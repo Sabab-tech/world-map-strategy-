@@ -159,6 +159,70 @@ test('Budget sector distribution sums to 100% and rejects an over-allocation',as
   assert.ok(before[first.id].budgetUsd>=latest.rows.find(r=>r.id===first.id).budgetUsd);
 });
 
+test('ministry budget transfer reallocates existing unspent ceilings without moving Treasury cash',async()=>{
+  const {context,state}=createRuntime();await context.OmegaFinanceMinistry.init();
+  const finance=context.OmegaFinanceMinistry;
+  const before=finance.getFinanceState('BGD');
+  const source=before.allocations.defense,target=before.allocations.interior;
+  assert.ok(source&&target,'both ministries need existing canonical budget allocations');
+  const amount=Math.min(250000,source.remainingUsd/2);
+  assert.ok(amount>0,'source ministry needs unspent allocated funds');
+  const treasuryBefore=before.treasuryBalanceUsd;
+  const sourceBudgetBefore=source.budgetUsd,targetBudgetBefore=target.budgetUsd;
+  const result=finance.applyAction({type:'transfer-budget',countryId:'BGD',sourceDepartment:'defense',
+    targetDepartment:'interior',amountUsd:amount,description:'Test inter-ministry reallocation'});
+  assert.equal(result.ok,true);
+  assert.equal(result.code,'BUDGET_TRANSFER_POSTED');
+  assert.equal(result.treasuryCashMoved,false);
+  assert.equal(state.finance.BGD.available,treasuryBefore,'allocation-only transfers must not move treasury cash');
+  const after=finance.getFinanceState('BGD');
+  assert.ok(Math.abs(after.allocations.defense.budgetUsd-(sourceBudgetBefore-amount))<0.01);
+  assert.ok(Math.abs(after.allocations.interior.budgetUsd-(targetBudgetBefore+amount))<0.01);
+  assert.ok(Math.abs(after.allocations.defense.remainingUsd-(source.remainingUsd-amount))<0.01);
+  const paired=after.ledger.filter(row=>row.transferId===result.transferId);
+  assert.equal(paired.length,2,'transfer must write paired debit/credit audit rows');
+  assert.deepEqual(paired.map(row=>row.action).sort(),['BUDGET_TRANSFER_IN','BUDGET_TRANSFER_OUT']);
+  assert.ok(paired.every(row=>row.category==='inter_ministry_budget_transfer'));
+  assert.equal(paired.find(row=>row.action==='BUDGET_TRANSFER_OUT').counterpartyDepartment,'interior');
+  assert.equal(paired.find(row=>row.action==='BUDGET_TRANSFER_IN').counterpartyDepartment,'defense');
+});
+
+test('ministry budget transfer rejects same-ministry, invalid, overdrawn and foreign-country requests',async()=>{
+  const {context}=createRuntime();await context.OmegaFinanceMinistry.init();
+  const finance=context.OmegaFinanceMinistry;
+  const before=finance.getFinanceState('BGD');
+  let result=finance.applyAction({type:'transfer-budget',countryId:'BGD',sourceDepartment:'defense',
+    targetDepartment:'defense',amountUsd:10});
+  assert.equal(result.ok,false);assert.equal(result.code,'BUDGET_TRANSFER_SAME_MINISTRY');
+  result=finance.applyAction({type:'transfer-budget',countryId:'BGD',sourceDepartment:'not-a-sector',
+    targetDepartment:'interior',amountUsd:10});
+  assert.equal(result.ok,false);assert.equal(result.code,'BUDGET_TRANSFER_SECTOR_INVALID');
+  result=finance.applyAction({type:'transfer-budget',countryId:'BGD',sourceDepartment:'defense',
+    targetDepartment:'interior',amountUsd:before.allocations.defense.remainingUsd+1});
+  assert.equal(result.ok,false);assert.equal(result.code,'BUDGET_TRANSFER_EXCEEDS_REMAINING');
+  result=finance.applyAction({type:'transfer-budget',countryId:'USA',sourceDepartment:'defense',
+    targetDepartment:'interior',amountUsd:10});
+  assert.equal(result.ok,false);assert.equal(result.code,'PLAYER_COUNTRY_SCOPE_VIOLATION');
+  const after=finance.getFinanceState('BGD');
+  assert.equal(after.treasuryBalanceUsd,before.treasuryBalanceUsd);
+  assert.equal(after.allocations.defense.budgetUsd,before.allocations.defense.budgetUsd);
+  assert.equal(after.allocations.interior.budgetUsd,before.allocations.interior.budgetUsd);
+});
+
+test('budget UI presents same-country ministry transfers only in the editable player profile',async()=>{
+  const {context,elements}=createRuntime();await context.OmegaFinanceMinistry.init();
+  assert.equal(context.OmegaFinanceMinistry.selectTab('budget').ok,true);
+  let html=elements.get('ministry-dashboard-content').innerHTML;
+  assert.ok(html.includes('Ministry-to-ministry budget transfer'));
+  assert.ok(html.includes('data-ofm-action="transfer-budget"'));
+  assert.ok(html.includes('name="sourceDepartment"'));
+  assert.ok(html.includes('name="targetDepartment"'));
+  assert.equal(context.OmegaFinanceMinistry.selectCountry('USA').ok,true);
+  html=elements.get('ministry-dashboard-content').innerHTML;
+  assert.ok(html.includes('READ-ONLY PROFILE'));
+  assert.ok(!html.includes('data-ofm-action="transfer-budget"'));
+});
+
 test('Modeled tax receipts accrue to the existing Finance ledger over simulation time',async()=>{
   const {context,state}=createRuntime();await context.OmegaFinanceMinistry.init();
   const beforeTax=Number(state.finance.BGD.taxRevenue)||0;
