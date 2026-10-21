@@ -1823,7 +1823,6 @@
       if(!Object.prototype.hasOwnProperty.call(EVENT_TYPES,type))throw new Error('NON_CANONICAL_EVENT:'+type);
       if(!this.ids.includes(source)||!country)throw new Error('INVALID_EVENT_SCOPE');
       const turn=Number.isFinite(Number(options.turn))?Number(options.turn):this.lastTurn;
-      this._eventSequence+=1;
       const eventId=String(options.eventId||('OMEGA-EVT-'+String(turn)+'-'+String(++this._eventSequence)));
       const event={
         schemaVersion:1,eventId,eventType:type,countryId:country,
