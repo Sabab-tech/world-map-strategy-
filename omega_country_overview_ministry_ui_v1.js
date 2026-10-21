@@ -4,7 +4,7 @@
  */
 (function (g) {
   'use strict';
-  const VERSION = '1.0.0';
+  const VERSION = '1.1.0';
   if (g.OmegaCountryOverviewMinistryUI?.VERSION === VERSION) return;
 
   const s = v => String(v == null ? '' : v);
@@ -25,10 +25,15 @@
   let selectedCountry = null;
   let activeTab = 'ministry';
   let lastRenderedCountry = null;
+  const sectorProfileState = {
+    promise: null, ready: false, error: null, data: null, schema: null,
+    byIso3: new Map(), byAlias: new Map(), registryPromise: null, registryError: null
+  };
 
   const runtime = () => g.OmegaCountryRuntimeData || null;
   const behaviorEngine = () => g.OmegaCountryBehaviorEngine || g.Omega?.CountryBehaviorEngine || null;
   const adaptiveEngine = () => g.OmegaOpponentAdaptiveStrategy || g.Omega?.OpponentAdaptiveStrategy || null;
+  const countryGeneralRuntime = () => g.OmegaCountryGeneralDataRuntime || g.Omega?.CountryGeneralData || null;
 
   function defaultCountry() {
     let simulatedPlayerCountry = null;
@@ -85,6 +90,323 @@
     try {
       return api.getProfile?.(value) || api.getProfile?.(resolve(value).canonical) || null;
     } catch (_) { return null; }
+  }
+
+
+  function normalizeProfileAlias(value) {
+    return s(value).normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/&/g, ' AND ').replace(/[_'-]+/g, ' ')
+      .replace(/[^A-Z0-9]+/gi, ' ').trim().toUpperCase().replace(/\s+/g, ' ');
+  }
+
+  function loadCountrySectorProfiles() {
+    if (sectorProfileState.ready) return Promise.resolve(true);
+    if (sectorProfileState.promise) return sectorProfileState.promise;
+    sectorProfileState.error = null;
+    sectorProfileState.promise = Promise.all([
+      g.fetch('./country_sector_profiles_v1.json', { cache: 'default' }),
+      g.fetch('./country_sector_profile_schema_v1.json', { cache: 'default' })
+    ]).then(responses => {
+      if (responses.some(response => !response || response.ok === false))
+        throw new Error('COUNTRY_SECTOR_PROFILE_ASSET_FETCH_FAILED');
+      return Promise.all(responses.map(response => response.json()));
+    }).then(([data, schema]) => {
+      if (!Array.isArray(data?.countries) || !Array.isArray(schema?.sectors) || !schema.sectors.length)
+        throw new Error('COUNTRY_SECTOR_PROFILE_SCHEMA_INVALID');
+      const expected = num(data.metadata?.countryAndTerritoryCount);
+      if (expected === null || expected !== data.countries.length)
+        throw new Error('COUNTRY_SECTOR_PROFILE_ROSTER_COUNT_MISMATCH');
+      const byIso3 = new Map();
+      const byAlias = new Map();
+      for (const row of data.countries) {
+        const identity = row?.identity || {};
+        const iso3 = s(identity.iso3).trim().toUpperCase();
+        if (!iso3 || byIso3.has(iso3)) throw new Error('COUNTRY_SECTOR_PROFILE_IDENTITY_INVALID:' + iso3);
+        if (row?.sourceRegistryRef?.identityValue && s(row.sourceRegistryRef.identityValue).toUpperCase() !== iso3)
+          throw new Error('COUNTRY_SECTOR_PROFILE_SOURCE_REFERENCE_MISMATCH:' + iso3);
+        byIso3.set(iso3, row);
+        for (const alias of [iso3, identity.iso2, identity.numericCode, identity.name, identity.officialName]) {
+          const key = normalizeProfileAlias(alias);
+          if (key && !byAlias.has(key)) byAlias.set(key, row);
+        }
+      }
+      const schemaIds = schema.sectors.map(item => item.id);
+      if (new Set(schemaIds).size !== schemaIds.length)
+        throw new Error('COUNTRY_SECTOR_SCHEMA_HAS_DUPLICATE_SECTORS');
+      for (const row of data.countries) {
+        const keys = Object.keys(row.sectors || {}).sort();
+        if (keys.length !== schemaIds.length || schemaIds.some(id => !Object.hasOwn(row.sectors || {}, id)))
+          throw new Error('COUNTRY_SECTOR_PROFILE_SECTOR_COVERAGE_MISMATCH:' + row.identity.iso3);
+      }
+      sectorProfileState.data = data;
+      sectorProfileState.schema = schema;
+      sectorProfileState.byIso3 = byIso3;
+      sectorProfileState.byAlias = byAlias;
+      sectorProfileState.ready = true;
+      sectorProfileState.error = null;
+      return true;
+    }).catch(error => {
+      sectorProfileState.error = s(error?.message || error) || 'COUNTRY_SECTOR_PROFILE_LOAD_FAILED';
+      sectorProfileState.ready = false;
+      sectorProfileState.byIso3.clear();
+      sectorProfileState.byAlias.clear();
+      throw error;
+    }).finally(() => { sectorProfileState.promise = null; });
+    return sectorProfileState.promise;
+  }
+
+  function profileForCountry(value, identity) {
+    const aliases = [identity?.iso3, identity?.iso2, identity?.numericCode,
+      identity?.countryCode, identity?.name, identity?.officialName, value];
+    for (const alias of aliases) {
+      const key = normalizeProfileAlias(alias);
+      const hit = sectorProfileState.byAlias.get(key);
+      if (hit) return hit;
+    }
+    return null;
+  }
+
+  function profileLabel(key) {
+    return s(key).replace(/([a-z0-9])([A-Z])/g, '$1 $2').replace(/[_-]+/g, ' ')
+      .replace(/\s+/g, ' ').trim().replace(/\b\w/g, char => char.toUpperCase());
+  }
+
+  function profileValueText(value, unit) {
+    if (value === null || value === undefined || value === '') return 'NOT RECORDED';
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      const unitText = s(unit);
+      const isMoney = /(^USD$|US dollars?|USD per person)/i.test(unitText);
+      if (isMoney && Math.abs(value) >= 1e9) return compactNumber(value, 'USD');
+      return value.toLocaleString(undefined, { maximumFractionDigits: 4 }) + (unitText ? ' ' + unitText : '');
+    }
+    if (typeof value === 'boolean') return value ? 'YES' : 'NO';
+    if (Array.isArray(value)) return value.length ? value.map(item => profileValueText(item, '')).join(', ') : 'NOT RECORDED';
+    if (isObj(value)) return Object.keys(value).length ? 'REGISTERED OBJECT (' + Object.keys(value).length + ' fields)' : 'NOT RECORDED';
+    return s(value);
+  }
+
+  function profileObservation(ref, generalRecord, profile, metricCatalog) {
+    const key = s(ref?.key);
+    if (!key) return { key: '', value: null, status: 'INVALID_REFERENCE' };
+    if (ref.refType === 'METRIC') {
+      const value = generalRecord?.metrics?.[key];
+      const meta = generalRecord?.metricMetadata?.[key] || {};
+      const definition = metricCatalog.get(key) || {};
+      return {
+        key, value: value === undefined ? null : value, unit: definition.unit || null,
+        status: meta.status || (value == null ? 'NOT_RECORDED' : 'REGISTERED_SOURCE_VALUE'),
+        sourceId: meta.sourceId || generalRecord?.datasetId || 'country_general_data_registry_v1.json',
+        sourceName: meta.sourceName || meta.sourceId || 'Canonical country registry',
+        year: meta.year ?? null, sourceUrl: meta.sourceUrl || null,
+        confidence: meta.confidence ?? meta.sourceConfidence ?? null,
+        note: meta.note || null
+      };
+    }
+    if (ref.refType === 'DERIVED_METRIC') return profile?.derivedMetrics?.[key] || { key, value: null, status: 'DERIVED_METRIC_NOT_FOUND' };
+    if (ref.refType === 'EXTERNAL_METRIC') return profile?.externalMetrics?.[key] || { key, value: null, status: 'EXTERNAL_METRIC_NOT_IMPORTED' };
+    if (ref.refType === 'ANALYTICS') return profile?.analytics?.[key] || { key, value: null, status: 'ANALYTICS_NOT_AVAILABLE' };
+    if (ref.refType === 'GENERAL_FACT') {
+      const value = generalRecord?.generalFacts?.[key];
+      const statuses = generalRecord?.generalFacts?.factsSourceStatus || {};
+      return {
+        key, value: value === undefined ? null : value,
+        status: value === null || value === undefined || value === '' ? 'NOT_RECORDED' : 'COUNTRY_FACT_RECORDED',
+        sourceId: generalRecord?.datasetId || 'country_general_data_registry_v1.json',
+        sourceName: Object.keys(statuses).filter(id => statuses[id]).join(' / ') || 'Canonical country facts'
+      };
+    }
+    if (ref.refType === 'SOURCE_GROUP') {
+      const value = generalRecord?.[key];
+      return {
+        key, value: value === undefined ? null : value,
+        status: value && isObj(value) ? 'CANONICAL_SOURCE_GROUP' : 'SOURCE_GROUP_NOT_AVAILABLE',
+        sourceId: generalRecord?.datasetId || 'country_general_data_registry_v1.json',
+        sourceName: 'Canonical ' + profileLabel(key)
+      };
+    }
+    return { key, value: null, status: 'UNSUPPORTED_REFERENCE_TYPE:' + s(ref.refType) };
+  }
+
+  function profileObservationRow(label, observation, refType) {
+    const value = observation?.value;
+    const missing = value === null || value === undefined || value === '';
+    const shown = (refType === 'SOURCE_GROUP' || refType === 'ANALYTICS' && isObj(value))
+      ? profileValueText(value, observation?.unit)
+      : profileValueText(value, observation?.unit);
+    const source = observation?.sourceName || observation?.sourceId || 'Source not recorded';
+    const year = observation?.year == null ? '' : ' · Year ' + observation.year;
+    const confidence = num(observation?.confidence);
+    const confidenceText = confidence === null ? '' : ' · Confidence ' + Math.round(Math.max(0, Math.min(1, confidence)) * 100) + '%';
+    const sourceUrl = /^https?:\/\//i.test(s(observation?.sourceUrl)) ? observation.sourceUrl : '';
+    return '<div class="ocov-pack-field" style="padding:8px 0;border-bottom:1px solid rgba(148,163,184,.14);display:grid;grid-template-columns:minmax(115px,.8fr) minmax(0,1.5fr);gap:8px">' +
+      '<strong style="font-size:11px;overflow-wrap:anywhere">' + esc(label) + '</strong>' +
+      '<div style="min-width:0"><div style="font-size:12px;overflow-wrap:anywhere;' + (missing ? 'color:#94a3b8' : 'color:#e2e8f0;font-weight:650') + '">' + esc(shown) + '</div>' +
+      '<small style="display:block;color:#94a3b8;line-height:1.45;margin-top:3px;overflow-wrap:anywhere">' +
+      esc(s(observation?.status || (missing ? 'NOT_RECORDED' : 'RECORDED')).replace(/_/g, ' ')) + ' · ' + esc(source) +
+      esc(year + confidenceText) + '</small>' +
+      (observation?.note ? '<small style="display:block;color:#94a3b8;margin-top:3px;overflow-wrap:anywhere">' + esc(observation.note) + '</small>' : '') +
+      (sourceUrl ? '<a href="' + esc(sourceUrl) + '" target="_blank" rel="noopener noreferrer" style="display:inline-block;margin-top:4px;color:#8dbdff;font-size:10px">Source record</a>' : '') +
+      (isObj(value) || Array.isArray(value) ? '<details style="margin-top:5px"><summary style="cursor:pointer;color:#a6b9d5;font-size:10px">Inspect registered fields</summary><pre style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:280px;overflow:auto;font-size:10px;color:#cbd5e1">' + esc(JSON.stringify(value, null, 2)) + '</pre></details>' : '') +
+      '</div></div>';
+  }
+
+  function renderCountrySectorDataPack(value, identity) {
+    if (!sectorProfileState.ready) {
+      if (sectorProfileState.error) {
+        return panel('Complete country data pack', 'The canonical pack was not loaded. Existing profile data remains available above.',
+          '<p class="ocov-empty">' + esc(sectorProfileState.error) + '</p>' +
+          '<button type="button" data-ocov-profile-retry style="padding:8px 12px;border:1px solid #64748b;border-radius:7px;background:#172033;color:#e2e8f0;cursor:pointer;font-weight:700">RETRY COUNTRY DATA LOAD</button>',
+          'ocov-sector-data-pack');
+      }
+      if (!sectorProfileState.promise) {
+        const requestedCountry = s(value);
+        loadCountrySectorProfiles().then(() => {
+          if (activeTab === 'country' && lastRenderedCountry === requestedCountry) renderCountryOverview();
+        }).catch(() => {
+          if (activeTab === 'country' && lastRenderedCountry === requestedCountry) renderCountryOverview();
+        });
+      }
+      return panel('Complete country data pack', 'Loading the compact, source-linked profile for all world identities…',
+        '<p class="ocov-empty">Loading the country-sector registry. Source data is not replaced with estimated values.</p>',
+        'ocov-sector-data-pack');
+    }
+
+    const profile = profileForCountry(value, identity);
+    if (!profile) return panel('Complete country data pack', 'No matching sector record was found for this canonical identity.',
+      '<p class="ocov-empty">Country identity: ' + esc(value) + ' · Status: PROFILE_NOT_FOUND</p>',
+      'ocov-sector-data-pack');
+
+    const generalApi = countryGeneralRuntime();
+    let generalRecord = null;
+    try { generalRecord = generalApi?.getCountryRecord?.(profile.identity.iso3) || null; } catch (_) {}
+    if (!generalRecord && typeof generalApi?.init === 'function' && !generalApi?.diagnostics?.().ready) {
+      if (!sectorProfileState.registryPromise) {
+        sectorProfileState.registryPromise = Promise.resolve(generalApi.init()).then(() => {
+          const diagnostics = generalApi.diagnostics?.() || {};
+          sectorProfileState.registryError = diagnostics.ready ? null : (diagnostics.error || 'CANONICAL_REGISTRY_NOT_READY');
+          if (activeTab === 'country' && lastRenderedCountry === s(value)) renderCountryOverview();
+        }).catch(error => {
+          sectorProfileState.registryError = s(error?.message || error);
+          if (activeTab === 'country' && lastRenderedCountry === s(value)) renderCountryOverview();
+        });
+      }
+      return panel('Complete country data pack', 'Connecting profile references to canonical country facts and indicator observations.',
+        '<p class="ocov-empty">' + esc(sectorProfileState.registryError || 'Connecting to the shared country registry. This does not create another country database.') + '</p>',
+        'ocov-sector-data-pack');
+    }
+
+    const metricCatalogue = runtime()?.getSourceDataset?.('country_general_data_registry_v1.json')?.fieldCatalogue || [];
+    const metricCatalog = new Map(metricCatalogue.filter(item => item?.key).map(item => [item.key, item]));
+    const definitions = sectorProfileState.schema.sectors;
+    const sectorRows = definitions.map(definition => {
+      const section = profile.sectors?.[definition.id] || {};
+      const fieldRows = [];
+      for (const [key, ref] of Object.entries(section.indicators || {})) {
+        const observation = profileObservation(ref, generalRecord, profile, metricCatalog);
+        const catalog = metricCatalog.get(key);
+        const label = catalog?.name || definition.metricLabels?.[key] || profileLabel(key);
+        fieldRows.push(profileObservationRow(label, observation, ref.refType));
+      }
+      for (const [key, ref] of Object.entries(section.facts || {})) {
+        const observation = profileObservation(ref, generalRecord, profile, metricCatalog);
+        fieldRows.push(profileObservationRow(profileLabel(key), observation, ref.refType));
+      }
+      if (section.sourceGroup) {
+        const observation = profileObservation(section.sourceGroup, generalRecord, profile, metricCatalog);
+        fieldRows.push(profileObservationRow(profileLabel(section.sourceGroup.key || definition.sourceGroup || 'Source group'),
+          observation, section.sourceGroup.refType));
+      }
+      for (const [key, ref] of Object.entries(section.analytics || {})) {
+        const observation = profileObservation(ref, generalRecord, profile, metricCatalog);
+        fieldRows.push(profileObservationRow(profileLabel(key), observation, ref.refType));
+      }
+      const extensionSlots = arr(definition.extensionSlots);
+      const extensionHtml = extensionSlots.length
+        ? '<div style="margin-top:10px"><strong style="font-size:11px">Additional data fields / known gaps</strong><ul class="ocov-list">' +
+          extensionSlots.map(slot => '<li><strong>' + esc(profileLabel(slot.key)) + '</strong><span>' +
+            esc(slot.description || 'Additional field defined in the profile schema.') + '</span><small>' +
+            esc(s(slot.emptyStatus || 'NOT_SOURCED').replace(/_/g, ' ')) +
+            ' · ' + esc('Field is defined; an observation is not included in this profile row yet.') + '</small></li>').join('') +
+          '</ul></div>' : '';
+      const unavailable = arr(sectorProfileState.schema.unavailableModelSlots).filter(slot => slot.sectorId === definition.id);
+      const modelHtml = unavailable.length
+        ? '<div style="margin-top:10px"><strong style="font-size:11px">Scores not generated without required inputs</strong><ul class="ocov-list">' +
+          unavailable.map(slot => '<li><strong>' + esc(slot.title || profileLabel(slot.id)) + '</strong><span>' +
+            esc(slot.note || 'Required source data has not been imported.') + '</span><small>' +
+            esc(s(slot.status || 'NOT_SCORED_REQUIRED_DATA_MISSING').replace(/_/g, ' ')) +
+            ' · Required: ' + esc(arr(slot.missingInputs).join(', ')) + '</small></li>').join('') +
+          '</ul></div>' : '';
+      const body = (fieldRows.length ? fieldRows.join('') :
+        '<p class="ocov-empty">No indicators are currently registered for this sector.</p>') +
+        extensionHtml + modelHtml;
+      const countAvailable = fieldRows.filter((html, index) => {
+        const refs = [...Object.values(section.indicators || {}), ...Object.values(section.facts || {}), ...Object.values(section.analytics || {})];
+        const ref = refs[index];
+        if (!ref) return false;
+        const resolved = profileObservation(ref, generalRecord, profile, metricCatalog);
+        return resolved.value !== null && resolved.value !== undefined && resolved.value !== '';
+      }).length;
+      const status = s(section.status || 'NO_DATA').replace(/_/g, ' ');
+      return '<details class="ocov-pack-sector" style="border:1px solid rgba(148,163,184,.2);border-radius:10px;background:rgba(15,23,42,.55);padding:10px;min-width:0">' +
+        '<summary style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px;list-style-position:inside">' +
+        '<strong style="font-size:12px">' + esc(definition.title || profileLabel(definition.id)) + '</strong>' +
+        '<span style="font-size:10px;color:#a7c4e8;white-space:nowrap">' + esc(status) + ' · ' + countAvailable + ' shown values</span></summary>' +
+        (definition.description ? '<p style="font-size:11px;color:#94a3b8;margin:8px 0">' + esc(definition.description) + '</p>' : '') +
+        '<div style="margin-top:8px">' + body + '</div></details>';
+    }).join('');
+
+    const rawRecord = {
+      identity: generalRecord?.identity || profile.identity,
+      generalFacts: generalRecord?.generalFacts || null,
+      metrics: generalRecord?.metrics || null,
+      metricMetadata: generalRecord?.metricMetadata || null,
+      naturalResources: generalRecord?.naturalResources || null,
+      publicSafety: generalRecord?.publicSafety || null,
+      localGeography: generalRecord?.localGeography || null,
+      dataStatus: generalRecord?.dataStatus || null,
+      sectorProfile: profile
+    };
+    const dataNote = 'Generated ' + s(sectorProfileState.data.metadata?.generatedAt || 'date not recorded') +
+      ' · Canonical roster ' + s(sectorProfileState.data.metadata?.countryAndTerritoryCount || sectorProfileState.data.countries.length) +
+      ' · ' + definitions.length + ' sectors · ' + s(generalRecord?.datasetId || 'canonical source reference unresolved');
+    const coverage = sectorProfileState.data.metadata?.sectorCoverage || {};
+    const coverageHtml = '<div style="display:flex;flex-wrap:wrap;gap:6px;margin:9px 0 12px">' +
+      definitions.map(definition => {
+        const item = coverage[definition.id] || {};
+        return '<span style="padding:5px 7px;border:1px solid rgba(148,163,184,.2);border-radius:7px;font-size:10px;color:#cbd5e1">' +
+          esc(definition.title || definition.id) + ': ' + esc(item.available || 0) + ' full / ' +
+          esc(item.partial || 0) + ' partial / ' + esc(item.noData || 0) + ' gaps</span>';
+      }).join('') + '</div>';
+    const relative = profile.relativeSignals || {};
+    const signalLine = items => arr(items).map(item =>
+      profileLabel(item.title || item.metricKey || 'Relative signal') +
+      ': ' + profileValueText(item.value, item.unit) +
+      (item.year == null ? '' : ' · Year ' + item.year) +
+      (item.peerPercentile == null ? '' : ' · Peer percentile ' + item.peerPercentile) +
+      (item.sourceName || item.sourceId ? ' · ' + (item.sourceName || item.sourceId) : '')
+    );
+    const signalHtml = '<details style="margin-top:10px"><summary style="cursor:pointer">Country-relative evidence signals (' +
+      (arr(relative.strengths).length + arr(relative.vulnerabilities).length) + ')</summary><div class="ocov-domain-grid" style="margin-top:8px">' +
+      panel('Relative strengths', 'Peer-relative signals, not official rankings or causal proof.',
+        bulletList(signalLine(relative.strengths), 'No eligible, sourced relative-strength signal was calculated.')) +
+      panel('Relative vulnerabilities', 'Peer-relative signals, not an overall national rating.',
+        bulletList(signalLine(relative.vulnerabilities), 'No eligible, sourced relative-vulnerability signal was calculated.')) +
+      '</div><p class="ocov-note">' + esc(relative.policy || 'Peer-relative signals retain their source and observation year.') + '</p></details>';
+    const rawHtml = '<details style="margin-top:10px"><summary style="cursor:pointer">Inspect complete resolved country record</summary>' +
+      '<p class="ocov-note">Read-only projection assembled from canonical registry values and references. This is not a second stored dataset.</p>' +
+      '<pre style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:420px;overflow:auto;padding:10px;border-radius:8px;background:rgba(2,6,23,.55);font:10px/1.45 monospace;color:#cbd5e1">' +
+      esc(JSON.stringify(rawRecord, null, 2)) + '</pre></details>';
+    const counts = {
+      metricCount: Object.keys(generalRecord?.metrics || {}).length,
+      observedMetrics: Object.values(generalRecord?.metrics || {}).filter(item => item !== null && item !== undefined).length
+    };
+    const body = '<p class="ocov-note">' + esc(dataNote) + ' · ' +
+      counts.observedMetrics + '/' + counts.metricCount + ' canonical metrics have recorded values for this country. Missing values remain unknown, never zero.</p>' +
+      coverageHtml +
+      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(255px,1fr));gap:9px">' + sectorRows + '</div>' +
+      signalHtml + rawHtml;
+    return panel('Complete country data pack', 'All profile sectors resolve references back to one canonical registry. Values carry status/source/year where available; gaps and unscored models are exposed explicitly.',
+      body, 'ocov-sector-data-pack');
   }
 
   function sourceNumber(profile, keys) {
@@ -343,6 +665,8 @@
       (strategic?.executiveSummary ? '<p class="ocov-summary">' + esc(strategic.executiveSummary) + '</p>' :
         '<p class="ocov-summary">The behaviour profile is derived from registered country indicators and gameplay systems. Missing evidence remains unobserved.</p>') +
       '</section>' +
+      '<div class="ocov-section-heading"><span>00</span><div><h3>Complete world country data pack</h3><p>Canonical source values, profile analytics, and visible data gaps.</p></div></div>' +
+      renderCountrySectorDataPack(value, identity) +
       '<div class="ocov-section-heading"><span>01</span><div><h3>Economic baseline</h3><p>Recorded inputs, not invented national statistics.</p></div></div>' +
       '<div class="ocov-kpi-grid">' +
       metricCard('GDP', gdp.value, 'USD', gdp.source || 'economy baseline') +
@@ -501,6 +825,16 @@
   function onClick(event) {
     const target = event?.target;
     if (!target || typeof target.closest !== 'function') return;
+    const profileRetry = target.closest('[data-ocov-profile-retry]');
+    if (profileRetry) {
+      event.preventDefault();
+      sectorProfileState.error = null;
+      sectorProfileState.promise = null;
+      sectorProfileState.registryError = null;
+      sectorProfileState.registryPromise = null;
+      renderCountryOverview();
+      return;
+    }
     const auditButton = target.closest('[data-ocov-audit-all]');
     if (auditButton) {
       event.preventDefault();
@@ -556,7 +890,11 @@
       countryCount: identities().length,
       behaviorEngineAvailable: !!behaviorEngine(),
       behaviorEngine: behaviorEngine()?.diagnostics?.() || null,
-      lastRenderedCountry
+      lastRenderedCountry,
+      countrySectorProfilesReady: sectorProfileState.ready,
+      countrySectorProfileCount: sectorProfileState.data?.countries?.length || 0,
+      countrySectorProfileError: sectorProfileState.error,
+      countrySectorRegistryError: sectorProfileState.registryError
     };
   }
 
