@@ -568,7 +568,7 @@ test('X: handler acknowledgements with no authoritative writes are not reported 
   const result=s.mesh.dispatchCommand('finance','TEST_ACK_ONLY',s.countryA,{},{
     turn:4,commandType:'TEST_ACK_ONLY'
   });
-  assert.equal(result.status,'ACCEPTED_NO_STATE_WRITE');
+  assert.equal(result.status,'ACCEPTED_NO_STATE_WRITE',JSON.stringify(result));
   assert.equal(result.stateChanged,false);
   assert.equal(result.stateWriteCount,0);
   assert.equal(result.result.accepted,false);
