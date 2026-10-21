@@ -5,6 +5,7 @@ const path = require('node:path');
 const root = path.resolve(__dirname, '..');
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const bootstrap = fs.readFileSync(path.join(root, 'server_bootstrap.js'), 'utf8');
+const server = fs.readFileSync(path.join(root, 'server.js'), 'utf8');
 const ministerBootstrap = fs.readFileSync(path.join(root, 'omega_minister_bootstrap.js'), 'utf8');
 
 const start = '<!-- OMEGA_CANONICAL_PRODUCTION_RUNTIME_START -->';
@@ -79,6 +80,16 @@ const canonicalArray = bootstrap.match(/const CANONICAL_AI_SCRIPTS = Object\.fre
 assert.ok(canonicalArray, 'Node server must expose the same canonical runtime asset list');
 const nodeSources = [...canonicalArray[1].matchAll(/'([^']+\.js)'/g)].map(m => m[1]);
 assert.deepEqual(nodeSources, expected, 'Node server and GitHub Pages must share one runtime asset order');
+assert.ok(html.includes('<script src="omega_world_bank_lending_runtime_v1.js" defer></script>'),
+  'Finance page must load the separate World Bank lending runtime');
+assert.ok(server.includes('WORLD_BANK_LENDING_SCRIPT'),
+  'server-rendered runtime must register the World Bank lending script');
+const financeBankingTag=html.indexOf('omega_government_banking_runtime_v1.js');
+const worldBankTag=html.indexOf('omega_world_bank_lending_runtime_v1.js');
+const transmissionTag=html.indexOf('omega_economic_transmission_runtime_v1.js');
+assert.ok(financeBankingTag >= 0 && worldBankTag > financeBankingTag && transmissionTag > worldBankTag,
+  'World Bank lending must load after government banking and before economic transmission');
+
 
 for (const src of ['minister_behavior_engine.js', 'omega_minister_integration.js', 'minister_communication_engine.js']) {
   assert.ok(ministerBootstrap.includes("src:'" + src + "'"), 'minister bootstrap must use relative script URLs: ' + src);
