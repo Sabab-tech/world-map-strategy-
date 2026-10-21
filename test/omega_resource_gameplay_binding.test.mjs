@@ -154,6 +154,7 @@ test('runtime renders all global sites and applies nation/resource scope without
     'resource_site_canonical_catalog_v1.json': catalog,
     'resource_site_master_registry_v1.json': master,
     'resource_site_country_expansion_v1.json': expansion,
+    'resource_site_country_mineplay_batch_20261020_v1.json': JSON.parse(read('resource_site_country_mineplay_batch_20261020_v1.json')),
     'resource_site_legacy_gameplay_expansion_part_6_v1.json': JSON.parse(read('resource_site_legacy_gameplay_expansion_part_6_v1.json'))
   };
   // Test-only fixture: force two separate site identities to share one coordinate so pixel-spider offsets are verified.
@@ -240,8 +241,13 @@ test('runtime renders all global sites and applies nation/resource scope without
   assert.equal(part6.records.length,50,'map binding fixture must load all 50 Part 6 sites');
   const part6Ids=new Set(part6.records.map(site=>site.siteId));
   const mappedPart6Sites=context.Omega.IndividualResourceSiteBinding.sites.filter(site=>part6Ids.has(site.siteId));
-  assert.equal(mappedPart6Sites.length,50,'all 50 Part 6 identities must join the same individual-site map registry');
-  for(const expected of part6.records){
+  const part6Aliases=part6.records.filter(site=>site.runtime?.aliasOfSiteId||site.map?.markerEligible===false);
+  assert.equal(part6Aliases.length,2,'duplicate Part 6 records must remain explicit non-marker aliases');
+  assert.equal(part6Aliases.find(site=>site.siteId==='SITE_CAN_voiseys_bay_nickel_mine')?.runtime?.aliasOfSiteId,'SITE_CAN_voisey_s_bay_nickel_mine');
+  assert.equal(part6Aliases.find(site=>site.siteId==='SITE_GBR_boulby_mine')?.runtime?.aliasOfSiteId,'SITE_GBR_boulby_potash_mine');
+  assert.equal(mappedPart6Sites.length,48,'48 unique executable Part 6 sites must join the individual-site map registry');
+  assert.equal(part6Aliases.every(alias=>!mappedPart6Sites.some(site=>site.siteId===alias.siteId)),true,'legacy aliases must not create duplicate physical-site markers');
+  for(const expected of part6.records.filter(site=>!site.runtime?.aliasOfSiteId&&site.map?.markerEligible!==false)){
     const site=mappedPart6Sites.find(row=>row.siteId===expected.siteId);
     assert(site,expected.siteId+': per-site map identity missing');
     assert.equal(site.countryId,expected.countryId,expected.siteId+': map country must remain site-specific');
@@ -252,7 +258,7 @@ test('runtime renders all global sites and applies nation/resource scope without
   assert.ok(geographicPositions.size>100,'world markers must preserve widespread source coordinates instead of collapsing all resources to one point');
   assert.ok(context.Game.Map.resourceDepositsLayer.clearCount>0,'legacy deposit layer must be cleared so old and individual markers do not stack');
   const activeMarkers=[...layers].flatMap(layer=>layer.markers);
-  for(const expected of part6.records){
+  for(const expected of part6.records.filter(site=>!site.runtime?.aliasOfSiteId&&site.map?.markerEligible!==false)){
     const coords=expected.location.coordinates;
     assert(activeMarkers.some(marker=>Math.abs(Number(marker.latlng[0])-Number(coords.lat))<1e-7&&
       Math.abs(Number(marker.latlng[1])-Number(coords.lng))<1e-7),
@@ -302,6 +308,26 @@ test('runtime renders all global sites and applies nation/resource scope without
   assert.equal(diagnosticsAfterLoad.sourceRecordCounts.runtimeDeposits,43,'diagnostics must count all raw runtime deposit records');
   assert.ok(Object.values(diagnosticsAfterLoad.coordinateStatusCounts).reduce((a,b)=>a+b,0)===diagnosticsAfterLoad.siteCount,
     'coordinate confidence reporting must cover every mapped site');
+  // The supplemental country dataset must populate the same map registry and survive a nation-scope switch.
+  const mappedBotswanaSites=context.Omega.IndividualResourceSiteBinding.sites.filter(site=>site.countryId==='BWA');
+  assert.ok(mappedBotswanaSites.length>=4,'Botswana supplemental sites must be visible in the shared map registry');
+  assert.ok(mappedBotswanaSites.some(site=>site.siteId==='SITE_BWA_sua_pan_salt_soda_ash_operation'),
+    'Botswana Sua Pan must join the map and country-filter registry');
+  context.Game.Map.resourceState.scope='NATION';
+  context.Game.currentActiveCountry='BWA';
+  context.Game.Map.resourceState.selectedResources=vm.runInContext("new Set(['all'])",context);
+  context.Omega.IndividualResourceSiteBinding.refresh();
+  assert.equal(markerCount(),mappedBotswanaSites.length,'selecting Botswana must render only Botswana mine/site markers');
+  const visibleBotswanaMarkers=[...layers].flatMap(layer=>layer.markers);
+  for(const site of mappedBotswanaSites){
+    const c=site.location.coordinates;
+    assert.ok(visibleBotswanaMarkers.some(marker=>Math.abs(Number(marker.latlng[0])-Number(c.lat))<1e-7&&Math.abs(Number(marker.latlng[1])-Number(c.lng))<1e-7),
+      site.siteId+': Botswana site must be visible at its individual coordinates');
+  }
+  context.Game.Map.resourceState.scope='NATION';
+  context.Game.currentActiveCountry='Saudi Arabia';
+  context.Game.Map.resourceState.selectedResources=vm.runInContext("new Set(['all'])",context);
+  context.Omega.IndividualResourceSiteBinding.refresh();
   const loadedSaudiSites=context.Omega.IndividualResourceSiteBinding.sites.filter(site=>site.countryId==='SAU');
   assert.equal(loadedSaudiSites.length,5,'Saudi Arabia must retain its three original source records plus two newly integrated physical sites');
   assert.ok(loadedSaudiSites.every(site=>site.location.coordinateStatus),
