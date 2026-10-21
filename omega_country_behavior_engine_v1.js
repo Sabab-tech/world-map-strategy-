@@ -28,6 +28,12 @@
   const id = v => String(v == null ? '' : v).trim().toUpperCase();
   const obj = v => !!v && typeof v === 'object' && !Array.isArray(v);
   const own = (o, k) => obj(o) && Object.prototype.hasOwnProperty.call(o, k);
+  const sourceFreshness = year => {
+    const y = num(year);
+    if (y === null) return 0.72;
+    const age = Math.max(0, new Date().getUTCFullYear() - y);
+    return Number((age <= 2 ? 1 : Math.max(0.25, 1 - 0.055 * (age - 2))).toFixed(3));
+  };
   const clone = (v, seen) => {
     if (v === null || typeof v !== 'object') return v;
     seen = seen || new WeakMap();
@@ -98,7 +104,7 @@
       if (!bucket) continue;
       for (const key of fields) {
         const value = num(bucket[key]);
-        if (value !== null) return { value, source: 'LIVE_GAME_STATE.' + domain + '.' + key, key, status: 'LIVE' };
+        if (value !== null) return { value, source: 'LIVE_GAME_STATE.' + domain + '.' + key, key, status: 'LIVE', year: null, sourceConfidence: 1, freshness: 1, confidence: 1, dataGap: null, confidenceBasis: 'LIVE_GAME_STATE', isCurrentGameState: true };
       }
     }
     return null;
@@ -118,7 +124,14 @@
         const value = num(container[key]);
         if (value !== null) return {
           value, source: (profile?.provenance?.economicSource || 'economy_global_profiles_v1.json') + ':' + label + '.' + key,
-          key, status: 'RECORDED_BASELINE'
+          key, status: 'RECORDED_BASELINE',
+          year: num(profile?.baselineYear ?? profile?.provenance?.baselineYear),
+          sourceConfidence: 0.42,
+          freshness: sourceFreshness(profile?.baselineYear ?? profile?.provenance?.baselineYear),
+          confidence: Number((0.42 * sourceFreshness(profile?.baselineYear ?? profile?.provenance?.baselineYear)).toFixed(3)),
+          dataGap: 'LEGACY_SOURCE_NOT_REVALIDATED',
+          confidenceBasis: 'LEGACY_GAME_BASELINE_HEURISTIC',
+          isCurrentGameState: false
         };
       }
     }
@@ -157,7 +170,14 @@
         year,
         sourceId: metadata.sourceId || null,
         sourceName: metadata.sourceName || null,
-        method: metadata.method || null
+        method: metadata.method || null,
+        sourceUrl: metadata.sourceUrl || null,
+        sourceConfidence: num(metadata.sourceConfidence),
+        freshness: num(metadata.freshness),
+        confidence: num(metadata.confidence),
+        dataGap: metadata.dataGap || null,
+        confidenceBasis: metadata.confidenceBasis || 'SOURCE_STATUS_AND_OBSERVATION_YEAR',
+        isCurrentGameState: false
       };
     }
     return null;
@@ -474,6 +494,8 @@
     const resourceRuntime = getLiveResourceSignals(identity);
     const confidenceReferenceYear = new Date().getUTCFullYear();
     function metricConfidence(row) {
+      const saved = num(row?.confidence);
+      if (saved !== null) return clamp(saved, 0, 1);
       const status = String(row?.status || 'RECORDED');
       if (status === 'LIVE' || status === 'LIVE_DERIVED') return 1;
       const base = status === 'WORLD_BANK_API_OBSERVATION' ? 0.9 :
@@ -783,7 +805,11 @@
           observationContext: v.status === 'LIVE' || v.status === 'LIVE_DERIVED' ? 'CURRENT_GAME_STATE' :
             (observationYear === null ? 'OBSERVATION_YEAR_NOT_RECORDED' : 'HISTORICAL_REFERENCE'),
           confidence: metricConfidence(v),
-          confidenceMethod: 'SOURCE_STATUS_AND_OBSERVATION_RECENCY_HEURISTIC'
+          sourceConfidence: num(v.sourceConfidence),
+          freshness: num(v.freshness) ?? sourceFreshness(observationYear),
+          dataGap: v.dataGap || (observationYear === null && v.status !== 'LIVE' && v.status !== 'LIVE_DERIVED' ? 'OBSERVATION_YEAR_UNAVAILABLE' : null),
+          confidenceBasis: v.confidenceBasis || 'SOURCE_STATUS_AND_OBSERVATION_RECENCY_HEURISTIC',
+          confidenceMethod: 'SOURCE_STATUS_AND_OBSERVATION_RECENCY_HEURISTIC; NOT_A_CALIBRATED_PROBABILITY'
         }];
       })),
       dataGaps: Object.entries(evidenceByMetric).flatMap(([metric, v]) => {
