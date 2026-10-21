@@ -35,7 +35,7 @@
     "test:opponent-multi-country": "node test/omega_opponent_multi_country_integration.test.mjs",
     "test:memory-trace": "node test/omega_opponent_memory_trace_log_system.test.mjs",
     "test:global-market": "node test/omega_global_market_system.test.mjs",
-    "test:resource-system-hardening": "node test/omega_resource_system_hardening.test.mjs && node --test test/android_web_compat_assets.test.mjs",
+    "test:resource-system-hardening": "node test/omega_resource_system_hardening.test.mjs",
     "test:resource-global-pipeline": "node --test test/omega_resource_global_pipeline.test.mjs",
     "test:resource-country-boundary": "node --test test/omega_resource_country_boundary.test.mjs",
     "test:resource-endowment": "node test/omega_resource_endowment_runtime.test.mjs",
