@@ -95,6 +95,37 @@ public final class OmegaGameplaySmokeTest {
                     evaluate(instrumentation, webViewRef.get(), compatibilityReadyScript)
             );
 
+            final String ministryRuntimeDiagnosticScript =
+                    "(function() { var r=window.OMEGA_MINISTRY_RUNTIME_V1 || (window.Omega && window.Omega.MinistryRuntime);" +
+                    " var h=r && typeof r.health==='function' ? r.health() : null;" +
+                    " var reg=window.OmegaMinistryRegistry, state=window.OmegaMinisterStateRegistry;" +
+                    " return JSON.stringify({registryVersion:reg&&reg.VERSION,registryCount:reg&&reg.ids&&reg.ids.length," +
+                    "controllerPresent:!!r,controllerIds:r&&typeof r.getIds==='function'?r.getIds().length:null," +
+                    "runtimeHealth:h?{count:h.count,active:h.active,independent:h.independent,initialized:h.initialized,engineRegistryHealthy:h.engineRegistryHealthy}:null," +
+                    "stateRegistryPresent:!!state,stateConsistency:typeof (state&&state.consistencyCheck),stateAssignments:typeof (state&&state.getAssignments)," +
+                    "domainEnginesPresent:!!window.OmegaMinistryDomainEngines,semanticBridgeVersion:window.OmegaAIIntegrityCanonicalBridge&&window.OmegaAIIntegrityCanonicalBridge.VERSION}); })()";
+            final String ministryRuntimeReadyScript =
+                    "(function() { var r=window.OMEGA_MINISTRY_RUNTIME_V1 || (window.Omega && window.Omega.MinistryRuntime);" +
+                    " var reg=window.OmegaMinistryRegistry, state=window.OmegaMinisterStateRegistry;" +
+                    " return !!(reg && reg.VERSION==='1.0.0' && reg.ids && reg.ids.length===17 &&" +
+                    " r && typeof r.getIds==='function' && r.getIds().length===17 &&" +
+                    " state && typeof state.consistencyCheck==='function' && typeof state.getAssignments==='function' &&" +
+                    " window.OmegaMinistryDomainEngines); })()";
+            final long ministryDeadline = SystemClock.elapsedRealtime() + 20000L;
+            String ministryReady = "false";
+            String ministryDiagnostic = "unavailable";
+            while (!"true".equals(ministryReady) && SystemClock.elapsedRealtime() < ministryDeadline) {
+                ministryReady = evaluate(instrumentation, webViewRef.get(), ministryRuntimeReadyScript);
+                ministryDiagnostic = evaluate(instrumentation, webViewRef.get(), ministryRuntimeDiagnosticScript);
+                if (!"true".equals(ministryReady)) SystemClock.sleep(300L);
+            }
+            assertEquals(
+                    "Canonical 17-ministry controller, domain engines and state registry must be available; diagnostic="
+                            + ministryDiagnostic,
+                    "true",
+                    ministryReady
+            );
+
             final String clickSpeedScript =
                     "(function() { var button = document.querySelector('.speed-btn[data-speed=\\\"2\\\"]');" +
                     " if (!button) return 'MISSING_SPEED_CONTROL'; button.click(); return 'CLICK_SENT'; })()";
