@@ -78,3 +78,14 @@ jobs:
               find android/app/build/outputs/androidTest-results/connected/debug -type f -maxdepth 4 -print 2>/dev/null || true
             fi
             exit "$result"
+
+      - name: Upload Android 9 instrumentation report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: omega-android9-gameplay-smoke-report
+          path: |
+            android/app/build/reports/androidTests/connected/debug/
+            android/app/build/outputs/androidTest-results/connected/debug/
+          if-no-files-found: warn
+          retention-days: 7
