@@ -120,8 +120,13 @@ assert.equal(projectsAfterFirstAdvance[0]?.status,'UNDER_CONSTRUCTION',
   }));
 await sim.advance(1);
 await sim.advance(1);
-assert.equal(globalThis.Game.state.cities.BD.housing.available,1200);
-assert.equal(globalThis.Game.state.projects.BD.registry[0].status,'COMPLETED');
+assert.equal(globalThis.Game.state.cities.BD.housing.available,1200,
+  'housing commissioning must update authoritative live state');
+assert.equal(globalThis.Game.state.projects.BD.registry[0].status,'COMMISSIONING',
+  'construction and asset commissioning occur before the queued finalization turn');
+await sim.advance(1);
+assert.equal(globalThis.Game.state.projects.BD.registry[0].status,'COMPLETED',
+  'queued project finalization must commit the completed status on the following simulation turn');
 assert.equal(globalThis.Game.state.resource.BD.inventory.steel,9950);
 assert(globalThis.Game.state.cabinet.BD.autonomyReservations.some(x=>x.status==='RELEASED'));
 assert(globalThis.Game.state.simulation.worldStateRevision>=3);
