@@ -123,11 +123,13 @@ test('source-backed registry metrics take precedence over legacy country snapsho
     year: 2024, status: 'WORLD_BANK_API_OBSERVATION', sourceId: 'TEST_FIXTURE',
     sourceName: 'Deterministic test fixture', method: 'TEST_ONLY', sourceUrl: null
   };
-  api.getCountryRecord = value => {
-    const identity = String(value || '').toUpperCase();
-    if (['BGD', 'BD', 'BANGLADESH'].includes(identity)) return fixtureRecord;
-    return originalGetCountryRecord(value);
-  };
+  context.OmegaCountryGeneralDataRuntime = Object.assign({}, api, {
+    getCountryRecord(value) {
+      const identity = String(value || '').toUpperCase();
+      if (['BGD', 'BD', 'BANGLADESH'].includes(identity)) return fixtureRecord;
+      return originalGetCountryRecord(value);
+    }
+  });
 
   const profile = behavior.getBehaviorProfile('BGD');
   assert.equal(profile.metrics.gdpUsd, fixtureValue,
