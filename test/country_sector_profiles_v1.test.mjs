@@ -16,7 +16,7 @@ const registryByIso3 = new Map(registry.countries.map((source) => [
 test('sector profile registry covers the canonical roster with unique ISO3 identities', () => {
   assert.ok(profiles, 'Run scripts/build_country_sector_profiles_v1.mjs before testing.');
   assert.ok(statSync(profilesPath).size < 12 * 1024 * 1024,
-    'sector profiles must remain compact and reuse canonical registry observations rather than ship a second full country database');
+    'sector profiles must remain under 12 MiB; actual bytes=' + statSync(profilesPath).size + '. Reuse canonical observations and avoid duplicated model evidence.');
   const canonical = readJson('countries.json');
   assert.equal(profiles.metadata.countryAndTerritoryCount, canonical.length);
   assert.equal(profiles.countries.length, canonical.length);
