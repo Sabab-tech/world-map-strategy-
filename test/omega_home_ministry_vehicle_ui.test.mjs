@@ -8,6 +8,9 @@ const ui = readFileSync(new URL('../omega_home_ministry_ui_v1.js', import.meta.u
 const operationsUi = readFileSync(new URL('../omega_home_ministry_police_operations_ui_v1.js', import.meta.url), 'utf8');
 const ministryEngine = readFileSync(new URL('../ministry_engine.js', import.meta.url), 'utf8');
 const cabinetEngine = readFileSync(new URL('../cabinet_engine.js', import.meta.url), 'utf8');
+const indexHtml = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+const budgetUi = readFileSync(new URL('../omega_home_ministry_budget_ui_v2.js', import.meta.url), 'utf8');
+const serviceWorker = readFileSync(new URL('../omega-offline-map-sw.js', import.meta.url), 'utf8');
 
 
 function makeUiHarness(vehicleInventory = null, recordedAssets = null) {
@@ -382,38 +385,16 @@ test('Home Affairs opens on real police controls and hides generic no-op actions
 });
 
 
-test('Home Ministry exposes a working Finance-linked budget panel without duplicating Finance balances', () => {
-  const harness = makeUiHarness({ 1: 2 });
-  const host = harness.nodes.get('home-ministry-host') || (() => {
-    const value = { id: 'home-ministry-host', innerHTML: '', isConnected: true };
-    harness.nodes.set('home-ministry-host', value);
-    return value;
-  })();
-  assert.equal(harness.ui.renderHomeMinistryInto(host), true);
-  assert.match(host.innerHTML, /home-police-dashboard-budget/);
-  harness.nodes.get('home-police-dashboard-budget').onclick();
-  assert.match(host.innerHTML, /HOME MINISTRY BUDGET/);
-  assert.match(host.innerHTML, /Finance allocation required/);
-  assert.match(host.innerHTML, /OPEN FINANCE MINISTRY/);
-  assert.match(ui, /ui\.renderHomeMinistryBudget = function/);
-  assert.match(ui, /getHomeBudgetSnapshot\(country\)/);
-  assert.match(ui, /setHomeBudgetPlan\(nextPlan, country\)/);
-  assert.match(ui, /OMEGA_HOME_BUDGET:/);
+test('Home Ministry reuses its existing Finance-backed budget UI instead of registering a duplicate panel', () => {
+  assert.match(indexHtml, /omega_home_ministry_budget_ui_v2\.js/);
+  assert.match(serviceWorker, /omega_home_ministry_budget_ui_v2\.js/);
+  assert.match(budgetUi, /getHomeBudgetSnapshot/);
+  assert.match(budgetUi, /setHomeBudgetPlan/);
+  assert.match(budgetUi, /Finance allocation/);
+  assert.match(budgetUi, /READ-ONLY COUNTRY VIEW/);
   assert.match(engine, /HOME_BUDGET_PLAN_EXCEEDS_PARENT_ALLOCATION/);
-  assert.match(engine, /HOME_BUDGET_BELOW_SPENT/);
-});
-
-test('Home Ministry budget plan supports all canonical categories, read-only scope, and current-year ledger rows', () => {
-  for (const category of ['personnel', 'vehicles', 'maintenance', 'facilities', 'training', 'operations']) {
-    assert.match(engine, new RegExp(category + ':\\{label:'));
-  }
-  assert.match(ui, /data-home-budget-mode/);
-  assert.match(ui, /data-home-budget-value/);
-  assert.match(ui, /snapshot\.canEdit/);
-  assert.match(ui, /Finance transaction/);
-  assert.match(ui, /Turn /);
-  assert.match(ui, /Only the active player country can be edited/);
-  assert.match(ui, /combined planned value cannot exceed the parent allocation/);
+  assert.doesNotMatch(ui, /home-police-dashboard-budget/);
+  assert.doesNotMatch(ui, /ui\.renderHomeMinistryBudget = function/);
 });
 
 test('police deployments require a real country-scoped location and classify the operating area', () => {
