@@ -1005,6 +1005,15 @@
         + escapeHTML(c.code + ' · ' + (c.name || c.code)) + '</option>';
     }).join('');
   }
+  function defaultConversionPair(playerCurrencyCode, availableCodes) {
+    const codes = (Array.isArray(availableCodes) ? availableCodes : Array.from(currencies.keys()))
+      .map(normalizeCode).filter(Boolean);
+    const domestic = normalizeCode(playerCurrencyCode);
+    const source = codes.includes('USD') ? 'USD' : (codes[0] || 'USD');
+    const target = domestic && domestic !== source && codes.includes(domestic)
+      ? domestic : (codes.find(code => code !== source) || source);
+    return { fromCode: source, toCode: target };
+  }
   function rateModeOptions(selected) {
     return '<option value="SIMULATION"' + (selected === 'SIMULATION' ? ' selected' : '') + '>OMEGA Game Simulation</option>'
       + '<option value="REFERENCE"' + (selected === 'REFERENCE' ? ' selected' : '') + '>World Reference Rates (online)</option>';
@@ -1121,7 +1130,7 @@
     if (!dashboard || !host || dashboard.querySelector('[data-ofx-panel]')) return false;
     const player = getPlayerProfile();
     const playerCode = getCountryCurrency(player) || 'USD';
-    const defaultTo = currencies.has('NGN') && playerCode !== 'NGN' ? 'NGN' : 'USD';
+    const defaultPair = defaultConversionPair(playerCode);
     const mode = state.viewMode === 'REFERENCE' ? 'REFERENCE' : 'SIMULATION';
     const rate = rateFor(playerCode, mode);
     const policy = currencyPolicy(playerCode);
@@ -1150,8 +1159,8 @@
       + '<button type="button" class="ofx-secondary" data-ofx-refresh>Refresh reference rates</button></div>'
       + '<form class="ofx-form" data-ofx-action="ofx-convert">'
       + '<label>Amount<input name="amount" type="number" min="0.000001" step="any" value="1000" required></label>'
-      + '<label>Sell currency<select name="fromCode">' + currencyOptions(playerCode) + '</select></label>'
-      + '<label>Buy currency<select name="toCode">' + currencyOptions(defaultTo) + '</select></label>'
+      + '<label>Sell currency<select name="fromCode">' + currencyOptions(defaultPair.fromCode) + '</select></label>'
+      + '<label>Buy currency<select name="toCode">' + currencyOptions(defaultPair.toCode) + '</select></label>'
       + '<label>Rate source<select name="mode">' + rateModeOptions(mode) + '</select></label>'
       + '<button type="submit">Simulate &amp; record exchange</button>'
       + '</form><div class="ofx-result" data-ofx-conversion-result role="status">Choose two supported currencies and submit to calculate the cross-rate.</div>'
@@ -1673,7 +1682,8 @@
       appendHistoryPoint: appendHistoryPoint,
       getCountryCurrency: getCountryCurrency,
       getCountryCurrencyName: getCountryCurrencyName,
-      effectiveRateCode: effectiveRateCode
+      effectiveRateCode: effectiveRateCode,
+      defaultConversionPair: defaultConversionPair
     }
   };
   global.OmegaForexMonetaryEngine = api;
