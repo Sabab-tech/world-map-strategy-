@@ -198,6 +198,11 @@ test('live metrics are resolved from secondary supported runtime state roots', a
   assert.equal(profile.metrics.gdpUsd, 987654321);
   assert.equal(profile.metrics.gdpGrowthPct, 7.25);
   assert.match(profile.metricSources.gdpUsd.source, /LIVE_GAME_STATE\.economy\.gdp/);
+  assert.equal(profile.metricSources.gdpUsd.observationContext, 'CURRENT_GAME_STATE');
+  assert.equal(profile.metricSources.gdpUsd.confidence, 1,
+    'live game observations must be distinguished from historical baselines and carry full source confidence');
+  assert.equal(profile.metricSources.gdpUsd.observationYear, null,
+    'a simulation value must not inherit a historical observation year');
 });
 
 test('authoritative resource inventory and production gaps alter supply behaviour and priorities', async () => {
@@ -258,7 +263,11 @@ test('metric provenance exposes observation year, confidence, explicit gaps, and
   assert.ok(gdp && typeof gdp.source === 'string' && gdp.source.length > 0);
   assert.ok(gdp.confidence >= 0 && gdp.confidence <= 1);
   assert.ok(Object.prototype.hasOwnProperty.call(gdp, 'observationYear'));
-  assert.ok(Array.isArray(profile.dataGaps), 'profile must report metrics that remain unobserved');
+  assert.ok(profile.dataGaps && Array.isArray(profile.dataGaps), 'profile must report metrics that remain unobserved');
+  assert.ok(profile.evidenceConfidenceModel.includes('NOT_A_CALIBRATED_PROBABILITY'),
+    'confidence must disclose that it is a transparent heuristic, not a calibrated probability');
+  assert.ok(profile.dataGaps.some(gap => gap.status === 'OBSERVATION_YEAR_UNAVAILABLE'),
+    'known legacy values without years must be reported as provenance gaps');
   const lowConfidence = adaptive.scoreAction('BGD', 'MILITARY_EQUIP');
   context.Game = { state: { cabinet: { BGD: { strategyProfile: { riskAppetite: 1 } } } } };
   const explicit = adaptive.scoreAction('BGD', 'MILITARY_EQUIP');
