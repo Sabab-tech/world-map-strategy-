@@ -45,7 +45,7 @@ if(typeof globalThis.dispatchEvent!=='function'){const t=new EventTarget();globa
 await import('../omega_universal_entity_identity_engine.js');
 await import('../omega_country_semantic_bridge.js');
 const bridge=globalThis.OmegaCanonicalIdentityRegistry||globalThis.OmegaCountrySemanticBridge;
-await bridge.init();
+assert.equal(await bridge.init(),true,'canonical country identity registry must load from local country data assets');
 await import('../omega_country_runtime_data_v1.js');
 assert.equal(await globalThis.OmegaCountryRuntimeData.ready,true,'shared country identity runtime must initialise');
 await import('../omega_country_general_data_runtime_v1.js');
