@@ -247,6 +247,16 @@
     lastRenderedCountry = value;
 
     const base = baselineFor(value);
+    const gateway = g.OmegaCountryDataGateway || g.Omega?.CountryDataGateway || null;
+    const sharedSnapshot = gateway?.getSnapshot?.(value) || null;
+    const sharedHasCountry = !!(sharedSnapshot && sharedSnapshot.countryCode);
+    const sharedMetric = (key, fallback) => {
+      if (!sharedHasCountry) return fallback;
+      const row = sharedSnapshot.fields?.[key];
+      if (!row || row.status !== 'AVAILABLE' || num(row.value) === null)
+        return { value: null, source: 'NOT RECORDED IN SHARED COUNTRY SOURCES' };
+      return { value: num(row.value), source: [row.sourceName || row.sourceId || row.authority || 'REGISTERED SOURCE', row.year ? 'Year ' + row.year : null].filter(Boolean).join(' · ') };
+    };
     const strategic = runtime()?.getStrategicProfile?.(value) || null;
     let behavior = null;
     try { behavior = behaviorEngine()?.getBehaviorProfile?.(value) || null; } catch (_) {}
@@ -264,26 +274,26 @@
     const countryCode = identity.iso3 || identity.countryCode || value;
     const profileStatus = behavior?.status || (strategic ? 'STRATEGIC PROFILE AVAILABLE' : (base?.profileStatus || 'BASELINE LIMITED'));
     const archetype = behavior?.archetype || strategic?.archetype || 'NOT CLASSIFIED';
-    const sourceStatus = behavior?.evidence?.baselineStatus || base?.provenance?.status || 'SOURCE STATUS NOT RECORDED';
+    const sourceStatus = sharedHasCountry
+      ? (sharedSnapshot.diagnostics?.errors?.length ? 'DATA INTEGRITY ERRORS' : sharedSnapshot.diagnostics?.warnings?.length ? 'SOURCE DIFFERENCES NEED REVIEW' : 'SHARED COUNTRY GATEWAY')
+      : (behavior?.evidence?.baselineStatus || base?.provenance?.status || 'SOURCE STATUS NOT RECORDED');
 
-    const gdp = preferBehaviorMetric(behavior, 'gdpUsd', sourceNumber(base, ['gdpCurrentUsd', 'gdp', 'grossDomesticProductUsd']));
-    const pop = preferBehaviorMetric(behavior, 'population', sourceNumber(base, ['populationTotal', 'population2015', 'population_2015', 'population']));
-    const growth = preferBehaviorMetric(behavior, 'gdpGrowthPct', sourceNumber(base, ['gdpGrowthPct', 'gdp_growth', 'growthRatePct']));
-    const inflation = preferBehaviorMetric(behavior, 'inflationPct', sourceNumber(base, ['inflationRatePct', 'inflationPct', 'inflation']));
-    const unemployment = preferBehaviorMetric(behavior, 'unemploymentPct', sourceNumber(base, ['unemploymentRatePct', 'unemployment_rate', 'unemploymentPct']));
-    const debtRatio = preferBehaviorMetric(behavior, 'debtToGdpPct', sourceNumber(base, ['publicDebtToGdpPct', 'debtToGdpPct']));
-    const budget = preferBehaviorMetric(behavior, 'budgetBalanceToGdpPct', sourceNumber(base, ['governmentBudgetBalanceUsd', 'budget_balance', 'budgetBalance']));
-    const tradeRatio = preferBehaviorMetric(behavior, 'tradeBalanceToGdpPct', sourceNumber(base, ['tradeBalanceToGdpPct', 'tradeBalancePctGdp']));
-    const tradeBalance = preferBehaviorMetric(behavior, 'tradeBalanceUsd', sourceNumber(base, ['tradeBalanceUsd', 'trade_balance', 'tradeBalance']));
-    const reserves = preferBehaviorMetric(behavior, 'fxReservesUsd', sourceNumber(base, ['foreignExchangeReservesUsd', 'fxReservesUsd', 'reserves']));
-    const fx = num(behavior?.metrics?.fxReservesUsd) ?? num(base?.indicators?.foreignExchangeReservesUsd ?? base?.indicators?.fxReservesUsd ?? base?.sourceValues?.reserves);
-    const militaryPct = num(behavior?.metrics?.militaryExpenditurePctGdp) ??
-      strategicNumber(strategic, 'military.militaryExpenditurePctGdp') ?? num(base?.indicators?.militaryExpenditurePctGdp);
+    const gdp = sharedMetric('gdp', preferBehaviorMetric(behavior, 'gdpUsd', sourceNumber(base, ['gdpCurrentUsd', 'gdp', 'grossDomesticProductUsd'])));
+    const pop = sharedMetric('population', preferBehaviorMetric(behavior, 'population', sourceNumber(base, ['populationTotal', 'population2015', 'population_2015', 'population'])));
+    const growth = sharedMetric('gdpGrowthPct', preferBehaviorMetric(behavior, 'gdpGrowthPct', sourceNumber(base, ['gdpGrowthPct', 'gdp_growth', 'growthRatePct'])));
+    const inflation = sharedMetric('inflationPct', preferBehaviorMetric(behavior, 'inflationPct', sourceNumber(base, ['inflationRatePct', 'inflationPct', 'inflation'])));
+    const unemployment = sharedMetric('unemploymentRatePct', preferBehaviorMetric(behavior, 'unemploymentPct', sourceNumber(base, ['unemploymentRatePct', 'unemployment_rate', 'unemploymentPct'])));
+    const debtRatio = sharedMetric('debtToGdpPct', preferBehaviorMetric(behavior, 'debtToGdpPct', sourceNumber(base, ['publicDebtToGdpPct', 'debtToGdpPct'])));
+    const budget = sharedMetric('budgetBalanceToGdpPct', sharedHasCountry ? {value:null,source:'NOT RECORDED IN SHARED COUNTRY SOURCES'} : preferBehaviorMetric(behavior, 'budgetBalanceToGdpPct', sourceNumber(base, ['budgetBalanceToGdpPct'])));
+    const tradeRatio = sharedMetric('tradeBalanceToGdpPct', preferBehaviorMetric(behavior, 'tradeBalanceToGdpPct', sourceNumber(base, ['tradeBalanceToGdpPct', 'tradeBalancePctGdp'])));
+    const tradeBalance = sharedMetric('tradeBalance', preferBehaviorMetric(behavior, 'tradeBalanceUsd', sourceNumber(base, ['tradeBalanceUsd', 'trade_balance', 'tradeBalance'])));
+    const reserves = sharedMetric('fxReservesUsd', preferBehaviorMetric(behavior, 'fxReservesUsd', sourceNumber(base, ['foreignExchangeReservesUsd', 'fxReservesUsd', 'reserves'])));
+    const fx = num(sharedHasCountry ? sharedSnapshot.fields?.fxReservesUsd?.value : null) ?? (sharedHasCountry ? null : (num(behavior?.metrics?.fxReservesUsd) ?? num(base?.indicators?.foreignExchangeReservesUsd ?? base?.indicators?.fxReservesUsd ?? base?.sourceValues?.reserves)));
+    const militaryValue = sharedMetric('militaryExpenditurePctGdp', { value: num(behavior?.metrics?.militaryExpenditurePctGdp) ?? strategicNumber(strategic, 'military.militaryExpenditurePctGdp') ?? num(base?.indicators?.militaryExpenditurePctGdp), source: 'Country strategic profile / behaviour engine' });
+    const militaryPct = militaryValue.value;
     const governance = strategic?.politics || behavior?.domainSignals?.politics || {};
-    const governmentEffectiveness = num(behavior?.metrics?.governmentEffectivenessWgiEstimate) ??
-      num(governance.governmentEffectivenessWgiEstimate);
-    const politicalStability = num(behavior?.metrics?.politicalStabilityWgiEstimate) ??
-      num(governance.politicalStabilityWgiEstimate);
+    const governmentEffectiveness = sharedMetric('governmentEffectivenessWgiEstimate', {value:num(behavior?.metrics?.governmentEffectivenessWgiEstimate) ?? num(governance.governmentEffectivenessWgiEstimate),source:'Country governance profile'}).value;
+    const politicalStability = sharedMetric('politicalStabilityWgiEstimate', {value:num(behavior?.metrics?.politicalStabilityWgiEstimate) ?? num(governance.politicalStabilityWgiEstimate),source:'Country governance profile'}).value;
     const resources = behavior?.domainSignals?.resources || {};
     const resourceRuntime = resources.runtimeState || {};
     const diplomacy = strategic?.diplomacy || behavior?.domainSignals?.diplomacy || {};
@@ -341,12 +351,7 @@
       metricCard('Inflation', inflation.value, '%', inflation.source || 'not recorded') +
       metricCard('Unemployment', unemployment.value, '%', unemployment.source || 'not recorded') +
       metricCard('Public debt / GDP', debtRatio.value, '%', debtRatio.source || 'not recorded') +
-      metricCard(behavior?.metrics?.budgetBalanceToGdpPct !== null && behavior?.metrics?.budgetBalanceToGdpPct !== undefined ? 'Budget balance / GDP' : 'Budget balance', behavior?.metrics?.budgetBalanceToGdpPct !== null && behavior?.metrics?.budgetBalanceToGdpPct !== undefined
-        ? behavior.metrics.budgetBalanceToGdpPct : budget.value,
-        behavior?.metrics?.budgetBalanceToGdpPct !== null && behavior?.metrics?.budgetBalanceToGdpPct !== undefined ? '%' : 'USD',
-        behavior?.metrics?.budgetBalanceToGdpPct !== null && behavior?.metrics?.budgetBalanceToGdpPct !== undefined
-          ? 'Budget balance / GDP · ' + (behavior.metricSources?.budgetBalanceToGdpPct?.source || 'registered ratio')
-          : budget.source || 'not recorded') +
+      metricCard('Budget balance / GDP', budget.value, '%', budget.source || 'not recorded') +
       metricCard('Trade balance', tradeBalance.value, 'USD', tradeBalance.source || 'not recorded') +
       metricCard('Trade balance / GDP', tradeRatio.value, '%', tradeRatio.source || 'not recorded') +
       metricCard('Foreign-exchange reserves', fx ?? reserves.value, 'USD', reserves.source || 'not recorded') +
@@ -443,14 +448,18 @@
       '</div>' +
       '<div class="ocov-section-heading"><span>03</span><div><h3>Priority stack</h3><p>Current candidate priorities generated from this country’s available evidence.</p></div></div>' +
       '<section class="ocov-panel"><div class="ocov-panel-body">' + priorityBody + '</div></section>' +
-      panel('Evidence quality & limits', 'The simulation should not turn missing data into false certainty.',
+      panel('Data integrity & evidence quality', 'One selected-country contract is shared across the map, Country IOS and ministry views. Source conflicts are reported, not silently reconciled.',
+        '<p><strong>Gateway:</strong> ' + esc(gateway?.VERSION || 'NOT LOADED') + ' · <strong>Country identity:</strong> ' + esc(sharedSnapshot?.countryCode || 'UNRESOLVED') + '</p>' +
+        '<p><strong>Integrity status:</strong> ' + esc(sharedSnapshot?.diagnostics?.errors?.length ? 'ERRORS DETECTED' : (sharedSnapshot?.diagnostics?.warnings?.length ? 'WARNINGS DETECTED' : (sharedHasCountry ? 'NO CONFLICT DETECTED IN CHECKED SOURCES' : 'GATEWAY COUNTRY UNRESOLVED'))) + '</p>' +
+        '<p><strong>Errors:</strong> ' + esc(sharedSnapshot?.diagnostics?.errors?.length ?? 'NOT CHECKED') + ' · <strong>Warnings:</strong> ' + esc(sharedSnapshot?.diagnostics?.warnings?.length ?? 'NOT CHECKED') + ' · <strong>Missing fields:</strong> ' + esc(sharedSnapshot?.diagnostics?.missingFields?.length ?? 'NOT CHECKED') + '</p>' +
         '<p><strong>Baseline source:</strong> ' + esc(base?.provenance?.economicSource || behavior?.evidence?.baselineSource || 'NOT RECORDED') + '</p>' +
         '<p><strong>Baseline status:</strong> ' + esc(sourceStatus) + '</p>' +
-        bulletList(arr(behavior?.evidence?.limitations).concat(arr(strategic?.assessmentCriteria?.peerComparison ? [
-          strategic.assessmentCriteria.peerComparison.rule,
-          strategic.assessmentCriteria.peerComparison.interpretation
-        ] : [])).concat(arr(strategic?.dataQuality?.limitations)),
-          'Evidence limitations are not separately documented for this record.'),
+        '<button type="button" data-ocov-audit-all style="padding:8px 12px;border:1px solid #64748b;border-radius:7px;background:#172033;color:#e2e8f0;cursor:pointer;font-weight:700">AUDIT ALL COUNTRY RECORDS</button>' +
+        '<pre data-ocov-audit-results style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:260px;overflow:auto;font:11px/1.5 monospace;color:#cbd5e1"></pre>' +
+        bulletList(arr(sharedSnapshot?.diagnostics?.errors).map(x => '[ERROR] ' + (x.code || 'DATA_INTEGRITY') + (x.field ? ' · ' + x.field : '') + ' · ' + JSON.stringify(x))
+          .concat(arr(sharedSnapshot?.diagnostics?.warnings).map(x => '[WARNING] ' + (x.code || 'SOURCE_DIFFERENCE') + (x.field ? ' · ' + x.field : '') + ' · ' + JSON.stringify(x)))
+          .concat(arr(behavior?.evidence?.limitations)).concat(arr(strategic?.dataQuality?.limitations)),
+          'No identity/source mismatch was detected in the sources checked; unobserved values remain unavailable.'),
         'ocov-panel-methodology') +
       '</div>';
 
@@ -492,6 +501,24 @@
   function onClick(event) {
     const target = event?.target;
     if (!target || typeof target.closest !== 'function') return;
+    const auditButton = target.closest('[data-ocov-audit-all]');
+    if (auditButton) {
+      event.preventDefault();
+      const output = auditButton.parentElement?.querySelector?.('[data-ocov-audit-results]');
+      const gateway = g.OmegaCountryDataGateway || g.Omega?.CountryDataGateway;
+      if (!gateway || typeof gateway.auditAllCountries !== 'function') {
+        if (output) output.textContent = 'Country data gateway is not loaded.';
+        return;
+      }
+      const report = gateway.auditAllCountries();
+      const samples = [...(report.errors || []).slice(0, 12).map(row => 'ERROR ' + row.countryCode + ' ' + row.code + ' ' + (row.field || '') + ' ' + JSON.stringify(row)),
+        ...(report.warnings || []).slice(0, 12).map(row => 'WARNING ' + row.countryCode + ' ' + row.code + ' ' + (row.field || '') + ' ' + JSON.stringify(row))];
+      if (output) output.textContent = 'Countries checked: ' + report.countryCount +
+        '\nErrors: ' + report.errorCount + '\nWarnings: ' + (report.warnings || []).length +
+        '\nMissing values (not errors by themselves): ' + report.missingFieldCount +
+        '\n' + (samples.length ? samples.join('\n') : 'No identity/source discrepancies detected in the checks performed.');
+      return;
+    }
     const tab = target.closest('[data-omega-ministry-view]');
     if (tab && tab.closest('#omega-country-overview-tabs')) {
       event.preventDefault();
