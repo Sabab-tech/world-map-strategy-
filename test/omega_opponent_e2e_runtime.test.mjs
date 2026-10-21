@@ -24,9 +24,9 @@ globalThis.fetch=async input=>{
   // "countries.json"), while some modules use "./asset.json". Resolve both to
   // repository files in this Node integration test; leave absolute/network URLs
   // to native fetch.
-  const isRelativeAsset=!/^[a-zA-Z][a-zA-Z\\d+.-]*:/.test(request)&&!request.startsWith('/');
+  const isRelativeAsset=!/^[a-zA-Z][a-zA-Z\d+.-]*:/.test(request)&&!request.startsWith('/');
   if(isRelativeAsset){
-    const relative=request.replace(/^\.\\//,'').split(/[?#]/)[0];
+    const relative=request.replace(/^\.\//,'').split(/[?#]/)[0];
     const full=path.resolve(projectRoot,relative);
     if(full!==projectRoot&&!full.startsWith(projectRoot+path.sep))return{ok:false,status:400,json:async()=>{throw new Error('INVALID_TEST_PATH')}};
     try{
