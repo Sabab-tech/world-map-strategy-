@@ -71,6 +71,8 @@ test('Country Overview renders the packed sectors through canonical source refer
   assert.match(ui, /definition\.extensionSlots/);
   assert.match(ui, /schema\.unavailableModelSlots/);
   assert.match(ui, /countrySectorProfilesReady/);
+  assert.match(ui, /cachedCountry/);
+  assert.match(ui, /cachedHtml/);
   assert.match(ui, /data-ocov-profile-retry/);
   assert.match(ui, /Missing values remain unknown, never zero/);
   assert.ok(index.includes('omega_country_general_data_runtime_v1.js'));
