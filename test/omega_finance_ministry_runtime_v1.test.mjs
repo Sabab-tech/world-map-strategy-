@@ -169,13 +169,26 @@ test('ministry budget transfer reallocates existing unspent ceilings without mov
   assert.ok(amount>0,'source ministry needs unspent allocated funds');
   const treasuryBefore=before.treasuryBalanceUsd;
   const sourceBudgetBefore=source.budgetUsd,targetBudgetBefore=target.budgetUsd;
-  const result=finance.applyAction({type:'transfer-budget',countryId:'BGD',sourceDepartment:'defense',
-    targetDepartment:'interior',amountUsd:amount,description:'Test inter-ministry reallocation'});
+  const transferRequest={type:'transfer-budget',countryId:'BGD',sourceDepartment:'defense',
+    targetDepartment:'interior',amountUsd:amount,description:'Test inter-ministry reallocation',idempotencyKey:'test-same-transfer-request'};
+  const result=finance.applyAction(transferRequest);
   assert.equal(result.ok,true);
   assert.equal(result.code,'BUDGET_TRANSFER_POSTED');
   assert.equal(result.treasuryCashMoved,false);
   assert.equal(state.finance.BGD.available,treasuryBefore,'allocation-only transfers must not move treasury cash');
   const after=finance.getFinanceState('BGD');
+  const revisionAfterFirst=after.revision;
+  const duplicate=finance.applyAction(transferRequest);
+  assert.equal(duplicate.ok,true);
+  assert.equal(duplicate.duplicate,true,'replaying the same request must not apply the allocation change twice');
+  assert.equal(duplicate.transferId,result.transferId);
+  const keyConflict=finance.applyAction({...transferRequest,amountUsd:amount+1});
+  assert.equal(keyConflict.ok,false);
+  assert.equal(keyConflict.code,'BUDGET_TRANSFER_IDEMPOTENCY_CONFLICT');
+  const afterDuplicate=finance.getFinanceState('BGD');
+  assert.equal(afterDuplicate.revision,revisionAfterFirst);
+  assert.ok(Math.abs(afterDuplicate.allocations.defense.budgetUsd-after.allocations.defense.budgetUsd)<0.01);
+  assert.ok(Math.abs(afterDuplicate.allocations.interior.budgetUsd-after.allocations.interior.budgetUsd)<0.01);
   assert.ok(Math.abs(after.allocations.defense.budgetUsd-(sourceBudgetBefore-amount))<0.01);
   assert.ok(Math.abs(after.allocations.interior.budgetUsd-(targetBudgetBefore+amount))<0.01);
   assert.ok(Math.abs(after.allocations.defense.remainingUsd-(source.remainingUsd-amount))<0.01);

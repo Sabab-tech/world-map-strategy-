@@ -513,15 +513,27 @@
         return {ok:false,code:'BUDGET_TRANSFER_SAME_MINISTRY',message:'Source and destination ministries must be different.'};
       if(amount===null||amount<=0)
         return {ok:false,code:'BUDGET_TRANSFER_AMOUNT_INVALID',message:'Transfer amount must be greater than zero.'};
+      const moved=Math.round(amount*100)/100;
+      if(!Number.isFinite(moved)||moved<=0)
+        return {ok:false,code:'BUDGET_TRANSFER_AMOUNT_INVALID',message:'Transfer must be at least one cent.'};
+      const idempotencyKey=String(action.idempotencyKey||action.requestId||'').trim().slice(0,160);
+      if(idempotencyKey){
+        const prior=fm.ledger.find(row=>row&&row.action==='BUDGET_TRANSFER_OUT'&&row.idempotencyKey===idempotencyKey);
+        if(prior){
+          const sameRequest=String(prior.department||'')===from
+            &&String(prior.counterpartyDepartment||'')===to
+            &&Math.abs((finite(prior.amountUsd)||0)-moved)<0.001;
+          if(!sameRequest)return {ok:false,code:'BUDGET_TRANSFER_IDEMPOTENCY_CONFLICT',message:'This request key was already used for a different transfer. No funds were changed.'};
+          return {ok:true,duplicate:true,code:'BUDGET_TRANSFER_ALREADY_POSTED',message:'This transfer request was already posted; the original transaction is returned without applying it again.',
+            transferId:prior.transferId,sourceDepartment:from,targetDepartment:to,amountUsd:moved,treasuryCashMoved:false};
+        }
+      }
       const source=fm.allocations[from],target=fm.allocations[to];
       if(!isObject(source)||!isObject(target))
         return {ok:false,code:'BUDGET_TRANSFER_ALLOCATION_MISSING',message:'Both ministries need an existing national budget allocation before money can be reallocated.'};
       const sourceBudget=Math.max(0,finite(source.budgetUsd)||0);
       const sourceSpent=Math.max(0,finite(source.spentUsd)||0);
       const sourceRemaining=Math.max(0,finite(source.remainingUsd)??(sourceBudget-sourceSpent));
-      const moved=Math.round(amount*100)/100;
-      if(!Number.isFinite(moved)||moved<=0)
-        return {ok:false,code:'BUDGET_TRANSFER_AMOUNT_INVALID',message:'Transfer must be at least one cent.'};
       if(moved>sourceRemaining+0.0001)
         return {ok:false,code:'BUDGET_TRANSFER_EXCEEDS_REMAINING',message:'Transfer exceeds the source ministry’s unspent allocation. No funds were moved.'};
       const targetBudget=Math.max(0,finite(target.budgetUsd)||0);
@@ -539,9 +551,9 @@
       const transferId='BUDGET-XFER-'+p.countryCode+'-'+currentTurn()+'-'+(Number(fm.revision)||0);
       const note=String(action.description||('Budget reallocation: '+from+' to '+to)).slice(0,160);
       postLedger(fm,p,{department:from,action:'BUDGET_TRANSFER_OUT',category:'inter_ministry_budget_transfer',
-        amountUsd:moved,transferId,counterpartyDepartment:to,description:note});
+        amountUsd:moved,transferId,idempotencyKey:idempotencyKey||null,counterpartyDepartment:to,description:note});
       postLedger(fm,p,{department:to,action:'BUDGET_TRANSFER_IN',category:'inter_ministry_budget_transfer',
-        amountUsd:moved,transferId,counterpartyDepartment:from,description:note});
+        amountUsd:moved,transferId,idempotencyKey:idempotencyKey||null,counterpartyDepartment:from,description:note});
       fm.revision+=1;
       result={ok:true,code:'BUDGET_TRANSFER_POSTED',message:'Budget allocation transferred within '+p.name+'. National treasury cash is unchanged until the receiving ministry executes a funded expense.',
         transferId,sourceDepartment:from,targetDepartment:to,amountUsd:moved,treasuryCashMoved:false};
@@ -790,6 +802,7 @@
       out+='<section class="ofm-section ofm-transfer-section"><div class="ofm-section-heading"><h3>Ministry-to-ministry budget transfer</h3><span>Country-scoped · ledger-backed</span></div>'+
         '<p class="ofm-data-note">Active government: <strong>'+escapeHTML(p.name)+' ('+escapeHTML(p.iso3)+')</strong>. Transfer an existing unspent allocation between ministries of this country. Paired ledger entries record both sides; national treasury cash remains unchanged until an expense is executed.</p>'+
         '<form class="ofm-form ofm-form-wide" data-ofm-action="transfer-budget">'+
+        '<input type="hidden" name="idempotencyKey" value="'+escapeHTML('BUDGET-XFER-REQUEST-'+p.countryCode+'-'+currentTurn()+'-'+(Number(fm.revision)||0))+'">'+
         '<label>Source ministry<select name="sourceDepartment">'+transferOptions("defense")+'</select></label>'+
         '<label>Receiving ministry<select name="targetDepartment">'+transferOptions("interior")+'</select></label>'+
         '<label>Amount (USD)<input name="amountUsd" type="number" min="0.01" step="0.01" placeholder="e.g. 250000" required></label>'+
