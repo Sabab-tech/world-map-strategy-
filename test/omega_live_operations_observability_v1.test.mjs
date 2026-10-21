@@ -296,3 +296,22 @@ test('Live Operations is opened from Resource Ministry, without redundant map la
   assert.match(binding, /if\(panel\)panel\.style\.display='block'/, 'the selected-site details panel still opens from marker selection');
   assert.doesNotMatch(css, /omega-resource-open-button/, 'removed launcher styling does not remain');
 });
+
+
+test('System health tab reports engine availability without exposing opponent internals', () => {
+  const source = read('omega_live_operations_observability_v1.js');
+  assert.match(source, /function renderSystemHealth\(\)/);
+  assert.match(source, /\['systems','System health'\]/);
+  assert.match(source, /systems: \(\) => renderSystemHealth\(\)/);
+  assert.match(source, /Private memory, beliefs and hidden plans remain undisclosed/);
+  const protectedSlice = source.slice(source.indexOf("function availability"), source.indexOf("const rows = [", source.indexOf("function renderSystemHealth")));
+  assert.match(protectedSlice, /if \(protectedCore\)/);
+  assert.doesNotMatch(protectedSlice, /api\.diagnostics\(\).*protectedCore/s);
+});
+
+test('system health handles absent numeric counters and engine-health flags explicitly', () => {
+  const source = read('omega_live_operations_observability_v1.js');
+  assert.match(source, /data\.engineRegistryHealthy === false/);
+  assert.doesNotMatch(source, /!!data\.engineRegistryHealthy === false/);
+  assert.match(source, /function presentNumber\(value\)/);
+});

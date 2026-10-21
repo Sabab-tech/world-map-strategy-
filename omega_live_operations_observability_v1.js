@@ -776,6 +776,86 @@
     return '<div class="omega-liveops-section"><h3>Per-site extraction / transport / factory flow</h3>'+table(['Country','Site','Resource','Batch','Shipment','Factory','Recorded status','Turn','Block reason'],flows.map(f=>tr([f.countryId,f.siteId,f.resourceId,f.batchId,f.shipmentId,f.factoryId,f.status,f.turn===null?'Not recorded':f.turn,f.reason])), 'No site execution or site-flow ledger rows are stored for this scope.')+'</div>'+
       '<div class="omega-liveops-section"><h3>Factory input receipts</h3>'+table(['Country','Turn','Event','Source site','Batch','Resource','Quantity','Unit','Dispatch status'],factoryRows.slice(-200).reverse().map(x=>tr([x.countryId,turnOf(x.row)===null?'Not recorded':turnOf(x.row),x.row.eventType||'FACTORY_INPUT_EVENT',x.row.siteId||x.row.mineId||x.row.occurrenceKey,x.row.batchId,x.row.resourceId,firstNum(x.row.quantity)===null?'Not recorded':fmt(firstNum(x.row.quantity)),x.row.unit,x.row.dispatchStatus||x.row.status])), 'No factory-input receipt events exist in the country economy runtime.')+'</div>';
   }
+  function renderSystemHealth() {
+    function firstApi(candidates) {
+      for (const get of candidates) {
+        try { const value = get(); if (value && typeof value === 'object') return value; } catch (_) {}
+      }
+      return null;
+    }
+    function presentNumber(value) {
+      return value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value));
+    }
+    function availability(api, protectedCore) {
+      if (!api) return { state: 'MISSING', detail: 'Runtime API is not registered.' };
+      if (protectedCore) return {
+        state: 'AVAILABLE',
+        detail: 'Internal decision subsystem is present. Private memory, beliefs and hidden plans remain undisclosed.'
+      };
+      let data = null;
+      try {
+        if (typeof api.diagnostics === 'function') data = api.diagnostics();
+        else if (typeof api.health === 'function') data = api.health();
+      } catch (_) {
+        return { state: 'DEGRADED', detail: 'The runtime reported a diagnostics error.' };
+      }
+      data = obj(data);
+      const hasError = !!data.error || !!data.siteCatalogError || data.engineRegistryHealthy === false ||
+        Number(data.failed || 0) > 0 || data.runtimeReady === false || data.generalRuntimeReady === false ||
+        data.ready === false || data.initialized === false || data.handlerInstalled === false;
+      const facts = [];
+      if (data.version || data.VERSION) facts.push('Version ' + String(data.version || data.VERSION));
+      if (presentNumber(data.countryCount)) facts.push(fmt(Number(data.countryCount), 0) + ' countries');
+      else if (presentNumber(data.profileCount)) facts.push(fmt(Number(data.profileCount), 0) + ' profiles');
+      else if (presentNumber(data.currencyCount)) facts.push(fmt(Number(data.currencyCount), 0) + ' currencies');
+      else if (presentNumber(data.count)) facts.push(fmt(Number(data.count), 0) + ' registered components');
+      if (presentNumber(data.failed) && Number(data.failed) > 0) facts.push(fmt(Number(data.failed), 0) + ' failed');
+      if (data.runtimeReady === false || data.generalRuntimeReady === false || data.ready === false || data.initialized === false)
+        facts.push('Runtime not ready');
+      if (data.engineRegistryHealthy === false) facts.push('Engine registry unhealthy');
+      if (data.handlerInstalled === false) facts.push('Command handler not installed');
+      if (presentNumber(data.dataUnavailable) && Number(data.dataUnavailable) > 0)
+        facts.push(fmt(Number(data.dataUnavailable), 0) + ' profiles unavailable');
+      return {
+        state: hasError ? 'DEGRADED' : 'AVAILABLE',
+        detail: facts.join(' · ') || 'Runtime is registered; detailed readiness is not published.'
+      };
+    }
+    const rows = [
+      { label: 'Game state authority', get: () => (g.Game && g.Game.state) || g.gameState
+        ? { diagnostics: () => ({ ready: true, version: 'Game.state' }) } : null },
+      { label: 'Ministry runtime', get: () => g.OMEGA_MINISTRY_RUNTIME_V1 || obj(g.Omega).MinistryRuntime },
+      { label: 'Country runtime', get: () => g.OmegaCountryRuntimeData },
+      { label: 'Country data gateway', get: () => g.OmegaCountryDataGateway || obj(g.Omega).CountryDataGateway },
+      { label: 'Finance & treasury', get: () => g.OmegaFinanceMinistry || g.FinanceMinistry || obj(g.Omega).FinanceMinistry },
+      { label: 'Foreign exchange engine', get: () => g.OmegaForexMonetaryEngine },
+      { label: 'Resource endowment', get: () => g.OmegaResourceEndowmentRuntime || obj(g.Omega).ResourceEndowmentRuntime },
+      { label: 'Industrial network', get: () => g.OmegaResourceIndustrialNetwork || obj(g.Omega).ResourceIndustrialNetwork },
+      { label: 'Minister language / cognition', get: () => g.OmegaMinisterIntelligencePipeline },
+      {
+        label: 'Opponent decision core', protectedCore: true,
+        get: () => firstApi([
+          () => g.OmegaOpponentAutonomy || obj(g.Omega).OpponentAutonomy,
+          () => g.OmegaOpponentAdaptiveStrategy || obj(g.Omega).OpponentAdaptiveStrategy,
+          () => g.OmegaOpponentDeepMemory || obj(g.Omega).OpponentDeepMemory
+        ])
+      }
+    ];
+    const cards = rows.map(row => {
+      const api = firstApi([row.get]);
+      const result = availability(api, row.protectedCore);
+      const color = result.state === 'MISSING' ? '#fca5a5' : result.state === 'DEGRADED' ? '#fbbf24' : '#86efac';
+      return '<article class="omega-liveops-card"><span>' + h(row.label) + '</span>' +
+        '<strong style="font-size:15px;color:' + color + '">' + h(result.state) + '</strong>' +
+        '<small>' + h(result.detail) + '</small></article>';
+    }).join('');
+    return '<h3>SYSTEM HEALTH <small>read-only · availability and wiring checks</small></h3>' +
+      '<p>Refresh this view after a country switch or game boot. A registered engine does not prove its gameplay action succeeded; failed actions and blocked reasons remain in their authoritative panels.</p>' +
+      '<div class="omega-liveops-grid">' + cards + '</div>' +
+      '<section class="omega-liveops-section"><strong>Protected AI boundary</strong><p>Opponent brain availability is shown only as a subsystem status. This view does not render the opponent’s internal memory, beliefs, scoring details or future plans.</p></section>' +
+      '<section class="omega-liveops-section"><strong>How to read this panel</strong><p><span style="color:#86efac">AVAILABLE</span> means the runtime API is present. <span style="color:#fbbf24">DEGRADED</span> means published readiness diagnostics report a problem. <span style="color:#fca5a5">MISSING</span> means the API was not found at the expected runtime boundary.</p><p>This is an observability aid, not a replacement for gameplay and Android smoke tests.</p></section>';
+  }
+
   function render() {
     if (!panelOpen || !root) return;
     const ids = selectedIds();
@@ -795,7 +875,8 @@
       flow: () => renderFlow(ids),
       trade: () => renderTrade(ids),
       communications: () => renderCommunications(ids),
-      charts: () => renderCharts(ids)
+      charts: () => renderCharts(ids),
+      systems: () => renderSystemHealth()
     };
     main.innerHTML = (tabs[currentTab] || tabs.overview)();
     root.querySelectorAll('[data-omega-liveops-tab]').forEach(btn => {
@@ -832,7 +913,7 @@
     root.innerHTML = '<section id="omega-liveops-panel" role="dialog" aria-modal="true" aria-label="Live operations and engine observability">'+
       '<header id="omega-liveops-header"><div><strong>OMEGA · LIVE OPERATIONS</strong><small id="omega-liveops-state">Reading game state…</small></div><div id="omega-liveops-actions"><label><select id="omega-liveops-country" aria-label="Country scope"></select></label><button type="button" data-omega-liveops-action="refresh">Refresh</button><button type="button" data-omega-liveops-action="export">Export data</button><button type="button" data-omega-liveops-action="close" aria-label="Close live operations">Close</button></div></header>'+
       '<nav id="omega-liveops-tabs" role="tablist" aria-label="Operations views">'+
-      [['overview','Overview'],['feed','Event feed'],['resources','Mines & stock'],['flow','Pipeline'],['trade','Trade & shipments'],['communications','Contacts'],['charts','Charts']].map(x=>'<button type="button" role="tab" data-omega-liveops-tab="'+x[0]+'" aria-selected="false">'+x[1]+'</button>').join('')+
+      [['overview','Overview'],['feed','Event feed'],['resources','Mines & stock'],['flow','Pipeline'],['trade','Trade & shipments'],['communications','Contacts'],['charts','Charts'],['systems','System health']].map(x=>'<button type="button" role="tab" data-omega-liveops-tab="'+x[0]+'" aria-selected="false">'+x[1]+'</button>').join('')+
       '</nav><main id="omega-liveops-main"></main></section>';
     g.document.body.appendChild(root);
     root.addEventListener('click', ev => {
