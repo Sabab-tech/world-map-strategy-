@@ -33,6 +33,10 @@ on:
       - "relation_generation_engine.json"
       - "resource_site_reserve_simulation_v1.json"
       - "scripts/build_country_general_data_registry_v1.mjs"
+      - "scripts/build_country_sector_profiles_v1.mjs"
+      - "country_sector_profile_schema_v1.json"
+      - "country_sector_profiles_v1.json"
+      - "test/country_sector_profiles_v1.test.mjs"
       - "test/country_general_data_registry_v1.test.mjs"
       - "countries.json"
       - "cities.json"
@@ -71,6 +75,9 @@ jobs:
             node scripts/build_country_general_data_registry_v1.mjs --refresh-sources
           fi
 
+      - name: Build canonical country sector profiles
+        run: node scripts/build_country_sector_profiles_v1.mjs
+
       - name: Validate shared schema, source preservation and coverage accounting
         run: |
           node --check omega_country_data_gateway_v1.js
@@ -85,6 +92,8 @@ jobs:
           node --check omega_ui_system_redesign_v1.js
           node --test test/country_general_data_registry_v1.test.mjs test/omega_country_runtime_data_v1.test.mjs test/omega_country_behavior_engine_v1.test.mjs test/omega_ministry_country_details_runtime.test.mjs test/omega_country_data_gateway_v1.test.mjs
           node test/omega_opponent_e2e_runtime.test.mjs
+          node --check scripts/build_country_sector_profiles_v1.mjs
+          node --test test/country_sector_profiles_v1.test.mjs
 
       - name: Commit registry only if it changed
         if: ${{ github.ref == 'refs/heads/main' && github.event_name != 'pull_request' }}
