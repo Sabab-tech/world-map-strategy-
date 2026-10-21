@@ -252,12 +252,15 @@
     for(const [name,hit] of [['world.json',refs.world],['countries.json',refs.roster]])if(hit){
       const r=hit.record||{},p=r.properties||{},rawName=first(p.ADMIN,p.name,r.name,r.countryName),rawCode=str(p.ISO_A2||p.iso_a2||r.iso2||r.code||r.countryCode||p.ISO_A3||p.iso_a3||r.iso3||r.id).toUpperCase();
       const resolvedCode=rawCode?resolveCountry(rawCode):null;
-      if(rawCode&&!resolvedCode)errors.push({code:'UNRESOLVED_SOURCE_COUNTRY_CODE',sourceId:name,expected:code,actual:rawCode});
+      const resolvedName=rawName?resolveCountry(rawName):null;
+      // Natural Earth and other geographic datasets use -99 when ISO is unavailable.
+      // An unavailable code is not itself a country mismatch when the source name resolves correctly.
+      if(rawCode&&rawCode!=='-99'&&!resolvedCode&&(!resolvedName||resolvedName.countryCode!==identity.countryCode))
+        errors.push({code:'UNRESOLVED_SOURCE_COUNTRY_CODE',sourceId:name,expected:code,actual:rawCode,sourceName:rawName||null});
       else if(resolvedCode&&(resolvedCode.countryCode!==identity.countryCode)&&
         !(identity.iso3&&resolvedCode.iso3===identity.iso3)&&!(identity.iso2&&resolvedCode.iso2===identity.iso2))
         errors.push({code:'SOURCE_COUNTRY_IDENTITY_MISMATCH',sourceId:name,expected:identity.countryCode,actual:resolvedCode.countryCode,sourceName:rawName||null});
       if(rawName&&norm(rawName)!==norm(identity.name)){
-        const resolvedName=resolveCountry(rawName);
         if(!resolvedName)warnings.push({code:'COUNTRY_NAME_ALIAS_UNRESOLVED',sourceId:name,expected:identity.name,actual:rawName});
         else if(resolvedName.countryCode!==identity.countryCode && !(identity.iso3&&resolvedName.iso3===identity.iso3))
           errors.push({code:'SOURCE_COUNTRY_NAME_MISMATCH',sourceId:name,expected:identity.name,actual:rawName,actualCountryCode:resolvedName.countryCode});
@@ -295,6 +298,27 @@
       const matchingKeys=Object.keys(data).filter(key=>resolveCountry(key)?.countryCode===identity.countryCode);
       if(matchingKeys.length>1)warnings.push({code:'DUPLICATE_COUNTRY_SOURCE_ROWS',sourceId,countryCode:identity.countryCode,keys:matchingKeys,
         message:'Multiple aliases in one source resolve to the same country; the first matching record may mask a duplicate.'});
+    }
+    // Audit live state roots as well as files: old and new engines sometimes keep
+    // separate state buckets or alias keys for the same canonical country.
+    const roots=[root.Game?.state,root.gameState,root.Omega?.Simulation?.state,root.Omega?.World?.state]
+      .filter((value,index,list)=>obj(value)&&list.indexOf(value)===index);
+    for(const domain of ['economy','population','society','defense','military','foreign','diplomacy','trade','government','politics','finance']){
+      const seen=[];
+      for(const stateRoot of roots){
+        const bucket=stateRoot?.[domain];if(!obj(bucket))continue;
+        const keys=Object.keys(bucket).filter(key=>resolveCountry(key)?.countryCode===identity.countryCode);
+        if(keys.length>1)warnings.push({code:'DUPLICATE_LIVE_STATE_COUNTRY_KEYS',domain,countryCode:identity.countryCode,keys,
+          message:'Multiple keys in the same live-state bucket resolve to this country.'});
+        for(const key of keys)if(obj(bucket[key]))seen.push({root:stateRoot,record:bucket[key],key});
+      }
+      const uniqueRecords=seen.filter((row,index,list)=>list.findIndex(other=>other.record===row.record)===index);
+      if(uniqueRecords.length>1){
+        const signatures=new Set(uniqueRecords.map(row=>{try{return JSON.stringify(row.record);}catch(_){return String(row.key);}}));
+        if(signatures.size>1)warnings.push({code:'DUPLICATE_LIVE_STATE_RECORDS',domain,countryCode:identity.countryCode,
+          locations:uniqueRecords.map(row=>row.key),count:uniqueRecords.length,
+          message:'Multiple live-state roots hold different records for the same canonical country; review engine ownership before using a fallback.'});
+      }
     }
     for(const [key,v]of Object.entries(fields)){if(v.status==='AVAILABLE'&&v.value===null)errors.push({code:'VALUE_STATUS_CONTRADICTION',field:key});if(v.status==='UNAVAILABLE'&&v.value!==null)errors.push({code:'MISSING_VALUE_POLICY_VIOLATION',field:key});}
     return {ok:errors.length===0,countryCode:code,errors,warnings,comparisons,sourcesChecked:['OmegaCountryRuntimeData','OmegaCountryGeneralDataRuntime','economy.json','population.json','society.json','countries.json','world.json','cities.json'],missingFields:Object.keys(fields).filter(k=>fields[k].status!=='AVAILABLE')};
