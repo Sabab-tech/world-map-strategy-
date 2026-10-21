@@ -45,6 +45,13 @@ const baseline = [
   ...prior
 ].map(metadata);
 const candidateIds = new Set(pack.records.map(s => s.siteId));
+const aliasRows = pack.records.filter(s => s?.runtime?.aliasOfSiteId || s?.map?.markerEligible === false);
+assert.equal(aliasRows.length, 1, 'one legacy duplicate remains auditable as an alias rather than being erased');
+assert.equal(aliasRows[0].siteId, 'SITE_CAN_voiseys_bay_nickel_mine');
+assert.equal(aliasRows[0].runtime?.aliasOfSiteId, 'SITE_CAN_voisey_s_bay_nickel_mine');
+assert.equal(aliasRows[0].operation?.commercialExtraction, false);
+const physicalRows = pack.records.filter(s => !s?.runtime?.aliasOfSiteId && s?.map?.markerEligible !== false);
+assert.equal(physicalRows.length, 49, 'only unique physical sites may become map/extraction candidates');
 for (const row of pack.records) {
   assert.ok(row.siteId && /^SITE_[A-Z]{3}_[a-z0-9_]+$/.test(row.siteId), 'stable canonical-style siteId: ' + row.siteId);
   assert.ok(/^[A-Z]{3}$/.test(row.countryId), row.siteId + ' ISO-3 country identity');
@@ -54,6 +61,13 @@ for (const row of pack.records) {
   const c = coords(row);
   assert.ok(c, row.siteId + ' valid map coordinates');
   assert.equal(row.location?.countryBoundaryKey, row.countryId, row.siteId + ' coordinate country boundary');
+  if (aliasRows.includes(row)) {
+    assert.equal(row.map?.markerEligible, false, row.siteId + ' aliases may not render markers');
+    assert.equal(row.map?.countryIsolationKey, row.countryId, row.siteId + ' alias country isolation');
+    assert.equal(row.map?.aliasOfSiteId || row.runtime?.aliasOfSiteId, 'SITE_CAN_voisey_s_bay_nickel_mine');
+    assert.equal(row.operation?.commercialExtraction, false, row.siteId + ' aliases must not execute extraction');
+    continue;
+  }
   assert.equal(row.map?.markerEligible, true, row.siteId + ' map marker eligible');
   assert.equal(row.map?.countryIsolationKey, row.countryId, row.siteId + ' marker country isolation');
   assert.equal(row.map?.aliasOfSiteId, null, row.siteId + ' must be a physical site, not an alias');
