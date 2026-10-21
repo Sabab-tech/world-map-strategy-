@@ -44,6 +44,18 @@ test('every profile contains the same extensible sector and calculation contract
   assert.ok(schema.extensionContract.customMetricsField);
   for (const row of profiles.countries) {
     assert.deepEqual(Object.keys(row.sectors).sort(), schema.sectors.map((sector) => sector.id).sort());
+    for (const section of schema.sectors) {
+      assert.equal(typeof section.title, 'string');
+      assert.equal(typeof section.description, 'string');
+      assert.ok(Array.isArray(section.extensionSlots),
+        'sector descriptions and extensible slot definitions must remain in the canonical schema');
+    }
+    for (const sectorId of Object.keys(row.sectors)) {
+      assert.equal(typeof row.sectors[sectorId].status, 'string');
+      assert.ok(!Object.hasOwn(row.sectors[sectorId], 'title'));
+      assert.ok(!Object.hasOwn(row.sectors[sectorId], 'description'));
+      assert.ok(!Object.hasOwn(row.sectors[sectorId], 'extensionSlots'));
+    }
     assert.ok(Array.isArray(row.extensions.customAttributes));
     assert.ok(Array.isArray(row.extensions.customMetrics));
     assert.ok(Array.isArray(row.extensions.customTimeSeries));
