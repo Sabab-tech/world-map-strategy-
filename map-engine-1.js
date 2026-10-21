@@ -444,6 +444,16 @@ var Game = window.Game = {
         const runtime = window.OmegaCountryRuntimeData;
         const identity = runtime && runtime.resolveCountry(countryName);
         const id = Game.getCountryId ? Game.getCountryId(countryName) : countryName.toUpperCase();
+        const selectedContextCode = identity && (identity.countryCode || identity.iso3) || null;
+        if (selectedContextCode) {
+            const previousContext = window.OmegaMinistryViewCountry || '';
+            window.OmegaMinistryViewCountry = selectedContextCode;
+            if (window.OmegaCabinetUI) window.OmegaCabinetUI.activeCountry = selectedContextCode;
+            if (window.CountryIOS) window.CountryIOS.activeCountry = selectedContextCode;
+            if (String(previousContext).toUpperCase() !== String(selectedContextCode).toUpperCase()) {
+                try { window.dispatchEvent(new CustomEvent('OMEGA_COUNTRY_CONTEXT_CHANGED', { detail: { countryId: selectedContextCode, source: 'map-country-selection' } })); } catch (_) {}
+            }
+        }
         const keys = [countryName, id, identity && identity.countryCode, identity && identity.iso3,
             identity && identity.name, identity && identity.economyKey, identity && identity.populationKey];
         const normalizeKey = value => String(value == null ? '' : value).trim().toUpperCase()
@@ -460,12 +470,30 @@ var Game = window.Game = {
             (window.gameState && window.gameState.economy) || {};
         const populationState = (Game.state && Game.state.population) ||
             (window.gameState && window.gameState.population) || {};
-        const econ = (runtime && runtime.getRecord('economy', countryName)) || findRecord(economyState);
-        const pop = (runtime && runtime.getRecord('population', countryName)) || findRecord(populationState);
+        const liveEcon = (runtime && typeof runtime.getLiveRecord === 'function' && runtime.getLiveRecord('economy', countryName)) || findRecord(economyState);
+        const livePop = (runtime && typeof runtime.getLiveRecord === 'function' && runtime.getLiveRecord('population', countryName)) || findRecord(populationState);
+        const econ = (runtime && runtime.getRecord('economy', countryName)) || liveEcon;
+        const pop = (runtime && runtime.getRecord('population', countryName)) || livePop;
+        const generalRuntime = window.OmegaCountryGeneralDataRuntime;
+        const generalCountryRecord = (generalRuntime && typeof generalRuntime.getCountryRecord === 'function')
+            ? generalRuntime.getCountryRecord(identity && (identity.iso3 || identity.countryCode) || countryName) : null;
+        const generalMetrics = generalCountryRecord && generalCountryRecord.metrics || {};
+        const generalMetadata = generalCountryRecord && generalCountryRecord.metricMetadata || {};
+        const countrySnapshot = window.OmegaCountryDataGateway && window.OmegaCountryDataGateway.getSnapshot(countryName);
+        const sharedField = key => countrySnapshot && countrySnapshot.countryCode && countrySnapshot.fields
+            && countrySnapshot.fields[key] && countrySnapshot.fields[key].status === 'AVAILABLE' ? countrySnapshot.fields[key] : null;
+        const sharedSourceTitle = field => field
+            ? 'Source: ' + (field.sourceName || field.sourceId || 'registered country data') + (field.year ? ' · Year: ' + field.year : '')
+            : 'Not recorded in the selected country data sources.';
+        const escapeAttribute = value => String(value == null ? '' : value).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         const displayName = identity && identity.name ? identity.name : countryName.replace(/_/g, ' ');
         const flag = (runtime && runtime.flagFor(countryName)) || '🏳️';
         const unavailable = 'NOT RECORDED';
         const numberExists = value => value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value));
+        const firstNumeric = (...values) => {
+            for (const value of values) if (numberExists(value)) return Number(value);
+            return null;
+        };
         const countryValue = (domains, paths) => {
             if (window.CountryIOS && typeof window.CountryIOS.readCountryValue === 'function') {
                 const value = window.CountryIOS.readCountryValue(countryName, domains, paths);
@@ -502,12 +530,52 @@ var Game = window.Game = {
         const elGov = document.getElementById('card-country-gov');
         if (elGov) elGov.innerText = 'Gov: ' + government;
 
+        const populationValue = countrySnapshot && countrySnapshot.countryCode
+            ? firstNumeric(sharedField('population') && sharedField('population').value)
+            : firstNumeric(
+                livePop && livePop.populationTotal, livePop && livePop.population_total,
+                livePop && livePop.totalPopulation, livePop && livePop.population,
+                livePop && livePop.population_2015,
+                generalMetrics.populationTotal, generalMetrics.population,
+                pop && pop.populationTotal, pop && pop.population_total,
+                pop && pop.totalPopulation, pop && pop.population, pop && pop.population_2015
+            );
+        const gdpValue = countrySnapshot && countrySnapshot.countryCode
+            ? firstNumeric(sharedField('gdp') && sharedField('gdp').value)
+            : firstNumeric(
+                liveEcon && liveEcon.gdpCurrentUsd, liveEcon && liveEcon.gdp_current_usd,
+                liveEcon && liveEcon.gdpUsd, liveEcon && liveEcon.gdp_usd,
+                liveEcon && liveEcon.gdp, liveEcon && liveEcon.GDP,
+                generalMetrics.gdpCurrentUsd, generalMetrics.gdpUsd,
+                econ && econ.gdpCurrentUsd, econ && econ.gdp_current_usd,
+                econ && econ.gdpUsd, econ && econ.gdp_usd, econ && econ.gdp, econ && econ.GDP
+            );
         const elPop = document.getElementById('card-stat-pop');
-        if (elPop) elPop.innerText = numberExists(pop && pop.population_2015)
-            ? this.formatPopulationNumber(Number(pop.population_2015)) : unavailable;
+        if (elPop) {
+            elPop.innerText = populationValue !== null ? this.formatPopulationNumber(populationValue) : unavailable;
+            const meta = generalMetadata.populationTotal || {};
+            elPop.title = countrySnapshot && countrySnapshot.countryCode ? escapeAttribute(sharedSourceTitle(sharedField('population')))
+                : (populationValue === null ? 'Population is not recorded for this country.'
+                    : (livePop && firstNumeric(livePop.populationTotal, livePop.population_total, livePop.totalPopulation,
+                        livePop.population, livePop.population_2015) !== null
+                        ? 'Source: live game state'
+                        : (meta.sourceName || meta.sourceId
+                            ? 'Source: ' + (meta.sourceName || meta.sourceId) + (meta.year ? ' · Year: ' + meta.year : '')
+                            : 'Source: shared country runtime baseline')));
+        }
         const elGdp = document.getElementById('card-stat-gdp');
-        if (elGdp) elGdp.innerText = numberExists(econ && econ.gdp)
-            ? this.formatGameNumber(Number(econ.gdp)) : unavailable;
+        if (elGdp) {
+            elGdp.innerText = gdpValue !== null ? this.formatGameNumber(gdpValue) : unavailable;
+            const meta = generalMetadata.gdpCurrentUsd || {};
+            elGdp.title = countrySnapshot && countrySnapshot.countryCode ? escapeAttribute(sharedSourceTitle(sharedField('gdp')))
+                : (gdpValue === null ? 'GDP is not recorded for this country.'
+                    : (liveEcon && firstNumeric(liveEcon.gdpCurrentUsd, liveEcon.gdp_current_usd,
+                        liveEcon.gdpUsd, liveEcon.gdp_usd, liveEcon.gdp, liveEcon.GDP) !== null
+                        ? 'Source: live game state'
+                        : (meta.sourceName || meta.sourceId
+                            ? 'Source: ' + (meta.sourceName || meta.sourceId) + (meta.year ? ' · Year: ' + meta.year : '')
+                            : 'Source: shared country runtime baseline')));
+        }
 
         const elStab = document.getElementById('card-stat-stability');
         if (elStab) elStab.innerText = countryValue(['government', 'politics', 'society'], [

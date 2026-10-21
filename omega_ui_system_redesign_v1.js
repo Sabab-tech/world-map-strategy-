@@ -329,8 +329,36 @@
   }
 
   function activeCountry() {
-    return (global.Game && global.Game.currentActiveCountry) ||
-      global.currentActiveCountry || global.OmegaMinistryViewCountry || 'BANGLADESH';
+    const game = global.Game || {};
+    const simulation = global.Omega && global.Omega.Simulation;
+    const candidates = [
+      global.OmegaMinistryViewCountry,
+      global.CountryIOS && global.CountryIOS.activeCountry,
+      global.OmegaCabinetUI && global.OmegaCabinetUI.activeCountry,
+      game.currentActiveCountry,
+      game.selectedCountryId,
+      game.activeCountry,
+      global.currentActiveCountry,
+      simulation && typeof simulation.getPlayerCountryId === 'function' ? simulation.getPlayerCountryId() : null,
+      global.playerCountryId,
+      global.playerCountry
+    ];
+    const runtime = global.OmegaCountryRuntimeData;
+    for (const candidate of candidates) {
+      if (candidate === null || candidate === undefined || candidate === '') continue;
+      try {
+        const identity = runtime && typeof runtime.resolveCountry === 'function'
+          ? runtime.resolveCountry(candidate) : null;
+        if (identity && (identity.countryCode || identity.iso3)) return identity.countryCode || identity.iso3;
+      } catch (_) {}
+      if (typeof candidate === 'string' && candidate.trim()) return candidate.trim();
+      if (typeof candidate === 'object') {
+        const raw = candidate.countryId || candidate.countryCode || candidate.iso3 ||
+          candidate.iso2 || candidate.code || candidate.name;
+        if (raw) return String(raw);
+      }
+    }
+    return 'USA';
   }
 
   function setLayerState(layer) {

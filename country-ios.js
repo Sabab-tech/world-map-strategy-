@@ -180,6 +180,13 @@ window.CountryIOS = {
 
     readCountryValue(countryKey, domains, paths) {
         const requested = String(countryKey || '').trim();
+        const gateway = window.OmegaCountryDataGateway;
+        if (gateway && typeof gateway.getValue === 'function') {
+            // Every Country IOS chapter reads through the same live-first, country-checked contract.
+            // When the country identity is unresolved, fail closed instead of reading another country's row.
+            const shared = gateway.getValue(requested, domains, paths);
+            return shared && shared.status === 'AVAILABLE' ? shared.value : null;
+        }
         const observer = window.OmegaLiveOpsObservability;
         const resolved = observer && typeof observer.resolveCountryId === 'function'
             ? observer.resolveCountryId(requested) : null;
@@ -362,12 +369,22 @@ window.CountryIOS = {
     // -------------------------------------------------------------------------
     renderChapter1_Overview(countryKey, econ, pop, rel) {
         const countryRuntime = window.OmegaCountryRuntimeData;
+        const gateway = window.OmegaCountryDataGateway;
+        const shared = gateway && gateway.getSnapshot(countryKey);
+        const sharedFields = shared && shared.countryCode ? shared.fields || {} : {};
+        const sharedValue = key => sharedFields[key] && sharedFields[key].status === 'AVAILABLE' ? sharedFields[key].value : null;
+        const describeField = key => {
+            const item = sharedFields[key];
+            if (!item || item.status !== 'AVAILABLE') return 'Not recorded in the selected country data sources.';
+            return 'Source: ' + (item.sourceName || item.sourceId || 'registered country data') + (item.year ? ' · Year: ' + item.year : '') + (item.authority ? ' · ' + item.authority.replace(/_/g, ' ') : '');
+        };
+        const escapeAttribute = value => String(value == null ? '' : value).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         const identity = countryRuntime && countryRuntime.resolveCountry(countryKey);
         const profile = countryRuntime && countryRuntime.getProfile(countryKey);
-        const nameClean = (identity && identity.name ? identity.name : countryKey).replace(/_/g, " ");
-        const capital = (countryRuntime && countryRuntime.getCapital(countryKey)) || "NOT RECORDED";
-        const gdp = econ && econ.gdp;
-        const population = pop && pop.population_2015;
+        const nameClean = (identity && identity.name ? identity.name : (shared?.identity?.name || countryKey)).replace(/_/g, " ");
+        const capital = gateway ? (sharedValue('capital') || "NOT RECORDED") : ((countryRuntime && countryRuntime.getCapital(countryKey)) || "NOT RECORDED");
+        const gdp = gateway ? sharedValue('gdp') : (econ && econ.gdp);
+        const population = gateway ? sharedValue('population') : (pop && pop.population_2015);
         const influence = profile && profile.indicators && profile.indicators.economicInfluenceIndex;
         const cashVal = gdp !== null && gdp !== undefined && gdp !== '' && Number.isFinite(Number(gdp))
             ? (Math.abs(Number(gdp)) >= 1e9 ? '$' + (Number(gdp) / 1e9).toFixed(2) + 'B' : '$' + (Number(gdp) / 1e6).toFixed(2) + 'M')
@@ -388,9 +405,9 @@ window.CountryIOS = {
                     <div class="banner-title-box">
                         <h2 class="banner-country-title">${nameClean.toUpperCase()} · ${capital.toUpperCase()}</h2>
                         <div class="banner-metrics-row">
-                            <span class="metric-item">🪙 <strong style="color:#fcd34d;">${cashVal}</strong></span>
+                            <span class="metric-item" title="${escapeAttribute(describeField('gdp'))}">🪙 <strong style="color:#fcd34d;">${cashVal}</strong></span>
                             <span class="metric-item" title="Repository-derived economic influence index"><strong style="color:#f43f5e;">📊 ${influenceVal}</strong></span>
-                            <span class="metric-item">👥 <strong style="color:#38bdf8;">${popVal}</strong></span>
+                            <span class="metric-item" title="${escapeAttribute(describeField('population'))}">👥 <strong style="color:#38bdf8;">${popVal}</strong></span>
                             <span class="metric-item">😊 <strong style="color:#4ade80;">${relationVal}</strong></span>
                         </div>
                     </div>
@@ -1455,20 +1472,28 @@ window.CountryIOS = {
             ecosystem = window.WorldEcosystemEngine && typeof window.WorldEcosystemEngine.getCountryProfile === 'function'
                 ? window.WorldEcosystemEngine.getCountryProfile(countryKey) : null;
         } catch (_) {}
+        const gateway = window.OmegaCountryDataGateway;
+        const countrySnapshot = gateway && gateway.getSnapshot(countryKey);
+        const hasResolvedSnapshot = !!(countrySnapshot && countrySnapshot.countryCode);
+        const sharedValue = key => hasResolvedSnapshot && countrySnapshot.fields?.[key]?.status === 'AVAILABLE'
+            ? countrySnapshot.fields[key].value : null;
         const profile = {
             geography: Object.assign({ isLandlocked: null, borderLengthKm: null }, ecosystem && ecosystem.geography || {}),
             resources: Object.assign({}, ecosystem && ecosystem.resources || {}),
             population: Object.assign({}, ecosystem && ecosystem.population || {}, {
-                total: ecosystem && ecosystem.population && ecosystem.population.total != null
-                    ? ecosystem.population.total : (populationRecord && populationRecord.population_2015 != null ? populationRecord.population_2015 : null),
-                urbanizationRate: ecosystem && ecosystem.population && ecosystem.population.urbanizationRate != null
-                    ? ecosystem.population.urbanizationRate : (populationRecord && populationRecord.urbanization_rate != null ? populationRecord.urbanization_rate : null),
+                total: gateway ? (hasResolvedSnapshot ? sharedValue('population') : null)
+                    : (ecosystem && ecosystem.population && ecosystem.population.total != null
+                        ? ecosystem.population.total : (populationRecord && populationRecord.population_2015 != null ? populationRecord.population_2015 : null)),
+                urbanizationRate: gateway ? (hasResolvedSnapshot ? sharedValue('urbanization') : null)
+                    : (ecosystem && ecosystem.population && ecosystem.population.urbanizationRate != null
+                        ? ecosystem.population.urbanizationRate : (populationRecord && populationRecord.urbanization_rate != null ? populationRecord.urbanization_rate : null)),
                 happinessScore: ecosystem && ecosystem.population && ecosystem.population.happinessScore != null
                     ? ecosystem.population.happinessScore : null
             }),
             economy: Object.assign({}, ecosystem && ecosystem.economy || {}, {
-                gdp: ecosystem && ecosystem.economy && ecosystem.economy.gdp != null
-                    ? ecosystem.economy.gdp : (economyRecord && economyRecord.gdp != null ? economyRecord.gdp : null)
+                gdp: gateway ? (hasResolvedSnapshot ? sharedValue('gdp') : null)
+                    : (ecosystem && ecosystem.economy && ecosystem.economy.gdp != null
+                        ? ecosystem.economy.gdp : (economyRecord && economyRecord.gdp != null ? economyRecord.gdp : null))
             }),
             government: Object.assign({ cabinetStability: null, corruptionIndex: null }, ecosystem && ecosystem.government || {}),
             aiPersonality: Object.assign({

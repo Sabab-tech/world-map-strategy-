@@ -543,14 +543,18 @@
   function extractPlanInputs(decision,action){
     const selected=decision?.selected||decision?.selectedEvaluations?.find?.(x=>x.action===action);
     const m=decision?.runtimeMeasurement||decision?.measurement||{};
-    const quantity=scalar(selected?.quantity??m?.selected?.quantity??m?.gap??m?.required);
-    const cost=scalar(selected?.cost??m?.cost);
-    const labor=scalar(selected?.labor??m?.labor??m?.requiredLabor);
-    const materials=selected?.materials??m?.materials??null;
-    const duration=scalar(selected?.durationTurns??m?.durationTurns??m?.time);
-    const personnelPerUnit=scalar(selected?.personnelPerUnit??m?.personnelPerUnit??m?.selected?.personnelPerUnit);
-    const readinessDelta=num(selected?.readinessDelta??m?.readinessDelta??m?.selected?.readinessDelta);
-    const item=selected?.item??m?.item??m?.selected?.item??null;
+    // Action-specific values may be nested under runtimeMeasurement.selected.
+    // Preserve those inputs so resource, cost and labor checks use the same plan
+    // that the caller measured instead of silently dropping execution requirements.
+    const measuredSelection=m?.selected&&typeof m.selected==='object'?m.selected:{};
+    const quantity=scalar(selected?.quantity??measuredSelection.quantity??m?.gap??m?.required);
+    const cost=scalar(selected?.cost??measuredSelection.cost??m?.cost);
+    const labor=scalar(selected?.labor??measuredSelection.labor??m?.labor??m?.requiredLabor);
+    const materials=selected?.materials??measuredSelection.materials??m?.materials??null;
+    const duration=scalar(selected?.durationTurns??measuredSelection.durationTurns??m?.durationTurns??m?.time);
+    const personnelPerUnit=scalar(selected?.personnelPerUnit??measuredSelection.personnelPerUnit??m?.personnelPerUnit);
+    const readinessDelta=num(selected?.readinessDelta??measuredSelection.readinessDelta??m?.readinessDelta);
+    const item=selected?.item??measuredSelection.item??m?.item??null;
     return{quantity,cost,labor,materials:materials&&typeof materials==='object'?clone(materials):null,durationTurns:duration,personnelPerUnit,readinessDelta,item};
   }
 
