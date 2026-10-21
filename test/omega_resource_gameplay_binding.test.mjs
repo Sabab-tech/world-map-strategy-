@@ -242,10 +242,11 @@ test('runtime renders all global sites and applies nation/resource scope without
   const part6Ids=new Set(part6.records.map(site=>site.siteId));
   const mappedPart6Sites=context.Omega.IndividualResourceSiteBinding.sites.filter(site=>part6Ids.has(site.siteId));
   const part6Aliases=part6.records.filter(site=>site.runtime?.aliasOfSiteId||site.map?.markerEligible===false);
-  assert.equal(part6Aliases.length,2,'duplicate Part 6 records must remain explicit non-marker aliases');
+  assert.equal(part6Aliases.length,3,'duplicate Part 6 records must remain explicit non-marker aliases');
   assert.equal(part6Aliases.find(site=>site.siteId==='SITE_CAN_voiseys_bay_nickel_mine')?.runtime?.aliasOfSiteId,'SITE_CAN_voisey_s_bay_nickel_mine');
   assert.equal(part6Aliases.find(site=>site.siteId==='SITE_GBR_boulby_mine')?.runtime?.aliasOfSiteId,'SITE_GBR_boulby_potash_mine');
-  assert.equal(mappedPart6Sites.length,48,'48 unique executable Part 6 sites must join the individual-site map registry');
+  assert.equal(part6Aliases.find(site=>site.siteId==='SITE_SWE_kiruna_iron_ore_mine')?.runtime?.aliasOfSiteId,'SITE_SWE_kiruna_iron_mine');
+  assert.equal(mappedPart6Sites.length,47,'47 unique executable Part 6 sites must join the individual-site map registry');
   assert.equal(part6Aliases.every(alias=>!mappedPart6Sites.some(site=>site.siteId===alias.siteId)),true,'legacy aliases must not create duplicate physical-site markers');
   for(const expected of part6.records.filter(site=>!site.runtime?.aliasOfSiteId&&site.map?.markerEligible!==false)){
     const site=mappedPart6Sites.find(row=>row.siteId===expected.siteId);
