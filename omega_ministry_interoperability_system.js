@@ -288,7 +288,7 @@
     let result;
     if(Array.isArray(value))result='['+value.map(item=>stableValue(item,seen)).join(',')+']';
     else if(value instanceof Map)result='{'+[...value.entries()].map(([key,item])=>[String(key),item]).sort((a,b)=>a[0].localeCompare(b[0])).map(([key,item])=>JSON.stringify(key)+':'+stableValue(item,seen)).join(',')+'}';
-    else if(value instanceof Set)result='['+[...value].map(item=>stableValue(item)).sort().join(',')+']';
+    else if(value instanceof Set)result='['+[...value].map(item=>stableValue(item,seen)).sort().join(',')+']';
     else result='{'+Object.keys(value).filter(key=>key!=='__proto__'&&key!=='constructor').sort().map(key=>JSON.stringify(key)+':'+stableValue(value[key],seen)).join(',')+'}';
     seen.delete(value);
     return result;
@@ -302,7 +302,7 @@
       const code=input.charCodeAt(i);
       a=Math.imul(a^code,16777619)>>>0;
       b=Math.imul(b^code,3266489917)>>>0;
-      b^=b>>>13;
+      b=(b^(b>>>13))>>>0;
     }
     return String(input.length)+':'+('00000000'+a.toString(16)).slice(-8)+('00000000'+b.toString(16)).slice(-8);
   }
