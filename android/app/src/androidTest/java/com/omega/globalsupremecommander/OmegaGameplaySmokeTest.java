@@ -71,36 +71,60 @@ public final class OmegaGameplaySmokeTest {
                     "true", ready
             );
 
-            final String speedControlScript =
-                    "(function() {" +
-                    " var button = document.querySelector('.speed-btn[data-speed=\\\"2\\\"]');" +
-                    " if (!button) return false;" +
-                    " button.click();" +
-                    " return !!(button.classList.contains('active') && window.Game.gameSpeed === 2);" +
-                    "})()";
-            assertEquals(
-                    "Tapping the 2x control must update the actual simulation speed",
-                    "true", evaluate(instrumentation, webViewRef.get(), speedControlScript)
-            );
+            final String clickSpeedScript =
+                    "(function() { var button = document.querySelector('.speed-btn[data-speed=\\\"2\\\"]');" +
+                    " if (!button) return 'MISSING_SPEED_CONTROL'; button.click(); return 'CLICK_SENT'; })()";
+            assertEquals("2x speed control must exist and accept a click",
+                    "\"CLICK_SENT\"", evaluate(instrumentation, webViewRef.get(), clickSpeedScript));
+            final String speedStateScript =
+                    "(function() { var b=document.querySelector('.speed-btn[data-speed=\\\"2\\\"]');" +
+                    " return JSON.stringify({speed:window.Game&&window.Game.gameSpeed," +
+                    "active:!!(b&&b.classList.contains('active')),button:!!b}); })()";
+            waitForJsCondition(instrumentation, webViewRef.get(),
+                    "(function(){var b=document.querySelector('.speed-btn[data-speed=\\\"2\\\"]');" +
+                    "return !!(b&&b.classList.contains('active')&&window.Game&&window.Game.gameSpeed===2);})()",
+                    10000L, "2x simulation speed");
+            final String speedState = evaluate(instrumentation, webViewRef.get(), speedStateScript);
+            assertEquals("2x speed control must update the actual simulation speed",
+                    "{\\\"speed\\\":2,\\\"active\\\":true,\\\"button\\\":true}", speedState);
 
-            final String ministryNavigationScript =
-                    "(function() {" +
-                    " var button = document.getElementById('btn-ministry-dock');" +
-                    " if (!button) return false;" +
-                    " button.click();" +
-                    " return !!(window.OmegaLayerManager &&" +
-                    " window.OmegaLayerManager.currentLayer === 1 &&" +
-                    " document.body.getAttribute('data-active-layer') === '1');" +
-                    "})()";
-            final String ministryOpened =
-                    evaluate(instrumentation, webViewRef.get(), ministryNavigationScript);
-            assertEquals(
-                    "Tapping the real Ministry dock must enter Government HQ Layer 1",
-                    "true", ministryOpened
-            );
+            final String clickMinistryScript =
+                    "(function() { var b=document.getElementById('btn-ministry-dock');" +
+                    " if (!b) return 'MISSING_MINISTRY_DOCK'; b.click(); return 'CLICK_SENT'; })()";
+            assertEquals("The real Ministry dock must exist and accept a click",
+                    "\"CLICK_SENT\"", evaluate(instrumentation, webViewRef.get(), clickMinistryScript));
+            final String ministryStateScript =
+                    "(function() {return JSON.stringify({manager:!!window.OmegaLayerManager," +
+                    "layer:window.OmegaLayerManager&&window.OmegaLayerManager.currentLayer," +
+                    "activeLayer:document.body.getAttribute('data-active-layer')});})()";
+            waitForJsCondition(instrumentation, webViewRef.get(),
+                    "(function() {return !!(window.OmegaLayerManager &&" +
+                    " window.OmegaLayerManager.currentLayer===1 &&" +
+                    " document.body.getAttribute('data-active-layer')==='1');})()",
+                    15000L, "Government HQ Layer 1");
+            final String ministryState = evaluate(instrumentation, webViewRef.get(), ministryStateScript);
+            assertEquals("Ministry dock must enter Government HQ Layer 1",
+                    "{\\\"manager\\\":true,\\\"layer\\\":1,\\\"activeLayer\\\":\\\"1\\\"}", ministryState);
         } finally {
             instrumentation.runOnMainSync(activity::finish);
         }
+    }
+
+    private static void waitForJsCondition(
+            android.app.Instrumentation instrumentation,
+            WebView webView,
+            String script,
+            long timeoutMs,
+            String description
+    ) throws Exception {
+        final long deadline = SystemClock.elapsedRealtime() + timeoutMs;
+        String last = "false";
+        while (!"true".equals(last) && SystemClock.elapsedRealtime() < deadline) {
+            last = evaluate(instrumentation, webView, script);
+            if (!"true".equals(last)) SystemClock.sleep(150L);
+        }
+        assertEquals("Timed out waiting for " + description + "; last JavaScript result=" + last,
+                "true", last);
     }
 
     private static String evaluate(
