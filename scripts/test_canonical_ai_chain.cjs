@@ -72,6 +72,10 @@ assert(server.includes("app.get('/api/deep-core/resolve'"), 'server resolve endp
 assert(server.includes("app.get('/api/deep-core/search'"), 'server search endpoint must exist');
 assert(server.includes("app.post('/api/deep-core/plan'"), 'server plan endpoint must exist');
 assert(server.includes("app.get('/api/deep-core/diagnostics'"), 'server diagnostics endpoint must exist');
+const listenBlock = server.slice(server.lastIndexOf('app.listen(PORT'));
+assert(listenBlock.includes('[OMEGA Server] Listening on port'), 'production listener must expose startup readiness');
+assert(!listenBlock.includes('OfflineQueryEngine.diagnostics()'), 'server startup must not synchronously scan every repository JSON file');
+assert(server.includes("app.get('/api/deep-core/diagnostics'"), 'Deep Core diagnostics must remain available on explicit request');
 assert(server.includes("app.post('/api/deep-core/refresh'"), 'server refresh endpoint must exist');
 assert(server.includes('function deepCoreContext('), 'server must preserve the existing Deep Core request-context gateway');
 assert(server.includes('function executeDeepCorePrompt('), 'server must preserve the existing Deep Core execution gateway');
