@@ -7,6 +7,12 @@ const registry = readJson('country_general_data_registry_v1.json');
 const schema = readJson('country_sector_profile_schema_v1.json');
 const profilesPath = 'country_sector_profiles_v1.json';
 const profiles = existsSync(profilesPath) ? readJson(profilesPath) : null;
+const registryIso3Index = registry.metadata.recordSchema.identityFields.indexOf('iso3');
+const strategicProfileVersionIndex = registry.metadata.recordSchema.strategicProfileFields
+  ? registry.metadata.recordSchema.strategicProfileFields.indexOf('profileVersion') : -1;
+const registryByIso3 = new Map(registry.countries.map((source) => [
+  source.identity[registryIso3Index], source
+]));
 
 test('sector profile registry covers the canonical roster with unique ISO3 identities', () => {
   assert.ok(profiles, 'Run scripts/build_country_sector_profiles_v1.mjs before testing.');
@@ -41,10 +47,12 @@ test('every profile contains the same extensible sector and calculation contract
     assert.ok(row.analytics.militaryCapabilityIndex);
     if (registry.metadata.recordSchema.strategicProfileFields) {
       assert.ok(row.strategicProfile, 'Existing strategic profile was not carried into the sector registry.');
-      const sourceRow = registry.countries.find((source) => source.identity.iso3 === row.identity.iso3);
+      const sourceRow = registryByIso3.get(row.identity.iso3);
+      assert.ok(sourceRow, 'the sector identity must resolve to the canonical registry record');
       assert.ok(String(row.strategicProfile.profileVersion || '').startsWith('OMEGA_COUNTRY_STRATEGIC_PROFILE_V'),
         'the canonical registry must provide an explicit strategic profile version');
-      assert.equal(row.strategicProfile.profileVersion, sourceRow.strategicProfile.profileVersion,
+      assert.ok(strategicProfileVersionIndex >= 0, 'the canonical schema must define strategic profile version provenance');
+      assert.equal(row.strategicProfile.profileVersion, sourceRow.strategicProfile[strategicProfileVersionIndex],
         'the sector profile must retain the exact canonical strategic-profile version');
       assert.deepEqual(Object.keys(row.strategicProfile), registry.metadata.recordSchema.strategicProfileFields);
     }
