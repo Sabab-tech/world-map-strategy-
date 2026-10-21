@@ -10524,7 +10524,7 @@
         "operationalStatus": "SIMULATED_ACTIVE",
         "extractionMethod": "UNDERGROUND_ROOM_PILLAR",
         "extractionEligibility": "SIMULATED_SITE_ELIGIBLE_SUBJECT_TO_GAMEPLAY_GATES",
-        "commercialExtraction": true,
+        "commercialExtraction": false,
         "siteCommissioningLevel": 3,
         "mineLevel": 1,
         "legacyReportedStatusTexts": [
@@ -10738,12 +10738,12 @@
       },
       "mineLevel": 1,
       "map": {
-        "markerEligible": true,
+        "markerEligible": false,
         "countryIsolationKey": "SWE",
         "iconResourceKey": "iron_ore",
         "markerType": "RESOURCE_SITE",
         "coordinatePrecision": "REGIONAL_APPROXIMATION",
-        "aliasOfSiteId": null,
+        "aliasOfSiteId": "SITE_SWE_kiruna_iron_mine",
         "collisionGroup": "SITE_SWE_kiruna_iron_ore_mine"
       },
       "runtime": {
@@ -10754,7 +10754,7 @@
         "countryWarehouseId": "WH-SWE-RAW",
         "requiresSiteSpecificRoute": true,
         "requiresFactoryBinding": true,
-        "aliasOfSiteId": null,
+        "aliasOfSiteId": "SITE_SWE_kiruna_iron_mine",
         "pipeline": {
           "site": "BOUND",
           "extraction": "SIMULATED_ENGINEERING_READY",
