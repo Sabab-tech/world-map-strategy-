@@ -244,8 +244,8 @@ assert(seen.some(x=>x&&x.payload&&x.payload.batch&&x.payload.batch.batchId===bat
 const preGlobal=runtime.diagnostics();
 const expectedResourceCountries=Object.keys(engine.countryProfiles||{});
 assert.equal(preGlobal.countryCount,expectedResourceCountries.length);
-assert.equal(preGlobal.mineSiteReferenceCount,399);
-assert.equal(preGlobal.mineSiteControllerCount,399);
+assert.equal(preGlobal.mineSiteReferenceCount,398);
+assert.equal(preGlobal.mineSiteControllerCount,398);
 const extractionPromiseA=runtime.extractAll();
 const extractionPromiseB=runtime.extractAll();
 assert.equal(extractionPromiseA,extractionPromiseB,'concurrent turn listeners must share one in-flight world extraction');
@@ -265,16 +265,27 @@ const profileMineOutputs=allMineOutputs.filter(x=>x?.assetType==='MINE_SITE');
 const siteLinkedExecutionOutputs=allMineOutputs.filter(x=>x?.siteReferenceKey&&Number(x?.producedQuantity)>0);
 const simulatedMineOutputs=profileMineOutputs.filter(x=>x?.simulationGenerated===true);
 const simulatedFieldOutputs=allMineOutputs.filter(x=>x?.simulationGenerated===true&&['OIL_FIELD','GAS_FIELD'].includes(x?.assetType));
-assert.equal(siteReferenceRows,399);
-assert.equal(siteControllerRows,399);
+assert.equal(siteReferenceRows,398);
+assert.equal(siteControllerRows,398);
 
 // Every new Part 6 mine must use the same authoritative runtime identity and extraction path.
 const part6Data=JSON.parse(fs.readFileSync(new URL('../resource_site_legacy_gameplay_expansion_part_6_v1.json',import.meta.url),'utf8'));
-assert.equal(part6Data.records.length,50,'Part 6 must contribute all 50 new physical sites');
-const part6SiteIds=new Set(part6Data.records.map(site=>site.siteId));
+assert.equal(part6Data.records.length,50,'Part 6 source pack must retain all 50 records including the explicit alias');
+const part6AliasRows=part6Data.records.filter(site=>site?.runtime?.aliasOfSiteId||site?.map?.markerEligible===false);
+assert.equal(part6AliasRows.length,1,'one duplicate physical site must remain a non-executable alias');
+assert.equal(part6AliasRows[0].siteId,'SITE_CAN_voiseys_bay_nickel_mine');
+assert.equal(part6AliasRows[0].runtime?.aliasOfSiteId,'SITE_CAN_voisey_s_bay_nickel_mine');
+assert.equal(part6AliasRows[0].operation?.commercialExtraction,false);
+assert.equal(part6AliasRows[0].map?.markerEligible,false);
+const part6PhysicalSites=part6Data.records.filter(site=>!site?.runtime?.aliasOfSiteId&&site?.map?.markerEligible!==false);
+assert.equal(part6PhysicalSites.length,49,'only 49 unique physical sites should be executable');
+const part6SiteIds=new Set(part6PhysicalSites.map(site=>site.siteId));
 const part6PositiveOutputs=new Set(siteLinkedExecutionOutputs.map(output=>output.siteReferenceKey).filter(siteId=>part6SiteIds.has(siteId)));
-assert.equal(part6PositiveOutputs.size,50,'all 50 new sites must create positive site-linked extraction output');
-for(const site of part6Data.records){
+assert.equal(part6PositiveOutputs.size,49,'each executable Part 6 site must create positive site-linked extraction output');
+const aliasCountryState=worldState[part6AliasRows[0].countryId]||{};
+assert.equal((aliasCountryState.mineSiteReferences||[]).some(ref=>ref.siteReferenceKey===part6AliasRows[0].siteId),false,'alias must not create its own executable site reference');
+assert.equal(Object.values(aliasCountryState.mineOutputs||{}).some(output=>output.siteReferenceKey===part6AliasRows[0].siteId),false,'alias must not produce mine output');
+for(const site of part6PhysicalSites){
   const countryRow=worldState[site.countryId];
   assert(countryRow,site.siteId+': owning country runtime state missing');
   const ref=(countryRow.mineSiteReferences||[]).find(item=>item.siteReferenceKey===site.siteId);
