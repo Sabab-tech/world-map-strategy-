@@ -37,12 +37,35 @@ vm.createContext(context);
 vm.runInContext(read('omega_resource_production_capacity_contract_v1.js'),context,{filename:'omega_resource_production_capacity_contract_v1.js'});
 vm.runInContext(read('omega_resource_realism_runtime_v1.js'),context,{filename:'omega_resource_realism_runtime_v1.js'});
 context.Omega.ResourceLogisticsRuntime={plan:()=>({status:'PLANNED',requestedQuantity:100,dispatchQuantity:100,capacity:100,transportMode:'truck',travelTimeDays:1})};
+const frozenRealism=Object.freeze(context.Omega.ResourceRealism);
+context.OmegaResourceRealism=frozenRealism;
+const extractionCalls={country:0,all:0};
+const frozenEndowment=Object.freeze({
+  VERSION:'test-frozen-endowment',
+  initialize:async()=>({status:'READY'}),
+  extractCountry:async countryId=>{extractionCalls.country++;return{status:'DONE',countryId};},
+  extractAll:async()=>{extractionCalls.all++;return{status:'DONE',results:[{countryId:'CHL'}]};}
+});
+context.Omega.ResourceEndowmentRuntime=frozenEndowment;
+context.OmegaResourceEndowmentRuntime=frozenEndowment;
 vm.runInContext(read('omega_resource_system_hardening_v1.js'),context,{filename:'omega_resource_system_hardening_v1.js'});
 
 const realism=context.Omega.ResourceRealism;
 const hard=context.Omega.ResourceSystemHardening;
 assert(hard);
 assert.equal(hard.VERSION,'1.0.0');
+assert.notEqual(realism,frozenRealism,'hardening must expose a wrapper instead of mutating the frozen ResourceRealism API');
+assert.equal(Object.isFrozen(frozenRealism),true);
+assert.equal(context.Omega.ResourceEndowmentRuntime.__resourceSystemHardeningExtraction,true,
+  'hardening must wrap frozen extraction APIs rather than assign methods onto them');
+assert.notEqual(context.Omega.ResourceEndowmentRuntime,frozenEndowment);
+assert.equal(Object.isFrozen(frozenEndowment),true);
+const extractionProbe=await context.Omega.ResourceEndowmentRuntime.extractCountry('CHL');
+assert.equal(extractionProbe.status,'DONE');
+assert.equal(extractionCalls.country,1);
+const extractionAllProbe=await context.Omega.ResourceEndowmentRuntime.extractAll();
+assert.equal(extractionAllProbe.status,'DONE');
+assert.equal(extractionCalls.all,1);
 
 const t0=performance.now();
 let simulatedCount=0;
