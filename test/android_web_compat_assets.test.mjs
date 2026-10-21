@@ -30,3 +30,15 @@ test('inline JavaScript is transpiled without rewriting non-JavaScript or extern
   assert.match(output, /<script type="application\/json">\{"literal":"\?\. must remain text"\}<\/script>/);
   assert.match(output, /<script src="runtime\.js"><\/script>/);
 });
+
+
+test('emoji icon matching does not use an unsupported Unicode-property regex literal', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const iconSource = await readFile(new URL('../omega_icon_system_v1.js', import.meta.url), 'utf8');
+  assert.doesNotMatch(iconSource, /\/\\p\{Extended_Pictographic\}/,
+    'old WebView must not have to parse an Extended_Pictographic regex literal');
+  assert.match(iconSource, /new RegExp\('\\?\\\\p\{Extended_Pictographic\}/,
+    'the precise matcher must be created dynamically so unsupported Unicode properties can be caught');
+  assert.match(iconSource, /catch\s*\(_\)\s*\{\s*ICON_RE\s*=\s*new RegExp/s,
+    'a legacy-safe matcher must be provided when the Unicode property is unsupported');
+});
