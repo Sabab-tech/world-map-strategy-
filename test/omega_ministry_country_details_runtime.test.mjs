@@ -110,10 +110,18 @@ test('defense command spends no funds when country readiness cannot be updated',
 
 
 test('DEFCON and procurement progress persist only for the selected country', () => {
-  const start = source.indexOf('    setDefconLevel(level) {');
-  const end = source.indexOf('    renderMoDDashboard(m, contentArea) {', start);
-  assert.ok(start >= 0 && end > start, 'country-scoped defence action methods should be bounded');
-  const methods = source.slice(start, end);
+  const extractMethod = signature => {
+    const start = source.indexOf('    ' + signature);
+    const end = source.indexOf('\\n    },', start);
+    assert.ok(start >= 0 && end > start, signature + ' should be a bounded method');
+    return source.slice(start, end + 7);
+  };
+  const methods = [
+    extractMethod('setDefconLevel(level) {'),
+    extractMethod('getProcurementCatalogue() {'),
+    extractMethod('getDefenseCountryRow(countryCode, createIfMissing = false) {'),
+    extractMethod('executeDefenseProcurement(itemId) {')
+  ].join('\\n');
   const context = {
     console,
     Game: { state: { defense: { BD: { orsData: { infantry: 80, armor: 70 }, orsDataSource: 'PLAYER_INITIALIZED_SIMULATION_STATE' } } } },
