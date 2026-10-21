@@ -144,11 +144,13 @@ test('source-backed registry metrics take precedence over legacy country snapsho
     'metric provenance should identify the unified source registry');
 });
 
-test('all canonical country and territory identities build a non-error behaviour profile with explicit evidence state', async () => {
-  const { runtime, behavior } = await loadCountryEngines();
+test('all canonical country and territory identities build profiles and feed country-specific action scoring', async () => {
+  const { runtime, behavior, adaptive } = await loadCountryEngines();
   const countries = runtime.listProfiles();
   assert.ok(countries.length >= 249, 'existing canonical roster should remain available');
   const signatures = new Set();
+  const scoredCountries = new Set();
+  const actionScores = new Set();
   const failures = [];
   for (const row of countries) {
     const profile = behavior.getBehaviorProfile(row.iso3 || row.countryCode);
@@ -172,9 +174,27 @@ test('all canonical country and territory identities build a non-error behaviour
       sites: profile.domainSignals.resources.siteCount,
       options: Object.keys(profile.actionPreferences || {}).sort()
     }));
+    const score = adaptive.scoreAction(row.iso3 || row.countryCode, 'INDUSTRY_BUILD');
+    assert.ok(score && typeof score.known === 'boolean',
+      'adaptive action scorer must return an explicit known/unknown outcome for ' + row.name);
+    if (score.known) {
+      assert.ok(Number.isFinite(score.score) && score.score >= 0 && score.score <= 1,
+        'candidate action score must be finite and normalized for ' + row.name);
+      assert.ok(Number.isFinite(score.confidence) && score.confidence >= 0 && score.confidence <= 1,
+        'candidate action confidence must be normalized for ' + row.name);
+      scoredCountries.add(row.iso3 || row.countryCode);
+      actionScores.add(score.score.toFixed(3));
+    } else {
+      assert.equal(score.score, null,
+        'unknown evidence must not silently become a numeric candidate score for ' + row.name);
+    }
   }
   assert.deepEqual(failures, [], 'no country-specific runtime profile should throw');
   assert.ok(signatures.size > 20, 'country records should produce differentiated runtime signatures, not a common preset');
+  assert.ok(scoredCountries.size > 20,
+    'country identity and evidence must reach adaptive action scoring for the broad canonical roster');
+  assert.ok(actionScores.size > 1,
+    'different country evidence must create differentiated candidate scores rather than one common preset');
 });
 
 test('missing economic evidence stays null instead of creating a fictitious GDP or risk appetite', async () => {
