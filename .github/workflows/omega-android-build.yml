@@ -20,6 +20,17 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      - name: Setup Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Install Android web asset compiler
+        run: npm install --ignore-scripts --no-audit
+
+      - name: Test Android 9 WebView compatibility transform
+        run: npm run test:android-web-compat
+
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
