@@ -810,6 +810,7 @@
   function renderTreasuryTab(p,m,fm,editable,root){
     const fb=financeBucketFor(root,p,false)||{},cash=Math.max(0,finite(fm.treasuryBalanceUsd)||0);
     const debt=Math.max(0,finite(m.publicDebtUsd)||0),rate=finite(fm.policy.interestRateAnnualPct)||0;
+    const reservePct=Math.max(0,finite(fm.policy.minimumReservePctOfAnnualSpending)||0);
     const reserveRuntime=global.OmegaForeignReserveRuntime;
     const reserveView=reserveRuntime&&typeof reserveRuntime.getAccount==='function'?reserveRuntime.getAccount(p.iso3||p.countryCode):null;
     const reserves=reserveView&&own(reserveView,'balanceUsd')?finite(reserveView.balanceUsd)
@@ -948,6 +949,7 @@
   function refreshVisibleMetrics(){
     const content=uiContainer||global.document?.getElementById?.('ministry-dashboard-content');if(!content||!content.querySelectorAll)return;
     const p=viewedCountryProfile();if(!p)return;const m=worldSnapshot().byCode.get(p.countryCode);if(!m)return;
+    const root=rootState();
     const reserveRuntime=global.OmegaForeignReserveRuntime;
     const reserveView=reserveRuntime&&typeof reserveRuntime.getAccount==='function'?reserveRuntime.getAccount(p.iso3||p.countryCode):null;
     const forex=global.OmegaForexMonetaryEngine;
