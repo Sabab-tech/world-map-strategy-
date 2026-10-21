@@ -7,6 +7,7 @@ const ui = readFileSync('omega_country_overview_ministry_ui_v1.js', 'utf8');
 const sw = readFileSync('omega-offline-map-sw.js', 'utf8');
 const index = readFileSync('index.html', 'utf8');
 const workflow = readFileSync('.github/workflows/omega-country-general-data-registry.yml', 'utf8');
+const builder = readFileSync('scripts/build_country_general_data_registry_v1.mjs', 'utf8');
 const roster = readJson('countries.json');
 const registry = readJson('country_general_data_registry_v1.json');
 const schema = readJson('country_sector_profile_schema_v1.json');
@@ -14,6 +15,37 @@ const pack = readJson('country_sector_profiles_v1.json');
 const sectorIds = schema.sectors.map((sector) => sector.id);
 const metricKeys = new Set((registry.fieldCatalogue || []).map((metric) => metric.key));
 const factKeys = new Set(registry.metadata.recordSchema.generalFactFields);
+const expandedWdiMetrics = {
+  "populationAge0To14Pct": "SP.POP.0014.TO.ZS",
+  "populationAge15To64Pct": "SP.POP.1564.TO.ZS",
+  "populationAge65PlusPct": "SP.POP.65UP.TO.ZS",
+  "ageDependencyRatioPct": "SP.POP.DPND",
+  "femaleLifeExpectancyYears": "SP.DYN.LE00.FE.IN",
+  "maleLifeExpectancyYears": "SP.DYN.LE00.MA.IN",
+  "primaryCompletionRatePct": "SE.PRM.CMPT.ZS",
+  "secondarySchoolEnrollmentPct": "SE.SEC.ENRR",
+  "tertiarySchoolEnrollmentPct": "SE.TER.ENRR",
+  "laborForceParticipationPct": "SL.TLF.CACT.ZS",
+  "healthExpenditurePerCapitaUsd": "SH.XPD.CHEX.PC.CD",
+  "mobileSubscriptionsPer100": "IT.CEL.SETS.P2",
+  "fixedBroadbandSubscriptionsPer100": "IT.NET.BBND.P2",
+  "internetSecureServersPerMillion": "IT.NET.SECR.P6",
+  "manufacturingValueAddedPctGdp": "NV.IND.MANF.ZS",
+  "domesticCreditPrivateSectorPctGdp": "FS.AST.PRVT.GD.ZS",
+  "grossCapitalFormationPctGdp": "NE.GDI.TOTL.ZS",
+  "agriculturalLandPct": "AG.LND.AGRI.ZS",
+  "forestAreaPct": "AG.LND.FRST.ZS",
+  "renewableEnergyConsumptionPct": "EG.FEC.RNEW.ZS",
+  "renewableElectricityOutputPct": "EG.ELC.RNEW.ZS",
+  "pm25ExposureUgM3": "EN.ATM.PM25.MC.M3",
+  "freshwaterWithdrawalPctAvailable": "ER.H2O.FWST.ZS",
+  "energyUseKgOilEqPerCapita": "EG.USE.PCAP.KG.OE",
+  "hospitalBedsPer1000": "SH.MED.BEDS.ZS",
+  "physiciansPer1000": "SH.MED.PHYS.ZS",
+  "infantMortalityPer1000": "SP.DYN.IMRT.IN",
+  "maternalMortalityPer100k": "SH.STA.MMRT",
+  "agricultureEmploymentPct": "SL.AGR.EMPL.ZS"
+};
 
 test('sector data pack matches every canonical identity and every schema sector', () => {
   assert.equal(pack.metadata.countryAndTerritoryCount, roster.length);
@@ -55,6 +87,31 @@ test('every compact profile reference resolves to a declared canonical or profil
           'unresolved analytical reference: ' + ref.key);
       }
     }
+  }
+});
+
+
+test('expanded official World Bank indicators are unique and assigned to profile sectors', () => {
+  const start = builder.indexOf('const METRIC_CATALOGUE = [');
+  const end = builder.indexOf('\\n];', start);
+  assert.ok(start >= 0 && end > start, 'canonical metric catalogue must exist');
+  const lines = builder.slice(start, end).split('\\n').filter(line => /^\\s*\\{ key:/.test(line));
+  const keys = lines.map(line => line.match(/key:\\s*'([^']+)'/)?.[1]).filter(Boolean);
+  assert.equal(keys.length, new Set(keys).size, 'canonical metric catalogue must contain no duplicate keys');
+  for (const [key, indicator] of Object.entries(expandedWdiMetrics)) {
+    const rows = lines.filter(line => line.includes("key: '" + key + "'"));
+    assert.equal(rows.length, 1, 'expected exactly one catalogue row for ' + key);
+    assert.ok(rows[0].includes("wb: '" + indicator + "'"), key + ' must use the declared World Bank indicator');
+    assert.ok(metricKeys.has(key), 'build output field catalogue must contain ' + key);
+    assert.ok(schema.sectors.some(sector => sector.metricKeys?.includes(key)), key + ' must be visible in a profile sector');
+  }
+  for (const [key, indicator] of Object.entries({
+    malePopulationPct: 'SP.POP.TOTL.MA.ZS',
+    femalePopulationPct: 'SP.POP.TOTL.FE.ZS'
+  })) {
+    const rows = lines.filter(line => line.includes("key: '" + key + "'"));
+    assert.equal(rows.length, 1);
+    assert.ok(rows[0].includes("wb: '" + indicator + "'"), key + ' must prefer the official WDI observation when available');
   }
 });
 
