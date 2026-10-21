@@ -457,16 +457,155 @@ window.OmegaCabinetUI = {
     // Country Intelligence & Specifications Lookup Core (No hardcoded countries)
     // Country Intelligence & Specifications Lookup Core.
     // Canonical runtime data is the only factual source; absent fields stay absent.
+    getActiveCountryKey() {
+        const simulation = window.Omega && window.Omega.Simulation;
+        const candidates = [
+            window.OmegaMinistryViewCountry,
+            window.CountryIOS && window.CountryIOS.activeCountry,
+            window.Game && window.Game.currentActiveCountry,
+            window.currentActiveCountry,
+            simulation && typeof simulation.getPlayerCountryId === 'function' ? simulation.getPlayerCountryId() : null,
+            window.Game && window.Game.state && window.Game.state.playerCountryId,
+            window.Game && window.Game.state && window.Game.state.playerCountryCode,
+            window.Game && window.Game.playerCountryId,
+            window.Game && window.Game.playerCountryCode,
+            window.Game && window.Game.playerCountry,
+            window.Game && window.Game.countryId,
+            this.activeCountry
+        ];
+        const runtime = window.OmegaCountryRuntimeData;
+        for (const candidate of candidates) {
+            if (candidate === null || candidate === undefined || candidate === '') continue;
+            try {
+                const identity = runtime && typeof runtime.resolveCountry === 'function'
+                    ? runtime.resolveCountry(candidate) : null;
+                if (identity && (identity.countryCode || identity.iso3)) return identity.countryCode || identity.iso3;
+            } catch (_) {}
+            if (typeof candidate === 'string' && candidate.trim()) return candidate.trim();
+            if (typeof candidate === 'object') {
+                const raw = candidate.countryId || candidate.countryCode || candidate.iso3 ||
+                    candidate.iso2 || candidate.code || candidate.name;
+                if (raw) return String(raw);
+            }
+        }
+        return '';
+    },
+
+    getCountryMinistryMetric(ministryId, metric) {
+        const country = this.getActiveCountryKey();
+        const gateway = window.OmegaCountryDataGateway || window.Omega && window.Omega.CountryDataGateway;
+        const unavailable = { value: null, display: 'তথ্য অনুপস্থিত', source: 'NO_COUNTRY_SPECIFIC_RECORD', year: null };
+        if (!gateway || typeof gateway.getValue !== 'function') return unavailable;
+        const domainsByMinistry = {
+            defense: ['defense', 'military'],
+            military: ['military', 'defense'],
+            foreign_affairs: ['foreign_affairs', 'foreign', 'diplomacy'],
+            treasury_finance: ['treasury_finance'],
+            central_bank: ['central_bank'],
+            taxes: ['taxes'],
+            trade: ['trade'],
+            production: ['production', 'industry'],
+            energy_mining: ['energy_mining', 'energy', 'resource'],
+            resource: ['resource', 'energy_mining'],
+            mega_projects: ['mega_projects', 'infrastructure'],
+            infrastructure: ['infrastructure'],
+            intelligence_cyber: ['intelligence_cyber', 'intelligence', 'cyber'],
+            education: ['education'],
+            health_welfare: ['health_welfare', 'health'],
+            agriculture_food: ['agriculture_food', 'agriculture'],
+            interior_security: ['interior_security', 'interior', 'police'],
+            laws: ['laws', 'justice'],
+            science_research: ['science_research', 'technology', 'education'],
+            environment: ['environment', 'society'],
+            labor: ['labor', 'society', 'population'],
+            religion: ['religion', 'society'],
+            media: ['media', 'society'],
+            infrastructure_ministry: ['infrastructure']
+        };
+        const domains = domainsByMinistry[ministryId] || [String(ministryId || '').toLowerCase()];
+        const slug = String(ministryId || '').replace(/[^A-Za-z0-9]+/g, '_');
+        const nested = [
+            'ministries.' + ministryId + '.' + metric,
+            'ministryState.' + ministryId + '.' + metric,
+            'ministry_state.' + ministryId + '.' + metric,
+            'ministryBudgets.' + ministryId,
+            'ministry_budgets.' + ministryId,
+            'budgetAllocations.' + ministryId,
+            'budget_allocations.' + ministryId,
+            'budgets.' + ministryId,
+            slug + '.' + metric,
+            metric + 'ByMinistry.' + ministryId,
+            metric + '_by_ministry.' + ministryId
+        ];
+        let result = gateway.getValue(country, domains, nested.concat([
+            metric, metric + 'Value', metric + '_value',
+            metric === 'budget' ? 'ministryBudget' : '',
+            metric === 'budget' ? 'budgetAllocation' : '',
+            metric === 'budget' ? 'allocatedBudget' : '',
+            metric === 'budget' ? 'annualBudget' : ''
+        ]).filter(Boolean));
+        // Finance can carry a per-ministry allocation map; query only explicit ministry keys,
+        // never the country's aggregate treasury/budget as if it belonged to one ministry.
+        if ((!result || result.status !== 'AVAILABLE') && metric === 'budget') {
+            result = gateway.getValue(country, ['finance'], nested);
+        }
+        if (!result || result.status !== 'AVAILABLE' || result.value === null || result.value === undefined || result.value === '') return unavailable;
+        let display = String(result.value);
+        const number = typeof result.value === 'number' ? result.value
+            : (typeof result.value === 'string' && /^[+-]?(?:\d+\.?\d*|\.\d+)$/.test(result.value.trim()) ? Number(result.value) : null);
+        if (metric === 'budget' && number !== null && Number.isFinite(number)) {
+            display = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD',
+                notation: Math.abs(number) >= 1e6 ? 'compact' : 'standard', maximumFractionDigits: 2 }).format(number);
+        } else if (metric === 'efficiency' && number !== null && Number.isFinite(number)) {
+            display = number + '%';
+        }
+        return { value: result.value, display, source: result.sourceName || result.sourceId || result.authority || 'REGISTERED_COUNTRY_STATE',
+            year: result.year ?? null };
+    },
+
     getCountryDetails(countryKey) {
-        const requested = String(countryKey || (window.Game && window.Game.currentActiveCountry) || window.currentActiveCountry || '').trim();
+        const requested = String(countryKey || this.getActiveCountryKey() || (window.Game && window.Game.currentActiveCountry) || window.currentActiveCountry || '').trim();
         const runtime = window.OmegaCountryRuntimeData;
         const general = window.OmegaCountryGeneralDataRuntime;
         const unavailable = 'তথ্য অনুপস্থিত';
-        const asText = value => value === null || value === undefined || String(value).trim() === '' ? unavailable : String(value);
+        const asText = value => {
+            if (value === null || value === undefined || (typeof value === 'string' && value.trim() === '')) return unavailable;
+            if (typeof value === 'object' && !Array.isArray(value)) {
+                const label = value.name || value.label || value.value || value.code;
+                return label === null || label === undefined || String(label).trim() === '' ? unavailable : String(label);
+            }
+            return String(value);
+        };
+        const displayList = value => {
+            if (value === null || value === undefined || value === '') return unavailable;
+            const items = Array.isArray(value) ? value : [value];
+            const labels = items.map(item => {
+                if (item === null || item === undefined) return '';
+                if (typeof item === 'object') return String(item.name || item.label || item.code || item.currency || '').trim();
+                return String(item).trim();
+            }).filter(Boolean);
+            return labels.length ? labels.join(', ') : unavailable;
+        };
         const number = value => {
             if (value === null || value === undefined || (typeof value === 'string' && value.trim() === '')) return null;
             const parsed = Number(value);
             return Number.isFinite(parsed) ? parsed : null;
+        };
+        const firstNumber = (...values) => {
+            for (const value of values) {
+                const parsed = number(value);
+                if (parsed !== null) return parsed;
+            }
+            return null;
+        };
+        const firstPresent = (...values) => {
+            for (const value of values) {
+                if (value === null || value === undefined) continue;
+                if (typeof value === 'string' && value.trim() === '') continue;
+                if (Array.isArray(value) && value.length === 0) continue;
+                return value;
+            }
+            return null;
         };
         const formatMoney = value => {
             const n = number(value);
@@ -485,24 +624,83 @@ window.OmegaCabinetUI = {
         let countryRecord = null;
         let economyRecord = null;
         let populationRecord = null;
+        let economyLiveRecord = null;
+        let populationLiveRecord = null;
+        let governmentRecord = null;
         try {
             identity = runtime?.resolveCountry?.(requested) || null;
             runtimeProfile = identity ? runtime?.getProfile?.(identity.countryCode) : null;
             countryRecord = identity ? general?.getCountryRecord?.(identity.iso3 || identity.countryCode) : null;
+            economyLiveRecord = identity ? runtime?.getLiveRecord?.('economy', identity.countryCode) : null;
+            populationLiveRecord = identity ? runtime?.getLiveRecord?.('population', identity.countryCode) : null;
             economyRecord = identity ? runtime?.getRecord?.('economy', identity.countryCode) : null;
             populationRecord = identity ? runtime?.getRecord?.('population', identity.countryCode) : null;
+            governmentRecord = identity ? (
+                runtime?.getRecord?.('government', identity.countryCode) ||
+                runtime?.getRecord?.('politics', identity.countryCode) ||
+                runtime?.getRecord?.('state', identity.countryCode)
+            ) : null;
         } catch (error) {
             console.warn('[OMEGA Country Details] Runtime lookup failed:', error);
         }
 
         const metrics = countryRecord?.metrics || {};
         const metadata = countryRecord?.metricMetadata || {};
+        const generalFacts = countryRecord?.generalFacts || {};
         const identityCode = identity?.countryCode || identity?.code || null;
+        const gateway = window.OmegaCountryDataGateway;
+        const sharedSnapshot = identityCode && gateway?.getSnapshot?.(identityCode) || null;
+        const sharedField = key => sharedSnapshot?.countryCode && sharedSnapshot.fields?.[key]?.status === 'AVAILABLE'
+            ? sharedSnapshot.fields[key] : null;
+        const sharedValue = key => sharedField(key)?.value ?? null;
+        const sharedRead = (domains, paths) => {
+            const hit = gateway?.getValue?.(requested, domains, paths);
+            return hit?.status === 'AVAILABLE' ? hit.value : null;
+        };
         const canonicalName = identity?.name || identity?.officialName || countryRecord?.identity?.name || null;
-        const capital = runtimeProfile?.capital || runtime?.getCapital?.(identityCode) || null;
-        const population = metrics.populationTotal ?? metrics.population ?? populationRecord?.population ?? populationRecord?.population_total ?? null;
-        const gdp = metrics.gdpCurrentUsd ?? metrics.gdpUsd ?? economyRecord?.gdp ?? economyRecord?.gdp_current_usd ?? null;
-        const gdpYear = metadata.gdpCurrentUsd?.year ?? metadata.gdpUsd?.year ?? null;
+        const livePopulation = firstNumber(
+            populationLiveRecord?.populationTotal, populationLiveRecord?.population_total,
+            populationLiveRecord?.totalPopulation, populationLiveRecord?.population,
+            populationLiveRecord?.population_2015
+        );
+        const liveGdp = firstNumber(
+            economyLiveRecord?.gdpCurrentUsd, economyLiveRecord?.gdp_current_usd,
+            economyLiveRecord?.gdpUsd, economyLiveRecord?.gdp_usd,
+            economyLiveRecord?.gdp, economyLiveRecord?.GDP
+        );
+        // Live player-driven state wins; sourced national observations are the fallback.
+        const population = sharedSnapshot?.countryCode
+            ? firstNumber(sharedValue('population'))
+            : (livePopulation !== null ? livePopulation : firstNumber(metrics.populationTotal, metrics.population,
+                populationRecord?.populationTotal, populationRecord?.population_total,
+                populationRecord?.totalPopulation, populationRecord?.population, populationRecord?.population_2015));
+        const gdp = sharedSnapshot?.countryCode
+            ? firstNumber(sharedValue('gdp'))
+            : (liveGdp !== null ? liveGdp : firstNumber(metrics.gdpCurrentUsd, metrics.gdpUsd,
+                economyRecord?.gdpCurrentUsd, economyRecord?.gdp_current_usd,
+                economyRecord?.gdpUsd, economyRecord?.gdp_usd, economyRecord?.gdp, economyRecord?.GDP));
+        const gdpYear = sharedField('gdp')?.year ?? (liveGdp !== null
+            ? firstPresent(economyLiveRecord?.gdpObservationYear, economyLiveRecord?.gdpYear)
+            : (metadata.gdpCurrentUsd?.year ?? metadata.gdpUsd?.year ?? null));
+        const populationYear = sharedField('population')?.year ?? (livePopulation !== null
+            ? firstPresent(populationLiveRecord?.populationObservationYear, populationLiveRecord?.populationYear)
+            : (metadata.populationTotal?.year ?? metadata.population?.year ?? null));
+        const capital = sharedSnapshot?.countryCode
+            ? sharedValue('capital')
+            : firstPresent(governmentRecord?.capital, governmentRecord?.capitalCity, governmentRecord?.capital_city,
+                generalFacts.capital, runtimeProfile?.capital, runtime?.getCapital?.(identityCode));
+        const govtName = sharedSnapshot?.countryCode
+            ? sharedRead(['government','politics','state'], ['governmentName','government_name','governmentTitle','name'])
+            : firstPresent(governmentRecord?.governmentName, governmentRecord?.government_name, governmentRecord?.governmentTitle, governmentRecord?.name);
+        const govtSystem = sharedSnapshot?.countryCode
+            ? sharedRead(['government','politics','state'], ['governmentType','government_type','formOfGovernment','form_of_government','regimeType','regime'])
+            : firstPresent(governmentRecord?.governmentType, governmentRecord?.government_type, governmentRecord?.formOfGovernment, governmentRecord?.form_of_government, governmentRecord?.regimeType, governmentRecord?.regime);
+        const leader = sharedSnapshot?.countryCode
+            ? sharedRead(['government','politics','state'], ['leaderName','leader_name','headOfState','head_of_state','president','primeMinister','prime_minister'])
+            : firstPresent(governmentRecord?.leaderName, governmentRecord?.leader_name, governmentRecord?.headOfState, governmentRecord?.head_of_state, governmentRecord?.president, governmentRecord?.primeMinister, governmentRecord?.prime_minister);
+        const currency = sharedSnapshot?.countryCode ? sharedValue('currency')
+            : firstPresent(economyLiveRecord?.currency_code, economyLiveRecord?.currencyCode, economyRecord?.currency_code, economyRecord?.currencyCode, generalFacts.currencies);
+        const language = sharedSnapshot?.countryCode ? sharedValue('languages') : firstPresent(generalFacts.languages, countryRecord?.identity?.languages);
         const strategicProfile = runtime?.getStrategicProfile?.(identityCode) || null;
 
         const resObj = {
@@ -510,28 +708,32 @@ window.OmegaCabinetUI = {
             iso3: identity?.iso3 || null,
             flag: runtimeProfile?.flag || runtime?.flagFor?.(identityCode) || '🌐',
             name: asText(canonicalName),
-            govtName: unavailable,
+            govtName: asText(govtName),
             capital: asText(capital),
-            govtSystem: unavailable,
+            govtSystem: asText(govtSystem),
             population: formatPopulation(population),
             populationValue: number(population),
             gdp: formatMoney(gdp),
             gdpValue: number(gdp),
             gdpObservationYear: gdpYear,
+            populationObservationYear: populationYear,
             militaryRank: unavailable,
             economicRank: unavailable,
             hdi: metrics.humanDevelopmentIndex == null ? unavailable : String(metrics.humanDevelopmentIndex),
             stability: metrics.politicalStabilityWgiEstimate == null ? unavailable : String(metrics.politicalStabilityWgiEstimate),
-            leader: unavailable,
-            currency: asText(economyRecord?.currency_code || economyRecord?.currencyCode),
-            language: unavailable,
+            leader: asText(leader),
+            currency: displayList(currency),
+            language: displayList(language),
             strategicProfile: strategicProfile || null,
             dataStatus: {
-                availability: identity ? (countryRecord ? 'PARTIAL' : 'IDENTITY_ONLY') : 'UNAVAILABLE',
-                source: countryRecord?.datasetId || 'OmegaCountryRuntimeData',
+                availability: identity ? ((countryRecord || economyRecord || populationRecord) ? 'PARTIAL' : 'IDENTITY_ONLY') : 'UNAVAILABLE',
+                source: sharedSnapshot ? 'OmegaCountryDataGateway' : ((liveGdp !== null || livePopulation !== null || governmentRecord) ? 'LIVE_GAME_STATE + Country Runtime' : (countryRecord?.datasetId || 'OmegaCountryRuntimeData')),
                 schemaVersion: countryRecord?.schemaVersion || null,
                 missingValuePolicy: 'MISSING_VALUES_REMAIN_UNAVAILABLE',
-                gdpSource: metadata.gdpCurrentUsd?.sourceName || metadata.gdpCurrentUsd?.sourceId || null,
+                gatewayDiagnostics: sharedSnapshot?.diagnostics || null,
+                sourceFields: sharedSnapshot?.fields || null,
+                gdpSource: sharedField('gdp')?.sourceName || sharedField('gdp')?.sourceId || (liveGdp !== null ? 'LIVE_GAME_STATE' : (metadata.gdpCurrentUsd?.sourceName || metadata.gdpCurrentUsd?.sourceId || (gdp !== null ? 'OmegaCountryRuntimeData' : null))),
+                populationSource: sharedField('population')?.sourceName || sharedField('population')?.sourceId || (livePopulation !== null ? 'LIVE_GAME_STATE' : (metadata.populationTotal?.sourceName || metadata.populationTotal?.sourceId || (population !== null ? 'OmegaCountryRuntimeData' : null))),
                 gdpYear
             },
             ministers: {}
@@ -563,7 +765,7 @@ window.OmegaCabinetUI = {
             role: 'Head of Cabinet & Supreme Executive Council',
             status: 'SOVEREIGN',
             efficiency: 99,
-            budget: '$250.0B',
+            budget: null,
             loyalty: 'EXTREME',
             trust: 99,
             stress: 5,
@@ -584,7 +786,7 @@ window.OmegaCabinetUI = {
             role: 'Minister of International Trade',
             status: 'ACTIVE',
             efficiency: 92,
-            budget: '$42.5B',
+            budget: null,
             loyalty: 'HIGH',
             trust: 90,
             stress: 10,
@@ -605,7 +807,7 @@ window.OmegaCabinetUI = {
             role: 'Minister of Heavy Production & Industry',
             status: 'OPTIMAL',
             efficiency: 95,
-            budget: '$68.0B',
+            budget: null,
             loyalty: 'EXTREME',
             trust: 94,
             stress: 15,
@@ -626,7 +828,7 @@ window.OmegaCabinetUI = {
             role: 'Commissioner of National Revenue & Tax',
             status: 'STABLE',
             efficiency: 89,
-            budget: '$18.2B',
+            budget: null,
             loyalty: 'HIGH',
             trust: 88,
             stress: 20,
@@ -647,7 +849,7 @@ window.OmegaCabinetUI = {
             role: 'Governor of Central Bank & Treasury',
             status: 'SECURE',
             efficiency: 96,
-            budget: '$150.0B',
+            budget: null,
             loyalty: 'EXTREME',
             trust: 96,
             stress: 12,
@@ -668,7 +870,7 @@ window.OmegaCabinetUI = {
             role: 'Attorney General & Minister of Law',
             status: 'ENFORCED',
             efficiency: 91,
-            budget: '$28.4B',
+            budget: null,
             loyalty: 'HIGH',
             trust: 92,
             stress: 14,
@@ -689,7 +891,7 @@ window.OmegaCabinetUI = {
             role: 'Minister of Education & Talent Academy',
             status: 'ADVANCING',
             efficiency: 93,
-            budget: '$45.0B',
+            budget: null,
             loyalty: 'HIGH',
             trust: 91,
             stress: 8,
@@ -710,7 +912,7 @@ window.OmegaCabinetUI = {
             role: 'Minister of Infrastructure & Transport',
             status: 'EXPANDING',
             efficiency: 94,
-            budget: '$82.0B',
+            budget: null,
             loyalty: 'HIGH',
             trust: 93,
             stress: 16,
@@ -731,7 +933,7 @@ window.OmegaCabinetUI = {
             role: 'Director of Science & Quantum Innovation',
             status: 'BREAKTHROUGH',
             efficiency: 97,
-            budget: '$54.0B',
+            budget: null,
             loyalty: 'EXTREME',
             trust: 95,
             stress: 18,
@@ -752,7 +954,7 @@ window.OmegaCabinetUI = {
             role: 'Secretary of Defense & Supreme War Command',
             status: 'DEFCON 2',
             efficiency: 98,
-            budget: '$180.0B',
+            budget: null,
             loyalty: 'EXTREME',
             trust: 97,
             stress: 22,
@@ -773,7 +975,7 @@ window.OmegaCabinetUI = {
             role: 'Minister of Diplomatic Missions & Treaties',
             status: 'DIPLOMATIC',
             efficiency: 91,
-            budget: '$32.0B',
+            budget: null,
             loyalty: 'HIGH',
             trust: 89,
             stress: 11,
@@ -794,7 +996,7 @@ window.OmegaCabinetUI = {
             role: 'Minister of Strategic Fuel & Resources',
             status: 'POWERFUL',
             efficiency: 92,
-            budget: '$75.0B',
+            budget: null,
             loyalty: 'HIGH',
             trust: 90,
             stress: 14,
@@ -815,7 +1017,7 @@ window.OmegaCabinetUI = {
             role: 'Director of Intelligence & Cyber Security',
             status: 'VIGILANT',
             efficiency: 96,
-            budget: '$52.0B',
+            budget: null,
             loyalty: 'EXTREME',
             trust: 95,
             stress: 25,
@@ -836,7 +1038,7 @@ window.OmegaCabinetUI = {
             role: 'Minister of Agriculture & Food Reserves',
             status: 'ABUNDANT',
             efficiency: 90,
-            budget: '$34.0B',
+            budget: null,
             loyalty: 'HIGH',
             trust: 89,
             stress: 7,
@@ -857,7 +1059,7 @@ window.OmegaCabinetUI = {
             role: 'Minister of Civil Order & Public Safety',
             status: 'PEACEFUL',
             efficiency: 88,
-            budget: '$36.0B',
+            budget: null,
             loyalty: 'HIGH',
             trust: 88,
             stress: 13,
@@ -879,7 +1081,7 @@ window.OmegaCabinetUI = {
             role: 'Minister of Healthcare & Emergency Medicine',
             status: 'HEALTHY',
             efficiency: 92,
-            budget: '$40.0B',
+            budget: null,
             loyalty: 'HIGH',
             trust: 91,
             stress: 9,
@@ -900,7 +1102,7 @@ window.OmegaCabinetUI = {
             role: 'Minister of Finance & Budget Allocations',
             status: 'BALANCED',
             efficiency: 95,
-            budget: '$110.0B',
+            budget: null,
             loyalty: 'EXTREME',
             trust: 93,
             stress: 19,
@@ -921,7 +1123,7 @@ window.OmegaCabinetUI = {
             role: 'Chief Engineer of Sovereign Megaprojects',
             status: 'CONSTRUCTING',
             efficiency: 93,
-            budget: '$95.0B',
+            budget: null,
             loyalty: 'HIGH',
             trust: 92,
             stress: 17,
@@ -1391,7 +1593,13 @@ window.OmegaCabinetUI = {
             this.activeDashboardTab = ministryId === 'interior_security' ? 'security_operations' : 'interrogate';
         }
         this.currentDashboardMinistryId = ministryId;
-        const countryDetails = this.getCountryDetails(this.activeCountry);
+        const countryKey = this.getActiveCountryKey();
+        const countryDetails = this.getCountryDetails(countryKey);
+        const ministryEfficiency = this.getCountryMinistryMetric(ministryId, 'efficiency');
+        const ministryBudget = this.getCountryMinistryMetric(ministryId, 'budget');
+        const ministryStatus = this.getCountryMinistryMetric(ministryId, 'status');
+        const escapeAttribute = value => String(value == null ? '' : value)
+            .replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
         const dashWin = document.getElementById('ministry-dashboard-view');
         const contentArea = document.getElementById('ministry-dashboard-content');
@@ -1479,13 +1687,13 @@ window.OmegaCabinetUI = {
 
                 <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
                     <div style="background:rgba(0,0,0,0.4); padding:8px 14px; border-radius:8px; border:1px solid rgba(255,255,255,0.1); font-family:'Share Tech Mono',monospace; font-size:11px;">
-                        <span style="color:#94a3b8;">EFFICIENCY</span><br/><strong style="color:#22c55e; font-size:14px;">${m.efficiency}%</strong>
+                        <span style="color:#94a3b8;">EFFICIENCY · SELECTED COUNTRY</span><br/><strong title="${escapeAttribute(ministryEfficiency.source)}" style="color:#22c55e; font-size:14px;">${escapeAttribute(ministryEfficiency.display)}</strong>
                     </div>
                     <div style="background:rgba(0,0,0,0.4); padding:8px 14px; border-radius:8px; border:1px solid rgba(255,255,255,0.1); font-family:'Share Tech Mono',monospace; font-size:11px;">
-                        <span style="color:#94a3b8;">ANNUAL BUDGET</span><br/><strong style="color:#ffd700; font-size:14px;">${m.budget}</strong>
+                        <span style="color:#94a3b8;">ANNUAL BUDGET · SELECTED COUNTRY</span><br/><strong title="${escapeAttribute(ministryBudget.source)}" style="color:#ffd700; font-size:14px;">${escapeAttribute(ministryBudget.display)}</strong>
                     </div>
                     <div style="background:rgba(0,0,0,0.4); padding:8px 14px; border-radius:8px; border:1px solid rgba(255,255,255,0.1); font-family:'Share Tech Mono',monospace; font-size:11px;">
-                        <span style="color:#94a3b8;">STATUS</span><br/><strong style="color:#00e5ff; font-size:14px;">${m.status}</strong>
+                        <span style="color:#94a3b8;">STATUS · SELECTED COUNTRY</span><br/><strong title="${escapeAttribute(ministryStatus.source)}" style="color:#00e5ff; font-size:14px;">${escapeAttribute(ministryStatus.display)}</strong>
                     </div>
                 </div>
             </div>
@@ -1750,7 +1958,20 @@ window.OmegaCabinetUI = {
     },
 
     setDefconLevel(level) {
-        this.defconLevel = parseInt(level, 10);
+        const parsedLevel = parseInt(level, 10);
+        if (!Number.isInteger(parsedLevel) || parsedLevel < 1 || parsedLevel > 5) return false;
+        const countryCode = this.getActiveCountryKey();
+        const identity = window.OmegaCountryRuntimeData?.resolveCountry?.(countryCode);
+        const canonicalCountry = identity?.countryCode || identity?.iso2 || identity?.iso3;
+        if (!canonicalCountry) {
+            if (window.showOmegaNotification) window.showOmegaNotification("DEFCON NOT UPDATED", "Select a valid country first.", "error");
+            return false;
+        }
+        const stored = this.getDefenseCountryRow(canonicalCountry, true);
+        if (!stored?.row) return false;
+        stored.row.defconLevel = parsedLevel;
+        stored.row.defconSource = 'PLAYER_SELECTED_COUNTRY_SIMULATION';
+        this.defconLevel = parsedLevel;
         const defconLabels = {
             1: "DEFCON 1: MAXIMUM WAR READINESS & STRATEGIC MISSILE SILO UNLOCK",
             2: "DEFCON 2: ELEVATED ALERT - AIR DEFENSE DOMES & SUBMARINE FLEET ACTIVE",
@@ -1760,49 +1981,166 @@ window.OmegaCabinetUI = {
         };
         const defconTypes = { 1: "danger", 2: "warning", 3: "warning", 4: "info", 5: "success" };
         if (window.showOmegaNotification) {
-            window.showOmegaNotification("DEFCON WAR ALERT UPDATED", defconLabels[this.defconLevel] || "ALERT UPDATED", defconTypes[this.defconLevel] || "info");
+            window.showOmegaNotification("DEFCON WAR ALERT UPDATED", `${canonicalCountry}: ${defconLabels[this.defconLevel] || "ALERT UPDATED"}`, defconTypes[this.defconLevel] || "info");
         }
         if (this.ministriesDatabase && this.ministriesDatabase.defense) {
-            this.ministriesDatabase.defense.status = `DEFCON ${this.defconLevel}`;
+            this.ministriesDatabase.defense.status = `${canonicalCountry} · DEFCON ${this.defconLevel}`;
         }
         this.renderMinistryDashboard('defense');
+        return true;
+    },
+
+    getDefenseCountryRow(countryCode, createIfMissing = false) {
+        const runtime = window.OmegaCountryRuntimeData;
+        const game = window.Game;
+        const roots = [game && game.state, window.gameState, window.Omega && window.Omega.Simulation && window.Omega.Simulation.state]
+            .filter((value, index, list) => value && typeof value === 'object' && list.indexOf(value) === index);
+        const matches = key => {
+            try {
+                const identity = runtime && runtime.resolveCountry ? runtime.resolveCountry(key) : null;
+                return identity ? (identity.countryCode || identity.iso2 || identity.iso3) === countryCode
+                    : String(key).trim().toUpperCase() === String(countryCode).trim().toUpperCase();
+            } catch (_) {
+                return String(key).trim().toUpperCase() === String(countryCode).trim().toUpperCase();
+            }
+        };
+        for (const root of roots) {
+            const bucket = root.defense;
+            if (!bucket || typeof bucket !== 'object') continue;
+            const key = Object.keys(bucket).find(matches);
+            if (key && bucket[key] && typeof bucket[key] === 'object') {
+                return { state: root, bucket, key, row: bucket[key] };
+            }
+        }
+        if (!createIfMissing) return null;
+        let root = roots[0];
+        if (!root) {
+            if (game) root = (game.state = {});
+            else root = (window.gameState = {});
+        }
+        if (!root.defense || typeof root.defense !== 'object') root.defense = {};
+        const bucket = root.defense;
+        const key = countryCode;
+        const row = bucket[key] && typeof bucket[key] === 'object' ? bucket[key] : {};
+        bucket[key] = row;
+        return { state: root, bucket, key, row };
+    },
+
+    getProcurementCatalogue() {
+        return [
+            { id: 'f35_jets', name: '5th-Gen Multirole Stealth Aircraft', stage: 0, maxStage: 8, cost: 1200 },
+            { id: 'sam_shield', name: 'Strategic SAM Air Defense Shield', stage: 0, maxStage: 8, cost: 1500 },
+            { id: 'mbt_tanks', name: 'Main Battle Tank Armored Division', stage: 0, maxStage: 8, cost: 850 },
+            { id: 'attack_subs', name: 'Stealth Attack Submarines', stage: 0, maxStage: 8, cost: 1100 },
+            { id: 'strike_drones', name: 'Autonomous Strike Drone Swarms', stage: 0, maxStage: 8, cost: 450 },
+            { id: 'hypersonic', name: 'Hypersonic Glide Interceptor', stage: 0, maxStage: 8, cost: 1800 },
+            { id: 'ew_radar', name: 'Quantum Radar Jamming Stations', stage: 0, maxStage: 8, cost: 350 },
+            { id: 'night_vision', name: 'Infantry Night Vision & Optics', stage: 0, maxStage: 8, cost: 200 }
+        ];
+    },
+
+    getDefenseReadinessState(countryKey, createIfMissing = false) {
+        const runtime = window.OmegaCountryRuntimeData;
+        const requested = countryKey || this.getActiveCountryKey();
+        const identity = runtime && runtime.resolveCountry ? runtime.resolveCountry(requested) : null;
+        const code = identity && (identity.countryCode || identity.iso2 || identity.iso3);
+        if (!code) return null;
+
+        const keys = ['infantry', 'armor', 'air_defense', 'air_force', 'navy',
+            'ammunition', 'recon', 'cyber_ew', 'satellite', 'morale'];
+        const normalize = value => {
+            const output = {};
+            keys.forEach(key => {
+                const raw = value && value[key];
+                const number = raw === null || raw === undefined || raw === '' ? null : Number(raw);
+                output[key] = Number.isFinite(number) && number >= 0 && number <= 100 ? number : null;
+            });
+            return output;
+        };
+        const validCount = value => Object.values(value || {}).filter(n => Number.isFinite(n)).length;
+        const liveDefense = runtime && typeof runtime.getLiveRecord === 'function'
+            ? (runtime.getLiveRecord('defense', code) || runtime.getLiveRecord('military', code)) : null;
+        const liveBreakdown = liveDefense && (liveDefense.orsData || liveDefense.operationalReadiness ||
+            liveDefense.readinessBreakdown || liveDefense.readinessProfile || liveDefense.capabilityReadiness);
+        const recordedBreakdown = normalize(liveBreakdown || liveDefense);
+        if (validCount(recordedBreakdown) > 0) {
+            return { countryCode: code, breakdown: recordedBreakdown,
+                source: liveDefense?.orsDataSource || 'LIVE_GAME_STATE', availability: liveDefense?.orsDataSource ? 'SIMULATED' : 'RECORDED' };
+        }
+
+        const aggregateCandidates = [
+            liveDefense && liveDefense.overallReadinessPercent,
+            liveDefense && liveDefense.combatReadiness,
+            liveDefense && liveDefense.readinessScore,
+            liveDefense && liveDefense.readiness
+        ];
+        const aggregate = aggregateCandidates.map(value => value === null || value === undefined || value === '' ? null : Number(value))
+            .find(value => Number.isFinite(value) && value >= 0 && value <= 100);
+        if (aggregate !== undefined && aggregate !== null && !createIfMissing) {
+            return { countryCode: code, breakdown: recordedBreakdown, score: aggregate, source: 'LIVE_GAME_STATE', availability: 'RECORDED_AGGREGATE' };
+        }
+
+        // Player changes are stored inside this country's simulation state only.
+        // There is deliberately no shared 80–96% baseline used for every nation.
+        if (!createIfMissing) {
+            return { countryCode: code, breakdown: normalize(null), score: null,
+                source: 'NO_COUNTRY_READINESS_RECORD', availability: 'UNAVAILABLE' };
+        }
+        const stored = this.getDefenseCountryRow(code, true);
+        if (!stored || !stored.row) return null;
+        const row = stored.row;
+        const prior = normalize(row.orsData || row.operationalReadiness || liveBreakdown || liveDefense);
+        const initial = {};
+        keys.forEach(key => { initial[key] = Number.isFinite(prior[key]) ? prior[key] : 50; });
+        row.orsData = initial;
+        row.orsDataSource = row.orsDataSource || 'PLAYER_INITIALIZED_SIMULATION_STATE';
+        return { countryCode: code, breakdown: normalize(initial), source: row.orsDataSource, availability: 'SIMULATED' };
     },
 
     calculateORS(countryKey) {
-        if (!this.orsData) {
-            this.orsData = {
-                infantry: 88,
-                armor: 84,
-                air_defense: 92,
-                air_force: 89,
-                navy: 82,
-                ammunition: 95,
-                recon: 96,
-                cyber_ew: 91,
-                satellite: 87,
-                morale: 94
-            };
+        const state = this.getDefenseReadinessState(countryKey, false);
+        const breakdown = state && state.breakdown || {
+            infantry: null, armor: null, air_defense: null, air_force: null, navy: null,
+            ammunition: null, recon: null, cyber_ew: null, satellite: null, morale: null
+        };
+        const values = Object.values(breakdown).filter(value => Number.isFinite(value));
+        const score = state && Number.isFinite(state.score)
+            ? Math.round(state.score)
+            : (values.length ? Math.round(values.reduce((sum, value) => sum + value, 0) / values.length) : null);
+        let rating = 'READINESS DATA UNAVAILABLE';
+        if (score !== null) {
+            rating = 'STANDARD DEFENSE POSTURE';
+            if (score >= 85) rating = 'HIGH READINESS · SIMULATION';
+            else if (score < 50) rating = 'CRITICAL VULNERABILITY · SIMULATION';
+            else if (score < 70) rating = 'MODERATE READINESS · SIMULATION';
         }
-        const vals = Object.values(this.orsData);
-        const sum = vals.reduce((a, b) => a + b, 0);
-        const avg = Math.round(sum / vals.length);
-        let rating = "T1 STRATEGIC SUPREMACY";
-        if (avg < 50) rating = "CRITICAL VULNERABILITY";
-        else if (avg < 70) rating = "MODERATE DEGRADATION";
-        else if (avg < 85) rating = "STANDARD DEFENSE POSTURE";
-
-        return { score: avg, rating, breakdown: this.orsData };
+        return {
+            score, rating, breakdown, countryCode: state && state.countryCode || null,
+            source: state && state.source || 'NO_COUNTRY_READINESS_RECORD',
+            availability: state && state.availability || 'UNAVAILABLE'
+        };
     },
 
     updateORSParameter(paramKey, delta) {
-        if (!this.orsData) this.calculateORS();
-        if (this.orsData[paramKey] !== undefined) {
-            this.orsData[paramKey] = Math.max(10, Math.min(100, this.orsData[paramKey] + delta));
-            if (window.showOmegaNotification) {
-                window.showOmegaNotification("ORS PARAMETER ADJUSTED", `Updated ${paramKey.toUpperCase()} readiness to ${this.orsData[paramKey]}%`, "info");
-            }
-            this.renderMinistryDashboard('defense');
+        const state = this.getDefenseReadinessState(this.getActiveCountryKey(), true);
+        if (!state || !Object.prototype.hasOwnProperty.call(state.breakdown || {}, paramKey)) return false;
+        const stored = this.getDefenseCountryRow(state.countryCode, true);
+        const countryRow = stored && stored.row;
+        if (!countryRow) return false;
+        if (!countryRow.orsData || typeof countryRow.orsData !== 'object') {
+            countryRow.orsData = Object.assign({}, state.breakdown || {});
         }
+        const rawCurrent = countryRow.orsData[paramKey] ?? state.breakdown[paramKey];
+        const current = rawCurrent === null || rawCurrent === undefined || rawCurrent === '' ? null : Number(rawCurrent);
+        const baseline = current !== null && Number.isFinite(current) ? current : 50;
+        countryRow.orsData[paramKey] = Math.max(0, Math.min(100, baseline + Number(delta || 0)));
+        countryRow.orsDataSource = 'PLAYER_ADJUSTED_SIMULATION_STATE';
+        const adjusted = countryRow.orsData[paramKey];
+        if (window.showOmegaNotification) {
+            window.showOmegaNotification("ORS PARAMETER ADJUSTED", `Updated ${paramKey.toUpperCase()} readiness to ${adjusted}% · ${state.countryCode}`, "info");
+        }
+        this.renderMinistryDashboard('defense');
+        return true;
     },
 
     executeDefenseCommand(cmdId) {
@@ -1829,42 +2167,41 @@ window.OmegaCabinetUI = {
             return;
         }
 
-        if (window.resources && window.resources.cash !== undefined) {
-            window.resources.cash -= op.cost * 1000000;
+        const updated = this.updateORSParameter(op.param, op.boost);
+        if (!updated) {
+            if (window.showOmegaNotification) window.showOmegaNotification("DEFENSE STATE UNAVAILABLE", "Select a valid country before issuing this directive. No funds were deducted.", "error");
+            return;
         }
-
-        this.updateORSParameter(op.param, op.boost);
+        if (window.resources && window.resources.cash !== undefined) window.resources.cash -= op.cost * 1000000;
         if (window.showOmegaNotification) {
-            window.showOmegaNotification("DEFENSE DIRECTIVE EXECUTED", `🛡️ ${op.msg}`, "success");
+            window.showOmegaNotification("SIMULATED DEFENSE READINESS UPDATED", `${this.getActiveCountryKey()}: ${op.name} applied the configured readiness modifier. This action does not itself verify equipment/personnel inventory.`, "info");
         }
     },
 
     executeDefenseProcurement(itemId) {
-        if (!this.procurementItems) {
-            this.procurementItems = [
-                { id: 'f35_jets', name: '5th-Gen Multirole Stealth Aircraft', stage: 7, maxStage: 8, cost: 1200 },
-                { id: 'sam_shield', name: 'Strategic SAM Air Defense Shield', stage: 8, maxStage: 8, cost: 1500 },
-                { id: 'mbt_tanks', name: 'Main Battle Tank Armored Division', stage: 5, maxStage: 8, cost: 850 },
-                { id: 'attack_subs', name: 'Stealth Attack Submarines', stage: 4, maxStage: 8, cost: 1100 },
-                { id: 'strike_drones', name: 'Autonomous Strike Drone Swarms', stage: 6, maxStage: 8, cost: 450 },
-                { id: 'hypersonic', name: 'Hypersonic Glide Interceptor', stage: 3, maxStage: 8, cost: 1800 },
-                { id: 'ew_radar', name: 'Quantum Radar Jamming Stations', stage: 8, maxStage: 8, cost: 350 },
-                { id: 'night_vision', name: 'Infantry Night Vision & Optics', stage: 8, maxStage: 8, cost: 200 }
-            ];
+        const selectedCountry = this.getActiveCountryKey();
+        const identity = window.OmegaCountryRuntimeData?.resolveCountry?.(selectedCountry);
+        const countryCode = identity?.countryCode || identity?.iso2 || identity?.iso3;
+        const stored = countryCode ? this.getDefenseCountryRow(countryCode, true) : null;
+        if (!stored?.row) {
+            if (window.showOmegaNotification) window.showOmegaNotification("PROCUREMENT NOT UPDATED", "Select a valid country first.", "error");
+            return false;
         }
-
-        const item = this.procurementItems.find(i => i.id === itemId);
-        if (!item) return;
+        if (!Array.isArray(stored.row.procurementItems)) stored.row.procurementItems = this.getProcurementCatalogue();
+        const items = stored.row.procurementItems;
+        this.procurementItems = items;
+        const item = items.find(i => i.id === itemId);
+        if (!item) return false;
 
         if (item.stage >= item.maxStage) {
-            if (window.showOmegaNotification) window.showOmegaNotification("PROCUREMENT COMPLETE", `📦 ${item.name} is already 100% field deployed!`, "info");
+            if (window.showOmegaNotification) window.showOmegaNotification("SIMULATED PROCUREMENT COMPLETE", `${countryCode}: ${item.name} is already at stage 8/8. Inventory deployment must be confirmed by the relevant game-state record.`, "info");
             return;
         }
 
         item.stage += 1;
         const stageNames = ["Requirement Def.", "Global RFI", "Tech Trials", "Sovereign Bidding", "Contract Signed", "Factory Production", "QA Inspection", "Field Deployed"];
         if (window.showOmegaNotification) {
-            window.showOmegaNotification("PROCUREMENT ADVANCED", `⚙️ Advanced ${item.name} to Stage ${item.stage}/8: ${stageNames[item.stage - 1]}`, "success");
+            window.showOmegaNotification("SIMULATED PROCUREMENT STAGE UPDATED", `${countryCode}: ${item.name} advanced to Stage ${item.stage}/8: ${stageNames[item.stage - 1]}. This stage is not proof of physical inventory.`, "success");
         }
 
         if (item.stage === 8) {
@@ -1876,29 +2213,22 @@ window.OmegaCabinetUI = {
 
     renderMoDDashboard(m, contentArea) {
         const activeSub = this.activeMoDSubview || 'ors_breakdown';
-        const countryKey = this.activeCountry || "BANGLADESH";
+        const countryKey = this.getActiveCountryKey();
         const cDetails = this.getCountryDetails(countryKey);
 
         const ministerName = (cDetails.ministers && cDetails.ministers['defense'] && cDetails.ministers['defense'].name) || m.ministerName;
         const ministerRole = (cDetails.ministers && cDetails.ministers['defense'] && cDetails.ministers['defense'].role) || m.role;
 
         const ors = this.calculateORS(countryKey);
-        const defcon = this.defconLevel || 2;
+        const selectedDefenseRow = this.getDefenseCountryRow(cDetails.code || countryKey, false);
+        const countryProcurementItems = Array.isArray(selectedDefenseRow?.row?.procurementItems)
+            ? selectedDefenseRow.row.procurementItems : this.getProcurementCatalogue();
+        const selectedDefcon = Number(selectedDefenseRow?.row?.defconLevel);
+        const defcon = Number.isInteger(selectedDefcon) && selectedDefcon >= 1 && selectedDefcon <= 5 ? selectedDefcon : 2;
+        const defconSource = selectedDefenseRow?.row?.defconLevel ? 'COUNTRY SIMULATION STATE' : 'DEFAULT GAME RULE';
         const defconColors = { 1: '#ef4444', 2: '#f97316', 3: '#eab308', 4: '#3b82f6', 5: '#10b981' };
         const defconLabels = { 1: 'DEFCON 1 (MAX WAR)', 2: 'DEFCON 2 (ELEVATED)', 3: 'DEFCON 3 (GUARDED)', 4: 'DEFCON 4 (NORMAL)', 5: 'DEFCON 5 (PEACE)' };
-
-        if (!this.procurementItems) {
-            this.procurementItems = [
-                { id: 'f35_jets', name: '5th-Gen Multirole Stealth Aircraft', stage: 7, maxStage: 8, cost: 1200 },
-                { id: 'sam_shield', name: 'Strategic SAM Air Defense Shield', stage: 8, maxStage: 8, cost: 1500 },
-                { id: 'mbt_tanks', name: 'Main Battle Tank Armored Division', stage: 5, maxStage: 8, cost: 850 },
-                { id: 'attack_subs', name: 'Stealth Attack Submarines', stage: 4, maxStage: 8, cost: 1100 },
-                { id: 'strike_drones', name: 'Autonomous Strike Drone Swarms', stage: 6, maxStage: 8, cost: 450 },
-                { id: 'hypersonic', name: 'Hypersonic Glide Interceptor', stage: 3, maxStage: 8, cost: 1800 },
-                { id: 'ew_radar', name: 'Quantum Radar Jamming Stations', stage: 8, maxStage: 8, cost: 350 },
-                { id: 'night_vision', name: 'Infantry Night Vision & Optics', stage: 8, maxStage: 8, cost: 200 }
-            ];
-        }
+        this.procurementItems = countryProcurementItems;
 
         let html = `
             <!-- MoD AAA HERO HEADER -->
@@ -1922,13 +2252,17 @@ window.OmegaCabinetUI = {
                     <div style="background:rgba(0,0,0,0.6); border:1px solid ${ors.score >= 80 ? '#22c55e' : (ors.score >= 65 ? '#00e5ff' : '#ffd700')}; padding:8px 16px; border-radius:10px; text-align:center;">
                         <div style="font-size:10px; color:#94a3b8; font-family:'Share Tech Mono',monospace;">TOTAL ORS SCORE</div>
                         <div style="font-size:22px; font-weight:900; color:${ors.score >= 80 ? '#22c55e' : (ors.score >= 65 ? '#00e5ff' : '#ffd700')}; font-family:'Share Tech Mono',monospace;">
-                            ${ors.score}% <span style="font-size:11px; color:#94a3b8;">${ors.rating}</span>
+                            ${ors.score === null ? 'NOT RECORDED' : ors.score + '%'} <span style="font-size:11px; color:#94a3b8;">${ors.rating}</span>
                         </div>
+                    </div>
+                    <div style="font-size:10px; color:#cbd5e1; max-width:220px;">
+                        Country: ${ors.countryCode || 'UNRESOLVED'} · Source: ${ors.source} · ${ors.availability === 'UNAVAILABLE' ? 'No readiness score inferred.' : (ors.availability === 'SIMULATED' ? 'Player-managed simulation state, not official national statistics.' : 'Recorded game-state readiness.')}
                     </div>
 
                     <!-- DEFCON SELECTOR -->
                     <div style="display:flex; flex-direction:column; gap:4px;">
                         <div style="font-size:9.5px; color:#94a3b8; font-family:'Share Tech Mono',monospace;">DEFCON WAR ALERT LEVEL</div>
+                        <div style="font-size:9px;color:#cbd5e1;">${ors.countryCode || 'UNRESOLVED'} · ${defconSource}</div>
                         <div style="display:flex; gap:3px;">
                             ${[1,2,3,4,5].map(lvl => `
                                 <button onclick="window.OmegaCabinetUI.setDefconLevel(${lvl});" style="
@@ -2004,10 +2338,10 @@ window.OmegaCabinetUI = {
                                 <span style="font-size:13px; font-weight:bold; color:#f8fafc; display:flex; align-items:center; gap:6px;">
                                     <span>${p.icon}</span> <span>${p.name}</span>
                                 </span>
-                                <span style="font-family:'Share Tech Mono',monospace; font-size:14px; font-weight:bold; color:${p.val >= 85 ? '#22c55e' : '#ffd700'};">${p.val}%</span>
+                                <span style="font-family:'Share Tech Mono',monospace; font-size:14px; font-weight:bold; color:${p.val === null ? '#94a3b8' : (p.val >= 85 ? '#22c55e' : '#ffd700')};">${p.val === null ? 'NOT RECORDED' : p.val + '%'}</span>
                             </div>
                             <div style="width:100%; height:8px; background:rgba(0,0,0,0.5); border-radius:4px; overflow:hidden;">
-                                <div style="width:${p.val}%; height:100%; background:linear-gradient(90deg, #ef4444, #22c55e); transition:width 0.3s ease;"></div>
+                                <div style="width:${p.val === null ? 0 : p.val}%; height:100%; background:linear-gradient(90deg, #ef4444, #22c55e); transition:width 0.3s ease;"></div>
                             </div>
                             <div style="display:flex; justify-content:space-between; margin-top:4px;">
                                 <button onclick="window.OmegaCabinetUI.updateORSParameter('${p.id}', -5);" style="background:rgba(239,68,68,0.2); border:1px solid #ef4444; color:#ef4444; padding:3px 10px; border-radius:4px; cursor:pointer; font-size:10px; font-weight:bold;">-5% DEGRADE</button>
@@ -2068,12 +2402,12 @@ window.OmegaCabinetUI = {
                     </div>
 
                     <div style="display:flex; flex-direction:column; gap:12px;">
-                        ${this.procurementItems.map(item => `
+                        ${countryProcurementItems.map(item => `
                             <div style="background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:12px;">
                                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                                     <span style="font-size:13px; font-weight:bold; color:#f8fafc;">${item.name}</span>
                                     <span style="font-size:11px; color:${item.stage === 8 ? '#22c55e' : '#ffd700'}; font-family:'Share Tech Mono',monospace; font-weight:bold;">
-                                        STAGE ${item.stage}/8 ${item.stage === 8 ? '● 100% FIELD DEPLOYED' : '● IN PIPELINE'}
+                                        STAGE ${item.stage}/8 ${item.stage === 0 ? '● NOT STARTED' : (item.stage === 8 ? '● SIMULATION COMPLETE' : '● IN PIPELINE')}
                                     </span>
                                 </div>
 
@@ -2187,7 +2521,7 @@ window.OmegaCabinetUI = {
 
     renderMoFADashboard(m, contentArea) {
         const activeSub = this.activeMoFASubview || 'reputation';
-        const countryKey = this.activeCountry || "BANGLADESH";
+        const countryKey = this.getActiveCountryKey();
         const cDetails = this.getCountryDetails(countryKey);
 
         const ministerName = (cDetails.ministers && cDetails.ministers['foreign_affairs'] && cDetails.ministers['foreign_affairs'].name) || m.ministerName;
@@ -2455,8 +2789,12 @@ window.OmegaCabinetUI = {
     },
 
     renderResourceMinistryDashboard(m, container) {
-        const countryDetails = this.getCountryDetails(this.activeCountry);
-        const normKey = (this.activeCountry || 'BANGLADESH').toUpperCase().replace(/[-\s]/g, '_');
+        const selectedCountry = this.getActiveCountryKey();
+        const countryDetails = this.getCountryDetails(selectedCountry);
+        const normKey = String(selectedCountry || '').toUpperCase().replace(/[-\s]/g, '_');
+        const energyBudget = this.getCountryMinistryMetric('energy_mining', 'budget');
+        const escapeAttribute = value => String(value == null ? '' : value)
+            .replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         this.activeResourceSub = this.activeResourceSub || 'power_grid';
 
         if (window._resourceChartTimer) {
@@ -2469,10 +2807,14 @@ window.OmegaCabinetUI = {
         let steel = null;
         let uranium = null;
 
-        if (window.gameState && window.gameState.economy && window.gameState.economy[normKey]) {
-            const econ = window.gameState.economy[normKey];
-            if (econ.treasury !== undefined) cash = econ.treasury;
-            else if (econ.gdp !== undefined) cash = econ.gdp * 0.08;
+        const gateway = window.OmegaCountryDataGateway || window.Omega && window.Omega.CountryDataGateway;
+        const treasuryField = gateway && typeof gateway.getValue === 'function'
+            ? gateway.getValue(selectedCountry, ['finance', 'treasury_finance', 'economy'],
+                ['treasury', 'treasuryBalance', 'treasury_balance', 'availableTreasury', 'available_treasury', 'cash'])
+            : null;
+        if (treasuryField && treasuryField.status === 'AVAILABLE' &&
+            treasuryField.value !== null && treasuryField.value !== '' && Number.isFinite(Number(treasuryField.value))) {
+            cash = Number(treasuryField.value);
         }
 
         if (window.ResourceMinistryEngine && typeof window.ResourceMinistryEngine.getIntegratedResourceState === 'function') {
@@ -2511,7 +2853,7 @@ window.OmegaCabinetUI = {
                         <span style="color:#94a3b8;">SECTOR EFFICIENCY</span><br/><strong style="color:#22c55e; font-size:14px;">${m.efficiency}%</strong>
                     </div>
                     <div style="background:rgba(0,0,0,0.5); padding:8px 14px; border-radius:8px; border:1px solid rgba(234,179,8,0.25); font-family:'Share Tech Mono',monospace; font-size:11px;">
-                        <span style="color:#94a3b8;">ENERGY BUDGET</span><br/><strong style="color:#ffd700; font-size:14px;">${m.budget}</strong>
+                        <span style="color:#94a3b8;">ENERGY BUDGET · SELECTED COUNTRY</span><br/><strong title="${escapeAttribute(energyBudget.source)}" style="color:#ffd700; font-size:14px;">${escapeAttribute(energyBudget.display)}</strong>
                     </div>
                     <button onclick="if(window.ResourceMinistryEngine && typeof window.ResourceMinistryEngine.openModal === 'function') { window.ResourceMinistryEngine.openModal('${normKey}', 'matrix'); }" style="background:linear-gradient(135deg,rgba(0,229,255,0.25),rgba(6,182,212,0.3)); border:1.5px solid #00e5ff; color:#00e5ff; font-weight:800; font-family:'Share Tech Mono',monospace; font-size:12px; padding:10px 14px; border-radius:8px; cursor:pointer; display:flex; align-items:center; gap:6px; box-shadow:0 0 15px rgba(0,229,255,0.3);">
                         💎 GSRSK INTELLIGENCE HUB
@@ -2986,7 +3328,7 @@ window.OmegaCabinetUI = {
     processQuestionAndReply(minister, questionText) {
         if (!this.chatHistories[minister.id]) this.chatHistories[minister.id] = [];
 
-        const countryKey = this.activeCountry || "BANGLADESH";
+        const countryKey = this.getActiveCountryKey();
         const cDetails = this.getCountryDetails(countryKey);
 
         // Dynamically resolution for localized minister name and role
