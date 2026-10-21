@@ -20,10 +20,15 @@ const projectRoot=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..'
 const nativeFetch=globalThis.fetch.bind(globalThis);
 globalThis.fetch=async input=>{
   const request=String(input);
-  if(request.startsWith('./')){
+  // Browser-oriented runtime modules use bare relative asset paths (for example
+  // "countries.json"), while some modules use "./asset.json". Resolve both to
+  // repository files in this Node integration test; leave absolute/network URLs
+  // to native fetch.
+  const isRelativeAsset=!/^[a-zA-Z][a-zA-Z\d+.-]*:/.test(request)&&!request.startsWith('/');
+  if(isRelativeAsset){
     const relative=request.replace(/^\.\//,'').split(/[?#]/)[0];
-    const full=path.join(projectRoot,relative);
-    if(!full.startsWith(projectRoot+path.sep))return{ok:false,status:400,json:async()=>{throw new Error('INVALID_TEST_PATH')}};
+    const full=path.resolve(projectRoot,relative);
+    if(full!==projectRoot&&!full.startsWith(projectRoot+path.sep))return{ok:false,status:400,json:async()=>{throw new Error('INVALID_TEST_PATH')}};
     try{
       const body=fs.readFileSync(full,'utf8');
       return{ok:true,status:200,json:async()=>JSON.parse(body)};
@@ -39,7 +44,9 @@ if(typeof globalThis.dispatchEvent!=='function'){const t=new EventTarget();globa
 await import('../omega_universal_entity_identity_engine.js');
 await import('../omega_country_semantic_bridge.js');
 const bridge=globalThis.OmegaCanonicalIdentityRegistry||globalThis.OmegaCountrySemanticBridge;
-await bridge.init();
+assert.equal(await bridge.init(),true,'canonical identity datasets must load from repository assets');
+assert.equal(bridge.diagnostics().ready,true,'canonical identity registry must be ready before behavior scoring');
+assert.ok(bridge.diagnostics().countryCount>150,'canonical identity registry must load the country roster');
 await import('../omega_country_runtime_data_v1.js');
 assert.equal(await globalThis.OmegaCountryRuntimeData.ready,true,'shared country identity runtime must initialise');
 await import('../omega_country_general_data_runtime_v1.js');
@@ -89,19 +96,45 @@ assert.equal(route.status,'READY_TO_QUEUE');
 assert(route.command);
 const candidate=route.route.candidateEvaluations.find(row=>row.action==='HOUSING_BUILD');
 assert(candidate,'autonomy must evaluate the country-specific candidate');
+assert.equal(route.route.selectedAction,'HOUSING_BUILD','explicit candidate action must not be replaced by scenario defaults');
+assert.equal(route.route.candidateEvaluations.length,1,'only explicitly supplied candidate actions should be scored');
+assert.equal(candidate.status,'READY','authoritative live resource inventory must satisfy the construction plan: '+String(candidate.reason||''));
 assert.equal(candidate.strategyEvaluation.score,strategyScore.score,
   'autonomy candidate evaluation must consume the same adaptive country score');
 assert.equal(candidate.factors.strategy,strategyScore.score,
   'country strategy score must reach the autonomy factor model before queueing');
 const sim=globalThis.Omega.Simulation;
+const firstAdvance=await sim.advance(1);
+const projectsAfterFirstAdvance=globalThis.Game.state.projects?.BD?.registry||[];
+assert.equal(projectsAfterFirstAdvance[0]?.status,'UNDER_CONSTRUCTION',
+  'queued country action must mutate authoritative project state; '+JSON.stringify({
+    advance:{turn:firstAdvance.turn,status:firstAdvance.status,last:firstAdvance.last?{
+      turn:firstAdvance.last.turn,
+      phases:firstAdvance.last.phases,
+      commandResults:firstAdvance.last.commandResults
+    }:null},
+    queuedCommands:sim.commandQueue?.snapshot?.(),
+    projects:globalThis.Game.state.projects?.BD?.registry,
+    autonomy:globalThis.OmegaOpponentAutonomy?.diagnostics?.(),
+    interoperability:globalThis.OmegaMinistryInteroperability?.diagnostics?.()
+  }));
 await sim.advance(1);
-assert.equal(globalThis.Game.state.projects.BD.registry[0].status,'UNDER_CONSTRUCTION');
 await sim.advance(1);
+assert.equal(globalThis.Game.state.cities.BD.housing.available,1200,
+  'housing commissioning must update authoritative live state');
+assert.equal(globalThis.Game.state.projects.BD.registry[0].status,'COMMISSIONING',
+  'construction and asset commissioning occur before the queued finalization turn');
 await sim.advance(1);
-assert.equal(globalThis.Game.state.cities.BD.housing.available,1200);
-assert.equal(globalThis.Game.state.projects.BD.registry[0].status,'COMPLETED');
+assert.equal(globalThis.Game.state.projects.BD.registry[0].status,'COMPLETED',
+  'queued project finalization must commit the completed status on the following simulation turn');
 assert.equal(globalThis.Game.state.resource.BD.inventory.steel,9950);
-assert(globalThis.Game.state.cabinet.BD.autonomyReservations.some(x=>x.status==='RELEASED'));
+const reservationLedger=globalThis.Game.state.cabinet?.BD?.autonomyReservations
+  ||globalThis.Game.state.cabinet?.BGD?.autonomyReservations||[];
+assert(reservationLedger.some(x=>x.status==='RELEASED'),
+  'completed autonomy project must release its reservation; '+JSON.stringify({
+    cabinetCountryKeys:Object.keys(globalThis.Game.state.cabinet||{}),
+    reservationLedger
+  }));
 assert(globalThis.Game.state.simulation.worldStateRevision>=3);
 assert(globalThis.OmegaOpponentDeepMemory?.diagnostics().handlerInstalled===true);
 console.log('OMEGA OPPONENT E2E RUNTIME TEST PASSED');
