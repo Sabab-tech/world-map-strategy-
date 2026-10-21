@@ -128,7 +128,13 @@ await sim.advance(1);
 assert.equal(globalThis.Game.state.projects.BD.registry[0].status,'COMPLETED',
   'queued project finalization must commit the completed status on the following simulation turn');
 assert.equal(globalThis.Game.state.resource.BD.inventory.steel,9950);
-assert(globalThis.Game.state.cabinet.BD.autonomyReservations.some(x=>x.status==='RELEASED'));
+const reservationLedger=globalThis.Game.state.cabinet?.BD?.autonomyReservations
+  ||globalThis.Game.state.cabinet?.BGD?.autonomyReservations||[];
+assert(reservationLedger.some(x=>x.status==='RELEASED'),
+  'completed autonomy project must release its reservation; '+JSON.stringify({
+    cabinetCountryKeys:Object.keys(globalThis.Game.state.cabinet||{}),
+    reservationLedger
+  }));
 assert(globalThis.Game.state.simulation.worldStateRevision>=3);
 assert(globalThis.OmegaOpponentDeepMemory?.diagnostics().handlerInstalled===true);
 console.log('OMEGA OPPONENT E2E RUNTIME TEST PASSED');
