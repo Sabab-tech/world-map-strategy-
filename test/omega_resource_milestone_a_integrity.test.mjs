@@ -105,9 +105,14 @@ for(const row of allLegacy){
   }
 }
 const legacyAliasRows=allLegacy.filter(x=>aliasOf(x));
-assert.equal(legacyAliasRows.length,10,'aliases must be explicit and enumerable');
-assert.equal(legacyAliasRows.filter(x=>x.map?.markerEligible===false).length,10,'aliases cannot create a duplicate map marker');
-assert.equal(part6.records.every(x=>x.operation?.commercialExtraction===true&&x.map?.markerEligible===true&&!aliasOf(x)),true,'all Part 6 sites are distinct executable map candidates');
+assert.equal(legacyAliasRows.length,11,'aliases must be explicit and enumerable');
+assert.equal(legacyAliasRows.filter(x=>x.map?.markerEligible===false).length,11,'aliases cannot create a duplicate map marker');
+const part6Aliases=part6.records.filter(x=>aliasOf(x));
+assert.equal(part6Aliases.length,1,'Part 6 retains one explicit duplicate-site alias');
+assert.equal(part6Aliases[0].siteId,'SITE_CAN_voiseys_bay_nickel_mine');
+assert.equal(part6Aliases[0].operation?.commercialExtraction,false);
+assert.equal(part6Aliases[0].map?.markerEligible,false);
+assert.equal(part6.records.filter(x=>x.operation?.commercialExtraction===true&&x.map?.markerEligible===true&&!aliasOf(x)).length,49,'49 Part 6 records must be distinct executable map candidates');
 for(const row of allLegacy.filter(x=>canonicalIds.has(x.siteId))){
   const c=canonical.sites.find(y=>y.siteId===row.siteId);
   assert.equal(countryOf(c),countryOf(row),row.siteId+': source overlap has country disagreement');
@@ -158,7 +163,7 @@ const expansionAudit=I.auditRegistry(allLegacy,{aliasMap,allowExternalAliasTarge
 assert.equal(expansionAudit.status,'PASS','expansion integrity audit failed: '+JSON.stringify(expansionAudit.errors.slice(0,20)));
 assert.equal(expansionAudit.siteCount,115);
 assert.equal(expansionAudit.uniqueSiteIdCount,115);
-assert.equal(expansionAudit.aliasCount,10);
+assert.equal(expansionAudit.aliasCount,11);
 assert.equal(expansionAudit.aliasTargetsNotFound.length,0);
 
 for(const file of ['index.html','server_bootstrap.js']){
