@@ -96,6 +96,9 @@ assert.equal(route.status,'READY_TO_QUEUE');
 assert(route.command);
 const candidate=route.route.candidateEvaluations.find(row=>row.action==='HOUSING_BUILD');
 assert(candidate,'autonomy must evaluate the country-specific candidate');
+assert.equal(route.route.selectedAction,'HOUSING_BUILD','explicit candidate action must not be replaced by scenario defaults');
+assert.equal(route.route.candidateEvaluations.length,1,'only explicitly supplied candidate actions should be scored');
+assert.equal(candidate.status,'READY','authoritative live resource inventory must satisfy the construction plan: '+String(candidate.reason||''));
 assert.equal(candidate.strategyEvaluation.score,strategyScore.score,
   'autonomy candidate evaluation must consume the same adaptive country score');
 assert.equal(candidate.factors.strategy,strategyScore.score,
