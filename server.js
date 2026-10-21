@@ -73,7 +73,10 @@ const WORLD_BANK_LENDING_SCRIPT = '<script src="/omega_world_bank_lending_runtim
 
 let cachedResourceProfiles = {}, resourceTypesRegistry = {};
 try {
-  for (const fileName of fs.readdirSync(__dirname)) {
+  // These canonical resource files are the only sources for the two caches below.
+  // Do not synchronously parse every repository JSON file during server startup:
+  // generated registries and sector profiles can be tens of MiB and are unrelated.
+  for (const fileName of ['resources.json', 'resources_2.json']) {
     if (!/\.json$/i.test(fileName)) continue;
     const file = path.join(__dirname, fileName);
     let raw;
