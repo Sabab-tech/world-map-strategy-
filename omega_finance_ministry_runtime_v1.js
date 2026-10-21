@@ -253,7 +253,7 @@
   function actualCashflow(model){
     return (finite(model?.currentYearTaxRevenueUsd)||0)+(finite(model?.currentYearExternalInflowUsd)||0)
       -(finite(model?.currentYearSpendingUsd)||0)-(finite(model?.currentYearExternalOutflowUsd)||0)
-      -(finite(model?.currentYearInterestUsd)||0);
+      -(finite(model?.currentYearInterestUsd)||0)-(finite(model?.currentYearDebtPrincipalRepaymentUsd)||0);
   }
   function fiscalYearIndexFor(turn,stepMs){
     const n=Math.max(0,finite(turn)||0),dt=Math.max(0,finite(stepMs)||Number(rules.simulationTurnDurationMs||DAY_MS));
@@ -287,7 +287,7 @@
       model.fiscalModel.balanceBaselineSource=observedBalance!==null?'EXISTING_GAME_DATASET':'GAME_RULE_ESTIMATE';
       for(const k of ['cumulativeRevenueUsd','cumulativeSpendingUsd','cumulativeInterestUsd','cumulativeBorrowingUsd',
         'cumulativeExternalInflowUsd','cumulativeExternalOutflowUsd','currentYearTaxRevenueUsd','currentYearSpendingUsd',
-        'currentYearInterestUsd','currentYearExternalInflowUsd','currentYearExternalOutflowUsd'])if(finite(model[k])===null)model[k]=0;
+        'currentYearInterestUsd','currentYearDebtPrincipalRepaymentUsd','currentYearExternalInflowUsd','currentYearExternalOutflowUsd'])if(finite(model[k])===null)model[k]=0;
       model.fiscalYearIndex=finite(model.fiscalYearIndex)??fiscalYearIndexFor(currentTurn(),Number(rules.simulationTurnDurationMs||DAY_MS));
       model.priceIndex=finite(model.priceIndex)??100;model.allocations=isObject(model.allocations)?model.allocations:{};
       if(!Array.isArray(model.ledger))model.ledger=[];model.revision=finite(model.revision)??0;
@@ -576,11 +576,39 @@
       if(amount===null||amount<=0)return {ok:false,code:'REPAY_AMOUNT_INVALID',message:'Debt repayment must be greater than zero.'};
       if(amount>cash)return {ok:false,code:'INSUFFICIENT_TREASURY',message:'Insufficient treasury balance for this repayment.'};
       if(amount>debt)return {ok:false,code:'REPAY_EXCEEDS_DEBT',message:'Repayment cannot exceed outstanding public debt.'};
+      const worldBankApi=global.OmegaWorldBankLending||(global.Omega&&global.Omega.WorldBankLending);
+      try {
+        if(worldBankApi&&typeof worldBankApi.applyManualRepayment==='function'&&worldBankApi.diagnostics?.().initialized){
+          const linked=worldBankApi.applyManualRepayment(p.countryCode,amount);
+          if(!linked||linked.ok!==true)return{ok:false,code:'WORLD_BANK_REPAYMENT_SYNC_FAILED',message:'The World Bank contract ledger could not reconcile this principal payment.',detail:linked||null};
+        }
+      } catch(error) { return{ok:false,code:'WORLD_BANK_REPAYMENT_SYNC_FAILED',message:String(error?.message||error)}; }
       e.debt=debt-amount;fm.treasuryBalanceUsd=cash-amount;
       fm.cumulativeDebtRepaymentUsd=(finite(fm.cumulativeDebtRepaymentUsd)||0)+amount;
+      fm.currentYearDebtPrincipalRepaymentUsd=(finite(fm.currentYearDebtPrincipalRepaymentUsd)||0)+amount;
       const fb=financeBucketFor(root,p,true);fb.debtRepayments=(finite(fb.debtRepayments)||0)+amount;
       postLedger(fm,p,{department:'finance',action:'DEBT_REPAYMENT',category:'sovereign_debt',amountUsd:amount,description:String(action.description||'Principal repayment').slice(0,160)});
-      fm.revision+=1;result={ok:true,code:'DEBT_REPAID',message:'Principal repaid; both treasury and outstanding public debt were reduced.'};
+      fm.revision+=1;result={ok:true,code:'DEBT_REPAID',message:'Principal repaid; treasury, public debt and matching World Bank principal were updated.'};
+    }else if(type==='world-bank-debt-service'){
+      if(action.authorization!=='OMEGA_WORLD_BANK_LENDING')
+        return{ok:false,code:'WORLD_BANK_AUTHORIZATION_REQUIRED',message:'Only the World Bank lending runtime can post contract debt service.'};
+      const principalPaid=finite(action.principalPaidUsd),interestPaid=finite(action.interestPaidUsd);
+      const debt=Math.max(0,finite(e.debt)||0),cash=Math.max(0,finite(fm.treasuryBalanceUsd)||0);
+      if(amount===null||amount<=0||principalPaid===null||interestPaid===null||principalPaid<0||interestPaid<0||Math.abs(principalPaid+interestPaid-amount)>0.02)
+        return{ok:false,code:'WORLD_BANK_DEBT_SERVICE_SPLIT_INVALID',message:'Principal and interest must sum to the authorized settlement amount.'};
+      if(amount>cash+0.01)return{ok:false,code:'INSUFFICIENT_TREASURY',message:'Treasury cannot cover scheduled World Bank debt service.'};
+      if(amount>debt+0.01)return{ok:false,code:'REPAY_EXCEEDS_DEBT',message:'World Bank debt service exceeds the authoritative public debt balance.'};
+      e.debt=Math.max(0,debt-amount);fm.treasuryBalanceUsd=Math.max(0,cash-amount);
+      fm.cumulativeDebtRepaymentUsd=(finite(fm.cumulativeDebtRepaymentUsd)||0)+principalPaid;
+      fm.currentYearDebtPrincipalRepaymentUsd=(finite(fm.currentYearDebtPrincipalRepaymentUsd)||0)+principalPaid;
+      fm.cumulativeInterestUsd=(finite(fm.cumulativeInterestUsd)||0)+interestPaid;
+      fm.currentYearInterestUsd=(finite(fm.currentYearInterestUsd)||0)+interestPaid;
+      const wbFinanceBucket=financeBucketFor(root,p,true);
+      wbFinanceBucket.debtRepayments=(finite(wbFinanceBucket.debtRepayments)||0)+principalPaid;
+      postLedger(fm,p,{department:'finance',action:'WORLD_BANK_DEBT_SERVICE',category:'sovereign_debt',
+        amountUsd:amount,principalPaidUsd:principalPaid,interestPaidUsd:interestPaid,
+        description:String(action.description||'World Bank scheduled principal and interest repayment').slice(0,160)});
+      fm.revision+=1;result={ok:true,code:'WORLD_BANK_DEBT_SERVICE_POSTED',message:'World Bank principal and interest were settled against Treasury and public debt.'};
     }else return {ok:false,code:'UNKNOWN_FINANCE_ACTION',message:'Unknown Finance Ministry command.'};
     fm.ledger=fm.ledger.slice(-Number(rules.maximumLedgerEntries||500));
     syncEconomyRecord(p,fm,root);
@@ -609,7 +637,7 @@
       const e=root.economy?.[p.economyKey]||getEconomyRecord(p);if(!isObject(e))continue;
       if(newYearIndex>(finite(fm.fiscalYearIndex)||0)){
         fm.fiscalYearIndex=newYearIndex;
-        fm.currentYearTaxRevenueUsd=0;fm.currentYearSpendingUsd=0;fm.currentYearInterestUsd=0;
+        fm.currentYearTaxRevenueUsd=0;fm.currentYearSpendingUsd=0;fm.currentYearInterestUsd=0;fm.currentYearDebtPrincipalRepaymentUsd=0;
         fm.currentYearExternalInflowUsd=0;fm.currentYearExternalOutflowUsd=0;
         fm.currentYearSectorReceiptsUsd={};
         for(const sector of sectorRegistry.economicSectors||[])fm.currentYearSectorReceiptsUsd[sector.id]=0;
@@ -625,7 +653,20 @@
       const gdpAfter=Math.max(0,gdpBefore*Math.pow(1+growth/100,years));e.gdp=gdpAfter;
       const debtBefore=Math.max(0,finite(e.debt)??finite(p.indicators?.publicDebtUsd)??0);
       const rate=clamp(finite(fm.policy?.interestRateAnnualPct)??Number(rules.defaultPolicyInterestRatePct||3),0,100);
-      const interest=debtBefore*(Math.pow(1+rate/100,years)-1),debtAfter=debtBefore+interest;
+      // World Bank contract principal/interest are handled by the separate loan ledger.
+      // Do not apply the general policy rate to the same principal a second time.
+      let worldBankBalance=0,worldBankInterest=0;
+      const worldBankApi=global.OmegaWorldBankLending||(global.Omega&&global.Omega.WorldBankLending);
+      try{
+        const state=worldBankApi&&typeof worldBankApi.diagnostics==='function'?worldBankApi.diagnostics():null;
+        if(state?.initialized&&typeof worldBankApi.getOutstandingBalance==='function'&&typeof worldBankApi.accrueInterest==='function'){
+          worldBankBalance=Math.min(debtBefore,Math.max(0,finite(worldBankApi.getOutstandingBalance(p.countryCode))||0));
+          worldBankInterest=Math.max(0,finite(worldBankApi.accrueInterest(p.countryCode,years,turnNumber))||0);
+        }
+      }catch(_){}
+      const nonWorldBankDebt=Math.max(0,debtBefore-worldBankBalance);
+      const interest=nonWorldBankDebt*(Math.pow(1+rate/100,years)-1);
+      const debtAfter=debtBefore+interest+worldBankInterest;
       recalculateFiscal(p,fm,e);
       const income=(finite(fm.fiscalModel.annualRevenueUsd)||0)*years;
       fm.treasuryBalanceUsd=Math.max(0,(finite(fm.treasuryBalanceUsd)||0)+income-interest);
