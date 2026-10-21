@@ -59,10 +59,13 @@ jobs:
         uses: ReactiveCircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
         with:
           api-level: 28
-          target: google_apis
+          target: default
           arch: x86_64
           profile: pixel_2
           emulator-boot-timeout: 1200
-          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none -no-metrics
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot-load -no-snapshot-save -noaudio -no-boot-anim -camera-back none -camera-front none -memory 2048 -cores 2
           disable-animations: true
-          script: gradle -p android connectedDebugAndroidTest --no-daemon
+          script: |
+            adb wait-for-device
+            adb shell getprop ro.build.version.sdk
+            gradle -p android connectedDebugAndroidTest --no-daemon
