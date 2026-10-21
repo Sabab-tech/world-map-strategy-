@@ -542,7 +542,7 @@ function canonicalPlan(prompt, input = {}) {
   return executeDeepCorePrompt(prompt, ctx);
 }
 function runCognitiveBridge(prompt, semantic, offlineResult, identity, language, gameState, conversationHistory) { if (!OmegaReasoningDispatcher?.dispatch) return { available: false, reason: 'COGNITIVE_DISPATCHER_UNAVAILABLE' }; try { const parsed = semantic || { operation: 'LOOKUP', language: language || 'en', surface: prompt }; const history = Array.isArray(conversationHistory) ? conversationHistory : []; return OmegaReasoningDispatcher.dispatch(prompt, parsed, offlineResult || {}, { ...identity, language, gameState: gameState || {}, history, timeHorizon: 'CURRENT' }); } catch (e) { return { available: false, reason: 'COGNITIVE_DISPATCH_ERROR', error: e.message }; } }
-app.get('/api/deep-core/health', (req, res) => { try { const health = OfflineQueryEngine.health ? OfflineQueryEngine.health() : { engine: 'OMEGA_DEEP_CORE', version: OfflineQueryEngine.VERSION, initialized: false }; res.json({ ok: true, ...health, repositoryIndex: health.initialized ? 'READY' : 'LAZY' }); } catch (e) { res.status(500).json({ ok: false, error: e.message }); } });
+app.get('/api/deep-core/health', (req, res) => { try { const health = OfflineQueryEngine.health ? OfflineQueryEngine.health() : { engine: 'OMEGA_DEEP_CORE', version: OfflineQueryEngine.VERSION, initialized: false }; res.json({ ok: true, ...health, diagnostics: health, repositoryIndex: health.initialized ? 'READY' : 'LAZY' }); } catch (e) { res.status(500).json({ ok: false, error: e.message }); } });
 
 app.listen(PORT, () => {
   // Keep readiness independent from Deep Core's explicit full-repository index.
