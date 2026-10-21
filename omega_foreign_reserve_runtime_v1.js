@@ -10,6 +10,7 @@
   let finance = null;
   let profiles = [];
   let registryRows = [];
+  let registryByIdentity = new Map();
   let byIdentity = new Map();
   let initialized = false;
   let initPromise = null;
@@ -90,14 +91,27 @@
       || value.iso2 || value.numericCode || value.economyKey || value.name;
     return byIdentity.get(norm(value)) || null;
   }
+  function indexRegistryRows() {
+    registryByIdentity = new Map();
+    registryRows.forEach(row => profileIds({
+      iso3: row.iso3, countryCode: row.countryCode, numericCode: row.numericCode,
+      name: row.countryName, economyKey: row.economyKey
+    }).forEach(key => {
+      if (!registryByIdentity.has(key)) registryByIdentity.set(key, row);
+    }));
+  }
   function findRegistryRow(profile) {
     const keys = profileIds(profile);
-    for (const row of registryRows) {
-      const rowKeys = profileIds({ iso3: row.iso3, countryCode: row.countryCode,
-        numericCode: row.numericCode, name: row.countryName, economyKey: row.economyKey });
-      if (rowKeys.some(key => keys.indexOf(key) >= 0)) return row;
+    for (const key of keys) {
+      const row = registryByIdentity.get(key);
+      if (row) return row;
     }
     return null;
+  }
+  function detailTurn(detail) {
+    return finite(detail && detail.simulationTurn)
+      ?? finite(detail && detail.payload && detail.payload.turn)
+      ?? finite(detail && detail.turn);
   }
   function economyRecord(profile, root) {
     const state = root || rootState();
@@ -240,7 +254,6 @@
       revision: 0
     };
     store[key] = account;
-    writeAccountProjections(profile, account, null);
     return account;
   }
   function buildFallbackRegistry() {
@@ -259,6 +272,7 @@
         status: ref.referenceReservesUsd === null ? 'NOT_RECORDED' : 'PROFILE_FALLBACK_BASELINE'
       };
     });
+    indexRegistryRows();
     registryStatus = 'PROFILE_FALLBACK_NO_REGISTRY_FETCH';
     baselineYear = 2015;
   }
@@ -297,13 +311,14 @@
       seen.add(id);
     });
     registryRows = data.reserves.map(row => clone(row));
+    indexRegistryRows();
     baselineYear = finite(data.metadata && data.metadata.baselineYear) ?? 2015;
     registryStatus = 'LOADED';
     registryError = null;
   }
   function syncFromEconomy(detail) {
     if (!initialized) return { ok: false, code: 'NOT_INITIALIZED' };
-    const turn = currentTurn(detail && detail.turn);
+    const turn = currentTurn(detailTurn(detail));
     let changed = 0;
     profiles.forEach(profile => {
       const account = ensureAccount(profile);
@@ -335,7 +350,7 @@
     account.balanceUsd = amount;
     account.status = account.referenceReservesUsd === null ? 'LIVE_GAME_VALUE_WITHOUT_REFERENCE_BASELINE' : 'LIVE';
     account.source = 'CENTRAL_BANK_INTERVENTION';
-    account.updatedTurn = currentTurn(detail.turn);
+    account.updatedTurn = currentTurn(detailTurn(detail));
     account.revision = (finite(account.revision) || 0) + 1;
     writeAccountProjections(profile, account, detail);
     dispatch('OMEGA_FOREIGN_RESERVE_ACCOUNT_UPDATED', {
@@ -393,7 +408,6 @@
       }
       const refs = bankingState(true);
       refs.fx.reserveAccountsByCountry = isObject(refs.fx.reserveAccountsByCountry) ? refs.fx.reserveAccountsByCountry : {};
-      profiles.forEach(profile => ensureAccount(profile));
       profiles.forEach(profile => {
         const account = ensureAccount(profile);
         if (account) writeAccountProjections(profile, account, null);
