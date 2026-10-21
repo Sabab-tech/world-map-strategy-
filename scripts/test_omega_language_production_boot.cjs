@@ -14,17 +14,28 @@ child.stderr.on('data', chunk => { logs += chunk.toString(); });
 
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-async function request(path, options) {
-  return fetch(base + path, { cache: 'no-store', ...options });
+async function request(path, options = {}) {
+  const { timeoutMs = 10000, ...requestOptions } = options;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(base + path, {
+      cache: 'no-store',
+      ...requestOptions,
+      signal: requestOptions.signal || controller.signal
+    });
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 async function main() {
   try {
     let ready = false;
     let lastError = null;
-    for (let i = 0; i < 120; i += 1) {
+    for (let i = 0; i < 60; i += 1) {
       try {
-        const response = await request('/api/deep-core/health');
+        const response = await request('/api/deep-core/health', { timeoutMs: 1500 });
         if (response.ok) {
           const body = await response.json();
           if (body?.ok === true) {
@@ -42,8 +53,14 @@ async function main() {
       await sleep(250);
     }
     assert.equal(ready, true, `production server did not become healthy: ${lastError?.message || 'unknown'}\n${logs}`);
+    const healthResponse = await request('/api/deep-core/health', { timeoutMs: 1500 });
+    const health = await healthResponse.json();
+    assert.equal(healthResponse.ok, true);
+    assert.equal(health.repositoryIndex, 'LAZY', 'liveness must not synchronously construct or index Deep Core');
+    assert.equal(health.initialized, false, 'health polling alone must not initialize the repository index');
 
-    const indexResponse = await request('/');
+
+    const indexResponse = await request('/', { timeoutMs: 10000 });
     assert.equal(indexResponse.ok, true, `production index request failed: HTTP ${indexResponse.status}`);
     const html = await indexResponse.text();
     const languageIndex = html.indexOf('/omega_language_system.js');
@@ -55,14 +72,14 @@ async function main() {
     assert.ok(universalIndex > batch03Index, 'production HTML must load Universal AI after Batch 03');
     assert.ok(ministerPipelineIndex > universalIndex, 'production HTML must load minister intelligence pipeline after Universal AI');
 
-    const statusResponse = await request('/api/ai/status');
+    const statusResponse = await request('/api/ai/status', { timeoutMs: 10000 });
     assert.equal(statusResponse.ok, true, `production AI status failed: HTTP ${statusResponse.status}`);
     const status = await statusResponse.json();
     assert.equal(status.ok, true);
     assert.ok(status.deepCore, 'production AI status must expose Deep Core');
     assert.ok(status.cognitiveBridge?.authority, 'production AI status must expose cognitive bridge');
 
-    const ministerValidation = await request('/api/ai/minister-consult', {
+    const ministerValidation = await request('/api/ai/minister-consult', { timeoutMs: 10000,
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({})
@@ -71,7 +88,7 @@ async function main() {
     const ministerValidationBody = await ministerValidation.json();
     assert.equal(ministerValidationBody.error, 'PROMPT_REQUIRED');
 
-    const queryResponse = await request('/api/deep-core/query', {
+    const queryResponse = await request('/api/deep-core/query', { timeoutMs: 30000,
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
