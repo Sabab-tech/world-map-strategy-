@@ -29,7 +29,8 @@ function inferredSourceConfidence(value,status,sourceId,sourceName,method,year,p
 }
 function metricFreshness(year){
  const y=n(year);if(y===null)return .72;
- const age=Math.max(0,currentYear()-y);
+ const age=currentYear()-y;
+ if(age<0)return .25;
  return Number((age<=2?1:Math.max(.25,1-.055*(age-2))).toFixed(3));
 }
 function inferredDataGap(value,status,sourceId,sourceName,year,persisted){
@@ -42,6 +43,7 @@ function inferredDataGap(value,status,sourceId,sourceName,year,persisted){
  }
  if(!str(sourceId)&&!str(sourceName))return 'SOURCE_METADATA_MISSING';
  if(n(year)===null)return 'OBSERVATION_YEAR_UNKNOWN';
+ if(n(year)>currentYear())return 'OBSERVATION_YEAR_IN_FUTURE';
  if(/NOT_EXTERNALLY_REVALIDATED|LEGACY/.test(st))return 'LEGACY_SOURCE_NOT_REVALIDATED';
  if(/MODELED|MODELLED|SIMULATION|GAMEPLAY|LOCAL_/.test(st))return 'UNVERIFIED_OR_MODELLED_SOURCE';
  return null;
@@ -75,7 +77,7 @@ function decode(row){
   meta.freshness=metricFreshness(meta.year);
   meta.confidence=Number((meta.sourceConfidence*meta.freshness).toFixed(3));
   meta.dataGap=inferredDataGap(value,meta.status,meta.sourceId,meta.sourceName,meta.year,a.dataGaps?.[i]);
-  meta.confidenceBasis=a.sourceConfidence?.[i]!==undefined?'PERSISTED_SOURCE_CONFIDENCE':'INFERRED_FROM_SOURCE_STATUS_AND_YEAR';
+  meta.confidenceBasis=n(a.sourceConfidence?.[i])!==null?'PERSISTED_SOURCE_CONFIDENCE':'INFERRED_FROM_SOURCE_STATUS_AND_YEAR';
   meta.freshnessBasis=meta.year===null?'UNKNOWN_YEAR_NEUTRAL_FRESHNESS_ESTIMATE':'OBSERVATION_YEAR_DECAY';
   metricMetadata[k]=meta;
  });
