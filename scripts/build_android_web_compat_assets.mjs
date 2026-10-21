@@ -13,16 +13,16 @@ export function injectCompatibilityScript(html, scriptPath = ANDROID_WEBVIEW_POL
 
   // Keep the polyfill inline and synchronous: Android 9 WebView can otherwise
   // execute deferred game scripts before a relative polyfill asset has loaded.
-  const diagnostic = "\\nwindow.__OMEGA_ANDROID_WEBVIEW_COMPAT__ = {version:'1.0.1', objectFromEntries:typeof Object.fromEntries === 'function', arrayFlatMap:typeof Array.prototype.flatMap === 'function'};";
-  const tag = '<script id="omega-android-webview-compat">\\n'
+  const diagnostic = "\nwindow.__OMEGA_ANDROID_WEBVIEW_COMPAT__ = {version:'1.0.1', objectFromEntries:typeof Object.fromEntries === 'function', arrayFlatMap:typeof Array.prototype.flatMap === 'function'};";
+  const tag = '<script id="omega-android-webview-compat">\n'
     + ANDROID_WEBVIEW_POLYFILL_SOURCE + diagnostic
-    + '\\n</script>\\n';
-  const head = /<head\\b[^>]*>/i.exec(source);
+    + '\n</script>\n';
+  const head = /<head\b[^>]*>/i.exec(source);
   if (head) {
     const index = head.index + head[0].length;
-    return source.slice(0, index) + '\\n' + tag + source.slice(index);
+    return source.slice(0, index) + '\n' + tag + source.slice(index);
   }
-  const firstScript = /<script\\b/i.exec(source);
+  const firstScript = /<script\b/i.exec(source);
   if (firstScript) return source.slice(0, firstScript.index) + tag + source.slice(firstScript.index);
   return tag + source;
 }
