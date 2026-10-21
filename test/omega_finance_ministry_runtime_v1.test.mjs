@@ -250,7 +250,7 @@ test('all nine Finance section buttons respond to click delegation',async()=>{
   const content=elements.get('ministry-dashboard-content');
   const click=content.listeners.click;
   assert.equal(typeof click,'function');
-  const markers={fx:'data-ofx-container',macro:'data-omss-container',analytics:'data-ofa-container'};
+  const markers={fx:'data-ofx-container',macro:'data-omss-container',analytics:'data-ofa-container',worldbank:'data-owb-container'};
   for(const [tab,marker] of Object.entries(markers)){
     const button={getAttribute(name){return name==='data-ofm-tab'?tab:null;}};
     click({target:{closest(selector){return selector==='[data-ofm-tab]'?button:null;}}});
@@ -264,4 +264,14 @@ test('ministry viewport layout confines scrolling and keeps Finance navigation c
   assert.match(layoutRepairCss,/overflow: hidden !important/);
   assert.match(layoutRepairCss,/min-height: 0 !important/);
   assert.match(layoutRepairCss,/grid-template-columns: repeat\(9, minmax\(0, 1fr\)\)/);
+});
+
+test('World Bank tab is part of the Finance API and its host is mounted only when selected',async()=>{
+  const {context,elements}=createRuntime();
+  await context.OmegaFinanceMinistry.init();
+  assert.equal(context.OmegaFinanceMinistry.selectTab('worldbank').ok,true);
+  const html=elements.get('ministry-dashboard-content').innerHTML;
+  assert.ok(html.includes('data-owb-container'),'World Bank runtime must receive a dedicated tab mount point');
+  assert.ok(html.includes('International Lending Institution'));
+  assert.ok(!html.includes('data-ofx-container'),'the FX mount must not leak into the World Bank tab');
 });
