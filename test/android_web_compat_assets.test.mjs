@@ -48,15 +48,15 @@ test('emoji icon matching does not use an unsupported Unicode-property regex lit
 
 
 test('legacy WebView polyfills are inline, synchronous, and precede every page script', () => {
-  assert.match(ANDROID_WEBVIEW_POLYFILL_SOURCE, /Object\\.fromEntries/);
-  assert.match(ANDROID_WEBVIEW_POLYFILL_SOURCE, /Array\\.prototype\\.flatMap/);
-  assert.doesNotMatch(ANDROID_WEBVIEW_POLYFILL_SOURCE, /\\?\\./);
-  assert.doesNotMatch(ANDROID_WEBVIEW_POLYFILL_SOURCE, /\\?\\?/);
+  assert.match(ANDROID_WEBVIEW_POLYFILL_SOURCE, /Object\.fromEntries/);
+  assert.match(ANDROID_WEBVIEW_POLYFILL_SOURCE, /Array\.prototype\.flatMap/);
+  assert.doesNotMatch(ANDROID_WEBVIEW_POLYFILL_SOURCE, /\?\./);
+  assert.doesNotMatch(ANDROID_WEBVIEW_POLYFILL_SOURCE, /\?\?/);
   const input = '<!doctype html><html><head><title>OMEGA</title></head><body><script src="runtime.js"></script></body></html>';
   const output = injectCompatibilityScript(input);
   const marker = 'id="omega-android-webview-compat"';
   assert.ok(output.indexOf(marker) >= 0 && output.indexOf(marker) < output.indexOf('runtime.js'));
-  assert.match(output, /window\\.__OMEGA_ANDROID_WEBVIEW_COMPAT__/);
+  assert.match(output, /window\.__OMEGA_ANDROID_WEBVIEW_COMPAT__/);
   assert.equal(output.split(marker).length - 1, 1);
   assert.equal(injectCompatibilityScript(output), output, 'injecting twice must not duplicate the polyfill');
 });
