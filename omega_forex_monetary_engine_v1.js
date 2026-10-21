@@ -875,7 +875,7 @@
     return Object.assign({ ok: true }, quote, {
       amountTarget: actualAmount, grossTarget: actualGross, feeUsd: actualFeeUsd,
       feeTarget: actualFeeTarget, usdNotional: actualNotional, route: entry.settlementRoute,
-      mode: 'SIMULATION', transaction: safeCopy(bankTransaction), bankTransactionId: entry.bankTransactionId
+      mode: 'SIMULATION', source: entry.source, transaction: safeCopy(bankTransaction), bankTransactionId: entry.bankTransactionId
     });
   }
 
@@ -1667,6 +1667,7 @@
       evolveInflation: evolveInflation,
       appendHistoryPoint: appendHistoryPoint,
       getCountryCurrency: getCountryCurrency,
+      getCountryCurrencyName: getCountryCurrencyName,
       effectiveRateCode: effectiveRateCode
     }
   };
