@@ -31,6 +31,9 @@ test('sector profile registry covers the canonical roster with unique ISO3 ident
   assert.equal(profiles.metadata.unknownValuesConvertedToZero, false);
   assert.equal(profiles.metadata.storageModel, 'COMPACT_REFERENCES_TO_CANONICAL_COUNTRY_REGISTRY');
   assert.equal(profiles.sourceRegistry.identityKey, 'iso3');
+  assert.equal(profiles.metadata.externalIndexSources[0].datasetId, 'OMEGA_TI_CPI_2025_SNAPSHOT_V1');
+  assert.equal(profiles.metadata.externalIndexSources[0].observationYear, 2025);
+  assert.equal(profiles.metadata.externalIndexSources[0].missingObservationsRemainNull, true);
 });
 
 test('every profile contains the same extensible sector and calculation contracts', () => {
@@ -55,12 +58,17 @@ test('every profile contains the same extensible sector and calculation contract
     });
     assert.ok(registryByIso3.has(row.identity.iso3), 'sector identity must resolve to the canonical registry record');
     assert.equal(row.profileVersion, schema.schemaVersion);
+    assert.ok(Object.hasOwn(row.externalMetrics, 'corruptionPerceptionIndex'));
+    assert.ok(Object.hasOwn(row.externalMetrics, 'corruptionPerceptionRank'));
+    assert.equal(row.externalMetrics.humanDevelopmentIndex.value, null);
+    assert.equal(row.externalMetrics.humanDevelopmentIndex.status, 'NOT_IMPORTED');
     for (const sector of Object.values(row.sectors)) {
       for (const ref of Object.values(sector.indicators || {})) {
-        assert.ok(['METRIC','DERIVED_METRIC'].includes(ref.refType));
+        assert.ok(['METRIC','DERIVED_METRIC','EXTERNAL_METRIC'].includes(ref.refType));
         assert.equal(typeof ref.key, 'string');
         if (ref.refType === 'METRIC') assert.ok(metricIndex.has(ref.key), 'unresolved canonical metric ref: ' + ref.key);
-        else assert.ok(Object.hasOwn(row.derivedMetrics, ref.key), 'unresolved derived metric ref: ' + ref.key);
+        else if (ref.refType === 'DERIVED_METRIC') assert.ok(Object.hasOwn(row.derivedMetrics, ref.key), 'unresolved derived metric ref: ' + ref.key);
+        else assert.ok(Object.hasOwn(row.externalMetrics, ref.key), 'unresolved external metric ref: ' + ref.key);
       }
       for (const ref of Object.values(sector.facts || {})) {
         assert.equal(ref.refType, 'GENERAL_FACT');
@@ -95,6 +103,36 @@ test('unknown values stay null and derived financial ratios require same-year in
     }
   }
   assert.ok(registry.metadata.metricCoverage);
+});
+
+test('CPI score and rank use the publisher result snapshot with correct provenance and null gaps', () => {
+  const snapshot = readJson('country_official_index_observations_v1.json');
+  assert.equal(snapshot.metadata.observationYear, 2025);
+  assert.equal(snapshot.metadata.datasetId, 'OMEGA_TI_CPI_2025_SNAPSHOT_V1');
+  assert.equal(snapshot.countries.length, 182);
+  const byIso3 = new Map(snapshot.countries.map((row) => [row.iso3, row]));
+  for (const profile of profiles.countries) {
+    const observation = byIso3.get(profile.identity.iso3);
+    const score = profile.externalMetrics.corruptionPerceptionIndex;
+    const rank = profile.externalMetrics.corruptionPerceptionRank;
+    if (observation) {
+      assert.equal(score.value, observation.score);
+      assert.equal(rank.value, observation.rank);
+      assert.equal(score.year, 2025);
+      assert.equal(rank.year, 2025);
+      assert.equal(score.status, 'SOURCE_OBSERVATION');
+      assert.equal(rank.status, 'SOURCE_OBSERVATION');
+      assert.equal(score.sourceId, snapshot.metadata.datasetId);
+      assert.equal(score.sourceUrl, snapshot.metadata.publisherUrl);
+      assert.equal(score.mirrorUrl, snapshot.metadata.sourceUrl);
+    } else {
+      assert.equal(score.value, null);
+      assert.equal(rank.value, null);
+      assert.equal(score.status, 'NO_SOURCE_OBSERVATION');
+      assert.equal(rank.status, 'NO_SOURCE_OBSERVATION');
+      assert.equal(score.year, null);
+    }
+  }
 });
 
 test('relative signals retain data year, source and quality labels', () => {
