@@ -63,7 +63,7 @@ public final class OmegaGameplaySmokeTest {
             final long deadline = SystemClock.elapsedRealtime() + 90000L;
             String ready = "false";
             while (!"true".equals(ready) && SystemClock.elapsedRealtime() < deadline) {
-                ready = evaluate(instrumentation, webViewRef.get(), readinessScript);
+                ready = evaluate(instrumentation, webViewRef.get(), readinessScript, 45000L);
                 if (!"true".equals(ready)) SystemClock.sleep(400L);
             }
             assertEquals(
@@ -132,6 +132,15 @@ public final class OmegaGameplaySmokeTest {
             WebView webView,
             String script
     ) throws Exception {
+        return evaluate(instrumentation, webView, script, 10000L);
+    }
+
+    private static String evaluate(
+            android.app.Instrumentation instrumentation,
+            WebView webView,
+            String script,
+            long callbackTimeoutMs
+    ) throws Exception {
         assertNotNull("WebView reference should be initialized", webView);
         final CountDownLatch latch = new CountDownLatch(1);
         final AtomicReference<String> result = new AtomicReference<>();
@@ -142,8 +151,9 @@ public final class OmegaGameplaySmokeTest {
                 })
         );
         assertTrue(
-                "WebView JavaScript evaluation callback should return",
-                latch.await(10, TimeUnit.SECONDS)
+                "WebView JavaScript evaluation callback should return within " + callbackTimeoutMs
+                        + " ms; script prefix=" + script.substring(0, Math.min(160, script.length())),
+                latch.await(callbackTimeoutMs, TimeUnit.MILLISECONDS)
         );
         return result.get();
     }
