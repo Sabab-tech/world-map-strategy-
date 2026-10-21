@@ -189,7 +189,8 @@
       // every country commit scan all already-materialized countries, producing O(N²)
       // extraction cost during world-scale resource simulation.
       const beforeDigest=this._scopeRevision();
-      if(beforeDigest!==this.expectedRevision){
+      // A transaction with no staged writes cannot overwrite newer state; it is an acknowledged no-op.
+      if(this.operations.length>0&&beforeDigest!==this.expectedRevision){
         this.closed=true;
         const conflict=new Error('STATE_TRANSACTION_CONFLICT');
         conflict.code='STATE_TRANSACTION_CONFLICT';
