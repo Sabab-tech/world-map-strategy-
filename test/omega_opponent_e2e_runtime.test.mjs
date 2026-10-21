@@ -101,8 +101,20 @@ assert.equal(candidate.strategyEvaluation.score,strategyScore.score,
 assert.equal(candidate.factors.strategy,strategyScore.score,
   'country strategy score must reach the autonomy factor model before queueing');
 const sim=globalThis.Omega.Simulation;
-await sim.advance(1);
-assert.equal(globalThis.Game.state.projects.BD.registry[0].status,'UNDER_CONSTRUCTION');
+const firstAdvance=await sim.advance(1);
+const projectsAfterFirstAdvance=globalThis.Game.state.projects?.BD?.registry||[];
+assert.equal(projectsAfterFirstAdvance[0]?.status,'UNDER_CONSTRUCTION',
+  'queued country action must mutate authoritative project state; '+JSON.stringify({
+    advance:{turn:firstAdvance.turn,status:firstAdvance.status,last:firstAdvance.last?{
+      turn:firstAdvance.last.turn,
+      phases:firstAdvance.last.phases,
+      commandResults:firstAdvance.last.commandResults
+    }:null},
+    queuedCommands:sim.commandQueue?.snapshot?.(),
+    projects:globalThis.Game.state.projects?.BD?.registry,
+    autonomy:globalThis.OmegaOpponentAutonomy?.diagnostics?.(),
+    interoperability:globalThis.OmegaMinistryInteroperability?.diagnostics?.()
+  }));
 await sim.advance(1);
 await sim.advance(1);
 assert.equal(globalThis.Game.state.cities.BD.housing.available,1200);
