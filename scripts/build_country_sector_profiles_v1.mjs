@@ -11,6 +11,7 @@ import { resolve } from 'node:path';
 const ROOT = process.cwd();
 const INPUT = resolve(ROOT, 'country_general_data_registry_v1.json');
 const SCHEMA = resolve(ROOT, 'country_sector_profile_schema_v1.json');
+const OFFICIAL_INDEX_SNAPSHOT = resolve(ROOT, 'country_official_index_observations_v1.json');
 const OUTPUT = resolve(ROOT, 'country_sector_profiles_v1.json');
 
 function readJson(path) {
@@ -23,6 +24,12 @@ const objectFrom = (keys, values) => Object.fromEntries(keys.map((key, index) =>
 
 const registry = readJson(INPUT);
 const schema = readJson(SCHEMA);
+const officialIndexSnapshot = readJson(OFFICIAL_INDEX_SNAPSHOT);
+if (officialIndexSnapshot.metadata?.datasetId !== 'OMEGA_TI_CPI_2025_SNAPSHOT_V1'
+  || !Array.isArray(officialIndexSnapshot.countries)) {
+  throw new Error('TI_CPI_2025_SNAPSHOT_SCHEMA_UNSUPPORTED');
+}
+const officialIndexByIso3 = new Map(officialIndexSnapshot.countries.map((row) => [String(row.iso3 || '').toUpperCase(), row]));
 const recordSchema = registry.metadata && registry.metadata.recordSchema;
 if (!Array.isArray(registry.countries) || !recordSchema || recordSchema.encoding !== 'ORDERED_VALUE_ARRAYS_V1') {
   throw new Error('COUNTRY_GENERAL_REGISTRY_SCHEMA_UNSUPPORTED');
@@ -37,6 +44,11 @@ const sourceNames = registry.metadata.provenanceEncoding.sourceNames || [];
 const methods = registry.metadata.provenanceEncoding.methods || [];
 const metricsCatalog = registry.fieldCatalogue || [];
 const metricIndex = Object.fromEntries(metricsCatalog.map((field, index) => [field.key, index]));
+const canonicalMetricKeys = new Set(metricsCatalog.map((field) => field.key));
+const schemaMetricKeys = new Set([
+  ...schema.sectors.flatMap((sector) => [...(sector.metricKeys || []), ...(sector.derivedMetricKeys || [])]),
+  ...(schema.extensionMetricDefinitions || []).map((metric) => metric.key)
+]);
 const identityIndex = Object.fromEntries(recordSchema.identityFields.map((key, index) => [key, index]));
 const factIndex = Object.fromEntries(recordSchema.generalFactFields.map((key, index) => [key, index]));
 const resourceIndex = Object.fromEntries(recordSchema.naturalResourceFields.map((key, index) => [key, index]));
@@ -410,6 +422,15 @@ const metadata = {
   noSourceRecordsDeleted: true,
   unknownValuesConvertedToZero: false,
   storageModel: 'COMPACT_REFERENCES_TO_CANONICAL_COUNTRY_REGISTRY',
+  externalIndexSources: [{
+    datasetId: officialIndexSnapshot.metadata.datasetId,
+    publisher: officialIndexSnapshot.metadata.publisher,
+    publisherUrl: officialIndexSnapshot.metadata.publisherUrl,
+    sourceUrl: officialIndexSnapshot.metadata.sourceUrl,
+    observationYear: officialIndexSnapshot.metadata.observationYear,
+    observationCount: officialIndexSnapshot.countries.length,
+    missingObservationsRemainNull: true
+  }],
   userInterfaceBinding: 'DATA_LAYER_ONLY_UI_MAPPING_NOT_YET_CONFIGURED'
 };
 function compactDerivedMetric(metric) {
@@ -438,9 +459,48 @@ function compactDerivedMetric(metric) {
   });
   return compact;
 }
+function externalMetricValue(key, iso3) {
+  const definition = (schema.extensionMetricDefinitions || []).find((item) => item.key === key);
+  if (key === 'corruptionPerceptionIndex' || key === 'corruptionPerceptionRank') {
+    const observation = officialIndexByIso3.get(iso3);
+    const field = key === 'corruptionPerceptionIndex' ? 'score' : 'rank';
+    const value = observation ? finite(observation[field]) : null;
+    return {
+      key, value,
+      unit: key === 'corruptionPerceptionIndex' ? 'score (0-100)' : 'publisher rank (1-182; lower is better)',
+      year: observation ? finite(observation.year) : null,
+      sourceId: officialIndexSnapshot.metadata.datasetId,
+      sourceName: officialIndexSnapshot.metadata.publisher,
+      method: officialIndexSnapshot.metadata.sourceType,
+      sourceUrl: officialIndexSnapshot.metadata.publisherUrl,
+      mirrorUrl: officialIndexSnapshot.metadata.sourceUrl,
+      status: value === null ? 'NO_SOURCE_OBSERVATION' : 'SOURCE_OBSERVATION',
+      note: key === 'corruptionPerceptionIndex'
+        ? officialIndexSnapshot.metadata.scoreScale
+        : officialIndexSnapshot.metadata.rankSemantics
+    };
+  }
+  if (key === 'humanDevelopmentIndex') {
+    return {
+      key, value: null, unit: 'index (0-1)', year: null,
+      sourceId: null, sourceName: null, method: null, sourceUrl: null,
+      status: 'NOT_IMPORTED',
+      note: 'The schema defines an expected HDI observation, but no validated offline HDI values are present in the canonical or external snapshot datasets. No value is inferred.'
+    };
+  }
+  return {
+    key, value: null, unit: definition?.unit || null, year: null,
+    sourceId: null, sourceName: null, method: null, sourceUrl: null,
+    status: definition?.initialStatus || 'NOT_IMPORTED',
+    note: definition?.description || 'Declared sector metric is not present in the canonical registry or a validated external observation snapshot.'
+  };
+}
 const compactProfiles = profiles.map((profile) => ({
   identity: profile.identity,
   profileVersion: profile.profileVersion,
+  externalMetrics: Object.fromEntries([...schemaMetricKeys]
+    .filter((key) => !canonicalMetricKeys.has(key) && !Object.hasOwn(profile.derivedMetrics, key))
+    .map((key) => [key, externalMetricValue(key, profile.identity.iso3)])),
   sourceRegistryRef: {
     dataset: 'country_general_data_registry_v1.json',
     identityKey: 'iso3',
@@ -451,11 +511,11 @@ const compactProfiles = profiles.map((profile) => ({
   analytics: profile.analytics,
   relativeSignals: profile.relativeSignals,
   sectors: Object.fromEntries(Object.entries(profile.sectors).map(([sectorId, sector]) => {
-    const derivedKeys = new Set(schema.sectors.find((entry) => entry.id === sectorId)?.derivedMetricKeys || []);
+    const derivedKeys = new Set(Object.keys(profile.derivedMetrics));
     return [sectorId, {
       id: sector.id, title: sector.title, status: sector.status, description: sector.description,
       indicators: Object.fromEntries(Object.keys(sector.indicators || {}).map((key) => [key, {
-        refType: derivedKeys.has(key) ? 'DERIVED_METRIC' : 'METRIC', key
+        refType: derivedKeys.has(key) ? 'DERIVED_METRIC' : (canonicalMetricKeys.has(key) ? 'METRIC' : 'EXTERNAL_METRIC'), key
       }])),
       facts: Object.fromEntries(Object.keys(sector.facts || {}).map((key) => [key, { refType: 'GENERAL_FACT', key }])),
       sourceGroup: sector.sourceGroup ? { refType: 'SOURCE_GROUP', key: sectorId === 'naturalResources' ? 'naturalResources' :
