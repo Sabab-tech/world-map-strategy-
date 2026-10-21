@@ -139,3 +139,21 @@ test('multiple aliases for one country in a source are reported as duplicate row
   const report=api.auditCountry('BD');
   assert.ok(report.warnings.some(v=>v.code==='DUPLICATE_COUNTRY_SOURCE_ROWS'&&v.sourceId==='society.json'));
 });
+
+
+test('geographic ISO sentinel -99 does not create a false wrong-country error when the country name matches',()=>{
+  const api=fixture({world:{type:'FeatureCollection',features:[
+    {type:'Feature',id:'BGD',properties:{name:'Bangladesh',ISO_A2:'-99',ISO_A3:'BGD'}}
+  ]}});
+  const report=api.auditCountry('BD');
+  assert.equal(report.errors.some(v=>v.sourceId==='world.json'&&v.code==='UNRESOLVED_SOURCE_COUNTRY_CODE'),false);
+  assert.equal(report.errors.some(v=>v.sourceId==='world.json'&&v.code==='SOURCE_COUNTRY_IDENTITY_MISMATCH'),false);
+});
+
+test('duplicate aliases in a single source remain visible to the audit',()=>{
+  const api=fixture({society:{BANGLADESH:{urbanization_rate:38},BGD:{urbanization_rate:40}}});
+  const report=api.auditCountry('Bangladesh');
+  const duplicate=report.warnings.find(v=>v.code==='DUPLICATE_COUNTRY_SOURCE_ROWS'&&v.sourceId==='society.json');
+  assert.ok(duplicate);
+  assert.deepEqual(duplicate.keys.sort(),['BANGLADESH','BGD']);
+});
