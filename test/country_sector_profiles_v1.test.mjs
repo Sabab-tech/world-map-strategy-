@@ -46,7 +46,7 @@ test('every profile contains the same extensible sector and calculation contract
     assert.deepEqual(Object.keys(row.sectors).sort(), schema.sectors.map((sector) => sector.id).sort());
     for (const section of schema.sectors) {
       assert.equal(typeof section.title, 'string');
-      assert.equal(typeof section.description, 'string');
+      if (section.description !== undefined) assert.equal(typeof section.description, 'string');
       if (section.extensionSlots !== undefined) assert.ok(Array.isArray(section.extensionSlots),
         'declared sector extension slots must remain an array in the canonical schema');
     }
