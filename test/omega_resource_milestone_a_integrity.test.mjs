@@ -19,7 +19,8 @@ const aliasMap={
  SITE_CHL_escondida_copper_mine_legacy2:'SITE_CHL_escondida_copper_mine',
  SITE_IDN_grasberg_copper_gold_mine:'SITE_IDN_grasberg_mine',
  SITE_COD_tenke_fungurume_copper_cobalt_complex:'SITE_COD_tenke_fungurume_mine',
- SITE_COD_kibali_gold_mine_complex:'SITE_COD_kibali_gold_mine'
+ SITE_COD_kibali_gold_mine_complex:'SITE_COD_kibali_gold_mine',
+ SITE_CAN_voiseys_bay_nickel_mine:'SITE_CAN_voisey_s_bay_nickel_mine'
 };
 const norm=v=>String(v??'').normalize('NFKD').replace(/\p{M}/gu,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
 const countryOf=x=>String(x?.countryId||x?.identity?.countryIso3||x?.countryCode||'').toUpperCase();
