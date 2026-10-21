@@ -133,21 +133,11 @@ function auditCountry(c){
  rs.mineStates=states;rs.depletionIntegrity=a;return a;
 }
 function patchExtraction(){
- const rt=g.Omega?.ResourceEndowmentRuntime||g.OmegaResourceEndowmentRuntime;
- if(!rt||rt.__resourceSystemHardeningExtraction)return false;
+ const rt=g.Omega?.ResourceEndowmentRuntime||g.OmegaResourceEndowmentRuntime;if(!rt||rt.__resourceSystemHardeningExtraction)return false;
  const all=rt.extractAll,countryExtract=rt.extractCountry;
- if(typeof all!=='function'||typeof countryExtract!=='function')return false;
- // ResourceEndowmentRuntime publishes a frozen canonical API. Wrap a facade rather
- // than assigning into that immutable object; keep both public aliases in sync.
- const facade=Object.assign({},rt);
- // Preserve the original receiver in case a canonical implementation uses this internally.
- facade.extractCountry=async(c,keys)=>{const r=await countryExtract.call(rt,c,keys);auditCountry(c);return r;};
- facade.extractAll=async()=>{const r=await all.call(rt);for(const x of r?.results||[])auditCountry(x?.countryId);return r;};
- facade.__resourceSystemHardeningExtraction=true;
- g.Omega=g.Omega||{};
- g.Omega.ResourceEndowmentRuntime=facade;
- g.OmegaResourceEndowmentRuntime=facade;
- return true;
+ rt.extractCountry=async(c,keys)=>{const r=await countryExtract(c,keys);auditCountry(c);return r;};
+ rt.extractAll=async()=>{const r=await all();for(const x of r?.results||[])auditCountry(x?.countryId);return r;};
+ rt.__resourceSystemHardeningExtraction=true;return true;
 }
 
 function ontology(){return g.__OmegaResourceEconomyOntology||{};}

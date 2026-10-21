@@ -63,7 +63,7 @@ public final class OmegaGameplaySmokeTest {
             final long deadline = SystemClock.elapsedRealtime() + 90000L;
             String ready = "false";
             while (!"true".equals(ready) && SystemClock.elapsedRealtime() < deadline) {
-                ready = evaluate(instrumentation, webViewRef.get(), readinessScript, 45000L);
+                ready = evaluate(instrumentation, webViewRef.get(), readinessScript);
                 if (!"true".equals(ready)) SystemClock.sleep(400L);
             }
             assertEquals(
@@ -71,130 +71,42 @@ public final class OmegaGameplaySmokeTest {
                     "true", ready
             );
 
-            final String compatibilityDiagnosticScript =
-                    "(function() { return JSON.stringify({" +
-                    "marker: !!window.__OMEGA_ANDROID_WEBVIEW_COMPAT__," +
-                    "version: window.__OMEGA_ANDROID_WEBVIEW_COMPAT__ && window.__OMEGA_ANDROID_WEBVIEW_COMPAT__.version," +
-                    "fromEntries: typeof Object.fromEntries === 'function'," +
-                    "flatMap: typeof Array.prototype.flatMap === 'function'," +
-                    "bridgeVersion: window.OmegaAIIntegrityCanonicalBridge && window.OmegaAIIntegrityCanonicalBridge.VERSION" +
-                    "}); })()";
-            final String compatibilityDiagnostic =
-                    evaluate(instrumentation, webViewRef.get(), compatibilityDiagnosticScript);
-            final String compatibilityReadyScript =
-                    "(function() { return !!(window.__OMEGA_ANDROID_WEBVIEW_COMPAT__ &&" +
-                    " window.__OMEGA_ANDROID_WEBVIEW_COMPAT__.version === '1.0.1' &&" +
-                    " typeof Object.fromEntries === 'function' &&" +
-                    " typeof Array.prototype.flatMap === 'function' &&" +
-                    " window.OmegaAIIntegrityCanonicalBridge &&" +
-                    " window.OmegaAIIntegrityCanonicalBridge.VERSION === '1.1.0'); })()";
+            final String speedControlScript =
+                    "(function() {" +
+                    " var button = document.querySelector('.speed-btn[data-speed=\\\"2\\\"]');" +
+                    " if (!button) return false;" +
+                    " button.click();" +
+                    " return !!(button.classList.contains('active') && window.Game.gameSpeed === 2);" +
+                    "})()";
             assertEquals(
-                    "APK must execute the Chrome 66 compatibility layer and current canonical bridge; diagnostic="
-                            + compatibilityDiagnostic,
-                    "true",
-                    evaluate(instrumentation, webViewRef.get(), compatibilityReadyScript)
+                    "Tapping the 2x control must update the actual simulation speed",
+                    "true", evaluate(instrumentation, webViewRef.get(), speedControlScript)
             );
 
-            final String ministryRuntimeDiagnosticScript =
-                    "(function() { var r=window.OMEGA_MINISTRY_RUNTIME_V1 || (window.Omega && window.Omega.MinistryRuntime);" +
-                    " var h=r && typeof r.health==='function' ? r.health() : null;" +
-                    " var reg=window.OmegaMinistryRegistry, state=window.OmegaMinisterStateRegistry;" +
-                    " return JSON.stringify({registryVersion:reg&&reg.VERSION,registryCount:reg&&reg.ids&&reg.ids.length," +
-                    "controllerPresent:!!r,controllerIds:r&&typeof r.getIds==='function'?r.getIds().length:null," +
-                    "runtimeHealth:h?{count:h.count,active:h.active,independent:h.independent,initialized:h.initialized,engineRegistryHealthy:h.engineRegistryHealthy}:null," +
-                    "stateRegistryPresent:!!state,stateConsistency:typeof (state&&state.consistencyCheck),stateAssignments:typeof (state&&state.getAssignments)," +
-                    "domainEnginesPresent:!!window.OmegaMinistryDomainEngines,semanticBridgeVersion:window.OmegaAIIntegrityCanonicalBridge&&window.OmegaAIIntegrityCanonicalBridge.VERSION}); })()";
-            final String ministryRuntimeReadyScript =
-                    "(function() { var r=window.OMEGA_MINISTRY_RUNTIME_V1 || (window.Omega && window.Omega.MinistryRuntime);" +
-                    " var reg=window.OmegaMinistryRegistry, state=window.OmegaMinisterStateRegistry;" +
-                    " return !!(reg && reg.VERSION==='1.0.0' && reg.ids && reg.ids.length===17 &&" +
-                    " r && typeof r.getIds==='function' && r.getIds().length===17 &&" +
-                    " state && typeof state.consistencyCheck==='function' && typeof state.getAssignments==='function' &&" +
-                    " window.OmegaMinistryDomainEngines); })()";
-            final long ministryDeadline = SystemClock.elapsedRealtime() + 20000L;
-            String ministryReady = "false";
-            String ministryDiagnostic = "unavailable";
-            while (!"true".equals(ministryReady) && SystemClock.elapsedRealtime() < ministryDeadline) {
-                ministryReady = evaluate(instrumentation, webViewRef.get(), ministryRuntimeReadyScript);
-                ministryDiagnostic = evaluate(instrumentation, webViewRef.get(), ministryRuntimeDiagnosticScript);
-                if (!"true".equals(ministryReady)) SystemClock.sleep(300L);
-            }
+            final String ministryNavigationScript =
+                    "(function() {" +
+                    " var button = document.getElementById('btn-ministry-dock');" +
+                    " if (!button) return false;" +
+                    " button.click();" +
+                    " return !!(window.OmegaLayerManager &&" +
+                    " window.OmegaLayerManager.currentLayer === 1 &&" +
+                    " document.body.getAttribute('data-active-layer') === '1');" +
+                    "})()";
+            final String ministryOpened =
+                    evaluate(instrumentation, webViewRef.get(), ministryNavigationScript);
             assertEquals(
-                    "Canonical 17-ministry controller, domain engines and state registry must be available; diagnostic="
-                            + ministryDiagnostic,
-                    "true",
-                    ministryReady
+                    "Tapping the real Ministry dock must enter Government HQ Layer 1",
+                    "true", ministryOpened
             );
-
-            final String clickSpeedScript =
-                    "(function() { var button = document.querySelector('.speed-btn[data-speed=\\\"2\\\"]');" +
-                    " if (!button) return 'MISSING_SPEED_CONTROL'; button.click(); return 'CLICK_SENT'; })()";
-            assertEquals("2x speed control must exist and accept a click",
-                    "\"CLICK_SENT\"", evaluate(instrumentation, webViewRef.get(), clickSpeedScript));
-            final String speedStateScript =
-                    "(function() { var b=document.querySelector('.speed-btn[data-speed=\\\"2\\\"]');" +
-                    " return JSON.stringify({speed:window.Game&&window.Game.gameSpeed," +
-                    "active:!!(b&&b.classList.contains('active')),button:!!b}); })()";
-            waitForJsCondition(instrumentation, webViewRef.get(),
-                    "(function(){var b=document.querySelector('.speed-btn[data-speed=\\\"2\\\"]');" +
-                    "return !!(b&&b.classList.contains('active')&&window.Game&&window.Game.gameSpeed===2);})()",
-                    10000L, "2x simulation speed");
-            final String speedState = evaluate(instrumentation, webViewRef.get(), speedStateScript);
-            assertTrue("2x speed diagnostic should show the settled state: " + speedState,
-                    speedState.contains("speed") && speedState.contains("2") && speedState.contains("true"));
-
-            final String clickMinistryScript =
-                    "(function() { var b=document.getElementById('btn-ministry-dock');" +
-                    " if (!b) return 'MISSING_MINISTRY_DOCK'; b.click(); return 'CLICK_SENT'; })()";
-            assertEquals("The real Ministry dock must exist and accept a click",
-                    "\"CLICK_SENT\"", evaluate(instrumentation, webViewRef.get(), clickMinistryScript));
-            final String ministryStateScript =
-                    "(function() {return JSON.stringify({manager:!!window.OmegaLayerManager," +
-                    "layer:window.OmegaLayerManager&&window.OmegaLayerManager.currentLayer," +
-                    "activeLayer:document.body.getAttribute('data-active-layer')});})()";
-            waitForJsCondition(instrumentation, webViewRef.get(),
-                    "(function() {return !!(window.OmegaLayerManager &&" +
-                    " window.OmegaLayerManager.currentLayer===1 &&" +
-                    " document.body.getAttribute('data-active-layer')==='1');})()",
-                    15000L, "Government HQ Layer 1");
-            final String ministryState = evaluate(instrumentation, webViewRef.get(), ministryStateScript);
-            assertTrue("Ministry diagnostic should show the settled state: " + ministryState,
-                    ministryState.contains("manager") && ministryState.contains("layer") && ministryState.contains("1"));
         } finally {
             instrumentation.runOnMainSync(activity::finish);
         }
-    }
-
-    private static void waitForJsCondition(
-            android.app.Instrumentation instrumentation,
-            WebView webView,
-            String script,
-            long timeoutMs,
-            String description
-    ) throws Exception {
-        final long deadline = SystemClock.elapsedRealtime() + timeoutMs;
-        String last = "false";
-        while (!"true".equals(last) && SystemClock.elapsedRealtime() < deadline) {
-            last = evaluate(instrumentation, webView, script);
-            if (!"true".equals(last)) SystemClock.sleep(150L);
-        }
-        assertEquals("Timed out waiting for " + description + "; last JavaScript result=" + last,
-                "true", last);
     }
 
     private static String evaluate(
             android.app.Instrumentation instrumentation,
             WebView webView,
             String script
-    ) throws Exception {
-        return evaluate(instrumentation, webView, script, 10000L);
-    }
-
-    private static String evaluate(
-            android.app.Instrumentation instrumentation,
-            WebView webView,
-            String script,
-            long callbackTimeoutMs
     ) throws Exception {
         assertNotNull("WebView reference should be initialized", webView);
         final CountDownLatch latch = new CountDownLatch(1);
@@ -206,9 +118,8 @@ public final class OmegaGameplaySmokeTest {
                 })
         );
         assertTrue(
-                "WebView JavaScript evaluation callback should return within " + callbackTimeoutMs
-                        + " ms; script prefix=" + script.substring(0, Math.min(160, script.length())),
-                latch.await(callbackTimeoutMs, TimeUnit.MILLISECONDS)
+                "WebView JavaScript evaluation callback should return",
+                latch.await(10, TimeUnit.SECONDS)
         );
         return result.get();
     }

@@ -14,9 +14,6 @@ on:
       - "map-engine-1.js"
       - "map-engine-2.js"
       - "test/**"
-      - "scripts/build_android_web_compat_assets.mjs"
-      - "package.json"
-      - "android/app/build.gradle"
   push:
     branches: [ main ]
     paths:
@@ -50,17 +47,6 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - name: Setup Node.js 24
-        uses: actions/setup-node@v4
-        with:
-          node-version: "24"
-
-      - name: Install Android web asset compiler
-        run: npm install --ignore-scripts --no-audit
-
-      - name: Test Android 9 WebView compatibility transform
-        run: npm run test:android-web-compat
-
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
@@ -80,26 +66,6 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot-load -no-snapshot-save -noaudio -no-boot-anim -camera-back none -camera-front none -memory 2048 -cores 2
           disable-animations: true
           script: |
-            set +e
             adb wait-for-device
             adb shell getprop ro.build.version.sdk
-            gradle -p android connectedDebugAndroidTest --no-daemon --info
-            result=$?
-            if [ "$result" -ne 0 ]; then
-              echo "Instrumentation run failed; collecting Android and test-runner diagnostics."
-              adb logcat -d -v time | grep -E "OmegaGameplaySmoke|AndroidJUnitRunner|FATAL EXCEPTION|AssertionError|FAILED|instrumentation" | tail -n 240 || true
-              find android/app/build/reports/androidTests/connected/debug -type f -maxdepth 4 -print 2>/dev/null || true
-              find android/app/build/outputs/androidTest-results/connected/debug -type f -maxdepth 4 -print 2>/dev/null || true
-            fi
-            exit "$result"
-
-      - name: Upload Android 9 instrumentation report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: omega-android9-gameplay-smoke-report
-          path: |
-            android/app/build/reports/androidTests/connected/debug/
-            android/app/build/outputs/androidTest-results/connected/debug/
-          if-no-files-found: warn
-          retention-days: 7
+            gradle -p android connectedDebugAndroidTest --no-daemon

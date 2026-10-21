@@ -195,18 +195,7 @@
         }
         return parts.join(' ');
     }
-    // Android 9 WebView ships an older Unicode database; Extended_Pictographic may
-    // be unknown even when the underlying JavaScript syntax otherwise parses.
-    // Prefer the precise matcher, with a legacy-safe fallback only when unsupported.
-    const EMOJI_BASE_PATTERN = '(?:[\\u2600-\\u27BF]|\\uD83C[\\uDC00-\\uDFFF]|\\uD83D[\\uDC00-\\uDFFF]|\\uD83E[\\uDD00-\\uDFFF])';
-    let ICON_RE;
-    try {
-        ICON_RE = new RegExp('\\p{Extended_Pictographic}(?:\\uFE0E|\\uFE0F)?(?:\\u200D\\p{Extended_Pictographic}(?:\\uFE0E|\\uFE0F)?)*', 'gu');
-        ICON_RE.test('🧭');
-        ICON_RE.lastIndex = 0;
-    } catch (_) {
-        ICON_RE = new RegExp(EMOJI_BASE_PATTERN + '(?:\\uFE0E|\\uFE0F)?(?:\\uD83C[\\uDFFB-\\uDFFF])?(?:\\u200D' + EMOJI_BASE_PATTERN + '(?:\\uFE0E|\\uFE0F)?(?:\\uD83C[\\uDFFB-\\uDFFF])?)*', 'gu');
-    }
+    const ICON_RE = /\p{Extended_Pictographic}(?:\uFE0E|\uFE0F)?(?:\u200D\p{Extended_Pictographic}(?:\uFE0E|\uFE0F)?)*/gu;
     const SKIP_SUBTREE_SELECTOR = [
         'script', 'style', 'textarea', 'input', 'select', 'option', 'pre', 'code', 'svg',
         '[contenteditable="true"]', '.omega-icon-sprite', '.omega-ui-icon', '#debug-root',

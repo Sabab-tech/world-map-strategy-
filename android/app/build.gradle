@@ -61,35 +61,14 @@ tasks.register('syncOmegaWebAssets', Sync) {
         exclude 'package.json'
         exclude 'bun.lock'
         exclude 'server.js'
-        // This is a Node AsyncLocalStorage server gateway, not an offline WebView asset.
-        exclude 'omega_server_ai_gateway.js'
         exclude 'server_bootstrap.js'
         exclude '.env*'
     }
-    into("$buildDir/generated/omegaWebAssetsRaw")
-}
-
-tasks.register('transpileOmegaWebAssets', Exec) {
-    dependsOn(tasks.named('syncOmegaWebAssets'))
-    inputs.dir("$buildDir/generated/omegaWebAssetsRaw")
-    inputs.file("$omegaRepoRoot/scripts/build_android_web_compat_assets.mjs")
-    outputs.dir("$buildDir/generated/omegaWebAssets")
-    commandLine 'node', "$omegaRepoRoot/scripts/build_android_web_compat_assets.mjs",
-        "$buildDir/generated/omegaWebAssetsRaw",
-        "$buildDir/generated/omegaWebAssets"
+    into("$buildDir/generated/omegaWebAssets")
 }
 
 tasks.named('preBuild').configure {
-    dependsOn(tasks.named('transpileOmegaWebAssets'))
-}
-
-// Bind transformed assets directly to the merge tasks too. A preBuild-only
-// dependency can be insufficient when Android Gradle Plugin schedules variant
-// asset merges independently, leaving stale/untransformed JavaScript in the APK.
-tasks.configureEach {
-    if (name.startsWith('merge') && name.endsWith('Assets')) {
-        dependsOn(tasks.named('transpileOmegaWebAssets'))
-    }
+    dependsOn(tasks.named('syncOmegaWebAssets'))
 }
 
 dependencies {

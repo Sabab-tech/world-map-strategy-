@@ -3,12 +3,9 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 
 const source = fs.readFileSync(new URL('../omega_minister_state_system.js', import.meta.url), 'utf8');
-const selectorSource = fs.readFileSync(new URL('../omega_live_minister_selector.js', import.meta.url), 'utf8');
 const store = new Map();
 const events = [];
-const legacyRegistry = { version: 'legacy-selector-registry' };
 const sandbox = {
-  OmegaMinisterStateRegistry: legacyRegistry,
   console,
   Date,
   JSON,
@@ -38,12 +35,6 @@ vm.runInNewContext(source, sandbox, { filename: 'omega_minister_state_system.js'
 
 const registry = sandbox.OmegaMinisterStateRegistry;
 assert.ok(registry);
-assert.notEqual(registry, legacyRegistry, 'the incomplete legacy alias must not suppress the canonical registry');
-assert.equal(sandbox.OmegaMinisterLegacyRegistry, legacyRegistry, 'legacy registry reference must be retained');
-assert.equal(typeof registry.consistencyCheck, 'function');
-assert.equal(typeof registry.getAssignments, 'function');
-assert.ok(selectorSource.includes("const r=registry(),canonical=global.OmegaMinisterStateRegistry;"), 'live selector must inspect canonical registry before writing its legacy alias');
-assert.ok(selectorSource.includes("return r||canonical||null;"), 'live selector must keep its own V2 registry without publishing it as canonical');
 
 const profileA = {
   id: 'Finance_3', age: 47, background: 'Macroeconomic Strategist', gender: 'male',

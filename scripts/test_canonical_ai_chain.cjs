@@ -34,11 +34,16 @@ assert(serverSyntax.status === 0, `server.js syntax gate failed: ${serverSyntax.
 const deepCoreSyntax = spawnSync(process.execPath, ['--check', path.join(root, 'offline_query_engine.js')], { encoding: 'utf8' });
 assert(deepCoreSyntax.status === 0, `offline_query_engine.js syntax gate failed: ${deepCoreSyntax.stderr || deepCoreSyntax.stdout}`);
 
-assert(/OfflineQueryEngine\.(?:execute)\(ir,\s*(?!\[\])[^,]+,/.test(server), 'server Deep Core execute path must not inject an empty dataset array');
+assert(/OfflineQueryEngine\.(?:execute|executeAsync)\(ir,\s*(?!\[\])[^,]+,/.test(server), 'server Deep Core execution path must preserve runtime context and must not inject an empty dataset array');
 assert(!/OfflineQueryEngine\.(?:execute|executeAsync|buildExecutionPlan|buildExecutionPlanAsync)\([^,]+,\s*\[\]/.test(server), 'server must not pass [] as Deep Core dataset/context');
 assert(server.includes('const runtimeDataContext ='), 'server must provide runtime context through the existing Deep Core contract');
-assert(server.includes('OfflineQueryEngine.execute(ir, runtimeDataContext'), 'server execute path must pass runtimeDataContext to Deep Core');
-assert(server.includes('OfflineQueryEngine.buildExecutionPlan(ir, runtimeDataContext'), 'server plan path must pass runtimeDataContext to Deep Core');
+assert(server.includes('OfflineQueryEngine.executeAsync(ir, runtimeDataContext') || server.includes('OfflineQueryEngine.execute(ir, runtimeDataContext'), 'server execute path must pass runtimeDataContext to Deep Core');
+assert(server.includes('OfflineQueryEngine.buildExecutionPlanAsync(ir, runtimeDataContext') || server.includes('OfflineQueryEngine.buildExecutionPlan(ir, runtimeDataContext'), 'server plan path must pass runtimeDataContext to Deep Core');
+assert(deepCore.includes('async nodeBuildAsync()'), 'Node repository indexing must support asynchronous file reads');
+assert(deepCore.includes('async ensureAsync()'), 'Deep Core async initialization must be available');
+assert(deepCore.includes('health:()=>core().health()'), 'Deep Core health must expose a lightweight, non-indexing status');
+assert(server.includes('OfflineQueryEngine.health()'), 'health endpoint must not trigger a synchronous full-repository scan');
+assert(server.includes('await OfflineQueryEngine.diagnosticsAsync()'), 'explicit server diagnostics must use asynchronous initialization');
 
 assert(deepCore.includes('this.catalog=new Map'), 'Deep Core authoritative catalog must remain internal');
 assert(deepCore.includes('this.records=[]'), 'Deep Core internal records index must remain internal');
@@ -72,6 +77,10 @@ assert(server.includes("app.get('/api/deep-core/resolve'"), 'server resolve endp
 assert(server.includes("app.get('/api/deep-core/search'"), 'server search endpoint must exist');
 assert(server.includes("app.post('/api/deep-core/plan'"), 'server plan endpoint must exist');
 assert(server.includes("app.get('/api/deep-core/diagnostics'"), 'server diagnostics endpoint must exist');
+const listenBlock = server.slice(server.lastIndexOf('app.listen(PORT'));
+assert(listenBlock.includes('[OMEGA Server] Listening on port'), 'production listener must expose startup readiness');
+assert(!listenBlock.includes('OfflineQueryEngine.diagnostics()'), 'server startup must not synchronously scan every repository JSON file');
+assert(server.includes("app.get('/api/deep-core/diagnostics'"), 'Deep Core diagnostics must remain available on explicit request');
 assert(server.includes("app.post('/api/deep-core/refresh'"), 'server refresh endpoint must exist');
 assert(server.includes('function deepCoreContext('), 'server must preserve the existing Deep Core request-context gateway');
 assert(server.includes('function executeDeepCorePrompt('), 'server must preserve the existing Deep Core execution gateway');

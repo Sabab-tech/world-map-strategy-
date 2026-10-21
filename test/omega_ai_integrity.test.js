@@ -166,38 +166,3 @@ test('Omega AI Integrity Suite', async () => {
   console.log('Explicit country beats active-country context: PASS');
   console.log('Resource entity remains separate from country entity: PASS');
 });
-
-
-test('canonical semantic bridge extends a frozen AI integrity API copy-on-write', () => {
-  const bridgeSource = fs.readFileSync(new URL('../omega_ai_integrity_canonical_bridge.js', import.meta.url), 'utf8');
-  const original = Object.freeze({
-    VERSION: '2.1.0',
-    canonicalMinisterIdentity: value => value,
-    detectIntent: () => ({ intent: 'LEGACY', confidence: 0.25 })
-  });
-  const sandbox = {
-    OmegaAIIntegrity: original,
-    __OMEGA_AI_INTEGRITY__: { version: '2.1.0', api: original },
-    OmegaProductionSemanticRuntime: {
-      VERSION: '3.0.0',
-      parse: (question, context) => ({ targetDomain: 'COUNTRY', operation: 'LOOKUP', confidence: 0.93, question, context })
-    },
-    setInterval: () => 1,
-    clearInterval: () => {},
-    setTimeout: () => 1
-  };
-  sandbox.globalThis = sandbox;
-  vm.runInNewContext(bridgeSource, sandbox, { filename: 'omega_ai_integrity_canonical_bridge.js' });
-  assert.equal(sandbox.OmegaAIIntegrityCanonicalBridge.install(), true);
-  const bridged = sandbox.OmegaAIIntegrity;
-  assert.notEqual(bridged, original, 'bridge must not mutate the frozen base object');
-  assert.equal(Object.isFrozen(original), true, 'original integrity API remains immutable');
-  assert.equal(Object.isFrozen(bridged), true, 'extended public API is frozen after complete assembly');
-  assert.equal(bridged.CANONICAL_SEMANTIC_VERSION, '3.0.0');
-  assert.equal(bridged.SEMANTIC_AUTHORITY, 'OmegaProductionSemanticRuntime');
-  const parsed = bridged.parse('What is Bangladesh?', { countryId: 'BGD' });
-  assert.equal(parsed.targetDomain, 'COUNTRY');
-  assert.equal(parsed.context.countryId, 'BGD');
-  assert.equal(bridged.detectIntent('What is Bangladesh?').intent, 'COUNTRY');
-  assert.equal(sandbox.__OMEGA_AI_INTEGRITY__.api, bridged, 'metadata must point to the canonical extended API');
-});

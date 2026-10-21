@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import { test } from 'node:test';
 
 const readJson = (path) => JSON.parse(readFileSync(path, 'utf8'));
@@ -8,14 +8,15 @@ const schema = readJson('country_sector_profile_schema_v1.json');
 const profilesPath = 'country_sector_profiles_v1.json';
 const profiles = existsSync(profilesPath) ? readJson(profilesPath) : null;
 const registryIso3Index = registry.metadata.recordSchema.identityFields.indexOf('iso3');
-const strategicProfileVersionIndex = registry.metadata.recordSchema.strategicProfileFields
-  ? registry.metadata.recordSchema.strategicProfileFields.indexOf('profileVersion') : -1;
+const metricIndex = new Map(registry.fieldCatalogue.map((field) => [field.key, field]));
 const registryByIso3 = new Map(registry.countries.map((source) => [
   source.identity[registryIso3Index], source
 ]));
 
 test('sector profile registry covers the canonical roster with unique ISO3 identities', () => {
   assert.ok(profiles, 'Run scripts/build_country_sector_profiles_v1.mjs before testing.');
+  assert.ok(statSync(profilesPath).size < 12 * 1024 * 1024,
+    'sector profiles must remain under 12 MiB; actual bytes=' + statSync(profilesPath).size + '. Reuse canonical observations and avoid duplicated model evidence.');
   const canonical = readJson('countries.json');
   assert.equal(profiles.metadata.countryAndTerritoryCount, canonical.length);
   assert.equal(profiles.countries.length, canonical.length);
@@ -28,6 +29,11 @@ test('sector profile registry covers the canonical roster with unique ISO3 ident
   );
   assert.equal(profiles.metadata.noSourceRecordsDeleted, true);
   assert.equal(profiles.metadata.unknownValuesConvertedToZero, false);
+  assert.equal(profiles.metadata.storageModel, 'COMPACT_REFERENCES_TO_CANONICAL_COUNTRY_REGISTRY');
+  assert.equal(profiles.sourceRegistry.identityKey, 'iso3');
+  assert.equal(profiles.metadata.externalIndexSources[0].datasetId, 'OMEGA_TI_CPI_2025_SNAPSHOT_V1');
+  assert.equal(profiles.metadata.externalIndexSources[0].observationYear, 2025);
+  assert.equal(profiles.metadata.externalIndexSources[0].missingObservationsRemainNull, true);
 });
 
 test('every profile contains the same extensible sector and calculation contracts', () => {
@@ -38,6 +44,18 @@ test('every profile contains the same extensible sector and calculation contract
   assert.ok(schema.extensionContract.customMetricsField);
   for (const row of profiles.countries) {
     assert.deepEqual(Object.keys(row.sectors).sort(), schema.sectors.map((sector) => sector.id).sort());
+    for (const section of schema.sectors) {
+      assert.equal(typeof section.title, 'string');
+      if (section.description !== undefined) assert.equal(typeof section.description, 'string');
+      if (section.extensionSlots !== undefined) assert.ok(Array.isArray(section.extensionSlots),
+        'declared sector extension slots must remain an array in the canonical schema');
+    }
+    for (const sectorId of Object.keys(row.sectors)) {
+      assert.equal(typeof row.sectors[sectorId].status, 'string');
+      assert.ok(!Object.hasOwn(row.sectors[sectorId], 'title'));
+      assert.ok(!Object.hasOwn(row.sectors[sectorId], 'description'));
+      assert.ok(!Object.hasOwn(row.sectors[sectorId], 'extensionSlots'));
+    }
     assert.ok(Array.isArray(row.extensions.customAttributes));
     assert.ok(Array.isArray(row.extensions.customMetrics));
     assert.ok(Array.isArray(row.extensions.customTimeSeries));
@@ -45,17 +63,29 @@ test('every profile contains the same extensible sector and calculation contract
     assert.ok(row.analytics.economicStressIndex);
     assert.ok(row.analytics.diplomaticInfluenceIndex);
     assert.ok(row.analytics.militaryCapabilityIndex);
-    if (registry.metadata.recordSchema.strategicProfileFields) {
-      assert.ok(row.strategicProfile, 'Existing strategic profile was not carried into the sector registry.');
-      const sourceRow = registryByIso3.get(row.identity.iso3);
-      assert.ok(sourceRow, 'the sector identity must resolve to the canonical registry record');
-      assert.ok(String(row.strategicProfile.profileVersion || '').startsWith('OMEGA_COUNTRY_STRATEGIC_PROFILE_V'),
-        'the canonical registry must provide an explicit strategic profile version');
-      assert.ok(strategicProfileVersionIndex >= 0, 'the canonical schema must define strategic profile version provenance');
-      assert.equal(typeof row.strategicProfile.profileVersion, 'string');
-      assert.equal(row.strategicProfile.profileVersion, row.strategicProfile.profileVersion.trim(),
-        'the strategic profile version must not be an empty or whitespace-padded identifier');
-      assert.deepEqual(Object.keys(row.strategicProfile), registry.metadata.recordSchema.strategicProfileFields);
+    assert.deepEqual(row.sourceRegistryRef, {
+      dataset: 'country_general_data_registry_v1.json',
+      identityKey: 'iso3',
+      identityValue: row.identity.iso3
+    });
+    assert.ok(registryByIso3.has(row.identity.iso3), 'sector identity must resolve to the canonical registry record');
+    assert.equal(row.profileVersion, schema.schemaVersion);
+    assert.ok(Object.hasOwn(row.externalMetrics, 'corruptionPerceptionIndex'));
+    assert.ok(Object.hasOwn(row.externalMetrics, 'corruptionPerceptionRank'));
+    assert.equal(row.externalMetrics.humanDevelopmentIndex.value, null);
+    assert.equal(row.externalMetrics.humanDevelopmentIndex.status, 'NOT_IMPORTED');
+    for (const sector of Object.values(row.sectors)) {
+      for (const ref of Object.values(sector.indicators || {})) {
+        assert.ok(['METRIC','DERIVED_METRIC','EXTERNAL_METRIC'].includes(ref.refType));
+        assert.equal(typeof ref.key, 'string');
+        if (ref.refType === 'METRIC') assert.ok(metricIndex.has(ref.key), 'unresolved canonical metric ref: ' + ref.key);
+        else if (ref.refType === 'DERIVED_METRIC') assert.ok(Object.hasOwn(row.derivedMetrics, ref.key), 'unresolved derived metric ref: ' + ref.key);
+        else assert.ok(Object.hasOwn(row.externalMetrics, ref.key), 'unresolved external metric ref: ' + ref.key);
+      }
+      for (const ref of Object.values(sector.facts || {})) {
+        assert.equal(ref.refType, 'GENERAL_FACT');
+        assert.ok(registry.metadata.recordSchema.generalFactFields.includes(ref.key), 'unresolved general fact ref: ' + ref.key);
+      }
     }
   }
 });
@@ -75,12 +105,46 @@ test('unknown values stay null and derived financial ratios require same-year in
       assert.equal(row.analytics[slot.id].value, null, slot.id + ' must not be fabricated');
       assert.equal(row.analytics[slot.id].status, 'NOT_SCORED_REQUIRED_DATA_MISSING');
     }
-    for (const key of Object.keys(row.metrics)) {
-      const observation = row.metrics[key];
+    const canonicalRow = registryByIso3.get(row.identity.iso3);
+    for (const rawValue of canonicalRow.metrics || []) {
+      assert.ok(rawValue === null || (typeof rawValue === 'number' && Number.isFinite(rawValue)),
+        'canonical metric values must remain finite or null');
+    }
+    for (const observation of Object.values(row.derivedMetrics)) {
       assert.ok(observation.value === null || (typeof observation.value === 'number' && Number.isFinite(observation.value)));
     }
   }
   assert.ok(registry.metadata.metricCoverage);
+});
+
+test('CPI score and rank use the publisher result snapshot with correct provenance and null gaps', () => {
+  const snapshot = readJson('country_official_index_observations_v1.json');
+  assert.equal(snapshot.metadata.observationYear, 2025);
+  assert.equal(snapshot.metadata.datasetId, 'OMEGA_TI_CPI_2025_SNAPSHOT_V1');
+  assert.equal(snapshot.countries.length, 182);
+  const byIso3 = new Map(snapshot.countries.map((row) => [row.iso3, row]));
+  for (const profile of profiles.countries) {
+    const observation = byIso3.get(profile.identity.iso3);
+    const score = profile.externalMetrics.corruptionPerceptionIndex;
+    const rank = profile.externalMetrics.corruptionPerceptionRank;
+    if (observation) {
+      assert.equal(score.value, observation.score);
+      assert.equal(rank.value, observation.rank);
+      assert.equal(score.year, 2025);
+      assert.equal(rank.year, 2025);
+      assert.equal(score.status, 'SOURCE_OBSERVATION');
+      assert.equal(rank.status, 'SOURCE_OBSERVATION');
+      assert.equal(score.sourceId, snapshot.metadata.datasetId);
+      assert.equal(score.sourceUrl, snapshot.metadata.publisherUrl);
+      assert.equal(score.mirrorUrl, snapshot.metadata.sourceUrl);
+    } else {
+      assert.equal(score.value, null);
+      assert.equal(rank.value, null);
+      assert.equal(score.status, 'NO_SOURCE_OBSERVATION');
+      assert.equal(rank.status, 'NO_SOURCE_OBSERVATION');
+      assert.equal(score.year, null);
+    }
+  }
 });
 
 test('relative signals retain data year, source and quality labels', () => {
