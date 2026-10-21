@@ -83,6 +83,15 @@ tasks.named('preBuild').configure {
     dependsOn(tasks.named('transpileOmegaWebAssets'))
 }
 
+// Bind transformed assets directly to the merge tasks too. A preBuild-only
+// dependency can be insufficient when Android Gradle Plugin schedules variant
+// asset merges independently, leaving stale/untransformed JavaScript in the APK.
+tasks.configureEach {
+    if (name.startsWith('merge') && name.endsWith('Assets')) {
+        dependsOn(tasks.named('transpileOmegaWebAssets'))
+    }
+}
+
 dependencies {
     implementation 'androidx.webkit:webkit:1.17.1'
     androidTestImplementation 'androidx.test:runner:1.6.2'
