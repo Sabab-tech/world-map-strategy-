@@ -297,6 +297,20 @@ test('runtime syncs country finance into Government Banking and settles FX with 
   assert.equal(context.gameState.governmentBanking.forex.ledger.length, 2);
 });
 
+test('FX converter defaults to a Treasury-funded USD source and the player domestic currency', () => {
+  const pair = engine.math.defaultConversionPair('BDT', ['USD', 'BDT', 'NGN']);
+  assert.equal(pair.fromCode, 'USD');
+  assert.equal(pair.toCode, 'BDT');
+  const usdHomePair = engine.math.defaultConversionPair('USD', ['USD', 'BDT', 'NGN']);
+  assert.equal(usdHomePair.fromCode, 'USD');
+  assert.equal(usdHomePair.toCode, 'BDT');
+  const unknownHomePair = engine.math.defaultConversionPair('XYZ', ['USD', 'BDT', 'NGN']);
+  assert.equal(unknownHomePair.fromCode, 'USD');
+  assert.equal(unknownHomePair.toCode, 'BDT');
+  assert.match(source, /currencyOptions\(defaultPair\.fromCode\)/);
+  assert.match(source, /currencyOptions\(defaultPair\.toCode\)/);
+});
+
 test('FX panel mounts only inside the dedicated Finance FX tab host',()=>{
   assert.match(source,/getCountryQuotes: getCountryQuotes/);
   assert.match(source,/function renderCountryLookup/);
