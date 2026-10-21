@@ -27,7 +27,8 @@
   let lastRenderedCountry = null;
   const sectorProfileState = {
     promise: null, ready: false, error: null, data: null, schema: null,
-    byIso3: new Map(), byAlias: new Map(), registryPromise: null, registryError: null
+    byIso3: new Map(), byAlias: new Map(), registryPromise: null, registryError: null,
+    cachedCountry: null, cachedHtml: null
   };
 
   const runtime = () => g.OmegaCountryRuntimeData || null;
@@ -299,6 +300,9 @@
         'ocov-sector-data-pack');
     }
 
+    const countryCacheKey = s(profile.identity.iso3).toUpperCase();
+    if (sectorProfileState.cachedCountry === countryCacheKey && sectorProfileState.cachedHtml)
+      return sectorProfileState.cachedHtml;
     const metricCatalogue = runtime()?.getSourceDataset?.('country_general_data_registry_v1.json')?.fieldCatalogue || [];
     const metricCatalog = new Map(metricCatalogue.filter(item => item?.key).map(item => [item.key, item]));
     const definitions = sectorProfileState.schema.sectors;
@@ -412,8 +416,11 @@
       coverageHtml +
       '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(255px,1fr));gap:9px">' + sectorRows + '</div>' +
       signalHtml + rawHtml;
-    return panel('Complete country data pack', 'All profile sectors resolve references back to one canonical registry. Values carry status/source/year where available; gaps and unscored models are exposed explicitly.',
+    const renderedPack = panel('Complete country data pack', 'All profile sectors resolve references back to one canonical registry. Values carry status/source/year where available; gaps and unscored models are exposed explicitly.',
       body, 'ocov-sector-data-pack');
+    sectorProfileState.cachedCountry = countryCacheKey;
+    sectorProfileState.cachedHtml = renderedPack;
+    return renderedPack;
   }
 
   function sourceNumber(profile, keys) {
@@ -839,6 +846,8 @@
       sectorProfileState.promise = null;
       sectorProfileState.registryError = null;
       sectorProfileState.registryPromise = null;
+      sectorProfileState.cachedCountry = null;
+      sectorProfileState.cachedHtml = null;
       renderCountryOverview();
       return;
     }
