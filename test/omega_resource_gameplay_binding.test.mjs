@@ -241,8 +241,12 @@ test('runtime renders all global sites and applies nation/resource scope without
   assert.equal(part6.records.length,50,'map binding fixture must load all 50 Part 6 sites');
   const part6Ids=new Set(part6.records.map(site=>site.siteId));
   const mappedPart6Sites=context.Omega.IndividualResourceSiteBinding.sites.filter(site=>part6Ids.has(site.siteId));
-  assert.equal(mappedPart6Sites.length,50,'all 50 Part 6 identities must join the same individual-site map registry');
-  for(const expected of part6.records){
+  const part6Aliases=part6.records.filter(site=>site.runtime?.aliasOfSiteId||site.map?.markerEligible===false);
+  assert.equal(part6Aliases.length,1,'the duplicate Voisey\'s Bay record must remain an explicit non-marker alias');
+  assert.equal(part6Aliases[0].runtime?.aliasOfSiteId,'SITE_CAN_voisey_s_bay_nickel_mine');
+  assert.equal(mappedPart6Sites.length,49,'49 unique executable Part 6 sites must join the individual-site map registry');
+  assert.equal(mappedPart6Sites.some(site=>site.siteId===part6Aliases[0].siteId),false,'legacy alias must not create a second physical-site marker');
+  for(const expected of part6.records.filter(site=>!site.runtime?.aliasOfSiteId&&site.map?.markerEligible!==false)){
     const site=mappedPart6Sites.find(row=>row.siteId===expected.siteId);
     assert(site,expected.siteId+': per-site map identity missing');
     assert.equal(site.countryId,expected.countryId,expected.siteId+': map country must remain site-specific');
