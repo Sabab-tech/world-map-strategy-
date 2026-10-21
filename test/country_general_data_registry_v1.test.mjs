@@ -22,6 +22,13 @@ const mapByIso3 = (rows, getter) => new Map(rows.map(row => [String(getter(row) 
 const rawByIso3 = mapByIso3(rawRows, row => row.iso3);
 const profilesByIso3 = mapByIso3(profilesSource, row => row.iso3);
 const finiteOrNull = (value) => value === null || (typeof value === 'number' && Number.isFinite(value));
+let previousRegistrySnapshot = null;
+try {
+  previousRegistrySnapshot = readJson('/tmp/omega-country-general-registry-before.json');
+} catch {
+  // Local ad hoc test runs may not have a pre-build registry snapshot.
+}
+
 
 test('registry includes every canonical country/territory identity exactly once', () => {
   assert.equal(registry.metadata.countryAndTerritoryCount, roster.length);
@@ -54,6 +61,9 @@ test('all countries use the same documented ordered schema and metric/provenance
     assert.equal(row.metricMetadata.sourceCodes.length, metricFields.length);
     if (Array.isArray(row.metricMetadata.sourceNameCodes)) assert.equal(row.metricMetadata.sourceNameCodes.length, metricFields.length);
     assert.equal(row.metricMetadata.methodCodes.length, metricFields.length);
+    assert.equal(row.metricMetadata.indicatorCodes.length, metricFields.length);
+    assert.equal(row.metricMetadata.sourceConfidence.length, metricFields.length);
+    assert.equal(row.metricMetadata.dataGaps.length, metricFields.length);
     if (Array.isArray(row.metricMetadata.sourceUrls)) assert.equal(row.metricMetadata.sourceUrls.length, metricFields.length);
     if (Array.isArray(row.metricMetadata.notes)) assert.equal(row.metricMetadata.notes.length, metricFields.length);
     else assert.equal(row.metricMetadata.noteCodes.length, metricFields.length);
@@ -73,6 +83,45 @@ test('all countries use the same documented ordered schema and metric/provenance
     }
   }
 });
+
+
+test('a rebuild never drops a previously non-null metric merely because the current source is silent', (t) => {
+  if (!previousRegistrySnapshot?.metadata?.recordSchema || !Array.isArray(previousRegistrySnapshot.countries)) {
+    t.skip('No prior registry snapshot was supplied to this test run.');
+    return;
+  }
+  const oldSchema = previousRegistrySnapshot.metadata.recordSchema;
+  const oldFields = oldSchema.metricFields || (previousRegistrySnapshot.fieldCatalogue || []).map((field) => field.key);
+  const oldMetricIndex = Object.fromEntries(oldFields.map((key, index) => [key, index]));
+  const oldIso3Index = (oldSchema.identityFields || []).indexOf('iso3');
+  assert.ok(oldIso3Index >= 0, 'Prior registry schema must contain ISO3 identity.');
+  const currentByIso3 = new Map(registry.countries.map((row) => [
+    String(row.identity[idIndex.iso3] || '').toUpperCase(), row
+  ]));
+  let priorValueCount = 0;
+  let preservedCount = 0;
+  for (const oldRow of previousRegistrySnapshot.countries) {
+    const iso3 = String(Array.isArray(oldRow.identity) ? oldRow.identity[oldIso3Index] : oldRow.identity?.iso3 || '').toUpperCase();
+    const current = currentByIso3.get(iso3);
+    if (!current) continue;
+    for (const key of oldFields) {
+      const oldValue = Array.isArray(oldRow.metrics)
+        ? oldRow.metrics[oldMetricIndex[key]]
+        : oldRow.metrics?.[key];
+      if (typeof oldValue !== 'number' || !Number.isFinite(oldValue)) continue;
+      const currentIndex = metricIndex[key];
+      assert.notEqual(currentIndex, undefined, 'Previously stored metric was removed from the catalogue: ' + key);
+      priorValueCount += 1;
+      const newValue = current.metrics[currentIndex];
+      assert.ok(typeof newValue === 'number' && Number.isFinite(newValue),
+        'Previously recorded metric was lost for ' + iso3 + '.' + key + '; missing means unknown, not deletion.');
+      preservedCount += 1;
+    }
+  }
+  assert.ok(priorValueCount > 0, 'Prior registry snapshot contained no numeric values to preserve.');
+  assert.equal(preservedCount, priorValueCount);
+});
+
 
 test('raw financial observations and derived indicators are losslessly preserved in source-key order', () => {
   assert.equal(rawRows.length, roster.length);
@@ -248,6 +297,77 @@ test('the preferred WGI series and documented fallback identifiers are part of t
     }
   }
 });
+
+test('Human Development Index retains official UNDP source, observation year and missing-value diagnostics', () => {
+  const hdiIndex = metricIndex.humanDevelopmentIndex;
+  let observed = 0;
+  for (const row of registry.countries) {
+    const value = row.metrics[hdiIndex];
+    const status = provenance.statuses[row.metricMetadata.statusCodes[hdiIndex]];
+    const year = row.metricMetadata.years[hdiIndex];
+    if (status === 'UNDP_HDR_OBSERVATION') {
+      observed += 1;
+      assert.ok(Number.isFinite(value) && value >= 0 && value <= 1);
+      assert.equal(year, 2023);
+      assert.equal(row.metricMetadata.indicatorCodes?.[hdiIndex], 'hdi_2023');
+      assert.equal(row.metricMetadata.sourceUrls?.[hdiIndex],
+        'https://hdr.undp.org/sites/default/files/2025_HDR/HDR25_Composite_indices_complete_time_series.csv');
+    } else if (value === null) {
+      assert.ok(['MISSING', 'SOURCE_REFRESH_FAILED', 'NO_SOURCE_OBSERVATION', 'NOT_DEFINED_OR_SOURCED'].includes(status));
+    }
+  }
+  const refresh = registry.metadata.externalRefresh;
+  assert.ok(refresh.undpHdi, 'Refresh metadata must describe the official UNDP HDI feed.');
+  assert.equal(refresh.undpHdi.observationYear, 2023);
+  if (refresh.requested) {
+    assert.equal(refresh.undpHdi.loaded, true, 'Official UNDP HDI source did not load: ' + String(refresh.undpHdi.error));
+    assert.ok(refresh.undpHdi.canonicalCountriesWithHdi >= 150,
+      'Unexpectedly low canonical country coverage: ' + refresh.undpHdi.canonicalCountriesWithHdi);
+    assert.ok(observed >= 150, 'Expected HDI values were not recorded with UNDP provenance.');
+  }
+});
+
+test('CPI 2025 score and rank stay distinct and retain the published source year', () => {
+  const scoreIndex = metricIndex.corruptionPerceptionIndex;
+  const rankIndex = metricIndex.corruptionPerceptionRank;
+  assert.notEqual(scoreIndex, undefined, 'CPI score metric is missing.');
+  assert.notEqual(rankIndex, undefined, 'CPI rank metric is missing.');
+  let sourcedScores = 0;
+  let sourcedRanks = 0;
+  for (const row of registry.countries) {
+    const score = row.metrics[scoreIndex];
+    const rank = row.metrics[rankIndex];
+    const scoreStatus = provenance.statuses[row.metricMetadata.statusCodes[scoreIndex]];
+    const rankStatus = provenance.statuses[row.metricMetadata.statusCodes[rankIndex]];
+    if (scoreStatus === 'TRANSPARENCY_INTERNATIONAL_CPI_2025') {
+      sourcedScores += 1;
+      assert.ok(Number.isFinite(score) && score >= 0 && score <= 100);
+      assert.equal(row.metricMetadata.years[scoreIndex], 2025);
+      assert.equal(row.metricMetadata.indicatorCodes?.[scoreIndex], 'CPI score 2025');
+      assert.equal(row.metricMetadata.sourceUrls?.[scoreIndex],
+        'https://raw.githubusercontent.com/loupeat/ti-cpi/main/docs/ti/CPI2025_GlobalResultsTrends.csv');
+    }
+    if (rankStatus === 'TRANSPARENCY_INTERNATIONAL_CPI_2025') {
+      sourcedRanks += 1;
+      assert.ok(Number.isFinite(rank) && rank >= 1);
+      assert.equal(row.metricMetadata.years[rankIndex], 2025);
+      assert.equal(row.metricMetadata.indicatorCodes?.[rankIndex], 'Rank 2025');
+    }
+  }
+  const refresh = registry.metadata.externalRefresh;
+  assert.ok(refresh.transparencyInternationalCpi2025, 'Source metadata must describe CPI 2025.');
+  assert.equal(refresh.transparencyInternationalCpi2025.observationYear, 2025);
+  assert.equal(refresh.transparencyInternationalCpi2025.loaded, true,
+    'CPI 2025 snapshot or source was unavailable: ' + String(refresh.transparencyInternationalCpi2025.error));
+  assert.ok(refresh.transparencyInternationalCpi2025.canonicalCountriesWithCpi >= 150);
+  assert.ok(sourcedScores >= 150, 'CPI scores were not imported with publisher provenance.');
+  assert.ok(sourcedRanks >= 150, 'CPI ranks were not imported as a separate metric.');
+  if (refresh.requested) {
+    assert.ok(['LIVE_REFRESH_OK','SNAPSHOT_FALLBACK_AFTER_LIVE_REFRESH_FAILURE'].includes(refresh.transparencyInternationalCpi2025.sourceLoadStatus),
+      'CPI source refresh state was not recorded.');
+  }
+});
+
 
 test('discipline score is not invented or confused with official governance indicators', () => {
   const disciplineIndex = metricIndex.disciplineIndex;
