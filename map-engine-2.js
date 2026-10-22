@@ -1101,6 +1101,16 @@ Game.Map.renderGeoJSON = function(geoData) {
         Game.__omegaGeoJSONRenderFrame = null;
         Game.LabelSystem.updateCountryLabels();
         self.renderOceanLabels();
+        // A geographic-region selection may have been applied while the
+        // country features were still streaming in. Reapply it to the
+        // now-complete layer so newly added polygons receive the same style.
+        const regions = window.OMEGAGeographicRegionSystem;
+        if (regions && typeof regions.getState === "function" && typeof regions.select === "function") {
+            const selection = regions.getState()?.selection;
+            if (selection?.kind && selection?.key) {
+                regions.select(selection.kind + ":" + selection.key);
+            }
+        }
         window.setTimeout(() => {
             if (renderToken !== Game.__omegaGeoJSONRenderToken || Game.geojsonLayer !== layer) return;
             if (typeof self.renderResourceDeposits === "function") {
