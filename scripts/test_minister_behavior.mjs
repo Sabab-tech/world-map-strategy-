@@ -27,4 +27,5 @@ r.updateStress('Energy_1',{economicCondition:90,politicalCondition:70,crisisExpo
 const stressed=r.getMinister('Energy_1');
 assert.ok(stressed.runtimeState.stress>before.runtimeState.stress);
 assert.ok(stressed.effectiveCapability.effectiveCapability<before.effectiveCapability.effectiveCapability);
+await import('./test_minister_profile_effects.mjs');
 console.log('Minister behavior/context tests: PASS');
