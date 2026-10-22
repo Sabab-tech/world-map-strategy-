@@ -1143,7 +1143,8 @@
     panel.innerHTML =
       '<section class="ofx-section ofx-hero"><div><div class="ofx-eyebrow">OMEGA / GLOBAL FOREIGN EXCHANGE</div>'
       + '<h3>Currency Market &amp; Monetary Authority</h3>'
-      + '<p>USD is the settlement numeraire. Every conversion uses source currency → USD → destination currency.</p></div>'
+      + '<p>USD is the settlement numeraire. Every conversion uses source currency → USD → destination currency.</p>'
+      + '<p>Game exchange rates run locally from country baseline data and saved simulation state, including offline play. Online reference rates are optional and read-only.</p></div>'
       + '<div class="ofx-status" data-ofx-live="status">' + escapeHTML(state.referenceStatus) + '</div></section>'
       + '<div class="ofx-kpis">'
       + '<article><span>Active country currency</span><strong data-ofx-live="player-currency">' + escapeHTML(playerCode) + '</strong><small>' + escapeHTML(getCountryCurrencyName(player, playerCode)) + '</small></article>'
@@ -1640,6 +1641,7 @@
     const referenceCoverage = countryRateCoverage('REFERENCE');
     return {
       version: VERSION, initialized: initialized, countryAreaCount: profiles.length,
+      offlineSimulationReady: simulationCoverage.covered === simulationCoverage.applicable,
       currencyCount: currencies.size,
       countriesWithCurrency: profiles.filter(profile => !!getCountryCurrency(profile)).length,
       countriesWithSimulationRate: simulationCoverage.covered,
