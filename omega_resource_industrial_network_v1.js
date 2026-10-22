@@ -2463,7 +2463,7 @@ function factoryProductionMetrics(asset,recipe){
     else if(tracked+1e-6<quantity)missing.push({resourceId:rid,requiredTrackedQuantity:quantity,tracked,reason:'FACTORY_INPUT_BATCH_LEDGER_MISMATCH'});
     inputs.push({resourceId:rid,coefficient:requiredPerUnit,stockKey,available:quantity,tracked,possibleProduction:Math.min(byStock,byTrace),eligibleLots:eligible});
   }
-  return{capacity,possibleProduction:Math.max(0,Math.min(cap,possible)),inputs,missingInputs:missing,
+  return{capacity:cap,possibleProduction:Math.max(0,Math.min(cap,possible)),inputs,missingInputs:missing,
     recipeInputCount:Object.keys(recipe?.inputs||{}).length};
 }
 function factorySourceWarehouse(rs,batch){
