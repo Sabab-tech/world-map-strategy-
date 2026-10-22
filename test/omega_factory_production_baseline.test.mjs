@@ -846,3 +846,65 @@ test('factory UI keeps warning lamps compact and exposes month/date and producti
   assert.match(ui, /omega-rescc-factory-icon-wrap--stopped/);
   assert.match(ui, /omegaFactoryWarningSweep/);
 });
+
+
+test('paused factory cycle resumes from new warehouse batches at the reduced attainable productivity', () => {
+  const { context, catalog, api } = makeRuntime();
+  const asset = makeSteelAsset();
+  context.Game.state.simulation.date = '2015-01-01';
+  context.Game.state.economy.BGD = {
+    unemploymentCount: 600000, laborForce: 6000000, unemployment_rate: 10, productionAssets: [asset]
+  };
+  context.Game.state.transport.BGD = { infrastructure: { utilitySupply: {
+    electricityMWhPerDay: 1000000, waterM3PerDay: 1000000,
+    authority: 'TEST_FIXTURE', status: 'AVAILABLE', simulationOnly: true, assets: []
+  } } };
+  const first = api.startFactoryProductionCycle({
+    countryId: 'BGD', factoryId: asset.id, resourceId: 'iron_concentrate', quantity: 50
+  });
+  assert.equal(first.status, 'IN_PROGRESS');
+  const firstCycle = first;
+  const missingCoal = asset.inputBatchLots.find(row => row.resourceId === 'coal_concentrate');
+  assert.ok(missingCoal);
+  asset.inputInventory.coal_concentrate = 0;
+  missingCoal.remainingQuantity = 0;
+  missingCoal.status = 'CONSUMED';
+
+  context.Game.state.simulation.turn = firstCycle.finishTurn;
+  context.Game.state.simulation.date = firstCycle.finishDate;
+  const paused = api.processPendingFactoryInputs('BGD');
+  assert.equal(paused.completedCount, 0);
+  assert.equal(paused.startedCount, 0);
+  assert.equal(asset.productionHealth.status, 'STOPPED');
+  assert.equal(asset.productionHealth.productivityPct, 0);
+  assert.equal(context.Game.state.resource.BGD.industrialNetwork.factoryProductionCycles[asset.id].status, 'PAUSED');
+
+  const resource = context.Game.state.resource.BGD;
+  resource.inventory.coal_concentrate = 4;
+  resource.processedWarehouse = {
+    warehouseId: 'WH-BGD-PROCESSED', countryId: 'BGD', status: 'OPERATIONAL',
+    availableByResource: { coal_concentrate: 4 }, reservedByResource: {}, storedBatchIds: ['BATCH-COAL-REFEED']
+  };
+  const batch = {
+    batchId: 'BATCH-COAL-REFEED', resourceId: 'coal_concentrate', materialIdentity: 'coal_concentrate',
+    quantity: 4, remainingQuantity: 4, unit: 'SIMULATION_RESOURCE_UNIT', stage: 'PROCESSED',
+    status: 'AVAILABLE', countryId: 'BGD', warehouseId: 'WH-BGD-PROCESSED', createdTurn: context.Game.state.simulation.turn,
+    sourceBatchIds: ['BATCH-COAL-ORIGINAL']
+  };
+  resource.batches.push(batch);
+  resource.inventoryLots[batch.batchId] = { ...batch, status: 'AVAILABLE' };
+
+  const resumed = api.processPendingFactoryInputs('BGD');
+  assert.equal(resumed.startedCount, 1, JSON.stringify(resumed));
+  assert.equal(resumed.blocked.length, 0, JSON.stringify(resumed.blocked));
+  const nextCycle = context.Game.state.resource.BGD.industrialNetwork.factoryProductionCycles[asset.id];
+  assert.ok(nextCycle);
+  assert.notEqual(nextCycle.cycleId, firstCycle.cycleId);
+  assert.equal(nextCycle.status, 'IN_PROGRESS');
+  assert.equal(nextCycle.productionQuantity, 20);
+  assert.equal(nextCycle.productivityPct, 20);
+  assert.equal(asset.productionHealth.status, 'REDUCED');
+  assert.equal(asset.productionHealth.productivityPct, 20);
+  assert.equal(asset.inputInventory.coal_concentrate, 4);
+  assert.equal(resource.processedWarehouse.availableByResource.coal_concentrate, 0);
+});

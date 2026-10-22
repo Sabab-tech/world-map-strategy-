@@ -2671,10 +2671,13 @@ function completeFactoryProductionCycle(countryId,asset,cycle,result){
     return{status:'PAUSED',cycleId:cycle.cycleId,reason:cycle.lastBlockedReason,detail:result};
   }
   cycle.status='COMPLETED';cycle.completedTurn=turn();cycle.actualCompletionDate=factoryCurrentGameDate()||cycle.finishDate;
+  const actualProduction=Math.max(0,num(result.requestedProduction)||cycle.productionQuantity);
+  cycle.actualProductionQuantity=Number(actualProduction.toFixed(6));
+  cycle.productivityPct=cycle.capacityPerDay>0?Number((actualProduction/cycle.capacityPerDay*100).toFixed(2)):0;
   cycle.transactionId=result.transactionId;cycle.outputQuantities=clone(result.outputQuantities||result.outputs||{});
   cycle.createdBatchIds=clone(result.createdBatchIds||[]);cycle.lastBlockedReason=null;
   asset.activeProductionCycleId=null;asset.lastProductionCycleId=cycle.cycleId;asset.lastProductionCycleCompletedDate=cycle.actualCompletionDate;
-  factorySetProductionHealth(asset,'READY',cycle.productionQuantity,cycle.capacityPerDay,{cycleId:cycle.cycleId});
+  factorySetProductionHealth(asset,cycle.productivityPct<99.999?'REDUCED':'READY',actualProduction,cycle.capacityPerDay,{cycleId:cycle.cycleId});
   n.factoryProductionCycleHistory.push(clone(cycle));n.factoryProductionCycleHistory=n.factoryProductionCycleHistory.slice(-MAX_EVENTS);
   const roots=[...new Set((result.sourceBatchIds||[]).map(String).filter(Boolean))];
   for(const sourceBatchId of roots){
@@ -2727,12 +2730,12 @@ function processPendingFactoryInputs(countryId){
   // First finish any cycle whose date has arrived. Output is not posted before this point.
   for(const asset of assets){
     const fid=String(asset?.id||asset?.assetId||asset?.projectId||''),cycle=n.factoryProductionCycles[fid];
-    if(!fid||!asset||!factoryCycleActive(cycle)||!factoryCycleDue(cycle))continue;
+    if(!fid||!asset||!factoryCycleActive(cycle)||cycle.status==='PAUSED'||!factoryCycleDue(cycle))continue;
     const result=executeFactoryCycle({countryId:cid,factoryId:fid,resourceId:cycle.primaryInputResourceId,
       quantity:cycle.productionQuantity,unit:asset.inputUnit||null});
     const outcome=completeFactoryProductionCycle(cid,asset,cycle,result);
     if(outcome.status==='COMPLETED'){completed.push(outcome);completedThisTurn.add(fid);}
-    else blocked.push({factoryId:fid,reason:outcome.reason||'FACTORY_PRODUCTION_CYCLE_PAUSED',detail:outcome});
+    else if(outcome.status!=='PAUSED')blocked.push({factoryId:fid,reason:outcome.reason||'FACTORY_PRODUCTION_CYCLE_PAUSED',detail:outcome});
   }
   for(const asset of assets){
     const fid=String(asset?.id||asset?.assetId||asset?.projectId||'');
@@ -2740,10 +2743,32 @@ function processPendingFactoryInputs(countryId){
     const prior=n.factoryProductionCycles[fid];
     if(factoryCycleActive(prior)){
       if(prior.status==='PAUSED'&&factoryCycleDue(prior)){
-        factorySetProductionHealth(asset,'STOPPED',0,prior.capacityPerDay,{reason:prior.lastBlockedReason,cycleId:prior.cycleId});
-      }else factorySetProductionHealth(asset,prior.productivityPct<99.999?'REDUCED':'RUNNING',
-        prior.productionQuantity,prior.capacityPerDay,{cycleId:prior.cycleId});
-      continue;
+        // Pause is not a dead end: fetch any newly delivered/available required feedstock before
+        // deciding whether this facility remains red/stopped or can resume at reduced productivity.
+        const pausedRecipe=recipeFor(prior.primaryInputResourceId,asset);
+        const feeder=transferFactoryInputsFromWarehouse(cid,asset,pausedRecipe);
+        transfers.push(...(feeder.transfers||[]));
+        const resumedMetrics=factoryProductionMetrics(asset,pausedRecipe);
+        const resumeMissing=resumedMetrics.inputs.filter(row=>row.available<=1e-9||row.tracked<=1e-9)
+          .map(row=>({resourceId:row.resourceId,available:row.available,tracked:row.tracked,
+            reason:row.available<=1e-9?'WAREHOUSE_AND_FACTORY_INPUT_STOCK_EMPTY':'FACTORY_INPUT_BATCH_LEDGER_MISMATCH'}));
+        if(resumedMetrics.possibleProduction<=1e-9||resumeMissing.length){
+          factorySetProductionHealth(asset,'STOPPED',0,resumedMetrics.capacity,{reason:'FACTORY_INPUT_SHORTAGE',
+            missingInputs:resumeMissing.length?resumeMissing:resumedMetrics.missingInputs,cycleId:prior.cycleId});
+          blocked.push({factoryId:fid,reason:'FACTORY_INPUT_SHORTAGE',
+            missingInputs:resumeMissing.length?resumeMissing:resumedMetrics.missingInputs,warehouseTransferStatus:feeder.status});
+          continue;
+        }
+        prior.status='RESCHEDULED_AFTER_INPUT_SHORTAGE';prior.resumedTurn=turn();prior.resumedByCycleSequence=(Number(n.factoryProductionCycleSequence)||0)+1;
+        n.factoryProductionCycleHistory.push(clone(prior));n.factoryProductionCycleHistory=n.factoryProductionCycleHistory.slice(-MAX_EVENTS);
+        delete n.factoryProductionCycles[fid];asset.activeProductionCycleId=null;
+        // Continue through the normal operation, utility and workforce gates below. The replacement
+        // cycle uses currently recorded batches and a newly calculated productivity percentage.
+      }else{
+        factorySetProductionHealth(asset,prior.productivityPct<99.999?'REDUCED':'RUNNING',
+          prior.productionQuantity,prior.capacityPerDay,{cycleId:prior.cycleId});
+        continue;
+      }
     }
     const gate=factoryOperationGate(cid,asset);
     if(gate.status!=='READY'){
