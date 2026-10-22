@@ -143,6 +143,19 @@ assert.ok(pilbaraExecution[pilbaraOccurrence].recoverableQuantity>0);
 await import('../omega_resource_industrial_network_v1.js');
 const industrialPipelineRuntime=globalThis.OmegaResourceIndustrialNetwork||globalThis.Omega?.ResourceIndustrialNetwork;
 assert(industrialPipelineRuntime?.executeSitePipeline,'industrial site-pipeline executor must be installed');
+// The scenario explicitly provisions the labour and utility ledgers used by the simulation-only factory.
+for(const root of [globalThis.Game?.state,globalThis.OmegaMinistryStateProvider?.getState?.()].filter(Boolean)){
+  root.economy=root.economy||{};
+  root.economy.AUS=root.economy.AUS||{productionAssets:[]};
+  root.economy.AUS.unemploymentCount=100000;
+  root.economy.AUS.laborForce=1000000;
+  root.economy.AUS.unemployment_rate=10;
+  root.transport=root.transport||{};
+  root.transport.AUS=root.transport.AUS||{};
+  root.transport.AUS.infrastructure=root.transport.AUS.infrastructure||{};
+  root.transport.AUS.infrastructure.utilitySupply={electricityMWhPerDay:1000000,waterM3PerDay:1000000,
+    authority:'TEST_FIXTURE',status:'AVAILABLE',simulationOnly:true,assets:[]};
+}
 const pilbaraPipeline=await industrialPipelineRuntime.executeSitePipeline({countryId:'AUS',siteId:'SITE_AUS_pilbara_iron_ore_range',resourceId:'iron_ore',quantity:100});
 assert.equal(pilbaraPipeline.status,'IN_TRANSIT',JSON.stringify(pilbaraPipeline));
 assert.equal(pilbaraPipeline.countryId,'AUS');
