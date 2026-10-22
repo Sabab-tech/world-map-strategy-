@@ -1888,6 +1888,30 @@
       "externalSectorInputs": "Grain, vegetable oil, sugar, cotton fibre and wool fibre require an authoritative upstream batch from an agriculture/food/livestock runtime or a tracked import.",
       "noFabricatedStock": "External input descriptors are contracts only; they do not create inventory or quantity. Production remains blocked until recorded stock is delivered.",
       "unknownInputs": "An input without an industrial producer, source resource identity or explicitly declared external-sector contract is a catalog integrity error."
+    },
+    "constructionMaterialPolicy": {
+      "version": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
+      "unit": "SIMULATION_RESOURCE_UNIT",
+      "costScalingBase": 6000,
+      "baseQuantitiesAtScalingCost": {
+        "construction_aggregate": 800,
+        "limestone": 500,
+        "iron_ore": 300,
+        "copper": 80,
+        "coal": 100,
+        "crude_oil": 50
+      },
+      "rule": "Each factory has an explicit persisted bill of materials derived from construction-cost scale and category-specific construction inputs. Quantities are gameplay-only resource units, not real-world engineering quantities.",
+      "missingMaterialPolicy": "BLOCK_PROJECT_WITHOUT_DEBIT",
+      "atomicDebit": true
+    },
+    "employmentPolicy": {
+      "version": "SIMULATED_FACTORY_EMPLOYMENT_V1",
+      "unit": "people",
+      "rule": "On commissioning, fill job slots from a known unemployed headcount. Reconcile by stable factory ID, and cap hires at the recorded unemployed pool.",
+      "unknownBaselinePolicy": "PRESERVE_UNKNOWN_AND_REPORT_OPEN_POSITIONS",
+      "duplicateHiringPolicy": "IDEMPOTENT_BY_FACTORY_ID",
+      "ratePolicy": "UPDATE_UNEMPLOYMENT_RATE_ONLY_WHEN_LABOUR_FORCE_IS_KNOWN"
     }
   },
   "factoryProfiles": {
@@ -1917,7 +1941,26 @@
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
       "simulationOnly": true,
       "inputUnit": "SIMULATION_RESOURCE_UNIT",
-      "outputUnit": "SIMULATION_RESOURCE_UNIT"
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "employment": {
+        "jobsPerFactory": 350,
+        "model": "DIRECT_JOB_CAPACITY",
+        "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
+        "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
+        "simulationOnly": true
+      },
+      "constructionMaterials": {
+        "construction_aggregate": 507,
+        "limestone": 317,
+        "iron_ore": 190,
+        "copper": 51,
+        "coal": 64,
+        "crude_oil": 32,
+        "silica_sand": 48
+      },
+      "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
+      "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
+      "employmentAuthority": "SIMULATED_FACTORY_EMPLOYMENT_V1"
     },
     "ALUMINA_REFINERY": {
       "factoryType": "ALUMINA_REFINERY",
@@ -1945,7 +1988,26 @@
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
       "simulationOnly": true,
       "inputUnit": "SIMULATION_RESOURCE_UNIT",
-      "outputUnit": "SIMULATION_RESOURCE_UNIT"
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "employment": {
+        "jobsPerFactory": 400,
+        "model": "DIRECT_JOB_CAPACITY",
+        "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
+        "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
+        "simulationOnly": true
+      },
+      "constructionMaterials": {
+        "construction_aggregate": 744,
+        "limestone": 465,
+        "iron_ore": 279,
+        "copper": 75,
+        "coal": 93,
+        "crude_oil": 47,
+        "gypsum": 52
+      },
+      "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
+      "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
+      "employmentAuthority": "SIMULATED_FACTORY_EMPLOYMENT_V1"
     },
     "BORATE_PROCESSING_PLANT": {
       "factoryType": "BORATE_PROCESSING_PLANT",
@@ -1973,7 +2035,26 @@
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
       "simulationOnly": true,
       "inputUnit": "SIMULATION_RESOURCE_UNIT",
-      "outputUnit": "SIMULATION_RESOURCE_UNIT"
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "employment": {
+        "jobsPerFactory": 500,
+        "model": "DIRECT_JOB_CAPACITY",
+        "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
+        "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
+        "simulationOnly": true
+      },
+      "constructionMaterials": {
+        "construction_aggregate": 527,
+        "limestone": 330,
+        "iron_ore": 198,
+        "copper": 53,
+        "coal": 66,
+        "crude_oil": 33,
+        "silica_sand": 50
+      },
+      "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
+      "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
+      "employmentAuthority": "SIMULATED_FACTORY_EMPLOYMENT_V1"
     },
     "CEMENT_LIMESTONE_PLANT": {
       "factoryType": "CEMENT_LIMESTONE_PLANT",
@@ -2001,7 +2082,26 @@
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
       "simulationOnly": true,
       "inputUnit": "SIMULATION_RESOURCE_UNIT",
-      "outputUnit": "SIMULATION_RESOURCE_UNIT"
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "employment": {
+        "jobsPerFactory": 650,
+        "model": "DIRECT_JOB_CAPACITY",
+        "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
+        "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
+        "simulationOnly": true
+      },
+      "constructionMaterials": {
+        "construction_aggregate": 537,
+        "limestone": 336,
+        "iron_ore": 202,
+        "copper": 54,
+        "coal": 68,
+        "crude_oil": 34,
+        "silica_sand": 51
+      },
+      "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
+      "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
+      "employmentAuthority": "SIMULATED_FACTORY_EMPLOYMENT_V1"
     },
     "CHROMITE_CONCENTRATOR": {
       "factoryType": "CHROMITE_CONCENTRATOR",
@@ -2029,7 +2129,25 @@
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
       "simulationOnly": true,
       "inputUnit": "SIMULATION_RESOURCE_UNIT",
-      "outputUnit": "SIMULATION_RESOURCE_UNIT"
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "employment": {
+        "jobsPerFactory": 650,
+        "model": "DIRECT_JOB_CAPACITY",
+        "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
+        "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
+        "simulationOnly": true
+      },
+      "constructionMaterials": {
+        "construction_aggregate": 654,
+        "limestone": 409,
+        "iron_ore": 245,
+        "copper": 66,
+        "coal": 82,
+        "crude_oil": 41
+      },
+      "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
+      "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
+      "employmentAuthority": "SIMULATED_FACTORY_EMPLOYMENT_V1"
     },
     "COAL_PREPARATION_PLANT": {
       "factoryType": "COAL_PREPARATION_PLANT",
@@ -2057,7 +2175,26 @@
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
       "simulationOnly": true,
       "inputUnit": "SIMULATION_RESOURCE_UNIT",
-      "outputUnit": "SIMULATION_RESOURCE_UNIT"
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "employment": {
+        "jobsPerFactory": 750,
+        "model": "DIRECT_JOB_CAPACITY",
+        "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
+        "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
+        "simulationOnly": true
+      },
+      "constructionMaterials": {
+        "construction_aggregate": 784,
+        "limestone": 490,
+        "iron_ore": 294,
+        "copper": 79,
+        "coal": 98,
+        "crude_oil": 49,
+        "gypsum": 54
+      },
+      "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
+      "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
+      "employmentAuthority": "SIMULATED_FACTORY_EMPLOYMENT_V1"
     },
     "COBALT_REFINERY": {
       "factoryType": "COBALT_REFINERY",
@@ -2085,7 +2222,26 @@
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
       "simulationOnly": true,
       "inputUnit": "SIMULATION_RESOURCE_UNIT",
-      "outputUnit": "SIMULATION_RESOURCE_UNIT"
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "employment": {
+        "jobsPerFactory": 350,
+        "model": "DIRECT_JOB_CAPACITY",
+        "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
+        "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
+        "simulationOnly": true
+      },
+      "constructionMaterials": {
+        "construction_aggregate": 927,
+        "limestone": 580,
+        "iron_ore": 348,
+        "copper": 93,
+        "coal": 116,
+        "crude_oil": 58,
+        "gypsum": 64
+      },
+      "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
+      "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
+      "employmentAuthority": "SIMULATED_FACTORY_EMPLOYMENT_V1"
     },
     "COPPER_CONCENTRATOR": {
       "factoryType": "COPPER_CONCENTRATOR",
@@ -2113,7 +2269,25 @@
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
       "simulationOnly": true,
       "inputUnit": "SIMULATION_RESOURCE_UNIT",
-      "outputUnit": "SIMULATION_RESOURCE_UNIT"
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "employment": {
+        "jobsPerFactory": 450,
+        "model": "DIRECT_JOB_CAPACITY",
+        "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
+        "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
+        "simulationOnly": true
+      },
+      "constructionMaterials": {
+        "construction_aggregate": 684,
+        "limestone": 428,
+        "iron_ore": 257,
+        "copper": 69,
+        "coal": 86,
+        "crude_oil": 43
+      },
+      "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
+      "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
+      "employmentAuthority": "SIMULATED_FACTORY_EMPLOYMENT_V1"
     },
     "DIAMOND_RECOVERY_PLANT": {
       "factoryType": "DIAMOND_RECOVERY_PLANT",
@@ -2141,7 +2315,25 @@
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
       "simulationOnly": true,
       "inputUnit": "SIMULATION_RESOURCE_UNIT",
-      "outputUnit": "SIMULATION_RESOURCE_UNIT"
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "employment": {
+        "jobsPerFactory": 450,
+        "model": "DIRECT_JOB_CAPACITY",
+        "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
+        "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
+        "simulationOnly": true
+      },
+      "constructionMaterials": {
+        "construction_aggregate": 640,
+        "limestone": 400,
+        "iron_ore": 240,
+        "copper": 64,
+        "coal": 80,
+        "crude_oil": 40
+      },
+      "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
+      "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
+      "employmentAuthority": "SIMULATED_FACTORY_EMPLOYMENT_V1"
     },
     "DOLOMITE_PROCESSING_PLANT": {
       "factoryType": "DOLOMITE_PROCESSING_PLANT",
@@ -2169,7 +2361,26 @@
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
       "simulationOnly": true,
       "inputUnit": "SIMULATION_RESOURCE_UNIT",
-      "outputUnit": "SIMULATION_RESOURCE_UNIT"
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "employment": {
+        "jobsPerFactory": 600,
+        "model": "DIRECT_JOB_CAPACITY",
+        "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
+        "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
+        "simulationOnly": true
+      },
+      "constructionMaterials": {
+        "construction_aggregate": 597,
+        "limestone": 373,
+        "iron_ore": 224,
+        "copper": 60,
+        "coal": 75,
+        "crude_oil": 38,
+        "silica_sand": 56
+      },
+      "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
+      "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
+      "employmentAuthority": "SIMULATED_FACTORY_EMPLOYMENT_V1"
     },
     "GAS_PROCESSING_PLANT": {
       "factoryType": "GAS_PROCESSING_PLANT",
@@ -2197,7 +2408,26 @@
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
       "simulationOnly": true,
       "inputUnit": "SIMULATION_RESOURCE_UNIT",
-      "outputUnit": "SIMULATION_RESOURCE_UNIT"
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "employment": {
+        "jobsPerFactory": 700,
+        "model": "DIRECT_JOB_CAPACITY",
+        "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
+        "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
+        "simulationOnly": true
+      },
+      "constructionMaterials": {
+        "construction_aggregate": 834,
+        "limestone": 521,
+        "iron_ore": 313,
+        "copper": 84,
+        "coal": 105,
+        "crude_oil": 53,
+        "gypsum": 58
+      },
+      "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
+      "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
+      "employmentAuthority": "SIMULATED_FACTORY_EMPLOYMENT_V1"
     },
     "GEMSTONE_SORTING_PLANT": {
       "factoryType": "GEMSTONE_SORTING_PLANT",
@@ -2225,7 +2455,25 @@
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
       "simulationOnly": true,
       "inputUnit": "SIMULATION_RESOURCE_UNIT",
-      "outputUnit": "SIMULATION_RESOURCE_UNIT"
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "employment": {
+        "jobsPerFactory": 800,
+        "model": "DIRECT_JOB_CAPACITY",
+        "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
+        "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
+        "simulationOnly": true
+      },
+      "constructionMaterials": {
+        "construction_aggregate": 670,
+        "limestone": 419,
+        "iron_ore": 252,
+        "copper": 67,
+        "coal": 84,
+        "crude_oil": 42
+      },
+      "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
+      "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
+      "employmentAuthority": "SIMULATED_FACTORY_EMPLOYMENT_V1"
     },
     "GLASS_SILICA_PLANT": {
       "factoryType": "GLASS_SILICA_PLANT",
@@ -2253,7 +2501,26 @@
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
       "simulationOnly": true,
       "inputUnit": "SIMULATION_RESOURCE_UNIT",
-      "outputUnit": "SIMULATION_RESOURCE_UNIT"
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "employment": {
+        "jobsPerFactory": 350,
+        "model": "DIRECT_JOB_CAPACITY",
+        "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
+        "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
+        "simulationOnly": true
+      },
+      "constructionMaterials": {
+        "construction_aggregate": 627,
+        "limestone": 392,
+        "iron_ore": 235,
+        "copper": 63,
+        "coal": 79,
+        "crude_oil": 40,
+        "silica_sand": 59
+      },
+      "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
+      "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
+      "employmentAuthority": "SIMULATED_FACTORY_EMPLOYMENT_V1"
     },
     "GOLD_PROCESSING_PLANT": {
       "factoryType": "GOLD_PROCESSING_PLANT",
@@ -2281,7 +2548,25 @@
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
       "simulationOnly": true,
       "inputUnit": "SIMULATION_RESOURCE_UNIT",
-      "outputUnit": "SIMULATION_RESOURCE_UNIT"
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "employment": {
+        "jobsPerFactory": 400,
+        "model": "DIRECT_JOB_CAPACITY",
+        "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
+        "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
+        "simulationOnly": true
+      },
+      "constructionMaterials": {
+        "construction_aggregate": 690,
+        "limestone": 432,
+        "iron_ore": 259,
+        "copper": 69,
+        "coal": 87,
+        "crude_oil": 44
+      },
+      "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
+      "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
+      "employmentAuthority": "SIMULATED_FACTORY_EMPLOYMENT_V1"
     },
     "GRAPHITE_CONCENTRATOR": {
       "factoryType": "GRAPHITE_CONCENTRATOR",
@@ -2309,7 +2594,25 @@
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
       "simulationOnly": true,
       "inputUnit": "SIMULATION_RESOURCE_UNIT",
-      "outputUnit": "SIMULATION_RESOURCE_UNIT"
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "employment": {
+        "jobsPerFactory": 500,
+        "model": "DIRECT_JOB_CAPACITY",
+        "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
+        "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
+        "simulationOnly": true
+      },
+      "constructionMaterials": {
+        "construction_aggregate": 754,
+        "limestone": 471,
+        "iron_ore": 283,
+        "copper": 76,
+        "coal": 95,
+        "crude_oil": 48
+      },
+      "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
+      "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
+      "employmentAuthority": "SIMULATED_FACTORY_EMPLOYMENT_V1"
     },
     "GYPSUM_PROCESSING_PLANT": {
       "factoryType": "GYPSUM_PROCESSING_PLANT",
@@ -2337,7 +2640,26 @@
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
       "simulationOnly": true,
       "inputUnit": "SIMULATION_RESOURCE_UNIT",
-      "outputUnit": "SIMULATION_RESOURCE_UNIT"
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "employment": {
+        "jobsPerFactory": 650,
+        "model": "DIRECT_JOB_CAPACITY",
+        "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
+        "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
+        "simulationOnly": true
+      },
+      "constructionMaterials": {
+        "construction_aggregate": 657,
+        "limestone": 411,
+        "iron_ore": 247,
+        "copper": 66,
+        "coal": 83,
+        "crude_oil": 42,
+        "silica_sand": 62
+      },
+      "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
+      "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
+      "employmentAuthority": "SIMULATED_FACTORY_EMPLOYMENT_V1"
     },
     "LITHIUM_CONVERSION_PLANT": {
       "factoryType": "LITHIUM_CONVERSION_PLANT",
@@ -2365,7 +2687,25 @@
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
       "simulationOnly": true,
       "inputUnit": "SIMULATION_RESOURCE_UNIT",
-      "outputUnit": "SIMULATION_RESOURCE_UNIT"
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "employment": {
+        "jobsPerFactory": 650,
+        "model": "DIRECT_JOB_CAPACITY",
+        "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
+        "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
+        "simulationOnly": true
+      },
+      "constructionMaterials": {
+        "construction_aggregate": 1027,
+        "limestone": 642,
+        "iron_ore": 386,
+        "copper": 103,
+        "coal": 129,
+        "crude_oil": 65
+      },
+      "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
+      "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
+      "employmentAuthority": "SIMULATED_FACTORY_EMPLOYMENT_V1"
     },
     "MAGNESIA_PLANT": {
       "factoryType": "MAGNESIA_PLANT",
@@ -2393,7 +2733,26 @@
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
       "simulationOnly": true,
       "inputUnit": "SIMULATION_RESOURCE_UNIT",
-      "outputUnit": "SIMULATION_RESOURCE_UNIT"
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "employment": {
+        "jobsPerFactory": 750,
+        "model": "DIRECT_JOB_CAPACITY",
+        "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
+        "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
+        "simulationOnly": true
+      },
+      "constructionMaterials": {
+        "construction_aggregate": 677,
+        "limestone": 423,
+        "iron_ore": 254,
+        "copper": 68,
+        "coal": 85,
+        "crude_oil": 43,
+        "silica_sand": 64
+      },
+      "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
+      "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
+      "employmentAuthority": "SIMULATED_FACTORY_EMPLOYMENT_V1"
     },
     "MANGANESE_BENEFICIATION_PLANT": {
       "factoryType": "MANGANESE_BENEFICIATION_PLANT",
@@ -2421,7 +2780,25 @@
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
       "simulationOnly": true,
       "inputUnit": "SIMULATION_RESOURCE_UNIT",
-      "outputUnit": "SIMULATION_RESOURCE_UNIT"
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "employment": {
+        "jobsPerFactory": 350,
+        "model": "DIRECT_JOB_CAPACITY",
+        "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
+        "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
+        "simulationOnly": true
+      },
+      "constructionMaterials": {
+        "construction_aggregate": 794,
+        "limestone": 496,
+        "iron_ore": 298,
+        "copper": 80,
+        "coal": 100,
+        "crude_oil": 50
+      },
+      "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
+      "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
+      "employmentAuthority": "SIMULATED_FACTORY_EMPLOYMENT_V1"
     },
     "MINERAL_SANDS_PLANT": {
       "factoryType": "MINERAL_SANDS_PLANT",
@@ -2449,7 +2826,26 @@
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
       "simulationOnly": true,
       "inputUnit": "SIMULATION_RESOURCE_UNIT",
-      "outputUnit": "SIMULATION_RESOURCE_UNIT"
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "employment": {
+        "jobsPerFactory": 450,
+        "model": "DIRECT_JOB_CAPACITY",
+        "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
+        "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
+        "simulationOnly": true
+      },
+      "constructionMaterials": {
+        "construction_aggregate": 697,
+        "limestone": 436,
+        "iron_ore": 262,
+        "copper": 70,
+        "coal": 88,
+        "crude_oil": 44,
+        "silica_sand": 66
+      },
+      "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
+      "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
+      "employmentAuthority": "SIMULATED_FACTORY_EMPLOYMENT_V1"
     },
     "NICKEL_PROCESSING_PLANT": {
       "factoryType": "NICKEL_PROCESSING_PLANT",
@@ -2477,7 +2873,25 @@
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
       "simulationOnly": true,
       "inputUnit": "SIMULATION_RESOURCE_UNIT",
-      "outputUnit": "SIMULATION_RESOURCE_UNIT"
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "employment": {
+        "jobsPerFactory": 450,
+        "model": "DIRECT_JOB_CAPACITY",
+        "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
+        "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
+        "simulationOnly": true
+      },
+      "constructionMaterials": {
+        "construction_aggregate": 814,
+        "limestone": 509,
+        "iron_ore": 305,
+        "copper": 82,
+        "coal": 102,
+        "crude_oil": 51
+      },
+      "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
+      "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
+      "employmentAuthority": "SIMULATED_FACTORY_EMPLOYMENT_V1"
     },
     "NIOBIUM_CONCENTRATION_PLANT": {
       "factoryType": "NIOBIUM_CONCENTRATION_PLANT",
@@ -2505,7 +2919,25 @@
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
       "simulationOnly": true,
       "inputUnit": "SIMULATION_RESOURCE_UNIT",
-      "outputUnit": "SIMULATION_RESOURCE_UNIT"
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "employment": {
+        "jobsPerFactory": 600,
+        "model": "DIRECT_JOB_CAPACITY",
+        "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
+        "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
+        "simulationOnly": true
+      },
+      "constructionMaterials": {
+        "construction_aggregate": 1077,
+        "limestone": 673,
+        "iron_ore": 404,
+        "copper": 108,
+        "coal": 135,
+        "crude_oil": 68
+      },
+      "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
+      "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
+      "employmentAuthority": "SIMULATED_FACTORY_EMPLOYMENT_V1"
     },
     "OIL_SHALE_RETORT": {
       "factoryType": "OIL_SHALE_RETORT",
@@ -2533,7 +2965,26 @@
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
       "simulationOnly": true,
       "inputUnit": "SIMULATION_RESOURCE_UNIT",
-      "outputUnit": "SIMULATION_RESOURCE_UNIT"
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "employment": {
+        "jobsPerFactory": 700,
+        "model": "DIRECT_JOB_CAPACITY",
+        "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
+        "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
+        "simulationOnly": true
+      },
+      "constructionMaterials": {
+        "construction_aggregate": 954,
+        "limestone": 596,
+        "iron_ore": 358,
+        "copper": 96,
+        "coal": 120,
+        "crude_oil": 60,
+        "gypsum": 66
+      },
+      "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
+      "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
+      "employmentAuthority": "SIMULATED_FACTORY_EMPLOYMENT_V1"
     },
     "ORE_BENEFICIATION_PLANT": {
       "factoryType": "ORE_BENEFICIATION_PLANT",
@@ -2561,7 +3012,25 @@
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
       "simulationOnly": true,
       "inputUnit": "SIMULATION_RESOURCE_UNIT",
-      "outputUnit": "SIMULATION_RESOURCE_UNIT"
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "employment": {
+        "jobsPerFactory": 800,
+        "model": "DIRECT_JOB_CAPACITY",
+        "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
+        "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
+        "simulationOnly": true
+      },
+      "constructionMaterials": {
+        "construction_aggregate": 844,
+        "limestone": 528,
+        "iron_ore": 317,
+        "copper": 85,
+        "coal": 106,
+        "crude_oil": 53
+      },
+      "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
+      "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
+      "employmentAuthority": "SIMULATED_FACTORY_EMPLOYMENT_V1"
     },
     "PGM_CONCENTRATOR": {
       "factoryType": "PGM_CONCENTRATOR",
@@ -2589,7 +3058,25 @@
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
       "simulationOnly": true,
       "inputUnit": "SIMULATION_RESOURCE_UNIT",
-      "outputUnit": "SIMULATION_RESOURCE_UNIT"
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "employment": {
+        "jobsPerFactory": 350,
+        "model": "DIRECT_JOB_CAPACITY",
+        "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
+        "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
+        "simulationOnly": true
+      },
+      "constructionMaterials": {
+        "construction_aggregate": 800,
+        "limestone": 500,
+        "iron_ore": 300,
+        "copper": 80,
+        "coal": 100,
+        "crude_oil": 50
+      },
+      "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
+      "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
+      "employmentAuthority": "SIMULATED_FACTORY_EMPLOYMENT_V1"
     },
     "PHOSPHATE_BENEFICIATION_PLANT": {
       "factoryType": "PHOSPHATE_BENEFICIATION_PLANT",
@@ -2617,7 +3104,25 @@
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
       "simulationOnly": true,
       "inputUnit": "SIMULATION_RESOURCE_UNIT",
-      "outputUnit": "SIMULATION_RESOURCE_UNIT"
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "employment": {
+        "jobsPerFactory": 400,
+        "model": "DIRECT_JOB_CAPACITY",
+        "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
+        "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
+        "simulationOnly": true
+      },
+      "constructionMaterials": {
+        "construction_aggregate": 864,
+        "limestone": 540,
+        "iron_ore": 324,
+        "copper": 87,
+        "coal": 108,
+        "crude_oil": 54
+      },
+      "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
+      "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
+      "employmentAuthority": "SIMULATED_FACTORY_EMPLOYMENT_V1"
     },
     "POTASH_PROCESSING_PLANT": {
       "factoryType": "POTASH_PROCESSING_PLANT",
@@ -2645,7 +3150,25 @@
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
       "simulationOnly": true,
       "inputUnit": "SIMULATION_RESOURCE_UNIT",
-      "outputUnit": "SIMULATION_RESOURCE_UNIT"
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "employment": {
+        "jobsPerFactory": 500,
+        "model": "DIRECT_JOB_CAPACITY",
+        "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
+        "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
+        "simulationOnly": true
+      },
+      "constructionMaterials": {
+        "construction_aggregate": 874,
+        "limestone": 546,
+        "iron_ore": 328,
+        "copper": 88,
+        "coal": 110,
+        "crude_oil": 55
+      },
+      "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
+      "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
+      "employmentAuthority": "SIMULATED_FACTORY_EMPLOYMENT_V1"
     },
     "RARE_EARTH_BENEFICIATION_PLANT": {
       "factoryType": "RARE_EARTH_BENEFICIATION_PLANT",
@@ -2673,7 +3196,25 @@
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
       "simulationOnly": true,
       "inputUnit": "SIMULATION_RESOURCE_UNIT",
-      "outputUnit": "SIMULATION_RESOURCE_UNIT"
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "employment": {
+        "jobsPerFactory": 650,
+        "model": "DIRECT_JOB_CAPACITY",
+        "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
+        "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
+        "simulationOnly": true
+      },
+      "constructionMaterials": {
+        "construction_aggregate": 1137,
+        "limestone": 711,
+        "iron_ore": 427,
+        "copper": 114,
+        "coal": 143,
+        "crude_oil": 72
+      },
+      "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
+      "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
+      "employmentAuthority": "SIMULATED_FACTORY_EMPLOYMENT_V1"
     },
     "REFINERY": {
       "factoryType": "REFINERY",
@@ -2701,7 +3242,26 @@
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
       "simulationOnly": true,
       "inputUnit": "SIMULATION_RESOURCE_UNIT",
-      "outputUnit": "SIMULATION_RESOURCE_UNIT"
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "employment": {
+        "jobsPerFactory": 650,
+        "model": "DIRECT_JOB_CAPACITY",
+        "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
+        "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
+        "simulationOnly": true
+      },
+      "constructionMaterials": {
+        "construction_aggregate": 1014,
+        "limestone": 634,
+        "iron_ore": 380,
+        "copper": 102,
+        "coal": 127,
+        "crude_oil": 64,
+        "gypsum": 70
+      },
+      "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
+      "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
+      "employmentAuthority": "SIMULATED_FACTORY_EMPLOYMENT_V1"
     },
     "SALT_REFINERY": {
       "factoryType": "SALT_REFINERY",
@@ -2729,7 +3289,26 @@
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
       "simulationOnly": true,
       "inputUnit": "SIMULATION_RESOURCE_UNIT",
-      "outputUnit": "SIMULATION_RESOURCE_UNIT"
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "employment": {
+        "jobsPerFactory": 750,
+        "model": "DIRECT_JOB_CAPACITY",
+        "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
+        "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
+        "simulationOnly": true
+      },
+      "constructionMaterials": {
+        "construction_aggregate": 797,
+        "limestone": 498,
+        "iron_ore": 299,
+        "copper": 80,
+        "coal": 100,
+        "crude_oil": 50,
+        "silica_sand": 75
+      },
+      "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
+      "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
+      "employmentAuthority": "SIMULATED_FACTORY_EMPLOYMENT_V1"
     },
     "SILVER_CONCENTRATOR": {
       "factoryType": "SILVER_CONCENTRATOR",
@@ -2757,7 +3336,25 @@
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
       "simulationOnly": true,
       "inputUnit": "SIMULATION_RESOURCE_UNIT",
-      "outputUnit": "SIMULATION_RESOURCE_UNIT"
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "employment": {
+        "jobsPerFactory": 350,
+        "model": "DIRECT_JOB_CAPACITY",
+        "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
+        "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
+        "simulationOnly": true
+      },
+      "constructionMaterials": {
+        "construction_aggregate": 860,
+        "limestone": 538,
+        "iron_ore": 323,
+        "copper": 86,
+        "coal": 108,
+        "crude_oil": 54
+      },
+      "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
+      "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
+      "employmentAuthority": "SIMULATED_FACTORY_EMPLOYMENT_V1"
     },
     "STONE_PROCESSING_PLANT": {
       "factoryType": "STONE_PROCESSING_PLANT",
@@ -2785,7 +3382,26 @@
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
       "simulationOnly": true,
       "inputUnit": "SIMULATION_RESOURCE_UNIT",
-      "outputUnit": "SIMULATION_RESOURCE_UNIT"
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "employment": {
+        "jobsPerFactory": 450,
+        "model": "DIRECT_JOB_CAPACITY",
+        "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
+        "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
+        "simulationOnly": true
+      },
+      "constructionMaterials": {
+        "construction_aggregate": 817,
+        "limestone": 511,
+        "iron_ore": 307,
+        "copper": 82,
+        "coal": 103,
+        "crude_oil": 52,
+        "silica_sand": 77
+      },
+      "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
+      "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
+      "employmentAuthority": "SIMULATED_FACTORY_EMPLOYMENT_V1"
     },
     "TIN_CONCENTRATOR": {
       "factoryType": "TIN_CONCENTRATOR",
@@ -2813,7 +3429,25 @@
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
       "simulationOnly": true,
       "inputUnit": "SIMULATION_RESOURCE_UNIT",
-      "outputUnit": "SIMULATION_RESOURCE_UNIT"
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "employment": {
+        "jobsPerFactory": 450,
+        "model": "DIRECT_JOB_CAPACITY",
+        "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
+        "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
+        "simulationOnly": true
+      },
+      "constructionMaterials": {
+        "construction_aggregate": 934,
+        "limestone": 584,
+        "iron_ore": 350,
+        "copper": 94,
+        "coal": 117,
+        "crude_oil": 59
+      },
+      "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
+      "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
+      "employmentAuthority": "SIMULATED_FACTORY_EMPLOYMENT_V1"
     },
     "TUNGSTEN_CONCENTRATOR": {
       "factoryType": "TUNGSTEN_CONCENTRATOR",
@@ -2841,7 +3475,25 @@
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
       "simulationOnly": true,
       "inputUnit": "SIMULATION_RESOURCE_UNIT",
-      "outputUnit": "SIMULATION_RESOURCE_UNIT"
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "employment": {
+        "jobsPerFactory": 600,
+        "model": "DIRECT_JOB_CAPACITY",
+        "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
+        "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
+        "simulationOnly": true
+      },
+      "constructionMaterials": {
+        "construction_aggregate": 1197,
+        "limestone": 748,
+        "iron_ore": 449,
+        "copper": 120,
+        "coal": 150,
+        "crude_oil": 75
+      },
+      "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
+      "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
+      "employmentAuthority": "SIMULATED_FACTORY_EMPLOYMENT_V1"
     },
     "URANIUM_MILL": {
       "factoryType": "URANIUM_MILL",
@@ -2869,7 +3521,25 @@
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
       "simulationOnly": true,
       "inputUnit": "SIMULATION_RESOURCE_UNIT",
-      "outputUnit": "SIMULATION_RESOURCE_UNIT"
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "employment": {
+        "jobsPerFactory": 700,
+        "model": "DIRECT_JOB_CAPACITY",
+        "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
+        "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
+        "simulationOnly": true
+      },
+      "constructionMaterials": {
+        "construction_aggregate": 1207,
+        "limestone": 755,
+        "iron_ore": 453,
+        "copper": 121,
+        "coal": 151,
+        "crude_oil": 76
+      },
+      "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
+      "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
+      "employmentAuthority": "SIMULATED_FACTORY_EMPLOYMENT_V1"
     },
     "ZINC_CONCENTRATOR": {
       "factoryType": "ZINC_CONCENTRATOR",
@@ -2897,7 +3567,25 @@
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
       "simulationOnly": true,
       "inputUnit": "SIMULATION_RESOURCE_UNIT",
-      "outputUnit": "SIMULATION_RESOURCE_UNIT"
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "employment": {
+        "jobsPerFactory": 800,
+        "model": "DIRECT_JOB_CAPACITY",
+        "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
+        "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
+        "simulationOnly": true
+      },
+      "constructionMaterials": {
+        "construction_aggregate": 964,
+        "limestone": 603,
+        "iron_ore": 362,
+        "copper": 97,
+        "coal": 121,
+        "crude_oil": 61
+      },
+      "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
+      "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
+      "employmentAuthority": "SIMULATED_FACTORY_EMPLOYMENT_V1"
     },
     "STEEL_AND_ALLOY_WORKS": {
       "factoryType": "STEEL_AND_ALLOY_WORKS",
@@ -2927,7 +3615,26 @@
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
       "simulationOnly": true,
       "inputUnit": "SIMULATION_RESOURCE_UNIT",
-      "outputUnit": "SIMULATION_RESOURCE_UNIT"
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "employment": {
+        "jobsPerFactory": 5000,
+        "model": "DIRECT_JOB_CAPACITY",
+        "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
+        "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
+        "simulationOnly": true
+      },
+      "constructionMaterials": {
+        "construction_aggregate": 2400,
+        "limestone": 1500,
+        "iron_ore": 900,
+        "copper": 240,
+        "coal": 300,
+        "crude_oil": 150,
+        "nickel": 105
+      },
+      "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
+      "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
+      "employmentAuthority": "SIMULATED_FACTORY_EMPLOYMENT_V1"
     },
     "NON_FERROUS_METAL_SMELTER": {
       "factoryType": "NON_FERROUS_METAL_SMELTER",
@@ -2957,7 +3664,26 @@
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
       "simulationOnly": true,
       "inputUnit": "SIMULATION_RESOURCE_UNIT",
-      "outputUnit": "SIMULATION_RESOURCE_UNIT"
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "employment": {
+        "jobsPerFactory": 4000,
+        "model": "DIRECT_JOB_CAPACITY",
+        "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
+        "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
+        "simulationOnly": true
+      },
+      "constructionMaterials": {
+        "construction_aggregate": 2134,
+        "limestone": 1334,
+        "iron_ore": 800,
+        "copper": 214,
+        "coal": 267,
+        "crude_oil": 134,
+        "nickel": 94
+      },
+      "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
+      "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
+      "employmentAuthority": "SIMULATED_FACTORY_EMPLOYMENT_V1"
     },
     "PETROCHEMICAL_POLYMER_PLANT": {
       "factoryType": "PETROCHEMICAL_POLYMER_PLANT",
@@ -2987,7 +3713,26 @@
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
       "simulationOnly": true,
       "inputUnit": "SIMULATION_RESOURCE_UNIT",
-      "outputUnit": "SIMULATION_RESOURCE_UNIT"
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "employment": {
+        "jobsPerFactory": 5500,
+        "model": "DIRECT_JOB_CAPACITY",
+        "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
+        "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
+        "simulationOnly": true
+      },
+      "constructionMaterials": {
+        "construction_aggregate": 3200,
+        "limestone": 2000,
+        "iron_ore": 1200,
+        "copper": 320,
+        "coal": 400,
+        "crude_oil": 200,
+        "gypsum": 220
+      },
+      "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
+      "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
+      "employmentAuthority": "SIMULATED_FACTORY_EMPLOYMENT_V1"
     },
     "FERTILIZER_CHEMICAL_PLANT": {
       "factoryType": "FERTILIZER_CHEMICAL_PLANT",
@@ -3017,7 +3762,26 @@
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
       "simulationOnly": true,
       "inputUnit": "SIMULATION_RESOURCE_UNIT",
-      "outputUnit": "SIMULATION_RESOURCE_UNIT"
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "employment": {
+        "jobsPerFactory": 3500,
+        "model": "DIRECT_JOB_CAPACITY",
+        "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
+        "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
+        "simulationOnly": true
+      },
+      "constructionMaterials": {
+        "construction_aggregate": 1867,
+        "limestone": 1167,
+        "iron_ore": 700,
+        "copper": 187,
+        "coal": 234,
+        "crude_oil": 117,
+        "phosphate": 105
+      },
+      "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
+      "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
+      "employmentAuthority": "SIMULATED_FACTORY_EMPLOYMENT_V1"
     },
     "INDUSTRIAL_CHEMICALS_GAS_PLANT": {
       "factoryType": "INDUSTRIAL_CHEMICALS_GAS_PLANT",
@@ -3047,7 +3811,26 @@
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
       "simulationOnly": true,
       "inputUnit": "SIMULATION_RESOURCE_UNIT",
-      "outputUnit": "SIMULATION_RESOURCE_UNIT"
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "employment": {
+        "jobsPerFactory": 4000,
+        "model": "DIRECT_JOB_CAPACITY",
+        "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
+        "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
+        "simulationOnly": true
+      },
+      "constructionMaterials": {
+        "construction_aggregate": 2534,
+        "limestone": 1584,
+        "iron_ore": 950,
+        "copper": 254,
+        "coal": 317,
+        "crude_oil": 159,
+        "gypsum": 175
+      },
+      "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
+      "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
+      "employmentAuthority": "SIMULATED_FACTORY_EMPLOYMENT_V1"
     },
     "CEMENT_CONCRETE_PLANT": {
       "factoryType": "CEMENT_CONCRETE_PLANT",
@@ -3077,7 +3860,26 @@
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
       "simulationOnly": true,
       "inputUnit": "SIMULATION_RESOURCE_UNIT",
-      "outputUnit": "SIMULATION_RESOURCE_UNIT"
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "employment": {
+        "jobsPerFactory": 2500,
+        "model": "DIRECT_JOB_CAPACITY",
+        "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
+        "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
+        "simulationOnly": true
+      },
+      "constructionMaterials": {
+        "construction_aggregate": 1334,
+        "limestone": 834,
+        "iron_ore": 500,
+        "copper": 134,
+        "coal": 167,
+        "crude_oil": 84,
+        "silica_sand": 125
+      },
+      "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
+      "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
+      "employmentAuthority": "SIMULATED_FACTORY_EMPLOYMENT_V1"
     },
     "GLASS_CERAMICS_PLANT": {
       "factoryType": "GLASS_CERAMICS_PLANT",
@@ -3106,7 +3908,26 @@
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
       "simulationOnly": true,
       "inputUnit": "SIMULATION_RESOURCE_UNIT",
-      "outputUnit": "SIMULATION_RESOURCE_UNIT"
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "employment": {
+        "jobsPerFactory": 2000,
+        "model": "DIRECT_JOB_CAPACITY",
+        "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
+        "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
+        "simulationOnly": true
+      },
+      "constructionMaterials": {
+        "construction_aggregate": 1667,
+        "limestone": 1042,
+        "iron_ore": 625,
+        "copper": 167,
+        "coal": 209,
+        "crude_oil": 105,
+        "silica_sand": 157
+      },
+      "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
+      "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
+      "employmentAuthority": "SIMULATED_FACTORY_EMPLOYMENT_V1"
     },
     "PAPER_PACKAGING_MILL": {
       "factoryType": "PAPER_PACKAGING_MILL",
@@ -3137,7 +3958,25 @@
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
       "simulationOnly": true,
       "inputUnit": "SIMULATION_RESOURCE_UNIT",
-      "outputUnit": "SIMULATION_RESOURCE_UNIT"
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "employment": {
+        "jobsPerFactory": 2500,
+        "model": "DIRECT_JOB_CAPACITY",
+        "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
+        "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
+        "simulationOnly": true
+      },
+      "constructionMaterials": {
+        "construction_aggregate": 1200,
+        "limestone": 750,
+        "iron_ore": 450,
+        "copper": 120,
+        "coal": 150,
+        "crude_oil": 75
+      },
+      "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
+      "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
+      "employmentAuthority": "SIMULATED_FACTORY_EMPLOYMENT_V1"
     },
     "FOOD_PROCESSING_COLD_CHAIN": {
       "factoryType": "FOOD_PROCESSING_COLD_CHAIN",
@@ -3167,7 +4006,26 @@
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
       "simulationOnly": true,
       "inputUnit": "SIMULATION_RESOURCE_UNIT",
-      "outputUnit": "SIMULATION_RESOURCE_UNIT"
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "employment": {
+        "jobsPerFactory": 3000,
+        "model": "DIRECT_JOB_CAPACITY",
+        "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
+        "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
+        "simulationOnly": true
+      },
+      "constructionMaterials": {
+        "construction_aggregate": 934,
+        "limestone": 584,
+        "iron_ore": 350,
+        "copper": 94,
+        "coal": 117,
+        "crude_oil": 59,
+        "phosphate": 53
+      },
+      "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
+      "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
+      "employmentAuthority": "SIMULATED_FACTORY_EMPLOYMENT_V1"
     },
     "TEXTILE_GARMENT_MILL": {
       "factoryType": "TEXTILE_GARMENT_MILL",
@@ -3197,7 +4055,25 @@
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
       "simulationOnly": true,
       "inputUnit": "SIMULATION_RESOURCE_UNIT",
-      "outputUnit": "SIMULATION_RESOURCE_UNIT"
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "employment": {
+        "jobsPerFactory": 4500,
+        "model": "DIRECT_JOB_CAPACITY",
+        "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
+        "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
+        "simulationOnly": true
+      },
+      "constructionMaterials": {
+        "construction_aggregate": 800,
+        "limestone": 500,
+        "iron_ore": 300,
+        "copper": 80,
+        "coal": 100,
+        "crude_oil": 50
+      },
+      "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
+      "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
+      "employmentAuthority": "SIMULATED_FACTORY_EMPLOYMENT_V1"
     },
     "INDUSTRIAL_MACHINERY_MACHINE_TOOLS": {
       "factoryType": "INDUSTRIAL_MACHINERY_MACHINE_TOOLS",
@@ -3227,7 +4103,26 @@
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
       "simulationOnly": true,
       "inputUnit": "SIMULATION_RESOURCE_UNIT",
-      "outputUnit": "SIMULATION_RESOURCE_UNIT"
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "employment": {
+        "jobsPerFactory": 3500,
+        "model": "DIRECT_JOB_CAPACITY",
+        "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
+        "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
+        "simulationOnly": true
+      },
+      "constructionMaterials": {
+        "construction_aggregate": 2934,
+        "limestone": 1834,
+        "iron_ore": 1100,
+        "copper": 294,
+        "coal": 367,
+        "crude_oil": 184,
+        "bauxite": 165
+      },
+      "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
+      "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
+      "employmentAuthority": "SIMULATED_FACTORY_EMPLOYMENT_V1"
     },
     "GRID_EQUIPMENT_FACTORY": {
       "factoryType": "GRID_EQUIPMENT_FACTORY",
@@ -3256,7 +4151,26 @@
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
       "simulationOnly": true,
       "inputUnit": "SIMULATION_RESOURCE_UNIT",
-      "outputUnit": "SIMULATION_RESOURCE_UNIT"
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "employment": {
+        "jobsPerFactory": 3000,
+        "model": "DIRECT_JOB_CAPACITY",
+        "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
+        "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
+        "simulationOnly": true
+      },
+      "constructionMaterials": {
+        "construction_aggregate": 2000,
+        "limestone": 1250,
+        "iron_ore": 750,
+        "copper": 200,
+        "coal": 250,
+        "crude_oil": 125,
+        "bauxite": 113
+      },
+      "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
+      "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
+      "employmentAuthority": "SIMULATED_FACTORY_EMPLOYMENT_V1"
     },
     "ELECTRONICS_SEMICONDUCTOR_FAB": {
       "factoryType": "ELECTRONICS_SEMICONDUCTOR_FAB",
@@ -3290,7 +4204,26 @@
       "recipeIds": [
         "SILICON_WAFER_PRODUCTION_ROUTE_V1"
       ],
-      "recipeMode": "MULTI_INPUT"
+      "recipeMode": "MULTI_INPUT",
+      "employment": {
+        "jobsPerFactory": 8500,
+        "model": "DIRECT_JOB_CAPACITY",
+        "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
+        "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
+        "simulationOnly": true
+      },
+      "constructionMaterials": {
+        "construction_aggregate": 10000,
+        "limestone": 6250,
+        "iron_ore": 3750,
+        "copper": 1000,
+        "coal": 1250,
+        "crude_oil": 625,
+        "silica_sand": 1625
+      },
+      "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
+      "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
+      "employmentAuthority": "SIMULATED_FACTORY_EMPLOYMENT_V1"
     },
     "BATTERY_ENERGY_STORAGE_PLANT": {
       "factoryType": "BATTERY_ENERGY_STORAGE_PLANT",
@@ -3320,7 +4253,26 @@
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
       "simulationOnly": true,
       "inputUnit": "SIMULATION_RESOURCE_UNIT",
-      "outputUnit": "SIMULATION_RESOURCE_UNIT"
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "employment": {
+        "jobsPerFactory": 3200,
+        "model": "DIRECT_JOB_CAPACITY",
+        "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
+        "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
+        "simulationOnly": true
+      },
+      "constructionMaterials": {
+        "construction_aggregate": 3734,
+        "limestone": 2334,
+        "iron_ore": 1400,
+        "copper": 374,
+        "coal": 467,
+        "crude_oil": 234,
+        "silica_sand": 607
+      },
+      "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
+      "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
+      "employmentAuthority": "SIMULATED_FACTORY_EMPLOYMENT_V1"
     },
     "VEHICLE_TRUCK_BUS_ASSEMBLY": {
       "factoryType": "VEHICLE_TRUCK_BUS_ASSEMBLY",
@@ -3350,7 +4302,26 @@
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
       "simulationOnly": true,
       "inputUnit": "SIMULATION_RESOURCE_UNIT",
-      "outputUnit": "SIMULATION_RESOURCE_UNIT"
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "employment": {
+        "jobsPerFactory": 5000,
+        "model": "DIRECT_JOB_CAPACITY",
+        "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
+        "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
+        "simulationOnly": true
+      },
+      "constructionMaterials": {
+        "construction_aggregate": 4267,
+        "limestone": 2667,
+        "iron_ore": 1600,
+        "copper": 427,
+        "coal": 534,
+        "crude_oil": 267,
+        "bauxite": 347
+      },
+      "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
+      "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
+      "employmentAuthority": "SIMULATED_FACTORY_EMPLOYMENT_V1"
     },
     "SHIP_RAIL_EQUIPMENT_YARD": {
       "factoryType": "SHIP_RAIL_EQUIPMENT_YARD",
@@ -3380,7 +4351,26 @@
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
       "simulationOnly": true,
       "inputUnit": "SIMULATION_RESOURCE_UNIT",
-      "outputUnit": "SIMULATION_RESOURCE_UNIT"
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "employment": {
+        "jobsPerFactory": 10000,
+        "model": "DIRECT_JOB_CAPACITY",
+        "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
+        "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
+        "simulationOnly": true
+      },
+      "constructionMaterials": {
+        "construction_aggregate": 5600,
+        "limestone": 3500,
+        "iron_ore": 2100,
+        "copper": 560,
+        "coal": 700,
+        "crude_oil": 350,
+        "bauxite": 455
+      },
+      "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
+      "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
+      "employmentAuthority": "SIMULATED_FACTORY_EMPLOYMENT_V1"
     },
     "AEROSPACE_EQUIPMENT_PLANT": {
       "factoryType": "AEROSPACE_EQUIPMENT_PLANT",
@@ -3409,7 +4399,26 @@
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
       "simulationOnly": true,
       "inputUnit": "SIMULATION_RESOURCE_UNIT",
-      "outputUnit": "SIMULATION_RESOURCE_UNIT"
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "employment": {
+        "jobsPerFactory": 6000,
+        "model": "DIRECT_JOB_CAPACITY",
+        "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
+        "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
+        "simulationOnly": true
+      },
+      "constructionMaterials": {
+        "construction_aggregate": 10667,
+        "limestone": 6667,
+        "iron_ore": 4000,
+        "copper": 1067,
+        "coal": 1334,
+        "crude_oil": 667,
+        "bauxite": 867
+      },
+      "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
+      "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
+      "employmentAuthority": "SIMULATED_FACTORY_EMPLOYMENT_V1"
     },
     "PHARMA_MEDICAL_SUPPLIES_PLANT": {
       "factoryType": "PHARMA_MEDICAL_SUPPLIES_PLANT",
@@ -3439,7 +4448,26 @@
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
       "simulationOnly": true,
       "inputUnit": "SIMULATION_RESOURCE_UNIT",
-      "outputUnit": "SIMULATION_RESOURCE_UNIT"
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "employment": {
+        "jobsPerFactory": 3500,
+        "model": "DIRECT_JOB_CAPACITY",
+        "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
+        "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
+        "simulationOnly": true
+      },
+      "constructionMaterials": {
+        "construction_aggregate": 3467,
+        "limestone": 2167,
+        "iron_ore": 1300,
+        "copper": 347,
+        "coal": 434,
+        "crude_oil": 217,
+        "silica_sand": 217
+      },
+      "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
+      "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
+      "employmentAuthority": "SIMULATED_FACTORY_EMPLOYMENT_V1"
     },
     "DEFENSE_EQUIPMENT_FACTORY": {
       "factoryType": "DEFENSE_EQUIPMENT_FACTORY",
@@ -3469,7 +4497,26 @@
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
       "simulationOnly": true,
       "inputUnit": "SIMULATION_RESOURCE_UNIT",
-      "outputUnit": "SIMULATION_RESOURCE_UNIT"
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "employment": {
+        "jobsPerFactory": 4500,
+        "model": "DIRECT_JOB_CAPACITY",
+        "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
+        "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
+        "simulationOnly": true
+      },
+      "constructionMaterials": {
+        "construction_aggregate": 5334,
+        "limestone": 3334,
+        "iron_ore": 2000,
+        "copper": 534,
+        "coal": 667,
+        "crude_oil": 334,
+        "silica_sand": 334
+      },
+      "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
+      "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
+      "employmentAuthority": "SIMULATED_FACTORY_EMPLOYMENT_V1"
     },
     "RECYCLING_WASTE_PROCESSING_PLANT": {
       "factoryType": "RECYCLING_WASTE_PROCESSING_PLANT",
@@ -3499,7 +4546,26 @@
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
       "simulationOnly": true,
       "inputUnit": "SIMULATION_RESOURCE_UNIT",
-      "outputUnit": "SIMULATION_RESOURCE_UNIT"
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "employment": {
+        "jobsPerFactory": 2200,
+        "model": "DIRECT_JOB_CAPACITY",
+        "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
+        "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
+        "simulationOnly": true
+      },
+      "constructionMaterials": {
+        "construction_aggregate": 1134,
+        "limestone": 709,
+        "iron_ore": 425,
+        "copper": 114,
+        "coal": 142,
+        "crude_oil": 71,
+        "graphite": 43
+      },
+      "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
+      "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
+      "employmentAuthority": "SIMULATED_FACTORY_EMPLOYMENT_V1"
     }
   },
   "downstreamFactoryRecipes": {
@@ -4061,7 +5127,11 @@
     "downstreamRecipeCount": 22,
     "categoryCount": 12,
     "unitNormalizationPolicy": "SIMULATION_ONLY_EXPLICIT_BRIDGES",
-    "externalSectorInputCount": 5
+    "externalSectorInputCount": 5,
+    "profilesWithConstructionMaterials": 56,
+    "profilesWithEmployment": 56,
+    "employmentModelVersion": "SIMULATED_FACTORY_EMPLOYMENT_V1",
+    "constructionMaterialsVersion": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1"
   },
   "externalInputSources": {
     "grain": {
