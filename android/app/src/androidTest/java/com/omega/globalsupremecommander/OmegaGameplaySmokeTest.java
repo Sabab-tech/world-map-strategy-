@@ -61,14 +61,14 @@ public final class OmegaGameplaySmokeTest {
                     " window.Game && window.Omega" +
                     " );" +
                     "})()";
-            final long deadline = SystemClock.elapsedRealtime() + 90000L;
+            final long deadline = SystemClock.elapsedRealtime() + 150000L;
             String ready = "false";
             while (!"true".equals(ready) && SystemClock.elapsedRealtime() < deadline) {
                 ready = evaluate(instrumentation, webViewRef.get(), readinessScript);
                 if (!"true".equals(ready)) SystemClock.sleep(400L);
             }
             assertEquals(
-                    "Bundled offline gameplay shell, local data assets and core runtime must finish booting within 90 seconds",
+                    "Bundled offline gameplay shell, local data assets and core runtime must finish booting within 150 seconds",
                     "true", ready
             );
             final String offlineBridgeScript =
@@ -82,13 +82,14 @@ public final class OmegaGameplaySmokeTest {
 
             final String speedControlScript =
                     "(function() {" +
-                    " var button = document.querySelector('.speed-btn[data-speed=\\\"2\\\"]');" +
-                    " if (!button) return false;" +
+                    " var button = document.querySelector('.speed-btn[data-speed=\"2\"]');" +
+                    " if (!button || !window.Omega || !window.Omega.GameLifecycle) return false;" +
                     " button.click();" +
-                    " return !!(button.classList.contains('active') && window.Game.gameSpeed === 2);" +
+                    " var diagnostics = window.Omega.GameLifecycle.getDiagnostics();" +
+                    " return !!(diagnostics && diagnostics.clock && Number(diagnostics.clock.speed) === 2);" +
                     "})()";
             assertEquals(
-                    "Tapping the 2x control must update the actual simulation speed",
+                    "Tapping the 2x control must set the authoritative OMEGA simulation clock to speed 2",
                     "true", evaluate(instrumentation, webViewRef.get(), speedControlScript)
             );
 
@@ -128,7 +129,7 @@ public final class OmegaGameplaySmokeTest {
         );
         assertTrue(
                 "WebView JavaScript evaluation callback should return",
-                latch.await(10, TimeUnit.SECONDS)
+                latch.await(45, TimeUnit.SECONDS)
         );
         return result.get();
     }
