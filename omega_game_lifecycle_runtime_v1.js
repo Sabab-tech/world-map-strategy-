@@ -576,6 +576,11 @@
   function clickHandler(event) {
     var target = event.target && event.target.closest ? event.target.closest('[data-omega-action="toggle"], [data-omega-speed], .speed-btn') : null;
     if (!target) return;
+    // This is the authoritative game-clock route. Legacy listeners must not
+    // overwrite a speed selection after this handler updates the simulation.
+    if (event && event.cancelable) event.preventDefault();
+    if (event && typeof event.stopImmediatePropagation === 'function') event.stopImmediatePropagation();
+    if (event && typeof event.stopPropagation === 'function') event.stopPropagation();
     var speed;
     if (target.hasAttribute('data-omega-action')) {
       var sim = runtime();
