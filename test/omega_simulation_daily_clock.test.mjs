@@ -234,7 +234,7 @@ test('finance, FX, macro and ministry time fallbacks treat one turn as one day',
   assert.match(home, /DAY_MS = 86400000/);
   assert.match(military, /simTurn\(\) \* 86400000/);
   assert.match(industrial, /clock\?\.stepDurationMs/);
-  assert.match(industrial, /milliseconds\/86400000/);
+  assert.match(industrial, /if\(num\(clock\?\.stepDurationMs\)!==null\)return 1/);
   assert.match(hardening, /OMEGA_SIMULATION_TURN_COMMITTED',[() =>]*\{ensureFactoryRecipes\(\);\}/);
   assert.equal(industrialCatalog.turnAssumption.daysPerTurn, 1);
 });

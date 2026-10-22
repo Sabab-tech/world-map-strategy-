@@ -441,7 +441,8 @@ function onExtractionCommitted(evt){
     addFlowStage(row,'TRANSPORT','BLOCKED',{reason:'NON_COMMERCIAL_SITE'});
     row.blockReason='NON_COMMERCIAL_SITE';saveSiteFlow(cid,row);return;
   }
-  let factoryChoice=candidateFactories(cid,rid)[0]?.asset||null,bootstrap=null;
+  const compatible=candidateFactories(cid,rid);
+  let factoryChoice=compatible.find(({asset})=>String(asset?.sourceSiteId||asset?.siteId||'')===String(site.siteId))?.asset||compatible[0]?.asset||null,bootstrap=null;
   if(!factoryChoice){bootstrap=ensureSimulationFactory(cid,site,rid,Math.min(quantity,Math.max(1,num(stored.remainingQuantity)||quantity)));factoryChoice=bootstrap.factory||null;}
   if(!factoryChoice){
     addFlowStage(row,'FACTORY','BLOCKED',{reason:bootstrap?.reason||'NO_COMPATIBLE_FACTORY_RECIPE'});
@@ -2886,22 +2887,27 @@ function processPendingFactoryInputs(countryId){
     startedCount:started.length,started,warehouseTransferCount:transfers.length,transfers,blocked};
 }
 
-function ensureSimulationFactory(cid,site,resourceId,quantity){
-  const existing=candidateFactories(cid,resourceId);
-  if(existing.length)return{status:'EXISTING',factory:existing[0].asset};
+function ensureSimulationFactory(cid,site,resourceId,quantity,options={}){
+  const economy=econState(cid);if(!Array.isArray(economy.productionAssets))economy.productionAssets=[];
+  const assets=economy.productionAssets,siteId=String(site?.siteId||'');
+  const factoryId='FAC-SIM:'+cid+':'+String(siteId).replace(/[^A-Za-z0-9_-]/g,'_')+':'+tok(resourceId);
+  const compatible=candidateFactories(cid,resourceId);
+  // Explicit auto-commissioning binds a new deposit to a source-site factory when possible.
+  // Otherwise retain the legacy shared-factory fallback for callers that do not request it.
+  const siteFactory=compatible.find(({asset})=>String(asset?.sourceSiteId||asset?.siteId||'')===siteId);
+  if(siteFactory)return{status:'EXISTING_SITE',factory:siteFactory.asset};
+  let factory=assets.find(a=>String(a?.id||a?.assetId||a?.projectId)===factoryId);
+  if(factory&&assetCanAccept(factory,resourceId))return{status:'EXISTING_SITE',factory};
+  if(options.siteSpecific!==true&&compatible.length)return{status:'EXISTING',factory:compatible[0].asset};
   const recipe=recipeFor(resourceId,{});
   if(!Object.keys(recipe.inputs||{}).length||!Object.keys(recipe.outputs||{}).length)return{status:'BLOCKED',reason:'NO_FACTORY_RECIPE'};
-  const economy=econState(cid);if(!Array.isArray(economy.productionAssets))economy.productionAssets=[];
-  // A site may expose more than one commodity stream. Keep simulation factories resource-specific,
-  // otherwise the first commodity bootstrapped for a site can make later commodities look incapable.
-  const assets=economy.productionAssets,factoryId='FAC-SIM:'+cid+':'+String(site.siteId).replace(/[^A-Za-z0-9_-]/g,'_')+':'+tok(resourceId);
-  let factory=assets.find(a=>String(a?.id||a?.assetId||a?.projectId)===factoryId);
   if(!factory){
-    factory={id:factoryId,countryId:cid,siteId:null,sourceSiteId:site.siteId,stage:'PROCESSING',factoryType:recipe.factoryType||'RESOURCE_PROCESSING_PLANT',
+    factory={id:factoryId,countryId:cid,siteId:null,sourceSiteId:siteId,stage:'PROCESSING',factoryType:recipe.factoryType||'RESOURCE_PROCESSING_PLANT',
       status:'OPERATIONAL',capacity:Math.max(1,num(quantity)||1),inputCoefficients:clone(recipe.inputs),outputProfile:clone(recipe.outputs),
       inputInventory:{},inputBatchLots:[],companyId:'SIM-COMPANY:'+cid,ownerCompanyId:'SIM-COMPANY:'+cid,
-      transportAccess:['truck','rail','ship','pipeline'],locationNodeKey:'FACTORY:'+cid+':'+site.siteId,
-      simulationOnly:true,authority:'SIMULATED_GAMEPLAY_BOOTSTRAP',bootstrapReason:'NO_EXISTING_COMPATIBLE_FACTORY'}
+      transportAccess:['truck','rail','ship','pipeline'],locationNodeKey:'FACTORY:'+cid+':'+siteId,
+      simulationOnly:true,authority:'SIMULATED_GAMEPLAY_BOOTSTRAP',
+      bootstrapReason:options.siteSpecific===true?'SOURCE_SITE_FACTORY_REQUIRED':'NO_EXISTING_COMPATIBLE_FACTORY'};
     assets.push(factory);
   }
   return{status:'CREATED_SIMULATION_ONLY',factory};
@@ -2966,6 +2972,15 @@ async function executeSitePipeline(input={}){
   const already=netState(cid).siteExecutions||[];
   const duplicate=already.find(x=>x.siteId===site.siteId&&Number(x.turn)===turn()&&x.status!=='FAILED');
   if(duplicate)return{status:'BLOCKED',reason:'SITE_ALREADY_EXECUTED_THIS_TURN',existingExecutionId:duplicate.executionId,siteId:site.siteId};
+  // Prepare an explicitly requested source-site factory before the extraction event fires.
+  // The extraction callback dispatches synchronously, so it must see the intended destination.
+  let preparedFactory=null,preparedFactoryBootstrap=null;
+  if(input.autoCommissionFactory===true){
+    preparedFactoryBootstrap=ensureSimulationFactory(cid,site,rid,
+      Math.max(1,num(extractionPlan.approvedQuantity)||num(input.quantity)||1),{siteSpecific:true});
+    preparedFactory=preparedFactoryBootstrap.factory||null;
+    if(!preparedFactory)return{status:'BLOCKED',reason:'SITE_FACTORY_BOOTSTRAP_BLOCKED',detail:preparedFactoryBootstrap};
+  }
   const extraction=await endowment.extractCountry(cid,keys);
   const records=extraction?.result?.records||extraction?.records||[];
   const record=records.find(x=>keys.includes(String(x?.occurrenceKey||''))&&canonicalCountry(x?.countryId||cid)===cid&&x?.producedBatch);
@@ -2974,8 +2989,11 @@ async function executeSitePipeline(input={}){
   }
   const batch=record.producedBatch,quantity=Math.max(0,num(record.approvedQuantity)||num(batch.quantity)||num(record.quantity)||0);
   if(quantity<=0)return{status:'BLOCKED',reason:'EXTRACTION_BATCH_QUANTITY_INVALID',siteId:site.siteId,occurrenceKey:record.occurrenceKey};
-  let factoryChoice=candidateFactories(cid,rid)[0]?.asset||null;
-  let factoryBootstrap=null;
+  const candidates=candidateFactories(cid,rid);
+  let factoryBootstrap=preparedFactoryBootstrap||null;
+  let factoryChoice=preparedFactory||
+    candidates.find(({asset})=>String(asset?.sourceSiteId||asset?.siteId||'')===String(site.siteId))?.asset||
+    candidates[0]?.asset||null;
   if(!factoryChoice&&input.autoCommissionFactory!==false){
     factoryBootstrap=ensureSimulationFactory(cid,site,rid,quantity);
     factoryChoice=factoryBootstrap.factory||null;
