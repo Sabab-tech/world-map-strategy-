@@ -9,6 +9,11 @@ on:
       - "android/**"
       - "index.html"
       - "omega-offline-map-sw.js"
+      - "omega_ministry_interoperability_system.js"
+      - "omega_ministry_state_transaction.js"
+      - "country_sector_profiles_v1.json"
+      - "country_sector_profile_schema_v1.json"
+      - "country_general_data_registry_v1.json"
       - "omega_ministry_entry_v3.js"
       - "omega_ui_system_redesign_v1.js"
       - "map-engine-1.js"
@@ -21,6 +26,11 @@ on:
       - "android/**"
       - "index.html"
       - "omega-offline-map-sw.js"
+      - "omega_ministry_interoperability_system.js"
+      - "omega_ministry_state_transaction.js"
+      - "country_sector_profiles_v1.json"
+      - "country_sector_profile_schema_v1.json"
+      - "country_general_data_registry_v1.json"
       - "omega_ministry_entry_v3.js"
       - "omega_ui_system_redesign_v1.js"
       - "map-engine-1.js"
@@ -30,8 +40,9 @@ permissions:
   contents: read
 
 concurrency:
+  # Every head of the same PR shares one group, so a newer head cancels stale emulator runs.
   group: omega-android9-gameplay-smoke-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   offline-gameplay-smoke:
