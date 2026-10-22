@@ -1011,7 +1011,7 @@ function dispatchFactoryInputShipment(input={}){
       authority:'SIMULATED_DOMESTIC_FACTORY_TRANSFER',sourceBatchId:batchId,sourceFactoryId:sourceBatch.sourceFactoryId||null,
       targetFactoryId:factoryId,unitBridge:bridge,simulationOnly:true}};
   network.shipments.push(shipment);network.shipments=network.shipments.slice(-MAX_SHIPMENTS);
-  if(sourceBatchId)updateSiteFlow(cid,sourceBatchId,row=>{
+  if(batchId)updateSiteFlow(cid,batchId,row=>{
     row.downstreamShipmentIds=[...new Set([...(row.downstreamShipmentIds||[]),shipmentId])];
     row.downstreamFactoryIds=[...new Set([...(row.downstreamFactoryIds||[]),factoryId])];
   });
