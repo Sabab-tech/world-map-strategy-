@@ -96,18 +96,34 @@ context.Game.state.simulation.turn=sent.shipment.etaTurn;
 const advanced=N.advanceShipments('BGD');
 assert.equal(advanced.delivered,1);
 assert.equal(advanced.shipments[0].destinationStatus,'FACTORY_RECEIVED');
-assert.equal(advanced.shipments[0].processingStatus,'PROCESSED','delivered shipment must run factory processing in the same runtime path');
+assert.equal(advanced.shipments[0].processingStatus,'IN_PROGRESS',
+  'delivery should schedule production, not synchronously commit finished goods');
 assert.equal(context.Game.state.resource.BGD.warehouse.availableByResource.coal,45000,'delivered raw stock must leave the sovereign warehouse');
 assert.equal(context.Game.state.resource.BGD.warehouse.reservedByResource.coal,0,'shipment reservation must be released on delivery');
 assert.equal(context.Game.state.resource.BGD.inventory.coal,45000,'raw inventory must be debited once when the shipment is delivered');
-assert.equal(context.Game.state.resource.BGD.inventory.COAL_CONCENTRATE,820,'factory output must enter the resource inventory');
-assert.equal(context.Game.state.resource.BGD.inventory.COAL_REJECT,180,'processing coproduct must be recorded');
-assert.equal(context.Game.state.economy.BGD.productionAssets[0].inputInventory.coal,4000,'unprocessed delivered material must remain in factory input stock');
+const factory=context.Game.state.economy.BGD.productionAssets[0];
+const cycle=context.Game.state.resource.BGD.industrialNetwork.factoryProductionCycles[factory.id];
+assert.ok(cycle&&cycle.status==='IN_PROGRESS','factory receipt must create a dated production cycle');
+assert.ok(cycle.finishDate,'factory cycle must expose its authoritative finish date');
+assert.equal(context.Game.state.resource.BGD.inventory.COAL_CONCENTRATE||0,0,'finished goods must not exist on the delivery tick');
+assert.equal(context.Game.state.resource.BGD.inventory.COAL_REJECT||0,0,'processing coproduct must not exist before cycle completion');
+assert.equal(factory.inputInventory.coal,5000,'all delivered material stays recorded at the factory until the cycle finishes');
+assert.equal(context.Game.state.resource.BGD.processedWarehouse,undefined,
+  'the processed warehouse must not be fabricated before there is production output');
+
+context.Game.state.simulation.turn=Math.max(Number(context.Game.state.simulation.turn)||0,Number(cycle.finishTurn)||0);
+context.Game.state.simulation.date=cycle.finishDate;
+const completed=N.processPendingFactoryInputs('BGD');
+assert.equal(completed.completedCount,1,JSON.stringify(completed));
+assert.equal(completed.completed[0].status,'COMPLETED');
+assert.equal(context.Game.state.resource.BGD.inventory.COAL_CONCENTRATE,820,'completed factory output must enter the resource inventory');
+assert.equal(context.Game.state.resource.BGD.inventory.COAL_REJECT,180,'processing coproduct must be recorded on completion');
+assert.equal(factory.inputInventory.coal,4000,'only the completed cycle input should be debited from factory input stock');
 assert.equal(context.Game.state.resource.BGD.processedWarehouse.availableByResource.COAL_CONCENTRATE,820);
 assert.equal(context.Game.state.resource.BGD.processedWarehouse.availableByResource.COAL_REJECT,180);
 assert.ok(context.Game.state.resource.BGD.batches.some(x=>x.stage==='FINISHED'&&x.resourceId==='COAL_CONCENTRATE'));
 assert.ok(Object.values(context.Game.state.resource.BGD.inventoryLots).some(x=>x.stage==='FINISHED'&&x.resourceId==='COAL_REJECT'));
-assert.equal(context.Game.state.economy.BGD.productionAssets[0].inputBatchLots.reduce((sum,x)=>sum+(Number(x.remainingQuantity)||0),0),4000);
+assert.equal(factory.inputBatchLots.reduce((sum,x)=>sum+(Number(x.remainingQuantity)||0),0),4000);
 
 const factoryBuildProfile=catalog.factoryProfiles.ORE_BENEFICIATION_PLANT;
 for(const [materialId,requiredQty] of Object.entries(factoryBuildProfile.constructionMaterials||{})){
