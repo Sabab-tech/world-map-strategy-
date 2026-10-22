@@ -520,6 +520,25 @@
         "ship"
       ],
       "batchDays": 2
+    },
+    "diatomite": {
+      "method": "OPEN_PIT_DRILL_BLAST",
+      "fallbackMethod": "QUARRY_CRUSH_SCREEN",
+      "preferredModes": [
+        "truck",
+        "rail"
+      ],
+      "batchDays": 2
+    },
+    "coral_aggregate": {
+      "method": "QUARRY_CRUSH_SCREEN",
+      "fallbackMethod": "DREDGING",
+      "preferredModes": [
+        "truck",
+        "barge",
+        "ship"
+      ],
+      "batchDays": 1
     }
   },
   "processingRules": {
@@ -957,6 +976,30 @@
         "GEMSTONE_WASTE": 0.8
       },
       "cycleDays": 2
+    },
+    "diatomite": {
+      "factoryType": "DIATOMITE_PROCESSING_PLANT",
+      "inputs": {
+        "diatomite": 1
+      },
+      "outputs": {
+        "DIATOMITE_CONCENTRATE": 0.85,
+        "PROCESSING_RESIDUE": 0.15
+      },
+      "cycleDays": 2,
+      "authority": "SIMULATED_GAMEPLAY_RULE"
+    },
+    "coral_aggregate": {
+      "factoryType": "AGGREGATE_CRUSHING_PLANT",
+      "inputs": {
+        "coral_aggregate": 1
+      },
+      "outputs": {
+        "CONSTRUCTION_AGGREGATE": 0.95,
+        "PROCESSING_RESIDUE": 0.05
+      },
+      "cycleDays": 1,
+      "authority": "SIMULATED_GAMEPLAY_RULE"
     }
   },
   "transportModes": {
@@ -5452,6 +5495,131 @@
         "silica_sand": 150,
         "graphite": 121,
         "crude_oil": 51
+      },
+      "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
+      "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
+      "employmentAuthority": "SIMULATED_FACTORY_EMPLOYMENT_V1"
+    },
+    "DIATOMITE_PROCESSING_PLANT": {
+      "factoryType": "DIATOMITE_PROCESSING_PLANT",
+      "name": "Diatomite Processing Plant",
+      "category": "RAW_RESOURCE_PROCESSING",
+      "subCategory": "INDUSTRIAL_MINERALS",
+      "iconId": "industrial-production",
+      "constructionCost": 2400,
+      "constructionDays": 45,
+      "defaultCapacityPerDay": 300,
+      "workforce": {
+        "operators": 55,
+        "engineers": 20
+      },
+      "utilities": {
+        "electricityMWhPerDay": 32,
+        "waterM3PerDay": 18
+      },
+      "requiredInfrastructure": [
+        "road",
+        "power"
+      ],
+      "requiredTechnologyIds": [],
+      "unit": "GAME_CURRENCY_UNITS",
+      "authority": "SIMULATED_GAMEPLAY_PROFILE",
+      "simulationOnly": true,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "employment": {
+        "jobsPerFactory": 120,
+        "model": "DIRECT_JOB_CAPACITY",
+        "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
+        "authority": "SIMULATED_FACTORY_EMPLOYMENT_MODEL",
+        "simulationOnly": true,
+        "coreOperatingCrew": 24,
+        "additionalDirectStaffSlots": 96,
+        "jobScope": "DIRECT_ONSITE_FACTORY_JOBS_INCLUDING_OPERATIONS_ENGINEERING_MAINTENANCE_LOGISTICS_QUALITY_ADMINISTRATION_AND_SAFETY",
+        "jobBreakdown": {
+          "operators": 55,
+          "engineers": 20,
+          "maintenanceAndFacilities": 93,
+          "logisticsAndWarehousing": 75,
+          "qualityControl": 56,
+          "administrationAndSupport": 56,
+          "healthSafetyAndEnvironmental": 37,
+          "otherDirectFactoryServices": 58
+        },
+        "jobBreakdownAuthority": "SIMULATED_FACTORY_ROLE_DISTRIBUTION_V1"
+      },
+      "constructionMaterials": {
+        "construction_aggregate": 715,
+        "limestone": 256,
+        "iron_ore": 123,
+        "copper": 36,
+        "silica_sand": 31,
+        "gypsum": 46,
+        "coal": 26,
+        "marble": 46,
+        "granite": 46
+      },
+      "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
+      "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
+      "employmentAuthority": "SIMULATED_FACTORY_EMPLOYMENT_V1"
+    },
+    "GENERIC_RESOURCE_PROCESSING_PLANT": {
+      "factoryType": "GENERIC_RESOURCE_PROCESSING_PLANT",
+      "name": "Generic Resource Processing Plant",
+      "category": "RAW_RESOURCE_PROCESSING",
+      "subCategory": "SIMULATION_FALLBACK",
+      "iconId": "industrial-production",
+      "constructionCost": 1800,
+      "constructionDays": 45,
+      "defaultCapacityPerDay": 250,
+      "workforce": {
+        "operators": 40,
+        "engineers": 8
+      },
+      "utilities": {
+        "electricityMWhPerDay": 24,
+        "waterM3PerDay": 12
+      },
+      "requiredInfrastructure": [
+        "road",
+        "power"
+      ],
+      "requiredTechnologyIds": [],
+      "unit": "GAME_CURRENCY_UNITS",
+      "authority": "SIMULATED_GENERIC_FALLBACK",
+      "simulationOnly": true,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "employment": {
+        "jobsPerFactory": 80,
+        "model": "DIRECT_JOB_CAPACITY",
+        "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
+        "authority": "SIMULATED_GENERIC_FALLBACK_EMPLOYMENT",
+        "simulationOnly": true,
+        "coreOperatingCrew": 16,
+        "additionalDirectStaffSlots": 64,
+        "jobScope": "DIRECT_ONSITE_FACTORY_JOBS_INCLUDING_OPERATIONS_ENGINEERING_MAINTENANCE_LOGISTICS_QUALITY_ADMINISTRATION_AND_SAFETY",
+        "jobBreakdown": {
+          "operators": 40,
+          "engineers": 8,
+          "maintenanceAndFacilities": 75,
+          "logisticsAndWarehousing": 60,
+          "qualityControl": 45,
+          "administrationAndSupport": 45,
+          "healthSafetyAndEnvironmental": 30,
+          "otherDirectFactoryServices": 47
+        },
+        "jobBreakdownAuthority": "SIMULATED_FACTORY_ROLE_DISTRIBUTION_V1"
+      },
+      "constructionMaterials": {
+        "construction_aggregate": 473,
+        "limestone": 159,
+        "iron_ore": 76,
+        "copper": 23,
+        "silica_sand": 19,
+        "gypsum": 29,
+        "coal": 16,
+        "basalt": 29
       },
       "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
       "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
