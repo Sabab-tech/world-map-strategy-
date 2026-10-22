@@ -2596,7 +2596,7 @@ function reconcileFactoryEmployment(countryId){
   if(baseline!==null)model.baselineUnemployedCount=baseline;
   model.labourForce=labour.value;model.labourForceAuthority=labour.authority;model.labourForceSimulationOnly=labour.simulationOnly;
   model.factories={};
-  const operational=assets.filter(asset=>String(asset?.status||'').toUpperCase()==='OPERATIONAL'&&
+  const operational=assets.filter(asset=>String(asset?.status||'OPERATIONAL').toUpperCase()==='OPERATIONAL'&&
     (asset?.commissionedTurn!==undefined||asset?.factoryType||asset?.type));
   operational.sort((a,b)=>(num(a.commissionedTurn)??num(a.createdTurn)??0)-(num(b.commissionedTurn)??num(b.createdTurn)??0)||
     String(a.id||a.assetId||a.factoryId||a.projectId||'').localeCompare(String(b.id||b.assetId||b.factoryId||b.projectId||'')));
