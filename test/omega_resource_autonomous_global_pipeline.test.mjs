@@ -159,12 +159,24 @@ test('every committed deposit event is routed country-by-country through factory
   for(const f of fixtures){
     const c=f.site.countryId,rs=state.resource[c];
     const shipment=rs.industrialNetwork.shipments.find(x=>x.batchId===f.batchId&&x.status==='IN_TRANSIT');
-    state.simulation.turn=shipment.etaTurn;
+    state.simulation.turn=Math.max(Number(state.simulation.turn)||0,Number(shipment.etaTurn)||0);
     const advanced=industry.advanceShipments(c);
     assert.equal(advanced.delivered,1,JSON.stringify(advanced));
     const result=advanced.shipments[0];
-    assert.equal(result.processingStatus,'PROCESSED',JSON.stringify(result.processing));
+    assert.equal(result.processingStatus,'IN_PROGRESS',JSON.stringify(result.processing));
     assert.equal(result.destinationStatus,'FACTORY_RECEIVED');
+    assert.equal(Number(rs.inventory[f.output])||0,0,'finished output must not be committed on the delivery tick');
+    const factory=state.economy[c].productionAssets.find(x=>String(x.id||x.assetId||x.projectId)===String(result.factoryId));
+    assert.ok(factory,'scheduled production must retain a country-local factory');
+    const cycle=rs.industrialNetwork.factoryProductionCycles[factory.id];
+    assert.ok(cycle&&cycle.status==='IN_PROGRESS'&&cycle.finishDate,'delivery must schedule a cycle against the game calendar');
+    state.simulation.turn=Math.max(Number(state.simulation.turn)||0,Number(cycle.finishTurn)||0);
+    state.simulation.date=cycle.finishDate;
+    const completion=industry.processPendingFactoryInputs(c);
+    assert.equal(completion.completedCount,1,JSON.stringify(completion));
+    const completedDelivery=(rs.industrialNetwork.deliveries||[]).find(x=>String(x.shipmentId)===String(result.shipmentId));
+    assert.equal(completedDelivery?.processingStatus,'PROCESSED','shipment status must reconcile after the cycle commits');
+    economy.processCountry(c);
     assert.ok(Number(rs.inventory[f.output])>0,"finished product quantity must increase in its own country's inventory");
     assert.ok(Number(rs.processedWarehouse.availableByResource[f.output])>0,'finished product must be allocated to its own country processed warehouse');
     const flow=rs.industrialNetwork.siteFlowLedger.find(x=>x.batchId===f.batchId);
@@ -322,6 +334,8 @@ test('all expanded deposits receive explicit flow status; active sites dispatch 
   const processingTurnLimit=lastEta+maxActivePerCountry+5;
   for(let simulationTurn=1;simulationTurn<=processingTurnLimit;simulationTurn++){
     state.simulation.turn=simulationTurn;
+    const daysPerTurn=Math.max(1,Number(state.simulation.daysPerTurn)||1);
+    state.simulation.date=new Date(Date.UTC(2025,0,1)+(simulationTurn-1)*daysPerTurn*86400000).toISOString().slice(0,10);
     for(const cid of countryIds)industry.processPendingFactoryInputs(cid);
     for(const cid of countryIds)industry.advanceShipments(cid);
   }
