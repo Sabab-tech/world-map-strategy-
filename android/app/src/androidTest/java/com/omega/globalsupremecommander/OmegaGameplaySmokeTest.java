@@ -82,7 +82,7 @@ public final class OmegaGameplaySmokeTest {
 
             final String speedControlScript =
                     "(function() {" +
-                    " var button = document.querySelector('.speed-btn[data-speed=\\\"2\\\"]');" +
+                    " var button = document.querySelector('.speed-btn[data-speed=\"2\"]');" +
                     " if (!button || !window.Omega || !window.Omega.GameLifecycle) return false;" +
                     " button.click();" +
                     " var diagnostics = window.Omega.GameLifecycle.getDiagnostics();" +
