@@ -1393,6 +1393,39 @@ function mineConstructionStock(c,rid){
   else if(invAmount!==null){available=invAmount;authority='LEGACY_INVENTORY_AGGREGATE_ONLY';}
   return{resourceId:rid,inventoryKey:invKey,warehouseKey,inventoryAmount:invAmount,warehouseBalance:warehouseAmount,warehouseAvailable:warehouseFree,reserved,available:available===null?0:available,authority};
 }
+
+function factoryConstructionMaterialQuote(c,profile){
+  const cid=canonicalCountry(c),catalog=cat()||{},knownResources=catalog.resourceRules||{},bom=profile?.constructionMaterials;
+  if(!cid||!profile)return{status:'BLOCKED',reason:'FACTORY_PROFILE_UNAVAILABLE',countryId:cid||null};
+  if(!bom||typeof bom!=='object'||Array.isArray(bom)||!Object.keys(bom).length)
+    return{status:'BLOCKED',reason:'FACTORY_CONSTRUCTION_BOM_MISSING',factoryType:profile.factoryType||null};
+  const materials=[];
+  for(const [resourceIdRaw,quantityRaw] of Object.entries(bom)){
+    const resourceId=tok(resourceIdRaw),required=num(quantityRaw);
+    if(!resourceId||required===null||required<=0)
+      return{status:'BLOCKED',reason:'FACTORY_CONSTRUCTION_BOM_INVALID',factoryType:profile.factoryType||null,resourceId:resourceIdRaw,quantity:quantityRaw};
+    if(!Object.keys(knownResources).some(key=>tok(key)===resourceId))
+      return{status:'BLOCKED',reason:'FACTORY_CONSTRUCTION_RESOURCE_UNREGISTERED',factoryType:profile.factoryType||null,resourceId};
+    const stock=mineConstructionStock(cid,resourceId);
+    const available=stock.available===null?0:Math.max(0,num(stock.available)||0);
+    materials.push({resourceId,required,available,shortfall:Math.max(0,required-available),unit:profile.constructionMaterialUnit||'SIMULATION_RESOURCE_UNIT',
+      sufficient:available+1e-9>=required,stockAuthority:stock.authority,inventoryAmount:stock.inventoryAmount,warehouseAvailable:stock.warehouseAvailable,
+      reserved:stock.reserved});
+  }
+  const missing=materials.filter(row=>!row.sufficient);
+  return{status:missing.length?'BLOCKED':'QUOTED',reason:missing.length?'INSUFFICIENT_FACTORY_CONSTRUCTION_MATERIALS':null,
+    contract:'OMEGA_FACTORY_CONSTRUCTION_BOM_V1',countryId:cid,factoryType:profile.factoryType||null,
+    unit:profile.constructionMaterialUnit||'SIMULATION_RESOURCE_UNIT',authority:profile.constructionMaterialsAuthority||'UNDECLARED',
+    materials,missingMaterials:missing,ready:missing.length===0,simulationOnly:true};
+}
+function consumeFactoryConstructionMaterial(c,material,quantity,projectId,unit='SIMULATION_RESOURCE_UNIT'){
+  const allocations=consumeMineConstructionMaterial(c,material,quantity,projectId,'FACTORY_CONSTRUCTION_MATERIAL_CONSUMPTION',unit);
+  return allocations.map(row=>({...row,unit,sourceUnit:row.sourceUnit||row.unit||'NOT_RECORDED',
+    unitBridge:{sourceUnit:row.sourceUnit||row.unit||'NOT_RECORDED',targetUnit:unit,factor:1,simulationOnly:true,
+      authority:'SIMULATED_FACTORY_CONSTRUCTION_UNIT_BRIDGE'},projectId,movementType:'FACTORY_CONSTRUCTION_MATERIAL_CONSUMPTION',
+    authority:row.authority||'UNOBSERVED'}));
+}
+
 function quoteMineProject(input={}){
   const cid=canonicalCountry(input.countryId),siteId=String(input.siteId||'').trim(),rid=tok(input.resourceId||'');
   if(!cid||!/^[A-Z]{3}$/.test(cid))return{status:'BLOCKED',reason:'VALID_ISO3_COUNTRY_REQUIRED'};
@@ -1441,7 +1474,7 @@ function quoteMineProject(input={}){
     ready:treasury.value!==null&&treasury.value+1e-9>=costUsd&&materials.every(x=>x.sufficient)&&assignedWorkers!==null&&assignedWorkers>=workersRequired&&!activeProject
   };
 }
-function consumeMineConstructionMaterial(c,material,quantity,projectId){
+function consumeMineConstructionMaterial(c,material,quantity,projectId,movementType='MINE_CONSTRUCTION_MATERIAL_CONSUMPTION',unitOverride=null){
   const cid=canonicalCountry(c),rs=resourceState(cid),stock=mineConstructionStock(cid,material),inv=rs.inventory||(rs.inventory={});
   const warehouse=rs.warehouse||(rs.warehouse={warehouseId:'WH-'+cid+'-RAW',countryId:cid,type:'SOVEREIGN_RAW_MATERIAL_WAREHOUSE',availableByResource:{},reservedByResource:{}});
   warehouse.availableByResource=warehouse.availableByResource||{};warehouse.reservedByResource=warehouse.reservedByResource||{};
@@ -1455,18 +1488,17 @@ function consumeMineConstructionMaterial(c,material,quantity,projectId){
     if(prior<=1e-9)continue;
     const take=Math.min(prior,remaining);
     batch.remainingQuantity=Math.max(0,prior-take);
-    batch.status=batch.remainingQuantity>1e-9?'PARTIALLY_CONSUMED_MINE_CONSTRUCTION':'CONSUMED_MINE_CONSTRUCTION';
-    batch.lastMovementType='MINE_CONSTRUCTION_MATERIAL_CONSUMPTION';batch.lastMovementTurn=turn();
+    batch.status=batch.remainingQuantity>1e-9?(movementType==='FACTORY_CONSTRUCTION_MATERIAL_CONSUMPTION'?'PARTIALLY_CONSUMED_FACTORY_CONSTRUCTION':'PARTIALLY_CONSUMED_MINE_CONSTRUCTION'):(movementType==='FACTORY_CONSTRUCTION_MATERIAL_CONSUMPTION'?'CONSUMED_FACTORY_CONSTRUCTION':'CONSUMED_MINE_CONSTRUCTION');
+    batch.lastMovementType=movementType;batch.lastMovementTurn=turn();
     const lot=lots[batch.batchId];
-    if(lot){lot.remainingQuantity=batch.remainingQuantity;lot.status=batch.remainingQuantity>1e-9?'PARTIALLY_CONSUMED_MINE_CONSTRUCTION':'CONSUMED_MINE_CONSTRUCTION';
-      lot.lastMovementType='MINE_CONSTRUCTION_MATERIAL_CONSUMPTION';lot.lastMovementTurn=turn();lots[batch.batchId]=lot;}
-    allocations.push({resourceId:material,sourceBatchId:batch.batchId,quantity:take,unit:batch.unit||'TONNES',authority:batch.provenance?.sourceAuthority||batch.provenance?.authority||'UNOBSERVED'});
+    if(lot){lot.remainingQuantity=batch.remainingQuantity;lot.status=batch.remainingQuantity>1e-9?(movementType==='FACTORY_CONSTRUCTION_MATERIAL_CONSUMPTION'?'PARTIALLY_CONSUMED_FACTORY_CONSTRUCTION':'PARTIALLY_CONSUMED_MINE_CONSTRUCTION'):(movementType==='FACTORY_CONSTRUCTION_MATERIAL_CONSUMPTION'?'CONSUMED_FACTORY_CONSTRUCTION':'CONSUMED_MINE_CONSTRUCTION');
+      lot.lastMovementType=movementType;lot.lastMovementTurn=turn();lots[batch.batchId]=lot;}
+    allocations.push({resourceId:material,sourceBatchId:batch.batchId,quantity:take,unit:unitOverride||batch.unit||'TONNES',sourceUnit:batch.unit||'NOT_RECORDED',authority:batch.provenance?.sourceAuthority||batch.provenance?.authority||'UNOBSERVED'});
     remaining-=take;
   }
-  if(remaining>1e-9)allocations.push({resourceId:material,sourceBatchId:null,quantity:remaining,unit:'TONNES',authority:stock.authority==='LEGACY_INVENTORY_AGGREGATE_ONLY'?'LEGACY_AGGREGATE_STOCK':'UNTRACKED_WAREHOUSE_BALANCE'});
+  if(remaining>1e-9)allocations.push({resourceId:material,sourceBatchId:null,quantity:remaining,unit:unitOverride||'TONNES',sourceUnit:'NOT_RECORDED',authority:stock.authority==='LEGACY_INVENTORY_AGGREGATE_ONLY'?'LEGACY_AGGREGATE_STOCK':'UNTRACKED_WAREHOUSE_BALANCE'});
   const invKey=stock.inventoryKey||material,warehouseKey=stock.warehouseKey||material;
   if(stock.inventoryAmount!==null)inv[invKey]=Math.max(0,stock.inventoryAmount-quantity);
-  else inv[invKey]=Math.max(0,Number(inv[invKey])||0);
   if(stock.warehouseBalance!==null)warehouse.availableByResource[warehouseKey]=Math.max(0,stock.warehouseBalance-quantity);
   rs.inventory=inv;rs.warehouse=warehouse;rs.batches=batches;rs.inventoryLots=lots;
   return allocations;
@@ -1568,6 +1600,9 @@ function commissionMineProject(cid,p){
 function startFactoryProject(input={}){
   const cid=canonicalCountry(input.countryId);
   if(!cid)return{status:'BLOCKED',reason:'FACTORY_COUNTRY_INVALID'};
+  const n=netState(cid);
+  if(input.requestId){const prior=n.projects.find(row=>row.projectType==='FACTORY_CONSTRUCTION'&&String(row.requestId||'')===String(input.requestId));if(prior)return{...clone(prior),idempotent:true};}
+  if(input.factoryId){const prior=n.projects.find(row=>row.projectType==='FACTORY_CONSTRUCTION'&&String(row.factoryId||'')===String(input.factoryId)&&['UNDER_CONSTRUCTION','COMPLETED'].includes(String(row.status||'')));if(prior)return{...clone(prior),idempotent:true};}
   const requestedType=String(input.factoryType||'').trim().toUpperCase();
   const profiles=cat()?.factoryProfiles||{},profile=requestedType?profiles[requestedType]||null:null;
   const downstream=cat()?.downstreamFactoryRecipes||{};
@@ -1601,6 +1636,12 @@ function startFactoryProject(input={}){
     return{status:'BLOCKED',reason:'NO_FACTORY_RECIPE'};
   const factoryType=String(rule.factoryType||requestedType||'').trim().toUpperCase();
   const typeProfile=profiles[factoryType]||profile||{};
+  const catalogProfile=Object.prototype.hasOwnProperty.call(profiles,factoryType);
+  let constructionMaterialQuote=null;
+  if(catalogProfile){
+    constructionMaterialQuote=factoryConstructionMaterialQuote(cid,typeProfile);
+    if(constructionMaterialQuote.status!=='QUOTED')return{...constructionMaterialQuote,status:'BLOCKED',projectType:'FACTORY_CONSTRUCTION'};
+  }
   const contractor=String(input.contractorType||'DOMESTIC_EPC'),cr=cat()?.contractorTypes?.[contractor]||cat()?.contractorTypes?.DOMESTIC_EPC;
   const profileDays=num(typeProfile.constructionDays),requestedDays=num(input.buildDays);
   const baseDays=Math.max(30,requestedDays||profileDays||Number(rule.cycleDays||1)*60+90),days=baseDays*(1-(num(cr?.constructionBonus)||0));
@@ -1619,8 +1660,19 @@ function startFactoryProject(input={}){
     factoryId:String(input.factoryId||('FAC:'+cid+':'+factoryType+':'+h32(String(turn())+'|'+(rule.recipeId||rid)))),
     targetLocationNodeKey:input.locationNodeKey||('INDUSTRIAL_ZONE:'+cid),foreignContract:contractor!=='DOMESTIC_EPC',
     requiredTechnologyIds:technologyIds,technologyPackage:clone(input.technologyPackage||null),
+    constructionMaterialsAuthority:constructionMaterialQuote?.authority||'SIMULATED_GENERIC_FACTORY_RECIPE_WITHOUT_CATALOG_BOM',
+    constructionMaterialUnit:constructionMaterialQuote?.unit||typeProfile.constructionMaterialUnit||'SIMULATION_RESOURCE_UNIT',
+    materialsRequired:constructionMaterialQuote?clone(constructionMaterialQuote.materials.map(row=>({resourceId:row.resourceId,quantity:row.required,unit:row.unit}))):[],
+    materialAllocations:[],constructionMaterialsStatus:constructionMaterialQuote?'PENDING_CONSUMPTION':'NOT_APPLICABLE',
+    employmentProfile:clone(typeProfile.employment||null),requestId:String(input.requestId||''),
     authority:'SIMULATED_FACTORY_CONSTRUCTION_PROJECT',simulationOnly:true};
-  const n=netState(cid);n.projects.push(project);n.projects=n.projects.slice(-MAX_PROJECTS);
+  if(constructionMaterialQuote){
+    const materialAllocations=[];
+    for(const material of constructionMaterialQuote.materials)
+      materialAllocations.push(...consumeFactoryConstructionMaterial(cid,material.resourceId,material.required,project.projectId,constructionMaterialQuote.unit));
+    project.materialAllocations=clone(materialAllocations);project.constructionMaterialsStatus='CONSUMED';project.constructionMaterialsConsumedTurn=turn();
+  }
+  n.projects.push(project);n.projects=n.projects.slice(-MAX_PROJECTS);
   emit('OMEGA_FACTORY_PROJECT_STARTED',cid,project);return project;
 }
 function startInfrastructureProject(input={}){
@@ -1676,7 +1728,8 @@ function advanceProjects(c){
     }
     emit('OMEGA_PROJECT_COMPLETED',cid,p);
   }
-  return{status:'ADVANCED',countryId:cid,completed,technologyCompleted};
+  const employment=reconcileFactoryEmployment(cid);
+  return{status:'ADVANCED',countryId:cid,completed,technologyCompleted,employment};
 }
 function inputCapacityFromFactory(p){
   return Math.max(1,num(p.capacityPerDay)||num(p.capacity)||1000);
@@ -2225,6 +2278,139 @@ function diagnostics(countryId){
     catalogLoaded:!!cat(),daysPerTurn:daysPerTurn(),targetArchitecture:'SITE -> EXTRACTION -> WAREHOUSE -> ROUTE -> FACTORY -> PROCESS -> OUTPUT',countryIsolation:'ENFORCED_BY_COUNTRY_SCOPED_STATE_AND_CROSS_BORDER_CONTRACT'};
 }
 
+
+function finiteCount(value){const n=num(value);return n!==null&&n>=0?n:null;}
+function countryPopulationRecord(cid,econ){
+  const s=state()||{},keys=[cid,String(cid||'').toUpperCase()];
+  const resolver=g.OmegaCanonicalIdentityRegistry||g.OmegaCountrySemanticBridge||g.Omega?.CanonicalIdentity;
+  try{
+    const identity=resolver?.resolveCountry?.(cid),raw=identity?.raw?.raw||identity?.raw?.datasets?.['countries.json']||identity?.raw||{};
+    for(const name of [identity?.name,identity?.countryName,identity?.canonicalName,raw?.name,raw?.countryName,raw?.officialName]){
+      if(name){keys.push(String(name));keys.push(String(name).toUpperCase().replace(/[^A-Z0-9]+/g,'_'));}
+    }
+  }catch(_){}
+  const directRows=[econ?.populationRecord,econ?.demographics,econ?.population,s.population?.[cid],s.populations?.[cid],
+    s.demographics?.[cid],s.society?.[cid],s.populationByCountry?.[cid],s.countryProfiles?.[cid],s.countries?.[cid]];
+  const globals=[g.OmegaPopulationData,g.Omega?.PopulationData,g.populationData,g.PopulationData,g.POPULATION_DATA,
+    g.OmegaCountryPopulationData,g.countryPopulationData,g.COUNTRY_POPULATION_DATA];
+  for(const source of globals){
+    if(!source||typeof source!=='object')continue;
+    for(const key of keys){const row=source[key];if(row&&typeof row==='object'){directRows.push(row);break;}}
+    if(source.data&&typeof source.data==='object')for(const key of keys){const row=source.data[key];if(row&&typeof row==='object'){directRows.push(row);break;}}
+  }
+  for(const row of directRows){if(row&&typeof row==='object')return row;if(typeof row==='number'&&Number.isFinite(row)&&row>0)return{population:row};}
+  return null;
+}
+function resolveFactoryLabourForce(cid,econ){
+  const s=state()||{},record=countryPopulationRecord(cid,econ);
+  const directCandidates=[econ.laborForce,econ.labor_force,econ.laborForceSize,econ.labor_force_size,econ.totalLaborForce,econ.total_labor_force,
+    econ.population?.laborForce,econ.demographics?.laborForce,s.population?.[cid]?.laborForce,s.population?.[cid]?.labor_force,
+    record?.laborForce,record?.labor_force,record?.labor_force_total,record?.laborForceTotal,record?.labourForce,record?.labour_force];
+  for(const value of directCandidates){const n=finiteCount(value);if(n!==null&&n>0)return{value:n,authority:'RECORDED_LABOUR_FORCE',simulationOnly:false};}
+  const popCandidates=[econ.populationTotal,econ.population_total,econ.population_2015,econ.population2015,econ.populationSize,
+    typeof econ.population==='number'?econ.population:null,record?.populationTotal,record?.population_total,record?.population_2015,
+    record?.population2015,record?.totalPopulation,record?.total_population,record?.population,record?.population_count];
+  let population=null;for(const value of popCandidates){const n=finiteCount(value);if(n!==null&&n>0){population=n;break;}}
+  if(population===null)return{value:null,authority:'NOT_RECORDED',simulationOnly:true};
+  const participationCandidates=[econ.laborForceParticipationPct,econ.labor_force_participation_pct,econ.laborParticipationRatePct,
+    record?.laborForceParticipationPct,record?.labor_force_participation_pct,record?.labor_force_participation_rate];
+  let participation=null;
+  for(const value of participationCandidates){const n=num(value);if(n!==null&&n>0&&n<=100){participation=n;break;}}
+  if(participation===null)participation=60;
+  return{value:Math.max(1,Math.round(population*participation/100)),authority:participation===60&&participationCandidates.every(v=>num(v)===null)?
+    'SIMULATED_POPULATION_LABOUR_FORCE_PROXY_60_PERCENT':'RECORDED_PARTICIPATION_RATE_PROXY',
+    simulationOnly:participationCandidates.every(v=>num(v)===null),population,participationRatePct:participation};
+}
+function readUnemploymentCount(econ){
+  for(const key of ['unemploymentCount','unemployedCount','unemployedPeople','unemployed_people','unemployment_count','joblessCount']){
+    const value=finiteCount(econ?.[key]);if(value!==null)return{value,key};
+  }
+  return{value:null,key:null};
+}
+function readUnemploymentRate(econ){
+  for(const key of ['unemployment_rate','unemploymentRatePct','unemploymentRate','unemployment_rate_pct']){
+    const value=num(econ?.[key]);if(value!==null&&value>=0&&value<=100)return{value,key};
+  }
+  return{value:null,key:null};
+}
+function reconcileFactoryEmployment(countryId){
+  const cid=canonicalCountry(countryId);
+  if(!cid)return{status:'BLOCKED',reason:'FACTORY_EMPLOYMENT_COUNTRY_INVALID'};
+  const econ=econState(cid),profiles=cat()?.factoryProfiles||{},assets=factoryAssets(cid);
+  let model=econ.factoryEmployment;
+  if(!model||typeof model!=='object'||Array.isArray(model)){
+    model={schemaVersion:'1.0.0',model:'SIMULATED_FACTORY_EMPLOYMENT_V1',baselineUnemployedCount:null,
+      labourForce:null,labourForceAuthority:'NOT_RECORDED',unemploymentSource:'NOT_RECORDED',factories:{},jobsSupported:0,jobsFilled:0,
+      vacancies:0,unemployedCount:null,unemploymentRatePct:null,lastAppliedUnemployedCount:null,lastAppliedUnemploymentRatePct:null,
+      lastUpdatedTurn:null,simulationOnly:true};
+    econ.factoryEmployment=model;
+  }
+  if(!model.factories||typeof model.factories!=='object'||Array.isArray(model.factories))model.factories={};
+  const labour=resolveFactoryLabourForce(cid,econ),direct=readUnemploymentCount(econ),rate=readUnemploymentRate(econ);
+  const priorFilled=Math.max(0,num(model.jobsFilled)||0);
+  let baseline=finiteCount(model.baselineUnemployedCount);
+  const lastCount=finiteCount(model.lastAppliedUnemployedCount),lastRate=num(model.lastAppliedUnemploymentRatePct);
+  const directChanged=direct.value!==null&&lastCount!==null&&Math.abs(direct.value-lastCount)>1e-6;
+  const rateChanged=rate.value!==null&&lastRate!==null&&Math.abs(rate.value-lastRate)>1e-7;
+  if(baseline===null){
+    if(direct.value!==null){baseline=direct.value;model.unemploymentSource='RECORDED_UNEMPLOYED_HEADCOUNT';}
+    else if(rate.value!==null&&labour.value!==null){
+      baseline=Math.max(0,Math.round(labour.value*rate.value/100));model.unemploymentSource='RECORDED_UNEMPLOYMENT_RATE_X_LABOUR_FORCE';
+    }
+  }else if(directChanged){
+    baseline=direct.value+priorFilled;model.unemploymentSource='UPDATED_LIVE_UNEMPLOYED_HEADCOUNT_PLUS_EXISTING_FACTORY_HIRES';
+  }else if(rateChanged&&labour.value!==null){
+    baseline=Math.max(0,Math.round(labour.value*rate.value/100))+priorFilled;
+    model.unemploymentSource='UPDATED_LIVE_UNEMPLOYMENT_RATE_PLUS_EXISTING_FACTORY_HIRES';
+  }
+  if(baseline!==null)model.baselineUnemployedCount=baseline;
+  model.labourForce=labour.value;model.labourForceAuthority=labour.authority;model.labourForceSimulationOnly=labour.simulationOnly;
+  model.factories={};
+  const operational=assets.filter(asset=>String(asset?.status||'').toUpperCase()==='OPERATIONAL'&&
+    (asset?.commissionedTurn!==undefined||asset?.factoryType||asset?.type));
+  operational.sort((a,b)=>(num(a.commissionedTurn)??num(a.createdTurn)??0)-(num(b.commissionedTurn)??num(b.createdTurn)??0)||
+    String(a.id||a.assetId||a.factoryId||a.projectId||'').localeCompare(String(b.id||b.assetId||b.factoryId||b.projectId||'')));
+  let totalSupported=0,totalFilled=0,remaining=baseline;
+  for(const asset of operational){
+    const id=String(asset.id||asset.assetId||asset.factoryId||asset.projectId||'').trim();if(!id)continue;
+    const type=String(asset.factoryType||asset.type||asset.facilityType||'').toUpperCase(),profile=profiles[type]||{};
+    const jobsRaw=num(profile.employment?.jobsPerFactory??asset.employmentProfile?.jobsPerFactory??asset.employment?.jobsSupported);
+    const supported=jobsRaw!==null&&jobsRaw>0?Math.floor(jobsRaw):0;
+    const filled=remaining===null?0:Math.min(supported,Math.max(0,Math.floor(remaining))),open=supported-filled;
+    remaining=remaining===null?null:Math.max(0,remaining-filled);totalSupported+=supported;totalFilled+=filled;
+    const record={factoryId:id,factoryType:type,jobsSupported:supported,jobsFilled:filled,vacancies:open,
+      status:supported===0?'EMPLOYMENT_PROFILE_MISSING':open===0?'FULLY_STAFFED':'PARTIALLY_STAFFED',
+      authority:profile.employmentAuthority||profile.employment?.authority||'UNDECLARED',simulationOnly:true,lastReconciledTurn:turn()};
+    model.factories[id]=record;
+    asset.employment={...(asset.employment&&typeof asset.employment==='object'?asset.employment:{}),jobsSupported:supported,jobsFilled:filled,
+      vacancies:open,status:record.status,model:'SIMULATED_FACTORY_EMPLOYMENT_V1',authority:record.authority,simulationOnly:true,lastReconciledTurn:turn()};
+  }
+  model.jobsSupported=totalSupported;model.jobsFilled=totalFilled;model.vacancies=Math.max(0,totalSupported-totalFilled);
+  model.unemployedCount=baseline===null?null:Math.max(0,baseline-totalFilled);
+  model.unemploymentRatePct=model.unemployedCount!==null&&labour.value!==null&&labour.value>0?
+    Number((model.unemployedCount/labour.value*100).toFixed(4)):null;
+  model.status=model.unemployedCount===null?'UNEMPLOYMENT_HEADCOUNT_UNAVAILABLE':'ACTIVE';
+  model.authority='SIMULATED_FACTORY_EMPLOYMENT_RECONCILIATION';model.simulationOnly=true;model.lastUpdatedTurn=turn();
+  if(model.unemployedCount!==null){
+    econ.unemploymentCount=model.unemployedCount;
+    for(const key of ['unemployedCount','unemployedPeople','unemployed_people','unemployment_count','joblessCount'])
+      if(Object.prototype.hasOwnProperty.call(econ,key))econ[key]=model.unemployedCount;
+    if(model.unemploymentRatePct!==null){
+      econ.unemployment_rate=model.unemploymentRatePct;
+      for(const key of ['unemploymentRatePct','unemploymentRate','unemployment_rate_pct'])
+        if(Object.prototype.hasOwnProperty.call(econ,key))econ[key]=model.unemploymentRatePct;
+      model.lastAppliedUnemploymentRatePct=model.unemploymentRatePct;
+    }
+    model.lastAppliedUnemployedCount=model.unemployedCount;
+  }
+  model.baselineUnemployedCount=baseline;
+  model.lastUpdateSourceFields={unemployedCountKey:direct.key,unemploymentRateKey:rate.key};
+  return{status:model.status,countryId:cid,turn:turn(),baselineUnemployedCount:baseline,labourForce:model.labourForce,
+    labourForceAuthority:model.labourForceAuthority,unemployedCount:model.unemployedCount,unemploymentRatePct:model.unemploymentRatePct,
+    jobsSupported:model.jobsSupported,jobsFilled:model.jobsFilled,vacancies:model.vacancies,operationalFactoryCount:operational.length,
+    source:model.unemploymentSource,simulationOnly:true};
+}
+
 function factoryCatalogDiagnostics(){
   const catalog=cat()||{},profiles=catalog.factoryProfiles||{},downstream=catalog.downstreamFactoryRecipes||{};
   const processing=processRules(),profileTypes=new Set(Object.keys(profiles));
@@ -2236,6 +2422,15 @@ function factoryCatalogDiagnostics(){
     if(!(num(profile?.defaultCapacityPerDay)>0))issues.push({code:'FACTORY_CAPACITY_INVALID',factoryType:type});
     if(!(num(profile?.constructionCost)>0)||!(num(profile?.constructionDays)>0))issues.push({code:'FACTORY_CONSTRUCTION_PROFILE_INVALID',factoryType:type});
     if(profile?.authority!=='SIMULATED_GAMEPLAY_PROFILE'||profile?.simulationOnly!==true)issues.push({code:'FACTORY_PROFILE_PROVENANCE_MISSING',factoryType:type});
+    const bom=profile?.constructionMaterials;
+    if(!bom||typeof bom!=='object'||Array.isArray(bom)||!Object.keys(bom).length)issues.push({code:'FACTORY_CONSTRUCTION_BOM_MISSING',factoryType:type});
+    else for(const [material,quantity] of Object.entries(bom)){
+      if(!Object.keys(catalog.resourceRules||{}).some(key=>tok(key)===tok(material)))issues.push({code:'FACTORY_CONSTRUCTION_RESOURCE_UNREGISTERED',factoryType:type,resourceId:material});
+      if(!(num(quantity)>0))issues.push({code:'FACTORY_CONSTRUCTION_MATERIAL_QUANTITY_INVALID',factoryType:type,resourceId:material,quantity});
+    }
+    const employment=profile?.employment;
+    if(!(num(employment?.jobsPerFactory)>0)||employment?.simulationOnly!==true||!employment?.hiringSource)
+      issues.push({code:'FACTORY_EMPLOYMENT_PROFILE_INVALID',factoryType:type});
     for(const tech of profile?.requiredTechnologyIds||[])if(!techRules()[String(tech).toUpperCase()])issues.push({code:'FACTORY_TECHNOLOGY_UNDEFINED',factoryType:type,technologyId:tech});
   }
   for(const type of new Set(Object.values(processing).map(x=>String(x?.factoryType||'').toUpperCase()).filter(Boolean)))
@@ -2308,7 +2503,7 @@ function gameplayPipelineDiagnostics(){
     treasuryReceipts:perCountry.reduce((n,x)=>n+x.treasuryReceipts,0),blocked:perCountry.reduce((n,x)=>n+x.blocked,0),perCountry};
 }
 function api(){
-  return Object.freeze({VERSION,loadCatalog,planExtraction,planShipment,dispatchShipment,dispatchFactoryInputShipment,advanceShipments,quoteMineProject,startMineProject,startFactoryProject,startInfrastructureProject,startPadmaCorridorProject,advanceProjects,startTechnologyProject,executeFactoryCycle,executeSitePipeline,diagnostics,gameplayPipelineDiagnostics,factoryCatalogDiagnostics,normalizeInfrastructure,candidateFactories,recipeFor,processPendingFactoryInputs,resourceMethod,buildRoute});
+  return Object.freeze({VERSION,loadCatalog,planExtraction,planShipment,dispatchShipment,dispatchFactoryInputShipment,advanceShipments,quoteMineProject,startMineProject,startFactoryProject,startInfrastructureProject,startPadmaCorridorProject,advanceProjects,startTechnologyProject,executeFactoryCycle,executeSitePipeline,diagnostics,gameplayPipelineDiagnostics,factoryCatalogDiagnostics,factoryConstructionMaterialQuote,reconcileFactoryEmployment,normalizeInfrastructure,candidateFactories,recipeFor,processPendingFactoryInputs,resourceMethod,buildRoute});
 }
 g.Omega=g.Omega||{};g.Omega.ResourceIndustrialNetwork=api();g.OmegaResourceIndustrialNetwork=g.Omega.ResourceIndustrialNetwork;
 
@@ -2324,6 +2519,7 @@ function boot(){
           await processPendingFactoryInputs(countryId);
           await advanceShipments(countryId);
           await advanceProjects(countryId);
+          reconcileFactoryEmployment(countryId);
         }catch(error){
           failures.push(countryId+':'+String(error?.message||error));
         }
