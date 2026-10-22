@@ -179,6 +179,8 @@ test('index, finance, bank and offline shell use the daily lifecycle assets', ()
   assert.match(css, /#omega-global-time-hud \.ogth-economy/);
   assert.ok(lifecycle.includes("'  GDP ' + (gdp === null ? 'Not recorded' : money(gdp))"),
     'the compact economy line must show the selected country GDP without inventing missing data');
+  assert.match(lifecycle, /event\.stopImmediatePropagation\(\)/,
+    'the unified speed control must prevent legacy click handlers from overwriting the authoritative clock speed');
   assert.match(index, /src="omega_game_lifecycle_runtime_v1\.js" defer/);
   assert.match(index, /href="omega_game_lifecycle_runtime_v1\.css"/);
   assert.ok(index.indexOf('src="omega_simulation_runtime.js"') < index.indexOf('src="map-engine-1.js"'),
