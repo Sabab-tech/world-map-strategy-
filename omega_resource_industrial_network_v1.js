@@ -1502,6 +1502,9 @@ function executeFactoryCycle(input={}){
   const recipe=recipeFor(requestedResource,asset),r=resourceState(cid);
   if(!Object.keys(recipe.inputs||{}).length||!Object.keys(recipe.outputs||{}).length)
     return{status:'BLOCKED',reason:recipe.reason||'NO_FACTORY_RECIPE',factoryId:fid,resourceId:requestedResource,recipeAuthority:recipe.recipeAuthority};
+  const resolvedPrimary=tok(recipe.primaryInput||requestedResource||'');
+  if(requestedResource&&resolvedPrimary&&requestedResource!==resolvedPrimary)
+    return{status:'BLOCKED',reason:'FACTORY_PRIMARY_RESOURCE_MISMATCH',factoryId:fid,requestedResource,primaryInput:resolvedPrimary,factoryType:asset.factoryType||recipe.factoryType};
   const inputRows=Object.entries(recipe.inputs||{}).map(([key,coefficient])=>({key,resourceId:tok(key),coefficient:num(coefficient)}));
   if(!inputRows.length||inputRows.some(x=>!x.resourceId||x.coefficient===null||x.coefficient<=0)||
     new Set(inputRows.map(x=>x.resourceId)).size!==inputRows.length)
