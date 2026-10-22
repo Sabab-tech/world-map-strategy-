@@ -56,12 +56,19 @@ test('canonical factory catalog, type profiles, offline icons and recipe coeffic
   const { catalog, api } = makeRuntime();
   const audit = api.factoryCatalogDiagnostics();
   assert.equal(audit.status, 'HEALTHY', JSON.stringify(audit.issues));
-  assert.equal(Object.keys(catalog.processingRules).length, 39);
-  assert.equal(new Set(Object.values(catalog.processingRules).map(row => row.factoryType)).size, 36);
-  assert.equal(Object.keys(catalog.factoryProfiles).length, 56);
+  assert.equal(Object.keys(catalog.processingRules).length, 41);
+  assert.equal(new Set(Object.values(catalog.processingRules).map(row => row.factoryType)).size, 37);
+  assert.equal(Object.keys(catalog.factoryProfiles).length, 58);
   assert.equal(Object.keys(catalog.downstreamFactoryRecipes).length, 22);
   assert.equal(catalog.factoryCatalogSummary.addedFactoryTypeCount, 20);
   assert.equal(catalog.factoryCatalogSummary.categoryCount, 12);
+  assert.ok(catalog.processingRules.diatomite, 'diatomite deposits must have an explicit processing recipe');
+  assert.equal(catalog.processingRules.diatomite.factoryType, 'DIATOMITE_PROCESSING_PLANT');
+  assert.ok(catalog.processingRules.coral_aggregate, 'coral aggregate deposits must have an explicit processing recipe');
+  assert.equal(catalog.processingRules.coral_aggregate.factoryType, 'AGGREGATE_CRUSHING_PLANT');
+  for (const recipe of Object.values(catalog.processingRules)) {
+    assert.ok(catalog.factoryProfiles[recipe.factoryType], 'every processing recipe must resolve to a canonical factory profile: ' + recipe.factoryType);
+  }
 
   const serviceWorker = readText('omega-offline-map-sw.js');
   assert.match(serviceWorker, /omega-offline-atlas-shell-v19/);
@@ -99,8 +106,8 @@ test('canonical factory catalog, type profiles, offline icons and recipe coeffic
       assert.ok(Number.isFinite(Number(quantity)) && Number(quantity) > 0, type + ': construction quantity must be positive: ' + material);
     }
   }
-  assert.equal(catalog.factoryCatalogSummary.profilesWithConstructionMaterials, 56);
-  assert.equal(catalog.factoryCatalogSummary.profilesWithEmployment, 56);
+  assert.equal(catalog.factoryCatalogSummary.profilesWithConstructionMaterials, 58);
+  assert.equal(catalog.factoryCatalogSummary.profilesWithEmployment, 58);
   for (const unit of ['TONNES_ORE', 'CARATS', 'MILLION_CUBIC_METRES', 'BARRELS']) {
     const bridge = catalog.factoryCatalogPolicy.unitNormalization.sourceUnits[unit];
     assert.ok(bridge, 'used source unit must have an explicit normalization bridge: ' + unit);
