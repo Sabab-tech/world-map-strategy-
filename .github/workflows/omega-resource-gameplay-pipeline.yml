@@ -48,6 +48,11 @@ on:
       - 'test/omega_resource_endowment_runtime.test.mjs'
       - 'test/omega_resource_production_capacity_contract.test.mjs'
       - 'test/omega_resource_industrial_network_v1.test.mjs'
+      - 'test/omega_factory_industry_baseline.test.mjs'
+      - 'omega_icon_system_v1.js'
+      - 'omega_icon_system_v1.css'
+      - 'omega-offline-map-sw.js'
+      - 'omega_resource_command_center_ui_v1.js'
       - 'test/omega_resource_logistics_runtime_v1.test.mjs'
       - 'test/omega_resource_milestone_a_integrity.test.mjs'
       - 'package.json'
@@ -80,6 +85,11 @@ on:
       - 'test/omega_resource_true_e2e_pipeline.test.mjs'
       - 'test/omega_resource_global_pipeline.test.mjs'
       - 'test/omega_resource_industrial_network_v1.test.mjs'
+      - 'test/omega_factory_industry_baseline.test.mjs'
+      - 'omega_icon_system_v1.js'
+      - 'omega_icon_system_v1.css'
+      - 'omega-offline-map-sw.js'
+      - 'omega_resource_command_center_ui_v1.js'
       - 'test/omega_resource_autonomous_global_pipeline.test.mjs'
       - 'test/omega_resource_endowment_runtime.test.mjs'
       - 'test/omega_resource_economy_runtime_v2.test.mjs'
@@ -136,6 +146,8 @@ jobs:
         run: npm run test:resource-system-hardening
       - name: Industrial network regression
         run: npm run test:resource-industrial-network
+      - name: Factory and downstream manufacturing baseline regression
+        run: npm run test:factory-industry-baseline
       - name: Transport logistics regression
         run: npm run test:resource-logistics
       - name: Strategic policy, depletion and save/load integrity regressions
