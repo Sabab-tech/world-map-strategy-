@@ -23,7 +23,7 @@
   const isObj = v => !!v && typeof v === 'object' && !Array.isArray(v);
   let initialized = false;
   let selectedCountry = null;
-  let activeTab = 'ministry';
+  let activeTab = 'cabinet';
   let lastRenderedCountry = null;
 
   const runtime = () => g.OmegaCountryRuntimeData || null;
@@ -235,9 +235,71 @@
     }).join('');
   }
 
+  function ensureGovernmentOverviewMount() {
+    const doc = g.document;
+    const cabinet = doc?.getElementById?.('cabinet-full-window');
+    const container = cabinet?.querySelector?.('.parchment-cabinet-container');
+    if (!cabinet || !container) return false;
+
+    let nav = doc.getElementById('omega-government-overview-tabs');
+    let panelEl = doc.getElementById('omega-government-overview-panel');
+    if (nav && panelEl && nav.parentElement === container && panelEl.parentElement === container) return false;
+
+    if (nav?.parentElement) nav.parentElement.removeChild(nav);
+    if (panelEl?.parentElement) panelEl.parentElement.removeChild(panelEl);
+
+    nav = doc.createElement('nav');
+    nav.id = 'omega-government-overview-tabs';
+    nav.className = 'omega-country-overview-tabs omega-government-overview-tabs';
+    nav.setAttribute('aria-label', 'Government views');
+    nav.innerHTML =
+      '<button type="button" data-omega-government-view="cabinet" aria-selected="true" class="is-active">EXECUTIVE CABINET</button>' +
+      '<button type="button" data-omega-government-view="overview" aria-selected="false">COUNTRY OVERVIEW</button>';
+
+    panelEl = doc.createElement('section');
+    panelEl.id = 'omega-government-overview-panel';
+    panelEl.className = 'omega-country-overview-panel';
+    panelEl.setAttribute('aria-label', 'Country Overview');
+    panelEl.setAttribute('role', 'region');
+    panelEl.hidden = true;
+
+    const topHud = container.querySelector('.parchment-top-hud');
+    if (topHud && topHud.parentElement === container) {
+      if (typeof topHud.insertAdjacentElement === 'function') {
+        topHud.insertAdjacentElement('afterend', nav);
+        nav.insertAdjacentElement('afterend', panelEl);
+      } else {
+        container.insertBefore(nav, topHud.nextSibling);
+        container.insertBefore(panelEl, nav.nextSibling);
+      }
+    } else {
+      container.insertBefore(nav, container.firstChild);
+      container.insertBefore(panelEl, nav.nextSibling);
+    }
+    return true;
+  }
+
+  function applyGovernmentViewState() {
+    const doc = g.document;
+    const nav = doc?.getElementById?.('omega-government-overview-tabs');
+    const panelEl = doc?.getElementById?.('omega-government-overview-panel');
+    const container = panelEl?.parentElement;
+    if (!nav || !panelEl || !container) return false;
+
+    const overviewActive = activeTab === 'overview';
+    nav.querySelectorAll('[data-omega-government-view]').forEach(button => {
+      const active = button.getAttribute('data-omega-government-view') === activeTab;
+      button.classList.toggle('is-active', active);
+      button.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+    panelEl.hidden = !overviewActive;
+    container.classList.toggle('ocov-government-overview-active', overviewActive);
+    return true;
+  }
+
   function renderCountryOverview() {
     const doc = g.document;
-    const panelEl = doc?.getElementById?.('omega-country-overview-panel');
+    const panelEl = doc?.getElementById?.('omega-government-overview-panel');
     if (!panelEl) return false;
     const requested = selectedCountry || defaultCountry();
     const resolved = resolve(requested);
@@ -265,7 +327,7 @@
 
     if (!base && runtime()?.ready && typeof runtime().isSettled === 'function' && !runtime().isSettled()) {
       panelEl.innerHTML = '<div class="ocov-loading"><div class="ocov-eyebrow">OMEGA / COUNTRY OVERVIEW</div><h2>Loading country records…</h2><p>Waiting for the canonical country registry. No substitute data is being displayed.</p></div>';
-      Promise.resolve(runtime().ready).then(() => { if (activeTab === 'country') renderCountryOverview(); }).catch(() => {});
+      Promise.resolve(runtime().ready).then(() => { if (activeTab === 'overview') renderCountryOverview(); }).catch(() => {});
       return true;
     }
 
@@ -468,7 +530,7 @@
     panelEl.dataset.profileStatus = String(profileStatus);
     if (behaviorEngine() && typeof behaviorEngine().init === 'function') {
       Promise.resolve(behaviorEngine().init()).then(() => {
-        if (activeTab === 'country' && lastRenderedCountry === value &&
+        if (activeTab === 'overview' && lastRenderedCountry === value &&
             (panelEl.dataset.resourceReady !== 'true')) {
           panelEl.dataset.resourceReady = 'true';
           renderCountryOverview();
@@ -479,22 +541,10 @@
   }
 
   function setActiveTab(tab) {
-    const requested = tab === 'country' ? 'country' : 'ministry';
-    activeTab = requested;
-    const doc = g.document;
-    const nav = doc?.getElementById?.('omega-country-overview-tabs');
-    const panelEl = doc?.getElementById?.('omega-country-overview-panel');
-    const ministry = doc?.getElementById?.('ministry-dashboard-content');
-    if (!nav || !panelEl || !ministry) return false;
-    nav.querySelectorAll('[data-omega-ministry-view]').forEach(button => {
-      const active = button.getAttribute('data-omega-ministry-view') === requested;
-      button.classList.toggle('is-active', active);
-      button.setAttribute('aria-selected', active ? 'true' : 'false');
-    });
-    const countryActive = requested === 'country';
-    panelEl.hidden = !countryActive;
-    ministry.classList.toggle('ocov-ministry-hidden', countryActive);
-    if (countryActive) renderCountryOverview();
+    activeTab = tab === 'overview' ? 'overview' : 'cabinet';
+    ensureGovernmentOverviewMount();
+    if (!applyGovernmentViewState()) return false;
+    if (activeTab === 'overview') renderCountryOverview();
     return true;
   }
 
@@ -519,14 +569,14 @@
         '\n' + (samples.length ? samples.join('\n') : 'No identity/source discrepancies detected in the checks performed.');
       return;
     }
-    const tab = target.closest('[data-omega-ministry-view]');
-    if (tab && tab.closest('#omega-country-overview-tabs')) {
+    const tab = target.closest('[data-omega-government-view]');
+    if (tab && tab.closest('#omega-government-overview-tabs')) {
       event.preventDefault();
-      setActiveTab(tab.getAttribute('data-omega-ministry-view'));
+      setActiveTab(tab.getAttribute('data-omega-government-view'));
       return;
     }
     if (target.closest('#cabinet-full-window .parchment-card-btn[data-ministry-id]')) {
-      setActiveTab('ministry');
+      setActiveTab('cabinet');
     }
   }
 
@@ -543,7 +593,7 @@
     const candidate = detail.countryId || detail.country || null;
     if (!candidate) return;
     selectedCountry = resolve(candidate).canonical || String(candidate);
-    if (activeTab === 'country') renderCountryOverview();
+    if (activeTab === 'overview') renderCountryOverview();
   }
 
   function diagnostics() {
@@ -566,15 +616,29 @@
     if (!selectedCountry) selectedCountry = defaultCountry();
     g.document.addEventListener('click', onClick);
     g.document.addEventListener('change', onChange);
+
+    const cabinet = g.document.getElementById('cabinet-full-window');
+    if (cabinet && typeof g.MutationObserver === 'function') {
+      const observer = new g.MutationObserver(() => {
+        const mounted = ensureGovernmentOverviewMount();
+        if (mounted) {
+          applyGovernmentViewState();
+          if (activeTab === 'overview') renderCountryOverview();
+        }
+      });
+      observer.observe(cabinet, { childList: true, subtree: true });
+    }
+    if (ensureGovernmentOverviewMount()) applyGovernmentViewState();
+
     g.addEventListener?.('OMEGA_COUNTRY_CONTEXT_CHANGED', onCountryContext);
     g.addEventListener?.('OMEGA_COUNTRY_BEHAVIOR_READY', () => {
-      if (activeTab === 'country') renderCountryOverview();
+      if (activeTab === 'overview') renderCountryOverview();
     });
     g.addEventListener?.('OMEGA_SIMULATION_TURN_COMMITTED', () => {
-      if (activeTab === 'country') renderCountryOverview();
+      if (activeTab === 'overview') renderCountryOverview();
     });
     Promise.resolve(runtime()?.ready).then(() => {
-      if (activeTab === 'country') renderCountryOverview();
+      if (activeTab === 'overview') renderCountryOverview();
     }).catch(() => {});
     return true;
   }
