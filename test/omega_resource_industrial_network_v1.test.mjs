@@ -220,6 +220,11 @@ assert.equal(firstCapacityShipment.status,'DISPATCHED',JSON.stringify(firstCapac
 const secondCapacityShipment=N.dispatchShipment({countryId:'BGD',siteId:'SITE_BGD_COAL_01',resourceId:'coal',quantity:1000,transportMode:'rail'});
 assert.equal(secondCapacityShipment.status,'DISPATCHED',JSON.stringify(secondCapacityShipment));
 assert.equal(secondCapacityShipment.shipment.quantity,500,'shared capacity across both truck legs must cap the second shipment');
+assert.ok(secondCapacityShipment.shipment.route.vehiclePlan.every(leg =>
+  leg.units === Math.ceil(500 / Math.max(.001, Number(leg.payloadTonnes) || 1))),
+  'vehicle count must be recalculated from the actual shared-capacity-limited shipment');
+assert.ok(secondCapacityShipment.shipment.route.vehiclePlan.every(leg => leg.dispatchQuantity === 500),
+  'every route leg must report the same adjusted dispatch quantity');
 const sharedTransport=context.Game.state.resource.BGD.industrialNetwork.transportCapacityLedger.turns['43'];
 assert.equal(sharedTransport.usedByMode.truck,11000,'truck capacity must be counted jointly for all route legs in one turn');
 assert.equal(sharedTransport.shipments.length,2);
