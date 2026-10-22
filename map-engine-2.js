@@ -1076,6 +1076,17 @@ Game.Map.renderGeoJSON = function(geoData) {
         (!this.map.hasLayer || this.map.hasLayer(previousLayer))) {
         this.map.removeLayer(previousLayer);
     }
+    // Retire labels owned by the previous country layer as well, otherwise
+    // a repeat render would re-add stale markers after the new layer finishes.
+    if (Array.isArray(Game.countryLabels)) {
+        Game.countryLabels.forEach(item => {
+            if (item && item.marker && this.map && typeof this.map.removeLayer === "function" &&
+                (!this.map.hasLayer || this.map.hasLayer(item.marker))) {
+                this.map.removeLayer(item.marker);
+            }
+        });
+        Game.countryLabels.length = 0;
+    }
 
     // Build an empty Leaflet layer immediately so the rest of the game can
     // boot without waiting for every country polygon to be parsed and mounted.
