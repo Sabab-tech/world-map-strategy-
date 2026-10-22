@@ -153,9 +153,9 @@ jobs:
           SERVER_PID=$!
           trap 'kill $SERVER_PID >/dev/null 2>&1 || true' EXIT
           READY=0
-          for i in $(seq 1 120); do
+          for i in $(seq 1 300); do
             if curl --connect-timeout 0.5 --max-time 2 -fsS http://127.0.0.1:31337/api/ai/status >/tmp/omega-ai-status.json 2>/dev/null; then READY=1; break; fi
-            if [ $((i % 15)) -eq 0 ]; then echo "Waiting for OMEGA server readiness ($i/120 seconds)"; fi
+            if [ $((i % 15)) -eq 0 ]; then echo "Waiting for OMEGA server readiness ($i/300 seconds)"; fi
             sleep 1
           done
           if [ "$READY" -ne 1 ]; then
