@@ -185,25 +185,19 @@
       try { g.updateGlobalResourceHUD(country); } catch (_) {}
     }
     var fm = country ? currentFinance(country) : null;
+    var economyState = country ? findCountryBucket('economy', country) : null;
     var treasury = number(fm && fm.treasuryBalanceUsd);
-    var annualRevenue = number(fm && fm.fiscalModel && fm.fiscalModel.annualRevenueUsd);
-    var annualSpending = number(fm && fm.fiscalModel && fm.fiscalModel.annualSpendingUsd);
-    if (treasury === null && country) {
-      var economy = findCountryBucket('economy', country);
-      treasury = number(economy && economy.treasury);
-    }
-    var dailyRevenue = annualRevenue === null ? null : annualRevenue / 365;
-    var dailySpending = annualSpending === null ? null : annualSpending / 365;
-    var dailyNet = dailyRevenue === null || dailySpending === null ? null : dailyRevenue - dailySpending;
-    var flowTitle = 'Daily revenue, spending and net are modeled annual Finance figures divided by 365, not observed daily cash receipts.';
+    if (treasury === null) treasury = number(economyState && economyState.treasury);
+    var gdp = number(economyState && (
+      economyState.gdp ?? economyState.nominal_gdp ?? economyState.gdpCurrentUsd ??
+      economyState.gdp_current_usd ?? economyState.gdpUsd ?? economyState.gdp_usd ?? economyState.GDP
+    ));
     var econNode = g.document.querySelector('[data-omega-economy]');
     if (econNode) {
       econNode.textContent = (country || 'COUNTRY NOT SELECTED') +
-        '  Treasury ' + (treasury === null ? 'Not recorded' : money(treasury)) +
-        '  Income/day ' + (dailyRevenue === null ? 'Not recorded' : money(dailyRevenue)) +
-        '  Spend/day ' + (dailySpending === null ? 'Not recorded' : money(dailySpending)) +
-        '  Net/day ' + (dailyNet === null ? 'Not recorded' : money(dailyNet));
-      econNode.title = flowTitle;
+        '  GDP ' + (gdp === null ? 'Not recorded' : money(gdp)) +
+        '  Treasury ' + (treasury === null ? 'Not recorded' : money(treasury));
+      econNode.title = 'GDP and Treasury are read from the selected country game state. Missing values remain Not recorded.';
     }
 
     var assetNode = g.document.querySelector('[data-omega-assets]');
