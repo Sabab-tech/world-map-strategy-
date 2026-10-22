@@ -58,6 +58,35 @@ context.Omega.MinistryInteroperability={
 vm.createContext(context);
 vm.runInContext(fs.readFileSync('omega_resource_industrial_network_v1.js','utf8'),context,{filename:'omega_resource_industrial_network_v1.js'});
 const N=context.Omega.ResourceIndustrialNetwork;
+function advanceOneGameTurn(state){
+  const sim=state.simulation||(state.simulation={});
+  const step=Math.max(1,Math.round(Number(sim.daysPerTurn)||1));
+  const base=String(sim.date||String(Number(sim.startYear)||2015)+'-01-01');
+  const date=new Date(base+'T00:00:00.000Z');
+  date.setUTCDate(date.getUTCDate()+step);
+  sim.date=date.toISOString().slice(0,10);
+  sim.turn=(Number(sim.turn)||1)+1;
+}
+function advanceToGameTurn(state,targetTurn){
+  const target=Math.max(1,Number(targetTurn)||1);
+  let guard=0;
+  while((Number(state.simulation?.turn)||1)<target){
+    advanceOneGameTurn(state);
+    if(++guard>10000)throw new Error('TEST_GAME_CLOCK_TURN_GUARD');
+  }
+}
+function advanceToCycleFinish(state,cycle){
+  const sim=state.simulation||(state.simulation={});
+  if(!sim.date)sim.date=String(cycle?.startDate||String(Number(sim.startYear)||2015)+'-01-01');
+  const currentTurn=Number(sim.turn)||1;
+  const targetTurn=Math.max(currentTurn+1,Number(cycle?.finishTurn)||currentTurn+1);
+  const targetDate=cycle?.finishDate?new Date(String(cycle.finishDate)+'T00:00:00.000Z'):null;
+  let guard=0;
+  while((Number(sim.turn)||1)<targetTurn||(targetDate&&new Date(String(sim.date)+'T00:00:00.000Z')<targetDate)){
+    advanceOneGameTurn(state);
+    if(++guard>10000)throw new Error('TEST_FACTORY_CYCLE_CLOCK_GUARD');
+  }
+}
 
 const extraction=N.planExtraction({countryId:'BGD',siteId:'SITE_BGD_COAL_01',resourceId:'coal',quantity:2000});
 assert.equal(extraction.status,'PLANNED');
@@ -92,7 +121,7 @@ const sent=N.dispatchShipment({countryId:'BGD',siteId:'SITE_BGD_COAL_01',resourc
 assert.equal(sent.status,'DISPATCHED');
 assert.equal(context.Game.state.resource.BGD.warehouse.reservedByResource.coal,5000);
 
-context.Game.state.simulation.turn=sent.shipment.etaTurn;
+advanceToGameTurn(context.Game.state,sent.shipment.etaTurn);
 const advanced=N.advanceShipments('BGD');
 assert.equal(advanced.delivered,1);
 assert.equal(advanced.shipments[0].destinationStatus,'FACTORY_RECEIVED');
@@ -199,7 +228,7 @@ assert.ok(siteRun.extractionPlanId,'industrial extraction planner must be part o
 assert.ok(siteRun.shipmentId,'shipment must be persisted in the country industrial network');
 assert.equal(siteRun.factoryBootstrapStatus,'CREATED_SIMULATION_ONLY','fallback processing capacity must be clearly marked simulation-only');
 assert.equal(context.Game.state.resource.BGD.industrialNetwork.siteExecutions[0].siteId,'SITE_BGD_COPPER_01');
-context.Game.state.simulation.turn=siteRun.shipment.etaTurn;
+advanceToGameTurn(context.Game.state,siteRun.shipment.etaTurn);
 const copperDelivery=N.advanceShipments('BGD');
 assert.equal(copperDelivery.delivered,1);
 assert.equal(copperDelivery.shipments[0].processingStatus,'IN_PROGRESS',

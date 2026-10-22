@@ -29,10 +29,10 @@ const state=()=>g.Game?.state||g.gameState||{};
 const turn=()=>num(state()?.simulation?.turn??state()?.turn??state()?.simulationTurn)??0;
 const daysPerTurn=()=>{
   const clock=g.Omega?.Simulation?.clock;
-  let milliseconds=num(clock?.stepDurationMs);
-  if(milliseconds===null)milliseconds=num(state()?.simulation?.stepDurationMs);
-  // The authoritative game clock wins over legacy month-length turn hints.
-  if(milliseconds!==null&&milliseconds>0)return Math.max(1/86400000,milliseconds/86400000);
+  const explicit=num(clock?.gameDaysPerTurn??clock?.daysPerTurn);
+  if(explicit!==null&&explicit>0)return explicit;
+  // stepDurationMs paces the real-time clock; by default every committed central turn advances one in-game day.
+  if(clock&&num(clock.stepDurationMs)!==null)return 1;
   return Math.max(1/86400000,num(state()?.simulation?.daysPerTurn??state()?.simulation?.turnDays)??1);
 };
 const year=()=>{const d=state()?.simulation?.date;if(d){const y=num(String(d).slice(0,4));if(y!==null)return y;}return num(state()?.simulation?.startYear)??2015};
@@ -2767,7 +2767,7 @@ function processPendingFactoryInputs(countryId){
       productivityPct:result.productivityPct,finishDate:result.finishDate});
     else blocked.push({factoryId:fid,reason:result.reason||result.status,detail:result});
   }
-  return{status:blocked.length?'DEGRADED':'COMPLETED',countryId:cid,turn:turn(),completedCount:completed.length,completed,
+  return{status:blocked.length?'DEGRADED':'COMPLETED',countryId:cid,turn:turn(),completedCount:completed.length,processedCount:completed.length,completed,processed:completed,
     startedCount:started.length,started,warehouseTransferCount:transfers.length,transfers,blocked};
 }
 

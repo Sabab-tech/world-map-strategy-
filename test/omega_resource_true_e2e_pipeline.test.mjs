@@ -6,6 +6,36 @@ import vm from 'node:vm';
 const readJson = file => JSON.parse(readFileSync(new URL('../'+file, import.meta.url), 'utf8'));
 const readText = file => readFileSync(new URL('../'+file, import.meta.url), 'utf8');
 
+function advanceOneGameTurn(state){
+  const sim=state.simulation||(state.simulation={});
+  const step=Math.max(1,Math.round(Number(sim.daysPerTurn)||1));
+  const base=String(sim.date||String(Number(sim.startYear)||2015)+'-01-01');
+  const date=new Date(base+'T00:00:00.000Z');
+  date.setUTCDate(date.getUTCDate()+step);
+  sim.date=date.toISOString().slice(0,10);
+  sim.turn=(Number(sim.turn)||1)+1;
+}
+function advanceToGameTurn(state,targetTurn){
+  const target=Math.max(1,Number(targetTurn)||1);
+  let guard=0;
+  while((Number(state.simulation?.turn)||1)<target){
+    advanceOneGameTurn(state);
+    if(++guard>10000)throw new Error('TEST_GAME_CLOCK_TURN_GUARD');
+  }
+}
+function advanceToCycleFinish(state,cycle){
+  const sim=state.simulation||(state.simulation={});
+  if(!sim.date)sim.date=String(cycle?.startDate||String(Number(sim.startYear)||2015)+'-01-01');
+  const currentTurn=Number(sim.turn)||1;
+  const targetTurn=Math.max(currentTurn+1,Number(cycle?.finishTurn)||currentTurn+1);
+  const targetDate=cycle?.finishDate?new Date(String(cycle.finishDate)+'T00:00:00.000Z'):null;
+  let guard=0;
+  while((Number(sim.turn)||1)<targetTurn||(targetDate&&new Date(String(sim.date)+'T00:00:00.000Z')<targetDate)){
+    advanceOneGameTurn(state);
+    if(++guard>10000)throw new Error('TEST_FACTORY_CYCLE_CLOCK_GUARD');
+  }
+}
+
 class EventTargetMock {
   constructor(){this.listeners=new Map();}
   addEventListener(type,fn){const rows=this.listeners.get(type)||[];rows.push(fn);this.listeners.set(type,rows);}
@@ -175,7 +205,7 @@ test('real site extraction flows through raw warehouse, transport, factory, fini
   assert.ok(rawStockBeforeDelivery+1e-6>=Number(run.shipment.quantity));
   assert.ok(rawWarehouseBeforeDelivery+1e-6>=Number(run.shipment.quantity));
   assert.ok(rawReservationBeforeDelivery+1e-6>=Number(run.shipment.quantity));
-  state.simulation.turn=run.shipment.etaTurn;
+  advanceToGameTurn(state,run.shipment.etaTurn);
   const advanced=industry.advanceShipments('BGD');
   assert.ok(advanced.delivered>=1,JSON.stringify(advanced));
   const delivery=advanced.shipments.find(item=>String(item.shipmentId)===String(run.shipmentId)||String(item.batchId)===String(run.batchId));
@@ -213,10 +243,7 @@ test('real site extraction flows through raw warehouse, transport, factory, fini
     'the delivery turn must schedule a tracked production quantity and explicit finish date');
   let followupTurns=0,lastCompletedCycle=null;
   while(inputBalance()>1e-6&&followupTurns<10){
-    state.simulation.turn+=1;
-    const nextDate=new Date(String(state.simulation.date||'2025-01-01')+'T00:00:00.000Z');
-    nextDate.setUTCDate(nextDate.getUTCDate()+Math.max(1,Number(state.simulation.daysPerTurn)||1));
-    state.simulation.date=nextDate.toISOString().slice(0,10);
+    advanceOneGameTurn(state);
     const followup=industry.processPendingFactoryInputs('BGD');
     assert.ok((Number(followup.completedCount)||0)+(Number(followup.startedCount)||0)>=1,
       JSON.stringify({followup,inputBalance:inputBalance(),factoryId:factory.id}));

@@ -3,6 +3,45 @@ import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 const repoRoot=new URL('../',import.meta.url);
+
+function advanceOneGameTurn(state){
+  const sim=state.simulation||(state.simulation={});
+  const step=Math.max(1,Math.round(Number(sim.daysPerTurn)||1));
+  const base=String(sim.date||String(Number(sim.startYear)||2015)+'-01-01');
+  const date=new Date(base+'T00:00:00.000Z');
+  date.setUTCDate(date.getUTCDate()+step);
+  sim.date=date.toISOString().slice(0,10);
+  sim.turn=(Number(sim.turn)||1)+1;
+}
+function advanceToGameTurn(state,targetTurn){
+  const target=Math.max(1,Number(targetTurn)||1);
+  let guard=0;
+  while((Number(state.simulation?.turn)||1)<target){
+    advanceOneGameTurn(state);
+    if(++guard>10000)throw new Error('TEST_GAME_CLOCK_TURN_GUARD');
+  }
+}
+function advanceToCycleFinish(state,cycle){
+  const sim=state.simulation||(state.simulation={});
+  if(!sim.date)sim.date=String(cycle?.startDate||String(Number(sim.startYear)||2015)+'-01-01');
+  const currentTurn=Number(sim.turn)||1;
+  const targetTurn=Math.max(currentTurn+1,Number(cycle?.finishTurn)||currentTurn+1);
+  const targetDate=cycle?.finishDate?new Date(String(cycle.finishDate)+'T00:00:00.000Z'):null;
+  let guard=0;
+  while((Number(sim.turn)||1)<targetTurn||(targetDate&&new Date(String(sim.date)+'T00:00:00.000Z')<targetDate)){
+    advanceOneGameTurn(state);
+    if(++guard>10000)throw new Error('TEST_FACTORY_CYCLE_CLOCK_GUARD');
+  }
+}
+function completeFactoryCycle(state,industry,countryId,factoryId){
+  const rs=state.resource?.[countryId]||{};
+  const cycle=rs.industrialNetwork?.factoryProductionCycles?.[String(factoryId)];
+  assert.ok(cycle&&cycle.finishDate,'factory cycle must persist its authoritative finish date');
+  advanceToCycleFinish(state,cycle);
+  const result=industry.processPendingFactoryInputs(countryId);
+  assert.ok(result.completedCount>=1,JSON.stringify({countryId,factoryId,cycle,result}));
+  return result;
+}
 const resourceFiles=new Map([
   ['resources.json',new URL('../resources.json',import.meta.url)],
   ['resources_2.json',new URL('../resources_2.json',import.meta.url)],
@@ -190,7 +229,7 @@ assert.equal(ausAfterExtraction.warehouse.countryId,'AUS');
 assert.ok((ausAfterExtraction.warehouse.availableByResource?.iron_ore||0)>=0);
 const etaTurn=Number(pilbaraPipeline.route.etaTurn);
 assert.ok(etaTurn>=Number(globalThis.Game.state.simulation.turn));
-globalThis.Game.state.simulation.turn=etaTurn;
+advanceToGameTurn(globalThis.Game.state,etaTurn);
 const delivery=industrialPipelineRuntime.advanceShipments('AUS');
 assert.equal(delivery.status,'ADVANCED',JSON.stringify(delivery));
 assert.equal(delivery.delivered,1,JSON.stringify(delivery));
@@ -585,7 +624,7 @@ assert.ok(deliveredQuantity>0,'route must dispatch a positive quantity');
 assert.ok(beforeWarehouse>=deliveredQuantity,'real extraction batch must be in the sovereign raw warehouse before shipment arrival');
 assert.ok(beforeReserved>=deliveredQuantity,'shipment quantity must be reserved in the raw warehouse before arrival');
 
-globalThis.Game.state.simulation.turn=Number(realPipeline.shipment.etaTurn);
+advanceToGameTurn(globalThis.Game.state,Number(realPipeline.shipment.etaTurn));
 const realDelivery=industrial.advanceShipments('KWT');
 const delivered=realDelivery.shipments.find(x=>x.shipmentId===realPipeline.shipmentId);
 assert.ok(delivered,'the exact real site shipment must arrive through the turn-advance runtime; other country deposits may also deliver on the same turn: '+JSON.stringify({
@@ -594,8 +633,11 @@ assert.ok(delivered,'the exact real site shipment must arrive through the turn-a
 const sameResourceDeliveredQuantity=realDelivery.shipments.filter(x=>String(x.resourceId)===String(realPipelineResourceId))
   .reduce((sum,x)=>sum+(Number(x.quantity)||0),0);
 assert.equal(delivered.destinationStatus,'FACTORY_RECEIVED');
-assert.equal(delivered.processingStatus,'PROCESSED','delivered real Endowment material must enter factory processing');
+assert.equal(delivered.processingStatus,'IN_PROGRESS','delivered real Endowment material must schedule a cycle');
+completeFactoryCycle(globalThis.Game.state,industrial,'KWT',realPipeline.factoryId);
 const postDeliveryState=runtime.countryResourceState('KWT');
+const completedRealDelivery=(postDeliveryState.industrialNetwork?.deliveries||[]).find(x=>String(x.shipmentId)===String(realPipeline.shipmentId));
+assert.equal(completedRealDelivery?.processingStatus,'PROCESSED','Kuwait delivery ledger must reconcile after cycle completion');
 assert.ok(Math.abs(Number(postDeliveryState.warehouse.availableByResource[realPipelineResourceId])-
   (beforeWarehouse-sameResourceDeliveredQuantity))<1e-5,
   'raw warehouse stock must fall by exactly the combined quantity of same-resource shipments delivered this turn');
@@ -610,14 +652,14 @@ assert.equal(postDeliveryState.industrialNetwork?.reservations?.[delivered.reser
 assert.ok(Math.abs(Number(postDeliveryState.inventory[realPipelineResourceId])-
   (beforeCountryRaw-sameResourceDeliveredQuantity))<1e-5,
   'country raw inventory must debit the combined same-resource deliveries exactly once');
-const realProcessedOutputs=Object.keys(delivered.processing?.outputs||{});
+const realProcessedOutputs=Object.keys(completedRealDelivery?.processing?.outputs||completedRealDelivery?.processing?.outputQuantities||{});
 assert.ok(realProcessedOutputs.length>0,'real factory cycle must produce at least one output');
 assert.ok(realProcessedOutputs.every(k=>Number(postDeliveryState.inventory[k])>0),
   'real processed outputs must be recorded in country inventory');
 const executionLedger=postDeliveryState.industrialNetwork?.siteExecutions||[];
 assert.ok(executionLedger.some(x=>x.siteId===realPipelineSiteId&&x.batchId===realPipeline.batchId&&x.occurrenceKey===realPipeline.occurrenceKey),
   'site execution ledger must preserve the exact site, batch and occurrence identities');
-assert.ok((postDeliveryState.industrialNetwork?.events||[]).some(x=>x.transactionId===delivered.processingTransactionId&&x.status==='COMPLETED'),
+assert.ok((postDeliveryState.industrialNetwork?.events||[]).some(x=>x.transactionId===completedRealDelivery?.processingTransactionId&&x.status==='COMPLETED'),
   'factory processing must be represented in the industrial event ledger');
 
 // Future-deposit contract: a canonical-only physical site with no matching legacy
@@ -689,31 +731,21 @@ const part6ShipQuantity=Number(part6Pipeline.shipment?.quantity||0);
 assert.ok(part6ShipQuantity>0);
 assert.ok(Number(part6PreDelivery?.warehouse?.reservedByResource?.[part6CopperSite.resourceId]||0)>=part6ShipQuantity,
   'Part 6 shipment must reserve material from its country raw warehouse');
-globalThis.Game.state.simulation.turn=Number(part6Pipeline.shipment.etaTurn);
+advanceToGameTurn(globalThis.Game.state,Number(part6Pipeline.shipment.etaTurn));
 const part6Delivery=industrial.advanceShipments(part6CopperSite.countryId);
 assert.ok(part6Delivery.delivered>=1,'global country turn must deliver due shipments across deposits; detail='+JSON.stringify({delivered:part6Delivery.delivered,targetShipmentId:part6Pipeline.shipmentId}));
 const part6Delivered=part6Delivery.shipments.find(item=>item.shipmentId===part6Pipeline.shipmentId);
 assert(part6Delivered);
 assert.equal(part6Delivered.destinationStatus,'FACTORY_RECEIVED');
+assert.equal(part6Delivered.processingStatus,'IN_PROGRESS',JSON.stringify(part6Delivered.processing));
+completeFactoryCycle(globalThis.Game.state,industrial,part6CopperSite.countryId,part6Pipeline.factoryId);
 const part6PostDelivery=runtime.countryResourceState(part6CopperSite.countryId);
 const part6Flow=part6PostDelivery.industrialNetwork?.siteFlowLedger?.find(item=>String(item.batchId)===String(part6Pipeline.batchId));
-const part6Factory=(globalThis.Game.state.economy?.[part6CopperSite.countryId]?.productionAssets||[])
-  .find(item=>String(item.id||item.assetId||item.projectId)===String(part6Pipeline.factoryId));
-if(part6Delivered.processingStatus==='PROCESSED'){
-  assert.ok(Object.keys(part6Delivered.processing?.outputs||{}).some(key=>Number(part6PostDelivery.inventory?.[key])>0),
-    'Part 6 processed products must enter the owning country inventory');
-  assert.ok(part6Flow?.stages?.some(step=>step.stage==='PROCESSING'&&step.status==='COMPLETED'));
-}else{
-  assert.equal(part6Delivered.processingStatus,'AWAITING_PROCESSING');
-  assert.equal(part6Delivered.processing?.reason,'FACTORY_TURN_CAPACITY_ALREADY_USED',
-    'only a legitimately exhausted factory turn may defer processing; other execution failures must fail the test: '+JSON.stringify(part6Delivered.processing));
-  assert.ok(Number(part6Factory?.inputInventory?.[part6CopperSite.resourceId])>0,
-    'deferred material must remain physically recorded in the matching factory input inventory');
-  assert.ok((part6Factory?.inputBatchLots||[]).some(lot=>String(lot.sourceBatchIds?.[0]||'')===String(part6Pipeline.batchId)&&Number(lot.remainingQuantity)>0),
-    'deferred material must retain the source deposit batch identity in the factory input lot');
-  assert.ok(part6Flow?.stages?.some(step=>step.stage==='PROCESSING'&&step.status==='AWAITING_CAPACITY'),
-    'deposit flow ledger must explicitly show the factory-capacity queue');
-}
+const part6CompletedDelivery=(part6PostDelivery.industrialNetwork?.deliveries||[]).find(item=>String(item.shipmentId)===String(part6Pipeline.shipmentId));
+assert.equal(part6CompletedDelivery?.processingStatus,'PROCESSED','Part 6 output must commit after its calendar finish date');
+assert.ok(Object.keys(part6CompletedDelivery?.processing?.outputs||{}).some(key=>Number(part6PostDelivery.inventory?.[key])>0),
+  'Part 6 finished products must enter the owning country inventory');
+assert.ok(part6Flow?.stages?.some(step=>step.stage==='PROCESSING'&&step.status==='COMPLETED'));
 assert.ok((part6PostDelivery.industrialNetwork?.siteExecutions||[]).some(item=>
   item.siteId===part6CopperSite.siteId&&item.batchId===part6Pipeline.batchId&&item.occurrenceKey===part6Pipeline.occurrenceKey),
   'Part 6 industrial ledger must retain the exact site, batch and occurrence identities');
