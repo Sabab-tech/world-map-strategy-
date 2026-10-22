@@ -104,6 +104,9 @@ console.log('[Cognitive Bridge] Dispatcher:', OmegaReasoningDispatcher?.VERSION 
 let cachedMinisters = {};
 try { const file = path.join(__dirname, 'ministers.json'); if (fs.existsSync(file)) cachedMinisters = JSON.parse(fs.readFileSync(file, 'utf8')); }
 catch (e) { console.warn('[Server DB] Minister dataset warning:', e.message); }
+let cachedMinisterRosterManifest=null;
+try{const file=path.join(__dirname,'minister_country_roster_manifest_v1.json');if(fs.existsSync(file))cachedMinisterRosterManifest=JSON.parse(fs.readFileSync(file,'utf8'));}catch(e){console.warn('[Server DB] Minister roster manifest warning:',e.message);}
+function normalizeCountryRosterKey(value){return String(value||'').normalize('NFKD').replace(/[\\u0300-\\u036f]/g,'').trim().toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'');}
 
 function normalizeKey(value) { return String(value || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, ''); }
 function tokens(value) { return new Set(normalizeKey(value).split('_').filter(Boolean)); }
@@ -144,6 +147,8 @@ const MINISTRY_PROFILE_CATEGORIES = Object.freeze({
   mega_projects: ['Energy_Infrastructure', 'Environment_Climate']
 });
 function ministerCandidates(ministryId, countryCode) {
+  const knownCode=cachedMinisterRosterManifest?.lookup?.[normalizeCountryRosterKey(countryCode)];
+  if(knownCode && cachedMinisterRosterManifest?.countries?.[knownCode]) return [];
   const all = flattenMinisterDatabase(); if (!all.length) return [];
   const target = normalizeKey(ministryId), exact = all.filter(m => normalizeKey(m.__category) === target);
   let pool = exact.length >= 5 ? exact : null;
