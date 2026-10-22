@@ -1583,11 +1583,10 @@ function executeMultiInputFactoryCycle(input={}){
       requiredForOneUnit:availability.map(x=>({resourceId:x.resourceId,required:x.coefficient,available:x.available})),missingInputs:missing.map(x=>x.resourceId)};
   }
   const needs=availability.map(x=>({...x,required:productionQuantity*x.coefficient}));
-  if(asset.requireTrackedInputs===true){
-    const mismatches=needs.filter(x=>x.tracked+1e-6<x.required);
-    if(mismatches.length)return{status:'BLOCKED',reason:'FACTORY_INPUT_BATCH_LEDGER_MISMATCH',factoryId:fid,recipeId:recipe.recipeId||null,
-      mismatches:mismatches.map(x=>({resourceId:x.resourceId,required:x.required,tracked:x.tracked,available:x.available}))};
-  }
+  const mismatches=needs.filter(x=>x.tracked+1e-6<x.required&&
+    (asset.requireTrackedInputs===true||x.tracked>1e-9));
+  if(mismatches.length)return{status:'BLOCKED',reason:'FACTORY_INPUT_BATCH_LEDGER_MISMATCH',factoryId:fid,recipeId:recipe.recipeId||null,
+    mismatches:mismatches.map(x=>({resourceId:x.resourceId,required:x.required,tracked:x.tracked,available:x.available}))};
   const policy=g.Omega?.ResourceStrategicPolicyRuntime||g.OmegaResourceStrategicPolicyRuntime;
   for(const need of needs){
     const first=lots.find(l=>tok(l?.resourceId||l?.materialIdentity)===need.resourceId&&Math.max(0,num(l?.remainingQuantity!=null?l.remainingQuantity:l?.quantity)||0)>1e-9);
