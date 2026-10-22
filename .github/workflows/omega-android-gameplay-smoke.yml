@@ -36,8 +36,8 @@ permissions:
   contents: read
 
 concurrency:
-  # Serialize main runs, but let a newer PR head supersede a stale emulator run.
-  group: omega-android9-gameplay-smoke-${{ github.event.pull_request.number || github.ref }}
+  # Every head of the same PR shares one group, so a newer head cancels stale emulator runs.
+  group: omega-android9-gameplay-smoke-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
