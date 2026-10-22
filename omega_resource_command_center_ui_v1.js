@@ -807,6 +807,8 @@
         '<div class="omega-rescc-factory-head"><svg class="omega-ui-icon omega-ui-icon--' + esc(iconId) + '" aria-hidden="true" viewBox="0 0 24 24"><use href="#omega-icon-' + esc(iconId) + '"></use></svg><span>' + esc(type) + '</span></div>' +
         '<div class="omega-rescc-grid2">' + kv('Recipe', recipeId) + kv('Capacity/day', number(asset.capacityPerDay ?? asset.capacity ?? asset.productionCapacity)) +
         kv('Jobs filled', number(asset.employment && asset.employment.jobsFilled)) + kv('Job slots', number((asset.employment && asset.employment.jobsSupported) ?? (profile.employment && profile.employment.jobsPerFactory))) +
+        kv('Core operating crew', number((asset.employment && asset.employment.coreOperatingCrew) ?? (profile.employment && profile.employment.coreOperatingCrew))) +
+        kv('Other direct roles', number((asset.employment && asset.employment.additionalDirectStaffSlots) ?? (profile.employment && profile.employment.additionalDirectStaffSlots))) +
         kv('Vacancies', number(asset.employment && asset.employment.vacancies)) + kv('Location', asset.locationNodeKey || 'Not recorded') +
         kv('Last production', last) + kv('Latest output quantities', shortJson(lastOutputs)) + '</div>' +
         '<h4 class="omega-rescc-section-title">Factory input stock</h4>' +
@@ -831,6 +833,9 @@
           '<div class="omega-rescc-grid2">' + kv('Build cost', number(profile.constructionCost, ' game units')) + kv('Build time', number(profile.constructionDays, ' days')) +
           kv('Capacity/day', number(profile.defaultCapacityPerDay)) + kv('Workers', number((Number(profile.workforce && profile.workforce.operators) || 0) + (Number(profile.workforce && profile.workforce.engineers) || 0))) +
           kv('Jobs per factory', number(profile.employment && profile.employment.jobsPerFactory)) +
+          kv('Core operators + engineers', number(profile.employment && profile.employment.coreOperatingCrew)) +
+          kv('Other direct job slots', number(profile.employment && profile.employment.additionalDirectStaffSlots)) +
+          kv('Job role breakdown', Object.entries(profile.employment && profile.employment.jobBreakdown || {}).map(function (pair) { return pair[0] + ': ' + number(pair[1]); }).join(', ') || 'NOT_RECORDED') +
           kv('Construction materials', Object.entries(profile.constructionMaterials || {}).map(function (pair) { return pair[0] + ': ' + number(pair[1]) + ' ' + String(profile.constructionMaterialUnit || 'SIMULATION_RESOURCE_UNIT'); }).join(', ') || 'NOT_RECORDED') +
           kv('Power (MWh/day)', number(profile.utilities && profile.utilities.electricityMWhPerDay)) + kv('Water (m³/day)', number(profile.utilities && profile.utilities.waterM3PerDay)) +
           kv('Infrastructure', Array.isArray(profile.requiredInfrastructure) ? profile.requiredInfrastructure.join(', ') : 'NOT_RECORDED') +
