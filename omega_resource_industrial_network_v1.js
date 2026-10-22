@@ -558,7 +558,7 @@ function infraQuality(c,mode){
   const {infra}=normalizeInfrastructure(c);
   const map={truck:infra.roads,rail:infra.rail,ship:infra.ports,barge:infra.roads,pipeline:infra.pipelines};
   const x=map[mode]||{capacityPerDay:20000,quality:.5};
-  return{capacityPerDay:num(x.capacityPerDay)||20000,quality:clamp(x.quality??.5,.15,1)};
+  return{capacityPerDay:num(x.capacityPerDay)||20000,quality:factoryClamp(x.quality??.5,.15,1)};
 }
 
 function resourceMethod(site,resourceId){
@@ -1431,6 +1431,7 @@ function advanceTechnologyProjects(c){
   }
   return completed;
 }
+function factoryClamp(value,min,max){return Math.max(min,Math.min(max,value));}
 function normalizedUnit(value){
   const raw=String(value??'').trim().toUpperCase().replace(/[. -]+/g,'_');
   const aliases={T:'TONNES',TON:'TONNES',TNE:'TONNES',TONNE:'TONNES',TONNES:'TONNES',METRIC_TON:'TONNES',METRIC_TONNE:'TONNES',METRIC_TONNES:'TONNES',
@@ -1471,16 +1472,16 @@ function factoryEffectiveCapacity(asset){
   if(nominalCapacity===null)return{capacity:0,nominalCapacity:null,reason:'FACTORY_CAPACITY_NOT_RECORDED'};
   const workersRequired=read(asset?.operatingWorkers??asset?.workersRequired??profile.operatingWorkers);
   const workersAvailable=read(asset?.assignedWorkers??asset?.workersAvailable??asset?.workforce?.assignedWorkers);
-  const workersFactor=workersAvailable===null||!workersRequired?1:clamp(workersAvailable/Math.max(1,workersRequired),0,1);
+  const workersFactor=workersAvailable===null||!workersRequired?1:factoryClamp(workersAvailable/Math.max(1,workersRequired),0,1);
   const powerRequired=read(asset?.electricityMWhPerDay??profile.electricityMWhPerDay);
   const powerAvailable=read(asset?.powerAvailableMWhPerDay??asset?.utilities?.electricityAvailableMWhPerDay);
-  const powerFactor=powerAvailable===null||!powerRequired?1:clamp(powerAvailable/Math.max(1e-9,powerRequired),0,1);
+  const powerFactor=powerAvailable===null||!powerRequired?1:factoryClamp(powerAvailable/Math.max(1e-9,powerRequired),0,1);
   const waterRequired=read(asset?.waterM3PerDay??profile.waterM3PerDay);
   const waterAvailable=read(asset?.waterAvailableM3PerDay??asset?.utilities?.waterAvailableM3PerDay);
-  const waterFactor=waterAvailable===null||!waterRequired?1:clamp(waterAvailable/Math.max(1e-9,waterRequired),0,1);
+  const waterFactor=waterAvailable===null||!waterRequired?1:factoryClamp(waterAvailable/Math.max(1e-9,waterRequired),0,1);
   const status=String(asset?.status||'').toUpperCase();
   const statusFactor=['CLOSED','DECOMMISSIONED','SUSPENDED','TECHNOLOGY_LOCKED','UNDER_CONSTRUCTION','MAINTENANCE'].includes(status)?0:1;
-  const maintenanceFactor=clamp(read(asset?.maintenanceFactor)??1,0,1);
+  const maintenanceFactor=factoryClamp(read(asset?.maintenanceFactor)??1,0,1);
   return{capacity:nominalCapacity*workersFactor*powerFactor*waterFactor*statusFactor*maintenanceFactor,nominalCapacity,
     workersFactor,powerFactor,waterFactor,statusFactor,maintenanceFactor,capacityUnit:asset?.capacityUnit||profile.capacityUnit||null,
     capacityAuthority:explicit!==null?'FACTORY_ASSET_STATE':'SIMULATED_FACTORY_PROFILE',
