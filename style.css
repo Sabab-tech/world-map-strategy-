@@ -4461,7 +4461,7 @@ body.modal-open .ui-bottom-navigation {
     border-radius: 5px;
     color: #b9c9dc;
     font-size: 9px;
-    font-weight: 700;
+    font-weight: 750;
     letter-spacing: 0.035em;
     line-height: 1.4;
     overflow-wrap: anywhere;
@@ -4502,7 +4502,7 @@ body.modal-open .ui-bottom-navigation {
 .sc-list-heading {
     color: #91a9c5;
     font-size: 10px;
-    font-weight: 800;
+    font-weight: 850;
     letter-spacing: 0.065em;
     text-transform: uppercase;
     margin: 7px 0 0;
@@ -4607,7 +4607,7 @@ body.modal-open .ui-bottom-navigation {
     color: #f2f6fb;
     font-size: 15px;
     font-variant-numeric: tabular-nums;
-    font-weight: 800;
+    font-weight: 850;
     line-height: 1.3;
     overflow-wrap: anywhere;
 }
@@ -5342,7 +5342,6 @@ body.modal-open .ui-bottom-navigation {
         grid-template-columns: minmax(0, 1fr);
     }
 }
-
 
 /* ============================================================================
    EXECUTIVE CABINET OVERVIEW — readable typography, ordered points, clear notes
