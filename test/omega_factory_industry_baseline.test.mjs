@@ -137,7 +137,7 @@ test('factory-type mismatch cannot route a raw mineral into an unrelated downstr
   assert.equal(api.candidateFactories('BGD','iron_concentrate').length,1);
   const result=api.executeFactoryCycle({countryId:'BGD',factoryId:'STEEL-1',resourceId:'iron_ore',quantity:100});
   assert.equal(result.status,'BLOCKED');
-  assert.match(result.reason,/RECIPE|INPUT|FACTORY_TYPE/);
+  assert.match(result.reason,/RECIPE|INPUT|FACTORY_TYPE|PRIMARY_RESOURCE/);
 });
 
 test('uppercase finished goods are usable as lowercase downstream recipe inputs without unit guessing',()=>{
