@@ -124,3 +124,48 @@ test('runtime preserves a distinct live reserve balance and exposes both currenc
   assert.equal(runtime.getAccount('BGD').balanceUsd, 85, 'peg/intervention movement must reconcile through game time');
   assert.equal(runtime.getAccount('BGD').updatedTurn, 1);
 });
+
+test('foreign reserve runtime falls back to bundled country data when network fetch is unavailable', async () => {
+  const runtimeSource = await readFile(new URL('../omega_foreign_reserve_runtime_v1.js', import.meta.url), 'utf8');
+  const sampleProfiles = [
+    { name: 'Bangladesh', countryCode: 'BD', iso3: 'BGD', economyKey: 'BANGLADESH',
+      sourceValues: { currency_code: 'BDT', currency_name: 'Bangladeshi taka', reserves: 120 },
+      indicators: { foreignExchangeReservesUsd: 120 }, profileStatus: 'AVAILABLE' },
+    { name: 'Nigeria', countryCode: 'NG', iso3: 'NGA', economyKey: 'NIGERIA',
+      sourceValues: { currency_code: 'NGN', currency_name: 'Nigerian naira', reserves: 250 },
+      indicators: { foreignExchangeReservesUsd: 250 }, profileStatus: 'AVAILABLE' }
+  ];
+  const listeners = new Map();
+  const context = vm.createContext({
+    console,
+    CustomEvent: class CustomEvent { constructor(type, options) { this.type = type; this.detail = (options && options.detail) || {}; } },
+    addEventListener(type, callback) { const all = listeners.get(type) || []; all.push(callback); listeners.set(type, all); },
+    dispatchEvent(event) { for (const cb of listeners.get(event.type) || []) cb(event); return true; },
+    gameState: {
+      simulation: { turn: 7, playerCountryId: 'BD' },
+      economy: { BANGLADESH: { reserves: 120 }, NIGERIA: { reserves: 250 } },
+      finance: {}
+    }
+  });
+  assert.equal(typeof context.fetch, 'undefined', 'offline path must not have a network fetch function');
+  context.OmegaFinanceMinistry = {
+    init: async () => ({ initialized: true }),
+    getProfiles: () => sampleProfiles,
+    getPlayerCountry: () => sampleProfiles[0]
+  };
+  context.OmegaForexMonetaryEngine = {
+    getCurrencyCode: profile => profile?.sourceValues?.currency_code || null,
+    getRate: code => ({ USD: 1, BDT: 120, NGN: 1500 })[code] || null
+  };
+  vm.runInContext(runtimeSource, context, { filename: 'omega_foreign_reserve_runtime_v1.js' });
+  const runtime = context.OmegaForeignReserveRuntime;
+  const result = await runtime.init();
+  assert.equal(result.initialized, true);
+  assert.equal(result.registryStatus, 'PROFILE_FALLBACK_NO_REGISTRY_FETCH');
+  assert.equal(result.countryAreaCount, 2);
+  assert.equal(runtime.getAccount('BGD').balanceUsd, 120);
+  assert.equal(runtime.getAccount('BGD').referenceReservesUsd, 120);
+  assert.equal(runtime.getAccount('BGD').domesticCurrencyCode, 'BDT');
+  assert.equal(runtime.getAccount('NGA').balanceUsd, 250);
+  assert.equal(context.gameState.economy.BANGLADESH.reserves, 120);
+});
