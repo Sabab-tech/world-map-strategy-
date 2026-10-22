@@ -826,10 +826,59 @@
         const iconId = String(profile.iconId || 'industrial-production').replace(/[^a-z0-9-]/gi, '');
         const recipeIds = Array.isArray(profile.recipeIds) ? profile.recipeIds : [];
         const recipeCount = recipeIds.length || Object.values(catalog.processingRules || {}).filter(function (r) { return r && r.factoryType === type; }).length;
-        const recipeList = recipeIds.map(function (id) {
-          const recipe = recipes[id] || {};
-          return '<li><strong>' + esc(id) + '</strong> · ' + esc(Object.keys(recipe.inputs || {}).join(' + ')) + ' → ' +
-            esc(Object.keys(recipe.outputs || {}).join(', ')) + '</li>';
+        const recipeRows = [];
+        recipeIds.forEach(function (id) {
+          const recipe = recipes[id];
+          if (recipe) recipeRows.push({ id: id, recipe: recipe, requirementKey: id, kind: 'DOWNSTREAM' });
+        });
+        Object.entries(catalog.processingRules || {}).forEach(function (pair) {
+          if (!pair[1] || String(pair[1].factoryType || '').toUpperCase() !== type) return;
+          if (recipeRows.some(function (row) { return row.kind === 'PROCESSING' && row.id === pair[0]; })) return;
+          recipeRows.push({ id: pair[0], recipe: pair[1], requirementKey: 'PROCESSING:' + pair[0], kind: 'PROCESSING' });
+        });
+        const recipeList = recipeRows.map(function (entry) {
+          const id = entry.id, recipe = entry.recipe || {};
+          const requirements = network && typeof network.factoryProductionRequirements === 'function'
+            ? network.factoryProductionRequirements(type, entry.requirementKey) : null;
+          const capacity = Number(profile.defaultCapacityPerDay) || 0;
+          const inputs = recipe.inputs && typeof recipe.inputs === 'object' ? recipe.inputs : {};
+          const outputs = recipe.outputs && typeof recipe.outputs === 'object' ? recipe.outputs : {};
+          const inputUnit = recipe.inputUnit || 'SIMULATION_RESOURCE_UNIT';
+          const outputUnit = recipe.outputUnit || 'SIMULATION_RESOURCE_UNIT';
+          const dailyInputs = requirements && requirements.ratedDailyInputs ? requirements.ratedDailyInputs : Object.fromEntries(
+            Object.entries(inputs).map(function (pair) { return [pair[0], Number(pair[1]) * capacity]; }));
+          const dailyOutputs = requirements && requirements.ratedDailyOutputs ? requirements.ratedDailyOutputs : Object.fromEntries(
+            Object.entries(outputs).map(function (pair) { return [pair[0], Number(pair[1]) * capacity]; }));
+          const inputRows = Object.entries(inputs).map(function (pair) {
+            return esc(pair[0]) + ': ' + number(pair[1], ' ' + inputUnit);
+          }).join(', ') || 'NOT_RECORDED';
+          const outputRows = Object.entries(outputs).map(function (pair) {
+            return esc(pair[0]) + ': ' + number(pair[1], ' ' + outputUnit);
+          }).join(', ') || 'NOT_RECORDED';
+          const dailyInputRows = Object.entries(dailyInputs).map(function (pair) {
+            return esc(pair[0]) + ': ' + number(pair[1], ' ' + inputUnit + '/day');
+          }).join(', ') || 'NOT_RECORDED';
+          const dailyOutputRows = Object.entries(dailyOutputs).map(function (pair) {
+            return esc(pair[0]) + ': ' + number(pair[1], ' ' + outputUnit + '/day');
+          }).join(', ') || 'NOT_RECORDED';
+          const powerDaily = requirements && requirements.utilities ? requirements.utilities.electricityMWhPerDay :
+            (profile.utilities && profile.utilities.electricityMWhPerDay);
+          const waterDaily = requirements && requirements.utilities ? requirements.utilities.waterM3PerDay :
+            (profile.utilities && profile.utilities.waterM3PerDay);
+          const powerPerUnit = requirements && requirements.utilities ? requirements.utilities.electricityMWhPerProductionUnit :
+            (capacity > 0 && powerDaily != null ? Number(powerDaily) / capacity : null);
+          const waterPerUnit = requirements && requirements.utilities ? requirements.utilities.waterM3PerProductionUnit :
+            (capacity > 0 && waterDaily != null ? Number(waterDaily) / capacity : null);
+          const cycleMode = requirements && requirements.processing ? requirements.processing.runtimeTimingMode :
+            (catalog.factoryCatalogPolicy && catalog.factoryCatalogPolicy.recipeTimingRuntimeBehavior);
+          return '<li><strong>' + esc(id) + '</strong>' +
+            '<div class="omega-rescc-grid2">' +
+            kv('Inputs per production unit', inputRows) + kv('Outputs and by-products per production unit', outputRows) +
+            kv('Rated daily input at capacity', dailyInputRows) + kv('Rated daily output at capacity', dailyOutputRows) +
+            kv('Declared recipe cycle time', number(recipe.cycleDays, ' in-game days')) +
+            kv('Power per production unit (MWh)', number(powerPerUnit)) + kv('Water per production unit (m³)', number(waterPerUnit)) +
+            '</div><div class="omega-rescc-muted">' + esc(cycleMode || 'CYCLE_TIMING_MODE_NOT_RECORDED') +
+            ' · Quantity basis: ' + esc(recipe.quantityBasis || 'PER_SIMULATION_PRODUCTION_UNIT') + '</div></li>';
         }).join('');
         return '<article class="omega-rescc-factory-catalog-row"><div class="omega-rescc-factory-head"><svg class="omega-ui-icon omega-ui-icon--' + esc(iconId) + '" aria-hidden="true" viewBox="0 0 24 24"><use href="#omega-icon-' + esc(iconId) + '"></use></svg><strong>' + esc(profile.name || type) + '</strong><span class="omega-rescc-factory-type">' + esc(type) + '</span></div>' +
           '<div class="omega-rescc-grid2">' + kv('Build cost', number(profile.constructionCost, ' game units')) + kv('Build time', number(profile.constructionDays, ' days')) +
@@ -844,7 +893,7 @@
           kv('Technology', Array.isArray(profile.requiredTechnologyIds) && profile.requiredTechnologyIds.length ? profile.requiredTechnologyIds.join(', ') : 'No technology gate recorded') +
           kv('Recipes', recipeCount) + kv('Data authority', profile.authority || 'NOT_RECORDED') + '</div>' +
           (recipeList ? '<details class="omega-rescc-factory-recipes"><summary>Recipe details (' + recipeIds.length + ')</summary><ul>' + recipeList + '</ul></details>' : '') +
-          '<div class="omega-rescc-muted">Construction and utilities use explicit game-simulation values, not verified real-world plant data.</div></article>';
+          '<div class="omega-rescc-muted">Build cost, BOM, staffing, recipe ratios, capacity and utility use are simulation values, not certified plant engineering data. Declared cycle days are not yet enforced as delayed completion; current runtime can commit output synchronously.</div></article>';
       }).join('');
       return '<details class="omega-rescc-factory-category"><summary>' + esc(category.replace(/_/g, ' ')) + ' · ' + rows.length + ' factory types</summary>' + contents + '</details>';
     }).join('');

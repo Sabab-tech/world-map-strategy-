@@ -2669,6 +2669,89 @@ function reconcileFactoryEmployment(countryId){
     source:model.unemploymentSource,simulationOnly:true};
 }
 
+function factoryProductionRequirements(factoryType, recipeId){
+  const catalog=cat()||{},profiles=catalog.factoryProfiles||{},processing=catalog.processingRules||{},
+    downstream=catalog.downstreamFactoryRecipes||{};
+  const requestedType=String(factoryType||'').trim().toUpperCase();
+  let key=String(recipeId||'').trim(),resourceId=null,recipe=null,kind=null;
+  if(/^PROCESSING:/i.test(key)){resourceId=key.replace(/^PROCESSING:/i,'').trim();key=resourceId;}
+  if(key&&downstream[key]){recipe=downstream[key];kind='DOWNSTREAM';key=String(recipe.recipeId||key);}
+  else if(key&&processing[key]){resourceId=key;recipe=processing[key];kind='PROCESSING';}
+  if(!recipe&&!key){
+    const profile=profiles[requestedType]||{};
+    const preferred=profile.defaultRecipeId||((profile.recipeIds||[]).find(id=>downstream[id])||null);
+    if(preferred&&downstream[preferred]){key=preferred;recipe=downstream[preferred];kind='DOWNSTREAM';}
+    if(!recipe){
+      const found=Object.entries(processing).find(([,row])=>String(row?.factoryType||'').toUpperCase()===requestedType);
+      if(found){resourceId=found[0];key=found[0];recipe=found[1];kind='PROCESSING';}
+    }
+    if(!recipe){
+      const found=Object.entries(downstream).find(([,row])=>String(row?.factoryType||'').toUpperCase()===requestedType);
+      if(found){key=found[0];recipe=found[1];kind='DOWNSTREAM';}
+    }
+  }
+  const resolvedType=String(recipe?.factoryType||requestedType).trim().toUpperCase();
+  const profile=profiles[resolvedType];
+  if(!recipe||!profile)return{status:'NOT_FOUND',reason:!recipe?'FACTORY_RECIPE_NOT_FOUND':'FACTORY_PROFILE_NOT_FOUND',
+    factoryType:resolvedType,recipeId:key||null};
+  const capacity=num(profile.defaultCapacityPerDay);
+  if(capacity===null||capacity<=0)return{status:'BLOCKED',reason:'FACTORY_CAPACITY_NOT_RECORDED',
+    factoryType:resolvedType,recipeId:recipe.recipeId||key||null};
+  const inputs=recipe.inputs&&typeof recipe.inputs==='object'?recipe.inputs:{};
+  const outputs=recipe.outputs&&typeof recipe.outputs==='object'?recipe.outputs:{};
+  const scaleRows=(source,scale)=>{
+    const result={};
+    for(const [id,value] of Object.entries(source)){
+      const quantity=num(value);
+      result[id]=quantity===null?null:Number((quantity*scale).toFixed(6));
+    }
+    return result;
+  };
+  const utilities=profile.utilities&&typeof profile.utilities==='object'?profile.utilities:{};
+  const power=num(utilities.electricityMWhPerDay),water=num(utilities.waterM3PerDay);
+  const employment=profile.employment&&typeof profile.employment==='object'?profile.employment:{};
+  const workforce=profile.workforce&&typeof profile.workforce==='object'?profile.workforce:{};
+  return{
+    status:'READY',
+    contract:'OMEGA_FACTORY_PRODUCTION_REQUIREMENTS_V1',
+    factoryType:resolvedType,
+    factoryName:profile.name||resolvedType,
+    recipeId:recipe.recipeId||((kind==='PROCESSING')?'PROCESSING:'+resourceId:key),
+    recipeKind:kind,
+    resourceId:resourceId,
+    inputsPerProductionUnit:clone(inputs),
+    outputsPerProductionUnit:clone(outputs),
+    inputUnit:recipe.inputUnit||'SIMULATION_RESOURCE_UNIT',
+    outputUnit:recipe.outputUnit||'SIMULATION_RESOURCE_UNIT',
+    quantityBasis:recipe.quantityBasis||catalog.factoryCatalogPolicy?.quantityBasis||'PER_SIMULATION_PRODUCTION_UNIT',
+    ratedCapacityPerDay:capacity,
+    ratedDailyInputs:scaleRows(inputs,capacity),
+    ratedDailyOutputs:scaleRows(outputs,capacity),
+    processing:{cycleDays:num(recipe.cycleDays),cycleTimeUnit:recipe.cycleTimeUnit||catalog.factoryCatalogPolicy?.recipeTimeUnit||'IN_GAME_DAYS',
+      runtimeTimingMode:catalog.factoryCatalogPolicy?.recipeTimingRuntimeBehavior||'DECLARED_DURATION_ONLY_SYNCHRONOUS_COMPLETION',
+      durationEnforced:false},
+    workforce:{
+      operators:num(workforce.operators),engineers:num(workforce.engineers),
+      coreOperatingCrew:num(employment.coreOperatingCrew)??((num(workforce.operators)||0)+(num(workforce.engineers)||0)),
+      additionalDirectStaffSlots:num(employment.additionalDirectStaffSlots),totalDirectJobs:num(employment.jobsPerFactory),
+      jobBreakdown:clone(employment.jobBreakdown||{})
+    },
+    utilities:{
+      electricityMWhPerDay:power,waterM3PerDay:water,
+      electricityMWhPerProductionUnit:power===null?null:Number((power/capacity).toFixed(6)),
+      waterM3PerProductionUnit:water===null?null:Number((water/capacity).toFixed(6))
+    },
+    construction:{
+      cost:num(profile.constructionCost),timeDays:num(profile.constructionDays),materials:clone(profile.constructionMaterials||{}),
+      materialUnit:profile.constructionMaterialUnit||'SIMULATION_RESOURCE_UNIT',
+      requiredInfrastructure:clone(profile.requiredInfrastructure||[]),requiredTechnologyIds:clone(profile.requiredTechnologyIds||[])
+    },
+    authority:recipe.recipeAuthority||recipe.authority||'SIMULATED_GAMEPLAY_RULE',
+    profileAuthority:profile.authority||'NOT_RECORDED',
+    simulationOnly:true
+  };
+}
+
 function factoryCatalogDiagnostics(){
   const catalog=cat()||{},profiles=catalog.factoryProfiles||{},downstream=catalog.downstreamFactoryRecipes||{};
   const processing=processRules(),profileTypes=new Set(Object.keys(profiles));
@@ -2703,11 +2786,25 @@ function factoryCatalogDiagnostics(){
       issues.push({code:'FACTORY_EMPLOYMENT_ROLE_BREAKDOWN_MISMATCH',factoryType:type,jobMixTotal,jobsPerFactory:employment?.jobsPerFactory});
     for(const tech of profile?.requiredTechnologyIds||[])if(!techRules()[String(tech).toUpperCase()])issues.push({code:'FACTORY_TECHNOLOGY_UNDEFINED',factoryType:type,technologyId:tech});
   }
+  for(const [resourceId,rule] of Object.entries(processing)){
+    if(!(num(rule?.cycleDays)>0))issues.push({code:'PROCESSING_CYCLE_TIME_INVALID',resourceId,cycleDays:rule?.cycleDays});
+    if(rule?.quantityBasis!=='PER_SIMULATION_PRODUCTION_UNIT'||rule?.cycleTimeUnit!=='IN_GAME_DAYS')
+      issues.push({code:'PROCESSING_REQUIREMENT_CONTRACT_MISSING',resourceId});
+    if(rule?.requiresAllInputs!==true||rule?.missingInputPolicy!=='BLOCK_CYCLE')
+      issues.push({code:'PROCESSING_ATOMIC_INPUT_POLICY_MISSING',resourceId});
+    for(const [inputId,coefficient] of Object.entries(rule?.inputs||{}))
+      if(!tok(inputId)||!(num(coefficient)>0))issues.push({code:'PROCESSING_INPUT_COEFFICIENT_INVALID',resourceId,inputId,coefficient});
+    for(const [outputId,coefficient] of Object.entries(rule?.outputs||{}))
+      if(!tok(outputId)||!(num(coefficient)>0))issues.push({code:'PROCESSING_OUTPUT_COEFFICIENT_INVALID',resourceId,outputId,coefficient});
+  }
   for(const type of new Set(Object.values(processing).map(x=>String(x?.factoryType||'').toUpperCase()).filter(Boolean)))
     if(!profileTypes.has(type))issues.push({code:'PROCESSING_FACTORY_PROFILE_MISSING',factoryType:type});
   for(const [id,recipe] of Object.entries(downstream)){
     const inputs=recipe?.inputs||{},outputs=recipe?.outputs||{};
     if(String(recipe?.recipeId||'')!==id)issues.push({code:'RECIPE_ID_KEY_MISMATCH',recipeId:id});
+    if(!(num(recipe?.cycleDays)>0))issues.push({code:'DOWNSTREAM_CYCLE_TIME_INVALID',recipeId:id,cycleDays:recipe?.cycleDays});
+    if(recipe?.quantityBasis!=='PER_SIMULATION_PRODUCTION_UNIT'||recipe?.cycleTimeUnit!=='IN_GAME_DAYS')
+      issues.push({code:'DOWNSTREAM_REQUIREMENT_CONTRACT_MISSING',recipeId:id});
     if(!profiles[String(recipe?.factoryType||'').toUpperCase()])issues.push({code:'DOWNSTREAM_FACTORY_PROFILE_MISSING',recipeId:id,factoryType:recipe?.factoryType});
     if(Object.keys(inputs).length<2||Object.keys(outputs).length<1)issues.push({code:'DOWNSTREAM_RECIPE_SHAPE_INVALID',recipeId:id});
     for(const [resourceId,coefficient] of Object.entries(inputs))if(!tok(resourceId)||!(num(coefficient)>0))issues.push({code:'RECIPE_INPUT_COEFFICIENT_INVALID',recipeId:id,resourceId,coefficient});
@@ -2773,7 +2870,7 @@ function gameplayPipelineDiagnostics(){
     treasuryReceipts:perCountry.reduce((n,x)=>n+x.treasuryReceipts,0),blocked:perCountry.reduce((n,x)=>n+x.blocked,0),perCountry};
 }
 function api(){
-  return Object.freeze({VERSION,loadCatalog,planExtraction,planShipment,dispatchShipment,dispatchFactoryInputShipment,advanceShipments,quoteMineProject,startMineProject,startFactoryProject,startInfrastructureProject,startPadmaCorridorProject,advanceProjects,startTechnologyProject,executeFactoryCycle,executeSitePipeline,diagnostics,gameplayPipelineDiagnostics,factoryCatalogDiagnostics,factoryUtilityDiagnostics,factoryConstructionMaterialQuote,reconcileFactoryEmployment,normalizeInfrastructure,candidateFactories,recipeFor,processPendingFactoryInputs,resourceMethod,buildRoute});
+  return Object.freeze({VERSION,loadCatalog,planExtraction,planShipment,dispatchShipment,dispatchFactoryInputShipment,advanceShipments,quoteMineProject,startMineProject,startFactoryProject,startInfrastructureProject,startPadmaCorridorProject,advanceProjects,startTechnologyProject,executeFactoryCycle,executeSitePipeline,diagnostics,gameplayPipelineDiagnostics,factoryCatalogDiagnostics,factoryProductionRequirements,factoryUtilityDiagnostics,factoryConstructionMaterialQuote,reconcileFactoryEmployment,normalizeInfrastructure,candidateFactories,recipeFor,processPendingFactoryInputs,resourceMethod,buildRoute});
 }
 g.Omega=g.Omega||{};g.Omega.ResourceIndustrialNetwork=api();g.OmegaResourceIndustrialNetwork=g.Omega.ResourceIndustrialNetwork;
 

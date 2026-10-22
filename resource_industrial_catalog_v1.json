@@ -551,7 +551,14 @@
         "COAL_CONCENTRATE": 0.82,
         "COAL_REJECT": 0.18
       },
-      "cycleDays": 1
+      "cycleDays": 1,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
+      "cycleTimeUnit": "IN_GAME_DAYS",
+      "requiresAllInputs": true,
+      "missingInputPolicy": "BLOCK_CYCLE",
+      "simulationOnly": true
     },
     "iron_ore": {
       "factoryType": "ORE_BENEFICIATION_PLANT",
@@ -562,7 +569,14 @@
         "IRON_CONCENTRATE": 0.67,
         "ORE_TAILINGS": 0.33
       },
-      "cycleDays": 1
+      "cycleDays": 1,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
+      "cycleTimeUnit": "IN_GAME_DAYS",
+      "requiresAllInputs": true,
+      "missingInputPolicy": "BLOCK_CYCLE",
+      "simulationOnly": true
     },
     "copper": {
       "factoryType": "COPPER_CONCENTRATOR",
@@ -573,7 +587,14 @@
         "COPPER_CONCENTRATE": 0.3,
         "TAILINGS": 0.7
       },
-      "cycleDays": 1
+      "cycleDays": 1,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
+      "cycleTimeUnit": "IN_GAME_DAYS",
+      "requiresAllInputs": true,
+      "missingInputPolicy": "BLOCK_CYCLE",
+      "simulationOnly": true
     },
     "gold": {
       "factoryType": "GOLD_PROCESSING_PLANT",
@@ -584,7 +605,14 @@
         "DORÉ": 0.005,
         "TAILINGS": 0.995
       },
-      "cycleDays": 2
+      "cycleDays": 2,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
+      "cycleTimeUnit": "IN_GAME_DAYS",
+      "requiresAllInputs": true,
+      "missingInputPolicy": "BLOCK_CYCLE",
+      "simulationOnly": true
     },
     "silver": {
       "factoryType": "SILVER_CONCENTRATOR",
@@ -595,7 +623,14 @@
         "SILVER_CONCENTRATE": 0.72,
         "TAILINGS": 0.28
       },
-      "cycleDays": 2
+      "cycleDays": 2,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
+      "cycleTimeUnit": "IN_GAME_DAYS",
+      "requiresAllInputs": true,
+      "missingInputPolicy": "BLOCK_CYCLE",
+      "simulationOnly": true
     },
     "bauxite": {
       "factoryType": "ALUMINA_REFINERY",
@@ -606,7 +641,14 @@
         "ALUMINA": 0.45,
         "BAUXITE_RESIDUE": 0.55
       },
-      "cycleDays": 2
+      "cycleDays": 2,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
+      "cycleTimeUnit": "IN_GAME_DAYS",
+      "requiresAllInputs": true,
+      "missingInputPolicy": "BLOCK_CYCLE",
+      "simulationOnly": true
     },
     "nickel": {
       "factoryType": "NICKEL_PROCESSING_PLANT",
@@ -617,7 +659,14 @@
         "NICKEL_CONCENTRATE": 0.12,
         "TAILINGS": 0.88
       },
-      "cycleDays": 2
+      "cycleDays": 2,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
+      "cycleTimeUnit": "IN_GAME_DAYS",
+      "requiresAllInputs": true,
+      "missingInputPolicy": "BLOCK_CYCLE",
+      "simulationOnly": true
     },
     "cobalt": {
       "factoryType": "COBALT_REFINERY",
@@ -628,7 +677,14 @@
         "COBALT_HYDROXIDE": 0.18,
         "RESIDUE": 0.82
       },
-      "cycleDays": 2
+      "cycleDays": 2,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
+      "cycleTimeUnit": "IN_GAME_DAYS",
+      "requiresAllInputs": true,
+      "missingInputPolicy": "BLOCK_CYCLE",
+      "simulationOnly": true
     },
     "lithium": {
       "factoryType": "LITHIUM_CONVERSION_PLANT",
@@ -639,7 +695,14 @@
         "LITHIUM_CARBONATE_OR_HYDROXIDE": 0.55,
         "RESIDUE": 0.45
       },
-      "cycleDays": 3
+      "cycleDays": 3,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
+      "cycleTimeUnit": "IN_GAME_DAYS",
+      "requiresAllInputs": true,
+      "missingInputPolicy": "BLOCK_CYCLE",
+      "simulationOnly": true
     },
     "crude_oil": {
       "factoryType": "REFINERY",
@@ -654,7 +717,14 @@
         "HEAVY_FUEL_OIL": 0.08,
         "OTHER_REFINERY_PRODUCTS": 0.15
       },
-      "cycleDays": 1
+      "cycleDays": 1,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
+      "cycleTimeUnit": "IN_GAME_DAYS",
+      "requiresAllInputs": true,
+      "missingInputPolicy": "BLOCK_CYCLE",
+      "simulationOnly": true
     },
     "natural_gas": {
       "factoryType": "GAS_PROCESSING_PLANT",
@@ -666,7 +736,14 @@
         "NGL": 0.07,
         "LOSS": 0.05
       },
-      "cycleDays": 1
+      "cycleDays": 1,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
+      "cycleTimeUnit": "IN_GAME_DAYS",
+      "requiresAllInputs": true,
+      "missingInputPolicy": "BLOCK_CYCLE",
+      "simulationOnly": true
     },
     "uranium": {
       "factoryType": "URANIUM_MILL",
@@ -677,7 +754,14 @@
         "YELLOWCAKE": 0.09,
         "MILL_TAILINGS": 0.91
       },
-      "cycleDays": 2
+      "cycleDays": 2,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
+      "cycleTimeUnit": "IN_GAME_DAYS",
+      "requiresAllInputs": true,
+      "missingInputPolicy": "BLOCK_CYCLE",
+      "simulationOnly": true
     },
     "phosphate": {
       "factoryType": "PHOSPHATE_BENEFICIATION_PLANT",
@@ -688,7 +772,14 @@
         "PHOSPHATE_CONCENTRATE": 0.72,
         "TAILINGS": 0.28
       },
-      "cycleDays": 1
+      "cycleDays": 1,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
+      "cycleTimeUnit": "IN_GAME_DAYS",
+      "requiresAllInputs": true,
+      "missingInputPolicy": "BLOCK_CYCLE",
+      "simulationOnly": true
     },
     "potash": {
       "factoryType": "POTASH_PROCESSING_PLANT",
@@ -699,7 +790,14 @@
         "MOP_POTASH": 0.72,
         "SALT_TAILINGS": 0.28
       },
-      "cycleDays": 1
+      "cycleDays": 1,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
+      "cycleTimeUnit": "IN_GAME_DAYS",
+      "requiresAllInputs": true,
+      "missingInputPolicy": "BLOCK_CYCLE",
+      "simulationOnly": true
     },
     "graphite": {
       "factoryType": "GRAPHITE_CONCENTRATOR",
@@ -710,7 +808,14 @@
         "GRAPHITE_CONCENTRATE": 0.15,
         "TAILINGS": 0.85
       },
-      "cycleDays": 1
+      "cycleDays": 1,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
+      "cycleTimeUnit": "IN_GAME_DAYS",
+      "requiresAllInputs": true,
+      "missingInputPolicy": "BLOCK_CYCLE",
+      "simulationOnly": true
     },
     "manganese": {
       "factoryType": "MANGANESE_BENEFICIATION_PLANT",
@@ -721,7 +826,14 @@
         "MANGANESE_CONCENTRATE": 0.6,
         "TAILINGS": 0.4
       },
-      "cycleDays": 1
+      "cycleDays": 1,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
+      "cycleTimeUnit": "IN_GAME_DAYS",
+      "requiresAllInputs": true,
+      "missingInputPolicy": "BLOCK_CYCLE",
+      "simulationOnly": true
     },
     "chromite": {
       "factoryType": "CHROMITE_CONCENTRATOR",
@@ -732,7 +844,14 @@
         "CHROMITE_CONCENTRATE": 0.35,
         "TAILINGS": 0.65
       },
-      "cycleDays": 1
+      "cycleDays": 1,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
+      "cycleTimeUnit": "IN_GAME_DAYS",
+      "requiresAllInputs": true,
+      "missingInputPolicy": "BLOCK_CYCLE",
+      "simulationOnly": true
     },
     "zinc": {
       "factoryType": "ZINC_CONCENTRATOR",
@@ -743,7 +862,14 @@
         "ZINC_CONCENTRATE": 0.25,
         "TAILINGS": 0.75
       },
-      "cycleDays": 2
+      "cycleDays": 2,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
+      "cycleTimeUnit": "IN_GAME_DAYS",
+      "requiresAllInputs": true,
+      "missingInputPolicy": "BLOCK_CYCLE",
+      "simulationOnly": true
     },
     "tin": {
       "factoryType": "TIN_CONCENTRATOR",
@@ -754,7 +880,14 @@
         "TIN_CONCENTRATE": 0.25,
         "TAILINGS": 0.75
       },
-      "cycleDays": 1
+      "cycleDays": 1,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
+      "cycleTimeUnit": "IN_GAME_DAYS",
+      "requiresAllInputs": true,
+      "missingInputPolicy": "BLOCK_CYCLE",
+      "simulationOnly": true
     },
     "tungsten": {
       "factoryType": "TUNGSTEN_CONCENTRATOR",
@@ -765,7 +898,14 @@
         "TUNGSTEN_CONCENTRATE": 0.08,
         "TAILINGS": 0.92
       },
-      "cycleDays": 2
+      "cycleDays": 2,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
+      "cycleTimeUnit": "IN_GAME_DAYS",
+      "requiresAllInputs": true,
+      "missingInputPolicy": "BLOCK_CYCLE",
+      "simulationOnly": true
     },
     "platinum": {
       "factoryType": "PGM_CONCENTRATOR",
@@ -776,7 +916,14 @@
         "PGM_CONCENTRATE": 0.05,
         "TAILINGS": 0.95
       },
-      "cycleDays": 2
+      "cycleDays": 2,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
+      "cycleTimeUnit": "IN_GAME_DAYS",
+      "requiresAllInputs": true,
+      "missingInputPolicy": "BLOCK_CYCLE",
+      "simulationOnly": true
     },
     "diamond": {
       "factoryType": "DIAMOND_RECOVERY_PLANT",
@@ -787,7 +934,14 @@
         "SORTED_DIAMONDS": 0.001,
         "GRAVEL_TAILINGS": 0.999
       },
-      "cycleDays": 2
+      "cycleDays": 2,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
+      "cycleTimeUnit": "IN_GAME_DAYS",
+      "requiresAllInputs": true,
+      "missingInputPolicy": "BLOCK_CYCLE",
+      "simulationOnly": true
     },
     "rare_earth": {
       "factoryType": "RARE_EARTH_BENEFICIATION_PLANT",
@@ -798,7 +952,14 @@
         "RARE_EARTH_CONCENTRATE": 0.08,
         "TAILINGS": 0.92
       },
-      "cycleDays": 2
+      "cycleDays": 2,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
+      "cycleTimeUnit": "IN_GAME_DAYS",
+      "requiresAllInputs": true,
+      "missingInputPolicy": "BLOCK_CYCLE",
+      "simulationOnly": true
     },
     "rutile": {
       "factoryType": "MINERAL_SANDS_PLANT",
@@ -809,7 +970,14 @@
         "UPGRADED_RUTILE": 0.85,
         "Tailings": 0.15
       },
-      "cycleDays": 1
+      "cycleDays": 1,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
+      "cycleTimeUnit": "IN_GAME_DAYS",
+      "requiresAllInputs": true,
+      "missingInputPolicy": "BLOCK_CYCLE",
+      "simulationOnly": true
     },
     "ilmenite": {
       "factoryType": "MINERAL_SANDS_PLANT",
@@ -820,7 +988,14 @@
         "TITANIUM_FEED": 0.55,
         "Tailings": 0.45
       },
-      "cycleDays": 1
+      "cycleDays": 1,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
+      "cycleTimeUnit": "IN_GAME_DAYS",
+      "requiresAllInputs": true,
+      "missingInputPolicy": "BLOCK_CYCLE",
+      "simulationOnly": true
     },
     "limestone": {
       "factoryType": "CEMENT_LIMESTONE_PLANT",
@@ -831,7 +1006,14 @@
         "CEMENT_FEED": 0.95,
         "QUARRY_LOSS": 0.05
       },
-      "cycleDays": 1
+      "cycleDays": 1,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
+      "cycleTimeUnit": "IN_GAME_DAYS",
+      "requiresAllInputs": true,
+      "missingInputPolicy": "BLOCK_CYCLE",
+      "simulationOnly": true
     },
     "gypsum": {
       "factoryType": "GYPSUM_PROCESSING_PLANT",
@@ -842,7 +1024,14 @@
         "CALCINED_GYPSUM": 0.78,
         "LOSS": 0.22
       },
-      "cycleDays": 1
+      "cycleDays": 1,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
+      "cycleTimeUnit": "IN_GAME_DAYS",
+      "requiresAllInputs": true,
+      "missingInputPolicy": "BLOCK_CYCLE",
+      "simulationOnly": true
     },
     "marble": {
       "factoryType": "STONE_PROCESSING_PLANT",
@@ -853,7 +1042,14 @@
         "MARBLE_BLOCK": 0.9,
         "SAWING_LOSS": 0.1
       },
-      "cycleDays": 2
+      "cycleDays": 2,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
+      "cycleTimeUnit": "IN_GAME_DAYS",
+      "requiresAllInputs": true,
+      "missingInputPolicy": "BLOCK_CYCLE",
+      "simulationOnly": true
     },
     "granite": {
       "factoryType": "STONE_PROCESSING_PLANT",
@@ -864,7 +1060,14 @@
         "GRANITE_BLOCK": 0.9,
         "SAWING_LOSS": 0.1
       },
-      "cycleDays": 2
+      "cycleDays": 2,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
+      "cycleTimeUnit": "IN_GAME_DAYS",
+      "requiresAllInputs": true,
+      "missingInputPolicy": "BLOCK_CYCLE",
+      "simulationOnly": true
     },
     "silica_sand": {
       "factoryType": "GLASS_SILICA_PLANT",
@@ -875,7 +1078,14 @@
         "GLASS_SILICA_FEED": 0.93,
         "LOSS": 0.07
       },
-      "cycleDays": 1
+      "cycleDays": 1,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
+      "cycleTimeUnit": "IN_GAME_DAYS",
+      "requiresAllInputs": true,
+      "missingInputPolicy": "BLOCK_CYCLE",
+      "simulationOnly": true
     },
     "construction_aggregate": {
       "factoryType": "AGGREGATE_CRUSHING_PLANT",
@@ -886,7 +1096,14 @@
         "GRADED_AGGREGATE": 0.97,
         "LOSS": 0.03
       },
-      "cycleDays": 1
+      "cycleDays": 1,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
+      "cycleTimeUnit": "IN_GAME_DAYS",
+      "requiresAllInputs": true,
+      "missingInputPolicy": "BLOCK_CYCLE",
+      "simulationOnly": true
     },
     "basalt": {
       "factoryType": "AGGREGATE_CRUSHING_PLANT",
@@ -897,7 +1114,14 @@
         "BASALT_AGGREGATE": 0.96,
         "LOSS": 0.04
       },
-      "cycleDays": 1
+      "cycleDays": 1,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
+      "cycleTimeUnit": "IN_GAME_DAYS",
+      "requiresAllInputs": true,
+      "missingInputPolicy": "BLOCK_CYCLE",
+      "simulationOnly": true
     },
     "salt": {
       "factoryType": "SALT_REFINERY",
@@ -908,7 +1132,14 @@
         "REFINED_SALT": 0.9,
         "BRINE_LOSS": 0.1
       },
-      "cycleDays": 1
+      "cycleDays": 1,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
+      "cycleTimeUnit": "IN_GAME_DAYS",
+      "requiresAllInputs": true,
+      "missingInputPolicy": "BLOCK_CYCLE",
+      "simulationOnly": true
     },
     "dolomite": {
       "factoryType": "DOLOMITE_PROCESSING_PLANT",
@@ -919,7 +1150,14 @@
         "DOLOMITE_PRODUCT": 0.9,
         "LOSS": 0.1
       },
-      "cycleDays": 1
+      "cycleDays": 1,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
+      "cycleTimeUnit": "IN_GAME_DAYS",
+      "requiresAllInputs": true,
+      "missingInputPolicy": "BLOCK_CYCLE",
+      "simulationOnly": true
     },
     "magnesite": {
       "factoryType": "MAGNESIA_PLANT",
@@ -930,7 +1168,14 @@
         "MAGNESIA": 0.62,
         "LOSS": 0.38
       },
-      "cycleDays": 2
+      "cycleDays": 2,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
+      "cycleTimeUnit": "IN_GAME_DAYS",
+      "requiresAllInputs": true,
+      "missingInputPolicy": "BLOCK_CYCLE",
+      "simulationOnly": true
     },
     "oil_shale": {
       "factoryType": "OIL_SHALE_RETORT",
@@ -942,7 +1187,14 @@
         "SHALE_GAS": 0.04,
         "SOLID_RESIDUE": 0.88
       },
-      "cycleDays": 2
+      "cycleDays": 2,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
+      "cycleTimeUnit": "IN_GAME_DAYS",
+      "requiresAllInputs": true,
+      "missingInputPolicy": "BLOCK_CYCLE",
+      "simulationOnly": true
     },
     "boron": {
       "factoryType": "BORATE_PROCESSING_PLANT",
@@ -953,7 +1205,14 @@
         "BORIC_ACID_OR_BORAX": 0.52,
         "RESIDUE": 0.48
       },
-      "cycleDays": 2
+      "cycleDays": 2,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
+      "cycleTimeUnit": "IN_GAME_DAYS",
+      "requiresAllInputs": true,
+      "missingInputPolicy": "BLOCK_CYCLE",
+      "simulationOnly": true
     },
     "niobium": {
       "factoryType": "NIOBIUM_CONCENTRATION_PLANT",
@@ -964,7 +1223,14 @@
         "NIOBIUM_CONCENTRATE": 0.72,
         "TAILINGS": 0.28
       },
-      "cycleDays": 2
+      "cycleDays": 2,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
+      "cycleTimeUnit": "IN_GAME_DAYS",
+      "requiresAllInputs": true,
+      "missingInputPolicy": "BLOCK_CYCLE",
+      "simulationOnly": true
     },
     "ruby": {
       "factoryType": "GEMSTONE_SORTING_PLANT",
@@ -975,7 +1241,14 @@
         "SORTED_RUBY_ROUGH": 0.2,
         "GEMSTONE_WASTE": 0.8
       },
-      "cycleDays": 2
+      "cycleDays": 2,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
+      "cycleTimeUnit": "IN_GAME_DAYS",
+      "requiresAllInputs": true,
+      "missingInputPolicy": "BLOCK_CYCLE",
+      "simulationOnly": true
     },
     "diatomite": {
       "factoryType": "DIATOMITE_PROCESSING_PLANT",
@@ -987,7 +1260,14 @@
         "PROCESSING_RESIDUE": 0.15
       },
       "cycleDays": 2,
-      "authority": "SIMULATED_GAMEPLAY_RULE"
+      "authority": "SIMULATED_GAMEPLAY_RULE",
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
+      "cycleTimeUnit": "IN_GAME_DAYS",
+      "requiresAllInputs": true,
+      "missingInputPolicy": "BLOCK_CYCLE",
+      "simulationOnly": true
     },
     "coral_aggregate": {
       "factoryType": "AGGREGATE_CRUSHING_PLANT",
@@ -999,7 +1279,14 @@
         "PROCESSING_RESIDUE": 0.05
       },
       "cycleDays": 1,
-      "authority": "SIMULATED_GAMEPLAY_RULE"
+      "authority": "SIMULATED_GAMEPLAY_RULE",
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
+      "cycleTimeUnit": "IN_GAME_DAYS",
+      "requiresAllInputs": true,
+      "missingInputPolicy": "BLOCK_CYCLE",
+      "simulationOnly": true
     }
   },
   "transportModes": {
@@ -1974,7 +2261,12 @@
       "ratePolicy": "UPDATE_UNEMPLOYMENT_RATE_ONLY_WHEN_LABOUR_FORCE_IS_KNOWN",
       "roleAllocationVersion": "SIMULATED_FACTORY_ROLE_DISTRIBUTION_V1",
       "jobScope": "Direct jobs inside the factory asset, including operators, engineers, maintenance, logistics, quality, administration, safety, and support roles."
-    }
+    },
+    "productionRequirementContract": "OMEGA_FACTORY_PRODUCTION_REQUIREMENTS_V1",
+    "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
+    "recipeTimeUnit": "IN_GAME_DAYS",
+    "recipeTimingRuntimeBehavior": "DECLARED_DURATION_ONLY_SYNCHRONOUS_COMPLETION",
+    "recipeTimingNote": "cycleDays is a nominal gameplay duration. Current factory executor can commit output synchronously; it is not yet a multi-turn completion scheduler."
   },
   "factoryProfiles": {
     "AGGREGATE_CRUSHING_PLANT": {
@@ -5650,7 +5942,9 @@
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
       "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
+      "cycleTimeUnit": "IN_GAME_DAYS"
     },
     "NONFERROUS_COPPER_ROUTE_V1": {
       "recipeId": "NONFERROUS_COPPER_ROUTE_V1",
@@ -5674,7 +5968,9 @@
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
       "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
+      "cycleTimeUnit": "IN_GAME_DAYS"
     },
     "NONFERROUS_ALUMINUM_ROUTE_V1": {
       "recipeId": "NONFERROUS_ALUMINUM_ROUTE_V1",
@@ -5697,7 +5993,9 @@
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
       "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
+      "cycleTimeUnit": "IN_GAME_DAYS"
     },
     "PETROCHEMICAL_POLYMER_ROUTE_V1": {
       "recipeId": "PETROCHEMICAL_POLYMER_ROUTE_V1",
@@ -5722,7 +6020,9 @@
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
       "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
+      "cycleTimeUnit": "IN_GAME_DAYS"
     },
     "FERTILIZER_ROUTE_V1": {
       "recipeId": "FERTILIZER_ROUTE_V1",
@@ -5745,7 +6045,9 @@
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
       "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
+      "cycleTimeUnit": "IN_GAME_DAYS"
     },
     "INDUSTRIAL_CHEMICALS_ROUTE_V1": {
       "recipeId": "INDUSTRIAL_CHEMICALS_ROUTE_V1",
@@ -5770,7 +6072,9 @@
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
       "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
+      "cycleTimeUnit": "IN_GAME_DAYS"
     },
     "CEMENT_CONCRETE_ROUTE_V1": {
       "recipeId": "CEMENT_CONCRETE_ROUTE_V1",
@@ -5793,7 +6097,9 @@
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
       "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
+      "cycleTimeUnit": "IN_GAME_DAYS"
     },
     "GLASS_CERAMICS_ROUTE_V1": {
       "recipeId": "GLASS_CERAMICS_ROUTE_V1",
@@ -5817,7 +6123,9 @@
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
       "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
+      "cycleTimeUnit": "IN_GAME_DAYS"
     },
     "PAPER_PACKAGING_ROUTE_V1": {
       "recipeId": "PAPER_PACKAGING_ROUTE_V1",
@@ -5839,7 +6147,9 @@
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
       "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
+      "cycleTimeUnit": "IN_GAME_DAYS"
     },
     "FOOD_PROCESSING_ROUTE_V1": {
       "recipeId": "FOOD_PROCESSING_ROUTE_V1",
@@ -5863,7 +6173,9 @@
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
       "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
+      "cycleTimeUnit": "IN_GAME_DAYS"
     },
     "TEXTILE_GARMENT_ROUTE_V1": {
       "recipeId": "TEXTILE_GARMENT_ROUTE_V1",
@@ -5888,7 +6200,9 @@
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
       "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
+      "cycleTimeUnit": "IN_GAME_DAYS"
     },
     "INDUSTRIAL_MACHINERY_ROUTE_V1": {
       "recipeId": "INDUSTRIAL_MACHINERY_ROUTE_V1",
@@ -5913,7 +6227,9 @@
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
       "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
+      "cycleTimeUnit": "IN_GAME_DAYS"
     },
     "GRID_EQUIPMENT_ROUTE_V1": {
       "recipeId": "GRID_EQUIPMENT_ROUTE_V1",
@@ -5939,7 +6255,9 @@
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
       "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
+      "cycleTimeUnit": "IN_GAME_DAYS"
     },
     "SEMICONDUCTOR_ELECTRONICS_ROUTE_V1": {
       "recipeId": "SEMICONDUCTOR_ELECTRONICS_ROUTE_V1",
@@ -5967,7 +6285,9 @@
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
       "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
+      "cycleTimeUnit": "IN_GAME_DAYS"
     },
     "BATTERY_STORAGE_ROUTE_V1": {
       "recipeId": "BATTERY_STORAGE_ROUTE_V1",
@@ -5993,7 +6313,9 @@
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
       "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
+      "cycleTimeUnit": "IN_GAME_DAYS"
     },
     "VEHICLE_ASSEMBLY_ROUTE_V1": {
       "recipeId": "VEHICLE_ASSEMBLY_ROUTE_V1",
@@ -6020,7 +6342,9 @@
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
       "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
+      "cycleTimeUnit": "IN_GAME_DAYS"
     },
     "SHIP_RAIL_EQUIPMENT_ROUTE_V1": {
       "recipeId": "SHIP_RAIL_EQUIPMENT_ROUTE_V1",
@@ -6046,7 +6370,9 @@
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
       "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
+      "cycleTimeUnit": "IN_GAME_DAYS"
     },
     "AEROSPACE_EQUIPMENT_ROUTE_V1": {
       "recipeId": "AEROSPACE_EQUIPMENT_ROUTE_V1",
@@ -6073,7 +6399,9 @@
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
       "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
+      "cycleTimeUnit": "IN_GAME_DAYS"
     },
     "PHARMA_MEDICAL_ROUTE_V1": {
       "recipeId": "PHARMA_MEDICAL_ROUTE_V1",
@@ -6098,7 +6426,9 @@
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
       "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
+      "cycleTimeUnit": "IN_GAME_DAYS"
     },
     "DEFENSE_EQUIPMENT_ROUTE_V1": {
       "recipeId": "DEFENSE_EQUIPMENT_ROUTE_V1",
@@ -6124,7 +6454,9 @@
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
       "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
+      "cycleTimeUnit": "IN_GAME_DAYS"
     },
     "RECYCLING_CIRCULAR_ROUTE_V1": {
       "recipeId": "RECYCLING_CIRCULAR_ROUTE_V1",
@@ -6152,7 +6484,9 @@
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
       "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
+      "cycleTimeUnit": "IN_GAME_DAYS"
     },
     "SILICON_WAFER_PRODUCTION_ROUTE_V1": {
       "recipeId": "SILICON_WAFER_PRODUCTION_ROUTE_V1",
@@ -6176,7 +6510,9 @@
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
       "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
+      "cycleTimeUnit": "IN_GAME_DAYS"
     }
   },
   "factoryCatalogSummary": {
@@ -6192,7 +6528,11 @@
     "employmentModelVersion": "SIMULATED_FACTORY_EMPLOYMENT_V1",
     "constructionMaterialsVersion": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
     "profilesWithEmploymentRoleBreakdown": 58,
-    "employmentRoleDistributionVersion": "SIMULATED_FACTORY_ROLE_DISTRIBUTION_V1"
+    "employmentRoleDistributionVersion": "SIMULATED_FACTORY_ROLE_DISTRIBUTION_V1",
+    "productionRequirementContract": "OMEGA_FACTORY_PRODUCTION_REQUIREMENTS_V1",
+    "productionRequirementRecipeCount": 63,
+    "recipeCycleTimeUnit": "IN_GAME_DAYS",
+    "cycleTimingRuntimeBehavior": "DECLARED_DURATION_ONLY_SYNCHRONOUS_COMPLETION"
   },
   "externalInputSources": {
     "grain": {

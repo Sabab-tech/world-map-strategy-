@@ -638,3 +638,73 @@ test('completed power and water projects add an auditable supply ledger for the 
   assert.equal(balance.waterM3PerDay, 800);
   assert.equal(balance.utilityAssets.length, 2);
 });
+
+
+test('production requirements expose per-unit inputs, outputs, rated daily flow, time, workforce and utility intensity', () => {
+  const { catalog, api } = makeRuntime();
+  const steel = api.factoryProductionRequirements('STEEL_AND_ALLOY_WORKS', 'STEEL_PRIMARY_ROUTE_V1');
+  assert.equal(steel.status, 'READY');
+  assert.equal(steel.contract, 'OMEGA_FACTORY_PRODUCTION_REQUIREMENTS_V1');
+  assert.equal(steel.recipeId, 'STEEL_PRIMARY_ROUTE_V1');
+  assert.equal(steel.quantityBasis, 'PER_SIMULATION_PRODUCTION_UNIT');
+  assert.equal(steel.processing.cycleDays, catalog.downstreamFactoryRecipes.STEEL_PRIMARY_ROUTE_V1.cycleDays);
+  assert.equal(steel.processing.cycleTimeUnit, 'IN_GAME_DAYS');
+  assert.equal(steel.processing.durationEnforced, false);
+  assert.equal(steel.inputsPerProductionUnit.iron_concentrate, 0.6);
+  assert.equal(steel.ratedDailyInputs.iron_concentrate, Number((catalog.factoryProfiles.STEEL_AND_ALLOY_WORKS.defaultCapacityPerDay * 0.6).toFixed(6)));
+  assert.equal(steel.outputsPerProductionUnit.STEEL, 0.72);
+  assert.equal(steel.ratedDailyOutputs.STEEL, Number((catalog.factoryProfiles.STEEL_AND_ALLOY_WORKS.defaultCapacityPerDay * 0.72).toFixed(6)));
+  assert.equal(steel.workforce.operators, catalog.factoryProfiles.STEEL_AND_ALLOY_WORKS.workforce.operators);
+  assert.equal(steel.workforce.engineers, catalog.factoryProfiles.STEEL_AND_ALLOY_WORKS.workforce.engineers);
+  assert.equal(steel.workforce.coreOperatingCrew, catalog.factoryProfiles.STEEL_AND_ALLOY_WORKS.employment.coreOperatingCrew);
+  assert.equal(steel.utilities.electricityMWhPerDay, catalog.factoryProfiles.STEEL_AND_ALLOY_WORKS.utilities.electricityMWhPerDay);
+  assert.equal(steel.utilities.waterM3PerDay, catalog.factoryProfiles.STEEL_AND_ALLOY_WORKS.utilities.waterM3PerDay);
+  assert.equal(steel.construction.timeDays, catalog.factoryProfiles.STEEL_AND_ALLOY_WORKS.constructionDays);
+  assert.equal(JSON.stringify(steel.construction.materials), JSON.stringify(catalog.factoryProfiles.STEEL_AND_ALLOY_WORKS.constructionMaterials));
+
+  let checked = 0;
+  for (const [resourceId, rule] of Object.entries(catalog.processingRules)) {
+    const row = api.factoryProductionRequirements(rule.factoryType, 'PROCESSING:' + resourceId);
+    assert.equal(row.status, 'READY', resourceId + ': ' + JSON.stringify(row));
+    assert.equal(row.recipeKind, 'PROCESSING');
+    assert.equal(row.processing.cycleDays, rule.cycleDays);
+    assert.equal(row.processing.cycleTimeUnit, 'IN_GAME_DAYS');
+    assert.equal(row.inputsPerProductionUnit[Object.keys(rule.inputs)[0]], Object.values(rule.inputs)[0]);
+    checked += 1;
+  }
+  for (const [recipeId, recipe] of Object.entries(catalog.downstreamFactoryRecipes)) {
+    const row = api.factoryProductionRequirements(recipe.factoryType, recipeId);
+    assert.equal(row.status, 'READY', recipeId + ': ' + JSON.stringify(row));
+    assert.equal(row.recipeId, recipeId);
+    assert.equal(row.processing.cycleDays, recipe.cycleDays);
+    assert.equal(row.processing.cycleTimeUnit, 'IN_GAME_DAYS');
+    assert.equal(row.ratedCapacityPerDay, catalog.factoryProfiles[recipe.factoryType].defaultCapacityPerDay);
+    checked += 1;
+  }
+  assert.equal(checked, 63);
+});
+
+test('all recipe rows declare a common simulation quantity basis and in-game cycle-time unit', () => {
+  const { catalog } = makeRuntime();
+  assert.equal(catalog.factoryCatalogPolicy.productionRequirementContract, 'OMEGA_FACTORY_PRODUCTION_REQUIREMENTS_V1');
+  assert.equal(catalog.factoryCatalogPolicy.quantityBasis, 'PER_SIMULATION_PRODUCTION_UNIT');
+  assert.equal(catalog.factoryCatalogPolicy.recipeTimeUnit, 'IN_GAME_DAYS');
+  for (const [resourceId, rule] of Object.entries(catalog.processingRules)) {
+    assert.equal(rule.quantityBasis, 'PER_SIMULATION_PRODUCTION_UNIT', resourceId);
+    assert.equal(rule.cycleTimeUnit, 'IN_GAME_DAYS', resourceId);
+    assert.equal(rule.requiresAllInputs, true, resourceId);
+    assert.equal(rule.missingInputPolicy, 'BLOCK_CYCLE', resourceId);
+    assert.equal(rule.simulationOnly, true, resourceId);
+  }
+  for (const [recipeId, recipe] of Object.entries(catalog.downstreamFactoryRecipes)) {
+    assert.equal(recipe.quantityBasis, 'PER_SIMULATION_PRODUCTION_UNIT', recipeId);
+    assert.equal(recipe.cycleTimeUnit, 'IN_GAME_DAYS', recipeId);
+  }
+  const ui = readText('omega_resource_command_center_ui_v1.js');
+  assert.match(ui, /Inputs per production unit/);
+  assert.match(ui, /Outputs and by-products per production unit/);
+  assert.match(ui, /Rated daily input at capacity/);
+  assert.match(ui, /Rated daily output at capacity/);
+  assert.match(ui, /Declared recipe cycle time/);
+  assert.match(ui, /not yet enforced as delayed completion/);
+});
