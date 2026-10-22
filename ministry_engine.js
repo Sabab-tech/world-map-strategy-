@@ -1425,7 +1425,34 @@ window.OmegaCabinetUI = {
         fullWin.style.display = 'flex';
 
         if (isCouncil && window.OmegaCabinetEngine) {
-            window.OmegaCabinetEngine.renderCabinetSubsystem();
+            const subsystemEngine = window.OmegaCabinetEngine;
+            const subsystemRoot = document.getElementById('cabinet-subsystem-root');
+            if (subsystemRoot) {
+                // Paint the cabinet shell first. On low-memory WebViews the
+                // governance subsystem can build a large HTML tree; doing that
+                // inside the navigation click blocks the JS callback and makes
+                // the whole game appear frozen.
+                subsystemRoot.innerHTML = '<div class="omega-cabinet-subsystem-loading" role="status" aria-live="polite" style="padding:16px; text-align:center; color:#5c4315;">Loading executive council…</div>';
+                const renderSubsystem = () => {
+                    if (document.getElementById('cabinet-subsystem-root') !== subsystemRoot) return;
+                    if (this.mainCabinetView === 'ministries') return;
+                    const layerManager = window.OmegaLayerManager;
+                    if (layerManager && Number(layerManager.currentLayer) !== 1) return;
+                    try {
+                        subsystemEngine.renderCabinetSubsystem(subsystemRoot);
+                    } catch (error) {
+                        if (window.console && typeof window.console.error === 'function') {
+                            window.console.error('[OMEGA CABINET] Deferred council rendering failed:', error);
+                        }
+                        subsystemRoot.innerHTML = '<div class="omega-cabinet-subsystem-error" role="alert" style="padding:16px; color:#b91c1c;">Council data could not be rendered. Reopen Government HQ to retry.</div>';
+                    }
+                };
+                if (typeof window.setTimeout === 'function') {
+                    window.setTimeout(renderSubsystem, 50);
+                } else {
+                    renderSubsystem();
+                }
+            }
         }
         this.initViewportScrollHandlers();
     },

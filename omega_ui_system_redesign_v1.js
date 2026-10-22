@@ -379,77 +379,141 @@
 
   function openCabinet(event) {
     const cabinet = doc.getElementById('cabinet-full-window');
+    if (event) {
+      if (typeof event.preventDefault === 'function') event.preventDefault();
+      if (typeof event.stopPropagation === 'function') event.stopPropagation();
+      if (typeof event.stopImmediatePropagation === 'function') event.stopImmediatePropagation();
+    }
     if (!cabinet) {
-      if (global.console && global.console.error) global.console.error('[OMEGA NAV] Cabinet entry failed: cabinet-full-window is missing.');
+      if (global.console && typeof global.console.error === 'function') {
+        global.console.error('[OMEGA NAV] Cabinet entry failed: cabinet-full-window is missing.');
+      }
       return false;
     }
 
-    try {
-      if (typeof global.openMainMinistryView === 'function') {
-        global.openMainMinistryView(event);
-        if (visible(cabinet)) {
-          const dock = doc.getElementById('omega-ministry-entry');
-          if (dock) dock.setAttribute('data-last-open-result', 'opened');
-          return true;
+    const dock = doc.getElementById('omega-ministry-entry');
+    const dashboard = doc.getElementById('ministry-dashboard-view');
+    const interrogation = doc.getElementById('minister-interrogation-modal');
+    const worldUi = doc.getElementById('world-ui-root');
+
+    // Keep the tap path short: switch the visible layer immediately, then run
+    // the expensive country/cabinet rendering after WebView can return the
+    // JavaScript callback and paint the new surface.
+    [
+      'command-hub-modal', 'country-info-card', 'city-detail-bar',
+      'search-drawer', 'events-drawer', 'layers-drawer',
+      'resource-filter-box', 'relation-filter-box', 'daily-quests-modal'
+    ].forEach(function (id) {
+      const surface = doc.getElementById(id);
+      if (surface && surface.style) {
+        surface.style.display = 'none';
+        surface.style.pointerEvents = 'none';
+      }
+    });
+
+    if (dashboard && dashboard.style) {
+      dashboard.style.display = 'none';
+      dashboard.style.opacity = '0';
+      dashboard.style.pointerEvents = 'none';
+      if (typeof dashboard.setAttribute === 'function') dashboard.setAttribute('aria-hidden', 'true');
+    }
+    if (interrogation && interrogation.style) {
+      interrogation.style.display = 'none';
+      interrogation.style.opacity = '0';
+      interrogation.style.pointerEvents = 'none';
+    }
+    Object.assign(cabinet.style, {
+      display: 'flex',
+      position: 'fixed',
+      inset: '0',
+      width: '100vw',
+      height: '100vh',
+      minHeight: '100%',
+      opacity: '1',
+      visibility: 'visible',
+      pointerEvents: 'auto',
+      zIndex: '999999'
+    });
+    if (typeof cabinet.setAttribute === 'function') cabinet.setAttribute('aria-hidden', 'false');
+    if (worldUi && worldUi.style) {
+      worldUi.style.filter = 'none';
+      worldUi.style.opacity = '0.5';
+      worldUi.style.pointerEvents = 'none';
+    }
+    setLayerState(1);
+
+    if (!String(cabinet.innerHTML || '').trim()) {
+      cabinet.innerHTML = '<div class="omega-cabinet-entry-loading" role="status" aria-live="polite" style="display:flex;min-height:60vh;align-items:center;justify-content:center;padding:24px;text-align:center;color:#5c4315;font-weight:700;">Opening Government HQ…</div>';
+    }
+    if (dock) dock.setAttribute('data-last-open-result', 'opening');
+    if (typeof cabinet.setAttribute === 'function') cabinet.setAttribute('aria-busy', 'true');
+
+    function renderCabinetContent() {
+      if (doc.body && Number(doc.body.getAttribute('data-active-layer') || 0) !== 1) return;
+      let opened = false;
+      try {
+        if (typeof global.openMainMinistryView === 'function') {
+          global.openMainMinistryView();
+          opened = visible(cabinet);
+        }
+      } catch (error) {
+        if (global.console && typeof global.console.warn === 'function') {
+          global.console.warn('[OMEGA NAV] Primary cabinet route failed; trying recovery.', error);
         }
       }
-    } catch (error) {
-      if (global.console && global.console.warn) global.console.warn('[OMEGA NAV] Primary cabinet route failed; trying recovery.', error);
-    }
 
-    const manager = global.OmegaLayerManager;
-    try {
-      if (manager && typeof manager.setLayer === 'function') manager.setLayer(1);
-      if (visible(cabinet)) {
-        const dock = doc.getElementById('omega-ministry-entry');
-        if (dock) dock.setAttribute('data-last-open-result', 'opened');
-        return true;
+      const manager = global.OmegaLayerManager;
+      if (!opened) {
+        try {
+          if (manager && typeof manager.setLayer === 'function') manager.setLayer(1, {}, true);
+          opened = visible(cabinet);
+        } catch (error) {
+          if (global.console && typeof global.console.warn === 'function') {
+            global.console.warn('[OMEGA NAV] Layer-manager route failed; using direct cabinet recovery.', error);
+          }
+        }
       }
-    } catch (error) {
-      if (global.console && global.console.warn) global.console.warn('[OMEGA NAV] Layer-manager route failed; using direct cabinet recovery.', error);
-    }
 
-    try {
-      const dashboard = doc.getElementById('ministry-dashboard-view');
-      if (dashboard) {
-        dashboard.style.display = 'none';
-        dashboard.style.pointerEvents = 'none';
-        dashboard.style.opacity = '0';
-        if (typeof dashboard.setAttribute === 'function') dashboard.setAttribute('aria-hidden', 'true');
+      if (!opened) {
+        try {
+          Object.assign(cabinet.style, {
+            display: 'flex',
+            position: 'fixed',
+            inset: '0',
+            width: '100vw',
+            height: '100vh',
+            opacity: '1',
+            visibility: 'visible',
+            pointerEvents: 'auto',
+            zIndex: '999999'
+          });
+          if (typeof cabinet.setAttribute === 'function') cabinet.setAttribute('aria-hidden', 'false');
+          setLayerState(1);
+          const cabinetUI = global.OmegaCabinetUI;
+          if (cabinetUI && typeof cabinetUI.renderCabinet === 'function') {
+            cabinetUI.renderCabinet(activeCountry());
+          }
+          opened = visible(cabinet);
+        } catch (error) {
+          if (global.console && typeof global.console.error === 'function') {
+            global.console.error('[OMEGA NAV] Cabinet recovery failed.', error);
+          }
+        }
       }
-      Object.assign(cabinet.style, {
-        display: 'flex',
-        position: 'fixed',
-        inset: '0',
-        width: '100vw',
-        height: '100vh',
-        opacity: '1',
-        visibility: 'visible',
-        pointerEvents: 'auto',
-        zIndex: '999999'
-      });
-      if (typeof cabinet.setAttribute === 'function') cabinet.setAttribute('aria-hidden', 'false');
-      setLayerState(1);
 
-      const cabinetUI = global.OmegaCabinetUI;
-      if (cabinetUI && typeof cabinetUI.renderCabinet === 'function') cabinetUI.renderCabinet(activeCountry());
-
-      const opened = visible(cabinet);
-      const dock = doc.getElementById('omega-ministry-entry');
+      if (typeof cabinet.setAttribute === 'function') cabinet.setAttribute('aria-busy', 'false');
       if (dock) dock.setAttribute('data-last-open-result', opened ? 'opened' : 'failed');
+      if (typeof global.updateGlobalBackButtonVisibility === 'function') {
+        global.updateGlobalBackButtonVisibility();
+      }
       if (!opened && typeof global.showOmegaNotification === 'function') {
-        global.showOmegaNotification('MINISTRY ENTRY FAILED', 'Cabinet was requested but did not become visible. Check OMEGA diagnostics for the runtime error.', 'danger');
+        global.showOmegaNotification('MINISTRY ENTRY FAILED', 'The cabinet view could not be initialized. Check OMEGA diagnostics.', 'danger');
       }
-      return opened;
-    } catch (error) {
-      const dock = doc.getElementById('omega-ministry-entry');
-      if (dock) dock.setAttribute('data-last-open-result', 'failed');
-      if (global.console && global.console.error) global.console.error('[OMEGA NAV] Cabinet recovery failed.', error);
-      if (typeof global.showOmegaNotification === 'function') {
-        global.showOmegaNotification('MINISTRY ENTRY FAILED', 'The cabinet view could not be initialized. See OMEGA diagnostics for the runtime error.', 'danger');
-      }
-      return false;
     }
+
+    if (typeof global.setTimeout === 'function') global.setTimeout(renderCabinetContent, 50);
+    else renderCabinetContent();
+    return true;
   }
 
   function handleMapMinistryDockClick(event) {
