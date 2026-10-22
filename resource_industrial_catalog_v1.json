@@ -1345,6 +1345,34 @@
             "workersRequired": 800,
             "authority": "SIMULATED_GAMEPLAY_ONLY"
           }
+        },
+        "recycled_steel": {
+          "recipeId": "STEEL_AND_ALLOY_MILL:recycled_steel",
+          "primaryInput": "recycled_steel",
+          "inputs": {
+            "recycled_steel": 1
+          },
+          "outputs": {
+            "STEEL_INGOT": 0.9,
+            "STEEL_MELT_LOSS": 0.08
+          },
+          "outputUnits": {},
+          "cycleDays": 1,
+          "quantityBasis": "SIMULATION_NORMALIZED_INPUT_UNITS",
+          "authority": "SIMULATED_GAMEPLAY_ONLY",
+          "utilities": {
+            "electricityMWhPerPrimaryUnit": 0.22,
+            "waterM3PerPrimaryUnit": 0.3,
+            "fuelGJPerPrimaryUnit": 0.18,
+            "enforcement": "METADATA_ONLY_UNLESS_A_FUTURE_AUTHORITATIVE_UTILITY_LEDGER_IS_CONNECTED"
+          },
+          "construction": {
+            "costUsd": 185000000,
+            "buildDays": 300,
+            "capacityPerDay": 1800,
+            "workersRequired": 950,
+            "authority": "SIMULATED_GAMEPLAY_ONLY"
+          }
         }
       }
     },
@@ -1473,6 +1501,34 @@
             "workersRequired": 520,
             "authority": "SIMULATED_GAMEPLAY_ONLY"
           }
+        },
+        "recycled_copper": {
+          "recipeId": "NON_FERROUS_SMELTER:recycled_copper",
+          "primaryInput": "recycled_copper",
+          "inputs": {
+            "recycled_copper": 1
+          },
+          "outputs": {
+            "COPPER_CATHODE": 0.9,
+            "COPPER_REFINING_RESIDUE": 0.08
+          },
+          "outputUnits": {},
+          "cycleDays": 1,
+          "quantityBasis": "SIMULATION_NORMALIZED_INPUT_UNITS",
+          "authority": "SIMULATED_GAMEPLAY_ONLY",
+          "utilities": {
+            "electricityMWhPerPrimaryUnit": 0.22,
+            "waterM3PerPrimaryUnit": 0.3,
+            "fuelGJPerPrimaryUnit": 0.08,
+            "enforcement": "METADATA_ONLY_UNLESS_A_FUTURE_AUTHORITATIVE_UTILITY_LEDGER_IS_CONNECTED"
+          },
+          "construction": {
+            "costUsd": 165000000,
+            "buildDays": 270,
+            "capacityPerDay": 1300,
+            "workersRequired": 650,
+            "authority": "SIMULATED_GAMEPLAY_ONLY"
+          }
         }
       }
     },
@@ -1493,9 +1549,12 @@
             "pipeline_gas": 0.04
           },
           "outputs": {
-            "POLYMER_RESIN": 0.63,
-            "SYNTHETIC_FIBER": 0.17,
-            "PETROCHEMICAL_BYPRODUCT": 0.16
+            "POLYMER_RESIN": 0.6,
+            "SYNTHETIC_FIBER": 0.15,
+            "PETROCHEMICAL_BYPRODUCT": 0.12,
+            "CARBON_ANODE": 0.05,
+            "INDUSTRIAL_DYE": 0.02,
+            "INDUSTRIAL_LUBRICANT": 0.02
           },
           "outputUnits": {},
           "cycleDays": 2,
@@ -1505,6 +1564,34 @@
             "electricityMWhPerPrimaryUnit": 0.45,
             "waterM3PerPrimaryUnit": 0.8,
             "fuelGJPerPrimaryUnit": 1.3,
+            "enforcement": "METADATA_ONLY_UNLESS_A_FUTURE_AUTHORITATIVE_UTILITY_LEDGER_IS_CONNECTED"
+          },
+          "construction": {
+            "costUsd": 210000000,
+            "buildDays": 330,
+            "capacityPerDay": 1200,
+            "workersRequired": 720,
+            "authority": "SIMULATED_GAMEPLAY_ONLY"
+          }
+        },
+        "recycled_polymer": {
+          "recipeId": "PETROCHEMICAL_POLYMER_PLANT:recycled_polymer",
+          "primaryInput": "recycled_polymer",
+          "inputs": {
+            "recycled_polymer": 1
+          },
+          "outputs": {
+            "POLYMER_RESIN": 0.86,
+            "POLYMER_RECYCLING_LOSS": 0.08
+          },
+          "outputUnits": {},
+          "cycleDays": 1,
+          "quantityBasis": "SIMULATION_NORMALIZED_INPUT_UNITS",
+          "authority": "SIMULATED_GAMEPLAY_ONLY",
+          "utilities": {
+            "electricityMWhPerPrimaryUnit": 0.18,
+            "waterM3PerPrimaryUnit": 0.2,
+            "fuelGJPerPrimaryUnit": 0.05,
             "enforcement": "METADATA_ONLY_UNLESS_A_FUTURE_AUTHORITATIVE_UTILITY_LEDGER_IS_CONNECTED"
           },
           "construction": {
@@ -1575,9 +1662,10 @@
             "limestone": 0.03
           },
           "outputs": {
-            "AMMONIA": 0.45,
-            "INDUSTRIAL_GAS": 0.24,
-            "CHEMICAL_RESIDUE": 0.25
+            "AMMONIA": 0.42,
+            "INDUSTRIAL_GAS": 0.22,
+            "PHARMACEUTICAL_BASE_CHEMICALS": 0.12,
+            "CHEMICAL_RESIDUE": 0.2
           },
           "outputUnits": {},
           "cycleDays": 2,
@@ -1656,8 +1744,7 @@
           "primaryInput": "glass_silica_feed",
           "inputs": {
             "glass_silica_feed": 1,
-            "limestone": 0.2,
-            "feldspar": 0.15
+            "limestone": 0.2
           },
           "outputs": {
             "SHEET_GLASS": 0.78,
@@ -1702,8 +1789,9 @@
             "starch": 0.02
           },
           "outputs": {
-            "PAPER": 0.72,
-            "CARDBOARD": 0.18,
+            "PAPER": 0.7,
+            "CARDBOARD": 0.16,
+            "PACKAGING_MATERIAL": 0.12,
             "PAPER_SLUDGE": 0.12
           },
           "outputUnits": {},
@@ -1741,7 +1829,7 @@
           "inputs": {
             "wheat": 1,
             "vegetable_oil": 0.05,
-            "salt": 0.01
+            "refined_salt": 0.01
           },
           "outputs": {
             "PROCESSED_FOOD": 0.76,
@@ -1855,13 +1943,15 @@
           "inputs": {
             "steel_ingot": 1,
             "copper_cathode": 0.08,
-            "industrial_electronics": 0.05,
-            "lubricant": 0.01
+            "electronic_modules": 0.05,
+            "industrial_lubricant": 0.01
           },
           "outputs": {
             "INDUSTRIAL_MACHINE_UNITS": 0.035,
             "REPLACEMENT_PARTS": 0.2,
-            "METAL_SCRAP": 0.16
+            "STEEL_SCRAP": 0.1,
+            "COPPER_SCRAP": 0.025,
+            "METAL_SCRAP": 0.12
           },
           "outputUnits": {
             "INDUSTRIAL_MACHINE_UNITS": "UNITS",
@@ -2039,7 +2129,8 @@
           "outputs": {
             "ROAD_VEHICLE_UNITS": 0.025,
             "REUSABLE_COMPONENTS": 0.12,
-            "VEHICLE_SCRAP": 0.13
+            "POLYMER_SCRAP": 0.08,
+            "VEHICLE_SCRAP": 0.1
           },
           "outputUnits": {
             "ROAD_VEHICLE_UNITS": "UNITS",
@@ -2262,10 +2353,10 @@
             "polymer_scrap": 0.1
           },
           "outputs": {
-            "recycled_steel": 0.72,
-            "recycled_copper": 0.08,
-            "recycled_polymer": 0.09,
-            "recycling_residue": 0.18
+            "RECYCLED_STEEL": 0.7,
+            "RECYCLED_COPPER": 0.07,
+            "RECYCLED_POLYMER": 0.08,
+            "RECYCLING_RESIDUE": 0.18
           },
           "outputUnits": {},
           "cycleDays": 2,
@@ -2316,7 +2407,634 @@
     "currentProcessingRuleCount": 39,
     "policy": "Additive-only. Existing resourceRules and processingRules remain authoritative and are not removed or rewritten.",
     "simulationNotice": "All new downstream recipes, output coefficients, capacities, construction costs, build durations, workforce and utility rates are GAME-SIMULATION PARAMETERS, not observed industrial measurements.",
-    "quantitySafety": "A production cycle is bounded by every required input coefficient. Missing inputs block the cycle with no partial stock debit. The runtime does not infer conversions between incompatible units.",
-    "utilitySafety": "Electricity/water/fuel requirements are metadata only until connected to an authoritative utility inventory and allocation ledger."
+    "quantitySafety": "Each input has a declared unit and coefficient per primary-input production quantity. A cycle is scaled by the scarcest required input, consumes every required input, never infers unit conversions, and commits no stock when any required input is absent.",
+    "utilitySafety": "Electricity/water/fuel requirements are metadata only until connected to an authoritative utility inventory and allocation ledger.",
+    "recipeLineCount": 28,
+    "externalInputPolicy": "Inputs outside the mining/processing/manufacturing registry are explicitly classified by domain. No supply is auto-created; a factory cycle blocks unless the required quantity exists in an actual inventory/warehouse ledger."
+  },
+  "manufacturingInputSourceCatalog": {
+    "alloy_steel": {
+      "resourceId": "alloy_steel",
+      "unit": "TONNES",
+      "source": {
+        "sourceType": "MANUFACTURING_INTERMEDIATE",
+        "status": "MANUFACTURING_CATALOG_PRODUCER",
+        "authoritativeProducerAvailable": true,
+        "producerRecipes": [
+          "STEEL_AND_ALLOY_MILL:steel_ingot"
+        ],
+        "sourceAuthority": "SIMULATED_MANUFACTURING_CATALOG"
+      }
+    },
+    "alumina": {
+      "resourceId": "alumina",
+      "unit": "TONNES",
+      "source": {
+        "sourceType": "EXISTING_PROCESSING_OUTPUT",
+        "status": "PROCESSING_CATALOG_PRODUCER",
+        "authoritativeProducerAvailable": true,
+        "producerFactoryTypes": [
+          "ALUMINA_REFINERY"
+        ],
+        "sourceAuthority": "PROCESSING_RULES"
+      }
+    },
+    "aluminium_ingot": {
+      "resourceId": "aluminium_ingot",
+      "unit": "TONNES",
+      "source": {
+        "sourceType": "MANUFACTURING_INTERMEDIATE",
+        "status": "MANUFACTURING_CATALOG_PRODUCER",
+        "authoritativeProducerAvailable": true,
+        "producerRecipes": [
+          "NON_FERROUS_SMELTER:alumina"
+        ],
+        "sourceAuthority": "SIMULATED_MANUFACTURING_CATALOG"
+      }
+    },
+    "ammonia": {
+      "resourceId": "ammonia",
+      "unit": "TONNES",
+      "source": {
+        "sourceType": "MANUFACTURING_INTERMEDIATE",
+        "status": "MANUFACTURING_CATALOG_PRODUCER",
+        "authoritativeProducerAvailable": true,
+        "producerRecipes": [
+          "INDUSTRIAL_CHEMICALS_GAS_PLANT:pipeline_gas"
+        ],
+        "sourceAuthority": "SIMULATED_MANUFACTURING_CATALOG"
+      }
+    },
+    "calcined_gypsum": {
+      "resourceId": "calcined_gypsum",
+      "unit": "TONNES",
+      "source": {
+        "sourceType": "EXISTING_PROCESSING_OUTPUT",
+        "status": "PROCESSING_CATALOG_PRODUCER",
+        "authoritativeProducerAvailable": true,
+        "producerFactoryTypes": [
+          "GYPSUM_PROCESSING_PLANT"
+        ],
+        "sourceAuthority": "PROCESSING_RULES"
+      }
+    },
+    "carbon_anode": {
+      "resourceId": "carbon_anode",
+      "unit": "TONNES",
+      "source": {
+        "sourceType": "MANUFACTURING_INTERMEDIATE",
+        "status": "MANUFACTURING_CATALOG_PRODUCER",
+        "authoritativeProducerAvailable": true,
+        "producerRecipes": [
+          "PETROCHEMICAL_POLYMER_PLANT:naphtha"
+        ],
+        "sourceAuthority": "SIMULATED_MANUFACTURING_CATALOG"
+      }
+    },
+    "cathode_precursor": {
+      "resourceId": "cathode_precursor",
+      "unit": "TONNES",
+      "source": {
+        "sourceType": "MANUFACTURING_INTERMEDIATE",
+        "status": "MANUFACTURING_CATALOG_PRODUCER",
+        "authoritativeProducerAvailable": true,
+        "producerRecipes": [
+          "NON_FERROUS_SMELTER:nickel_concentrate"
+        ],
+        "sourceAuthority": "SIMULATED_MANUFACTURING_CATALOG"
+      }
+    },
+    "cement_feed": {
+      "resourceId": "cement_feed",
+      "unit": "TONNES",
+      "source": {
+        "sourceType": "EXISTING_PROCESSING_OUTPUT",
+        "status": "PROCESSING_CATALOG_PRODUCER",
+        "authoritativeProducerAvailable": true,
+        "producerFactoryTypes": [
+          "CEMENT_LIMESTONE_PLANT"
+        ],
+        "sourceAuthority": "PROCESSING_RULES"
+      }
+    },
+    "chromite_concentrate": {
+      "resourceId": "chromite_concentrate",
+      "unit": "TONNES",
+      "source": {
+        "sourceType": "EXISTING_PROCESSING_OUTPUT",
+        "status": "PROCESSING_CATALOG_PRODUCER",
+        "authoritativeProducerAvailable": true,
+        "producerFactoryTypes": [
+          "CHROMITE_CONCENTRATOR"
+        ],
+        "sourceAuthority": "PROCESSING_RULES"
+      }
+    },
+    "coal_concentrate": {
+      "resourceId": "coal_concentrate",
+      "unit": "TONNES",
+      "source": {
+        "sourceType": "EXISTING_PROCESSING_OUTPUT",
+        "status": "PROCESSING_CATALOG_PRODUCER",
+        "authoritativeProducerAvailable": true,
+        "producerFactoryTypes": [
+          "COAL_PREPARATION_PLANT"
+        ],
+        "sourceAuthority": "PROCESSING_RULES"
+      }
+    },
+    "copper_cathode": {
+      "resourceId": "copper_cathode",
+      "unit": "TONNES",
+      "source": {
+        "sourceType": "MANUFACTURING_INTERMEDIATE",
+        "status": "MANUFACTURING_CATALOG_PRODUCER",
+        "authoritativeProducerAvailable": true,
+        "producerRecipes": [
+          "NON_FERROUS_SMELTER:copper_concentrate",
+          "NON_FERROUS_SMELTER:recycled_copper"
+        ],
+        "sourceAuthority": "SIMULATED_MANUFACTURING_CATALOG"
+      }
+    },
+    "copper_concentrate": {
+      "resourceId": "copper_concentrate",
+      "unit": "TONNES",
+      "source": {
+        "sourceType": "EXISTING_PROCESSING_OUTPUT",
+        "status": "PROCESSING_CATALOG_PRODUCER",
+        "authoritativeProducerAvailable": true,
+        "producerFactoryTypes": [
+          "COPPER_CONCENTRATOR"
+        ],
+        "sourceAuthority": "PROCESSING_RULES"
+      }
+    },
+    "copper_scrap": {
+      "resourceId": "copper_scrap",
+      "unit": "TONNES",
+      "source": {
+        "sourceType": "MANUFACTURING_INTERMEDIATE",
+        "status": "MANUFACTURING_CATALOG_PRODUCER",
+        "authoritativeProducerAvailable": true,
+        "producerRecipes": [
+          "INDUSTRIAL_MACHINERY_TOOL_PLANT:steel_ingot"
+        ],
+        "sourceAuthority": "SIMULATED_MANUFACTURING_CATALOG"
+      }
+    },
+    "cotton": {
+      "resourceId": "cotton",
+      "unit": "TONNES",
+      "source": {
+        "sourceType": "AGRICULTURE",
+        "status": "EXTERNAL_INPUT_REQUIRED",
+        "authoritativeProducerAvailable": false,
+        "sourceAuthority": "NOT_RECORDED",
+        "description": "Cotton farming or import"
+      }
+    },
+    "electronic_modules": {
+      "resourceId": "electronic_modules",
+      "unit": "UNITS",
+      "source": {
+        "sourceType": "MANUFACTURING_INTERMEDIATE",
+        "status": "MANUFACTURING_CATALOG_PRODUCER",
+        "authoritativeProducerAvailable": true,
+        "producerRecipes": [
+          "ELECTRONICS_SEMICONDUCTOR_PLANT:purified_silicon"
+        ],
+        "sourceAuthority": "SIMULATED_MANUFACTURING_CATALOG"
+      }
+    },
+    "glass_silica_feed": {
+      "resourceId": "glass_silica_feed",
+      "unit": "TONNES",
+      "source": {
+        "sourceType": "EXISTING_PROCESSING_OUTPUT",
+        "status": "PROCESSING_CATALOG_PRODUCER",
+        "authoritativeProducerAvailable": true,
+        "producerFactoryTypes": [
+          "GLASS_SILICA_PLANT"
+        ],
+        "sourceAuthority": "PROCESSING_RULES"
+      }
+    },
+    "graphite_concentrate": {
+      "resourceId": "graphite_concentrate",
+      "unit": "TONNES",
+      "source": {
+        "sourceType": "EXISTING_PROCESSING_OUTPUT",
+        "status": "PROCESSING_CATALOG_PRODUCER",
+        "authoritativeProducerAvailable": true,
+        "producerFactoryTypes": [
+          "GRAPHITE_CONCENTRATOR"
+        ],
+        "sourceAuthority": "PROCESSING_RULES"
+      }
+    },
+    "grid_equipment_units": {
+      "resourceId": "grid_equipment_units",
+      "unit": "UNITS",
+      "source": {
+        "sourceType": "MANUFACTURING_INTERMEDIATE",
+        "status": "MANUFACTURING_CATALOG_PRODUCER",
+        "authoritativeProducerAvailable": true,
+        "producerRecipes": [
+          "ELECTRICAL_GRID_EQUIPMENT_PLANT:copper_cathode"
+        ],
+        "sourceAuthority": "SIMULATED_MANUFACTURING_CATALOG"
+      }
+    },
+    "industrial_dye": {
+      "resourceId": "industrial_dye",
+      "unit": "TONNES",
+      "source": {
+        "sourceType": "MANUFACTURING_INTERMEDIATE",
+        "status": "MANUFACTURING_CATALOG_PRODUCER",
+        "authoritativeProducerAvailable": true,
+        "producerRecipes": [
+          "PETROCHEMICAL_POLYMER_PLANT:naphtha"
+        ],
+        "sourceAuthority": "SIMULATED_MANUFACTURING_CATALOG"
+      }
+    },
+    "industrial_gas": {
+      "resourceId": "industrial_gas",
+      "unit": "TONNES",
+      "source": {
+        "sourceType": "MANUFACTURING_INTERMEDIATE",
+        "status": "MANUFACTURING_CATALOG_PRODUCER",
+        "authoritativeProducerAvailable": true,
+        "producerRecipes": [
+          "INDUSTRIAL_CHEMICALS_GAS_PLANT:pipeline_gas"
+        ],
+        "sourceAuthority": "SIMULATED_MANUFACTURING_CATALOG"
+      }
+    },
+    "industrial_lubricant": {
+      "resourceId": "industrial_lubricant",
+      "unit": "TONNES",
+      "source": {
+        "sourceType": "MANUFACTURING_INTERMEDIATE",
+        "status": "MANUFACTURING_CATALOG_PRODUCER",
+        "authoritativeProducerAvailable": true,
+        "producerRecipes": [
+          "PETROCHEMICAL_POLYMER_PLANT:naphtha"
+        ],
+        "sourceAuthority": "SIMULATED_MANUFACTURING_CATALOG"
+      }
+    },
+    "industrial_machine_units": {
+      "resourceId": "industrial_machine_units",
+      "unit": "UNITS",
+      "source": {
+        "sourceType": "MANUFACTURING_INTERMEDIATE",
+        "status": "MANUFACTURING_CATALOG_PRODUCER",
+        "authoritativeProducerAvailable": true,
+        "producerRecipes": [
+          "INDUSTRIAL_MACHINERY_TOOL_PLANT:steel_ingot"
+        ],
+        "sourceAuthority": "SIMULATED_MANUFACTURING_CATALOG"
+      }
+    },
+    "iron_concentrate": {
+      "resourceId": "iron_concentrate",
+      "unit": "TONNES",
+      "source": {
+        "sourceType": "EXISTING_PROCESSING_OUTPUT",
+        "status": "PROCESSING_CATALOG_PRODUCER",
+        "authoritativeProducerAvailable": true,
+        "producerFactoryTypes": [
+          "ORE_BENEFICIATION_PLANT"
+        ],
+        "sourceAuthority": "PROCESSING_RULES"
+      }
+    },
+    "limestone": {
+      "resourceId": "limestone",
+      "unit": "TONNES",
+      "source": {
+        "sourceType": "RAW_MINERAL_RESOURCE",
+        "status": "MINE_OR_IMPORT_SUPPLY",
+        "authoritativeProducerAvailable": true,
+        "sourceAuthority": "RESOURCE_RULES"
+      }
+    },
+    "lithium_carbonate_or_hydroxide": {
+      "resourceId": "lithium_carbonate_or_hydroxide",
+      "unit": "TONNES",
+      "source": {
+        "sourceType": "EXISTING_PROCESSING_OUTPUT",
+        "status": "PROCESSING_CATALOG_PRODUCER",
+        "authoritativeProducerAvailable": true,
+        "producerFactoryTypes": [
+          "LITHIUM_CONVERSION_PLANT"
+        ],
+        "sourceAuthority": "PROCESSING_RULES"
+      }
+    },
+    "mop_potash": {
+      "resourceId": "mop_potash",
+      "unit": "TONNES",
+      "source": {
+        "sourceType": "EXISTING_PROCESSING_OUTPUT",
+        "status": "PROCESSING_CATALOG_PRODUCER",
+        "authoritativeProducerAvailable": true,
+        "producerFactoryTypes": [
+          "POTASH_PROCESSING_PLANT"
+        ],
+        "sourceAuthority": "PROCESSING_RULES"
+      }
+    },
+    "naphtha": {
+      "resourceId": "naphtha",
+      "unit": "TONNES",
+      "source": {
+        "sourceType": "EXISTING_PROCESSING_OUTPUT",
+        "status": "PROCESSING_CATALOG_PRODUCER",
+        "authoritativeProducerAvailable": true,
+        "producerFactoryTypes": [
+          "REFINERY"
+        ],
+        "sourceAuthority": "PROCESSING_RULES"
+      }
+    },
+    "nickel_concentrate": {
+      "resourceId": "nickel_concentrate",
+      "unit": "TONNES",
+      "source": {
+        "sourceType": "EXISTING_PROCESSING_OUTPUT",
+        "status": "PROCESSING_CATALOG_PRODUCER",
+        "authoritativeProducerAvailable": true,
+        "producerFactoryTypes": [
+          "NICKEL_PROCESSING_PLANT"
+        ],
+        "sourceAuthority": "PROCESSING_RULES"
+      }
+    },
+    "packaging_material": {
+      "resourceId": "packaging_material",
+      "unit": "TONNES",
+      "source": {
+        "sourceType": "MANUFACTURING_INTERMEDIATE",
+        "status": "MANUFACTURING_CATALOG_PRODUCER",
+        "authoritativeProducerAvailable": true,
+        "producerRecipes": [
+          "PAPER_PACKAGING_MILL:wood_pulp"
+        ],
+        "sourceAuthority": "SIMULATED_MANUFACTURING_CATALOG"
+      }
+    },
+    "pharmaceutical_base_chemicals": {
+      "resourceId": "pharmaceutical_base_chemicals",
+      "unit": "TONNES",
+      "source": {
+        "sourceType": "MANUFACTURING_INTERMEDIATE",
+        "status": "MANUFACTURING_CATALOG_PRODUCER",
+        "authoritativeProducerAvailable": true,
+        "producerRecipes": [
+          "INDUSTRIAL_CHEMICALS_GAS_PLANT:pipeline_gas"
+        ],
+        "sourceAuthority": "SIMULATED_MANUFACTURING_CATALOG"
+      }
+    },
+    "phosphate_concentrate": {
+      "resourceId": "phosphate_concentrate",
+      "unit": "TONNES",
+      "source": {
+        "sourceType": "EXISTING_PROCESSING_OUTPUT",
+        "status": "PROCESSING_CATALOG_PRODUCER",
+        "authoritativeProducerAvailable": true,
+        "producerFactoryTypes": [
+          "PHOSPHATE_BENEFICIATION_PLANT"
+        ],
+        "sourceAuthority": "PROCESSING_RULES"
+      }
+    },
+    "pipeline_gas": {
+      "resourceId": "pipeline_gas",
+      "unit": "TONNES",
+      "source": {
+        "sourceType": "EXISTING_PROCESSING_OUTPUT",
+        "status": "PROCESSING_CATALOG_PRODUCER",
+        "authoritativeProducerAvailable": true,
+        "producerFactoryTypes": [
+          "GAS_PROCESSING_PLANT"
+        ],
+        "sourceAuthority": "PROCESSING_RULES"
+      }
+    },
+    "polymer_resin": {
+      "resourceId": "polymer_resin",
+      "unit": "TONNES",
+      "source": {
+        "sourceType": "MANUFACTURING_INTERMEDIATE",
+        "status": "MANUFACTURING_CATALOG_PRODUCER",
+        "authoritativeProducerAvailable": true,
+        "producerRecipes": [
+          "PETROCHEMICAL_POLYMER_PLANT:naphtha",
+          "PETROCHEMICAL_POLYMER_PLANT:recycled_polymer"
+        ],
+        "sourceAuthority": "SIMULATED_MANUFACTURING_CATALOG"
+      }
+    },
+    "polymer_scrap": {
+      "resourceId": "polymer_scrap",
+      "unit": "TONNES",
+      "source": {
+        "sourceType": "MANUFACTURING_INTERMEDIATE",
+        "status": "MANUFACTURING_CATALOG_PRODUCER",
+        "authoritativeProducerAvailable": true,
+        "producerRecipes": [
+          "VEHICLE_TRUCK_BUS_PLANT:steel_ingot"
+        ],
+        "sourceAuthority": "SIMULATED_MANUFACTURING_CATALOG"
+      }
+    },
+    "purified_silicon": {
+      "resourceId": "purified_silicon",
+      "unit": "TONNES",
+      "source": {
+        "sourceType": "MANUFACTURING_INTERMEDIATE",
+        "status": "MANUFACTURING_CATALOG_PRODUCER",
+        "authoritativeProducerAvailable": true,
+        "producerRecipes": [
+          "NON_FERROUS_SMELTER:glass_silica_feed"
+        ],
+        "sourceAuthority": "SIMULATED_MANUFACTURING_CATALOG"
+      }
+    },
+    "raw_milk": {
+      "resourceId": "raw_milk",
+      "unit": "TONNES",
+      "source": {
+        "sourceType": "LIVESTOCK_AND_DAIRY",
+        "status": "EXTERNAL_INPUT_REQUIRED",
+        "authoritativeProducerAvailable": false,
+        "sourceAuthority": "NOT_RECORDED",
+        "description": "Livestock/dairy production or import"
+      }
+    },
+    "recycled_copper": {
+      "resourceId": "recycled_copper",
+      "unit": "TONNES",
+      "source": {
+        "sourceType": "MANUFACTURING_INTERMEDIATE",
+        "status": "MANUFACTURING_CATALOG_PRODUCER",
+        "authoritativeProducerAvailable": true,
+        "producerRecipes": [
+          "RECYCLING_WASTE_PROCESSING_PLANT:steel_scrap"
+        ],
+        "sourceAuthority": "SIMULATED_MANUFACTURING_CATALOG"
+      }
+    },
+    "recycled_fiber": {
+      "resourceId": "recycled_fiber",
+      "unit": "TONNES",
+      "source": {
+        "sourceType": "PAPER_RECYCLING",
+        "status": "EXTERNAL_INPUT_REQUIRED",
+        "authoritativeProducerAvailable": false,
+        "sourceAuthority": "NOT_RECORDED",
+        "description": "Recovered paper/fiber supply or import"
+      }
+    },
+    "recycled_polymer": {
+      "resourceId": "recycled_polymer",
+      "unit": "TONNES",
+      "source": {
+        "sourceType": "MANUFACTURING_INTERMEDIATE",
+        "status": "MANUFACTURING_CATALOG_PRODUCER",
+        "authoritativeProducerAvailable": true,
+        "producerRecipes": [
+          "RECYCLING_WASTE_PROCESSING_PLANT:steel_scrap"
+        ],
+        "sourceAuthority": "SIMULATED_MANUFACTURING_CATALOG"
+      }
+    },
+    "recycled_steel": {
+      "resourceId": "recycled_steel",
+      "unit": "TONNES",
+      "source": {
+        "sourceType": "MANUFACTURING_INTERMEDIATE",
+        "status": "MANUFACTURING_CATALOG_PRODUCER",
+        "authoritativeProducerAvailable": true,
+        "producerRecipes": [
+          "RECYCLING_WASTE_PROCESSING_PLANT:steel_scrap"
+        ],
+        "sourceAuthority": "SIMULATED_MANUFACTURING_CATALOG"
+      }
+    },
+    "refined_salt": {
+      "resourceId": "refined_salt",
+      "unit": "TONNES",
+      "source": {
+        "sourceType": "EXISTING_PROCESSING_OUTPUT",
+        "status": "PROCESSING_CATALOG_PRODUCER",
+        "authoritativeProducerAvailable": true,
+        "producerFactoryTypes": [
+          "SALT_REFINERY"
+        ],
+        "sourceAuthority": "PROCESSING_RULES"
+      }
+    },
+    "semiconductor_components": {
+      "resourceId": "semiconductor_components",
+      "unit": "UNITS",
+      "source": {
+        "sourceType": "MANUFACTURING_INTERMEDIATE",
+        "status": "MANUFACTURING_CATALOG_PRODUCER",
+        "authoritativeProducerAvailable": true,
+        "producerRecipes": [
+          "ELECTRONICS_SEMICONDUCTOR_PLANT:purified_silicon"
+        ],
+        "sourceAuthority": "SIMULATED_MANUFACTURING_CATALOG"
+      }
+    },
+    "starch": {
+      "resourceId": "starch",
+      "unit": "TONNES",
+      "source": {
+        "sourceType": "AGRICULTURE_AND_FOOD_PROCESSING",
+        "status": "EXTERNAL_INPUT_REQUIRED",
+        "authoritativeProducerAvailable": false,
+        "sourceAuthority": "NOT_RECORDED",
+        "description": "Starch production or import"
+      }
+    },
+    "steel_ingot": {
+      "resourceId": "steel_ingot",
+      "unit": "TONNES",
+      "source": {
+        "sourceType": "MANUFACTURING_INTERMEDIATE",
+        "status": "MANUFACTURING_CATALOG_PRODUCER",
+        "authoritativeProducerAvailable": true,
+        "producerRecipes": [
+          "STEEL_AND_ALLOY_MILL:iron_concentrate",
+          "STEEL_AND_ALLOY_MILL:recycled_steel"
+        ],
+        "sourceAuthority": "SIMULATED_MANUFACTURING_CATALOG"
+      }
+    },
+    "steel_scrap": {
+      "resourceId": "steel_scrap",
+      "unit": "TONNES",
+      "source": {
+        "sourceType": "MANUFACTURING_INTERMEDIATE",
+        "status": "MANUFACTURING_CATALOG_PRODUCER",
+        "authoritativeProducerAvailable": true,
+        "producerRecipes": [
+          "INDUSTRIAL_MACHINERY_TOOL_PLANT:steel_ingot"
+        ],
+        "sourceAuthority": "SIMULATED_MANUFACTURING_CATALOG"
+      }
+    },
+    "synthetic_fiber": {
+      "resourceId": "synthetic_fiber",
+      "unit": "TONNES",
+      "source": {
+        "sourceType": "MANUFACTURING_INTERMEDIATE",
+        "status": "MANUFACTURING_CATALOG_PRODUCER",
+        "authoritativeProducerAvailable": true,
+        "producerRecipes": [
+          "PETROCHEMICAL_POLYMER_PLANT:naphtha"
+        ],
+        "sourceAuthority": "SIMULATED_MANUFACTURING_CATALOG"
+      }
+    },
+    "vegetable_oil": {
+      "resourceId": "vegetable_oil",
+      "unit": "TONNES",
+      "source": {
+        "sourceType": "AGRICULTURE_AND_FOOD_PROCESSING",
+        "status": "EXTERNAL_INPUT_REQUIRED",
+        "authoritativeProducerAvailable": false,
+        "sourceAuthority": "NOT_RECORDED",
+        "description": "Domestic agriculture/food processing or import"
+      }
+    },
+    "wheat": {
+      "resourceId": "wheat",
+      "unit": "TONNES",
+      "source": {
+        "sourceType": "AGRICULTURE",
+        "status": "EXTERNAL_INPUT_REQUIRED",
+        "authoritativeProducerAvailable": false,
+        "sourceAuthority": "NOT_RECORDED",
+        "description": "Crop production or import; not generated by the mineral mine pipeline"
+      }
+    },
+    "wood_pulp": {
+      "resourceId": "wood_pulp",
+      "unit": "TONNES",
+      "source": {
+        "sourceType": "FORESTRY_AND_PULP",
+        "status": "EXTERNAL_INPUT_REQUIRED",
+        "authoritativeProducerAvailable": false,
+        "sourceAuthority": "NOT_RECORDED",
+        "description": "Forestry/pulp supply or import"
+      }
+    }
   }
 }
