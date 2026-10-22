@@ -1910,7 +1910,9 @@
       "rule": "On commissioning, fill job slots from a known unemployed headcount. Reconcile by stable factory ID, and cap hires at the recorded unemployed pool.",
       "unknownBaselinePolicy": "PRESERVE_UNKNOWN_AND_REPORT_OPEN_POSITIONS",
       "duplicateHiringPolicy": "IDEMPOTENT_BY_FACTORY_ID",
-      "ratePolicy": "UPDATE_UNEMPLOYMENT_RATE_ONLY_WHEN_LABOUR_FORCE_IS_KNOWN"
+      "ratePolicy": "UPDATE_UNEMPLOYMENT_RATE_ONLY_WHEN_LABOUR_FORCE_IS_KNOWN",
+      "roleAllocationVersion": "SIMULATED_FACTORY_ROLE_DISTRIBUTION_V1",
+      "jobScope": "Direct jobs inside the factory asset, including operators, engineers, maintenance, logistics, quality, administration, safety, and support roles."
     }
   },
   "factoryProfiles": {
@@ -1946,7 +1948,21 @@
         "model": "DIRECT_JOB_CAPACITY",
         "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
         "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
-        "simulationOnly": true
+        "simulationOnly": true,
+        "coreOperatingCrew": 48,
+        "additionalDirectStaffSlots": 302,
+        "jobScope": "DIRECT_ONSITE_FACTORY_JOBS_INCLUDING_OPERATIONS_ENGINEERING_MAINTENANCE_LOGISTICS_QUALITY_ADMINISTRATION_AND_SAFETY",
+        "jobBreakdown": {
+          "operators": 40,
+          "engineers": 8,
+          "maintenanceAndFacilities": 75,
+          "logisticsAndWarehousing": 60,
+          "qualityControl": 45,
+          "administrationAndSupport": 45,
+          "healthSafetyAndEnvironmental": 30,
+          "otherDirectFactoryServices": 47
+        },
+        "jobBreakdownAuthority": "SIMULATED_FACTORY_ROLE_DISTRIBUTION_V1"
       },
       "constructionMaterials": {
         "construction_aggregate": 473,
@@ -1994,7 +2010,21 @@
         "model": "DIRECT_JOB_CAPACITY",
         "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
         "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
-        "simulationOnly": true
+        "simulationOnly": true,
+        "coreOperatingCrew": 67,
+        "additionalDirectStaffSlots": 333,
+        "jobScope": "DIRECT_ONSITE_FACTORY_JOBS_INCLUDING_OPERATIONS_ENGINEERING_MAINTENANCE_LOGISTICS_QUALITY_ADMINISTRATION_AND_SAFETY",
+        "jobBreakdown": {
+          "operators": 55,
+          "engineers": 12,
+          "maintenanceAndFacilities": 83,
+          "logisticsAndWarehousing": 66,
+          "qualityControl": 49,
+          "administrationAndSupport": 49,
+          "healthSafetyAndEnvironmental": 33,
+          "otherDirectFactoryServices": 53
+        },
+        "jobBreakdownAuthority": "SIMULATED_FACTORY_ROLE_DISTRIBUTION_V1"
       },
       "constructionMaterials": {
         "construction_aggregate": 651,
@@ -2043,7 +2073,21 @@
         "model": "DIRECT_JOB_CAPACITY",
         "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
         "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
-        "simulationOnly": true
+        "simulationOnly": true,
+        "coreOperatingCrew": 86,
+        "additionalDirectStaffSlots": 414,
+        "jobScope": "DIRECT_ONSITE_FACTORY_JOBS_INCLUDING_OPERATIONS_ENGINEERING_MAINTENANCE_LOGISTICS_QUALITY_ADMINISTRATION_AND_SAFETY",
+        "jobBreakdown": {
+          "operators": 70,
+          "engineers": 16,
+          "maintenanceAndFacilities": 103,
+          "logisticsAndWarehousing": 82,
+          "qualityControl": 62,
+          "administrationAndSupport": 62,
+          "healthSafetyAndEnvironmental": 41,
+          "otherDirectFactoryServices": 64
+        },
+        "jobBreakdownAuthority": "SIMULATED_FACTORY_ROLE_DISTRIBUTION_V1"
       },
       "constructionMaterials": {
         "construction_aggregate": 461,
@@ -2091,7 +2135,21 @@
         "model": "DIRECT_JOB_CAPACITY",
         "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
         "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
-        "simulationOnly": true
+        "simulationOnly": true,
+        "coreOperatingCrew": 105,
+        "additionalDirectStaffSlots": 545,
+        "jobScope": "DIRECT_ONSITE_FACTORY_JOBS_INCLUDING_OPERATIONS_ENGINEERING_MAINTENANCE_LOGISTICS_QUALITY_ADMINISTRATION_AND_SAFETY",
+        "jobBreakdown": {
+          "operators": 85,
+          "engineers": 20,
+          "maintenanceAndFacilities": 136,
+          "logisticsAndWarehousing": 109,
+          "qualityControl": 81,
+          "administrationAndSupport": 81,
+          "healthSafetyAndEnvironmental": 54,
+          "otherDirectFactoryServices": 84
+        },
+        "jobBreakdownAuthority": "SIMULATED_FACTORY_ROLE_DISTRIBUTION_V1"
       },
       "constructionMaterials": {
         "construction_aggregate": 470,
@@ -2138,7 +2196,21 @@
         "model": "DIRECT_JOB_CAPACITY",
         "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
         "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
-        "simulationOnly": true
+        "simulationOnly": true,
+        "coreOperatingCrew": 108,
+        "additionalDirectStaffSlots": 542,
+        "jobScope": "DIRECT_ONSITE_FACTORY_JOBS_INCLUDING_OPERATIONS_ENGINEERING_MAINTENANCE_LOGISTICS_QUALITY_ADMINISTRATION_AND_SAFETY",
+        "jobBreakdown": {
+          "operators": 100,
+          "engineers": 8,
+          "maintenanceAndFacilities": 135,
+          "logisticsAndWarehousing": 108,
+          "qualityControl": 81,
+          "administrationAndSupport": 81,
+          "healthSafetyAndEnvironmental": 54,
+          "otherDirectFactoryServices": 83
+        },
+        "jobBreakdownAuthority": "SIMULATED_FACTORY_ROLE_DISTRIBUTION_V1"
       },
       "constructionMaterials": {
         "construction_aggregate": 572,
@@ -2185,7 +2257,21 @@
         "model": "DIRECT_JOB_CAPACITY",
         "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
         "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
-        "simulationOnly": true
+        "simulationOnly": true,
+        "coreOperatingCrew": 127,
+        "additionalDirectStaffSlots": 623,
+        "jobScope": "DIRECT_ONSITE_FACTORY_JOBS_INCLUDING_OPERATIONS_ENGINEERING_MAINTENANCE_LOGISTICS_QUALITY_ADMINISTRATION_AND_SAFETY",
+        "jobBreakdown": {
+          "operators": 115,
+          "engineers": 12,
+          "maintenanceAndFacilities": 155,
+          "logisticsAndWarehousing": 124,
+          "qualityControl": 93,
+          "administrationAndSupport": 93,
+          "healthSafetyAndEnvironmental": 62,
+          "otherDirectFactoryServices": 96
+        },
+        "jobBreakdownAuthority": "SIMULATED_FACTORY_ROLE_DISTRIBUTION_V1"
       },
       "constructionMaterials": {
         "construction_aggregate": 686,
@@ -2233,7 +2319,21 @@
         "model": "DIRECT_JOB_CAPACITY",
         "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
         "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
-        "simulationOnly": true
+        "simulationOnly": true,
+        "coreOperatingCrew": 56,
+        "additionalDirectStaffSlots": 294,
+        "jobScope": "DIRECT_ONSITE_FACTORY_JOBS_INCLUDING_OPERATIONS_ENGINEERING_MAINTENANCE_LOGISTICS_QUALITY_ADMINISTRATION_AND_SAFETY",
+        "jobBreakdown": {
+          "operators": 40,
+          "engineers": 16,
+          "maintenanceAndFacilities": 73,
+          "logisticsAndWarehousing": 58,
+          "qualityControl": 44,
+          "administrationAndSupport": 44,
+          "healthSafetyAndEnvironmental": 29,
+          "otherDirectFactoryServices": 46
+        },
+        "jobBreakdownAuthority": "SIMULATED_FACTORY_ROLE_DISTRIBUTION_V1"
       },
       "constructionMaterials": {
         "construction_aggregate": 811,
@@ -2282,7 +2382,21 @@
         "model": "DIRECT_JOB_CAPACITY",
         "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
         "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
-        "simulationOnly": true
+        "simulationOnly": true,
+        "coreOperatingCrew": 75,
+        "additionalDirectStaffSlots": 375,
+        "jobScope": "DIRECT_ONSITE_FACTORY_JOBS_INCLUDING_OPERATIONS_ENGINEERING_MAINTENANCE_LOGISTICS_QUALITY_ADMINISTRATION_AND_SAFETY",
+        "jobBreakdown": {
+          "operators": 55,
+          "engineers": 20,
+          "maintenanceAndFacilities": 93,
+          "logisticsAndWarehousing": 75,
+          "qualityControl": 56,
+          "administrationAndSupport": 56,
+          "healthSafetyAndEnvironmental": 37,
+          "otherDirectFactoryServices": 58
+        },
+        "jobBreakdownAuthority": "SIMULATED_FACTORY_ROLE_DISTRIBUTION_V1"
       },
       "constructionMaterials": {
         "construction_aggregate": 598,
@@ -2328,7 +2442,21 @@
         "model": "DIRECT_JOB_CAPACITY",
         "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
         "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
-        "simulationOnly": true
+        "simulationOnly": true,
+        "coreOperatingCrew": 78,
+        "additionalDirectStaffSlots": 372,
+        "jobScope": "DIRECT_ONSITE_FACTORY_JOBS_INCLUDING_OPERATIONS_ENGINEERING_MAINTENANCE_LOGISTICS_QUALITY_ADMINISTRATION_AND_SAFETY",
+        "jobBreakdown": {
+          "operators": 70,
+          "engineers": 8,
+          "maintenanceAndFacilities": 93,
+          "logisticsAndWarehousing": 74,
+          "qualityControl": 55,
+          "administrationAndSupport": 55,
+          "healthSafetyAndEnvironmental": 37,
+          "otherDirectFactoryServices": 58
+        },
+        "jobBreakdownAuthority": "SIMULATED_FACTORY_ROLE_DISTRIBUTION_V1"
       },
       "constructionMaterials": {
         "construction_aggregate": 560,
@@ -2375,7 +2503,21 @@
         "model": "DIRECT_JOB_CAPACITY",
         "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
         "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
-        "simulationOnly": true
+        "simulationOnly": true,
+        "coreOperatingCrew": 97,
+        "additionalDirectStaffSlots": 503,
+        "jobScope": "DIRECT_ONSITE_FACTORY_JOBS_INCLUDING_OPERATIONS_ENGINEERING_MAINTENANCE_LOGISTICS_QUALITY_ADMINISTRATION_AND_SAFETY",
+        "jobBreakdown": {
+          "operators": 85,
+          "engineers": 12,
+          "maintenanceAndFacilities": 125,
+          "logisticsAndWarehousing": 100,
+          "qualityControl": 75,
+          "administrationAndSupport": 75,
+          "healthSafetyAndEnvironmental": 50,
+          "otherDirectFactoryServices": 78
+        },
+        "jobBreakdownAuthority": "SIMULATED_FACTORY_ROLE_DISTRIBUTION_V1"
       },
       "constructionMaterials": {
         "construction_aggregate": 523,
@@ -2423,7 +2565,21 @@
         "model": "DIRECT_JOB_CAPACITY",
         "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
         "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
-        "simulationOnly": true
+        "simulationOnly": true,
+        "coreOperatingCrew": 116,
+        "additionalDirectStaffSlots": 584,
+        "jobScope": "DIRECT_ONSITE_FACTORY_JOBS_INCLUDING_OPERATIONS_ENGINEERING_MAINTENANCE_LOGISTICS_QUALITY_ADMINISTRATION_AND_SAFETY",
+        "jobBreakdown": {
+          "operators": 100,
+          "engineers": 16,
+          "maintenanceAndFacilities": 146,
+          "logisticsAndWarehousing": 116,
+          "qualityControl": 87,
+          "administrationAndSupport": 87,
+          "healthSafetyAndEnvironmental": 58,
+          "otherDirectFactoryServices": 90
+        },
+        "jobBreakdownAuthority": "SIMULATED_FACTORY_ROLE_DISTRIBUTION_V1"
       },
       "constructionMaterials": {
         "construction_aggregate": 730,
@@ -2471,7 +2627,21 @@
         "model": "DIRECT_JOB_CAPACITY",
         "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
         "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
-        "simulationOnly": true
+        "simulationOnly": true,
+        "coreOperatingCrew": 135,
+        "additionalDirectStaffSlots": 665,
+        "jobScope": "DIRECT_ONSITE_FACTORY_JOBS_INCLUDING_OPERATIONS_ENGINEERING_MAINTENANCE_LOGISTICS_QUALITY_ADMINISTRATION_AND_SAFETY",
+        "jobBreakdown": {
+          "operators": 115,
+          "engineers": 20,
+          "maintenanceAndFacilities": 166,
+          "logisticsAndWarehousing": 133,
+          "qualityControl": 99,
+          "administrationAndSupport": 99,
+          "healthSafetyAndEnvironmental": 66,
+          "otherDirectFactoryServices": 102
+        },
+        "jobBreakdownAuthority": "SIMULATED_FACTORY_ROLE_DISTRIBUTION_V1"
       },
       "constructionMaterials": {
         "construction_aggregate": 587,
@@ -2518,7 +2688,21 @@
         "model": "DIRECT_JOB_CAPACITY",
         "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
         "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
-        "simulationOnly": true
+        "simulationOnly": true,
+        "coreOperatingCrew": 48,
+        "additionalDirectStaffSlots": 302,
+        "jobScope": "DIRECT_ONSITE_FACTORY_JOBS_INCLUDING_OPERATIONS_ENGINEERING_MAINTENANCE_LOGISTICS_QUALITY_ADMINISTRATION_AND_SAFETY",
+        "jobBreakdown": {
+          "operators": 40,
+          "engineers": 8,
+          "maintenanceAndFacilities": 75,
+          "logisticsAndWarehousing": 60,
+          "qualityControl": 45,
+          "administrationAndSupport": 45,
+          "healthSafetyAndEnvironmental": 30,
+          "otherDirectFactoryServices": 47
+        },
+        "jobBreakdownAuthority": "SIMULATED_FACTORY_ROLE_DISTRIBUTION_V1"
       },
       "constructionMaterials": {
         "construction_aggregate": 549,
@@ -2565,7 +2749,21 @@
         "model": "DIRECT_JOB_CAPACITY",
         "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
         "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
-        "simulationOnly": true
+        "simulationOnly": true,
+        "coreOperatingCrew": 67,
+        "additionalDirectStaffSlots": 333,
+        "jobScope": "DIRECT_ONSITE_FACTORY_JOBS_INCLUDING_OPERATIONS_ENGINEERING_MAINTENANCE_LOGISTICS_QUALITY_ADMINISTRATION_AND_SAFETY",
+        "jobBreakdown": {
+          "operators": 55,
+          "engineers": 12,
+          "maintenanceAndFacilities": 83,
+          "logisticsAndWarehousing": 66,
+          "qualityControl": 49,
+          "administrationAndSupport": 49,
+          "healthSafetyAndEnvironmental": 33,
+          "otherDirectFactoryServices": 53
+        },
+        "jobBreakdownAuthority": "SIMULATED_FACTORY_ROLE_DISTRIBUTION_V1"
       },
       "constructionMaterials": {
         "construction_aggregate": 604,
@@ -2612,7 +2810,21 @@
         "model": "DIRECT_JOB_CAPACITY",
         "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
         "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
-        "simulationOnly": true
+        "simulationOnly": true,
+        "coreOperatingCrew": 86,
+        "additionalDirectStaffSlots": 414,
+        "jobScope": "DIRECT_ONSITE_FACTORY_JOBS_INCLUDING_OPERATIONS_ENGINEERING_MAINTENANCE_LOGISTICS_QUALITY_ADMINISTRATION_AND_SAFETY",
+        "jobBreakdown": {
+          "operators": 70,
+          "engineers": 16,
+          "maintenanceAndFacilities": 103,
+          "logisticsAndWarehousing": 82,
+          "qualityControl": 62,
+          "administrationAndSupport": 62,
+          "healthSafetyAndEnvironmental": 41,
+          "otherDirectFactoryServices": 64
+        },
+        "jobBreakdownAuthority": "SIMULATED_FACTORY_ROLE_DISTRIBUTION_V1"
       },
       "constructionMaterials": {
         "construction_aggregate": 660,
@@ -2659,7 +2871,21 @@
         "model": "DIRECT_JOB_CAPACITY",
         "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
         "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
-        "simulationOnly": true
+        "simulationOnly": true,
+        "coreOperatingCrew": 105,
+        "additionalDirectStaffSlots": 545,
+        "jobScope": "DIRECT_ONSITE_FACTORY_JOBS_INCLUDING_OPERATIONS_ENGINEERING_MAINTENANCE_LOGISTICS_QUALITY_ADMINISTRATION_AND_SAFETY",
+        "jobBreakdown": {
+          "operators": 85,
+          "engineers": 20,
+          "maintenanceAndFacilities": 136,
+          "logisticsAndWarehousing": 109,
+          "qualityControl": 81,
+          "administrationAndSupport": 81,
+          "healthSafetyAndEnvironmental": 54,
+          "otherDirectFactoryServices": 84
+        },
+        "jobBreakdownAuthority": "SIMULATED_FACTORY_ROLE_DISTRIBUTION_V1"
       },
       "constructionMaterials": {
         "construction_aggregate": 575,
@@ -2706,7 +2932,21 @@
         "model": "DIRECT_JOB_CAPACITY",
         "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
         "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
-        "simulationOnly": true
+        "simulationOnly": true,
+        "coreOperatingCrew": 108,
+        "additionalDirectStaffSlots": 542,
+        "jobScope": "DIRECT_ONSITE_FACTORY_JOBS_INCLUDING_OPERATIONS_ENGINEERING_MAINTENANCE_LOGISTICS_QUALITY_ADMINISTRATION_AND_SAFETY",
+        "jobBreakdown": {
+          "operators": 100,
+          "engineers": 8,
+          "maintenanceAndFacilities": 135,
+          "logisticsAndWarehousing": 108,
+          "qualityControl": 81,
+          "administrationAndSupport": 81,
+          "healthSafetyAndEnvironmental": 54,
+          "otherDirectFactoryServices": 83
+        },
+        "jobBreakdownAuthority": "SIMULATED_FACTORY_ROLE_DISTRIBUTION_V1"
       },
       "constructionMaterials": {
         "construction_aggregate": 899,
@@ -2753,7 +2993,21 @@
         "model": "DIRECT_JOB_CAPACITY",
         "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
         "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
-        "simulationOnly": true
+        "simulationOnly": true,
+        "coreOperatingCrew": 127,
+        "additionalDirectStaffSlots": 623,
+        "jobScope": "DIRECT_ONSITE_FACTORY_JOBS_INCLUDING_OPERATIONS_ENGINEERING_MAINTENANCE_LOGISTICS_QUALITY_ADMINISTRATION_AND_SAFETY",
+        "jobBreakdown": {
+          "operators": 115,
+          "engineers": 12,
+          "maintenanceAndFacilities": 155,
+          "logisticsAndWarehousing": 124,
+          "qualityControl": 93,
+          "administrationAndSupport": 93,
+          "healthSafetyAndEnvironmental": 62,
+          "otherDirectFactoryServices": 96
+        },
+        "jobBreakdownAuthority": "SIMULATED_FACTORY_ROLE_DISTRIBUTION_V1"
       },
       "constructionMaterials": {
         "construction_aggregate": 593,
@@ -2801,7 +3055,21 @@
         "model": "DIRECT_JOB_CAPACITY",
         "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
         "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
-        "simulationOnly": true
+        "simulationOnly": true,
+        "coreOperatingCrew": 56,
+        "additionalDirectStaffSlots": 294,
+        "jobScope": "DIRECT_ONSITE_FACTORY_JOBS_INCLUDING_OPERATIONS_ENGINEERING_MAINTENANCE_LOGISTICS_QUALITY_ADMINISTRATION_AND_SAFETY",
+        "jobBreakdown": {
+          "operators": 40,
+          "engineers": 16,
+          "maintenanceAndFacilities": 73,
+          "logisticsAndWarehousing": 58,
+          "qualityControl": 44,
+          "administrationAndSupport": 44,
+          "healthSafetyAndEnvironmental": 29,
+          "otherDirectFactoryServices": 46
+        },
+        "jobBreakdownAuthority": "SIMULATED_FACTORY_ROLE_DISTRIBUTION_V1"
       },
       "constructionMaterials": {
         "construction_aggregate": 695,
@@ -2848,7 +3116,21 @@
         "model": "DIRECT_JOB_CAPACITY",
         "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
         "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
-        "simulationOnly": true
+        "simulationOnly": true,
+        "coreOperatingCrew": 75,
+        "additionalDirectStaffSlots": 375,
+        "jobScope": "DIRECT_ONSITE_FACTORY_JOBS_INCLUDING_OPERATIONS_ENGINEERING_MAINTENANCE_LOGISTICS_QUALITY_ADMINISTRATION_AND_SAFETY",
+        "jobBreakdown": {
+          "operators": 55,
+          "engineers": 20,
+          "maintenanceAndFacilities": 93,
+          "logisticsAndWarehousing": 75,
+          "qualityControl": 56,
+          "administrationAndSupport": 56,
+          "healthSafetyAndEnvironmental": 37,
+          "otherDirectFactoryServices": 58
+        },
+        "jobBreakdownAuthority": "SIMULATED_FACTORY_ROLE_DISTRIBUTION_V1"
       },
       "constructionMaterials": {
         "construction_aggregate": 610,
@@ -2897,7 +3179,21 @@
         "model": "DIRECT_JOB_CAPACITY",
         "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
         "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
-        "simulationOnly": true
+        "simulationOnly": true,
+        "coreOperatingCrew": 78,
+        "additionalDirectStaffSlots": 372,
+        "jobScope": "DIRECT_ONSITE_FACTORY_JOBS_INCLUDING_OPERATIONS_ENGINEERING_MAINTENANCE_LOGISTICS_QUALITY_ADMINISTRATION_AND_SAFETY",
+        "jobBreakdown": {
+          "operators": 70,
+          "engineers": 8,
+          "maintenanceAndFacilities": 93,
+          "logisticsAndWarehousing": 74,
+          "qualityControl": 55,
+          "administrationAndSupport": 55,
+          "healthSafetyAndEnvironmental": 37,
+          "otherDirectFactoryServices": 58
+        },
+        "jobBreakdownAuthority": "SIMULATED_FACTORY_ROLE_DISTRIBUTION_V1"
       },
       "constructionMaterials": {
         "construction_aggregate": 712,
@@ -2944,7 +3240,21 @@
         "model": "DIRECT_JOB_CAPACITY",
         "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
         "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
-        "simulationOnly": true
+        "simulationOnly": true,
+        "coreOperatingCrew": 97,
+        "additionalDirectStaffSlots": 503,
+        "jobScope": "DIRECT_ONSITE_FACTORY_JOBS_INCLUDING_OPERATIONS_ENGINEERING_MAINTENANCE_LOGISTICS_QUALITY_ADMINISTRATION_AND_SAFETY",
+        "jobBreakdown": {
+          "operators": 85,
+          "engineers": 12,
+          "maintenanceAndFacilities": 125,
+          "logisticsAndWarehousing": 100,
+          "qualityControl": 75,
+          "administrationAndSupport": 75,
+          "healthSafetyAndEnvironmental": 50,
+          "otherDirectFactoryServices": 78
+        },
+        "jobBreakdownAuthority": "SIMULATED_FACTORY_ROLE_DISTRIBUTION_V1"
       },
       "constructionMaterials": {
         "construction_aggregate": 943,
@@ -2991,7 +3301,21 @@
         "model": "DIRECT_JOB_CAPACITY",
         "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
         "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
-        "simulationOnly": true
+        "simulationOnly": true,
+        "coreOperatingCrew": 116,
+        "additionalDirectStaffSlots": 584,
+        "jobScope": "DIRECT_ONSITE_FACTORY_JOBS_INCLUDING_OPERATIONS_ENGINEERING_MAINTENANCE_LOGISTICS_QUALITY_ADMINISTRATION_AND_SAFETY",
+        "jobBreakdown": {
+          "operators": 100,
+          "engineers": 16,
+          "maintenanceAndFacilities": 146,
+          "logisticsAndWarehousing": 116,
+          "qualityControl": 87,
+          "administrationAndSupport": 87,
+          "healthSafetyAndEnvironmental": 58,
+          "otherDirectFactoryServices": 90
+        },
+        "jobBreakdownAuthority": "SIMULATED_FACTORY_ROLE_DISTRIBUTION_V1"
       },
       "constructionMaterials": {
         "construction_aggregate": 835,
@@ -3040,7 +3364,21 @@
         "model": "DIRECT_JOB_CAPACITY",
         "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
         "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
-        "simulationOnly": true
+        "simulationOnly": true,
+        "coreOperatingCrew": 135,
+        "additionalDirectStaffSlots": 665,
+        "jobScope": "DIRECT_ONSITE_FACTORY_JOBS_INCLUDING_OPERATIONS_ENGINEERING_MAINTENANCE_LOGISTICS_QUALITY_ADMINISTRATION_AND_SAFETY",
+        "jobBreakdown": {
+          "operators": 115,
+          "engineers": 20,
+          "maintenanceAndFacilities": 166,
+          "logisticsAndWarehousing": 133,
+          "qualityControl": 99,
+          "administrationAndSupport": 99,
+          "healthSafetyAndEnvironmental": 66,
+          "otherDirectFactoryServices": 102
+        },
+        "jobBreakdownAuthority": "SIMULATED_FACTORY_ROLE_DISTRIBUTION_V1"
       },
       "constructionMaterials": {
         "construction_aggregate": 738,
@@ -3086,7 +3424,21 @@
         "model": "DIRECT_JOB_CAPACITY",
         "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
         "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
-        "simulationOnly": true
+        "simulationOnly": true,
+        "coreOperatingCrew": 48,
+        "additionalDirectStaffSlots": 302,
+        "jobScope": "DIRECT_ONSITE_FACTORY_JOBS_INCLUDING_OPERATIONS_ENGINEERING_MAINTENANCE_LOGISTICS_QUALITY_ADMINISTRATION_AND_SAFETY",
+        "jobBreakdown": {
+          "operators": 40,
+          "engineers": 8,
+          "maintenanceAndFacilities": 75,
+          "logisticsAndWarehousing": 60,
+          "qualityControl": 45,
+          "administrationAndSupport": 45,
+          "healthSafetyAndEnvironmental": 30,
+          "otherDirectFactoryServices": 47
+        },
+        "jobBreakdownAuthority": "SIMULATED_FACTORY_ROLE_DISTRIBUTION_V1"
       },
       "constructionMaterials": {
         "construction_aggregate": 700,
@@ -3133,7 +3485,21 @@
         "model": "DIRECT_JOB_CAPACITY",
         "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
         "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
-        "simulationOnly": true
+        "simulationOnly": true,
+        "coreOperatingCrew": 67,
+        "additionalDirectStaffSlots": 333,
+        "jobScope": "DIRECT_ONSITE_FACTORY_JOBS_INCLUDING_OPERATIONS_ENGINEERING_MAINTENANCE_LOGISTICS_QUALITY_ADMINISTRATION_AND_SAFETY",
+        "jobBreakdown": {
+          "operators": 55,
+          "engineers": 12,
+          "maintenanceAndFacilities": 83,
+          "logisticsAndWarehousing": 66,
+          "qualityControl": 49,
+          "administrationAndSupport": 49,
+          "healthSafetyAndEnvironmental": 33,
+          "otherDirectFactoryServices": 53
+        },
+        "jobBreakdownAuthority": "SIMULATED_FACTORY_ROLE_DISTRIBUTION_V1"
       },
       "constructionMaterials": {
         "construction_aggregate": 756,
@@ -3180,7 +3546,21 @@
         "model": "DIRECT_JOB_CAPACITY",
         "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
         "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
-        "simulationOnly": true
+        "simulationOnly": true,
+        "coreOperatingCrew": 86,
+        "additionalDirectStaffSlots": 414,
+        "jobScope": "DIRECT_ONSITE_FACTORY_JOBS_INCLUDING_OPERATIONS_ENGINEERING_MAINTENANCE_LOGISTICS_QUALITY_ADMINISTRATION_AND_SAFETY",
+        "jobBreakdown": {
+          "operators": 70,
+          "engineers": 16,
+          "maintenanceAndFacilities": 103,
+          "logisticsAndWarehousing": 82,
+          "qualityControl": 62,
+          "administrationAndSupport": 62,
+          "healthSafetyAndEnvironmental": 41,
+          "otherDirectFactoryServices": 64
+        },
+        "jobBreakdownAuthority": "SIMULATED_FACTORY_ROLE_DISTRIBUTION_V1"
       },
       "constructionMaterials": {
         "construction_aggregate": 765,
@@ -3227,7 +3607,21 @@
         "model": "DIRECT_JOB_CAPACITY",
         "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
         "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
-        "simulationOnly": true
+        "simulationOnly": true,
+        "coreOperatingCrew": 105,
+        "additionalDirectStaffSlots": 545,
+        "jobScope": "DIRECT_ONSITE_FACTORY_JOBS_INCLUDING_OPERATIONS_ENGINEERING_MAINTENANCE_LOGISTICS_QUALITY_ADMINISTRATION_AND_SAFETY",
+        "jobBreakdown": {
+          "operators": 85,
+          "engineers": 20,
+          "maintenanceAndFacilities": 136,
+          "logisticsAndWarehousing": 109,
+          "qualityControl": 81,
+          "administrationAndSupport": 81,
+          "healthSafetyAndEnvironmental": 54,
+          "otherDirectFactoryServices": 84
+        },
+        "jobBreakdownAuthority": "SIMULATED_FACTORY_ROLE_DISTRIBUTION_V1"
       },
       "constructionMaterials": {
         "construction_aggregate": 995,
@@ -3274,7 +3668,21 @@
         "model": "DIRECT_JOB_CAPACITY",
         "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
         "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
-        "simulationOnly": true
+        "simulationOnly": true,
+        "coreOperatingCrew": 108,
+        "additionalDirectStaffSlots": 542,
+        "jobScope": "DIRECT_ONSITE_FACTORY_JOBS_INCLUDING_OPERATIONS_ENGINEERING_MAINTENANCE_LOGISTICS_QUALITY_ADMINISTRATION_AND_SAFETY",
+        "jobBreakdown": {
+          "operators": 100,
+          "engineers": 8,
+          "maintenanceAndFacilities": 135,
+          "logisticsAndWarehousing": 108,
+          "qualityControl": 81,
+          "administrationAndSupport": 81,
+          "healthSafetyAndEnvironmental": 54,
+          "otherDirectFactoryServices": 83
+        },
+        "jobBreakdownAuthority": "SIMULATED_FACTORY_ROLE_DISTRIBUTION_V1"
       },
       "constructionMaterials": {
         "construction_aggregate": 887,
@@ -3322,7 +3730,21 @@
         "model": "DIRECT_JOB_CAPACITY",
         "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
         "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
-        "simulationOnly": true
+        "simulationOnly": true,
+        "coreOperatingCrew": 127,
+        "additionalDirectStaffSlots": 623,
+        "jobScope": "DIRECT_ONSITE_FACTORY_JOBS_INCLUDING_OPERATIONS_ENGINEERING_MAINTENANCE_LOGISTICS_QUALITY_ADMINISTRATION_AND_SAFETY",
+        "jobBreakdown": {
+          "operators": 115,
+          "engineers": 12,
+          "maintenanceAndFacilities": 155,
+          "logisticsAndWarehousing": 124,
+          "qualityControl": 93,
+          "administrationAndSupport": 93,
+          "healthSafetyAndEnvironmental": 62,
+          "otherDirectFactoryServices": 96
+        },
+        "jobBreakdownAuthority": "SIMULATED_FACTORY_ROLE_DISTRIBUTION_V1"
       },
       "constructionMaterials": {
         "construction_aggregate": 698,
@@ -3370,7 +3792,21 @@
         "model": "DIRECT_JOB_CAPACITY",
         "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
         "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
-        "simulationOnly": true
+        "simulationOnly": true,
+        "coreOperatingCrew": 56,
+        "additionalDirectStaffSlots": 294,
+        "jobScope": "DIRECT_ONSITE_FACTORY_JOBS_INCLUDING_OPERATIONS_ENGINEERING_MAINTENANCE_LOGISTICS_QUALITY_ADMINISTRATION_AND_SAFETY",
+        "jobBreakdown": {
+          "operators": 40,
+          "engineers": 16,
+          "maintenanceAndFacilities": 73,
+          "logisticsAndWarehousing": 58,
+          "qualityControl": 44,
+          "administrationAndSupport": 44,
+          "healthSafetyAndEnvironmental": 29,
+          "otherDirectFactoryServices": 46
+        },
+        "jobBreakdownAuthority": "SIMULATED_FACTORY_ROLE_DISTRIBUTION_V1"
       },
       "constructionMaterials": {
         "construction_aggregate": 753,
@@ -3417,7 +3853,21 @@
         "model": "DIRECT_JOB_CAPACITY",
         "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
         "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
-        "simulationOnly": true
+        "simulationOnly": true,
+        "coreOperatingCrew": 75,
+        "additionalDirectStaffSlots": 375,
+        "jobScope": "DIRECT_ONSITE_FACTORY_JOBS_INCLUDING_OPERATIONS_ENGINEERING_MAINTENANCE_LOGISTICS_QUALITY_ADMINISTRATION_AND_SAFETY",
+        "jobBreakdown": {
+          "operators": 55,
+          "engineers": 20,
+          "maintenanceAndFacilities": 93,
+          "logisticsAndWarehousing": 75,
+          "qualityControl": 56,
+          "administrationAndSupport": 56,
+          "healthSafetyAndEnvironmental": 37,
+          "otherDirectFactoryServices": 58
+        },
+        "jobBreakdownAuthority": "SIMULATED_FACTORY_ROLE_DISTRIBUTION_V1"
       },
       "constructionMaterials": {
         "construction_aggregate": 715,
@@ -3466,7 +3916,21 @@
         "model": "DIRECT_JOB_CAPACITY",
         "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
         "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
-        "simulationOnly": true
+        "simulationOnly": true,
+        "coreOperatingCrew": 78,
+        "additionalDirectStaffSlots": 372,
+        "jobScope": "DIRECT_ONSITE_FACTORY_JOBS_INCLUDING_OPERATIONS_ENGINEERING_MAINTENANCE_LOGISTICS_QUALITY_ADMINISTRATION_AND_SAFETY",
+        "jobBreakdown": {
+          "operators": 70,
+          "engineers": 8,
+          "maintenanceAndFacilities": 93,
+          "logisticsAndWarehousing": 74,
+          "qualityControl": 55,
+          "administrationAndSupport": 55,
+          "healthSafetyAndEnvironmental": 37,
+          "otherDirectFactoryServices": 58
+        },
+        "jobBreakdownAuthority": "SIMULATED_FACTORY_ROLE_DISTRIBUTION_V1"
       },
       "constructionMaterials": {
         "construction_aggregate": 817,
@@ -3513,7 +3977,21 @@
         "model": "DIRECT_JOB_CAPACITY",
         "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
         "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
-        "simulationOnly": true
+        "simulationOnly": true,
+        "coreOperatingCrew": 97,
+        "additionalDirectStaffSlots": 503,
+        "jobScope": "DIRECT_ONSITE_FACTORY_JOBS_INCLUDING_OPERATIONS_ENGINEERING_MAINTENANCE_LOGISTICS_QUALITY_ADMINISTRATION_AND_SAFETY",
+        "jobBreakdown": {
+          "operators": 85,
+          "engineers": 12,
+          "maintenanceAndFacilities": 125,
+          "logisticsAndWarehousing": 100,
+          "qualityControl": 75,
+          "administrationAndSupport": 75,
+          "healthSafetyAndEnvironmental": 50,
+          "otherDirectFactoryServices": 78
+        },
+        "jobBreakdownAuthority": "SIMULATED_FACTORY_ROLE_DISTRIBUTION_V1"
       },
       "constructionMaterials": {
         "construction_aggregate": 1048,
@@ -3560,7 +4038,21 @@
         "model": "DIRECT_JOB_CAPACITY",
         "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
         "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
-        "simulationOnly": true
+        "simulationOnly": true,
+        "coreOperatingCrew": 116,
+        "additionalDirectStaffSlots": 584,
+        "jobScope": "DIRECT_ONSITE_FACTORY_JOBS_INCLUDING_OPERATIONS_ENGINEERING_MAINTENANCE_LOGISTICS_QUALITY_ADMINISTRATION_AND_SAFETY",
+        "jobBreakdown": {
+          "operators": 100,
+          "engineers": 16,
+          "maintenanceAndFacilities": 146,
+          "logisticsAndWarehousing": 116,
+          "qualityControl": 87,
+          "administrationAndSupport": 87,
+          "healthSafetyAndEnvironmental": 58,
+          "otherDirectFactoryServices": 90
+        },
+        "jobBreakdownAuthority": "SIMULATED_FACTORY_ROLE_DISTRIBUTION_V1"
       },
       "constructionMaterials": {
         "construction_aggregate": 1056,
@@ -3607,7 +4099,21 @@
         "model": "DIRECT_JOB_CAPACITY",
         "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
         "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
-        "simulationOnly": true
+        "simulationOnly": true,
+        "coreOperatingCrew": 135,
+        "additionalDirectStaffSlots": 665,
+        "jobScope": "DIRECT_ONSITE_FACTORY_JOBS_INCLUDING_OPERATIONS_ENGINEERING_MAINTENANCE_LOGISTICS_QUALITY_ADMINISTRATION_AND_SAFETY",
+        "jobBreakdown": {
+          "operators": 115,
+          "engineers": 20,
+          "maintenanceAndFacilities": 166,
+          "logisticsAndWarehousing": 133,
+          "qualityControl": 99,
+          "administrationAndSupport": 99,
+          "healthSafetyAndEnvironmental": 66,
+          "otherDirectFactoryServices": 102
+        },
+        "jobBreakdownAuthority": "SIMULATED_FACTORY_ROLE_DISTRIBUTION_V1"
       },
       "constructionMaterials": {
         "construction_aggregate": 843,
@@ -3656,7 +4162,21 @@
         "model": "DIRECT_JOB_CAPACITY",
         "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
         "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
-        "simulationOnly": true
+        "simulationOnly": true,
+        "coreOperatingCrew": 270,
+        "additionalDirectStaffSlots": 4730,
+        "jobScope": "DIRECT_ONSITE_FACTORY_JOBS_INCLUDING_OPERATIONS_ENGINEERING_MAINTENANCE_LOGISTICS_QUALITY_ADMINISTRATION_AND_SAFETY",
+        "jobBreakdown": {
+          "operators": 240,
+          "engineers": 30,
+          "maintenanceAndFacilities": 1182,
+          "logisticsAndWarehousing": 946,
+          "qualityControl": 709,
+          "administrationAndSupport": 709,
+          "healthSafetyAndEnvironmental": 473,
+          "otherDirectFactoryServices": 711
+        },
+        "jobBreakdownAuthority": "SIMULATED_FACTORY_ROLE_DISTRIBUTION_V1"
       },
       "constructionMaterials": {
         "construction_aggregate": 2100,
@@ -3707,7 +4227,21 @@
         "model": "DIRECT_JOB_CAPACITY",
         "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
         "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
-        "simulationOnly": true
+        "simulationOnly": true,
+        "coreOperatingCrew": 204,
+        "additionalDirectStaffSlots": 3796,
+        "jobScope": "DIRECT_ONSITE_FACTORY_JOBS_INCLUDING_OPERATIONS_ENGINEERING_MAINTENANCE_LOGISTICS_QUALITY_ADMINISTRATION_AND_SAFETY",
+        "jobBreakdown": {
+          "operators": 180,
+          "engineers": 24,
+          "maintenanceAndFacilities": 949,
+          "logisticsAndWarehousing": 759,
+          "qualityControl": 569,
+          "administrationAndSupport": 569,
+          "healthSafetyAndEnvironmental": 379,
+          "otherDirectFactoryServices": 571
+        },
+        "jobBreakdownAuthority": "SIMULATED_FACTORY_ROLE_DISTRIBUTION_V1"
       },
       "constructionMaterials": {
         "construction_aggregate": 1867,
@@ -3761,7 +4295,21 @@
         "model": "DIRECT_JOB_CAPACITY",
         "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
         "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
-        "simulationOnly": true
+        "simulationOnly": true,
+        "coreOperatingCrew": 245,
+        "additionalDirectStaffSlots": 5255,
+        "jobScope": "DIRECT_ONSITE_FACTORY_JOBS_INCLUDING_OPERATIONS_ENGINEERING_MAINTENANCE_LOGISTICS_QUALITY_ADMINISTRATION_AND_SAFETY",
+        "jobBreakdown": {
+          "operators": 210,
+          "engineers": 35,
+          "maintenanceAndFacilities": 1313,
+          "logisticsAndWarehousing": 1051,
+          "qualityControl": 788,
+          "administrationAndSupport": 788,
+          "healthSafetyAndEnvironmental": 525,
+          "otherDirectFactoryServices": 790
+        },
+        "jobBreakdownAuthority": "SIMULATED_FACTORY_ROLE_DISTRIBUTION_V1"
       },
       "constructionMaterials": {
         "construction_aggregate": 2800,
@@ -3812,7 +4360,21 @@
         "model": "DIRECT_JOB_CAPACITY",
         "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
         "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
-        "simulationOnly": true
+        "simulationOnly": true,
+        "coreOperatingCrew": 182,
+        "additionalDirectStaffSlots": 3318,
+        "jobScope": "DIRECT_ONSITE_FACTORY_JOBS_INCLUDING_OPERATIONS_ENGINEERING_MAINTENANCE_LOGISTICS_QUALITY_ADMINISTRATION_AND_SAFETY",
+        "jobBreakdown": {
+          "operators": 160,
+          "engineers": 22,
+          "maintenanceAndFacilities": 829,
+          "logisticsAndWarehousing": 663,
+          "qualityControl": 497,
+          "administrationAndSupport": 497,
+          "healthSafetyAndEnvironmental": 331,
+          "otherDirectFactoryServices": 501
+        },
+        "jobBreakdownAuthority": "SIMULATED_FACTORY_ROLE_DISTRIBUTION_V1"
       },
       "constructionMaterials": {
         "construction_aggregate": 1634,
@@ -3864,7 +4426,21 @@
         "model": "DIRECT_JOB_CAPACITY",
         "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
         "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
-        "simulationOnly": true
+        "simulationOnly": true,
+        "coreOperatingCrew": 200,
+        "additionalDirectStaffSlots": 3800,
+        "jobScope": "DIRECT_ONSITE_FACTORY_JOBS_INCLUDING_OPERATIONS_ENGINEERING_MAINTENANCE_LOGISTICS_QUALITY_ADMINISTRATION_AND_SAFETY",
+        "jobBreakdown": {
+          "operators": 170,
+          "engineers": 30,
+          "maintenanceAndFacilities": 950,
+          "logisticsAndWarehousing": 760,
+          "qualityControl": 570,
+          "administrationAndSupport": 570,
+          "healthSafetyAndEnvironmental": 380,
+          "otherDirectFactoryServices": 570
+        },
+        "jobBreakdownAuthority": "SIMULATED_FACTORY_ROLE_DISTRIBUTION_V1"
       },
       "constructionMaterials": {
         "construction_aggregate": 2217,
@@ -3916,7 +4492,21 @@
         "model": "DIRECT_JOB_CAPACITY",
         "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
         "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
-        "simulationOnly": true
+        "simulationOnly": true,
+        "coreOperatingCrew": 148,
+        "additionalDirectStaffSlots": 2352,
+        "jobScope": "DIRECT_ONSITE_FACTORY_JOBS_INCLUDING_OPERATIONS_ENGINEERING_MAINTENANCE_LOGISTICS_QUALITY_ADMINISTRATION_AND_SAFETY",
+        "jobBreakdown": {
+          "operators": 130,
+          "engineers": 18,
+          "maintenanceAndFacilities": 588,
+          "logisticsAndWarehousing": 470,
+          "qualityControl": 352,
+          "administrationAndSupport": 352,
+          "healthSafetyAndEnvironmental": 235,
+          "otherDirectFactoryServices": 355
+        },
+        "jobBreakdownAuthority": "SIMULATED_FACTORY_ROLE_DISTRIBUTION_V1"
       },
       "constructionMaterials": {
         "construction_aggregate": 1834,
@@ -3964,7 +4554,21 @@
         "model": "DIRECT_JOB_CAPACITY",
         "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
         "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
-        "simulationOnly": true
+        "simulationOnly": true,
+        "coreOperatingCrew": 162,
+        "additionalDirectStaffSlots": 1838,
+        "jobScope": "DIRECT_ONSITE_FACTORY_JOBS_INCLUDING_OPERATIONS_ENGINEERING_MAINTENANCE_LOGISTICS_QUALITY_ADMINISTRATION_AND_SAFETY",
+        "jobBreakdown": {
+          "operators": 140,
+          "engineers": 22,
+          "maintenanceAndFacilities": 459,
+          "logisticsAndWarehousing": 367,
+          "qualityControl": 275,
+          "administrationAndSupport": 275,
+          "healthSafetyAndEnvironmental": 183,
+          "otherDirectFactoryServices": 279
+        },
+        "jobBreakdownAuthority": "SIMULATED_FACTORY_ROLE_DISTRIBUTION_V1"
       },
       "constructionMaterials": {
         "construction_aggregate": 1459,
@@ -4016,7 +4620,21 @@
         "model": "DIRECT_JOB_CAPACITY",
         "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
         "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
-        "simulationOnly": true
+        "simulationOnly": true,
+        "coreOperatingCrew": 166,
+        "additionalDirectStaffSlots": 2334,
+        "jobScope": "DIRECT_ONSITE_FACTORY_JOBS_INCLUDING_OPERATIONS_ENGINEERING_MAINTENANCE_LOGISTICS_QUALITY_ADMINISTRATION_AND_SAFETY",
+        "jobBreakdown": {
+          "operators": 150,
+          "engineers": 16,
+          "maintenanceAndFacilities": 583,
+          "logisticsAndWarehousing": 466,
+          "qualityControl": 350,
+          "administrationAndSupport": 350,
+          "healthSafetyAndEnvironmental": 233,
+          "otherDirectFactoryServices": 352
+        },
+        "jobBreakdownAuthority": "SIMULATED_FACTORY_ROLE_DISTRIBUTION_V1"
       },
       "constructionMaterials": {
         "construction_aggregate": 1050,
@@ -4065,7 +4683,21 @@
         "model": "DIRECT_JOB_CAPACITY",
         "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
         "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
-        "simulationOnly": true
+        "simulationOnly": true,
+        "coreOperatingCrew": 184,
+        "additionalDirectStaffSlots": 2816,
+        "jobScope": "DIRECT_ONSITE_FACTORY_JOBS_INCLUDING_OPERATIONS_ENGINEERING_MAINTENANCE_LOGISTICS_QUALITY_ADMINISTRATION_AND_SAFETY",
+        "jobBreakdown": {
+          "operators": 170,
+          "engineers": 14,
+          "maintenanceAndFacilities": 704,
+          "logisticsAndWarehousing": 563,
+          "qualityControl": 422,
+          "administrationAndSupport": 422,
+          "healthSafetyAndEnvironmental": 281,
+          "otherDirectFactoryServices": 424
+        },
+        "jobBreakdownAuthority": "SIMULATED_FACTORY_ROLE_DISTRIBUTION_V1"
       },
       "constructionMaterials": {
         "construction_aggregate": 817,
@@ -4115,7 +4747,21 @@
         "model": "DIRECT_JOB_CAPACITY",
         "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
         "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
-        "simulationOnly": true
+        "simulationOnly": true,
+        "coreOperatingCrew": 412,
+        "additionalDirectStaffSlots": 4088,
+        "jobScope": "DIRECT_ONSITE_FACTORY_JOBS_INCLUDING_OPERATIONS_ENGINEERING_MAINTENANCE_LOGISTICS_QUALITY_ADMINISTRATION_AND_SAFETY",
+        "jobBreakdown": {
+          "operators": 400,
+          "engineers": 12,
+          "maintenanceAndFacilities": 1022,
+          "logisticsAndWarehousing": 817,
+          "qualityControl": 613,
+          "administrationAndSupport": 613,
+          "healthSafetyAndEnvironmental": 408,
+          "otherDirectFactoryServices": 615
+        },
+        "jobBreakdownAuthority": "SIMULATED_FACTORY_ROLE_DISTRIBUTION_V1"
       },
       "constructionMaterials": {
         "construction_aggregate": 700,
@@ -4165,7 +4811,21 @@
         "model": "DIRECT_JOB_CAPACITY",
         "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
         "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
-        "simulationOnly": true
+        "simulationOnly": true,
+        "coreOperatingCrew": 225,
+        "additionalDirectStaffSlots": 3275,
+        "jobScope": "DIRECT_ONSITE_FACTORY_JOBS_INCLUDING_OPERATIONS_ENGINEERING_MAINTENANCE_LOGISTICS_QUALITY_ADMINISTRATION_AND_SAFETY",
+        "jobBreakdown": {
+          "operators": 180,
+          "engineers": 45,
+          "maintenanceAndFacilities": 818,
+          "logisticsAndWarehousing": 655,
+          "qualityControl": 491,
+          "administrationAndSupport": 491,
+          "healthSafetyAndEnvironmental": 327,
+          "otherDirectFactoryServices": 493
+        },
+        "jobBreakdownAuthority": "SIMULATED_FACTORY_ROLE_DISTRIBUTION_V1"
       },
       "constructionMaterials": {
         "construction_aggregate": 2567,
@@ -4214,7 +4874,21 @@
         "model": "DIRECT_JOB_CAPACITY",
         "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
         "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
-        "simulationOnly": true
+        "simulationOnly": true,
+        "coreOperatingCrew": 172,
+        "additionalDirectStaffSlots": 2828,
+        "jobScope": "DIRECT_ONSITE_FACTORY_JOBS_INCLUDING_OPERATIONS_ENGINEERING_MAINTENANCE_LOGISTICS_QUALITY_ADMINISTRATION_AND_SAFETY",
+        "jobBreakdown": {
+          "operators": 140,
+          "engineers": 32,
+          "maintenanceAndFacilities": 707,
+          "logisticsAndWarehousing": 565,
+          "qualityControl": 424,
+          "administrationAndSupport": 424,
+          "healthSafetyAndEnvironmental": 282,
+          "otherDirectFactoryServices": 426
+        },
+        "jobBreakdownAuthority": "SIMULATED_FACTORY_ROLE_DISTRIBUTION_V1"
       },
       "constructionMaterials": {
         "construction_aggregate": 1750,
@@ -4268,7 +4942,21 @@
         "model": "DIRECT_JOB_CAPACITY",
         "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
         "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
-        "simulationOnly": true
+        "simulationOnly": true,
+        "coreOperatingCrew": 355,
+        "additionalDirectStaffSlots": 8145,
+        "jobScope": "DIRECT_ONSITE_FACTORY_JOBS_INCLUDING_OPERATIONS_ENGINEERING_MAINTENANCE_LOGISTICS_QUALITY_ADMINISTRATION_AND_SAFETY",
+        "jobBreakdown": {
+          "operators": 260,
+          "engineers": 95,
+          "maintenanceAndFacilities": 2036,
+          "logisticsAndWarehousing": 1629,
+          "qualityControl": 1221,
+          "administrationAndSupport": 1221,
+          "healthSafetyAndEnvironmental": 814,
+          "otherDirectFactoryServices": 1224
+        },
+        "jobBreakdownAuthority": "SIMULATED_FACTORY_ROLE_DISTRIBUTION_V1"
       },
       "constructionMaterials": {
         "construction_aggregate": 8750,
@@ -4320,7 +5008,21 @@
         "model": "DIRECT_JOB_CAPACITY",
         "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
         "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
-        "simulationOnly": true
+        "simulationOnly": true,
+        "coreOperatingCrew": 232,
+        "additionalDirectStaffSlots": 2968,
+        "jobScope": "DIRECT_ONSITE_FACTORY_JOBS_INCLUDING_OPERATIONS_ENGINEERING_MAINTENANCE_LOGISTICS_QUALITY_ADMINISTRATION_AND_SAFETY",
+        "jobBreakdown": {
+          "operators": 190,
+          "engineers": 42,
+          "maintenanceAndFacilities": 742,
+          "logisticsAndWarehousing": 593,
+          "qualityControl": 445,
+          "administrationAndSupport": 445,
+          "healthSafetyAndEnvironmental": 296,
+          "otherDirectFactoryServices": 447
+        },
+        "jobBreakdownAuthority": "SIMULATED_FACTORY_ROLE_DISTRIBUTION_V1"
       },
       "constructionMaterials": {
         "construction_aggregate": 3267,
@@ -4372,7 +5074,21 @@
         "model": "DIRECT_JOB_CAPACITY",
         "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
         "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
-        "simulationOnly": true
+        "simulationOnly": true,
+        "coreOperatingCrew": 405,
+        "additionalDirectStaffSlots": 4595,
+        "jobScope": "DIRECT_ONSITE_FACTORY_JOBS_INCLUDING_OPERATIONS_ENGINEERING_MAINTENANCE_LOGISTICS_QUALITY_ADMINISTRATION_AND_SAFETY",
+        "jobBreakdown": {
+          "operators": 350,
+          "engineers": 55,
+          "maintenanceAndFacilities": 1148,
+          "logisticsAndWarehousing": 919,
+          "qualityControl": 689,
+          "administrationAndSupport": 689,
+          "healthSafetyAndEnvironmental": 459,
+          "otherDirectFactoryServices": 691
+        },
+        "jobBreakdownAuthority": "SIMULATED_FACTORY_ROLE_DISTRIBUTION_V1"
       },
       "constructionMaterials": {
         "construction_aggregate": 3734,
@@ -4424,7 +5140,21 @@
         "model": "DIRECT_JOB_CAPACITY",
         "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
         "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
-        "simulationOnly": true
+        "simulationOnly": true,
+        "coreOperatingCrew": 480,
+        "additionalDirectStaffSlots": 9520,
+        "jobScope": "DIRECT_ONSITE_FACTORY_JOBS_INCLUDING_OPERATIONS_ENGINEERING_MAINTENANCE_LOGISTICS_QUALITY_ADMINISTRATION_AND_SAFETY",
+        "jobBreakdown": {
+          "operators": 420,
+          "engineers": 60,
+          "maintenanceAndFacilities": 2380,
+          "logisticsAndWarehousing": 1904,
+          "qualityControl": 1428,
+          "administrationAndSupport": 1428,
+          "healthSafetyAndEnvironmental": 952,
+          "otherDirectFactoryServices": 1428
+        },
+        "jobBreakdownAuthority": "SIMULATED_FACTORY_ROLE_DISTRIBUTION_V1"
       },
       "constructionMaterials": {
         "construction_aggregate": 4900,
@@ -4475,7 +5205,21 @@
         "model": "DIRECT_JOB_CAPACITY",
         "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
         "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
-        "simulationOnly": true
+        "simulationOnly": true,
+        "coreOperatingCrew": 280,
+        "additionalDirectStaffSlots": 5720,
+        "jobScope": "DIRECT_ONSITE_FACTORY_JOBS_INCLUDING_OPERATIONS_ENGINEERING_MAINTENANCE_LOGISTICS_QUALITY_ADMINISTRATION_AND_SAFETY",
+        "jobBreakdown": {
+          "operators": 180,
+          "engineers": 100,
+          "maintenanceAndFacilities": 1430,
+          "logisticsAndWarehousing": 1144,
+          "qualityControl": 858,
+          "administrationAndSupport": 858,
+          "healthSafetyAndEnvironmental": 572,
+          "otherDirectFactoryServices": 858
+        },
+        "jobBreakdownAuthority": "SIMULATED_FACTORY_ROLE_DISTRIBUTION_V1"
       },
       "constructionMaterials": {
         "construction_aggregate": 9334,
@@ -4528,7 +5272,21 @@
         "model": "DIRECT_JOB_CAPACITY",
         "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
         "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
-        "simulationOnly": true
+        "simulationOnly": true,
+        "coreOperatingCrew": 245,
+        "additionalDirectStaffSlots": 3255,
+        "jobScope": "DIRECT_ONSITE_FACTORY_JOBS_INCLUDING_OPERATIONS_ENGINEERING_MAINTENANCE_LOGISTICS_QUALITY_ADMINISTRATION_AND_SAFETY",
+        "jobBreakdown": {
+          "operators": 180,
+          "engineers": 65,
+          "maintenanceAndFacilities": 813,
+          "logisticsAndWarehousing": 651,
+          "qualityControl": 488,
+          "administrationAndSupport": 488,
+          "healthSafetyAndEnvironmental": 325,
+          "otherDirectFactoryServices": 490
+        },
+        "jobBreakdownAuthority": "SIMULATED_FACTORY_ROLE_DISTRIBUTION_V1"
       },
       "constructionMaterials": {
         "construction_aggregate": 3034,
@@ -4579,7 +5337,21 @@
         "model": "DIRECT_JOB_CAPACITY",
         "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
         "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
-        "simulationOnly": true
+        "simulationOnly": true,
+        "coreOperatingCrew": 270,
+        "additionalDirectStaffSlots": 4230,
+        "jobScope": "DIRECT_ONSITE_FACTORY_JOBS_INCLUDING_OPERATIONS_ENGINEERING_MAINTENANCE_LOGISTICS_QUALITY_ADMINISTRATION_AND_SAFETY",
+        "jobBreakdown": {
+          "operators": 200,
+          "engineers": 70,
+          "maintenanceAndFacilities": 1057,
+          "logisticsAndWarehousing": 846,
+          "qualityControl": 634,
+          "administrationAndSupport": 634,
+          "healthSafetyAndEnvironmental": 423,
+          "otherDirectFactoryServices": 636
+        },
+        "jobBreakdownAuthority": "SIMULATED_FACTORY_ROLE_DISTRIBUTION_V1"
       },
       "constructionMaterials": {
         "construction_aggregate": 4667,
@@ -4633,7 +5405,21 @@
         "model": "DIRECT_JOB_CAPACITY",
         "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
         "authority": "SIMULATED_GAMEPLAY_EMPLOYMENT_MODEL",
-        "simulationOnly": true
+        "simulationOnly": true,
+        "coreOperatingCrew": 148,
+        "additionalDirectStaffSlots": 2052,
+        "jobScope": "DIRECT_ONSITE_FACTORY_JOBS_INCLUDING_OPERATIONS_ENGINEERING_MAINTENANCE_LOGISTICS_QUALITY_ADMINISTRATION_AND_SAFETY",
+        "jobBreakdown": {
+          "operators": 130,
+          "engineers": 18,
+          "maintenanceAndFacilities": 513,
+          "logisticsAndWarehousing": 410,
+          "qualityControl": 307,
+          "administrationAndSupport": 307,
+          "healthSafetyAndEnvironmental": 205,
+          "otherDirectFactoryServices": 310
+        },
+        "jobBreakdownAuthority": "SIMULATED_FACTORY_ROLE_DISTRIBUTION_V1"
       },
       "constructionMaterials": {
         "construction_aggregate": 992,
@@ -5212,7 +5998,9 @@
     "profilesWithConstructionMaterials": 56,
     "profilesWithEmployment": 56,
     "employmentModelVersion": "SIMULATED_FACTORY_EMPLOYMENT_V1",
-    "constructionMaterialsVersion": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1"
+    "constructionMaterialsVersion": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
+    "profilesWithEmploymentRoleBreakdown": 56,
+    "employmentRoleDistributionVersion": "SIMULATED_FACTORY_ROLE_DISTRIBUTION_V1"
   },
   "externalInputSources": {
     "grain": {
