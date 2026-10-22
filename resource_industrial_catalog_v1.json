@@ -1882,6 +1882,12 @@
           "simulationOnly": true
         }
       }
+    },
+    "inputSourcePolicy": {
+      "internallyProduced": "Every industrial recipe input is backed by an existing mining-processing output or another downstream recipe output.",
+      "externalSectorInputs": "Grain, vegetable oil, sugar, cotton fibre and wool fibre require an authoritative upstream batch from an agriculture/food/livestock runtime or a tracked import.",
+      "noFabricatedStock": "External input descriptors are contracts only; they do not create inventory or quantity. Production remains blocked until recorded stock is delivered.",
+      "unknownInputs": "An input without an industrial producer, source resource identity or explicitly declared external-sector contract is a catalog integrity error."
     }
   },
   "factoryProfiles": {
@@ -3280,7 +3286,11 @@
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
       "simulationOnly": true,
       "inputUnit": "SIMULATION_RESOURCE_UNIT",
-      "outputUnit": "SIMULATION_RESOURCE_UNIT"
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "recipeIds": [
+        "SILICON_WAFER_PRODUCTION_ROUTE_V1"
+      ],
+      "recipeMode": "MULTI_INPUT"
     },
     "BATTERY_ENERGY_STORAGE_PLANT": {
       "factoryType": "BATTERY_ENERGY_STORAGE_PLANT",
@@ -3500,7 +3510,7 @@
       "inputs": {
         "iron_concentrate": 0.6,
         "coal_concentrate": 0.2,
-        "limestone": 0.1,
+        "cement_feed": 0.1,
         "copper_concentrate": 0.1
       },
       "outputs": {
@@ -3524,7 +3534,7 @@
       "inputs": {
         "copper_concentrate": 0.7,
         "coal_concentrate": 0.1,
-        "limestone": 0.1,
+        "cement_feed": 0.1,
         "refined_salt": 0.1
       },
       "outputs": {
@@ -3548,7 +3558,7 @@
       "inputs": {
         "alumina": 0.7,
         "coal_concentrate": 0.15,
-        "limestone": 0.1,
+        "cement_feed": 0.1,
         "refined_salt": 0.05
       },
       "outputs": {
@@ -3575,10 +3585,11 @@
         "limestone": 0.1
       },
       "outputs": {
-        "POLYMER_RESIN": 0.4,
-        "PROPYLENE_FEEDSTOCK": 0.25,
-        "INDUSTRIAL_SOLVENTS": 0.2,
-        "CHEMICAL_PROCESS_RESIDUE": 0.15
+        "POLYMER_RESIN": 0.35,
+        "PROPYLENE_FEEDSTOCK": 0.22,
+        "INDUSTRIAL_SOLVENTS": 0.17,
+        "CHEMICAL_PROCESS_RESIDUE": 0.16,
+        "PLASTIC_WASTE": 0.1
       },
       "cycleDays": 2,
       "inputUnit": "SIMULATION_RESOURCE_UNIT",
@@ -3619,8 +3630,8 @@
         "pipeline_gas": 0.35,
         "refined_salt": 0.25,
         "calcined_gypsum": 0.2,
-        "sulphur": 0.1,
-        "limestone": 0.1
+        "other_refinery_products": 0.1,
+        "cement_feed": 0.1
       },
       "outputs": {
         "INDUSTRIAL_CHEMICALS": 0.45,
@@ -3664,11 +3675,10 @@
       "factoryType": "GLASS_CERAMICS_PLANT",
       "name": "Glass and ceramics line",
       "inputs": {
-        "glass_silica_feed": 0.65,
+        "glass_silica_feed": 0.7,
         "calcined_gypsum": 0.1,
         "magnesia": 0.1,
-        "refined_salt": 0.05,
-        "processed_clay": 0.1
+        "refined_salt": 0.1
       },
       "outputs": {
         "FLAT_GLASS": 0.35,
@@ -3689,10 +3699,9 @@
       "factoryType": "PAPER_PACKAGING_MILL",
       "name": "Paper and packaging line",
       "inputs": {
-        "wood_pulp": 0.65,
-        "recycled_paper": 0.2,
-        "polymer_resin": 0.1,
-        "refined_salt": 0.05
+        "recycled_feedstock": 0.65,
+        "polymer_resin": 0.2,
+        "refined_salt": 0.15
       },
       "outputs": {
         "PAPER": 0.5,
@@ -3715,7 +3724,7 @@
         "grain": 0.55,
         "vegetable_oil": 0.15,
         "sugar": 0.1,
-        "packaging_material": 0.1,
+        "packaging_board": 0.1,
         "refined_salt": 0.1
       },
       "outputs": {
@@ -3738,9 +3747,9 @@
       "inputs": {
         "cotton_fibre": 0.45,
         "wool_fibre": 0.1,
-        "polymer_fibre": 0.2,
-        "dyes_chemicals": 0.1,
-        "packaging_material": 0.15
+        "polymer_resin": 0.2,
+        "industrial_chemicals": 0.1,
+        "packaging_board": 0.15
       },
       "outputs": {
         "TEXTILE_FABRIC": 0.45,
@@ -3761,15 +3770,16 @@
       "factoryType": "INDUSTRIAL_MACHINERY_MACHINE_TOOLS",
       "name": "Industrial machinery and machine tools",
       "inputs": {
-        "steel": 0.5,
+        "steel": 0.45,
         "aluminum_ingot": 0.15,
         "refined_copper": 0.1,
         "semiconductor_chips": 0.1,
-        "polymer_resin": 0.15
+        "polymer_resin": 0.2
       },
       "outputs": {
-        "INDUSTRIAL_MACHINERY": 0.7,
-        "MACHINE_TOOL_PARTS": 0.2,
+        "INDUSTRIAL_MACHINERY": 0.6,
+        "MACHINE_TOOL_PARTS": 0.15,
+        "COMPOSITE_MATERIALS": 0.15,
         "METAL_SCRAP": 0.1
       },
       "cycleDays": 3,
@@ -3789,7 +3799,7 @@
         "steel": 0.25,
         "aluminum_ingot": 0.1,
         "electronic_components": 0.2,
-        "insulation_polymer": 0.15
+        "polymer_resin": 0.15
       },
       "outputs": {
         "GRID_TRANSFORMERS": 0.2,
@@ -3816,7 +3826,7 @@
         "aluminum_ingot": 0.1,
         "industrial_gases": 0.15,
         "polymer_resin": 0.15,
-        "gold_processed": 0.1,
+        "doré": 0.1,
         "refined_salt": 0.1
       },
       "outputs": {
@@ -3843,8 +3853,8 @@
         "graphite_concentrate": 0.2,
         "refined_copper": 0.1,
         "aluminum_ingot": 0.1,
-        "polymer_separator": 0.1,
-        "electrolyte": 0.1,
+        "polymer_resin": 0.1,
+        "industrial_chemicals": 0.1,
         "industrial_gases": 0.05
       },
       "outputs": {
@@ -3869,9 +3879,8 @@
         "aluminum_ingot": 0.1,
         "refined_copper": 0.1,
         "flat_glass": 0.1,
-        "rubber": 0.1,
+        "polymer_resin": 0.2,
         "electronic_components": 0.15,
-        "polymer_resin": 0.1,
         "machine_tool_parts": 0.05
       },
       "outputs": {
@@ -3899,7 +3908,7 @@
         "grid_equipment": 0.1,
         "refined_copper": 0.05,
         "electronic_components": 0.05,
-        "rubber": 0.1
+        "polymer_resin": 0.1
       },
       "outputs": {
         "SHIP_RAIL_EQUIPMENT": 0.78,
@@ -3946,12 +3955,12 @@
       "factoryType": "PHARMA_MEDICAL_SUPPLIES_PLANT",
       "name": "Pharmaceuticals and medical supplies",
       "inputs": {
-        "chemical_intermediates": 0.25,
-        "active_pharmaceutical_ingredients": 0.2,
-        "glass": 0.1,
+        "industrial_solvents": 0.25,
+        "industrial_chemicals": 0.2,
+        "container_glass": 0.1,
         "polymer_resin": 0.15,
-        "packaging_material": 0.15,
-        "industrial_chemicals": 0.15
+        "packaging_board": 0.15,
+        "refined_salt": 0.15
       },
       "outputs": {
         "PHARMACEUTICAL_GOODS": 0.75,
@@ -3976,7 +3985,7 @@
         "electronic_components": 0.2,
         "industrial_machinery": 0.15,
         "polymer_resin": 0.1,
-        "special_alloys": 0.1,
+        "alloy_steel": 0.1,
         "grid_equipment": 0.1
       },
       "outputs": {
@@ -3997,12 +4006,12 @@
       "factoryType": "RECYCLING_WASTE_PROCESSING_PLANT",
       "name": "Recycling and waste recovery",
       "inputs": {
-        "mixed_recyclables": 0.35,
-        "metal_scrap": 0.2,
+        "metal_scrap": 0.25,
+        "e_waste": 0.15,
+        "packaging_waste": 0.15,
+        "chemical_process_residue": 0.15,
         "plastic_waste": 0.15,
-        "e_waste": 0.1,
-        "packaging_waste": 0.1,
-        "process_residue": 0.1
+        "processing_loss": 0.15
       },
       "outputs": {
         "RECOVERED_STEEL": 0.2,
@@ -4019,14 +4028,81 @@
       "missingInputPolicy": "BLOCK_CYCLE",
       "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
       "simulationOnly": true
+    },
+    "SILICON_WAFER_PRODUCTION_ROUTE_V1": {
+      "recipeId": "SILICON_WAFER_PRODUCTION_ROUTE_V1",
+      "factoryType": "ELECTRONICS_SEMICONDUCTOR_FAB",
+      "name": "Silicon wafer fabrication line",
+      "inputs": {
+        "glass_silica_feed": 0.6,
+        "coal_concentrate": 0.15,
+        "industrial_gases": 0.15,
+        "refined_salt": 0.1
+      },
+      "outputs": {
+        "SILICON_WAFERS": 0.6,
+        "PROCESSING_DUST": 0.15,
+        "CHEMICAL_PROCESS_RESIDUE": 0.1,
+        "PROCESSING_LOSS": 0.15
+      },
+      "cycleDays": 3,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "requiresAllInputs": true,
+      "missingInputPolicy": "BLOCK_CYCLE",
+      "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
+      "simulationOnly": true
     }
   },
   "factoryCatalogSummary": {
     "factoryTypeCount": 56,
     "existingProcessingFactoryTypeCount": 36,
     "addedFactoryTypeCount": 20,
-    "downstreamRecipeCount": 21,
+    "downstreamRecipeCount": 22,
     "categoryCount": 12,
-    "unitNormalizationPolicy": "SIMULATION_ONLY_EXPLICIT_BRIDGES"
+    "unitNormalizationPolicy": "SIMULATION_ONLY_EXPLICIT_BRIDGES",
+    "externalSectorInputCount": 5
+  },
+  "externalInputSources": {
+    "grain": {
+      "resourceId": "grain",
+      "sourceSector": "AGRICULTURE",
+      "sourceAuthority": "EXTERNAL_SECTOR_BATCH_REQUIRED",
+      "requiresRecordedBatch": true,
+      "autoGenerateStock": false,
+      "simulationOnly": true
+    },
+    "vegetable_oil": {
+      "resourceId": "vegetable_oil",
+      "sourceSector": "AGRICULTURE_AND_FOOD",
+      "sourceAuthority": "EXTERNAL_SECTOR_BATCH_REQUIRED",
+      "requiresRecordedBatch": true,
+      "autoGenerateStock": false,
+      "simulationOnly": true
+    },
+    "sugar": {
+      "resourceId": "sugar",
+      "sourceSector": "AGRICULTURE_AND_FOOD",
+      "sourceAuthority": "EXTERNAL_SECTOR_BATCH_REQUIRED",
+      "requiresRecordedBatch": true,
+      "autoGenerateStock": false,
+      "simulationOnly": true
+    },
+    "cotton_fibre": {
+      "resourceId": "cotton_fibre",
+      "sourceSector": "AGRICULTURE",
+      "sourceAuthority": "EXTERNAL_SECTOR_BATCH_REQUIRED",
+      "requiresRecordedBatch": true,
+      "autoGenerateStock": false,
+      "simulationOnly": true
+    },
+    "wool_fibre": {
+      "resourceId": "wool_fibre",
+      "sourceSector": "LIVESTOCK_AND_AGRICULTURE",
+      "sourceAuthority": "EXTERNAL_SECTOR_BATCH_REQUIRED",
+      "requiresRecordedBatch": true,
+      "autoGenerateStock": false,
+      "simulationOnly": true
+    }
   }
 }
