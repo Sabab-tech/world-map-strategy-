@@ -72,20 +72,23 @@ test("offline atlas starts without a first-online-load requirement", () => {
   assert.match(js, /externalMapRequests:0/);
   assert.match(css, /omega-offline-atlas-badge/);
 });
-test("Android WebView blocks remote basemap imagery as a safety net", () => {
-  assert.match(mainActivity, /h\.equals\("server\.arcgisonline\.com"\)/);
-  assert.match(mainActivity, /h\.equals\("assets\.science\.nasa\.gov"\)/);
-  assert.match(mainActivity, /h\.equals\("tile\.opentopomap\.org"\)/);
-  assert.match(mainActivity, /h\.endsWith\("\.basemaps\.cartocdn\.com"\)/);
-  assert.match(mainActivity, /block external basemap imagery/i);
-  assert.match(mainActivity, /h\.equals\("unpkg\.com"\)/);
+test("Android WebView serves bundled assets locally and blocks every off-origin request", () => {
+  assert.match(mainActivity, /if \(isAppAssetUri\(uri\)\) return missingAssetResponse\(uri\);/);
+  assert.match(mainActivity, /return offlineResponse\(uri\);/);
+  assert.match(mainActivity, /private boolean isAppAssetUri\(Uri uri\)/);
+  assert.match(mainActivity, /appassets\.androidplatform\.net/);
+  assert.match(mainActivity, /private WebResourceResponse missingAssetResponse\(Uri uri\)/);
+  assert.match(mainActivity, /404/);
+  assert.match(mainActivity, /OFFLINE_SOURCE_UNAVAILABLE/);
+  assert.match(mainActivity, /Never let a cross-origin/);
+  assert.doesNotMatch(mainActivity, /isKnownRemoteVisualOrLibrary/);
 });
 test("the offline atlas never substitutes a fake remote imagery tile", () => {
   assert.doesNotMatch(js, /https?:\/\//i);
   assert.doesNotMatch(js, /SATELLITE TILE|data:image\/svg\+xml/i);
   assert.doesNotMatch(mapEngine, /errorTileUrl:\s*['"]data:image\/svg\+xml/i);
   assert.match(mapEngine, /window\.OmegaOfflineHybridAtlas\.activate/);
-  assert.match(mainActivity, /h\.equals\("tile\.opentopomap\.org"\)/);
+  assert.match(mainActivity, /if \(isAppAssetUri\(uri\)\) return missingAssetResponse\(uri\);/);
 });
 test("browser shell resources are cached locally for offline relaunch", () => {
   assert.match(html, /navigator\.serviceWorker\.register\('\.\/omega-offline-map-sw\.js'/);
