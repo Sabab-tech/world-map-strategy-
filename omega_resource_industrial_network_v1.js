@@ -1456,6 +1456,9 @@ function advanceShipments(c){
             productionQuantity:processing.productionQuantity||0,reason:processing.reason||null});
         }else if(['FACTORY_INPUT_SHORTAGE','FACTORY_INPUT_OR_BATCH_SHORTAGE','FACTORY_INPUT_BATCH_LEDGER_MISMATCH'].includes(processing?.reason)){
           addFlowStage(row,'PROCESSING','AWAITING_INPUTS',{reason:processing.reason,missingInputs:processing.missingInputs||[]});
+        }else if(processing?.reason==='FACTORY_CYCLE_ALREADY_RUNNING'){
+          addFlowStage(row,'PROCESSING','AWAITING_CYCLE',{activeCycleId:processing.activeCycleId||null,
+            finishDate:processing.finishDate||null,reason:processing.reason});
         }else if(processing?.reason==='FACTORY_TURN_CAPACITY_ALREADY_USED')addFlowStage(row,'PROCESSING','AWAITING_CAPACITY',{reason:processing.reason,turn:turn()});
         else addFlowStage(row,'PROCESSING','BLOCKED',{reason:processing?.reason||processing?.status||'PROCESSING_NOT_COMPLETED'});
       });
