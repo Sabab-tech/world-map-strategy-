@@ -1037,6 +1037,24 @@
       "costPerKm": 4,
       "buildDays": 720,
       "constructionClass": "PIPELINE"
+    },
+    "power": {
+      "capacityPerDay": 5000,
+      "capacityUnit": "MWh_PER_DAY",
+      "costFixed": 5000,
+      "buildDays": 365,
+      "constructionClass": "UTILITY_POWER_SUPPLY",
+      "simulationOnly": true,
+      "authority": "SIMULATED_INFRASTRUCTURE_PROJECT"
+    },
+    "water": {
+      "capacityPerDay": 50000,
+      "capacityUnit": "M3_PER_DAY",
+      "costFixed": 3000,
+      "buildDays": 180,
+      "constructionClass": "INDUSTRIAL_WATER_SUPPLY",
+      "simulationOnly": true,
+      "authority": "SIMULATED_INFRASTRUCTURE_PROJECT"
     }
   },
   "technologyProjects": {
