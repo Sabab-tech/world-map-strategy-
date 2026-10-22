@@ -1657,7 +1657,7 @@ function startFactoryProject(input={}){
     cost:Math.max(1,requestedCost||configuredCost||1000),costUnit:typeProfile.unit||'GAME_CURRENCY_UNITS',
     durationDays:Number(days.toFixed(2)),startTurn:turn(),progressDays:0,status:'UNDER_CONSTRUCTION',
     capacityPerDay:Math.max(1,requestedCapacity||configuredCapacity||500),recipe:clone(rule),
-    factoryId:String(input.factoryId||('FAC:'+cid+':'+factoryType+':'+h32(String(turn())+'|'+(rule.recipeId||rid)))),
+    factoryId:String(input.factoryId||('FAC:'+cid+':'+factoryType+':T'+turn()+':P'+n.projects.length+':'+h32(String(turn())+'|'+(rule.recipeId||rid)+'|'+n.projects.length))),
     targetLocationNodeKey:input.locationNodeKey||('INDUSTRIAL_ZONE:'+cid),foreignContract:contractor!=='DOMESTIC_EPC',
     requiredTechnologyIds:technologyIds,technologyPackage:clone(input.technologyPackage||null),
     constructionMaterialsAuthority:constructionMaterialQuote?.authority||'SIMULATED_GENERIC_FACTORY_RECIPE_WITHOUT_CATALOG_BOM',
@@ -2292,14 +2292,20 @@ function countryPopulationRecord(cid,econ){
   }catch(_){}
   const directRows=[econ?.populationRecord,econ?.demographics,econ?.population,s.population?.[cid],s.populations?.[cid],
     s.demographics?.[cid],s.society?.[cid],s.populationByCountry?.[cid],s.countryProfiles?.[cid],s.countries?.[cid]];
-  const globals=[g.OmegaPopulationData,g.Omega?.PopulationData,g.populationData,g.PopulationData,g.POPULATION_DATA,
-    g.OmegaCountryPopulationData,g.countryPopulationData,g.COUNTRY_POPULATION_DATA];
+  const globals=[s.population,s.populations,s.populationByCountry,g.OmegaPopulationData,g.Omega?.PopulationData,g.populationData,
+    g.PopulationData,g.POPULATION_DATA,g.OmegaCountryPopulationData,g.countryPopulationData,g.COUNTRY_POPULATION_DATA];
   for(const source of globals){
     if(!source||typeof source!=='object')continue;
     for(const key of keys){const row=source[key];if(row&&typeof row==='object'){directRows.push(row);break;}}
     if(source.data&&typeof source.data==='object')for(const key of keys){const row=source.data[key];if(row&&typeof row==='object'){directRows.push(row);break;}}
   }
-  for(const row of directRows){if(row&&typeof row==='object')return row;if(typeof row==='number'&&Number.isFinite(row)&&row>0)return{population:row};}
+  const populationFields=['populationTotal','population_total','totalPopulation','total_population','population','population_2015','population2015',
+    'populationCurrent','population_current','populationCount','population_count','laborForce','labor_force','laborForceSize','labor_force_size',
+    'totalLaborForce','total_labor_force','labourForce','labour_force'];
+  for(const row of directRows){
+    if(row&&typeof row==='object'&&populationFields.some(key=>row[key]!==undefined&&row[key]!==null&&row[key]!==''))return row;
+    if(typeof row==='number'&&Number.isFinite(row)&&row>0)return{population:row};
+  }
   return null;
 }
 function resolveFactoryLabourForce(cid,econ){
@@ -2310,7 +2316,8 @@ function resolveFactoryLabourForce(cid,econ){
   for(const value of directCandidates){const n=finiteCount(value);if(n!==null&&n>0)return{value:n,authority:'RECORDED_LABOUR_FORCE',simulationOnly:false};}
   const popCandidates=[econ.populationTotal,econ.population_total,econ.population_2015,econ.population2015,econ.populationSize,
     typeof econ.population==='number'?econ.population:null,record?.populationTotal,record?.population_total,record?.population_2015,
-    record?.population2015,record?.totalPopulation,record?.total_population,record?.population,record?.population_count];
+    record?.population2015,record?.totalPopulation,record?.total_population,record?.population,record?.population_count,
+    record?.populationCurrent,record?.population_current,record?.populationCount,record?.total];
   let population=null;for(const value of popCandidates){const n=finiteCount(value);if(n!==null&&n>0){population=n;break;}}
   if(population===null)return{value:null,authority:'NOT_RECORDED',simulationOnly:true};
   const participationCandidates=[econ.laborForceParticipationPct,econ.labor_force_participation_pct,econ.laborParticipationRatePct,
