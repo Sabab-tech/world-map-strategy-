@@ -59,7 +59,7 @@ test('canonical factory catalog, type profiles, offline icons and recipe coeffic
   assert.equal(Object.keys(catalog.processingRules).length, 39);
   assert.equal(new Set(Object.values(catalog.processingRules).map(row => row.factoryType)).size, 36);
   assert.equal(Object.keys(catalog.factoryProfiles).length, 56);
-  assert.equal(Object.keys(catalog.downstreamFactoryRecipes).length, 21);
+  assert.equal(Object.keys(catalog.downstreamFactoryRecipes).length, 22);
   assert.equal(catalog.factoryCatalogSummary.addedFactoryTypeCount, 20);
   assert.equal(catalog.factoryCatalogSummary.categoryCount, 12);
 
@@ -87,6 +87,51 @@ test('canonical factory catalog, type profiles, offline icons and recipe coeffic
     assert.equal(bridge.targetUnit, 'SIMULATION_RESOURCE_UNIT');
     assert.equal(bridge.factor, 1);
     assert.equal(bridge.simulationOnly, true);
+  }
+  const producers = new Set([
+    ...Object.values(catalog.processingRules).flatMap(row => Object.keys(row.outputs || {})),
+    ...Object.values(catalog.downstreamFactoryRecipes).flatMap(row => Object.keys(row.outputs || {}))
+  ].map(token));
+  const rawInputs = new Set([
+    ...Object.keys(catalog.resourceRules || {}),
+    ...Object.values(catalog.processingRules).flatMap(row => Object.keys(row.inputs || {}))
+  ].map(token));
+  const externalInputs = new Set(Object.keys(catalog.externalInputSources || {}).map(token));
+  const recipeProducerMap = new Map();
+  for (const [id, recipe] of Object.entries(catalog.downstreamFactoryRecipes)) {
+    for (const output of Object.keys(recipe.outputs || {})) {
+      const key = token(output);
+      const rows = recipeProducerMap.get(key) || [];
+      rows.push(id);
+      recipeProducerMap.set(key, rows);
+    }
+  }
+  const dependencyGraph = Object.fromEntries(Object.keys(catalog.downstreamFactoryRecipes).map(id => [id, new Set()]));
+  for (const [consumer, recipe] of Object.entries(catalog.downstreamFactoryRecipes)) {
+    for (const input of Object.keys(recipe.inputs || {})) {
+      const key = token(input);
+      assert.ok(producers.has(key) || rawInputs.has(key) || externalInputs.has(key),
+        consumer + ': every input must have a producer, raw resource rule or explicit external-source contract: ' + input);
+      for (const producer of recipeProducerMap.get(key) || []) {
+        if (producer !== consumer) dependencyGraph[producer].add(consumer);
+      }
+    }
+  }
+  const visiting = new Set(), visited = new Set();
+  const visit = (id, path = []) => {
+    assert.ok(!visiting.has(id), 'downstream recipe graph must not contain bootstrap dependency loops: ' + [...path, id].join(' -> '));
+    if (visited.has(id)) return;
+    visiting.add(id);
+    for (const next of dependencyGraph[id]) visit(next, [...path, id]);
+    visiting.delete(id);
+    visited.add(id);
+  };
+  for (const id of Object.keys(dependencyGraph)) visit(id);
+  assert.equal(catalog.factoryProfiles.ELECTRONICS_SEMICONDUCTOR_FAB.recipeIds.length, 2,
+    'semiconductor factory profile must expose both wafer and chip production lines');
+  for (const [input, contract] of Object.entries(catalog.externalInputSources || {})) {
+    assert.equal(contract.requiresRecordedBatch, true, input + ': external source must require recorded stock');
+    assert.equal(contract.autoGenerateStock, false, input + ': external source must not fabricate stock');
   }
   for (const [recipeId, recipe] of Object.entries(catalog.downstreamFactoryRecipes)) {
     assert.equal(recipe.recipeId, recipeId);
