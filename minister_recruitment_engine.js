@@ -362,9 +362,10 @@
     document.head.appendChild(style);
   }
 
-  function renderCandidateDetail(detail, candidate, ministryId, cc, currentId, busy) {
+  function renderCandidateDetail(detail, candidate, ministryId, cc, currentId, blockedReason) {
     const id = text(candidate.id);
     const isActive = id === currentId;
+    const blocked = text(blockedReason);
     const cap = capability(candidate, ministryId);
     const effects = profileEffects(candidate, ministryId);
     const effectsMarkup = effects
@@ -394,8 +395,8 @@
           '%"></em></i></div>';
       }).join('');
     const name = displayName(candidate);
-    const action = busy
-      ? '<button class="omr-recruit" data-action="recruit" type="button" disabled>ALREADY ASSIGNED</button>'
+    const action = blocked
+      ? '<button class="omr-recruit" data-action="recruit" type="button" disabled>' + esc(blocked) + '</button>'
       : isActive
         ? '<button class="omr-fire" data-action="fire" type="button">FIRE MINISTER</button>'
         : '<button class="omr-recruit" data-action="recruit" type="button">RECRUIT MINISTER</button>';
@@ -404,7 +405,7 @@
       '<div class="omr-dossier"><div class="omr-dossier-top"><div>' +
       '<span class="omr-role">MINISTER PROFILE</span><h3>' + esc(name) + '</h3><p>' +
       esc(candidate.background || 'No professional background supplied.') + '</p></div>' +
-      '<span class="omr-active-tag">' + (isActive ? 'CURRENTLY ACTIVE' : busy ? 'ASSIGNED ELSEWHERE' : 'AVAILABLE CANDIDATE') +
+      '<span class="omr-active-tag">' + (isActive ? 'CURRENTLY ACTIVE' : blocked ? esc(blocked) : 'AVAILABLE CANDIDATE') +
       '</span></div><div class="omr-meta"><span>ID <b>' + esc(id) + '</b></span><span>AGE <b>' +
       esc(candidate.age) + '</b></span><span>GENDER <b>' + esc(candidate.gender) +
       '</b></span><span>IDEOLOGY <b>' + esc(candidate.ideology && candidate.ideology.type || 'Unspecified') +
@@ -445,12 +446,14 @@
       roster.map((candidate, index) => {
         const id = text(candidate.id || candidate.ministerId);
         const current = id === currentId;
-        const busy = !current && assignedElsewhere(id, ministryId, cc);
-        const status = current ? 'ACTIVE' : busy ? 'ASSIGNED ELSEWHERE' : 'AVAILABLE';
+        const assignedElsewhereReason = !current && assignedElsewhere(id, ministryId, cc);
+        const ministryOccupied = !current && Boolean(currentId);
+        const blockedReason = assignedElsewhereReason ? 'ASSIGNED ELSEWHERE' : ministryOccupied ? 'MINISTRY OCCUPIED' : '';
+        const status = current ? 'ACTIVE' : blockedReason || 'AVAILABLE';
         const quickAction = current
           ? '<span class="omr-card-quick-status">ACTIVE MINISTER</span>'
-          : busy
-            ? '<button class="omr-card-quick-recruit" data-action="quick-recruit" type="button" disabled>ASSIGNED ELSEWHERE</button>'
+          : blockedReason
+            ? '<button class="omr-card-quick-recruit" data-action="quick-recruit" type="button" disabled>' + esc(blockedReason) + '</button>'
             : '<button class="omr-card-quick-recruit" data-action="quick-recruit" type="button">RECRUIT MINISTER</button>';
         return '<div class="omr-card ' + (current ? 'is-active' : busy ? 'is-busy' : '') +
           '" data-id="' + esc(id) + '" role="button" tabindex="0" aria-label="View profile for ' + esc(displayName(candidate)) + '">' +
@@ -469,8 +472,10 @@
       const showDetails = () => {
         const current = activeId(ministryId, cc);
         const isCurrent = text(candidate.id || candidate.ministerId) === current;
-        const busy = !isCurrent && assignedElsewhere(candidate.id || candidate.ministerId, ministryId, cc);
-        renderCandidateDetail(detail, candidate, ministryId, cc, current, busy);
+        const assignedElsewhereReason = !isCurrent && assignedElsewhere(candidate.id || candidate.ministerId, ministryId, cc)
+          ? 'ASSIGNED ELSEWHERE' : '';
+        const occupiedReason = !isCurrent && current ? 'MINISTRY OCCUPIED' : '';
+        renderCandidateDetail(detail, candidate, ministryId, cc, current, assignedElsewhereReason || occupiedReason);
       };
 
       card.addEventListener('click', event => {
