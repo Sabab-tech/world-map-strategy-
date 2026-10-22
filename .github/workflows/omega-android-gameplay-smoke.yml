@@ -73,6 +73,66 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot-load -no-snapshot-save -noaudio -no-boot-anim -camera-back none -camera-front none -memory 2048 -cores 2
           disable-animations: true
           script: |
-            adb wait-for-device
+            set -u
+
+            # API 28 can occasionally report "offline" to ADB after emulator boot.
+            # Wait for both Android boot completion and the expected API before test discovery.
+            wait_for_api28() {
+              local attempt state boot sdk
+              for attempt in $(seq 1 45); do
+                state="$(adb get-state 2>/dev/null | tr -d '\r' || true)"
+                if [ "$state" = "device" ]; then
+                  boot="$(timeout 5s adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r' || true)"
+                  sdk="$(timeout 5s adb shell getprop ro.build.version.sdk 2>/dev/null | tr -d '\r' || true)"
+                  if [ "$boot" = "1" ] && [ "$sdk" = "28" ]; then
+                    echo "API 28 emulator is online and fully booted (poll $attempt)."
+                    return 0
+                  fi
+                elif [ "$state" = "offline" ]; then
+                  adb reconnect offline >/dev/null 2>&1 || true
+                fi
+                sleep 2
+              done
+              echo "ERROR: emulator did not become a fully booted API 28 device." >&2
+              adb devices -l >&2 || true
+              return 1
+            }
+
+            wait_for_api28
             adb shell getprop ro.build.version.sdk
-            gradle -p android connectedDebugAndroidTest --no-daemon
+
+            attempt=1
+            max_attempts=3
+            while [ "$attempt" -le "$max_attempts" ]; do
+              log_file="/tmp/omega-offline-gameplay-smoke-${attempt}.log"
+              echo "Offline gameplay instrumentation attempt ${attempt}/${max_attempts}"
+
+              if gradle -p android connectedDebugAndroidTest --no-daemon >"$log_file" 2>&1; then
+                cat "$log_file"
+                echo "PASS: API 28 offline gameplay instrumentation completed."
+                exit 0
+              else
+                test_exit=$?
+                cat "$log_file"
+              fi
+
+              # Retry only when the ADB/emulator transport prevented test discovery.
+              # Real assertions/test failures are returned immediately without retry.
+              if ! grep -Eiq 'No compatible devices connected|Unknown API Level|ShellCommandUnresponsiveException|adb: device offline|device offline' "$log_file"; then
+                echo "ERROR: instrumentation failed without an emulator/ADB discovery error; not retrying." >&2
+                exit "$test_exit"
+              fi
+
+              if [ "$attempt" -ge "$max_attempts" ]; then
+                echo "ERROR: emulator/ADB discovery still failed after ${max_attempts} attempts." >&2
+                adb devices -l >&2 || true
+                exit "$test_exit"
+              fi
+
+              echo "Transient ADB/emulator discovery failure detected. Restarting ADB and rechecking API 28 boot state."
+              adb kill-server >/dev/null 2>&1 || true
+              adb start-server
+              adb reconnect offline >/dev/null 2>&1 || true
+              wait_for_api28 || exit "$test_exit"
+              attempt=$((attempt + 1))
+            done
