@@ -831,10 +831,11 @@ function reserveInventoryForShipment(c,resourceId,quantity,shipmentId){
 function resizeRouteForDispatch(route,actualQuantity,plannedQuantity){
   const out=clone(route||{}),actual=Math.max(0,num(actualQuantity)||0);
   const planned=Math.max(0,num(plannedQuantity)??num(out.dispatchQuantity)??num(out.requestedQuantity)??actual);
+  const costBasis=Math.max(0,num(out.requestedQuantity)??planned);
   out.plannedDispatchQuantity=planned;
   out.dispatchQuantity=Number(actual.toFixed(6));
-  if(planned>1e-9&&num(out.totalCost)!==null)
-    out.totalCost=Number((num(out.totalCost)*actual/planned).toFixed(4));
+  if(costBasis>1e-9&&num(out.totalCost)!==null)
+    out.totalCost=Number((num(out.totalCost)*actual/costBasis).toFixed(4));
   for(const key of ['vehiclePlan','legs']){
     if(Array.isArray(out[key]))out[key]=out[key].map(leg=>{
       const payload=Math.max(.001,num(leg?.payloadTonnes)||1);
