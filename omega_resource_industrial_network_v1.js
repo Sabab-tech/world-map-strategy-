@@ -2679,7 +2679,15 @@ function completeFactoryProductionCycle(countryId,asset,cycle,result){
   asset.activeProductionCycleId=null;asset.lastProductionCycleId=cycle.cycleId;asset.lastProductionCycleCompletedDate=cycle.actualCompletionDate;
   factorySetProductionHealth(asset,cycle.productivityPct<99.999?'REDUCED':'READY',actualProduction,cycle.capacityPerDay,{cycleId:cycle.cycleId});
   n.factoryProductionCycleHistory.push(clone(cycle));n.factoryProductionCycleHistory=n.factoryProductionCycleHistory.slice(-MAX_EVENTS);
-  const roots=[...new Set((result.sourceBatchIds||[]).map(String).filter(Boolean))];
+  // The actual processing inputs may be newly created factory-input lots, while the
+  // originating mine batch is represented by a shipment whose processingTransactionId
+  // was set to this cycle ID on receipt. Join both identities so site-flow provenance
+  // completes even when the processor consumes an intermediate factory-input batch.
+  const cycleLinkedSourceBatches=[...n.shipments,...n.deliveries]
+    .filter(row=>String(row?.factoryId||'')===String(cycle.factoryId)&&
+      String(row?.processingTransactionId||'')===String(cycle.cycleId))
+    .map(row=>String(row?.batchId||'').trim()).filter(Boolean);
+  const roots=[...new Set([...(result.sourceBatchIds||[]).map(String),...cycleLinkedSourceBatches].filter(Boolean))];
   for(const sourceBatchId of roots){
     updateSiteFlow(cid,sourceBatchId,row=>{
       row.processingTransactionIds=[...new Set([...(row.processingTransactionIds||[]),String(result.transactionId)])];
