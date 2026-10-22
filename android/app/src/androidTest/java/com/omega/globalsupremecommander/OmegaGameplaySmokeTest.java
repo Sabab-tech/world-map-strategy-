@@ -100,8 +100,13 @@ public final class OmegaGameplaySmokeTest {
 
             final String speedControlScript =
                     "(function() {" +
-                    " var button = document.querySelector('.speed-btn[data-speed=\"2\"]');" +
-                    " if (!button || !window.Omega || !window.Omega.GameLifecycle) return false;" +
+                    " if (!window.Omega || !window.Omega.GameLifecycle || !window.Game) return false;" +
+                    // A speed selection must be tested in a started game, not an unowned world.
+                    " window.Game.currentActiveCountry = 'USA';" +
+                    " window.Game.playerCountry = 'USA';" +
+                    " if (window.CountryIOS) window.CountryIOS.activeCountry = 'USA';" +
+                    " var button = document.querySelector('.speed-btn[data-speed=\\\"2\\\"]');" +
+                    " if (!button) return false;" +
                     " button.click();" +
                     " var diagnostics = window.Omega.GameLifecycle.getDiagnostics();" +
                     " return !!(diagnostics && diagnostics.clock && Number(diagnostics.clock.speed) === 2);" +

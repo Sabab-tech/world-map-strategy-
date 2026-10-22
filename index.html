@@ -216,11 +216,11 @@
                         <button class="speed-btn" data-speed="0" title="Pause Game">⏸</button>
                         <button class="speed-btn active" data-speed="1" title="Normal Speed">1x</button>
                         <button class="speed-btn" data-speed="2" title="Fast Speed">2x</button>
-                        <button class="speed-btn" data-speed="5" title="Ultra Speed">5x</button>
+                        <button class="speed-btn" data-speed="3" title="Very Fast Speed">3x</button>
                     </div>
                 </div>
 
-                <div class="status-group status-resources" role="status" title="Click or slide anywhere on Top Bar to view Resources & Dropdown Menu">
+                <div class="status-group status-resources" role="status" title="Current map metric; tap to change the map overlay">
                     <!-- 🌐 MAP METRIC SELECTOR DROPDOWN BUTTON -->
                     <div id="metric-selector-pill" class="res-node metric-pill-btn" onclick="if(window.Game && window.Game.Map && typeof window.Game.Map.toggleMetricDropdown === 'function') { window.Game.Map.toggleMetricDropdown(event); }" style="cursor:pointer; background:rgba(0,229,255,0.18); border:1.5px solid #00e5ff; padding:3px 12px; border-radius:14px; box-shadow:0 0 12px rgba(0,229,255,0.35); user-select:none;">
                         <span class="res-icon">📊</span>
@@ -261,13 +261,6 @@
                     </div>
                 </div>
 
-                <div class="status-group status-right">
-                    <span class="status-item green"><span class="icon">💾</span> <span id="status-autosave">SAVE STATUS UNKNOWN</span></span>
-                    <span class="status-item cyan"><span class="icon">📡</span> <span id="status-link">ENGINE STATE UNKNOWN</span></span>
-                    <span class="status-item debug-fps"><span id="status-fps">FPS N/A</span></span>
-                </div>
-            </div>
-
             <!-- OMEGA persistent game-time and national-finance controls -->
             <section id="omega-global-time-hud" aria-label="Global game clock and national status">
                 <div class="ogth-topline">
@@ -281,12 +274,21 @@
                         <button type="button" data-omega-action="toggle" aria-label="Resume game" title="Resume game">▶</button>
                         <button type="button" data-omega-speed="1" class="active" aria-label="Normal game speed" title="Normal speed">1x</button>
                         <button type="button" data-omega-speed="2" aria-label="Fast game speed" title="Fast speed">2x</button>
-                        <button type="button" data-omega-speed="5" aria-label="Very fast game speed" title="Very fast speed">5x</button>
+                        <button type="button" data-omega-speed="3" aria-label="Very fast game speed" title="Very fast speed">3x</button>
                     </div>
                 </div>
                 <div class="ogth-economy" data-omega-economy title="Daily revenue, spending and net are modeled annual Finance figures divided by 365, not observed daily cash receipts.">Treasury and daily fiscal flow: Not recorded</div>
                 <div class="ogth-assets" data-omega-assets>Assets/resources not recorded</div>
             </section>
+
+                <div class="status-group status-right">
+                    <span class="status-item green"><span class="icon">💾</span> <span id="status-autosave">SAVE STATUS UNKNOWN</span></span>
+                    <span class="status-item cyan"><span class="icon">📡</span> <span id="status-link">ENGINE STATE UNKNOWN</span></span>
+                    <span class="status-item debug-fps"><span id="status-fps">FPS N/A</span></span>
+                </div>
+            </div>
+
+
 
             <!-- 📊 MAP METRIC & SOVEREIGN INTELLIGENCE DROPDOWN DRAWER -->
             <div id="map-metric-dropdown" class="map-metric-dropdown hidden" style="display:none; position:fixed; top:54px; left:50%; transform:translateX(-50%); z-index:1000000; background:rgba(8,15,26,0.98); border:1.5px solid #00e5ff; border-radius:12px; width:360px; max-width:94vw; padding:12px; box-shadow:0 12px 35px rgba(0,0,0,0.95), 0 0 25px rgba(0,229,255,0.35); backdrop-filter:blur(16px); font-family:var(--font-mono); color:#f8fafc; flex-direction:column; gap:8px;">
@@ -599,11 +601,6 @@
                     </div>
                 </header>
 
-                <nav id="omega-country-overview-tabs" class="omega-country-overview-tabs" aria-label="Ministry views">
-                    <button type="button" data-omega-ministry-view="country" aria-selected="false">COUNTRY OVERVIEW</button>
-                    <button type="button" data-omega-ministry-view="ministry" aria-selected="true" class="is-active">MINISTRY WORKSPACE</button>
-                </nav>
-                <section id="omega-country-overview-panel" class="omega-country-overview-panel" aria-label="Country Overview" hidden></section>
                 <div id="ministry-dashboard-content" class="ministry-content-area">
                     <!-- Dynamically populated by JS based on selected Ministry identity & theme -->
                 </div>

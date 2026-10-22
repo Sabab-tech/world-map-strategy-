@@ -122,11 +122,41 @@ function candidateName(candidate, countryCode) {
 function flattenMinisterDatabase() { const db = cachedMinisters?.ministers_database || {}, out = []; for (const [category, list] of Object.entries(db)) if (Array.isArray(list)) for (const minister of list) out.push({ ...minister, __category: category }); return out; }
 function scoreCategory(category, ministryId) { const a = tokens(category), b = tokens(ministryId); let score = 0; for (const x of a) if (b.has(x)) score += 3; return score; }
 function scoreMinister(minister, ministryId) { const target = tokens(ministryId), blob = [minister.__category, minister.background, minister.id].map(normalizeKey).join(' '); let score = scoreCategory(minister.__category, ministryId); for (const t of target) if (blob.includes(t)) score += 1; return score; }
+// Keep API-backed and offline Pages recruitment rosters aligned with ministry roles.
+const MINISTRY_PROFILE_CATEGORIES = Object.freeze({
+  cabinet_council: ['Information_Media', 'Culture_Religion'],
+  trade: ['Economy_Commerce'],
+  production: ['Energy_Infrastructure'],
+  taxes: ['Finance'],
+  central_bank: ['Finance'],
+  laws: ['Justice'],
+  education: ['Public_Welfare'],
+  infrastructure: ['Energy_Infrastructure'],
+  science_research: ['Science_Technology'],
+  defense: ['Defense'],
+  foreign_affairs: ['Foreign_Affairs'],
+  energy_mining: ['Energy_Infrastructure', 'Environment_Climate'],
+  intelligence_cyber: ['Intelligence', 'Science_Technology'],
+  agriculture_food: ['Agriculture_Food'],
+  interior_security: ['Home_Affairs'],
+  health_welfare: ['Public_Welfare'],
+  treasury_finance: ['Finance'],
+  mega_projects: ['Energy_Infrastructure', 'Environment_Climate']
+});
 function ministerCandidates(ministryId, countryCode) {
   const all = flattenMinisterDatabase(); if (!all.length) return [];
   const target = normalizeKey(ministryId), exact = all.filter(m => normalizeKey(m.__category) === target);
-  const pool = exact.length >= 5 ? exact : [...all].sort((a, b) => scoreMinister(b, ministryId) - scoreMinister(a, ministryId) || String(a.id).localeCompare(String(b.id)));
-  const unique = new Map(); for (const m of pool) { if (!unique.has(m.id)) unique.set(m.id, m); if (unique.size >= 5) break; }
+  let pool = exact.length >= 5 ? exact : null;
+  if (!pool) {
+    for (const category of MINISTRY_PROFILE_CATEGORIES[target] || []) {
+      const matched = all.filter(m => normalizeKey(m.__category) === normalizeKey(category));
+      if (matched.length >= 5) { pool = matched; break; }
+    }
+  }
+  if (!pool) pool = exact.length ? exact : [...all].sort((a, b) =>
+    scoreMinister(b, ministryId) - scoreMinister(a, ministryId) || String(a.id).localeCompare(String(b.id)));
+  const unique = new Map();
+  for (const minister of pool) { if (!unique.has(minister.id)) unique.set(minister.id, minister); if (unique.size >= 5) break; }
   return [...unique.values()].slice(0, 5).map(m => ({ ...m, displayName: candidateName(m, countryCode), ministryCategory: m.__category }));
 }
 
