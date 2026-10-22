@@ -649,7 +649,12 @@ assert.ok(delivered,'the exact real site shipment must arrive through the turn-a
 const sameResourceDeliveredQuantity=realDelivery.shipments.filter(x=>String(x.resourceId)===String(realPipelineResourceId))
   .reduce((sum,x)=>sum+(Number(x.quantity)||0),0);
 assert.equal(delivered.destinationStatus,'FACTORY_RECEIVED');
-assert.equal(delivered.processingStatus,'IN_PROGRESS','delivered real Endowment material must schedule a cycle');
+assert.ok(['IN_PROGRESS','AWAITING_PROCESSING'].includes(delivered.processingStatus),
+  'delivery either starts its own cycle or waits for a different active cycle: '+JSON.stringify(delivered));
+if(delivered.processingStatus==='AWAITING_PROCESSING'){
+  assert.equal(delivered.processing?.reason,'FACTORY_CYCLE_ALREADY_RUNNING');
+  assert.equal(delivered.processingTransactionId,null,'unrelated active cycles must never own this delivery');
+}
 completeFactoryCycle(globalThis.Game.state,industrial,'KWT',realPipeline.factoryId,realPipeline.batchId);
 const postDeliveryState=runtime.countryResourceState('KWT');
 const completedRealDelivery=(postDeliveryState.industrialNetwork?.deliveries||[]).find(x=>String(x.shipmentId)===String(realPipeline.shipmentId));
@@ -753,7 +758,11 @@ assert.ok(part6Delivery.delivered>=1,'global country turn must deliver due shipm
 const part6Delivered=part6Delivery.shipments.find(item=>item.shipmentId===part6Pipeline.shipmentId);
 assert(part6Delivered);
 assert.equal(part6Delivered.destinationStatus,'FACTORY_RECEIVED');
-assert.equal(part6Delivered.processingStatus,'IN_PROGRESS',JSON.stringify(part6Delivered.processing));
+assert.ok(['IN_PROGRESS','AWAITING_PROCESSING'].includes(part6Delivered.processingStatus),JSON.stringify(part6Delivered));
+if(part6Delivered.processingStatus==='AWAITING_PROCESSING'){
+  assert.equal(part6Delivered.processing?.reason,'FACTORY_CYCLE_ALREADY_RUNNING');
+  assert.equal(part6Delivered.processingTransactionId,null,'Part 6 shipment must not attach to an unrelated cycle');
+}
 completeFactoryCycle(globalThis.Game.state,industrial,part6CopperSite.countryId,part6Pipeline.factoryId,part6Pipeline.batchId);
 const part6PostDelivery=runtime.countryResourceState(part6CopperSite.countryId);
 const part6Flow=part6PostDelivery.industrialNetwork?.siteFlowLedger?.find(item=>String(item.batchId)===String(part6Pipeline.batchId));
