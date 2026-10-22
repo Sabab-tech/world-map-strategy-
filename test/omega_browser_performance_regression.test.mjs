@@ -187,4 +187,6 @@ test('large world GeoJSON is rendered incrementally rather than monopolizing the
   assert.match(renderer, /requestAnimationFrame\(addFeatureChunk\)/);
   assert.match(renderer, /layer\.addData\(featureCollection\.features\[nextFeature\]\)/);
   assert.match(renderer, /renderToken !== Game\.__omegaGeoJSONRenderToken/);
+  assert.match(renderer, /OMEGAGeographicRegionSystem/);
+  assert.match(renderer, /Game\.countryLabels\.length = 0/);
 });
