@@ -40,8 +40,9 @@ const context={
     state:{
       simulation:{turn:1,startYear:2015,date:'2015-01-01',daysPerTurn:30},
       resource:{BGD:{inventory:{coal:50000,iron_ore:50000},warehouse:{availableByResource:{coal:50000,iron_ore:50000},reservedByResource:{}},technologyCapabilities:[]}},
-      economy:{BGD:{productionAssets:[]}},
-      transport:{BGD:{infrastructure:{roads:{capacityPerDay:50000,quality:.9},rail:{capacityPerDay:120000,quality:.8},ports:{capacityPerDay:200000,quality:.9},bridges:{capacityPerDay:50000,quality:.8},pipelines:{capacityPerDay:400000,quality:.8}}}},
+      economy:{BGD:{unemploymentCount:600000,laborForce:6000000,unemployment_rate:10,productionAssets:[]}},
+      transport:{BGD:{infrastructure:{roads:{capacityPerDay:50000,quality:.9},rail:{capacityPerDay:120000,quality:.8},ports:{capacityPerDay:200000,quality:.9},bridges:{capacityPerDay:50000,quality:.8},pipelines:{capacityPerDay:400000,quality:.8},
+        utilitySupply:{electricityMWhPerDay:1000000,waterM3PerDay:1000000,authority:'TEST_FIXTURE',status:'AVAILABLE',simulationOnly:true,assets:[]}}}},
       foreign:{BGD:{relations:{USA:80}}}
     }
   }
