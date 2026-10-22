@@ -80,7 +80,17 @@ test('canonical factory catalog, type profiles, offline icons and recipe coeffic
     assert.ok(Number(profile.constructionDays) > 0, type + ': construction duration must be positive');
     assert.ok(Number(profile.defaultCapacityPerDay) > 0, type + ': declared capacity must be positive');
     assert.ok(symbolNames.has(profile.iconId), type + ': icon must resolve offline: ' + profile.iconId);
+    assert.ok(profile.constructionMaterials && Object.keys(profile.constructionMaterials).length > 0, type + ': construction BOM required');
+    assert.equal(profile.constructionMaterialUnit, 'SIMULATION_RESOURCE_UNIT');
+    assert.ok(profile.employment && Number(profile.employment.jobsPerFactory) > 0, type + ': employment capacity required');
+    assert.equal(profile.employment.simulationOnly, true);
+    for (const [material, quantity] of Object.entries(profile.constructionMaterials)) {
+      assert.ok(Object.prototype.hasOwnProperty.call(catalog.resourceRules, material), type + ': material must use a registered game resource: ' + material);
+      assert.ok(Number.isFinite(Number(quantity)) && Number(quantity) > 0, type + ': construction quantity must be positive: ' + material);
+    }
   }
+  assert.equal(catalog.factoryCatalogSummary.profilesWithConstructionMaterials, 56);
+  assert.equal(catalog.factoryCatalogSummary.profilesWithEmployment, 56);
   for (const unit of ['TONNES_ORE', 'CARATS', 'MILLION_CUBIC_METRES', 'BARRELS']) {
     const bridge = catalog.factoryCatalogPolicy.unitNormalization.sourceUnits[unit];
     assert.ok(bridge, 'used source unit must have an explicit normalization bridge: ' + unit);
@@ -149,6 +159,11 @@ test('canonical factory catalog, type profiles, offline icons and recipe coeffic
 test('factory construction reads its selected recipe and defaults from the canonical profile', () => {
   const { context, catalog, api } = makeRuntime();
   const profile = catalog.factoryProfiles.STEEL_AND_ALLOY_WORKS;
+  const stock = context.Game.state.resource.BGD = {inventory:{},batches:[],inventoryLots:{},warehouse:{warehouseId:'WH-BGD-RAW',availableByResource:{},reservedByResource:{}}};
+  for (const [resourceId, quantity] of Object.entries(profile.constructionMaterials)) {
+    stock.inventory[resourceId] = Number(quantity) + 50;
+    stock.warehouse.availableByResource[resourceId] = Number(quantity) + 50;
+  }
   const project = api.startFactoryProject({
     countryId: 'BGD', factoryType: 'STEEL_AND_ALLOY_WORKS',
     recipeId: 'STEEL_PRIMARY_ROUTE_V1', resourceId: 'iron_concentrate',
@@ -161,6 +176,16 @@ test('factory construction reads its selected recipe and defaults from the canon
   assert.equal(project.cost, profile.constructionCost);
   assert.equal(project.capacityPerDay, 50);
   assert.equal(project.recipeMode, 'MULTI_INPUT');
+  assert.equal(project.constructionMaterialsStatus, 'CONSUMED');
+  assert.equal(project.materialsRequired.length, Object.keys(profile.constructionMaterials).length);
+  assert.equal(project.materialAllocations.reduce((sum,row)=>sum+Number(row.quantity||0),0), Object.values(profile.constructionMaterials).reduce((sum,q)=>sum+Number(q),0));
+  for (const [resourceId, quantity] of Object.entries(profile.constructionMaterials)) {
+    assert.equal(stock.inventory[resourceId], 50, resourceId + ': construction inventory must be debited exactly once');
+    assert.equal(stock.warehouse.availableByResource[resourceId], 50, resourceId + ': raw warehouse must be debited exactly once');
+  }
+  const duplicate = api.startFactoryProject({countryId:'BGD',factoryType:'STEEL_AND_ALLOY_WORKS',recipeId:'STEEL_PRIMARY_ROUTE_V1',resourceId:'iron_concentrate',factoryId:'FAC-STEEL-CONSTRUCT-TEST'});
+  assert.equal(duplicate.idempotent, true);
+  assert.equal(stock.inventory.construction_aggregate, 50, 'duplicate request must not debit construction inventory twice');
   assert.deepEqual(JSON.parse(JSON.stringify(project.recipe.inputs)), JSON.parse(JSON.stringify(catalog.downstreamFactoryRecipes.STEEL_PRIMARY_ROUTE_V1.inputs)));
 
   for (let day = 0; day < Math.ceil(project.durationDays); day += 1) {
@@ -407,6 +432,53 @@ test('technology-locked or explicitly unavailable factories cannot consume input
   assert.equal(noTech.reason, 'FACTORY_TECHNOLOGY_REQUIREMENT_NOT_MET');
   assert.ok(noTech.missingTechnologyIds.includes('MISSING_TECH_GATE'));
   assert.equal(JSON.stringify(asset.inputInventory), stockBefore);
+});
+
+
+test('factory construction blocks atomically when any required material is short', () => {
+  const {context,catalog,api}=makeRuntime();
+  const profile=catalog.factoryProfiles.STEEL_AND_ALLOY_WORKS;
+  const stock=context.Game.state.resource.BGD={inventory:{},batches:[],inventoryLots:{},
+    warehouse:{warehouseId:'WH-BGD-RAW',availableByResource:{},reservedByResource:{}}};
+  const entries=Object.entries(profile.constructionMaterials);
+  const missingId=entries[entries.length-1][0];
+  for(const [resourceId,quantity] of entries){
+    if(resourceId===missingId)continue;
+    stock.inventory[resourceId]=Number(quantity)+20;
+    stock.warehouse.availableByResource[resourceId]=Number(quantity)+20;
+  }
+  const before=JSON.stringify(stock);
+  const result=api.startFactoryProject({countryId:'BGD',factoryType:'STEEL_AND_ALLOY_WORKS',recipeId:'STEEL_PRIMARY_ROUTE_V1'});
+  assert.equal(result.status,'BLOCKED');
+  assert.equal(result.reason,'INSUFFICIENT_FACTORY_CONSTRUCTION_MATERIALS');
+  assert.ok(result.missingMaterials.some(row=>row.resourceId===missingId));
+  assert.equal(JSON.stringify(stock),before,'preflight must not consume any material if one BOM row is missing');
+  assert.equal(context.Game.state.resource.BGD.industrialNetwork.projects.length,0,'failed construction must not create a project');
+});
+
+test('factory commissioning fills job slots from the unemployed pool exactly once', () => {
+  const {context,api}=makeRuntime();
+  const assets=Array.from({length:10},(_,i)=>({
+    id:'FAC-SHIP-'+String(i+1).padStart(2,'0'),countryId:'BGD',factoryType:'SHIP_RAIL_EQUIPMENT_YARD',
+    status:'OPERATIONAL',commissionedTurn:i+1,capacityPerDay:180
+  }));
+  context.Game.state.economy.BGD={
+    unemploymentCount:600000,laborForce:6000000,unemployment_rate:10,productionAssets:assets
+  };
+  const first=api.reconcileFactoryEmployment('BGD');
+  assert.equal(first.status,'ACTIVE');
+  assert.equal(first.baselineUnemployedCount,600000);
+  assert.equal(first.jobsSupported,100000);
+  assert.equal(first.jobsFilled,100000);
+  assert.equal(first.vacancies,0);
+  assert.equal(first.unemployedCount,500000);
+  assert.equal(first.unemploymentRatePct,8.3333);
+  assert.equal(context.Game.state.economy.BGD.unemploymentCount,500000);
+  assert.equal(context.Game.state.economy.BGD.unemployment_rate,8.3333);
+  const second=api.reconcileFactoryEmployment('BGD');
+  assert.equal(second.unemployedCount,500000,'repeated reconciliation must not subtract factory jobs twice');
+  assert.equal(second.jobsFilled,100000);
+  assert.equal(context.Game.state.economy.BGD.factoryEmployment.factories['FAC-SHIP-01'].jobsFilled,10000);
 });
 
 test('unknown generic production is not allowed to create a factory project without explicit opt-in', () => {
