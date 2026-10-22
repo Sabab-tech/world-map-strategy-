@@ -182,8 +182,10 @@ test('large world GeoJSON is rendered incrementally rather than monopolizing the
 
   assert.match(renderer, /L\.geoJSON\(null,\s*renderOptions\)/);
   assert.match(renderer, /CHUNK_THRESHOLD\s*=\s*24/);
-  assert.match(renderer, /MAX_FEATURES_PER_FRAME\s*=\s*4/);
-  assert.match(renderer, /FRAME_BUDGET_MS\s*=\s*5/);
+  assert.match(renderer, /renderer:\s*typeof L\.canvas === "function" \? L\.canvas\(\{ padding: 0\.25 \}\) : undefined/);
+  assert.match(renderer, /smoothFactor:\s*1\.2/);
+  assert.match(renderer, /MAX_FEATURES_PER_FRAME\s*=\s*8/);
+  assert.match(renderer, /FRAME_BUDGET_MS\s*=\s*7/);
   assert.match(renderer, /requestAnimationFrame\(addFeatureChunk\)/);
   assert.match(renderer, /layer\.addData\(featureCollection\.features\[nextFeature\]\)/);
   assert.match(renderer, /renderToken !== Game\.__omegaGeoJSONRenderToken/);
