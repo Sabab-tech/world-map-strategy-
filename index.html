@@ -11,6 +11,7 @@
     <script>
         /* WebViewAssetLoader serves bundled APK assets over its local HTTPS origin. */
         window.OMEGA_ANDROID_OFFLINE = window.location.hostname === 'appassets.androidplatform.net';
+        window.OMEGA_ANDROID_DIAGNOSTICS = !!(window.OMEGA_ANDROID_OFFLINE && window.OmegaAndroid && window.OmegaAndroid.isDiagnosticsEnabled && window.OmegaAndroid.isDiagnosticsEnabled());
 
         /* GitHub Pages browsers can reopen the local app shell after a first online visit. */
         if (!window.OMEGA_ANDROID_OFFLINE &&
