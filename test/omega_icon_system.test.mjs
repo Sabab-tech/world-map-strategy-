@@ -26,7 +26,11 @@ test('original line icon set includes semantic symbols for all main command area
   assert.ok(icons, 'icon registry should export its local API');
   for (const name of ['landmark', 'shield', 'wallet', 'chart-column', 'globe', 'search', 'satellite',
     'pickaxe', 'factory', 'industrial-production', 'mine-extraction', 'heart-pulse', 'book-open', 'microscope', 'scroll', 'bot', 'eye',
-    'arrow-left', 'clock', 'settings', 'users', 'gem', 'car-front', 'circle-help']) {
+    'arrow-left', 'clock', 'settings', 'users', 'gem', 'car-front', 'circle-help',
+    'steelworks', 'non-ferrous-smelter', 'petrochemical-plant', 'fertilizer-plant', 'chemical-plant',
+    'cement-plant', 'glass-plant', 'paper-mill', 'food-processing', 'textile-mill', 'machine-tools',
+    'grid-equipment', 'semiconductor-factory', 'battery-plant', 'vehicle-plant', 'shipyard',
+    'aerospace-factory', 'pharmaceutical-plant', 'defense-industry', 'recycling-plant']) {
     assert.ok(icons.iconNames.includes(name), 'missing icon symbol: ' + name);
   }
   assert.ok(icons.iconNames.length >= 45, 'the bespoke SVG library should cover a broad set of UI actions');
