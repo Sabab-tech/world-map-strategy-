@@ -242,6 +242,8 @@ assert.equal(diag.targetArchitecture,'SITE -> EXTRACTION -> WAREHOUSE -> ROUTE -
 
 // Every route segment shares a per-turn transport ledger across shipments.
 context.Omega.Simulation.clock.turn=43;
+// Industrial ledgers use the shared Game simulation state as the canonical turn source.
+context.Game.state.simulation.turn=43;
 context.Game.state.transport.BGD.infrastructure.roads.capacityPerDay=11000;
 context.Game.state.transport.BGD.infrastructure.roads.quality=1;
 const firstCapacityShipment=N.dispatchShipment({countryId:'BGD',siteId:'SITE_BGD_COAL_01',resourceId:'coal',quantity:5000,transportMode:'rail'});
