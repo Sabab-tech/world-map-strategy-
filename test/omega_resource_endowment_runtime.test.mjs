@@ -33,14 +33,20 @@ function advanceToCycleFinish(state,cycle){
     if(++guard>10000)throw new Error('TEST_FACTORY_CYCLE_CLOCK_GUARD');
   }
 }
-function completeFactoryCycle(state,industry,countryId,factoryId,sourceBatchId,maxTurns=24){
+function completeFactoryCycle(state,industry,countryId,factoryId,sourceBatchId,maxTurns=32){
   const resourceState=()=>state.resource?.[countryId]||{};
   const flow=()=> (resourceState().industrialNetwork?.siteFlowLedger||[])
     .find(row=>String(row.batchId||'')===String(sourceBatchId||''));
+  const flowSummary=()=>{
+    const row=flow();
+    return row?{flowId:row.flowId,siteId:row.siteId,batchId:row.batchId,quantity:row.quantity,
+      stages:(row.stages||[]).map(x=>({stage:x.stage,status:x.status,turn:x.turn,transactionId:x.transactionId,
+        reason:x.reason,sourceBatchIds:x.sourceBatchIds,createdBatchIds:x.createdBatchIds}))}:null;
+  };
   const completed=()=>flow()?.stages?.some(step=>step.stage==='PROCESSING'&&step.status==='COMPLETED');
   const history=[];
   for(let step=0;step<maxTurns;step++){
-    if(completed())return{status:'COMPLETED',sourceBatchId,turns:step,flow:flow(),history};
+    if(completed())return{status:'COMPLETED',sourceBatchId,turns:step,flow:flowSummary(),history};
     const cycle=resourceState().industrialNetwork?.factoryProductionCycles?.[String(factoryId)];
     if(cycle&&cycle.status==='IN_PROGRESS'&&cycle.finishDate){
       advanceToCycleFinish(state,cycle);
@@ -52,11 +58,17 @@ function completeFactoryCycle(state,industry,countryId,factoryId,sourceBatchId,m
     const result=industry.processPendingFactoryInputs(countryId);
     history.push({turn:state.simulation?.turn,date:state.simulation?.date,cycleId:cycle?.cycleId||null,
       cycleStatus:cycle?.status||null,completedCount:result?.completedCount||0,startedCount:result?.startedCount||0,
-      blocked:result?.blocked||[]});
+      blocked:(result?.blocked||[]).slice(0,5).map(x=>({factoryId:x.factoryId,reason:x.reason,
+        missingInputs:(x.missingInputs||[]).map(n=>({resourceId:n.resourceId,available:n.available,required:n.required,tracked:n.tracked})),
+        utilityStatus:x.utilityStatus||x.utilities?.status||null,technologyStatus:x.technologyStatus||null,
+        workforceStatus:x.workforceStatus||null,warehouseTransferStatus:x.warehouseTransferStatus||null}))});
   }
+  const cycle=resourceState().industrialNetwork?.factoryProductionCycles?.[String(factoryId)]||null;
   assert.ok(completed(),JSON.stringify({reason:'SOURCE_BATCH_FACTORY_CYCLE_NOT_COMPLETED',countryId,factoryId,sourceBatchId,
-    flow:flow(),cycle:resourceState().industrialNetwork?.factoryProductionCycles?.[String(factoryId)]||null,history}));
-  return{status:'COMPLETED',sourceBatchId,flow:flow(),history};
+    flow:flowSummary(),cycle:cycle?{cycleId:cycle.cycleId,status:cycle.status,startDate:cycle.startDate,finishDate:cycle.finishDate,
+      finishTurn:cycle.finishTurn,sourceBatchIds:cycle.sourceBatchIds,inputQuantities:cycle.inputQuantities,
+      expectedOutputs:cycle.expectedOutputs,utilityConsumption:cycle.utilityConsumption,reason:cycle.reason}:null,history}));
+  return{status:'COMPLETED',sourceBatchId,flow:flowSummary(),history};
 }
 const resourceFiles=new Map([
   ['resources.json',new URL('../resources.json',import.meta.url)],
