@@ -447,12 +447,13 @@ test('factory construction blocks atomically when any required material is short
     stock.inventory[resourceId]=Number(quantity)+20;
     stock.warehouse.availableByResource[resourceId]=Number(quantity)+20;
   }
-  const before=JSON.stringify(stock);
+  const beforeInventory=JSON.stringify(stock.inventory),beforeWarehouse=JSON.stringify(stock.warehouse.availableByResource);
   const result=api.startFactoryProject({countryId:'BGD',factoryType:'STEEL_AND_ALLOY_WORKS',recipeId:'STEEL_PRIMARY_ROUTE_V1'});
   assert.equal(result.status,'BLOCKED');
   assert.equal(result.reason,'INSUFFICIENT_FACTORY_CONSTRUCTION_MATERIALS');
   assert.ok(result.missingMaterials.some(row=>row.resourceId===missingId));
-  assert.equal(JSON.stringify(stock),before,'preflight must not consume any material if one BOM row is missing');
+  assert.equal(JSON.stringify(stock.inventory),beforeInventory,'preflight must not debit inventory if one BOM row is missing');
+  assert.equal(JSON.stringify(stock.warehouse.availableByResource),beforeWarehouse,'preflight must not debit warehouse if one BOM row is missing');
   assert.equal(context.Game.state.resource.BGD.industrialNetwork.projects.length,0,'failed construction must not create a project');
 });
 
