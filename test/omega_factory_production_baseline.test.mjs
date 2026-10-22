@@ -773,7 +773,8 @@ test('factory production scheduler waits for cycle time and posts output only on
   assert.equal(done.completedCount, 1);
   assert.equal(done.completed[0].status, 'COMPLETED');
   assert.equal(context.Game.state.resource.BGD.processedWarehouse.availableByResource.STEEL, 36);
-  assert.equal(asset.productionHealth.status, 'READY');
+  assert.equal(asset.productionHealth.status, 'REDUCED');
+  assert.equal(asset.productionHealth.productivityPct, 50);
 });
 
 test('warehouse feeder transfers real tracked stock and schedules proportional partial factory production', () => {
