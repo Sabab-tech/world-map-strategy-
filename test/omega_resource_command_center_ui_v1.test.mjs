@@ -93,6 +93,6 @@ test('industrial panel exposes real utility ledgers and a single-country utility
   assert.match(ui, /Industrial utility balances/);
   assert.match(ui, /data-form="factory-utility-project"/);
   assert.match(ui, /startInfrastructureProject\(\{/);
-  assert.match(ui, /FACTORY_UTILITY_SUPPLY_NOT_RECORDED/);
+  assert.match(ui, /Not recorded/);
   assert.match(ui, /Completed in-game utility projects|completed in-game utility projects/i);
 });
