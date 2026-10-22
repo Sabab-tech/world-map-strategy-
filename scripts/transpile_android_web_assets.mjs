@@ -36,7 +36,15 @@ try {
     runEsbuild([...jsFiles, '--outdir=' + outDir, '--outbase=' + root, '--target=es2017', '--log-level=error']);
     for (const file of jsFiles) {
       const output = path.join(outDir, path.relative(root, file));
-      await fs.copyFile(output, file);
+      const transpiled = await fs.readFile(output, 'utf8');
+      const label = path.relative(root, file).split(path.sep).join('/').replace(/'/g, "\\'");
+      const traceStart = `;if(window.OMEGA_ANDROID_DIAGNOSTICS===true)console.info('[OMEGA_BOOT_START] ${label}');\\n`;
+      const traceEnd = `\\n;if(window.OMEGA_ANDROID_DIAGNOSTICS===true)console.info('[OMEGA_BOOT_END] ${label}');\\n`;
+      const strictDirective = /^(\\s*["']use strict["'];\\s*)/.exec(transpiled);
+      const instrumented = strictDirective
+        ? strictDirective[1] + traceStart + transpiled.slice(strictDirective[1].length) + traceEnd
+        : traceStart + transpiled + traceEnd;
+      await fs.writeFile(file, instrumented, 'utf8');
     }
   }
 
