@@ -44,11 +44,13 @@ The capability engine continues to weight a candidate's recorded attributes for 
 
 Stress resilience is derived from the recorded crisis-handling, discipline, empathy, strategic, and integrity values, unless the profile explicitly records a composure/stress-tolerance value. That resilience scales the stress used by the capability evaluation; raw stress remains in the canonical runtime so the player can still see how pressured the minister is.
 
-This models two distinct facts: the situation may be stressful, but different ministers can lose different amounts of effectiveness under the same pressure. It does not erase crisis exposure from the simulation.
+This models two distinct facts: the situation may be stressful, but different ministers can lose different amounts of effectiveness under the same pressure. It does not erase crisis exposure from the simulation. The canonical state view now exposes `status` and `isActive` as well, allowing the decision engine to reject recommendations from dismissed or otherwise inactive ministers.
+
+Fatigue is now advanced by `OMEGA_SIMULATION_TURN_COMMITTED`. Each committed day contributes the configured game-hours from the simulation clock, applies the profile's age-related fatigue rate, adds burden for active workload and stress, and allows recovery under lower workload. Duplicate turn notifications are ignored so a single game day is not counted twice. Fatigue applies a configurable penalty to decision capability and also reduces training yield.
 
 ### Personalized training
 
-Training updates `learningState.domainExperience`, `trainingHours`, `skillEvolution`, and `lastTraining`. Gain is:
+Training updates `learningState.domainExperience`, `trainingHours`, `skillEvolution`, and `lastTraining`. The active minister's recruitment dossier offers a 24-game-hour training session. The session is stored in canonical runtime state, advances on committed game-time events, shows progress, and awards experience only when its duration completes. A minister cannot run overlapping sessions. The direct `train()` method remains available for deterministic system-driven training. Gain is:
 
 `gain = trainingFactor × hours × quality × ageTrainingRate × learningAgility × availableCapacity ÷ (1 + domainExperience ÷ diminishingScale)`
 
@@ -58,7 +60,7 @@ Available capacity declines with current stress, workload, and fatigue, with a c
 
 - **Recruitment dossier:** role capability, work style, age stage, age-related operational factor, stress resilience, training rate, and career-fit evidence.
 - **Decision evaluation:** adjusted effective capability plus raw/effective stress, age multiplier, and career-fit multiplier in the evaluation breakdown.
-- **Training:** domain experience and a persisted `lastTraining` breakdown including actual gain and applied modifiers.
+- **Training:** the active-minister dossier starts a time-bound session; its progress and completion state live in the canonical runtime. Domain experience and a persisted `lastTraining` breakdown are updated only when the session finishes.
 - **Save/load and appointments:** use the existing canonical state and assignment paths. No new profile identity records are created.
 
 ## Data handling rules
@@ -72,7 +74,7 @@ Available capacity declines with current stress, workload, and fatigue, with a c
 
 ## Verification
 
-Run `node scripts/test_minister_profile_effects.mjs` for focused coverage. The existing `test:cabinet`/`test:minister` paths also execute this suite through `scripts/test_minister_behavior.mjs`. The suite checks every profile in the canonical minister catalogue and verifies age-stage modifiers, specialty fit, resilience under identical stress, training gains, bounded values, and appointment-registry consistency. The repository's existing cabinet/minister checks remain in the normal test/build chain.
+Run `node scripts/test_minister_profile_effects.mjs` for focused coverage. The existing `test:cabinet`/`test:minister` paths also execute this suite through `scripts/test_minister_behavior.mjs`. The suite checks every profile in the canonical minister catalogue and verifies age-stage modifiers, specialty fit, resilience under identical stress, age-related fatigue during game time, fatigue penalties to decisions, scheduled-training completion after one committed game day, duplicate-turn deduplication, training gains, bounded values, and appointment-registry consistency. The repository's existing cabinet/minister checks remain in the normal test/build chain.
 
 ## Trade-offs
 
