@@ -227,6 +227,7 @@ body.modal-open #omega-global-time-hud {
   height: auto !important;
   min-height: 0 !important;
   max-height: 104px !important;
+  flex-wrap: wrap !important;
   gap: 3px 7px !important;
   padding: 4px 6px !important;
   align-items: center !important;
