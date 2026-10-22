@@ -5586,7 +5586,7 @@
       ],
       "requiredTechnologyIds": [],
       "unit": "GAME_CURRENCY_UNITS",
-      "authority": "SIMULATED_GENERIC_FALLBACK",
+      "authority": "SIMULATED_GAMEPLAY_PROFILE",
       "simulationOnly": true,
       "inputUnit": "SIMULATION_RESOURCE_UNIT",
       "outputUnit": "SIMULATION_RESOURCE_UNIT",
@@ -5623,7 +5623,8 @@
       },
       "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
       "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
-      "employmentAuthority": "SIMULATED_FACTORY_EMPLOYMENT_V1"
+      "employmentAuthority": "SIMULATED_FACTORY_EMPLOYMENT_V1",
+      "profileAuthority": "SIMULATED_GENERIC_FALLBACK"
     }
   },
   "downstreamFactoryRecipes": {
