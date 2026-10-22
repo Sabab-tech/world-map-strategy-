@@ -33,14 +33,30 @@ function advanceToCycleFinish(state,cycle){
     if(++guard>10000)throw new Error('TEST_FACTORY_CYCLE_CLOCK_GUARD');
   }
 }
-function completeFactoryCycle(state,industry,countryId,factoryId){
-  const rs=state.resource?.[countryId]||{};
-  const cycle=rs.industrialNetwork?.factoryProductionCycles?.[String(factoryId)];
-  assert.ok(cycle&&cycle.finishDate,'factory cycle must persist its authoritative finish date');
-  advanceToCycleFinish(state,cycle);
-  const result=industry.processPendingFactoryInputs(countryId);
-  assert.ok(result.completedCount>=1,JSON.stringify({countryId,factoryId,cycle,result}));
-  return result;
+function completeFactoryCycle(state,industry,countryId,factoryId,sourceBatchId,maxTurns=24){
+  const resourceState=()=>state.resource?.[countryId]||{};
+  const flow=()=> (resourceState().industrialNetwork?.siteFlowLedger||[])
+    .find(row=>String(row.batchId||'')===String(sourceBatchId||''));
+  const completed=()=>flow()?.stages?.some(step=>step.stage==='PROCESSING'&&step.status==='COMPLETED');
+  const history=[];
+  for(let step=0;step<maxTurns;step++){
+    if(completed())return{status:'COMPLETED',sourceBatchId,turns:step,flow:flow(),history};
+    const cycle=resourceState().industrialNetwork?.factoryProductionCycles?.[String(factoryId)];
+    if(cycle&&cycle.status==='IN_PROGRESS'&&cycle.finishDate){
+      advanceToCycleFinish(state,cycle);
+    }else{
+      // A prior cycle may belong to an older batch. Complete/start cycles one turn at a time
+      // until this exact source batch appears in a committed lineage, not merely any cycle.
+      advanceOneGameTurn(state);
+    }
+    const result=industry.processPendingFactoryInputs(countryId);
+    history.push({turn:state.simulation?.turn,date:state.simulation?.date,cycleId:cycle?.cycleId||null,
+      cycleStatus:cycle?.status||null,completedCount:result?.completedCount||0,startedCount:result?.startedCount||0,
+      blocked:result?.blocked||[]});
+  }
+  assert.ok(completed(),JSON.stringify({reason:'SOURCE_BATCH_FACTORY_CYCLE_NOT_COMPLETED',countryId,factoryId,sourceBatchId,
+    flow:flow(),cycle:resourceState().industrialNetwork?.factoryProductionCycles?.[String(factoryId)]||null,history}));
+  return{status:'COMPLETED',sourceBatchId,flow:flow(),history};
 }
 const resourceFiles=new Map([
   ['resources.json',new URL('../resources.json',import.meta.url)],
@@ -634,7 +650,7 @@ const sameResourceDeliveredQuantity=realDelivery.shipments.filter(x=>String(x.re
   .reduce((sum,x)=>sum+(Number(x.quantity)||0),0);
 assert.equal(delivered.destinationStatus,'FACTORY_RECEIVED');
 assert.equal(delivered.processingStatus,'IN_PROGRESS','delivered real Endowment material must schedule a cycle');
-completeFactoryCycle(globalThis.Game.state,industrial,'KWT',realPipeline.factoryId);
+completeFactoryCycle(globalThis.Game.state,industrial,'KWT',realPipeline.factoryId,realPipeline.batchId);
 const postDeliveryState=runtime.countryResourceState('KWT');
 const completedRealDelivery=(postDeliveryState.industrialNetwork?.deliveries||[]).find(x=>String(x.shipmentId)===String(realPipeline.shipmentId));
 assert.equal(completedRealDelivery?.processingStatus,'PROCESSED','Kuwait delivery ledger must reconcile after cycle completion');
@@ -738,7 +754,7 @@ const part6Delivered=part6Delivery.shipments.find(item=>item.shipmentId===part6P
 assert(part6Delivered);
 assert.equal(part6Delivered.destinationStatus,'FACTORY_RECEIVED');
 assert.equal(part6Delivered.processingStatus,'IN_PROGRESS',JSON.stringify(part6Delivered.processing));
-completeFactoryCycle(globalThis.Game.state,industrial,part6CopperSite.countryId,part6Pipeline.factoryId);
+completeFactoryCycle(globalThis.Game.state,industrial,part6CopperSite.countryId,part6Pipeline.factoryId,part6Pipeline.batchId);
 const part6PostDelivery=runtime.countryResourceState(part6CopperSite.countryId);
 const part6Flow=part6PostDelivery.industrialNetwork?.siteFlowLedger?.find(item=>String(item.batchId)===String(part6Pipeline.batchId));
 const part6CompletedDelivery=(part6PostDelivery.industrialNetwork?.deliveries||[]).find(item=>String(item.shipmentId)===String(part6Pipeline.shipmentId));
