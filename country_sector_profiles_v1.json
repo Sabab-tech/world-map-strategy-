@@ -3,9 +3,9 @@
     "schemaVersion": "1.1.0",
     "datasetId": "OMEGA_COUNTRY_SECTOR_PROFILES_V1",
     "title": "OMEGA Country Sector Profiles",
-    "generatedAt": "2026-10-22T04:17:41.823Z",
+    "generatedAt": "2026-10-22T04:33:06.571Z",
     "generatedFrom": "/home/runner/work/world-map-strategy-/world-map-strategy-/country_general_data_registry_v1.json",
-    "sourceRegistryGeneratedAt": "2026-10-22T04:17:38.747Z",
+    "sourceRegistryGeneratedAt": "2026-10-22T04:32:54.832Z",
     "countryAndTerritoryCount": 249,
     "uniqueIso3Count": 249,
     "duplicateIdentityCount": 0,
@@ -683,8 +683,8 @@
       },
       "populationAndHumanDevelopment": {
         "total": 249,
-        "available": 92,
-        "partial": 132,
+        "available": 123,
+        "partial": 101,
         "noData": 25
       },
       "naturalResources": {
@@ -1019,8 +1019,8 @@
       },
       "primaryCompletionRatePct": {
         "total": 249,
-        "nonNull": 147,
-        "missing": 102
+        "nonNull": 198,
+        "missing": 51
       },
       "secondarySchoolEnrollmentPct": {
         "total": 249,
@@ -33559,7 +33559,7 @@
           "analytics": {}
         },
         "populationAndHumanDevelopment": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "populationTotal": {
               "refType": "METRIC",
@@ -41629,7 +41629,7 @@
           "analytics": {}
         },
         "populationAndHumanDevelopment": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "populationTotal": {
               "refType": "METRIC",
@@ -51068,7 +51068,7 @@
           "analytics": {}
         },
         "populationAndHumanDevelopment": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "populationTotal": {
               "refType": "METRIC",
@@ -59368,7 +59368,7 @@
           "analytics": {}
         },
         "populationAndHumanDevelopment": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "populationTotal": {
               "refType": "METRIC",
@@ -60843,7 +60843,7 @@
           "analytics": {}
         },
         "populationAndHumanDevelopment": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "populationTotal": {
               "refType": "METRIC",
@@ -63529,7 +63529,7 @@
           "analytics": {}
         },
         "populationAndHumanDevelopment": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "populationTotal": {
               "refType": "METRIC",
@@ -67614,7 +67614,7 @@
           "analytics": {}
         },
         "populationAndHumanDevelopment": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "populationTotal": {
               "refType": "METRIC",
@@ -93369,7 +93369,7 @@
           "analytics": {}
         },
         "populationAndHumanDevelopment": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "populationTotal": {
               "refType": "METRIC",
@@ -110939,7 +110939,7 @@
           "analytics": {}
         },
         "populationAndHumanDevelopment": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "populationTotal": {
               "refType": "METRIC",
@@ -128463,7 +128463,7 @@
           "analytics": {}
         },
         "populationAndHumanDevelopment": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "populationTotal": {
               "refType": "METRIC",
@@ -129924,7 +129924,7 @@
           "analytics": {}
         },
         "populationAndHumanDevelopment": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "populationTotal": {
               "refType": "METRIC",
@@ -132678,7 +132678,7 @@
           "analytics": {}
         },
         "populationAndHumanDevelopment": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "populationTotal": {
               "refType": "METRIC",
@@ -146264,7 +146264,7 @@
           "analytics": {}
         },
         "populationAndHumanDevelopment": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "populationTotal": {
               "refType": "METRIC",
@@ -159835,7 +159835,7 @@
           "analytics": {}
         },
         "populationAndHumanDevelopment": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "populationTotal": {
               "refType": "METRIC",
@@ -173638,7 +173638,7 @@
           "analytics": {}
         },
         "populationAndHumanDevelopment": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "populationTotal": {
               "refType": "METRIC",
@@ -193017,7 +193017,7 @@
           "analytics": {}
         },
         "populationAndHumanDevelopment": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "populationTotal": {
               "refType": "METRIC",
@@ -207888,7 +207888,7 @@
           "analytics": {}
         },
         "populationAndHumanDevelopment": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "populationTotal": {
               "refType": "METRIC",
@@ -209288,7 +209288,7 @@
           "analytics": {}
         },
         "populationAndHumanDevelopment": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "populationTotal": {
               "refType": "METRIC",
@@ -218748,7 +218748,7 @@
           "analytics": {}
         },
         "populationAndHumanDevelopment": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "populationTotal": {
               "refType": "METRIC",
@@ -221544,7 +221544,7 @@
           "analytics": {}
         },
         "populationAndHumanDevelopment": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "populationTotal": {
               "refType": "METRIC",
@@ -239114,7 +239114,7 @@
           "analytics": {}
         },
         "populationAndHumanDevelopment": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "populationTotal": {
               "refType": "METRIC",
@@ -243143,7 +243143,7 @@
           "analytics": {}
         },
         "populationAndHumanDevelopment": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "populationTotal": {
               "refType": "METRIC",
@@ -251263,7 +251263,7 @@
           "analytics": {}
         },
         "populationAndHumanDevelopment": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "populationTotal": {
               "refType": "METRIC",
@@ -269996,7 +269996,7 @@
           "analytics": {}
         },
         "populationAndHumanDevelopment": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "populationTotal": {
               "refType": "METRIC",
@@ -289311,7 +289311,7 @@
           "analytics": {}
         },
         "populationAndHumanDevelopment": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "populationTotal": {
               "refType": "METRIC",
@@ -290650,7 +290650,7 @@
           "analytics": {}
         },
         "populationAndHumanDevelopment": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "populationTotal": {
               "refType": "METRIC",
@@ -298929,7 +298929,7 @@
           "analytics": {}
         },
         "populationAndHumanDevelopment": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "populationTotal": {
               "refType": "METRIC",
@@ -309879,7 +309879,7 @@
           "analytics": {}
         },
         "populationAndHumanDevelopment": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "populationTotal": {
               "refType": "METRIC",
@@ -316768,7 +316768,7 @@
           "analytics": {}
         },
         "populationAndHumanDevelopment": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "populationTotal": {
               "refType": "METRIC",
@@ -337177,7 +337177,7 @@
           "analytics": {}
         },
         "populationAndHumanDevelopment": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "populationTotal": {
               "refType": "METRIC",
@@ -338554,7 +338554,7 @@
           "analytics": {}
         },
         "populationAndHumanDevelopment": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "populationTotal": {
               "refType": "METRIC",
