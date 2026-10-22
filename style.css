@@ -4688,8 +4688,8 @@ body.modal-open .ui-bottom-navigation {
 
 
 /* ============================================================================
-   OMEGA Ministry Country Overview / Evidence-backed Behaviour Profile
-   Reuses the existing ministry dashboard surface; keeps scrolling inside it.
+   OMEGA Country Overview / Evidence-backed Behaviour Profile
+   Shared styling for the Government Cabinet overview surface.
    ============================================================================ */
 .omega-country-overview-tabs {
     display: flex;
@@ -5341,4 +5341,28 @@ body.modal-open .ui-bottom-navigation {
     .ocov-resource-runtime-metrics {
         grid-template-columns: minmax(0, 1fr);
     }
+}
+
+
+/* Mount the country overview only as a view of the Government / Executive Cabinet.
+   In overview mode the cabinet navigation remains visible while ministry cards and
+   council controls are hidden, so this panel can never duplicate across ministries. */
+#cabinet-full-window .parchment-cabinet-container.ocov-government-overview-active {
+    display: flex !important;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+}
+#cabinet-full-window .parchment-cabinet-container.ocov-government-overview-active > :not(#omega-government-overview-tabs):not(#omega-government-overview-panel) {
+    display: none !important;
+}
+#cabinet-full-window #omega-government-overview-tabs {
+    position: relative;
+    flex: 0 0 auto;
+}
+#cabinet-full-window #omega-government-overview-panel {
+    flex: 1 1 auto;
+    min-height: 0;
+    width: 100%;
 }
