@@ -12,6 +12,10 @@ on:
       - 'test/offline_hybrid_map.test.mjs'
       - 'android/app/src/main/java/com/omega/globalsupremecommander/MainActivity.java'
       - 'omega_ui_visual_system_v1.css'
+      - 'omega_ui_button_system_v1.css'
+      - 'omega_ui_button_system_v1.js'
+      - 'test/omega_ui_button_system_v1.test.mjs'
+      - 'OMEGA_UI_BUTTON_SYSTEM_V1.md'
       - 'omega_ui_system_redesign_v1.css'
       - 'omega_ui_system_redesign_v1.js'
       - 'omega-offline-map-sw.js'
@@ -35,6 +39,10 @@ on:
       - 'test/offline_hybrid_map.test.mjs'
       - 'android/app/src/main/java/com/omega/globalsupremecommander/MainActivity.java'
       - 'omega_ui_visual_system_v1.css'
+      - 'omega_ui_button_system_v1.css'
+      - 'omega_ui_button_system_v1.js'
+      - 'test/omega_ui_button_system_v1.test.mjs'
+      - 'OMEGA_UI_BUTTON_SYSTEM_V1.md'
       - 'omega_ui_system_redesign_v1.css'
       - 'omega_ui_system_redesign_v1.js'
       - 'omega-offline-map-sw.js'
@@ -69,6 +77,7 @@ jobs:
           node --check map-engine-1.js
           node --check map-engine-2.js
           node --check omega_ui_system_redesign_v1.js
+          node --check omega_ui_button_system_v1.js
           node --check omega_home_ministry_engine_v1.js
           node --check omega-offline-map-sw.js
           node --check offline-hybrid-map.js

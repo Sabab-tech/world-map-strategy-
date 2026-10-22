@@ -12,6 +12,10 @@ on:
       - "country_sector_profiles_v1.json"
       - "country_sector_profile_schema_v1.json"
       - "country_general_data_registry_v1.json"
+      - "foreign_exchange_reserve_profiles_v1.json"
+      - "omega_foreign_reserve_runtime_v1.js"
+      - "omega_forex_monetary_engine_v1.js"
+      - "omega_finance_ministry_runtime_v1.js"
       - "omega_ministry_entry_v3.js"
       - "omega_ui_system_redesign_v1.js"
       - "map-engine-1.js"
@@ -27,6 +31,10 @@ on:
       - "country_sector_profiles_v1.json"
       - "country_sector_profile_schema_v1.json"
       - "country_general_data_registry_v1.json"
+      - "foreign_exchange_reserve_profiles_v1.json"
+      - "omega_foreign_reserve_runtime_v1.js"
+      - "omega_forex_monetary_engine_v1.js"
+      - "omega_finance_ministry_runtime_v1.js"
       - "omega_ministry_entry_v3.js"
       - "omega_ui_system_redesign_v1.js"
       - "map-engine-1.js"
@@ -36,9 +44,9 @@ permissions:
   contents: read
 
 concurrency:
-  # Every head of the same PR shares one group, so a newer head cancels stale emulator runs.
+  # CI smoke tests are disposable; newer commits must not wait behind stale emulator runs.
   group: omega-android9-gameplay-smoke-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  cancel-in-progress: true
 
 jobs:
   offline-gameplay-smoke:
@@ -73,16 +81,84 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot-load -no-snapshot-save -noaudio -no-boot-anim -camera-back none -camera-front none -memory 2048 -cores 2
           disable-animations: true
           script: |
-            adb wait-for-device
+            # The emulator runner invokes this through /usr/bin/sh (dash); do not use pipefail.
+            set -eu
+
+            wait_for_api28() {
+              poll=1
+              while [ "$poll" -le 45 ]; do
+                state="$(adb get-state 2>/dev/null | tr -d '\r' || true)"
+                if [ "$state" = "device" ]; then
+                  boot="$(timeout 5s adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r' || true)"
+                  sdk="$(timeout 5s adb shell getprop ro.build.version.sdk 2>/dev/null | tr -d '\r' || true)"
+                  if [ "$boot" = "1" ] && [ "$sdk" = "28" ]; then
+                    echo "API 28 emulator is online and fully booted (poll $poll)."
+                    return 0
+                  fi
+                elif [ "$state" = "offline" ]; then
+                  adb reconnect offline >/dev/null 2>&1 || true
+                fi
+                sleep 2
+                poll=$((poll + 1))
+              done
+              echo "ERROR: emulator did not become a fully booted API 28 device." >&2
+              adb devices -l >&2 || true
+              return 1
+            }
+
+            wait_for_api28
             adb shell getprop ro.build.version.sdk
-            bash -c 'set +e; gradle -p android connectedDebugAndroidTest --no-daemon; test_status=$?; if [ "$test_status" -ne 0 ]; then mkdir -p android/app/build/reports/omega-offline-smoke; adb logcat -d -t 8000 > android/app/build/reports/omega-offline-smoke/logcat.txt 2>&1 || true; find android/app/build/outputs/androidTest-results android/app/build/reports/androidTests -type f -name "*.xml" -print 2>/dev/null || true; find android/app/build/outputs/androidTest-results android/app/build/reports/androidTests -type f -name "*.xml" -exec cat {} \; 2>/dev/null || true; fi; exit "$test_status"'
+
+            attempt=1
+            max_attempts=3
+            while [ "$attempt" -le "$max_attempts" ]; do
+              log_file="/tmp/omega-offline-gameplay-smoke-${attempt}.log"
+              echo "Offline gameplay instrumentation attempt ${attempt}/${max_attempts}"
+
+              if gradle -p android connectedDebugAndroidTest --no-daemon >"$log_file" 2>&1; then
+                cat "$log_file"
+                echo "PASS: API 28 offline gameplay instrumentation completed."
+                exit 0
+              else
+                test_exit=$?
+                cat "$log_file"
+                mkdir -p android/app/build/reports/omega-offline-smoke
+                adb logcat -d -t 8000 > "android/app/build/reports/omega-offline-smoke/logcat-${attempt}.txt" 2>&1 || true
+              fi
+
+              # Retry only when ADB/emulator transport prevented test discovery.
+              # Actual instrumentation assertions fail immediately without retry.
+              if ! grep -Eiq 'No compatible devices connected|Unknown API Level|ShellCommandUnresponsiveException|adb: device offline|device offline' "$log_file"; then
+                echo "ERROR: instrumentation failed without an emulator/ADB discovery error; not retrying." >&2
+                exit "$test_exit"
+              fi
+
+              if [ "$attempt" -ge "$max_attempts" ]; then
+                echo "ERROR: emulator/ADB discovery failed after ${max_attempts} attempts." >&2
+                adb devices -l >&2 || true
+                exit "$test_exit"
+              fi
+
+              echo "Transient ADB failure detected; restarting ADB and rechecking API 28 boot state."
+              adb kill-server >/dev/null 2>&1 || true
+              adb start-server
+              adb reconnect offline >/dev/null 2>&1 || true
+              wait_for_api28 || exit "$test_exit"
+              attempt=$((attempt + 1))
+            done
+
       - name: Print Android instrumentation diagnostics on failure
         if: failure()
         shell: bash
         run: |
-          find android/app/build/outputs/androidTest-results/connected/debug android/app/build/reports/androidTests/connected/debug -type f -name '*.xml' -print -exec cat {} \; 2>/dev/null || true
-          if [ -f android/app/build/reports/omega-offline-smoke/logcat.txt ]; then
-            grep -Ei 'AndroidRuntime|chromium|console.*(error|exception)|uncaught|fatal exception' android/app/build/reports/omega-offline-smoke/logcat.txt | tail -n 240 || true
+          find android/app/build/outputs/androidTest-results/connected/debug android/app/build/reports/androidTests/connected/debug -type f -name '*.xml' -print -exec cat {} \\; 2>/dev/null || true
+          for log_file in /tmp/omega-offline-gameplay-smoke-*.log; do
+            [ -f "$log_file" ] || continue
+            echo "===== $log_file ====="
+            tail -n 220 "$log_file"
+          done
+          if [ -d android/app/build/reports/omega-offline-smoke ]; then
+            grep -Ei 'AndroidRuntime|chromium|console.*(error|exception)|uncaught|fatal exception' android/app/build/reports/omega-offline-smoke/logcat-*.txt 2>/dev/null | tail -n 240 || true
           fi
 
       - name: Upload Android 9 offline smoke diagnostics
@@ -95,3 +171,4 @@ jobs:
             android/app/build/outputs/androidTest-results/connected/debug/**
             android/app/build/reports/androidTests/connected/debug/**
             android/app/build/reports/omega-offline-smoke/**
+            /tmp/omega-offline-gameplay-smoke-*.log

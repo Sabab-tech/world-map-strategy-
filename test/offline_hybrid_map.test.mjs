@@ -92,12 +92,12 @@ test("the offline atlas never substitutes a fake remote imagery tile", () => {
   assert.match(mapEngine, /window\.OmegaOfflineHybridAtlas\.activate/);
   assert.match(mainActivity, /if \(isAppAssetUri\(uri\)\) return missingAssetResponse\(uri\);/);
 });
-test("new pull request commits supersede stale Android emulator smoke runs", () => {
+test("newer commits supersede stale Android emulator smoke runs on the same ref", () => {
   assert.ok(androidOfflineWorkflow.includes(
     "group: omega-android9-gameplay-smoke-${{ github.ref }}"
   ));
   assert.ok(androidOfflineWorkflow.includes(
-    "cancel-in-progress: ${{ github.event_name == 'pull_request' }}"
+    "cancel-in-progress: true"
   ));
 });
 
@@ -135,6 +135,8 @@ test("browser shell resources are cached locally for offline relaunch", () => {
     'activation must preserve the current shell cache while pruning older versions');
   assert.match(serviceWorker, /omega_ui_system_redesign_v1[.]css/);
   assert.match(serviceWorker, /omega_ui_system_redesign_v1[.]js/);
+  assert.match(serviceWorker, /omega_ui_button_system_v1[.]css/);
+  assert.match(serviceWorker, /omega_ui_button_system_v1[.]js/);
   assert.match(serviceWorker, /omega_home_ministry_country_police_baseline_v1[.]json/);
   assert.match(serviceWorker, /omega_home_ministry_police_operations_ui_v1[.]js/);
   assert.match(serviceWorker, /military_command_catalog_v1[.]json/);
