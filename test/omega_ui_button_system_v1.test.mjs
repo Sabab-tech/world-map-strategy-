@@ -117,7 +117,9 @@ test('runtime annotates every live button without replacing its real action hand
     makeButton({ text: '', attrs: {} }),
     makeButton({ id: 'duplicate-id', text: 'One' }),
     makeButton({ id: 'duplicate-id', text: 'Two' }),
-    makeButton({ text: 'Send', inForm: true })
+    makeButton({ text: 'Send', inForm: true }),
+    makeButton({ id: 'delete-by-label', text: 'Delete entire save' }),
+    makeButton({ id: 'purchase-by-label', text: 'Purchase reserve', attrs: { type: 'button' } })
   ];
   const h = makeHarness(buttons);
   const system = h.context.OMEGA_BUTTON_SYSTEM_V1;
@@ -129,13 +131,15 @@ test('runtime annotates every live button without replacing its real action hand
   assert.equal(buttons[0].getAttribute('data-omega-button-kind'), 'primary');
   assert.equal(buttons[1].getAttribute('data-omega-button-kind'), 'icon');
   assert.equal(buttons[2].getAttribute('data-omega-button-kind'), 'danger');
+  assert.equal(buttons[7].getAttribute('data-omega-button-kind'), 'danger', 'danger labels must be recognized without a semantic CSS class');
+  assert.equal(buttons[8].getAttribute('data-omega-button-kind'), 'primary', 'action labels must be recognized without a semantic CSS class');
   assert.equal(buttons[0].onclick, direct, 'existing click handler must stay intact');
 
   const report = system.audit();
   assert.equal(report.total, buttons.length);
-  assert.equal(report.byKind.primary, 1);
+  assert.equal(report.byKind.primary, 2);
   assert.equal(report.byKind.icon, 1);
-  assert.equal(report.byKind.danger, 1);
+  assert.equal(report.byKind.danger, 2);
   assert.ok(report.issues.some((issue) => issue.code === 'MISSING_ACCESSIBLE_NAME'));
   assert.ok(report.issues.some((issue) => issue.code === 'DUPLICATE_BUTTON_ID'));
   assert.ok(report.issues.some((issue) => issue.code === 'IMPLICIT_FORM_SUBMIT'));

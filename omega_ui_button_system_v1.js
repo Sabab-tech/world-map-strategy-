@@ -80,12 +80,12 @@
     var role = String(getAttr(node, 'role') || '').toLowerCase();
     var actionLabel = label.toLowerCase();
 
-    if (/(^|[\\s_-])(danger|destructive|delete|remove)([\\s_-]|$)/.test(classes) ||
-        /(^|[\\s_-])(danger|destructive|delete|remove)([\\s_-]|$)/.test(id) ||
-        /\\b(delete|remove|destroy|erase|demolish)\\b/.test(actionLabel)) return 'danger';
+    if (/(^|[\s_-])(danger|destructive|delete|remove)([\s_-]|$)/.test(classes) ||
+        /(^|[\s_-])(danger|destructive|delete|remove)([\s_-]|$)/.test(id) ||
+        /\b(delete|remove|destroy|erase|demolish)\b/.test(actionLabel)) return 'danger';
 
     if (/(^|[\\s_-])(primary|btn-primary|confirm|apply|submit)([\\s_-]|$)/.test(classes) ||
-        /\\b(save|apply|confirm|execute|build|recruit|purchase|approve|launch|accept|create|deploy|submit|enact)\\b/.test(actionLabel)) return 'primary';
+        /\b(save|apply|confirm|execute|build|recruit|purchase|approve|launch|accept|create|deploy|submit|enact)\b/.test(actionLabel)) return 'primary';
 
     if (/(^|[\\s_-])(close|drawer-close|modal-close|dismiss)([\\s_-]|$)/.test(classes) ||
         /^(close|dismiss|back|cancel|go back|return)$/.test(actionLabel) ||
