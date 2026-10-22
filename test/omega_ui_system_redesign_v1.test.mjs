@@ -109,7 +109,7 @@ test('map ministry entry is outside map stacking and has independent click recov
   assert.ok(runtime.includes("addEventListener('click', handleMapMinistryDockClick, true)"),
     'late-loaded recovery listens in document capture phase');
   assert.ok(runtime.includes('function openCabinet(event)'));
-  assert.ok(runtime.includes('manager.setLayer(1)'));
+  assert.ok(/manager\.setLayer\(1(?:,\s*\{\},\s*true)?\)/.test(runtime), 'the direct fallback can enter cabinet layer without duplicating the layer stack');
   assert.ok(runtime.includes('data-last-open-result'));
   assert.ok(runtime.includes("function syncDockPosition()"));
   assert.ok(runtime.includes("rect.bottom + 8"));
