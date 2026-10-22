@@ -135,6 +135,8 @@ test("browser shell resources are cached locally for offline relaunch", () => {
     'activation must preserve the current shell cache while pruning older versions');
   assert.match(serviceWorker, /omega_ui_system_redesign_v1[.]css/);
   assert.match(serviceWorker, /omega_ui_system_redesign_v1[.]js/);
+  assert.match(serviceWorker, /omega_ui_button_system_v1[.]css/);
+  assert.match(serviceWorker, /omega_ui_button_system_v1[.]js/);
   assert.match(serviceWorker, /omega_home_ministry_country_police_baseline_v1[.]json/);
   assert.match(serviceWorker, /omega_home_ministry_police_operations_ui_v1[.]js/);
   assert.match(serviceWorker, /military_command_catalog_v1[.]json/);
