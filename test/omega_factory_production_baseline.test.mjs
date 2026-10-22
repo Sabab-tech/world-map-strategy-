@@ -88,6 +88,12 @@ test('canonical factory catalog, type profiles, offline icons and recipe coeffic
     assert.equal(profile.constructionMaterialUnit, 'SIMULATION_RESOURCE_UNIT');
     assert.ok(profile.employment && Number(profile.employment.jobsPerFactory) > 0, type + ': employment capacity required');
     assert.equal(profile.employment.simulationOnly, true);
+    assert.equal(profile.employment.coreOperatingCrew,
+      Number(profile.workforce.operators || 0) + Number(profile.workforce.engineers || 0), type + ': core crew must match operator/engineer profile');
+    assert.equal(profile.employment.coreOperatingCrew + profile.employment.additionalDirectStaffSlots,
+      profile.employment.jobsPerFactory, type + ': direct job slots must reconcile');
+    assert.equal(Object.values(profile.employment.jobBreakdown).reduce((sum, value) => sum + Number(value || 0), 0),
+      profile.employment.jobsPerFactory, type + ': job role mix must balance to the total job capacity');
     for (const [material, quantity] of Object.entries(profile.constructionMaterials)) {
       assert.ok(Object.prototype.hasOwnProperty.call(catalog.resourceRules, material), type + ': material must use a registered game resource: ' + material);
       assert.ok(Number.isFinite(Number(quantity)) && Number(quantity) > 0, type + ': construction quantity must be positive: ' + material);
