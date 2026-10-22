@@ -62,6 +62,8 @@ tasks.register('syncOmegaWebAssets', Sync) {
         exclude 'bun.lock'
         exclude 'server.js'
         exclude 'server_bootstrap.js'
+        exclude 'omega_server_ai_gateway.js'
+        exclude 'omega_resource_ai_decision_service.js'
         exclude '.env*'
     }
     into("$buildDir/generated/omegaWebAssets")
