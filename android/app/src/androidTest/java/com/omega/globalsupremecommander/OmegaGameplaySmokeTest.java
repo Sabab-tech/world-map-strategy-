@@ -4,7 +4,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.os.SystemClock;
 import android.view.View;
@@ -32,7 +31,7 @@ public final class OmegaGameplaySmokeTest {
                 InstrumentationRegistry.getInstrumentation();
         final Intent launch = new Intent(instrumentation.getTargetContext(), MainActivity.class);
         launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        final Activity activity = instrumentation.startActivitySync(launch);
+        final MainActivity activity = (MainActivity) instrumentation.startActivitySync(launch);
         final AtomicReference<WebView> webViewRef = new AtomicReference<>();
 
         try {
@@ -53,25 +52,18 @@ public final class OmegaGameplaySmokeTest {
             });
 
             /*
-             * Do not queue JavaScript into a still-parsing document. On the API 28 WebView,
-             * evaluateJavascript callbacks can otherwise wait behind synchronous script tags
-             * and hit the per-evaluation timeout before the page has finished loading.
-             * This is a load barrier, not a readiness bypass: after it passes, we still verify
-             * the offline shell, core runtime, actual speed control, and ministry navigation.
+             * Wait for the main-frame load callback before queuing JavaScript. WebView progress
+             * can reach 100 before onPageFinished is delivered; using the Activity's explicit
+             * load state avoids racing JavaScript evaluation against a cold API 28 renderer.
              */
             final long loadDeadline = SystemClock.elapsedRealtime() + PAGE_LOAD_TIMEOUT_MS;
-            int loadProgress = 0;
-            while (loadProgress < 100 && SystemClock.elapsedRealtime() < loadDeadline) {
-                final AtomicReference<Integer> progressRef = new AtomicReference<>(0);
-                instrumentation.runOnMainSync(
-                        () -> progressRef.set(webViewRef.get().getProgress())
-                );
-                loadProgress = progressRef.get();
-                if (loadProgress < 100) SystemClock.sleep(250L);
+            while (!activity.hasMainFrameLoaded() &&
+                    SystemClock.elapsedRealtime() < loadDeadline) {
+                SystemClock.sleep(250L);
             }
-            assertEquals(
-                    "Bundled offline HTML and synchronous scripts must finish loading within 90 seconds",
-                    100, loadProgress
+            assertTrue(
+                    "Bundled offline HTML and ordered deferred scripts must finish loading within 90 seconds",
+                    activity.hasMainFrameLoaded()
             );
 
             final String readinessScript =
