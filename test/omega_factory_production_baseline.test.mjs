@@ -75,6 +75,13 @@ test('canonical factory catalog, type profiles, offline icons and recipe coeffic
     assert.ok(Number(profile.defaultCapacityPerDay) > 0, type + ': declared capacity must be positive');
     assert.ok(symbolNames.has(profile.iconId), type + ': icon must resolve offline: ' + profile.iconId);
   }
+  for (const unit of ['TONNES_ORE', 'CARATS', 'MILLION_CUBIC_METRES', 'BARRELS']) {
+    const bridge = catalog.factoryCatalogPolicy.unitNormalization.sourceUnits[unit];
+    assert.ok(bridge, 'used source unit must have an explicit normalization bridge: ' + unit);
+    assert.equal(bridge.targetUnit, 'SIMULATION_RESOURCE_UNIT');
+    assert.equal(bridge.factor, 1);
+    assert.equal(bridge.simulationOnly, true);
+  }
   for (const [recipeId, recipe] of Object.entries(catalog.downstreamFactoryRecipes)) {
     assert.equal(recipe.recipeId, recipeId);
     assert.equal(recipe.simulationOnly, true);
@@ -273,6 +280,28 @@ test('processed mine-derived batches route to a downstream factory and reconcile
     assert.equal(source.remainingQuantity, 0, source.batchId + ': delivered source batch must be debited once');
     assert.equal(state.inventoryLots[source.batchId].remainingQuantity, 0, source.batchId + ': inventory lot must reconcile');
   }
+});
+
+test('unrecognized physical units are blocked instead of being converted by an implicit fallback', () => {
+  const { context, api } = makeRuntime();
+  const asset = makeSteelAsset({ inputInventory: {}, inputBatchLots: [] });
+  context.Game.state.economy.BGD = { productionAssets: [asset] };
+  context.Game.state.resource.BGD = {
+    inventory: { IRON_CONCENTRATE: 60 },
+    batches: [{ batchId: 'OUTPUT-UNIT-TEST', resourceId: 'IRON_CONCENTRATE', quantity: 60, remainingQuantity: 60,
+      unit: 'UNKNOWN_VOLUME_UNIT', stage: 'FINISHED', countryId: 'BGD' }],
+    inventoryLots: { 'OUTPUT-UNIT-TEST': { batchId: 'OUTPUT-UNIT-TEST', resourceId: 'IRON_CONCENTRATE',
+      quantity: 60, remainingQuantity: 60, unit: 'UNKNOWN_VOLUME_UNIT' } },
+    processedWarehouse: { warehouseId: 'WH-BGD-PROCESSED', availableByResource: { IRON_CONCENTRATE: 60 },
+      reservedByResource: {}, storedBatchIds: ['OUTPUT-UNIT-TEST'] }
+  };
+  const result = api.dispatchFactoryInputShipment({
+    countryId: 'BGD', batchId: 'OUTPUT-UNIT-TEST', factoryId: asset.id, resourceId: 'iron_concentrate'
+  });
+  assert.equal(result.status, 'BLOCKED');
+  assert.equal(result.reason, 'FACTORY_INPUT_UNIT_BRIDGE_NOT_DECLARED');
+  assert.equal(context.Game.state.resource.BGD.processedWarehouse.availableByResource.IRON_CONCENTRATE, 60);
+  assert.equal(context.Game.state.resource.BGD.processedWarehouse.reservedByResource.IRON_CONCENTRATE || 0, 0);
 });
 
 test('unknown generic production is not allowed to create a factory project without explicit opt-in', () => {
