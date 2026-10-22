@@ -175,7 +175,7 @@ test('index, finance, bank and offline shell use the daily lifecycle assets', ()
   assert.match(index, /data-speed="3" title="Very Fast Speed">3x/);
   assert.match(index, /data-omega-speed="3" aria-label="Very fast game speed" title="Very fast speed">3x/);
   assert.match(css, /#top-status-bar \.status-right \{[\s\S]{0,40}display: none !important;/);
-  assert.match(css, /#top-status-bar,[\s\S]{0,100}flex-wrap: wrap !important;/,
+  assert.match(css, /max-height: 104px !important;\n  flex-wrap: wrap !important;/,
     'the compact header must wrap the metrics onto a second row instead of squeezing them off-screen');
   assert.match(css, /#omega-global-time-hud \.ogth-topline,[\s\S]{0,140}display: none !important;/);
   assert.match(css, /#omega-global-time-hud \.ogth-economy/);
