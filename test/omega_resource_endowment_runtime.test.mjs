@@ -196,10 +196,25 @@ assert.equal(delivery.status,'ADVANCED',JSON.stringify(delivery));
 assert.equal(delivery.delivered,1,JSON.stringify(delivery));
 const pilbaraDelivered=delivery.shipments[0];
 assert.equal(pilbaraDelivered.status,'DELIVERED');
-assert.equal(pilbaraDelivered.processingStatus,'PROCESSED',JSON.stringify(pilbaraDelivered.processing));
-const ausAfterProcessing=runtime.countryResourceState('AUS')||{};
+assert.equal(pilbaraDelivered.processingStatus,'IN_PROGRESS',JSON.stringify(pilbaraDelivered.processing));
+const ausAfterDelivery=runtime.countryResourceState('AUS')||{};
 const factoryRuntime=globalThis.OmegaMinistryStateProvider?.getState?.()?.economy?.AUS?.productionAssets||globalThis.Game.state.economy?.AUS?.productionAssets||[];
-assert.ok(factoryRuntime.some(x=>String(x.id||x.assetId||x.projectId)===pilbaraPipeline.factoryId),'simulated factory must remain country-owned and findable');
+const pilbaraFactory=factoryRuntime.find(x=>String(x.id||x.assetId||x.projectId)===pilbaraPipeline.factoryId);
+assert.ok(pilbaraFactory,'simulated factory must remain country-owned and findable');
+const pilbaraCycle=ausAfterDelivery.industrialNetwork?.factoryProductionCycles?.[String(pilbaraPipeline.factoryId)];
+assert.ok(pilbaraCycle&&pilbaraCycle.status==='IN_PROGRESS'&&pilbaraCycle.finishDate,
+  'mine-to-factory delivery must start an auditable calendar-based production cycle');
+assert.equal((ausAfterDelivery.batches||[]).some(x=>x.stage==='FINISHED'&&x.sourceBatchIds?.includes(pilbaraBatch.batchId)),false,
+  'finished-goods batches must not appear on the delivery tick');
+globalThis.Game.state.simulation.turn=Math.max(Number(globalThis.Game.state.simulation.turn)||0,Number(pilbaraCycle.finishTurn)||0);
+globalThis.Game.state.simulation.date=pilbaraCycle.finishDate;
+const pilbaraCompletion=industrialPipelineRuntime.processPendingFactoryInputs('AUS');
+assert.equal(pilbaraCompletion.completedCount,1,JSON.stringify(pilbaraCompletion));
+const ausAfterProcessing=runtime.countryResourceState('AUS')||{};
+const completedPilbaraDelivery=(ausAfterProcessing.industrialNetwork?.deliveries||[])
+  .find(x=>String(x.shipmentId)===String(pilbaraPipeline.shipmentId));
+assert.equal(completedPilbaraDelivery?.processingStatus,'PROCESSED',
+  'delivery ledger must be reconciled only after the scheduled cycle commits');
 const gevraRef=(indState.mineSiteReferences||[]).find(x=>x.siteReferenceKey==='SITE_IND_gevra_oc_mine');
 const kwtDiag=runtime.hydrateCountry('KWT');const kwtState=runtime.countryResourceState('KWT')||{};const kwtRef=(kwtState.mineSiteReferences||[]).find(x=>x.siteReferenceKey==='SITE_KWT_greater_burgan_oilfield');const kwtRuntimeModel=globalThis.Omega?.ResourceRealism?.siteModel?.(kwtRef,engine.countryProfiles?.KWT,'KWT');console.log('ENDOWMENT_KWT_MODEL '+JSON.stringify({hydrate:kwtDiag.status,ref:kwtRef&&{siteReferenceKey:kwtRef.siteReferenceKey,resourceId:kwtRef.resourceId,commercialExtraction:kwtRef.commercialExtraction,simulationReserveQuantity:kwtRef.simulationReserveQuantity},model:kwtRuntimeModel,controller:Object.values(kwtState.mineSiteControllers||{}).find(x=>x.siteReferenceKey==='SITE_KWT_greater_burgan_oilfield')}));
 // Regression: nullable catalog metrics must stay missing, not be coerced to numeric zero.
