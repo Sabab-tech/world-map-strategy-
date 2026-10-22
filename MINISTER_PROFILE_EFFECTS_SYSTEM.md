@@ -72,7 +72,7 @@ Available capacity declines with current stress, workload, and fatigue, with a c
 
 ## Verification
 
-Run `npm run test:minister-profile-effects` for focused coverage. The suite checks every profile in the canonical minister catalogue and verifies age-stage modifiers, specialty fit, resilience under identical stress, training gains, bounded values, and appointment-registry consistency. The repository's existing cabinet/minister checks remain in the normal test/build chain.
+Run `node scripts/test_minister_profile_effects.mjs` for focused coverage. The existing `test:cabinet`/`test:minister` paths also execute this suite through `scripts/test_minister_behavior.mjs`. The suite checks every profile in the canonical minister catalogue and verifies age-stage modifiers, specialty fit, resilience under identical stress, training gains, bounded values, and appointment-registry consistency. The repository's existing cabinet/minister checks remain in the normal test/build chain.
 
 ## Trade-offs
 
