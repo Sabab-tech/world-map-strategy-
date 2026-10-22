@@ -29,6 +29,11 @@ public final class MainActivity extends Activity {
             "https://appassets.androidplatform.net/assets/index.html";
     private WebView webView;
     private WebViewAssetLoader assetLoader;
+    private volatile boolean mainFrameLoaded = false;
+
+    boolean hasMainFrameLoaded() {
+        return mainFrameLoaded;
+    }
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -129,10 +134,20 @@ public final class MainActivity extends Activity {
             @Override
             public void onPageStarted(WebView view, String url, Bitmap favicon) {
                 super.onPageStarted(view, url, favicon);
+                if (view == webView) mainFrameLoaded = false;
                 view.evaluateJavascript(
                         "window.OMEGA_ANDROID_APP=true;window.OMEGA_ANDROID_OFFLINE=true;",
                         null
                 );
+            }
+
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                super.onPageFinished(view, url);
+                if (view == webView) mainFrameLoaded = true;
+                if (BuildConfig.DEBUG) {
+                    android.util.Log.d("OMEGA_WEB_DIAGNOSTICS", "MAIN_FRAME_FINISHED=" + url);
+                }
             }
 
             @Override
