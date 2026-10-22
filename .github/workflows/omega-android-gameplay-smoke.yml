@@ -62,20 +62,13 @@ jobs:
       - name: Build Android debug APK and instrumentation APK
         run: gradle -p android assembleDebug assembleDebugAndroidTest --no-daemon
 
-      - name: Run offline gameplay smoke on Android 9 emulator (API 28)
-        uses: ReactiveCircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
-        with:
-          api-level: 28
-          target: default
-          arch: x86_64
-          profile: pixel_2
-          emulator-boot-timeout: 1200
-          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot-load -no-snapshot-save -noaudio -no-boot-anim -camera-back none -camera-front none -memory 2048 -cores 2
-          disable-animations: true
-          script: |
+      - name: Prepare offline gameplay smoke script
+        id: prepare-offline-gameplay-smoke
+        env:
+          SCRIPT: |
             # The emulator runner invokes this through /usr/bin/sh (dash); do not use pipefail.
             set -eu
-
+            
             wait_for_api28() {
               poll=1
               while [ "$poll" -le 45 ]; do
@@ -97,16 +90,16 @@ jobs:
               adb devices -l >&2 || true
               return 1
             }
-
+            
             wait_for_api28
             adb shell getprop ro.build.version.sdk
-
+            
             attempt=1
             max_attempts=3
             while [ "$attempt" -le "$max_attempts" ]; do
               log_file="/tmp/omega-offline-gameplay-smoke-${attempt}.log"
               echo "Offline gameplay instrumentation attempt ${attempt}/${max_attempts}"
-
+            
               if gradle -p android connectedDebugAndroidTest --no-daemon >"$log_file" 2>&1; then
                 cat "$log_file"
                 echo "PASS: API 28 offline gameplay instrumentation completed."
@@ -115,20 +108,20 @@ jobs:
                 test_exit=$?
                 cat "$log_file"
               fi
-
+            
               # Retry only when ADB/emulator transport prevented test discovery.
               # Actual instrumentation assertions fail immediately without retry.
               if ! grep -Eiq 'No compatible devices connected|Unknown API Level|ShellCommandUnresponsiveException|adb: device offline|device offline' "$log_file"; then
                 echo "ERROR: instrumentation failed without an emulator/ADB discovery error; not retrying." >&2
                 exit "$test_exit"
               fi
-
+            
               if [ "$attempt" -ge "$max_attempts" ]; then
                 echo "ERROR: emulator/ADB discovery failed after ${max_attempts} attempts." >&2
                 adb devices -l >&2 || true
                 exit "$test_exit"
               fi
-
+            
               echo "Transient ADB failure detected; restarting ADB and rechecking API 28 boot state."
               adb kill-server >/dev/null 2>&1 || true
               adb start-server
@@ -136,3 +129,22 @@ jobs:
               wait_for_api28 || exit "$test_exit"
               attempt=$((attempt + 1))
             done
+        run: |
+          script_file="$RUNNER_TEMP/omega-offline-gameplay-smoke.sh"
+          printf '%s\n' "$SCRIPT" > "$script_file"
+          chmod +x "$script_file"
+          echo "file=$script_file" >> "$GITHUB_OUTPUT"
+
+      - name: Run offline gameplay smoke on Android 9 emulator (API 28)
+        uses: ReactiveCircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
+        with:
+          api-level: 28
+          target: default
+          arch: x86_64
+          profile: pixel_2
+          emulator-boot-timeout: 1200
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot-load -no-snapshot-save -noaudio -no-boot-anim -camera-back none -camera-front none -memory 2048 -cores 2
+          disable-animations: true
+          # android-emulator-runner parses multiline script input line-by-line.
+          # Invoke the prepared file as one command so shell functions and loops stay intact.
+          script: bash "${{ steps.prepare-offline-gameplay-smoke.outputs.file }}"
