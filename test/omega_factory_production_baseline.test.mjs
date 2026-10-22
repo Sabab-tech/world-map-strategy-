@@ -418,8 +418,22 @@ test('processed mine-derived batches route to a downstream factory and reconcile
   const factory = context.Game.state.economy.BGD.productionAssets[0];
   assert.deepEqual(
     ['iron_concentrate', 'coal_concentrate', 'cement_feed', 'copper_concentrate'].map(id => factory.inputInventory[id]),
-    [0, 0, 0, 0]
+    [60, 20, 10, 10],
+    'delivered material is stored at the factory while its production cycle runs'
   );
+  const cycle = network.factoryProductionCycles[factory.id];
+  assert.ok(cycle, 'all recipe inputs must start one tracked multi-input cycle');
+  assert.equal(cycle.status, 'IN_PROGRESS');
+  assert.equal(cycle.finishDate, '2015-01-03');
+  assert.equal((context.Game.state.resource.BGD.batches || []).some(row => row.resourceId === 'STEEL'), false,
+    'finished goods must not exist before the cycle finish date');
+  assert.ok(network.shipments.filter(row => row.shipmentType === 'FACTORY_INPUT')
+    .every(row => row.status === 'DELIVERED' && ['AWAITING_INPUTS','IN_PROGRESS'].includes(row.processingStatus)));
+  context.Game.state.simulation.turn = cycle.finishTurn;
+  context.Game.state.simulation.date = cycle.finishDate;
+  const finished = api.processPendingFactoryInputs('BGD');
+  assert.equal(finished.completedCount, 1);
+  assert.equal(finished.completed[0].status, 'COMPLETED');
   assert.ok(network.shipments.filter(row => row.shipmentType === 'FACTORY_INPUT')
     .every(row => row.status === 'DELIVERED' && row.processingStatus === 'PROCESSED'));
   const state = context.Game.state.resource.BGD;
@@ -649,7 +663,7 @@ test('production requirements expose per-unit inputs, outputs, rated daily flow,
   assert.equal(steel.quantityBasis, 'PER_SIMULATION_PRODUCTION_UNIT');
   assert.equal(steel.processing.cycleDays, catalog.downstreamFactoryRecipes.STEEL_PRIMARY_ROUTE_V1.cycleDays);
   assert.equal(steel.processing.cycleTimeUnit, 'IN_GAME_DAYS');
-  assert.equal(steel.processing.durationEnforced, false);
+  assert.equal(steel.processing.durationEnforced, true);
   assert.equal(steel.inputsPerProductionUnit.iron_concentrate, 0.6);
   assert.equal(steel.ratedDailyInputs.iron_concentrate, Number((catalog.factoryProfiles.STEEL_AND_ALLOY_WORKS.defaultCapacityPerDay * 0.6).toFixed(6)));
   assert.equal(steel.outputsPerProductionUnit.STEEL, 0.72);
@@ -706,7 +720,7 @@ test('all recipe rows declare a common simulation quantity basis and in-game cyc
   assert.match(ui, /Rated daily input at capacity/);
   assert.match(ui, /Rated daily output at capacity/);
   assert.match(ui, /Declared recipe cycle time/);
-  assert.match(ui, /not yet enforced as delayed completion/);
+  assert.match(ui, /Production output is committed only when the in-game cycle finish date is reached/);
 });
 
 

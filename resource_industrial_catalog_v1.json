@@ -2265,8 +2265,8 @@
     "productionRequirementContract": "OMEGA_FACTORY_PRODUCTION_REQUIREMENTS_V1",
     "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
     "recipeTimeUnit": "IN_GAME_DAYS",
-    "recipeTimingRuntimeBehavior": "DECLARED_DURATION_ONLY_SYNCHRONOUS_COMPLETION",
-    "recipeTimingNote": "cycleDays is a nominal gameplay duration. Current factory executor can commit output synchronously; it is not yet a multi-turn completion scheduler."
+    "recipeTimingRuntimeBehavior": "GAME_CALENDAR_DELAYED_COMPLETION",
+    "recipeTimingNote": "Each factory cycle starts from tracked factory input stock and commits outputs only when the authoritative game calendar reaches the finish date. Missing inputs, workforce or utilities pause production. Partial tracked stock reduces production quantity and productivity."
   },
   "factoryProfiles": {
     "AGGREGATE_CRUSHING_PLANT": {
@@ -6532,7 +6532,9 @@
     "productionRequirementContract": "OMEGA_FACTORY_PRODUCTION_REQUIREMENTS_V1",
     "productionRequirementRecipeCount": 63,
     "recipeCycleTimeUnit": "IN_GAME_DAYS",
-    "cycleTimingRuntimeBehavior": "DECLARED_DURATION_ONLY_SYNCHRONOUS_COMPLETION"
+    "cycleTimingRuntimeBehavior": "GAME_CALENDAR_DELAYED_COMPLETION",
+    "productionSchedulerVersion": "OMEGA_FACTORY_PRODUCTION_SCHEDULER_V1",
+    "warehouseFeedAuthority": "SIMULATED_WAREHOUSE_TO_FACTORY_TRANSFER_WITH_BATCH_LINEAGE"
   },
   "externalInputSources": {
     "grain": {

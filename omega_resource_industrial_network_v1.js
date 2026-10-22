@@ -2460,7 +2460,7 @@ function factoryProductionMetrics(asset,recipe){
     const byStock=quantity/requiredPerUnit,byTrace=tracked/requiredPerUnit;
     possible=Math.min(possible,byStock,byTrace);
     if(quantity<=1e-9)missing.push({resourceId:rid,requiredPerProductionUnit:requiredPerUnit,available:0,reason:'WAREHOUSE_AND_FACTORY_INPUT_STOCK_EMPTY'});
-    else if(tracked+1e-6<quantity)missing.push({resourceId:rid,requiredTrackedQuantity:quantity,tracked,reason:'FACTORY_INPUT_BATCH_LEDGER_MISMATCH'});
+    else if(tracked<=1e-9)missing.push({resourceId:rid,requiredTrackedQuantity:quantity,tracked,reason:'FACTORY_INPUT_BATCH_LEDGER_MISMATCH'});
     inputs.push({resourceId:rid,coefficient:requiredPerUnit,stockKey,available:quantity,tracked,possibleProduction:Math.min(byStock,byTrace),eligibleLots:eligible});
   }
   return{capacity:cap,possibleProduction:Math.max(0,Math.min(cap,possible)),inputs,missingInputs:missing,
@@ -2721,7 +2721,7 @@ function processPendingFactoryInputs(countryId){
     const transfer=transferFactoryInputsFromWarehouse(cid,asset,recipe);
     transfers.push(...(transfer.transfers||[]));
     const metrics=factoryProductionMetrics(asset,recipe);
-    const missing=metrics.inputs.filter(row=>row.available<=1e-9||row.tracked+1e-6<Math.min(row.available,metrics.capacity*row.coefficient))
+    const missing=metrics.inputs.filter(row=>row.available<=1e-9||row.tracked<=1e-9)
       .map(row=>({resourceId:row.resourceId,available:row.available,tracked:row.tracked,reason:row.available<=1e-9?'WAREHOUSE_AND_FACTORY_INPUT_STOCK_EMPTY':'FACTORY_INPUT_BATCH_LEDGER_MISMATCH'}));
     if(metrics.possibleProduction<=1e-9||missing.length){
       factorySetProductionHealth(asset,'STOPPED',0,metrics.capacity,{reason:'FACTORY_INPUT_SHORTAGE',missingInputs:missing.length?missing:metrics.missingInputs});
@@ -3056,8 +3056,8 @@ function factoryProductionRequirements(factoryType, recipeId){
     ratedDailyInputs:scaleRows(inputs,capacity),
     ratedDailyOutputs:scaleRows(outputs,capacity),
     processing:{cycleDays:num(recipe.cycleDays),cycleTimeUnit:recipe.cycleTimeUnit||catalog.factoryCatalogPolicy?.recipeTimeUnit||'IN_GAME_DAYS',
-      runtimeTimingMode:catalog.factoryCatalogPolicy?.recipeTimingRuntimeBehavior||'DECLARED_DURATION_ONLY_SYNCHRONOUS_COMPLETION',
-      durationEnforced:false},
+      runtimeTimingMode:catalog.factoryCatalogPolicy?.recipeTimingRuntimeBehavior||'GAME_CALENDAR_DELAYED_COMPLETION',
+      durationEnforced:true},
     workforce:{
       operators:num(workforce.operators),engineers:num(workforce.engineers),
       coreOperatingCrew:num(employment.coreOperatingCrew)??((num(workforce.operators)||0)+(num(workforce.engineers)||0)),

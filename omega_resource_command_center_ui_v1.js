@@ -67,7 +67,7 @@
     return months + (months === 1 ? ' month' : ' months') + (remainder ? ' ' + remainder + (remainder === 1 ? ' day' : ' days') : '') + ' (' + days + ' days)';
   }
   function displayGameDate(value) {
-    const match = String(value || '').match(/^(\\d{4})-(\\d{2})-(\\d{2})$/);
+    const match = String(value || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
     if (!match) return value == null || value === '' ? 'Not recorded' : String(value);
     const date = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])));
     return new Intl.DateTimeFormat('en-GB', {day:'numeric',month:'long',year:'numeric',timeZone:'UTC'}).format(date);
@@ -855,7 +855,7 @@
       const last = lastRun && (lastRun.transactionId || lastRun.turn) || asset.lastProductionTransactionId || asset.lastProductionTurn || 'No production transaction recorded';
       const lastOutputs = lastRun && (lastRun.outputQuantities || lastRun.outputs) || 'NOT_RECORDED';
       const health = asset.productionHealth && typeof asset.productionHealth === 'object' ? asset.productionHealth : {};
-      const healthStatus = String(health.status || 'STOPPED').toUpperCase();
+      const healthStatus = String(health.status || 'NOT_RECORDED').toUpperCase();
       const iconAlertClass = healthStatus === 'STOPPED' ? 'omega-rescc-factory-icon-wrap--stopped' :
         healthStatus === 'REDUCED' ? 'omega-rescc-factory-icon-wrap--partial' : 'omega-rescc-factory-icon-wrap--normal';
       const productivityPct = Number.isFinite(Number(health.productivityPct)) ? Number(health.productivityPct) : 0;
@@ -957,7 +957,7 @@
           kv('Technology', Array.isArray(profile.requiredTechnologyIds) && profile.requiredTechnologyIds.length ? profile.requiredTechnologyIds.join(', ') : 'No technology gate recorded') +
           kv('Recipes', recipeCount) + kv('Data authority', profile.authority || 'NOT_RECORDED') + '</div>' +
           (recipeList ? '<details class="omega-rescc-factory-recipes"><summary>Recipe details (' + recipeIds.length + ')</summary><ul>' + recipeList + '</ul></details>' : '') +
-          '<div class="omega-rescc-muted">Build cost, BOM, staffing, recipe ratios, capacity and utility use are simulation values, not certified plant engineering data. Declared cycle days are not yet enforced as delayed completion; current runtime can commit output synchronously.</div></article>';
+          '<div class="omega-rescc-muted">Build cost, BOM, staffing, recipe ratios, capacity and utility use are simulation values, not certified plant engineering data. Production output is committed only when the in-game cycle finish date is reached; shortages pause the cycle.</div></article>';
       }).join('');
       return '<details class="omega-rescc-factory-category"><summary>' + esc(category.replace(/_/g, ' ')) + ' · ' + rows.length + ' factory types</summary>' + contents + '</details>';
     }).join('');
