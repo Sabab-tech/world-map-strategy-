@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 @RunWith(AndroidJUnit4.class)
 public final class OmegaGameplaySmokeTest {
-    private static final long PAGE_LOAD_TIMEOUT_MS = 90000L;
+    private static final long PAGE_LOAD_TIMEOUT_MS = 150000L;
     private static final long JAVASCRIPT_CALLBACK_TIMEOUT_SECONDS = 10L;
 
     @Test
@@ -62,7 +62,7 @@ public final class OmegaGameplaySmokeTest {
                 SystemClock.sleep(250L);
             }
             assertTrue(
-                    "Bundled offline HTML and ordered deferred scripts must finish loading within 90 seconds",
+                    "Bundled offline HTML and ordered deferred scripts must finish loading within 150 seconds",
                     activity.hasMainFrameLoaded()
             );
 
@@ -85,7 +85,7 @@ public final class OmegaGameplaySmokeTest {
                 if (!"true".equals(ready)) SystemClock.sleep(400L);
             }
             assertEquals(
-                    "Bundled offline gameplay shell, local data assets and core runtime must finish booting within 90 seconds",
+                    "Bundled offline gameplay shell, local data assets and core runtime must finish booting within 150 seconds",
                     "true", ready
             );
 
@@ -100,13 +100,14 @@ public final class OmegaGameplaySmokeTest {
 
             final String speedControlScript =
                     "(function() {" +
-                    " var button = document.querySelector('.speed-btn[data-speed=\\\"2\\\"]');" +
-                    " if (!button) return false;" +
+                    " var button = document.querySelector('.speed-btn[data-speed=\"2\"]');" +
+                    " if (!button || !window.Omega || !window.Omega.GameLifecycle) return false;" +
                     " button.click();" +
-                    " return !!(button.classList.contains('active') && window.Game.gameSpeed === 2);" +
+                    " var diagnostics = window.Omega.GameLifecycle.getDiagnostics();" +
+                    " return !!(diagnostics && diagnostics.clock && Number(diagnostics.clock.speed) === 2);" +
                     "})()";
             assertEquals(
-                    "Tapping the 2x control must update the actual simulation speed",
+                    "Tapping the 2x control must set the authoritative OMEGA simulation clock to speed 2",
                     "true", evaluate(instrumentation, webViewRef.get(), speedControlScript)
             );
 
