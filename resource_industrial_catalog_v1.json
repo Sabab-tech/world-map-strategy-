@@ -1884,7 +1884,7 @@
       }
     },
     "inputSourcePolicy": {
-      "internallyProduced": "Every industrial recipe input is backed by an existing mining-processing output or another downstream recipe output.",
+      "internallyProduced": "Every non-agricultural downstream recipe input has a producing processing rule or downstream recipe. Production still requires actual batches and stock; producer presence does not create material.",
       "externalSectorInputs": "Grain, vegetable oil, sugar, cotton fibre and wool fibre require an authoritative upstream batch from an agriculture/food/livestock runtime or a tracked import.",
       "noFabricatedStock": "External input descriptors are contracts only; they do not create inventory or quantity. Production remains blocked until recorded stock is delivered.",
       "unknownInputs": "An input without an industrial producer, source resource identity or explicitly declared external-sector contract is a catalog integrity error."
@@ -4008,7 +4008,7 @@
       "inputs": {
         "metal_scrap": 0.25,
         "e_waste": 0.15,
-        "packaging_waste": 0.15,
+        "glass_cullet": 0.15,
         "chemical_process_residue": 0.15,
         "plastic_waste": 0.15,
         "processing_loss": 0.15
