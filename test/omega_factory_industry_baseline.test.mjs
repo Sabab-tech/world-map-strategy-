@@ -56,8 +56,14 @@ test('factory baseline preserves existing raw processing catalogue and defines 2
   assert.equal(Object.keys(catalog.processingRules||{}).length,39,'existing processing rules remain in place');
   assert.equal(Object.keys(catalog.resourceRules||{}).length,39,'existing resource identities remain in place');
   assert.equal(Object.keys(catalog.manufacturingRules||{}).length,20);
-  assert.equal(Object.values(catalog.manufacturingRules).reduce((n,row)=>n+Object.keys(row.recipes||{}).length,0),25);
+  assert.equal(Object.values(catalog.manufacturingRules).reduce((n,row)=>n+Object.keys(row.recipes||{}).length,0),28);
   assert.equal(catalog.manufacturingBaseline.targetFactoryTypeCount,56);
+  assert.equal(catalog.manufacturingBaseline.recipeLineCount,28);
+  assert.ok(catalog.manufacturingInputSourceCatalog);
+  assert.ok(Object.values(catalog.manufacturingInputSourceCatalog).every(row=>row.unit&&row.source&&row.source.status),
+    'every recipe input must declare a unit and an explicit source classification');
+  assert.ok(Object.values(catalog.manufacturingInputSourceCatalog).every(row=>row.source.status!=='SOURCE_NOT_REGISTERED'),
+    'an unresolved required input must be classified rather than left silently unmapped');
   for(const [factoryType,profile] of Object.entries(catalog.manufacturingRules)){
     assert.ok(profile.iconId,factoryType+': iconId is required');
     assert.ok(profile.simulationOnly,factoryType+': simulation parameters must not masquerade as observations');
@@ -69,6 +75,8 @@ test('factory baseline preserves existing raw processing catalogue and defines 2
       assert.ok(Object.entries(recipe.inputs).every(([k,v])=>tok(k)&&Number.isFinite(Number(v))&&Number(v)>0),factoryType+'/'+recipeKey+': invalid input coefficient');
       assert.ok(Object.entries(recipe.outputs||{}).length>0,factoryType+'/'+recipeKey+': outputs are empty');
       assert.ok(Object.entries(recipe.outputs).every(([k,v])=>tok(k)&&Number.isFinite(Number(v))&&Number(v)>0),factoryType+'/'+recipeKey+': invalid output coefficient');
+      assert.deepEqual(Object.keys(recipe.inputUnits||{}).sort(),Object.keys(recipe.inputs||{}).sort(),factoryType+'/'+recipeKey+': every input must declare a unit');
+      assert.deepEqual(Object.keys(recipe.outputUnits||{}).sort(),Object.keys(recipe.outputs||{}).sort(),factoryType+'/'+recipeKey+': every output must declare a unit');
       assert.ok(recipe.construction&&Number(recipe.construction.costUsd)>0&&Number(recipe.construction.buildDays)>0&&
         Number(recipe.construction.capacityPerDay)>0&&Number(recipe.construction.workersRequired)>0,
         factoryType+'/'+recipeKey+': explicit simulated construction profile is required');
@@ -84,7 +92,12 @@ test('every manufacturing iconId exists in the local offline SVG registry and ca
   const missing=[...new Set(Object.values(catalog.manufacturingRules).map(x=>x.iconId))].filter(x=>!icons.iconNames.includes(x));
   assert.deepEqual(missing,[]);
   const html=readText('index.html');
+  const ui=readText('omega_resource_command_center_ui_v1.js');
   const sw=readText('omega-offline-map-sw.js');
+  assert.match(ui,/name="factoryPlan"/);
+  assert.match(ui,/SIMULATION-ONLY MANUFACTURING/);
+  assert.match(ui,/primary feedstock/i);
+  assert.match(ui,/omega-icon-/);
   assert.match(html,/src="omega_resource_industrial_network_v1\.js"/);
   assert.match(html,/src="omega_icon_system_v1\.js"/);
   assert.match(sw,/omega-offline-atlas-shell-v18/);
