@@ -110,7 +110,7 @@
         'megaphone': '<path d="m3 11 18-6v14l-18-6v-2ZM3 13l2 7h5l-3-6M21 10h1v6h-1"/>',
         'rocket': '<path d="M12 22s4-4 4-9V6l-4-4-4 4v7c0 5 4 9 4 9Z"/><path d="M8 13H4l-2 5 6-1m8-4h4l2 5-6-1M10 8h4M10 18l-2 4m6-4 2 4"/>',
         'smile': '<circle cx="12" cy="12" r="9"/><path d="M8 14s1.5 3 4 3 4-3 4-3M9 9h.01M15 9h.01"/>',
-        'droplet': '<path d="M12 22a7 7 0 0 0 7-7c0-4-7-13-7-13S5 11 5 15a7 7 0 0 0 7 7Z"/>'
+        'droplet': '<path d="M12 22a7 7 0 0 0 7-7c0-4-7-13-7-13S5 11 5 15a7 7 0 0 0 7 7Z"/>',
         'steelworks': '<path d="M3 21V11l5 3V10l5 3V7l4 2V4h3v17H3Z"/><path d="M7 17h2m3 0h2m3 0h2M17 4V2h3v2"/>',
         'smelter': '<path d="M4 21h16l-2-8H6l-2 8Z"/><path d="M8 13c-2-3 2-4 1-7 3 2 4 4 3 7m1 0c-1-3 2-4 2-6 2 2 3 4 2 6"/>',
         'petrochemical-plant': '<path d="M3 21V11h5V7h4v7h4V5h4v16H3Z"/><path d="M5 7V3h4v4m7 2h2M7 15h2m3 0h2m3 3h2"/>',
