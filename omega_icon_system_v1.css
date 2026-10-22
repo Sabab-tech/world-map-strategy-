@@ -136,3 +136,40 @@ button > .omega-ui-icon, [role="button"] > .omega-ui-icon, .icon-btn > .omega-ui
 @media (prefers-reduced-motion: reduce) {
     .omega-ui-icon { animation: none !important; transition: none !important; }
 }
+
+/* Factory families use the same offline SVG registry across map, catalogue and ministry views. */
+.omega-ui-icon--steelworks, .omega-ui-icon--non-ferrous-smelter, .omega-ui-icon--machine-tools {
+    --omega-icon-color: #fbbf24;
+    --omega-icon-bg: rgba(245, 158, 11, .16);
+    --omega-icon-border: rgba(251, 191, 36, .4);
+}
+.omega-ui-icon--petrochemical-plant, .omega-ui-icon--fertilizer-plant, .omega-ui-icon--chemical-plant {
+    --omega-icon-color: #c4b5fd;
+    --omega-icon-bg: rgba(139, 92, 246, .15);
+    --omega-icon-border: rgba(196, 181, 253, .38);
+}
+.omega-ui-icon--cement-plant, .omega-ui-icon--glass-plant, .omega-ui-icon--paper-mill, .omega-ui-icon--recycling-plant {
+    --omega-icon-color: #86efac;
+    --omega-icon-bg: rgba(34, 197, 94, .14);
+    --omega-icon-border: rgba(134, 239, 172, .36);
+}
+.omega-ui-icon--food-processing, .omega-ui-icon--textile-mill, .omega-ui-icon--pharmaceutical-plant {
+    --omega-icon-color: #f9a8d4;
+    --omega-icon-bg: rgba(236, 72, 153, .13);
+    --omega-icon-border: rgba(249, 168, 212, .36);
+}
+.omega-ui-icon--grid-equipment, .omega-ui-icon--semiconductor-factory, .omega-ui-icon--battery-plant {
+    --omega-icon-color: #7dd3fc;
+    --omega-icon-bg: rgba(14, 165, 233, .15);
+    --omega-icon-border: rgba(125, 211, 252, .38);
+}
+.omega-ui-icon--vehicle-plant, .omega-ui-icon--shipyard, .omega-ui-icon--aerospace-factory {
+    --omega-icon-color: #93c5fd;
+    --omega-icon-bg: rgba(59, 130, 246, .15);
+    --omega-icon-border: rgba(147, 197, 253, .36);
+}
+.omega-ui-icon--defense-industry {
+    --omega-icon-color: #fca5a5;
+    --omega-icon-bg: rgba(220, 38, 38, .13);
+    --omega-icon-border: rgba(252, 165, 165, .36);
+}
