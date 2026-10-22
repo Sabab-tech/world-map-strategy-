@@ -167,6 +167,22 @@ test('index, finance, bank and offline shell use the daily lifecycle assets', ()
   const macro = fs.readFileSync(path.join(root, 'omega_macro_stability_runtime_v1.js'), 'utf8');
 
   assert.match(index, /id="omega-global-time-hud"/);
+  const topHeaderStart = index.indexOf('id="top-status-bar"');
+  const unifiedHudStart = index.indexOf('id="omega-global-time-hud"');
+  const metricDropdownStart = index.indexOf('id="map-metric-dropdown"');
+  assert.ok(topHeaderStart >= 0 && unifiedHudStart > topHeaderStart && unifiedHudStart < metricDropdownStart,
+    'the lifecycle HUD must be embedded in the existing top status bar');
+  assert.match(index, /data-speed="3" title="Very Fast Speed">3x/);
+  assert.match(index, /data-omega-speed="3" aria-label="Very fast game speed" title="Very fast speed">3x/);
+  assert.match(css, /#top-status-bar \.status-right \{[\s\S]{0,40}display: none !important;/);
+  assert.match(css, /max-height: 104px !important;\n  flex-wrap: wrap !important;/,
+    'the compact header must wrap the metrics onto a second row instead of squeezing them off-screen');
+  assert.match(css, /#omega-global-time-hud \.ogth-topline,[\s\S]{0,140}display: none !important;/);
+  assert.match(css, /#omega-global-time-hud \.ogth-economy/);
+  assert.ok(lifecycle.includes("'  GDP ' + (gdp === null ? 'Not recorded' : money(gdp))"),
+    'the compact economy line must show the selected country GDP without inventing missing data');
+  assert.match(lifecycle, /event\.stopImmediatePropagation\(\)/,
+    'the unified speed control must prevent legacy click handlers from overwriting the authoritative clock speed');
   assert.match(index, /src="omega_game_lifecycle_runtime_v1\.js" defer/);
   assert.match(index, /href="omega_game_lifecycle_runtime_v1\.css"/);
   assert.ok(index.indexOf('src="omega_simulation_runtime.js"') < index.indexOf('src="map-engine-1.js"'),
@@ -185,6 +201,7 @@ test('index, finance, bank and offline shell use the daily lifecycle assets', ()
   assert.match(finance, /DAY_MS=86400000/);
   assert.match(banking, /dayTurns = 1/);
   assert.match(serviceWorker, /omega-offline-atlas-shell-v\d+/);
+  assert.match(serviceWorker, /omega-offline-atlas-shell-v18/, 'the offline shell cache must refresh the unified header assets');
   assert.match(serviceWorker, /omega_game_lifecycle_runtime_v1\.js/);
   assert.match(serviceWorker, /omega_game_lifecycle_runtime_v1\.css/);
   assert.match(serviceWorker, /resource_industrial_catalog_v1\.json/);
