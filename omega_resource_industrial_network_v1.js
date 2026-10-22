@@ -2353,6 +2353,15 @@ function commitMultiInputFactoryCycleImmediately(input={}){
   return record;
 }
 
+
+/**
+ * Stable public entry point for delivery completion and per-turn production.
+ * Keep external callers independent of the internal immediate-commit method name.
+ */
+function executeFactoryCycle(input={}){
+  return commitFactoryCycleImmediately(input);
+}
+
 function processPendingFactoryInputs(countryId){
   const cid=canonicalCountry(countryId),n=netState(cid),assets=factoryAssets(cid),processed=[],blocked=[];
   for(const asset of assets){
