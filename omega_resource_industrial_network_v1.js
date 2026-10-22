@@ -1828,8 +1828,7 @@ function executeFactoryCycle(input={}){
   const batches=Array.isArray(r.batches)?r.batches:[],inventoryLots=r.inventoryLots&&typeof r.inventoryLots==='object'?r.inventoryLots:{},created=[];
   for(const outputId of Object.keys(output)){
     const outQty=output[outputId];if(!(outQty>0))continue;
-    const inventoryKey=outputInventoryKeys[outputId]||outputId;
-    r.inventory[inventoryKey]=(num(r.inventory[inventoryKey])||0)+outQty;
+    r.inventory[outputId]=(num(r.inventory[outputId])||0)+outQty;
     const batchId='OUTPUT:'+transactionId+':'+outputId,roots=[...new Set(sourceBatchIds.filter(Boolean))],unit=input.unit||inputLots.find(x=>tok(x.resourceId)===rid)?.unit||'TONNES';
     const row={batchId,resourceId:outputId,materialIdentity:outputId,quantity:outQty,remainingQuantity:outQty,unit,stage:'FINISHED',countryId:cid,
       sourceCountryId:cid,originCountryId:cid,ownerCountryCode:cid,destinationCountryId:cid,ownerCompanyId:String(asset.companyId||asset.ownerCompanyId||('SIM-COMPANY:'+cid)),
@@ -2002,7 +2001,8 @@ function executeMultiInputFactoryCycle(input={}){
   const outputUnit=recipe.outputUnit||asset.outputUnit||'SIMULATION_TONNE_EQUIVALENT';
   for(const [outputId,outQty] of Object.entries(output)){
     if(!(outQty>1e-9))continue;
-    r.inventory[outputId]=(num(r.inventory[outputId])||0)+outQty;
+    const inventoryKey=outputInventoryKeys[outputId]||outputId;
+    r.inventory[inventoryKey]=(num(r.inventory[inventoryKey])||0)+outQty;
     const batchId='OUTPUT:'+transactionId+':'+outputId;
     const row={batchId,resourceId:outputId,materialIdentity:outputId,quantity:outQty,remainingQuantity:outQty,unit:outputUnit,
       stage:'FINISHED',countryId:cid,sourceCountryId:cid,originCountryId:cid,ownerCountryCode:cid,destinationCountryId:cid,
