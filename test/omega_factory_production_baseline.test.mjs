@@ -32,7 +32,7 @@ function makeRuntime() {
 const steelRecipe = {
   iron_concentrate: 0.60,
   coal_concentrate: 0.20,
-  limestone: 0.10,
+  cement_feed: 0.10,
   copper_concentrate: 0.10
 };
 const makeSteelAsset = (overrides = {}) => ({
@@ -40,11 +40,11 @@ const makeSteelAsset = (overrides = {}) => ({
   recipeId: 'STEEL_PRIMARY_ROUTE_V1', recipeMode: 'MULTI_INPUT',
   inputCoefficients: steelRecipe,
   outputProfile: { STEEL: 0.72, ALLOY_STEEL: 0.08, BLAST_FURNACE_SLAG: 0.15, PROCESSING_DUST: 0.05 },
-  inputInventory: { iron_concentrate: 60, coal_concentrate: 20, limestone: 10, copper_concentrate: 10 },
+  inputInventory: { iron_concentrate: 60, coal_concentrate: 20, cement_feed: 10, copper_concentrate: 10 },
   inputBatchLots: [
     { batchId: 'INPUT-IRON', resourceId: 'iron_concentrate', quantity: 60, remainingQuantity: 60, unit: 'SIMULATION_TONNE_EQUIVALENT', sourceBatchIds: ['MINE-IRON-001'], createdTurn: 1 },
     { batchId: 'INPUT-COAL', resourceId: 'coal_concentrate', quantity: 20, remainingQuantity: 20, unit: 'SIMULATION_TONNE_EQUIVALENT', sourceBatchIds: ['MINE-COAL-001'], createdTurn: 1 },
-    { batchId: 'INPUT-LIME', resourceId: 'limestone', quantity: 10, remainingQuantity: 10, unit: 'SIMULATION_TONNE_EQUIVALENT', sourceBatchIds: ['MINE-LIME-001'], createdTurn: 1 },
+    { batchId: 'INPUT-CEMENT-FEED', resourceId: 'cement_feed', quantity: 10, remainingQuantity: 10, unit: 'SIMULATION_TONNE_EQUIVALENT', sourceBatchIds: ['MINE-LIME-001'], createdTurn: 1 },
     { batchId: 'INPUT-COPPER', resourceId: 'copper_concentrate', quantity: 10, remainingQuantity: 10, unit: 'SIMULATION_TONNE_EQUIVALENT', sourceBatchIds: ['MINE-COPPER-001'], createdTurn: 1 }
   ],
   capacity: 100, capacityPerDay: 100, inputUnit: 'SIMULATION_TONNE_EQUIVALENT',
@@ -227,11 +227,11 @@ test('multi-input factory consumes every required input once and preserves mine-
   assert.equal(run.status, 'COMPLETED', JSON.stringify(run));
   assert.equal(run.recipeId, 'STEEL_PRIMARY_ROUTE_V1');
   assert.deepEqual(JSON.parse(JSON.stringify(run.inputQuantities)), {
-    iron_concentrate: 30, coal_concentrate: 10, limestone: 5, copper_concentrate: 5
+    iron_concentrate: 30, coal_concentrate: 10, cement_feed: 5, copper_concentrate: 5
   });
   assert.equal(run.outputQuantities.STEEL, 36);
   assert.deepEqual(
-    ['iron_concentrate', 'coal_concentrate', 'limestone', 'copper_concentrate'].map(id => asset.inputInventory[id]),
+    ['iron_concentrate', 'coal_concentrate', 'cement_feed', 'copper_concentrate'].map(id => asset.inputInventory[id]),
     [30, 10, 5, 5]
   );
   for (const mineBatch of ['MINE-IRON-001', 'MINE-COAL-001', 'MINE-LIME-001', 'MINE-COPPER-001']) {
@@ -259,10 +259,10 @@ test('multi-input factory consumes every required input once and preserves mine-
 test('missing required input blocks multi-input production without consuming partial stock', () => {
   const { context, api } = makeRuntime();
   const asset = makeSteelAsset({
-    inputInventory: { iron_concentrate: 60, coal_concentrate: 0, limestone: 10, copper_concentrate: 10 },
+    inputInventory: { iron_concentrate: 60, coal_concentrate: 0, cement_feed: 10, copper_concentrate: 10 },
     inputBatchLots: [
       { batchId: 'INPUT-IRON', resourceId: 'iron_concentrate', quantity: 60, remainingQuantity: 60, sourceBatchIds: ['MINE-IRON-001'] },
-      { batchId: 'INPUT-LIME', resourceId: 'limestone', quantity: 10, remainingQuantity: 10, sourceBatchIds: ['MINE-LIME-001'] },
+      { batchId: 'INPUT-CEMENT-FEED', resourceId: 'cement_feed', quantity: 10, remainingQuantity: 10, sourceBatchIds: ['MINE-LIME-001'] },
       { batchId: 'INPUT-COPPER', resourceId: 'copper_concentrate', quantity: 10, remainingQuantity: 10, sourceBatchIds: ['MINE-COPPER-001'] }
     ]
   });
@@ -285,7 +285,7 @@ test('tracked input shortage blocks before any component is consumed', () => {
     inputBatchLots: [
       { batchId: 'INPUT-IRON', resourceId: 'iron_concentrate', quantity: 60, remainingQuantity: 60, sourceBatchIds: ['MINE-IRON-001'] },
       { batchId: 'INPUT-COAL', resourceId: 'coal_concentrate', quantity: 20, remainingQuantity: 5, sourceBatchIds: ['MINE-COAL-001'] },
-      { batchId: 'INPUT-LIME', resourceId: 'limestone', quantity: 10, remainingQuantity: 10, sourceBatchIds: ['MINE-LIME-001'] },
+      { batchId: 'INPUT-CEMENT-FEED', resourceId: 'cement_feed', quantity: 10, remainingQuantity: 10, sourceBatchIds: ['MINE-LIME-001'] },
       { batchId: 'INPUT-COPPER', resourceId: 'copper_concentrate', quantity: 10, remainingQuantity: 10, sourceBatchIds: ['MINE-COPPER-001'] }
     ]
   });
@@ -340,7 +340,7 @@ test('processed mine-derived batches route to a downstream factory and reconcile
   const sources = [
     { batchId: 'OUTPUT-IRON', resourceId: 'IRON_CONCENTRATE', quantity: 60, sourceBatchIds: ['MINE-IRON-001'], sourceSiteIds: ['SITE-IRON'] },
     { batchId: 'OUTPUT-COAL', resourceId: 'COAL_CONCENTRATE', quantity: 20, sourceBatchIds: ['MINE-COAL-001'], sourceSiteIds: ['SITE-COAL'] },
-    { batchId: 'OUTPUT-LIME', resourceId: 'LIMESTONE', quantity: 10, sourceBatchIds: ['MINE-LIME-001'], sourceSiteIds: ['SITE-LIME'] },
+    { batchId: 'OUTPUT-CEMENT-FEED', resourceId: 'CEMENT_FEED', quantity: 10, sourceBatchIds: ['MINE-LIME-001'], sourceSiteIds: ['SITE-LIME'] },
     { batchId: 'OUTPUT-COPPER', resourceId: 'COPPER_CONCENTRATE', quantity: 10, sourceBatchIds: ['MINE-COPPER-001'], sourceSiteIds: ['SITE-COPPER'] }
   ];
   const availableByResource = {}, inventory = {}, inventoryLots = {};
@@ -383,7 +383,7 @@ test('processed mine-derived batches route to a downstream factory and reconcile
   assert.equal(delivered.delivered, 4, JSON.stringify(delivered));
   const factory = context.Game.state.economy.BGD.productionAssets[0];
   assert.deepEqual(
-    ['iron_concentrate', 'coal_concentrate', 'limestone', 'copper_concentrate'].map(id => factory.inputInventory[id]),
+    ['iron_concentrate', 'coal_concentrate', 'cement_feed', 'copper_concentrate'].map(id => factory.inputInventory[id]),
     [0, 0, 0, 0]
   );
   assert.ok(network.shipments.filter(row => row.shipmentType === 'FACTORY_INPUT')
