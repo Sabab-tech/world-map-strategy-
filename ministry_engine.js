@@ -1680,7 +1680,7 @@ window.OmegaCabinetUI = {
                         <h1 style="margin:0; font-family:'Inter',sans-serif; font-weight:700; font-size:20px; color:#f8fafc; letter-spacing:0.2px;">${m.title}</h1>
                         <div style="font-size:12px; font-weight:500; color:#00e5ff; margin-top:2px;">${m.role}</div>
                         <div style="font-size:11px; color:#94a3b8; margin-top:3px; line-height:1.4;">
-                            Minister: <strong style="color:#f8fafc;">${m.ministerName}</strong>
+                            Minister: <strong style="color:#f8fafc;">${m.ministerName || "Vacant"}</strong>
                         </div>
                     </div>
                 </div>
