@@ -539,8 +539,18 @@ test('factory commissioning fills job slots from the unemployed pool exactly onc
   assert.equal(context.Game.state.economy.BGD.factoryEmployment.factories['FAC-SHIP-01'].jobsFilled,10000);
 });
 
-test('unknown generic production is not allowed to create a factory project without explicit opt-in', () => {
-  const { api } = makeRuntime();
+test('unknown generic production requires explicit opt-in and recorded construction materials', () => {
+  const { context, catalog, api } = makeRuntime();
+  const profile = catalog.factoryProfiles.GENERIC_RESOURCE_PROCESSING_PLANT;
+  context.Game.state.economy.BGD = { unemploymentCount: 600000, laborForce: 6000000, unemployment_rate: 10, productionAssets: [] };
+  const stock = context.Game.state.resource.BGD = {
+    inventory: {}, batches: [], inventoryLots: {},
+    warehouse: { warehouseId: 'WH-BGD-RAW', availableByResource: {}, reservedByResource: {} }
+  };
+  for (const [resourceId, quantity] of Object.entries(profile.constructionMaterials)) {
+    stock.inventory[resourceId] = Number(quantity) + 10;
+    stock.warehouse.availableByResource[resourceId] = Number(quantity) + 10;
+  }
   const blocked = api.startFactoryProject({ countryId: 'BGD', resourceId: 'future_unknown_metal' });
   assert.equal(blocked.status, 'BLOCKED');
   assert.equal(blocked.reason, 'UNVERIFIED_GENERIC_RECIPE_REQUIRES_EXPLICIT_SIMULATION_OPT_IN');
@@ -549,6 +559,11 @@ test('unknown generic production is not allowed to create a factory project with
   });
   assert.equal(allowed.status, 'UNDER_CONSTRUCTION');
   assert.equal(allowed.recipeAuthority, 'SIMULATED_GENERIC_FALLBACK');
+  assert.equal(allowed.constructionMaterialsStatus, 'CONSUMED');
+  for (const [resourceId, quantity] of Object.entries(profile.constructionMaterials)) {
+    assert.equal(stock.inventory[resourceId], 10, resourceId + ': fallback construction must debit inventory');
+    assert.equal(stock.warehouse.availableByResource[resourceId], 10, resourceId + ': fallback construction must debit warehouse stock');
+  }
 });
 
 
