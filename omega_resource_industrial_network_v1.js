@@ -945,8 +945,8 @@ function dispatchFactoryInputShipment(input={}){
   const factory=factoryAssets(cid).find(row=>String(row?.id||row?.assetId||row?.projectId)===factoryId);
   if(!factory)return{status:'BLOCKED',reason:'FACTORY_NOT_FOUND',factoryId};
   if(canonicalCountry(factory.countryId||cid)!==cid)return{status:'BLOCKED',reason:'FACTORY_COUNTRY_MISMATCH',factoryId,countryId:cid};
-  if(['CLOSED','DECOMMISSIONED','TECHNOLOGY_LOCKED','BLOCKED','UNDER_CONSTRUCTION'].includes(String(factory.status||'').toUpperCase()))
-    return{status:'BLOCKED',reason:'FACTORY_NOT_OPERATIONAL',factoryId,factoryStatus:factory.status};
+  const operationGate=factoryOperationGate(cid,factory);
+  if(operationGate.status!=='READY')return operationGate;
   const recipe=recipeFor(rid,factory),inputKey=Object.keys(recipe.inputs||{}).find(key=>tok(key)===rid);
   if(!inputKey)return{status:'BLOCKED',reason:'FACTORY_INPUT_NOT_IN_RECIPE',factoryId,resourceId:rid,recipeId:recipe.recipeId||factory.recipeId||null};
   if(!(Object.keys(recipe.inputs||{}).length>1)&&recipe.requiresAllInputs!==true)
@@ -1727,9 +1727,24 @@ function advanceTechnologyProjects(c){
   }
   return completed;
 }
+function factoryOperationGate(countryId,asset){
+  if(!asset)return{status:'BLOCKED',reason:'FACTORY_NOT_FOUND'};
+  const status=String(asset.status||'OPERATIONAL').toUpperCase();
+  if(['CLOSED','DECOMMISSIONED','TECHNOLOGY_LOCKED','BLOCKED','UNDER_CONSTRUCTION','MAINTENANCE'].includes(status))
+    return{status:'BLOCKED',reason:'FACTORY_NOT_OPERATIONAL',factoryId:asset.id||asset.assetId||asset.projectId,factoryStatus:status};
+  const required=Array.isArray(asset.requiredTechnologyIds)?asset.requiredTechnologyIds.map(x=>String(x).toUpperCase()):[];
+  const capabilities=Array.isArray(resourceState(countryId).technologyCapabilities)?resourceState(countryId).technologyCapabilities:[];
+  const missing=required.filter(id=>!capabilities.some(row=>String(row?.technologyId||'').trim().toUpperCase()===id&&
+    !['BLOCKED','LOCKED','REVOKED'].includes(String(row?.status||'').toUpperCase())));
+  if(missing.length)return{status:'BLOCKED',reason:'FACTORY_TECHNOLOGY_REQUIREMENT_NOT_MET',
+    factoryId:asset.id||asset.assetId||asset.projectId,missingTechnologyIds:missing};
+  return{status:'READY',factoryId:asset.id||asset.assetId||asset.projectId,factoryStatus:status};
+}
 function executeFactoryCycle(input={}){
   const cid=canonicalCountry(input.countryId),fid=String(input.factoryId||''),assets=factoryAssets(cid),asset=assets.find(a=>String(a?.id||a?.assetId||a?.projectId)===fid);
   if(!asset)return{status:'BLOCKED',reason:'FACTORY_NOT_FOUND'};
+  const gate=factoryOperationGate(cid,asset);
+  if(gate.status!=='READY')return gate;
   const requestedRecipe=recipeFor(input.resourceId||Object.keys(asset.inputCoefficients||asset.inputs||{})[0]||asset.resourceId,asset);
   if(asset.recipeMode==='MULTI_INPUT'||requestedRecipe.recipeMode==='MULTI_INPUT'||Object.keys(requestedRecipe.inputs||{}).length>1)
     return executeMultiInputFactoryCycle(input);
