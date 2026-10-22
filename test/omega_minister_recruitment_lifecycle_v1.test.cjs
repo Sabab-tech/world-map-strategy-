@@ -60,13 +60,27 @@ class FakeElement {
     }
 
     if (this._innerHTML.includes('class="omr-grid"')) {
-      const cardPattern = /<button class="omr-card ([^"]*)" data-id="([^"]+)" type="button">([\s\S]*?)<\/button>/g;
+      const cardPattern = /<div class="omr-card ([^"]*)" data-id="([^"]+)" role="button" tabindex="0"[^>]*>([\s\S]*?)<\/div>/g;
       let match;
       while ((match = cardPattern.exec(this._innerHTML))) {
-        const card = new FakeElement('button');
+        const card = new FakeElement('div');
         card.className = 'omr-card ' + match[1];
         card.dataset.id = match[2];
         card.textContent = plainText(match[3]).trim();
+        const actionPattern = /<button\b([^>]*)>([\s\S]*?)<\/button>/g;
+        let actionMatch;
+        while ((actionMatch = actionPattern.exec(match[3]))) {
+          const attributes = actionMatch[1];
+          const action = attributes.match(/\bdata-action="([^"]+)"/);
+          if (!action) continue;
+          const button = new FakeElement('button');
+          button.dataset.action = action[1];
+          const classMatch = attributes.match(/\bclass="([^"]+)"/);
+          button.className = classMatch ? classMatch[1] : '';
+          button.disabled = /\sdisabled(?:\s|$)/.test(attributes);
+          button.textContent = plainText(actionMatch[2]).trim();
+          card.appendChild(button);
+        }
         this.appendChild(card);
       }
       this._detail = new FakeElement('div');
@@ -260,11 +274,14 @@ async function flushUi() {
 
   cards[0].dispatch('click');
   const detail = host.querySelector('.omr-detail');
-  let recruitButton = detail && detail.querySelector('[data-action="recruit"]');
-  assert.ok(recruitButton, 'Selecting a candidate must expose a working Recruit Minister action');
-  assert.equal(recruitButton.textContent, 'RECRUIT MINISTER');
+  let dossierRecruitButton = detail && detail.querySelector('[data-action="recruit"]');
+  assert.ok(dossierRecruitButton, 'Selecting a candidate must still expose the detailed Recruit Minister action');
+  assert.equal(dossierRecruitButton.textContent, 'RECRUIT MINISTER');
 
-  await recruitButton.dispatch('click');
+  const quickRecruitButton = cards[0].querySelector('[data-action="quick-recruit"]');
+  assert.ok(quickRecruitButton, 'Each available candidate must expose a direct Recruit Minister action');
+  assert.equal(quickRecruitButton.textContent, 'RECRUIT MINISTER');
+  await quickRecruitButton.dispatch('click');
   await flushUi();
 
   const candidate = interiorRoster[0];
