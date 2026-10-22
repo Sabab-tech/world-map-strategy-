@@ -110,8 +110,8 @@ assert.equal(context.Game.state.economy.BGD.productionAssets[0].inputBatchLots.r
 
 const factoryBuildProfile=catalog.factoryProfiles.ORE_BENEFICIATION_PLANT;
 for(const [materialId,requiredQty] of Object.entries(factoryBuildProfile.constructionMaterials||{})){
-  context.Game.state.resource.BGD.inventory[materialId]=(Number(context.Game.state.resource.BGD.inventory[materialId])||0)+Number(requiredQty)+25;
-  context.Game.state.resource.BGD.warehouse.availableByResource[materialId]=(Number(context.Game.state.resource.BGD.warehouse.availableByResource[materialId])||0)+Number(requiredQty)+25;
+  context.Game.state.resource.BGD.inventory[materialId]=(Number(context.Game.state.resource.BGD.inventory[materialId])||0)+Number(requiredQty);
+  context.Game.state.resource.BGD.warehouse.availableByResource[materialId]=(Number(context.Game.state.resource.BGD.warehouse.availableByResource[materialId])||0)+Number(requiredQty);
 }
 const factoryProject=N.startFactoryProject({countryId:'BGD',resourceId:'iron_ore',capacityPerDay:750,buildDays:60,requiredTechnologyIds:['DIGITAL_MAINTENANCE']});
 assert.equal(factoryProject.status,'UNDER_CONSTRUCTION');
