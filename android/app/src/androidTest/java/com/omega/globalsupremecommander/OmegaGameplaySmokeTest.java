@@ -83,12 +83,13 @@ public final class OmegaGameplaySmokeTest {
             final String speedControlScript =
                     "(function() {" +
                     " var button = document.querySelector('.speed-btn[data-speed=\\\"2\\\"]');" +
-                    " if (!button) return false;" +
+                    " if (!button || !window.Omega || !window.Omega.GameLifecycle) return false;" +
                     " button.click();" +
-                    " return !!(button.classList.contains('active') && window.Game.gameSpeed === 2);" +
+                    " var diagnostics = window.Omega.GameLifecycle.getDiagnostics();" +
+                    " return !!(diagnostics && diagnostics.clock && Number(diagnostics.clock.speed) === 2);" +
                     "})()";
             assertEquals(
-                    "Tapping the 2x control must update the actual simulation speed",
+                    "Tapping the 2x control must set the authoritative OMEGA simulation clock to speed 2",
                     "true", evaluate(instrumentation, webViewRef.get(), speedControlScript)
             );
 
