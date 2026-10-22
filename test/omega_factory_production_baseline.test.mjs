@@ -754,11 +754,29 @@ test('factory production scheduler waits for cycle time and posts output only on
   context.Game.state.transport.BGD = { infrastructure: { utilitySupply: {
     electricityMWhPerDay: 1000000, waterM3PerDay: 1000000, authority: 'TEST_FIXTURE', status: 'AVAILABLE', simulationOnly: true, assets: []
   } } };
+  const inputInventoryBeforeCycle = JSON.stringify(asset.inputInventory);
+  const inputLotBalancesBeforeCycle = Object.fromEntries(asset.inputBatchLots.map(lot => [lot.batchId, Number(lot.remainingQuantity)]));
   const start = api.startFactoryProductionCycle({ countryId: 'BGD', factoryId: asset.id, resourceId: 'iron_concentrate', quantity: 50 });
   assert.equal(start.status, 'IN_PROGRESS');
   assert.equal(start.startDate, '2015-01-01');
   assert.equal(start.finishDate, '2015-01-03');
   assert.equal(start.productivityPct, 50);
+  assert.equal(start.inputBatchReservations.length, Object.keys(start.inputQuantities).length,
+    'the scheduled cycle must reserve its exact tracked input lots');
+  assert.deepEqual([...new Set(start.inputBatchReservations.map(row => row.batchId))].sort(), [...start.sourceBatchIds].sort(),
+    'cycle source batch identities must be exactly its reserved factory-input lots');
+  for (const reservation of start.inputBatchReservations) {
+    const lot = asset.inputBatchLots.find(row => row.batchId === reservation.batchId);
+    assert.ok(lot, 'each cycle reservation must point to an existing input lot');
+    assert.equal(lot.cycleReservationId, start.cycleId, 'reserved input lots must be locked to this cycle');
+    assert.equal(Number(lot.cycleReservedQuantity), Number(reservation.quantity));
+  }
+  const competingCycle = api.executeFactoryCycle({ countryId: 'BGD', factoryId: asset.id, resourceId: 'iron_concentrate', quantity: 50 });
+  assert.equal(competingCycle.status, 'BLOCKED');
+  assert.equal(competingCycle.reason, 'FACTORY_CYCLE_ALREADY_RUNNING');
+  assert.equal(JSON.stringify(asset.inputInventory), inputInventoryBeforeCycle,
+    'starting a cycle and rejecting a competing immediate run must not debit input stock');
+  assert.deepEqual(Object.fromEntries(asset.inputBatchLots.map(lot => [lot.batchId, Number(lot.remainingQuantity)])), inputLotBalancesBeforeCycle);
   assert.equal((context.Game.state.resource.BGD.batches || []).length, 0, 'no output should exist when the cycle only starts');
   const sameDay = api.processPendingFactoryInputs('BGD');
   assert.equal(sameDay.completedCount, 0);
@@ -773,6 +791,8 @@ test('factory production scheduler waits for cycle time and posts output only on
   assert.equal(done.completedCount, 1);
   assert.equal(done.completed[0].status, 'COMPLETED');
   assert.equal(context.Game.state.resource.BGD.processedWarehouse.availableByResource.STEEL, 36);
+  assert.equal(asset.inputBatchLots.some(lot => lot.cycleReservationId === start.cycleId), false,
+    'successful completion must release any unconsumed portion of reserved input lots');
   assert.equal(asset.productionHealth.status, 'REDUCED');
   assert.equal(asset.productionHealth.productivityPct, 50);
 });
