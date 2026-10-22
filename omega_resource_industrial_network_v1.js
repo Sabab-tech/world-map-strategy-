@@ -32,7 +32,7 @@ const daysPerTurn=()=>{
   const explicit=num(clock?.gameDaysPerTurn??clock?.daysPerTurn);
   if(explicit!==null&&explicit>0)return explicit;
   // stepDurationMs paces the real-time clock; by default every committed central turn advances one in-game day.
-  if(clock&&num(clock.stepDurationMs)!==null)return 1;
+  if(num(clock?.stepDurationMs)!==null)return 1;
   return Math.max(1/86400000,num(state()?.simulation?.daysPerTurn??state()?.simulation?.turnDays)??1);
 };
 const year=()=>{const d=state()?.simulation?.date;if(d){const y=num(String(d).slice(0,4));if(y!==null)return y;}return num(state()?.simulation?.startYear)??2015};
