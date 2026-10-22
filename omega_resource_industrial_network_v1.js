@@ -1882,6 +1882,13 @@ function executeMultiInputFactoryCycle(input={}){
   const factoryStock=asset.inputInventory&&typeof asset.inputInventory==='object'?asset.inputInventory:{};
   const lots=Array.isArray(asset.inputBatchLots)?asset.inputBatchLots:[];
   const inactiveLotStatuses=new Set(['CONSUMED','SOLD','TRANSFERRED_OUT','EXHAUSTED','IN_TRANSIT','RESERVED','DECOMMISSIONED']);
+  const activeSourceLots=lots.filter(l=>{
+    const status=String(l?.status||'').toUpperCase();
+    return Math.max(0,num(l?.remainingQuantity!=null?l.remainingQuantity:l?.quantity)||0)>1e-9&&!inactiveLotStatuses.has(status);
+  });
+  const globalBatchIds=activeSourceLots.map(l=>String(l?.batchId||'').trim()).filter(Boolean);
+  if(new Set(globalBatchIds).size!==globalBatchIds.length)
+    return{status:'BLOCKED',reason:'DUPLICATE_FACTORY_INPUT_BATCH_ID',factoryId:fid,recipeId:recipe.recipeId||null};
   const availability=[];
   const seenRecipeInputs=new Set();
   for(const [resourceId,coefficient] of entries){
@@ -1914,6 +1921,19 @@ function executeMultiInputFactoryCycle(input={}){
   const mismatches=needs.filter(x=>x.tracked+1e-6<x.required);
   if(mismatches.length)return{status:'BLOCKED',reason:'FACTORY_INPUT_BATCH_LEDGER_MISMATCH',factoryId:fid,recipeId:recipe.recipeId||null,
     mismatches:mismatches.map(x=>({resourceId:x.resourceId,required:x.required,tracked:x.tracked,available:x.available}))};
+  for(const need of needs){
+    let remaining=need.required;
+    need.lotAllocations=[];
+    const ordered=need.eligibleLots.slice().sort((a,b)=>(Number(a.createdTurn)||0)-(Number(b.createdTurn)||0));
+    for(const lot of ordered){
+      if(remaining<=1e-9)break;
+      const prior=Math.max(0,num(lot?.remainingQuantity!=null?lot.remainingQuantity:lot?.quantity)||0);
+      const take=Math.min(prior,remaining);
+      if(take>1e-9){need.lotAllocations.push({lot,quantity:take});remaining-=take;}
+    }
+    if(remaining>1e-6)return{status:'BLOCKED',reason:'FACTORY_INPUT_BATCH_LEDGER_MISMATCH',factoryId:fid,resourceId:need.resourceId,
+      required:need.required,tracked:need.tracked,unallocated:remaining};
+  }
   const outputEntries=Object.entries(recipe.outputs||{}).map(([outputId,ratio])=>({outputId,token:tok(outputId),ratio:num(ratio)}));
   if(!outputEntries.length||outputEntries.some(x=>!x.token||x.ratio===null||x.ratio<=0)||
     new Set(outputEntries.map(x=>x.token)).size!==outputEntries.length)
@@ -1954,14 +1974,9 @@ function executeMultiInputFactoryCycle(input={}){
   const sourceBatchIds=[],sourceSiteIds=[],consumedInputs=[];
   for(const need of needs){
     factoryStock[need.stockKey]=Math.max(0,need.available-need.required);
-    let remaining=need.required;
-    const ordered=lots.filter(l=>tok(l?.resourceId||l?.materialIdentity)===need.resourceId&&
-      Math.max(0,num(l?.remainingQuantity!=null?l.remainingQuantity:l?.quantity)||0)>1e-9)
-      .sort((a,b)=>(Number(a.createdTurn)||0)-(Number(b.createdTurn)||0));
-    for(const lot of ordered){
-      if(remaining<=1e-9)break;
+    for(const allocation of need.lotAllocations){
+      const lot=allocation.lot,take=allocation.quantity;
       const prior=Math.max(0,num(lot.remainingQuantity!=null?lot.remainingQuantity:lot.quantity)||0);
-      const take=Math.min(prior,remaining);if(take<=0)continue;
       lot.remainingQuantity=Math.max(0,prior-take);lot.status=lot.remainingQuantity>1e-9?'PARTIALLY_CONSUMED':'CONSUMED';
       lot.lastMovementType='MULTI_INPUT_PROCESSING_CONSUMPTION';lot.lastMovementTurn=turn();
       const lineage=Array.isArray(lot.sourceBatchIds)&&lot.sourceBatchIds.length?lot.sourceBatchIds:[lot.batchId].filter(Boolean);
@@ -1970,10 +1985,7 @@ function executeMultiInputFactoryCycle(input={}){
       (Array.isArray(lot.sourceSiteIds)?lot.sourceSiteIds:[]).filter(Boolean).forEach(x=>sourceSiteIds.push(String(x)));
       consumedInputs.push({batchId:lot.batchId||null,resourceId:need.resourceId,quantity:take,
         sourceBatchIds:lineage.filter(Boolean).map(String),stage:'FACTORY_INPUT'});
-      remaining-=take;
     }
-    if(remaining>1e-6)return{status:'BLOCKED',reason:'FACTORY_INPUT_BATCH_LEDGER_MISMATCH',factoryId:fid,resourceId:need.resourceId,unallocated:remaining};
-    if(remaining>0)factoryStock[need.resourceId]=Math.max(0,(num(factoryStock[need.resourceId])||0)+remaining);
   }
   const sequence=Math.max(0,Number(n.factoryRunSequence)||0)+1;n.factoryRunSequence=sequence;
   const transactionId='FACTORYRUN:'+cid+':'+fid+':T'+turn()+':'+sequence;
