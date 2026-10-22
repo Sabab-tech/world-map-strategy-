@@ -38,9 +38,9 @@ try {
       const output = path.join(outDir, path.relative(root, file));
       const transpiled = await fs.readFile(output, 'utf8');
       const label = path.relative(root, file).split(path.sep).join('/').replace(/'/g, "\\'");
-      const traceStart = `;if(window.OMEGA_ANDROID_DIAGNOSTICS===true)console.info('[OMEGA_BOOT_START] ${label}');\\n`;
-      const traceEnd = `\\n;if(window.OMEGA_ANDROID_DIAGNOSTICS===true)console.info('[OMEGA_BOOT_END] ${label}');\\n`;
-      const strictDirective = /^(\\s*["']use strict["'];\\s*)/.exec(transpiled);
+      const traceStart = `;if(window.OMEGA_ANDROID_DIAGNOSTICS===true)console.info('[OMEGA_BOOT_START] ${label}');\n`;
+      const traceEnd = `\n;if(window.OMEGA_ANDROID_DIAGNOSTICS===true)console.info('[OMEGA_BOOT_END] ${label}');\n`;
+      const strictDirective = /^(\s*["']use strict["'];\s*)/.exec(transpiled);
       const instrumented = strictDirective
         ? strictDirective[1] + traceStart + transpiled.slice(strictDirective[1].length) + traceEnd
         : traceStart + transpiled + traceEnd;
