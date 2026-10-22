@@ -1285,9 +1285,19 @@ function advanceShipments(c){
         const c=num(coefficient);
         return c&&c>0?Math.min(limit,Math.max(0,num(stocks[tok(resourceId)])||0)/c):0;
       },capacity);
-      const processing=maxProduction>1e-9
-        ?startFactoryProductionCycle({countryId:cid,factoryId:s.factoryId,resourceId:received.resourceId,quantity:maxProduction,unit:received.unitBridge.targetUnit})
-        :{status:'BLOCKED',reason:'FACTORY_INPUT_SHORTAGE',factoryId:s.factoryId};
+      const currentCycle=factoryCycleStore(cid).factoryProductionCycles[String(s.factoryId)];
+      const currentCycleInputIds=new Set((currentCycle?.sourceBatchIds||[]).map(String));
+      const receivedInputBatchId=String(received.inputBatchId||s.factoryInputBatchId||'');
+      const arrivalBelongsToCurrentCycle=!!receivedInputBatchId&&currentCycleInputIds.has(receivedInputBatchId);
+      const processing=factoryCycleActive(currentCycle)
+        ?arrivalBelongsToCurrentCycle
+          ?{status:currentCycle.status==='PAUSED'?'PAUSED':'IN_PROGRESS',cycleId:currentCycle.cycleId,
+            factoryId:String(s.factoryId),finishDate:currentCycle.finishDate,productionQuantity:currentCycle.productionQuantity,idempotent:true}
+          :{status:'BLOCKED',reason:'FACTORY_CYCLE_ALREADY_RUNNING',activeCycleId:currentCycle.cycleId,
+            factoryId:String(s.factoryId),finishDate:currentCycle.finishDate}
+        :maxProduction>1e-9
+          ?startFactoryProductionCycle({countryId:cid,factoryId:s.factoryId,resourceId:received.resourceId,quantity:maxProduction,unit:received.unitBridge.targetUnit})
+          :{status:'BLOCKED',reason:'FACTORY_INPUT_SHORTAGE',factoryId:s.factoryId};
       s.processingStatus=processing?.status==='IN_PROGRESS'?'IN_PROGRESS':
         processing?.status==='COMPLETED'?'PROCESSED':
         ['FACTORY_INPUT_SHORTAGE','FACTORY_INPUT_NOT_IN_RECIPE','FACTORY_INPUT_BATCH_LEDGER_MISMATCH'].includes(processing?.reason)?'AWAITING_INPUTS':'AWAITING_PROCESSING';
@@ -1407,9 +1417,15 @@ function advanceShipments(c){
     // output cannot be committed until the authoritative in-game calendar reaches finishDate.
     const receivedRecipe=recipeFor(rid,factory),productionMetrics=factoryProductionMetrics(factory,receivedRecipe);
     const existingCycle=factoryCycleStore(cid).factoryProductionCycles[String(s.factoryId)];
+    const cycleInputBatchIds=new Set((existingCycle?.sourceBatchIds||[]).map(String));
+    const arrivalInputBatchId=String(inputBatchId||s.factoryInputBatchId||'');
+    const arrivalBelongsToCurrentCycle=!!arrivalInputBatchId&&cycleInputBatchIds.has(arrivalInputBatchId);
     const processing=factoryCycleActive(existingCycle)
-      ?{status:existingCycle.status==='PAUSED'?'PAUSED':'IN_PROGRESS',cycleId:existingCycle.cycleId,
-        factoryId:String(s.factoryId),finishDate:existingCycle.finishDate,productionQuantity:existingCycle.productionQuantity,idempotent:true}
+      ?arrivalBelongsToCurrentCycle
+        ?{status:existingCycle.status==='PAUSED'?'PAUSED':'IN_PROGRESS',cycleId:existingCycle.cycleId,
+          factoryId:String(s.factoryId),finishDate:existingCycle.finishDate,productionQuantity:existingCycle.productionQuantity,idempotent:true}
+        :{status:'BLOCKED',reason:'FACTORY_CYCLE_ALREADY_RUNNING',activeCycleId:existingCycle.cycleId,
+          factoryId:String(s.factoryId),finishDate:existingCycle.finishDate}
       :productionMetrics.missingInputs.length
         ?{status:'BLOCKED',reason:'FACTORY_INPUT_SHORTAGE',factoryId:String(s.factoryId),
           missingInputs:clone(productionMetrics.missingInputs),capacity:productionMetrics.capacity}
@@ -2679,15 +2695,10 @@ function completeFactoryProductionCycle(countryId,asset,cycle,result){
   asset.activeProductionCycleId=null;asset.lastProductionCycleId=cycle.cycleId;asset.lastProductionCycleCompletedDate=cycle.actualCompletionDate;
   factorySetProductionHealth(asset,cycle.productivityPct<99.999?'REDUCED':'READY',actualProduction,cycle.capacityPerDay,{cycleId:cycle.cycleId});
   n.factoryProductionCycleHistory.push(clone(cycle));n.factoryProductionCycleHistory=n.factoryProductionCycleHistory.slice(-MAX_EVENTS);
-  // The actual processing inputs may be newly created factory-input lots, while the
-  // originating mine batch is represented by a shipment whose processingTransactionId
-  // was set to this cycle ID on receipt. Join both identities so site-flow provenance
-  // completes even when the processor consumes an intermediate factory-input batch.
-  const cycleLinkedSourceBatches=[...n.shipments,...n.deliveries]
-    .filter(row=>String(row?.factoryId||'')===String(cycle.factoryId)&&
-      String(row?.processingTransactionId||'')===String(cycle.cycleId))
-    .map(row=>String(row?.batchId||'').trim()).filter(Boolean);
-  const roots=[...new Set([...(result.sourceBatchIds||[]).map(String),...cycleLinkedSourceBatches].filter(Boolean))];
+  // Batch lineage from the committed transaction is the only source of truth for
+  // which sites and shipments were consumed by this cycle. Do not join by factory/cycle
+  // ID alone: later arrivals at a busy factory must remain queued for the next cycle.
+  const roots=[...new Set((result.sourceBatchIds||[]).map(String).filter(Boolean))];
   for(const sourceBatchId of roots){
     updateSiteFlow(cid,sourceBatchId,row=>{
       row.processingTransactionIds=[...new Set([...(row.processingTransactionIds||[]),String(result.transactionId)])];
@@ -2713,20 +2724,6 @@ function completeFactoryProductionCycle(countryId,asset,cycle,result){
     emit('OMEGA_RESOURCE_SITE_FLOW_PROCESSED',cid,{siteId:siteFlowRows(cid).find(row=>String(row.batchId)===sourceBatchId)?.siteId||null,
       batchId:sourceBatchId,resourceId:cycle.primaryInputResourceId,transactionId:result.transactionId,
       createdBatchIds:result.createdBatchIds||[],outputQuantities:result.outputQuantities||{},turn:turn(),status:'PROCESSED'});
-  }
-  // Close the originating delivery/shipment records when the cycle they started commits.
-  // The scheduler cycle ID is stored as processingTransactionId while production is in progress.
-  for(const rows of [n.shipments,n.deliveries]){
-    if(!Array.isArray(rows))continue;
-    for(const row of rows){
-      if(String(row?.factoryId||'')!==String(cycle.factoryId)||String(row?.processingTransactionId||'')!==String(cycle.cycleId))continue;
-      row.processingStatus='PROCESSED';
-      row.processingTransactionId=result.transactionId;
-      row.processing=clone(result);
-      row.productionCycleId=cycle.cycleId;
-      row.processedTurn=turn();
-      row.createdBatchIds=[...new Set([...(row.createdBatchIds||[]),...(result.createdBatchIds||[])])];
-    }
   }
   emit('OMEGA_FACTORY_PRODUCTION_CYCLE_COMPLETED',cid,{cycleId:cycle.cycleId,transactionId:result.transactionId,
     factoryId:cycle.factoryId,outputQuantities:cycle.outputQuantities,finishDate:cycle.finishDate,actualCompletionDate:cycle.actualCompletionDate});
