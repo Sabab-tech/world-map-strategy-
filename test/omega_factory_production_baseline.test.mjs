@@ -145,7 +145,7 @@ test('multi-input factory consumes every required input once and preserves mine-
     const outputBatch = resource.batches.find(row => row.processId === run.transactionId && row.resourceId === resourceId);
     assert.ok(outputBatch, resourceId + ': finished goods batch must exist');
     assert.equal(resource.inventoryLots[outputBatch.batchId].remainingQuantity, quantity);
-    assert.equal(outputBatch.unit, 'SIMULATION_TONNE_EQUIVALENT');
+    assert.equal(outputBatch.unit, 'SIMULATION_RESOURCE_UNIT');
   }
   const outputCountBeforeRetry = resource.batches.filter(row => row.processId === run.transactionId).length;
   const inputSnapshot = JSON.stringify(asset.inputInventory);
@@ -202,6 +202,77 @@ test('tracked input shortage blocks before any component is consumed', () => {
   assert.equal(JSON.stringify(asset.inputInventory), stockBefore);
   assert.equal(JSON.stringify(asset.inputBatchLots), lotsBefore);
   assert.equal((context.Game.state.resource.BGD.batches || []).length, 0);
+});
+
+test('processed mine-derived batches route to a downstream factory and reconcile a full multi-input cycle', () => {
+  const { context, api } = makeRuntime();
+  const assets = [makeSteelAsset({ inputInventory: {}, inputBatchLots: [] })];
+  context.Game.state.economy.BGD = { productionAssets: assets };
+  const sources = [
+    { batchId: 'OUTPUT-IRON', resourceId: 'IRON_CONCENTRATE', quantity: 60, sourceBatchIds: ['MINE-IRON-001'], sourceSiteIds: ['SITE-IRON'] },
+    { batchId: 'OUTPUT-COAL', resourceId: 'COAL_CONCENTRATE', quantity: 20, sourceBatchIds: ['MINE-COAL-001'], sourceSiteIds: ['SITE-COAL'] },
+    { batchId: 'OUTPUT-LIME', resourceId: 'LIMESTONE', quantity: 10, sourceBatchIds: ['MINE-LIME-001'], sourceSiteIds: ['SITE-LIME'] },
+    { batchId: 'OUTPUT-COPPER', resourceId: 'COPPER_CONCENTRATE', quantity: 10, sourceBatchIds: ['MINE-COPPER-001'], sourceSiteIds: ['SITE-COPPER'] }
+  ];
+  const availableByResource = {}, inventory = {}, inventoryLots = {};
+  for (const source of sources) {
+    availableByResource[source.resourceId] = source.quantity;
+    inventory[source.resourceId] = source.quantity;
+    source.remainingQuantity = source.quantity;
+    source.unit = 'TONNES';
+    source.stage = 'FINISHED';
+    source.countryId = 'BGD';
+    source.sourceFactoryId = 'FAC-UPSTREAM-' + source.resourceId;
+    source.warehouseId = 'WH-BGD-PROCESSED';
+    source.locationNodeKey = 'WAREHOUSE:BGD:PROCESSED';
+    source.createdTurn = 1;
+    source.provenance = { authority: 'SIMULATED_UPSTREAM_PROCESSING', simulationOnly: true };
+    inventoryLots[source.batchId] = { ...source, status: 'AVAILABLE', sourceBatchIds: [...source.sourceBatchIds] };
+  }
+  context.Game.state.resource.BGD = {
+    inventory, batches: sources,
+    inventoryLots,
+    processedWarehouse: { warehouseId: 'WH-BGD-PROCESSED', countryId: 'BGD',
+      availableByResource, reservedByResource: {}, storedBatchIds: sources.map(row => row.batchId), receipts: [] }
+  };
+
+  const scheduled = api.advanceShipments('BGD');
+  assert.equal(scheduled.status, 'ADVANCED');
+  const network = context.Game.state.resource.BGD.industrialNetwork;
+  const shipments = network.shipments.filter(row => row.shipmentType === 'FACTORY_INPUT');
+  assert.equal(shipments.length, 4, 'each required ingredient must receive an individual tracked shipment');
+  assert.ok(shipments.every(row => row.status === 'IN_TRANSIT'));
+  for (const shipment of shipments) {
+    assert.equal(shipment.countryId, 'BGD');
+    assert.equal(shipment.targetUnit, 'SIMULATION_RESOURCE_UNIT');
+    assert.equal(shipment.unitBridge.simulationOnly, true);
+    assert.equal(shipment.quantity, shipment.targetQuantity, 'the declared bridge preserves numeric quantity by explicit policy');
+  }
+
+  context.Game.state.simulation.turn += 1;
+  const delivered = api.advanceShipments('BGD');
+  assert.equal(delivered.delivered, 4, JSON.stringify(delivered));
+  const factory = context.Game.state.economy.BGD.productionAssets[0];
+  assert.deepEqual(
+    ['iron_concentrate', 'coal_concentrate', 'limestone', 'copper_concentrate'].map(id => factory.inputInventory[id]),
+    [0, 0, 0, 0]
+  );
+  assert.ok(network.shipments.filter(row => row.shipmentType === 'FACTORY_INPUT')
+    .every(row => row.status === 'DELIVERED' && row.processingStatus === 'PROCESSED'));
+  const state = context.Game.state.resource.BGD;
+  const steelOutput = state.batches.find(row => row.resourceId === 'STEEL' && row.stage === 'FINISHED');
+  assert.ok(steelOutput, 'downstream cycle must create steel as a finished batch');
+  assert.equal(steelOutput.quantity, 72);
+  assert.equal(steelOutput.unit, 'SIMULATION_RESOURCE_UNIT');
+  assert.ok(steelOutput.sourceBatchIds.includes('MINE-IRON-001'));
+  assert.ok(steelOutput.sourceBatchIds.includes('MINE-COAL-001'));
+  assert.ok(steelOutput.sourceSiteIds.includes('SITE-IRON'));
+  assert.ok(steelOutput.sourceSiteIds.includes('SITE-COAL'));
+  assert.equal(state.processedWarehouse.availableByResource.STEEL, 72);
+  for (const source of sources) {
+    assert.equal(source.remainingQuantity, 0, source.batchId + ': delivered source batch must be debited once');
+    assert.equal(state.inventoryLots[source.batchId].remainingQuantity, 0, source.batchId + ': inventory lot must reconcile');
+  }
 });
 
 test('unknown generic production is not allowed to create a factory project without explicit opt-in', () => {
