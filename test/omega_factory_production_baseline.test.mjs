@@ -745,14 +745,14 @@ test('factory production scheduler waits for cycle time and posts output only on
   assert.equal(start.startDate, '2015-01-01');
   assert.equal(start.finishDate, '2015-01-03');
   assert.equal(start.productivityPct, 50);
-  assert.equal(context.Game.state.resource.BGD.batches.length, 0, 'no output should exist when the cycle only starts');
+  assert.equal((context.Game.state.resource.BGD.batches || []).length, 0, 'no output should exist when the cycle only starts');
   const sameDay = api.processPendingFactoryInputs('BGD');
   assert.equal(sameDay.completedCount, 0);
-  assert.equal(context.Game.state.resource.BGD.batches.length, 0);
+  assert.equal((context.Game.state.resource.BGD.batches || []).length, 0);
   context.Game.state.simulation.turn = 2;
   context.Game.state.simulation.date = '2015-01-02';
   api.processPendingFactoryInputs('BGD');
-  assert.equal(context.Game.state.resource.BGD.batches.length, 0);
+  assert.equal((context.Game.state.resource.BGD.batches || []).length, 0);
   context.Game.state.simulation.turn = 3;
   context.Game.state.simulation.date = '2015-01-03';
   const done = api.processPendingFactoryInputs('BGD');
@@ -793,7 +793,7 @@ test('warehouse feeder transfers real tracked stock and schedules proportional p
   assert.equal(asset.inputInventory.iron_concentrate, 24);
   assert.equal(r.batches.find(x => x.batchId === 'WH-BATCH-1').remainingQuantity, 0);
   assert.equal(r.processedWarehouse, undefined);
-  assert.equal(r.batches.filter(x => x.stage === 'FACTORY_INPUT').length, 4);
+  assert.equal(asset.inputBatchLots.filter(x => x.stage === 'FACTORY_INPUT').length, 4);
   assert.equal(asset.productionHealth.status, 'REDUCED');
   assert.equal(asset.productionHealth.productivityPct, 40);
   assert.equal(r.batches.some(x => Object.keys(x).includes('STEEL')), false);
