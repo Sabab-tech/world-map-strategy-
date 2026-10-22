@@ -5544,7 +5544,7 @@
           "qualityControl": 12,
           "administrationAndSupport": 12,
           "healthSafetyAndEnvironmental": 10,
-          "otherDirectFactoryServices": null
+          "otherDirectFactoryServices": 30
         },
         "jobBreakdownAuthority": "SIMULATED_FACTORY_ROLE_DISTRIBUTION_V1"
       },
@@ -5607,7 +5607,7 @@
           "qualityControl": 8,
           "administrationAndSupport": 8,
           "healthSafetyAndEnvironmental": 6,
-          "otherDirectFactoryServices": null
+          "otherDirectFactoryServices": 20
         },
         "jobBreakdownAuthority": "SIMULATED_FACTORY_ROLE_DISTRIBUTION_V1"
       },
