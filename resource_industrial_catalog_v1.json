@@ -2412,7 +2412,7 @@
         "COPPER_CATHODE": 13
       },
       "capacityPerDay": 250,
-      "capacityUnit": "SIMULATION_PRODUCTION_UNITS_PER_DAY",
+      "capacityUnit": "MACHINE_UNITS_PER_DAY",
       "operatingWorkers": 550,
       "electricityMWhPerDay": 340,
       "waterM3PerDay": 480,
@@ -2439,7 +2439,7 @@
         "COPPER_CATHODE": 15
       },
       "capacityPerDay": 260,
-      "capacityUnit": "SIMULATION_PRODUCTION_UNITS_PER_DAY",
+      "capacityUnit": "EQUIPMENT_UNITS_PER_DAY",
       "operatingWorkers": 500,
       "electricityMWhPerDay": 350,
       "waterM3PerDay": 560,
@@ -2520,7 +2520,7 @@
         "COPPER_CATHODE": 26
       },
       "capacityPerDay": 420,
-      "capacityUnit": "SIMULATION_PRODUCTION_UNITS_PER_DAY",
+      "capacityUnit": "VEHICLES_PER_DAY",
       "operatingWorkers": 690,
       "electricityMWhPerDay": 430,
       "waterM3PerDay": 820,
@@ -2545,7 +2545,7 @@
         "COPPER_CATHODE": 34
       },
       "capacityPerDay": 260,
-      "capacityUnit": "SIMULATION_PRODUCTION_UNITS_PER_DAY",
+      "capacityUnit": "TRANSPORT_EQUIPMENT_UNITS_PER_DAY",
       "operatingWorkers": 920,
       "electricityMWhPerDay": 480,
       "waterM3PerDay": 740,
@@ -2570,7 +2570,7 @@
         "COPPER_CATHODE": 76
       },
       "capacityPerDay": 80,
-      "capacityUnit": "SIMULATION_PRODUCTION_UNITS_PER_DAY",
+      "capacityUnit": "AEROSPACE_UNITS_PER_DAY",
       "operatingWorkers": 650,
       "electricityMWhPerDay": 520,
       "waterM3PerDay": 1450,
@@ -2622,7 +2622,7 @@
         "COPPER_CATHODE": 38
       },
       "capacityPerDay": 240,
-      "capacityUnit": "SIMULATION_PRODUCTION_UNITS_PER_DAY",
+      "capacityUnit": "EQUIPMENT_UNITS_PER_DAY",
       "operatingWorkers": 580,
       "electricityMWhPerDay": 400,
       "waterM3PerDay": 680,
@@ -2935,7 +2935,7 @@
         "INDUSTRIAL_GASES": 0.05
       },
       "outputs": {
-        "MACHINE_TOOLS": 0.9,
+        "MACHINE_TOOLS": 1,
         "MACHINING_SCRAP": 0.1
       },
       "cycleDays": 3,
@@ -2946,9 +2946,11 @@
         "INDUSTRIAL_GASES": "TONNES"
       },
       "outputUnits": {
-        "MACHINE_TOOLS": "TONNES",
+        "MACHINE_TOOLS": "UNITS",
         "MACHINING_SCRAP": "TONNES"
-      }
+      },
+      "discreteProduction": true,
+      "productionUnit": "MACHINE_UNITS"
     },
     "ELECTRICAL_GRID_EQUIPMENT_FACTORY": {
       "recipeId": "ELECTRICAL_GRID_EQUIPMENT_FACTORY",
@@ -2962,7 +2964,7 @@
         "ELECTRONIC_COMPONENTS": 0.2
       },
       "outputs": {
-        "GRID_EQUIPMENT": 0.94,
+        "GRID_EQUIPMENT": 1,
         "MANUFACTURING_SCRAP": 0.06
       },
       "cycleDays": 3,
@@ -2974,9 +2976,11 @@
         "ELECTRONIC_COMPONENTS": "TONNES"
       },
       "outputUnits": {
-        "GRID_EQUIPMENT": "TONNES",
+        "GRID_EQUIPMENT": "UNITS",
         "MANUFACTURING_SCRAP": "TONNES"
-      }
+      },
+      "discreteProduction": true,
+      "productionUnit": "EQUIPMENT_UNITS"
     },
     "ELECTRONICS_SEMICONDUCTOR_FAB": {
       "recipeId": "ELECTRONICS_SEMICONDUCTOR_FAB",
@@ -3052,7 +3056,7 @@
         "RUBBER_PRODUCTS": 0.1
       },
       "outputs": {
-        "VEHICLES": 0.94,
+        "VEHICLES": 1,
         "VEHICLE_SCRAP": 0.06
       },
       "cycleDays": 3,
@@ -3068,7 +3072,9 @@
       "outputUnits": {
         "VEHICLES": "UNITS",
         "VEHICLE_SCRAP": "TONNES"
-      }
+      },
+      "discreteProduction": true,
+      "productionUnit": "VEHICLE_UNITS"
     },
     "SHIP_RAIL_EQUIPMENT_FACTORY": {
       "recipeId": "SHIP_RAIL_EQUIPMENT_FACTORY",
@@ -3082,21 +3088,23 @@
         "POLYMER_RESIN": 0.05
       },
       "outputs": {
-        "TRANSPORT_EQUIPMENT": 0.94,
+        "TRANSPORT_EQUIPMENT": 1,
         "MANUFACTURING_SCRAP": 0.06
       },
       "cycleDays": 4,
       "inputUnits": {
         "STEEL_PRODUCTS": "TONNES",
-        "GRID_EQUIPMENT": "TONNES",
+        "GRID_EQUIPMENT": "UNITS",
         "MACHINE_TOOLS": "TONNES",
         "ELECTRONIC_COMPONENTS": "TONNES",
         "POLYMER_RESIN": "TONNES"
       },
       "outputUnits": {
-        "TRANSPORT_EQUIPMENT": "TONNES",
+        "TRANSPORT_EQUIPMENT": "UNITS",
         "MANUFACTURING_SCRAP": "TONNES"
-      }
+      },
+      "discreteProduction": true,
+      "productionUnit": "TRANSPORT_EQUIPMENT_UNITS"
     },
     "AEROSPACE_FACTORY": {
       "recipeId": "AEROSPACE_FACTORY",
@@ -3111,7 +3119,7 @@
         "MACHINE_TOOLS": 0.05
       },
       "outputs": {
-        "AEROSPACE_COMPONENTS": 0.9,
+        "AEROSPACE_COMPONENTS": 1,
         "AEROSPACE_SCRAP": 0.1
       },
       "cycleDays": 5,
@@ -3121,12 +3129,14 @@
         "TITANIUM_FEED": "TONNES",
         "ELECTRONIC_COMPONENTS": "TONNES",
         "POLYMER_RESIN": "TONNES",
-        "MACHINE_TOOLS": "TONNES"
+        "MACHINE_TOOLS": "UNITS"
       },
       "outputUnits": {
-        "AEROSPACE_COMPONENTS": "TONNES",
+        "AEROSPACE_COMPONENTS": "UNITS",
         "AEROSPACE_SCRAP": "TONNES"
-      }
+      },
+      "discreteProduction": true,
+      "productionUnit": "AEROSPACE_UNITS"
     },
     "PHARMACEUTICAL_MEDICAL_FACTORY": {
       "recipeId": "PHARMACEUTICAL_MEDICAL_FACTORY",
@@ -3170,21 +3180,23 @@
         "POLYMER_RESIN": 0.1
       },
       "outputs": {
-        "DEFENCE_EQUIPMENT": 0.94,
+        "DEFENCE_EQUIPMENT": 1,
         "MANUFACTURING_SCRAP": 0.06
       },
       "cycleDays": 3,
       "inputUnits": {
         "STEEL_PRODUCTS": "TONNES",
-        "GRID_EQUIPMENT": "TONNES",
+        "GRID_EQUIPMENT": "UNITS",
         "TRANSPORT_EQUIPMENT": "TONNES",
         "ELECTRONIC_COMPONENTS": "TONNES",
         "POLYMER_RESIN": "TONNES"
       },
       "outputUnits": {
-        "DEFENCE_EQUIPMENT": "TONNES",
+        "DEFENCE_EQUIPMENT": "UNITS",
         "MANUFACTURING_SCRAP": "TONNES"
-      }
+      },
+      "discreteProduction": true,
+      "productionUnit": "EQUIPMENT_UNITS"
     },
     "RECYCLING_WASTE_PROCESSING_PLANT": {
       "recipeId": "RECYCLING_WASTE_PROCESSING_PLANT",
@@ -3353,9 +3365,9 @@
     "TEXTILE_SCRAP": "TONNES",
     "NONFERROUS_METAL_PRODUCTS": "TONNES",
     "ELECTRONIC_COMPONENTS": "TONNES",
-    "MACHINE_TOOLS": "TONNES",
+    "MACHINE_TOOLS": "UNITS",
     "MACHINING_SCRAP": "TONNES",
-    "GRID_EQUIPMENT": "TONNES",
+    "GRID_EQUIPMENT": "UNITS",
     "MANUFACTURING_SCRAP": "TONNES",
     "ELECTRONIC_GRADE_SILICON": "TONNES",
     "SEMICONDUCTOR_PROCESS_WASTE": "TONNES",
@@ -3364,12 +3376,12 @@
     "RUBBER_PRODUCTS": "TONNES",
     "VEHICLES": "UNITS",
     "VEHICLE_SCRAP": "TONNES",
-    "TRANSPORT_EQUIPMENT": "TONNES",
-    "AEROSPACE_COMPONENTS": "TONNES",
+    "TRANSPORT_EQUIPMENT": "UNITS",
+    "AEROSPACE_COMPONENTS": "UNITS",
     "AEROSPACE_SCRAP": "TONNES",
     "PHARMACEUTICAL_PRODUCTS": "TONNES",
     "PHARMACEUTICAL_WASTE": "TONNES",
-    "DEFENCE_EQUIPMENT": "TONNES",
+    "DEFENCE_EQUIPMENT": "UNITS",
     "MIXED_RECYCLABLES": "TONNES",
     "RECOVERED_METALS": "TONNES",
     "RECOVERED_PLASTICS": "TONNES",
