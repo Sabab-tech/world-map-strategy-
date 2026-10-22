@@ -75,16 +75,7 @@ jobs:
           script: |
             adb wait-for-device
             adb shell getprop ro.build.version.sdk
-            set +e
-            gradle -p android connectedDebugAndroidTest --no-daemon
-            test_status=$?
-            if [ "$test_status" -ne 0 ]; then
-              mkdir -p android/app/build/reports/omega-offline-smoke
-              adb logcat -d -t 8000 > android/app/build/reports/omega-offline-smoke/logcat.txt 2>&1 || true
-              find android/app/build/outputs/androidTest-results android/app/build/reports/androidTests -type f -name '*.xml' -print 2>/dev/null || true
-              find android/app/build/outputs/androidTest-results android/app/build/reports/androidTests -type f -name '*.xml' -exec cat {} \; 2>/dev/null || true
-            fi
-            exit "$test_status"
+            bash -c 'set +e; gradle -p android connectedDebugAndroidTest --no-daemon; test_status=$?; if [ "$test_status" -ne 0 ]; then mkdir -p android/app/build/reports/omega-offline-smoke; adb logcat -d -t 8000 > android/app/build/reports/omega-offline-smoke/logcat.txt 2>&1 || true; find android/app/build/outputs/androidTest-results android/app/build/reports/androidTests -type f -name "*.xml" -print 2>/dev/null || true; find android/app/build/outputs/androidTest-results android/app/build/reports/androidTests -type f -name "*.xml" -exec cat {} \; 2>/dev/null || true; fi; exit "$test_status"'
       - name: Print Android instrumentation diagnostics on failure
         if: failure()
         shell: bash
