@@ -394,6 +394,9 @@ test('processed mine-derived batches route to a downstream factory and reconcile
   const network = context.Game.state.resource.BGD.industrialNetwork;
   const shipments = network.shipments.filter(row => row.shipmentType === 'FACTORY_INPUT');
   assert.equal(shipments.length, 4, 'each required ingredient must receive an individual tracked shipment');
+  const transportLedger = context.Game.state.resource.BGD.industrialNetwork.transportCapacityLedger.turns['1'];
+  assert.equal(transportLedger.shipments.length, 4, 'downstream factory-input transfers must reserve shared transport capacity');
+  assert.ok(transportLedger.usedByMode.truck > 0, 'downstream factory-input legs must debit truck capacity');
   assert.ok(shipments.every(row => row.status === 'IN_TRANSIT'));
   for (const shipment of shipments) {
     assert.equal(shipment.countryId, 'BGD');
