@@ -81,77 +81,19 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot-load -no-snapshot-save -noaudio -no-boot-anim -camera-back none -camera-front none -memory 2048 -cores 2
           disable-animations: true
           script: |
-            # The emulator runner invokes this through /usr/bin/sh (dash); do not use pipefail.
-            set -eu
-
-            wait_for_api28() {
-              poll=1
-              while [ "$poll" -le 45 ]; do
-                state="$(adb get-state 2>/dev/null | tr -d '\r' || true)"
-                if [ "$state" = "device" ]; then
-                  boot="$(timeout 5s adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r' || true)"
-                  sdk="$(timeout 5s adb shell getprop ro.build.version.sdk 2>/dev/null | tr -d '\r' || true)"
-                  if [ "$boot" = "1" ] && [ "$sdk" = "28" ]; then
-                    echo "API 28 emulator is online and fully booted (poll $poll)."
-                    return 0
-                  fi
-                elif [ "$state" = "offline" ]; then
-                  adb reconnect offline >/dev/null 2>&1 || true
-                fi
-                sleep 2
-                poll=$((poll + 1))
-              done
-              echo "ERROR: emulator did not become a fully booted API 28 device." >&2
-              adb devices -l >&2 || true
-              return 1
-            }
-
-            wait_for_api28
-            adb shell getprop ro.build.version.sdk
-
-            attempt=1
-            max_attempts=3
-            while [ "$attempt" -le "$max_attempts" ]; do
-              log_file="/tmp/omega-offline-gameplay-smoke-${attempt}.log"
-              echo "Offline gameplay instrumentation attempt ${attempt}/${max_attempts}"
-
-              if gradle -p android connectedDebugAndroidTest --no-daemon >"$log_file" 2>&1; then
-                cat "$log_file"
-                echo "PASS: API 28 offline gameplay instrumentation completed."
-                exit 0
-              else
-                test_exit=$?
-                cat "$log_file"
-                mkdir -p android/app/build/reports/omega-offline-smoke
-                adb logcat -d -t 8000 > "android/app/build/reports/omega-offline-smoke/logcat-${attempt}.txt" 2>&1 || true
-              fi
-
-              # Retry only when ADB/emulator transport prevented test discovery.
-              # Actual instrumentation assertions fail immediately without retry.
-              if ! grep -Eiq 'No compatible devices connected|Unknown API Level|ShellCommandUnresponsiveException|adb: device offline|device offline' "$log_file"; then
-                echo "ERROR: instrumentation failed without an emulator/ADB discovery error; not retrying." >&2
-                exit "$test_exit"
-              fi
-
-              if [ "$attempt" -ge "$max_attempts" ]; then
-                echo "ERROR: emulator/ADB discovery failed after ${max_attempts} attempts." >&2
-                adb devices -l >&2 || true
-                exit "$test_exit"
-              fi
-
-              echo "Transient ADB failure detected; restarting ADB and rechecking API 28 boot state."
-              adb kill-server >/dev/null 2>&1 || true
-              adb start-server
-              adb reconnect offline >/dev/null 2>&1 || true
-              wait_for_api28 || exit "$test_exit"
-              attempt=$((attempt + 1))
-            done
+            bash -c "$(printf '%s' 'IyBUaGUgZW11bGF0b3IgcnVubmVyIGludm9rZXMgdGhpcyB0aHJvdWdoIC91c3IvYmluL3NoIChkYXNoKTsgZG8gbm90IHVzZSBwaXBlZmFpbC4Kc2V0IC1ldQoKd2FpdF9mb3JfYXBpMjgoKSB7CiAgcG9sbD0xCiAgd2hpbGUgWyAiJHBvbGwiIC1sZSA0NSBdOyBkbwogICAgc3RhdGU9IiQoYWRiIGdldC1zdGF0ZSAyPi9kZXYvbnVsbCB8IHRyIC1kICdccicgfHwgdHJ1ZSkiCiAgICBpZiBbICIkc3RhdGUiID0gImRldmljZSIgXTsgdGhlbgogICAgICBib290PSIkKHRpbWVvdXQgNXMgYWRiIHNoZWxsIGdldHByb3Agc3lzLmJvb3RfY29tcGxldGVkIDI+L2Rldi9udWxsIHwgdHIgLWQgJ1xyJyB8fCB0cnVlKSIKICAgICAgc2RrPSIkKHRpbWVvdXQgNXMgYWRiIHNoZWxsIGdldHByb3Agcm8uYnVpbGQudmVyc2lvbi5zZGsgMj4vZGV2L251bGwgfCB0ciAtZCAnXHInIHx8IHRydWUpIgogICAgICBpZiBbICIkYm9vdCIgPSAiMSIgXSAmJiBbICIkc2RrIiA9ICIyOCIgXTsgdGhlbgogICAgICAgIGVjaG8gIkFQSSAyOCBlbXVsYXRvciBpcyBvbmxpbmUgYW5kIGZ1bGx5IGJvb3RlZCAocG9sbCAkcG9sbCkuIgogICAgICAgIHJldHVybiAwCiAgICAgIGZpCiAgICBlbGlmIFsgIiRzdGF0ZSIgPSAib2ZmbGluZSIgXTsgdGhlbgogICAgICBhZGIgcmVjb25uZWN0IG9mZmxpbmUgPi9kZXYvbnVsbCAyPiYxIHx8IHRydWUKICAgIGZpCiAgICBzbGVlcCAyCiAgICBwb2xsPSQoKHBvbGwgKyAxKSkKICBkb25lCiAgZWNobyAiRVJST1I6IGVtdWxhdG9yIGRpZCBub3QgYmVjb21lIGEgZnVsbHkgYm9vdGVkIEFQSSAyOCBkZXZpY2UuIiA+JjIKICBhZGIgZGV2aWNlcyAtbCA+JjIgfHwgdHJ1ZQogIHJldHVybiAxCn0KCndhaXRfZm9yX2FwaTI4CmFkYiBzaGVsbCBnZXRwcm9wIHJvLmJ1aWxkLnZlcnNpb24uc2RrCgphdHRlbXB0PTEKbWF4X2F0dGVtcHRzPTMKd2hpbGUgWyAiJGF0dGVtcHQiIC1sZSAiJG1heF9hdHRlbXB0cyIgXTsgZG8KICBsb2dfZmlsZT0iL3RtcC9vbWVnYS1vZmZsaW5lLWdhbWVwbGF5LXNtb2tlLSR7YXR0ZW1wdH0ubG9nIgogIGVjaG8gIk9mZmxpbmUgZ2FtZXBsYXkgaW5zdHJ1bWVudGF0aW9uIGF0dGVtcHQgJHthdHRlbXB0fS8ke21heF9hdHRlbXB0c30iCgogIGlmIGdyYWRsZSAtcCBhbmRyb2lkIGNvbm5lY3RlZERlYnVnQW5kcm9pZFRlc3QgLS1uby1kYWVtb24gPiIkbG9nX2ZpbGUiIDI+JjE7IHRoZW4KICAgIGNhdCAiJGxvZ19maWxlIgogICAgZWNobyAiUEFTUzogQVBJIDI4IG9mZmxpbmUgZ2FtZXBsYXkgaW5zdHJ1bWVudGF0aW9uIGNvbXBsZXRlZC4iCiAgICBleGl0IDAKICBlbHNlCiAgICB0ZXN0X2V4aXQ9JD8KICAgIGNhdCAiJGxvZ19maWxlIgogICAgbWtkaXIgLXAgYW5kcm9pZC9hcHAvYnVpbGQvcmVwb3J0cy9vbWVnYS1vZmZsaW5lLXNtb2tlCiAgICBjcCAiJGxvZ19maWxlIiAiYW5kcm9pZC9hcHAvYnVpbGQvcmVwb3J0cy9vbWVnYS1vZmZsaW5lLXNtb2tlL2dyYWRsZS0ke2F0dGVtcHR9LmxvZyIgfHwgdHJ1ZQogICAgYWRiIGxvZ2NhdCAtZCAtdCA4MDAwID4gImFuZHJvaWQvYXBwL2J1aWxkL3JlcG9ydHMvb21lZ2Etb2ZmbGluZS1zbW9rZS9sb2djYXQtJHthdHRlbXB0fS50eHQiIDI+JjEgfHwgdHJ1ZQogIGZpCgogICMgUmV0cnkgb25seSB3aGVuIEFEQi9lbXVsYXRvciB0cmFuc3BvcnQgcHJldmVudGVkIHRlc3QgZGlzY292ZXJ5LgogICMgQWN0dWFsIGluc3RydW1lbnRhdGlvbiBhc3NlcnRpb25zIGZhaWwgaW1tZWRpYXRlbHkgd2l0aG91dCByZXRyeS4KICBpZiAhIGdyZXAgLUVpcSAnTm8gY29tcGF0aWJsZSBkZXZpY2VzIGNvbm5lY3RlZHxVbmtub3duIEFQSSBMZXZlbHxTaGVsbENvbW1hbmRVbnJlc3BvbnNpdmVFeGNlcHRpb258YWRiOiBkZXZpY2Ugb2ZmbGluZXxkZXZpY2Ugb2ZmbGluZScgIiRsb2dfZmlsZSI7IHRoZW4KICAgIGVjaG8gIkVSUk9SOiBpbnN0cnVtZW50YXRpb24gZmFpbGVkIHdpdGhvdXQgYW4gZW11bGF0b3IvQURCIGRpc2NvdmVyeSBlcnJvcjsgbm90IHJldHJ5aW5nLiIgPiYyCiAgICBleGl0ICIkdGVzdF9leGl0IgogIGZpCgogIGlmIFsgIiRhdHRlbXB0IiAtZ2UgIiRtYXhfYXR0ZW1wdHMiIF07IHRoZW4KICAgIGVjaG8gIkVSUk9SOiBlbXVsYXRvci9BREIgZGlzY292ZXJ5IGZhaWxlZCBhZnRlciAke21heF9hdHRlbXB0c30gYXR0ZW1wdHMuIiA+JjIKICAgIGFkYiBkZXZpY2VzIC1sID4mMiB8fCB0cnVlCiAgICBleGl0ICIkdGVzdF9leGl0IgogIGZpCgogIGVjaG8gIlRyYW5zaWVudCBBREIgZmFpbHVyZSBkZXRlY3RlZDsgcmVzdGFydGluZyBBREIgYW5kIHJlY2hlY2tpbmcgQVBJIDI4IGJvb3Qgc3RhdGUuIgogIGFkYiBraWxsLXNlcnZlciA+L2Rldi9udWxsIDI+JjEgfHwgdHJ1ZQogIGFkYiBzdGFydC1zZXJ2ZXIKICBhZGIgcmVjb25uZWN0IG9mZmxpbmUgPi9kZXYvbnVsbCAyPiYxIHx8IHRydWUKICB3YWl0X2Zvcl9hcGkyOCB8fCBleGl0ICIkdGVzdF9leGl0IgogIGF0dGVtcHQ9JCgoYXR0ZW1wdCArIDEpKQpkb25l' | base64 -d)"
 
       - name: Print Android instrumentation diagnostics on failure
         if: failure()
         shell: bash
         run: |
-          find android/app/build/outputs/androidTest-results/connected/debug android/app/build/reports/androidTests/connected/debug -type f -name '*.xml' -print -exec cat {} \\; 2>/dev/null || true
+          for report_dir in android/app/build/outputs/androidTest-results/connected/debug android/app/build/reports/androidTests/connected/debug; do
+            [ -d "$report_dir" ] || continue
+            while IFS= read -r report_file; do
+              echo "===== $report_file ====="
+              cat "$report_file"
+            done < <(find "$report_dir" -type f -name "*.xml" -print 2>/dev/null)
+          done
           for log_file in /tmp/omega-offline-gameplay-smoke-*.log; do
             [ -f "$log_file" ] || continue
             echo "===== $log_file ====="
@@ -171,4 +113,3 @@ jobs:
             android/app/build/outputs/androidTest-results/connected/debug/**
             android/app/build/reports/androidTests/connected/debug/**
             android/app/build/reports/omega-offline-smoke/**
-            /tmp/omega-offline-gameplay-smoke-*.log
