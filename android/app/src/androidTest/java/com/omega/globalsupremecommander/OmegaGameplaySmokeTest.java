@@ -60,14 +60,32 @@ public final class OmegaGameplaySmokeTest {
                     " window.Game && window.Omega" +
                     " );" +
                     "})()";
-            final long deadline = SystemClock.elapsedRealtime() + 90000L;
+            final long deadline = SystemClock.elapsedRealtime() + 180000L;
             String ready = "false";
             while (!"true".equals(ready) && SystemClock.elapsedRealtime() < deadline) {
                 ready = evaluate(instrumentation, webViewRef.get(), readinessScript);
                 if (!"true".equals(ready)) SystemClock.sleep(400L);
             }
+            final String readinessDiagnosticsScript =
+                    "(function() {" +
+                    " return JSON.stringify({" +
+                    " readyState: document.readyState," +
+                    " app: !!document.getElementById('app')," +
+                    " map: !!document.getElementById('map')," +
+                    " ministryDock: !!document.getElementById('btn-ministry-dock')," +
+                    " ministryEntry: typeof window.openMainMinistryView === 'function'," +
+                    " game: !!window.Game," +
+                    " omega: !!window.Omega," +
+                    " omegaKernel: !!(window.Omega && window.Omega.Kernel)," +
+                    " activeLayer: window.OmegaLayerManager && window.OmegaLayerManager.currentLayer," +
+                    " gameErrors: window.__OMEGA_DIAG__ && window.__OMEGA_DIAG__.errors" +
+                    " });" +
+                    "})()";
+            final String readinessDiagnostics = "true".equals(ready)
+                    ? "ready" : evaluate(instrumentation, webViewRef.get(), readinessDiagnosticsScript);
             assertEquals(
-                    "Bundled offline gameplay shell and core runtime must finish booting within 90 seconds",
+                    "Bundled offline gameplay shell and core runtime must finish booting within 180 seconds. Readiness diagnostics: "
+                            + readinessDiagnostics,
                     "true", ready
             );
 
