@@ -1425,7 +1425,8 @@ function advanceProjects(c){
       econ.productionAssets.push({id:p.factoryId,stage:'PROCESSING',factoryType:p.factoryType,primaryInput:p.primaryInput||p.recipe?.primaryInput||p.resourceId,
         recipeResourceId:p.recipeResourceId||p.recipe?.primaryInput||p.resourceId,iconId:p.iconId||p.recipe?.iconId||cat()?.manufacturingRules?.[id(p.factoryType)]?.iconId||'factory',
         category:p.category||p.recipe?.category||'industry',capacity:inputCapacityFromFactory(p),locationNodeKey:p.targetLocationNodeKey,status:assetStatus,
-        inputCoefficients:clone(p.recipe.inputs||{}),outputProfile:clone(p.recipe.outputs||{}),outputUnits:clone(p.recipe.outputUnits||{}),cycleDays:p.recipe.cycleDays,
+        inputCoefficients:clone(p.recipe.inputs||{}),inputUnits:clone(p.recipe.inputUnits||{}),
+        outputProfile:clone(p.recipe.outputs||{}),outputUnits:clone(p.recipe.outputUnits||{}),cycleDays:p.recipe.cycleDays,
         recipeAuthority:p.recipeAuthority||p.recipe?.recipeAuthority,simulationOnly:p.simulationOnly===true||p.recipe?.simulationOnly===true,
         companyId:'EPC_FACTORY_OWNER',transportAccess:['road','rail','ship','truck','pipeline'],commissionedTurn:turn(),
         requiredTechnologyIds:clone(p.requiredTechnologyIds||[])});
