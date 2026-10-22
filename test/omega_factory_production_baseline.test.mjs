@@ -852,6 +852,10 @@ test('paused factory cycle resumes from new warehouse batches at the reduced att
   const { context, catalog, api } = makeRuntime();
   const asset = makeSteelAsset();
   context.Game.state.simulation.date = '2015-01-01';
+  const resource = context.Game.state.resource.BGD = {
+    inventory: {}, batches: [], inventoryLots: {},
+    warehouse: { warehouseId: 'WH-BGD-RAW', countryId: 'BGD', availableByResource: {}, reservedByResource: {}, storedBatchIds: [] }
+  };
   context.Game.state.economy.BGD = {
     unemploymentCount: 600000, laborForce: 6000000, unemployment_rate: 10, productionAssets: [asset]
   };
@@ -879,7 +883,6 @@ test('paused factory cycle resumes from new warehouse batches at the reduced att
   assert.equal(asset.productionHealth.productivityPct, 0);
   assert.equal(context.Game.state.resource.BGD.industrialNetwork.factoryProductionCycles[asset.id].status, 'PAUSED');
 
-  const resource = context.Game.state.resource.BGD;
   resource.inventory.coal_concentrate = 4;
   resource.processedWarehouse = {
     warehouseId: 'WH-BGD-PROCESSED', countryId: 'BGD', status: 'OPERATIONAL',
