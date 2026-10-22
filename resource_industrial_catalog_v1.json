@@ -1298,7 +1298,11 @@
             "SLAG": 0.3,
             "STEEL_DUST": 0.08
           },
-          "outputUnits": {},
+          "outputUnits": {
+            "STEEL_INGOT": "TONNES",
+            "SLAG": "TONNES",
+            "STEEL_DUST": "TONNES"
+          },
           "cycleDays": 2,
           "quantityBasis": "SIMULATION_NORMALIZED_INPUT_UNITS",
           "authority": "SIMULATED_GAMEPLAY_ONLY",
@@ -1314,6 +1318,11 @@
             "capacityPerDay": 1800,
             "workersRequired": 950,
             "authority": "SIMULATED_GAMEPLAY_ONLY"
+          },
+          "inputUnits": {
+            "iron_concentrate": "TONNES",
+            "coal_concentrate": "TONNES",
+            "limestone": "TONNES"
           }
         },
         "steel_ingot": {
@@ -1328,7 +1337,10 @@
             "ALLOY_STEEL": 0.91,
             "ALLOY_FURNACE_SLAG": 0.11
           },
-          "outputUnits": {},
+          "outputUnits": {
+            "ALLOY_STEEL": "TONNES",
+            "ALLOY_FURNACE_SLAG": "TONNES"
+          },
           "cycleDays": 2,
           "quantityBasis": "SIMULATION_NORMALIZED_INPUT_UNITS",
           "authority": "SIMULATED_GAMEPLAY_ONLY",
@@ -1344,6 +1356,11 @@
             "capacityPerDay": 1500,
             "workersRequired": 800,
             "authority": "SIMULATED_GAMEPLAY_ONLY"
+          },
+          "inputUnits": {
+            "steel_ingot": "TONNES",
+            "nickel_concentrate": "TONNES",
+            "chromite_concentrate": "TONNES"
           }
         },
         "recycled_steel": {
@@ -1356,7 +1373,10 @@
             "STEEL_INGOT": 0.9,
             "STEEL_MELT_LOSS": 0.08
           },
-          "outputUnits": {},
+          "outputUnits": {
+            "STEEL_INGOT": "TONNES",
+            "STEEL_MELT_LOSS": "TONNES"
+          },
           "cycleDays": 1,
           "quantityBasis": "SIMULATION_NORMALIZED_INPUT_UNITS",
           "authority": "SIMULATED_GAMEPLAY_ONLY",
@@ -1372,6 +1392,9 @@
             "capacityPerDay": 1800,
             "workersRequired": 950,
             "authority": "SIMULATED_GAMEPLAY_ONLY"
+          },
+          "inputUnits": {
+            "recycled_steel": "TONNES"
           }
         }
       }
@@ -1396,7 +1419,10 @@
             "COPPER_CATHODE": 0.82,
             "COPPER_SLAG": 0.12
           },
-          "outputUnits": {},
+          "outputUnits": {
+            "COPPER_CATHODE": "TONNES",
+            "COPPER_SLAG": "TONNES"
+          },
           "cycleDays": 2,
           "quantityBasis": "SIMULATION_NORMALIZED_INPUT_UNITS",
           "authority": "SIMULATED_GAMEPLAY_ONLY",
@@ -1412,6 +1438,10 @@
             "capacityPerDay": 1300,
             "workersRequired": 650,
             "authority": "SIMULATED_GAMEPLAY_ONLY"
+          },
+          "inputUnits": {
+            "copper_concentrate": "TONNES",
+            "limestone": "TONNES"
           }
         },
         "alumina": {
@@ -1425,7 +1455,10 @@
             "ALUMINIUM_INGOT": 0.78,
             "SPENT_SALT_AND_DROSS": 0.18
           },
-          "outputUnits": {},
+          "outputUnits": {
+            "ALUMINIUM_INGOT": "TONNES",
+            "SPENT_SALT_AND_DROSS": "TONNES"
+          },
           "cycleDays": 2,
           "quantityBasis": "SIMULATION_NORMALIZED_INPUT_UNITS",
           "authority": "SIMULATED_GAMEPLAY_ONLY",
@@ -1441,6 +1474,10 @@
             "capacityPerDay": 1250,
             "workersRequired": 700,
             "authority": "SIMULATED_GAMEPLAY_ONLY"
+          },
+          "inputUnits": {
+            "alumina": "TONNES",
+            "carbon_anode": "TONNES"
           }
         },
         "nickel_concentrate": {
@@ -1454,7 +1491,10 @@
             "CATHODE_PRECURSOR": 0.68,
             "NICKEL_SLAG": 0.2
           },
-          "outputUnits": {},
+          "outputUnits": {
+            "CATHODE_PRECURSOR": "TONNES",
+            "NICKEL_SLAG": "TONNES"
+          },
           "cycleDays": 3,
           "quantityBasis": "SIMULATION_NORMALIZED_INPUT_UNITS",
           "authority": "SIMULATED_GAMEPLAY_ONLY",
@@ -1470,6 +1510,10 @@
             "capacityPerDay": 900,
             "workersRequired": 600,
             "authority": "SIMULATED_GAMEPLAY_ONLY"
+          },
+          "inputUnits": {
+            "nickel_concentrate": "TONNES",
+            "industrial_gas": "TONNES"
           }
         },
         "glass_silica_feed": {
@@ -1484,7 +1528,11 @@
             "SILICA_RESIDUE": 0.5,
             "PROCESS_LOSS": 0.08
           },
-          "outputUnits": {},
+          "outputUnits": {
+            "PURIFIED_SILICON": "TONNES",
+            "SILICA_RESIDUE": "TONNES",
+            "PROCESS_LOSS": "TONNES"
+          },
           "cycleDays": 3,
           "quantityBasis": "SIMULATION_NORMALIZED_INPUT_UNITS",
           "authority": "SIMULATED_GAMEPLAY_ONLY",
@@ -1500,6 +1548,10 @@
             "capacityPerDay": 650,
             "workersRequired": 520,
             "authority": "SIMULATED_GAMEPLAY_ONLY"
+          },
+          "inputUnits": {
+            "glass_silica_feed": "TONNES",
+            "industrial_gas": "TONNES"
           }
         },
         "recycled_copper": {
@@ -1512,7 +1564,10 @@
             "COPPER_CATHODE": 0.9,
             "COPPER_REFINING_RESIDUE": 0.08
           },
-          "outputUnits": {},
+          "outputUnits": {
+            "COPPER_CATHODE": "TONNES",
+            "COPPER_REFINING_RESIDUE": "TONNES"
+          },
           "cycleDays": 1,
           "quantityBasis": "SIMULATION_NORMALIZED_INPUT_UNITS",
           "authority": "SIMULATED_GAMEPLAY_ONLY",
@@ -1528,6 +1583,9 @@
             "capacityPerDay": 1300,
             "workersRequired": 650,
             "authority": "SIMULATED_GAMEPLAY_ONLY"
+          },
+          "inputUnits": {
+            "recycled_copper": "TONNES"
           }
         }
       }
@@ -1556,7 +1614,14 @@
             "INDUSTRIAL_DYE": 0.02,
             "INDUSTRIAL_LUBRICANT": 0.02
           },
-          "outputUnits": {},
+          "outputUnits": {
+            "POLYMER_RESIN": "TONNES",
+            "SYNTHETIC_FIBER": "TONNES",
+            "PETROCHEMICAL_BYPRODUCT": "TONNES",
+            "CARBON_ANODE": "TONNES",
+            "INDUSTRIAL_DYE": "TONNES",
+            "INDUSTRIAL_LUBRICANT": "TONNES"
+          },
           "cycleDays": 2,
           "quantityBasis": "SIMULATION_NORMALIZED_INPUT_UNITS",
           "authority": "SIMULATED_GAMEPLAY_ONLY",
@@ -1572,6 +1637,10 @@
             "capacityPerDay": 1200,
             "workersRequired": 720,
             "authority": "SIMULATED_GAMEPLAY_ONLY"
+          },
+          "inputUnits": {
+            "naphtha": "TONNES",
+            "pipeline_gas": "TONNES"
           }
         },
         "recycled_polymer": {
@@ -1584,7 +1653,10 @@
             "POLYMER_RESIN": 0.86,
             "POLYMER_RECYCLING_LOSS": 0.08
           },
-          "outputUnits": {},
+          "outputUnits": {
+            "POLYMER_RESIN": "TONNES",
+            "POLYMER_RECYCLING_LOSS": "TONNES"
+          },
           "cycleDays": 1,
           "quantityBasis": "SIMULATION_NORMALIZED_INPUT_UNITS",
           "authority": "SIMULATED_GAMEPLAY_ONLY",
@@ -1600,6 +1672,9 @@
             "capacityPerDay": 1200,
             "workersRequired": 720,
             "authority": "SIMULATED_GAMEPLAY_ONLY"
+          },
+          "inputUnits": {
+            "recycled_polymer": "TONNES"
           }
         }
       }
@@ -1625,7 +1700,10 @@
             "NPK_FERTILIZER": 1.18,
             "FERTILIZER_RESIDUE": 0.3
           },
-          "outputUnits": {},
+          "outputUnits": {
+            "NPK_FERTILIZER": "TONNES",
+            "FERTILIZER_RESIDUE": "TONNES"
+          },
           "cycleDays": 2,
           "quantityBasis": "SIMULATION_NORMALIZED_INPUT_UNITS",
           "authority": "SIMULATED_GAMEPLAY_ONLY",
@@ -1641,6 +1719,11 @@
             "capacityPerDay": 1500,
             "workersRequired": 520,
             "authority": "SIMULATED_GAMEPLAY_ONLY"
+          },
+          "inputUnits": {
+            "ammonia": "TONNES",
+            "phosphate_concentrate": "TONNES",
+            "mop_potash": "TONNES"
           }
         }
       }
@@ -1667,7 +1750,12 @@
             "PHARMACEUTICAL_BASE_CHEMICALS": 0.12,
             "CHEMICAL_RESIDUE": 0.2
           },
-          "outputUnits": {},
+          "outputUnits": {
+            "AMMONIA": "TONNES",
+            "INDUSTRIAL_GAS": "TONNES",
+            "PHARMACEUTICAL_BASE_CHEMICALS": "TONNES",
+            "CHEMICAL_RESIDUE": "TONNES"
+          },
           "cycleDays": 2,
           "quantityBasis": "SIMULATION_NORMALIZED_INPUT_UNITS",
           "authority": "SIMULATED_GAMEPLAY_ONLY",
@@ -1683,6 +1771,10 @@
             "capacityPerDay": 1100,
             "workersRequired": 480,
             "authority": "SIMULATED_GAMEPLAY_ONLY"
+          },
+          "inputUnits": {
+            "pipeline_gas": "TONNES",
+            "limestone": "TONNES"
           }
         }
       }
@@ -1710,7 +1802,11 @@
             "CEMENT_DUST": 0.16,
             "CLINKER_SCRAP": 0.03
           },
-          "outputUnits": {},
+          "outputUnits": {
+            "CEMENT": "TONNES",
+            "CEMENT_DUST": "TONNES",
+            "CLINKER_SCRAP": "TONNES"
+          },
           "cycleDays": 1,
           "quantityBasis": "SIMULATION_NORMALIZED_INPUT_UNITS",
           "authority": "SIMULATED_GAMEPLAY_ONLY",
@@ -1726,6 +1822,12 @@
             "capacityPerDay": 2200,
             "workersRequired": 430,
             "authority": "SIMULATED_GAMEPLAY_ONLY"
+          },
+          "inputUnits": {
+            "cement_feed": "TONNES",
+            "calcined_gypsum": "TONNES",
+            "limestone": "TONNES",
+            "coal_concentrate": "TONNES"
           }
         }
       }
@@ -1751,7 +1853,11 @@
             "CERAMIC_BODY": 0.28,
             "GLASS_CULLET": 0.18
           },
-          "outputUnits": {},
+          "outputUnits": {
+            "SHEET_GLASS": "TONNES",
+            "CERAMIC_BODY": "TONNES",
+            "GLASS_CULLET": "TONNES"
+          },
           "cycleDays": 2,
           "quantityBasis": "SIMULATION_NORMALIZED_INPUT_UNITS",
           "authority": "SIMULATED_GAMEPLAY_ONLY",
@@ -1767,6 +1873,10 @@
             "capacityPerDay": 900,
             "workersRequired": 390,
             "authority": "SIMULATED_GAMEPLAY_ONLY"
+          },
+          "inputUnits": {
+            "glass_silica_feed": "TONNES",
+            "limestone": "TONNES"
           }
         }
       }
@@ -1794,7 +1904,12 @@
             "PACKAGING_MATERIAL": 0.12,
             "PAPER_SLUDGE": 0.12
           },
-          "outputUnits": {},
+          "outputUnits": {
+            "PAPER": "TONNES",
+            "CARDBOARD": "TONNES",
+            "PACKAGING_MATERIAL": "TONNES",
+            "PAPER_SLUDGE": "TONNES"
+          },
           "cycleDays": 2,
           "quantityBasis": "SIMULATION_NORMALIZED_INPUT_UNITS",
           "authority": "SIMULATED_GAMEPLAY_ONLY",
@@ -1810,6 +1925,11 @@
             "capacityPerDay": 850,
             "workersRequired": 360,
             "authority": "SIMULATED_GAMEPLAY_ONLY"
+          },
+          "inputUnits": {
+            "wood_pulp": "TONNES",
+            "recycled_fiber": "TONNES",
+            "starch": "TONNES"
           }
         }
       }
@@ -1835,7 +1955,10 @@
             "PROCESSED_FOOD": 0.76,
             "FOOD_BYPRODUCT": 0.22
           },
-          "outputUnits": {},
+          "outputUnits": {
+            "PROCESSED_FOOD": "TONNES",
+            "FOOD_BYPRODUCT": "TONNES"
+          },
           "cycleDays": 1,
           "quantityBasis": "SIMULATION_NORMALIZED_INPUT_UNITS",
           "authority": "SIMULATED_GAMEPLAY_ONLY",
@@ -1851,6 +1974,11 @@
             "capacityPerDay": 1000,
             "workersRequired": 420,
             "authority": "SIMULATED_GAMEPLAY_ONLY"
+          },
+          "inputUnits": {
+            "wheat": "TONNES",
+            "vegetable_oil": "TONNES",
+            "refined_salt": "TONNES"
           }
         },
         "raw_milk": {
@@ -1864,7 +1992,10 @@
             "DAIRY_PRODUCT": 0.88,
             "DAIRY_BYPRODUCT": 0.1
           },
-          "outputUnits": {},
+          "outputUnits": {
+            "DAIRY_PRODUCT": "TONNES",
+            "DAIRY_BYPRODUCT": "TONNES"
+          },
           "cycleDays": 1,
           "quantityBasis": "SIMULATION_NORMALIZED_INPUT_UNITS",
           "authority": "SIMULATED_GAMEPLAY_ONLY",
@@ -1880,6 +2011,10 @@
             "capacityPerDay": 700,
             "workersRequired": 300,
             "authority": "SIMULATED_GAMEPLAY_ONLY"
+          },
+          "inputUnits": {
+            "raw_milk": "TONNES",
+            "packaging_material": "TONNES"
           }
         }
       }
@@ -1907,7 +2042,9 @@
             "TEXTILE_WASTE": 0.2
           },
           "outputUnits": {
-            "GARMENT_UNITS": "UNITS"
+            "GARMENT_UNITS": "UNITS",
+            "TEXTILE_FABRIC": "TONNES",
+            "TEXTILE_WASTE": "TONNES"
           },
           "cycleDays": 2,
           "quantityBasis": "SIMULATION_NORMALIZED_INPUT_UNITS",
@@ -1924,6 +2061,11 @@
             "capacityPerDay": 700,
             "workersRequired": 520,
             "authority": "SIMULATED_GAMEPLAY_ONLY"
+          },
+          "inputUnits": {
+            "cotton": "TONNES",
+            "synthetic_fiber": "TONNES",
+            "industrial_dye": "TONNES"
           }
         }
       }
@@ -1955,7 +2097,10 @@
           },
           "outputUnits": {
             "INDUSTRIAL_MACHINE_UNITS": "UNITS",
-            "REPLACEMENT_PARTS": "UNITS"
+            "REPLACEMENT_PARTS": "UNITS",
+            "STEEL_SCRAP": "TONNES",
+            "COPPER_SCRAP": "TONNES",
+            "METAL_SCRAP": "TONNES"
           },
           "cycleDays": 3,
           "quantityBasis": "SIMULATION_NORMALIZED_INPUT_UNITS",
@@ -1972,6 +2117,12 @@
             "capacityPerDay": 650,
             "workersRequired": 620,
             "authority": "SIMULATED_GAMEPLAY_ONLY"
+          },
+          "inputUnits": {
+            "steel_ingot": "TONNES",
+            "copper_cathode": "TONNES",
+            "electronic_modules": "UNITS",
+            "industrial_lubricant": "TONNES"
           }
         }
       }
@@ -1999,7 +2150,9 @@
             "ASSEMBLY_SCRAP": 0.15
           },
           "outputUnits": {
-            "GRID_EQUIPMENT_UNITS": "UNITS"
+            "GRID_EQUIPMENT_UNITS": "UNITS",
+            "COPPER_OFFCUT": "TONNES",
+            "ASSEMBLY_SCRAP": "TONNES"
           },
           "cycleDays": 2,
           "quantityBasis": "SIMULATION_NORMALIZED_INPUT_UNITS",
@@ -2016,6 +2169,11 @@
             "capacityPerDay": 800,
             "workersRequired": 500,
             "authority": "SIMULATED_GAMEPLAY_ONLY"
+          },
+          "inputUnits": {
+            "copper_cathode": "TONNES",
+            "steel_ingot": "TONNES",
+            "polymer_resin": "TONNES"
           }
         }
       }
@@ -2044,7 +2202,8 @@
           },
           "outputUnits": {
             "SEMICONDUCTOR_COMPONENTS": "UNITS",
-            "ELECTRONIC_MODULES": "UNITS"
+            "ELECTRONIC_MODULES": "UNITS",
+            "PROCESS_RESIDUE": "TONNES"
           },
           "cycleDays": 3,
           "quantityBasis": "SIMULATION_NORMALIZED_INPUT_UNITS",
@@ -2061,6 +2220,11 @@
             "capacityPerDay": 180,
             "workersRequired": 780,
             "authority": "SIMULATED_GAMEPLAY_ONLY"
+          },
+          "inputUnits": {
+            "purified_silicon": "TONNES",
+            "copper_cathode": "TONNES",
+            "industrial_gas": "TONNES"
           }
         }
       }
@@ -2087,7 +2251,8 @@
             "BATTERY_CHEMICAL_RESIDUE": 0.2
           },
           "outputUnits": {
-            "BATTERY_CELL_UNITS": "UNITS"
+            "BATTERY_CELL_UNITS": "UNITS",
+            "BATTERY_CHEMICAL_RESIDUE": "TONNES"
           },
           "cycleDays": 2,
           "quantityBasis": "SIMULATION_NORMALIZED_INPUT_UNITS",
@@ -2104,6 +2269,11 @@
             "capacityPerDay": 420,
             "workersRequired": 680,
             "authority": "SIMULATED_GAMEPLAY_ONLY"
+          },
+          "inputUnits": {
+            "lithium_carbonate_or_hydroxide": "TONNES",
+            "graphite_concentrate": "TONNES",
+            "cathode_precursor": "TONNES"
           }
         }
       }
@@ -2134,7 +2304,9 @@
           },
           "outputUnits": {
             "ROAD_VEHICLE_UNITS": "UNITS",
-            "REUSABLE_COMPONENTS": "UNITS"
+            "REUSABLE_COMPONENTS": "UNITS",
+            "POLYMER_SCRAP": "TONNES",
+            "VEHICLE_SCRAP": "TONNES"
           },
           "cycleDays": 3,
           "quantityBasis": "SIMULATION_NORMALIZED_INPUT_UNITS",
@@ -2151,6 +2323,12 @@
             "capacityPerDay": 420,
             "workersRequired": 980,
             "authority": "SIMULATED_GAMEPLAY_ONLY"
+          },
+          "inputUnits": {
+            "steel_ingot": "TONNES",
+            "polymer_resin": "TONNES",
+            "electronic_modules": "UNITS",
+            "copper_cathode": "TONNES"
           }
         }
       }
@@ -2179,7 +2357,8 @@
           },
           "outputUnits": {
             "RAIL_ROLLING_STOCK_UNITS": "UNITS",
-            "SHIP_HULL_UNITS": "UNITS"
+            "SHIP_HULL_UNITS": "UNITS",
+            "STEEL_OFFCUT": "TONNES"
           },
           "cycleDays": 4,
           "quantityBasis": "SIMULATION_NORMALIZED_INPUT_UNITS",
@@ -2196,6 +2375,11 @@
             "capacityPerDay": 240,
             "workersRequired": 1100,
             "authority": "SIMULATED_GAMEPLAY_ONLY"
+          },
+          "inputUnits": {
+            "steel_ingot": "TONNES",
+            "industrial_machine_units": "UNITS",
+            "grid_equipment_units": "UNITS"
           }
         }
       }
@@ -2225,7 +2409,8 @@
           },
           "outputUnits": {
             "AIRCRAFT_UNITS": "UNITS",
-            "AEROSPACE_PARTS": "UNITS"
+            "AEROSPACE_PARTS": "UNITS",
+            "METAL_SCRAP": "TONNES"
           },
           "cycleDays": 5,
           "quantityBasis": "SIMULATION_NORMALIZED_INPUT_UNITS",
@@ -2242,6 +2427,12 @@
             "capacityPerDay": 120,
             "workersRequired": 1250,
             "authority": "SIMULATED_GAMEPLAY_ONLY"
+          },
+          "inputUnits": {
+            "aluminium_ingot": "TONNES",
+            "alloy_steel": "TONNES",
+            "semiconductor_components": "UNITS",
+            "polymer_resin": "TONNES"
           }
         }
       }
@@ -2268,7 +2459,8 @@
             "PHARMA_RESIDUE": 0.08
           },
           "outputUnits": {
-            "MEDICAL_SUPPLY_UNITS": "UNITS"
+            "MEDICAL_SUPPLY_UNITS": "UNITS",
+            "PHARMA_RESIDUE": "TONNES"
           },
           "cycleDays": 3,
           "quantityBasis": "SIMULATION_NORMALIZED_INPUT_UNITS",
@@ -2285,6 +2477,11 @@
             "capacityPerDay": 360,
             "workersRequired": 620,
             "authority": "SIMULATED_GAMEPLAY_ONLY"
+          },
+          "inputUnits": {
+            "pharmaceutical_base_chemicals": "TONNES",
+            "industrial_gas": "TONNES",
+            "packaging_material": "TONNES"
           }
         }
       }
@@ -2314,7 +2511,8 @@
           },
           "outputUnits": {
             "DEFENSE_EQUIPMENT_UNITS": "UNITS",
-            "REPLACEMENT_COMPONENTS": "UNITS"
+            "REPLACEMENT_COMPONENTS": "UNITS",
+            "MANUFACTURING_SCRAP": "TONNES"
           },
           "cycleDays": 4,
           "quantityBasis": "SIMULATION_NORMALIZED_INPUT_UNITS",
@@ -2331,6 +2529,12 @@
             "capacityPerDay": 260,
             "workersRequired": 1050,
             "authority": "SIMULATED_GAMEPLAY_ONLY"
+          },
+          "inputUnits": {
+            "steel_ingot": "TONNES",
+            "semiconductor_components": "UNITS",
+            "polymer_resin": "TONNES",
+            "grid_equipment_units": "UNITS"
           }
         }
       }
@@ -2358,7 +2562,12 @@
             "RECYCLED_POLYMER": 0.08,
             "RECYCLING_RESIDUE": 0.18
           },
-          "outputUnits": {},
+          "outputUnits": {
+            "RECYCLED_STEEL": "TONNES",
+            "RECYCLED_COPPER": "TONNES",
+            "RECYCLED_POLYMER": "TONNES",
+            "RECYCLING_RESIDUE": "TONNES"
+          },
           "cycleDays": 2,
           "quantityBasis": "SIMULATION_NORMALIZED_INPUT_UNITS",
           "authority": "SIMULATED_GAMEPLAY_ONLY",
@@ -2374,6 +2583,11 @@
             "capacityPerDay": 1100,
             "workersRequired": 430,
             "authority": "SIMULATED_GAMEPLAY_ONLY"
+          },
+          "inputUnits": {
+            "steel_scrap": "TONNES",
+            "copper_scrap": "TONNES",
+            "polymer_scrap": "TONNES"
           }
         }
       }
