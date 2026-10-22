@@ -776,6 +776,7 @@
       ? pipeline.perCountry.find(x => normaliseCountry(x.countryId) === activeCountry(country)) : null;
     const catalog = g.OmegaResourceIndustrialCatalogData || (g.Omega && g.Omega.ResourceIndustrialCatalogData) || {};
     const factoryAudit = network && typeof network.factoryCatalogDiagnostics === 'function' ? network.factoryCatalogDiagnostics() : null;
+    const utilityAudit = network && typeof network.factoryUtilityDiagnostics === 'function' ? network.factoryUtilityDiagnostics(country) : null;
     const profiles = catalog.factoryProfiles && typeof catalog.factoryProfiles === 'object' ? catalog.factoryProfiles : {};
     const recipes = catalog.downstreamFactoryRecipes && typeof catalog.downstreamFactoryRecipes === 'object' ? catalog.downstreamFactoryRecipes : {};
     const categories = Array.isArray(catalog.factoryCatalogPolicy && catalog.factoryCatalogPolicy.categoryOrder)
@@ -847,7 +848,28 @@
       }).join('');
       return '<details class="omega-rescc-factory-category"><summary>' + esc(category.replace(/_/g, ' ')) + ' · ' + rows.length + ' factory types</summary>' + contents + '</details>';
     }).join('');
+    const utilityPanel = utilityAudit ? card('Industrial utility balances', utilityAudit.status,
+      '<div class="omega-rescc-grid2">' +
+      kv('Power supply', utilityAudit.electricityMWhPerDay == null ? 'Not recorded' : number(utilityAudit.electricityMWhPerDay, ' MWh/day')) +
+      kv('Power used this turn', number(utilityAudit.electricity && utilityAudit.electricity.usedThisTurn, ' MWh')) +
+      kv('Power available this turn', utilityAudit.electricity && utilityAudit.electricity.availableThisTurn == null ? 'Not recorded' : number(utilityAudit.electricity && utilityAudit.electricity.availableThisTurn, ' MWh')) +
+      kv('Industrial water supply', utilityAudit.waterM3PerDay == null ? 'Not recorded' : number(utilityAudit.waterM3PerDay, ' m³/day')) +
+      kv('Water used this turn', number(utilityAudit.water && utilityAudit.water.usedThisTurn, ' m³')) +
+      kv('Water available this turn', utilityAudit.water && utilityAudit.water.availableThisTurn == null ? 'Not recorded' : number(utilityAudit.water && utilityAudit.water.availableThisTurn, ' m³')) +
+      kv('Transport capacity usage', Object.entries(utilityAudit.transportCapacity || {}).map(function (pair) {
+        return pair[0] + ': ' + number(pair[1].usedThisTurn) + ' / ' + number(pair[1].capacityPerTurn);
+      }).join(' · ')) +
+      kv('Workforce status', utilityAudit.workforce && utilityAudit.workforce.status || 'NOT_RECORDED') +
+      '</div><div class="omega-rescc-muted">Supply is counted only from completed in-game utility projects or explicit game state. Missing supply remains Not recorded, never a fabricated zero-balance source.</div>', '') : empty('Industrial utility ledger is unavailable.');
+    const utilityProjectForm = '<form class="omega-rescc-form" data-search-item data-form="factory-utility-project"><h3>Build utility supply for this country</h3>' +
+      '<div class="omega-rescc-formgrid">' +
+      '<label>Utility type<select name="infrastructureType"><option value="power">Power supply · MWh/day</option><option value="water">Industrial water · m³/day</option></select></label>' +
+      '<label>Added supply per day<input name="capacityPerDay" type="number" min="1" step="1" required value="5000"></label>' +
+      '<label>Construction time (days)<input name="buildDays" type="number" min="30" step="1" required value="180"></label></div>' +
+      '<button class="omega-rescc-button" type="submit">Start utility infrastructure project</button>' +
+      '<p class="omega-rescc-muted">Completing this project adds recorded supply to the selected country. Values are simulation-only and the project does not fabricate utilities before completion.</p></form>';
     return (diag ? diagnosticCard('Country industrial network diagnostics', diag) : empty('Industrial network runtime is unavailable.')) +
+      utilityPanel + utilityProjectForm +
       (factoryAudit ? diagnosticCard('Canonical factory catalog integrity', factoryAudit) : '') +
       (perCountry ? diagnosticCard('End-to-end site pipeline state', perCountry) : '') +
       '<div class="omega-rescc-metrics"><div><span>Factory type catalog</span><strong>' + number(factoryAudit && factoryAudit.factoryTypeCount) + '</strong></div><div><span>Owned factory assets</span><strong>' + number(assets.length) + '</strong></div><div><span>Unemployed people</span><strong>' + number(employment.unemployedCount ?? econ.unemploymentCount) + '</strong></div><div><span>Jobs filled</span><strong>' + number(employment.jobsFilled) + '</strong></div><div><span>Job vacancies</span><strong>' + number(employment.vacancies) + '</strong></div><div><span>Country site profiles</span><strong>' + number(sites.length) + '</strong></div><div><span>Dispatched shipments</span><strong>' + number(perCountry && perCountry.dispatched) + '</strong></div><div><span>Processed flows</span><strong>' + number(perCountry && perCountry.processed) + '</strong></div></div>' +
@@ -1510,6 +1532,17 @@
           source: 'OMEGA_RESOURCE_COMMAND_CENTER_UI'
         });
         setOutcome('Bilateral supply request', result);
+        return;
+      }
+      if (kind === 'factory-utility-project') {
+        const net = g.Omega && g.Omega.ResourceIndustrialNetwork;
+        if (!net || typeof net.startInfrastructureProject !== 'function') result = { status: 'UNAVAILABLE', reason: 'INDUSTRIAL_INFRASTRUCTURE_API_UNAVAILABLE' };
+        else result = net.startInfrastructureProject({
+          requestId: uniqueRequestId('FACTORY-UTILITY', data.get('infrastructureType')),
+          countryId: c, infrastructureType: data.get('infrastructureType'),
+          capacityPerDay: Number(data.get('capacityPerDay')), buildDays: Number(data.get('buildDays'))
+        });
+        setOutcome('Industrial utility infrastructure project', result);
         return;
       }
       if (kind === 'factory-project') {
