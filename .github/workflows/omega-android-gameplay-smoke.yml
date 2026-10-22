@@ -36,9 +36,9 @@ permissions:
   contents: read
 
 concurrency:
-  # Every head of the same PR shares one group, so a newer head cancels stale emulator runs.
+  # CI smoke tests are disposable; newer commits must not wait behind stale emulator runs.
   group: omega-android9-gameplay-smoke-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  cancel-in-progress: true
 
 jobs:
   offline-gameplay-smoke:

@@ -92,12 +92,12 @@ test("the offline atlas never substitutes a fake remote imagery tile", () => {
   assert.match(mapEngine, /window\.OmegaOfflineHybridAtlas\.activate/);
   assert.match(mainActivity, /if \(isAppAssetUri\(uri\)\) return missingAssetResponse\(uri\);/);
 });
-test("new pull request commits supersede stale Android emulator smoke runs", () => {
+test("newer commits supersede stale Android emulator smoke runs on the same ref", () => {
   assert.ok(androidOfflineWorkflow.includes(
     "group: omega-android9-gameplay-smoke-${{ github.ref }}"
   ));
   assert.ok(androidOfflineWorkflow.includes(
-    "cancel-in-progress: ${{ github.event_name == 'pull_request' }}"
+    "cancel-in-progress: true"
   ));
 });
 
