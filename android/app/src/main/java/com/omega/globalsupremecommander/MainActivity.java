@@ -19,6 +19,7 @@ import androidx.webkit.WebViewAssetLoader;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.Locale;
 
 public final class MainActivity extends Activity {
@@ -82,11 +83,14 @@ public final class MainActivity extends Activity {
                     return local;
                 }
 
-                if (uri != null && isKnownRemoteVisualOrLibrary(uri)) {
-                    return offlineResponse(uri);
-                }
+                if (uri == null) return super.shouldInterceptRequest(view, request);
 
-                return super.shouldInterceptRequest(view, request);
+                // Android gameplay is an APK-bundled offline app. Never let a cross-origin
+                // script, tile, font, image, or API request escape to the device network.
+                // This makes offline behaviour deterministic instead of relying on a
+                // best-effort host deny-list that can miss newly introduced CDNs.
+                if (isAppAssetUri(uri)) return missingAssetResponse(uri);
+                return offlineResponse(uri);
             }
 
             @Override
@@ -121,22 +125,25 @@ public final class MainActivity extends Activity {
         });
     }
 
-    private boolean isKnownRemoteVisualOrLibrary(Uri uri) {
-        final String host = uri.getHost();
-        if (host == null) return false;
-        final String h = host.toLowerCase(Locale.ROOT);
-        // The offline atlas is rendered from local data. Block external basemap imagery
-        // as a second line of defence so APK map layers cannot leak tile requests to the network.
-        return h.equals("unpkg.com")
-                || h.equals("fonts.googleapis.com")
-                || h.equals("fonts.gstatic.com")
-                || h.equals("server.arcgisonline.com")
-                || h.equals("assets.science.nasa.gov")
-                || h.equals("tile.opentopomap.org")
-                || h.equals("tile.openstreetmap.org")
-                || h.endsWith(".tile.openstreetmap.org")
-                || h.equals("basemaps.cartocdn.com")
-                || h.endsWith(".basemaps.cartocdn.com");
+    private boolean isAppAssetUri(Uri uri) {
+        return uri != null
+                && "https".equalsIgnoreCase(uri.getScheme())
+                && "appassets.androidplatform.net".equalsIgnoreCase(uri.getHost())
+                && uri.getPath() != null
+                && uri.getPath().startsWith("/assets/");
+    }
+
+    private WebResourceResponse missingAssetResponse(Uri uri) {
+        final byte[] body = ("OMEGA offline asset not found: " +
+                (uri == null ? "" : uri.getPath())).getBytes(StandardCharsets.UTF_8);
+        return new WebResourceResponse(
+                "text/plain",
+                "UTF-8",
+                404,
+                "Not Found",
+                Collections.singletonMap("Cache-Control", "no-store"),
+                new ByteArrayInputStream(body)
+        );
     }
 
     private WebResourceResponse offlineResponse(Uri uri) {
@@ -152,13 +159,36 @@ public final class MainActivity extends Activity {
             );
         }
 
-        if (path.endsWith(".css")
-                || uri.getHost().equalsIgnoreCase("fonts.googleapis.com")
-                || uri.getHost().equalsIgnoreCase("fonts.gstatic.com")) {
-            mime = "text/css";
+        if (path.endsWith(".css")) {
             return new WebResourceResponse(
-                    mime, encoding,
+                    "text/css", encoding,
                     new ByteArrayInputStream(new byte[0])
+            );
+        }
+
+        if (path.endsWith(".woff") || path.endsWith(".woff2") ||
+                path.endsWith(".ttf") || path.endsWith(".otf")) {
+            final String fontMime = path.endsWith(".woff2") ? "font/woff2"
+                    : (path.endsWith(".ttf") ? "font/ttf"
+                    : (path.endsWith(".otf") ? "font/otf" : "font/woff"));
+            return new WebResourceResponse(
+                    fontMime, null, new ByteArrayInputStream(new byte[0])
+            );
+        }
+
+        if (path.endsWith(".svg")) {
+            final byte[] emptySvg = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 1 1\"></svg>"
+                    .getBytes(StandardCharsets.UTF_8);
+            return new WebResourceResponse(
+                    "image/svg+xml", encoding, new ByteArrayInputStream(emptySvg)
+            );
+        }
+
+        if (path.endsWith(".json") || path.contains("/api/") || uri.getQuery() != null) {
+            final byte[] json = "{\"offline\":true,\"status\":\"OFFLINE_SOURCE_UNAVAILABLE\",\"data\":null,\"countries\":[]}"
+                    .getBytes(StandardCharsets.UTF_8);
+            return new WebResourceResponse(
+                    "application/json", encoding, new ByteArrayInputStream(json)
             );
         }
 

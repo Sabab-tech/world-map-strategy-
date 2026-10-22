@@ -57,6 +57,7 @@ public final class OmegaGameplaySmokeTest {
                     " document.getElementById('map') &&" +
                     " document.getElementById('btn-ministry-dock') &&" +
                     " typeof window.openMainMinistryView === 'function' &&" +
+                    " window.OMEGA_ANDROID_OFFLINE === true &&" +
                     " window.Game && window.Omega" +
                     " );" +
                     "})()";
@@ -67,8 +68,16 @@ public final class OmegaGameplaySmokeTest {
                 if (!"true".equals(ready)) SystemClock.sleep(400L);
             }
             assertEquals(
-                    "Bundled offline gameplay shell and core runtime must finish booting within 90 seconds",
+                    "Bundled offline gameplay shell, local data assets and core runtime must finish booting within 90 seconds",
                     "true", ready
+            );
+            final String offlineBridgeScript =
+                    "(function() { return !!(window.OmegaAndroid && " +
+                    "window.OmegaAndroid.isAndroidApp() === true && " +
+                    "window.OmegaAndroid.isOfflineMode() === true); })()";
+            assertEquals(
+                    "Android bridge must confirm that packaged gameplay is offline-only",
+                    "true", evaluate(instrumentation, webViewRef.get(), offlineBridgeScript)
             );
 
             final String speedControlScript =

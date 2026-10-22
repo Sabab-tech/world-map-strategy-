@@ -95,8 +95,8 @@ const METRIC_CATALOGUE = [
   { key: 'deathRate', name: 'Crude death rate', unit: 'deaths per 1,000 people', wb: 'SP.DYN.CDRT.IN', description: 'Crude death rate where a source observation exists.' },
   { key: 'migrationRateLegacy', name: 'Legacy migration-rate field', unit: 'source-defined; not assumed', description: 'Copied from the repository population baseline; source units are not independently confirmed.' },
   { key: 'urbanizationPct', name: 'Urban population', unit: '% of population', wb: 'SP.URB.TOTL.IN.ZS', description: 'Urban population share.' },
-  { key: 'malePopulationPct', name: 'Male population share', unit: '%', description: 'Legacy demographic baseline.' },
-  { key: 'femalePopulationPct', name: 'Female population share', unit: '%', description: 'Legacy demographic baseline.' },
+  { key: 'malePopulationPct', name: 'Male population share', unit: '%', wb: 'SP.POP.TOTL.MA.ZS', description: 'World Bank male population share where a source observation exists; legacy baseline remains as fallback.' },
+  { key: 'femalePopulationPct', name: 'Female population share', unit: '%', wb: 'SP.POP.TOTL.FE.ZS', description: 'World Bank female population share where a source observation exists; legacy baseline remains as fallback.' },
   { key: 'lifeExpectancyYears', name: 'Life expectancy at birth', unit: 'years', wb: 'SP.DYN.LE00.IN', description: 'World Bank life-expectancy observation.' },
   { key: 'fertilityRate', name: 'Fertility rate', unit: 'births per woman', wb: 'SP.DYN.TFRT.IN', description: 'Total fertility rate.' },
   { key: 'literacyRatePct', name: 'Adult literacy rate', unit: '% of people ages 15+', wb: 'SE.ADT.LITR.ZS', description: 'Available adult literacy observation.' },
@@ -144,12 +144,42 @@ const METRIC_CATALOGUE = [
   { key: 'educationSpendPctGdp', name: 'Government education expenditure', unit: '% of GDP', wb: 'SE.XPD.TOTL.GD.ZS', description: 'Government education spending where available.' },
   { key: 'foreignDirectInvestmentUsd', name: 'Foreign direct investment, net inflows', unit: 'USD', wb: 'BX.KLT.DINV.CD.WD', description: 'Net FDI inflows.' },
   { key: 'povertyRatePct', name: 'Poverty headcount at national poverty lines', unit: '% of population', wb: 'SI.POV.NAHC', description: 'National poverty line; definitions differ across countries.' },
+  { key: 'populationAge0To14Pct', name: 'Population ages 0–14', unit: '% of total population', wb: 'SP.POP.0014.TO.ZS', description: 'Age-structure share; latest World Bank observation, with year noted per country.' },
+  { key: 'populationAge15To64Pct', name: 'Population ages 15–64', unit: '% of total population', wb: 'SP.POP.1564.TO.ZS', description: 'Working-age population share.' },
+  { key: 'populationAge65PlusPct', name: 'Population ages 65 and over', unit: '% of total population', wb: 'SP.POP.65UP.TO.ZS', description: 'Older population share.' },
+  { key: 'ageDependencyRatioPct', name: 'Age dependency ratio', unit: '% of working-age population', wb: 'SP.POP.DPND', description: 'Dependents relative to the working-age population.' },
+  { key: 'femaleLifeExpectancyYears', name: 'Female life expectancy at birth', unit: 'years', wb: 'SP.DYN.LE00.FE.IN', description: 'World Bank female life expectancy observation.' },
+  { key: 'maleLifeExpectancyYears', name: 'Male life expectancy at birth', unit: 'years', wb: 'SP.DYN.LE00.MA.IN', description: 'World Bank male life expectancy observation.' },
+  { key: 'primaryCompletionRatePct', name: 'Primary school completion', unit: '% of relevant age group', wb: 'SE.PRM.CMPT.ZS', description: 'Reported completion rate; coverage and observation years vary.' },
+  { key: 'secondarySchoolEnrollmentPct', name: 'Secondary school enrollment', unit: '% gross', wb: 'SE.SEC.ENRR', description: 'Gross secondary enrollment; values can exceed 100%.' },
+  { key: 'tertiarySchoolEnrollmentPct', name: 'Tertiary school enrollment', unit: '% gross', wb: 'SE.TER.ENRR', description: 'Gross tertiary enrollment; values can exceed 100%.' },
+  { key: 'laborForceParticipationPct', name: 'Labor force participation', unit: '% of population ages 15+', wb: 'SL.TLF.CACT.ZS', description: 'Modeled ILO labor-force participation estimate in the World Bank database.' },
+  { key: 'healthExpenditurePerCapitaUsd', name: 'Current health expenditure per capita', unit: 'USD per person', wb: 'SH.XPD.CHEX.PC.CD', description: 'Current health spending per capita in current US dollars.' },
+  { key: 'mobileSubscriptionsPer100', name: 'Mobile cellular subscriptions', unit: 'per 100 people', wb: 'IT.CEL.SETS.P2', description: 'Mobile subscription indicator; subscription counts are not unique individuals.' },
+  { key: 'fixedBroadbandSubscriptionsPer100', name: 'Fixed broadband subscriptions', unit: 'per 100 people', wb: 'IT.NET.BBND.P2', description: 'Fixed broadband subscriptions per 100 people.' },
+  { key: 'internetSecureServersPerMillion', name: 'Secure Internet servers', unit: 'per 1 million people', wb: 'IT.NET.SECR.P6', description: 'Secure Internet servers per million people.' },
+  { key: 'manufacturingValueAddedPctGdp', name: 'Manufacturing value added', unit: '% of GDP', wb: 'NV.IND.MANF.ZS', description: 'Manufacturing share of GDP, distinct from overall industry value added.' },
+  { key: 'domesticCreditPrivateSectorPctGdp', name: 'Domestic credit to private sector', unit: '% of GDP', wb: 'FS.AST.PRVT.GD.ZS', description: 'Domestic credit to private sector as a share of GDP.' },
+  { key: 'grossCapitalFormationPctGdp', name: 'Gross capital formation', unit: '% of GDP', wb: 'NE.GDI.TOTL.ZS', description: 'Gross capital formation as a share of GDP.' },
+  { key: 'agriculturalLandPct', name: 'Agricultural land', unit: '% of land area', wb: 'AG.LND.AGRI.ZS', description: 'Land classified as agricultural in the World Bank series.' },
+  { key: 'forestAreaPct', name: 'Forest area', unit: '% of land area', wb: 'AG.LND.FRST.ZS', description: 'Forest area share of land area.' },
+  { key: 'renewableEnergyConsumptionPct', name: 'Renewable energy consumption', unit: '% of total final energy consumption', wb: 'EG.FEC.RNEW.ZS', description: 'Renewable share in total final energy use.' },
+  { key: 'renewableElectricityOutputPct', name: 'Renewable electricity output', unit: '% of total electricity output', wb: 'EG.ELC.RNEW.ZS', description: 'Renewable share of electricity output.' },
+  { key: 'pm25ExposureUgM3', name: 'PM2.5 mean annual exposure', unit: 'micrograms per cubic meter', wb: 'EN.ATM.PM25.MC.M3', description: 'Population-weighted modeled ambient PM2.5 exposure.' },
+  { key: 'freshwaterWithdrawalPctAvailable', name: 'Freshwater withdrawal / available resources', unit: '%', wb: 'ER.H2O.FWST.ZS', description: 'Water-stress pressure measure, not a direct measure of water quality.' },
+  { key: 'energyUseKgOilEqPerCapita', name: 'Energy use per capita', unit: 'kg of oil equivalent per person', wb: 'EG.USE.PCAP.KG.OE', description: 'Energy use per capita; latest source year retained.' },
+  { key: 'hospitalBedsPer1000', name: 'Hospital beds', unit: 'per 1,000 people', wb: 'SH.MED.BEDS.ZS', description: 'Hospital-bed availability where reported; definitions may differ.' },
+  { key: 'physiciansPer1000', name: 'Physicians', unit: 'per 1,000 people', wb: 'SH.MED.PHYS.ZS', description: 'Physicians per 1,000 people where reported.' },
+  { key: 'infantMortalityPer1000', name: 'Infant mortality rate', unit: 'per 1,000 live births', wb: 'SP.DYN.IMRT.IN', description: 'Estimated infant deaths before age one per 1,000 live births.' },
+  { key: 'maternalMortalityPer100k', name: 'Maternal mortality ratio', unit: 'per 100,000 live births', wb: 'SH.STA.MMRT', description: 'Modeled maternal mortality ratio.' },
+  { key: 'agricultureEmploymentPct', name: 'Employment in agriculture', unit: '% of total employment', wb: 'SL.AGR.EMPL.ZS', description: 'Agriculture employment share; modeled ILO estimates and coverage vary.' },
   { key: 'economicInfluenceIndex', name: 'Repository-derived economic influence index', unit: 'index 0-100', description: 'Custom game index. Not an official national ranking.' },
   { key: 'fiscalRiskIndex', name: 'Repository-derived fiscal risk index', unit: 'index 0-100', description: 'Custom game index. Not a sovereign credit rating.' },
   { key: 'fiscalHealthIndex', name: 'Repository-derived fiscal health index', unit: 'index 0-100', description: '100 minus the repository-derived fiscal risk index.' },
   { key: 'gdpWorldRank', name: 'GDP world rank in local profile', unit: 'rank', description: 'Legacy local-profile rank; methodology and year require verification.' },
-  { key: 'humanDevelopmentIndex', name: 'Human Development Index', unit: 'index 0-1', description: 'Reserved for a sourced UNDP observation; not inferred from GDP.' },
-  { key: 'corruptionPerceptionIndex', name: 'Corruption Perceptions Index', unit: 'rank or score per source release', description: 'Reserved for a dated Transparency International release.' },
+  { key: 'humanDevelopmentIndex', name: 'Human Development Index', unit: 'index 0-1', description: 'UNDP Human Development Report 2025 series; official observation year 2023.' },
+  { key: 'corruptionPerceptionIndex', name: 'Corruption Perceptions Index score', unit: 'score 0-100', description: 'Transparency International CPI 2025 score; higher score means lower perceived public-sector corruption.' },
+  { key: 'corruptionPerceptionRank', name: 'Corruption Perceptions Index rank', unit: 'rank', description: 'Transparency International CPI 2025 rank; lower numeric rank means higher position. Rank is not the CPI score.' },
   { key: 'globalPeaceIndexRank', name: 'Global Peace Index rank', unit: 'rank', description: 'Reserved for a dated Institute for Economics & Peace release.' },
   { key: 'democracyIndex', name: 'Democracy Index', unit: 'score 0-10', description: 'Reserved for a dated Economist Intelligence Unit release.' },
   { key: 'pressFreedomIndex', name: 'Press freedom index', unit: 'rank or score per source release', description: 'Reserved for a dated Reporters Without Borders release.' },
@@ -168,6 +198,147 @@ const baseObservation = (value, year, sourceId, status, method = 'OBSERVED_SOURC
   value: finite(value), year: Number.isFinite(Number(year)) ? Number(year) : null,
   sourceId: sourceId || null, status, method, indicatorCode: indicatorCode || null, sourceUrl: sourceUrl || null, note: note || null
 });
+
+async function getText(url) {
+  const response = await fetch(url, { headers: { 'User-Agent': 'OMEGA-Country-General-Data-Registry/1.0', 'Accept': 'text/csv,text/plain,*/*' } });
+  if (!response.ok) throw new Error('HTTP_' + response.status + ' from ' + url);
+  return response.text();
+}
+
+// Minimal RFC-4180-compatible parser; the registry refresh has no extra runtime dependency.
+function parseDelimited(text, delimiter = ',') {
+  const rows = [];
+  let row = [];
+  let field = '';
+  let quoted = false;
+  for (let i = 0; i < text.length; i += 1) {
+    const ch = text[i];
+    if (quoted) {
+      if (ch === '"' && text[i + 1] === '"') {
+        field += '"';
+        i += 1;
+      } else if (ch === '"') {
+        quoted = false;
+      } else {
+        field += ch;
+      }
+    } else if (ch === '"' && field.length === 0) {
+      quoted = true;
+    } else if (ch === delimiter) {
+      row.push(field);
+      field = '';
+    } else if (ch === '\n' || ch === '\r') {
+      if (ch === '\r' && text[i + 1] === '\n') i += 1;
+      row.push(field);
+      if (row.some((value) => String(value).trim() !== '')) rows.push(row);
+      row = [];
+      field = '';
+    } else {
+      field += ch;
+    }
+  }
+  if (field.length || row.length) {
+    row.push(field);
+    if (row.some((value) => String(value).trim() !== '')) rows.push(row);
+  }
+  if (quoted) throw new Error('UNDP_HDI_CSV_UNTERMINATED_QUOTED_FIELD');
+  return rows;
+}
+
+async function fetchUndpHdi() {
+  const sourceUrl = 'https://hdr.undp.org/sites/default/files/2025_HDR/HDR25_Composite_indices_complete_time_series.csv';
+  const sourceId = 'UNDP_HDR_2025_COMPOSITE_INDICES';
+  const records = parseDelimited(await getText(sourceUrl), ',');
+  if (records.length < 10) throw new Error('UNDP_HDI_CSV_TOO_FEW_ROWS');
+  const headers = records[0].map((value) => String(value).replace(/^\uFEFF/, '').trim().toLowerCase());
+  const isoIndex = headers.indexOf('iso3');
+  const hdiIndex = headers.indexOf('hdi_2023');
+  if (isoIndex < 0 || hdiIndex < 0) {
+    throw new Error('UNDP_HDI_CSV_EXPECTED_COLUMNS_NOT_FOUND: ' + headers.slice(0, 12).join(','));
+  }
+  const byIso3 = new Map();
+  for (const row of records.slice(1)) {
+    const iso3 = String(row[isoIndex] || '').trim().toUpperCase();
+    const value = finite(row[hdiIndex]);
+    if (!/^[A-Z]{3}$/.test(iso3) || value === null || value < 0 || value > 1) continue;
+    byIso3.set(iso3, { value, year: 2023, code: 'hdi_2023', sourceId, sourceUrl });
+  }
+  if (byIso3.size < 100) throw new Error('UNDP_HDI_CSV_TOO_FEW_VALID_COUNTRY_VALUES: ' + byIso3.size);
+  return { byIso3, loaded: true, error: null, sourceId, sourceUrl, rowCount: byIso3.size, observationYear: 2023 };
+}
+
+async function fetchTransparencyInternationalCpi2025() {
+  // Maintained machine-readable mirror of the Transparency International CPI
+  // 2025 full results table. The record stores the publisher and publication
+  // page as well as the actual mirror URL so its provenance is transparent.
+  const sourceUrl = 'https://raw.githubusercontent.com/loupeat/ti-cpi/main/docs/ti/CPI2025_GlobalResultsTrends.csv';
+  const publisherUrl = 'https://www.transparency.org/en/cpi/2025';
+  const sourceId = 'TI_CPI_2025_MIRRORED_FULL_RESULTS';
+  const rows = parseDelimited(await getText(sourceUrl), ';');
+  const headerIndex = rows.findIndex((row) => {
+    const normalized = row.map((value) => String(value).replace(String.fromCharCode(0xFEFF), '').trim().toLowerCase());
+    return normalized.includes('iso3') && normalized.includes('cpi score 2025') && normalized.includes('rank 2025');
+  });
+  if (headerIndex < 0) throw new Error('TI_CPI_2025_EXPECTED_HEADER_NOT_FOUND');
+  const headers = rows[headerIndex].map((value) => String(value).replace(String.fromCharCode(0xFEFF), '').trim().toLowerCase());
+  const isoIndex = headers.indexOf('iso3');
+  const scoreIndex = headers.indexOf('cpi score 2025');
+  const rankIndex = headers.indexOf('rank 2025');
+  const byIso3 = new Map();
+  for (const row of rows.slice(headerIndex + 1)) {
+    const iso3 = String(row[isoIndex] || '').trim().toUpperCase();
+    const score = finite(row[scoreIndex]);
+    const rank = finite(row[rankIndex]);
+    if (!/^[A-Z]{3}$/.test(iso3)) continue;
+    if ((score === null || score < 0 || score > 100) && (rank === null || rank < 1)) continue;
+    byIso3.set(iso3, {
+      score: score !== null && score >= 0 && score <= 100 ? score : null,
+      rank: rank !== null && rank >= 1 ? rank : null,
+      year: 2025,
+      sourceId,
+      sourceUrl,
+      publisherUrl
+    });
+  }
+  if (byIso3.size < 150) throw new Error('TI_CPI_2025_TOO_FEW_VALID_COUNTRY_VALUES: ' + byIso3.size);
+  return { byIso3, loaded: true, error: null, sourceId, sourceUrl, publisherUrl, rowCount: byIso3.size, observationYear: 2025 };
+}
+
+function loadCpiSnapshot(snapshot) {
+  const source = snapshot?.metadata || {};
+  const rows = Array.isArray(snapshot?.countries) ? snapshot.countries : [];
+  const byIso3 = new Map();
+  for (const row of rows) {
+    const iso3 = String(row?.iso3 || '').trim().toUpperCase();
+    const score = finite(row?.score);
+    const rank = finite(row?.rank);
+    if (!/^[A-Z]{3}$/.test(iso3) ||
+        ((score === null || score < 0 || score > 100) && (rank === null || rank < 1))) continue;
+    byIso3.set(iso3, {
+      score: score !== null && score >= 0 && score <= 100 ? score : null,
+      rank: rank !== null && rank >= 1 ? rank : null,
+      year: finite(row.year) ?? finite(source.observationYear) ?? 2025,
+      sourceId: 'TI_CPI_2025_CHECKED_IN_SNAPSHOT',
+      sourceUrl: source.sourceUrl || 'https://raw.githubusercontent.com/loupeat/ti-cpi/main/docs/ti/CPI2025_GlobalResultsTrends.csv',
+      publisherUrl: source.publisherUrl || 'https://www.transparency.org/en/cpi/2025',
+      snapshotFallback: true
+    });
+  }
+  return {
+    byIso3,
+    loaded: byIso3.size >= 150,
+    error: byIso3.size >= 150 ? null : 'CPI_2025_CHECKED_IN_SNAPSHOT_TOO_SMALL: ' + byIso3.size,
+    sourceId: 'TI_CPI_2025_CHECKED_IN_SNAPSHOT',
+    sourceUrl: source.sourceUrl || 'https://raw.githubusercontent.com/loupeat/ti-cpi/main/docs/ti/CPI2025_GlobalResultsTrends.csv',
+    publisherUrl: source.publisherUrl || 'https://www.transparency.org/en/cpi/2025',
+    rowCount: byIso3.size,
+    observationYear: finite(source.observationYear) ?? 2025,
+    snapshotFallback: true,
+    sourceLoadStatus: byIso3.size >= 150 ? 'SNAPSHOT_NOT_REQUESTED' : 'SNAPSHOT_INVALID',
+    liveRefreshError: null
+  };
+}
+
 
 async function getJson(url) {
   const response = await fetch(url, { headers: { 'User-Agent': 'OMEGA-Country-General-Data-Registry/1.0', 'Accept': 'application/json' } });
@@ -443,6 +614,36 @@ function updateFacts(identity, legacyEconomy, localCity, restCountry, wbCountry,
   return fact;
 }
 
+function decodePreviousRegistryRecord(row, previousRegistry) {
+  const recordSchema = previousRegistry?.metadata?.recordSchema;
+  if (!row || !recordSchema || !Array.isArray(row.identity)) return row;
+  const asObject = (keys, values) => Object.fromEntries(keys.map((key, index) => [
+    key, Array.isArray(values) && values[index] !== undefined ? values[index] : null
+  ]));
+  const identity = asObject(recordSchema.identityFields || [], row.identity);
+  const facts = asObject(recordSchema.generalFactFields || [], row.generalFacts);
+  if (Array.isArray(facts.factsSourceStatus)) {
+    facts.factsSourceStatus = asObject(recordSchema.factSourceStatusFields || ['restCountries', 'worldBankMetadata'], facts.factsSourceStatus);
+  }
+  const fields = recordSchema.metricFields || (previousRegistry.fieldCatalogue || []).map((field) => field.key);
+  const metrics = asObject(fields, row.metrics);
+  const sourceMap = previousRegistry.metadata.provenanceEncoding || {};
+  const decode = (items, code) => Number.isInteger(code) && code >= 0 ? (items?.[code] ?? null) : null;
+  const compactMeta = row.metricMetadata || {};
+  const metricMetadata = Object.fromEntries(fields.map((key, index) => [key, {
+    year: finite(compactMeta.years?.[index]),
+    status: decode(sourceMap.statuses, compactMeta.statusCodes?.[index]) || 'MISSING',
+    sourceId: decode(sourceMap.sourceIds, compactMeta.sourceCodes?.[index]) || null,
+    sourceName: decode(sourceMap.sourceNames, compactMeta.sourceNameCodes?.[index]) || null,
+    method: decode(sourceMap.methods, compactMeta.methodCodes?.[index]) || null,
+    indicatorCode: compactMeta.indicatorCodes?.[index] || previousRegistry.fieldCatalogue?.[index]?.wb || null,
+    sourceUrl: compactMeta.sourceUrls?.[index] || null,
+    note: compactMeta.notes?.[index] || null
+  }]));
+  return { ...row, identity, generalFacts: facts, metrics, metricMetadata };
+}
+
+
 function makeRecord(country, sources, previous, refreshData) {
   const identity = {
     code: country.code ?? country.iso2 ?? null,
@@ -485,8 +686,14 @@ function makeRecord(country, sources, previous, refreshData) {
   for (const field of METRIC_CATALOGUE) {
     const existingMeta = priorMeta[field.key];
     const oldOfficial = existingMeta?.status === 'WORLD_BANK_API_OBSERVATION';
-    if (oldOfficial && finite(priorMetrics[field.key]) !== null) {
-      metrics[field.key] = finite(priorMetrics[field.key]);
+    const oldSourcedHdi = existingMeta?.status === 'UNDP_HDR_OBSERVATION';
+    const oldSourcedCpi = existingMeta?.status === 'TRANSPARENCY_INTERNATIONAL_CPI_2025';
+    const priorValue = finite(priorMetrics[field.key]);
+    // Preserve every previous non-null value when a local source is silent.
+    // Official observations survive API outages, while a newer valid source value may replace them.
+    if (priorValue !== null &&
+        (oldOfficial || oldSourcedHdi || oldSourcedCpi || finite(metrics[field.key]) === null)) {
+      metrics[field.key] = priorValue;
       metricMetadata[field.key] = safeCopy(existingMeta, metricMetadata[field.key]);
     }
     if (field.wb) {
@@ -525,6 +732,86 @@ function makeRecord(country, sources, previous, refreshData) {
       }
     }
   }
+
+    // HDI is published by UNDP rather than the World Bank WDI API.
+  if (refreshData.undpHdi) {
+    const hdiObservation = refreshData.undpHdi.byIso3.get(String(country.iso3 || '').toUpperCase());
+    if (hdiObservation && hdiObservation.value !== null) {
+      const priorYear = finite(metricMetadata.humanDevelopmentIndex?.year);
+      if (metrics.humanDevelopmentIndex === null || priorYear === null || hdiObservation.year >= priorYear) {
+        metrics.humanDevelopmentIndex = hdiObservation.value;
+        metricMetadata.humanDevelopmentIndex = {
+          year: hdiObservation.year,
+          sourceId: hdiObservation.sourceId,
+          sourceName: 'United Nations Development Programme, Human Development Report 2025',
+          status: 'UNDP_HDR_OBSERVATION',
+          method: 'SOURCE_OBSERVATION',
+          indicatorCode: hdiObservation.code,
+          sourceUrl: hdiObservation.sourceUrl,
+          note: 'Official HDI value from UNDP HDR 2025 composite-index time series; observation year 2023, not publication or simulation year.'
+        };
+      }
+    } else if (REFRESH && metrics.humanDevelopmentIndex === null) {
+      metricMetadata.humanDevelopmentIndex = {
+        year: null,
+        sourceId: refreshData.undpHdi.error ? refreshData.undpHdi.sourceId || 'UNDP_HDR_2025_COMPOSITE_INDICES' : null,
+        sourceName: refreshData.undpHdi.error ? 'United Nations Development Programme, Human Development Reports' : null,
+        status: refreshData.undpHdi.error ? 'SOURCE_REFRESH_FAILED' : 'NO_SOURCE_OBSERVATION',
+        method: 'API_REFRESH_DIAGNOSTIC',
+        indicatorCode: 'hdi_2023',
+        sourceUrl: refreshData.undpHdi.sourceUrl || 'https://hdr.undp.org/data-center/documentation-and-downloads',
+        note: refreshData.undpHdi.error
+          ? 'Official UNDP HDI feed could not be refreshed: ' + refreshData.undpHdi.error
+          : 'No matching ISO3 observation was available in the official UNDP HDI 2023 data. Unknown is not zero.'
+      };
+    }
+  }
+
+    // CPI score and rank come from Transparency International's published 2025
+  // results. The source is a maintained machine-readable mirror, so both the
+  // mirror URL and publisher's official release page are stored.
+  if (refreshData.transparencyInternationalCpi2025) {
+    const cpi = refreshData.transparencyInternationalCpi2025.byIso3.get(String(country.iso3 || '').toUpperCase());
+    const mappings = [
+      { key: 'corruptionPerceptionIndex', value: cpi?.score, code: 'CPI score 2025',
+        note: 'CPI score 0–100 from Transparency International CPI 2025. Source values are read from a maintained mirror; original publisher release: ' + refreshData.transparencyInternationalCpi2025.publisherUrl },
+      { key: 'corruptionPerceptionRank', value: cpi?.rank, code: 'Rank 2025',
+        note: 'CPI rank from Transparency International CPI 2025. Rank is not a score, and rank 1 is the highest position. Source values are read from a maintained mirror; original publisher release: ' + refreshData.transparencyInternationalCpi2025.publisherUrl }
+    ];
+    for (const item of mappings) {
+      if (cpi && finite(item.value) !== null) {
+        const priorYear = finite(metricMetadata[item.key]?.year);
+        if (metrics[item.key] === null || priorYear === null || 2025 >= priorYear) {
+          metrics[item.key] = finite(item.value);
+          metricMetadata[item.key] = {
+            year: 2025,
+            sourceId: refreshData.transparencyInternationalCpi2025.sourceId,
+            sourceName: 'Transparency International, Corruption Perceptions Index 2025',
+            status: 'TRANSPARENCY_INTERNATIONAL_CPI_2025',
+            method: 'SOURCE_OBSERVATION',
+            indicatorCode: item.code,
+            sourceUrl: refreshData.transparencyInternationalCpi2025.sourceUrl,
+            note: item.note + (cpi.snapshotFallback ? ' Value came from the checked-in offline snapshot; mirror and publisher URLs are preserved.' : '') +
+              (refreshData.transparencyInternationalCpi2025.liveRefreshError ? ' Live refresh error: ' + refreshData.transparencyInternationalCpi2025.liveRefreshError : '')
+          };
+        }
+      } else if (REFRESH && metrics[item.key] === null) {
+        metricMetadata[item.key] = {
+          year: null,
+          sourceId: refreshData.transparencyInternationalCpi2025.error ? refreshData.transparencyInternationalCpi2025.sourceId : null,
+          sourceName: refreshData.transparencyInternationalCpi2025.error ? 'Transparency International, Corruption Perceptions Index 2025' : null,
+          status: refreshData.transparencyInternationalCpi2025.error ? 'SOURCE_REFRESH_FAILED' : 'NO_SOURCE_OBSERVATION',
+          method: 'API_REFRESH_DIAGNOSTIC',
+          indicatorCode: item.code,
+          sourceUrl: refreshData.transparencyInternationalCpi2025.sourceUrl,
+          note: refreshData.transparencyInternationalCpi2025.error
+            ? 'CPI 2025 source refresh failed: ' + refreshData.transparencyInternationalCpi2025.error
+            : 'No CPI 2025 observation was found for this canonical ISO3. Unknown is not zero.'
+        };
+      }
+    }
+  }
+
 
   const setDerived = (key, value, year, sourceKeys, formula) => {
     if (finite(value) === null || finite(year) === null) return;
@@ -1388,6 +1675,7 @@ async function main() {
   const cityData = readJson('cities.json');
   const relationDatabase = readJson('relation_generation_engine.json');
   const resourceReserveSimulation = readJson('resource_site_reserve_simulation_v1.json');
+  const indexSnapshot = readJson('country_official_index_observations_v1.json');
   const previousData = existsSync(OUTPUT) ? JSON.parse(readFileSync(OUTPUT, 'utf8')) : null;
 
   const profileRows = economyProfiles.countries || [];
@@ -1409,11 +1697,23 @@ async function main() {
   const resourceSiteSummaryByIso3 = summarizeResourceSites(resourceReserveRows);
   const economyByKey = new Map(Object.entries(economy).map(([key, row]) => [norm(key), row]));
   const populationByKey = new Map(Object.entries(population).map(([key, row]) => [norm(key), row]));
-  const priorCountryByIso3 = new Map((previousData?.countries || []).map((row) => [String(row.identity?.iso3 || '').toUpperCase(), row]));
+  // Prior registry output uses fixed-schema arrays, not nested objects. Decode it before
+  // building the ISO3 index so later refreshes can preserve prior source values and provenance.
+  const previousRows = (previousData?.countries || []).map((row) => decodePreviousRegistryRecord(row, previousData));
+  const priorCountryByIso3 = new Map(previousRows
+    .map((row) => [String(row.identity?.iso3 || '').toUpperCase(), row])
+    .filter(([iso3]) => iso3));
   const sources = { profileByIso3, rawFinanceByIso3, policeByIso3, resourceByCountryId, resourceByCountryName, cityByName, economyByKey, populationByKey, rawFinancialIndicatorKeys, rawFinancialDerivedKeys, profileIndicatorKeys: PROFILE_INDICATOR_KEYS };
   let restCountries = { byIso3: new Map(), loaded: false, error: null };
   let wbMetadata = { metadataByIso2: new Map(), metadataByIso3: new Map(), metadataLoaded: false, metadataError: null };
   let wbData = { byCountry: new Map(), errors: [], loaded: false };
+  let undpHdi = {
+    byIso3: new Map(), loaded: false, error: null,
+    sourceId: 'UNDP_HDR_2025_COMPOSITE_INDICES',
+    sourceUrl: 'https://hdr.undp.org/sites/default/files/2025_HDR/HDR25_Composite_indices_complete_time_series.csv',
+    rowCount: 0, observationYear: 2023
+  };
+  let transparencyInternationalCpi2025 = loadCpiSnapshot(indexSnapshot);
   if (REFRESH) {
     try { restCountries.byIso3 = await fetchRestCountries(); restCountries.loaded = true; }
     catch (error) { restCountries.error = String(error); console.error('REST Countries refresh failed:', String(error)); }
@@ -1424,9 +1724,36 @@ async function main() {
     } catch (error) { wbMetadata.metadataError = String(error); console.error('World Bank metadata refresh failed:', String(error)); }
     try { const result = await fetchWorldBankIndicators(); wbData.byCountry = result.byCountry; wbData.errors = result.errors; wbData.loaded = true; }
     catch (error) { wbData.errors = [{ error: String(error) }]; console.error('World Bank indicators refresh failed:', String(error)); }
+    try { undpHdi = await fetchUndpHdi(); }
+    catch (error) { undpHdi.error = String(error); console.error('UNDP HDI refresh failed:', String(error)); }
+    try {
+      transparencyInternationalCpi2025 = {
+        ...await fetchTransparencyInternationalCpi2025(),
+        snapshotFallback: false,
+        sourceLoadStatus: 'LIVE_REFRESH_OK',
+        liveRefreshError: null
+      };
+    } catch (error) {
+      const refreshError = String(error);
+      if (transparencyInternationalCpi2025.loaded) {
+        transparencyInternationalCpi2025 = {
+          ...transparencyInternationalCpi2025,
+          snapshotFallback: true,
+          sourceLoadStatus: 'SNAPSHOT_FALLBACK_AFTER_LIVE_REFRESH_FAILURE',
+          liveRefreshError: refreshError
+        };
+      } else {
+        transparencyInternationalCpi2025.error = refreshError;
+        transparencyInternationalCpi2025.sourceLoadStatus = 'FAILED';
+        transparencyInternationalCpi2025.liveRefreshError = refreshError;
+      }
+      console.error('Transparency International CPI 2025 live refresh failed; source status:', transparencyInternationalCpi2025.sourceLoadStatus, refreshError);
+    }
   }
   const refreshData = {
     restCountries,
+    undpHdi,
+    transparencyInternationalCpi2025,
     worldBank: {
       byCountry: wbData.byCountry, errors: wbData.errors, loaded: wbData.loaded,
       metadataByIso2: wbMetadata.metadataByIso2, metadataByIso3: wbMetadata.metadataByIso3,
@@ -1525,9 +1852,32 @@ async function main() {
       worldBankMetadataLoaded: wbMetadata.metadataLoaded,
       worldBankIndicatorErrors: wbData.errors,
       worldBankMetadataError: wbMetadata.metadataError,
+      undpHdi: {
+        loaded: undpHdi.loaded,
+        error: undpHdi.error,
+        sourceId: undpHdi.sourceId,
+        sourceUrl: undpHdi.sourceUrl,
+        observationYear: undpHdi.observationYear,
+        sourceRowsWithNumericHdi: undpHdi.rowCount,
+        canonicalCountriesWithHdi: rows.filter((row) => undpHdi.byIso3.has(String(row.identity.iso3 || '').toUpperCase())).length
+      },
+      transparencyInternationalCpi2025: {
+        loaded: transparencyInternationalCpi2025.loaded,
+        error: transparencyInternationalCpi2025.error,
+        refreshRequested: REFRESH,
+        snapshotFallback: transparencyInternationalCpi2025.snapshotFallback,
+        sourceLoadStatus: transparencyInternationalCpi2025.sourceLoadStatus,
+        liveRefreshError: transparencyInternationalCpi2025.liveRefreshError || null,
+        sourceId: transparencyInternationalCpi2025.sourceId,
+        sourceUrl: transparencyInternationalCpi2025.sourceUrl,
+        publisherUrl: transparencyInternationalCpi2025.publisherUrl,
+        observationYear: transparencyInternationalCpi2025.observationYear,
+        sourceRowsWithCpi: transparencyInternationalCpi2025.rowCount,
+        canonicalCountriesWithCpi: rows.filter((row) => transparencyInternationalCpi2025.byIso3.has(String(row.identity.iso3 || '').toUpperCase())).length
+      },
+      governanceIndicatorRefresh: governanceRefresh,
       restCountriesLoaded: restCountries.loaded,
       restCountriesError: restCountries.error,
-      governanceIndicatorRefresh: governanceRefresh,
       policy: 'A refreshed observation replaces a legacy value only when the World Bank API returns a numeric observation. When a refresh is unavailable, previously stored World Bank observations are preserved.'
     },
     dataQualityPolicy: {
@@ -1561,6 +1911,8 @@ async function main() {
       { id: 'relation_generation_engine.json', role: 'existing game relation salience profiles; generic default parameters are explicitly detected rather than treated as country-specific behaviour', coverage: relationRows.length, status: 'LOCAL_GAME_MODEL_NOT_INDEPENDENTLY_VERIFIED' },
       { id: 'resource_site_reserve_simulation_v1.json', role: 'existing gameplay extraction-site identities and resource types; simulated reserve amounts are not used as real-world facts', coverage: resourceReserveRows.length, status: 'SCENARIO_SIMULATION_DATA' },
       { id: 'World Bank Indicators API v2', role: 'current/latest non-empty macro, demographic, governance and selected social observations', url: 'https://api.worldbank.org/v2/', enabledBy: '--refresh-sources', status: wbData.loaded ? 'FETCHED' : 'NOT_FETCHED' },
+      { id: 'UNDP Human Development Report 2025 composite-index time series', role: 'official human development index; observation year 2023', url: undpHdi.sourceUrl, enabledBy: '--refresh-sources', status: undpHdi.loaded ? 'FETCHED' : (undpHdi.error ? 'FAILED' : 'NOT_FETCHED'), observationYear: undpHdi.observationYear, matchedRows: undpHdi.rowCount },
+      { id: 'Transparency International CPI 2025 results (maintained CSV mirror plus checked-in snapshot)', role: 'CPI score and rank from the publisher 2025 release; provenance states mirror and original publisher URL, as well as fallback mode', url: transparencyInternationalCpi2025.sourceUrl, publisherUrl: transparencyInternationalCpi2025.publisherUrl, enabledBy: '--refresh-sources', status: transparencyInternationalCpi2025.sourceLoadStatus || (transparencyInternationalCpi2025.loaded ? 'SNAPSHOT_OR_MIRROR_AVAILABLE' : (transparencyInternationalCpi2025.error ? 'FAILED' : 'NOT_FETCHED')), observationYear: transparencyInternationalCpi2025.observationYear, matchedRows: transparencyInternationalCpi2025.rowCount },
       { id: restCountries.byIso3.sourceId || 'REST Countries API', role: 'general facts such as official name, capital, languages, currency codes, area, borders and timezones', url: restCountries.byIso3.sourceId === 'REST_COUNTRIES_GITHUB_MIRROR' ? 'https://github.com/mledoze/countries' : 'https://restcountries.com/', enabledBy: '--refresh-sources', status: restCountries.loaded ? 'FETCHED' : 'NOT_FETCHED' }
     ],
     countries: rows
@@ -1590,6 +1942,37 @@ async function main() {
     const code = list.indexOf(value);
     return code < 0 ? -1 : code;
   };
+
+  // Source confidence is persisted separately from recency decay, and missing values retain explicit reasons.
+  const metricSourceConfidence = (value, meta) => {
+    if (finite(value) === null) return 0;
+    const status = String(meta?.status || 'MISSING').toUpperCase();
+    const sourceId = String(meta?.sourceId || '').trim();
+    const sourceName = String(meta?.sourceName || '').trim();
+    let confidence = 0.32;
+    if (['WORLD_BANK_API_OBSERVATION','UNDP_HDR_OBSERVATION','TRANSPARENCY_INTERNATIONAL_CPI_2025'].includes(status)) confidence = 0.92;
+    else if (status === 'DERIVED_SAME_YEAR_OBSERVATIONS') confidence = 0.80;
+    else if (status === 'SOURCE_OBSERVATION' || String(meta?.method || '').toUpperCase() === 'SOURCE_OBSERVATION') confidence = 0.84;
+    else if (/MODELED|MODELLED|SIMULATION|GAMEPLAY|LOCAL_/.test(status)) confidence = 0.46;
+    else if (sourceId || sourceName) confidence = 0.58;
+    if (!sourceId && !sourceName) confidence = Math.min(confidence, 0.32);
+    if (finite(meta?.year) === null) confidence = Math.min(confidence, 0.68);
+    return Number(Math.max(0, Math.min(1, confidence)).toFixed(3));
+  };
+  const metricDataGap = (value, meta) => {
+    const status = String(meta?.status || 'MISSING').toUpperCase();
+    if (finite(value) === null) {
+      if (status.includes('SOURCE_REFRESH_FAILED')) return 'SOURCE_REFRESH_FAILED';
+      if (status.includes('NO_SOURCE_OBSERVATION')) return 'NO_SOURCE_OBSERVATION';
+      if (status.includes('NOT_DEFINED_OR_SOURCED')) return 'NOT_DEFINED_OR_SOURCED';
+      return 'MISSING_OBSERVATION';
+    }
+    if (!meta?.sourceId && !meta?.sourceName) return 'SOURCE_METADATA_MISSING';
+    if (finite(meta?.year) === null) return 'OBSERVATION_YEAR_UNKNOWN';
+    if (/NOT_EXTERNALLY_REVALIDATED|LEGACY/.test(status)) return 'LEGACY_SOURCE_NOT_REVALIDATED';
+    if (/MODELED|MODELLED|SIMULATION|GAMEPLAY|LOCAL_/.test(status)) return 'UNVERIFIED_OR_MODELLED_SOURCE';
+    return null;
+  };
   registry.metadata.recordSchema = {
     encoding: 'ORDERED_VALUE_ARRAYS_V1',
     description: 'Each group array follows its listed field names in order. Metric positions follow fieldCatalogue. Provenance integer codes decode with metadata.provenanceEncoding. All source observations are retained; null is never zero.',
@@ -1597,7 +1980,7 @@ async function main() {
     generalFactFields: factFields,
     factSourceStatusFields: ['restCountries', 'worldBankMetadata'],
     metricFields: METRIC_CATALOGUE.map((field) => field.key),
-    metricProvenanceFields: ['years', 'statusCodes', 'sourceCodes', 'sourceNameCodes', 'methodCodes', 'sourceUrls', 'notes'],
+    metricProvenanceFields: ['years', 'statusCodes', 'sourceCodes', 'sourceNameCodes', 'methodCodes', 'indicatorCodes', 'sourceUrls', 'notes', 'sourceConfidence', 'dataGaps'],
     legacySnapshotFields: ['baselineYear', 'rawFinancialRegistry', 'economyGlobalProfile'],
     rawFinancialRegistryFields: ['baselineYear', 'rawIndicatorValues', 'derivedIndicatorValues'],
     economyGlobalProfileFields: ['profileStatus', 'economyKey', 'populationKey', 'indicatorValues', 'metricAvailabilityValues', 'provenance'],
@@ -1645,8 +2028,11 @@ async function main() {
       sourceCodes: METRIC_CATALOGUE.map((field) => codeOf(sourceIds, row.metricMetadata[field.key]?.sourceId || '')),
       sourceNameCodes: METRIC_CATALOGUE.map((field) => codeOf(sourceNames, row.metricMetadata[field.key]?.sourceName || '')),
       methodCodes: METRIC_CATALOGUE.map((field) => codeOf(methods, row.metricMetadata[field.key]?.method || 'NONE')),
+      indicatorCodes: METRIC_CATALOGUE.map((field) => row.metricMetadata[field.key]?.indicatorCode || field.wb || null),
       sourceUrls: METRIC_CATALOGUE.map((field) => row.metricMetadata[field.key]?.sourceUrl || null),
-      notes: METRIC_CATALOGUE.map((field) => row.metricMetadata[field.key]?.note || null)
+      notes: METRIC_CATALOGUE.map((field) => row.metricMetadata[field.key]?.note || null),
+      sourceConfidence: METRIC_CATALOGUE.map((field) => metricSourceConfidence(row.metrics[field.key], row.metricMetadata[field.key])),
+      dataGaps: METRIC_CATALOGUE.map((field) => metricDataGap(row.metrics[field.key], row.metricMetadata[field.key]))
     },
     legacySnapshots: [
       row.legacySnapshots.baselineYear,
