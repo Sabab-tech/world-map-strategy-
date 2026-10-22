@@ -828,6 +828,22 @@ function reserveInventoryForShipment(c,resourceId,quantity,shipmentId){
   w.reservedByResource[resourceId]=reserved+quantity;n.reservations[shipmentId]={resourceId,quantity,status:'RESERVED'};
   return{ok:true};
 }
+function resizeRouteForDispatch(route,actualQuantity,plannedQuantity){
+  const out=clone(route||{}),actual=Math.max(0,num(actualQuantity)||0);
+  const planned=Math.max(0,num(plannedQuantity)??num(out.dispatchQuantity)??num(out.requestedQuantity)??actual);
+  out.plannedDispatchQuantity=planned;
+  out.dispatchQuantity=Number(actual.toFixed(6));
+  if(planned>1e-9&&num(out.totalCost)!==null)
+    out.totalCost=Number((num(out.totalCost)*actual/planned).toFixed(4));
+  for(const key of ['vehiclePlan','legs']){
+    if(Array.isArray(out[key]))out[key]=out[key].map(leg=>{
+      const payload=Math.max(.001,num(leg?.payloadTonnes)||1);
+      return{...leg,units:Math.ceil(actual/payload),dispatchQuantity:Number(actual.toFixed(6))};
+    });
+  }
+  out.status=actual>1e-9?'PLANNED':'BLOCKED';
+  return out;
+}
 function dispatchShipment(input={}){
   const cid=canonicalCountry(input.countryId);
   const sourceBatchId=String(input.batchId||'').trim();
@@ -880,8 +896,9 @@ function dispatchShipment(input={}){
   }
   if(quantity<=0)return{status:'BLOCKED',reason:'SOURCE_BATCH_QUANTITY_ZERO',batchId:sourceBatchId||null,plan,capacity:capacityPreview};
   const reserved=reserveInventoryForShipment(cid,plan.resourceId,quantity,shipmentId);if(!reserved.ok)return{status:'BLOCKED',reason:reserved.reason,details:reserved,plan};
-  const capacityUse=commitTransportCapacity(cid,plan.route,quantity,shipmentId);
-  const route=clone(plan.route);route.dispatchQuantity=quantity;route.capacityUse=capacityUse;
+  const route=resizeRouteForDispatch(plan.route,quantity,plannedQuantity);
+  const capacityUse=commitTransportCapacity(cid,route,quantity,shipmentId);
+  route.capacityUse=capacityUse;
   if(quantity<plannedQuantity)route.quantityAdjustment={reason:quantityAdjustmentReason||'SOURCE_BATCH_OR_LOT_ROUNDING_CAP',plannedQuantity,actualQuantity:quantity};
   const s={shipmentId,countryId:cid,siteId:plan.siteId,resourceId:plan.resourceId,factoryId:plan.factoryId,quantity,unit:input.unit||'TONNES',
     batchId:sourceBatchId||null,occurrenceKey:input.occurrenceKey||sourceBatch?.occurrenceKey||null,
@@ -1012,21 +1029,29 @@ function dispatchFactoryInputShipment(input={}){
   const blocked=policy?.isRouteBlocked?.(cid,{resourceId:rid,transportMode:route.transportMode,routeId:route.routeId,
     siteId:sourceBatch.sourceSiteIds?.[0]||sourceBatch.sourceFactoryId||sourceWarehouseId,factoryId});
   if(blocked?.blocked)return{status:'BLOCKED',reason:blocked.reason||'FACTORY_INPUT_ROUTE_BLOCKED',policy:blocked,route};
-  const dispatchedSourceQuantity=Math.min(quantity,Math.max(0,num(route.dispatchQuantity)||0));
+  const routePlannedQuantity=Math.min(quantity,Math.max(0,num(route.dispatchQuantity)||0));
+  const routeCapacityPreview=previewTransportCapacity(cid,route,routePlannedQuantity);
+  if(routeCapacityPreview.status!=='READY')
+    return{status:'BLOCKED',reason:routeCapacityPreview.reason||'TRANSPORT_CAPACITY_EXHAUSTED',capacity:routeCapacityPreview,route};
+  const dispatchedSourceQuantity=Math.min(routePlannedQuantity,routeCapacityPreview.allowedQuantity);
   const deliveredTargetQuantity=dispatchedSourceQuantity*bridge.factor;
   if(!(dispatchedSourceQuantity>1e-9)||!(deliveredTargetQuantity>1e-9))
-    return{status:'BLOCKED',reason:'FACTORY_INPUT_ROUTE_QUANTITY_ZERO',route};
+    return{status:'BLOCKED',reason:'FACTORY_INPUT_ROUTE_QUANTITY_ZERO',route,capacity:routeCapacityPreview};
   const shipmentId='FACTORYINPUT:'+h32(JSON.stringify({cid,batchId,factoryId,rid,turn:turn(),seq:network.shipments.length+1}));
   processed.reservedByResource=processed.reservedByResource||{};
   const actualReservedKey=quantityObjectKey(processed.reservedByResource,rid)||sourceKey||rid;
   processed.reservedByResource[actualReservedKey]=(num(processed.reservedByResource[actualReservedKey])||0)+dispatchedSourceQuantity;
-  route.dispatchQuantity=dispatchedSourceQuantity;
+  const adjustedRoute=resizeRouteForDispatch(route,dispatchedSourceQuantity,routePlannedQuantity);
+  adjustedRoute.capacityUse=null;
   const shipment={shipmentId,shipmentType:'FACTORY_INPUT',countryId:cid,siteId:sourceBatch.sourceSiteIds?.[0]||sourceBatch.sourceFactoryId||sourceWarehouseId,
     sourceFactoryId:sourceBatch.sourceFactoryId||null,factoryId,resourceId:rid,quantity:dispatchedSourceQuantity,unit:sourceUnit,
     targetQuantity:deliveredTargetQuantity,targetUnit,unitBridge:bridge,batchId,sourceWarehouseId,warehouseId:sourceWarehouseId,
-    status:'IN_TRANSIT',createdTurn:turn(),etaTurn:route.etaTurn,route,provenance:{source:'OMEGA_RESOURCE_INDUSTRIAL_NETWORK_V1',
+    status:'IN_TRANSIT',createdTurn:turn(),etaTurn:adjustedRoute.etaTurn,route:adjustedRoute,
+    transportCapacityReservation:null,provenance:{source:'OMEGA_RESOURCE_INDUSTRIAL_NETWORK_V1',
       authority:'SIMULATED_DOMESTIC_FACTORY_TRANSFER',sourceBatchId:batchId,sourceFactoryId:sourceBatch.sourceFactoryId||null,
       targetFactoryId:factoryId,unitBridge:bridge,simulationOnly:true}};
+  const capacityUse=commitTransportCapacity(cid,adjustedRoute,dispatchedSourceQuantity,shipmentId);
+  adjustedRoute.capacityUse=capacityUse;shipment.route=adjustedRoute;shipment.transportCapacityReservation=capacityUse;
   network.shipments.push(shipment);network.shipments=network.shipments.slice(-MAX_SHIPMENTS);
   if(batchId)updateSiteFlow(cid,batchId,row=>{
     row.downstreamShipmentIds=[...new Set([...(row.downstreamShipmentIds||[]),shipmentId])];
