@@ -705,7 +705,7 @@ function recipeFor(resourceId,asset={}){
     if(!base)return{factoryType:manufacturing.factoryType,primaryInput:null,inputs:{},outputs:{},outputUnits:{},cycleDays:1,
       recipeAuthority:'MANUFACTURING_RECIPE_NOT_FOUND',reason:'FACTORY_TYPE_HAS_NO_RECIPE_FOR_INPUT'};
     return{factoryType:manufacturing.factoryType,primaryInput:tok(base.primaryInput||manufacturing.recipeKey),
-      inputs:clone(base.inputs||{}),outputs:clone(base.outputs||{}),outputUnits:clone(base.outputUnits||{}),
+      inputs:clone(base.inputs||{}),inputUnits:clone(base.inputUnits||{}),outputs:clone(base.outputs||{}),outputUnits:clone(base.outputUnits||{}),
       cycleDays:Math.max(1,num(base.cycleDays)||1),recipeId:base.recipeId||manufacturing.factoryType+':'+manufacturing.recipeKey,
       recipeResourceId:manufacturing.recipeKey,category:manufacturing.spec.category||'industry',
       iconId:manufacturing.spec.iconId||'factory',construction:clone(base.construction||{}),utilities:clone(base.utilities||{}),
@@ -723,6 +723,7 @@ function recipeFor(resourceId,asset={}){
     const custom=asset.customRecipeAllowed===true;
     return{factoryType:custom?(asset.factoryType||asset.type||catalogRule.factoryType):catalogRule.factoryType,
       primaryInput:rid,inputs:clone(custom?(asset.inputCoefficients||asset.inputs||catalogRule.inputs):catalogRule.inputs||{}),
+      inputUnits:clone(custom?(asset.inputUnits||{}):catalogRule.inputUnits||{}),
       outputs:clone(custom?(asset.outputProfile||asset.outputs||catalogRule.outputs):catalogRule.outputs||{}),
       outputUnits:clone(custom?(asset.outputUnits||{}):catalogRule.outputUnits||{}),
       cycleDays:Math.max(1,num(asset.cycleDays)||num(catalogRule.cycleDays)||1),
@@ -733,7 +734,7 @@ function recipeFor(resourceId,asset={}){
     (!(asset.factoryType||asset.type)&&Object.keys(assetInputs||{}).length>0&&Object.keys(assetOutputs||{}).length>0);
   if(hasProfile&&Object.keys(assetInputs||{}).length&&Object.keys(assetOutputs||{}).length){
     return{factoryType:asset.factoryType||asset.type||'CUSTOM_RESOURCE_PROCESSING_PLANT',
-      primaryInput:tok(asset.primaryInput||rid),inputs:clone(assetInputs),outputs:clone(assetOutputs),
+      primaryInput:tok(asset.primaryInput||rid),inputs:clone(assetInputs),inputUnits:clone(asset.inputUnits||{}),outputs:clone(assetOutputs),
       outputUnits:clone(asset.outputUnits||{}),cycleDays:Math.max(1,num(asset.cycleDays)||1),
       recipeAuthority:'ASSET_PROFILE',simulationOnly:asset.simulationOnly===true};
   }
@@ -743,7 +744,7 @@ function recipeFor(resourceId,asset={}){
   }
   const genericProduct=String(resourceId||'RESOURCE').trim().replace(/[^A-Za-z0-9]+/g,'_').replace(/^_+|_+$/g,'').toUpperCase()+'_PROCESSED';
   return{factoryType:'GENERIC_RESOURCE_PROCESSING_PLANT',primaryInput:rid||'unknown_resource',
-    inputs:{[rid||'unknown_resource']:1},outputs:{[genericProduct]:0.85,PROCESSING_RESIDUE:0.15},
+    inputs:{[rid||'unknown_resource']:1},inputUnits:{[rid||'unknown_resource']:input.unit||'TONNES'},outputs:{[genericProduct]:0.85,PROCESSING_RESIDUE:0.15},
     outputUnits:{},cycleDays:2,quantityBasis:'SIMULATION_NORMALIZED_INPUT_UNITS',
     recipeAuthority:'SIMULATED_GENERIC_FALLBACK',simulationOnly:true};
 }
@@ -1640,10 +1641,12 @@ function executeFactoryCycle(input={}){
   }
   const carbonPolicy=g.Omega?.ResourceStrategicPolicyRuntime||g.OmegaResourceStrategicPolicyRuntime;
   for(const plan of plannedInputs){
+    const declaredUnit=recipe.inputUnits?.[plan.key]||recipe.inputUnits?.[plan.resourceId]||
+      Object.entries(recipe.inputUnits||{}).find(([key])=>tok(key)===plan.resourceId)?.[1]||null;
     const unit=plan.inputLotRows.find(lot=>lot?.unit)?.unit||
       countryBatches.find(batch=>tok(batch?.resourceId||batch?.materialIdentity)===plan.resourceId&&batch?.unit)?.unit||
       (Array.isArray(g.ResourceMinistryEngine?.resourceTypes)?g.ResourceMinistryEngine.resourceTypes.find(x=>tok(x?.id||x?.resourceId)===plan.resourceId)?.unit:null)||
-      input.unit||'TONNES';
+      declaredUnit||input.unit||'TONNES';
     const carbonGate=carbonPolicy?.previewCarbonActivity?.(cid,plan.resourceId,plan.required,unit,'RESOURCE_PROCESSING',null,{
       activityId:'FACTORYRUN:'+cid+':'+fid+':T'+turn()+':'+plan.resourceId,factoryId:fid,
       siteId:plan.inputLotRows.find(x=>x?.siteId)?.siteId||countryBatches.find(x=>tok(x?.resourceId||x?.materialIdentity)===plan.resourceId&&x?.siteId)?.siteId||null,
