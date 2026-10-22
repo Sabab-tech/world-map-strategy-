@@ -1259,6 +1259,386 @@
         "*"
       ],
       "innovationMode": "RESEARCH_OR_IMPORT"
+    },
+    "BASIC_METALLURGY": {
+      "researchTurns": 5,
+      "importTurns": 3,
+      "researchCost": 1800,
+      "importCost": 1260,
+      "foreignContractBonus": 0.08,
+      "effects": {
+        "productionEfficiencyAdd": 0.03,
+        "maintenanceMultiplier": 0.98
+      },
+      "targetResourceIds": [
+        "*"
+      ],
+      "innovationMode": "RESEARCH_OR_IMPORT",
+      "prerequisiteTechnologyIds": [
+        "DIGITAL_MAINTENANCE"
+      ],
+      "authority": "SIMULATED_GAMEPLAY_TECHNOLOGY",
+      "simulationOnly": true
+    },
+    "METAL_SMELTING": {
+      "researchTurns": 6,
+      "importTurns": 4,
+      "researchCost": 2200,
+      "importCost": 1540,
+      "foreignContractBonus": 0.08,
+      "effects": {
+        "productionEfficiencyAdd": 0.03,
+        "maintenanceMultiplier": 0.98
+      },
+      "targetResourceIds": [
+        "*"
+      ],
+      "innovationMode": "RESEARCH_OR_IMPORT",
+      "prerequisiteTechnologyIds": [
+        "ADVANCED_ORE_SORTING"
+      ],
+      "authority": "SIMULATED_GAMEPLAY_TECHNOLOGY",
+      "simulationOnly": true
+    },
+    "CHEMICAL_PROCESSING": {
+      "researchTurns": 6,
+      "importTurns": 4,
+      "researchCost": 2400,
+      "importCost": 1680,
+      "foreignContractBonus": 0.08,
+      "effects": {
+        "productionEfficiencyAdd": 0.03,
+        "maintenanceMultiplier": 0.98
+      },
+      "targetResourceIds": [
+        "*"
+      ],
+      "innovationMode": "RESEARCH_OR_IMPORT",
+      "prerequisiteTechnologyIds": [
+        "DIGITAL_MAINTENANCE"
+      ],
+      "authority": "SIMULATED_GAMEPLAY_TECHNOLOGY",
+      "simulationOnly": true
+    },
+    "FERTILIZER_PROCESSING": {
+      "researchTurns": 4,
+      "importTurns": 2,
+      "researchCost": 1200,
+      "importCost": 840,
+      "foreignContractBonus": 0.08,
+      "effects": {
+        "productionEfficiencyAdd": 0.03,
+        "maintenanceMultiplier": 0.98
+      },
+      "targetResourceIds": [
+        "*"
+      ],
+      "innovationMode": "RESEARCH_OR_IMPORT",
+      "prerequisiteTechnologyIds": [
+        "CHEMICAL_PROCESSING"
+      ],
+      "authority": "SIMULATED_GAMEPLAY_TECHNOLOGY",
+      "simulationOnly": true
+    },
+    "CEMENT_PROCESSING": {
+      "researchTurns": 4,
+      "importTurns": 2,
+      "researchCost": 1100,
+      "importCost": 770,
+      "foreignContractBonus": 0.08,
+      "effects": {
+        "productionEfficiencyAdd": 0.03,
+        "maintenanceMultiplier": 0.98
+      },
+      "targetResourceIds": [
+        "*"
+      ],
+      "innovationMode": "RESEARCH_OR_IMPORT",
+      "prerequisiteTechnologyIds": [
+        "DIGITAL_MAINTENANCE"
+      ],
+      "authority": "SIMULATED_GAMEPLAY_TECHNOLOGY",
+      "simulationOnly": true
+    },
+    "THERMAL_PROCESSING": {
+      "researchTurns": 5,
+      "importTurns": 3,
+      "researchCost": 1600,
+      "importCost": 1120,
+      "foreignContractBonus": 0.08,
+      "effects": {
+        "productionEfficiencyAdd": 0.03,
+        "maintenanceMultiplier": 0.98
+      },
+      "targetResourceIds": [
+        "*"
+      ],
+      "innovationMode": "RESEARCH_OR_IMPORT",
+      "prerequisiteTechnologyIds": [
+        "DIGITAL_MAINTENANCE"
+      ],
+      "authority": "SIMULATED_GAMEPLAY_TECHNOLOGY",
+      "simulationOnly": true
+    },
+    "PAPER_PROCESSING": {
+      "researchTurns": 4,
+      "importTurns": 2,
+      "researchCost": 1000,
+      "importCost": 700,
+      "foreignContractBonus": 0.08,
+      "effects": {
+        "productionEfficiencyAdd": 0.03,
+        "maintenanceMultiplier": 0.98
+      },
+      "targetResourceIds": [
+        "*"
+      ],
+      "innovationMode": "RESEARCH_OR_IMPORT",
+      "prerequisiteTechnologyIds": [
+        "WATER_RECYCLING"
+      ],
+      "authority": "SIMULATED_GAMEPLAY_TECHNOLOGY",
+      "simulationOnly": true
+    },
+    "FOOD_SAFETY": {
+      "researchTurns": 3,
+      "importTurns": 2,
+      "researchCost": 900,
+      "importCost": 630,
+      "foreignContractBonus": 0.08,
+      "effects": {
+        "productionEfficiencyAdd": 0.03,
+        "maintenanceMultiplier": 0.98
+      },
+      "targetResourceIds": [
+        "*"
+      ],
+      "innovationMode": "RESEARCH_OR_IMPORT",
+      "prerequisiteTechnologyIds": [
+        "DIGITAL_MAINTENANCE"
+      ],
+      "authority": "SIMULATED_GAMEPLAY_TECHNOLOGY",
+      "simulationOnly": true
+    },
+    "TEXTILE_PROCESSING": {
+      "researchTurns": 3,
+      "importTurns": 2,
+      "researchCost": 900,
+      "importCost": 630,
+      "foreignContractBonus": 0.08,
+      "effects": {
+        "productionEfficiencyAdd": 0.03,
+        "maintenanceMultiplier": 0.98
+      },
+      "targetResourceIds": [
+        "*"
+      ],
+      "innovationMode": "RESEARCH_OR_IMPORT",
+      "prerequisiteTechnologyIds": [
+        "DIGITAL_MAINTENANCE"
+      ],
+      "authority": "SIMULATED_GAMEPLAY_TECHNOLOGY",
+      "simulationOnly": true
+    },
+    "PRECISION_MANUFACTURING": {
+      "researchTurns": 7,
+      "importTurns": 5,
+      "researchCost": 3000,
+      "importCost": 2100,
+      "foreignContractBonus": 0.08,
+      "effects": {
+        "productionEfficiencyAdd": 0.03,
+        "maintenanceMultiplier": 0.98
+      },
+      "targetResourceIds": [
+        "*"
+      ],
+      "innovationMode": "RESEARCH_OR_IMPORT",
+      "prerequisiteTechnologyIds": [
+        "DIGITAL_MAINTENANCE"
+      ],
+      "authority": "SIMULATED_GAMEPLAY_TECHNOLOGY",
+      "simulationOnly": true
+    },
+    "ELECTRICAL_ENGINEERING": {
+      "researchTurns": 5,
+      "importTurns": 3,
+      "researchCost": 1800,
+      "importCost": 1260,
+      "foreignContractBonus": 0.08,
+      "effects": {
+        "productionEfficiencyAdd": 0.03,
+        "maintenanceMultiplier": 0.98
+      },
+      "targetResourceIds": [
+        "*"
+      ],
+      "innovationMode": "RESEARCH_OR_IMPORT",
+      "prerequisiteTechnologyIds": [
+        "DIGITAL_MAINTENANCE"
+      ],
+      "authority": "SIMULATED_GAMEPLAY_TECHNOLOGY",
+      "simulationOnly": true
+    },
+    "SEMICONDUCTOR_PROCESSING": {
+      "researchTurns": 10,
+      "importTurns": 8,
+      "researchCost": 8000,
+      "importCost": 5600,
+      "foreignContractBonus": 0.08,
+      "effects": {
+        "productionEfficiencyAdd": 0.03,
+        "maintenanceMultiplier": 0.98
+      },
+      "targetResourceIds": [
+        "*"
+      ],
+      "innovationMode": "RESEARCH_OR_IMPORT",
+      "prerequisiteTechnologyIds": [
+        "PRECISION_MANUFACTURING"
+      ],
+      "authority": "SIMULATED_GAMEPLAY_TECHNOLOGY",
+      "simulationOnly": true
+    },
+    "BATTERY_CHEMISTRY": {
+      "researchTurns": 7,
+      "importTurns": 5,
+      "researchCost": 3200,
+      "importCost": 2240,
+      "foreignContractBonus": 0.08,
+      "effects": {
+        "productionEfficiencyAdd": 0.03,
+        "maintenanceMultiplier": 0.98
+      },
+      "targetResourceIds": [
+        "*"
+      ],
+      "innovationMode": "RESEARCH_OR_IMPORT",
+      "prerequisiteTechnologyIds": [
+        "CHEMICAL_PROCESSING"
+      ],
+      "authority": "SIMULATED_GAMEPLAY_TECHNOLOGY",
+      "simulationOnly": true
+    },
+    "VEHICLE_MANUFACTURING": {
+      "researchTurns": 6,
+      "importTurns": 4,
+      "researchCost": 2800,
+      "importCost": 1960,
+      "foreignContractBonus": 0.08,
+      "effects": {
+        "productionEfficiencyAdd": 0.03,
+        "maintenanceMultiplier": 0.98
+      },
+      "targetResourceIds": [
+        "*"
+      ],
+      "innovationMode": "RESEARCH_OR_IMPORT",
+      "prerequisiteTechnologyIds": [
+        "PRECISION_MANUFACTURING"
+      ],
+      "authority": "SIMULATED_GAMEPLAY_TECHNOLOGY",
+      "simulationOnly": true
+    },
+    "HEAVY_TRANSPORT_MANUFACTURING": {
+      "researchTurns": 8,
+      "importTurns": 6,
+      "researchCost": 4000,
+      "importCost": 2800,
+      "foreignContractBonus": 0.08,
+      "effects": {
+        "productionEfficiencyAdd": 0.03,
+        "maintenanceMultiplier": 0.98
+      },
+      "targetResourceIds": [
+        "*"
+      ],
+      "innovationMode": "RESEARCH_OR_IMPORT",
+      "prerequisiteTechnologyIds": [
+        "BASIC_METALLURGY"
+      ],
+      "authority": "SIMULATED_GAMEPLAY_TECHNOLOGY",
+      "simulationOnly": true
+    },
+    "AEROSPACE_ENGINEERING": {
+      "researchTurns": 10,
+      "importTurns": 8,
+      "researchCost": 9000,
+      "importCost": 6300,
+      "foreignContractBonus": 0.08,
+      "effects": {
+        "productionEfficiencyAdd": 0.03,
+        "maintenanceMultiplier": 0.98
+      },
+      "targetResourceIds": [
+        "*"
+      ],
+      "innovationMode": "RESEARCH_OR_IMPORT",
+      "prerequisiteTechnologyIds": [
+        "PRECISION_MANUFACTURING"
+      ],
+      "authority": "SIMULATED_GAMEPLAY_TECHNOLOGY",
+      "simulationOnly": true
+    },
+    "PHARMACEUTICAL_GMP": {
+      "researchTurns": 8,
+      "importTurns": 6,
+      "researchCost": 4500,
+      "importCost": 3150,
+      "foreignContractBonus": 0.08,
+      "effects": {
+        "productionEfficiencyAdd": 0.03,
+        "maintenanceMultiplier": 0.98
+      },
+      "targetResourceIds": [
+        "*"
+      ],
+      "innovationMode": "RESEARCH_OR_IMPORT",
+      "prerequisiteTechnologyIds": [
+        "CHEMICAL_PROCESSING"
+      ],
+      "authority": "SIMULATED_GAMEPLAY_TECHNOLOGY",
+      "simulationOnly": true
+    },
+    "ADVANCED_MANUFACTURING": {
+      "researchTurns": 8,
+      "importTurns": 6,
+      "researchCost": 4500,
+      "importCost": 3150,
+      "foreignContractBonus": 0.08,
+      "effects": {
+        "productionEfficiencyAdd": 0.03,
+        "maintenanceMultiplier": 0.98
+      },
+      "targetResourceIds": [
+        "*"
+      ],
+      "innovationMode": "RESEARCH_OR_IMPORT",
+      "prerequisiteTechnologyIds": [
+        "PRECISION_MANUFACTURING"
+      ],
+      "authority": "SIMULATED_GAMEPLAY_TECHNOLOGY",
+      "simulationOnly": true
+    },
+    "MATERIAL_RECOVERY": {
+      "researchTurns": 4,
+      "importTurns": 2,
+      "researchCost": 1200,
+      "importCost": 840,
+      "foreignContractBonus": 0.08,
+      "effects": {
+        "productionEfficiencyAdd": 0.03,
+        "maintenanceMultiplier": 0.98
+      },
+      "targetResourceIds": [
+        "*"
+      ],
+      "innovationMode": "RESEARCH_OR_IMPORT",
+      "prerequisiteTechnologyIds": [
+        "WATER_RECYCLING"
+      ],
+      "authority": "SIMULATED_GAMEPLAY_TECHNOLOGY",
+      "simulationOnly": true
     }
   },
   "contractorTypes": {
