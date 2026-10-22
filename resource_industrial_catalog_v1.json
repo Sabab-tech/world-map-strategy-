@@ -3392,6 +3392,26 @@
       "Output coefficients and unit metadata are defined in the catalog; unknown observed quantities must not be presented as observed facts.",
       "Factory capacity is a per-day simulation profile, never inferred from a single shipment quantity.",
       "By-products and residues are persisted as separate batches."
-    ]
+    ],
+    "genericFactoryProfile": {
+      "factoryType": "GENERIC_RESOURCE_PROCESSING_PLANT",
+      "name": "Generic simulated resource processing plant",
+      "category": "generic-processing",
+      "iconId": "industrial-production",
+      "recipeId": null,
+      "constructionCostUsd": 1000000,
+      "constructionDays": 180,
+      "constructionWorkers": 80,
+      "constructionMaterials": {},
+      "capacityPerDay": 250,
+      "capacityUnit": "SIMULATION_PRODUCTION_UNITS_PER_DAY",
+      "operatingWorkers": 60,
+      "electricityMWhPerDay": 50,
+      "waterM3PerDay": 25,
+      "maintenanceRate": 0.04,
+      "requiredTechnologyIds": [],
+      "simulationOnly": true,
+      "authority": "SIMULATED_GENERIC_FALLBACK"
+    }
   }
 }
