@@ -111,6 +111,26 @@
         'rocket': '<path d="M12 22s4-4 4-9V6l-4-4-4 4v7c0 5 4 9 4 9Z"/><path d="M8 13H4l-2 5 6-1m8-4h4l2 5-6-1M10 8h4M10 18l-2 4m6-4 2 4"/>',
         'smile': '<circle cx="12" cy="12" r="9"/><path d="M8 14s1.5 3 4 3 4-3 4-3M9 9h.01M15 9h.01"/>',
         'droplet': '<path d="M12 22a7 7 0 0 0 7-7c0-4-7-13-7-13S5 11 5 15a7 7 0 0 0 7 7Z"/>'
+        'steelworks': '<path d="M3 21V11l5 3V10l5 3V7l4 2V4h3v17H3Z"/><path d="M7 17h2m3 0h2m3 0h2M17 4V2h3v2"/>',
+        'smelter': '<path d="M4 21h16l-2-8H6l-2 8Z"/><path d="M8 13c-2-3 2-4 1-7 3 2 4 4 3 7m1 0c-1-3 2-4 2-6 2 2 3 4 2 6"/>',
+        'petrochemical-plant': '<path d="M3 21V11h5V7h4v7h4V5h4v16H3Z"/><path d="M5 7V3h4v4m7 2h2M7 15h2m3 0h2m3 3h2"/>',
+        'fertilizer-plant': '<path d="M12 21v-8"/><path d="M12 14c-7 0-9-4-9-9 6 0 10 3 9 9Z"/><path d="M12 17c0-5 3-8 8-8 0 5-2 8-8 8Z"/><path d="M3 21h18"/>',
+        'chemical-plant': '<path d="M9 3h6m-5 0v6l-5 9a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-9V3"/><path d="M7 15h10m-8-3h6"/>',
+        'cement-plant': '<path d="M3 21h18M5 21V10l7-4 7 4v11"/><path d="M8 12h2m4 0h2M8 16h2m4 0h2"/><path d="M9 6V3h6v3"/>',
+        'glass-ceramic-plant': '<path d="M8 3h8l-1 4 3 11a2 2 0 0 1-2 3H8a2 2 0 0 1-2-3L9 7 8 3Z"/><path d="M8 15h8M10 10h4"/>',
+        'paper-mill': '<path d="M6 3h9l4 4v14H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"/><path d="M15 3v5h4M8 12h8M8 16h8"/>',
+        'food-processing': '<path d="M4 21h16M6 21V11h12v10"/><path d="M9 11V5m3 6V3m3 8V6"/><path d="M8 16h8"/>',
+        'textile-mill': '<path d="M4 8h16v10H4z"/><path d="M7 8V4h4v4m2 0V4h4v4M7 12h10m-10 3h10"/><path d="M7 18v3m10-3v3"/>',
+        'machine-tool': '<path d="M3 9V5h5l2 3h7l3-3 2 2-3 4 3 4-2 2-3-3h-7l-2 3H3v-4l3-2-3-2Z"/><circle cx="12" cy="11" r="2"/>',
+        'grid-equipment': '<path d="M12 2 5 12h5l-1 10 10-13h-6l-1-7Z"/><path d="M4 9h3m10 7h3"/>',
+        'semiconductor-fab': '<rect x="6" y="6" width="12" height="12" rx="2"/><path d="M9 2v4m6-4v4M9 18v4m6-4v4M2 9h4m-4 6h4m12-6h4m-4 6h4"/><path d="M10 10h4v4h-4z"/>',
+        'battery-plant': '<rect x="4" y="6" width="16" height="14" rx="2"/><path d="M9 6V3h6v3m-3 3-3 5h3l-1 3 4-6h-3l1-2"/>',
+        'vehicle-assembly': '<path d="M3 15 5 9h10l4 4h2v6H3v-4Z"/><circle cx="7" cy="19" r="1.5"/><circle cx="17" cy="19" r="1.5"/><path d="m6 9 2-4h5l3 4"/>',
+        'shipyard': '<path d="M3 14h18l-3 6H7l-4-6Z"/><path d="M6 14V8h5v6m2 0V5h4v9"/><path d="M3 22c2-1 3-1 5 0s3 1 5 0 3-1 5 0 2 1 3 0"/>',
+        'aerospace-plant': '<path d="m12 2 4 11-4 2-4-2 4-11Z"/><path d="m8 10-5 4 1 4 5-3m7-5 5 4-1 4-5-3"/><path d="m10 16-1 5h6l-1-5"/>',
+        'pharma-plant': '<path d="M8 3a4 4 0 0 0-4 4v10a4 4 0 0 0 4 4h8a4 4 0 0 0 4-4V7a4 4 0 0 0-4-4H8Z"/><path d="m6 17 12-10M7 10h4m2 7h4"/>',
+        'defense-industry': '<path d="M12 22s8-4 8-11V5l-8-3-8 3v6c0 7 8 11 8 11Z"/><path d="M7 12h10m-5-5v10"/>',
+        'recycling-plant': '<path d="m9 4 3-2 4 6h-4"/><path d="m18 10 3 1-3 7-2-3"/><path d="m7 17-1 4-5-4 4-1"/><path d="M7 17 4 12l3-5m11 3-4 1m-7 6h6"/>',
     });
 
     const normalizeEmoji = (value) => String(value || '')
