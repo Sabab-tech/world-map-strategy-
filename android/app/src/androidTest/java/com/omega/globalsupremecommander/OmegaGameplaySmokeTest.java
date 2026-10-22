@@ -23,6 +23,9 @@ import java.util.concurrent.atomic.AtomicReference;
 
 @RunWith(AndroidJUnit4.class)
 public final class OmegaGameplaySmokeTest {
+    private static final long PAGE_LOAD_TIMEOUT_MS = 90000L;
+    private static final long JAVASCRIPT_CALLBACK_TIMEOUT_SECONDS = 10L;
+
     @Test
     public void offlineWebViewBootsAndMinistryNavigationResponds() throws Exception {
         final android.app.Instrumentation instrumentation =
@@ -49,6 +52,28 @@ public final class OmegaGameplaySmokeTest {
                 webViewRef.set(found);
             });
 
+            /*
+             * Do not queue JavaScript into a still-parsing document. On the API 28 WebView,
+             * evaluateJavascript callbacks can otherwise wait behind synchronous script tags
+             * and hit the per-evaluation timeout before the page has finished loading.
+             * This is a load barrier, not a readiness bypass: after it passes, we still verify
+             * the offline shell, core runtime, actual speed control, and ministry navigation.
+             */
+            final long loadDeadline = SystemClock.elapsedRealtime() + PAGE_LOAD_TIMEOUT_MS;
+            int loadProgress = 0;
+            while (loadProgress < 100 && SystemClock.elapsedRealtime() < loadDeadline) {
+                final AtomicReference<Integer> progressRef = new AtomicReference<>(0);
+                instrumentation.runOnMainSync(
+                        () -> progressRef.set(webViewRef.get().getProgress())
+                );
+                loadProgress = progressRef.get();
+                if (loadProgress < 100) SystemClock.sleep(250L);
+            }
+            assertEquals(
+                    "Bundled offline HTML and synchronous scripts must finish loading within 90 seconds",
+                    100, loadProgress
+            );
+
             final String readinessScript =
                     "(function() {" +
                     " return !!(" +
@@ -61,7 +86,7 @@ public final class OmegaGameplaySmokeTest {
                     " window.Game && window.Omega" +
                     " );" +
                     "})()";
-            final long deadline = SystemClock.elapsedRealtime() + 90000L;
+            final long deadline = SystemClock.elapsedRealtime() + PAGE_LOAD_TIMEOUT_MS;
             String ready = "false";
             while (!"true".equals(ready) && SystemClock.elapsedRealtime() < deadline) {
                 ready = evaluate(instrumentation, webViewRef.get(), readinessScript);
@@ -71,6 +96,7 @@ public final class OmegaGameplaySmokeTest {
                     "Bundled offline gameplay shell, local data assets and core runtime must finish booting within 90 seconds",
                     "true", ready
             );
+
             final String offlineBridgeScript =
                     "(function() { return !!(window.OmegaAndroid && " +
                     "window.OmegaAndroid.isAndroidApp() === true && " +
@@ -127,8 +153,9 @@ public final class OmegaGameplaySmokeTest {
                 })
         );
         assertTrue(
-                "WebView JavaScript evaluation callback should return",
-                latch.await(10, TimeUnit.SECONDS)
+                "WebView JavaScript evaluation callback should return within " +
+                        JAVASCRIPT_CALLBACK_TIMEOUT_SECONDS + " seconds after page load",
+                latch.await(JAVASCRIPT_CALLBACK_TIMEOUT_SECONDS, TimeUnit.SECONDS)
         );
         return result.get();
     }
