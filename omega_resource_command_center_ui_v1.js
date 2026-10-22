@@ -697,8 +697,21 @@
     const profileCards=profiles.slice(0,150).map(x=>card(x.site.siteName||x.site.name||x.site.siteId,'FILE-BACKED PROCESSING PROFILE',
       '<div class="omega-rescc-grid2">'+kv('Site ID',x.site.siteId)+kv('Commodity',x.site.resourceId||x.site.real&&x.site.real.resourceId||x.site.identity&&x.site.identity.resourceTypeId)+kv('Upstream',x.up)+kv('Midstream',x.mid)+kv('Outputs',x.outputs)+kv('Downstream sectors',x.down)+'</div>','')).join('');
     const industrial=resourceBucket(country).industrialNetwork||{},econ=bucket('economy',country),projects=Array.isArray(industrial.projects)?industrial.projects:(Array.isArray(econ.projects)?econ.projects:(Array.isArray(econ.industrialProjects)?econ.industrialProjects:[]));
+    const catalog=g.OmegaResourceIndustrialCatalogData||(g.Omega&&g.Omega.ResourceIndustrialCatalogData)||{};
+    const factoryProfiles=catalog.factoryProfiles&&typeof catalog.factoryProfiles==='object'?catalog.factoryProfiles:{};
+    const downstreamRecipes=catalog.downstreamFactoryRecipes&&typeof catalog.downstreamFactoryRecipes==='object'?catalog.downstreamFactoryRecipes:{};
+    const factoryTypeOptions=Object.entries(factoryProfiles).map(([id,p])=>'<option value="'+esc(id)+'">'+esc(p.name||id)+' · '+esc(id)+'</option>').join('');
+    const recipeOptions=Object.entries(downstreamRecipes).map(([id,r])=>'<option value="'+esc(id)+'">'+esc(r.name||id)+' · '+esc(r.factoryType||'')+'</option>').join('');
     const options=resources(country).map(x=>'<option value="'+esc(x.id)+'">'+esc(x.name||x.id)+'</option>').join('');
-    const form='<form class="omega-rescc-form" data-search-item data-form="factory-project"><h3>Start a catalog-backed factory project</h3><div class="omega-rescc-formgrid"><label>Resource<select name="resourceId" required>'+options+'</select></label><label>Budget cost<input type="number" name="cost" min="1" step="1" required></label><label>Capacity per day<input type="number" name="capacityPerDay" min="1" step="1" required></label><label>Build days<input type="number" name="buildDays" min="1" step="1" value="180" required></label></div><p class="omega-rescc-note">Project creation does not itself debit treasury.</p><button class="omega-rescc-button" type="submit">Create factory project</button></form>';
+    const form='<form class="omega-rescc-form" data-search-item data-form="factory-project"><h3>Start a catalog-backed factory project</h3><div class="omega-rescc-formgrid">'+
+      '<label>Factory type<select name="factoryType"><option value="">Choose from resource rule</option>'+factoryTypeOptions+'</select></label>'+
+      '<label>Production recipe<select name="recipeId"><option value="">Use factory profile default</option>'+recipeOptions+'</select></label>'+
+      '<label>Input resource (legacy processing only)<select name="resourceId"><option value="">Use selected factory recipe</option>'+options+'</select></label>'+
+      '<label>Budget cost override<input type="number" name="cost" min="1" step="1" placeholder="Use catalog default"></label>'+
+      '<label>Capacity/day override<input type="number" name="capacityPerDay" min="1" step="1" placeholder="Use catalog default"></label>'+
+      '<label>Construction days override<input type="number" name="buildDays" min="1" step="1" placeholder="Use catalog default"></label></div>'+
+      '<p class="omega-rescc-note">Choose a factory type and a matching recipe. Empty overrides use catalog defaults. Legacy resource-processing plants can still be selected by input resource. Project creation does not itself debit treasury.</p>'+
+      '<button class="omega-rescc-button" type="submit">Create factory project</button></form>';
     return '<h3 class="omega-rescc-section-title">Live production and processing assets</h3>'+(liveCards||empty('No factory asset is recorded in this country runtime.'))+
       '<h3 class="omega-rescc-section-title">Processing capabilities from existing site files</h3>'+(profileCards||empty('No per-site processing/output profile is recorded for this country.'))+
       (profiles.length>150?'<p class="omega-rescc-note">Showing 150 of '+profiles.length+' site profiles.</p>':'')+
@@ -1490,8 +1503,11 @@
         const net = g.Omega && g.Omega.ResourceIndustrialNetwork;
         if (!net || typeof net.startFactoryProject !== 'function') result = { status: 'UNAVAILABLE', reason: 'FACTORY_PROJECT_API_UNAVAILABLE' };
         else result = net.startFactoryProject({
-          countryId: c, resourceId: data.get('resourceId'), cost: Number(data.get('cost')),
-          capacityPerDay: Number(data.get('capacityPerDay')), buildDays: Number(data.get('buildDays'))
+          countryId: c, factoryType: data.get('factoryType') || undefined,
+          recipeId: data.get('recipeId') || undefined,
+          resourceId: data.get('resourceId') || undefined,
+          cost: Number(data.get('cost')), capacityPerDay: Number(data.get('capacityPerDay')),
+          buildDays: Number(data.get('buildDays'))
         });
         setOutcome('Factory construction project', result);
         return;
