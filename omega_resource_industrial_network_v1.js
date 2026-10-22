@@ -2502,7 +2502,7 @@ function diagnostics(countryId){
 }
 
 
-function finiteCount(value){const n=num(value);return n!==null&&n>=0?n:null;}
+function finiteCount(value){if(value===null||value===undefined||value==='')return null;const n=num(value);return n!==null&&n>=0?n:null;}
 function countryPopulationRecord(cid,econ){
   const s=state()||{},keys=[cid,String(cid||'').toUpperCase()];
   const resolver=g.OmegaCanonicalIdentityRegistry||g.OmegaCountrySemanticBridge||g.Omega?.CanonicalIdentity;
