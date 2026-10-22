@@ -784,11 +784,14 @@
       const stock = asset.inputInventory && typeof asset.inputInventory === 'object' ? asset.inputInventory : {};
       const stockRows = Object.entries(stock).filter(function (pair) { return Number(pair[1]) > 0; })
         .map(function (pair) { return kv(pair[0], number(pair[1])); }).join('');
-      const last = asset.lastProductionTransactionId || asset.lastProductionTurn || 'No production transaction recorded';
+      const factoryRuns = industrialState.factoryRuntime && typeof industrialState.factoryRuntime === 'object' ? industrialState.factoryRuntime : {};
+      const lastRun = factoryRuns[id] || null;
+      const last = lastRun && (lastRun.transactionId || lastRun.turn) || asset.lastProductionTransactionId || asset.lastProductionTurn || 'No production transaction recorded';
+      const lastOutputs = lastRun && (lastRun.outputQuantities || lastRun.outputs) || 'NOT_RECORDED';
       return card(String(profile.name || type) + ' · ' + id, asset.status || 'STATUS_NOT_RECORDED',
         '<div class="omega-rescc-factory-head"><svg class="omega-ui-icon omega-ui-icon--' + esc(iconId) + '" aria-hidden="true" viewBox="0 0 24 24"><use href="#omega-icon-' + esc(iconId) + '"></use></svg><span>' + esc(type) + '</span></div>' +
         '<div class="omega-rescc-grid2">' + kv('Recipe', recipeId) + kv('Capacity/day', number(asset.capacityPerDay ?? asset.capacity ?? asset.productionCapacity)) +
-        kv('Location', asset.locationNodeKey || 'Not recorded') + kv('Last production', last) + '</div>' +
+        kv('Location', asset.locationNodeKey || 'Not recorded') + kv('Last production', last) + kv('Latest output quantities', shortJson(lastOutputs)) + '</div>' +
         '<h4 class="omega-rescc-section-title">Factory input stock</h4>' +
         (stockRows ? '<div class="omega-rescc-grid2">' + stockRows + '</div>' : empty('No tracked input stock is currently recorded.')) +
         (Array.isArray(asset.inputBatchLots) && asset.inputBatchLots.length ? '<div class="omega-rescc-muted">Tracked input lots: ' + number(asset.inputBatchLots.length) + '</div>' : '') +
@@ -811,6 +814,8 @@
           '<div class="omega-rescc-grid2">' + kv('Build cost', number(profile.constructionCost, ' game units')) + kv('Build time', number(profile.constructionDays, ' days')) +
           kv('Capacity/day', number(profile.defaultCapacityPerDay)) + kv('Workers', number((Number(profile.workforce && profile.workforce.operators) || 0) + (Number(profile.workforce && profile.workforce.engineers) || 0))) +
           kv('Power (MWh/day)', number(profile.utilities && profile.utilities.electricityMWhPerDay)) + kv('Water (m³/day)', number(profile.utilities && profile.utilities.waterM3PerDay)) +
+          kv('Infrastructure', Array.isArray(profile.requiredInfrastructure) ? profile.requiredInfrastructure.join(', ') : 'NOT_RECORDED') +
+          kv('Technology', Array.isArray(profile.requiredTechnologyIds) && profile.requiredTechnologyIds.length ? profile.requiredTechnologyIds.join(', ') : 'No technology gate recorded') +
           kv('Recipes', recipeCount) + kv('Data authority', profile.authority || 'NOT_RECORDED') + '</div>' +
           (recipeList ? '<details class="omega-rescc-factory-recipes"><summary>Recipe details (' + recipeIds.length + ')</summary><ul>' + recipeList + '</ul></details>' : '') +
           '<div class="omega-rescc-muted">Construction and utilities use explicit game-simulation values, not verified real-world plant data.</div></article>';
