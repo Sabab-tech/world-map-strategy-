@@ -1274,5 +1274,1049 @@
       "constructionBonus": 0.05,
       "techTransferBonus": 0.25
     }
+  },
+  "manufacturingRules": {
+    "STEEL_AND_ALLOY_MILL": {
+      "name": "Steel and alloy mill",
+      "category": "metals",
+      "iconId": "steelworks",
+      "description": "Concentrate-to-steel and alloy production; simulation recipe, not a measured industrial yield.",
+      "simulationOnly": true,
+      "recipeSelection": "PRIMARY_INPUT_TOKEN",
+      "quantityPolicy": "Inputs are debited by coefficient × primary-input production quantity; unit conversion is not inferred.",
+      "recipes": {
+        "iron_concentrate": {
+          "recipeId": "STEEL_AND_ALLOY_MILL:iron_concentrate",
+          "primaryInput": "iron_concentrate",
+          "inputs": {
+            "iron_concentrate": 1,
+            "coal_concentrate": 0.24,
+            "limestone": 0.05
+          },
+          "outputs": {
+            "STEEL_INGOT": 0.78,
+            "SLAG": 0.3,
+            "STEEL_DUST": 0.08
+          },
+          "outputUnits": {},
+          "cycleDays": 2,
+          "quantityBasis": "SIMULATION_NORMALIZED_INPUT_UNITS",
+          "authority": "SIMULATED_GAMEPLAY_ONLY",
+          "utilities": {
+            "electricityMWhPerPrimaryUnit": 0.65,
+            "waterM3PerPrimaryUnit": 1.4,
+            "fuelGJPerPrimaryUnit": null,
+            "enforcement": "METADATA_ONLY_UNLESS_A_FUTURE_AUTHORITATIVE_UTILITY_LEDGER_IS_CONNECTED"
+          },
+          "construction": {
+            "costUsd": 185000000,
+            "buildDays": 300,
+            "capacityPerDay": 1800,
+            "workersRequired": 950,
+            "authority": "SIMULATED_GAMEPLAY_ONLY"
+          }
+        },
+        "steel_ingot": {
+          "recipeId": "STEEL_AND_ALLOY_MILL:steel_ingot",
+          "primaryInput": "steel_ingot",
+          "inputs": {
+            "steel_ingot": 1,
+            "nickel_concentrate": 0.06,
+            "chromite_concentrate": 0.04
+          },
+          "outputs": {
+            "ALLOY_STEEL": 0.91,
+            "ALLOY_FURNACE_SLAG": 0.11
+          },
+          "outputUnits": {},
+          "cycleDays": 2,
+          "quantityBasis": "SIMULATION_NORMALIZED_INPUT_UNITS",
+          "authority": "SIMULATED_GAMEPLAY_ONLY",
+          "utilities": {
+            "electricityMWhPerPrimaryUnit": 0.9,
+            "waterM3PerPrimaryUnit": 1.2,
+            "fuelGJPerPrimaryUnit": null,
+            "enforcement": "METADATA_ONLY_UNLESS_A_FUTURE_AUTHORITATIVE_UTILITY_LEDGER_IS_CONNECTED"
+          },
+          "construction": {
+            "costUsd": 240000000,
+            "buildDays": 360,
+            "capacityPerDay": 1500,
+            "workersRequired": 800,
+            "authority": "SIMULATED_GAMEPLAY_ONLY"
+          }
+        }
+      }
+    },
+    "NON_FERROUS_SMELTER": {
+      "name": "Non-ferrous smelter and refining plant",
+      "category": "metals",
+      "iconId": "non-ferrous-smelter",
+      "description": "Simulation-only smelting and high-purity-material recipes. The silicon path is a simplified game abstraction.",
+      "simulationOnly": true,
+      "recipeSelection": "PRIMARY_INPUT_TOKEN",
+      "quantityPolicy": "Inputs are debited by coefficient × primary-input production quantity; unit conversion is not inferred.",
+      "recipes": {
+        "copper_concentrate": {
+          "recipeId": "NON_FERROUS_SMELTER:copper_concentrate",
+          "primaryInput": "copper_concentrate",
+          "inputs": {
+            "copper_concentrate": 1,
+            "limestone": 0.08
+          },
+          "outputs": {
+            "COPPER_CATHODE": 0.82,
+            "COPPER_SLAG": 0.12
+          },
+          "outputUnits": {},
+          "cycleDays": 2,
+          "quantityBasis": "SIMULATION_NORMALIZED_INPUT_UNITS",
+          "authority": "SIMULATED_GAMEPLAY_ONLY",
+          "utilities": {
+            "electricityMWhPerPrimaryUnit": 1.1,
+            "waterM3PerPrimaryUnit": 1.8,
+            "fuelGJPerPrimaryUnit": null,
+            "enforcement": "METADATA_ONLY_UNLESS_A_FUTURE_AUTHORITATIVE_UTILITY_LEDGER_IS_CONNECTED"
+          },
+          "construction": {
+            "costUsd": 165000000,
+            "buildDays": 270,
+            "capacityPerDay": 1300,
+            "workersRequired": 650,
+            "authority": "SIMULATED_GAMEPLAY_ONLY"
+          }
+        },
+        "alumina": {
+          "recipeId": "NON_FERROUS_SMELTER:alumina",
+          "primaryInput": "alumina",
+          "inputs": {
+            "alumina": 1,
+            "carbon_anode": 0.12
+          },
+          "outputs": {
+            "ALUMINIUM_INGOT": 0.78,
+            "SPENT_SALT_AND_DROSS": 0.18
+          },
+          "outputUnits": {},
+          "cycleDays": 2,
+          "quantityBasis": "SIMULATION_NORMALIZED_INPUT_UNITS",
+          "authority": "SIMULATED_GAMEPLAY_ONLY",
+          "utilities": {
+            "electricityMWhPerPrimaryUnit": 2.4,
+            "waterM3PerPrimaryUnit": 1.3,
+            "fuelGJPerPrimaryUnit": null,
+            "enforcement": "METADATA_ONLY_UNLESS_A_FUTURE_AUTHORITATIVE_UTILITY_LEDGER_IS_CONNECTED"
+          },
+          "construction": {
+            "costUsd": 280000000,
+            "buildDays": 360,
+            "capacityPerDay": 1250,
+            "workersRequired": 700,
+            "authority": "SIMULATED_GAMEPLAY_ONLY"
+          }
+        },
+        "nickel_concentrate": {
+          "recipeId": "NON_FERROUS_SMELTER:nickel_concentrate",
+          "primaryInput": "nickel_concentrate",
+          "inputs": {
+            "nickel_concentrate": 1,
+            "industrial_gas": 0.08
+          },
+          "outputs": {
+            "CATHODE_PRECURSOR": 0.68,
+            "NICKEL_SLAG": 0.2
+          },
+          "outputUnits": {},
+          "cycleDays": 3,
+          "quantityBasis": "SIMULATION_NORMALIZED_INPUT_UNITS",
+          "authority": "SIMULATED_GAMEPLAY_ONLY",
+          "utilities": {
+            "electricityMWhPerPrimaryUnit": 1.5,
+            "waterM3PerPrimaryUnit": 2.2,
+            "fuelGJPerPrimaryUnit": null,
+            "enforcement": "METADATA_ONLY_UNLESS_A_FUTURE_AUTHORITATIVE_UTILITY_LEDGER_IS_CONNECTED"
+          },
+          "construction": {
+            "costUsd": 215000000,
+            "buildDays": 330,
+            "capacityPerDay": 900,
+            "workersRequired": 600,
+            "authority": "SIMULATED_GAMEPLAY_ONLY"
+          }
+        },
+        "glass_silica_feed": {
+          "recipeId": "NON_FERROUS_SMELTER:glass_silica_feed",
+          "primaryInput": "glass_silica_feed",
+          "inputs": {
+            "glass_silica_feed": 1,
+            "industrial_gas": 0.12
+          },
+          "outputs": {
+            "PURIFIED_SILICON": 0.34,
+            "SILICA_RESIDUE": 0.5,
+            "PROCESS_LOSS": 0.08
+          },
+          "outputUnits": {},
+          "cycleDays": 3,
+          "quantityBasis": "SIMULATION_NORMALIZED_INPUT_UNITS",
+          "authority": "SIMULATED_GAMEPLAY_ONLY",
+          "utilities": {
+            "electricityMWhPerPrimaryUnit": 3.2,
+            "waterM3PerPrimaryUnit": 1,
+            "fuelGJPerPrimaryUnit": null,
+            "enforcement": "METADATA_ONLY_UNLESS_A_FUTURE_AUTHORITATIVE_UTILITY_LEDGER_IS_CONNECTED"
+          },
+          "construction": {
+            "costUsd": 320000000,
+            "buildDays": 420,
+            "capacityPerDay": 650,
+            "workersRequired": 520,
+            "authority": "SIMULATED_GAMEPLAY_ONLY"
+          }
+        }
+      }
+    },
+    "PETROCHEMICAL_POLYMER_PLANT": {
+      "name": "Petrochemical, plastics and polymers",
+      "category": "chemicals",
+      "iconId": "petrochemical-plant",
+      "description": "Refinery feedstock to basic polymer inputs, using explicit simulation-only quantities.",
+      "simulationOnly": true,
+      "recipeSelection": "PRIMARY_INPUT_TOKEN",
+      "quantityPolicy": "Inputs are debited by coefficient × primary-input production quantity; unit conversion is not inferred.",
+      "recipes": {
+        "naphtha": {
+          "recipeId": "PETROCHEMICAL_POLYMER_PLANT:naphtha",
+          "primaryInput": "naphtha",
+          "inputs": {
+            "naphtha": 1,
+            "pipeline_gas": 0.04
+          },
+          "outputs": {
+            "POLYMER_RESIN": 0.63,
+            "SYNTHETIC_FIBER": 0.17,
+            "PETROCHEMICAL_BYPRODUCT": 0.16
+          },
+          "outputUnits": {},
+          "cycleDays": 2,
+          "quantityBasis": "SIMULATION_NORMALIZED_INPUT_UNITS",
+          "authority": "SIMULATED_GAMEPLAY_ONLY",
+          "utilities": {
+            "electricityMWhPerPrimaryUnit": 0.45,
+            "waterM3PerPrimaryUnit": 0.8,
+            "fuelGJPerPrimaryUnit": 1.3,
+            "enforcement": "METADATA_ONLY_UNLESS_A_FUTURE_AUTHORITATIVE_UTILITY_LEDGER_IS_CONNECTED"
+          },
+          "construction": {
+            "costUsd": 210000000,
+            "buildDays": 330,
+            "capacityPerDay": 1200,
+            "workersRequired": 720,
+            "authority": "SIMULATED_GAMEPLAY_ONLY"
+          }
+        }
+      }
+    },
+    "FERTILIZER_AGROCHEMICAL_PLANT": {
+      "name": "Fertilizer and agrochemical plant",
+      "category": "chemicals",
+      "iconId": "fertilizer-plant",
+      "description": "Ammonia, phosphate and potash are required together before a fertilizer cycle can run.",
+      "simulationOnly": true,
+      "recipeSelection": "PRIMARY_INPUT_TOKEN",
+      "quantityPolicy": "Inputs are debited by coefficient × primary-input production quantity; unit conversion is not inferred.",
+      "recipes": {
+        "ammonia": {
+          "recipeId": "FERTILIZER_AGROCHEMICAL_PLANT:ammonia",
+          "primaryInput": "ammonia",
+          "inputs": {
+            "ammonia": 1,
+            "phosphate_concentrate": 0.42,
+            "mop_potash": 0.32
+          },
+          "outputs": {
+            "NPK_FERTILIZER": 1.18,
+            "FERTILIZER_RESIDUE": 0.3
+          },
+          "outputUnits": {},
+          "cycleDays": 2,
+          "quantityBasis": "SIMULATION_NORMALIZED_INPUT_UNITS",
+          "authority": "SIMULATED_GAMEPLAY_ONLY",
+          "utilities": {
+            "electricityMWhPerPrimaryUnit": 0.32,
+            "waterM3PerPrimaryUnit": 1.7,
+            "fuelGJPerPrimaryUnit": null,
+            "enforcement": "METADATA_ONLY_UNLESS_A_FUTURE_AUTHORITATIVE_UTILITY_LEDGER_IS_CONNECTED"
+          },
+          "construction": {
+            "costUsd": 140000000,
+            "buildDays": 240,
+            "capacityPerDay": 1500,
+            "workersRequired": 520,
+            "authority": "SIMULATED_GAMEPLAY_ONLY"
+          }
+        }
+      }
+    },
+    "INDUSTRIAL_CHEMICALS_GAS_PLANT": {
+      "name": "Industrial chemicals and gases",
+      "category": "chemicals",
+      "iconId": "chemical-plant",
+      "description": "Simplified industrial gas and chemical feedstock line; utility fields are informational in this baseline.",
+      "simulationOnly": true,
+      "recipeSelection": "PRIMARY_INPUT_TOKEN",
+      "quantityPolicy": "Inputs are debited by coefficient × primary-input production quantity; unit conversion is not inferred.",
+      "recipes": {
+        "pipeline_gas": {
+          "recipeId": "INDUSTRIAL_CHEMICALS_GAS_PLANT:pipeline_gas",
+          "primaryInput": "pipeline_gas",
+          "inputs": {
+            "pipeline_gas": 1,
+            "limestone": 0.03
+          },
+          "outputs": {
+            "AMMONIA": 0.45,
+            "INDUSTRIAL_GAS": 0.24,
+            "CHEMICAL_RESIDUE": 0.25
+          },
+          "outputUnits": {},
+          "cycleDays": 2,
+          "quantityBasis": "SIMULATION_NORMALIZED_INPUT_UNITS",
+          "authority": "SIMULATED_GAMEPLAY_ONLY",
+          "utilities": {
+            "electricityMWhPerPrimaryUnit": 0.4,
+            "waterM3PerPrimaryUnit": 1.5,
+            "fuelGJPerPrimaryUnit": null,
+            "enforcement": "METADATA_ONLY_UNLESS_A_FUTURE_AUTHORITATIVE_UTILITY_LEDGER_IS_CONNECTED"
+          },
+          "construction": {
+            "costUsd": 125000000,
+            "buildDays": 240,
+            "capacityPerDay": 1100,
+            "workersRequired": 480,
+            "authority": "SIMULATED_GAMEPLAY_ONLY"
+          }
+        }
+      }
+    },
+    "CEMENT_CONCRETE_PLANT": {
+      "name": "Cement and concrete plant",
+      "category": "construction",
+      "iconId": "cement-plant",
+      "description": "Finishes processed cement feed; distinct from quarry/limestone preparation.",
+      "simulationOnly": true,
+      "recipeSelection": "PRIMARY_INPUT_TOKEN",
+      "quantityPolicy": "Inputs are debited by coefficient × primary-input production quantity; unit conversion is not inferred.",
+      "recipes": {
+        "cement_feed": {
+          "recipeId": "CEMENT_CONCRETE_PLANT:cement_feed",
+          "primaryInput": "cement_feed",
+          "inputs": {
+            "cement_feed": 1,
+            "calcined_gypsum": 0.08,
+            "limestone": 0.08,
+            "coal_concentrate": 0.04
+          },
+          "outputs": {
+            "CEMENT": 0.92,
+            "CEMENT_DUST": 0.16,
+            "CLINKER_SCRAP": 0.03
+          },
+          "outputUnits": {},
+          "cycleDays": 1,
+          "quantityBasis": "SIMULATION_NORMALIZED_INPUT_UNITS",
+          "authority": "SIMULATED_GAMEPLAY_ONLY",
+          "utilities": {
+            "electricityMWhPerPrimaryUnit": 0.18,
+            "waterM3PerPrimaryUnit": 0.35,
+            "fuelGJPerPrimaryUnit": 0.85,
+            "enforcement": "METADATA_ONLY_UNLESS_A_FUTURE_AUTHORITATIVE_UTILITY_LEDGER_IS_CONNECTED"
+          },
+          "construction": {
+            "costUsd": 92000000,
+            "buildDays": 180,
+            "capacityPerDay": 2200,
+            "workersRequired": 430,
+            "authority": "SIMULATED_GAMEPLAY_ONLY"
+          }
+        }
+      }
+    },
+    "GLASS_CERAMICS_PLANT": {
+      "name": "Glass and ceramics plant",
+      "category": "construction",
+      "iconId": "glass-plant",
+      "description": "Silica feed is combined with flux materials before glass/ceramic output.",
+      "simulationOnly": true,
+      "recipeSelection": "PRIMARY_INPUT_TOKEN",
+      "quantityPolicy": "Inputs are debited by coefficient × primary-input production quantity; unit conversion is not inferred.",
+      "recipes": {
+        "glass_silica_feed": {
+          "recipeId": "GLASS_CERAMICS_PLANT:glass_silica_feed",
+          "primaryInput": "glass_silica_feed",
+          "inputs": {
+            "glass_silica_feed": 1,
+            "limestone": 0.2,
+            "feldspar": 0.15
+          },
+          "outputs": {
+            "SHEET_GLASS": 0.78,
+            "CERAMIC_BODY": 0.28,
+            "GLASS_CULLET": 0.18
+          },
+          "outputUnits": {},
+          "cycleDays": 2,
+          "quantityBasis": "SIMULATION_NORMALIZED_INPUT_UNITS",
+          "authority": "SIMULATED_GAMEPLAY_ONLY",
+          "utilities": {
+            "electricityMWhPerPrimaryUnit": 0.52,
+            "waterM3PerPrimaryUnit": 0.25,
+            "fuelGJPerPrimaryUnit": 1.1,
+            "enforcement": "METADATA_ONLY_UNLESS_A_FUTURE_AUTHORITATIVE_UTILITY_LEDGER_IS_CONNECTED"
+          },
+          "construction": {
+            "costUsd": 98000000,
+            "buildDays": 210,
+            "capacityPerDay": 900,
+            "workersRequired": 390,
+            "authority": "SIMULATED_GAMEPLAY_ONLY"
+          }
+        }
+      }
+    },
+    "PAPER_PACKAGING_MILL": {
+      "name": "Paper and packaging mill",
+      "category": "consumer",
+      "iconId": "paper-mill",
+      "description": "Pulp and recovered fibre to paper/cardboard. Forestry and pulp inputs can remain explicitly unavailable.",
+      "simulationOnly": true,
+      "recipeSelection": "PRIMARY_INPUT_TOKEN",
+      "quantityPolicy": "Inputs are debited by coefficient × primary-input production quantity; unit conversion is not inferred.",
+      "recipes": {
+        "wood_pulp": {
+          "recipeId": "PAPER_PACKAGING_MILL:wood_pulp",
+          "primaryInput": "wood_pulp",
+          "inputs": {
+            "wood_pulp": 1,
+            "recycled_fiber": 0.15,
+            "starch": 0.02
+          },
+          "outputs": {
+            "PAPER": 0.72,
+            "CARDBOARD": 0.18,
+            "PAPER_SLUDGE": 0.12
+          },
+          "outputUnits": {},
+          "cycleDays": 2,
+          "quantityBasis": "SIMULATION_NORMALIZED_INPUT_UNITS",
+          "authority": "SIMULATED_GAMEPLAY_ONLY",
+          "utilities": {
+            "electricityMWhPerPrimaryUnit": 0.34,
+            "waterM3PerPrimaryUnit": 2.7,
+            "fuelGJPerPrimaryUnit": null,
+            "enforcement": "METADATA_ONLY_UNLESS_A_FUTURE_AUTHORITATIVE_UTILITY_LEDGER_IS_CONNECTED"
+          },
+          "construction": {
+            "costUsd": 74000000,
+            "buildDays": 180,
+            "capacityPerDay": 850,
+            "workersRequired": 360,
+            "authority": "SIMULATED_GAMEPLAY_ONLY"
+          }
+        }
+      }
+    },
+    "FOOD_PROCESSING_COLD_CHAIN": {
+      "name": "Food processing and cold-chain plant",
+      "category": "consumer",
+      "iconId": "food-processing",
+      "description": "A two-input line will wait for all recipe materials rather than produce against the primary input alone.",
+      "simulationOnly": true,
+      "recipeSelection": "PRIMARY_INPUT_TOKEN",
+      "quantityPolicy": "Inputs are debited by coefficient × primary-input production quantity; unit conversion is not inferred.",
+      "recipes": {
+        "wheat": {
+          "recipeId": "FOOD_PROCESSING_COLD_CHAIN:wheat",
+          "primaryInput": "wheat",
+          "inputs": {
+            "wheat": 1,
+            "vegetable_oil": 0.05,
+            "salt": 0.01
+          },
+          "outputs": {
+            "PROCESSED_FOOD": 0.76,
+            "FOOD_BYPRODUCT": 0.22
+          },
+          "outputUnits": {},
+          "cycleDays": 1,
+          "quantityBasis": "SIMULATION_NORMALIZED_INPUT_UNITS",
+          "authority": "SIMULATED_GAMEPLAY_ONLY",
+          "utilities": {
+            "electricityMWhPerPrimaryUnit": 0.22,
+            "waterM3PerPrimaryUnit": 0.9,
+            "fuelGJPerPrimaryUnit": null,
+            "enforcement": "METADATA_ONLY_UNLESS_A_FUTURE_AUTHORITATIVE_UTILITY_LEDGER_IS_CONNECTED"
+          },
+          "construction": {
+            "costUsd": 52000000,
+            "buildDays": 150,
+            "capacityPerDay": 1000,
+            "workersRequired": 420,
+            "authority": "SIMULATED_GAMEPLAY_ONLY"
+          }
+        },
+        "raw_milk": {
+          "recipeId": "FOOD_PROCESSING_COLD_CHAIN:raw_milk",
+          "primaryInput": "raw_milk",
+          "inputs": {
+            "raw_milk": 1,
+            "packaging_material": 0.02
+          },
+          "outputs": {
+            "DAIRY_PRODUCT": 0.88,
+            "DAIRY_BYPRODUCT": 0.1
+          },
+          "outputUnits": {},
+          "cycleDays": 1,
+          "quantityBasis": "SIMULATION_NORMALIZED_INPUT_UNITS",
+          "authority": "SIMULATED_GAMEPLAY_ONLY",
+          "utilities": {
+            "electricityMWhPerPrimaryUnit": 0.25,
+            "waterM3PerPrimaryUnit": 0.8,
+            "fuelGJPerPrimaryUnit": null,
+            "enforcement": "METADATA_ONLY_UNLESS_A_FUTURE_AUTHORITATIVE_UTILITY_LEDGER_IS_CONNECTED"
+          },
+          "construction": {
+            "costUsd": 46000000,
+            "buildDays": 140,
+            "capacityPerDay": 700,
+            "workersRequired": 300,
+            "authority": "SIMULATED_GAMEPLAY_ONLY"
+          }
+        }
+      }
+    },
+    "TEXTILE_GARMENT_MILL": {
+      "name": "Textile and garment mill",
+      "category": "consumer",
+      "iconId": "textile-mill",
+      "description": "Textile output is simulation-scaled; apparel output is tracked as discrete units.",
+      "simulationOnly": true,
+      "recipeSelection": "PRIMARY_INPUT_TOKEN",
+      "quantityPolicy": "Inputs are debited by coefficient × primary-input production quantity; unit conversion is not inferred.",
+      "recipes": {
+        "cotton": {
+          "recipeId": "TEXTILE_GARMENT_MILL:cotton",
+          "primaryInput": "cotton",
+          "inputs": {
+            "cotton": 1,
+            "synthetic_fiber": 0.15,
+            "industrial_dye": 0.01
+          },
+          "outputs": {
+            "TEXTILE_FABRIC": 0.73,
+            "GARMENT_UNITS": 0.045,
+            "TEXTILE_WASTE": 0.2
+          },
+          "outputUnits": {
+            "GARMENT_UNITS": "UNITS"
+          },
+          "cycleDays": 2,
+          "quantityBasis": "SIMULATION_NORMALIZED_INPUT_UNITS",
+          "authority": "SIMULATED_GAMEPLAY_ONLY",
+          "utilities": {
+            "electricityMWhPerPrimaryUnit": 0.24,
+            "waterM3PerPrimaryUnit": 1.9,
+            "fuelGJPerPrimaryUnit": null,
+            "enforcement": "METADATA_ONLY_UNLESS_A_FUTURE_AUTHORITATIVE_UTILITY_LEDGER_IS_CONNECTED"
+          },
+          "construction": {
+            "costUsd": 66000000,
+            "buildDays": 180,
+            "capacityPerDay": 700,
+            "workersRequired": 520,
+            "authority": "SIMULATED_GAMEPLAY_ONLY"
+          }
+        }
+      }
+    },
+    "INDUSTRIAL_MACHINERY_TOOL_PLANT": {
+      "name": "Industrial machinery and machine tools",
+      "category": "capital-goods",
+      "iconId": "machine-tools",
+      "description": "Requires steel plus electronic and maintenance inputs before production.",
+      "simulationOnly": true,
+      "recipeSelection": "PRIMARY_INPUT_TOKEN",
+      "quantityPolicy": "Inputs are debited by coefficient × primary-input production quantity; unit conversion is not inferred.",
+      "recipes": {
+        "steel_ingot": {
+          "recipeId": "INDUSTRIAL_MACHINERY_TOOL_PLANT:steel_ingot",
+          "primaryInput": "steel_ingot",
+          "inputs": {
+            "steel_ingot": 1,
+            "copper_cathode": 0.08,
+            "industrial_electronics": 0.05,
+            "lubricant": 0.01
+          },
+          "outputs": {
+            "INDUSTRIAL_MACHINE_UNITS": 0.035,
+            "REPLACEMENT_PARTS": 0.2,
+            "METAL_SCRAP": 0.16
+          },
+          "outputUnits": {
+            "INDUSTRIAL_MACHINE_UNITS": "UNITS",
+            "REPLACEMENT_PARTS": "UNITS"
+          },
+          "cycleDays": 3,
+          "quantityBasis": "SIMULATION_NORMALIZED_INPUT_UNITS",
+          "authority": "SIMULATED_GAMEPLAY_ONLY",
+          "utilities": {
+            "electricityMWhPerPrimaryUnit": 0.8,
+            "waterM3PerPrimaryUnit": 0.4,
+            "fuelGJPerPrimaryUnit": null,
+            "enforcement": "METADATA_ONLY_UNLESS_A_FUTURE_AUTHORITATIVE_UTILITY_LEDGER_IS_CONNECTED"
+          },
+          "construction": {
+            "costUsd": 160000000,
+            "buildDays": 300,
+            "capacityPerDay": 650,
+            "workersRequired": 620,
+            "authority": "SIMULATED_GAMEPLAY_ONLY"
+          }
+        }
+      }
+    },
+    "ELECTRICAL_GRID_EQUIPMENT_PLANT": {
+      "name": "Electrical and grid equipment plant",
+      "category": "capital-goods",
+      "iconId": "grid-equipment",
+      "description": "Grid equipment production is a downstream manufacturing stage, not a power-generation facility.",
+      "simulationOnly": true,
+      "recipeSelection": "PRIMARY_INPUT_TOKEN",
+      "quantityPolicy": "Inputs are debited by coefficient × primary-input production quantity; unit conversion is not inferred.",
+      "recipes": {
+        "copper_cathode": {
+          "recipeId": "ELECTRICAL_GRID_EQUIPMENT_PLANT:copper_cathode",
+          "primaryInput": "copper_cathode",
+          "inputs": {
+            "copper_cathode": 1,
+            "steel_ingot": 0.35,
+            "polymer_resin": 0.07
+          },
+          "outputs": {
+            "GRID_EQUIPMENT_UNITS": 0.055,
+            "COPPER_OFFCUT": 0.12,
+            "ASSEMBLY_SCRAP": 0.15
+          },
+          "outputUnits": {
+            "GRID_EQUIPMENT_UNITS": "UNITS"
+          },
+          "cycleDays": 2,
+          "quantityBasis": "SIMULATION_NORMALIZED_INPUT_UNITS",
+          "authority": "SIMULATED_GAMEPLAY_ONLY",
+          "utilities": {
+            "electricityMWhPerPrimaryUnit": 0.65,
+            "waterM3PerPrimaryUnit": 0.25,
+            "fuelGJPerPrimaryUnit": null,
+            "enforcement": "METADATA_ONLY_UNLESS_A_FUTURE_AUTHORITATIVE_UTILITY_LEDGER_IS_CONNECTED"
+          },
+          "construction": {
+            "costUsd": 118000000,
+            "buildDays": 240,
+            "capacityPerDay": 800,
+            "workersRequired": 500,
+            "authority": "SIMULATED_GAMEPLAY_ONLY"
+          }
+        }
+      }
+    },
+    "ELECTRONICS_SEMICONDUCTOR_PLANT": {
+      "name": "Electronics and semiconductor plant",
+      "category": "technology",
+      "iconId": "semiconductor-factory",
+      "description": "Advanced fabrication is expensive and capacity-limited in the game model; the coefficients are simulated.",
+      "simulationOnly": true,
+      "recipeSelection": "PRIMARY_INPUT_TOKEN",
+      "quantityPolicy": "Inputs are debited by coefficient × primary-input production quantity; unit conversion is not inferred.",
+      "recipes": {
+        "purified_silicon": {
+          "recipeId": "ELECTRONICS_SEMICONDUCTOR_PLANT:purified_silicon",
+          "primaryInput": "purified_silicon",
+          "inputs": {
+            "purified_silicon": 1,
+            "copper_cathode": 0.025,
+            "industrial_gas": 0.08
+          },
+          "outputs": {
+            "SEMICONDUCTOR_COMPONENTS": 0.16,
+            "ELECTRONIC_MODULES": 0.22,
+            "PROCESS_RESIDUE": 0.35
+          },
+          "outputUnits": {
+            "SEMICONDUCTOR_COMPONENTS": "UNITS",
+            "ELECTRONIC_MODULES": "UNITS"
+          },
+          "cycleDays": 3,
+          "quantityBasis": "SIMULATION_NORMALIZED_INPUT_UNITS",
+          "authority": "SIMULATED_GAMEPLAY_ONLY",
+          "utilities": {
+            "electricityMWhPerPrimaryUnit": 4.5,
+            "waterM3PerPrimaryUnit": 3.2,
+            "fuelGJPerPrimaryUnit": null,
+            "enforcement": "METADATA_ONLY_UNLESS_A_FUTURE_AUTHORITATIVE_UTILITY_LEDGER_IS_CONNECTED"
+          },
+          "construction": {
+            "costUsd": 580000000,
+            "buildDays": 540,
+            "capacityPerDay": 180,
+            "workersRequired": 780,
+            "authority": "SIMULATED_GAMEPLAY_ONLY"
+          }
+        }
+      }
+    },
+    "BATTERY_ENERGY_STORAGE_PLANT": {
+      "name": "Battery and energy-storage plant",
+      "category": "technology",
+      "iconId": "battery-plant",
+      "description": "Battery production depends on lithium, graphite and cathode precursor material.",
+      "simulationOnly": true,
+      "recipeSelection": "PRIMARY_INPUT_TOKEN",
+      "quantityPolicy": "Inputs are debited by coefficient × primary-input production quantity; unit conversion is not inferred.",
+      "recipes": {
+        "lithium_carbonate_or_hydroxide": {
+          "recipeId": "BATTERY_ENERGY_STORAGE_PLANT:lithium_carbonate_or_hydroxide",
+          "primaryInput": "lithium_carbonate_or_hydroxide",
+          "inputs": {
+            "lithium_carbonate_or_hydroxide": 1,
+            "graphite_concentrate": 0.42,
+            "cathode_precursor": 0.58
+          },
+          "outputs": {
+            "BATTERY_CELL_UNITS": 0.12,
+            "BATTERY_CHEMICAL_RESIDUE": 0.2
+          },
+          "outputUnits": {
+            "BATTERY_CELL_UNITS": "UNITS"
+          },
+          "cycleDays": 2,
+          "quantityBasis": "SIMULATION_NORMALIZED_INPUT_UNITS",
+          "authority": "SIMULATED_GAMEPLAY_ONLY",
+          "utilities": {
+            "electricityMWhPerPrimaryUnit": 1.3,
+            "waterM3PerPrimaryUnit": 0.8,
+            "fuelGJPerPrimaryUnit": null,
+            "enforcement": "METADATA_ONLY_UNLESS_A_FUTURE_AUTHORITATIVE_UTILITY_LEDGER_IS_CONNECTED"
+          },
+          "construction": {
+            "costUsd": 260000000,
+            "buildDays": 360,
+            "capacityPerDay": 420,
+            "workersRequired": 680,
+            "authority": "SIMULATED_GAMEPLAY_ONLY"
+          }
+        }
+      }
+    },
+    "VEHICLE_TRUCK_BUS_PLANT": {
+      "name": "Vehicle, truck and bus plant",
+      "category": "transport",
+      "iconId": "vehicle-plant",
+      "description": "Vehicle assemblies require metal, polymer, electrical and electronic components.",
+      "simulationOnly": true,
+      "recipeSelection": "PRIMARY_INPUT_TOKEN",
+      "quantityPolicy": "Inputs are debited by coefficient × primary-input production quantity; unit conversion is not inferred.",
+      "recipes": {
+        "steel_ingot": {
+          "recipeId": "VEHICLE_TRUCK_BUS_PLANT:steel_ingot",
+          "primaryInput": "steel_ingot",
+          "inputs": {
+            "steel_ingot": 1,
+            "polymer_resin": 0.14,
+            "electronic_modules": 0.08,
+            "copper_cathode": 0.04
+          },
+          "outputs": {
+            "ROAD_VEHICLE_UNITS": 0.025,
+            "REUSABLE_COMPONENTS": 0.12,
+            "VEHICLE_SCRAP": 0.13
+          },
+          "outputUnits": {
+            "ROAD_VEHICLE_UNITS": "UNITS",
+            "REUSABLE_COMPONENTS": "UNITS"
+          },
+          "cycleDays": 3,
+          "quantityBasis": "SIMULATION_NORMALIZED_INPUT_UNITS",
+          "authority": "SIMULATED_GAMEPLAY_ONLY",
+          "utilities": {
+            "electricityMWhPerPrimaryUnit": 0.8,
+            "waterM3PerPrimaryUnit": 0.6,
+            "fuelGJPerPrimaryUnit": null,
+            "enforcement": "METADATA_ONLY_UNLESS_A_FUTURE_AUTHORITATIVE_UTILITY_LEDGER_IS_CONNECTED"
+          },
+          "construction": {
+            "costUsd": 340000000,
+            "buildDays": 420,
+            "capacityPerDay": 420,
+            "workersRequired": 980,
+            "authority": "SIMULATED_GAMEPLAY_ONLY"
+          }
+        }
+      }
+    },
+    "SHIP_RAIL_EQUIPMENT_PLANT": {
+      "name": "Ship and rail equipment plant",
+      "category": "transport",
+      "iconId": "shipyard",
+      "description": "Heavy transport capital goods require equipment modules as well as steel.",
+      "simulationOnly": true,
+      "recipeSelection": "PRIMARY_INPUT_TOKEN",
+      "quantityPolicy": "Inputs are debited by coefficient × primary-input production quantity; unit conversion is not inferred.",
+      "recipes": {
+        "steel_ingot": {
+          "recipeId": "SHIP_RAIL_EQUIPMENT_PLANT:steel_ingot",
+          "primaryInput": "steel_ingot",
+          "inputs": {
+            "steel_ingot": 1,
+            "industrial_machine_units": 0.04,
+            "grid_equipment_units": 0.02
+          },
+          "outputs": {
+            "RAIL_ROLLING_STOCK_UNITS": 0.012,
+            "SHIP_HULL_UNITS": 0.004,
+            "STEEL_OFFCUT": 0.16
+          },
+          "outputUnits": {
+            "RAIL_ROLLING_STOCK_UNITS": "UNITS",
+            "SHIP_HULL_UNITS": "UNITS"
+          },
+          "cycleDays": 4,
+          "quantityBasis": "SIMULATION_NORMALIZED_INPUT_UNITS",
+          "authority": "SIMULATED_GAMEPLAY_ONLY",
+          "utilities": {
+            "electricityMWhPerPrimaryUnit": 1.1,
+            "waterM3PerPrimaryUnit": 0.7,
+            "fuelGJPerPrimaryUnit": null,
+            "enforcement": "METADATA_ONLY_UNLESS_A_FUTURE_AUTHORITATIVE_UTILITY_LEDGER_IS_CONNECTED"
+          },
+          "construction": {
+            "costUsd": 520000000,
+            "buildDays": 600,
+            "capacityPerDay": 240,
+            "workersRequired": 1100,
+            "authority": "SIMULATED_GAMEPLAY_ONLY"
+          }
+        }
+      }
+    },
+    "AEROSPACE_EQUIPMENT_PLANT": {
+      "name": "Aerospace and aircraft equipment plant",
+      "category": "transport",
+      "iconId": "aerospace-factory",
+      "description": "Aircraft output is represented in units and needs refined metal and avionics components.",
+      "simulationOnly": true,
+      "recipeSelection": "PRIMARY_INPUT_TOKEN",
+      "quantityPolicy": "Inputs are debited by coefficient × primary-input production quantity; unit conversion is not inferred.",
+      "recipes": {
+        "aluminium_ingot": {
+          "recipeId": "AEROSPACE_EQUIPMENT_PLANT:aluminium_ingot",
+          "primaryInput": "aluminium_ingot",
+          "inputs": {
+            "aluminium_ingot": 1,
+            "alloy_steel": 0.15,
+            "semiconductor_components": 0.04,
+            "polymer_resin": 0.08
+          },
+          "outputs": {
+            "AIRCRAFT_UNITS": 0.006,
+            "AEROSPACE_PARTS": 0.1,
+            "METAL_SCRAP": 0.12
+          },
+          "outputUnits": {
+            "AIRCRAFT_UNITS": "UNITS",
+            "AEROSPACE_PARTS": "UNITS"
+          },
+          "cycleDays": 5,
+          "quantityBasis": "SIMULATION_NORMALIZED_INPUT_UNITS",
+          "authority": "SIMULATED_GAMEPLAY_ONLY",
+          "utilities": {
+            "electricityMWhPerPrimaryUnit": 1.4,
+            "waterM3PerPrimaryUnit": 0.9,
+            "fuelGJPerPrimaryUnit": null,
+            "enforcement": "METADATA_ONLY_UNLESS_A_FUTURE_AUTHORITATIVE_UTILITY_LEDGER_IS_CONNECTED"
+          },
+          "construction": {
+            "costUsd": 820000000,
+            "buildDays": 720,
+            "capacityPerDay": 120,
+            "workersRequired": 1250,
+            "authority": "SIMULATED_GAMEPLAY_ONLY"
+          }
+        }
+      }
+    },
+    "PHARMACEUTICAL_MEDICAL_SUPPLIES_PLANT": {
+      "name": "Pharmaceutical and medical-supplies plant",
+      "category": "healthcare",
+      "iconId": "pharmaceutical-plant",
+      "description": "Quality/technology assumptions are simulated; no claim about specific medicines or regulatory approval.",
+      "simulationOnly": true,
+      "recipeSelection": "PRIMARY_INPUT_TOKEN",
+      "quantityPolicy": "Inputs are debited by coefficient × primary-input production quantity; unit conversion is not inferred.",
+      "recipes": {
+        "pharmaceutical_base_chemicals": {
+          "recipeId": "PHARMACEUTICAL_MEDICAL_SUPPLIES_PLANT:pharmaceutical_base_chemicals",
+          "primaryInput": "pharmaceutical_base_chemicals",
+          "inputs": {
+            "pharmaceutical_base_chemicals": 1,
+            "industrial_gas": 0.04,
+            "packaging_material": 0.03
+          },
+          "outputs": {
+            "MEDICAL_SUPPLY_UNITS": 0.16,
+            "PHARMA_RESIDUE": 0.08
+          },
+          "outputUnits": {
+            "MEDICAL_SUPPLY_UNITS": "UNITS"
+          },
+          "cycleDays": 3,
+          "quantityBasis": "SIMULATION_NORMALIZED_INPUT_UNITS",
+          "authority": "SIMULATED_GAMEPLAY_ONLY",
+          "utilities": {
+            "electricityMWhPerPrimaryUnit": 0.3,
+            "waterM3PerPrimaryUnit": 1.2,
+            "fuelGJPerPrimaryUnit": null,
+            "enforcement": "METADATA_ONLY_UNLESS_A_FUTURE_AUTHORITATIVE_UTILITY_LEDGER_IS_CONNECTED"
+          },
+          "construction": {
+            "costUsd": 190000000,
+            "buildDays": 360,
+            "capacityPerDay": 360,
+            "workersRequired": 620,
+            "authority": "SIMULATED_GAMEPLAY_ONLY"
+          }
+        }
+      }
+    },
+    "DEFENSE_EQUIPMENT_PLANT": {
+      "name": "Defense equipment and vehicles plant",
+      "category": "defense-industry",
+      "iconId": "defense-industry",
+      "description": "Generic equipment manufacturing abstraction. Does not provide weapons engineering details.",
+      "simulationOnly": true,
+      "recipeSelection": "PRIMARY_INPUT_TOKEN",
+      "quantityPolicy": "Inputs are debited by coefficient × primary-input production quantity; unit conversion is not inferred.",
+      "recipes": {
+        "steel_ingot": {
+          "recipeId": "DEFENSE_EQUIPMENT_PLANT:steel_ingot",
+          "primaryInput": "steel_ingot",
+          "inputs": {
+            "steel_ingot": 1,
+            "semiconductor_components": 0.04,
+            "polymer_resin": 0.06,
+            "grid_equipment_units": 0.015
+          },
+          "outputs": {
+            "DEFENSE_EQUIPMENT_UNITS": 0.018,
+            "REPLACEMENT_COMPONENTS": 0.12,
+            "MANUFACTURING_SCRAP": 0.14
+          },
+          "outputUnits": {
+            "DEFENSE_EQUIPMENT_UNITS": "UNITS",
+            "REPLACEMENT_COMPONENTS": "UNITS"
+          },
+          "cycleDays": 4,
+          "quantityBasis": "SIMULATION_NORMALIZED_INPUT_UNITS",
+          "authority": "SIMULATED_GAMEPLAY_ONLY",
+          "utilities": {
+            "electricityMWhPerPrimaryUnit": 1,
+            "waterM3PerPrimaryUnit": 0.5,
+            "fuelGJPerPrimaryUnit": null,
+            "enforcement": "METADATA_ONLY_UNLESS_A_FUTURE_AUTHORITATIVE_UTILITY_LEDGER_IS_CONNECTED"
+          },
+          "construction": {
+            "costUsd": 460000000,
+            "buildDays": 540,
+            "capacityPerDay": 260,
+            "workersRequired": 1050,
+            "authority": "SIMULATED_GAMEPLAY_ONLY"
+          }
+        }
+      }
+    },
+    "RECYCLING_WASTE_PROCESSING_PLANT": {
+      "name": "Recycling and waste-processing plant",
+      "category": "circular-economy",
+      "iconId": "recycling-plant",
+      "description": "Recycling consumes separately tracked scrap streams and produces reusable secondary materials.",
+      "simulationOnly": true,
+      "recipeSelection": "PRIMARY_INPUT_TOKEN",
+      "quantityPolicy": "Inputs are debited by coefficient × primary-input production quantity; unit conversion is not inferred.",
+      "recipes": {
+        "steel_scrap": {
+          "recipeId": "RECYCLING_WASTE_PROCESSING_PLANT:steel_scrap",
+          "primaryInput": "steel_scrap",
+          "inputs": {
+            "steel_scrap": 1,
+            "copper_scrap": 0.12,
+            "polymer_scrap": 0.1
+          },
+          "outputs": {
+            "recycled_steel": 0.72,
+            "recycled_copper": 0.08,
+            "recycled_polymer": 0.09,
+            "recycling_residue": 0.18
+          },
+          "outputUnits": {},
+          "cycleDays": 2,
+          "quantityBasis": "SIMULATION_NORMALIZED_INPUT_UNITS",
+          "authority": "SIMULATED_GAMEPLAY_ONLY",
+          "utilities": {
+            "electricityMWhPerPrimaryUnit": null,
+            "waterM3PerPrimaryUnit": null,
+            "fuelGJPerPrimaryUnit": null,
+            "enforcement": "METADATA_ONLY_UNLESS_A_FUTURE_AUTHORITATIVE_UTILITY_LEDGER_IS_CONNECTED"
+          },
+          "construction": {
+            "costUsd": 87000000,
+            "buildDays": 210,
+            "capacityPerDay": 1100,
+            "workersRequired": 430,
+            "authority": "SIMULATED_GAMEPLAY_ONLY"
+          }
+        }
+      }
+    }
+  },
+  "manufacturingBaseline": {
+    "baselineId": "OMEGA_FACTORY_INDUSTRIAL_BASELINE_V1",
+    "additionalFactoryTypes": [
+      "STEEL_AND_ALLOY_MILL",
+      "NON_FERROUS_SMELTER",
+      "PETROCHEMICAL_POLYMER_PLANT",
+      "FERTILIZER_AGROCHEMICAL_PLANT",
+      "INDUSTRIAL_CHEMICALS_GAS_PLANT",
+      "CEMENT_CONCRETE_PLANT",
+      "GLASS_CERAMICS_PLANT",
+      "PAPER_PACKAGING_MILL",
+      "FOOD_PROCESSING_COLD_CHAIN",
+      "TEXTILE_GARMENT_MILL",
+      "INDUSTRIAL_MACHINERY_TOOL_PLANT",
+      "ELECTRICAL_GRID_EQUIPMENT_PLANT",
+      "ELECTRONICS_SEMICONDUCTOR_PLANT",
+      "BATTERY_ENERGY_STORAGE_PLANT",
+      "VEHICLE_TRUCK_BUS_PLANT",
+      "SHIP_RAIL_EQUIPMENT_PLANT",
+      "AEROSPACE_EQUIPMENT_PLANT",
+      "PHARMACEUTICAL_MEDICAL_SUPPLIES_PLANT",
+      "DEFENSE_EQUIPMENT_PLANT",
+      "RECYCLING_WASTE_PROCESSING_PLANT"
+    ],
+    "targetFactoryTypeCount": 56,
+    "currentProcessingRuleCount": 39,
+    "policy": "Additive-only. Existing resourceRules and processingRules remain authoritative and are not removed or rewritten.",
+    "simulationNotice": "All new downstream recipes, output coefficients, capacities, construction costs, build durations, workforce and utility rates are GAME-SIMULATION PARAMETERS, not observed industrial measurements.",
+    "quantitySafety": "A production cycle is bounded by every required input coefficient. Missing inputs block the cycle with no partial stock debit. The runtime does not infer conversions between incompatible units.",
+    "utilitySafety": "Electricity/water/fuel requirements are metadata only until connected to an authoritative utility inventory and allocation ledger."
   }
 }
