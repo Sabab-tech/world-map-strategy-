@@ -64,7 +64,7 @@ test('canonical factory catalog, type profiles, offline icons and recipe coeffic
   assert.equal(catalog.factoryCatalogSummary.categoryCount, 12);
 
   const serviceWorker = readText('omega-offline-map-sw.js');
-  assert.match(serviceWorker, /omega-offline-atlas-shell-v18/);
+  assert.match(serviceWorker, /omega-offline-atlas-shell-v19/);
   const factoryUi = readText('omega_resource_command_center_ui_v1.js');
   assert.match(factoryUi, /Unemployed people/, 'industrial UI must expose the unemployment headcount');
   assert.match(factoryUi, /Jobs per factory/, 'catalog UI must expose per-factory job slots');
@@ -220,7 +220,11 @@ test('factory construction reads its selected recipe and defaults from the canon
 test('multi-input factory consumes every required input once and preserves mine-batch lineage', () => {
   const { context, api } = makeRuntime();
   const asset = makeSteelAsset();
-  context.Game.state.economy.BGD = { productionAssets: [asset] };
+  context.Game.state.economy.BGD = { unemploymentCount: 600000, laborForce: 6000000, unemployment_rate: 10, productionAssets: [asset] };
+  context.Game.state.transport.BGD = { infrastructure: { utilitySupply: {
+    electricityMWhPerDay: 1000000, waterM3PerDay: 1000000,
+    authority: 'TEST_FIXTURE', status: 'AVAILABLE', simulationOnly: true, assets: []
+  } } };
   const run = api.executeFactoryCycle({
     countryId: 'BGD', factoryId: asset.id, resourceId: 'iron_concentrate', quantity: 50
   });
@@ -266,7 +270,11 @@ test('missing required input blocks multi-input production without consuming par
       { batchId: 'INPUT-COPPER', resourceId: 'copper_concentrate', quantity: 10, remainingQuantity: 10, sourceBatchIds: ['MINE-COPPER-001'] }
     ]
   });
-  context.Game.state.economy.BGD = { productionAssets: [asset] };
+  context.Game.state.economy.BGD = { unemploymentCount: 600000, laborForce: 6000000, unemployment_rate: 10, productionAssets: [asset] };
+  context.Game.state.transport.BGD = { infrastructure: { utilitySupply: {
+    electricityMWhPerDay: 1000000, waterM3PerDay: 1000000,
+    authority: 'TEST_FIXTURE', status: 'AVAILABLE', simulationOnly: true, assets: []
+  } } };
   const stockBefore = JSON.stringify(asset.inputInventory);
   const lotsBefore = JSON.stringify(asset.inputBatchLots);
   const run = api.executeFactoryCycle({
@@ -289,7 +297,11 @@ test('tracked input shortage blocks before any component is consumed', () => {
       { batchId: 'INPUT-COPPER', resourceId: 'copper_concentrate', quantity: 10, remainingQuantity: 10, sourceBatchIds: ['MINE-COPPER-001'] }
     ]
   });
-  context.Game.state.economy.BGD = { productionAssets: [asset] };
+  context.Game.state.economy.BGD = { unemploymentCount: 600000, laborForce: 6000000, unemployment_rate: 10, productionAssets: [asset] };
+  context.Game.state.transport.BGD = { infrastructure: { utilitySupply: {
+    electricityMWhPerDay: 1000000, waterM3PerDay: 1000000,
+    authority: 'TEST_FIXTURE', status: 'AVAILABLE', simulationOnly: true, assets: []
+  } } };
   const stockBefore = JSON.stringify(asset.inputInventory);
   const lotsBefore = JSON.stringify(asset.inputBatchLots);
   const run = api.executeFactoryCycle({
@@ -305,7 +317,11 @@ test('tracked input shortage blocks before any component is consumed', () => {
 test('untracked multi-input stock is rejected atomically even when legacy tracking is optional', () => {
   const { context, api } = makeRuntime();
   const asset = makeSteelAsset({ inputBatchLots: [], requireTrackedInputs: false });
-  context.Game.state.economy.BGD = { productionAssets: [asset] };
+  context.Game.state.economy.BGD = { unemploymentCount: 600000, laborForce: 6000000, unemployment_rate: 10, productionAssets: [asset] };
+  context.Game.state.transport.BGD = { infrastructure: { utilitySupply: {
+    electricityMWhPerDay: 1000000, waterM3PerDay: 1000000,
+    authority: 'TEST_FIXTURE', status: 'AVAILABLE', simulationOnly: true, assets: []
+  } } };
   const stockBefore = JSON.stringify(asset.inputInventory);
   const run = api.executeFactoryCycle({
     countryId: 'BGD', factoryId: asset.id, resourceId: 'iron_concentrate', quantity: 50
@@ -320,7 +336,11 @@ test('untracked multi-input stock is rejected atomically even when legacy tracki
 test('invalid output recipe is rejected before any input batch is consumed', () => {
   const { context, api } = makeRuntime();
   const asset = makeSteelAsset({ outputProfile: {} });
-  context.Game.state.economy.BGD = { productionAssets: [asset] };
+  context.Game.state.economy.BGD = { unemploymentCount: 600000, laborForce: 6000000, unemployment_rate: 10, productionAssets: [asset] };
+  context.Game.state.transport.BGD = { infrastructure: { utilitySupply: {
+    electricityMWhPerDay: 1000000, waterM3PerDay: 1000000,
+    authority: 'TEST_FIXTURE', status: 'AVAILABLE', simulationOnly: true, assets: []
+  } } };
   const stockBefore = JSON.stringify(asset.inputInventory);
   const lotsBefore = JSON.stringify(asset.inputBatchLots);
   const run = api.executeFactoryCycle({
@@ -407,7 +427,11 @@ test('processed mine-derived batches route to a downstream factory and reconcile
 test('unrecognized physical units are blocked instead of being converted by an implicit fallback', () => {
   const { context, api } = makeRuntime();
   const asset = makeSteelAsset({ inputInventory: {}, inputBatchLots: [] });
-  context.Game.state.economy.BGD = { productionAssets: [asset] };
+  context.Game.state.economy.BGD = { unemploymentCount: 600000, laborForce: 6000000, unemployment_rate: 10, productionAssets: [asset] };
+  context.Game.state.transport.BGD = { infrastructure: { utilitySupply: {
+    electricityMWhPerDay: 1000000, waterM3PerDay: 1000000,
+    authority: 'TEST_FIXTURE', status: 'AVAILABLE', simulationOnly: true, assets: []
+  } } };
   context.Game.state.resource.BGD = {
     inventory: { IRON_CONCENTRATE: 60 },
     batches: [{ batchId: 'OUTPUT-UNIT-TEST', resourceId: 'IRON_CONCENTRATE', quantity: 60, remainingQuantity: 60,
@@ -429,7 +453,11 @@ test('unrecognized physical units are blocked instead of being converted by an i
 test('technology-locked or explicitly unavailable factories cannot consume inputs or accept shipments', () => {
   const { context, api } = makeRuntime();
   const asset = makeSteelAsset({ status: 'TECHNOLOGY_LOCKED' });
-  context.Game.state.economy.BGD = { productionAssets: [asset] };
+  context.Game.state.economy.BGD = { unemploymentCount: 600000, laborForce: 6000000, unemployment_rate: 10, productionAssets: [asset] };
+  context.Game.state.transport.BGD = { infrastructure: { utilitySupply: {
+    electricityMWhPerDay: 1000000, waterM3PerDay: 1000000,
+    authority: 'TEST_FIXTURE', status: 'AVAILABLE', simulationOnly: true, assets: []
+  } } };
   const stockBefore = JSON.stringify(asset.inputInventory);
   const result = api.executeFactoryCycle({
     countryId: 'BGD', factoryId: asset.id, resourceId: 'iron_concentrate', quantity: 50
@@ -507,4 +535,77 @@ test('unknown generic production is not allowed to create a factory project with
   });
   assert.equal(allowed.status, 'UNDER_CONSTRUCTION');
   assert.equal(allowed.recipeAuthority, 'SIMULATED_GENERIC_FALLBACK');
+});
+
+
+test('factory production blocks missing utility supply before consuming any input stock', () => {
+  const { context, catalog, api } = makeRuntime();
+  const asset = makeSteelAsset();
+  context.Game.state.economy.BGD = { unemploymentCount: 600000, laborForce: 6000000, unemployment_rate: 10, productionAssets: [asset] };
+  context.Game.state.transport.BGD = { infrastructure: { utilitySupply: {
+    electricityMWhPerDay: null, waterM3PerDay: 100000,
+    authority: 'TEST_FIXTURE', status: 'AVAILABLE', simulationOnly: true, assets: []
+  } } };
+  const beforeStock = JSON.stringify(asset.inputInventory);
+  const beforeLots = JSON.stringify(asset.inputBatchLots.map(x => x.remainingQuantity));
+  const result = api.executeFactoryCycle({ countryId: 'BGD', factoryId: asset.id, resourceId: 'iron_concentrate', quantity: 50 });
+  assert.equal(result.status, 'BLOCKED');
+  assert.equal(result.reason, 'FACTORY_UTILITY_SUPPLY_NOT_RECORDED');
+  assert.equal(JSON.stringify(asset.inputInventory), beforeStock);
+  assert.equal(JSON.stringify(asset.inputBatchLots.map(x => x.remainingQuantity)), beforeLots);
+  assert.equal(context.Game.state.resource.BGD?.industrialNetwork?.utilityLedger?.turns?.['1']?.transactions?.length || 0, 0);
+});
+
+test('factory production consumes proportional electricity and water only after every gate passes', () => {
+  const { context, catalog, api } = makeRuntime();
+  const asset = makeSteelAsset();
+  context.Game.state.economy.BGD = { unemploymentCount: 600000, laborForce: 6000000, unemployment_rate: 10, productionAssets: [asset] };
+  const profile = catalog.factoryProfiles[asset.factoryType];
+  context.Game.state.transport.BGD = { infrastructure: { utilitySupply: {
+    electricityMWhPerDay: 1000000, waterM3PerDay: 1000000,
+    authority: 'TEST_FIXTURE', status: 'AVAILABLE', simulationOnly: true, assets: []
+  } } };
+  const result = api.executeFactoryCycle({ countryId: 'BGD', factoryId: asset.id, resourceId: 'iron_concentrate', quantity: 50 });
+  assert.equal(result.status, 'COMPLETED', JSON.stringify(result));
+  assert.equal(result.utilityConsumption.electricityMWh, Number((profile.utilities.electricityMWhPerDay * 0.5).toFixed(6)));
+  assert.equal(result.utilityConsumption.waterM3, Number((profile.utilities.waterM3PerDay * 0.5).toFixed(6)));
+  const balance = api.factoryUtilityDiagnostics('BGD');
+  assert.equal(balance.electricity.usedThisTurn, result.utilityConsumption.electricityMWh);
+  assert.equal(balance.water.usedThisTurn, result.utilityConsumption.waterM3);
+  assert.equal(balance.electricity.availableThisTurn, 1000000 - result.utilityConsumption.electricityMWh);
+  assert.equal(balance.water.availableThisTurn, 1000000 - result.utilityConsumption.waterM3);
+});
+
+test('factory production refuses an unrecorded workforce pool', () => {
+  const { context, api } = makeRuntime();
+  const asset = makeSteelAsset();
+  context.Game.state.economy.BGD = { productionAssets: [asset] };
+  context.Game.state.transport.BGD = { infrastructure: { utilitySupply: {
+    electricityMWhPerDay: 100000, waterM3PerDay: 100000,
+    authority: 'TEST_FIXTURE', status: 'AVAILABLE', simulationOnly: true, assets: []
+  } } };
+  const beforeStock = JSON.stringify(asset.inputInventory);
+  const result = api.executeFactoryCycle({ countryId: 'BGD', factoryId: asset.id, resourceId: 'iron_concentrate', quantity: 50 });
+  assert.equal(result.status, 'BLOCKED');
+  assert.equal(result.reason, 'FACTORY_WORKFORCE_NOT_RECORDED');
+  assert.equal(JSON.stringify(asset.inputInventory), beforeStock);
+});
+
+test('completed power and water projects add an auditable supply ledger for the selected country', () => {
+  const { context, api } = makeRuntime();
+  const power = api.startInfrastructureProject({ countryId: 'BGD', requestId: 'POWER-TEST', infrastructureType: 'power', capacityPerDay: 250, buildDays: 30 });
+  const water = api.startInfrastructureProject({ countryId: 'BGD', requestId: 'WATER-TEST', infrastructureType: 'water', capacityPerDay: 800, buildDays: 30 });
+  assert.equal(power.status, 'UNDER_CONSTRUCTION');
+  assert.equal(water.status, 'UNDER_CONSTRUCTION');
+  assert.equal(power.capacityUnit, 'MWh_PER_DAY');
+  assert.equal(water.capacityUnit, 'M3_PER_DAY');
+  assert.equal(api.startInfrastructureProject({ countryId: 'BGD', requestId: 'POWER-TEST', infrastructureType: 'power', capacityPerDay: 250, buildDays: 30 }).idempotent, true);
+  for (let day = 2; day <= 31; day += 1) {
+    context.Game.state.simulation.turn = day;
+    api.advanceProjects('BGD');
+  }
+  const balance = api.factoryUtilityDiagnostics('BGD');
+  assert.equal(balance.electricityMWhPerDay, 250);
+  assert.equal(balance.waterM3PerDay, 800);
+  assert.equal(balance.utilityAssets.length, 2);
 });
