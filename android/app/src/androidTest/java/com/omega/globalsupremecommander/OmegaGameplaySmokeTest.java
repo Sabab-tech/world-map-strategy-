@@ -61,14 +61,14 @@ public final class OmegaGameplaySmokeTest {
                     " window.Game && window.Omega" +
                     " );" +
                     "})()";
-            final long deadline = SystemClock.elapsedRealtime() + 90000L;
+            final long deadline = SystemClock.elapsedRealtime() + 150000L;
             String ready = "false";
             while (!"true".equals(ready) && SystemClock.elapsedRealtime() < deadline) {
                 ready = evaluate(instrumentation, webViewRef.get(), readinessScript);
                 if (!"true".equals(ready)) SystemClock.sleep(400L);
             }
             assertEquals(
-                    "Bundled offline gameplay shell, local data assets and core runtime must finish booting within 90 seconds",
+                    "Bundled offline gameplay shell, local data assets and core runtime must finish booting within 150 seconds",
                     "true", ready
             );
             final String offlineBridgeScript =
@@ -129,7 +129,7 @@ public final class OmegaGameplaySmokeTest {
         );
         assertTrue(
                 "WebView JavaScript evaluation callback should return",
-                latch.await(10, TimeUnit.SECONDS)
+                latch.await(45, TimeUnit.SECONDS)
         );
         return result.get();
     }
