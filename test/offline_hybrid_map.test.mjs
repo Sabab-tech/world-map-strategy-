@@ -119,11 +119,11 @@ test("canonical country profile pack is bundled for Android and refreshes offlin
 });
 
 test("runtime composition root executes in the ordered deferred script queue", () => {
-  const scripts = [...html.matchAll(/<script\\b([^>]*)>([\\s\\S]*?)<\\/script\\s*>/gi)].map((match, index) => ({
+  const scripts = [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script\s*>/gi)].map((match, index) => ({
     index,
     attributes: match[1],
     body: match[2],
-    src: (match[1].match(/\\bsrc\\s*=\\s*["']([^"']+)["']/i) || [])[1] || null
+    src: (match[1].match(/\bsrc\s*=\s*["']([^"']+)["']/i) || [])[1] || null
   }));
   const find = name => scripts.find(script => script.src === name);
   const performance = find("omega_boot_performance_monitor_v1.js");
@@ -133,8 +133,8 @@ test("runtime composition root executes in the ordered deferred script queue", (
   const ministryDomain = find("omega_ministry_domain_engines.js");
   assert.ok(performance && root && countryRuntime && legacyEngine && ministryDomain,
     "all ordered boot scripts must be present in index.html");
-  assert.match(performance.attributes, /\\bdefer\\b/);
-  assert.match(root.attributes, /\\bdefer\\b/);
+  assert.match(performance.attributes, /\bdefer\b/);
+  assert.match(root.attributes, /\bdefer\b/);
   assert.equal(root.body.trim(), "", "composition root must not execute inline during HTML parsing");
   assert.ok(root.index > countryRuntime.index && root.index > legacyEngine.index,
     "composition root must retain its position after its legacy runtime dependencies");
