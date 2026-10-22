@@ -350,6 +350,12 @@
       '.omr-launch .omega-open-recruitment{border-color:#20c997;background:linear-gradient(135deg,#123e3a,#102b3b)}' +
       '.omr-launch .omega-manage-recruitment{background:#182536;color:#d7e2ec}' +
       '.omr-launch button:disabled,.omr-actions button:disabled{opacity:.55;cursor:not-allowed}' +
+      '.omr-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;align-items:stretch}' +
+      '.omr-card{display:flex;flex-direction:column;gap:6px;min-width:0;width:100%;padding:12px;border:1px solid #355063;border-radius:10px;background:#10202d;color:#e3f8ff;text-align:left;cursor:pointer;font:inherit}' +
+      '.omr-card:focus-visible,.omr-card-quick-recruit:focus-visible{outline:2px solid #20c997;outline-offset:2px}' +
+      '.omr-card-quick-recruit{margin-top:8px;min-height:34px;padding:7px 10px;border:1px solid #20c997;border-radius:7px;background:#123e3a;color:#e8fff8;font-size:12px;font-weight:800;cursor:pointer}' +
+      '.omr-card-quick-recruit:disabled{opacity:.55;cursor:not-allowed}' +
+      '.omr-card-quick-status{margin-top:8px;color:#8cd9b9;font-size:11px;font-weight:800}' +
       '.omr-card.is-busy{opacity:.7;border-color:#8b6b35}' +
       '.omr-error{margin:10px 0;padding:10px 12px;border:1px solid #b45353;border-radius:8px;background:#2b151a;color:#ffd8d8;font-size:12px;line-height:1.5}' +
       '.omr-status.is-busy{color:#f7c97a}';
@@ -441,24 +447,60 @@
         const current = id === currentId;
         const busy = !current && assignedElsewhere(id, ministryId, cc);
         const status = current ? 'ACTIVE' : busy ? 'ASSIGNED ELSEWHERE' : 'AVAILABLE';
-        return '<button class="omr-card ' + (current ? 'is-active' : busy ? 'is-busy' : '') +
-          '" data-id="' + esc(id) + '" type="button"><span class="omr-index">' +
-          String(index + 1).padStart(2, '0') + '</span><strong>' + esc(displayName(candidate)) +
+        const quickAction = current
+          ? '<span class="omr-card-quick-status">ACTIVE MINISTER</span>'
+          : busy
+            ? '<button class="omr-card-quick-recruit" data-action="quick-recruit" type="button" disabled>ASSIGNED ELSEWHERE</button>'
+            : '<button class="omr-card-quick-recruit" data-action="quick-recruit" type="button">RECRUIT MINISTER</button>';
+        return '<div class="omr-card ' + (current ? 'is-active' : busy ? 'is-busy' : '') +
+          '" data-id="' + esc(id) + '" role="button" tabindex="0" aria-label="View profile for ' + esc(displayName(candidate)) + '">' +
+          '<span class="omr-index">' + String(index + 1).padStart(2, '0') + '</span><strong>' + esc(displayName(candidate)) +
           '</strong><span class="omr-id">ID: ' + esc(id) + '</span><span>' +
           esc(candidate.background || '') + '</span><span>Age ' + esc(candidate.age) +
-          '</span><span class="omr-status ' + (busy ? 'is-busy' : '') + '">' + status + '</span></button>';
+          '</span><span class="omr-status ' + (busy ? 'is-busy' : '') + '">' + status + '</span>' +
+          quickAction + '</div>';
       }).join('') + '</div><div class="omr-detail"><div class="omr-empty">Select a candidate to inspect the complete profile.</div></div></section>';
 
     const detail = container.querySelector('.omr-detail');
     container.querySelectorAll('.omr-card').forEach(card => {
-      card.addEventListener('click', () => {
-        const candidate = roster.find(item => text(item.id || item.ministerId) === card.dataset.id);
-        if (!candidate) return;
+      const candidate = roster.find(item => text(item.id || item.ministerId) === card.dataset.id);
+      if (!candidate) return;
+
+      const showDetails = () => {
         const current = activeId(ministryId, cc);
         const isCurrent = text(candidate.id || candidate.ministerId) === current;
         const busy = !isCurrent && assignedElsewhere(candidate.id || candidate.ministerId, ministryId, cc);
         renderCandidateDetail(detail, candidate, ministryId, cc, current, busy);
+      };
+
+      card.addEventListener('click', event => {
+        const target = event && event.target;
+        if (target && typeof target.closest === 'function' && target.closest('[data-action="quick-recruit"]')) return;
+        showDetails();
       });
+      card.addEventListener('keydown', event => {
+        if (!event || (event.key !== 'Enter' && event.key !== ' ')) return;
+        const target = event.target;
+        if (target && typeof target.closest === 'function' && target.closest('[data-action="quick-recruit"]')) return;
+        if (typeof event.preventDefault === 'function') event.preventDefault();
+        showDetails();
+      });
+
+      const quickRecruit = card.querySelector('[data-action="quick-recruit"]');
+      if (quickRecruit && !quickRecruit.disabled) {
+        quickRecruit.addEventListener('click', async event => {
+          event.preventDefault();
+          event.stopPropagation();
+          if (quickRecruit.disabled) return;
+          quickRecruit.disabled = true;
+          try {
+            await recruit(ministryId, candidate, cc);
+          } catch (error) {
+            quickRecruit.disabled = false;
+            showInlineError(container, error);
+          }
+        });
+      }
     });
   }
 
