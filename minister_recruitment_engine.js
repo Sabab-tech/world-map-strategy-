@@ -208,6 +208,18 @@
     }
   }
 
+  function profileEffects(candidate, ministryId) {
+    const behavior = global.OmegaMinisterBehavior;
+    if (!behavior || typeof behavior.analyzeProfile !== 'function') return null;
+    try {
+      return behavior.analyzeProfile(candidate, operationFor(ministryId), {
+        ministryId, domain: ministryId
+      });
+    } catch (_) {
+      return null;
+    }
+  }
+
   function displayName(candidate) {
     return candidate && (candidate.displayName || candidate.name ||
       candidate.regional_names && (candidate.regional_names.south_asia ||
@@ -348,6 +360,25 @@
     const id = text(candidate.id);
     const isActive = id === currentId;
     const cap = capability(candidate, ministryId);
+    const effects = profileEffects(candidate, ministryId);
+    const effectsMarkup = effects
+      ? '<div class="omr-profile-effects" style="margin-top:12px;padding:12px;border:1px solid rgba(100,155,190,.35);border-radius:9px;background:rgba(12,28,42,.55)">' +
+        '<h4 style="margin:0 0 8px">PROFILE EFFECTS</h4>' +
+        '<p style="margin:4px 0"><b>Work style:</b> ' +
+          esc(Array.isArray(effects.workStyle) ? effects.workStyle.map(item => String(item).replace(/_/g, ' ')).join(', ') : 'Not recorded') + '</p>' +
+        '<p style="margin:4px 0"><b>Age stage:</b> ' + esc(effects.age && effects.age.band || 'Not recorded') +
+          ' · operation modifier ×' + esc(Number.isFinite(Number(effects.age && effects.age.capabilityMultiplier)) ? Number(effects.age.capabilityMultiplier).toFixed(2) : 'N/A') + '</p>' +
+        '<p style="margin:4px 0"><b>Stress resilience:</b> ' + esc(effects.stressResilience && effects.stressResilience.handlingLabel || 'Not recorded') +
+          ' (' + esc(effects.stressResilience && effects.stressResilience.score != null ? effects.stressResilience.score : 'N/A') + '/100)</p>' +
+        '<p style="margin:4px 0"><b>Training rate:</b> ×' +
+          esc(Number.isFinite(Number(effects.training && effects.training.ageMultiplier)) ? Number(effects.training.ageMultiplier).toFixed(2) : 'N/A') + ' age · ×' +
+          esc(Number.isFinite(Number(effects.training && effects.training.learningAgilityMultiplier)) ? Number(effects.training.learningAgilityMultiplier).toFixed(2) : 'N/A') + ' learning agility</p>' +
+        '<p style="margin:4px 0"><b>Career fit:</b> ' +
+          (effects.careerFit && effects.careerFit.matched
+            ? 'match +' + esc(Math.round(Number(effects.careerFit.bonus || 0) * 100)) + '% (' +
+              esc(Array.isArray(effects.careerFit.matchedKeywords) ? effects.careerFit.matchedKeywords.join(', ') : '') + ')'
+            : 'no recorded specialty match; neutral modifier') + '</p></div>'
+      : '';
     const stats = Object.entries(Object.assign({}, candidate.stats || {}, candidate.efficiency || {}))
       .filter(entry => typeof entry[1] === 'number')
       .map(entry => {
@@ -377,7 +408,7 @@
       '</div><div><h4>EFFECTIVE CAPABILITY</h4><p>Capability is evaluated from this profile and the selected ministry runtime rules.</p>' +
       (cap ? '<div class="omr-capability"><strong>' + esc(cap.operation) + '</strong><span>Base ' +
         esc(cap.baseCapability) + ' • Effective ' + esc(cap.effectiveCapability) + '</span></div>' : '') +
-      '</div></div><div class="omr-actions">' + action + '</div></div>';
+      effectsMarkup + '</div></div><div class="omr-actions">' + action + '</div></div>';
 
     const actionButton = detail.querySelector('[data-action]');
     if (actionButton && !busy) {
