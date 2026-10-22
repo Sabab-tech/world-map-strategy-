@@ -202,12 +202,25 @@ assert.equal(context.Game.state.resource.BGD.industrialNetwork.siteExecutions[0]
 context.Game.state.simulation.turn=siteRun.shipment.etaTurn;
 const copperDelivery=N.advanceShipments('BGD');
 assert.equal(copperDelivery.delivered,1);
-assert.equal(copperDelivery.shipments[0].processingStatus,'PROCESSED');
-assert.ok(context.Game.state.resource.BGD.inventory.COPPER_CONCENTRATE>0,'processed site output must be persisted in the country inventory');
-assert.ok(context.Game.state.resource.BGD.inventory.TAILINGS>0,'processing by-product must be persisted too');
+assert.equal(copperDelivery.shipments[0].processingStatus,'IN_PROGRESS',
+  'site extraction delivery must schedule production instead of bypassing cycle timing');
+assert.equal(Number(context.Game.state.resource.BGD.inventory.COPPER_CONCENTRATE)||0,0,
+  'copper output must not be committed on the delivery tick');
+const copperFactory=context.Game.state.economy.BGD.productionAssets.find(x=>String(x.id||x.assetId||x.projectId)===String(siteRun.factoryId));
+const copperCycle=context.Game.state.resource.BGD.industrialNetwork.factoryProductionCycles[copperFactory.id];
+assert.ok(copperCycle&&copperCycle.finishDate,'auto-commissioned copper processing must have a dated production cycle');
+context.Game.state.simulation.turn=Math.max(Number(context.Game.state.simulation.turn)||0,Number(copperCycle.finishTurn)||0);
+context.Game.state.simulation.date=copperCycle.finishDate;
+const copperCompleted=N.processPendingFactoryInputs('BGD');
+assert.equal(copperCompleted.completedCount,1,JSON.stringify(copperCompleted));
+assert.ok(context.Game.state.resource.BGD.inventory.COPPER_CONCENTRATE>0,'completed site output must be persisted in the country inventory');
+assert.ok(context.Game.state.resource.BGD.inventory.TAILINGS>0,'completed processing by-product must be persisted too');
 assert.equal(context.Game.state.resource.BGD.warehouse.availableByResource.copper,0,'raw shipment quantity must be removed from warehouse exactly once');
 assert.equal(context.Game.state.resource.BGD.warehouse.reservedByResource.copper,0,'site shipment reservation must be cleared');
-assert.ok(context.Game.state.resource.BGD.industrialNetwork.events.some(x=>x.transactionId&&x.status==='COMPLETED'),'factory processing must be written to the runtime event ledger');
+const copperDeliveryRow=context.Game.state.resource.BGD.industrialNetwork.deliveries.find(x=>String(x.shipmentId)===String(siteRun.shipmentId));
+assert.equal(copperDeliveryRow.processingStatus,'PROCESSED','delivery record must reconcile when its cycle commits');
+assert.ok(context.Game.state.resource.BGD.industrialNetwork.events.some(x=>x.transactionId&&x.status==='COMPLETED'),
+  'factory processing must be written to the runtime event ledger');
 
 const kuwaitProject=N.startInfrastructureProject({
   countryId:'Kuwait',infrastructureType:'road',distanceKm:10,capacityPerDay:100,cost:100
