@@ -1713,7 +1713,8 @@ function advanceProjects(c){
         inputInventory:{},inputBatchLots:[],inputUnit:p.recipe?.inputUnit||factoryProfile.inputUnit||null,
         outputUnit:p.recipe?.outputUnit||factoryProfile.outputUnit||null,
         requireTrackedInputs:p.recipeMode==='MULTI_INPUT'||factoryProfile.requireTrackedInputs===true,
-        workforce:clone(factoryProfile.workforce||{}),utilityRequirements:clone(factoryProfile.utilities||{}),
+        workforce:clone(factoryProfile.workforce||{}),employmentProfile:clone(factoryProfile.employment||p.employmentProfile||null),
+        utilityRequirements:clone(factoryProfile.utilities||{}),
         requiredInfrastructure:clone(factoryProfile.requiredInfrastructure||[]),companyId:'EPC_FACTORY_OWNER',
         simulationOnly:true,authority:'SIMULATED_FACTORY_ASSET',transportAccess:['road','rail','ship'],commissionedTurn:turn(),
         requiredTechnologyIds:clone(p.requiredTechnologyIds||[])});
@@ -2383,7 +2384,9 @@ function reconcileFactoryEmployment(countryId){
       authority:profile.employmentAuthority||profile.employment?.authority||'UNDECLARED',simulationOnly:true,lastReconciledTurn:turn()};
     model.factories[id]=record;
     asset.employment={...(asset.employment&&typeof asset.employment==='object'?asset.employment:{}),jobsSupported:supported,jobsFilled:filled,
-      vacancies:open,status:record.status,model:'SIMULATED_FACTORY_EMPLOYMENT_V1',authority:record.authority,simulationOnly:true,lastReconciledTurn:turn()};
+      vacancies:open,coreOperatingCrew:num(profile.employment?.coreOperatingCrew),additionalDirectStaffSlots:num(profile.employment?.additionalDirectStaffSlots),
+      jobScope:profile.employment?.jobScope||'DIRECT_FACTORY_JOBS_SCOPE_NOT_RECORDED',jobBreakdown:clone(profile.employment?.jobBreakdown||{}),
+      status:record.status,model:'SIMULATED_FACTORY_EMPLOYMENT_V1',authority:record.authority,simulationOnly:true,lastReconciledTurn:turn()};
   }
   model.jobsSupported=totalSupported;model.jobsFilled=totalFilled;model.vacancies=Math.max(0,totalSupported-totalFilled);
   model.unemployedCount=baseline===null?null:Math.max(0,baseline-totalFilled);
@@ -2431,6 +2434,11 @@ function factoryCatalogDiagnostics(){
     const employment=profile?.employment;
     if(!(num(employment?.jobsPerFactory)>0)||employment?.simulationOnly!==true||!employment?.hiringSource)
       issues.push({code:'FACTORY_EMPLOYMENT_PROFILE_INVALID',factoryType:type});
+    const jobMix=employment?.jobBreakdown;
+    const jobMixTotal=jobMix&&typeof jobMix==='object'&&!Array.isArray(jobMix)?Object.values(jobMix).reduce((sum,value)=>sum+(num(value)||0),0):null;
+    if(jobMixTotal===null||Math.abs(jobMixTotal-(num(employment?.jobsPerFactory)||0))>1e-6||
+      Math.abs((num(employment?.coreOperatingCrew)||0)+(num(employment?.additionalDirectStaffSlots)||0)-(num(employment?.jobsPerFactory)||0))>1e-6)
+      issues.push({code:'FACTORY_EMPLOYMENT_ROLE_BREAKDOWN_MISMATCH',factoryType:type,jobMixTotal,jobsPerFactory:employment?.jobsPerFactory});
     for(const tech of profile?.requiredTechnologyIds||[])if(!techRules()[String(tech).toUpperCase()])issues.push({code:'FACTORY_TECHNOLOGY_UNDEFINED',factoryType:type,technologyId:tech});
   }
   for(const type of new Set(Object.values(processing).map(x=>String(x?.factoryType||'').toUpperCase()).filter(Boolean)))
