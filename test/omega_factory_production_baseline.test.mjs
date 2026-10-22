@@ -65,6 +65,10 @@ test('canonical factory catalog, type profiles, offline icons and recipe coeffic
 
   const serviceWorker = readText('omega-offline-map-sw.js');
   assert.match(serviceWorker, /omega-offline-atlas-shell-v18/);
+  const factoryUi = readText('omega_resource_command_center_ui_v1.js');
+  assert.match(factoryUi, /Unemployed people/, 'industrial UI must expose the unemployment headcount');
+  assert.match(factoryUi, /Jobs per factory/, 'catalog UI must expose per-factory job slots');
+  assert.match(factoryUi, /Construction materials/, 'catalog UI must expose each factory construction bill of materials');
   for (const asset of ['./resource_industrial_catalog_v1.json', './omega_resource_industrial_network_v1.js', './omega_icon_system_v1.js', './omega_icon_system_v1.css']) {
     assert.ok(serviceWorker.includes(asset), 'offline shell must precache ' + asset);
   }
@@ -159,6 +163,7 @@ test('canonical factory catalog, type profiles, offline icons and recipe coeffic
 test('factory construction reads its selected recipe and defaults from the canonical profile', () => {
   const { context, catalog, api } = makeRuntime();
   const profile = catalog.factoryProfiles.STEEL_AND_ALLOY_WORKS;
+  context.Game.state.economy.BGD = {unemploymentCount:600000,laborForce:6000000,unemployment_rate:10,productionAssets:[]};
   const stock = context.Game.state.resource.BGD = {inventory:{},batches:[],inventoryLots:{},warehouse:{warehouseId:'WH-BGD-RAW',availableByResource:{},reservedByResource:{}}};
   for (const [resourceId, quantity] of Object.entries(profile.constructionMaterials)) {
     stock.inventory[resourceId] = Number(quantity) + 50;
@@ -200,6 +205,10 @@ test('factory construction reads its selected recipe and defaults from the canon
   assert.equal(commissioned.recipeId, 'STEEL_PRIMARY_ROUTE_V1');
   assert.deepEqual(JSON.parse(JSON.stringify(commissioned.inputCoefficients)), JSON.parse(JSON.stringify(steelRecipe)));
   assert.ok(Array.isArray(commissioned.inputBatchLots));
+  assert.equal(commissioned.employment.jobsSupported,5000);
+  assert.equal(commissioned.employment.jobsFilled,5000);
+  assert.equal(context.Game.state.economy.BGD.unemploymentCount,595000);
+  assert.equal(context.Game.state.economy.BGD.unemployment_rate,9.9167);
 });
 
 test('multi-input factory consumes every required input once and preserves mine-batch lineage', () => {
