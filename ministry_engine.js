@@ -1680,7 +1680,7 @@ window.OmegaCabinetUI = {
                         <h1 style="margin:0; font-family:'Inter',sans-serif; font-weight:700; font-size:20px; color:#f8fafc; letter-spacing:0.2px;">${m.title}</h1>
                         <div style="font-size:12px; font-weight:500; color:#00e5ff; margin-top:2px;">${m.role}</div>
                         <div style="font-size:11px; color:#94a3b8; margin-top:3px; line-height:1.4;">
-                            Minister: <strong style="color:#f8fafc;">${m.ministerName}</strong>
+                            Minister: <strong style="color:#f8fafc;">${m.ministerName || "Vacant"}</strong>
                         </div>
                     </div>
                 </div>
@@ -1838,7 +1838,7 @@ window.OmegaCabinetUI = {
                     <div style="color:#00e5ff; font-size:14px; font-weight:bold; margin-bottom:12px;">📁 MINISTRY EXECUTIVE PERSONNEL & STAFF ROSTER</div>
                     <div style="display:flex; flex-direction:column; gap:8px; font-size:12px;">
                         <div style="display:flex; justify-content:space-between; padding:8px; background:rgba(255,255,255,0.04); border-radius:6px;">
-                            <span>${m.ministerName} (${m.role})</span>
+                            <span>${m.ministerName || 'Vacant'} (${m.role})</span>
                             <span style="color:#22c55e;">Trust: ${m.trust}/100 | Loyalty: ${m.loyalty}</span>
                         </div>
                         <div style="display:flex; justify-content:space-between; padding:8px; background:rgba(255,255,255,0.04); border-radius:6px;">
@@ -2242,7 +2242,7 @@ window.OmegaCabinetUI = {
                         <h1 style="margin:0; font-family:'Inter',sans-serif; font-weight:800; font-size:22px; color:#f8fafc; letter-spacing:0.3px;">MINISTRY OF DEFENSE & SUPREME COMMAND (${cDetails.name.toUpperCase()})</h1>
                         <div style="font-size:12px; font-weight:600; color:#ef4444; margin-top:2px;">Operational Readiness Score (ORS) Engine, 12 Master Operations & Procurement Pipeline</div>
                         <div style="font-size:11px; color:#cbd5e1; margin-top:2px;">
-                            Commander: <strong style="color:#ffd700;">${ministerName}</strong> (${ministerRole}) | Alert: <strong style="color:${defconColors[defcon]};">${defconLabels[defcon]}</strong>
+                            Commander: <strong style="color:#ffd700;">${ministerName || 'Vacant'}</strong> (${ministerRole}) | Alert: <strong style="color:${defconColors[defcon]};">${defconLabels[defcon]}</strong>
                         </div>
                     </div>
                 </div>
@@ -2538,7 +2538,7 @@ window.OmegaCabinetUI = {
                     <div>
                         <h1 style="margin:0; font-family:'Inter',sans-serif; font-weight:800; font-size:22px; color:#f8fafc; letter-spacing:0.3px;">MINISTRY OF FOREIGN AFFAIRS (${cDetails.name.toUpperCase()})</h1>
                         <div style="font-size:12px; font-weight:600; color:#00e5ff; margin-top:2px;">Sovereignty, International Pacts & Autonomous Diplomatic AI</div>
-                        <div style="font-size:11px; color:#cbd5e1; margin-top:2px;">Minister: <strong style="color:#ffd700;">${ministerName}</strong> (${ministerRole}) | State: <strong style="color:#22c55e;">PEACEFUL NON-ALIGNMENT</strong></div>
+                        <div style="font-size:11px; color:#cbd5e1; margin-top:2px;">Minister: <strong style="color:#ffd700;">${ministerName || 'Vacant'}</strong> (${ministerRole}) | State: <strong style="color:#22c55e;">PEACEFUL NON-ALIGNMENT</strong></div>
                     </div>
                 </div>
 
@@ -2843,7 +2843,7 @@ window.OmegaCabinetUI = {
                         <h1 style="margin:0; font-family:'Inter',sans-serif; font-weight:700; font-size:20px; color:#f8fafc; letter-spacing:0.2px;">${m.title} (${m.bnTitle || 'জ্বালানি ও প্রাকৃতিক সম্পদ'})</h1>
                         <div style="font-size:12px; font-weight:500; color:#eab308; margin-top:2px;">${m.role} • ${countryDetails.flag} ${countryDetails.name}</div>
                         <div style="font-size:11px; color:#94a3b8; margin-top:3px; line-height:1.4;">
-                            Minister: <strong style="color:#f8fafc;">${m.ministerName}</strong> • Status: <strong style="color:#22c55e;">${m.status}</strong>
+                            Minister: <strong style="color:#f8fafc;">${m.ministerName || 'Vacant'}</strong> • Status: <strong style="color:#22c55e;">${m.status}</strong>
                         </div>
                     </div>
                 </div>
@@ -3211,7 +3211,7 @@ window.OmegaCabinetUI = {
 
         if (title) title.innerText = `${m.title.toUpperCase()} - MINISTER INTERROGATION HUB`;
         if (avatar) avatar.innerText = m.avatar;
-        if (name) name.innerText = m.ministerName;
+        if (name) name.innerText = m.ministerName || 'Vacant';
         if (role) role.innerText = m.role;
         if (trust) trust.innerText = `${m.trust}/100`;
         if (reliability) reliability.innerText = `${m.efficiency}%`;
@@ -3244,7 +3244,7 @@ window.OmegaCabinetUI = {
         if (chatHistory) {
             if (!this.chatHistories[m.id]) {
                 this.chatHistories[m.id] = [
-                    { sender: 'MINISTER', text: `Greetings Executive Commander. I am ${m.ministerName}. Ask me any strategic question regarding ${m.title}.` }
+                    { sender: 'MINISTER', text: `Greetings Executive Commander. I am ${m.ministerName || 'the acting ministerial system'}. Ask me any strategic question regarding ${m.title}.` }
                 ];
             }
             this.renderChatHistory(m.id);
@@ -3423,7 +3423,7 @@ window.OmegaCabinetUI = {
             this.renderCabinet(this.activeCountry);
         } else if (directiveType === 'policy') {
             m.efficiency = Math.min(100, m.efficiency + 2);
-            window.showOmegaNotification("EXECUTIVE ALIGNMENT", `⚡ Executive Directive Issued to ${m.ministerName} (${m.role})! Operational alignment updated.`, "info");
+            window.showOmegaNotification("EXECUTIVE ALIGNMENT", `⚡ Executive Directive Issued to ${m.ministerName || 'the vacant ministry'} (${m.role})! Operational alignment updated.`, "info");
             this.renderCabinet(this.activeCountry);
         }
     }
