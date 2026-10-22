@@ -710,7 +710,7 @@
       '<label>Budget cost override<input type="number" name="cost" min="1" step="1" placeholder="Use catalog default"></label>'+
       '<label>Capacity/day override<input type="number" name="capacityPerDay" min="1" step="1" placeholder="Use catalog default"></label>'+
       '<label>Construction days override<input type="number" name="buildDays" min="1" step="1" placeholder="Use catalog default"></label></div>'+
-      '<p class="omega-rescc-note">Choose a factory type and a matching recipe. Empty overrides use catalog defaults. Legacy resource-processing plants can still be selected by input resource. Project creation does not itself debit treasury.</p>'+
+      '<p class="omega-rescc-note">Choose a factory type and a matching recipe. Empty overrides use catalog defaults. A catalog-backed project preflights and debits every required construction material from the country inventory/warehouse before creating the project. The cost field is a simulation estimate; treasury debit is not performed by this factory action.</p>'+
       '<button class="omega-rescc-button" type="submit">Create factory project</button></form>';
     return '<h3 class="omega-rescc-section-title">Live production and processing assets</h3>'+(liveCards||empty('No factory asset is recorded in this country runtime.'))+
       '<h3 class="omega-rescc-section-title">Processing capabilities from existing site files</h3>'+(profileCards||empty('No per-site processing/output profile is recorded for this country.'))+
@@ -787,6 +787,8 @@
     const projects = Array.isArray(industrialState.projects) ? industrialState.projects : (Array.isArray(econ.projects) ? econ.projects : []);
     const contracts = Array.isArray(industrialState.technologyContracts) ? industrialState.technologyContracts : [];
     const assets = Array.isArray(econ.productionAssets) ? econ.productionAssets : [];
+    const employmentApi = network && typeof network.reconcileFactoryEmployment === 'function' ? network.reconcileFactoryEmployment(country) : null;
+    const employment = econ.factoryEmployment && typeof econ.factoryEmployment === 'object' ? econ.factoryEmployment : {};
     const stages = perCountry && perCountry.stages || {}, sites = siteRows(country);
     const factoryCards = assets.map(function (asset) {
       const id = String(asset.id || asset.assetId || asset.projectId || 'FACTORY_ID_NOT_RECORDED');
@@ -804,7 +806,9 @@
       return card(String(profile.name || type) + ' · ' + id, asset.status || 'STATUS_NOT_RECORDED',
         '<div class="omega-rescc-factory-head"><svg class="omega-ui-icon omega-ui-icon--' + esc(iconId) + '" aria-hidden="true" viewBox="0 0 24 24"><use href="#omega-icon-' + esc(iconId) + '"></use></svg><span>' + esc(type) + '</span></div>' +
         '<div class="omega-rescc-grid2">' + kv('Recipe', recipeId) + kv('Capacity/day', number(asset.capacityPerDay ?? asset.capacity ?? asset.productionCapacity)) +
-        kv('Location', asset.locationNodeKey || 'Not recorded') + kv('Last production', last) + kv('Latest output quantities', shortJson(lastOutputs)) + '</div>' +
+        kv('Jobs filled', number(asset.employment && asset.employment.jobsFilled)) + kv('Job slots', number((asset.employment && asset.employment.jobsSupported) ?? (profile.employment && profile.employment.jobsPerFactory))) +
+        kv('Vacancies', number(asset.employment && asset.employment.vacancies)) + kv('Location', asset.locationNodeKey || 'Not recorded') +
+        kv('Last production', last) + kv('Latest output quantities', shortJson(lastOutputs)) + '</div>' +
         '<h4 class="omega-rescc-section-title">Factory input stock</h4>' +
         (stockRows ? '<div class="omega-rescc-grid2">' + stockRows + '</div>' : empty('No tracked input stock is currently recorded.')) +
         (Array.isArray(asset.inputBatchLots) && asset.inputBatchLots.length ? '<div class="omega-rescc-muted">Tracked input lots: ' + number(asset.inputBatchLots.length) + '</div>' : '') +
@@ -826,6 +830,8 @@
         return '<article class="omega-rescc-factory-catalog-row"><div class="omega-rescc-factory-head"><svg class="omega-ui-icon omega-ui-icon--' + esc(iconId) + '" aria-hidden="true" viewBox="0 0 24 24"><use href="#omega-icon-' + esc(iconId) + '"></use></svg><strong>' + esc(profile.name || type) + '</strong><span class="omega-rescc-factory-type">' + esc(type) + '</span></div>' +
           '<div class="omega-rescc-grid2">' + kv('Build cost', number(profile.constructionCost, ' game units')) + kv('Build time', number(profile.constructionDays, ' days')) +
           kv('Capacity/day', number(profile.defaultCapacityPerDay)) + kv('Workers', number((Number(profile.workforce && profile.workforce.operators) || 0) + (Number(profile.workforce && profile.workforce.engineers) || 0))) +
+          kv('Jobs per factory', number(profile.employment && profile.employment.jobsPerFactory)) +
+          kv('Construction materials', Object.entries(profile.constructionMaterials || {}).map(function (pair) { return pair[0] + ': ' + number(pair[1]) + ' ' + String(profile.constructionMaterialUnit || 'SIMULATION_RESOURCE_UNIT'); }).join(', ') || 'NOT_RECORDED') +
           kv('Power (MWh/day)', number(profile.utilities && profile.utilities.electricityMWhPerDay)) + kv('Water (m³/day)', number(profile.utilities && profile.utilities.waterM3PerDay)) +
           kv('Infrastructure', Array.isArray(profile.requiredInfrastructure) ? profile.requiredInfrastructure.join(', ') : 'NOT_RECORDED') +
           kv('Technology', Array.isArray(profile.requiredTechnologyIds) && profile.requiredTechnologyIds.length ? profile.requiredTechnologyIds.join(', ') : 'No technology gate recorded') +
@@ -838,7 +844,8 @@
     return (diag ? diagnosticCard('Country industrial network diagnostics', diag) : empty('Industrial network runtime is unavailable.')) +
       (factoryAudit ? diagnosticCard('Canonical factory catalog integrity', factoryAudit) : '') +
       (perCountry ? diagnosticCard('End-to-end site pipeline state', perCountry) : '') +
-      '<div class="omega-rescc-metrics"><div><span>Factory type catalog</span><strong>' + number(factoryAudit && factoryAudit.factoryTypeCount) + '</strong></div><div><span>Owned factory assets</span><strong>' + number(assets.length) + '</strong></div><div><span>Country site profiles</span><strong>' + number(sites.length) + '</strong></div><div><span>Dispatched shipments</span><strong>' + number(perCountry && perCountry.dispatched) + '</strong></div><div><span>Processed flows</span><strong>' + number(perCountry && perCountry.processed) + '</strong></div></div>' +
+      '<div class="omega-rescc-metrics"><div><span>Factory type catalog</span><strong>' + number(factoryAudit && factoryAudit.factoryTypeCount) + '</strong></div><div><span>Owned factory assets</span><strong>' + number(assets.length) + '</strong></div><div><span>Unemployed people</span><strong>' + number(employment.unemployedCount ?? econ.unemploymentCount) + '</strong></div><div><span>Jobs filled</span><strong>' + number(employment.jobsFilled) + '</strong></div><div><span>Job vacancies</span><strong>' + number(employment.vacancies) + '</strong></div><div><span>Country site profiles</span><strong>' + number(sites.length) + '</strong></div><div><span>Dispatched shipments</span><strong>' + number(perCountry && perCountry.dispatched) + '</strong></div><div><span>Processed flows</span><strong>' + number(perCountry && perCountry.processed) + '</strong></div></div>' +
+      '<p class="omega-rescc-note">Employment: ' + esc(employment.status || employmentApi && employmentApi.status || 'NOT_RECORDED') + ' · ' + esc(employment.labourForceAuthority || 'LABOUR_FORCE_NOT_RECORDED') + ' · simulated job capacity; actual hires are capped by the recorded/estimated unemployed pool. Unknown baseline values stay unavailable rather than being treated as zero.</p>' +
       '<h3 class="omega-rescc-section-title">My factories · live runtime assets</h3>' + (factoryCards || empty('No commissioned factory assets are recorded for this country.')) +
       '<h3 class="omega-rescc-section-title">Factory catalog · ' + number(Object.keys(profiles).length) + ' profiles</h3>' +
       '<p class="omega-rescc-muted">The catalog is a plan and rule registry. A catalog entry is not proof that the country owns an operational factory.</p>' +
