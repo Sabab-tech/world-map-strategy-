@@ -558,7 +558,9 @@ function infraQuality(c,mode){
   const {infra}=normalizeInfrastructure(c);
   const map={truck:infra.roads,rail:infra.rail,ship:infra.ports,barge:infra.roads,pipeline:infra.pipelines};
   const x=map[mode]||{capacityPerDay:20000,quality:.5};
-  return{capacityPerDay:num(x.capacityPerDay)||20000,quality:clamp(x.quality??.5,.15,1)};
+  const rawCapacity=x.capacityPerDay==null?20000:num(x.capacityPerDay);
+  const rawQuality=x.quality==null?.5:num(x.quality);
+  return{capacityPerDay:Math.max(0,rawCapacity==null?20000:rawCapacity),quality:Math.max(0,Math.min(1,rawQuality==null?.5:rawQuality))};
 }
 
 function resourceMethod(site,resourceId){
@@ -827,13 +829,19 @@ function reserveInventoryForShipment(c,resourceId,quantity,shipmentId){
   return{ok:true};
 }
 function dispatchShipment(input={}){
+  const cid=canonicalCountry(input.countryId);
+  const sourceBatchId=String(input.batchId||'').trim();
+  if(cid&&sourceBatchId){
+    const inTransit=netState(cid).shipments.find(x=>String(x?.batchId||'')===sourceBatchId&&String(x?.status||'')==='IN_TRANSIT');
+    if(inTransit)return{status:'DISPATCHED',shipment:inTransit,idempotent:true};
+  }
   const plan=planShipment(input);if(plan.status!=='PLANNED')return plan;
-  const cid=canonicalCountry(input.countryId),strategicPolicy=g.Omega?.ResourceStrategicPolicyRuntime||g.OmegaResourceStrategicPolicyRuntime;
+  const strategicPolicy=g.Omega?.ResourceStrategicPolicyRuntime||g.OmegaResourceStrategicPolicyRuntime;
   const dispatchBlockade=strategicPolicy?.isRouteBlocked?.(cid,{resourceId:plan.resourceId,transportMode:plan.route?.transportMode,routeId:plan.route?.routeId,siteId:plan.siteId,factoryId:plan.factoryId});
   if(dispatchBlockade?.blocked)return{status:'BLOCKED',reason:dispatchBlockade.reason||'RESOURCE_ROUTE_BLOCKADE_ACTIVE',policy:dispatchBlockade,plan};
   const plannedQuantity=Math.max(0,num(plan.route.dispatchQuantity)||0);
   let quantity=plannedQuantity,quantityAdjustmentReason=null;
-  const sourceBatchId=String(input.batchId||'').trim(),sourceBatch=sourceBatchId?
+  const sourceBatch=sourceBatchId?
     (Array.isArray(resourceState(cid).batches)?resourceState(cid).batches.find(x=>String(x?.batchId||'')===sourceBatchId):null):null;
   if(sourceBatchId){
     const inTransit=netState(cid).shipments.find(x=>String(x?.batchId||'')===sourceBatchId&&String(x?.status||'')==='IN_TRANSIT');
@@ -861,15 +869,24 @@ function dispatchShipment(input={}){
   // receiving factory may hold in its input warehouse. Leave the full eligible
   // lot in transit; processFactory() applies the actual production-capacity limit
   // and retains any unprocessed input batch for later turns.
-  if(quantity<=0)return{status:'BLOCKED',reason:'SOURCE_BATCH_QUANTITY_ZERO',batchId:sourceBatchId||null,plan};
   const shipmentId='SHIP:'+h32(JSON.stringify({plan,turn:turn(),salt:frac(input.siteId||'')}));
+  const duplicateShipment=netState(cid).shipments.find(x=>String(x?.shipmentId||'')===shipmentId);
+  if(duplicateShipment)return{status:'DISPATCHED',shipment:duplicateShipment,idempotent:true};
+  const capacityPreview=previewTransportCapacity(cid,plan.route,quantity);
+  if(capacityPreview.status!=='READY')return{status:'BLOCKED',reason:capacityPreview.reason||'TRANSPORT_CAPACITY_EXHAUSTED',capacity:capacityPreview,plan};
+  if(capacityPreview.allowedQuantity+quantityEpsilon<quantity){
+    quantityAdjustmentReason='SHARED_TURN_TRANSPORT_CAPACITY';
+    quantity=capacityPreview.allowedQuantity;
+  }
+  if(quantity<=0)return{status:'BLOCKED',reason:'SOURCE_BATCH_QUANTITY_ZERO',batchId:sourceBatchId||null,plan,capacity:capacityPreview};
   const reserved=reserveInventoryForShipment(cid,plan.resourceId,quantity,shipmentId);if(!reserved.ok)return{status:'BLOCKED',reason:reserved.reason,details:reserved,plan};
-  const route=clone(plan.route);route.dispatchQuantity=quantity;
+  const capacityUse=commitTransportCapacity(cid,plan.route,quantity,shipmentId);
+  const route=clone(plan.route);route.dispatchQuantity=quantity;route.capacityUse=capacityUse;
   if(quantity<plannedQuantity)route.quantityAdjustment={reason:quantityAdjustmentReason||'SOURCE_BATCH_OR_LOT_ROUNDING_CAP',plannedQuantity,actualQuantity:quantity};
   const s={shipmentId,countryId:cid,siteId:plan.siteId,resourceId:plan.resourceId,factoryId:plan.factoryId,quantity,unit:input.unit||'TONNES',
     batchId:sourceBatchId||null,occurrenceKey:input.occurrenceKey||sourceBatch?.occurrenceKey||null,
     warehouseId:input.warehouseId||sourceBatch?.warehouseId||('WH-'+cid+'-RAW'),
-    status:'IN_TRANSIT',createdTurn:turn(),etaTurn:route.etaTurn,route,reservationId:shipmentId,
+    status:'IN_TRANSIT',createdTurn:turn(),etaTurn:route.etaTurn,route,reservationId:shipmentId,transportCapacityReservation:capacityUse,
     provenance:{source:'OMEGA_RESOURCE_INDUSTRIAL_NETWORK_V1',authority:route.distanceAuthority,sourceBatchId:sourceBatchId||null,
       sourceAuthority:sourceBatch?.provenance?.sourceAuthority||sourceBatch?.provenance?.authority||'UNOBSERVED',
       sourceBatchQuantity:sourceBatch?Math.max(0,num(sourceBatch.remainingQuantity!=null?sourceBatch.remainingQuantity:sourceBatch.quantity)||0):null,
@@ -1676,13 +1693,30 @@ function startFactoryProject(input={}){
   emit('OMEGA_FACTORY_PROJECT_STARTED',cid,project);return project;
 }
 function startInfrastructureProject(input={}){
-  const cid=canonicalCountry(input.countryId),type=tok(input.infrastructureType||'road'),ir=infraRules()[type];if(!ir)return{status:'BLOCKED',reason:'INFRASTRUCTURE_TYPE_UNDEFINED'};
-  const distance=Math.max(0,num(input.distanceKm)||1),contractor=String(input.contractorType||'DOMESTIC_EPC'),cr=cat()?.contractorTypes?.[contractor]||{};
-  const days=Math.max(30,(num(ir.buildDays)||180)*(distance/Math.max(1,num(input.distanceReferenceKm)||10))*(1-(num(cr?.constructionBonus)||0)));
-  const capacityAdd=Math.max(0,num(input.capacityPerDay)||num(ir.capacityPerDay)||1000);
-  const project={projectId:'INFRA:'+cid+':'+type+':T'+turn()+':'+h32(JSON.stringify(input)),projectType:'INFRASTRUCTURE',countryId:cid,infrastructureType:type,distanceKm:distance,capacityAddPerDay:capacityAdd,cost:Math.max(1,num(input.cost)||((num(ir.costPerKm)||0)*distance+(num(ir.costFixed)||0))),durationDays:Number(days.toFixed(2)),progressDays:0,startTurn:turn(),status:'UNDER_CONSTRUCTION',
-    fromNode:input.fromNode||null,toNode:input.toNode||null,corridorId:input.corridorId||null,contractorType:contractor,contractorCountryId:canonicalCountry(input.contractorCountryId||cid)};
-  const n=netState(cid);n.projects.push(project);n.projects=n.projects.slice(-MAX_PROJECTS);emit('OMEGA_INFRASTRUCTURE_PROJECT_STARTED',cid,project);return project;
+  const cid=canonicalCountry(input.countryId),type=tok(input.infrastructureType||'road'),ir=infraRules()[type];
+  if(!cid)return{status:'BLOCKED',reason:'INFRASTRUCTURE_COUNTRY_INVALID'};
+  if(!ir)return{status:'BLOCKED',reason:'INFRASTRUCTURE_TYPE_UNDEFINED'};
+  const n=netState(cid),requestId=String(input.requestId||'').trim();
+  if(requestId){const previous=n.projects.find(row=>row.projectType==='INFRASTRUCTURE'&&String(row.requestId||'')===requestId&&['UNDER_CONSTRUCTION','COMPLETED'].includes(String(row.status||'')));if(previous)return{...clone(previous),idempotent:true};}
+  const utilityType=type==='power'||type==='water';
+  const distance=utilityType?0:Math.max(0,num(input.distanceKm)||1),contractor=String(input.contractorType||'DOMESTIC_EPC'),cr=cat()?.contractorTypes?.[contractor]||{};
+  const requestedDays=input.buildDays==null?null:num(input.buildDays);
+  const days=Math.max(30,utilityType?Math.max(0,requestedDays||num(ir.buildDays)||180):
+    (num(ir.buildDays)||180)*(distance/Math.max(1,num(input.distanceReferenceKm)||10))*(1-(num(cr?.constructionBonus)||0)));
+  const requestedCapacity=input.capacityPerDay==null?null:num(input.capacityPerDay);
+  const capacityAdd=requestedCapacity===null?num(ir.capacityPerDay):requestedCapacity;
+  if(capacityAdd===null||!Number.isFinite(capacityAdd)||capacityAdd<=0)
+    return{status:'BLOCKED',reason:'INFRASTRUCTURE_CAPACITY_MUST_BE_POSITIVE',infrastructureType:type,capacityPerDay:input.capacityPerDay};
+  const fixed=num(ir.costFixed)||0,perKm=num(ir.costPerKm)||0,requestedCost=input.cost==null?null:num(input.cost);
+  const project={projectId:'INFRA:'+cid+':'+type+':T'+turn()+':'+h32(JSON.stringify(input)),requestId:requestId||null,
+    projectType:'INFRASTRUCTURE',countryId:cid,infrastructureType:type,distanceKm:distance,capacityAddPerDay:capacityAdd,
+    capacityUnit:ir.capacityUnit||'SIMULATION_RESOURCE_UNITS_PER_DAY',
+    cost:Math.max(1,requestedCost==null?(perKm*distance+fixed):requestedCost),durationDays:Number(days.toFixed(2)),
+    progressDays:0,startTurn:turn(),status:'UNDER_CONSTRUCTION',simulationOnly:true,
+    authority:utilityType?'SIMULATED_UTILITY_INFRASTRUCTURE_PROJECT':'SIMULATED_TRANSPORT_INFRASTRUCTURE_PROJECT',
+    fromNode:input.fromNode||null,toNode:input.toNode||null,corridorId:input.corridorId||null,
+    contractorType:contractor,contractorCountryId:canonicalCountry(input.contractorCountryId||cid)};
+  n.projects.push(project);n.projects=n.projects.slice(-MAX_PROJECTS);emit('OMEGA_INFRASTRUCTURE_PROJECT_STARTED',cid,project);return project;
 }
 function startPadmaCorridorProject(input={}){
   if(canonicalCountry(input.countryId)!=='BGD')return{status:'BLOCKED',reason:'PADMA_CORRIDOR_IS_BGD_SPECIFIC'};
@@ -1720,6 +1754,24 @@ function advanceProjects(c){
         requiredTechnologyIds:clone(p.requiredTechnologyIds||[])});
       emit('OMEGA_FACTORY_CAPACITY_CHANGED',cid,{factoryId:p.factoryId,capacity:inputCapacityFromFactory(p),projectId:p.projectId,status:assetStatus});
       if(assetStatus==='TECHNOLOGY_LOCKED')emit('OMEGA_FACTORY_TECHNOLOGY_BLOCKED',cid,{factoryId:p.factoryId,requiredTechnologyIds:clone(p.requiredTechnologyIds||[])});
+    }else if(p.infrastructureType==='power'||p.infrastructureType==='water'){
+      const ts=transportState(cid);ts.infrastructure=ts.infrastructure||{};
+      const supply=ts.infrastructure.utilitySupply&&typeof ts.infrastructure.utilitySupply==='object'?ts.infrastructure.utilitySupply:
+        (ts.infrastructure.utilitySupply={electricityMWhPerDay:0,waterM3PerDay:0,assets:[],authority:'SIMULATED_COMPLETED_UTILITY_PROJECTS',status:'AVAILABLE',simulationOnly:true});
+      if(!Array.isArray(supply.assets))supply.assets=[];
+      const amount=Math.max(0,num(p.capacityAddPerDay)||0);
+      if(p.infrastructureType==='power')supply.electricityMWhPerDay=Number(((num(supply.electricityMWhPerDay)||0)+amount).toFixed(6));
+      else supply.waterM3PerDay=Number(((num(supply.waterM3PerDay)||0)+amount).toFixed(6));
+      supply.authority='SIMULATED_COMPLETED_UTILITY_PROJECTS';supply.status='AVAILABLE';supply.lastUpdatedTurn=turn();
+      supply.assets.push({projectId:p.projectId,infrastructureType:p.infrastructureType,capacityPerDay:amount,capacityUnit:p.capacityUnit,
+        completedTurn:turn(),status:'OPERATIONAL',authority:'SIMULATED_INFRASTRUCTURE_PROJECT',simulationOnly:true});
+      while(supply.assets.length>512)supply.assets.shift();
+      const key=p.infrastructureType==='power'?'powers':'waters';
+      ts.infrastructure[key]=ts.infrastructure[key]||{capacityPerDay:0};
+      ts.infrastructure[key].capacityPerDay=(num(ts.infrastructure[key].capacityPerDay)||0)+amount;
+      ts.infrastructure[key].status='OPERATIONAL';ts.infrastructure[key].capacityUnit=p.capacityUnit;
+      emit('OMEGA_INDUSTRIAL_UTILITY_SUPPLY_CHANGED',cid,{projectId:p.projectId,infrastructureType:p.infrastructureType,
+        capacityPerDay:amount,capacityUnit:p.capacityUnit,supply:clone(supply),status:'AVAILABLE',simulationOnly:true});
     }else{
       const ts=transportState(cid),ir=infraRules()[p.infrastructureType]||{};ts.infrastructure=ts.infrastructure||{};
       const key=p.infrastructureType+'s';ts.infrastructure[key]=ts.infrastructure[key]||{};ts.infrastructure[key].capacityPerDay=(num(ts.infrastructure[key].capacityPerDay)||0)+(num(p.capacityAddPerDay)||0);
@@ -1756,7 +1808,7 @@ function refreshTechnologyGatedFactories(c){
   for(const asset of factoryAssets(cid)){
     if(String(asset.status).toUpperCase()!=='TECHNOLOGY_LOCKED')continue;
     const req=Array.isArray(asset.requiredTechnologyIds)?asset.requiredTechnologyIds.map(x=>tok(x).toUpperCase()).filter(Boolean):[];
-    if(req.length&&req.every(t=>available.has(t))){
+    if(req.length&&req.every(t=>caps.some(row=>tok(row?.technologyId).toUpperCase()===t&&technologyCapabilityAvailable(row)))){
       asset.status='OPERATIONAL';asset.technologyUnlockedTurn=turn();
       emit('OMEGA_FACTORY_TECHNOLOGY_UNLOCKED',cid,{factoryId:asset.id,requiredTechnologyIds:clone(req)});
     }
@@ -1781,18 +1833,181 @@ function advanceTechnologyProjects(c){
   }
   return completed;
 }
+
+function currentTurnLedgerBucket(countryId,ledgerName,initialBucket){
+  const network=netState(countryId);
+  let ledger=network[ledgerName];
+  if(!ledger||typeof ledger!=='object'||Array.isArray(ledger))ledger=network[ledgerName]={schemaVersion:VERSION,turns:{}};
+  if(!ledger.turns||typeof ledger.turns!=='object'||Array.isArray(ledger.turns))ledger.turns={};
+  const currentTurn=Math.max(0,Number(turn())||0),key=String(currentTurn);
+  for(const oldKey of Object.keys(ledger.turns)){
+    const oldTurn=Number(oldKey);
+    if(Number.isFinite(oldTurn)&&oldTurn<currentTurn-30)delete ledger.turns[oldKey];
+  }
+  let bucket=ledger.turns[key];
+  if(!bucket||typeof bucket!=='object')bucket=ledger.turns[key]={turn:currentTurn,...clone(initialBucket||{})};
+  bucket.turn=currentTurn;
+  return bucket;
+}
+function utilityTurnBucket(countryId){
+  const bucket=currentTurnLedgerBucket(countryId,'utilityLedger',{used:{electricityMWh:0,waterM3:0},transactions:[]});
+  bucket.used=bucket.used&&typeof bucket.used==='object'?bucket.used:{};
+  bucket.used.electricityMWh=Math.max(0,num(bucket.used.electricityMWh)||0);
+  bucket.used.waterM3=Math.max(0,num(bucket.used.waterM3)||0);
+  bucket.transactions=Array.isArray(bucket.transactions)?bucket.transactions:[];
+  return bucket;
+}
+function transportTurnBucket(countryId){
+  const bucket=currentTurnLedgerBucket(countryId,'transportCapacityLedger',{usedByMode:{},shipments:[]});
+  bucket.usedByMode=bucket.usedByMode&&typeof bucket.usedByMode==='object'?bucket.usedByMode:{};
+  bucket.shipments=Array.isArray(bucket.shipments)?bucket.shipments:[];
+  return bucket;
+}
+function technologyCapabilityAvailable(row){
+  return ['COMPLETE','COMPLETED','AVAILABLE','UNLOCKED','OPERATIONAL','ACTIVE'].includes(String(row?.status||'').trim().toUpperCase());
+}
+function utilitySupplyValues(countryId){
+  const infra=transportState(countryId).infrastructure||{};
+  const supply=infra.utilitySupply&&typeof infra.utilitySupply==='object'?infra.utilitySupply:{};
+  const power=supply.electricityMWhPerDay==null?null:num(supply.electricityMWhPerDay);
+  const water=supply.waterM3PerDay==null?null:num(supply.waterM3PerDay);
+  return{power:power!==null&&power>=0?power:null,water:water!==null&&water>=0?water:null,
+    authority:supply.authority||null,status:supply.status||'NOT_RECORDED',assets:Array.isArray(supply.assets)?supply.assets:[]};
+}
+function previewFactoryUtilityUse(countryId,asset,productionQuantity){
+  const cid=canonicalCountry(countryId),factoryId=String(asset?.id||asset?.assetId||asset?.factoryId||asset?.projectId||'');
+  const type=String(asset?.factoryType||asset?.type||asset?.facilityType||'').toUpperCase();
+  const profile=(cat()?.factoryProfiles||{})[type]||{};
+  const utilities=asset?.utilityRequirements&&typeof asset.utilityRequirements==='object'&&
+    (asset.utilityRequirements.electricityMWhPerDay!=null||asset.utilityRequirements.waterM3PerDay!=null)
+      ?asset.utilityRequirements:profile.utilities;
+  const powerDaily=utilities?.electricityMWhPerDay==null?null:num(utilities.electricityMWhPerDay);
+  const waterDaily=utilities?.waterM3PerDay==null?null:num(utilities.waterM3PerDay);
+  if(powerDaily===null||waterDaily===null||powerDaily<0||waterDaily<0)
+    return{status:'BLOCKED',reason:'FACTORY_UTILITY_PROFILE_NOT_RECORDED',countryId:cid,factoryId, factoryType:type};
+  const capacityRaw=asset?.capacityPerDay??asset?.capacity??asset?.productionCapacity??asset?.throughput;
+  const capacity=capacityRaw==null?null:num(capacityRaw);
+  const quantity=num(productionQuantity);
+  if(capacity===null||capacity<=0||quantity===null||quantity<=0)
+    return{status:'BLOCKED',reason:'FACTORY_UTILITY_CAPACITY_INVALID',countryId:cid,factoryId,capacity,productionQuantity};
+  const fraction=Math.min(1,quantity/capacity);
+  const required={electricityMWh:Number((powerDaily*fraction).toFixed(6)),waterM3:Number((waterDaily*fraction).toFixed(6))};
+  const supply=utilitySupplyValues(cid),bucket=utilityTurnBucket(cid);
+  const used={electricityMWh:bucket.used.electricityMWh,waterM3:bucket.used.waterM3};
+  const checks=[
+    {key:'electricityMWh',label:'ELECTRICITY',supply:supply.power,unit:'MWh',required:required.electricityMWh,used:used.electricityMWh},
+    {key:'waterM3',label:'INDUSTRIAL_WATER',supply:supply.water,unit:'M3',required:required.waterM3,used:used.waterM3}
+  ];
+  const missing=checks.filter(x=>x.required>1e-9&&x.supply===null);
+  if(missing.length)return{status:'BLOCKED',reason:'FACTORY_UTILITY_SUPPLY_NOT_RECORDED',countryId:cid,factoryId,
+    missingUtilities:missing.map(x=>x.label),required,used,supply:{electricityMWhPerDay:supply.power,waterM3PerDay:supply.water}};
+  const shortages=checks.filter(x=>x.required>1e-9&&x.supply!==null&&x.supply-x.used+1e-9<x.required);
+  if(shortages.length)return{status:'BLOCKED',reason:'FACTORY_UTILITY_SHORTAGE',countryId:cid,factoryId,
+    shortages:shortages.map(x=>({utility:x.label,required:x.required,available:Math.max(0,x.supply-x.used),supply:x.supply,used:x.used,unit:x.unit})),
+    required,used,supply:{electricityMWhPerDay:supply.power,waterM3PerDay:supply.water}};
+  return{status:'READY',countryId:cid,factoryId,factoryType:type,turn:turn(),capacity,productionQuantity,
+    utilizationFraction:fraction,required,used,supply:{electricityMWhPerDay:supply.power,waterM3PerDay:supply.water},
+    supplyAuthority:supply.authority||'COMPLETED_UTILITY_PROJECTS_OR_EXPLICIT_GAME_STATE'};
+}
+function commitFactoryUtilityUse(countryId,asset,preview,transactionId){
+  const cid=canonicalCountry(countryId),bucket=utilityTurnBucket(cid);
+  bucket.used.electricityMWh=Number((bucket.used.electricityMWh+preview.required.electricityMWh).toFixed(6));
+  bucket.used.waterM3=Number((bucket.used.waterM3+preview.required.waterM3).toFixed(6));
+  const row={transactionId:String(transactionId),factoryId:String(asset?.id||asset?.assetId||asset?.factoryId||asset?.projectId||''),
+    countryId:cid,turn:turn(),electricityMWh:preview.required.electricityMWh,waterM3:preview.required.waterM3,
+    electricityUnit:'MWh',waterUnit:'M3',authority:'SIMULATED_UTILITY_CONSUMPTION_LEDGER',
+    supplyAuthority:preview.supplyAuthority||'COMPLETED_UTILITY_PROJECTS_OR_EXPLICIT_GAME_STATE'};
+  bucket.transactions.push(row);while(bucket.transactions.length>1024)bucket.transactions.shift();
+  asset.lastUtilityConsumptionTurn=turn();asset.lastUtilityConsumptionTransactionId=String(transactionId);
+  emit('OMEGA_FACTORY_UTILITY_CONSUMED',cid,row);
+  return clone(row);
+}
+function previewTransportCapacity(countryId,route,requestedQuantity){
+  const cid=canonicalCountry(countryId),quantity=num(requestedQuantity);
+  if(quantity===null||quantity<=0)return{status:'BLOCKED',reason:'TRANSPORT_QUANTITY_INVALID',requestedQuantity};
+  const legs=Array.isArray(route?.legs)?route.legs:(Array.isArray(route?.vehiclePlan)?route.vehiclePlan:[]);
+  const modes=legs.map(row=>tok(row?.mode||row?.transportMode)).filter(Boolean);
+  if(!modes.length)return{status:'BLOCKED',reason:'TRANSPORT_ROUTE_HAS_NO_LEGS',routeId:route?.routeId||null};
+  const counts={};for(const mode of modes)counts[mode]=(counts[mode]||0)+1;
+  const bucket=transportTurnBucket(cid),constraints=[];
+  let allowed=quantity;
+  for(const [mode,count] of Object.entries(counts)){
+    const infra=infraQuality(cid,mode),capacity=Math.max(0,infra.capacityPerDay*infra.quality);
+    const used=Math.max(0,num(bucket.usedByMode[mode])||0),remaining=Math.max(0,capacity-used);
+    const modeAllowed=count>0?remaining/count:0;allowed=Math.min(allowed,modeAllowed);
+    constraints.push({mode,legs:count,capacityPerTurn:capacity,usedThisTurn:used,availableThisTurn:remaining,
+      maximumQuantityForRoute:modeAllowed,unit:'SIMULATION_RESOURCE_UNITS_PER_TURN'});
+  }
+  allowed=Number(Math.max(0,allowed).toFixed(6));
+  if(allowed<=1e-9)return{status:'BLOCKED',reason:'TRANSPORT_CAPACITY_EXHAUSTED',countryId:cid,turn:turn(),
+    routeId:route?.routeId||null,requestedQuantity:quantity,allowedQuantity:0,constraints};
+  return{status:'READY',countryId:cid,turn:turn(),routeId:route?.routeId||null,requestedQuantity:quantity,
+    allowedQuantity:allowed,adjusted:allowed+1e-6<quantity,constraints,
+    authority:'SIMULATED_SHARED_TRANSPORT_CAPACITY_LEDGER'};
+}
+function commitTransportCapacity(countryId,route,quantity,shipmentId){
+  const cid=canonicalCountry(countryId),bucket=transportTurnBucket(cid);
+  const legs=Array.isArray(route?.legs)?route.legs:(Array.isArray(route?.vehiclePlan)?route.vehiclePlan:[]);
+  const counts={};for(const row of legs){const mode=tok(row?.mode||row?.transportMode);if(mode)counts[mode]=(counts[mode]||0)+1;}
+  for(const [mode,count] of Object.entries(counts))
+    bucket.usedByMode[mode]=Number(((num(bucket.usedByMode[mode])||0)+quantity*count).toFixed(6));
+  const row={shipmentId:String(shipmentId),countryId:cid,turn:turn(),quantity,
+    useByMode:Object.fromEntries(Object.entries(counts).map(([mode,count])=>[mode,Number((quantity*count).toFixed(6))])),
+    authority:'SIMULATED_SHARED_TRANSPORT_CAPACITY_LEDGER'};
+  bucket.shipments.push(row);while(bucket.shipments.length>1024)bucket.shipments.shift();
+  return clone(row);
+}
+function factoryUtilityDiagnostics(countryId){
+  const cid=canonicalCountry(countryId);if(!cid)return{status:'BLOCKED',reason:'FACTORY_UTILITY_COUNTRY_INVALID'};
+  const supply=utilitySupplyValues(cid),bucket=utilityTurnBucket(cid),transport=transportTurnBucket(cid);
+  const utility=(value,used,unit)=>({supply:value,usedThisTurn:used,availableThisTurn:value===null?null:Math.max(0,value-used),unit,
+    status:value===null?'NOT_RECORDED':(value-used<=1e-9?'DEPLETED_THIS_TURN':'AVAILABLE'),
+    authority:supply.authority||'COMPLETED_UTILITY_PROJECTS_OR_EXPLICIT_GAME_STATE',simulationOnly:true});
+  const transportCapacity={};
+  for(const mode of ['truck','rail','ship','barge','pipeline']){
+    const q=infraQuality(cid,mode),capacity=Math.max(0,q.capacityPerDay*q.quality),used=Math.max(0,num(transport.usedByMode[mode])||0);
+    transportCapacity[mode]={capacityPerTurn:capacity,usedThisTurn:used,availableThisTurn:Math.max(0,capacity-used),
+      unit:'SIMULATION_RESOURCE_UNITS_PER_TURN',quality:q.quality,authority:'SIMULATED_INFRASTRUCTURE_MODEL'};
+  }
+  const employment=econState(cid).factoryEmployment||null;
+  return{status:supply.power===null||supply.water===null?'DEGRADED':'HEALTHY',countryId:cid,turn:turn(),
+    electricityMWhPerDay:supply.power,electricity:utility(supply.power,bucket.used.electricityMWh,'MWh/day'),
+    waterM3PerDay:supply.water,water:utility(supply.water,bucket.used.waterM3,'m3/day'),
+    utilityAuthority:supply.authority||'NOT_RECORDED',utilityAssets:clone(supply.assets),
+    transportCapacity,transportShipmentsThisTurn:transport.shipments.length,
+    workforce:employment?{status:employment.status,unemployedCount:employment.unemployedCount,
+      jobsSupported:employment.jobsSupported,jobsFilled:employment.jobsFilled,vacancies:employment.vacancies,
+      authority:employment.authority||'NOT_RECORDED'}:{status:'NOT_RECORDED',authority:'NOT_RECORDED'},
+    simulationOnly:true};
+}
+
 function factoryOperationGate(countryId,asset){
   if(!asset)return{status:'BLOCKED',reason:'FACTORY_NOT_FOUND'};
+  const cid=canonicalCountry(countryId),factoryId=String(asset.id||asset.assetId||asset.factoryId||asset.projectId||'');
   const status=String(asset.status||'OPERATIONAL').toUpperCase();
   if(['CLOSED','DECOMMISSIONED','TECHNOLOGY_LOCKED','BLOCKED','UNDER_CONSTRUCTION','MAINTENANCE'].includes(status))
-    return{status:'BLOCKED',reason:'FACTORY_NOT_OPERATIONAL',factoryId:asset.id||asset.assetId||asset.projectId,factoryStatus:status};
+    return{status:'BLOCKED',reason:'FACTORY_NOT_OPERATIONAL',factoryId,factoryStatus:status};
   const required=Array.isArray(asset.requiredTechnologyIds)?asset.requiredTechnologyIds.map(x=>String(x).toUpperCase()):[];
-  const capabilities=Array.isArray(resourceState(countryId).technologyCapabilities)?resourceState(countryId).technologyCapabilities:[];
-  const missing=required.filter(id=>!capabilities.some(row=>String(row?.technologyId||'').trim().toUpperCase()===id&&
-    !['BLOCKED','LOCKED','REVOKED'].includes(String(row?.status||'').toUpperCase())));
-  if(missing.length)return{status:'BLOCKED',reason:'FACTORY_TECHNOLOGY_REQUIREMENT_NOT_MET',
-    factoryId:asset.id||asset.assetId||asset.projectId,missingTechnologyIds:missing};
-  return{status:'READY',factoryId:asset.id||asset.assetId||asset.projectId,factoryStatus:status};
+  const capabilities=Array.isArray(resourceState(cid).technologyCapabilities)?resourceState(cid).technologyCapabilities:[];
+  const missing=required.filter(id=>!capabilities.some(row=>String(row?.technologyId||'').trim().toUpperCase()===id&&technologyCapabilityAvailable(row)));
+  if(missing.length)return{status:'BLOCKED',reason:'FACTORY_TECHNOLOGY_REQUIREMENT_NOT_MET',factoryId,missingTechnologyIds:missing};
+  const employmentSummary=reconcileFactoryEmployment(cid);
+  const employmentModel=econState(cid).factoryEmployment||{};
+  const employment=employmentModel.factories?.[factoryId]||asset.employment||{};
+  if(employmentSummary?.baselineUnemployedCount==null||employmentModel.status==='UNEMPLOYMENT_HEADCOUNT_UNAVAILABLE')
+    return{status:'BLOCKED',reason:'FACTORY_WORKFORCE_NOT_RECORDED',factoryId,
+      requiredWorkers:num((cat()?.factoryProfiles||{})[String(asset.factoryType||asset.type||'').toUpperCase()]?.employment?.coreOperatingCrew)||null,
+      authority:employmentModel.unemploymentSource||'NOT_RECORDED'};
+  const profile=(cat()?.factoryProfiles||{})[String(asset.factoryType||asset.type||asset.facilityType||'').toUpperCase()]||{};
+  const requiredCrew=Math.max(1,num(profile.employment?.coreOperatingCrew)||
+    ((num(profile.workforce?.operators)||0)+(num(profile.workforce?.engineers)||0))||
+    (num(asset.workforce?.operators)||0)+(num(asset.workforce?.engineers)||0));
+  const workersFilled=num(employment.jobsFilled);
+  if(workersFilled===null)return{status:'BLOCKED',reason:'FACTORY_WORKFORCE_NOT_RECORDED',factoryId,requiredWorkers:requiredCrew};
+  if(workersFilled<requiredCrew)return{status:'BLOCKED',reason:'FACTORY_WORKFORCE_SHORTAGE',factoryId,
+    requiredWorkers:requiredCrew,workersAvailable:workersFilled,vacancies:num(employment.vacancies)??Math.max(0,requiredCrew-workersFilled)};
+  return{status:'READY',factoryId,factoryStatus:status,requiredWorkers:requiredCrew,workersAvailable:workersFilled,
+    workforceAuthority:employment.authority||employmentModel.authority||'SIMULATED_FACTORY_EMPLOYMENT_RECONCILIATION'};
 }
 function executeFactoryCycle(input={}){
   const cid=canonicalCountry(input.countryId),fid=String(input.factoryId||''),assets=factoryAssets(cid),asset=assets.find(a=>String(a?.id||a?.assetId||a?.projectId)===fid);
@@ -1825,6 +2040,8 @@ function executeFactoryCycle(input={}){
   const carbonUnit=trackedForResource.find(x=>x?.unit)?.unit||
     (Array.isArray(r.batches)?r.batches.find(x=>tok(x?.resourceId||x?.materialIdentity)===rid&&x?.unit)?.unit:null)||
     (Array.isArray(g.ResourceMinistryEngine?.resourceTypes)?g.ResourceMinistryEngine.resourceTypes.find(x=>tok(x?.id||x?.resourceId)===rid)?.unit:null);
+  const utilityPreview=previewFactoryUtilityUse(cid,asset,requested);
+  if(utilityPreview.status!=='READY')return utilityPreview;
   const carbonGate=carbonPolicy?.previewCarbonActivity?.(cid,rid,need,carbonUnit,'RESOURCE_PROCESSING',null,{
     activityId:'FACTORYRUN:'+cid+':'+fid+':T'+turn(),factoryId:fid,
     siteId:trackedForResource.find(x=>x?.siteId)?.siteId||null,
@@ -1900,6 +2117,8 @@ function executeFactoryCycle(input={}){
     inputQuantity:need,inputQuantities:{[rid]:need},requestedProduction:requested,outputs:output,outputQuantities:clone(output),recipe:clone(recipe),
     cycleDays:recipe.cycleDays,turn:turn(),authority:'INDUSTRIAL_NETWORK_SIMULATION',status:'COMPLETED',inputSource:fromFactoryInput?'DELIVERED_SHIPMENT':'CENTRAL_INVENTORY',
     inputTrackingStatus,consumedInputs:clone(consumedInputs),sourceBatchIds:[...new Set(sourceBatchIds.filter(Boolean))],createdBatchIds:created.map(x=>x.batchId)};
+  record.utilityConsumption=commitFactoryUtilityUse(cid,asset,utilityPreview,transactionId);
+  asset.lastProductionTurn=turn();asset.lastProductionTransactionId=transactionId;
   r.batches=batches;r.inventoryLots=inventoryLots;r.processedWarehouse=finishedWarehouse;
   processedTurns[fid]=turn();n.factoryProcessingTurns=processedTurns;
   r.finishedGoodsLedger=Array.isArray(r.finishedGoodsLedger)?r.finishedGoodsLedger:[];
@@ -2002,6 +2221,8 @@ function executeMultiInputFactoryCycle(input={}){
   }
   if(!Object.keys(output).length)
     return{status:'BLOCKED',reason:'FACTORY_OUTPUT_ROUNDED_TO_ZERO',factoryId:fid,recipeId:recipe.recipeId||null};
+  const utilityPreview=previewFactoryUtilityUse(cid,asset,productionQuantity);
+  if(utilityPreview.status!=='READY')return utilityPreview;
   const r=resourceState(cid);
   r.inventory=r.inventory&&typeof r.inventory==='object'?r.inventory:{};
   const finishedMap=r.processedWarehouse?.availableByResource||{};
@@ -2085,6 +2306,7 @@ function executeMultiInputFactoryCycle(input={}){
     recipe:clone(recipe),cycleDays:recipe.cycleDays,turn:turn(),authority:'SIMULATED_DOWNSTREAM_PRODUCTION',status:'COMPLETED',
     inputSource:'TRACKED_FACTORY_INPUT',inputTrackingStatus:'TRACKED_FACTORY_INPUT_LOTS',
     consumedInputs:clone(consumedInputs),sourceBatchIds:roots,sourceSiteIds:sites,createdBatchIds:created.map(x=>x.batchId)};
+  record.utilityConsumption=commitFactoryUtilityUse(cid,asset,utilityPreview,transactionId);
   asset.inputInventory=factoryStock;asset.lastProductionTurn=turn();asset.lastProductionTransactionId=transactionId;
   r.batches=batches;r.inventoryLots=inventoryLots;r.processedWarehouse=finished;
   processedTurns[fid]=turn();n.factoryProcessingTurns=processedTurns;
@@ -2441,6 +2663,13 @@ function factoryCatalogDiagnostics(){
     const employment=profile?.employment;
     if(!(num(employment?.jobsPerFactory)>0)||employment?.simulationOnly!==true||!employment?.hiringSource)
       issues.push({code:'FACTORY_EMPLOYMENT_PROFILE_INVALID',factoryType:type});
+    const utilities=profile?.utilities;
+    if(!utilities||num(utilities.electricityMWhPerDay)===null||num(utilities.waterM3PerDay)===null||
+      num(utilities.electricityMWhPerDay)<0||num(utilities.waterM3PerDay)<0||
+      !(num(utilities.electricityMWhPerDay)>0)&&!(num(utilities.waterM3PerDay)>0))
+      issues.push({code:'FACTORY_UTILITY_PROFILE_INVALID',factoryType:type});
+    if(!Array.isArray(profile?.requiredInfrastructure)||!profile.requiredInfrastructure.some(x=>tok(x)==='power'))
+      issues.push({code:'FACTORY_POWER_INFRASTRUCTURE_REQUIREMENT_MISSING',factoryType:type});
     const jobMix=employment?.jobBreakdown;
     const jobMixTotal=jobMix&&typeof jobMix==='object'&&!Array.isArray(jobMix)?Object.values(jobMix).reduce((sum,value)=>sum+(num(value)||0),0):null;
     if(jobMixTotal===null||Math.abs(jobMixTotal-(num(employment?.jobsPerFactory)||0))>1e-6||
@@ -2518,7 +2747,7 @@ function gameplayPipelineDiagnostics(){
     treasuryReceipts:perCountry.reduce((n,x)=>n+x.treasuryReceipts,0),blocked:perCountry.reduce((n,x)=>n+x.blocked,0),perCountry};
 }
 function api(){
-  return Object.freeze({VERSION,loadCatalog,planExtraction,planShipment,dispatchShipment,dispatchFactoryInputShipment,advanceShipments,quoteMineProject,startMineProject,startFactoryProject,startInfrastructureProject,startPadmaCorridorProject,advanceProjects,startTechnologyProject,executeFactoryCycle,executeSitePipeline,diagnostics,gameplayPipelineDiagnostics,factoryCatalogDiagnostics,factoryConstructionMaterialQuote,reconcileFactoryEmployment,normalizeInfrastructure,candidateFactories,recipeFor,processPendingFactoryInputs,resourceMethod,buildRoute});
+  return Object.freeze({VERSION,loadCatalog,planExtraction,planShipment,dispatchShipment,dispatchFactoryInputShipment,advanceShipments,quoteMineProject,startMineProject,startFactoryProject,startInfrastructureProject,startPadmaCorridorProject,advanceProjects,startTechnologyProject,executeFactoryCycle,executeSitePipeline,diagnostics,gameplayPipelineDiagnostics,factoryCatalogDiagnostics,factoryUtilityDiagnostics,factoryConstructionMaterialQuote,reconcileFactoryEmployment,normalizeInfrastructure,candidateFactories,recipeFor,processPendingFactoryInputs,resourceMethod,buildRoute});
 }
 g.Omega=g.Omega||{};g.Omega.ResourceIndustrialNetwork=api();g.OmegaResourceIndustrialNetwork=g.Omega.ResourceIndustrialNetwork;
 
