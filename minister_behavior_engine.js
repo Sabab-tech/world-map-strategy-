@@ -46,7 +46,8 @@
       operationAgeFactor:{...DEFAULT_PROFILE_EFFECTS.operationAgeFactor,...(source.operationAgeFactor||{})},
       operationKeywords:{...DEFAULT_PROFILE_EFFECTS.operationKeywords,...(source.operationKeywords||{})},
       stressResistanceWeights:{...DEFAULT_PROFILE_EFFECTS.stressResistanceWeights,...(source.stressResistanceWeights||{})},
-      training:{...DEFAULT_PROFILE_EFFECTS.training,...(source.training||{})}
+      training:{...DEFAULT_PROFILE_EFFECTS.training,...(source.training||{})},
+      performance:{fatiguePenaltyMax:0.20,...(source.performance||{})}
     };
   }
   const roleConfig=ministryId=>{const n=String(ministryId||'').toLowerCase();return (cfg().roles||[]).find(r=>(r.match||[]).some(x=>n.includes(String(x).toLowerCase())))||(cfg().roles||[]).find(r=>!(r.match||[]).length)||{};};
@@ -144,12 +145,13 @@
       taskFit:careerAdjustedFit,
       timePressureFactor:clamp(context.timePressureFactor??1,.6,1.05)
     })||{effectiveCapability:0,baseCapability:0};
-    const capabilityScore=clamp(num(effective.effectiveCapability)*effects.age.capabilityMultiplier),risk=clamp(context.risk??50),feasibility=clamp(context.feasibility??100),authority=clamp(context.authority??100),riskScore=100-risk;
+    const fatigue=clamp(r.runtimeState.fatigue,0,100),fatiguePenaltyMax=clamp(profileConfig().performance.fatiguePenaltyMax??0.20,0,0.50),fatigueFactor=1-(fatigue/100)*fatiguePenaltyMax;
+    const capabilityScore=clamp(num(effective.effectiveCapability)*effects.age.capabilityMultiplier*fatigueFactor),risk=clamp(context.risk??50),feasibility=clamp(context.feasibility??100),authority=clamp(context.authority??100),riskScore=100-risk;
     const actionKey=String(context.action||directive||'').toLowerCase().replace(/\s+/g,'_');
     const ideologyFit=clamp(50+ideologyPreference(profile,actionKey)),personalityFit=clamp(50+(p.riskTolerance-risk)*.4+p.discipline*.1);
     const score=clamp(feasibility*(w.feasibility??.25)+riskScore*(w.risk??.2)+authority*(w.authority??.15)+capabilityScore*(w.capability??.2)+information*(w.information??.1)+((personalityFit+ideologyFit)/2)*(w.personalityFit??.1));
     const threshold=Number(policy.refusalThreshold??.3)*100,decision=score<threshold?'REFUSE_OR_ESCALATE':score<70?'DEFER_OR_REQUEST_MORE_INFORMATION':'EXECUTE_OR_RECOMMEND';
-    return Object.freeze({ministerId,directive:String(directive||''),operation,decision,executable:decision!=='REFUSE_OR_ESCALATE',score:Number(score.toFixed(2)),components:{feasibility,risk:riskScore,authority,capability:Number(capabilityScore.toFixed(2)),information,personalityFit,ideologyFit,rawStress:Number(rawStress.toFixed(2)),effectiveStress:Number(effectiveStress.toFixed(2)),stressResilience:effects.stressResilience.score,ageCapabilityMultiplier:effects.age.capabilityMultiplier,careerFitMultiplier:effects.careerFit.multiplier},effectiveCapability:{...effective,rawEffectiveCapability:effective.effectiveCapability,effectiveCapability:Number(capabilityScore.toFixed(2)),profileEffects:effects}});
+    return Object.freeze({ministerId,directive:String(directive||''),operation,decision,executable:decision!=='REFUSE_OR_ESCALATE',score:Number(score.toFixed(2)),components:{feasibility,risk:riskScore,authority,capability:Number(capabilityScore.toFixed(2)),information,personalityFit,ideologyFit,rawStress:Number(rawStress.toFixed(2)),effectiveStress:Number(effectiveStress.toFixed(2)),stressResilience:effects.stressResilience.score,ageCapabilityMultiplier:effects.age.capabilityMultiplier,careerFitMultiplier:effects.careerFit.multiplier,fatigue:Number(fatigue.toFixed(2)),fatigueFactor:Number(fatigueFactor.toFixed(3))},effectiveCapability:{...effective,rawEffectiveCapability:effective.effectiveCapability,effectiveCapability:Number(capabilityScore.toFixed(2)),profileEffects:effects}});
   }
   function createDecisionContract(ministerId,directive,context={}){const evaluation=evaluateDirective(ministerId,directive,context),r=registry().getMinister(ministerId);return Object.freeze({contractVersion:'1.2.0',decisionId:`DECISION-${Date.now()}-${String(ministerId)}`,ministerId,directive:String(directive||''),countryId:r.runtimeState.countryId,ministryId:r.runtimeState.ministryId,decision:evaluation.decision,executable:evaluation.executable,evaluation,playerDirective:context.playerDirective===true,executionAuthority:'PART_15_EXECUTION_ENGINE',worldMutationByMinister:false});}
   function rankOptions(ministerId,options,context={}){return (Array.isArray(options)?options:[]).map((o,i)=>{const evaluation=evaluateDirective(ministerId,o.name||o.id||`OPTION_${i+1}`,Object.assign({},context,o));return {index:i,option:o,evaluation}}).sort((a,b)=>b.evaluation.score-a.evaluation.score);}
