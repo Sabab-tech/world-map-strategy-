@@ -109,7 +109,8 @@ test('map ministry entry is outside map stacking and has independent click recov
   assert.ok(runtime.includes("addEventListener('click', handleMapMinistryDockClick, true)"),
     'late-loaded recovery listens in document capture phase');
   assert.ok(runtime.includes('function openCabinet(event)'));
-  assert.ok(/manager\.setLayer\(1(?:,\s*\{\},\s*true)?\)/.test(runtime), 'the direct fallback can enter cabinet layer without duplicating the layer stack');
+  assert.ok(runtime.includes('cabinetUI.renderCabinet(activeCountry())'), 'the recovery route renders the current-country cabinet without re-entering the blocking layer manager');
+  assert.ok(!runtime.includes('global.openMainMinistryView();'), 'deferred recovery must not re-enter the legacy layer manager');
   assert.ok(runtime.includes('data-last-open-result'));
   assert.ok(runtime.includes("function syncDockPosition()"));
   assert.ok(runtime.includes("rect.bottom + 8"));
@@ -363,7 +364,7 @@ test('map ministry dock click opens the cabinet through the independent capture 
   const h = createMapMinistryDockHarness();
   assert.ok(h.listeners.length > 0, 'the standalone capture handler is registered');
   h.listeners.forEach((handler) => handler(h.event));
-  assert.ok(h.calls.includes('primary'), 'the original cabinet route is attempted first');
+  assert.ok(h.calls.includes('render:BANGLADESH'), 'the cabinet is rendered through the non-blocking recovery route');
   assert.equal(h.dock.style.top, '158px', 'dock sits below the measured 150px status header plus an 8px gap');
   assert.equal(h.cabinet.style.display, 'flex', 'the cabinet becomes visible after the tap');
   assert.equal(h.event.prevented, true);
@@ -382,7 +383,7 @@ test('ministry dock enters Government HQ immediately and defers cabinet renderin
   assert.equal(h.calls.length, 0, 'heavy legacy rendering is not run inside the tap callback');
   assert.equal(h.scheduled.length, 1, 'rendering is queued for a later task');
   h.flushScheduled();
-  assert.ok(h.calls.includes('primary'), 'the original cabinet renderer still runs after the callback returns');
+  assert.ok(h.calls.includes('render:BANGLADESH'), 'the cabinet renderer runs after the click callback returns');
   assert.equal(h.dock.attrs['data-last-open-result'], 'opened');
 });
 
@@ -400,5 +401,7 @@ test('cabinet council rendering is deferred until after the cabinet shell is pai
   const engine = read('ministry_engine.js');
   assert.ok(engine.includes('omega-cabinet-subsystem-loading'));
   assert.ok(engine.includes('window.setTimeout(renderSubsystem, 50)'));
+  const index = read('index.html');
+  assert.ok(index.includes("if (typeof Object.fromEntries !== 'function')"), 'Android 9 gets Object.fromEntries before runtime scripts load');
   assert.ok(engine.includes("document.getElementById('cabinet-subsystem-root') !== subsystemRoot"));
 });
