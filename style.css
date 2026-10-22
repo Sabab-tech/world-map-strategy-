@@ -4461,7 +4461,7 @@ body.modal-open .ui-bottom-navigation {
     border-radius: 5px;
     color: #b9c9dc;
     font-size: 9px;
-    font-weight: 750;
+    font-weight: 700;
     letter-spacing: 0.035em;
     line-height: 1.4;
     overflow-wrap: anywhere;
@@ -4502,7 +4502,7 @@ body.modal-open .ui-bottom-navigation {
 .sc-list-heading {
     color: #91a9c5;
     font-size: 10px;
-    font-weight: 850;
+    font-weight: 800;
     letter-spacing: 0.065em;
     text-transform: uppercase;
     margin: 7px 0 0;
@@ -4607,7 +4607,7 @@ body.modal-open .ui-bottom-navigation {
     color: #f2f6fb;
     font-size: 15px;
     font-variant-numeric: tabular-nums;
-    font-weight: 850;
+    font-weight: 800;
     line-height: 1.3;
     overflow-wrap: anywhere;
 }
@@ -5539,11 +5539,20 @@ body.modal-open .ui-bottom-navigation {
 }
 .omega-cabinet-overview__points li {
     display: grid;
-    grid-template-columns: minmax(95px, 0.75fr) minmax(0, 1.25fr);
+    grid-template-columns: 12px minmax(85px, 0.75fr) minmax(0, 1.25fr);
     gap: 8px;
     align-items: start;
     padding-bottom: 8px;
     border-bottom: 1px solid rgba(157, 126, 71, 0.22);
+}
+.omega-cabinet-overview__points li::before {
+    grid-column: 1;
+    grid-row: 1;
+    color: #9b742e;
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1.1;
+    content: "•";
 }
 .omega-cabinet-overview__points li:last-child {
     padding-bottom: 0;
@@ -5557,7 +5566,7 @@ body.modal-open .ui-bottom-navigation {
 .omega-cabinet-overview__points li > strong {
     color: #3b2d1a;
     font-size: 13px;
-    font-weight: 750;
+    font-weight: 700;
     line-height: 1.45;
     overflow-wrap: anywhere;
 }
@@ -5580,7 +5589,7 @@ body.modal-open .ui-bottom-navigation {
     text-decoration-color: #74a783;
 }
 .omega-cabinet-overview__key-note strong {
-    font-weight: 850;
+    font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.035em;
 }
@@ -5598,7 +5607,7 @@ body.modal-open .ui-bottom-navigation {
     color: #fff9ed;
     background: linear-gradient(135deg, #85601f, #624514);
     box-shadow: 0 3px 7px rgba(66, 47, 19, 0.15);
-    font: 750 13px/1.4 system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+    font: 700 13px/1.4 system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
     text-align: center;
     cursor: pointer;
     transition: transform 0.16s ease, box-shadow 0.16s ease, filter 0.16s ease;
@@ -5639,7 +5648,7 @@ body.modal-open .ui-bottom-navigation {
     margin: 0;
     color: #7a3c25;
     font-size: 13px;
-    font-weight: 650;
+    font-weight: 600;
     line-height: 1.6;
     text-decoration-line: underline;
     text-decoration-color: #b77c49;
