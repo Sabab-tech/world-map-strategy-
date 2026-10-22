@@ -2764,9 +2764,25 @@ function completeFactoryProductionCycle(countryId,asset,cycle,result){
   factorySetProductionHealth(asset,cycle.productivityPct<99.999?'REDUCED':'READY',actualProduction,cycle.capacityPerDay,{cycleId:cycle.cycleId});
   n.factoryProductionCycleHistory.push(clone(cycle));n.factoryProductionCycleHistory=n.factoryProductionCycleHistory.slice(-MAX_EVENTS);
   // Batch lineage from the committed transaction is the only source of truth for
-  // which sites and shipments were consumed by this cycle. Do not join by factory/cycle
-  // ID alone: later arrivals at a busy factory must remain queued for the next cycle.
-  const roots=[...new Set((result.sourceBatchIds||[]).map(String).filter(Boolean))];
+  // which sites and shipments were consumed by this cycle. Input-lot IDs (for example,
+  // INPUT:SHIP:...) are not site-flow batch IDs, so reconcile each consumed input lot's
+  // recorded upstream lineage before updating mine/site flow records.
+  // Never infer completion from factory/cycle identity alone.
+  const rootsSet=new Set((result.sourceBatchIds||[]).map(String).filter(Boolean));
+  const consumedInputIds=new Set((result.consumedInputs||[]).map(row=>String(row?.batchId||'')).filter(Boolean));
+  const inputLots=Array.isArray(asset?.inputBatchLots)?asset.inputBatchLots:[];
+  for(const lot of inputLots){
+    const inputBatchId=String(lot?.batchId||'').trim();
+    if(!inputBatchId)continue;
+    if(consumedInputIds.has(inputBatchId)||rootsSet.has(inputBatchId)){
+      rootsSet.add(inputBatchId);
+      for(const sourceId of Array.isArray(lot?.sourceBatchIds)?lot.sourceBatchIds:[]){
+        const id=String(sourceId||'').trim();
+        if(id)rootsSet.add(id);
+      }
+    }
+  }
+  const roots=[...rootsSet];
   for(const sourceBatchId of roots){
     updateSiteFlow(cid,sourceBatchId,row=>{
       row.processingTransactionIds=[...new Set([...(row.processingTransactionIds||[]),String(result.transactionId)])];
