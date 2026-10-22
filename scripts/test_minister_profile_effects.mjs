@@ -48,6 +48,13 @@ registry.recruitCandidate(resilient, 'USA', 'energy_mining', 0);
 registry.recruitCandidate(strained, 'CAN', 'energy_mining', 0);
 registry.recruitCandidate(unrelated, 'AUS', 'energy_mining', 0);
 
+const youngFatigueBefore = registry.getMinister('ProfileYoung').runtimeState.fatigue;
+const seniorFatigueBefore = registry.getMinister('ProfileSenior').runtimeState.fatigue;
+registry.onGameTime(8, 8);
+const youngFatigueGain = registry.getMinister('ProfileYoung').runtimeState.fatigue - youngFatigueBefore;
+const seniorFatigueGain = registry.getMinister('ProfileSenior').runtimeState.fatigue - seniorFatigueBefore;
+assert.ok(seniorFatigueGain > youngFatigueGain, 'age-stage fatigue rates must affect the real game-time runtime');
+
 const youngEffects = behavior.analyzeProfile(young, 'INDUSTRY', { ministryId: 'energy_mining', domain: 'energy_mining' });
 const seniorEffects = behavior.analyzeProfile(senior, 'INDUSTRY', { ministryId: 'energy_mining', domain: 'energy_mining' });
 const unrelatedEffects = behavior.analyzeProfile(unrelated, 'INDUSTRY', { ministryId: 'energy_mining', domain: 'energy_mining' });
@@ -66,6 +73,12 @@ const youngDecision = behavior.evaluateDirective('ProfileYoung', 'Build new gene
 const seniorDecision = behavior.evaluateDirective('ProfileSenior', 'Build new generation capacity', directive);
 assert.ok(youngDecision.components.ageCapabilityMultiplier > seniorDecision.components.ageCapabilityMultiplier, 'age stage must affect operational capability');
 assert.equal(youngDecision.effectiveCapability.profileEffects.careerFit.matched, true);
+registry.updateRuntimeState('ProfileYoung', { fatigue: 0 }, 'PROFILE_EFFECTS_TEST');
+const restedDecision = behavior.evaluateDirective('ProfileYoung', 'Build new generation capacity', directive);
+registry.updateRuntimeState('ProfileYoung', { fatigue: 100 }, 'PROFILE_EFFECTS_TEST');
+const tiredDecision = behavior.evaluateDirective('ProfileYoung', 'Build new generation capacity', directive);
+assert.ok(tiredDecision.components.fatigueFactor < restedDecision.components.fatigueFactor, 'fatigue must reduce decision capability');
+assert.ok(tiredDecision.effectiveCapability.effectiveCapability < restedDecision.effectiveCapability.effectiveCapability, 'exhaustion must measurably change effective capability');
 
 registry.updateRuntimeState('ProfileResilient', { stress: 80 }, 'PROFILE_EFFECTS_TEST');
 registry.updateRuntimeState('ProfileStrained', { stress: 80 }, 'PROFILE_EFFECTS_TEST');
