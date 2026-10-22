@@ -760,6 +760,12 @@
     const pipeline = network && network.gameplayPipelineDiagnostics ? network.gameplayPipelineDiagnostics() : null;
     const perCountry = pipeline && Array.isArray(pipeline.perCountry)
       ? pipeline.perCountry.find(x => normaliseCountry(x.countryId) === activeCountry(country)) : null;
+    const catalog = g.OmegaResourceIndustrialCatalogData || (g.Omega && g.Omega.ResourceIndustrialCatalogData) || {};
+    const factoryAudit = network && typeof network.factoryCatalogDiagnostics === 'function' ? network.factoryCatalogDiagnostics() : null;
+    const profiles = catalog.factoryProfiles && typeof catalog.factoryProfiles === 'object' ? catalog.factoryProfiles : {};
+    const recipes = catalog.downstreamFactoryRecipes && typeof catalog.downstreamFactoryRecipes === 'object' ? catalog.downstreamFactoryRecipes : {};
+    const categories = Array.isArray(catalog.factoryCatalogPolicy && catalog.factoryCatalogPolicy.categoryOrder)
+      ? catalog.factoryCatalogPolicy.categoryOrder : [];
     const r = resourceBucket(country);
     const econ = bucket('economy', country);
     const industrialState = r.industrialNetwork || {};
@@ -767,14 +773,62 @@
       (Array.isArray(r.siteFlows) ? r.siteFlows : (Array.isArray(r.siteFlowLedger) ? r.siteFlowLedger : (Array.isArray(r.extractionFlows) ? r.extractionFlows : [])));
     const projects = Array.isArray(industrialState.projects) ? industrialState.projects : (Array.isArray(econ.projects) ? econ.projects : []);
     const contracts = Array.isArray(industrialState.technologyContracts) ? industrialState.technologyContracts : [];
+    const assets = Array.isArray(econ.productionAssets) ? econ.productionAssets : [];
     const stages = perCountry && perCountry.stages || {}, sites = siteRows(country);
+    const factoryCards = assets.map(function (asset) {
+      const id = String(asset.id || asset.assetId || asset.projectId || 'FACTORY_ID_NOT_RECORDED');
+      const type = String(asset.factoryType || asset.type || asset.facilityType || 'FACTORY_TYPE_NOT_RECORDED').toUpperCase();
+      const profile = profiles[type] || {};
+      const iconId = String(profile.iconId || 'industrial-production').replace(/[^a-z0-9-]/gi, '');
+      const recipeId = asset.recipeId || profile.defaultRecipeId || 'RECIPE_NOT_RECORDED';
+      const stock = asset.inputInventory && typeof asset.inputInventory === 'object' ? asset.inputInventory : {};
+      const stockRows = Object.entries(stock).filter(function (pair) { return Number(pair[1]) > 0; })
+        .map(function (pair) { return kv(pair[0], number(pair[1])); }).join('');
+      const last = asset.lastProductionTransactionId || asset.lastProductionTurn || 'No production transaction recorded';
+      return card(String(profile.name || type) + ' · ' + id, asset.status || 'STATUS_NOT_RECORDED',
+        '<div class="omega-rescc-factory-head"><svg class="omega-ui-icon omega-ui-icon--' + esc(iconId) + '" aria-hidden="true" viewBox="0 0 24 24"><use href="#omega-icon-' + esc(iconId) + '"></use></svg><span>' + esc(type) + '</span></div>' +
+        '<div class="omega-rescc-grid2">' + kv('Recipe', recipeId) + kv('Capacity/day', number(asset.capacityPerDay ?? asset.capacity ?? asset.productionCapacity)) +
+        kv('Location', asset.locationNodeKey || 'Not recorded') + kv('Last production', last) + '</div>' +
+        '<h4 class="omega-rescc-section-title">Factory input stock</h4>' +
+        (stockRows ? '<div class="omega-rescc-grid2">' + stockRows + '</div>' : empty('No tracked input stock is currently recorded.')) +
+        (Array.isArray(asset.inputBatchLots) && asset.inputBatchLots.length ? '<div class="omega-rescc-muted">Tracked input lots: ' + number(asset.inputBatchLots.length) + '</div>' : '') +
+        '<div class="omega-rescc-muted">' + esc(profile.authority || asset.authority || 'PROFILE_AUTHORITY_NOT_RECORDED') + '</div>', '');
+    }).join('');
+    const catalogCards = categories.map(function (category) {
+      const rows = Object.entries(profiles).filter(function (pair) { return pair[1] && pair[1].category === category; });
+      if (!rows.length) return '';
+      const contents = rows.map(function (pair) {
+        const type = pair[0], profile = pair[1];
+        const iconId = String(profile.iconId || 'industrial-production').replace(/[^a-z0-9-]/gi, '');
+        const recipeIds = Array.isArray(profile.recipeIds) ? profile.recipeIds : [];
+        const recipeCount = recipeIds.length || Object.values(catalog.processingRules || {}).filter(function (r) { return r && r.factoryType === type; }).length;
+        const recipeList = recipeIds.map(function (id) {
+          const recipe = recipes[id] || {};
+          return '<li><strong>' + esc(id) + '</strong> · ' + esc(Object.keys(recipe.inputs || {}).join(' + ')) + ' → ' +
+            esc(Object.keys(recipe.outputs || {}).join(', ')) + '</li>';
+        }).join('');
+        return '<article class="omega-rescc-factory-catalog-row"><div class="omega-rescc-factory-head"><svg class="omega-ui-icon omega-ui-icon--' + esc(iconId) + '" aria-hidden="true" viewBox="0 0 24 24"><use href="#omega-icon-' + esc(iconId) + '"></use></svg><strong>' + esc(profile.name || type) + '</strong><span class="omega-rescc-factory-type">' + esc(type) + '</span></div>' +
+          '<div class="omega-rescc-grid2">' + kv('Build cost', number(profile.constructionCost, ' game units')) + kv('Build time', number(profile.constructionDays, ' days')) +
+          kv('Capacity/day', number(profile.defaultCapacityPerDay)) + kv('Workers', number((Number(profile.workforce && profile.workforce.operators) || 0) + (Number(profile.workforce && profile.workforce.engineers) || 0))) +
+          kv('Power (MWh/day)', number(profile.utilities && profile.utilities.electricityMWhPerDay)) + kv('Water (m³/day)', number(profile.utilities && profile.utilities.waterM3PerDay)) +
+          kv('Recipes', recipeCount) + kv('Data authority', profile.authority || 'NOT_RECORDED') + '</div>' +
+          (recipeList ? '<details class="omega-rescc-factory-recipes"><summary>Recipe details (' + recipeIds.length + ')</summary><ul>' + recipeList + '</ul></details>' : '') +
+          '<div class="omega-rescc-muted">Construction and utilities use explicit game-simulation values, not verified real-world plant data.</div></article>';
+      }).join('');
+      return '<details class="omega-rescc-factory-category"><summary>' + esc(category.replace(/_/g, ' ')) + ' · ' + rows.length + ' factory types</summary>' + contents + '</details>';
+    }).join('');
     return (diag ? diagnosticCard('Country industrial network diagnostics', diag) : empty('Industrial network runtime is unavailable.')) +
+      (factoryAudit ? diagnosticCard('Canonical factory catalog integrity', factoryAudit) : '') +
       (perCountry ? diagnosticCard('End-to-end site pipeline state', perCountry) : '') +
-      '<div class="omega-rescc-metrics"><div><span>Country site profiles</span><strong>'+number(sites.length)+'</strong></div><div><span>Extraction flows</span><strong>'+number(perCountry&&perCountry.extractionFlows)+'</strong></div><div><span>Dispatched shipments</span><strong>'+number(perCountry&&perCountry.dispatched)+'</strong></div><div><span>Processed flows</span><strong>'+number(perCountry&&perCountry.processed)+'</strong></div></div>'+
-      '<h3 class="omega-rescc-section-title">Observed flow ledger</h3>'+(flows.length?statusRows(flows):empty('No site execution or flow records are present in this country runtime.'))+
-      '<h3 class="omega-rescc-section-title">Construction projects</h3>'+statusRows(projects)+
-      '<h3 class="omega-rescc-section-title">Technology project contracts</h3>'+statusRows(contracts)+
-      (Object.keys(stages).length?diagnosticCard('Pipeline stage counts',stages):'');
+      '<div class="omega-rescc-metrics"><div><span>Factory type catalog</span><strong>' + number(factoryAudit && factoryAudit.factoryTypeCount) + '</strong></div><div><span>Owned factory assets</span><strong>' + number(assets.length) + '</strong></div><div><span>Country site profiles</span><strong>' + number(sites.length) + '</strong></div><div><span>Dispatched shipments</span><strong>' + number(perCountry && perCountry.dispatched) + '</strong></div><div><span>Processed flows</span><strong>' + number(perCountry && perCountry.processed) + '</strong></div></div>' +
+      '<h3 class="omega-rescc-section-title">My factories · live runtime assets</h3>' + (factoryCards || empty('No commissioned factory assets are recorded for this country.')) +
+      '<h3 class="omega-rescc-section-title">Factory catalog · ' + number(Object.keys(profiles).length) + ' profiles</h3>' +
+      '<p class="omega-rescc-muted">The catalog is a plan and rule registry. A catalog entry is not proof that the country owns an operational factory.</p>' +
+      (catalogCards || empty('Factory catalog is unavailable.')) +
+      '<h3 class="omega-rescc-section-title">Observed flow ledger</h3>' + (flows.length ? statusRows(flows) : empty('No site execution or flow records are present in this country runtime.')) +
+      '<h3 class="omega-rescc-section-title">Construction projects</h3>' + statusRows(projects) +
+      '<h3 class="omega-rescc-section-title">Technology project contracts</h3>' + statusRows(contracts) +
+      (Object.keys(stages).length ? diagnosticCard('Pipeline stage counts', stages) : '');
   }
   function panelMarket(country) {
     const market = g.OmegaGlobalMarket || g.Omega && g.Omega.GlobalMarket;
@@ -1039,6 +1093,14 @@
       '.omega-rescc-note{display:none!important}' +
       '.omega-rescc-muted{color:#9fb3c8;font-size:12px;margin:0}' +
       '.omega-rescc-warning{border-left:3px solid #f59e0b;background:#251b0b;color:#fde68a;padding:9px 11px;border-radius:4px;font-size:12px;margin:7px 0}' +
+      '.omega-rescc-factory-category{border:1px solid #263d51;background:#091827;border-radius:8px;padding:8px 10px;margin:7px 0}' +
+      '.omega-rescc-factory-category>summary,.omega-rescc-factory-recipes>summary{cursor:pointer;color:#bae6fd;font-weight:650;padding:5px 2px}' +
+      '.omega-rescc-factory-catalog-row{border-top:1px solid #1e3548;padding:10px 2px;display:flex;flex-direction:column;gap:7px;min-width:0}' +
+      '.omega-rescc-factory-head{display:flex;align-items:center;gap:8px;min-width:0;flex-wrap:wrap;color:#e2e8f0}' +
+      '.omega-rescc-factory-type{color:#93a9bc;font-size:10px;overflow-wrap:anywhere}' +
+      '.omega-rescc-factory-recipes{background:#07111f;border-radius:6px;padding:6px 9px;overflow-wrap:anywhere}' +
+      '.omega-rescc-factory-recipes ul{margin:6px 0;padding-left:18px}' +
+      '.omega-rescc-factory-recipes li{padding:3px 0;color:#cbd5e1;font-size:11px}' +
       '.omega-rescc-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}' +
       '.omega-rescc-metrics>div{border:1px solid #263d51;background:#0a1a2b;border-radius:8px;padding:11px;display:flex;flex-direction:column;gap:3px;min-width:0}' +
       '.omega-rescc-metrics span{font-size:11px;color:#91a9bd}.omega-rescc-metrics strong{font-size:15px;color:#cffafe;overflow-wrap:anywhere}' +
