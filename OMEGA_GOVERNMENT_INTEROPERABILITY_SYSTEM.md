@@ -386,3 +386,25 @@ The canonical Ministry Runtime workflow verifies:
 - production server boot and canonical script injection
 
 The architecture is intended to accept future fiscal, economic, diplomatic, military, social, transport, education, health, technology, resource and project datasets without rewriting the ministry topology or multiplying engine classes by country.
+
+
+## Integrity hardening: duplicate identity, stale writes and event ordering
+
+The existing interoperability stack remains the single ministry data bus and authoritative delivery ledger. Do not add a parallel bus, message store, or country-data cache for ministry communication.
+
+The pipeline enforces these guards:
+
+1. **Message identity is immutable.** A `messageId` replay with the same canonical envelope is idempotent and does not enqueue another message. Reusing that ID with a different sender, target, country, topic, turn, revision, payload, correlation, expiry, or provenance is rejected as `MESSAGE_ID_COLLISION`.
+2. **Command identity is idempotent.** A matching `commandId` replay returns the original command outcome without invoking its handler again. Reusing the ID for a different command fails with `COMMAND_ID_COLLISION`; it must not replace the existing ledger row or apply a second mutation.
+3. **Event identity is immutable.** An identical `eventId` replay returns the existing event. A conflicting event envelope is rejected as `EVENT_ID_COLLISION`.
+4. **State writes use path-scoped optimistic concurrency.** When a path is first staged for `SET` or `DELETE`, the transaction captures that path's current value. Commit validates every staged write target before applying any mutation and fails with `STATE_TRANSACTION_CONFLICT` if a target changed in the meantime. Unrelated changes to other fields do not block the transaction, and a no-write transaction remains a safe no-op.
+5. **Events follow successful commits.** Command handlers stage canonical events while preparing a transaction. The interoperability layer publishes them only after the state owner transaction commits successfully. Events staged by a failed/conflicted command are discarded.
+6. **Conflicts are observable and bounded.** `Omega.MinistryInteroperability.getIntegrityConflicts(countryId)` returns recent country-scoped collision/write-conflict records. `diagnostics()` reports integrity counters separately from structure, transport, and data coverage. Conflict history is bounded by `maxHistory` and included in save/load state.
+
+### Recommended ministry-to-ministry flow
+
+`canonical data / authoritative state → owner ministry transaction → validated state mutation → canonical event → public snapshot/revision → permitted peer state → ministry decision context`
+
+For direct communication, acquire the country-bound port from `Omega.MinistryInteroperability.createPort(ministryId, countryId)` and use `send`, `broadcast`, `request`, `reply`, or `acknowledge`. Read peer facts through `getPeer` / `getNationalBriefing`; do not copy another ministry's private state or write another ministry's owned paths. Use the same simulation turn and canonical country identity throughout the operation.
+
+The mesh creates routes dynamically from the ministry registry. Full connectivity is an available topology, not a requirement to broadcast on every tick. Prefer change-driven publication and targeted messages; preserve explicit `UNOBSERVED`, `UNAVAILABLE`, `STALE`, `INVALID`, `NOT_APPLICABLE`, and `ESTIMATED` states rather than substituting zero.
