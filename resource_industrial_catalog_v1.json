@@ -1893,15 +1893,14 @@
       "version": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
       "unit": "SIMULATION_RESOURCE_UNIT",
       "costScalingBase": 6000,
-      "baseQuantitiesAtScalingCost": {
-        "construction_aggregate": 800,
-        "limestone": 500,
-        "iron_ore": 300,
-        "copper": 80,
-        "coal": 100,
-        "crude_oil": 50
-      },
-      "rule": "Each factory has an explicit persisted bill of materials derived from construction-cost scale and category-specific construction inputs. Quantities are gameplay-only resource units, not real-world engineering quantities.",
+      "structuralBaseResources": [
+        "construction_aggregate",
+        "limestone",
+        "iron_ore",
+        "copper",
+        "silica_sand"
+      ],
+      "rule": "Per-factory-type BOM derived from structural resources, the declared industry category, and each catalog processing rule's registered raw feedstock. Quantities scale with simulated construction cost. Values are gameplay-only units, not real-world engineering quantities.",
       "missingMaterialPolicy": "BLOCK_PROJECT_WITHOUT_DEBIT",
       "atomicDebit": true
     },
@@ -1950,13 +1949,14 @@
         "simulationOnly": true
       },
       "constructionMaterials": {
-        "construction_aggregate": 507,
-        "limestone": 317,
-        "iron_ore": 190,
-        "copper": 51,
-        "coal": 64,
-        "crude_oil": 32,
-        "silica_sand": 48
+        "construction_aggregate": 473,
+        "limestone": 159,
+        "iron_ore": 76,
+        "copper": 23,
+        "silica_sand": 19,
+        "gypsum": 29,
+        "coal": 16,
+        "basalt": 29
       },
       "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
       "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
@@ -1997,13 +1997,15 @@
         "simulationOnly": true
       },
       "constructionMaterials": {
-        "construction_aggregate": 744,
-        "limestone": 465,
-        "iron_ore": 279,
-        "copper": 75,
-        "coal": 93,
-        "crude_oil": 47,
-        "gypsum": 52
+        "construction_aggregate": 651,
+        "limestone": 233,
+        "iron_ore": 112,
+        "copper": 33,
+        "silica_sand": 28,
+        "coal": 52,
+        "crude_oil": 24,
+        "natural_gas": 24,
+        "bauxite": 42
       },
       "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
       "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
@@ -2044,13 +2046,14 @@
         "simulationOnly": true
       },
       "constructionMaterials": {
-        "construction_aggregate": 527,
-        "limestone": 330,
-        "iron_ore": 198,
-        "copper": 53,
-        "coal": 66,
-        "crude_oil": 33,
-        "silica_sand": 50
+        "construction_aggregate": 461,
+        "limestone": 165,
+        "iron_ore": 79,
+        "copper": 24,
+        "silica_sand": 20,
+        "gypsum": 30,
+        "coal": 17,
+        "boron": 30
       },
       "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
       "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
@@ -2091,13 +2094,13 @@
         "simulationOnly": true
       },
       "constructionMaterials": {
-        "construction_aggregate": 537,
-        "limestone": 336,
-        "iron_ore": 202,
-        "copper": 54,
-        "coal": 68,
-        "crude_oil": 34,
-        "silica_sand": 51
+        "construction_aggregate": 470,
+        "limestone": 199,
+        "iron_ore": 81,
+        "copper": 24,
+        "silica_sand": 21,
+        "gypsum": 31,
+        "coal": 17
       },
       "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
       "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
@@ -2138,12 +2141,13 @@
         "simulationOnly": true
       },
       "constructionMaterials": {
-        "construction_aggregate": 654,
-        "limestone": 409,
-        "iron_ore": 245,
-        "copper": 66,
-        "coal": 82,
-        "crude_oil": 41
+        "construction_aggregate": 572,
+        "limestone": 205,
+        "iron_ore": 98,
+        "copper": 29,
+        "silica_sand": 25,
+        "coal": 29,
+        "chromite": 37
       },
       "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
       "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
@@ -2184,13 +2188,14 @@
         "simulationOnly": true
       },
       "constructionMaterials": {
-        "construction_aggregate": 784,
-        "limestone": 490,
-        "iron_ore": 294,
-        "copper": 79,
-        "coal": 98,
-        "crude_oil": 49,
-        "gypsum": 54
+        "construction_aggregate": 686,
+        "limestone": 245,
+        "iron_ore": 118,
+        "copper": 35,
+        "silica_sand": 30,
+        "coal": 99,
+        "crude_oil": 25,
+        "natural_gas": 25
       },
       "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
       "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
@@ -2231,13 +2236,15 @@
         "simulationOnly": true
       },
       "constructionMaterials": {
-        "construction_aggregate": 927,
-        "limestone": 580,
-        "iron_ore": 348,
-        "copper": 93,
-        "coal": 116,
-        "crude_oil": 58,
-        "gypsum": 64
+        "construction_aggregate": 811,
+        "limestone": 290,
+        "iron_ore": 139,
+        "copper": 41,
+        "silica_sand": 35,
+        "coal": 64,
+        "crude_oil": 29,
+        "natural_gas": 29,
+        "cobalt": 53
       },
       "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
       "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
@@ -2278,12 +2285,12 @@
         "simulationOnly": true
       },
       "constructionMaterials": {
-        "construction_aggregate": 684,
-        "limestone": 428,
-        "iron_ore": 257,
+        "construction_aggregate": 598,
+        "limestone": 214,
+        "iron_ore": 103,
         "copper": 69,
-        "coal": 86,
-        "crude_oil": 43
+        "silica_sand": 26,
+        "coal": 30
       },
       "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
       "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
@@ -2324,12 +2331,13 @@
         "simulationOnly": true
       },
       "constructionMaterials": {
-        "construction_aggregate": 640,
-        "limestone": 400,
-        "iron_ore": 240,
-        "copper": 64,
-        "coal": 80,
-        "crude_oil": 40
+        "construction_aggregate": 560,
+        "limestone": 200,
+        "iron_ore": 96,
+        "copper": 28,
+        "silica_sand": 24,
+        "coal": 28,
+        "diamond": 36
       },
       "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
       "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
@@ -2370,13 +2378,14 @@
         "simulationOnly": true
       },
       "constructionMaterials": {
-        "construction_aggregate": 597,
-        "limestone": 373,
-        "iron_ore": 224,
-        "copper": 60,
-        "coal": 75,
-        "crude_oil": 38,
-        "silica_sand": 56
+        "construction_aggregate": 523,
+        "limestone": 187,
+        "iron_ore": 90,
+        "copper": 27,
+        "silica_sand": 23,
+        "gypsum": 34,
+        "coal": 19,
+        "dolomite": 34
       },
       "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
       "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
@@ -2417,13 +2426,14 @@
         "simulationOnly": true
       },
       "constructionMaterials": {
-        "construction_aggregate": 834,
-        "limestone": 521,
-        "iron_ore": 313,
-        "copper": 84,
-        "coal": 105,
-        "crude_oil": 53,
-        "gypsum": 58
+        "construction_aggregate": 730,
+        "limestone": 261,
+        "iron_ore": 126,
+        "copper": 37,
+        "silica_sand": 32,
+        "coal": 58,
+        "crude_oil": 27,
+        "natural_gas": 74
       },
       "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
       "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
@@ -2464,12 +2474,13 @@
         "simulationOnly": true
       },
       "constructionMaterials": {
-        "construction_aggregate": 670,
-        "limestone": 419,
-        "iron_ore": 252,
-        "copper": 67,
-        "coal": 84,
-        "crude_oil": 42
+        "construction_aggregate": 587,
+        "limestone": 210,
+        "iron_ore": 101,
+        "copper": 30,
+        "silica_sand": 26,
+        "coal": 30,
+        "ruby": 38
       },
       "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
       "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
@@ -2510,13 +2521,13 @@
         "simulationOnly": true
       },
       "constructionMaterials": {
-        "construction_aggregate": 627,
-        "limestone": 392,
-        "iron_ore": 235,
-        "copper": 63,
-        "coal": 79,
-        "crude_oil": 40,
-        "silica_sand": 59
+        "construction_aggregate": 549,
+        "limestone": 196,
+        "iron_ore": 94,
+        "copper": 28,
+        "silica_sand": 60,
+        "gypsum": 36,
+        "coal": 20
       },
       "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
       "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
@@ -2557,12 +2568,13 @@
         "simulationOnly": true
       },
       "constructionMaterials": {
-        "construction_aggregate": 690,
-        "limestone": 432,
-        "iron_ore": 259,
-        "copper": 69,
-        "coal": 87,
-        "crude_oil": 44
+        "construction_aggregate": 604,
+        "limestone": 216,
+        "iron_ore": 104,
+        "copper": 31,
+        "silica_sand": 26,
+        "coal": 31,
+        "gold": 39
       },
       "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
       "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
@@ -2603,12 +2615,13 @@
         "simulationOnly": true
       },
       "constructionMaterials": {
-        "construction_aggregate": 754,
-        "limestone": 471,
-        "iron_ore": 283,
-        "copper": 76,
-        "coal": 95,
-        "crude_oil": 48
+        "construction_aggregate": 660,
+        "limestone": 236,
+        "iron_ore": 113,
+        "copper": 33,
+        "silica_sand": 29,
+        "coal": 33,
+        "graphite": 43
       },
       "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
       "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
@@ -2649,13 +2662,13 @@
         "simulationOnly": true
       },
       "constructionMaterials": {
-        "construction_aggregate": 657,
-        "limestone": 411,
-        "iron_ore": 247,
-        "copper": 66,
-        "coal": 83,
-        "crude_oil": 42,
-        "silica_sand": 62
+        "construction_aggregate": 575,
+        "limestone": 206,
+        "iron_ore": 99,
+        "copper": 29,
+        "silica_sand": 25,
+        "gypsum": 74,
+        "coal": 21
       },
       "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
       "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
@@ -2696,12 +2709,13 @@
         "simulationOnly": true
       },
       "constructionMaterials": {
-        "construction_aggregate": 1027,
-        "limestone": 642,
-        "iron_ore": 386,
-        "copper": 103,
-        "coal": 129,
-        "crude_oil": 65
+        "construction_aggregate": 899,
+        "limestone": 321,
+        "iron_ore": 154,
+        "copper": 45,
+        "silica_sand": 39,
+        "coal": 45,
+        "lithium": 58
       },
       "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
       "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
@@ -2742,13 +2756,14 @@
         "simulationOnly": true
       },
       "constructionMaterials": {
-        "construction_aggregate": 677,
-        "limestone": 423,
-        "iron_ore": 254,
-        "copper": 68,
-        "coal": 85,
-        "crude_oil": 43,
-        "silica_sand": 64
+        "construction_aggregate": 593,
+        "limestone": 212,
+        "iron_ore": 102,
+        "copper": 30,
+        "silica_sand": 26,
+        "gypsum": 39,
+        "coal": 22,
+        "magnesite": 39
       },
       "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
       "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
@@ -2789,12 +2804,13 @@
         "simulationOnly": true
       },
       "constructionMaterials": {
-        "construction_aggregate": 794,
-        "limestone": 496,
-        "iron_ore": 298,
-        "copper": 80,
-        "coal": 100,
-        "crude_oil": 50
+        "construction_aggregate": 695,
+        "limestone": 248,
+        "iron_ore": 119,
+        "copper": 35,
+        "silica_sand": 30,
+        "coal": 35,
+        "manganese": 45
       },
       "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
       "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
@@ -2835,13 +2851,15 @@
         "simulationOnly": true
       },
       "constructionMaterials": {
-        "construction_aggregate": 697,
-        "limestone": 436,
-        "iron_ore": 262,
-        "copper": 70,
-        "coal": 88,
-        "crude_oil": 44,
-        "silica_sand": 66
+        "construction_aggregate": 610,
+        "limestone": 218,
+        "iron_ore": 105,
+        "copper": 31,
+        "silica_sand": 27,
+        "gypsum": 40,
+        "coal": 22,
+        "rutile": 40,
+        "ilmenite": 40
       },
       "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
       "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
@@ -2882,12 +2900,13 @@
         "simulationOnly": true
       },
       "constructionMaterials": {
-        "construction_aggregate": 814,
-        "limestone": 509,
-        "iron_ore": 305,
-        "copper": 82,
-        "coal": 102,
-        "crude_oil": 51
+        "construction_aggregate": 712,
+        "limestone": 255,
+        "iron_ore": 122,
+        "copper": 36,
+        "silica_sand": 31,
+        "coal": 36,
+        "nickel": 46
       },
       "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
       "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
@@ -2928,12 +2947,13 @@
         "simulationOnly": true
       },
       "constructionMaterials": {
-        "construction_aggregate": 1077,
-        "limestone": 673,
-        "iron_ore": 404,
-        "copper": 108,
-        "coal": 135,
-        "crude_oil": 68
+        "construction_aggregate": 943,
+        "limestone": 337,
+        "iron_ore": 162,
+        "copper": 48,
+        "silica_sand": 41,
+        "coal": 48,
+        "niobium": 61
       },
       "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
       "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
@@ -2974,13 +2994,15 @@
         "simulationOnly": true
       },
       "constructionMaterials": {
-        "construction_aggregate": 954,
-        "limestone": 596,
-        "iron_ore": 358,
-        "copper": 96,
-        "coal": 120,
-        "crude_oil": 60,
-        "gypsum": 66
+        "construction_aggregate": 835,
+        "limestone": 298,
+        "iron_ore": 143,
+        "copper": 42,
+        "silica_sand": 36,
+        "coal": 66,
+        "crude_oil": 30,
+        "natural_gas": 30,
+        "oil_shale": 54
       },
       "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
       "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
@@ -3021,12 +3043,12 @@
         "simulationOnly": true
       },
       "constructionMaterials": {
-        "construction_aggregate": 844,
-        "limestone": 528,
-        "iron_ore": 317,
-        "copper": 85,
-        "coal": 106,
-        "crude_oil": 53
+        "construction_aggregate": 738,
+        "limestone": 264,
+        "iron_ore": 175,
+        "copper": 37,
+        "silica_sand": 32,
+        "coal": 37
       },
       "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
       "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
@@ -3067,12 +3089,13 @@
         "simulationOnly": true
       },
       "constructionMaterials": {
-        "construction_aggregate": 800,
-        "limestone": 500,
-        "iron_ore": 300,
-        "copper": 80,
-        "coal": 100,
-        "crude_oil": 50
+        "construction_aggregate": 700,
+        "limestone": 250,
+        "iron_ore": 120,
+        "copper": 35,
+        "silica_sand": 30,
+        "coal": 35,
+        "platinum": 45
       },
       "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
       "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
@@ -3113,12 +3136,13 @@
         "simulationOnly": true
       },
       "constructionMaterials": {
-        "construction_aggregate": 864,
-        "limestone": 540,
-        "iron_ore": 324,
-        "copper": 87,
-        "coal": 108,
-        "crude_oil": 54
+        "construction_aggregate": 756,
+        "limestone": 270,
+        "iron_ore": 130,
+        "copper": 38,
+        "silica_sand": 33,
+        "coal": 38,
+        "phosphate": 49
       },
       "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
       "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
@@ -3159,12 +3183,13 @@
         "simulationOnly": true
       },
       "constructionMaterials": {
-        "construction_aggregate": 874,
-        "limestone": 546,
-        "iron_ore": 328,
-        "copper": 88,
-        "coal": 110,
-        "crude_oil": 55
+        "construction_aggregate": 765,
+        "limestone": 273,
+        "iron_ore": 131,
+        "copper": 39,
+        "silica_sand": 33,
+        "coal": 39,
+        "potash": 50
       },
       "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
       "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
@@ -3205,12 +3230,13 @@
         "simulationOnly": true
       },
       "constructionMaterials": {
-        "construction_aggregate": 1137,
-        "limestone": 711,
-        "iron_ore": 427,
-        "copper": 114,
-        "coal": 143,
-        "crude_oil": 72
+        "construction_aggregate": 995,
+        "limestone": 356,
+        "iron_ore": 171,
+        "copper": 50,
+        "silica_sand": 43,
+        "coal": 50,
+        "rare_earth": 64
       },
       "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
       "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
@@ -3251,13 +3277,14 @@
         "simulationOnly": true
       },
       "constructionMaterials": {
-        "construction_aggregate": 1014,
-        "limestone": 634,
-        "iron_ore": 380,
-        "copper": 102,
-        "coal": 127,
-        "crude_oil": 64,
-        "gypsum": 70
+        "construction_aggregate": 887,
+        "limestone": 317,
+        "iron_ore": 152,
+        "copper": 45,
+        "silica_sand": 38,
+        "coal": 70,
+        "crude_oil": 89,
+        "natural_gas": 32
       },
       "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
       "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
@@ -3298,13 +3325,14 @@
         "simulationOnly": true
       },
       "constructionMaterials": {
-        "construction_aggregate": 797,
-        "limestone": 498,
-        "iron_ore": 299,
-        "copper": 80,
-        "coal": 100,
-        "crude_oil": 50,
-        "silica_sand": 75
+        "construction_aggregate": 698,
+        "limestone": 249,
+        "iron_ore": 120,
+        "copper": 35,
+        "silica_sand": 30,
+        "gypsum": 45,
+        "coal": 25,
+        "salt": 45
       },
       "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
       "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
@@ -3345,12 +3373,13 @@
         "simulationOnly": true
       },
       "constructionMaterials": {
-        "construction_aggregate": 860,
-        "limestone": 538,
-        "iron_ore": 323,
-        "copper": 86,
-        "coal": 108,
-        "crude_oil": 54
+        "construction_aggregate": 753,
+        "limestone": 269,
+        "iron_ore": 129,
+        "copper": 38,
+        "silica_sand": 33,
+        "coal": 38,
+        "silver": 49
       },
       "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
       "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
@@ -3391,13 +3420,15 @@
         "simulationOnly": true
       },
       "constructionMaterials": {
-        "construction_aggregate": 817,
-        "limestone": 511,
-        "iron_ore": 307,
-        "copper": 82,
-        "coal": 103,
-        "crude_oil": 52,
-        "silica_sand": 77
+        "construction_aggregate": 715,
+        "limestone": 256,
+        "iron_ore": 123,
+        "copper": 36,
+        "silica_sand": 31,
+        "gypsum": 46,
+        "coal": 26,
+        "marble": 46,
+        "granite": 46
       },
       "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
       "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
@@ -3438,12 +3469,13 @@
         "simulationOnly": true
       },
       "constructionMaterials": {
-        "construction_aggregate": 934,
-        "limestone": 584,
-        "iron_ore": 350,
-        "copper": 94,
-        "coal": 117,
-        "crude_oil": 59
+        "construction_aggregate": 817,
+        "limestone": 292,
+        "iron_ore": 140,
+        "copper": 41,
+        "silica_sand": 35,
+        "coal": 41,
+        "tin": 53
       },
       "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
       "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
@@ -3484,12 +3516,13 @@
         "simulationOnly": true
       },
       "constructionMaterials": {
-        "construction_aggregate": 1197,
-        "limestone": 748,
-        "iron_ore": 449,
-        "copper": 120,
-        "coal": 150,
-        "crude_oil": 75
+        "construction_aggregate": 1048,
+        "limestone": 374,
+        "iron_ore": 180,
+        "copper": 53,
+        "silica_sand": 45,
+        "coal": 53,
+        "tungsten": 68
       },
       "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
       "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
@@ -3530,12 +3563,13 @@
         "simulationOnly": true
       },
       "constructionMaterials": {
-        "construction_aggregate": 1207,
-        "limestone": 755,
-        "iron_ore": 453,
-        "copper": 121,
-        "coal": 151,
-        "crude_oil": 76
+        "construction_aggregate": 1056,
+        "limestone": 378,
+        "iron_ore": 181,
+        "copper": 53,
+        "silica_sand": 46,
+        "coal": 53,
+        "uranium": 68
       },
       "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
       "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
@@ -3576,12 +3610,13 @@
         "simulationOnly": true
       },
       "constructionMaterials": {
-        "construction_aggregate": 964,
-        "limestone": 603,
-        "iron_ore": 362,
-        "copper": 97,
-        "coal": 121,
-        "crude_oil": 61
+        "construction_aggregate": 843,
+        "limestone": 302,
+        "iron_ore": 145,
+        "copper": 43,
+        "silica_sand": 37,
+        "coal": 43,
+        "zinc": 55
       },
       "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
       "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
@@ -3624,13 +3659,15 @@
         "simulationOnly": true
       },
       "constructionMaterials": {
-        "construction_aggregate": 2400,
-        "limestone": 1500,
-        "iron_ore": 900,
-        "copper": 240,
-        "coal": 300,
-        "crude_oil": 150,
-        "nickel": 105
+        "construction_aggregate": 2100,
+        "limestone": 750,
+        "iron_ore": 1710,
+        "copper": 375,
+        "silica_sand": 90,
+        "coal": 1050,
+        "nickel": 255,
+        "manganese": 195,
+        "chromite": 180
       },
       "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
       "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
@@ -3673,13 +3710,18 @@
         "simulationOnly": true
       },
       "constructionMaterials": {
-        "construction_aggregate": 2134,
-        "limestone": 1334,
-        "iron_ore": 800,
-        "copper": 214,
-        "coal": 267,
-        "crude_oil": 134,
-        "nickel": 94
+        "construction_aggregate": 1867,
+        "limestone": 667,
+        "iron_ore": 320,
+        "copper": 761,
+        "silica_sand": 80,
+        "coal": 481,
+        "nickel": 281,
+        "manganese": 67,
+        "chromite": 54,
+        "bauxite": 800,
+        "zinc": 160,
+        "tin": 107
       },
       "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
       "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
@@ -3722,13 +3764,15 @@
         "simulationOnly": true
       },
       "constructionMaterials": {
-        "construction_aggregate": 3200,
-        "limestone": 2000,
-        "iron_ore": 1200,
-        "copper": 320,
-        "coal": 400,
-        "crude_oil": 200,
-        "gypsum": 220
+        "construction_aggregate": 2800,
+        "limestone": 1000,
+        "iron_ore": 480,
+        "copper": 340,
+        "silica_sand": 120,
+        "coal": 220,
+        "crude_oil": 2100,
+        "natural_gas": 1100,
+        "salt": 200
       },
       "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
       "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
@@ -3771,13 +3815,16 @@
         "simulationOnly": true
       },
       "constructionMaterials": {
-        "construction_aggregate": 1867,
-        "limestone": 1167,
-        "iron_ore": 700,
-        "copper": 187,
-        "coal": 234,
-        "crude_oil": 117,
-        "phosphate": 105
+        "construction_aggregate": 1634,
+        "limestone": 584,
+        "iron_ore": 280,
+        "copper": 82,
+        "silica_sand": 70,
+        "salt": 70,
+        "phosphate": 549,
+        "natural_gas": 700,
+        "potash": 234,
+        "boron": 47
       },
       "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
       "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
@@ -3820,13 +3867,16 @@
         "simulationOnly": true
       },
       "constructionMaterials": {
-        "construction_aggregate": 2534,
-        "limestone": 1584,
-        "iron_ore": 950,
-        "copper": 254,
-        "coal": 317,
-        "crude_oil": 159,
-        "gypsum": 175
+        "construction_aggregate": 2217,
+        "limestone": 792,
+        "iron_ore": 380,
+        "copper": 111,
+        "silica_sand": 95,
+        "coal": 175,
+        "crude_oil": 334,
+        "natural_gas": 840,
+        "salt": 380,
+        "gypsum": 254
       },
       "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
       "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
@@ -3869,13 +3919,13 @@
         "simulationOnly": true
       },
       "constructionMaterials": {
-        "construction_aggregate": 1334,
-        "limestone": 834,
-        "iron_ore": 500,
-        "copper": 134,
-        "coal": 167,
-        "crude_oil": 84,
-        "silica_sand": 125
+        "construction_aggregate": 1834,
+        "limestone": 1251,
+        "iron_ore": 200,
+        "copper": 59,
+        "silica_sand": 184,
+        "gypsum": 342,
+        "coal": 242
       },
       "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
       "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
@@ -3917,13 +3967,15 @@
         "simulationOnly": true
       },
       "constructionMaterials": {
-        "construction_aggregate": 1667,
-        "limestone": 1042,
-        "iron_ore": 625,
-        "copper": 167,
-        "coal": 209,
-        "crude_oil": 105,
-        "silica_sand": 157
+        "construction_aggregate": 1459,
+        "limestone": 521,
+        "iron_ore": 251,
+        "copper": 73,
+        "silica_sand": 522,
+        "gypsum": 178,
+        "coal": 53,
+        "dolomite": 146,
+        "boron": 53
       },
       "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
       "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
@@ -3967,12 +4019,13 @@
         "simulationOnly": true
       },
       "constructionMaterials": {
-        "construction_aggregate": 1200,
-        "limestone": 750,
-        "iron_ore": 450,
-        "copper": 120,
-        "coal": 150,
-        "crude_oil": 75
+        "construction_aggregate": 1050,
+        "limestone": 375,
+        "iron_ore": 180,
+        "copper": 91,
+        "silica_sand": 98,
+        "salt": 53,
+        "crude_oil": 98
       },
       "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
       "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
@@ -4015,13 +4068,14 @@
         "simulationOnly": true
       },
       "constructionMaterials": {
-        "construction_aggregate": 934,
-        "limestone": 584,
-        "iron_ore": 350,
-        "copper": 94,
-        "coal": 117,
-        "crude_oil": 59,
-        "phosphate": 53
+        "construction_aggregate": 817,
+        "limestone": 386,
+        "iron_ore": 140,
+        "copper": 82,
+        "silica_sand": 129,
+        "salt": 105,
+        "phosphate": 18,
+        "crude_oil": 24
       },
       "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
       "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
@@ -4064,12 +4118,14 @@
         "simulationOnly": true
       },
       "constructionMaterials": {
-        "construction_aggregate": 800,
-        "limestone": 500,
-        "iron_ore": 300,
-        "copper": 80,
-        "coal": 100,
-        "crude_oil": 50
+        "construction_aggregate": 700,
+        "limestone": 250,
+        "iron_ore": 120,
+        "copper": 75,
+        "silica_sand": 100,
+        "crude_oil": 75,
+        "natural_gas": 45,
+        "salt": 25
       },
       "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
       "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
@@ -4112,13 +4168,14 @@
         "simulationOnly": true
       },
       "constructionMaterials": {
-        "construction_aggregate": 2934,
-        "limestone": 1834,
-        "iron_ore": 1100,
-        "copper": 294,
-        "coal": 367,
-        "crude_oil": 184,
-        "bauxite": 165
+        "construction_aggregate": 2567,
+        "limestone": 917,
+        "iron_ore": 440,
+        "copper": 423,
+        "silica_sand": 110,
+        "bauxite": 459,
+        "nickel": 404,
+        "tungsten": 404
       },
       "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
       "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
@@ -4160,13 +4217,14 @@
         "simulationOnly": true
       },
       "constructionMaterials": {
-        "construction_aggregate": 2000,
-        "limestone": 1250,
-        "iron_ore": 750,
-        "copper": 200,
-        "coal": 250,
-        "crude_oil": 125,
-        "bauxite": 113
+        "construction_aggregate": 1750,
+        "limestone": 625,
+        "iron_ore": 600,
+        "copper": 713,
+        "silica_sand": 275,
+        "bauxite": 263,
+        "nickel": 50,
+        "tungsten": 25
       },
       "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
       "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
@@ -4213,13 +4271,16 @@
         "simulationOnly": true
       },
       "constructionMaterials": {
-        "construction_aggregate": 10000,
-        "limestone": 6250,
-        "iron_ore": 3750,
-        "copper": 1000,
-        "coal": 1250,
-        "crude_oil": 625,
-        "silica_sand": 1625
+        "construction_aggregate": 8750,
+        "limestone": 3125,
+        "iron_ore": 1500,
+        "copper": 2313,
+        "silica_sand": 6000,
+        "graphite": 1313,
+        "lithium": 250,
+        "rare_earth": 438,
+        "gold": 250,
+        "boron": 250
       },
       "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
       "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
@@ -4262,13 +4323,16 @@
         "simulationOnly": true
       },
       "constructionMaterials": {
-        "construction_aggregate": 3734,
-        "limestone": 2334,
-        "iron_ore": 1400,
-        "copper": 374,
-        "coal": 467,
-        "crude_oil": 234,
-        "silica_sand": 607
+        "construction_aggregate": 3267,
+        "limestone": 1167,
+        "iron_ore": 560,
+        "copper": 561,
+        "silica_sand": 140,
+        "graphite": 1004,
+        "lithium": 1261,
+        "rare_earth": 47,
+        "nickel": 420,
+        "cobalt": 327
       },
       "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
       "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
@@ -4311,13 +4375,16 @@
         "simulationOnly": true
       },
       "constructionMaterials": {
-        "construction_aggregate": 4267,
-        "limestone": 2667,
-        "iron_ore": 1600,
-        "copper": 427,
-        "coal": 534,
-        "crude_oil": 267,
-        "bauxite": 347
+        "construction_aggregate": 3734,
+        "limestone": 1334,
+        "iron_ore": 640,
+        "copper": 667,
+        "silica_sand": 160,
+        "bauxite": 1068,
+        "nickel": 294,
+        "rutile": 80,
+        "crude_oil": 347,
+        "platinum": 54
       },
       "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
       "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
@@ -4360,13 +4427,16 @@
         "simulationOnly": true
       },
       "constructionMaterials": {
-        "construction_aggregate": 5600,
-        "limestone": 3500,
-        "iron_ore": 2100,
-        "copper": 560,
-        "coal": 700,
-        "crude_oil": 350,
-        "bauxite": 455
+        "construction_aggregate": 4900,
+        "limestone": 1750,
+        "iron_ore": 2940,
+        "copper": 1295,
+        "silica_sand": 210,
+        "bauxite": 700,
+        "nickel": 560,
+        "rutile": 105,
+        "crude_oil": 105,
+        "graphite": 245
       },
       "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
       "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
@@ -4408,13 +4478,17 @@
         "simulationOnly": true
       },
       "constructionMaterials": {
-        "construction_aggregate": 10667,
-        "limestone": 6667,
-        "iron_ore": 4000,
-        "copper": 1067,
-        "coal": 1334,
-        "crude_oil": 667,
-        "bauxite": 867
+        "construction_aggregate": 9334,
+        "limestone": 3334,
+        "iron_ore": 1600,
+        "copper": 1934,
+        "silica_sand": 400,
+        "bauxite": 3201,
+        "nickel": 1867,
+        "rutile": 1400,
+        "crude_oil": 200,
+        "tungsten": 934,
+        "rare_earth": 600
       },
       "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
       "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
@@ -4457,13 +4531,15 @@
         "simulationOnly": true
       },
       "constructionMaterials": {
-        "construction_aggregate": 3467,
-        "limestone": 2167,
-        "iron_ore": 1300,
-        "copper": 347,
-        "coal": 434,
-        "crude_oil": 217,
-        "silica_sand": 217
+        "construction_aggregate": 3034,
+        "limestone": 1084,
+        "iron_ore": 520,
+        "copper": 152,
+        "silica_sand": 650,
+        "salt": 391,
+        "boron": 239,
+        "graphite": 44,
+        "crude_oil": 109
       },
       "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
       "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
@@ -4506,13 +4582,18 @@
         "simulationOnly": true
       },
       "constructionMaterials": {
-        "construction_aggregate": 5334,
-        "limestone": 3334,
-        "iron_ore": 2000,
-        "copper": 534,
-        "coal": 667,
-        "crude_oil": 334,
-        "silica_sand": 334
+        "construction_aggregate": 4667,
+        "limestone": 1667,
+        "iron_ore": 800,
+        "copper": 1168,
+        "silica_sand": 200,
+        "salt": 134,
+        "boron": 100,
+        "graphite": 67,
+        "tungsten": 600,
+        "rare_earth": 334,
+        "bauxite": 534,
+        "crude_oil": 400
       },
       "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
       "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
@@ -4555,13 +4636,13 @@
         "simulationOnly": true
       },
       "constructionMaterials": {
-        "construction_aggregate": 1134,
-        "limestone": 709,
-        "iron_ore": 425,
-        "copper": 114,
-        "coal": 142,
-        "crude_oil": 71,
-        "graphite": 43
+        "construction_aggregate": 992,
+        "limestone": 355,
+        "iron_ore": 170,
+        "copper": 135,
+        "silica_sand": 150,
+        "graphite": 121,
+        "crude_oil": 51
       },
       "constructionMaterialUnit": "SIMULATION_RESOURCE_UNIT",
       "constructionMaterialsAuthority": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
