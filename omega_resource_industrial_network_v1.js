@@ -2703,6 +2703,20 @@ function completeFactoryProductionCycle(countryId,asset,cycle,result){
       batchId:sourceBatchId,resourceId:cycle.primaryInputResourceId,transactionId:result.transactionId,
       createdBatchIds:result.createdBatchIds||[],outputQuantities:result.outputQuantities||{},turn:turn(),status:'PROCESSED'});
   }
+  // Close the originating delivery/shipment records when the cycle they started commits.
+  // The scheduler cycle ID is stored as processingTransactionId while production is in progress.
+  for(const rows of [n.shipments,n.deliveries]){
+    if(!Array.isArray(rows))continue;
+    for(const row of rows){
+      if(String(row?.factoryId||'')!==String(cycle.factoryId)||String(row?.processingTransactionId||'')!==String(cycle.cycleId))continue;
+      row.processingStatus='PROCESSED';
+      row.processingTransactionId=result.transactionId;
+      row.processing=clone(result);
+      row.productionCycleId=cycle.cycleId;
+      row.processedTurn=turn();
+      row.createdBatchIds=[...new Set([...(row.createdBatchIds||[]),...(result.createdBatchIds||[])])];
+    }
+  }
   emit('OMEGA_FACTORY_PRODUCTION_CYCLE_COMPLETED',cid,{cycleId:cycle.cycleId,transactionId:result.transactionId,
     factoryId:cycle.factoryId,outputQuantities:cycle.outputQuantities,finishDate:cycle.finishDate,actualCompletionDate:cycle.actualCompletionDate});
   return{status:'COMPLETED',cycleId:cycle.cycleId,transactionId:result.transactionId,outputQuantities:cycle.outputQuantities};
