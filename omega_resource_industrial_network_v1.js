@@ -1821,31 +1821,40 @@ function executeFactoryCycle(input={}){
 }
 function processPendingFactoryInputs(countryId){
   const cid=canonicalCountry(countryId),n=netState(cid),assets=factoryAssets(cid),processed=[],blocked=[];
+  const r=resourceState(cid);
   for(const asset of assets){
     const fid=String(asset?.id||asset?.assetId||asset?.projectId||'');
     if(!fid||!asset||Number(n.factoryProcessingTurns?.[fid])===turn())continue;
+    if(['CLOSED','DECOMMISSIONED','TECHNOLOGY_LOCKED','UNDER_CONSTRUCTION','MAINTENANCE'].includes(String(asset.status||'').toUpperCase()))continue;
     const stock=asset.inputInventory&&typeof asset.inputInventory==='object'?asset.inputInventory:{};
     const lots=Array.isArray(asset.inputBatchLots)?asset.inputBatchLots:[];
     const pending=lots.filter(lot=>Math.max(0,num(lot?.remainingQuantity!=null?lot.remainingQuantity:lot?.quantity)||0)>1e-9)
       .sort((a,b)=>(Number(a.createdTurn)||0)-(Number(b.createdTurn)||0));
-    const first=pending.find(lot=>{
-      const rid=tok(lot?.resourceId||lot?.materialIdentity);
-      return !!rid&&Math.max(0,num(stock[rid])||0)>1e-9;
-    });
-    const rid=tok(first?.resourceId||first?.materialIdentity||
-      Object.keys(stock).find(key=>Math.max(0,num(stock[key])||0)>1e-9)||'');
-    if(!rid)continue;
-    const available=Math.max(0,num(stock[rid])||0),recipe=recipeFor(rid,asset),
-      coefficient=Math.max(1e-9,num(recipe.inputs?.[rid])||1),
-      capacity=Math.max(0,num(asset.capacity!=null?asset.capacity:(asset.productionCapacity!=null?asset.productionCapacity:asset.throughput))||0);
-    if(!(available>1e-9)||!(capacity>1e-9)){
-      blocked.push({factoryId:fid,resourceId:rid,reason:capacity>1e-9?'FACTORY_INPUT_UNAVAILABLE':'PRODUCTION_CAPACITY_UNAVAILABLE',available,capacity});
+    const stockedKeys=Object.keys(stock).filter(key=>Math.max(0,num(stock[key])||0)>1e-9);
+    const hint=asset.recipeResourceId||asset.primaryInput||asset.resourceId||
+      pending[0]?.resourceId||pending[0]?.materialIdentity||stockedKeys[0];
+    if(!hint)continue;
+    const recipe=recipeFor(hint,asset),primary=tok(recipe.primaryInput||hint);
+    const inputs=Object.entries(recipe.inputs||{}).map(([resourceId,coefficient])=>({resourceId:tok(resourceId),coefficient:num(coefficient)}));
+    if(!inputs.length||inputs.some(x=>!x.resourceId||x.coefficient===null||x.coefficient<=0)){
+      if(stockedKeys.length)blocked.push({factoryId:fid,resourceId:primary,reason:'INVALID_FACTORY_INPUT_RECIPE'});
       continue;
     }
-    const quantity=Math.min(capacity,available/coefficient);
-    const result=executeFactoryCycle({countryId:cid,factoryId:fid,resourceId:rid,quantity,unit:first?.unit||null});
+    const hasRelevantStock=inputs.some(item=>resourceAmount(stock,item.resourceId)>1e-9||
+      resourceAmount(r.inventory||{},item.resourceId)>1e-9||
+      resourceAmount(r.warehouse?.availableByResource||{},item.resourceId)>1e-9||
+      resourceAmount(r.processedWarehouse?.availableByResource||{},item.resourceId)>1e-9);
+    if(!hasRelevantStock)continue;
+    const capacity=Math.max(0,num(asset.capacity!=null?asset.capacity:(asset.productionCapacity!=null?asset.productionCapacity:asset.throughput))||0);
+    if(!(capacity>1e-9)){
+      blocked.push({factoryId:fid,resourceId:primary,reason:'PRODUCTION_CAPACITY_UNAVAILABLE',capacity});
+      continue;
+    }
+    const primaryLot=pending.find(lot=>tok(lot?.resourceId||lot?.materialIdentity)===primary&&lot?.unit);
+    const result=executeFactoryCycle({countryId:cid,factoryId:fid,resourceId:primary,quantity:capacity,unit:primaryLot?.unit||null});
     if(result?.status==='COMPLETED'){
-      processed.push({factoryId:fid,resourceId:rid,inputQuantity:result.inputQuantity,transactionId:result.transactionId,createdBatchIds:result.createdBatchIds||[]});
+      processed.push({factoryId:fid,resourceId:primary,inputQuantity:result.inputQuantity,inputQuantities:clone(result.inputQuantities||{}),
+        transactionId:result.transactionId,createdBatchIds:result.createdBatchIds||[],sourceBatchIds:result.sourceBatchIds||[]});
       for(const sourceBatchId of [...new Set((result.sourceBatchIds||[]).map(String).filter(Boolean))]){
         updateSiteFlow(cid,sourceBatchId,row=>{
           row.processingTransactionIds=[...new Set([...(row.processingTransactionIds||[]),String(result.transactionId)])];
@@ -1855,8 +1864,10 @@ function processPendingFactoryInputs(countryId){
           for(const [outputId,amount] of Object.entries(result.outputQuantities||{}))
             row.outputQuantities[outputId]=(num(row.outputQuantities[outputId])||0)+(num(amount)||0);
           row.lastProcessingTurn=turn();row.status='PROCESSED';
-          addFlowStage(row,'PROCESSING','COMPLETED',{transactionId:result.transactionId,inputQuantity:result.inputQuantity,resumedFromFactoryInput:true});
-          addFlowStage(row,'FINISHED_GOODS','AVAILABLE',{transactionId:result.transactionId,createdBatchIds:result.createdBatchIds||[],outputQuantities:result.outputQuantities||{},resumedFromFactoryInput:true});
+          addFlowStage(row,'PROCESSING','COMPLETED',{transactionId:result.transactionId,inputQuantity:result.inputQuantity,
+            inputQuantities:clone(result.inputQuantities||{}),resumedFromFactoryInput:true});
+          addFlowStage(row,'FINISHED_GOODS','AVAILABLE',{transactionId:result.transactionId,createdBatchIds:result.createdBatchIds||[],
+            outputQuantities:result.outputQuantities||{},resumedFromFactoryInput:true});
         });
         for(const shipment of n.shipments.filter(x=>String(x.batchId||'')===sourceBatchId)){
           shipment.processingStatus='PROCESSED';shipment.processingTransactionId=result.transactionId;shipment.processing=clone(result);
@@ -1867,10 +1878,14 @@ function processPendingFactoryInputs(countryId){
           delivery.processedTurn=turn();delivery.createdBatchIds=[...new Set([...(delivery.createdBatchIds||[]),...(result.createdBatchIds||[])])];
         }
         emit('OMEGA_RESOURCE_SITE_FLOW_PROCESSED',cid,{siteId:siteFlowRows(cid).find(x=>String(x.batchId)===sourceBatchId)?.siteId||null,
-          batchId:sourceBatchId,resourceId:rid,transactionId:result.transactionId,createdBatchIds:result.createdBatchIds||[],
-          outputQuantities:result.outputQuantities||{},turn:turn(),status:'PROCESSED'},'resource-industrial-network');
+          batchId:sourceBatchId,resourceId:primary,transactionId:result.transactionId,createdBatchIds:result.createdBatchIds||[],
+          outputQuantities:result.outputQuantities||{},inputQuantities:result.inputQuantities||{},turn:turn(),status:'PROCESSED'},
+          'resource-industrial-network');
       }
-    }else blocked.push({factoryId:fid,resourceId:rid,reason:result?.reason||result?.status||'FACTORY_INPUT_PROCESSING_FAILED',detail:result||null});
+    }else{
+      blocked.push({factoryId:fid,resourceId:primary,reason:result?.reason||result?.status||'FACTORY_INPUT_PROCESSING_FAILED',
+        detail:result||null});
+    }
   }
   return{status:blocked.length?'DEGRADED':'COMPLETED',countryId:cid,turn:turn(),processedCount:processed.length,processed,blocked};
 }
