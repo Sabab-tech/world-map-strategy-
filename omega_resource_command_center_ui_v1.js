@@ -703,7 +703,8 @@
     const factoryTypeOptions=Object.entries(factoryProfiles).map(([id,p])=>'<option value="'+esc(id)+'">'+esc(p.name||id)+' · '+esc(id)+'</option>').join('');
     const recipeOptions=Object.entries(downstreamRecipes).map(([id,r])=>'<option value="'+esc(id)+'">'+esc(r.name||id)+' · '+esc(r.factoryType||'')+'</option>').join('');
     const options=resources(country).map(x=>'<option value="'+esc(x.id)+'">'+esc(x.name||x.id)+'</option>').join('');
-    const form='<form class="omega-rescc-form" data-search-item data-form="factory-project"><h3>Start a catalog-backed factory project</h3><div class="omega-rescc-formgrid">'+
+    const form='<form class="omega-rescc-form" data-search-item data-form="factory-project"><h3>Start a catalog-backed factory project</h3>'+
+      '<input type="hidden" name="requestId" value="'+esc(uniqueRequestId('FACTORY-PROJECT-FORM','CREATE'))+'"><div class="omega-rescc-formgrid">'+
       '<label>Factory type<select name="factoryType"><option value="">Choose from resource rule</option>'+factoryTypeOptions+'</select></label>'+
       '<label>Production recipe<select name="recipeId"><option value="">Use factory profile default</option>'+recipeOptions+'</select></label>'+
       '<label>Input resource (legacy processing only)<select name="resourceId"><option value="">Use selected factory recipe</option>'+options+'</select></label>'+
@@ -1515,7 +1516,7 @@
         const net = g.Omega && g.Omega.ResourceIndustrialNetwork;
         if (!net || typeof net.startFactoryProject !== 'function') result = { status: 'UNAVAILABLE', reason: 'FACTORY_PROJECT_API_UNAVAILABLE' };
         else result = net.startFactoryProject({
-          requestId: uniqueRequestId('FACTORY-PROJECT', data.get('factoryType') || data.get('resourceId')),
+          requestId: data.get('requestId') || uniqueRequestId('FACTORY-PROJECT', data.get('factoryType') || data.get('resourceId')),
           countryId: c, factoryType: data.get('factoryType') || undefined,
           recipeId: data.get('recipeId') || undefined,
           resourceId: data.get('resourceId') || undefined,
