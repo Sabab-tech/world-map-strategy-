@@ -2,7 +2,7 @@
  * Same-origin app files are cached for offline relaunch; remote map tiles are never cached here.
  */
 "use strict";
-const CACHE_NAME = "omega-offline-atlas-shell-v16";
+const CACHE_NAME = "omega-offline-atlas-shell-v17";
 const APP_BASE = new URL("./", self.location.href);
 const INDEX_URL = new URL("index.html", APP_BASE).href;
 const CORE_ASSETS = [
@@ -11,6 +11,7 @@ const CORE_ASSETS = [
   "./omega_game_lifecycle_runtime_v1.js", "./omega_game_lifecycle_runtime_v1.css",
   "./omega_shared_number_format_v1.js",
   "./omega_ui_system_redesign_v1.css", "./omega_ui_system_redesign_v1.js",
+  "./omega_ui_button_system_v1.css", "./omega_ui_button_system_v1.js",
   "./omega_country_runtime_data_v1.js", "./omega_country_general_data_runtime_v1.js", "./omega_country_data_gateway_v1.js", "./omega_country_behavior_engine_v1.js", "./omega_country_overview_ministry_ui_v1.js", "./omega_country_sector_profile_ui_v1.js", "./omega_country_sector_profile_ui_v1.css", "./country_sector_profiles_v1.json", "./country_sector_profile_schema_v1.json", "./country_general_data_registry_v1.json", "./resource_site_reserve_simulation_v1.json", "./cities.json",
   "./offline-hybrid-map.js", "./offline-hybrid-map.css",
   "./omega_forex_monetary_engine_v1.js", "./omega_forex_monetary_engine_v1.css",
