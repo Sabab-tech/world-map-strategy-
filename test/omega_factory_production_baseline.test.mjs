@@ -63,6 +63,12 @@ test('canonical factory catalog, type profiles, offline icons and recipe coeffic
   assert.equal(catalog.factoryCatalogSummary.addedFactoryTypeCount, 20);
   assert.equal(catalog.factoryCatalogSummary.categoryCount, 12);
 
+  const serviceWorker = readText('omega-offline-map-sw.js');
+  assert.match(serviceWorker, /omega-offline-atlas-shell-v18/);
+  for (const asset of ['./resource_industrial_catalog_v1.json', './omega_resource_industrial_network_v1.js', './omega_icon_system_v1.js', './omega_icon_system_v1.css']) {
+    assert.ok(serviceWorker.includes(asset), 'offline shell must precache ' + asset);
+  }
+
   const iconSource = readText('omega_icon_system_v1.js');
   const symbolStart = iconSource.indexOf('const SYMBOLS');
   const symbolEnd = iconSource.indexOf('const normalizeEmoji', symbolStart);
