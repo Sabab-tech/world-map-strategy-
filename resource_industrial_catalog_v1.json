@@ -5510,8 +5510,8 @@
       "constructionDays": 45,
       "defaultCapacityPerDay": 300,
       "workforce": {
-        "operators": 55,
-        "engineers": 20
+        "operators": 20,
+        "engineers": 4
       },
       "utilities": {
         "electricityMWhPerDay": 32,
@@ -5535,16 +5535,16 @@
         "simulationOnly": true,
         "coreOperatingCrew": 24,
         "additionalDirectStaffSlots": 96,
-        "jobScope": "DIRECT_ONSITE_FACTORY_JOBS_INCLUDING_OPERATIONS_ENGINEERING_MAINTENANCE_LOGISTICS_QUALITY_ADMINISTRATION_AND_SAFETY",
+        "jobScope": "DIRECT_ONSITE_FACTORY_JOBS_SIMULATION",
         "jobBreakdown": {
-          "operators": 55,
-          "engineers": 20,
-          "maintenanceAndFacilities": 93,
-          "logisticsAndWarehousing": 75,
-          "qualityControl": 56,
-          "administrationAndSupport": 56,
-          "healthSafetyAndEnvironmental": 37,
-          "otherDirectFactoryServices": 58
+          "operators": 20,
+          "engineers": 4,
+          "maintenanceAndFacilities": 18,
+          "logisticsAndWarehousing": 14,
+          "qualityControl": 12,
+          "administrationAndSupport": 12,
+          "healthSafetyAndEnvironmental": 10,
+          "otherDirectFactoryServices": null
         },
         "jobBreakdownAuthority": "SIMULATED_FACTORY_ROLE_DISTRIBUTION_V1"
       },
@@ -5573,8 +5573,8 @@
       "constructionDays": 45,
       "defaultCapacityPerDay": 250,
       "workforce": {
-        "operators": 40,
-        "engineers": 8
+        "operators": 12,
+        "engineers": 4
       },
       "utilities": {
         "electricityMWhPerDay": 24,
@@ -5594,20 +5594,20 @@
         "jobsPerFactory": 80,
         "model": "DIRECT_JOB_CAPACITY",
         "hiringSource": "COUNTRY_UNEMPLOYED_LABOUR_POOL",
-        "authority": "SIMULATED_GENERIC_FALLBACK_EMPLOYMENT",
+        "authority": "SIMULATED_FACTORY_EMPLOYMENT_MODEL",
         "simulationOnly": true,
         "coreOperatingCrew": 16,
         "additionalDirectStaffSlots": 64,
-        "jobScope": "DIRECT_ONSITE_FACTORY_JOBS_INCLUDING_OPERATIONS_ENGINEERING_MAINTENANCE_LOGISTICS_QUALITY_ADMINISTRATION_AND_SAFETY",
+        "jobScope": "DIRECT_ONSITE_FACTORY_JOBS_SIMULATION",
         "jobBreakdown": {
-          "operators": 40,
-          "engineers": 8,
-          "maintenanceAndFacilities": 75,
-          "logisticsAndWarehousing": 60,
-          "qualityControl": 45,
-          "administrationAndSupport": 45,
-          "healthSafetyAndEnvironmental": 30,
-          "otherDirectFactoryServices": 47
+          "operators": 12,
+          "engineers": 4,
+          "maintenanceAndFacilities": 12,
+          "logisticsAndWarehousing": 10,
+          "qualityControl": 8,
+          "administrationAndSupport": 8,
+          "healthSafetyAndEnvironmental": 6,
+          "otherDirectFactoryServices": null
         },
         "jobBreakdownAuthority": "SIMULATED_FACTORY_ROLE_DISTRIBUTION_V1"
       },
@@ -6179,18 +6179,18 @@
     }
   },
   "factoryCatalogSummary": {
-    "factoryTypeCount": 56,
-    "existingProcessingFactoryTypeCount": 36,
+    "factoryTypeCount": 58,
+    "existingProcessingFactoryTypeCount": 37,
     "addedFactoryTypeCount": 20,
     "downstreamRecipeCount": 22,
     "categoryCount": 12,
     "unitNormalizationPolicy": "SIMULATION_ONLY_EXPLICIT_BRIDGES",
     "externalSectorInputCount": 5,
-    "profilesWithConstructionMaterials": 56,
-    "profilesWithEmployment": 56,
+    "profilesWithConstructionMaterials": 58,
+    "profilesWithEmployment": 58,
     "employmentModelVersion": "SIMULATED_FACTORY_EMPLOYMENT_V1",
     "constructionMaterialsVersion": "SIMULATED_FACTORY_BILL_OF_MATERIALS_V1",
-    "profilesWithEmploymentRoleBreakdown": 56,
+    "profilesWithEmploymentRoleBreakdown": 58,
     "employmentRoleDistributionVersion": "SIMULATED_FACTORY_ROLE_DISTRIBUTION_V1"
   },
   "externalInputSources": {
