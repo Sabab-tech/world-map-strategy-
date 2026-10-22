@@ -94,7 +94,7 @@ test("the offline atlas never substitutes a fake remote imagery tile", () => {
 });
 test("new pull request commits supersede stale Android emulator smoke runs", () => {
   assert.ok(androidOfflineWorkflow.includes(
-    "group: omega-android9-gameplay-smoke-${{ github.event.pull_request.number || github.ref }}"
+    "group: omega-android9-gameplay-smoke-${{ github.ref }}"
   ));
   assert.ok(androidOfflineWorkflow.includes(
     "cancel-in-progress: ${{ github.event_name == 'pull_request' }}"
