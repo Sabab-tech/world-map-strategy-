@@ -768,6 +768,14 @@
       '<h3 class="omega-rescc-section-title">Saved route profiles from existing data files</h3>'+(routeCards||empty('No saved route definition is recorded for this country.'))+
       '<h3 class="omega-rescc-section-title">Actual shipment state</h3>'+(shipmentCards||empty('No shipments have been recorded.'));
   }
+  function factoryVisual(type, label) {
+    const visualCatalog = g.OmegaFactoryVisualCatalog;
+    if (visualCatalog && typeof visualCatalog.render === 'function') return visualCatalog.render(type, label);
+    const text = String(label || type || 'Factory');
+    return '<span class="omega-factory-visual" data-factory-type="' + esc(type) +
+      '" data-factory-label="' + esc(text) + '" role="img" aria-label="' + esc(text) +
+      '" title="' + esc(text) + '"></span>';
+  }
   function panelIndustrial(country){
     const network = g.Omega && g.Omega.ResourceIndustrialNetwork;
     const diag = network && network.diagnostics ? network.diagnostics(country) : null;
@@ -796,7 +804,6 @@
       const id = String(asset.id || asset.assetId || asset.projectId || 'FACTORY_ID_NOT_RECORDED');
       const type = String(asset.factoryType || asset.type || asset.facilityType || 'FACTORY_TYPE_NOT_RECORDED').toUpperCase();
       const profile = profiles[type] || {};
-      const iconId = String(profile.iconId || 'industrial-production').replace(/[^a-z0-9-]/gi, '');
       const recipeId = asset.recipeId || profile.defaultRecipeId || 'RECIPE_NOT_RECORDED';
       const stock = asset.inputInventory && typeof asset.inputInventory === 'object' ? asset.inputInventory : {};
       const stockRows = Object.entries(stock).filter(function (pair) { return Number(pair[1]) > 0; })
@@ -806,7 +813,7 @@
       const last = lastRun && (lastRun.transactionId || lastRun.turn) || asset.lastProductionTransactionId || asset.lastProductionTurn || 'No production transaction recorded';
       const lastOutputs = lastRun && (lastRun.outputQuantities || lastRun.outputs) || 'NOT_RECORDED';
       return card(String(profile.name || type) + ' · ' + id, asset.status || 'STATUS_NOT_RECORDED',
-        '<div class="omega-rescc-factory-head"><svg class="omega-ui-icon omega-ui-icon--' + esc(iconId) + '" aria-hidden="true" viewBox="0 0 24 24"><use href="#omega-icon-' + esc(iconId) + '"></use></svg><span>' + esc(type) + '</span></div>' +
+        '<div class="omega-rescc-factory-head">' + factoryVisual(type, profile.name || type) + '<span>' + esc(type) + '</span></div>' +
         '<div class="omega-rescc-grid2">' + kv('Recipe', recipeId) + kv('Capacity/day', number(asset.capacityPerDay ?? asset.capacity ?? asset.productionCapacity)) +
         kv('Jobs filled', number(asset.employment && asset.employment.jobsFilled)) + kv('Job slots', number((asset.employment && asset.employment.jobsSupported) ?? (profile.employment && profile.employment.jobsPerFactory))) +
         kv('Core operating crew', number((asset.employment && asset.employment.coreOperatingCrew) ?? (profile.employment && profile.employment.coreOperatingCrew))) +
@@ -823,8 +830,7 @@
       if (!rows.length) return '';
       const contents = rows.map(function (pair) {
         const type = pair[0], profile = pair[1];
-        const iconId = String(profile.iconId || 'industrial-production').replace(/[^a-z0-9-]/gi, '');
-        const recipeIds = Array.isArray(profile.recipeIds) ? profile.recipeIds : [];
+          const recipeIds = Array.isArray(profile.recipeIds) ? profile.recipeIds : [];
         const recipeCount = recipeIds.length || Object.values(catalog.processingRules || {}).filter(function (r) { return r && r.factoryType === type; }).length;
         const recipeRows = [];
         recipeIds.forEach(function (id) {
@@ -880,7 +886,7 @@
             '</div><div class="omega-rescc-muted">' + esc(cycleMode || 'CYCLE_TIMING_MODE_NOT_RECORDED') +
             ' · Quantity basis: ' + esc(recipe.quantityBasis || 'PER_SIMULATION_PRODUCTION_UNIT') + '</div></li>';
         }).join('');
-        return '<article class="omega-rescc-factory-catalog-row"><div class="omega-rescc-factory-head"><svg class="omega-ui-icon omega-ui-icon--' + esc(iconId) + '" aria-hidden="true" viewBox="0 0 24 24"><use href="#omega-icon-' + esc(iconId) + '"></use></svg><strong>' + esc(profile.name || type) + '</strong><span class="omega-rescc-factory-type">' + esc(type) + '</span></div>' +
+        return '<article class="omega-rescc-factory-catalog-row"><div class="omega-rescc-factory-head">' + factoryVisual(type, profile.name || type) + '<strong>' + esc(profile.name || type) + '</strong><span class="omega-rescc-factory-type">' + esc(type) + '</span></div>' +
           '<div class="omega-rescc-grid2">' + kv('Build cost', number(profile.constructionCost, ' game units')) + kv('Build time', number(profile.constructionDays, ' days')) +
           kv('Capacity/day', number(profile.defaultCapacityPerDay)) + kv('Workers', number((Number(profile.workforce && profile.workforce.operators) || 0) + (Number(profile.workforce && profile.workforce.engineers) || 0))) +
           kv('Jobs per factory', number(profile.employment && profile.employment.jobsPerFactory)) +
