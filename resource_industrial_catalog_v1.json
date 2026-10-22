@@ -1274,5 +1274,2124 @@
       "constructionBonus": 0.05,
       "techTransferBonus": 0.25
     }
+  },
+  "factoryTypeProfiles": {
+    "COAL_PREPARATION_PLANT": {
+      "factoryType": "COAL_PREPARATION_PLANT",
+      "name": "Coal Preparation Plant",
+      "category": "energy-materials",
+      "iconId": "factory",
+      "recipeId": null,
+      "constructionCostUsd": 115000000,
+      "constructionDays": 300,
+      "constructionWorkers": 756,
+      "constructionMaterials": {
+        "STEEL_PRODUCTS": 230,
+        "CEMENT_PRODUCTS": 274,
+        "CONSTRUCTION_AGGREGATE": 383
+      },
+      "capacityPerDay": 1800,
+      "capacityUnit": "TONNES_PER_DAY",
+      "operatingWorkers": 612,
+      "electricityMWhPerDay": 990,
+      "waterM3PerDay": 396,
+      "maintenanceRate": 0.035,
+      "requiredTechnologyIds": [],
+      "simulationOnly": true,
+      "authority": "SIMULATED_GAMEPLAY_PROFILE_V1"
+    },
+    "ORE_BENEFICIATION_PLANT": {
+      "factoryType": "ORE_BENEFICIATION_PLANT",
+      "name": "Ore Beneficiation Plant",
+      "category": "mineral-processing",
+      "iconId": "mine-extraction",
+      "recipeId": null,
+      "constructionCostUsd": 76000000,
+      "constructionDays": 230,
+      "constructionWorkers": 260,
+      "constructionMaterials": {
+        "STEEL_PRODUCTS": 152,
+        "CEMENT_PRODUCTS": 181,
+        "CONSTRUCTION_AGGREGATE": 253
+      },
+      "capacityPerDay": 620,
+      "capacityUnit": "TONNES_PER_DAY",
+      "operatingWorkers": 211,
+      "electricityMWhPerDay": 341,
+      "waterM3PerDay": 136,
+      "maintenanceRate": 0.035,
+      "requiredTechnologyIds": [],
+      "simulationOnly": true,
+      "authority": "SIMULATED_GAMEPLAY_PROFILE_V1"
+    },
+    "COPPER_CONCENTRATOR": {
+      "factoryType": "COPPER_CONCENTRATOR",
+      "name": "Copper Concentrator",
+      "category": "mineral-processing",
+      "iconId": "mine-extraction",
+      "recipeId": null,
+      "constructionCostUsd": 76000000,
+      "constructionDays": 230,
+      "constructionWorkers": 260,
+      "constructionMaterials": {
+        "STEEL_PRODUCTS": 152,
+        "CEMENT_PRODUCTS": 181,
+        "CONSTRUCTION_AGGREGATE": 253
+      },
+      "capacityPerDay": 620,
+      "capacityUnit": "TONNES_PER_DAY",
+      "operatingWorkers": 211,
+      "electricityMWhPerDay": 341,
+      "waterM3PerDay": 136,
+      "maintenanceRate": 0.035,
+      "requiredTechnologyIds": [],
+      "simulationOnly": true,
+      "authority": "SIMULATED_GAMEPLAY_PROFILE_V1"
+    },
+    "GOLD_PROCESSING_PLANT": {
+      "factoryType": "GOLD_PROCESSING_PLANT",
+      "name": "Gold Processing Plant",
+      "category": "precious-materials",
+      "iconId": "gem",
+      "recipeId": null,
+      "constructionCostUsd": 68000000,
+      "constructionDays": 260,
+      "constructionWorkers": 90,
+      "constructionMaterials": {
+        "STEEL_PRODUCTS": 136,
+        "CEMENT_PRODUCTS": 162,
+        "CONSTRUCTION_AGGREGATE": 227
+      },
+      "capacityPerDay": 180,
+      "capacityUnit": "TONNES_PER_DAY",
+      "operatingWorkers": 70,
+      "electricityMWhPerDay": 99,
+      "waterM3PerDay": 40,
+      "maintenanceRate": 0.035,
+      "requiredTechnologyIds": [],
+      "simulationOnly": true,
+      "authority": "SIMULATED_GAMEPLAY_PROFILE_V1"
+    },
+    "SILVER_CONCENTRATOR": {
+      "factoryType": "SILVER_CONCENTRATOR",
+      "name": "Silver Concentrator",
+      "category": "precious-materials",
+      "iconId": "gem",
+      "recipeId": null,
+      "constructionCostUsd": 68000000,
+      "constructionDays": 260,
+      "constructionWorkers": 90,
+      "constructionMaterials": {
+        "STEEL_PRODUCTS": 136,
+        "CEMENT_PRODUCTS": 162,
+        "CONSTRUCTION_AGGREGATE": 227
+      },
+      "capacityPerDay": 180,
+      "capacityUnit": "TONNES_PER_DAY",
+      "operatingWorkers": 70,
+      "electricityMWhPerDay": 99,
+      "waterM3PerDay": 40,
+      "maintenanceRate": 0.035,
+      "requiredTechnologyIds": [],
+      "simulationOnly": true,
+      "authority": "SIMULATED_GAMEPLAY_PROFILE_V1"
+    },
+    "ALUMINA_REFINERY": {
+      "factoryType": "ALUMINA_REFINERY",
+      "name": "Alumina Refinery",
+      "category": "energy-materials",
+      "iconId": "factory",
+      "recipeId": null,
+      "constructionCostUsd": 115000000,
+      "constructionDays": 300,
+      "constructionWorkers": 756,
+      "constructionMaterials": {
+        "STEEL_PRODUCTS": 230,
+        "CEMENT_PRODUCTS": 274,
+        "CONSTRUCTION_AGGREGATE": 383
+      },
+      "capacityPerDay": 1800,
+      "capacityUnit": "TONNES_PER_DAY",
+      "operatingWorkers": 612,
+      "electricityMWhPerDay": 990,
+      "waterM3PerDay": 396,
+      "maintenanceRate": 0.035,
+      "requiredTechnologyIds": [],
+      "simulationOnly": true,
+      "authority": "SIMULATED_GAMEPLAY_PROFILE_V1"
+    },
+    "NICKEL_PROCESSING_PLANT": {
+      "factoryType": "NICKEL_PROCESSING_PLANT",
+      "name": "Nickel Processing Plant",
+      "category": "mineral-processing",
+      "iconId": "mine-extraction",
+      "recipeId": null,
+      "constructionCostUsd": 76000000,
+      "constructionDays": 230,
+      "constructionWorkers": 260,
+      "constructionMaterials": {
+        "STEEL_PRODUCTS": 152,
+        "CEMENT_PRODUCTS": 181,
+        "CONSTRUCTION_AGGREGATE": 253
+      },
+      "capacityPerDay": 620,
+      "capacityUnit": "TONNES_PER_DAY",
+      "operatingWorkers": 211,
+      "electricityMWhPerDay": 341,
+      "waterM3PerDay": 136,
+      "maintenanceRate": 0.035,
+      "requiredTechnologyIds": [],
+      "simulationOnly": true,
+      "authority": "SIMULATED_GAMEPLAY_PROFILE_V1"
+    },
+    "COBALT_REFINERY": {
+      "factoryType": "COBALT_REFINERY",
+      "name": "Cobalt Refinery",
+      "category": "energy-materials",
+      "iconId": "factory",
+      "recipeId": null,
+      "constructionCostUsd": 115000000,
+      "constructionDays": 300,
+      "constructionWorkers": 756,
+      "constructionMaterials": {
+        "STEEL_PRODUCTS": 230,
+        "CEMENT_PRODUCTS": 274,
+        "CONSTRUCTION_AGGREGATE": 383
+      },
+      "capacityPerDay": 1800,
+      "capacityUnit": "TONNES_PER_DAY",
+      "operatingWorkers": 612,
+      "electricityMWhPerDay": 990,
+      "waterM3PerDay": 396,
+      "maintenanceRate": 0.035,
+      "requiredTechnologyIds": [],
+      "simulationOnly": true,
+      "authority": "SIMULATED_GAMEPLAY_PROFILE_V1"
+    },
+    "LITHIUM_CONVERSION_PLANT": {
+      "factoryType": "LITHIUM_CONVERSION_PLANT",
+      "name": "Lithium Conversion Plant",
+      "category": "strategic-materials",
+      "iconId": "battery-charging",
+      "recipeId": null,
+      "constructionCostUsd": 98000000,
+      "constructionDays": 285,
+      "constructionWorkers": 143,
+      "constructionMaterials": {
+        "STEEL_PRODUCTS": 196,
+        "CEMENT_PRODUCTS": 233,
+        "CONSTRUCTION_AGGREGATE": 327
+      },
+      "capacityPerDay": 340,
+      "capacityUnit": "TONNES_PER_DAY",
+      "operatingWorkers": 116,
+      "electricityMWhPerDay": 187,
+      "waterM3PerDay": 75,
+      "maintenanceRate": 0.035,
+      "requiredTechnologyIds": [
+        "ADVANCED_ORE_SORTING"
+      ],
+      "simulationOnly": true,
+      "authority": "SIMULATED_GAMEPLAY_PROFILE_V1"
+    },
+    "REFINERY": {
+      "factoryType": "REFINERY",
+      "name": "Refinery",
+      "category": "energy-materials",
+      "iconId": "factory",
+      "recipeId": null,
+      "constructionCostUsd": 115000000,
+      "constructionDays": 300,
+      "constructionWorkers": 756,
+      "constructionMaterials": {
+        "STEEL_PRODUCTS": 230,
+        "CEMENT_PRODUCTS": 274,
+        "CONSTRUCTION_AGGREGATE": 383
+      },
+      "capacityPerDay": 1800,
+      "capacityUnit": "BARRELS_PER_DAY",
+      "operatingWorkers": 612,
+      "electricityMWhPerDay": 990,
+      "waterM3PerDay": 396,
+      "maintenanceRate": 0.035,
+      "requiredTechnologyIds": [],
+      "simulationOnly": true,
+      "authority": "SIMULATED_GAMEPLAY_PROFILE_V1"
+    },
+    "GAS_PROCESSING_PLANT": {
+      "factoryType": "GAS_PROCESSING_PLANT",
+      "name": "Gas Processing Plant",
+      "category": "energy-materials",
+      "iconId": "factory",
+      "recipeId": null,
+      "constructionCostUsd": 115000000,
+      "constructionDays": 300,
+      "constructionWorkers": 756,
+      "constructionMaterials": {
+        "STEEL_PRODUCTS": 230,
+        "CEMENT_PRODUCTS": 274,
+        "CONSTRUCTION_AGGREGATE": 383
+      },
+      "capacityPerDay": 1800,
+      "capacityUnit": "BCM_PER_DAY",
+      "operatingWorkers": 612,
+      "electricityMWhPerDay": 990,
+      "waterM3PerDay": 396,
+      "maintenanceRate": 0.035,
+      "requiredTechnologyIds": [],
+      "simulationOnly": true,
+      "authority": "SIMULATED_GAMEPLAY_PROFILE_V1"
+    },
+    "URANIUM_MILL": {
+      "factoryType": "URANIUM_MILL",
+      "name": "Uranium Mill",
+      "category": "strategic-materials",
+      "iconId": "radiation",
+      "recipeId": null,
+      "constructionCostUsd": 98000000,
+      "constructionDays": 285,
+      "constructionWorkers": 143,
+      "constructionMaterials": {
+        "STEEL_PRODUCTS": 196,
+        "CEMENT_PRODUCTS": 233,
+        "CONSTRUCTION_AGGREGATE": 327
+      },
+      "capacityPerDay": 340,
+      "capacityUnit": "TONNES_PER_DAY",
+      "operatingWorkers": 116,
+      "electricityMWhPerDay": 187,
+      "waterM3PerDay": 75,
+      "maintenanceRate": 0.035,
+      "requiredTechnologyIds": [
+        "ADVANCED_ORE_SORTING"
+      ],
+      "simulationOnly": true,
+      "authority": "SIMULATED_GAMEPLAY_PROFILE_V1"
+    },
+    "PHOSPHATE_BENEFICIATION_PLANT": {
+      "factoryType": "PHOSPHATE_BENEFICIATION_PLANT",
+      "name": "Phosphate Beneficiation Plant",
+      "category": "mineral-processing",
+      "iconId": "leaf",
+      "recipeId": null,
+      "constructionCostUsd": 76000000,
+      "constructionDays": 230,
+      "constructionWorkers": 260,
+      "constructionMaterials": {
+        "STEEL_PRODUCTS": 152,
+        "CEMENT_PRODUCTS": 181,
+        "CONSTRUCTION_AGGREGATE": 253
+      },
+      "capacityPerDay": 620,
+      "capacityUnit": "TONNES_PER_DAY",
+      "operatingWorkers": 211,
+      "electricityMWhPerDay": 341,
+      "waterM3PerDay": 136,
+      "maintenanceRate": 0.035,
+      "requiredTechnologyIds": [],
+      "simulationOnly": true,
+      "authority": "SIMULATED_GAMEPLAY_PROFILE_V1"
+    },
+    "POTASH_PROCESSING_PLANT": {
+      "factoryType": "POTASH_PROCESSING_PLANT",
+      "name": "Potash Processing Plant",
+      "category": "mineral-processing",
+      "iconId": "leaf",
+      "recipeId": null,
+      "constructionCostUsd": 76000000,
+      "constructionDays": 230,
+      "constructionWorkers": 260,
+      "constructionMaterials": {
+        "STEEL_PRODUCTS": 152,
+        "CEMENT_PRODUCTS": 181,
+        "CONSTRUCTION_AGGREGATE": 253
+      },
+      "capacityPerDay": 620,
+      "capacityUnit": "TONNES_PER_DAY",
+      "operatingWorkers": 211,
+      "electricityMWhPerDay": 341,
+      "waterM3PerDay": 136,
+      "maintenanceRate": 0.035,
+      "requiredTechnologyIds": [],
+      "simulationOnly": true,
+      "authority": "SIMULATED_GAMEPLAY_PROFILE_V1"
+    },
+    "GRAPHITE_CONCENTRATOR": {
+      "factoryType": "GRAPHITE_CONCENTRATOR",
+      "name": "Graphite Concentrator",
+      "category": "mineral-processing",
+      "iconId": "mine-extraction",
+      "recipeId": null,
+      "constructionCostUsd": 76000000,
+      "constructionDays": 230,
+      "constructionWorkers": 260,
+      "constructionMaterials": {
+        "STEEL_PRODUCTS": 152,
+        "CEMENT_PRODUCTS": 181,
+        "CONSTRUCTION_AGGREGATE": 253
+      },
+      "capacityPerDay": 620,
+      "capacityUnit": "TONNES_PER_DAY",
+      "operatingWorkers": 211,
+      "electricityMWhPerDay": 341,
+      "waterM3PerDay": 136,
+      "maintenanceRate": 0.035,
+      "requiredTechnologyIds": [],
+      "simulationOnly": true,
+      "authority": "SIMULATED_GAMEPLAY_PROFILE_V1"
+    },
+    "MANGANESE_BENEFICIATION_PLANT": {
+      "factoryType": "MANGANESE_BENEFICIATION_PLANT",
+      "name": "Manganese Beneficiation Plant",
+      "category": "mineral-processing",
+      "iconId": "mine-extraction",
+      "recipeId": null,
+      "constructionCostUsd": 76000000,
+      "constructionDays": 230,
+      "constructionWorkers": 260,
+      "constructionMaterials": {
+        "STEEL_PRODUCTS": 152,
+        "CEMENT_PRODUCTS": 181,
+        "CONSTRUCTION_AGGREGATE": 253
+      },
+      "capacityPerDay": 620,
+      "capacityUnit": "TONNES_PER_DAY",
+      "operatingWorkers": 211,
+      "electricityMWhPerDay": 341,
+      "waterM3PerDay": 136,
+      "maintenanceRate": 0.035,
+      "requiredTechnologyIds": [],
+      "simulationOnly": true,
+      "authority": "SIMULATED_GAMEPLAY_PROFILE_V1"
+    },
+    "CHROMITE_CONCENTRATOR": {
+      "factoryType": "CHROMITE_CONCENTRATOR",
+      "name": "Chromite Concentrator",
+      "category": "mineral-processing",
+      "iconId": "mine-extraction",
+      "recipeId": null,
+      "constructionCostUsd": 76000000,
+      "constructionDays": 230,
+      "constructionWorkers": 260,
+      "constructionMaterials": {
+        "STEEL_PRODUCTS": 152,
+        "CEMENT_PRODUCTS": 181,
+        "CONSTRUCTION_AGGREGATE": 253
+      },
+      "capacityPerDay": 620,
+      "capacityUnit": "TONNES_PER_DAY",
+      "operatingWorkers": 211,
+      "electricityMWhPerDay": 341,
+      "waterM3PerDay": 136,
+      "maintenanceRate": 0.035,
+      "requiredTechnologyIds": [],
+      "simulationOnly": true,
+      "authority": "SIMULATED_GAMEPLAY_PROFILE_V1"
+    },
+    "ZINC_CONCENTRATOR": {
+      "factoryType": "ZINC_CONCENTRATOR",
+      "name": "Zinc Concentrator",
+      "category": "mineral-processing",
+      "iconId": "mine-extraction",
+      "recipeId": null,
+      "constructionCostUsd": 76000000,
+      "constructionDays": 230,
+      "constructionWorkers": 260,
+      "constructionMaterials": {
+        "STEEL_PRODUCTS": 152,
+        "CEMENT_PRODUCTS": 181,
+        "CONSTRUCTION_AGGREGATE": 253
+      },
+      "capacityPerDay": 620,
+      "capacityUnit": "TONNES_PER_DAY",
+      "operatingWorkers": 211,
+      "electricityMWhPerDay": 341,
+      "waterM3PerDay": 136,
+      "maintenanceRate": 0.035,
+      "requiredTechnologyIds": [],
+      "simulationOnly": true,
+      "authority": "SIMULATED_GAMEPLAY_PROFILE_V1"
+    },
+    "TIN_CONCENTRATOR": {
+      "factoryType": "TIN_CONCENTRATOR",
+      "name": "Tin Concentrator",
+      "category": "mineral-processing",
+      "iconId": "mine-extraction",
+      "recipeId": null,
+      "constructionCostUsd": 76000000,
+      "constructionDays": 230,
+      "constructionWorkers": 260,
+      "constructionMaterials": {
+        "STEEL_PRODUCTS": 152,
+        "CEMENT_PRODUCTS": 181,
+        "CONSTRUCTION_AGGREGATE": 253
+      },
+      "capacityPerDay": 620,
+      "capacityUnit": "TONNES_PER_DAY",
+      "operatingWorkers": 211,
+      "electricityMWhPerDay": 341,
+      "waterM3PerDay": 136,
+      "maintenanceRate": 0.035,
+      "requiredTechnologyIds": [],
+      "simulationOnly": true,
+      "authority": "SIMULATED_GAMEPLAY_PROFILE_V1"
+    },
+    "TUNGSTEN_CONCENTRATOR": {
+      "factoryType": "TUNGSTEN_CONCENTRATOR",
+      "name": "Tungsten Concentrator",
+      "category": "strategic-materials",
+      "iconId": "mine-extraction",
+      "recipeId": null,
+      "constructionCostUsd": 98000000,
+      "constructionDays": 285,
+      "constructionWorkers": 143,
+      "constructionMaterials": {
+        "STEEL_PRODUCTS": 196,
+        "CEMENT_PRODUCTS": 233,
+        "CONSTRUCTION_AGGREGATE": 327
+      },
+      "capacityPerDay": 340,
+      "capacityUnit": "TONNES_PER_DAY",
+      "operatingWorkers": 116,
+      "electricityMWhPerDay": 187,
+      "waterM3PerDay": 75,
+      "maintenanceRate": 0.035,
+      "requiredTechnologyIds": [],
+      "simulationOnly": true,
+      "authority": "SIMULATED_GAMEPLAY_PROFILE_V1"
+    },
+    "PGM_CONCENTRATOR": {
+      "factoryType": "PGM_CONCENTRATOR",
+      "name": "Pgm Concentrator",
+      "category": "precious-materials",
+      "iconId": "gem",
+      "recipeId": null,
+      "constructionCostUsd": 68000000,
+      "constructionDays": 260,
+      "constructionWorkers": 90,
+      "constructionMaterials": {
+        "STEEL_PRODUCTS": 136,
+        "CEMENT_PRODUCTS": 162,
+        "CONSTRUCTION_AGGREGATE": 227
+      },
+      "capacityPerDay": 180,
+      "capacityUnit": "TONNES_PER_DAY",
+      "operatingWorkers": 70,
+      "electricityMWhPerDay": 99,
+      "waterM3PerDay": 40,
+      "maintenanceRate": 0.035,
+      "requiredTechnologyIds": [],
+      "simulationOnly": true,
+      "authority": "SIMULATED_GAMEPLAY_PROFILE_V1"
+    },
+    "DIAMOND_RECOVERY_PLANT": {
+      "factoryType": "DIAMOND_RECOVERY_PLANT",
+      "name": "Diamond Recovery Plant",
+      "category": "precious-materials",
+      "iconId": "gem",
+      "recipeId": null,
+      "constructionCostUsd": 68000000,
+      "constructionDays": 260,
+      "constructionWorkers": 90,
+      "constructionMaterials": {
+        "STEEL_PRODUCTS": 136,
+        "CEMENT_PRODUCTS": 162,
+        "CONSTRUCTION_AGGREGATE": 227
+      },
+      "capacityPerDay": 180,
+      "capacityUnit": "TONNES_PER_DAY",
+      "operatingWorkers": 70,
+      "electricityMWhPerDay": 99,
+      "waterM3PerDay": 40,
+      "maintenanceRate": 0.035,
+      "requiredTechnologyIds": [],
+      "simulationOnly": true,
+      "authority": "SIMULATED_GAMEPLAY_PROFILE_V1"
+    },
+    "RARE_EARTH_BENEFICIATION_PLANT": {
+      "factoryType": "RARE_EARTH_BENEFICIATION_PLANT",
+      "name": "Rare Earth Beneficiation Plant",
+      "category": "strategic-materials",
+      "iconId": "mine-extraction",
+      "recipeId": null,
+      "constructionCostUsd": 98000000,
+      "constructionDays": 285,
+      "constructionWorkers": 143,
+      "constructionMaterials": {
+        "STEEL_PRODUCTS": 196,
+        "CEMENT_PRODUCTS": 233,
+        "CONSTRUCTION_AGGREGATE": 327
+      },
+      "capacityPerDay": 340,
+      "capacityUnit": "TONNES_PER_DAY",
+      "operatingWorkers": 116,
+      "electricityMWhPerDay": 187,
+      "waterM3PerDay": 75,
+      "maintenanceRate": 0.035,
+      "requiredTechnologyIds": [],
+      "simulationOnly": true,
+      "authority": "SIMULATED_GAMEPLAY_PROFILE_V1"
+    },
+    "MINERAL_SANDS_PLANT": {
+      "factoryType": "MINERAL_SANDS_PLANT",
+      "name": "Mineral Sands Plant",
+      "category": "construction-materials",
+      "iconId": "mountain",
+      "recipeId": null,
+      "constructionCostUsd": 52000000,
+      "constructionDays": 190,
+      "constructionWorkers": 328,
+      "constructionMaterials": {
+        "STEEL_PRODUCTS": 104,
+        "CEMENT_PRODUCTS": 160,
+        "CONSTRUCTION_AGGREGATE": 220
+      },
+      "capacityPerDay": 780,
+      "capacityUnit": "TONNES_PER_DAY",
+      "operatingWorkers": 265,
+      "electricityMWhPerDay": 429,
+      "waterM3PerDay": 172,
+      "maintenanceRate": 0.035,
+      "requiredTechnologyIds": [],
+      "simulationOnly": true,
+      "authority": "SIMULATED_GAMEPLAY_PROFILE_V1"
+    },
+    "CEMENT_LIMESTONE_PLANT": {
+      "factoryType": "CEMENT_LIMESTONE_PLANT",
+      "name": "Cement Limestone Plant",
+      "category": "construction-materials",
+      "iconId": "factory",
+      "recipeId": null,
+      "constructionCostUsd": 52000000,
+      "constructionDays": 190,
+      "constructionWorkers": 328,
+      "constructionMaterials": {
+        "STEEL_PRODUCTS": 104,
+        "CEMENT_PRODUCTS": 160,
+        "CONSTRUCTION_AGGREGATE": 220
+      },
+      "capacityPerDay": 780,
+      "capacityUnit": "TONNES_PER_DAY",
+      "operatingWorkers": 265,
+      "electricityMWhPerDay": 429,
+      "waterM3PerDay": 172,
+      "maintenanceRate": 0.035,
+      "requiredTechnologyIds": [],
+      "simulationOnly": true,
+      "authority": "SIMULATED_GAMEPLAY_PROFILE_V1"
+    },
+    "GYPSUM_PROCESSING_PLANT": {
+      "factoryType": "GYPSUM_PROCESSING_PLANT",
+      "name": "Gypsum Processing Plant",
+      "category": "construction-materials",
+      "iconId": "factory",
+      "recipeId": null,
+      "constructionCostUsd": 52000000,
+      "constructionDays": 190,
+      "constructionWorkers": 328,
+      "constructionMaterials": {
+        "STEEL_PRODUCTS": 104,
+        "CEMENT_PRODUCTS": 160,
+        "CONSTRUCTION_AGGREGATE": 220
+      },
+      "capacityPerDay": 780,
+      "capacityUnit": "TONNES_PER_DAY",
+      "operatingWorkers": 265,
+      "electricityMWhPerDay": 429,
+      "waterM3PerDay": 172,
+      "maintenanceRate": 0.035,
+      "requiredTechnologyIds": [],
+      "simulationOnly": true,
+      "authority": "SIMULATED_GAMEPLAY_PROFILE_V1"
+    },
+    "STONE_PROCESSING_PLANT": {
+      "factoryType": "STONE_PROCESSING_PLANT",
+      "name": "Stone Processing Plant",
+      "category": "construction-materials",
+      "iconId": "mountain",
+      "recipeId": null,
+      "constructionCostUsd": 52000000,
+      "constructionDays": 190,
+      "constructionWorkers": 328,
+      "constructionMaterials": {
+        "STEEL_PRODUCTS": 104,
+        "CEMENT_PRODUCTS": 160,
+        "CONSTRUCTION_AGGREGATE": 220
+      },
+      "capacityPerDay": 780,
+      "capacityUnit": "TONNES_PER_DAY",
+      "operatingWorkers": 265,
+      "electricityMWhPerDay": 429,
+      "waterM3PerDay": 172,
+      "maintenanceRate": 0.035,
+      "requiredTechnologyIds": [],
+      "simulationOnly": true,
+      "authority": "SIMULATED_GAMEPLAY_PROFILE_V1"
+    },
+    "GLASS_SILICA_PLANT": {
+      "factoryType": "GLASS_SILICA_PLANT",
+      "name": "Glass Silica Plant",
+      "category": "construction-materials",
+      "iconId": "factory",
+      "recipeId": null,
+      "constructionCostUsd": 52000000,
+      "constructionDays": 190,
+      "constructionWorkers": 328,
+      "constructionMaterials": {
+        "STEEL_PRODUCTS": 104,
+        "CEMENT_PRODUCTS": 160,
+        "CONSTRUCTION_AGGREGATE": 220
+      },
+      "capacityPerDay": 780,
+      "capacityUnit": "TONNES_PER_DAY",
+      "operatingWorkers": 265,
+      "electricityMWhPerDay": 429,
+      "waterM3PerDay": 172,
+      "maintenanceRate": 0.035,
+      "requiredTechnologyIds": [],
+      "simulationOnly": true,
+      "authority": "SIMULATED_GAMEPLAY_PROFILE_V1"
+    },
+    "AGGREGATE_CRUSHING_PLANT": {
+      "factoryType": "AGGREGATE_CRUSHING_PLANT",
+      "name": "Aggregate Crushing Plant",
+      "category": "construction-materials",
+      "iconId": "factory",
+      "recipeId": null,
+      "constructionCostUsd": 52000000,
+      "constructionDays": 190,
+      "constructionWorkers": 328,
+      "constructionMaterials": {
+        "STEEL_PRODUCTS": 104,
+        "CEMENT_PRODUCTS": 160,
+        "CONSTRUCTION_AGGREGATE": 220
+      },
+      "capacityPerDay": 780,
+      "capacityUnit": "TONNES_PER_DAY",
+      "operatingWorkers": 265,
+      "electricityMWhPerDay": 429,
+      "waterM3PerDay": 172,
+      "maintenanceRate": 0.035,
+      "requiredTechnologyIds": [],
+      "simulationOnly": true,
+      "authority": "SIMULATED_GAMEPLAY_PROFILE_V1"
+    },
+    "SALT_REFINERY": {
+      "factoryType": "SALT_REFINERY",
+      "name": "Salt Refinery",
+      "category": "energy-materials",
+      "iconId": "droplet",
+      "recipeId": null,
+      "constructionCostUsd": 115000000,
+      "constructionDays": 300,
+      "constructionWorkers": 756,
+      "constructionMaterials": {
+        "STEEL_PRODUCTS": 230,
+        "CEMENT_PRODUCTS": 274,
+        "CONSTRUCTION_AGGREGATE": 383
+      },
+      "capacityPerDay": 1800,
+      "capacityUnit": "TONNES_PER_DAY",
+      "operatingWorkers": 612,
+      "electricityMWhPerDay": 990,
+      "waterM3PerDay": 396,
+      "maintenanceRate": 0.035,
+      "requiredTechnologyIds": [],
+      "simulationOnly": true,
+      "authority": "SIMULATED_GAMEPLAY_PROFILE_V1"
+    },
+    "DOLOMITE_PROCESSING_PLANT": {
+      "factoryType": "DOLOMITE_PROCESSING_PLANT",
+      "name": "Dolomite Processing Plant",
+      "category": "construction-materials",
+      "iconId": "mountain",
+      "recipeId": null,
+      "constructionCostUsd": 52000000,
+      "constructionDays": 190,
+      "constructionWorkers": 328,
+      "constructionMaterials": {
+        "STEEL_PRODUCTS": 104,
+        "CEMENT_PRODUCTS": 160,
+        "CONSTRUCTION_AGGREGATE": 220
+      },
+      "capacityPerDay": 780,
+      "capacityUnit": "TONNES_PER_DAY",
+      "operatingWorkers": 265,
+      "electricityMWhPerDay": 429,
+      "waterM3PerDay": 172,
+      "maintenanceRate": 0.035,
+      "requiredTechnologyIds": [],
+      "simulationOnly": true,
+      "authority": "SIMULATED_GAMEPLAY_PROFILE_V1"
+    },
+    "MAGNESIA_PLANT": {
+      "factoryType": "MAGNESIA_PLANT",
+      "name": "Magnesia Plant",
+      "category": "construction-materials",
+      "iconId": "factory",
+      "recipeId": null,
+      "constructionCostUsd": 52000000,
+      "constructionDays": 190,
+      "constructionWorkers": 328,
+      "constructionMaterials": {
+        "STEEL_PRODUCTS": 104,
+        "CEMENT_PRODUCTS": 160,
+        "CONSTRUCTION_AGGREGATE": 220
+      },
+      "capacityPerDay": 780,
+      "capacityUnit": "TONNES_PER_DAY",
+      "operatingWorkers": 265,
+      "electricityMWhPerDay": 429,
+      "waterM3PerDay": 172,
+      "maintenanceRate": 0.035,
+      "requiredTechnologyIds": [],
+      "simulationOnly": true,
+      "authority": "SIMULATED_GAMEPLAY_PROFILE_V1"
+    },
+    "OIL_SHALE_RETORT": {
+      "factoryType": "OIL_SHALE_RETORT",
+      "name": "Oil Shale Retort",
+      "category": "energy-materials",
+      "iconId": "factory",
+      "recipeId": null,
+      "constructionCostUsd": 115000000,
+      "constructionDays": 300,
+      "constructionWorkers": 756,
+      "constructionMaterials": {
+        "STEEL_PRODUCTS": 230,
+        "CEMENT_PRODUCTS": 274,
+        "CONSTRUCTION_AGGREGATE": 383
+      },
+      "capacityPerDay": 1800,
+      "capacityUnit": "TONNES_PER_DAY",
+      "operatingWorkers": 612,
+      "electricityMWhPerDay": 990,
+      "waterM3PerDay": 396,
+      "maintenanceRate": 0.035,
+      "requiredTechnologyIds": [],
+      "simulationOnly": true,
+      "authority": "SIMULATED_GAMEPLAY_PROFILE_V1"
+    },
+    "BORATE_PROCESSING_PLANT": {
+      "factoryType": "BORATE_PROCESSING_PLANT",
+      "name": "Borate Processing Plant",
+      "category": "construction-materials",
+      "iconId": "factory",
+      "recipeId": null,
+      "constructionCostUsd": 52000000,
+      "constructionDays": 190,
+      "constructionWorkers": 328,
+      "constructionMaterials": {
+        "STEEL_PRODUCTS": 104,
+        "CEMENT_PRODUCTS": 160,
+        "CONSTRUCTION_AGGREGATE": 220
+      },
+      "capacityPerDay": 780,
+      "capacityUnit": "TONNES_PER_DAY",
+      "operatingWorkers": 265,
+      "electricityMWhPerDay": 429,
+      "waterM3PerDay": 172,
+      "maintenanceRate": 0.035,
+      "requiredTechnologyIds": [],
+      "simulationOnly": true,
+      "authority": "SIMULATED_GAMEPLAY_PROFILE_V1"
+    },
+    "NIOBIUM_CONCENTRATION_PLANT": {
+      "factoryType": "NIOBIUM_CONCENTRATION_PLANT",
+      "name": "Niobium Concentration Plant",
+      "category": "strategic-materials",
+      "iconId": "mine-extraction",
+      "recipeId": null,
+      "constructionCostUsd": 98000000,
+      "constructionDays": 285,
+      "constructionWorkers": 143,
+      "constructionMaterials": {
+        "STEEL_PRODUCTS": 196,
+        "CEMENT_PRODUCTS": 233,
+        "CONSTRUCTION_AGGREGATE": 327
+      },
+      "capacityPerDay": 340,
+      "capacityUnit": "TONNES_PER_DAY",
+      "operatingWorkers": 116,
+      "electricityMWhPerDay": 187,
+      "waterM3PerDay": 75,
+      "maintenanceRate": 0.035,
+      "requiredTechnologyIds": [],
+      "simulationOnly": true,
+      "authority": "SIMULATED_GAMEPLAY_PROFILE_V1"
+    },
+    "GEMSTONE_SORTING_PLANT": {
+      "factoryType": "GEMSTONE_SORTING_PLANT",
+      "name": "Gemstone Sorting Plant",
+      "category": "precious-materials",
+      "iconId": "gem",
+      "recipeId": null,
+      "constructionCostUsd": 68000000,
+      "constructionDays": 260,
+      "constructionWorkers": 90,
+      "constructionMaterials": {
+        "STEEL_PRODUCTS": 136,
+        "CEMENT_PRODUCTS": 162,
+        "CONSTRUCTION_AGGREGATE": 227
+      },
+      "capacityPerDay": 180,
+      "capacityUnit": "TONNES_PER_DAY",
+      "operatingWorkers": 70,
+      "electricityMWhPerDay": 99,
+      "waterM3PerDay": 40,
+      "maintenanceRate": 0.035,
+      "requiredTechnologyIds": [],
+      "simulationOnly": true,
+      "authority": "SIMULATED_GAMEPLAY_PROFILE_V1"
+    },
+    "STEEL_ALLOY_WORKS": {
+      "factoryType": "STEEL_ALLOY_WORKS",
+      "name": "Steel and alloy works",
+      "category": "heavy-industry",
+      "iconId": "steelworks",
+      "recipeId": "STEEL_ALLOY_WORKS",
+      "constructionCostUsd": 185000000,
+      "constructionDays": 360,
+      "constructionWorkers": 686,
+      "constructionMaterials": {
+        "STEEL_PRODUCTS": 529,
+        "CEMENT_PRODUCTS": 661,
+        "CONSTRUCTION_AGGREGATE": 1028,
+        "COPPER_CATHODE": 21
+      },
+      "capacityPerDay": 650,
+      "capacityUnit": "SIMULATION_PRODUCTION_UNITS_PER_DAY",
+      "operatingWorkers": 980,
+      "electricityMWhPerDay": 520,
+      "waterM3PerDay": 1450,
+      "maintenanceRate": 0.03,
+      "requiredTechnologyIds": [],
+      "simulationOnly": true,
+      "authority": "SIMULATED_GAMEPLAY_PROFILE_V1"
+    },
+    "NON_FERROUS_SMELTER": {
+      "factoryType": "NON_FERROUS_SMELTER",
+      "name": "Non-ferrous smelter and metal refinery",
+      "category": "metals",
+      "iconId": "smelter",
+      "recipeId": "NON_FERROUS_SMELTER",
+      "constructionCostUsd": 145000000,
+      "constructionDays": 330,
+      "constructionWorkers": 532,
+      "constructionMaterials": {
+        "STEEL_PRODUCTS": 414,
+        "CEMENT_PRODUCTS": 518,
+        "CONSTRUCTION_AGGREGATE": 806,
+        "COPPER_CATHODE": 16
+      },
+      "capacityPerDay": 520,
+      "capacityUnit": "SIMULATION_PRODUCTION_UNITS_PER_DAY",
+      "operatingWorkers": 760,
+      "electricityMWhPerDay": 410,
+      "waterM3PerDay": 1900,
+      "maintenanceRate": 0.03,
+      "requiredTechnologyIds": [
+        "ADVANCED_ORE_SORTING"
+      ],
+      "simulationOnly": true,
+      "authority": "SIMULATED_GAMEPLAY_PROFILE_V1"
+    },
+    "PETROCHEMICAL_POLYMER_PLANT": {
+      "factoryType": "PETROCHEMICAL_POLYMER_PLANT",
+      "name": "Petrochemical and polymer plant",
+      "category": "chemicals",
+      "iconId": "petrochemicals",
+      "recipeId": "PETROCHEMICAL_POLYMER_PLANT",
+      "constructionCostUsd": 210000000,
+      "constructionDays": 390,
+      "constructionWorkers": 805,
+      "constructionMaterials": {
+        "STEEL_PRODUCTS": 600,
+        "CEMENT_PRODUCTS": 750,
+        "CONSTRUCTION_AGGREGATE": 1167,
+        "COPPER_CATHODE": 23
+      },
+      "capacityPerDay": 900,
+      "capacityUnit": "SIMULATION_PRODUCTION_UNITS_PER_DAY",
+      "operatingWorkers": 1150,
+      "electricityMWhPerDay": 480,
+      "waterM3PerDay": 1250,
+      "maintenanceRate": 0.03,
+      "requiredTechnologyIds": [],
+      "simulationOnly": true,
+      "authority": "SIMULATED_GAMEPLAY_PROFILE_V1"
+    },
+    "FERTILIZER_CHEMICAL_PLANT": {
+      "factoryType": "FERTILIZER_CHEMICAL_PLANT",
+      "name": "Fertilizer and agrochemical plant",
+      "category": "chemicals",
+      "iconId": "fertilizer-plant",
+      "recipeId": "FERTILIZER_CHEMICAL_PLANT",
+      "constructionCostUsd": 128000000,
+      "constructionDays": 270,
+      "constructionWorkers": 427,
+      "constructionMaterials": {
+        "STEEL_PRODUCTS": 366,
+        "CEMENT_PRODUCTS": 457,
+        "CONSTRUCTION_AGGREGATE": 711,
+        "COPPER_CATHODE": 14
+      },
+      "capacityPerDay": 720,
+      "capacityUnit": "SIMULATION_PRODUCTION_UNITS_PER_DAY",
+      "operatingWorkers": 610,
+      "electricityMWhPerDay": 320,
+      "waterM3PerDay": 1400,
+      "maintenanceRate": 0.03,
+      "requiredTechnologyIds": [],
+      "simulationOnly": true,
+      "authority": "SIMULATED_GAMEPLAY_PROFILE_V1"
+    },
+    "INDUSTRIAL_GAS_CHEMICALS_PLANT": {
+      "factoryType": "INDUSTRIAL_GAS_CHEMICALS_PLANT",
+      "name": "Industrial gases and base chemicals plant",
+      "category": "chemicals",
+      "iconId": "industrial-chemicals",
+      "recipeId": "INDUSTRIAL_GAS_CHEMICALS_PLANT",
+      "constructionCostUsd": 135000000,
+      "constructionDays": 300,
+      "constructionWorkers": 490,
+      "constructionMaterials": {
+        "STEEL_PRODUCTS": 386,
+        "CEMENT_PRODUCTS": 482,
+        "CONSTRUCTION_AGGREGATE": 750,
+        "COPPER_CATHODE": 15
+      },
+      "capacityPerDay": 760,
+      "capacityUnit": "SIMULATION_PRODUCTION_UNITS_PER_DAY",
+      "operatingWorkers": 700,
+      "electricityMWhPerDay": 370,
+      "waterM3PerDay": 1850,
+      "maintenanceRate": 0.03,
+      "requiredTechnologyIds": [],
+      "simulationOnly": true,
+      "authority": "SIMULATED_GAMEPLAY_PROFILE_V1"
+    },
+    "CEMENT_CONCRETE_PLANT": {
+      "factoryType": "CEMENT_CONCRETE_PLANT",
+      "name": "Cement and concrete plant",
+      "category": "construction-materials",
+      "iconId": "cement-plant",
+      "recipeId": "CEMENT_CONCRETE_PLANT",
+      "constructionCostUsd": 98000000,
+      "constructionDays": 240,
+      "constructionWorkers": 301,
+      "constructionMaterials": {
+        "STEEL_PRODUCTS": 280,
+        "CEMENT_PRODUCTS": 350,
+        "CONSTRUCTION_AGGREGATE": 544,
+        "COPPER_CATHODE": 11
+      },
+      "capacityPerDay": 1100,
+      "capacityUnit": "SIMULATION_PRODUCTION_UNITS_PER_DAY",
+      "operatingWorkers": 430,
+      "electricityMWhPerDay": 270,
+      "waterM3PerDay": 900,
+      "maintenanceRate": 0.03,
+      "requiredTechnologyIds": [],
+      "simulationOnly": true,
+      "authority": "SIMULATED_GAMEPLAY_PROFILE_V1"
+    },
+    "GLASS_CERAMICS_FACTORY": {
+      "factoryType": "GLASS_CERAMICS_FACTORY",
+      "name": "Glass and ceramics factory",
+      "category": "construction-materials",
+      "iconId": "glassworks",
+      "recipeId": "GLASS_CERAMICS_FACTORY",
+      "constructionCostUsd": 78000000,
+      "constructionDays": 220,
+      "constructionWorkers": 266,
+      "constructionMaterials": {
+        "STEEL_PRODUCTS": 223,
+        "CEMENT_PRODUCTS": 279,
+        "CONSTRUCTION_AGGREGATE": 433,
+        "COPPER_CATHODE": 9
+      },
+      "capacityPerDay": 400,
+      "capacityUnit": "SIMULATION_PRODUCTION_UNITS_PER_DAY",
+      "operatingWorkers": 380,
+      "electricityMWhPerDay": 230,
+      "waterM3PerDay": 680,
+      "maintenanceRate": 0.03,
+      "requiredTechnologyIds": [],
+      "simulationOnly": true,
+      "authority": "SIMULATED_GAMEPLAY_PROFILE_V1"
+    },
+    "PAPER_PACKAGING_MILL": {
+      "factoryType": "PAPER_PACKAGING_MILL",
+      "name": "Paper and packaging mill",
+      "category": "consumer-industry",
+      "iconId": "paper-mill",
+      "recipeId": "PAPER_PACKAGING_MILL",
+      "constructionCostUsd": 72000000,
+      "constructionDays": 230,
+      "constructionWorkers": 329,
+      "constructionMaterials": {
+        "STEEL_PRODUCTS": 206,
+        "CEMENT_PRODUCTS": 257,
+        "CONSTRUCTION_AGGREGATE": 400,
+        "COPPER_CATHODE": 8
+      },
+      "capacityPerDay": 420,
+      "capacityUnit": "SIMULATION_PRODUCTION_UNITS_PER_DAY",
+      "operatingWorkers": 470,
+      "electricityMWhPerDay": 240,
+      "waterM3PerDay": 1250,
+      "maintenanceRate": 0.03,
+      "requiredTechnologyIds": [],
+      "simulationOnly": true,
+      "authority": "SIMULATED_GAMEPLAY_PROFILE_V1"
+    },
+    "FOOD_PROCESSING_COLD_CHAIN": {
+      "factoryType": "FOOD_PROCESSING_COLD_CHAIN",
+      "name": "Food processing and cold-chain plant",
+      "category": "consumer-industry",
+      "iconId": "food-processing",
+      "recipeId": "FOOD_PROCESSING_COLD_CHAIN",
+      "constructionCostUsd": 46000000,
+      "constructionDays": 150,
+      "constructionWorkers": 259,
+      "constructionMaterials": {
+        "STEEL_PRODUCTS": 131,
+        "CEMENT_PRODUCTS": 180,
+        "CONSTRUCTION_AGGREGATE": 256,
+        "COPPER_CATHODE": 8
+      },
+      "capacityPerDay": 480,
+      "capacityUnit": "SIMULATION_PRODUCTION_UNITS_PER_DAY",
+      "operatingWorkers": 370,
+      "electricityMWhPerDay": 210,
+      "waterM3PerDay": 520,
+      "maintenanceRate": 0.03,
+      "requiredTechnologyIds": [],
+      "simulationOnly": true,
+      "authority": "SIMULATED_GAMEPLAY_PROFILE_V1"
+    },
+    "TEXTILE_APPAREL_FACTORY": {
+      "factoryType": "TEXTILE_APPAREL_FACTORY",
+      "name": "Textile and apparel factory",
+      "category": "consumer-industry",
+      "iconId": "textile-mill",
+      "recipeId": "TEXTILE_APPAREL_FACTORY",
+      "constructionCostUsd": 54000000,
+      "constructionDays": 180,
+      "constructionWorkers": 434,
+      "constructionMaterials": {
+        "STEEL_PRODUCTS": 154,
+        "CEMENT_PRODUCTS": 193,
+        "CONSTRUCTION_AGGREGATE": 300,
+        "COPPER_CATHODE": 8
+      },
+      "capacityPerDay": 330,
+      "capacityUnit": "SIMULATION_PRODUCTION_UNITS_PER_DAY",
+      "operatingWorkers": 620,
+      "electricityMWhPerDay": 250,
+      "waterM3PerDay": 320,
+      "maintenanceRate": 0.03,
+      "requiredTechnologyIds": [],
+      "simulationOnly": true,
+      "authority": "SIMULATED_GAMEPLAY_PROFILE_V1"
+    },
+    "MACHINE_TOOL_FACTORY": {
+      "factoryType": "MACHINE_TOOL_FACTORY",
+      "name": "Machine tools and industrial machinery factory",
+      "category": "capital-goods",
+      "iconId": "machine-tools",
+      "recipeId": "MACHINE_TOOL_FACTORY",
+      "constructionCostUsd": 118000000,
+      "constructionDays": 300,
+      "constructionWorkers": 385,
+      "constructionMaterials": {
+        "STEEL_PRODUCTS": 337,
+        "CEMENT_PRODUCTS": 421,
+        "CONSTRUCTION_AGGREGATE": 656,
+        "COPPER_CATHODE": 13
+      },
+      "capacityPerDay": 250,
+      "capacityUnit": "SIMULATION_PRODUCTION_UNITS_PER_DAY",
+      "operatingWorkers": 550,
+      "electricityMWhPerDay": 340,
+      "waterM3PerDay": 480,
+      "maintenanceRate": 0.03,
+      "requiredTechnologyIds": [
+        "DIGITAL_MAINTENANCE"
+      ],
+      "simulationOnly": true,
+      "authority": "SIMULATED_GAMEPLAY_PROFILE_V1"
+    },
+    "ELECTRICAL_GRID_EQUIPMENT_FACTORY": {
+      "factoryType": "ELECTRICAL_GRID_EQUIPMENT_FACTORY",
+      "name": "Electrical and grid equipment factory",
+      "category": "capital-goods",
+      "iconId": "electrical-equipment",
+      "recipeId": "ELECTRICAL_GRID_EQUIPMENT_FACTORY",
+      "constructionCostUsd": 132000000,
+      "constructionDays": 300,
+      "constructionWorkers": 350,
+      "constructionMaterials": {
+        "STEEL_PRODUCTS": 377,
+        "CEMENT_PRODUCTS": 471,
+        "CONSTRUCTION_AGGREGATE": 733,
+        "COPPER_CATHODE": 15
+      },
+      "capacityPerDay": 260,
+      "capacityUnit": "SIMULATION_PRODUCTION_UNITS_PER_DAY",
+      "operatingWorkers": 500,
+      "electricityMWhPerDay": 350,
+      "waterM3PerDay": 560,
+      "maintenanceRate": 0.03,
+      "requiredTechnologyIds": [
+        "DIGITAL_MAINTENANCE"
+      ],
+      "simulationOnly": true,
+      "authority": "SIMULATED_GAMEPLAY_PROFILE_V1"
+    },
+    "ELECTRONICS_SEMICONDUCTOR_FAB": {
+      "factoryType": "ELECTRONICS_SEMICONDUCTOR_FAB",
+      "name": "Electronics and semiconductor fabrication plant",
+      "category": "advanced-technology",
+      "iconId": "semiconductors",
+      "recipeId": "ELECTRONICS_SEMICONDUCTOR_FAB",
+      "constructionCostUsd": 540000000,
+      "constructionDays": 600,
+      "constructionWorkers": 574,
+      "constructionMaterials": {
+        "STEEL_PRODUCTS": 1543,
+        "CEMENT_PRODUCTS": 1929,
+        "CONSTRUCTION_AGGREGATE": 3000,
+        "COPPER_CATHODE": 60
+      },
+      "capacityPerDay": 120,
+      "capacityUnit": "SIMULATION_PRODUCTION_UNITS_PER_DAY",
+      "operatingWorkers": 820,
+      "electricityMWhPerDay": 460,
+      "waterM3PerDay": 2600,
+      "maintenanceRate": 0.03,
+      "requiredTechnologyIds": [
+        "DIGITAL_MAINTENANCE"
+      ],
+      "simulationOnly": true,
+      "authority": "SIMULATED_GAMEPLAY_PROFILE_V1"
+    },
+    "BATTERY_ENERGY_STORAGE_FACTORY": {
+      "factoryType": "BATTERY_ENERGY_STORAGE_FACTORY",
+      "name": "Battery and energy-storage factory",
+      "category": "advanced-technology",
+      "iconId": "battery-plant",
+      "recipeId": "BATTERY_ENERGY_STORAGE_FACTORY",
+      "constructionCostUsd": 265000000,
+      "constructionDays": 420,
+      "constructionWorkers": 427,
+      "constructionMaterials": {
+        "STEEL_PRODUCTS": 757,
+        "CEMENT_PRODUCTS": 946,
+        "CONSTRUCTION_AGGREGATE": 1472,
+        "COPPER_CATHODE": 29
+      },
+      "capacityPerDay": 380,
+      "capacityUnit": "SIMULATION_PRODUCTION_UNITS_PER_DAY",
+      "operatingWorkers": 610,
+      "electricityMWhPerDay": 370,
+      "waterM3PerDay": 920,
+      "maintenanceRate": 0.03,
+      "requiredTechnologyIds": [
+        "DIGITAL_MAINTENANCE"
+      ],
+      "simulationOnly": true,
+      "authority": "SIMULATED_GAMEPLAY_PROFILE_V1"
+    },
+    "VEHICLE_MANUFACTURING_PLANT": {
+      "factoryType": "VEHICLE_MANUFACTURING_PLANT",
+      "name": "Vehicle and road-transport manufacturing plant",
+      "category": "capital-goods",
+      "iconId": "vehicle-plant",
+      "recipeId": "VEHICLE_MANUFACTURING_PLANT",
+      "constructionCostUsd": 235000000,
+      "constructionDays": 420,
+      "constructionWorkers": 483,
+      "constructionMaterials": {
+        "STEEL_PRODUCTS": 671,
+        "CEMENT_PRODUCTS": 839,
+        "CONSTRUCTION_AGGREGATE": 1306,
+        "COPPER_CATHODE": 26
+      },
+      "capacityPerDay": 420,
+      "capacityUnit": "SIMULATION_PRODUCTION_UNITS_PER_DAY",
+      "operatingWorkers": 690,
+      "electricityMWhPerDay": 430,
+      "waterM3PerDay": 820,
+      "maintenanceRate": 0.03,
+      "requiredTechnologyIds": [],
+      "simulationOnly": true,
+      "authority": "SIMULATED_GAMEPLAY_PROFILE_V1"
+    },
+    "SHIP_RAIL_EQUIPMENT_FACTORY": {
+      "factoryType": "SHIP_RAIL_EQUIPMENT_FACTORY",
+      "name": "Shipbuilding and rail-equipment works",
+      "category": "capital-goods",
+      "iconId": "shipyard",
+      "recipeId": "SHIP_RAIL_EQUIPMENT_FACTORY",
+      "constructionCostUsd": 310000000,
+      "constructionDays": 540,
+      "constructionWorkers": 644,
+      "constructionMaterials": {
+        "STEEL_PRODUCTS": 886,
+        "CEMENT_PRODUCTS": 1107,
+        "CONSTRUCTION_AGGREGATE": 1722,
+        "COPPER_CATHODE": 34
+      },
+      "capacityPerDay": 260,
+      "capacityUnit": "SIMULATION_PRODUCTION_UNITS_PER_DAY",
+      "operatingWorkers": 920,
+      "electricityMWhPerDay": 480,
+      "waterM3PerDay": 740,
+      "maintenanceRate": 0.03,
+      "requiredTechnologyIds": [],
+      "simulationOnly": true,
+      "authority": "SIMULATED_GAMEPLAY_PROFILE_V1"
+    },
+    "AEROSPACE_FACTORY": {
+      "factoryType": "AEROSPACE_FACTORY",
+      "name": "Aerospace and aviation equipment factory",
+      "category": "advanced-technology",
+      "iconId": "aerospace-factory",
+      "recipeId": "AEROSPACE_FACTORY",
+      "constructionCostUsd": 680000000,
+      "constructionDays": 720,
+      "constructionWorkers": 455,
+      "constructionMaterials": {
+        "STEEL_PRODUCTS": 1943,
+        "CEMENT_PRODUCTS": 2429,
+        "CONSTRUCTION_AGGREGATE": 3778,
+        "COPPER_CATHODE": 76
+      },
+      "capacityPerDay": 80,
+      "capacityUnit": "SIMULATION_PRODUCTION_UNITS_PER_DAY",
+      "operatingWorkers": 650,
+      "electricityMWhPerDay": 520,
+      "waterM3PerDay": 1450,
+      "maintenanceRate": 0.03,
+      "requiredTechnologyIds": [
+        "DIGITAL_MAINTENANCE"
+      ],
+      "simulationOnly": true,
+      "authority": "SIMULATED_GAMEPLAY_PROFILE_V1"
+    },
+    "PHARMACEUTICAL_MEDICAL_FACTORY": {
+      "factoryType": "PHARMACEUTICAL_MEDICAL_FACTORY",
+      "name": "Pharmaceutical and medical-supplies factory",
+      "category": "health-industry",
+      "iconId": "pharmaceutical-plant",
+      "recipeId": "PHARMACEUTICAL_MEDICAL_FACTORY",
+      "constructionCostUsd": 168000000,
+      "constructionDays": 390,
+      "constructionWorkers": 343,
+      "constructionMaterials": {
+        "STEEL_PRODUCTS": 480,
+        "CEMENT_PRODUCTS": 600,
+        "CONSTRUCTION_AGGREGATE": 933,
+        "COPPER_CATHODE": 19
+      },
+      "capacityPerDay": 260,
+      "capacityUnit": "SIMULATION_PRODUCTION_UNITS_PER_DAY",
+      "operatingWorkers": 490,
+      "electricityMWhPerDay": 340,
+      "waterM3PerDay": 620,
+      "maintenanceRate": 0.03,
+      "requiredTechnologyIds": [],
+      "simulationOnly": true,
+      "authority": "SIMULATED_GAMEPLAY_PROFILE_V1"
+    },
+    "DEFENCE_EQUIPMENT_FACTORY": {
+      "factoryType": "DEFENCE_EQUIPMENT_FACTORY",
+      "name": "Defence equipment manufacturing plant",
+      "category": "strategic-industry",
+      "iconId": "defence-factory",
+      "recipeId": "DEFENCE_EQUIPMENT_FACTORY",
+      "constructionCostUsd": 340000000,
+      "constructionDays": 540,
+      "constructionWorkers": 406,
+      "constructionMaterials": {
+        "STEEL_PRODUCTS": 971,
+        "CEMENT_PRODUCTS": 1214,
+        "CONSTRUCTION_AGGREGATE": 1889,
+        "COPPER_CATHODE": 38
+      },
+      "capacityPerDay": 240,
+      "capacityUnit": "SIMULATION_PRODUCTION_UNITS_PER_DAY",
+      "operatingWorkers": 580,
+      "electricityMWhPerDay": 400,
+      "waterM3PerDay": 680,
+      "maintenanceRate": 0.03,
+      "requiredTechnologyIds": [
+        "DIGITAL_MAINTENANCE"
+      ],
+      "simulationOnly": true,
+      "authority": "SIMULATED_GAMEPLAY_PROFILE_V1"
+    },
+    "RECYCLING_WASTE_PROCESSING_PLANT": {
+      "factoryType": "RECYCLING_WASTE_PROCESSING_PLANT",
+      "name": "Recycling and waste-processing plant",
+      "category": "circular-industry",
+      "iconId": "recycling-plant",
+      "recipeId": "RECYCLING_WASTE_PROCESSING_PLANT",
+      "constructionCostUsd": 62000000,
+      "constructionDays": 210,
+      "constructionWorkers": 252,
+      "constructionMaterials": {
+        "STEEL_PRODUCTS": 177,
+        "CEMENT_PRODUCTS": 221,
+        "CONSTRUCTION_AGGREGATE": 344,
+        "COPPER_CATHODE": 8
+      },
+      "capacityPerDay": 650,
+      "capacityUnit": "SIMULATION_PRODUCTION_UNITS_PER_DAY",
+      "operatingWorkers": 360,
+      "electricityMWhPerDay": 250,
+      "waterM3PerDay": 980,
+      "maintenanceRate": 0.03,
+      "requiredTechnologyIds": [
+        "WATER_RECYCLING"
+      ],
+      "simulationOnly": true,
+      "authority": "SIMULATED_GAMEPLAY_PROFILE_V1"
+    }
+  },
+  "factoryRecipes": {
+    "STEEL_ALLOY_WORKS": {
+      "recipeId": "STEEL_ALLOY_WORKS",
+      "factoryType": "STEEL_ALLOY_WORKS",
+      "category": "heavy-industry",
+      "inputs": {
+        "IRON_CONCENTRATE": 0.72,
+        "COAL_CONCENTRATE": 0.28
+      },
+      "outputs": {
+        "STEEL_PRODUCTS": 0.93,
+        "STEEL_SLAG": 0.07
+      },
+      "cycleDays": 2,
+      "inputUnits": {
+        "IRON_CONCENTRATE": "TONNES",
+        "COAL_CONCENTRATE": "TONNES"
+      },
+      "outputUnits": {
+        "STEEL_PRODUCTS": "TONNES",
+        "STEEL_SLAG": "TONNES"
+      }
+    },
+    "NON_FERROUS_SMELTER_COPPER": {
+      "recipeId": "NON_FERROUS_SMELTER_COPPER",
+      "factoryType": "NON_FERROUS_SMELTER",
+      "category": "metals",
+      "inputs": {
+        "COPPER_CONCENTRATE": 0.82,
+        "COAL_CONCENTRATE": 0.18
+      },
+      "outputs": {
+        "COPPER_CATHODE": 0.96,
+        "SMELTER_SLAG": 0.04
+      },
+      "cycleDays": 2,
+      "inputUnits": {
+        "COPPER_CONCENTRATE": "TONNES",
+        "COAL_CONCENTRATE": "TONNES"
+      },
+      "outputUnits": {
+        "COPPER_CATHODE": "TONNES",
+        "SMELTER_SLAG": "TONNES"
+      }
+    },
+    "NON_FERROUS_SMELTER_ALUMINUM": {
+      "recipeId": "NON_FERROUS_SMELTER_ALUMINUM",
+      "factoryType": "NON_FERROUS_SMELTER",
+      "category": "metals",
+      "inputs": {
+        "ALUMINA": 0.88,
+        "COAL_CONCENTRATE": 0.12
+      },
+      "outputs": {
+        "ALUMINUM_INGOT": 0.94,
+        "ALUMINUM_DROSS": 0.06
+      },
+      "cycleDays": 2,
+      "inputUnits": {
+        "ALUMINA": "TONNES",
+        "COAL_CONCENTRATE": "TONNES"
+      },
+      "outputUnits": {
+        "ALUMINUM_INGOT": "TONNES",
+        "ALUMINUM_DROSS": "TONNES"
+      }
+    },
+    "PETROCHEMICAL_POLYMER_PLANT": {
+      "recipeId": "PETROCHEMICAL_POLYMER_PLANT",
+      "factoryType": "PETROCHEMICAL_POLYMER_PLANT",
+      "category": "chemicals",
+      "inputs": {
+        "NAPHTHA": 0.78,
+        "PIPELINE_GAS": 0.22
+      },
+      "outputs": {
+        "POLYMER_RESIN": 0.9,
+        "CHEMICAL_BYPRODUCT": 0.1
+      },
+      "cycleDays": 2,
+      "inputUnits": {
+        "NAPHTHA": "BARRELS",
+        "PIPELINE_GAS": "BCM"
+      },
+      "outputUnits": {
+        "POLYMER_RESIN": "TONNES",
+        "CHEMICAL_BYPRODUCT": "TONNES"
+      }
+    },
+    "FERTILIZER_CHEMICAL_PLANT": {
+      "recipeId": "FERTILIZER_CHEMICAL_PLANT",
+      "factoryType": "FERTILIZER_CHEMICAL_PLANT",
+      "category": "chemicals",
+      "inputs": {
+        "AMMONIA": 0.42,
+        "PHOSPHATE_CONCENTRATE": 0.34,
+        "MOP_POTASH": 0.24
+      },
+      "outputs": {
+        "FERTILIZER_PRODUCTS": 0.94,
+        "CHEMICAL_RESIDUE": 0.06
+      },
+      "cycleDays": 2,
+      "inputUnits": {
+        "AMMONIA": "TONNES",
+        "PHOSPHATE_CONCENTRATE": "TONNES",
+        "MOP_POTASH": "TONNES"
+      },
+      "outputUnits": {
+        "FERTILIZER_PRODUCTS": "TONNES",
+        "CHEMICAL_RESIDUE": "TONNES"
+      }
+    },
+    "INDUSTRIAL_GAS_CHEMICALS_PLANT": {
+      "recipeId": "INDUSTRIAL_GAS_CHEMICALS_PLANT",
+      "factoryType": "INDUSTRIAL_GAS_CHEMICALS_PLANT",
+      "category": "chemicals",
+      "inputs": {
+        "PIPELINE_GAS": 0.72,
+        "WATER": 0.18,
+        "COAL_CONCENTRATE": 0.1
+      },
+      "outputs": {
+        "AMMONIA": 0.42,
+        "INDUSTRIAL_GASES": 0.22,
+        "SPECIALTY_CHEMICALS": 0.26,
+        "CHEMICAL_RESIDUE": 0.1
+      },
+      "cycleDays": 2,
+      "inputUnits": {
+        "PIPELINE_GAS": "BCM",
+        "WATER": "CUBIC_METRES",
+        "COAL_CONCENTRATE": "TONNES"
+      },
+      "outputUnits": {
+        "AMMONIA": "TONNES",
+        "INDUSTRIAL_GASES": "TONNES",
+        "SPECIALTY_CHEMICALS": "TONNES",
+        "CHEMICAL_RESIDUE": "TONNES"
+      }
+    },
+    "CEMENT_CONCRETE_PLANT": {
+      "recipeId": "CEMENT_CONCRETE_PLANT",
+      "factoryType": "CEMENT_CONCRETE_PLANT",
+      "category": "construction-materials",
+      "inputs": {
+        "CEMENT_FEED": 0.75,
+        "CALCINED_GYPSUM": 0.1,
+        "GRADED_AGGREGATE": 0.15
+      },
+      "outputs": {
+        "CEMENT_PRODUCTS": 0.64,
+        "CONCRETE_PRODUCTS": 0.31,
+        "KILN_DUST": 0.05
+      },
+      "cycleDays": 2,
+      "inputUnits": {
+        "CEMENT_FEED": "TONNES",
+        "CALCINED_GYPSUM": "TONNES",
+        "GRADED_AGGREGATE": "TONNES"
+      },
+      "outputUnits": {
+        "CEMENT_PRODUCTS": "TONNES",
+        "CONCRETE_PRODUCTS": "TONNES",
+        "KILN_DUST": "TONNES"
+      }
+    },
+    "GLASS_CERAMICS_FACTORY": {
+      "recipeId": "GLASS_CERAMICS_FACTORY",
+      "factoryType": "GLASS_CERAMICS_FACTORY",
+      "category": "construction-materials",
+      "inputs": {
+        "GLASS_SILICA_FEED": 0.65,
+        "CEMENT_FEED": 0.2,
+        "DOLOMITE_PRODUCT": 0.15
+      },
+      "outputs": {
+        "GLASS_PRODUCTS": 0.95,
+        "GLASS_CERAMIC_WASTE": 0.05
+      },
+      "cycleDays": 2,
+      "inputUnits": {
+        "GLASS_SILICA_FEED": "TONNES",
+        "CEMENT_FEED": "TONNES",
+        "DOLOMITE_PRODUCT": "TONNES"
+      },
+      "outputUnits": {
+        "GLASS_PRODUCTS": "TONNES",
+        "GLASS_CERAMIC_WASTE": "TONNES"
+      }
+    },
+    "PAPER_PACKAGING_MILL": {
+      "recipeId": "PAPER_PACKAGING_MILL",
+      "factoryType": "PAPER_PACKAGING_MILL",
+      "category": "consumer-industry",
+      "inputs": {
+        "RECOVERED_PAPER": 0.55,
+        "AGRICULTURAL_FIBRE": 0.35,
+        "SPECIALTY_CHEMICALS": 0.1
+      },
+      "outputs": {
+        "PAPER_PACKAGING": 0.92,
+        "PAPER_SLUDGE": 0.08
+      },
+      "cycleDays": 2,
+      "inputUnits": {
+        "RECOVERED_PAPER": "TONNES",
+        "AGRICULTURAL_FIBRE": "TONNES",
+        "SPECIALTY_CHEMICALS": "TONNES"
+      },
+      "outputUnits": {
+        "PAPER_PACKAGING": "TONNES",
+        "PAPER_SLUDGE": "TONNES"
+      }
+    },
+    "FOOD_PROCESSING_COLD_CHAIN": {
+      "recipeId": "FOOD_PROCESSING_COLD_CHAIN",
+      "factoryType": "FOOD_PROCESSING_COLD_CHAIN",
+      "category": "consumer-industry",
+      "inputs": {
+        "AGRICULTURAL_OUTPUT": 0.7,
+        "WATER": 0.15,
+        "PAPER_PACKAGING": 0.15
+      },
+      "outputs": {
+        "PROCESSED_FOOD": 0.9,
+        "FOOD_WASTE": 0.1
+      },
+      "cycleDays": 1,
+      "inputUnits": {
+        "AGRICULTURAL_OUTPUT": "TONNES",
+        "WATER": "CUBIC_METRES",
+        "PAPER_PACKAGING": "TONNES"
+      },
+      "outputUnits": {
+        "PROCESSED_FOOD": "TONNES",
+        "FOOD_WASTE": "TONNES"
+      }
+    },
+    "TEXTILE_APPAREL_FACTORY": {
+      "recipeId": "TEXTILE_APPAREL_FACTORY",
+      "factoryType": "TEXTILE_APPAREL_FACTORY",
+      "category": "consumer-industry",
+      "inputs": {
+        "TEXTILE_FIBRE": 0.7,
+        "POLYMER_RESIN": 0.2,
+        "SPECIALTY_CHEMICALS": 0.1
+      },
+      "outputs": {
+        "TEXTILE_PRODUCTS": 0.94,
+        "TEXTILE_SCRAP": 0.06
+      },
+      "cycleDays": 2,
+      "inputUnits": {
+        "TEXTILE_FIBRE": "TONNES",
+        "POLYMER_RESIN": "TONNES",
+        "SPECIALTY_CHEMICALS": "TONNES"
+      },
+      "outputUnits": {
+        "TEXTILE_PRODUCTS": "TONNES",
+        "TEXTILE_SCRAP": "TONNES"
+      }
+    },
+    "MACHINE_TOOL_FACTORY": {
+      "recipeId": "MACHINE_TOOL_FACTORY",
+      "factoryType": "MACHINE_TOOL_FACTORY",
+      "category": "capital-goods",
+      "inputs": {
+        "STEEL_PRODUCTS": 0.65,
+        "NONFERROUS_METAL_PRODUCTS": 0.15,
+        "ELECTRONIC_COMPONENTS": 0.15,
+        "INDUSTRIAL_GASES": 0.05
+      },
+      "outputs": {
+        "MACHINE_TOOLS": 0.9,
+        "MACHINING_SCRAP": 0.1
+      },
+      "cycleDays": 3,
+      "inputUnits": {
+        "STEEL_PRODUCTS": "TONNES",
+        "NONFERROUS_METAL_PRODUCTS": "TONNES",
+        "ELECTRONIC_COMPONENTS": "TONNES",
+        "INDUSTRIAL_GASES": "TONNES"
+      },
+      "outputUnits": {
+        "MACHINE_TOOLS": "TONNES",
+        "MACHINING_SCRAP": "TONNES"
+      }
+    },
+    "ELECTRICAL_GRID_EQUIPMENT_FACTORY": {
+      "recipeId": "ELECTRICAL_GRID_EQUIPMENT_FACTORY",
+      "factoryType": "ELECTRICAL_GRID_EQUIPMENT_FACTORY",
+      "category": "capital-goods",
+      "inputs": {
+        "COPPER_CATHODE": 0.25,
+        "STEEL_PRODUCTS": 0.25,
+        "GLASS_PRODUCTS": 0.15,
+        "POLYMER_RESIN": 0.15,
+        "ELECTRONIC_COMPONENTS": 0.2
+      },
+      "outputs": {
+        "GRID_EQUIPMENT": 0.94,
+        "MANUFACTURING_SCRAP": 0.06
+      },
+      "cycleDays": 3,
+      "inputUnits": {
+        "COPPER_CATHODE": "TONNES",
+        "STEEL_PRODUCTS": "TONNES",
+        "GLASS_PRODUCTS": "TONNES",
+        "POLYMER_RESIN": "TONNES",
+        "ELECTRONIC_COMPONENTS": "TONNES"
+      },
+      "outputUnits": {
+        "GRID_EQUIPMENT": "TONNES",
+        "MANUFACTURING_SCRAP": "TONNES"
+      }
+    },
+    "ELECTRONICS_SEMICONDUCTOR_FAB": {
+      "recipeId": "ELECTRONICS_SEMICONDUCTOR_FAB",
+      "factoryType": "ELECTRONICS_SEMICONDUCTOR_FAB",
+      "category": "advanced-technology",
+      "inputs": {
+        "ELECTRONIC_GRADE_SILICON": 0.45,
+        "COPPER_CATHODE": 0.1,
+        "INDUSTRIAL_GASES": 0.2,
+        "SPECIALTY_CHEMICALS": 0.15,
+        "GLASS_PRODUCTS": 0.1
+      },
+      "outputs": {
+        "ELECTRONIC_COMPONENTS": 0.75,
+        "SEMICONDUCTOR_PROCESS_WASTE": 0.25
+      },
+      "cycleDays": 4,
+      "inputUnits": {
+        "ELECTRONIC_GRADE_SILICON": "TONNES",
+        "COPPER_CATHODE": "TONNES",
+        "INDUSTRIAL_GASES": "TONNES",
+        "SPECIALTY_CHEMICALS": "TONNES",
+        "GLASS_PRODUCTS": "TONNES"
+      },
+      "outputUnits": {
+        "ELECTRONIC_COMPONENTS": "TONNES",
+        "SEMICONDUCTOR_PROCESS_WASTE": "TONNES"
+      }
+    },
+    "BATTERY_ENERGY_STORAGE_FACTORY": {
+      "recipeId": "BATTERY_ENERGY_STORAGE_FACTORY",
+      "factoryType": "BATTERY_ENERGY_STORAGE_FACTORY",
+      "category": "advanced-technology",
+      "inputs": {
+        "LITHIUM_CARBONATE_OR_HYDROXIDE": 0.25,
+        "GRAPHITE_CONCENTRATE": 0.2,
+        "NICKEL_CONCENTRATE": 0.12,
+        "COBALT_HYDROXIDE": 0.08,
+        "COPPER_CATHODE": 0.1,
+        "ALUMINUM_INGOT": 0.1,
+        "SPECIALTY_CHEMICALS": 0.15
+      },
+      "outputs": {
+        "BATTERY_CELLS": 0.92,
+        "BATTERY_PRODUCTION_SCRAP": 0.08
+      },
+      "cycleDays": 3,
+      "inputUnits": {
+        "LITHIUM_CARBONATE_OR_HYDROXIDE": "TONNES",
+        "GRAPHITE_CONCENTRATE": "TONNES",
+        "NICKEL_CONCENTRATE": "TONNES",
+        "COBALT_HYDROXIDE": "TONNES",
+        "COPPER_CATHODE": "TONNES",
+        "ALUMINUM_INGOT": "TONNES",
+        "SPECIALTY_CHEMICALS": "TONNES"
+      },
+      "outputUnits": {
+        "BATTERY_CELLS": "TONNES",
+        "BATTERY_PRODUCTION_SCRAP": "TONNES"
+      }
+    },
+    "VEHICLE_MANUFACTURING_PLANT": {
+      "recipeId": "VEHICLE_MANUFACTURING_PLANT",
+      "factoryType": "VEHICLE_MANUFACTURING_PLANT",
+      "category": "capital-goods",
+      "inputs": {
+        "STEEL_PRODUCTS": 0.35,
+        "ALUMINUM_INGOT": 0.15,
+        "GLASS_PRODUCTS": 0.1,
+        "POLYMER_RESIN": 0.1,
+        "ELECTRONIC_COMPONENTS": 0.15,
+        "TEXTILE_PRODUCTS": 0.05,
+        "RUBBER_PRODUCTS": 0.1
+      },
+      "outputs": {
+        "VEHICLES": 0.94,
+        "VEHICLE_SCRAP": 0.06
+      },
+      "cycleDays": 3,
+      "inputUnits": {
+        "STEEL_PRODUCTS": "TONNES",
+        "ALUMINUM_INGOT": "TONNES",
+        "GLASS_PRODUCTS": "TONNES",
+        "POLYMER_RESIN": "TONNES",
+        "ELECTRONIC_COMPONENTS": "TONNES",
+        "TEXTILE_PRODUCTS": "TONNES",
+        "RUBBER_PRODUCTS": "TONNES"
+      },
+      "outputUnits": {
+        "VEHICLES": "UNITS",
+        "VEHICLE_SCRAP": "TONNES"
+      }
+    },
+    "SHIP_RAIL_EQUIPMENT_FACTORY": {
+      "recipeId": "SHIP_RAIL_EQUIPMENT_FACTORY",
+      "factoryType": "SHIP_RAIL_EQUIPMENT_FACTORY",
+      "category": "capital-goods",
+      "inputs": {
+        "STEEL_PRODUCTS": 0.55,
+        "GRID_EQUIPMENT": 0.15,
+        "MACHINE_TOOLS": 0.15,
+        "ELECTRONIC_COMPONENTS": 0.1,
+        "POLYMER_RESIN": 0.05
+      },
+      "outputs": {
+        "TRANSPORT_EQUIPMENT": 0.94,
+        "MANUFACTURING_SCRAP": 0.06
+      },
+      "cycleDays": 4,
+      "inputUnits": {
+        "STEEL_PRODUCTS": "TONNES",
+        "GRID_EQUIPMENT": "TONNES",
+        "MACHINE_TOOLS": "TONNES",
+        "ELECTRONIC_COMPONENTS": "TONNES",
+        "POLYMER_RESIN": "TONNES"
+      },
+      "outputUnits": {
+        "TRANSPORT_EQUIPMENT": "TONNES",
+        "MANUFACTURING_SCRAP": "TONNES"
+      }
+    },
+    "AEROSPACE_FACTORY": {
+      "recipeId": "AEROSPACE_FACTORY",
+      "factoryType": "AEROSPACE_FACTORY",
+      "category": "advanced-technology",
+      "inputs": {
+        "STEEL_PRODUCTS": 0.25,
+        "ALUMINUM_INGOT": 0.2,
+        "TITANIUM_FEED": 0.2,
+        "ELECTRONIC_COMPONENTS": 0.2,
+        "POLYMER_RESIN": 0.1,
+        "MACHINE_TOOLS": 0.05
+      },
+      "outputs": {
+        "AEROSPACE_COMPONENTS": 0.9,
+        "AEROSPACE_SCRAP": 0.1
+      },
+      "cycleDays": 5,
+      "inputUnits": {
+        "STEEL_PRODUCTS": "TONNES",
+        "ALUMINUM_INGOT": "TONNES",
+        "TITANIUM_FEED": "TONNES",
+        "ELECTRONIC_COMPONENTS": "TONNES",
+        "POLYMER_RESIN": "TONNES",
+        "MACHINE_TOOLS": "TONNES"
+      },
+      "outputUnits": {
+        "AEROSPACE_COMPONENTS": "TONNES",
+        "AEROSPACE_SCRAP": "TONNES"
+      }
+    },
+    "PHARMACEUTICAL_MEDICAL_FACTORY": {
+      "recipeId": "PHARMACEUTICAL_MEDICAL_FACTORY",
+      "factoryType": "PHARMACEUTICAL_MEDICAL_FACTORY",
+      "category": "health-industry",
+      "inputs": {
+        "SPECIALTY_CHEMICALS": 0.3,
+        "INDUSTRIAL_GASES": 0.1,
+        "WATER": 0.2,
+        "PAPER_PACKAGING": 0.2,
+        "GLASS_PRODUCTS": 0.1,
+        "ALUMINUM_INGOT": 0.1
+      },
+      "outputs": {
+        "PHARMACEUTICAL_PRODUCTS": 0.9,
+        "PHARMACEUTICAL_WASTE": 0.1
+      },
+      "cycleDays": 3,
+      "inputUnits": {
+        "SPECIALTY_CHEMICALS": "TONNES",
+        "INDUSTRIAL_GASES": "TONNES",
+        "WATER": "CUBIC_METRES",
+        "PAPER_PACKAGING": "TONNES",
+        "GLASS_PRODUCTS": "TONNES",
+        "ALUMINUM_INGOT": "TONNES"
+      },
+      "outputUnits": {
+        "PHARMACEUTICAL_PRODUCTS": "TONNES",
+        "PHARMACEUTICAL_WASTE": "TONNES"
+      }
+    },
+    "DEFENCE_EQUIPMENT_FACTORY": {
+      "recipeId": "DEFENCE_EQUIPMENT_FACTORY",
+      "factoryType": "DEFENCE_EQUIPMENT_FACTORY",
+      "category": "strategic-industry",
+      "inputs": {
+        "STEEL_PRODUCTS": 0.4,
+        "GRID_EQUIPMENT": 0.15,
+        "TRANSPORT_EQUIPMENT": 0.15,
+        "ELECTRONIC_COMPONENTS": 0.2,
+        "POLYMER_RESIN": 0.1
+      },
+      "outputs": {
+        "DEFENCE_EQUIPMENT": 0.94,
+        "MANUFACTURING_SCRAP": 0.06
+      },
+      "cycleDays": 3,
+      "inputUnits": {
+        "STEEL_PRODUCTS": "TONNES",
+        "GRID_EQUIPMENT": "TONNES",
+        "TRANSPORT_EQUIPMENT": "TONNES",
+        "ELECTRONIC_COMPONENTS": "TONNES",
+        "POLYMER_RESIN": "TONNES"
+      },
+      "outputUnits": {
+        "DEFENCE_EQUIPMENT": "TONNES",
+        "MANUFACTURING_SCRAP": "TONNES"
+      }
+    },
+    "RECYCLING_WASTE_PROCESSING_PLANT": {
+      "recipeId": "RECYCLING_WASTE_PROCESSING_PLANT",
+      "factoryType": "RECYCLING_WASTE_PROCESSING_PLANT",
+      "category": "circular-industry",
+      "inputs": {
+        "MIXED_RECYCLABLES": 0.6,
+        "WATER": 0.1,
+        "SPECIALTY_CHEMICALS": 0.1,
+        "GRADED_AGGREGATE": 0.2
+      },
+      "outputs": {
+        "RECOVERED_METALS": 0.2,
+        "RECOVERED_PLASTICS": 0.2,
+        "RECOVERED_GLASS": 0.15,
+        "RECOVERED_PAPER": 0.15,
+        "RECYCLED_AGGREGATE": 0.1,
+        "RESIDUAL_WASTE": 0.2
+      },
+      "cycleDays": 2,
+      "inputUnits": {
+        "MIXED_RECYCLABLES": "TONNES",
+        "WATER": "CUBIC_METRES",
+        "SPECIALTY_CHEMICALS": "TONNES",
+        "GRADED_AGGREGATE": "TONNES"
+      },
+      "outputUnits": {
+        "RECOVERED_METALS": "TONNES",
+        "RECOVERED_PLASTICS": "TONNES",
+        "RECOVERED_GLASS": "TONNES",
+        "RECOVERED_PAPER": "TONNES",
+        "RECYCLED_AGGREGATE": "TONNES",
+        "RESIDUAL_WASTE": "TONNES"
+      }
+    }
+  },
+  "materialUnits": {
+    "coal": "TONNES",
+    "iron_ore": "TONNES",
+    "copper": "TONNES",
+    "gold": "TONNES",
+    "silver": "TONNES",
+    "bauxite": "TONNES",
+    "nickel": "TONNES",
+    "cobalt": "TONNES",
+    "lithium": "TONNES",
+    "natural_gas": "BCM",
+    "crude_oil": "BARRELS",
+    "uranium": "TONNES",
+    "phosphate": "TONNES",
+    "potash": "TONNES",
+    "graphite": "TONNES",
+    "manganese": "TONNES",
+    "chromite": "TONNES",
+    "zinc": "TONNES",
+    "tin": "TONNES",
+    "tungsten": "TONNES",
+    "platinum": "TONNES",
+    "diamond": "TONNES",
+    "rare_earth": "TONNES",
+    "rutile": "TONNES",
+    "ilmenite": "TONNES",
+    "limestone": "TONNES",
+    "gypsum": "TONNES",
+    "marble": "TONNES",
+    "granite": "TONNES",
+    "silica_sand": "TONNES",
+    "construction_aggregate": "TONNES",
+    "basalt": "TONNES",
+    "salt": "TONNES",
+    "dolomite": "TONNES",
+    "magnesite": "TONNES",
+    "oil_shale": "TONNES",
+    "boron": "TONNES",
+    "niobium": "TONNES",
+    "ruby": "TONNES",
+    "COAL_CONCENTRATE": "TONNES",
+    "COAL_REJECT": "TONNES",
+    "IRON_CONCENTRATE": "TONNES",
+    "ORE_TAILINGS": "TONNES",
+    "COPPER_CONCENTRATE": "TONNES",
+    "TAILINGS": "TONNES",
+    "DORÉ": "TONNES",
+    "SILVER_CONCENTRATE": "TONNES",
+    "ALUMINA": "TONNES",
+    "BAUXITE_RESIDUE": "TONNES",
+    "NICKEL_CONCENTRATE": "TONNES",
+    "COBALT_HYDROXIDE": "TONNES",
+    "RESIDUE": "TONNES",
+    "LITHIUM_CARBONATE_OR_HYDROXIDE": "TONNES",
+    "DIESEL": "BARRELS",
+    "GASOLINE": "BARRELS",
+    "JET_FUEL": "BARRELS",
+    "NAPHTHA": "BARRELS",
+    "HEAVY_FUEL_OIL": "BARRELS",
+    "OTHER_REFINERY_PRODUCTS": "BARRELS",
+    "PIPELINE_GAS": "BCM",
+    "NGL": "BARRELS",
+    "LOSS": "TONNES",
+    "YELLOWCAKE": "TONNES",
+    "MILL_TAILINGS": "TONNES",
+    "PHOSPHATE_CONCENTRATE": "TONNES",
+    "MOP_POTASH": "TONNES",
+    "SALT_TAILINGS": "TONNES",
+    "GRAPHITE_CONCENTRATE": "TONNES",
+    "MANGANESE_CONCENTRATE": "TONNES",
+    "CHROMITE_CONCENTRATE": "TONNES",
+    "ZINC_CONCENTRATE": "TONNES",
+    "TIN_CONCENTRATE": "TONNES",
+    "TUNGSTEN_CONCENTRATE": "TONNES",
+    "PGM_CONCENTRATE": "TONNES",
+    "SORTED_DIAMONDS": "TONNES",
+    "GRAVEL_TAILINGS": "TONNES",
+    "RARE_EARTH_CONCENTRATE": "TONNES",
+    "UPGRADED_RUTILE": "TONNES",
+    "Tailings": "TONNES",
+    "TITANIUM_FEED": "TONNES",
+    "CEMENT_FEED": "TONNES",
+    "QUARRY_LOSS": "TONNES",
+    "CALCINED_GYPSUM": "TONNES",
+    "MARBLE_BLOCK": "TONNES",
+    "SAWING_LOSS": "TONNES",
+    "GRANITE_BLOCK": "TONNES",
+    "GLASS_SILICA_FEED": "TONNES",
+    "GRADED_AGGREGATE": "TONNES",
+    "BASALT_AGGREGATE": "TONNES",
+    "REFINED_SALT": "TONNES",
+    "BRINE_LOSS": "TONNES",
+    "DOLOMITE_PRODUCT": "TONNES",
+    "MAGNESIA": "TONNES",
+    "SHALE_OIL": "BARRELS",
+    "SHALE_GAS": "BCM",
+    "SOLID_RESIDUE": "TONNES",
+    "BORIC_ACID_OR_BORAX": "TONNES",
+    "NIOBIUM_CONCENTRATE": "TONNES",
+    "SORTED_RUBY_ROUGH": "TONNES",
+    "GEMSTONE_WASTE": "TONNES",
+    "STEEL_PRODUCTS": "TONNES",
+    "STEEL_SLAG": "TONNES",
+    "COPPER_CATHODE": "TONNES",
+    "SMELTER_SLAG": "TONNES",
+    "ALUMINUM_INGOT": "TONNES",
+    "ALUMINUM_DROSS": "TONNES",
+    "POLYMER_RESIN": "TONNES",
+    "CHEMICAL_BYPRODUCT": "TONNES",
+    "AMMONIA": "TONNES",
+    "FERTILIZER_PRODUCTS": "TONNES",
+    "CHEMICAL_RESIDUE": "TONNES",
+    "WATER": "CUBIC_METRES",
+    "INDUSTRIAL_GASES": "TONNES",
+    "SPECIALTY_CHEMICALS": "TONNES",
+    "CEMENT_PRODUCTS": "TONNES",
+    "CONCRETE_PRODUCTS": "TONNES",
+    "KILN_DUST": "TONNES",
+    "GLASS_PRODUCTS": "TONNES",
+    "GLASS_CERAMIC_WASTE": "TONNES",
+    "RECOVERED_PAPER": "TONNES",
+    "AGRICULTURAL_FIBRE": "TONNES",
+    "PAPER_PACKAGING": "TONNES",
+    "PAPER_SLUDGE": "TONNES",
+    "AGRICULTURAL_OUTPUT": "TONNES",
+    "PROCESSED_FOOD": "TONNES",
+    "FOOD_WASTE": "TONNES",
+    "TEXTILE_FIBRE": "TONNES",
+    "TEXTILE_PRODUCTS": "TONNES",
+    "TEXTILE_SCRAP": "TONNES",
+    "NONFERROUS_METAL_PRODUCTS": "TONNES",
+    "ELECTRONIC_COMPONENTS": "TONNES",
+    "MACHINE_TOOLS": "TONNES",
+    "MACHINING_SCRAP": "TONNES",
+    "GRID_EQUIPMENT": "TONNES",
+    "MANUFACTURING_SCRAP": "TONNES",
+    "ELECTRONIC_GRADE_SILICON": "TONNES",
+    "SEMICONDUCTOR_PROCESS_WASTE": "TONNES",
+    "BATTERY_CELLS": "TONNES",
+    "BATTERY_PRODUCTION_SCRAP": "TONNES",
+    "RUBBER_PRODUCTS": "TONNES",
+    "VEHICLES": "UNITS",
+    "VEHICLE_SCRAP": "TONNES",
+    "TRANSPORT_EQUIPMENT": "TONNES",
+    "AEROSPACE_COMPONENTS": "TONNES",
+    "AEROSPACE_SCRAP": "TONNES",
+    "PHARMACEUTICAL_PRODUCTS": "TONNES",
+    "PHARMACEUTICAL_WASTE": "TONNES",
+    "DEFENCE_EQUIPMENT": "TONNES",
+    "MIXED_RECYCLABLES": "TONNES",
+    "RECOVERED_METALS": "TONNES",
+    "RECOVERED_PLASTICS": "TONNES",
+    "RECOVERED_GLASS": "TONNES",
+    "RECYCLED_AGGREGATE": "TONNES",
+    "RESIDUAL_WASTE": "TONNES"
+  },
+  "factoryBaseline": {
+    "version": "1.0.0",
+    "targetFactoryTypeCount": 56,
+    "firstStageRuleAuthority": "processingRules",
+    "downstreamRecipeAuthority": "factoryRecipes",
+    "profileAuthority": "factoryTypeProfiles",
+    "recipeQuantityModel": "SIMULATED_INPUT_COEFFICIENTS_PER_PRODUCTION_UNIT",
+    "defaultMaterialUnit": "TONNES",
+    "policy": "SIMULATION_ONLY_NOT_OBSERVED_INDUSTRIAL_ENGINEERING",
+    "rules": [
+      "Every required input is checked and consumed together in one committed factory cycle.",
+      "A missing required input blocks the complete recipe without consuming other ingredients.",
+      "Output coefficients and unit metadata are defined in the catalog; unknown observed quantities must not be presented as observed facts.",
+      "Factory capacity is a per-day simulation profile, never inferred from a single shipment quantity.",
+      "By-products and residues are persisted as separate batches."
+    ]
   }
 }
