@@ -10,6 +10,7 @@ const CORE_ASSETS = [
   "./style.css", "./map-engine-1.js", "./map-engine-2.js",
   "./omega_game_lifecycle_runtime_v1.js", "./omega_game_lifecycle_runtime_v1.css",
   "./omega_shared_number_format_v1.js",
+  "./omega_boot_performance_monitor_v1.js", "./omega_enterprise_composition_root_v10.js",
   "./omega_ui_system_redesign_v1.css", "./omega_ui_system_redesign_v1.js",
   "./omega_ui_button_system_v1.css", "./omega_ui_button_system_v1.js",
   "./omega_country_runtime_data_v1.js", "./omega_country_general_data_runtime_v1.js", "./omega_country_data_gateway_v1.js", "./omega_country_behavior_engine_v1.js", "./omega_country_overview_ministry_ui_v1.js", "./omega_country_sector_profile_ui_v1.js", "./omega_country_sector_profile_ui_v1.css", "./country_sector_profiles_v1.json", "./country_sector_profile_schema_v1.json", "./country_general_data_registry_v1.json", "./resource_site_reserve_simulation_v1.json", "./cities.json",
