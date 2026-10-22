@@ -264,3 +264,8 @@ test("layer drawer click routing executes the controller and tracks the visible 
   });
   assert.equal(switchedLayer, null);
 });
+
+test("offline app shell caches the dual-currency foreign-reserve registry and runtime", () => {
+  assert.match(serviceWorker, /foreign_exchange_reserve_profiles_v1\.json/);
+  assert.match(serviceWorker, /omega_foreign_reserve_runtime_v1\.js/);
+});

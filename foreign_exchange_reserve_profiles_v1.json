@@ -1,0 +1,5001 @@
+{
+  "schemaVersion": "1.0.0",
+  "metadata": {
+    "title": "OMEGA Foreign-Exchange Reserve Reference Registry",
+    "baselineYear": 2015,
+    "countryAndAreaCount": 249,
+    "recordsWithReferenceReservesUsd": 230,
+    "recordsWithoutReferenceReservesUsd": 19,
+    "unit": "USD",
+    "valueMeaning": "Reference foreign-exchange reserve assets in USD from the existing repository baseline. These are not the player's current mutable in-game reserve balance.",
+    "sourceFiles": [
+      "economy_raw_financial_data_v2.json",
+      "economy_global_profiles_v1.json"
+    ],
+    "dataPolicy": "The two existing data sets were reconciled record-by-record. A value is retained only where all recorded source fields agree. Null means not recorded; it never means zero. No reserve figure is fabricated.",
+    "provenanceWarning": "The existing local baseline is dated 2015 and has not been independently revalidated against current official World Bank, IMF, or national-central-bank reserve series.",
+    "runtimeOwnership": "Immutable reference/seeding data only. Mutable simulation reserve balances are stored separately under governmentBanking.forex.reserveAccountsByCountry."
+  },
+  "reserves": [
+    {
+      "countryCode": "AF",
+      "iso3": "AFG",
+      "numericCode": "004",
+      "countryName": "Afghanistan",
+      "economyKey": "AFGHANISTAN",
+      "currencyCode": "AFN",
+      "currencyName": "Afghan Afghani",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 6000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "AX",
+      "iso3": "ALA",
+      "numericCode": "248",
+      "countryName": "Åland Islands",
+      "economyKey": null,
+      "currencyCode": null,
+      "currencyName": null,
+      "baselineYear": 2015,
+      "referenceReservesUsd": null,
+      "status": "NOT_RECORDED",
+      "profileStatus": "UNAVAILABLE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "AL",
+      "iso3": "ALB",
+      "numericCode": "008",
+      "countryName": "Albania",
+      "economyKey": "ALBANIA",
+      "currencyCode": "ALL",
+      "currencyName": "Albanian Lek",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 3000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "DZ",
+      "iso3": "DZA",
+      "numericCode": "012",
+      "countryName": "Algeria",
+      "economyKey": "ALGERIA",
+      "currencyCode": "DZD",
+      "currencyName": "Algerian Dinar",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 141000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "AS",
+      "iso3": "ASM",
+      "numericCode": "016",
+      "countryName": "American Samoa",
+      "economyKey": "AMERICAN_SAMOA",
+      "currencyCode": "USD",
+      "currencyName": "United States Dollar",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 50000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "AD",
+      "iso3": "AND",
+      "numericCode": "020",
+      "countryName": "Andorra",
+      "economyKey": "ANDORRA",
+      "currencyCode": "EUR",
+      "currencyName": "Euro",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 500000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "AO",
+      "iso3": "AGO",
+      "numericCode": "024",
+      "countryName": "Angola",
+      "economyKey": "ANGOLA",
+      "currencyCode": "AOA",
+      "currencyName": "Angolan Kwanza",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 24000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "AI",
+      "iso3": "AIA",
+      "numericCode": "660",
+      "countryName": "Anguilla",
+      "economyKey": "ANGUILLA",
+      "currencyCode": "XCD",
+      "currencyName": "East Caribbean Dollar",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 50000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "AQ",
+      "iso3": "ATA",
+      "numericCode": "010",
+      "countryName": "Antarctica",
+      "economyKey": null,
+      "currencyCode": null,
+      "currencyName": null,
+      "baselineYear": 2015,
+      "referenceReservesUsd": null,
+      "status": "NOT_RECORDED",
+      "profileStatus": "UNAVAILABLE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "AG",
+      "iso3": "ATG",
+      "numericCode": "028",
+      "countryName": "Antigua and Barbuda",
+      "economyKey": "ANTIGUA_AND_BARBUDA",
+      "currencyCode": "XCD",
+      "currencyName": "East Caribbean Dollar",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 200000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "AR",
+      "iso3": "ARG",
+      "numericCode": "032",
+      "countryName": "Argentina",
+      "economyKey": "ARGENTINA",
+      "currencyCode": "ARS",
+      "currencyName": "Argentine Peso",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 25000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "AM",
+      "iso3": "ARM",
+      "numericCode": "051",
+      "countryName": "Armenia",
+      "economyKey": "ARMENIA",
+      "currencyCode": "AMD",
+      "currencyName": "Armenian Dram",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 1700000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "AW",
+      "iso3": "ABW",
+      "numericCode": "533",
+      "countryName": "Aruba",
+      "economyKey": "ARUBA",
+      "currencyCode": "AWG",
+      "currencyName": "Aruban Florin",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 600000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "AU",
+      "iso3": "AUS",
+      "numericCode": "036",
+      "countryName": "Australia",
+      "economyKey": "AUSTRALIA",
+      "currencyCode": "AUD",
+      "currencyName": "Australian Dollar",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 50000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "AT",
+      "iso3": "AUT",
+      "numericCode": "040",
+      "countryName": "Austria",
+      "economyKey": "AUSTRIA",
+      "currencyCode": "EUR",
+      "currencyName": "Euro",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 22000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "AZ",
+      "iso3": "AZE",
+      "numericCode": "031",
+      "countryName": "Azerbaijan",
+      "economyKey": "AZERBAIJAN",
+      "currencyCode": "AZN",
+      "currencyName": "Azerbaijani Manat",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 7000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "BS",
+      "iso3": "BHS",
+      "numericCode": "044",
+      "countryName": "Bahamas",
+      "economyKey": "BAHAMAS",
+      "currencyCode": "BSD",
+      "currencyName": "Bahamian Dollar",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 1000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "BH",
+      "iso3": "BHR",
+      "numericCode": "048",
+      "countryName": "Bahrain",
+      "economyKey": "BAHRAIN",
+      "currencyCode": "BHD",
+      "currencyName": "Bahraini Dinar",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 5000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "BD",
+      "iso3": "BGD",
+      "numericCode": "050",
+      "countryName": "Bangladesh",
+      "economyKey": "BANGLADESH",
+      "currencyCode": "BDT",
+      "currencyName": "Bangladeshi Taka",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 27000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "BB",
+      "iso3": "BRB",
+      "numericCode": "052",
+      "countryName": "Barbados",
+      "economyKey": "BARBADOS",
+      "currencyCode": "BBD",
+      "currencyName": "Barbadian Dollar",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 500000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "BY",
+      "iso3": "BLR",
+      "numericCode": "112",
+      "countryName": "Belarus",
+      "economyKey": "BELARUS",
+      "currencyCode": "BYR",
+      "currencyName": "Belarusian Ruble",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 5000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "BE",
+      "iso3": "BEL",
+      "numericCode": "056",
+      "countryName": "Belgium",
+      "economyKey": "BELGIUM",
+      "currencyCode": "EUR",
+      "currencyName": "Euro",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 25000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "BZ",
+      "iso3": "BLZ",
+      "numericCode": "084",
+      "countryName": "Belize",
+      "economyKey": "BELIZE",
+      "currencyCode": "BZD",
+      "currencyName": "Belize Dollar",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 400000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "BJ",
+      "iso3": "BEN",
+      "numericCode": "204",
+      "countryName": "Benin",
+      "economyKey": "BENIN",
+      "currencyCode": "XOF",
+      "currencyName": "West African CFA Franc",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 1000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "BM",
+      "iso3": "BMU",
+      "numericCode": "060",
+      "countryName": "Bermuda",
+      "economyKey": "BERMUDA",
+      "currencyCode": "BMD",
+      "currencyName": "Bermudian Dollar",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 1000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "BT",
+      "iso3": "BTN",
+      "numericCode": "064",
+      "countryName": "Bhutan",
+      "economyKey": "BHUTAN",
+      "currencyCode": "BTN",
+      "currencyName": "Bhutanese Ngultrum",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 100000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "BO",
+      "iso3": "BOL",
+      "numericCode": "068",
+      "countryName": "Bolivia, Plurinational State of",
+      "economyKey": "BOLIVIA",
+      "currencyCode": "BOB",
+      "currencyName": "Bolivian Boliviano",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 13000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "BQ",
+      "iso3": "BES",
+      "numericCode": "535",
+      "countryName": "Bonaire, Sint Eustatius and Saba",
+      "economyKey": null,
+      "currencyCode": null,
+      "currencyName": null,
+      "baselineYear": 2015,
+      "referenceReservesUsd": null,
+      "status": "NOT_RECORDED",
+      "profileStatus": "UNAVAILABLE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "BA",
+      "iso3": "BIH",
+      "numericCode": "070",
+      "countryName": "Bosnia and Herzegovina",
+      "economyKey": "BOSNIA_AND_HERZEGOVINA",
+      "currencyCode": "BAM",
+      "currencyName": "Bosnia Convertible Mark",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 5000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "BW",
+      "iso3": "BWA",
+      "numericCode": "072",
+      "countryName": "Botswana",
+      "economyKey": "BOTSWANA",
+      "currencyCode": "BWP",
+      "currencyName": "Botswana Pula",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 7500000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "BV",
+      "iso3": "BVT",
+      "numericCode": "074",
+      "countryName": "Bouvet Island",
+      "economyKey": null,
+      "currencyCode": null,
+      "currencyName": null,
+      "baselineYear": 2015,
+      "referenceReservesUsd": null,
+      "status": "NOT_RECORDED",
+      "profileStatus": "UNAVAILABLE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "BR",
+      "iso3": "BRA",
+      "numericCode": "076",
+      "countryName": "Brazil",
+      "economyKey": "BRAZIL",
+      "currencyCode": "BRL",
+      "currencyName": "Brazilian Real",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 356000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "IO",
+      "iso3": "IOT",
+      "numericCode": "086",
+      "countryName": "British Indian Ocean Territory",
+      "economyKey": null,
+      "currencyCode": null,
+      "currencyName": null,
+      "baselineYear": 2015,
+      "referenceReservesUsd": null,
+      "status": "NOT_RECORDED",
+      "profileStatus": "UNAVAILABLE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "BN",
+      "iso3": "BRN",
+      "numericCode": "096",
+      "countryName": "Brunei Darussalam",
+      "economyKey": "BRUNEI",
+      "currencyCode": "BND",
+      "currencyName": "Brunei Dollar",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 3000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "BG",
+      "iso3": "BGR",
+      "numericCode": "100",
+      "countryName": "Bulgaria",
+      "economyKey": "BULGARIA",
+      "currencyCode": "BGN",
+      "currencyName": "Bulgarian Lev",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 22000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "BF",
+      "iso3": "BFA",
+      "numericCode": "854",
+      "countryName": "Burkina Faso",
+      "economyKey": "BURKINA_FASO",
+      "currencyCode": "XOF",
+      "currencyName": "West African CFA Franc",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 1000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "BI",
+      "iso3": "BDI",
+      "numericCode": "108",
+      "countryName": "Burundi",
+      "economyKey": "BURUNDI",
+      "currencyCode": "BIF",
+      "currencyName": "Burundian Franc",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 300000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "CV",
+      "iso3": "CPV",
+      "numericCode": "132",
+      "countryName": "Cabo Verde",
+      "economyKey": "CABO_VERDE",
+      "currencyCode": "CVE",
+      "currencyName": "Cape Verdean Escudo",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 600000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "KH",
+      "iso3": "KHM",
+      "numericCode": "116",
+      "countryName": "Cambodia",
+      "economyKey": "CAMBODIA",
+      "currencyCode": "KHR",
+      "currencyName": "Cambodian Riel",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 6000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "CM",
+      "iso3": "CMR",
+      "numericCode": "120",
+      "countryName": "Cameroon",
+      "economyKey": "CAMEROON",
+      "currencyCode": "XAF",
+      "currencyName": "Central African CFA Franc",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 3000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "CA",
+      "iso3": "CAN",
+      "numericCode": "124",
+      "countryName": "Canada",
+      "economyKey": "CANADA",
+      "currencyCode": "CAD",
+      "currencyName": "Canadian Dollar",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 80000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "KY",
+      "iso3": "CYM",
+      "numericCode": "136",
+      "countryName": "Cayman Islands",
+      "economyKey": "CAYMAN_ISLANDS",
+      "currencyCode": "KYD",
+      "currencyName": "Cayman Islands Dollar",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 200000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "CF",
+      "iso3": "CAF",
+      "numericCode": "140",
+      "countryName": "Central African Republic",
+      "economyKey": "CENTRAL_AFRICAN_REPUBLIC",
+      "currencyCode": "XAF",
+      "currencyName": "Central African CFA Franc",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 200000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "TD",
+      "iso3": "TCD",
+      "numericCode": "148",
+      "countryName": "Chad",
+      "economyKey": "CHAD",
+      "currencyCode": "XAF",
+      "currencyName": "Central African CFA Franc",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 1000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "CL",
+      "iso3": "CHL",
+      "numericCode": "152",
+      "countryName": "Chile",
+      "economyKey": "CHILE",
+      "currencyCode": "CLP",
+      "currencyName": "Chilean Peso",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 38000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "CN",
+      "iso3": "CHN",
+      "numericCode": "156",
+      "countryName": "China",
+      "economyKey": "CHINA",
+      "currencyCode": "CNY",
+      "currencyName": "Chinese Yuan",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 3300000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "CX",
+      "iso3": "CXR",
+      "numericCode": "162",
+      "countryName": "Christmas Island",
+      "economyKey": "CHRISTMAS_ISLAND",
+      "currencyCode": "AUD",
+      "currencyName": "Australian Dollar",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 5000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "CC",
+      "iso3": "CCK",
+      "numericCode": "166",
+      "countryName": "Cocos (Keeling) Islands",
+      "economyKey": "COCOS_KEELING_ISLANDS",
+      "currencyCode": "AUD",
+      "currencyName": "Australian Dollar",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 2000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "CO",
+      "iso3": "COL",
+      "numericCode": "170",
+      "countryName": "Colombia",
+      "economyKey": "COLOMBIA",
+      "currencyCode": "COP",
+      "currencyName": "Colombian Peso",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 46000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "KM",
+      "iso3": "COM",
+      "numericCode": "174",
+      "countryName": "Comoros",
+      "economyKey": "COMOROS",
+      "currencyCode": "KMF",
+      "currencyName": "Comorian Franc",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 150000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "CG",
+      "iso3": "COG",
+      "numericCode": "178",
+      "countryName": "Congo Republic",
+      "economyKey": "REPUBLIC_OF_CONGO",
+      "currencyCode": "XAF",
+      "currencyName": "Central African CFA Franc",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 2000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "CD",
+      "iso3": "COD",
+      "numericCode": "180",
+      "countryName": "DR Congo",
+      "economyKey": "DEMOCRATIC_REPUBLIC_OF_CONGO",
+      "currencyCode": "CDF",
+      "currencyName": "Congolese Franc",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 1000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "CK",
+      "iso3": "COK",
+      "numericCode": "184",
+      "countryName": "Cook Islands",
+      "economyKey": "COOK_ISLANDS",
+      "currencyCode": "NZD",
+      "currencyName": "New Zealand Dollar",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 50000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "CR",
+      "iso3": "CRI",
+      "numericCode": "188",
+      "countryName": "Costa Rica",
+      "economyKey": "COSTA_RICA",
+      "currencyCode": "CRC",
+      "currencyName": "Costa Rican Colón",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 7500000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "CI",
+      "iso3": "CIV",
+      "numericCode": "384",
+      "countryName": "Ivory Coast",
+      "economyKey": "COTE_D_IVOIRE",
+      "currencyCode": "XOF",
+      "currencyName": "West African CFA Franc",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 5000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "HR",
+      "iso3": "HRV",
+      "numericCode": "191",
+      "countryName": "Croatia",
+      "economyKey": "CROATIA",
+      "currencyCode": "HRK",
+      "currencyName": "Croatian Kuna",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 15000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "CU",
+      "iso3": "CUB",
+      "numericCode": "192",
+      "countryName": "Cuba",
+      "economyKey": "CUBA",
+      "currencyCode": "CUP",
+      "currencyName": "Cuban Peso",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 10000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "CW",
+      "iso3": "CUW",
+      "numericCode": "531",
+      "countryName": "Curaçao",
+      "economyKey": "CURACAO",
+      "currencyCode": "ANG",
+      "currencyName": "Netherlands Antillean Guilder",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 600000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "CY",
+      "iso3": "CYP",
+      "numericCode": "196",
+      "countryName": "Cyprus",
+      "economyKey": "CYPRUS",
+      "currencyCode": "EUR",
+      "currencyName": "Euro",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 1000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "CZ",
+      "iso3": "CZE",
+      "numericCode": "203",
+      "countryName": "Czechia",
+      "economyKey": "CZECH_REPUBLIC",
+      "currencyCode": "CZK",
+      "currencyName": "Czech Koruna",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 68000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "DK",
+      "iso3": "DNK",
+      "numericCode": "208",
+      "countryName": "Denmark",
+      "economyKey": "DENMARK",
+      "currencyCode": "DKK",
+      "currencyName": "Danish Krone",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 75000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "DJ",
+      "iso3": "DJI",
+      "numericCode": "262",
+      "countryName": "Djibouti",
+      "economyKey": "DJIBOUTI",
+      "currencyCode": "DJF",
+      "currencyName": "Djiboutian Franc",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 400000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "DM",
+      "iso3": "DMA",
+      "numericCode": "212",
+      "countryName": "Dominica",
+      "economyKey": "DOMINICA",
+      "currencyCode": "XCD",
+      "currencyName": "East Caribbean Dollar",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 100000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "DO",
+      "iso3": "DOM",
+      "numericCode": "214",
+      "countryName": "Dominican Republic",
+      "economyKey": "DOMINICAN_REPUBLIC",
+      "currencyCode": "DOP",
+      "currencyName": "Dominican Peso",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 5000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "EC",
+      "iso3": "ECU",
+      "numericCode": "218",
+      "countryName": "Ecuador",
+      "economyKey": "ECUADOR",
+      "currencyCode": "USD",
+      "currencyName": "United States Dollar",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 4000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "EG",
+      "iso3": "EGY",
+      "numericCode": "818",
+      "countryName": "Egypt",
+      "economyKey": "EGYPT",
+      "currencyCode": "EGP",
+      "currencyName": "Egyptian Pound",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 16000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "SV",
+      "iso3": "SLV",
+      "numericCode": "222",
+      "countryName": "El Salvador",
+      "economyKey": "EL_SALVADOR",
+      "currencyCode": "USD",
+      "currencyName": "United States Dollar",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 2800000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "GQ",
+      "iso3": "GNQ",
+      "numericCode": "226",
+      "countryName": "Equatorial Guinea",
+      "economyKey": "EQUATORIAL_GUINEA",
+      "currencyCode": "XAF",
+      "currencyName": "Central African CFA Franc",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 3000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "ER",
+      "iso3": "ERI",
+      "numericCode": "232",
+      "countryName": "Eritrea",
+      "economyKey": "ERITREA",
+      "currencyCode": "ERN",
+      "currencyName": "Eritrean Nakfa",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 200000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "EE",
+      "iso3": "EST",
+      "numericCode": "233",
+      "countryName": "Estonia",
+      "economyKey": "ESTONIA",
+      "currencyCode": "EUR",
+      "currencyName": "Euro",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 500000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "SZ",
+      "iso3": "SWZ",
+      "numericCode": "748",
+      "countryName": "Eswatini",
+      "economyKey": "ESWATINI",
+      "currencyCode": "SZL",
+      "currencyName": "Swazi Lilangeni",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 600000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "ET",
+      "iso3": "ETH",
+      "numericCode": "231",
+      "countryName": "Ethiopia",
+      "economyKey": "ETHIOPIA",
+      "currencyCode": "ETB",
+      "currencyName": "Ethiopian Birr",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 3000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "FK",
+      "iso3": "FLK",
+      "numericCode": "238",
+      "countryName": "Falkland Islands (Malvinas)",
+      "economyKey": "FALKLAND_ISLANDS",
+      "currencyCode": "FKP",
+      "currencyName": "Falkland Islands Pound",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 100000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "FO",
+      "iso3": "FRO",
+      "numericCode": "234",
+      "countryName": "Faroe Islands",
+      "economyKey": "FAROE_ISLANDS",
+      "currencyCode": "DKK",
+      "currencyName": "Danish Krone",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 400000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "FJ",
+      "iso3": "FJI",
+      "numericCode": "242",
+      "countryName": "Fiji",
+      "economyKey": "FIJI",
+      "currencyCode": "FJD",
+      "currencyName": "Fijian Dollar",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 900000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "FI",
+      "iso3": "FIN",
+      "numericCode": "246",
+      "countryName": "Finland",
+      "economyKey": "FINLAND",
+      "currencyCode": "EUR",
+      "currencyName": "Euro",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 10000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "FR",
+      "iso3": "FRA",
+      "numericCode": "250",
+      "countryName": "France",
+      "economyKey": "FRANCE",
+      "currencyCode": "EUR",
+      "currencyName": "Euro",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 140000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "GF",
+      "iso3": "GUF",
+      "numericCode": "254",
+      "countryName": "French Guiana",
+      "economyKey": "FRENCH_GUIANA",
+      "currencyCode": "EUR",
+      "currencyName": "Euro",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 200000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "PF",
+      "iso3": "PYF",
+      "numericCode": "258",
+      "countryName": "French Polynesia",
+      "economyKey": "FRENCH_POLYNESIA",
+      "currencyCode": "XPF",
+      "currencyName": "CFP Franc",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 800000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "TF",
+      "iso3": "ATF",
+      "numericCode": "260",
+      "countryName": "French Southern Territories",
+      "economyKey": null,
+      "currencyCode": null,
+      "currencyName": null,
+      "baselineYear": 2015,
+      "referenceReservesUsd": null,
+      "status": "NOT_RECORDED",
+      "profileStatus": "UNAVAILABLE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "GA",
+      "iso3": "GAB",
+      "numericCode": "266",
+      "countryName": "Gabon",
+      "economyKey": "GABON",
+      "currencyCode": "XAF",
+      "currencyName": "Central African CFA Franc",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 2000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "GM",
+      "iso3": "GMB",
+      "numericCode": "270",
+      "countryName": "Gambia",
+      "economyKey": "GAMBIA",
+      "currencyCode": "GMD",
+      "currencyName": "Gambian Dalasi",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 200000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "GE",
+      "iso3": "GEO",
+      "numericCode": "268",
+      "countryName": "Georgia",
+      "economyKey": "GEORGIA",
+      "currencyCode": "GEL",
+      "currencyName": "Georgian Lari",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 2500000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "DE",
+      "iso3": "DEU",
+      "numericCode": "276",
+      "countryName": "Germany",
+      "economyKey": "GERMANY",
+      "currencyCode": "EUR",
+      "currencyName": "Euro",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 180000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "GH",
+      "iso3": "GHA",
+      "numericCode": "288",
+      "countryName": "Ghana",
+      "economyKey": "GHANA",
+      "currencyCode": "GHS",
+      "currencyName": "Ghanaian Cedi",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 5000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "GI",
+      "iso3": "GIB",
+      "numericCode": "292",
+      "countryName": "Gibraltar",
+      "economyKey": "GIBRALTAR",
+      "currencyCode": "GIP",
+      "currencyName": "Gibraltar Pound",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 200000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "GR",
+      "iso3": "GRC",
+      "numericCode": "300",
+      "countryName": "Greece",
+      "economyKey": "GREECE",
+      "currencyCode": "EUR",
+      "currencyName": "Euro",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 6000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "GL",
+      "iso3": "GRL",
+      "numericCode": "304",
+      "countryName": "Greenland",
+      "economyKey": "GREENLAND",
+      "currencyCode": "DKK",
+      "currencyName": "Danish Krone",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 300000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "GD",
+      "iso3": "GRD",
+      "numericCode": "308",
+      "countryName": "Grenada",
+      "economyKey": "GRENADA",
+      "currencyCode": "XCD",
+      "currencyName": "East Caribbean Dollar",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 150000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "GP",
+      "iso3": "GLP",
+      "numericCode": "312",
+      "countryName": "Guadeloupe",
+      "economyKey": "GUADELOUPE",
+      "currencyCode": "EUR",
+      "currencyName": "Euro",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 500000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "GU",
+      "iso3": "GUM",
+      "numericCode": "316",
+      "countryName": "Guam",
+      "economyKey": "GUAM",
+      "currencyCode": "USD",
+      "currencyName": "United States Dollar",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 1000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "GT",
+      "iso3": "GTM",
+      "numericCode": "320",
+      "countryName": "Guatemala",
+      "economyKey": "GUATEMALA",
+      "currencyCode": "GTQ",
+      "currencyName": "Guatemalan Quetzal",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 7500000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "GG",
+      "iso3": "GGY",
+      "numericCode": "831",
+      "countryName": "Guernsey",
+      "economyKey": null,
+      "currencyCode": null,
+      "currencyName": null,
+      "baselineYear": 2015,
+      "referenceReservesUsd": null,
+      "status": "NOT_RECORDED",
+      "profileStatus": "UNAVAILABLE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "GN",
+      "iso3": "GIN",
+      "numericCode": "324",
+      "countryName": "Guinea",
+      "economyKey": "GUINEA",
+      "currencyCode": "GNF",
+      "currencyName": "Guinean Franc",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 1000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "GW",
+      "iso3": "GNB",
+      "numericCode": "624",
+      "countryName": "Guinea-Bissau",
+      "economyKey": "GUINEA_BISSAU",
+      "currencyCode": "XOF",
+      "currencyName": "West African CFA Franc",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 200000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "GY",
+      "iso3": "GUY",
+      "numericCode": "328",
+      "countryName": "Guyana",
+      "economyKey": "GUYANA",
+      "currencyCode": "GYD",
+      "currencyName": "Guyanese Dollar",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 600000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "HT",
+      "iso3": "HTI",
+      "numericCode": "332",
+      "countryName": "Haiti",
+      "economyKey": "HAITI",
+      "currencyCode": "HTG",
+      "currencyName": "Haitian Gourde",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 1500000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "HM",
+      "iso3": "HMD",
+      "numericCode": "334",
+      "countryName": "Heard Island and McDonald Islands",
+      "economyKey": null,
+      "currencyCode": null,
+      "currencyName": null,
+      "baselineYear": 2015,
+      "referenceReservesUsd": null,
+      "status": "NOT_RECORDED",
+      "profileStatus": "UNAVAILABLE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "VA",
+      "iso3": "VAT",
+      "numericCode": "336",
+      "countryName": "Vatican City",
+      "economyKey": "VATICAN_CITY",
+      "currencyCode": "EUR",
+      "currencyName": "Euro",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 100000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "HN",
+      "iso3": "HND",
+      "numericCode": "340",
+      "countryName": "Honduras",
+      "economyKey": "HONDURAS",
+      "currencyCode": "HNL",
+      "currencyName": "Honduran Lempira",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 3500000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "HK",
+      "iso3": "HKG",
+      "numericCode": "344",
+      "countryName": "Hong Kong",
+      "economyKey": "HONG_KONG",
+      "currencyCode": "HKD",
+      "currencyName": "Hong Kong Dollar",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 358000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "HU",
+      "iso3": "HUN",
+      "numericCode": "348",
+      "countryName": "Hungary",
+      "economyKey": "HUNGARY",
+      "currencyCode": "HUF",
+      "currencyName": "Hungarian Forint",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 33000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "IS",
+      "iso3": "ISL",
+      "numericCode": "352",
+      "countryName": "Iceland",
+      "economyKey": "ICELAND",
+      "currencyCode": "ISK",
+      "currencyName": "Icelandic Krona",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 5000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "IN",
+      "iso3": "IND",
+      "numericCode": "356",
+      "countryName": "India",
+      "economyKey": "INDIA",
+      "currencyCode": "INR",
+      "currencyName": "Indian Rupee",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 350000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "ID",
+      "iso3": "IDN",
+      "numericCode": "360",
+      "countryName": "Indonesia",
+      "economyKey": "INDONESIA",
+      "currencyCode": "IDR",
+      "currencyName": "Indonesian Rupiah",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 105000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "IR",
+      "iso3": "IRN",
+      "numericCode": "364",
+      "countryName": "Iran",
+      "economyKey": "IRAN",
+      "currencyCode": "IRR",
+      "currencyName": "Iranian Rial",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 110000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "IQ",
+      "iso3": "IRQ",
+      "numericCode": "368",
+      "countryName": "Iraq",
+      "economyKey": "IRAQ",
+      "currencyCode": "IQD",
+      "currencyName": "Iraqi Dinar",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 54000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "IE",
+      "iso3": "IRL",
+      "numericCode": "372",
+      "countryName": "Ireland",
+      "economyKey": "IRELAND",
+      "currencyCode": "EUR",
+      "currencyName": "Euro",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 5000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "IM",
+      "iso3": "IMN",
+      "numericCode": "833",
+      "countryName": "Isle of Man",
+      "economyKey": null,
+      "currencyCode": null,
+      "currencyName": null,
+      "baselineYear": 2015,
+      "referenceReservesUsd": null,
+      "status": "NOT_RECORDED",
+      "profileStatus": "UNAVAILABLE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "IL",
+      "iso3": "ISR",
+      "numericCode": "376",
+      "countryName": "Israel",
+      "economyKey": "ISRAEL",
+      "currencyCode": "ILS",
+      "currencyName": "Israeli New Shekel",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 90000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "IT",
+      "iso3": "ITA",
+      "numericCode": "380",
+      "countryName": "Italy",
+      "economyKey": "ITALY",
+      "currencyCode": "EUR",
+      "currencyName": "Euro",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 130000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "JM",
+      "iso3": "JAM",
+      "numericCode": "388",
+      "countryName": "Jamaica",
+      "economyKey": "JAMAICA",
+      "currencyCode": "JMD",
+      "currencyName": "Jamaican Dollar",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 2500000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "JP",
+      "iso3": "JPN",
+      "numericCode": "392",
+      "countryName": "Japan",
+      "economyKey": "JAPAN",
+      "currencyCode": "JPY",
+      "currencyName": "Japanese Yen",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 1230000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "JE",
+      "iso3": "JEY",
+      "numericCode": "832",
+      "countryName": "Jersey",
+      "economyKey": null,
+      "currencyCode": null,
+      "currencyName": null,
+      "baselineYear": 2015,
+      "referenceReservesUsd": null,
+      "status": "NOT_RECORDED",
+      "profileStatus": "UNAVAILABLE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "JO",
+      "iso3": "JOR",
+      "numericCode": "400",
+      "countryName": "Jordan",
+      "economyKey": "JORDAN",
+      "currencyCode": "JOD",
+      "currencyName": "Jordanian Dinar",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 14000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "KZ",
+      "iso3": "KAZ",
+      "numericCode": "398",
+      "countryName": "Kazakhstan",
+      "economyKey": "KAZAKHSTAN",
+      "currencyCode": "KZT",
+      "currencyName": "Kazakhstani Tenge",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 28000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "KE",
+      "iso3": "KEN",
+      "numericCode": "404",
+      "countryName": "Kenya",
+      "economyKey": "KENYA",
+      "currencyCode": "KES",
+      "currencyName": "Kenyan Shilling",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 7000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "KI",
+      "iso3": "KIR",
+      "numericCode": "296",
+      "countryName": "Kiribati",
+      "economyKey": "KIRIBATI",
+      "currencyCode": "AUD",
+      "currencyName": "Australian Dollar",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 150000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "KP",
+      "iso3": "PRK",
+      "numericCode": "408",
+      "countryName": "Korea, Democratic People's Republic of",
+      "economyKey": "NORTH_KOREA",
+      "currencyCode": "KPW",
+      "currencyName": "North Korean Won",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 1000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "KR",
+      "iso3": "KOR",
+      "numericCode": "410",
+      "countryName": "South Korea",
+      "economyKey": "SOUTH_KOREA",
+      "currencyCode": "KRW",
+      "currencyName": "South Korean Won",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 367000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "KW",
+      "iso3": "KWT",
+      "numericCode": "414",
+      "countryName": "Kuwait",
+      "economyKey": "KUWAIT",
+      "currencyCode": "KWD",
+      "currencyName": "Kuwaiti Dinar",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 35000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "KG",
+      "iso3": "KGZ",
+      "numericCode": "417",
+      "countryName": "Kyrgyzstan",
+      "economyKey": "KYRGYZSTAN",
+      "currencyCode": "KGS",
+      "currencyName": "Kyrgyzstani Som",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 1700000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "LA",
+      "iso3": "LAO",
+      "numericCode": "418",
+      "countryName": "Lao People's Democratic Republic",
+      "economyKey": "LAOS",
+      "currencyCode": "LAK",
+      "currencyName": "Lao Kip",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 1000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "LV",
+      "iso3": "LVA",
+      "numericCode": "428",
+      "countryName": "Latvia",
+      "economyKey": "LATVIA",
+      "currencyCode": "EUR",
+      "currencyName": "Euro",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 1000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "LB",
+      "iso3": "LBN",
+      "numericCode": "422",
+      "countryName": "Lebanon",
+      "economyKey": "LEBANON",
+      "currencyCode": "LBP",
+      "currencyName": "Lebanese Pound",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 35000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "LS",
+      "iso3": "LSO",
+      "numericCode": "426",
+      "countryName": "Lesotho",
+      "economyKey": "LESOTHO",
+      "currencyCode": "LSL",
+      "currencyName": "Lesotho Loti",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 800000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "LR",
+      "iso3": "LBR",
+      "numericCode": "430",
+      "countryName": "Liberia",
+      "economyKey": "LIBERIA",
+      "currencyCode": "LRD",
+      "currencyName": "Liberian Dollar",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 500000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "LY",
+      "iso3": "LBY",
+      "numericCode": "434",
+      "countryName": "Libya",
+      "economyKey": "LIBYA",
+      "currencyCode": "LYD",
+      "currencyName": "Libyan Dinar",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 70000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "LI",
+      "iso3": "LIE",
+      "numericCode": "438",
+      "countryName": "Liechtenstein",
+      "economyKey": "LIECHTENSTEIN",
+      "currencyCode": "CHF",
+      "currencyName": "Swiss Franc",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 1000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "LT",
+      "iso3": "LTU",
+      "numericCode": "440",
+      "countryName": "Lithuania",
+      "economyKey": "LITHUANIA",
+      "currencyCode": "EUR",
+      "currencyName": "Euro",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 1000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "LU",
+      "iso3": "LUX",
+      "numericCode": "442",
+      "countryName": "Luxembourg",
+      "economyKey": "LUXEMBOURG",
+      "currencyCode": "EUR",
+      "currencyName": "Euro",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 1000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "MO",
+      "iso3": "MAC",
+      "numericCode": "446",
+      "countryName": "Macao",
+      "economyKey": "MACAU",
+      "currencyCode": "MOP",
+      "currencyName": "Macanese Pataca",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 18000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "MG",
+      "iso3": "MDG",
+      "numericCode": "450",
+      "countryName": "Madagascar",
+      "economyKey": "MADAGASCAR",
+      "currencyCode": "MGA",
+      "currencyName": "Malagasy Ariary",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 1000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "MW",
+      "iso3": "MWI",
+      "numericCode": "454",
+      "countryName": "Malawi",
+      "economyKey": "MALAWI",
+      "currencyCode": "MWK",
+      "currencyName": "Malawian Kwacha",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 500000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "MY",
+      "iso3": "MYS",
+      "numericCode": "458",
+      "countryName": "Malaysia",
+      "economyKey": "MALAYSIA",
+      "currencyCode": "MYR",
+      "currencyName": "Malaysian Ringgit",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 95000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "MV",
+      "iso3": "MDV",
+      "numericCode": "462",
+      "countryName": "Maldives",
+      "economyKey": "MALDIVES",
+      "currencyCode": "MVR",
+      "currencyName": "Maldivian Rufiyaa",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 500000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "ML",
+      "iso3": "MLI",
+      "numericCode": "466",
+      "countryName": "Mali",
+      "economyKey": "MALI",
+      "currencyCode": "XOF",
+      "currencyName": "West African CFA Franc",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 1500000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "MT",
+      "iso3": "MLT",
+      "numericCode": "470",
+      "countryName": "Malta",
+      "economyKey": "MALTA",
+      "currencyCode": "EUR",
+      "currencyName": "Euro",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 1000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "MH",
+      "iso3": "MHL",
+      "numericCode": "584",
+      "countryName": "Marshall Islands",
+      "economyKey": "MARSHALL_ISLANDS",
+      "currencyCode": "USD",
+      "currencyName": "United States Dollar",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 50000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "MQ",
+      "iso3": "MTQ",
+      "numericCode": "474",
+      "countryName": "Martinique",
+      "economyKey": "MARTINIQUE",
+      "currencyCode": "EUR",
+      "currencyName": "Euro",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 500000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "MR",
+      "iso3": "MRT",
+      "numericCode": "478",
+      "countryName": "Mauritania",
+      "economyKey": "MAURITANIA",
+      "currencyCode": "MRO",
+      "currencyName": "Mauritanian Ouguiya",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 1000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "MU",
+      "iso3": "MUS",
+      "numericCode": "480",
+      "countryName": "Mauritius",
+      "economyKey": "MAURITIUS",
+      "currencyCode": "MUR",
+      "currencyName": "Mauritian Rupee",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 4500000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "YT",
+      "iso3": "MYT",
+      "numericCode": "175",
+      "countryName": "Mayotte",
+      "economyKey": null,
+      "currencyCode": null,
+      "currencyName": null,
+      "baselineYear": 2015,
+      "referenceReservesUsd": null,
+      "status": "NOT_RECORDED",
+      "profileStatus": "UNAVAILABLE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "MX",
+      "iso3": "MEX",
+      "numericCode": "484",
+      "countryName": "Mexico",
+      "economyKey": "MEXICO",
+      "currencyCode": "MXN",
+      "currencyName": "Mexican Peso",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 175000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "FM",
+      "iso3": "FSM",
+      "numericCode": "583",
+      "countryName": "Micronesia, Federated States of",
+      "economyKey": "MICRONESIA",
+      "currencyCode": "USD",
+      "currencyName": "United States Dollar",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 100000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "MD",
+      "iso3": "MDA",
+      "numericCode": "498",
+      "countryName": "Moldova, Republic of",
+      "economyKey": "MOLDOVA",
+      "currencyCode": "MDL",
+      "currencyName": "Moldovan Leu",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 1700000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "MC",
+      "iso3": "MCO",
+      "numericCode": "492",
+      "countryName": "Monaco",
+      "economyKey": "MONACO",
+      "currencyCode": "EUR",
+      "currencyName": "Euro",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 1000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "MN",
+      "iso3": "MNG",
+      "numericCode": "496",
+      "countryName": "Mongolia",
+      "economyKey": "MONGOLIA",
+      "currencyCode": "MNT",
+      "currencyName": "Mongolian Tugrik",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 1300000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "ME",
+      "iso3": "MNE",
+      "numericCode": "499",
+      "countryName": "Montenegro",
+      "economyKey": "MONTENEGRO",
+      "currencyCode": "EUR",
+      "currencyName": "Euro",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 1000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "MS",
+      "iso3": "MSR",
+      "numericCode": "500",
+      "countryName": "Montserrat",
+      "economyKey": "MONTSERRAT",
+      "currencyCode": "XCD",
+      "currencyName": "East Caribbean Dollar",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 10000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "MA",
+      "iso3": "MAR",
+      "numericCode": "504",
+      "countryName": "Morocco",
+      "economyKey": "MOROCCO",
+      "currencyCode": "MAD",
+      "currencyName": "Moroccan Dirham",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 22000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "MZ",
+      "iso3": "MOZ",
+      "numericCode": "508",
+      "countryName": "Mozambique",
+      "economyKey": "MOZAMBIQUE",
+      "currencyCode": "MZN",
+      "currencyName": "Mozambican Metical",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 2500000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "MM",
+      "iso3": "MMR",
+      "numericCode": "104",
+      "countryName": "Myanmar",
+      "economyKey": "MYANMAR",
+      "currencyCode": "MMK",
+      "currencyName": "Myanmar Kyat",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 5000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "NA",
+      "iso3": "NAM",
+      "numericCode": "516",
+      "countryName": "Namibia",
+      "economyKey": "NAMIBIA",
+      "currencyCode": "NAD",
+      "currencyName": "Namibian Dollar",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 2500000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "NR",
+      "iso3": "NRU",
+      "numericCode": "520",
+      "countryName": "Nauru",
+      "economyKey": "NAURU",
+      "currencyCode": "AUD",
+      "currencyName": "Australian Dollar",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 10000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "NP",
+      "iso3": "NPL",
+      "numericCode": "524",
+      "countryName": "Nepal",
+      "economyKey": "NEPAL",
+      "currencyCode": "NPR",
+      "currencyName": "Nepalese Rupee",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 7000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "NL",
+      "iso3": "NLD",
+      "numericCode": "528",
+      "countryName": "Netherlands",
+      "economyKey": "NETHERLANDS",
+      "currencyCode": "EUR",
+      "currencyName": "Euro",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 90000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "NC",
+      "iso3": "NCL",
+      "numericCode": "540",
+      "countryName": "New Caledonia",
+      "economyKey": "NEW_CALEDONIA",
+      "currencyCode": "XPF",
+      "currencyName": "CFP Franc",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 1000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "NZ",
+      "iso3": "NZL",
+      "numericCode": "554",
+      "countryName": "New Zealand",
+      "economyKey": "NEW_ZEALAND",
+      "currencyCode": "NZD",
+      "currencyName": "New Zealand Dollar",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 18000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "NI",
+      "iso3": "NIC",
+      "numericCode": "558",
+      "countryName": "Nicaragua",
+      "economyKey": "NICARAGUA",
+      "currencyCode": "NIO",
+      "currencyName": "Nicaraguan Córdoba",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 2500000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "NE",
+      "iso3": "NER",
+      "numericCode": "562",
+      "countryName": "Niger",
+      "economyKey": "NIGER",
+      "currencyCode": "XOF",
+      "currencyName": "West African CFA Franc",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 1000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "NG",
+      "iso3": "NGA",
+      "numericCode": "566",
+      "countryName": "Nigeria",
+      "economyKey": "NIGERIA",
+      "currencyCode": "NGN",
+      "currencyName": "Nigerian Naira",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 28000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "NU",
+      "iso3": "NIU",
+      "numericCode": "570",
+      "countryName": "Niue",
+      "economyKey": "NIUE",
+      "currencyCode": "NZD",
+      "currencyName": "New Zealand Dollar",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 5000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "NF",
+      "iso3": "NFK",
+      "numericCode": "574",
+      "countryName": "Norfolk Island",
+      "economyKey": "NORFOLK_ISLAND",
+      "currencyCode": "AUD",
+      "currencyName": "Australian Dollar",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 5000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "MK",
+      "iso3": "MKD",
+      "numericCode": "807",
+      "countryName": "North Macedonia",
+      "economyKey": "MACEDONIA",
+      "currencyCode": "MKD",
+      "currencyName": "Macedonian Denar",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 2500000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "MP",
+      "iso3": "MNP",
+      "numericCode": "580",
+      "countryName": "Northern Mariana Islands",
+      "economyKey": "NORTHERN_MARIANA_ISLANDS",
+      "currencyCode": "USD",
+      "currencyName": "United States Dollar",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 50000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "NO",
+      "iso3": "NOR",
+      "numericCode": "578",
+      "countryName": "Norway",
+      "economyKey": "NORWAY",
+      "currencyCode": "NOK",
+      "currencyName": "Norwegian Krone",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 55000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "OM",
+      "iso3": "OMN",
+      "numericCode": "512",
+      "countryName": "Oman",
+      "economyKey": "OMAN",
+      "currencyCode": "OMR",
+      "currencyName": "Omani Rial",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 17000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "PK",
+      "iso3": "PAK",
+      "numericCode": "586",
+      "countryName": "Pakistan",
+      "economyKey": "PAKISTAN",
+      "currencyCode": "PKR",
+      "currencyName": "Pakistani Rupee",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 20000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "PW",
+      "iso3": "PLW",
+      "numericCode": "585",
+      "countryName": "Palau",
+      "economyKey": "PALAU",
+      "currencyCode": "USD",
+      "currencyName": "United States Dollar",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 50000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "PS",
+      "iso3": "PSE",
+      "numericCode": "275",
+      "countryName": "Palestine",
+      "economyKey": "PALESTINE",
+      "currencyCode": "ILS",
+      "currencyName": "Palestine Pound",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 600000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "PA",
+      "iso3": "PAN",
+      "numericCode": "591",
+      "countryName": "Panama",
+      "economyKey": "PANAMA",
+      "currencyCode": "PAB",
+      "currencyName": "Panamanian Balboa",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 4500000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "PG",
+      "iso3": "PNG",
+      "numericCode": "598",
+      "countryName": "Papua New Guinea",
+      "economyKey": "PAPUA_NEW_GUINEA",
+      "currencyCode": "PGK",
+      "currencyName": "Papua New Guinean Kina",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 2000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "PY",
+      "iso3": "PRY",
+      "numericCode": "600",
+      "countryName": "Paraguay",
+      "economyKey": "PARAGUAY",
+      "currencyCode": "PYG",
+      "currencyName": "Paraguayan Guaraní",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 6200000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "PE",
+      "iso3": "PER",
+      "numericCode": "604",
+      "countryName": "Peru",
+      "economyKey": "PERU",
+      "currencyCode": "PEN",
+      "currencyName": "Peruvian Sol",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 61000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "PH",
+      "iso3": "PHL",
+      "numericCode": "608",
+      "countryName": "Philippines",
+      "economyKey": "PHILIPPINES",
+      "currencyCode": "PHP",
+      "currencyName": "Philippine Peso",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 80000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "PN",
+      "iso3": "PCN",
+      "numericCode": "612",
+      "countryName": "Pitcairn",
+      "economyKey": "PITCAIRN_ISLANDS",
+      "currencyCode": "NZD",
+      "currencyName": "New Zealand Dollar",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 1000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "PL",
+      "iso3": "POL",
+      "numericCode": "616",
+      "countryName": "Poland",
+      "economyKey": "POLAND",
+      "currencyCode": "PLN",
+      "currencyName": "Polish Zloty",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 95000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "PT",
+      "iso3": "PRT",
+      "numericCode": "620",
+      "countryName": "Portugal",
+      "economyKey": "PORTUGAL",
+      "currencyCode": "EUR",
+      "currencyName": "Euro",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 22000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "PR",
+      "iso3": "PRI",
+      "numericCode": "630",
+      "countryName": "Puerto Rico",
+      "economyKey": "PUERTO_RICO",
+      "currencyCode": "USD",
+      "currencyName": "United States Dollar",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 8000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "QA",
+      "iso3": "QAT",
+      "numericCode": "634",
+      "countryName": "Qatar",
+      "economyKey": "QATAR",
+      "currencyCode": "QAR",
+      "currencyName": "Qatari Riyal",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 40000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "RE",
+      "iso3": "REU",
+      "numericCode": "638",
+      "countryName": "Réunion",
+      "economyKey": null,
+      "currencyCode": null,
+      "currencyName": null,
+      "baselineYear": 2015,
+      "referenceReservesUsd": null,
+      "status": "NOT_RECORDED",
+      "profileStatus": "UNAVAILABLE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "RO",
+      "iso3": "ROU",
+      "numericCode": "642",
+      "countryName": "Romania",
+      "economyKey": "ROMANIA",
+      "currencyCode": "RON",
+      "currencyName": "Romanian Leu",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 35000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "RU",
+      "iso3": "RUS",
+      "numericCode": "643",
+      "countryName": "Russia",
+      "economyKey": "RUSSIA",
+      "currencyCode": "RUB",
+      "currencyName": "Russian Ruble",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 370000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "RW",
+      "iso3": "RWA",
+      "numericCode": "646",
+      "countryName": "Rwanda",
+      "economyKey": "RWANDA",
+      "currencyCode": "RWF",
+      "currencyName": "Rwandan Franc",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 1000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "BL",
+      "iso3": "BLM",
+      "numericCode": "652",
+      "countryName": "Saint Barthélemy",
+      "economyKey": null,
+      "currencyCode": null,
+      "currencyName": null,
+      "baselineYear": 2015,
+      "referenceReservesUsd": null,
+      "status": "NOT_RECORDED",
+      "profileStatus": "UNAVAILABLE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "SH",
+      "iso3": "SHN",
+      "numericCode": "654",
+      "countryName": "Saint Helena, Ascension and Tristan da Cunha",
+      "economyKey": null,
+      "currencyCode": null,
+      "currencyName": null,
+      "baselineYear": 2015,
+      "referenceReservesUsd": null,
+      "status": "NOT_RECORDED",
+      "profileStatus": "UNAVAILABLE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "KN",
+      "iso3": "KNA",
+      "numericCode": "659",
+      "countryName": "Saint Kitts and Nevis",
+      "economyKey": "SAINT_KITTS_AND_NEVIS",
+      "currencyCode": "XCD",
+      "currencyName": "East Caribbean Dollar",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 250000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "LC",
+      "iso3": "LCA",
+      "numericCode": "662",
+      "countryName": "Saint Lucia",
+      "economyKey": "SAINT_LUCIA",
+      "currencyCode": "XCD",
+      "currencyName": "East Caribbean Dollar",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 300000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "MF",
+      "iso3": "MAF",
+      "numericCode": "663",
+      "countryName": "Saint Martin (French part)",
+      "economyKey": null,
+      "currencyCode": null,
+      "currencyName": null,
+      "baselineYear": 2015,
+      "referenceReservesUsd": null,
+      "status": "NOT_RECORDED",
+      "profileStatus": "UNAVAILABLE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "PM",
+      "iso3": "SPM",
+      "numericCode": "666",
+      "countryName": "Saint Pierre and Miquelon",
+      "economyKey": null,
+      "currencyCode": null,
+      "currencyName": null,
+      "baselineYear": 2015,
+      "referenceReservesUsd": null,
+      "status": "NOT_RECORDED",
+      "profileStatus": "UNAVAILABLE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "VC",
+      "iso3": "VCT",
+      "numericCode": "670",
+      "countryName": "Saint Vincent and the Grenadines",
+      "economyKey": "SAINT_VINCENT_AND_THE_GRENADINES",
+      "currencyCode": "XCD",
+      "currencyName": "East Caribbean Dollar",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 150000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "WS",
+      "iso3": "WSM",
+      "numericCode": "882",
+      "countryName": "Samoa",
+      "economyKey": "SAMOA",
+      "currencyCode": "WST",
+      "currencyName": "Samoan Tālā",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 150000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "SM",
+      "iso3": "SMR",
+      "numericCode": "674",
+      "countryName": "San Marino",
+      "economyKey": "SAN_MARINO",
+      "currencyCode": "EUR",
+      "currencyName": "Euro",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 300000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "ST",
+      "iso3": "STP",
+      "numericCode": "678",
+      "countryName": "Sao Tome and Principe",
+      "economyKey": "SAO_TOME_AND_PRINCIPE",
+      "currencyCode": "STD",
+      "currencyName": "São Tomé and Príncipe Dobra",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 50000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "SA",
+      "iso3": "SAU",
+      "numericCode": "682",
+      "countryName": "Saudi Arabia",
+      "economyKey": "SAUDI_ARABIA",
+      "currencyCode": "SAR",
+      "currencyName": "Saudi Riyal",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 616000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "SN",
+      "iso3": "SEN",
+      "numericCode": "686",
+      "countryName": "Senegal",
+      "economyKey": "SENEGAL",
+      "currencyCode": "XOF",
+      "currencyName": "West African CFA Franc",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 1500000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "RS",
+      "iso3": "SRB",
+      "numericCode": "688",
+      "countryName": "Serbia",
+      "economyKey": "SERBIA",
+      "currencyCode": "RSD",
+      "currencyName": "Serbian Dinar",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 11000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "SC",
+      "iso3": "SYC",
+      "numericCode": "690",
+      "countryName": "Seychelles",
+      "economyKey": "SEYCHELLES",
+      "currencyCode": "SCR",
+      "currencyName": "Seychellois Rupee",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 500000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "SL",
+      "iso3": "SLE",
+      "numericCode": "694",
+      "countryName": "Sierra Leone",
+      "economyKey": "SIERRA_LEONE",
+      "currencyCode": "SLL",
+      "currencyName": "Sierra Leonean Leone",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 600000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "SG",
+      "iso3": "SGP",
+      "numericCode": "702",
+      "countryName": "Singapore",
+      "economyKey": "SINGAPORE",
+      "currencyCode": "SGD",
+      "currencyName": "Singapore Dollar",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 247000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "SX",
+      "iso3": "SXM",
+      "numericCode": "534",
+      "countryName": "Sint Maarten (Dutch part)",
+      "economyKey": "SINT_MAARTEN",
+      "currencyCode": "ANG",
+      "currencyName": "Netherlands Antillean Guilder",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 150000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "SK",
+      "iso3": "SVK",
+      "numericCode": "703",
+      "countryName": "Slovakia",
+      "economyKey": "SLOVAKIA",
+      "currencyCode": "EUR",
+      "currencyName": "Euro",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 3000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "SI",
+      "iso3": "SVN",
+      "numericCode": "705",
+      "countryName": "Slovenia",
+      "economyKey": "SLOVENIA",
+      "currencyCode": "EUR",
+      "currencyName": "Euro",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 1000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "SB",
+      "iso3": "SLB",
+      "numericCode": "090",
+      "countryName": "Solomon Islands",
+      "economyKey": "SOLOMON_ISLANDS",
+      "currencyCode": "SBD",
+      "currencyName": "Solomon Islands Dollar",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 400000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "SO",
+      "iso3": "SOM",
+      "numericCode": "706",
+      "countryName": "Somalia",
+      "economyKey": "SOMALIA",
+      "currencyCode": "SOS",
+      "currencyName": "Somali Shilling",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 100000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "ZA",
+      "iso3": "ZAF",
+      "numericCode": "710",
+      "countryName": "South Africa",
+      "economyKey": "SOUTH_AFRICA",
+      "currencyCode": "ZAR",
+      "currencyName": "South African Rand",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 45000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "GS",
+      "iso3": "SGS",
+      "numericCode": "239",
+      "countryName": "South Georgia and the South Sandwich Islands",
+      "economyKey": null,
+      "currencyCode": null,
+      "currencyName": null,
+      "baselineYear": 2015,
+      "referenceReservesUsd": null,
+      "status": "NOT_RECORDED",
+      "profileStatus": "UNAVAILABLE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "SS",
+      "iso3": "SSD",
+      "numericCode": "728",
+      "countryName": "South Sudan",
+      "economyKey": "SOUTH_SUDAN",
+      "currencyCode": "SSP",
+      "currencyName": "South Sudanese Pound",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 100000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "ES",
+      "iso3": "ESP",
+      "numericCode": "724",
+      "countryName": "Spain",
+      "economyKey": "SPAIN",
+      "currencyCode": "EUR",
+      "currencyName": "Euro",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 60000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "LK",
+      "iso3": "LKA",
+      "numericCode": "144",
+      "countryName": "Sri Lanka",
+      "economyKey": "SRI_LANKA",
+      "currencyCode": "LKR",
+      "currencyName": "Sri Lankan Rupee",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 8000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "SD",
+      "iso3": "SDN",
+      "numericCode": "729",
+      "countryName": "Sudan",
+      "economyKey": "SUDAN",
+      "currencyCode": "SDG",
+      "currencyName": "Sudanese Pound",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 1000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "SR",
+      "iso3": "SUR",
+      "numericCode": "740",
+      "countryName": "Suriname",
+      "economyKey": "SURINAME",
+      "currencyCode": "SRD",
+      "currencyName": "Surinamese Dollar",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 300000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "SJ",
+      "iso3": "SJM",
+      "numericCode": "744",
+      "countryName": "Svalbard and Jan Mayen",
+      "economyKey": null,
+      "currencyCode": null,
+      "currencyName": null,
+      "baselineYear": 2015,
+      "referenceReservesUsd": null,
+      "status": "NOT_RECORDED",
+      "profileStatus": "UNAVAILABLE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "SE",
+      "iso3": "SWE",
+      "numericCode": "752",
+      "countryName": "Sweden",
+      "economyKey": "SWEDEN",
+      "currencyCode": "SEK",
+      "currencyName": "Swedish Krona",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 55000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "CH",
+      "iso3": "CHE",
+      "numericCode": "756",
+      "countryName": "Switzerland",
+      "economyKey": "SWITZERLAND",
+      "currencyCode": "CHF",
+      "currencyName": "Swiss Franc",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 600000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "SY",
+      "iso3": "SYR",
+      "numericCode": "760",
+      "countryName": "Syria",
+      "economyKey": "SYRIA",
+      "currencyCode": "SYP",
+      "currencyName": "Syrian Pound",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 1000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "TW",
+      "iso3": "TWN",
+      "numericCode": "158",
+      "countryName": "Taiwan, Province of China",
+      "economyKey": "TAIWAN",
+      "currencyCode": "TWD",
+      "currencyName": "New Taiwan Dollar",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 426000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "TJ",
+      "iso3": "TJK",
+      "numericCode": "762",
+      "countryName": "Tajikistan",
+      "economyKey": "TAJIKISTAN",
+      "currencyCode": "TJS",
+      "currencyName": "Tajikistani Somoni",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 1000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "TZ",
+      "iso3": "TZA",
+      "numericCode": "834",
+      "countryName": "Tanzania",
+      "economyKey": "TANZANIA",
+      "currencyCode": "TZS",
+      "currencyName": "Tanzanian Shilling",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 4000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "TH",
+      "iso3": "THA",
+      "numericCode": "764",
+      "countryName": "Thailand",
+      "economyKey": "THAILAND",
+      "currencyCode": "THB",
+      "currencyName": "Thai Baht",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 156000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "TL",
+      "iso3": "TLS",
+      "numericCode": "626",
+      "countryName": "Timor-Leste",
+      "economyKey": "TIMOR_LESTE",
+      "currencyCode": "USD",
+      "currencyName": "United States Dollar",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 800000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "TG",
+      "iso3": "TGO",
+      "numericCode": "768",
+      "countryName": "Togo",
+      "economyKey": "TOGO",
+      "currencyCode": "XOF",
+      "currencyName": "West African CFA Franc",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 500000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "TK",
+      "iso3": "TKL",
+      "numericCode": "772",
+      "countryName": "Tokelau",
+      "economyKey": "TOKELAU",
+      "currencyCode": "NZD",
+      "currencyName": "New Zealand Dollar",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 5000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "TO",
+      "iso3": "TON",
+      "numericCode": "776",
+      "countryName": "Tonga",
+      "economyKey": "TONGA",
+      "currencyCode": "TOP",
+      "currencyName": "Tongan Paʻanga",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 100000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "TT",
+      "iso3": "TTO",
+      "numericCode": "780",
+      "countryName": "Trinidad and Tobago",
+      "economyKey": "TRINIDAD_AND_TOBAGO",
+      "currencyCode": "TTD",
+      "currencyName": "Trinidad and Tobago Dollar",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 10000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "TN",
+      "iso3": "TUN",
+      "numericCode": "788",
+      "countryName": "Tunisia",
+      "economyKey": "TUNISIA",
+      "currencyCode": "TND",
+      "currencyName": "Tunisian Dinar",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 7000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "TR",
+      "iso3": "TUR",
+      "numericCode": "792",
+      "countryName": "Turkey",
+      "economyKey": "TURKEY",
+      "currencyCode": "TRY",
+      "currencyName": "Turkish Lira",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 115000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "TM",
+      "iso3": "TKM",
+      "numericCode": "795",
+      "countryName": "Turkmenistan",
+      "economyKey": "TURKMENISTAN",
+      "currencyCode": "TMT",
+      "currencyName": "Turkmenistani Manat",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 20000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "TC",
+      "iso3": "TCA",
+      "numericCode": "796",
+      "countryName": "Turks and Caicos Islands",
+      "economyKey": "TURKS_AND_CAICOS_ISLANDS",
+      "currencyCode": "USD",
+      "currencyName": "United States Dollar",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 100000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "TV",
+      "iso3": "TUV",
+      "numericCode": "798",
+      "countryName": "Tuvalu",
+      "economyKey": "TUVALU",
+      "currencyCode": "AUD",
+      "currencyName": "Australian Dollar",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 10000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "UG",
+      "iso3": "UGA",
+      "numericCode": "800",
+      "countryName": "Uganda",
+      "economyKey": "UGANDA",
+      "currencyCode": "UGX",
+      "currencyName": "Ugandan Shilling",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 3000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "UA",
+      "iso3": "UKR",
+      "numericCode": "804",
+      "countryName": "Ukraine",
+      "economyKey": "UKRAINE",
+      "currencyCode": "UAH",
+      "currencyName": "Ukrainian Hryvnia",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 13000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "AE",
+      "iso3": "ARE",
+      "numericCode": "784",
+      "countryName": "United Arab Emirates",
+      "economyKey": "UNITED_ARAB_EMIRATES",
+      "currencyCode": "AED",
+      "currencyName": "UAE Dirham",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 94000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "GB",
+      "iso3": "GBR",
+      "numericCode": "826",
+      "countryName": "United Kingdom",
+      "economyKey": "UNITED_KINGDOM",
+      "currencyCode": "GBP",
+      "currencyName": "British Pound",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 150000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "US",
+      "iso3": "USA",
+      "numericCode": "840",
+      "countryName": "United States",
+      "economyKey": "UNITED_STATES_OF_AMERICA",
+      "currencyCode": "USD",
+      "currencyName": "United States Dollar",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 120000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "UM",
+      "iso3": "UMI",
+      "numericCode": "581",
+      "countryName": "United States Minor Outlying Islands",
+      "economyKey": null,
+      "currencyCode": null,
+      "currencyName": null,
+      "baselineYear": 2015,
+      "referenceReservesUsd": null,
+      "status": "NOT_RECORDED",
+      "profileStatus": "UNAVAILABLE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "UY",
+      "iso3": "URY",
+      "numericCode": "858",
+      "countryName": "Uruguay",
+      "economyKey": "URUGUAY",
+      "currencyCode": "UYU",
+      "currencyName": "Uruguayan Peso",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 15000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "UZ",
+      "iso3": "UZB",
+      "numericCode": "860",
+      "countryName": "Uzbekistan",
+      "economyKey": "UZBEKISTAN",
+      "currencyCode": "UZS",
+      "currencyName": "Uzbekistani Som",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 15000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "VU",
+      "iso3": "VUT",
+      "numericCode": "548",
+      "countryName": "Vanuatu",
+      "economyKey": "VANUATU",
+      "currencyCode": "VUV",
+      "currencyName": "Vanuatu Vatu",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 150000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "VE",
+      "iso3": "VEN",
+      "numericCode": "862",
+      "countryName": "Venezuela",
+      "economyKey": "VENEZUELA",
+      "currencyCode": "VEF",
+      "currencyName": "Venezuelan Bolívar",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 15000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "VN",
+      "iso3": "VNM",
+      "numericCode": "704",
+      "countryName": "Vietnam",
+      "economyKey": "VIETNAM",
+      "currencyCode": "VND",
+      "currencyName": "Vietnamese Dong",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 28000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "VG",
+      "iso3": "VGB",
+      "numericCode": "092",
+      "countryName": "Virgin Islands (British)",
+      "economyKey": "BRITISH_VIRGIN_ISLANDS",
+      "currencyCode": "USD",
+      "currencyName": "United States Dollar",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 150000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "VI",
+      "iso3": "VIR",
+      "numericCode": "850",
+      "countryName": "Virgin Islands (U.S.)",
+      "economyKey": "US_VIRGIN_ISLANDS",
+      "currencyCode": "USD",
+      "currencyName": "United States Dollar",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 300000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "WF",
+      "iso3": "WLF",
+      "numericCode": "876",
+      "countryName": "Wallis and Futuna",
+      "economyKey": "WALLIS_AND_FUTUNA",
+      "currencyCode": "XPF",
+      "currencyName": "CFP Franc",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 10000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "EH",
+      "iso3": "ESH",
+      "numericCode": "732",
+      "countryName": "Western Sahara",
+      "economyKey": "WESTERN_SAHARA",
+      "currencyCode": "MAD",
+      "currencyName": "Moroccan Dirham",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 10000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "YE",
+      "iso3": "YEM",
+      "numericCode": "887",
+      "countryName": "Yemen",
+      "economyKey": "YEMEN",
+      "currencyCode": "YER",
+      "currencyName": "Yemeni Rial",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 1000000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "ZM",
+      "iso3": "ZMB",
+      "numericCode": "894",
+      "countryName": "Zambia",
+      "economyKey": "ZAMBIA",
+      "currencyCode": "ZMW",
+      "currencyName": "Zambian Kwacha",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 2500000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    },
+    {
+      "countryCode": "ZW",
+      "iso3": "ZWE",
+      "numericCode": "716",
+      "countryName": "Zimbabwe",
+      "economyKey": "ZIMBABWE",
+      "currencyCode": "USD",
+      "currencyName": "United States Dollar",
+      "baselineYear": 2015,
+      "referenceReservesUsd": 500000000,
+      "status": "RECORDED_BASELINE",
+      "profileStatus": "OBSERVED_LOCAL_BASELINE",
+      "sourceFile": "economy_raw_financial_data_v2.json",
+      "sourceField": "rawIndicators.foreignExchangeReservesUsd",
+      "crossCheckFields": [
+        "economy_raw_financial_data_v2.json:rawSourceRecords.economy.reserves",
+        "economy_global_profiles_v1.json:sourceValues.reserves",
+        "economy_global_profiles_v1.json:indicators.foreignExchangeReservesUsd"
+      ]
+    }
+  ]
+}

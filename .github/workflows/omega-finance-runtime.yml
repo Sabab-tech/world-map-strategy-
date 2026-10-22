@@ -34,6 +34,8 @@ jobs:
         run: node --check omega_forex_monetary_engine_v1.js
       - name: Validate FX regression test syntax
         run: node --check test/omega_forex_monetary_engine_v1.test.mjs
+      - name: Validate dual-currency foreign-reserve data and runtime
+        run: node --check omega_foreign_reserve_runtime_v1.js && node --check scripts/generate_foreign_exchange_reserve_profiles_v1.mjs && node --check test/foreign_exchange_reserve_profiles_v1.test.mjs && node scripts/generate_foreign_exchange_reserve_profiles_v1.mjs --check && node --test test/foreign_exchange_reserve_profiles_v1.test.mjs
       - name: FX conversion, monetary policy and history tests
         run: node --test test/omega_forex_monetary_engine_v1.test.mjs
       - name: Government Banking runtime and test syntax

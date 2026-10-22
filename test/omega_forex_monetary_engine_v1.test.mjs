@@ -146,6 +146,8 @@ test('all canonical country profiles resolve currency metadata and honest simula
   const missingRates = quotes.filter(row => row.currencyCode && !(Number(row.localPerUsd) > 0));
   assert.equal(profiles.length, 249);
   assert.equal(diagnostics.countryAreaCount, 249);
+  assert.equal(typeof localContext.fetch, 'undefined', 'this test intentionally has no network provider');
+  assert.equal(diagnostics.offlineSimulationReady, true, 'game simulation quotes must be ready without an online FX provider');
   assert.equal(diagnostics.countriesWithCurrency, 248);
   assert.equal(diagnostics.countriesWithSimulationRate, 248,
     JSON.stringify({ missingRates, countriesWithoutQuote: quotes.filter(row => row.currencyCode && !(Number(row.localPerUsd) > 0)).map(row => ({ name: row.countryName, iso3: row.iso3, countryCode: row.countryCode, currencyCode: row.currencyCode, rateSource: row.rateSource, status: row.status })) }));
@@ -295,6 +297,20 @@ test('runtime syncs country finance into Government Banking and settles FX with 
   assert.equal(intervention.ok, true);
   assert.ok(intervention.transaction.newLocalPerUsd < intervention.transaction.oldLocalPerUsd);
   assert.equal(context.gameState.governmentBanking.forex.ledger.length, 2);
+});
+
+test('FX converter defaults to a Treasury-funded USD source and the player domestic currency', () => {
+  const pair = engine.math.defaultConversionPair('BDT', ['USD', 'BDT', 'NGN']);
+  assert.equal(pair.fromCode, 'USD');
+  assert.equal(pair.toCode, 'BDT');
+  const usdHomePair = engine.math.defaultConversionPair('USD', ['USD', 'BDT', 'NGN']);
+  assert.equal(usdHomePair.fromCode, 'USD');
+  assert.equal(usdHomePair.toCode, 'BDT');
+  const unknownHomePair = engine.math.defaultConversionPair('XYZ', ['USD', 'BDT', 'NGN']);
+  assert.equal(unknownHomePair.fromCode, 'USD');
+  assert.equal(unknownHomePair.toCode, 'BDT');
+  assert.match(source, /currencyOptions\(defaultPair\.fromCode\)/);
+  assert.match(source, /currencyOptions\(defaultPair\.toCode\)/);
 });
 
 test('FX panel mounts only inside the dedicated Finance FX tab host',()=>{
