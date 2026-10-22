@@ -211,4 +211,17 @@ assert.equal(diag.siteCount,3);
 assert.equal(diag.extractionPlans,3);
 assert.equal(diag.targetArchitecture,'SITE -> EXTRACTION -> WAREHOUSE -> ROUTE -> FACTORY -> PROCESS -> OUTPUT');
 
+// Every route segment shares a per-turn transport ledger across shipments.
+context.Omega.Simulation.clock.turn=43;
+context.Game.state.transport.BGD.infrastructure.roads.capacityPerDay=11000;
+context.Game.state.transport.BGD.infrastructure.roads.quality=1;
+const firstCapacityShipment=N.dispatchShipment({countryId:'BGD',siteId:'SITE_BGD_COAL_01',resourceId:'coal',quantity:5000,transportMode:'rail'});
+assert.equal(firstCapacityShipment.status,'DISPATCHED',JSON.stringify(firstCapacityShipment));
+const secondCapacityShipment=N.dispatchShipment({countryId:'BGD',siteId:'SITE_BGD_COAL_01',resourceId:'coal',quantity:1000,transportMode:'rail'});
+assert.equal(secondCapacityShipment.status,'DISPATCHED',JSON.stringify(secondCapacityShipment));
+assert.equal(secondCapacityShipment.shipment.quantity,500,'shared capacity across both truck legs must cap the second shipment');
+const sharedTransport=context.Game.state.resource.BGD.industrialNetwork.transportCapacityLedger.turns['43'];
+assert.equal(sharedTransport.usedByMode.truck,11000,'truck capacity must be counted jointly for all route legs in one turn');
+assert.equal(sharedTransport.shipments.length,2);
+
 console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');
