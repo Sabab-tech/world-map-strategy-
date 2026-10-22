@@ -1902,7 +1902,8 @@ function executeMultiInputFactoryCycle(input={}){
     const eligibleLots=lots.filter(l=>{
       const status=String(l?.status||'').toUpperCase();
       const remaining=Math.max(0,num(l?.remainingQuantity!=null?l.remainingQuantity:l?.quantity)||0);
-      return tok(l?.resourceId||l?.materialIdentity)===resourceId&&remaining>1e-9&&!inactiveLotStatuses.has(status);
+      return tok(l?.resourceId||l?.materialIdentity)===resourceId&&String(l?.batchId||'').trim()!==''&&
+        remaining>1e-9&&!inactiveLotStatuses.has(status);
     });
     const batchIds=eligibleLots.map(l=>String(l?.batchId||'').trim()).filter(Boolean);
     if(new Set(batchIds).size!==batchIds.length)
