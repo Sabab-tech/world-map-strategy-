@@ -1274,5 +1274,2067 @@
       "constructionBonus": 0.05,
       "techTransferBonus": 0.25
     }
+  },
+  "factoryCatalogSchemaVersion": "1.0.0",
+  "factoryCatalogPolicy": {
+    "authority": "SINGLE_CANONICAL_FACTORY_CATALOG",
+    "observedDataPolicy": "Unknown real-world values remain NOT_RECORDED; factory profile values below are explicitly simulation-only.",
+    "quantityPolicy": "All recipe coefficients are deterministic simulation ratios on the declared SIMULATION_TONNE_EQUIVALENT basis; no implicit unit conversion is allowed.",
+    "missingInputPolicy": "A production cycle requires every declared recipe input. Missing or untracked required inputs block the cycle.",
+    "outputPolicy": "Output batches are created once per committed transaction, retain source-batch lineage and are added to the processed warehouse exactly once.",
+    "capacityPolicy": "Factory profile capacity is a maximum processed production-unit quantity per simulation day; resource availability and all recipe coefficients further constrain output.",
+    "categoryOrder": [
+      "RAW_RESOURCE_PROCESSING",
+      "METALS_AND_ALLOYS",
+      "CHEMICALS_AND_POLYMERS",
+      "AGRICULTURE_AND_FOOD",
+      "CONSTRUCTION_AND_GLASS",
+      "PAPER_AND_PACKAGING",
+      "TEXTILES_AND_APPAREL",
+      "MACHINERY_AND_CAPITAL_GOODS",
+      "ELECTRONICS_AND_ENERGY_STORAGE",
+      "TRANSPORT_AND_AEROSPACE",
+      "HEALTHCARE_AND_DEFENCE",
+      "CIRCULAR_INDUSTRY"
+    ],
+    "uiSections": [
+      "MY_FACTORIES",
+      "PRODUCTION_LINES",
+      "INVENTORY",
+      "INDUSTRIAL_FINANCE"
+    ],
+    "simulationOnly": true
+  },
+  "factoryProfiles": {
+    "AGGREGATE_CRUSHING_PLANT": {
+      "factoryType": "AGGREGATE_CRUSHING_PLANT",
+      "name": "Aggregate Crushing Plant",
+      "category": "CONSTRUCTION_AND_GLASS",
+      "subCategory": "CONSTRUCTION_INPUTS",
+      "iconId": "industrial-production",
+      "constructionCost": 3800,
+      "constructionDays": 60,
+      "defaultCapacityPerDay": 500,
+      "workforce": {
+        "operators": 40,
+        "engineers": 8
+      },
+      "utilities": {
+        "electricityMWhPerDay": 60,
+        "waterM3PerDay": 35
+      },
+      "requiredInfrastructure": [
+        "road",
+        "power"
+      ],
+      "requiredTechnologyIds": [],
+      "unit": "GAME_CURRENCY_UNITS",
+      "authority": "SIMULATED_GAMEPLAY_PROFILE",
+      "simulationOnly": true
+    },
+    "ALUMINA_REFINERY": {
+      "factoryType": "ALUMINA_REFINERY",
+      "name": "Alumina Refinery",
+      "category": "CHEMICALS_AND_POLYMERS",
+      "subCategory": "ENERGY_PROCESSING",
+      "iconId": "factory",
+      "constructionCost": 5575,
+      "constructionDays": 80,
+      "defaultCapacityPerDay": 625,
+      "workforce": {
+        "operators": 55,
+        "engineers": 12
+      },
+      "utilities": {
+        "electricityMWhPerDay": 95,
+        "waterM3PerDay": 55
+      },
+      "requiredInfrastructure": [
+        "pipeline",
+        "power"
+      ],
+      "requiredTechnologyIds": [],
+      "unit": "GAME_CURRENCY_UNITS",
+      "authority": "SIMULATED_GAMEPLAY_PROFILE",
+      "simulationOnly": true
+    },
+    "BORATE_PROCESSING_PLANT": {
+      "factoryType": "BORATE_PROCESSING_PLANT",
+      "name": "Borate Processing Plant",
+      "category": "CONSTRUCTION_AND_GLASS",
+      "subCategory": "CONSTRUCTION_INPUTS",
+      "iconId": "industrial-production",
+      "constructionCost": 3950,
+      "constructionDays": 100,
+      "defaultCapacityPerDay": 750,
+      "workforce": {
+        "operators": 70,
+        "engineers": 16
+      },
+      "utilities": {
+        "electricityMWhPerDay": 130,
+        "waterM3PerDay": 75
+      },
+      "requiredInfrastructure": [
+        "road",
+        "power"
+      ],
+      "requiredTechnologyIds": [],
+      "unit": "GAME_CURRENCY_UNITS",
+      "authority": "SIMULATED_GAMEPLAY_PROFILE",
+      "simulationOnly": true
+    },
+    "CEMENT_LIMESTONE_PLANT": {
+      "factoryType": "CEMENT_LIMESTONE_PLANT",
+      "name": "Cement Limestone Feed Plant",
+      "category": "CONSTRUCTION_AND_GLASS",
+      "subCategory": "CONSTRUCTION_INPUTS",
+      "iconId": "industrial-production",
+      "constructionCost": 4025,
+      "constructionDays": 120,
+      "defaultCapacityPerDay": 875,
+      "workforce": {
+        "operators": 85,
+        "engineers": 20
+      },
+      "utilities": {
+        "electricityMWhPerDay": 165,
+        "waterM3PerDay": 95
+      },
+      "requiredInfrastructure": [
+        "road",
+        "power"
+      ],
+      "requiredTechnologyIds": [],
+      "unit": "GAME_CURRENCY_UNITS",
+      "authority": "SIMULATED_GAMEPLAY_PROFILE",
+      "simulationOnly": true
+    },
+    "CHROMITE_CONCENTRATOR": {
+      "factoryType": "CHROMITE_CONCENTRATOR",
+      "name": "Chromite Concentrator",
+      "category": "RAW_RESOURCE_PROCESSING",
+      "subCategory": "MINERAL_PROCESSING",
+      "iconId": "industrial-production",
+      "constructionCost": 4900,
+      "constructionDays": 140,
+      "defaultCapacityPerDay": 1000,
+      "workforce": {
+        "operators": 100,
+        "engineers": 8
+      },
+      "utilities": {
+        "electricityMWhPerDay": 200,
+        "waterM3PerDay": 115
+      },
+      "requiredInfrastructure": [
+        "road",
+        "power"
+      ],
+      "requiredTechnologyIds": [],
+      "unit": "GAME_CURRENCY_UNITS",
+      "authority": "SIMULATED_GAMEPLAY_PROFILE",
+      "simulationOnly": true
+    },
+    "COAL_PREPARATION_PLANT": {
+      "factoryType": "COAL_PREPARATION_PLANT",
+      "name": "Coal Preparation Plant",
+      "category": "CHEMICALS_AND_POLYMERS",
+      "subCategory": "ENERGY_PROCESSING",
+      "iconId": "factory",
+      "constructionCost": 5875,
+      "constructionDays": 160,
+      "defaultCapacityPerDay": 1125,
+      "workforce": {
+        "operators": 115,
+        "engineers": 12
+      },
+      "utilities": {
+        "electricityMWhPerDay": 235,
+        "waterM3PerDay": 135
+      },
+      "requiredInfrastructure": [
+        "pipeline",
+        "power"
+      ],
+      "requiredTechnologyIds": [],
+      "unit": "GAME_CURRENCY_UNITS",
+      "authority": "SIMULATED_GAMEPLAY_PROFILE",
+      "simulationOnly": true
+    },
+    "COBALT_REFINERY": {
+      "factoryType": "COBALT_REFINERY",
+      "name": "Cobalt Refinery",
+      "category": "CHEMICALS_AND_POLYMERS",
+      "subCategory": "ENERGY_PROCESSING",
+      "iconId": "factory",
+      "constructionCost": 6950,
+      "constructionDays": 60,
+      "defaultCapacityPerDay": 1250,
+      "workforce": {
+        "operators": 40,
+        "engineers": 16
+      },
+      "utilities": {
+        "electricityMWhPerDay": 270,
+        "waterM3PerDay": 155
+      },
+      "requiredInfrastructure": [
+        "pipeline",
+        "power"
+      ],
+      "requiredTechnologyIds": [],
+      "unit": "GAME_CURRENCY_UNITS",
+      "authority": "SIMULATED_GAMEPLAY_PROFILE",
+      "simulationOnly": true
+    },
+    "COPPER_CONCENTRATOR": {
+      "factoryType": "COPPER_CONCENTRATOR",
+      "name": "Copper Concentrator",
+      "category": "RAW_RESOURCE_PROCESSING",
+      "subCategory": "MINERAL_PROCESSING",
+      "iconId": "industrial-production",
+      "constructionCost": 5125,
+      "constructionDays": 80,
+      "defaultCapacityPerDay": 500,
+      "workforce": {
+        "operators": 55,
+        "engineers": 20
+      },
+      "utilities": {
+        "electricityMWhPerDay": 305,
+        "waterM3PerDay": 35
+      },
+      "requiredInfrastructure": [
+        "road",
+        "power"
+      ],
+      "requiredTechnologyIds": [],
+      "unit": "GAME_CURRENCY_UNITS",
+      "authority": "SIMULATED_GAMEPLAY_PROFILE",
+      "simulationOnly": true
+    },
+    "DIAMOND_RECOVERY_PLANT": {
+      "factoryType": "DIAMOND_RECOVERY_PLANT",
+      "name": "Diamond Recovery Plant",
+      "category": "RAW_RESOURCE_PROCESSING",
+      "subCategory": "PRECIOUS_MATERIALS",
+      "iconId": "gem",
+      "constructionCost": 4800,
+      "constructionDays": 100,
+      "defaultCapacityPerDay": 625,
+      "workforce": {
+        "operators": 70,
+        "engineers": 8
+      },
+      "utilities": {
+        "electricityMWhPerDay": 340,
+        "waterM3PerDay": 55
+      },
+      "requiredInfrastructure": [
+        "road",
+        "power"
+      ],
+      "requiredTechnologyIds": [],
+      "unit": "GAME_CURRENCY_UNITS",
+      "authority": "SIMULATED_GAMEPLAY_PROFILE",
+      "simulationOnly": true
+    },
+    "DOLOMITE_PROCESSING_PLANT": {
+      "factoryType": "DOLOMITE_PROCESSING_PLANT",
+      "name": "Dolomite Processing Plant",
+      "category": "CONSTRUCTION_AND_GLASS",
+      "subCategory": "CONSTRUCTION_INPUTS",
+      "iconId": "industrial-production",
+      "constructionCost": 4475,
+      "constructionDays": 120,
+      "defaultCapacityPerDay": 750,
+      "workforce": {
+        "operators": 85,
+        "engineers": 12
+      },
+      "utilities": {
+        "electricityMWhPerDay": 60,
+        "waterM3PerDay": 75
+      },
+      "requiredInfrastructure": [
+        "road",
+        "power"
+      ],
+      "requiredTechnologyIds": [],
+      "unit": "GAME_CURRENCY_UNITS",
+      "authority": "SIMULATED_GAMEPLAY_PROFILE",
+      "simulationOnly": true
+    },
+    "GAS_PROCESSING_PLANT": {
+      "factoryType": "GAS_PROCESSING_PLANT",
+      "name": "Natural Gas Processing Plant",
+      "category": "CHEMICALS_AND_POLYMERS",
+      "subCategory": "ENERGY_PROCESSING",
+      "iconId": "factory",
+      "constructionCost": 6250,
+      "constructionDays": 140,
+      "defaultCapacityPerDay": 875,
+      "workforce": {
+        "operators": 100,
+        "engineers": 16
+      },
+      "utilities": {
+        "electricityMWhPerDay": 95,
+        "waterM3PerDay": 95
+      },
+      "requiredInfrastructure": [
+        "pipeline",
+        "power"
+      ],
+      "requiredTechnologyIds": [],
+      "unit": "GAME_CURRENCY_UNITS",
+      "authority": "SIMULATED_GAMEPLAY_PROFILE",
+      "simulationOnly": true
+    },
+    "GEMSTONE_SORTING_PLANT": {
+      "factoryType": "GEMSTONE_SORTING_PLANT",
+      "name": "Gemstone Sorting Plant",
+      "category": "RAW_RESOURCE_PROCESSING",
+      "subCategory": "CONSTRUCTION_INPUTS",
+      "iconId": "industrial-production",
+      "constructionCost": 5025,
+      "constructionDays": 160,
+      "defaultCapacityPerDay": 1000,
+      "workforce": {
+        "operators": 115,
+        "engineers": 20
+      },
+      "utilities": {
+        "electricityMWhPerDay": 130,
+        "waterM3PerDay": 115
+      },
+      "requiredInfrastructure": [
+        "road",
+        "power"
+      ],
+      "requiredTechnologyIds": [],
+      "unit": "GAME_CURRENCY_UNITS",
+      "authority": "SIMULATED_GAMEPLAY_PROFILE",
+      "simulationOnly": true
+    },
+    "GLASS_SILICA_PLANT": {
+      "factoryType": "GLASS_SILICA_PLANT",
+      "name": "Silica Processing Plant",
+      "category": "CONSTRUCTION_AND_GLASS",
+      "subCategory": "CONSTRUCTION_INPUTS",
+      "iconId": "industrial-production",
+      "constructionCost": 4700,
+      "constructionDays": 60,
+      "defaultCapacityPerDay": 1125,
+      "workforce": {
+        "operators": 40,
+        "engineers": 8
+      },
+      "utilities": {
+        "electricityMWhPerDay": 165,
+        "waterM3PerDay": 135
+      },
+      "requiredInfrastructure": [
+        "road",
+        "power"
+      ],
+      "requiredTechnologyIds": [],
+      "unit": "GAME_CURRENCY_UNITS",
+      "authority": "SIMULATED_GAMEPLAY_PROFILE",
+      "simulationOnly": true
+    },
+    "GOLD_PROCESSING_PLANT": {
+      "factoryType": "GOLD_PROCESSING_PLANT",
+      "name": "Gold Processing Plant",
+      "category": "RAW_RESOURCE_PROCESSING",
+      "subCategory": "PRECIOUS_MATERIALS",
+      "iconId": "gem",
+      "constructionCost": 5175,
+      "constructionDays": 80,
+      "defaultCapacityPerDay": 1250,
+      "workforce": {
+        "operators": 55,
+        "engineers": 12
+      },
+      "utilities": {
+        "electricityMWhPerDay": 200,
+        "waterM3PerDay": 155
+      },
+      "requiredInfrastructure": [
+        "road",
+        "power"
+      ],
+      "requiredTechnologyIds": [],
+      "unit": "GAME_CURRENCY_UNITS",
+      "authority": "SIMULATED_GAMEPLAY_PROFILE",
+      "simulationOnly": true
+    },
+    "GRAPHITE_CONCENTRATOR": {
+      "factoryType": "GRAPHITE_CONCENTRATOR",
+      "name": "Graphite Concentrator",
+      "category": "RAW_RESOURCE_PROCESSING",
+      "subCategory": "MINERAL_PROCESSING",
+      "iconId": "industrial-production",
+      "constructionCost": 5650,
+      "constructionDays": 100,
+      "defaultCapacityPerDay": 500,
+      "workforce": {
+        "operators": 70,
+        "engineers": 16
+      },
+      "utilities": {
+        "electricityMWhPerDay": 235,
+        "waterM3PerDay": 35
+      },
+      "requiredInfrastructure": [
+        "road",
+        "power"
+      ],
+      "requiredTechnologyIds": [],
+      "unit": "GAME_CURRENCY_UNITS",
+      "authority": "SIMULATED_GAMEPLAY_PROFILE",
+      "simulationOnly": true
+    },
+    "GYPSUM_PROCESSING_PLANT": {
+      "factoryType": "GYPSUM_PROCESSING_PLANT",
+      "name": "Gypsum Processing Plant",
+      "category": "CONSTRUCTION_AND_GLASS",
+      "subCategory": "CONSTRUCTION_INPUTS",
+      "iconId": "industrial-production",
+      "constructionCost": 4925,
+      "constructionDays": 120,
+      "defaultCapacityPerDay": 625,
+      "workforce": {
+        "operators": 85,
+        "engineers": 20
+      },
+      "utilities": {
+        "electricityMWhPerDay": 270,
+        "waterM3PerDay": 55
+      },
+      "requiredInfrastructure": [
+        "road",
+        "power"
+      ],
+      "requiredTechnologyIds": [],
+      "unit": "GAME_CURRENCY_UNITS",
+      "authority": "SIMULATED_GAMEPLAY_PROFILE",
+      "simulationOnly": true
+    },
+    "LITHIUM_CONVERSION_PLANT": {
+      "factoryType": "LITHIUM_CONVERSION_PLANT",
+      "name": "Lithium Conversion Plant",
+      "category": "RAW_RESOURCE_PROCESSING",
+      "subCategory": "STRATEGIC_MINERALS",
+      "iconId": "pickaxe",
+      "constructionCost": 7700,
+      "constructionDays": 140,
+      "defaultCapacityPerDay": 750,
+      "workforce": {
+        "operators": 100,
+        "engineers": 8
+      },
+      "utilities": {
+        "electricityMWhPerDay": 305,
+        "waterM3PerDay": 75
+      },
+      "requiredInfrastructure": [
+        "road",
+        "power"
+      ],
+      "requiredTechnologyIds": [],
+      "unit": "GAME_CURRENCY_UNITS",
+      "authority": "SIMULATED_GAMEPLAY_PROFILE",
+      "simulationOnly": true
+    },
+    "MAGNESIA_PLANT": {
+      "factoryType": "MAGNESIA_PLANT",
+      "name": "Magnesia Plant",
+      "category": "CONSTRUCTION_AND_GLASS",
+      "subCategory": "CONSTRUCTION_INPUTS",
+      "iconId": "industrial-production",
+      "constructionCost": 5075,
+      "constructionDays": 160,
+      "defaultCapacityPerDay": 875,
+      "workforce": {
+        "operators": 115,
+        "engineers": 12
+      },
+      "utilities": {
+        "electricityMWhPerDay": 340,
+        "waterM3PerDay": 95
+      },
+      "requiredInfrastructure": [
+        "road",
+        "power"
+      ],
+      "requiredTechnologyIds": [],
+      "unit": "GAME_CURRENCY_UNITS",
+      "authority": "SIMULATED_GAMEPLAY_PROFILE",
+      "simulationOnly": true
+    },
+    "MANGANESE_BENEFICIATION_PLANT": {
+      "factoryType": "MANGANESE_BENEFICIATION_PLANT",
+      "name": "Manganese Beneficiation Plant",
+      "category": "RAW_RESOURCE_PROCESSING",
+      "subCategory": "MINERAL_PROCESSING",
+      "iconId": "industrial-production",
+      "constructionCost": 5950,
+      "constructionDays": 60,
+      "defaultCapacityPerDay": 1000,
+      "workforce": {
+        "operators": 40,
+        "engineers": 16
+      },
+      "utilities": {
+        "electricityMWhPerDay": 60,
+        "waterM3PerDay": 115
+      },
+      "requiredInfrastructure": [
+        "road",
+        "power"
+      ],
+      "requiredTechnologyIds": [],
+      "unit": "GAME_CURRENCY_UNITS",
+      "authority": "SIMULATED_GAMEPLAY_PROFILE",
+      "simulationOnly": true
+    },
+    "MINERAL_SANDS_PLANT": {
+      "factoryType": "MINERAL_SANDS_PLANT",
+      "name": "Mineral Sands Plant",
+      "category": "CONSTRUCTION_AND_GLASS",
+      "subCategory": "CONSTRUCTION_INPUTS",
+      "iconId": "industrial-production",
+      "constructionCost": 5225,
+      "constructionDays": 80,
+      "defaultCapacityPerDay": 1125,
+      "workforce": {
+        "operators": 55,
+        "engineers": 20
+      },
+      "utilities": {
+        "electricityMWhPerDay": 95,
+        "waterM3PerDay": 135
+      },
+      "requiredInfrastructure": [
+        "road",
+        "power"
+      ],
+      "requiredTechnologyIds": [],
+      "unit": "GAME_CURRENCY_UNITS",
+      "authority": "SIMULATED_GAMEPLAY_PROFILE",
+      "simulationOnly": true
+    },
+    "NICKEL_PROCESSING_PLANT": {
+      "factoryType": "NICKEL_PROCESSING_PLANT",
+      "name": "Nickel Processing Plant",
+      "category": "RAW_RESOURCE_PROCESSING",
+      "subCategory": "MINERAL_PROCESSING",
+      "iconId": "industrial-production",
+      "constructionCost": 6100,
+      "constructionDays": 100,
+      "defaultCapacityPerDay": 1250,
+      "workforce": {
+        "operators": 70,
+        "engineers": 8
+      },
+      "utilities": {
+        "electricityMWhPerDay": 130,
+        "waterM3PerDay": 155
+      },
+      "requiredInfrastructure": [
+        "road",
+        "power"
+      ],
+      "requiredTechnologyIds": [],
+      "unit": "GAME_CURRENCY_UNITS",
+      "authority": "SIMULATED_GAMEPLAY_PROFILE",
+      "simulationOnly": true
+    },
+    "NIOBIUM_CONCENTRATION_PLANT": {
+      "factoryType": "NIOBIUM_CONCENTRATION_PLANT",
+      "name": "Niobium Concentration Plant",
+      "category": "RAW_RESOURCE_PROCESSING",
+      "subCategory": "STRATEGIC_MINERALS",
+      "iconId": "pickaxe",
+      "constructionCost": 8075,
+      "constructionDays": 120,
+      "defaultCapacityPerDay": 500,
+      "workforce": {
+        "operators": 85,
+        "engineers": 12
+      },
+      "utilities": {
+        "electricityMWhPerDay": 165,
+        "waterM3PerDay": 35
+      },
+      "requiredInfrastructure": [
+        "road",
+        "power"
+      ],
+      "requiredTechnologyIds": [],
+      "unit": "GAME_CURRENCY_UNITS",
+      "authority": "SIMULATED_GAMEPLAY_PROFILE",
+      "simulationOnly": true
+    },
+    "OIL_SHALE_RETORT": {
+      "factoryType": "OIL_SHALE_RETORT",
+      "name": "Oil Shale Retort",
+      "category": "CHEMICALS_AND_POLYMERS",
+      "subCategory": "ENERGY_PROCESSING",
+      "iconId": "factory",
+      "constructionCost": 7150,
+      "constructionDays": 140,
+      "defaultCapacityPerDay": 625,
+      "workforce": {
+        "operators": 100,
+        "engineers": 16
+      },
+      "utilities": {
+        "electricityMWhPerDay": 200,
+        "waterM3PerDay": 55
+      },
+      "requiredInfrastructure": [
+        "pipeline",
+        "power"
+      ],
+      "requiredTechnologyIds": [],
+      "unit": "GAME_CURRENCY_UNITS",
+      "authority": "SIMULATED_GAMEPLAY_PROFILE",
+      "simulationOnly": true
+    },
+    "ORE_BENEFICIATION_PLANT": {
+      "factoryType": "ORE_BENEFICIATION_PLANT",
+      "name": "Ore Beneficiation Plant",
+      "category": "RAW_RESOURCE_PROCESSING",
+      "subCategory": "MINERAL_PROCESSING",
+      "iconId": "industrial-production",
+      "constructionCost": 6325,
+      "constructionDays": 160,
+      "defaultCapacityPerDay": 750,
+      "workforce": {
+        "operators": 115,
+        "engineers": 20
+      },
+      "utilities": {
+        "electricityMWhPerDay": 235,
+        "waterM3PerDay": 75
+      },
+      "requiredInfrastructure": [
+        "road",
+        "power"
+      ],
+      "requiredTechnologyIds": [],
+      "unit": "GAME_CURRENCY_UNITS",
+      "authority": "SIMULATED_GAMEPLAY_PROFILE",
+      "simulationOnly": true
+    },
+    "PGM_CONCENTRATOR": {
+      "factoryType": "PGM_CONCENTRATOR",
+      "name": "Platinum Group Metals Concentrator",
+      "category": "RAW_RESOURCE_PROCESSING",
+      "subCategory": "PRECIOUS_MATERIALS",
+      "iconId": "gem",
+      "constructionCost": 6000,
+      "constructionDays": 60,
+      "defaultCapacityPerDay": 875,
+      "workforce": {
+        "operators": 40,
+        "engineers": 8
+      },
+      "utilities": {
+        "electricityMWhPerDay": 270,
+        "waterM3PerDay": 95
+      },
+      "requiredInfrastructure": [
+        "road",
+        "power"
+      ],
+      "requiredTechnologyIds": [],
+      "unit": "GAME_CURRENCY_UNITS",
+      "authority": "SIMULATED_GAMEPLAY_PROFILE",
+      "simulationOnly": true
+    },
+    "PHOSPHATE_BENEFICIATION_PLANT": {
+      "factoryType": "PHOSPHATE_BENEFICIATION_PLANT",
+      "name": "Phosphate Beneficiation Plant",
+      "category": "RAW_RESOURCE_PROCESSING",
+      "subCategory": "MINERAL_PROCESSING",
+      "iconId": "industrial-production",
+      "constructionCost": 6475,
+      "constructionDays": 80,
+      "defaultCapacityPerDay": 1000,
+      "workforce": {
+        "operators": 55,
+        "engineers": 12
+      },
+      "utilities": {
+        "electricityMWhPerDay": 305,
+        "waterM3PerDay": 115
+      },
+      "requiredInfrastructure": [
+        "road",
+        "power"
+      ],
+      "requiredTechnologyIds": [],
+      "unit": "GAME_CURRENCY_UNITS",
+      "authority": "SIMULATED_GAMEPLAY_PROFILE",
+      "simulationOnly": true
+    },
+    "POTASH_PROCESSING_PLANT": {
+      "factoryType": "POTASH_PROCESSING_PLANT",
+      "name": "Potash Processing Plant",
+      "category": "RAW_RESOURCE_PROCESSING",
+      "subCategory": "MINERAL_PROCESSING",
+      "iconId": "industrial-production",
+      "constructionCost": 6550,
+      "constructionDays": 100,
+      "defaultCapacityPerDay": 1125,
+      "workforce": {
+        "operators": 70,
+        "engineers": 16
+      },
+      "utilities": {
+        "electricityMWhPerDay": 340,
+        "waterM3PerDay": 135
+      },
+      "requiredInfrastructure": [
+        "road",
+        "power"
+      ],
+      "requiredTechnologyIds": [],
+      "unit": "GAME_CURRENCY_UNITS",
+      "authority": "SIMULATED_GAMEPLAY_PROFILE",
+      "simulationOnly": true
+    },
+    "RARE_EARTH_BENEFICIATION_PLANT": {
+      "factoryType": "RARE_EARTH_BENEFICIATION_PLANT",
+      "name": "Rare Earth Beneficiation Plant",
+      "category": "RAW_RESOURCE_PROCESSING",
+      "subCategory": "STRATEGIC_MINERALS",
+      "iconId": "pickaxe",
+      "constructionCost": 8525,
+      "constructionDays": 120,
+      "defaultCapacityPerDay": 1250,
+      "workforce": {
+        "operators": 85,
+        "engineers": 20
+      },
+      "utilities": {
+        "electricityMWhPerDay": 60,
+        "waterM3PerDay": 155
+      },
+      "requiredInfrastructure": [
+        "road",
+        "power"
+      ],
+      "requiredTechnologyIds": [],
+      "unit": "GAME_CURRENCY_UNITS",
+      "authority": "SIMULATED_GAMEPLAY_PROFILE",
+      "simulationOnly": true
+    },
+    "REFINERY": {
+      "factoryType": "REFINERY",
+      "name": "Petroleum Refinery",
+      "category": "CHEMICALS_AND_POLYMERS",
+      "subCategory": "ENERGY_PROCESSING",
+      "iconId": "factory",
+      "constructionCost": 7600,
+      "constructionDays": 140,
+      "defaultCapacityPerDay": 500,
+      "workforce": {
+        "operators": 100,
+        "engineers": 8
+      },
+      "utilities": {
+        "electricityMWhPerDay": 95,
+        "waterM3PerDay": 35
+      },
+      "requiredInfrastructure": [
+        "pipeline",
+        "power"
+      ],
+      "requiredTechnologyIds": [],
+      "unit": "GAME_CURRENCY_UNITS",
+      "authority": "SIMULATED_GAMEPLAY_PROFILE",
+      "simulationOnly": true
+    },
+    "SALT_REFINERY": {
+      "factoryType": "SALT_REFINERY",
+      "name": "Salt Refinery",
+      "category": "CONSTRUCTION_AND_GLASS",
+      "subCategory": "CONSTRUCTION_INPUTS",
+      "iconId": "industrial-production",
+      "constructionCost": 5975,
+      "constructionDays": 160,
+      "defaultCapacityPerDay": 625,
+      "workforce": {
+        "operators": 115,
+        "engineers": 12
+      },
+      "utilities": {
+        "electricityMWhPerDay": 130,
+        "waterM3PerDay": 55
+      },
+      "requiredInfrastructure": [
+        "road",
+        "power"
+      ],
+      "requiredTechnologyIds": [],
+      "unit": "GAME_CURRENCY_UNITS",
+      "authority": "SIMULATED_GAMEPLAY_PROFILE",
+      "simulationOnly": true
+    },
+    "SILVER_CONCENTRATOR": {
+      "factoryType": "SILVER_CONCENTRATOR",
+      "name": "Silver Concentrator",
+      "category": "RAW_RESOURCE_PROCESSING",
+      "subCategory": "PRECIOUS_MATERIALS",
+      "iconId": "gem",
+      "constructionCost": 6450,
+      "constructionDays": 60,
+      "defaultCapacityPerDay": 750,
+      "workforce": {
+        "operators": 40,
+        "engineers": 16
+      },
+      "utilities": {
+        "electricityMWhPerDay": 165,
+        "waterM3PerDay": 75
+      },
+      "requiredInfrastructure": [
+        "road",
+        "power"
+      ],
+      "requiredTechnologyIds": [],
+      "unit": "GAME_CURRENCY_UNITS",
+      "authority": "SIMULATED_GAMEPLAY_PROFILE",
+      "simulationOnly": true
+    },
+    "STONE_PROCESSING_PLANT": {
+      "factoryType": "STONE_PROCESSING_PLANT",
+      "name": "Stone Processing Plant",
+      "category": "CONSTRUCTION_AND_GLASS",
+      "subCategory": "CONSTRUCTION_INPUTS",
+      "iconId": "industrial-production",
+      "constructionCost": 6125,
+      "constructionDays": 80,
+      "defaultCapacityPerDay": 875,
+      "workforce": {
+        "operators": 55,
+        "engineers": 20
+      },
+      "utilities": {
+        "electricityMWhPerDay": 200,
+        "waterM3PerDay": 95
+      },
+      "requiredInfrastructure": [
+        "road",
+        "power"
+      ],
+      "requiredTechnologyIds": [],
+      "unit": "GAME_CURRENCY_UNITS",
+      "authority": "SIMULATED_GAMEPLAY_PROFILE",
+      "simulationOnly": true
+    },
+    "TIN_CONCENTRATOR": {
+      "factoryType": "TIN_CONCENTRATOR",
+      "name": "Tin Concentrator",
+      "category": "RAW_RESOURCE_PROCESSING",
+      "subCategory": "MINERAL_PROCESSING",
+      "iconId": "industrial-production",
+      "constructionCost": 7000,
+      "constructionDays": 100,
+      "defaultCapacityPerDay": 1000,
+      "workforce": {
+        "operators": 70,
+        "engineers": 8
+      },
+      "utilities": {
+        "electricityMWhPerDay": 235,
+        "waterM3PerDay": 115
+      },
+      "requiredInfrastructure": [
+        "road",
+        "power"
+      ],
+      "requiredTechnologyIds": [],
+      "unit": "GAME_CURRENCY_UNITS",
+      "authority": "SIMULATED_GAMEPLAY_PROFILE",
+      "simulationOnly": true
+    },
+    "TUNGSTEN_CONCENTRATOR": {
+      "factoryType": "TUNGSTEN_CONCENTRATOR",
+      "name": "Tungsten Concentrator",
+      "category": "RAW_RESOURCE_PROCESSING",
+      "subCategory": "STRATEGIC_MINERALS",
+      "iconId": "pickaxe",
+      "constructionCost": 8975,
+      "constructionDays": 120,
+      "defaultCapacityPerDay": 1125,
+      "workforce": {
+        "operators": 85,
+        "engineers": 12
+      },
+      "utilities": {
+        "electricityMWhPerDay": 270,
+        "waterM3PerDay": 135
+      },
+      "requiredInfrastructure": [
+        "road",
+        "power"
+      ],
+      "requiredTechnologyIds": [],
+      "unit": "GAME_CURRENCY_UNITS",
+      "authority": "SIMULATED_GAMEPLAY_PROFILE",
+      "simulationOnly": true
+    },
+    "URANIUM_MILL": {
+      "factoryType": "URANIUM_MILL",
+      "name": "Uranium Mill",
+      "category": "RAW_RESOURCE_PROCESSING",
+      "subCategory": "STRATEGIC_MINERALS",
+      "iconId": "pickaxe",
+      "constructionCost": 9050,
+      "constructionDays": 140,
+      "defaultCapacityPerDay": 1250,
+      "workforce": {
+        "operators": 100,
+        "engineers": 16
+      },
+      "utilities": {
+        "electricityMWhPerDay": 305,
+        "waterM3PerDay": 155
+      },
+      "requiredInfrastructure": [
+        "road",
+        "power"
+      ],
+      "requiredTechnologyIds": [],
+      "unit": "GAME_CURRENCY_UNITS",
+      "authority": "SIMULATED_GAMEPLAY_PROFILE",
+      "simulationOnly": true
+    },
+    "ZINC_CONCENTRATOR": {
+      "factoryType": "ZINC_CONCENTRATOR",
+      "name": "Zinc Concentrator",
+      "category": "RAW_RESOURCE_PROCESSING",
+      "subCategory": "MINERAL_PROCESSING",
+      "iconId": "industrial-production",
+      "constructionCost": 7225,
+      "constructionDays": 160,
+      "defaultCapacityPerDay": 500,
+      "workforce": {
+        "operators": 115,
+        "engineers": 20
+      },
+      "utilities": {
+        "electricityMWhPerDay": 340,
+        "waterM3PerDay": 35
+      },
+      "requiredInfrastructure": [
+        "road",
+        "power"
+      ],
+      "requiredTechnologyIds": [],
+      "unit": "GAME_CURRENCY_UNITS",
+      "authority": "SIMULATED_GAMEPLAY_PROFILE",
+      "simulationOnly": true
+    },
+    "STEEL_AND_ALLOY_WORKS": {
+      "factoryType": "STEEL_AND_ALLOY_WORKS",
+      "name": "Steel and Alloy Works",
+      "category": "METALS_AND_ALLOYS",
+      "iconId": "steelworks",
+      "constructionCost": 18000,
+      "constructionDays": 240,
+      "defaultCapacityPerDay": 900,
+      "workforce": {
+        "operators": 240,
+        "engineers": 30
+      },
+      "utilities": {
+        "electricityMWhPerDay": 950,
+        "waterM3PerDay": 420
+      },
+      "requiredInfrastructure": [
+        "rail",
+        "power",
+        "industrial_water"
+      ],
+      "requiredTechnologyIds": [
+        "BASIC_METALLURGY"
+      ],
+      "unit": "GAME_CURRENCY_UNITS",
+      "authority": "SIMULATED_GAMEPLAY_PROFILE",
+      "simulationOnly": true
+    },
+    "NON_FERROUS_METAL_SMELTER": {
+      "factoryType": "NON_FERROUS_METAL_SMELTER",
+      "name": "Non-Ferrous Metal Smelter",
+      "category": "METALS_AND_ALLOYS",
+      "iconId": "smelter",
+      "constructionCost": 16000,
+      "constructionDays": 210,
+      "defaultCapacityPerDay": 650,
+      "workforce": {
+        "operators": 180,
+        "engineers": 24
+      },
+      "utilities": {
+        "electricityMWhPerDay": 1200,
+        "waterM3PerDay": 260
+      },
+      "requiredInfrastructure": [
+        "rail",
+        "power",
+        "industrial_water"
+      ],
+      "requiredTechnologyIds": [
+        "METAL_SMELTING"
+      ],
+      "unit": "GAME_CURRENCY_UNITS",
+      "authority": "SIMULATED_GAMEPLAY_PROFILE",
+      "simulationOnly": true
+    },
+    "PETROCHEMICAL_POLYMER_PLANT": {
+      "factoryType": "PETROCHEMICAL_POLYMER_PLANT",
+      "name": "Petrochemical, Plastics and Polymers",
+      "category": "CHEMICALS_AND_POLYMERS",
+      "iconId": "petrochemical-plant",
+      "constructionCost": 24000,
+      "constructionDays": 300,
+      "defaultCapacityPerDay": 800,
+      "workforce": {
+        "operators": 210,
+        "engineers": 35
+      },
+      "utilities": {
+        "electricityMWhPerDay": 1100,
+        "waterM3PerDay": 380
+      },
+      "requiredInfrastructure": [
+        "pipeline",
+        "power",
+        "industrial_water"
+      ],
+      "requiredTechnologyIds": [
+        "CHEMICAL_PROCESSING"
+      ],
+      "unit": "GAME_CURRENCY_UNITS",
+      "authority": "SIMULATED_GAMEPLAY_PROFILE",
+      "simulationOnly": true
+    },
+    "FERTILIZER_CHEMICAL_PLANT": {
+      "factoryType": "FERTILIZER_CHEMICAL_PLANT",
+      "name": "Fertilizer and Agrochemicals",
+      "category": "AGRICULTURE_AND_FOOD",
+      "iconId": "fertilizer-plant",
+      "constructionCost": 14000,
+      "constructionDays": 180,
+      "defaultCapacityPerDay": 1000,
+      "workforce": {
+        "operators": 160,
+        "engineers": 22
+      },
+      "utilities": {
+        "electricityMWhPerDay": 500,
+        "waterM3PerDay": 350
+      },
+      "requiredInfrastructure": [
+        "pipeline",
+        "power",
+        "industrial_water"
+      ],
+      "requiredTechnologyIds": [
+        "FERTILIZER_PROCESSING"
+      ],
+      "unit": "GAME_CURRENCY_UNITS",
+      "authority": "SIMULATED_GAMEPLAY_PROFILE",
+      "simulationOnly": true
+    },
+    "INDUSTRIAL_CHEMICALS_GAS_PLANT": {
+      "factoryType": "INDUSTRIAL_CHEMICALS_GAS_PLANT",
+      "name": "Industrial Chemicals and Gases",
+      "category": "CHEMICALS_AND_POLYMERS",
+      "iconId": "chemical-plant",
+      "constructionCost": 19000,
+      "constructionDays": 240,
+      "defaultCapacityPerDay": 700,
+      "workforce": {
+        "operators": 170,
+        "engineers": 30
+      },
+      "utilities": {
+        "electricityMWhPerDay": 800,
+        "waterM3PerDay": 400
+      },
+      "requiredInfrastructure": [
+        "pipeline",
+        "power",
+        "industrial_water"
+      ],
+      "requiredTechnologyIds": [
+        "CHEMICAL_PROCESSING"
+      ],
+      "unit": "GAME_CURRENCY_UNITS",
+      "authority": "SIMULATED_GAMEPLAY_PROFILE",
+      "simulationOnly": true
+    },
+    "CEMENT_CONCRETE_PLANT": {
+      "factoryType": "CEMENT_CONCRETE_PLANT",
+      "name": "Cement and Concrete Works",
+      "category": "CONSTRUCTION_AND_GLASS",
+      "iconId": "cement-plant",
+      "constructionCost": 10000,
+      "constructionDays": 150,
+      "defaultCapacityPerDay": 1400,
+      "workforce": {
+        "operators": 130,
+        "engineers": 18
+      },
+      "utilities": {
+        "electricityMWhPerDay": 450,
+        "waterM3PerDay": 150
+      },
+      "requiredInfrastructure": [
+        "road",
+        "rail",
+        "power"
+      ],
+      "requiredTechnologyIds": [
+        "CEMENT_PROCESSING"
+      ],
+      "unit": "GAME_CURRENCY_UNITS",
+      "authority": "SIMULATED_GAMEPLAY_PROFILE",
+      "simulationOnly": true
+    },
+    "GLASS_CERAMICS_PLANT": {
+      "factoryType": "GLASS_CERAMICS_PLANT",
+      "name": "Glass and Ceramics Works",
+      "category": "CONSTRUCTION_AND_GLASS",
+      "iconId": "glass-ceramic-plant",
+      "constructionCost": 12500,
+      "constructionDays": 180,
+      "defaultCapacityPerDay": 750,
+      "workforce": {
+        "operators": 140,
+        "engineers": 22
+      },
+      "utilities": {
+        "electricityMWhPerDay": 650,
+        "waterM3PerDay": 170
+      },
+      "requiredInfrastructure": [
+        "road",
+        "power"
+      ],
+      "requiredTechnologyIds": [
+        "THERMAL_PROCESSING"
+      ],
+      "unit": "GAME_CURRENCY_UNITS",
+      "authority": "SIMULATED_GAMEPLAY_PROFILE",
+      "simulationOnly": true
+    },
+    "PAPER_PACKAGING_MILL": {
+      "factoryType": "PAPER_PACKAGING_MILL",
+      "name": "Paper and Packaging Mill",
+      "category": "PAPER_AND_PACKAGING",
+      "iconId": "paper-mill",
+      "constructionCost": 9000,
+      "constructionDays": 150,
+      "defaultCapacityPerDay": 850,
+      "workforce": {
+        "operators": 150,
+        "engineers": 16
+      },
+      "utilities": {
+        "electricityMWhPerDay": 380,
+        "waterM3PerDay": 520
+      },
+      "requiredInfrastructure": [
+        "road",
+        "rail",
+        "power",
+        "industrial_water"
+      ],
+      "requiredTechnologyIds": [
+        "PAPER_PROCESSING"
+      ],
+      "unit": "GAME_CURRENCY_UNITS",
+      "authority": "SIMULATED_GAMEPLAY_PROFILE",
+      "simulationOnly": true
+    },
+    "FOOD_PROCESSING_COLD_CHAIN": {
+      "factoryType": "FOOD_PROCESSING_COLD_CHAIN",
+      "name": "Food Processing and Cold Chain",
+      "category": "AGRICULTURE_AND_FOOD",
+      "iconId": "food-processing",
+      "constructionCost": 7000,
+      "constructionDays": 120,
+      "defaultCapacityPerDay": 650,
+      "workforce": {
+        "operators": 170,
+        "engineers": 14
+      },
+      "utilities": {
+        "electricityMWhPerDay": 260,
+        "waterM3PerDay": 240
+      },
+      "requiredInfrastructure": [
+        "road",
+        "power",
+        "refrigeration"
+      ],
+      "requiredTechnologyIds": [
+        "FOOD_SAFETY"
+      ],
+      "unit": "GAME_CURRENCY_UNITS",
+      "authority": "SIMULATED_GAMEPLAY_PROFILE",
+      "simulationOnly": true
+    },
+    "TEXTILE_GARMENT_MILL": {
+      "factoryType": "TEXTILE_GARMENT_MILL",
+      "name": "Textile and Garment Mill",
+      "category": "TEXTILES_AND_APPAREL",
+      "iconId": "textile-mill",
+      "constructionCost": 6000,
+      "constructionDays": 110,
+      "defaultCapacityPerDay": 500,
+      "workforce": {
+        "operators": 400,
+        "engineers": 12
+      },
+      "utilities": {
+        "electricityMWhPerDay": 220,
+        "waterM3PerDay": 180
+      },
+      "requiredInfrastructure": [
+        "road",
+        "power",
+        "industrial_water"
+      ],
+      "requiredTechnologyIds": [
+        "TEXTILE_PROCESSING"
+      ],
+      "unit": "GAME_CURRENCY_UNITS",
+      "authority": "SIMULATED_GAMEPLAY_PROFILE",
+      "simulationOnly": true
+    },
+    "INDUSTRIAL_MACHINERY_MACHINE_TOOLS": {
+      "factoryType": "INDUSTRIAL_MACHINERY_MACHINE_TOOLS",
+      "name": "Industrial Machinery and Machine Tools",
+      "category": "MACHINERY_AND_CAPITAL_GOODS",
+      "iconId": "machine-tool",
+      "constructionCost": 22000,
+      "constructionDays": 240,
+      "defaultCapacityPerDay": 280,
+      "workforce": {
+        "operators": 180,
+        "engineers": 45
+      },
+      "utilities": {
+        "electricityMWhPerDay": 420,
+        "waterM3PerDay": 100
+      },
+      "requiredInfrastructure": [
+        "road",
+        "rail",
+        "power"
+      ],
+      "requiredTechnologyIds": [
+        "PRECISION_MANUFACTURING"
+      ],
+      "unit": "GAME_CURRENCY_UNITS",
+      "authority": "SIMULATED_GAMEPLAY_PROFILE",
+      "simulationOnly": true
+    },
+    "GRID_EQUIPMENT_FACTORY": {
+      "factoryType": "GRID_EQUIPMENT_FACTORY",
+      "name": "Grid and Electrical Equipment",
+      "category": "MACHINERY_AND_CAPITAL_GOODS",
+      "iconId": "grid-equipment",
+      "constructionCost": 15000,
+      "constructionDays": 180,
+      "defaultCapacityPerDay": 400,
+      "workforce": {
+        "operators": 140,
+        "engineers": 32
+      },
+      "utilities": {
+        "electricityMWhPerDay": 300,
+        "waterM3PerDay": 90
+      },
+      "requiredInfrastructure": [
+        "road",
+        "power"
+      ],
+      "requiredTechnologyIds": [
+        "ELECTRICAL_ENGINEERING"
+      ],
+      "unit": "GAME_CURRENCY_UNITS",
+      "authority": "SIMULATED_GAMEPLAY_PROFILE",
+      "simulationOnly": true
+    },
+    "ELECTRONICS_SEMICONDUCTOR_FAB": {
+      "factoryType": "ELECTRONICS_SEMICONDUCTOR_FAB",
+      "name": "Electronics and Semiconductor Fab",
+      "category": "ELECTRONICS_AND_ENERGY_STORAGE",
+      "iconId": "semiconductor-fab",
+      "constructionCost": 75000,
+      "constructionDays": 365,
+      "defaultCapacityPerDay": 160,
+      "workforce": {
+        "operators": 260,
+        "engineers": 95
+      },
+      "utilities": {
+        "electricityMWhPerDay": 2200,
+        "waterM3PerDay": 900
+      },
+      "requiredInfrastructure": [
+        "reliable_power",
+        "ultrapure_water",
+        "controlled_environment"
+      ],
+      "requiredTechnologyIds": [
+        "SEMICONDUCTOR_PROCESSING"
+      ],
+      "unit": "GAME_CURRENCY_UNITS",
+      "authority": "SIMULATED_GAMEPLAY_PROFILE",
+      "simulationOnly": true
+    },
+    "BATTERY_ENERGY_STORAGE_PLANT": {
+      "factoryType": "BATTERY_ENERGY_STORAGE_PLANT",
+      "name": "Battery and Energy Storage Plant",
+      "category": "ELECTRONICS_AND_ENERGY_STORAGE",
+      "iconId": "battery-plant",
+      "constructionCost": 28000,
+      "constructionDays": 240,
+      "defaultCapacityPerDay": 320,
+      "workforce": {
+        "operators": 190,
+        "engineers": 42
+      },
+      "utilities": {
+        "electricityMWhPerDay": 700,
+        "waterM3PerDay": 140
+      },
+      "requiredInfrastructure": [
+        "road",
+        "power",
+        "controlled_environment"
+      ],
+      "requiredTechnologyIds": [
+        "BATTERY_CHEMISTRY"
+      ],
+      "unit": "GAME_CURRENCY_UNITS",
+      "authority": "SIMULATED_GAMEPLAY_PROFILE",
+      "simulationOnly": true
+    },
+    "VEHICLE_TRUCK_BUS_ASSEMBLY": {
+      "factoryType": "VEHICLE_TRUCK_BUS_ASSEMBLY",
+      "name": "Vehicle, Truck and Bus Assembly",
+      "category": "TRANSPORT_AND_AEROSPACE",
+      "iconId": "vehicle-assembly",
+      "constructionCost": 32000,
+      "constructionDays": 300,
+      "defaultCapacityPerDay": 260,
+      "workforce": {
+        "operators": 350,
+        "engineers": 55
+      },
+      "utilities": {
+        "electricityMWhPerDay": 750,
+        "waterM3PerDay": 220
+      },
+      "requiredInfrastructure": [
+        "road",
+        "rail",
+        "power"
+      ],
+      "requiredTechnologyIds": [
+        "VEHICLE_MANUFACTURING"
+      ],
+      "unit": "GAME_CURRENCY_UNITS",
+      "authority": "SIMULATED_GAMEPLAY_PROFILE",
+      "simulationOnly": true
+    },
+    "SHIP_RAIL_EQUIPMENT_YARD": {
+      "factoryType": "SHIP_RAIL_EQUIPMENT_YARD",
+      "name": "Shipbuilding and Rail Equipment Yard",
+      "category": "TRANSPORT_AND_AEROSPACE",
+      "iconId": "shipyard",
+      "constructionCost": 42000,
+      "constructionDays": 330,
+      "defaultCapacityPerDay": 180,
+      "workforce": {
+        "operators": 420,
+        "engineers": 60
+      },
+      "utilities": {
+        "electricityMWhPerDay": 900,
+        "waterM3PerDay": 260
+      },
+      "requiredInfrastructure": [
+        "rail",
+        "port",
+        "power"
+      ],
+      "requiredTechnologyIds": [
+        "HEAVY_TRANSPORT_MANUFACTURING"
+      ],
+      "unit": "GAME_CURRENCY_UNITS",
+      "authority": "SIMULATED_GAMEPLAY_PROFILE",
+      "simulationOnly": true
+    },
+    "AEROSPACE_EQUIPMENT_PLANT": {
+      "factoryType": "AEROSPACE_EQUIPMENT_PLANT",
+      "name": "Aerospace and Aircraft Equipment",
+      "category": "TRANSPORT_AND_AEROSPACE",
+      "iconId": "aerospace-plant",
+      "constructionCost": 80000,
+      "constructionDays": 365,
+      "defaultCapacityPerDay": 90,
+      "workforce": {
+        "operators": 180,
+        "engineers": 100
+      },
+      "utilities": {
+        "electricityMWhPerDay": 1000,
+        "waterM3PerDay": 260
+      },
+      "requiredInfrastructure": [
+        "reliable_power",
+        "precision_zone"
+      ],
+      "requiredTechnologyIds": [
+        "AEROSPACE_ENGINEERING"
+      ],
+      "unit": "GAME_CURRENCY_UNITS",
+      "authority": "SIMULATED_GAMEPLAY_PROFILE",
+      "simulationOnly": true
+    },
+    "PHARMA_MEDICAL_SUPPLIES_PLANT": {
+      "factoryType": "PHARMA_MEDICAL_SUPPLIES_PLANT",
+      "name": "Pharmaceuticals and Medical Supplies",
+      "category": "HEALTHCARE_AND_DEFENCE",
+      "iconId": "pharma-plant",
+      "constructionCost": 26000,
+      "constructionDays": 240,
+      "defaultCapacityPerDay": 260,
+      "workforce": {
+        "operators": 180,
+        "engineers": 65
+      },
+      "utilities": {
+        "electricityMWhPerDay": 330,
+        "waterM3PerDay": 240
+      },
+      "requiredInfrastructure": [
+        "reliable_power",
+        "purified_water",
+        "controlled_environment"
+      ],
+      "requiredTechnologyIds": [
+        "PHARMACEUTICAL_GMP"
+      ],
+      "unit": "GAME_CURRENCY_UNITS",
+      "authority": "SIMULATED_GAMEPLAY_PROFILE",
+      "simulationOnly": true
+    },
+    "DEFENSE_EQUIPMENT_FACTORY": {
+      "factoryType": "DEFENSE_EQUIPMENT_FACTORY",
+      "name": "Defence Equipment Factory",
+      "category": "HEALTHCARE_AND_DEFENCE",
+      "iconId": "defense-industry",
+      "constructionCost": 40000,
+      "constructionDays": 300,
+      "defaultCapacityPerDay": 200,
+      "workforce": {
+        "operators": 200,
+        "engineers": 70
+      },
+      "utilities": {
+        "electricityMWhPerDay": 520,
+        "waterM3PerDay": 130
+      },
+      "requiredInfrastructure": [
+        "secure_industrial_zone",
+        "power",
+        "road"
+      ],
+      "requiredTechnologyIds": [
+        "ADVANCED_MANUFACTURING"
+      ],
+      "unit": "GAME_CURRENCY_UNITS",
+      "authority": "SIMULATED_GAMEPLAY_PROFILE",
+      "simulationOnly": true
+    },
+    "RECYCLING_WASTE_PROCESSING_PLANT": {
+      "factoryType": "RECYCLING_WASTE_PROCESSING_PLANT",
+      "name": "Recycling and Waste Processing Plant",
+      "category": "CIRCULAR_INDUSTRY",
+      "iconId": "recycling-plant",
+      "constructionCost": 8500,
+      "constructionDays": 140,
+      "defaultCapacityPerDay": 700,
+      "workforce": {
+        "operators": 130,
+        "engineers": 18
+      },
+      "utilities": {
+        "electricityMWhPerDay": 240,
+        "waterM3PerDay": 180
+      },
+      "requiredInfrastructure": [
+        "road",
+        "power",
+        "waste_collection"
+      ],
+      "requiredTechnologyIds": [
+        "MATERIAL_RECOVERY"
+      ],
+      "unit": "GAME_CURRENCY_UNITS",
+      "authority": "SIMULATED_GAMEPLAY_PROFILE",
+      "simulationOnly": true
+    }
+  },
+  "downstreamFactoryRecipes": {
+    "STEEL_PRIMARY_ROUTE_V1": {
+      "recipeId": "STEEL_PRIMARY_ROUTE_V1",
+      "factoryType": "STEEL_AND_ALLOY_WORKS",
+      "name": "Steel and alloy works",
+      "inputs": {
+        "iron_concentrate": 0.6,
+        "coal_concentrate": 0.2,
+        "limestone": 0.1,
+        "copper_concentrate": 0.1
+      },
+      "outputs": {
+        "STEEL": 0.72,
+        "ALLOY_STEEL": 0.08,
+        "BLAST_FURNACE_SLAG": 0.15,
+        "PROCESSING_DUST": 0.05
+      },
+      "cycleDays": 2,
+      "inputUnit": "SIMULATION_TONNE_EQUIVALENT",
+      "outputUnit": "SIMULATION_TONNE_EQUIVALENT",
+      "requiresAllInputs": true,
+      "missingInputPolicy": "BLOCK_CYCLE",
+      "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
+      "simulationOnly": true
+    },
+    "NONFERROUS_COPPER_ROUTE_V1": {
+      "recipeId": "NONFERROUS_COPPER_ROUTE_V1",
+      "factoryType": "NON_FERROUS_METAL_SMELTER",
+      "name": "Copper smelting and refining line",
+      "inputs": {
+        "copper_concentrate": 0.7,
+        "coal_concentrate": 0.1,
+        "limestone": 0.1,
+        "refined_salt": 0.1
+      },
+      "outputs": {
+        "REFINED_COPPER": 0.45,
+        "COPPER_MATTE": 0.1,
+        "SMELTER_SLAG": 0.35,
+        "PROCESSING_DUST": 0.1
+      },
+      "cycleDays": 2,
+      "inputUnit": "SIMULATION_TONNE_EQUIVALENT",
+      "outputUnit": "SIMULATION_TONNE_EQUIVALENT",
+      "requiresAllInputs": true,
+      "missingInputPolicy": "BLOCK_CYCLE",
+      "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
+      "simulationOnly": true
+    },
+    "NONFERROUS_ALUMINUM_ROUTE_V1": {
+      "recipeId": "NONFERROUS_ALUMINUM_ROUTE_V1",
+      "factoryType": "NON_FERROUS_METAL_SMELTER",
+      "name": "Aluminium smelting line",
+      "inputs": {
+        "alumina": 0.7,
+        "coal_concentrate": 0.15,
+        "limestone": 0.1,
+        "refined_salt": 0.05
+      },
+      "outputs": {
+        "ALUMINUM_INGOT": 0.5,
+        "ALUMINA_RESIDUE": 0.35,
+        "SMELTER_DROSS": 0.15
+      },
+      "cycleDays": 2,
+      "inputUnit": "SIMULATION_TONNE_EQUIVALENT",
+      "outputUnit": "SIMULATION_TONNE_EQUIVALENT",
+      "requiresAllInputs": true,
+      "missingInputPolicy": "BLOCK_CYCLE",
+      "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
+      "simulationOnly": true
+    },
+    "PETROCHEMICAL_POLYMER_ROUTE_V1": {
+      "recipeId": "PETROCHEMICAL_POLYMER_ROUTE_V1",
+      "factoryType": "PETROCHEMICAL_POLYMER_PLANT",
+      "name": "Petrochemical and polymer line",
+      "inputs": {
+        "naphtha": 0.65,
+        "pipeline_gas": 0.2,
+        "refined_salt": 0.05,
+        "limestone": 0.1
+      },
+      "outputs": {
+        "POLYMER_RESIN": 0.4,
+        "PROPYLENE_FEEDSTOCK": 0.25,
+        "INDUSTRIAL_SOLVENTS": 0.2,
+        "CHEMICAL_PROCESS_RESIDUE": 0.15
+      },
+      "cycleDays": 2,
+      "inputUnit": "SIMULATION_TONNE_EQUIVALENT",
+      "outputUnit": "SIMULATION_TONNE_EQUIVALENT",
+      "requiresAllInputs": true,
+      "missingInputPolicy": "BLOCK_CYCLE",
+      "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
+      "simulationOnly": true
+    },
+    "FERTILIZER_ROUTE_V1": {
+      "recipeId": "FERTILIZER_ROUTE_V1",
+      "factoryType": "FERTILIZER_CHEMICAL_PLANT",
+      "name": "Fertilizer and agricultural chemicals",
+      "inputs": {
+        "pipeline_gas": 0.55,
+        "phosphate_concentrate": 0.25,
+        "mop_potash": 0.15,
+        "refined_salt": 0.05
+      },
+      "outputs": {
+        "NPK_FERTILIZER": 0.7,
+        "AMMONIA": 0.15,
+        "CHEMICAL_PROCESS_RESIDUE": 0.15
+      },
+      "cycleDays": 2,
+      "inputUnit": "SIMULATION_TONNE_EQUIVALENT",
+      "outputUnit": "SIMULATION_TONNE_EQUIVALENT",
+      "requiresAllInputs": true,
+      "missingInputPolicy": "BLOCK_CYCLE",
+      "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
+      "simulationOnly": true
+    },
+    "INDUSTRIAL_CHEMICALS_ROUTE_V1": {
+      "recipeId": "INDUSTRIAL_CHEMICALS_ROUTE_V1",
+      "factoryType": "INDUSTRIAL_CHEMICALS_GAS_PLANT",
+      "name": "Industrial chemicals and gases",
+      "inputs": {
+        "pipeline_gas": 0.35,
+        "refined_salt": 0.25,
+        "calcined_gypsum": 0.2,
+        "sulphur": 0.1,
+        "limestone": 0.1
+      },
+      "outputs": {
+        "INDUSTRIAL_CHEMICALS": 0.45,
+        "INDUSTRIAL_GASES": 0.2,
+        "CAUSTIC_SODA": 0.2,
+        "CHEMICAL_PROCESS_RESIDUE": 0.15
+      },
+      "cycleDays": 2,
+      "inputUnit": "SIMULATION_TONNE_EQUIVALENT",
+      "outputUnit": "SIMULATION_TONNE_EQUIVALENT",
+      "requiresAllInputs": true,
+      "missingInputPolicy": "BLOCK_CYCLE",
+      "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
+      "simulationOnly": true
+    },
+    "CEMENT_CONCRETE_ROUTE_V1": {
+      "recipeId": "CEMENT_CONCRETE_ROUTE_V1",
+      "factoryType": "CEMENT_CONCRETE_PLANT",
+      "name": "Cement and concrete line",
+      "inputs": {
+        "cement_feed": 0.45,
+        "calcined_gypsum": 0.1,
+        "graded_aggregate": 0.35,
+        "refined_salt": 0.1
+      },
+      "outputs": {
+        "CEMENT": 0.55,
+        "READY_MIX_CONCRETE": 0.3,
+        "KILN_DUST": 0.15
+      },
+      "cycleDays": 2,
+      "inputUnit": "SIMULATION_TONNE_EQUIVALENT",
+      "outputUnit": "SIMULATION_TONNE_EQUIVALENT",
+      "requiresAllInputs": true,
+      "missingInputPolicy": "BLOCK_CYCLE",
+      "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
+      "simulationOnly": true
+    },
+    "GLASS_CERAMICS_ROUTE_V1": {
+      "recipeId": "GLASS_CERAMICS_ROUTE_V1",
+      "factoryType": "GLASS_CERAMICS_PLANT",
+      "name": "Glass and ceramics line",
+      "inputs": {
+        "glass_silica_feed": 0.65,
+        "calcined_gypsum": 0.1,
+        "magnesia": 0.1,
+        "refined_salt": 0.05,
+        "processed_clay": 0.1
+      },
+      "outputs": {
+        "FLAT_GLASS": 0.35,
+        "CONTAINER_GLASS": 0.25,
+        "CERAMIC_COMPONENTS": 0.25,
+        "GLASS_CULLET": 0.15
+      },
+      "cycleDays": 2,
+      "inputUnit": "SIMULATION_TONNE_EQUIVALENT",
+      "outputUnit": "SIMULATION_TONNE_EQUIVALENT",
+      "requiresAllInputs": true,
+      "missingInputPolicy": "BLOCK_CYCLE",
+      "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
+      "simulationOnly": true
+    },
+    "PAPER_PACKAGING_ROUTE_V1": {
+      "recipeId": "PAPER_PACKAGING_ROUTE_V1",
+      "factoryType": "PAPER_PACKAGING_MILL",
+      "name": "Paper and packaging line",
+      "inputs": {
+        "wood_pulp": 0.65,
+        "recycled_paper": 0.2,
+        "polymer_resin": 0.1,
+        "refined_salt": 0.05
+      },
+      "outputs": {
+        "PAPER": 0.5,
+        "PACKAGING_BOARD": 0.3,
+        "PACKAGING_WASTE": 0.2
+      },
+      "cycleDays": 2,
+      "inputUnit": "SIMULATION_TONNE_EQUIVALENT",
+      "outputUnit": "SIMULATION_TONNE_EQUIVALENT",
+      "requiresAllInputs": true,
+      "missingInputPolicy": "BLOCK_CYCLE",
+      "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
+      "simulationOnly": true
+    },
+    "FOOD_PROCESSING_ROUTE_V1": {
+      "recipeId": "FOOD_PROCESSING_ROUTE_V1",
+      "factoryType": "FOOD_PROCESSING_COLD_CHAIN",
+      "name": "Food processing and cold-chain line",
+      "inputs": {
+        "grain": 0.55,
+        "vegetable_oil": 0.15,
+        "sugar": 0.1,
+        "packaging_material": 0.1,
+        "refined_salt": 0.1
+      },
+      "outputs": {
+        "PROCESSED_FOOD": 0.8,
+        "FEED_BYPRODUCT": 0.1,
+        "ORGANIC_PROCESSING_WASTE": 0.1
+      },
+      "cycleDays": 1,
+      "inputUnit": "SIMULATION_TONNE_EQUIVALENT",
+      "outputUnit": "SIMULATION_TONNE_EQUIVALENT",
+      "requiresAllInputs": true,
+      "missingInputPolicy": "BLOCK_CYCLE",
+      "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
+      "simulationOnly": true
+    },
+    "TEXTILE_GARMENT_ROUTE_V1": {
+      "recipeId": "TEXTILE_GARMENT_ROUTE_V1",
+      "factoryType": "TEXTILE_GARMENT_MILL",
+      "name": "Textile and garment line",
+      "inputs": {
+        "cotton_fibre": 0.45,
+        "wool_fibre": 0.1,
+        "polymer_fibre": 0.2,
+        "dyes_chemicals": 0.1,
+        "packaging_material": 0.15
+      },
+      "outputs": {
+        "TEXTILE_FABRIC": 0.45,
+        "READYMADE_GARMENTS": 0.35,
+        "TEXTILE_WASTE": 0.1,
+        "SECONDARY_TEXTILE_FIBRE": 0.1
+      },
+      "cycleDays": 2,
+      "inputUnit": "SIMULATION_TONNE_EQUIVALENT",
+      "outputUnit": "SIMULATION_TONNE_EQUIVALENT",
+      "requiresAllInputs": true,
+      "missingInputPolicy": "BLOCK_CYCLE",
+      "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
+      "simulationOnly": true
+    },
+    "INDUSTRIAL_MACHINERY_ROUTE_V1": {
+      "recipeId": "INDUSTRIAL_MACHINERY_ROUTE_V1",
+      "factoryType": "INDUSTRIAL_MACHINERY_MACHINE_TOOLS",
+      "name": "Industrial machinery and machine tools",
+      "inputs": {
+        "steel": 0.5,
+        "aluminum_ingot": 0.15,
+        "refined_copper": 0.1,
+        "semiconductor_chips": 0.1,
+        "polymer_resin": 0.15
+      },
+      "outputs": {
+        "INDUSTRIAL_MACHINERY": 0.7,
+        "MACHINE_TOOL_PARTS": 0.2,
+        "METAL_SCRAP": 0.1
+      },
+      "cycleDays": 3,
+      "inputUnit": "SIMULATION_TONNE_EQUIVALENT",
+      "outputUnit": "SIMULATION_TONNE_EQUIVALENT",
+      "requiresAllInputs": true,
+      "missingInputPolicy": "BLOCK_CYCLE",
+      "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
+      "simulationOnly": true
+    },
+    "GRID_EQUIPMENT_ROUTE_V1": {
+      "recipeId": "GRID_EQUIPMENT_ROUTE_V1",
+      "factoryType": "GRID_EQUIPMENT_FACTORY",
+      "name": "Grid and electrical equipment",
+      "inputs": {
+        "refined_copper": 0.3,
+        "steel": 0.25,
+        "aluminum_ingot": 0.1,
+        "electronic_components": 0.2,
+        "insulation_polymer": 0.15
+      },
+      "outputs": {
+        "GRID_TRANSFORMERS": 0.2,
+        "SWITCHGEAR": 0.2,
+        "POWER_CABLES": 0.25,
+        "GRID_EQUIPMENT": 0.25,
+        "ELECTRICAL_SCRAP": 0.1
+      },
+      "cycleDays": 2,
+      "inputUnit": "SIMULATION_TONNE_EQUIVALENT",
+      "outputUnit": "SIMULATION_TONNE_EQUIVALENT",
+      "requiresAllInputs": true,
+      "missingInputPolicy": "BLOCK_CYCLE",
+      "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
+      "simulationOnly": true
+    },
+    "SEMICONDUCTOR_ELECTRONICS_ROUTE_V1": {
+      "recipeId": "SEMICONDUCTOR_ELECTRONICS_ROUTE_V1",
+      "factoryType": "ELECTRONICS_SEMICONDUCTOR_FAB",
+      "name": "Electronics and semiconductor line",
+      "inputs": {
+        "silicon_wafers": 0.25,
+        "refined_copper": 0.15,
+        "aluminum_ingot": 0.1,
+        "industrial_gases": 0.15,
+        "polymer_resin": 0.15,
+        "gold_processed": 0.1,
+        "refined_salt": 0.1
+      },
+      "outputs": {
+        "SEMICONDUCTOR_CHIPS": 0.35,
+        "ELECTRONIC_COMPONENTS": 0.35,
+        "CONTROL_MODULES": 0.2,
+        "E_WASTE": 0.05,
+        "PROCESSING_LOSS": 0.05
+      },
+      "cycleDays": 4,
+      "inputUnit": "SIMULATION_TONNE_EQUIVALENT",
+      "outputUnit": "SIMULATION_TONNE_EQUIVALENT",
+      "requiresAllInputs": true,
+      "missingInputPolicy": "BLOCK_CYCLE",
+      "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
+      "simulationOnly": true
+    },
+    "BATTERY_STORAGE_ROUTE_V1": {
+      "recipeId": "BATTERY_STORAGE_ROUTE_V1",
+      "factoryType": "BATTERY_ENERGY_STORAGE_PLANT",
+      "name": "Battery cells and energy storage",
+      "inputs": {
+        "lithium_carbonate_or_hydroxide": 0.35,
+        "graphite_concentrate": 0.2,
+        "refined_copper": 0.1,
+        "aluminum_ingot": 0.1,
+        "polymer_separator": 0.1,
+        "electrolyte": 0.1,
+        "industrial_gases": 0.05
+      },
+      "outputs": {
+        "BATTERY_CELLS": 0.7,
+        "BATTERY_PACKS": 0.2,
+        "BATTERY_SCRAP": 0.1
+      },
+      "cycleDays": 3,
+      "inputUnit": "SIMULATION_TONNE_EQUIVALENT",
+      "outputUnit": "SIMULATION_TONNE_EQUIVALENT",
+      "requiresAllInputs": true,
+      "missingInputPolicy": "BLOCK_CYCLE",
+      "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
+      "simulationOnly": true
+    },
+    "VEHICLE_ASSEMBLY_ROUTE_V1": {
+      "recipeId": "VEHICLE_ASSEMBLY_ROUTE_V1",
+      "factoryType": "VEHICLE_TRUCK_BUS_ASSEMBLY",
+      "name": "Vehicle, truck and bus assembly",
+      "inputs": {
+        "steel": 0.3,
+        "aluminum_ingot": 0.1,
+        "refined_copper": 0.1,
+        "flat_glass": 0.1,
+        "rubber": 0.1,
+        "electronic_components": 0.15,
+        "polymer_resin": 0.1,
+        "machine_tool_parts": 0.05
+      },
+      "outputs": {
+        "VEHICLES": 0.75,
+        "VEHICLE_SPARE_PARTS": 0.1,
+        "METAL_SCRAP": 0.1,
+        "ASSEMBLY_LOSS": 0.05
+      },
+      "cycleDays": 3,
+      "inputUnit": "SIMULATION_TONNE_EQUIVALENT",
+      "outputUnit": "SIMULATION_TONNE_EQUIVALENT",
+      "requiresAllInputs": true,
+      "missingInputPolicy": "BLOCK_CYCLE",
+      "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
+      "simulationOnly": true
+    },
+    "SHIP_RAIL_EQUIPMENT_ROUTE_V1": {
+      "recipeId": "SHIP_RAIL_EQUIPMENT_ROUTE_V1",
+      "factoryType": "SHIP_RAIL_EQUIPMENT_YARD",
+      "name": "Shipbuilding and rail equipment",
+      "inputs": {
+        "steel": 0.45,
+        "aluminum_ingot": 0.1,
+        "industrial_machinery": 0.15,
+        "grid_equipment": 0.1,
+        "refined_copper": 0.05,
+        "electronic_components": 0.05,
+        "rubber": 0.1
+      },
+      "outputs": {
+        "SHIP_RAIL_EQUIPMENT": 0.78,
+        "HEAVY_TRANSPORT_SPARES": 0.12,
+        "METAL_SCRAP": 0.1
+      },
+      "cycleDays": 4,
+      "inputUnit": "SIMULATION_TONNE_EQUIVALENT",
+      "outputUnit": "SIMULATION_TONNE_EQUIVALENT",
+      "requiresAllInputs": true,
+      "missingInputPolicy": "BLOCK_CYCLE",
+      "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
+      "simulationOnly": true
+    },
+    "AEROSPACE_EQUIPMENT_ROUTE_V1": {
+      "recipeId": "AEROSPACE_EQUIPMENT_ROUTE_V1",
+      "factoryType": "AEROSPACE_EQUIPMENT_PLANT",
+      "name": "Aerospace and aircraft equipment",
+      "inputs": {
+        "aluminum_ingot": 0.2,
+        "titanium_feed": 0.15,
+        "alloy_steel": 0.1,
+        "semiconductor_chips": 0.15,
+        "machine_tool_parts": 0.15,
+        "composite_materials": 0.15,
+        "refined_copper": 0.1
+      },
+      "outputs": {
+        "AEROSPACE_COMPONENTS": 0.55,
+        "AIRCRAFT": 0.3,
+        "PRECISION_SCRAP": 0.1,
+        "ASSEMBLY_LOSS": 0.05
+      },
+      "cycleDays": 5,
+      "inputUnit": "SIMULATION_TONNE_EQUIVALENT",
+      "outputUnit": "SIMULATION_TONNE_EQUIVALENT",
+      "requiresAllInputs": true,
+      "missingInputPolicy": "BLOCK_CYCLE",
+      "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
+      "simulationOnly": true
+    },
+    "PHARMA_MEDICAL_ROUTE_V1": {
+      "recipeId": "PHARMA_MEDICAL_ROUTE_V1",
+      "factoryType": "PHARMA_MEDICAL_SUPPLIES_PLANT",
+      "name": "Pharmaceuticals and medical supplies",
+      "inputs": {
+        "chemical_intermediates": 0.25,
+        "active_pharmaceutical_ingredients": 0.2,
+        "glass": 0.1,
+        "polymer_resin": 0.15,
+        "packaging_material": 0.15,
+        "industrial_chemicals": 0.15
+      },
+      "outputs": {
+        "PHARMACEUTICAL_GOODS": 0.75,
+        "MEDICAL_SUPPLIES": 0.15,
+        "PHARMA_PROCESS_WASTE": 0.1
+      },
+      "cycleDays": 3,
+      "inputUnit": "SIMULATION_TONNE_EQUIVALENT",
+      "outputUnit": "SIMULATION_TONNE_EQUIVALENT",
+      "requiresAllInputs": true,
+      "missingInputPolicy": "BLOCK_CYCLE",
+      "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
+      "simulationOnly": true
+    },
+    "DEFENSE_EQUIPMENT_ROUTE_V1": {
+      "recipeId": "DEFENSE_EQUIPMENT_ROUTE_V1",
+      "factoryType": "DEFENSE_EQUIPMENT_FACTORY",
+      "name": "Defence equipment and components",
+      "inputs": {
+        "steel": 0.25,
+        "aluminum_ingot": 0.1,
+        "electronic_components": 0.2,
+        "industrial_machinery": 0.15,
+        "polymer_resin": 0.1,
+        "special_alloys": 0.1,
+        "grid_equipment": 0.1
+      },
+      "outputs": {
+        "DEFENSE_EQUIPMENT": 0.7,
+        "DEFENSE_SPARE_PARTS": 0.2,
+        "MANUFACTURING_SCRAP": 0.1
+      },
+      "cycleDays": 4,
+      "inputUnit": "SIMULATION_TONNE_EQUIVALENT",
+      "outputUnit": "SIMULATION_TONNE_EQUIVALENT",
+      "requiresAllInputs": true,
+      "missingInputPolicy": "BLOCK_CYCLE",
+      "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
+      "simulationOnly": true
+    },
+    "RECYCLING_CIRCULAR_ROUTE_V1": {
+      "recipeId": "RECYCLING_CIRCULAR_ROUTE_V1",
+      "factoryType": "RECYCLING_WASTE_PROCESSING_PLANT",
+      "name": "Recycling and waste recovery",
+      "inputs": {
+        "mixed_recyclables": 0.35,
+        "metal_scrap": 0.2,
+        "plastic_waste": 0.15,
+        "e_waste": 0.1,
+        "packaging_waste": 0.1,
+        "process_residue": 0.1
+      },
+      "outputs": {
+        "RECOVERED_STEEL": 0.2,
+        "RECOVERED_COPPER": 0.15,
+        "RECYCLED_POLYMER": 0.2,
+        "RECOVERED_GLASS": 0.1,
+        "RECYCLED_FEEDSTOCK": 0.25,
+        "DISPOSAL_RESIDUE": 0.1
+      },
+      "cycleDays": 2,
+      "inputUnit": "SIMULATION_TONNE_EQUIVALENT",
+      "outputUnit": "SIMULATION_TONNE_EQUIVALENT",
+      "requiresAllInputs": true,
+      "missingInputPolicy": "BLOCK_CYCLE",
+      "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
+      "simulationOnly": true
+    }
+  },
+  "factoryCatalogSummary": {
+    "factoryTypeCount": 56,
+    "existingProcessingFactoryTypeCount": 36,
+    "addedFactoryTypeCount": 20,
+    "downstreamRecipeCount": 21,
+    "categoryCount": 12
   }
 }
