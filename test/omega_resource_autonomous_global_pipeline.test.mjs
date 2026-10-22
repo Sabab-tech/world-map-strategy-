@@ -92,9 +92,11 @@ function makeContext(siteOverride=null){
     state.resource[cid]={inventory:{},batches:[],inventoryLots:{},mineStates:{},mineSiteReferences:[],mineSiteControllers:{},
       warehouse:{warehouseId:'WH-'+cid+'-RAW',countryId:cid,type:'SOVEREIGN_RAW_MATERIAL_WAREHOUSE',
         locationNodeKey:'WAREHOUSE:'+cid+':RAW',status:'OPERATIONAL',availableByResource:{},reservedByResource:{},storedBatchIds:[],receipts:[]}};
-    state.economy[cid]={productionAssets:[]};
+    state.economy[cid]={productionAssets:[],unemploymentCount:1000000,laborForce:10000000,unemployment_rate:10};
     state.transport[cid]={infrastructure:{roads:{capacityPerDay:40000,quality:.9},rail:{capacityPerDay:90000,quality:.9},
-      ports:{capacityPerDay:180000,quality:.9},bridges:{capacityPerDay:45000,quality:.9},pipelines:{capacityPerDay:350000,quality:.9}}};
+      ports:{capacityPerDay:180000,quality:.9},bridges:{capacityPerDay:45000,quality:.9},pipelines:{capacityPerDay:350000,quality:.9},
+      utilitySupply:{electricityMWhPerDay:1000000000,waterM3PerDay:1000000000,
+        authority:'TEST_FIXTURE',status:'AVAILABLE',simulationOnly:true,assets:[]}}};
     state.trade[cid]={marketPrice:cid==='BGD'?{COAL_CONCENTRATE:100,COAL_REJECT:5}:{COPPER_CONCENTRATE:150,TAILINGS:2},offerBook:[]};
     state.finance[cid]={available:1000000,reserves:2000000};
   }
