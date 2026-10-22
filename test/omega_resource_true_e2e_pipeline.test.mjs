@@ -181,7 +181,7 @@ test('real site extraction flows through raw warehouse, transport, factory, fini
   const delivery=advanced.shipments.find(item=>String(item.shipmentId)===String(run.shipmentId)||String(item.batchId)===String(run.batchId));
   assert.ok(delivery,'the specific E2E shipment must reach its factory during the global country delivery tick');
   assert.equal(delivery.status,'DELIVERED');
-  assert.equal(delivery.processingStatus,'PROCESSED',JSON.stringify(delivery.processing));
+  assert.equal(delivery.processingStatus,'IN_PROGRESS',JSON.stringify(delivery.processing));
   assert.equal(delivery.batchId,run.batchId);
   assert.equal(delivery.destinationStatus,'FACTORY_RECEIVED');
   const sameResourceDeliveryQuantity=advanced.shipments.filter(x=>String(x.resourceId)==='coal')
@@ -209,13 +209,18 @@ test('real site extraction flows through raw warehouse, transport, factory, fini
   assert.ok(inputBalance()>0,'a shipment larger than one turn of factory throughput must preserve unprocessed input');
   assert.ok(Math.abs(inputBalance()-inputLotsBalance())<1e-5,
     'factory input aggregate must equal its batch-lot remaining quantities after partial processing');
-  assert.ok(Number(delivery.processing?.inputQuantity)>0,
-    'the delivery turn must process up to factory throughput and produce a transaction');
-  let followupTurns=0;
+  assert.ok(Number(delivery.processing?.productionQuantity)>0&&delivery.processing?.finishDate,
+    'the delivery turn must schedule a tracked production quantity and explicit finish date');
+  let followupTurns=0,lastCompletedCycle=null;
   while(inputBalance()>1e-6&&followupTurns<10){
     state.simulation.turn+=1;
+    const nextDate=new Date(String(state.simulation.date||'2025-01-01')+'T00:00:00.000Z');
+    nextDate.setUTCDate(nextDate.getUTCDate()+Math.max(1,Number(state.simulation.daysPerTurn)||1));
+    state.simulation.date=nextDate.toISOString().slice(0,10);
     const followup=industry.processPendingFactoryInputs('BGD');
-    assert.ok(followup.processedCount>=1,JSON.stringify({followup,inputBalance:inputBalance(),factoryId:factory.id}));
+    assert.ok((Number(followup.completedCount)||0)+(Number(followup.startedCount)||0)>=1,
+      JSON.stringify({followup,inputBalance:inputBalance(),factoryId:factory.id}));
+    if((followup.completed||[]).length)lastCompletedCycle=followup.completed[followup.completed.length-1];
     assert.ok(Math.abs(inputBalance()-inputLotsBalance())<1e-5,
       'every later factory processing turn must keep aggregate input and batch lineage reconciled');
     followupTurns+=1;
@@ -232,8 +237,9 @@ test('real site extraction flows through raw warehouse, transport, factory, fini
     assert.equal(resource.inventoryLots[b.batchId].remainingQuantity,b.remainingQuantity);
     assert.equal(Number(resource.processedWarehouse.availableByResource[b.resourceId])||0,Number(resource.inventory[b.resourceId])||0);
   }
-  assert.ok(resource.finishedGoodsLedger.some(x=>x.transactionId===delivery.processingTransactionId),'processing transaction must persist to the finished-goods ledger');
-  assert.ok((state.economy.BGD.industrialRuntime?.finishedGoodsLedger||[]).some(x=>x.transactionId===delivery.processingTransactionId),'finished goods event must register in Economy Runtime');
+  assert.ok(lastCompletedCycle?.transactionId,'the full multi-turn processing cycle must return its committed transaction ID');
+  assert.ok(resource.finishedGoodsLedger.some(x=>x.transactionId===lastCompletedCycle.transactionId),'processing transaction must persist to the finished-goods ledger');
+  assert.ok((state.economy.BGD.industrialRuntime?.finishedGoodsLedger||[]).some(x=>x.transactionId===lastCompletedCycle.transactionId),'finished goods event must register in Economy Runtime');
   const concentrateOffer=(state.trade.BGD.offerBook||[]).find(x=>x.resourceId==='COAL_CONCENTRATE'&&x.quantity>0);
   assert.ok(concentrateOffer,'priced finished goods must be published into the actual market offer book');
   assert.ok(Array.isArray(concentrateOffer.batchAllocations)&&concentrateOffer.batchAllocations.length>0,
