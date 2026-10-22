@@ -617,78 +617,81 @@ window.OmegaCabinetEngine = {
             `;
         }
 
-        // DEFAULT SUB-VIEW: OVERVIEW (TWO SEPARATE MAIN BUTTONS)
-        return `
-            <div style="display:flex; flex-direction:column; gap:14px; touch-action:pan-y;">
-                ${transitionProgress}
+        // DEFAULT SUB-VIEW: OVERVIEW — readable, structured executive briefing.
+        return \`
+            <section class="omega-cabinet-overview" aria-label="Executive government overview">
+                \${transitionProgress}
 
-                <!-- TOP METRICS BAR -->
-                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:10px;">
-                    <div style="background:rgba(15,23,42,0.9); border:1px solid rgba(0,229,255,0.4); border-radius:10px; padding:12px;">
-                        <span style="color:#94a3b8; font-size:10px;">EXECUTIVE AUTHORITY SCORE</span>
-                        <div style="font-size:22px; font-weight:bold; color:#00e5ff; font-family:'Share Tech Mono',monospace;">96 / 100</div>
-                        <span style="color:#22c55e; font-size:10px;">+6.5% Direct Executive Command</span>
+                <header class="omega-cabinet-overview__header">
+                    <div>
+                        <p class="omega-cabinet-overview__eyebrow">EXECUTIVE CABINET</p>
+                        <h2>Government Overview</h2>
                     </div>
-                    <div style="background:rgba(15,23,42,0.9); border:1px solid rgba(255,215,0,0.4); border-radius:10px; padding:12px;">
-                        <span style="color:#94a3b8; font-size:10px;">ACTIVE STATE IDEOLOGY</span>
-                        <div style="font-size:16px; font-weight:bold; color:#ffd700; font-family:'Share Tech Mono',monospace;">${activeIdeoObj.icon} ${activeIdeoObj.bnName}</div>
-                        <span style="color:#ffd700; font-size:10px;">State Sovereign Direction</span>
-                    </div>
-                    <div style="background:rgba(15,23,42,0.9); border:1px solid rgba(34,197,94,0.4); border-radius:10px; padding:12px;">
-                        <span style="color:#94a3b8; font-size:10px;">STATE MORAL ALIGNMENT</span>
-                        <div style="font-size:16px; font-weight:bold; color:#22c55e; font-family:'Share Tech Mono',monospace;">${activeRelObj.icon} ${activeRelObj.bnName}</div>
-                        <span style="color:#94a3b8; font-size:10px;">High Civil Cohesion</span>
-                    </div>
-                </div>
+                    <p class="omega-cabinet-overview__intro">A clear snapshot of executive authority, state ideology and state religion.</p>
+                </header>
 
-                <!-- 2 SEPARATE DISTINCT MAIN ACTION BUTTONS / MODULE CARDS -->
-                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:14px; margin-top:6px;">
-                    
-                    <!-- BUTTON 1: STATE IDEOLOGY -->
-                    <div style="background:linear-gradient(135deg, rgba(30,27,15,0.95), rgba(15,23,42,0.95)); border:2px solid #ffd700; border-radius:14px; padding:18px; display:flex; flex-direction:column; justify-content:space-between; gap:12px; box-shadow:0 6px 20px rgba(255,215,0,0.15);">
-                        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-                            <div style="display:flex; align-items:center; gap:12px;">
-                                <span style="font-size:36px;">📜</span>
-                                <div>
-                                    <h3 style="color:#ffd700; font-size:16px; margin:0; font-family:'Share Tech Mono',monospace;">State Ideology & Political Structure</h3>
-                                    <span style="color:#cbd5e1; font-size:11px;">Governance Model & Economic Policy</span>
-                                </div>
+                <section class="omega-cabinet-overview__metrics" aria-label="Executive overview indicators">
+                    <article class="omega-cabinet-overview__metric omega-cabinet-overview__metric--authority">
+                        <p class="omega-cabinet-overview__label">Executive Authority Score</p>
+                        <p class="omega-cabinet-overview__value">96 <span>/ 100</span></p>
+                        <p class="omega-cabinet-overview__support">+6.5% Direct Executive Command</p>
+                    </article>
+                    <article class="omega-cabinet-overview__metric omega-cabinet-overview__metric--ideology">
+                        <p class="omega-cabinet-overview__label">Active State Ideology</p>
+                        <p class="omega-cabinet-overview__value omega-cabinet-overview__value--setting">\${activeIdeoObj.icon} \${activeIdeoObj.bnName}</p>
+                        <p class="omega-cabinet-overview__support">State sovereign direction</p>
+                    </article>
+                    <article class="omega-cabinet-overview__metric omega-cabinet-overview__metric--religion">
+                        <p class="omega-cabinet-overview__label">State Moral Alignment</p>
+                        <p class="omega-cabinet-overview__value omega-cabinet-overview__value--setting">\${activeRelObj.icon} \${activeRelObj.bnName}</p>
+                        <p class="omega-cabinet-overview__support">State religion and demographic alignment</p>
+                    </article>
+                </section>
+
+                <section class="omega-cabinet-overview__actions" aria-label="Government settings">
+                    <article class="omega-cabinet-overview__card omega-cabinet-overview__card--ideology">
+                        <header class="omega-cabinet-overview__card-header">
+                            <span class="omega-cabinet-overview__icon" aria-hidden="true">📜</span>
+                            <div>
+                                <h3>State Ideology &amp; Political Structure</h3>
+                                <p>Governance model and economic policy</p>
                             </div>
-                        </div>
-                        <div style="background:rgba(255,215,0,0.1); border:1px solid rgba(255,215,0,0.3); border-radius:10px; padding:10px; display:flex; align-items:center; justify-content:space-between;">
-                            <span style="color:#94a3b8; font-size:11px;">Current Active Ideology:</span>
-                            <strong style="color:#ffd700; font-size:13px;">${activeIdeoObj.icon} ${activeIdeoObj.bnName}</strong>
-                        </div>
-                        <button onclick="window.OmegaCabinetEngine.setGovSubView('ideology')" 
-                            style="width:100%; background:linear-gradient(135deg, #dfba61, #a8812c); border:none; color:#1a1003; font-weight:bold; font-size:13px; border-radius:10px; padding:12px; cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,0.3); display:flex; align-items:center; justify-content:center; gap:8px;">
-                            <span>📜</span> <span>View & Change State Ideologies</span>
+                        </header>
+                        <ul class="omega-cabinet-overview__points">
+                            <li><span>Current ideology</span><strong>\${activeIdeoObj.icon} \${activeIdeoObj.bnName}</strong></li>
+                            <li><span>Main focus</span><strong>Governance structure and policy direction</strong></li>
+                        </ul>
+                        <p class="omega-cabinet-overview__key-note"><strong>Important:</strong> Review the active model before making a policy change.</p>
+                        <button type="button" class="omega-cabinet-overview__button omega-cabinet-overview__button--ideology" onclick="window.OmegaCabinetEngine.setGovSubView('ideology')">
+                            <span aria-hidden="true">📜</span><span>View &amp; Change State Ideology</span>
                         </button>
-                    </div>
+                    </article>
 
-                    <!-- BUTTON 2: STATE RELIGION -->
-                    <div style="background:linear-gradient(135deg, rgba(8,30,45,0.95), rgba(15,23,42,0.95)); border:2px solid #00e5ff; border-radius:14px; padding:18px; display:flex; flex-direction:column; justify-content:space-between; gap:12px; box-shadow:0 6px 20px rgba(0,229,255,0.15);">
-                        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-                            <div style="display:flex; align-items:center; gap:12px;">
-                                <span style="font-size:36px;">🕌</span>
-                                <div>
-                                    <h3 style="color:#00e5ff; font-size:16px; margin:0; font-family:'Share Tech Mono',monospace;">State Religion & Demographics</h3>
-                                    <span style="color:#cbd5e1; font-size:11px;">Moral Alignment & Faith Census</span>
-                                </div>
+                    <article class="omega-cabinet-overview__card omega-cabinet-overview__card--religion">
+                        <header class="omega-cabinet-overview__card-header">
+                            <span class="omega-cabinet-overview__icon" aria-hidden="true">🕌</span>
+                            <div>
+                                <h3>State Religion &amp; Demographics</h3>
+                                <p>State religion and demographic alignment</p>
                             </div>
-                        </div>
-                        <div style="background:rgba(0,229,255,0.1); border:1px solid rgba(0,229,255,0.3); border-radius:10px; padding:10px; display:flex; align-items:center; justify-content:space-between;">
-                            <span style="color:#94a3b8; font-size:11px;">Current Active Religion:</span>
-                            <strong style="color:#00e5ff; font-size:13px;">${activeRelObj.icon} ${activeRelObj.bnName}</strong>
-                        </div>
-                        <button onclick="window.OmegaCabinetEngine.setGovSubView('religion')" 
-                            style="width:100%; background:linear-gradient(135deg, #00e5ff, #0284c7); border:none; color:#03131a; font-weight:bold; font-size:13px; border-radius:10px; padding:12px; cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,0.3); display:flex; align-items:center; justify-content:center; gap:8px;">
-                            <span>🕌</span> <span>View & Change State Religions</span>
+                        </header>
+                        <ul class="omega-cabinet-overview__points">
+                            <li><span>Current state religion</span><strong>\${activeRelObj.icon} \${activeRelObj.bnName}</strong></li>
+                            <li><span>Main focus</span><strong>Faith and demographic settings</strong></li>
+                        </ul>
+                        <p class="omega-cabinet-overview__key-note"><strong>Important:</strong> Review the current selection in the dedicated religion controls.</p>
+                        <button type="button" class="omega-cabinet-overview__button omega-cabinet-overview__button--religion" onclick="window.OmegaCabinetEngine.setGovSubView('religion')">
+                            <span aria-hidden="true">🕌</span><span>View &amp; Change State Religion</span>
                         </button>
-                    </div>
+                    </article>
+                </section>
 
-                </div>
-            </div>
-        `;
+                <aside class="omega-cabinet-overview__important-note" role="note" aria-label="Important information">
+                    <h3>Important Note</h3>
+                    <p class="omega-cabinet-overview__note-text">These indicators summarize the current game settings. Use the dedicated controls above to review or change a setting; this overview itself does not apply changes.</p>
+                </aside>
+            </section>
+        \`;
     },
 
     // 2. 🤝 DYNAMIC 80 MOTIONS & SIMULATION INTELLIGENCE ENGINE VOTING
