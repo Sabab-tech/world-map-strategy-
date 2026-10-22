@@ -999,14 +999,11 @@ Game.Map = {
 
 Game.Map.renderGeoJSON = function(geoData) {
     const self = this;
-    Game.geojsonLayer = L.geoJSON(geoData, {
+    const renderOptions = {
         filter: function(feature) {
             var props = feature.properties || {};
             var geoName = (props.ADMIN || props.name || props.NAME || "").toLowerCase().trim();
-            if (geoName === "northern cyprus" || geoName === "somaliland" || geoName === "somaliland region") {
-                return false; 
-            }
-            return true;
+            return geoName !== "northern cyprus" && geoName !== "somaliland" && geoName !== "somaliland region";
         },
         style: function(feature) {
             var props = feature.properties || {};
@@ -1015,15 +1012,15 @@ Game.Map.renderGeoJSON = function(geoData) {
                 geoName = "Palestine";
             }
             var config = Game.findCountryConfig(geoName);
-            var defaultColor = "#2c4235"; 
+            var defaultColor = "#2c4235";
             if (config) defaultColor = window.getCountryColor(config.name);
-            return { 
-                color: "rgba(255, 255, 255, 0.85)", 
-                weight: 1.2, 
-                opacity: 0.9, 
+            return {
+                color: "rgba(255, 255, 255, 0.85)",
+                weight: 1.2,
+                opacity: 0.9,
                 dashArray: null,
-                fillColor: defaultColor, 
-                fillOpacity: 0.25 
+                fillColor: defaultColor,
+                fillOpacity: 0.25
             };
         },
         onEachFeature: function(feature, layer) {
@@ -1063,16 +1060,101 @@ Game.Map.renderGeoJSON = function(geoData) {
                 }
             });
         }
-    }).addTo(this.map);
+    };
 
-    Game.LabelSystem.updateCountryLabels();
-    this.renderOceanLabels();
-    setTimeout(() => {
-        if (typeof this.renderResourceDeposits === 'function') {
-            this.renderResourceDeposits('NONE');
+    // Keep only one canonical country layer. Repeated boot/render calls must not
+    // leave duplicate world polygons competing for the same pointer events.
+    const previousLayer = Game.geojsonLayer;
+    const renderToken = (Number(Game.__omegaGeoJSONRenderToken) || 0) + 1;
+    Game.__omegaGeoJSONRenderToken = renderToken;
+    if (Game.__omegaGeoJSONRenderFrame !== null && Game.__omegaGeoJSONRenderFrame !== undefined &&
+        typeof window.cancelAnimationFrame === "function") {
+        window.cancelAnimationFrame(Game.__omegaGeoJSONRenderFrame);
+    }
+    Game.__omegaGeoJSONRenderFrame = null;
+    if (previousLayer && this.map && typeof this.map.removeLayer === "function" &&
+        (!this.map.hasLayer || this.map.hasLayer(previousLayer))) {
+        this.map.removeLayer(previousLayer);
+    }
+    // Retire labels owned by the previous country layer as well, otherwise
+    // a repeat render would re-add stale markers after the new layer finishes.
+    if (Array.isArray(Game.countryLabels)) {
+        Game.countryLabels.forEach(item => {
+            if (item && item.marker && this.map && typeof this.map.removeLayer === "function" &&
+                (!this.map.hasLayer || this.map.hasLayer(item.marker))) {
+                this.map.removeLayer(item.marker);
+            }
+        });
+        Game.countryLabels.length = 0;
+    }
+
+    // Build an empty Leaflet layer immediately so the rest of the game can
+    // boot without waiting for every country polygon to be parsed and mounted.
+    const layer = L.geoJSON(null, renderOptions);
+    Game.geojsonLayer = layer;
+    layer.addTo(this.map);
+
+    const featureCollection = geoData && geoData.type === "FeatureCollection" &&
+        Array.isArray(geoData.features) ? geoData.features : null;
+    const finishRender = function() {
+        if (renderToken !== Game.__omegaGeoJSONRenderToken || Game.geojsonLayer !== layer) return;
+        Game.__omegaGeoJSONRenderFrame = null;
+        Game.LabelSystem.updateCountryLabels();
+        self.renderOceanLabels();
+        // A geographic-region selection may have been applied while the
+        // country features were still streaming in. Reapply it to the
+        // now-complete layer so newly added polygons receive the same style.
+        const regions = window.OMEGAGeographicRegionSystem;
+        if (regions && typeof regions.getState === "function" && typeof regions.select === "function") {
+            const selection = regions.getState()?.selection;
+            if (selection?.kind && selection?.key) {
+                regions.select(selection.kind + ":" + selection.key);
+            }
         }
-    }, 200);
-};
+        window.setTimeout(() => {
+            if (renderToken !== Game.__omegaGeoJSONRenderToken || Game.geojsonLayer !== layer) return;
+            if (typeof self.renderResourceDeposits === "function") {
+                self.renderResourceDeposits("NONE");
+            }
+        }, 200);
+    };
+
+    // Small/non-collection GeoJSON stays synchronous for API compatibility.
+    // Large world collections are added in short frame-budgeted slices so map
+    // construction cannot monopolize the browser's main thread.
+    const CHUNK_THRESHOLD = 24;
+    const MAX_FEATURES_PER_FRAME = 4;
+    const FRAME_BUDGET_MS = 5;
+    if (!featureCollection || featureCollection.features.length <= CHUNK_THRESHOLD ||
+        typeof window.requestAnimationFrame !== "function") {
+        layer.addData(geoData);
+        finishRender();
+        return layer;
+    }
+
+    let nextFeature = 0;
+    const now = () => window.performance && typeof window.performance.now === "function"
+        ? window.performance.now() : Date.now();
+    const addFeatureChunk = function() {
+        if (renderToken !== Game.__omegaGeoJSONRenderToken || Game.geojsonLayer !== layer) return;
+        const startedAt = now();
+        let added = 0;
+        do {
+            layer.addData(featureCollection.features[nextFeature]);
+            nextFeature += 1;
+            added += 1;
+        } while (nextFeature < featureCollection.features.length &&
+            added < MAX_FEATURES_PER_FRAME && now() - startedAt < FRAME_BUDGET_MS);
+
+        if (nextFeature < featureCollection.features.length) {
+            Game.__omegaGeoJSONRenderFrame = window.requestAnimationFrame(addFeatureChunk);
+        } else {
+            finishRender();
+        }
+    };
+    Game.__omegaGeoJSONRenderFrame = window.requestAnimationFrame(addFeatureChunk);
+    return layer;
+}
 
 Game.selectCountryByName = function(countryName, layerTarget) {
     if (!countryName) return;

@@ -1,16 +1,29 @@
-/* OMEGA UI INTERACTION GUARD v2.2.0
+/* OMEGA UI INTERACTION GUARD v2.3.0
  * Modal-aware interaction gate. The minister interrogation dialog is an
  * authorized interactive surface and must never be blocked by the ministry
  * outside-click shield.
+ *
+ * Performance invariants:
+ * - Never write an observed DOM attribute/style unless its value changes.
+ * - Coalesce relevant DOM changes to one animation frame.
+ * - Ignore unrelated deep UI mutations and avoid a permanent polling timer.
  */
 (function(global){
 'use strict';
 if(global.__OMEGA_UI_INTERACTION_GUARD_V21__)return;
 global.__OMEGA_UI_INTERACTION_GUARD_V21__=true;
 const MINISTRY='#ministry-dashboard-view',INTERROGATION='#minister-interrogation-modal',CABINET='#cabinet-full-window',COMMAND='#command-hub-modal',STYLE_ID='omega-ui-interaction-guard-v22';
+const SURFACE_SELECTOR=[MINISTRY,INTERROGATION,CABINET,COMMAND].join(',');
+let pendingSyncFrame=null;
 const visible=el=>{if(!el)return false;const s=getComputedStyle(el),r=el.getBoundingClientRect();return s.display!=='none'&&s.visibility!=='hidden'&&Number(s.opacity)!==0&&r.width>0&&r.height>0;};
 const active=()=>visible(document.querySelector(MINISTRY));
 const interactiveOverlay=()=>visible(document.querySelector(INTERROGATION));
+function setAttributeIfChanged(el,name,value){
+ if(el&&el.getAttribute(name)!==value)el.setAttribute(name,value);
+}
+function setStyleIfChanged(el,name,value){
+ if(el&&el.style&&el.style[name]!==value)el.style[name]=value;
+}
 function install(){
  if(document.getElementById(STYLE_ID))return;
  const s=document.createElement('style');s.id=STYLE_ID;s.textContent=`
@@ -34,31 +47,65 @@ function install(){
 }
 function setSurface(){
  const m=document.querySelector(MINISTRY),content=document.querySelector('#ministry-dashboard-content'),interrogation=document.querySelector(INTERROGATION),on=active(),overlay=interactiveOverlay();
- document.body.classList.toggle('omega-ministry-active',on);
- if(m){m.classList.toggle('omega-ui-active',on);m.setAttribute('aria-hidden',on?'false':'true');}
- if(content)content.classList.add('omega-ministry-scroll-surface');
+ if(document.body&&document.body.classList)document.body.classList.toggle('omega-ministry-active',on);
+ if(m){m.classList.toggle('omega-ui-active',on);setAttributeIfChanged(m,'aria-hidden',on?'false':'true');}
+ if(content&&!content.classList.contains('omega-ministry-scroll-surface'))content.classList.add('omega-ministry-scroll-surface');
  if(interrogation){
-   interrogation.style.pointerEvents=overlay?'auto':'none';
-   interrogation.setAttribute('aria-hidden',overlay?'false':'true');
+   setStyleIfChanged(interrogation,'pointerEvents',overlay?'auto':'none');
+   setAttributeIfChanged(interrogation,'aria-hidden',overlay?'false':'true');
    if(overlay){
-     interrogation.style.zIndex='100000';
-     interrogation.querySelectorAll('input,button,textarea,select,[role="button"]').forEach(el=>{el.style.pointerEvents='auto';el.style.touchAction='manipulation';});
+     setStyleIfChanged(interrogation,'zIndex','100000');
+     interrogation.querySelectorAll('input,button,textarea,select,[role="button"]').forEach(el=>{
+       setStyleIfChanged(el,'pointerEvents','auto');
+       setStyleIfChanged(el,'touchAction','manipulation');
+     });
    }
  }
  const c=document.querySelector(CABINET),cmd=document.querySelector(COMMAND);
- if(c)c.setAttribute('aria-hidden',on?'true':'false');
- if(cmd)cmd.setAttribute('aria-hidden',on?'true':'false');
+ setAttributeIfChanged(c,'aria-hidden',on?'true':'false');
+ setAttributeIfChanged(cmd,'aria-hidden',on?'true':'false');
 }
 function allowedTarget(target){const m=document.querySelector(MINISTRY),i=document.querySelector(INTERROGATION);return!!(m?.contains(target)||i?.contains(target));}
 function blockOutside(e){if(!active())return;if(allowedTarget(e.target))return;e.preventDefault();e.stopImmediatePropagation();}
+function containsSurface(el){
+ if(!el||el.nodeType!==1)return false;
+ if(el.matches&&el.matches(SURFACE_SELECTOR))return true;
+ const surfaces=[document.querySelector(MINISTRY),document.querySelector(INTERROGATION),document.querySelector(CABINET),document.querySelector(COMMAND)];
+ return surfaces.some(surface=>surface&&(surface===el||(typeof el.contains==='function'&&el.contains(surface))));
+}
+function scheduleSurfaceSync(){
+ if(pendingSyncFrame!==null)return;
+ const run=()=>{pendingSyncFrame=null;setSurface();};
+ if(typeof global.requestAnimationFrame==='function')pendingSyncFrame=global.requestAnimationFrame(run);
+ else pendingSyncFrame=global.setTimeout(run,16);
+}
+function relevantMutations(records){
+ for(const record of records||[]){
+   if(record.type==='attributes'){
+     if(record.target===document.body||containsSurface(record.target))return true;
+   }else if(record.type==='childList'){
+     if(record.target===document.body||containsSurface(record.target))return true;
+     for(const node of [...(record.addedNodes||[]),...(record.removedNodes||[])]){
+       if(containsSurface(node))return true;
+     }
+   }
+ }
+ return false;
+}
 function boot(){
  install();
  for(const t of ['pointerdown','pointerup','click','touchstart','touchend','mousedown','mouseup','focusin'])document.addEventListener(t,blockOutside,true);
  document.addEventListener('wheel',e=>{if(!active())return;if(allowedTarget(e.target))return;e.preventDefault();e.stopImmediatePropagation();},{capture:true,passive:false});
- const observer=new MutationObserver(()=>queueMicrotask(setSurface));
- observer.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['style','class','hidden','aria-hidden']});
- setInterval(setSurface,200);setSurface();
+ if(typeof global.MutationObserver==='function'){
+   const observer=new global.MutationObserver(records=>{if(relevantMutations(records))scheduleSurfaceSync();});
+   observer.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['style','class','hidden','aria-hidden']});
+ }
+ global.addEventListener('pageshow',scheduleSurfaceSync);
+ global.addEventListener('resize',scheduleSurfaceSync,{passive:true});
+ global.addEventListener('transitionend',scheduleSurfaceSync,true);
+ document.addEventListener('visibilitychange',scheduleSurfaceSync);
+ setSurface();
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
-global.OmegaUIInteractionGuard={version:'2.2.0',refresh:setSurface};
+global.OmegaUIInteractionGuard={version:'2.3.0',refresh:setSurface,scheduleRefresh:scheduleSurfaceSync};
 })(window);
