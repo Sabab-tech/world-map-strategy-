@@ -1605,6 +1605,21 @@ function executeFactoryCycle(input={}){
     if(carbonGate&&carbonGate.allowed===false)return{status:'BLOCKED',reason:carbonGate.reason||'CARBON_QUOTA_POLICY_BLOCKED_PROCESSING',carbonGate,resourceId:plan.resourceId};
     plan.unit=unit;
   }
+  const output={},outputQuantities={},outputUnits={};
+  for(const out of outputRows){
+    const raw=Number((requested*out.coefficient).toFixed(6)),unit=String(recipe.outputUnits?.[out.key]||recipe.outputUnits?.[out.resourceId]||'').toUpperCase();
+    const quantity=unit==='UNITS'?Math.floor(raw+1e-9):raw;
+    outputUnits[out.key]=unit||plannedInputs.find(x=>x.resourceId===primary)?.unit||input.unit||'TONNES';
+    if(quantity>0){output[out.key]=quantity;outputQuantities[out.key]=quantity;}
+  }
+  if(!Object.keys(output).length)
+    return{status:'BLOCKED',reason:'FACTORY_OUTPUT_ROUNDED_TO_ZERO',factoryId:fid,primaryInput:primary,requestedProduction:requested};
+  for(const out of outputRows){
+    if(!Object.prototype.hasOwnProperty.call(output,out.key))continue;
+    if(resourceKeysFor(r.inventory,out.resourceId).length>1||
+      resourceKeysFor(r.processedWarehouse?.availableByResource||{},out.resourceId).length>1)
+      return{status:'BLOCKED',reason:'DUPLICATE_NORMALIZED_OUTPUT_KEYS',factoryId:fid,resourceId:out.resourceId};
+  }
   const consumedInputs=[],sourceBatchIds=[],directInputBatchIds=[],sourceSiteIds=[];
   let anyFactoryInput=false,anyCentralInput=false,anyLegacyInput=false;
   const inputQuantities={};
@@ -1688,25 +1703,10 @@ function executeFactoryCycle(input={}){
       const initialInventory=plan.inventoryQty===null?(plan.physicalAvailable+plan.reservedTotal):plan.inventoryQty;
       r.inventory[inventoryKey]=Math.max(0,initialInventory-plan.centralTake);
       if(plan.rawKey!==null)r.warehouse.availableByResource[plan.rawKey]=Math.max(0,plan.rawQty-plan.rawDebit);
-      if(plan.processedKey!==null)r.processedWarehouse.availableByResource[plan.processedKey]=Math.max(0,plan.processedQty-plan.processedReservedKey?plan.processedDebit:plan.processedDebit);
+      if(plan.processedKey!==null)r.processedWarehouse.availableByResource[plan.processedKey]=Math.max(0,plan.processedQty-plan.processedDebit);
     }
   }
   asset.inputInventory=factoryStock;asset.inputBatchLots=inputLots;
-  const output={},outputQuantities={},outputUnits={};
-  for(const out of outputRows){
-    const raw=Number((requested*out.coefficient).toFixed(6)),unit=String(recipe.outputUnits?.[out.key]||recipe.outputUnits?.[out.resourceId]||'').toUpperCase();
-    const quantity=unit==='UNITS'?Math.floor(raw+1e-9):raw;
-    outputUnits[out.key]=unit||plannedInputs.find(x=>x.resourceId===primary)?.unit||input.unit||'TONNES';
-    if(quantity>0){output[out.key]=quantity;outputQuantities[out.key]=quantity;}
-  }
-  if(!Object.keys(output).length)return{status:'BLOCKED',reason:'FACTORY_OUTPUT_ROUNDED_TO_ZERO',factoryId:fid,primaryInput:primary,requestedProduction:requested};
-  for(const out of outputRows){
-    const outputId=out.key,outputToken=out.resourceId;
-    if(!Object.prototype.hasOwnProperty.call(output,outputId))continue;
-    if(resourceKeysFor(r.inventory,outputToken).length>1||
-      resourceKeysFor(r.processedWarehouse?.availableByResource||{},outputToken).length>1)
-      return{status:'BLOCKED',reason:'DUPLICATE_NORMALIZED_OUTPUT_KEYS',factoryId:fid,resourceId:outputToken};
-  }
   const sequence=Math.max(0,Number(n.factoryRunSequence)||0)+1;
   const transactionId='FACTORYRUN:'+cid+':'+fid+':T'+turn()+':'+sequence;
   const finishedWarehouse=r.processedWarehouse||(r.processedWarehouse={warehouseId:'WH-'+cid+'-PROCESSED',countryId:cid,type:'SOVEREIGN_FINISHED_GOODS_WAREHOUSE',
