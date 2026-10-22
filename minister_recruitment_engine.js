@@ -418,7 +418,7 @@
       effectsMarkup + '</div></div><div class="omr-actions">' + action + '</div></div>';
 
     const actionButton = detail.querySelector('[data-action]');
-    if (actionButton && !busy) {
+    if (actionButton && !blocked) {
       actionButton.addEventListener('click', async event => {
         event.preventDefault();
         event.stopPropagation();
@@ -455,12 +455,12 @@
           : blockedReason
             ? '<button class="omr-card-quick-recruit" data-action="quick-recruit" type="button" disabled>' + esc(blockedReason) + '</button>'
             : '<button class="omr-card-quick-recruit" data-action="quick-recruit" type="button">RECRUIT MINISTER</button>';
-        return '<div class="omr-card ' + (current ? 'is-active' : busy ? 'is-busy' : '') +
+        return '<div class="omr-card ' + (current ? 'is-active' : blockedReason ? 'is-busy' : '') +
           '" data-id="' + esc(id) + '" role="button" tabindex="0" aria-label="View profile for ' + esc(displayName(candidate)) + '">' +
           '<span class="omr-index">' + String(index + 1).padStart(2, '0') + '</span><strong>' + esc(displayName(candidate)) +
           '</strong><span class="omr-id">ID: ' + esc(id) + '</span><span>' +
           esc(candidate.background || '') + '</span><span>Age ' + esc(candidate.age) +
-          '</span><span class="omr-status ' + (busy ? 'is-busy' : '') + '">' + status + '</span>' +
+          '</span><span class="omr-status ' + (blockedReason ? 'is-busy' : '') + '">' + status + '</span>' +
           quickAction + '</div>';
       }).join('') + '</div><div class="omr-detail"><div class="omr-empty">Select a candidate to inspect the complete profile.</div></div></section>';
 
