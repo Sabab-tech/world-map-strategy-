@@ -305,6 +305,28 @@ async function flushUi() {
   assert.equal(sandbox.OmegaMinisterStateRegistry.consistencyCheck().ok, true,
     'Canonical assignments must remain consistent after recruitment');
 
+  // When the roster is reopened for an occupied ministry, competing candidates
+  // must be blocked instead of surfacing a predictable assignment exception.
+  const manageButton = wrapper && wrapper.querySelector('[data-action="manage"]');
+  assert.ok(manageButton, 'Minister profiles must remain accessible after recruitment');
+  manageButton.onclick({ preventDefault() {}, stopPropagation() {} });
+  await flushUi();
+  host = content.querySelector('.omega-recruitment-host');
+  assert.ok(host, 'Manage Minister Profiles must reopen the candidate roster');
+  cards = host.querySelectorAll('.omr-card');
+  const competingCard = cards.find(card => card.dataset.id !== candidate.id);
+  assert.ok(competingCard, 'The roster must still show other candidates');
+  const occupiedAction = competingCard.querySelector('[data-action="quick-recruit"]');
+  assert.ok(occupiedAction, 'Other candidate cards must display their guarded action');
+  assert.equal(occupiedAction.textContent, 'MINISTRY OCCUPIED');
+  assert.equal(occupiedAction.disabled, true, 'An occupied ministry must block another appointment');
+  competingCard.dispatch('click');
+  const blockedDossierAction = host.querySelector('.omr-detail').querySelector('[data-action="recruit"]');
+  assert.ok(blockedDossierAction, 'The candidate dossier must explain the blocked action');
+  assert.equal(blockedDossierAction.textContent, 'MINISTRY OCCUPIED');
+  assert.equal(blockedDossierAction.disabled, true,
+    'Dossier recruitment must not attempt to appoint over the active minister');
+
   // Click the visible Fire Minister button and verify the complete vacancy path.
   primary.onclick({ preventDefault() {}, stopPropagation() {} });
   await flushUi();
