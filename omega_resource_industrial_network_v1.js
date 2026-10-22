@@ -1135,9 +1135,31 @@ function settleFactoryInputShipment(countryId,shipment){
     provenance:{source:'OMEGA_RESOURCE_INDUSTRIAL_NETWORK_V1',authority:bridge.authority,simulationOnly:bridge.simulationOnly,
       status:'TRACKED_FACTORY_TO_FACTORY_TRANSFER',shipmentId:s.shipmentId,sourceBatchId:batchId,sourceBatchIds:lineage,sourceSiteIds:[...new Set(sourceSites)],unitBridge:bridge,simulationTurn:turn()},
     lastMovementType:'RECEIPT_FROM_FACTORY_LOGISTICS',lastMovementTurn:turn(),status:'AVAILABLE_TO_FACTORY'});
-  const trackedInput=inputRows.filter(row=>tok(row?.resourceId||row?.materialIdentity)===rid)
+  let trackedInput=inputRows.filter(row=>tok(row?.resourceId||row?.materialIdentity)===rid)
     .reduce((sum,row)=>sum+(['CONSUMED','SOLD','TRANSFERRED_OUT'].includes(String(row?.status||'').toUpperCase())?0:Math.max(0,num(row?.remainingQuantity!=null?row.remainingQuantity:row?.quantity)||0)),0);
-  if(Math.abs((num(targetInventory[rid])||0)-trackedInput)>1e-5)targetInventory[rid]=trackedInput;
+  const inputGap=(num(targetInventory[rid])||0)-trackedInput;
+  if(inputGap>1e-6){
+    const legacyId='LEGACY-FACTORY-INPUT:'+cid+':'+factoryId+':'+rid;
+    let legacy=inputRows.find(row=>String(row?.batchId||'')===legacyId);
+    if(!legacy){
+      legacy={batchId:legacyId,resourceId:rid,materialIdentity:rid,quantity:inputGap,remainingQuantity:inputGap,unit:targetUnit,
+        stage:'FACTORY_INPUT',countryId:cid,sourceCountryId:cid,originCountryId:cid,ownerCountryCode:cid,destinationCountryId:cid,
+        ownerCompanyId:String(factory.companyId||factory.ownerCompanyId||('SIM-COMPANY:'+cid)),sourceBatchIds:[],sourceSiteIds:[],
+        factoryId,locationNodeKey:'FACTORY:'+cid+':'+factoryId,
+        provenance:{source:'OMEGA_RESOURCE_INDUSTRIAL_NETWORK_V1',authority:'UNOBSERVED',status:'LEGACY_FACTORY_INPUT_BALANCE',
+          explanation:'Pre-existing aggregate stock has no verified source-batch lineage',simulationTurn:turn()},
+        lastMovementType:'LEGACY_INPUT_RECONCILIATION',lastMovementTurn:turn(),status:'AVAILABLE_TO_FACTORY'};
+      inputRows.push(legacy);
+    }else{
+      const previous=Math.max(0,num(legacy.remainingQuantity!=null?legacy.remainingQuantity:legacy.quantity)||0);
+      legacy.quantity=previous+inputGap;legacy.remainingQuantity=previous+inputGap;legacy.status='AVAILABLE_TO_FACTORY';
+      legacy.lastMovementType='LEGACY_INPUT_RECONCILIATION';legacy.lastMovementTurn=turn();
+    }
+    trackedInput+=inputGap;
+  }else if(inputGap < -1e-6){
+    // Detailed batch lots take precedence over a stale aggregate stock counter.
+    targetInventory[rid]=trackedInput;
+  }
   factory.inputInventory=targetInventory;factory.inputBatchLots=inputRows;
   if(sourceBatch.remainingQuantity<=1e-9&&sourceBatch.status==='TRANSFERRED_TO_FACTORY')sourceBatch.status='TRANSFERRED_TO_FACTORY';
   s.status='DELIVERED';s.deliveredTurn=turn();s.destinationStatus='FACTORY_RECEIVED';s.factoryInputBatchId=inputBatchId;
@@ -1186,6 +1208,14 @@ function advanceShipments(c){
         ['FACTORY_INPUT_SHORTAGE','FACTORY_INPUT_NOT_IN_RECIPE'].includes(processing?.reason)?'AWAITING_INPUTS':'AWAITING_PROCESSING';
       s.processingTransactionId=processing?.transactionId||null;s.processing=clone(processing);
       n.deliveries.push(clone(s));delivered.push(clone(s));
+      if(processing?.status==='COMPLETED'){
+        const consumedSourceBatches=new Set((processing.sourceBatchIds||[]).map(String));
+        for(const peer of [...n.shipments,...n.deliveries,...delivered]){
+          if(String(peer?.shipmentType||'')!=='FACTORY_INPUT'||String(peer?.factoryId||'')!==String(s.factoryId)||
+            !consumedSourceBatches.has(String(peer?.batchId||'')))continue;
+          peer.processingStatus='PROCESSED';peer.processingTransactionId=processing.transactionId;peer.processing=clone(processing);
+        }
+      }
       emit('OMEGA_RESOURCE_DELIVERY_COMPLETED',cid,{shipmentId:s.shipmentId,factoryId:s.factoryId,resourceId:received.resourceId,
         quantity:received.targetQuantity,unit:received.unitBridge.targetUnit,sourceBatchId:s.batchId,
         status:'DELIVERED_TO_FACTORY',processingStatus:s.processingStatus,processingTransactionId:s.processingTransactionId});
