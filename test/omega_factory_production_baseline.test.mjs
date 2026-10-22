@@ -356,7 +356,11 @@ test('invalid output recipe is rejected before any input batch is consumed', () 
 test('processed mine-derived batches route to a downstream factory and reconcile a full multi-input cycle', () => {
   const { context, api } = makeRuntime();
   const assets = [makeSteelAsset({ inputInventory: {}, inputBatchLots: [] })];
-  context.Game.state.economy.BGD = { productionAssets: assets };
+  context.Game.state.economy.BGD = { unemploymentCount: 600000, laborForce: 6000000, unemployment_rate: 10, productionAssets: assets };
+  context.Game.state.transport.BGD = { infrastructure: { utilitySupply: {
+    electricityMWhPerDay: 1000000, waterM3PerDay: 1000000,
+    authority: 'TEST_FIXTURE', status: 'AVAILABLE', simulationOnly: true, assets: []
+  } } };
   const sources = [
     { batchId: 'OUTPUT-IRON', resourceId: 'IRON_CONCENTRATE', quantity: 60, sourceBatchIds: ['MINE-IRON-001'], sourceSiteIds: ['SITE-IRON'] },
     { batchId: 'OUTPUT-COAL', resourceId: 'COAL_CONCENTRATE', quantity: 20, sourceBatchIds: ['MINE-COAL-001'], sourceSiteIds: ['SITE-COAL'] },
