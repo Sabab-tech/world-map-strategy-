@@ -11,6 +11,8 @@ import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
+import android.webkit.WebChromeClient;
+import android.webkit.ConsoleMessage;
 import android.webkit.WebViewClient;
 import android.webkit.RenderProcessGoneDetail;
 
@@ -72,6 +74,29 @@ public final class MainActivity extends Activity {
 
         WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG);
         webView.addJavascriptInterface(new OmegaAndroidBridge(), "OmegaAndroid");
+        if (BuildConfig.DEBUG) {
+            webView.setWebChromeClient(new WebChromeClient() {
+                @Override
+                public boolean onConsoleMessage(ConsoleMessage message) {
+                    final String text = message.message();
+                    if (text.startsWith("[OMEGA_BOOT_") ||
+                            message.messageLevel() == ConsoleMessage.MessageLevel.ERROR) {
+                        android.util.Log.e(
+                                "OMEGA_WEB_DIAGNOSTICS",
+                                text + " (" + message.sourceId() + ":" + message.lineNumber() + ")"
+                        );
+                    }
+                    return true;
+                }
+
+                @Override
+                public void onProgressChanged(WebView view, int newProgress) {
+                    if (newProgress == 100) {
+                        android.util.Log.d("OMEGA_WEB_DIAGNOSTICS", "PAGE_LOAD_PROGRESS=100");
+                    }
+                }
+            });
+        }
 
         webView.setWebViewClient(new WebViewClient() {
             @Override
@@ -237,6 +262,11 @@ public final class MainActivity extends Activity {
         @JavascriptInterface
         public boolean isOfflineMode() {
             return true;
+        }
+
+        @JavascriptInterface
+        public boolean isDiagnosticsEnabled() {
+            return BuildConfig.DEBUG;
         }
 
         @JavascriptInterface
