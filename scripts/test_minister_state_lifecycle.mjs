@@ -65,7 +65,7 @@ const afterTask = registry.getMinister('Finance_3');
 assert.ok(afterTask.learningState.domainExperience.fiscal > 0);
 assert.ok(afterTask.memorySummary.counts.lessons > 0);
 
-registry.onGameTime(8760, { unit: 'hours', stableConditions: 20 });
+registry.onGameTime(8760, 8760);
 const afterYear = registry.getMinister('Finance_3');
 assert.equal(afterYear.staticProfile.baseAge, 47);
 assert.ok(afterYear.learningState.totalServiceTime > 0);

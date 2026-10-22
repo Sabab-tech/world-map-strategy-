@@ -26,5 +26,6 @@ assert.ok(low[0].evaluation.score>=low[1].evaluation.score);
 r.updateStress('Energy_1',{economicCondition:90,politicalCondition:70,crisisExposure:80,timePressure:80,uncertainty:60});
 const stressed=r.getMinister('Energy_1');
 assert.ok(stressed.runtimeState.stress>before.runtimeState.stress);
-assert.ok(stressed.effectiveCapability.effectiveCapability<before.effectiveCapability.effectiveCapability);
+assert.ok(stressed.effectiveCapability<before.effectiveCapability);
+await import('./test_minister_profile_effects.mjs');
 console.log('Minister behavior/context tests: PASS');
