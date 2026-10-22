@@ -140,6 +140,19 @@ test('real site extraction flows through raw warehouse, transport, factory, fini
   const hydration=await endowment.hydrateCountry('BGD');
   assert.equal(hydration.status,'APPLIED',JSON.stringify(hydration));
   assert.notEqual(hydration.result?.accepted,false,JSON.stringify(hydration));
+  // Explicit simulation fixture: workforce and utility supply must be recorded before production.
+  state.economy.BGD=state.economy.BGD||{productionAssets:[]};
+  state.economy.BGD.unemploymentCount=100000;
+  state.economy.BGD.laborForce=1000000;
+  state.economy.BGD.unemployment_rate=10;
+  state.transport.BGD=state.transport.BGD||{};
+  state.transport.BGD.infrastructure=state.transport.BGD.infrastructure||{
+    roads:{capacityPerDay:40000,quality:.9},rail:{capacityPerDay:90000,quality:.9},
+    ports:{capacityPerDay:180000,quality:.9},bridges:{capacityPerDay:45000,quality:.9},
+    pipelines:{capacityPerDay:350000,quality:.9}
+  };
+  state.transport.BGD.infrastructure.utilitySupply={electricityMWhPerDay:1000000,waterM3PerDay:1000000,
+    authority:'TEST_FIXTURE',status:'AVAILABLE',simulationOnly:true,assets:[]};
   const run=await industry.executeSitePipeline({countryId:'BGD',siteId:site.siteId,resourceId:'coal',autoCommissionFactory:true,transportMode:'rail'});
   assert.equal(run.status,'IN_TRANSIT',JSON.stringify(run));
   assert.equal(run.extractionStatus,'COMMITTED');
