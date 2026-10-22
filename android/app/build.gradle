@@ -67,8 +67,18 @@ tasks.register('syncOmegaWebAssets', Sync) {
     into("$buildDir/generated/omegaWebAssets")
 }
 
-tasks.named('preBuild').configure {
+tasks.register('transpileOmegaAndroidWebAssets') {
     dependsOn(tasks.named('syncOmegaWebAssets'))
+    doLast {
+        exec {
+            commandLine 'node', new File(omegaRepoRoot, 'scripts/transpile_android_web_assets.mjs').absolutePath,
+                    new File(buildDir, 'generated/omegaWebAssets').absolutePath
+        }
+    }
+}
+
+tasks.named('preBuild').configure {
+    dependsOn(tasks.named('transpileOmegaAndroidWebAssets'))
 }
 
 dependencies {
