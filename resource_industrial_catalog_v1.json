@@ -4941,7 +4941,8 @@
       "requiredInfrastructure": [
         "reliable_power",
         "ultrapure_water",
-        "controlled_environment"
+        "controlled_environment",
+        "power"
       ],
       "requiredTechnologyIds": [
         "SEMICONDUCTOR_PROCESSING"
@@ -5210,7 +5211,8 @@
       },
       "requiredInfrastructure": [
         "reliable_power",
-        "precision_zone"
+        "precision_zone",
+        "power"
       ],
       "requiredTechnologyIds": [
         "AEROSPACE_ENGINEERING"
@@ -5277,7 +5279,8 @@
       "requiredInfrastructure": [
         "reliable_power",
         "purified_water",
-        "controlled_environment"
+        "controlled_environment",
+        "power"
       ],
       "requiredTechnologyIds": [
         "PHARMACEUTICAL_GMP"
