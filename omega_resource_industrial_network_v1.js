@@ -1059,7 +1059,8 @@ function advanceShipments(c){
     if(finishedGoodsSource)r.processedWarehouse=warehouse;else r.warehouse=warehouse;
     r.inventoryLots=lots;r.batches=batches;r.inventory[invKey]=Math.max(0,countryRawStock-quantity);
     factory.inputInventory=factory.inputInventory&&typeof factory.inputInventory==='object'?factory.inputInventory:{};
-    factory.inputInventory[rid]=(num(factory.inputInventory[rid])||0)+quantity;
+    const factoryInputKey=countryStockKey(factory.inputInventory,rid)||rid;
+    factory.inputInventory[factoryInputKey]=(num(factory.inputInventory[factoryInputKey])||0)+quantity;
     factory.inputBatchLots=Array.isArray(factory.inputBatchLots)?factory.inputBatchLots:[];
     const inputBatchId='INPUT:'+s.shipmentId;
     if(!factory.inputBatchLots.some(x=>String(x?.batchId||'')===inputBatchId)){
@@ -1079,7 +1080,7 @@ function advanceShipments(c){
     }
     // Reconcile legacy aggregate-only factory stock into an explicitly unobserved input lot.
     // The batch-lot ledger then becomes the single quantity basis for each future processing debit.
-    const aggregateInput=Math.max(0,num(factory.inputInventory[rid])||0),inputRows=factory.inputBatchLots.filter(lot=>
+    const aggregateInput=Math.max(0,num(factory.inputInventory[factoryInputKey])||0),inputRows=factory.inputBatchLots.filter(lot=>
       tok(lot?.resourceId||lot?.materialIdentity)===rid);
     const lotRemaining=lot=>['CONSUMED','SOLD','TRANSFERRED_OUT'].includes(String(lot?.status||'').toUpperCase())?0:
       Math.max(0,num(lot?.remainingQuantity!=null?lot.remainingQuantity:lot?.quantity)||0);
@@ -1103,12 +1104,12 @@ function advanceShipments(c){
       }
     }else if(inputGap < -1e-6){
       // Detailed physical lots take precedence over a stale aggregate counter.
-      factory.inputInventory[rid]=trackedInput;
+      factory.inputInventory[factoryInputKey]=trackedInput;
     }
     const reconciledInputRows=factory.inputBatchLots.filter(lot=>tok(lot?.resourceId||lot?.materialIdentity)===rid);
     const reconciledInputTotal=reconciledInputRows.reduce((sum,lot)=>sum+lotRemaining(lot),0);
-    if(Math.abs((num(factory.inputInventory[rid])||0)-reconciledInputTotal)>1e-5){
-      factory.inputInventory[rid]=reconciledInputTotal;
+    if(Math.abs((num(factory.inputInventory[factoryInputKey])||0)-reconciledInputTotal)>1e-5){
+      factory.inputInventory[factoryInputKey]=reconciledInputTotal;
       emit('OMEGA_RESOURCE_FACTORY_INPUT_LEDGER_RECONCILED',cid,{factoryId:String(s.factoryId),resourceId:rid,
         aggregateBefore:aggregateInput,trackedBefore:trackedInput,aggregateAfter:reconciledInputTotal,turn:turn(),
         authority:'TRACKED_LOTS_PLUS_UNOBSERVED_LEGACY_BALANCE'},'resource-industrial-network');
@@ -1846,15 +1847,16 @@ function processPendingFactoryInputs(countryId){
     const pending=lots.filter(lot=>Math.max(0,num(lot?.remainingQuantity!=null?lot.remainingQuantity:lot?.quantity)||0)>1e-9)
       .sort((a,b)=>(Number(a.createdTurn)||0)-(Number(b.createdTurn)||0));
     const first=pending.find(lot=>{
-      const rid=tok(lot?.resourceId||lot?.materialIdentity);
-      return !!rid&&Math.max(0,num(stock[rid])||0)>1e-9;
+      const rid=tok(lot?.resourceId||lot?.materialIdentity),key=countryStockKey(stock,rid);
+      return !!rid&&!!key&&Math.max(0,num(stock[key])||0)>1e-9;
     });
     const rid=tok(first?.resourceId||first?.materialIdentity||
       Object.keys(stock).find(key=>Math.max(0,num(stock[key])||0)>1e-9)||'');
     if(!rid)continue;
-    const available=Math.max(0,num(stock[rid])||0),recipe=recipeFor(rid,asset),
-      coefficient=Math.max(1e-9,num(recipe.inputs?.[rid])||1),
-      capacity=Math.max(0,num(asset.capacity!=null?asset.capacity:(asset.productionCapacity!=null?asset.productionCapacity:asset.throughput))||0);
+    const stockKey=countryStockKey(stock,rid)||rid,available=Math.max(0,num(stock[stockKey])||0),recipe=recipeFor(rid,asset),
+      coefficientEntry=Object.entries(recipe.inputs||{}).find(([key])=>tok(key)===rid),
+      coefficient=positiveNumber(coefficientEntry?.[1])||1,
+      capacity=Math.max(0,factoryEffectiveCapacity(asset).capacity||0);
     if(!(available>1e-9)||!(capacity>1e-9)){
       blocked.push({factoryId:fid,resourceId:rid,reason:capacity>1e-9?'FACTORY_INPUT_UNAVAILABLE':'PRODUCTION_CAPACITY_UNAVAILABLE',available,capacity});
       continue;
