@@ -146,6 +146,8 @@ test('all canonical country profiles resolve currency metadata and honest simula
   const missingRates = quotes.filter(row => row.currencyCode && !(Number(row.localPerUsd) > 0));
   assert.equal(profiles.length, 249);
   assert.equal(diagnostics.countryAreaCount, 249);
+  assert.equal(typeof localContext.fetch, 'undefined', 'this test intentionally has no network provider');
+  assert.equal(diagnostics.offlineSimulationReady, true, 'game simulation quotes must be ready without an online FX provider');
   assert.equal(diagnostics.countriesWithCurrency, 248);
   assert.equal(diagnostics.countriesWithSimulationRate, 248,
     JSON.stringify({ missingRates, countriesWithoutQuote: quotes.filter(row => row.currencyCode && !(Number(row.localPerUsd) > 0)).map(row => ({ name: row.countryName, iso3: row.iso3, countryCode: row.countryCode, currencyCode: row.currencyCode, rateSource: row.rateSource, status: row.status })) }));
