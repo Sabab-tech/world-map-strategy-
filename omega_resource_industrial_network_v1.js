@@ -2476,8 +2476,7 @@ function factorySourceWarehouse(rs,batch){
 }
 function transferFactoryInputsFromWarehouse(countryId,asset,recipe){
   const cid=canonicalCountry(countryId),rs=resourceState(cid),n=netState(cid);
-  const stocks=asset.inputInventory&&typeof asset.inputInventory==='object'?(asset.inputInventory={}):asset.inputInventory;
-  const stock=asset.inputInventory||(asset.inputInventory={});
+  const stock=asset.inputInventory&&typeof asset.inputInventory==='object'?asset.inputInventory:(asset.inputInventory={});
   const lots=Array.isArray(asset.inputBatchLots)?asset.inputBatchLots:(asset.inputBatchLots=[]);
   const capacity=Math.max(0,num(asset.capacityPerDay??asset.capacity??asset.productionCapacity??asset.throughput)||0);
   const transfers=[],blocked=[];
