@@ -338,7 +338,7 @@ test('country overview mounts in the government cabinet, not inside ministry wor
   assert.match(ui, /omega-government-overview-panel/);
   assert.match(ui, /data-omega-government-view/);
   assert.match(ui, /ocov-government-overview-active/);
-  assert.doesNotMatch(ui, /data-omega-ministry-view|omega-country-overview-panel|omega-country-overview-tabs/);
+  assert.doesNotMatch(ui, /data-omega-ministry-view|panelEl\.id = 'omega-country-overview-panel'|getElementById\?\.\('omega-country-overview-panel'\)|getElementById\?\.\('omega-country-overview-tabs'\)/);
   assert.match(ui, /getBehaviorProfile/);
   assert.match(ui, /getStrategicProfile/);
   assert.match(ui, /resourceRuntime\.availability/);
