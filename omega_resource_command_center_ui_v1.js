@@ -1515,6 +1515,7 @@
         const net = g.Omega && g.Omega.ResourceIndustrialNetwork;
         if (!net || typeof net.startFactoryProject !== 'function') result = { status: 'UNAVAILABLE', reason: 'FACTORY_PROJECT_API_UNAVAILABLE' };
         else result = net.startFactoryProject({
+          requestId: uniqueRequestId('FACTORY-PROJECT', data.get('factoryType') || data.get('resourceId')),
           countryId: c, factoryType: data.get('factoryType') || undefined,
           recipeId: data.get('recipeId') || undefined,
           resourceId: data.get('resourceId') || undefined,
