@@ -6,6 +6,7 @@ const CACHE_NAME = "omega-offline-atlas-shell-v16";
 const APP_BASE = new URL("./", self.location.href);
 const INDEX_URL = new URL("index.html", APP_BASE).href;
 const CORE_ASSETS = [
+  "./foreign_exchange_reserve_profiles_v1.json", "./omega_foreign_reserve_runtime_v1.js",
   "./", "./index.html", "./world.json", "./leaflet.js", "./leaflet.css",
   "./style.css", "./map-engine-1.js", "./map-engine-2.js",
   "./omega_game_lifecycle_runtime_v1.js", "./omega_game_lifecycle_runtime_v1.css",

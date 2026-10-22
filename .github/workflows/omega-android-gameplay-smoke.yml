@@ -75,4 +75,32 @@ jobs:
           script: |
             adb wait-for-device
             adb shell getprop ro.build.version.sdk
+            set +e
             gradle -p android connectedDebugAndroidTest --no-daemon
+            test_status=$?
+            if [ "$test_status" -ne 0 ]; then
+              mkdir -p android/app/build/reports/omega-offline-smoke
+              adb logcat -d -t 8000 > android/app/build/reports/omega-offline-smoke/logcat.txt 2>&1 || true
+              find android/app/build/outputs/androidTest-results android/app/build/reports/androidTests -type f -name '*.xml' -print 2>/dev/null || true
+              find android/app/build/outputs/androidTest-results android/app/build/reports/androidTests -type f -name '*.xml' -exec cat {} \; 2>/dev/null || true
+            fi
+            exit "$test_status"
+      - name: Print Android instrumentation diagnostics on failure
+        if: failure()
+        shell: bash
+        run: |
+          find android/app/build/outputs/androidTest-results/connected/debug android/app/build/reports/androidTests/connected/debug -type f -name '*.xml' -print -exec cat {} \; 2>/dev/null || true
+          if [ -f android/app/build/reports/omega-offline-smoke/logcat.txt ]; then
+            grep -Ei 'AndroidRuntime|chromium|console.*(error|exception)|uncaught|fatal exception' android/app/build/reports/omega-offline-smoke/logcat.txt | tail -n 240 || true
+          fi
+
+      - name: Upload Android 9 offline smoke diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: omega-android9-offline-smoke-diagnostics
+          if-no-files-found: warn
+          path: |
+            android/app/build/outputs/androidTest-results/connected/debug/**
+            android/app/build/reports/androidTests/connected/debug/**
+            android/app/build/reports/omega-offline-smoke/**

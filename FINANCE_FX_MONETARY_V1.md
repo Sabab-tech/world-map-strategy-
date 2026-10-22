@@ -180,3 +180,14 @@ The FX engine accepts optional capital-flow, confidence, reserve-cover and peg-a
 
 ### Validation gates
 The Finance GitHub Actions workflow runs existing Finance tests plus FX conversions/policy/history, Government Banking account/transfer/tariff/delay/idempotency tests, economic transmission/wage/import-cost/stress tests, the Global Trade and National Demand suites, and offline-cache checks for the new banking/transmission assets. Green CI means the tested contracts pass on that commit; it does not certify every country source-data field or guarantee real-world FX forecasts.
+
+## Extended implementation: Dual-currency foreign reserves (2026-10-22)
+
+### Separate reference data and live game state
+- `foreign_exchange_reserve_profiles_v1.json` is a dedicated 249-country/area reserve-reference registry. It reconciles the existing raw financial registry and economic profile registry record by record before copying values.
+- The source baseline is 2015. The reconciled input contains 230 reserve values and 19 explicit missing values. Missing values remain `null`; they are never converted to zero or replaced with estimates. These are legacy game-baseline values, not independently verified current official observations.
+- `scripts/generate_foreign_exchange_reserve_profiles_v1.mjs --check` verifies the generated data has not drifted from its two source registries.
+- `omega_foreign_reserve_runtime_v1.js` keeps immutable reference reserves separate from mutable live balances at `governmentBanking.forex.reserveAccountsByCountry[ISO3].balanceUsd`. It preserves existing running-game balances during migration; new saves use the recorded baseline only as an initial seed. The game balance is mirrored to the existing economy and finance country snapshot for all current readers.
+- The FX/monetary engine continues to own simulated FX quotes and intervention mechanics. The reserve bridge reconciles its intervention and simulation-turn events so exchange-rate pressure, peg reserve use, the Finance metrics and country snapshots use the same live balance.
+- Finance Treasury UI shows the domestic-currency clearing account, game exchange quote, live USD foreign-reserve asset, local-currency valuation, and baseline reference independently. The local valuation is informational only; it is not added to reserve assets or Treasury cash.
+- The browser service worker precaches the registry and reserve runtime for offline play. Finance CI now checks record parity, missing-data semantics, runtime synchronization, and cache availability.
