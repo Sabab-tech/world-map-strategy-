@@ -1403,9 +1403,24 @@ function advanceShipments(c){
         authority:'TRACKED_LOTS_PLUS_UNOBSERVED_LEGACY_BALANCE'},'resource-industrial-network');
     }
     s.status='DELIVERED';s.deliveredTurn=turn();s.destinationStatus='FACTORY_RECEIVED';s.factoryInputBatchId=inputBatchId;
-    const processQuantity=Math.min(quantity,Math.max(1,num(factory.capacity)||quantity));
-    const processing=executeFactoryCycle({countryId:cid,factoryId:s.factoryId,resourceId:rid,quantity:processQuantity});
-    s.processingStatus=processing?.status==='COMPLETED'?'PROCESSED':'AWAITING_PROCESSING';s.processingTransactionId=processing?.transactionId||null;s.processing=clone(processing);
+    // Delivery updates warehouse/factory input ledgers only. Production is scheduled and
+    // output cannot be committed until the authoritative in-game calendar reaches finishDate.
+    const receivedRecipe=recipeFor(rid,factory),productionMetrics=factoryProductionMetrics(factory,receivedRecipe);
+    const existingCycle=factoryCycleStore(cid).factoryProductionCycles[String(s.factoryId)];
+    const processing=factoryCycleActive(existingCycle)
+      ?{status:existingCycle.status==='PAUSED'?'PAUSED':'IN_PROGRESS',cycleId:existingCycle.cycleId,
+        factoryId:String(s.factoryId),finishDate:existingCycle.finishDate,productionQuantity:existingCycle.productionQuantity,idempotent:true}
+      :productionMetrics.missingInputs.length
+        ?{status:'BLOCKED',reason:'FACTORY_INPUT_SHORTAGE',factoryId:String(s.factoryId),
+          missingInputs:clone(productionMetrics.missingInputs),capacity:productionMetrics.capacity}
+        :startFactoryProductionCycle({countryId:cid,factoryId:s.factoryId,resourceId:rid,
+          quantity:productionMetrics.possibleProduction,unit:s.unit||sourceBatch?.unit||factory.inputUnit||null});
+    s.processingStatus=processing?.status==='COMPLETED'?'PROCESSED':
+      processing?.status==='IN_PROGRESS'?'IN_PROGRESS':
+      processing?.status==='PAUSED'?'PAUSED':
+      ['FACTORY_INPUT_SHORTAGE','FACTORY_INPUT_OR_BATCH_SHORTAGE','FACTORY_INPUT_BATCH_LEDGER_MISMATCH'].includes(processing?.reason)
+        ?'AWAITING_INPUTS':'AWAITING_PROCESSING';
+    s.processingTransactionId=processing?.transactionId||processing?.cycleId||null;s.processing=clone(processing);
     n.deliveries.push(clone(s));delivered.push(clone(s));const res=n.reservations?.[s.reservationId];if(res)res.status='DELIVERED';
     emit('OMEGA_RESOURCE_DELIVERY_COMPLETED',cid,{shipmentId:s.shipmentId,siteId:s.siteId,factoryId:s.factoryId,resourceId:rid,quantity,unit:s.unit,
       travelTimeDays:s.route.travelTimeDays,transport:s.route.transportMode,status:'DELIVERED_TO_FACTORY',processingStatus:s.processingStatus,
@@ -1420,6 +1435,11 @@ function advanceShipments(c){
         if(processing?.status==='COMPLETED'){
           addFlowStage(row,'PROCESSING','COMPLETED',{transactionId:processing.transactionId,inputQuantity:processing.inputQuantity});
           addFlowStage(row,'FINISHED_GOODS','AVAILABLE',{transactionId:processing.transactionId,createdBatchIds:processing.createdBatchIds||[],outputQuantities:processing.outputQuantities||processing.outputs||{}});
+        }else if(processing?.status==='IN_PROGRESS'||processing?.status==='PAUSED'){
+          addFlowStage(row,'PROCESSING',processing.status,{cycleId:processing.cycleId||null,finishDate:processing.finishDate||null,
+            productionQuantity:processing.productionQuantity||0,reason:processing.reason||null});
+        }else if(['FACTORY_INPUT_SHORTAGE','FACTORY_INPUT_OR_BATCH_SHORTAGE','FACTORY_INPUT_BATCH_LEDGER_MISMATCH'].includes(processing?.reason)){
+          addFlowStage(row,'PROCESSING','AWAITING_INPUTS',{reason:processing.reason,missingInputs:processing.missingInputs||[]});
         }else if(processing?.reason==='FACTORY_TURN_CAPACITY_ALREADY_USED')addFlowStage(row,'PROCESSING','AWAITING_CAPACITY',{reason:processing.reason,turn:turn()});
         else addFlowStage(row,'PROCESSING','BLOCKED',{reason:processing?.reason||processing?.status||'PROCESSING_NOT_COMPLETED'});
       });
