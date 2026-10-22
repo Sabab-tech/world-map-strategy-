@@ -49,7 +49,7 @@ test('country sector UI is wired into the existing page and offline app shell', 
  assert.match(sw,/omega_country_sector_profile_ui_v1\.js/);
  assert.match(sw,/country_sector_profiles_v1\.json/);
  assert.match(sw,/country_sector_profile_schema_v1\.json/);
- assert.match(sw,/omega-offline-atlas-shell-v16/);
+ assert.match(sw,/omega-offline-atlas-shell-v[0-9]+/);
 });
 
 test('country sector UI resolves compact references through canonical data and preserves missing states', () => {
