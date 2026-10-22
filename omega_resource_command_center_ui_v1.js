@@ -48,6 +48,30 @@
     const output=format&&typeof format.compact==='function'?format.compact(n):n.toLocaleString();
     return output + (unit || '');
   }
+  function formatDuration(daysValue) {
+    const days = Math.max(0, Math.ceil(Number(daysValue) || 0));
+    if (days < 30) return days + (days === 1 ? ' day' : ' days');
+    const start = new Date(Date.UTC(2000, 0, 1));
+    const end = new Date(start.getTime());
+    end.setUTCDate(end.getUTCDate() + days);
+    let months = 0;
+    while (months < 240) {
+      const candidate = new Date(Date.UTC(2000, months + 1, 1));
+      const last = new Date(Date.UTC(candidate.getUTCFullYear(), candidate.getUTCMonth() + 1, 0)).getUTCDate();
+      candidate.setUTCDate(Math.min(1, last));
+      if (candidate.getTime() > end.getTime()) break;
+      months += 1;
+    }
+    const anchor = new Date(Date.UTC(2000, months, 1));
+    const remainder = Math.max(0, Math.round((end.getTime() - anchor.getTime()) / 86400000));
+    return months + (months === 1 ? ' month' : ' months') + (remainder ? ' ' + remainder + (remainder === 1 ? ' day' : ' days') : '') + ' (' + days + ' days)';
+  }
+  function displayGameDate(value) {
+    const match = String(value || '').match(/^(\\d{4})-(\\d{2})-(\\d{2})$/);
+    if (!match) return value == null || value === '' ? 'Not recorded' : String(value);
+    const date = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])));
+    return new Intl.DateTimeFormat('en-GB', {day:'numeric',month:'long',year:'numeric',timeZone:'UTC'}).format(date);
+  }
   function shortJson(value) {
     try { return esc(JSON.stringify(value)); } catch (_) { return 'Unavailable'; }
   }
@@ -710,13 +734,31 @@
       '<label>Input resource (legacy processing only)<select name="resourceId"><option value="">Use selected factory recipe</option>'+options+'</select></label>'+
       '<label>Budget cost override<input type="number" name="cost" min="1" step="1" placeholder="Use catalog default"></label>'+
       '<label>Capacity/day override<input type="number" name="capacityPerDay" min="1" step="1" placeholder="Use catalog default"></label>'+
+      '<label>Construction duration in months<input type="number" name="buildMonths" min="1" max="240" step="1" placeholder="Optional exact calendar months"></label>'+
       '<label>Construction days override<input type="number" name="buildDays" min="1" step="1" placeholder="Use catalog default"></label></div>'+
       '<p class="omega-rescc-note">Choose a factory type and a matching recipe. Empty overrides use catalog defaults. A catalog-backed project preflights and debits every required construction material from the country inventory/warehouse before creating the project. The cost field is a simulation estimate; treasury debit is not performed by this factory action.</p>'+
       '<button class="omega-rescc-button" type="submit">Create factory project</button></form>';
     return '<h3 class="omega-rescc-section-title">Live production and processing assets</h3>'+(liveCards||empty('No factory asset is recorded in this country runtime.'))+
       '<h3 class="omega-rescc-section-title">Processing capabilities from existing site files</h3>'+(profileCards||empty('No per-site processing/output profile is recorded for this country.'))+
       (profiles.length>150?'<p class="omega-rescc-note">Showing 150 of '+profiles.length+' site profiles.</p>':'')+
-      '<h3 class="omega-rescc-section-title">Capacity requests</h3>'+statusRows(requests)+'<h3 class="omega-rescc-section-title">Industrial construction projects</h3>'+statusRows(projects)+form;
+      '<h3 class="omega-rescc-section-title">Capacity requests</h3>'+statusRows(requests)+
+      '<h3 class="omega-rescc-section-title">Factory commissioning calendar</h3>' +
+      (projects.filter(function (p) { return p && p.projectType === 'FACTORY_CONSTRUCTION'; }).map(function (p) {
+        const duration = p.durationMonthsRequested ? p.durationMonthsRequested + (p.durationMonthsRequested === 1 ? ' month' : ' months') + ' (' + number(p.durationDays, ' days') + ')' : formatDuration(p.durationDays);
+        const completion = p.actualCompletionDate || p.estimatedCompletionDate || p.estimatedCommissioningDate;
+        const pct = Number(p.progressPct);
+        return card(String((profiles[p.factoryType] && profiles[p.factoryType].name) || p.factoryType || 'Factory project'),
+          String(p.status || 'STATUS_NOT_RECORDED'),
+          '<div class="omega-rescc-grid2">' +
+          kv('Construction started', displayGameDate(p.startDate)) +
+          kv('Estimated commissioning', displayGameDate(completion)) +
+          kv('Actual commissioning', p.actualCompletionDate ? displayGameDate(p.actualCompletionDate) : 'Not commissioned yet') +
+          kv('Planned duration', duration) +
+          kv('Construction progress', Number.isFinite(pct) ? number(pct * 100, '%') : 'Not recorded') +
+          kv('Recipe / factory ID', String(p.recipeId || p.factoryId || 'Not recorded')) +
+          '</div>', '');
+      }).join('') || empty('No factory construction project is recorded.')) +
+      '<h3 class="omega-rescc-section-title">All industrial construction projects</h3>'+statusRows(projects.filter(function (p) { return !p || p.projectType !== 'FACTORY_CONSTRUCTION'; }))+form;
   }
   function panelInventory(country) {
     const r = resourceBucket(country);
@@ -812,13 +854,29 @@
       const lastRun = factoryRuns[id] || null;
       const last = lastRun && (lastRun.transactionId || lastRun.turn) || asset.lastProductionTransactionId || asset.lastProductionTurn || 'No production transaction recorded';
       const lastOutputs = lastRun && (lastRun.outputQuantities || lastRun.outputs) || 'NOT_RECORDED';
+      const health = asset.productionHealth && typeof asset.productionHealth === 'object' ? asset.productionHealth : {};
+      const healthStatus = String(health.status || 'STOPPED').toUpperCase();
+      const iconAlertClass = healthStatus === 'STOPPED' ? 'omega-rescc-factory-icon-wrap--stopped' :
+        healthStatus === 'REDUCED' ? 'omega-rescc-factory-icon-wrap--partial' : 'omega-rescc-factory-icon-wrap--normal';
+      const productivityPct = Number.isFinite(Number(health.productivityPct)) ? Number(health.productivityPct) : 0;
+      const activeCycle = industrialState.factoryProductionCycles && industrialState.factoryProductionCycles[id] || null;
+      const cycleLine = activeCycle && ['IN_PROGRESS','PAUSED'].includes(String(activeCycle.status || '').toUpperCase())
+        ? (String(activeCycle.status).toUpperCase() === 'PAUSED' ? 'Paused · ' : 'Producing · ') +
+          number(activeCycle.productionQuantity, ' units/cycle') + ' · completes ' + String(activeCycle.finishDate || 'date unavailable')
+        : 'No active production cycle';
+      const missingLine = Array.isArray(health.missingInputs) && health.missingInputs.length
+        ? health.missingInputs.map(function (x) { return String(x.resourceId || 'input') + (x.available != null ? ' (' + number(x.available) + ')' : ''); }).join(', ')
+        : (health.reason || 'No production warning recorded');
       return card(String(profile.name || type) + ' · ' + id, asset.status || 'STATUS_NOT_RECORDED',
-        '<div class="omega-rescc-factory-head">' + factoryVisual(type, profile.name || type) + '<span>' + esc(type) + '</span></div>' +
+        '<div class="omega-rescc-factory-head"><span class="omega-rescc-factory-icon-wrap ' + iconAlertClass + '" title="' + esc(healthStatus + ' · Productivity ' + productivityPct + '%') + '">' +
+          factoryVisual(type, profile.name || type) + '<span class="omega-rescc-factory-alert-lamp" aria-hidden="true"></span></span><span>' + esc(type) + '</span></div>' +
         '<div class="omega-rescc-grid2">' + kv('Recipe', recipeId) + kv('Capacity/day', number(asset.capacityPerDay ?? asset.capacity ?? asset.productionCapacity)) +
         kv('Jobs filled', number(asset.employment && asset.employment.jobsFilled)) + kv('Job slots', number((asset.employment && asset.employment.jobsSupported) ?? (profile.employment && profile.employment.jobsPerFactory))) +
         kv('Core operating crew', number((asset.employment && asset.employment.coreOperatingCrew) ?? (profile.employment && profile.employment.coreOperatingCrew))) +
         kv('Other direct roles', number((asset.employment && asset.employment.additionalDirectStaffSlots) ?? (profile.employment && profile.employment.additionalDirectStaffSlots))) +
         kv('Vacancies', number(asset.employment && asset.employment.vacancies)) + kv('Location', asset.locationNodeKey || 'Not recorded') +
+        kv('Productivity', number(productivityPct, '%')) + kv('Production cycle', cycleLine) +
+        kv('Input warning', healthStatus === 'STOPPED' || healthStatus === 'REDUCED' ? missingLine : 'None') +
         kv('Last production', last) + kv('Latest output quantities', shortJson(lastOutputs)) + '</div>' +
         '<h4 class="omega-rescc-section-title">Factory input stock</h4>' +
         (stockRows ? '<div class="omega-rescc-grid2">' + stockRows + '</div>' : empty('No tracked input stock is currently recorded.')) +
@@ -887,7 +945,7 @@
             ' · Quantity basis: ' + esc(recipe.quantityBasis || 'PER_SIMULATION_PRODUCTION_UNIT') + '</div></li>';
         }).join('');
         return '<article class="omega-rescc-factory-catalog-row"><div class="omega-rescc-factory-head">' + factoryVisual(type, profile.name || type) + '<strong>' + esc(profile.name || type) + '</strong><span class="omega-rescc-factory-type">' + esc(type) + '</span></div>' +
-          '<div class="omega-rescc-grid2">' + kv('Build cost', number(profile.constructionCost, ' game units')) + kv('Build time', number(profile.constructionDays, ' days')) +
+          '<div class="omega-rescc-grid2">' + kv('Build cost', number(profile.constructionCost, ' game units')) + kv('Build time', formatDuration(profile.constructionDays)) +
           kv('Capacity/day', number(profile.defaultCapacityPerDay)) + kv('Workers', number((Number(profile.workforce && profile.workforce.operators) || 0) + (Number(profile.workforce && profile.workforce.engineers) || 0))) +
           kv('Jobs per factory', number(profile.employment && profile.employment.jobsPerFactory)) +
           kv('Core operators + engineers', number(profile.employment && profile.employment.coreOperatingCrew)) +
@@ -1205,6 +1263,20 @@
       '.omega-rescc-factory-category>summary,.omega-rescc-factory-recipes>summary{cursor:pointer;color:#bae6fd;font-weight:650;padding:5px 2px}' +
       '.omega-rescc-factory-catalog-row{border-top:1px solid #1e3548;padding:10px 2px;display:flex;flex-direction:column;gap:7px;min-width:0}' +
       '.omega-rescc-factory-head{display:flex;align-items:center;gap:8px;min-width:0;flex-wrap:wrap;color:#e2e8f0}' +
+      '.omega-rescc-factory-icon-wrap{position:relative;display:inline-flex;align-items:center;justify-content:center;flex:0 0 38px;width:38px;height:38px;max-width:38px;max-height:38px;border-radius:7px;isolation:isolate}' +
+      '.omega-rescc-factory-icon-wrap>.omega-factory-visual{width:34px;height:34px;max-width:34px;max-height:34px;display:inline-flex;align-items:center;justify-content:center}' +
+      '.omega-rescc-factory-alert-lamp{position:absolute;right:-2px;top:-2px;display:block;width:8px;height:8px;border-radius:50%;pointer-events:none;z-index:3;background:transparent}' +
+      '.omega-rescc-factory-icon-wrap--partial{outline:1px solid #eab308;box-shadow:0 0 4px #eab30877;border-radius:7px}' +
+      '.omega-rescc-factory-icon-wrap--partial:before{content:"";position:absolute;inset:-2px;border-radius:8px;border:2px solid transparent;border-top-color:#fde047;border-bottom-color:#facc15;pointer-events:none;animation:omegaFactoryWarningSweep 1.25s linear infinite;box-shadow:0 0 8px #eab30888}' +
+      '.omega-rescc-factory-icon-wrap--partial .omega-rescc-factory-alert-lamp{background:#facc15;box-shadow:0 0 7px #facc15;animation:omegaFactoryLampPulse 1.1s steps(2,end) infinite}' +
+      '.omega-rescc-factory-icon-wrap--stopped{outline:1px solid #ef4444;box-shadow:0 0 5px #ef444477;border-radius:7px}' +
+      '.omega-rescc-factory-icon-wrap--stopped:before{content:"";position:absolute;inset:-2px;border-radius:8px;border:2px solid #ef4444;box-shadow:0 0 10px #ef4444;pointer-events:none;animation:omegaFactoryStopPulse .8s steps(2,end) infinite}' +
+      '.omega-rescc-factory-icon-wrap--stopped .omega-rescc-factory-alert-lamp{background:#ef4444;box-shadow:0 0 8px #ef4444;animation:omegaFactoryLampPulse .8s steps(2,end) infinite}' +
+      '.omega-rescc-factory-icon-wrap--normal .omega-rescc-factory-alert-lamp{display:none}' +
+      '@keyframes omegaFactoryWarningSweep{0%{border-left-color:transparent;border-right-color:#fde047;filter:brightness(.75)}50%{border-left-color:#facc15;border-right-color:transparent;filter:brightness(1.8)}100%{border-left-color:transparent;border-right-color:#fde047;filter:brightness(.75)}}' +
+      '@keyframes omegaFactoryLampPulse{0%,100%{opacity:1}50%{opacity:.16}}' +
+      '@keyframes omegaFactoryStopPulse{0%,100%{opacity:1;box-shadow:0 0 10px #ef4444}50%{opacity:.32;box-shadow:0 0 2px #ef4444}}' +
+      '@media(prefers-reduced-motion:reduce){.omega-rescc-factory-icon-wrap--partial:before,.omega-rescc-factory-icon-wrap--partial .omega-rescc-factory-alert-lamp,.omega-rescc-factory-icon-wrap--stopped:before,.omega-rescc-factory-icon-wrap--stopped .omega-rescc-factory-alert-lamp{animation:none}}' +
       '.omega-rescc-factory-type{color:#93a9bc;font-size:10px;overflow-wrap:anywhere}' +
       '.omega-rescc-factory-recipes{background:#07111f;border-radius:6px;padding:6px 9px;overflow-wrap:anywhere}' +
       '.omega-rescc-factory-recipes ul{margin:6px 0;padding-left:18px}' +
@@ -1489,8 +1561,8 @@
       }
       if (action === 'process-factory') {
         const net = g.Omega && g.Omega.ResourceIndustrialNetwork;
-        if (!net || typeof net.executeFactoryCycle !== 'function') result = { status: 'UNAVAILABLE', reason: 'FACTORY_CYCLE_API_UNAVAILABLE' };
-        else result = net.executeFactoryCycle({ countryId: c, factoryId: d.factoryId, resourceId: d.resourceId, quantity: Number(d.quantity) || 1 });
+        if (!net || typeof net.startFactoryProductionCycle !== 'function') result = { status: 'UNAVAILABLE', reason: 'FACTORY_CYCLE_API_UNAVAILABLE' };
+        else result = net.startFactoryProductionCycle({ countryId: c, factoryId: d.factoryId, resourceId: d.resourceId, quantity: Number(d.quantity) || undefined });
         setOutcome('Factory cycle ' + (d.factoryId || ''), result);
         return;
       }
@@ -1609,7 +1681,7 @@
           recipeId: data.get('recipeId') || undefined,
           resourceId: data.get('resourceId') || undefined,
           cost: Number(data.get('cost')), capacityPerDay: Number(data.get('capacityPerDay')),
-          buildDays: Number(data.get('buildDays'))
+          buildDays: Number(data.get('buildDays')), buildMonths: Number(data.get('buildMonths'))
         });
         setOutcome('Factory construction project', result);
         return;

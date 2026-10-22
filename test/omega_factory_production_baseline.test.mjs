@@ -708,3 +708,127 @@ test('all recipe rows declare a common simulation quantity basis and in-game cyc
   assert.match(ui, /Declared recipe cycle time/);
   assert.match(ui, /not yet enforced as delayed completion/);
 });
+
+
+test('factory construction calendar honours exact game-calendar month dates', () => {
+  const { context, catalog, api } = makeRuntime();
+  const profile = catalog.factoryProfiles.STEEL_AND_ALLOY_WORKS;
+  context.Game.state.simulation.date = '2026-06-13';
+  context.Game.state.economy.BGD = { unemploymentCount: 600000, laborForce: 6000000, unemployment_rate: 10, productionAssets: [] };
+  const resource = context.Game.state.resource.BGD = { inventory: {}, batches: [], inventoryLots: {},
+    warehouse: { warehouseId: 'WH-BGD-RAW', availableByResource: {}, reservedByResource: {} } };
+  for (const [id, quantity] of Object.entries(profile.constructionMaterials)) {
+    resource.inventory[id] = Number(quantity) + 10;
+    resource.warehouse.availableByResource[id] = Number(quantity) + 10;
+  }
+  const project = api.startFactoryProject({ countryId: 'BGD', factoryType: 'STEEL_AND_ALLOY_WORKS',
+    recipeId: 'STEEL_PRIMARY_ROUTE_V1', requestId: 'CALENDAR-6-MONTHS', buildMonths: 6 });
+  assert.equal(project.status, 'UNDER_CONSTRUCTION');
+  assert.equal(project.startDate, '2026-06-13');
+  assert.equal(project.durationMonthsRequested, 6);
+  assert.equal(project.estimatedCompletionDate, '2026-12-13');
+  assert.equal(project.durationDays, 183);
+  assert.equal(api.startFactoryProject({ countryId: 'BGD', factoryType: 'STEEL_AND_ALLOY_WORKS',
+    recipeId: 'STEEL_PRIMARY_ROUTE_V1', requestId: 'CALENDAR-6-MONTHS', buildMonths: 6 }).idempotent, true);
+});
+
+test('factory production scheduler waits for cycle time and posts output only on the game-calendar finish date', () => {
+  const { context, api } = makeRuntime();
+  const asset = makeSteelAsset();
+  context.Game.state.simulation.date = '2015-01-01';
+  context.Game.state.economy.BGD = { unemploymentCount: 600000, laborForce: 6000000, unemployment_rate: 10, productionAssets: [asset] };
+  context.Game.state.transport.BGD = { infrastructure: { utilitySupply: {
+    electricityMWhPerDay: 1000000, waterM3PerDay: 1000000, authority: 'TEST_FIXTURE', status: 'AVAILABLE', simulationOnly: true, assets: []
+  } } };
+  const start = api.startFactoryProductionCycle({ countryId: 'BGD', factoryId: asset.id, resourceId: 'iron_concentrate', quantity: 50 });
+  assert.equal(start.status, 'IN_PROGRESS');
+  assert.equal(start.startDate, '2015-01-01');
+  assert.equal(start.finishDate, '2015-01-03');
+  assert.equal(start.productivityPct, 50);
+  assert.equal(context.Game.state.resource.BGD.batches.length, 0, 'no output should exist when the cycle only starts');
+  const sameDay = api.processPendingFactoryInputs('BGD');
+  assert.equal(sameDay.completedCount, 0);
+  assert.equal(context.Game.state.resource.BGD.batches.length, 0);
+  context.Game.state.simulation.turn = 2;
+  context.Game.state.simulation.date = '2015-01-02';
+  api.processPendingFactoryInputs('BGD');
+  assert.equal(context.Game.state.resource.BGD.batches.length, 0);
+  context.Game.state.simulation.turn = 3;
+  context.Game.state.simulation.date = '2015-01-03';
+  const done = api.processPendingFactoryInputs('BGD');
+  assert.equal(done.completedCount, 1);
+  assert.equal(done.completed[0].status, 'COMPLETED');
+  assert.equal(context.Game.state.resource.BGD.processedWarehouse.availableByResource.STEEL, 36);
+  assert.equal(asset.productionHealth.status, 'READY');
+});
+
+test('warehouse feeder transfers real tracked stock and schedules proportional partial factory production', () => {
+  const { context, api } = makeRuntime();
+  const asset = makeSteelAsset({ inputInventory: {}, inputBatchLots: [] });
+  context.Game.state.simulation.date = '2015-01-01';
+  context.Game.state.economy.BGD = { unemploymentCount: 600000, laborForce: 6000000, unemployment_rate: 10, productionAssets: [asset] };
+  context.Game.state.transport.BGD = { infrastructure: { utilitySupply: {
+    electricityMWhPerDay: 1000000, waterM3PerDay: 1000000, authority: 'TEST_FIXTURE', status: 'AVAILABLE', simulationOnly: true, assets: []
+  } } };
+  const r = context.Game.state.resource.BGD = { inventory: {}, batches: [], inventoryLots: {},
+    warehouse: { warehouseId: 'WH-BGD-RAW', availableByResource: {}, reservedByResource: {}, storedBatchIds: [] } };
+  const quantities = { iron_concentrate: 24, coal_concentrate: 8, cement_feed: 4, copper_concentrate: 4 };
+  let ix = 0;
+  for (const [resourceId, quantity] of Object.entries(quantities)) {
+    const batchId = 'WH-BATCH-' + (++ix);
+    r.inventory[resourceId] = quantity;
+    r.warehouse.availableByResource[resourceId] = quantity;
+    r.warehouse.storedBatchIds.push(batchId);
+    r.batches.push({ batchId, resourceId, quantity, remainingQuantity: quantity, unit: 'SIMULATION_RESOURCE_UNIT',
+      stage: 'RAW', status: 'AVAILABLE', countryId: 'BGD', warehouseId: 'WH-BGD-RAW', createdTurn: 1 });
+    r.inventoryLots[batchId] = { batchId, resourceId, quantity, remainingQuantity: quantity, unit: 'SIMULATION_RESOURCE_UNIT', status: 'AVAILABLE' };
+  }
+  const result = api.processPendingFactoryInputs('BGD');
+  assert.equal(result.startedCount, 1);
+  assert.equal(result.warehouseTransferCount, 4);
+  assert.equal(result.started[0].productivityPct, 40);
+  assert.deepEqual(JSON.parse(JSON.stringify(result.transfers.map(x => x.resourceId).sort())),
+    ['cement_feed','coal_concentrate','copper_concentrate','iron_concentrate']);
+  assert.equal(r.warehouse.availableByResource.iron_concentrate, 0);
+  assert.equal(asset.inputInventory.iron_concentrate, 24);
+  assert.equal(r.batches.find(x => x.batchId === 'WH-BATCH-1').remainingQuantity, 0);
+  assert.equal(r.processedWarehouse, undefined);
+  assert.equal(r.batches.filter(x => x.stage === 'FACTORY_INPUT').length, 4);
+  assert.equal(asset.productionHealth.status, 'REDUCED');
+  assert.equal(asset.productionHealth.productivityPct, 40);
+  assert.equal(r.batches.some(x => Object.keys(x).includes('STEEL')), false);
+  context.Game.state.simulation.turn = 3;
+  context.Game.state.simulation.date = '2015-01-03';
+  const completed = api.processPendingFactoryInputs('BGD');
+  assert.equal(completed.completedCount, 1);
+  assert.equal(r.processedWarehouse.availableByResource.STEEL, 28.8);
+  assert.equal(r.inventory.STEEL, 28.8);
+});
+
+test('factory production health stops at zero required input and retains unconverted factory stock', () => {
+  const { context, api } = makeRuntime();
+  const asset = makeSteelAsset({ inputInventory: { iron_concentrate: 60, coal_concentrate: 0, cement_feed: 10, copper_concentrate: 10 } });
+  asset.inputBatchLots = asset.inputBatchLots.filter(row => row.resourceId !== 'coal_concentrate');
+  context.Game.state.economy.BGD = { unemploymentCount: 600000, laborForce: 6000000, unemployment_rate: 10, productionAssets: [asset] };
+  context.Game.state.transport.BGD = { infrastructure: { utilitySupply: {
+    electricityMWhPerDay: 1000000, waterM3PerDay: 1000000, authority: 'TEST_FIXTURE', status: 'AVAILABLE', simulationOnly: true, assets: []
+  } } };
+  const before = JSON.stringify(asset.inputInventory);
+  const result = api.processPendingFactoryInputs('BGD');
+  assert.equal(result.startedCount, 0);
+  assert.equal(result.blocked.length, 1);
+  assert.equal(asset.productionHealth.status, 'STOPPED');
+  assert.equal(asset.productionHealth.productivityPct, 0);
+  assert.equal(JSON.stringify(asset.inputInventory), before);
+  assert.equal((context.Game.state.resource.BGD?.batches || []).length, 0);
+});
+
+test('factory UI keeps warning lamps compact and exposes month/date and productivity metrics', () => {
+  const ui = readText('omega_resource_command_center_ui_v1.js');
+  assert.match(ui, /Construction duration in months/);
+  assert.match(ui, /Estimated commissioning/);
+  assert.match(ui, /Productivity/);
+  assert.match(ui, /omega-rescc-factory-icon-wrap--partial/);
+  assert.match(ui, /omega-rescc-factory-icon-wrap--stopped/);
+  assert.match(ui, /omegaFactoryWarningSweep/);
+});
