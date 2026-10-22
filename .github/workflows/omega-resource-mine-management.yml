@@ -6,6 +6,8 @@ on:
       - feat/resource-ministry-mine-management-20261020
     paths:
       - 'omega_resource_industrial_network_v1.js'
+      - 'omega_icon_system_v1.js'
+      - 'omega_icon_system_v1.css'
       - 'omega_resource_endowment_runtime.js'
       - 'omega_resource_gameplay_binding_v1.js'
       - 'omega_resource_mine_management_v1.js'
@@ -13,6 +15,7 @@ on:
       - 'resource_site_country_mineplay_batch_20261020_v1.json'
       - 'test/omega_resource_mine_management_v1.test.mjs'
       - 'test/omega_resource_industrial_network_v1.test.mjs'
+      - 'test/omega_factory_production_baseline.test.mjs'
       - 'test/omega_resource_recipe_coverage.test.mjs'
       - 'test/omega_resource_gameplay_binding.test.mjs'
       - 'resource_site_legacy_gameplay_expansion_part_6_v1.json'
@@ -29,6 +32,8 @@ on:
   pull_request:
     paths:
       - 'omega_resource_industrial_network_v1.js'
+      - 'omega_icon_system_v1.js'
+      - 'omega_icon_system_v1.css'
       - 'omega_resource_endowment_runtime.js'
       - 'omega_resource_gameplay_binding_v1.js'
       - 'omega_resource_mine_management_v1.js'
@@ -36,6 +41,7 @@ on:
       - 'resource_site_country_mineplay_batch_20261020_v1.json'
       - 'test/omega_resource_mine_management_v1.test.mjs'
       - 'test/omega_resource_industrial_network_v1.test.mjs'
+      - 'test/omega_factory_production_baseline.test.mjs'
       - 'test/omega_resource_recipe_coverage.test.mjs'
       - 'test/omega_resource_gameplay_binding.test.mjs'
       - 'resource_site_legacy_gameplay_expansion_part_6_v1.json'
@@ -64,6 +70,8 @@ jobs:
         run: npm run test:resource-mine-management
       - name: Preserve existing industrial pipeline behavior
         run: npm run test:resource-industrial-network
+      - name: Verify canonical factory types, recipe quantities and batch lineage
+        run: npm run test:factory-baseline
       - name: Validate every extraction and processing recipe
         run: npm run test:resource-recipe-coverage
       - name: Validate supplemental site binding
