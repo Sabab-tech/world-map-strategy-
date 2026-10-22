@@ -251,9 +251,10 @@ test('ministry card hit targets remain tap-enabled on mobile', () => {
 });
 
 
-function createMapMinistryDockHarness({ primaryFails = false, managerFails = false } = {}) {
+function createMapMinistryDockHarness({ primaryFails = false, managerFails = false, deferNavigation = false } = {}) {
   const listeners = [];
   const calls = [];
+  const scheduled = [];
   const attributes = {};
   const bodyClasses = new Set();
   const body = {
@@ -339,7 +340,8 @@ function createMapMinistryDockHarness({ primaryFails = false, managerFails = fal
       }
     },
     OmegaCabinetUI: { renderCabinet(country) { calls.push('render:' + country); } },
-    Game: { currentActiveCountry: 'BANGLADESH' }
+    Game: { currentActiveCountry: 'BANGLADESH' },
+    setTimeout: deferNavigation ? function (callback) { scheduled.push(callback); return scheduled.length; } : undefined
   };
   context.window = context;
   context.addEventListener = () => {};
@@ -351,7 +353,10 @@ function createMapMinistryDockHarness({ primaryFails = false, managerFails = fal
     preventDefault() { this.prevented = true; },
     stopImmediatePropagation() { this.stoppedImmediate = true; }
   };
-  return { listeners, event, calls, cabinet, dock, context, attributes };
+  return {
+    listeners, event, calls, cabinet, dock, context, attributes, scheduled,
+    flushScheduled() { let count = 0; while (scheduled.length && count++ < 10) scheduled.shift()(); }
+  };
 }
 
 test('map ministry dock click opens the cabinet through the independent capture route', () => {
@@ -367,6 +372,20 @@ test('map ministry dock click opens the cabinet through the independent capture 
   assert.equal(h.context.OMEGAMinistryDock.audit().cabinetVisible, true);
 });
 
+test('ministry dock enters Government HQ immediately and defers cabinet rendering', () => {
+  const h = createMapMinistryDockHarness({ deferNavigation: true });
+  h.listeners.forEach((handler) => handler(h.event));
+  assert.equal(h.attributes['data-active-layer'], '1', 'the tap immediately enters Government HQ');
+  assert.equal(h.context.OmegaLayerManager.currentLayer, 1);
+  assert.equal(h.cabinet.style.display, 'flex', 'the cabinet shell is visible before heavy rendering');
+  assert.equal(h.dock.attrs['data-last-open-result'], 'opening');
+  assert.equal(h.calls.length, 0, 'heavy legacy rendering is not run inside the tap callback');
+  assert.equal(h.scheduled.length, 1, 'rendering is queued for a later task');
+  h.flushScheduled();
+  assert.ok(h.calls.includes('primary'), 'the original cabinet renderer still runs after the callback returns');
+  assert.equal(h.dock.attrs['data-last-open-result'], 'opened');
+});
+
 test('map ministry dock recovers when both the original route and layer manager fail', () => {
   const h = createMapMinistryDockHarness({ primaryFails: true, managerFails: true });
   h.listeners.forEach((handler) => handler(h.event));
@@ -375,4 +394,11 @@ test('map ministry dock recovers when both the original route and layer manager 
   assert.equal(h.attributes['data-active-layer'], '1');
   assert.ok(h.calls.includes('render:BANGLADESH'), 'fallback renders the current-country cabinet');
   assert.equal(h.dock.attrs['data-last-open-result'], 'opened');
+});
+
+test('cabinet council rendering is deferred until after the cabinet shell is painted', () => {
+  const engine = read('ministry_engine.js');
+  assert.ok(engine.includes('omega-cabinet-subsystem-loading'));
+  assert.ok(engine.includes('window.setTimeout(renderSubsystem, 50)'));
+  assert.ok(engine.includes("document.getElementById('cabinet-subsystem-root') !== subsystemRoot"));
 });

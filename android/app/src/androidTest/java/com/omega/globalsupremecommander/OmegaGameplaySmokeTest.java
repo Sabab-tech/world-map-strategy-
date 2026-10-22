@@ -128,8 +128,27 @@ public final class OmegaGameplaySmokeTest {
             final String ministryOpened =
                     evaluate(instrumentation, webViewRef.get(), ministryNavigationScript);
             assertEquals(
-                    "Tapping the real Ministry dock must enter Government HQ Layer 1",
+                    "Tapping the real Ministry dock must enter Government HQ Layer 1 without blocking WebView",
                     "true", ministryOpened
+            );
+
+            // Give the deferred cabinet task time to run, then verify that both the
+            // cabinet shell and executive-council surface actually rendered.
+            SystemClock.sleep(350L);
+            final String cabinetSurfaceReadyScript =
+                    "(function() {" +
+                    " var cabinet = document.getElementById('cabinet-full-window');" +
+                    " var root = document.getElementById('cabinet-subsystem-root');" +
+                    " return !!(cabinet && cabinet.style.display === 'flex' &&" +
+                    " cabinet.querySelector('.parchment-cabinet-container') && root &&" +
+                    " !root.querySelector('.omega-cabinet-subsystem-loading') &&" +
+                    " root.childElementCount > 0 && window.OmegaLayerManager &&" +
+                    " Number(window.OmegaLayerManager.currentLayer) === 1 &&" +
+                    " document.body.getAttribute('data-active-layer') === '1');" +
+                    "})()";
+            assertEquals(
+                    "Government HQ must render its council content after the immediate navigation callback returns",
+                    "true", evaluate(instrumentation, webViewRef.get(), cabinetSurfaceReadyScript)
             );
         } finally {
             instrumentation.runOnMainSync(activity::finish);
