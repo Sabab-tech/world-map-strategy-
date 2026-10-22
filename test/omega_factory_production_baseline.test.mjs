@@ -262,6 +262,37 @@ test('tracked input shortage blocks before any component is consumed', () => {
   assert.equal((context.Game.state.resource.BGD.batches || []).length, 0);
 });
 
+test('untracked multi-input stock is rejected atomically even when legacy tracking is optional', () => {
+  const { context, api } = makeRuntime();
+  const asset = makeSteelAsset({ inputBatchLots: [], requireTrackedInputs: false });
+  context.Game.state.economy.BGD = { productionAssets: [asset] };
+  const stockBefore = JSON.stringify(asset.inputInventory);
+  const run = api.executeFactoryCycle({
+    countryId: 'BGD', factoryId: asset.id, resourceId: 'iron_concentrate', quantity: 50
+  });
+  assert.equal(run.status, 'BLOCKED');
+  assert.equal(run.reason, 'FACTORY_INPUT_BATCH_LEDGER_MISMATCH');
+  assert.equal(JSON.stringify(asset.inputInventory), stockBefore);
+  assert.deepEqual(asset.inputBatchLots, []);
+  assert.equal((context.Game.state.resource.BGD.batches || []).length, 0);
+});
+
+test('invalid output recipe is rejected before any input batch is consumed', () => {
+  const { context, api } = makeRuntime();
+  const asset = makeSteelAsset({ outputProfile: {} });
+  context.Game.state.economy.BGD = { productionAssets: [asset] };
+  const stockBefore = JSON.stringify(asset.inputInventory);
+  const lotsBefore = JSON.stringify(asset.inputBatchLots);
+  const run = api.executeFactoryCycle({
+    countryId: 'BGD', factoryId: asset.id, resourceId: 'iron_concentrate', quantity: 50
+  });
+  assert.equal(run.status, 'BLOCKED');
+  assert.match(run.reason, /OUTPUT/);
+  assert.equal(JSON.stringify(asset.inputInventory), stockBefore);
+  assert.equal(JSON.stringify(asset.inputBatchLots), lotsBefore);
+  assert.equal((context.Game.state.resource.BGD.batches || []).length, 0);
+});
+
 test('processed mine-derived batches route to a downstream factory and reconcile a full multi-input cycle', () => {
   const { context, api } = makeRuntime();
   const assets = [makeSteelAsset({ inputInventory: {}, inputBatchLots: [] })];
