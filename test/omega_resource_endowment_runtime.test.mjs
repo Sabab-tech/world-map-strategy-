@@ -143,19 +143,30 @@ assert.ok(pilbaraExecution[pilbaraOccurrence].recoverableQuantity>0);
 await import('../omega_resource_industrial_network_v1.js');
 const industrialPipelineRuntime=globalThis.OmegaResourceIndustrialNetwork||globalThis.Omega?.ResourceIndustrialNetwork;
 assert(industrialPipelineRuntime?.executeSitePipeline,'industrial site-pipeline executor must be installed');
-// The scenario explicitly provisions the labour and utility ledgers used by the simulation-only factory.
-for(const root of [globalThis.Game?.state,globalThis.OmegaMinistryStateProvider?.getState?.()].filter(Boolean)){
-  root.economy=root.economy||{};
-  root.economy.AUS=root.economy.AUS||{productionAssets:[]};
-  root.economy.AUS.unemploymentCount=100000;
-  root.economy.AUS.laborForce=1000000;
-  root.economy.AUS.unemployment_rate=10;
-  root.transport=root.transport||{};
-  root.transport.AUS=root.transport.AUS||{};
-  root.transport.AUS.infrastructure=root.transport.AUS.infrastructure||{};
-  root.transport.AUS.infrastructure.utilitySupply={electricityMWhPerDay:1000000,waterM3PerDay:1000000,
-    authority:'TEST_FIXTURE',status:'AVAILABLE',simulationOnly:true,assets:[]};
+// Explicit game-simulation resources for the four end-to-end routes. No production runtime fallback creates stock.
+function provisionIndustrialTestResources(countryId){
+  for(const root of [globalThis.Game?.state,globalThis.OmegaMinistryStateProvider?.getState?.()].filter(Boolean)){
+    root.economy=root.economy||{};
+    root.economy[countryId]=root.economy[countryId]||{productionAssets:[]};
+    const econ=root.economy[countryId];
+    if(!Array.isArray(econ.productionAssets))econ.productionAssets=[];
+    econ.unemploymentCount=100000;
+    econ.laborForce=1000000;
+    econ.unemployment_rate=10;
+    root.transport=root.transport||{};
+    root.transport[countryId]=root.transport[countryId]||{};
+    const transport=root.transport[countryId];
+    transport.infrastructure=transport.infrastructure||{};
+    transport.infrastructure.roads=transport.infrastructure.roads||{capacityPerDay:50000,quality:.9};
+    transport.infrastructure.rail=transport.infrastructure.rail||{capacityPerDay:120000,quality:.8};
+    transport.infrastructure.ports=transport.infrastructure.ports||{capacityPerDay:200000,quality:.9};
+    transport.infrastructure.bridges=transport.infrastructure.bridges||{capacityPerDay:50000,quality:.8};
+    transport.infrastructure.pipelines=transport.infrastructure.pipelines||{capacityPerDay:400000,quality:.8};
+    transport.infrastructure.utilitySupply={electricityMWhPerDay:1000000,waterM3PerDay:1000000,
+      authority:'TEST_FIXTURE',status:'AVAILABLE',simulationOnly:true,assets:[]};
+  }
 }
+for(const cid of ['AUS','KWT','BGD','CHL'])provisionIndustrialTestResources(cid);
 const pilbaraPipeline=await industrialPipelineRuntime.executeSitePipeline({countryId:'AUS',siteId:'SITE_AUS_pilbara_iron_ore_range',resourceId:'iron_ore',quantity:100});
 assert.equal(pilbaraPipeline.status,'IN_TRANSIT',JSON.stringify(pilbaraPipeline));
 assert.equal(pilbaraPipeline.countryId,'AUS');
