@@ -48,9 +48,11 @@ registry.recruitCandidate(resilient, 'USA', 'energy_mining', 0);
 registry.recruitCandidate(strained, 'CAN', 'energy_mining', 0);
 registry.recruitCandidate(unrelated, 'AUS', 'energy_mining', 0);
 
+registry.updateRuntimeState('ProfileYoung', { workload: 80, stress: 30 }, 'PROFILE_EFFECTS_TEST');
+registry.updateRuntimeState('ProfileSenior', { workload: 80, stress: 30 }, 'PROFILE_EFFECTS_TEST');
 const youngFatigueBefore = registry.getMinister('ProfileYoung').runtimeState.fatigue;
 const seniorFatigueBefore = registry.getMinister('ProfileSenior').runtimeState.fatigue;
-registry.onGameTime(8, 8);
+registry.onGameTime(8, 24);
 const youngFatigueGain = registry.getMinister('ProfileYoung').runtimeState.fatigue - youngFatigueBefore;
 const seniorFatigueGain = registry.getMinister('ProfileSenior').runtimeState.fatigue - seniorFatigueBefore;
 assert.ok(seniorFatigueGain > youngFatigueGain, 'age-stage fatigue rates must affect the real game-time runtime');
@@ -97,6 +99,20 @@ assert.ok(youngGain > seniorGain, 'personalized training gain must apply the age
 assert.equal(youngTrained.learningState.lastTraining.domain, 'energy_mining');
 assert.ok(youngTrained.learningState.lastTraining.gain > 0);
 assert.ok(youngTrained.learningState.trainingHours >= 8);
+
+const scheduledExperienceBefore = registry.getMinister('ProfileYoung').learningState.domainExperience.energy_mining;
+const queuedTraining = behavior.scheduleTraining('ProfileYoung', 'energy_mining', 24, 1);
+assert.equal(queuedTraining.runtimeState.trainingSession.status, 'IN_PROGRESS');
+assert.equal(queuedTraining.runtimeState.trainingSession.remainingHours, 24);
+const serviceHoursBeforeTick = registry.getMinister('ProfileYoung').learningState.totalServiceTime;
+sandbox.dispatchEvent(new sandbox.CustomEvent('OMEGA_SIMULATION_TURN_COMMITTED', { detail: { turn: 10, day: 11, stepDurationMs: 86400000, simulationDate: '2015-01-11' } }));
+const scheduledCompletion = registry.getMinister('ProfileYoung');
+assert.equal(scheduledCompletion.runtimeState.trainingSession.status, 'COMPLETED', 'one committed game day must complete a 24-hour training session');
+assert.equal(scheduledCompletion.runtimeState.trainingSession.progress, 100);
+assert.ok(scheduledCompletion.learningState.domainExperience.energy_mining > scheduledExperienceBefore, 'scheduled training must only award experience after game time advances');
+assert.equal(scheduledCompletion.learningState.totalServiceTime, serviceHoursBeforeTick + 24, 'committed game day must advance minister service time');
+sandbox.dispatchEvent(new sandbox.CustomEvent('OMEGA_SIMULATION_TURN_COMMITTED', { detail: { turn: 10, day: 11, stepDurationMs: 86400000, simulationDate: '2015-01-11' } }));
+assert.equal(registry.getMinister('ProfileYoung').learningState.totalServiceTime, serviceHoursBeforeTick + 24, 'duplicate turn events must not double-advance minister time');
 
 const database = JSON.parse(fs.readFileSync('./ministers.json', 'utf8'));
 const roster = database.ministers_database || database.ministers || database;
