@@ -73,7 +73,7 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot-load -no-snapshot-save -noaudio -no-boot-anim -camera-back none -camera-front none -memory 2048 -cores 2
           disable-animations: true
           script: |
-            set -u
+            set -euo pipefail
 
             # API 28 can occasionally report "offline" to ADB after emulator boot.
             # Wait for both Android boot completion and the expected API before test discovery.
