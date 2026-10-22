@@ -169,6 +169,43 @@
     registry().updateLearningState(ministerId,{domainExperience:{...r.learningState.domainExperience,[targetDomain]:next},trainingHours:num(r.learningState.trainingHours)+h,lastLearningAt:Date.now(),skillEvolution:{...r.learningState.skillEvolution,[targetDomain]:next},lastTraining:{domain:targetDomain,hours:h,quality:q,gain:Number((next-current).toFixed(4)),ageMultiplier:effects.training.ageMultiplier,learningAgilityMultiplier:effects.training.learningAgilityMultiplier,capacityFactor:Number(capacity.toFixed(3))}});
     return registry().getMinister(ministerId);
   }
+  function scheduleTraining(ministerId,domain,hours=24,quality=1){
+    const r=registry()?.getMinister(ministerId);
+    if(!r)throw new Error('MINISTER_NOT_REGISTERED');
+    if(r.status!=='ACTIVE')throw new Error('MINISTER_NOT_ACTIVE');
+    if(r.runtimeState.trainingSession?.status==='IN_PROGRESS')throw new Error('MINISTER_TRAINING_ALREADY_IN_PROGRESS');
+    const targetDomain=String(domain||r.runtimeState.ministryId||'general'),durationHours=Math.max(1,Math.min(720,num(hours)||24)),q=clamp(quality,0,1);
+    const effects=analyzeProfile(r.staticProfile,'TRAINING',{domain:targetDomain,ministryId:r.runtimeState.ministryId});
+    const session={status:'IN_PROGRESS',domain:targetDomain,durationHours,remainingHours:durationHours,progress:0,quality:q,startedAtGameTime:global.Game?.gameTime??0,startedAt:Date.now(),ageTrainingMultiplier:effects.training.ageMultiplier,learningAgilityMultiplier:effects.training.learningAgilityMultiplier};
+    registry().updateRuntimeState(ministerId,{trainingSession:session},'TRAINING_STARTED');
+    try{global.dispatchEvent?.(new global.CustomEvent('MINISTER_TRAINING_STARTED',{detail:{ministerId,trainingSession:session}}));}catch(_){}
+    return registry().getMinister(ministerId);
+  }
+  function advanceTraining(detail={}){
+    const deltaHours=Math.max(0,num(detail.deltaHours));
+    if(deltaHours<=0)return [];
+    const rows=registry()?.getRegistry?.();
+    if(!(rows instanceof Map))return [];
+    const updated=[];
+    for(const [ministerId,record] of rows){
+      if(record?.runtime?.status!=='ACTIVE')continue;
+      const current=registry().getMinister(ministerId),session=current?.runtimeState?.trainingSession;
+      if(!session||session.status!=='IN_PROGRESS')continue;
+      const consumed=Math.min(deltaHours,Math.max(0,num(session.remainingHours))),remaining=Math.max(0,num(session.remainingHours)-consumed),complete=remaining<=0;
+      const next={...session,remainingHours:remaining,progress:Math.round((1-remaining/Math.max(1,num(session.durationHours)))*100),status:complete?'COMPLETED':'IN_PROGRESS',lastAdvancedAtGameTime:detail.gameTime??null};
+      registry().updateRuntimeState(ministerId,{trainingSession:next},complete?'TRAINING_DURATION_ELAPSED':'TRAINING_PROGRESS');
+      try{global.dispatchEvent?.(new global.CustomEvent('MINISTER_TRAINING_PROGRESS',{detail:{ministerId,trainingSession:next}}));}catch(_){}
+      if(complete){
+        const trained=train(ministerId,session.domain,session.durationHours,session.quality),learning=trained?.learningState||{},gain=learning.lastTraining?.gain??0;
+        const finalSession={...next,status:'COMPLETED',progress:100,remainingHours:0,completedAtGameTime:detail.gameTime??null,actualGain:gain};
+        registry().updateRuntimeState(ministerId,{trainingSession:finalSession},'TRAINING_COMPLETED');
+        try{global.dispatchEvent?.(new global.CustomEvent('MINISTER_TRAINING_COMPLETED',{detail:{ministerId,trainingSession:finalSession,actualGain:gain}}));}catch(_){}
+        updated.push({ministerId,status:'COMPLETED',actualGain:gain});
+      }else updated.push({ministerId,status:'IN_PROGRESS',progress:next.progress});
+    }
+    return updated;
+  }
+  global.addEventListener?.('MINISTER_GAME_TIME_ADVANCED',event=>{try{advanceTraining(event?.detail||{});}catch(error){console.error('[OMEGA Minister Training] progress failed',error);}});
   function debug(ministerId){const r=registry()?.getMinister(ministerId);if(!r)return null;return {identity:r.staticProfile,runtime:r.runtimeState,learning:r.learningState,memory:r.memorySummary,effectiveCapability:r.effectiveCapability,roleConfig:roleConfig(r.runtimeState.ministryId),personality:personality(r.staticProfile),profileEffects:analyzeProfile(r.staticProfile,operationFor(r.runtimeState.ministryId),{ministryId:r.runtimeState.ministryId}),status:r.status};}
-  global.OmegaMinisterBehavior={VERSION,evaluateDirective,createDecisionContract,rankOptions,recordOutcome,recordForecast,train,debug,roleConfig,operationFor,personality,ideologyPreference,analyzeProfile,profileConfig};
+  global.OmegaMinisterBehavior={VERSION,evaluateDirective,createDecisionContract,rankOptions,recordOutcome,recordForecast,train,scheduleTraining,advanceTraining,debug,roleConfig,operationFor,personality,ideologyPreference,analyzeProfile,profileConfig};
 })(typeof window!=='undefined'?window:globalThis);
