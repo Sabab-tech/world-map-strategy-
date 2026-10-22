@@ -2201,6 +2201,27 @@ function factoryCatalogDiagnostics(){
     if(Math.abs(inputTotal-outputTotal)>1e-6)issues.push({code:'RECIPE_SIMULATION_MASS_BALANCE_MISMATCH',recipeId:id,inputTotal,outputTotal});
     if(recipe?.simulationOnly!==true||recipe?.recipeAuthority!=='SIMULATED_GAMEPLAY_RULE')issues.push({code:'RECIPE_PROVENANCE_MISSING',recipeId:id});
   }
+  const producerIds=new Set([
+    ...Object.values(processing).flatMap(rule=>Object.keys(rule?.outputs||{})),
+    ...Object.values(downstream).flatMap(rule=>Object.keys(rule?.outputs||{}))
+  ].map(tok));
+  const knownRawIds=new Set([
+    ...Object.keys(catalog.resourceRules||{}),
+    ...Object.values(processing).flatMap(rule=>Object.keys(rule?.inputs||{}))
+  ].map(tok));
+  const declaredExternalIds=new Set(Object.keys(catalog.externalInputSources||{}).map(tok));
+  for(const [recipeId,recipe] of Object.entries(downstream)){
+    for(const resourceId of Object.keys(recipe?.inputs||{})){
+      const rid=tok(resourceId);
+      if(!producerIds.has(rid)&&!knownRawIds.has(rid)&&!declaredExternalIds.has(rid))
+        issues.push({code:'RECIPE_INPUT_SOURCE_UNREGISTERED',recipeId,resourceId});
+      const external=Object.keys(catalog.externalInputSources||{}).find(key=>tok(key)===rid);
+      if(external&&catalog.externalInputSources[external]?.requiresRecordedBatch!==true)
+        issues.push({code:'EXTERNAL_RECIPE_INPUT_MUST_REQUIRE_RECORDED_STOCK',recipeId,resourceId});
+      if(external&&catalog.externalInputSources[external]?.autoGenerateStock===true)
+        issues.push({code:'EXTERNAL_RECIPE_INPUT_MUST_NOT_AUTOFABRICATE_STOCK',recipeId,resourceId});
+    }
+  }
   for(const [type,profile] of Object.entries(profiles)){
     if(profile?.defaultRecipeId&&!downstream[profile.defaultRecipeId])issues.push({code:'FACTORY_DEFAULT_RECIPE_MISSING',factoryType:type,recipeId:profile.defaultRecipeId});
   }
