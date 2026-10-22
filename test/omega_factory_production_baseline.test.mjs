@@ -304,6 +304,29 @@ test('unrecognized physical units are blocked instead of being converted by an i
   assert.equal(context.Game.state.resource.BGD.processedWarehouse.reservedByResource.IRON_CONCENTRATE || 0, 0);
 });
 
+test('technology-locked or explicitly unavailable factories cannot consume inputs or accept shipments', () => {
+  const { context, api } = makeRuntime();
+  const asset = makeSteelAsset({ status: 'TECHNOLOGY_LOCKED' });
+  context.Game.state.economy.BGD = { productionAssets: [asset] };
+  const stockBefore = JSON.stringify(asset.inputInventory);
+  const result = api.executeFactoryCycle({
+    countryId: 'BGD', factoryId: asset.id, resourceId: 'iron_concentrate', quantity: 50
+  });
+  assert.equal(result.status, 'BLOCKED');
+  assert.equal(result.reason, 'FACTORY_NOT_OPERATIONAL');
+  assert.equal(JSON.stringify(asset.inputInventory), stockBefore);
+
+  asset.status = 'OPERATIONAL';
+  asset.requiredTechnologyIds = ['MISSING_TECH_GATE'];
+  const noTech = api.executeFactoryCycle({
+    countryId: 'BGD', factoryId: asset.id, resourceId: 'iron_concentrate', quantity: 50
+  });
+  assert.equal(noTech.status, 'BLOCKED');
+  assert.equal(noTech.reason, 'FACTORY_TECHNOLOGY_REQUIREMENT_NOT_MET');
+  assert.ok(noTech.missingTechnologyIds.includes('MISSING_TECH_GATE'));
+  assert.equal(JSON.stringify(asset.inputInventory), stockBefore);
+});
+
 test('unknown generic production is not allowed to create a factory project without explicit opt-in', () => {
   const { api } = makeRuntime();
   const blocked = api.startFactoryProject({ countryId: 'BGD', resourceId: 'future_unknown_metal' });
