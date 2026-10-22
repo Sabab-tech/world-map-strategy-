@@ -1362,7 +1362,8 @@ function startFactoryProject(input={}){
   if(!rid)return{status:'BLOCKED',reason:'FACTORY_PRIMARY_RESOURCE_REQUIRED'};
   const rule=recipeFor(rid,{factoryType:requestedType||undefined,recipeResourceId:rid});
   if(!Object.keys(rule.inputs||{}).length||!Object.keys(rule.outputs||{}).length)
-    return{status:'BLOCKED',reason:rule.reason||'NO_FACTORY_RECIPE',factoryType:requestedType||rule.factoryType,resourceId:rid,recipeAuthority:rule.recipeAuthority};
+    return{status:'BLOCKED',reason:(requestedType&&id(rule.factoryType)===requestedType)?'FACTORY_TYPE_RESOURCE_MISMATCH':(rule.reason||'NO_FACTORY_RECIPE'),
+      factoryType:requestedType||rule.factoryType,resourceId:rid,recipeAuthority:rule.recipeAuthority};
   if(requestedType&&id(rule.factoryType)!==requestedType)
     return{status:'BLOCKED',reason:'FACTORY_TYPE_RESOURCE_MISMATCH',factoryType:requestedType,resourceId:rid,expectedFactoryType:rule.factoryType};
   const primary=tok(rule.primaryInput||rid);
