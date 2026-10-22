@@ -9,6 +9,37 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#000000">
     <script>
+        /*
+         * Android 9's older bundled WebView lacks Object.fromEntries.
+         * Install a small offline-safe polyfill before any OMEGA runtime script
+         * executes. defineProperty avoids the legacy __proto__ setter hazard.
+         */
+        if (typeof Object.fromEntries !== 'function') {
+            Object.fromEntries = function (iterable) {
+                if (iterable == null) throw new TypeError('Object.fromEntries requires an iterable');
+                var output = {};
+                var iteratorMethod = iterable[Symbol.iterator];
+                if (typeof iteratorMethod !== 'function') {
+                    throw new TypeError('Object.fromEntries requires an iterable');
+                }
+                var iterator = iteratorMethod.call(iterable);
+                var next;
+                while (!(next = iterator.next()).done) {
+                    var pair = next.value;
+                    if (pair === null || (typeof pair !== 'object' && typeof pair !== 'function')) {
+                        throw new TypeError('Object.fromEntries entries must be objects');
+                    }
+                    Object.defineProperty(output, pair[0], {
+                        value: pair[1],
+                        writable: true,
+                        enumerable: true,
+                        configurable: true
+                    });
+                }
+                return output;
+            };
+        }
+
         /* WebViewAssetLoader serves bundled APK assets over its local HTTPS origin. */
         window.OMEGA_ANDROID_OFFLINE = window.location.hostname === 'appassets.androidplatform.net';
         window.OMEGA_ANDROID_DIAGNOSTICS = !!(window.OMEGA_ANDROID_OFFLINE && window.OmegaAndroid && window.OmegaAndroid.isDiagnosticsEnabled && window.OmegaAndroid.isDiagnosticsEnabled());
