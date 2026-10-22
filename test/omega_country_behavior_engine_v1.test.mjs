@@ -321,18 +321,24 @@ test('low-confidence action preferences are also attenuated toward neutral', asy
   if (confidence < 1) assert.ok(Math.abs(scored - 0.5) <= Math.abs(raw - 0.5));
 });
 
-test('country overview is inside ministry dashboard, uses shared behaviour runtime, and remains cached for offline play', () => {
+test('country overview mounts in the government cabinet, not inside ministry workspaces, and remains cached for offline play', () => {
   const html = read('index.html');
-  const start = html.indexOf('<div id="ministry-dashboard-view"');
-  const countryTab = html.indexOf('id="omega-country-overview-tabs"', start);
-  const overviewPanel = html.indexOf('id="omega-country-overview-panel"', countryTab);
-  const ministryWorkspace = html.indexOf('id="ministry-dashboard-content"', overviewPanel);
-  assert.ok(start >= 0 && countryTab > start && overviewPanel > countryTab && ministryWorkspace > overviewPanel);
+  const ministryStart = html.indexOf('<div id="ministry-dashboard-view"');
+  const cabinetStart = html.indexOf('<div id="cabinet-full-window"', ministryStart);
+  assert.ok(ministryStart >= 0 && cabinetStart > ministryStart);
+  const ministryMarkup = html.slice(ministryStart, cabinetStart);
+  assert.doesNotMatch(ministryMarkup, /omega-country-overview-tabs|omega-country-overview-panel|COUNTRY OVERVIEW/i);
   assert.match(html, /omega_country_behavior_engine_v1\.js/);
   assert.match(html, /omega_country_overview_ministry_ui_v1\.js/);
   assert.ok(html.indexOf('omega_country_behavior_engine_v1.js') < html.indexOf('omega_opponent_adaptive_strategy_system.js'));
 
   const ui = read('omega_country_overview_ministry_ui_v1.js');
+  assert.match(ui, /getElementById\?\.\('cabinet-full-window'\)/);
+  assert.match(ui, /querySelector\?\.\('\.parchment-cabinet-container'\)/);
+  assert.match(ui, /omega-government-overview-panel/);
+  assert.match(ui, /data-omega-government-view/);
+  assert.match(ui, /ocov-government-overview-active/);
+  assert.doesNotMatch(ui, /data-omega-ministry-view|omega-country-overview-panel|omega-country-overview-tabs/);
   assert.match(ui, /getBehaviorProfile/);
   assert.match(ui, /getStrategicProfile/);
   assert.match(ui, /resourceRuntime\.availability/);
