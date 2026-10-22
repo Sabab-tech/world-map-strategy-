@@ -618,9 +618,9 @@ window.OmegaCabinetEngine = {
         }
 
         // DEFAULT SUB-VIEW: OVERVIEW — readable, structured executive briefing.
-        return \`
+        return `
             <section class="omega-cabinet-overview" aria-label="Executive government overview">
-                \${transitionProgress}
+                ${transitionProgress}
 
                 <header class="omega-cabinet-overview__header">
                     <div>
@@ -638,12 +638,12 @@ window.OmegaCabinetEngine = {
                     </article>
                     <article class="omega-cabinet-overview__metric omega-cabinet-overview__metric--ideology">
                         <p class="omega-cabinet-overview__label">Active State Ideology</p>
-                        <p class="omega-cabinet-overview__value omega-cabinet-overview__value--setting">\${activeIdeoObj.icon} \${activeIdeoObj.bnName}</p>
+                        <p class="omega-cabinet-overview__value omega-cabinet-overview__value--setting">${activeIdeoObj.icon} ${activeIdeoObj.bnName}</p>
                         <p class="omega-cabinet-overview__support">State sovereign direction</p>
                     </article>
                     <article class="omega-cabinet-overview__metric omega-cabinet-overview__metric--religion">
                         <p class="omega-cabinet-overview__label">State Moral Alignment</p>
-                        <p class="omega-cabinet-overview__value omega-cabinet-overview__value--setting">\${activeRelObj.icon} \${activeRelObj.bnName}</p>
+                        <p class="omega-cabinet-overview__value omega-cabinet-overview__value--setting">${activeRelObj.icon} ${activeRelObj.bnName}</p>
                         <p class="omega-cabinet-overview__support">State religion and demographic alignment</p>
                     </article>
                 </section>
@@ -658,7 +658,7 @@ window.OmegaCabinetEngine = {
                             </div>
                         </header>
                         <ul class="omega-cabinet-overview__points">
-                            <li><span>Current ideology</span><strong>\${activeIdeoObj.icon} \${activeIdeoObj.bnName}</strong></li>
+                            <li><span>Current ideology</span><strong>${activeIdeoObj.icon} ${activeIdeoObj.bnName}</strong></li>
                             <li><span>Main focus</span><strong>Governance structure and policy direction</strong></li>
                         </ul>
                         <p class="omega-cabinet-overview__key-note"><strong>Important:</strong> Review the active model before making a policy change.</p>
@@ -676,7 +676,7 @@ window.OmegaCabinetEngine = {
                             </div>
                         </header>
                         <ul class="omega-cabinet-overview__points">
-                            <li><span>Current state religion</span><strong>\${activeRelObj.icon} \${activeRelObj.bnName}</strong></li>
+                            <li><span>Current state religion</span><strong>${activeRelObj.icon} ${activeRelObj.bnName}</strong></li>
                             <li><span>Main focus</span><strong>Faith and demographic settings</strong></li>
                         </ul>
                         <p class="omega-cabinet-overview__key-note"><strong>Important:</strong> Review the current selection in the dedicated religion controls.</p>
@@ -691,7 +691,7 @@ window.OmegaCabinetEngine = {
                     <p class="omega-cabinet-overview__note-text">These indicators summarize the current game settings. Use the dedicated controls above to review or change a setting; this overview itself does not apply changes.</p>
                 </aside>
             </section>
-        \`;
+        `;
     },
 
     // 2. 🤝 DYNAMIC 80 MOTIONS & SIMULATION INTELLIGENCE ENGINE VOTING
