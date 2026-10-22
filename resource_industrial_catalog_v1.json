@@ -1659,7 +1659,7 @@
   "factoryCatalogPolicy": {
     "authority": "SINGLE_CANONICAL_FACTORY_CATALOG",
     "observedDataPolicy": "Unknown real-world values remain NOT_RECORDED; factory profile values below are explicitly simulation-only.",
-    "quantityPolicy": "All recipe coefficients are deterministic simulation ratios on the declared SIMULATION_TONNE_EQUIVALENT basis; no implicit unit conversion is allowed.",
+    "quantityPolicy": "Recipe coefficients operate on the explicitly declared simulation-resource quantity basis. Unit normalization is an explicit simulation-only bridge; it is not a real-world physical conversion.",
     "missingInputPolicy": "A production cycle requires every declared recipe input. Missing or untracked required inputs block the cycle.",
     "outputPolicy": "Output batches are created once per committed transaction, retain source-batch lineage and are added to the processed warehouse exactly once.",
     "capacityPolicy": "Factory profile capacity is a maximum processed production-unit quantity per simulation day; resource availability and all recipe coefficients further constrain output.",
@@ -1683,7 +1683,206 @@
       "INVENTORY",
       "INDUSTRIAL_FINANCE"
     ],
-    "simulationOnly": true
+    "simulationOnly": true,
+    "unitNormalization": {
+      "targetUnit": "SIMULATION_RESOURCE_UNIT",
+      "authority": "SIMULATION_ONLY_UNIT_NORMALIZATION",
+      "factorPolicy": "Unit bridges preserve numeric quantity only for gameplay. They must never be reported as real-world mass/volume equivalence.",
+      "sourceUnits": {
+        "TONNES_ORE": {
+          "targetUnit": "SIMULATION_RESOURCE_UNIT",
+          "factor": 1,
+          "authority": "SIMULATION_ONLY_NORMALIZATION",
+          "simulationOnly": true
+        },
+        "TONNES": {
+          "targetUnit": "SIMULATION_RESOURCE_UNIT",
+          "factor": 1,
+          "authority": "SIMULATION_ONLY_NORMALIZATION",
+          "simulationOnly": true
+        },
+        "TONNE": {
+          "targetUnit": "SIMULATION_RESOURCE_UNIT",
+          "factor": 1,
+          "authority": "SIMULATION_ONLY_NORMALIZATION",
+          "simulationOnly": true
+        },
+        "METRIC_TONNES": {
+          "targetUnit": "SIMULATION_RESOURCE_UNIT",
+          "factor": 1,
+          "authority": "SIMULATION_ONLY_NORMALIZATION",
+          "simulationOnly": true
+        },
+        "METRIC_TONNE": {
+          "targetUnit": "SIMULATION_RESOURCE_UNIT",
+          "factor": 1,
+          "authority": "SIMULATION_ONLY_NORMALIZATION",
+          "simulationOnly": true
+        },
+        "TONS": {
+          "targetUnit": "SIMULATION_RESOURCE_UNIT",
+          "factor": 1,
+          "authority": "SIMULATION_ONLY_NORMALIZATION",
+          "simulationOnly": true
+        },
+        "T": {
+          "targetUnit": "SIMULATION_RESOURCE_UNIT",
+          "factor": 1,
+          "authority": "SIMULATION_ONLY_NORMALIZATION",
+          "simulationOnly": true
+        },
+        "CARATS": {
+          "targetUnit": "SIMULATION_RESOURCE_UNIT",
+          "factor": 1,
+          "authority": "SIMULATION_ONLY_NORMALIZATION",
+          "simulationOnly": true
+        },
+        "MILLION_CUBIC_METRES": {
+          "targetUnit": "SIMULATION_RESOURCE_UNIT",
+          "factor": 1,
+          "authority": "SIMULATION_ONLY_NORMALIZATION",
+          "simulationOnly": true
+        },
+        "MILLION_CUBIC_METERS": {
+          "targetUnit": "SIMULATION_RESOURCE_UNIT",
+          "factor": 1,
+          "authority": "SIMULATION_ONLY_NORMALIZATION",
+          "simulationOnly": true
+        },
+        "BARRELS": {
+          "targetUnit": "SIMULATION_RESOURCE_UNIT",
+          "factor": 1,
+          "authority": "SIMULATION_ONLY_NORMALIZATION",
+          "simulationOnly": true
+        },
+        "BARREL": {
+          "targetUnit": "SIMULATION_RESOURCE_UNIT",
+          "factor": 1,
+          "authority": "SIMULATION_ONLY_NORMALIZATION",
+          "simulationOnly": true
+        },
+        "BBL": {
+          "targetUnit": "SIMULATION_RESOURCE_UNIT",
+          "factor": 1,
+          "authority": "SIMULATION_ONLY_NORMALIZATION",
+          "simulationOnly": true
+        },
+        "KILOGRAMS": {
+          "targetUnit": "SIMULATION_RESOURCE_UNIT",
+          "factor": 1,
+          "authority": "SIMULATION_ONLY_NORMALIZATION",
+          "simulationOnly": true
+        },
+        "KILOGRAM": {
+          "targetUnit": "SIMULATION_RESOURCE_UNIT",
+          "factor": 1,
+          "authority": "SIMULATION_ONLY_NORMALIZATION",
+          "simulationOnly": true
+        },
+        "KG": {
+          "targetUnit": "SIMULATION_RESOURCE_UNIT",
+          "factor": 1,
+          "authority": "SIMULATION_ONLY_NORMALIZATION",
+          "simulationOnly": true
+        },
+        "GRAMS": {
+          "targetUnit": "SIMULATION_RESOURCE_UNIT",
+          "factor": 1,
+          "authority": "SIMULATION_ONLY_NORMALIZATION",
+          "simulationOnly": true
+        },
+        "GRAM": {
+          "targetUnit": "SIMULATION_RESOURCE_UNIT",
+          "factor": 1,
+          "authority": "SIMULATION_ONLY_NORMALIZATION",
+          "simulationOnly": true
+        },
+        "G": {
+          "targetUnit": "SIMULATION_RESOURCE_UNIT",
+          "factor": 1,
+          "authority": "SIMULATION_ONLY_NORMALIZATION",
+          "simulationOnly": true
+        },
+        "OUNCES": {
+          "targetUnit": "SIMULATION_RESOURCE_UNIT",
+          "factor": 1,
+          "authority": "SIMULATION_ONLY_NORMALIZATION",
+          "simulationOnly": true
+        },
+        "TROY_OUNCES": {
+          "targetUnit": "SIMULATION_RESOURCE_UNIT",
+          "factor": 1,
+          "authority": "SIMULATION_ONLY_NORMALIZATION",
+          "simulationOnly": true
+        },
+        "CUBIC_METRES": {
+          "targetUnit": "SIMULATION_RESOURCE_UNIT",
+          "factor": 1,
+          "authority": "SIMULATION_ONLY_NORMALIZATION",
+          "simulationOnly": true
+        },
+        "CUBIC_METERS": {
+          "targetUnit": "SIMULATION_RESOURCE_UNIT",
+          "factor": 1,
+          "authority": "SIMULATION_ONLY_NORMALIZATION",
+          "simulationOnly": true
+        },
+        "M3": {
+          "targetUnit": "SIMULATION_RESOURCE_UNIT",
+          "factor": 1,
+          "authority": "SIMULATION_ONLY_NORMALIZATION",
+          "simulationOnly": true
+        },
+        "LITRES": {
+          "targetUnit": "SIMULATION_RESOURCE_UNIT",
+          "factor": 1,
+          "authority": "SIMULATION_ONLY_NORMALIZATION",
+          "simulationOnly": true
+        },
+        "LITERS": {
+          "targetUnit": "SIMULATION_RESOURCE_UNIT",
+          "factor": 1,
+          "authority": "SIMULATION_ONLY_NORMALIZATION",
+          "simulationOnly": true
+        },
+        "L": {
+          "targetUnit": "SIMULATION_RESOURCE_UNIT",
+          "factor": 1,
+          "authority": "SIMULATION_ONLY_NORMALIZATION",
+          "simulationOnly": true
+        },
+        "UNITS": {
+          "targetUnit": "SIMULATION_RESOURCE_UNIT",
+          "factor": 1,
+          "authority": "SIMULATION_ONLY_NORMALIZATION",
+          "simulationOnly": true
+        },
+        "UNIT": {
+          "targetUnit": "SIMULATION_RESOURCE_UNIT",
+          "factor": 1,
+          "authority": "SIMULATION_ONLY_NORMALIZATION",
+          "simulationOnly": true
+        },
+        "BAGS": {
+          "targetUnit": "SIMULATION_RESOURCE_UNIT",
+          "factor": 1,
+          "authority": "SIMULATION_ONLY_NORMALIZATION",
+          "simulationOnly": true
+        },
+        "SIMULATION_TONNE_EQUIVALENT": {
+          "targetUnit": "SIMULATION_RESOURCE_UNIT",
+          "factor": 1,
+          "authority": "SIMULATION_ONLY_NORMALIZATION",
+          "simulationOnly": true
+        },
+        "SIMULATION_RESOURCE_UNIT": {
+          "targetUnit": "SIMULATION_RESOURCE_UNIT",
+          "factor": 1,
+          "authority": "SIMULATION_ONLY_NORMALIZATION",
+          "simulationOnly": true
+        }
+      }
+    }
   },
   "factoryProfiles": {
     "AGGREGATE_CRUSHING_PLANT": {
@@ -1710,7 +1909,9 @@
       "requiredTechnologyIds": [],
       "unit": "GAME_CURRENCY_UNITS",
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT"
     },
     "ALUMINA_REFINERY": {
       "factoryType": "ALUMINA_REFINERY",
@@ -1736,7 +1937,9 @@
       "requiredTechnologyIds": [],
       "unit": "GAME_CURRENCY_UNITS",
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT"
     },
     "BORATE_PROCESSING_PLANT": {
       "factoryType": "BORATE_PROCESSING_PLANT",
@@ -1762,7 +1965,9 @@
       "requiredTechnologyIds": [],
       "unit": "GAME_CURRENCY_UNITS",
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT"
     },
     "CEMENT_LIMESTONE_PLANT": {
       "factoryType": "CEMENT_LIMESTONE_PLANT",
@@ -1788,7 +1993,9 @@
       "requiredTechnologyIds": [],
       "unit": "GAME_CURRENCY_UNITS",
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT"
     },
     "CHROMITE_CONCENTRATOR": {
       "factoryType": "CHROMITE_CONCENTRATOR",
@@ -1814,7 +2021,9 @@
       "requiredTechnologyIds": [],
       "unit": "GAME_CURRENCY_UNITS",
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT"
     },
     "COAL_PREPARATION_PLANT": {
       "factoryType": "COAL_PREPARATION_PLANT",
@@ -1840,7 +2049,9 @@
       "requiredTechnologyIds": [],
       "unit": "GAME_CURRENCY_UNITS",
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT"
     },
     "COBALT_REFINERY": {
       "factoryType": "COBALT_REFINERY",
@@ -1866,7 +2077,9 @@
       "requiredTechnologyIds": [],
       "unit": "GAME_CURRENCY_UNITS",
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT"
     },
     "COPPER_CONCENTRATOR": {
       "factoryType": "COPPER_CONCENTRATOR",
@@ -1892,7 +2105,9 @@
       "requiredTechnologyIds": [],
       "unit": "GAME_CURRENCY_UNITS",
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT"
     },
     "DIAMOND_RECOVERY_PLANT": {
       "factoryType": "DIAMOND_RECOVERY_PLANT",
@@ -1918,7 +2133,9 @@
       "requiredTechnologyIds": [],
       "unit": "GAME_CURRENCY_UNITS",
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT"
     },
     "DOLOMITE_PROCESSING_PLANT": {
       "factoryType": "DOLOMITE_PROCESSING_PLANT",
@@ -1944,7 +2161,9 @@
       "requiredTechnologyIds": [],
       "unit": "GAME_CURRENCY_UNITS",
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT"
     },
     "GAS_PROCESSING_PLANT": {
       "factoryType": "GAS_PROCESSING_PLANT",
@@ -1970,7 +2189,9 @@
       "requiredTechnologyIds": [],
       "unit": "GAME_CURRENCY_UNITS",
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT"
     },
     "GEMSTONE_SORTING_PLANT": {
       "factoryType": "GEMSTONE_SORTING_PLANT",
@@ -1996,7 +2217,9 @@
       "requiredTechnologyIds": [],
       "unit": "GAME_CURRENCY_UNITS",
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT"
     },
     "GLASS_SILICA_PLANT": {
       "factoryType": "GLASS_SILICA_PLANT",
@@ -2022,7 +2245,9 @@
       "requiredTechnologyIds": [],
       "unit": "GAME_CURRENCY_UNITS",
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT"
     },
     "GOLD_PROCESSING_PLANT": {
       "factoryType": "GOLD_PROCESSING_PLANT",
@@ -2048,7 +2273,9 @@
       "requiredTechnologyIds": [],
       "unit": "GAME_CURRENCY_UNITS",
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT"
     },
     "GRAPHITE_CONCENTRATOR": {
       "factoryType": "GRAPHITE_CONCENTRATOR",
@@ -2074,7 +2301,9 @@
       "requiredTechnologyIds": [],
       "unit": "GAME_CURRENCY_UNITS",
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT"
     },
     "GYPSUM_PROCESSING_PLANT": {
       "factoryType": "GYPSUM_PROCESSING_PLANT",
@@ -2100,7 +2329,9 @@
       "requiredTechnologyIds": [],
       "unit": "GAME_CURRENCY_UNITS",
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT"
     },
     "LITHIUM_CONVERSION_PLANT": {
       "factoryType": "LITHIUM_CONVERSION_PLANT",
@@ -2126,7 +2357,9 @@
       "requiredTechnologyIds": [],
       "unit": "GAME_CURRENCY_UNITS",
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT"
     },
     "MAGNESIA_PLANT": {
       "factoryType": "MAGNESIA_PLANT",
@@ -2152,7 +2385,9 @@
       "requiredTechnologyIds": [],
       "unit": "GAME_CURRENCY_UNITS",
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT"
     },
     "MANGANESE_BENEFICIATION_PLANT": {
       "factoryType": "MANGANESE_BENEFICIATION_PLANT",
@@ -2178,7 +2413,9 @@
       "requiredTechnologyIds": [],
       "unit": "GAME_CURRENCY_UNITS",
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT"
     },
     "MINERAL_SANDS_PLANT": {
       "factoryType": "MINERAL_SANDS_PLANT",
@@ -2204,7 +2441,9 @@
       "requiredTechnologyIds": [],
       "unit": "GAME_CURRENCY_UNITS",
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT"
     },
     "NICKEL_PROCESSING_PLANT": {
       "factoryType": "NICKEL_PROCESSING_PLANT",
@@ -2230,7 +2469,9 @@
       "requiredTechnologyIds": [],
       "unit": "GAME_CURRENCY_UNITS",
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT"
     },
     "NIOBIUM_CONCENTRATION_PLANT": {
       "factoryType": "NIOBIUM_CONCENTRATION_PLANT",
@@ -2256,7 +2497,9 @@
       "requiredTechnologyIds": [],
       "unit": "GAME_CURRENCY_UNITS",
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT"
     },
     "OIL_SHALE_RETORT": {
       "factoryType": "OIL_SHALE_RETORT",
@@ -2282,7 +2525,9 @@
       "requiredTechnologyIds": [],
       "unit": "GAME_CURRENCY_UNITS",
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT"
     },
     "ORE_BENEFICIATION_PLANT": {
       "factoryType": "ORE_BENEFICIATION_PLANT",
@@ -2308,7 +2553,9 @@
       "requiredTechnologyIds": [],
       "unit": "GAME_CURRENCY_UNITS",
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT"
     },
     "PGM_CONCENTRATOR": {
       "factoryType": "PGM_CONCENTRATOR",
@@ -2334,7 +2581,9 @@
       "requiredTechnologyIds": [],
       "unit": "GAME_CURRENCY_UNITS",
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT"
     },
     "PHOSPHATE_BENEFICIATION_PLANT": {
       "factoryType": "PHOSPHATE_BENEFICIATION_PLANT",
@@ -2360,7 +2609,9 @@
       "requiredTechnologyIds": [],
       "unit": "GAME_CURRENCY_UNITS",
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT"
     },
     "POTASH_PROCESSING_PLANT": {
       "factoryType": "POTASH_PROCESSING_PLANT",
@@ -2386,7 +2637,9 @@
       "requiredTechnologyIds": [],
       "unit": "GAME_CURRENCY_UNITS",
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT"
     },
     "RARE_EARTH_BENEFICIATION_PLANT": {
       "factoryType": "RARE_EARTH_BENEFICIATION_PLANT",
@@ -2412,7 +2665,9 @@
       "requiredTechnologyIds": [],
       "unit": "GAME_CURRENCY_UNITS",
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT"
     },
     "REFINERY": {
       "factoryType": "REFINERY",
@@ -2438,7 +2693,9 @@
       "requiredTechnologyIds": [],
       "unit": "GAME_CURRENCY_UNITS",
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT"
     },
     "SALT_REFINERY": {
       "factoryType": "SALT_REFINERY",
@@ -2464,7 +2721,9 @@
       "requiredTechnologyIds": [],
       "unit": "GAME_CURRENCY_UNITS",
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT"
     },
     "SILVER_CONCENTRATOR": {
       "factoryType": "SILVER_CONCENTRATOR",
@@ -2490,7 +2749,9 @@
       "requiredTechnologyIds": [],
       "unit": "GAME_CURRENCY_UNITS",
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT"
     },
     "STONE_PROCESSING_PLANT": {
       "factoryType": "STONE_PROCESSING_PLANT",
@@ -2516,7 +2777,9 @@
       "requiredTechnologyIds": [],
       "unit": "GAME_CURRENCY_UNITS",
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT"
     },
     "TIN_CONCENTRATOR": {
       "factoryType": "TIN_CONCENTRATOR",
@@ -2542,7 +2805,9 @@
       "requiredTechnologyIds": [],
       "unit": "GAME_CURRENCY_UNITS",
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT"
     },
     "TUNGSTEN_CONCENTRATOR": {
       "factoryType": "TUNGSTEN_CONCENTRATOR",
@@ -2568,7 +2833,9 @@
       "requiredTechnologyIds": [],
       "unit": "GAME_CURRENCY_UNITS",
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT"
     },
     "URANIUM_MILL": {
       "factoryType": "URANIUM_MILL",
@@ -2594,7 +2861,9 @@
       "requiredTechnologyIds": [],
       "unit": "GAME_CURRENCY_UNITS",
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT"
     },
     "ZINC_CONCENTRATOR": {
       "factoryType": "ZINC_CONCENTRATOR",
@@ -2620,7 +2889,9 @@
       "requiredTechnologyIds": [],
       "unit": "GAME_CURRENCY_UNITS",
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT"
     },
     "STEEL_AND_ALLOY_WORKS": {
       "factoryType": "STEEL_AND_ALLOY_WORKS",
@@ -2648,7 +2919,9 @@
       ],
       "unit": "GAME_CURRENCY_UNITS",
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT"
     },
     "NON_FERROUS_METAL_SMELTER": {
       "factoryType": "NON_FERROUS_METAL_SMELTER",
@@ -2676,7 +2949,9 @@
       ],
       "unit": "GAME_CURRENCY_UNITS",
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT"
     },
     "PETROCHEMICAL_POLYMER_PLANT": {
       "factoryType": "PETROCHEMICAL_POLYMER_PLANT",
@@ -2704,7 +2979,9 @@
       ],
       "unit": "GAME_CURRENCY_UNITS",
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT"
     },
     "FERTILIZER_CHEMICAL_PLANT": {
       "factoryType": "FERTILIZER_CHEMICAL_PLANT",
@@ -2732,7 +3009,9 @@
       ],
       "unit": "GAME_CURRENCY_UNITS",
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT"
     },
     "INDUSTRIAL_CHEMICALS_GAS_PLANT": {
       "factoryType": "INDUSTRIAL_CHEMICALS_GAS_PLANT",
@@ -2760,7 +3039,9 @@
       ],
       "unit": "GAME_CURRENCY_UNITS",
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT"
     },
     "CEMENT_CONCRETE_PLANT": {
       "factoryType": "CEMENT_CONCRETE_PLANT",
@@ -2788,7 +3069,9 @@
       ],
       "unit": "GAME_CURRENCY_UNITS",
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT"
     },
     "GLASS_CERAMICS_PLANT": {
       "factoryType": "GLASS_CERAMICS_PLANT",
@@ -2815,7 +3098,9 @@
       ],
       "unit": "GAME_CURRENCY_UNITS",
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT"
     },
     "PAPER_PACKAGING_MILL": {
       "factoryType": "PAPER_PACKAGING_MILL",
@@ -2844,7 +3129,9 @@
       ],
       "unit": "GAME_CURRENCY_UNITS",
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT"
     },
     "FOOD_PROCESSING_COLD_CHAIN": {
       "factoryType": "FOOD_PROCESSING_COLD_CHAIN",
@@ -2872,7 +3159,9 @@
       ],
       "unit": "GAME_CURRENCY_UNITS",
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT"
     },
     "TEXTILE_GARMENT_MILL": {
       "factoryType": "TEXTILE_GARMENT_MILL",
@@ -2900,7 +3189,9 @@
       ],
       "unit": "GAME_CURRENCY_UNITS",
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT"
     },
     "INDUSTRIAL_MACHINERY_MACHINE_TOOLS": {
       "factoryType": "INDUSTRIAL_MACHINERY_MACHINE_TOOLS",
@@ -2928,7 +3219,9 @@
       ],
       "unit": "GAME_CURRENCY_UNITS",
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT"
     },
     "GRID_EQUIPMENT_FACTORY": {
       "factoryType": "GRID_EQUIPMENT_FACTORY",
@@ -2955,7 +3248,9 @@
       ],
       "unit": "GAME_CURRENCY_UNITS",
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT"
     },
     "ELECTRONICS_SEMICONDUCTOR_FAB": {
       "factoryType": "ELECTRONICS_SEMICONDUCTOR_FAB",
@@ -2983,7 +3278,9 @@
       ],
       "unit": "GAME_CURRENCY_UNITS",
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT"
     },
     "BATTERY_ENERGY_STORAGE_PLANT": {
       "factoryType": "BATTERY_ENERGY_STORAGE_PLANT",
@@ -3011,7 +3308,9 @@
       ],
       "unit": "GAME_CURRENCY_UNITS",
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT"
     },
     "VEHICLE_TRUCK_BUS_ASSEMBLY": {
       "factoryType": "VEHICLE_TRUCK_BUS_ASSEMBLY",
@@ -3039,7 +3338,9 @@
       ],
       "unit": "GAME_CURRENCY_UNITS",
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT"
     },
     "SHIP_RAIL_EQUIPMENT_YARD": {
       "factoryType": "SHIP_RAIL_EQUIPMENT_YARD",
@@ -3067,7 +3368,9 @@
       ],
       "unit": "GAME_CURRENCY_UNITS",
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT"
     },
     "AEROSPACE_EQUIPMENT_PLANT": {
       "factoryType": "AEROSPACE_EQUIPMENT_PLANT",
@@ -3094,7 +3397,9 @@
       ],
       "unit": "GAME_CURRENCY_UNITS",
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT"
     },
     "PHARMA_MEDICAL_SUPPLIES_PLANT": {
       "factoryType": "PHARMA_MEDICAL_SUPPLIES_PLANT",
@@ -3122,7 +3427,9 @@
       ],
       "unit": "GAME_CURRENCY_UNITS",
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT"
     },
     "DEFENSE_EQUIPMENT_FACTORY": {
       "factoryType": "DEFENSE_EQUIPMENT_FACTORY",
@@ -3150,7 +3457,9 @@
       ],
       "unit": "GAME_CURRENCY_UNITS",
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT"
     },
     "RECYCLING_WASTE_PROCESSING_PLANT": {
       "factoryType": "RECYCLING_WASTE_PROCESSING_PLANT",
@@ -3178,7 +3487,9 @@
       ],
       "unit": "GAME_CURRENCY_UNITS",
       "authority": "SIMULATED_GAMEPLAY_PROFILE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT"
     }
   },
   "downstreamFactoryRecipes": {
@@ -3199,8 +3510,8 @@
         "PROCESSING_DUST": 0.05
       },
       "cycleDays": 2,
-      "inputUnit": "SIMULATION_TONNE_EQUIVALENT",
-      "outputUnit": "SIMULATION_TONNE_EQUIVALENT",
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
       "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
@@ -3223,8 +3534,8 @@
         "PROCESSING_DUST": 0.1
       },
       "cycleDays": 2,
-      "inputUnit": "SIMULATION_TONNE_EQUIVALENT",
-      "outputUnit": "SIMULATION_TONNE_EQUIVALENT",
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
       "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
@@ -3246,8 +3557,8 @@
         "SMELTER_DROSS": 0.15
       },
       "cycleDays": 2,
-      "inputUnit": "SIMULATION_TONNE_EQUIVALENT",
-      "outputUnit": "SIMULATION_TONNE_EQUIVALENT",
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
       "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
@@ -3270,8 +3581,8 @@
         "CHEMICAL_PROCESS_RESIDUE": 0.15
       },
       "cycleDays": 2,
-      "inputUnit": "SIMULATION_TONNE_EQUIVALENT",
-      "outputUnit": "SIMULATION_TONNE_EQUIVALENT",
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
       "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
@@ -3293,8 +3604,8 @@
         "CHEMICAL_PROCESS_RESIDUE": 0.15
       },
       "cycleDays": 2,
-      "inputUnit": "SIMULATION_TONNE_EQUIVALENT",
-      "outputUnit": "SIMULATION_TONNE_EQUIVALENT",
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
       "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
@@ -3318,8 +3629,8 @@
         "CHEMICAL_PROCESS_RESIDUE": 0.15
       },
       "cycleDays": 2,
-      "inputUnit": "SIMULATION_TONNE_EQUIVALENT",
-      "outputUnit": "SIMULATION_TONNE_EQUIVALENT",
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
       "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
@@ -3341,8 +3652,8 @@
         "KILN_DUST": 0.15
       },
       "cycleDays": 2,
-      "inputUnit": "SIMULATION_TONNE_EQUIVALENT",
-      "outputUnit": "SIMULATION_TONNE_EQUIVALENT",
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
       "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
@@ -3366,8 +3677,8 @@
         "GLASS_CULLET": 0.15
       },
       "cycleDays": 2,
-      "inputUnit": "SIMULATION_TONNE_EQUIVALENT",
-      "outputUnit": "SIMULATION_TONNE_EQUIVALENT",
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
       "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
@@ -3389,8 +3700,8 @@
         "PACKAGING_WASTE": 0.2
       },
       "cycleDays": 2,
-      "inputUnit": "SIMULATION_TONNE_EQUIVALENT",
-      "outputUnit": "SIMULATION_TONNE_EQUIVALENT",
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
       "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
@@ -3413,8 +3724,8 @@
         "ORGANIC_PROCESSING_WASTE": 0.1
       },
       "cycleDays": 1,
-      "inputUnit": "SIMULATION_TONNE_EQUIVALENT",
-      "outputUnit": "SIMULATION_TONNE_EQUIVALENT",
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
       "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
@@ -3438,8 +3749,8 @@
         "SECONDARY_TEXTILE_FIBRE": 0.1
       },
       "cycleDays": 2,
-      "inputUnit": "SIMULATION_TONNE_EQUIVALENT",
-      "outputUnit": "SIMULATION_TONNE_EQUIVALENT",
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
       "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
@@ -3462,8 +3773,8 @@
         "METAL_SCRAP": 0.1
       },
       "cycleDays": 3,
-      "inputUnit": "SIMULATION_TONNE_EQUIVALENT",
-      "outputUnit": "SIMULATION_TONNE_EQUIVALENT",
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
       "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
@@ -3488,8 +3799,8 @@
         "ELECTRICAL_SCRAP": 0.1
       },
       "cycleDays": 2,
-      "inputUnit": "SIMULATION_TONNE_EQUIVALENT",
-      "outputUnit": "SIMULATION_TONNE_EQUIVALENT",
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
       "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
@@ -3516,8 +3827,8 @@
         "PROCESSING_LOSS": 0.05
       },
       "cycleDays": 4,
-      "inputUnit": "SIMULATION_TONNE_EQUIVALENT",
-      "outputUnit": "SIMULATION_TONNE_EQUIVALENT",
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
       "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
@@ -3542,8 +3853,8 @@
         "BATTERY_SCRAP": 0.1
       },
       "cycleDays": 3,
-      "inputUnit": "SIMULATION_TONNE_EQUIVALENT",
-      "outputUnit": "SIMULATION_TONNE_EQUIVALENT",
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
       "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
@@ -3570,8 +3881,8 @@
         "ASSEMBLY_LOSS": 0.05
       },
       "cycleDays": 3,
-      "inputUnit": "SIMULATION_TONNE_EQUIVALENT",
-      "outputUnit": "SIMULATION_TONNE_EQUIVALENT",
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
       "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
@@ -3596,8 +3907,8 @@
         "METAL_SCRAP": 0.1
       },
       "cycleDays": 4,
-      "inputUnit": "SIMULATION_TONNE_EQUIVALENT",
-      "outputUnit": "SIMULATION_TONNE_EQUIVALENT",
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
       "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
@@ -3623,8 +3934,8 @@
         "ASSEMBLY_LOSS": 0.05
       },
       "cycleDays": 5,
-      "inputUnit": "SIMULATION_TONNE_EQUIVALENT",
-      "outputUnit": "SIMULATION_TONNE_EQUIVALENT",
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
       "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
@@ -3648,8 +3959,8 @@
         "PHARMA_PROCESS_WASTE": 0.1
       },
       "cycleDays": 3,
-      "inputUnit": "SIMULATION_TONNE_EQUIVALENT",
-      "outputUnit": "SIMULATION_TONNE_EQUIVALENT",
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
       "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
@@ -3674,8 +3985,8 @@
         "MANUFACTURING_SCRAP": 0.1
       },
       "cycleDays": 4,
-      "inputUnit": "SIMULATION_TONNE_EQUIVALENT",
-      "outputUnit": "SIMULATION_TONNE_EQUIVALENT",
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
       "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
@@ -3702,8 +4013,8 @@
         "DISPOSAL_RESIDUE": 0.1
       },
       "cycleDays": 2,
-      "inputUnit": "SIMULATION_TONNE_EQUIVALENT",
-      "outputUnit": "SIMULATION_TONNE_EQUIVALENT",
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
       "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
@@ -3715,6 +4026,7 @@
     "existingProcessingFactoryTypeCount": 36,
     "addedFactoryTypeCount": 20,
     "downstreamRecipeCount": 21,
-    "categoryCount": 12
+    "categoryCount": 12,
+    "unitNormalizationPolicy": "SIMULATION_ONLY_EXPLICIT_BRIDGES"
   }
 }
