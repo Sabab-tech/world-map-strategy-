@@ -995,18 +995,28 @@ function advanceShipments(c){
     if(s.status==='BLOCKED_ROUTE_BLOCKADE'){s.status='IN_TRANSIT';s.blockReason=null;s.resumedTurn=turn();s.etaTurn=Math.max(turn()+1,num(s.etaTurn)||turn()+1);}
     if(num(s.etaTurn)>turn())continue;
     const rid=tok(s.resourceId),quantity=Math.max(0,num(s.quantity)||0),r=resourceState(cid);
-    const warehouse=r.warehouse||{},available=Math.max(0,num(warehouse.availableByResource?.[rid])||0);
-    const reserved=Math.max(0,num(warehouse.reservedByResource?.[rid])||0);
-    if(quantity<=0||available+1e-9<quantity||reserved+1e-9<quantity){
-      s.status='BLOCKED_LEDGER_MISMATCH';s.blockReason='WAREHOUSE_AVAILABLE_OR_RESERVATION_MISMATCH';s.blockedTurn=turn();
-      emit('OMEGA_RESOURCE_DELIVERY_BLOCKED',cid,{shipmentId:s.shipmentId,siteId:s.siteId,resourceId:rid,quantity,available,reserved,reason:s.blockReason});
+    const warehouseType=String(s.sourceWarehouseType||s.route?.sourceWarehouseType||
+      (String(s.warehouseId||'').toUpperCase().includes('PROCESSED')?'PROCESSED':'RAW')).toUpperCase()==='PROCESSED'?'PROCESSED':'RAW';
+    const warehouse=warehouseType==='PROCESSED'?r.processedWarehouse:r.warehouse;
+    const availableMap=warehouse?.availableByResource||{},reservedMap=warehouse?.reservedByResource||{};
+    const availableKeys=resourceKeysFor(availableMap,rid),reservedKeys=resourceKeysFor(reservedMap,rid);
+    const inventoryKeys=resourceKeysFor(r.inventory||{},rid);
+    if(availableKeys.length>1||reservedKeys.length>1||inventoryKeys.length>1){
+      s.status='BLOCKED_LEDGER_MISMATCH';s.blockReason='DUPLICATE_NORMALIZED_RESOURCE_KEYS';s.blockedTurn=turn();
+      emit('OMEGA_RESOURCE_DELIVERY_BLOCKED',cid,{shipmentId:s.shipmentId,resourceId:rid,reason:s.blockReason,warehouseType,availableKeys,reservedKeys,inventoryKeys});continue;
+    }
+    const availableKey=availableKeys[0]||null,reservedKey=reservedKeys[0]||null,invKey=inventoryKeys[0]||null;
+    const available=availableKey===null?0:Math.max(0,num(availableMap[availableKey])||0);
+    const reserved=reservedKey===null?0:Math.max(0,num(reservedMap[reservedKey])||0);
+    if(!warehouse||quantity<=0||available+1e-9<quantity||reserved+1e-9<quantity){
+      s.status='BLOCKED_LEDGER_MISMATCH';s.blockReason='SOURCE_WAREHOUSE_OR_RESERVATION_MISMATCH';s.blockedTurn=turn();
+      emit('OMEGA_RESOURCE_DELIVERY_BLOCKED',cid,{shipmentId:s.shipmentId,siteId:s.siteId,resourceId:rid,quantity,available,reserved,warehouseType,reason:s.blockReason});
       continue;
     }
     const factory=factoryAssets(cid).find(a=>String(a?.id||a?.assetId||a?.projectId)===String(s.factoryId));
     if(!factory){s.status='BLOCKED_FACTORY_MISSING';s.blockReason='FACTORY_NOT_FOUND_AT_DELIVERY';s.blockedTurn=turn();continue;}
-    r.inventory=r.inventory||{};
-    const invKey=Object.prototype.hasOwnProperty.call(r.inventory,rid)?rid:Object.keys(r.inventory).find(k=>tok(k)===rid);
-    const countryRawStock=Math.max(0,num(invKey==null?0:r.inventory[invKey])||0);
+    r.inventory=r.inventory&&typeof r.inventory==='object'?r.inventory:{};
+    const countryRawStock=Math.max(0,num(invKey===null?0:r.inventory[invKey])||0);
     if(countryRawStock+1e-9<quantity){
       s.status='BLOCKED_LEDGER_MISMATCH';s.blockReason='COUNTRY_INVENTORY_BELOW_SHIPMENT_QUANTITY';s.blockedTurn=turn();continue;
     }
@@ -1026,7 +1036,10 @@ function advanceShipments(c){
       }
     }
     warehouse.availableByResource=warehouse.availableByResource||{};warehouse.reservedByResource=warehouse.reservedByResource||{};
-    warehouse.availableByResource[rid]=Math.max(0,available-quantity);warehouse.reservedByResource[rid]=Math.max(0,reserved-quantity);
+    const writeAvailableKey=availableKey||rid,writeReservedKey=reservedKey||availableKey||rid;
+    warehouse.availableByResource[writeAvailableKey]=Math.max(0,available-quantity);
+    warehouse.reservedByResource[writeReservedKey]=Math.max(0,reserved-quantity);
+    if(warehouseType==='PROCESSED')r.processedWarehouse=warehouse;else r.warehouse=warehouse;
     if(sourceBatch){
       const sourceRemaining=Math.max(0,num(sourceBatch.remainingQuantity!=null?sourceBatch.remainingQuantity:sourceBatch.quantity)||0);
       sourceBatch.remainingQuantity=Math.max(0,sourceRemaining-quantity);
@@ -1038,9 +1051,11 @@ function advanceShipments(c){
       }
       if(sourceBatch.remainingQuantity<=1e-9&&Array.isArray(warehouse.storedBatchIds))warehouse.storedBatchIds=warehouse.storedBatchIds.filter(x=>String(x)!==sourceBatchId);
     }
-    r.warehouse=warehouse;r.inventoryLots=lots;r.batches=batches;r.inventory[invKey]=Math.max(0,countryRawStock-quantity);
+    r.inventoryLots=lots;r.batches=batches;
+    r.inventory[invKey||rid]=Math.max(0,countryRawStock-quantity);
     factory.inputInventory=factory.inputInventory&&typeof factory.inputInventory==='object'?factory.inputInventory:{};
-    factory.inputInventory[rid]=(num(factory.inputInventory[rid])||0)+quantity;
+    const factoryStockKey=resourceKeyFor(factory.inputInventory,rid)||rid;
+    factory.inputInventory[factoryStockKey]=(num(factory.inputInventory[factoryStockKey])||0)+quantity;
     factory.inputBatchLots=Array.isArray(factory.inputBatchLots)?factory.inputBatchLots:[];
     const inputBatchId='INPUT:'+s.shipmentId;
     if(!factory.inputBatchLots.some(x=>String(x?.batchId||'')===inputBatchId)){
@@ -1056,7 +1071,7 @@ function advanceShipments(c){
     }
     // Reconcile legacy aggregate-only factory stock into an explicitly unobserved input lot.
     // The batch-lot ledger then becomes the single quantity basis for each future processing debit.
-    const aggregateInput=Math.max(0,num(factory.inputInventory[rid])||0),inputRows=factory.inputBatchLots.filter(lot=>
+    const aggregateInput=Math.max(0,num(factory.inputInventory[resourceKeyFor(factory.inputInventory,rid)||rid])||0),inputRows=factory.inputBatchLots.filter(lot=>
       tok(lot?.resourceId||lot?.materialIdentity)===rid);
     const lotRemaining=lot=>['CONSUMED','SOLD','TRANSFERRED_OUT'].includes(String(lot?.status||'').toUpperCase())?0:
       Math.max(0,num(lot?.remainingQuantity!=null?lot.remainingQuantity:lot?.quantity)||0);
@@ -1084,15 +1099,17 @@ function advanceShipments(c){
     }
     const reconciledInputRows=factory.inputBatchLots.filter(lot=>tok(lot?.resourceId||lot?.materialIdentity)===rid);
     const reconciledInputTotal=reconciledInputRows.reduce((sum,lot)=>sum+lotRemaining(lot),0);
-    if(Math.abs((num(factory.inputInventory[rid])||0)-reconciledInputTotal)>1e-5){
-      factory.inputInventory[rid]=reconciledInputTotal;
+    const reconciledStockKey=resourceKeyFor(factory.inputInventory,rid)||rid;
+    if(Math.abs((num(factory.inputInventory[reconciledStockKey])||0)-reconciledInputTotal)>1e-5){
+      factory.inputInventory[reconciledStockKey]=reconciledInputTotal;
       emit('OMEGA_RESOURCE_FACTORY_INPUT_LEDGER_RECONCILED',cid,{factoryId:String(s.factoryId),resourceId:rid,
         aggregateBefore:aggregateInput,trackedBefore:trackedInput,aggregateAfter:reconciledInputTotal,turn:turn(),
         authority:'TRACKED_LOTS_PLUS_UNOBSERVED_LEGACY_BALANCE'},'resource-industrial-network');
     }
     s.status='DELIVERED';s.deliveredTurn=turn();s.destinationStatus='FACTORY_RECEIVED';s.factoryInputBatchId=inputBatchId;
-    const processQuantity=Math.min(quantity,Math.max(1,num(factory.capacity)||quantity));
-    const processing=executeFactoryCycle({countryId:cid,factoryId:s.factoryId,resourceId:rid,quantity:processQuantity});
+    const processingRecipe=recipeFor(rid,factory),processingResource=tok(processingRecipe.primaryInput||rid);
+    const processQuantity=Math.max(1,num(factory.capacity)||quantity);
+    const processing=executeFactoryCycle({countryId:cid,factoryId:s.factoryId,resourceId:processingResource,quantity:processQuantity,unit:s.unit});
     s.processingStatus=processing?.status==='COMPLETED'?'PROCESSED':'AWAITING_PROCESSING';s.processingTransactionId=processing?.transactionId||null;s.processing=clone(processing);
     n.deliveries.push(clone(s));delivered.push(clone(s));const res=n.reservations?.[s.reservationId];if(res)res.status='DELIVERED';
     emit('OMEGA_RESOURCE_DELIVERY_COMPLETED',cid,{shipmentId:s.shipmentId,siteId:s.siteId,factoryId:s.factoryId,resourceId:rid,quantity,unit:s.unit,
