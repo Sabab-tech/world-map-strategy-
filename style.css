@@ -5342,3 +5342,342 @@ body.modal-open .ui-bottom-navigation {
         grid-template-columns: minmax(0, 1fr);
     }
 }
+
+/* ============================================================================
+   EXECUTIVE CABINET OVERVIEW — readable typography, ordered points, clear notes
+   Uses local system font stacks so the offline Android build needs no font fetch.
+   ============================================================================ */
+.omega-cabinet-overview {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-width: 0;
+    color: #342719;
+    font-family: system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+    line-height: 1.5;
+}
+.omega-cabinet-overview *,
+.omega-cabinet-overview *::before,
+.omega-cabinet-overview *::after {
+    box-sizing: border-box;
+}
+.omega-cabinet-overview__header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 12px 20px;
+    flex-wrap: wrap;
+    padding: 4px 2px 12px;
+    border-bottom: 1px solid rgba(137, 99, 38, 0.34);
+}
+.omega-cabinet-overview__eyebrow {
+    margin: 0 0 4px;
+    color: #77541b;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+.omega-cabinet-overview__header h2 {
+    margin: 0;
+    color: #342719;
+    font-family: "Cinzel", Georgia, "Times New Roman", serif;
+    font-size: clamp(21px, 3vw, 28px);
+    font-weight: 700;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+}
+.omega-cabinet-overview__intro {
+    flex: 1 1 240px;
+    max-width: 440px;
+    margin: 0;
+    color: #655541;
+    font-size: 13px;
+    line-height: 1.55;
+}
+.omega-cabinet-overview__metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 10px;
+    min-width: 0;
+}
+.omega-cabinet-overview__metric {
+    position: relative;
+    min-width: 0;
+    padding: 14px 15px 13px;
+    overflow-wrap: anywhere;
+    background: rgba(255, 250, 239, 0.94);
+    border: 1px solid #cbb487;
+    border-radius: 10px;
+    box-shadow: 0 3px 10px rgba(77, 56, 23, 0.08);
+}
+.omega-cabinet-overview__metric::before {
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    height: 3px;
+    border-radius: 10px 10px 0 0;
+    background: #8a641e;
+    content: "";
+}
+.omega-cabinet-overview__metric--ideology::before { background: #87611c; }
+.omega-cabinet-overview__metric--religion::before { background: #347052; }
+.omega-cabinet-overview__label {
+    margin: 0 0 8px;
+    color: #6c5a42;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.055em;
+    line-height: 1.4;
+    text-transform: uppercase;
+}
+.omega-cabinet-overview__value {
+    margin: 0;
+    color: #725014;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 27px;
+    font-weight: 700;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+}
+.omega-cabinet-overview__value span {
+    color: #81715a;
+    font-family: system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+}
+.omega-cabinet-overview__value--setting {
+    color: #4b3a21;
+    font-size: 19px;
+    line-height: 1.35;
+}
+.omega-cabinet-overview__metric--religion .omega-cabinet-overview__value--setting {
+    color: #245b42;
+}
+.omega-cabinet-overview__support {
+    margin: 8px 0 0;
+    color: #5a6b48;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.45;
+}
+.omega-cabinet-overview__actions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    align-items: stretch;
+    gap: 14px;
+}
+.omega-cabinet-overview__card {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    gap: 14px;
+    padding: 17px;
+    background: rgba(255, 249, 235, 0.98);
+    border: 1px solid #c4a66d;
+    border-top: 4px solid #926d2b;
+    border-radius: 12px;
+    box-shadow: 0 5px 15px rgba(77, 56, 23, 0.1);
+}
+.omega-cabinet-overview__card--religion {
+    border-top-color: #347052;
+}
+.omega-cabinet-overview__card-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    min-width: 0;
+}
+.omega-cabinet-overview__icon {
+    display: inline-flex;
+    flex: 0 0 44px;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    color: #6d4d17;
+    background: #f1e5c8;
+    border: 1px solid #cfb57b;
+    border-radius: 10px;
+    font-size: 24px;
+}
+.omega-cabinet-overview__card--religion .omega-cabinet-overview__icon {
+    color: #245b42;
+    background: #e4eee4;
+    border-color: #a6c2a6;
+}
+.omega-cabinet-overview__card-header > div {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+.omega-cabinet-overview__card-header h3 {
+    margin: 0;
+    color: #3b2b18;
+    font-family: "Cinzel", Georgia, "Times New Roman", serif;
+    font-size: 17px;
+    font-weight: 700;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+}
+.omega-cabinet-overview__card-header p {
+    margin: 5px 0 0;
+    color: #77654e;
+    font-size: 12px;
+    line-height: 1.5;
+}
+.omega-cabinet-overview__points {
+    display: grid;
+    gap: 9px;
+    margin: 0;
+    padding: 12px 13px;
+    list-style: none;
+    background: #f3ead8;
+    border: 1px solid #ddcba7;
+    border-radius: 8px;
+}
+.omega-cabinet-overview__points li {
+    display: grid;
+    grid-template-columns: 12px minmax(85px, 0.75fr) minmax(0, 1.25fr);
+    gap: 8px;
+    align-items: start;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(157, 126, 71, 0.22);
+}
+.omega-cabinet-overview__points li::before {
+    grid-column: 1;
+    grid-row: 1;
+    color: #9b742e;
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1.1;
+    content: "•";
+}
+.omega-cabinet-overview__points li:last-child {
+    padding-bottom: 0;
+    border-bottom: 0;
+}
+.omega-cabinet-overview__points li > span {
+    color: #766044;
+    font-size: 12px;
+    font-weight: 600;
+}
+.omega-cabinet-overview__points li > strong {
+    color: #3b2d1a;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+}
+.omega-cabinet-overview__key-note {
+    margin: 0;
+    padding: 2px 0 2px 10px;
+    color: #79511b;
+    border-left: 3px solid #b88b36;
+    font-size: 12px;
+    line-height: 1.55;
+    text-decoration-line: underline;
+    text-decoration-color: #ba9652;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+    overflow-wrap: anywhere;
+}
+.omega-cabinet-overview__card--religion .omega-cabinet-overview__key-note {
+    color: #245b42;
+    border-left-color: #4b8a65;
+    text-decoration-color: #74a783;
+}
+.omega-cabinet-overview__key-note strong {
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.035em;
+}
+.omega-cabinet-overview__button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    width: 100%;
+    min-height: 46px;
+    margin-top: auto;
+    padding: 11px 14px;
+    border: 1px solid #8b692d;
+    border-radius: 8px;
+    color: #fff9ed;
+    background: linear-gradient(135deg, #85601f, #624514);
+    box-shadow: 0 3px 7px rgba(66, 47, 19, 0.15);
+    font: 700 13px/1.4 system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+    text-align: center;
+    cursor: pointer;
+    transition: transform 0.16s ease, box-shadow 0.16s ease, filter 0.16s ease;
+}
+.omega-cabinet-overview__button--religion {
+    border-color: #286347;
+    color: #f5fff7;
+    background: linear-gradient(135deg, #357653, #205238);
+}
+.omega-cabinet-overview__button:hover {
+    filter: brightness(1.06);
+    box-shadow: 0 5px 12px rgba(66, 47, 19, 0.2);
+}
+.omega-cabinet-overview__button:active {
+    transform: translateY(1px);
+}
+.omega-cabinet-overview__button:focus-visible {
+    outline: 3px solid #315f9d;
+    outline-offset: 3px;
+}
+.omega-cabinet-overview__important-note {
+    padding: 13px 15px;
+    background: #f2e6d0;
+    border: 1px solid #c7a66a;
+    border-left: 4px solid #8e5a27;
+    border-radius: 8px;
+}
+.omega-cabinet-overview__important-note h3 {
+    margin: 0 0 5px;
+    color: #7a3c25;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: 0.045em;
+    text-transform: uppercase;
+}
+.omega-cabinet-overview__note-text {
+    margin: 0;
+    color: #7a3c25;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.6;
+    text-decoration-line: underline;
+    text-decoration-color: #b77c49;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+    overflow-wrap: anywhere;
+}
+@media (max-width: 560px) {
+    .omega-cabinet-overview {
+        gap: 12px;
+    }
+    .omega-cabinet-overview__header {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 8px;
+    }
+    .omega-cabinet-overview__intro {
+        flex-basis: auto;
+        max-width: none;
+    }
+    .omega-cabinet-overview__metrics,
+    .omega-cabinet-overview__actions {
+        grid-template-columns: minmax(0, 1fr);
+    }
+    .omega-cabinet-overview__card {
+        padding: 14px;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .omega-cabinet-overview__button {
+        transition: none;
+    }
+}
