@@ -102,13 +102,14 @@ test('country sector dossier opens automatically, shows missing fields and suppr
  assert.doesNotMatch(renderedProfile,/sector\.analytics|sector\.status|signalsBlock\(profile/);
 });
 
-test('current CO2 indicator prefers the modern World Bank series and retains a compatible fallback', () => {
+test('current CO2-equivalent indicator prefers the current World Bank series and retains a legacy fallback', () => {
  const start=builder.indexOf('const METRIC_CATALOGUE = ['),end=builder.indexOf('\n];',start);
  const rows=builder.slice(start,end).split('\n').filter(line=>/^\s*\{ key:/.test(line));
  const co2=rows.filter(line=>line.includes("key: 'co2TonnesPerCapita'"));
  assert.equal(co2.length,1);
- assert.ok(co2[0].includes("wb: 'EN.ATM.CO2E.PC_'"));
+ assert.ok(co2[0].includes("wb: 'EN.GHG.CO2.PC.CE.AR5'"));
  assert.ok(co2[0].includes("wbFallbacks: ['EN.ATM.CO2E.PC']"));
+ assert.ok(co2[0].includes('CO2-equivalent emissions excluding LULUCF'));
  assert.ok(registryMetricKeys.has('co2TonnesPerCapita'));
  assert.ok(profileMetricKeys.has('co2TonnesPerCapita'));
 });
