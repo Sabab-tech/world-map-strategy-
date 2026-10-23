@@ -1062,6 +1062,12 @@ Game.Map.renderGeoJSON = function(geoData) {
         }
     };
 
+    // A shared Canvas renderer avoids hundreds of SVG path nodes and expensive
+    // whole-map DOM/compositing work on constrained Android WebViews.
+    if (typeof L.canvas === "function") {
+        renderOptions.renderer = L.canvas({ padding: 0.5 });
+    }
+
     // Keep only one canonical country layer. Repeated boot/render calls must not
     // leave duplicate world polygons competing for the same pointer events.
     const previousLayer = Game.geojsonLayer;
