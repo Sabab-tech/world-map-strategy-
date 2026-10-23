@@ -35,3 +35,7 @@ These assets are real-world reference photographs sourced from Wikimedia Commons
 Use `python scripts/download_omega_ui_photo_assets.py --download` in an internet-enabled environment with Pillow installed. The script checks each file's current Commons API licence metadata against the explicit allowed licence aliases before downloading, and fails closed if the licence cannot be confirmed. Then run `node --test test/omega_ui_photo_assets.test.mjs`.
 
 Do not reuse an ID for another photograph unless the source, author, licence, and captions have been reviewed again.
+
+## Import verification record
+
+On 23 October 2026, the branch importer confirmed the current Wikimedia Commons licence metadata for all 14 approved sources, generated 14 local WebP images totalling 2,775,906 bytes, and passed the dedicated photo-catalog and attribution checks after the CC0 API alias was corrected. The pull-request verification job also passed its Commons metadata re-check and UI visual regression suite.
