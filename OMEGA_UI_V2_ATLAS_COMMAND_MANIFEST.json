@@ -1,0 +1,57 @@
+{
+  "name": "OMEGA UI v2 — Atlas Command",
+  "version": "2.0.0",
+  "design": {
+    "palette": {
+      "background": "#071521",
+      "surface": "#0c1f2e",
+      "card": "#10283a",
+      "accent": "#43d6c8",
+      "primary": "#1878d1"
+    },
+    "referenceViewport": "360x800dp",
+    "headerHeight": 56,
+    "bottomNavigationHeight": 64,
+    "contentGutter": 12,
+    "sectionGap": 18,
+    "cardRadius": 14,
+    "minTouchTarget": 48,
+    "heroAspectRatio": "16:9"
+  },
+  "primaryNavigation": [
+    "Home",
+    "World",
+    "Government",
+    "Economy",
+    "More"
+  ],
+  "governmentNavigation": [
+    "Executive Ministry",
+    "All Ministries"
+  ],
+  "dataAuthority": "OmegaCountryRuntimeData, OmegaFinanceAnalyticsRuntime, existing ministry/resource/factory runtimes",
+  "chartPolicy": "Live series only when committed turns exist; model-preview series visibly labelled; no made-up point data.",
+  "offlinePolicy": "Local CSS/JS, existing local WebP photo manifest, no new CDN, no network dependency introduced by v2.",
+  "reversibleLegacyBridge": true,
+  "implementationFiles": [
+    "omega_ui_v2.js",
+    "omega_ui_v2.css",
+    "test/omega_ui_v2_shell.test.mjs",
+    ".github/workflows/omega-ui-v2.yml"
+  ],
+  "screens": [
+    "Home",
+    "World Map",
+    "Government/Executive Ministry",
+    "Government/All Ministries",
+    "Country Dossier",
+    "Economy & Finance",
+    "Resources & Mines",
+    "Factories & Industry",
+    "Home Affairs",
+    "Foreign Affairs",
+    "Society & Religion",
+    "Defense",
+    "More module directory"
+  ]
+}
