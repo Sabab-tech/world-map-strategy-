@@ -133,6 +133,15 @@
             const mineplayResponse=await fetch('resource_site_country_mineplay_batch_20261020_v1.json?v='+Date.now(),{cache:'no-store'});
             if(mineplayResponse?.ok)supplement=await mineplayResponse.json();
           }
+          try{
+            const extraResponse=await fetch('resource_site_country_mineplay_batch_20261024_v1.json?v='+Date.now(),{cache:'no-store'});
+            const extra=extraResponse?.ok?await extraResponse.json():null;
+            if(extra?.datasetId==='OMEGA_RESOURCE_SITE_COUNTRY_MINEPLAY_BATCH_V1'&&Array.isArray(extra.records)){
+              const merged=[...(supplement?.datasetId==='OMEGA_RESOURCE_SITE_COUNTRY_MINEPLAY_BATCH_V1'&&Array.isArray(supplement.records)?supplement.records:[]),...extra.records];
+              const unique=Array.from(new Map(merged.filter(row=>row?.siteId).map(row=>[String(row.siteId),row])).values());
+              supplement={...(supplement||extra),batchId:'COUNTRY_MINEPLAY_COMBINED_20261024',recordCount:unique.length,countryCount:new Set(unique.map(row=>String(row?.countryId||row?.identity?.countryIso3||'').toUpperCase()).filter(Boolean)).size,records:unique};
+            }
+          }catch(_){}
           if(supplement?.datasetId==='OMEGA_RESOURCE_SITE_COUNTRY_MINEPLAY_BATCH_V1'&&Array.isArray(supplement.records)){
             for(const row of supplement.records){
               const siteId=String(row?.siteId||'').trim(),country=String(row?.countryId||row?.identity?.countryIso3||'').trim().toUpperCase();
@@ -245,6 +254,15 @@
             const mr=await fetch('resource_site_country_mineplay_batch_20261020_v1.json?v='+Date.now(),{cache:'no-store'});
             if(mr?.ok)supplement=await mr.json();
           }
+          try{
+            const extraResponse=await fetch('resource_site_country_mineplay_batch_20261024_v1.json?v='+Date.now(),{cache:'no-store'});
+            const extra=extraResponse?.ok?await extraResponse.json():null;
+            if(extra?.datasetId==='OMEGA_RESOURCE_SITE_COUNTRY_MINEPLAY_BATCH_V1'&&Array.isArray(extra.records)){
+              const merged=[...(supplement?.datasetId==='OMEGA_RESOURCE_SITE_COUNTRY_MINEPLAY_BATCH_V1'&&Array.isArray(supplement.records)?supplement.records:[]),...extra.records];
+              const unique=Array.from(new Map(merged.filter(row=>row?.siteId).map(row=>[String(row.siteId),row])).values());
+              supplement={...(supplement||extra),batchId:'COUNTRY_MINEPLAY_COMBINED_20261024',recordCount:unique.length,countryCount:new Set(unique.map(row=>String(row?.countryId||row?.identity?.countryIso3||'').toUpperCase()).filter(Boolean)).size,records:unique};
+            }
+          }catch(_){}
           if(supplement?.datasetId==='OMEGA_RESOURCE_SITE_COUNTRY_MINEPLAY_BATCH_V1'&&Array.isArray(supplement.records)){
             const accepted=[];
             for(const row of supplement.records){
