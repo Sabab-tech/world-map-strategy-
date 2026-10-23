@@ -100,6 +100,29 @@ public final class OmegaGameplaySmokeTest {
             );
 
             android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=CORE_RUNTIME_READY");
+            // Report map-only geometry mount timing separately from HTML/runtime boot time.
+            final String mapRenderMetricsScript =
+                    "(function() {" +
+                    " var m = window.__OMEGA_MAP_RENDER_METRICS_V1__;" +
+                    " if (!m || !m.complete || Number(m.sourceFeatureCount) < 250 || Number(m.renderedFeatureCount) < 200) return 'WAIT';" +
+                    " return 'READY|' + Math.round(Number(m.durationMs) || 0) +" +
+                    " '|' + Number(m.sourceFeatureCount) + '|' + Number(m.renderedFeatureCount) +" +
+                    " '|' + Number(m.frameCount) + '|' + Math.round(Number(m.totalChunkWorkMs) || 0) +" +
+                    " '|' + Math.round(Number(m.maxChunkWorkMs) || 0);" +
+                    "})()";
+            final long mapRenderDeadline = SystemClock.elapsedRealtime() + 60000L;
+            String mapRenderMetrics = "WAIT";
+            while (!mapRenderMetrics.contains("READY|") &&
+                    SystemClock.elapsedRealtime() < mapRenderDeadline) {
+                mapRenderMetrics = evaluate(instrumentation, webViewRef.get(), mapRenderMetricsScript, 5L);
+                if (!mapRenderMetrics.contains("READY|")) SystemClock.sleep(250L);
+            }
+            assertTrue(
+                    "Canonical offline world map must finish rendering and report timing within 60 seconds; last result=" + mapRenderMetrics,
+                    mapRenderMetrics.contains("READY|")
+            );
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "MAP_RENDER_METRICS=" + mapRenderMetrics);
+
             final String offlineBridgeScript =
                     "(function() { return !!(window.OmegaAndroid && " +
                     "window.OmegaAndroid.isAndroidApp() === true && " +

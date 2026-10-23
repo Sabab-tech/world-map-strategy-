@@ -1003,6 +1003,22 @@ Game.Map = {
 
 Game.Map.renderGeoJSON = function(geoData) {
     const self = this;
+    // Passive per-render metrics for offline Android performance diagnostics.
+    const mapMetricNow = () => window.performance && typeof window.performance.now === "function"
+        ? window.performance.now() : Date.now();
+    const renderMetrics = {
+        version: 1,
+        startedAtMs: mapMetricNow(),
+        completedAtMs: null,
+        durationMs: null,
+        sourceFeatureCount: 0,
+        renderedFeatureCount: 0,
+        frameCount: 0,
+        totalChunkWorkMs: 0,
+        maxChunkWorkMs: 0,
+        complete: false
+    };
+    window.__OMEGA_MAP_RENDER_METRICS_V1__ = renderMetrics;
     const renderOptions = {
         // Simplify country paths slightly to reduce Canvas drawing cost.
         smoothFactor: 1.2,
@@ -1108,8 +1124,13 @@ Game.Map.renderGeoJSON = function(geoData) {
 
     const featureCollection = geoData && geoData.type === "FeatureCollection" &&
         Array.isArray(geoData.features) ? geoData.features : null;
+    renderMetrics.sourceFeatureCount = featureCollection ? featureCollection.features.length : 0;
     const finishRender = function() {
         if (renderToken !== Game.__omegaGeoJSONRenderToken || Game.geojsonLayer !== layer) return;
+        renderMetrics.completedAtMs = mapMetricNow();
+        renderMetrics.durationMs = Math.max(0, renderMetrics.completedAtMs - renderMetrics.startedAtMs);
+        renderMetrics.renderedFeatureCount = typeof layer.getLayers === "function" ? layer.getLayers().length : 0;
+        renderMetrics.complete = true;
         Game.__omegaGeoJSONRenderFrame = null;
         Game.LabelSystem.updateCountryLabels();
         self.renderOceanLabels();
@@ -1145,8 +1166,7 @@ Game.Map.renderGeoJSON = function(geoData) {
     }
 
     let nextFeature = 0;
-    const now = () => window.performance && typeof window.performance.now === "function"
-        ? window.performance.now() : Date.now();
+    const now = mapMetricNow;
     const addFeatureChunk = function() {
         if (renderToken !== Game.__omegaGeoJSONRenderToken || Game.geojsonLayer !== layer) return;
         const startedAt = now();
@@ -1157,6 +1177,11 @@ Game.Map.renderGeoJSON = function(geoData) {
             added += 1;
         } while (nextFeature < featureCollection.features.length &&
             added < MAX_FEATURES_PER_FRAME && now() - startedAt < FRAME_BUDGET_MS);
+
+        const chunkDurationMs = Math.max(0, now() - startedAt);
+        renderMetrics.frameCount += 1;
+        renderMetrics.totalChunkWorkMs += chunkDurationMs;
+        renderMetrics.maxChunkWorkMs = Math.max(renderMetrics.maxChunkWorkMs, chunkDurationMs);
 
         if (nextFeature < featureCollection.features.length) {
             Game.__omegaGeoJSONRenderFrame = window.requestAnimationFrame(addFeatureChunk);
