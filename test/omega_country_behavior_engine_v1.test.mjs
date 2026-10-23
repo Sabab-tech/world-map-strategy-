@@ -342,6 +342,11 @@ test('country overview mounts in the government cabinet, not inside ministry wor
   assert.doesNotMatch(ui, /data-omega-ministry-view|panelEl\.id = 'omega-country-overview-panel'|getElementById\?\.\('omega-country-overview-panel'\)|getElementById\?\.\('omega-country-overview-tabs'\)/);
   assert.match(ui, /OmegaCountryGeneralDataRuntime/);
   assert.match(ui, /Data coverage & missing fields/);
+  assert.match(ui, /function renderCountryDataCoverage/);
+  assert.match(ui, /function runCountryDataAudit/);
+  assert.match(ui, /MISSING FIELDS BY COUNTRY/);
+  assert.match(ui, /Additional context fields not recorded/);
+  assert.match(ui, /countryMetricIsInternal/);
   assert.match(ui, /gdpCurrentUsd/);
   assert.match(ui, /populationTotal/);
   assert.match(ui, /setActiveTab/);
@@ -350,6 +355,7 @@ test('country overview mounts in the government cabinet, not inside ministry wor
   assert.match(visibleMarkup, /countryFacts/);
   assert.match(visibleMarkup, /missingMetrics/);
   assert.doesNotMatch(visibleMarkup, /SIMULATION|RUNTIME|EXECUTABLE BEHAVIOUR|gameplay|LIVE RESOURCE STATE|SOURCE STATUS NOT RECORDED/i);
+  assert.match(visibleMarkup, /renderCountryDataCoverage/);
 
   const sw = read('omega-offline-map-sw.js');
   assert.match(sw, /omega-offline-atlas-shell-v\d+/);
