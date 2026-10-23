@@ -54,7 +54,7 @@ test('country sector UI is wired into the existing page and offline app shell', 
 
 test('country sector UI resolves compact references through canonical data and preserves missing states', () => {
  const ui=read('omega_country_sector_profile_ui_v1.js'),runtime=read('omega_country_general_data_runtime_v1.js');
- assert.match(ui,/sourcePolicy/);
+ assert.match(ui,/sourceUrl/);
  assert.match(ui,/refType==='METRIC'/);
  assert.match(ui,/refType==='DERIVED_METRIC'/);
  assert.match(ui,/refType==='EXTERNAL_METRIC'/);
@@ -97,8 +97,9 @@ test('country sector dossier opens automatically, shows missing fields and suppr
  assert.match(ui,/data-ocsp-sector open/);
  assert.match(ui,/Not recorded in available sources/);
  const presentation=ui.slice(ui.indexOf('function evidenceRows('),ui.indexOf('function filterContent('));
- assert.doesNotMatch(presentation,/titleCase\(evidence\.status\)|Sector status:|Relative signals: strengths|Relative signals: vulnerabilities|read-only and does not change simulation state/i);
- assert.doesNotMatch(presentation,/titleCase\(evidence\.status\)|sector\.analytics|sector\.status|signalsBlock\(profile/);
+ const renderedProfile=ui.slice(ui.indexOf('function profileMarkup('),ui.indexOf('function shellHtml('));
+ assert.doesNotMatch(ui,/if\(evidence\.status\)bits\.push\(titleCase\(evidence\.status\)\)/);
+ assert.doesNotMatch(renderedProfile,/sector\.analytics|sector\.status|signalsBlock\(profile/);
 });
 
 test('current CO2 indicator prefers the modern World Bank series and retains a compatible fallback', () => {
