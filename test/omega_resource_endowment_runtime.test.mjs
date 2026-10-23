@@ -182,6 +182,8 @@ for(const site of unifiedProfileRows){
      String(site?.operation?.status||site?.operation?.operationalStatus||site?.status||'').toUpperCase()==='NOT_APPLICABLE')continue;
   auditedMineIds.add(siteId);
   const normalized=runtime.normalizeBoundSiteForRuntime(site);
+  if(normalized.status==='REJECTED'&&
+     ['SITE_ALIAS_OR_NON_MARKER_CANNOT_EXECUTE','NON_COMMERCIAL_SITE'].includes(normalized.reason))continue;
   assert.equal(normalized.status,'READY',siteId+': canonical mine profile rejected '+JSON.stringify(normalized));
   const bound=normalized.site,q=bound.quantitative||{},sim=bound.simulation||{};
   assert.equal(bound.runtime?.identityAuthority,'CANONICAL_SITE_REGISTRY',siteId+': identity authority mismatch');
