@@ -135,9 +135,9 @@ public final class OmegaGameplaySmokeTest {
                     "true", ministryOpened
             );
 
-            // Give the deferred cabinet task time to run, then verify that both the
-            // cabinet shell and executive-council surface actually rendered.
-            SystemClock.sleep(350L);
+            // Wait for the production renderer's explicit ready state instead of assuming
+            // the nested low-memory WebView timers finish within an arbitrary 350 ms.
+            // The deadline remains bounded and the assertion still requires actual council DOM.
             final String cabinetSurfaceReadyScript =
                     "(function() {" +
                     " var cabinet = document.getElementById('cabinet-full-window');" +
@@ -145,13 +145,43 @@ public final class OmegaGameplaySmokeTest {
                     " return !!(cabinet && cabinet.style.display === 'flex' &&" +
                     " cabinet.querySelector('.parchment-cabinet-container') && root &&" +
                     " !root.querySelector('.omega-cabinet-subsystem-loading') &&" +
-                    " root.childElementCount > 0 && window.OmegaLayerManager &&" +
+                    " !root.querySelector('.omega-cabinet-subsystem-error') &&" +
+                    " root.childElementCount > 0 &&" +
+                    " cabinet.getAttribute('data-cabinet-render-state') === 'ready' &&" +
+                    " cabinet.getAttribute('aria-busy') === 'false' && window.OmegaLayerManager &&" +
                     " Number(window.OmegaLayerManager.currentLayer) === 1 &&" +
                     " document.body.getAttribute('data-active-layer') === '1');" +
                     "})()";
+            final String cabinetDiagnosticScript =
+                    "(function() {" +
+                    " var cabinet = document.getElementById('cabinet-full-window');" +
+                    " var root = document.getElementById('cabinet-subsystem-root');" +
+                    " var dock = document.getElementById('omega-ministry-entry');" +
+                    " return JSON.stringify({" +
+                    " display: cabinet ? cabinet.style.display : null," +
+                    " renderState: cabinet ? cabinet.getAttribute('data-cabinet-render-state') : null," +
+                    " busy: cabinet ? cabinet.getAttribute('aria-busy') : null," +
+                    " cabinetShell: !!(cabinet && cabinet.querySelector('.parchment-cabinet-container'))," +
+                    " rootPresent: !!root," +
+                    " rootChildren: root ? root.childElementCount : -1," +
+                    " loading: !!(root && root.querySelector('.omega-cabinet-subsystem-loading'))," +
+                    " renderError: !!(root && root.querySelector('.omega-cabinet-subsystem-error'))," +
+                    " layer: window.OmegaLayerManager ? window.OmegaLayerManager.currentLayer : null," +
+                    " activeLayer: document.body.getAttribute('data-active-layer')," +
+                    " dockResult: dock ? dock.getAttribute('data-last-open-result') : null" +
+                    " });" +
+                    "})()";
+            final long cabinetDeadline = SystemClock.elapsedRealtime() + 30000L;
+            String cabinetReady = "false";
+            while (!"true".equals(cabinetReady) && SystemClock.elapsedRealtime() < cabinetDeadline) {
+                cabinetReady = evaluate(instrumentation, webViewRef.get(), cabinetSurfaceReadyScript, 10L);
+                if (!"true".equals(cabinetReady)) SystemClock.sleep(350L);
+            }
+            final String cabinetDiagnostics = "true".equals(cabinetReady) ? "" :
+                    evaluate(instrumentation, webViewRef.get(), cabinetDiagnosticScript, 10L);
             assertEquals(
-                    "Government HQ must render its council content after the immediate navigation callback returns",
-                    "true", evaluate(instrumentation, webViewRef.get(), cabinetSurfaceReadyScript)
+                    "Government HQ must render its council content within 30 seconds; diagnostics=" + cabinetDiagnostics,
+                    "true", cabinetReady
             );
         } finally {
             instrumentation.runOnMainSync(activity::finish);
@@ -162,6 +192,15 @@ public final class OmegaGameplaySmokeTest {
             android.app.Instrumentation instrumentation,
             WebView webView,
             String script
+    ) throws Exception {
+        return evaluate(instrumentation, webView, script, JAVASCRIPT_CALLBACK_TIMEOUT_SECONDS);
+    }
+
+    private static String evaluate(
+            android.app.Instrumentation instrumentation,
+            WebView webView,
+            String script,
+            long timeoutSeconds
     ) throws Exception {
         assertNotNull("WebView reference should be initialized", webView);
         final CountDownLatch latch = new CountDownLatch(1);
@@ -182,8 +221,8 @@ public final class OmegaGameplaySmokeTest {
         assertTrue("WebView must accept the JavaScript evaluation task", posted);
         assertTrue(
                 "WebView JavaScript evaluation callback should return within " +
-                        JAVASCRIPT_CALLBACK_TIMEOUT_SECONDS + " seconds after page load",
-                latch.await(JAVASCRIPT_CALLBACK_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                        timeoutSeconds + " seconds after page load",
+                latch.await(timeoutSeconds, TimeUnit.SECONDS)
         );
         return result.get();
     }
