@@ -34,31 +34,34 @@ public final class OmegaGameplaySmokeTest {
                 InstrumentationRegistry.getInstrumentation();
         final Intent launch = new Intent(instrumentation.getTargetContext(), MainActivity.class);
         launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        final MainActivity activity = (MainActivity) instrumentation.startActivitySync(launch);
+        final android.app.Instrumentation.ActivityMonitor activityMonitor =
+                instrumentation.addMonitor(MainActivity.class.getName(), null, false);
+        MainActivity activity = null;
         final AtomicReference<WebView> webViewRef = new AtomicReference<>();
 
         try {
-            instrumentation.runOnMainSync(() -> {
-                final ViewGroup content =
-                        activity.findViewById(android.R.id.content);
-                assertNotNull("Activity content view should exist", content);
-                WebView found = null;
-                for (int i = 0; i < content.getChildCount(); i++) {
-                    final View child = content.getChildAt(i);
-                    if (child instanceof WebView) {
-                        found = (WebView) child;
-                        break;
-                    }
-                }
-                assertNotNull("MainActivity should render the game inside a WebView", found);
-                webViewRef.set(found);
-            });
+            // startActivitySync() and runOnMainSync() wait for UI idleness without a caller
+            // deadline. The game runs an animation loop and performs a large offline boot,
+            // so use the ActivityMonitor's bounded wait and fetch the already-created WebView
+            // directly rather than blocking the instrumentation thread on the UI thread.
+            instrumentation.getTargetContext().startActivity(launch);
+            final android.app.Activity startedActivity =
+                    activityMonitor.waitForActivityWithTimeout(15000L);
+            assertNotNull("MainActivity should start within 15 seconds", startedActivity);
+            assertTrue("The launched activity must be MainActivity",
+                    startedActivity instanceof MainActivity);
+            activity = (MainActivity) startedActivity;
+            final WebView found = activity.webViewForTest();
+            assertNotNull("MainActivity should render the game inside a WebView", found);
+            webViewRef.set(found);
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=ACTIVITY_AND_WEBVIEW_READY");
 
             /*
              * Wait for the main-frame load callback before queuing JavaScript. WebView progress
              * can reach 100 before onPageFinished is delivered; using the Activity's explicit
              * load state avoids racing JavaScript evaluation against a cold API 28 renderer.
              */
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=WAIT_MAIN_FRAME");
             final long loadDeadline = SystemClock.elapsedRealtime() + PAGE_LOAD_TIMEOUT_MS;
             while (!activity.hasMainFrameLoaded() &&
                     SystemClock.elapsedRealtime() < loadDeadline) {
@@ -69,6 +72,7 @@ public final class OmegaGameplaySmokeTest {
                     activity.hasMainFrameLoaded()
             );
 
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=MAIN_FRAME_LOADED");
             final String readinessScript =
                     "(function() {" +
                     " return !!(" +
@@ -81,6 +85,7 @@ public final class OmegaGameplaySmokeTest {
                     " window.Game && window.Omega" +
                     " );" +
                     "})()";
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=WAIT_CORE_RUNTIME_READY");
             final long deadline = SystemClock.elapsedRealtime() + PAGE_LOAD_TIMEOUT_MS;
             String ready = "false";
             while (!"true".equals(ready) && SystemClock.elapsedRealtime() < deadline) {
@@ -92,6 +97,7 @@ public final class OmegaGameplaySmokeTest {
                     "true", ready
             );
 
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=CORE_RUNTIME_READY");
             final String offlineBridgeScript =
                     "(function() { return !!(window.OmegaAndroid && " +
                     "window.OmegaAndroid.isAndroidApp() === true && " +
@@ -101,6 +107,7 @@ public final class OmegaGameplaySmokeTest {
                     "true", evaluate(instrumentation, webViewRef.get(), offlineBridgeScript)
             );
 
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=OFFLINE_BRIDGE_READY");
             final String speedControlScript =
                     "(function() {" +
                     " if (!window.Omega || !window.Omega.GameLifecycle || !window.Game) return false;" +
@@ -119,6 +126,7 @@ public final class OmegaGameplaySmokeTest {
                     "true", evaluate(instrumentation, webViewRef.get(), speedControlScript)
             );
 
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=OPEN_MINISTRY");
             final String ministryNavigationScript =
                     "(function() {" +
                     " var button = document.getElementById('btn-ministry-dock');" +
@@ -135,6 +143,7 @@ public final class OmegaGameplaySmokeTest {
                     "true", ministryOpened
             );
 
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=MINISTRY_LAYER_OPENED");
             // Wait for the production renderer's explicit ready state instead of assuming
             // the nested low-memory WebView timers finish within an arbitrary 350 ms.
             // The deadline remains bounded and the assertion still requires actual council DOM.
@@ -171,6 +180,7 @@ public final class OmegaGameplaySmokeTest {
                     " dockResult: dock ? dock.getAttribute('data-last-open-result') : null" +
                     " });" +
                     "})()";
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=WAIT_CABINET_READY");
             final long cabinetDeadline = SystemClock.elapsedRealtime() + PAGE_LOAD_TIMEOUT_MS;
             String cabinetReady = "false";
             while (!"true".equals(cabinetReady) && SystemClock.elapsedRealtime() < cabinetDeadline) {
@@ -184,6 +194,7 @@ public final class OmegaGameplaySmokeTest {
                     "true", cabinetReady
             );
 
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=CABINET_READY");
             // Exercise the actual player-facing Industry/Factories panel for a selected country.
             // The panel must distinguish owned live factory assets from catalog profiles instead
             // of inventing an operational asset just because a profile exists in the catalog.
@@ -219,8 +230,15 @@ public final class OmegaGameplaySmokeTest {
                     "Selecting a country and opening Industry/Factories must show the real asset state plus canonical factory catalog",
                     "true", evaluate(instrumentation, webViewRef.get(), factoryPanelScript)
             );
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=FACTORY_PANEL_READY");
         } finally {
-            instrumentation.runOnMainSync(activity::finish);
+            if (activity != null) {
+                final MainActivity launchedActivity = activity;
+                // Posting cleanup is asynchronous; it must not mask a timeout by blocking on
+                // the same UI thread whose responsiveness this smoke test is checking.
+                launchedActivity.runOnUiThread(launchedActivity::finish);
+            }
+            instrumentation.removeMonitor(activityMonitor);
         }
     }
 
