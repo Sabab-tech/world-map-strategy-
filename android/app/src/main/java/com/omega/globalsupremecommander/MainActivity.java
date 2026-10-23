@@ -27,12 +27,18 @@ import java.util.Locale;
 public final class MainActivity extends Activity {
     private static final String APP_URL =
             "https://appassets.androidplatform.net/assets/index.html";
-    private WebView webView;
+    private volatile WebView webView;
     private WebViewAssetLoader assetLoader;
     private volatile boolean mainFrameLoaded = false;
 
     boolean hasMainFrameLoaded() {
         return mainFrameLoaded;
+    }
+
+    // Package-private access for instrumentation avoids blocking the UI thread just
+    // to discover the WebView while the offline JavaScript bundle is booting.
+    WebView webViewForTest() {
+        return webView;
     }
 
     @Override
