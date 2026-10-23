@@ -213,6 +213,12 @@
     });
   }
 
+  function fleetHeroPhoto() {
+    var lib=g.OmegaUIPhotoAssets,item=null;try{item=lib&&typeof lib.get==='function'?lib.get('bangladesh-police-headquarters'):null;}catch(_){}
+    var path=item&&/^assets\/ui-photos\/bangladesh-police-headquarters\.webp$/.test(String(item.path||''))?item.path:'assets/ui-photos/bangladesh-police-headquarters.webp';
+    var credit=item&&item.author&&item.sourcePageUrl&&item.licenseUrl?'<small class="omega-v2-photo-credit">Photo: <a href="'+esc(item.sourcePageUrl)+'" target="_blank" rel="noopener noreferrer">'+esc(item.author)+'</a> · <a href="'+esc(item.licenseUrl)+'" target="_blank" rel="noopener noreferrer">'+esc(item.licenseShortName||'License')+'</a></small>':'';
+    return '<figure class="omega-v2-photo omega-v2-photo--hero omega-v2-fleet-hero"><img loading="lazy" decoding="async" width="1280" height="720" src="'+esc(path)+'" alt="Police headquarters, representative public safety reference photograph"><figcaption><strong>'+esc(item&&item.caption||'PUBLIC SAFETY & FLEET')+'</strong><small>Representative public-safety image. It is not evidence that the selected country owns a pictured facility or vehicle.</small>'+credit+'</figcaption></figure>';
+  }
   function render(root, options) {
     options = options || {};
     if (!root || typeof root !== 'object') return { ok: false, code: 'POLICE_FLEET_ROOT_REQUIRED' };

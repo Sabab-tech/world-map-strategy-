@@ -103,6 +103,19 @@
     }
     return '<div class="omega-v2-photo-placeholder" aria-label="' + esc(label) + '">Factory art unavailable</div>';
   }
+  function factoryPhoto(factory) {
+    factory = factory && typeof factory === 'object' ? factory : {};
+    var descriptor = [factory.type, factory.name, factory.recipeId, factory.category].join(' ').toUpperCase();
+    var photoId = 'industrial-production-line';
+    if (/(REFIN|PETRO|CHEMICAL|CHEM\b|OIL|GAS|FERTIL|FUEL)/.test(descriptor)) photoId = 'geelong-oil-refinery';
+    else if (/(POWER|ENERGY|ELECTRIC|HYDRO|TURBINE|GENERATOR)/.test(descriptor)) photoId = 'hydroelectric-plant';
+    else if (/(MINE|ORE|MINERAL|SMELT|STEEL|METAL|COPPER|ALUMIN)/.test(descriptor)) photoId = 'open-pit-mine';
+    else if (/(AGRI|FOOD|WHEAT|GRAIN|SUGAR|COTTON|CEREAL)/.test(descriptor)) photoId = 'wheat-field';
+    var lib=g.OmegaUIPhotoAssets,item=null;try{item=lib&&typeof lib.get==='function'?lib.get(photoId):null;}catch(_){}
+    var path=item&&/^assets\/ui-photos\/[a-z0-9-]+\.webp$/.test(String(item.path||''))?item.path:'assets/ui-photos/'+photoId+'.webp';
+    var credit=item&&item.author&&item.sourcePageUrl&&item.licenseUrl?'<small class="omega-v2-photo-credit">Photo: <a href="'+esc(item.sourcePageUrl)+'" target="_blank" rel="noopener noreferrer">'+esc(item.author)+'</a> · <a href="'+esc(item.licenseUrl)+'" target="_blank" rel="noopener noreferrer">'+esc(item.licenseShortName||'License')+'</a></small>':'';
+    return '<figure class="omega-v2-photo omega-v2-photo--tile omega-v2-factory-photo"><img loading="lazy" decoding="async" width="1280" height="720" src="'+esc(path)+'" alt="'+esc(factory.name||factory.type||'Industrial production')+', representative factory reference photograph"><figcaption><strong>'+esc(item&&item.caption||'INDUSTRIAL PRODUCTION')+'</strong><small>Representative reference photography only. Actual ownership, location, operating status and output come from the canonical game state.</small>'+credit+'</figcaption></figure>';
+  }
   function factoryCard(factory, options) {
     var status = factory.healthStatus || factory.status || 'NOT_RECORDED';
     var statusKey = /STOPPED|BLOCKED|FAILED|CLOSED/.test(status) ? 'blocked' : /ACTIVE|OPERAT|RUNNING|READY|IN_PROGRESS/.test(status) ? 'operational' : 'unknown';
@@ -117,7 +130,7 @@
     var canOpen = options && typeof options.onOpenFactory === 'function';
     return '<article class="omega-v2-card" data-omega-v2-factory-card data-search="' + esc((factory.name + ' ' + factory.id + ' ' + factory.type + ' ' + factory.recipeId).toLowerCase()) + '">' +
       '<div class="omega-v2-card-header"><div><h3 class="omega-v2-card-title">' + esc(factory.name) + '</h3><div class="omega-v2-card-meta">' + esc(factory.id || 'Factory ID not recorded') + ' · ' + esc(factory.type) + '</div></div><span class="omega-v2-status" data-state="' + statusKey + '">' + esc(status) + '</span></div>' +
-      '<div class="omega-v2-factory-art">' + factoryVisual(factory.type, factory.name) + '</div>' +
+      '<div class="omega-v2-factory-art">' + factoryPhoto(factory) + '</div>' +
       '<div class="omega-v2-vehicle-stats">' +
       '<div><span>Recipe</span><strong>' + esc(factory.recipeId) + '</strong></div>' +
       '<div><span>Registered capacity/day</span><strong>' + fmt(factory.capacityPerDay) + '</strong></div>' +

@@ -400,3 +400,15 @@ test('religion and ideology routes to the existing canonical system', () => {
   assert.match(source, /photoMarkup\('mosque-architecture'/);
   assert.doesNotMatch(source, /domainPhoto\('mosque-architecture'/);
 });
+
+
+test('factory and police fleet screens show local reference photography inside their domain views', () => {
+  const industry = readFileSync(new URL('../omega_ui_v2/screens/industry.js', import.meta.url), 'utf8');
+  const fleet = readFileSync(new URL('../omega_ui_v2/screens/police-fleet.js', import.meta.url), 'utf8');
+  assert.match(industry, /function factoryPhoto\(factory\)/);
+  assert.match(industry, /assets\/ui-photos\/industrial-production-line\.webp/);
+  assert.match(industry, /factoryPhoto\(factory\)/);
+  assert.match(fleet, /function fleetHeroPhoto\(\)/);
+  assert.match(fleet, /assets\/ui-photos\/bangladesh-police-headquarters\.webp/);
+  assert.match(fleet, /fleetHeroPhoto\(\)/);
+});
