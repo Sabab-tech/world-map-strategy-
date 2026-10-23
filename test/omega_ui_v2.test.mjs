@@ -408,7 +408,8 @@ test('Government exposes emblems, minister recruitment and a stable future portr
   assert.match(government, /function ministerRecruitmentTable\(rows\)/);
   assert.match(government, /data-omega-v2-minister-recruitment=/);
   assert.match(government, /data-omega-v2-minister-portrait-slot/);
-  assert.match(government, /OmegaMinisterRecruitment\.fetchRoster/);
+  assert.match(government, /g\.OmegaMinisterRecruitment/);
+  assert.match(government, /engine\.fetchRoster/);
   assert.match(government, /OmegaLiveMinisterSelectorV9/);
   assert.match(detail, /omega-v2-ministry-appointed-minister/);
 });
@@ -421,14 +422,32 @@ test('Finance has six separate data-backed tabs', () => {
   assert.match(source, /data-omega-v2-economy-tab/);
   assert.match(source, /data-omega-v2-finance-panel/);
   assert.match(source, /Game\.state\.finance\[country\]/);
+  const root = { classList:{ add(){} }, addEventListener(){}, innerHTML:'' };
+  for (const tab of finance.tabs) {
+    const result = finance.render(root, { countryId:'BGD', tab:tab.id });
+    assert.equal(result.tab, tab.id);
+    assert.ok(root.innerHTML.includes('data-omega-v2-finance-panel="' + tab.id + '"'));
+  }
 });
 
-test('Home Affairs legal register displays stored provisions without inventing missing laws', () => {
-  const source = readFileSync(new URL('../omega_ui_v2/screens/home-affairs.js', import.meta.url), 'utf8');
-  assert.match(source, /function lawsHtml\(state, country\)/);
-  assert.match(source, /Law \/ Act/);
-  assert.match(source, /no act, article or punishment has been invented/i);
-  assert.match(source, /active === 'laws'/);
+test('Home Affairs legal register shows stored law sections and never fabricates missing law text', () => {
+  const previousEngine = globalThis.OmegaHomeMinistryEngine;
+  globalThis.OmegaHomeMinistryEngine = {
+    getState: () => ({ laws:[{ name:'Public Safety Act', sections:[{ number:'12', title:'Police accountability', text:'Recorded provision text.' }] }] }),
+    estimateRecruitmentImpact: () => ({ ok:false, code:'TEST_QUOTE_UNAVAILABLE' }),
+    getCountryFleetSnapshot: () => null
+  };
+  const root = { classList:{ add(){} }, addEventListener(){}, querySelector(){ return null; }, innerHTML:'' };
+  try {
+    const result = globalThis.OmegaUIV2HomeAffairs.render(root, { countryId:'BGD', tab:'laws' });
+    assert.equal(result.tab, 'laws');
+    assert.match(root.innerHTML, /Public Safety Act/);
+    assert.match(root.innerHTML, /Police accountability/);
+    assert.match(root.innerHTML, /Recorded provision text\\./);
+    assert.match(root.innerHTML, /Law \/ Act/);
+  } finally {
+    globalThis.OmegaHomeMinistryEngine = previousEngine;
+  }
 });
 
 test('factory and police fleet screens show local reference photography inside their domain views', () => {
