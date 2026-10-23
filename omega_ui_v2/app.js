@@ -37,19 +37,11 @@
     };
   }
   function routeName(id) {
-    return ({
-      'executive-ministry': 'government',
-      'all-ministries': 'government',
-      'country-overview': 'government',
-      'treasury_finance':'economy',
-      'taxes':'economy',
-      'central_bank':'economy',
-      'trade':'economy',
-      'production':'industry',
-      'energy_mining':'resources',
-      'interior_security':'home-affairs',
-      'mega_projects':'ministry-detail'
-    })[String(id)] || 'ministry-detail';
+    var value = String(id || '');
+    if (value === 'production') return 'industry';
+    if (value === 'energy_mining') return 'resources';
+    if (value === 'interior_security') return 'home-affairs';
+    return 'ministry-detail';
   }
   function openMinistry(root, id) {
     var state = stateFor(root);
