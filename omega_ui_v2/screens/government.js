@@ -166,8 +166,32 @@
       '</div>' + (coverage && coverage.length ? '<details><summary>Inspect missing fields</summary><ul>' + coverage.map(function (row) { return '<li>' + esc(typeof row === 'string' ? row : row.field || row.name || JSON.stringify(row)) + '</li>'; }).join('') + '</ul></details>' : '<p class="omega-v2-card-meta">The gateway did not report a missing-field list for this snapshot.</p>') + '</div>' +
       '</section>';
   }
+  function ministryEmblem(row) {
+    var symbols = {
+      trade:'<path d="M3 8h12l-3-3m3 3-3 3M21 16H9l3-3m-3 3 3 3"/>',
+      production:'<circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4M4.9 4.9l2.8 2.8m8.6 8.6 2.8 2.8m0-14.2-2.8 2.8m-8.6 8.6-2.8 2.8"/>',
+      taxes:'<path d="M4 19h16M6 15h3v-5H6zm5 0h3V6h-3zm5 0h3V9h-3z"/>',
+      central_bank:'<path d="M3 9h18L12 4 3 9zm2 2v6m4-6v6m6-6v6m4-6v6M3 20h18"/>',
+      laws:'<path d="M12 4v15m-6-13h12M6 6l-4 7h8L6 6zm12 0-4 7h8l-4-7zM8 22h8"/>',
+      education:'<path d="M3 5c4-2 7-1 9 1 2-2 5-3 9-1v14c-4-2-7-1-9 1-2-2-5-3-9-1zM12 6v14"/>',
+      infrastructure:'<path d="M3 20V8l9-5 9 5v12M3 12h18M7 12v8m5-8v8m5-8v8"/>',
+      science_research:'<path d="M9 3h6m-5 0v6l-5 9a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-9V3M8 15h8"/>',
+      defense:'<path d="M12 2 20 5v6c0 5-3 8-8 11-5-3-8-6-8-11V5zM8 12l3 3 5-6"/>',
+      foreign_affairs:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>',
+      energy_mining:'<path d="M13 2 5 13h6l-1 9 9-13h-6z"/>',
+      intelligence_cyber:'<path d="M2 12s3-6 10-6 10 6 10 6-3 6-10 6-10-6-10-6z"/><circle cx="12" cy="12" r="2.5"/>',
+      agriculture_food:'<path d="M12 21V9m0 5C4 14 3 8 3 5c6 0 9 3 9 9m0-1c0-6 4-9 9-9 0 5-2 10-9 10"/>',
+      interior_security:'<path d="M12 2 20 5v6c0 5-3 8-8 11-5-3-8-6-8-11V5zM8 13v-3l4-3 4 3v3M10 17v-4h4v4"/>',
+      health_welfare:'<path d="M12 3v18M3 12h18"/>',
+      treasury_finance:'<path d="M3 8h18l-9-5-9 5zm2 3v6m5-6v6m4-6v6m5-6v6M3 20h18"/>',
+      mega_projects:'<path d="M4 21V8m0 0 7 4M4 8l9-5M13 3v12m0-12 6 2m-6 4h7l-2 3h-5m-10 9h18"/>'
+    };
+    var symbol = symbols[row.id] || '<circle cx="12" cy="12" r="7"/><path d="M12 8v8m-4-4h8"/>';
+    return '<span class="omega-v2-ministry-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">' + symbol + '</svg></span>';
+  }
+
   function directoryCard(row) {
-    var icon = row.avatar && /^[\u0000-\uFFFF]{1,4}$/.test(String(row.avatar)) ? '<span class="omega-v2-ministry-icon" aria-hidden="true">' + esc(row.avatar) + '</span>' : '<span class="omega-v2-ministry-icon" aria-hidden="true">▣</span>';
+    var icon = ministryEmblem(row);
     var photoId = PHOTO_BY_MINISTRY[row.id];
     var status = row.status || 'NOT_RECORDED';
     var img = photoId ? photoMarkup(photoId, row.title + ' reference photograph') : '';
