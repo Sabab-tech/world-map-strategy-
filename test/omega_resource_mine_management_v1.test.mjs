@@ -5,7 +5,10 @@ import test from 'node:test';
 
 const repoRoot = new URL('../', import.meta.url);
 const catalog = JSON.parse(fs.readFileSync(new URL('resource_industrial_catalog_v1.json', repoRoot), 'utf8'));
+const canonicalSiteCatalog = JSON.parse(fs.readFileSync(new URL('resource_site_canonical_catalog_v1.json', repoRoot), 'utf8'));
+const masterSiteRegistry = JSON.parse(fs.readFileSync(new URL('resource_site_master_registry_v1.json', repoRoot), 'utf8'));
 const supplement = JSON.parse(fs.readFileSync(new URL('resource_site_country_mineplay_batch_20261020_v1.json', repoRoot), 'utf8'));
+const expandedCoverageBatch = JSON.parse(fs.readFileSync(new URL('resource_site_country_mineplay_batch_20261024_v1.json', repoRoot), 'utf8'));
 const reserveRegistry = JSON.parse(fs.readFileSync(new URL('resource_site_reserve_simulation_v1.json', repoRoot), 'utf8'));
 const legacySiteRegistries = [1,2,3,4,5,6].map(n =>
   JSON.parse(fs.readFileSync(new URL('resource_site_legacy_gameplay_expansion_part_' + n + '_v1.json', repoRoot), 'utf8'))
@@ -138,6 +141,129 @@ test('supplemental records pass the canonical resource site integrity contract',
   const report = api.auditRegistry(supplement.records, {});
   assert.equal(report.status, 'PASS', JSON.stringify(report.errors.slice(0, 10)));
   assert.equal(report.siteCount, supplement.records.length);
+});
+
+
+test('global mine coverage batch contains 108 complete records across 36 countries with duplicate sites safely aliased', () => {
+  assert.equal(expandedCoverageBatch.datasetId, 'OMEGA_RESOURCE_SITE_COUNTRY_MINEPLAY_BATCH_V1');
+  assert.equal(expandedCoverageBatch.batchId, 'COUNTRY_MINEPLAY_GLOBAL_COVERAGE_20261024');
+  assert.equal(expandedCoverageBatch.recordCount, 108);
+  assert.equal(expandedCoverageBatch.records.length, 108);
+  assert.equal(expandedCoverageBatch.countryCount, 36);
+  assert.ok(bindingSource.includes('resource_site_country_mineplay_batch_20261024_v1.json'), 'map/gameplay binding must load the added batch');
+  assert.ok(endowmentSource.includes('resource_site_country_mineplay_batch_20261024_v1.json'), 'endowment/runtime must load the added batch');
+  assert.ok(serviceWorkerSource.includes('resource_site_country_mineplay_batch_20261024_v1.json'), 'new batch must be cached for offline use');
+  assert.equal(new Set(expandedCoverageBatch.records.map(x => x.siteId)).size, 108);
+  const aliasTargets = { SITE_PRK_musan_iron_ore_mine: 'SITE_PRK_musan_iron_mine' };
+  assert.equal(expandedCoverageBatch.records.filter(x => !aliasTargets[x.siteId]).length, 107, 'one same-coordinate Musan record is retained for audit but aliases the existing physical mine');
+  const normalize = v => String(v ?? '').normalize('NFKD').replace(/\p{M}/gu, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  const country = row => String(row?.countryId || row?.identity?.countryIso3 || row?.location?.countryBoundaryKey || '').toUpperCase();
+  const resource = row => String(row?.resourceId || row?.identity?.resourceTypeId || '').toLowerCase();
+  const name = row => normalize(row?.siteName || row?.name);
+  const coord = row => { const c = row?.location?.coordinates || {}; return Number.isFinite(Number(c.lat)) && Number.isFinite(Number(c.lng)) ? {lat:Number(c.lat),lng:Number(c.lng)} : null; };
+  const distanceKm = (a,b) => { const rad = Math.PI/180, dl=(b.lat-a.lat)*rad, dg=(b.lng-a.lng)*rad, la=a.lat*rad, lb=b.lat*rad, h=Math.sin(dl/2)**2+Math.cos(la)*Math.cos(lb)*Math.sin(dg/2)**2; return 6371*2*Math.asin(Math.min(1,Math.sqrt(h))); };
+  const allExisting = [
+    ...(canonicalSiteCatalog.sites || []), ...(masterSiteRegistry.sites || []),
+    ...reserveRegistry.records, ...supplement.records,
+    ...legacySiteRegistries.flatMap(x => x.records || []),
+    ...expandedSiteRegistries.flatMap(x => x.sites || [])
+  ];
+  const existingIds = new Set(allExisting.map(x => String(x?.siteId || '')).filter(Boolean));
+  const existingNames = new Set(allExisting.map(x => country(x) + '|' + name(x)).filter(x => !x.endsWith('|')));
+  for (const sourceRow of expandedCoverageBatch.records) {
+    const target = aliasTargets[sourceRow.siteId] || null;
+    const row = target ? {
+      ...sourceRow,
+      operation: { ...(sourceRow.operation || {}), commercialExtraction: false },
+      map: { ...(sourceRow.map || {}), markerEligible: false, aliasOfSiteId: target },
+      runtime: { ...(sourceRow.runtime || {}), aliasOfSiteId: target }
+    } : sourceRow;
+    assert.ok(row.siteId && /^SITE_[A-Z]{3}_[a-z0-9_]+$/.test(row.siteId), row.siteId + ': stable site ID');
+    assert.equal(existingIds.has(row.siteId), false, row.siteId + ': duplicate ID in existing registries');
+    assert.equal(existingNames.has(country(row) + '|' + name(row)), false, row.siteId + ': duplicate country/site name');
+    assert.equal(row.identity.countryIso3, row.countryId, row.siteId + ': country identity');
+    assert.equal(row.identity.resourceTypeId, row.resourceId, row.siteId + ': resource identity');
+    assert.equal(row.location.countryBoundaryKey, row.countryId, row.siteId + ': country boundary');
+    assert.equal(row.map.countryIsolationKey, row.countryId, row.siteId + ': country isolation');
+    if (target) {
+      assert.equal(row.map.markerEligible, false, row.siteId + ': duplicate reference must not create a second marker');
+      assert.equal(row.map.aliasOfSiteId, target, row.siteId + ': duplicate reference points to its canonical physical mine');
+      assert.equal(row.runtime.aliasOfSiteId, target, row.siteId + ': runtime alias target');
+      assert.equal(row.operation.commercialExtraction, false, row.siteId + ': duplicate alias cannot execute a second extraction');
+      assert.ok(existingIds.has(target), row.siteId + ': canonical mine exists in current registries');
+      continue;
+    }
+    assert.equal(row.map.markerEligible, true, row.siteId + ': map marker must be eligible');
+    assert.equal(row.operation.status, 'SIMULATED_OPERATIONAL_SCENARIO');
+    assert.equal(row.operation.operationalStatus, 'SIMULATED_ACTIVE');
+    assert.equal(row.operation.commercialExtraction, true);
+    assert.equal(row.operation.siteCommissioningLevel, 5);
+    assert.equal(row.operation.gameplayConstructionAllowed, true);
+    assert.equal(row.runtime.requiresSiteSpecificRoute, true);
+    assert.equal(row.runtime.requiresFactoryBinding, true);
+    assert.equal(row.logistics.warehouseCountryId, row.countryId);
+    assert.equal(row.logistics.transport.originSiteId, row.siteId);
+    assert.equal(row.logistics.transport.originCountryId, row.countryId);
+    assert.equal(row.logistics.transport.destinationCountryId, row.countryId);
+    assert.equal(row.logistics.transport.warehouseId, 'WH-' + row.countryId + '-RAW');
+    assert.equal(row.simulation.factoryBinding.countryId, row.countryId);
+    assert.equal(row.simulation.factoryBinding.inputResourceId, row.resourceId);
+    assert.equal(row.simulation.factoryBinding.status, 'SIMULATED_READY');
+    assert.ok(row.simulation.factoryBinding.factoryId);
+    assert.ok(row.simulation.transportRoute.length > 0);
+    assert.ok(row.processing.refinedOutputs.length > 0);
+    assert.ok(catalog.resourceRules[row.resourceId], row.siteId + ': extraction rule');
+    assert.ok(catalog.processingRules[row.resourceId], row.siteId + ': processing rule');
+    const q = row.quantitative;
+    for (const field of ['reserve','production','grade','recovery','throughput','purity','capacity']) {
+      assert.equal(q[field].status, 'SIMULATED', row.siteId + ': ' + field + ' must not be presented as observed');
+      assert.equal(q.completeness[field], 'SIMULATED', row.siteId + ': ' + field + ' coverage');
+    }
+    assert.ok(q.reserve.quantity > 0);
+    assert.equal(q.production.annual, q.production.rate * 365);
+    assert.equal(q.reserve.quantity, q.production.annual * 400);
+    assert.ok(q.production.rate > 0 && q.production.annual > 0);
+    assert.ok(q.grade.value > 0 && q.recovery.value > 0 && q.recovery.value <= 100);
+    assert.ok(q.throughput.value > 0 && q.purity.value > 0 && q.purity.value <= 100);
+    assert.ok(q.capacity.minimum > 0 && q.capacity.minimum <= q.capacity.nominal && q.capacity.nominal <= q.capacity.maximum);
+    assert.equal(q.quantitativeProvenance.authority, 'SCENARIO_SIMULATION_DATA');
+    assert.equal(q.quantitativeProvenance.gameplayHorizonYears, 400);
+    assert.equal(q.quantitativeProvenance.realWorldDataRequired, false);
+    assert.equal(q.completeness.overall, 'GAMEPLAY_SIMULATION_COMPLETE');
+    assert.deepEqual(row.observedFacts, []);
+    assert.ok(row.sources.some(source => String(source.url).startsWith('https://') || String(source.url).startsWith('http://')), row.siteId + ': identity/source URL');
+    assert.equal(row.sourceReference.facts.measuredReservePromoted, false);
+    assert.equal(row.sourceReference.facts.measuredProductionPromoted, false);
+    assert.equal(row.sourceReference.facts.quantitativeValuesAreSimulated, true);
+    const pt = coord(row);
+    assert.ok(pt && Math.abs(pt.lat) <= 90 && Math.abs(pt.lng) <= 180);
+    for (const old of allExisting) {
+      if (country(old) !== country(row) || resource(old) !== resource(row)) continue;
+      const oldPt = coord(old);
+      if (oldPt) assert.ok(distanceKm(pt, oldPt) >= 2, row.siteId + ': possible same-commodity duplicate of ' + old.siteId);
+    }
+  }
+  const integrityContext = { console, Math, Number, String, Object, Array, Set, Map, WeakMap, JSON, Date, Intl };
+  integrityContext.globalThis = integrityContext;
+  vm.createContext(integrityContext);
+  vm.runInContext(integritySource, integrityContext, { filename: 'omega_resource_site_integrity_v1.js' });
+  const api = integrityContext.Omega?.ResourceSiteIntegrity || integrityContext.OmegaResourceSiteIntegrity;
+  assert.ok(api && typeof api.auditRegistry === 'function');
+  const auditRows = expandedCoverageBatch.records.map(sourceRow => {
+    const target = aliasTargets[sourceRow.siteId];
+    return target ? {
+      ...sourceRow,
+      operation: { ...(sourceRow.operation || {}), commercialExtraction: false },
+      map: { ...(sourceRow.map || {}), markerEligible: false, aliasOfSiteId: target },
+      runtime: { ...(sourceRow.runtime || {}), aliasOfSiteId: target }
+    } : sourceRow;
+  });
+  const audit = api.auditRegistry(auditRows, {
+    aliasMap: aliasTargets,
+    allowExternalAliasTargets: new Set(Object.values(aliasTargets))
+  });
+  assert.equal(audit.status, 'PASS', JSON.stringify(audit.errors.slice(0, 12)));
+  assert.equal(audit.siteCount, 108);
 });
 
 test('niobium and ruby have extraction and processing rules', () => {
