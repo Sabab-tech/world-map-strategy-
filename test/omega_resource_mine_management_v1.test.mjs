@@ -304,3 +304,22 @@ test('mine project rejects cross-country identity and player-only actions requir
   assert.match(endowmentSource, /OMEGA_RESOURCE_MINE_COMMISSIONED/);
   assert.match(bindingSource, /resource_site_country_mineplay_batch_20261020_v1\.json/);
 });
+
+
+test('every mapped resource site joins the executable runtime and has a one-tap country production action', () => {
+  assert.match(endowmentSource, /function normalizeBoundSiteForRuntime/);
+  assert.match(endowmentSource, /function syncBoundSiteRegistry/);
+  assert.match(endowmentSource, /syncBoundSiteRegistry\(binding\.sites\)/);
+  assert.match(endowmentSource, /simulation\.routeAuthority='SIMULATED_TOPOLOGY_FALLBACK'/);
+  assert.match(endowmentSource, /distanceKm:null,distanceStatus:'UNOBSERVED'/,
+    'a fallback route must not invent an observed transport distance');
+  assert.match(endowmentSource, /async function startCountryProduction\(countryId,siteIds=null\)/);
+  assert.match(endowmentSource, /PRODUCTION_ALREADY_STARTED_THIS_TURN/);
+  assert.match(endowmentSource, /NO_UNATTEMPTED_SITE_OCCURRENCES/);
+  assert.match(endowmentSource, /registerCanonicalSiteSimulationRecord/);
+  assert.match(uiSource, /data-omm-action="start-country-production"/);
+  assert.match(uiSource, /runtime\.startCountryProduction\(country\)/);
+  assert.match(uiSource, /country!==playerCountry\(\)/,
+    'the one-tap action must stay within the active player-country boundary');
+  assert.match(uiSource, /No duplicate extraction was created/);
+});
