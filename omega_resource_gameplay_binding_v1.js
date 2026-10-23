@@ -159,10 +159,35 @@ function detailDatum(value,unit){
  const text=humanize(value);
  return text&&hasValue(unit)?text+' '+formatUnit(unit):text;
 }
+// Resolve display values from the live canonical authority after runtime site hydration.
+// Site-specific source evidence remains attached, but it cannot override the normalized simulation profile.
+function canonicalPresentationSite(site){
+ const siteId=String(site?.siteId||site?.siteReferenceKey||'').trim();
+ if(!siteId)return site;
+ const data=g.OmegaResourceSiteCanonicalCatalogData||g.Omega?.ResourceSiteCanonicalCatalogData||null;
+ const rows=Array.isArray(data?.sites)?data.sites:[];
+ const authority=rows.find(row=>String(row?.siteId||'').trim()===siteId);
+ if(!authority)return site;
+ return {
+  ...site,...authority,siteId,
+  identity:{...(site.identity||{}),...(authority.identity||{})},
+  real:{...(site.real||{}),...(authority.real||{})},
+  location:{...(site.location||{}),...(authority.location||{})},
+  operation:{...(site.operation||{}),...(authority.operation||{})},
+  ownership:{...(site.ownership||{}),...(authority.ownership||{})},
+  quantitative:authority.quantitative||site.quantitative||{},
+  simulation:{...(site.simulation||{}),...(authority.simulation||{})},
+  processing:{...(site.processing||{}),...(authority.processing||{})},
+  logistics:{...(site.logistics||{}),...(authority.logistics||{})},
+  sourceSiteRecord:authority.sourceSiteRecord||site.sourceSiteRecord||{},
+  sourceReference:authority.sourceReference||site.sourceReference||{}
+ };
+}
 // No country-average substitution: the panel renders values attached to the selected site identity only.
 // Individual transport route & delivery is kept in a collapsed section and only uses this site's own route fields.
 function renderSiteDetail(s){
  if(!s)return '<p class="omega-site-empty">Select a mine, field or deposit on the map.</p>';
+ s=canonicalPresentationSite(s);
  const sim=s.simulation||{},real=s.real||{},loc=s.location||{},coords=s.coordinates||loc.coordinates||{};
  const source=s.sourceSiteRecord||{},identity=s.identity||{};
  const operation=s.operation||s.operationProfile||source.operation||{},ownership=s.ownership||source.ownership||{};

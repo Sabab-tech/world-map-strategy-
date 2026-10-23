@@ -75,6 +75,46 @@ test('resource site detail uses readable, source-labelled measures and hides raw
     'details must not leak raw JSON blobs or empty placeholder values');
 });
 
+test('hydrated canonical authority supplies the uniform simulation profile to sparse UI records', () => {
+  context.Omega.ResourceSiteCanonicalCatalogData = { sites: [{
+    siteId: 'SITE_USA_authority_copper_mine',
+    siteName: 'Authority Copper Mine',
+    countryId: 'USA',
+    identity: { countryIso3: 'USA', resourceTypeId: 'copper' },
+    real: { resourceId: 'copper', quantitative: {} },
+    location: { countryName: 'United States', coordinates: { lat: 33.1, lng: -109.3 } },
+    operation: { status: 'SIMULATED_OPERATIONAL_SCENARIO', commercialExtraction: true },
+    quantitative: {
+      reserve: { quantity: 584000000, unit: 'TONNES_ORE', status: 'SIMULATED', authority: 'GAMEPLAY_SIMULATION' },
+      production: { rate: 4000, annual: 1460000, unit: 'TONNES_PER_DAY', annualUnit: 'TONNES_PER_YEAR', status: 'SIMULATED', authority: 'GAMEPLAY_SIMULATION' },
+      grade: { value: 0.9, unit: 'PERCENT', status: 'SIMULATED' },
+      recovery: { value: 86, unit: 'PERCENT', status: 'SIMULATED' },
+      purity: { value: 94, unit: 'PERCENT', status: 'SIMULATED' },
+      throughput: { value: 3520, unit: 'TONNES_PER_DAY', status: 'SIMULATED' },
+      capacity: { minimum: 2600, nominal: 4600, maximum: 6210, unit: 'TONNES_PER_DAY', status: 'SIMULATED' }
+    },
+    simulation: {
+      productionRate: 4000, productionRateUnit: 'TONNES_PER_DAY',
+      productionReadiness: 'CAPACITY_READY',
+      transportRoute: [{ routeId: 'R1', mode: 'rail', origin: 'Mine', destination: 'WH-USA-RAW', countryIsolationKey: 'USA' }]
+    },
+    runtime: { identityAuthority: 'CANONICAL_SITE_REGISTRY', countryWarehouseId: 'WH-USA-RAW' }
+  }] };
+  const html = render({
+    siteId: 'SITE_USA_authority_copper_mine',
+    siteName: 'Authority Copper Mine',
+    countryId: 'USA',
+    real: { resourceId: 'copper' },
+    quantitative: {}
+  });
+  assert.match(html, /584,000,000 TONNES_ORE|584,000,000 tonnes ore/i);
+  assert.match(html, /4,000 t\/day/i);
+  assert.match(html, /2,600 t\/day/i);
+  assert.match(html, /6,210 t\/day/i);
+  assert.match(html, /Simulated/i);
+  assert.match(html, /Wh Usa Raw/);
+});
+
 test('sparse site profiles remain clean and do not invent reserve or output figures', () => {
   assert.equal(typeof render, 'function');
   const html = render({
