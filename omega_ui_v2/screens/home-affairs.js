@@ -150,15 +150,15 @@
     var sources = [
       [state && state.laws, 'Home Ministry state'], [state && state.legislation, 'Home Ministry legislation'],
       [state && state.legalCode, 'Home Ministry legal code'], [state && state.lawRegistry, 'Home Ministry law registry'],
-      [state && state.legalArticles, 'Home Ministry legal articles'], [state && state.articles, 'Home Ministry articles'],
+      [state && state.legalArticles, 'Home Ministry legal articles'], [state && state.homeAffairsLaws, 'Home Affairs law registry'], [state && state.articles, 'Home Ministry articles'], [state && state.acts, 'Home Ministry acts'], [state && state.regulations, 'Home Ministry regulations'],
       [gameState.laws && (gameState.laws[key] || gameState.laws[country]), 'Game law registry'],
-      [domain && (domain.record || domain), 'Country Data Gateway · interior']
+      [domain && domain.record && (domain.record.laws || domain.record.homeAffairsLaws || domain.record.legislation || domain.record.legalCode || domain.record.lawRegistry || domain.record.legalArticles || domain.record.articles || domain.record.acts || domain.record.regulations), 'Country Data Gateway · interior']
     ];
     var rows = [];
     sources.forEach(function (entry) {
       var source = entry[0];
       if (!source || typeof source !== 'object') return;
-      var legal = source.laws || source.legislation || source.legalCode || source.lawRegistry || source.legalArticles || source.articles || source;
+      var legal = source.laws || source.homeAffairsLaws || source.legislation || source.legalCode || source.lawRegistry || source.legalArticles || source.articles || source.acts || source.regulations || source;
       rows = rows.concat(legalRowsFromSource(legal, entry[1]));
     });
     var unique = Object.create(null);
