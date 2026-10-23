@@ -166,12 +166,20 @@ public final class OmegaGameplaySmokeTest {
         assertNotNull("WebView reference should be initialized", webView);
         final CountDownLatch latch = new CountDownLatch(1);
         final AtomicReference<String> result = new AtomicReference<>();
-        instrumentation.runOnMainSync(
+        /*
+         * Do not use Instrumentation.runOnMainSync here: it waits for the UI-thread
+         * runnable to execute without a caller-controlled deadline. If WebView's UI
+         * thread is monopolized during boot, the test itself can hang before reaching
+         * the CountDownLatch timeout below. View.post returns immediately, allowing
+         * the bounded wait to fail with a useful diagnostic instead.
+         */
+        final boolean posted = webView.post(
                 () -> webView.evaluateJavascript(script, value -> {
                     result.set(value);
                     latch.countDown();
                 })
         );
+        assertTrue("WebView must accept the JavaScript evaluation task", posted);
         assertTrue(
                 "WebView JavaScript evaluation callback should return within " +
                         JAVASCRIPT_CALLBACK_TIMEOUT_SECONDS + " seconds after page load",
