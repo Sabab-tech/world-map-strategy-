@@ -213,6 +213,7 @@ test('slow simulation frames and data-heavy ministry panels bound repeated UI wo
     'global site records must be country-filtered before expensive cloning');
   assert.match(resources, /const visibleSites = sites\.slice\(0, 150\)/);
 
-  assert.match(read('omega-offline-map-sw.js'), /omega-offline-atlas-shell-v23/,
-    'Android/offline installs must receive the fixed runtime scripts');
+  const serviceWorker = read('omega-offline-map-sw.js');
+  const cacheVersion = Number(serviceWorker.match(/CACHE_NAME = "omega-offline-atlas-shell-v(\\d+)"/)?.[1] || 0);
+  assert.ok(cacheVersion >= 24, 'Android/offline installs must receive the updated anti-hang runtime scripts');
 });
