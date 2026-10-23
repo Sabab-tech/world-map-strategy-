@@ -219,6 +219,28 @@ test('UI v2 integration is controllable and reports the real mount dependency', 
   assert.equal(bridge.isEnabled(), true);
 });
 
+test('Back-to-Map bypasses legacy cabinet subsystem stack traps', () => {
+  const bridge = globalThis.OmegaUIV2Integration;
+  const previousManager = globalThis.OmegaLayerManager;
+  const manager = {
+    currentLayer:1,
+    layerStack:[0,1,5],
+    calledPop:false,
+    popLayer() { this.calledPop = true; this.currentLayer = 5; },
+    setLayer(layer, data, skipPush) { this.currentLayer = layer; }
+  };
+  globalThis.OmegaLayerManager = manager;
+  try {
+    assert.equal(bridge.closeToWorldMap(), true);
+    assert.equal(manager.currentLayer, 0);
+    assert.deepEqual(manager.layerStack, [0]);
+    assert.equal(manager.calledPop, false);
+  } finally {
+    if (previousManager === undefined) delete globalThis.OmegaLayerManager;
+    else globalThis.OmegaLayerManager = previousManager;
+  }
+});
+
 test('production shell loads and offline-preloads every UI v2 module', () => {
   const index = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
   const sw = readFileSync(new URL('../omega-offline-map-sw.js', import.meta.url), 'utf8');
