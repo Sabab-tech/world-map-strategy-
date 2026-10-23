@@ -4,7 +4,7 @@
  */
 (function(root){
 'use strict';
-const VERSION='1.0.0';
+const VERSION='1.1.0';
 if(root.OmegaCountrySectorProfileUI&&root.OmegaCountrySectorProfileUI.VERSION===VERSION)return;
 const PROFILE_URL='./country_sector_profiles_v1.json',SCHEMA_URL='./country_sector_profile_schema_v1.json';
 const state={promise:null,profiles:null,profileByIso3:null,schema:null,lastError:null,mountCount:0,panelObserver:null};
@@ -15,7 +15,7 @@ const titleCase=v=>str(v).replace(/([a-z0-9])([A-Z])/g,'$1 $2').replace(/[_-]+/g
 const formatNumber=v=>{try{return new Intl.NumberFormat('en',{maximumFractionDigits:3}).format(v)}catch(_){return str(v)}};
 function formatValue(value,depth){
  const level=depth||0;
- if(value===null||value===undefined||value==='')return 'NOT RECORDED';
+ if(value===null||value===undefined||value==='')return 'Not recorded';
  if(typeof value==='number')return Number.isFinite(value)?formatNumber(value):'NOT RECORDED';
  if(typeof value==='boolean')return value?'Yes':'No';
  if(typeof value==='string')return value;
@@ -82,13 +82,12 @@ function evidenceRows(profile,record,entries,fallbackType){
   const kind=reference&&reference.refType||fallbackType,evidence=resolvedValue(profile,record,key,kind)||{},definition=getDefinition(key);
   const label=definition.title||definition.label||definition.name||titleCase(key),value=evidence.value!==undefined?evidence.value:null;
   const bits=[];
-  if(evidence.status)bits.push(titleCase(evidence.status));
   if(evidence.year!==null&&evidence.year!==undefined)bits.push('Year '+evidence.year);
   if(evidence.sourceName||evidence.sourceId)bits.push(evidence.sourceName||evidence.sourceId);
   const unit=evidence.unit||definition.unit||'',display=formatValue(value)+(value!==null&&unit?' '+unit:'');
   const search=norm([label,key,value,evidence.status,evidence.sourceName,evidence.sourceId].join(' '));
   return '<article class="ocsp-evidence-row" data-ocsp-evidence data-search="'+esc(search)+'"><div class="ocsp-evidence-label"><strong>'+esc(label)+'</strong><code>'+esc(key)+'</code></div>'+
-   '<div class="ocsp-evidence-value">'+esc(display)+'</div><div class="ocsp-evidence-meta">'+esc(bits.length?bits.join(' · '):(value===null?'Source status not recorded':'Recorded value'))+'</div>'+
+   '<div class="ocsp-evidence-value">'+esc(display)+'</div><div class="ocsp-evidence-meta">'+esc(bits.length?bits.join(' · '):(value===null?'Not recorded in available sources':'Recorded value'))+'</div>'+
    (evidence.note?'<p class="ocsp-evidence-note">'+esc(evidence.note)+'</p>':'')+
    (evidence.sourceUrl?'<p class="ocsp-evidence-note">Source: <a href="'+esc(evidence.sourceUrl)+'" target="_blank" rel="noopener noreferrer">'+esc(evidence.sourceUrl)+'</a></p>':'')+'</article>';
  }).join('');
@@ -97,23 +96,23 @@ function sourceGroupRows(record,sourceGroup){
  if(!sourceGroup||!sourceGroup.key||!record)return '';
  const key=sourceGroup.key,value=record[key];
  if(value===null||value===undefined)return '';
- const rows=obj(value)?Object.entries(value):[['value',value]];
+ const rows=obj(value)?Object.entries(value).filter(([field])=>!/(?:status|diagnostic|provenance|runtime|simulation|error|confidence|datagap)/i.test(field)):[['value',value]];
  if(!rows.length)return '';
- return '<details class="ocsp-source-group"><summary>Registered source group · '+esc(titleCase(key))+'</summary><div class="ocsp-source-grid">'+
+ return '<details class="ocsp-source-group" open><summary>Additional recorded details · '+esc(titleCase(key))+'</summary><div class="ocsp-source-grid">'+
   rows.map(([field,item])=>'<div><span>'+esc(titleCase(field))+'</span><strong>'+esc(formatValue(item))+'</strong></div>').join('')+
   '</div><small>Values come from the shared country registry. Empty or unavailable inputs are not replaced with zero.</small></details>';
 }
 function renderSector(profile,record,definition){
  const sector=profile.sectors&&profile.sectors[definition.id]||{};
- const blocks=[evidenceRows(profile,record,sector.indicators,null),evidenceRows(profile,record,sector.facts,'GENERAL_FACT'),evidenceRows(profile,record,sector.analytics,'ANALYTICS')].filter(Boolean).join('');
- const allRows=[sector.indicators,sector.facts,sector.analytics].flatMap((group,index)=>Object.entries(group||{}).map(([key,ref])=>({key,ref,type:index===1?'GENERAL_FACT':index===2?'ANALYTICS':null})));
+ const blocks=[evidenceRows(profile,record,sector.indicators,null),evidenceRows(profile,record,sector.facts,'GENERAL_FACT')].filter(Boolean).join('');
+ const allRows=[sector.indicators,sector.facts].flatMap((group,index)=>Object.entries(group||{}).map(([key,ref])=>({key,ref,type:index===1?'GENERAL_FACT':null})));
  let available=0;
  allRows.forEach(row=>{const item=resolvedValue(profile,record,row.key,row.ref&&row.ref.refType||row.type);if(item&&item.value!==null&&item.value!==undefined&&item.value!=='')available++});
  const search=norm([definition.title,definition.description,definition.id].join(' '));
- return '<details class="ocsp-sector" data-ocsp-sector data-search="'+esc(search)+'"><summary><span class="ocsp-sector-title"><strong>'+esc(definition.title||titleCase(definition.id))+'</strong>'+
-  '<small>'+esc(definition.description||'Registered sector profile')+'</small></span><span class="ocsp-sector-count">'+available+' / '+allRows.length+' recorded</span></summary><div class="ocsp-sector-body">'+
-  (blocks||'<p class="ocsp-empty">No indicator references are registered for this sector.</p>')+sourceGroupRows(record,sector.sourceGroup||definition.sourceGroup)+
-  '<p class="ocsp-sector-note">Sector status: '+esc(titleCase(sector.status||'NOT CLASSIFIED'))+'. Missing evidence remains unavailable; derived values retain their own year and calculation status.</p></div></details>';
+ return '<details class="ocsp-sector" data-ocsp-sector open data-search="'+esc(search)+'"><summary><span class="ocsp-sector-title"><strong>'+esc(definition.title||titleCase(definition.id))+'</strong>'+
+  '<small>'+esc(definition.description||'National indicators and general facts')+'</small></span><span class="ocsp-sector-count">'+available+' / '+allRows.length+' recorded</span></summary><div class="ocsp-sector-body">'+
+  (blocks||'<p class="ocsp-empty">No published indicators are recorded in this section.</p>')+sourceGroupRows(record,sector.sourceGroup||definition.sourceGroup)+
+  '<p class="ocsp-sector-note">Available values retain their source and observation year. Missing fields are marked Not recorded.</p></div></details>';
 }
 function signalsBlock(profile,key,title,description){
  const rows=profile.relativeSignals&&Array.isArray(profile.relativeSignals[key])?profile.relativeSignals[key]:[];
@@ -125,28 +124,27 @@ function signalsBlock(profile,key,title,description){
    (signal.caveat?'<p>'+esc(signal.caveat)+'</p>':'')+'</article>').join('')+'</div></details>';
 }
 function profileMarkup(profile,record){
- const sectors=state.schema.sectors||[];let total=0,recorded=0;
- sectors.forEach(def=>{const section=profile.sectors&&profile.sectors[def.id]||{};
-  ['indicators','facts','analytics'].forEach((group,index)=>Object.entries(section[group]||{}).forEach(([key,ref])=>{
-   total++;const type=index===1?'GENERAL_FACT':index===2?'ANALYTICS':null,item=resolvedValue(profile,record,key,ref&&ref.refType||type);
-   if(item&&item.value!==null&&item.value!==undefined&&item.value!=='')recorded++;
+ const sectors=state.schema.sectors||[];let total=0,recorded=0,sectorsWithData=0;
+ sectors.forEach(def=>{
+  const section=profile.sectors&&profile.sectors[def.id]||{};let sectorRecorded=0;
+  ['indicators','facts'].forEach((group,index)=>Object.entries(section[group]||{}).forEach(([key,ref])=>{
+   total++;const type=index===1?'GENERAL_FACT':null,item=resolvedValue(profile,record,key,ref&&ref.refType||type);
+   if(item&&item.value!==null&&item.value!==undefined&&item.value!==''){recorded++;sectorRecorded++}
   }));
+  if(sectorRecorded>0)sectorsWithData++;
  });
- const metadata=state.profiles.metadata||{};
- return '<div class="ocsp-summary-grid"><div><strong>'+esc(sectors.length)+'</strong><span>Registered sectors</span></div><div><strong>'+esc(recorded)+' / '+esc(total)+'</strong><span>Recorded indicators</span></div>'+
-  '<div><strong>'+esc(Math.max(0,total-recorded))+'</strong><span>Unavailable indicators</span></div><div><strong>'+esc(metadata.schemaVersion||profile.profileVersion||'N/A')+'</strong><span>Profile schema</span></div></div>'+
-  '<div class="ocsp-profile-toolbar"><label for="ocsp-sector-filter">Find a sector or indicator</label><input id="ocsp-sector-filter" type="search" data-ocsp-filter placeholder="Search metrics, evidence, source status…" autocomplete="off">'+
+ return '<div class="ocsp-summary-grid"><div><strong>'+esc(sectors.length)+'</strong><span>Country sectors</span></div><div><strong>'+esc(recorded)+' / '+esc(total)+'</strong><span>Recorded indicators</span></div>'+
+  '<div><strong>'+esc(Math.max(0,total-recorded))+'</strong><span>Not recorded</span></div><div><strong>'+esc(sectorsWithData)+' / '+esc(sectors.length)+'</strong><span>Sectors with data</span></div></div>'+
+  '<div class="ocsp-profile-toolbar"><label for="ocsp-sector-filter">Find a sector or indicator</label><input id="ocsp-sector-filter" type="search" data-ocsp-filter placeholder="Search country indicators, values or sources…" autocomplete="off">'+
   '<div class="ocsp-profile-actions"><button type="button" data-ocsp-expand>Expand all</button><button type="button" data-ocsp-collapse>Collapse all</button></div></div>'+
-  '<div class="ocsp-sector-list" data-ocsp-sector-list>'+sectors.map(def=>renderSector(profile,record,def)).join('')+'</div><div class="ocsp-signal-grid">'+
-  signalsBlock(profile,'strengths','Relative signals: strengths','Peer-percentile analytical signals from recorded values, not official rankings.')+
-  signalsBlock(profile,'vulnerabilities','Relative signals: vulnerabilities','Relative data signals, not factual claims about intent or guaranteed gameplay outcomes.')+'</div>'+
-  '<p class="ocsp-data-policy">'+esc(state.profiles.sourcePolicy||'Source references resolve through the canonical country data registry.')+' The country briefing is read-only and does not change simulation state.</p>';
+  '<div class="ocsp-sector-list" data-ocsp-sector-list>'+sectors.map(def=>renderSector(profile,record,def)).join('')+'</div>'+
+  '<p class="ocsp-data-policy">Available values retain their source and observation year. Fields without a published observation are marked Not recorded; missing values are not assumed to be zero.</p>';
 }
 function shellHtml(countryId){
- return '<section class="ocsp-shell" data-ocsp-root data-country-value="'+esc(countryId)+'" aria-label="Country sector profile"><header class="ocsp-header"><div><p class="ocsp-eyebrow">OMEGA / COUNTRY INTELLIGENCE</p>'+
-  '<h3>National sector profiles</h3><p>Source-traceable economic, trade, governance, industry, security, human-development, resource and infrastructure data.</p></div>'+
-  '<button type="button" class="ocsp-primary" data-ocsp-toggle aria-expanded="false">Show sector dossier</button></header>'+
-  '<div class="ocsp-status" data-ocsp-status role="status" aria-live="polite">Detailed profile loads only when opened, keeping the country briefing responsive.</div><div class="ocsp-content" data-ocsp-content hidden></div></section>';
+ return '<section class="ocsp-shell" data-ocsp-root data-country-value="'+esc(countryId)+'" aria-label="Country sector profile"><header class="ocsp-header"><div><p class="ocsp-eyebrow">OMEGA / COUNTRY DATA</p>'+
+  '<h3>National data and sector details</h3><p>Economic, trade, governance, industry, security, population, resource and infrastructure indicators, including fields with no recorded observation.</p></div>'+
+  '<button type="button" class="ocsp-primary" data-ocsp-toggle aria-expanded="true">Hide sector details</button></header>'+
+  '<div class="ocsp-status" data-ocsp-status role="status" aria-live="polite">Loading country records…</div><div class="ocsp-content" data-ocsp-content></div></section>';
 }
 function mount(panel){
  if(!panel||!root.document)return;
@@ -156,6 +154,12 @@ function mount(panel){
  if(current&&current.getAttribute('data-country-value')===countryValue)return;
  if(current)current.remove();
  panel.insertAdjacentHTML('beforeend',shellHtml(countryValue));state.mountCount++;
+ const shell=panel.querySelector('[data-ocsp-root]');
+ const content=shell&&shell.querySelector('[data-ocsp-content]');
+ const button=shell&&shell.querySelector('[data-ocsp-toggle]');
+ if(content)content.hidden=false;
+ if(button){button.textContent='Hide sector details';button.setAttribute('aria-expanded','true')}
+ ensureDossierLoaded(shell);
 }
 function filterContent(content,query){
  const term=norm(query),sectors=content.querySelectorAll('[data-ocsp-sector]');let visible=0;
@@ -170,13 +174,14 @@ function filterContent(content,query){
  const shell=content.closest('[data-ocsp-root]'),status=shell&&shell.querySelector('[data-ocsp-status]');
  if(status)status.textContent=term?(visible?'Showing matching sectors and evidence.':'No sector or indicator matches that search.'):'Loaded country sector dossier. Source records and analytical values remain separately labelled.';
 }
-async function toggleDossier(button){
- const shell=button.closest('[data-ocsp-root]');if(!shell)return;
- const content=shell.querySelector('[data-ocsp-content]'),status=shell.querySelector('[data-ocsp-status]');if(!content)return;
- if(!content.hidden){content.hidden=true;button.textContent='Show sector dossier';button.setAttribute('aria-expanded','false');return}
- if(shell.dataset.loaded==='true'){content.hidden=false;button.textContent='Hide sector dossier';button.setAttribute('aria-expanded','true');return}
- button.disabled=true;button.textContent='Loading sector data…';shell.setAttribute('aria-busy','true');
- if(status)status.textContent='Loading compact profiles and resolving source references…';
+async function ensureDossierLoaded(shell){
+ if(!shell||shell.dataset.loaded==='true'||shell.dataset.loading==='true')return;
+ const content=shell.querySelector('[data-ocsp-content]'),status=shell.querySelector('[data-ocsp-status]'),button=shell.querySelector('[data-ocsp-toggle]');
+ if(!content)return;
+ shell.dataset.loading='true';
+ if(button){button.disabled=true;button.textContent='Loading country data…';button.setAttribute('aria-expanded','true')}
+ shell.setAttribute('aria-busy','true');
+ if(status)status.textContent='Loading country indicators…';
  try{
   await loadData();
   const countryId=shell.getAttribute('data-country-value')||'';
@@ -193,13 +198,26 @@ async function toggleDossier(button){
   }
   if(!profile)throw Error('PROFILE_NOT_FOUND_FOR_SELECTED_COUNTRY');
   content.innerHTML=profileMarkup(profile,record);content.hidden=false;shell.dataset.loaded='true';
-  button.textContent='Hide sector dossier';button.setAttribute('aria-expanded','true');
-  if(status)status.textContent='Loaded '+(profile.identity.name||profile.identity.iso3)+'. '+((profile.sectors&&Object.keys(profile.sectors).length)||0)+' sector sections are available; unavailable source values remain explicit.';
+  if(button){button.textContent='Hide sector details';button.setAttribute('aria-expanded','true')}
+  if(status)status.textContent='Showing national indicators for '+(profile.identity.name||profile.identity.iso3)+'. Fields without a published observation are marked Not recorded.';
  }catch(error){
   const message=str(error&&(error.message||error));
-  if(status)status.textContent='Sector profile unavailable: '+message+'. No fallback scores were fabricated. Check that the canonical profile build is present, then retry.';
-  content.hidden=true;button.textContent='Retry sector dossier';button.setAttribute('aria-expanded','false');
- }finally{button.disabled=false;shell.removeAttribute('aria-busy')}
+  shell.dataset.lastError=message;
+  if(status)status.textContent='Country data could not be loaded. Please retry.';
+  content.hidden=true;
+  if(button){button.textContent='Retry loading data';button.setAttribute('aria-expanded','false')}
+ }finally{
+  if(button)button.disabled=false;
+  shell.removeAttribute('aria-busy');
+  delete shell.dataset.loading;
+ }
+}
+async function toggleDossier(button){
+ const shell=button.closest('[data-ocsp-root]');if(!shell)return;
+ const content=shell.querySelector('[data-ocsp-content]');if(!content)return;
+ if(!content.hidden){content.hidden=true;button.textContent='Show sector details';button.setAttribute('aria-expanded','false');return}
+ content.hidden=false;button.textContent='Hide sector details';button.setAttribute('aria-expanded','true');
+ await ensureDossierLoaded(shell);
 }
 function onClick(event){
  const target=event&&event.target;if(!target||typeof target.closest!=='function')return;

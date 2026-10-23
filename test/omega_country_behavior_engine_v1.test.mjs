@@ -342,12 +342,18 @@ test('country overview mounts in the government cabinet, not inside ministry wor
   assert.doesNotMatch(ui, /data-omega-ministry-view|panelEl\.id = 'omega-country-overview-panel'|getElementById\?\.\('omega-country-overview-panel'\)|getElementById\?\.\('omega-country-overview-tabs'\)/);
   assert.match(ui, /getBehaviorProfile/);
   assert.match(ui, /getStrategicProfile/);
-  assert.match(ui, /resourceRuntime\.availability/);
-  assert.match(ui, /observed inventories/);
+  assert.match(ui, /getSnapshot\?\.\(value\)/);
   assert.match(ui, /setActiveTab/);
   assert.match(ui, /OMEGA_COUNTRY_CONTEXT_CHANGED/);
-  assert.match(ui, /Simulation state remains unchanged/);
-  assert.match(ui, /the game does not substitute invented stock or production/i);
+  const presentationStart = ui.indexOf('const overviewHtml =');
+  const presentationEnd = ui.indexOf('panelEl.innerHTML = overviewHtml;', presentationStart);
+  assert.ok(presentationStart >= 0 && presentationEnd > presentationStart, 'country-facing markup must exist');
+  const visibleMarkup = ui.slice(presentationStart, presentationEnd);
+  assert.match(visibleMarkup, /National indicators below retain their recorded source and observation year/);
+  assert.match(visibleMarkup, /Economic structure & development/);
+  assert.match(visibleMarkup, /Country-specific strengths/);
+  assert.doesNotMatch(visibleMarkup, /simulation|simulated|live resource state|runtime|DERIVED_SIMULATION_POLICY|executable behaviour profile|AUDIT ALL COUNTRY RECORDS|NOT OBSERVED/i);
+  assert.doesNotMatch(visibleMarkup, /ocov-status|resourceRuntime|profileStatus|sourceStatus|archetype/);
 
   const sw = read('omega-offline-map-sw.js');
   assert.match(sw, /omega-offline-atlas-shell-v\d+/);

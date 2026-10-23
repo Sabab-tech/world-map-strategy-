@@ -89,6 +89,29 @@ test('expanded World Bank indicators are unique and exposed by the canonical pro
  }
 });
 
+test('country sector dossier opens automatically, shows missing fields and suppresses internal model status', () => {
+ const ui=read('omega_country_sector_profile_ui_v1.js');
+ assert.match(ui,/function ensureDossierLoaded\(shell\)/);
+ assert.match(ui,/ensureDossierLoaded\(shell\)/);
+ assert.match(ui,/data-ocsp-content><\/div><\/section>/);
+ assert.match(ui,/data-ocsp-sector open/);
+ assert.match(ui,/Not recorded in available sources/);
+ const presentation=ui.slice(ui.indexOf('function evidenceRows('),ui.indexOf('function filterContent('));
+ assert.doesNotMatch(presentation,/titleCase\(evidence\.status\)|Sector status:|Relative signals: strengths|Relative signals: vulnerabilities|read-only and does not change simulation state/i);
+ assert.doesNotMatch(presentation,/titleCase\(evidence\.status\)|sector\.analytics|sector\.status|signalsBlock\(profile/);
+});
+
+test('current CO2 indicator prefers the modern World Bank series and retains a compatible fallback', () => {
+ const start=builder.indexOf('const METRIC_CATALOGUE = ['),end=builder.indexOf('\\n];',start);
+ const rows=builder.slice(start,end).split('\\n').filter(line=>/^\\s*\\{ key:/.test(line));
+ const co2=rows.filter(line=>line.includes("key: 'co2TonnesPerCapita'"));
+ assert.equal(co2.length,1);
+ assert.ok(co2[0].includes("wb: 'EN.ATM.CO2E.PC_'"));
+ assert.ok(co2[0].includes("wbFallbacks: ['EN.ATM.CO2E.PC']"));
+ assert.ok(registryMetricKeys.has('co2TonnesPerCapita'));
+ assert.ok(profileMetricKeys.has('co2TonnesPerCapita'));
+});
+
 test('new country sector asset parses as valid JavaScript', () => {
  assert.doesNotThrow(()=>new vm.Script(read('omega_country_sector_profile_ui_v1.js')));
 });

@@ -121,7 +121,7 @@
 
   function compactNumber(value, unit) {
     const n = num(value);
-    if (n === null) return 'NOT OBSERVED';
+    if (n === null) return 'Not recorded';
     if (unit === 'USD') {
       const abs = Math.abs(n);
       const sign = n < 0 ? '−' : '';
@@ -321,10 +321,10 @@
     const sharedSnapshot = gateway?.getSnapshot?.(value) || null;
     const sharedHasCountry = !!(sharedSnapshot && sharedSnapshot.countryCode);
     const sharedMetric = (key, fallback) => {
-      if (!sharedHasCountry) return fallback;
+      if (!sharedHasCountry) return { value: null, source: 'No published observation recorded' };
       const row = sharedSnapshot.fields?.[key];
       if (!row || row.status !== 'AVAILABLE' || num(row.value) === null)
-        return { value: null, source: 'NOT RECORDED IN SHARED COUNTRY SOURCES' };
+        return { value: null, source: 'No published observation recorded' };
       return { value: num(row.value), source: [row.sourceName || row.sourceId || row.authority || 'REGISTERED SOURCE', row.year ? 'Year ' + row.year : null].filter(Boolean).join(' · ') };
     };
     const strategic = runtime()?.getStrategicProfile?.(value) || null;
@@ -405,15 +405,13 @@
       '<div class="ocov-shell">' +
       '<div class="ocov-toolbar"><label for="ocov-country-select">Viewed country</label>' +
       '<select id="ocov-country-select" aria-label="Choose country">' + countryOptions(value) + '</select>' +
-      '<span class="ocov-baseline-label">Read-only briefing · Simulation state remains unchanged</span></div>' +
+      '</div>' +
       '<section class="ocov-hero"><div class="ocov-hero-id"><span class="ocov-flag">' + esc(flag) + '</span><div>' +
-      '<div class="ocov-eyebrow">OMEGA / NATIONAL PROFILE & BEHAVIOUR</div><h2>' + esc(name) + '</h2>' +
-      '<p>' + esc(countryCode) + ' · ' + esc(archetype) + '</p></div></div>' +
-      '<div class="ocov-status"><span>' + esc(profileStatus.replace(/_/g, ' ')) + '</span><small>' + esc(sourceStatus.replace(/_/g, ' ')) + '</small></div>' +
-      (strategic?.executiveSummary ? '<p class="ocov-summary">' + esc(strategic.executiveSummary) + '</p>' :
-        '<p class="ocov-summary">The behaviour profile is derived from registered country indicators and gameplay systems. Missing evidence remains unobserved.</p>') +
+      '<div class="ocov-eyebrow">OMEGA / COUNTRY PROFILE</div><h2>' + esc(name) + '</h2>' +
+      '<p>' + esc(countryCode) + '</p></div></div>' +
+      '<p class="ocov-summary">National indicators below retain their recorded source and observation year. Missing values are marked Not recorded.</p>' +
       '</section>' +
-      '<div class="ocov-section-heading"><span>01</span><div><h3>Economic baseline</h3><p>Recorded inputs, not invented national statistics.</p></div></div>' +
+      '<div class="ocov-section-heading"><span>01</span><div><h3>Economic baseline</h3><p>National indicators with recorded source and year.</p></div></div>' +
       '<div class="ocov-kpi-grid">' +
       metricCard('GDP', gdp.value, 'USD', gdp.source || 'economy baseline') +
       metricCard('Population', pop.value, 'people', pop.source || 'population baseline') +
@@ -426,51 +424,27 @@
       metricCard('Trade balance / GDP', tradeRatio.value, '%', tradeRatio.source || 'not recorded') +
       metricCard('Foreign-exchange reserves', fx ?? reserves.value, 'USD', reserves.source || 'not recorded') +
       '</div>' +
+      '<div class="ocov-section-heading"><span>02</span><div><h3>National institutions and context</h3><p>Country-specific context, institutions and strategic options.</p></div></div>' +
       '<div class="ocov-domain-grid">' +
-      panel('Resources & industrial options', 'Gameplay assets are separated from live stock, consumption and production measurements.',
-        '<div class="ocov-resource-stat"><strong>' + (num(resources.siteCount) === null ? 'NOT LOADED' : esc(resources.siteCount)) +
-        '</strong><span>registered gameplay sites</span><strong>' +
-        (num(resources.resourceDiversity) === null ? 'NOT LOADED' : esc(resources.resourceDiversity)) +
-        '</strong><span>distinct resource identifiers</span></div>' +
-        '<p class="ocov-source-line">Site catalog: ' + esc(resources.availability || 'UNKNOWN') + ' · Live resource state: ' +
-          esc(resourceRuntime.availability || 'UNAVAILABLE') + '</p>' +
-        '<div class="ocov-resource-runtime-metrics">' +
-          '<div><strong>' + (num(resourceRuntime.inventoryObservedCount) === null ? 'NOT OBSERVED' : esc(resourceRuntime.inventoryObservedCount)) + '</strong><span>observed inventories</span></div>' +
-          '<div><strong>' + (num(resourceRuntime.productionObservedCount) === null ? 'NOT OBSERVED' : esc(resourceRuntime.productionObservedCount)) + '</strong><span>observed production rates</span></div>' +
-          '<div><strong>' + (num(resourceRuntime.consumptionObservedCount) === null ? 'NOT OBSERVED' : esc(resourceRuntime.consumptionObservedCount)) + '</strong><span>observed consumption rates</span></div>' +
-          '<div><strong>' + (num(resourceRuntime.productionDeficitCount) === null ? 'NOT OBSERVED' : esc(resourceRuntime.productionDeficitCount)) + '</strong><span>resources with observed production gaps</span></div>' +
-        '</div>' +
-        (resourceRuntime.averageSelfSufficiencyPct === null || resourceRuntime.averageSelfSufficiencyPct === undefined
-          ? '<p class="ocov-empty">National resource-runtime supply metrics are not yet observed; the game does not substitute invented stock or production.</p>'
-          : '<p class="ocov-source-line">Average observed production / consumption ratio: ' + esc(compactNumber(resourceRuntime.averageSelfSufficiencyPct, '%')) + ' · ' + esc(resourceRuntime.source || 'resource runtime') + '</p>') +
-        bulletList(arr(resourceRuntime.productionDeficitResources).map(row =>
-          (row.name || row.resourceId || 'Resource') + ': observed production ' +
-          compactNumber(row.dailyProduction, '') + ', consumption ' + compactNumber(row.dailyConsumption, '') +
-          ', self-sufficiency ' + compactNumber(row.selfSufficiencyPct, '%') +
-          (num(row.stockDays) === null ? '' : ', stock cover ' + compactNumber(row.stockDays, 'days')),
-        ), 'No observed resource production deficit is currently registered.') +
-        bulletList(arr(resources.resources).map(x => String(x)), 'No registered gameplay resource-site information for this country.'),
-        'ocov-panel-resources') +
       panel('Economic structure & development', 'Sector and trade details are shown only when registered in the country profile.',
         bulletList(
           evidenceItems(strategic?.economy?.tradePosition, 'Trade position')
             .concat(evidenceItems(strategic?.economy?.sectorProfile, 'Sector profile'))
             .concat(evidenceItems(strategic?.economy?.developmentSignals, 'Development signal')),
           'No separate sector or development-profile data is registered.')) +
-      panel('Diplomacy & foreign relations', 'Only named game-model signals are treated as country-specific.',
-        '<p><strong>Evidence mode:</strong> ' + esc(diplomacy.evidenceMode || 'NOT ESTABLISHED') + '</p>' +
-        '<p><strong>Modelled posture:</strong> ' + esc(diplomacy.strategicPosture || 'NOT ESTABLISHED') + '</p>' +
+      panel('Diplomacy & foreign relations', 'Country-specific foreign relations and priorities, when recorded.',
+        '' +
         bulletList(arr(diplomacy.tendencies).concat(arr(diplomacy.highWeightFocus).map(x => 'Priority: ' + x))
           .concat(arr(diplomacy.cooperationSignals), arr(diplomacy.pressurePoints),
-            arr(diplomacy.leverageSignals), arr(diplomacy.modelSignals)),
+            arr(diplomacy.leverageSignals)),
           'No country-specific diplomatic behaviour was verified by available model evidence.') +
-        (dependencies.status ? '<p><strong>Dependency status:</strong> ' + esc(dependencies.status) + '</p>' : ''),
+        '',
         'ocov-panel-diplomacy') +
       panel('Military context', 'Budget effort is not combat capability, readiness or equipment quality.',
         '<div class="ocov-single-metric"><strong>' + esc(compactNumber(militaryPct, '%')) + '</strong><span>military expenditure / GDP</span></div>' +
-        '<p>' + esc(strategic?.military?.caveat || 'Operational force structure, readiness, equipment, sustainment and logistics require separate verified runtime records.') + '</p>' +
+        '<p>' + esc(strategic?.military?.caveat || 'Operational force structure, readiness, equipment, sustainment and logistics require separate verified national data.') + '</p>' +
         bulletList(arr(strategic?.military?.strengthSignals).concat(arr(strategic?.military?.riskSignals),
-          arr(strategic?.military?.capabilityGaps), arr(strategic?.military?.gameModelMilitarySignals)),
+          arr(strategic?.military?.capabilityGaps)),
           'No comparable force-capability estimate is recorded.'),
         'ocov-panel-military') +
       panel('Politics & institutions', 'Governance indicators are kept separate; no unsupported regime label.',
@@ -479,29 +453,17 @@
         metricCard('Political stability', politicalStability, '', 'WGI estimate; scale is not 0–100') +
         metricCard('Rule of law', strategicNumber(strategic, 'politics.ruleOfLawWgiEstimate'), '', 'WGI estimate; scale is not 0–100') +
         metricCard('Control of corruption', strategicNumber(strategic, 'politics.controlOfCorruptionWgiEstimate'), '', 'WGI estimate; scale is not 0–100') +
-        '</div><p><strong>Political system:</strong> ' + esc(governance.regimeClassification || strategic?.politics?.politicalSystemClassification || 'NOT CLASSIFIED') + '</p>' +
+        '</div><p><strong>Political system:</strong> ' + esc(governance.regimeClassification || strategic?.politics?.politicalSystemClassification || 'Not recorded') + '</p>' +
         bulletList(arr(strategic?.politics?.governanceIndicatorPoints).concat(
           arr(strategic?.politics?.strengths), arr(strategic?.politics?.risks), arr(strategic?.politics?.limitations)),
           'No separately registered governance-risk points are available.'),
         'ocov-panel-politics') +
       panel('Dependencies & structural pressure', 'A signal tells the AI what to examine; it does not prove dependence on a named state.',
-        bulletList(arr(dependencies.modelSignals)
-          .concat(arr(strategic?.dependencies?.domains), arr(strategic?.dependencies?.measurementGaps),
+        bulletList(arr(strategic?.dependencies?.domains).concat(arr(strategic?.dependencies?.measurementGaps),
             arr(strategic?.economy?.pressurePoints)),
           'Named supplier, creditor and critical-import dependencies are not established in the available record.'),
         'ocov-panel-dependencies') +
       '</div>' +
-      '<div class="ocov-section-heading"><span>02</span><div><h3>Executable behaviour profile</h3><p>These dimensions flow into adaptive action scoring. They are simulation policies, not real-world intent labels.</p></div></div>' +
-      '<div class="ocov-behaviour-summary"><span>Behaviour engine: ' + esc(behavior?.engineVersion || 'UNAVAILABLE') + '</span>' +
-      '<span>Derived dimensions: ' + esc(behavior?.evidence?.derivedDimensionCount ?? arr(behavior?.evidence?.availableDimensions).length) + '/' + esc(Object.keys(behavior?.dimensions || {}).length || 11) + '</span>' +
-      '<span>Adaptive AI source: ' + esc(adaptive?.behaviorSource || (adaptive?.derivedDimensionCount > 0 ? 'CONNECTED' : 'WAITING/EXPLICIT DOCTRINE')) + '</span></div>' +
-      dimensionCards(adaptive?.dimensions || behavior?.dimensions) +
-      panel('Runtime action preference signals', 'Derived from current evidence and registered country strategy options; the score influences AI ranking but does not execute an order.',
-        actionPreferenceRows.length
-          ? '<ul class="ocov-action-pref-list">' + actionPreferenceRows.slice(0, 12).map(([action, row]) =>
-              '<li><div><strong>' + esc(action.replace(/_/g, ' ')) + '</strong><small>' + esc(row.title || row.domain || row.source || 'Country strategic option') +
-              '</small></div><span>' + Math.round(Math.max(0, Math.min(1, Number(row.value))) * 100) + '/100</span></li>').join('') + '</ul>'
-          : '<p class="ocov-empty">No action-specific priority signal is registered for this country yet.</p>') +
       '<div class="ocov-domain-grid">' +
       panel('Country-specific strengths', 'Evidence-backed signals, not a single invented national score.',
         bulletList(strengths, 'No registered strength signal is available.')) +
@@ -511,26 +473,11 @@
         bulletList(playerAdvantages, 'No country-specific player advantage has been established.')) +
       panel('Player challenges', 'Strategic challenges for the player; these are not automatic penalties.',
         bulletList(playerChallenges, 'No country-specific player challenge has been established.')) +
-      panel('Registered strategic options', 'Profile-builder options retained alongside current runtime priorities.',
+      panel('Registered strategic options', 'Country-specific strategic options recorded for this profile.',
         bulletList(registeredOptions, 'No separately registered strategic option is available.')) +
       panel('Recommended strategy from country profile', 'Recommendations are advice, not executed orders.',
         bulletList(recommendedStrategyItems, 'No separately registered country strategy recommendation is available.')) +
       '</div>' +
-      '<div class="ocov-section-heading"><span>03</span><div><h3>Priority stack</h3><p>Current candidate priorities generated from this country’s available evidence.</p></div></div>' +
-      '<section class="ocov-panel"><div class="ocov-panel-body">' + priorityBody + '</div></section>' +
-      panel('Data integrity & evidence quality', 'One selected-country contract is shared across the map, Country IOS and ministry views. Source conflicts are reported, not silently reconciled.',
-        '<p><strong>Gateway:</strong> ' + esc(gateway?.VERSION || 'NOT LOADED') + ' · <strong>Country identity:</strong> ' + esc(sharedSnapshot?.countryCode || 'UNRESOLVED') + '</p>' +
-        '<p><strong>Integrity status:</strong> ' + esc(sharedSnapshot?.diagnostics?.errors?.length ? 'ERRORS DETECTED' : (sharedSnapshot?.diagnostics?.warnings?.length ? 'WARNINGS DETECTED' : (sharedHasCountry ? 'NO CONFLICT DETECTED IN CHECKED SOURCES' : 'GATEWAY COUNTRY UNRESOLVED'))) + '</p>' +
-        '<p><strong>Errors:</strong> ' + esc(sharedSnapshot?.diagnostics?.errors?.length ?? 'NOT CHECKED') + ' · <strong>Warnings:</strong> ' + esc(sharedSnapshot?.diagnostics?.warnings?.length ?? 'NOT CHECKED') + ' · <strong>Missing fields:</strong> ' + esc(sharedSnapshot?.diagnostics?.missingFields?.length ?? 'NOT CHECKED') + '</p>' +
-        '<p><strong>Baseline source:</strong> ' + esc(base?.provenance?.economicSource || behavior?.evidence?.baselineSource || 'NOT RECORDED') + '</p>' +
-        '<p><strong>Baseline status:</strong> ' + esc(sourceStatus) + '</p>' +
-        '<button type="button" data-ocov-audit-all style="padding:8px 12px;border:1px solid #64748b;border-radius:7px;background:#172033;color:#e2e8f0;cursor:pointer;font-weight:700">AUDIT ALL COUNTRY RECORDS</button>' +
-        '<pre data-ocov-audit-results style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:260px;overflow:auto;font:11px/1.5 monospace;color:#cbd5e1"></pre>' +
-        bulletList(arr(sharedSnapshot?.diagnostics?.errors).map(x => '[ERROR] ' + (x.code || 'DATA_INTEGRITY') + (x.field ? ' · ' + x.field : '') + ' · ' + JSON.stringify(x))
-          .concat(arr(sharedSnapshot?.diagnostics?.warnings).map(x => '[WARNING] ' + (x.code || 'SOURCE_DIFFERENCE') + (x.field ? ' · ' + x.field : '') + ' · ' + JSON.stringify(x)))
-          .concat(arr(behavior?.evidence?.limitations)).concat(arr(strategic?.dataQuality?.limitations)),
-          'No identity/source mismatch was detected in the sources checked; unobserved values remain unavailable.'),
-        'ocov-panel-methodology') +
       '</div>';
 
     panelEl.innerHTML = overviewHtml;

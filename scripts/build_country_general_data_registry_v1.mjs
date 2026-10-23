@@ -130,7 +130,7 @@ const METRIC_CATALOGUE = [
   { key: 'servicesValueAddedPctGdp', name: 'Services value added', unit: '% of GDP', wb: 'NV.SRV.TOTL.ZS', description: 'Services value-added share of GDP.' },
   { key: 'internetUsersPct', name: 'Internet users', unit: '% of population', wb: 'IT.NET.USER.ZS', description: 'Individuals using the Internet.' },
   { key: 'electricityAccessPct', name: 'Access to electricity', unit: '% of population', wb: 'EG.ELC.ACCS.ZS', description: 'Population access to electricity.' },
-  { key: 'co2TonnesPerCapita', name: 'CO2 emissions per capita', unit: 'metric tonnes per person', wb: 'EN.ATM.CO2E.PC', description: 'Territorial CO2 emissions per capita.' },
+  { key: 'co2TonnesPerCapita', name: 'CO2 emissions per capita', unit: 'metric tonnes per person', wb: 'EN.ATM.CO2E.PC_', wbFallbacks: ['EN.ATM.CO2E.PC'], description: 'Territorial CO2 emissions per capita; prefer the current World Bank series and retain the legacy series as a country-level fallback.' },
   { key: 'militaryExpenditurePctGdp', name: 'Military expenditure', unit: '% of GDP', wb: 'MS.MIL.XPND.GD.ZS', description: 'Military expenditure share of GDP; source coverage varies.' },
   { key: 'homicideRatePer100k', name: 'Intentional homicide rate', unit: 'per 100,000 people', wb: 'VC.IHR.PSRC.P5', description: 'Observed-source record when available; repository legacy observations need revalidation.' },
   { key: 'ruleOfLawWgiEstimate', name: 'Rule of law, WGI estimate', unit: 'WGI estimate, approximately -2.5 to +2.5', wb: 'GOV_WGI_RL_EST', wbFallbacks: ['RL.EST'], description: 'World Governance Indicators estimate, not a 0-100 discipline score.' },
