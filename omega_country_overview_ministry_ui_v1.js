@@ -4,11 +4,22 @@
  */
 (function (g) {
   'use strict';
-  const VERSION = '1.0.0';
+  const VERSION = '1.2.0';
   if (g.OmegaCountryOverviewMinistryUI?.VERSION === VERSION) return;
 
   const s = v => String(v == null ? '' : v);
-  const esc = v => s(v).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+  const cleanCountryDisplayText = value => s(value)
+    .replace(/\bSIMULATED(?:[\s_-]+FOR[\s_-]+GAMEPLAY[\s_-]+ONLY)?\b/gi, '')
+    .replace(/\bREAL[\s_-]+DATA\b/gi, '')
+    .replace(/\b(?:UNOBSERVED|UNAVAILABLE|NOT[\s_-]+LOADED)\b/gi, 'Not recorded')
+    .replace(/\bDERIVED[\s_-]+SIMULATION[\s_-]+POLICY\b/gi, '')
+    .replace(/\b(?:SIMULATION|RUNTIME|LIVE[\s_-]+STATE|SOURCE[\s_-]+BASELINE|REGISTERED[\s_-]+SOURCE)\b/gi, '')
+    .replace(/\bOMEGA_[A-Z0-9_]+\b/g, '')
+    .replace(/\s{2,}/g, ' ')
+    .replace(/\s+([·,:;])/g, '$1')
+    .replace(/([·,:;])\s*([·,:;])/g, '$1')
+    .replace(/^[\s·,:;|]+|[\s·,:;|]+$/g, '');
+  const esc = v => cleanCountryDisplayText(v).replace(/&/g, '&amp;').replace(/</g, '&lt;')
     .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   const num = v => {
     if (v === null || v === undefined || (typeof v === 'string' && !v.trim())) return null;
@@ -23,12 +34,12 @@
   const isObj = v => !!v && typeof v === 'object' && !Array.isArray(v);
   let initialized = false;
   let selectedCountry = null;
-  let activeTab = 'cabinet';
+  let activeTab = 'overview';
+  let countryDataInitPromise = null;
   let lastRenderedCountry = null;
 
   const runtime = () => g.OmegaCountryRuntimeData || null;
   const behaviorEngine = () => g.OmegaCountryBehaviorEngine || g.Omega?.CountryBehaviorEngine || null;
-  const adaptiveEngine = () => g.OmegaOpponentAdaptiveStrategy || g.Omega?.OpponentAdaptiveStrategy || null;
 
   function defaultCountry() {
     let simulatedPlayerCountry = null;
@@ -100,7 +111,7 @@
       if (!isObj(root)) continue;
       for (const key of keys) {
         const value = num(root[key]);
-        if (value !== null) return { value, source: key };
+        if (value !== null) return { value, source: '' };
       }
     }
     return { value: null, source: null };
@@ -109,8 +120,7 @@
   function preferBehaviorMetric(behavior, key, fallback) {
     const value = num(behavior?.metrics?.[key]);
     if (value === null) return fallback;
-    const record = behavior?.metricSources?.[key] || {};
-    return { value, source: record.source || record.status || 'OMEGA_COUNTRY_BEHAVIOR_ENGINE_V1' };
+    return { value, source: '' };
   }
 
   function strategicNumber(profile, path) {
@@ -121,7 +131,7 @@
 
   function compactNumber(value, unit) {
     const n = num(value);
-    if (n === null) return 'NOT OBSERVED';
+    if (n === null) return 'Not recorded';
     if (unit === 'USD') {
       const abs = Math.abs(n);
       const sign = n < 0 ? '−' : '';
@@ -142,6 +152,302 @@
       '<div class="ocov-kpi-value">' + esc(shown) + '</div>' +
       (detail ? '<div class="ocov-kpi-detail">' + esc(detail) + '</div>' : '') +
       '</article>';
+  }
+
+  function countryDataApi() {
+    return g.OmegaCountryGeneralDataRuntime || g.Omega?.CountryGeneralData || null;
+  }
+
+  function ensureCountryDataReady() {
+    const api = countryDataApi();
+    if (!api || typeof api.getCountryRecord !== 'function') return Promise.resolve(false);
+    if (api.diagnostics?.().ready) return Promise.resolve(true);
+    if (countryDataInitPromise) return countryDataInitPromise;
+    countryDataInitPromise = Promise.resolve(typeof api.init === 'function' ? api.init() : false)
+      .then(() => !!api.diagnostics?.().ready)
+      .catch(() => false);
+    return countryDataInitPromise;
+  }
+
+  function humanizeCountryDataKey(key) {
+    return String(key || '')
+      .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+      .replace(/([A-Z])([A-Z][a-z])/g, '$1 $2')
+      .replace(/[_-]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .replace(/\b[a-z]/g, character => character.toUpperCase());
+  }
+
+  function hasCountryDataValue(value) {
+    if (value === null || value === undefined) return false;
+    if (typeof value === 'string') return value.trim() !== '';
+    if (Array.isArray(value)) return value.some(hasCountryDataValue);
+    if (isObj(value)) return Object.values(value).some(hasCountryDataValue);
+    return true;
+  }
+
+  function formatCountryDataValue(value, unit, depth) {
+    const level = depth || 0;
+    if (!hasCountryDataValue(value)) return 'Not recorded';
+    if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+    if (typeof value === 'number') {
+      const shown = value.toLocaleString(undefined, { maximumFractionDigits: 3 });
+      return shown + (unit ? ' ' + unit : '');
+    }
+    if (typeof value === 'string') return value;
+    if (Array.isArray(value)) {
+      const shown = value.slice(0, 8).map(item => formatCountryDataValue(item, null, level + 1));
+      return shown.join(', ') + (value.length > 8 ? ' · +' + (value.length - 8) + ' more' : '');
+    }
+    if (isObj(value)) {
+      const entries = Object.entries(value).filter(([, item]) => hasCountryDataValue(item));
+      if (!entries.length) return 'Not recorded';
+      if (level >= 3) return 'Details available';
+      return entries.slice(0, 6).map(([key, item]) =>
+        humanizeCountryDataKey(key) + ': ' + formatCountryDataValue(item, null, level + 1)
+      ).join(' · ') + (entries.length > 6 ? ' · +' + (entries.length - 6) + ' more' : '');
+    }
+    return String(value);
+  }
+
+  const COUNTRY_METRIC_GROUPS = [
+    { title: 'Economy & public finance', pattern: /^(gdp|inflation|unemployment|publicDebt|government|budget|taxRevenue|fiscal|domesticCredit|grossCapital|policyInterest)/i },
+    { title: 'Trade & foreign exchange', pattern: /(trade|exports|imports|currentAccount|fxReserves|exchangeRate|foreignDirectInvestment|externalDebt)/i },
+    { title: 'Population & human development', pattern: /^(population|birthRate|deathRate|fertilityRate|lifeExpectancy|literacyRate|urbanization|malePopulation|femalePopulation|poverty|healthSpend|educationSpend|humanDevelopment|migrationRate)/i },
+    { title: 'Industry, infrastructure & environment', pattern: /(agriculture|industry|servicesValue|manufacturing|rAndD|internet|electricity|co2|renewable|energy|forest|emission|protected|research|urbanization)/i },
+    { title: 'Governance, defence & public safety', pattern: /(Wgi|democracy|corruption|globalPeace|fragileStates|pressFreedom|military|homicide|crime|ruleOfLaw|politicalStability|governmentEffectiveness|regulatoryQuality|voiceAccountability)/i }
+  ];
+
+  function countryMetricGroup(key) {
+    const match = COUNTRY_METRIC_GROUPS.find(group => group.pattern.test(key));
+    return match ? match.title : 'Other indicators';
+  }
+
+  function countryDataRow(label, value, unit, year) {
+    const available = hasCountryDataValue(value);
+    return '<div class="ocov-country-data-row' + (available ? '' : ' is-missing') + '">' +
+      '<span class="ocov-country-data-label">' + esc(label) + '</span>' +
+      '<strong class="ocov-country-data-value">' + esc(formatCountryDataValue(value, unit, 0)) + '</strong>' +
+      (available && year !== null && year !== undefined && year !== '' && Number.isFinite(Number(year))
+        ? '<small>Year ' + esc(String(year)) + '</small>' : '') +
+      '</div>';
+  }
+
+  const INTERNAL_COUNTRY_META_KEY = /^(status|availability|source|sourceId|sourceName|sourceUrl|datasetId|authority|provenance|confidence|method|observationYear|schemaVersion|version|coverageStatus|dataStatus)$/i;
+
+  function countryExtraRows(value, prefix, rows, depth) {
+    const level = depth || 0;
+    if (isObj(value) && level < 3) {
+      const entries = Object.entries(value).filter(([key]) => !INTERNAL_COUNTRY_META_KEY.test(key));
+      if (!entries.length) rows.push(countryDataRow(humanizeCountryDataKey(prefix), null, null, null));
+      else entries.forEach(([key, item]) =>
+        countryExtraRows(item, prefix ? prefix + '.' + key : key, rows, level + 1)
+      );
+      return;
+    }
+    rows.push(countryDataRow(String(prefix).split('.').map(humanizeCountryDataKey).join(' · '), value, null, null));
+  }
+
+  function flattenCountryAuditFields(value, prefix, output) {
+    if (Array.isArray(value)) {
+      output.push(prefix);
+      return;
+    }
+    if (isObj(value)) {
+      const entries = Object.entries(value).filter(([key]) => !INTERNAL_COUNTRY_META_KEY.test(key));
+      if (!entries.length) {
+        output.push(prefix);
+        return;
+      }
+      entries.forEach(([key, child]) => flattenCountryAuditFields(child, prefix ? prefix + '.' + key : key, output));
+      return;
+    }
+    output.push(prefix);
+  }
+
+  function countryValueAtPath(record, path) {
+    return String(path || '').split('.').reduce((value, key) =>
+      value === null || value === undefined ? undefined : value[key], record);
+  }
+
+  function renderCountryDataCoverage(country, record) {
+    const api = countryDataApi();
+    if (!record || !api) {
+      return '<section class="ocov-country-data"><div class="ocov-section-heading"><span>01A</span><div>' +
+        '<h3>Country data & indicators</h3><p>Detailed country indicators are not available for this selection.</p></div></div></section>';
+    }
+    const metrics = Object.entries(record.metrics || {});
+    const facts = Object.entries(record.generalFacts || {});
+    const identity = record.identity || {};
+    const identityFacts = ['officialName', 'continent', 'subregion']
+      .filter(key => Object.prototype.hasOwnProperty.call(identity, key))
+      .map(key => [key, identity[key]]);
+    const allFacts = identityFacts.concat(facts);
+    const availableMetrics = metrics.filter(([, value]) => hasCountryDataValue(value)).length;
+    const missingMetrics = metrics.length - availableMetrics;
+    const availableFacts = allFacts.filter(([, value]) => hasCountryDataValue(value)).length;
+    const missingFacts = allFacts.length - availableFacts;
+    const groups = new Map();
+    metrics.forEach(entry => {
+      const name = countryMetricGroup(entry[0]);
+      if (!groups.has(name)) groups.set(name, []);
+      groups.get(name).push(entry);
+    });
+    const generalHtml = allFacts.map(([key, value]) =>
+      countryDataRow(humanizeCountryDataKey(key), value, null, null)
+    ).join('');
+    const groupsHtml = Array.from(groups.entries()).map(([title, entries], index) => {
+      const available = entries.filter(([, value]) => hasCountryDataValue(value)).length;
+      const body = entries.map(([key, value]) => {
+        const definition = api.getMetricDefinition?.(key) || {};
+        const metadata = record.metricMetadata?.[key] || {};
+        return countryDataRow(definition.name || definition.title || humanizeCountryDataKey(key),
+          value, definition.unit || null, metadata.year);
+      }).join('');
+      return '<details class="ocov-country-data-group"' + (index === 0 ? ' open' : '') + '>' +
+        '<summary>' + esc(title) + '<span>' + available + '/' + entries.length + ' recorded</span></summary>' +
+        '<div class="ocov-country-data-rows">' + body + '</div></details>';
+    }).join('');
+    const extras = [
+      ['Local geography', record.localGeography],
+      ['Natural resources & energy context', record.naturalResources],
+      ['Public safety context', record.publicSafety]
+    ];
+    const extrasHtml = extras.map(([title, value]) => {
+      if (!isObj(value) || !Object.keys(value).length) return '';
+      const rows = [];
+      countryExtraRows(value, '', rows, 0);
+      const available = rows.filter(row => !row.includes('class="ocov-country-data-row is-missing"')).length;
+      return '<details class="ocov-country-data-group"><summary>' + esc(title) +
+        '<span>' + available + '/' + rows.length + ' recorded</span></summary>' +
+        '<div class="ocov-country-data-rows">' + rows.join('') + '</div></details>';
+    }).join('');
+    return '<section class="ocov-country-data" data-ocov-country-data data-country-id="' + esc(country) + '">' +
+      '<div class="ocov-section-heading"><span>01A</span><div><h3>Country data & indicators</h3>' +
+      '<p>Browse the full recorded country profile. Missing values are shown instead of being hidden or filled with zero.</p></div></div>' +
+      '<div class="ocov-country-data-summary">' +
+      '<div><strong>' + availableMetrics + '/' + metrics.length + '</strong><span>Indicators recorded</span></div>' +
+      '<div><strong>' + missingMetrics + '</strong><span>Indicators not recorded</span></div>' +
+      '<div><strong>' + availableFacts + '/' + allFacts.length + '</strong><span>General facts recorded</span></div>' +
+      '<div><strong>' + missingFacts + '</strong><span>General facts not recorded</span></div>' +
+      '</div>' +
+      '<details class="ocov-country-data-group" open><summary>General country facts<span>' +
+      availableFacts + '/' + allFacts.length + ' recorded</span></summary><div class="ocov-country-data-rows">' +
+      generalHtml + '</div></details>' +
+      groupsHtml + extrasHtml +
+      '<div class="ocov-country-data-audit"><div><strong>Country-by-country data gaps</strong>' +
+      '<p>Review every country and the indicators that have no recorded value.</p></div>' +
+      '<button type="button" data-ocov-audit-all>Review all country data</button>' +
+      '<pre data-ocov-audit-results role="status" aria-live="polite">Select “Review all country data” to list missing fields across the country registry.</pre></div>' +
+      '</section>';
+  }
+
+  function runCountryDataAudit(output) {
+    const api = countryDataApi();
+    if (!output) return;
+    if (!api || typeof api.getCountryRecord !== 'function') {
+      output.textContent = 'Country indicator records are unavailable.';
+      return;
+    }
+    output.textContent = 'Reviewing country indicator coverage…';
+    ensureCountryDataReady().then(ready => {
+      if (!ready) {
+        output.textContent = 'Country indicator records could not be loaded.';
+        return;
+      }
+      const countries = identities();
+      const firstCountry = countries[0];
+      const firstCode = firstCountry && (firstCountry.iso3 || firstCountry.countryCode || firstCountry.code || firstCountry.name);
+      const template = firstCode ? api.getCountryRecord(firstCode) : null;
+      if (!countries.length || !template) {
+        output.textContent = 'Country records could not be enumerated for this review.';
+        return;
+      }
+      const metricKeys = Object.keys(template.metrics || {});
+      const factKeys = Object.keys(template.generalFacts || {});
+      const identityKeys = ['officialName', 'continent', 'subregion']
+        .filter(key => Object.prototype.hasOwnProperty.call(template.identity || {}, key))
+        .map(key => 'identity.' + key);
+      const contextKeys = [];
+      [['localGeography', template.localGeography], ['naturalResources', template.naturalResources],
+        ['publicSafety', template.publicSafety]].forEach(([rootKey, value]) =>
+          flattenCountryAuditFields(value, rootKey, contextKeys)
+        );
+      const metricMissing = Object.fromEntries(metricKeys.map(key => [key, 0]));
+      const countryGaps = [];
+      let missingMetricCells = 0;
+      let missingFactCells = 0;
+      let missingContextCells = 0;
+      let unavailableRecords = 0;
+      countries.forEach(countryRow => {
+        const code = countryRow.iso3 || countryRow.countryCode || countryRow.code || countryRow.name;
+        const record = api.getCountryRecord(code);
+        if (!record) {
+          unavailableRecords += 1;
+          missingMetricCells += metricKeys.length;
+          missingFactCells += factKeys.length + identityKeys.length;
+          missingContextCells += contextKeys.length;
+          metricKeys.forEach(key => { metricMissing[key] += 1; });
+          countryGaps.push({
+            name: countryRow.name || countryRow.officialName || String(code),
+            code, metrics: metricKeys.slice(), facts: factKeys.slice(), identity: identityKeys.slice(),
+            context: contextKeys.slice()
+          });
+          return;
+        }
+        const missingMetrics = metricKeys.filter(key => !hasCountryDataValue(record.metrics?.[key]));
+        const missingFacts = factKeys.filter(key => !hasCountryDataValue(record.generalFacts?.[key]));
+        const missingIdentity = identityKeys.filter(key => !hasCountryDataValue(countryValueAtPath(record, key)));
+        const missingContext = contextKeys.filter(key => !hasCountryDataValue(countryValueAtPath(record, key)));
+        missingMetrics.forEach(key => { metricMissing[key] += 1; });
+        missingMetricCells += missingMetrics.length;
+        missingFactCells += missingFacts.length + missingIdentity.length;
+        missingContextCells += missingContext.length;
+        if (missingMetrics.length || missingFacts.length || missingIdentity.length || missingContext.length) {
+          countryGaps.push({
+            name: countryRow.name || countryRow.officialName || record.identity?.name || String(code),
+            code, metrics: missingMetrics, facts: missingFacts, identity: missingIdentity, context: missingContext
+          });
+        }
+      });
+      const metricNames = key => {
+        const definition = api.getMetricDefinition?.(key) || {};
+        return definition.name || definition.title || humanizeCountryDataKey(key);
+      };
+      const friendlyPath = key => String(key).split('.').map(humanizeCountryDataKey).join(' · ');
+      const mostMissing = Object.entries(metricMissing)
+        .sort((left, right) => right[1] - left[1])
+        .filter(([, count]) => count > 0).slice(0, 12)
+        .map(([key, count]) => '  ' + metricNames(key) + ': missing in ' + count + ' countries');
+      const lines = [
+        'COUNTRY DATA COVERAGE REVIEW',
+        'Countries checked: ' + countries.length,
+        'Indicator fields: ' + metricKeys.length + ' per country',
+        'Indicator values not recorded: ' + missingMetricCells + ' of ' + (countries.length * metricKeys.length),
+        'General and identity fact fields: ' + (factKeys.length + identityKeys.length) + ' per country',
+        'General and identity fact values not recorded: ' + missingFactCells + ' of ' + (countries.length * (factKeys.length + identityKeys.length)),
+        'Additional context fields not recorded: ' + missingContextCells + ' of ' + (countries.length * contextKeys.length),
+        'Country records unavailable: ' + unavailableRecords,
+        '',
+        'MOST FREQUENTLY MISSING INDICATORS',
+        ...(mostMissing.length ? mostMissing : ['  No missing indicator values were found.']),
+        '',
+        'MISSING FIELDS BY COUNTRY'
+      ];
+      countryGaps.forEach(row => {
+        lines.push('', row.name + ' (' + row.code + ')');
+        lines.push('  Indicators: ' + (row.metrics.length ? row.metrics.map(metricNames).join(', ') : 'All listed indicators recorded'));
+        lines.push('  General facts: ' + (row.facts.length || row.identity.length
+          ? row.identity.concat(row.facts.map(key => 'generalFacts.' + key)).map(friendlyPath).join(', ')
+          : 'All listed general facts recorded'));
+        lines.push('  Additional context: ' + (row.context.length ? row.context.map(friendlyPath).join(', ') : 'All listed context fields recorded'));
+      });
+      if (!countryGaps.length) lines.push('All checked country fields have recorded values.');
+      output.textContent = lines.join('\n');
+    }).catch(() => {
+      output.textContent = 'Country indicator review could not be completed.';
+    });
   }
 
   function bulletList(items, emptyLabel) {
@@ -180,47 +486,6 @@
       '<div class="ocov-panel-body">' + body + '</div></section>';
   }
 
-  function dimensionLabel(key) {
-    const labels = {
-      riskAppetite: 'Risk appetite',
-      diplomaticPreference: 'Diplomatic cooperation incentive',
-      fiscalDiscipline: 'Fiscal restraint priority',
-      mobilizationTolerance: 'Defence-budget effort proxy',
-      strategicTimeHorizon: 'Long-term investment capacity',
-      tradeDependence: 'Trade exposure',
-      selfSufficiencyPriority: 'Domestic supply / self-sufficiency',
-      innovationPreference: 'Technology investment readiness',
-      domesticStabilityPriority: 'Domestic stability pressure',
-      escalationTolerance: 'Escalation tolerance',
-      economicCapacity: 'Economic capacity / investment headroom'
-    };
-    return labels[key] || key;
-  }
-
-  function dimensionCards(profile) {
-    const dims = profile?.dimensions || {};
-    const keys = Object.keys(dims);
-    if (!keys.length) return '<p class="ocov-empty">Behaviour profile is not ready. No default national scores have been substituted.</p>';
-    return '<div class="ocov-dimension-grid">' + keys.map(key => {
-      const row = dims[key] || {};
-      const value = clamp01(row.value);
-      const percent = value === null ? null : Math.round(value * 100);
-      const confidence = clamp01(row.confidence);
-      const status = row.availability || (value === null ? 'UNOBSERVED' : 'DERIVED_SIMULATION_POLICY');
-      return '<article class="ocov-dimension' + (value === null ? ' is-missing' : '') + '">' +
-        '<div class="ocov-dimension-top"><strong>' + esc(dimensionLabel(key)) + '</strong>' +
-        '<span>' + (percent === null ? 'NOT OBSERVED' : percent + '/100') + '</span></div>' +
-        '<div class="ocov-meter"><span style="width:' + (percent === null ? 0 : percent) + '%"></span></div>' +
-        '<small>' + esc(status.replace(/_/g, ' ')) +
-        (confidence === null ? '' : ' · Confidence ' + Math.round(confidence * 100) + '%') + '</small>' +
-        (row.interpretation ? '<p>' + esc(row.interpretation) + '</p>' : '') +
-        (arr(row.evidence).length ? '<details><summary>Evidence inputs (' + row.evidence.length + ')</summary>' +
-          bulletList(row.evidence.map(e => (e.metric || e.key || 'input') + ': ' + e.value + (e.source ? ' · ' + e.source : '')), 'No listed input rows.') +
-          '</details>' : '') +
-        '</article>';
-    }).join('') + '</div>';
-  }
-
   function countryOptions(selected) {
     const rows = identities();
     if (!rows.length) return '<option value="' + esc(selected) + '">' + esc(selected) + '</option>';
@@ -235,65 +500,73 @@
     }).join('');
   }
 
+  function isExecutiveMinistryView() {
+    return g.OmegaCabinetUI?.mainCabinetView !== 'ministries';
+  }
+
   function ensureGovernmentOverviewMount() {
     const doc = g.document;
     const cabinet = doc?.getElementById?.('cabinet-full-window');
     const container = cabinet?.querySelector?.('.parchment-cabinet-container');
     if (!cabinet || !container) return false;
 
-    let nav = doc.getElementById('omega-government-overview-tabs');
+    const legacyNav = doc.getElementById('omega-government-overview-tabs');
+    if (legacyNav?.parentElement) legacyNav.parentElement.removeChild(legacyNav);
+
     let panelEl = doc.getElementById('omega-government-overview-panel');
-    if (nav && panelEl && nav.parentElement === container && panelEl.parentElement === container) return false;
-
-    if (nav?.parentElement) nav.parentElement.removeChild(nav);
-    if (panelEl?.parentElement) panelEl.parentElement.removeChild(panelEl);
-
-    nav = doc.createElement('nav');
-    nav.id = 'omega-government-overview-tabs';
-    nav.className = 'omega-country-overview-tabs omega-government-overview-tabs';
-    nav.setAttribute('aria-label', 'Government views');
-    nav.innerHTML =
-      '<button type="button" data-omega-government-view="cabinet" aria-selected="true" class="is-active">EXECUTIVE CABINET</button>' +
-      '<button type="button" data-omega-government-view="overview" aria-selected="false">COUNTRY OVERVIEW</button>';
-
-    panelEl = doc.createElement('section');
-    panelEl.id = 'omega-government-overview-panel';
-    panelEl.className = 'omega-country-overview-panel';
-    panelEl.setAttribute('aria-label', 'Country Overview');
-    panelEl.setAttribute('role', 'region');
-    panelEl.hidden = true;
-
-    const topHud = container.querySelector('.parchment-top-hud');
-    if (topHud && topHud.parentElement === container) {
-      if (typeof topHud.insertAdjacentElement === 'function') {
-        topHud.insertAdjacentElement('afterend', nav);
-        nav.insertAdjacentElement('afterend', panelEl);
-      } else {
-        container.insertBefore(nav, topHud.nextSibling);
-        container.insertBefore(panelEl, nav.nextSibling);
-      }
-    } else {
-      container.insertBefore(nav, container.firstChild);
-      container.insertBefore(panelEl, nav.nextSibling);
+    if (!isExecutiveMinistryView()) {
+      activeTab = 'cabinet';
+      if (panelEl?.parentElement) panelEl.parentElement.removeChild(panelEl);
+      container.classList.remove('ocov-government-overview-active');
+      return false;
     }
+
+    activeTab = 'overview';
+    const mainNavigation = container.querySelector('.omega-cabinet-main-navigation');
+    if (!panelEl) {
+      panelEl = doc.createElement('section');
+      panelEl.id = 'omega-government-overview-panel';
+      panelEl.className = 'omega-country-overview-panel';
+      panelEl.setAttribute('aria-label', 'Country Overview');
+      panelEl.setAttribute('role', 'region');
+    }
+    if (mainNavigation && panelEl.parentElement === container &&
+        panelEl.previousElementSibling === mainNavigation) {
+      panelEl.hidden = false;
+      container.classList.remove('ocov-government-overview-active');
+      return false;
+    }
+    if (panelEl.parentElement) panelEl.parentElement.removeChild(panelEl);
+    if (mainNavigation && typeof mainNavigation.insertAdjacentElement === 'function') {
+      mainNavigation.insertAdjacentElement('afterend', panelEl);
+    } else if (mainNavigation) {
+      container.insertBefore(panelEl, mainNavigation.nextSibling);
+    } else {
+      const topHud = container.querySelector('.parchment-top-hud');
+      if (topHud && typeof topHud.insertAdjacentElement === 'function') topHud.insertAdjacentElement('afterend', panelEl);
+      else container.insertBefore(panelEl, container.firstChild);
+    }
+    panelEl.hidden = false;
+    container.classList.remove('ocov-government-overview-active');
     return true;
   }
 
   function applyGovernmentViewState() {
     const doc = g.document;
-    const nav = doc?.getElementById?.('omega-government-overview-tabs');
+    const cabinet = doc?.getElementById?.('cabinet-full-window');
+    const container = cabinet?.querySelector?.('.parchment-cabinet-container');
     const panelEl = doc?.getElementById?.('omega-government-overview-panel');
-    const container = panelEl?.parentElement;
-    if (!nav || !panelEl || !container) return false;
-
-    const overviewActive = activeTab === 'overview';
-    nav.querySelectorAll('[data-omega-government-view]').forEach(button => {
-      const active = button.getAttribute('data-omega-government-view') === activeTab;
-      button.classList.toggle('is-active', active);
-      button.setAttribute('aria-selected', active ? 'true' : 'false');
-    });
-    panelEl.hidden = !overviewActive;
-    container.classList.toggle('ocov-government-overview-active', overviewActive);
+    if (!container) return false;
+    if (!isExecutiveMinistryView()) {
+      activeTab = 'cabinet';
+      if (panelEl?.parentElement) panelEl.parentElement.removeChild(panelEl);
+      container.classList.remove('ocov-government-overview-active');
+      return false;
+    }
+    activeTab = 'overview';
+    if (!panelEl) return false;
+    panelEl.hidden = false;
+    container.classList.remove('ocov-government-overview-active');
     return true;
   }
 
@@ -312,12 +585,45 @@
     const gateway = g.OmegaCountryDataGateway || g.Omega?.CountryDataGateway || null;
     const sharedSnapshot = gateway?.getSnapshot?.(value) || null;
     const sharedHasCountry = !!(sharedSnapshot && sharedSnapshot.countryCode);
+    const dataApi = countryDataApi();
+    const generalRecord = dataApi?.getCountryRecord?.(value) || dataApi?.getCountryRecord?.(identity.iso3 || value) || null;
+    if (!generalRecord && dataApi && dataApi.diagnostics?.().settled !== true) {
+      ensureCountryDataReady().then(() => {
+        if (activeTab === 'overview' && lastRenderedCountry === value) renderCountryOverview();
+      });
+    }
+    const canonicalMetricKeys = {
+      gdp: ['gdpCurrentUsd'],
+      population: ['populationTotal', 'population2015'],
+      gdpGrowthPct: ['gdpGrowthPct'],
+      inflationPct: ['inflationPct'],
+      unemploymentPct: ['unemploymentRatePct'],
+      debtToGdpPct: ['publicDebtToGdpPct'],
+      budgetBalanceToGdpPct: ['budgetBalancePctGdp'],
+      tradeBalanceToGdpPct: ['tradeBalanceToGdpPct'],
+      tradeBalance: ['tradeBalanceUsd'],
+      fxReservesUsd: ['fxReservesUsd'],
+      militaryExpenditurePctGdp: ['militaryExpenditurePctGdp'],
+      governmentEffectivenessWgiEstimate: ['governmentEffectivenessWgiEstimate'],
+      politicalStabilityWgiEstimate: ['politicalStabilityWgiEstimate'],
+      ruleOfLawWgiEstimate: ['ruleOfLawWgiEstimate'],
+      controlOfCorruptionWgiEstimate: ['controlOfCorruptionWgiEstimate']
+    };
+    const canonicalMetric = key => {
+      const keys = canonicalMetricKeys[key] || [key];
+      for (const metricKey of keys) {
+        const value = num(generalRecord?.metrics?.[metricKey]);
+        if (value !== null) return { value, source: '' };
+      }
+      return null;
+    };
     const sharedMetric = (key, fallback) => {
-      if (!sharedHasCountry) return fallback;
-      const row = sharedSnapshot.fields?.[key];
-      if (!row || row.status !== 'AVAILABLE' || num(row.value) === null)
-        return { value: null, source: 'NOT RECORDED IN SHARED COUNTRY SOURCES' };
-      return { value: num(row.value), source: [row.sourceName || row.sourceId || row.authority || 'REGISTERED SOURCE', row.year ? 'Year ' + row.year : null].filter(Boolean).join(' · ') };
+      if (sharedHasCountry) {
+        const row = sharedSnapshot.fields?.[key];
+        if (row && row.status === 'AVAILABLE' && num(row.value) !== null)
+          return { value: num(row.value), source: '' };
+      }
+      return canonicalMetric(key) || fallback || { value: null, source: '' };
     };
     const strategic = runtime()?.getStrategicProfile?.(value) || null;
     let behavior = null;
@@ -334,11 +640,7 @@
     const name = identity.name || base?.name || base?.officialName || value;
     const flag = runtime()?.flagFor?.(value) || '';
     const countryCode = identity.iso3 || identity.countryCode || value;
-    const profileStatus = behavior?.status || (strategic ? 'STRATEGIC PROFILE AVAILABLE' : (base?.profileStatus || 'BASELINE LIMITED'));
     const archetype = behavior?.archetype || strategic?.archetype || 'NOT CLASSIFIED';
-    const sourceStatus = sharedHasCountry
-      ? (sharedSnapshot.diagnostics?.errors?.length ? 'DATA INTEGRITY ERRORS' : sharedSnapshot.diagnostics?.warnings?.length ? 'SOURCE DIFFERENCES NEED REVIEW' : 'SHARED COUNTRY GATEWAY')
-      : (behavior?.evidence?.baselineStatus || base?.provenance?.status || 'SOURCE STATUS NOT RECORDED');
 
     const gdp = sharedMetric('gdp', preferBehaviorMetric(behavior, 'gdpUsd', sourceNumber(base, ['gdpCurrentUsd', 'gdp', 'grossDomesticProductUsd'])));
     const pop = sharedMetric('population', preferBehaviorMetric(behavior, 'population', sourceNumber(base, ['populationTotal', 'population2015', 'population_2015', 'population'])));
@@ -346,18 +648,19 @@
     const inflation = sharedMetric('inflationPct', preferBehaviorMetric(behavior, 'inflationPct', sourceNumber(base, ['inflationRatePct', 'inflationPct', 'inflation'])));
     const unemployment = sharedMetric('unemploymentRatePct', preferBehaviorMetric(behavior, 'unemploymentPct', sourceNumber(base, ['unemploymentRatePct', 'unemployment_rate', 'unemploymentPct'])));
     const debtRatio = sharedMetric('debtToGdpPct', preferBehaviorMetric(behavior, 'debtToGdpPct', sourceNumber(base, ['publicDebtToGdpPct', 'debtToGdpPct'])));
-    const budget = sharedMetric('budgetBalanceToGdpPct', sharedHasCountry ? {value:null,source:'NOT RECORDED IN SHARED COUNTRY SOURCES'} : preferBehaviorMetric(behavior, 'budgetBalanceToGdpPct', sourceNumber(base, ['budgetBalanceToGdpPct'])));
+    const budget = sharedMetric('budgetBalanceToGdpPct', preferBehaviorMetric(behavior, 'budgetBalanceToGdpPct', sourceNumber(base, ['budgetBalanceToGdpPct'])));
     const tradeRatio = sharedMetric('tradeBalanceToGdpPct', preferBehaviorMetric(behavior, 'tradeBalanceToGdpPct', sourceNumber(base, ['tradeBalanceToGdpPct', 'tradeBalancePctGdp'])));
     const tradeBalance = sharedMetric('tradeBalance', preferBehaviorMetric(behavior, 'tradeBalanceUsd', sourceNumber(base, ['tradeBalanceUsd', 'trade_balance', 'tradeBalance'])));
     const reserves = sharedMetric('fxReservesUsd', preferBehaviorMetric(behavior, 'fxReservesUsd', sourceNumber(base, ['foreignExchangeReservesUsd', 'fxReservesUsd', 'reserves'])));
-    const fx = num(sharedHasCountry ? sharedSnapshot.fields?.fxReservesUsd?.value : null) ?? (sharedHasCountry ? null : (num(behavior?.metrics?.fxReservesUsd) ?? num(base?.indicators?.foreignExchangeReservesUsd ?? base?.indicators?.fxReservesUsd ?? base?.sourceValues?.reserves)));
+    const fx = num(sharedSnapshot?.fields?.fxReservesUsd?.value) ?? num(generalRecord?.metrics?.fxReservesUsd) ?? num(behavior?.metrics?.fxReservesUsd) ?? num(base?.indicators?.foreignExchangeReservesUsd ?? base?.indicators?.fxReservesUsd ?? base?.sourceValues?.reserves);
     const militaryValue = sharedMetric('militaryExpenditurePctGdp', { value: num(behavior?.metrics?.militaryExpenditurePctGdp) ?? strategicNumber(strategic, 'military.militaryExpenditurePctGdp') ?? num(base?.indicators?.militaryExpenditurePctGdp), source: 'Country strategic profile / behaviour engine' });
     const militaryPct = militaryValue.value;
     const governance = strategic?.politics || behavior?.domainSignals?.politics || {};
-    const governmentEffectiveness = sharedMetric('governmentEffectivenessWgiEstimate', {value:num(behavior?.metrics?.governmentEffectivenessWgiEstimate) ?? num(governance.governmentEffectivenessWgiEstimate),source:'Country governance profile'}).value;
-    const politicalStability = sharedMetric('politicalStabilityWgiEstimate', {value:num(behavior?.metrics?.politicalStabilityWgiEstimate) ?? num(governance.politicalStabilityWgiEstimate),source:'Country governance profile'}).value;
+    const governmentEffectiveness = sharedMetric('governmentEffectivenessWgiEstimate', {value:num(behavior?.metrics?.governmentEffectivenessWgiEstimate) ?? num(governance.governmentEffectivenessWgiEstimate),source:''}).value;
+    const politicalStability = sharedMetric('politicalStabilityWgiEstimate', {value:num(behavior?.metrics?.politicalStabilityWgiEstimate) ?? num(governance.politicalStabilityWgiEstimate),source:''}).value;
+    const ruleOfLaw = sharedMetric('ruleOfLawWgiEstimate', {value:strategicNumber(strategic, 'politics.ruleOfLawWgiEstimate'),source:''}).value;
+    const controlOfCorruption = sharedMetric('controlOfCorruptionWgiEstimate', {value:strategicNumber(strategic, 'politics.controlOfCorruptionWgiEstimate'),source:''}).value;
     const resources = behavior?.domainSignals?.resources || {};
-    const resourceRuntime = resources.runtimeState || {};
     const diplomacy = strategic?.diplomacy || behavior?.domainSignals?.diplomacy || {};
     const dependencies = strategic?.dependencies || behavior?.domainSignals?.dependencies || {};
     const narrative = behavior?.profileNarrative || {};
@@ -397,51 +700,36 @@
       '<div class="ocov-shell">' +
       '<div class="ocov-toolbar"><label for="ocov-country-select">Viewed country</label>' +
       '<select id="ocov-country-select" aria-label="Choose country">' + countryOptions(value) + '</select>' +
-      '<span class="ocov-baseline-label">Read-only briefing · Simulation state remains unchanged</span></div>' +
+      '<span class="ocov-baseline-label">Country briefing</span></div>' +
       '<section class="ocov-hero"><div class="ocov-hero-id"><span class="ocov-flag">' + esc(flag) + '</span><div>' +
       '<div class="ocov-eyebrow">OMEGA / NATIONAL PROFILE & BEHAVIOUR</div><h2>' + esc(name) + '</h2>' +
       '<p>' + esc(countryCode) + ' · ' + esc(archetype) + '</p></div></div>' +
-      '<div class="ocov-status"><span>' + esc(profileStatus.replace(/_/g, ' ')) + '</span><small>' + esc(sourceStatus.replace(/_/g, ' ')) + '</small></div>' +
       (strategic?.executiveSummary ? '<p class="ocov-summary">' + esc(strategic.executiveSummary) + '</p>' :
-        '<p class="ocov-summary">The behaviour profile is derived from registered country indicators and gameplay systems. Missing evidence remains unobserved.</p>') +
+        '<p class="ocov-summary">Country briefing based on the recorded national profile and available indicators.</p>') +
       '</section>' +
       '<div class="ocov-section-heading"><span>01</span><div><h3>Economic baseline</h3><p>Recorded inputs, not invented national statistics.</p></div></div>' +
       '<div class="ocov-kpi-grid">' +
-      metricCard('GDP', gdp.value, 'USD', gdp.source || 'economy baseline') +
-      metricCard('Population', pop.value, 'people', pop.source || 'population baseline') +
-      metricCard('GDP growth', growth.value, '%', growth.source || 'not recorded') +
-      metricCard('Inflation', inflation.value, '%', inflation.source || 'not recorded') +
-      metricCard('Unemployment', unemployment.value, '%', unemployment.source || 'not recorded') +
-      metricCard('Public debt / GDP', debtRatio.value, '%', debtRatio.source || 'not recorded') +
-      metricCard('Budget balance / GDP', budget.value, '%', budget.source || 'not recorded') +
-      metricCard('Trade balance', tradeBalance.value, 'USD', tradeBalance.source || 'not recorded') +
-      metricCard('Trade balance / GDP', tradeRatio.value, '%', tradeRatio.source || 'not recorded') +
-      metricCard('Foreign-exchange reserves', fx ?? reserves.value, 'USD', reserves.source || 'not recorded') +
+      metricCard('GDP', gdp.value, 'USD', gdp.source || '') +
+      metricCard('Population', pop.value, 'people', pop.source || '') +
+      metricCard('GDP growth', growth.value, '%', growth.source || '') +
+      metricCard('Inflation', inflation.value, '%', inflation.source || '') +
+      metricCard('Unemployment', unemployment.value, '%', unemployment.source || '') +
+      metricCard('Public debt / GDP', debtRatio.value, '%', debtRatio.source || '') +
+      metricCard('Budget balance / GDP', budget.value, '%', budget.source || '') +
+      metricCard('Trade balance', tradeBalance.value, 'USD', tradeBalance.source || '') +
+      metricCard('Trade balance / GDP', tradeRatio.value, '%', tradeRatio.source || '') +
+      metricCard('Foreign-exchange reserves', fx ?? reserves.value, 'USD', reserves.source || '') +
       '</div>' +
+      renderCountryDataCoverage(value, generalRecord) +
       '<div class="ocov-domain-grid">' +
-      panel('Resources & industrial options', 'Gameplay assets are separated from live stock, consumption and production measurements.',
-        '<div class="ocov-resource-stat"><strong>' + (num(resources.siteCount) === null ? 'NOT LOADED' : esc(resources.siteCount)) +
-        '</strong><span>registered gameplay sites</span><strong>' +
-        (num(resources.resourceDiversity) === null ? 'NOT LOADED' : esc(resources.resourceDiversity)) +
-        '</strong><span>distinct resource identifiers</span></div>' +
-        '<p class="ocov-source-line">Site catalog: ' + esc(resources.availability || 'UNKNOWN') + ' · Live resource state: ' +
-          esc(resourceRuntime.availability || 'UNAVAILABLE') + '</p>' +
-        '<div class="ocov-resource-runtime-metrics">' +
-          '<div><strong>' + (num(resourceRuntime.inventoryObservedCount) === null ? 'NOT OBSERVED' : esc(resourceRuntime.inventoryObservedCount)) + '</strong><span>observed inventories</span></div>' +
-          '<div><strong>' + (num(resourceRuntime.productionObservedCount) === null ? 'NOT OBSERVED' : esc(resourceRuntime.productionObservedCount)) + '</strong><span>observed production rates</span></div>' +
-          '<div><strong>' + (num(resourceRuntime.consumptionObservedCount) === null ? 'NOT OBSERVED' : esc(resourceRuntime.consumptionObservedCount)) + '</strong><span>observed consumption rates</span></div>' +
-          '<div><strong>' + (num(resourceRuntime.productionDeficitCount) === null ? 'NOT OBSERVED' : esc(resourceRuntime.productionDeficitCount)) + '</strong><span>resources with observed production gaps</span></div>' +
-        '</div>' +
-        (resourceRuntime.averageSelfSufficiencyPct === null || resourceRuntime.averageSelfSufficiencyPct === undefined
-          ? '<p class="ocov-empty">National resource-runtime supply metrics are not yet observed; the game does not substitute invented stock or production.</p>'
-          : '<p class="ocov-source-line">Average observed production / consumption ratio: ' + esc(compactNumber(resourceRuntime.averageSelfSufficiencyPct, '%')) + ' · ' + esc(resourceRuntime.source || 'resource runtime') + '</p>') +
-        bulletList(arr(resourceRuntime.productionDeficitResources).map(row =>
-          (row.name || row.resourceId || 'Resource') + ': observed production ' +
-          compactNumber(row.dailyProduction, '') + ', consumption ' + compactNumber(row.dailyConsumption, '') +
-          ', self-sufficiency ' + compactNumber(row.selfSufficiencyPct, '%') +
-          (num(row.stockDays) === null ? '' : ', stock cover ' + compactNumber(row.stockDays, 'days')),
-        ), 'No observed resource production deficit is currently registered.') +
-        bulletList(arr(resources.resources).map(x => String(x)), 'No registered gameplay resource-site information for this country.'),
+      panel('Natural resources & industry', 'Recorded resource-site information and resource variety for this country.',
+        '<div class="ocov-resource-stat"><strong>' +
+        (num(resources.siteCount) === null ? 'Not recorded' : esc(resources.siteCount)) +
+        '</strong><span>resource sites</span><strong>' +
+        (num(resources.resourceDiversity) === null ? 'Not recorded' : esc(resources.resourceDiversity)) +
+        '</strong><span>resource types</span></div>' +
+        bulletList(arr(resources.resources).map(x => String(x)),
+          'No resource names are recorded for this country.'),
         'ocov-panel-resources') +
       panel('Economic structure & development', 'Sector and trade details are shown only when registered in the country profile.',
         bulletList(
@@ -449,51 +737,39 @@
             .concat(evidenceItems(strategic?.economy?.sectorProfile, 'Sector profile'))
             .concat(evidenceItems(strategic?.economy?.developmentSignals, 'Development signal')),
           'No separate sector or development-profile data is registered.')) +
-      panel('Diplomacy & foreign relations', 'Only named game-model signals are treated as country-specific.',
-        '<p><strong>Evidence mode:</strong> ' + esc(diplomacy.evidenceMode || 'NOT ESTABLISHED') + '</p>' +
-        '<p><strong>Modelled posture:</strong> ' + esc(diplomacy.strategicPosture || 'NOT ESTABLISHED') + '</p>' +
+      panel('Diplomacy & foreign relations', 'Country-specific diplomatic factors and recorded international relationships.',
+        '' +
         bulletList(arr(diplomacy.tendencies).concat(arr(diplomacy.highWeightFocus).map(x => 'Priority: ' + x))
           .concat(arr(diplomacy.cooperationSignals), arr(diplomacy.pressurePoints),
             arr(diplomacy.leverageSignals), arr(diplomacy.modelSignals)),
           'No country-specific diplomatic behaviour was verified by available model evidence.') +
-        (dependencies.status ? '<p><strong>Dependency status:</strong> ' + esc(dependencies.status) + '</p>' : ''),
         'ocov-panel-diplomacy') +
       panel('Military context', 'Budget effort is not combat capability, readiness or equipment quality.',
         '<div class="ocov-single-metric"><strong>' + esc(compactNumber(militaryPct, '%')) + '</strong><span>military expenditure / GDP</span></div>' +
         '<p>' + esc(strategic?.military?.caveat || 'Operational force structure, readiness, equipment, sustainment and logistics require separate verified runtime records.') + '</p>' +
         bulletList(arr(strategic?.military?.strengthSignals).concat(arr(strategic?.military?.riskSignals),
-          arr(strategic?.military?.capabilityGaps), arr(strategic?.military?.gameModelMilitarySignals)),
+          arr(strategic?.military?.capabilityGaps)),
           'No comparable force-capability estimate is recorded.'),
         'ocov-panel-military') +
       panel('Politics & institutions', 'Governance indicators are kept separate; no unsupported regime label.',
         '<div class="ocov-kpi-grid ocov-kpi-grid-small">' +
         metricCard('Government effectiveness', governmentEffectiveness, '', 'WGI estimate; scale is not 0–100') +
         metricCard('Political stability', politicalStability, '', 'WGI estimate; scale is not 0–100') +
-        metricCard('Rule of law', strategicNumber(strategic, 'politics.ruleOfLawWgiEstimate'), '', 'WGI estimate; scale is not 0–100') +
-        metricCard('Control of corruption', strategicNumber(strategic, 'politics.controlOfCorruptionWgiEstimate'), '', 'WGI estimate; scale is not 0–100') +
+        metricCard('Rule of law', ruleOfLaw, '', 'WGI estimate; scale is not 0–100') +
+        metricCard('Control of corruption', controlOfCorruption, '', 'WGI estimate; scale is not 0–100') +
         '</div><p><strong>Political system:</strong> ' + esc(governance.regimeClassification || strategic?.politics?.politicalSystemClassification || 'NOT CLASSIFIED') + '</p>' +
         bulletList(arr(strategic?.politics?.governanceIndicatorPoints).concat(
           arr(strategic?.politics?.strengths), arr(strategic?.politics?.risks), arr(strategic?.politics?.limitations)),
           'No separately registered governance-risk points are available.'),
         'ocov-panel-politics') +
-      panel('Dependencies & structural pressure', 'A signal tells the AI what to examine; it does not prove dependence on a named state.',
+      panel('Dependencies & structural pressure', 'Registered supplier, creditor and critical-import factors for this country.',
         bulletList(arr(dependencies.modelSignals)
           .concat(arr(strategic?.dependencies?.domains), arr(strategic?.dependencies?.measurementGaps),
             arr(strategic?.economy?.pressurePoints)),
           'Named supplier, creditor and critical-import dependencies are not established in the available record.'),
         'ocov-panel-dependencies') +
       '</div>' +
-      '<div class="ocov-section-heading"><span>02</span><div><h3>Executable behaviour profile</h3><p>These dimensions flow into adaptive action scoring. They are simulation policies, not real-world intent labels.</p></div></div>' +
-      '<div class="ocov-behaviour-summary"><span>Behaviour engine: ' + esc(behavior?.engineVersion || 'UNAVAILABLE') + '</span>' +
-      '<span>Derived dimensions: ' + esc(behavior?.evidence?.derivedDimensionCount ?? arr(behavior?.evidence?.availableDimensions).length) + '/' + esc(Object.keys(behavior?.dimensions || {}).length || 11) + '</span>' +
-      '<span>Adaptive AI source: ' + esc(adaptive?.behaviorSource || (adaptive?.derivedDimensionCount > 0 ? 'CONNECTED' : 'WAITING/EXPLICIT DOCTRINE')) + '</span></div>' +
-      dimensionCards(adaptive?.dimensions || behavior?.dimensions) +
-      panel('Runtime action preference signals', 'Derived from current evidence and registered country strategy options; the score influences AI ranking but does not execute an order.',
-        actionPreferenceRows.length
-          ? '<ul class="ocov-action-pref-list">' + actionPreferenceRows.slice(0, 12).map(([action, row]) =>
-              '<li><div><strong>' + esc(action.replace(/_/g, ' ')) + '</strong><small>' + esc(row.title || row.domain || row.source || 'Country strategic option') +
-              '</small></div><span>' + Math.round(Math.max(0, Math.min(1, Number(row.value))) * 100) + '/100</span></li>').join('') + '</ul>'
-          : '<p class="ocov-empty">No action-specific priority signal is registered for this country yet.</p>') +
+      '<div class="ocov-section-heading"><span>02</span><div><h3>Country strategy</h3><p>Registered strengths, challenges and planning priorities for this country.</p></div></div>' +
       '<div class="ocov-domain-grid">' +
       panel('Country-specific strengths', 'Evidence-backed signals, not a single invented national score.',
         bulletList(strengths, 'No registered strength signal is available.')) +
@@ -508,26 +784,12 @@
       panel('Recommended strategy from country profile', 'Recommendations are advice, not executed orders.',
         bulletList(recommendedStrategyItems, 'No separately registered country strategy recommendation is available.')) +
       '</div>' +
-      '<div class="ocov-section-heading"><span>03</span><div><h3>Priority stack</h3><p>Current candidate priorities generated from this country’s available evidence.</p></div></div>' +
+      '<div class="ocov-section-heading"><span>03</span><div><h3>Priority stack</h3><p>Planning priorities for the selected country.</p></div></div>' +
       '<section class="ocov-panel"><div class="ocov-panel-body">' + priorityBody + '</div></section>' +
-      panel('Data integrity & evidence quality', 'One selected-country contract is shared across the map, Country IOS and ministry views. Source conflicts are reported, not silently reconciled.',
-        '<p><strong>Gateway:</strong> ' + esc(gateway?.VERSION || 'NOT LOADED') + ' · <strong>Country identity:</strong> ' + esc(sharedSnapshot?.countryCode || 'UNRESOLVED') + '</p>' +
-        '<p><strong>Integrity status:</strong> ' + esc(sharedSnapshot?.diagnostics?.errors?.length ? 'ERRORS DETECTED' : (sharedSnapshot?.diagnostics?.warnings?.length ? 'WARNINGS DETECTED' : (sharedHasCountry ? 'NO CONFLICT DETECTED IN CHECKED SOURCES' : 'GATEWAY COUNTRY UNRESOLVED'))) + '</p>' +
-        '<p><strong>Errors:</strong> ' + esc(sharedSnapshot?.diagnostics?.errors?.length ?? 'NOT CHECKED') + ' · <strong>Warnings:</strong> ' + esc(sharedSnapshot?.diagnostics?.warnings?.length ?? 'NOT CHECKED') + ' · <strong>Missing fields:</strong> ' + esc(sharedSnapshot?.diagnostics?.missingFields?.length ?? 'NOT CHECKED') + '</p>' +
-        '<p><strong>Baseline source:</strong> ' + esc(base?.provenance?.economicSource || behavior?.evidence?.baselineSource || 'NOT RECORDED') + '</p>' +
-        '<p><strong>Baseline status:</strong> ' + esc(sourceStatus) + '</p>' +
-        '<button type="button" data-ocov-audit-all style="padding:8px 12px;border:1px solid #64748b;border-radius:7px;background:#172033;color:#e2e8f0;cursor:pointer;font-weight:700">AUDIT ALL COUNTRY RECORDS</button>' +
-        '<pre data-ocov-audit-results style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:260px;overflow:auto;font:11px/1.5 monospace;color:#cbd5e1"></pre>' +
-        bulletList(arr(sharedSnapshot?.diagnostics?.errors).map(x => '[ERROR] ' + (x.code || 'DATA_INTEGRITY') + (x.field ? ' · ' + x.field : '') + ' · ' + JSON.stringify(x))
-          .concat(arr(sharedSnapshot?.diagnostics?.warnings).map(x => '[WARNING] ' + (x.code || 'SOURCE_DIFFERENCE') + (x.field ? ' · ' + x.field : '') + ' · ' + JSON.stringify(x)))
-          .concat(arr(behavior?.evidence?.limitations)).concat(arr(strategic?.dataQuality?.limitations)),
-          'No identity/source mismatch was detected in the sources checked; unobserved values remain unavailable.'),
-        'ocov-panel-methodology') +
       '</div>';
 
     panelEl.innerHTML = overviewHtml;
     panelEl.dataset.countryId = String(value);
-    panelEl.dataset.profileStatus = String(profileStatus);
     if (behaviorEngine() && typeof behaviorEngine().init === 'function') {
       Promise.resolve(behaviorEngine().init()).then(() => {
         if (activeTab === 'overview' && lastRenderedCountry === value &&
@@ -540,8 +802,7 @@
     return true;
   }
 
-  function setActiveTab(tab) {
-    activeTab = tab === 'overview' ? 'overview' : 'cabinet';
+  function setActiveTab() {
     ensureGovernmentOverviewMount();
     if (!applyGovernmentViewState()) return false;
     if (activeTab === 'overview') renderCountryOverview();
@@ -554,29 +815,18 @@
     const auditButton = target.closest('[data-ocov-audit-all]');
     if (auditButton) {
       event.preventDefault();
-      const output = auditButton.parentElement?.querySelector?.('[data-ocov-audit-results]');
-      const gateway = g.OmegaCountryDataGateway || g.Omega?.CountryDataGateway;
-      if (!gateway || typeof gateway.auditAllCountries !== 'function') {
-        if (output) output.textContent = 'Country data gateway is not loaded.';
-        return;
-      }
-      const report = gateway.auditAllCountries();
-      const samples = [...(report.errors || []).slice(0, 12).map(row => 'ERROR ' + row.countryCode + ' ' + row.code + ' ' + (row.field || '') + ' ' + JSON.stringify(row)),
-        ...(report.warnings || []).slice(0, 12).map(row => 'WARNING ' + row.countryCode + ' ' + row.code + ' ' + (row.field || '') + ' ' + JSON.stringify(row))];
-      if (output) output.textContent = 'Countries checked: ' + report.countryCount +
-        '\nErrors: ' + report.errorCount + '\nWarnings: ' + (report.warnings || []).length +
-        '\nMissing values (not errors by themselves): ' + report.missingFieldCount +
-        '\n' + (samples.length ? samples.join('\n') : 'No identity/source discrepancies detected in the checks performed.');
+      const auditRoot = auditButton.closest('.ocov-country-data-audit');
+      runCountryDataAudit(auditRoot?.querySelector?.('[data-ocov-audit-results]'));
       return;
     }
-    const tab = target.closest('[data-omega-government-view]');
-    if (tab && tab.closest('#omega-government-overview-tabs')) {
+    const mainNavigationButton = target.closest('#cabinet-full-window .omega-cabinet-main-navigation button');
+    if (mainNavigationButton) {
       event.preventDefault();
-      setActiveTab(tab.getAttribute('data-omega-government-view'));
+      setActiveTab();
       return;
     }
     if (target.closest('#cabinet-full-window .parchment-card-btn[data-ministry-id]')) {
-      setActiveTab('cabinet');
+      setActiveTab();
     }
   }
 
