@@ -109,6 +109,11 @@
     render(root);
     return true;
   }
+  function openOperationalConsole(id) {
+    var integration = g.OmegaUIV2Integration;
+    if (!integration || typeof integration.openOperationalConsole !== 'function') return { ok:false, code:'OPERATIONAL_CONSOLE_BRIDGE_UNAVAILABLE' };
+    return integration.openOperationalConsole(id);
+  }
   function routeScreen(root, content) {
     var state = stateFor(root);
     var options = state.options || {};
@@ -121,23 +126,23 @@
         return g.OmegaUIV2Economy.render(content, Object.assign({}, options, { countryId:state.countryId, onOpenMinistry:function (id) { return openMinistry(root, id); } }));
       }
     } else if (state.route === 'industry' || (state.route === 'ministry-detail' && state.ministryId === 'production')) {
-      if (g.OmegaUIV2Industry && typeof g.OmegaUIV2Industry.render === 'function') return g.OmegaUIV2Industry.render(content, Object.assign({}, options, { countryId:state.countryId, onOpenFactory:options.onOpenFactory }));
+      if (g.OmegaUIV2Industry && typeof g.OmegaUIV2Industry.render === 'function') return g.OmegaUIV2Industry.render(content, Object.assign({}, options, { countryId:state.countryId, onOpenFactory:options.onOpenFactory, onOpenOperationalConsole:openOperationalConsole }));
     } else if (state.route === 'home-affairs' || (state.route === 'ministry-detail' && state.ministryId === 'interior_security')) {
-      if (g.OmegaUIV2HomeAffairs && typeof g.OmegaUIV2HomeAffairs.render === 'function') return g.OmegaUIV2HomeAffairs.render(content, Object.assign({}, options, { countryId:state.countryId, tab:state.section }));
+      if (g.OmegaUIV2HomeAffairs && typeof g.OmegaUIV2HomeAffairs.render === 'function') return g.OmegaUIV2HomeAffairs.render(content, Object.assign({}, options, { countryId:state.countryId, tab:state.section, onOpenOperationalConsole:openOperationalConsole }));
     } else if (state.route === 'resources' || (state.route === 'ministry-detail' && state.ministryId === 'energy_mining')) {
       if (g.OmegaUIV2ResourceMinistry && typeof g.OmegaUIV2ResourceMinistry.render === 'function') {
         return g.OmegaUIV2ResourceMinistry.render(content, Object.assign({}, options, { countryId:state.countryId,
           onOpenSite:function (siteId) { state.resourceSiteId = siteId; return navigate(root, 'mine-detail'); },
-          onLocateSite:options.onLocateMine, getInventoryForSite:options.getInventoryForSite }));
+          onLocateSite:options.onLocateMine, getInventoryForSite:options.getInventoryForSite, onOpenOperationalConsole:openOperationalConsole }));
       }
     } else if (state.route === 'mine-detail') {
-      if (g.OmegaUIV2MineDetail && typeof g.OmegaUIV2MineDetail.render === 'function') return g.OmegaUIV2MineDetail.render(content, Object.assign({}, options, { countryId:state.countryId, siteId:state.resourceSiteId, onBack:function () { back(root); } }));
+      if (g.OmegaUIV2MineDetail && typeof g.OmegaUIV2MineDetail.render === 'function') return g.OmegaUIV2MineDetail.render(content, Object.assign({}, options, { countryId:state.countryId, siteId:state.resourceSiteId, onBack:function () { back(root); }, onOpenOperationalConsole:openOperationalConsole }));
     } else if (state.route === 'reports') {
       if (g.OmegaUIV2Reports && typeof g.OmegaUIV2Reports.render === 'function') return g.OmegaUIV2Reports.render(content, Object.assign({}, options, { countryId:state.countryId, onOpenDomain:function (id) { return openDomain(root, id); } }));
     } else if (state.route === 'ministry-detail') {
       if (g.OmegaUIV2MinistryDetail && typeof g.OmegaUIV2MinistryDetail.render === 'function') {
         return g.OmegaUIV2MinistryDetail.render(content, Object.assign({}, options, { countryId:state.countryId, ministryId:state.ministryId,
-          onNavigate:function (destination) { return navigate(root, destination); }, section:state.section }));
+          onNavigate:function (destination) { return navigate(root, destination); }, onOpenOperationalConsole:openOperationalConsole, section:state.section }));
       }
     }
     if (state.route === 'map') {
