@@ -212,3 +212,16 @@
 .omega-v2-ministry-icon svg { display:block; height:23px; width:23px; }
 .omega-v2-ministry-icon { flex:0 0 38px; }
 .omega-v2-ministry-icon svg path, .omega-v2-ministry-icon svg circle { vector-effect:non-scaling-stroke; }
+
+/* Expandable capability profile for all fifteen canonical police tiers. */
+.omega-v2-capability-details { border-top:1px solid var(--omega-v2-border); margin-top:10px; padding-top:8px; }
+.omega-v2-capability-details summary { color:var(--omega-v2-accent); cursor:pointer; font-size:11px; font-weight:700; padding:4px 0; }
+.omega-v2-capability-bars { display:grid; gap:7px; margin-top:9px; }
+.omega-v2-capability-row { align-items:center; display:grid; font-size:10px; gap:7px; grid-template-columns:minmax(78px, .9fr) minmax(54px, 1.5fr) auto; min-width:0; }
+.omega-v2-capability-row > span { color:var(--omega-v2-muted); overflow-wrap:anywhere; text-transform:capitalize; }
+.omega-v2-capability-row > strong { color:var(--omega-v2-text); font-size:10px; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.omega-v2-capability-track { background:#203249; border-radius:999px; height:7px; overflow:hidden; }
+.omega-v2-capability-track > span { background:var(--omega-v2-accent-blue); border-radius:inherit; display:block; height:100%; }
+@media (max-width:359px) {
+  .omega-v2-capability-row { gap:5px; grid-template-columns:minmax(70px, .9fr) minmax(42px, 1fr) auto; }
+}
