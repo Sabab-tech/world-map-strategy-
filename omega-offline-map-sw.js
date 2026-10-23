@@ -2,7 +2,7 @@
  * Same-origin app files are cached for offline relaunch; remote map tiles are never cached here.
  */
 "use strict";
-const CACHE_NAME = "omega-offline-atlas-shell-v25";
+const CACHE_NAME = "omega-offline-atlas-shell-v26";
 const APP_BASE = new URL("./", self.location.href);
 const INDEX_URL = new URL("index.html", APP_BASE).href;
 const CORE_ASSETS = [
@@ -34,7 +34,20 @@ const CORE_ASSETS = [
   "./omega_resource_industrial_network_v1.js", "./omega_resource_command_center_ui_v1.js", "./omega_icon_system_v1.js", "./omega_icon_system_v1.css",
   "./omega_resource_mine_management_v1.js", "./resource_site_country_mineplay_batch_20261020_v1.json",
   "./resource_site_canonical_catalog_v1.json", "./resource_site_master_registry_v1.json",
-  "./resource_site_country_expansion_v1.json"
+  "./resource_site_country_expansion_v1.json",
+  "./omega_ui_v2/omega-ui-v2.css",
+  "./omega_ui_v2/navigation-registry.js",
+  "./omega_ui_v2/screens/government.js",
+  "./omega_ui_v2/screens/ministry-detail.js",
+  "./omega_ui_v2/screens/economy.js",
+  "./omega_ui_v2/screens/resource-ministry.js",
+  "./omega_ui_v2/screens/mine-detail.js",
+  "./omega_ui_v2/screens/industry.js",
+  "./omega_ui_v2/screens/home-affairs.js",
+  "./omega_ui_v2/screens/police-fleet.js",
+  "./omega_ui_v2/screens/reports.js",
+  "./omega_ui_v2/app.js",
+  "./omega_ui_v2/integration.js"
 ];
 
 function isLocalAppUrl(value) {
