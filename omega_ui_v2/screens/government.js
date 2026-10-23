@@ -248,7 +248,9 @@
         var tab = target.closest('[data-omega-v2-government-view]');
         if (tab && root.contains(tab)) {
           root.__omegaV2GovernmentView = tab.getAttribute('data-omega-v2-government-view');
-          render(root, Object.assign({}, root.__omegaV2GovernmentOptions || {}, { view: root.__omegaV2GovernmentView }));
+          var activeOptions = root.__omegaV2GovernmentOptions || {};
+          if (typeof activeOptions.onViewChange === 'function') activeOptions.onViewChange(root.__omegaV2GovernmentView);
+          render(root, Object.assign({}, activeOptions, { view: root.__omegaV2GovernmentView }));
           return;
         }
         var ministry = target.closest('[data-omega-v2-open-ministry]');
