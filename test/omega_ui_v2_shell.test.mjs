@@ -12,7 +12,7 @@ test('Atlas Command shell is loaded after existing UI without deleting legacy wi
   assert.match(html, /href="omega_ui_v2\.css"/);
   assert.match(html, /src="omega_ui_v2\.js"/);
   assert.ok(html.indexOf('omega_ui_v2.css') < html.indexOf('omega_ui_v2.js'));
-  assert.match(html, /<script src="omega_ui_v2\\.js" defer><\\/script>/);
+  assert.ok(html.includes('<script src="omega_ui_v2.js" defer></script>'));
   assert.match(html, /id="ui-engine-root"/);
   assert.match(html, /id="render-engine-root"/);
   assert.match(html, /omega_country_runtime_data_v1\.js/);
@@ -53,8 +53,8 @@ test('photos are local WebP from the pre-existing licensed catalog; native modul
   assert.match(css, /env\(safe-area-inset-bottom/);
   assert.match(css, /overscroll-behavior:contain/);
   assert.match(css, /min-height:48px/);
-  assert.match(css, /#omega-ui-v2-root\\.ov2-world \\{ background:transparent; pointer-events:none; \\}/);
-  assert.match(css, /\\.ov2-world \\.ov2-main \\{ background:transparent; pointer-events:none; \\}/);
+  assert.ok(css.includes('#omega-ui-v2-root.ov2-world { background:transparent; pointer-events:none; }'));
+  assert.ok(css.includes('.ov2-world .ov2-main { background:transparent; pointer-events:none; }'));
 });
 
 test('ministry directory prefers canonical cabinet display records and human-readable registry labels', () => {
