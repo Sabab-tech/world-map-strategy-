@@ -52,6 +52,7 @@
     var routes = routeRows(raw);
     var buttons = [];
     if (options.onLocateMine) buttons.push('<button type="button" class="omega-v2-button" data-omega-v2-mine-action="locate">Locate on map</button>');
+    if (typeof options.onOpenOperationalConsole === 'function') buttons.push('<button type="button" class="omega-v2-button omega-v2-button--quiet" data-omega-v2-mine-action="open-console">Open existing mining operations</button>');
     ['survey','develop','extract','upgrade','ship'].forEach(function (action) {
       var actions = options.actions || {};
       if (typeof actions[action] === 'function') buttons.push('<button type="button" class="omega-v2-button omega-v2-button--primary" data-omega-v2-mine-action="' + action + '">' + ({ survey:'Survey site', develop:'Develop mine', extract:'Start extraction', upgrade:'Upgrade capacity', ship:'Send batch' })[action] + '</button>');
@@ -87,6 +88,10 @@
         if (!button || !root.contains(button)) return;
         var action = button.getAttribute('data-omega-v2-mine-action');
         var current = root.__omegaV2MineDetailOptions || {};
+        if (action === 'open-console' && typeof current.onOpenOperationalConsole === 'function') {
+          current.onOpenOperationalConsole('energy_mining');
+          return;
+        }
         if (action === 'locate' && typeof current.onLocateMine === 'function') {
           current.onLocateMine(site.siteId, country);
           return;
