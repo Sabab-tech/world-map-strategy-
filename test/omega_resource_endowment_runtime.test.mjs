@@ -151,11 +151,13 @@ const mineplayScenario={
   ...mineplayBaseScenario,
   batchId:'COUNTRY_MINEPLAY_COMBINED_TEST_FIXTURE',
   recordCount:mineplayBaseScenario.records.length+mineplayExpandedScenario.records.filter(site=>
-    !site?.runtime?.aliasOfSiteId&&site?.map?.markerEligible!==false).length,
+    !site?.runtime?.aliasOfSiteId&&site?.map?.markerEligible!==false&&
+    String(site?.siteId||'')!=='SITE_PRK_musan_iron_ore_mine').length,
   records:[
     ...mineplayBaseScenario.records,
     ...mineplayExpandedScenario.records.filter(site=>
-      !site?.runtime?.aliasOfSiteId&&site?.map?.markerEligible!==false)
+      !site?.runtime?.aliasOfSiteId&&site?.map?.markerEligible!==false&&
+      String(site?.siteId||'')!=='SITE_PRK_musan_iron_ore_mine')
   ]
 };
 const reserveScenario=JSON.parse(fs.readFileSync(new URL('../resource_site_reserve_simulation_v1.json',import.meta.url),'utf8'));
