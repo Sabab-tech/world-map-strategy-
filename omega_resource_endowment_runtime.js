@@ -2044,7 +2044,7 @@ function batchFromExtraction(x,record){
   function mineplayAuthorityAllowsValue(metric,key){
     const amount=mineplayMetricNumber(metric,key),status=String(metric?.status||'').trim().toUpperCase();
     if(amount===null||amount<=0)return false;
-    if(['UNOBSERVED','UNQUANTIFIED','NOT_RECORDED','NOT_REPORTED','REPORTED_TEXT_ONLY','UNKNOWN','UNSPECIFIED','N/A','NA'].includes(status))return false;
+    if(['UNOBSERVED','UNQUANTIFIED','NOT_RECORDED','NOT_REPORTED','REPORTED_TEXT_ONLY','UNKNOWN','UNSPECIFIED','SOURCE_STATUS_UNSPECIFIED','SOURCE_UNSPECIFIED','N/A','NA'].includes(status))return false;
     return true;
   }
   function completeMineplayQuantitativeV1(rawQuantitative,countryId,siteId,resourceId){
@@ -2112,8 +2112,9 @@ function batchFromExtraction(x,record){
     };
     q.quantitativeProvenance={
       ...(q.quantitativeProvenance||{}),
-      authority:q.quantitativeProvenance?.authority||'SCENARIO_SIMULATION_DATA',
-      method:q.quantitativeProvenance?.method||'OMEGA_UNIFIED_MINEPLAY_PROFILE_V1',
+      upstreamAuthority:q.quantitativeProvenance?.upstreamAuthority||q.quantitativeProvenance?.authority||null,
+      authority:'GAMEPLAY_SIMULATION_OVERLAY',
+      method:'OMEGA_UNIFIED_MINEPLAY_PROFILE_V1',
       externalMeasuredValuePromotion:false,
       gameplayHorizonYears:Number(q.quantitativeProvenance?.gameplayHorizonYears)||400,
       missingMetricPolicy:'SIMULATED_GAMEPLAY_DEFAULTS_ONLY',
@@ -2173,20 +2174,37 @@ function batchFromExtraction(x,record){
     simulation.gameplayProductionEnabled=true;
     simulation.productionAuthority='SIMULATED_OR_SOURCE_REPORTED_GAMEPLAY_PROFILE';
     simulation.productionProfileId='OMEGA_UNIFIED_MINEPLAY_PROFILE_V1';
-    simulation.factoryBinding=fillRuntimeMissing(simulation.factoryBinding||{},{
+    simulation.factoryBinding={
+      ...clone(simulation.factoryBinding||{}),
       countryId,resourceId,warehouseId:'WH-'+countryId+'-RAW',
       requiresSameCountryWarehouse:true,requiresSiteSpecificRecipe:true,
-      status:'RUNTIME_CATALOG_LOOKUP_REQUIRED',authority:'RUNTIME_CATALOG'
-    });
+      status:simulation.factoryBinding?.status||'RUNTIME_CATALOG_LOOKUP_REQUIRED',
+      authority:simulation.factoryBinding?.authority||'RUNTIME_CATALOG'
+    };
     if(!Array.isArray(simulation.transportRoute)||simulation.transportRoute.length===0){
       simulation.transportRoute=[{
         routeId:'SIM_ROUTE:'+countryId+':'+siteId,
         mode:preferredMode,transportMode:preferredMode,
         sourceNode:'MINE:'+countryId+':'+siteId,destinationNode:'WH-'+countryId+'-RAW',
+        sourceCountryId:countryId,destinationCountryId:countryId,
         distanceKm:null,distanceStatus:'UNOBSERVED',routeStatus:'SIMULATED_ROUTE_TEMPLATE',
         authority:'SIMULATED_TOPOLOGY_FALLBACK',countryIsolationKey:countryId
       }];
       simulation.routeAuthority='SIMULATED_TOPOLOGY_FALLBACK';
+    }else{
+      simulation.transportRoute=simulation.transportRoute.map((route,index)=>({
+        ...clone(route||{}),
+        routeId:route?.routeId||'SITE_ROUTE:'+countryId+':'+siteId+':'+(index+1),
+        mode:route?.mode||route?.transportMode||preferredMode,
+        transportMode:route?.transportMode||route?.mode||preferredMode,
+        sourceNode:route?.sourceNode||'MINE:'+countryId+':'+siteId,
+        destinationNode:route?.destinationNode||'WH-'+countryId+'-RAW',
+        sourceCountryId:countryId,destinationCountryId:countryId,
+        distanceKm:n(route?.distanceKm)??null,
+        distanceStatus:route?.distanceStatus||(n(route?.distanceKm)!==null?'SIMULATED':'UNOBSERVED'),
+        countryIsolationKey:countryId,
+        authority:route?.authority||'SITE_SPECIFIC_SIMULATED_ROUTE'
+      }));
     }
     const operation=fillRuntimeMissing(source.operation||raw.operation||{},{
       status,operationalStatus:status,commercialExtraction:true,
