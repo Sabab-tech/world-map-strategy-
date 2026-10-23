@@ -37,7 +37,7 @@ The modules are loaded as local scripts and the existing Government entry mounts
 
 ## Global Atlas Command
 
-The global map dock provides World, Overview, Government, Economy and More. Domain pages reuse canonical game runtimes; local WebP photos use representative-image notes. The offline shell cache v27 explicitly includes UI-v2 modules and bundled photography. Android and visual acceptance remain release gates.
+The global map dock provides World, Overview, Government, Economy and More. Domain pages reuse canonical game runtimes; local WebP photos use representative-image notes. The offline shell cache v29 explicitly includes UI-v2 modules and bundled photography. Android and visual acceptance remain release gates.
 
 
 ## Atlas Command visual rollout
@@ -56,6 +56,6 @@ The main navigation is World, Overview, Government, Economy and More. Overview r
 ## Final UI verification notes
 
 - Religion & Ideology uses the shared `photoMarkup` renderer for its local `mosque-architecture.webp` image. The source contract test checks that no undefined `domainPhoto` helper is used by this route.
-- The offline preload contract explicitly verifies `omega_ui_v2/world-command-dock.js` is included in both the production entrypoint and service-worker cache (`omega-offline-atlas-shell-v27`).
+- The offline preload contract explicitly verifies `omega_ui_v2/world-command-dock.js` is included in both the production entrypoint and service-worker cache (`omega-offline-atlas-shell-v29`).
 - This is an additive UI integration. Legacy engines, the original Religion & Ideology handler, map rendering, and existing Back-to-Map layer recovery remain in place.
 - Visual and Android/device acceptance status should be taken from runs attached to the exact current commit, not inherited from an earlier SHA.
