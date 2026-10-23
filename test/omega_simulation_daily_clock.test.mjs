@@ -207,7 +207,7 @@ test('save slot preserves an unfinished factory project, reserved input batches 
   gameState.resource.BGD.industrialNetwork.factoryProductionCycles = {};
   gameState.economy.BGD.productionAssets = [];
   const restored = sim.loadSlot('factory-acceptance');
-  assert.equal(restored.ok, true);
+  assert.equal(restored.lastLoadIntegrity, 'VERIFIED', 'the restored factory snapshot must pass authoritative save integrity validation');
 
   assert.deepEqual(gameState.resource.BGD.industrialNetwork.projects[0], expectedProject,
     'construction dates, consumed BOM allocations and request identity must survive reload');
