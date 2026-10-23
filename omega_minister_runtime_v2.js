@@ -205,7 +205,12 @@
   }
   function showDetail(card,p,countryId,ministry){ const root=document.getElementById('omega-minister-command'), old=root.querySelector('.om-detail'); const r=registry.getRuntime(p.id)||{},l=registry.getLearning(p.id)||initLearning(p.id); old.innerHTML=`<strong>${profileName(p)}</strong><div class="om-meta">${p.background||''} • ${p.gender||''} • Age ${p.baseAge||'—'}<br>Minister ID: ${p.id}<br>Ministry: ${ministry}<br>Status: ${r.status||'AVAILABLE'}</div><div class="om-kv"><div>Workload: ${Math.round(r.workload||0)}</div><div>Stress: ${Math.round(r.stress||0)}</div><div>Fatigue: ${Math.round(r.fatigue||0)}</div><div>Trust: ${Math.round((r.trust??.5)*100)}%</div><div>Service: ${Number(l.totalServiceTime||0).toFixed(2)} years</div><div>Tasks: ${(r.activeTasks||[]).length}</div></div>`; }
 
+  let bootAttempted = false;
   async function boot(){
+    // Deferred scripts can observe readyState="interactive" before DOMContentLoaded.
+    // The old two-path startup invoked boot twice, racing the same JSON/profile registry.
+    if (bootAttempted) return;
+    bootAttempted = true;
     try{
       const [ministers,config]=await Promise.all([loadJson('ministers.json'),loadJson('minister_system_config.json').catch(()=>null)]);
       normalizeProfiles(ministers); readConfig(config); restore(); synchronize();
@@ -214,7 +219,10 @@
       // Public command hook for existing ministry UI. Existing buttons may call this without owning state.
       window.OmegaMinisterSystem.openForMinistry=openPanel;
       console.info('[OMEGA Minister Runtime V2] ready',registry.profiles.size,'profiles');
-    }catch(e){ console.error('[OMEGA Minister Runtime V2] boot failed',e); window.__OMEGA_DIAG__?.errors?.push({msg:String(e),type:'MINISTER_RUNTIME_BOOT'}); }
+    }catch(e){
+      console.error('[OMEGA Minister Runtime V2] boot failed:', e && (e.stack || e.message) || String(e));
+      window.__OMEGA_DIAG__?.errors?.push({msg:String(e && (e.stack || e.message) || e),type:'MINISTER_RUNTIME_BOOT'});
+    }
   }
   // A safe, single delegated click hook. It never steals clicks from unrelated UI.
   document.addEventListener('click',e=>{ const b=e.target.closest?.('[data-open-minister-recruitment],[data-minister-recruitment]'); if(!b) return; e.preventDefault(); e.stopPropagation(); openPanel(b.dataset.ministryId||b.getAttribute('data-minister-recruitment')||ministryFromContext()); },true);
