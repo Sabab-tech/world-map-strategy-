@@ -1,0 +1,390 @@
+{
+  "schemaVersion": "1.0.0",
+  "datasetId": "OMEGA_UI_PHOTO_ASSET_SOURCES_V1",
+  "purpose": "Source registry for legally reusable real-world reference photographs used by the OMEGA game UI.",
+  "reviewDate": "2026-10-23",
+  "sourceProvider": "Wikimedia Commons",
+  "importPolicy": {
+    "requireApiLicenseMatch": true,
+    "allowedLicenseFamilies": [
+      "CC BY 2.0",
+      "CC BY 4.0",
+      "CC BY-SA 4.0",
+      "CC0 1.0",
+      "Public domain"
+    ],
+    "maxDimensionPx": 1280,
+    "outputFormat": "WebP",
+    "maxOutputBytes": 409600,
+    "note": "Every item is used as contextual reference art, not evidence that the currently selected country owns or operates the pictured facility. Country-specific images must retain their place/country labels."
+  },
+  "items": [
+    {
+      "id": "bangladesh-parliament",
+      "filename": "bangladesh-parliament.webp",
+      "commonsTitle": "The Parliament building of the People's Republic of Bangladesh.jpg",
+      "sourcePageUrl": "https://commons.wikimedia.org/wiki/File:The_Parliament_building_of_the_People%27s_Republic_of_Bangladesh.jpg",
+      "author": "AuthorTasin",
+      "licenseId": "CC-BY-SA-4.0",
+      "licenseShortName": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "acceptedApiLicenseNames": [
+        "CC BY-SA 4.0",
+        "CC BY-SA 4.0 International",
+        "Creative Commons Attribution-ShareAlike 4.0 International"
+      ],
+      "uiRoles": [
+        "executive-government",
+        "country-institutions"
+      ],
+      "isCountrySpecific": true,
+      "countryScope": "Bangladesh",
+      "altText": "Jatiya Sangsad Bhaban, the Parliament building of Bangladesh.",
+      "caption": "Bangladesh Parliament building",
+      "creditText": "AuthorTasin / CC BY-SA 4.0 via Wikimedia Commons",
+      "changesMade": "Resized to fit 1280 px and converted to WebP; EXIF metadata omitted."
+    },
+    {
+      "id": "un-assembly-building",
+      "filename": "un-assembly-building.webp",
+      "commonsTitle": "UN General Assembly Building.jpg",
+      "sourcePageUrl": "https://commons.wikimedia.org/wiki/File:UN_General_Assembly_Building.jpg",
+      "author": "Nadia Chaudhury",
+      "licenseId": "CC-BY-2.0",
+      "licenseShortName": "CC BY 2.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/2.0/",
+      "acceptedApiLicenseNames": [
+        "CC BY 2.0",
+        "Creative Commons Attribution 2.0 Generic"
+      ],
+      "uiRoles": [
+        "foreign-affairs",
+        "diplomacy",
+        "international-organisations"
+      ],
+      "isCountrySpecific": false,
+      "countryScope": null,
+      "altText": "Exterior of the United Nations General Assembly building in New York.",
+      "caption": "United Nations General Assembly building",
+      "creditText": "Nadia Chaudhury / CC BY 2.0 via Wikimedia Commons",
+      "changesMade": "Resized to fit 1280 px and converted to WebP; EXIF metadata omitted."
+    },
+    {
+      "id": "bangladesh-police-headquarters",
+      "filename": "bangladesh-police-headquarters.webp",
+      "commonsTitle": "Police Headquarter Dhaka.jpg",
+      "sourcePageUrl": "https://commons.wikimedia.org/wiki/File:Police_Headquarter_Dhaka.jpg",
+      "author": "Wasiul Bahar",
+      "licenseId": "CC-BY-SA-4.0",
+      "licenseShortName": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "acceptedApiLicenseNames": [
+        "CC BY-SA 4.0",
+        "CC BY-SA 4.0 International",
+        "Creative Commons Attribution-ShareAlike 4.0 International"
+      ],
+      "uiRoles": [
+        "home-affairs",
+        "police",
+        "public-safety"
+      ],
+      "isCountrySpecific": true,
+      "countryScope": "Bangladesh",
+      "altText": "Bangladesh Police Headquarters building in Dhaka.",
+      "caption": "Bangladesh Police Headquarters, Dhaka",
+      "creditText": "Wasiul Bahar / CC BY-SA 4.0 via Wikimedia Commons",
+      "changesMade": "Resized to fit 1280 px and converted to WebP; EXIF metadata omitted."
+    },
+    {
+      "id": "chittagong-hospital",
+      "filename": "chittagong-hospital.webp",
+      "commonsTitle": "Chittagong International Medical College & Hospital building.jpg",
+      "sourcePageUrl": "https://commons.wikimedia.org/wiki/File:Chittagong_International_Medical_College_%26_Hospital_building.jpg",
+      "author": "RiazACU",
+      "licenseId": "CC-BY-SA-4.0",
+      "licenseShortName": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "acceptedApiLicenseNames": [
+        "CC BY-SA 4.0",
+        "CC BY-SA 4.0 International",
+        "Creative Commons Attribution-ShareAlike 4.0 International"
+      ],
+      "uiRoles": [
+        "health",
+        "public-services"
+      ],
+      "isCountrySpecific": true,
+      "countryScope": "Chattogram, Bangladesh",
+      "altText": "Chittagong International Medical College and Hospital building in Bangladesh.",
+      "caption": "Chittagong International Medical College & Hospital",
+      "creditText": "RiazACU / CC BY-SA 4.0 via Wikimedia Commons",
+      "changesMade": "Resized to fit 1280 px and converted to WebP; EXIF metadata omitted."
+    },
+    {
+      "id": "uss-nimitz",
+      "filename": "uss-nimitz.webp",
+      "commonsTitle": "USS Nimitz (CVN-68).jpg",
+      "sourcePageUrl": "https://commons.wikimedia.org/wiki/File:USS_Nimitz_(CVN-68).jpg",
+      "author": "United States Navy",
+      "licenseId": "PUBLIC-DOMAIN-US-GOV",
+      "licenseShortName": "Public domain (U.S. federal government work)",
+      "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/",
+      "acceptedApiLicenseNames": [
+        "Public domain",
+        "Public domain (United States)",
+        "Public domain in the United States",
+        "PD-USGov",
+        "PD US Navy",
+        "PD-USGov-Military-Navy"
+      ],
+      "uiRoles": [
+        "defense",
+        "naval-forces"
+      ],
+      "isCountrySpecific": true,
+      "countryScope": "United States",
+      "altText": "USS Nimitz (CVN-68), a United States Navy aircraft carrier.",
+      "caption": "USS Nimitz aircraft carrier (United States Navy)",
+      "creditText": "United States Navy / public domain via Wikimedia Commons",
+      "changesMade": "Resized to fit 1280 px and converted to WebP; EXIF metadata omitted."
+    },
+    {
+      "id": "open-pit-mine",
+      "filename": "open-pit-mine.webp",
+      "commonsTitle": "Open pit mine.jpg",
+      "sourcePageUrl": "https://commons.wikimedia.org/wiki/File:Open_pit_mine.jpg",
+      "author": "Irene2005",
+      "licenseId": "CC-BY-2.0",
+      "licenseShortName": "CC BY 2.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/2.0/",
+      "acceptedApiLicenseNames": [
+        "CC BY 2.0",
+        "Creative Commons Attribution 2.0 Generic"
+      ],
+      "uiRoles": [
+        "mining",
+        "natural-resources",
+        "resource-sites"
+      ],
+      "isCountrySpecific": false,
+      "countryScope": null,
+      "altText": "Large open-pit mining site viewed from above.",
+      "caption": "Open-pit mine",
+      "creditText": "Irene2005 / CC BY 2.0 via Wikimedia Commons",
+      "changesMade": "Resized to fit 1280 px and converted to WebP; EXIF metadata omitted."
+    },
+    {
+      "id": "geelong-oil-refinery",
+      "filename": "geelong-oil-refinery.webp",
+      "commonsTitle": "Geelong Oil Refinery 2026.jpg",
+      "sourcePageUrl": "https://commons.wikimedia.org/wiki/File:Geelong_Oil_Refinery_2026.jpg",
+      "author": "Totallynotarandomalt69",
+      "licenseId": "CC-BY-4.0",
+      "licenseShortName": "CC BY 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "acceptedApiLicenseNames": [
+        "CC BY 4.0",
+        "CC BY 4.0 International",
+        "Creative Commons Attribution 4.0 International"
+      ],
+      "uiRoles": [
+        "industry",
+        "oil-gas",
+        "factories",
+        "energy-processing"
+      ],
+      "isCountrySpecific": true,
+      "countryScope": "Geelong, Victoria, Australia",
+      "altText": "Geelong oil refinery viewed from a passing train.",
+      "caption": "Geelong oil refinery, Australia",
+      "creditText": "Totallynotarandomalt69 / CC BY 4.0 via Wikimedia Commons",
+      "changesMade": "Resized to fit 1280 px and converted to WebP; EXIF metadata omitted."
+    },
+    {
+      "id": "industrial-production-line",
+      "filename": "industrial-production-line.webp",
+      "commonsTitle": "Industrial production line operating in a large modern factory.jpg",
+      "sourcePageUrl": "https://commons.wikimedia.org/wiki/File:Industrial_production_line_operating_in_a_large_modern_factory.jpg",
+      "author": "Shixart1985",
+      "licenseId": "CC-BY-2.0",
+      "licenseShortName": "CC BY 2.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/2.0/",
+      "acceptedApiLicenseNames": [
+        "CC BY 2.0",
+        "Creative Commons Attribution 2.0 Generic"
+      ],
+      "uiRoles": [
+        "industry",
+        "factories",
+        "production-lines",
+        "manufacturing"
+      ],
+      "isCountrySpecific": false,
+      "countryScope": null,
+      "altText": "Interior of a large modern factory with an industrial production line.",
+      "caption": "Industrial production line",
+      "creditText": "Shixart1985 / CC BY 2.0 via Wikimedia Commons",
+      "changesMade": "Resized to fit 1280 px and converted to WebP; EXIF metadata omitted."
+    },
+    {
+      "id": "wind-farm",
+      "filename": "wind-farm.webp",
+      "commonsTitle": "Wind farm turbines.jpg",
+      "sourcePageUrl": "https://commons.wikimedia.org/wiki/File:Wind_farm_turbines.jpg",
+      "author": "Greg Goebel",
+      "licenseId": "PUBLIC-DOMAIN",
+      "licenseShortName": "Public domain",
+      "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/",
+      "acceptedApiLicenseNames": [
+        "Public domain",
+        "Public domain (United States)",
+        "Public domain in the United States",
+        "PD-USGov",
+        "PD US Government",
+        "Public domain in the United States (U.S. Government work)"
+      ],
+      "uiRoles": [
+        "energy",
+        "renewables",
+        "wind-power"
+      ],
+      "isCountrySpecific": false,
+      "countryScope": null,
+      "altText": "Utility-scale wind farm turbines across an open landscape.",
+      "caption": "Wind farm turbines",
+      "creditText": "Greg Goebel / public domain via Wikimedia Commons",
+      "changesMade": "Resized to fit 1280 px and converted to WebP; EXIF metadata omitted."
+    },
+    {
+      "id": "hydroelectric-plant",
+      "filename": "hydroelectric-plant.webp",
+      "commonsTitle": "Winooski One Hydroelectric Plant Dam.jpg",
+      "sourcePageUrl": "https://commons.wikimedia.org/wiki/File:Winooski_One_Hydroelectric_Plant_Dam.jpg",
+      "author": "Ohead",
+      "licenseId": "CC0-1.0",
+      "licenseShortName": "CC0 1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "acceptedApiLicenseNames": [
+        "CC0 1.0",
+        "CC0 1.0 Universal",
+        "Creative Commons Zero v1.0 Universal"
+      ],
+      "uiRoles": [
+        "energy",
+        "hydropower",
+        "infrastructure"
+      ],
+      "isCountrySpecific": true,
+      "countryScope": "Winooski, Vermont, United States",
+      "altText": "Winooski One hydroelectric plant and dam.",
+      "caption": "Winooski One hydroelectric plant and dam",
+      "creditText": "Ohead / CC0 1.0 via Wikimedia Commons",
+      "changesMade": "Resized to fit 1280 px and converted to WebP; EXIF metadata omitted."
+    },
+    {
+      "id": "container-ship",
+      "filename": "container-ship.webp",
+      "commonsTitle": "ContainerShip.jpg",
+      "sourcePageUrl": "https://commons.wikimedia.org/wiki/File:ContainerShip.jpg",
+      "author": "Syukrimsw",
+      "licenseId": "CC-BY-SA-4.0",
+      "licenseShortName": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "acceptedApiLicenseNames": [
+        "CC BY-SA 4.0",
+        "CC BY-SA 4.0 International",
+        "Creative Commons Attribution-ShareAlike 4.0 International"
+      ],
+      "uiRoles": [
+        "trade",
+        "logistics",
+        "ports",
+        "shipping"
+      ],
+      "isCountrySpecific": false,
+      "countryScope": null,
+      "altText": "Container ship carrying freight along an international shipping route.",
+      "caption": "Container ship and maritime freight",
+      "creditText": "Syukrimsw / CC BY-SA 4.0 via Wikimedia Commons",
+      "changesMade": "Resized to fit 1280 px and converted to WebP; EXIF metadata omitted."
+    },
+    {
+      "id": "wheat-field",
+      "filename": "wheat-field.webp",
+      "commonsTitle": "Field of Wheat.jpg",
+      "sourcePageUrl": "https://commons.wikimedia.org/wiki/File:Field_of_Wheat.jpg",
+      "author": "Kmtextor",
+      "licenseId": "CC-BY-4.0",
+      "licenseShortName": "CC BY 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "acceptedApiLicenseNames": [
+        "CC BY 4.0",
+        "CC BY 4.0 International",
+        "Creative Commons Attribution 4.0 International"
+      ],
+      "uiRoles": [
+        "agriculture",
+        "food-security",
+        "rural-economy"
+      ],
+      "isCountrySpecific": false,
+      "countryScope": null,
+      "altText": "A field of ripe wheat before harvest.",
+      "caption": "Wheat field",
+      "creditText": "Kmtextor / CC BY 4.0 via Wikimedia Commons",
+      "changesMade": "Resized to fit 1280 px and converted to WebP; EXIF metadata omitted."
+    },
+    {
+      "id": "mosque-architecture",
+      "filename": "mosque-architecture.webp",
+      "commonsTitle": "Architecture of mosque.jpg",
+      "sourcePageUrl": "https://commons.wikimedia.org/wiki/File:Architecture_of_mosque.jpg",
+      "author": "Amini Aisyah",
+      "licenseId": "CC-BY-4.0",
+      "licenseShortName": "CC BY 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "acceptedApiLicenseNames": [
+        "CC BY 4.0",
+        "CC BY 4.0 International",
+        "Creative Commons Attribution 4.0 International"
+      ],
+      "uiRoles": [
+        "religion",
+        "culture",
+        "architecture"
+      ],
+      "isCountrySpecific": false,
+      "countryScope": null,
+      "altText": "Architectural details of a mosque.",
+      "caption": "Mosque architecture",
+      "creditText": "Amini Aisyah / CC BY 4.0 via Wikimedia Commons",
+      "changesMade": "Resized to fit 1280 px and converted to WebP; EXIF metadata omitted."
+    },
+    {
+      "id": "dhaka-skyline",
+      "filename": "dhaka-skyline.webp",
+      "commonsTitle": "Sky View of Dhaka City.jpg",
+      "sourcePageUrl": "https://commons.wikimedia.org/wiki/File:Sky_View_of_Dhaka_City.jpg",
+      "author": "S.M.M.Musabbir Uddin",
+      "licenseId": "CC-BY-4.0",
+      "licenseShortName": "CC BY 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "acceptedApiLicenseNames": [
+        "CC BY 4.0",
+        "CC BY 4.0 International",
+        "Creative Commons Attribution 4.0 International"
+      ],
+      "uiRoles": [
+        "country-overview",
+        "urbanisation",
+        "city-infrastructure"
+      ],
+      "isCountrySpecific": true,
+      "countryScope": "Dhaka, Bangladesh",
+      "altText": "Aerial view of Dhaka's dense urban skyline.",
+      "caption": "Dhaka city skyline, Bangladesh",
+      "creditText": "S.M.M.Musabbir Uddin / CC BY 4.0 via Wikimedia Commons",
+      "changesMade": "Resized to fit 1280 px and converted to WebP; EXIF metadata omitted."
+    }
+  ]
+}
