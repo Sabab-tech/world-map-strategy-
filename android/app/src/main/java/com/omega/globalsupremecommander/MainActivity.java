@@ -281,7 +281,11 @@ public final class MainActivity extends Activity {
 
         @JavascriptInterface
         public boolean isDiagnosticsEnabled() {
-            return BuildConfig.DEBUG;
+            // Per-script console tracing is expensive on Android 9's renderer. Keep it
+            // opt-in for diagnostics instead of enabling hundreds of log callbacks in
+            // every debug launch and instrumentation smoke test.
+            return BuildConfig.DEBUG && getIntent() != null
+                    && getIntent().getBooleanExtra("omegaWebDiagnostics", false);
         }
 
         @JavascriptInterface
