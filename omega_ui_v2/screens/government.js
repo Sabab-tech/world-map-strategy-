@@ -107,7 +107,7 @@
           subtitle: String(row.bnTitle || ''),
           category: categoryOf(row),
           status: String(row.status || 'NOT_RECORDED'),
-          ministerName: row.ministerName || activeProfile.baseName || activeProfile.name || activeProfile.ministerName || null,
+          ministerName: activeProfile.baseName || activeProfile.name || activeProfile.ministerName || row.ministerName || null,
           ministerPortraitUrl: row.ministerPortraitUrl || row.portraitUrl || row.ministerPhotoUrl || row.ministerPhoto || activeProfile.portraitUrl || activeProfile.photoUrl || activeProfile.imageUrl || null,
           avatar: row.icon3D || row.avatar || null,
           activeMinisterProfile: activeProfile,
