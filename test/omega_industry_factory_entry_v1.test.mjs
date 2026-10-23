@@ -31,3 +31,30 @@ test('the deployed HTML loads factory visuals before the Resource Command Center
   assert.match(commandCenter, /function panelProcessing/, 'the Production Lines panel renderer must exist');
   assert.match(commandCenter, /function panelInventory/, 'the inventory panel renderer must exist');
 });
+
+test('Industry & Factories is a dedicated tab with responsive positioning', () => {
+  assert.ok(
+    ministry.includes("? ['interrogate', 'reports', 'security_operations']") &&
+    ministry.includes("['interrogate', 'reports', 'personnel', 'industry']"),
+    'Economy ministry tab allowlist must include Industry & Factories without changing Home Ministry tabs'
+  );
+  assert.ok(
+    ministry.includes("showIndustryFactoryHub && activeTab === 'industry'"),
+    'the factory hub must render only when its dedicated tab is active'
+  );
+  assert.ok(
+    ministry.includes("setDashboardTab('industry')"),
+    'the navigation must provide a dedicated Industry & Factories tab'
+  );
+  assert.ok(
+    ministry.includes('class="omega-ministry-action-bar"') &&
+    ministry.includes('flex-wrap:nowrap;') &&
+    ministry.includes('overflow-x:auto;'),
+    'ministry tabs must stay in a single horizontally scrollable row on narrow screens'
+  );
+  assert.ok(
+    ministry.includes('grid-template-columns: repeat(4, minmax(0, 1fr))') &&
+    ministry.includes('@media (max-width: 360px)'),
+    'factory navigation cards must adapt between desktop, phone and very narrow phone layouts'
+  );
+});
