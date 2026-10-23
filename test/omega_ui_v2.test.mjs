@@ -412,6 +412,28 @@ test('Government exposes emblems, minister recruitment and a stable future portr
   assert.match(government, /engine\.fetchRoster/);
   assert.match(government, /OmegaLiveMinisterSelectorV9/);
   assert.match(detail, /omega-v2-ministry-appointed-minister/);
+  const portrait = globalThis.OmegaUIV2Government.renderMinisterPortrait({ id:'treasury_finance', ministerName:'Test Minister', ministerPortraitUrl:'assets/ministers/test-minister.webp' });
+  assert.match(portrait, /data-omega-v2-minister-portrait-slot/);
+  assert.match(portrait, /src="assets\/ministers\/test-minister\.webp"/);
+  const placeholder = globalThis.OmegaUIV2Government.renderMinisterPortrait({ id:'treasury_finance', ministerName:'Test Minister' });
+  assert.match(placeholder, /MINISTER PORTRAIT/);
+  const previousCabinet = globalThis.OmegaCabinetUI;
+  globalThis.OmegaCabinetUI = { ministriesDatabase:{
+    cabinet_council:{ id:'cabinet_council', title:'Executive Cabinet', category:'governance' },
+    interior_security:{ id:'interior_security', title:'Interior & Security', category:'governance' },
+    treasury_finance:{ id:'treasury_finance', title:'Treasury & Finance', category:'finance' }
+  } };
+  const root = { classList:{ add(){} }, addEventListener(){}, querySelector(){ return null; }, querySelectorAll(){ return []; }, innerHTML:'', contains(){ return true; } };
+  try {
+    const rendered = globalThis.OmegaUIV2Government.render(root, { view:'all-ministries', countryId:'BGD' });
+    assert.equal(rendered.ministryCount, 2);
+    assert.match(root.innerHTML, /omega-v2-minister-table/);
+    assert.match(root.innerHTML, /data-omega-v2-minister-portrait-slot/);
+    assert.match(root.innerHTML, /Recruit \/ Replace/);
+    assert.match(root.innerHTML, /<svg/);
+  } finally {
+    globalThis.OmegaCabinetUI = previousCabinet;
+  }
 });
 
 test('Finance has six separate data-backed tabs', () => {
