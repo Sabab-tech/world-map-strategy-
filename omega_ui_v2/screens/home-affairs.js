@@ -121,7 +121,7 @@
     var rows = [], seen = Object.create(null);
     function push(item, lawName, sectionName) {
       if (!item || typeof item !== 'object') return;
-      var law = item.actName || item.lawName || item.law || item.act || item.name || item.title || lawName || 'Law not named';
+      var law = item.actName || item.lawName || item.law || item.act || lawName || item.name || item.title || 'Law not named';
       var parts = Array.isArray(item.sections) ? item.sections : Array.isArray(item.articles) ? item.articles : Array.isArray(item.provisions) ? item.provisions : null;
       if (parts && parts.length) { parts.forEach(function (section) { push(section, law, section.number || section.section || section.article || null); }); return; }
       var section = item.sectionNumber || item.articleNumber || item.section || item.article || item.number || sectionName || 'General';
