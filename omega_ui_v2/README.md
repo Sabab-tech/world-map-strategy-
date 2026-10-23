@@ -19,4 +19,15 @@ This directory is the isolated replacement UI namespace. It is intentionally not
 5. Never delete/replace any live legacy/gameplay file as part of UI v2 work.
 6. If the ministry registry count is unresolved, do not invent an eighteenth card. See `docs/OMEGA_UI_V2_DESIGN_SPEC_V1.md`.
 
-The current implementation slice is the 15-tier Police Fleet renderer plus a read-only resource-site adapter. Other screens are specified in the design contract and must be implemented through the same adapter pattern before rollout.
+## Current isolated implementation modules
+
+- `app.js`: explicit mount API, global Map/Government/Economy/Industry/Reports navigation, Back history and country context. A host can provide the live-map renderer; UI v2 does not create a parallel world map.
+- `screens/government.js` and `screens/ministry-detail.js`: Executive Ministry / Country Overview, All Ministries directory and read-only country-domain details.
+- `screens/economy.js`: sourced Economy/Treasury summary, separate from published macro indicators.
+- `screens/resource-ministry.js` and `screens/mine-detail.js`: six Energy & Mining sections and individual `siteId` pages; reserve, modeled reserve, inventory stock, rate and capacity remain distinct.
+- `screens/industry.js`: existing commissioned factories, production cycles, input inventory and projects.
+- `screens/home-affairs.js` and `screens/police-fleet.js`: six Home Affairs sections, all 15 canonical vehicle profiles, existing local vehicle SVGs and existing police recruitment handler.
+- `screens/reports.js`: source-linked report index.
+- `test/omega_ui_v2.test.mjs`: automated UI-v2 contract tests, included in `npm run test:ui-visual`.
+
+This is a staged foundation, not a claim that production UI replacement is complete. The modules are still isolated and have not been wired into root `index.html`. Merge and production rollout require all checks on the exact PR head, host navigation integration, Android 9/offline smoke, runtime action verification, and preservation of the legacy recovery path. Do not remove or overwrite any live legacy/gameplay file during the rollout.
