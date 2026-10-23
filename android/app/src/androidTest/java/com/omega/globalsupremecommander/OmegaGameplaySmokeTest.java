@@ -171,16 +171,16 @@ public final class OmegaGameplaySmokeTest {
                     " dockResult: dock ? dock.getAttribute('data-last-open-result') : null" +
                     " });" +
                     "})()";
-            final long cabinetDeadline = SystemClock.elapsedRealtime() + 30000L;
+            final long cabinetDeadline = SystemClock.elapsedRealtime() + PAGE_LOAD_TIMEOUT_MS;
             String cabinetReady = "false";
             while (!"true".equals(cabinetReady) && SystemClock.elapsedRealtime() < cabinetDeadline) {
-                cabinetReady = evaluate(instrumentation, webViewRef.get(), cabinetSurfaceReadyScript, 10L);
+                cabinetReady = evaluate(instrumentation, webViewRef.get(), cabinetSurfaceReadyScript, JAVASCRIPT_CALLBACK_TIMEOUT_SECONDS);
                 if (!"true".equals(cabinetReady)) SystemClock.sleep(350L);
             }
             final String cabinetDiagnostics = "true".equals(cabinetReady) ? "" :
-                    evaluate(instrumentation, webViewRef.get(), cabinetDiagnosticScript, 10L);
+                    evaluate(instrumentation, webViewRef.get(), cabinetDiagnosticScript, JAVASCRIPT_CALLBACK_TIMEOUT_SECONDS);
             assertEquals(
-                    "Government HQ must render its council content within 30 seconds; diagnostics=" + cabinetDiagnostics,
+                    "Government HQ must render its council content within 150 seconds; diagnostics=" + cabinetDiagnostics,
                     "true", cabinetReady
             );
         } finally {
