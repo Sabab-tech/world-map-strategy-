@@ -208,3 +208,7 @@
   .omega-v2-nav-button { font-size:9px; }
   .omega-v2-materials { grid-template-columns:1fr; }
 }
+
+.omega-v2-ministry-icon svg { display:block; height:23px; width:23px; }
+.omega-v2-ministry-icon { flex:0 0 38px; }
+.omega-v2-ministry-icon svg path, .omega-v2-ministry-icon svg circle { vector-effect:non-scaling-stroke; }
