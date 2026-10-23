@@ -194,3 +194,26 @@ test('large world GeoJSON is rendered incrementally rather than monopolizing the
   assert.match(renderer, /OMEGAGeographicRegionSystem/);
   assert.match(renderer, /Game\.countryLabels\.length = 0/);
 });
+
+
+test('slow simulation frames and data-heavy ministry panels bound repeated UI work', () => {
+  const simulation = read('omega_simulation_runtime.js');
+  assert.match(simulation, /MAX_PENDING_REAL_DELTA_MS\s*=\s*STEP_MS/);
+  assert.match(simulation, /this\.pendingRealDeltaMs\s*=\s*Math\.min\(MAX_PENDING_REAL_DELTA_MS,\s*this\.pendingRealDeltaMs\s*\+\s*delta\)/);
+
+  const overview = read('omega_country_overview_ministry_ui_v1.js');
+  assert.match(overview, /function scheduleOverviewRender\(\)/);
+  assert.match(overview, /overviewRenderTimer !== null/);
+  assert.match(overview, /OMEGA_SIMULATION_TURN_COMMITTED', scheduleOverviewRender/);
+
+  const resources = read('omega_resource_command_center_ui_v1.js');
+  assert.match(resources, /function scheduleVisiblePanelRefresh\(\)/);
+  assert.match(resources, /resourceDataWarmupAttempted = false; scheduleVisiblePanelRefresh\(\)/);
+  assert.match(resources, /normaliseCountry\(ownCountry\)!==selected/,
+    'global site records must be country-filtered before expensive cloning');
+  assert.match(resources, /const visibleSites = sites\.slice\(0, 150\)/);
+
+  const serviceWorker = read('omega-offline-map-sw.js');
+  const cacheVersion = Number(serviceWorker.match(/CACHE_NAME = "omega-offline-atlas-shell-v(\d+)"/)?.[1] || 0);
+  assert.ok(cacheVersion >= 24, 'Android/offline installs must receive the updated anti-hang runtime scripts');
+});
