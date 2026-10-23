@@ -167,7 +167,7 @@
           var result;
           try { result = engineNow.recruitPolice(amount, countryId(currentOptions)); }
           catch (error) { result = { ok:false, code:'RECRUITMENT_RUNTIME_EXCEPTION', message:String(error && error.message || error) }; }
-          if (result && result.ok) root.__omegaV2RecruitOutcome = 'Recruitment accepted by the canonical runtime for ' + fmt(amount) + ' officer(s). Recorded cost: ' + money(result.upfrontCostUsd !== undefined ? result.upfrontCostUsd : result.costUsd) + '.';
+          if (result && result.ok) root.__omegaV2RecruitOutcome = 'Recruitment accepted by the canonical runtime for ' + fmt(amount) + ' officer(s). Recorded cost: ' + money(result.upfrontCostUsd !== undefined ? result.upfrontCostUsd : result.costUsd !== undefined ? result.costUsd : result.cost) + '.';
           else root.__omegaV2RecruitOutcome = 'Recruitment not executed: ' + String(result && (result.message || result.code || result.reason) || 'RUNTIME_REJECTED') + '.';
           render(root, Object.assign({}, currentOptions, { tab:'personnel' }));
         } else if (actionId === 'open-operations') {
