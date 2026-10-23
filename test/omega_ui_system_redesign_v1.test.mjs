@@ -126,6 +126,22 @@ test('map ministry entry is outside map stacking and has independent click recov
     'the entry is above the map renderer and its interaction layers');
 });
 
+test('Government HQ stays busy until deferred council content is actually rendered', () => {
+  const engine = read('ministry_engine.js');
+  const navigation = read('omega_ui_system_redesign_v1.js');
+
+  assert.match(engine, /data-cabinet-render-state/);
+  assert.match(engine, /loading-council/);
+  assert.match(engine, /renderedContent/);
+  assert.match(engine, /setAttribute\('data-cabinet-render-state', 'ready'\)/);
+  assert.match(engine, /setAttribute\('data-cabinet-render-state', 'error'\)/);
+  assert.match(engine, /setAttribute\('aria-busy', 'false'\)/);
+
+  assert.match(navigation, /const councilPending = opened/);
+  assert.match(navigation, /cabinet\.getAttribute\('data-cabinet-render-state'\) === 'loading-council'/);
+  assert.match(navigation, /if \(typeof cabinet\.setAttribute === 'function' && !councilPending\)/);
+});
+
 function createMinistryNavigationHarness({ withLayerManager = true } = {}) {
   const listeners = {};
   const calls = [];
