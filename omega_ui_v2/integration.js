@@ -18,6 +18,7 @@
       g.OmegaCabinetUI && g.OmegaCabinetUI.activeCountry,
       g.CountryIOS && g.CountryIOS.activeCountry,
       g.Game && (g.Game.currentActiveCountry || g.Game.selectedCountryId),
+      g.OmegaHomeMinistryEngine && typeof g.OmegaHomeMinistryEngine.getCurrentCountryId === 'function' ? g.OmegaHomeMinistryEngine.getCurrentCountryId() : null,
       g.currentActiveCountry,
       g.playerCountryId,
       g.playerCountry
@@ -26,6 +27,26 @@
       if (values[i] != null && String(values[i]).trim()) return String(values[i]).trim().toUpperCase();
     }
     return '';
+  }
+  function availableCountryOptions(country) {
+    var engine = g.OmegaHomeMinistryEngine || g.Omega && g.Omega.HomeMinistry;
+    var ids = [];
+    if (country) ids.push(String(country).toUpperCase());
+    try {
+      var additional = engine && typeof engine.getAvailableCountries === 'function' ? engine.getAvailableCountries(country) : [];
+      if (Array.isArray(additional)) ids = ids.concat(additional);
+    } catch (_) {}
+    ids = Array.from(new Set(ids.map(function (id) { return String(id || '').trim().toUpperCase(); }).filter(Boolean))).slice(0, 300);
+    var gateway = g.OmegaCountryDataGateway || g.Omega && g.Omega.CountryDataGateway;
+    return ids.map(function (id) {
+      var label = id;
+      try {
+        var resolved = gateway && typeof gateway.resolveCountry === 'function' ? gateway.resolveCountry(id) : null;
+        var identity = resolved && (resolved.identity || resolved.country || resolved);
+        label = String(identity && (identity.officialName || identity.name || identity.countryName) || id) + ' (' + id + ')';
+      } catch (_) {}
+      return { id:id, name:label };
+    });
   }
   function restoreLegacy(root, country) {
     try {
@@ -63,6 +84,7 @@
       var result = g.OmegaUIV2App.mount(root, {
         initialRoute:'government',
         countryId:country,
+        countryOptions:availableCountryOptions(country),
         onBackToMap:closeToWorldMap,
         renderMap:function () { return closeToWorldMap(); },
         onCountryChange:function (id) {
