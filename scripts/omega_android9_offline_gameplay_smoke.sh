@@ -13,19 +13,37 @@ cleanup() {
 }
 trap cleanup EXIT
 
-timeout 10s adb shell cmd webviewupdate set-webview-implementation com.android.chrome \
+# Prefer Chrome's WebView when installed; use Android System WebView on the AOSP image.
+# Do not assume a Play Store-only package exists, and fail fast if no provider is available.
+webview_provider=""
+for candidate in com.android.chrome com.android.webview; do
+  if timeout 10s adb shell pm path "$candidate" 2>/dev/null \
+      | tr -d "\\r" | grep -q "^package:"; then
+    webview_provider="$candidate"
+    break
+  fi
+done
+
+if [[ -z "$webview_provider" ]]; then
+  timeout 10s adb shell dumpsys webviewupdate \
+    | tee "$artifact_dir/webview-provider.txt" || true
+  echo "ERROR: API 28 emulator has no installed Chrome or Android System WebView provider." >&2
+  exit 1
+fi
+printf "%s\\n" "$webview_provider" >"$artifact_dir/webview-provider-selected.txt"
+timeout 10s adb shell cmd webviewupdate set-webview-implementation "$webview_provider" \
   >"$artifact_dir/webview-provider-select.txt" 2>&1 || true
 timeout 10s adb shell dumpsys webviewupdate \
   | tee "$artifact_dir/webview-provider.txt" || true
-timeout 10s adb shell dumpsys package com.android.chrome \
+timeout 10s adb shell dumpsys package "$webview_provider" \
   | grep -m1 -E "versionName=|versionCode=" \
-  >"$artifact_dir/chrome-version.txt" 2>&1 || true
+  >"$artifact_dir/webview-provider-version.txt" 2>&1 || true
 
 wait_for_api28() {
   local poll state boot sdk
   poll=1
   while [[ "$poll" -le 45 ]]; do
-    state="$(adb get-state 2>/dev/null | tr -d "\r" || true)"
+    state="$(timeout 5s adb get-state 2>/dev/null | tr -d "\r" || true)"
     if [[ "$state" == "device" ]]; then
       boot="$(timeout 5s adb shell getprop sys.boot_completed 2>/dev/null | tr -d "\r" || true)"
       sdk="$(timeout 5s adb shell getprop ro.build.version.sdk 2>/dev/null | tr -d "\r" || true)"
@@ -55,6 +73,12 @@ adb logcat -c >/dev/null 2>&1 || true
 adb logcat -v threadtime \
   "OMEGA_ANDROID_SMOKE:I" \
   "OMEGA_WEB_DIAGNOSTICS:D" \
+  "ActivityManager:E" \
+  "AndroidRuntime:E" \
+  "Instrumentation:I" \
+  "TestRunner:I" \
+  "Choreographer:I" \
+  "OpenGLRenderer:I" \
   "chromium:E" \
   "*:E" >"$artifact_dir/logcat-live.txt" 2>&1 &
 logcat_pid=$!

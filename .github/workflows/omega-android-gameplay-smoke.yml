@@ -70,11 +70,12 @@ jobs:
         uses: ReactiveCircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
         with:
           api-level: 28
-          target: google_apis_playstore
+          # Offline-only app: avoid Play Store/Google app first-boot tasks that ANR before instrumentation starts.
+          target: default
           arch: x86_64
           profile: pixel_2
-          emulator-boot-timeout: 1200
-          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot-load -no-snapshot-save -noaudio -no-boot-anim -camera-back none -camera-front none -memory 4096 -cores 4
+          emulator-boot-timeout: 600
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot-load -no-snapshot-save -noaudio -no-boot-anim -camera-back none -camera-front none -memory 3072 -cores 4
           disable-animations: true
           script: bash scripts/omega_android9_offline_gameplay_smoke.sh
       - name: Upload Android 9 smoke diagnostics
