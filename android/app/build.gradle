@@ -3,6 +3,8 @@ plugins {
 }
 
 def omegaRepoRoot = rootProject.projectDir.parentFile
+// Give each CI-built APK a monotonically increasing versionCode so Android can recognize newer builds.
+def omegaBuildNumber = (System.getenv('GITHUB_RUN_NUMBER') ?: '2').toInteger()
 
 android {
     namespace 'com.omega.globalsupremecommander'
@@ -12,8 +14,8 @@ android {
         applicationId 'com.omega.globalsupremecommander'
         minSdk 24
         targetSdk 35
-        versionCode 1
-        versionName '0.1.0'
+        versionCode omegaBuildNumber
+        versionName "0.1.${omegaBuildNumber}"
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
     }
 
