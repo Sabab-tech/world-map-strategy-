@@ -32,7 +32,6 @@
       onCountryChange: function (countryId) {
         state.countryId = String(countryId || '').trim().toUpperCase();
         g.OmegaMinistryViewCountry = state.countryId;
-        render(root);
       }
     };
   }
