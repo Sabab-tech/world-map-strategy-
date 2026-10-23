@@ -72,7 +72,7 @@ test('canonical factory catalog, type profiles, offline icons and recipe coeffic
 
   const serviceWorker = readText('omega-offline-map-sw.js');
   const offlineShellVersion = Number(serviceWorker.match(/CACHE_NAME = "omega-offline-atlas-shell-v(\d+)"/)?.[1] || 0);
-  assert.ok(offlineShellVersion >= 23, 'offline shell cache must invalidate stale factory UI assets');
+  assert.ok(offlineShellVersion >= 24, 'offline shell cache must invalidate stale factory UI assets');
   const factoryUi = readText('omega_resource_command_center_ui_v1.js');
   assert.match(factoryUi, /Unemployed people/, 'industrial UI must expose the unemployment headcount');
   assert.match(factoryUi, /Jobs per factory/, 'catalog UI must expose per-factory job slots');
