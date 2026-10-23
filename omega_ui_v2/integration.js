@@ -39,6 +39,26 @@
     if (!enabled || !root || !g.OmegaUIV2App || typeof g.OmegaUIV2App.mount !== 'function') return { ok:false, code:'UI_V2_INTEGRATION_UNAVAILABLE' };
     var country = selectedCountry();
     try {
+      // Open the already-existing cabinet surface without rendering the legacy cabinet HTML first.
+      var dashboard = g.document && g.document.getElementById('ministry-dashboard-view');
+      if (dashboard && dashboard.style) {
+        dashboard.style.display = 'none';
+        dashboard.style.opacity = '0';
+        dashboard.style.pointerEvents = 'none';
+        if (dashboard.setAttribute) dashboard.setAttribute('aria-hidden', 'true');
+      }
+      if (root.style) Object.assign(root.style, {
+        display:'flex', position:'fixed', inset:'0', width:'100vw', height:'100vh',
+        minHeight:'100%', opacity:'1', visibility:'visible', pointerEvents:'auto', zIndex:'999999'
+      });
+      if (root.setAttribute) root.setAttribute('aria-hidden','false');
+      if (g.document.body && g.document.body.setAttribute) g.document.body.setAttribute('data-active-layer','1');
+      var layerManager = g.OmegaLayerManager;
+      if (layerManager) {
+        layerManager.currentLayer = 1;
+        if (Array.isArray(layerManager.layerStack) && layerManager.layerStack[layerManager.layerStack.length - 1] !== 1) layerManager.layerStack.push(1);
+      }
+      if (typeof g.updateGlobalBackButtonVisibility === 'function') g.updateGlobalBackButtonVisibility();
       if (country) g.OmegaMinistryViewCountry = country;
       var result = g.OmegaUIV2App.mount(root, {
         initialRoute:'government',
@@ -86,8 +106,18 @@
     try {
       if (manager && typeof manager.popLayer === 'function') manager.popLayer();
       else if (manager && typeof manager.setLayer === 'function') manager.setLayer(0);
+      else if (g.document && g.document.body && g.document.body.setAttribute) g.document.body.setAttribute('data-active-layer','0');
     } catch (_) {}
-    try { if (typeof g.updateGlobalBackButtonVisibility === 'function') g.updateGlobalBackButtonVisibility(); } catch (_) {}
+    try {
+      var dashboard = g.document && g.document.getElementById('ministry-dashboard-view');
+      if (dashboard && dashboard.style) {
+        dashboard.style.display = '';
+        dashboard.style.opacity = '1';
+        dashboard.style.pointerEvents = 'auto';
+        if (dashboard.removeAttribute) dashboard.removeAttribute('aria-hidden');
+      }
+      if (typeof g.updateGlobalBackButtonVisibility === 'function') g.updateGlobalBackButtonVisibility();
+    } catch (_) {}
     return true;
   }
   function audit() {
