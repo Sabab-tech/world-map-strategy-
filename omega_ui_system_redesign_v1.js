@@ -472,7 +472,15 @@
         cabinet.querySelector('.omega-cabinet-entry-loading').textContent =
           'Government HQ is open. Cabinet data could not be rendered; reopen this view to retry.';
       }
-      if (typeof cabinet.setAttribute === 'function') cabinet.setAttribute('aria-busy', 'false');
+      const councilPending = opened &&
+        typeof cabinet.getAttribute === 'function' &&
+        cabinet.getAttribute('data-cabinet-render-state') === 'loading-council';
+      // ministry_engine owns the busy-state transition when council rendering is deferred.
+      // Clearing it here made the visible shell look ready while its content was still loading.
+      if (typeof cabinet.setAttribute === 'function' && !councilPending) {
+        cabinet.setAttribute('aria-busy', 'false');
+        if (!opened) cabinet.setAttribute('data-cabinet-render-state', 'error');
+      }
       if (dock) dock.setAttribute('data-last-open-result', opened ? 'opened' : 'failed');
       if (typeof global.updateGlobalBackButtonVisibility === 'function') {
         try { global.updateGlobalBackButtonVisibility(); } catch (_) {}
