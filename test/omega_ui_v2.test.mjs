@@ -285,6 +285,49 @@ test('Government entry mount synchronizes existing layer, sidebar and map visibi
   }
 });
 
+test('Legacy operational console Back resumes UI v2 in the existing cabinet host', () => {
+  const bridge = globalThis.OmegaUIV2Integration;
+  const previous = {
+    document:globalThis.document, app:globalThis.OmegaUIV2App, manager:globalThis.OmegaLayerManager,
+    country:globalThis.OmegaMinistryViewCountry, updateBack:globalThis.updateGlobalBackButtonVisibility
+  };
+  const attrs = Object.create(null), bodyAttrs = Object.create(null), classes = new Set();
+  const root = { style:{}, classList:{add(){},remove(){}},
+    setAttribute(k,v){attrs[k]=String(v);}, getAttribute(k){return attrs[k]||null;}, removeAttribute(k){delete attrs[k];} };
+  const dashboard={style:{},setAttribute(){},removeAttribute(){}}, world={style:{}};
+  const manager={
+    currentLayer:1,layerStack:[0,1],updates:[],
+    updateRightSidebar(layer){this.updates.push(layer);},
+    setLayer(layer){this.currentLayer=layer;},
+    popLayer(){this.setLayer(1);return true;}
+  };
+  globalThis.document={
+    getElementById(id){return id==='cabinet-full-window'?root:id==='ministry-dashboard-view'?dashboard:id==='world-ui-root'?world:null;},
+    body:{setAttribute(k,v){bodyAttrs[k]=String(v);},classList:{add(k){classes.add(k);}}}
+  };
+  globalThis.OmegaUIV2App={mount(){return {ok:true,mounted:true,route:'government'};},unmount(){return {ok:true};}};
+  globalThis.OmegaLayerManager=manager;
+  globalThis.OmegaMinistryViewCountry='BGD';
+  globalThis.updateGlobalBackButtonVisibility=()=>{};
+  try{
+    const opened=bridge.openOperationalConsole('defense');
+    assert.equal(opened.ok,true);
+    assert.equal(manager.currentLayer,2);
+    assert.equal(bridge.audit().mounted,false);
+    manager.popLayer();
+    assert.equal(manager.currentLayer,1);
+    assert.equal(attrs['data-omega-ui-v2-active'],'true');
+    assert.equal(bridge.audit().mounted,true);
+    assert.equal(dashboard.style.display,'none');
+  } finally {
+    if(previous.document===undefined)delete globalThis.document;else globalThis.document=previous.document;
+    if(previous.app===undefined)delete globalThis.OmegaUIV2App;else globalThis.OmegaUIV2App=previous.app;
+    if(previous.manager===undefined)delete globalThis.OmegaLayerManager;else globalThis.OmegaLayerManager=previous.manager;
+    if(previous.country===undefined)delete globalThis.OmegaMinistryViewCountry;else globalThis.OmegaMinistryViewCountry=previous.country;
+    if(previous.updateBack===undefined)delete globalThis.updateGlobalBackButtonVisibility;else globalThis.updateGlobalBackButtonVisibility=previous.updateBack;
+  }
+});
+
 test('Back-to-Map bypasses legacy cabinet subsystem stack traps', () => {
   const bridge = globalThis.OmegaUIV2Integration;
   const previousManager = globalThis.OmegaLayerManager;
