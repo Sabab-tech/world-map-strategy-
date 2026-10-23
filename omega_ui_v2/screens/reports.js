@@ -118,6 +118,13 @@
       '<div class="omega-v2-kpi"><span>Current source coverage</span><strong>' + esc(value) + '</strong></div>' +
       '<div class="omega-v2-actions"><button type="button" class="omega-v2-button omega-v2-button--primary" data-omega-v2-open-report="' + esc(category.id) + '" data-domain="' + esc(category.domain || '') + '"' + (canOpen ? '' : ' disabled title="No canonical source-screen route is connected for this report yet."') + '>Open source report</button></div></article>';
   }
+  function photoMarkup(id,alt,caption) {
+    var lib=g.OmegaUIPhotoAssets,item=null;try{item=lib&&typeof lib.get==='function'?lib.get(id):null;}catch(_){}
+    var safe=/^[a-z0-9-]+$/.test(String(id||''))?String(id):'',path=item&&/^assets\/ui-photos\/[a-z0-9-]+\.webp$/.test(String(item.path||''))?item.path:(safe?'assets/ui-photos/'+safe+'.webp':'');
+    if(!path)return '<div class="omega-v2-photo-placeholder" role="img" aria-label="'+esc(alt)+'">LOCAL PHOTO UNAVAILABLE</div>';
+    var credit=item&&item.author&&item.sourcePageUrl&&item.licenseUrl?'<small class="omega-v2-photo-credit">Photo: <a href="'+esc(item.sourcePageUrl)+'" target="_blank" rel="noopener noreferrer">'+esc(item.author)+'</a> · <a href="'+esc(item.licenseUrl)+'" target="_blank" rel="noopener noreferrer">'+esc(item.licenseShortName||'License')+'</a></small>':'';
+    return '<figure class="omega-v2-photo omega-v2-photo--hero"><img loading="lazy" decoding="async" width="1280" height="720" src="'+esc(path)+'" alt="'+esc(alt)+'"><figcaption><strong>'+esc(item&&item.caption||caption)+'</strong><small>Representative reference imagery, not evidence of current ownership or operation.</small>'+credit+'</figcaption></figure>';
+  }
   function render(root, options) {
     options = options || {};
     if (!root) return { ok:false, code:'REPORTS_ROOT_REQUIRED' };
@@ -125,6 +132,7 @@
     model.onOpenDomain = options.onOpenDomain;
     root.classList.add('omega-v2-screen');
     root.innerHTML = '<section class="omega-v2-shell omega-v2-reports"><header class="omega-v2-heading"><div><div class="omega-v2-eyebrow">CROSS-MINISTRY REPORTS</div><h1 class="omega-v2-title">Reports & Data Quality</h1><p class="omega-v2-subtitle">Country ' + esc(model.countryId || 'Not recorded') + ' · each report links to its source domain</p></div><span class="omega-v2-status" data-state="' + (model.sourceStateAvailable ? 'operational' : 'unknown') + '">' + (model.sourceStateAvailable ? 'SOURCE DATA CONNECTED' : 'SOURCE DATA UNAVAILABLE') + '</span></header>' +
+      photoMarkup('wind-farm', 'Wind farm, representative energy and reporting reference image', 'REPORTS & EVIDENCE') +
       '<div class="omega-v2-kpis"><div class="omega-v2-kpi"><span>Country indicators</span><strong>' + esc(model.fields.available + ' / ' + model.fields.registered) + '</strong></div><div class="omega-v2-kpi"><span>Unrecorded indicators</span><strong>' + esc(model.fields.missing) + '</strong></div><div class="omega-v2-kpi"><span>Mine/resource sites</span><strong>' + esc(model.siteCount) + '</strong></div><div class="omega-v2-kpi"><span>Factories</span><strong>' + esc(model.factoryCount) + '</strong></div></div>' +
       '<p class="omega-v2-note">This is an index, not a second database. Values appear only when the source runtime or registry has returned a recorded value. Time-series charts are omitted unless an actual series is provided by the owning module.</p>' +
       '<div class="omega-v2-grid">' + model.categories.map(function (category) { return card(category, model); }).join('') + '</div></section>';

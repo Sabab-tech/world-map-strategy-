@@ -3,11 +3,11 @@
   'use strict';
 
   var destinations = [
-    { id: 'map', label: 'Map', icon: 'map', group: 'global' },
+    { id: 'map', label: 'World', icon: 'map', group: 'global' },
+    { id: 'overview', label: 'Overview', icon: 'layout-dashboard', group: 'global' },
     { id: 'government', label: 'Government', icon: 'landmark', group: 'global' },
     { id: 'economy', label: 'Economy', icon: 'wallet', group: 'global' },
-    { id: 'industry', label: 'Industry', icon: 'factory', group: 'global' },
-    { id: 'reports', label: 'Reports', icon: 'chart-no-axes-combined', group: 'global' }
+    { id: 'more', label: 'More', icon: 'grid-2x2', group: 'global' }
   ];
 
   var governmentDestinations = [

@@ -36,3 +36,8 @@ The modules are loaded as local scripts and the existing Government entry mounts
 ## Global Atlas Command
 
 The global map dock provides World, Overview, Government, Economy and More. Domain pages reuse canonical game runtimes; local WebP photos use representative-image notes. The offline shell cache v27 explicitly includes UI-v2 modules and bundled photography. Android and visual acceptance remain release gates.
+
+
+## Atlas Command visual rollout
+
+The main navigation is World, Overview, Government, Economy and More. Overview reads source-backed country indicators and available game finance state. More provides image-led domain cards into the current canonical modules. The global dock routes through `OmegaUIV2Integration`; local WebP images load lazily and remain in the offline service-worker cache. Android 9, offline and responsive acceptance remain release gates.

@@ -4,7 +4,7 @@
 (function (g) {
   'use strict';
 
-  var ROUTES = ['map', 'government', 'economy', 'industry', 'reports'];
+  var ROUTES = ['map', 'overview', 'government', 'economy', 'more', 'industry', 'reports'];
   function esc(v) { return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) { return ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[c]; }); }
   function currentCountry() {
     var candidates = [g.OmegaMinistryViewCountry, g.OmegaCabinetUI && g.OmegaCabinetUI.activeCountry,
@@ -19,7 +19,8 @@
     try { return lib && typeof lib.list === 'function' ? lib.list().length : null; } catch (_) { return null; }
   }
   function navButton(id, label, active) {
-    return '<button type="button" class="omega-v2-nav-button' + (active === id ? ' is-active' : '') + '" data-omega-v2-global-nav="' + esc(id) + '" aria-current="' + (active === id ? 'page' : 'false') + '">' + esc(label) + '</button>';
+    var selected = active === id || (id === 'more' && ['industry','reports','home-affairs','resources','ministry-detail','mine-detail'].indexOf(active) >= 0);
+    return '<button type="button" class="omega-v2-nav-button' + (selected ? ' is-active' : '') + '" data-omega-v2-global-nav="' + esc(id) + '" aria-current="' + (selected ? 'page' : 'false') + '">' + esc(label) + '</button>';
   }
   function ministryOptions(root) {
     var state = stateFor(root);
@@ -114,10 +115,55 @@
     if (!integration || typeof integration.openOperationalConsole !== 'function') return { ok:false, code:'OPERATIONAL_CONSOLE_BRIDGE_UNAVAILABLE' };
     return integration.openOperationalConsole(id);
   }
+  function photoMarkup(id,alt,caption,tile) {
+    var lib=g.OmegaUIPhotoAssets,item=null;try{item=lib&&typeof lib.get==='function'?lib.get(id):null;}catch(_){}
+    var safe=/^[a-z0-9-]+$/.test(String(id||''))?String(id):'';
+    var path=item&&/^assets\/ui-photos\/[a-z0-9-]+\.webp$/.test(String(item.path||''))?item.path:(safe?'assets/ui-photos/'+safe+'.webp':'');
+    if(!path)return '<div class="omega-v2-photo-placeholder" role="img" aria-label="'+esc(alt)+'">LOCAL PHOTO UNAVAILABLE</div>';
+    var credit=item&&item.author&&item.sourcePageUrl&&item.licenseUrl?'<small class="omega-v2-photo-credit">Photo: <a href="'+esc(item.sourcePageUrl)+'" target="_blank" rel="noopener noreferrer">'+esc(item.author)+'</a> · <a href="'+esc(item.licenseUrl)+'" target="_blank" rel="noopener noreferrer">'+esc(item.licenseShortName||'License')+'</a></small>':'';
+    return '<figure class="omega-v2-photo '+(tile?'omega-v2-photo--tile':'omega-v2-photo--hero')+'"><img loading="lazy" decoding="async" width="1280" height="720" src="'+esc(path)+'" alt="'+esc(alt)+'"><figcaption><strong>'+esc(item&&item.caption||caption)+'</strong><small>Representative reference imagery, not evidence of current ownership or operation.</small>'+credit+'</figcaption></figure>';
+  }
+  function renderOverview(root,content) {
+    var s=stateFor(root),candidate=s.countryId||g.OmegaMinistryViewCountry||(g.CountryIOS&&g.CountryIOS.activeCountry)||(g.Game&&(g.Game.currentActiveCountry||g.Game.selectedCountryId));
+    if(candidate&&typeof candidate==='object')candidate=candidate.countryCode||candidate.iso3||candidate.countryId||candidate.code||candidate.name||candidate.id;
+    var country=String(candidate||'').trim().toUpperCase(),gateway=g.OmegaCountryDataGateway||(g.Omega&&g.Omega.CountryDataGateway),snap=null;
+    try{if(country&&gateway&&typeof gateway.getSnapshot==='function')snap=gateway.getSnapshot(country);}catch(_){}
+    var fields=snap&&snap.fields||{},keys=Object.keys(fields),available=keys.filter(function(k){return fields[k]&&fields[k].status==='AVAILABLE'&&fields[k].value!=null;}).length;
+    function value(k){var r=fields[k];if(!r||r.status!=='AVAILABLE'||r.value==null||r.value==='')return'Not recorded';var v=r.value;if(typeof v==='number'&&Number.isFinite(v))v=v.toLocaleString('en-US',{maximumFractionDigits:2});return String(v)+(r.unit?' '+r.unit:'');}
+    var finance=((g.Game&&g.Game.state&&g.Game.state.finance)||{})[country]||{},cash=finance.available!=null?finance.available:finance.cash;
+    if(cash==null||cash==='')cash='Not recorded';else if(typeof cash==='number'&&Number.isFinite(cash))cash=cash.toLocaleString('en-US',{maximumFractionDigits:2})+(finance.currencyCode?' '+finance.currencyCode:'');
+    content.innerHTML='<section class="omega-v2-shell omega-v2-overview"><header class="omega-v2-heading"><div><div class="omega-v2-eyebrow">ATLAS COMMAND / NATIONAL BRIEFING</div><h1 class="omega-v2-title">Country Overview</h1><p class="omega-v2-subtitle">Country '+esc(country||'Not recorded')+' · sourced indicators and current game state</p></div><span class="omega-v2-status" data-state="'+(snap?'operational':'unknown')+'">'+(snap?'SOURCE LINK CONNECTED':'SOURCE DATA UNAVAILABLE')+'</span></header>'+
+    photoMarkup('dhaka-skyline','Urban skyline, representative reference image for national infrastructure','NATIONAL CONTEXT',false)+
+    '<div class="omega-v2-kpis"><div class="omega-v2-kpi"><span>GDP</span><strong>'+esc(value('gdp'))+'</strong><small>Source: '+esc(fields.gdp&&(fields.gdp.sourceName||fields.gdp.sourceId)||'Not recorded')+'</small></div><div class="omega-v2-kpi"><span>Population</span><strong>'+esc(value('population'))+'</strong><small>Published indicator only</small></div><div class="omega-v2-kpi"><span>GDP growth</span><strong>'+esc(value('gdpGrowth'))+'</strong><small>Period: '+esc(fields.gdpGrowth&&fields.gdpGrowth.year||'Not recorded')+'</small></div><div class="omega-v2-kpi"><span>Inflation</span><strong>'+esc(value('inflation'))+'</strong><small>Published indicator only</small></div><div class="omega-v2-kpi"><span>Available treasury</span><strong>'+esc(cash)+'</strong><small>Canonical game finance state</small></div><div class="omega-v2-kpi"><span>Recorded indicators</span><strong>'+available+' / '+keys.length+'</strong><small>Missing values remain unrecorded</small></div></div>'+
+    '<div class="omega-v2-note">Photographs are illustrative, not proof of ownership or current activity. Published indicators and simulated treasury values are separate sources; absent values are never filled with invented zeros.</div><h2 class="omega-v2-section-title">Continue command</h2><div class="omega-v2-actions"><button type="button" class="omega-v2-button omega-v2-button--primary" data-omega-v2-global-nav="government">Government and ministries</button><button type="button" class="omega-v2-button" data-omega-v2-global-nav="economy">Economy & treasury</button><button type="button" class="omega-v2-button omega-v2-button--quiet" data-omega-v2-global-nav="more">All strategic domains</button></div></section>';
+    return{ok:true,route:'overview',countryId:country||null,available:available,registered:keys.length};
+  }
+  function renderMore(root,content) {
+    var items=[
+      {title:'Industry & Factories',desc:'Production lines, inputs, factory sites and output.',photo:'industrial-production-line',route:'industry'},
+      {title:'Resources & Mining',desc:'Registered sites, extraction, reserves, stock and material flow.',photo:'open-pit-mine',ministry:'energy_mining'},
+      {title:'Public Safety',desc:'Police staffing, fleet, operations and incidents.',photo:'bangladesh-police-headquarters',ministry:'interior_security'},
+      {title:'Logistics & Trade',desc:'Shipping, trade, contracts and markets.',photo:'container-ship',ministry:'trade'},
+      {title:'Foreign Affairs',desc:'Diplomacy, treaties and international commitments.',photo:'un-assembly-building',ministry:'foreign_affairs'},
+      {title:'Defense',desc:'Readiness, assets, procurement and defense logistics.',photo:'uss-nimitz',ministry:'defense'},
+      {title:'Intelligence & Research',desc:'Research priorities and strategic reports.',photo:'hydroelectric-plant',ministry:'science_research'},
+      {title:'Society & Infrastructure',desc:'Infrastructure, food systems and public services.',photo:'wheat-field',ministry:'infrastructure'},
+      {title:'Events & Projects',desc:'Project schedules, milestones and completion state.',photo:'dhaka-skyline',ministry:'mega_projects'},
+      {title:'Reports & Data Quality',desc:'Source coverage and missing fields.',photo:'wind-farm',route:'reports'}
+    ];
+    function card(x){var action=x.route?'<button type="button" class="omega-v2-button omega-v2-button--primary" data-omega-v2-global-nav="'+esc(x.route)+'">Open section ↗</button>':'<button type="button" class="omega-v2-button omega-v2-button--primary" data-omega-v2-more-ministry="'+esc(x.ministry)+'">Open ministry ↗</button>';
+      return '<article class="omega-v2-card omega-v2-domain-card">'+photoMarkup(x.photo,x.title+', representative reference photograph',x.title,true)+'<div class="omega-v2-domain-card-body"><span class="omega-v2-eyebrow">STRATEGIC DOMAIN</span><h3 class="omega-v2-card-title">'+esc(x.title)+'</h3><p class="omega-v2-card-meta">'+esc(x.desc)+'</p><div class="omega-v2-domain-card-action">'+action+'</div></div></article>';}
+    function core(id,title,desc,pic){return '<article class="omega-v2-card omega-v2-command-card">'+photoMarkup(pic,title+', representative reference image',title.toUpperCase(),true)+'<div class="omega-v2-domain-card-body"><h3 class="omega-v2-card-title">'+esc(title)+'</h3><p class="omega-v2-card-meta">'+esc(desc)+'</p><button type="button" class="omega-v2-button" data-omega-v2-global-nav="'+id+'">Open '+esc(title)+' ↗</button></div></article>';}
+    content.innerHTML='<section class="omega-v2-shell omega-v2-more-page"><header class="omega-v2-heading"><div><div class="omega-v2-eyebrow">OMEGA / ATLAS COMMAND</div><h1 class="omega-v2-title">Command Center</h1><p class="omega-v2-subtitle">One navigation system for the whole game. Existing simulation engines retain authority over country data and actions.</p></div><span class="omega-v2-status" data-state="operational">LOCAL-FIRST UI</span></header>'+photoMarkup('dhaka-skyline','Urban skyline, representative national infrastructure image','NATIONAL CONTEXT',false)+'<div class="omega-v2-note">Images are illustrative, not proof of ownership. Actions use existing canonical modules and never claim success without confirmation.</div><h2 class="omega-v2-section-title">Core command</h2><div class="omega-v2-grid omega-v2-core-grid">'+core('overview','Overview','National briefing and sourced indicators.','dhaka-skyline')+core('government','Government','Executive Ministry and All Ministries.','bangladesh-parliament')+core('economy','Economy','Treasury state and macro indicators.','container-ship')+'</div><h2 class="omega-v2-section-title">Strategic domains</h2><div class="omega-v2-grid omega-v2-domain-grid">'+items.map(card).join('')+'</div></section>';
+  }
   function routeScreen(root, content) {
     var state = stateFor(root);
     var options = state.options || {};
-    if (state.route === 'government') {
+    if (state.route === 'overview') {
+      return renderOverview(root, content);
+    } else if (state.route === 'more') {
+      return renderMore(root, content);
+    } else if (state.route === 'government') {
       if (g.OmegaUIV2Government && typeof g.OmegaUIV2Government.render === 'function') {
         return g.OmegaUIV2Government.render(content, ministryOptions(root));
       }
@@ -168,7 +214,7 @@
       '<header class="omega-v2-app-header"><button class="omega-v2-button omega-v2-button--quiet" type="button" data-omega-v2-back aria-label="Go back">‹ Back</button><div class="omega-v2-app-brand"><span class="omega-v2-brand-mark">Ω</span><div><strong>OMEGA</strong><small>GLOBAL COMMAND</small></div></div>' + countryControl + '</header>' +
       '<main class="omega-v2-app-main" data-omega-v2-main></main>' +
       '<nav class="omega-v2-bottom-nav" aria-label="Main navigation">' +
-      navButton('map','Map',state.route) + navButton('government','Government',state.route) + navButton('economy','Economy',state.route) + navButton('industry','Industry',state.route) + navButton('reports','Reports',state.route) +
+      navButton('map','World',state.route) + navButton('overview','Overview',state.route) + navButton('government','Government',state.route) + navButton('economy','Economy',state.route) + navButton('more','More',state.route) +
       '</nav></div>';
     var main = root.querySelector('[data-omega-v2-main]');
     var result = routeScreen(root, main);
@@ -187,7 +233,9 @@
         var target = event && event.target;
         if (!target || typeof target.closest !== 'function') return;
         var nav = target.closest('[data-omega-v2-global-nav]');
-        if (nav && root.contains(nav)) { navigate(root, nav.getAttribute('data-omega-v2-global-nav')); return; }
+        if (nav && root.contains(nav)) { var destination = nav.getAttribute('data-omega-v2-global-nav'); if (destination === 'map' && stateFor(root).options && typeof stateFor(root).options.onBackToMap === 'function') stateFor(root).options.onBackToMap(); else navigate(root, destination); return; }
+        var domain = target.closest('[data-omega-v2-more-ministry]');
+        if (domain && root.contains(domain)) { openMinistry(root, domain.getAttribute('data-omega-v2-more-ministry')); return; }
         if (target.closest('[data-omega-v2-back]') && root.contains(target)) { back(root); return; }
         if (target.closest('[data-omega-v2-action="back-to-map"]') && root.contains(target)) {
           var state = stateFor(root);

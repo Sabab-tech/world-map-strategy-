@@ -2,7 +2,7 @@
   "schemaVersion": "1.0.0",
   "app": "OMEGA",
   "namespace": "omega_ui_v2",
-  "rolloutStatus": "GLOBAL_ATLAS_COMMAND_DOCK_INTEGRATED; FULL_ANDROID_AND_VISUAL_ACCEPTANCE_PENDING",
+  "rolloutStatus": "GLOBAL_ATLAS_COMMAND_DOCK_AND_OVERVIEW_MORE_INTEGRATED; FULL_ANDROID_AND_VISUAL_ACCEPTANCE_PENDING",
   "preservationPolicy": "ADDITIVE_ONLY",
   "designDocument": "docs/OMEGA_UI_V2_DESIGN_SPEC_V1.md",
   "globalNavigation": [
@@ -51,7 +51,7 @@
     "countryIsolation": true,
     "preserveLegacyFiles": true
   },
-  "screenCoverageStatus": "GLOBAL_NAVIGATION_AND_RESPONSIVE_VISUAL_SYSTEM_INTEGRATED; ANDROID_OFFLINE_AND_FULL_SCREEN_ACCEPTANCE_PENDING",
+  "screenCoverageStatus": "ATLAS_VISUAL_SYSTEM_AND_GLOBAL_ROUTES_INTEGRATED; DEVICE_ACCEPTANCE_REQUIRED",
   "integrationPolicy": {
     "entry": "omega_ministry_entry_v3.js",
     "trigger": "Global Atlas Command dock plus existing Government entry",

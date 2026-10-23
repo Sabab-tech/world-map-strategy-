@@ -56,7 +56,8 @@
     } catch (_) {}
     if (root && root.removeAttribute) root.removeAttribute(ACTIVE_ATTR);
   }
-  function mountIntoCabinet(root) {
+  function mountIntoCabinet(root, mountOptions) {
+    mountOptions = mountOptions || {};
     root = root || cabinetRoot();
     if (!enabled || !root || !g.OmegaUIV2App || typeof g.OmegaUIV2App.mount !== 'function') return { ok:false, code:'UI_V2_INTEGRATION_UNAVAILABLE' };
     var country = selectedCountry();
@@ -91,7 +92,7 @@
       if (typeof g.updateGlobalBackButtonVisibility === 'function') g.updateGlobalBackButtonVisibility();
       if (country) g.OmegaMinistryViewCountry = country;
       var result = g.OmegaUIV2App.mount(root, {
-        initialRoute:'government',
+        initialRoute:mountOptions.initialRoute && g.OmegaUIV2App.destinations.indexOf(mountOptions.initialRoute) >= 0 ? mountOptions.initialRoute : 'government',
         countryId:country,
         countryOptions:availableCountryOptions(country),
         onBackToMap:closeToWorldMap,
@@ -114,7 +115,8 @@
       if (root.setAttribute) root.setAttribute(ACTIVE_ATTR, 'true');
       lastMount = { countryId:country || null, route:result.route || 'government', mounted:true };
       lastError = null;
-      return { ok:true, countryId:country || null, result:result };
+      if (mountOptions.ministryId && g.OmegaUIV2App && typeof g.OmegaUIV2App.openMinistry === 'function') { if (!g.OmegaUIV2App.openMinistry(root, mountOptions.ministryId)) return { ok:false, code:'UI_V2_MINISTRY_ROUTE_FAILED' }; lastMount.route = 'ministry-detail'; }
+      return { ok:true, countryId:country || null, result:result, route:lastMount.route || mountOptions.initialRoute || 'government' };
     } catch (error) {
       lastError = String(error && error.message || error || 'UI_V2_MOUNT_EXCEPTION');
       restoreLegacy(root, country);
@@ -160,6 +162,18 @@
     return result && result.ok === true;
   }
 
+  function openRoute(route) {
+    route=String(route||'').trim().toLowerCase();
+    if(!enabled||!g.OmegaUIV2App)return false;
+    if(route==='map'||route==='world'){var active=cabinetRoot();if(active&&active.getAttribute&&active.getAttribute(ACTIVE_ATTR)==='true')return closeToWorldMap();return true;}
+    var mappings={resources:'energy_mining',security:'interior_security','public-safety':'interior_security',logistics:'trade',foreign:'foreign_affairs',defense:'defense',research:'science_research',society:'infrastructure',projects:'mega_projects',agriculture:'agriculture_food',health:'health_welfare',laws:'laws',education:'education',taxes:'taxes',treasury:'treasury_finance','central-bank':'central_bank'};
+    var ministryId=mappings[route]||null,destinations=g.OmegaUIV2App.destinations||[];
+    if(destinations.indexOf(route)<0&&!ministryId)return false;
+    var root=cabinetRoot();
+    try{if(root&&root.getAttribute&&root.getAttribute(ACTIVE_ATTR)==='true'&&root.__omegaUIV2State){if(ministryId)return !!g.OmegaUIV2App.openMinistry(root,ministryId);g.OmegaUIV2App.navigate(root,route);return true;}
+      var initial=destinations.indexOf(route)>=0?route:'government';return !!(mountIntoCabinet(root,{initialRoute:initial,ministryId:ministryId})||{}).ok;
+    }catch(_){return false;}
+  }
   function closeToWorldMap() {
     var root = cabinetRoot();
     try {
@@ -206,6 +220,7 @@
     isEnabled:function () { return enabled; },
     setEnabled:function (value) { enabled = value === true; return enabled; },
     mountIntoCabinet:mountIntoCabinet,
+    openRoute:openRoute,
     openOperationalConsole:openOperationalConsole,
     resumeAfterOperationalConsole:resumeAfterOperationalConsole,
     closeToWorldMap:closeToWorldMap,

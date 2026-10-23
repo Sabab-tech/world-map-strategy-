@@ -59,6 +59,13 @@
     var source = record.source ? String(record.source) + (record.year ? ' · ' + record.year : '') : 'Source not recorded';
     return item(label, fmt(record.value, record.unit), source);
   }
+  function photoMarkup(id,alt,caption) {
+    var lib=g.OmegaUIPhotoAssets,item=null;try{item=lib&&typeof lib.get==='function'?lib.get(id):null;}catch(_){}
+    var safe=/^[a-z0-9-]+$/.test(String(id||''))?String(id):'',path=item&&/^assets\/ui-photos\/[a-z0-9-]+\.webp$/.test(String(item.path||''))?item.path:(safe?'assets/ui-photos/'+safe+'.webp':'');
+    if(!path)return '<div class="omega-v2-photo-placeholder" role="img" aria-label="'+esc(alt)+'">LOCAL PHOTO UNAVAILABLE</div>';
+    var credit=item&&item.author&&item.sourcePageUrl&&item.licenseUrl?'<small class="omega-v2-photo-credit">Photo: <a href="'+esc(item.sourcePageUrl)+'" target="_blank" rel="noopener noreferrer">'+esc(item.author)+'</a> · <a href="'+esc(item.licenseUrl)+'" target="_blank" rel="noopener noreferrer">'+esc(item.licenseShortName||'License')+'</a></small>':'';
+    return '<figure class="omega-v2-photo omega-v2-photo--hero"><img loading="lazy" decoding="async" width="1280" height="720" src="'+esc(path)+'" alt="'+esc(alt)+'"><figcaption><strong>'+esc(item&&item.caption||caption)+'</strong><small>Representative reference imagery, not evidence of current ownership or operation.</small>'+credit+'</figcaption></figure>';
+  }
   function render(root, options) {
     options = options || {};
     if (!root) return { ok:false, code:'ECONOMY_ROOT_REQUIRED' };
@@ -72,6 +79,7 @@
     root.classList.add('omega-v2-screen');
     root.innerHTML = '<section class="omega-v2-shell omega-v2-economy">' +
       '<header class="omega-v2-heading"><div><div class="omega-v2-eyebrow">ECONOMY · FINANCE</div><h1 class="omega-v2-title">Economy & Treasury</h1><p class="omega-v2-subtitle">Country ' + esc(model.countryId || 'Not recorded') + ' · recorded game ledger and country indicators</p></div><span class="omega-v2-status" data-state="' + (model.snapshot ? 'operational' : 'unknown') + '">' + (model.snapshot ? 'DATA GATEWAY CONNECTED' : 'REFERENCE SNAPSHOT UNAVAILABLE') + '</span></header>' +
+      photoMarkup('container-ship', 'Container ship at an international port, representative trade reference image', 'TRADE & NATIONAL ACCOUNTS') +
       '<div class="omega-v2-note">Game cash, national debt and published macroeconomic indicators are separate concepts. Reference exchange rates never execute a treasury transfer; missing figures are not filled with defaults.</div>' +
       '<h2 class="omega-v2-section-title">Live game treasury ledger</h2><div class="omega-v2-kpis">' +
       item('Available treasury', fmt(model.treasuryCash,'USD'), 'Game finance state') +
