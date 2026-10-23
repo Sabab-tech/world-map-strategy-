@@ -154,3 +154,57 @@
 @media (prefers-reduced-motion: reduce) {
   .omega-v2-screen *, .omega-v2-screen *::before, .omega-v2-screen *::after { scroll-behavior: auto !important; transition: none !important; }
 }
+
+/* Host shell, photos, tables and domain-specific cards. */
+.omega-v2-app-root { background:var(--omega-v2-bg); color:var(--omega-v2-text); min-height:100%; width:100%; }
+.omega-v2-app-frame { display:flex; flex-direction:column; margin:0 auto; max-width:1200px; min-height:100vh; min-height:100dvh; }
+.omega-v2-app-header { align-items:center; background:rgba(7,19,33,.97); border-bottom:1px solid var(--omega-v2-border); display:flex; flex-shrink:0; gap:9px; justify-content:space-between; padding:9px var(--omega-v2-gutter); position:sticky; top:0; z-index:20; }
+.omega-v2-app-brand { align-items:center; display:flex; gap:7px; min-width:0; }
+.omega-v2-app-brand strong, .omega-v2-app-brand small { display:block; }
+.omega-v2-app-brand strong { font-size:13px; letter-spacing:.12em; }
+.omega-v2-app-brand small { color:var(--omega-v2-muted); font-size:8px; letter-spacing:.1em; }
+.omega-v2-brand-mark { align-items:center; border:1px solid var(--omega-v2-accent); border-radius:9px; color:var(--omega-v2-accent); display:inline-flex; font-size:23px; font-weight:800; height:34px; justify-content:center; width:34px; }
+.omega-v2-country-select { background:var(--omega-v2-surface); border:1px solid var(--omega-v2-border); border-radius:8px; color:var(--omega-v2-text); max-width:34%; min-height:38px; padding:6px; }
+.omega-v2-country-badge { border:1px solid var(--omega-v2-border); border-radius:999px; color:var(--omega-v2-muted); font-size:10px; padding:6px 8px; }
+.omega-v2-app-main { flex:1 0 auto; min-width:0; padding-bottom:calc(76px + env(safe-area-inset-bottom)); }
+.omega-v2-bottom-nav { align-items:stretch; background:rgba(7,19,33,.985); border-top:1px solid var(--omega-v2-border); bottom:0; display:grid; flex-shrink:0; gap:3px; grid-template-columns:repeat(5,minmax(0,1fr)); padding:5px 7px calc(5px + env(safe-area-inset-bottom)); position:fixed; width:100%; z-index:30; }
+.omega-v2-nav-button { background:transparent; border:1px solid transparent; border-radius:9px; color:var(--omega-v2-muted); cursor:pointer; font:600 10px/1.2 system-ui,sans-serif; min-height:44px; min-width:0; padding:6px 2px; }
+.omega-v2-nav-button.is-active { background:var(--omega-v2-surface-raised); border-color:#385570; color:var(--omega-v2-text); }
+.omega-v2-screen button:focus-visible, .omega-v2-screen input:focus-visible, .omega-v2-screen select:focus-visible { outline:2px solid var(--omega-v2-accent-blue); outline-offset:2px; }
+.omega-v2-photo { background:#081624; border:1px solid var(--omega-v2-border); border-radius:12px; margin:12px 0; overflow:hidden; }
+.omega-v2-photo img { aspect-ratio:16/9; display:block; height:auto; object-fit:cover; width:100%; }
+.omega-v2-photo figcaption { color:var(--omega-v2-text); font-size:11px; padding:7px 9px; }
+.omega-v2-photo figcaption small { color:var(--omega-v2-muted); display:block; font-size:9px; margin-top:2px; }
+.omega-v2-photo--hero img { max-height:300px; }
+.omega-v2-photo-placeholder { align-items:center; background:linear-gradient(150deg,#172b40,#081624); border:1px solid var(--omega-v2-border); border-radius:9px; color:var(--omega-v2-muted); display:flex; font-size:11px; justify-content:center; min-height:90px; padding:16px; text-align:center; }
+.omega-v2-ministry-icon { align-items:center; background:#0a1a2a; border:1px solid #34516b; border-radius:9px; color:var(--omega-v2-accent); display:inline-flex; font-size:20px; height:38px; justify-content:center; margin:0 0 4px; width:38px; }
+.omega-v2-materials { display:grid; gap:6px; grid-template-columns:repeat(2,minmax(0,1fr)); margin:9px 0; }
+.omega-v2-material-row { align-items:flex-start; background:#081624; border:1px solid rgba(59,86,111,.42); border-radius:7px; display:flex; font-size:11px; gap:9px; justify-content:space-between; min-width:0; overflow-wrap:anywhere; padding:8px; }
+.omega-v2-material-row strong { color:var(--omega-v2-text); font-weight:700; text-align:right; }
+.omega-v2-table-wrap { max-width:100%; overflow-x:auto; overscroll-behavior-x:contain; }
+.omega-v2-table-wrap table { border-collapse:collapse; min-width:560px; width:100%; }
+.omega-v2-table-wrap th, .omega-v2-table-wrap td { border-bottom:1px solid var(--omega-v2-border); font-size:11px; padding:8px; text-align:left; vertical-align:top; }
+.omega-v2-table-wrap th { color:var(--omega-v2-muted); font-weight:700; }
+.omega-v2-json { background:#06101c; border:1px solid var(--omega-v2-border); border-radius:8px; font:11px/1.45 ui-monospace,monospace; max-width:100%; overflow-wrap:anywhere; overflow-x:auto; padding:9px; white-space:pre-wrap; }
+.omega-v2-factory-art { background:linear-gradient(155deg,#0f2335,#07111d); border:1px solid var(--omega-v2-border); border-radius:9px; display:flex; justify-content:center; margin:8px 0; min-height:90px; overflow:hidden; padding:8px; }
+.omega-v2-factory-art .omega-factory-visual { display:block; height:96px; max-width:100%; width:100%; }
+.omega-v2-factory-art .omega-factory-visual[data-factory-type] { background-size:contain; background-position:center; }
+.omega-v2-flow { align-items:center; display:flex; flex-wrap:wrap; gap:5px; margin:10px 0; }
+.omega-v2-flow span { background:#10263a; border:1px solid var(--omega-v2-border); border-radius:7px; font-size:10px; padding:6px 8px; }
+.omega-v2-flow b { color:var(--omega-v2-accent); font-size:13px; }
+.omega-v2-field-label { color:var(--omega-v2-muted); display:block; font-size:11px; margin:12px 0 5px; }
+.omega-v2-number-input { background:var(--omega-v2-surface); border:1px solid var(--omega-v2-border); border-radius:9px; color:var(--omega-v2-text); font:inherit; min-height:42px; max-width:220px; padding:8px 10px; width:100%; }
+.omega-v2-home-link { cursor:pointer; font:inherit; text-align:left; width:100%; }
+.omega-v2-home-link .omega-v2-card-title, .omega-v2-home-link .omega-v2-card-meta { display:block; }
+.omega-v2-home-tabs { padding-bottom:3px; }
+.omega-v2-status[ data-state="unknown" ] { color:var(--omega-v2-muted); }
+@media (min-width:760px) {
+  .omega-v2-bottom-nav { left:50%; max-width:1200px; transform:translateX(-50%); }
+  .omega-v2-app-header { padding-inline:20px; }
+  .omega-v2-materials { grid-template-columns:repeat(3,minmax(0,1fr)); }
+}
+@media (max-width:370px) {
+  .omega-v2-app-brand small { display:none; }
+  .omega-v2-nav-button { font-size:9px; }
+  .omega-v2-materials { grid-template-columns:1fr; }
+}
