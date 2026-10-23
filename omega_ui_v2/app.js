@@ -61,6 +61,7 @@
     if (domain === 'industry-production' || domain === 'production') return openMinistry(root, 'production');
     if (domain === 'security-police' || domain === 'interior_security') return openMinistry(root, 'interior_security');
     if (domain === 'diplomacy') return openMinistry(root, 'foreign_affairs');
+    if (domain === 'society-culture' || domain === 'health_welfare') return openMinistry(root, 'health_welfare');
     if (domain === 'economy-finance' || domain === 'treasury_finance') return navigate(root, 'economy');
     if (domain === 'mega-projects' || domain === 'mega_projects') return openMinistry(root, 'mega_projects');
     return false;
