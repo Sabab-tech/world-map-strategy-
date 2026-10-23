@@ -270,7 +270,14 @@
               const lat=n(row?.location?.coordinates?.lat),lng=n(row?.location?.coordinates?.lng);
               if(!siteId||!/^[A-Z]{3}$/.test(country)||lat===null||lat<-90||lat>90||lng===null||lng<-180||lng>180||
                  row?.runtime?.aliasOfSiteId||row?.map?.markerEligible===false||ids.has(siteId))continue;
-              ids.add(siteId);accepted.push(row);
+              const aliasTarget=LEGACY_CANONICAL_ALIAS_IDS[siteId]||null;
+              const candidate=aliasTarget?{
+                ...row,
+                operation:{...(row.operation||{}),commercialExtraction:false},
+                map:{...(row.map||{}),markerEligible:false,aliasOfSiteId:aliasTarget},
+                runtime:{...(row.runtime||{}),aliasOfSiteId:aliasTarget}
+              }:row;
+              ids.add(siteId);accepted.push(candidate);
             }
             mineplayRows=accepted;
             g.OmegaResourceCountryMineplaySupplementData=supplement;g.Omega=g.Omega||{};g.Omega.ResourceCountryMineplaySupplementData=supplement;
