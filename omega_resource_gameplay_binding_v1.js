@@ -510,6 +510,14 @@ async function init(){
    const coords=coordsOf(row);
    if(!siteId||!/^[A-Z]{3}$/.test(country)||!coords||row?.runtime?.aliasOfSiteId||row?.map?.markerEligible===false||knownSiteIds.has(siteId))return false;
    knownSiteIds.add(siteId);return true;
+  }).map(row=>{
+   const aliasTarget=LEGACY_CANONICAL_ALIAS_IDS[String(row?.siteId||'')];
+   if(!aliasTarget)return row;
+   return {...row,
+    operation:{...(row.operation||{}),commercialExtraction:false},
+    map:{...(row.map||{}),markerEligible:false,aliasOfSiteId:aliasTarget},
+    runtime:{...(row.runtime||{}),aliasOfSiteId:aliasTarget}
+   };
   });
   const legacySiteRows=sources.filter(x=>LEGACY_GAMEPLAY_URLS.includes(x.url)).filter(x=>x.data?.datasetId?.startsWith('OMEGA_RESOURCE_SITE_LEGACY_GAMEPLAY_EXPANSION_PART_')).flatMap(x=>Array.isArray(x.data?.records)?x.data.records:[]);
    const canonicalLegacySites=Number(catalog?.legacyGameplayExpansion?.candidateRecordCount)===65?baseCatalogSites.slice(-65):baseCatalogSites.filter(row=>row?.runtime?.identityAuthority==='LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE');
