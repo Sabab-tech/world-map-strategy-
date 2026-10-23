@@ -2062,7 +2062,7 @@ function batchFromExtraction(x,record){
     const reserve= suppliedReserve?mineplayMetricNumber(reserveMetric,'quantity'):
       Math.max(1,Math.round(rate*365*400));
     const reserveUnit=String(reserveMetric.unit||profile.reserveUnit);
-    const annualMetric=mineplayMetricNumber(rateMetric,'annual');
+    const annualMetric=mineplayAuthorityAllowsValue(rateMetric,'annual')?mineplayMetricNumber(rateMetric,'annual'):null;
     const productionStatus=suppliedRate&&rateMetric.status?String(rateMetric.status).toUpperCase():'SIMULATED';
     q.production={
       ...rateMetric,rate,annual:annualMetric!==null&&annualMetric>0?annualMetric:Math.round(rate*365*100)/100,
