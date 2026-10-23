@@ -108,11 +108,11 @@ test('hydrated canonical authority supplies the uniform simulation profile to sp
     quantitative: {}
   });
   assert.match(html, /584,000,000 TONNES_ORE|584,000,000 tonnes ore/i);
-  assert.match(html, /4,000 TONNES_PER_DAY|4,000 tonnes per day/i);
-  assert.match(html, /2,600 TONNES_PER_DAY|2,600 tonnes per day/i);
-  assert.match(html, /6,210 TONNES_PER_DAY|6,210 tonnes per day/i);
+  assert.match(html, /4,000 t\/day/i);
+  assert.match(html, /2,600 t\/day/i);
+  assert.match(html, /6,210 t\/day/i);
   assert.match(html, /Simulated/i);
-  assert.match(html, /WH-USA-RAW/);
+  assert.match(html, /Wh Usa Raw/);
 });
 
 test('sparse site profiles remain clean and do not invent reserve or output figures', () => {
