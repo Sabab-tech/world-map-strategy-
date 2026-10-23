@@ -99,6 +99,12 @@ test('country behaviour profile is evidence-backed and differs with country macr
   const dimensionMean = investmentScore.dimensions.reduce((sum, row) => sum + row.utility, 0) / investmentScore.dimensions.length;
   assert.ok(Math.abs(investmentScore.score - (0.7 * dimensionMean + 0.3 * investmentScore.actionPreference.scoredValue)) < 0.000001,
     'candidate strategy score should combine confidence-adjusted dimensions and confidence-adjusted action preference');
+  assert.ok(Number.isFinite(investmentScore.rawScore) && investmentScore.rawScore >= 0 && investmentScore.rawScore <= 1,
+    'the unadjusted evidence score must remain visible as a normalized diagnostic');
+  assert.equal(investmentScore.uncertaintyAdjustment,
+    Number((investmentScore.rawScore - investmentScore.score).toFixed(6)),
+    'the signed difference must explain how evidence confidence changed the candidate score');
+  assert.equal(investmentScore.actionPreferenceEffectiveValue, investmentScore.actionPreference.scoredValue);
   assert.ok(investmentScore.dimensions.every(row => row.rawUtility !== undefined && row.confidence >= 0 && row.confidence <= 1),
     'scored dimensions should expose raw utility and the confidence used to attenuate it');
   assert.ok(bangladesh.evidence.registeredMacroMetricCount > 0);
