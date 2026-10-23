@@ -142,6 +142,30 @@
 .omega-v2-section-title { font-size: 14px; font-weight: 760; margin: 18px 0 8px; }
 .omega-v2-source { color: var(--omega-v2-muted); font-size: 10px; margin-top: 5px; }
 .omega-v2-hidden { display: none !important; }
+
+/* Ministry roster and appointment table; reserve a consistent space before portraits arrive. */
+.omega-v2-minister-table-wrap { margin: 10px 0 14px; }
+.omega-v2-minister-table { min-width: 700px !important; }
+.omega-v2-minister-table-title, .omega-v2-minister-table-person { align-items: center; display: flex; gap: 10px; min-width: 180px; }
+.omega-v2-minister-table-title > div, .omega-v2-minister-table-person > div:last-child { display: flex; flex-direction: column; gap: 4px; }
+.omega-v2-minister-table-title strong, .omega-v2-minister-table-person strong { color: var(--omega-v2-text); font-size: 12px; }
+.omega-v2-minister-table-title small, .omega-v2-minister-table-person small, .omega-v2-minister-source { color: var(--omega-v2-muted); display: block; font-size: 10px; line-height: 1.35; margin-top: 3px; }
+.omega-v2-minister-table .omega-v2-ministry-icon { flex: 0 0 38px; margin: 0; }
+.omega-v2-minister-portrait { align-items: center; background: #081624; border: 1px dashed rgba(115,151,181,.55); border-radius: 8px; color: var(--omega-v2-muted); display: flex; flex: 0 0 54px; flex-direction: column; height: 64px; justify-content: center; overflow: hidden; padding: 3px; text-align: center; width: 54px; }
+.omega-v2-minister-portrait img { height: 100%; object-fit: cover; width: 100%; }
+.omega-v2-minister-portrait-placeholder { font-size: 8px; font-weight: 800; letter-spacing: .04em; line-height: 1.2; }
+.omega-v2-minister-portrait small { font-size: 8px; margin-top: 3px; }
+.omega-v2-minister-recruitment-panel { margin-top: 12px; }
+.omega-v2-minister-recruitment-panel select { background: var(--omega-v2-surface); border: 1px solid var(--omega-v2-border); border-radius: 9px; color: var(--omega-v2-text); margin-top: 5px; max-width: 100%; padding: 10px; width: 100%; }
+.omega-v2-ministry-detail-mark { align-items: center; display: flex; gap: 12px; min-width: 0; }
+.omega-v2-ministry-appointed-minister { margin: 10px 0; }
+.omega-v2-ministry-appointed-minister .omega-v2-minister-table-person { flex-wrap: wrap; margin-top: 8px; }
+.omega-v2-finance-tabs { flex-wrap: nowrap; overflow-x: auto; overscroll-behavior-x: contain; padding-bottom: 4px; }
+.omega-v2-finance-tabs [role="tab"] { flex: 0 0 auto; min-height: 40px; }
+.omega-v2-finance-tab-panel { min-width: 0; }
+.omega-v2-home-laws .omega-v2-table-wrap { margin-top: 10px; }
+.omega-v2-home-laws td p { margin: 5px 0 0; overflow-wrap: anywhere; white-space: pre-wrap; }
+@media (max-width: 480px) { .omega-v2-minister-table-title, .omega-v2-minister-table-person { align-items: flex-start; gap: 7px; } .omega-v2-minister-portrait { flex-basis: 46px; height: 56px; width: 46px; } }
 @media (min-width: 700px) {
   .omega-v2-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .omega-v2-kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); }
