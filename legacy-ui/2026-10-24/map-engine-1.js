@@ -1,0 +1,1089 @@
+/* ============================================================================
+   MAP ENGINE 1: UI CONTROLLER, DOM CACHE & TICKERS (map-engine-1.js)
+   ============================================================================ */
+
+var Game = window.Game = {
+    state: {
+        population: {},
+        economy: {},
+        relations: {}
+    },
+
+    directives: [
+        {
+            id: 'd1',
+            title: '🏛️ Strategic Governance Audit',
+            desc: 'Review sovereign economic indicators and institutional health.',
+            status: 'Operational',
+            category: 'Governance'
+        },
+        {
+            id: 'd2',
+            title: '🛡️ Territorial Security Readiness',
+            desc: 'Monitor border garrisons and active defense deployments.',
+            status: 'Operational',
+            category: 'Defense'
+        },
+        {
+            id: 'd3',
+            title: '🚔 Public Safety & Law Enforcement',
+            desc: 'Maintain internal civil stability and security intelligence.',
+            status: 'Operational',
+            category: 'Interior'
+        },
+        {
+            id: 'd4',
+            title: '🌐 Sovereign Bilateral Accord',
+            desc: 'Engage neighboring states via formal diplomatic channels.',
+            status: 'Operational',
+            category: 'Diplomacy'
+        }
+    ],
+
+    renderStrategicDirectives() {
+        const container = document.getElementById('quest-list-container');
+        if (!container) return;
+        container.innerHTML = '';
+
+        this.directives.forEach(dir => {
+            const item = document.createElement('div');
+            item.style.cssText = `
+                background: rgba(15, 23, 42, 0.85);
+                border: 1px solid rgba(0, 229, 255, 0.35);
+                border-radius: 8px;
+                padding: 12px 14px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                gap: 12px;
+            `;
+
+            item.innerHTML = `
+                <div style="flex: 1;">
+                    <div style="font-size: 13px; font-weight: bold; color: #f8fafc; margin-bottom: 3px; font-family: var(--font-title);">${dir.title}</div>
+                    <div style="font-size: 11px; color: #94a3b8; margin-bottom: 6px; font-family: var(--font-mono);">${dir.desc}</div>
+                    <div style="font-size: 11px; color: #00e5ff; font-weight: bold; font-family: var(--font-mono);">STATUS: ${dir.status.toUpperCase()} [${dir.category}]</div>
+                </div>
+                <div>
+                    <button style="padding: 6px 14px; background: rgba(0, 229, 255, 0.15); border: 1px solid #00e5ff; color: #00e5ff; border-radius: 6px; font-size: 11px; font-weight: bold;">ACTIVE</button>
+                </div>
+            `;
+
+            container.appendChild(item);
+        });
+    },
+
+    renderDailyQuests() {
+        this.renderStrategicDirectives();
+    },
+
+    locationsRegistry: {},
+    currentActiveCountry: null,
+    geojsonLayer: null,
+    selectedLayer: null,
+    hubsGroupLayer: null,
+    countryLookup: {},
+    countryLabels: [],
+    map: null,
+    dom: {},
+
+    cacheDOM() {
+        this.dom.resCash = document.getElementById('res-cash');
+        this.dom.resPower = document.getElementById('res-power');
+        this.dom.resOil = document.getElementById('res-oil');
+        this.dom.resSteel = document.getElementById('res-steel');
+        this.dom.resUranium = document.getElementById('res-uranium');
+        this.dom.resManpower = document.getElementById('res-manpower');
+        this.dom.resEnergy = document.getElementById('res-energy');
+
+        this.dom.resFilterBox = document.getElementById('resource-filter-box');
+        this.dom.relFilterBox = document.getElementById('relation-filter-box');
+        
+        this.dom.resSelector = document.getElementById('resource-selector');
+        this.dom.relSelector = document.getElementById('relation-selector');
+
+        this.dom.btnResOverlay = document.getElementById('btn-resource-overlay');
+        this.dom.btnRelOverlay = document.getElementById('btn-relation-overlay');
+        this.dom.btnCabinet = document.getElementById('btn-main-cabinet');
+        
+        this.dom.hubModal = document.getElementById('command-hub-modal');
+        this.dom.cabinetWindow = document.getElementById('cabinet-full-window');
+        this.dom.modalCountryName = document.getElementById('modal-country-name');
+        
+        this.dom.econGdp = document.getElementById('econ-gdp');
+        this.dom.econDebt = document.getElementById('econ-debt');
+        this.dom.popPane = document.getElementById('tab-population');
+        this.dom.dipList = document.getElementById('diplomacy-list');
+    },
+
+    bindEvents() {
+        const self = this;
+
+        if (this.dom.btnResOverlay) {
+            this.dom.btnResOverlay.addEventListener('click', () => Game.Map.toggleResourceOverlay());
+        }
+        if (this.dom.btnRelOverlay) {
+            this.dom.btnRelOverlay.addEventListener('click', () => Game.Map.toggleRelationOverlay());
+        }
+        if (this.dom.btnCabinet) {
+            this.dom.btnCabinet.addEventListener('click', () => self.toggleMainCabinet(true));
+        }
+
+        const closeCab = document.getElementById('btn-close-cabinet');
+        if (closeCab) {
+            closeCab.addEventListener('click', () => self.toggleMainCabinet(false));
+        }
+
+        const closeHub = document.getElementById('btn-close-hub');
+        if (closeHub) {
+            closeHub.addEventListener('click', () => Game.Map.toggleCommandHub(false));
+        }
+
+        if (this.dom.hubModal) {
+            this.dom.hubModal.addEventListener('click', (e) => {
+                if (e.target === self.dom.hubModal) {
+                    Game.Map.toggleCommandHub(false);
+                }
+            });
+        }
+
+        const tabButtons = document.querySelectorAll('#hub-tabs .tab-btn');
+        tabButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                self.switchModalTab(e, e.currentTarget.getAttribute('data-tab'));
+            });
+        });
+
+        // 📜 DAILY QUESTS BINDINGS
+        const btnQuests = document.getElementById('btn-daily-quests');
+        const modalQuests = document.getElementById('daily-quests-modal');
+        const closeQuests = document.getElementById('btn-close-quests');
+
+        if (btnQuests) {
+            btnQuests.addEventListener('click', () => {
+                if (modalQuests) {
+                    modalQuests.style.display = 'block';
+                    self.renderDailyQuests();
+                }
+            });
+        }
+        if (closeQuests) {
+            closeQuests.addEventListener('click', () => {
+                if (modalQuests) modalQuests.style.display = 'none';
+            });
+        }
+        if (modalQuests) {
+            modalQuests.addEventListener('click', (e) => {
+                if (e.target === modalQuests) modalQuests.style.display = 'none';
+            });
+        }
+
+        // ⏱️ SPEED CONTROLS
+        const speedBtns = document.querySelectorAll('.speed-btn');
+        speedBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                speedBtns.forEach(b => b.classList.remove('active'));
+                e.currentTarget.classList.add('active');
+                const speed = parseInt(e.currentTarget.getAttribute('data-speed'), 10);
+                self.gameSpeed = speed;
+                self.showNotification("GAME SPEED", `Simulation speed set to ${speed}x`, "info");
+            });
+        });
+
+        // 🎛️ RIGHT QUICK DOCK BINDINGS
+        const btnSearch = document.getElementById('btn-quick-search');
+        const drawerSearch = document.getElementById('search-drawer');
+        const btnCloseSearch = document.getElementById('btn-close-search');
+        if (drawerSearch && typeof L !== 'undefined' && L.DomEvent) {
+            L.DomEvent.disableClickPropagation(drawerSearch);
+            L.DomEvent.disableScrollPropagation(drawerSearch);
+        }
+        if (btnSearch && drawerSearch) {
+            btnSearch.addEventListener('click', (e) => {
+                if (e && e.stopPropagation) e.stopPropagation();
+                const isVis = drawerSearch.style.display === 'flex';
+                self.closeAllDrawers();
+                if (!isVis) {
+                    drawerSearch.style.display = 'flex';
+                    const inp = document.getElementById('search-input');
+                    if (inp) { inp.focus(); inp.value = ""; }
+                    self.renderSearch("");
+                }
+            });
+        }
+        if (btnCloseSearch && drawerSearch) {
+            btnCloseSearch.addEventListener('click', (e) => {
+                if (e && e.stopPropagation) e.stopPropagation();
+                drawerSearch.style.display = 'none';
+            });
+        }
+
+        const searchInput = document.getElementById('search-input');
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                if (e && e.stopPropagation) e.stopPropagation();
+                if (self._searchDebounceTimer && typeof window.clearTimeout === 'function') {
+                    window.clearTimeout(self._searchDebounceTimer);
+                }
+                self._searchDebounceTimer = window.setTimeout(() => {
+                    self._searchDebounceTimer = null;
+                    self.renderSearch(searchInput.value);
+                }, 120);
+            });
+            if (typeof L !== 'undefined' && L.DomEvent) {
+                L.DomEvent.disableClickPropagation(searchInput);
+            }
+        }
+
+        const btnEvents = document.getElementById('btn-quick-events');
+        const drawerEvents = document.getElementById('events-drawer');
+        const btnCloseEvents = document.getElementById('btn-close-events');
+        if (btnEvents && drawerEvents) {
+            btnEvents.addEventListener('click', () => {
+                const isVis = drawerEvents.style.display === 'flex';
+                self.closeAllDrawers();
+                if (!isVis) {
+                    drawerEvents.style.display = 'flex';
+                    self.renderEventsFeed();
+                }
+            });
+        }
+        if (btnCloseEvents && drawerEvents) {
+            btnCloseEvents.addEventListener('click', () => drawerEvents.style.display = 'none');
+        }
+
+        const btnQuickBuild = document.getElementById('btn-quick-build');
+        if (btnQuickBuild) {
+            btnQuickBuild.addEventListener('click', () => {
+                self.closeAllDrawers();
+                self.toggleMainCabinet(false);
+                Game.Map.toggleCommandHub(true);
+                self.switchTabDirectly('tab-projects');
+            });
+        }
+
+        const btnQuickMilitary = document.getElementById('btn-quick-military');
+        if (btnQuickMilitary) {
+            btnQuickMilitary.addEventListener('click', () => {
+                self.closeAllDrawers();
+                self.toggleMainCabinet(false);
+                Game.Map.toggleCommandHub(true);
+                self.switchTabDirectly('tab-military');
+            });
+        }
+
+        const btnLayers = document.getElementById('btn-quick-layers');
+        const drawerLayers = document.getElementById('layers-drawer');
+        const btnCloseLayers = document.getElementById('btn-close-layers');
+        if (btnLayers && drawerLayers) {
+            btnLayers.addEventListener('click', () => {
+                const isVis = drawerLayers.style.display === 'flex';
+                self.closeAllDrawers();
+                if (!isVis) drawerLayers.style.display = 'flex';
+            });
+        }
+        if (btnCloseLayers && drawerLayers) {
+            btnCloseLayers.addEventListener('click', () => drawerLayers.style.display = 'none');
+        }
+
+        const layerOptBtns = document.querySelectorAll('.layer-opt-btn');
+        layerOptBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                layerOptBtns.forEach(b => b.classList.remove('active'));
+                e.currentTarget.classList.add('active');
+                const layerType = e.currentTarget.getAttribute('data-layer');
+                self.switchMapLayer(layerType);
+            });
+        });
+
+        // ⚡ FAB COMMAND BUTTON & RADIAL MENU
+        const fabBtn = document.getElementById('fab-command-btn');
+        const fabMenu = document.getElementById('fab-radial-menu');
+        if (fabBtn && fabMenu) {
+            fabBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                fabMenu.classList.toggle('active');
+            });
+            document.addEventListener('click', () => fabMenu.classList.remove('active'));
+        }
+
+        const fabItems = document.querySelectorAll('.fab-radial-item');
+        fabItems.forEach(item => {
+            item.addEventListener('click', (e) => {
+                const action = e.currentTarget.getAttribute('data-action');
+                self.executeExecutiveAction(action);
+            });
+        });
+
+        // 🗺️ COUNTRY CARD CLOSE BUTTON & ACTION BUTTONS
+        const btnCloseCard = document.getElementById('btn-close-card');
+        if (btnCloseCard) {
+            btnCloseCard.addEventListener('click', () => self.closeCountryInfoCard());
+        }
+
+        const btnCardCab = document.getElementById('btn-card-cabinet');
+        if (btnCardCab) {
+            btnCardCab.addEventListener('click', (e) => {
+                if (typeof window.openMainMinistryView === 'function') {
+                    window.openMainMinistryView(e);
+                } else if (window.OmegaLayerManager) {
+                    window.OmegaLayerManager.setLayer(1);
+                } else {
+                    self.toggleMainCabinet(true);
+                }
+            });
+        }
+        const btnCardDip = document.getElementById('btn-card-diplomacy');
+        if (btnCardDip) {
+            btnCardDip.addEventListener('click', () => {
+                if (window.CountryIOS) window.CountryIOS.open(Game.currentActiveCountry, 6);
+                else { Game.Map.toggleCommandHub(true); self.switchTabDirectly('tab-diplomacy'); }
+            });
+        }
+        const btnCardMil = document.getElementById('btn-card-military');
+        if (btnCardMil) {
+            btnCardMil.addEventListener('click', () => {
+                if (window.CountryIOS) window.CountryIOS.open(Game.currentActiveCountry, 3);
+                else { Game.Map.toggleCommandHub(true); self.switchTabDirectly('tab-military'); }
+            });
+        }
+        const btnCardEcon = document.getElementById('btn-card-economy');
+        if (btnCardEcon) {
+            btnCardEcon.addEventListener('click', () => {
+                if (window.CountryIOS) window.CountryIOS.open(Game.currentActiveCountry, 4);
+                else { Game.Map.toggleCommandHub(true); self.switchTabDirectly('tab-projects'); }
+            });
+        }
+        const btnCardIntel = document.getElementById('btn-card-intel');
+        if (btnCardIntel) {
+            btnCardIntel.addEventListener('click', () => {
+                if (window.CountryIOS) window.CountryIOS.open(Game.currentActiveCountry, 7);
+                else { Game.Map.toggleCommandHub(true); self.switchTabDirectly('tab-internal'); }
+            });
+        }
+
+        // 🏛️ BOTTOM NAVIGATION BINDINGS
+        const getActiveCountry = () => (Game.currentActiveCountry || window.currentActiveCountry || 'USA');
+
+        const btnCmdHq = document.getElementById('btn-command-hq') || document.getElementById('btn-hq') || document.getElementById('btn-politics');
+        if (btnCmdHq) {
+            btnCmdHq.addEventListener('click', () => {
+                self.setActiveNavButton('btn-command-hq');
+                if (window.CountryIOS) window.CountryIOS.open(getActiveCountry(), 1);
+            });
+        }
+        const btnBuild = document.getElementById('btn-build');
+        if (btnBuild) {
+            btnBuild.addEventListener('click', () => {
+                self.setActiveNavButton('btn-build');
+                if (window.CountryIOS) window.CountryIOS.open(getActiveCountry(), 4);
+            });
+        }
+        const btnMil = document.getElementById('btn-military-dock');
+        if (btnMil) {
+            btnMil.addEventListener('click', () => {
+                self.setActiveNavButton('btn-military-dock');
+                if (window.CountryIOS) window.CountryIOS.open(getActiveCountry(), 3);
+            });
+        }
+        const btnDip = document.getElementById('btn-diplomacy-dock');
+        if (btnDip) {
+            btnDip.addEventListener('click', () => {
+                self.setActiveNavButton('btn-diplomacy-dock');
+                if (window.CountryIOS) window.CountryIOS.open(getActiveCountry(), 6);
+            });
+        }
+        const btnResDock = document.getElementById('btn-resources-dock');
+        if (btnResDock) {
+            btnResDock.addEventListener('click', () => {
+                self.setActiveNavButton('btn-resources-dock');
+                if (window.CountryIOS) window.CountryIOS.open(getActiveCountry(), 5);
+            });
+        }
+    },
+
+    gameSpeed: 1,
+
+    closeAllDrawers() {
+        const drawers = document.querySelectorAll('.omega-drawer');
+        drawers.forEach(d => d.style.display = 'none');
+
+        // Clean single active window enforcement
+        if (window.CountryIOS && typeof window.CountryIOS.close === 'function') {
+            window.CountryIOS.close();
+        }
+        const cabWin = document.getElementById('cabinet-full-window');
+        if (cabWin) { cabWin.style.display = 'none'; cabWin.style.opacity = '0'; }
+        const questsModal = document.getElementById('daily-quests-modal');
+        if (questsModal) questsModal.style.display = 'none';
+        if (window.Game && window.Game.Map && typeof window.Game.Map.closeCityDetailBar === 'function') {
+            window.Game.Map.closeCityDetailBar();
+        }
+    },
+
+    showNotification(title, message, type = "info") {
+        const stack = document.getElementById('notification-stack');
+        if (!stack) return;
+        const card = document.createElement('div');
+        card.className = `notif-card ${type}`;
+        card.innerHTML = `<strong style="color:#00e5ff;">${title}</strong><br><span>${message}</span>`;
+        stack.prepend(card);
+
+        while (stack.children.length > 3) {
+            stack.removeChild(stack.lastChild);
+        }
+
+        setTimeout(() => {
+            if (card.parentNode) card.remove();
+        }, 4500);
+    },
+
+    updateCountryInfoCard(countryName) {
+        if (!countryName) return;
+
+        const runtime = window.OmegaCountryRuntimeData;
+        const identity = runtime && runtime.resolveCountry(countryName);
+        const id = Game.getCountryId ? Game.getCountryId(countryName) : countryName.toUpperCase();
+        const selectedContextCode = identity && (identity.countryCode || identity.iso3) || null;
+        if (selectedContextCode) {
+            const previousContext = window.OmegaMinistryViewCountry || '';
+            window.OmegaMinistryViewCountry = selectedContextCode;
+            if (window.OmegaCabinetUI) window.OmegaCabinetUI.activeCountry = selectedContextCode;
+            if (window.CountryIOS) window.CountryIOS.activeCountry = selectedContextCode;
+            if (String(previousContext).toUpperCase() !== String(selectedContextCode).toUpperCase()) {
+                try { window.dispatchEvent(new CustomEvent('OMEGA_COUNTRY_CONTEXT_CHANGED', { detail: { countryId: selectedContextCode, source: 'map-country-selection' } })); } catch (_) {}
+            }
+        }
+        const keys = [countryName, id, identity && identity.countryCode, identity && identity.iso3,
+            identity && identity.name, identity && identity.economyKey, identity && identity.populationKey];
+        const normalizeKey = value => String(value == null ? '' : value).trim().toUpperCase()
+            .replace(/[^A-Z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+        const findRecord = records => {
+            if (!records || typeof records !== 'object') return null;
+            for (const key of keys) {
+                const match = Object.keys(records).find(candidate => normalizeKey(candidate) === normalizeKey(key));
+                if (match !== undefined && records[match] && typeof records[match] === 'object') return records[match];
+            }
+            return null;
+        };
+        const economyState = (Game.state && Game.state.economy) ||
+            (window.gameState && window.gameState.economy) || {};
+        const populationState = (Game.state && Game.state.population) ||
+            (window.gameState && window.gameState.population) || {};
+        const liveEcon = (runtime && typeof runtime.getLiveRecord === 'function' && runtime.getLiveRecord('economy', countryName)) || findRecord(economyState);
+        const livePop = (runtime && typeof runtime.getLiveRecord === 'function' && runtime.getLiveRecord('population', countryName)) || findRecord(populationState);
+        const econ = (runtime && runtime.getRecord('economy', countryName)) || liveEcon;
+        const pop = (runtime && runtime.getRecord('population', countryName)) || livePop;
+        const generalRuntime = window.OmegaCountryGeneralDataRuntime;
+        const generalCountryRecord = (generalRuntime && typeof generalRuntime.getCountryRecord === 'function')
+            ? generalRuntime.getCountryRecord(identity && (identity.iso3 || identity.countryCode) || countryName) : null;
+        const generalMetrics = generalCountryRecord && generalCountryRecord.metrics || {};
+        const generalMetadata = generalCountryRecord && generalCountryRecord.metricMetadata || {};
+        const countrySnapshot = window.OmegaCountryDataGateway && window.OmegaCountryDataGateway.getSnapshot(countryName);
+        const sharedField = key => countrySnapshot && countrySnapshot.countryCode && countrySnapshot.fields
+            && countrySnapshot.fields[key] && countrySnapshot.fields[key].status === 'AVAILABLE' ? countrySnapshot.fields[key] : null;
+        const sharedSourceTitle = field => field
+            ? 'Source: ' + (field.sourceName || field.sourceId || 'registered country data') + (field.year ? ' · Year: ' + field.year : '')
+            : 'Not recorded in the selected country data sources.';
+        const escapeAttribute = value => String(value == null ? '' : value).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const displayName = identity && identity.name ? identity.name : countryName.replace(/_/g, ' ');
+        const flag = (runtime && runtime.flagFor(countryName)) || '🏳️';
+        const unavailable = 'NOT RECORDED';
+        const numberExists = value => value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value));
+        const firstNumeric = (...values) => {
+            for (const value of values) if (numberExists(value)) return Number(value);
+            return null;
+        };
+        const countryValue = (domains, paths) => {
+            if (window.CountryIOS && typeof window.CountryIOS.readCountryValue === 'function') {
+                const value = window.CountryIOS.readCountryValue(countryName, domains, paths);
+                return value === null || value === undefined || value === '' ? unavailable : String(value);
+            }
+            return unavailable;
+        };
+
+        // Update the persistent selected-country bar with the resolved country flag.
+        const selBar = document.getElementById('country-selection-bar');
+        const elSelName = document.getElementById('sel-country-name');
+        const elSelFlag = document.getElementById('sel-country-flag');
+        if (elSelName) elSelName.innerText = displayName.toUpperCase();
+        if (elSelFlag) elSelFlag.innerText = flag;
+        if (selBar) {
+            selBar.classList.remove('hidden');
+            selBar.style.display = 'flex';
+        }
+
+        // Populate the information card only with recorded values for this country.
+        const elName = document.getElementById('card-country-name');
+        if (elName) elName.innerText = displayName.toUpperCase();
+        const elFlag = document.getElementById('card-country-flag');
+        if (elFlag) elFlag.innerText = flag;
+
+        const leader = countryValue(['government', 'politics', 'state'], [
+            'leaderName', 'leader_name', 'headOfState', 'head_of_state', 'president', 'primeMinister'
+        ]);
+        const government = countryValue(['government', 'politics', 'state'], [
+            'governmentType', 'government_type', 'governmentName', 'formOfGovernment', 'regime'
+        ]);
+        const elLeader = document.getElementById('card-country-leader');
+        if (elLeader) elLeader.innerText = 'Leader: ' + leader;
+        const elGov = document.getElementById('card-country-gov');
+        if (elGov) elGov.innerText = 'Gov: ' + government;
+
+        const populationValue = countrySnapshot && countrySnapshot.countryCode
+            ? firstNumeric(sharedField('population') && sharedField('population').value)
+            : firstNumeric(
+                livePop && livePop.populationTotal, livePop && livePop.population_total,
+                livePop && livePop.totalPopulation, livePop && livePop.population,
+                livePop && livePop.population_2015,
+                generalMetrics.populationTotal, generalMetrics.population,
+                pop && pop.populationTotal, pop && pop.population_total,
+                pop && pop.totalPopulation, pop && pop.population, pop && pop.population_2015
+            );
+        const gdpValue = countrySnapshot && countrySnapshot.countryCode
+            ? firstNumeric(sharedField('gdp') && sharedField('gdp').value)
+            : firstNumeric(
+                liveEcon && liveEcon.gdpCurrentUsd, liveEcon && liveEcon.gdp_current_usd,
+                liveEcon && liveEcon.gdpUsd, liveEcon && liveEcon.gdp_usd,
+                liveEcon && liveEcon.gdp, liveEcon && liveEcon.GDP,
+                generalMetrics.gdpCurrentUsd, generalMetrics.gdpUsd,
+                econ && econ.gdpCurrentUsd, econ && econ.gdp_current_usd,
+                econ && econ.gdpUsd, econ && econ.gdp_usd, econ && econ.gdp, econ && econ.GDP
+            );
+        const elPop = document.getElementById('card-stat-pop');
+        if (elPop) {
+            elPop.innerText = populationValue !== null ? this.formatPopulationNumber(populationValue) : unavailable;
+            const meta = generalMetadata.populationTotal || {};
+            elPop.title = countrySnapshot && countrySnapshot.countryCode ? escapeAttribute(sharedSourceTitle(sharedField('population')))
+                : (populationValue === null ? 'Population is not recorded for this country.'
+                    : (livePop && firstNumeric(livePop.populationTotal, livePop.population_total, livePop.totalPopulation,
+                        livePop.population, livePop.population_2015) !== null
+                        ? 'Source: live game state'
+                        : (meta.sourceName || meta.sourceId
+                            ? 'Source: ' + (meta.sourceName || meta.sourceId) + (meta.year ? ' · Year: ' + meta.year : '')
+                            : 'Source: shared country runtime baseline')));
+        }
+        const elGdp = document.getElementById('card-stat-gdp');
+        if (elGdp) {
+            elGdp.innerText = gdpValue !== null ? this.formatGameNumber(gdpValue) : unavailable;
+            const meta = generalMetadata.gdpCurrentUsd || {};
+            elGdp.title = countrySnapshot && countrySnapshot.countryCode ? escapeAttribute(sharedSourceTitle(sharedField('gdp')))
+                : (gdpValue === null ? 'GDP is not recorded for this country.'
+                    : (liveEcon && firstNumeric(liveEcon.gdpCurrentUsd, liveEcon.gdp_current_usd,
+                        liveEcon.gdpUsd, liveEcon.gdp_usd, liveEcon.gdp, liveEcon.GDP) !== null
+                        ? 'Source: live game state'
+                        : (meta.sourceName || meta.sourceId
+                            ? 'Source: ' + (meta.sourceName || meta.sourceId) + (meta.year ? ' · Year: ' + meta.year : '')
+                            : 'Source: shared country runtime baseline')));
+        }
+
+        const elStab = document.getElementById('card-stat-stability');
+        if (elStab) elStab.innerText = countryValue(['government', 'politics', 'society'], [
+            'stability', 'stabilityScore', 'stability_score', 'cabinetStability', 'politicalStability'
+        ]);
+        const elRel = document.getElementById('card-stat-relations');
+        if (elRel) elRel.innerText = countryValue(['relations', 'diplomacy'], [
+            'standing', 'relationshipStatus', 'relationshipScore', 'relationship_score'
+        ]);
+        const elMil = document.getElementById('card-stat-mil');
+        if (elMil) elMil.innerText = countryValue(['military', 'defense'], [
+            'power', 'militaryPower', 'military_power', 'readinessScore', 'strengthScore'
+        ]);
+
+        // Retry once if the registry was still loading when the map selection occurred.
+        if (runtime && runtime.ready && typeof runtime.isSettled === 'function' && !runtime.isSettled()) {
+            const requested = countryName;
+            const pendingRefreshes = this._countryRuntimeRefreshPending ||
+                (this._countryRuntimeRefreshPending = new Set());
+            if (!pendingRefreshes.has(requested)) {
+                pendingRefreshes.add(requested);
+                Promise.resolve(runtime.ready).then(() => {
+                    pendingRefreshes.delete(requested);
+                    const active = Game.currentActiveCountry || window.currentActiveCountry || '';
+                    const activeProfile = runtime.resolveCountry(active);
+                    const requestedProfile = runtime.resolveCountry(requested);
+                    if (normalizeKey(active) === normalizeKey(requested) ||
+                        (activeProfile && requestedProfile && activeProfile.countryCode === requestedProfile.countryCode)) {
+                        if (Game.Map && typeof Game.Map.updateCountryInfoCard === 'function') Game.Map.updateCountryInfoCard(requested);
+                    }
+                }).catch(() => { pendingRefreshes.delete(requested); });
+            }
+        }
+
+        // The user opens the full detail panel explicitly via the eye button.
+    },
+
+    closeCountryInfoCard() {
+        const card = document.getElementById('country-info-card');
+        if (card) card.classList.remove('active');
+    },
+
+    closeCountrySelectionBar() {
+        const selBar = document.getElementById('country-selection-bar');
+        if (selBar) {
+            selBar.classList.add('hidden');
+            selBar.style.display = 'none';
+        }
+        if (Game.geojsonLayer && Game.selectedLayer) {
+            Game.geojsonLayer.resetStyle(Game.selectedLayer);
+            Game.selectedLayer = null;
+        }
+    },
+
+    renderSearch(query) {
+        const container = document.getElementById('search-results-container');
+        if (!container) return;
+
+        const q = query.toLowerCase().trim();
+        let html = '';
+        const geographicApi = window.OMEGAGeographicRegionSystem;
+        const geographicSearch = geographicApi && typeof geographicApi.search === 'function' ?
+            geographicApi.search(query) : { matches: [], exclusive: false };
+        const regionMatches = Array.isArray(geographicSearch.matches) ? geographicSearch.matches : [];
+        const appendRegionMatches = function () {
+            regionMatches.forEach(region => {
+                const isOcean = region.type === 'ocean';
+                const accent = isOcean ? '#55d8ff' : '#8be0b1';
+                const symbol = isOcean ? '≈' : '◉';
+                const label = isOcean ? 'OCEAN BASIN' : 'CONTINENT';
+                html += `<button type="button" class="search-item omega-region-search-item" onclick="window.GameEngine.handleSearchSelect('region', '${region.value}', null, null, null, event)" style="width:100%; box-sizing:border-box; cursor:pointer; padding:9px 10px; background:rgba(8,36,52,0.94); border:0; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; align-items:center; gap:9px; color:#e5f7ff; text-align:left;">
+                    <span style="font-size:21px; line-height:1; color:${accent}; width:25px; text-align:center;">${symbol}</span>
+                    <span style="flex:1; min-width:0;"><strong style="display:block; font-family:var(--font-mono); color:${accent}; font-size:12px;">${region.label}</strong><small style="display:block; color:#93a9b8; font-size:9px; letter-spacing:1px; margin-top:3px;">${label}</small></span>
+                    <span style="font-size:9px; white-space:nowrap; padding:4px 6px; border:1px solid ${accent}; border-radius:4px; color:${accent};">HIGHLIGHT</span>
+                </button>`;
+            });
+        };
+
+        // Bengali name mappings
+        const bnCountryMap = {
+            "bangladesh": "বাংলাদেশ", "usa": "যুক্তরাষ্ট্র", "united states": "যুক্তরাষ্ট্র",
+            "india": "ভারত", "china": "চীন", "russia": "রাশিয়া", "saudi arabia": "সৌদি আরব",
+            "uk": "যুক্তরাজ্য", "united kingdom": "যুক্তরাজ্য", "germany": "জার্মানি",
+            "japan": "জাপান", "pakistan": "পাকিস্তান", "france": "ফ্রান্স",
+            "brazil": "ব্রাজিল", "canada": "কানাডা", "australia": "অস্ট্রেলিয়া",
+            "turkey": "তুরস্ক", "iran": "ইরান", "egypt": "মিশর", "indonesia": "ইন্দোনেশিয়া"
+        };
+
+        const masterList = [
+            "USA", "Bangladesh", "India", "China", "Russia", "Saudi_Arabia",
+            "United_Kingdom", "Germany", "Japan", "Pakistan", "France", "Brazil",
+            "Canada", "Australia", "Turkey", "Iran", "Egypt", "Indonesia", "South_Africa",
+            "Mexico", "Argentina", "Italy", "Spain", "South_Korea", "Vietnam", "Ukraine"
+        ];
+
+        const countriesFromRegistry = Object.keys(Game.locationsRegistry || {});
+        const allCountries = Array.from(new Set([...masterList, ...countriesFromRegistry]));
+
+        if (!q) {
+            html = `<div style="font-size:10px; color:#ffd700; font-family:var(--font-mono); margin-bottom:8px; font-weight:bold;">📍 QUICK SELECT POPULAR NATIONS:</div>
+            <div style="display:flex; flex-wrap:wrap; gap:6px;">`;
+            const quickList = ["Bangladesh", "USA", "India", "China", "Russia", "Saudi_Arabia", "United_Kingdom", "Germany", "Japan"];
+            quickList.forEach(name => {
+                const bn = bnCountryMap[name.toLowerCase()] || name;
+                html += `<button onclick="window.GameEngine.handleSearchSelect('country', '${name}', null, null, null, event)" style="padding:6px 10px; background:rgba(0,229,255,0.15); border:1px solid #00e5ff; color:#00e5ff; font-size:11px; font-weight:bold; border-radius:6px; cursor:pointer; font-family:var(--font-mono);">
+                    🌐 ${name.replace(/_/g, " ")} (${bn})
+                </button>`;
+            });
+            html += `</div>`;
+            container.innerHTML = html;
+            return;
+        }
+
+        // Exact geographic region searches (for example, "sea" or "ocean")
+        // must not be polluted with unrelated country, city, and resource results.
+        if (geographicSearch.exclusive && regionMatches.length) {
+            appendRegionMatches();
+            container.innerHTML = html;
+            return;
+        }
+        appendRegionMatches();
+
+        // 1. Search Country Matches
+        const countryMatches = allCountries.filter(c => {
+            const normC = c.toLowerCase().replace(/_/g, " ");
+            const bnName = (bnCountryMap[normC] || "").toLowerCase();
+            return normC.includes(q) || bnName.includes(q) || c.toLowerCase().includes(q);
+        }).slice(0, 8);
+
+        // 2. Search City/Capital Matches
+        const cityMatches = [];
+        if (Game.locationsRegistry) {
+            for (let cId in Game.locationsRegistry) {
+                if (cityMatches.length >= 6) break;
+                const cData = Game.locationsRegistry[cId];
+                if (cData && cData.cities && Array.isArray(cData.cities)) {
+                    for (let cityIndex = 0; cityIndex < cData.cities.length && cityMatches.length < 6; cityIndex++) {
+                        const city = cData.cities[cityIndex];
+                        if (city.name && city.name.toLowerCase().includes(q)) {
+                            cityMatches.push({
+                                name: city.name,
+                                country: cData.name || cId,
+                                lat: city.lat,
+                                lng: city.lng,
+                                role: city.role || 'CITY'
+                            });
+                        }
+                    }
+                }
+            }
+        }
+
+        // 3. Search Strategic Resource Deposits
+        const depositMatches = [];
+        const deposits = (window.ResourceMinistryEngine && window.ResourceMinistryEngine.deposits) ? window.ResourceMinistryEngine.deposits : [];
+        for (let depositIndex = 0; depositIndex < deposits.length && depositMatches.length < 6; depositIndex++) {
+            const dep = deposits[depositIndex];
+            if (dep && dep.name && (dep.name.toLowerCase().includes(q) ||
+                (dep.country && dep.country.toLowerCase().includes(q)))) {
+                depositMatches.push(dep);
+            }
+        }
+
+        if (regionMatches.length === 0 && countryMatches.length === 0 && cityMatches.length === 0 && depositMatches.length === 0) {
+            container.innerHTML = `<div style="font-size:11px; color:#ef4444; font-family:var(--font-mono); padding:8px;">❌ No matching nation, city, or strategic deposit found for "${query}".</div>`;
+            return;
+        }
+
+        // Render Country Matches
+        countryMatches.forEach(name => {
+            const displayName = name.replace(/_/g, " ").toUpperCase();
+            const bn = bnCountryMap[name.toLowerCase()] || "";
+            html += `<div class="search-item" onclick="window.GameEngine.handleSearchSelect('country', '${name}', null, null, null, event)" style="cursor:pointer; padding:8px 10px; background:rgba(15,23,42,0.8); border-bottom:1px solid rgba(255,255,255,0.05); display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <strong style="color:#00e5ff; font-family:var(--font-mono);">🌐 ${displayName}</strong>
+                    ${bn ? `<span style="font-size:10px; color:#ffd700; margin-left:6px; font-family:var(--font-mono);">(${bn})</span>` : ''}
+                </div>
+                <span style="font-size:10px; padding:2px 6px; background:rgba(34,197,94,0.2); color:#22c55e; border-radius:4px; font-family:var(--font-mono); font-weight:bold;">COUNTRY</span>
+            </div>`;
+        });
+
+        // Render City Matches
+        cityMatches.slice(0, 6).forEach(city => {
+            html += `<div class="search-item" onclick="window.GameEngine.handleSearchSelect('city', '${city.name}', ${city.lat}, ${city.lng}, '${city.country}', event)" style="cursor:pointer; padding:8px 10px; background:rgba(15,23,42,0.8); border-bottom:1px solid rgba(255,255,255,0.05); display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <strong style="color:#ffd700; font-family:var(--font-mono);">🏙️ ${city.name.toUpperCase()}</strong>
+                    <span style="font-size:10px; color:#cbd5e1; margin-left:6px; font-family:var(--font-mono);">(${city.country})</span>
+                </div>
+                <span style="font-size:10px; padding:2px 6px; background:rgba(0,229,255,0.2); color:#00e5ff; border-radius:4px; font-family:var(--font-mono); font-weight:bold;">CITY / HUB</span>
+            </div>`;
+        });
+
+        // Render Deposit Matches
+        depositMatches.slice(0, 6).forEach(dep => {
+            html += `<div class="search-item" onclick="window.GameEngine.handleSearchSelect('deposit', '${dep.name}', ${dep.lat}, ${dep.lng}, '${dep.country}', event)" style="cursor:pointer; padding:8px 10px; background:rgba(15,23,42,0.8); border-bottom:1px solid rgba(255,255,255,0.05); display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <strong style="color:#22c55e; font-family:var(--font-mono);">⛏️ ${dep.name.toUpperCase()}</strong>
+                    <span style="font-size:10px; color:#a855f7; margin-left:6px; font-family:var(--font-mono);">(${dep.country})</span>
+                </div>
+                <span style="font-size:10px; padding:2px 6px; background:rgba(234,179,8,0.2); color:#eab308; border-radius:4px; font-family:var(--font-mono); font-weight:bold;">RESOURCE</span>
+            </div>`;
+        });
+
+        container.innerHTML = html;
+    },
+
+    handleSearchSelect(type, name, lat, lng, extraCountry, e) {
+        if (e) {
+            if (e.preventDefault) e.preventDefault();
+            if (e.stopPropagation) e.stopPropagation();
+        }
+
+        const drawers = document.querySelectorAll('.omega-drawer');
+        drawers.forEach(d => d.style.display = 'none');
+
+        if (type === 'region') {
+            const regionSystem = window.OMEGAGeographicRegionSystem;
+            const selected = regionSystem && typeof regionSystem.select === 'function' ?
+                regionSystem.select(name, { focus: true }) : false;
+            if (selected) {
+                const result = typeof regionSystem.search === 'function' ?
+                    regionSystem.search(name.split(':').slice(1).join(':')).matches.find(region => region.value === name) : null;
+                const regionLabel = result ? result.label : name.split(':').slice(1).join(':');
+                this.showNotification("GEOGRAPHIC SEARCH FOCUS", `HIGHLIGHTED REGION: ${regionLabel.toUpperCase()}`, "info");
+            } else {
+                this.showNotification("GEOGRAPHIC SEARCH", "GEOGRAPHIC REGION DATA IS NOT READY", "warning");
+            }
+        } else if (type === 'country') {
+            const cleanName = name.replace(/_/g, " ").trim();
+            if (window.Game && typeof window.Game.selectCountryByName === 'function') {
+                window.Game.selectCountryByName(cleanName);
+            }
+            
+            // Camera FlyTo target
+            let targetLat = lat, targetLng = lng;
+            if (!targetLat || !targetLng) {
+                const config = window.Game.findCountryConfig ? window.Game.findCountryConfig(cleanName) : null;
+                if (config && config.lat && (config.lng || config.lng === 0)) {
+                    targetLat = config.lat; targetLng = config.lng;
+                } else {
+                    const norm = (cleanName || "").toLowerCase().replace(/[^a-z]/g, "").trim();
+                    if (window.Game.visualCenters && window.Game.visualCenters[norm]) {
+                        targetLat = window.Game.visualCenters[norm][0];
+                        targetLng = window.Game.visualCenters[norm][1];
+                    }
+                }
+            }
+
+            if (window.map && targetLat && targetLng) {
+                window.map.flyTo([targetLat, targetLng], 5.5, { duration: 1.3 });
+            }
+
+            this.showNotification("GLOBAL SEARCH FOCUS", `LOCATED NATION: ${cleanName.toUpperCase()}`, "info");
+        } else if (type === 'city' || type === 'deposit') {
+            const targetCountry = extraCountry || 'BANGLADESH';
+            if (window.Game && typeof window.Game.selectCountryByName === 'function') {
+                window.Game.selectCountryByName(targetCountry);
+            }
+            if (window.map && lat && lng) {
+                window.map.flyTo([lat, lng], 8, { duration: 1.3 });
+            }
+            if (type === 'city' && Game.Map && typeof Game.Map.openCityDetailBar === 'function') {
+                Game.Map.openCityDetailBar({ name: name, country: targetCountry, lat: lat, lng: lng, role: 'COMMERCIAL / ADMIN' });
+            }
+            this.showNotification("GLOBAL SEARCH FOCUS", `LOCATED OBJECT: ${name.toUpperCase()} (${targetCountry})`, "info");
+        }
+    },
+
+    renderEventsFeed() {
+        const container = document.getElementById('events-feed-container');
+        if (!container) return;
+
+        container.innerHTML = `
+            <div class="search-item" style="border-left:3px solid #ef4444;">
+                <span style="color:#ef4444; font-weight:bold;">⚠ MILITARY ALERT</span><br>
+                <span>Border skirmish reported along eastern demilitarized zone.</span>
+            </div>
+            <div class="search-item" style="border-left:3px solid #00e5ff;">
+                <span style="color:#00e5ff; font-weight:bold;">🌐 DIPLOMATIC SUMMIT</span><br>
+                <span>UN Resolution 402 passed on global trade stability.</span>
+            </div>
+            <div class="search-item" style="border-left:3px solid #ffd700;">
+                <span style="color:#ffd700; font-weight:bold;">💰 ECONOMIC SHIFT</span><br>
+                <span>Energy trade volume surges by +12.4% this quarter.</span>
+            </div>
+        `;
+    },
+
+    switchMapLayer(layerType) {
+        this.showNotification("MAP SPECTRUM", `MAP TERRAIN SWITCHED TO: ${layerType.toUpperCase()}`, "info");
+        
+        if (!window.map || typeof L === 'undefined') return;
+
+        if (window.currentMapTileLayer) {
+            window.map.removeLayer(window.currentMapTileLayer);
+        } else if (window.satelliteLayer) {
+            window.map.removeLayer(window.satelliteLayer);
+        }
+
+        let tileUrl = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
+        let attr = 'Esri World Imagery Satellite';
+
+        if (layerType === 'political') {
+            tileUrl = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+            attr = 'CartoDB Political Voyager';
+        } else if (layerType === 'night') {
+            tileUrl = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+            attr = 'CartoDB Night Grid';
+        } else if (layerType === 'weather') {
+            tileUrl = 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png';
+            attr = 'OpenTopoMap Weather Grid';
+        }
+
+        const offlineShell = Boolean(window.OMEGA_ANDROID_OFFLINE)
+            || (typeof navigator !== 'undefined' && navigator.onLine === false);
+        if (offlineShell) {
+            // Never request online map tiles from the APK or an explicitly offline browser.
+            window.currentMapTileLayer = null;
+            if (window.OmegaOfflineHybridAtlas && typeof window.OmegaOfflineHybridAtlas.activate === 'function') {
+                window.OmegaOfflineHybridAtlas.activate();
+            }
+        } else {
+            window.currentMapTileLayer = L.tileLayer(tileUrl, {
+                attribution: attr,
+                maxZoom: 18,
+                opacity: 0.95,
+                keepBuffer: 2,
+                updateWhenIdle: true
+            }).addTo(window.map);
+            window.currentMapTileLayer.bringToBack();
+        }
+        if (layerType === "resources") {
+            if (Game.Map && Game.Map.toggleResourceOverlay) {
+                Game.Map.toggleResourceOverlay();
+            }
+        }
+    },
+
+    executeExecutiveAction(action) {
+        this.showNotification("EXECUTIVE DIRECTIVE", `Directive initiated: ${action.toUpperCase()}`, "info");
+    },
+
+    formatGameNumber(num) {
+        if (num === null || num === undefined) return "N/A";
+        const absVal = Math.abs(num);
+        let suffix = "", divisor = 1;
+
+        if (absVal >= 1000000000000) { suffix = " Trillion"; divisor = 1000000000000; }
+        else if (absVal >= 1000000000) { suffix = " Billion"; divisor = 1000000000; }
+        else if (absVal >= 1000000) { suffix = " Million"; divisor = 1000000; }
+        else if (absVal >= 1000) { suffix = "K"; divisor = 1000; }
+
+        return (num < 0 ? "-" : "") + "$" + (num / divisor).toFixed(1) + suffix;
+    },
+
+    formatPopulationNumber(num) {
+        if (num >= 1000000000) return (num / 1000000000).toFixed(2) + " Billion";
+        if (num >= 1000000) return (num / 1000000).toFixed(1) + " Million";
+        if (num >= 1000) return (num / 1000).toFixed(1) + "K";
+        return Math.floor(num).toString();
+    },
+
+    getCountryId(name) {
+        if (!name) return "";
+        return name.toUpperCase().replace(/[-\s]/g, "_").replace(/[^A-Z0-9_]/g, "").trim();
+    },
+
+    normalizeName(name) {
+        return (name || "").toLowerCase().replace(/[^a-z]/g, "").trim();
+    },
+
+    getGameFriendlyName(name) {
+        if (!name) return "";
+        const mapping = {
+            "democratic republic of the congo": "DR Congo",
+            "united states of america": "USA",
+            "united states": "USA", // আমেরিকার নাম 'USA' ফিক্স করা হলো
+            "united kingdom": "UK",
+            "united arab emirates": "UAE"
+        };
+        return mapping[name.toLowerCase().trim()] || name;
+    },
+
+    getFontSizeForCountry(config, zoom) {
+        var importance = (config && config.importance) ? config.importance : 3;
+        var baseSize = 9;
+        if (importance >= 5) baseSize = zoom * 3.2;
+        else if (importance === 4) baseSize = zoom * 2.6;
+        else baseSize = zoom * 1.8;
+        return Math.max(7.5, Math.min(baseSize, 22));
+    },
+
+    toggleMainCabinet(show) {
+        if (this.dom.cabinetWindow) {
+            this.dom.cabinetWindow.style.display = show ? 'flex' : 'none';
+        }
+    },
+
+    setActiveNavButton(buttonId) {
+        const navButtons = document.querySelectorAll('.nav-btn');
+        navButtons.forEach(btn => btn.classList.remove('active'));
+        const activeBtn = document.getElementById(buttonId);
+        if (activeBtn) activeBtn.classList.add('active');
+    },
+
+    switchModalTab(event, tabId) {
+        const tabButtons = document.querySelectorAll('.tab-btn');
+        tabButtons.forEach(btn => btn.classList.remove('active'));
+        const tabPanes = document.querySelectorAll('.tab-pane');
+        tabPanes.forEach(pane => pane.classList.remove('active'));
+        event.currentTarget.classList.add('active');
+        const activePane = document.getElementById(tabId);
+        if (activePane) activePane.classList.add('active');
+    },
+
+    switchTabDirectly(tabId) {
+        const tabBtn = document.querySelector(`#hub-tabs .tab-btn[data-tab="${tabId}"]`);
+        if (tabBtn) tabBtn.click();
+    },
+
+    init() {
+        this.cacheDOM();
+        this.bindEvents();
+
+        if (window.updateGlobalResourceHUD) {
+            window.updateGlobalResourceHUD();
+        }
+
+        console.log("Game Core Engine initialized.");
+    }
+};
+
+window.bounds = L.latLngBounds(L.latLng(-60, -180), L.latLng(85, 180));
+
+// ============================================================================
+// ম্যাপ এবং হাব লেয়ার ইনিশিয়ালাইজেশন কোড (ISRO / Modern Age 3 Satellite Style)
+// ============================================================================
+window.map = L.map('map', {
+    maxBounds: window.bounds,
+    maxBoundsViscosity: 0.5,
+    inertia: true,
+    inertiaDeceleration: 3000,
+    bounceAtZoomLimits: false,
+    minZoom: 2.1,
+    maxZoom: 10,
+    zoomControl: false
+}).setView([20, 0], 2.5);
+
+// The default basemap is the local offline atlas. Remote raster layers are opt-in.
+window.satelliteLayer = null;
+
+window.hubsGroupLayer = L.layerGroup().addTo(window.map);
+
+window.getCountryColor = function(name) {
+    if (typeof window.getCountryColorOverride === "function") {
+        return window.getCountryColorOverride(name);
+    }
+    if (!name) return "#2c4235";
+    const norm = name.toLowerCase().trim();
+    const biomeMap = {
+        "russia": "#283f34", "canada": "#2c4839", "greenland": "#3d5348", "sweden": "#2d4438",
+        "saudi arabia": "#69533a", "egypt": "#6e583e", "algeria": "#6b543b", "australia": "#664d38",
+        "brazil": "#1b4330", "indonesia": "#1a4734", "democratic republic of the congo": "#1a422f",
+        "united states": "#384e3d", "china": "#3c4d38", "france": "#324838", "germany": "#314737"
+    };
+    if (biomeMap[norm]) return biomeMap[norm];
+    let hash = 0;
+    for (let i = 0; i < norm.length; i++) hash = norm.charCodeAt(i) + ((hash << 5) - hash);
+    const satellitePalette = ["#2d4235", "#384e3d", "#4d4a36", "#5e4c36", "#1e4231", "#364a3d", "#4a523f", "#33453a"];
+    return satellitePalette[Math.abs(hash) % satellitePalette.length];
+};
+
+// গ্লোবাল Escape কী হ্যান্ডলার - যেকোনো খোলা উইন্ডো/মোডাল বন্ধ করার জন্য
+document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+        // ১. অ্যাডভাইজারি পপআপ ক্লোজ
+        const advise = document.querySelector(".om-advise-popup");
+        if (advise) { advise.remove(); return; }
+        // ২. কাস্টম ফ্যাসিলিটি মোডাল ক্লোজ
+        const modal = document.querySelector(".om-modal-overlay");
+        if (modal) { modal.remove(); return; }
+        // ৩. কান্ট্রি কমান্ড হাব মোডাল ক্লোজ
+        if (Game.dom && Game.dom.hubModal && Game.dom.hubModal.style.display !== "none") {
+            Game.Map.toggleCommandHub(false);
+            return;
+        }
+        // ৪. ফুল স্টেট ক্যাবিনেট উইন্ডো ক্লোজ
+        const win = document.getElementById("cabinet-full-window");
+        if (win && (win.style.display !== "none" && win.style.opacity !== "0")) {
+            Game.toggleMainCabinet(false);
+            return;
+        }
+    }
+});
+
+window.isCoastalCountry = function(name) { return false; };
+
+window.oceanLabelsList = [
+    { name: "NORTH ATLANTIC OCEAN", lat: 32, lng: -42, fontSize: 13 },
+    { name: "SOUTH ATLANTIC OCEAN", lat: -22, lng: -18, fontSize: 12 },
+    { name: "PACIFIC OCEAN", lat: 0, lng: -135, fontSize: 14 },
+    { name: "INDIAN OCEAN", lat: -18, lng: 78, fontSize: 13 },
+    { name: "ARCTIC OCEAN", lat: 82, lng: 0, fontSize: 13 },
+    { name: "HUDSON BAY", lat: 60, lng: -85, fontSize: 11 },
+    { name: "BAFFIN BAY", lat: 73, lng: -65, fontSize: 10 },
+    { name: "GULF OF MEXICO", lat: 25, lng: -90, fontSize: 11 },
+    { name: "CARIBBEAN SEA", lat: 15, lng: -75, fontSize: 11 },
+    { name: "MEDITERRANEAN SEA", lat: 35, lng: 18, fontSize: 11 }
+];
+
+document.addEventListener("DOMContentLoaded", () => Game.init());
