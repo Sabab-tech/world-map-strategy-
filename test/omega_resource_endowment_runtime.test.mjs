@@ -770,8 +770,9 @@ assert.equal(oneTapLedgerAfter.length,oneTapLedgerBefore.length,
   'a repeat one-tap action must not create a second successful row for already-produced occurrences');
 assert.equal(oneTapLedgerAfter.reduce((sum,row)=>sum+Number(row.quantity||0),0),successfulQuantityBefore,
   'a repeat one-tap action must not duplicate successful production quantities');
-assert.ok(Number(afterOneTap.mineStates?.[oneTapLedgerBefore[0].occurrenceKey]?.residualQuantity)>=0,
-  'the one-tap site must retain a valid reserve state after production');
+const oneTapReserveAfter=oneTapLedgerBefore[0].reserveAfter;
+assert.ok(oneTapReserveAfter&&Number.isFinite(Number(oneTapReserveAfter.residualQuantity))&&Number(oneTapReserveAfter.residualQuantity)>=0,
+  'the one-tap production ledger must retain a valid post-extraction reserve snapshot');
 
 // // Part 6 integration proof: a newly added mine must complete the same extraction,
 // sovereign warehouse, transport, auto-commissioned factory and processing sequence.
