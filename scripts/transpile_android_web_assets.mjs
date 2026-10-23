@@ -33,7 +33,7 @@ try {
   if (jsFiles.length) {
     const outDir = path.join(tempRoot, 'js');
     await fs.mkdir(outDir, { recursive: true });
-    runEsbuild([...jsFiles, '--outdir=' + outDir, '--outbase=' + root, '--target=es2017', '--log-level=error']);
+    runEsbuild([...jsFiles, '--outdir=' + outDir, '--outbase=' + root, '--target=es2017', '--minify', '--log-level=error']);
     for (const file of jsFiles) {
       const output = path.join(outDir, path.relative(root, file));
       const transpiled = await fs.readFile(output, 'utf8');
@@ -71,7 +71,7 @@ try {
   }
   if (inlineRows.length) {
     const inputs = inlineRows.map(row => path.join(inlineDir, row.id + '.js'));
-    runEsbuild([...inputs, '--outdir=' + inlineOutDir, '--outbase=' + inlineDir, '--target=es2017', '--log-level=error']);
+    runEsbuild([...inputs, '--outdir=' + inlineOutDir, '--outbase=' + inlineDir, '--target=es2017', '--minify', '--log-level=error']);
     const byFile = new Map();
     for (const row of inlineRows) {
       const rows = byFile.get(row.file) || [];
