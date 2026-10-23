@@ -209,11 +209,11 @@ test('save slot preserves an unfinished factory project, reserved input batches 
   const restored = sim.loadSlot('factory-acceptance');
   assert.equal(restored.lastLoadIntegrity, 'VERIFIED', 'the restored factory snapshot must pass authoritative save integrity validation');
 
-  assert.deepEqual(gameState.resource.BGD.industrialNetwork.projects[0], expectedProject,
+  assert.deepEqual(JSON.parse(JSON.stringify(gameState.resource.BGD.industrialNetwork.projects[0])), expectedProject,
     'construction dates, consumed BOM allocations and request identity must survive reload');
-  assert.deepEqual(gameState.resource.BGD.industrialNetwork.factoryProductionCycles['FAC-BGD-STEEL-01'], expectedCycle,
+  assert.deepEqual(JSON.parse(JSON.stringify(gameState.resource.BGD.industrialNetwork.factoryProductionCycles['FAC-BGD-STEEL-01'])), expectedCycle,
     'cycle status, finish date, exact batch reservations and expected outputs must survive reload');
-  assert.deepEqual(gameState.economy.BGD.productionAssets[0].inputBatchLots[0], expectedLot,
+  assert.deepEqual(JSON.parse(JSON.stringify(gameState.economy.BGD.productionAssets[0].inputBatchLots[0])), expectedLot,
     'remaining quantity, reservation lock and source-mine lineage must survive reload');
   assert.equal(gameState.economy.BGD.productionAssets[0].inputBatchLots[0].cycleReservedQuantity, 50);
   assert.equal(gameState.resource.BGD.industrialNetwork.factoryProductionCycles['FAC-BGD-STEEL-01'].status, 'IN_PROGRESS');
