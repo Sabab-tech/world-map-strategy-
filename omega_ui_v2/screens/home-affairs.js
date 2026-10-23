@@ -10,7 +10,8 @@
     { id:'fleet', label:'Fleet' },
     { id:'patrols', label:'Patrols & Deployment' },
     { id:'facilities', label:'Facilities & Equipment' },
-    { id:'incidents', label:'Incidents & Reports' }
+    { id:'incidents', label:'Incidents & Reports' },
+    { id:'laws', label:'Laws & Sections' }
   ];
   function esc(v) { return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) { return ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[c]; }); }
   function num(v) { if (v === null || v === undefined || v === '') return null; var n = Number(v); return Number.isFinite(n) ? n : null; }
@@ -116,6 +117,57 @@
           '</article>';
       }).join('') + '</div>' : '<div class="omega-v2-empty">No security incident history is recorded for this country yet.</div>');
   }
+  function legalRowsFromSource(source, sourceName) {
+    var rows = [], seen = Object.create(null);
+    function push(item, lawName, sectionName) {
+      if (!item || typeof item !== 'object') return;
+      var law = item.actName || item.lawName || item.law || item.act || item.name || item.title || lawName || 'Law not named';
+      var parts = Array.isArray(item.sections) ? item.sections : Array.isArray(item.articles) ? item.articles : Array.isArray(item.provisions) ? item.provisions : null;
+      if (parts && parts.length) { parts.forEach(function (section) { push(section, law, section.number || section.section || section.article || null); }); return; }
+      var section = item.sectionNumber || item.articleNumber || item.section || item.article || item.number || sectionName || 'General';
+      var title = item.title || item.heading || item.provisionTitle || item.name || (section !== 'General' ? 'Section ' + section : law);
+      var body = item.text || item.description || item.summary || item.provision || item.content || item.body || '';
+      if (!body && !item.title && !item.name && !item.heading && !item.provisionTitle && section === 'General') return;
+      var key = String(law) + '|' + String(section) + '|' + String(title);
+      if (seen[key]) return;
+      seen[key] = true;
+      rows.push({ law:String(law), section:String(section), title:String(title), body:String(body || 'Full provision text not recorded'), status:String(item.status || item.state || 'NOT_RECORDED'), source:String(item.source || item.sourceId || item.authority || sourceName) });
+    }
+    if (Array.isArray(source)) source.forEach(function (item) { push(item, null, null); });
+    else if (source && typeof source === 'object') Object.keys(source).forEach(function (key) {
+      var item = source[key];
+      if (item && typeof item === 'object') push(Object.assign({ lawName:key }, item), key, null);
+      else if (typeof item === 'string') push({ lawName:key, title:key, text:item }, key, null);
+    });
+    return rows;
+  }
+  function lawsHtml(state, country) {
+    var gameState = g.Game && g.Game.state || {};
+    var key = String(country || '').toUpperCase();
+    var gateway = g.OmegaCountryDataGateway || (g.Omega && g.Omega.CountryDataGateway);
+    var domain = null;
+    try { domain = gateway && typeof gateway.getDomainRecord === 'function' ? gateway.getDomainRecord(country, 'interior') : null; } catch (_) {}
+    var sources = [
+      [state && state.laws, 'Home Ministry state'], [state && state.legislation, 'Home Ministry legislation'],
+      [state && state.legalCode, 'Home Ministry legal code'], [state && state.lawRegistry, 'Home Ministry law registry'],
+      [state && state.legalArticles, 'Home Ministry legal articles'], [state && state.articles, 'Home Ministry articles'],
+      [gameState.laws && (gameState.laws[key] || gameState.laws[country]), 'Game law registry'],
+      [domain && (domain.record || domain), 'Country Data Gateway · interior']
+    ];
+    var rows = [];
+    sources.forEach(function (entry) {
+      var source = entry[0];
+      if (!source || typeof source !== 'object') return;
+      var legal = source.laws || source.legislation || source.legalCode || source.lawRegistry || source.legalArticles || source.articles || source;
+      rows = rows.concat(legalRowsFromSource(legal, entry[1]));
+    });
+    var unique = Object.create(null);
+    rows = rows.filter(function (row) { var id = row.law + '|' + row.section + '|' + row.title; if (unique[id]) return false; unique[id] = true; return true; });
+    var body = rows.map(function (row) { return '<tr><td>' + esc(row.law) + '</td><td>' + esc(row.section) + '</td><td><strong>' + esc(row.title) + '</strong><p>' + esc(row.body) + '</p></td><td>' + esc(row.status) + '</td><td>' + esc(row.source) + '</td></tr>'; }).join('');
+    return '<section class="omega-v2-home-laws"><h2 class="omega-v2-section-title">Home Affairs · Law &amp; Sections</h2><p class="omega-v2-card-meta">Legal records are read from the selected country and existing Home Affairs / country-data sources. Only registered law titles, sections and text are displayed.</p>' +
+      (rows.length ? '<div class="omega-v2-table-wrap omega-v2-laws-table-wrap"><table><thead><tr><th scope="col">Law / Act</th><th scope="col">Section / Article</th><th scope="col">Title &amp; provision</th><th scope="col">Status</th><th scope="col">Source</th></tr></thead><tbody>' + body + '</tbody></table></div>' : '<div class="omega-v2-empty" role="status">No Home Affairs laws or section text are registered for ' + esc(country || 'the selected country') + '. The legal register is empty or unavailable; no act, article or punishment has been invented.</div>') +
+      '<p class="omega-v2-source">Authoritative legal display requires jurisdiction, current version and a registered source. This view never substitutes fictional provisions for missing legal records.</p></section>';
+  }
   function render(root, options) {
     options = options || {};
     if (!root) return { ok:false, code:'HOME_AFFAIRS_ROOT_REQUIRED' };
@@ -133,6 +185,7 @@
     else if (active === 'patrols') content = patrolsHtml(state, options);
     else if (active === 'facilities') content = facilitiesHtml(state);
     else if (active === 'incidents') content = incidentsHtml(state);
+    else if (active === 'laws') content = lawsHtml(state, country);
     else content = dashboardHtml(state, fleet, country);
 
     root.classList.add('omega-v2-screen');
