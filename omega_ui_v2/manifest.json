@@ -1,0 +1,44 @@
+{
+  "schemaVersion": "1.0.0",
+  "app": "OMEGA",
+  "namespace": "omega_ui_v2",
+  "rolloutStatus": "ISOLATED_NOT_LOADED_IN_PRODUCTION",
+  "preservationPolicy": "ADDITIVE_ONLY",
+  "designDocument": "docs/OMEGA_UI_V2_DESIGN_SPEC_V1.md",
+  "globalNavigation": [
+    "map",
+    "government",
+    "economy",
+    "industry",
+    "reports"
+  ],
+  "governmentDestinations": [
+    "executive-ministry",
+    "all-ministries"
+  ],
+  "screens": {
+    "policeFleet": "screens/police-fleet.js",
+    "resourceMinistry": "screens/resource-ministry.js"
+  },
+  "sharedStyles": "omega-ui-v2.css",
+  "canonicalAdapters": {
+    "policeEngine": "OmegaHomeMinistryEngine",
+    "vehicleIllustration": "OMEGA_UI_ADAPTER.getPoliceVehicleSvg",
+    "resourceSiteCatalog": "OmegaResourceSiteCanonicalCatalogData"
+  },
+  "requiredRuntimeTruths": [
+    "Vehicle tier, cost, operating capability, ownership and procurement are read from canonical HomeMinistry engine",
+    "Resource sites retain unique siteId and countryId",
+    "Reserve, stock, production rate and capacity are separate quantities",
+    "Missing values remain Not recorded or Unavailable",
+    "Every action must be routed to the canonical handler"
+  ],
+  "gates": {
+    "android9": true,
+    "offline": true,
+    "responsiveUI": true,
+    "all15PoliceVehicleTiers": true,
+    "countryIsolation": true,
+    "preserveLegacyFiles": true
+  }
+}
