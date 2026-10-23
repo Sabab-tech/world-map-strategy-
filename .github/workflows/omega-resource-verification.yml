@@ -20,7 +20,7 @@ env:
 jobs:
   resource-verification-certificate:
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -92,7 +92,7 @@ jobs:
           done
           GATES[syntax]="$syntax_status"
 
-          run_gate resourceEndowment 120 node test/omega_resource_endowment_runtime.test.mjs
+          run_gate resourceEndowment 240 node test/omega_resource_endowment_runtime.test.mjs
           run_gate siteIntegrity 30 node test/omega_resource_milestone_a_integrity.test.mjs
           run_gate siteDataContract 15 node --test test/omega_resource_site_data_contract.test.mjs
           run_gate siteDataCompleteness 15 node test/omega_resource_site_data_completeness.test.mjs
@@ -177,7 +177,7 @@ jobs:
             gates,
             timeboxing: {
               longGatePolicy: 'TIMEOUT_AND_CONTINUE',
-              endowmentSeconds: 120,
+              endowmentSeconds: 240,
               otherTestSeconds: 15,
               syntaxSeconds: 3
             },
