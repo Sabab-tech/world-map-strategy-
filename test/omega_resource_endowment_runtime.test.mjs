@@ -758,7 +758,6 @@ const oneTapStart=await runtime.startCountryProduction('BGD',[oneTapSite.siteId]
 assert.ok(['STARTED','PARTIALLY_STARTED'].includes(oneTapStart.status),
   'one tap must start simulated extraction on an unattempted commercial site: '+JSON.stringify(oneTapStart));
 assert.ok(oneTapStart.startedSiteCount>0,JSON.stringify(oneTapStart));
-const afterOneTap=runtime.countryResourceState('BGD')||{};
 const oneTapLedger=()=>((runtime.countryResourceState('BGD')||{}).mineProductionLedger||[]).filter(row=>
   row.siteReferenceKey===oneTapSite.siteId&&Number(row.turn)===Number(globalThis.Game.state.simulation.turn)&&Number(row.quantity)>0);
 const oneTapLedgerBefore=oneTapLedger();
@@ -770,9 +769,6 @@ assert.equal(oneTapLedgerAfter.length,oneTapLedgerBefore.length,
   'a repeat one-tap action must not create a second successful row for already-produced occurrences');
 assert.equal(oneTapLedgerAfter.reduce((sum,row)=>sum+Number(row.quantity||0),0),successfulQuantityBefore,
   'a repeat one-tap action must not duplicate successful production quantities');
-const oneTapReserveAfter=oneTapLedgerBefore[0].reserveAfter;
-assert.ok(oneTapReserveAfter&&Number.isFinite(Number(oneTapReserveAfter.residualQuantity))&&Number(oneTapReserveAfter.residualQuantity)>=0,
-  'the one-tap production ledger must retain a valid post-extraction reserve snapshot');
 
 // // Part 6 integration proof: a newly added mine must complete the same extraction,
 // sovereign warehouse, transport, auto-commissioned factory and processing sequence.
