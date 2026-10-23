@@ -1752,6 +1752,83 @@ function batchFromExtraction(x,record){
     publishCommittedExtractionEvents(c,result);
     return result;
   }
+
+  async function startCountryProduction(countryId,siteIds=null){
+    const c=canonical(countryId);
+    if(!/^[A-Z]{3}$/.test(c))return{status:'BLOCKED',reason:'COUNTRY_ID_INVALID',countryId:c||null};
+    const initialized=await initialize();
+    if(initialized?.status!=='READY')return{status:'BLOCKED',reason:'RESOURCE_ENDOWMENT_NOT_READY',detail:initialized,countryId:c};
+    const refreshed=await hydrateCountry(c),hydration=refreshed?.result||refreshed;
+    if(refreshed?.status!=='APPLIED'||hydration?.accepted===false)
+      return{status:'BLOCKED',reason:'COUNTRY_HYDRATION_NOT_COMMITTED',detail:refreshed,countryId:c};
+    const bucket=state()?.resource?.[c]||{},t=turn();
+    const requestedSites=Array.isArray(siteIds)&&siteIds.length?new Set(siteIds.map(String)):null;
+    const outputs=bucket.mineOutputs&&typeof bucket.mineOutputs==='object'?bucket.mineOutputs:{};
+    const paths=bucket.minePaths&&typeof bucket.minePaths==='object'?bucket.minePaths:{};
+    const states=bucket.mineStates&&typeof bucket.mineStates==='object'?bucket.mineStates:{};
+    const attempted=new Set(),retryableBlocked=new Set(),successfulOccurrences=new Set();
+    const currentLedger=Array.isArray(bucket.mineProductionLedger)?bucket.mineProductionLedger:[];
+    for(const row of currentLedger){
+      if(n(row?.turn)!==t||(n(row?.quantity)||0)<=0)continue;
+      const key=String(row.occurrenceKey||row.mineId||'').trim();
+      if(key)successfulOccurrences.add(key);
+    }
+    for(const [key,row] of Object.entries(outputs)){
+      if(n(row?.simulationTurn??row?.turn)!==t)continue;
+      attempted.add(String(key));
+      const quantity=n(row?.producedQuantity??row?.approvedQuantity??row?.quantity)||0;
+      if(quantity>0)successfulOccurrences.add(String(key));
+      else if(String(row?.status||'').toUpperCase().startsWith('BLOCK')||row?.blockReason)retryableBlocked.add(String(key));
+    }
+    for(const [key,path] of Object.entries(paths)){
+      const scanned=Array.isArray(path?.stages)&&path.stages.some(stage=>
+        n(stage?.turn)===t&&['EXTRACTION_SCAN','EXTRACTION_BLOCKED'].includes(String(stage?.stage||'')));
+      if(scanned){
+        attempted.add(String(key));
+        if(String(path?.status||'').toUpperCase()==='BLOCKED')retryableBlocked.add(String(key));
+      }
+    }
+    const siteByOccurrence=new Map();
+    for(const [siteKey,controller] of Object.entries(bucket.mineSiteControllers||{})){
+      for(const key of Array.isArray(controller?.linkedOccurrenceKeys)?controller.linkedOccurrenceKeys:[])
+        siteByOccurrence.set(String(key),String(controller.siteReferenceKey||siteKey));
+    }
+    const candidates=Object.keys(states).filter(key=>{
+      if(successfulOccurrences.has(String(key)))return false;
+      if(attempted.has(String(key))&&!retryableBlocked.has(String(key)))return false;
+      if(!requestedSites)return true;
+      const row=states[key]||{},siteKey=String(row.siteReferenceKey||row.siteId||row.sourceSiteId||siteByOccurrence.get(String(key))||'');
+      return requestedSites.has(siteKey)||requestedSites.has(String(siteByOccurrence.get(String(key))||''));
+    });
+    const currentSiteIds=new Set(currentLedger.filter(row=>n(row?.turn)===t&&(n(row?.quantity)||0)>0)
+      .map(row=>String(row.siteReferenceKey||row.mineId||row.occurrenceKey||'')).filter(Boolean));
+    const currentPositiveOutputs=Object.values(outputs).filter(row=>n(row?.simulationTurn??row?.turn)===t&&
+      (n(row?.producedQuantity??row?.approvedQuantity??row?.quantity)||0)>0);
+    for(const row of currentPositiveOutputs){
+      const key=String(row.siteReferenceKey||row.siteId||'');
+      if(key)currentSiteIds.add(key);
+    }
+    if(!candidates.length){
+      const activeCount=requestedSites?Array.from(currentSiteIds).filter(id=>requestedSites.has(id)).length:currentSiteIds.size;
+      return{status:activeCount?'ALREADY_ACTIVE':'BLOCKED',reason:activeCount?'PRODUCTION_ALREADY_STARTED_THIS_TURN':'NO_UNATTEMPTED_SITE_OCCURRENCES',
+        countryId:c,turn:t,activeSiteCount:activeCount,attemptedOccurrenceCount:attempted.size,blockedOccurrenceCount:
+          Object.values(outputs).filter(row=>n(row?.simulationTurn??row?.turn)===t&&
+            (String(row?.status||'').toUpperCase().startsWith('BLOCK')||!!row?.blockReason)).length,
+        requestedSiteIds:requestedSites?[...requestedSites]:null,records:[]};
+    }
+    const dispatchResult=await extractCountry(c,candidates);
+    const payload=dispatchResult?.result||dispatchResult||{};
+    const records=Array.isArray(payload.records)?payload.records:[];
+    const produced=records.filter(row=>(n(row?.approvedQuantity??row?.quantity)||0)>0);
+    const producingSites=new Set(produced.map(row=>String(row.siteReferenceKey||row.siteId||row.occurrenceKey||'')).filter(Boolean));
+    const blocked=Array.isArray(payload.blocked)?payload.blocked.length:Math.max(0,n(payload.blocked)||0);
+    const status=produced.length?(blocked?'PARTIALLY_STARTED':'STARTED'):'BLOCKED';
+    return{status,countryId:c,turn:t,requestedSiteCount:requestedSites?.size||null,
+      attemptedOccurrenceCount:candidates.length,startedSiteCount:producingSites.size,
+      extractedRecordCount:produced.length,blockedOccurrenceCount:blocked,
+      reason:produced.length?null:(payload.reason||dispatchResult?.reason||'NO_SITE_PRODUCTION_APPROVED'),
+      records:clone(records),dispatchStatus:dispatchResult?.status||payload.status||null};
+  }
   function countryResourceState(c){
     const out=clone(state()?.resource?.[canonical(c)]||null);
     if(out && !out.resourceAuthority && out.authority)out.resourceAuthority=clone(out.authority);
@@ -1882,11 +1959,222 @@ function batchFromExtraction(x,record){
     const status=String(operation.status||site.operationStatus||site.status||'').trim().toUpperCase().replace(/[\s-]+/g,'_');
     return !['NOT_APPLICABLE','NOT_APPLICABLE_SITE','N_A','NA'].includes(status);
   }
+
+  function runtimeValueMissing(value){
+    if(value===null||value===undefined||value==='')return true;
+    if(typeof value==='number'&&!Number.isFinite(value))return true;
+    if(typeof value==='string'&&/^(?:UNOBSERVED|UNKNOWN|UNRECORDED|NOT_RECORDED|NOT_REPORTED|UNSPECIFIED|SOURCE_STATUS_UNSPECIFIED|N\/A|NA)$/i.test(value.trim()))return true;
+    if(Array.isArray(value))return value.length===0;
+    if(typeof value==='object')return Object.keys(value).length===0;
+    return false;
+  }
+  function fillRuntimeMissing(current,fallback){
+    if(runtimeValueMissing(current))return clone(fallback);
+    if(Array.isArray(current))return current.length?clone(current):clone(fallback);
+    if(current&&fallback&&typeof current==='object'&&typeof fallback==='object'&&!Array.isArray(current)&&!Array.isArray(fallback)){
+      const out=clone(current);
+      for(const [key,value] of Object.entries(fallback)){
+        out[key]=Object.prototype.hasOwnProperty.call(out,key)?fillRuntimeMissing(out[key],value):clone(value);
+      }
+      return out;
+    }
+    return clone(current);
+  }
+  function normalizeBoundSiteForRuntime(input={}){
+    const source=clone(input||{}),raw=source.sourceSiteRecord||source.resourceJsonReference||source.rawSiteReference||{};
+    const identity=source.identity||{},real=source.real||{};
+    const resourceId=rid(real.resourceId||identity.resourceTypeId||source.resourceId||source.resourceTypeId||
+      raw.resourceId||raw.resourceTypeId||raw.resourceTypeKey||raw.resId||'');
+    const countryId=canonical(source.countryId||identity.countryIso3||identity.countryId||source.countryCode||
+      source.location?.countryIso3||raw.countryId||raw.countryCode||raw.country||'');
+    const siteId=String(source.siteId||source.siteReferenceKey||raw.siteId||raw.id||'').trim();
+    const siteName=String(source.siteName||source.name||raw.siteName||raw.name||siteId).trim();
+    const location=source.location||real.location||raw.location||{};
+    const rawCoords=location.coordinates||source.coordinates||real.coordinates||raw.location?.coordinates||
+      raw.coordinates||raw;
+    const lat=n(rawCoords?.lat??rawCoords?.latitude??source.lat??raw.lat??raw.latitude);
+    const lng=n(rawCoords?.lng??rawCoords?.lon??rawCoords?.longitude??source.lng??source.lon??raw.lng??raw.lon??raw.longitude);
+    if(!siteId||!/^[A-Z]{3}$/.test(countryId)||!resourceId||lat===null||lat < -90||lat > 90||lng===null||lng < -180||lng > 180)
+      return{status:'REJECTED',reason:'SITE_ID_COUNTRY_RESOURCE_OR_COORDINATES_INVALID',siteId:siteId||null,countryId:countryId||null,resourceId:resourceId||null};
+    if(source.runtime?.aliasOfSiteId||raw.runtime?.aliasOfSiteId||source.map?.markerEligible===false||
+       LEGACY_CANONICAL_ALIAS_IDS[siteId])return{status:'REJECTED',reason:'SITE_ALIAS_OR_NON_MARKER_CANNOT_EXECUTE',siteId,countryId,resourceId};
+    const status=String(source.operation?.status||source.operation?.operationalStatus||raw.operation?.status||
+      source.operationStatus||source.status||raw.status||'SOURCE_STATUS_UNSPECIFIED');
+    const commercialExtraction=source.commercialExtraction!==false&&source.operation?.commercialExtraction!==false&&
+      raw.commercialExtraction!==false&&raw.operation?.commercialExtraction!==false&&
+      String(status).toUpperCase()!=='NOT_APPLICABLE';
+    if(!commercialExtraction)return{status:'REJECTED',reason:'NON_COMMERCIAL_SITE',siteId,countryId,resourceId};
+    const siteType=String(source.siteType||identity.siteType||raw.siteType||raw.assetType||'RESOURCE_SITE');
+    const reserveUnit=source.quantitative?.reserve?.unit||raw.quantitative?.reserve?.unit||
+      source.quantitative?.production?.unit||raw.quantitative?.production?.unit||null;
+    const quantitative=fillRuntimeMissing(source.quantitative||real.quantitative||raw.quantitative||{},{
+      reserve:{quantity:null,unit:reserveUnit,status:'UNOBSERVED',authority:'UNOBSERVED'},
+      production:{rate:null,annual:null,unit:null,status:'UNOBSERVED',authority:'UNOBSERVED'},
+      capacity:{nominal:null,minimum:null,maximum:null,unit:reserveUnit,status:'UNOBSERVED',authority:'UNOBSERVED'},
+      quantitativeProvenance:{authority:'UNOBSERVED'}
+    });
+    const preferredMode=['crude_oil','natural_gas'].includes(resourceId)?'pipeline':
+      ['coal','iron_ore','limestone','construction_aggregate','phosphate','bauxite','potash','salt'].includes(resourceId)?'rail':'truck';
+    const simulation=clone(source.simulation||raw.simulation||{});
+    if(!Array.isArray(simulation.transportRoute)||simulation.transportRoute.length===0){
+      simulation.transportRoute=[{
+        routeId:'SIM_ROUTE:'+countryId+':'+siteId,
+        mode:preferredMode,transportMode:preferredMode,
+        sourceNode:'MINE:'+countryId+':'+siteId,destinationNode:'WH-'+countryId+'-RAW',
+        distanceKm:null,distanceStatus:'UNOBSERVED',routeStatus:'SIMULATED_ROUTE_TEMPLATE',
+        authority:'SIMULATED_TOPOLOGY_FALLBACK',countryIsolationKey:countryId
+      }];
+      simulation.routeAuthority='SIMULATED_TOPOLOGY_FALLBACK';
+    }
+    const operation=fillRuntimeMissing(source.operation||raw.operation||{},{
+      status,operationalStatus:status,commercialExtraction:true,
+      statusAuthority:source.operation?.statusAuthority||raw.operation?.statusAuthority||'SOURCE_REPORTED_OR_UNOBSERVED'
+    });
+    const processing=fillRuntimeMissing(source.processing||raw.processing||{},{
+      recipeSource:'resource_industrial_catalog_v1.json',
+      recipeResolution:'RUNTIME_CATALOG_LOOKUP',
+      siteSpecificRecipeRequired:true,
+      status:'CATALOG_LOOKUP_REQUIRED',
+      authority:'RUNTIME_CATALOG'
+    });
+    const logistics=fillRuntimeMissing(source.logistics||raw.logistics||{},{
+      routeRequired:true,transportMode:preferredMode,
+      distanceStatus:'UNOBSERVED',routeStatus:'SIMULATED_ROUTE_TEMPLATE',
+      authority:'SIMULATED_TOPOLOGY_FALLBACK',
+      countryIsolationKey:countryId
+    });
+    const coordinates={...clone(location.coordinates||{}),lat,lng};
+    const normalized=normalizeSiteRecord({
+      ...source,siteId,siteName,countryId,siteType,resourceTypeId:resourceId,
+      identity:{...clone(identity),countryIso3:countryId,resourceTypeId:resourceId,siteType},
+      real:{...clone(real),resourceId,siteType,location:{...clone(location),coordinates},quantitative:clone(quantitative)},
+      location:{...clone(location),countryName:location.countryName||source.countryName||raw.countryName||null,
+        countryIso3:countryId,coordinates},
+      coordinates,ownership:fillRuntimeMissing(source.ownership||raw.ownership||{},{
+        owner:source.owner||raw.owner||null,operator:source.operator||raw.operator||null
+      }),
+      operation,quantitative,processing,logistics,simulation,
+      map:{...clone(source.map||raw.map||{}),markerEligible:true,countryIsolationKey:countryId},
+      runtime:{...clone(source.runtime||raw.runtime||{}),
+        sourceIdentityAuthority:source.runtime?.identityAuthority||raw.runtime?.identityAuthority||'RESOURCE_JSON_SITE_BINDING',
+        identityAuthority:'CANONICAL_SITE_REGISTRY',quantityAuthority:'SIMULATED',
+        productionAuthority:'SIMULATED',requiresSiteSpecificRoute:true,requiresFactoryBinding:true,
+        countryWarehouseId:'WH-'+countryId+'-RAW'},
+      quantitativeProvenance:fillRuntimeMissing(source.quantitativeProvenance||quantitative.quantitativeProvenance||{},{
+        authority:'SIMULATED_RUNTIME_FALLBACK'
+      }),
+      sourceReference:fillRuntimeMissing(source.sourceReference||raw.sourceReference||{},{
+        sourcePath:source.sourcePath||raw.sourcePath||'RESOURCE_JSON_SITE_BINDING',
+        authority:'RESOURCE_JSON_SITE_BINDING'
+      }),
+      sourceSiteRecord:{
+        ...clone(raw),id:String(raw.id||raw.siteId||siteId),siteId,
+        siteName:String(raw.siteName||raw.name||siteName),
+        countryId:canonical(raw.countryId||raw.countryCode||countryId),countryCode:canonical(raw.countryCode||raw.countryId||countryId),
+        resourceId:String(raw.resourceId||raw.resourceTypeId||raw.resId||resourceId),
+        resourceTypeId:String(raw.resourceTypeId||raw.resourceId||raw.resId||resourceId),siteType,
+        status:raw.status||status,commercialExtraction,
+        lat:raw.lat??lat,lng:raw.lng??raw.lon??lng,
+        location:fillRuntimeMissing(raw.location||{}, {countryIso3:countryId,coordinates})
+      }
+    });
+    return{status:'READY',site:normalized,siteId,countryId,resourceId};
+  }
+  function mergeBoundSiteIntoCanonical(input={}){
+    const prepared=normalizeBoundSiteForRuntime(input);
+    if(prepared.status!=='READY')return prepared;
+    const {site,siteId,countryId,resourceId}=prepared;
+    canonicalSiteCatalogMap=canonicalSiteCatalogMap||{};
+    const existing=canonicalSiteCatalogMap[siteId]||null;
+    if(existing&&canonical(existing.countryId||existing.identity?.countryIso3)!==countryId)
+      return{status:'REJECTED',reason:'SITE_COUNTRY_IDENTITY_CONFLICT',siteId,countryId,resourceId};
+    const existingResource=rid(existing?.identity?.resourceTypeId||existing?.real?.resourceId||
+      existing?.sourceSiteRecord?.resourceId||existing?.resourceId||'');
+    if(existingResource&&existingResource!==resourceId)
+      return{status:'REJECTED',reason:'SITE_RESOURCE_IDENTITY_CONFLICT',siteId,countryId,resourceId,existingResource};
+    const oldCoordinates=existing?.location?.coordinates||existing?.coordinates||{};
+    const oldLat=n(oldCoordinates.lat??oldCoordinates.latitude),oldLng=n(oldCoordinates.lng??oldCoordinates.lon??oldCoordinates.longitude);
+    const wasExecutable=!!existing&&!!existingResource&&oldLat!==null&&Math.abs(oldLat)<=90&&oldLng!==null&&Math.abs(oldLng)<=180;
+    let merged=existing?fillRuntimeMissing(existing,site):site;
+    merged={...merged,siteId,countryId,siteName:runtimeValueMissing(existing?.siteName)?site.siteName:existing.siteName,
+      resourceTypeId:resourceId,
+      identity:{...clone(merged.identity||{}),countryIso3:countryId,resourceTypeId:resourceId,
+        siteType:merged.identity?.siteType||site.identity.siteType},
+      real:{...clone(merged.real||{}),resourceId,
+        quantitative:fillRuntimeMissing(merged.real?.quantitative||{},site.quantitative)},
+      location:fillRuntimeMissing(merged.location||{},site.location),
+      operation:fillRuntimeMissing(merged.operation||{},site.operation),
+      quantitative:fillRuntimeMissing(merged.quantitative||{},site.quantitative),
+      processing:fillRuntimeMissing(merged.processing||{},site.processing),
+      logistics:fillRuntimeMissing(merged.logistics||{},site.logistics),
+      simulation:fillRuntimeMissing(merged.simulation||{},site.simulation),
+      map:{...clone(site.map||{}),...clone(merged.map||{}),countryIsolationKey:countryId},
+      runtime:{...clone(site.runtime||{}),...clone(merged.runtime||{}),
+        identityAuthority:'CANONICAL_SITE_REGISTRY',
+        quantityAuthority:merged.runtime?.quantityAuthority||'SIMULATED',
+        productionAuthority:merged.runtime?.productionAuthority||'SIMULATED',
+        requiresSiteSpecificRoute:true,requiresFactoryBinding:true,
+        countryWarehouseId:'WH-'+countryId+'-RAW'},
+      sourceSiteRecord:fillRuntimeMissing(merged.sourceSiteRecord||{},site.sourceSiteRecord),
+      sourceReference:fillRuntimeMissing(merged.sourceReference||{},site.sourceReference)
+    };
+    if(!merged.location?.coordinates||n(merged.location.coordinates.lat??merged.location.coordinates.latitude)===null||
+       n(merged.location.coordinates.lng??merged.location.coordinates.lon??merged.location.coordinates.longitude)===null)
+      merged.location={...clone(merged.location||{}),coordinates:clone(site.location.coordinates)};
+    merged=normalizeSiteRecord(merged);
+    canonicalSiteCatalogMap[siteId]=merged;
+    const data=g.OmegaResourceSiteCanonicalCatalogData||g.Omega?.ResourceSiteCanonicalCatalogData;
+    if(data){
+      if(!Array.isArray(data.sites))data.sites=[];
+      const index=data.sites.findIndex(row=>String(row?.siteId||'')===siteId);
+      if(index>=0)data.sites[index]=clone(merged);else data.sites.push(clone(merged));
+      data.totalSiteCount=Object.keys(canonicalSiteCatalogMap).length;
+      data.runtimeSiteBindingSync={authority:'RESOURCE_JSON_SITE_BINDING',lastUpdatedTurn:turn(),siteCount:data.totalSiteCount};
+    }
+    const serializedBefore=existing?JSON.stringify(existing):'';
+    const serializedAfter=JSON.stringify(merged);
+    const changed=!existing||serializedBefore!==serializedAfter;
+    const becameExecutable=!wasExecutable;
+    if(changed){mineSiteReferenceCache.clear();siteExecutionRowsCache.clear();siteExecutionRowsCacheTurn=-1;}
+    return{status:!existing?'REGISTERED':changed?'ENRICHED':'EXISTS',siteId,countryId,resourceId,
+      changed,executionRequired:!existing||becameExecutable};
+  }
+  async function syncBoundSiteRegistry(rows=[]){
+    const loaded=await loadCanonicalSiteCatalogData();
+    if(loaded?.status!=='READY')return{status:'FAILED',reason:loaded?.reason||'CANONICAL_SITE_CATALOG_NOT_READY',registeredCount:0,enrichedCount:0,rejectedCount:0,executionSiteIdsByCountry:{}};
+    const executionSiteIdsByCountry={},errors=[];
+    let registeredCount=0,enrichedCount=0,rejectedCount=0;
+    const seen=new Set();
+    for(const input of Array.isArray(rows)?rows:[]){
+      const candidateId=String(input?.siteId||input?.siteReferenceKey||input?.sourceSiteRecord?.siteId||input?.sourceSiteRecord?.id||'').trim();
+      if(!candidateId||seen.has(candidateId))continue;
+      seen.add(candidateId);
+      const result=mergeBoundSiteIntoCanonical(input);
+      if(result.status==='REGISTERED')registeredCount++;
+      else if(result.status==='ENRICHED')enrichedCount++;
+      else if(result.status==='REJECTED'){
+        rejectedCount++;
+        if(errors.length<40)errors.push({siteId:candidateId,reason:result.reason||'SITE_BINDING_REJECTED'});
+      }
+      if(result.executionRequired&&result.countryId&&result.siteId){
+        executionSiteIdsByCountry[result.countryId]=executionSiteIdsByCountry[result.countryId]||[];
+        executionSiteIdsByCountry[result.countryId].push(result.siteId);
+      }
+    }
+    for(const ids of Object.values(executionSiteIdsByCountry))ids.sort();
+    const siteCount=Object.keys(canonicalSiteCatalogMap||{}).length;
+    const summary={status:'READY',sourceSiteCount:Array.isArray(rows)?rows.length:0,siteCount,
+      registeredCount,enrichedCount,rejectedCount,executionSiteIdsByCountry,errors,simulationOnlyDefaults:true};
+    g.__OmegaResourceSiteBindingSync=clone(summary);
+    try{if(typeof g.dispatchEvent==='function'&&typeof g.CustomEvent==='function')
+      g.dispatchEvent(new g.CustomEvent('OMEGA_RESOURCE_SITE_BINDING_SYNCED',{detail:clone(summary)}));}catch(_){}
+    return summary;
+  }
+
   function onSiteBindingReady(){
     const binding=g.Omega?.IndividualResourceSiteBinding||g.OmegaIndividualResourceSiteBinding;
     if(!binding||!Array.isArray(binding.sites)||binding.sites.length===0)return;
     const t=turn(),last=g.__omegaResourceEndowmentLastBootstrap;
-    if(last&&Number(last.turn)===t&&['COMPLETED','DEGRADED','NO_OUTPUT'].includes(String(last.status)))return;
     if(g.__omegaResourceEndowmentBootstrapPromise)return;
     const sites=binding.sites.filter(isCommercialBootstrapSite);
     const failureSnapshot=(initialized)=>({
@@ -1904,7 +2192,42 @@ function batchFromExtraction(x,record){
         publishBootstrapStatus(snapshot);
         return snapshot;
       }
-      const result=await extractAll();
+      const bindingSync=await syncBoundSiteRegistry(binding.sites);
+      if(bindingSync.status!=='READY'){
+        const snapshot=failureSnapshot({status:'FAILED',reason:bindingSync.reason||'SITE_BINDING_REGISTRY_SYNC_FAILED'});
+        snapshot.bindingSync=clone(bindingSync);
+        g.__omegaResourceEndowmentLastBootstrap=snapshot;
+        publishBootstrapStatus(snapshot);
+        return snapshot;
+      }
+      for(const countryId of Object.keys(bindingSync.executionSiteIdsByCountry||{})){
+        const hydration=hydrateCountry(countryId);
+        const payload=hydration?.result||hydration;
+        if(hydration?.status!=='APPLIED'||payload?.accepted===false){
+          bindingSync.hydrationFailures=bindingSync.hydrationFailures||[];
+          bindingSync.hydrationFailures.push({countryId,status:hydration?.status||'UNAVAILABLE',reason:payload?.reason||hydration?.reason||'SITE_BINDING_HYDRATION_NOT_COMMITTED'});
+        }
+      }
+      const prior=g.__omegaResourceEndowmentLastBootstrap;
+      const hasNewExecutionSites=Object.keys(bindingSync.executionSiteIdsByCountry||{}).length>0;
+      if(prior&&Number(prior.turn)===t&&['COMPLETED','DEGRADED','NO_OUTPUT'].includes(String(prior.status))&&!hasNewExecutionSites){
+        prior.bindingSync={status:bindingSync.status,registeredCount:bindingSync.registeredCount,enrichedCount:bindingSync.enrichedCount,
+          rejectedCount:bindingSync.rejectedCount,siteCount:bindingSync.siteCount};
+        g.__omegaResourceEndowmentLastBootstrap=prior;
+        return prior;
+      }
+      let result=await extractAll();
+      if(result?.status==='ALREADY_EXTRACTED'&&hasNewExecutionSites){
+        const retryResults=[];
+        for(const [countryId,siteIds] of Object.entries(bindingSync.executionSiteIdsByCountry)){
+          const started=await startCountryProduction(countryId,siteIds);
+          retryResults.push({countryId,started});
+        }
+        result={status:'COMPLETED',turn:t,bindingSync:clone(bindingSync),results:retryResults.map(({countryId,started})=>({
+          countryId,result:{status:['STARTED','PARTIALLY_STARTED','ALREADY_ACTIVE'].includes(started?.status)?'APPLIED':'FAILED',
+            result:{accepted:started?.status!=='BLOCKED',records:clone(started?.records||[]),blocked:Number(started?.blockedOccurrenceCount)||0}}
+        }))};
+      }
       const countryResults=Array.isArray(result?.results)?result.results:[];
       const failedCountryRows=countryResults.filter(function(row){
         return row?.result?.status!=='APPLIED'||row?.result?.result?.accepted===false;
@@ -1979,6 +2302,7 @@ function batchFromExtraction(x,record){
       const reason=failedCountryRows[0]?.result?.reason||failedCountryRows[0]?.result?.result?.reason||
         result?.reason||(status==='NO_OUTPUT'?'NO_CURRENT_TURN_EXTRACTION_RECORDS':null);
       const snapshot={
+        bindingSync:{status:bindingSync.status,siteCount:bindingSync.siteCount,registeredCount:bindingSync.registeredCount,enrichedCount:bindingSync.enrichedCount,rejectedCount:bindingSync.rejectedCount,hydrationFailures:bindingSync.hydrationFailures||[]},
         status,resultStatus:rawStatus,productionStatus:producingSiteIds.size?'ACTIVE_THIS_TURN':'NO_CURRENT_TURN_OUTPUT',
         turn:t,siteCount:binding.sites.length,commercialCandidateCount:sites.length,
         productionCapableSiteCount,productionCapablePercent,currentTurnProducingSiteCount:producingSiteIds.size,
@@ -2061,7 +2385,7 @@ function batchFromExtraction(x,record){
     VERSION,diagnostics,initialize,extractAll,extractCountry,hydrateCountry,countryResourceState,countryMines,
     countryMineSiteReferences:function(c){return clone(state()?.resource?.[canonical(c)]?.mineSiteReferences||mineSiteReferenceRows(c));},
     countryMineSiteControllers:function(c){return clone(state()?.resource?.[canonical(c)]?.mineSiteControllers||{});},
-    registerCanonicalSiteSimulationRecord,
+    registerCanonicalSiteSimulationRecord,startCountryProduction,
     compile
   });
   g.Omega=g.Omega||{};g.Omega.ResourceEndowmentRuntime=API;g.OmegaResourceEndowmentRuntime=API;
