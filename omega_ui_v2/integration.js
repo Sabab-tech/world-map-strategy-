@@ -121,11 +121,30 @@
       return { ok:false, code:'UI_V2_MOUNT_EXCEPTION', message:lastError };
     }
   }
+  function installOperationalConsoleResumeHook(manager) {
+    if (!manager || typeof manager.popLayer !== 'function' || manager.__omegaUIV2ResumeHookInstalled) return;
+    var originalPopLayer = manager.popLayer;
+    manager.popLayer = function () {
+      var result = originalPopLayer.apply(this, arguments);
+      var active = Number(this.currentLayer);
+      try {
+        if (!Number.isFinite(active) && g.document && g.document.body) active = Number(g.document.body.getAttribute('data-active-layer'));
+      } catch (_) {}
+      if (resumeOnCabinetReturn && active === 1) {
+        var resumed = resumeAfterOperationalConsole();
+        if (!resumed) resumeOnCabinetReturn = false;
+      }
+      return result;
+    };
+    manager.__omegaUIV2ResumeHookInstalled = true;
+  }
+
   function openOperationalConsole(ministryId) {
     var id = String(ministryId || '').trim();
     var manager = g.OmegaLayerManager;
     if (!id || !manager || typeof manager.setLayer !== 'function') return { ok:false, code:'LEGACY_OPERATIONAL_CONSOLE_UNAVAILABLE' };
     resumeOnCabinetReturn = true;
+    installOperationalConsoleResumeHook(manager);
     try {
       manager.setLayer(2, { ministryId:id });
       return { ok:true, ministryId:id, destination:'EXISTING_CANONICAL_MINISTRY_CONSOLE' };
