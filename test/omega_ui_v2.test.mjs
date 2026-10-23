@@ -12,6 +12,8 @@ import '../omega_ui_v2/screens/home-affairs.js';
 import '../omega_ui_v2/screens/reports.js';
 import '../omega_ui_v2/screens/economy.js';
 import '../omega_ui_v2/app.js';
+import '../omega_ui_v2/integration.js';
+import { readFileSync } from 'node:fs';
 
 test('Government navigation has exactly Executive Ministry and All Ministries', () => {
   const nav = globalThis.OmegaUIV2Navigation;
@@ -195,4 +197,47 @@ test('economy model keeps unavailable cash and macroeconomic values unavailable'
   assert.equal(model.gdp.value,42);
   assert.equal(model.debt.value,null);
   assert.equal(model.currencyCode,'BDT');
+});
+
+
+test('UI v2 integration is controllable and reports the real mount dependency', () => {
+  const bridge = globalThis.OmegaUIV2Integration;
+  assert.ok(bridge);
+  assert.equal(bridge.isEnabled(), true);
+  bridge.setEnabled(false);
+  assert.equal(bridge.isEnabled(), false);
+  const blocked = bridge.mountIntoCabinet();
+  assert.equal(blocked.ok, false);
+  assert.equal(blocked.code, 'UI_V2_INTEGRATION_UNAVAILABLE');
+  bridge.setEnabled(true);
+  assert.equal(bridge.isEnabled(), true);
+});
+
+test('production shell loads and offline-preloads every UI v2 module', () => {
+  const index = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  const sw = readFileSync(new URL('../omega-offline-map-sw.js', import.meta.url), 'utf8');
+  const entry = readFileSync(new URL('../omega_ministry_entry_v3.js', import.meta.url), 'utf8');
+  const modules = [
+    'omega_ui_v2/omega-ui-v2.css',
+    'omega_ui_v2/navigation-registry.js',
+    'omega_ui_v2/screens/government.js',
+    'omega_ui_v2/screens/ministry-detail.js',
+    'omega_ui_v2/screens/economy.js',
+    'omega_ui_v2/screens/resource-ministry.js',
+    'omega_ui_v2/screens/mine-detail.js',
+    'omega_ui_v2/screens/industry.js',
+    'omega_ui_v2/screens/home-affairs.js',
+    'omega_ui_v2/screens/police-fleet.js',
+    'omega_ui_v2/screens/reports.js',
+    'omega_ui_v2/app.js',
+    'omega_ui_v2/integration.js'
+  ];
+  for (const modulePath of modules) {
+    assert.ok(index.includes(modulePath), 'index.html must load ' + modulePath);
+    assert.ok(sw.includes(modulePath), 'offline service worker must pre-cache ' + modulePath);
+  }
+  assert.match(sw, /omega-offline-atlas-shell-v26/);
+  assert.match(entry, /OmegaUIV2Integration/);
+  assert.match(entry, /opened-ui-v2/);
+  assert.match(entry, /opened-primary/);
 });
