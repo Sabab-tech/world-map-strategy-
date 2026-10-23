@@ -5016,31 +5016,57 @@ body.modal-open .ui-bottom-navigation {
 }
 .ocov-list {
     display: grid;
-    gap: 8px;
+    gap: 10px;
     margin: 0;
-    padding-left: 17px;
+    padding: 0;
+    list-style: none;
 }
 .ocov-list li {
-    padding-left: 2px;
-    color: #b6c9d7;
-    line-height: 1.45;
+    position: relative;
+    padding-left: 17px;
+    color: #c8d8e5;
+    line-height: 1.55;
+    font-size: 11px;
+    font-style: italic;
+    overflow-wrap: anywhere;
+}
+.ocov-list li::before {
+    content: "●";
+    position: absolute;
+    left: 1px;
+    top: 0.16em;
+    color: #e9bd57;
+    font-size: 9px;
+    line-height: 1.5;
+    text-shadow: 0 0 7px rgba(233, 189, 87, 0.28);
+}
+.ocov-list li:nth-child(3n + 2)::before {
+    color: #60d7c2;
+    text-shadow: 0 0 7px rgba(96, 215, 194, 0.22);
+}
+.ocov-list li:nth-child(3n)::before {
+    color: #91b5ff;
+    text-shadow: 0 0 7px rgba(145, 181, 255, 0.22);
 }
 .ocov-list li strong {
-    display: block;
-    color: #dceaf3;
+    display: inline;
+    color: #f0d995;
     font-size: 11px;
+    font-style: italic;
 }
 .ocov-list li span {
     display: block;
-    margin-top: 2px;
-    color: #96adbd;
+    margin-top: 3px;
+    color: #a9c1d2;
     font-size: 11px;
+    font-style: italic;
 }
 .ocov-list li small {
     display: block;
-    margin-top: 3px;
-    color: #657f94;
+    margin-top: 4px;
+    color: #7894aa;
     font-size: 9px;
+    font-style: normal;
     overflow-wrap: anywhere;
 }
 .ocov-empty {
