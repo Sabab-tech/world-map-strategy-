@@ -239,7 +239,8 @@
     root.innerHTML = '<section class="omega-v2-shell omega-v2-resource">' +
       '<header class="omega-v2-heading"><div><div class="omega-v2-eyebrow">ENERGY & MINING</div><h1 class="omega-v2-title">Energy, Resources & Mining</h1><p class="omega-v2-subtitle">Country ' + esc(model.countryId || 'All countries') + ' · site identity uses unique canonical siteId</p></div><span class="omega-v2-status" data-state="' + (model.ready ? 'operational' : 'attention') + '">' + fmt(model.siteCount) + ' registered sites</span></header>' +
       '<div class="omega-v2-note">Reserve is not warehouse stock. Modeled reserves are labeled MODELED; transfers are not complete until an authoritative shipment/warehouse runtime confirms receipt. This screen does not execute mine actions by itself.</div>' +
-      tabMarkup + '<div data-omega-v2-resource-content>' + contentMarkup + '</div></section>';
+      tabMarkup + '<div data-omega-v2-resource-content>' + contentMarkup + '</div>' +
+      '<div class="omega-v2-actions omega-v2-legacy-console-link"><button type="button" class="omega-v2-button omega-v2-button--quiet" data-omega-v2-open-operational-console="energy_mining"' + (typeof options.onOpenOperationalConsole === 'function' ? '' : ' disabled title="Existing mining console bridge is unavailable."') + '>Open existing mining operations</button></div></section>';
 
     if (!root.__omegaV2ResourceBound && typeof root.addEventListener === 'function') {
       root.addEventListener('input', function (event) {
@@ -257,6 +258,12 @@
         if (tab && root.contains(tab)) {
           root.__omegaV2ResourceTab = tab.getAttribute('data-omega-v2-resource-tab') || 'dashboard';
           render(root, Object.assign({}, root.__omegaV2ResourceOptions || {}, { tab:root.__omegaV2ResourceTab }));
+          return;
+        }
+        var legacyConsole = target.closest('[data-omega-v2-open-operational-console]');
+        if (legacyConsole && root.contains(legacyConsole) && !legacyConsole.disabled) {
+          var consoleOptions = root.__omegaV2ResourceOptions || {};
+          if (typeof consoleOptions.onOpenOperationalConsole === 'function') consoleOptions.onOpenOperationalConsole('energy_mining');
           return;
         }
         var button = target.closest('[data-omega-v2-site-action]');
