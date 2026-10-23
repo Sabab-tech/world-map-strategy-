@@ -23,7 +23,10 @@ import java.util.concurrent.atomic.AtomicReference;
 @RunWith(AndroidJUnit4.class)
 public final class OmegaGameplaySmokeTest {
     private static final long PAGE_LOAD_TIMEOUT_MS = 150000L;
-    private static final long JAVASCRIPT_CALLBACK_TIMEOUT_SECONDS = 10L;
+    // The API 28 WebView must finish a large offline script bundle on a cold emulator.
+    // Keep this finite, but do not confuse a delayed renderer callback with a failed boot.
+    // The overall gameplay readiness checks remain bounded by PAGE_LOAD_TIMEOUT_MS.
+    private static final long JAVASCRIPT_CALLBACK_TIMEOUT_SECONDS = 45L;
 
     @Test
     public void offlineWebViewBootsAndMinistryNavigationResponds() throws Exception {
