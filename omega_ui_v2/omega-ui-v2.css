@@ -1,5 +1,5 @@
 /* OMEGA UI v2: local styling only. No remote fonts, images or dependencies. */
-:root {
+.omega-v2-app-root {
   --omega-v2-bg: #071321;
   --omega-v2-surface: #0d1b2b;
   --omega-v2-surface-raised: #12253a;
