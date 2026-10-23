@@ -14,17 +14,26 @@ child.stderr.on('data', chunk => { logs += chunk.toString(); });
 
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-async function request(path, options) {
-  return fetch(base + path, { cache: 'no-store', ...options });
+async function request(path, options = {}, timeoutMs = 10000) {
+  // A local API can accept a connection and then stop responding while startup
+  // blocks the event loop. Every probe needs an abort deadline so CI cannot hang
+  // forever inside await fetch() before the polling loop reaches its own deadline.
+  return fetch(base + path, {
+    cache: 'no-store',
+    ...(options || {}),
+    signal: options?.signal || AbortSignal.timeout(timeoutMs)
+  });
 }
 
 async function main() {
   try {
     let ready = false;
     let lastError = null;
-    for (let i = 0; i < 120; i += 1) {
+    const startupDeadline = Date.now() + 30_000;
+    while (!ready && Date.now() < startupDeadline) {
       try {
-        const response = await request('/api/deep-core/health');
+        const remaining = startupDeadline - Date.now();
+        const response = await request('/api/deep-core/health', undefined, Math.min(1500, Math.max(1, remaining)));
         if (response.ok) {
           const body = await response.json();
           if (body?.ok === true) {
@@ -39,7 +48,8 @@ async function main() {
         lastError = error;
       }
       if (child.exitCode !== null) break;
-      await sleep(250);
+      const remaining = startupDeadline - Date.now();
+      if (remaining > 0) await sleep(Math.min(250, remaining));
     }
     assert.equal(ready, true, `production server did not become healthy: ${lastError?.message || 'unknown'}\n${logs}`);
 
