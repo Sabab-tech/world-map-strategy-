@@ -640,6 +640,28 @@
     }, 180);
   }
 
+  function bindPhotoReferenceGallery(panelEl) {
+    const details = panelEl && panelEl.querySelector && panelEl.querySelector('[data-ocov-photo-reference-toggle]');
+    const mount = panelEl && panelEl.querySelector && panelEl.querySelector('[data-omega-photo-gallery-mount]');
+    if (!details || !mount || typeof details.addEventListener !== 'function') return false;
+    if (details.dataset && details.dataset.ocovPhotoBound === 'true') return true;
+    details.addEventListener('toggle', function () {
+      if (!details.open || (mount.dataset && (mount.dataset.omegaPhotoGalleryReady === 'true' || mount.dataset.omegaPhotoGalleryLoading === 'true'))) return;
+      const photoLibrary = g.OmegaUIPhotoAssets;
+      if (!photoLibrary || typeof photoLibrary.mountGallery !== 'function') {
+        mount.innerHTML = '<p class="ocov-empty">The photo reference library is unavailable in this build.</p>';
+        return;
+      }
+      if (mount.dataset) mount.dataset.omegaPhotoGalleryLoading = 'true';
+      photoLibrary.mountGallery(mount).catch(function () {
+        if (mount.dataset) mount.dataset.omegaPhotoGalleryLoading = 'false';
+        mount.innerHTML = '<p class="ocov-empty">Photo references could not be loaded. Country data and gameplay remain available.</p>';
+      });
+    });
+    if (details.dataset) details.dataset.ocovPhotoBound = 'true';
+    return true;
+  }
+
   function renderCountryOverview() {
     if (overviewRenderTimer !== null) {
       if (typeof g.clearTimeout === 'function') g.clearTimeout(overviewRenderTimer);
@@ -833,9 +855,15 @@
           missingMetrics.map(([key]) => '<li><strong>' + esc(fieldTitle(key)) + '</strong><span>' + esc(key) + '</span></li>').join('') +
           '</ul></details>' : '<p class="ocov-empty">All registered indicators have a displayable value.</p>')) +
       '</div>' +
+      '<details class="omega-ui-photo-reference-disclosure" data-ocov-photo-reference-toggle>' +
+      '<summary>Real-world photo references · source and licence credits</summary>' +
+      '<div class="omega-ui-photo-reference-disclosure__body" data-omega-photo-gallery-mount>' +
+      '<p class="ocov-empty">Open the photo library to load the licensed reference images. Photos load only when requested.</p>' +
+      '</div></details>' +
       '</div>';
     panelEl.innerHTML = overviewHtml;
     panelEl.dataset.countryId = String(value);
+    bindPhotoReferenceGallery(panelEl);
     return true;
   }
 
