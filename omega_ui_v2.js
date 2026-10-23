@@ -352,22 +352,50 @@
       '<p class="ov2-data-note">Ministry actions and minister state are delegated to the established game engine. This directory does not invent budgets, staffing or readiness values.</p>';
   }
   function listMinistries() {
-    var result=[],cabinet=g.OmegaCabinetUI,registry=g.OmegaMinistryRegistry;
-    var sources=[];
-    if(registry) ['list','listMinistries','getAll','getAllMinistries'].forEach(function(k){if(typeof registry[k]==='function')try{var v=registry[k]();if(Array.isArray(v))sources.push(v);}catch(_){}});
-    if(cabinet&&cabinet.ministriesDatabase) {
-      if(Array.isArray(cabinet.ministriesDatabase))sources.push(cabinet.ministriesDatabase);
-      else if(typeof cabinet.ministriesDatabase==='object')sources.push(Object.keys(cabinet.ministriesDatabase).map(function(k){var v=cabinet.ministriesDatabase[k];return Object.assign({id:k},v&&typeof v==='object'?v:{name:text(v)});}));
+    var result=[],sources=[],cabinet=g.OmegaCabinetUI,registry=g.OmegaMinistryRegistry;
+    var ministryLabels={
+      cabinet:'Executive Coordination',defense:'Defense',military:'Military Affairs',
+      finance:'Finance',economy:'Economy',trade:'Trade & Commerce',foreign:'Foreign Affairs',
+      intelligence:'Intelligence',interior:'Home Affairs',transport:'Transport & Infrastructure',
+      resource:'Resources & Mines',health:'Health',education:'Education',
+      technology:'Science & Technology',projects:'Government Projects',
+      culture:'Culture & Media',statistics:'National Statistics'
+    };
+    function addSource(value){
+      if(Array.isArray(value)){if(value.length)sources.push(value);return;}
+      if(value&&typeof value==='object'){
+        var rows=Object.keys(value).map(function(k){
+          var v=value[k];
+          return Object.assign({id:k},v&&typeof v==='object'?v:{name:text(v)});
+        });
+        if(rows.length)sources.push(rows);
+      }
     }
-    if(registry&&Array.isArray(registry.ministries))sources.push(registry.ministries);
+    // The actual cabinet display database has the exact user-facing ministry titles
+    // and routes. Prefer it over the lower-level independent-engine registry.
+    addSource(cabinet&&cabinet.ministriesDatabase);
+    addSource(g.OmegaMinistry&&g.OmegaMinistry.ministriesDatabase);
+    if(registry&&Array.isArray(registry.definitions))sources.push(registry.definitions);
+    else if(registry&&Array.isArray(registry.ministries))sources.push(registry.ministries);
+    else if(registry) ['list','listMinistries','getAll','getAllMinistries'].forEach(function(k){
+      if(typeof registry[k]==='function')try{var v=registry[k]();if(Array.isArray(v))sources.push(v);}catch(_){}
+    });
     for(var i=0;i<sources.length;i++){
       result=sources[i].map(function(m){
-        if(typeof m==='string')return{id:keyNorm(m),name:m,group:'Ministry'};
-        return{id:text(m.id||m.ministryId||m.key||m.code||m.slug),name:text(m.name||m.title||m.label||m.ministryName||m.id),group:text(m.description||m.portfolio||m.domain||'Ministry workspace')};
+        if(typeof m==='string'){
+          var id=keyNorm(m),label=ministryLabels[m]||ministryLabels[id]||text(m).replace(/[_-]+/g,' ').replace(/\b\w/g,function(c){return c.toUpperCase();});
+          return{id:id,name:label,group:'Ministry workspace'};
+        }
+        var rawId=text(m.id||m.ministryId||m.key||m.code||m.slug);
+        var idKey=keyNorm(rawId);
+        return{
+          id:rawId,
+          name:text(m.name||m.title||m.label||m.ministryName||m.displayName||ministryLabels[rawId]||ministryLabels[idKey]||rawId.replace(/[_-]+/g,' ').replace(/\b\w/g,function(c){return c.toUpperCase();})),
+          group:text(m.description||m.portfolio||m.domain||m.category||'Ministry workspace')
+        };
       }).filter(function(m){return m.id&&m.name;});
       if(result.length)break;
     }
-    if(!result.length)result=CORE_MINISTRIES.slice();
     var seen=Object.create(null);
     return result.filter(function(m){var key=keyNorm(m.id);if(!key||seen[key])return false;seen[key]=true;return true;});
   }

@@ -54,6 +54,20 @@ test('photos are local WebP from the pre-existing licensed catalog; native modul
   assert.match(css, /min-height:48px/);
 });
 
+test('ministry directory prefers canonical cabinet display records and human-readable registry labels', () => {
+  const js = read('omega_ui_v2.js');
+  const start = js.indexOf('function listMinistries() {');
+  const end = js.indexOf('function ministryIcon(', start);
+  assert.ok(start >= 0 && end > start, 'ministry list resolver must exist');
+  const resolver = js.slice(start, end);
+  assert.ok(resolver.indexOf('cabinet&&cabinet.ministriesDatabase') < resolver.indexOf('registry.definitions'),
+    'prefer actual cabinet ministry records before independent-engine registry');
+  assert.match(resolver, /Foreign Affairs/);
+  assert.match(resolver, /Home Affairs/);
+  assert.doesNotMatch(resolver, /CORE_MINISTRIES\.slice\(\)/,
+    'do not show a fabricated fallback directory when canonical registry has not loaded');
+});
+
 test('Government has two primary cabinet choices and the legacy snapshot remains present', () => {
   const js = read('omega_ui_v2.js');
   assert.match(js, /data-v2-gov-tab="executive"/);
