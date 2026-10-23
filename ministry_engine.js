@@ -1423,6 +1423,9 @@ window.OmegaCabinetUI = {
 
         fullWin.innerHTML = html;
         fullWin.style.display = 'flex';
+        // The cabinet shell is not ready until its deferred council subtree has rendered.
+        fullWin.setAttribute('data-cabinet-render-state', isCouncil ? 'loading-council' : 'ready');
+        fullWin.setAttribute('aria-busy', isCouncil ? 'true' : 'false');
 
         if (isCouncil && window.OmegaCabinetEngine) {
             const subsystemEngine = window.OmegaCabinetEngine;
@@ -1440,19 +1443,38 @@ window.OmegaCabinetUI = {
                     if (layerManager && Number(layerManager.currentLayer) !== 1) return;
                     try {
                         subsystemEngine.renderCabinetSubsystem(subsystemRoot);
+                        const renderedContent = subsystemRoot.childElementCount > 0 &&
+                            !subsystemRoot.querySelector('.omega-cabinet-subsystem-loading');
+                        if (!renderedContent) {
+                            throw new Error('Council renderer completed without producing visible content.');
+                        }
+                        fullWin.setAttribute('data-cabinet-render-state', 'ready');
+                        fullWin.setAttribute('aria-busy', 'false');
                     } catch (error) {
                         if (window.console && typeof window.console.error === 'function') {
                             window.console.error('[OMEGA CABINET] Deferred council rendering failed:', error);
                         }
                         subsystemRoot.innerHTML = '<div class="omega-cabinet-subsystem-error" role="alert" style="padding:16px; color:#b91c1c;">Council data could not be rendered. Reopen Government HQ to retry.</div>';
+                        fullWin.setAttribute('data-cabinet-render-state', 'error');
+                        fullWin.setAttribute('aria-busy', 'false');
                     }
                 };
                 if (typeof window.setTimeout === 'function') {
                     window.setTimeout(renderSubsystem, 50);
                 } else {
                     renderSubsystem();
+                } else {
+                    fullWin.setAttribute('data-cabinet-render-state', 'error');
+                    fullWin.setAttribute('aria-busy', 'false');
                 }
             }
+        } else if (isCouncil) {
+            const subsystemRoot = document.getElementById('cabinet-subsystem-root');
+            if (subsystemRoot) {
+                subsystemRoot.innerHTML = '<div class="omega-cabinet-subsystem-error" role="alert" style="padding:16px; color:#b91c1c;">Council renderer is unavailable in this runtime.</div>';
+            }
+            fullWin.setAttribute('data-cabinet-render-state', 'error');
+            fullWin.setAttribute('aria-busy', 'false');
         }
         this.initViewportScrollHandlers();
     },
