@@ -183,6 +183,42 @@ public final class OmegaGameplaySmokeTest {
                     "Government HQ must render its council content within 150 seconds; diagnostics=" + cabinetDiagnostics,
                     "true", cabinetReady
             );
+
+            // Exercise the actual player-facing Industry/Factories panel for a selected country.
+            // The panel must distinguish owned live factory assets from catalog profiles instead
+            // of inventing an operational asset just because a profile exists in the catalog.
+            final String factoryPanelScript =
+                    "(function() {" +
+                    " var ui = window.Omega && window.Omega.ResourceCommandCenterUI;" +
+                    " if (!ui || typeof ui.open !== 'function') return false;" +
+                    " if (window.Game) {" +
+                    "   window.Game.currentActiveCountry = 'USA';" +
+                    "   window.Game.playerCountry = 'USA';" +
+                    "   if (window.Game.state) window.Game.state.playerCountryId = 'USA';" +
+                    " }" +
+                    " if (window.CountryIOS) window.CountryIOS.activeCountry = 'USA';" +
+                    " window.currentActiveCountry = 'USA';" +
+                    " ui.open('USA', 'industrial');" +
+                    " var viewState = ui.getState();" +
+                    " var modal = document.getElementById('gsrsk-intelligence-modal');" +
+                    " var content = document.getElementById('omega-rescc-content');" +
+                    " var title = content && content.querySelector('.omega-rescc-section-title');" +
+                    " if (!viewState || viewState.countryId !== 'USA' || viewState.panel !== 'industrial' ||" +
+                    "     !modal || modal.style.display !== 'flex' || !content || !title ||" +
+                    "     title.textContent.trim() !== 'Industrial value chain') return false;" +
+                    " if (content.querySelectorAll('.omega-rescc-factory-catalog-row').length === 0) return false;" +
+                    " var body = content.textContent || '';" +
+                    " var ownedStart = body.indexOf('My factories');" +
+                    " var catalogStart = body.indexOf('Factory catalog');" +
+                    " if (ownedStart < 0 || catalogStart <= ownedStart) return false;" +
+                    " var ownedText = body.substring(ownedStart, catalogStart);" +
+                    " return ownedText.indexOf('No commissioned factory assets are recorded for this country.') >= 0 ||" +
+                    "        ownedText.indexOf('Factory input stock') >= 0;" +
+                    "})()";
+            assertEquals(
+                    "Selecting a country and opening Industry/Factories must show the real asset state plus canonical factory catalog",
+                    "true", evaluate(instrumentation, webViewRef.get(), factoryPanelScript)
+            );
         } finally {
             instrumentation.runOnMainSync(activity::finish);
         }
