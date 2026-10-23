@@ -367,7 +367,8 @@ test('production shell loads and offline-preloads every UI v2 module', () => {
     'omega_ui_v2/screens/police-fleet.js',
     'omega_ui_v2/screens/reports.js',
     'omega_ui_v2/app.js',
-    'omega_ui_v2/integration.js'
+    'omega_ui_v2/integration.js',
+    'omega_ui_v2/world-command-dock.js'
   ];
   for (const modulePath of modules) {
     assert.ok(index.includes(modulePath), 'index.html must load ' + modulePath);
