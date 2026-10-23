@@ -1717,6 +1717,27 @@ window.OmegaCabinetUI = {
         const fallbackTab = isHomeMinistry ? 'security_operations' : 'interrogate';
         const activeTab = allowedTabs.includes(requestedTab) ? requestedTab : fallbackTab;
 
+        const showIndustryFactoryHub = m.category === 'economy' ||
+            ['treasury_finance', 'central_bank', 'taxes', 'trade', 'production'].includes(ministryId);
+        const industryFactoryHub = showIndustryFactoryHub ? `
+            <section id="omega-industry-factories-hub" aria-label="Industry and Factories" style="margin:10px 0 14px;padding:14px;border:1px solid rgba(125,211,252,.35);border-radius:12px;background:linear-gradient(135deg,rgba(10,28,43,.96),rgba(7,15,25,.96));color:#e5edf5;">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
+                    <div>
+                        <div style="font-size:14px;font-weight:900;letter-spacing:.06em;color:#bae6fd;">INDUSTRY &amp; FACTORIES</div>
+                        <div style="font-size:11px;color:#94a3b8;margin-top:4px;">Selected country: ${escapeAttribute(countryDetails.name || countryKey || 'selected country')}</div>
+                    </div>
+                    <span style="font-size:10px;color:#a7f3d0;border:1px solid rgba(110,231,183,.35);border-radius:6px;padding:5px 8px;">LIVE RUNTIME PANELS</span>
+                </div>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:8px;">
+                    <button type="button" data-omega-industry-panel="industrial" data-country="${escapeAttribute(countryKey)}" onclick="if(window.OmegaResourceCommandCenterUI && typeof window.OmegaResourceCommandCenterUI.open === 'function'){window.OmegaResourceCommandCenterUI.open(this.getAttribute('data-country'),this.getAttribute('data-omega-industry-panel'));}else{this.textContent='FACTORY UI UNAVAILABLE';this.disabled=true;}" style="min-height:42px;border:1px solid #38bdf8;border-radius:8px;padding:10px;background:rgba(14,116,144,.22);color:#e0f2fe;font-size:11px;font-weight:800;cursor:pointer;">My Factories</button>
+                    <button type="button" data-omega-industry-panel="processing" data-country="${escapeAttribute(countryKey)}" onclick="if(window.OmegaResourceCommandCenterUI && typeof window.OmegaResourceCommandCenterUI.open === 'function'){window.OmegaResourceCommandCenterUI.open(this.getAttribute('data-country'),this.getAttribute('data-omega-industry-panel'));}else{this.textContent='FACTORY UI UNAVAILABLE';this.disabled=true;}" style="min-height:42px;border:1px solid rgba(148,163,184,.45);border-radius:8px;padding:10px;background:rgba(255,255,255,.04);color:#e2e8f0;font-size:11px;font-weight:800;cursor:pointer;">Production Lines</button>
+                    <button type="button" data-omega-industry-panel="inventory" data-country="${escapeAttribute(countryKey)}" onclick="if(window.OmegaResourceCommandCenterUI && typeof window.OmegaResourceCommandCenterUI.open === 'function'){window.OmegaResourceCommandCenterUI.open(this.getAttribute('data-country'),this.getAttribute('data-omega-industry-panel'));}else{this.textContent='FACTORY UI UNAVAILABLE';this.disabled=true;}" style="min-height:42px;border:1px solid rgba(148,163,184,.45);border-radius:8px;padding:10px;background:rgba(255,255,255,.04);color:#e2e8f0;font-size:11px;font-weight:800;cursor:pointer;">Industrial Inventory</button>
+                    <button type="button" data-omega-industry-panel="value" data-country="${escapeAttribute(countryKey)}" onclick="if(window.OmegaResourceCommandCenterUI && typeof window.OmegaResourceCommandCenterUI.open === 'function'){window.OmegaResourceCommandCenterUI.open(this.getAttribute('data-country'),this.getAttribute('data-omega-industry-panel'));}else{this.textContent='FACTORY UI UNAVAILABLE';this.disabled=true;}" style="min-height:42px;border:1px solid rgba(148,163,184,.45);border-radius:8px;padding:10px;background:rgba(255,255,255,.04);color:#e2e8f0;font-size:11px;font-weight:800;cursor:pointer;">Industrial Finance &amp; Value</button>
+                </div>
+                <p style="margin:10px 0 0;font-size:10px;line-height:1.5;color:#94a3b8;">Catalog entries are not owned factories. Actual production depends on commissioned assets, available inputs, workforce, utilities, transport and the in-game production clock.</p>
+            </section>
+        ` : '';
+
         let html = `
             <!-- 3-TIER TYPOGRAPHY & ELEGANT AAA HERO HEADER -->
             <div style="background:rgba(2,11,20,0.85); border:1px solid rgba(0,229,255,0.25); border-radius:12px; padding:16px 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
@@ -1761,6 +1782,7 @@ window.OmegaCabinetUI = {
                 </button>` : ''}
                 ${ministryId === 'interior_security' ? `<button onclick="window.OmegaCabinetUI.setDashboardTab('security_operations');" style="background:${activeTab==='security_operations'?'linear-gradient(135deg,#00e5ff,#0066ff)':'rgba(255,255,255,0.06)'}; color:${activeTab==='security_operations'?'#000':'#cbd5e1'}; font-weight:bold; padding:8px 16px; border-radius:8px; border:none; cursor:pointer; font-family:'Share Tech Mono',monospace; font-size:12px; display:flex; align-items:center; gap:6px; white-space:nowrap;">🚓 Police Command & Fleet</button>` : ''}
             </div>
+            ${industryFactoryHub}
         `;
 
         if (activeTab === 'interrogate') {
