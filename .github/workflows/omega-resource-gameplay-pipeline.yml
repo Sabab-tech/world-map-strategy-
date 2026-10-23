@@ -26,6 +26,8 @@ on:
       - 'omega_resource_realism_runtime_v1.js'
       - 'omega_resource_country_boundary_guard.js'
       - 'omega_resource_industrial_network_v1.js'
+      - 'omega_icon_system_v1.js'
+      - 'omega_icon_system_v1.css'
       - 'omega_resource_economy_runtime_v2.js'
       - 'omega_global_trade_system.js'
       - 'resource*.json'
@@ -48,6 +50,7 @@ on:
       - 'test/omega_resource_endowment_runtime.test.mjs'
       - 'test/omega_resource_production_capacity_contract.test.mjs'
       - 'test/omega_resource_industrial_network_v1.test.mjs'
+      - 'test/omega_factory_production_baseline.test.mjs'
       - 'test/omega_resource_logistics_runtime_v1.test.mjs'
       - 'test/omega_resource_milestone_a_integrity.test.mjs'
       - 'package.json'
@@ -73,6 +76,8 @@ on:
       - '.github/workflows/omega-resource-gameplay-pipeline.yml'
       - 'omega_resource_endowment_runtime.js'
       - 'omega_resource_industrial_network_v1.js'
+      - 'omega_icon_system_v1.js'
+      - 'omega_icon_system_v1.css'
       - 'omega_resource_economy_runtime_v2.js'
       - 'omega_global_trade_system.js'
       - 'resource*.json'
@@ -80,6 +85,7 @@ on:
       - 'test/omega_resource_true_e2e_pipeline.test.mjs'
       - 'test/omega_resource_global_pipeline.test.mjs'
       - 'test/omega_resource_industrial_network_v1.test.mjs'
+      - 'test/omega_factory_production_baseline.test.mjs'
       - 'test/omega_resource_autonomous_global_pipeline.test.mjs'
       - 'test/omega_resource_endowment_runtime.test.mjs'
       - 'test/omega_resource_economy_runtime_v2.test.mjs'
@@ -136,6 +142,8 @@ jobs:
         run: npm run test:resource-system-hardening
       - name: Industrial network regression
         run: npm run test:resource-industrial-network
+      - name: Factory catalog, construction and quantity integrity
+        run: npm run test:factory-baseline
       - name: Transport logistics regression
         run: npm run test:resource-logistics
       - name: Strategic policy, depletion and save/load integrity regressions

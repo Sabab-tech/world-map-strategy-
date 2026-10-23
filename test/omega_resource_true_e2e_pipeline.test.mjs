@@ -6,6 +6,36 @@ import vm from 'node:vm';
 const readJson = file => JSON.parse(readFileSync(new URL('../'+file, import.meta.url), 'utf8'));
 const readText = file => readFileSync(new URL('../'+file, import.meta.url), 'utf8');
 
+function advanceOneGameTurn(state){
+  const sim=state.simulation||(state.simulation={});
+  const step=Math.max(1,Math.round(Number(sim.daysPerTurn)||1));
+  const base=String(sim.date||String(Number(sim.startYear)||2015)+'-01-01');
+  const date=new Date(base+'T00:00:00.000Z');
+  date.setUTCDate(date.getUTCDate()+step);
+  sim.date=date.toISOString().slice(0,10);
+  sim.turn=(Number(sim.turn)||1)+1;
+}
+function advanceToGameTurn(state,targetTurn){
+  const target=Math.max(1,Number(targetTurn)||1);
+  let guard=0;
+  while((Number(state.simulation?.turn)||1)<target){
+    advanceOneGameTurn(state);
+    if(++guard>10000)throw new Error('TEST_GAME_CLOCK_TURN_GUARD');
+  }
+}
+function advanceToCycleFinish(state,cycle){
+  const sim=state.simulation||(state.simulation={});
+  if(!sim.date)sim.date=String(cycle?.startDate||String(Number(sim.startYear)||2015)+'-01-01');
+  const currentTurn=Number(sim.turn)||1;
+  const targetTurn=Math.max(currentTurn+1,Number(cycle?.finishTurn)||currentTurn+1);
+  const targetDate=cycle?.finishDate?new Date(String(cycle.finishDate)+'T00:00:00.000Z'):null;
+  let guard=0;
+  while((Number(sim.turn)||1)<targetTurn||(targetDate&&new Date(String(sim.date)+'T00:00:00.000Z')<targetDate)){
+    advanceOneGameTurn(state);
+    if(++guard>10000)throw new Error('TEST_FACTORY_CYCLE_CLOCK_GUARD');
+  }
+}
+
 class EventTargetMock {
   constructor(){this.listeners=new Map();}
   addEventListener(type,fn){const rows=this.listeners.get(type)||[];rows.push(fn);this.listeners.set(type,rows);}
@@ -140,6 +170,19 @@ test('real site extraction flows through raw warehouse, transport, factory, fini
   const hydration=await endowment.hydrateCountry('BGD');
   assert.equal(hydration.status,'APPLIED',JSON.stringify(hydration));
   assert.notEqual(hydration.result?.accepted,false,JSON.stringify(hydration));
+  // Explicit simulation fixture: workforce and utility supply must be recorded before production.
+  state.economy.BGD=state.economy.BGD||{productionAssets:[]};
+  state.economy.BGD.unemploymentCount=100000;
+  state.economy.BGD.laborForce=1000000;
+  state.economy.BGD.unemployment_rate=10;
+  state.transport.BGD=state.transport.BGD||{};
+  state.transport.BGD.infrastructure=state.transport.BGD.infrastructure||{
+    roads:{capacityPerDay:40000,quality:.9},rail:{capacityPerDay:90000,quality:.9},
+    ports:{capacityPerDay:180000,quality:.9},bridges:{capacityPerDay:45000,quality:.9},
+    pipelines:{capacityPerDay:350000,quality:.9}
+  };
+  state.transport.BGD.infrastructure.utilitySupply={electricityMWhPerDay:1000000,waterM3PerDay:1000000,
+    authority:'TEST_FIXTURE',status:'AVAILABLE',simulationOnly:true,assets:[]};
   const run=await industry.executeSitePipeline({countryId:'BGD',siteId:site.siteId,resourceId:'coal',autoCommissionFactory:true,transportMode:'rail'});
   assert.equal(run.status,'IN_TRANSIT',JSON.stringify(run));
   assert.equal(run.extractionStatus,'COMMITTED');
@@ -162,13 +205,13 @@ test('real site extraction flows through raw warehouse, transport, factory, fini
   assert.ok(rawStockBeforeDelivery+1e-6>=Number(run.shipment.quantity));
   assert.ok(rawWarehouseBeforeDelivery+1e-6>=Number(run.shipment.quantity));
   assert.ok(rawReservationBeforeDelivery+1e-6>=Number(run.shipment.quantity));
-  state.simulation.turn=run.shipment.etaTurn;
+  advanceToGameTurn(state,run.shipment.etaTurn);
   const advanced=industry.advanceShipments('BGD');
   assert.ok(advanced.delivered>=1,JSON.stringify(advanced));
   const delivery=advanced.shipments.find(item=>String(item.shipmentId)===String(run.shipmentId)||String(item.batchId)===String(run.batchId));
   assert.ok(delivery,'the specific E2E shipment must reach its factory during the global country delivery tick');
   assert.equal(delivery.status,'DELIVERED');
-  assert.equal(delivery.processingStatus,'PROCESSED',JSON.stringify(delivery.processing));
+  assert.equal(delivery.processingStatus,'IN_PROGRESS',JSON.stringify(delivery.processing));
   assert.equal(delivery.batchId,run.batchId);
   assert.equal(delivery.destinationStatus,'FACTORY_RECEIVED');
   const sameResourceDeliveryQuantity=advanced.shipments.filter(x=>String(x.resourceId)==='coal')
@@ -196,13 +239,15 @@ test('real site extraction flows through raw warehouse, transport, factory, fini
   assert.ok(inputBalance()>0,'a shipment larger than one turn of factory throughput must preserve unprocessed input');
   assert.ok(Math.abs(inputBalance()-inputLotsBalance())<1e-5,
     'factory input aggregate must equal its batch-lot remaining quantities after partial processing');
-  assert.ok(Number(delivery.processing?.inputQuantity)>0,
-    'the delivery turn must process up to factory throughput and produce a transaction');
-  let followupTurns=0;
+  assert.ok(Number(delivery.processing?.productionQuantity)>0&&delivery.processing?.finishDate,
+    'the delivery turn must schedule a tracked production quantity and explicit finish date');
+  let followupTurns=0,lastCompletedCycle=null;
   while(inputBalance()>1e-6&&followupTurns<10){
-    state.simulation.turn+=1;
+    advanceOneGameTurn(state);
     const followup=industry.processPendingFactoryInputs('BGD');
-    assert.ok(followup.processedCount>=1,JSON.stringify({followup,inputBalance:inputBalance(),factoryId:factory.id}));
+    assert.ok((Number(followup.completedCount)||0)+(Number(followup.startedCount)||0)>=1,
+      JSON.stringify({followup,inputBalance:inputBalance(),factoryId:factory.id}));
+    if((followup.completed||[]).length)lastCompletedCycle=followup.completed[followup.completed.length-1];
     assert.ok(Math.abs(inputBalance()-inputLotsBalance())<1e-5,
       'every later factory processing turn must keep aggregate input and batch lineage reconciled');
     followupTurns+=1;
@@ -219,8 +264,9 @@ test('real site extraction flows through raw warehouse, transport, factory, fini
     assert.equal(resource.inventoryLots[b.batchId].remainingQuantity,b.remainingQuantity);
     assert.equal(Number(resource.processedWarehouse.availableByResource[b.resourceId])||0,Number(resource.inventory[b.resourceId])||0);
   }
-  assert.ok(resource.finishedGoodsLedger.some(x=>x.transactionId===delivery.processingTransactionId),'processing transaction must persist to the finished-goods ledger');
-  assert.ok((state.economy.BGD.industrialRuntime?.finishedGoodsLedger||[]).some(x=>x.transactionId===delivery.processingTransactionId),'finished goods event must register in Economy Runtime');
+  assert.ok(lastCompletedCycle?.transactionId,'the full multi-turn processing cycle must return its committed transaction ID');
+  assert.ok(resource.finishedGoodsLedger.some(x=>x.transactionId===lastCompletedCycle.transactionId),'processing transaction must persist to the finished-goods ledger');
+  assert.ok((state.economy.BGD.industrialRuntime?.finishedGoodsLedger||[]).some(x=>x.transactionId===lastCompletedCycle.transactionId),'finished goods event must register in Economy Runtime');
   const concentrateOffer=(state.trade.BGD.offerBook||[]).find(x=>x.resourceId==='COAL_CONCENTRATE'&&x.quantity>0);
   assert.ok(concentrateOffer,'priced finished goods must be published into the actual market offer book');
   assert.ok(Array.isArray(concentrateOffer.batchAllocations)&&concentrateOffer.batchAllocations.length>0,

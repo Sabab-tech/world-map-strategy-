@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { runInNewContext } from "node:vm";
 
-const [html, js, css, world, mapEngine, mainActivity, serviceWorker, androidOfflineWorkflow, androidGradle] = await Promise.all([
+const [html, js, css, world, mapEngine, mainActivity, serviceWorker, androidOfflineWorkflow, androidGradle, bootPerformanceMonitor, compositionRoot] = await Promise.all([
   readFile(new URL("../index.html", import.meta.url), "utf8"),
   readFile(new URL("../offline-hybrid-map.js", import.meta.url), "utf8"),
   readFile(new URL("../offline-hybrid-map.css", import.meta.url), "utf8"),
@@ -12,7 +12,9 @@ const [html, js, css, world, mapEngine, mainActivity, serviceWorker, androidOffl
   readFile(new URL("../android/app/src/main/java/com/omega/globalsupremecommander/MainActivity.java", import.meta.url), "utf8"),
   readFile(new URL("../omega-offline-map-sw.js", import.meta.url), "utf8"),
   readFile(new URL("../.github/workflows/omega-android-gameplay-smoke.yml", import.meta.url), "utf8"),
-  readFile(new URL("../android/app/build.gradle", import.meta.url), "utf8")
+  readFile(new URL("../android/app/build.gradle", import.meta.url), "utf8"),
+  readFile(new URL("../omega_boot_performance_monitor_v1.js", import.meta.url), "utf8"),
+  readFile(new URL("../omega_enterprise_composition_root_v10.js", import.meta.url), "utf8")
 ]);
 
 test("offline map has a Bengali label and stays in the existing satellite control", () => {
@@ -116,6 +118,34 @@ test("canonical country profile pack is bundled for Android and refreshes offlin
   }
 });
 
+test("runtime composition root executes in the ordered deferred script queue", () => {
+  const scripts = [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script\s*>/gi)].map((match, index) => ({
+    index,
+    attributes: match[1],
+    body: match[2],
+    src: (match[1].match(/\bsrc\s*=\s*["']([^"']+)["']/i) || [])[1] || null
+  }));
+  const find = name => scripts.find(script => script.src === name);
+  const performance = find("omega_boot_performance_monitor_v1.js");
+  const root = find("omega_enterprise_composition_root_v10.js");
+  const countryRuntime = find("country-ios.js");
+  const legacyEngine = find("ministry_engine.js");
+  const ministryDomain = find("omega_ministry_domain_engines.js");
+  assert.ok(performance && root && countryRuntime && legacyEngine && ministryDomain,
+    "all ordered boot scripts must be present in index.html");
+  assert.match(performance.attributes, /\bdefer\b/);
+  assert.match(root.attributes, /\bdefer\b/);
+  assert.equal(root.body.trim(), "", "composition root must not execute inline during HTML parsing");
+  assert.ok(root.index > countryRuntime.index && root.index > legacyEngine.index,
+    "composition root must retain its position after its legacy runtime dependencies");
+  assert.ok(root.index < ministryDomain.index,
+    "composition root must remain ahead of the later ministry-domain script in the declared dependency order");
+  assert.ok(bootPerformanceMonitor.includes("requestAnimationFrame"));
+  assert.ok(compositionRoot.includes("OMEGA ENTERPRISE COMPOSITION ROOT"));
+  assert.doesNotMatch(html, /OMEGA ENTERPRISE COMPOSITION ROOT/,
+    "the composition root must not run before earlier defer scripts have executed");
+});
+
 test("browser shell resources are cached locally for offline relaunch", () => {
   assert.match(html, /navigator\.serviceWorker\.register\('\.\/omega-offline-map-sw\.js'/);
   assert.match(serviceWorker, /CORE_ASSETS/);
@@ -141,6 +171,8 @@ test("browser shell resources are cached locally for offline relaunch", () => {
   assert.match(serviceWorker, /omega_home_ministry_police_operations_ui_v1[.]js/);
   assert.match(serviceWorker, /military_command_catalog_v1[.]json/);
   assert.match(serviceWorker, /omega_resource_mine_management_v1[.]js/);
+  assert.match(serviceWorker, /omega_boot_performance_monitor_v1[.]js/);
+  assert.match(serviceWorker, /omega_enterprise_composition_root_v10[.]js/);
   assert.match(serviceWorker, /omega_world_bank_lending_runtime_v1[.]js/);
   assert.match(serviceWorker, /resource_site_country_mineplay_batch_20261020_v1[.]json/);
   assert.match(serviceWorker, /omega_government_banking_runtime_v1[.]js/);

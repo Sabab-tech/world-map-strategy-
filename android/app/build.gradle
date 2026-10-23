@@ -62,13 +62,21 @@ tasks.register('syncOmegaWebAssets', Sync) {
         exclude 'bun.lock'
         exclude 'server.js'
         exclude 'server_bootstrap.js'
+        exclude 'omega_server_ai_gateway.js'
+        exclude 'omega_resource_ai_decision_service.js'
         exclude '.env*'
     }
     into("$buildDir/generated/omegaWebAssets")
 }
 
-tasks.named('preBuild').configure {
+tasks.register('transpileOmegaAndroidWebAssets', Exec) {
     dependsOn(tasks.named('syncOmegaWebAssets'))
+    commandLine 'node', new File(omegaRepoRoot, 'scripts/transpile_android_web_assets.mjs').absolutePath,
+            new File(buildDir, 'generated/omegaWebAssets').absolutePath
+}
+
+tasks.named('preBuild').configure {
+    dependsOn(tasks.named('transpileOmegaAndroidWebAssets'))
 }
 
 dependencies {

@@ -109,7 +109,8 @@ test('map ministry entry is outside map stacking and has independent click recov
   assert.ok(runtime.includes("addEventListener('click', handleMapMinistryDockClick, true)"),
     'late-loaded recovery listens in document capture phase');
   assert.ok(runtime.includes('function openCabinet(event)'));
-  assert.ok(runtime.includes('manager.setLayer(1)'));
+  assert.ok(runtime.includes('cabinetUI.renderCabinet(activeCountry())'), 'the recovery route renders the current-country cabinet without re-entering the blocking layer manager');
+  assert.ok(!runtime.includes('global.openMainMinistryView();'), 'deferred recovery must not re-enter the legacy layer manager');
   assert.ok(runtime.includes('data-last-open-result'));
   assert.ok(runtime.includes("function syncDockPosition()"));
   assert.ok(runtime.includes("rect.bottom + 8"));
@@ -123,6 +124,22 @@ test('map ministry entry is outside map stacking and has independent click recov
   assert.ok(css.includes('.omega-ministry-entry.ui-bottom-navigation'));
   assert.ok(css.includes('z-index: 2147483000 !important'),
     'the entry is above the map renderer and its interaction layers');
+});
+
+test('Government HQ stays busy until deferred council content is actually rendered', () => {
+  const engine = read('ministry_engine.js');
+  const navigation = read('omega_ui_system_redesign_v1.js');
+
+  assert.match(engine, /data-cabinet-render-state/);
+  assert.match(engine, /loading-council/);
+  assert.match(engine, /renderedContent/);
+  assert.match(engine, /setAttribute\('data-cabinet-render-state', 'ready'\)/);
+  assert.match(engine, /setAttribute\('data-cabinet-render-state', 'error'\)/);
+  assert.match(engine, /setAttribute\('aria-busy', 'false'\)/);
+
+  assert.match(navigation, /const councilPending = opened/);
+  assert.match(navigation, /cabinet\.getAttribute\('data-cabinet-render-state'\) === 'loading-council'/);
+  assert.match(navigation, /if \(typeof cabinet\.setAttribute === 'function' && !councilPending\)/);
 });
 
 function createMinistryNavigationHarness({ withLayerManager = true } = {}) {
@@ -251,9 +268,10 @@ test('ministry card hit targets remain tap-enabled on mobile', () => {
 });
 
 
-function createMapMinistryDockHarness({ primaryFails = false, managerFails = false } = {}) {
+function createMapMinistryDockHarness({ primaryFails = false, managerFails = false, deferNavigation = false } = {}) {
   const listeners = [];
   const calls = [];
+  const scheduled = [];
   const attributes = {};
   const bodyClasses = new Set();
   const body = {
@@ -339,7 +357,8 @@ function createMapMinistryDockHarness({ primaryFails = false, managerFails = fal
       }
     },
     OmegaCabinetUI: { renderCabinet(country) { calls.push('render:' + country); } },
-    Game: { currentActiveCountry: 'BANGLADESH' }
+    Game: { currentActiveCountry: 'BANGLADESH' },
+    setTimeout: deferNavigation ? function (callback) { scheduled.push(callback); return scheduled.length; } : undefined
   };
   context.window = context;
   context.addEventListener = () => {};
@@ -351,20 +370,37 @@ function createMapMinistryDockHarness({ primaryFails = false, managerFails = fal
     preventDefault() { this.prevented = true; },
     stopImmediatePropagation() { this.stoppedImmediate = true; }
   };
-  return { listeners, event, calls, cabinet, dock, context, attributes };
+  return {
+    listeners, event, calls, cabinet, dock, context, attributes, scheduled,
+    flushScheduled() { let count = 0; while (scheduled.length && count++ < 10) scheduled.shift()(); }
+  };
 }
 
 test('map ministry dock click opens the cabinet through the independent capture route', () => {
   const h = createMapMinistryDockHarness();
   assert.ok(h.listeners.length > 0, 'the standalone capture handler is registered');
   h.listeners.forEach((handler) => handler(h.event));
-  assert.ok(h.calls.includes('primary'), 'the original cabinet route is attempted first');
+  assert.ok(h.calls.includes('render:BANGLADESH'), 'the cabinet is rendered through the non-blocking recovery route');
   assert.equal(h.dock.style.top, '158px', 'dock sits below the measured 150px status header plus an 8px gap');
   assert.equal(h.cabinet.style.display, 'flex', 'the cabinet becomes visible after the tap');
   assert.equal(h.event.prevented, true);
   assert.equal(h.event.stoppedImmediate, true);
   assert.equal(h.dock.attrs['data-last-open-result'], 'opened');
   assert.equal(h.context.OMEGAMinistryDock.audit().cabinetVisible, true);
+});
+
+test('ministry dock enters Government HQ immediately and defers cabinet rendering', () => {
+  const h = createMapMinistryDockHarness({ deferNavigation: true });
+  h.listeners.forEach((handler) => handler(h.event));
+  assert.equal(h.attributes['data-active-layer'], '1', 'the tap immediately enters Government HQ');
+  assert.equal(h.context.OmegaLayerManager.currentLayer, 1);
+  assert.equal(h.cabinet.style.display, 'flex', 'the cabinet shell is visible before heavy rendering');
+  assert.equal(h.dock.attrs['data-last-open-result'], 'opening');
+  assert.equal(h.calls.length, 0, 'heavy legacy rendering is not run inside the tap callback');
+  assert.equal(h.scheduled.length, 1, 'rendering is queued for a later task');
+  h.flushScheduled();
+  assert.ok(h.calls.includes('render:BANGLADESH'), 'the cabinet renderer runs after the click callback returns');
+  assert.equal(h.dock.attrs['data-last-open-result'], 'opened');
 });
 
 test('map ministry dock recovers when both the original route and layer manager fail', () => {
@@ -375,4 +411,13 @@ test('map ministry dock recovers when both the original route and layer manager 
   assert.equal(h.attributes['data-active-layer'], '1');
   assert.ok(h.calls.includes('render:BANGLADESH'), 'fallback renders the current-country cabinet');
   assert.equal(h.dock.attrs['data-last-open-result'], 'opened');
+});
+
+test('cabinet council rendering is deferred until after the cabinet shell is painted', () => {
+  const engine = read('ministry_engine.js');
+  assert.ok(engine.includes('omega-cabinet-subsystem-loading'));
+  assert.ok(engine.includes('window.setTimeout(renderSubsystem, 50)'));
+  const index = read('index.html');
+  assert.ok(index.includes("if (typeof Object.fromEntries !== 'function')"), 'Android 9 gets Object.fromEntries before runtime scripts load');
+  assert.ok(engine.includes("document.getElementById('cabinet-subsystem-root') !== subsystemRoot"));
 });

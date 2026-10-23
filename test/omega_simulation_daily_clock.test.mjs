@@ -138,6 +138,87 @@ test('save slot restores selected country, game date and authoritative state', a
   assert.equal(sim.clock.turn, 4);
 });
 
+test('save slot preserves an unfinished factory project, reserved input batches and in-progress production cycle', async () => {
+  const { sim, gameState, storage } = createRuntime();
+  sim.startSession({ playerCountryId: 'BGD' });
+  await sim.advance(2);
+
+  gameState.economy.BGD.productionAssets = [{
+    id: 'FAC-BGD-STEEL-01',
+    countryId: 'BGD',
+    factoryType: 'STEEL_AND_ALLOY_WORKS',
+    status: 'OPERATIONAL',
+    inputInventory: { iron_concentrate: 60, coal_concentrate: 20 },
+    inputBatchLots: [{
+      batchId: 'INPUT-IRON-01',
+      resourceId: 'iron_concentrate',
+      quantity: 60,
+      remainingQuantity: 60,
+      cycleReservationId: 'CYCLE-STEEL-01',
+      cycleReservedQuantity: 50,
+      sourceBatchIds: ['MINE-BGD-IRON-01'],
+      unit: 'SIMULATION_TONNE_EQUIVALENT'
+    }]
+  }];
+  gameState.resource.BGD.industrialNetwork = {
+    schemaVersion: '1.0.0',
+    projects: [{
+      projectId: 'PROJECT-BGD-CHEM-01',
+      projectType: 'FACTORY_CONSTRUCTION',
+      countryId: 'BGD',
+      factoryId: 'FAC-BGD-CHEM-01',
+      status: 'UNDER_CONSTRUCTION',
+      startDate: '2026-06-13',
+      estimatedCompletionDate: '2026-12-13',
+      requestId: 'SAVE-FACTORY-PROJECT-01',
+      constructionMaterialsStatus: 'CONSUMED',
+      materialAllocations: [{ resourceId: 'steel', quantity: 120, batchId: 'BUILD-MATERIAL-01' }]
+    }],
+    factoryProductionCycles: {
+      'FAC-BGD-STEEL-01': {
+        cycleId: 'CYCLE-STEEL-01',
+        factoryId: 'FAC-BGD-STEEL-01',
+        countryId: 'BGD',
+        status: 'IN_PROGRESS',
+        startDate: '2015-01-03',
+        finishDate: '2015-01-06',
+        productionQuantity: 50,
+        sourceBatchIds: ['MINE-BGD-IRON-01'],
+        inputBatchReservations: [{
+          batchId: 'INPUT-IRON-01',
+          resourceId: 'iron_concentrate',
+          quantity: 50,
+          unit: 'SIMULATION_TONNE_EQUIVALENT'
+        }],
+        outputQuantities: { STEEL: 36 }
+      }
+    },
+    factoryProductionCycleHistory: []
+  };
+
+  const expectedProject = JSON.parse(JSON.stringify(gameState.resource.BGD.industrialNetwork.projects[0]));
+  const expectedCycle = JSON.parse(JSON.stringify(gameState.resource.BGD.industrialNetwork.factoryProductionCycles['FAC-BGD-STEEL-01']));
+  const expectedLot = JSON.parse(JSON.stringify(gameState.economy.BGD.productionAssets[0].inputBatchLots[0]));
+  const saved = sim.saveSlot('factory-acceptance');
+  assert.equal(saved.ok, true);
+  assert.equal(storage.has('omega.game.save.factory-acceptance'), true);
+
+  gameState.resource.BGD.industrialNetwork.projects = [];
+  gameState.resource.BGD.industrialNetwork.factoryProductionCycles = {};
+  gameState.economy.BGD.productionAssets = [];
+  const restored = sim.loadSlot('factory-acceptance');
+  assert.equal(restored.lastLoadIntegrity, 'VERIFIED', 'the restored factory snapshot must pass authoritative save integrity validation');
+
+  assert.deepEqual(JSON.parse(JSON.stringify(gameState.resource.BGD.industrialNetwork.projects[0])), expectedProject,
+    'construction dates, consumed BOM allocations and request identity must survive reload');
+  assert.deepEqual(JSON.parse(JSON.stringify(gameState.resource.BGD.industrialNetwork.factoryProductionCycles['FAC-BGD-STEEL-01'])), expectedCycle,
+    'cycle status, finish date, exact batch reservations and expected outputs must survive reload');
+  assert.deepEqual(JSON.parse(JSON.stringify(gameState.economy.BGD.productionAssets[0].inputBatchLots[0])), expectedLot,
+    'remaining quantity, reservation lock and source-mine lineage must survive reload');
+  assert.equal(gameState.economy.BGD.productionAssets[0].inputBatchLots[0].cycleReservedQuantity, 50);
+  assert.equal(gameState.resource.BGD.industrialNetwork.factoryProductionCycles['FAC-BGD-STEEL-01'].status, 'IN_PROGRESS');
+});
+
 test('legacy hourly save is migrated to one calendar day per turn', () => {
   const { sim, gameState } = createRuntime();
   sim.createSession({ playerCountryId: 'BGD', startTurn: 7, simulationTimeMs: 7 * 3600000 });
@@ -201,7 +282,7 @@ test('index, finance, bank and offline shell use the daily lifecycle assets', ()
   assert.match(finance, /DAY_MS=86400000/);
   assert.match(banking, /dayTurns = 1/);
   assert.match(serviceWorker, /omega-offline-atlas-shell-v\d+/);
-  assert.match(serviceWorker, /omega-offline-atlas-shell-v18/, 'the offline shell cache must refresh the unified header assets');
+  assert.match(serviceWorker, /omega-offline-atlas-shell-v21/, 'the offline shell cache must refresh the unified header assets');
   assert.match(serviceWorker, /omega_game_lifecycle_runtime_v1\.js/);
   assert.match(serviceWorker, /omega_game_lifecycle_runtime_v1\.css/);
   assert.match(serviceWorker, /resource_industrial_catalog_v1\.json/);
@@ -251,7 +332,7 @@ test('finance, FX, macro and ministry time fallbacks treat one turn as one day',
   assert.match(home, /DAY_MS = 86400000/);
   assert.match(military, /simTurn\(\) \* 86400000/);
   assert.match(industrial, /clock\?\.stepDurationMs/);
-  assert.match(industrial, /milliseconds\/86400000/);
+  assert.match(industrial, /if\(num\(clock\?\.stepDurationMs\)!==null\)return 1/);
   assert.match(hardening, /OMEGA_SIMULATION_TURN_COMMITTED',[() =>]*\{ensureFactoryRecipes\(\);\}/);
   assert.equal(industrialCatalog.turnAssumption.daysPerTurn, 1);
 });

@@ -48,6 +48,30 @@
     const output=format&&typeof format.compact==='function'?format.compact(n):n.toLocaleString();
     return output + (unit || '');
   }
+  function formatDuration(daysValue) {
+    const days = Math.max(0, Math.ceil(Number(daysValue) || 0));
+    if (days < 30) return days + (days === 1 ? ' day' : ' days');
+    const start = new Date(Date.UTC(2000, 0, 1));
+    const end = new Date(start.getTime());
+    end.setUTCDate(end.getUTCDate() + days);
+    let months = 0;
+    while (months < 240) {
+      const candidate = new Date(Date.UTC(2000, months + 1, 1));
+      const last = new Date(Date.UTC(candidate.getUTCFullYear(), candidate.getUTCMonth() + 1, 0)).getUTCDate();
+      candidate.setUTCDate(Math.min(1, last));
+      if (candidate.getTime() > end.getTime()) break;
+      months += 1;
+    }
+    const anchor = new Date(Date.UTC(2000, months, 1));
+    const remainder = Math.max(0, Math.round((end.getTime() - anchor.getTime()) / 86400000));
+    return months + (months === 1 ? ' month' : ' months') + (remainder ? ' ' + remainder + (remainder === 1 ? ' day' : ' days') : '') + ' (' + days + ' days)';
+  }
+  function displayGameDate(value) {
+    const match = String(value || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!match) return value == null || value === '' ? 'Not recorded' : String(value);
+    const date = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])));
+    return new Intl.DateTimeFormat('en-GB', {day:'numeric',month:'long',year:'numeric',timeZone:'UTC'}).format(date);
+  }
   function shortJson(value) {
     try { return esc(JSON.stringify(value)); } catch (_) { return 'Unavailable'; }
   }
@@ -697,12 +721,44 @@
     const profileCards=profiles.slice(0,150).map(x=>card(x.site.siteName||x.site.name||x.site.siteId,'FILE-BACKED PROCESSING PROFILE',
       '<div class="omega-rescc-grid2">'+kv('Site ID',x.site.siteId)+kv('Commodity',x.site.resourceId||x.site.real&&x.site.real.resourceId||x.site.identity&&x.site.identity.resourceTypeId)+kv('Upstream',x.up)+kv('Midstream',x.mid)+kv('Outputs',x.outputs)+kv('Downstream sectors',x.down)+'</div>','')).join('');
     const industrial=resourceBucket(country).industrialNetwork||{},econ=bucket('economy',country),projects=Array.isArray(industrial.projects)?industrial.projects:(Array.isArray(econ.projects)?econ.projects:(Array.isArray(econ.industrialProjects)?econ.industrialProjects:[]));
+    const catalog=g.OmegaResourceIndustrialCatalogData||(g.Omega&&g.Omega.ResourceIndustrialCatalogData)||{};
+    const factoryProfiles=catalog.factoryProfiles&&typeof catalog.factoryProfiles==='object'?catalog.factoryProfiles:{};
+    const downstreamRecipes=catalog.downstreamFactoryRecipes&&typeof catalog.downstreamFactoryRecipes==='object'?catalog.downstreamFactoryRecipes:{};
+    const factoryTypeOptions=Object.entries(factoryProfiles).map(([id,p])=>'<option value="'+esc(id)+'">'+esc(p.name||id)+' · '+esc(id)+'</option>').join('');
+    const recipeOptions=Object.entries(downstreamRecipes).map(([id,r])=>'<option value="'+esc(id)+'">'+esc(r.name||id)+' · '+esc(r.factoryType||'')+'</option>').join('');
     const options=resources(country).map(x=>'<option value="'+esc(x.id)+'">'+esc(x.name||x.id)+'</option>').join('');
-    const form='<form class="omega-rescc-form" data-search-item data-form="factory-project"><h3>Start a catalog-backed factory project</h3><div class="omega-rescc-formgrid"><label>Resource<select name="resourceId" required>'+options+'</select></label><label>Budget cost<input type="number" name="cost" min="1" step="1" required></label><label>Capacity per day<input type="number" name="capacityPerDay" min="1" step="1" required></label><label>Build days<input type="number" name="buildDays" min="1" step="1" value="180" required></label></div><p class="omega-rescc-note">Project creation does not itself debit treasury.</p><button class="omega-rescc-button" type="submit">Create factory project</button></form>';
+    const form='<form class="omega-rescc-form" data-search-item data-form="factory-project"><h3>Start a catalog-backed factory project</h3>'+
+      '<input type="hidden" name="requestId" value="'+esc(uniqueRequestId('FACTORY-PROJECT-FORM','CREATE'))+'"><div class="omega-rescc-formgrid">'+
+      '<label>Factory type<select name="factoryType"><option value="">Choose from resource rule</option>'+factoryTypeOptions+'</select></label>'+
+      '<label>Production recipe<select name="recipeId"><option value="">Use factory profile default</option>'+recipeOptions+'</select></label>'+
+      '<label>Input resource (legacy processing only)<select name="resourceId"><option value="">Use selected factory recipe</option>'+options+'</select></label>'+
+      '<label>Budget cost override<input type="number" name="cost" min="1" step="1" placeholder="Use catalog default"></label>'+
+      '<label>Capacity/day override<input type="number" name="capacityPerDay" min="1" step="1" placeholder="Use catalog default"></label>'+
+      '<label>Construction duration in months<input type="number" name="buildMonths" min="1" max="240" step="1" placeholder="Optional exact calendar months"></label>'+
+      '<label>Construction days override<input type="number" name="buildDays" min="1" step="1" placeholder="Use catalog default"></label></div>'+
+      '<p class="omega-rescc-note">Choose a factory type and a matching recipe. Empty overrides use catalog defaults. A catalog-backed project preflights and debits every required construction material from the country inventory/warehouse before creating the project. The cost field is a simulation estimate; treasury debit is not performed by this factory action.</p>'+
+      '<button class="omega-rescc-button" type="submit">Create factory project</button></form>';
     return '<h3 class="omega-rescc-section-title">Live production and processing assets</h3>'+(liveCards||empty('No factory asset is recorded in this country runtime.'))+
       '<h3 class="omega-rescc-section-title">Processing capabilities from existing site files</h3>'+(profileCards||empty('No per-site processing/output profile is recorded for this country.'))+
       (profiles.length>150?'<p class="omega-rescc-note">Showing 150 of '+profiles.length+' site profiles.</p>':'')+
-      '<h3 class="omega-rescc-section-title">Capacity requests</h3>'+statusRows(requests)+'<h3 class="omega-rescc-section-title">Industrial construction projects</h3>'+statusRows(projects)+form;
+      '<h3 class="omega-rescc-section-title">Capacity requests</h3>'+statusRows(requests)+
+      '<h3 class="omega-rescc-section-title">Factory commissioning calendar</h3>' +
+      (projects.filter(function (p) { return p && p.projectType === 'FACTORY_CONSTRUCTION'; }).map(function (p) {
+        const duration = p.durationMonthsRequested ? p.durationMonthsRequested + (p.durationMonthsRequested === 1 ? ' month' : ' months') + ' (' + number(p.durationDays, ' days') + ')' : formatDuration(p.durationDays);
+        const completion = p.actualCompletionDate || p.estimatedCompletionDate || p.estimatedCommissioningDate;
+        const pct = Number(p.progressPct);
+        return card(String((profiles[p.factoryType] && profiles[p.factoryType].name) || p.factoryType || 'Factory project'),
+          String(p.status || 'STATUS_NOT_RECORDED'),
+          '<div class="omega-rescc-grid2">' +
+          kv('Construction started', displayGameDate(p.startDate)) +
+          kv('Estimated commissioning', displayGameDate(completion)) +
+          kv('Actual commissioning', p.actualCompletionDate ? displayGameDate(p.actualCompletionDate) : 'Not commissioned yet') +
+          kv('Planned duration', duration) +
+          kv('Construction progress', Number.isFinite(pct) ? number(pct * 100, '%') : 'Not recorded') +
+          kv('Recipe / factory ID', String(p.recipeId || p.factoryId || 'Not recorded')) +
+          '</div>', '');
+      }).join('') || empty('No factory construction project is recorded.')) +
+      '<h3 class="omega-rescc-section-title">All industrial construction projects</h3>'+statusRows(projects.filter(function (p) { return !p || p.projectType !== 'FACTORY_CONSTRUCTION'; }))+form;
   }
   function panelInventory(country) {
     const r = resourceBucket(country);
@@ -754,12 +810,27 @@
       '<h3 class="omega-rescc-section-title">Saved route profiles from existing data files</h3>'+(routeCards||empty('No saved route definition is recorded for this country.'))+
       '<h3 class="omega-rescc-section-title">Actual shipment state</h3>'+(shipmentCards||empty('No shipments have been recorded.'));
   }
+  function factoryVisual(type, label) {
+    const visualCatalog = g.OmegaFactoryVisualCatalog;
+    if (visualCatalog && typeof visualCatalog.render === 'function') return visualCatalog.render(type, label);
+    const text = String(label || type || 'Factory');
+    return '<span class="omega-factory-visual" data-factory-type="' + esc(type) +
+      '" data-factory-label="' + esc(text) + '" role="img" aria-label="' + esc(text) +
+      '" title="' + esc(text) + '"></span>';
+  }
   function panelIndustrial(country){
     const network = g.Omega && g.Omega.ResourceIndustrialNetwork;
     const diag = network && network.diagnostics ? network.diagnostics(country) : null;
     const pipeline = network && network.gameplayPipelineDiagnostics ? network.gameplayPipelineDiagnostics() : null;
     const perCountry = pipeline && Array.isArray(pipeline.perCountry)
       ? pipeline.perCountry.find(x => normaliseCountry(x.countryId) === activeCountry(country)) : null;
+    const catalog = g.OmegaResourceIndustrialCatalogData || (g.Omega && g.Omega.ResourceIndustrialCatalogData) || {};
+    const factoryAudit = network && typeof network.factoryCatalogDiagnostics === 'function' ? network.factoryCatalogDiagnostics() : null;
+    const utilityAudit = network && typeof network.factoryUtilityDiagnostics === 'function' ? network.factoryUtilityDiagnostics(country) : null;
+    const profiles = catalog.factoryProfiles && typeof catalog.factoryProfiles === 'object' ? catalog.factoryProfiles : {};
+    const recipes = catalog.downstreamFactoryRecipes && typeof catalog.downstreamFactoryRecipes === 'object' ? catalog.downstreamFactoryRecipes : {};
+    const categories = Array.isArray(catalog.factoryCatalogPolicy && catalog.factoryCatalogPolicy.categoryOrder)
+      ? catalog.factoryCatalogPolicy.categoryOrder : [];
     const r = resourceBucket(country);
     const econ = bucket('economy', country);
     const industrialState = r.industrialNetwork || {};
@@ -767,14 +838,163 @@
       (Array.isArray(r.siteFlows) ? r.siteFlows : (Array.isArray(r.siteFlowLedger) ? r.siteFlowLedger : (Array.isArray(r.extractionFlows) ? r.extractionFlows : [])));
     const projects = Array.isArray(industrialState.projects) ? industrialState.projects : (Array.isArray(econ.projects) ? econ.projects : []);
     const contracts = Array.isArray(industrialState.technologyContracts) ? industrialState.technologyContracts : [];
+    const assets = Array.isArray(econ.productionAssets) ? econ.productionAssets : [];
+    const employmentApi = network && typeof network.reconcileFactoryEmployment === 'function' ? network.reconcileFactoryEmployment(country) : null;
+    const employment = econ.factoryEmployment && typeof econ.factoryEmployment === 'object' ? econ.factoryEmployment : {};
     const stages = perCountry && perCountry.stages || {}, sites = siteRows(country);
+    const factoryCards = assets.map(function (asset) {
+      const id = String(asset.id || asset.assetId || asset.projectId || 'FACTORY_ID_NOT_RECORDED');
+      const type = String(asset.factoryType || asset.type || asset.facilityType || 'FACTORY_TYPE_NOT_RECORDED').toUpperCase();
+      const profile = profiles[type] || {};
+      const recipeId = asset.recipeId || profile.defaultRecipeId || 'RECIPE_NOT_RECORDED';
+      const stock = asset.inputInventory && typeof asset.inputInventory === 'object' ? asset.inputInventory : {};
+      const stockRows = Object.entries(stock).filter(function (pair) { return Number(pair[1]) > 0; })
+        .map(function (pair) { return kv(pair[0], number(pair[1])); }).join('');
+      const factoryRuns = industrialState.factoryRuntime && typeof industrialState.factoryRuntime === 'object' ? industrialState.factoryRuntime : {};
+      const lastRun = factoryRuns[id] || null;
+      const last = lastRun && (lastRun.transactionId || lastRun.turn) || asset.lastProductionTransactionId || asset.lastProductionTurn || 'No production transaction recorded';
+      const lastOutputs = lastRun && (lastRun.outputQuantities || lastRun.outputs) || 'NOT_RECORDED';
+      const health = asset.productionHealth && typeof asset.productionHealth === 'object' ? asset.productionHealth : {};
+      const healthStatus = String(health.status || 'NOT_RECORDED').toUpperCase();
+      const iconAlertClass = healthStatus === 'STOPPED' ? 'omega-rescc-factory-icon-wrap--stopped' :
+        healthStatus === 'REDUCED' ? 'omega-rescc-factory-icon-wrap--partial' : 'omega-rescc-factory-icon-wrap--normal';
+      const productivityPct = Number.isFinite(Number(health.productivityPct)) ? Number(health.productivityPct) : 0;
+      const activeCycle = industrialState.factoryProductionCycles && industrialState.factoryProductionCycles[id] || null;
+      const cycleLine = activeCycle && ['IN_PROGRESS','PAUSED'].includes(String(activeCycle.status || '').toUpperCase())
+        ? (String(activeCycle.status).toUpperCase() === 'PAUSED' ? 'Paused · ' : 'Producing · ') +
+          number(activeCycle.productionQuantity, ' units/cycle') + ' · completes ' + String(activeCycle.finishDate || 'date unavailable')
+        : 'No active production cycle';
+      const missingLine = Array.isArray(health.missingInputs) && health.missingInputs.length
+        ? health.missingInputs.map(function (x) { return String(x.resourceId || 'input') + (x.available != null ? ' (' + number(x.available) + ')' : ''); }).join(', ')
+        : (health.reason || 'No production warning recorded');
+      return card(String(profile.name || type) + ' · ' + id, asset.status || 'STATUS_NOT_RECORDED',
+        '<div class="omega-rescc-factory-head"><span class="omega-rescc-factory-icon-wrap ' + iconAlertClass + '" title="' + esc(healthStatus + ' · Productivity ' + productivityPct + '%') + '">' +
+          factoryVisual(type, profile.name || type) + '<span class="omega-rescc-factory-alert-lamp" aria-hidden="true"></span></span><span>' + esc(type) + '</span></div>' +
+        '<div class="omega-rescc-grid2">' + kv('Recipe', recipeId) + kv('Capacity/day', number(asset.capacityPerDay ?? asset.capacity ?? asset.productionCapacity)) +
+        kv('Jobs filled', number(asset.employment && asset.employment.jobsFilled)) + kv('Job slots', number((asset.employment && asset.employment.jobsSupported) ?? (profile.employment && profile.employment.jobsPerFactory))) +
+        kv('Core operating crew', number((asset.employment && asset.employment.coreOperatingCrew) ?? (profile.employment && profile.employment.coreOperatingCrew))) +
+        kv('Other direct roles', number((asset.employment && asset.employment.additionalDirectStaffSlots) ?? (profile.employment && profile.employment.additionalDirectStaffSlots))) +
+        kv('Vacancies', number(asset.employment && asset.employment.vacancies)) + kv('Location', asset.locationNodeKey || 'Not recorded') +
+        kv('Productivity', number(productivityPct, '%')) + kv('Production cycle', cycleLine) +
+        kv('Input warning', healthStatus === 'STOPPED' || healthStatus === 'REDUCED' ? missingLine : 'None') +
+        kv('Last production', last) + kv('Latest output quantities', shortJson(lastOutputs)) + '</div>' +
+        '<h4 class="omega-rescc-section-title">Factory input stock</h4>' +
+        (stockRows ? '<div class="omega-rescc-grid2">' + stockRows + '</div>' : empty('No tracked input stock is currently recorded.')) +
+        (Array.isArray(asset.inputBatchLots) && asset.inputBatchLots.length ? '<div class="omega-rescc-muted">Tracked input lots: ' + number(asset.inputBatchLots.length) + '</div>' : '') +
+        '<div class="omega-rescc-muted">' + esc(profile.authority || asset.authority || 'PROFILE_AUTHORITY_NOT_RECORDED') + '</div>', '');
+    }).join('');
+    const catalogCards = categories.map(function (category) {
+      const rows = Object.entries(profiles).filter(function (pair) { return pair[1] && pair[1].category === category; });
+      if (!rows.length) return '';
+      const contents = rows.map(function (pair) {
+        const type = pair[0], profile = pair[1];
+          const recipeIds = Array.isArray(profile.recipeIds) ? profile.recipeIds : [];
+        const recipeCount = recipeIds.length || Object.values(catalog.processingRules || {}).filter(function (r) { return r && r.factoryType === type; }).length;
+        const recipeRows = [];
+        recipeIds.forEach(function (id) {
+          const recipe = recipes[id];
+          if (recipe) recipeRows.push({ id: id, recipe: recipe, requirementKey: id, kind: 'DOWNSTREAM' });
+        });
+        Object.entries(catalog.processingRules || {}).forEach(function (pair) {
+          if (!pair[1] || String(pair[1].factoryType || '').toUpperCase() !== type) return;
+          if (recipeRows.some(function (row) { return row.kind === 'PROCESSING' && row.id === pair[0]; })) return;
+          recipeRows.push({ id: pair[0], recipe: pair[1], requirementKey: 'PROCESSING:' + pair[0], kind: 'PROCESSING' });
+        });
+        const recipeList = recipeRows.map(function (entry) {
+          const id = entry.id, recipe = entry.recipe || {};
+          const requirements = network && typeof network.factoryProductionRequirements === 'function'
+            ? network.factoryProductionRequirements(type, entry.requirementKey) : null;
+          const capacity = Number(profile.defaultCapacityPerDay) || 0;
+          const inputs = recipe.inputs && typeof recipe.inputs === 'object' ? recipe.inputs : {};
+          const outputs = recipe.outputs && typeof recipe.outputs === 'object' ? recipe.outputs : {};
+          const inputUnit = recipe.inputUnit || 'SIMULATION_RESOURCE_UNIT';
+          const outputUnit = recipe.outputUnit || 'SIMULATION_RESOURCE_UNIT';
+          const dailyInputs = requirements && requirements.ratedDailyInputs ? requirements.ratedDailyInputs : Object.fromEntries(
+            Object.entries(inputs).map(function (pair) { return [pair[0], Number(pair[1]) * capacity]; }));
+          const dailyOutputs = requirements && requirements.ratedDailyOutputs ? requirements.ratedDailyOutputs : Object.fromEntries(
+            Object.entries(outputs).map(function (pair) { return [pair[0], Number(pair[1]) * capacity]; }));
+          const inputRows = Object.entries(inputs).map(function (pair) {
+            return esc(pair[0]) + ': ' + number(pair[1], ' ' + inputUnit);
+          }).join(', ') || 'NOT_RECORDED';
+          const outputRows = Object.entries(outputs).map(function (pair) {
+            return esc(pair[0]) + ': ' + number(pair[1], ' ' + outputUnit);
+          }).join(', ') || 'NOT_RECORDED';
+          const dailyInputRows = Object.entries(dailyInputs).map(function (pair) {
+            return esc(pair[0]) + ': ' + number(pair[1], ' ' + inputUnit + '/day');
+          }).join(', ') || 'NOT_RECORDED';
+          const dailyOutputRows = Object.entries(dailyOutputs).map(function (pair) {
+            return esc(pair[0]) + ': ' + number(pair[1], ' ' + outputUnit + '/day');
+          }).join(', ') || 'NOT_RECORDED';
+          const powerDaily = requirements && requirements.utilities ? requirements.utilities.electricityMWhPerDay :
+            (profile.utilities && profile.utilities.electricityMWhPerDay);
+          const waterDaily = requirements && requirements.utilities ? requirements.utilities.waterM3PerDay :
+            (profile.utilities && profile.utilities.waterM3PerDay);
+          const powerPerUnit = requirements && requirements.utilities ? requirements.utilities.electricityMWhPerProductionUnit :
+            (capacity > 0 && powerDaily != null ? Number(powerDaily) / capacity : null);
+          const waterPerUnit = requirements && requirements.utilities ? requirements.utilities.waterM3PerProductionUnit :
+            (capacity > 0 && waterDaily != null ? Number(waterDaily) / capacity : null);
+          const cycleMode = requirements && requirements.processing ? requirements.processing.runtimeTimingMode :
+            (catalog.factoryCatalogPolicy && catalog.factoryCatalogPolicy.recipeTimingRuntimeBehavior);
+          return '<li><strong>' + esc(id) + '</strong>' +
+            '<div class="omega-rescc-grid2">' +
+            kv('Inputs per production unit', inputRows) + kv('Outputs and by-products per production unit', outputRows) +
+            kv('Rated daily input at capacity', dailyInputRows) + kv('Rated daily output at capacity', dailyOutputRows) +
+            kv('Declared recipe cycle time', number(recipe.cycleDays, ' in-game days')) +
+            kv('Power per production unit (MWh)', number(powerPerUnit)) + kv('Water per production unit (m³)', number(waterPerUnit)) +
+            '</div><div class="omega-rescc-muted">' + esc(cycleMode || 'CYCLE_TIMING_MODE_NOT_RECORDED') +
+            ' · Quantity basis: ' + esc(recipe.quantityBasis || 'PER_SIMULATION_PRODUCTION_UNIT') + '</div></li>';
+        }).join('');
+        return '<article class="omega-rescc-factory-catalog-row"><div class="omega-rescc-factory-head">' + factoryVisual(type, profile.name || type) + '<strong>' + esc(profile.name || type) + '</strong><span class="omega-rescc-factory-type">' + esc(type) + '</span></div>' +
+          '<div class="omega-rescc-grid2">' + kv('Build cost', number(profile.constructionCost, ' game units')) + kv('Build time', formatDuration(profile.constructionDays)) +
+          kv('Capacity/day', number(profile.defaultCapacityPerDay)) + kv('Workers', number((Number(profile.workforce && profile.workforce.operators) || 0) + (Number(profile.workforce && profile.workforce.engineers) || 0))) +
+          kv('Jobs per factory', number(profile.employment && profile.employment.jobsPerFactory)) +
+          kv('Core operators + engineers', number(profile.employment && profile.employment.coreOperatingCrew)) +
+          kv('Other direct job slots', number(profile.employment && profile.employment.additionalDirectStaffSlots)) +
+          kv('Job role breakdown', Object.entries(profile.employment && profile.employment.jobBreakdown || {}).map(function (pair) { return pair[0] + ': ' + number(pair[1]); }).join(', ') || 'NOT_RECORDED') +
+          kv('Construction materials', Object.entries(profile.constructionMaterials || {}).map(function (pair) { return pair[0] + ': ' + number(pair[1]) + ' ' + String(profile.constructionMaterialUnit || 'SIMULATION_RESOURCE_UNIT'); }).join(', ') || 'NOT_RECORDED') +
+          kv('Power (MWh/day)', number(profile.utilities && profile.utilities.electricityMWhPerDay)) + kv('Water (m³/day)', number(profile.utilities && profile.utilities.waterM3PerDay)) +
+          kv('Infrastructure', Array.isArray(profile.requiredInfrastructure) ? profile.requiredInfrastructure.join(', ') : 'NOT_RECORDED') +
+          kv('Technology', Array.isArray(profile.requiredTechnologyIds) && profile.requiredTechnologyIds.length ? profile.requiredTechnologyIds.join(', ') : 'No technology gate recorded') +
+          kv('Recipes', recipeCount) + kv('Data authority', profile.authority || 'NOT_RECORDED') + '</div>' +
+          (recipeList ? '<details class="omega-rescc-factory-recipes"><summary>Recipe details (' + recipeIds.length + ')</summary><ul>' + recipeList + '</ul></details>' : '') +
+          '<div class="omega-rescc-muted">Build cost, BOM, staffing, recipe ratios, capacity and utility use are simulation values, not certified plant engineering data. Production output is committed only when the in-game cycle finish date is reached; shortages pause the cycle.</div></article>';
+      }).join('');
+      return '<details class="omega-rescc-factory-category"><summary>' + esc(category.replace(/_/g, ' ')) + ' · ' + rows.length + ' factory types</summary>' + contents + '</details>';
+    }).join('');
+    const utilityPanel = utilityAudit ? card('Industrial utility balances', utilityAudit.status,
+      '<div class="omega-rescc-grid2">' +
+      kv('Power supply', utilityAudit.electricityMWhPerDay == null ? 'Not recorded' : number(utilityAudit.electricityMWhPerDay, ' MWh/day')) +
+      kv('Power used this turn', number(utilityAudit.electricity && utilityAudit.electricity.usedThisTurn, ' MWh')) +
+      kv('Power available this turn', utilityAudit.electricity && utilityAudit.electricity.availableThisTurn == null ? 'Not recorded' : number(utilityAudit.electricity && utilityAudit.electricity.availableThisTurn, ' MWh')) +
+      kv('Industrial water supply', utilityAudit.waterM3PerDay == null ? 'Not recorded' : number(utilityAudit.waterM3PerDay, ' m³/day')) +
+      kv('Water used this turn', number(utilityAudit.water && utilityAudit.water.usedThisTurn, ' m³')) +
+      kv('Water available this turn', utilityAudit.water && utilityAudit.water.availableThisTurn == null ? 'Not recorded' : number(utilityAudit.water && utilityAudit.water.availableThisTurn, ' m³')) +
+      kv('Transport capacity usage', Object.entries(utilityAudit.transportCapacity || {}).map(function (pair) {
+        return pair[0] + ': ' + number(pair[1].usedThisTurn) + ' / ' + number(pair[1].capacityPerTurn);
+      }).join(' · ')) +
+      kv('Workforce status', utilityAudit.workforce && utilityAudit.workforce.status || 'NOT_RECORDED') +
+      '</div><div class="omega-rescc-muted">Supply is counted only from completed in-game utility projects or explicit game state. Missing supply remains Not recorded, never a fabricated zero-balance source.</div>', '') : empty('Industrial utility ledger is unavailable.');
+    const utilityProjectForm = '<form class="omega-rescc-form" data-search-item data-form="factory-utility-project"><h3>Build utility supply for this country</h3>' +
+      '<div class="omega-rescc-formgrid">' +
+      '<label>Utility type<select name="infrastructureType"><option value="power">Power supply · MWh/day</option><option value="water">Industrial water · m³/day</option></select></label>' +
+      '<label>Added supply per day<input name="capacityPerDay" type="number" min="1" step="1" required value="5000"></label>' +
+      '<label>Construction time (days)<input name="buildDays" type="number" min="30" step="1" required value="180"></label></div>' +
+      '<button class="omega-rescc-button" type="submit">Start utility infrastructure project</button>' +
+      '<p class="omega-rescc-muted">Completing this project adds recorded supply to the selected country. Values are simulation-only and the project does not fabricate utilities before completion.</p></form>';
     return (diag ? diagnosticCard('Country industrial network diagnostics', diag) : empty('Industrial network runtime is unavailable.')) +
+      utilityPanel + utilityProjectForm +
+      (factoryAudit ? diagnosticCard('Canonical factory catalog integrity', factoryAudit) : '') +
       (perCountry ? diagnosticCard('End-to-end site pipeline state', perCountry) : '') +
-      '<div class="omega-rescc-metrics"><div><span>Country site profiles</span><strong>'+number(sites.length)+'</strong></div><div><span>Extraction flows</span><strong>'+number(perCountry&&perCountry.extractionFlows)+'</strong></div><div><span>Dispatched shipments</span><strong>'+number(perCountry&&perCountry.dispatched)+'</strong></div><div><span>Processed flows</span><strong>'+number(perCountry&&perCountry.processed)+'</strong></div></div>'+
-      '<h3 class="omega-rescc-section-title">Observed flow ledger</h3>'+(flows.length?statusRows(flows):empty('No site execution or flow records are present in this country runtime.'))+
-      '<h3 class="omega-rescc-section-title">Construction projects</h3>'+statusRows(projects)+
-      '<h3 class="omega-rescc-section-title">Technology project contracts</h3>'+statusRows(contracts)+
-      (Object.keys(stages).length?diagnosticCard('Pipeline stage counts',stages):'');
+      '<div class="omega-rescc-metrics"><div><span>Factory type catalog</span><strong>' + number(factoryAudit && factoryAudit.factoryTypeCount) + '</strong></div><div><span>Owned factory assets</span><strong>' + number(assets.length) + '</strong></div><div><span>Unemployed people</span><strong>' + number(employment.unemployedCount ?? econ.unemploymentCount) + '</strong></div><div><span>Jobs filled</span><strong>' + number(employment.jobsFilled) + '</strong></div><div><span>Job vacancies</span><strong>' + number(employment.vacancies) + '</strong></div><div><span>Country site profiles</span><strong>' + number(sites.length) + '</strong></div><div><span>Dispatched shipments</span><strong>' + number(perCountry && perCountry.dispatched) + '</strong></div><div><span>Processed flows</span><strong>' + number(perCountry && perCountry.processed) + '</strong></div></div>' +
+      '<p class="omega-rescc-note">Employment: ' + esc(employment.status || employmentApi && employmentApi.status || 'NOT_RECORDED') + ' · ' + esc(employment.labourForceAuthority || 'LABOUR_FORCE_NOT_RECORDED') + ' · simulated job capacity; actual hires are capped by the recorded/estimated unemployed pool. Unknown baseline values stay unavailable rather than being treated as zero.</p>' +
+      '<h3 class="omega-rescc-section-title">My factories · live runtime assets</h3>' + (factoryCards || empty('No commissioned factory assets are recorded for this country.')) +
+      '<h3 class="omega-rescc-section-title">Factory catalog · ' + number(Object.keys(profiles).length) + ' profiles</h3>' +
+      '<p class="omega-rescc-muted">The catalog is a plan and rule registry. A catalog entry is not proof that the country owns an operational factory.</p>' +
+      (catalogCards || empty('Factory catalog is unavailable.')) +
+      '<h3 class="omega-rescc-section-title">Observed flow ledger</h3>' + (flows.length ? statusRows(flows) : empty('No site execution or flow records are present in this country runtime.')) +
+      '<h3 class="omega-rescc-section-title">Construction projects</h3>' + statusRows(projects) +
+      '<h3 class="omega-rescc-section-title">Technology project contracts</h3>' + statusRows(contracts) +
+      (Object.keys(stages).length ? diagnosticCard('Pipeline stage counts', stages) : '');
   }
   function panelMarket(country) {
     const market = g.OmegaGlobalMarket || g.Omega && g.Omega.GlobalMarket;
@@ -1039,6 +1259,28 @@
       '.omega-rescc-note{display:none!important}' +
       '.omega-rescc-muted{color:#9fb3c8;font-size:12px;margin:0}' +
       '.omega-rescc-warning{border-left:3px solid #f59e0b;background:#251b0b;color:#fde68a;padding:9px 11px;border-radius:4px;font-size:12px;margin:7px 0}' +
+      '.omega-rescc-factory-category{border:1px solid #263d51;background:#091827;border-radius:8px;padding:8px 10px;margin:7px 0}' +
+      '.omega-rescc-factory-category>summary,.omega-rescc-factory-recipes>summary{cursor:pointer;color:#bae6fd;font-weight:650;padding:5px 2px}' +
+      '.omega-rescc-factory-catalog-row{border-top:1px solid #1e3548;padding:10px 2px;display:flex;flex-direction:column;gap:7px;min-width:0}' +
+      '.omega-rescc-factory-head{display:flex;align-items:center;gap:8px;min-width:0;flex-wrap:wrap;color:#e2e8f0}' +
+      '.omega-rescc-factory-icon-wrap{position:relative;display:inline-flex;align-items:center;justify-content:center;flex:0 0 38px;width:38px;height:38px;max-width:38px;max-height:38px;border-radius:7px;isolation:isolate}' +
+      '.omega-rescc-factory-icon-wrap>.omega-factory-visual{width:34px;height:34px;max-width:34px;max-height:34px;display:inline-flex;align-items:center;justify-content:center}' +
+      '.omega-rescc-factory-alert-lamp{position:absolute;right:-2px;top:-2px;display:block;width:8px;height:8px;border-radius:50%;pointer-events:none;z-index:3;background:transparent}' +
+      '.omega-rescc-factory-icon-wrap--partial{outline:1px solid #eab308;box-shadow:0 0 4px #eab30877;border-radius:7px}' +
+      '.omega-rescc-factory-icon-wrap--partial:before{content:"";position:absolute;inset:-2px;border-radius:8px;border:2px solid transparent;border-top-color:#fde047;border-bottom-color:#facc15;pointer-events:none;animation:omegaFactoryWarningSweep 1.25s linear infinite;box-shadow:0 0 8px #eab30888}' +
+      '.omega-rescc-factory-icon-wrap--partial .omega-rescc-factory-alert-lamp{background:#facc15;box-shadow:0 0 7px #facc15;animation:omegaFactoryLampPulse 1.1s steps(2,end) infinite}' +
+      '.omega-rescc-factory-icon-wrap--stopped{outline:1px solid #ef4444;box-shadow:0 0 5px #ef444477;border-radius:7px}' +
+      '.omega-rescc-factory-icon-wrap--stopped:before{content:"";position:absolute;inset:-2px;border-radius:8px;border:2px solid #ef4444;box-shadow:0 0 10px #ef4444;pointer-events:none;animation:omegaFactoryStopPulse .8s steps(2,end) infinite}' +
+      '.omega-rescc-factory-icon-wrap--stopped .omega-rescc-factory-alert-lamp{background:#ef4444;box-shadow:0 0 8px #ef4444;animation:omegaFactoryLampPulse .8s steps(2,end) infinite}' +
+      '.omega-rescc-factory-icon-wrap--normal .omega-rescc-factory-alert-lamp{display:none}' +
+      '@keyframes omegaFactoryWarningSweep{0%{border-left-color:transparent;border-right-color:#fde047;filter:brightness(.75)}50%{border-left-color:#facc15;border-right-color:transparent;filter:brightness(1.8)}100%{border-left-color:transparent;border-right-color:#fde047;filter:brightness(.75)}}' +
+      '@keyframes omegaFactoryLampPulse{0%,100%{opacity:1}50%{opacity:.16}}' +
+      '@keyframes omegaFactoryStopPulse{0%,100%{opacity:1;box-shadow:0 0 10px #ef4444}50%{opacity:.32;box-shadow:0 0 2px #ef4444}}' +
+      '@media(prefers-reduced-motion:reduce){.omega-rescc-factory-icon-wrap--partial:before,.omega-rescc-factory-icon-wrap--partial .omega-rescc-factory-alert-lamp,.omega-rescc-factory-icon-wrap--stopped:before,.omega-rescc-factory-icon-wrap--stopped .omega-rescc-factory-alert-lamp{animation:none}}' +
+      '.omega-rescc-factory-type{color:#93a9bc;font-size:10px;overflow-wrap:anywhere}' +
+      '.omega-rescc-factory-recipes{background:#07111f;border-radius:6px;padding:6px 9px;overflow-wrap:anywhere}' +
+      '.omega-rescc-factory-recipes ul{margin:6px 0;padding-left:18px}' +
+      '.omega-rescc-factory-recipes li{padding:3px 0;color:#cbd5e1;font-size:11px}' +
       '.omega-rescc-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}' +
       '.omega-rescc-metrics>div{border:1px solid #263d51;background:#0a1a2b;border-radius:8px;padding:11px;display:flex;flex-direction:column;gap:3px;min-width:0}' +
       '.omega-rescc-metrics span{font-size:11px;color:#91a9bd}.omega-rescc-metrics strong{font-size:15px;color:#cffafe;overflow-wrap:anywhere}' +
@@ -1319,8 +1561,8 @@
       }
       if (action === 'process-factory') {
         const net = g.Omega && g.Omega.ResourceIndustrialNetwork;
-        if (!net || typeof net.executeFactoryCycle !== 'function') result = { status: 'UNAVAILABLE', reason: 'FACTORY_CYCLE_API_UNAVAILABLE' };
-        else result = net.executeFactoryCycle({ countryId: c, factoryId: d.factoryId, resourceId: d.resourceId, quantity: Number(d.quantity) || 1 });
+        if (!net || typeof net.startFactoryProductionCycle !== 'function') result = { status: 'UNAVAILABLE', reason: 'FACTORY_CYCLE_API_UNAVAILABLE' };
+        else result = net.startFactoryProductionCycle({ countryId: c, factoryId: d.factoryId, resourceId: d.resourceId, quantity: Number(d.quantity) || undefined });
         setOutcome('Factory cycle ' + (d.factoryId || ''), result);
         return;
       }
@@ -1419,12 +1661,27 @@
         setOutcome('Bilateral supply request', result);
         return;
       }
+      if (kind === 'factory-utility-project') {
+        const net = g.Omega && g.Omega.ResourceIndustrialNetwork;
+        if (!net || typeof net.startInfrastructureProject !== 'function') result = { status: 'UNAVAILABLE', reason: 'INDUSTRIAL_INFRASTRUCTURE_API_UNAVAILABLE' };
+        else result = net.startInfrastructureProject({
+          requestId: uniqueRequestId('FACTORY-UTILITY', data.get('infrastructureType')),
+          countryId: c, infrastructureType: data.get('infrastructureType'),
+          capacityPerDay: Number(data.get('capacityPerDay')), buildDays: Number(data.get('buildDays'))
+        });
+        setOutcome('Industrial utility infrastructure project', result);
+        return;
+      }
       if (kind === 'factory-project') {
         const net = g.Omega && g.Omega.ResourceIndustrialNetwork;
         if (!net || typeof net.startFactoryProject !== 'function') result = { status: 'UNAVAILABLE', reason: 'FACTORY_PROJECT_API_UNAVAILABLE' };
         else result = net.startFactoryProject({
-          countryId: c, resourceId: data.get('resourceId'), cost: Number(data.get('cost')),
-          capacityPerDay: Number(data.get('capacityPerDay')), buildDays: Number(data.get('buildDays'))
+          requestId: data.get('requestId') || uniqueRequestId('FACTORY-PROJECT', data.get('factoryType') || data.get('resourceId')),
+          countryId: c, factoryType: data.get('factoryType') || undefined,
+          recipeId: data.get('recipeId') || undefined,
+          resourceId: data.get('resourceId') || undefined,
+          cost: Number(data.get('cost')), capacityPerDay: Number(data.get('capacityPerDay')),
+          buildDays: Number(data.get('buildDays')), buildMonths: Number(data.get('buildMonths'))
         });
         setOutcome('Factory construction project', result);
         return;

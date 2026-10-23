@@ -135,8 +135,22 @@ function auditCountry(c){
 function patchExtraction(){
  const rt=g.Omega?.ResourceEndowmentRuntime||g.OmegaResourceEndowmentRuntime;if(!rt||rt.__resourceSystemHardeningExtraction)return false;
  const all=rt.extractAll,countryExtract=rt.extractCountry;
- rt.extractCountry=async(c,keys)=>{const r=await countryExtract(c,keys);auditCountry(c);return r;};
- rt.extractAll=async()=>{const r=await all();for(const x of r?.results||[])auditCountry(x?.countryId);return r;};
+ // The authoritative endowment API is frozen in production builds. Only wrap
+ // it when its object and method slots are writable.
+ const canAssign=key=>{
+   let owner=rt;
+   while(owner){
+     const descriptor=Object.getOwnPropertyDescriptor(owner,key);
+     if(descriptor)return Object.prototype.hasOwnProperty.call(descriptor,'writable')
+       ? descriptor.writable===true : typeof descriptor.set==='function';
+     owner=Object.getPrototypeOf(owner);
+   }
+   return Object.isExtensible(rt);
+ };
+ if(typeof all!=='function'||typeof countryExtract!=='function'||!Object.isExtensible(rt)||
+    !canAssign('extractCountry')||!canAssign('extractAll')||!canAssign('__resourceSystemHardeningExtraction'))return false;
+ rt.extractCountry=async(c,keys)=>{const r=await countryExtract.call(rt,c,keys);auditCountry(c);return r;};
+ rt.extractAll=async()=>{const r=await all.call(rt);for(const x of r?.results||[])auditCountry(x?.countryId);return r;};
  rt.__resourceSystemHardeningExtraction=true;return true;
 }
 

@@ -156,9 +156,9 @@ jobs:
           # The production bootstrap loads the offline semantic and country/resource
           # registries before it can bind the port. Poll briefly so a refused connection
           # does not burn two seconds per attempt, while leaving enough headroom for CI.
-          for i in $(seq 1 420); do
+          for i in $(seq 1 600); do
             if curl --connect-timeout 0.2 --max-time 0.5 -fsS http://127.0.0.1:31337/api/ai/status >/tmp/omega-ai-status.json 2>/dev/null; then READY=1; break; fi
-            if [ $((i % 30)) -eq 0 ]; then echo "Waiting for OMEGA server readiness ($i/420 attempts)"; fi
+            if [ $((i % 30)) -eq 0 ]; then echo "Waiting for OMEGA server readiness ($i/600 attempts)"; fi
             sleep 0.5
           done
           if [ "$READY" -ne 1 ]; then
