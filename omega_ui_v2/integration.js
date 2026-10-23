@@ -8,6 +8,7 @@
   var enabled = true;
   var lastMount = null;
   var lastError = null;
+  var resumeOnCabinetReturn = false;
 
   function cabinetRoot() {
     return g.document && g.document.getElementById('cabinet-full-window') || null;
@@ -120,6 +121,26 @@
       return { ok:false, code:'UI_V2_MOUNT_EXCEPTION', message:lastError };
     }
   }
+  function openOperationalConsole(ministryId) {
+    var id = String(ministryId || '').trim();
+    var manager = g.OmegaLayerManager;
+    if (!id || !manager || typeof manager.setLayer !== 'function') return { ok:false, code:'LEGACY_OPERATIONAL_CONSOLE_UNAVAILABLE' };
+    resumeOnCabinetReturn = true;
+    try {
+      manager.setLayer(2, { ministryId:id });
+      return { ok:true, ministryId:id, destination:'EXISTING_CANONICAL_MINISTRY_CONSOLE' };
+    } catch (error) {
+      resumeOnCabinetReturn = false;
+      return { ok:false, code:'LEGACY_OPERATIONAL_CONSOLE_OPEN_FAILED', message:String(error && error.message || error) };
+    }
+  }
+  function resumeAfterOperationalConsole(root) {
+    if (!resumeOnCabinetReturn) return false;
+    resumeOnCabinetReturn = false;
+    var result = mountIntoCabinet(root || cabinetRoot());
+    return result && result.ok === true;
+  }
+
   function closeToWorldMap() {
     var root = cabinetRoot();
     try {
@@ -166,6 +187,8 @@
     isEnabled:function () { return enabled; },
     setEnabled:function (value) { enabled = value === true; return enabled; },
     mountIntoCabinet:mountIntoCabinet,
+    openOperationalConsole:openOperationalConsole,
+    resumeAfterOperationalConsole:resumeAfterOperationalConsole,
     closeToWorldMap:closeToWorldMap,
     audit:audit
   });
