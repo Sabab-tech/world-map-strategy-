@@ -374,7 +374,7 @@ test('production shell loads and offline-preloads every UI v2 module', () => {
     assert.ok(index.includes(modulePath), 'index.html must load ' + modulePath);
     assert.ok(sw.includes(modulePath), 'offline service worker must pre-cache ' + modulePath);
   }
-  assert.match(sw, /omega-offline-atlas-shell-v28/);
+  assert.match(sw, /omega-offline-atlas-shell-v29/);
   assert.match(entry, /OmegaUIV2Integration/);
   assert.match(entry, /opened-ui-v2/);
   assert.match(entry, /opened-primary/);
