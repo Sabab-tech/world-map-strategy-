@@ -41,6 +41,9 @@ test('police fleet view model reads all 15 canonical profiles and preserves miss
     className: 'Tier ' + (index + 1),
     cost: index === 0 ? 1000 : undefined,
     speed: index === 0 ? 120 : undefined,
+    acceleration: index === 0 ? 48 : undefined,
+    capabilities: index === 0 ? { response: 42, patrol: 52 } : undefined,
+    terrain: index === 0 ? 'City streets' : undefined,
     environmentFit: { city: index === 0 ? 98 : undefined }
   }));
   globalThis.OmegaHomeMinistryEngine = {
@@ -62,6 +65,9 @@ test('police fleet view model reads all 15 canonical profiles and preserves miss
   assert.equal(model.catalogCountMatchesExpected, true);
   assert.deepEqual(model.vehicles.map((vehicle) => vehicle.level), Array.from({ length: 15 }, (_, i) => i + 1));
   assert.equal(model.vehicles[0].ownedCount, 2);
+  assert.equal(model.vehicles[0].acceleration, 48);
+  assert.equal(model.vehicles[0].capabilities.response, 42);
+  assert.equal(model.vehicles[0].terrain, 'City streets');
   assert.equal(model.vehicles[3].pendingOrder.quantity, 2);
   assert.equal(model.vehicles[4].cost, null);
   assert.equal(model.vehicles[4].speed, null);
