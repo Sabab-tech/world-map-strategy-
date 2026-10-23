@@ -40,19 +40,19 @@
     if(!runtime.init(kernel)) return false;
 
     const ids=runtime.getIds();
-    const manifest=global.GLOBAL_MINISTRY_MANIFEST;
-    if(Array.isArray(manifest)){
-      manifest.forEach(item=>{
-        if(item && ids.includes(String(item.id))) item.status='ACTIVE';
-      });
-    }
+    // GLOBAL_MINISTRY_MANIFEST is canonical, immutable source data. Keep live
+    // activation in runtime-owned state below instead of mutating frozen records.
 
     global.Omega=global.Omega||{};
     global.Omega.App=global.Omega.App||{};
     global.Omega.App.MINISTRIES=Object.freeze(ids.slice());
     global.Omega.App.activeMinistries=Object.freeze(ids.slice());
 
-    global.__OMEGA_MINISTRY_RUNTIME_STATUS__=global.__OMEGA_MINISTRY_RUNTIME_STATUS__||{};
+    const runtimeStatus = global.__OMEGA_MINISTRY_RUNTIME_STATUS__ || {};
+    if (!Object.isFrozen(runtimeStatus)) {
+      ids.forEach(id => { runtimeStatus[String(id)] = 'ACTIVE'; });
+      global.__OMEGA_MINISTRY_RUNTIME_STATUS__ = runtimeStatus;
+    }
     global.__OMEGA_17_MINISTRY_ACTIVATION__={
       version:'2.0.0',
       controllerVersion:runtime.version,
