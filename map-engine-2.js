@@ -411,28 +411,66 @@ Game.Diplomacy = {
 
 Game.DataLoader = {
     async loadAssets() {
+        const mapPipelineNow = () => window.performance && typeof window.performance.now === "function"
+            ? window.performance.now() : Date.now();
+        const mapPipeline = window.__OMEGA_MAP_PIPELINE_METRICS_V1__ ||
+            { version: 1, startedAtMs: mapPipelineNow(), lastUpdatedAtMs: mapPipelineNow(), stage: "DATA_LOADER_START", stages: [] };
+        window.__OMEGA_MAP_PIPELINE_METRICS_V1__ = mapPipeline;
+        const markMapPipelineStage = (stage, details) => {
+            const atMs = mapPipelineNow();
+            const priorAtMs = Number(mapPipeline.lastUpdatedAtMs) || Number(mapPipeline.startedAtMs) || atMs;
+            const row = {
+                stage,
+                atMs,
+                elapsedMs: Math.max(0, atMs - (Number(mapPipeline.startedAtMs) || atMs)),
+                stageDurationMs: Math.max(0, atMs - priorAtMs)
+            };
+            if (details && typeof details === "object") Object.assign(row, details);
+            mapPipeline.stage = stage;
+            mapPipeline.lastUpdatedAtMs = atMs;
+            if (!Array.isArray(mapPipeline.stages)) mapPipeline.stages = [];
+            mapPipeline.stages.push(row);
+            if (mapPipeline.stages.length > 32) mapPipeline.stages.shift();
+            if (details && typeof details === "object") Object.assign(mapPipeline, details);
+        };
+        markMapPipelineStage("DATA_LOADER_START");
         try {
             const fetcher = window.fetchResilient || (async (f) => {
                 const res = await fetch(f + '?v=' + Date.now());
                 return res.ok ? await res.json() : null;
             });
 
+            markMapPipelineStage("POPULATION_FETCH_START");
             const popData = await fetcher('population.json');
+            markMapPipelineStage("POPULATION_FETCH_DONE", {
+                populationRecords: popData && typeof popData === "object" ? Object.keys(popData).length : 0
+            });
             if (popData && typeof popData === 'object') {
                 Game.state.population = popData;
             }
 
+            markMapPipelineStage("ECONOMY_FETCH_START");
             const econData = await fetcher('economy.json');
+            markMapPipelineStage("ECONOMY_FETCH_DONE", {
+                economyRecords: econData && typeof econData === "object" ? Object.keys(econData).length : 0
+            });
             if (econData && typeof econData === 'object') {
                 Game.state.economy = econData;
             }
 
             // Load relation generation engine and baseline relations
+            markMapPipelineStage("RELATION_DATA_FETCH_START");
             const [rgeData, relData, minData] = await Promise.all([
                 fetcher('relation_generation_engine.json'),
                 fetcher('relations.json'),
                 fetcher('ministers.json')
             ]);
+            markMapPipelineStage("RELATION_DATA_FETCH_DONE", {
+                hasRelationEngine: !!(rgeData && rgeData.RELATION_GENERATION_ENGINE),
+                hasRelations: !!relData,
+                ministerRecords: minData && minData.ministers_database && typeof minData.ministers_database === "object"
+                    ? Object.keys(minData.ministers_database).length : 0
+            });
 
             if (rgeData && rgeData.RELATION_GENERATION_ENGINE) {
                 Game.state.relationEngine = rgeData;
@@ -452,7 +490,12 @@ Game.DataLoader = {
             }
 
             if (Game.Diplomacy && typeof Game.Diplomacy.generateAllBilateralRelations === 'function') {
+                markMapPipelineStage("BILATERAL_RELATIONS_START");
                 Game.Diplomacy.generateAllBilateralRelations();
+                markMapPipelineStage("BILATERAL_RELATIONS_DONE", {
+                    relationCountries: Game.state && Game.state.relations && typeof Game.state.relations === "object"
+                        ? Object.keys(Game.state.relations).length : 0
+                });
             }
 
             const relSelector = (Game.dom && Game.dom.relSelector) || document.getElementById('relation-selector'); 
@@ -490,7 +533,11 @@ Game.DataLoader = {
                 });
             }
 
+            markMapPipelineStage("COUNTRIES_FETCH_START");
             const countryConfig = await fetcher('countries.json');
+            markMapPipelineStage("COUNTRIES_FETCH_DONE", {
+                countryRecords: Array.isArray(countryConfig) ? countryConfig.length : 0
+            });
             if (Array.isArray(countryConfig)) {
                 countryConfig.forEach(c => {
                     if (c && c.name) {
@@ -501,15 +548,31 @@ Game.DataLoader = {
                 window.OmegaCountryDataGateway?.registerSource('countries.json', countryConfig, { authority: 'CANONICAL_MAP_ROSTER' });
             }
 
+            markMapPipelineStage("WORLD_JSON_FETCH_START");
             const geoData = await fetcher('world.json');
+            markMapPipelineStage("WORLD_JSON_FETCH_DONE", {
+                worldDataType: geoData && geoData.type ? String(geoData.type) : "NONE",
+                worldFeatureCount: geoData && Array.isArray(geoData.features) ? geoData.features.length : 0
+            });
             if (geoData && geoData.type) {
                 // Keep the actual map source available for identity cross-checks.
                 Game.Map.countryGeoJSON = geoData;
                 window.OmegaCountryDataGateway?.registerSource('world.json', geoData, { authority: 'GEOGRAPHIC_REFERENCE' });
+                markMapPipelineStage("GEOJSON_RENDER_START", {
+                    renderCalled: true,
+                    renderCallStartedAtMs: mapPipelineNow()
+                });
                 Game.Map.renderGeoJSON(geoData);
+                markMapPipelineStage("GEOJSON_RENDER_RETURNED", {
+                    renderCallReturned: true,
+                    renderCallReturnedAtMs: mapPipelineNow()
+                });
+            } else {
+                markMapPipelineStage("WORLD_JSON_INVALID", { worldDataType: "NONE", worldFeatureCount: 0 });
             }
 
         } catch (error) {
+            markMapPipelineStage("DATA_PIPELINE_ERROR", { error: String(error && error.message || error).slice(0, 180) });
             console.error("❌ ডাটা পাইপলাইন এরর:", error);
         }
     }
@@ -2150,6 +2213,20 @@ Game.findCountryConfig = function(name) {
 };
 
 window.loadGameCities = async function() {
+    const probeNow = () => window.performance && typeof window.performance.now === "function"
+        ? window.performance.now() : Date.now();
+    const pipeline = window.__OMEGA_MAP_PIPELINE_METRICS_V1__ ||
+        { version: 1, startedAtMs: probeNow(), lastUpdatedAtMs: probeNow(), stage: "LOAD_GAME_CITIES_ENTERED", stages: [] };
+    window.__OMEGA_MAP_PIPELINE_METRICS_V1__ = pipeline;
+    const enteredAtMs = probeNow();
+    pipeline.stage = "LOAD_GAME_CITIES_ENTERED";
+    pipeline.lastUpdatedAtMs = enteredAtMs;
+    if (!Array.isArray(pipeline.stages)) pipeline.stages = [];
+    pipeline.stages.push({
+        stage: "LOAD_GAME_CITIES_ENTERED",
+        atMs: enteredAtMs,
+        elapsedMs: Math.max(0, enteredAtMs - (Number(pipeline.startedAtMs) || enteredAtMs))
+    });
     const files = ['cities.json'];
     Game.locationsRegistry = Game.locationsRegistry || {};
     
