@@ -31,3 +31,11 @@ jobs:
       - name: Report APK
         run: |
           ls -lh android/app/build/outputs/apk/debug/*.apk
+
+      - name: Upload installable debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: omega-android-debug-apk-${{ github.sha }}
+          path: android/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 14
