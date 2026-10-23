@@ -209,7 +209,7 @@ public final class OmegaGameplaySmokeTest {
                     " if (content.querySelectorAll('.omega-rescc-factory-catalog-row').length === 0) return false;" +
                     " var body = content.textContent || '';" +
                     " var ownedStart = body.indexOf('My factories');" +
-                    " var catalogStart = body.indexOf('Factory catalog');" +
+                    " var catalogStart = body.indexOf('Factory catalog ·', ownedStart);" +
                     " if (ownedStart < 0 || catalogStart <= ownedStart) return false;" +
                     " var ownedText = body.substring(ownedStart, catalogStart);" +
                     " return ownedText.indexOf('No commissioned factory assets are recorded for this country.') >= 0 ||" +
