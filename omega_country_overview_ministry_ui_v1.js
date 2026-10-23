@@ -629,7 +629,6 @@
     let behavior = null;
     try { behavior = behaviorEngine()?.getBehaviorProfile?.(value) || null; } catch (_) {}
     let adaptive = null;
-    try { adaptive = adaptiveEngine()?.profile?.(value) || null; } catch (_) {}
 
     if (!base && runtime()?.ready && typeof runtime().isSettled === 'function' && !runtime().isSettled()) {
       panelEl.innerHTML = '<div class="ocov-loading"><div class="ocov-eyebrow">OMEGA / COUNTRY OVERVIEW</div><h2>Loading country records…</h2><p>Waiting for the canonical country registry. No substitute data is being displayed.</p></div>';
