@@ -41,3 +41,11 @@ The global map dock provides World, Overview, Government, Economy and More. Doma
 ## Atlas Command visual rollout
 
 The main navigation is World, Overview, Government, Economy and More. Overview reads source-backed country indicators and available game finance state. More provides image-led domain cards into the current canonical modules. The global dock routes through `OmegaUIV2Integration`; local WebP images load lazily and remain in the offline service-worker cache. Android 9, offline and responsive acceptance remain release gates.
+
+
+## Religion & Society visual routes
+
+- `More` includes Religion & Ideology with the bundled `mosque-architecture.webp` reference image. It hands off to the existing `openReligionIdeologySystem` handler and does not invent religious-demographic data.
+- `More` also includes Health & Welfare and Agriculture & Food using the existing local hospital and wheat-field WebP assets. Actions route to existing ministry runtimes.
+- The global map navigation dock replaces the old bottom navigation strip to avoid overlapping controls.
+- Route/source-truth tests cover the religion handoff. The Android 9 offline and responsive manual checks remain acceptance gates.
