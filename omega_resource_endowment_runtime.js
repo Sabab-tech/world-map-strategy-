@@ -2005,6 +2005,126 @@ function batchFromExtraction(x,record){
     }
     return clone(current);
   }
+  // One deterministic gameplay profile for every physical commercial site.
+  // It is deliberately separate from source/observed facts. Real/source values remain
+  // intact under real.quantitative and sourceSiteRecord; these values exist only to run OMEGA.
+  const MINEPLAY_DEFAULT_PROFILE_V1=Object.freeze({
+    crude_oil:{rate:2500,rateUnit:'BBL_PER_DAY',reserveUnit:'BBL',grade:32,gradeUnit:'API_GRAVITY',purity:92},
+    natural_gas:{rate:1200,rateUnit:'MMCF_PER_DAY',reserveUnit:'MMCF',grade:88,gradeUnit:'PERCENT',purity:95},
+    gold:{rate:0.8,rateUnit:'TONNES_PER_DAY',reserveUnit:'TONNES',grade:5.2,gradeUnit:'GRAMS_PER_TONNE',purity:92},
+    silver:{rate:18,rateUnit:'TONNES_PER_DAY',reserveUnit:'TONNES',grade:120,gradeUnit:'GRAMS_PER_TONNE',purity:94},
+    diamond:{rate:8,rateUnit:'TONNES_PER_DAY',reserveUnit:'TONNES_ORE',grade:0.65,gradeUnit:'CARATS_PER_TONNE',purity:90},
+    uranium:{rate:120,rateUnit:'TONNES_PER_DAY',reserveUnit:'TONNES_ORE',grade:0.12,gradeUnit:'PERCENT',purity:88},
+    copper:{rate:6000,rateUnit:'TONNES_PER_DAY',reserveUnit:'TONNES_ORE',grade:0.9,gradeUnit:'PERCENT',purity:96},
+    iron_ore:{rate:25000,rateUnit:'TONNES_PER_DAY',reserveUnit:'TONNES_ORE',grade:58,gradeUnit:'PERCENT',purity:96},
+    coal:{rate:9000,rateUnit:'TONNES_PER_DAY',reserveUnit:'TONNES',grade:55,gradeUnit:'PERCENT',purity:88},
+    bauxite:{rate:6500,rateUnit:'TONNES_PER_DAY',reserveUnit:'TONNES',grade:42,gradeUnit:'PERCENT',purity:91},
+    nickel:{rate:2200,rateUnit:'TONNES_PER_DAY',reserveUnit:'TONNES_ORE',grade:1.4,gradeUnit:'PERCENT',purity:93},
+    cobalt:{rate:950,rateUnit:'TONNES_PER_DAY',reserveUnit:'TONNES_ORE',grade:0.18,gradeUnit:'PERCENT',purity:91},
+    lithium:{rate:1400,rateUnit:'TONNES_PER_DAY',reserveUnit:'TONNES_ORE',grade:1.1,gradeUnit:'PERCENT',purity:90},
+    phosphate:{rate:4200,rateUnit:'TONNES_PER_DAY',reserveUnit:'TONNES',grade:28,gradeUnit:'PERCENT',purity:89},
+    potash:{rate:3600,rateUnit:'TONNES_PER_DAY',reserveUnit:'TONNES',grade:18,gradeUnit:'PERCENT',purity:91},
+    salt:{rate:7000,rateUnit:'TONNES_PER_DAY',reserveUnit:'TONNES',grade:92,gradeUnit:'PERCENT',purity:98},
+    limestone:{rate:10000,rateUnit:'TONNES_PER_DAY',reserveUnit:'TONNES',grade:82,gradeUnit:'PERCENT',purity:94},
+    construction_aggregate:{rate:12000,rateUnit:'TONNES_PER_DAY',reserveUnit:'TONNES',grade:85,gradeUnit:'PERCENT',purity:92},
+    rare_earth:{rate:750,rateUnit:'TONNES_PER_DAY',reserveUnit:'TONNES_ORE',grade:4.5,gradeUnit:'PERCENT',purity:90},
+    natural_graphite:{rate:900,rateUnit:'TONNES_PER_DAY',reserveUnit:'TONNES',grade:12,gradeUnit:'PERCENT',purity:92}
+  });
+  function mineplayStableFactor(countryId,siteId,resourceId){
+    const seed=String(siteId)+'|'+String(countryId)+'|'+String(resourceId);
+    let hash=2166136261;
+    for(let i=0;i<seed.length;i++)hash=Math.imul(hash^seed.charCodeAt(i),16777619)>>>0;
+    return 0.72+((hash%5901)/10000);
+  }
+  function mineplayMetricNumber(metric,key){
+    const value=metric&&typeof metric==='object'?metric[key]:null;
+    const raw=value&&typeof value==='object'?(value.value??value.quantity??value.amount??value.rate):value;
+    return n(raw);
+  }
+  function mineplayAuthorityAllowsValue(metric,key){
+    const amount=mineplayMetricNumber(metric,key),status=String(metric?.status||'').trim().toUpperCase();
+    if(amount===null||amount<=0)return false;
+    if(['UNOBSERVED','UNQUANTIFIED','NOT_RECORDED','NOT_REPORTED','REPORTED_TEXT_ONLY','UNKNOWN','UNSPECIFIED','N/A','NA'].includes(status))return false;
+    return true;
+  }
+  function completeMineplayQuantitativeV1(rawQuantitative,countryId,siteId,resourceId){
+    const q=clone(rawQuantitative||{}),profile=MINEPLAY_DEFAULT_PROFILE_V1[resourceId]||{
+      rate:2000,rateUnit:'TONNES_PER_DAY',reserveUnit:'TONNES',grade:35,gradeUnit:'PERCENT',purity:90
+    };
+    const factor=mineplayStableFactor(countryId,siteId,resourceId);
+    const rateMetric=q.production&&typeof q.production==='object'?clone(q.production):{};
+    const suppliedRate=mineplayAuthorityAllowsValue(rateMetric,'rate');
+    const rawUnit=rateMetric.unit||rateMetric.sourceRateUnit||profile.rateUnit;
+    const rate=suppliedRate?mineplayMetricNumber(rateMetric,'rate'):Math.max(0.01,Math.round(profile.rate*factor*100)/100);
+    const rateUnit=String(rawUnit||profile.rateUnit);
+    const reserveMetric=q.reserve&&typeof q.reserve==='object'?clone(q.reserve):{};
+    const suppliedReserve=mineplayAuthorityAllowsValue(reserveMetric,'quantity');
+    const reserve= suppliedReserve?mineplayMetricNumber(reserveMetric,'quantity'):
+      Math.max(1,Math.round(rate*365*400));
+    const reserveUnit=String(reserveMetric.unit||profile.reserveUnit);
+    const annualMetric=mineplayMetricNumber(rateMetric,'annual');
+    const productionStatus=suppliedRate&&rateMetric.status?String(rateMetric.status).toUpperCase():'SIMULATED';
+    q.production={
+      ...rateMetric,rate,annual:annualMetric!==null&&annualMetric>0?annualMetric:Math.round(rate*365*100)/100,
+      unit:rateUnit,annualUnit:rateMetric.annualUnit||rateUnit.replace(/_PER_DAY$/,'_PER_YEAR'),
+      period:rateMetric.period||'DAILY_AND_ANNUAL',status:productionStatus,
+      authority:rateMetric.authority||(productionStatus==='SIMULATED'?'GAMEPLAY_SIMULATION':'SOURCE_REPORTED'),
+      basis:rateMetric.basis||(productionStatus==='SIMULATED'?'DETERMINISTIC_SITE_PROFILE_V1':null)
+    };
+    const reserveStatus=suppliedReserve&&reserveMetric.status?String(reserveMetric.status).toUpperCase():'SIMULATED';
+    q.reserve={
+      ...reserveMetric,quantity:reserve,unit:reserveUnit,status:reserveStatus,
+      authority:reserveMetric.authority||(reserveStatus==='SIMULATED'?'GAMEPLAY_SIMULATION':'SOURCE_REPORTED'),
+      basis:reserveMetric.basis||(reserveStatus==='SIMULATED'?'DETERMINISTIC_400_YEAR_GAMEPLAY_HORIZON':null)
+    };
+    const unitlessFallback=(key,value,unit,period)=>{
+      const metric=q[key]&&typeof q[key]==='object'?clone(q[key]):{};
+      const valueKey=key==='throughput'?'value':'value';
+      const valid=mineplayAuthorityAllowsValue(metric,valueKey);
+      const numeric=valid?mineplayMetricNumber(metric,valueKey):value;
+      const status=valid&&metric.status?String(metric.status).toUpperCase():'SIMULATED';
+      q[key]={
+        ...metric,[valueKey]:numeric,unit:metric.unit||unit,
+        ...(period?{period:metric.period||period}:{}),
+        status,authority:metric.authority||(status==='SIMULATED'?'GAMEPLAY_SIMULATION':'SOURCE_REPORTED'),
+        basis:metric.basis||(status==='SIMULATED'?'DETERMINISTIC_SITE_PROFILE_V1':null)
+      };
+    };
+    const gradeDefaults=profile.grade;
+    unitlessFallback('grade',Math.max(0.01,Math.round(gradeDefaults*factor*100)/100),profile.gradeUnit);
+    unitlessFallback('recovery',Math.round((78+((Math.floor(factor*10000)%1500)/100))*100)/100,'PERCENT','PROCESSING_CYCLE');
+    unitlessFallback('purity',Math.min(99.5,Math.round((profile.purity+((Math.floor(factor*10000)%501)/100))*100)/100),'PERCENT');
+    const throughputExisting=q.throughput&&typeof q.throughput==='object'?clone(q.throughput):{};
+    const throughputUnit=throughputExisting.unit||rateUnit;
+    unitlessFallback('throughput',Math.max(0.01,Math.round(rate*0.88*100)/100),throughputUnit,'DAILY');
+    const capacity=q.capacity&&typeof q.capacity==='object'?clone(q.capacity):{};
+    const suppliedNominal=mineplayAuthorityAllowsValue(capacity,'nominal');
+    const nominal=suppliedNominal?mineplayMetricNumber(capacity,'nominal'):Math.max(0.01,Math.round(rate*1.15*100)/100);
+    const minCandidate=mineplayMetricNumber(capacity,'minimum');
+    const maxCandidate=mineplayMetricNumber(capacity,'maximum');
+    const minimum=minCandidate!==null&&minCandidate>0&&minCandidate<=nominal?minCandidate:Math.max(0.01,Math.round(nominal*0.65*100)/100);
+    const maximum=maxCandidate!==null&&maxCandidate>=nominal?maxCandidate:Math.max(nominal,Math.round(nominal*1.35*100)/100);
+    const capacityStatus=suppliedNominal&&capacity.status?String(capacity.status).toUpperCase():'SIMULATED';
+    q.capacity={
+      ...capacity,minimum,nominal,maximum,unit:capacity.unit||rateUnit,period:capacity.period||'DAILY',
+      status:capacityStatus,authority:capacity.authority||(capacityStatus==='SIMULATED'?'GAMEPLAY_SIMULATION':'SOURCE_REPORTED'),
+      basis:capacity.basis||(capacityStatus==='SIMULATED'?'DETERMINISTIC_SITE_CAPACITY_PROFILE_V1':null)
+    };
+    q.quantitativeProvenance={
+      ...(q.quantitativeProvenance||{}),
+      authority:q.quantitativeProvenance?.authority||'SCENARIO_SIMULATION_DATA',
+      method:q.quantitativeProvenance?.method||'OMEGA_UNIFIED_MINEPLAY_PROFILE_V1',
+      externalMeasuredValuePromotion:false,
+      gameplayHorizonYears:Number(q.quantitativeProvenance?.gameplayHorizonYears)||400,
+      missingMetricPolicy:'SIMULATED_GAMEPLAY_DEFAULTS_ONLY',
+      sourceObservationsPreservedSeparately:true
+    };
+    q.completeness=q.completeness||{};
+    for(const key of ['reserve','production','grade','recovery','throughput','purity','capacity']){
+      q.completeness[key]=q[key]?.status||'UNOBSERVED';
+    }
+    return q;
+  }
   function normalizeBoundSiteForRuntime(input={}){
     const source=clone(input||{}),raw=source.sourceSiteRecord||source.resourceJsonReference||source.rawSiteReference||{};
     const identity=source.identity||{},real=source.real||{};
@@ -2030,17 +2150,34 @@ function batchFromExtraction(x,record){
       String(status).toUpperCase()!=='NOT_APPLICABLE';
     if(!commercialExtraction)return{status:'REJECTED',reason:'NON_COMMERCIAL_SITE',siteId,countryId,resourceId};
     const siteType=String(source.siteType||identity.siteType||raw.siteType||raw.assetType||'RESOURCE_SITE');
-    const reserveUnit=source.quantitative?.reserve?.unit||raw.quantitative?.reserve?.unit||
-      source.quantitative?.production?.unit||raw.quantitative?.production?.unit||null;
-    const quantitative=fillRuntimeMissing(source.quantitative||real.quantitative||raw.quantitative||{},{
-      reserve:{quantity:null,unit:reserveUnit,status:'UNOBSERVED',authority:'UNOBSERVED'},
-      production:{rate:null,annual:null,unit:null,status:'UNOBSERVED',authority:'UNOBSERVED'},
-      capacity:{nominal:null,minimum:null,maximum:null,unit:reserveUnit,status:'UNOBSERVED',authority:'UNOBSERVED'},
-      quantitativeProvenance:{authority:'UNOBSERVED'}
-    });
+    const sourceQuantitative=source.quantitative||real.quantitative||raw.quantitative||{};
+    const realQuantitative=clone(real.quantitative||raw.quantitative||source.quantitative||{});
+    const quantitative=completeMineplayQuantitativeV1(sourceQuantitative,countryId,siteId,resourceId);
     const preferredMode=['crude_oil','natural_gas'].includes(resourceId)?'pipeline':
       ['coal','iron_ore','limestone','construction_aggregate','phosphate','bauxite','potash','salt'].includes(resourceId)?'rail':'truck';
     const simulation=clone(source.simulation||raw.simulation||{});
+    const production=quantitative.production||{},capacity=quantitative.capacity||{},reserve=quantitative.reserve||{};
+    simulation.productionRate=Number(production.rate);
+    simulation.productionRateUnit=String(production.unit||'TONNES_PER_DAY');
+    simulation.annualProduction=Number(production.annual);
+    simulation.annualProductionUnit=String(production.annualUnit||'TONNES_PER_YEAR');
+    simulation.minimumDailyCapacity=Number(capacity.minimum);
+    simulation.nominalDailyCapacity=Number(capacity.nominal);
+    simulation.maximumDailyCapacity=Number(capacity.maximum);
+    simulation.dailyThroughput=Number(quantitative.throughput?.value);
+    simulation.dailyThroughputUnit=String(quantitative.throughput?.unit||production.unit||'TONNES_PER_DAY');
+    simulation.reserveQuantity=Number(reserve.quantity);
+    simulation.reserveUnit=String(reserve.unit||'TONNES');
+    simulation.reserveHorizonYears=Number(quantitative.quantitativeProvenance?.gameplayHorizonYears)||400;
+    simulation.productionReadiness='CAPACITY_READY';
+    simulation.gameplayProductionEnabled=true;
+    simulation.productionAuthority='SIMULATED_OR_SOURCE_REPORTED_GAMEPLAY_PROFILE';
+    simulation.productionProfileId='OMEGA_UNIFIED_MINEPLAY_PROFILE_V1';
+    simulation.factoryBinding=fillRuntimeMissing(simulation.factoryBinding||{},{
+      countryId,resourceId,warehouseId:'WH-'+countryId+'-RAW',
+      requiresSameCountryWarehouse:true,requiresSiteSpecificRecipe:true,
+      status:'RUNTIME_CATALOG_LOOKUP_REQUIRED',authority:'RUNTIME_CATALOG'
+    });
     if(!Array.isArray(simulation.transportRoute)||simulation.transportRoute.length===0){
       simulation.transportRoute=[{
         routeId:'SIM_ROUTE:'+countryId+':'+siteId,
@@ -2072,7 +2209,7 @@ function batchFromExtraction(x,record){
     const normalized=normalizeSiteRecord({
       ...source,siteId,siteName,countryId,siteType,resourceTypeId:resourceId,
       identity:{...clone(identity),countryIso3:countryId,resourceTypeId:resourceId,siteType},
-      real:{...clone(real),resourceId,siteType,location:{...clone(location),coordinates},quantitative:clone(quantitative)},
+      real:{...clone(real),resourceId,siteType,location:{...clone(location),coordinates},quantitative:clone(realQuantitative)},
       location:{...clone(location),countryName:location.countryName||source.countryName||raw.countryName||null,
         countryIso3:countryId,coordinates},
       coordinates,ownership:fillRuntimeMissing(source.ownership||raw.ownership||{},{
@@ -2410,7 +2547,7 @@ function batchFromExtraction(x,record){
     VERSION,diagnostics,initialize,extractAll,extractCountry,hydrateCountry,countryResourceState,countryMines,
     countryMineSiteReferences:function(c){return clone(state()?.resource?.[canonical(c)]?.mineSiteReferences||mineSiteReferenceRows(c));},
     countryMineSiteControllers:function(c){return clone(state()?.resource?.[canonical(c)]?.mineSiteControllers||{});},
-    registerCanonicalSiteSimulationRecord,startCountryProduction,
+    registerCanonicalSiteSimulationRecord,startCountryProduction,normalizeBoundSiteForRuntime,
     compile
   });
   g.Omega=g.Omega||{};g.Omega.ResourceEndowmentRuntime=API;g.OmegaResourceEndowmentRuntime=API;
