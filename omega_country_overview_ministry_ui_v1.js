@@ -355,7 +355,7 @@
       '</section>';
   }
 
-  function runCountryDataAudit(output) {
+  function runCountryDataAudit(output, gatewayReport) {
     const api = countryDataApi();
     if (!output) return;
     if (!api || typeof api.getCountryRecord !== 'function') {
@@ -447,6 +447,14 @@
         '',
         'MISSING FIELDS BY COUNTRY'
       ];
+      if (gatewayReport) {
+        lines.splice(8, 0,
+          'Source consistency issues: ' + (Number(gatewayReport.errorCount) || 0),
+          'Source consistency review notes: ' + (Array.isArray(gatewayReport.warnings) ? gatewayReport.warnings.length : 0),
+          'Source coverage missing values: ' + (Number(gatewayReport.missingFieldCount) || 0),
+          ''
+        );
+      }
       countryGaps.forEach(row => {
         lines.push('', row.name + ' (' + row.code + ')');
         lines.push('  Indicators: ' + (row.metrics.length ? row.metrics.map(metricNames).join(', ') : 'All listed indicators recorded'));
@@ -835,7 +843,11 @@
     if (auditButton) {
       event.preventDefault();
       const auditRoot = auditButton.closest('.ocov-country-data-audit');
-      runCountryDataAudit(auditRoot?.querySelector?.('[data-ocov-audit-results]'));
+      const output = auditRoot?.querySelector?.('[data-ocov-audit-results]');
+      const gateway = g.OmegaCountryDataGateway || g.Omega?.CountryDataGateway || null;
+      let gatewayReport = null;
+      try { gatewayReport = gateway?.auditAllCountries?.() || null; } catch (_) {}
+      runCountryDataAudit(output, gatewayReport);
       return;
     }
     if (target.closest('#cabinet-full-window .parchment-card-btn[data-ministry-id]')) {
