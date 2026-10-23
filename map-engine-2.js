@@ -1182,6 +1182,11 @@ Game.Map.renderGeoJSON = function(geoData) {
         renderMetrics.frameCount += 1;
         renderMetrics.totalChunkWorkMs += chunkDurationMs;
         renderMetrics.maxChunkWorkMs = Math.max(renderMetrics.maxChunkWorkMs, chunkDurationMs);
+        // Keep progress visible even if a severely throttled WebView cannot finish
+        // the whole world layer during a bounded diagnostic window.
+        renderMetrics.durationMs = Math.max(0, now() - renderMetrics.startedAtMs);
+        renderMetrics.renderedFeatureCount = typeof layer.getLayers === "function"
+            ? layer.getLayers().length : renderMetrics.renderedFeatureCount;
 
         if (nextFeature < featureCollection.features.length) {
             Game.__omegaGeoJSONRenderFrame = window.requestAnimationFrame(addFeatureChunk);

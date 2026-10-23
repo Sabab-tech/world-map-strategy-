@@ -191,6 +191,8 @@ test('large world GeoJSON is rendered incrementally rather than monopolizing the
   assert.match(renderer, /renderMetrics\.durationMs/);
   assert.match(renderer, /renderMetrics\.renderedFeatureCount/);
   assert.match(renderer, /renderMetrics\.maxChunkWorkMs/);
+  assert.match(renderer, /renderMetrics\.renderedFeatureCount = typeof layer\.getLayers\(\) === "function"/);
+  assert.match(renderer, /renderMetrics\.frameCount \+= 1/);
   assert.match(renderer, /MAX_FEATURES_PER_FRAME\s*=\s*8/);
   assert.match(renderer, /FRAME_BUDGET_MS\s*=\s*7/);
   assert.match(renderer, /requestAnimationFrame\(addFeatureChunk\)/);
