@@ -29,6 +29,9 @@
       onOpenMinistry: function (id) { return openMinistry(root, id); },
       onOpenDomain: function (domain) { return openDomain(root, domain); },
       onNavigate: function (destination) { return navigate(root, destination); },
+      onViewChange: function (view) {
+        state.governmentView = view === 'all-ministries' ? 'all-ministries' : 'executive-ministry';
+      },
       onCountryChange: function (countryId) {
         state.countryId = String(countryId || '').trim().toUpperCase();
         g.OmegaMinistryViewCountry = state.countryId;
