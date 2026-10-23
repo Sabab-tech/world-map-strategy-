@@ -108,7 +108,7 @@
           category: categoryOf(row),
           status: String(row.status || 'NOT_RECORDED'),
           ministerName: activeProfile.baseName || activeProfile.name || activeProfile.ministerName || row.ministerName || null,
-          ministerPortraitUrl: row.ministerPortraitUrl || row.portraitUrl || row.ministerPhotoUrl || row.ministerPhoto || activeProfile.portraitUrl || activeProfile.photoUrl || activeProfile.imageUrl || null,
+          ministerPortraitUrl: row.ministerPortraitUrl || row.ministerPortraitPath || row.portraitUrl || row.portrait || row.ministerPhotoUrl || row.ministerPhotoPath || row.ministerPhoto || row.imagePath || activeProfile.portraitUrl || activeProfile.portraitPath || activeProfile.avatarUrl || activeProfile.photoUrl || activeProfile.photoPath || activeProfile.imagePath || activeProfile.imageUrl || null,
           avatar: row.icon3D || row.avatar || null,
           activeMinisterProfile: activeProfile,
           source: 'OmegaCabinetUI.ministriesDatabase + canonical minister lifecycle',
@@ -202,7 +202,7 @@
 
   function ministerPortraitMarkup(row) {
     var profile = row && row.activeMinisterProfile || {};
-    var source = String(row && row.ministerPortraitUrl || profile.portraitUrl || profile.photoUrl || profile.imageUrl || '').trim();
+    var source = String(row && row.ministerPortraitUrl || profile.portraitUrl || profile.portraitPath || profile.avatarUrl || profile.photoUrl || profile.photoPath || profile.imagePath || profile.imageUrl || (typeof profile.photo === 'string' ? profile.photo : '') || (typeof profile.portrait === 'string' ? profile.portrait : '') || '').trim();
     var safeLocalImage = /^(assets|images)\/[a-z0-9/_-]+\.(webp|png|jpe?g)$/i.test(source);
     var name = row && row.ministerName || profile.baseName || profile.name || 'Minister not assigned';
     return '<div class="omega-v2-minister-portrait" data-omega-v2-minister-portrait-slot aria-label="Minister portrait slot for ' + esc(name) + '">' +
