@@ -150,7 +150,7 @@ body.omega-ui-v2-active #ui-engine-root { visibility:hidden!important; pointer-e
 .ov2-nav-item svg { width:21px; height:21px; }
 .ov2-nav-item[aria-current=page] { color:#f1f7fa!important; background:linear-gradient(180deg,rgba(24,120,209,.25),rgba(24,120,209,.07)); }
 .ov2-nav-item[aria-current=page] svg { color:var(--ov2-accent); }
-.ov2-world .ov2-main { background:transparent; }
+.ov2-world .ov2-main { background:transparent; pointer-events:none; }
 .ov2-world .ov2-content { pointer-events:none; background:linear-gradient(180deg,rgba(6,20,31,.75),rgba(6,20,31,.12) 45%,rgba(6,20,31,.82)); }
 .ov2-world .ov2-content > * { pointer-events:auto; }
 .ov2-world .ov2-map-pointer-hole { pointer-events:none; height:min(36vh,310px); min-height:180px; }
@@ -187,4 +187,4 @@ body.omega-ui-v2-active #ui-engine-root { visibility:hidden!important; pointer-e
 @media (prefers-reduced-motion:reduce) { #omega-ui-v2-root *,#omega-ui-v2-resume * { transition:none!important; animation:none!important; scroll-behavior:auto!important; } }
 
 /* Let the existing offline Leaflet map remain visible behind the World overlay. */
-#omega-ui-v2-root.ov2-world { background:transparent; }
+#omega-ui-v2-root.ov2-world { background:transparent; pointer-events:none; }
