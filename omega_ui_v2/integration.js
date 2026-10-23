@@ -74,10 +74,18 @@
       });
       if (root.setAttribute) root.setAttribute('aria-hidden','false');
       if (g.document.body && g.document.body.setAttribute) g.document.body.setAttribute('data-active-layer','1');
+      if (g.document.body && g.document.body.classList) g.document.body.classList.add('modal-open');
+      var worldUi = g.document && g.document.getElementById('world-ui-root');
+      if (worldUi && worldUi.style) {
+        worldUi.style.filter = 'none';
+        worldUi.style.opacity = '0.5';
+        worldUi.style.pointerEvents = 'none';
+      }
       var layerManager = g.OmegaLayerManager;
       if (layerManager) {
         layerManager.currentLayer = 1;
         if (Array.isArray(layerManager.layerStack) && layerManager.layerStack[layerManager.layerStack.length - 1] !== 1) layerManager.layerStack.push(1);
+        if (typeof layerManager.updateRightSidebar === 'function') layerManager.updateRightSidebar(1);
       }
       if (typeof g.updateGlobalBackButtonVisibility === 'function') g.updateGlobalBackButtonVisibility();
       if (country) g.OmegaMinistryViewCountry = country;
