@@ -11,7 +11,7 @@
   const cleanCountryDisplayText = value => s(value)
     .replace(/\bSIMULATED(?:[\s_-]+FOR[\s_-]+GAMEPLAY[\s_-]+ONLY)?\b/gi, '')
     .replace(/\bREAL[\s_-]+DATA\b/gi, '')
-    .replace(/\b(?:UNOBSERVED|UNAVAILABLE|NOT[\s_-]+LOADED)\b/gi, 'Not recorded')
+    .replace(/\b(?:UNOBSERVED|UNAVAILABLE|NOT[\s_-]+LOADED|NOT[\s_-]*CLASSIFIED|NOT[\s_-]*ESTABLISHED)\b/gi, 'Not recorded')
     .replace(/\bDERIVED[\s_-]+SIMULATION[\s_-]+POLICY\b/gi, '')
     .replace(/\b(?:SIMULATION|RUNTIME|LIVE[\s_-]+STATE|SOURCE[\s_-]+BASELINE|REGISTERED[\s_-]+SOURCE)\b/gi, '')
     .replace(/\bOMEGA_[A-Z0-9_]+\b/g, '')
@@ -40,6 +40,7 @@
 
   const runtime = () => g.OmegaCountryRuntimeData || null;
   const behaviorEngine = () => g.OmegaCountryBehaviorEngine || g.Omega?.CountryBehaviorEngine || null;
+  const adaptiveEngine = () => g.OmegaOpponentAdaptiveStrategy || g.Omega?.OpponentAdaptiveStrategy || null;
 
   function defaultCountry() {
     let simulatedPlayerCountry = null;
@@ -629,9 +630,10 @@
     let behavior = null;
     try { behavior = behaviorEngine()?.getBehaviorProfile?.(value) || null; } catch (_) {}
     let adaptive = null;
+    try { adaptive = adaptiveEngine()?.profile?.(value) || null; } catch (_) {}
 
     if (!base && runtime()?.ready && typeof runtime().isSettled === 'function' && !runtime().isSettled()) {
-      panelEl.innerHTML = '<div class="ocov-loading"><div class="ocov-eyebrow">OMEGA / COUNTRY OVERVIEW</div><h2>Loading country records…</h2><p>Waiting for the canonical country registry. No substitute data is being displayed.</p></div>';
+      panelEl.innerHTML = '<div class="ocov-loading"><div class="ocov-eyebrow">OMEGA / COUNTRY OVERVIEW</div><h2>Loading country records…</h2><p>Loading country details…</p></div>';
       Promise.resolve(runtime().ready).then(() => { if (activeTab === 'overview') renderCountryOverview(); }).catch(() => {});
       return true;
     }
@@ -639,7 +641,7 @@
     const name = identity.name || base?.name || base?.officialName || value;
     const flag = runtime()?.flagFor?.(value) || '';
     const countryCode = identity.iso3 || identity.countryCode || value;
-    const archetype = behavior?.archetype || strategic?.archetype || 'NOT CLASSIFIED';
+    const archetype = behavior?.archetype || strategic?.archetype || '';
 
     const gdp = sharedMetric('gdp', preferBehaviorMetric(behavior, 'gdpUsd', sourceNumber(base, ['gdpCurrentUsd', 'gdp', 'grossDomesticProductUsd'])));
     const pop = sharedMetric('population', preferBehaviorMetric(behavior, 'population', sourceNumber(base, ['populationTotal', 'population2015', 'population_2015', 'population'])));
@@ -682,18 +684,13 @@
     const recommendedStrategyItems = evidenceItems(strategic?.recommendedStrategy || narrative.recommendedStrategy, 'Recommended strategy');
     const registeredOptions = arr(adaptive?.registeredStrategyOptions).length
       ? arr(adaptive.registeredStrategyOptions) : arr(strategic?.strategyOptions);
-    const actionPreferences = isObj(adaptive?.actionPreferences) ? adaptive.actionPreferences :
-      (isObj(behavior?.actionPreferences) ? behavior.actionPreferences : {});
-    const actionPreferenceRows = Object.entries(actionPreferences)
-      .filter(([, row]) => isObj(row) && num(row.value) !== null)
-      .sort((a, b) => (num(b[1].value) || 0) - (num(a[1].value) || 0));
     const priorities = arr(behavior?.priorityStack).length ? arr(behavior.priorityStack) : arr(strategic?.strategyOptions);
     const priorityBody = priorities.length ? '<ol class="ocov-priority-list">' + priorities.slice(0, 6).map((row, i) =>
       '<li><span class="ocov-priority-number">' + (i + 1) + '</span><div><strong>' + esc(row.title || row.action || row.domain || 'Strategic priority') +
       '</strong><p>' + esc(row.detail || row.basis || row.reason || row.description || 'Based on currently registered evidence.') + '</p>' +
       (row.basis ? '<small>Basis: ' + esc(row.basis) + '</small>' : '') + '</div></li>').join('') +
-      '</ol><p class="ocov-note">These are candidate priorities, not executed orders. Live decisions still pass through the simulation\'s action, finance, materials and authority checks.</p>'
-      : '<p class="ocov-empty">No evidence-backed priority is available yet.</p>';
+      '</ol><p class="ocov-note">These priorities support planning and review.</p>'
+      : '<p class="ocov-empty">No planning priority is recorded for this country.</p>';
 
     const overviewHtml =
       '<div class="ocov-shell">' +
@@ -702,7 +699,7 @@
       '<span class="ocov-baseline-label">Country briefing</span></div>' +
       '<section class="ocov-hero"><div class="ocov-hero-id"><span class="ocov-flag">' + esc(flag) + '</span><div>' +
       '<div class="ocov-eyebrow">OMEGA / NATIONAL PROFILE & BEHAVIOUR</div><h2>' + esc(name) + '</h2>' +
-      '<p>' + esc(countryCode) + ' · ' + esc(archetype) + '</p></div></div>' +
+      '<p>' + esc(countryCode + (archetype ? ' · ' + archetype : '')) + '</p></div></div>' +
       (strategic?.executiveSummary ? '<p class="ocov-summary">' + esc(strategic.executiveSummary) + '</p>' :
         '<p class="ocov-summary">Country briefing based on the recorded national profile and available indicators.</p>') +
       '</section>' +
