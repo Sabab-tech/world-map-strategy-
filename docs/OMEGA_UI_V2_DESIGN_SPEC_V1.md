@@ -116,13 +116,14 @@ Different unit families (tonnes, barrels, cubic metres, energy) must not be summ
 ### Ministry emblem and layout
 Use an original understated civic-security emblem: deep navy shield, fine brass rim and a simple civic gate/protective mark. It must not copy an actual country seal, police badge or third-party trademark. Use a clean local SVG for the small control/icon representation and locally stored imagery for larger entity cards.
 
-### Six internal destinations
+### Seven internal destinations
 1. **Dashboard:** sourced staffing, fleet readiness, deployments, incident alerts, facilities, allocated budget and recent reports.
 2. **Personnel:** staffing by rank/role, trained/active/reserve states, vacancies, recruitment and recruitment history. Keep one primary Recruit Police action here.
 3. **Fleet:** all 15 vehicle tiers, owned/ready/deployed/in-repair/ordered states and filters.
 4. **Patrols & Deployment:** mission, real region/location, shift, eligible assigned staff/vehicle, route and mission status.
 5. **Facilities & Equipment:** police stations, garages, training sites, capacity, equipment and upgrade status.
 6. **Incidents & Reports:** recorded incident ledger, trends, staffing/fleet coverage, responses and spending history. Response-time claims only appear if the runtime calculates them.
+7. **Laws & Sections:** show only law/act, section/article, provision text, status and source records supplied by the selected country's canonical legal data. Missing provisions remain explicitly unavailable; do not invent laws or penalties.
 
 ### Complete canonical 15-tier hangar
 The canonical engine already contains 15 individually designed local SVG vehicle profiles and capability data. UI-v2 must display all records in `OmegaHomeMinistryEngine.VEHICLES` rather than cloning a second vehicle catalogue or stopping after six generic vehicle types. Keep all existing IDs, tier numbers, unique SVG silhouettes, costs, maintenance values, capabilities, terrain/environment fits, route-risk and wear rules, ownership state, acquisition history and sequential 180-simulation-day procurement rules. Do not fabricate a fixed number of owned vehicles per country.
@@ -159,7 +160,7 @@ Personnel → Recruit Police → choose role/rank and quantity → show recruitm
 ## 8. Economy, Industry and Reports
 
 ### Economy
-Economy is a convenient view of the existing Treasury, Taxes, Central Bank and Trade domains, not a parallel financial ledger. Display recorded cash, revenue/expenditure, appropriations, debt, trade balance, FX reference and forecasts with units and source periods. A reference currency exchange rate is not a treasury transfer. Banking data is separate from game cash unless the canonical simulation explicitly links the two.
+Economy is a convenient view of the existing Treasury, Taxes, Central Bank and Trade domains, not a parallel financial ledger. Organize Finance into Overview, Treasury & Ledger, Budget, Debt & Fiscal, Monetary & FX, and Trade & Revenue tabs. Display recorded cash, revenue/expenditure, appropriations, debt, trade balance, FX reference and forecasts with units and source periods. A reference currency exchange rate is not a treasury transfer. Banking data is separate from game cash unless the canonical simulation explicitly links the two.
 
 ### Industry
 Industry displays factories, production lines, recipes, required input batches, delivered input, workforce, build stage/duration, operational capacity, output batches, inventory and industrial finance. Map each factory type to the canonical industrial catalogue and its existing locally cached visual. Do not make up factory costs/capacities if the canonical catalogue lacks them. A factory input is available only when the authoritative batch/warehouse delivery has settled.
