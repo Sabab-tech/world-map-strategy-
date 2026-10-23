@@ -443,7 +443,7 @@ test('Home Affairs legal register shows stored law sections and never fabricates
     assert.equal(result.tab, 'laws');
     assert.match(root.innerHTML, /Public Safety Act/);
     assert.match(root.innerHTML, /Police accountability/);
-    assert.match(root.innerHTML, /Recorded provision text\\./);
+    assert.match(root.innerHTML, /Recorded provision text\./);
     assert.match(root.innerHTML, /Law \/ Act/);
   } finally {
     globalThis.OmegaHomeMinistryEngine = previousEngine;
