@@ -193,6 +193,13 @@ app.get('/index.html', (req, res, next) => renderIndex(res, next));
 app.use(express.static(__dirname, { index: false }));
 app.get('/minister_system_config.json', (req, res) => res.sendFile(path.join(__dirname, 'minister_system_config.json')));
 
+app.use('/api/deep-core', (req, res, next) => {
+  if (req.path === '/health') return next();
+  OfflineQueryEngine.initializeRepositoryAsync()
+    .then(() => next())
+    .catch(error => res.status(503).json({ ok: false, error: 'DEEP_CORE_INITIALIZATION_FAILED', message: error.message }));
+});
+
 app.get('/api/minister-candidates', (req, res) => {
   try { const ministryId = String(req.query.ministryId || '').trim(), countryCode = String(req.query.countryCode || '').trim().toUpperCase(); if (!ministryId) return res.status(400).json({ ok: false, error: 'ministryId is required' }); const candidates = ministerCandidates(ministryId, countryCode); if (candidates.length !== 5) return res.status(404).json({ ok: false, error: `Five verified candidates are required but only ${candidates.length} were available in ministers.json.`, candidateCount: candidates.length, required: 5 }); res.json({ ok: true, ministryId, countryCode, candidates, source: 'ministers.json', count: candidates.length }); }
   catch (e) { res.status(500).json({ ok: false, error: e.message }); }
@@ -561,6 +568,11 @@ function canonicalPlan(prompt, input = {}) {
   return executeDeepCorePrompt(prompt, ctx);
 }
 function runCognitiveBridge(prompt, semantic, offlineResult, identity, language, gameState, conversationHistory) { if (!OmegaReasoningDispatcher?.dispatch) return { available: false, reason: 'COGNITIVE_DISPATCHER_UNAVAILABLE' }; try { const parsed = semantic || { operation: 'LOOKUP', language: language || 'en', surface: prompt }; const history = Array.isArray(conversationHistory) ? conversationHistory : []; return OmegaReasoningDispatcher.dispatch(prompt, parsed, offlineResult || {}, { ...identity, language, gameState: gameState || {}, history, timeHorizon: 'CURRENT' }); } catch (e) { return { available: false, reason: 'COGNITIVE_DISPATCH_ERROR', error: e.message }; } }
-app.get('/api/deep-core/health', (req, res) => { try { const diagnostics = OfflineQueryEngine.diagnostics(); res.json({ ok: diagnostics.initialized === true, engine: 'OMEGA_DEEP_CORE', version: OfflineQueryEngine.VERSION, diagnostics }); } catch (e) { res.status(500).json({ ok: false, error: e.message }); } });
+app.get('/api/deep-core/health', (req, res) => { try { const diagnostics = OfflineQueryEngine.health(); const ready = diagnostics.initialized === true; res.status(ready ? 200 : 503).json({ ok: ready, engine: 'OMEGA_DEEP_CORE', version: OfflineQueryEngine.VERSION, diagnostics }); } catch (e) { res.status(500).json({ ok: false, error: e.message }); } });
 
-app.listen(PORT, () => { console.log(`[OMEGA Server] Listening on port ${PORT}`); try { console.log('[Deep Core Diagnostics]', JSON.stringify(OfflineQueryEngine.diagnostics())); } catch (e) { console.warn('[Deep Core Diagnostics] unavailable:', e.message); } });
+app.listen(PORT, () => {
+  console.log(`[OMEGA Server] Listening on port ${PORT}`);
+  OfflineQueryEngine.initializeRepositoryAsync()
+    .then(() => { try { console.log('[Deep Core Diagnostics]', JSON.stringify(OfflineQueryEngine.diagnostics())); } catch (e) { console.warn('[Deep Core Diagnostics] unavailable:', e.message); } })
+    .catch(e => console.warn('[Deep Core] Async repository initialization failed:', e.message));
+});
