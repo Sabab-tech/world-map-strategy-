@@ -583,8 +583,10 @@
         const source=site.sourceSiteRecord&&typeof site.sourceSiteRecord==='object'?site.sourceSiteRecord:{};
         const identity=site.identity&&typeof site.identity==='object'?site.identity:{};
         const ownCountry=site.countryId||site.countryCode||site.country||identity.countryIso3||identity.countryId||source.countryId||source.countryCode||countryHint;
-        if(!ownCountry)return;
-        candidates.push(Object.assign({},site,{countryId:normaliseCountry(ownCountry)}));
+        // Filter global catalogs before cloning: rows for other countries are not needed
+        // to paint this country's screen and can otherwise create large temporary heaps.
+        if(!ownCountry||normaliseCountry(ownCountry)!==selected)return;
+        candidates.push(Object.assign({},site,{countryId:selected}));
       });
     };
     // Source profile and the canonical site binding are primary identity sources.
@@ -662,7 +664,8 @@
     const sites = siteRows(country);
     const diag = g.Omega && g.Omega.ResourceIndustrialNetwork && g.Omega.ResourceIndustrialNetwork.diagnostics ?
       g.Omega.ResourceIndustrialNetwork.diagnostics(country) : null;
-    const siteCards = sites.map(function (s) {
+    const visibleSites = sites.slice(0, 150);
+    const siteCards = visibleSites.map(function (s) {
       const rid = s.resourceId || s.resId || s.real && s.real.resourceId || s.sourceSiteRecord && s.sourceSiteRecord.resourceId || '';
       const body = '<div class="omega-rescc-grid2">' + kv('Site ID', s.siteId) + kv('Resource', rid || s.resourceName) +
         kv('Reserve', s.reserveQuantity ?? s.remainingReserve ?? s.reserves ?? (s.quantitative && s.quantitative.reserve && (s.quantitative.reserve.quantity ?? s.quantitative.reserve.value))) +
@@ -700,6 +703,7 @@
       (diag ? diagnosticCard('Extraction runtime diagnostics', diag) : '') +
       '<h3 class="omega-rescc-section-title">Canonical site registry</h3>' +
       (siteCards || empty('No country-scoped site profile matched the existing canonical registry or loaded JSON profile. ' + sourceDataStatus(country))) +
+      (sites.length > visibleSites.length ? '<p class="omega-rescc-note">Showing the first ' + visibleSites.length + ' of ' + sites.length + ' country site records.</p>' : '') +
       '<h3 class="omega-rescc-section-title">Resource survey requests</h3>' + statusRows(surveys) +
       '<h3 class="omega-rescc-section-title">Completed survey evidence</h3>' + statusRows(results) +
       '<h3 class="omega-rescc-section-title">Authoritative exploration projects</h3>' + (explorationCards || empty('No exploration projects have been recorded.')) +
@@ -1386,6 +1390,7 @@
     return PANELS.some(function (p) { return p.id === id; }) ? id : 'matrix';
   }
   let resourceDataWarmupAttempted = false, resourceDataWarmupPromise = null, resourceDataRefreshBound = false;
+  let visibleRefreshTimer = null;
   function visibleModal() { return g.document && g.document.getElementById('gsrsk-intelligence-modal'); }
   function refreshVisiblePanel() {
     const modal = visibleModal();
@@ -1395,6 +1400,13 @@
     render(countryId, activePanel, modal);
     const current = modal.querySelector ? modal.querySelector('#omega-rescc-content') : null;
     if (current) { current.scrollTop = scrollTop; current.scrollLeft = scrollLeft; }
+  }
+  function scheduleVisiblePanelRefresh() {
+    if (visibleRefreshTimer !== null) return;
+    visibleRefreshTimer = g.setTimeout(function () {
+      visibleRefreshTimer = null;
+      refreshVisiblePanel();
+    }, 250);
   }
   function ensureResourceDataReady(force) {
     if (resourceDataWarmupPromise) return resourceDataWarmupPromise;
@@ -1409,7 +1421,7 @@
       if (e && e.isReady && endowment && typeof endowment.initialize === 'function' && !g.__omegaResourceEndowmentReady) {
         try { await endowment.initialize(); } catch (_) {}
       }
-    })().then(refreshVisiblePanel).catch(refreshVisiblePanel).finally(function () { resourceDataWarmupPromise = null; });
+    })().then(scheduleVisiblePanelRefresh).catch(scheduleVisiblePanelRefresh).finally(function () { resourceDataWarmupPromise = null; });
     return resourceDataWarmupPromise;
   }
   function bindResourceDataRefreshEvents() {
@@ -1420,7 +1432,7 @@
       'OMEGA_SIMULATION_TURN_COMMITTED','OMEGA_RESOURCE_EXTRACTION_COMPLETED','OMEGA_RESOURCE_BATCH_CREATED',
       'OMEGA_RESOURCE_INVENTORY_CHANGED','OMEGA_RESOURCE_PROCESSING_COMPLETED','OMEGA_TRADE_SETTLEMENT_COMPLETED'
     ].forEach(function (name) {
-      try { g.addEventListener(name, function () { resourceDataWarmupAttempted = false; refreshVisiblePanel(); }); } catch (_) {}
+      try { g.addEventListener(name, function () { resourceDataWarmupAttempted = false; scheduleVisiblePanelRefresh(); }); } catch (_) {}
     });
   }
   function render(country, panel, modalOverride) {
