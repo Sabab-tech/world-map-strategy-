@@ -96,10 +96,13 @@
         specialFeatures: Array.isArray(vehicle && vehicle.specialFeatures) ? vehicle.specialFeatures.slice() : [],
         environmentFit: vehicle && vehicle.environmentFit && typeof vehicle.environmentFit === 'object' ? vehicle.environmentFit : {},
         speed: speed,
+        acceleration: numberOrNull(vehicle && vehicle.acceleration),
         capacity: capacity,
         durability: durability,
         rangeKm: range,
         enduranceHours: endurance,
+        terrain: String(vehicle && vehicle.terrain || 'Not recorded'),
+        capabilities: vehicle && vehicle.capabilities && typeof vehicle.capabilities === 'object' ? vehicle.capabilities : {},
         cost: cost,
         maintenancePerDay: maintenance,
         ownedCount: ownedCount,
@@ -164,6 +167,7 @@
       '<div class="omega-v2-vehicle-stats">' +
       '<div><span>Owned in selected country</span><strong>' + owned + '</strong></div>' +
       '<div><span>Maximum speed</span><strong>' + (vehicle.speed === null ? 'Not recorded' : fmtCount(vehicle.speed) + ' km/h') + '</strong></div>' +
+      '<div><span>Acceleration</span><strong>' + fmtCount(vehicle.acceleration) + '</strong></div>' +
       '<div><span>Passenger capacity</span><strong>' + fmtCount(vehicle.capacity) + '</strong></div>' +
       '<div><span>Durability</span><strong>' + fmtCount(vehicle.durability) + '</strong></div>' +
       '<div><span>Range</span><strong>' + (vehicle.rangeKm === null ? 'Not recorded' : fmtCount(vehicle.rangeKm) + ' km') + '</strong></div>' +
@@ -174,7 +178,15 @@
       '<div class="omega-v2-section-title">Equipment & capability</div>' + features +
       '<div class="omega-v2-section-title">Strengths</div><div class="omega-v2-card-meta">' + esc(vehicle.strengths) + '</div>' +
       '<div class="omega-v2-section-title">Trade-off</div><div class="omega-v2-card-meta">' + esc(vehicle.tradeoff) + '</div>' +
-      '<div class="omega-v2-section-title">Environment fit</div><div class="omega-v2-card-meta">' + fitLine + '</div>' +
+      '<div class="omega-v2-section-title">Environment fit</div><div class="omega-v2-card-meta">' + esc(vehicle.terrain) + ' · ' + fitLine + '</div>' +
+      '<details class="omega-v2-capability-details"><summary>Full capability profile</summary><div class="omega-v2-capability-bars">' +
+      Object.keys(vehicle.capabilities).map(function (key) {
+        var value = numberOrNull(vehicle.capabilities[key]);
+        var width = value === null ? 0 : Math.max(0, Math.min(100, value));
+        var label = key.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/[_-]+/g, ' ');
+        return '<div class="omega-v2-capability-row"><span>' + esc(label) + '</span><div class="omega-v2-capability-track"><span style="width:' + width + '%"></span></div><strong>' + (value === null ? 'Not recorded' : fmtCount(value) + '/100') + '</strong></div>';
+      }).join('') +
+      '</div></details>' +
       pendingText +
       '<div class="omega-v2-actions"><button type="button" class="omega-v2-button omega-v2-button--primary" data-omega-v2-action="inspect-vehicle" data-level="' + esc(vehicle.level) + '"' + (canInspect ? '' : ' disabled title="The existing police hangar action adapter is not available."') + '>Inspect in existing hangar</button></div>' +
       '</article>';
