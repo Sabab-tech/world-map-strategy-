@@ -1463,10 +1463,10 @@ window.OmegaCabinetUI = {
                     window.setTimeout(renderSubsystem, 50);
                 } else {
                     renderSubsystem();
-                } else {
-                    fullWin.setAttribute('data-cabinet-render-state', 'error');
-                    fullWin.setAttribute('aria-busy', 'false');
                 }
+            } else {
+                fullWin.setAttribute('data-cabinet-render-state', 'error');
+                fullWin.setAttribute('aria-busy', 'false');
             }
         } else if (isCouncil) {
             const subsystemRoot = document.getElementById('cabinet-subsystem-root');
