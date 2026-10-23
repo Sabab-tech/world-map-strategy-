@@ -35,6 +35,7 @@
   let activeTab = 'overview';
   let lastRenderedCountry = null;
   let countryDataInitPromise = null;
+  let overviewRenderTimer = null;
 
   const runtime = () => g.OmegaCountryRuntimeData || null;
   const behaviorEngine = () => g.OmegaCountryBehaviorEngine || g.Omega?.CountryBehaviorEngine || null;
@@ -631,7 +632,19 @@
     return executiveActive;
   }
 
+  function scheduleOverviewRender() {
+    if (overviewRenderTimer !== null) return;
+    overviewRenderTimer = g.setTimeout(() => {
+      overviewRenderTimer = null;
+      if (isExecutiveMinistryView()) renderCountryOverview();
+    }, 180);
+  }
+
   function renderCountryOverview() {
+    if (overviewRenderTimer !== null) {
+      if (typeof g.clearTimeout === 'function') g.clearTimeout(overviewRenderTimer);
+      overviewRenderTimer = null;
+    }
     const doc = g.document;
     const panelEl = doc?.getElementById?.('omega-government-overview-panel');
     if (!panelEl || !isExecutiveMinistryView()) return false;
@@ -909,15 +922,9 @@
     }
 
     g.addEventListener?.('OMEGA_COUNTRY_CONTEXT_CHANGED', onCountryContext);
-    g.addEventListener?.('OMEGA_COUNTRY_BEHAVIOR_READY', () => {
-      if (isExecutiveMinistryView()) renderCountryOverview();
-    });
-    g.addEventListener?.('OMEGA_SIMULATION_TURN_COMMITTED', () => {
-      if (isExecutiveMinistryView()) renderCountryOverview();
-    });
-    Promise.resolve(runtime()?.ready).then(() => {
-      if (isExecutiveMinistryView()) renderCountryOverview();
-    }).catch(() => {});
+    g.addEventListener?.('OMEGA_COUNTRY_BEHAVIOR_READY', scheduleOverviewRender);
+    g.addEventListener?.('OMEGA_SIMULATION_TURN_COMMITTED', scheduleOverviewRender);
+    Promise.resolve(runtime()?.ready).then(scheduleOverviewRender).catch(() => {});
     return true;
   }
 
