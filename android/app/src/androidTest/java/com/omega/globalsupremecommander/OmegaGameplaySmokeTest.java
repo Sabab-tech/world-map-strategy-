@@ -114,7 +114,7 @@ public final class OmegaGameplaySmokeTest {
             String mapRenderMetrics = "WAIT";
             while (!mapRenderMetrics.contains("READY|") &&
                     SystemClock.elapsedRealtime() < mapRenderDeadline) {
-                mapRenderMetrics = evaluate(instrumentation, webViewRef.get(), mapRenderMetricsScript, 5L);
+                mapRenderMetrics = evaluate(instrumentation, webViewRef.get(), mapRenderMetricsScript);
                 if (!mapRenderMetrics.contains("READY|")) SystemClock.sleep(250L);
             }
             assertTrue(
