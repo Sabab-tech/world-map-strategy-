@@ -682,8 +682,12 @@ Game.Map = {
             const el = document.getElementById(id);
             if (el) {
                 if (typeof L !== 'undefined' && L.DomEvent) {
-                    L.DomEvent.disableClickPropagation(el);
-                    L.DomEvent.disableScrollPropagation(el);
+                    if (typeof L.DomEvent.disableClickPropagation === 'function') {
+                        L.DomEvent.disableClickPropagation(el);
+                    }
+                    if (typeof L.DomEvent.disableScrollPropagation === 'function') {
+                        L.DomEvent.disableScrollPropagation(el);
+                    }
                 }
                 ['touchstart', 'touchmove', 'touchend', 'pointerdown', 'mousedown'].forEach(evtType => {
                     el.addEventListener(evtType, function(e) {
@@ -2092,10 +2096,16 @@ if (typeof L !== 'undefined' && L.DomEvent) {
         'search-drawer', 'events-drawer', 'layers-drawer'
     ];
     setTimeout(() => {
+        // Re-check Leaflet at callback time: the offline Android bundle can boot
+        // before its optional interaction helpers are fully available.
+        if (typeof L === 'undefined' || !L.DomEvent) return;
         protectIds.forEach(id => {
             const el = document.getElementById(id);
-            if (el) {
+            if (!el) return;
+            if (typeof L.DomEvent.disableClickPropagation === 'function') {
                 L.DomEvent.disableClickPropagation(el);
+            }
+            if (typeof L.DomEvent.disableScrollPropagation === 'function') {
                 L.DomEvent.disableScrollPropagation(el);
             }
         });
