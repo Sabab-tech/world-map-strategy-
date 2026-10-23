@@ -172,7 +172,7 @@
       Array.isArray(gameResource.extractionLedger) ? gameResource.extractionLedger : [];
     var photoLib = g.OmegaUIPhotoAssets;
     var minePhoto = photoLib && typeof photoLib.get === 'function' ? photoLib.get('open-pit-mine') : null;
-    var photoMarkup = minePhoto && /^assets\\/ui-photos\\/[a-z0-9-]+\\.webp$/.test(String(minePhoto.path || ''))
+    var photoMarkup = minePhoto && /^assets\/ui-photos\/[a-z0-9-]+\.webp$/.test(String(minePhoto.path || ''))
       ? '<figure class="omega-v2-photo"><img src="' + esc(minePhoto.path) + '" loading="lazy" decoding="async" alt="Open-pit mine, representative reference photograph"><figcaption>' + esc(minePhoto.caption || 'Open-pit mine') + '<small>Reference photo; not proof of this country’s live mine ownership</small></figcaption></figure>' : '';
     var selectOptions = '<option value="all">All registered resources</option>' + Array.from(new Set(model.sites.map(function (item) { return item.resourceId; })).values()).map(function (id) {
       return '<option value="' + esc(id) + '">' + esc(id.replace(/[_-]+/g, ' ')) + '</option>';
