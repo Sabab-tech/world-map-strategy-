@@ -2,7 +2,7 @@
  * Same-origin app files are cached for offline relaunch; remote map tiles are never cached here.
  */
 "use strict";
-const CACHE_NAME = "omega-offline-atlas-shell-v26";
+const CACHE_NAME = "omega-offline-atlas-shell-v27";
 const APP_BASE = new URL("./", self.location.href);
 const INDEX_URL = new URL("index.html", APP_BASE).href;
 const CORE_ASSETS = [
@@ -47,7 +47,14 @@ const CORE_ASSETS = [
   "./omega_ui_v2/screens/police-fleet.js",
   "./omega_ui_v2/screens/reports.js",
   "./omega_ui_v2/app.js",
-  "./omega_ui_v2/integration.js"
+  "./omega_ui_v2/integration.js",
+  "./omega_ui_v2/world-command-dock.js",
+  "./assets/ui-photos/bangladesh-parliament.webp", "./assets/ui-photos/bangladesh-police-headquarters.webp",
+  "./assets/ui-photos/chittagong-hospital.webp", "./assets/ui-photos/container-ship.webp", "./assets/ui-photos/dhaka-skyline.webp",
+  "./assets/ui-photos/geelong-oil-refinery.webp", "./assets/ui-photos/hydroelectric-plant.webp",
+  "./assets/ui-photos/industrial-production-line.webp", "./assets/ui-photos/mosque-architecture.webp",
+  "./assets/ui-photos/open-pit-mine.webp", "./assets/ui-photos/un-assembly-building.webp",
+  "./assets/ui-photos/uss-nimitz.webp", "./assets/ui-photos/wheat-field.webp", "./assets/ui-photos/wind-farm.webp"
 ];
 
 function isLocalAppUrl(value) {

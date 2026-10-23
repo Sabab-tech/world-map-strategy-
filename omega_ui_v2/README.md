@@ -1,6 +1,6 @@
 # OMEGA UI v2 foundation
 
-This directory is the isolated replacement UI namespace. It is intentionally not loaded by the production `index.html` in this foundation PR. The live UI, canonical runtimes, game-state schema, data sets and asset paths remain untouched.
+This directory contains the integrated OMEGA Atlas Command UI. The production entrypoint loads these modules additively, while canonical runtimes, map state and existing legacy recovery remain authoritative.
 
 ## Modules
 
@@ -31,3 +31,8 @@ This directory is the isolated replacement UI namespace. It is intentionally not
 - `test/omega_ui_v2.test.mjs`: automated UI-v2 contract tests, included in `npm run test:ui-visual`.
 
 The modules are loaded as local scripts and the existing Government entry mounts UI v2 into the existing `#cabinet-full-window` host. The integration bridge opens the new shell before legacy cabinet rendering and falls back to the legacy cabinet if mount fails. Map/Back closes the current Cabinet layer. This is an integrated rollout candidate, not a claim that all gameplay acceptance is complete: validate every visible screen/action, scroll/back behavior, source data, UI visual regression, performance, offline cache and Android 9 on the exact PR head before merging. Do not remove or overwrite any live legacy/gameplay file.
+
+
+## Global Atlas Command
+
+The global map dock provides World, Overview, Government, Economy and More. Domain pages reuse canonical game runtimes; local WebP photos use representative-image notes. The offline shell cache v27 explicitly includes UI-v2 modules and bundled photography. Android and visual acceptance remain release gates.

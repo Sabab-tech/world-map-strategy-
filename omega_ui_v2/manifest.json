@@ -2,15 +2,15 @@
   "schemaVersion": "1.0.0",
   "app": "OMEGA",
   "namespace": "omega_ui_v2",
-  "rolloutStatus": "INTEGRATED_VIA_GOVERNMENT_ENTRY_WITH_LEGACY_FALLBACK; FULL_RUNTIME_ACCEPTANCE_PENDING",
+  "rolloutStatus": "GLOBAL_ATLAS_COMMAND_DOCK_INTEGRATED; FULL_ANDROID_AND_VISUAL_ACCEPTANCE_PENDING",
   "preservationPolicy": "ADDITIVE_ONLY",
   "designDocument": "docs/OMEGA_UI_V2_DESIGN_SPEC_V1.md",
   "globalNavigation": [
     "map",
+    "overview",
     "government",
     "economy",
-    "industry",
-    "reports"
+    "more"
   ],
   "governmentDestinations": [
     "executive-ministry",
@@ -27,7 +27,8 @@
     "homeAffairs": "omega_ui_v2/screens/home-affairs.js",
     "reports": "omega_ui_v2/screens/reports.js",
     "policeFleet": "omega_ui_v2/screens/police-fleet.js",
-    "integration": "omega_ui_v2/integration.js"
+    "integration": "omega_ui_v2/integration.js",
+    "worldCommandDock": "world-command-dock.js"
   },
   "sharedStyles": "omega_ui_v2/omega-ui-v2.css",
   "canonicalAdapters": {
@@ -50,12 +51,12 @@
     "countryIsolation": true,
     "preserveLegacyFiles": true
   },
-  "screenCoverageStatus": "DESIGN_AND_FIRST_RENDERERS_ADDED; HOST INTEGRATION AND END_TO_END RUNTIME GATES REQUIRED",
+  "screenCoverageStatus": "GLOBAL_NAVIGATION_AND_RESPONSIVE_VISUAL_SYSTEM_INTEGRATED; ANDROID_OFFLINE_AND_FULL_SCREEN_ACCEPTANCE_PENDING",
   "integrationPolicy": {
     "entry": "omega_ministry_entry_v3.js",
-    "trigger": "existing Government entry button",
+    "trigger": "Global Atlas Command dock plus existing Government entry",
     "fallback": "legacy cabinet is retained and re-rendered if UI v2 mount fails",
-    "navigation": "Map/Back closes the existing Cabinet layer and restores the world map",
+    "navigation": "World closes the cabinet layer; Overview, Government, Economy and More use one shared UI-v2 app and canonical source modules.",
     "productionRoot": "cabinet-full-window",
     "enabledByDefault": true
   }

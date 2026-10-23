@@ -13,6 +13,7 @@ import '../omega_ui_v2/screens/reports.js';
 import '../omega_ui_v2/screens/economy.js';
 import '../omega_ui_v2/app.js';
 import '../omega_ui_v2/integration.js';
+import '../omega_ui_v2/world-command-dock.js';
 import { readFileSync } from 'node:fs';
 
 test('Government navigation has exactly Executive Ministry and All Ministries', () => {
@@ -189,7 +190,7 @@ test('application shell exports explicit mount and contains only five intended g
   const app = globalThis.OmegaUIV2App;
   assert.ok(app);
   assert.equal(typeof app.mount,'function');
-  assert.deepEqual(app.destinations,['map','government','economy','industry','reports']);
+  assert.deepEqual(app.destinations,['map','overview','government','economy','more','industry','reports']);
   assert.equal(globalThis.OmegaUIV2Navigation.governmentDestinations.length,2);
 });
 
@@ -329,8 +330,17 @@ test('production shell loads and offline-preloads every UI v2 module', () => {
     assert.ok(index.includes(modulePath), 'index.html must load ' + modulePath);
     assert.ok(sw.includes(modulePath), 'offline service worker must pre-cache ' + modulePath);
   }
-  assert.match(sw, /omega-offline-atlas-shell-v26/);
+  assert.match(sw, /omega-offline-atlas-shell-v27/);
   assert.match(entry, /OmegaUIV2Integration/);
   assert.match(entry, /opened-ui-v2/);
   assert.match(entry, /opened-primary/);
+});
+
+
+test('world command dock exposes the unified mobile-first primary routes', () => {
+  const dock = globalThis.OmegaUIV2WorldCommandDock;
+  assert.ok(dock);
+  assert.deepEqual(dock.routes.map((item) => item.id), ['map','overview','government','economy','more']);
+  assert.equal(typeof dock.mount, 'function');
+  assert.equal(typeof dock.launch, 'function');
 });
