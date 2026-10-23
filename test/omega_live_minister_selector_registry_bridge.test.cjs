@@ -1,0 +1,125 @@
+'use strict';
+
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const vm = require('node:vm');
+
+const root = path.resolve(__dirname, '..');
+const handlers = new Map();
+class TestCustomEvent {
+  constructor(type, options = {}) { this.type = type; this.detail = options.detail || {}; }
+}
+const candidateA = {
+  id: 'TEST_MINISTER_A', name: 'Test Minister A', age: 42,
+  background: 'Public administration', ministryId: 'interior_security',
+  stats: { capability: 70 }, efficiency: { efficiency: 65 }
+};
+const candidateB = {
+  id: 'TEST_MINISTER_B', name: 'Test Minister B', age: 45,
+  background: 'Civil service', ministryId: 'interior_security',
+  stats: { capability: 75 }, efficiency: { efficiency: 70 }
+};
+const legacyRegistry = {
+  profiles: new Map([[candidateA.id, candidateA], [candidateB.id, candidateB]]),
+  getActiveMinister() { return null; },
+  getRuntime() { return null; },
+  getLearning() { return null; },
+  setRuntime() {},
+  setLearning() {},
+  assign() { throw new Error('LEGACY_REGISTRY_MUST_NOT_OWN_RECRUITMENT'); },
+  unassign() {}
+};
+const document = {
+  readyState: 'loading',
+  body: { dataset: {} },
+  addEventListener() {},
+  getElementById() { return null; },
+  querySelector() { return null; },
+  querySelectorAll() { return []; }
+};
+const sandbox = {
+  console,
+  document,
+  CustomEvent: TestCustomEvent,
+  OmegaMinisterState: { registry: legacyRegistry },
+  Game: { currentActiveCountry: 'BGD', playerCountry: 'BGD', state: { countryId: 'BGD', playerCountryId: 'BGD' } },
+  localStorage: { setItem() {}, getItem() { return null; } },
+  setInterval() { return 1; },
+  clearInterval() {},
+  setTimeout() { return 1; },
+  clearTimeout() {},
+  addEventListener(type, handler) {
+    const bucket = handlers.get(type) || [];
+    bucket.push(handler);
+    handlers.set(type, bucket);
+  },
+  dispatchEvent(event) {
+    for (const handler of handlers.get(event.type) || []) handler(event);
+    return true;
+  },
+  fetch: async () => ({ ok: false, status: 404, json: async () => ({}) })
+};
+sandbox.window = sandbox;
+sandbox.globalThis = sandbox;
+sandbox.confirm = () => true;
+
+function load(file) {
+  vm.runInNewContext(fs.readFileSync(path.join(root, file), 'utf8'), sandbox, { filename: file });
+}
+
+(async () => {
+  load('omega_minister_state_system.js');
+  const canonicalRegistry = sandbox.OmegaMinisterStateRegistry;
+  assert.equal(typeof canonicalRegistry.recruitCandidate, 'function',
+    'canonical registry must expose the real recruitment command');
+  assert.equal(sandbox.OmegaMinisterState.registry, legacyRegistry,
+    'legacy runtime registry is an independent compatibility object');
+
+  load('minister_recruitment_engine.js');
+  load('omega_live_minister_selector.js');
+  const selector = sandbox.OmegaLiveMinisterSelectorV9;
+  assert.ok(selector, 'live minister selector must be initialized');
+  assert.deepEqual(
+    [...selector.candidates('interior_security')].map(row => row.id),
+    [candidateA.id, candidateB.id],
+    'legacy candidate dossier source must remain readable without taking state ownership'
+  );
+
+  await selector.appoint('interior_security', candidateA);
+  let active = canonicalRegistry.getActiveMinister('BGD', 'interior_security');
+  assert.equal(active && active.ministerId, candidateA.id,
+    'the real selector appointment must use canonical recruitment');
+  assert.equal(sandbox.OmegaMinisterStateRegistry, canonicalRegistry,
+    'selector startup/appointment must never overwrite the canonical global with the legacy registry');
+  assert.equal(canonicalRegistry.consistencyCheck().ok, true,
+    'canonical assignment index must remain consistent after recruitment');
+
+  await selector.appoint('interior_security', candidateB);
+  active = canonicalRegistry.getActiveMinister('BGD', 'interior_security');
+  assert.equal(active && active.ministerId, candidateB.id,
+    'replacing an active minister must complete through the canonical Fire/Recruit lifecycle');
+  assert.equal(canonicalRegistry.getMinister(candidateA.id).runtimeState.status, 'FIRED',
+    'the replaced minister must keep its lifecycle status');
+  assert.equal(canonicalRegistry.consistencyCheck().ok, true,
+    'canonical assignment index must remain consistent after replacement');
+
+  const liveRecruitment = sandbox.OmegaMinisterRecruitment;
+  sandbox.OmegaMinisterRecruitment = null;
+  await assert.rejects(
+    selector.appoint('treasury_finance', candidateA),
+    /MINISTER_RECRUITMENT_ENGINE_UNAVAILABLE/,
+    'a missing recruitment API must surface a diagnostic rather than calling the wrong registry'
+  );
+  sandbox.OmegaMinisterRecruitment = liveRecruitment;
+  assert.equal(sandbox.OmegaMinisterStateRegistry, canonicalRegistry,
+    'missing-engine diagnostics must not corrupt canonical registry wiring');
+
+  console.log('OMEGA LIVE MINISTER REGISTRY BRIDGE: PASS');
+  console.log('Canonical registry preserved against legacy V2 alias collision: PASS');
+  console.log('Real Recruit/Fire/Recruit replacement lifecycle: PASS');
+  console.log('Missing recruitment API fails visibly without registry mutation: PASS');
+})().catch(error => {
+  console.error(error);
+  process.exitCode = 1;
+});

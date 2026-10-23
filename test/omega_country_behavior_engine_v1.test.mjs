@@ -321,26 +321,41 @@ test('low-confidence action preferences are also attenuated toward neutral', asy
   if (confidence < 1) assert.ok(Math.abs(scored - 0.5) <= Math.abs(raw - 0.5));
 });
 
-test('country overview is inside ministry dashboard, uses shared behaviour runtime, and remains cached for offline play', () => {
+test('country overview mounts in the government cabinet, not inside ministry workspaces, and remains cached for offline play', () => {
   const html = read('index.html');
-  const start = html.indexOf('<div id="ministry-dashboard-view"');
-  const countryTab = html.indexOf('id="omega-country-overview-tabs"', start);
-  const overviewPanel = html.indexOf('id="omega-country-overview-panel"', countryTab);
-  const ministryWorkspace = html.indexOf('id="ministry-dashboard-content"', overviewPanel);
-  assert.ok(start >= 0 && countryTab > start && overviewPanel > countryTab && ministryWorkspace > overviewPanel);
+  const ministryStart = html.indexOf('<div id="ministry-dashboard-view"');
+  const cabinetStart = html.indexOf('<div id="cabinet-full-window"', ministryStart);
+  assert.ok(ministryStart >= 0 && cabinetStart > ministryStart);
+  const ministryMarkup = html.slice(ministryStart, cabinetStart);
+  assert.doesNotMatch(ministryMarkup, /omega-country-overview-tabs|omega-country-overview-panel|COUNTRY OVERVIEW/i);
   assert.match(html, /omega_country_behavior_engine_v1\.js/);
   assert.match(html, /omega_country_overview_ministry_ui_v1\.js/);
   assert.ok(html.indexOf('omega_country_behavior_engine_v1.js') < html.indexOf('omega_opponent_adaptive_strategy_system.js'));
 
   const ui = read('omega_country_overview_ministry_ui_v1.js');
-  assert.match(ui, /getBehaviorProfile/);
-  assert.match(ui, /getStrategicProfile/);
-  assert.match(ui, /resourceRuntime\.availability/);
-  assert.match(ui, /observed inventories/);
+  assert.match(ui, /getElementById\?\.\('cabinet-full-window'\)/);
+  assert.match(ui, /querySelector\?\.\('\.parchment-cabinet-container'\)/);
+  assert.match(ui, /omega-government-overview-panel/);
+  assert.doesNotMatch(ui, /data-omega-government-view|nav\.innerHTML/);
+  assert.match(ui, /function isExecutiveMinistryView/);
+  assert.match(ui, /mainCabinetView !== 'ministries'/);
+  assert.doesNotMatch(ui, /data-omega-ministry-view|panelEl\.id = 'omega-country-overview-panel'|getElementById\?\.\('omega-country-overview-panel'\)|getElementById\?\.\('omega-country-overview-tabs'\)/);
+  assert.match(ui, /OmegaCountryGeneralDataRuntime/);
+  assert.match(ui, /Data coverage & missing fields/);
+  assert.match(ui, /function renderCountryDataCoverage/);
+  assert.match(ui, /function runCountryDataAudit/);
+  assert.match(ui, /MISSING FIELDS BY COUNTRY/);
+  assert.match(ui, /Additional context fields not recorded/);
+  assert.match(ui, /countryMetricIsInternal/);
+  assert.match(ui, /gdpCurrentUsd/);
+  assert.match(ui, /populationTotal/);
   assert.match(ui, /setActiveTab/);
   assert.match(ui, /OMEGA_COUNTRY_CONTEXT_CHANGED/);
-  assert.match(ui, /Simulation state remains unchanged/);
-  assert.match(ui, /the game does not substitute invented stock or production/i);
+  const visibleMarkup = ui.slice(ui.indexOf('const overviewHtml ='), ui.indexOf('panelEl.innerHTML = overviewHtml;'));
+  assert.match(visibleMarkup, /countryFacts/);
+  assert.match(visibleMarkup, /missingMetrics/);
+  assert.doesNotMatch(visibleMarkup, /SIMULATION|RUNTIME|EXECUTABLE BEHAVIOUR|gameplay|LIVE RESOURCE STATE|SOURCE STATUS NOT RECORDED/i);
+  assert.match(visibleMarkup, /renderCountryDataCoverage/);
 
   const sw = read('omega-offline-map-sw.js');
   assert.match(sw, /omega-offline-atlas-shell-v\d+/);
@@ -348,7 +363,14 @@ test('country overview is inside ministry dashboard, uses shared behaviour runti
   assert.match(sw, /omega_country_overview_ministry_ui_v1\.js/);
   assert.match(sw, /resource_site_reserve_simulation_v1\.json/);
   assert.match(read('server_bootstrap.js'), /'omega_country_behavior_engine_v1\.js',\s*'omega_opponent_adaptive_strategy_system\.js'/);
-  assert.match(read('style.css'), /\.omega-country-overview-tabs/);
+  const ministryEngine = read('ministry_engine.js');
+  assert.match(ministryEngine, /class="omega-cabinet-main-navigation"/);
+  assert.match(ministryEngine, /EXECUTIVE MINISTRY/);
+  assert.match(ministryEngine, /ALL MINISTRIES \(18\)/);
+  assert.ok(ui.includes("return '<li><em>' + esc(item) + '</em></li>';"));
+  assert.doesNotMatch(ui, /over population|insufficient industrial material/i);
+  assert.match(read('style.css'), /\.ocov-list li::before/);
+  assert.match(read('style.css'), /font-style: italic/);
 
   const autonomy = read('omega_opponent_autonomy_system.js');
   const weightBlock = autonomy.match(/const DECISION_WEIGHTS=Object\.freeze\(\{([\s\S]*?)\}\);/);

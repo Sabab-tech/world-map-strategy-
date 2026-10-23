@@ -161,6 +161,42 @@ test('save and load restores the canonical session without creating a second sta
   assert.equal(sandbox.Omega.GameSession.diagnostics().lastLoadIntegrity,'VERIFIED');
 });
 
+test('slow in-flight frame caps accumulated catch-up work instead of freezing the UI',async()=>{
+  const {sandbox,state}=makeSandbox();
+  loadScript('omega_simulation_runtime.js',sandbox);
+  let engineSteps=0,releaseFirstTurn,notifyTurnStarted;
+  const firstTurnGate=new Promise(resolve=>{releaseFirstTurn=resolve;});
+  const turnStarted=new Promise(resolve=>{notifyTurnStarted=resolve;});
+  sandbox.Omega.Simulation.configure({
+    state,
+    worldEngine:{
+      setAuthoritativeState(){},
+      processSimulationTick(){engineSteps+=1;return {advanced:true};}
+    },
+    interoperability:{advanceTurn(){},saveState(){return {};},loadState(){return true;}},
+    ministryPump:async()=>{
+      if(engineSteps===1){notifyTurnStarted();await firstTurnGate;}
+      return null;
+    }
+  });
+  sandbox.Omega.GameSession.createSession({playerCountryId:'BANGLADESH'});
+  sandbox.Omega.GameSession.startSession({playerCountryId:'BANGLADESH'});
+  const activeFrame=sandbox.Omega.Simulation.frame(10000);
+  await turnStarted;
+  for(let i=0;i<50;i++){
+    const pending=sandbox.Omega.Simulation.frame(10000);
+    assert.equal((await pending).busy,true,'overlapping frames should only queue bounded time');
+  }
+  releaseFirstTurn();
+  await activeFrame;
+  const resumed=await sandbox.Omega.Simulation.frame(0);
+  assert.equal(resumed.steps,1,'bounded pending time should allow at most one catch-up day at normal speed');
+  assert.equal(sandbox.Omega.Simulation.clock.turn,2);
+  const idle=await sandbox.Omega.Simulation.frame(0);
+  assert.equal(idle.steps,0,'consumed frame backlog must not replay on later frames');
+  assert.equal(sandbox.Omega.Simulation.clock.turn,2);
+});
+
 console.log('OMEGA SIMULATION AUTHORITY TESTS: PASS');
 
 test('save checksum and resource ownership integrity reject corruption before changing live state',()=>{

@@ -204,9 +204,14 @@ jobs:
           const pid = Number(process.env.OMEGA_SERVER_PID || 0);
           let health = null;
           let lastError = null;
-          for (let i = 0; i < 480; i++) {
+          const startupDeadline = Date.now() + 120_000;
+          while (!health && Date.now() < startupDeadline) {
+            const remaining = startupDeadline - Date.now();
             try {
-              const r = await fetch(`${base}/api/deep-core/health`, { cache: 'no-store' });
+              const timeoutMs = Math.max(1, Math.min(2000, remaining));
+              const r = await fetch(`${base}/api/deep-core/health`, {
+                cache: 'no-store', signal: AbortSignal.timeout(timeoutMs)
+              });
               const body = await r.json().catch(() => null);
               if (r.ok && body?.ok) { health = body; break; }
               lastError = new Error(`HTTP ${r.status}: ${JSON.stringify(body)}`);
@@ -214,13 +219,14 @@ jobs:
             if (pid) {
               try { process.kill(pid, 0); } catch (_) { break; }
             }
-            await sleep(250);
+            const left = startupDeadline - Date.now();
+            if (left > 0) await sleep(Math.min(250, left));
           }
           if (!health?.ok) {
             const log = await fs.readFile('/tmp/omega-server.log', 'utf8').catch(() => '');
             throw new Error(`Deep Core server did not become healthy. last=${lastError?.message || 'none'}\nSERVER_LOG\n${log}`);
           }
-          const diag = await (await fetch(`${base}/api/deep-core/diagnostics`, { cache: 'no-store' })).json();
+          const diag = await (await fetch(`${base}/api/deep-core/diagnostics`, { cache: 'no-store', signal: AbortSignal.timeout(10000) })).json();
           if (diag?.scan?.authority !== 'NODE_FILESYSTEM') throw new Error(`Server Deep Core authority mismatch: ${diag?.scan?.authority || 'UNKNOWN'}`);
           if (diag?.initialized !== true) throw new Error('Server Deep Core was not initialized');
           if (diag?.scan?.complete !== true) throw new Error(`Server Deep Core repository scan incomplete: ${JSON.stringify(diag?.scan?.failedFiles || [])}`);
@@ -232,11 +238,11 @@ jobs:
           const id = String(row.code || row.id || row.iso2 || row.iso3).trim().toUpperCase();
           const name = String(row.name).trim();
 
-          const lookupResponse = await fetch(`${base}/api/deep-core/lookup?id=${encodeURIComponent(id)}`);
+          const lookupResponse = await fetch(`${base}/api/deep-core/lookup?id=${encodeURIComponent(id)}`, { signal: AbortSignal.timeout(10000) });
           const lookup = await lookupResponse.json();
           if (!lookupResponse.ok || lookup.status !== 'RESOLVED' || !lookup.count) throw new Error(`Server lookup failed: ${lookup.status || lookupResponse.status}`);
 
-          const searchResponse = await fetch(`${base}/api/deep-core/search?q=${encodeURIComponent(name)}`);
+          const searchResponse = await fetch(`${base}/api/deep-core/search?q=${encodeURIComponent(name)}`, { signal: AbortSignal.timeout(10000) });
           const search = await searchResponse.json();
           if (!searchResponse.ok || search.status !== 'RESOLVED' || !search.count) throw new Error(`Server search failed: ${search.status || searchResponse.status}`);
 
@@ -244,7 +250,8 @@ jobs:
           const queryResponse = await fetch(`${base}/api/deep-core/query`, {
             method: 'POST',
             headers: {'content-type':'application/json'},
-            body: JSON.stringify({ prompt: queryPrompt, countryId: id })
+            body: JSON.stringify({ prompt: queryPrompt, countryId: id }),
+            signal: AbortSignal.timeout(10000)
           });
           const query = await queryResponse.json();
           if (!queryResponse.ok || !query?.ok || query.result?.status !== 'VERIFIED_FACT' || !query.result?.evidence?.length) {

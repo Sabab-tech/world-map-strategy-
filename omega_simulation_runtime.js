@@ -23,6 +23,9 @@
   const DAY_MS=86400000;
   const STEP_MS=10000;
   const MAX_STEPS_PER_FRAME=8;
+  // Bound frame deltas arriving while an asynchronous turn is still running.
+  // Otherwise slow turns accumulate an unbounded catch-up burst on low-end devices.
+  const MAX_PENDING_REAL_DELTA_MS=STEP_MS;
   const MAX_EVENT_HISTORY=2000;
   const MAX_COMMAND_HISTORY=2000;
 
@@ -788,7 +791,7 @@
     async frame(realDeltaMs){
       const delta=Math.max(0,finite(realDeltaMs,0));
       if(this.frameInProgress){
-        this.pendingRealDeltaMs+=delta;
+        this.pendingRealDeltaMs=Math.min(MAX_PENDING_REAL_DELTA_MS,this.pendingRealDeltaMs+delta);
         return {steps:0,turn:this.clock.turn,status:this.status,busy:true};
       }
       if(this.status!=='RUNNING')return {steps:0,turn:this.clock.turn,status:this.status};

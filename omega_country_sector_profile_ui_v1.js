@@ -4,7 +4,7 @@
  */
 (function(root){
 'use strict';
-const VERSION='1.0.0';
+const VERSION='1.1.0';
 if(root.OmegaCountrySectorProfileUI&&root.OmegaCountrySectorProfileUI.VERSION===VERSION)return;
 const PROFILE_URL='./country_sector_profiles_v1.json',SCHEMA_URL='./country_sector_profile_schema_v1.json';
 const state={promise:null,profiles:null,profileByIso3:null,schema:null,lastError:null,mountCount:0,panelObserver:null};
@@ -12,6 +12,25 @@ const str=v=>String(v==null?'':v),norm=v=>str(v).normalize('NFKD').replace(/[\u0
 const obj=v=>!!v&&typeof v==='object'&&!Array.isArray(v);
 const esc=v=>str(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 const titleCase=v=>str(v).replace(/([a-z0-9])([A-Z])/g,'$1 $2').replace(/[_-]+/g,' ').replace(/\s+/g,' ').trim().replace(/\b[a-z]/g,ch=>ch.toUpperCase());
+const internalOnlyStatus=status=>/GAME_DERIVED|SIMULATION|GAMEPLAY|SCENARIO|MODELED|MODELLED|DERIVED_HEURISTIC|DERIVED_SIMULATION|POLICY_ONLY/i.test(str(status));
+function friendlyStatus(status,value){
+ if(value===null||value===undefined||value==='')return 'Not recorded';
+ const raw=str(status).toUpperCase();
+ if(raw.includes('WORLD_BANK_API_OBSERVATION'))return 'World Bank observation';
+ if(raw.includes('UNDP_HDR_OBSERVATION'))return 'UNDP observation';
+ if(raw.includes('TRANSPARENCY_INTERNATIONAL_CPI'))return 'Transparency International observation';
+ if(raw.includes('DERIVED_SAME_YEAR_OBSERVATIONS'))return 'Calculated from same-year data';
+ if(raw.includes('CANONICAL_GENERAL_FACT'))return 'Country fact';
+ if(raw.includes('LEGACY')||raw.includes('LOCAL_BASELINE'))return 'Earlier recorded data';
+ if(raw.includes('SOURCE_OBSERVATION'))return 'Source observation';
+ return 'Recorded value';
+}
+function safeSourceName(evidence){
+ const name=str(evidence&&(evidence.sourceName||evidence.sourceId));
+ if(!name||/OMEGA_|GAME|SIMULATION|RUNTIME|LOCAL_GAME|SCENARIO|MODELLED|MODELED/i.test(name))return '';
+ if(/\.json$/i.test(name))return '';
+ return name;
+}
 const formatNumber=v=>{try{return new Intl.NumberFormat('en',{maximumFractionDigits:3}).format(v)}catch(_){return str(v)}};
 function formatValue(value,depth){
  const level=depth||0;
@@ -68,52 +87,82 @@ function getDefinition(key){
 function resolvedValue(profile,record,key,refType){
  if(refType==='METRIC'){
   const metadata=record&&record.metricMetadata&&record.metricMetadata[key]||{};
-  return {value:record&&record.metrics&&record.metrics[key]!==undefined?record.metrics[key]:null,unit:getDefinition(key).unit||null,
-   year:metadata.year,status:metadata.status||null,sourceId:metadata.sourceId||null,sourceName:metadata.sourceName||null,sourceUrl:metadata.sourceUrl||null,note:metadata.note||null};
+  const value=record&&record.metrics&&record.metrics[key]!==undefined?record.metrics[key]:null;
+  if(internalOnlyStatus(metadata.status))return {value:null,unit:null,year:null,status:null,sourceId:null,sourceName:null,sourceUrl:null,note:null};
+  return {value,unit:getDefinition(key).unit||null,
+   year:metadata.year,status:metadata.status||null,sourceId:metadata.sourceId||null,sourceName:metadata.sourceName||null,sourceUrl:metadata.sourceUrl||null,note:/SIMULATION|GAMEPLAY|RUNTIME|MODELLED|MODELED/i.test(str(metadata.note))?null:(metadata.note||null)};
  }
- if(refType==='DERIVED_METRIC')return profile.derivedMetrics&&profile.derivedMetrics[key]||null;
+ if(refType==='DERIVED_METRIC'){
+  const value=profile.derivedMetrics&&profile.derivedMetrics[key]||null;
+  return value&&internalOnlyStatus(value.status)?{value:null,status:null,sourceId:null,sourceName:null,sourceUrl:null,note:null}:value;
+ }
  if(refType==='EXTERNAL_METRIC')return profile.externalMetrics&&profile.externalMetrics[key]||null;
- if(refType==='ANALYTICS')return profile.analytics&&profile.analytics[key]||null;
+ if(refType==='ANALYTICS')return null;
  if(refType==='GENERAL_FACT')return {value:record&&record.generalFacts&&record.generalFacts[key]!==undefined?record.generalFacts[key]:null,unit:null,year:null,status:'CANONICAL_GENERAL_FACT',sourceName:'Canonical country general-data registry'};
  return null;
 }
 function evidenceRows(profile,record,entries,fallbackType){
  return Object.entries(entries||{}).map(([key,reference])=>{
-  const kind=reference&&reference.refType||fallbackType,evidence=resolvedValue(profile,record,key,kind)||{},definition=getDefinition(key);
-  const label=definition.title||definition.label||definition.name||titleCase(key),value=evidence.value!==undefined?evidence.value:null;
-  const bits=[];
-  if(evidence.status)bits.push(titleCase(evidence.status));
-  if(evidence.year!==null&&evidence.year!==undefined)bits.push('Year '+evidence.year);
-  if(evidence.sourceName||evidence.sourceId)bits.push(evidence.sourceName||evidence.sourceId);
+  const actualKey=reference&&reference.key||key;
+  const kind=reference&&reference.refType||fallbackType;
+  const evidence=resolvedValue(profile,record,actualKey,kind)||{},definition=getDefinition(actualKey);
+  const label=definition.title||definition.label||definition.name||titleCase(actualKey),value=evidence.value!==undefined?evidence.value:null;
+  const internal=internalOnlyStatus(evidence.status);
+  const status=friendlyStatus(internal?'':evidence.status,value);
+  const bits=[status];
+  if(value!==null&&value!==undefined&&evidence.year!==null&&evidence.year!==undefined)bits.push('Year '+evidence.year);
+  const source=safeSourceName(evidence);if(value!==null&&source)bits.push(source);
   const unit=evidence.unit||definition.unit||'',display=formatValue(value)+(value!==null&&unit?' '+unit:'');
-  const search=norm([label,key,value,evidence.status,evidence.sourceName,evidence.sourceId].join(' '));
-  return '<article class="ocsp-evidence-row" data-ocsp-evidence data-search="'+esc(search)+'"><div class="ocsp-evidence-label"><strong>'+esc(label)+'</strong><code>'+esc(key)+'</code></div>'+
-   '<div class="ocsp-evidence-value">'+esc(display)+'</div><div class="ocsp-evidence-meta">'+esc(bits.length?bits.join(' · '):(value===null?'Source status not recorded':'Recorded value'))+'</div>'+
-   (evidence.note?'<p class="ocsp-evidence-note">'+esc(evidence.note)+'</p>':'')+
-   (evidence.sourceUrl?'<p class="ocsp-evidence-note">Source: <a href="'+esc(evidence.sourceUrl)+'" target="_blank" rel="noopener noreferrer">'+esc(evidence.sourceUrl)+'</a></p>':'')+'</article>';
+  const search=norm([label,actualKey,value,status,source].join(' '));
+  return '<article class="ocsp-evidence-row" data-ocsp-evidence data-search="'+esc(search)+'"><div class="ocsp-evidence-label"><strong>'+esc(label)+'</strong><code>'+esc(actualKey)+'</code></div>'+
+   '<div class="ocsp-evidence-value">'+esc(display)+'</div><div class="ocsp-evidence-meta">'+esc(bits.join(' · '))+'</div>'+
+   (value!==null&&evidence.note&&!/SIMULATION|GAMEPLAY|RUNTIME|MODELLED|MODELED|OMEGA_/i.test(str(evidence.note))?'<p class="ocsp-evidence-note">'+esc(evidence.note)+'</p>':'')+
+   (value!==null&&evidence.sourceUrl&&/^https:\/\//i.test(evidence.sourceUrl)?'<p class="ocsp-evidence-note">Source: <a href="'+esc(evidence.sourceUrl)+'" target="_blank" rel="noopener noreferrer">'+esc(evidence.sourceUrl)+'</a></p>':'')+'</article>';
  }).join('');
 }
 function sourceGroupRows(record,sourceGroup){
  if(!sourceGroup||!sourceGroup.key||!record)return '';
  const key=sourceGroup.key,value=record[key];
  if(value===null||value===undefined)return '';
- const rows=obj(value)?Object.entries(value):[['value',value]];
+ const rows=(obj(value)?Object.entries(value):[['value',value]]).filter(([field])=>! /status|source|provenance|diagnostic/i.test(str(field)));
  if(!rows.length)return '';
- return '<details class="ocsp-source-group"><summary>Registered source group · '+esc(titleCase(key))+'</summary><div class="ocsp-source-grid">'+
+ return '<details class="ocsp-source-group" open><summary>Additional country facts</summary><div class="ocsp-source-grid">'+
   rows.map(([field,item])=>'<div><span>'+esc(titleCase(field))+'</span><strong>'+esc(formatValue(item))+'</strong></div>').join('')+
-  '</div><small>Values come from the shared country registry. Empty or unavailable inputs are not replaced with zero.</small></details>';
+  '</div><small>Unavailable values are marked Not recorded.</small></details>';
+}
+function sectorRows(profile,definition){
+ const sector=profile.sectors&&profile.sectors[definition.id]||{};
+ const indicators={...(sector.indicators||{})};
+ for(const key of definition.metricKeys||[])if(!indicators[key])indicators[key]={refType:'METRIC',key};
+ for(const key of definition.derivedMetricKeys||[])if(!indicators[key])indicators[key]={refType:'DERIVED_METRIC',key};
+ for(const key of definition.externalMetricKeys||[])if(!indicators[key])indicators[key]={refType:'EXTERNAL_METRIC',key};
+ return {sector,indicators,facts:sector.facts||{}};
+}
+function extensionRows(profile,definition){
+ const slots=Array.isArray(definition.extensionSlots)?definition.extensionSlots:[];
+ if(!slots.length)return '';
+ const values=[...(profile.extensions&&profile.extensions.customAttributes||[]),...(profile.extensions&&profile.extensions.customMetrics||[]),...(profile.extensions&&profile.extensions.customTimeSeries||[])];
+ return '<div class="ocsp-extension-list">'+slots.map(slot=>{
+  const valueRow=values.find(row=>row&&(row.key===slot.key||row.metricKey===slot.key||row.name===slot.key));
+  const value=valueRow?(valueRow.value??valueRow.values??valueRow.observation??null):null;
+  const recorded=value!==null&&value!==undefined&&value!=='';
+  const description=/future game score|project model|gameplay|simulation/i.test(str(slot.description))?'No comparable source record is available yet.':str(slot.description);
+  return '<article class="ocsp-evidence-row" data-ocsp-evidence data-search="'+esc(norm([slot.key,description,value].join(' ')))+'"><div class="ocsp-evidence-label"><strong>'+esc(slot.title||titleCase(slot.key))+'</strong><code>'+esc(slot.key)+'</code></div><div class="ocsp-evidence-value">'+esc(formatValue(recorded?value:null))+'</div><div class="ocsp-evidence-meta">'+(recorded?'Recorded value':'Not recorded')+'</div>'+(description?'<p class="ocsp-evidence-note">'+esc(description)+'</p>':'')+'</article>';
+ }).join('')+'</div>';
 }
 function renderSector(profile,record,definition){
- const sector=profile.sectors&&profile.sectors[definition.id]||{};
- const blocks=[evidenceRows(profile,record,sector.indicators,null),evidenceRows(profile,record,sector.facts,'GENERAL_FACT'),evidenceRows(profile,record,sector.analytics,'ANALYTICS')].filter(Boolean).join('');
- const allRows=[sector.indicators,sector.facts,sector.analytics].flatMap((group,index)=>Object.entries(group||{}).map(([key,ref])=>({key,ref,type:index===1?'GENERAL_FACT':index===2?'ANALYTICS':null})));
+ const resolved=sectorRows(profile,definition),sector=resolved.sector,indicators=resolved.indicators,facts=resolved.facts;
+ const blocks=[evidenceRows(profile,record,indicators,null),evidenceRows(profile,record,facts,'GENERAL_FACT')].filter(Boolean).join('');
+ const allRows=[indicators,facts].flatMap((group,index)=>Object.entries(group||{}).map(([key,ref])=>({key,ref,type:index===1?'GENERAL_FACT':null})));
  let available=0;
- allRows.forEach(row=>{const item=resolvedValue(profile,record,row.key,row.ref&&row.ref.refType||row.type);if(item&&item.value!==null&&item.value!==undefined&&item.value!=='')available++});
+ allRows.forEach(row=>{const item=resolvedValue(profile,record,row.ref&&row.ref.key||row.key,row.ref&&row.ref.refType||row.type);if(item&&item.value!==null&&item.value!==undefined&&item.value!=='')available++});
+ const extensions=extensionRows(profile,definition);
+ const totalRows=allRows.length+(Array.isArray(definition.extensionSlots)?definition.extensionSlots.length:0);
  const search=norm([definition.title,definition.description,definition.id].join(' '));
- return '<details class="ocsp-sector" data-ocsp-sector data-search="'+esc(search)+'"><summary><span class="ocsp-sector-title"><strong>'+esc(definition.title||titleCase(definition.id))+'</strong>'+
-  '<small>'+esc(definition.description||'Registered sector profile')+'</small></span><span class="ocsp-sector-count">'+available+' / '+allRows.length+' recorded</span></summary><div class="ocsp-sector-body">'+
-  (blocks||'<p class="ocsp-empty">No indicator references are registered for this sector.</p>')+sourceGroupRows(record,sector.sourceGroup||definition.sourceGroup)+
-  '<p class="ocsp-sector-note">Sector status: '+esc(titleCase(sector.status||'NOT CLASSIFIED'))+'. Missing evidence remains unavailable; derived values retain their own year and calculation status.</p></div></details>';
+ return '<details class="ocsp-sector" open data-ocsp-sector data-search="'+esc(search)+'"><summary><span class="ocsp-sector-title"><strong>'+esc(definition.title||titleCase(definition.id))+'</strong>'+
+  '<small>'+esc(definition.description||'Country information')+'</small></span><span class="ocsp-sector-count">'+available+' / '+totalRows+' recorded</span></summary><div class="ocsp-sector-body">'+
+  (blocks||'<p class="ocsp-empty">No registered fields for this section.</p>')+extensions+sourceGroupRows(record,sector.sourceGroup||definition.sourceGroup)+
+  '</div></details>';
 }
 function signalsBlock(profile,key,title,description){
  const rows=profile.relativeSignals&&Array.isArray(profile.relativeSignals[key])?profile.relativeSignals[key]:[];
@@ -124,29 +173,33 @@ function signalsBlock(profile,key,title,description){
    (signal.year==null?'':' · Year '+esc(signal.year))+(signal.peerPercentile==null?'':' · Peer percentile '+esc(formatNumber(signal.peerPercentile)))+'</small>'+
    (signal.caveat?'<p>'+esc(signal.caveat)+'</p>':'')+'</article>').join('')+'</div></details>';
 }
+function displaySectors(profile,record){
+ const sectors=(state.schema.sectors||[]).slice(),covered=new Set();
+ for(const def of sectors){
+  for(const key of [...(def.metricKeys||[]),...(def.derivedMetricKeys||[]),...(def.externalMetricKeys||[])])covered.add(key);
+  const section=profile.sectors&&profile.sectors[def.id]||{};
+  Object.entries(section.indicators||{}).forEach(([key,ref])=>covered.add(ref&&ref.key||key));
+ }
+ const extras=Object.keys(record&&record.metrics||{}).filter(key=>!covered.has(key));
+ if(extras.length)sectors.push({id:'additionalIndicators',title:'Additional country indicators',description:'Other registered indicators not assigned to a main sector.',metricKeys:extras});
+ return sectors;
+}
 function profileMarkup(profile,record){
- const sectors=state.schema.sectors||[];let total=0,recorded=0;
- sectors.forEach(def=>{const section=profile.sectors&&profile.sectors[def.id]||{};
-  ['indicators','facts','analytics'].forEach((group,index)=>Object.entries(section[group]||{}).forEach(([key,ref])=>{
-   total++;const type=index===1?'GENERAL_FACT':index===2?'ANALYTICS':null,item=resolvedValue(profile,record,key,ref&&ref.refType||type);
-   if(item&&item.value!==null&&item.value!==undefined&&item.value!=='')recorded++;
-  }));
- });
- const metadata=state.profiles.metadata||{};
- return '<div class="ocsp-summary-grid"><div><strong>'+esc(sectors.length)+'</strong><span>Registered sectors</span></div><div><strong>'+esc(recorded)+' / '+esc(total)+'</strong><span>Recorded indicators</span></div>'+
-  '<div><strong>'+esc(Math.max(0,total-recorded))+'</strong><span>Unavailable indicators</span></div><div><strong>'+esc(metadata.schemaVersion||profile.profileVersion||'N/A')+'</strong><span>Profile schema</span></div></div>'+
-  '<div class="ocsp-profile-toolbar"><label for="ocsp-sector-filter">Find a sector or indicator</label><input id="ocsp-sector-filter" type="search" data-ocsp-filter placeholder="Search metrics, evidence, source status…" autocomplete="off">'+
+ const sectors=displaySectors(profile,record),metrics=Object.entries(record&&record.metrics||{}),facts=Object.entries(record&&record.generalFacts||{});
+ const recordedMetrics=metrics.filter(([key,value])=>value!==null&&value!==undefined&&value!==''&&!internalOnlyStatus(record.metricMetadata&&record.metricMetadata[key]&&record.metricMetadata[key].status)).length;
+ const recordedFacts=facts.filter(([,value])=>value!==null&&value!==undefined&&value!==''&&(!Array.isArray(value)||value.length>0)).length;
+ return '<div class="ocsp-summary-grid"><div><strong>'+esc(sectors.length)+'</strong><span>Information sections</span></div><div><strong>'+esc(recordedMetrics)+' / '+esc(metrics.length)+'</strong><span>Recorded indicators</span></div>'+
+  '<div><strong>'+esc(Math.max(0,metrics.length-recordedMetrics))+'</strong><span>Not recorded indicators</span></div><div><strong>'+esc(recordedFacts)+' / '+esc(facts.length)+'</strong><span>Recorded general facts</span></div></div>'+
+  '<div class="ocsp-profile-toolbar"><label for="ocsp-sector-filter">Find a country field</label><input id="ocsp-sector-filter" type="search" data-ocsp-filter placeholder="Search indicators, facts, or missing fields…" autocomplete="off">'+
   '<div class="ocsp-profile-actions"><button type="button" data-ocsp-expand>Expand all</button><button type="button" data-ocsp-collapse>Collapse all</button></div></div>'+
-  '<div class="ocsp-sector-list" data-ocsp-sector-list>'+sectors.map(def=>renderSector(profile,record,def)).join('')+'</div><div class="ocsp-signal-grid">'+
-  signalsBlock(profile,'strengths','Relative signals: strengths','Peer-percentile analytical signals from recorded values, not official rankings.')+
-  signalsBlock(profile,'vulnerabilities','Relative signals: vulnerabilities','Relative data signals, not factual claims about intent or guaranteed gameplay outcomes.')+'</div>'+
-  '<p class="ocsp-data-policy">'+esc(state.profiles.sourcePolicy||'Source references resolve through the canonical country data registry.')+' The country briefing is read-only and does not change simulation state.</p>';
+  '<div class="ocsp-sector-list" data-ocsp-sector-list>'+sectors.map(def=>renderSector(profile,record,def)).join('')+'</div>'+
+  '<p class="ocsp-data-policy">Values retain source and observation year where available. Missing values are marked Not recorded.</p>';
 }
 function shellHtml(countryId){
  return '<section class="ocsp-shell" data-ocsp-root data-country-value="'+esc(countryId)+'" aria-label="Country sector profile"><header class="ocsp-header"><div><p class="ocsp-eyebrow">OMEGA / COUNTRY INTELLIGENCE</p>'+
   '<h3>National sector profiles</h3><p>Source-traceable economic, trade, governance, industry, security, human-development, resource and infrastructure data.</p></div>'+
-  '<button type="button" class="ocsp-primary" data-ocsp-toggle aria-expanded="false">Show sector dossier</button></header>'+
-  '<div class="ocsp-status" data-ocsp-status role="status" aria-live="polite">Detailed profile loads only when opened, keeping the country briefing responsive.</div><div class="ocsp-content" data-ocsp-content hidden></div></section>';
+  '<button type="button" class="ocsp-primary" data-ocsp-toggle aria-expanded="false">Hide details</button></header>'+
+  '<div class="ocsp-status" data-ocsp-status role="status" aria-live="polite">Country information</div><div class="ocsp-content" data-ocsp-content hidden></div></section>';
 }
 function mount(panel){
  if(!panel||!root.document)return;
@@ -156,6 +209,8 @@ function mount(panel){
  if(current&&current.getAttribute('data-country-value')===countryValue)return;
  if(current)current.remove();
  panel.insertAdjacentHTML('beforeend',shellHtml(countryValue));state.mountCount++;
+ const toggle=panel.querySelector('[data-ocsp-root] [data-ocsp-toggle]');
+ if(toggle)Promise.resolve().then(()=>toggleDossier(toggle));
 }
 function filterContent(content,query){
  const term=norm(query),sectors=content.querySelectorAll('[data-ocsp-sector]');let visible=0;
@@ -168,15 +223,15 @@ function filterContent(content,query){
   sector.hidden=!matchSector;if(matchSector){visible++;if(term&&rowVisible)sector.open=true}
  });
  const shell=content.closest('[data-ocsp-root]'),status=shell&&shell.querySelector('[data-ocsp-status]');
- if(status)status.textContent=term?(visible?'Showing matching sectors and evidence.':'No sector or indicator matches that search.'):'Loaded country sector dossier. Source records and analytical values remain separately labelled.';
+ if(status)status.textContent=term?(visible?'Matching country fields are shown.':'No country field matches that search.'):'Country information and missing fields are shown below.';
 }
 async function toggleDossier(button){
  const shell=button.closest('[data-ocsp-root]');if(!shell)return;
  const content=shell.querySelector('[data-ocsp-content]'),status=shell.querySelector('[data-ocsp-status]');if(!content)return;
- if(!content.hidden){content.hidden=true;button.textContent='Show sector dossier';button.setAttribute('aria-expanded','false');return}
- if(shell.dataset.loaded==='true'){content.hidden=false;button.textContent='Hide sector dossier';button.setAttribute('aria-expanded','true');return}
- button.disabled=true;button.textContent='Loading sector data…';shell.setAttribute('aria-busy','true');
- if(status)status.textContent='Loading compact profiles and resolving source references…';
+ if(!content.hidden){content.hidden=true;button.textContent='Show details';button.setAttribute('aria-expanded','false');return}
+ if(shell.dataset.loaded==='true'){content.hidden=false;button.textContent='Hide details';button.setAttribute('aria-expanded','true');return}
+ button.disabled=true;button.textContent='Loading…';shell.setAttribute('aria-busy','true');content.hidden=false;content.innerHTML='<p class="ocsp-empty">Loading country information…</p>';
+ if(status)status.textContent='Loading country information…';
  try{
   await loadData();
   const countryId=shell.getAttribute('data-country-value')||'';
@@ -193,12 +248,12 @@ async function toggleDossier(button){
   }
   if(!profile)throw Error('PROFILE_NOT_FOUND_FOR_SELECTED_COUNTRY');
   content.innerHTML=profileMarkup(profile,record);content.hidden=false;shell.dataset.loaded='true';
-  button.textContent='Hide sector dossier';button.setAttribute('aria-expanded','true');
-  if(status)status.textContent='Loaded '+(profile.identity.name||profile.identity.iso3)+'. '+((profile.sectors&&Object.keys(profile.sectors).length)||0)+' sector sections are available; unavailable source values remain explicit.';
+  button.textContent='Hide details';button.setAttribute('aria-expanded','true');
+  if(status)status.textContent='Country details are visible. Fields without a recorded value are labelled Not recorded.';
  }catch(error){
   const message=str(error&&(error.message||error));
-  if(status)status.textContent='Sector profile unavailable: '+message+'. No fallback scores were fabricated. Check that the canonical profile build is present, then retry.';
-  content.hidden=true;button.textContent='Retry sector dossier';button.setAttribute('aria-expanded','false');
+  if(status)status.textContent='Country information could not be loaded. Check the connection or retry.';
+  content.innerHTML='<p class="ocsp-empty">Country information could not be loaded.</p>';content.hidden=false;button.textContent='Retry';button.setAttribute('aria-expanded','true');
  }finally{button.disabled=false;shell.removeAttribute('aria-busy')}
 }
 function onClick(event){

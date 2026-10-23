@@ -1327,12 +1327,12 @@ window.OmegaCabinetUI = {
                 </div>
 
                 <!-- MAIN CABINET ARCHITECTURE NAVIGATION TABS -->
-                <div style="display:flex; gap:8px; margin-bottom:12px; border-bottom:2px solid #b89329; padding-bottom:8px; flex-shrink:0;">
+                <div class="omega-cabinet-main-navigation" style="display:flex; gap:8px; margin-bottom:12px; border-bottom:2px solid #b89329; padding-bottom:8px; flex-shrink:0;">
                     <button onclick="window.OmegaCabinetUI.setCabinetMainView('council');" class="parchment-tab-btn ${isCouncil ? 'active' : ''}" style="flex:1; padding:8px 12px; font-size:12px; font-weight:bold; justify-content:center; border-radius:8px;">
-                        🏛️ NATIONAL EXECUTIVE COUNCIL (10 Subsystems)
+                        🏛️ EXECUTIVE MINISTRY
                     </button>
                     <button onclick="window.OmegaCabinetUI.setCabinetMainView('ministries');" class="parchment-tab-btn ${!isCouncil ? 'active' : ''}" style="flex:1; padding:8px 12px; font-size:12px; font-weight:bold; justify-content:center; border-radius:8px;">
-                        🏢 18 STATE MINISTRIES
+                        🏢 ALL MINISTRIES (18)
                     </button>
                 </div>
         `;
@@ -1423,9 +1423,58 @@ window.OmegaCabinetUI = {
 
         fullWin.innerHTML = html;
         fullWin.style.display = 'flex';
+        // The cabinet shell is not ready until its deferred council subtree has rendered.
+        fullWin.setAttribute('data-cabinet-render-state', isCouncil ? 'loading-council' : 'ready');
+        fullWin.setAttribute('aria-busy', isCouncil ? 'true' : 'false');
 
         if (isCouncil && window.OmegaCabinetEngine) {
-            window.OmegaCabinetEngine.renderCabinetSubsystem();
+            const subsystemEngine = window.OmegaCabinetEngine;
+            const subsystemRoot = document.getElementById('cabinet-subsystem-root');
+            if (subsystemRoot) {
+                // Paint the cabinet shell first. On low-memory WebViews the
+                // governance subsystem can build a large HTML tree; doing that
+                // inside the navigation click blocks the JS callback and makes
+                // the whole game appear frozen.
+                subsystemRoot.innerHTML = '<div class="omega-cabinet-subsystem-loading" role="status" aria-live="polite" style="padding:16px; text-align:center; color:#5c4315;">Loading executive council…</div>';
+                const renderSubsystem = () => {
+                    if (document.getElementById('cabinet-subsystem-root') !== subsystemRoot) return;
+                    if (this.mainCabinetView === 'ministries') return;
+                    const layerManager = window.OmegaLayerManager;
+                    if (layerManager && Number(layerManager.currentLayer) !== 1) return;
+                    try {
+                        subsystemEngine.renderCabinetSubsystem(subsystemRoot);
+                        const renderedContent = subsystemRoot.childElementCount > 0 &&
+                            !subsystemRoot.querySelector('.omega-cabinet-subsystem-loading');
+                        if (!renderedContent) {
+                            throw new Error('Council renderer completed without producing visible content.');
+                        }
+                        fullWin.setAttribute('data-cabinet-render-state', 'ready');
+                        fullWin.setAttribute('aria-busy', 'false');
+                    } catch (error) {
+                        if (window.console && typeof window.console.error === 'function') {
+                            window.console.error('[OMEGA CABINET] Deferred council rendering failed:', error);
+                        }
+                        subsystemRoot.innerHTML = '<div class="omega-cabinet-subsystem-error" role="alert" style="padding:16px; color:#b91c1c;">Council data could not be rendered. Reopen Government HQ to retry.</div>';
+                        fullWin.setAttribute('data-cabinet-render-state', 'error');
+                        fullWin.setAttribute('aria-busy', 'false');
+                    }
+                };
+                if (typeof window.setTimeout === 'function') {
+                    window.setTimeout(renderSubsystem, 50);
+                } else {
+                    renderSubsystem();
+                }
+            } else {
+                fullWin.setAttribute('data-cabinet-render-state', 'error');
+                fullWin.setAttribute('aria-busy', 'false');
+            }
+        } else if (isCouncil) {
+            const subsystemRoot = document.getElementById('cabinet-subsystem-root');
+            if (subsystemRoot) {
+                subsystemRoot.innerHTML = '<div class="omega-cabinet-subsystem-error" role="alert" style="padding:16px; color:#b91c1c;">Council renderer is unavailable in this runtime.</div>';
+            }
+            fullWin.setAttribute('data-cabinet-render-state', 'error');
+            fullWin.setAttribute('aria-busy', 'false');
         }
         this.initViewportScrollHandlers();
     },
@@ -1661,12 +1710,107 @@ window.OmegaCabinetUI = {
         }
 
         const isHomeMinistry = ministryId === 'interior_security';
+        const showIndustryFactoryHub = m.category === 'economy' ||
+            ['treasury_finance', 'central_bank', 'taxes', 'trade', 'production'].includes(ministryId);
         const allowedTabs = isHomeMinistry
             ? ['interrogate', 'reports', 'security_operations']
-            : ['interrogate', 'reports', 'personnel'];
+            : (showIndustryFactoryHub
+                ? ['interrogate', 'reports', 'personnel', 'industry']
+                : ['interrogate', 'reports', 'personnel']);
         const requestedTab = this.activeDashboardTab || (isHomeMinistry ? 'security_operations' : 'interrogate');
         const fallbackTab = isHomeMinistry ? 'security_operations' : 'interrogate';
         const activeTab = allowedTabs.includes(requestedTab) ? requestedTab : fallbackTab;
+
+        const industryFactoryTabButton = showIndustryFactoryHub ? `
+            <button type="button" onclick="window.OmegaCabinetUI.setDashboardTab('industry');"
+                aria-current="${activeTab === 'industry' ? 'page' : 'false'}"
+                style="flex:0 0 auto;white-space:nowrap;min-height:40px;background:${activeTab === 'industry' ? 'linear-gradient(135deg,#0e7490,#0369a1)' : 'rgba(255,255,255,0.06)'};color:${activeTab === 'industry' ? '#fff' : '#cbd5e1'};border:1px solid ${activeTab === 'industry' ? '#38bdf8' : 'rgba(255,255,255,0.10)'};font-weight:800;padding:9px 14px;border-radius:9px;cursor:pointer;font-family:'Inter',sans-serif;font-size:12px;">
+                Industry &amp; Factories
+            </button>` : '';
+
+        const industryFactoryHub = showIndustryFactoryHub && activeTab === 'industry' ? `
+            <style>
+                #omega-industry-factories-hub {
+                    width: 100%; max-width: 980px; box-sizing: border-box;
+                    margin: 12px auto 20px; padding: clamp(14px, 3vw, 24px);
+                    border: 1px solid rgba(125,211,252,.28); border-radius: 16px;
+                    background: linear-gradient(145deg, rgba(10,28,43,.98), rgba(5,13,24,.98));
+                    color: #e5edf5; box-shadow: 0 12px 34px rgba(0,0,0,.22);
+                }
+                #omega-industry-factories-hub .omega-industry-factory-grid {
+                    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px;
+                }
+                #omega-industry-factories-hub .omega-industry-factory-button {
+                    display: flex; align-items: flex-start; gap: 11px; min-width: 0;
+                    min-height: 94px; padding: 13px; box-sizing: border-box; text-align: left;
+                    border: 1px solid rgba(148,163,184,.22); border-radius: 12px;
+                    background: rgba(255,255,255,.035); color: #e2e8f0;
+                    cursor: pointer; touch-action: manipulation;
+                    transition: background .15s ease, border-color .15s ease, transform .15s ease;
+                }
+                #omega-industry-factories-hub .omega-industry-factory-button:first-child {
+                    border-color: rgba(56,189,248,.5); background: rgba(14,116,144,.13);
+                }
+                #omega-industry-factories-hub .omega-industry-factory-button:active {
+                    transform: scale(.985); background: rgba(14,116,144,.22);
+                }
+                #omega-industry-factories-hub .omega-industry-factory-button:focus-visible {
+                    outline: 2px solid #7dd3fc; outline-offset: 2px;
+                }
+                #omega-industry-factories-hub .omega-industry-factory-index {
+                    display: inline-flex; align-items: center; justify-content: center;
+                    width: 30px; height: 30px; flex: 0 0 30px; border-radius: 9px;
+                    border: 1px solid rgba(125,211,252,.28); background: rgba(14,116,144,.19);
+                    color: #bae6fd; font: 800 10px/1 Inter, sans-serif;
+                }
+                #omega-industry-factories-hub .omega-industry-factory-copy { min-width: 0; }
+                #omega-industry-factories-hub .omega-industry-factory-copy strong {
+                    display: block; font-size: 12px; line-height: 1.4; overflow-wrap: anywhere;
+                }
+                #omega-industry-factories-hub .omega-industry-factory-copy small {
+                    display: block; margin-top: 5px; color: #94a3b8; font-size: 10px; line-height: 1.5;
+                }
+                @media (min-width: 760px) {
+                    #omega-industry-factories-hub .omega-industry-factory-grid {
+                        grid-template-columns: repeat(4, minmax(0, 1fr));
+                    }
+                }
+                @media (max-width: 360px) {
+                    #omega-industry-factories-hub .omega-industry-factory-grid {
+                        grid-template-columns: minmax(0, 1fr);
+                    }
+                    #omega-industry-factories-hub .omega-industry-factory-button { min-height: 76px; }
+                }
+            </style>
+            <section id="omega-industry-factories-hub" aria-label="Industry and Factories">
+                <header style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:18px;">
+                    <div style="min-width:0;flex:1;">
+                        <div style="font-size:10px;font-weight:800;letter-spacing:.13em;color:#7dd3fc;text-transform:uppercase;">Industrial management</div>
+                        <h2 style="margin:6px 0 0;font-size:clamp(19px,4vw,25px);line-height:1.2;color:#f8fafc;">Industry &amp; Factories</h2>
+                        <p style="margin:7px 0 0;font-size:11px;line-height:1.6;color:#94a3b8;">Manage production, plant inventory and industrial projects for the selected country.</p>
+                    </div>
+                    <div style="max-width:100%;padding:7px 10px;border:1px solid rgba(125,211,252,.22);border-radius:9px;background:rgba(2,6,23,.35);color:#bae6fd;font-size:10px;line-height:1.4;overflow-wrap:anywhere;">
+                        ${escapeAttribute(countryDetails.name || countryKey || 'Selected country')}
+                    </div>
+                </header>
+                <div class="omega-industry-factory-grid">
+                    <button type="button" class="omega-industry-factory-button" data-omega-industry-panel="industrial" data-country="${escapeAttribute(countryKey)}" onclick="if(window.OmegaResourceCommandCenterUI && typeof window.OmegaResourceCommandCenterUI.open === 'function'){window.OmegaResourceCommandCenterUI.open(this.getAttribute('data-country'),this.getAttribute('data-omega-industry-panel'));}else{this.textContent='Factory UI unavailable';this.disabled=true;}">
+                        <span class="omega-industry-factory-index">01</span><span class="omega-industry-factory-copy"><strong>My Factories</strong><small>Commissioned plants, staffing and operating status.</small></span>
+                    </button>
+                    <button type="button" class="omega-industry-factory-button" data-omega-industry-panel="processing" data-country="${escapeAttribute(countryKey)}" onclick="if(window.OmegaResourceCommandCenterUI && typeof window.OmegaResourceCommandCenterUI.open === 'function'){window.OmegaResourceCommandCenterUI.open(this.getAttribute('data-country'),this.getAttribute('data-omega-industry-panel'));}else{this.textContent='Factory UI unavailable';this.disabled=true;}">
+                        <span class="omega-industry-factory-index">02</span><span class="omega-industry-factory-copy"><strong>Production Lines</strong><small>Recipes, input requirements and processing cycles.</small></span>
+                    </button>
+                    <button type="button" class="omega-industry-factory-button" data-omega-industry-panel="inventory" data-country="${escapeAttribute(countryKey)}" onclick="if(window.OmegaResourceCommandCenterUI && typeof window.OmegaResourceCommandCenterUI.open === 'function'){window.OmegaResourceCommandCenterUI.open(this.getAttribute('data-country'),this.getAttribute('data-omega-industry-panel'));}else{this.textContent='Factory UI unavailable';this.disabled=true;}">
+                        <span class="omega-industry-factory-index">03</span><span class="omega-industry-factory-copy"><strong>Industrial Inventory</strong><small>Raw materials, batches and processed stock.</small></span>
+                    </button>
+                    <button type="button" class="omega-industry-factory-button" data-omega-industry-panel="value" data-country="${escapeAttribute(countryKey)}" onclick="if(window.OmegaResourceCommandCenterUI && typeof window.OmegaResourceCommandCenterUI.open === 'function'){window.OmegaResourceCommandCenterUI.open(this.getAttribute('data-country'),this.getAttribute('data-omega-industry-panel'));}else{this.textContent='Factory UI unavailable';this.disabled=true;}">
+                        <span class="omega-industry-factory-index">04</span><span class="omega-industry-factory-copy"><strong>Industrial Finance &amp; Value</strong><small>Costs, employment and recorded industrial value.</small></span>
+                    </button>
+                </div>
+                <p style="margin:15px 0 0;padding-top:12px;border-top:1px solid rgba(148,163,184,.13);font-size:10px;line-height:1.6;color:#8293a8;">
+                    Factory catalog entries are not proof of owned plants. Production requires commissioned assets, available inputs, workforce, utilities, transport and the game clock.
+                </p>
+            </section>` : '';
 
         let html = `
             <!-- 3-TIER TYPOGRAPHY & ELEGANT AAA HERO HEADER -->
@@ -1680,7 +1824,7 @@ window.OmegaCabinetUI = {
                         <h1 style="margin:0; font-family:'Inter',sans-serif; font-weight:700; font-size:20px; color:#f8fafc; letter-spacing:0.2px;">${m.title}</h1>
                         <div style="font-size:12px; font-weight:500; color:#00e5ff; margin-top:2px;">${m.role}</div>
                         <div style="font-size:11px; color:#94a3b8; margin-top:3px; line-height:1.4;">
-                            Minister: <strong style="color:#f8fafc;">${m.ministerName}</strong>
+                            Minister: <strong style="color:#f8fafc;">${m.ministerName || "Vacant"}</strong>
                         </div>
                     </div>
                 </div>
@@ -1699,19 +1843,21 @@ window.OmegaCabinetUI = {
             </div>
 
             <!-- ACTION BAR (CONTEXT NAVIGATION) -->
-            <div style="display:flex; gap:10px; border-bottom:1px solid rgba(255,255,255,0.1); padding:8px 0; flex-wrap:wrap; flex-shrink:0; min-height:44px; position:relative; background:rgba(3,8,16,0.95); z-index:10; border-radius:8px; margin:6px 0;">
-                <button onclick="window.OmegaCabinetUI.setDashboardTab('interrogate');" style="background:${activeTab==='interrogate'?'linear-gradient(135deg,#00e5ff,#0066ff)':'rgba(255,255,255,0.06)'}; color:${activeTab==='interrogate'?'#000':'#cbd5e1'}; font-weight:bold; padding:8px 16px; border-radius:8px; border:none; cursor:pointer; font-family:'Share Tech Mono',monospace; font-size:12px; display:flex; align-items:center; gap:6px;">
+            <div class="omega-ministry-action-bar" style="display:flex; gap:8px; border-bottom:1px solid rgba(255,255,255,0.1); padding:8px 0; flex-wrap:nowrap; flex-shrink:0; min-height:44px; min-width:0; max-width:100%; overflow-x:auto; overflow-y:hidden; -webkit-overflow-scrolling:touch; scrollbar-width:thin; position:relative; background:rgba(3,8,16,0.95); z-index:10; border-radius:8px; margin:6px 0;">
+                <button onclick="window.OmegaCabinetUI.setDashboardTab('interrogate');" style="background:${activeTab==='interrogate'?'linear-gradient(135deg,#00e5ff,#0066ff)':'rgba(255,255,255,0.06)'}; color:${activeTab==='interrogate'?'#000':'#cbd5e1'}; font-weight:bold; padding:8px 16px; border-radius:8px; border:none; cursor:pointer; font-family:'Share Tech Mono',monospace; font-size:12px; display:flex; align-items:center; gap:6px; flex:0 0 auto; white-space:nowrap;">
                     🎙️ Interrogate Minister
                 </button>
 
-                <button onclick="window.OmegaCabinetUI.setDashboardTab('reports');" style="background:${activeTab==='reports'?'linear-gradient(135deg,#00e5ff,#0066ff)':'rgba(255,255,255,0.06)'}; color:${activeTab==='reports'?'#000':'#cbd5e1'}; font-weight:bold; padding:8px 16px; border-radius:8px; border:none; cursor:pointer; font-family:'Share Tech Mono',monospace; font-size:12px; display:flex; align-items:center; gap:6px;">
+                <button onclick="window.OmegaCabinetUI.setDashboardTab('reports');" style="background:${activeTab==='reports'?'linear-gradient(135deg,#00e5ff,#0066ff)':'rgba(255,255,255,0.06)'}; color:${activeTab==='reports'?'#000':'#cbd5e1'}; font-weight:bold; padding:8px 16px; border-radius:8px; border:none; cursor:pointer; font-family:'Share Tech Mono',monospace; font-size:12px; display:flex; align-items:center; gap:6px; flex:0 0 auto; white-space:nowrap;">
                     📊 Reports & Metrics
                 </button>
-                ${ministryId !== 'interior_security' ? `<button onclick="window.OmegaCabinetUI.setDashboardTab('personnel');" style="background:${activeTab==='personnel'?'linear-gradient(135deg,#00e5ff,#0066ff)':'rgba(255,255,255,0.06)'}; color:${activeTab==='personnel'?'#000':'#cbd5e1'}; font-weight:bold; padding:8px 16px; border-radius:8px; border:none; cursor:pointer; font-family:'Share Tech Mono',monospace; font-size:12px; display:flex; align-items:center; gap:6px;">
+                ${ministryId !== 'interior_security' ? `<button onclick="window.OmegaCabinetUI.setDashboardTab('personnel');" style="background:${activeTab==='personnel'?'linear-gradient(135deg,#00e5ff,#0066ff)':'rgba(255,255,255,0.06)'}; color:${activeTab==='personnel'?'#000':'#cbd5e1'}; font-weight:bold; padding:8px 16px; border-radius:8px; border:none; cursor:pointer; font-family:'Share Tech Mono',monospace; font-size:12px; display:flex; align-items:center; gap:6px; flex:0 0 auto; white-space:nowrap;">
                     📁 Personnel & Audits
                 </button>` : ''}
+                ${industryFactoryTabButton}
                 ${ministryId === 'interior_security' ? `<button onclick="window.OmegaCabinetUI.setDashboardTab('security_operations');" style="background:${activeTab==='security_operations'?'linear-gradient(135deg,#00e5ff,#0066ff)':'rgba(255,255,255,0.06)'}; color:${activeTab==='security_operations'?'#000':'#cbd5e1'}; font-weight:bold; padding:8px 16px; border-radius:8px; border:none; cursor:pointer; font-family:'Share Tech Mono',monospace; font-size:12px; display:flex; align-items:center; gap:6px; white-space:nowrap;">🚓 Police Command & Fleet</button>` : ''}
             </div>
+            ${industryFactoryHub}
         `;
 
         if (activeTab === 'interrogate') {
@@ -1838,7 +1984,7 @@ window.OmegaCabinetUI = {
                     <div style="color:#00e5ff; font-size:14px; font-weight:bold; margin-bottom:12px;">📁 MINISTRY EXECUTIVE PERSONNEL & STAFF ROSTER</div>
                     <div style="display:flex; flex-direction:column; gap:8px; font-size:12px;">
                         <div style="display:flex; justify-content:space-between; padding:8px; background:rgba(255,255,255,0.04); border-radius:6px;">
-                            <span>${m.ministerName} (${m.role})</span>
+                            <span>${m.ministerName || 'Vacant'} (${m.role})</span>
                             <span style="color:#22c55e;">Trust: ${m.trust}/100 | Loyalty: ${m.loyalty}</span>
                         </div>
                         <div style="display:flex; justify-content:space-between; padding:8px; background:rgba(255,255,255,0.04); border-radius:6px;">
@@ -2242,7 +2388,7 @@ window.OmegaCabinetUI = {
                         <h1 style="margin:0; font-family:'Inter',sans-serif; font-weight:800; font-size:22px; color:#f8fafc; letter-spacing:0.3px;">MINISTRY OF DEFENSE & SUPREME COMMAND (${cDetails.name.toUpperCase()})</h1>
                         <div style="font-size:12px; font-weight:600; color:#ef4444; margin-top:2px;">Operational Readiness Score (ORS) Engine, 12 Master Operations & Procurement Pipeline</div>
                         <div style="font-size:11px; color:#cbd5e1; margin-top:2px;">
-                            Commander: <strong style="color:#ffd700;">${ministerName}</strong> (${ministerRole}) | Alert: <strong style="color:${defconColors[defcon]};">${defconLabels[defcon]}</strong>
+                            Commander: <strong style="color:#ffd700;">${ministerName || 'Vacant'}</strong> (${ministerRole}) | Alert: <strong style="color:${defconColors[defcon]};">${defconLabels[defcon]}</strong>
                         </div>
                     </div>
                 </div>
@@ -2538,7 +2684,7 @@ window.OmegaCabinetUI = {
                     <div>
                         <h1 style="margin:0; font-family:'Inter',sans-serif; font-weight:800; font-size:22px; color:#f8fafc; letter-spacing:0.3px;">MINISTRY OF FOREIGN AFFAIRS (${cDetails.name.toUpperCase()})</h1>
                         <div style="font-size:12px; font-weight:600; color:#00e5ff; margin-top:2px;">Sovereignty, International Pacts & Autonomous Diplomatic AI</div>
-                        <div style="font-size:11px; color:#cbd5e1; margin-top:2px;">Minister: <strong style="color:#ffd700;">${ministerName}</strong> (${ministerRole}) | State: <strong style="color:#22c55e;">PEACEFUL NON-ALIGNMENT</strong></div>
+                        <div style="font-size:11px; color:#cbd5e1; margin-top:2px;">Minister: <strong style="color:#ffd700;">${ministerName || 'Vacant'}</strong> (${ministerRole}) | State: <strong style="color:#22c55e;">PEACEFUL NON-ALIGNMENT</strong></div>
                     </div>
                 </div>
 
@@ -2843,7 +2989,7 @@ window.OmegaCabinetUI = {
                         <h1 style="margin:0; font-family:'Inter',sans-serif; font-weight:700; font-size:20px; color:#f8fafc; letter-spacing:0.2px;">${m.title} (${m.bnTitle || 'জ্বালানি ও প্রাকৃতিক সম্পদ'})</h1>
                         <div style="font-size:12px; font-weight:500; color:#eab308; margin-top:2px;">${m.role} • ${countryDetails.flag} ${countryDetails.name}</div>
                         <div style="font-size:11px; color:#94a3b8; margin-top:3px; line-height:1.4;">
-                            Minister: <strong style="color:#f8fafc;">${m.ministerName}</strong> • Status: <strong style="color:#22c55e;">${m.status}</strong>
+                            Minister: <strong style="color:#f8fafc;">${m.ministerName || 'Vacant'}</strong> • Status: <strong style="color:#22c55e;">${m.status}</strong>
                         </div>
                     </div>
                 </div>
@@ -3211,7 +3357,7 @@ window.OmegaCabinetUI = {
 
         if (title) title.innerText = `${m.title.toUpperCase()} - MINISTER INTERROGATION HUB`;
         if (avatar) avatar.innerText = m.avatar;
-        if (name) name.innerText = m.ministerName;
+        if (name) name.innerText = m.ministerName || 'Vacant';
         if (role) role.innerText = m.role;
         if (trust) trust.innerText = `${m.trust}/100`;
         if (reliability) reliability.innerText = `${m.efficiency}%`;
@@ -3244,7 +3390,7 @@ window.OmegaCabinetUI = {
         if (chatHistory) {
             if (!this.chatHistories[m.id]) {
                 this.chatHistories[m.id] = [
-                    { sender: 'MINISTER', text: `Greetings Executive Commander. I am ${m.ministerName}. Ask me any strategic question regarding ${m.title}.` }
+                    { sender: 'MINISTER', text: `Greetings Executive Commander. I am ${m.ministerName || 'the acting ministerial system'}. Ask me any strategic question regarding ${m.title}.` }
                 ];
             }
             this.renderChatHistory(m.id);
@@ -3423,7 +3569,7 @@ window.OmegaCabinetUI = {
             this.renderCabinet(this.activeCountry);
         } else if (directiveType === 'policy') {
             m.efficiency = Math.min(100, m.efficiency + 2);
-            window.showOmegaNotification("EXECUTIVE ALIGNMENT", `⚡ Executive Directive Issued to ${m.ministerName} (${m.role})! Operational alignment updated.`, "info");
+            window.showOmegaNotification("EXECUTIVE ALIGNMENT", `⚡ Executive Directive Issued to ${m.ministerName || 'the vacant ministry'} (${m.role})! Operational alignment updated.`, "info");
             this.renderCabinet(this.activeCountry);
         }
     }

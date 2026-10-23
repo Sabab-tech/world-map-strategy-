@@ -109,6 +109,48 @@ button > .omega-ui-icon, [role="button"] > .omega-ui-icon, .icon-btn > .omega-ui
     --omega-icon-border: rgba(196, 181, 253, .38);
 }
 
+/* Manufacturing icon palettes. Paths are embedded in the offline local SVG sprite. */
+.omega-ui-icon--steelworks, .omega-ui-icon--smelter, .omega-ui-icon--machine-tool {
+    --omega-icon-color: #fbbf24;
+    --omega-icon-bg: rgba(161, 98, 7, .20);
+    --omega-icon-border: rgba(250, 204, 21, .44);
+}
+.omega-ui-icon--petrochemical-plant, .omega-ui-icon--chemical-plant, .omega-ui-icon--fertilizer-plant {
+    --omega-icon-color: #2dd4bf;
+    --omega-icon-bg: rgba(13, 148, 136, .18);
+    --omega-icon-border: rgba(45, 212, 191, .40);
+}
+.omega-ui-icon--cement-plant, .omega-ui-icon--glass-ceramic-plant, .omega-ui-icon--paper-mill {
+    --omega-icon-color: #cbd5e1;
+    --omega-icon-bg: rgba(100, 116, 139, .19);
+    --omega-icon-border: rgba(203, 213, 225, .38);
+}
+.omega-ui-icon--food-processing, .omega-ui-icon--textile-mill, .omega-ui-icon--pharma-plant {
+    --omega-icon-color: #86efac;
+    --omega-icon-bg: rgba(22, 163, 74, .16);
+    --omega-icon-border: rgba(134, 239, 172, .38);
+}
+.omega-ui-icon--grid-equipment, .omega-ui-icon--semiconductor-fab, .omega-ui-icon--battery-plant {
+    --omega-icon-color: #67e8f9;
+    --omega-icon-bg: rgba(8, 145, 178, .17);
+    --omega-icon-border: rgba(103, 232, 249, .40);
+}
+.omega-ui-icon--vehicle-assembly, .omega-ui-icon--shipyard, .omega-ui-icon--aerospace-plant {
+    --omega-icon-color: #93c5fd;
+    --omega-icon-bg: rgba(37, 99, 235, .17);
+    --omega-icon-border: rgba(147, 197, 253, .40);
+}
+.omega-ui-icon--defense-industry {
+    --omega-icon-color: #fca5a5;
+    --omega-icon-bg: rgba(185, 28, 28, .16);
+    --omega-icon-border: rgba(252, 165, 165, .40);
+}
+.omega-ui-icon--recycling-plant {
+    --omega-icon-color: #4ade80;
+    --omega-icon-bg: rgba(22, 163, 74, .17);
+    --omega-icon-border: rgba(74, 222, 128, .38);
+}
+
 /* Status dots stay plain circles, not colored tiles. */
 .omega-ui-icon.omega-ui-icon--blue-dot { color: #60a5fa !important; background: transparent !important; border-color: transparent !important; }
 .omega-ui-icon.omega-ui-icon--red-dot { color: #f87171 !important; background: transparent !important; border-color: transparent !important; }

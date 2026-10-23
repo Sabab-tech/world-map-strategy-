@@ -1,0 +1,611 @@
+{
+  "schemaVersion": "1.0.0",
+  "datasetId": "OMEGA_FACTORY_VISUAL_CATALOG_V1",
+  "purpose": "Visual-only factory art mapping for OMEGA's canonical industrial profiles.",
+  "provenance": {
+    "assetKind": "AI-generated photorealistic 3D-style industrial scenes",
+    "semantics": "Representative game art, not a claim that an image depicts a specific real-world facility.",
+    "gameplayAuthority": "visual-only; does not change production, recipes, cost, capacity, or simulation state."
+  },
+  "atlas": {
+    "columns": 5,
+    "rows": 2,
+    "cellWidth": 64,
+    "cellHeight": 40,
+    "format": "image/webp"
+  },
+  "visuals": [
+    {
+      "id": "steel-mill",
+      "label": "Steel mill",
+      "asset": "assets/factories/omega_factory_atlas_01.webp",
+      "atlasColumns": 5,
+      "atlasRows": 2,
+      "atlasColumn": 0,
+      "atlasRow": 0,
+      "cellWidth": 64,
+      "cellHeight": 40,
+      "sourceCellIndex": 0
+    },
+    {
+      "id": "oil-refinery",
+      "label": "Oil refinery",
+      "asset": "assets/factories/omega_factory_atlas_01.webp",
+      "atlasColumns": 5,
+      "atlasRows": 2,
+      "atlasColumn": 1,
+      "atlasRow": 0,
+      "cellWidth": 64,
+      "cellHeight": 40,
+      "sourceCellIndex": 1
+    },
+    {
+      "id": "chemical-plant",
+      "label": "Chemical plant",
+      "asset": "assets/factories/omega_factory_atlas_01.webp",
+      "atlasColumns": 5,
+      "atlasRows": 2,
+      "atlasColumn": 2,
+      "atlasRow": 0,
+      "cellWidth": 64,
+      "cellHeight": 40,
+      "sourceCellIndex": 2
+    },
+    {
+      "id": "textile-factory",
+      "label": "Textile factory",
+      "asset": "assets/factories/omega_factory_atlas_01.webp",
+      "atlasColumns": 5,
+      "atlasRows": 2,
+      "atlasColumn": 3,
+      "atlasRow": 0,
+      "cellWidth": 64,
+      "cellHeight": 40,
+      "sourceCellIndex": 3
+    },
+    {
+      "id": "food-processing",
+      "label": "Food processing plant",
+      "asset": "assets/factories/omega_factory_atlas_01.webp",
+      "atlasColumns": 5,
+      "atlasRows": 2,
+      "atlasColumn": 4,
+      "atlasRow": 0,
+      "cellWidth": 64,
+      "cellHeight": 40,
+      "sourceCellIndex": 4
+    },
+    {
+      "id": "electricity-plant",
+      "label": "Electricity generation plant",
+      "asset": "assets/factories/omega_factory_atlas_01.webp",
+      "atlasColumns": 5,
+      "atlasRows": 2,
+      "atlasColumn": 0,
+      "atlasRow": 1,
+      "cellWidth": 64,
+      "cellHeight": 40,
+      "sourceCellIndex": 5
+    },
+    {
+      "id": "electronics-factory",
+      "label": "Electronics factory",
+      "asset": "assets/factories/omega_factory_atlas_01.webp",
+      "atlasColumns": 5,
+      "atlasRows": 2,
+      "atlasColumn": 1,
+      "atlasRow": 1,
+      "cellWidth": 64,
+      "cellHeight": 40,
+      "sourceCellIndex": 6
+    },
+    {
+      "id": "automobile-factory",
+      "label": "Automobile assembly plant",
+      "asset": "assets/factories/omega_factory_atlas_01.webp",
+      "atlasColumns": 5,
+      "atlasRows": 2,
+      "atlasColumn": 2,
+      "atlasRow": 1,
+      "cellWidth": 64,
+      "cellHeight": 40,
+      "sourceCellIndex": 7
+    },
+    {
+      "id": "machinery-factory",
+      "label": "Industrial machinery factory",
+      "asset": "assets/factories/omega_factory_atlas_01.webp",
+      "atlasColumns": 5,
+      "atlasRows": 2,
+      "atlasColumn": 3,
+      "atlasRow": 1,
+      "cellWidth": 64,
+      "cellHeight": 40,
+      "sourceCellIndex": 8
+    },
+    {
+      "id": "pharmaceutical-factory",
+      "label": "Pharmaceutical factory",
+      "asset": "assets/factories/omega_factory_atlas_01.webp",
+      "atlasColumns": 5,
+      "atlasRows": 2,
+      "atlasColumn": 4,
+      "atlasRow": 1,
+      "cellWidth": 64,
+      "cellHeight": 40,
+      "sourceCellIndex": 9
+    },
+    {
+      "id": "building-materials-factory",
+      "label": "Building materials plant",
+      "asset": "assets/factories/omega_factory_atlas_02.webp",
+      "atlasColumns": 5,
+      "atlasRows": 2,
+      "atlasColumn": 0,
+      "atlasRow": 0,
+      "cellWidth": 64,
+      "cellHeight": 40,
+      "sourceCellIndex": 10
+    },
+    {
+      "id": "paper-mill",
+      "label": "Paper and packaging mill",
+      "asset": "assets/factories/omega_factory_atlas_02.webp",
+      "atlasColumns": 5,
+      "atlasRows": 2,
+      "atlasColumn": 1,
+      "atlasRow": 0,
+      "cellWidth": 64,
+      "cellHeight": 40,
+      "sourceCellIndex": 11
+    },
+    {
+      "id": "sawmill",
+      "label": "Sawmill and timber processing",
+      "asset": "assets/factories/omega_factory_atlas_02.webp",
+      "atlasColumns": 5,
+      "atlasRows": 2,
+      "atlasColumn": 2,
+      "atlasRow": 0,
+      "cellWidth": 64,
+      "cellHeight": 40,
+      "sourceCellIndex": 12
+    },
+    {
+      "id": "cement-factory",
+      "label": "Cement factory",
+      "asset": "assets/factories/omega_factory_atlas_02.webp",
+      "atlasColumns": 5,
+      "atlasRows": 2,
+      "atlasColumn": 3,
+      "atlasRow": 0,
+      "cellWidth": 64,
+      "cellHeight": 40,
+      "sourceCellIndex": 13
+    },
+    {
+      "id": "fertilizer-plant",
+      "label": "Fertilizer plant",
+      "asset": "assets/factories/omega_factory_atlas_02.webp",
+      "atlasColumns": 5,
+      "atlasRows": 2,
+      "atlasColumn": 4,
+      "atlasRow": 0,
+      "cellWidth": 64,
+      "cellHeight": 40,
+      "sourceCellIndex": 14
+    },
+    {
+      "id": "metal-processing",
+      "label": "Metal processing plant",
+      "asset": "assets/factories/omega_factory_atlas_02.webp",
+      "atlasColumns": 5,
+      "atlasRows": 2,
+      "atlasColumn": 0,
+      "atlasRow": 1,
+      "cellWidth": 64,
+      "cellHeight": 40,
+      "sourceCellIndex": 15
+    },
+    {
+      "id": "glass-factory",
+      "label": "Glass factory",
+      "asset": "assets/factories/omega_factory_atlas_02.webp",
+      "atlasColumns": 5,
+      "atlasRows": 2,
+      "atlasColumn": 1,
+      "atlasRow": 1,
+      "cellWidth": 64,
+      "cellHeight": 40,
+      "sourceCellIndex": 16
+    },
+    {
+      "id": "rubber-factory",
+      "label": "Rubber goods factory",
+      "asset": "assets/factories/omega_factory_atlas_02.webp",
+      "atlasColumns": 5,
+      "atlasRows": 2,
+      "atlasColumn": 2,
+      "atlasRow": 1,
+      "cellWidth": 64,
+      "cellHeight": 40,
+      "sourceCellIndex": 17
+    },
+    {
+      "id": "plastic-factory",
+      "label": "Plastic and polymer factory",
+      "asset": "assets/factories/omega_factory_atlas_02.webp",
+      "atlasColumns": 5,
+      "atlasRows": 2,
+      "atlasColumn": 3,
+      "atlasRow": 1,
+      "cellWidth": 64,
+      "cellHeight": 40,
+      "sourceCellIndex": 18
+    },
+    {
+      "id": "defense-equipment-factory",
+      "label": "Defense equipment factory",
+      "asset": "assets/factories/omega_factory_atlas_02.webp",
+      "atlasColumns": 5,
+      "atlasRows": 2,
+      "atlasColumn": 4,
+      "atlasRow": 1,
+      "cellWidth": 64,
+      "cellHeight": 40,
+      "sourceCellIndex": 19
+    },
+    {
+      "id": "shipyard",
+      "label": "Shipyard",
+      "asset": "assets/factories/omega_factory_atlas_03.webp",
+      "atlasColumns": 5,
+      "atlasRows": 2,
+      "atlasColumn": 0,
+      "atlasRow": 0,
+      "cellWidth": 64,
+      "cellHeight": 40,
+      "sourceCellIndex": 20
+    },
+    {
+      "id": "aircraft-factory",
+      "label": "Aircraft factory",
+      "asset": "assets/factories/omega_factory_atlas_03.webp",
+      "atlasColumns": 5,
+      "atlasRows": 2,
+      "atlasColumn": 1,
+      "atlasRow": 0,
+      "cellWidth": 64,
+      "cellHeight": 40,
+      "sourceCellIndex": 21
+    },
+    {
+      "id": "solar-panel-factory",
+      "label": "Solar panel factory",
+      "asset": "assets/factories/omega_factory_atlas_03.webp",
+      "atlasColumns": 5,
+      "atlasRows": 2,
+      "atlasColumn": 2,
+      "atlasRow": 0,
+      "cellWidth": 64,
+      "cellHeight": 40,
+      "sourceCellIndex": 22
+    },
+    {
+      "id": "wind-turbine-factory",
+      "label": "Wind turbine factory",
+      "asset": "assets/factories/omega_factory_atlas_03.webp",
+      "atlasColumns": 5,
+      "atlasRows": 2,
+      "atlasColumn": 3,
+      "atlasRow": 0,
+      "cellWidth": 64,
+      "cellHeight": 40,
+      "sourceCellIndex": 23
+    },
+    {
+      "id": "battery-factory",
+      "label": "Battery factory",
+      "asset": "assets/factories/omega_factory_atlas_03.webp",
+      "atlasColumns": 5,
+      "atlasRows": 2,
+      "atlasColumn": 4,
+      "atlasRow": 0,
+      "cellWidth": 64,
+      "cellHeight": 40,
+      "sourceCellIndex": 24
+    }
+  ],
+  "factoryTypes": {
+    "AGGREGATE_CRUSHING_PLANT": {
+      "visualId": "building-materials-factory",
+      "altText": "Aggregate Crushing Plant industrial facility",
+      "category": "CONSTRUCTION_AND_GLASS"
+    },
+    "ALUMINA_REFINERY": {
+      "visualId": "metal-processing",
+      "altText": "Alumina Refinery industrial facility",
+      "category": "CHEMICALS_AND_POLYMERS"
+    },
+    "BORATE_PROCESSING_PLANT": {
+      "visualId": "chemical-plant",
+      "altText": "Borate Processing Plant industrial facility",
+      "category": "CONSTRUCTION_AND_GLASS"
+    },
+    "CEMENT_LIMESTONE_PLANT": {
+      "visualId": "cement-factory",
+      "altText": "Cement Limestone Feed Plant industrial facility",
+      "category": "CONSTRUCTION_AND_GLASS"
+    },
+    "CHROMITE_CONCENTRATOR": {
+      "visualId": "metal-processing",
+      "altText": "Chromite Concentrator industrial facility",
+      "category": "RAW_RESOURCE_PROCESSING"
+    },
+    "COAL_PREPARATION_PLANT": {
+      "visualId": "chemical-plant",
+      "altText": "Coal Preparation Plant industrial facility",
+      "category": "CHEMICALS_AND_POLYMERS"
+    },
+    "COBALT_REFINERY": {
+      "visualId": "chemical-plant",
+      "altText": "Cobalt Refinery industrial facility",
+      "category": "CHEMICALS_AND_POLYMERS"
+    },
+    "COPPER_CONCENTRATOR": {
+      "visualId": "metal-processing",
+      "altText": "Copper Concentrator industrial facility",
+      "category": "RAW_RESOURCE_PROCESSING"
+    },
+    "DIAMOND_RECOVERY_PLANT": {
+      "visualId": "metal-processing",
+      "altText": "Diamond Recovery Plant industrial facility",
+      "category": "RAW_RESOURCE_PROCESSING"
+    },
+    "DOLOMITE_PROCESSING_PLANT": {
+      "visualId": "building-materials-factory",
+      "altText": "Dolomite Processing Plant industrial facility",
+      "category": "CONSTRUCTION_AND_GLASS"
+    },
+    "GAS_PROCESSING_PLANT": {
+      "visualId": "oil-refinery",
+      "altText": "Natural Gas Processing Plant industrial facility",
+      "category": "CHEMICALS_AND_POLYMERS"
+    },
+    "GEMSTONE_SORTING_PLANT": {
+      "visualId": "metal-processing",
+      "altText": "Gemstone Sorting Plant industrial facility",
+      "category": "RAW_RESOURCE_PROCESSING"
+    },
+    "GLASS_SILICA_PLANT": {
+      "visualId": "glass-factory",
+      "altText": "Silica Processing Plant industrial facility",
+      "category": "CONSTRUCTION_AND_GLASS"
+    },
+    "GOLD_PROCESSING_PLANT": {
+      "visualId": "metal-processing",
+      "altText": "Gold Processing Plant industrial facility",
+      "category": "RAW_RESOURCE_PROCESSING"
+    },
+    "GRAPHITE_CONCENTRATOR": {
+      "visualId": "metal-processing",
+      "altText": "Graphite Concentrator industrial facility",
+      "category": "RAW_RESOURCE_PROCESSING"
+    },
+    "GYPSUM_PROCESSING_PLANT": {
+      "visualId": "cement-factory",
+      "altText": "Gypsum Processing Plant industrial facility",
+      "category": "CONSTRUCTION_AND_GLASS"
+    },
+    "LITHIUM_CONVERSION_PLANT": {
+      "visualId": "battery-factory",
+      "altText": "Lithium Conversion Plant industrial facility",
+      "category": "RAW_RESOURCE_PROCESSING"
+    },
+    "MAGNESIA_PLANT": {
+      "visualId": "cement-factory",
+      "altText": "Magnesia Plant industrial facility",
+      "category": "CONSTRUCTION_AND_GLASS"
+    },
+    "MANGANESE_BENEFICIATION_PLANT": {
+      "visualId": "metal-processing",
+      "altText": "Manganese Beneficiation Plant industrial facility",
+      "category": "RAW_RESOURCE_PROCESSING"
+    },
+    "MINERAL_SANDS_PLANT": {
+      "visualId": "metal-processing",
+      "altText": "Mineral Sands Plant industrial facility",
+      "category": "CONSTRUCTION_AND_GLASS"
+    },
+    "NICKEL_PROCESSING_PLANT": {
+      "visualId": "metal-processing",
+      "altText": "Nickel Processing Plant industrial facility",
+      "category": "RAW_RESOURCE_PROCESSING"
+    },
+    "NIOBIUM_CONCENTRATION_PLANT": {
+      "visualId": "metal-processing",
+      "altText": "Niobium Concentration Plant industrial facility",
+      "category": "RAW_RESOURCE_PROCESSING"
+    },
+    "OIL_SHALE_RETORT": {
+      "visualId": "oil-refinery",
+      "altText": "Oil Shale Retort industrial facility",
+      "category": "CHEMICALS_AND_POLYMERS"
+    },
+    "ORE_BENEFICIATION_PLANT": {
+      "visualId": "metal-processing",
+      "altText": "Ore Beneficiation Plant industrial facility",
+      "category": "RAW_RESOURCE_PROCESSING"
+    },
+    "PGM_CONCENTRATOR": {
+      "visualId": "metal-processing",
+      "altText": "Platinum Group Metals Concentrator industrial facility",
+      "category": "RAW_RESOURCE_PROCESSING"
+    },
+    "PHOSPHATE_BENEFICIATION_PLANT": {
+      "visualId": "fertilizer-plant",
+      "altText": "Phosphate Beneficiation Plant industrial facility",
+      "category": "RAW_RESOURCE_PROCESSING"
+    },
+    "POTASH_PROCESSING_PLANT": {
+      "visualId": "fertilizer-plant",
+      "altText": "Potash Processing Plant industrial facility",
+      "category": "RAW_RESOURCE_PROCESSING"
+    },
+    "RARE_EARTH_BENEFICIATION_PLANT": {
+      "visualId": "metal-processing",
+      "altText": "Rare Earth Beneficiation Plant industrial facility",
+      "category": "RAW_RESOURCE_PROCESSING"
+    },
+    "REFINERY": {
+      "visualId": "oil-refinery",
+      "altText": "Petroleum Refinery industrial facility",
+      "category": "CHEMICALS_AND_POLYMERS"
+    },
+    "SALT_REFINERY": {
+      "visualId": "chemical-plant",
+      "altText": "Salt Refinery industrial facility",
+      "category": "CONSTRUCTION_AND_GLASS"
+    },
+    "SILVER_CONCENTRATOR": {
+      "visualId": "metal-processing",
+      "altText": "Silver Concentrator industrial facility",
+      "category": "RAW_RESOURCE_PROCESSING"
+    },
+    "STONE_PROCESSING_PLANT": {
+      "visualId": "building-materials-factory",
+      "altText": "Stone Processing Plant industrial facility",
+      "category": "CONSTRUCTION_AND_GLASS"
+    },
+    "TIN_CONCENTRATOR": {
+      "visualId": "metal-processing",
+      "altText": "Tin Concentrator industrial facility",
+      "category": "RAW_RESOURCE_PROCESSING"
+    },
+    "TUNGSTEN_CONCENTRATOR": {
+      "visualId": "metal-processing",
+      "altText": "Tungsten Concentrator industrial facility",
+      "category": "RAW_RESOURCE_PROCESSING"
+    },
+    "URANIUM_MILL": {
+      "visualId": "chemical-plant",
+      "altText": "Uranium Mill industrial facility",
+      "category": "RAW_RESOURCE_PROCESSING"
+    },
+    "ZINC_CONCENTRATOR": {
+      "visualId": "metal-processing",
+      "altText": "Zinc Concentrator industrial facility",
+      "category": "RAW_RESOURCE_PROCESSING"
+    },
+    "STEEL_AND_ALLOY_WORKS": {
+      "visualId": "steel-mill",
+      "altText": "Steel and Alloy Works industrial facility",
+      "category": "METALS_AND_ALLOYS"
+    },
+    "NON_FERROUS_METAL_SMELTER": {
+      "visualId": "metal-processing",
+      "altText": "Non-Ferrous Metal Smelter industrial facility",
+      "category": "METALS_AND_ALLOYS"
+    },
+    "PETROCHEMICAL_POLYMER_PLANT": {
+      "visualId": "plastic-factory",
+      "altText": "Petrochemical, Plastics and Polymers industrial facility",
+      "category": "CHEMICALS_AND_POLYMERS"
+    },
+    "FERTILIZER_CHEMICAL_PLANT": {
+      "visualId": "fertilizer-plant",
+      "altText": "Fertilizer and Agrochemicals industrial facility",
+      "category": "AGRICULTURE_AND_FOOD"
+    },
+    "INDUSTRIAL_CHEMICALS_GAS_PLANT": {
+      "visualId": "chemical-plant",
+      "altText": "Industrial Chemicals and Gases industrial facility",
+      "category": "CHEMICALS_AND_POLYMERS"
+    },
+    "CEMENT_CONCRETE_PLANT": {
+      "visualId": "cement-factory",
+      "altText": "Cement and Concrete Works industrial facility",
+      "category": "CONSTRUCTION_AND_GLASS"
+    },
+    "GLASS_CERAMICS_PLANT": {
+      "visualId": "glass-factory",
+      "altText": "Glass and Ceramics Works industrial facility",
+      "category": "CONSTRUCTION_AND_GLASS"
+    },
+    "PAPER_PACKAGING_MILL": {
+      "visualId": "paper-mill",
+      "altText": "Paper and Packaging Mill industrial facility",
+      "category": "PAPER_AND_PACKAGING"
+    },
+    "FOOD_PROCESSING_COLD_CHAIN": {
+      "visualId": "food-processing",
+      "altText": "Food Processing and Cold Chain industrial facility",
+      "category": "AGRICULTURE_AND_FOOD"
+    },
+    "TEXTILE_GARMENT_MILL": {
+      "visualId": "textile-factory",
+      "altText": "Textile and Garment Mill industrial facility",
+      "category": "TEXTILES_AND_APPAREL"
+    },
+    "INDUSTRIAL_MACHINERY_MACHINE_TOOLS": {
+      "visualId": "machinery-factory",
+      "altText": "Industrial Machinery and Machine Tools industrial facility",
+      "category": "MACHINERY_AND_CAPITAL_GOODS"
+    },
+    "GRID_EQUIPMENT_FACTORY": {
+      "visualId": "machinery-factory",
+      "altText": "Grid and Electrical Equipment industrial facility",
+      "category": "MACHINERY_AND_CAPITAL_GOODS"
+    },
+    "ELECTRONICS_SEMICONDUCTOR_FAB": {
+      "visualId": "electronics-factory",
+      "altText": "Electronics and Semiconductor Fab industrial facility",
+      "category": "ELECTRONICS_AND_ENERGY_STORAGE"
+    },
+    "BATTERY_ENERGY_STORAGE_PLANT": {
+      "visualId": "battery-factory",
+      "altText": "Battery and Energy Storage Plant industrial facility",
+      "category": "ELECTRONICS_AND_ENERGY_STORAGE"
+    },
+    "VEHICLE_TRUCK_BUS_ASSEMBLY": {
+      "visualId": "automobile-factory",
+      "altText": "Vehicle, Truck and Bus Assembly industrial facility",
+      "category": "TRANSPORT_AND_AEROSPACE"
+    },
+    "SHIP_RAIL_EQUIPMENT_YARD": {
+      "visualId": "shipyard",
+      "altText": "Shipbuilding and Rail Equipment Yard industrial facility",
+      "category": "TRANSPORT_AND_AEROSPACE"
+    },
+    "AEROSPACE_EQUIPMENT_PLANT": {
+      "visualId": "aircraft-factory",
+      "altText": "Aerospace and Aircraft Equipment industrial facility",
+      "category": "TRANSPORT_AND_AEROSPACE"
+    },
+    "PHARMA_MEDICAL_SUPPLIES_PLANT": {
+      "visualId": "pharmaceutical-factory",
+      "altText": "Pharmaceuticals and Medical Supplies industrial facility",
+      "category": "HEALTHCARE_AND_DEFENCE"
+    },
+    "DEFENSE_EQUIPMENT_FACTORY": {
+      "visualId": "defense-equipment-factory",
+      "altText": "Defence Equipment Factory industrial facility",
+      "category": "HEALTHCARE_AND_DEFENCE"
+    },
+    "RECYCLING_WASTE_PROCESSING_PLANT": {
+      "visualId": "metal-processing",
+      "altText": "Recycling and Waste Processing Plant industrial facility",
+      "category": "CIRCULAR_INDUSTRY"
+    },
+    "DIATOMITE_PROCESSING_PLANT": {
+      "visualId": "chemical-plant",
+      "altText": "Diatomite Processing Plant industrial facility",
+      "category": "RAW_RESOURCE_PROCESSING"
+    },
+    "GENERIC_RESOURCE_PROCESSING_PLANT": {
+      "visualId": "building-materials-factory",
+      "altText": "Generic Resource Processing Plant industrial facility",
+      "category": "RAW_RESOURCE_PROCESSING"
+    }
+  }
+}

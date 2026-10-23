@@ -14,6 +14,11 @@
     const integrity=global.OmegaAIIntegrity;
     if(!rt||!integrity||typeof rt.parse!=='function')return false;
     if(integrity.__canonicalSemanticBridgeV110)return true;
+    // This API is intentionally frozen. The parser is already provided by
+    // OmegaAIIntegrity and should not be overwritten by a second bridge.
+    if(Object.isFrozen(integrity)||!Object.isExtensible(integrity)){
+      return typeof integrity.parse==='function';
+    }
 
     integrity.parse=function(question,context={}){
       return rt.parse(question,context);

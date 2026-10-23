@@ -54,7 +54,9 @@ test('country sector UI is wired into the existing page and offline app shell', 
 
 test('country sector UI resolves compact references through canonical data and preserves missing states', () => {
  const ui=read('omega_country_sector_profile_ui_v1.js'),runtime=read('omega_country_general_data_runtime_v1.js');
- assert.match(ui,/sourcePolicy/);
+ assert.match(ui,/friendlyStatus/);
+ assert.match(ui,/function displaySectors/);
+ assert.match(ui,/function extensionRows/);
  assert.match(ui,/refType==='METRIC'/);
  assert.match(ui,/refType==='DERIVED_METRIC'/);
  assert.match(ui,/refType==='EXTERNAL_METRIC'/);
@@ -64,6 +66,8 @@ test('country sector UI resolves compact references through canonical data and p
  assert.match(runtime,/getMetricDefinition/);
  assert.match(ui,/data-ocsp-toggle/);
  assert.match(ui,/async function toggleDossier/);
+ assert.match(ui,/Promise\.resolve\(\)\.then\(\(\)=>toggleDossier\(toggle\)\)/);
+ assert.match(ui,/data-ocsp-sector data-search/);
  assert.match(ui,/const metaMatches/);
  assert.doesNotMatch(ui,/localStorage|sessionStorage/);
 });

@@ -40,8 +40,9 @@ const context={
     state:{
       simulation:{turn:1,startYear:2015,date:'2015-01-01',daysPerTurn:30},
       resource:{BGD:{inventory:{coal:50000,iron_ore:50000},warehouse:{availableByResource:{coal:50000,iron_ore:50000},reservedByResource:{}},technologyCapabilities:[]}},
-      economy:{BGD:{productionAssets:[]}},
-      transport:{BGD:{infrastructure:{roads:{capacityPerDay:50000,quality:.9},rail:{capacityPerDay:120000,quality:.8},ports:{capacityPerDay:200000,quality:.9},bridges:{capacityPerDay:50000,quality:.8},pipelines:{capacityPerDay:400000,quality:.8}}}},
+      economy:{BGD:{unemploymentCount:600000,laborForce:6000000,unemployment_rate:10,productionAssets:[]}},
+      transport:{BGD:{infrastructure:{roads:{capacityPerDay:50000,quality:.9},rail:{capacityPerDay:120000,quality:.8},ports:{capacityPerDay:200000,quality:.9},bridges:{capacityPerDay:50000,quality:.8},pipelines:{capacityPerDay:400000,quality:.8},
+        utilitySupply:{electricityMWhPerDay:1000000,waterM3PerDay:1000000,authority:'TEST_FIXTURE',status:'AVAILABLE',simulationOnly:true,assets:[]}}}},
       foreign:{BGD:{relations:{USA:80}}}
     }
   }
@@ -57,6 +58,35 @@ context.Omega.MinistryInteroperability={
 vm.createContext(context);
 vm.runInContext(fs.readFileSync('omega_resource_industrial_network_v1.js','utf8'),context,{filename:'omega_resource_industrial_network_v1.js'});
 const N=context.Omega.ResourceIndustrialNetwork;
+function advanceOneGameTurn(state){
+  const sim=state.simulation||(state.simulation={});
+  const step=Math.max(1,Math.round(Number(sim.daysPerTurn)||1));
+  const base=String(sim.date||String(Number(sim.startYear)||2015)+'-01-01');
+  const date=new Date(base+'T00:00:00.000Z');
+  date.setUTCDate(date.getUTCDate()+step);
+  sim.date=date.toISOString().slice(0,10);
+  sim.turn=(Number(sim.turn)||1)+1;
+}
+function advanceToGameTurn(state,targetTurn){
+  const target=Math.max(1,Number(targetTurn)||1);
+  let guard=0;
+  while((Number(state.simulation?.turn)||1)<target){
+    advanceOneGameTurn(state);
+    if(++guard>10000)throw new Error('TEST_GAME_CLOCK_TURN_GUARD');
+  }
+}
+function advanceToCycleFinish(state,cycle){
+  const sim=state.simulation||(state.simulation={});
+  if(!sim.date)sim.date=String(cycle?.startDate||String(Number(sim.startYear)||2015)+'-01-01');
+  const currentTurn=Number(sim.turn)||1;
+  const targetTurn=Math.max(currentTurn+1,Number(cycle?.finishTurn)||currentTurn+1);
+  const targetDate=cycle?.finishDate?new Date(String(cycle.finishDate)+'T00:00:00.000Z'):null;
+  let guard=0;
+  while((Number(sim.turn)||1)<targetTurn||(targetDate&&new Date(String(sim.date)+'T00:00:00.000Z')<targetDate)){
+    advanceOneGameTurn(state);
+    if(++guard>10000)throw new Error('TEST_FACTORY_CYCLE_CLOCK_GUARD');
+  }
+}
 
 const extraction=N.planExtraction({countryId:'BGD',siteId:'SITE_BGD_COAL_01',resourceId:'coal',quantity:2000});
 assert.equal(extraction.status,'PLANNED');
@@ -91,23 +121,44 @@ const sent=N.dispatchShipment({countryId:'BGD',siteId:'SITE_BGD_COAL_01',resourc
 assert.equal(sent.status,'DISPATCHED');
 assert.equal(context.Game.state.resource.BGD.warehouse.reservedByResource.coal,5000);
 
-context.Game.state.simulation.turn=sent.shipment.etaTurn;
+advanceToGameTurn(context.Game.state,sent.shipment.etaTurn);
 const advanced=N.advanceShipments('BGD');
 assert.equal(advanced.delivered,1);
 assert.equal(advanced.shipments[0].destinationStatus,'FACTORY_RECEIVED');
-assert.equal(advanced.shipments[0].processingStatus,'PROCESSED','delivered shipment must run factory processing in the same runtime path');
+assert.equal(advanced.shipments[0].processingStatus,'IN_PROGRESS',
+  'delivery should schedule production, not synchronously commit finished goods');
 assert.equal(context.Game.state.resource.BGD.warehouse.availableByResource.coal,45000,'delivered raw stock must leave the sovereign warehouse');
 assert.equal(context.Game.state.resource.BGD.warehouse.reservedByResource.coal,0,'shipment reservation must be released on delivery');
 assert.equal(context.Game.state.resource.BGD.inventory.coal,45000,'raw inventory must be debited once when the shipment is delivered');
-assert.equal(context.Game.state.resource.BGD.inventory.COAL_CONCENTRATE,820,'factory output must enter the resource inventory');
-assert.equal(context.Game.state.resource.BGD.inventory.COAL_REJECT,180,'processing coproduct must be recorded');
-assert.equal(context.Game.state.economy.BGD.productionAssets[0].inputInventory.coal,4000,'unprocessed delivered material must remain in factory input stock');
+const factory=context.Game.state.economy.BGD.productionAssets[0];
+const cycle=context.Game.state.resource.BGD.industrialNetwork.factoryProductionCycles[factory.id];
+assert.ok(cycle&&cycle.status==='IN_PROGRESS','factory receipt must create a dated production cycle');
+assert.ok(cycle.finishDate,'factory cycle must expose its authoritative finish date');
+assert.equal(context.Game.state.resource.BGD.inventory.COAL_CONCENTRATE||0,0,'finished goods must not exist on the delivery tick');
+assert.equal(context.Game.state.resource.BGD.inventory.COAL_REJECT||0,0,'processing coproduct must not exist before cycle completion');
+assert.equal(factory.inputInventory.coal,5000,'all delivered material stays recorded at the factory until the cycle finishes');
+assert.equal(context.Game.state.resource.BGD.processedWarehouse,undefined,
+  'the processed warehouse must not be fabricated before there is production output');
+
+context.Game.state.simulation.turn=Math.max(Number(context.Game.state.simulation.turn)||0,Number(cycle.finishTurn)||0);
+context.Game.state.simulation.date=cycle.finishDate;
+const completed=N.processPendingFactoryInputs('BGD');
+assert.equal(completed.completedCount,1,JSON.stringify(completed));
+assert.equal(completed.completed[0].status,'COMPLETED');
+assert.equal(context.Game.state.resource.BGD.inventory.COAL_CONCENTRATE,820,'completed factory output must enter the resource inventory');
+assert.equal(context.Game.state.resource.BGD.inventory.COAL_REJECT,180,'processing coproduct must be recorded on completion');
+assert.equal(factory.inputInventory.coal,4000,'only the completed cycle input should be debited from factory input stock');
 assert.equal(context.Game.state.resource.BGD.processedWarehouse.availableByResource.COAL_CONCENTRATE,820);
 assert.equal(context.Game.state.resource.BGD.processedWarehouse.availableByResource.COAL_REJECT,180);
 assert.ok(context.Game.state.resource.BGD.batches.some(x=>x.stage==='FINISHED'&&x.resourceId==='COAL_CONCENTRATE'));
 assert.ok(Object.values(context.Game.state.resource.BGD.inventoryLots).some(x=>x.stage==='FINISHED'&&x.resourceId==='COAL_REJECT'));
-assert.equal(context.Game.state.economy.BGD.productionAssets[0].inputBatchLots.reduce((sum,x)=>sum+(Number(x.remainingQuantity)||0),0),4000);
+assert.equal(factory.inputBatchLots.reduce((sum,x)=>sum+(Number(x.remainingQuantity)||0),0),4000);
 
+const factoryBuildProfile=catalog.factoryProfiles.ORE_BENEFICIATION_PLANT;
+for(const [materialId,requiredQty] of Object.entries(factoryBuildProfile.constructionMaterials||{})){
+  context.Game.state.resource.BGD.inventory[materialId]=(Number(context.Game.state.resource.BGD.inventory[materialId])||0)+Number(requiredQty);
+  context.Game.state.resource.BGD.warehouse.availableByResource[materialId]=(Number(context.Game.state.resource.BGD.warehouse.availableByResource[materialId])||0)+Number(requiredQty);
+}
 const factoryProject=N.startFactoryProject({countryId:'BGD',resourceId:'iron_ore',capacityPerDay:750,buildDays:60,requiredTechnologyIds:['DIGITAL_MAINTENANCE']});
 assert.equal(factoryProject.status,'UNDER_CONSTRUCTION');
 context.Game.state.simulation.turn=2;
@@ -177,15 +228,28 @@ assert.ok(siteRun.extractionPlanId,'industrial extraction planner must be part o
 assert.ok(siteRun.shipmentId,'shipment must be persisted in the country industrial network');
 assert.equal(siteRun.factoryBootstrapStatus,'CREATED_SIMULATION_ONLY','fallback processing capacity must be clearly marked simulation-only');
 assert.equal(context.Game.state.resource.BGD.industrialNetwork.siteExecutions[0].siteId,'SITE_BGD_COPPER_01');
-context.Game.state.simulation.turn=siteRun.shipment.etaTurn;
+advanceToGameTurn(context.Game.state,siteRun.shipment.etaTurn);
 const copperDelivery=N.advanceShipments('BGD');
 assert.equal(copperDelivery.delivered,1);
-assert.equal(copperDelivery.shipments[0].processingStatus,'PROCESSED');
-assert.ok(context.Game.state.resource.BGD.inventory.COPPER_CONCENTRATE>0,'processed site output must be persisted in the country inventory');
-assert.ok(context.Game.state.resource.BGD.inventory.TAILINGS>0,'processing by-product must be persisted too');
+assert.equal(copperDelivery.shipments[0].processingStatus,'IN_PROGRESS',
+  'site extraction delivery must schedule production instead of bypassing cycle timing');
+assert.equal(Number(context.Game.state.resource.BGD.inventory.COPPER_CONCENTRATE)||0,0,
+  'copper output must not be committed on the delivery tick');
+const copperFactory=context.Game.state.economy.BGD.productionAssets.find(x=>String(x.id||x.assetId||x.projectId)===String(siteRun.factoryId));
+const copperCycle=context.Game.state.resource.BGD.industrialNetwork.factoryProductionCycles[copperFactory.id];
+assert.ok(copperCycle&&copperCycle.finishDate,'auto-commissioned copper processing must have a dated production cycle');
+context.Game.state.simulation.turn=Math.max(Number(context.Game.state.simulation.turn)||0,Number(copperCycle.finishTurn)||0);
+context.Game.state.simulation.date=copperCycle.finishDate;
+const copperCompleted=N.processPendingFactoryInputs('BGD');
+assert.equal(copperCompleted.completedCount,1,JSON.stringify(copperCompleted));
+assert.ok(context.Game.state.resource.BGD.inventory.COPPER_CONCENTRATE>0,'completed site output must be persisted in the country inventory');
+assert.ok(context.Game.state.resource.BGD.inventory.TAILINGS>0,'completed processing by-product must be persisted too');
 assert.equal(context.Game.state.resource.BGD.warehouse.availableByResource.copper,0,'raw shipment quantity must be removed from warehouse exactly once');
 assert.equal(context.Game.state.resource.BGD.warehouse.reservedByResource.copper,0,'site shipment reservation must be cleared');
-assert.ok(context.Game.state.resource.BGD.industrialNetwork.events.some(x=>x.transactionId&&x.status==='COMPLETED'),'factory processing must be written to the runtime event ledger');
+const copperDeliveryRow=context.Game.state.resource.BGD.industrialNetwork.deliveries.find(x=>String(x.shipmentId)===String(siteRun.shipmentId));
+assert.equal(copperDeliveryRow.processingStatus,'PROCESSED','delivery record must reconcile when its cycle commits');
+assert.ok(context.Game.state.resource.BGD.industrialNetwork.events.some(x=>x.transactionId&&x.status==='COMPLETED'),
+  'factory processing must be written to the runtime event ledger');
 
 const kuwaitProject=N.startInfrastructureProject({
   countryId:'Kuwait',infrastructureType:'road',distanceKm:10,capacityPerDay:100,cost:100
@@ -204,5 +268,25 @@ const diag=N.diagnostics();
 assert.equal(diag.siteCount,3);
 assert.equal(diag.extractionPlans,3);
 assert.equal(diag.targetArchitecture,'SITE -> EXTRACTION -> WAREHOUSE -> ROUTE -> FACTORY -> PROCESS -> OUTPUT');
+
+// Every route segment shares a per-turn transport ledger across shipments.
+context.Omega.Simulation.clock.turn=43;
+// Industrial ledgers use the shared Game simulation state as the canonical turn source.
+context.Game.state.simulation.turn=43;
+context.Game.state.transport.BGD.infrastructure.roads.capacityPerDay=11000;
+context.Game.state.transport.BGD.infrastructure.roads.quality=1;
+const firstCapacityShipment=N.dispatchShipment({countryId:'BGD',siteId:'SITE_BGD_COAL_01',resourceId:'coal',quantity:5000,transportMode:'rail'});
+assert.equal(firstCapacityShipment.status,'DISPATCHED',JSON.stringify(firstCapacityShipment));
+const secondCapacityShipment=N.dispatchShipment({countryId:'BGD',siteId:'SITE_BGD_COAL_01',resourceId:'coal',quantity:1000,transportMode:'rail'});
+assert.equal(secondCapacityShipment.status,'DISPATCHED',JSON.stringify(secondCapacityShipment));
+assert.equal(secondCapacityShipment.shipment.quantity,500,'shared capacity across both truck legs must cap the second shipment');
+assert.ok(secondCapacityShipment.shipment.route.vehiclePlan.every(leg =>
+  leg.units === Math.ceil(500 / Math.max(.001, Number(leg.payloadTonnes) || 1))),
+  'vehicle count must be recalculated from the actual shared-capacity-limited shipment');
+assert.ok(secondCapacityShipment.shipment.route.vehiclePlan.every(leg => leg.dispatchQuantity === 500),
+  'every route leg must report the same adjusted dispatch quantity');
+const sharedTransport=context.Game.state.resource.BGD.industrialNetwork.transportCapacityLedger.turns['43'];
+assert.equal(sharedTransport.usedByMode.truck,11000,'truck capacity must be counted jointly for all route legs in one turn');
+assert.equal(sharedTransport.shipments.length,2);
 
 console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');

@@ -86,3 +86,13 @@ test('resource panels avoid navigation clutter, raw diagnostics, and pinned top 
   assert.ok(ui.includes("(lastOutcome ? '<div id=\"omega-rescc-status\""));
   assert.equal(ui.includes("Panel: ' + viewTitle(activePanel)"), false);
 });
+
+
+test('industrial panel exposes real utility ledgers and a single-country utility infrastructure action', () => {
+  assert.match(ui, /factoryUtilityDiagnostics\(country\)/);
+  assert.match(ui, /Industrial utility balances/);
+  assert.match(ui, /data-form="factory-utility-project"/);
+  assert.match(ui, /startInfrastructureProject\(\{/);
+  assert.match(ui, /Not recorded/);
+  assert.match(ui, /Completed in-game utility projects|completed in-game utility projects/i);
+});

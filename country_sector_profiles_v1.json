@@ -3,9 +3,9 @@
     "schemaVersion": "1.1.0",
     "datasetId": "OMEGA_COUNTRY_SECTOR_PROFILES_V1",
     "title": "OMEGA Country Sector Profiles",
-    "generatedAt": "2026-10-22T14:49:32.725Z",
+    "generatedAt": "2026-10-23T16:06:45.234Z",
     "generatedFrom": "/home/runner/work/world-map-strategy-/world-map-strategy-/country_general_data_registry_v1.json",
-    "sourceRegistryGeneratedAt": "2026-10-22T14:49:10.549Z",
+    "sourceRegistryGeneratedAt": "2026-10-23T16:06:39.489Z",
     "countryAndTerritoryCount": 249,
     "uniqueIso3Count": 249,
     "duplicateIdentityCount": 0,
@@ -701,8 +701,8 @@
       },
       "environmentAndEnergy": {
         "total": 249,
-        "available": 0,
-        "partial": 249,
+        "available": 163,
+        "partial": 86,
         "noData": 0
       }
     },
@@ -919,8 +919,8 @@
       },
       "co2TonnesPerCapita": {
         "total": 249,
-        "nonNull": 0,
-        "missing": 249
+        "nonNull": 203,
+        "missing": 46
       },
       "militaryExpenditurePctGdp": {
         "total": 249,
@@ -5216,7 +5216,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -6579,7 +6579,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -10793,7 +10793,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -14747,7 +14747,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -16068,7 +16068,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -17361,7 +17361,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -20113,7 +20113,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -21494,7 +21494,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -22857,7 +22857,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -25581,7 +25581,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -26944,7 +26944,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -28308,7 +28308,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -29643,7 +29643,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -31066,7 +31066,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -32358,7 +32358,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -33721,7 +33721,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -36501,7 +36501,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -37864,7 +37864,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -40456,7 +40456,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -41791,7 +41791,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -44397,7 +44397,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -47107,7 +47107,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -48385,7 +48385,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -49790,7 +49790,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -52621,7 +52621,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -53970,7 +53970,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -55346,7 +55346,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -56727,7 +56727,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -61005,7 +61005,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -62357,7 +62357,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -63691,7 +63691,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -67776,7 +67776,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -69171,7 +69171,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -70548,7 +70548,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -72009,7 +72009,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -74630,7 +74630,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -76021,7 +76021,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -77317,7 +77317,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -78630,7 +78630,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -81311,7 +81311,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -82705,7 +82705,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -84128,7 +84128,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -85535,7 +85535,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -86895,7 +86895,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -88173,7 +88173,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -89480,7 +89480,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -90815,7 +90815,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -92136,7 +92136,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -93531,7 +93531,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -94938,7 +94938,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -96291,7 +96291,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -97612,7 +97612,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -99003,7 +99003,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -103036,7 +103036,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -104445,7 +104445,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -105840,7 +105840,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -111101,7 +111101,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -112520,7 +112520,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -113841,7 +113841,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -115208,7 +115208,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -116515,7 +116515,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -119209,7 +119209,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -121898,7 +121898,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -125907,7 +125907,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -130086,7 +130086,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -131421,7 +131421,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -132840,7 +132840,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -136827,7 +136827,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -139579,7 +139579,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -140974,7 +140974,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -142295,7 +142295,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -143616,7 +143616,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -145021,7 +145021,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -146426,7 +146426,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -147863,7 +147863,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -150590,7 +150590,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -151943,7 +151943,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -153271,7 +153271,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -154666,7 +154666,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -157314,7 +157314,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -158649,7 +158649,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -159997,7 +159997,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -162777,7 +162777,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -164157,7 +164157,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -165538,7 +165538,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -166887,7 +166887,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -168238,7 +168238,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -169534,7 +169534,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -170955,7 +170955,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -172374,7 +172374,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -175211,7 +175211,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -178012,7 +178012,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -179463,7 +179463,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -182252,7 +182252,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -184994,7 +184994,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -186347,7 +186347,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -189147,7 +189147,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -194500,7 +194500,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -197134,7 +197134,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -199868,7 +199868,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -202651,7 +202651,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -206632,7 +206632,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -208050,7 +208050,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -209450,7 +209450,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -210761,7 +210761,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -213499,7 +213499,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -214879,7 +214879,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -217575,7 +217575,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -218910,7 +218910,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -220315,7 +220315,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -221706,7 +221706,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -225749,7 +225749,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -228546,7 +228546,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -229885,7 +229885,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -231248,7 +231248,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -235314,7 +235314,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -237984,7 +237984,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -239276,7 +239276,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -240611,7 +240611,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -243305,7 +243305,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -244643,7 +244643,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -247396,7 +247396,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -250020,7 +250020,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -251425,7 +251425,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -252802,7 +252802,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -256722,7 +256722,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -258068,7 +258068,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -262019,7 +262019,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -266193,7 +266193,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -267545,7 +267545,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -268880,7 +268880,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -274394,7 +274394,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -277026,7 +277026,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -278379,7 +278379,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -282556,7 +282556,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -286717,7 +286717,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -288024,7 +288024,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -289473,7 +289473,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -290812,7 +290812,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -293491,7 +293491,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -294927,7 +294927,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -296389,7 +296389,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -299091,7 +299091,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -300454,7 +300454,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -301788,7 +301788,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -303221,7 +303221,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -304654,7 +304654,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -308735,7 +308735,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -310041,7 +310041,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -311362,7 +311362,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -312755,7 +312755,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -316930,7 +316930,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -318250,7 +318250,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -319674,7 +319674,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -321083,7 +321083,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -322450,7 +322450,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -325059,7 +325059,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -326396,7 +326396,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -329131,7 +329131,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -330494,7 +330494,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -337339,7 +337339,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -338716,7 +338716,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",
@@ -340107,7 +340107,7 @@
           "analytics": {}
         },
         "environmentAndEnergy": {
-          "status": "PARTIAL",
+          "status": "AVAILABLE",
           "indicators": {
             "co2TonnesPerCapita": {
               "refType": "METRIC",

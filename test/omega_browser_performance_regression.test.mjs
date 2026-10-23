@@ -181,8 +181,11 @@ test('large world GeoJSON is rendered incrementally rather than monopolizing the
   const renderer = source.slice(start, end + 3);
 
   assert.match(renderer, /L\.geoJSON\(null,\s*renderOptions\)/);
+  assert.match(renderer, /typeof L\.canvas === ["']function["']/,
+    'large country layers should use Leaflet Canvas when supported to avoid SVG DOM/compositing overhead');
+  assert.match(renderer, /renderOptions\.renderer = L\.canvas\(\{ padding: 0\.5 \}\)/,
+    'the shared Canvas renderer should be attached to the canonical GeoJSON layer options');
   assert.match(renderer, /CHUNK_THRESHOLD\s*=\s*24/);
-  assert.match(renderer, /renderer:\s*typeof L\.canvas === "function" \? L\.canvas\(\{ padding: 0\.25 \}\) : undefined/);
   assert.match(renderer, /smoothFactor:\s*1\.2/);
   assert.match(renderer, /MAX_FEATURES_PER_FRAME\s*=\s*8/);
   assert.match(renderer, /FRAME_BUDGET_MS\s*=\s*7/);
@@ -191,4 +194,27 @@ test('large world GeoJSON is rendered incrementally rather than monopolizing the
   assert.match(renderer, /renderToken !== Game\.__omegaGeoJSONRenderToken/);
   assert.match(renderer, /OMEGAGeographicRegionSystem/);
   assert.match(renderer, /Game\.countryLabels\.length = 0/);
+});
+
+
+test('slow simulation frames and data-heavy ministry panels bound repeated UI work', () => {
+  const simulation = read('omega_simulation_runtime.js');
+  assert.match(simulation, /MAX_PENDING_REAL_DELTA_MS\s*=\s*STEP_MS/);
+  assert.match(simulation, /this\.pendingRealDeltaMs\s*=\s*Math\.min\(MAX_PENDING_REAL_DELTA_MS,\s*this\.pendingRealDeltaMs\s*\+\s*delta\)/);
+
+  const overview = read('omega_country_overview_ministry_ui_v1.js');
+  assert.match(overview, /function scheduleOverviewRender\(\)/);
+  assert.match(overview, /overviewRenderTimer !== null/);
+  assert.match(overview, /OMEGA_SIMULATION_TURN_COMMITTED', scheduleOverviewRender/);
+
+  const resources = read('omega_resource_command_center_ui_v1.js');
+  assert.match(resources, /function scheduleVisiblePanelRefresh\(\)/);
+  assert.match(resources, /resourceDataWarmupAttempted = false; scheduleVisiblePanelRefresh\(\)/);
+  assert.match(resources, /normaliseCountry\(ownCountry\)!==selected/,
+    'global site records must be country-filtered before expensive cloning');
+  assert.match(resources, /const visibleSites = sites\.slice\(0, 150\)/);
+
+  const serviceWorker = read('omega-offline-map-sw.js');
+  const cacheVersion = Number(serviceWorker.match(/CACHE_NAME = "omega-offline-atlas-shell-v(\d+)"/)?.[1] || 0);
+  assert.ok(cacheVersion >= 24, 'Android/offline installs must receive the updated anti-hang runtime scripts');
 });

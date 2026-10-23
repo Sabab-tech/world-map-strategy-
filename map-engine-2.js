@@ -682,8 +682,12 @@ Game.Map = {
             const el = document.getElementById(id);
             if (el) {
                 if (typeof L !== 'undefined' && L.DomEvent) {
-                    L.DomEvent.disableClickPropagation(el);
-                    L.DomEvent.disableScrollPropagation(el);
+                    if (typeof L.DomEvent.disableClickPropagation === 'function') {
+                        L.DomEvent.disableClickPropagation(el);
+                    }
+                    if (typeof L.DomEvent.disableScrollPropagation === 'function') {
+                        L.DomEvent.disableScrollPropagation(el);
+                    }
                 }
                 ['touchstart', 'touchmove', 'touchend', 'pointerdown', 'mousedown'].forEach(evtType => {
                     el.addEventListener(evtType, function(e) {
@@ -1000,9 +1004,7 @@ Game.Map = {
 Game.Map.renderGeoJSON = function(geoData) {
     const self = this;
     const renderOptions = {
-        // Canvas keeps hundreds of country paths out of the DOM-heavy SVG renderer.
-        // Fall back to Leaflet's configured renderer if Canvas is unavailable.
-        renderer: typeof L.canvas === "function" ? L.canvas({ padding: 0.25 }) : undefined,
+        // Simplify country paths slightly to reduce Canvas drawing cost.
         smoothFactor: 1.2,
         filter: function(feature) {
             var props = feature.properties || {};
@@ -1065,6 +1067,12 @@ Game.Map.renderGeoJSON = function(geoData) {
             });
         }
     };
+
+    // A shared Canvas renderer avoids hundreds of SVG path nodes and expensive
+    // whole-map DOM/compositing work on constrained Android WebViews.
+    if (typeof L.canvas === "function") {
+        renderOptions.renderer = L.canvas({ padding: 0.5 });
+    }
 
     // Keep only one canonical country layer. Repeated boot/render calls must not
     // leave duplicate world polygons competing for the same pointer events.
@@ -2090,10 +2098,16 @@ if (typeof L !== 'undefined' && L.DomEvent) {
         'search-drawer', 'events-drawer', 'layers-drawer'
     ];
     setTimeout(() => {
+        // Re-check Leaflet at callback time: the offline Android bundle can boot
+        // before its optional interaction helpers are fully available.
+        if (typeof L === 'undefined' || !L.DomEvent) return;
         protectIds.forEach(id => {
             const el = document.getElementById(id);
-            if (el) {
+            if (!el) return;
+            if (typeof L.DomEvent.disableClickPropagation === 'function') {
                 L.DomEvent.disableClickPropagation(el);
+            }
+            if (typeof L.DomEvent.disableScrollPropagation === 'function') {
                 L.DomEvent.disableScrollPropagation(el);
             }
         });

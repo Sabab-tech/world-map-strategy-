@@ -6,6 +6,36 @@ import test from 'node:test';
 const readJson=name=>JSON.parse(fs.readFileSync(new URL('../'+name,import.meta.url),'utf8'));
 const readText=name=>fs.readFileSync(new URL('../'+name,import.meta.url),'utf8');
 
+function advanceOneGameTurn(state){
+  const sim=state.simulation||(state.simulation={});
+  const step=Math.max(1,Math.round(Number(sim.daysPerTurn)||1));
+  const base=String(sim.date||String(Number(sim.startYear)||2015)+'-01-01');
+  const date=new Date(base+'T00:00:00.000Z');
+  date.setUTCDate(date.getUTCDate()+step);
+  sim.date=date.toISOString().slice(0,10);
+  sim.turn=(Number(sim.turn)||1)+1;
+}
+function advanceToGameTurn(state,targetTurn){
+  const target=Math.max(1,Number(targetTurn)||1);
+  let guard=0;
+  while((Number(state.simulation?.turn)||1)<target){
+    advanceOneGameTurn(state);
+    if(++guard>10000)throw new Error('TEST_GAME_CLOCK_TURN_GUARD');
+  }
+}
+function advanceToCycleFinish(state,cycle){
+  const sim=state.simulation||(state.simulation={});
+  if(!sim.date)sim.date=String(cycle?.startDate||String(Number(sim.startYear)||2015)+'-01-01');
+  const currentTurn=Number(sim.turn)||1;
+  const targetTurn=Math.max(currentTurn+1,Number(cycle?.finishTurn)||currentTurn+1);
+  const targetDate=cycle?.finishDate?new Date(String(cycle.finishDate)+'T00:00:00.000Z'):null;
+  let guard=0;
+  while((Number(sim.turn)||1)<targetTurn||(targetDate&&new Date(String(sim.date)+'T00:00:00.000Z')<targetDate)){
+    advanceOneGameTurn(state);
+    if(++guard>10000)throw new Error('TEST_FACTORY_CYCLE_CLOCK_GUARD');
+  }
+}
+
 class EventTargetMock{
   constructor(){this.listeners=new Map();}
   addEventListener(type,fn){const rows=this.listeners.get(type)||[];rows.push(fn);this.listeners.set(type,rows);}
@@ -92,9 +122,11 @@ function makeContext(siteOverride=null){
     state.resource[cid]={inventory:{},batches:[],inventoryLots:{},mineStates:{},mineSiteReferences:[],mineSiteControllers:{},
       warehouse:{warehouseId:'WH-'+cid+'-RAW',countryId:cid,type:'SOVEREIGN_RAW_MATERIAL_WAREHOUSE',
         locationNodeKey:'WAREHOUSE:'+cid+':RAW',status:'OPERATIONAL',availableByResource:{},reservedByResource:{},storedBatchIds:[],receipts:[]}};
-    state.economy[cid]={productionAssets:[]};
+    state.economy[cid]={productionAssets:[],unemploymentCount:1000000000000,laborForce:10000000000000,unemployment_rate:10};
     state.transport[cid]={infrastructure:{roads:{capacityPerDay:40000,quality:.9},rail:{capacityPerDay:90000,quality:.9},
-      ports:{capacityPerDay:180000,quality:.9},bridges:{capacityPerDay:45000,quality:.9},pipelines:{capacityPerDay:350000,quality:.9}}};
+      ports:{capacityPerDay:180000,quality:.9},bridges:{capacityPerDay:45000,quality:.9},pipelines:{capacityPerDay:350000,quality:.9},
+      utilitySupply:{electricityMWhPerDay:1000000000,waterM3PerDay:1000000000,
+        authority:'TEST_FIXTURE',status:'AVAILABLE',simulationOnly:true,assets:[]}}};
     state.trade[cid]={marketPrice:cid==='BGD'?{COAL_CONCENTRATE:100,COAL_REJECT:5}:{COPPER_CONCENTRATE:150,TAILINGS:2},offerBook:[]};
     state.finance[cid]={available:1000000,reserves:2000000};
   }
@@ -157,12 +189,23 @@ test('every committed deposit event is routed country-by-country through factory
   for(const f of fixtures){
     const c=f.site.countryId,rs=state.resource[c];
     const shipment=rs.industrialNetwork.shipments.find(x=>x.batchId===f.batchId&&x.status==='IN_TRANSIT');
-    state.simulation.turn=shipment.etaTurn;
+    advanceToGameTurn(state,shipment.etaTurn);
     const advanced=industry.advanceShipments(c);
     assert.equal(advanced.delivered,1,JSON.stringify(advanced));
     const result=advanced.shipments[0];
-    assert.equal(result.processingStatus,'PROCESSED',JSON.stringify(result.processing));
+    assert.equal(result.processingStatus,'IN_PROGRESS',JSON.stringify(result.processing));
     assert.equal(result.destinationStatus,'FACTORY_RECEIVED');
+    assert.equal(Number(rs.inventory[f.output])||0,0,'finished output must not be committed on the delivery tick');
+    const factory=state.economy[c].productionAssets.find(x=>String(x.id||x.assetId||x.projectId)===String(result.factoryId));
+    assert.ok(factory,'scheduled production must retain a country-local factory');
+    const cycle=rs.industrialNetwork.factoryProductionCycles[factory.id];
+    assert.ok(cycle&&cycle.status==='IN_PROGRESS'&&cycle.finishDate,'delivery must schedule a cycle against the game calendar');
+    advanceToCycleFinish(state,cycle);
+    const completion=industry.processPendingFactoryInputs(c);
+    assert.equal(completion.completedCount,1,JSON.stringify(completion));
+    const completedDelivery=(rs.industrialNetwork.deliveries||[]).find(x=>String(x.shipmentId)===String(result.shipmentId));
+    assert.equal(completedDelivery?.processingStatus,'PROCESSED','shipment status must reconcile after the cycle commits');
+    economy.processCountry(c);
     assert.ok(Number(rs.inventory[f.output])>0,"finished product quantity must increase in its own country's inventory");
     assert.ok(Number(rs.processedWarehouse.availableByResource[f.output])>0,'finished product must be allocated to its own country processed warehouse');
     const flow=rs.industrialNetwork.siteFlowLedger.find(x=>x.batchId===f.batchId);
@@ -320,6 +363,8 @@ test('all expanded deposits receive explicit flow status; active sites dispatch 
   const processingTurnLimit=lastEta+maxActivePerCountry+5;
   for(let simulationTurn=1;simulationTurn<=processingTurnLimit;simulationTurn++){
     state.simulation.turn=simulationTurn;
+    const daysPerTurn=Math.max(1,Math.round(Number(state.simulation.daysPerTurn)||1));
+    state.simulation.date=new Date(Date.UTC(Number(state.simulation.startYear)||2025,0,1)+(simulationTurn-1)*daysPerTurn*86400000).toISOString().slice(0,10);
     for(const cid of countryIds)industry.processPendingFactoryInputs(cid);
     for(const cid of countryIds)industry.advanceShipments(cid);
   }

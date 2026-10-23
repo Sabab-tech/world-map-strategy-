@@ -11,6 +11,8 @@ import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
+import android.webkit.WebChromeClient;
+import android.webkit.ConsoleMessage;
 import android.webkit.WebViewClient;
 import android.webkit.RenderProcessGoneDetail;
 
@@ -25,8 +27,19 @@ import java.util.Locale;
 public final class MainActivity extends Activity {
     private static final String APP_URL =
             "https://appassets.androidplatform.net/assets/index.html";
-    private WebView webView;
+    private volatile WebView webView;
     private WebViewAssetLoader assetLoader;
+    private volatile boolean mainFrameLoaded = false;
+
+    boolean hasMainFrameLoaded() {
+        return mainFrameLoaded;
+    }
+
+    // Package-private access for instrumentation avoids blocking the UI thread just
+    // to discover the WebView while the offline JavaScript bundle is booting.
+    WebView webViewForTest() {
+        return webView;
+    }
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -72,6 +85,29 @@ public final class MainActivity extends Activity {
 
         WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG);
         webView.addJavascriptInterface(new OmegaAndroidBridge(), "OmegaAndroid");
+        if (BuildConfig.DEBUG) {
+            webView.setWebChromeClient(new WebChromeClient() {
+                @Override
+                public boolean onConsoleMessage(ConsoleMessage message) {
+                    final String text = message.message();
+                    if (text.startsWith("[OMEGA_BOOT_") ||
+                            message.messageLevel() == ConsoleMessage.MessageLevel.ERROR) {
+                        android.util.Log.e(
+                                "OMEGA_WEB_DIAGNOSTICS",
+                                text + " (" + message.sourceId() + ":" + message.lineNumber() + ")"
+                        );
+                    }
+                    return true;
+                }
+
+                @Override
+                public void onProgressChanged(WebView view, int newProgress) {
+                    if (newProgress == 100) {
+                        android.util.Log.d("OMEGA_WEB_DIAGNOSTICS", "PAGE_LOAD_PROGRESS=100");
+                    }
+                }
+            });
+        }
 
         webView.setWebViewClient(new WebViewClient() {
             @Override
@@ -104,10 +140,20 @@ public final class MainActivity extends Activity {
             @Override
             public void onPageStarted(WebView view, String url, Bitmap favicon) {
                 super.onPageStarted(view, url, favicon);
+                if (view == webView) mainFrameLoaded = false;
                 view.evaluateJavascript(
                         "window.OMEGA_ANDROID_APP=true;window.OMEGA_ANDROID_OFFLINE=true;",
                         null
                 );
+            }
+
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                super.onPageFinished(view, url);
+                if (view == webView) mainFrameLoaded = true;
+                if (BuildConfig.DEBUG) {
+                    android.util.Log.d("OMEGA_WEB_DIAGNOSTICS", "MAIN_FRAME_FINISHED=" + url);
+                }
             }
 
             @Override
@@ -237,6 +283,15 @@ public final class MainActivity extends Activity {
         @JavascriptInterface
         public boolean isOfflineMode() {
             return true;
+        }
+
+        @JavascriptInterface
+        public boolean isDiagnosticsEnabled() {
+            // Per-script console tracing is expensive on Android 9's renderer. Keep it
+            // opt-in for diagnostics instead of enabling hundreds of log callbacks in
+            // every debug launch and instrumentation smoke test.
+            return BuildConfig.DEBUG && getIntent() != null
+                    && getIntent().getBooleanExtra("omegaWebDiagnostics", false);
         }
 
         @JavascriptInterface

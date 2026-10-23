@@ -126,6 +126,18 @@ assert.equal(copperModel.resourceId,'copper');
 assert(Object.keys(copperModel.outputs).length>0);
 assert.equal(copperModel.authority,'SIMULATION_RULES_FROM_CANONICAL_ONTOLOGY');
 
+// A production Resource Endowment API is immutable. Re-applying hardening must
+// skip monkey-patching it cleanly instead of throwing a read-only-property error.
+context.Omega.ResourceEndowmentRuntime = Object.freeze({
+  extractCountry: async () => ({ countryId: 'CHL' }),
+  extractAll: async () => ({ results: [{ countryId: 'CHL' }] })
+});
+assert.doesNotThrow(() => vm.runInContext(
+  read('omega_resource_system_hardening_v1.js'), context,
+  { filename: 'omega_resource_system_hardening_v1.js:frozen-api-regression' }
+));
+assert.equal(context.OmegaResourceSystemHardeningError, undefined);
+
 const diagnostics=hard.diagnostics();
 assert.equal(diagnostics.masterSiteCount,250);
 assert.equal(diagnostics.commercialSiteCount,246);
