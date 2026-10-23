@@ -5392,3 +5392,28 @@ body.modal-open .ui-bottom-navigation {
     min-height: 0;
     width: 100%;
 }
+
+
+/* Country Overview: complete national indicator coverage */
+.ocov-country-data { margin: 14px 0 18px; padding: 12px; border: 1px solid rgba(145, 181, 255, 0.28); border-radius: 12px; background: linear-gradient(155deg, rgba(15, 27, 45, 0.96), rgba(8, 17, 30, 0.96)); color: #dce7f1; }
+.ocov-country-data .ocov-section-heading { margin-top: 0; }
+.ocov-country-data-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(112px, 1fr)); gap: 7px; margin: 12px 0; }
+.ocov-country-data-summary > div { min-width: 0; padding: 10px; border: 1px solid rgba(148, 163, 184, 0.22); border-radius: 9px; background: rgba(148, 163, 184, 0.06); }
+.ocov-country-data-summary strong { display: block; color: #f0d995; font-size: 17px; }
+.ocov-country-data-summary span { display: block; margin-top: 3px; color: #aebfce; font-size: 10px; line-height: 1.4; }
+.ocov-country-data-group { margin-top: 8px; border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 9px; overflow: hidden; }
+.ocov-country-data-group > summary { display: flex; align-items: center; justify-content: space-between; gap: 9px; padding: 10px 11px; color: #e5edfa; background: rgba(148, 163, 184, 0.07); cursor: pointer; font-size: 11px; font-weight: 700; list-style-position: inside; }
+.ocov-country-data-group > summary span { flex-shrink: 0; color: #aebfce; font-size: 10px; font-weight: 500; }
+.ocov-country-data-rows { padding: 0 10px 7px; }
+.ocov-country-data-row { display: grid; grid-template-columns: minmax(95px, 0.9fr) minmax(115px, 1.1fr); gap: 3px 10px; padding: 8px 0; border-bottom: 1px solid rgba(148, 163, 184, 0.12); }
+.ocov-country-data-row:last-child { border-bottom: 0; }
+.ocov-country-data-label { color: #aebfce; font-size: 10px; line-height: 1.45; overflow-wrap: anywhere; }
+.ocov-country-data-value { color: #f1f5f9; font-size: 11px; font-weight: 600; line-height: 1.45; overflow-wrap: anywhere; }
+.ocov-country-data-row.is-missing .ocov-country-data-value { color: #8294a7; font-weight: 400; }
+.ocov-country-data-row > small { grid-column: 2; color: #94a3b8; font-size: 9px; }
+.ocov-country-data-audit { margin-top: 12px; padding: 10px; border: 1px solid rgba(233, 189, 87, 0.28); border-radius: 9px; background: rgba(233, 189, 87, 0.04); }
+.ocov-country-data-audit > div strong { color: #f0d995; font-size: 12px; }
+.ocov-country-data-audit p { margin: 4px 0 9px; color: #aebfce; font-size: 10px; line-height: 1.5; }
+.ocov-country-data-audit button { min-height: 36px; padding: 8px 12px; border: 1px solid rgba(233, 189, 87, 0.55); border-radius: 7px; background: rgba(233, 189, 87, 0.12); color: #f8e7b0; font-weight: 700; font-size: 11px; cursor: pointer; }
+.ocov-country-data-audit pre { margin: 10px 0 0; max-height: 420px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; font: 10px/1.55 system-ui, sans-serif; color: #cbd5e1; }
+@media (max-width: 420px) { .ocov-country-data { padding: 9px; } .ocov-country-data-row { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: 4px 7px; } .ocov-country-data-value { font-size: 10px; } }
