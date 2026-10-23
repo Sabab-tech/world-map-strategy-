@@ -150,6 +150,9 @@ test('global mine coverage batch adds 108 immediately executable, fully simulate
   assert.equal(expandedCoverageBatch.recordCount, 108);
   assert.equal(expandedCoverageBatch.records.length, 108);
   assert.equal(expandedCoverageBatch.countryCount, 36);
+  assert.ok(bindingSource.includes('resource_site_country_mineplay_batch_20261024_v1.json'), 'map/gameplay binding must load the added batch');
+  assert.ok(endowmentSource.includes('resource_site_country_mineplay_batch_20261024_v1.json'), 'endowment/runtime must load the added batch');
+  assert.ok(serviceWorkerSource.includes('resource_site_country_mineplay_batch_20261024_v1.json'), 'new batch must be cached for offline use');
   assert.equal(new Set(expandedCoverageBatch.records.map(x => x.siteId)).size, 108);
   const normalize = v => String(v ?? '').normalize('NFKD').replace(/\\p{M}/gu, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
   const country = row => String(row?.countryId || row?.identity?.countryIso3 || row?.location?.countryBoundaryKey || '').toUpperCase();
@@ -211,7 +214,7 @@ test('global mine coverage batch adds 108 immediately executable, fully simulate
     assert.equal(q.quantitativeProvenance.realWorldDataRequired, false);
     assert.equal(q.completeness.overall, 'GAMEPLAY_SIMULATION_COMPLETE');
     assert.deepEqual(row.observedFacts, []);
-    assert.ok(row.sources.some(source => /^https?:\\/\\//.test(source.url)), row.siteId + ': identity/source URL');
+    assert.ok(row.sources.some(source => String(source.url).startsWith('https://') || String(source.url).startsWith('http://')), row.siteId + ': identity/source URL');
     assert.equal(row.sourceReference.facts.measuredReservePromoted, false);
     assert.equal(row.sourceReference.facts.measuredProductionPromoted, false);
     assert.equal(row.sourceReference.facts.quantitativeValuesAreSimulated, true);
