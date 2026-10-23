@@ -1766,14 +1766,27 @@ function batchFromExtraction(x,record){
     const outputs=bucket.mineOutputs&&typeof bucket.mineOutputs==='object'?bucket.mineOutputs:{};
     const paths=bucket.minePaths&&typeof bucket.minePaths==='object'?bucket.minePaths:{};
     const states=bucket.mineStates&&typeof bucket.mineStates==='object'?bucket.mineStates:{};
-    const attempted=new Set();
+    const attempted=new Set(),retryableBlocked=new Set(),successfulOccurrences=new Set();
+    const currentLedger=Array.isArray(bucket.mineProductionLedger)?bucket.mineProductionLedger:[];
+    for(const row of currentLedger){
+      if(n(row?.turn)!==t||(n(row?.quantity)||0)<=0)continue;
+      const key=String(row.occurrenceKey||row.mineId||'').trim();
+      if(key)successfulOccurrences.add(key);
+    }
     for(const [key,row] of Object.entries(outputs)){
-      if(n(row?.simulationTurn??row?.turn)===t)attempted.add(String(key));
+      if(n(row?.simulationTurn??row?.turn)!==t)continue;
+      attempted.add(String(key));
+      const quantity=n(row?.producedQuantity??row?.approvedQuantity??row?.quantity)||0;
+      if(quantity>0)successfulOccurrences.add(String(key));
+      else if(String(row?.status||'').toUpperCase().startsWith('BLOCK')||row?.blockReason)retryableBlocked.add(String(key));
     }
     for(const [key,path] of Object.entries(paths)){
-      const scanned=n(path?.lastTurn)===t||(Array.isArray(path?.stages)&&path.stages.some(stage=>
-        n(stage?.turn)===t&&['EXTRACTION_SCAN','EXTRACTION_BLOCKED'].includes(String(stage?.stage||''))));
-      if(scanned)attempted.add(String(key));
+      const scanned=Array.isArray(path?.stages)&&path.stages.some(stage=>
+        n(stage?.turn)===t&&['EXTRACTION_SCAN','EXTRACTION_BLOCKED'].includes(String(stage?.stage||'')));
+      if(scanned){
+        attempted.add(String(key));
+        if(String(path?.status||'').toUpperCase()==='BLOCKED')retryableBlocked.add(String(key));
+      }
     }
     const siteByOccurrence=new Map();
     for(const [siteKey,controller] of Object.entries(bucket.mineSiteControllers||{})){
@@ -1781,12 +1794,12 @@ function batchFromExtraction(x,record){
         siteByOccurrence.set(String(key),String(controller.siteReferenceKey||siteKey));
     }
     const candidates=Object.keys(states).filter(key=>{
-      if(attempted.has(String(key)))return false;
+      if(successfulOccurrences.has(String(key)))return false;
+      if(attempted.has(String(key))&&!retryableBlocked.has(String(key)))return false;
       if(!requestedSites)return true;
       const row=states[key]||{},siteKey=String(row.siteReferenceKey||row.siteId||row.sourceSiteId||siteByOccurrence.get(String(key))||'');
       return requestedSites.has(siteKey)||requestedSites.has(String(siteByOccurrence.get(String(key))||''));
     });
-    const currentLedger=Array.isArray(bucket.mineProductionLedger)?bucket.mineProductionLedger:[];
     const currentSiteIds=new Set(currentLedger.filter(row=>n(row?.turn)===t&&(n(row?.quantity)||0)>0)
       .map(row=>String(row.siteReferenceKey||row.mineId||row.occurrenceKey||'')).filter(Boolean));
     const currentPositiveOutputs=Object.values(outputs).filter(row=>n(row?.simulationTurn??row?.turn)===t&&
