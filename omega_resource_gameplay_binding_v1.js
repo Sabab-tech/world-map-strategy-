@@ -8,6 +8,7 @@ const CATALOG_URL='resource_site_canonical_catalog_v1.json';
 const MASTER_URL='resource_site_master_registry_v1.json';
 const EXPANSION_URL='resource_site_country_expansion_v1.json';
 const MINEPLAY_BATCH_URL='resource_site_country_mineplay_batch_20261020_v1.json';
+const MINEPLAY_EXTRA_BATCH_URL='resource_site_country_mineplay_batch_20261024_v1.json';
 const LEGACY_GAMEPLAY_URLS=['resource_site_legacy_gameplay_expansion_part_1_v1.json','resource_site_legacy_gameplay_expansion_part_2_v1.json','resource_site_legacy_gameplay_expansion_part_3_v1.json','resource_site_legacy_gameplay_expansion_part_4_v1.json','resource_site_legacy_gameplay_expansion_part_5_v1.json','resource_site_legacy_gameplay_expansion_part_6_v1.json'];
 const LEGACY_CANONICAL_ALIAS_IDS={SITE_AUS_olympic_dam_uranium_copper:'SITE_AUS_olympic_dam_mine',SITE_BRA_carajas_iron_ore_mine_legacy2:'SITE_BRA_carajas_iron_ore_mine',SITE_CHL_escondida_copper_mine_legacy2:'SITE_CHL_escondida_copper_mine',SITE_IDN_grasberg_copper_gold_mine:'SITE_IDN_grasberg_mine',SITE_COD_tenke_fungurume_copper_cobalt_complex:'SITE_COD_tenke_fungurume_mine',SITE_COD_kibali_gold_mine_complex:'SITE_COD_kibali_gold_mine',SITE_CAN_voiseys_bay_nickel_mine:'SITE_CAN_voisey_s_bay_nickel_mine',SITE_GBR_boulby_mine:'SITE_GBR_boulby_potash_mine',SITE_SWE_kiruna_iron_ore_mine:'SITE_SWE_kiruna_iron_mine'};
 let sites=[], selected=null, markers=[], markerLayer=null, panel=null, statusNode=null, detailNode=null, selectNode=null;
@@ -485,16 +486,18 @@ async function init(){
  g.__OMEGA_RESOURCE_SITE_BINDING_INIT__=true;
  mount();
  try{
-  const urls=['resources.json','resources_2.json',CATALOG_URL,MASTER_URL,EXPANSION_URL,MINEPLAY_BATCH_URL,...LEGACY_GAMEPLAY_URLS];
+  const urls=['resources.json','resources_2.json',CATALOG_URL,MASTER_URL,EXPANSION_URL,MINEPLAY_BATCH_URL,MINEPLAY_EXTRA_BATCH_URL,...LEGACY_GAMEPLAY_URLS];
   const loaded=await Promise.all(urls.map(async url=>{
    try{const response=await fetch(url,{cache:'no-store'});if(!response.ok)return null;return {url,data:await response.json()};}
    catch(_){return null;}
   }));
   const sources=loaded.filter(Boolean);
   const getData=url=>sources.find(x=>x.url===url)?.data||null;
-  const catalog=getData(CATALOG_URL),master=getData(MASTER_URL),expansion=getData(EXPANSION_URL),mineplay=getData(MINEPLAY_BATCH_URL);
-  const mineplayRows=mineplay?.datasetId==='OMEGA_RESOURCE_SITE_COUNTRY_MINEPLAY_BATCH_V1'&&Array.isArray(mineplay.records)?mineplay.records:[];
-  if(mineplayRows.length){g.OmegaResourceCountryMineplaySupplementData=mineplay;g.Omega=g.Omega||{};g.Omega.ResourceCountryMineplaySupplementData=mineplay;}
+  const catalog=getData(CATALOG_URL),master=getData(MASTER_URL),expansion=getData(EXPANSION_URL),mineplay=getData(MINEPLAY_BATCH_URL),mineplayExtra=getData(MINEPLAY_EXTRA_BATCH_URL);
+  const mineplayRows=[...(mineplay?.datasetId==='OMEGA_RESOURCE_SITE_COUNTRY_MINEPLAY_BATCH_V1'&&Array.isArray(mineplay.records)?mineplay.records:[]),...(mineplayExtra?.datasetId==='OMEGA_RESOURCE_SITE_COUNTRY_MINEPLAY_BATCH_V1'&&Array.isArray(mineplayExtra.records)?mineplayExtra.records:[])];
+  const uniqueMineplayRows=Array.from(new Map(mineplayRows.filter(row=>row?.siteId).map(row=>[String(row.siteId),row])).values());
+  const combinedMineplay=uniqueMineplayRows.length?{...(mineplay||mineplayExtra),batchId:'COUNTRY_MINEPLAY_COMBINED_20261024',recordCount:uniqueMineplayRows.length,countryCount:new Set(uniqueMineplayRows.map(row=>String(row?.countryId||row?.identity?.countryIso3||'').toUpperCase()).filter(Boolean)).size,records:uniqueMineplayRows}:null;
+  if(combinedMineplay){g.OmegaResourceCountryMineplaySupplementData=combinedMineplay;g.Omega=g.Omega||{};g.Omega.ResourceCountryMineplaySupplementData=combinedMineplay;}
   if(expansion?.datasetId==='OMEGA_RESOURCE_SITE_COUNTRY_EXPANSION_V1'){
    g.OmegaResourceSiteCountryExpansionData=expansion;g.Omega=g.Omega||{};g.Omega.ResourceSiteCountryExpansionData=expansion;
   }
