@@ -380,6 +380,15 @@ test('discipline score is not invented or confused with official governance indi
   }
 });
 
+test('CO2 coverage uses the current EDGAR series with the older WDI series as fallback', () => {
+  const field = registry.fieldCatalogue.find((item) => item.key === 'co2TonnesPerCapita');
+  assert.ok(field, 'Per-capita CO2 indicator is missing from the canonical field catalogue.');
+  assert.equal(field.wb, 'EN.GHG.CO2.PC.CE.AR5');
+  assert.deepEqual(field.wbFallbacks, ['EN.ATM.CO2E.PC']);
+  assert.match(field.unit, /CO2-equivalent/i);
+  assert.equal(registry.metadata.metricCoverage.co2TonnesPerCapita.total, roster.length);
+});
+
 test('coverage totals reconcile and no source or duplicate deletion is claimed', () => {
   for (const field of registry.fieldCatalogue) {
     const coverage = registry.metadata.metricCoverage[field.key];

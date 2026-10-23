@@ -130,7 +130,7 @@ const METRIC_CATALOGUE = [
   { key: 'servicesValueAddedPctGdp', name: 'Services value added', unit: '% of GDP', wb: 'NV.SRV.TOTL.ZS', description: 'Services value-added share of GDP.' },
   { key: 'internetUsersPct', name: 'Internet users', unit: '% of population', wb: 'IT.NET.USER.ZS', description: 'Individuals using the Internet.' },
   { key: 'electricityAccessPct', name: 'Access to electricity', unit: '% of population', wb: 'EG.ELC.ACCS.ZS', description: 'Population access to electricity.' },
-  { key: 'co2TonnesPerCapita', name: 'CO2 emissions per capita', unit: 'metric tonnes per person', wb: 'EN.ATM.CO2E.PC', description: 'Territorial CO2 emissions per capita.' },
+  { key: 'co2TonnesPerCapita', name: 'CO2 emissions excluding land-use changes, per capita', unit: 'tonnes CO2-equivalent per person', wb: 'EN.GHG.CO2.PC.CE.AR5', wbFallbacks: ['EN.ATM.CO2E.PC'], description: 'World Bank EDGAR-based greenhouse-gas series excluding land use, land-use change and forestry; the legacy fossil-fuel CO2 series is a documented fallback and is not identical.' },
   { key: 'militaryExpenditurePctGdp', name: 'Military expenditure', unit: '% of GDP', wb: 'MS.MIL.XPND.GD.ZS', description: 'Military expenditure share of GDP; source coverage varies.' },
   { key: 'homicideRatePer100k', name: 'Intentional homicide rate', unit: 'per 100,000 people', wb: 'VC.IHR.PSRC.P5', description: 'Observed-source record when available; repository legacy observations need revalidation.' },
   { key: 'ruleOfLawWgiEstimate', name: 'Rule of law, WGI estimate', unit: 'WGI estimate, approximately -2.5 to +2.5', wb: 'GOV_WGI_RL_EST', wbFallbacks: ['RL.EST'], description: 'World Governance Indicators estimate, not a 0-100 discipline score.' },
