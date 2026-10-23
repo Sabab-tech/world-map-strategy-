@@ -126,18 +126,16 @@
     }
     var manager = g.OmegaLayerManager;
     try {
-      if (manager && typeof manager.popLayer === 'function') manager.popLayer();
-      else if (manager && typeof manager.setLayer === 'function') manager.setLayer(0);
-      else if (g.document && g.document.body && g.document.body.setAttribute) g.document.body.setAttribute('data-active-layer','0');
-    } catch (_) {}
-    try {
-      var dashboard = g.document && g.document.getElementById('ministry-dashboard-view');
-      if (dashboard && dashboard.style) {
-        dashboard.style.display = '';
-        dashboard.style.opacity = '1';
-        dashboard.style.pointerEvents = 'auto';
-        if (dashboard.removeAttribute) dashboard.removeAttribute('aria-hidden');
+      // Do not call popLayer here: legacy cabinet subsystems can consume Back
+      // before closing the active UI-v2 host. Return directly to World Map.
+      if (manager && typeof manager.setLayer === 'function') {
+        manager.setLayer(0, {}, true);
+        manager.currentLayer = 0;
+        if (Array.isArray(manager.layerStack)) manager.layerStack = [0];
+      } else if (g.document && g.document.body && g.document.body.setAttribute) {
+        g.document.body.setAttribute('data-active-layer','0');
       }
+      // Layer 0 owns visibility of the old dashboard; do not resurrect it over the map.
       if (typeof g.updateGlobalBackButtonVisibility === 'function') g.updateGlobalBackButtonVisibility();
     } catch (_) {}
     return true;
