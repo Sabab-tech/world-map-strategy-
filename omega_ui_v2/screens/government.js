@@ -86,6 +86,12 @@
     }
     return null;
   }
+  function activeMinisterProfile(ministryId) {
+    var selector = g.OmegaLiveMinisterSelectorV9;
+    if (!selector || typeof selector.active !== 'function') return null;
+    try { var active = selector.active(ministryId); return active && (active.profile || active.staticProfile) || null; }
+    catch (_) { return null; }
+  }
   function ministryRows() {
     var db = ministryDatabase();
     var rows = [];
@@ -93,15 +99,19 @@
       Object.keys(db).forEach(function (id) {
         var row = db[id];
         if (!row || id === 'cabinet_council' || row.id === 'cabinet_council') return;
+        var canonicalId = String(row.id || id);
+        var activeProfile = activeMinisterProfile(canonicalId) || {};
         rows.push({
-          id: String(row.id || id),
+          id: canonicalId,
           title: String(row.title || row.bnTitle || id.replace(/[_-]+/g, ' ')),
           subtitle: String(row.bnTitle || ''),
           category: categoryOf(row),
           status: String(row.status || 'NOT_RECORDED'),
-          ministerName: row.ministerName || null,
+          ministerName: row.ministerName || activeProfile.baseName || activeProfile.name || activeProfile.ministerName || null,
+          ministerPortraitUrl: row.ministerPortraitUrl || row.portraitUrl || row.ministerPhotoUrl || row.ministerPhoto || activeProfile.portraitUrl || activeProfile.photoUrl || activeProfile.imageUrl || null,
           avatar: row.icon3D || row.avatar || null,
-          source: 'OmegaCabinetUI.ministriesDatabase',
+          activeMinisterProfile: activeProfile,
+          source: 'OmegaCabinetUI.ministriesDatabase + canonical minister lifecycle',
           raw: row
         });
       });
@@ -190,6 +200,64 @@
     return '<span class="omega-v2-ministry-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">' + symbol + '</svg></span>';
   }
 
+  function ministerPortraitMarkup(row) {
+    var profile = row && row.activeMinisterProfile || {};
+    var source = String(row && row.ministerPortraitUrl || profile.portraitUrl || profile.photoUrl || profile.imageUrl || '').trim();
+    var safeLocalImage = /^(assets|images)\/[a-z0-9/_-]+\.(webp|png|jpe?g)$/i.test(source);
+    var name = row && row.ministerName || profile.baseName || profile.name || 'Minister not assigned';
+    return '<div class="omega-v2-minister-portrait" data-omega-v2-minister-portrait-slot aria-label="Minister portrait slot for ' + esc(name) + '">' +
+      (safeLocalImage ? '<img data-omega-v2-minister-portrait src="' + esc(source) + '" loading="lazy" decoding="async" alt="Portrait of ' + esc(name) + '">' : '<span class="omega-v2-minister-portrait-placeholder">MINISTER PORTRAIT</span><small>Image pending</small>') +
+      '</div>';
+  }
+  function ministerRecruitmentTable(rows) {
+    return '<div class="omega-v2-table-wrap omega-v2-minister-table-wrap"><table class="omega-v2-minister-table"><thead><tr><th scope="col">Ministry / Emblem</th><th scope="col">Minister &amp; portrait</th><th scope="col">Registry status</th><th scope="col">Recruitment</th><th scope="col">Details</th></tr></thead><tbody>' + rows.map(function (row) {
+      var activeName = row.ministerName || 'Vacant / not recorded';
+      return '<tr data-omega-v2-ministry-card data-search="' + esc((row.title + ' ' + row.subtitle + ' ' + row.id + ' ' + row.category + ' ' + activeName).toLowerCase()) + '" data-category="' + esc(row.category) + '">' +
+        '<td><div class="omega-v2-minister-table-title">' + ministryEmblem(row) + '<div><strong>' + esc(row.title) + '</strong><small>' + esc(row.subtitle || CATEGORY_LABELS[row.category] || row.category) + '</small></div></div></td>' +
+        '<td><div class="omega-v2-minister-table-person">' + ministerPortraitMarkup(row) + '<div><strong>' + esc(activeName) + '</strong><small>' + esc(row.activeMinisterProfile && (row.activeMinisterProfile.role || row.activeMinisterProfile.position) || 'Current assignment not independently recorded') + '</small></div></div></td>' +
+        '<td><span class="omega-v2-status" data-state="unknown">' + esc(row.status || 'NOT_RECORDED') + '</span><small class="omega-v2-minister-source">' + esc(row.source || 'Registered ministry record') + '</small></td>' +
+        '<td><button type="button" class="omega-v2-button omega-v2-button--accent" data-omega-v2-minister-recruitment="' + esc(row.id) + '">Recruit / Replace</button></td>' +
+        '<td><button type="button" class="omega-v2-button omega-v2-button--quiet" data-omega-v2-open-ministry="' + esc(row.id) + '">Open</button></td>' +
+        '</tr>';
+    }).join('') + '</tbody></table></div>';
+  }
+  function recruitmentPanel(ministryId) {
+    var row = ministryRows().find(function (item) { return item.id === ministryId; });
+    return '<section class="omega-v2-card omega-v2-minister-recruitment-panel" data-omega-v2-minister-recruitment-panel data-ministry-id="' + esc(ministryId) + '" aria-labelledby="omega-v2-minister-recruitment-title">' +
+      '<div class="omega-v2-card-header"><div><h3 class="omega-v2-card-title" id="omega-v2-minister-recruitment-title">Minister recruitment · ' + esc(row && row.title || ministryId) + '</h3><p class="omega-v2-card-meta">Profiles come from the canonical minister roster; appointments use the existing minister lifecycle.</p></div><button type="button" class="omega-v2-button omega-v2-button--quiet" data-omega-v2-cancel-minister-recruitment>Close</button></div>' +
+      '<p class="omega-v2-card-meta" role="status" data-omega-v2-minister-roster-status>Loading verified candidate roster…</p>' +
+      '<label class="omega-v2-field-label" for="omega-v2-minister-candidate">Candidate</label><select id="omega-v2-minister-candidate" data-omega-v2-minister-candidate disabled><option value="">Loading candidates…</option></select>' +
+      '<div class="omega-v2-actions"><button type="button" class="omega-v2-button omega-v2-button--primary" data-omega-v2-confirm-minister disabled>Appoint selected minister</button></div>' +
+      '<p class="omega-v2-source">If roster or appointment validation is unavailable, the UI reports the blocker; it does not fabricate candidates or silently change assignments.</p></section>';
+  }
+  function loadMinisterCandidates(root, ministryId, countryId) {
+    var panel = root.querySelector('[data-omega-v2-minister-recruitment-panel]');
+    if (!panel || panel.getAttribute('data-ministry-id') !== ministryId) return;
+    var status = panel.querySelector('[data-omega-v2-minister-roster-status]');
+    var select = panel.querySelector('[data-omega-v2-minister-candidate]');
+    var button = panel.querySelector('[data-omega-v2-confirm-minister]');
+    var engine = g.OmegaMinisterRecruitment;
+    if (!engine || typeof engine.fetchRoster !== 'function') {
+      if (status) status.textContent = 'Canonical minister roster unavailable. No candidates were fabricated.';
+      return;
+    }
+    Promise.resolve().then(function () { return engine.fetchRoster(ministryId, countryId); }).then(function (candidates) {
+      if (root.__omegaV2RecruitingMinistry !== ministryId || !select || !root.contains(panel)) return;
+      var valid = Array.isArray(candidates) ? candidates.filter(function (item) { return item && (item.id || item.ministerId) && (item.baseName || item.name || item.ministerName); }) : [];
+      root.__omegaV2MinisterCandidates = valid;
+      select.innerHTML = '<option value="">Choose a verified candidate</option>' + valid.map(function (candidate) {
+        var id = String(candidate.id || candidate.ministerId);
+        var name = String(candidate.baseName || candidate.name || candidate.ministerName || id);
+        return '<option value="' + esc(id) + '">' + esc(name) + '</option>';
+      }).join('');
+      select.disabled = valid.length === 0;
+      if (button) button.disabled = valid.length === 0;
+      if (status) status.textContent = valid.length ? valid.length + ' canonical candidate profile(s) loaded for ' + ministryId + '.' : 'No verified candidates returned. Appointment is disabled.';
+    }).catch(function (error) {
+      if (root.__omegaV2RecruitingMinistry !== ministryId) return;
+      if (status) status.textContent = 'Roster unavailable: ' + String(error && error.message || error || 'UNKNOWN_ERROR') + '. No assignment was changed.';
+    });
+  }
   function directoryCard(row) {
     var icon = ministryEmblem(row);
     var photoId = PHOTO_BY_MINISTRY[row.id];
@@ -238,7 +306,7 @@
           '<select aria-label="Filter ministry category" data-omega-v2-ministry-filter><option value="all">All categories</option>' +
           Object.keys(CATEGORY_LABELS).map(function (key) { return '<option value="' + esc(key) + '">' + esc(CATEGORY_LABELS[key]) + '</option>'; }).join('') +
           '</select></div><p class="omega-v2-card-meta">Showing <strong data-omega-v2-ministry-count>' + rows.length + '</strong> ministry record(s).</p>' +
-          '<div class="omega-v2-grid">' + rows.map(directoryCard).join('') + '</div></section>') +
+          ministerRecruitmentTable(rows) + (root.__omegaV2RecruitingMinistry ? recruitmentPanel(root.__omegaV2RecruitingMinistry) : '') + '</section>') +
       '</section>';
 
     if (!root.__omegaV2GovernmentBound && typeof root.addEventListener === 'function') {
@@ -251,6 +319,45 @@
           var activeOptions = root.__omegaV2GovernmentOptions || {};
           if (typeof activeOptions.onViewChange === 'function') activeOptions.onViewChange(root.__omegaV2GovernmentView);
           render(root, Object.assign({}, activeOptions, { view: root.__omegaV2GovernmentView }));
+          return;
+        }
+        var recruit = target.closest('[data-omega-v2-minister-recruitment]');
+        if (recruit && root.contains(recruit)) {
+          root.__omegaV2RecruitingMinistry = recruit.getAttribute('data-omega-v2-minister-recruitment');
+          render(root, Object.assign({}, root.__omegaV2GovernmentOptions || {}, { view:'all-ministries' }));
+          return;
+        }
+        var cancelRecruitment = target.closest('[data-omega-v2-cancel-minister-recruitment]');
+        if (cancelRecruitment && root.contains(cancelRecruitment)) {
+          root.__omegaV2RecruitingMinistry = null;
+          render(root, Object.assign({}, root.__omegaV2GovernmentOptions || {}, { view:'all-ministries' }));
+          return;
+        }
+        var confirmRecruitment = target.closest('[data-omega-v2-confirm-minister]');
+        if (confirmRecruitment && root.contains(confirmRecruitment) && !confirmRecruitment.disabled) {
+          var recruitingId = root.__omegaV2RecruitingMinistry;
+          var selection = root.querySelector('[data-omega-v2-minister-candidate]');
+          var candidateId = selection && selection.value;
+          var candidates = root.__omegaV2MinisterCandidates || [];
+          var candidate = candidates.find(function (item) { return String(item.id || item.ministerId) === String(candidateId); });
+          var selector = g.OmegaLiveMinisterSelectorV9;
+          var engine = g.OmegaMinisterRecruitment;
+          var activeOptions = root.__omegaV2GovernmentOptions || {};
+          var country = activeOptions.countryId || activeCountry();
+          var status = root.querySelector('[data-omega-v2-minister-roster-status]');
+          confirmRecruitment.disabled = true;
+          if (!candidate || !recruitingId) { if (status) status.textContent = 'Choose a valid candidate. No assignment was changed.'; confirmRecruitment.disabled = false; return; }
+          if (status) status.textContent = 'Submitting appointment to the canonical ministry lifecycle…';
+          var appointment = selector && typeof selector.appoint === 'function'
+            ? selector.appoint(recruitingId, candidate)
+            : engine && typeof engine.recruit === 'function' ? engine.recruit(recruitingId, candidate, country) : Promise.reject(new Error('MINISTER_APPOINTMENT_RUNTIME_UNAVAILABLE'));
+          Promise.resolve(appointment).then(function () {
+            root.__omegaV2RecruitingMinistry = null;
+            render(root, Object.assign({}, activeOptions, { view:'all-ministries' }));
+          }).catch(function (error) {
+            if (status) status.textContent = 'Appointment rejected: ' + String(error && error.message || error || 'RUNTIME_REJECTED') + '. No success was reported.';
+            confirmRecruitment.disabled = false;
+          });
           return;
         }
         var ministry = target.closest('[data-omega-v2-open-ministry]');
@@ -268,7 +375,10 @@
     }
     root.__omegaV2GovernmentOptions = options;
     root.__omegaV2GovernmentView = view;
-    if (view === 'all-ministries') applyDirectoryFilters(root);
+    if (view === 'all-ministries') {
+      applyDirectoryFilters(root);
+      if (root.__omegaV2RecruitingMinistry) loadMinisterCandidates(root, root.__omegaV2RecruitingMinistry, options.countryId || activeCountry());
+    }
     return { ok: true, view: view, ministryCount: rows.length, countryId: countryId || null };
   }
 
@@ -277,6 +387,8 @@
     render: render,
     renderExecutiveOverview: overviewHtml,
     getMinistryRows: ministryRows,
+    ministryEmblem: ministryEmblem,
+    renderMinisterPortrait: ministerPortraitMarkup,
     getCountrySnapshot: snapshot,
     getMetricField: field
   });
