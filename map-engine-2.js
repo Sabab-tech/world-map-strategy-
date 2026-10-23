@@ -1004,6 +1004,8 @@ Game.Map = {
 Game.Map.renderGeoJSON = function(geoData) {
     const self = this;
     const renderOptions = {
+        // Simplify country paths slightly to reduce Canvas drawing cost.
+        smoothFactor: 1.2,
         filter: function(feature) {
             var props = feature.properties || {};
             var geoName = (props.ADMIN || props.name || props.NAME || "").toLowerCase().trim();
@@ -1133,8 +1135,8 @@ Game.Map.renderGeoJSON = function(geoData) {
     // Large world collections are added in short frame-budgeted slices so map
     // construction cannot monopolize the browser's main thread.
     const CHUNK_THRESHOLD = 24;
-    const MAX_FEATURES_PER_FRAME = 4;
-    const FRAME_BUDGET_MS = 5;
+    const MAX_FEATURES_PER_FRAME = 8;
+    const FRAME_BUDGET_MS = 7;
     if (!featureCollection || featureCollection.features.length <= CHUNK_THRESHOLD ||
         typeof window.requestAnimationFrame !== "function") {
         layer.addData(geoData);
