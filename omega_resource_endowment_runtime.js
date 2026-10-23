@@ -2151,8 +2151,10 @@ function batchFromExtraction(x,record){
       String(status).toUpperCase()!=='NOT_APPLICABLE';
     if(!commercialExtraction)return{status:'REJECTED',reason:'NON_COMMERCIAL_SITE',siteId,countryId,resourceId};
     const siteType=String(source.siteType||identity.siteType||raw.siteType||raw.assetType||'RESOURCE_SITE');
-    const sourceQuantitative=source.quantitative||real.quantitative||raw.quantitative||{};
-    const realQuantitative=clone(real.quantitative||raw.quantitative||source.quantitative||{});
+    const sourceQuantitative=fillRuntimeMissing(
+      fillRuntimeMissing(clone(source.quantitative||{}),real.quantitative||{}),raw.quantitative||{});
+    const realQuantitative=fillRuntimeMissing(
+      fillRuntimeMissing(clone(real.quantitative||{}),source.quantitative||{}),raw.quantitative||{});
     const quantitative=completeMineplayQuantitativeV1(sourceQuantitative,countryId,siteId,resourceId);
     const preferredMode=['crude_oil','natural_gas'].includes(resourceId)?'pipeline':
       ['coal','iron_ore','limestone','construction_aggregate','phosphate','bauxite','potash','salt'].includes(resourceId)?'rail':'truck';
