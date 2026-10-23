@@ -82,7 +82,7 @@ test("new photo library is linked to the UI and cached on request, not eagerly d
   assert.match(helper, /changesMade/);
   assert.match(css, /grid-template-columns/);
   assert.match(overview, /omega-ui-photo-reference-disclosure/);
-  assert.match(overview, /omega-ui-photo-gallery-mount/);
+  assert.match(overview, /omega-photo-gallery-mount/);
 });
 
 test("runtime helper rejects unsafe source paths and produces attribution-bearing local image markup", async () => {
