@@ -251,7 +251,7 @@
         return '<option value="' + esc(id) + '">' + esc(name) + '</option>';
       }).join('');
       select.disabled = valid.length === 0;
-      if (button) button.disabled = valid.length === 0;
+      if (button) button.disabled = true;
       if (status) status.textContent = valid.length ? valid.length + ' canonical candidate profile(s) loaded for ' + ministryId + '.' : 'No verified candidates returned. Appointment is disabled.';
     }).catch(function (error) {
       if (root.__omegaV2RecruitingMinistry !== ministryId) return;
@@ -369,7 +369,14 @@
         if (event && event.target && event.target.matches && event.target.matches('[data-omega-v2-ministry-search]')) applyDirectoryFilters(root);
       });
       root.addEventListener('change', function (event) {
-        if (event && event.target && event.target.matches && event.target.matches('[data-omega-v2-ministry-filter]')) applyDirectoryFilters(root);
+        var target = event && event.target;
+        if (!target || !target.matches) return;
+        if (target.matches('[data-omega-v2-minister-candidate]')) {
+          var appointButton = root.querySelector('[data-omega-v2-confirm-minister]');
+          if (appointButton) appointButton.disabled = !target.value;
+          return;
+        }
+        if (target.matches('[data-omega-v2-ministry-filter]')) applyDirectoryFilters(root);
       });
       root.__omegaV2GovernmentBound = true;
     }
