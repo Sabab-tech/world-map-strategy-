@@ -129,7 +129,7 @@ test('Government directory never duplicates the Executive Cabinet as an ordinary
 
 test('Home Affairs provides all six planned sections and does not create a separate recruitment destination', () => {
   const tabs = globalThis.OmegaUIV2HomeAffairs.tabs;
-  assert.deepEqual(tabs.map((item) => item.id), ['dashboard', 'personnel', 'fleet', 'patrols', 'facilities', 'incidents']);
+  assert.deepEqual(tabs.map((item) => item.id), ['dashboard', 'personnel', 'fleet', 'patrols', 'facilities', 'incidents', 'laws']);
   assert.equal(tabs.some((item) => /recruit/i.test(item.id)), false);
 });
 
@@ -401,6 +401,35 @@ test('religion and ideology routes to the existing canonical system', () => {
   assert.doesNotMatch(source, /domainPhoto\('mosque-architecture'/);
 });
 
+
+test('Government exposes emblems, minister recruitment and a stable future portrait slot', () => {
+  const government = readFileSync(new URL('../omega_ui_v2/screens/government.js', import.meta.url), 'utf8');
+  const detail = readFileSync(new URL('../omega_ui_v2/screens/ministry-detail.js', import.meta.url), 'utf8');
+  assert.match(government, /function ministerRecruitmentTable\\(rows\\)/);
+  assert.match(government, /data-omega-v2-minister-recruitment=/);
+  assert.match(government, /data-omega-v2-minister-portrait-slot/);
+  assert.match(government, /OmegaMinisterRecruitment\\.fetchRoster/);
+  assert.match(government, /OmegaLiveMinisterSelectorV9/);
+  assert.match(detail, /omega-v2-ministry-appointed-minister/);
+});
+
+test('Finance has six separate data-backed tabs', () => {
+  const finance = globalThis.OmegaUIV2Economy;
+  assert.ok(finance);
+  assert.deepEqual(finance.tabs.map((item) => item.id), ['overview', 'treasury', 'budget', 'debt', 'monetary', 'trade']);
+  const source = readFileSync(new URL('../omega_ui_v2/screens/economy.js', import.meta.url), 'utf8');
+  assert.match(source, /data-omega-v2-economy-tab/);
+  assert.match(source, /data-omega-v2-finance-panel/);
+  assert.match(source, /Game\\.state\\.finance\\[country\\]/);
+});
+
+test('Home Affairs legal register displays stored provisions without inventing missing laws', () => {
+  const source = readFileSync(new URL('../omega_ui_v2/screens/home-affairs.js', import.meta.url), 'utf8');
+  assert.match(source, /function lawsHtml\\(state, country\\)/);
+  assert.match(source, /Law \\/ Act/);
+  assert.match(source, /no act, article or punishment has been invented/i);
+  assert.match(source, /active === 'laws'/);
+});
 
 test('factory and police fleet screens show local reference photography inside their domain views', () => {
   const industry = readFileSync(new URL('../omega_ui_v2/screens/industry.js', import.meta.url), 'utf8');
