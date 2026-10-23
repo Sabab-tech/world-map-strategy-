@@ -396,4 +396,6 @@ test('religion and ideology routes to the existing canonical system', () => {
   assert.match(source, /mosque-architecture/);
   assert.match(source, /openReligionIdeologySystem\(event\)/);
   assert.match(source, /data-omega-v2-open-religion/);
+  assert.match(source, /photoMarkup\('mosque-architecture'/);
+  assert.doesNotMatch(source, /domainPhoto\('mosque-architecture'/);
 });
