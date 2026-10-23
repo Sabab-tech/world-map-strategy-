@@ -1327,12 +1327,12 @@ window.OmegaCabinetUI = {
                 </div>
 
                 <!-- MAIN CABINET ARCHITECTURE NAVIGATION TABS -->
-                <div style="display:flex; gap:8px; margin-bottom:12px; border-bottom:2px solid #b89329; padding-bottom:8px; flex-shrink:0;">
+                <div class="omega-cabinet-main-navigation" style="display:flex; gap:8px; margin-bottom:12px; border-bottom:2px solid #b89329; padding-bottom:8px; flex-shrink:0;">
                     <button onclick="window.OmegaCabinetUI.setCabinetMainView('council');" class="parchment-tab-btn ${isCouncil ? 'active' : ''}" style="flex:1; padding:8px 12px; font-size:12px; font-weight:bold; justify-content:center; border-radius:8px;">
-                        🏛️ NATIONAL EXECUTIVE COUNCIL (10 Subsystems)
+                        🏛️ EXECUTIVE MINISTRY
                     </button>
                     <button onclick="window.OmegaCabinetUI.setCabinetMainView('ministries');" class="parchment-tab-btn ${!isCouncil ? 'active' : ''}" style="flex:1; padding:8px 12px; font-size:12px; font-weight:bold; justify-content:center; border-radius:8px;">
-                        🏢 18 STATE MINISTRIES
+                        🏢 ALL MINISTRIES (18)
                     </button>
                 </div>
         `;
