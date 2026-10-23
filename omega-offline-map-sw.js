@@ -2,7 +2,7 @@
  * Same-origin app files are cached for offline relaunch; remote map tiles are never cached here.
  */
 "use strict";
-const CACHE_NAME = "omega-offline-atlas-shell-v27";
+const CACHE_NAME = "omega-offline-atlas-shell-v28";
 const APP_BASE = new URL("./", self.location.href);
 const INDEX_URL = new URL("index.html", APP_BASE).href;
 const CORE_ASSETS = [
@@ -32,7 +32,8 @@ const CORE_ASSETS = [
   "./omega_factory_visual_catalog_v1.js", "./omega_factory_visual_catalog_v1.css", "./omega_factory_visual_catalog_v1.json",
   "./assets/factories/omega_factory_atlas_01.webp", "./assets/factories/omega_factory_atlas_02.webp", "./assets/factories/omega_factory_atlas_03.webp",
   "./omega_resource_industrial_network_v1.js", "./omega_resource_command_center_ui_v1.js", "./omega_icon_system_v1.js", "./omega_icon_system_v1.css",
-  "./omega_resource_mine_management_v1.js", "./resource_site_country_mineplay_batch_20261020_v1.json",
+  "./omega_resource_endowment_runtime.js", "./omega_resource_gameplay_binding_v1.js",
+  "./omega_resource_mine_management_v1.js", "./resource_site_country_mineplay_batch_20261020_v1.json", "./resource_site_country_mineplay_batch_20261024_v1.json",
   "./resource_site_canonical_catalog_v1.json", "./resource_site_master_registry_v1.json",
   "./resource_site_country_expansion_v1.json",
   "./omega_ui_v2/omega-ui-v2.css",

@@ -275,7 +275,7 @@ function ensureModal(){
 function render(){
  const modal=ensureModal(),country=currentCountry||playerCountry(),player=playerCountry();currentCountry=country;
  const isPlayer=country===player;
- modal.innerHTML='<div class="omm-shell"><header class="omm-head"><div><h2>'+SVG_MOUNTAIN+' Resource Ministry · Mine Management</h2><div class="omm-sub">Country-scoped site registry, mine construction, extraction and stock ledger · '+esc(VERSION)+'</div></div><div class="omm-actions">'+(currentView==='mines'?countrySelect():'<span class="omm-pill">PLAYER COUNTRY · '+esc(countryName(country))+'</span>')+'<button data-omm-action="refresh">Refresh</button><button class="omm-danger" data-omm-action="close" aria-label="Close mine management">Close</button></div></header>'+
+ modal.innerHTML='<div class="omm-shell"><header class="omm-head"><div><h2>'+SVG_MOUNTAIN+' Resource Ministry · Mine Management</h2><div class="omm-sub">Country-scoped site registry, mine construction, extraction and stock ledger · '+esc(VERSION)+'</div></div><div class="omm-actions">'+(currentView==='mines'?countrySelect():'<span class="omm-pill">PLAYER COUNTRY · '+esc(countryName(country))+'</span>')+'<button class="omm-primary" data-omm-action="start-country-production" '+(isPlayer?'':'disabled')+' aria-label="Start production for this country">Start production · 1 tap</button><button data-omm-action="refresh">Refresh</button><button class="omm-danger" data-omm-action="close" aria-label="Close mine management">Close</button></div></header>'+
  '<div class="omm-tabs"><button data-omm-action="tab-my-mines" class="'+(currentView==='my-mines'?'omm-primary':'')+'">'+SVG_PICKAXE+' My Mines</button><button data-omm-action="tab-mines" class="'+(currentView==='mines'?'omm-primary':'')+'">'+SVG_MOUNTAIN+' Mines</button></div>'+
  (!isPlayer?'<div class="omm-alert">Viewing '+esc(countryName(country))+' in read-only mode. Mine building and production are restricted to the active player country ('+esc(player||'UNRESOLVED')+').</div>':'')+
  (lastOutcome?'<div class="omm-status" role="status" aria-live="polite">'+esc(lastOutcome)+'</div>':'')+
@@ -300,6 +300,24 @@ async function onClick(event){
  const button=event.target?.closest?.('[data-omm-action]');if(!button)return;
  const action=button.getAttribute('data-omm-action'),country=currentCountry||playerCountry(),api=network();
  if(action==='close'){close();return;}
+ if(action==='start-country-production'){
+  if(country!==playerCountry()){lastOutcome='Rejected: production is restricted to the active player country.';render();return;}
+  const runtime=endowment();
+  if(!runtime?.startCountryProduction){lastOutcome='One-tap production runtime unavailable.';render();return;}
+  button.disabled=true;button.textContent='Starting production…';
+  try{
+   const result=await runtime.startCountryProduction(country);
+   const status=String(result?.status||'BLOCKED').toUpperCase();
+   if(status==='STARTED'||status==='PARTIALLY_STARTED'){
+    lastOutcome='Production started: '+formatNum(result.startedSiteCount||0)+' site(s), '+formatNum(result.extractedRecordCount||0)+' extraction record(s) committed'+((Number(result.blockedOccurrenceCount)||0)>0?'; '+formatNum(result.blockedOccurrenceCount)+' occurrence(s) blocked':'')+'.';
+   }else if(status==='ALREADY_ACTIVE'){
+    lastOutcome='Production is already active this turn at '+formatNum(result.activeSiteCount||0)+' site(s). No duplicate extraction was created.';
+   }else{
+    lastOutcome='Production did not start: '+label(result?.reason||status)+((Number(result?.blockedOccurrenceCount)||0)>0?' · '+formatNum(result.blockedOccurrenceCount)+' occurrence(s) blocked':'')+'.';
+   }
+  }catch(error){lastOutcome='Production start failed: '+String(error?.message||error);}
+  render();return;
+ }
  if(action==='refresh'){lastOutcome='Refreshing resource data…';render();try{await api?.loadCatalog?.();await endowment()?.initialize?.();}catch(_){}lastOutcome='Refreshed from current runtime state.';render();return;}
  if(action==='tab-my-mines'){currentView='my-mines';currentCountry=playerCountry();lastOutcome='';render();return;}
  if(action==='tab-mines'){currentView='mines';lastOutcome='';render();return;}

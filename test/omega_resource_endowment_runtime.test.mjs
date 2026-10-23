@@ -734,6 +734,42 @@ assert.ok(Number(futureState.warehouse.availableByResource.silver)>0||Number(fut
 assert.ok(futureState.industrialNetwork?.siteFlowLedger?.some(x=>x.batchId===futurePipeline.batchId&&x.siteId===futureCanonicalSite.siteId),
   'future canonical-only deposit must be present in the site flow ledger');
 
+// One tap must bind a new, canonical-only site to the shared extraction runtime.
+// The first call starts its missing turn work; the second call must not duplicate
+// successful quantities even when another occurrence at the same site was blocked.
+const oneTapSite={
+  siteId:'SITE_TEST_ONE_TAP_LIMESTONE',schemaVersion:'1.0.0',countryId:'BGD',
+  siteName:'One Tap Limestone Quarry',siteType:'QUARRY',
+  identity:{countryIso3:'BGD',resourceTypeId:'limestone',siteType:'QUARRY'},
+  location:{countryName:'Bangladesh',coordinates:{lat:24.25,lng:90.35},coordinateStatus:'ESTIMATED_SITE_POINT'},
+  operation:{status:'ACTIVE_PRODUCING',operationalStatus:'ACTIVE_PRODUCING',commercialExtraction:true},
+  quantitative:{
+    reserve:{quantity:null,unit:'TONNES',status:'UNOBSERVED'},
+    production:{rate:null,unit:'TONNES_PER_DAY',status:'UNOBSERVED'},
+    capacity:{nominal:null,minimum:null,maximum:null,unit:'TONNES_PER_DAY',status:'UNOBSERVED'}
+  },
+  map:{markerEligible:true,countryIsolationKey:'BGD'},
+  simulation:{simulationOnly:true,transportRoute:[]},
+  runtime:{identityAuthority:'CANONICAL_SITE_REGISTRY'}
+};
+const oneTapRegistration=runtime.registerCanonicalSiteSimulationRecord(oneTapSite);
+assert.equal(oneTapRegistration.status,'REGISTERED',JSON.stringify(oneTapRegistration));
+const oneTapStart=await runtime.startCountryProduction('BGD',[oneTapSite.siteId]);
+assert.ok(['STARTED','PARTIALLY_STARTED'].includes(oneTapStart.status),
+  'one tap must start simulated extraction on an unattempted commercial site: '+JSON.stringify(oneTapStart));
+assert.ok(oneTapStart.startedSiteCount>0,JSON.stringify(oneTapStart));
+const oneTapLedger=()=>((runtime.countryResourceState('BGD')||{}).mineProductionLedger||[]).filter(row=>
+  row.siteReferenceKey===oneTapSite.siteId&&Number(row.turn)===Number(globalThis.Game.state.simulation.turn)&&Number(row.quantity)>0);
+const oneTapLedgerBefore=oneTapLedger();
+assert.ok(oneTapLedgerBefore.length>0,'the one-tap site must create a successful production ledger row');
+const successfulQuantityBefore=oneTapLedgerBefore.reduce((sum,row)=>sum+Number(row.quantity||0),0);
+await runtime.startCountryProduction('BGD',[oneTapSite.siteId]);
+const oneTapLedgerAfter=oneTapLedger();
+assert.equal(oneTapLedgerAfter.length,oneTapLedgerBefore.length,
+  'a repeat one-tap action must not create a second successful row for already-produced occurrences');
+assert.equal(oneTapLedgerAfter.reduce((sum,row)=>sum+Number(row.quantity||0),0),successfulQuantityBefore,
+  'a repeat one-tap action must not duplicate successful production quantities');
+
 // // Part 6 integration proof: a newly added mine must complete the same extraction,
 // sovereign warehouse, transport, auto-commissioned factory and processing sequence.
 const part6CopperSite=part6Data.records.find(site=>site.siteId==='SITE_CHL_collahuasi_copper_mine');

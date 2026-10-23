@@ -26,8 +26,10 @@ test('site readiness starts the idempotent extraction runtime and exposes per-si
   const runtime = read('omega_resource_endowment_runtime.js');
   assert.ok(runtime.includes('function onSiteBindingReady()'));
   assert.ok(runtime.includes("g.addEventListener?.('OMEGA_RESOURCE_SITE_BINDING_READY',onSiteBindingReady)"));
-  assert.ok(runtime.includes('const result=await extractAll();'),
-    'registry readiness must trigger the authoritative country extraction pass');
+  const bindingSyncIndex=runtime.indexOf('const bindingSync=await syncBoundSiteRegistry(binding.sites);');
+  const extractionIndex=runtime.indexOf('let result=await extractAll();');
+  assert.ok(bindingSyncIndex>=0 && extractionIndex>bindingSyncIndex,
+    'registry readiness must synchronize bound sites before the authoritative country extraction pass');
   assert.ok(runtime.includes('productionCapableSiteCount'));
   assert.ok(runtime.includes('productionCapablePercent'));
   assert.ok(runtime.includes('currentTurnProducingSiteCount'));

@@ -36,7 +36,7 @@ The authoritative physical flow remains:
 
 ## New site supplement and data policy
 
-`resource_site_country_mineplay_batch_20261020_v1.json` adds 44 source-referenced site identities across 22 countries: Botswana, Rwanda, Malawi, Senegal, Zimbabwe, Tanzania, Mozambique, Zambia, Ghana, Namibia, Guinea, the Democratic Republic of the Congo, Indonesia, Mongolia, Peru, Mauritania, Burkina Faso, Uzbekistan, Kazakhstan, Algeria, Côte d’Ivoire and Papua New Guinea. The supplemental file is loaded independently by the endowment runtime and individual site/map binding. Existing canonical, reserve-simulation, legacy expansion and migration files remain in place.
+`resource_site_country_mineplay_batch_20261020_v1.json` preserves the original 44 source-referenced site identities across 22 countries. The additive `resource_site_country_mineplay_batch_20261024_v1.json` contributes a further 108 site identities across 36 undercovered countries. Both batches are loaded by the endowment runtime and map/gameplay binding without replacing canonical, reserve-simulation, legacy expansion or migration files. The new tranche is pre-commissioned for immediate gameplay extraction, has a site-specific simulated route and same-country factory binding, and retains separate source identity versus simulated operational values.
 
 The supplement deliberately separates four kinds of information:
 
@@ -59,4 +59,4 @@ Some site-level operator, ownership or operating-state details have a source-ver
 
 ## Validation
 
-The focused mine management workflow checks script syntax, mine project accounting, the new 30-site dataset, recipe coverage, site binding, the existing industrial pipeline, and endowment/extraction runtime tests. Main-branch integration should occur only after the required checks are green.
+The focused mine management workflow checks script syntax, mine project accounting, the original 44-site batch and the additive 108-site / 36-country expansion contract, recipe coverage, site binding, the existing industrial pipeline, and endowment/extraction runtime tests. Main-branch integration should occur only after the required checks are green.
