@@ -29,11 +29,13 @@ async function main() {
   try {
     let ready = false;
     let lastError = null;
-    const startupDeadline = Date.now() + 30_000;
+    // Cold Deep Core initialization scans the authoritative repository before health can respond.
+    // Prior successful CI took about three minutes here; cap this wait at five minutes.
+    const startupDeadline = Date.now() + 300_000;
     while (!ready && Date.now() < startupDeadline) {
       try {
         const remaining = startupDeadline - Date.now();
-        const response = await request('/api/deep-core/health', undefined, Math.min(1500, Math.max(1, remaining)));
+        const response = await request('/api/deep-core/health', undefined, Math.min(240_000, Math.max(1, remaining)));
         if (response.ok) {
           const body = await response.json();
           if (body?.ok === true) {
@@ -49,7 +51,7 @@ async function main() {
       }
       if (child.exitCode !== null) break;
       const remaining = startupDeadline - Date.now();
-      if (remaining > 0) await sleep(Math.min(250, remaining));
+      if (remaining > 0) await sleep(Math.min(1000, remaining));
     }
     assert.equal(ready, true, `production server did not become healthy: ${lastError?.message || 'unknown'}\n${logs}`);
 
