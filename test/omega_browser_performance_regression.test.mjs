@@ -181,6 +181,10 @@ test('large world GeoJSON is rendered incrementally rather than monopolizing the
   const renderer = source.slice(start, end + 3);
 
   assert.match(renderer, /L\.geoJSON\(null,\s*renderOptions\)/);
+  assert.match(renderer, /typeof L\.canvas === ["']function["']/,
+    'large country layers should use Leaflet Canvas when supported to avoid SVG DOM/compositing overhead');
+  assert.match(renderer, /renderOptions\.renderer = L\.canvas\(\{ padding: 0\.5 \}\)/,
+    'the shared Canvas renderer should be attached to the canonical GeoJSON layer options');
   assert.match(renderer, /CHUNK_THRESHOLD\s*=\s*24/);
   assert.match(renderer, /MAX_FEATURES_PER_FRAME\s*=\s*4/);
   assert.match(renderer, /FRAME_BUDGET_MS\s*=\s*5/);
