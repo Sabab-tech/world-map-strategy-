@@ -49,3 +49,11 @@ The main navigation is World, Overview, Government, Economy and More. Overview r
 - `More` also includes Health & Welfare and Agriculture & Food using the existing local hospital and wheat-field WebP assets. Actions route to existing ministry runtimes.
 - The global map navigation dock replaces the old bottom navigation strip to avoid overlapping controls.
 - Route/source-truth tests cover the religion handoff. The Android 9 offline and responsive manual checks remain acceptance gates.
+
+
+## Final UI verification notes
+
+- Religion & Ideology uses the shared `photoMarkup` renderer for its local `mosque-architecture.webp` image. The source contract test checks that no undefined `domainPhoto` helper is used by this route.
+- The offline preload contract explicitly verifies `omega_ui_v2/world-command-dock.js` is included in both the production entrypoint and service-worker cache (`omega-offline-atlas-shell-v27`).
+- This is an additive UI integration. Legacy engines, the original Religion & Ideology handler, map rendering, and existing Back-to-Map layer recovery remain in place.
+- Visual and Android/device acceptance status should be taken from runs attached to the exact current commit, not inherited from an earlier SHA.
