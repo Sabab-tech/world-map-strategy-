@@ -214,6 +214,6 @@ test('slow simulation frames and data-heavy ministry panels bound repeated UI wo
   assert.match(resources, /const visibleSites = sites\.slice\(0, 150\)/);
 
   const serviceWorker = read('omega-offline-map-sw.js');
-  const cacheVersion = Number(serviceWorker.match(/CACHE_NAME = "omega-offline-atlas-shell-v(\\d+)"/)?.[1] || 0);
+  const cacheVersion = Number(serviceWorker.match(/CACHE_NAME = "omega-offline-atlas-shell-v(\d+)"/)?.[1] || 0);
   assert.ok(cacheVersion >= 24, 'Android/offline installs must receive the updated anti-hang runtime scripts');
 });
