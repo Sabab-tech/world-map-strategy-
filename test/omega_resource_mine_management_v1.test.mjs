@@ -144,7 +144,7 @@ test('supplemental records pass the canonical resource site integrity contract',
 });
 
 
-test('global mine coverage batch adds 108 immediately executable, fully simulated sites across 36 countries', () => {
+test('global mine coverage batch contains 108 complete records across 36 countries with duplicate sites safely aliased', () => {
   assert.equal(expandedCoverageBatch.datasetId, 'OMEGA_RESOURCE_SITE_COUNTRY_MINEPLAY_BATCH_V1');
   assert.equal(expandedCoverageBatch.batchId, 'COUNTRY_MINEPLAY_GLOBAL_COVERAGE_20261024');
   assert.equal(expandedCoverageBatch.recordCount, 108);
@@ -154,7 +154,9 @@ test('global mine coverage batch adds 108 immediately executable, fully simulate
   assert.ok(endowmentSource.includes('resource_site_country_mineplay_batch_20261024_v1.json'), 'endowment/runtime must load the added batch');
   assert.ok(serviceWorkerSource.includes('resource_site_country_mineplay_batch_20261024_v1.json'), 'new batch must be cached for offline use');
   assert.equal(new Set(expandedCoverageBatch.records.map(x => x.siteId)).size, 108);
-  const normalize = v => String(v ?? '').normalize('NFKD').replace(/\\p{M}/gu, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  const aliasTargets = { SITE_PRK_musan_iron_ore_mine: 'SITE_PRK_musan_iron_mine' };
+  assert.equal(expandedCoverageBatch.records.filter(x => !aliasTargets[x.siteId]).length, 107, 'one same-coordinate Musan record is retained for audit but aliases the existing physical mine');
+  const normalize = v => String(v ?? '').normalize('NFKD').replace(/\p{M}/gu, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
   const country = row => String(row?.countryId || row?.identity?.countryIso3 || row?.location?.countryBoundaryKey || '').toUpperCase();
   const resource = row => String(row?.resourceId || row?.identity?.resourceTypeId || '').toLowerCase();
   const name = row => normalize(row?.siteName || row?.name);
@@ -168,15 +170,30 @@ test('global mine coverage batch adds 108 immediately executable, fully simulate
   ];
   const existingIds = new Set(allExisting.map(x => String(x?.siteId || '')).filter(Boolean));
   const existingNames = new Set(allExisting.map(x => country(x) + '|' + name(x)).filter(x => !x.endsWith('|')));
-  for (const row of expandedCoverageBatch.records) {
+  for (const sourceRow of expandedCoverageBatch.records) {
+    const target = aliasTargets[sourceRow.siteId] || null;
+    const row = target ? {
+      ...sourceRow,
+      operation: { ...(sourceRow.operation || {}), commercialExtraction: false },
+      map: { ...(sourceRow.map || {}), markerEligible: false, aliasOfSiteId: target },
+      runtime: { ...(sourceRow.runtime || {}), aliasOfSiteId: target }
+    } : sourceRow;
     assert.ok(row.siteId && /^SITE_[A-Z]{3}_[a-z0-9_]+$/.test(row.siteId), row.siteId + ': stable site ID');
     assert.equal(existingIds.has(row.siteId), false, row.siteId + ': duplicate ID in existing registries');
     assert.equal(existingNames.has(country(row) + '|' + name(row)), false, row.siteId + ': duplicate country/site name');
     assert.equal(row.identity.countryIso3, row.countryId, row.siteId + ': country identity');
     assert.equal(row.identity.resourceTypeId, row.resourceId, row.siteId + ': resource identity');
     assert.equal(row.location.countryBoundaryKey, row.countryId, row.siteId + ': country boundary');
-    assert.equal(row.map.markerEligible, true, row.siteId + ': map marker must be eligible');
     assert.equal(row.map.countryIsolationKey, row.countryId, row.siteId + ': country isolation');
+    if (target) {
+      assert.equal(row.map.markerEligible, false, row.siteId + ': duplicate reference must not create a second marker');
+      assert.equal(row.map.aliasOfSiteId, target, row.siteId + ': duplicate reference points to its canonical physical mine');
+      assert.equal(row.runtime.aliasOfSiteId, target, row.siteId + ': runtime alias target');
+      assert.equal(row.operation.commercialExtraction, false, row.siteId + ': duplicate alias cannot execute a second extraction');
+      assert.ok(existingIds.has(target), row.siteId + ': canonical mine exists in current registries');
+      continue;
+    }
+    assert.equal(row.map.markerEligible, true, row.siteId + ': map marker must be eligible');
     assert.equal(row.operation.status, 'SIMULATED_OPERATIONAL_SCENARIO');
     assert.equal(row.operation.operationalStatus, 'SIMULATED_ACTIVE');
     assert.equal(row.operation.commercialExtraction, true);
@@ -232,7 +249,19 @@ test('global mine coverage batch adds 108 immediately executable, fully simulate
   vm.runInContext(integritySource, integrityContext, { filename: 'omega_resource_site_integrity_v1.js' });
   const api = integrityContext.Omega?.ResourceSiteIntegrity || integrityContext.OmegaResourceSiteIntegrity;
   assert.ok(api && typeof api.auditRegistry === 'function');
-  const audit = api.auditRegistry(expandedCoverageBatch.records, {});
+  const auditRows = expandedCoverageBatch.records.map(sourceRow => {
+    const target = aliasTargets[sourceRow.siteId];
+    return target ? {
+      ...sourceRow,
+      operation: { ...(sourceRow.operation || {}), commercialExtraction: false },
+      map: { ...(sourceRow.map || {}), markerEligible: false, aliasOfSiteId: target },
+      runtime: { ...(sourceRow.runtime || {}), aliasOfSiteId: target }
+    } : sourceRow;
+  });
+  const audit = api.auditRegistry(auditRows, {
+    aliasMap: aliasTargets,
+    allowExternalAliasTargets: new Set(Object.values(aliasTargets))
+  });
   assert.equal(audit.status, 'PASS', JSON.stringify(audit.errors.slice(0, 12)));
   assert.equal(audit.siteCount, 108);
 });
