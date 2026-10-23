@@ -249,3 +249,6 @@ body.omega-atlas-dock-ready #omega-ministry-entry,body.omega-atlas-dock-ready #o
 @media(max-width:390px){#omega-atlas-command-dock{width:calc(100vw - 12px);bottom:calc(5px + env(safe-area-inset-bottom,0px));padding:4px;gap:2px;border-radius:14px;}.omega-atlas-command-button{min-height:48px;font-size:8px;gap:3px;}.omega-atlas-command-icon{width:23px;height:23px;font-size:14px;border-radius:7px;}.omega-v2-app-header{gap:6px;padding-inline:10px;}.omega-v2-shell{padding:10px;}.omega-v2-grid{gap:8px;}.omega-v2-card{border-radius:12px;padding:9px;}.omega-v2-domain-card,.omega-v2-command-card{padding:0;}.omega-v2-domain-card-body{padding:9px;}}
 @media(max-width:330px){.omega-v2-title{font-size:20px;}.omega-v2-core-grid,.omega-v2-domain-grid{grid-template-columns:1fr;}.omega-v2-app-brand small{display:none;}.omega-atlas-command-button{font-size:8px;}.omega-v2-photo--hero img{aspect-ratio:16/9;}}
 @media(prefers-reduced-motion:reduce){#omega-atlas-command-dock *,.omega-v2-app-root *{transition:none!important;animation:none!important;scroll-behavior:auto!important;}}
+
+/* The Atlas dock replaces the old map navigation strip, avoiding duplicate controls. */
+body.omega-atlas-dock-ready .ui-bottom-navigation{display:none!important;}

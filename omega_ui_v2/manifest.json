@@ -28,7 +28,8 @@
     "reports": "omega_ui_v2/screens/reports.js",
     "policeFleet": "omega_ui_v2/screens/police-fleet.js",
     "integration": "omega_ui_v2/integration.js",
-    "worldCommandDock": "world-command-dock.js"
+    "worldCommandDock": "world-command-dock.js",
+    "religion": "app.js#religion (existing canonical Religion & Ideology handoff)"
   },
   "sharedStyles": "omega_ui_v2/omega-ui-v2.css",
   "canonicalAdapters": {

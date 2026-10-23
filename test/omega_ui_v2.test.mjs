@@ -190,7 +190,7 @@ test('application shell exports explicit mount and contains only five intended g
   const app = globalThis.OmegaUIV2App;
   assert.ok(app);
   assert.equal(typeof app.mount,'function');
-  assert.deepEqual(app.destinations,['map','overview','government','economy','more','industry','reports']);
+  assert.deepEqual(app.destinations,['map','overview','government','economy','more','industry','reports','religion']);
   assert.equal(globalThis.OmegaUIV2Navigation.governmentDestinations.length,2);
 });
 
@@ -386,4 +386,14 @@ test('world command dock exposes the unified mobile-first primary routes', () =>
   assert.deepEqual(dock.routes.map((item) => item.id), ['map','overview','government','economy','more']);
   assert.equal(typeof dock.mount, 'function');
   assert.equal(typeof dock.launch, 'function');
+});
+
+
+test('religion and ideology routes to the existing canonical system', () => {
+  const app = globalThis.OmegaUIV2App;
+  assert.ok(app.destinations.includes('religion'));
+  const source = readFileSync(new URL('../omega_ui_v2/app.js', import.meta.url), 'utf8');
+  assert.match(source, /mosque-architecture/);
+  assert.match(source, /openReligionIdeologySystem\(event\)/);
+  assert.match(source, /data-omega-v2-open-religion/);
 });
