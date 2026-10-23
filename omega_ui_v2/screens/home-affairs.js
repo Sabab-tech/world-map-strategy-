@@ -138,7 +138,8 @@
     root.classList.add('omega-v2-screen');
     root.innerHTML = '<section class="omega-v2-shell omega-v2-home-affairs">' +
       '<header class="omega-v2-heading"><div><div class="omega-v2-eyebrow">CIVIL ADMINISTRATION · HOME AFFAIRS</div><h1 class="omega-v2-title">Public Safety & Police</h1><p class="omega-v2-subtitle">Country ' + esc(country || 'Not recorded') + ' · canonical personnel, fleet and incident state</p></div><span class="omega-v2-status" data-state="' + (e ? 'operational' : 'unknown') + '">' + (e ? 'POLICE RUNTIME CONNECTED' : 'POLICE RUNTIME UNAVAILABLE') + '</span></header>' +
-      tabBar(active) + '<div data-omega-v2-home-content>' + content + '</div></section>';
+      tabBar(active) + '<div data-omega-v2-home-content>' + content + '</div>' +
+      '<div class="omega-v2-actions omega-v2-legacy-console-link"><button type="button" class="omega-v2-button omega-v2-button--quiet" data-omega-v2-open-operational-console="interior_security"' + (typeof options.onOpenOperationalConsole === 'function' ? '' : ' disabled title="Existing operational console bridge is unavailable."') + '>Open existing police operations console</button></div></section>';
 
     if (!root.__omegaV2HomeBound && typeof root.addEventListener === 'function') {
       root.addEventListener('click', function (event) {
@@ -148,6 +149,12 @@
         if (tab && root.contains(tab)) {
           root.__omegaV2HomeTab = tab.getAttribute('data-omega-v2-home-tab');
           render(root, Object.assign({}, root.__omegaV2HomeOptions || {}, { tab:root.__omegaV2HomeTab }));
+          return;
+        }
+        var legacyConsole = target.closest('[data-omega-v2-open-operational-console]');
+        if (legacyConsole && root.contains(legacyConsole) && !legacyConsole.disabled) {
+          var legacyOptions = root.__omegaV2HomeOptions || {};
+          if (typeof legacyOptions.onOpenOperationalConsole === 'function') legacyOptions.onOpenOperationalConsole('interior_security');
           return;
         }
         var action = target.closest('[data-omega-v2-action]');
