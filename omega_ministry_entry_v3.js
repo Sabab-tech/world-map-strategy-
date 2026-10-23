@@ -168,6 +168,20 @@
 
     closeCompetingDrawers();
 
+    const uiV2 = global.OmegaUIV2Integration;
+    if (uiV2 && typeof uiV2.isEnabled === 'function' && uiV2.isEnabled() && typeof uiV2.mountIntoCabinet === 'function') {
+      try {
+        const mountResult = uiV2.mountIntoCabinet(cabinet);
+        if (mountResult && mountResult.ok === true) {
+          if (button) button.setAttribute('data-last-open-result', 'opened-ui-v2');
+          syncVisibility();
+          return true;
+        }
+      } catch (error) {
+        if (global.console && typeof global.console.warn === 'function') global.console.warn('[OMEGA GOV ENTRY v3] UI v2 mount failed; retaining legacy fallback.', error);
+      }
+    }
+
     try {
       if (typeof global.openMainMinistryView === 'function') {
         global.openMainMinistryView(event || {
@@ -176,16 +190,6 @@
           stopImmediatePropagation: function () {}
         });
         if (visible(cabinet)) {
-          const uiV2 = global.OmegaUIV2Integration;
-          if (uiV2 && typeof uiV2.isEnabled === 'function' && uiV2.isEnabled() && typeof uiV2.mountIntoCabinet === 'function') {
-            const mountResult = uiV2.mountIntoCabinet(cabinet);
-            if (mountResult && mountResult.ok === true) {
-              if (button) button.setAttribute('data-last-open-result', 'opened-ui-v2');
-              syncVisibility();
-              return true;
-            }
-            // The integration bridge restores the legacy cabinet if mounting UI v2 fails.
-          }
           if (button) button.setAttribute('data-last-open-result', 'opened-primary');
           syncVisibility();
           return true;
