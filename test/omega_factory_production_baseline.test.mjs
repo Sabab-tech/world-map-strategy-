@@ -71,7 +71,7 @@ test('canonical factory catalog, type profiles, offline icons and recipe coeffic
   }
 
   const serviceWorker = readText('omega-offline-map-sw.js');
-  assert.match(serviceWorker, /omega-offline-atlas-shell-v21/);
+  assert.match(serviceWorker, /omega-offline-atlas-shell-v22/);
   const factoryUi = readText('omega_resource_command_center_ui_v1.js');
   assert.match(factoryUi, /Unemployed people/, 'industrial UI must expose the unemployment headcount');
   assert.match(factoryUi, /Jobs per factory/, 'catalog UI must expose per-factory job slots');
