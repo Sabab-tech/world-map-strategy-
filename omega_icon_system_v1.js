@@ -215,7 +215,17 @@
         }
         return parts.join(' ');
     }
-    const ICON_RE = /\p{Extended_Pictographic}(?:\uFE0E|\uFE0F)?(?:\u200D\p{Extended_Pictographic}(?:\uFE0E|\uFE0F)?)*/gu;
+    // Android 9 ships an older Chromium without Unicode property escapes.
+    // Construct the modern pattern dynamically so old parsers never reject this file;
+    // use a conservative offline-safe fallback for pictographs and joined emoji.
+    const ICON_RE = (function () {
+        try {
+            return new RegExp('\\p{Extended_Pictographic}(?:\\uFE0E|\\uFE0F)?(?:\\u200D\\p{Extended_Pictographic}(?:\\uFE0E|\\uFE0F)?)*', 'gu');
+        } catch (_unsupportedUnicodePropertyEscape) {
+            const pictograph = '(?:[\\uD83C-\\uDBFF][\\uDC00-\\uDFFF]|[\\u2600-\\u27BF])';
+            return new RegExp(pictograph + '(?:[\\uFE0E\\uFE0F])?(?:\\u200D' + pictograph + '(?:[\\uFE0E\\uFE0F])?)*', 'g');
+        }
+    })();
     const SKIP_SUBTREE_SELECTOR = [
         'script', 'style', 'textarea', 'input', 'select', 'option', 'pre', 'code', 'svg',
         '[contenteditable="true"]', '.omega-icon-sprite', '.omega-ui-icon', '#debug-root',

@@ -82,6 +82,8 @@ public final class OmegaGameplaySmokeTest {
                     " document.getElementById('btn-ministry-dock') &&" +
                     " typeof window.openMainMinistryView === 'function' &&" +
                     " window.OMEGA_ANDROID_OFFLINE === true &&" +
+                    " typeof Array.prototype.flatMap === 'function' &&" +
+                    " window.OMEGA_ICON_SYSTEM_V1 && typeof window.OMEGA_ICON_SYSTEM_V1.nameForEmoji === 'function' &&" +
                     " window.Game && window.Omega" +
                     " );" +
                     "})()";
