@@ -405,10 +405,10 @@ test('religion and ideology routes to the existing canonical system', () => {
 test('Government exposes emblems, minister recruitment and a stable future portrait slot', () => {
   const government = readFileSync(new URL('../omega_ui_v2/screens/government.js', import.meta.url), 'utf8');
   const detail = readFileSync(new URL('../omega_ui_v2/screens/ministry-detail.js', import.meta.url), 'utf8');
-  assert.match(government, /function ministerRecruitmentTable\\(rows\\)/);
+  assert.match(government, /function ministerRecruitmentTable\(rows\)/);
   assert.match(government, /data-omega-v2-minister-recruitment=/);
   assert.match(government, /data-omega-v2-minister-portrait-slot/);
-  assert.match(government, /OmegaMinisterRecruitment\\.fetchRoster/);
+  assert.match(government, /OmegaMinisterRecruitment\.fetchRoster/);
   assert.match(government, /OmegaLiveMinisterSelectorV9/);
   assert.match(detail, /omega-v2-ministry-appointed-minister/);
 });
@@ -420,13 +420,13 @@ test('Finance has six separate data-backed tabs', () => {
   const source = readFileSync(new URL('../omega_ui_v2/screens/economy.js', import.meta.url), 'utf8');
   assert.match(source, /data-omega-v2-economy-tab/);
   assert.match(source, /data-omega-v2-finance-panel/);
-  assert.match(source, /Game\\.state\\.finance\\[country\\]/);
+  assert.match(source, /Game\.state\.finance\[country\]/);
 });
 
 test('Home Affairs legal register displays stored provisions without inventing missing laws', () => {
   const source = readFileSync(new URL('../omega_ui_v2/screens/home-affairs.js', import.meta.url), 'utf8');
-  assert.match(source, /function lawsHtml\\(state, country\\)/);
-  assert.match(source, /Law \\/ Act/);
+  assert.match(source, /function lawsHtml\(state, country\)/);
+  assert.match(source, /Law \/ Act/);
   assert.match(source, /no act, article or punishment has been invented/i);
   assert.match(source, /active === 'laws'/);
 });
