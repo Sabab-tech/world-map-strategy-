@@ -1,0 +1,64 @@
+{
+  "schemaVersion": "1.0.0",
+  "app": "OMEGA",
+  "namespace": "omega_ui_v2",
+  "rolloutStatus": "GLOBAL_ATLAS_COMMAND_DOCK_AND_OVERVIEW_MORE_INTEGRATED; FULL_ANDROID_AND_VISUAL_ACCEPTANCE_PENDING",
+  "preservationPolicy": "ADDITIVE_ONLY",
+  "designDocument": "docs/OMEGA_UI_V2_DESIGN_SPEC_V1.md",
+  "globalNavigation": [
+    "map",
+    "overview",
+    "government",
+    "economy",
+    "more"
+  ],
+  "governmentDestinations": [
+    "executive-ministry",
+    "all-ministries"
+  ],
+  "screens": {
+    "app": "omega_ui_v2/app.js",
+    "government": "omega_ui_v2/screens/government.js",
+    "ministryDetail": "omega_ui_v2/screens/ministry-detail.js",
+    "economy": "omega_ui_v2/screens/economy.js",
+    "resourceMinistry": "omega_ui_v2/screens/resource-ministry.js",
+    "mineDetail": "omega_ui_v2/screens/mine-detail.js",
+    "industry": "omega_ui_v2/screens/industry.js",
+    "homeAffairs": "omega_ui_v2/screens/home-affairs.js",
+    "reports": "omega_ui_v2/screens/reports.js",
+    "policeFleet": "omega_ui_v2/screens/police-fleet.js",
+    "integration": "omega_ui_v2/integration.js",
+    "worldCommandDock": "world-command-dock.js",
+    "religion": "app.js#religion (existing canonical Religion & Ideology handoff)"
+  },
+  "sharedStyles": "omega_ui_v2/omega-ui-v2.css",
+  "canonicalAdapters": {
+    "policeEngine": "OmegaHomeMinistryEngine",
+    "vehicleIllustration": "OMEGA_UI_ADAPTER.getPoliceVehicleSvg",
+    "resourceSiteCatalog": "OmegaResourceSiteCanonicalCatalogData"
+  },
+  "requiredRuntimeTruths": [
+    "Vehicle tier, cost, operating capability, ownership and procurement are read from canonical HomeMinistry engine",
+    "Resource sites retain unique siteId and countryId",
+    "Reserve, stock, production rate and capacity are separate quantities",
+    "Missing values remain Not recorded or Unavailable",
+    "Every action must be routed to the canonical handler"
+  ],
+  "gates": {
+    "android9": true,
+    "offline": true,
+    "responsiveUI": true,
+    "all15PoliceVehicleTiers": true,
+    "countryIsolation": true,
+    "preserveLegacyFiles": true
+  },
+  "screenCoverageStatus": "ATLAS_VISUAL_SYSTEM_AND_GLOBAL_ROUTES_INTEGRATED; DEVICE_ACCEPTANCE_REQUIRED",
+  "integrationPolicy": {
+    "entry": "omega_ministry_entry_v3.js",
+    "trigger": "Global Atlas Command dock plus existing Government entry",
+    "fallback": "legacy cabinet is retained and re-rendered if UI v2 mount fails",
+    "navigation": "World closes the cabinet layer; Overview, Government, Economy and More use one shared UI-v2 app and canonical source modules.",
+    "productionRoot": "cabinet-full-window",
+    "enabledByDefault": true
+  }
+}
