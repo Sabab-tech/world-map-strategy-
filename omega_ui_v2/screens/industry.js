@@ -112,8 +112,9 @@
     else if (/(MINE|ORE|MINERAL|SMELT|STEEL|METAL|COPPER|ALUMIN)/.test(descriptor)) photoId = 'open-pit-mine';
     else if (/(AGRI|FOOD|WHEAT|GRAIN|SUGAR|COTTON|CEREAL)/.test(descriptor)) photoId = 'wheat-field';
     var lib=g.OmegaUIPhotoAssets,item=null;try{item=lib&&typeof lib.get==='function'?lib.get(photoId):null;}catch(_){}
+    var defaultFactoryPhotoPath = 'assets/ui-photos/industrial-production-line.webp';
     var fallbackPaths = {
-      'industrial-production-line':'assets/ui-photos/industrial-production-line.webp',
+      'industrial-production-line':defaultFactoryPhotoPath,
       'geelong-oil-refinery':'assets/ui-photos/geelong-oil-refinery.webp',
       'hydroelectric-plant':'assets/ui-photos/hydroelectric-plant.webp',
       'open-pit-mine':'assets/ui-photos/open-pit-mine.webp',
