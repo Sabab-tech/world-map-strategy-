@@ -4,6 +4,14 @@ import assert from 'node:assert/strict';
 import '../omega_ui_v2/navigation-registry.js';
 import '../omega_ui_v2/screens/police-fleet.js';
 import '../omega_ui_v2/screens/resource-ministry.js';
+import '../omega_ui_v2/screens/government.js';
+import '../omega_ui_v2/screens/ministry-detail.js';
+import '../omega_ui_v2/screens/mine-detail.js';
+import '../omega_ui_v2/screens/industry.js';
+import '../omega_ui_v2/screens/home-affairs.js';
+import '../omega_ui_v2/screens/reports.js';
+import '../omega_ui_v2/screens/economy.js';
+import '../omega_ui_v2/app.js';
 
 test('Government navigation has exactly Executive Ministry and All Ministries', () => {
   const nav = globalThis.OmegaUIV2Navigation;
@@ -94,4 +102,97 @@ test('resource view model keeps simulated reserve out of reported reserve', () =
   });
   assert.equal(model.sites[0].reserve.value, null);
   assert.equal(model.sites[0].modeledReserve.modeledValue, 5000);
+});
+
+
+test('Government directory never duplicates the Executive Cabinet as an ordinary ministry', () => {
+  globalThis.OmegaCabinetUI = {
+    ministriesDatabase: {
+      cabinet_council: { id:'cabinet_council', title:'Executive Cabinet', category:'governance' },
+      interior_security: { id:'interior_security', title:'Interior & Security', category:'governance', status:'PEACEFUL' },
+      energy_mining: { id:'energy_mining', title:'Energy & Mining', category:'agriculture', status:'POWERFUL' }
+    }
+  };
+  const rows = globalThis.OmegaUIV2Government.getMinistryRows();
+  assert.deepEqual(rows.map((row) => row.id), ['interior_security', 'energy_mining']);
+  assert.equal(rows.some((row) => row.id === 'cabinet_council'), false);
+});
+
+test('Home Affairs provides all six planned sections and does not create a separate recruitment destination', () => {
+  const tabs = globalThis.OmegaUIV2HomeAffairs.tabs;
+  assert.deepEqual(tabs.map((item) => item.id), ['dashboard', 'personnel', 'fleet', 'patrols', 'facilities', 'incidents']);
+  assert.equal(tabs.some((item) => /recruit/i.test(item.id)), false);
+});
+
+test('industry view reads current country assets, cycles and projects without synthesizing factories', () => {
+  globalThis.Game = { state: {
+    resource: { BGD: { industrialNetwork: {
+      projects: [{ projectId:'P-1', projectType:'MINE_CONSTRUCTION', status:'UNDER_CONSTRUCTION' }],
+      factoryProductionCycles: { 'FAC-1': { status:'IN_PROGRESS', productionQuantity:20, sourceBatchIds:['B-1'] } }
+    } } },
+    economy: { BGD: { productionAssets: [
+      { id:'FAC-1', factoryType:'STEEL_MILL', capacityPerDay:50, inputInventory:{ iron_ore:20 }, employment:{jobsFilled:3,jobsSupported:5} }
+    ] } }
+  } };
+  globalThis.OmegaResourceIndustrialCatalogData = {
+    factoryProfiles: { STEEL_MILL: { name:'Steel Mill', defaultRecipeId:'STEEL-RECIPE', employment:{jobsPerFactory:5} } }
+  };
+  const model = globalThis.OmegaUIV2Industry.buildViewModel({ countryId:'BGD' });
+  assert.equal(model.factoryCount,1);
+  assert.equal(model.factories[0].id,'FAC-1');
+  assert.equal(model.factories[0].capacityPerDay,50);
+  assert.equal(model.factories[0].inputRows[0].quantity,20);
+  assert.equal(model.cycles.length,1);
+  assert.equal(model.projects.length,1);
+  assert.equal(globalThis.OmegaUIV2Industry.buildViewModel({countryId:'USA'}).factoryCount,0);
+});
+
+test('reports list nine source-linked report categories and do not treat missing data as zero', () => {
+  globalThis.Game = { state: { resource:{BGD:{industrialNetwork:{projects:[]}}}, economy:{BGD:{productionAssets:[]}} } };
+  globalThis.OmegaCountryDataGateway = {
+    getSnapshot: () => ({ status:'OK', fields:{
+      gdp:{status:'AVAILABLE',value:100,unit:'USD'},
+      population:{status:'UNAVAILABLE',value:null}
+    },diagnostics:{missingFields:['population']} })
+  };
+  globalThis.OmegaResourceSiteCanonicalCatalogData = { sites:[] };
+  const model = globalThis.OmegaUIV2Reports.buildViewModel({countryId:'BGD'});
+  assert.equal(model.categories.length,9);
+  assert.equal(model.fields.available,1);
+  assert.equal(model.fields.missing,1);
+  assert.equal(model.available['resources-mining'],false);
+  assert.equal(model.siteCount,0);
+});
+
+test('mine detail refuses an unknown siteId instead of showing a different site', () => {
+  const root = { classList:{ add(){} }, innerHTML:'' };
+  const result = globalThis.OmegaUIV2MineDetail.render(root, {
+    countryId:'BGD',
+    siteId:'BGD-NOT-REGISTERED',
+    sites:[{siteId:'BGD-GAS-01',countryId:'BGD',resourceId:'natural_gas',siteName:'Known gas site'}]
+  });
+  assert.equal(result.ok,false);
+  assert.equal(result.code,'CANONICAL_SITE_ID_NOT_FOUND');
+  assert.ok(root.innerHTML.includes('BGD-NOT-REGISTERED'));
+  assert.ok(root.innerHTML.includes('No substitute site'));
+});
+
+test('application shell exports explicit mount and contains only five intended global destinations', () => {
+  const app = globalThis.OmegaUIV2App;
+  assert.ok(app);
+  assert.equal(typeof app.mount,'function');
+  assert.deepEqual(app.destinations,['map','government','economy','industry','reports']);
+  assert.equal(globalThis.OmegaUIV2Navigation.governmentDestinations.length,2);
+});
+
+test('economy model keeps unavailable cash and macroeconomic values unavailable', () => {
+  globalThis.Game = { state:{ finance:{BGD:{}}, economy:{BGD:{currencyCode:'BDT'}} } };
+  globalThis.OmegaCountryDataGateway = {
+    getSnapshot: () => ({ fields:{gdp:{status:'AVAILABLE',value:42,unit:'USD'},debt:{status:'UNAVAILABLE',value:null}} })
+  };
+  const model = globalThis.OmegaUIV2Economy.buildViewModel({countryId:'BGD'});
+  assert.equal(model.treasuryCash,null);
+  assert.equal(model.gdp.value,42);
+  assert.equal(model.debt.value,null);
+  assert.equal(model.currencyCode,'BDT');
 });
