@@ -89,9 +89,12 @@ test('legacy button CSS stays on disk but the v2 stylesheet is the active visual
   assert.doesNotMatch(html, /<link[^>]+href="omega_ui_system_redesign_v1\.css"/i);
   assert.doesNotMatch(html, /<link[^>]+href="omega_ui_button_system_v1\.css"/i);
   assert.match(html, /<link[^>]+href="omega_ui_v2\/omega-ui-v2\.css"/);
-  const runtime = html.indexOf('src="omega_ui_button_system_v1.js"');
+  for (const retiredRuntime of ['omega_ui_button_system_v1.js', 'omega_ui_system_redesign_v1.js', 'omega_ui_interaction_guard.js']) {
+    assert.doesNotMatch(html, new RegExp('<script[^>]+src=["\\\\\\']' + retiredRuntime.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\  const runtime = html.indexOf('src="omega_ui_button_system_v1.js"');
   assert.ok(runtime > html.indexOf('src="omega_ui_system_redesign_v1.js"'), 'button inventory runtime remains after the layout runtime');
-  assert.ok(runtime < html.indexOf('</body>'));
+  assert.ok(runtime < html.indexOf('</body>'));') + '["\\\\\\']'));
+  }
+  assert.match(html, /omega_ui_v2\\/legacy-disconnect\\.css/);
   for (const required of ['map-engine-1.js', 'map-engine-2.js', 'omega_home_ministry_engine_v1.js', 'omega_resource_gameplay_binding_v1.js']) {
     assert.ok(html.includes(required), 'keep existing runtime loaded: ' + required);
   }
