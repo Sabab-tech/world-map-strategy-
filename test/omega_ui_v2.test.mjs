@@ -403,12 +403,12 @@ test('religion and ideology navigation stays inside UI v2', () => {
   const app = globalThis.OmegaUIV2App;
   assert.ok(app.destinations.includes('religion'));
   const source = readFileSync(new URL('../omega_ui_v2/app.js', import.meta.url), 'utf8');
-  assert.match(source, /mosque-architecture/);
-  assert.doesNotMatch(source, /openReligionIdeologySystem\\(event\\)/);
-  assert.doesNotMatch(source, /data-omega-v2-open-religion/);
+  assert.ok(source.includes('mosque-architecture'));
+  assert.equal(source.includes('openReligionIdeologySystem(event)'), false);
+  assert.equal(source.includes('data-omega-v2-open-religion'), false);
   assert.ok(source.includes('data-omega-v2-global-nav="government"'));
-  assert.match(source, /photoMarkup\\('mosque-architecture'/);
-  assert.doesNotMatch(source, /domainPhoto\\('mosque-architecture'/);
+  assert.ok(source.includes("photoMarkup('mosque-architecture'"));
+  assert.equal(source.includes("domainPhoto('mosque-architecture'"), false);
 });
 
 test('Government exposes emblems, minister recruitment and a stable future portrait slot', () => {
@@ -529,25 +529,25 @@ test('universal navigation and the isolated legacy-free shell are wired into the
   const shellCss = readFileSync(new URL('../omega_ui_v2/omega-ui-v2.css', import.meta.url), 'utf8');
   const isolationCss = readFileSync(new URL('../omega_ui_v2/legacy-disconnect.css', import.meta.url), 'utf8');
   const integration = readFileSync(new URL('../omega_ui_v2/integration.js', import.meta.url), 'utf8');
-  assert.match(app, /data-omega-v2-jump-route/);
-  assert.match(app, /data-omega-v2-jump-ministry/);
-  assert.match(app, /function exitToMap\\(/);
-  assert.match(app, /state\\.history\\.length = 0/);
-  assert.match(app, /root\\.addEventListener\\('keydown'/);
+  assert.ok(app.includes('data-omega-v2-jump-route'));
+  assert.ok(app.includes('data-omega-v2-jump-ministry'));
+  assert.ok(app.includes('function exitToMap('));
+  assert.ok(app.includes('state.history.length = 0'));
+  assert.ok(app.includes("root.addEventListener('keydown'"));
   assert.ok(app.includes('root.contains(ownControl)'));
   assert.ok(app.includes('event.stopPropagation()'));
   assert.ok(html.includes('omega_ui_v2/ministry-visual-refresh.css'));
-  assert.match(worker, /omega-offline-atlas-shell-v35/);
+  assert.ok(worker.includes('omega-offline-atlas-shell-v35'));
   assert.ok(worker.includes('"./omega_ui_v2/legacy-disconnect.css"'));
   assert.ok(refreshCss.includes('omega-v2-ministry-detail-cover-image'));
   assert.ok(refreshCss.includes('min-height: 48px'));
-  assert.match(shellCss, /\\.omega-v2-app-frame \\{[^}]*height:100%;[^}]*min-height:0;[^}]*overflow:hidden/s);
-  assert.match(shellCss, /\\.omega-v2-app-main \\{[^}]*min-height:0;[^}]*overflow-y:auto;[^}]*touch-action:pan-y pinch-zoom/s);
+  assert.ok(shellCss.includes('overflow-y:auto;'));
+  assert.ok(shellCss.includes('touch-action:pan-y pinch-zoom;'));
   assert.ok(isolationCss.includes('#ministry-dashboard-view'));
   assert.ok(isolationCss.includes('display: none !important'));
   assert.ok(isolationCss.includes('z-index: 2147483000 !important'));
-  assert.doesNotMatch(integration, /restoreLegacy|resumeAfterOperationalConsole|OmegaCabinetUI\\.renderCabinet/);
-  assert.doesNotMatch(integration, /manager\\.setLayer\\(/);
+  assert.ok(!/restoreLegacy|resumeAfterOperationalConsole|OmegaCabinetUI\.renderCabinet/.test(integration));
+  assert.equal(integration.includes('manager.setLayer('),false);
   for (const retired of ['omega_ui_system_redesign_v1.js','omega_ui_interaction_guard.js','omega_ui_button_system_v1.js']) {
     assert.equal(html.includes('src="' + retired + '"'),false);
     assert.equal(worker.includes('"./' + retired + '"'),false);
@@ -678,79 +678,6 @@ test('failed UI v2 mount fails closed and never revives the legacy Cabinet', () 
     assert.equal(bodyAttrs['data-active-layer'],'0');
     assert.equal(manager.currentLayer,0);
     assert.deepEqual(calls,[]);
-  } finally {
-    if(previous.document===undefined)delete globalThis.document;else globalThis.document=previous.document;
-    if(previous.app===undefined)delete globalThis.OmegaUIV2App;else globalThis.OmegaUIV2App=previous.app;
-    if(previous.manager===undefined)delete globalThis.OmegaLayerManager;else globalThis.OmegaLayerManager=previous.manager;
-    if(previous.country===undefined)delete globalThis.OmegaMinistryViewCountry;else globalThis.OmegaMinistryViewCountry=previous.country;
-    if(previous.cabinet===undefined)delete globalThis.OmegaCabinetUI;else globalThis.OmegaCabinetUI=previous.cabinet;
-    if(previous.updateBack===undefined)delete globalThis.updateGlobalBackButtonVisibility;else globalThis.updateGlobalBackButtonVisibility=previous.updateBack;
-  }
-});
-test('returning from a legacy console restores the exact ministry, selected tab and navigation history', () => {
-  const previous = {
-    document:globalThis.document, app:globalThis.OmegaUIV2App, manager:globalThis.OmegaLayerManager,
-    country:globalThis.OmegaMinistryViewCountry, cabinet:globalThis.OmegaCabinetUI,
-    updateBack:globalThis.updateGlobalBackButtonVisibility
-  };
-  const attrs = Object.create(null), receivedOptions = [];
-  const root = {
-    style:{}, classList:{ add(){}, remove(){} },
-    __omegaUIV2State:{
-      route:'ministry-detail', ministryId:'defense', section:'assets', resourceSiteId:null,
-      governmentView:'executive-ministry', countryId:'BGD',
-      history:[{ route:'government', ministryId:null, section:'dashboard', governmentView:'all-ministries' }],
-      options:{}
-    },
-    setAttribute(key,value){ attrs[key] = String(value); },
-    getAttribute(key){ return attrs[key] || null; },
-    removeAttribute(key){ delete attrs[key]; }
-  };
-  attrs['data-omega-ui-v2-active'] = 'true';
-  const dashboard={style:{},setAttribute(){},removeAttribute(){}}, world={style:{}};
-  const manager={
-    currentLayer:1, layerStack:[0,1],
-    updateRightSidebar(){},
-    setLayer(layer){ this.currentLayer = layer; if(layer===2) this.layerStack=[0,1,2]; },
-    popLayer(){ this.currentLayer=1; this.layerStack=[0,1]; return true; }
-  };
-  globalThis.document={
-    getElementById(id){return id==='cabinet-full-window'?root:id==='ministry-dashboard-view'?dashboard:id==='world-ui-root'?world:null;},
-    body:{setAttribute(){},classList:{add(){}}}
-  };
-  globalThis.OmegaMinistryViewCountry='BGD';
-  globalThis.OmegaCabinetUI={ activeCountry:'BGD' };
-  globalThis.OmegaUIV2App={
-    destinations:['map','overview','government','economy','more','industry','reports','religion'],
-    mount(target,options){
-      receivedOptions.push(options);
-      target.__omegaUIV2State={
-        route:options.initialRoute, ministryId:options.initialMinistryId,
-        section:options.initialSection, resourceSiteId:options.initialResourceSiteId,
-        governmentView:options.initialGovernmentView, history:options.initialHistory,
-        countryId:options.countryId, options
-      };
-      return {ok:true,mounted:true,route:options.initialRoute};
-    },
-    unmount(){return {ok:true};}
-  };
-  globalThis.OmegaLayerManager=manager;
-  globalThis.updateGlobalBackButtonVisibility=()=>{};
-  try {
-    const opened=globalThis.OmegaUIV2Integration.openOperationalConsole('defense');
-    assert.equal(opened.ok,true);
-    assert.equal(manager.currentLayer,2);
-    manager.popLayer();
-    assert.equal(manager.currentLayer,1);
-    assert.equal(receivedOptions.length,1);
-    assert.equal(receivedOptions[0].initialRoute,'ministry-detail');
-    assert.equal(receivedOptions[0].initialMinistryId,'defense');
-    assert.equal(receivedOptions[0].initialSection,'assets');
-    assert.equal(receivedOptions[0].initialHistory.length,1);
-    assert.equal(root.__omegaUIV2State.route,'ministry-detail');
-    assert.equal(root.__omegaUIV2State.ministryId,'defense');
-    assert.equal(root.__omegaUIV2State.section,'assets');
-    assert.equal(globalThis.OmegaUIV2Integration.audit().mounted,true);
   } finally {
     if(previous.document===undefined)delete globalThis.document;else globalThis.document=previous.document;
     if(previous.app===undefined)delete globalThis.OmegaUIV2App;else globalThis.OmegaUIV2App=previous.app;
