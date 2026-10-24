@@ -49,7 +49,7 @@
   }
   function safeVisualPath(value) {
     var path = String(value || '');
-    return /^assets\\/[a-zA-Z0-9_ .()\\/-]+\\.(?:webp|png|jpe?g|svg)$/i.test(path) && path.indexOf('..') < 0 ? path : '';
+    return /^assets\/[a-zA-Z0-9_ .()\/-]+\.(?:webp|png|jpe?g|svg)$/i.test(path) && path.indexOf('..') < 0 ? path : '';
   }
   function ministryVisualMarkup(id, row) {
     var registry = g.OmegaUIV2MinistryVisualRegistry;
