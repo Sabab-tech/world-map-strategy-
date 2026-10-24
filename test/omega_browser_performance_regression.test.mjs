@@ -264,17 +264,27 @@ test('large world GeoJSON is rendered incrementally rather than monopolizing the
 });
 
 
-test('interaction guard is loaded by the production shell and cached for offline/Android use', () => {
+test('production shell fully disconnects legacy UI scripts and caches the isolated UI v2 shell', () => {
   const html = read('index.html');
+  const server = read('server.js');
   const serviceWorker = read('omega-offline-map-sw.js');
-  assert.match(html, /<script src="omega_ui_interaction_guard\.js" defer><\/script>/);
-  assert.match(serviceWorker, /CACHE_NAME = "omega-offline-atlas-shell-v34"/);
+  const isolationCss = read('omega_ui_v2/legacy-disconnect.css');
+  for (const retiredRuntime of ['omega_ui_system_redesign_v1.js', 'omega_ui_interaction_guard.js', 'omega_ui_button_system_v1.js']) {
+    assert.doesNotMatch(html, new RegExp('<script[^>]+src=["\\\\\\']' + retiredRuntime.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&') + '["\\\\\\']'));
+    assert.doesNotMatch(serviceWorker, new RegExp('["\\\\\\']\\\\.\\\\/' + retiredRuntime.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&') + '["\\\\\\']'));
+  }
+  assert.doesNotMatch(server, /UI_INTERACTION_GUARD_SCRIPT|omega_ui_interaction_guard\\.js/,
+    'the production server must not inject the retired click interceptor');
+  assert.match(html, /omega_ui_v2\\/legacy-disconnect\\.css/);
+  assert.match(serviceWorker, /CACHE_NAME = "omega-offline-atlas-shell-v35"/);
   const coreStart = serviceWorker.indexOf('const CORE_ASSETS');
   const coreEnd = serviceWorker.indexOf('];', coreStart);
-  assert.ok(serviceWorker.slice(coreStart, coreEnd).includes('"./omega_ui_interaction_guard.js"'),
-    'the interaction guard must be included in the offline core asset bundle');
+  const coreAssets = serviceWorker.slice(coreStart, coreEnd);
+  assert.ok(coreAssets.includes('"./omega_ui_v2/legacy-disconnect.css"'));
+  assert.match(isolationCss, /#ministry-dashboard-view[^]*display: none !important/s);
+  assert.match(isolationCss, /z-index: 2147483000 !important/);
 });
-
+ 
 test('slow simulation frames and data-heavy ministry panels bound repeated UI work', () => {
   const simulation = read('omega_simulation_runtime.js');
   assert.match(simulation, /MAX_PENDING_REAL_DELTA_MS\s*=\s*STEP_MS/);
