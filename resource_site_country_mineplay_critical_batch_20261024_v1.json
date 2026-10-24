@@ -5577,88 +5577,85 @@
     },
     {
       "schemaVersion": "1.0.0",
-      "siteId": "SITE_ZAF_dwarsrivier_chromite_mine",
-      "countryId": "ZAF",
-      "siteName": "Dwarsrivier Chromite Mine",
+      "siteId": "SITE_ALB_bulqiza_chromite_mine",
+      "countryId": "ALB",
+      "siteName": "Bulqiza Chromite Mine",
       "identity": {
-        "countryIso3": "ZAF",
-        "countryName": "South Africa",
+        "countryIso3": "ALB",
+        "countryName": "Albania",
         "siteType": "UNDERGROUND_CHROMITE_MINE",
         "resourceTypeId": "chromite",
         "resourceName": "Chromite",
         "ontologyKey": "CHROMITE",
         "aliases": [
-          "Dwarsrivier Chrome Mine",
-          "Dwarsrivier Chromite Mine"
+          "Bulqiza Mine",
+          "Chrome Mine of Bulqiza"
         ]
       },
       "location": {
-        "countryName": "South Africa",
-        "adminRegion": "Limpopo Province, Steelpoort area",
-        "locality": "Dwarsrivier 372KT, near Steelpoort",
+        "countryName": "Albania",
+        "adminRegion": "Dibër County, Bulqizë",
+        "locality": "Bulqiza mining area",
         "coordinates": {
-          "lat": -24.9369,
-          "lng": 30.1276
+          "lat": 41.506,
+          "lng": 20.221
         },
         "coordinateStatus": "REGIONAL_APPROXIMATION",
-        "coordinateAuthority": "OFFICIAL_OPERATOR_SITE_CONTEXT_AND_PUBLISHED_MINE_LOCALITY; APPROXIMATE MAP PIN",
+        "coordinateAuthority": "OFFICIAL_OPERATOR_SITE_CONTEXT; REGIONAL APPROXIMATE MAP PIN",
         "coordinatePrecision": "REGIONAL_APPROXIMATION",
-        "countryBoundaryKey": "ZAF"
+        "countryBoundaryKey": "ALB"
       },
       "ownership": {
-        "owner": "Dwarsrivier Chrome Mine Proprietary Limited (Assore South Africa)",
-        "operator": "Dwarsrivier Chrome Mine Proprietary Limited",
+        "owner": "AlbChrome shpk",
+        "operator": "AlbChrome shpk",
         "ownerEvidenceStatus": "OPERATOR_PRIMARY_SOURCE",
         "operatorEvidenceStatus": "OPERATOR_PRIMARY_SOURCE",
         "authority": "OFFICIAL_MINE_OPERATOR_SOURCE",
-        "equityControlCountry": "ZAF",
-        "operatorContractId": "OPCONTRACT_SITE_ZAF_dwarsrivier_chromite_mine"
+        "equityControlCountry": "ALB",
+        "operatorContractId": "OPCONTRACT_SITE_ALB_bulqiza_chromite_mine"
       },
       "operation": {
         "status": "SIMULATED_OPERATIONAL_SCENARIO",
         "operationalStatus": "SIMULATED_ACTIVE",
-        "extractionMethod": "UNDERGROUND_BORD_AND_PILLAR",
-        "fallbackMethod": "MECHANISED_UNDERGROUND_CHROMITE_EXTRACTION",
+        "extractionMethod": "UNDERGROUND_SUBLEVEL_CAVING",
+        "fallbackMethod": "UNDERGROUND_CHROMITE_EXTRACTION",
         "extractionEligibility": "SIMULATED_GAMEPLAY_EXECUTABLE_SUBJECT_TO_RUNTIME_GATES",
         "commercialExtraction": true,
         "siteCommissioningLevel": 5,
         "mineLevel": 5,
-        "statusAuthority": "OPERATOR_SOURCE_REPORTS_UNDERGROUND_CHROMITE_EXTRACTION; GAMEPLAY COMMISSIONING IS SEPARATE",
-        "realWorldStatus": "OPERATOR REPORTS UNDERGROUND CHROMITE EXTRACTION AND BENEFICIATION; GAMEPLAY PRODUCTION VALUES ARE SIMULATED",
+        "statusAuthority": "OPERATOR_SOURCE_DOCUMENTS_BULQIZA_CHROMITE_MINE; GAMEPLAY COMMISSIONING IS SEPARATE",
+        "realWorldStatus": "OPERATOR IDENTIFIES BULQIZA AS ITS CHROME MINE; GAMEPLAY PRODUCTION VALUES ARE SIMULATED",
         "gameplayConstructionAllowed": true
       },
       "processing": {
-        "upstreamProcess": "UNDERGROUND_BORD_AND_PILLAR",
-        "midstreamProcess": "CRUSHING_SCREENING_DENSE_MEDIA_SEPARATION_MILLING_AND_SPIRAL_BENEFICIATION",
+        "upstreamProcess": "UNDERGROUND_CHROMITE_EXTRACTION",
+        "midstreamProcess": "CHROMITE_SORTING_AND_ENRICHMENT",
         "refinedOutputs": [
+          "CHROMITE_ORE_FRACTIONS",
           "CHROMITE_CONCENTRATE",
-          "METALLURGICAL_CHROME_ORE",
-          "CHEMICAL_GRADE_CHROME",
-          "FOUNDRY_GRADE_CHROME",
           "TAILINGS"
         ],
         "downstreamSectors": [
-          "stainless steel",
           "ferrochrome",
-          "refractories",
-          "chemical industry",
-          "foundry sand"
+          "stainless steel",
+          "metallurgy",
+          "refractories"
         ]
       },
       "logistics": {
-        "warehouseCountryId": "ZAF",
-        "warehouseSiteId": "WH-ZAF-RAW",
+        "warehouseCountryId": "ALB",
+        "warehouseSiteId": "WH-ALB-RAW",
         "inventoryRouteStatus": "RUNTIME_ROUTE_VALIDATION_REQUIRED",
         "factoryRouteStatus": "SITE_BOUND_COMPATIBLE_FACTORY_REQUIRED",
         "routeStatus": "SIMULATED_ROUTE_TO_BE_VALIDATED_BY_RUNTIME",
         "transport": {
-          "routeId": "ROUTE_SITE_SITE_ZAF_dwarsrivier_chromite_mine_RAW_TO_FACTORY",
+          "routeId": "ROUTE_SITE_SITE_ALB_bulqiza_chromite_mine_RAW_TO_FACTORY",
           "routeType": "ROAD_RAIL",
-          "originSiteId": "SITE_ZAF_dwarsrivier_chromite_mine",
-          "originCountryId": "ZAF",
-          "warehouseId": "WH-ZAF-RAW",
+          "originSiteId": "SITE_ALB_bulqiza_chromite_mine",
+          "originCountryId": "ALB",
+          "warehouseId": "WH-ALB-RAW",
           "destinationFactoryId": "AUTO_SELECT_COMPATIBLE_FACTORY",
-          "destinationCountryId": "ZAF",
+          "destinationCountryId": "ALB",
           "distanceKm": null,
           "averageSpeedKmPerDay": null,
           "estimatedTravelDays": null,
@@ -5722,8 +5719,8 @@
           "measuredProductionPromoted": false,
           "quantitativeValuesAreSimulated": true,
           "sourceUrls": [
-            "https://dwarsriviermine.co.za/",
-            "https://dwarsriviermine.co.za/chrome-ore/"
+            "https://www.albchrome.al/our-structure",
+            "https://www.albchrome.al/chromite-ore"
           ],
           "generatedAt": "2026-10-24"
         },
@@ -5767,22 +5764,22 @@
         "recovery": 80,
         "transportRoute": [
           {
-            "routeId": "SIM_ROUTE:ZAF:SITE_ZAF_dwarsrivier_chromite_mine",
-            "mode": "road_rail",
-            "transportMode": "road_rail",
+            "routeId": "SIM_ROUTE:ALB:SITE_ALB_bulqiza_chromite_mine",
+            "mode": "road",
+            "transportMode": "road",
             "distanceKm": null,
             "estimatedTravelDays": null,
             "status": "SIMULATED_ROUTE_REQUIRES_RUNTIME_PLAN",
             "blockableByWar": true,
             "blockableByNeighborControl": true,
             "blockableByNavalInterdiction": true,
-            "countryIsolationKey": "ZAF"
+            "countryIsolationKey": "ALB"
           }
         ],
-        "rawWarehouseId": "WH-ZAF-RAW",
+        "rawWarehouseId": "WH-ALB-RAW",
         "factoryBinding": {
-          "factoryId": "FACTORY_ZAF_CHROMITE_SITE_ZAF_dwarsrivier_chromite_mine",
-          "countryId": "ZAF",
+          "factoryId": "FACTORY_ALB_CHROMITE_SITE_ALB_bulqiza_chromite_mine",
+          "countryId": "ALB",
           "inputResourceId": "chromite",
           "status": "SIMULATED_READY",
           "authority": "SIMULATED_GAMEPLAY_RULE"
@@ -5791,7 +5788,7 @@
       },
       "map": {
         "markerEligible": true,
-        "countryIsolationKey": "ZAF",
+        "countryIsolationKey": "ALB",
         "coordinatePrecision": "REGIONAL_APPROXIMATION",
         "resourceFilterKey": "chromite"
       },
@@ -5804,7 +5801,7 @@
         "sourceStatusIsNotGameplayCommissioning": true
       },
       "sourceReference": {
-        "sourcePath": "https://dwarsriviermine.co.za/chrome-ore/",
+        "sourcePath": "https://www.albchrome.al/our-structure",
         "sourceType": "OPERATOR_PRIMARY",
         "accessed": "2026-10-24",
         "facts": {
@@ -5812,22 +5809,22 @@
           "measuredReservePromoted": false,
           "measuredProductionPromoted": false,
           "quantitativeValuesAreSimulated": true,
-          "sourceReportedRealWorldStatus": "OPERATOR REPORTS UNDERGROUND CHROMITE EXTRACTION AND BENEFICIATION; GAMEPLAY PRODUCTION VALUES ARE SIMULATED"
+          "sourceReportedRealWorldStatus": "OPERATOR IDENTIFIES BULQIZA AS ITS CHROME MINE; GAMEPLAY PRODUCTION VALUES ARE SIMULATED"
         },
-        "statusNote": "Official mine operator documents underground chromite extraction and beneficiation at Dwarsrivier. Gameplay reserve, grade, recovery, production, capacity and throughput values remain simulated and are not represented as observed mine output."
+        "statusNote": "AlbChrome identifies Bulqiza as its chrome mine and documents mining and beneficiation activity. Gameplay reserve, grade, recovery, production, capacity and throughput values remain simulated and are not represented as observed mine output."
       },
       "sources": [
         {
-          "url": "https://dwarsriviermine.co.za/",
+          "url": "https://www.albchrome.al/our-structure",
           "sourceType": "OPERATOR_PRIMARY",
           "accessed": "2026-10-25",
-          "scope": "mine identity and operator"
+          "scope": "mine identity and operator context"
         },
         {
-          "url": "https://dwarsriviermine.co.za/chrome-ore/",
+          "url": "https://www.albchrome.al/chromite-ore",
           "sourceType": "OPERATOR_PRIMARY",
           "accessed": "2026-10-25",
-          "scope": "chromite extraction and beneficiation process"
+          "scope": "chromite extraction and beneficiation context"
         }
       ],
       "observedFacts": []
