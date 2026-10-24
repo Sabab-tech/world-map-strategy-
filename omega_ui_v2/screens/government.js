@@ -98,7 +98,7 @@
     if (db) {
       Object.keys(db).forEach(function (id) {
         var row = db[id];
-        if (!row || id === 'cabinet_council' || row.id === 'cabinet_council') return;
+        if (!row) return;
         var canonicalId = String(row.id || id);
         var activeProfile = activeMinisterProfile(canonicalId) || {};
         rows.push({
@@ -221,6 +221,131 @@
         '</tr>';
     }).join('') + '</tbody></table></div>';
   }
+  function visualRecord(row) {
+    var registry = g.OmegaUIV2MinistryVisualRegistry;
+    return registry && typeof registry.get === 'function' ? registry.get(row && row.id) : null;
+  }
+  function safeAssetPath(value) {
+    var path = String(value || '');
+    return /^assets\/[a-zA-Z0-9_ .()\/-]+\.(?:webp|png|jpe?g|svg)$/i.test(path) && path.indexOf('..') < 0 ? path : '';
+  }
+  function cardImage(path, alt, className) {
+    var safe = safeAssetPath(path);
+    if (!safe) return '<div class="omega-v2-ministry-image-placeholder" role="img" aria-label="' + esc(alt) + '">OMEGA</div>';
+    return '<img class="' + esc(className || '') + '" loading="lazy" decoding="async" src="' + esc(safe) + '" alt="' + esc(alt || 'Ministry reference image') + '">';
+  }
+  function ministryCardGrid(rows) {
+    return '<div class="omega-v2-ministry-grid">' + rows.map(function (row) {
+      var visual = visualRecord(row) || {};
+      var hero = visual.image || (PHOTO_BY_MINISTRY[row.id] ? 'assets/ui-photos/' + PHOTO_BY_MINISTRY[row.id] + '.webp' : '');
+      var category = CATEGORY_LABELS[row.category] || visual.category || row.category || 'Ministry';
+      var minister = row.ministerName || 'Minister not assigned';
+      var galleries = Array.isArray(visual.gallery) ? visual.gallery.slice(0, 2) : [];
+      var logo = safeAssetPath(visual.logo);
+      return '<article class="omega-v2-ministry-card" data-omega-v2-ministry-card data-search="' +
+        esc((row.title + ' ' + row.subtitle + ' ' + row.id + ' ' + category + ' ' + minister).toLowerCase()) +
+        '" data-category="' + esc(row.category) + '" data-ministry-id="' + esc(row.id) + '">' +
+        '<button type="button" class="omega-v2-ministry-card-media" data-omega-v2-open-ministry="' + esc(row.id) +
+        '" aria-label="Open ' + esc(row.title) + '">' + cardImage(hero, visual.alt || row.title, 'omega-v2-ministry-cover') +
+        '<span class="omega-v2-ministry-category">' + esc(category) + '</span></button>' +
+        '<div class="omega-v2-ministry-card-content"><div class="omega-v2-ministry-card-heading">' +
+        '<div class="omega-v2-ministry-logo">' + (logo ? cardImage(logo, visual.logoAlt || row.title + ' logo', 'omega-v2-ministry-logo-image') : ministryEmblem(row)) + '</div>' +
+        '<div class="omega-v2-ministry-heading-copy"><h3>' + esc(visual.title || row.title) + '</h3><p>' + esc(row.subtitle || visual.subtitle || '') + '</p></div></div>' +
+        '<div class="omega-v2-ministry-card-meta"><span class="omega-v2-status" data-state="unknown">' + esc(row.status || 'NOT_RECORDED') + '</span>' +
+        '<div class="omega-v2-ministry-person">' + ministerPortraitMarkup(row) + '<span>' + esc(minister) + '</span></div></div>' +
+        (galleries.length ? '<div class="omega-v2-ministry-gallery" aria-label="Additional ministry assets">' + galleries.map(function (path, galleryIndex) {
+          return cardImage(path, row.title + ' additional reference ' + (galleryIndex + 1), 'omega-v2-ministry-gallery-image');
+        }).join('') + '</div>' : '') +
+        '<div class="omega-v2-actions omega-v2-ministry-actions"><button type="button" class="omega-v2-button omega-v2-button--primary" data-omega-v2-open-ministry="' +
+        esc(row.id) + '">' + (row.id === 'cabinet_council' ? 'Open Executive Ministry' : 'Open Ministry') + '</button>' +
+        (row.id === 'cabinet_council' ? '<span class="omega-v2-card-meta">Executive destination</span>' :
+          '<button type="button" class="omega-v2-button omega-v2-button--accent" data-omega-v2-minister-recruitment="' + esc(row.id) + '">Recruit / Replace</button>') +
+        '</div></div></article>';
+    }).join('') + '</div>';
+  }
+  function ministrySpotlightMarkup(rows) {
+    var row = rows[0] || { id:'cabinet_council', title:'Executive Cabinet', subtitle:'National executive coordination', status:'NOT_RECORDED' };
+    var visual = visualRecord(row) || {};
+    return '<section class="omega-v2-ministry-rotator" data-omega-v2-ministry-rotator aria-roledescription="carousel" aria-label="Featured ministries">' +
+      '<div class="omega-v2-ministry-rotator-image">' + cardImage(visual.image, visual.alt || row.title, 'omega-v2-ministry-rotator-photo') +
+      '<span class="omega-v2-ministry-rotator-kicker" data-omega-v2-rotation-count>MINISTRY 01 / 18</span></div>' +
+      '<div class="omega-v2-ministry-rotator-copy"><div class="omega-v2-eyebrow">ATLAS COMMAND / MINISTRY SPOTLIGHT</div>' +
+      '<span class="omega-v2-ministry-rotator-category" data-omega-v2-rotation-category>' + esc(visual.category || CATEGORY_LABELS[row.category] || row.category || 'Governance') + '</span>' +
+      '<h2 data-omega-v2-rotation-title>' + esc(visual.title || row.title) + '</h2><p data-omega-v2-rotation-subtitle>' + esc(row.subtitle || visual.subtitle || '') + '</p>' +
+      '<div class="omega-v2-actions"><button type="button" class="omega-v2-button omega-v2-button--primary" data-omega-v2-rotation-open="' + esc(row.id) + '">Open featured ministry</button>' +
+      '<button type="button" class="omega-v2-button omega-v2-button--quiet" data-omega-v2-ministry-rotate="previous" aria-label="Previous ministry">‹</button>' +
+      '<button type="button" class="omega-v2-button omega-v2-button--quiet" data-omega-v2-ministry-rotate="next" aria-label="Next ministry">›</button>' +
+      '<button type="button" class="omega-v2-button omega-v2-button--quiet" data-omega-v2-ministry-rotate="pause" aria-pressed="false">Pause auto-rotate</button></div>' +
+      '<small class="omega-v2-card-meta">Automatically rotates every 7 seconds. Pauses when the app is hidden or the spotlight is focused/hovered.</small></div></section>';
+  }
+  function stopMinistryRotation(root) {
+    if (!root) return;
+    var state = root.__omegaV2RotationState;
+    if (state && state.timer && typeof g.clearInterval === 'function') g.clearInterval(state.timer);
+    root.__omegaV2RotationState = null;
+  }
+  function setMinistryRotationSlide(root, index) {
+    var state = root && root.__omegaV2RotationState;
+    if (!state || !state.rows.length) return false;
+    var count = state.rows.length;
+    state.index = ((index % count) + count) % count;
+    var row = state.rows[state.index];
+    var visual = visualRecord(row) || {};
+    var rotator = root.querySelector('[data-omega-v2-ministry-rotator]');
+    if (!rotator) return false;
+    var image = rotator.querySelector('.omega-v2-ministry-rotator-photo');
+    var title = rotator.querySelector('[data-omega-v2-rotation-title]');
+    var subtitle = rotator.querySelector('[data-omega-v2-rotation-subtitle]');
+    var category = rotator.querySelector('[data-omega-v2-rotation-category]');
+    var countLabel = rotator.querySelector('[data-omega-v2-rotation-count]');
+    var openButton = rotator.querySelector('[data-omega-v2-rotation-open]');
+    if (image) { image.src = safeAssetPath(visual.image) || 'assets/ui-photos/dhaka-skyline.webp'; image.alt = visual.alt || row.title; }
+    if (title) title.textContent = visual.title || row.title;
+    if (subtitle) subtitle.textContent = row.subtitle || visual.subtitle || '';
+    if (category) category.textContent = visual.category || CATEGORY_LABELS[row.category] || row.category || 'Ministry';
+    if (countLabel) countLabel.textContent = 'MINISTRY ' + String(state.index + 1).padStart(2, '0') + ' / ' + String(count).padStart(2, '0');
+    if (openButton) openButton.setAttribute('data-omega-v2-rotation-open', row.id);
+    return true;
+  }
+  function ministryRotationAction(root, action) {
+    var state = root && root.__omegaV2RotationState;
+    if (!state) return false;
+    if (action === 'pause') {
+      state.paused = !state.paused;
+      var button = root.querySelector('[data-omega-v2-ministry-rotate="pause"]');
+      if (button) {
+        button.textContent = state.paused ? 'Resume auto-rotate' : 'Pause auto-rotate';
+        button.setAttribute('aria-pressed', state.paused ? 'true' : 'false');
+      }
+      return true;
+    }
+    if (action === 'next') return setMinistryRotationSlide(root, state.index + 1);
+    if (action === 'previous') return setMinistryRotationSlide(root, state.index - 1);
+    return false;
+  }
+  function startMinistryRotation(root, rows) {
+    stopMinistryRotation(root);
+    if (!root || !g.document || typeof g.document.createElement !== 'function' ||
+        typeof root.querySelector !== 'function' || !rows.length) return;
+    var state = { index:0, paused:false, timer:null, rows:rows.slice() };
+    root.__omegaV2RotationState = state;
+    setMinistryRotationSlide(root, 0);
+    var reduced = false;
+    try { reduced = !!(g.matchMedia && g.matchMedia('(prefers-reduced-motion: reduce)').matches); } catch (_) {}
+    if (!reduced && typeof g.setInterval === 'function') {
+      state.timer = g.setInterval(function () {
+        if (state.paused || !g.document || g.document.visibilityState === 'hidden') return;
+        var rotator = root.querySelector('[data-omega-v2-ministry-rotator]');
+        if (!rotator) { stopMinistryRotation(root); return; }
+        try { if (rotator.matches && rotator.matches(':hover')) return; } catch (_) {}
+        if (g.document.activeElement && rotator.contains(g.document.activeElement)) return;
+        setMinistryRotationSlide(root, state.index + 1);
+      }, 7000);
+    } else {
+      var pauseButton = root.querySelector('[data-omega-v2-ministry-rotate="pause"]');
+      if (pauseButton) { pauseButton.textContent = 'Auto-rotate reduced'; pauseButton.disabled = true; }
+    }
+  }
   function recruitmentPanel(ministryId) {
     var row = ministryRows().find(function (item) { return item.id === ministryId; });
     return '<section class="omega-v2-card omega-v2-minister-recruitment-panel" data-omega-v2-minister-recruitment-panel data-ministry-id="' + esc(ministryId) + '" aria-labelledby="omega-v2-minister-recruitment-title">' +
@@ -288,31 +413,42 @@
   function render(root, options) {
     options = options || {};
     if (!root) return { ok: false, code: 'GOVERNMENT_ROOT_REQUIRED' };
+    stopMinistryRotation(root);
     var countryId = options.countryId || activeCountry();
     var view = options.view === 'all-ministries' ? 'all-ministries' : 'executive-ministry';
     var rows = ministryRows();
     var nav = g.OmegaUIV2Navigation;
     root.classList.add('omega-v2-screen');
     root.innerHTML = '<section class="omega-v2-shell omega-v2-government">' +
-      '<header class="omega-v2-heading"><div><div class="omega-v2-eyebrow">GOVERNMENT</div><h1 class="omega-v2-title">National Government</h1><p class="omega-v2-subtitle">Selected country: ' + esc(countryId || 'Not recorded') + '</p></div></header>' +
+      '<header class="omega-v2-heading"><div><div class="omega-v2-eyebrow">GOVERNMENT / ATLAS COMMAND</div><h1 class="omega-v2-title">National Government</h1><p class="omega-v2-subtitle">Selected country: ' + esc(countryId || 'Not recorded') + ' · executive controls and registered ministries</p></div><span class="omega-v2-status" data-state="operational">' + rows.length + ' ministry destinations</span></header>' +
       '<div class="omega-v2-government-tabs" role="group" aria-label="Government destinations">' +
       '<button type="button" class="omega-v2-button ' + (view === 'executive-ministry' ? 'omega-v2-button--accent' : 'omega-v2-button--quiet') + '" data-omega-v2-government-view="executive-ministry" aria-pressed="' + (view === 'executive-ministry' ? 'true' : 'false') + '">Executive Ministry</button>' +
-      '<button type="button" class="omega-v2-button ' + (view === 'all-ministries' ? 'omega-v2-button--accent' : 'omega-v2-button--quiet') + '" data-omega-v2-government-view="all-ministries" aria-pressed="' + (view === 'all-ministries' ? 'true' : 'false') + '">All Ministries</button></div>' +
+      '<button type="button" class="omega-v2-button ' + (view === 'all-ministries' ? 'omega-v2-button--accent' : 'omega-v2-button--quiet') + '" data-omega-v2-government-view="all-ministries" aria-pressed="' + (view === 'all-ministries' ? 'true' : 'false') + '">All Ministries · ' + rows.length + '</button></div>' +
       (view === 'executive-ministry'
         ? overviewHtml(countryId, options)
-        : '<section class="omega-v2-ministry-directory"><header class="omega-v2-heading"><div><h2 class="omega-v2-title">All Ministries</h2><p class="omega-v2-subtitle">Only registered ministry records are shown. Executive Ministry is a separate destination, not a duplicate directory card.</p></div><span class="omega-v2-status">' + rows.length + ' registered records</span></header>' +
-          (rows.length !== 18 ? '<div class="omega-v2-note">The existing operational ministry database exposes ' + rows.length + ' regular records. Its former “18 Ministries” label includes a separate cabinet record; this directory does not duplicate it or invent a filler ministry.</div>' : '') +
-          '<div class="omega-v2-filterbar"><input type="search" aria-label="Search ministries" placeholder="Search a ministry" data-omega-v2-ministry-search>' +
+        : '<section class="omega-v2-ministry-directory"><header class="omega-v2-heading"><div><h2 class="omega-v2-title">All Ministries</h2><p class="omega-v2-subtitle">Open any ministry directly. The Executive Cabinet card returns to the executive overview; it does not create a duplicate runtime.</p></div><span class="omega-v2-status">' + rows.length + ' / 18 registered</span></header>' +
+          '<div class="omega-v2-ministry-rotator-mount">' + ministrySpotlightMarkup(rows) + '</div>' +
+          '<div class="omega-v2-filterbar"><input type="search" aria-label="Search ministries" placeholder="Search all 18 ministries" data-omega-v2-ministry-search>' +
           '<select aria-label="Filter ministry category" data-omega-v2-ministry-filter><option value="all">All categories</option>' +
           Object.keys(CATEGORY_LABELS).map(function (key) { return '<option value="' + esc(key) + '">' + esc(CATEGORY_LABELS[key]) + '</option>'; }).join('') +
-          '</select></div><p class="omega-v2-card-meta">Showing <strong data-omega-v2-ministry-count>' + rows.length + '</strong> ministry record(s).</p>' +
-          ministerRecruitmentTable(rows) + (root.__omegaV2RecruitingMinistry ? recruitmentPanel(root.__omegaV2RecruitingMinistry) : '') + '</section>') +
+          '</select></div><p class="omega-v2-card-meta">Showing <strong data-omega-v2-ministry-count>' + rows.length + '</strong> registered destinations.</p>' +
+          ministryCardGrid(rows) + (root.__omegaV2RecruitingMinistry ? recruitmentPanel(root.__omegaV2RecruitingMinistry) : '') + '</section>') +
       '</section>';
 
     if (!root.__omegaV2GovernmentBound && typeof root.addEventListener === 'function') {
       root.addEventListener('click', function (event) {
         var target = event && event.target;
         if (!target || typeof target.closest !== 'function') return;
+        var rotateButton = target.closest('[data-omega-v2-ministry-rotate]');
+        if (rotateButton && root.contains(rotateButton)) {
+          ministryRotationAction(root, rotateButton.getAttribute('data-omega-v2-ministry-rotate'));
+          return;
+        }
+        var rotationOpen = target.closest('[data-omega-v2-rotation-open]');
+        if (rotationOpen && root.contains(rotationOpen)) {
+          callOpenMinistry(rotationOpen.getAttribute('data-omega-v2-rotation-open'), root.__omegaV2GovernmentOptions || {});
+          return;
+        }
         var tab = target.closest('[data-omega-v2-government-view]');
         if (tab && root.contains(tab)) {
           root.__omegaV2GovernmentView = tab.getAttribute('data-omega-v2-government-view');
@@ -384,6 +520,7 @@
     root.__omegaV2GovernmentView = view;
     if (view === 'all-ministries') {
       applyDirectoryFilters(root);
+      startMinistryRotation(root, rows);
       if (root.__omegaV2RecruitingMinistry) loadMinisterCandidates(root, root.__omegaV2RecruitingMinistry, options.countryId || activeCountry());
     }
     return { ok: true, view: view, ministryCount: rows.length, countryId: countryId || null };
@@ -396,6 +533,7 @@
     getMinistryRows: ministryRows,
     ministryEmblem: ministryEmblem,
     renderMinisterPortrait: ministerPortraitMarkup,
+    stopAutoRotation: stopMinistryRotation,
     getCountrySnapshot: snapshot,
     getMetricField: field
   });
