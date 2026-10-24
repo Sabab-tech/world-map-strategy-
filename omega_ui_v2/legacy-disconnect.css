@@ -1,0 +1,64 @@
+/* OMEGA UI v2 is the only active ministry presentation and navigation layer.
+   Retired UI assets remain in the repository for history, but cannot cover the live shell. */
+#ministry-dashboard-view,
+#ministry-dashboard-view.omega-ui-active,
+#ministry-dashboard-view[aria-hidden="false"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+#ministry-dashboard-view *,
+#ministry-dashboard-view *::before,
+#ministry-dashboard-view *::after {
+  pointer-events: none !important;
+}
+#cabinet-full-window[data-omega-ui-v2-active="true"] {
+  position: fixed !important;
+  inset: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  width: 100vw !important;
+  height: var(--omega-app-height, 100vh) !important;
+  max-height: var(--omega-app-height, 100vh) !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  z-index: 2147483000 !important;
+  isolation: isolate !important;
+}
+#cabinet-full-window[data-omega-ui-v2-active="true"] > .omega-v2-app-frame {
+  height: 100% !important;
+  min-height: 0 !important;
+  max-height: 100% !important;
+  overflow: hidden !important;
+}
+#cabinet-full-window[data-omega-ui-v2-active="true"] .omega-v2-app-main {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  overscroll-behavior-y: contain !important;
+  touch-action: pan-y pinch-zoom !important;
+  padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px)) !important;
+}
+#cabinet-full-window[data-omega-ui-v2-active="true"] button,
+#cabinet-full-window[data-omega-ui-v2-active="true"] a,
+#cabinet-full-window[data-omega-ui-v2-active="true"] [role="button"],
+#cabinet-full-window[data-omega-ui-v2-active="true"] summary {
+  touch-action: manipulation;
+}
+@media (prefers-reduced-motion: reduce) {
+  #cabinet-full-window[data-omega-ui-v2-active="true"] *,
+  #cabinet-full-window[data-omega-ui-v2-active="true"] *::before,
+  #cabinet-full-window[data-omega-ui-v2-active="true"] *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
