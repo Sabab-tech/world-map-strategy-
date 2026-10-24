@@ -80,15 +80,17 @@ function makeHarness(buttons) {
   return { context, document, listeners, observers, buttons };
 }
 
-test('button styles load after the existing visual and responsive design layers', () => {
+test('legacy button CSS stays on disk but the v2 stylesheet is the active visual layer', () => {
   const html = read('index.html');
-  const visual = html.indexOf('omega_ui_visual_system_v1.css');
-  const redesign = html.indexOf('omega_ui_system_redesign_v1.css');
-  const buttons = html.indexOf('omega_ui_button_system_v1.css');
-  assert.ok(visual >= 0 && redesign > visual && buttons > redesign, 'button contract must be the final linked visual layer');
-  assert.ok(buttons < html.indexOf('</head>'));
+  for (const legacyCss of ['omega_ui_visual_system_v1.css', 'omega_ui_system_redesign_v1.css', 'omega_ui_button_system_v1.css']) {
+    assert.ok(fs.existsSync(path.join(root, legacyCss)), legacyCss + ' must remain on disk');
+  }
+  assert.doesNotMatch(html, /<link[^>]+href="omega_ui_visual_system_v1\.css"/i);
+  assert.doesNotMatch(html, /<link[^>]+href="omega_ui_system_redesign_v1\.css"/i);
+  assert.doesNotMatch(html, /<link[^>]+href="omega_ui_button_system_v1\.css"/i);
+  assert.match(html, /<link[^>]+href="omega_ui_v2\/omega-ui-v2\.css"/);
   const runtime = html.indexOf('src="omega_ui_button_system_v1.js"');
-  assert.ok(runtime > html.indexOf('src="omega_ui_system_redesign_v1.js"'), 'button inventory must load after the layout runtime');
+  assert.ok(runtime > html.indexOf('src="omega_ui_system_redesign_v1.js"'), 'button inventory runtime remains after the layout runtime');
   assert.ok(runtime < html.indexOf('</body>'));
   for (const required of ['map-engine-1.js', 'map-engine-2.js', 'omega_home_ministry_engine_v1.js', 'omega_resource_gameplay_binding_v1.js']) {
     assert.ok(html.includes(required), 'keep existing runtime loaded: ' + required);
