@@ -866,9 +866,15 @@ function reserveInventoryForShipment(c,resourceId,quantity,shipmentId){
   w.availableByResource=w.availableByResource||{};w.reservedByResource=w.reservedByResource||{};
   const available=Math.max(0,num(w.availableByResource[resourceId])||0);
   const reserved=Math.max(0,num(w.reservedByResource[resourceId])||0);
-  if(available-reserved<quantity)return{ok:false,reason:'WAREHOUSE_AVAILABLE_AFTER_RESERVATIONS_TOO_LOW',available:available-reserved};
-  w.reservedByResource[resourceId]=reserved+quantity;n.reservations[shipmentId]={resourceId,quantity,status:'RESERVED'};
-  return{ok:true};
+  const free=Math.max(0,available-reserved);
+  const requested=Math.max(0,num(quantity)||0);
+  const approved=Math.min(requested,free);
+  if(approved<=1e-9)return{ok:false,reason:'WAREHOUSE_AVAILABLE_AFTER_RESERVATIONS_TOO_LOW',
+    available:free,requestedQuantity:requested,dispatchableQuantity:0};
+  w.reservedByResource[resourceId]=reserved+approved;
+  n.reservations[shipmentId]={resourceId,quantity:approved,status:'RESERVED'};
+  return{ok:true,quantity:approved,requestedQuantity:requested,adjusted:approved+1e-6<requested,
+    reason:approved+1e-6<requested?'WAREHOUSE_AVAILABLE_AFTER_RESERVATIONS':'SOURCE_BATCH_WITHIN_AVAILABLE_WAREHOUSE_BALANCE'};
 }
 function resizeRouteForDispatch(route,actualQuantity,plannedQuantity){
   const out=clone(route||{}),actual=Math.max(0,num(actualQuantity)||0);
@@ -939,6 +945,9 @@ function dispatchShipment(input={}){
   }
   if(quantity<=0)return{status:'BLOCKED',reason:'SOURCE_BATCH_QUANTITY_ZERO',batchId:sourceBatchId||null,plan,capacity:capacityPreview};
   const reserved=reserveInventoryForShipment(cid,plan.resourceId,quantity,shipmentId);if(!reserved.ok)return{status:'BLOCKED',reason:reserved.reason,details:reserved,plan};
+  if(Number.isFinite(Number(reserved.quantity))&&reserved.quantity>0&&reserved.quantity+quantityEpsilon<quantity){
+    quantity=reserved.quantity;quantityAdjustmentReason='WAREHOUSE_AVAILABLE_AFTER_RESERVATIONS';
+  }
   const route=resizeRouteForDispatch(plan.route,quantity,plannedQuantity);
   const capacityUse=commitTransportCapacity(cid,route,quantity,shipmentId);
   route.capacityUse=capacityUse;
