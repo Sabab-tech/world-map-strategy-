@@ -37,6 +37,67 @@ function selectedMinistryCountry(){
 function siteIdOf(x){return String(x?.siteId||x?.siteReferenceKey||x?.id||'').trim();}
 function countryOf(x){return iso3(x?.countryId||x?.countryCode||x?.identity?.countryIso3||x?.sourceSiteRecord?.countryCode||'');}
 function resourceOf(x){return String(x?.real?.resourceId||x?.sourceSiteRecord?.resourceId||x?.sourceSiteRecord?.resourceTypeId||x?.identity?.resourceTypeId||x?.resourceId||x?.resourceTypeId||'').trim().toLowerCase();}
+const REPORTED_METRIC_STATUSES=new Set(['OBSERVED','OBSERVED_ATTRIBUTABLE','MEASURED','REPORTED','VERIFIED_SOURCE']);
+function isReportedMetric(metric){
+ const status=String(metric?.status||'').trim().toUpperCase();
+ const authority=String(metric?.authority||metric?.provenance?.authority||'').trim().toUpperCase();
+ return REPORTED_METRIC_STATUSES.has(status)||/^(OBSERVED|MEASURED|REPORTED|VERIFIED_SOURCE)/.test(authority);
+}
+function mergeDefinedObject(base,preferred){
+ const out={...(base&&typeof base==='object'&&!Array.isArray(base)?base:{})};
+ if(!preferred||typeof preferred!=='object'||Array.isArray(preferred))return out;
+ for(const [key,value] of Object.entries(preferred)){
+  if(value===undefined||value===null||(typeof value==='string'&&!value.trim()))continue;
+  if(Array.isArray(value)){if(value.length||!Array.isArray(out[key]))out[key]=value.slice();continue;}
+  if(value&&typeof value==='object')out[key]=mergeDefinedObject(out[key],value);
+  else out[key]=value;
+ }
+ return out;
+}
+function mergeMetric(base,preferred){
+ const original=base&&typeof base==='object'?base:{},incoming=preferred&&typeof preferred==='object'?preferred:{};
+ const out=mergeDefinedObject(original,incoming);
+ // Runtime defaults may fill gaps, but they never replace measured/reported quantitative facts.
+ if(isReportedMetric(original)){
+  for(const key of ['quantity','value','amount','rate','annual','minimum','nominal','maximum','unit','units','annualUnit','year','period','basis','metric']){
+   if(original[key]!==undefined&&original[key]!==null&&original[key]!=='')out[key]=original[key];
+  }
+  out.status=original.status;
+  if(original.authority)out.authority=original.authority;
+ }
+ return out;
+}
+function mergeQuantitative(base,preferred){
+ const out=mergeDefinedObject(base,preferred);
+ for(const key of ['reserve','production','grade','recovery','throughput','purity','capacity']){
+  if((base&&base[key]&&typeof base[key]==='object')||(preferred&&preferred[key]&&typeof preferred[key]==='object'))
+   out[key]=mergeMetric(base?.[key],preferred?.[key]);
+ }
+ out.reportedMetrics=mergeDefinedObject(base?.reportedMetrics,preferred?.reportedMetrics);
+ out.quantitativeProvenance=mergeDefinedObject(base?.quantitativeProvenance,preferred?.quantitativeProvenance);
+ out.completeness=mergeDefinedObject(base?.completeness,preferred?.completeness);
+ return out;
+}
+function mergeSiteRecords(base,preferred){
+ const out=mergeDefinedObject(base,preferred);
+ for(const key of ['identity','location','map','runtime','simulation','processing','logistics','real','sourceSiteRecord','transport','productionModel','operations']){
+  if((base?.[key]&&typeof base[key]==='object')||(preferred?.[key]&&typeof preferred[key]==='object'))
+   out[key]=mergeDefinedObject(base?.[key],preferred?.[key]);
+ }
+ out.quantitative=mergeQuantitative(base?.quantitative,preferred?.quantitative);
+ if(base?.real?.quantitative||preferred?.real?.quantitative){
+  out.real=mergeDefinedObject(base?.real,preferred?.real);
+  out.real.quantitative=mergeQuantitative(base?.real?.quantitative,preferred?.real?.quantitative);
+ }
+ out.operation=mergeDefinedObject(base?.operation,preferred?.operation);
+ const previousStatus=String(base?.operation?.realWorldStatus||base?.operation?.status||base?.sourceSiteRecord?.realWorldStatus||base?.sourceSiteRecord?.status||'');
+ const incomingStatus=String(preferred?.operation?.realWorldStatus||preferred?.operation?.status||'');
+ if(!out.operation.realWorldStatus&&previousStatus&&incomingStatus&&previousStatus!==incomingStatus)
+  out.operation.realWorldStatus=previousStatus;
+ const combinedSources=[...(Array.isArray(base?.sources)?base.sources:[]),...(Array.isArray(preferred?.sources)?preferred.sources:[])];
+ out.sources=[...new Map(combinedSources.map(item=>[String(item?.url||item?.sourceId||JSON.stringify(item)),item])).values()];
+ return out;
+}
 function sitesFor(country){
  const all=[];
  const catalog=g.OmegaResourceSiteCanonicalCatalogData||g.Omega?.ResourceSiteCanonicalCatalogData;
@@ -44,18 +105,21 @@ function sitesFor(country){
  const binding=g.Omega?.IndividualResourceSiteBinding||g.OmegaIndividualResourceSiteBinding;
  if(Array.isArray(binding?.sites))all.push(...binding.sites);
  const ref=endowment()?.countryMineSiteReferences?.(country);
- if(Array.isArray(ref))all.push(...ref.map(x=>({...x,siteId:x.siteId||x.siteReferenceKey,countryId:country,identity:{...(x.identity||{}),resourceTypeId:x.resourceId||x.resourceTypeId}})));
+ if(Array.isArray(ref))all.push(...ref.map(x=>({...x,siteId:x.siteId||x.siteReferenceKey,countryId:x.countryId||country,identity:{...(x.identity||{}),countryIso3:x.identity?.countryIso3||x.countryId||country,resourceTypeId:x.resourceId||x.resourceTypeId||x.identity?.resourceTypeId}})));
  const unique=new Map();
- for(const row of all){
-   const id=siteIdOf(row),cid=countryOf(row),rid=resourceOf(row);
-   if(!id||!rid||!/^[A-Z]{3}$/.test(cid)||cid!==country||row?.runtime?.aliasOfSiteId||row?.map?.markerEligible===false)continue;
-   if(!unique.has(id))unique.set(id,{...row,siteId:id,countryId:cid,identity:{...(row.identity||{}),resourceTypeId:rid}});
- }
+ const absorb=row=>{
+  const id=siteIdOf(row),cid=countryOf(row),rid=resourceOf(row);
+  if(!id||!rid||!/^[A-Z]{3}$/.test(cid)||cid!==country||row?.runtime?.aliasOfSiteId||row?.map?.markerEligible===false)return;
+  const normalized={...row,siteId:id,countryId:cid,identity:{...(row.identity||{}),countryIso3:row.identity?.countryIso3||cid,resourceTypeId:rid}};
+  const previous=unique.get(id);
+  // Runtime site rows arrive after raw catalogue rows; merge rather than discarding
+  // normalized production, route and factory-binding data on the first duplicate siteId.
+  unique.set(id,previous?mergeSiteRecords(previous,normalized):normalized);
+ };
+ for(const row of all)absorb(row);
  const rs=state()?.resource?.[country]||{};
- for(const row of Array.isArray(rs.mineSiteReferences)?rs.mineSiteReferences:[]){
-   const id=siteIdOf(row),rid=resourceOf(row);
-   if(id&&rid&&!unique.has(id))unique.set(id,{...row,siteId:id,countryId:country,identity:{...(row.identity||{}),resourceTypeId:rid}});
- }
+ for(const row of Array.isArray(rs.mineSiteReferences)?rs.mineSiteReferences:[])
+  absorb({...row,countryId:row.countryId||country,identity:{...(row.identity||{}),countryIso3:row.identity?.countryIso3||row.countryId||country,resourceTypeId:resourceOf(row)}});
  return [...unique.values()].sort((a,b)=>String(a.siteName||a.name||a.siteId).localeCompare(String(b.siteName||b.name||b.siteId)));
 }
 function formatNum(v,digits=0){const n=num(v);return n===null?'Not recorded':n.toLocaleString('en-US',{maximumFractionDigits:digits});}
@@ -75,11 +139,32 @@ function reserveSummary(site){
  if(seed!==null&&String(site?.simulation?.reserve?.status||site?.reserve?.status||'').toUpperCase()==='SIMULATED')return 'Gameplay seed only: '+formatNum(seed,2)+' '+String(site?.simulation?.reserve?.unit||site?.reserve?.unit||'units');
  return 'Reserve: '+label(status)+' (no measured quantity)';
 }
+function unitLabel(value){return String(value||'units').replace(/[_-]+/g,' ').replace(/\s+/g,' ').trim().toLowerCase();}
 function productionSummary(site){
- const p=site?.quantitative?.production||{},annual=num(p.annual),rate=num(p.rate),status=String(p.status||'UNOBSERVED').toUpperCase();
- if(annual!==null&&['OBSERVED','OBSERVED_ATTRIBUTABLE','REPORTED'].includes(status))return 'Annual output: '+formatNum(annual,2)+' '+String(p.annualUnit||p.unit||'units')+' ('+label(status)+')';
- if(rate!==null&&['OBSERVED','OBSERVED_ATTRIBUTABLE','REPORTED'].includes(status))return 'Output rate: '+formatNum(rate,2)+' '+String(p.unit||'units')+' ('+label(status)+')';
- return 'Measured production: '+label(status);
+ const q=site?.quantitative||{},p=q.production||{},capacity=q.capacity||{},grade=q.grade||{},recovery=q.recovery||{},purity=q.purity||{},throughput=q.throughput||{},sim=site?.simulation||{};
+ const status=String(p.status||'UNOBSERVED').toUpperCase(),reported=isReportedMetric(p);
+ const ready=sim.productionReadiness==='CAPACITY_READY'||sim.gameplayProductionEnabled===true;
+ const rate=num(p.rate)??num(sim.productionRate),annual=num(p.annual)??num(sim.annualProduction);
+ const capMin=num(capacity.minimum)??num(sim.minimumDailyCapacity),capNominal=num(capacity.nominal)??num(sim.nominalDailyCapacity),capMax=num(capacity.maximum)??num(sim.maximumDailyCapacity);
+ const parts=[];
+ if(reported&&rate!==null)parts.push('Reported rate: '+formatNum(rate,2)+' '+unitLabel(p.unit||sim.productionRateUnit));
+ if(reported&&annual!==null)parts.push('Reported annual output: '+formatNum(annual,2)+' '+unitLabel(p.annualUnit||p.unit||sim.annualProductionUnit));
+ if(!reported&&(ready||status==='SIMULATED')){
+  if(rate!==null)parts.push('Gameplay rate: '+formatNum(rate,2)+' '+unitLabel(p.unit||sim.productionRateUnit)+' (SIMULATED)');
+  if(annual!==null)parts.push('Annual gameplay output: '+formatNum(annual,2)+' '+unitLabel(p.annualUnit||p.unit||sim.annualProductionUnit)+' (SIMULATED)');
+ }
+ if(capMin!==null||capNominal!==null||capMax!==null){
+  const range=capMin!==null&&capMax!==null?formatNum(capMin,2)+'-'+formatNum(capMax,2):capMin!==null?formatNum(capMin,2):formatNum(capMax,2);
+  parts.push((isReportedMetric(capacity)?'Reported':'Gameplay')+' daily capacity: '+range+' '+unitLabel(capacity.unit||p.unit||sim.productionRateUnit)+(capNominal!==null?' (nominal '+formatNum(capNominal,2)+')':'')+(isReportedMetric(capacity)?'':' (SIMULATED)'));
+ }
+ for(const [name,metric] of [['Grade',grade],['Recovery',recovery],['Purity',purity],['Throughput',throughput]]){
+  const value=num(metric.value);
+  if(value===null)continue;
+  parts.push(name+': '+formatNum(value,2)+(metric.unit?' '+unitLabel(metric.unit):'')+' ('+(isReportedMetric(metric)?'reported':'SIMULATED')+')');
+ }
+ if(ready)parts.push('Profile ready for gameplay; actual extraction remains subject to runtime gates');
+ if(parts.length)return parts.join('; ');
+ return 'Production profile: '+label(status);
 }
 function quoteFor(site,country,workers){
  const api=network();if(!api?.quoteMineProject)return{status:'BLOCKED',reason:'MINE_CONSTRUCTION_API_UNAVAILABLE'};
@@ -389,7 +474,7 @@ function boot(){
   observer=new MutationObserver(injectButtons);
   observer.observe(g.document.body,{childList:true,subtree:true});
  }
- for(const name of ['OMEGA_RESOURCE_MINE_PROJECT_STARTED','OMEGA_RESOURCE_MINE_COMMISSIONED','OMEGA_SIMULATION_TURN_COMMITTED','OMEGA_RESOURCE_EXTRACTION_COMPLETED','OMEGA_RESOURCE_INVENTORY_CHANGED','OMEGA_RESOURCE_PROCESSING_COMPLETED','OMEGA_TRADE_SETTLEMENT_COMPLETED','OMEGA_RESOURCE_FISCAL_RECEIPT_POSTED','OMEGA_RESOURCE_TRADE_RECONCILED']){
+ for(const name of ['OMEGA_RESOURCE_MINE_PROJECT_STARTED','OMEGA_RESOURCE_MINE_COMMISSIONED','OMEGA_SIMULATION_TURN_COMMITTED','OMEGA_RESOURCE_EXTRACTION_COMPLETED','OMEGA_RESOURCE_INVENTORY_CHANGED','OMEGA_RESOURCE_PROCESSING_COMPLETED','OMEGA_TRADE_SETTLEMENT_COMPLETED','OMEGA_RESOURCE_FISCAL_RECEIPT_POSTED','OMEGA_RESOURCE_TRADE_RECONCILED','OMEGA_RESOURCE_SITE_BINDING_SYNCED','OMEGA_RESOURCE_BOOTSTRAP_STATUS']){
   g.addEventListener?.(name,function(){const modal=g.document.getElementById('omega-mine-management-modal');if(modal?.style.display==='flex')render();});
  }
  for(const name of ['MINISTRY_SELECTED','OMEGA_MINISTRY_VIEW_COUNTRY_CHANGED','OMEGA_COUNTRY_SELECTED','COUNTRY_SELECTED','OMEGA_COUNTRY_CONTEXT_CHANGED','OMEGA_SELECTED_COUNTRY_CHANGED']){
@@ -403,6 +488,6 @@ function boot(){
 }
 if(g.document?.readyState==='loading')g.document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 g.Omega=g.Omega||{};
-g.Omega.ResourceMineManagementUI=Object.freeze({VERSION,open:function(view,country){currentView=view==='mines'?'mines':'my-mines';currentCountry=iso3(country||(currentView==='mines'?selectedMinistryCountry():playerCountry()));render();},refresh:render});
+g.Omega.ResourceMineManagementUI=Object.freeze({VERSION,open:function(view,country){currentView=view==='mines'?'mines':'my-mines';currentCountry=iso3(country||(currentView==='mines'?selectedMinistryCountry():playerCountry()));render();},refresh:render,getCountrySites:function(country){return sitesFor(iso3(country||playerCountry()));},getProductionSummary:productionSummary});
 g.OmegaResourceMineManagementUI=g.Omega.ResourceMineManagementUI;
 })(typeof window!=='undefined'?window:globalThis);
