@@ -256,7 +256,7 @@
         const mineplayBatchCoverage={
           base:{file:'resource_site_country_mineplay_batch_20261020_v1.json',expectedRecordCount:44,recordCount:0,status:'MISSING'},
           expanded:{file:'resource_site_country_mineplay_batch_20261024_v1.json',expectedRecordCount:108,recordCount:0,status:'MISSING'},
-          critical:{file:'resource_site_country_mineplay_critical_batch_20261024_v1.json',expectedRecordCount:56,recordCount:0,status:'MISSING'}
+          critical:{file:'resource_site_country_mineplay_critical_batch_20261024_v1.json',expectedRecordCount:58,recordCount:0,status:'MISSING'}
         };
         let mineplaySourceRecordCount=0,mineplayUniqueRecordCount=0;
         try{
