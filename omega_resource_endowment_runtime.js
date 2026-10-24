@@ -247,42 +247,72 @@
         const legacyCanonicalRows=Number(data?.legacyGameplayExpansion?.candidateRecordCount)===65?baseRows.slice(-65):baseRows.filter(row=>row?.runtime?.identityAuthority==='LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE');
         const legacyCanonicalPhysicalRows=legacyCanonicalRows.filter(row=>row?.map?.markerEligible!==false&&!row?.runtime?.aliasOfSiteId&&!LEGACY_CANONICAL_ALIAS_IDS[String(row?.siteId||'')]);
         let mineplayRows=[];
+        const mineplayBatchCoverage={
+          base:{file:'resource_site_country_mineplay_batch_20261020_v1.json',expectedRecordCount:44,recordCount:0,status:'MISSING'},
+          expanded:{file:'resource_site_country_mineplay_batch_20261024_v1.json',expectedRecordCount:108,recordCount:0,status:'MISSING'}
+        };
+        let mineplaySourceRecordCount=0,mineplayUniqueRecordCount=0;
         try{
-          const inlineSupplement=g.OmegaResourceCountryMineplaySupplementData||g.Omega?.ResourceCountryMineplaySupplementData;
-          let supplement=inlineSupplement||null;
-          if(!supplement){
-            const mr=await fetch('resource_site_country_mineplay_batch_20261020_v1.json?v='+Date.now(),{cache:'no-store'});
-            if(mr?.ok)supplement=await mr.json();
+          // These two batches are required production data, not optional map decoration.
+          // A missing batch must make runtime initialization fail visibly rather than silently
+          // publishing READY with only the historical 315-site catalog.
+          const baseResponse=await fetch(mineplayBatchCoverage.base.file+'?v='+Date.now(),{cache:'no-store'});
+          if(!baseResponse?.ok)throw new Error('RESOURCE_SITE_MINEPLAY_BATCH_20261020_FETCH_FAILED');
+          const base=await baseResponse.json();
+          mineplayBatchCoverage.base.recordCount=Array.isArray(base?.records)?base.records.length:0;
+          mineplayBatchCoverage.base.status=
+            base?.datasetId==='OMEGA_RESOURCE_SITE_COUNTRY_MINEPLAY_BATCH_V1'&&
+            mineplayBatchCoverage.base.recordCount===mineplayBatchCoverage.base.expectedRecordCount&&
+            Number(base?.recordCount)===mineplayBatchCoverage.base.expectedRecordCount&&
+            new Set((base.records||[]).map(row=>String(row?.siteId||'').trim()).filter(Boolean)).size===mineplayBatchCoverage.base.expectedRecordCount
+              ?'READY':'INVALID';
+          if(mineplayBatchCoverage.base.status!=='READY')throw new Error('RESOURCE_SITE_MINEPLAY_BATCH_20261020_INVALID');
+
+          const extraResponse=await fetch(mineplayBatchCoverage.expanded.file+'?v='+Date.now(),{cache:'no-store'});
+          if(!extraResponse?.ok)throw new Error('RESOURCE_SITE_MINEPLAY_BATCH_20261024_FETCH_FAILED');
+          const extra=await extraResponse.json();
+          mineplayBatchCoverage.expanded.recordCount=Array.isArray(extra?.records)?extra.records.length:0;
+          mineplayBatchCoverage.expanded.status=
+            extra?.datasetId==='OMEGA_RESOURCE_SITE_COUNTRY_MINEPLAY_BATCH_V1'&&
+            mineplayBatchCoverage.expanded.recordCount===mineplayBatchCoverage.expanded.expectedRecordCount&&
+            Number(extra?.recordCount)===mineplayBatchCoverage.expanded.expectedRecordCount&&
+            new Set((extra.records||[]).map(row=>String(row?.siteId||'').trim()).filter(Boolean)).size===mineplayBatchCoverage.expanded.expectedRecordCount
+              ?'READY':'INVALID';
+          if(mineplayBatchCoverage.expanded.status!=='READY')throw new Error('RESOURCE_SITE_MINEPLAY_BATCH_20261024_INVALID');
+
+          const merged=[...base.records,...extra.records];
+          mineplaySourceRecordCount=merged.length;
+          const unique=Array.from(new Map(merged.filter(row=>row?.siteId).map(row=>[String(row.siteId),row])).values());
+          mineplayUniqueRecordCount=unique.length;
+          const supplement={
+            ...base,batchId:'COUNTRY_MINEPLAY_COMBINED_20261024',
+            recordCount:unique.length,
+            countryCount:new Set(unique.map(row=>String(row?.countryId||row?.identity?.countryIso3||'').toUpperCase()).filter(Boolean)).size,
+            sourceBatchCoverage:clone(mineplayBatchCoverage),records:unique
+          };
+          const accepted=[];
+          for(const row of supplement.records){
+            const siteId=String(row?.siteId||'').trim(),country=String(row?.countryId||row?.identity?.countryIso3||'').trim().toUpperCase();
+            const lat=n(row?.location?.coordinates?.lat),lng=n(row?.location?.coordinates?.lng);
+            if(!siteId||!/^[A-Z]{3}$/.test(country)||lat===null||lat<-90||lat>90||lng===null||lng<-180||lng>180||
+               row?.runtime?.aliasOfSiteId||row?.map?.markerEligible===false||ids.has(siteId))continue;
+            const aliasTarget=LEGACY_CANONICAL_ALIAS_IDS[siteId]||null;
+            const candidate=aliasTarget?{
+              ...row,
+              operation:{...(row.operation||{}),commercialExtraction:false},
+              map:{...(row.map||{}),markerEligible:false,aliasOfSiteId:aliasTarget},
+              runtime:{...(row.runtime||{}),aliasOfSiteId:aliasTarget}
+            }:row;
+            ids.add(siteId);accepted.push(candidate);
           }
-          try{
-            const extraResponse=await fetch('resource_site_country_mineplay_batch_20261024_v1.json?v='+Date.now(),{cache:'no-store'});
-            const extra=extraResponse?.ok?await extraResponse.json():null;
-            if(extra?.datasetId==='OMEGA_RESOURCE_SITE_COUNTRY_MINEPLAY_BATCH_V1'&&Array.isArray(extra.records)){
-              const merged=[...(supplement?.datasetId==='OMEGA_RESOURCE_SITE_COUNTRY_MINEPLAY_BATCH_V1'&&Array.isArray(supplement.records)?supplement.records:[]),...extra.records];
-              const unique=Array.from(new Map(merged.filter(row=>row?.siteId).map(row=>[String(row.siteId),row])).values());
-              supplement={...(supplement||extra),batchId:'COUNTRY_MINEPLAY_COMBINED_20261024',recordCount:unique.length,countryCount:new Set(unique.map(row=>String(row?.countryId||row?.identity?.countryIso3||'').toUpperCase()).filter(Boolean)).size,records:unique};
-            }
-          }catch(_){}
-          if(supplement?.datasetId==='OMEGA_RESOURCE_SITE_COUNTRY_MINEPLAY_BATCH_V1'&&Array.isArray(supplement.records)){
-            const accepted=[];
-            for(const row of supplement.records){
-              const siteId=String(row?.siteId||'').trim(),country=String(row?.countryId||row?.identity?.countryIso3||'').trim().toUpperCase();
-              const lat=n(row?.location?.coordinates?.lat),lng=n(row?.location?.coordinates?.lng);
-              if(!siteId||!/^[A-Z]{3}$/.test(country)||lat===null||lat<-90||lat>90||lng===null||lng<-180||lng>180||
-                 row?.runtime?.aliasOfSiteId||row?.map?.markerEligible===false||ids.has(siteId))continue;
-              const aliasTarget=LEGACY_CANONICAL_ALIAS_IDS[siteId]||null;
-              const candidate=aliasTarget?{
-                ...row,
-                operation:{...(row.operation||{}),commercialExtraction:false},
-                map:{...(row.map||{}),markerEligible:false,aliasOfSiteId:aliasTarget},
-                runtime:{...(row.runtime||{}),aliasOfSiteId:aliasTarget}
-              }:row;
-              ids.add(siteId);accepted.push(candidate);
-            }
-            mineplayRows=accepted;
-            g.OmegaResourceCountryMineplaySupplementData=supplement;g.Omega=g.Omega||{};g.Omega.ResourceCountryMineplaySupplementData=supplement;
-          }
-        }catch(_){mineplayRows=[];}
+          mineplayRows=accepted;
+          g.OmegaResourceCountryMineplaySupplementData=supplement;
+          g.Omega=g.Omega||{};
+          g.Omega.ResourceCountryMineplaySupplementData=supplement;
+        }catch(error){
+          mineplayBatchCoverage.error=String(error?.message||error);
+          mineplayRows=[];
+        }
         const rows=baseRows.concat(acceptedExpansion,acceptedLegacy,mineplayRows);
         const normalizedRows=rows.map(row=>normalizeSiteRecord(applyPlayerMineCommissionOverlay(row)));
         const integrity=g.OmegaResourceSiteIntegrity||g.Omega?.ResourceSiteIntegrity;
@@ -306,6 +336,10 @@
         data.expansionSiteCount=acceptedExpansion.length;
         data.mineplaySupplementSiteCount=mineplayRows.length;
         data.totalSiteCount=normalizedRows.length;
+        data.mineplayBatchCoverage=clone(mineplayBatchCoverage);
+        data.mineplaySourceRecordCount=mineplaySourceRecordCount;
+        data.mineplayUniqueRecordCount=mineplayUniqueRecordCount;
+        data.legacyLoadedParts=legacy.loadedParts||0;
         g.OmegaResourceSiteCanonicalCatalogData=data;
         g.Omega=g.Omega||{};
         g.Omega.ResourceSiteCanonicalCatalogData=data;
@@ -313,7 +347,7 @@
         g.OmegaResourceLegacyGameplayExpansion={status:legacy.count>=115?'READY':legacy.status,count:Math.max(Number(legacy.count)||0,legacyCanonicalRows.length),activeAdded:acceptedLegacy.length+legacyCanonicalPhysicalRows.length,activeCanonical:legacyCanonicalPhysicalRows.length,canonicalCandidateCount:legacyCanonicalRows.length,aliasCount:legacyAliasCount,loadedParts:legacy.loadedParts||0};
         g.Omega=g.Omega||{};
         g.Omega.ResourceLegacyGameplayExpansion=g.OmegaResourceLegacyGameplayExpansion;
-        return{status:'READY',count:baseRows.length,siteCount:baseRows.length,totalSiteCount:rows.length,expansionSiteCount:acceptedExpansion.length,mineplaySupplementSiteCount:mineplayRows.length,legacyCandidateCount:Math.max(Number(legacy.count)||0,legacyCanonicalRows.length),legacyExpansionSiteCount:acceptedLegacy.length+legacyCanonicalPhysicalRows.length,legacyCanonicalCandidateCount:legacyCanonicalRows.length,legacyAliasCount};
+        return{status:'READY',count:baseRows.length,siteCount:baseRows.length,totalSiteCount:rows.length,expansionSiteCount:acceptedExpansion.length,mineplaySupplementSiteCount:mineplayRows.length,mineplayBatchCoverage:clone(mineplayBatchCoverage),mineplaySourceRecordCount,mineplayUniqueRecordCount,legacyCandidateCount:Math.max(Number(legacy.count)||0,legacyCanonicalRows.length),legacyExpansionSiteCount:acceptedLegacy.length+legacyCanonicalPhysicalRows.length,legacyCanonicalCandidateCount:legacyCanonicalRows.length,legacyAliasCount,legacyLoadedParts:legacy.loadedParts||0};
       }catch(e){
         canonicalSiteCatalogMap={};
         return{status:'FAILED',count:0,reason:String(e?.message||e)};
@@ -1886,7 +1920,18 @@ function batchFromExtraction(x,record){
         const [reserveData,researchData,canonicalCatalogData,losslessReferenceData,masterResearchData]=await Promise.all([loadSimulationReserveData(),loadResearchEvidenceData(),loadCanonicalSiteCatalogData(),loadLosslessResourceReferenceData(),loadMasterResourceResearchData()]);
         const dependencyLightContext=typeof g.fetch!=='function'&&typeof g.OmegaResourceSiteReserveSimulationData==='undefined'&&typeof g.Omega?.ResourceSiteReserveSimulationData==='undefined';
         if((reserveData.status!=='READY'||Number(reserveData.baseSiteCount??reserveData.count)!==250)&&!dependencyLightContext)return{status:'FAILED',reason:'PER_SITE_RESERVE_DATASET_INCOMPLETE',detail:reserveData};
-        const canonicalCatalogCountReady=canonicalCatalogData.status==='READY'&&(canonicalCatalogData.count===250||(canonicalCatalogData.count===315&&canonicalCatalogData.legacyCanonicalCandidateCount===65&&((canonicalCatalogData.legacyExpansionSiteCount===55&&canonicalCatalogData.legacyCandidateCount===65)||(canonicalCatalogData.legacyCandidateCount===115&&canonicalCatalogData.legacyExpansionSiteCount+(Number(canonicalCatalogData.legacyAliasCount)||0)===115))));
+        const mineplayCoverage=canonicalCatalogData.mineplayBatchCoverage||{};
+        const mineplaySupplementReady=canonicalCatalogData.status==='READY'&&
+          mineplayCoverage.base?.status==='READY'&&Number(mineplayCoverage.base?.recordCount)===44&&
+          mineplayCoverage.expanded?.status==='READY'&&Number(mineplayCoverage.expanded?.recordCount)===108&&
+          Number(canonicalCatalogData.mineplaySourceRecordCount)===152&&
+          Number(canonicalCatalogData.mineplayUniqueRecordCount)>=151;
+        if(!mineplaySupplementReady&&!dependencyLightContext)return{
+          status:'FAILED',reason:'MINEPLAY_SUPPLEMENTAL_DATASET_INCOMPLETE',
+          detail:{coverage:mineplayCoverage,sourceRecordCount:canonicalCatalogData.mineplaySourceRecordCount,
+            uniqueRecordCount:canonicalCatalogData.mineplayUniqueRecordCount}
+        };
+        const canonicalCatalogCountReady=canonicalCatalogData.status==='READY'&&(canonicalCatalogData.count===250||(canonicalCatalogData.count===315&&canonicalCatalogData.legacyCanonicalCandidateCount===65&&canonicalCatalogData.legacyLoadedParts===6&&((canonicalCatalogData.legacyExpansionSiteCount===55&&canonicalCatalogData.legacyCandidateCount===65)||(canonicalCatalogData.legacyCandidateCount===115&&canonicalCatalogData.legacyExpansionSiteCount+(Number(canonicalCatalogData.legacyAliasCount)||0)===115))));
         if(!canonicalCatalogCountReady&&!dependencyLightContext)return{status:'FAILED',reason:'CANONICAL_SITE_CATALOG_INCOMPLETE',detail:canonicalCatalogData};
         if((losslessReferenceData.status!=='READY'||losslessReferenceData.count!==199)&&!dependencyLightContext)return{status:'FAILED',reason:'LOSSLESS_RESOURCE_REFERENCE_INCOMPLETE',detail:losslessReferenceData};
         if((masterResearchData.status!=='READY'||masterResearchData.count!==250)&&!dependencyLightContext)return{status:'FAILED',reason:'RESOURCE_SITE_MASTER_RESEARCH_INCOMPLETE',detail:masterResearchData};

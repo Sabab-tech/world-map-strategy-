@@ -177,13 +177,19 @@
     render(root);
     return true;
   }
-  function photoMarkup(id,alt,caption,tile) {
+  function safeLocalAssetPath(value) {
+    var path = String(value || '');
+    return /^assets\/[A-Za-z0-9_ .()\/-]+\.(?:webp|png|jpe?g|svg)$/i.test(path) && path.indexOf('..') < 0 ? path : '';
+  }
+  function photoMarkup(id,alt,caption,tile,localPath) {
     var lib=g.OmegaUIPhotoAssets,item=null;try{item=lib&&typeof lib.get==='function'?lib.get(id):null;}catch(_){}
     var safe=/^[a-z0-9-]+$/.test(String(id||''))?String(id):'';
-    var path=item&&/^assets\/ui-photos\/[a-z0-9-]+\.webp$/.test(String(item.path||''))?item.path:(safe?'assets/ui-photos/'+safe+'.webp':'');
+    // Prefer an explicitly mapped repository image, then the licensed photo
+    // catalog, then the deterministic local path. No external image URLs.
+    var path=safeLocalAssetPath(localPath)||(item&&safeLocalAssetPath(item.path))||(safe?'assets/ui-photos/'+safe+'.webp':'');
     if(!path)return '<div class="omega-v2-photo-placeholder" role="img" aria-label="'+esc(alt)+'">LOCAL PHOTO UNAVAILABLE</div>';
-    var credit=item&&item.author&&item.sourcePageUrl&&item.licenseUrl?'<small class="omega-v2-photo-credit">Photo: <a href="'+esc(item.sourcePageUrl)+'" target="_blank" rel="noopener noreferrer">'+esc(item.author)+'</a> · <a href="'+esc(item.licenseUrl)+'" target="_blank" rel="noopener noreferrer">'+esc(item.licenseShortName||'License')+'</a></small>':'';
-    return '<figure class="omega-v2-photo '+(tile?'omega-v2-photo--tile':'omega-v2-photo--hero')+'"><img loading="lazy" decoding="async" width="1280" height="720" src="'+esc(path)+'" alt="'+esc(alt)+'"><figcaption><strong>'+esc(item&&item.caption||caption)+'</strong><small>Representative reference imagery, not evidence of current ownership or operation.</small>'+credit+'</figcaption></figure>';
+    var credit=item&&item.path===path&&item.author&&item.sourcePageUrl&&item.licenseUrl?'<small class="omega-v2-photo-credit">Photo: <a href="'+esc(item.sourcePageUrl)+'" target="_blank" rel="noopener noreferrer">'+esc(item.author)+'</a> · <a href="'+esc(item.licenseUrl)+'" target="_blank" rel="noopener noreferrer">'+esc(item.licenseShortName||'License')+'</a></small>':'';
+    return '<figure class="omega-v2-photo '+(tile?'omega-v2-photo--tile':'omega-v2-photo--hero')+'"><img loading="lazy" decoding="async" width="1280" height="720" src="'+esc(path)+'" alt="'+esc(alt)+'"><figcaption><strong>'+esc(item&&item.path===path&&item.caption||caption)+'</strong><small>Representative reference imagery, not evidence of current ownership or operation.</small>'+credit+'</figcaption></figure>';
   }
   function renderOverview(root,content) {
     var s=stateFor(root),candidate=s.countryId||g.OmegaMinistryViewCountry||(g.CountryIOS&&g.CountryIOS.activeCountry)||(g.Game&&(g.Game.currentActiveCountry||g.Game.selectedCountryId));
@@ -202,22 +208,23 @@
   }
   function renderMore(root,content) {
     var items=[
-      {title:'Industry & Factories',desc:'Production lines, inputs, factory sites and output.',photo:'industrial-production-line',route:'industry'},
+      {title:'Industry & Factories',desc:'Production lines, inputs, factory sites and output.',asset:'assets/factories/omega_factory_atlas_01.webp',route:'industry'},
       {title:'Resources & Mining',desc:'Registered sites, extraction, reserves, stock and material flow.',photo:'open-pit-mine',ministry:'energy_mining'},
       {title:'Public Safety',desc:'Police staffing, fleet, operations and incidents.',photo:'bangladesh-police-headquarters',ministry:'interior_security'},
       {title:'Logistics & Trade',desc:'Shipping, trade, contracts and markets.',photo:'container-ship',ministry:'trade'},
       {title:'Foreign Affairs',desc:'Diplomacy, treaties and international commitments.',photo:'un-assembly-building',ministry:'foreign_affairs'},
-      {title:'Defense',desc:'Readiness, assets, procurement and defense logistics.',photo:'uss-nimitz',ministry:'defense'},
-      {title:'Intelligence & Research',desc:'Research priorities and strategic reports.',photo:'hydroelectric-plant',ministry:'science_research'},
-      {title:'Society & Infrastructure',desc:'Infrastructure, food systems and public services.',photo:'wheat-field',ministry:'infrastructure'},
-      {title:'Events & Projects',desc:'Project schedules, milestones and completion state.',photo:'dhaka-skyline',ministry:'mega_projects'},
+      {title:'Defense',desc:'Readiness, assets, procurement and defense logistics.',asset:'assets/images (15).jpeg',ministry:'defense'},
+      {title:'Intelligence & Cyber',desc:'Satellite imagery, threat research and strategic reports.',asset:'assets/China_Military_Facilities_What_Satellites_Reveal_f6efe2c1b2.jpg',ministry:'intelligence_cyber'},
+      {title:'Society & Infrastructure',desc:'Infrastructure, food systems and public services.',asset:'assets/images (17).jpeg',ministry:'infrastructure'},
+      {title:'Events & Projects',desc:'Project schedules, milestones and completion state.',photo:'hydroelectric-plant',ministry:'mega_projects'},
       {title:'Reports & Data Quality',desc:'Source coverage and missing fields.',photo:'wind-farm',route:'reports'},
       {title:'Religion & Ideology',desc:'Open the existing religion and ideology policy system.',photo:'mosque-architecture',route:'religion'},
       {title:'Health & Welfare',desc:'Public health, medical facilities and welfare programs.',photo:'chittagong-hospital',ministry:'health_welfare'},
       {title:'Agriculture & Food',desc:'Agriculture, food security and production systems.',photo:'wheat-field',ministry:'agriculture_food'}
     ];
     function card(x){var action=x.route?'<button type="button" class="omega-v2-button omega-v2-button--primary" data-omega-v2-global-nav="'+esc(x.route)+'">Open section ↗</button>':'<button type="button" class="omega-v2-button omega-v2-button--primary" data-omega-v2-more-ministry="'+esc(x.ministry)+'">Open ministry ↗</button>';
-      return '<article class="omega-v2-card omega-v2-domain-card">'+photoMarkup(x.photo,x.title+', representative reference photograph',x.title,true)+'<div class="omega-v2-domain-card-body"><span class="omega-v2-eyebrow">STRATEGIC DOMAIN</span><h3 class="omega-v2-card-title">'+esc(x.title)+'</h3><p class="omega-v2-card-meta">'+esc(x.desc)+'</p><div class="omega-v2-domain-card-action">'+action+'</div></div></article>';}
+      var art=photoMarkup(x.asset?'':x.photo,x.title+', representative reference photograph',x.title,true,x.asset);
+      return '<article class="omega-v2-card omega-v2-domain-card">'+art+'<div class="omega-v2-domain-card-body"><span class="omega-v2-eyebrow">STRATEGIC DOMAIN</span><h3 class="omega-v2-card-title">'+esc(x.title)+'</h3><p class="omega-v2-card-meta">'+esc(x.desc)+'</p><div class="omega-v2-domain-card-action">'+action+'</div></div></article>';}
     function core(id,title,desc,pic){return '<article class="omega-v2-card omega-v2-command-card">'+photoMarkup(pic,title+', representative reference image',title.toUpperCase(),true)+'<div class="omega-v2-domain-card-body"><h3 class="omega-v2-card-title">'+esc(title)+'</h3><p class="omega-v2-card-meta">'+esc(desc)+'</p><button type="button" class="omega-v2-button" data-omega-v2-global-nav="'+id+'">Open '+esc(title)+' ↗</button></div></article>';}
     content.innerHTML='<section class="omega-v2-shell omega-v2-more-page"><header class="omega-v2-heading"><div><div class="omega-v2-eyebrow">OMEGA / ATLAS COMMAND</div><h1 class="omega-v2-title">Command Center</h1><p class="omega-v2-subtitle">One navigation system for the whole game. Existing simulation engines retain authority over country data and actions.</p></div><span class="omega-v2-status" data-state="operational">LOCAL-FIRST UI</span></header>'+photoMarkup('dhaka-skyline','Urban skyline, representative national infrastructure image','NATIONAL CONTEXT',false)+'<div class="omega-v2-note">Images are illustrative, not proof of ownership. Actions use existing canonical modules and never claim success without confirmation.</div><h2 class="omega-v2-section-title">Core command</h2><div class="omega-v2-grid omega-v2-core-grid">'+core('overview','Overview','National briefing and sourced indicators.','dhaka-skyline')+core('government','Government','Executive Ministry and All Ministries.','bangladesh-parliament')+core('economy','Economy','Treasury state and macro indicators.','container-ship')+'</div><h2 class="omega-v2-section-title">Strategic domains</h2><div class="omega-v2-grid omega-v2-domain-grid">'+items.map(card).join('')+'</div></section>';
   }

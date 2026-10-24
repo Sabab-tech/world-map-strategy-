@@ -69,8 +69,17 @@
   function photoMarkup(id, alt) {
     var library = g.OmegaUIPhotoAssets;
     var item = library && typeof library.get === 'function' ? library.get(id) : null;
-    if (!item || !/^assets\/ui-photos\/[a-z0-9-]+\.webp$/.test(String(item.path || ''))) return '<div class="omega-v2-photo-placeholder" aria-label="' + esc(alt) + '">OMEGA</div>';
-    return '<figure class="omega-v2-photo"><img loading="lazy" decoding="async" src="' + esc(item.path) + '" alt="' + esc(alt || item.caption || 'Reference photograph') + '"><figcaption>' + esc(item.caption || 'Reference photograph') + '<small>Reference image · not evidence of current country status</small></figcaption></figure>';
+    var safeId = /^[a-z0-9-]+$/.test(String(id || '')) ? String(id) : '';
+    // Render bundled photos even before the async manifest is ready, including on
+    // Android file:// builds where fetching a local JSON file may be blocked.
+    var path = item && /^assets\/ui-photos\/[a-z0-9-]+\.webp$/.test(String(item.path || ''))
+      ? item.path : (safeId ? 'assets/ui-photos/' + safeId + '.webp' : '');
+    if (!path) return '<div class="omega-v2-photo-placeholder" role="img" aria-label="' + esc(alt || 'Reference photograph') + '">PHOTO UNAVAILABLE</div>';
+    var caption = item && item.caption || alt || 'Reference photograph';
+    var credit = item && item.author && item.sourcePageUrl && item.licenseUrl
+      ? '<small class="omega-v2-photo-credit">Photo: <a href="' + esc(item.sourcePageUrl) + '" target="_blank" rel="noopener noreferrer">' + esc(item.author) + '</a> · <a href="' + esc(item.licenseUrl) + '" target="_blank" rel="noopener noreferrer">' + esc(item.licenseShortName || 'License') + '</a></small>'
+      : '';
+    return '<figure class="omega-v2-photo"><img loading="lazy" decoding="async" width="1280" height="720" src="' + esc(path) + '" alt="' + esc(alt || caption) + '"><figcaption>' + esc(caption) + '<small>Reference image · not evidence of current country status</small>' + credit + '</figcaption></figure>';
   }
   function categoryOf(row) {
     return String(row && row.category || 'other');
