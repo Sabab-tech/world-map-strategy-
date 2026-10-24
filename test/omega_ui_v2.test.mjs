@@ -15,7 +15,7 @@ import '../omega_ui_v2/screens/economy.js';
 import '../omega_ui_v2/app.js';
 import '../omega_ui_v2/integration.js';
 import '../omega_ui_v2/world-command-dock.js';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 
 test('Government navigation has exactly Executive Ministry and All Ministries', () => {
   const nav = globalThis.OmegaUIV2Navigation;
@@ -41,6 +41,15 @@ test('registry exposes 18 canonical ministry destinations with local visual asse
   assert.equal(visuals.get('foreign_affairs').logo, 'assets/IMG_20260703_180105.jpg');
   assert.ok(visuals.get('intelligence_cyber').image.includes('China_Military_Facilities_What_Satellites_Reveal'));
   assert.ok(visuals.get('intelligence_cyber').gallery.includes('assets/images (14).jpeg'));
+});
+
+test('all ministry cover photos, gallery assets and uploaded logos exist in the repository', () => {
+  const visuals = globalThis.OmegaUIV2MinistryVisualRegistry;
+  for (const visual of visuals.list()) {
+    for (const asset of [visual.image, visual.logo, ...(visual.gallery || [])].filter(Boolean)) {
+      assert.ok(existsSync(new URL('../' + asset, import.meta.url)), visual.title + ' is missing asset ' + asset);
+    }
+  }
 });
 
 test('police fleet view model reads all 15 canonical profiles and preserves missing values', () => {
