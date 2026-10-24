@@ -115,4 +115,8 @@
     VERSION: VERSION, ready: ready, get: get, list: list, renderFigure: renderFigure,
     renderGallery: renderGallery, mountGallery: mountGallery, diagnostics: diagnostics
   });
+
+  // Prime the small local manifest during boot. Callers still use local-path
+  // fallbacks so file:// WebViews and offline cache failures do not hide photos.
+  try { ready().catch(function () {}); } catch (_) {}
 })(typeof window !== "undefined" ? window : globalThis);

@@ -44,8 +44,15 @@
   function photo(id, alt) {
     var lib = g.OmegaUIPhotoAssets;
     var item = lib && typeof lib.get === 'function' ? lib.get(id) : null;
-    if (!item || !/^assets\/ui-photos\/[a-z0-9-]+\.webp$/.test(String(item.path || ''))) return '';
-    return '<figure class="omega-v2-photo"><img loading="lazy" decoding="async" src="' + esc(item.path) + '" alt="' + esc(alt || item.caption || 'Reference photo') + '"><figcaption>' + esc(item.caption || 'Reference photo') + '<small>Reference only</small></figcaption></figure>';
+    var safeId = /^[a-z0-9-]+$/.test(String(id || '')) ? String(id) : '';
+    var path = item && /^assets\/ui-photos\/[a-z0-9-]+\.webp$/.test(String(item.path || ''))
+      ? item.path : (safeId ? 'assets/ui-photos/' + safeId + '.webp' : '');
+    if (!path) return '<div class="omega-v2-photo-placeholder" role="img" aria-label="' + esc(alt || 'Reference photo') + '">PHOTO UNAVAILABLE</div>';
+    var caption = item && item.caption || alt || 'Reference photo';
+    var credit = item && item.author && item.sourcePageUrl && item.licenseUrl
+      ? '<small class="omega-v2-photo-credit">Photo: <a href="' + esc(item.sourcePageUrl) + '" target="_blank" rel="noopener noreferrer">' + esc(item.author) + '</a> · <a href="' + esc(item.licenseUrl) + '" target="_blank" rel="noopener noreferrer">' + esc(item.licenseShortName || 'License') + '</a></small>'
+      : '';
+    return '<figure class="omega-v2-photo"><img loading="lazy" decoding="async" width="1280" height="720" src="' + esc(path) + '" alt="' + esc(alt || caption) + '"><figcaption>' + esc(caption) + '<small>Reference only; imagery does not establish current ownership or operation.</small>' + credit + '</figcaption></figure>';
   }
   function safeVisualPath(value) {
     var path = String(value || '');
