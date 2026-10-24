@@ -529,7 +529,7 @@ test('critical mineral batch has complete runtime profiles and joins the canonic
   assert.ok(catalog.resourceRules.aragonite, 'aragonite extraction must be a catalog rule');
   assert.ok(catalog.processingRules.aragonite, 'aragonite processing must be a catalog recipe');
 
-  const normalize = v => String(v ?? '').normalize('NFKD').replace(/\\p{M}/gu, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  const normalize = v => String(v ?? '').normalize('NFKD').replace(/\p{M}/gu, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
   const country = row => String(row?.countryId || row?.identity?.countryIso3 || row?.location?.countryBoundaryKey || '').toUpperCase();
   const resource = row => String(row?.resourceId || row?.identity?.resourceTypeId || row?.real?.resourceId || '').toLowerCase();
   const siteName = row => normalize(row?.siteName || row?.name);
@@ -604,7 +604,7 @@ test('critical mineral batch has complete runtime profiles and joins the canonic
     assert.equal(q.quantitativeProvenance.realWorldDataRequired,false);
     assert.equal(q.completeness.overall,'GAMEPLAY_SIMULATION_COMPLETE');
     assert.deepEqual(row.observedFacts,[]);
-    assert.ok(Array.isArray(row.sources) && row.sources.some(source=>/^https?:\\/\\//.test(source.url)),row.siteId+': source lineage');
+    assert.ok(Array.isArray(row.sources) && row.sources.some(source=>/^https?:\/\//.test(source.url)),row.siteId+': source lineage');
     assert.equal(row.sourceReference.facts.measuredReservePromoted,false);
     assert.equal(row.sourceReference.facts.measuredProductionPromoted,false);
     assert.equal(row.sourceReference.facts.quantitativeValuesAreSimulated,true);
