@@ -1,0 +1,289 @@
+/* OMEGA UI v2: local styling only. No remote fonts, images or dependencies. */
+.omega-v2-app-root {
+  --omega-v2-bg: #071321;
+  --omega-v2-surface: #0d1b2b;
+  --omega-v2-surface-raised: #12253a;
+  --omega-v2-border: #294158;
+  --omega-v2-text: #edf3fa;
+  --omega-v2-muted: #9fb2c7;
+  --omega-v2-accent: #e1c077;
+  --omega-v2-accent-blue: #72b7ea;
+  --omega-v2-positive: #70d5b0;
+  --omega-v2-warning: #efc277;
+  --omega-v2-danger: #e69c9c;
+  --omega-v2-radius: 14px;
+  --omega-v2-gutter: 14px;
+  --omega-v2-gap: 12px;
+  color-scheme: dark;
+}
+.omega-v2-screen, .omega-v2-screen * { box-sizing: border-box; }
+.omega-v2-screen {
+  background: var(--omega-v2-bg);
+  color: var(--omega-v2-text);
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 14px;
+  line-height: 1.45;
+  min-width: 0;
+  width: 100%;
+}
+.omega-v2-shell {
+  margin-inline: auto;
+  max-width: 1120px;
+  padding: var(--omega-v2-gutter);
+  width: 100%;
+}
+.omega-v2-heading {
+  align-items: flex-start;
+  border-bottom: 1px solid var(--omega-v2-border);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  padding-bottom: 14px;
+}
+.omega-v2-eyebrow {
+  color: var(--omega-v2-accent);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+.omega-v2-title { font-size: clamp(20px, 5vw, 28px); font-weight: 760; line-height: 1.18; margin: 4px 0; }
+.omega-v2-subtitle { color: var(--omega-v2-muted); font-size: 12px; margin: 4px 0 0; }
+.omega-v2-kpis { display: grid; gap: 8px; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 14px 0; }
+.omega-v2-kpi {
+  background: var(--omega-v2-surface);
+  border: 1px solid var(--omega-v2-border);
+  border-radius: 10px;
+  min-width: 0;
+  padding: 10px;
+}
+.omega-v2-kpi span { color: var(--omega-v2-muted); display: block; font-size: 11px; }
+.omega-v2-kpi strong { display: block; font-size: 18px; margin-top: 3px; overflow-wrap: anywhere; }
+.omega-v2-grid { display: grid; gap: var(--omega-v2-gap); grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.omega-v2-card {
+  background: linear-gradient(155deg, var(--omega-v2-surface-raised), var(--omega-v2-surface));
+  border: 1px solid var(--omega-v2-border);
+  border-radius: var(--omega-v2-radius);
+  min-width: 0;
+  overflow: hidden;
+  padding: 12px;
+}
+.omega-v2-card.is-locked { opacity: .78; }
+.omega-v2-card.is-selected { border-color: var(--omega-v2-accent); box-shadow: inset 0 0 0 1px rgba(225, 192, 119, .22); }
+.omega-v2-card-header { align-items: flex-start; display: flex; gap: 8px; justify-content: space-between; }
+.omega-v2-card-title { font-size: 13px; font-weight: 740; line-height: 1.35; margin: 4px 0; overflow-wrap: anywhere; }
+.omega-v2-card-meta { color: var(--omega-v2-muted); font-size: 11px; overflow-wrap: anywhere; }
+.omega-v2-status {
+  border: 1px solid var(--omega-v2-border);
+  border-radius: 999px;
+  color: var(--omega-v2-muted);
+  display: inline-flex;
+  font-size: 10px;
+  line-height: 1.5;
+  padding: 2px 7px;
+  white-space: nowrap;
+}
+.omega-v2-status[data-state="ready"], .omega-v2-status[data-state="operational"] { color: var(--omega-v2-positive); }
+.omega-v2-status[data-state="locked"], .omega-v2-status[data-state="attention"] { color: var(--omega-v2-warning); }
+.omega-v2-status[data-state="blocked"], .omega-v2-status[data-state="error"] { color: var(--omega-v2-danger); }
+.omega-v2-actions { align-items: center; display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.omega-v2-button {
+  align-items: center;
+  background: #18324b;
+  border: 1px solid #3d5b76;
+  border-radius: 9px;
+  color: var(--omega-v2-text);
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  justify-content: center;
+  min-height: 42px;
+  padding: 8px 11px;
+  text-align: center;
+}
+.omega-v2-button:focus-visible { outline: 2px solid var(--omega-v2-accent-blue); outline-offset: 2px; }
+.omega-v2-button:disabled { cursor: not-allowed; opacity: .45; }
+.omega-v2-button--primary { background: #174b68; border-color: #4286ac; }
+.omega-v2-button--accent { background: #3b3325; border-color: #8f7545; }
+.omega-v2-button--quiet { background: transparent; border-color: var(--omega-v2-border); }
+.omega-v2-filterbar { display: flex; flex-wrap: wrap; gap: 7px; margin: 12px 0; }
+.omega-v2-filterbar input, .omega-v2-filterbar select {
+  background: var(--omega-v2-surface);
+  border: 1px solid var(--omega-v2-border);
+  border-radius: 9px;
+  color: var(--omega-v2-text);
+  font: inherit;
+  min-height: 42px;
+  min-width: 0;
+  padding: 8px 10px;
+}
+.omega-v2-filterbar input { flex: 1 1 150px; }
+.omega-v2-vehicle-art {
+  align-items: center;
+  background: radial-gradient(ellipse at 50% 100%, rgba(87, 169, 209, .10), transparent 72%), #081624;
+  border: 1px solid rgba(76, 112, 143, .32);
+  border-radius: 9px;
+  display: flex;
+  justify-content: center;
+  margin: 8px 0;
+  min-height: 94px;
+  overflow: hidden;
+  padding: 4px;
+}
+.omega-v2-vehicle-art svg { display: block; height: auto; max-width: 100%; overflow: visible; width: 100%; }
+.omega-v2-vehicle-stats { display: grid; gap: 6px; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 8px; }
+.omega-v2-vehicle-stats > div { background: rgba(0, 0, 0, .15); border-radius: 7px; min-width: 0; padding: 7px; }
+.omega-v2-vehicle-stats span { color: var(--omega-v2-muted); display: block; font-size: 10px; }
+.omega-v2-vehicle-stats strong { display: block; font-size: 12px; margin-top: 2px; overflow-wrap: anywhere; }
+.omega-v2-note { background: rgba(10, 24, 38, .82); border-left: 3px solid var(--omega-v2-accent); border-radius: 6px; color: var(--omega-v2-muted); font-size: 12px; margin: 12px 0; padding: 9px 11px; }
+.omega-v2-empty { border: 1px dashed var(--omega-v2-border); border-radius: 10px; color: var(--omega-v2-muted); padding: 18px; text-align: center; }
+.omega-v2-section-title { font-size: 14px; font-weight: 760; margin: 18px 0 8px; }
+.omega-v2-source { color: var(--omega-v2-muted); font-size: 10px; margin-top: 5px; }
+.omega-v2-hidden { display: none !important; }
+
+/* Ministry roster and appointment table; reserve a consistent space before portraits arrive. */
+.omega-v2-minister-table-wrap { margin: 10px 0 14px; }
+.omega-v2-minister-table { min-width: 700px !important; }
+.omega-v2-minister-table-title, .omega-v2-minister-table-person { align-items: center; display: flex; gap: 10px; min-width: 180px; }
+.omega-v2-minister-table-title > div, .omega-v2-minister-table-person > div:last-child { display: flex; flex-direction: column; gap: 4px; }
+.omega-v2-minister-table-title strong, .omega-v2-minister-table-person strong { color: var(--omega-v2-text); font-size: 12px; }
+.omega-v2-minister-table-title small, .omega-v2-minister-table-person small, .omega-v2-minister-source { color: var(--omega-v2-muted); display: block; font-size: 10px; line-height: 1.35; margin-top: 3px; }
+.omega-v2-minister-table .omega-v2-ministry-icon { flex: 0 0 38px; margin: 0; }
+.omega-v2-minister-portrait { align-items: center; background: #081624; border: 1px dashed rgba(115,151,181,.55); border-radius: 8px; color: var(--omega-v2-muted); display: flex; flex: 0 0 54px; flex-direction: column; height: 64px; justify-content: center; overflow: hidden; padding: 3px; text-align: center; width: 54px; }
+.omega-v2-minister-portrait img { height: 100%; object-fit: cover; width: 100%; }
+.omega-v2-minister-portrait-placeholder { font-size: 8px; font-weight: 800; letter-spacing: .04em; line-height: 1.2; }
+.omega-v2-minister-portrait small { font-size: 8px; margin-top: 3px; }
+.omega-v2-minister-recruitment-panel { margin-top: 12px; }
+.omega-v2-minister-recruitment-panel select { background: var(--omega-v2-surface); border: 1px solid var(--omega-v2-border); border-radius: 9px; color: var(--omega-v2-text); margin-top: 5px; max-width: 100%; padding: 10px; width: 100%; }
+.omega-v2-ministry-detail-mark { align-items: center; display: flex; gap: 12px; min-width: 0; }
+.omega-v2-ministry-appointed-minister { margin: 10px 0; }
+.omega-v2-ministry-appointed-minister .omega-v2-minister-table-person { flex-wrap: wrap; margin-top: 8px; }
+.omega-v2-finance-tabs { flex-wrap: nowrap; overflow-x: auto; overscroll-behavior-x: contain; padding-bottom: 4px; }
+.omega-v2-finance-tabs [role="tab"] { flex: 0 0 auto; min-height: 40px; }
+.omega-v2-finance-tab-panel { min-width: 0; }
+.omega-v2-home-laws .omega-v2-table-wrap { margin-top: 10px; }
+.omega-v2-home-laws td p { margin: 5px 0 0; overflow-wrap: anywhere; white-space: pre-wrap; }
+@media (max-width: 480px) { .omega-v2-minister-table-title, .omega-v2-minister-table-person { align-items: flex-start; gap: 7px; } .omega-v2-minister-portrait { flex-basis: 46px; height: 56px; width: 46px; } }
+@media (min-width: 700px) {
+  .omega-v2-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .omega-v2-kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .omega-v2-shell { padding: 20px; }
+}
+@media (max-width: 359px) {
+  .omega-v2-grid { grid-template-columns: 1fr; }
+  .omega-v2-shell { padding: 9px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .omega-v2-screen *, .omega-v2-screen *::before, .omega-v2-screen *::after { scroll-behavior: auto !important; transition: none !important; }
+}
+
+/* Host shell, photos, tables and domain-specific cards. */
+.omega-v2-app-root { background:var(--omega-v2-bg); color:var(--omega-v2-text); min-height:100%; width:100%; }
+.omega-v2-app-frame { display:flex; flex-direction:column; margin:0 auto; max-width:1200px; min-height:100vh; min-height:100dvh; }
+.omega-v2-app-header { align-items:center; background:rgba(7,19,33,.97); border-bottom:1px solid var(--omega-v2-border); display:flex; flex-shrink:0; gap:9px; justify-content:space-between; padding:9px var(--omega-v2-gutter); position:sticky; top:0; z-index:20; }
+.omega-v2-app-brand { align-items:center; display:flex; gap:7px; min-width:0; }
+.omega-v2-app-brand strong, .omega-v2-app-brand small { display:block; }
+.omega-v2-app-brand strong { font-size:13px; letter-spacing:.12em; }
+.omega-v2-app-brand small { color:var(--omega-v2-muted); font-size:8px; letter-spacing:.1em; }
+.omega-v2-brand-mark { align-items:center; border:1px solid var(--omega-v2-accent); border-radius:9px; color:var(--omega-v2-accent); display:inline-flex; font-size:23px; font-weight:800; height:34px; justify-content:center; width:34px; }
+.omega-v2-country-select { background:var(--omega-v2-surface); border:1px solid var(--omega-v2-border); border-radius:8px; color:var(--omega-v2-text); max-width:34%; min-height:38px; padding:6px; }
+.omega-v2-country-badge { border:1px solid var(--omega-v2-border); border-radius:999px; color:var(--omega-v2-muted); font-size:10px; padding:6px 8px; }
+.omega-v2-app-main { flex:1 0 auto; min-width:0; padding-bottom:calc(76px + env(safe-area-inset-bottom)); }
+.omega-v2-bottom-nav { align-items:stretch; background:rgba(7,19,33,.985); border-top:1px solid var(--omega-v2-border); bottom:0; display:grid; flex-shrink:0; gap:3px; grid-template-columns:repeat(5,minmax(0,1fr)); padding:5px 7px calc(5px + env(safe-area-inset-bottom)); position:fixed; width:100%; z-index:30; }
+.omega-v2-nav-button { background:transparent; border:1px solid transparent; border-radius:9px; color:var(--omega-v2-muted); cursor:pointer; font:600 10px/1.2 system-ui,sans-serif; min-height:44px; min-width:0; padding:6px 2px; }
+.omega-v2-nav-button.is-active { background:var(--omega-v2-surface-raised); border-color:#385570; color:var(--omega-v2-text); }
+.omega-v2-screen button:focus-visible, .omega-v2-screen input:focus-visible, .omega-v2-screen select:focus-visible { outline:2px solid var(--omega-v2-accent-blue); outline-offset:2px; }
+.omega-v2-photo { background:#081624; border:1px solid var(--omega-v2-border); border-radius:12px; margin:12px 0; overflow:hidden; }
+.omega-v2-photo img { aspect-ratio:16/9; display:block; height:auto; object-fit:cover; width:100%; }
+.omega-v2-photo figcaption { color:var(--omega-v2-text); font-size:11px; padding:7px 9px; }
+.omega-v2-photo figcaption small { color:var(--omega-v2-muted); display:block; font-size:9px; margin-top:2px; }
+.omega-v2-photo--hero img { max-height:300px; }
+.omega-v2-photo-placeholder { align-items:center; background:linear-gradient(150deg,#172b40,#081624); border:1px solid var(--omega-v2-border); border-radius:9px; color:var(--omega-v2-muted); display:flex; font-size:11px; justify-content:center; min-height:90px; padding:16px; text-align:center; }
+.omega-v2-ministry-icon { align-items:center; background:#0a1a2a; border:1px solid #34516b; border-radius:9px; color:var(--omega-v2-accent); display:inline-flex; font-size:20px; height:38px; justify-content:center; margin:0 0 4px; width:38px; }
+.omega-v2-materials { display:grid; gap:6px; grid-template-columns:repeat(2,minmax(0,1fr)); margin:9px 0; }
+.omega-v2-material-row { align-items:flex-start; background:#081624; border:1px solid rgba(59,86,111,.42); border-radius:7px; display:flex; font-size:11px; gap:9px; justify-content:space-between; min-width:0; overflow-wrap:anywhere; padding:8px; }
+.omega-v2-material-row strong { color:var(--omega-v2-text); font-weight:700; text-align:right; }
+.omega-v2-table-wrap { max-width:100%; overflow-x:auto; overscroll-behavior-x:contain; }
+.omega-v2-table-wrap table { border-collapse:collapse; min-width:560px; width:100%; }
+.omega-v2-table-wrap th, .omega-v2-table-wrap td { border-bottom:1px solid var(--omega-v2-border); font-size:11px; padding:8px; text-align:left; vertical-align:top; }
+.omega-v2-table-wrap th { color:var(--omega-v2-muted); font-weight:700; }
+.omega-v2-json { background:#06101c; border:1px solid var(--omega-v2-border); border-radius:8px; font:11px/1.45 ui-monospace,monospace; max-width:100%; overflow-wrap:anywhere; overflow-x:auto; padding:9px; white-space:pre-wrap; }
+.omega-v2-factory-art { background:linear-gradient(155deg,#0f2335,#07111d); border:1px solid var(--omega-v2-border); border-radius:9px; display:flex; justify-content:center; margin:8px 0; min-height:90px; overflow:hidden; padding:8px; }
+.omega-v2-factory-art .omega-factory-visual { display:block; height:96px; max-width:100%; width:100%; }
+.omega-v2-factory-art .omega-factory-visual[data-factory-type] { background-size:contain; background-position:center; }
+.omega-v2-flow { align-items:center; display:flex; flex-wrap:wrap; gap:5px; margin:10px 0; }
+.omega-v2-flow span { background:#10263a; border:1px solid var(--omega-v2-border); border-radius:7px; font-size:10px; padding:6px 8px; }
+.omega-v2-flow b { color:var(--omega-v2-accent); font-size:13px; }
+.omega-v2-field-label { color:var(--omega-v2-muted); display:block; font-size:11px; margin:12px 0 5px; }
+.omega-v2-number-input { background:var(--omega-v2-surface); border:1px solid var(--omega-v2-border); border-radius:9px; color:var(--omega-v2-text); font:inherit; min-height:42px; max-width:220px; padding:8px 10px; width:100%; }
+.omega-v2-home-link { cursor:pointer; font:inherit; text-align:left; width:100%; }
+.omega-v2-home-link .omega-v2-card-title, .omega-v2-home-link .omega-v2-card-meta { display:block; }
+.omega-v2-home-tabs { padding-bottom:3px; }
+.omega-v2-status[ data-state="unknown" ] { color:var(--omega-v2-muted); }
+@media (min-width:760px) {
+  .omega-v2-bottom-nav { left:50%; max-width:1200px; transform:translateX(-50%); }
+  .omega-v2-app-header { padding-inline:20px; }
+  .omega-v2-materials { grid-template-columns:repeat(3,minmax(0,1fr)); }
+}
+@media (max-width:370px) {
+  .omega-v2-app-brand small { display:none; }
+  .omega-v2-nav-button { font-size:9px; }
+  .omega-v2-materials { grid-template-columns:1fr; }
+}
+
+.omega-v2-ministry-icon svg { display:block; height:23px; width:23px; }
+.omega-v2-ministry-icon { flex:0 0 38px; }
+.omega-v2-ministry-icon svg path, .omega-v2-ministry-icon svg circle { vector-effect:non-scaling-stroke; }
+
+/* Expandable capability profile for all fifteen canonical police tiers. */
+.omega-v2-capability-details { border-top:1px solid var(--omega-v2-border); margin-top:10px; padding-top:8px; }
+.omega-v2-capability-details summary { color:var(--omega-v2-accent); cursor:pointer; font-size:11px; font-weight:700; padding:4px 0; }
+.omega-v2-capability-bars { display:grid; gap:7px; margin-top:9px; }
+.omega-v2-capability-row { align-items:center; display:grid; font-size:10px; gap:7px; grid-template-columns:minmax(78px, .9fr) minmax(54px, 1.5fr) auto; min-width:0; }
+.omega-v2-capability-row > span { color:var(--omega-v2-muted); overflow-wrap:anywhere; text-transform:capitalize; }
+.omega-v2-capability-row > strong { color:var(--omega-v2-text); font-size:10px; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.omega-v2-capability-track { background:#203249; border-radius:999px; height:7px; overflow:hidden; }
+.omega-v2-capability-track > span { background:var(--omega-v2-accent-blue); border-radius:inherit; display:block; height:100%; }
+@media (max-width:359px) {
+  .omega-v2-capability-row { gap:5px; grid-template-columns:minmax(70px, .9fr) minmax(42px, 1fr) auto; }
+}
+
+
+/* Atlas Command visual system: restrained brass on deep navy/slate. */
+:root{--atlas-ink:#071321;--atlas-surface:#0d1b2b;--atlas-raised:#15283b;--atlas-border:#294158;--atlas-text:#edf2f5;--atlas-muted:#a1b1bf;--atlas-brass:#d6b875;--atlas-blue:#79b9d7;}
+#top-status-bar,.ui-top-hud,.ui-right-controls,.country-selection-bar,.country-info-card,.ios-card,.rm-card,.omega-drawer,.dep-card-item,.res-filter-controls,.resource-filter-bar,.leaflet-popup-content,.drawer-body{border-color:rgba(91,122,146,.52)!important;background-color:rgba(10,24,38,.96)!important;color:#e8edf1!important;box-shadow:0 10px 28px rgba(0,0,0,.19);}
+#top-status-bar,.ui-top-hud,.country-selection-bar{border-radius:12px!important;}#top-status-bar .res-node span:first-child,.res-node span:first-child{color:#d6b875!important;}
+.ui-bottom-navigation .nav-btn,.nav-btn,#btn-ministry-dock{border-color:rgba(91,122,146,.5)!important;background:linear-gradient(155deg,#14283a,#0c1b2a)!important;color:#cfdae2!important;box-shadow:none!important;}
+.ui-bottom-navigation .nav-btn.active,.nav-btn.active,.nav-btn[aria-current="page"]{border-color:rgba(214,184,117,.72)!important;background:linear-gradient(155deg,#263748,#17283a)!important;color:#f0d69e!important;}
+#omega-atlas-command-dock{position:fixed;z-index:999990;left:50%;bottom:calc(7px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);width:calc(100vw - 16px);max-width:760px;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:3px;padding:5px;border:1px solid rgba(104,139,164,.47);border-radius:17px;background:rgba(7,19,33,.96);color:#edf2f5;box-shadow:0 15px 42px rgba(0,0,0,.4),inset 0 1px rgba(255,255,255,.035);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;}
+.omega-atlas-command-button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-width:0;min-height:51px;padding:5px 2px;border:1px solid transparent;border-radius:11px;background:transparent;color:#aebdca;font:650 9px/1.15 system-ui,-apple-system,"Segoe UI",sans-serif;cursor:pointer;touch-action:manipulation;}
+.omega-atlas-command-icon{display:flex;align-items:center;justify-content:center;width:25px;height:25px;border:1px solid rgba(99,130,153,.32);border-radius:8px;color:#c5d3dd;font-size:15px;font-weight:700;}
+.omega-atlas-command-button[aria-current="page"]{border-color:rgba(214,184,117,.42);background:linear-gradient(145deg,rgba(214,184,117,.15),rgba(121,185,215,.065));color:#f2dca7;}
+.omega-atlas-command-button[aria-current="page"] .omega-atlas-command-icon{border-color:rgba(214,184,117,.68);background:rgba(214,184,117,.1);color:#f1d79b;}
+.omega-atlas-command-button:focus-visible{outline:2px solid #79b9d7;outline-offset:2px;}
+body.omega-atlas-dock-ready #omega-ministry-entry,body.omega-atlas-dock-ready #omega-gov-entry-v3{display:none!important;}body.omega-atlas-dock-ready #omega-atlas-command-dock[hidden]{display:none!important;}
+.omega-v2-app-root{--omega-v2-bg:#081522;--omega-v2-surface:#101f30;--omega-v2-surface-raised:#162a3f;--omega-v2-border:#294258;--omega-v2-text:#f2f0e9;--omega-v2-muted:#a5b5c4;--omega-v2-accent:#d6b875;--omega-v2-accent-blue:#79b9d7;--omega-v2-radius:15px;--omega-v2-gutter:clamp(12px,3vw,22px);}
+.omega-v2-app-header{background:rgba(8,21,34,.97);border-color:rgba(119,153,179,.25);box-shadow:0 8px 24px rgba(0,0,0,.15);}
+.omega-v2-card{border-color:#2a4358;border-radius:15px;background:linear-gradient(145deg,rgba(23,42,61,.98),rgba(13,28,43,.99));}.omega-v2-kpi{border-radius:12px;background:rgba(17,34,50,.88);}.omega-v2-status{white-space:normal;overflow-wrap:anywhere;}
+.omega-v2-photo{position:relative;border-color:rgba(123,156,177,.28);border-radius:15px;background:#0b1a29;box-shadow:0 12px 30px rgba(0,0,0,.18);}.omega-v2-photo img{display:block;aspect-ratio:16/9;width:100%;height:auto;max-height:none;object-fit:cover;object-position:center 48%;filter:saturate(.86) contrast(1.035);}.omega-v2-photo--hero img{aspect-ratio:16/7;max-height:320px;}.omega-v2-photo--tile{margin:0;border:0;border-radius:0;box-shadow:none;}.omega-v2-photo--tile img{aspect-ratio:16/8;max-height:none;}.omega-v2-photo figcaption{line-height:1.4;}.omega-v2-photo figcaption strong{display:block;}.omega-v2-photo-credit{display:block;font-size:9px;margin-top:4px;overflow-wrap:anywhere;}.omega-v2-photo-credit a{color:#e8d29b;text-decoration:underline;text-underline-offset:2px;}
+.omega-v2-domain-card,.omega-v2-command-card{display:flex;flex-direction:column;min-width:0;overflow:hidden;padding:0;}.omega-v2-domain-card-body{display:flex;flex-direction:column;align-items:flex-start;gap:5px;width:100%;padding:12px;flex:1;}.omega-v2-domain-card-action{margin-top:auto;padding-top:10px;}.omega-v2-core-grid{grid-template-columns:repeat(2,minmax(0,1fr));}.omega-v2-domain-grid{grid-template-columns:repeat(2,minmax(0,1fr));}.omega-v2-more-page>.omega-v2-photo{margin:12px 0 16px;}.omega-v2-app-main{padding-bottom:calc(78px + env(safe-area-inset-bottom,0px));}
+@media(min-width:760px){#omega-atlas-command-dock{bottom:calc(14px + env(safe-area-inset-bottom,0px));padding:6px;gap:4px;border-radius:19px;}.omega-atlas-command-button{min-height:56px;font-size:10px;}.omega-atlas-command-icon{width:28px;height:28px;font-size:16px;}.omega-v2-core-grid,.omega-v2-domain-grid{grid-template-columns:repeat(3,minmax(0,1fr));}.omega-v2-photo--hero img{aspect-ratio:16/7;max-height:360px;}}
+@media(max-width:390px){#omega-atlas-command-dock{width:calc(100vw - 12px);bottom:calc(5px + env(safe-area-inset-bottom,0px));padding:4px;gap:2px;border-radius:14px;}.omega-atlas-command-button{min-height:48px;font-size:8px;gap:3px;}.omega-atlas-command-icon{width:23px;height:23px;font-size:14px;border-radius:7px;}.omega-v2-app-header{gap:6px;padding-inline:10px;}.omega-v2-shell{padding:10px;}.omega-v2-grid{gap:8px;}.omega-v2-card{border-radius:12px;padding:9px;}.omega-v2-domain-card,.omega-v2-command-card{padding:0;}.omega-v2-domain-card-body{padding:9px;}}
+@media(max-width:330px){.omega-v2-title{font-size:20px;}.omega-v2-core-grid,.omega-v2-domain-grid{grid-template-columns:1fr;}.omega-v2-app-brand small{display:none;}.omega-atlas-command-button{font-size:8px;}.omega-v2-photo--hero img{aspect-ratio:16/9;}}
+@media(prefers-reduced-motion:reduce){#omega-atlas-command-dock *,.omega-v2-app-root *{transition:none!important;animation:none!important;scroll-behavior:auto!important;}}
+
+/* The Atlas dock replaces the old map navigation strip, avoiding duplicate controls. */
+body.omega-atlas-dock-ready .ui-bottom-navigation{display:none!important;}
+
+
+/* Local WebP photography at factory and police-fleet entry points. */
+.omega-v2-factory-art{display:block;min-height:0;margin:10px 0;padding:0;border:0;background:transparent;overflow:visible;}
+.omega-v2-factory-art .omega-v2-factory-photo{margin:0;border-radius:12px;}
+.omega-v2-factory-art .omega-v2-factory-photo img{aspect-ratio:16/9;max-height:190px;width:100%;object-fit:cover;object-position:center 48%;}
+.omega-v2-factory-art .omega-v2-factory-photo figcaption{padding:8px 10px;font-size:10px;}
+.omega-v2-factory-art .omega-v2-factory-photo figcaption small{font-size:9px;line-height:1.45;}
+.omega-v2-police-fleet>.omega-v2-fleet-hero{margin:12px 0 16px;}
+.omega-v2-fleet-hero img{aspect-ratio:16/7;max-height:280px;object-fit:cover;}
+@media(max-width:390px){.omega-v2-factory-art .omega-v2-factory-photo img{max-height:150px;}.omega-v2-police-fleet>.omega-v2-fleet-hero img{aspect-ratio:16/9;max-height:200px;}}
