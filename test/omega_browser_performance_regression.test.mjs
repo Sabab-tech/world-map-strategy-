@@ -268,7 +268,7 @@ test('interaction guard is loaded by the production shell and cached for offline
   const html = read('index.html');
   const serviceWorker = read('omega-offline-map-sw.js');
   assert.match(html, /<script src="omega_ui_interaction_guard\.js" defer><\/script>/);
-  assert.match(serviceWorker, /CACHE_NAME = "omega-offline-atlas-shell-v33"/);
+  assert.match(serviceWorker, /CACHE_NAME = "omega-offline-atlas-shell-v34"/);
   const coreStart = serviceWorker.indexOf('const CORE_ASSETS');
   const coreEnd = serviceWorker.indexOf('];', coreStart);
   assert.ok(serviceWorker.slice(coreStart, coreEnd).includes('"./omega_ui_interaction_guard.js"'),
