@@ -1552,8 +1552,15 @@ function batchFromExtraction(x,record){
         /(^|_)(ACTIVE_EXTRACTION|ACTIVE_PRODUCING|ACTIVE|DEPLETING|RESERVE_DEPLETING|OPERATING|RUNNING|PRODUCING)(_|$)/.test(status);
       // Negative operational evidence wins. In particular HISTORICAL_INACTIVE must not match
       // a plain substring search for ACTIVE.
-      const operational=!isExplicitlyNonOperational(operationalStatus)&&!isExplicitlyNonOperational(sourceStatus)&&
-        (isOperationalStatus(operationalStatus)||isOperationalStatus(sourceStatus));
+      // A player-commissioned mine is an authoritative gameplay state, separate from
+      // its preserved real-world status. Commissioning must override an inactive or
+      // development status for simulation extraction, without rewriting source evidence.
+      const commissionedMineAsset=(Array.isArray(state()?.resource?.[c]?.mineAssets)?state().resource[c].mineAssets:[])
+        .find(asset=>String(asset?.siteId||'')===String(policySiteId||x.siteReferenceKey||'')&&
+          String(asset?.status||'').toUpperCase()==='OPERATIONAL');
+      const operational=!!commissionedMineAsset||
+        (!isExplicitlyNonOperational(operationalStatus)&&!isExplicitlyNonOperational(sourceStatus)&&
+        (isOperationalStatus(operationalStatus)||isOperationalStatus(sourceStatus)));
       if(!operational){
         const reason={occurrenceKey:x.occurrenceKey,resourceId:x.resourceId,reason:'MINE_NOT_OPERATIONAL',operationalStatus:operationalStatus||'UNKNOWN',sourceStatus:sourceStatus||null};
         blocked.push(reason);
