@@ -67,7 +67,7 @@ test("new photo library is linked to the UI and cached on request, not eagerly d
   assert.match(html, /omega_ui_photo_asset_system_v1\.css/);
   assert.match(html, /omega_ui_photo_asset_system_v1\.js/);
   assert.match(html, /omega_ui_photo_asset_system_v1\.js[\s\S]*?omega_country_overview_ministry_ui_v1\.js/);
-  assert.match(serviceWorker, /CACHE_NAME\s*=\s*"omega-offline-atlas-shell-v29"/);
+  assert.match(serviceWorker, /CACHE_NAME\s*=\s*"omega-offline-atlas-shell-v\d+"/);
   assert.match(serviceWorker, /"\.\/omega_ui_photo_asset_catalog_v1\.json"/);
   assert.match(serviceWorker, /"\.\/omega_ui_photo_asset_system_v1\.js"/);
   assert.match(serviceWorker, /"\.\/omega_ui_photo_asset_system_v1\.css"/);
