@@ -146,9 +146,27 @@ public final class OmegaGameplaySmokeTest {
                     " var diagnostics = window.Omega.GameLifecycle.getDiagnostics();" +
                     " return !!(diagnostics && diagnostics.clock && Number(diagnostics.clock.speed) === 2);" +
                     "})()";
+            final String speedControlResult = evaluate(instrumentation, webViewRef.get(), speedControlScript);
+            final String speedControlDiagnosticScript =
+                    "(function() {" +
+                    " var sim=window.Omega&&(window.Omega.SimulationRuntime||window.Omega.Simulation);" +
+                    " var b=document.querySelector('.speed-btn[data-speed=\\\"2\\\"]');" +
+                    " var afterClick=window.Omega&&window.Omega.GameLifecycle&&window.Omega.GameLifecycle.getDiagnostics();" +
+                    " var directResult=window.Omega&&window.Omega.GameLifecycle&&window.Omega.GameLifecycle.setSpeed(2);" +
+                    " var afterDirect=window.Omega&&window.Omega.GameLifecycle&&window.Omega.GameLifecycle.getDiagnostics();" +
+                    " return JSON.stringify({buttonFound:!!b,buttonClass:b?String(b.className):null," +
+                    " simFound:!!sim,simStatus:sim?sim.status:null,simClockFound:!!(sim&&sim.clock)," +
+                    " clickClock:afterClick&&afterClick.clock,clickStatus:afterClick&&afterClick.status," +
+                    " directResult:directResult,afterDirectClock:afterDirect&&afterDirect.clock," +
+                    " afterDirectStatus:afterDirect&&afterDirect.status," +
+                    " countryIOS:window.CountryIOS?window.CountryIOS.activeCountry:null," +
+                    " gameCountry:window.Game?window.Game.currentActiveCountry:null});" +
+                    "})()";
+            final String speedControlDiagnostics = "true".equals(speedControlResult) ? "" :
+                    evaluate(instrumentation, webViewRef.get(), speedControlDiagnosticScript);
             assertEquals(
-                    "Tapping the 2x control must set the authoritative OMEGA simulation clock to speed 2",
-                    "true", evaluate(instrumentation, webViewRef.get(), speedControlScript)
+                    "Tapping the 2x control must set the authoritative OMEGA simulation clock to speed 2; diagnostics=" + speedControlDiagnostics,
+                    "true", speedControlResult
             );
 
             android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=OPEN_MINISTRY");
