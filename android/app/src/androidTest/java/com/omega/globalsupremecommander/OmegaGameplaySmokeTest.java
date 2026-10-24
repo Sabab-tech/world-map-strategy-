@@ -127,7 +127,7 @@ public final class OmegaGameplaySmokeTest {
             final String fatalDiagnostic = evaluate(instrumentation, webViewRef.get(), fatalDiagnosticScript);
             final String fatalVisibleScript =
                     "(function() { var screen=document.getElementById('fatal-screen');" +
-                    " return screen && getComputedStyle(screen).display !== 'none' ? 'true' : 'false'; })()";
+                    " return !!(screen && getComputedStyle(screen).display !== 'none'); })()";
             assertEquals(
                     "The enterprise boot must not leave a full-screen fatal overlay that blocks real taps; diagnostic=" + fatalDiagnostic,
                     "false", evaluate(instrumentation, webViewRef.get(), fatalVisibleScript)
