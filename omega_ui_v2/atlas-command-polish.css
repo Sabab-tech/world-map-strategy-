@@ -362,3 +362,701 @@
     animation: none !important;
   }
 }
+
+
+/* Atlas Command v2.1: layered navy, steel silver and restrained signal blue.
+ * This refinement is additive so Android 9 keeps its existing layout fallbacks.
+ */
+.omega-v2-app-root,
+.omega-v2-screen {
+  --omega-v2-bg: #071426;
+  --omega-v2-surface: #0b1d31;
+  --omega-v2-surface-raised: #102840;
+  --omega-v2-border: #4b6681;
+  --omega-v2-text: #f2f6fc;
+  --omega-v2-muted: #b8c7d8;
+  --omega-v2-accent: #c9d5e3;
+  --omega-v2-accent-blue: #77c8f2;
+  --omega-v2-positive: #77d5b2;
+  --omega-v2-warning: #f0c978;
+  --omega-v2-danger: #ff9696;
+  --omega-v2-radius: 14px;
+  --omega-section-accent: #77c8f2;
+}
+.omega-v2-app-root {
+  background:
+    radial-gradient(ellipse at 12% 0%, rgba(47, 104, 151, .18), transparent 38%),
+    radial-gradient(ellipse at 92% 38%, rgba(53, 88, 124, .12), transparent 42%),
+    #071426 !important;
+  color: var(--omega-v2-text) !important;
+}
+.omega-v2-app-frame {
+  background: transparent !important;
+}
+.omega-v2-app-header {
+  background: rgba(7, 20, 38, .97) !important;
+  border-bottom: 1px solid rgba(141, 169, 196, .42) !important;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, .22), inset 0 -1px rgba(119, 200, 242, .08);
+}
+.omega-v2-brand-mark {
+  background: linear-gradient(145deg, #173653, #0b1d31) !important;
+  border-color: #82b6d8 !important;
+  color: #d9e6f4 !important;
+  box-shadow: inset 0 1px rgba(255,255,255,.08), 0 4px 12px rgba(0,0,0,.2);
+}
+.omega-v2-app-main {
+  background: transparent !important;
+  scrollbar-color: #486681 #09182a;
+  scrollbar-width: thin;
+}
+.omega-v2-app-main::-webkit-scrollbar,
+.omega-v2-route-menu::-webkit-scrollbar,
+.omega-v2-finance-tabs::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+.omega-v2-app-main::-webkit-scrollbar-thumb,
+.omega-v2-route-menu::-webkit-scrollbar-thumb,
+.omega-v2-finance-tabs::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: #486681;
+}
+.omega-v2-shell {
+  padding: clamp(12px, 2.5vw, 22px) !important;
+}
+.omega-v2-heading {
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 16px;
+  padding: 4px 0 14px;
+  border-bottom: 1px solid rgba(137, 163, 188, .24);
+}
+.omega-v2-eyebrow {
+  color: #9fc9e8 !important;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .14em;
+  line-height: 1.45;
+}
+.omega-v2-title {
+  color: #f2f6fc !important;
+  font-size: clamp(22px, 5vw, 31px) !important;
+  font-weight: 780;
+  letter-spacing: -.025em;
+  line-height: 1.14 !important;
+  text-wrap: balance;
+}
+.omega-v2-subtitle {
+  color: #b8c7d8 !important;
+  font-size: 13px !important;
+  line-height: 1.5;
+  max-width: 72ch;
+}
+.omega-v2-section-title {
+  align-items: center;
+  color: #e3edf7;
+  display: flex;
+  font-size: 15px !important;
+  font-weight: 760;
+  gap: 9px;
+  line-height: 1.35;
+  margin: 22px 0 10px !important;
+}
+.omega-v2-section-title::before {
+  background: var(--omega-section-accent, #77c8f2);
+  border-radius: 999px;
+  content: "";
+  flex: 0 0 3px;
+  height: 18px;
+}
+.omega-v2-card {
+  background: linear-gradient(155deg, rgba(21, 43, 65, .98), rgba(11, 29, 49, .99)) !important;
+  border: 1px solid rgba(117, 145, 173, .53) !important;
+  border-radius: 14px !important;
+  box-shadow: 0 7px 20px rgba(0, 0, 0, .15), inset 0 1px rgba(240, 247, 255, .035);
+  min-width: 0;
+  padding: 13px !important;
+}
+.omega-v2-grid > .omega-v2-card:nth-child(3n + 2) {
+  background: linear-gradient(155deg, rgba(18, 39, 60, .99), rgba(10, 26, 44, .99)) !important;
+}
+.omega-v2-grid > .omega-v2-card:nth-child(3n) {
+  background: linear-gradient(155deg, rgba(24, 45, 67, .96), rgba(12, 28, 46, .99)) !important;
+}
+.omega-v2-card-header {
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+}
+.omega-v2-card-title {
+  color: #edf4fb !important;
+  font-size: 14px !important;
+  font-weight: 760;
+  line-height: 1.4;
+  margin: 3px 0 6px !important;
+}
+.omega-v2-card-meta {
+  color: #b8c7d8 !important;
+  font-size: 12px !important;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.omega-v2-kpis {
+  gap: 10px !important;
+}
+.omega-v2-kpi {
+  background: linear-gradient(145deg, #132c44, #0d2035) !important;
+  border: 1px solid rgba(117, 148, 180, .54) !important;
+  border-left: 3px solid #718ba5 !important;
+  border-radius: 11px !important;
+  box-shadow: inset 0 1px rgba(255,255,255,.035);
+  min-width: 0;
+  padding: 12px !important;
+}
+.omega-v2-kpi:nth-child(3n + 1) {
+  border-left-color: #77c8f2 !important;
+}
+.omega-v2-kpi:nth-child(3n + 2) {
+  border-left-color: #c4d0de !important;
+}
+.omega-v2-kpi:nth-child(3n) {
+  border-left-color: #d4b979 !important;
+}
+.omega-v2-kpi span {
+  color: #bdccdc !important;
+  font-size: 11px !important;
+  font-weight: 650;
+  letter-spacing: .015em;
+  line-height: 1.35;
+}
+.omega-v2-kpi strong {
+  color: #f4f7fc !important;
+  font-size: clamp(17px, 3.4vw, 22px) !important;
+  font-weight: 790;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -.015em;
+  line-height: 1.35;
+  margin-top: 5px !important;
+}
+.omega-v2-kpi small {
+  color: #aebfd1 !important;
+  display: block;
+  font-size: 10px;
+  line-height: 1.4;
+  margin-top: 5px;
+  overflow-wrap: anywhere;
+}
+.omega-v2-status {
+  align-items: center;
+  background: rgba(127, 153, 179, .10);
+  border: 1px solid rgba(154, 180, 205, .44);
+  border-radius: 999px;
+  color: #d4e0ec !important;
+  display: inline-flex;
+  font-size: 10px !important;
+  font-weight: 780;
+  gap: 5px;
+  line-height: 1.3;
+  padding: 5px 9px;
+  text-align: center;
+  white-space: normal;
+}
+.omega-v2-status[data-state="ready"],
+.omega-v2-status[data-state="operational"] {
+  background: rgba(71, 174, 139, .12);
+  border-color: rgba(105, 213, 177, .48);
+  color: #a6efd4 !important;
+}
+.omega-v2-status[data-state="locked"],
+.omega-v2-status[data-state="attention"] {
+  background: rgba(208, 160, 71, .12);
+  border-color: rgba(241, 201, 120, .55);
+  color: #f4d795 !important;
+}
+.omega-v2-status[data-state="blocked"],
+.omega-v2-status[data-state="error"] {
+  background: rgba(224, 91, 100, .12);
+  border-color: rgba(255, 150, 150, .55);
+  color: #ffb8b8 !important;
+}
+.omega-v2-button {
+  background: linear-gradient(145deg, #203b55, #12283f) !important;
+  border: 1px solid #63809d !important;
+  border-radius: 10px !important;
+  box-shadow: inset 0 1px rgba(255,255,255,.055);
+  color: #e8f0f8 !important;
+  cursor: pointer;
+  font-size: 12px !important;
+  font-weight: 720;
+  line-height: 1.25;
+  min-height: 44px !important;
+  padding: 10px 13px !important;
+  touch-action: manipulation;
+  transition: background-color .15s ease, border-color .15s ease, transform .15s ease;
+}
+.omega-v2-button--primary {
+  background: linear-gradient(145deg, #24658d, #164464) !important;
+  border-color: #77b9df !important;
+  color: #f5fbff !important;
+}
+.omega-v2-button--accent {
+  background: linear-gradient(145deg, #d6e0eb, #adbed0) !important;
+  border-color: #e4edf6 !important;
+  color: #0a1b2d !important;
+  box-shadow: inset 0 1px rgba(255,255,255,.7), 0 3px 10px rgba(0,0,0,.14);
+}
+.omega-v2-button--quiet {
+  background: rgba(11, 29, 49, .5) !important;
+  border-color: #647e98 !important;
+  color: #cad7e5 !important;
+  box-shadow: none;
+}
+.omega-v2-button--exit {
+  background: linear-gradient(145deg, #482b34, #291e2b) !important;
+  border-color: #ac7683 !important;
+  color: #ffced5 !important;
+}
+.omega-v2-button:hover:not(:disabled) {
+  border-color: #9ac8e8 !important;
+  filter: brightness(1.09);
+}
+.omega-v2-button--accent:hover:not(:disabled) {
+  border-color: #ffffff !important;
+  filter: brightness(1.04);
+}
+.omega-v2-button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+.omega-v2-button:disabled {
+  background: #14273a !important;
+  border-color: #354b60 !important;
+  color: #8496a9 !important;
+  opacity: .75;
+}
+.omega-v2-app-root button:focus-visible,
+.omega-v2-screen button:focus-visible,
+.omega-v2-app-root input:focus-visible,
+.omega-v2-screen input:focus-visible,
+.omega-v2-app-root select:focus-visible,
+.omega-v2-screen select:focus-visible,
+.omega-v2-screen summary:focus-visible {
+  outline: 2px solid #91d5f7 !important;
+  outline-offset: 2px;
+}
+.omega-v2-filterbar {
+  align-items: center;
+  background: rgba(9, 25, 43, .68);
+  border: 1px solid rgba(111, 143, 172, .42);
+  border-radius: 13px;
+  gap: 8px !important;
+  margin: 15px 0 !important;
+  padding: 8px !important;
+}
+.omega-v2-filterbar input,
+.omega-v2-filterbar select,
+.omega-v2-country-select,
+.omega-v2-number-input {
+  background: #0b1d31 !important;
+  border: 1px solid #657f99 !important;
+  border-radius: 9px !important;
+  color: #f2f6fc !important;
+  font: inherit;
+  min-height: 42px;
+  padding: 9px 11px !important;
+}
+.omega-v2-filterbar input::placeholder {
+  color: #afc0d1 !important;
+  opacity: 1;
+}
+.omega-v2-government-tabs,
+.omega-v2-finance-tabs,
+.omega-v2-home-tabs,
+.omega-v2-ministry-detail > .omega-v2-filterbar {
+  align-items: stretch;
+  background: rgba(9, 25, 43, .78);
+  border: 1px solid rgba(111, 143, 172, .42);
+  border-radius: 13px;
+  display: flex;
+  gap: 7px;
+  margin: 14px 0 18px;
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  padding: 7px;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+.omega-v2-government-tabs > .omega-v2-button,
+.omega-v2-finance-tabs > .omega-v2-button,
+.omega-v2-home-tabs > .omega-v2-button,
+.omega-v2-ministry-detail > .omega-v2-filterbar > .omega-v2-button {
+  flex: 0 0 auto;
+  min-height: 42px;
+  white-space: nowrap;
+}
+.omega-v2-note {
+  background: linear-gradient(100deg, rgba(35, 83, 117, .26), rgba(15, 35, 55, .72)) !important;
+  border: 1px solid rgba(107, 155, 190, .34);
+  border-left: 3px solid #77c8f2 !important;
+  border-radius: 10px !important;
+  color: #c3d2e1 !important;
+  font-size: 12px !important;
+  line-height: 1.55;
+  margin: 12px 0 !important;
+  padding: 11px 13px !important;
+}
+.omega-v2-empty {
+  background: rgba(15, 34, 54, .62);
+  border: 1px dashed #66809a !important;
+  border-radius: 13px !important;
+  color: #c5d2e0 !important;
+  line-height: 1.6;
+  padding: 22px 16px !important;
+  text-align: center;
+}
+.omega-v2-source {
+  color: #aebfd1 !important;
+  font-size: 10px !important;
+  line-height: 1.45;
+  margin-top: 10px;
+  overflow-wrap: anywhere;
+}
+.omega-v2-domain-card,
+.omega-v2-command-card {
+  background: linear-gradient(158deg, #17334d, #0b1d31) !important;
+  border: 1px solid rgba(123, 159, 190, .52) !important;
+  border-radius: 15px !important;
+}
+.omega-v2-domain-card-body {
+  padding: 13px !important;
+}
+.omega-v2-domain-card .omega-v2-eyebrow {
+  color: #91c6e8 !important;
+}
+.omega-v2-domain-card-action .omega-v2-button,
+.omega-v2-command-card .omega-v2-button,
+.omega-v2-ministry-actions .omega-v2-button {
+  width: 100%;
+  justify-content: center;
+}
+.omega-v2-photo {
+  border: 1px solid rgba(129, 157, 184, .45) !important;
+  background: #0b1d31 !important;
+  box-shadow: 0 10px 24px rgba(0,0,0,.18);
+}
+.omega-v2-photo figcaption {
+  color: #e5edf6 !important;
+  font-size: 11px;
+  line-height: 1.45;
+}
+.omega-v2-photo figcaption small {
+  color: #b8c7d8 !important;
+  display: block;
+  font-size: 10px;
+  margin-top: 3px;
+}
+.omega-v2-photo--tile {
+  border-radius: 0 !important;
+  box-shadow: none;
+}
+.omega-v2-photo-credit a {
+  color: #9edcff !important;
+  text-underline-offset: 3px;
+}
+.omega-v2-table-wrap,
+.omega-v2-minister-table-wrap {
+  border: 1px solid rgba(111, 143, 172, .45);
+  border-radius: 12px;
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+}
+.omega-v2-table-wrap table,
+.omega-v2-minister-table {
+  background: rgba(9, 24, 41, .62);
+  border-collapse: separate !important;
+  border-spacing: 0;
+}
+.omega-v2-table-wrap th,
+.omega-v2-minister-table th {
+  background: #18334c;
+  color: #d9e5f0 !important;
+  font-size: 11px;
+  font-weight: 760;
+  position: sticky;
+  top: 0;
+}
+.omega-v2-table-wrap td,
+.omega-v2-minister-table td {
+  border-bottom: 1px solid rgba(112, 144, 173, .29) !important;
+  color: #e3ecf6;
+  line-height: 1.45;
+}
+.omega-v2-table-wrap tr:nth-child(even) td {
+  background: rgba(119, 154, 185, .055);
+}
+.omega-v2-vehicle-stats > div,
+.omega-v2-material-row {
+  background: linear-gradient(145deg, rgba(24, 47, 70, .95), rgba(12, 31, 50, .95)) !important;
+  border: 1px solid rgba(106, 140, 170, .32);
+  border-radius: 9px !important;
+  min-width: 0;
+  padding: 9px !important;
+}
+.omega-v2-vehicle-stats span {
+  color: #b8c7d8 !important;
+  font-size: 10px;
+  line-height: 1.35;
+}
+.omega-v2-vehicle-stats strong {
+  color: #f1f6fc !important;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.omega-v2-json {
+  background: #08182a !important;
+  border: 1px solid #4b6681 !important;
+  color: #d5e1ee !important;
+}
+.omega-v2-route-menu {
+  background: #091a2c !important;
+  border: 1px solid #647f99 !important;
+  box-shadow: 0 22px 48px rgba(0,0,0,.48) !important;
+}
+.omega-v2-route-menu h2 {
+  color: #a8cdea !important;
+}
+.omega-v2-route-link {
+  background: #102840 !important;
+  border-color: #4f6a84 !important;
+  color: #dfe9f3 !important;
+  min-height: 44px;
+}
+.omega-v2-route-link.is-current {
+  background: #d0dce8 !important;
+  border-color: #edf5fc !important;
+  color: #081a2c !important;
+}
+.omega-v2-nav-button {
+  color: #c0cedd !important;
+  font-weight: 740 !important;
+  min-height: 48px !important;
+}
+.omega-v2-nav-button.is-active {
+  background: linear-gradient(145deg, #d2dce7, #aabfd2) !important;
+  border-color: #edf5fc !important;
+  color: #091a2b !important;
+}
+.omega-v2-screen table caption {
+  color: #dbe6f1;
+  font-size: 12px;
+  font-weight: 760;
+  padding: 10px;
+  text-align: left;
+}
+.omega-v2-screen details {
+  background: rgba(13, 33, 54, .52);
+  border: 1px solid rgba(111, 143, 172, .35);
+  border-radius: 9px;
+  margin-top: 8px;
+  padding: 10px 12px;
+}
+.omega-v2-screen details > summary {
+  color: #cbd8e5;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 720;
+  line-height: 1.5;
+}
+.omega-v2-screen details[open] > summary {
+  color: #a7dcfa;
+  margin-bottom: 8px;
+}
+.omega-v2-government,
+.omega-v2-overview {
+  --omega-section-accent: #91c9ec;
+}
+.omega-v2-economy {
+  --omega-section-accent: #72d0d1;
+}
+.omega-v2-industry {
+  --omega-section-accent: #75bfee;
+}
+.omega-v2-resource-ministry,
+.omega-v2-mine-detail {
+  --omega-section-accent: #b6c8d9;
+}
+.omega-v2-home-affairs,
+.omega-v2-police-fleet {
+  --omega-section-accent: #7fd4b3;
+}
+.omega-v2-reports {
+  --omega-section-accent: #d8c184;
+}
+.omega-v2-ministry-detail {
+  --omega-section-accent: #9fb8d1;
+}
+.omega-v2-religion {
+  --omega-section-accent: #b7c8dc;
+}
+.omega-v2-government .omega-v2-ministry-rotator,
+.omega-v2-ministry-rotator {
+  border: 1px solid rgba(121, 155, 184, .48) !important;
+  border-radius: 15px !important;
+  overflow: hidden;
+}
+.omega-v2-ministry-grid {
+  gap: 12px !important;
+}
+.omega-v2-ministry-card {
+  background: linear-gradient(160deg, #17334d, #0b1d31) !important;
+  border: 1px solid rgba(126, 158, 187, .5) !important;
+  box-shadow: 0 8px 20px rgba(0,0,0,.17);
+}
+.omega-v2-ministry-card-media {
+  border-bottom-color: rgba(132, 165, 194, .46) !important;
+}
+.omega-v2-ministry-card-content {
+  gap: 10px !important;
+  padding: 12px !important;
+}
+.omega-v2-ministry-card-heading h3,
+.omega-v2-ministry-heading-copy h3 {
+  color: #f0f5fb !important;
+  font-size: 14px;
+  line-height: 1.35;
+}
+.omega-v2-ministry-card-meta {
+  color: #bdccdb !important;
+}
+.omega-v2-ministry-actions .omega-v2-button {
+  flex: 1 1 100%;
+}
+.omega-v2-ministry-detail-cover,
+.omega-v2-ministry-detail-gallery-item {
+  background: #0d2138;
+  border: 1px solid rgba(125, 157, 186, .4);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.omega-v2-ministry-detail-cover figcaption,
+.omega-v2-ministry-detail-gallery-item figcaption {
+  color: #c3d2e1;
+  font-size: 11px;
+  line-height: 1.4;
+  padding: 9px 11px;
+}
+.omega-v2-ministry-detail-gallery {
+  gap: 10px !important;
+}
+.omega-v2-ministry-detail-gallery-image {
+  aspect-ratio: 16 / 9;
+  background: #0b1d31;
+}
+.omega-v2-ministry-appointed-minister {
+  background: linear-gradient(145deg, #152f48, #0c2035) !important;
+  border-color: rgba(131, 167, 196, .5) !important;
+}
+.omega-v2-minister-portrait {
+  background: #112840 !important;
+  border-color: #617d98 !important;
+  color: #c8d7e5 !important;
+}
+.omega-v2-finance-tab-panel {
+  background: rgba(9, 25, 42, .4);
+  border: 1px solid rgba(103, 137, 167, .22);
+  border-radius: 14px;
+  padding: clamp(10px, 2vw, 16px);
+}
+.omega-v2-source,
+.omega-v2-screen .omega-v2-card-meta small {
+  overflow-wrap: anywhere;
+}
+@media (min-width: 761px) {
+  .omega-v2-shell {
+    max-width: 1220px;
+    margin-inline: auto;
+  }
+  .omega-v2-grid {
+    gap: 13px !important;
+  }
+  .omega-v2-card:hover {
+    border-color: rgba(144, 192, 226, .72) !important;
+  }
+}
+@media (max-width: 760px) {
+  .omega-v2-heading {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .omega-v2-heading > .omega-v2-status {
+    align-self: flex-start;
+  }
+  .omega-v2-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+  .omega-v2-ministry-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+  .omega-v2-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .omega-v2-card {
+    padding: 11px !important;
+  }
+  .omega-v2-card-header {
+    flex-wrap: wrap;
+  }
+  .omega-v2-domain-card,
+  .omega-v2-command-card {
+    padding: 0 !important;
+  }
+  .omega-v2-kpi strong {
+    font-size: clamp(16px, 4vw, 21px) !important;
+  }
+}
+@media (max-width: 420px) {
+  .omega-v2-shell {
+    padding: 11px !important;
+  }
+  .omega-v2-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 7px !important;
+  }
+  .omega-v2-kpi {
+    padding: 9px !important;
+  }
+  .omega-v2-kpi span {
+    font-size: 10px !important;
+  }
+  .omega-v2-kpi strong {
+    font-size: 16px !important;
+  }
+  .omega-v2-grid,
+  .omega-v2-core-grid,
+  .omega-v2-domain-grid,
+  .omega-v2-ministry-grid,
+  .omega-v2-ministry-detail-gallery {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 10px !important;
+  }
+  .omega-v2-ministry-card-media {
+    height: auto !important;
+    aspect-ratio: 16 / 8.5;
+  }
+  .omega-v2-domain-card-body {
+    padding: 11px !important;
+  }
+  .omega-v2-government-tabs,
+  .omega-v2-finance-tabs,
+  .omega-v2-home-tabs,
+  .omega-v2-ministry-detail > .omega-v2-filterbar {
+    max-width: calc(100vw - 22px);
+  }
+  .omega-v2-button {
+    min-height: 44px !important;
+  }
+}

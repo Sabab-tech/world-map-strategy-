@@ -28,6 +28,7 @@
       return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch];
     });
   }
+  function displayStatus(value) { var text = String(value == null ? '' : value).replace(/[_-]+/g, ' ').trim().toUpperCase(); var labels = { NOT_RECORDED:'Not recorded', UNOBSERVED:'Not measured', ACTIVE:'Active', OPERATIONAL:'Operational', INACTIVE:'Inactive', VACANT:'Vacant', APPOINTED:'Appointed', AVAILABLE:'Available', BLOCKED:'Blocked', FAILED:'Failed', PENDING:'Pending' }; return labels[text] || (text ? text.toLowerCase().replace(/\b\w/g, function (ch) { return ch.toUpperCase(); }) : 'Not recorded'); }
   function finite(value) {
     if (value === null || value === undefined || value === '') return null;
     var number = Number(value);
@@ -146,15 +147,15 @@
     return false;
   }
   function metricCard(title, metric) {
-    var source = metric.sourceName ? String(metric.sourceName) : 'Source not recorded';
-    var year = metric.year ? ' · ' + metric.year : '';
-    var detail = source + year + (metric.status && metric.status !== 'AVAILABLE' ? ' · ' + metric.status : '');
-    return '<div class="omega-v2-kpi"><span>' + esc(title) + '</span><strong>' + fmt(metric.value, metric.unit) + '</strong><small>' + esc(detail) + '</small></div>';
+    var source = metric.sourceName ? String(metric.sourceName) : '';
+    var year = metric.year ? 'Year ' + String(metric.year) : '';
+    var details = source || year ? '<details class="omega-v2-metric-details"><summary>Indicator details</summary><p class="omega-v2-card-meta">' + (source ? 'Source: ' + esc(source) : '') + (source && year ? ' · ' : '') + esc(year) + '</p></details>' : '';
+    return '<div class="omega-v2-kpi"><span>' + esc(title) + '</span><strong>' + fmt(metric.value, metric.unit) + '</strong>' + details + '</div>';
   }
   function overviewHtml(countryId, options) {
     var data = snapshot(countryId);
     if (!data || !data.identity) {
-      return '<section class="omega-v2-overview"><div class="omega-v2-empty">Country overview data is not available for ' + esc(countryId || 'the selected country') + '. The source gateway did not return a resolved identity; no country statistics were invented.</div></section>';
+      return '<section class="omega-v2-overview"><div class="omega-v2-empty">Country information is not available for ' + esc(countryId || 'the selected country') + ' yet.</div></section>';
     }
     var identity = data.identity || {};
     var displayName = identity.officialName || identity.name || data.countryCode || countryId;
@@ -174,14 +175,13 @@
         '<div class="omega-v2-actions"><button class="omega-v2-button omega-v2-button--primary" data-omega-v2-open-ministry="' + esc(row.id) + '">Open ministry</button></div></article>';
     }).join('');
     return '<section class="omega-v2-overview">' +
-      '<header class="omega-v2-heading"><div><div class="omega-v2-eyebrow">EXECUTIVE MINISTRY · COUNTRY OVERVIEW</div><h1 class="omega-v2-title">' + esc(displayName) + '</h1><p class="omega-v2-subtitle">Country snapshot from registered sources and the current simulation. Missing fields are never displayed as zero.</p></div>' +
-      '<span class="omega-v2-status" data-state="' + (data.status === 'OK' || data.status === 'AVAILABLE' ? 'operational' : 'attention') + '">' + esc(data.status || 'DATA STATUS NOT RECORDED') + '</span></header>' +
+      '<header class="omega-v2-heading"><div><div class="omega-v2-eyebrow">EXECUTIVE MINISTRY · COUNTRY OVERVIEW</div><h1 class="omega-v2-title">' + esc(displayName) + '</h1><p class="omega-v2-subtitle">National indicators and executive priorities for the selected country.</p></div>' +
+      '<span class="omega-v2-status" data-state="' + (data.status === 'OK' || data.status === 'AVAILABLE' ? 'operational' : 'attention') + '">' + (data.status === 'OK' || data.status === 'AVAILABLE' ? 'COUNTRY PROFILE READY' : 'PROFILE INCOMPLETE') + '</span></header>' +
       (String(data.countryCode || '').toUpperCase() === 'BGD' ? photoMarkup('bangladesh-parliament', 'Bangladesh parliament building, reference image') : photoMarkup('un-assembly-building', 'United Nations Assembly building, international reference image')) +
       '<h2 class="omega-v2-section-title">National snapshot</h2><div class="omega-v2-kpis">' + cards + '</div>' +
-      '<h2 class="omega-v2-section-title">Executive priorities and alerts</h2><div class="omega-v2-note">Only alerts and decisions returned by a registered gameplay source should be placed here. This UI foundation does not invent crisis alerts.</div>' +
       '<h2 class="omega-v2-section-title">Government, security, resources and industry</h2><div class="omega-v2-grid">' + shortcuts + '</div>' +
       '<h2 class="omega-v2-section-title">Data coverage & missing fields</h2><div class="omega-v2-card"><div class="omega-v2-card-title">' +
-      (coverage && coverage.length ? Math.max(0, Object.keys(data.fields || {}).length - coverage.length) + ' recorded field(s) · ' + coverage.length + ' missing field(s)' : Object.keys(data.fields || {}).length + ' field(s) returned by the gateway') +
+      (coverage && coverage.length ? Math.max(0, Object.keys(data.fields || {}).length - coverage.length) + ' recorded field(s) · ' + coverage.length + ' missing field(s)' : Object.keys(data.fields || {}).length + ' indicators available in this view') +
       '</div>' + (coverage && coverage.length ? '<details><summary>Inspect missing fields</summary><ul>' + coverage.map(function (row) { return '<li>' + esc(typeof row === 'string' ? row : row.field || row.name || JSON.stringify(row)) + '</li>'; }).join('') + '</ul></details>' : '<p class="omega-v2-card-meta">The gateway did not report a missing-field list for this snapshot.</p>') + '</div>' +
       '</section>';
   }
@@ -215,16 +215,16 @@
     var safeLocalImage = /^(assets|images)\/[a-z0-9/_-]+\.(webp|png|jpe?g)$/i.test(source);
     var name = row && row.ministerName || profile.baseName || profile.name || 'Minister not assigned';
     return '<div class="omega-v2-minister-portrait" data-omega-v2-minister-portrait-slot aria-label="Minister portrait slot for ' + esc(name) + '">' +
-      (safeLocalImage ? '<img data-omega-v2-minister-portrait src="' + esc(source) + '" loading="lazy" decoding="async" alt="Portrait of ' + esc(name) + '">' : '<span class="omega-v2-minister-portrait-placeholder">MINISTER PORTRAIT</span><small>Image pending</small>') +
+      (safeLocalImage ? '<img data-omega-v2-minister-portrait src="' + esc(source) + '" loading="lazy" decoding="async" alt="Portrait of ' + esc(name) + '">' : '<span class="omega-v2-minister-portrait-placeholder">MINISTER PORTRAIT</span>') +
       '</div>';
   }
   function ministerRecruitmentTable(rows) {
-    return '<div class="omega-v2-table-wrap omega-v2-minister-table-wrap"><table class="omega-v2-minister-table"><thead><tr><th scope="col">Ministry / Emblem</th><th scope="col">Minister &amp; portrait</th><th scope="col">Registry status</th><th scope="col">Recruitment</th><th scope="col">Details</th></tr></thead><tbody>' + rows.map(function (row) {
+    return '<div class="omega-v2-table-wrap omega-v2-minister-table-wrap"><table class="omega-v2-minister-table"><thead><tr><th scope="col">Ministry / Emblem</th><th scope="col">Minister &amp; portrait</th><th scope="col">Profile</th><th scope="col">Recruitment</th><th scope="col">Details</th></tr></thead><tbody>' + rows.map(function (row) {
       var activeName = row.ministerName || 'Vacant / not recorded';
       return '<tr data-omega-v2-ministry-card data-search="' + esc((row.title + ' ' + row.subtitle + ' ' + row.id + ' ' + row.category + ' ' + activeName).toLowerCase()) + '" data-category="' + esc(row.category) + '">' +
         '<td><div class="omega-v2-minister-table-title">' + ministryEmblem(row) + '<div><strong>' + esc(row.title) + '</strong><small>' + esc(row.subtitle || CATEGORY_LABELS[row.category] || row.category) + '</small></div></div></td>' +
-        '<td><div class="omega-v2-minister-table-person">' + ministerPortraitMarkup(row) + '<div><strong>' + esc(activeName) + '</strong><small>' + esc(row.activeMinisterProfile && (row.activeMinisterProfile.role || row.activeMinisterProfile.position) || 'Current assignment not independently recorded') + '</small></div></div></td>' +
-        '<td><span class="omega-v2-status" data-state="unknown">' + esc(row.status || 'NOT_RECORDED') + '</span><small class="omega-v2-minister-source">' + esc(row.source || 'Registered ministry record') + '</small></td>' +
+        '<td><div class="omega-v2-minister-table-person">' + ministerPortraitMarkup(row) + '<div><strong>' + esc(activeName) + '</strong><small>' + esc(row.activeMinisterProfile && (row.activeMinisterProfile.role || row.activeMinisterProfile.position) || 'Appointment details not recorded') + '</small></div></div></td>' +
+        '<td><span class="omega-v2-status" data-state="unknown">' + esc(displayStatus(row.status)) + '</span></td>' +
         '<td><button type="button" class="omega-v2-button omega-v2-button--accent" data-omega-v2-minister-recruitment="' + esc(row.id) + '">Recruit / Replace</button></td>' +
         '<td><button type="button" class="omega-v2-button omega-v2-button--quiet" data-omega-v2-open-ministry="' + esc(row.id) + '">Open</button></td>' +
         '</tr>';
@@ -260,7 +260,7 @@
         '<div class="omega-v2-ministry-card-content"><div class="omega-v2-ministry-card-heading">' +
         '<div class="omega-v2-ministry-logo">' + (logo ? cardImage(logo, visual.logoAlt || row.title + ' logo', 'omega-v2-ministry-logo-image') : ministryEmblem(row)) + '</div>' +
         '<div class="omega-v2-ministry-heading-copy"><h3>' + esc(visual.title || row.title) + '</h3><p>' + esc(row.subtitle || visual.subtitle || '') + '</p></div></div>' +
-        '<div class="omega-v2-ministry-card-meta"><span class="omega-v2-status" data-state="unknown">' + esc(row.status || 'NOT_RECORDED') + '</span>' +
+        '<div class="omega-v2-ministry-card-meta"><span class="omega-v2-status" data-state="unknown">' + esc(displayStatus(row.status)) + '</span>' +
         '<div class="omega-v2-ministry-person">' + ministerPortraitMarkup(row) + '<span>' + esc(minister) + '</span></div></div>' +
         (galleries.length ? '<div class="omega-v2-ministry-gallery" aria-label="Additional ministry assets">' + galleries.map(function (path, galleryIndex) {
           return cardImage(path, row.title + ' additional reference ' + (galleryIndex + 1), 'omega-v2-ministry-gallery-image');
@@ -399,13 +399,12 @@
   function directoryCard(row) {
     var icon = ministryEmblem(row);
     var photoId = PHOTO_BY_MINISTRY[row.id];
-    var status = row.status || 'NOT_RECORDED';
     var img = photoId ? photoMarkup(photoId, row.title + ' reference photograph') : '';
     return '<article class="omega-v2-card" data-omega-v2-ministry-card data-search="' + esc((row.title + ' ' + row.subtitle + ' ' + row.id + ' ' + row.category).toLowerCase()) + '" data-category="' + esc(row.category) + '">' +
-      '<div class="omega-v2-card-header"><div>' + icon + '<h3 class="omega-v2-card-title">' + esc(row.title) + '</h3><div class="omega-v2-card-meta">' + esc(row.subtitle || CATEGORY_LABELS[row.category] || row.category) + '</div></div><span class="omega-v2-status" data-state="unknown">Registered profile</span></div>' +
+      '<div class="omega-v2-card-header"><div>' + icon + '<h3 class="omega-v2-card-title">' + esc(row.title) + '</h3><div class="omega-v2-card-meta">' + esc(row.subtitle || CATEGORY_LABELS[row.category] || row.category) + '</div></div></div>' +
       img +
       '<div class="omega-v2-card-meta">Minister: ' + esc(row.ministerName || 'Not recorded') + '</div>' +
-      '<div class="omega-v2-card-meta">Profile label: ' + esc(status || 'Not recorded') + ' · Live operational state is shown only when supplied by a verified runtime.</div>' +
+      
       '<div class="omega-v2-actions"><button type="button" class="omega-v2-button omega-v2-button--primary" data-omega-v2-open-ministry="' + esc(row.id) + '">Open ministry</button></div>' +
       '</article>';
   }
@@ -433,13 +432,13 @@
     var nav = g.OmegaUIV2Navigation;
     root.classList.add('omega-v2-screen');
     root.innerHTML = '<section class="omega-v2-shell omega-v2-government">' +
-      '<header class="omega-v2-heading"><div><div class="omega-v2-eyebrow">GOVERNMENT / ATLAS COMMAND</div><h1 class="omega-v2-title">National Government</h1><p class="omega-v2-subtitle">Selected country: ' + esc(countryId || 'Not recorded') + ' · executive controls and registered ministries</p></div><span class="omega-v2-status" data-state="operational">' + rows.length + ' ministry destinations</span></header>' +
+      '<header class="omega-v2-heading"><div><div class="omega-v2-eyebrow">GOVERNMENT / ATLAS COMMAND</div><h1 class="omega-v2-title">National Government</h1><p class="omega-v2-subtitle">Selected country: ' + esc(countryId || 'Not recorded') + ' · executive priorities and ministries</p></div><span class="omega-v2-status" data-state="operational">' + rows.length + ' ministry destinations</span></header>' +
       '<div class="omega-v2-government-tabs" role="group" aria-label="Government destinations">' +
       '<button type="button" class="omega-v2-button ' + (view === 'executive-ministry' ? 'omega-v2-button--accent' : 'omega-v2-button--quiet') + '" data-omega-v2-government-view="executive-ministry" aria-pressed="' + (view === 'executive-ministry' ? 'true' : 'false') + '">Executive Ministry</button>' +
       '<button type="button" class="omega-v2-button ' + (view === 'all-ministries' ? 'omega-v2-button--accent' : 'omega-v2-button--quiet') + '" data-omega-v2-government-view="all-ministries" aria-pressed="' + (view === 'all-ministries' ? 'true' : 'false') + '">All Ministries · ' + rows.length + '</button></div>' +
       (view === 'executive-ministry'
         ? overviewHtml(countryId, options)
-        : '<section class="omega-v2-ministry-directory"><header class="omega-v2-heading"><div><h2 class="omega-v2-title">All Ministries</h2><p class="omega-v2-subtitle">Open any ministry directly. The Executive Cabinet card returns to the executive overview; it does not create a duplicate runtime.</p></div><span class="omega-v2-status">' + rows.length + ' / 18 registered</span></header>' +
+        : '<section class="omega-v2-ministry-directory"><header class="omega-v2-heading"><div><h2 class="omega-v2-title">All Ministries</h2><p class="omega-v2-subtitle">Open any ministry directly. The Executive Cabinet card returns to the executive overview.</p></div><span class="omega-v2-status">' + rows.length + ' / 18 registered</span></header>' +
           '<div class="omega-v2-ministry-rotator-mount">' + ministrySpotlightMarkup(rows) + '</div>' +
           '<div class="omega-v2-filterbar"><input type="search" aria-label="Search ministries" placeholder="Search all 18 ministries" data-omega-v2-ministry-search>' +
           '<select aria-label="Filter ministry category" data-omega-v2-ministry-filter><option value="all">All categories</option>' +

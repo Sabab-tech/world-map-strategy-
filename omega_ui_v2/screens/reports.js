@@ -110,13 +110,13 @@
       ? (model.fields ? model.fields.missing + ' missing fields' : 'Unavailable')
       : category.id === 'resources-mining' ? n + ' registered site(s)'
       : category.id === 'industry-production' ? model.factoryCount + ' factory / ' + model.projectCount + ' project record(s)'
-      : category.id === 'security-police' ? (model.policeStateAvailable ? 'Police runtime connected' : 'No police state record')
+      : category.id === 'security-police' ? (model.policeStateAvailable ? 'Police records available' : 'No police records yet')
       : category.id === 'mega-projects' ? n + ' project record(s)'
       : category.id === 'national-snapshot' ? n + ' sourced indicator(s)' : n + ' source record(s)';
     var canOpen = !!(category.domain && ROUTES[category.domain]) || !!category.domain && typeof model.onOpenDomain === 'function' || !category.domain && category.id === 'national-snapshot';
-    return '<article class="omega-v2-card"><div class="omega-v2-card-header"><div><h3 class="omega-v2-card-title">' + esc(category.title) + '</h3><p class="omega-v2-card-meta">' + esc(category.subtitle) + '</p></div><span class="omega-v2-status" data-state="' + (hasData ? 'operational' : 'unknown') + '">' + (hasData ? 'DATA AVAILABLE' : 'DATA NOT RECORDED') + '</span></div>' +
-      '<div class="omega-v2-kpi"><span>Current source coverage</span><strong>' + esc(value) + '</strong></div>' +
-      '<div class="omega-v2-actions"><button type="button" class="omega-v2-button omega-v2-button--primary" data-omega-v2-open-report="' + esc(category.id) + '" data-domain="' + esc(category.domain || '') + '"' + (canOpen ? '' : ' disabled title="No canonical source-screen route is connected for this report yet."') + '>Open source report</button></div></article>';
+    return '<article class="omega-v2-card"><div class="omega-v2-card-header"><div><h3 class="omega-v2-card-title">' + esc(category.title) + '</h3><p class="omega-v2-card-meta">' + esc(category.subtitle) + '</p></div><span class="omega-v2-status" data-state="' + (hasData ? 'operational' : 'unknown') + '">' + (hasData ? 'RECORDS AVAILABLE' : 'NO RECORDS YET') + '</span></div>' +
+      '<div class="omega-v2-kpi"><span>Records found</span><strong>' + esc(value) + '</strong></div>' +
+      '<div class="omega-v2-actions"><button type="button" class="omega-v2-button omega-v2-button--primary" data-omega-v2-open-report="' + esc(category.id) + '" data-domain="' + esc(category.domain || '') + '"' + (canOpen ? '' : ' disabled title="This report is not available yet."') + ' >Open report</button></div></article>';
   }
   function photoMarkup(id,alt,caption) {
     var lib=g.OmegaUIPhotoAssets,item=null;try{item=lib&&typeof lib.get==='function'?lib.get(id):null;}catch(_){}
@@ -131,10 +131,10 @@
     var model = buildViewModel(options);
     model.onOpenDomain = options.onOpenDomain;
     root.classList.add('omega-v2-screen');
-    root.innerHTML = '<section class="omega-v2-shell omega-v2-reports"><header class="omega-v2-heading"><div><div class="omega-v2-eyebrow">CROSS-MINISTRY REPORTS</div><h1 class="omega-v2-title">Reports & Data Quality</h1><p class="omega-v2-subtitle">Country ' + esc(model.countryId || 'Not recorded') + ' · each report links to its source domain</p></div><span class="omega-v2-status" data-state="' + (model.sourceStateAvailable ? 'operational' : 'unknown') + '">' + (model.sourceStateAvailable ? 'SOURCE DATA CONNECTED' : 'SOURCE DATA UNAVAILABLE') + '</span></header>' +
+    root.innerHTML = '<section class="omega-v2-shell omega-v2-reports"><header class="omega-v2-heading"><div><div class="omega-v2-eyebrow">CROSS-MINISTRY REPORTS</div><h1 class="omega-v2-title">Reports & Data Quality</h1><p class="omega-v2-subtitle">Country ' + esc(model.countryId || 'Not recorded') + ' · reports across ministries</p></div><span class="omega-v2-status" data-state="' + (model.sourceStateAvailable ? 'operational' : 'unknown') + '">' + (model.sourceStateAvailable ? 'REPORT DATA AVAILABLE' : 'REPORT DATA UNAVAILABLE') + '</span></header>' +
       photoMarkup('wind-farm', 'Wind farm, representative energy and reporting reference image', 'REPORTS & EVIDENCE') +
       '<div class="omega-v2-kpis"><div class="omega-v2-kpi"><span>Country indicators</span><strong>' + esc(model.fields.available + ' / ' + model.fields.registered) + '</strong></div><div class="omega-v2-kpi"><span>Unrecorded indicators</span><strong>' + esc(model.fields.missing) + '</strong></div><div class="omega-v2-kpi"><span>Mine/resource sites</span><strong>' + esc(model.siteCount) + '</strong></div><div class="omega-v2-kpi"><span>Factories</span><strong>' + esc(model.factoryCount) + '</strong></div></div>' +
-      '<p class="omega-v2-note">This is an index, not a second database. Values appear only when the source runtime or registry has returned a recorded value. Time-series charts are omitted unless an actual series is provided by the owning module.</p>' +
+      '<p class="omega-v2-note">Only recorded values are shown. Missing information is marked Not recorded.</p>' +
       '<div class="omega-v2-grid">' + model.categories.map(function (category) { return card(category, model); }).join('') + '</div></section>';
     if (!root.__omegaV2ReportsBound && typeof root.addEventListener === 'function') {
       root.addEventListener('click', function (event) {

@@ -8,6 +8,7 @@
   function esc(value) { return String(value == null ? '' : value).replace(/[&<>"']/g, function (ch) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch]; }); }
   function num(value) { if (value === null || value === undefined || value === '') return null; var n = Number(value); return Number.isFinite(n) ? n : null; }
   function fmt(value, unit) { var n = num(value); return n === null ? 'Not recorded' : n.toLocaleString('en-US', { maximumFractionDigits: 2 }) + (unit ? ' ' + esc(unit) : ''); }
+  function labelStatus(value) { var text = String(value == null ? '' : value).replace(/[_-]+/g, ' ').trim().toLowerCase(); return text ? text.replace(/\b\w/g, function (ch) { return ch.toUpperCase(); }) : 'Not recorded'; }
   function stateRoot() { return g.Game && g.Game.state || g.gameState || null; }
   function pickCountryBucket(root, country) {
     if (!root || typeof root !== 'object') return null;
@@ -122,35 +123,41 @@
     };
     var path=item&&/^assets\/ui-photos\/[a-z0-9-]+\.webp$/.test(String(item.path||''))?item.path:(fallbackPaths[photoId]||fallbackPaths['industrial-production-line']);
     var credit=item&&item.author&&item.sourcePageUrl&&item.licenseUrl?'<small class="omega-v2-photo-credit">Photo: <a href="'+esc(item.sourcePageUrl)+'" target="_blank" rel="noopener noreferrer">'+esc(item.author)+'</a> · <a href="'+esc(item.licenseUrl)+'" target="_blank" rel="noopener noreferrer">'+esc(item.licenseShortName||'License')+'</a></small>':'';
-    return '<figure class="omega-v2-photo omega-v2-photo--tile omega-v2-factory-photo"><img loading="lazy" decoding="async" width="1280" height="720" src="'+esc(path)+'" alt="'+esc(factory.name||factory.type||'Industrial production')+', representative factory reference photograph"><figcaption><strong>'+esc(item&&item.caption||'INDUSTRIAL PRODUCTION')+'</strong><small>Representative reference photography only. Actual ownership, location, operating status and output come from the canonical game state.</small>'+credit+'</figcaption></figure>';
+    return '<figure class="omega-v2-photo omega-v2-photo--tile omega-v2-factory-photo"><img loading="lazy" decoding="async" width="1280" height="720" src="'+esc(path)+'" alt="'+esc(factory.name||factory.type||'Industrial production')+', representative factory reference photograph"><figcaption><strong>'+esc(item&&item.caption||'INDUSTRIAL PRODUCTION')+'</strong>'+credit+'</figcaption></figure>';
   }
   function factoryCard(factory, options) {
     var status = factory.healthStatus || factory.status || 'NOT_RECORDED';
+    var statusLabel = labelStatus(status);
     var statusKey = /STOPPED|BLOCKED|FAILED|CLOSED/.test(status) ? 'blocked' : /ACTIVE|OPERAT|RUNNING|READY|IN_PROGRESS/.test(status) ? 'operational' : 'unknown';
     var inputRows = factory.inputRows.filter(function (row) { return row.quantity !== null && row.quantity > 0; }).map(function (row) {
       return '<div class="omega-v2-material-row"><span>' + esc(row.resourceId) + '</span><strong>' + fmt(row.quantity) + '</strong></div>';
     }).join('');
     var cycle = factory.cycle;
     var cycleLine = cycle && /IN_PROGRESS|PAUSED/.test(String(cycle.status || '').toUpperCase())
-      ? String(cycle.status).toUpperCase() + ' · ' + fmt(cycle.productionQuantity, 'units/cycle') + ' · ' + esc(cycle.finishDate || 'completion date not recorded')
-      : cycle ? esc(cycle.status || 'Cycle status not recorded') : 'No active cycle recorded';
+      ? labelStatus(cycle.status) + ' · ' + fmt(cycle.productionQuantity, 'units/cycle') + ' · ' + esc(cycle.finishDate || 'Finish date not recorded')
+      : cycle ? esc(labelStatus(cycle.status || 'Cycle status not recorded')) : 'No active cycle recorded';
     var outputs = factory.latestOutputs;
+    var outputRows = outputs && typeof outputs === 'object' ? Object.keys(outputs).slice(0, 16).map(function (key) {
+      var value = outputs[key];
+      if (value && typeof value === 'object') value = Array.isArray(value) ? value.join(', ') : Object.keys(value).map(function (part) { return part + ': ' + String(value[part]); }).join(' · ');
+      return '<div class="omega-v2-material-row"><span>' + esc(labelStatus(key)) + '</span><strong>' + esc(value == null || value === '' ? 'Not recorded' : value) + '</strong></div>';
+    }).join('') : '';
     var canOpen = options && typeof options.onOpenFactory === 'function';
     return '<article class="omega-v2-card" data-omega-v2-factory-card data-search="' + esc((factory.name + ' ' + factory.id + ' ' + factory.type + ' ' + factory.recipeId).toLowerCase()) + '">' +
-      '<div class="omega-v2-card-header"><div><h3 class="omega-v2-card-title">' + esc(factory.name) + '</h3><div class="omega-v2-card-meta">' + esc(factory.id || 'Factory ID not recorded') + ' · ' + esc(factory.type) + '</div></div><span class="omega-v2-status" data-state="' + statusKey + '">' + esc(status) + '</span></div>' +
+      '<div class="omega-v2-card-header"><div><h3 class="omega-v2-card-title">' + esc(factory.name) + '</h3><div class="omega-v2-card-meta">' + esc(labelStatus(factory.type)) + '</div></div><span class="omega-v2-status" data-state="' + statusKey + '">' + esc(statusLabel) + '</span></div>' +
       '<div class="omega-v2-factory-art">' + factoryPhoto(factory) + '</div>' +
       '<div class="omega-v2-vehicle-stats">' +
       '<div><span>Recipe</span><strong>' + esc(factory.recipeId) + '</strong></div>' +
-      '<div><span>Registered capacity/day</span><strong>' + fmt(factory.capacityPerDay) + '</strong></div>' +
+      '<div><span>Daily capacity</span><strong>' + fmt(factory.capacityPerDay) + '</strong></div>' +
       '<div><span>Productivity</span><strong>' + (factory.productivityPct === null ? 'Not recorded' : fmt(factory.productivityPct, '%')) + '</strong></div>' +
       '<div><span>Location</span><strong>' + esc(factory.location) + '</strong></div>' +
       '<div><span>Jobs filled / supported</span><strong>' + fmt(factory.jobsFilled) + ' / ' + fmt(factory.jobSlots) + '</strong></div>' +
       '<div><span>Vacancies</span><strong>' + fmt(factory.vacancies) + '</strong></div>' +
       '</div><h4 class="omega-v2-section-title">Production cycle</h4><p class="omega-v2-card-meta">' + cycleLine + '</p>' +
-      '<h4 class="omega-v2-section-title">Tracked input inventory</h4>' + (inputRows ? '<div class="omega-v2-materials">' + inputRows + '</div>' : '<p class="omega-v2-card-meta">No positive tracked input batches are recorded in this asset inventory.</p>') +
-      '<h4 class="omega-v2-section-title">Latest output</h4><pre class="omega-v2-json">' + esc(outputs ? JSON.stringify(outputs, null, 2) : 'Not recorded') + '</pre>' +
-      '<p class="omega-v2-source">Authority: ' + esc(factory.authority) + '. A catalog profile is not evidence that a factory is owned or operating.</p>' +
-      '<div class="omega-v2-actions"><button class="omega-v2-button omega-v2-button--primary" data-omega-v2-open-factory="' + esc(factory.id || '') + '"' + (canOpen ? '' : ' disabled title="No canonical factory-detail navigation is connected."') + '>View factory</button></div></article>';
+      '<h4 class="omega-v2-section-title">Tracked input inventory</h4>' + (inputRows ? '<div class="omega-v2-materials">' + inputRows + '</div>' : '<p class="omega-v2-card-meta">No input stock is recorded for this factory.</p>') +
+      '<h4 class="omega-v2-section-title">Latest output</h4>' + (outputRows ? '<div class="omega-v2-materials">' + outputRows + '</div>' : '<p class="omega-v2-card-meta">Output has not been recorded yet.</p>') +
+      
+      '<div class="omega-v2-actions"><button class="omega-v2-button omega-v2-button--primary" data-omega-v2-open-factory="' + esc(factory.id || '') + '"' + (canOpen ? '' : ' disabled title="Factory detail is not available yet."') + '>View factory</button></div></article>';
   }
   function render(root, options) {
     options = options || {};
@@ -159,34 +166,33 @@
     var active = options.tab || root.__omegaV2IndustryTab || 'factories';
     var content = '';
     if (active === 'factories') {
-      content = model.factories.length ? '<div class="omega-v2-grid">' + model.factories.map(function (row) { return factoryCard(row, options); }).join('') + '</div>' : '<div class="omega-v2-empty">No commissioned production assets are recorded for ' + esc(model.countryId || 'the selected country') + '. Catalog profiles are not counted as owned factories.</div>';
+      content = model.factories.length ? '<div class="omega-v2-grid">' + model.factories.map(function (row) { return factoryCard(row, options); }).join('') + '</div>' : '<div class="omega-v2-empty">No factories are recorded for ' + esc(model.countryId || 'the selected country') + ' yet.</div>';
     } else if (active === 'production-lines') {
       content = model.cycles.length ? '<div class="omega-v2-grid">' + model.cycles.map(function (cycle) {
-        return '<article class="omega-v2-card"><h3 class="omega-v2-card-title">' + esc(cycle.factoryId) + '</h3><span class="omega-v2-status">' + esc(cycle.status || 'NOT_RECORDED') + '</span><div class="omega-v2-vehicle-stats"><div><span>Output quantity</span><strong>' + fmt(cycle.productionQuantity) + '</strong></div><div><span>Start date</span><strong>' + esc(cycle.startDate || 'Not recorded') + '</strong></div><div><span>Finish date</span><strong>' + esc(cycle.finishDate || 'Not recorded') + '</strong></div><div><span>Source batches</span><strong>' + fmt(Array.isArray(cycle.sourceBatchIds) ? cycle.sourceBatchIds.length : null) + '</strong></div></div></article>';
-      }).join('') + '</div>' : '<div class="omega-v2-empty">No tracked production cycles were returned by this country’s industrial state.</div>';
+        return '<article class="omega-v2-card"><h3 class="omega-v2-card-title">' + esc(cycle.factoryId) + '</h3><span class="omega-v2-status">' + esc(labelStatus(cycle.status || 'NOT_RECORDED')) + '</span><div class="omega-v2-vehicle-stats"><div><span>Output quantity</span><strong>' + fmt(cycle.productionQuantity) + '</strong></div><div><span>Start date</span><strong>' + esc(cycle.startDate || 'Not recorded') + '</strong></div><div><span>Finish date</span><strong>' + esc(cycle.finishDate || 'Not recorded') + '</strong></div><div><span>Source batches</span><strong>' + fmt(Array.isArray(cycle.sourceBatchIds) ? cycle.sourceBatchIds.length : null) + '</strong></div></div></article>';
+      }).join('') + '</div>' : '<div class="omega-v2-empty">No production cycles are recorded for this country yet.</div>';
     } else if (active === 'inventory') {
       var rows = [];
       model.factories.forEach(function (factory) { factory.inputRows.forEach(function (item) { rows.push({ factory: factory.id || factory.name, resource: item.resourceId, quantity: item.quantity }); }); });
-      content = rows.length ? '<div class="omega-v2-card"><div class="omega-v2-table-wrap"><table><thead><tr><th>Factory</th><th>Input resource</th><th>Recorded quantity</th></tr></thead><tbody>' + rows.map(function (row) { return '<tr><td>' + esc(row.factory) + '</td><td>' + esc(row.resource) + '</td><td>' + fmt(row.quantity) + '</td></tr>'; }).join('') + '</tbody></table></div><p class="omega-v2-source">Rows reflect per-factory input inventory only. They do not assert country-wide warehouse availability or a completed logistics receipt.</p></div>' : '<div class="omega-v2-empty">No per-factory input quantities are recorded. Shared warehouse stock is not inferred.</div>';
+      content = rows.length ? '<div class="omega-v2-card"><div class="omega-v2-table-wrap"><table><thead><tr><th>Factory</th><th>Input resource</th><th>Recorded quantity</th></tr></thead><tbody>' + rows.map(function (row) { return '<tr><td>' + esc(row.factory) + '</td><td>' + esc(row.resource) + '</td><td>' + fmt(row.quantity) + '</td></tr>'; }).join('') + '</tbody></table></div><p class="omega-v2-source">These quantities are assigned to the listed factories. Country-wide stock is shown in Stock & Warehouses.</p></div>' : '<div class="omega-v2-empty">No input stock is recorded for these factories yet.</div>';
     } else {
       content = model.projects.length ? '<div class="omega-v2-grid">' + model.projects.slice().reverse().map(function (project) {
-        return '<article class="omega-v2-card"><div class="omega-v2-card-header"><h3 class="omega-v2-card-title">' + esc(project.projectType || 'Industrial project') + '</h3><span class="omega-v2-status">' + esc(project.status || 'NOT_RECORDED') + '</span></div><div class="omega-v2-vehicle-stats"><div><span>Project ID</span><strong>' + esc(project.projectId || 'Not recorded') + '</strong></div><div><span>Site / factory</span><strong>' + esc(project.siteId || project.factoryId || 'Not recorded') + '</strong></div><div><span>Start turn</span><strong>' + fmt(project.createdTurn !== undefined ? project.createdTurn : project.startedTurn) + '</strong></div><div><span>Cost</span><strong>' + (num(project.costUsd) === null ? 'Not recorded' : new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(num(project.costUsd))) + '</strong></div></div></article>';
+        return '<article class="omega-v2-card"><div class="omega-v2-card-header"><h3 class="omega-v2-card-title">' + esc(project.projectType || 'Industrial project') + '</h3><span class="omega-v2-status">' + esc(labelStatus(project.status || 'NOT_RECORDED')) + '</span></div><div class="omega-v2-vehicle-stats"><div><span>Project ID</span><strong>' + esc(project.projectId || 'Not recorded') + '</strong></div><div><span>Site / factory</span><strong>' + esc(project.siteId || project.factoryId || 'Not recorded') + '</strong></div><div><span>Start turn</span><strong>' + fmt(project.createdTurn !== undefined ? project.createdTurn : project.startedTurn) + '</strong></div><div><span>Cost</span><strong>' + (num(project.costUsd) === null ? 'Not recorded' : new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(num(project.costUsd))) + '</strong></div></div></article>';
       }).join('') + '</div>' : '<div class="omega-v2-empty">No industrial or construction project rows are recorded for this country.</div>';
     }
 
     root.classList.add('omega-v2-screen');
     root.innerHTML = '<section class="omega-v2-shell omega-v2-industry">' +
-      '<header class="omega-v2-heading"><div><div class="omega-v2-eyebrow">INDUSTRY · PRODUCTION SYSTEM</div><h1 class="omega-v2-title">Factories & Production</h1><p class="omega-v2-subtitle">Country ' + esc(model.countryId || 'Not recorded') + ' · canonical production assets and cycles only</p></div><span class="omega-v2-status">' + fmt(model.factoryCount) + ' commissioned assets</span></header>' +
-      '<div class="omega-v2-kpis"><div class="omega-v2-kpi"><span>Owned factory assets</span><strong>' + fmt(model.factoryCount) + '</strong></div><div class="omega-v2-kpi"><span>Tracked production cycles</span><strong>' + fmt(model.cycles.length) + '</strong></div><div class="omega-v2-kpi"><span>Tracked input rows</span><strong>' + fmt(model.inputInventoryCount) + '</strong></div><div class="omega-v2-kpi"><span>Catalog profiles</span><strong>' + fmt(model.catalogProfileCount) + '</strong></div></div>' +
-      '<div class="omega-v2-note">Factory catalog artwork and recipe profiles are reference definitions. Ownership, production status, inventory and delivered input come from current country game state; a button does not build or produce a factory by itself.</div>' +
+      '<header class="omega-v2-heading"><div><div class="omega-v2-eyebrow">INDUSTRY · PRODUCTION SYSTEM</div><h1 class="omega-v2-title">Factories & Production</h1><p class="omega-v2-subtitle">Country ' + esc(model.countryId || 'Not recorded') + ' · factories, input stock, output and build projects</p></div><span class="omega-v2-status">' + fmt(model.factoryCount) + ' commissioned assets</span></header>' +
+      '<div class="omega-v2-kpis"><div class="omega-v2-kpi"><span>Owned factory assets</span><strong>' + fmt(model.factoryCount) + '</strong></div><div class="omega-v2-kpi"><span>Tracked production cycles</span><strong>' + fmt(model.cycles.length) + '</strong></div><div class="omega-v2-kpi"><span>Tracked input rows</span><strong>' + fmt(model.inputInventoryCount) + '</strong></div><div class="omega-v2-kpi"><span>Available factory designs</span><strong>' + fmt(model.catalogProfileCount) + '</strong></div><div class="omega-v2-kpi"><span>Recent material movements</span><strong>' + fmt(model.recentFlowCount) + '</strong></div></div>' +
+      '<div class="omega-v2-note">Use the tabs to review factory details, production cycles, input stock and construction projects.</div>' +
       '<div class="omega-v2-filterbar">' +
       tabButton('factories', 'My Factories', active) +
       tabButton('production-lines', 'Production Lines', active) +
       tabButton('inventory', 'Input Inventory', active) +
       tabButton('projects', 'Build Projects', active) +
       '</div><div data-omega-v2-industry-content>' + content + '</div>' +
-      '<p class="omega-v2-source">Factory and production records remain in this UI v2 screen. Retired console navigation is disabled.</p>' +
-      '<p class="omega-v2-source">Read source: ' + esc(model.source) + '. Recent site-flow ledger entries available: ' + fmt(model.recentFlowCount) + '.</p></section>';
+      '</section>';
 
     if (!root.__omegaV2IndustryBound && typeof root.addEventListener === 'function') {
       root.addEventListener('click', function (event) {

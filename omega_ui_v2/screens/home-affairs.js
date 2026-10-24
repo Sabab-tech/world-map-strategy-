@@ -16,6 +16,7 @@
   function esc(v) { return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) { return ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[c]; }); }
   function num(v) { if (v === null || v === undefined || v === '') return null; var n = Number(v); return Number.isFinite(n) ? n : null; }
   function fmt(v) { var n = num(v); return n === null ? 'Not recorded' : n.toLocaleString('en-US', { maximumFractionDigits: 2 }); }
+  function displayStatus(value) { var text = String(value == null ? '' : value).replace(/[_-]+/g, ' ').trim().toUpperCase(); var labels = { SIMULATED:'Estimated', MODELED:'Estimated', MODELLED:'Estimated', UNOBSERVED:'Not measured', NOT_RECORDED:'Not recorded', OPERATIONAL:'Operational', ACTIVE:'Active', INACTIVE:'Inactive', IN_TRANSIT:'In transit', DELIVERED:'Delivered', BLOCKED:'Blocked', FAILED:'Failed' }; return labels[text] || (text ? text.toLowerCase().replace(/\b\w/g, function (ch) { return ch.toUpperCase(); }) : 'Not recorded'); }
   function money(v) { var n = num(v); return n === null ? 'Unavailable' : new Intl.NumberFormat('en-US', { style:'currency', currency:'USD', maximumFractionDigits:0 }).format(n); }
   function countryId(options) {
     return String(options && options.countryId || g.OmegaMinistryViewCountry || (g.OmegaCabinetUI && g.OmegaCabinetUI.activeCountry) || g.currentActiveCountry || g.playerCountryId || '').trim().toUpperCase();
@@ -63,7 +64,7 @@
     var summary = stateSummary(state, fleet);
     return '<div class="omega-v2-home-dashboard">' +
       getPhoto('bangladesh-police-headquarters', 'Police headquarters reference photo') +
-      '<div class="omega-v2-kpis">' + summary.map(function (item) { return '<div class="omega-v2-kpi"><span>' + esc(item.label) + '</span><strong>' + esc(item.value) + '</strong><small>' + esc(item.source) + '</small></div>'; }).join('') + '</div>' +
+      '<div class="omega-v2-kpis">' + summary.map(function (item) { return '<div class="omega-v2-kpi"><span>' + esc(item.label) + '</span><strong>' + esc(item.value) + '</strong></div>'; }).join('') + '</div>' +
       '<h2 class="omega-v2-section-title">Operational sections</h2><div class="omega-v2-grid">' +
       [
         ['personnel','Personnel','Staff count, recruiting and training.'],
@@ -72,7 +73,7 @@
         ['facilities','Facilities & Equipment','Recorded station, academy and equipment levels.'],
         ['incidents','Incidents & Reports','Recorded security incidents and response status.']
       ].map(function (item) { return '<button type="button" class="omega-v2-card omega-v2-home-link" data-omega-v2-home-tab="' + item[0] + '"><span class="omega-v2-card-title">' + esc(item[1]) + '</span><span class="omega-v2-card-meta">' + esc(item[2]) + '</span></button>'; }).join('') +
-      '</div><p class="omega-v2-source">Country context: ' + esc(country || 'Not recorded') + '. Values come from HomeMinistry state and the existing fleet snapshot.</p></div>';
+      '</div><p class="omega-v2-source"></p></div>';
   }
   function personnelHtml(state, country, quote, outcome, canRecruit) {
     state = state || {};
@@ -80,21 +81,21 @@
     var cost = quote && quote.ok ? money(quote.upfrontCostUsd) : 'Unavailable';
     var forecast = quote && quote.ok && quote.additionalIncidentsAvoidedPerYear !== null ? fmt(quote.additionalIncidentsAvoidedPerYear) : 'Not recorded';
     var message = outcome ? '<div class="omega-v2-note" role="status">' + esc(outcome) + '</div>' : '';
-    var quoteWarning = quote && !quote.ok ? '<div class="omega-v2-note">Recruitment estimate is blocked or unavailable (' + esc(quote.code || quote.reason || 'NO_QUOTE') + '). The official recruitment runtime will validate the action; no costs are guessed.</div>' : '';
+    var quoteWarning = quote && !quote.ok ? '<div class="omega-v2-note">Recruitment costs are unavailable for this country. Check the selected country and treasury before confirming.</div>' : '';
     return '<div class="omega-v2-home-personnel">' + message + '<h2 class="omega-v2-section-title">Current personnel</h2>' +
       '<div class="omega-v2-kpis"><div class="omega-v2-kpi"><span>Police officers</span><strong>' + fmt(state.policeCount) + '</strong></div><div class="omega-v2-kpi"><span>Special agents</span><strong>' + fmt(state.specialAgents) + '</strong></div><div class="omega-v2-kpi"><span>Recruitment fee per officer</span><strong>' + money(state.recruitmentFeePerOfficerUsd) + '</strong></div><div class="omega-v2-kpi"><span>Daily salary per officer</span><strong>' + money(state.dailySalaryPerOfficerUsd) + '</strong></div></div>' +
-      '<article class="omega-v2-card"><h2 class="omega-v2-title">Recruit Police</h2><p class="omega-v2-card-meta">Recruitment is executed through the existing Home Ministry engine. Recruitment costs, payroll, country rules and treasury checks remain authoritative.</p>' +
+      '<article class="omega-v2-card"><h2 class="omega-v2-title">Recruit Police</h2><p class="omega-v2-card-meta">Recruit officers, then train and assign them before deployment. Upfront costs and daily payroll are shown before confirmation.</p>' +
       '<label class="omega-v2-field-label" for="omega-v2-police-recruit-quantity">Number of officers</label><input class="omega-v2-number-input" id="omega-v2-police-recruit-quantity" type="number" min="1" max="100000" step="1" value="1" inputmode="numeric" data-omega-v2-recruit-quantity>' +
       '<div class="omega-v2-vehicle-stats"><div><span>Upfront cost estimate</span><strong data-omega-v2-recruit-cost>' + cost + '</strong></div><div><span>Added daily payroll estimate</span><strong data-omega-v2-recruit-payroll>' + payroll + '</strong></div><div><span>Projected annual incidents avoided</span><strong data-omega-v2-recruit-forecast>' + forecast + '</strong></div></div>' +
       quoteWarning + '<div class="omega-v2-actions"><button type="button" class="omega-v2-button omega-v2-button--primary" data-omega-v2-action="recruit-police"' + (canRecruit ? '' : ' disabled title="Canonical police recruitment API is unavailable."') + '>Confirm recruitment</button></div>' +
-      '<p class="omega-v2-source">A successful result is shown only after the authoritative engine returns an accepted mutation. After recruitment, staff still need valid training/availability before deployment.</p></article></div>';
+      '<p class="omega-v2-source">New officers must complete training and be available before deployment.</p></article></div>';
   }
   function patrolsHtml(state, options) {
     var plan = state && state.patrolPlan && typeof state.patrolPlan === 'object' ? state.patrolPlan : null;
     var entries = plan ? Object.keys(plan).map(function (key) { return '<div class="omega-v2-material-row"><span>' + esc(key.replace(/[_-]+/g, ' ')) + '</span><strong>' + fmt(plan[key]) + '%</strong></div>'; }).join('') : '';
     return '<article class="omega-v2-card"><h2 class="omega-v2-section-title">Recorded patrol plan</h2>' +
       (entries ? '<div class="omega-v2-materials">' + entries + '</div>' : '<div class="omega-v2-empty">No authoritative patrol allocation was returned for this country.</div>') +
-      '<p class="omega-v2-note">Assignment is only accepted when the real runtime confirms an owned/available vehicle, eligible personnel, country scope and mission requirements. This summary does not invent routes or active units.</p>' +
+      '<p class="omega-v2-note">Patrol assignments require available vehicles, eligible staff and a valid mission.</p>' +
       '<div class="omega-v2-actions"><button type="button" class="omega-v2-button omega-v2-button--primary" data-omega-v2-home-tab="personnel">Review police personnel</button></div></article>';
   }
   function facilitiesHtml(state) {
@@ -108,7 +109,7 @@
     var rows = state && Array.isArray(state.incidentLedger) ? state.incidentLedger.slice().reverse().slice(0, 30) : [];
     return '<h2 class="omega-v2-section-title">Recorded incidents</h2>' +
       (rows.length ? '<div class="omega-v2-grid">' + rows.map(function (item) {
-        return '<article class="omega-v2-card"><div class="omega-v2-card-header"><h3 class="omega-v2-card-title">' + esc(String(item.type || 'Incident').replace(/[_-]+/g, ' ')) + '</h3><span class="omega-v2-status">' + esc(item.status || 'NOT_RECORDED') + '</span></div><div class="omega-v2-card-meta">Turn ' + fmt(item.simulationTurn) + ' · Week ' + fmt(item.simulationWeek) + '</div>' +
+        return '<article class="omega-v2-card"><div class="omega-v2-card-header"><h3 class="omega-v2-card-title">' + esc(String(item.type || 'Incident').replace(/[_-]+/g, ' ')) + '</h3><span class="omega-v2-status">' + esc(displayStatus(item.status || 'NOT_RECORDED')) + '</span></div><div class="omega-v2-card-meta">Turn ' + fmt(item.simulationTurn) + ' · Week ' + fmt(item.simulationWeek) + '</div>' +
           '<div class="omega-v2-card-meta">Detection: ' + (item.detected === true ? 'Detected' : item.detected === false ? 'Not detected' : 'Not recorded') + '</div>' +
           (item.targetAssetName ? '<div class="omega-v2-card-meta">Target asset: ' + esc(item.targetAssetName) + '</div>' : '') +
           (item.assetImpact && item.assetImpact.assetId ? '<div class="omega-v2-card-meta">Recorded impact: ' + esc(item.assetImpact.assetId) + ' · ' + esc(item.assetImpact.condition || 'condition not recorded') + '</div>' : '') +
@@ -162,9 +163,9 @@
     var unique = Object.create(null);
     rows = rows.filter(function (row) { var id = row.law + '|' + row.section + '|' + row.title; if (unique[id]) return false; unique[id] = true; return true; });
     var body = rows.map(function (row) { return '<tr><td>' + esc(row.law) + '</td><td>' + esc(row.section) + '</td><td><strong>' + esc(row.title) + '</strong><p>' + esc(row.body) + '</p></td><td>' + esc(row.status) + '</td><td>' + esc(row.source) + '</td></tr>'; }).join('');
-    return '<section class="omega-v2-home-laws"><h2 class="omega-v2-section-title">Home Affairs · Law &amp; Sections</h2><p class="omega-v2-card-meta">Legal records are read from the selected country and existing Home Affairs / country-data sources. Only registered law titles, sections and text are displayed.</p>' +
-      (rows.length ? '<div class="omega-v2-table-wrap omega-v2-laws-table-wrap"><table><thead><tr><th scope="col">Law / Act</th><th scope="col">Section / Article</th><th scope="col">Title &amp; provision</th><th scope="col">Status</th><th scope="col">Source</th></tr></thead><tbody>' + body + '</tbody></table></div>' : '<div class="omega-v2-empty" role="status">No Home Affairs laws or section text are registered for ' + esc(country || 'the selected country') + '. The legal register is empty or unavailable; no act, article or punishment has been invented.</div>') +
-      '<p class="omega-v2-source">Authoritative legal display requires jurisdiction, current version and a registered source. This view never substitutes fictional provisions for missing legal records.</p></section>';
+    return '<section class="omega-v2-home-laws"><h2 class="omega-v2-section-title">Home Affairs · Law &amp; Sections</h2><p class="omega-v2-card-meta">Browse the laws and sections recorded for the selected country.</p>' +
+      (rows.length ? '<div class="omega-v2-table-wrap omega-v2-laws-table-wrap"><table><thead><tr><th scope="col">Law / Act</th><th scope="col">Section / Article</th><th scope="col">Title &amp; provision</th><th scope="col">Status</th><th scope="col">Source</th></tr></thead><tbody>' + body + '</tbody></table></div>' : '<div class="omega-v2-empty" role="status">No laws or sections are recorded for ' + esc(country || 'the selected country') + ' yet.</div>') +
+      '</section>';
   }
   function render(root, options) {
     options = options || {};
@@ -188,9 +189,9 @@
 
     root.classList.add('omega-v2-screen');
     root.innerHTML = '<section class="omega-v2-shell omega-v2-home-affairs">' +
-      '<header class="omega-v2-heading"><div><div class="omega-v2-eyebrow">CIVIL ADMINISTRATION · HOME AFFAIRS</div><h1 class="omega-v2-title">Public Safety & Police</h1><p class="omega-v2-subtitle">Country ' + esc(country || 'Not recorded') + ' · canonical personnel, fleet and incident state</p></div><span class="omega-v2-status" data-state="' + (e ? 'operational' : 'unknown') + '">' + (e ? 'POLICE RUNTIME CONNECTED' : 'POLICE RUNTIME UNAVAILABLE') + '</span></header>' +
+      '<header class="omega-v2-heading"><div><div class="omega-v2-eyebrow">CIVIL ADMINISTRATION · HOME AFFAIRS</div><h1 class="omega-v2-title">Public Safety & Police</h1><p class="omega-v2-subtitle">Country ' + esc(country || 'Not recorded') + ' · staff, fleet, patrols and incident records</p></div><span class="omega-v2-status" data-state="' + (e ? 'operational' : 'unknown') + '">' + (e ? 'POLICE RECORDS AVAILABLE' : 'POLICE RECORDS UNAVAILABLE') + '</span></header>' +
       tabBar(active) + '<div data-omega-v2-home-content>' + content + '</div>' +
-      '<p class="omega-v2-source">Police personnel, fleet and patrol records are managed within this UI v2 screen. The retired console is disconnected.</p></section>';
+      '</section>';
 
     if (!root.__omegaV2HomeBound && typeof root.addEventListener === 'function') {
       root.addEventListener('click', function (event) {
@@ -219,8 +220,8 @@
           var result;
           try { result = engineNow.recruitPolice(amount, countryId(currentOptions)); }
           catch (error) { result = { ok:false, code:'RECRUITMENT_RUNTIME_EXCEPTION', message:String(error && error.message || error) }; }
-          if (result && result.ok) root.__omegaV2RecruitOutcome = 'Recruitment accepted by the canonical runtime for ' + fmt(amount) + ' officer(s). Recorded cost: ' + money(result.upfrontCostUsd !== undefined ? result.upfrontCostUsd : result.costUsd !== undefined ? result.costUsd : result.cost) + '.';
-          else root.__omegaV2RecruitOutcome = 'Recruitment not executed: ' + String(result && (result.message || result.code || result.reason) || 'RUNTIME_REJECTED') + '.';
+          if (result && result.ok) root.__omegaV2RecruitOutcome = 'Recruitment confirmed: ' + fmt(amount) + ' officer(s). Cost: ' + money(result.upfrontCostUsd !== undefined ? result.upfrontCostUsd : result.costUsd !== undefined ? result.costUsd : result.cost) + '.';
+          else root.__omegaV2RecruitOutcome = 'Recruitment was not completed. Review the selected country, available funds and recruitment requirements.';
           render(root, Object.assign({}, currentOptions, { tab:'personnel' }));
         }
       });

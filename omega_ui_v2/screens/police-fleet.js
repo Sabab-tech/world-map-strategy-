@@ -144,10 +144,10 @@
 
   function vehicleCard(vehicle) {
     var state = vehicle.unlocked === true ? 'ready' : vehicle.unlocked === false ? 'locked' : 'unknown';
-    var stateText = vehicle.unlocked === true ? 'UNLOCKED' : vehicle.unlocked === false ? 'LOCKED TIER' : 'UNLOCK STATE UNAVAILABLE';
+    var stateText = vehicle.unlocked === true ? 'UNLOCKED' : vehicle.unlocked === false ? 'LOCKED TIER' : 'Availability not recorded';
     var owned = vehicle.ownedStateAvailable ? fmtCount(vehicle.ownedCount) : 'Not recorded';
     var pendingText = vehicle.pendingOrder
-      ? '<div class="omega-v2-note">Order pending: ' + fmtCount(vehicle.pendingOrder.quantity) + ' unit(s). Delivery remains pending until the simulation confirms it.</div>'
+      ? '<div class="omega-v2-note">Order pending: ' + fmtCount(vehicle.pendingOrder.quantity) + ' unit(s). Units are added to owned stock after delivery.</div>'
       : '';
     var adapter = safeAdapter();
     var canInspect = !!(adapter && typeof adapter.renderVehicleCatalog === 'function');
@@ -217,32 +217,32 @@
     var lib=g.OmegaUIPhotoAssets,item=null;try{item=lib&&typeof lib.get==='function'?lib.get('bangladesh-police-headquarters'):null;}catch(_){}
     var path=item&&/^assets\/ui-photos\/bangladesh-police-headquarters\.webp$/.test(String(item.path||''))?item.path:'assets/ui-photos/bangladesh-police-headquarters.webp';
     var credit=item&&item.author&&item.sourcePageUrl&&item.licenseUrl?'<small class="omega-v2-photo-credit">Photo: <a href="'+esc(item.sourcePageUrl)+'" target="_blank" rel="noopener noreferrer">'+esc(item.author)+'</a> · <a href="'+esc(item.licenseUrl)+'" target="_blank" rel="noopener noreferrer">'+esc(item.licenseShortName||'License')+'</a></small>':'';
-    return '<figure class="omega-v2-photo omega-v2-photo--hero omega-v2-fleet-hero"><img loading="lazy" decoding="async" width="1280" height="720" src="'+esc(path)+'" alt="Police headquarters, representative public safety reference photograph"><figcaption><strong>'+esc(item&&item.caption||'PUBLIC SAFETY & FLEET')+'</strong><small>Representative public-safety image. It is not evidence that the selected country owns a pictured facility or vehicle.</small>'+credit+'</figcaption></figure>';
+    return '<figure class="omega-v2-photo omega-v2-photo--hero omega-v2-fleet-hero"><img loading="lazy" decoding="async" width="1280" height="720" src="'+esc(path)+'" alt="Police headquarters, representative public safety reference photograph"><figcaption><strong>'+esc(item&&item.caption||'PUBLIC SAFETY & FLEET')+'</strong>'+credit+'</figcaption></figure>';
   }
   function render(root, options) {
     options = options || {};
     if (!root || typeof root !== 'object') return { ok: false, code: 'POLICE_FLEET_ROOT_REQUIRED' };
     var model = buildViewModel(options);
     if (!model.ready) {
-      root.innerHTML = '<section class="omega-v2-screen omega-v2-shell"><div class="omega-v2-empty">Police vehicle data is unavailable. No vehicle catalogue was fabricated.</div></section>';
+      root.innerHTML = '<section class="omega-v2-screen omega-v2-shell"><div class="omega-v2-empty">Vehicle details are unavailable for the selected country right now.</div></section>';
       return { ok: false, code: model.reason };
     }
 
     root.classList.add('omega-v2-screen');
     root.innerHTML = '<section class="omega-v2-shell omega-v2-police-fleet">' +
-      '<header class="omega-v2-heading"><div><div class="omega-v2-eyebrow">INTERIOR & SECURITY · FLEET</div><h1 class="omega-v2-title">Police Vehicle Hangar</h1><p class="omega-v2-subtitle">All ' + model.catalogCount + ' canonical vehicle profiles · selected country ' + esc(model.countryId || 'Not recorded') + '</p></div><span class="omega-v2-status" data-state="' + (model.catalogCountMatchesExpected ? 'operational' : 'attention') + '">' + (model.catalogCountMatchesExpected ? '15-TIER CATALOG' : fmtCount(model.catalogCount) + ' PROFILES · VERIFY CATALOG') + '</span></header>' +
+      '<header class="omega-v2-heading"><div><div class="omega-v2-eyebrow">INTERIOR & SECURITY · FLEET</div><h1 class="omega-v2-title">Police Vehicle Hangar</h1><p class="omega-v2-subtitle">All ' + model.catalogCount + ' vehicle options · selected country ' + esc(model.countryId || 'Not recorded') + '</p></div><span class="omega-v2-status" data-state="' + (model.catalogCountMatchesExpected ? 'operational' : 'attention') + '">' + (model.catalogCountMatchesExpected ? '15 VEHICLE TIERS' : fmtCount(model.catalogCount) + ' VEHICLE PROFILES') + '</span></header>' +
       '<div class="omega-v2-kpis">' +
       '<div class="omega-v2-kpi"><span>Canonical tiers</span><strong>' + fmtCount(model.catalogCount) + '</strong></div>' +
       '<div class="omega-v2-kpi"><span>Highest unlocked tier</span><strong>' + fmtCount(model.unlockedTier) + '</strong></div>' +
       '<div class="omega-v2-kpi"><span>Owned units</span><strong>' + (model.stateAvailable && model.vehicles.every(function (v) { return v.ownedStateAvailable; }) ? fmtCount(model.vehicles.reduce(function (total, v) { return total + v.ownedCount; }, 0)) : 'Not recorded') + '</strong></div>' +
       '<div class="omega-v2-kpi"><span>Order in transit</span><strong>' + (model.stateAvailable && model.vehicles.some(function (v) { return !!v.pendingOrder; }) ? 'Pending' : model.stateAvailable ? 'None recorded' : 'Unavailable') + '</strong></div>' +
       '</div>' +
-      (!model.catalogCountMatchesExpected ? '<div class="omega-v2-note">The canonical catalogue currently exposes ' + fmtCount(model.catalogCount) + ' profiles, not the expected 15 tiers. The UI displays the actual registry; it will not synthesize missing vehicles.</div>' : '') +
-      '<p class="omega-v2-note">Vehicle selection is not procurement. Buying, maintenance and deployment stay with the existing authoritative Home Ministry engine and its Finance, unlock, route, staffing and delivery checks.</p>' +
+      (!model.catalogCountMatchesExpected ? '<div class="omega-v2-note">Expected 15 tiers, but ' + fmtCount(model.catalogCount) + ' are currently available.</div>' : '') +
+      '<p class="omega-v2-note">Inspect a vehicle to compare speed, range, durability, equipment and operating cost. Selecting a profile does not place an order.</p>' +
       '<div class="omega-v2-filterbar"><input type="search" aria-label="Search police vehicles" placeholder="Search vehicle name, tier or role" data-omega-v2-fleet-search><button type="button" class="omega-v2-button omega-v2-button--accent" data-omega-v2-fleet-filter="all" aria-pressed="true">All tiers</button><button type="button" class="omega-v2-button" data-omega-v2-fleet-filter="unlocked" aria-pressed="false">Unlocked</button><button type="button" class="omega-v2-button" data-omega-v2-fleet-filter="owned" aria-pressed="false">Owned</button></div>' +
-      '<div class="omega-v2-card-meta">Showing <strong data-omega-v2-visible-count>' + model.catalogCount + '</strong> vehicle profiles. Locked vehicles remain inspectable; order eligibility is enforced by the existing hangar.</div>' +
+      '<div class="omega-v2-card-meta">Showing <strong data-omega-v2-visible-count>' + model.catalogCount + '</strong> vehicle profiles. Use the filters to narrow the list.</div>' +
       '<div class="omega-v2-grid" data-omega-v2-fleet-grid>' + model.vehicles.map(vehicleCard).join('') + '</div>' +
-      '<p class="omega-v2-source">Authority: ' + esc(model.source) + '. Illustrations are local SVGs returned by the existing OMEGA UI adapter. Prices/capabilities are canonical game-model values, not real-world procurement advice.</p>' +
+      
       '</section>';
 
     if (!root.__omegaV2PoliceFleetBound && typeof root.addEventListener === 'function') {
