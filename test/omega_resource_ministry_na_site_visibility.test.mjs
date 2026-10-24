@@ -25,7 +25,7 @@ const api = sandbox.OmegaUIV2ResourceMinistry;
 assert.ok(api && typeof api.buildViewModel === 'function', 'resource ministry view model must be available');
 const model = api.buildViewModel({});
 assert.equal(model.siteCount, 4, 'resource ministry must not filter out records with no commodity identity');
-assert.deepEqual(model.sites.map(row => row.countryId).sort(), ['LIE','MCO','SMR','VAT']);
+assert.deepEqual(Array.from(model.sites, row => row.countryId).sort(), ['LIE','MCO','SMR','VAT']);
 for (const item of model.sites) {
   assert.equal(item.resourceId, 'NOT_APPLICABLE', item.siteId + ': show an explicit non-resource category label');
   assert.equal(item.notApplicable, true, item.siteId + ': UI must mark the row as non-applicable');
