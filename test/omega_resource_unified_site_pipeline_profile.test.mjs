@@ -127,7 +127,12 @@ for (const row of resourceRows) {
   const purityValue = typeof sim.purity === 'object' ? sim.purity?.value : sim.purity;
   const throughputValue = typeof sim.throughput === 'object' ? sim.throughput?.value : sim.throughput;
   assert.ok(Number(gradeValue) > 0, row.siteId + ': explicit simulated grade/quality value');
-  assert.ok(Number(sim.recovery) > 0, row.siteId + ': simulated recovery');
+  const recoveryValue = typeof sim.recovery === 'object' ? sim.recovery?.value : sim.recovery;
+  assert.ok(Number(recoveryValue) > 0, row.siteId + ': simulated recovery');
+  if (typeof sim.recovery === 'object') {
+    assert.ok(String(sim.recovery.status || '').length > 0, row.siteId + ': recovery provenance status');
+    assert.ok(String(sim.recovery.unit || '').length > 0, row.siteId + ': recovery unit');
+  }
   assert.ok(Number(purityValue) > 0, row.siteId + ': simulated product purity');
   assert.ok(Number(throughputValue) > 0, row.siteId + ': simulated throughput');
 
