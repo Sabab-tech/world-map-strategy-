@@ -41,13 +41,33 @@
   }
   function scalarRows(record) {
     if (!record || typeof record !== 'object' || Array.isArray(record)) return [];
-    return Object.keys(record).filter(function (key) {
-      var value = record[key];
-      return value === null || ['string','number','boolean'].indexOf(typeof value) >= 0;
-    }).slice(0, 32).map(function (key) {
-      var value = record[key];
-      return { key:key.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/[_-]+/g,' '), section:sectionForField(key), value:value == null || value === '' ? 'Not recorded' : String(value) };
-    });
+    var rows = [];
+    var seen = [];
+    function flatten(value, label, depth) {
+      if (rows.length >= 72 || depth > 4) return;
+      if (value === null || value === undefined || typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+        if (!label) return;
+        rows.push({
+          key:label.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/[_-]+/g,' '),
+          section:sectionForField(label),
+          value:value == null || value === '' ? 'Not recorded' : String(value)
+        });
+        return;
+      }
+      if (typeof value !== 'object' || seen.indexOf(value) >= 0) return;
+      seen.push(value);
+      if (Array.isArray(value)) {
+        value.slice(0, 10).forEach(function (item, index) {
+          flatten(item, label + ' ' + (index + 1), depth + 1);
+        });
+      } else {
+        Object.keys(value).slice(0, 24).forEach(function (key) {
+          flatten(value[key], label ? label + ' ' + key : key, depth + 1);
+        });
+      }
+    }
+    flatten(record, '', 0);
+    return rows;
   }
   function rowsForSection(rows, section) {
     return (rows || []).filter(function (item) { return item.section === section; });
