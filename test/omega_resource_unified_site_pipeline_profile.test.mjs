@@ -74,13 +74,13 @@ const rows = [...registryById.values()].map(source => {
   const normalized = integrity.normalizeSiteRecord(source);
   return integrity.buildSimulationPipelineProfile(normalized, { aliasMap, year: 2026 });
 });
-assert.equal(rows.length, 513, 'single runtime registry must retain canonical plus additive records without duplicate IDs');
+assert.equal(rows.length, 514, 'single runtime registry must retain canonical plus additive records without duplicate IDs');
 assert.equal(new Set(rows.map(siteId)).size, rows.length, 'runtime site IDs must remain unique');
 
 const aliases = rows.filter(row => integrity.isAlias(row, aliasMap));
 const physical = rows.filter(row => !integrity.isAlias(row, aliasMap));
 assert.equal(physical.length, 503, 'all 503 unique physical site records must be in the unified registry');
-assert.equal(aliases.length, 10, 'known aliases remain references and never become a second producing site');
+assert.equal(aliases.length, 11, 'known aliases remain references and never become a second producing site');
 assert.equal(physical.filter(row => row.operation?.commercialExtraction === true).length, 492,
   'commercially eligible site count must remain explicit and stable');
 
