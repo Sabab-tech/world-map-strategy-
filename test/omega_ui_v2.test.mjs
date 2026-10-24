@@ -123,7 +123,7 @@ test('resource view model keeps simulated reserve out of reported reserve', () =
 });
 
 
-test('Government directory never duplicates the Executive Cabinet as an ordinary ministry', () => {
+test('Government directory includes every canonical cabinet record', () => {
   globalThis.OmegaCabinetUI = {
     ministriesDatabase: {
       cabinet_council: { id:'cabinet_council', title:'Executive Cabinet', category:'governance' },
@@ -132,8 +132,8 @@ test('Government directory never duplicates the Executive Cabinet as an ordinary
     }
   };
   const rows = globalThis.OmegaUIV2Government.getMinistryRows();
-  assert.deepEqual(rows.map((row) => row.id), ['interior_security', 'energy_mining']);
-  assert.equal(rows.some((row) => row.id === 'cabinet_council'), false);
+  assert.deepEqual(rows.map((row) => row.id), ['cabinet_council', 'interior_security', 'energy_mining']);
+  assert.equal(rows.length, 3);
 });
 
 test('Home Affairs provides all six planned sections and does not create a separate recruitment destination', () => {
@@ -435,11 +435,13 @@ test('Government exposes emblems, minister recruitment and a stable future portr
   const root = { classList:{ add(){} }, addEventListener(){}, querySelector(){ return null; }, querySelectorAll(){ return []; }, innerHTML:'', contains(){ return true; } };
   try {
     const rendered = globalThis.OmegaUIV2Government.render(root, { view:'all-ministries', countryId:'BGD' });
-    assert.equal(rendered.ministryCount, 2);
-    assert.match(root.innerHTML, /omega-v2-minister-table/);
+    assert.equal(rendered.ministryCount, 3);
+    assert.match(root.innerHTML, /omega-v2-ministry-grid/);
+    assert.match(root.innerHTML, /data-omega-v2-ministry-rotator/);
     assert.match(root.innerHTML, /data-omega-v2-minister-portrait-slot/);
     assert.match(root.innerHTML, /Recruit \/ Replace/);
     assert.match(root.innerHTML, /<svg/);
+    assert.ok(root.innerHTML.includes('assets/Military_Ministry_Logo_Concept_A.png.jpg') || root.innerHTML.includes('assets/IMG_20260703_180105.jpg'));
   } finally {
     globalThis.OmegaCabinetUI = previousCabinet;
   }
