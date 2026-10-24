@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import '../omega_ui_v2/navigation-registry.js';
+import '../omega_ui_v2/ministry-visual-registry.js';
 import '../omega_ui_v2/screens/police-fleet.js';
 import '../omega_ui_v2/screens/resource-ministry.js';
 import '../omega_ui_v2/screens/government.js';
@@ -25,13 +26,21 @@ test('Government navigation has exactly Executive Ministry and All Ministries', 
   assert.equal(nav.normalizeGovernmentDestination('overview'), 'executive-ministry');
 });
 
-test('registry exposes only confirmed regular ministry IDs while documenting count mismatch', () => {
+test('registry exposes 18 canonical ministry destinations with local visual assets', () => {
   const nav = globalThis.OmegaUIV2Navigation;
-  assert.equal(nav.ministryIds.length, 17);
-  assert.equal(new Set(nav.ministryIds).size, 17);
-  assert.equal(nav.unresolvedDirectoryLabelCount, 18);
-  assert.ok(nav.unresolvedCountNote.includes('reconcile'));
-  assert.equal(nav.ministryIds.includes('cabinet_council'), false);
+  const visuals = globalThis.OmegaUIV2MinistryVisualRegistry;
+  assert.equal(nav.ministryIds.length, 18);
+  assert.equal(new Set(nav.ministryIds).size, 18);
+  assert.equal(nav.visibleRegularMinistryCount, 17);
+  assert.equal(nav.visibleMinistryCount, 18);
+  assert.equal(nav.unresolvedDirectoryLabelCount, 0);
+  assert.ok(nav.ministryIds.includes('cabinet_council'));
+  assert.equal(visuals.count, 18);
+  assert.deepEqual(visuals.ids, nav.ministryIds);
+  assert.equal(visuals.get('defense').logo, 'assets/Military_Ministry_Logo_Concept_A.png.jpg');
+  assert.equal(visuals.get('foreign_affairs').logo, 'assets/IMG_20260703_180105.jpg');
+  assert.ok(visuals.get('intelligence_cyber').image.includes('China_Military_Facilities_What_Satellites_Reveal'));
+  assert.ok(visuals.get('intelligence_cyber').gallery.includes('assets/images (14).jpeg'));
 });
 
 test('police fleet view model reads all 15 canonical profiles and preserves missing values', () => {
