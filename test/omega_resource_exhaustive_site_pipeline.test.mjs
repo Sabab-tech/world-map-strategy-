@@ -40,7 +40,10 @@ const sourceById = new Map();
 const profileFailures = [];
 for (const source of sourceRows) {
   const siteId = String(source?.siteId || '').trim();
-  if (!siteId || sourceById.has(siteId) || source?.runtime?.aliasOfSiteId ||
+  // The base integration fixture deliberately registers synthetic SITE_TEST_* rows.
+  // They are covered by their dedicated fixture assertions, not counted as physical mines.
+  if (!siteId || /^SITE_TEST_/i.test(siteId) || source?.sourceReference?.sourcePath === 'TEST_FIXTURE_CANONICAL_ONLY' ||
+      sourceById.has(siteId) || source?.runtime?.aliasOfSiteId ||
       source?.map?.markerEligible === false || source?.operation?.commercialExtraction === false ||
       source?.commercialExtraction === false ||
       String(source?.operation?.status || source?.operation?.operationalStatus || source?.status || '').toUpperCase() === 'NOT_APPLICABLE') continue;
@@ -89,15 +92,6 @@ function commissionGameplayMine(entry) {
     };
     row.mineAssets.push(asset);
   }
-  row.commissionedSites = Array.isArray(row.commissionedSites) ? row.commissionedSites : [];
-  if (!row.commissionedSites.some(x => String(x?.siteId || '') === siteId &&
-      String(x?.status || '').toUpperCase() === 'COMMISSIONED')) {
-    row.commissionedSites.push({
-      siteId, resourceId, status: 'COMMISSIONED',
-      commissionedTurn: Number(root.simulation?.turn) || 1,
-      authority: 'SIMULATED_PLAYER_MINE_ASSET_TEST_FIXTURE'
-    });
-  }
   if (typeof globalThis.dispatchEvent === 'function' && typeof globalThis.CustomEvent === 'function') {
     globalThis.dispatchEvent(new CustomEvent('OMEGA_RESOURCE_MINE_COMMISSIONED', {
       detail: { countryId, payload: { countryId, siteId, resourceId, mineId: asset.mineId,
@@ -105,6 +99,9 @@ function commissionGameplayMine(entry) {
         authority: 'SIMULATED_PLAYER_MINE_ASSET_TEST_FIXTURE' } }
     }));
   }
+  const commission=(row.commissionedSites||[]).find(x=>String(x?.siteId||'')===siteId&&
+    String(x?.status||'').toUpperCase()==='COMMISSIONED');
+  if(!commission)throw new Error('MINE_COMMISSION_EVENT_DID_NOT_UPDATE_POLICY_LEDGER:'+countryId+':'+siteId);
 }
 function provisionCountry(countryId) {
   for (const root of [globalThis.Game?.state, globalThis.OmegaMinistryStateProvider?.getState?.()].filter(Boolean)) {
