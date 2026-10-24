@@ -27,8 +27,6 @@
       else if (active && typeof classes.add === 'function') classes.add('omega-ui-v2-cabinet-active');
       else if (!active && typeof classes.remove === 'function') classes.remove('omega-ui-v2-cabinet-active');
     }
-    var guard = g.OmegaUIInteractionGuard;
-    if (guard && typeof guard.scheduleRefresh === 'function') guard.scheduleRefresh();
   }
   function selectedCountry() {
     var values = [
@@ -66,12 +64,48 @@
       return { id:id, name:label };
     });
   }
-  function restoreLegacy(root, country) {
+  function failClosed(root) {
     setV2CabinetActive(root, false);
     try {
-      var cabinet = g.OmegaCabinetUI;
-      if (cabinet && typeof cabinet.renderCabinet === 'function') cabinet.renderCabinet(country || selectedCountry());
+      if (root && root.__omegaUIV2State && g.OmegaUIV2App && typeof g.OmegaUIV2App.unmount === 'function') {
+        g.OmegaUIV2App.unmount(root);
+      }
     } catch (_) {}
+    var dashboard = g.document && g.document.getElementById('ministry-dashboard-view');
+    if (dashboard && dashboard.style) {
+      dashboard.style.display = 'none';
+      dashboard.style.visibility = 'hidden';
+      dashboard.style.opacity = '0';
+      dashboard.style.pointerEvents = 'none';
+      if (dashboard.setAttribute) dashboard.setAttribute('aria-hidden', 'true');
+    }
+    if (root) {
+      if (root.innerHTML !== undefined) root.innerHTML = '';
+      if (root.style) {
+        root.style.display = 'none';
+        root.style.visibility = 'hidden';
+        root.style.opacity = '0';
+        root.style.pointerEvents = 'none';
+      }
+      if (root.setAttribute) root.setAttribute('aria-hidden', 'true');
+      if (root.removeAttribute) root.removeAttribute(ACTIVE_ATTR);
+    }
+    var body = g.document && g.document.body;
+    if (body) {
+      if (body.setAttribute) body.setAttribute('data-active-layer', '0');
+      if (body.classList && typeof body.classList.remove === 'function') body.classList.remove('modal-open');
+    }
+    var worldUi = g.document && g.document.getElementById('world-ui-root');
+    if (worldUi && worldUi.style) {
+      worldUi.style.filter = 'none';
+      worldUi.style.opacity = '1';
+      worldUi.style.pointerEvents = 'auto';
+    }
+    var manager = g.OmegaLayerManager;
+    if (manager) {
+      manager.currentLayer = 0;
+      if (Array.isArray(manager.layerStack)) manager.layerStack = [0];
+    }
   }
   function mountIntoCabinet(root, mountOptions) {
     mountOptions = mountOptions || {};
@@ -126,14 +160,12 @@
           if (code) g.OmegaMinistryViewCountry = code;
         },
         onOpenOperations:function () {
-          var adapter = g.OMEGA_UI_ADAPTER;
-          if (adapter && typeof adapter.openPoliceCommand === 'function') return adapter.openPoliceCommand();
-          return false;
+          return openOperationalConsole('interior_security');
         }
       });
       if (!result || result.ok === false || result.mounted !== true) {
         lastError = result && result.code || 'UI_V2_MOUNT_FAILED';
-        restoreLegacy(root, country);
+        failClosed(root);
         return { ok:false, code:lastError };
       }
       lastMount = { countryId:country || null, route:result.route || initialRoute || 'government', mounted:true };
@@ -186,20 +218,12 @@
 
   function openOperationalConsole(ministryId) {
     var id = String(ministryId || '').trim();
-    var manager = g.OmegaLayerManager;
-    if (!id || !manager || typeof manager.setLayer !== 'function') return { ok:false, code:'LEGACY_OPERATIONAL_CONSOLE_UNAVAILABLE' };
-    resumeUiState = captureUiStateForResume();
-    setV2CabinetActive(cabinetRoot(), false);
-    resumeOnCabinetReturn = true;
-    installOperationalConsoleResumeHook(manager);
-    try {
-      manager.setLayer(2, { ministryId:id });
-      return { ok:true, ministryId:id, destination:'EXISTING_CANONICAL_MINISTRY_CONSOLE' };
-    } catch (error) {
-      resumeOnCabinetReturn = false;
-      setV2CabinetActive(cabinetRoot(), true);
-      return { ok:false, code:'LEGACY_OPERATIONAL_CONSOLE_OPEN_FAILED', message:String(error && error.message || error) };
+    var result = { ok:false, code:'LEGACY_UI_DISCONNECTED', ministryId:id || null,
+      message:'The retired operational UI is disconnected. Use actions available in the active UI v2 screen.' };
+    if (typeof g.showOmegaNotification === 'function') {
+      g.showOmegaNotification('LEGACY UI DISCONNECTED', result.message, 'warning');
     }
+    return result;
   }
   function resumeAfterOperationalConsole(root) {
     if (!resumeOnCabinetReturn) return false;
