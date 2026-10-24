@@ -192,7 +192,7 @@
     root.innerHTML = '<section class="omega-v2-shell omega-v2-home-affairs">' +
       '<header class="omega-v2-heading"><div><div class="omega-v2-eyebrow">CIVIL ADMINISTRATION · HOME AFFAIRS</div><h1 class="omega-v2-title">Public Safety & Police</h1><p class="omega-v2-subtitle">Country ' + esc(country || 'Not recorded') + ' · canonical personnel, fleet and incident state</p></div><span class="omega-v2-status" data-state="' + (e ? 'operational' : 'unknown') + '">' + (e ? 'POLICE RUNTIME CONNECTED' : 'POLICE RUNTIME UNAVAILABLE') + '</span></header>' +
       tabBar(active) + '<div data-omega-v2-home-content>' + content + '</div>' +
-      '<div class="omega-v2-actions omega-v2-legacy-console-link"><button type="button" class="omega-v2-button omega-v2-button--quiet" data-omega-v2-open-operational-console="interior_security"' + (typeof options.onOpenOperationalConsole === 'function' ? '' : ' disabled title="Existing operational console bridge is unavailable."') + '>Open existing police operations console</button></div></section>';
+      '<p class="omega-v2-source">Police personnel, fleet and patrol records are managed within this UI v2 screen. The retired console is disconnected.</p></section>';
 
     if (!root.__omegaV2HomeBound && typeof root.addEventListener === 'function') {
       root.addEventListener('click', function (event) {
@@ -231,8 +231,8 @@
           else root.__omegaV2RecruitOutcome = 'Recruitment not executed: ' + String(result && (result.message || result.code || result.reason) || 'RUNTIME_REJECTED') + '.';
           render(root, Object.assign({}, currentOptions, { tab:'personnel' }));
         } else if (actionId === 'open-operations') {
-          if (typeof currentOptions.onOpenOperations === 'function') currentOptions.onOpenOperations();
-          else if (g.OMEGA_UI_ADAPTER && typeof g.OMEGA_UI_ADAPTER.openPoliceCommand === 'function') g.OMEGA_UI_ADAPTER.openPoliceCommand();
+          root.__omegaV2HomeTab = 'patrols';
+          render(root, Object.assign({}, currentOptions, { tab:'patrols' }));
         }
       });
       root.addEventListener('input', function (event) {
