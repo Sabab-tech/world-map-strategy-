@@ -10,6 +10,7 @@ const read = (name) => fs.readFileSync(path.join(root, name), 'utf8');
 
 function createHarness() {
   const elementsById = new Map();
+  const documentListeners = new Map();
   const frames = new Map();
   let nextFrame = 1;
   let observerInstance = null;
@@ -92,7 +93,11 @@ function createHarness() {
     querySelector: (selector) => selectors.get(selector) || null,
     getElementById: (id) => elementsById.get(id) || null,
     createElement: (tagName) => new FakeElement(tagName === 'style' ? '' : ''),
-    addEventListener() {}
+    addEventListener(type, callback, options) {
+      const listeners = documentListeners.get(type) || [];
+      listeners.push({ callback, options });
+      documentListeners.set(type, listeners);
+    }
   };
   class FakeMutationObserver {
     constructor(callback) { this.callback = callback; observerInstance = this; }
@@ -123,7 +128,7 @@ function createHarness() {
     console
   };
   return {
-    context, body, ministry, interrogation, cabinet, command, unrelated, frames,
+    context, body, ministry, interrogation, cabinet, command, unrelated, frames, documentListeners,
     getObserver: () => observerInstance,
     runFrame(id) {
       const callback = frames.get(id);
@@ -142,7 +147,7 @@ test('interaction guard does not rewrite observed attributes/styles on every ref
 
   const guard = harness.context.window.OmegaUIInteractionGuard;
   assert.ok(guard, 'interaction guard should expose its refresh API');
-  assert.equal(guard.version, '2.3.0');
+  assert.equal(guard.version, '2.4.0');
 
   const targets = [harness.ministry, harness.interrogation, harness.cabinet, harness.command];
   const before = targets.reduce((sum, el) => sum + el.attributeWrites + el.styleWrites, 0);
@@ -150,6 +155,58 @@ test('interaction guard does not rewrite observed attributes/styles on every ref
   guard.refresh();
   const after = targets.reduce((sum, el) => sum + el.attributeWrites + el.styleWrites, 0);
   assert.equal(after, before, 'idempotent refresh must not create another observed DOM mutation');
+});
+
+test('active OMEGA UI v2 cabinet accepts touch and click events over a visible legacy ministry surface', () => {
+  const harness = createHarness();
+  harness.cabinet.setAttribute('data-omega-ui-v2-active', 'true');
+  const exitButton = new (Object.getPrototypeOf(harness.cabinet).constructor)('v2-exit-button');
+  harness.cabinet.appendChild(exitButton);
+  vm.runInNewContext(read('omega_ui_interaction_guard.js'), harness.context, {
+    filename: 'omega_ui_interaction_guard.js'
+  });
+
+  assert.equal(harness.cabinet.getAttribute('aria-hidden'), 'false',
+    'the legacy ministry overlay must not mark the active UI v2 cabinet inaccessible');
+  const injectedStyles = harness.context.document.getElementById('omega-ui-interaction-guard-v22');
+  assert.ok(injectedStyles, 'interaction guard styles should be installed');
+  assert.match(injectedStyles.textContent, /#cabinet-full-window\[data-omega-ui-v2-active="true"\]/,
+    'active UI v2 cabinet and its controls must override the legacy pointer-event shield');
+
+  for (const type of ['pointerdown', 'pointerup', 'click', 'touchstart', 'touchend', 'mousedown', 'mouseup']) {
+    const handler = (harness.documentListeners.get(type) || []).find((entry) => entry.options === true);
+    assert.ok(handler, type + ' capture gate should be installed');
+    let prevented = false;
+    let stopped = false;
+    handler.callback({
+      target: exitButton,
+      preventDefault() { prevented = true; },
+      stopImmediatePropagation() { stopped = true; }
+    });
+    assert.equal(prevented, false, type + ' must reach the active UI v2 control');
+    assert.equal(stopped, false, type + ' must not be swallowed by the legacy guard');
+  }
+});
+
+test('legacy cabinet interactions remain shielded when the new UI is not active', () => {
+  const harness = createHarness();
+  const legacyButton = new (Object.getPrototypeOf(harness.cabinet).constructor)('legacy-button');
+  harness.cabinet.appendChild(legacyButton);
+  vm.runInNewContext(read('omega_ui_interaction_guard.js'), harness.context, {
+    filename: 'omega_ui_interaction_guard.js'
+  });
+  const handler = (harness.documentListeners.get('click') || []).find((entry) => entry.options === true);
+  assert.ok(handler);
+  let prevented = false;
+  let stopped = false;
+  handler.callback({
+    target: legacyButton,
+    preventDefault() { prevented = true; },
+    stopImmediatePropagation() { stopped = true; }
+  });
+  assert.equal(prevented, true);
+  assert.equal(stopped, true);
+  assert.equal(harness.cabinet.getAttribute('aria-hidden'), 'true');
 });
 
 test('interaction guard coalesces relevant mutations and ignores unrelated map churn', () => {
@@ -197,6 +254,17 @@ test('large world GeoJSON is rendered incrementally rather than monopolizing the
 });
 
 
+test('interaction guard is loaded by the production shell and cached for offline/Android use', () => {
+  const html = read('index.html');
+  const serviceWorker = read('omega-offline-map-sw.js');
+  assert.match(html, /<script src="omega_ui_interaction_guard\.js" defer><\/script>/);
+  assert.match(serviceWorker, /CACHE_NAME = "omega-offline-atlas-shell-v33"/);
+  const coreStart = serviceWorker.indexOf('const CORE_ASSETS');
+  const coreEnd = serviceWorker.indexOf('];', coreStart);
+  assert.ok(serviceWorker.slice(coreStart, coreEnd).includes('"./omega_ui_interaction_guard.js"'),
+    'the interaction guard must be included in the offline core asset bundle');
+});
+
 test('slow simulation frames and data-heavy ministry panels bound repeated UI work', () => {
   const simulation = read('omega_simulation_runtime.js');
   assert.match(simulation, /MAX_PENDING_REAL_DELTA_MS\s*=\s*STEP_MS/);
@@ -216,7 +284,7 @@ test('slow simulation frames and data-heavy ministry panels bound repeated UI wo
 
   const serviceWorker = read('omega-offline-map-sw.js');
   const cacheVersion = Number(serviceWorker.match(/CACHE_NAME = "omega-offline-atlas-shell-v(\d+)"/)?.[1] || 0);
-  assert.ok(cacheVersion >= 30, 'Android/offline installs must receive the updated anti-hang runtime scripts');
+  assert.ok(cacheVersion >= 33, 'Android/offline installs must receive the active interaction-guard runtime');
 });
 
 
