@@ -550,6 +550,9 @@ test('universal navigation and the isolated legacy-free shell are wired into the
   assert.equal(integration.includes('manager.setLayer('),false);
   assert.ok(integration.includes('function installLegacyLayerBridge()'));
   assert.ok(integration.includes('manager.setLayer = function (layerNum, data)'));
+  assert.ok(integration.includes('manager.popLayer = function ()'));
+  assert.ok(integration.includes('g.OmegaUIV2App.back(root) === true'));
+
   assert.ok(integration.includes('installLegacyLayerBridge();'));
   assert.ok(integration.includes("api.openRoute('government') === true"));
 
