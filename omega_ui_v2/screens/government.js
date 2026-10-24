@@ -28,6 +28,7 @@
       return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch];
     });
   }
+  function displayStatus(value) { var text = String(value == null ? '' : value).replace(/[_-]+/g, ' ').trim().toUpperCase(); var labels = { NOT_RECORDED:'Not recorded', UNOBSERVED:'Not measured', ACTIVE:'Active', OPERATIONAL:'Operational', INACTIVE:'Inactive', VACANT:'Vacant', APPOINTED:'Appointed', AVAILABLE:'Available', BLOCKED:'Blocked', FAILED:'Failed', PENDING:'Pending' }; return labels[text] || (text ? text.toLowerCase().replace(/\b\w/g, function (ch) { return ch.toUpperCase(); }) : 'Not recorded'); }
   function finite(value) {
     if (value === null || value === undefined || value === '') return null;
     var number = Number(value);
@@ -146,8 +147,10 @@
     return false;
   }
   function metricCard(title, metric) {
-    var detail = metric.year ? 'Year ' + String(metric.year) : '';
-    return '<div class="omega-v2-kpi"><span>' + esc(title) + '</span><strong>' + fmt(metric.value, metric.unit) + '</strong>' + (detail ? '<small>' + esc(detail) + '</small>' : '') + '</div>';
+    var source = metric.sourceName ? String(metric.sourceName) : '';
+    var year = metric.year ? 'Year ' + String(metric.year) : '';
+    var details = source || year ? '<details class="omega-v2-metric-details"><summary>Indicator details</summary><p class="omega-v2-card-meta">' + (source ? 'Source: ' + esc(source) : '') + (source && year ? ' · ' : '') + esc(year) + '</p></details>' : '';
+    return '<div class="omega-v2-kpi"><span>' + esc(title) + '</span><strong>' + fmt(metric.value, metric.unit) + '</strong>' + details + '</div>';
   }
   function overviewHtml(countryId, options) {
     var data = snapshot(countryId);
@@ -212,16 +215,16 @@
     var safeLocalImage = /^(assets|images)\/[a-z0-9/_-]+\.(webp|png|jpe?g)$/i.test(source);
     var name = row && row.ministerName || profile.baseName || profile.name || 'Minister not assigned';
     return '<div class="omega-v2-minister-portrait" data-omega-v2-minister-portrait-slot aria-label="Minister portrait slot for ' + esc(name) + '">' +
-      (safeLocalImage ? '<img data-omega-v2-minister-portrait src="' + esc(source) + '" loading="lazy" decoding="async" alt="Portrait of ' + esc(name) + '">' : '<span class="omega-v2-minister-portrait-placeholder">MINISTER PORTRAIT</span><small>Image pending</small>') +
+      (safeLocalImage ? '<img data-omega-v2-minister-portrait src="' + esc(source) + '" loading="lazy" decoding="async" alt="Portrait of ' + esc(name) + '">' : '<span class="omega-v2-minister-portrait-placeholder">NO PHOTO</span>') +
       '</div>';
   }
   function ministerRecruitmentTable(rows) {
-    return '<div class="omega-v2-table-wrap omega-v2-minister-table-wrap"><table class="omega-v2-minister-table"><thead><tr><th scope="col">Ministry / Emblem</th><th scope="col">Minister &amp; portrait</th><th scope="col">Registry status</th><th scope="col">Recruitment</th><th scope="col">Details</th></tr></thead><tbody>' + rows.map(function (row) {
+    return '<div class="omega-v2-table-wrap omega-v2-minister-table-wrap"><table class="omega-v2-minister-table"><thead><tr><th scope="col">Ministry / Emblem</th><th scope="col">Minister &amp; portrait</th><th scope="col">Profile</th><th scope="col">Recruitment</th><th scope="col">Details</th></tr></thead><tbody>' + rows.map(function (row) {
       var activeName = row.ministerName || 'Vacant / not recorded';
       return '<tr data-omega-v2-ministry-card data-search="' + esc((row.title + ' ' + row.subtitle + ' ' + row.id + ' ' + row.category + ' ' + activeName).toLowerCase()) + '" data-category="' + esc(row.category) + '">' +
         '<td><div class="omega-v2-minister-table-title">' + ministryEmblem(row) + '<div><strong>' + esc(row.title) + '</strong><small>' + esc(row.subtitle || CATEGORY_LABELS[row.category] || row.category) + '</small></div></div></td>' +
-        '<td><div class="omega-v2-minister-table-person">' + ministerPortraitMarkup(row) + '<div><strong>' + esc(activeName) + '</strong><small>' + esc(row.activeMinisterProfile && (row.activeMinisterProfile.role || row.activeMinisterProfile.position) || 'Current assignment not independently recorded') + '</small></div></div></td>' +
-        '<td><span class="omega-v2-status" data-state="unknown">' + esc(row.status || 'NOT_RECORDED') + '</span><small class="omega-v2-minister-source">' + esc(row.source || 'Registered ministry record') + '</small></td>' +
+        '<td><div class="omega-v2-minister-table-person">' + ministerPortraitMarkup(row) + '<div><strong>' + esc(activeName) + '</strong><small>' + esc(row.activeMinisterProfile && (row.activeMinisterProfile.role || row.activeMinisterProfile.position) || 'Appointment details not recorded') + '</small></div></div></td>' +
+        '<td><span class="omega-v2-status" data-state="unknown">' + esc(displayStatus(row.status)) + '</span></td>' +
         '<td><button type="button" class="omega-v2-button omega-v2-button--accent" data-omega-v2-minister-recruitment="' + esc(row.id) + '">Recruit / Replace</button></td>' +
         '<td><button type="button" class="omega-v2-button omega-v2-button--quiet" data-omega-v2-open-ministry="' + esc(row.id) + '">Open</button></td>' +
         '</tr>';
@@ -257,7 +260,7 @@
         '<div class="omega-v2-ministry-card-content"><div class="omega-v2-ministry-card-heading">' +
         '<div class="omega-v2-ministry-logo">' + (logo ? cardImage(logo, visual.logoAlt || row.title + ' logo', 'omega-v2-ministry-logo-image') : ministryEmblem(row)) + '</div>' +
         '<div class="omega-v2-ministry-heading-copy"><h3>' + esc(visual.title || row.title) + '</h3><p>' + esc(row.subtitle || visual.subtitle || '') + '</p></div></div>' +
-        '<div class="omega-v2-ministry-card-meta"><span class="omega-v2-status" data-state="unknown">' + esc(row.status || 'NOT_RECORDED') + '</span>' +
+        '<div class="omega-v2-ministry-card-meta"><span class="omega-v2-status" data-state="unknown">' + esc(displayStatus(row.status)) + '</span>' +
         '<div class="omega-v2-ministry-person">' + ministerPortraitMarkup(row) + '<span>' + esc(minister) + '</span></div></div>' +
         (galleries.length ? '<div class="omega-v2-ministry-gallery" aria-label="Additional ministry assets">' + galleries.map(function (path, galleryIndex) {
           return cardImage(path, row.title + ' additional reference ' + (galleryIndex + 1), 'omega-v2-ministry-gallery-image');
