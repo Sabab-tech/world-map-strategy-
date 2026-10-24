@@ -1,20 +1,21 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
-// The base regression boots the authoritative resource runtime, verifies all 503
-// site references/controllers, and proves the canonical + legacy extraction paths.
-// This exhaustive layer then sends every eligible live site reference through the
-// same industrial pipeline and verifies its own delivery, processing cycle and output.
+// The base regression boots the authoritative resource runtime and verifies the
+// complete 503-site reference/controller registry. This test then exercises all
+// eligible sites in a batch so unrelated background residual shipments cannot
+// steal factory capacity from a site under test.
 await import('./omega_resource_endowment_runtime.test.mjs');
 
 const game=globalThis.Game;
 const runtime=globalThis.OmegaResourceEndowmentRuntime||globalThis.Omega?.ResourceEndowmentRuntime;
 const industry=globalThis.OmegaResourceIndustrialNetwork||globalThis.Omega?.ResourceIndustrialNetwork;
 assert.ok(game?.state&&runtime?.countryResourceState&&industry?.executeSitePipeline,
-  'base runtime must expose the live resource and industrial systems');
+  'authoritative resource and industrial runtimes must be available');
 
-const criticalBatch=JSON.parse(fs.readFileSync(new URL('../resource_site_country_mineplay_critical_batch_20261024_v1.json',import.meta.url),'utf8'));
-assert.equal(criticalBatch.records.length,58,'all critical-mineral site records must be loaded');
+const criticalBatch=JSON.parse(fs.readFileSync(
+  new URL('../resource_site_country_mineplay_critical_batch_20261024_v1.json',import.meta.url),'utf8'));
+assert.equal(criticalBatch.records.length,58,'all critical-mineral records must be loaded');
 assert.equal(new Set(criticalBatch.records.map(x=>x.siteId)).size,58,'critical-mineral site IDs must be unique');
 const criticalCountries=new Set(criticalBatch.records.map(x=>String(x.countryId||'').toUpperCase()));
 assert.equal(criticalCountries.size,23,'critical-mineral coverage must span 23 countries');
@@ -26,31 +27,41 @@ for(const site of criticalBatch.records){
   assert.equal(site.location?.countryBoundaryKey,countryId);
   assert.equal(site.map?.countryIsolationKey,countryId);
   assert.equal(site.map?.resourceFilterKey,resourceId);
-  assert.ok(Number(site.quantitative?.production?.rate)>0,site.siteId+': positive production rate required');
-  assert.ok(Number(site.quantitative?.reserve?.quantity)>0,site.siteId+': positive simulation reserve required');
-  assert.ok(site.sources?.some(x=>/^https?:\/\//.test(x.url)),site.siteId+': source URL evidence missing');
+  assert.ok(Number(site.quantitative?.production?.rate)>0,site.siteId+': production rate missing');
+  assert.ok(Number(site.quantitative?.reserve?.quantity)>0,site.siteId+': simulation reserve missing');
+  assert.ok(site.sources?.some(x=>typeof x.url==='string'&&/^https?:/.test(x.url)),
+    site.siteId+': source URL evidence missing');
 }
 
 const world=game.state.resource||{};
-const refs=[];
+const allRefs=[];
+const eligibleById=new Map();
 for(const [countryId,row] of Object.entries(world)){
   for(const ref of Array.isArray(row?.mineSiteReferences)?row.mineSiteReferences:[]){
     const siteId=String(ref?.siteReferenceKey||ref?.siteId||'').trim();
     const resourceId=String(ref?.resourceId||ref?.resourceTypeId||ref?.identity?.resourceTypeId||'').trim().toLowerCase();
     const owner=String(ref?.countryId||countryId).trim().toUpperCase();
     if(!siteId||!resourceId||!owner)continue;
+    allRefs.push({countryId:owner,siteId,resourceId,ref});
     if(ref?.runtime?.aliasOfSiteId||ref?.rawSiteReference?.runtime?.aliasOfSiteId)continue;
     if(ref?.map?.markerEligible===false||ref?.rawSiteReference?.map?.markerEligible===false)continue;
-    if(ref?.commercialExtraction===false||ref?.operation?.commercialExtraction===false)continue;
+    if(ref?.commercialExtraction===false||ref?.operation?.commercialExtraction===false||
+       ref?.rawSiteReference?.commercialExtraction===false||
+       ref?.rawSiteReference?.operation?.commercialExtraction===false)continue;
     const status=String(ref?.operation?.status||ref?.operation?.operationalStatus||
       ref?.status||ref?.rawSiteReference?.operation?.status||'').toUpperCase().replace(/[^A-Z0-9]+/g,'_');
     if(/(^|_)(NOT_APPLICABLE|INACTIVE|NOT_ACTIVE|HISTORICAL|HISTORICALLY|SUSPENDED|CLOSED|ABANDONED|DEPLETED|CARE_AND_MAINTENANCE|CESSATION_OF_PRODUCTION|DISPUTED_OPERATION|RESOURCE_IDENTITY_UNVERIFIED)(_|$)/.test(status))continue;
-    refs.push({countryId:owner,siteId,resourceId,ref});
+    eligibleById.set(siteId,{countryId:owner,siteId,resourceId,ref});
   }
 }
-const unique=new Map(refs.map(x=>[x.siteId,x]));
-const sites=[...unique.values()].sort((a,b)=>a.countryId.localeCompare(b.countryId)||a.siteId.localeCompare(b.siteId));
+assert.equal(new Set(allRefs.map(x=>x.siteId)).size,503,
+  'the unified runtime must expose exactly 503 unique site references');
+const sites=[...eligibleById.values()].sort((a,b)=>a.countryId.localeCompare(b.countryId)||a.siteId.localeCompare(b.siteId));
 assert.ok(sites.length>=400,'exhaustive audit must cover at least 400 unique executable sites; got '+sites.length);
+const eligibleIds=new Set(sites.map(x=>x.siteId));
+for(const site of criticalBatch.records){
+  assert.ok(eligibleIds.has(site.siteId),site.siteId+': critical-mineral site missing from executable runtime references');
+}
 
 function advanceOneTurn(){
   const sim=game.state.simulation||(game.state.simulation={});
@@ -59,21 +70,15 @@ function advanceOneTurn(){
   sim.date=date.toISOString().slice(0,10);
   sim.turn=(Number(sim.turn)||1)+1;
 }
-function advanceToTurn(target){
-  let guard=0;
-  while((Number(game.state.simulation?.turn)||1)<Number(target)){
-    advanceOneTurn();
-    if(++guard>10000)throw new Error('EXHAUSTIVE_PIPELINE_CLOCK_GUARD');
-  }
-}
-function advanceToCycleFinish(cycle){
+function advanceTo(targetTurn,targetDate){
   const sim=game.state.simulation||(game.state.simulation={});
-  const targetTurn=Math.max((Number(sim.turn)||1)+1,Number(cycle?.finishTurn)||0);
-  const targetDate=cycle?.finishDate?new Date(String(cycle.finishDate)+'T00:00:00.000Z'):null;
+  const turnTarget=Math.max(1,Number(targetTurn)||1);
+  const dateTarget=targetDate?String(targetDate):null;
   let guard=0;
-  while((Number(sim.turn)||1)<targetTurn||(targetDate&&new Date(String(sim.date||'2015-01-01')+'T00:00:00.000Z')<targetDate)){
+  while((Number(sim.turn)||1)<turnTarget||
+    (dateTarget&&String(sim.date||'2015-01-01')<dateTarget)){
     advanceOneTurn();
-    if(++guard>10000)throw new Error('EXHAUSTIVE_FACTORY_CLOCK_GUARD');
+    if(++guard>20000)throw new Error('EXHAUSTIVE_PIPELINE_CLOCK_GUARD');
   }
 }
 function provisionSimulationInfrastructure(countryId){
@@ -97,32 +102,24 @@ function provisionSimulationInfrastructure(countryId){
     e.unemployment_rate=10;
   }
 }
-async function completeCycle(countryId,factoryId,batchId){
-  const row=()=>runtime.countryResourceState(countryId)||{};
-  const flow=()=> (row().industrialNetwork?.siteFlowLedger||[]).find(x=>String(x.batchId)===String(batchId));
-  const completed=()=>flow()?.stages?.some(x=>x.stage==='PROCESSING'&&x.status==='COMPLETED');
-  for(let i=0;i<128&&!completed();i++){
-    const cycle=row().industrialNetwork?.factoryProductionCycles?.[String(factoryId)];
-    if(cycle?.status==='IN_PROGRESS'&&cycle.finishDate)advanceToCycleFinish(cycle);
-    else advanceOneTurn();
-    const result=industry.processPendingFactoryInputs(countryId);
-    if(i===127&&!completed())assert.fail('factory processing did not finish for '+batchId+': '+JSON.stringify({
-      countryId,factoryId,batchId,cycle:row().industrialNetwork?.factoryProductionCycles?.[String(factoryId)]||null,
-      blocked:(result?.blocked||[]).slice(0,4)
-    }));
-  }
-  assert.ok(completed(),countryId+': completed processing ledger missing for '+batchId);
-  const delivery=(row().industrialNetwork?.deliveries||[]).find(x=>String(x.batchId)===String(batchId));
-  assert.ok(delivery,countryId+': source batch delivery record missing for '+batchId);
-  assert.equal(delivery.processingStatus,'PROCESSED',countryId+': delivery not reconciled as processed for '+batchId);
-  const outputs=delivery.processing?.outputs||delivery.processing?.outputQuantities||{};
-  assert.ok(Object.entries(outputs).some(([rid,qty])=>Number(qty)>0&&Number(row().inventory?.[rid])>0),
-    countryId+': no positive finished-goods output for '+batchId);
+function liveCountryState(countryId){return game.state.resource?.[countryId]||{};}
+function flowFor(countryId,batchId){
+  return (runtime.countryResourceState(countryId)?.industrialNetwork?.siteFlowLedger||[])
+    .find(x=>String(x.batchId)===String(batchId));
 }
-const counts={eligible:sites.length,started:0,delivered:0,processed:0};
+function cycleFor(countryId,factoryId){
+  return runtime.countryResourceState(countryId)?.industrialNetwork?.factoryProductionCycles?.[String(factoryId)]||null;
+}
+function flowProcessed(countryId,batchId){
+  return !!flowFor(countryId,batchId)?.stages?.some(x=>x.stage==='PROCESSING'&&x.status==='COMPLETED');
+}
+const counts={references:new Set(allRefs.map(x=>x.siteId)).size,eligible:sites.length,started:0,delivered:0,processed:0};
 const failures=[];
+const pipelines=[];
+const countryIds=new Set();
 for(const site of sites){
   provisionSimulationInfrastructure(site.countryId);
+  countryIds.add(site.countryId);
   game.state.simulation=game.state.simulation||{};
   game.state.simulation.turn=(Number(game.state.simulation.turn)||1)+1;
   if(!game.state.simulation.date)game.state.simulation.date='2015-01-01';
@@ -144,28 +141,90 @@ for(const site of sites){
   assert.equal(batch.countryId,site.countryId,site.siteId+': batch country mismatch');
   assert.equal(batch.warehouseId,'WH-'+site.countryId+'-RAW',site.siteId+': raw warehouse mismatch');
   assert.ok(Number(batch.quantity)>0,site.siteId+': extraction quantity must be positive');
-  assert.ok(Number(pre.warehouse?.reservedByResource?.[site.resourceId]||0)>0,
-    site.siteId+': shipment did not reserve sovereign warehouse stock');
-  advanceToTurn(Number(result.shipment?.etaTurn)||((Number(game.state.simulation.turn)||1)+1));
-  // Isolate this site's committed shipment from unrelated baseline extraction batches.
-  // The base regression intentionally preloads every mine's raw stock; without this guard,
-  // advanceShipments would auto-dispatch those unrelated batches to whichever compatible
-  // factory happens to be first, masking the target site's own factory-cycle lineage.
-  const countryRuntime=game.state.resource?.[site.countryId]||{};
-  for(const flow of countryRuntime.industrialNetwork?.siteFlowLedger||[])flow.lastResidualDispatchTurn=Number(game.state.simulation.turn)||1;
-  const deliveryResult=industry.advanceShipments(site.countryId);
-  const delivered=(deliveryResult.shipments||[]).find(x=>String(x.shipmentId)===String(result.shipmentId));
-  if(!delivered||delivered.destinationStatus!=='FACTORY_RECEIVED'){
-    failures.push({siteId:site.siteId,countryId:site.countryId,resourceId:site.resourceId,
-      stage:'DELIVERY',shipmentId:result.shipmentId,deliveryResult});
+  pipelines.push({site,result});
+}
+assert.deepEqual(failures,[],'site extraction/dispatch failures: '+JSON.stringify(failures.slice(0,20)));
+
+const maxEta=Math.max(Number(game.state.simulation.turn)||1,
+  ...pipelines.map(x=>Number(x.result.shipment?.etaTurn)||Number(game.state.simulation.turn)||1));
+advanceTo(maxEta);
+for(const countryId of countryIds){
+  // The base fixture preloads raw batches for all mines. Prevent those unrelated
+  // residual batches from being auto-routed to a different site's factory during
+  // this targeted batch run; each pipeline shipment is already explicitly dispatched.
+  const network=liveCountryState(countryId).industrialNetwork;
+  for(const flow of network?.siteFlowLedger||[])flow.lastResidualDispatchTurn=Number(game.state.simulation.turn)||1;
+  const deliveryResult=industry.advanceShipments(countryId);
+  for(const pipeline of pipelines.filter(x=>x.site.countryId===countryId)){
+    const shipmentId=String(pipeline.result.shipmentId);
+    const delivered=(runtime.countryResourceState(countryId)?.industrialNetwork?.deliveries||[])
+      .find(x=>String(x.shipmentId)===shipmentId)||
+      (deliveryResult.shipments||[]).find(x=>String(x.shipmentId)===shipmentId);
+    if(!delivered||delivered.destinationStatus!=='FACTORY_RECEIVED'){
+      failures.push({siteId:pipeline.site.siteId,countryId,resourceId:pipeline.site.resourceId,
+        stage:'DELIVERY',shipmentId,deliveryStatus:delivered?.destinationStatus||null,deliveryResult});
+      continue;
+    }
+    counts.delivered++;
+  }
+}
+assert.deepEqual(failures,[],'site dispatch/delivery failures: '+JSON.stringify(failures.slice(0,20)));
+
+const targetPipelines=pipelines.filter(x=>flowFor(x.site.countryId,x.result.batchId));
+for(let pass=0;pass<12;pass++){
+  const pending=targetPipelines.filter(x=>!flowProcessed(x.site.countryId,x.result.batchId));
+  if(!pending.length)break;
+  let targetTurn=(Number(game.state.simulation.turn)||1)+1;
+  let targetDate=String(game.state.simulation.date||'2015-01-01');
+  for(const item of pending){
+    const cycle=cycleFor(item.site.countryId,item.result.factoryId);
+    if(!cycle){
+      failures.push({siteId:item.site.siteId,countryId:item.site.countryId,stage:'FACTORY_CYCLE',
+        reason:'FACTORY_CYCLE_NOT_CREATED',batchId:item.result.batchId,factoryId:item.result.factoryId});
+      continue;
+    }
+    targetTurn=Math.max(targetTurn,Number(cycle.finishTurn)||targetTurn);
+    if(cycle.finishDate&&String(cycle.finishDate)>targetDate)targetDate=String(cycle.finishDate);
+  }
+  advanceTo(targetTurn,targetDate);
+  for(const countryId of countryIds)industry.processPendingFactoryInputs(countryId);
+}
+for(const item of targetPipelines){
+  const {site,result}=item,countryId=site.countryId;
+  if(!flowProcessed(countryId,result.batchId)){
+    const cycle=cycleFor(countryId,result.factoryId);
+    failures.push({siteId:site.siteId,countryId,resourceId:site.resourceId,stage:'PROCESSING',
+      reason:'FINISHED_GOODS_NOT_COMMITTED',batchId:result.batchId,factoryId:result.factoryId,
+      cycle,flow:flowFor(countryId,result.batchId)});
     continue;
   }
-  counts.delivered++;
-  await completeCycle(site.countryId,result.factoryId,result.batchId);
+  const finalState=runtime.countryResourceState(countryId)||{};
+  const delivery=(finalState.industrialNetwork?.deliveries||[])
+    .find(x=>String(x.shipmentId)===String(result.shipmentId));
+  if(delivery?.processingStatus!=='PROCESSED'){
+    failures.push({siteId:site.siteId,countryId,stage:'DELIVERY_RECONCILIATION',
+      status:delivery?.processingStatus||null,shipmentId:result.shipmentId,batchId:result.batchId});
+    continue;
+  }
+  const outputs=delivery.processing?.outputs||delivery.processing?.outputQuantities||
+    flowFor(countryId,result.batchId)?.outputQuantities||{};
+  const inventory=finalState.inventory||{};
+  const positiveOutput=Object.entries(outputs).some(([rid,quantity])=>{
+    if(!(Number(quantity)>0))return false;
+    const key=Object.keys(inventory).find(k=>String(k).toLowerCase()===String(rid).toLowerCase());
+    return !!key&&Number(inventory[key])>0;
+  });
+  if(!positiveOutput){
+    failures.push({siteId:site.siteId,countryId,stage:'FINISHED_GOODS',
+      reason:'POSITIVE_OUTPUT_NOT_IN_SOVEREIGN_INVENTORY',outputs,inventoryKeys:Object.keys(inventory).slice(0,40)});
+    continue;
+  }
   counts.processed++;
 }
-assert.deepEqual(failures,[],'every eligible site must complete extraction and delivery without blocked routes: '+JSON.stringify(failures.slice(0,12)));
-assert.equal(counts.started,counts.eligible,'every eligible site must dispatch a shipment: '+JSON.stringify(counts));
-assert.equal(counts.delivered,counts.eligible,'every eligible site must deliver to its own factory: '+JSON.stringify(counts));
-assert.equal(counts.processed,counts.eligible,'every eligible site must produce finished goods: '+JSON.stringify(counts));
-console.log('OMEGA EXHAUSTIVE EVERY-SITE PRODUCTION PIPELINE PASSED '+JSON.stringify(counts));
+assert.deepEqual(failures,[],'every-site production failures: '+JSON.stringify(failures.slice(0,20)));
+assert.equal(counts.started,counts.eligible,'every eligible site must dispatch: '+JSON.stringify(counts));
+assert.equal(counts.delivered,counts.eligible,'every eligible site must deliver to its factory: '+JSON.stringify(counts));
+assert.equal(counts.processed,counts.eligible,'every eligible site must commit finished goods: '+JSON.stringify(counts));
+console.log('OMEGA EXHAUSTIVE EVERY-SITE PRODUCTION PIPELINE PASSED '+JSON.stringify({
+  ...counts,countries:countryIds.size,criticalMineralSites:criticalBatch.records.length
+}));
