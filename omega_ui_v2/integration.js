@@ -157,9 +157,6 @@
           var code = String(id || '').trim().toUpperCase();
           if (code) g.OmegaMinistryViewCountry = code;
         },
-        onOpenOperations:function () {
-          return openOperationalConsole('interior_security');
-        }
       });
       if (!result || result.ok === false || result.mounted !== true) {
         lastError = result && result.code || 'UI_V2_MOUNT_FAILED';
