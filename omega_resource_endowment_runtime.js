@@ -136,10 +136,16 @@
           try{
             const extraResponse=await fetch('resource_site_country_mineplay_batch_20261024_v1.json?v='+Date.now(),{cache:'no-store'});
             const extra=extraResponse?.ok?await extraResponse.json():null;
-            if(extra?.datasetId==='OMEGA_RESOURCE_SITE_COUNTRY_MINEPLAY_BATCH_V1'&&Array.isArray(extra.records)){
-              const merged=[...(supplement?.datasetId==='OMEGA_RESOURCE_SITE_COUNTRY_MINEPLAY_BATCH_V1'&&Array.isArray(supplement.records)?supplement.records:[]),...extra.records];
+            const criticalResponse=await fetch('resource_site_country_mineplay_critical_batch_20261024_v1.json?v='+Date.now(),{cache:'no-store'});
+            const critical=criticalResponse?.ok?await criticalResponse.json():null;
+            const merged=[
+              ...(supplement?.datasetId==='OMEGA_RESOURCE_SITE_COUNTRY_MINEPLAY_BATCH_V1'&&Array.isArray(supplement.records)?supplement.records:[]),
+              ...(extra?.datasetId==='OMEGA_RESOURCE_SITE_COUNTRY_MINEPLAY_BATCH_V1'&&Array.isArray(extra.records)?extra.records:[]),
+              ...(critical?.datasetId==='OMEGA_RESOURCE_SITE_COUNTRY_MINEPLAY_BATCH_V1'&&Array.isArray(critical.records)?critical.records:[])
+            ];
+            if(merged.length){
               const unique=Array.from(new Map(merged.filter(row=>row?.siteId).map(row=>[String(row.siteId),row])).values());
-              supplement={...(supplement||extra),batchId:'COUNTRY_MINEPLAY_COMBINED_20261024',recordCount:unique.length,countryCount:new Set(unique.map(row=>String(row?.countryId||row?.identity?.countryIso3||'').toUpperCase()).filter(Boolean)).size,records:unique};
+              supplement={...(supplement||extra||critical),batchId:'COUNTRY_MINEPLAY_COMBINED_CRITICAL_MINERALS_20261024',recordCount:unique.length,countryCount:new Set(unique.map(row=>String(row?.countryId||row?.identity?.countryIso3||'').toUpperCase()).filter(Boolean)).size,records:unique};
             }
           }catch(_){}
           if(supplement?.datasetId==='OMEGA_RESOURCE_SITE_COUNTRY_MINEPLAY_BATCH_V1'&&Array.isArray(supplement.records)){
@@ -203,8 +209,11 @@
   }
 
   async function loadCanonicalSiteCatalogData(){
-    if(canonicalSiteCatalogMap)return{status:'READY',count:Object.keys(canonicalSiteCatalogMap).length,reused:true};
+    // Await the in-flight catalog promise before consulting the partially populated map.
+    // The map is assigned before supplemental batch coverage is finalized; checking it first
+    // can leak a premature READY report with no mineplayBatchCoverage to concurrent callers.
     if(canonicalSiteCatalogPromise)return canonicalSiteCatalogPromise;
+    if(canonicalSiteCatalogMap)return{status:'READY',count:Object.keys(canonicalSiteCatalogMap).length,reused:true};
     canonicalSiteCatalogPromise=(async()=>{
       try{
         const inline=g.OmegaResourceSiteCanonicalCatalogData||g.Omega?.ResourceSiteCanonicalCatalogData;
@@ -249,11 +258,12 @@
         let mineplayRows=[];
         const mineplayBatchCoverage={
           base:{file:'resource_site_country_mineplay_batch_20261020_v1.json',expectedRecordCount:44,recordCount:0,status:'MISSING'},
-          expanded:{file:'resource_site_country_mineplay_batch_20261024_v1.json',expectedRecordCount:108,recordCount:0,status:'MISSING'}
+          expanded:{file:'resource_site_country_mineplay_batch_20261024_v1.json',expectedRecordCount:108,recordCount:0,status:'MISSING'},
+          critical:{file:'resource_site_country_mineplay_critical_batch_20261024_v1.json',expectedRecordCount:58,recordCount:0,status:'MISSING'}
         };
         let mineplaySourceRecordCount=0,mineplayUniqueRecordCount=0;
         try{
-          // These two batches are required production data, not optional map decoration.
+          // These three batches are required production data, not optional map decoration.
           // A missing batch must make runtime initialization fail visibly rather than silently
           // publishing READY with only the historical 315-site catalog.
           const baseResponse=await fetch(mineplayBatchCoverage.base.file+'?v='+Date.now(),{cache:'no-store'});
@@ -280,7 +290,19 @@
               ?'READY':'INVALID';
           if(mineplayBatchCoverage.expanded.status!=='READY')throw new Error('RESOURCE_SITE_MINEPLAY_BATCH_20261024_INVALID');
 
-          const merged=[...base.records,...extra.records];
+          const criticalResponse=await fetch(mineplayBatchCoverage.critical.file+'?v='+Date.now(),{cache:'no-store'});
+          if(!criticalResponse?.ok)throw new Error('RESOURCE_SITE_MINEPLAY_CRITICAL_BATCH_20261024_FETCH_FAILED');
+          const critical=await criticalResponse.json();
+          mineplayBatchCoverage.critical.recordCount=Array.isArray(critical?.records)?critical.records.length:0;
+          mineplayBatchCoverage.critical.status=
+            critical?.datasetId==='OMEGA_RESOURCE_SITE_COUNTRY_MINEPLAY_BATCH_V1'&&
+            mineplayBatchCoverage.critical.recordCount===mineplayBatchCoverage.critical.expectedRecordCount&&
+            Number(critical?.recordCount)===mineplayBatchCoverage.critical.expectedRecordCount&&
+            new Set((critical.records||[]).map(row=>String(row?.siteId||'').trim()).filter(Boolean)).size===mineplayBatchCoverage.critical.expectedRecordCount
+              ?'READY':'INVALID';
+          if(mineplayBatchCoverage.critical.status!=='READY')throw new Error('RESOURCE_SITE_MINEPLAY_CRITICAL_BATCH_20261024_INVALID');
+
+          const merged=[...base.records,...extra.records,...critical.records];
           mineplaySourceRecordCount=merged.length;
           const unique=Array.from(new Map(merged.filter(row=>row?.siteId).map(row=>[String(row.siteId),row])).values());
           mineplayUniqueRecordCount=unique.length;
@@ -1924,8 +1946,9 @@ function batchFromExtraction(x,record){
         const mineplaySupplementReady=canonicalCatalogData.status==='READY'&&
           mineplayCoverage.base?.status==='READY'&&Number(mineplayCoverage.base?.recordCount)===44&&
           mineplayCoverage.expanded?.status==='READY'&&Number(mineplayCoverage.expanded?.recordCount)===108&&
-          Number(canonicalCatalogData.mineplaySourceRecordCount)===152&&
-          Number(canonicalCatalogData.mineplayUniqueRecordCount)>=151;
+          mineplayCoverage.critical?.status==='READY'&&Number(mineplayCoverage.critical?.recordCount)===58&&
+          Number(canonicalCatalogData.mineplaySourceRecordCount)===210&&
+          Number(canonicalCatalogData.mineplayUniqueRecordCount)===210;
         if(!mineplaySupplementReady&&!dependencyLightContext)return{
           status:'FAILED',reason:'MINEPLAY_SUPPLEMENTAL_DATASET_INCOMPLETE',
           detail:{coverage:mineplayCoverage,sourceRecordCount:canonicalCatalogData.mineplaySourceRecordCount,
