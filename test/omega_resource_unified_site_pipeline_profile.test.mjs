@@ -9,6 +9,7 @@ const reserve = json('resource_site_reserve_simulation_v1.json');
 const mineplayBase = json('resource_site_country_mineplay_batch_20261020_v1.json');
 const mineplayExpanded = json('resource_site_country_mineplay_batch_20261024_v1.json');
 const legacyPacks = [1,2,3,4,5,6].map(n => json('resource_site_legacy_gameplay_expansion_part_' + n + '_v1.json'));
+const gameplayBindingSource = read('omega_resource_gameplay_binding_v1.js');
 
 const aliasMap = {
   SITE_AUS_olympic_dam_uranium_copper: 'SITE_AUS_olympic_dam_mine',
@@ -69,6 +70,13 @@ new vm.Script(read('omega_resource_site_integrity_v1.js'), {
 const integrity = context.Omega.ResourceSiteIntegrity;
 assert.equal(typeof integrity.buildSimulationPipelineProfile, 'function',
   'unified site simulation pipeline profile builder must be exported');
+
+assert.match(gameplayBindingSource, /const modeled=sim\.recovery;/,
+  'site detail UI must accept structured simulated recovery values');
+assert.match(gameplayBindingSource, /recoveryRaw=modeled\.value\?\?modeled\.quantity\?\?modeled\.amount\?\?modeled\.rate;/,
+  'site detail UI must extract the structured recovery value');
+assert.match(gameplayBindingSource, /recoveryUnit=modeled\.unit\|\|modeled\.units\|\|modeled\.measurementUnit\|\|'%'/,
+  'site detail UI must preserve the structured recovery unit');
 
 const rows = [...registryById.values()].map(source => {
   const normalized = integrity.normalizeSiteRecord(source);
