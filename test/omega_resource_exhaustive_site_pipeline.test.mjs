@@ -41,8 +41,9 @@ for(const [countryId,row] of Object.entries(world)){
     const siteId=String(ref?.siteReferenceKey||ref?.siteId||'').trim();
     const resourceId=String(ref?.resourceId||ref?.resourceTypeId||ref?.identity?.resourceTypeId||'').trim().toLowerCase();
     const owner=String(ref?.countryId||countryId).trim().toUpperCase();
-    if(!siteId||!resourceId||!owner||siteId.startsWith('SITE_TEST_'))continue;
+    if(!siteId||siteId.startsWith('SITE_TEST_'))continue;
     allRefs.push({countryId:owner,siteId,resourceId,ref});
+    if(!resourceId||!owner)continue;
     if(ref?.runtime?.aliasOfSiteId||ref?.rawSiteReference?.runtime?.aliasOfSiteId)continue;
     if(ref?.map?.markerEligible===false||ref?.rawSiteReference?.map?.markerEligible===false)continue;
     if(ref?.commercialExtraction===false||ref?.operation?.commercialExtraction===false||
