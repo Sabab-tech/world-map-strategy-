@@ -143,6 +143,17 @@ const runtime=globalThis.OmegaResourceEndowmentRuntime;
 const initialized=await runtime.initialize();
 assert.equal(initialized.status,'READY',JSON.stringify(initialized));
 assert.equal(initialized.countries,Object.keys(engine.countryProfiles||{}).length);
+// Startup must not claim READY if either supplemental production batch is absent or partial.
+const mineplayReadiness=globalThis.OmegaResourceSiteCanonicalCatalogData;
+assert.equal(mineplayReadiness?.mineplayBatchCoverage?.base?.status,'READY',JSON.stringify(mineplayReadiness?.mineplayBatchCoverage));
+assert.equal(mineplayReadiness?.mineplayBatchCoverage?.base?.recordCount,44);
+assert.equal(mineplayReadiness?.mineplayBatchCoverage?.expanded?.status,'READY',JSON.stringify(mineplayReadiness?.mineplayBatchCoverage));
+assert.equal(mineplayReadiness?.mineplayBatchCoverage?.expanded?.recordCount,108);
+assert.equal(mineplayReadiness?.mineplaySourceRecordCount,152);
+assert.ok(Number(mineplayReadiness?.mineplayUniqueRecordCount)>=151);
+assert.equal(mineplayReadiness?.legacyLoadedParts,6);
+assert.ok(Number(mineplayReadiness?.totalSiteCount)>=500,
+  'canonical runtime catalog must contain the 315-site authority plus eligible legacy and mineplay additions');
 const mineplayBaseScenario=JSON.parse(fs.readFileSync(new URL('../resource_site_country_mineplay_batch_20261020_v1.json',import.meta.url),'utf8'));
 const mineplayExpandedScenario=JSON.parse(fs.readFileSync(new URL('../resource_site_country_mineplay_batch_20261024_v1.json',import.meta.url),'utf8'));
 assert.equal(mineplayBaseScenario.records.length,44);
