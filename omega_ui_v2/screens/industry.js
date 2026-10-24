@@ -198,12 +198,6 @@
           render(root, Object.assign({}, root.__omegaV2IndustryOptions || {}, { tab: root.__omegaV2IndustryTab }));
           return;
         }
-        var legacyConsole = target.closest('[data-omega-v2-open-operational-console]');
-        if (legacyConsole && root.contains(legacyConsole) && !legacyConsole.disabled) {
-          var consoleOptions = root.__omegaV2IndustryOptions || {};
-          if (typeof consoleOptions.onOpenOperationalConsole === 'function') consoleOptions.onOpenOperationalConsole('production');
-          return;
-        }
         var factory = target.closest('[data-omega-v2-open-factory]');
         if (factory && root.contains(factory) && !factory.disabled) {
           var callback = root.__omegaV2IndustryOptions && root.__omegaV2IndustryOptions.onOpenFactory;
