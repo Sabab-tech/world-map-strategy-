@@ -1,0 +1,363 @@
+/* OMEGA Atlas Command UI polish.
+ * Loaded after the accumulated legacy overrides; this file is additive and
+ * keeps the original UI styles available for recovery.
+ */
+#cabinet-full-window[data-omega-ui-v2-active="true"] {
+  height: var(--omega-app-height, 100vh) !important;
+  max-height: var(--omega-app-height, 100vh) !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  overscroll-behavior: none !important;
+}
+.omega-v2-app-root {
+  position: relative !important;
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  max-height: 100% !important;
+  overflow: hidden !important;
+  isolation: isolate;
+  background: #071321;
+  color: #edf3fa;
+}
+.omega-v2-app-root,
+.omega-v2-app-root * {
+  box-sizing: border-box;
+}
+.omega-v2-app-frame {
+  display: flex !important;
+  flex-direction: column !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+.omega-v2-app-header {
+  position: relative !important;
+  z-index: 40 !important;
+  display: flex !important;
+  flex: 0 0 auto !important;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 12px !important;
+  border-bottom: 1px solid rgba(121, 158, 184, .25);
+  background: #081626 !important;
+}
+.omega-v2-app-brand {
+  min-width: 75px;
+}
+.omega-v2-app-brand strong {
+  display: block;
+  font-size: 13px;
+  letter-spacing: .08em;
+  line-height: 1.2;
+}
+.omega-v2-app-brand small {
+  display: block;
+  color: #9fb2c7;
+  font-size: 8px;
+  letter-spacing: .12em;
+}
+.omega-v2-app-header .omega-v2-button,
+.omega-v2-route-switcher > summary {
+  min-height: 40px !important;
+  border-radius: 10px;
+  font-size: 11px;
+  line-height: 1.2;
+  touch-action: manipulation;
+}
+.omega-v2-country-select,
+.omega-v2-country-badge {
+  min-height: 38px;
+  min-width: 0;
+}
+.omega-v2-app-main {
+  position: relative;
+  z-index: 1;
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y pinch-zoom;
+  padding: 0 0 calc(8px + env(safe-area-inset-bottom, 0px)) !important;
+}
+.omega-v2-app-main > .omega-v2-screen,
+.omega-v2-app-main > .omega-v2-shell {
+  width: 100%;
+  min-width: 0;
+  margin-inline: auto;
+}
+.omega-v2-bottom-nav {
+  position: relative !important;
+  z-index: 45 !important;
+  left: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+  transform: none !important;
+  flex: 0 0 auto !important;
+  width: 100% !important;
+  max-width: none !important;
+  display: grid !important;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  gap: 4px !important;
+  padding: 5px 8px calc(5px + env(safe-area-inset-bottom, 0px)) !important;
+  border-top: 1px solid rgba(121, 158, 184, .28);
+  background: rgba(7, 19, 33, .99) !important;
+}
+.omega-v2-nav-button {
+  width: 100%;
+  min-width: 0;
+  min-height: 48px !important;
+  padding: 6px 3px !important;
+  border-radius: 10px !important;
+  font-size: 10px !important;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+  touch-action: manipulation;
+}
+.omega-v2-app-root button,
+.omega-v2-app-root select,
+.omega-v2-app-root summary {
+  pointer-events: auto !important;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.omega-v2-app-root button:focus-visible,
+.omega-v2-app-root summary:focus-visible,
+.omega-v2-app-root select:focus-visible {
+  outline: 2px solid #79b9d7;
+  outline-offset: 2px;
+}
+.omega-v2-app-root button:active {
+  filter: brightness(1.16);
+}
+.omega-v2-core-grid,
+.omega-v2-domain-grid {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  align-items: stretch;
+  gap: 12px !important;
+}
+.omega-v2-domain-card,
+.omega-v2-command-card {
+  display: flex !important;
+  flex-direction: column !important;
+  min-width: 0;
+  height: 100%;
+  padding: 0 !important;
+  overflow: hidden;
+}
+.omega-v2-domain-card-body {
+  display: flex !important;
+  flex: 1 1 auto;
+  flex-direction: column;
+  align-items: stretch !important;
+  gap: 8px !important;
+  min-width: 0;
+  padding: 12px !important;
+}
+.omega-v2-card-title {
+  font-size: 14px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+.omega-v2-card-meta {
+  font-size: 12px;
+  line-height: 1.45;
+}
+.omega-v2-domain-card-action {
+  width: 100%;
+  margin-top: auto;
+  padding-top: 8px;
+}
+.omega-v2-domain-card-action .omega-v2-button,
+.omega-v2-command-card .omega-v2-button {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px !important;
+  justify-content: center;
+}
+.omega-v2-photo {
+  min-width: 0;
+  margin: 0 0 12px;
+  overflow: hidden;
+}
+.omega-v2-photo--tile {
+  margin: 0;
+  border: 0;
+  border-bottom: 1px solid rgba(121, 158, 184, .22);
+  border-radius: 0;
+  box-shadow: none;
+}
+.omega-v2-photo--tile img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 210px;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  object-position: center;
+}
+.omega-v2-photo--hero img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 330px;
+  aspect-ratio: 16 / 8;
+  object-fit: cover;
+  object-position: center 48%;
+}
+.omega-v2-photo figcaption {
+  padding: 8px 10px;
+  font-size: 11px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.omega-v2-photo figcaption small {
+  font-size: 10px;
+  line-height: 1.4;
+}
+.omega-v2-photo-credit {
+  display: block;
+  margin-top: 4px;
+  font-size: 10px;
+  overflow-wrap: anywhere;
+}
+.omega-v2-route-menu {
+  z-index: 60 !important;
+  max-width: min(440px, 92vw) !important;
+  max-height: min(62vh, 560px) !important;
+  overflow: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+.omega-v2-route-menu-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 7px !important;
+}
+.omega-v2-route-link {
+  min-height: 42px;
+  padding: 8px 10px;
+  text-align: left;
+  font-size: 12px;
+  line-height: 1.3;
+  touch-action: manipulation;
+}
+@media (max-width: 760px) {
+  .omega-v2-core-grid,
+  .omega-v2-domain-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+  }
+  .omega-v2-app-header {
+    gap: 6px !important;
+    padding: 7px 9px !important;
+  }
+  .omega-v2-photo--tile img {
+    max-height: 185px;
+  }
+}
+@media (max-width: 420px) {
+  .omega-v2-app-header {
+    display: grid !important;
+    grid-template-columns: 48px minmax(58px, 1fr) minmax(90px, auto) 48px;
+    align-items: center;
+    gap: 5px !important;
+    padding: 7px 8px !important;
+  }
+  .omega-v2-app-header > [data-omega-v2-back] {
+    grid-column: 1;
+    grid-row: 1;
+    min-width: 0;
+    width: 100%;
+    padding-inline: 3px !important;
+    font-size: 10px !important;
+  }
+  .omega-v2-app-header > .omega-v2-app-brand {
+    grid-column: 2;
+    grid-row: 1;
+    min-width: 0;
+    overflow: hidden;
+  }
+  .omega-v2-app-brand strong {
+    font-size: 12px;
+  }
+  .omega-v2-app-brand small {
+    font-size: 7px;
+    letter-spacing: .06em;
+  }
+  .omega-v2-app-header > .omega-v2-route-switcher {
+    grid-column: 3;
+    grid-row: 1;
+    min-width: 0;
+    justify-self: stretch;
+  }
+  .omega-v2-app-header > .omega-v2-route-switcher > summary {
+    min-width: 0;
+    padding: 6px 5px;
+    font-size: 10px;
+  }
+  .omega-v2-app-header > .omega-v2-button--exit {
+    grid-column: 4;
+    grid-row: 1;
+    min-width: 0;
+    width: 100%;
+    padding-inline: 3px !important;
+  }
+  .omega-v2-app-header > .omega-v2-country-select,
+  .omega-v2-app-header > .omega-v2-country-badge {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    width: 100%;
+    max-width: none !important;
+    min-width: 0;
+    min-height: 34px;
+  }
+  .omega-v2-core-grid,
+  .omega-v2-domain-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 12px !important;
+  }
+  .omega-v2-domain-card-body {
+    padding: 11px !important;
+  }
+  .omega-v2-photo--tile img {
+    max-height: 220px;
+    aspect-ratio: 16 / 8.5;
+  }
+  .omega-v2-bottom-nav {
+    gap: 2px !important;
+    padding-inline: 5px !important;
+  }
+  .omega-v2-nav-button {
+    min-height: 48px !important;
+    padding-inline: 1px !important;
+    font-size: 9px !important;
+  }
+  .omega-v2-route-menu {
+    position: fixed !important;
+    top: 100px !important;
+    right: 8px !important;
+    left: auto !important;
+    width: calc(100vw - 16px) !important;
+    max-width: 390px !important;
+    max-height: calc(var(--omega-app-height, 100vh) - 190px) !important;
+  }
+  .omega-v2-route-menu-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .omega-v2-app-root *,
+  .omega-v2-app-root *::before,
+  .omega-v2-app-root *::after {
+    scroll-behavior: auto !important;
+    transition: none !important;
+    animation: none !important;
+  }
+}
