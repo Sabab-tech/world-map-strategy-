@@ -339,6 +339,7 @@
         data.mineplayBatchCoverage=clone(mineplayBatchCoverage);
         data.mineplaySourceRecordCount=mineplaySourceRecordCount;
         data.mineplayUniqueRecordCount=mineplayUniqueRecordCount;
+        data.legacyLoadedParts=legacy.loadedParts||0;
         g.OmegaResourceSiteCanonicalCatalogData=data;
         g.Omega=g.Omega||{};
         g.Omega.ResourceSiteCanonicalCatalogData=data;
