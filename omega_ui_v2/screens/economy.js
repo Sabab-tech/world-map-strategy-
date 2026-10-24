@@ -16,8 +16,6 @@
       var suffix = '';
       if (absolute >= 1e12) { divisor = 1e12; suffix = 'T'; }
       else if (absolute >= 1e9) { divisor = 1e9; suffix = 'B'; }
-      else if (absolute >= 1e6) { divisor = 1e6; suffix = 'M'; }
-      else if (absolute >= 1e3) { divisor = 1e3; suffix = 'K'; }
       var fractionDigits = suffix ? 1 : 2;
       var formatted = new Intl.NumberFormat('en-US', {
         style:'currency',
