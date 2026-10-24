@@ -15,13 +15,12 @@
     { id: 'all-ministries', label: 'All Ministries', icon: 'building-2', defaultRoute: 'ministry-directory' }
   ];
 
-  /* IDs seen in the current ministry_engine.js database as regular records.
-     Do not synthesize a missing eighteenth ministry to satisfy a stale UI label. */
+  /* All 18 canonical records from ministry_engine.js, including the executive cabinet destination. */
   var ministryIds = [
-    'trade', 'production', 'taxes', 'central_bank', 'laws', 'education',
-    'infrastructure', 'science_research', 'defense', 'foreign_affairs',
-    'energy_mining', 'intelligence_cyber', 'agriculture_food',
-    'interior_security', 'health_welfare', 'treasury_finance', 'mega_projects'
+    'cabinet_council', 'trade', 'production', 'taxes', 'central_bank', 'laws',
+    'education', 'infrastructure', 'science_research', 'defense', 'foreign_affairs',
+    'energy_mining', 'intelligence_cyber', 'agriculture_food', 'interior_security',
+    'health_welfare', 'treasury_finance', 'mega_projects'
   ];
 
   function normalizeGovernmentDestination(value) {
@@ -46,9 +45,10 @@
     destinations: destinations,
     governmentDestinations: governmentDestinations,
     ministryIds: ministryIds,
-    visibleRegularMinistryCount: ministryIds.length,
-    unresolvedDirectoryLabelCount: 18,
-    unresolvedCountNote: 'Current visible database has 17 regular ministry records plus cabinet_council; reconcile authoritative registry before displaying a final count.',
+    visibleRegularMinistryCount: ministryIds.length - 1,
+    visibleMinistryCount: ministryIds.length,
+    unresolvedDirectoryLabelCount: 0,
+    unresolvedCountNote: 'The registry contains 18 canonical records, including the Executive Cabinet destination.',
     normalizeGovernmentDestination: normalizeGovernmentDestination,
     canRenderCountryOverview: canRenderCountryOverview,
     getGovernmentDestination: getGovernmentDestination
