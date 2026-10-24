@@ -490,7 +490,7 @@ test('Mine Management prefers hydrated canonical runtime profiles over sparse du
   assert.equal(merged.operation.realWorldStatus, 'OPERATING', 'runtime status must not erase separate real-world status');
   const summary = api.getProductionSummary(merged);
   assert.match(summary, /Gameplay rate: 123\.5 tonnes per day \(SIMULATED\)/);
-  assert.match(summary, /Gameplay daily capacity: 80-200 tonnes per day \\(nominal 150\\) \\(SIMULATED\\)/);
+  assert.match(summary, /Gameplay daily capacity: 80-200 tonnes per day \(nominal 150\) \(SIMULATED\)/);
   assert.match(summary, /Profile ready for gameplay/);
   assert.match(summary, /actual extraction remains subject to runtime gates/);
 });
