@@ -135,6 +135,15 @@
       return false;
     }
 
+    // Pointer/touch/click recovery can call the entry twice for one physical tap.
+    // Once UI v2 is mounted, do not rerender the root or repeat expensive setup.
+    if (cabinet.getAttribute && cabinet.getAttribute('data-omega-ui-v2-active') === 'true' &&
+        cabinet.__omegaUIV2State) {
+      if (button) button.setAttribute('data-last-open-result', 'opened-ui-v2');
+      syncVisibility();
+      return true;
+    }
+
     closeCompetingDrawers();
     const uiV2 = global.OmegaUIV2Integration;
     if (!uiV2 || typeof uiV2.isEnabled !== 'function' || uiV2.isEnabled() !== true ||
