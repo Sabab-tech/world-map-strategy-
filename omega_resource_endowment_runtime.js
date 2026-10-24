@@ -81,7 +81,7 @@
   };
   const simulationYear=()=>{const d=state()?.simulation?.date;if(d){const y=Number(String(d).slice(0,4));if(Number.isFinite(y))return y;}const sy=Number(state()?.simulation?.startYear);return Number.isFinite(sy)?sy:2015;};
   let simulationReserveMap=null,simulationReservePromise=null,researchEvidenceMap=null,researchEvidencePromise=null;
-  let canonicalSiteCatalogMap=null,canonicalSiteCatalogPromise=null;
+  let canonicalSiteCatalogMap=null,canonicalSiteCatalogPromise=null,canonicalSiteCatalogLoadReport=null;
   let losslessReferenceMap=null,losslessReferencePromise=null,masterResearchMap=null,masterResearchPromise=null;
   const LEGACY_GAMEPLAY_EXPANSION_FILES=['resource_site_legacy_gameplay_expansion_part_1_v1.json','resource_site_legacy_gameplay_expansion_part_2_v1.json','resource_site_legacy_gameplay_expansion_part_3_v1.json','resource_site_legacy_gameplay_expansion_part_4_v1.json','resource_site_legacy_gameplay_expansion_part_5_v1.json','resource_site_legacy_gameplay_expansion_part_6_v1.json'];
   const LEGACY_CANONICAL_ALIAS_IDS={SITE_AUS_olympic_dam_uranium_copper:'SITE_AUS_olympic_dam_mine',SITE_BRA_carajas_iron_ore_mine_legacy2:'SITE_BRA_carajas_iron_ore_mine',SITE_CHL_escondida_copper_mine_legacy2:'SITE_CHL_escondida_copper_mine',SITE_IDN_grasberg_copper_gold_mine:'SITE_IDN_grasberg_mine',SITE_COD_tenke_fungurume_copper_cobalt_complex:'SITE_COD_tenke_fungurume_mine',SITE_COD_kibali_gold_mine_complex:'SITE_COD_kibali_gold_mine',SITE_CAN_voiseys_bay_nickel_mine:'SITE_CAN_voisey_s_bay_nickel_mine',SITE_GBR_boulby_mine:'SITE_GBR_boulby_potash_mine',SITE_SWE_kiruna_iron_ore_mine:'SITE_SWE_kiruna_iron_mine',SITE_PRK_musan_iron_ore_mine:'SITE_PRK_musan_iron_mine'};
@@ -136,10 +136,16 @@
           try{
             const extraResponse=await fetch('resource_site_country_mineplay_batch_20261024_v1.json?v='+Date.now(),{cache:'no-store'});
             const extra=extraResponse?.ok?await extraResponse.json():null;
-            if(extra?.datasetId==='OMEGA_RESOURCE_SITE_COUNTRY_MINEPLAY_BATCH_V1'&&Array.isArray(extra.records)){
-              const merged=[...(supplement?.datasetId==='OMEGA_RESOURCE_SITE_COUNTRY_MINEPLAY_BATCH_V1'&&Array.isArray(supplement.records)?supplement.records:[]),...extra.records];
+            const criticalResponse=await fetch('resource_site_country_mineplay_critical_batch_20261024_v1.json?v='+Date.now(),{cache:'no-store'});
+            const critical=criticalResponse?.ok?await criticalResponse.json():null;
+            const merged=[
+              ...(supplement?.datasetId==='OMEGA_RESOURCE_SITE_COUNTRY_MINEPLAY_BATCH_V1'&&Array.isArray(supplement.records)?supplement.records:[]),
+              ...(extra?.datasetId==='OMEGA_RESOURCE_SITE_COUNTRY_MINEPLAY_BATCH_V1'&&Array.isArray(extra.records)?extra.records:[]),
+              ...(critical?.datasetId==='OMEGA_RESOURCE_SITE_COUNTRY_MINEPLAY_BATCH_V1'&&Array.isArray(critical.records)?critical.records:[])
+            ];
+            if(merged.length){
               const unique=Array.from(new Map(merged.filter(row=>row?.siteId).map(row=>[String(row.siteId),row])).values());
-              supplement={...(supplement||extra),batchId:'COUNTRY_MINEPLAY_COMBINED_20261024',recordCount:unique.length,countryCount:new Set(unique.map(row=>String(row?.countryId||row?.identity?.countryIso3||'').toUpperCase()).filter(Boolean)).size,records:unique};
+              supplement={...(supplement||extra||critical),batchId:'COUNTRY_MINEPLAY_COMBINED_CRITICAL_MINERALS_20261024',recordCount:unique.length,countryCount:new Set(unique.map(row=>String(row?.countryId||row?.identity?.countryIso3||'').toUpperCase()).filter(Boolean)).size,records:unique};
             }
           }catch(_){}
           if(supplement?.datasetId==='OMEGA_RESOURCE_SITE_COUNTRY_MINEPLAY_BATCH_V1'&&Array.isArray(supplement.records)){
@@ -203,8 +209,11 @@
   }
 
   async function loadCanonicalSiteCatalogData(){
-    if(canonicalSiteCatalogMap)return{status:'READY',count:Object.keys(canonicalSiteCatalogMap).length,reused:true};
+    // Await the in-flight catalog promise before consulting the partially populated map.
+    // The map is assigned before supplemental batch coverage is finalized; checking it first
+    // can leak a premature READY report with no mineplayBatchCoverage to concurrent callers.
     if(canonicalSiteCatalogPromise)return canonicalSiteCatalogPromise;
+    if(canonicalSiteCatalogMap&&canonicalSiteCatalogLoadReport)return canonicalSiteCatalogLoadReport;
     canonicalSiteCatalogPromise=(async()=>{
       try{
         const inline=g.OmegaResourceSiteCanonicalCatalogData||g.Omega?.ResourceSiteCanonicalCatalogData;
@@ -249,11 +258,12 @@
         let mineplayRows=[];
         const mineplayBatchCoverage={
           base:{file:'resource_site_country_mineplay_batch_20261020_v1.json',expectedRecordCount:44,recordCount:0,status:'MISSING'},
-          expanded:{file:'resource_site_country_mineplay_batch_20261024_v1.json',expectedRecordCount:108,recordCount:0,status:'MISSING'}
+          expanded:{file:'resource_site_country_mineplay_batch_20261024_v1.json',expectedRecordCount:108,recordCount:0,status:'MISSING'},
+          critical:{file:'resource_site_country_mineplay_critical_batch_20261024_v1.json',expectedRecordCount:58,recordCount:0,status:'MISSING'}
         };
         let mineplaySourceRecordCount=0,mineplayUniqueRecordCount=0;
         try{
-          // These two batches are required production data, not optional map decoration.
+          // These three batches are required production data, not optional map decoration.
           // A missing batch must make runtime initialization fail visibly rather than silently
           // publishing READY with only the historical 315-site catalog.
           const baseResponse=await fetch(mineplayBatchCoverage.base.file+'?v='+Date.now(),{cache:'no-store'});
@@ -280,7 +290,19 @@
               ?'READY':'INVALID';
           if(mineplayBatchCoverage.expanded.status!=='READY')throw new Error('RESOURCE_SITE_MINEPLAY_BATCH_20261024_INVALID');
 
-          const merged=[...base.records,...extra.records];
+          const criticalResponse=await fetch(mineplayBatchCoverage.critical.file+'?v='+Date.now(),{cache:'no-store'});
+          if(!criticalResponse?.ok)throw new Error('RESOURCE_SITE_MINEPLAY_CRITICAL_BATCH_20261024_FETCH_FAILED');
+          const critical=await criticalResponse.json();
+          mineplayBatchCoverage.critical.recordCount=Array.isArray(critical?.records)?critical.records.length:0;
+          mineplayBatchCoverage.critical.status=
+            critical?.datasetId==='OMEGA_RESOURCE_SITE_COUNTRY_MINEPLAY_BATCH_V1'&&
+            mineplayBatchCoverage.critical.recordCount===mineplayBatchCoverage.critical.expectedRecordCount&&
+            Number(critical?.recordCount)===mineplayBatchCoverage.critical.expectedRecordCount&&
+            new Set((critical.records||[]).map(row=>String(row?.siteId||'').trim()).filter(Boolean)).size===mineplayBatchCoverage.critical.expectedRecordCount
+              ?'READY':'INVALID';
+          if(mineplayBatchCoverage.critical.status!=='READY')throw new Error('RESOURCE_SITE_MINEPLAY_CRITICAL_BATCH_20261024_INVALID');
+
+          const merged=[...base.records,...extra.records,...critical.records];
           mineplaySourceRecordCount=merged.length;
           const unique=Array.from(new Map(merged.filter(row=>row?.siteId).map(row=>[String(row.siteId),row])).values());
           mineplayUniqueRecordCount=unique.length;
@@ -347,7 +369,8 @@
         g.OmegaResourceLegacyGameplayExpansion={status:legacy.count>=115?'READY':legacy.status,count:Math.max(Number(legacy.count)||0,legacyCanonicalRows.length),activeAdded:acceptedLegacy.length+legacyCanonicalPhysicalRows.length,activeCanonical:legacyCanonicalPhysicalRows.length,canonicalCandidateCount:legacyCanonicalRows.length,aliasCount:legacyAliasCount,loadedParts:legacy.loadedParts||0};
         g.Omega=g.Omega||{};
         g.Omega.ResourceLegacyGameplayExpansion=g.OmegaResourceLegacyGameplayExpansion;
-        return{status:'READY',count:baseRows.length,siteCount:baseRows.length,totalSiteCount:rows.length,expansionSiteCount:acceptedExpansion.length,mineplaySupplementSiteCount:mineplayRows.length,mineplayBatchCoverage:clone(mineplayBatchCoverage),mineplaySourceRecordCount,mineplayUniqueRecordCount,legacyCandidateCount:Math.max(Number(legacy.count)||0,legacyCanonicalRows.length),legacyExpansionSiteCount:acceptedLegacy.length+legacyCanonicalPhysicalRows.length,legacyCanonicalCandidateCount:legacyCanonicalRows.length,legacyAliasCount,legacyLoadedParts:legacy.loadedParts||0};
+        canonicalSiteCatalogLoadReport={status:'READY',count:baseRows.length,siteCount:baseRows.length,totalSiteCount:rows.length,expansionSiteCount:acceptedExpansion.length,mineplaySupplementSiteCount:mineplayRows.length,mineplayBatchCoverage:clone(mineplayBatchCoverage),mineplaySourceRecordCount,mineplayUniqueRecordCount,legacyCandidateCount:Math.max(Number(legacy.count)||0,legacyCanonicalRows.length),legacyExpansionSiteCount:acceptedLegacy.length+legacyCanonicalPhysicalRows.length,legacyCanonicalCandidateCount:legacyCanonicalRows.length,legacyAliasCount,legacyLoadedParts:legacy.loadedParts||0};
+        return canonicalSiteCatalogLoadReport;
       }catch(e){
         canonicalSiteCatalogMap={};
         return{status:'FAILED',count:0,reason:String(e?.message||e)};
@@ -1920,12 +1943,14 @@ function batchFromExtraction(x,record){
         const [reserveData,researchData,canonicalCatalogData,losslessReferenceData,masterResearchData]=await Promise.all([loadSimulationReserveData(),loadResearchEvidenceData(),loadCanonicalSiteCatalogData(),loadLosslessResourceReferenceData(),loadMasterResourceResearchData()]);
         const dependencyLightContext=typeof g.fetch!=='function'&&typeof g.OmegaResourceSiteReserveSimulationData==='undefined'&&typeof g.Omega?.ResourceSiteReserveSimulationData==='undefined';
         if((reserveData.status!=='READY'||Number(reserveData.baseSiteCount??reserveData.count)!==250)&&!dependencyLightContext)return{status:'FAILED',reason:'PER_SITE_RESERVE_DATASET_INCOMPLETE',detail:reserveData};
+        if(canonicalCatalogData.status!=='READY'&&!dependencyLightContext)return{status:'FAILED',reason:'CANONICAL_SITE_CATALOG_LOAD_FAILED',detail:canonicalCatalogData};
         const mineplayCoverage=canonicalCatalogData.mineplayBatchCoverage||{};
         const mineplaySupplementReady=canonicalCatalogData.status==='READY'&&
           mineplayCoverage.base?.status==='READY'&&Number(mineplayCoverage.base?.recordCount)===44&&
           mineplayCoverage.expanded?.status==='READY'&&Number(mineplayCoverage.expanded?.recordCount)===108&&
-          Number(canonicalCatalogData.mineplaySourceRecordCount)===152&&
-          Number(canonicalCatalogData.mineplayUniqueRecordCount)>=151;
+          mineplayCoverage.critical?.status==='READY'&&Number(mineplayCoverage.critical?.recordCount)===58&&
+          Number(canonicalCatalogData.mineplaySourceRecordCount)===210&&
+          Number(canonicalCatalogData.mineplayUniqueRecordCount)===210;
         if(!mineplaySupplementReady&&!dependencyLightContext)return{
           status:'FAILED',reason:'MINEPLAY_SUPPLEMENTAL_DATASET_INCOMPLETE',
           detail:{coverage:mineplayCoverage,sourceRecordCount:canonicalCatalogData.mineplaySourceRecordCount,
