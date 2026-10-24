@@ -331,7 +331,12 @@ function buildSimulationPipelineProfile(raw,options={}){
   simulation.annualProduction=annualProduction;simulation.annualProductionUnit=annualUnit;
   simulation.reserveHorizonYears=horizon;simulation.utilization=utilization;
   simulation.nominalDailyCapacity=nominal;simulation.minimumDailyCapacity=minimum;simulation.maximumDailyCapacity=maximum;
-  simulation.recovery=sitePipelinePositive(simulation.recovery)||Math.round((.68+(seed%261)/1000)*10000)/10000;
+  const recoveryObject=simulation.recovery&&typeof simulation.recovery==='object'?simulation.recovery:null;
+  const recoveryValue=sitePipelinePositive(recoveryObject?.value??simulation.recovery)||
+    Math.round((.68+(seed%261)/1000)*10000)/10000;
+  simulation.recovery=recoveryObject?{...recoveryObject,value:recoveryValue,
+    unit:recoveryObject.unit||'PERCENT',status:recoveryObject.status||'SIMULATED',
+    basis:recoveryObject.basis||'SITE_ID_SEEDED_RECOVERY_NOT_OBSERVED'}:recoveryValue;
   const oldGrade=simulation.grade;
   if(!(oldGrade&&typeof oldGrade==='object'&&sitePipelinePositive(oldGrade.value))&&!(sitePipelinePositive(oldGrade))){
     const gradeBase=resource==='gold' ? 1.2 : resource==='copper' ? 0.85 : resource==='iron_ore' ? 58 : resource==='coal' ? 6200 : resource==='natural_gas' ? 91 : resource==='crude_oil' ? 32 : resource==='limestone' ? 88 : 20;
@@ -375,6 +380,7 @@ function buildSimulationPipelineProfile(raw,options={}){
   const route={...(matchingRoute||{}),routeId:String(matchingRoute?.routeId||('ROUTE_'+siteId+'_RAW_TO_FACTORY')),
     countryId:country,originSiteId:siteId,warehouseId,factoryId,mode,distanceKm:distance,
     estimatedTravelDays:Math.max(1,Math.ceil(distance/speed)),status:'SIMULATED_ROUTE_READY',
+    distanceAuthority:matchingRoute?.distanceAuthority||'SIMULATED_SITE_ID_SEEDED_DISTANCE_NOT_GEODESIC',
     routeCapacityPerDay:Math.max(maximum,sitePipelinePositive(matchingRoute?.routeCapacityPerDay)||0),
     blockableByWar:true,blockableByNeighborControl:true,blockableByNavalInterdiction:mode==='pipeline',
     simulationOnly:true};
@@ -396,6 +402,7 @@ function buildSimulationPipelineProfile(raw,options={}){
       {routeId:route.routeId,routeType:mode.toUpperCase(),mode,originSiteId:siteId,originCountryId:country,
        warehouseId,destinationFactoryId:factoryId,destinationCountryId:country,distanceKm:distance,
        averageSpeedKmPerDay:speed,estimatedTravelDays:route.estimatedTravelDays,
+       distanceAuthority:route.distanceAuthority,
        routeStatus:'SIMULATED_ROUTE_READY',routeCapacityPerDay:route.routeCapacityPerDay,
        canBeBlockedByWar:true,canBeBlockedByNeighborControl:true,
        canBeBlockedByNavalInterdiction:mode==='pipeline',simulationOnly:true}};
