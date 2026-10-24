@@ -10,7 +10,8 @@
   overscroll-behavior: none !important;
 }
 .omega-v2-app-root {
-  position: relative !important;
+  position: fixed !important;
+  inset: 0 !important;
   display: block !important;
   width: 100% !important;
   height: 100% !important;
