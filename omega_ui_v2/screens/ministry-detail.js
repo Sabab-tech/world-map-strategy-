@@ -11,7 +11,7 @@
     health_welfare:'health', treasury_finance:'finance', mega_projects:'projects'
   };
   var SECTIONS = ['dashboard','operations','assets','budget','reports'];
-  var SECTION_LABELS = { dashboard:'Dashboard', operations:'Operations / Programmes', assets:'People & Assets', budget:'Budget', reports:'Reports' };
+  var SECTION_LABELS = { dashboard:'Overview', operations:'Operations', assets:'People & Assets', budget:'Budget & Finance', reports:'Reports & Data' };
   var PHOTO_BY_MINISTRY = {
     interior_security:'bangladesh-police-headquarters', health_welfare:'chittagong-hospital',
     energy_mining:'open-pit-mine', production:'industrial-production-line',
@@ -31,15 +31,26 @@
     if (!gateway || typeof gateway.getDomainRecord !== 'function' || !domain) return { ok:false, record:null, reason:'DOMAIN_SOURCE_GATEWAY_UNAVAILABLE', domain:domain || null };
     try { return gateway.getDomainRecord(country, domain); } catch (_) { return { ok:false, record:null, reason:'DOMAIN_RECORD_READ_FAILED', domain:domain }; }
   }
+  function sectionForField(value) {
+    var key = String(value || '').replace(/([a-z])([A-Z])/g, '$1 $2').replace(/[_-]+/g, ' ').toLowerCase();
+    if (/budget|revenue|expenditure|treasury|tax|debt|cost|expense|currency|balance|salary|payroll|finance|fund/.test(key)) return 'budget';
+    if (/staff|personnel|minister|employee|recruit|training|fleet|vehicle|equipment|inventory|warehouse|stock|resource|mine|site|asset|owner|operator|facility|facilities|workforce/.test(key)) return 'assets';
+    if (/operation|operational|activity|status|incident|shipment|transport|route|production|output|project|progress|milestone|cycle|capacity|service|deployment|inspection|readiness|programme|program/.test(key)) return 'operations';
+    if (/report|source|coverage|missing|audit|year|history|evidence|quality|provenance|update/.test(key)) return 'reports';
+    return 'dashboard';
+  }
   function scalarRows(record) {
     if (!record || typeof record !== 'object' || Array.isArray(record)) return [];
     return Object.keys(record).filter(function (key) {
       var value = record[key];
       return value === null || ['string','number','boolean'].indexOf(typeof value) >= 0;
-    }).slice(0, 16).map(function (key) {
+    }).slice(0, 32).map(function (key) {
       var value = record[key];
-      return { key:key.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/[_-]+/g,' '), value:value == null || value === '' ? 'Not recorded' : String(value) };
+      return { key:key.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/[_-]+/g,' '), section:sectionForField(key), value:value == null || value === '' ? 'Not recorded' : String(value) };
     });
+  }
+  function rowsForSection(rows, section) {
+    return (rows || []).filter(function (item) { return item.section === section; });
   }
   function photo(id, alt) {
     var lib = g.OmegaUIPhotoAssets;
@@ -113,6 +124,7 @@
     var domain = domainRecord(country, id);
     var section = SECTIONS.indexOf(options.section) >= 0 ? options.section : 'dashboard';
     var rawRows = scalarRows(domain && domain.record);
+    var sectionRows = rowsForSection(rawRows, section);
     var categories = options.sectionData && Array.isArray(options.sectionData[section]) ? options.sectionData[section] : null;
     var content;
     if (!row) {
@@ -120,13 +132,15 @@
     } else if (!domain || !domain.record) {
       content = '<div class="omega-v2-empty">No country-specific details have been recorded for this section yet.</div>';
     } else if (categories) {
-      content = '<div class="omega-v2-grid">' + categories.map(function (item) {
+      content = categories.length ? '<div class="omega-v2-grid">' + categories.map(function (item) {
         return '<div class="omega-v2-card"><div class="omega-v2-card-title">' + esc(item.label || item.key || 'Recorded field') + '</div><div class="omega-v2-card-meta">' + esc(item.value == null ? 'Not recorded' : item.value) + '</div></div>';
-      }).join('') + '</div>';
+      }).join('') + '</div>' : '<div class="omega-v2-empty">No details have been recorded for this section yet.</div>';
     } else {
-      content = '<div class="omega-v2-card"><div class="omega-v2-card-header"><div><h2 class="omega-v2-card-title">Ministry overview</h2><p class="omega-v2-card-meta">Area: ' + esc(domain.domain || DOMAIN_BY_MINISTRY[id] || row.title) + '</p></div><span class="omega-v2-status" data-state="operational">' + 'Details available' + '</span></div>' +
-        
-        (rawRows.length ? '<div class="omega-v2-vehicle-stats">' + rawRows.map(function (item) { return '<div><span>' + esc(item.key) + '</span><strong>' + esc(item.value) + '</strong></div>'; }).join('') + '</div>' : '<p class="omega-v2-card-meta">No additional details have been recorded for this section yet.</p>') + '</div>';
+      content = sectionRows.length
+        ? '<div class="omega-v2-grid">' + sectionRows.map(function (item) {
+            return '<article class="omega-v2-card omega-v2-ministry-field-card"><h3 class="omega-v2-card-title">' + esc(item.key) + '</h3><p class="omega-v2-card-meta">' + esc(item.value) + '</p></article>';
+          }).join('') + '</div>'
+        : '<div class="omega-v2-empty">No details have been recorded for this section yet.</div>';
     }
     root.classList.add('omega-v2-screen');
     var visualRegistry = g.OmegaUIV2MinistryVisualRegistry;
