@@ -92,13 +92,10 @@
     return '<div class="omega-v2-actions"><button type="button" class="omega-v2-button omega-v2-button--primary" data-omega-v2-detail-navigate="' + esc(route[0]) + '"' + (enabled ? '' : ' disabled title="Navigation callback is unavailable."') + '>' + esc(route[1]) + '</button></div>';
   }
   function operationalConsoleCard(id, options) {
-    var available = options && typeof options.onOpenOperationalConsole === 'function';
     return '<article class="omega-v2-card omega-v2-operational-console-card">' +
-      '<h2 class="omega-v2-card-title">Existing operational controls</h2>' +
-      '<p class="omega-v2-card-meta">Actions not yet reimplemented in UI v2 remain available through the canonical gameplay console. This preserves existing command, staffing, budget and asset workflows.</p>' +
-      '<div class="omega-v2-actions"><button type="button" class="omega-v2-button omega-v2-button--primary" data-omega-v2-open-operational-console="' + esc(id) + '"' +
-      (available ? '' : ' disabled title="The existing operational-console bridge is unavailable."') +
-      '>Open operational console</button></div></article>';
+      '<h2 class="omega-v2-card-title">Operational coverage</h2>' +
+      '<p class="omega-v2-card-meta">This ministry is displayed inside UI v2. Legacy screen navigation is disconnected; only actions implemented in the current screen are enabled.</p>' +
+      '<div class="omega-v2-status" data-state="attention">V2 CONTROLS ONLY</div></article>';
   }
   function render(root, options) {
     options = options || {};
