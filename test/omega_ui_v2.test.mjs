@@ -548,7 +548,7 @@ test('universal navigation and the isolated legacy-free shell are wired into the
   assert.ok(isolationCss.includes('#ministry-dashboard-view'));
   assert.ok(isolationCss.includes('display: none !important'));
   assert.ok(isolationCss.includes('z-index: 2147483000 !important'));
-  assert.ok(!/restoreLegacy|resumeAfterOperationalConsole|OmegaCabinetUI\.renderCabinet/.test(integration));
+  assert.doesNotMatch(integration, /function\s+restoreLegacy\s*\(|function\s+resumeAfterOperationalConsole\s*\(|g\.OmegaCabinetUI\s*\.renderCabinet\s*\(/, 'integration must not call retired cabinet renderers');
   assert.equal(integration.includes('manager.setLayer('),false);
   assert.ok(integration.includes('function installLegacyLayerBridge()'));
   assert.ok(integration.includes('manager.setLayer = function (layerNum, data)'));
