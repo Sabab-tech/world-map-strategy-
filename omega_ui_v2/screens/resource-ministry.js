@@ -20,6 +20,7 @@
     var n = numberOrNull(value);
     return n === null ? 'Not recorded' : n.toLocaleString('en-US', { maximumFractionDigits: digits === undefined ? 2 : digits });
   }
+  function displayStatus(value) { var text = String(value == null ? '' : value).replace(/[_-]+/g, ' ').trim().toUpperCase(); var labels = { SIMULATED:'Estimated', MODELED:'Estimated', MODELLED:'Estimated', UNOBSERVED:'Not measured', NOT_RECORDED:'Not recorded', OBSERVED:'Observed', OBSERVED_ATTRIBUTABLE:'Observed', REPORTED:'Reported', REPORTED_OBSERVED:'Reported', OPERATIONAL:'Operational', ACTIVE:'Active', INACTIVE:'Inactive', IN_TRANSIT:'In transit', DELIVERED:'Delivered', BLOCKED:'Blocked', FAILED:'Failed' }; return labels[text] || (text ? text.toLowerCase().replace(/\b\w/g, function (ch) { return ch.toUpperCase(); }) : 'Not recorded'); }
 
   function key(value) {
     return String(value == null ? '' : value).trim().toUpperCase();
@@ -173,24 +174,24 @@
     var photoLib = g.OmegaUIPhotoAssets;
     var minePhoto = photoLib && typeof photoLib.get === 'function' ? photoLib.get('open-pit-mine') : null;
     var photoMarkup = minePhoto && /^assets\/ui-photos\/[a-z0-9-]+\.webp$/.test(String(minePhoto.path || ''))
-      ? '<figure class="omega-v2-photo"><img src="' + esc(minePhoto.path) + '" loading="lazy" decoding="async" alt="Open-pit mine, representative reference photograph"><figcaption>' + esc(minePhoto.caption || 'Open-pit mine') + '<small>Reference photo; not proof of this country’s live mine ownership</small></figcaption></figure>' : '';
+      ? '<figure class="omega-v2-photo"><img src="' + esc(minePhoto.path) + '" loading="lazy" decoding="async" alt="Open-pit mine, representative reference photograph"><figcaption>' + esc(minePhoto.caption || 'Open-pit mine') + '</figcaption></figure>' : '';
     var selectOptions = '<option value="all">All registered resources</option>' + Array.from(new Set(model.sites.map(function (item) { return item.resourceId; })).values()).map(function (id) {
       return '<option value="' + esc(id) + '">' + esc(id.replace(/[_-]+/g, ' ')) + '</option>';
     }).join('');
     var cards = model.sites.map(function (site) {
       var stockLabel = site.stock ? fmt(site.stock.quantity) + ' ' + esc(site.stock.unit) : 'Unavailable';
-      var reserveLabel = site.reserve.value !== null ? fmt(site.reserve.value) + ' ' + esc(site.reserve.unit) + ' · ' + esc(site.reserve.status) :
-        site.modeledReserve && site.modeledReserve.modeledValue !== null ? fmt(site.modeledReserve.modeledValue) + ' ' + esc(site.modeledReserve.unit) + ' · MODELED' :
-          esc(site.reserve.status);
-      var productionLabel = site.production.value !== null ? fmt(site.production.value) + ' ' + esc(site.production.unit) + ' · ' + esc(site.production.status) : esc(site.production.status);
+      var reserveLabel = site.reserve.value !== null ? fmt(site.reserve.value) + ' ' + esc(site.reserve.unit) + ' · ' + esc(displayStatus(site.reserve.status)) :
+        site.modeledReserve && site.modeledReserve.modeledValue !== null ? fmt(site.modeledReserve.modeledValue) + ' ' + esc(site.modeledReserve.unit) + ' · Estimated' :
+          'Not recorded';
+      var productionLabel = site.production.value !== null ? fmt(site.production.value) + ' ' + esc(site.production.unit) + ' · ' + esc(displayStatus(site.production.status)) : 'Not recorded';
       var openEnabled = typeof options.onOpenSite === 'function';
       var locateEnabled = typeof options.onLocateSite === 'function';
       return '<article class="omega-v2-card" data-omega-v2-site-card data-site-id="' + esc(site.siteId) + '" data-resource="' + esc(site.resourceId) + '" data-search="' + esc((site.name + ' ' + site.resourceId + ' ' + site.location + ' ' + site.status).toLowerCase()) + '">' +
-        '<div class="omega-v2-card-header"><div><div class="omega-v2-eyebrow">' + esc(site.resourceId.replace(/[_-]+/g, ' ')) + '</div><h3 class="omega-v2-card-title">' + esc(site.name) + '</h3><div class="omega-v2-card-meta">' + esc(site.countryId) + ' · ' + esc(site.location) + '</div></div><span class="omega-v2-status" data-state="' + (site.status === 'OPERATIONAL' || site.status === 'ACTIVE' ? 'operational' : site.status === 'UNOBSERVED' ? 'unknown' : 'attention') + '">' + esc(site.status) + '</span></div>' +
+        '<div class="omega-v2-card-header"><div><div class="omega-v2-eyebrow">' + esc(site.resourceId.replace(/[_-]+/g, ' ')) + '</div><h3 class="omega-v2-card-title">' + esc(site.name) + '</h3><div class="omega-v2-card-meta">' + esc(site.countryId) + ' · ' + esc(site.location) + '</div></div><span class="omega-v2-status" data-state="' + (site.status === 'OPERATIONAL' || site.status === 'ACTIVE' ? 'operational' : site.status === 'UNOBSERVED' ? 'unknown' : 'attention') + '">' + esc(displayStatus(site.status)) + '</span></div>' +
         '<div class="omega-v2-vehicle-stats"><div><span>Reported reserve</span><strong>' + reserveLabel + '</strong></div>' +
         '<div><span>Current warehouse stock</span><strong>' + stockLabel + '</strong></div><div><span>Measured production</span><strong>' + productionLabel + '</strong></div>' +
         '<div><span>Coordinates</span><strong>' + (site.coordinates ? esc((site.coordinates.latitude !== undefined ? site.coordinates.latitude : site.coordinates.lat) + ', ' + (site.coordinates.longitude !== undefined ? site.coordinates.longitude : site.coordinates.lng)) : 'Not recorded') + '</strong></div></div>' +
-        '<div class="omega-v2-source">Site ID: ' + esc(site.siteId) + ' · Source: ' + esc(site.source) + '</div>' +
+        '<details class="omega-v2-record-details"><summary>Site record details</summary><p class="omega-v2-card-meta">Site ID: ' + esc(site.siteId) + ' · Record source: ' + esc(site.source) + '</p></details>' +
         '<div class="omega-v2-actions"><button type="button" class="omega-v2-button omega-v2-button--primary" data-omega-v2-site-action="open" data-site-id="' + esc(site.siteId) + '"' + (openEnabled ? '' : ' disabled title="No canonical site-detail route is connected."') + '>View site</button>' +
         '<button type="button" class="omega-v2-button omega-v2-button--quiet" data-omega-v2-site-action="locate" data-site-id="' + esc(site.siteId) + '"' + (locateEnabled ? '' : ' disabled title="No map locator adapter is connected."') + '>Locate on map</button></div></article>';
     }).join('');
@@ -208,19 +209,19 @@
         (model.siteCount ? '<div class="omega-v2-grid" data-omega-v2-site-grid>' + cards + '</div>' : '<div class="omega-v2-empty">No canonical site records are available for this context. ' + esc(model.emptyReason) + '</div>');
     } else if (active === 'reserves') {
       contentMarkup = model.sites.length ? '<div class="omega-v2-grid">' + model.sites.map(function (site) {
-        var observed = site.reserve.value !== null ? fmt(site.reserve.value) + ' ' + esc(site.reserve.unit) + ' · ' + esc(site.reserve.status) : 'Not recorded (' + esc(site.reserve.status) + ')';
-        var modeled = site.modeledReserve && site.modeledReserve.modeledValue !== null ? fmt(site.modeledReserve.modeledValue) + ' ' + esc(site.modeledReserve.unit) + ' · MODELED' : 'Not recorded';
-        return '<article class="omega-v2-card"><h3 class="omega-v2-card-title">' + esc(site.name) + '</h3><p class="omega-v2-card-meta">' + esc(site.siteId) + ' · ' + esc(site.resourceId) + '</p><div class="omega-v2-vehicle-stats"><div><span>Reported / observed reserve</span><strong>' + observed + '</strong></div><div><span>Modeled gameplay reserve</span><strong>' + modeled + '</strong></div></div><p class="omega-v2-source">Source: ' + esc(site.source) + '</p></article>';
+        var observed = site.reserve.value !== null ? fmt(site.reserve.value) + ' ' + esc(site.reserve.unit) + ' · ' + esc(displayStatus(site.reserve.status)) : 'Not recorded';
+        var modeled = site.modeledReserve && site.modeledReserve.modeledValue !== null ? fmt(site.modeledReserve.modeledValue) + ' ' + esc(site.modeledReserve.unit) + ' · Estimated' : 'Not recorded';
+        return '<article class="omega-v2-card"><h3 class="omega-v2-card-title">' + esc(site.name) + '</h3><p class="omega-v2-card-meta">' + esc(site.resourceId.replace(/[_-]+/g, ' ')) + '</p><div class="omega-v2-vehicle-stats"><div><span>Reported reserve</span><strong>' + observed + '</strong></div><div><span>Estimated reserve</span><strong>' + modeled + '</strong></div></div><details class="omega-v2-record-details"><summary>Site record details</summary><p class="omega-v2-card-meta">Site ID: ' + esc(site.siteId) + ' · Record source: ' + esc(site.source) + '</p></details></article>';
       }).join('') + '</div>' : '<div class="omega-v2-empty">No site reserves can be listed because the selected country has no resolved canonical site records.</div>';
     } else if (active === 'warehouses') {
-      contentMarkup = inventoryRows.length ? '<div class="omega-v2-card"><div class="omega-v2-table-wrap"><table><thead><tr><th>Batch / record</th><th>Resource</th><th>Recorded quantity</th><th>Location</th><th>Status</th><th>Source</th></tr></thead><tbody>' + inventoryRows.map(function (row) {
-        return '<tr><td>' + esc(row.batchId) + '</td><td>' + esc(row.resourceId) + '</td><td>' + (row.quantity === null ? 'Not recorded' : fmt(row.quantity, row.unit)) + '</td><td>' + esc(row.location) + '</td><td>' + esc(row.status) + '</td><td>' + esc(row.provenance) + '</td></tr>';
-      }).join('') + '</tbody></table></div><p class="omega-v2-source">Inventory rows are read from the selected country’s current inventory object; aggregated inventory rows are not claimed to be distinct physical lots.</p></div>' : '<div class="omega-v2-empty">No explicit warehouse batches or per-resource on-hand quantities are exposed by the selected country’s current inventory state. Reserve values are not substituted for stock.</div>';
+      contentMarkup = inventoryRows.length ? '<div class="omega-v2-card"><div class="omega-v2-table-wrap"><table><thead><tr><th>Batch / record</th><th>Resource</th><th>Recorded quantity</th><th>Location</th><th>Status</th></tr></thead><tbody>' + inventoryRows.map(function (row) {
+        return '<tr><td>' + esc(row.batchId) + '</td><td>' + esc(row.resourceId) + '</td><td>' + (row.quantity === null ? 'Not recorded' : fmt(row.quantity, row.unit)) + '</td><td>' + esc(row.location) + '</td><td>' + esc(row.status) + '</tr>';
+      }).join('') + '</tbody></table></div><p class="omega-v2-source">These are the stock quantities currently recorded for this country.</p></div>' : '<div class="omega-v2-empty">No warehouse stock has been recorded for this country yet.</div>';
     } else if (active === 'transport') {
       contentMarkup = shipments ? (shipments.length ? '<div class="omega-v2-grid">' + shipments.slice(-60).reverse().map(function (shipment) {
-        return '<article class="omega-v2-card"><div class="omega-v2-card-header"><h3 class="omega-v2-card-title">' + esc(shipment.shipmentId || shipment.id || shipment.reservationId || 'Shipment record') + '</h3><span class="omega-v2-status">' + esc(shipment.status || 'NOT_RECORDED') + '</span></div><div class="omega-v2-vehicle-stats"><div><span>Origin</span><strong>' + esc(shipment.sourceSiteId || shipment.originSiteId || shipment.origin || shipment.from || 'Not recorded') + '</strong></div><div><span>Destination</span><strong>' + esc(shipment.destinationFactoryId || shipment.destinationWarehouseId || shipment.destination || shipment.to || 'Not recorded') + '</strong></div><div><span>Mode</span><strong>' + esc(shipment.route && (shipment.route.transportMode || shipment.route.mode) || shipment.transportMode || shipment.mode || 'Not recorded') + '</strong></div><div><span>ETA turn</span><strong>' + fmt(shipment.etaTurn) + '</strong></div></div><p class="omega-v2-source">Authority/provenance: ' + esc(shipment.provenance && (shipment.provenance.authority || shipment.provenance.sourceAuthority) || shipment.authority || 'Not recorded') + '. In-transit is not delivered.</p></article>';
+        return '<article class="omega-v2-card"><div class="omega-v2-card-header"><h3 class="omega-v2-card-title">' + esc(shipment.shipmentId || shipment.id || shipment.reservationId || 'Shipment record') + '</h3><span class="omega-v2-status">' + esc(shipment.status || 'NOT_RECORDED') + '</span></div><div class="omega-v2-vehicle-stats"><div><span>Origin</span><strong>' + esc(shipment.sourceSiteId || shipment.originSiteId || shipment.origin || shipment.from || 'Not recorded') + '</strong></div><div><span>Destination</span><strong>' + esc(shipment.destinationFactoryId || shipment.destinationWarehouseId || shipment.destination || shipment.to || 'Not recorded') + '</strong></div><div><span>Mode</span><strong>' + esc(shipment.route && (shipment.route.transportMode || shipment.route.mode) || shipment.transportMode || shipment.mode || 'Not recorded') + '</strong></div><div><span>ETA turn</span><strong>' + fmt(shipment.etaTurn) + '</strong></div></div><p class="omega-v2-card-meta">Delivery is complete when the destination stock is updated.</p></article>';
       }).join('') + '</div>' : '<div class="omega-v2-empty">The selected country exposes a shipment collection, but it contains no shipment records.</div>') :
-        '<div class="omega-v2-empty">A country-specific shipment collection is not exposed by the current state adapter. No routes or deliveries are inferred from a generic country profile.</div>';
+        '<div class="omega-v2-empty">Transport records are not available for this country yet.</div>';
     } else if (active === 'reports') {
       var observedReserves = model.sites.filter(function (site) { return site.reserve.value !== null; }).length;
       var measuredProduction = model.sites.filter(function (site) { return site.production.value !== null; }).length;
@@ -238,9 +239,9 @@
     root.classList.add('omega-v2-screen');
     root.innerHTML = '<section class="omega-v2-shell omega-v2-resource">' +
       '<header class="omega-v2-heading"><div><div class="omega-v2-eyebrow">ENERGY & MINING</div><h1 class="omega-v2-title">Energy, Resources & Mining</h1><p class="omega-v2-subtitle">Country ' + esc(model.countryId || 'All countries') + ' · site identity uses unique canonical siteId</p></div><span class="omega-v2-status" data-state="' + (model.ready ? 'operational' : 'attention') + '">' + fmt(model.siteCount) + ' registered sites</span></header>' +
-      '<div class="omega-v2-note">Reserve is not warehouse stock. Modeled reserves are labeled MODELED; transfers are not complete until an authoritative shipment/warehouse runtime confirms receipt. This screen does not execute mine actions by itself.</div>' +
+      '<div class="omega-v2-note">Reported reserves, estimated reserves, stored stock and production are separate quantities.</div>' +
       tabMarkup + '<div data-omega-v2-resource-content>' + contentMarkup + '</div>' +
-      '<p class="omega-v2-source">Mine sites and recorded operational data are managed within this UI v2 screen. Retired console navigation is disabled.</p></section>';
+      '</section>';
 
     if (!root.__omegaV2ResourceBound && typeof root.addEventListener === 'function') {
       root.addEventListener('input', function (event) {
