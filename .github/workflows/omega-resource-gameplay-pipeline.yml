@@ -104,7 +104,7 @@ permissions:
 jobs:
   real-resource-gameplay-pipeline:
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v4
