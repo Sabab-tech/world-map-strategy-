@@ -971,6 +971,20 @@ for(const siteId of exhaustivePipelineCandidateIds){
   // and falsely make this mine appear unable to finish its own output.
   const rs=testState.resource[countryId];
   if(rs){
+    // Discard raw/finished stock, batches and ledger rows left by earlier
+    // world-wide extraction fixtures. The current site pipeline must generate
+    // and process its own feedstock, not borrow an unrelated mine's old stock.
+    rs.inventory={};
+    rs.batches=[];
+    rs.inventoryLots={};
+    rs.warehouse={
+      warehouseId:'WH-'+countryId+'-RAW',
+      availableByResource:{},reservedByResource:{},storedBatchIds:[]
+    };
+    rs.processedWarehouse={
+      warehouseId:'WH-'+countryId+'-PROCESSED',
+      availableByResource:{},reservedByResource:{},storedBatchIds:[]
+    };
     const previousNetwork=rs.industrialNetwork||{};
     rs.industrialNetwork={
       ...previousNetwork,
@@ -979,7 +993,6 @@ for(const siteId of exhaustivePipelineCandidateIds){
       events:[],factoryRuntime:{},technologyContracts:[],
       factoryProductionCycles:{},siteExecutions:[]
     };
-    if(rs.warehouse&&typeof rs.warehouse==='object')rs.warehouse.reservedByResource={};
   }
   // Factory construction is asserted below, not inherited from an earlier fixture.
   econ.productionAssets=[];
