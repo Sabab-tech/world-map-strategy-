@@ -54,9 +54,9 @@ test('v3 styles do not inherit old navigation class and create a separate access
 
   const css = read('omega_ministry_entry_v3.css');
   const activeShellCss = read('omega_ui_v2/legacy-disconnect.css');
-  assert.match(activeShellCss, /#omega-gov-entry-v3\\s*\\{[^}]*position:\\s*fixed\\s*!important/s,
+  assert.match(activeShellCss, /#omega-gov-entry-v3\s*\{[^}]*position:\s*fixed\s*!important/s,
     'the fallback government entry must keep its tap target when the retired stylesheet is unloaded');
-  assert.match(activeShellCss, /#omega-gov-entry-v3[^}]*touch-action:\\s*manipulation\\s*!important/s);
+  assert.match(activeShellCss, /#omega-gov-entry-v3[^}]*touch-action:\s*manipulation\s*!important/s);
   for (const needle of [
     '#omega-gov-entry-v3', 'position: fixed !important', 'pointer-events: auto !important',
     'touch-action: manipulation !important', 'z-index: 99998 !important',
