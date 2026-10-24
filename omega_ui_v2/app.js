@@ -22,6 +22,31 @@
     var selected = active === id || (id === 'more' && ['industry','reports','religion','home-affairs','resources','ministry-detail','mine-detail'].indexOf(active) >= 0);
     return '<button type="button" class="omega-v2-nav-button' + (selected ? ' is-active' : '') + '" data-omega-v2-global-nav="' + esc(id) + '" aria-current="' + (selected ? 'page' : 'false') + '">' + esc(label) + '</button>';
   }
+  function jumpMenuMarkup(activeRoute) {
+    var nav = g.OmegaUIV2Navigation || {};
+    var registry = g.OmegaUIV2MinistryVisualRegistry;
+    var rows = g.OmegaUIV2Government && typeof g.OmegaUIV2Government.getMinistryRows === 'function'
+      ? g.OmegaUIV2Government.getMinistryRows() : [];
+    var labels = Object.create(null);
+    rows.forEach(function (row) { labels[row.id] = row.title; });
+    var ids = Array.isArray(nav.ministryIds) ? nav.ministryIds : (registry && Array.isArray(registry.ids) ? registry.ids : []);
+    var globalRoutes = [
+      ['map','World map'],['overview','Country overview'],['government','Government'],
+      ['economy','Economy & finance'],['industry','Factories & industry'],['reports','Reports'],
+      ['more','More modules'],['religion','Religion & ideology']
+    ];
+    return '<details class="omega-v2-route-switcher"><summary aria-label="Jump to any screen or ministry">Jump anywhere ▾</summary>' +
+      '<div class="omega-v2-route-menu"><section><h2>MAIN SCREENS</h2><div class="omega-v2-route-menu-grid">' +
+      globalRoutes.map(function (item) {
+        return '<button type="button" class="omega-v2-route-link' + (activeRoute === item[0] ? ' is-current' : '') +
+          '" data-omega-v2-jump-route="' + esc(item[0]) + '">' + esc(item[1]) + '</button>';
+      }).join('') + '</div></section><section><h2>ALL 18 MINISTRIES</h2><div class="omega-v2-route-menu-grid">' +
+      ids.map(function (id) {
+        var visual = registry && typeof registry.get === 'function' ? registry.get(id) : null;
+        var label = labels[id] || (visual && visual.title) || id.replace(/[_-]+/g, ' ').replace(/\b\w/g, function (ch) { return ch.toUpperCase(); });
+        return '<button type="button" class="omega-v2-route-link" data-omega-v2-jump-ministry="' + esc(id) + '">' + esc(label) + '</button>';
+      }).join('') + '</div></section></div></details>';
+  }
   function ministryOptions(root) {
     var state = stateFor(root);
     return {
@@ -39,8 +64,13 @@
       }
     };
   }
+  function historySnapshot(state) {
+    return { route:state.route, ministryId:state.ministryId, section:state.section,
+      resourceSiteId:state.resourceSiteId, governmentView:state.governmentView };
+  }
   function routeName(id) {
     var value = String(id || '');
+    if (value === 'cabinet_council') return 'government';
     if (value === 'production') return 'industry';
     if (value === 'energy_mining') return 'resources';
     if (value === 'interior_security') return 'home-affairs';
@@ -50,10 +80,22 @@
     var state = stateFor(root);
     id = String(id || '').trim();
     if (!id) return false;
-    state.history.push({ route: state.route, ministryId: state.ministryId, section: state.section, resourceSiteId: state.resourceSiteId });
+    if (id === 'cabinet_council') {
+      if (state.route !== 'government' || state.governmentView !== 'executive-ministry') state.history.push(historySnapshot(state));
+      state.route = 'government';
+      state.ministryId = null;
+      state.section = 'dashboard';
+      state.resourceSiteId = null;
+      state.governmentView = 'executive-ministry';
+      render(root);
+      return true;
+    }
+    var next = routeName(id);
+    if (state.route === next && state.ministryId === id && state.section === 'dashboard') return true;
+    state.history.push(historySnapshot(state));
     state.ministryId = id;
     state.section = 'dashboard';
-    var next = routeName(id);
+    state.resourceSiteId = null;
     state.route = next;
     if (next === 'government') state.governmentView = 'executive-ministry';
     render(root);
@@ -72,22 +114,30 @@
   }
   function navigate(root, route) {
     var state = stateFor(root);
-    if (ROUTES.indexOf(route) >= 0 && state.route !== route) {
-      state.history.push({ route: state.route, ministryId: state.ministryId, section: state.section, resourceSiteId: state.resourceSiteId });
+    route = String(route || '').trim();
+    if (!route) return false;
+    if (route === 'world') route = 'map';
+    if (route === 'executive-ministry') return openMinistry(root, 'cabinet_council');
+    if (route === 'all-ministries' || route === 'ministry-directory') {
+      if (state.route !== 'government' || state.governmentView !== 'all-ministries') state.history.push(historySnapshot(state));
+      state.route = 'government';
+      state.ministryId = null;
+      state.section = 'dashboard';
+      state.governmentView = 'all-ministries';
+      render(root);
+      return true;
+    }
+    var ministryIds = g.OmegaUIV2Navigation && g.OmegaUIV2Navigation.ministryIds;
+    if (Array.isArray(ministryIds) && ministryIds.indexOf(route) >= 0) return openMinistry(root, route);
+    if (ROUTES.indexOf(route) >= 0 || route === 'home-affairs' || route === 'resources' ||
+        route === 'ministry-detail' || route === 'mine-detail') {
+      if (state.route === route && !(route === 'government' && state.governmentView !== 'executive-ministry')) return true;
+      state.history.push(historySnapshot(state));
       state.route = route;
+      state.ministryId = null;
+      state.section = 'dashboard';
+      state.resourceSiteId = null;
       if (route === 'government') state.governmentView = 'executive-ministry';
-      render(root);
-      return true;
-    }
-    if (route === 'home-affairs' || route === 'resources' || route === 'ministry-detail') {
-      state.history.push({ route: state.route, ministryId: state.ministryId, section: state.section, resourceSiteId: state.resourceSiteId });
-      state.route = route;
-      render(root);
-      return true;
-    }
-    if (route === 'mine-detail') {
-      state.history.push({ route: state.route, ministryId: state.ministryId, section: state.section, resourceSiteId: state.resourceSiteId });
-      state.route = route;
       render(root);
       return true;
     }
@@ -107,6 +157,7 @@
     state.ministryId = previous.ministryId || null;
     state.section = previous.section || 'dashboard';
     state.resourceSiteId = previous.resourceSiteId || null;
+    state.governmentView = previous.governmentView === 'all-ministries' ? 'all-ministries' : 'executive-ministry';
     render(root);
     return true;
   }
@@ -222,9 +273,13 @@
         return '<option value="' + esc(id) + '"' + (String(id).toUpperCase() === String(state.countryId).toUpperCase() ? ' selected' : '') + '>' + esc(label) + '</option>';
       }).join('') + '</select>'
       : '<span class="omega-v2-country-badge">COUNTRY ' + esc(state.countryId || 'NOT RECORDED') + '</span>';
+    var oldMain = root.querySelector && root.querySelector('[data-omega-v2-main]');
+    if (oldMain && g.OmegaUIV2Government && typeof g.OmegaUIV2Government.stopAutoRotation === 'function') g.OmegaUIV2Government.stopAutoRotation(oldMain);
     root.classList.add('omega-v2-app-root');
     root.innerHTML = '<div class="omega-v2-app-frame">' +
-      '<header class="omega-v2-app-header"><button class="omega-v2-button omega-v2-button--quiet" type="button" data-omega-v2-back aria-label="Go back">‹ Back</button><div class="omega-v2-app-brand"><span class="omega-v2-brand-mark">Ω</span><div><strong>OMEGA</strong><small>GLOBAL COMMAND</small></div></div>' + countryControl + '</header>' +
+      '<header class="omega-v2-app-header"><button class="omega-v2-button omega-v2-button--quiet" type="button" data-omega-v2-back aria-label="Go back">‹ Back</button><div class="omega-v2-app-brand"><span class="omega-v2-brand-mark">Ω</span><div><strong>OMEGA</strong><small>GLOBAL COMMAND</small></div></div>' +
+      jumpMenuMarkup(state.route) + countryControl +
+      '<button class="omega-v2-button omega-v2-button--exit" type="button" data-omega-v2-exit aria-label="Exit to live world map" title="Exit to live world map">Exit ↗</button></header>' +
       '<main class="omega-v2-app-main" data-omega-v2-main></main>' +
       '<nav class="omega-v2-bottom-nav" aria-label="Main navigation">' +
       navButton('map','World',state.route) + navButton('overview','Overview',state.route) + navButton('government','Government',state.route) + navButton('economy','Economy',state.route) + navButton('more','More',state.route) +
@@ -245,8 +300,19 @@
       root.addEventListener('click', function (event) {
         var target = event && event.target;
         if (!target || typeof target.closest !== 'function') return;
+        var exit = target.closest('[data-omega-v2-exit]');
+        if (exit && root.contains(exit)) {
+          var exitState = stateFor(root);
+          if (exitState.options && typeof exitState.options.onBackToMap === 'function') exitState.options.onBackToMap();
+          else { exitState.route = 'map'; exitState.ministryId = null; render(root); }
+          return;
+        }
+        var jumpMinistry = target.closest('[data-omega-v2-jump-ministry]');
+        if (jumpMinistry && root.contains(jumpMinistry)) { openMinistry(root, jumpMinistry.getAttribute('data-omega-v2-jump-ministry')); return; }
+        var jumpRoute = target.closest('[data-omega-v2-jump-route]');
+        if (jumpRoute && root.contains(jumpRoute)) { navigate(root, jumpRoute.getAttribute('data-omega-v2-jump-route')); return; }
         var nav = target.closest('[data-omega-v2-global-nav]');
-        if (nav && root.contains(nav)) { var destination = nav.getAttribute('data-omega-v2-global-nav'); if (destination === 'map' && stateFor(root).options && typeof stateFor(root).options.onBackToMap === 'function') stateFor(root).options.onBackToMap(); else navigate(root, destination); return; }
+        if (nav && root.contains(nav)) { navigate(root, nav.getAttribute('data-omega-v2-global-nav')); return; }
         var domain = target.closest('[data-omega-v2-more-ministry]');
         if (domain && root.contains(domain)) { openMinistry(root, domain.getAttribute('data-omega-v2-more-ministry')); return; }
         var religionButton = target.closest('[data-omega-v2-open-religion]');
