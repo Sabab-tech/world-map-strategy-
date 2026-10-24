@@ -127,7 +127,7 @@ for(const site of sites){
   // The base regression intentionally preloads every mine's raw stock; without this guard,
   // advanceShipments would auto-dispatch those unrelated batches to whichever compatible
   // factory happens to be first, masking the target site's own factory-cycle lineage.
-  const countryRuntime=runtime.countryResourceState(site.countryId)||{};
+  const countryRuntime=game.state.resource?.[site.countryId]||{};
   for(const flow of countryRuntime.industrialNetwork?.siteFlowLedger||[])flow.lastResidualDispatchTurn=Number(game.state.simulation.turn)||1;
   const deliveryResult=industry.advanceShipments(site.countryId);
   const delivered=(deliveryResult.shipments||[]).find(x=>String(x.shipmentId)===String(result.shipmentId));
