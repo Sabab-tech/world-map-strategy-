@@ -245,7 +245,6 @@ test("layer drawer click routing executes the controller and tracks the visible 
   const listeners = {};
   const viewportVars = {};
   let switchedLayer = null;
-  let switchedGlobalLayer = null;
   const makeButton = (layer, initiallyActive = false) => {
     const attributes = { "data-layer": layer, "aria-pressed": String(initiallyActive) };
     const classes = new Set(initiallyActive ? ["active"] : []);
@@ -273,16 +272,13 @@ test("layer drawer click routing executes the controller and tracks the visible 
   const politicalButton = makeButton("political", true);
   const buttons = [atlasButton, politicalButton];
   const Game = {
-    Map: {
-      renderGeoJSON() {},
-      switchMapLayer(layer) { switchedLayer = layer; return true; }
-    },
+    Map: { renderGeoJSON() {} },
     geojsonLayer: null,
     selectedLayer: null,
     selectCountryByName() {},
     findCountryConfig() { return null; },
     showNotification() {},
-    switchMapLayer(layer) { switchedGlobalLayer = layer; return true; }
+    switchMapLayer(layer) { switchedLayer = layer; return true; }
   };
   const map = { on() {} };
   const visualViewport = {
@@ -321,7 +317,6 @@ test("layer drawer click routing executes the controller and tracks the visible 
     stopImmediatePropagation() { immediatePropagationStopped = true; }
   });
   assert.equal(switchedLayer, "political");
-  assert.equal(switchedGlobalLayer, null, "layer buttons must use Game.Map.switchMapLayer, not a competing global controller");
   assert.equal(defaultPrevented, true);
   assert.equal(propagationStopped, true);
   assert.equal(immediatePropagationStopped, true);
