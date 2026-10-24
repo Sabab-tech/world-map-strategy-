@@ -52,6 +52,46 @@ test('all ministry cover photos, gallery assets and uploaded logos exist in the 
   }
 });
 
+test('ministry detail renders its uploaded logo, local hero image and linked gallery assets', () => {
+  const previousGovernment = globalThis.OmegaUIV2Government;
+  const previousGateway = globalThis.OmegaCountryDataGateway;
+  const previousCountry = globalThis.OmegaMinistryViewCountry;
+  const row = { id:'defense', title:'Defense & Armed Forces', subtitle:'National defense', category:'defense', status:'NOT_RECORDED', ministerName:null };
+  globalThis.OmegaUIV2Government = {
+    getMinistryRows:() => [row],
+    ministryEmblem:() => '<svg aria-hidden="true"></svg>',
+    renderMinisterPortrait:() => ''
+  };
+  globalThis.OmegaCountryDataGateway = { getDomainRecord:() => ({ok:false,record:null,reason:'DOMAIN_SOURCE_GATEWAY_UNAVAILABLE'}) };
+  globalThis.OmegaMinistryViewCountry = 'BGD';
+  const root = { classList:{add(){}}, addEventListener(){}, contains(){return true;}, innerHTML:'' };
+  try {
+    const result = globalThis.OmegaUIV2MinistryDetail.render(root, { ministryId:'defense', countryId:'BGD' });
+    assert.equal(result.ministryId, 'defense');
+    assert.ok(root.innerHTML.includes('assets/Military_Ministry_Logo_Concept_A.png.jpg'));
+    assert.ok(root.innerHTML.includes('assets/images (15).jpeg'));
+    assert.ok(root.innerHTML.includes('assets/vecteezy_ai-generated-futuristic-army-combatants-in-a-firefight-with_35839258.jpg'));
+    assert.match(root.innerHTML, /omega-v2-ministry-detail-gallery/);
+    assert.match(root.innerHTML, /Illustrative imagery does not assert current ownership/);
+  } finally {
+    globalThis.OmegaUIV2Government = previousGovernment;
+    globalThis.OmegaCountryDataGateway = previousGateway;
+    globalThis.OmegaMinistryViewCountry = previousCountry;
+  }
+});
+
+test('every remaining uploaded reference photo is assigned to an appropriate ministry gallery', () => {
+  const visuals = globalThis.OmegaUIV2MinistryVisualRegistry;
+  const assigned = new Set(visuals.list().flatMap((item) => [item.image, item.logo, ...(item.gallery || [])].filter(Boolean)));
+  for (const asset of [
+    'assets/1776286900118.png',
+    'assets/1783055273164.jpg',
+    'assets/1783068102501.jpg',
+    'assets/futuristic-digital-visualization-global-import-260nw-2615199881.jpg',
+    'assets/vecteezy_ai-generated-futuristic-army-combatants-in-a-firefight-with_35839258.jpg'
+  ]) assert.ok(assigned.has(asset), 'unassigned uploaded reference image: ' + asset);
+});
+
 test('police fleet view model reads all 15 canonical profiles and preserves missing values', () => {
   const vehicles = Array.from({ length: 15 }, (_, index) => ({
     level: index + 1,
@@ -462,6 +502,9 @@ test('Universal navigation keeps the World tab internal and supplies a separate 
   assert.ok(appSource.includes('data-omega-v2-jump-ministry'));
   assert.ok(appSource.includes('data-omega-v2-jump-route'));
   assert.ok(appSource.includes('data-omega-v2-exit'));
+  assert.ok(appSource.includes('data-omega-v2-open-ministry'));
+  assert.ok(appSource.includes('data-omega-v2-ministry-section'));
+  assert.match(appSource, /Root-level fallback keeps ministry navigation working/);
   assert.ok(appSource.includes('historySnapshot(state)'));
   assert.equal(appSource.includes("destination === 'map' && stateFor(root).options"), false);
   assert.equal(bridgeSource.includes('renderMap:function () { return closeToWorldMap(); }'), false);
