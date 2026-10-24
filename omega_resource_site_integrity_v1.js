@@ -349,12 +349,14 @@ function buildSimulationPipelineProfile(raw,options={}){
     unit:simulation.throughput?.unit||rateUnit,status:'SIMULATED',
     basis:simulation.throughput?.basis||'SITE_ID_SEEDED_THROUGHPUT_NOT_OBSERVED'};
   const warehouseId='WH-'+country+'-RAW';
-  const factoryId='FACTORY_'+country+'_'+resource;
+  // Match the industrial runtime's site-specific factory identity exactly. A generic
+  // country/resource ID looked plausible in the profile but could not bind to FAC-SIM assets.
+  const factoryId='FAC-SIM:'+country+':'+siteId.replace(/[^A-Za-z0-9_-]/g,'_')+':'+resource;
   const existingFactory=simulation.factoryBinding;
   const factoryCompatible=existingFactory&&
     String(existingFactory.countryId||country).toUpperCase()===country&&
     String(existingFactory.inputResourceId||resource).toLowerCase()===resource&&
-    String(existingFactory.factoryId||'').startsWith('FACTORY_'+country+'_');
+    String(existingFactory.factoryId||'')===factoryId;
   const factoryBinding=factoryCompatible?{...existingFactory,factoryId,countryId:country,inputResourceId:resource,status:'SIMULATED_READY',requiresSameCountryWarehouse:true}:
     {factoryId,countryId:country,inputResourceId:resource,outputResourceId:band.output,
      status:'SIMULATED_READY',processingMethod:resource.toUpperCase()+'_PROCESSING_PLANT',
