@@ -95,3 +95,50 @@ test("government and ministry detail screens render local photo paths before the
   assert.match(government, /loading="lazy" decoding="async"/);
   assert.match(details, /loading="lazy" decoding="async"/);
 });
+
+test("Atlas Command uses the layered navy and steel-silver palette with distinct section accents", () => {
+  const css = read("omega_ui_v2/atlas-command-polish.css");
+  assert.match(css, /--omega-v2-bg:\s*#071426/i, "deep navy is the foundation");
+  assert.match(css, /--omega-v2-accent:\s*#c9d5e3/i, "silver is a dedicated accent");
+  assert.match(css, /--omega-v2-accent-blue:\s*#77c8f2/i, "signal blue is distinct from the silver accent");
+  assert.match(css, /\.omega-v2-kpi:nth-child\(3n \+ 1\)/);
+  assert.match(css, /\.omega-v2-kpi:nth-child\(3n \+ 2\)/);
+  assert.match(css, /\.omega-v2-kpi:nth-child\(3n\)/, "metric cards use more than one accent color");
+  assert.match(css, /\.omega-v2-button--primary[\s\S]*border-color:\s*#77b9df/i);
+  assert.match(css, /\.omega-v2-button--accent[\s\S]*color:\s*#0a1b2d/i, "selected controls use high-contrast silver");
+  assert.match(css, /@media\s*\(max-width:\s*420px\)/, "small-phone layout must remain responsive");
+  assert.match(css, /min-height:\s*44px/, "tap targets remain touch-friendly");
+});
+
+test("ministry details separate Overview, Operations, Assets, Budget and Reports", () => {
+  const detail = read("omega_ui_v2/screens/ministry-detail.js");
+  assert.match(detail, /dashboard:'Overview'/);
+  assert.match(detail, /operations:'Operations'/);
+  assert.match(detail, /assets:'People & Assets'/);
+  assert.match(detail, /budget:'Budget & Finance'/);
+  assert.match(detail, /reports:'Reports & Data'/);
+  assert.match(detail, /function sectionForField\(/);
+  assert.match(detail, /function rowsForSection\(/);
+  assert.match(detail, /var sectionRows = rowsForSection\(rawRows, section\)/);
+  assert.match(detail, /sectionRows\.map\(function \(item\)/);
+  assert.doesNotMatch(detail, /V2 CONTROLS ONLY|Legacy screen navigation is disconnected/);
+});
+
+test("player-facing screens avoid raw debug dumps and use readable resource-status labels", () => {
+  const app = read("omega_ui_v2/app.js");
+  const government = read("omega_ui_v2/screens/government.js");
+  const industry = read("omega_ui_v2/screens/industry.js");
+  const resource = read("omega_ui_v2/screens/resource-ministry.js");
+  const mine = read("omega_ui_v2/screens/mine-detail.js");
+  const homeAffairs = read("omega_ui_v2/screens/home-affairs.js");
+  const reports = read("omega_ui_v2/screens/reports.js");
+  assert.doesNotMatch(app, /simulated treasury values/i);
+  assert.doesNotMatch(government, /Profile label:|current simulation\./i);
+  assert.doesNotMatch(industry, /JSON\.stringify\(outputs,\s*null,\s*2\)/);
+  assert.doesNotMatch(resource, /labeled MODELED/i);
+  assert.doesNotMatch(mine, /· MODELED|Quantitative provenance:/i);
+  assert.doesNotMatch(homeAffairs, /retired console|canonical runtime/i);
+  assert.doesNotMatch(reports, /source runtime|Open source report/i);
+  assert.match(resource, /SIMULATED:'Estimated'/);
+  assert.match(mine, /MODELED:'Estimated'/);
+});
