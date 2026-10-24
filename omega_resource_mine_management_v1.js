@@ -134,9 +134,14 @@ function projectFor(site,country){return playerProjects(country).filter(p=>p.pro
 function resourceLabel(site){return label(site?.identity?.resourceName||resourceOf(site));}
 function reserveSummary(site){
  const reserve=site?.quantitative?.reserve||{},measured=num(reserve.quantity),status=String(reserve.status||'UNOBSERVED').toUpperCase();
- if(measured!==null&&['OBSERVED','OBSERVED_ATTRIBUTABLE','REPORTED'].includes(status))return 'Reported reserve: '+formatNum(measured,2)+' '+String(reserve.unit||'units')+' ('+label(status)+')';
- const seed=num(site?.simulation?.reserve?.quantity??site?.reserve?.quantity);
- if(seed!==null&&String(site?.simulation?.reserve?.status||site?.reserve?.status||'').toUpperCase()==='SIMULATED')return 'Gameplay seed only: '+formatNum(seed,2)+' '+String(site?.simulation?.reserve?.unit||site?.reserve?.unit||'units');
+ const unit=unitLabel(reserve.unit||site?.simulation?.reserveUnit||site?.simulation?.reserve?.unit||site?.reserve?.unit||'units');
+ if(measured!==null&&isReportedMetric(reserve))return 'Reported reserve: '+formatNum(measured,2)+' '+unit+' ('+label(reserve.status||'REPORTED')+')';
+ const sim=site?.simulation||{},legacy=sim.reserve||site?.reserve||{};
+ let gameplay=num(sim.reserveQuantity);
+ if(gameplay===null)gameplay=num(legacy.quantity);
+ if(gameplay===null&&status==='SIMULATED')gameplay=measured;
+ const explicitlySimulated=status==='SIMULATED'||String(legacy.status||'').toUpperCase()==='SIMULATED'||sim.productionReadiness==='CAPACITY_READY'||sim.gameplayProductionEnabled===true;
+ if(gameplay!==null&&explicitlySimulated)return 'Gameplay reserve: '+formatNum(gameplay,2)+' '+unit+' (SIMULATED)';
  return 'Reserve: '+label(status)+' (no measured quantity)';
 }
 function unitLabel(value){return String(value||'units').replace(/[_-]+/g,' ').replace(/\s+/g,' ').trim().toLowerCase();}
@@ -488,6 +493,6 @@ function boot(){
 }
 if(g.document?.readyState==='loading')g.document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 g.Omega=g.Omega||{};
-g.Omega.ResourceMineManagementUI=Object.freeze({VERSION,open:function(view,country){currentView=view==='mines'?'mines':'my-mines';currentCountry=iso3(country||(currentView==='mines'?selectedMinistryCountry():playerCountry()));render();},refresh:render,getCountrySites:function(country){return sitesFor(iso3(country||playerCountry()));},getProductionSummary:productionSummary});
+g.Omega.ResourceMineManagementUI=Object.freeze({VERSION,open:function(view,country){currentView=view==='mines'?'mines':'my-mines';currentCountry=iso3(country||(currentView==='mines'?selectedMinistryCountry():playerCountry()));render();},refresh:render,getCountrySites:function(country){return sitesFor(iso3(country||playerCountry()));},getProductionSummary:productionSummary,getReserveSummary:reserveSummary});
 g.OmegaResourceMineManagementUI=g.Omega.ResourceMineManagementUI;
 })(typeof window!=='undefined'?window:globalThis);
