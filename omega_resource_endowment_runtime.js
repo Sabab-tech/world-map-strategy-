@@ -196,6 +196,19 @@
         if(i>=0)data.sites[i]=clone(canonicalSiteCatalogMap[siteId]);
       }
     }
+    // Keep the strategic-policy commission ledger synchronized with the authoritative
+    // operational mine asset, so exploration-locked sites become executable only after
+    // the actual mine-commission event. Real-world status remains separately preserved.
+    const resourceRow=state()?.resource?.[country];
+    if(resourceRow&&String(p.status||'').toUpperCase()==='OPERATIONAL'&&p.mineId){
+      resourceRow.commissionedSites=Array.isArray(resourceRow.commissionedSites)?resourceRow.commissionedSites:[];
+      if(!resourceRow.commissionedSites.some(x=>String(x?.siteId||'')===siteId&&String(x?.status||'').toUpperCase()==='COMMISSIONED')){
+        resourceRow.commissionedSites.push({siteId,resourceId:p.resourceId||existing?.identity?.resourceTypeId||null,
+          mineId:p.mineId,projectId:p.projectId||null,status:'COMMISSIONED',commissionedTurn:turn(),
+          authority:'SIMULATED_PLAYER_MINE_ASSET'});
+        resourceRow.commissionedSites=resourceRow.commissionedSites.slice(-2048);
+      }
+    }
     try{mineSiteReferenceCache?.clear?.();siteExecutionRowsCache?.clear?.();siteExecutionRowsCacheTurn=-1;}catch(_){}
     let hydration=null;
     try{hydration=hydrateCountry(country);}catch(error){hydration={status:'FAILED',reason:String(error?.message||error)};}
