@@ -102,7 +102,11 @@ function siteAvailableForExtraction(c,siteId,siteRecord=null){
  if(!locked)return{allowed:true,reason:null,siteKnown:true};
  const res=state()?.resource?.[cid]||{},commissioned=Array.isArray(res.commissionedSites)?res.commissionedSites:[];
  const hit=commissioned.find(x=>String(x?.siteId||'')===sid&&String(x?.status||'').toUpperCase()==='COMMISSIONED');
- return hit?{allowed:true,reason:null,siteKnown:true,commissioned:true}:{allowed:false,reason:'EXPLORATION_AND_INVESTMENT_REQUIRED',siteKnown:true};
+ const operationalAssets=Array.isArray(res.mineAssets)?res.mineAssets:[];
+ const asset=operationalAssets.find(x=>String(x?.siteId||'')===sid&&String(x?.status||'').toUpperCase()==='OPERATIONAL');
+ return hit||asset?{allowed:true,reason:null,siteKnown:true,commissioned:true,
+  commissionAuthority:asset?'GAME_STATE_RESOURCE_MINE_ASSETS':'COMMISSIONED_SITE_LEDGER'}:
+  {allowed:false,reason:'EXPLORATION_AND_INVESTMENT_REQUIRED',siteKnown:true};
 }
 function setPolicy(ctx,kind,payload){
  const c=country(ctx.countryId),p=payload||{},target=country(p.targetCountryId||'*'),rid=String(p.resourceId||'*').trim();
