@@ -316,19 +316,27 @@
       root.addEventListener('click', function (event) {
         var target = event && event.target;
         if (!target || typeof target.closest !== 'function') return;
+        // Stop app-owned controls at the UI v2 boundary after screen-local handlers
+        // have run. This prevents document-level map and retired UI listeners from
+        // acting on the same tap and duplicating expensive state transitions.
+        var ownControl = target.closest('button,a[href],[role="button"],summary');
+        if (ownControl && root.contains(ownControl) && event && typeof event.stopPropagation === 'function') {
+          event.stopPropagation();
+        }
         var exit = target.closest('[data-omega-v2-exit]');
         if (exit && root.contains(exit)) {
+          if (event.preventDefault) event.preventDefault();
           exitToMap(root);
           return;
         }
         var jumpMinistry = target.closest('[data-omega-v2-jump-ministry]');
-        if (jumpMinistry && root.contains(jumpMinistry)) { openMinistry(root, jumpMinistry.getAttribute('data-omega-v2-jump-ministry')); return; }
+        if (jumpMinistry && root.contains(jumpMinistry)) { if (event.preventDefault) event.preventDefault(); openMinistry(root, jumpMinistry.getAttribute('data-omega-v2-jump-ministry')); return; }
         var jumpRoute = target.closest('[data-omega-v2-jump-route]');
-        if (jumpRoute && root.contains(jumpRoute)) { navigate(root, jumpRoute.getAttribute('data-omega-v2-jump-route')); return; }
+        if (jumpRoute && root.contains(jumpRoute)) { if (event.preventDefault) event.preventDefault(); navigate(root, jumpRoute.getAttribute('data-omega-v2-jump-route')); return; }
         var nav = target.closest('[data-omega-v2-global-nav]');
-        if (nav && root.contains(nav)) { navigate(root, nav.getAttribute('data-omega-v2-global-nav')); return; }
+        if (nav && root.contains(nav)) { if (event.preventDefault) event.preventDefault(); navigate(root, nav.getAttribute('data-omega-v2-global-nav')); return; }
         var domain = target.closest('[data-omega-v2-more-ministry]');
-        if (domain && root.contains(domain)) { openMinistry(root, domain.getAttribute('data-omega-v2-more-ministry')); return; }
+        if (domain && root.contains(domain)) { if (event.preventDefault) event.preventDefault(); openMinistry(root, domain.getAttribute('data-omega-v2-more-ministry')); return; }
         var religionButton = target.closest('[data-omega-v2-open-religion]');
         if (religionButton && root.contains(religionButton)) {
           var bridge = g.OmegaUIV2Integration;
@@ -337,8 +345,9 @@
           else if (typeof g.showOmegaNotification === 'function') g.showOmegaNotification('RELIGION MODULE UNAVAILABLE','The canonical Religion & Ideology handler is not available. No state was changed.','warning');
           return;
         }
-        if (target.closest('[data-omega-v2-back]') && root.contains(target)) { back(root); return; }
+        if (target.closest('[data-omega-v2-back]') && root.contains(target)) { if (event.preventDefault) event.preventDefault(); back(root); return; }
         if (target.closest('[data-omega-v2-action="back-to-map"]') && root.contains(target)) {
+          if (event.preventDefault) event.preventDefault();
           exitToMap(root);
           return;
         }
