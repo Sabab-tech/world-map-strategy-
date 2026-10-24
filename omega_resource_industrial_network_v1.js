@@ -945,7 +945,7 @@ function dispatchShipment(input={}){
   }
   if(quantity<=0)return{status:'BLOCKED',reason:'SOURCE_BATCH_QUANTITY_ZERO',batchId:sourceBatchId||null,plan,capacity:capacityPreview};
   const reserved=reserveInventoryForShipment(cid,plan.resourceId,quantity,shipmentId);if(!reserved.ok)return{status:'BLOCKED',reason:reserved.reason,details:reserved,plan};
-  if(Number.isFinite(Number(reserved.quantity))&&reserved.quantity>0&&reserved.quantity+quantityEpsilon<quantity){
+  if(Number.isFinite(Number(reserved.quantity))&&reserved.quantity>0&&reserved.quantity<quantity){
     quantity=reserved.quantity;quantityAdjustmentReason='WAREHOUSE_AVAILABLE_AFTER_RESERVATIONS';
   }
   const route=resizeRouteForDispatch(plan.route,quantity,plannedQuantity);
