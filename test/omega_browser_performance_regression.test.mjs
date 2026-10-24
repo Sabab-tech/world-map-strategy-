@@ -294,7 +294,7 @@ test('slow simulation frames and data-heavy ministry panels bound repeated UI wo
 
   const serviceWorker = read('omega-offline-map-sw.js');
   const cacheVersion = Number(serviceWorker.match(/CACHE_NAME = "omega-offline-atlas-shell-v(\d+)"/)?.[1] || 0);
-  assert.ok(cacheVersion >= 33, 'Android/offline installs must receive the active interaction-guard runtime');
+  assert.ok(cacheVersion >= 34, 'Android/offline installs must receive the active interaction-guard runtime');
 });
 
 
