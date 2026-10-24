@@ -735,7 +735,9 @@
       return definition?.name || definition?.title || key.replace(/([a-z0-9])([A-Z])/g,'$1 $2').replace(/[_-]+/g,' ').replace(/\b[a-z]/g,ch=>ch.toUpperCase());
     };
     const gateway = g.OmegaCountryDataGateway || g.Omega?.CountryDataGateway || null;
-    const sharedSnapshot = gateway?.getSnapshot?.(value) || null;
+    const sharedSnapshot = (typeof gateway?.getSnapshotForView === 'function'
+      ? gateway.getSnapshotForView(value)
+      : gateway?.getSnapshot?.(value)) || null;
     const sharedHasCountry = !!(sharedSnapshot && sharedSnapshot.countryCode);
     const sharedMetric = (key, fallback) => {
       if (!sharedHasCountry) return fallback;

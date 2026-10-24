@@ -69,7 +69,26 @@
 
                 if (ministryRuntimeController && typeof ministryRuntimeController.init === "function") {
                     if (!ministryRuntimeController.init(kernel)) {
-                        throw new Error("17-Ministry Runtime Controller initialization failed.");
+                        let controllerHealth = null;
+                        try {
+                            const health = typeof ministryRuntimeController.health === "function"
+                                ? ministryRuntimeController.health() : null;
+                            if (health) controllerHealth = {
+                                initialized:health.initialized,
+                                engineRegistryHealthy:health.engineRegistryHealthy,
+                                engineRegistryReason:health.engineRegistryReason,
+                                missingEngineIds:health.missingEngineIds,
+                                count:health.count,
+                                independent:health.independent,
+                                uniqueInstances:health.uniqueInstances,
+                                interoperability:health.interoperability
+                                    ? { ok:health.interoperability.ok, initialized:health.interoperability.initialized,
+                                        reason:health.interoperability.reason, version:health.interoperability.version }
+                                    : null
+                            };
+                        } catch (_) {}
+                        throw new Error("17-Ministry Runtime Controller initialization failed: " +
+                            JSON.stringify(controllerHealth || {health:"UNAVAILABLE"}));
                     }
                     window.__LOG_EVENT__("MINISTRY_RUNTIME_17_CONTROLLER_READY");
                 } else {
@@ -116,19 +135,19 @@
                     window.__LOG_EVENT__("SIMULATION_COORDINATOR_CONFIGURED");
                 }
 
-                if (window.OmegaMinistry && typeof window.OmegaMinistry.createRuntime === "function") {
-                    const ministryRuntime = window.OmegaMinistry.createRuntime();
-                    if (ministryRuntime && typeof ministryRuntime.init === "function") {
-                        ministryRuntime.init(sharedBridge);
-                        window.__LOG_EVENT__("MINISTRY_RUNTIME_INIT_CALLED");
+                // UI v2 owns player-facing ministry navigation. Do not instantiate the
+                // retired OmegaMinistry runtime / UI adapter as part of application boot:
+                // its constructor can throw before the UI is ready, and the legacy fatal
+                // overlay then intercepts every touch even though the kernel is initialized.
+                // Keep the old source files intact for reference, but do not execute them.
+                if (window.OMEGA_UI_ADAPTER && typeof window.OMEGA_UI_ADAPTER.dispose === "function") {
+                    try {
+                        window.OMEGA_UI_ADAPTER.dispose();
+                    } catch (adapterError) {
+                        console.warn("[OMEGA] Retired UI adapter cleanup was skipped:", adapterError?.message || adapterError);
                     }
-                    if (window.OMEGA_UI_ADAPTER) {
-                        window.OMEGA_UI_ADAPTER.init(ministryRuntime, sharedBridge, presentation);
-                        window.__LOG_EVENT__("UI_ADAPTER_MANUAL_INIT_CALLED");
-                    }
-                } else {
-                    console.warn("[OMEGA] OmegaMinistry.createRuntime not found.");
                 }
+                window.__LOG_EVENT__("LEGACY_MINISTRY_UI_ADAPTER_SKIPPED");
 
                 // The simulation clock advances in 10-second steps. Polling it at display
                 // refresh rate repeatedly hydrated world state while no game turn was due.
@@ -246,8 +265,15 @@
                 window.addEventListener("beforeunload", shutdown);
 
             } catch (err) {
-                triggerFatal(err.message);
-                console.error("[FATAL]", err);
+                const fatalDetail = String(err && (err.stack || err.message) || err || "UNKNOWN_BOOT_ERROR").slice(0, 3000);
+                try {
+                    window.__OMEGA_DIAG__.errors.push({ msg:fatalDetail, type:"FATAL_BOOT" });
+                } catch (_) {}
+                triggerFatal(err && err.message ? err.message : fatalDetail);
+                // Android WebChromeClient receives one console message at a time. A
+                // multi-argument console.error("[FATAL]", err) drops the useful error
+                // because the bridge logs only message.message().
+                console.error("[FATAL_BOOT_DETAIL] " + fatalDetail);
             }
         };
 

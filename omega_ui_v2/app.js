@@ -25,10 +25,9 @@
   function jumpMenuMarkup(activeRoute) {
     var nav = g.OmegaUIV2Navigation || {};
     var registry = g.OmegaUIV2MinistryVisualRegistry;
-    var rows = g.OmegaUIV2Government && typeof g.OmegaUIV2Government.getMinistryRows === 'function'
-      ? g.OmegaUIV2Government.getMinistryRows() : [];
-    var labels = Object.create(null);
-    rows.forEach(function (row) { labels[row.id] = row.title; });
+    // Route chrome is rebuilt after every navigation. Keep this lightweight: the
+    // government data adapter is expensive on low-memory Android WebViews and
+    // the screen renderer will read authoritative ministry data when needed.
     var ids = Array.isArray(nav.ministryIds) ? nav.ministryIds : (registry && Array.isArray(registry.ids) ? registry.ids : []);
     var globalRoutes = [
       ['map','World map'],['overview','Country overview'],['government','Government'],
@@ -43,7 +42,7 @@
       }).join('') + '</div></section><section><h2>ALL 18 MINISTRIES</h2><div class="omega-v2-route-menu-grid">' +
       ids.map(function (id) {
         var visual = registry && typeof registry.get === 'function' ? registry.get(id) : null;
-        var label = labels[id] || (visual && visual.title) || id.replace(/[_-]+/g, ' ').replace(/\b\w/g, function (ch) { return ch.toUpperCase(); });
+        var label = (visual && visual.title) || id.replace(/[_-]+/g, ' ').replace(/\b\w/g, function (ch) { return ch.toUpperCase(); });
         return '<button type="button" class="omega-v2-route-link" data-omega-v2-jump-ministry="' + esc(id) + '">' + esc(label) + '</button>';
       }).join('') + '</div></section></div></details>';
   }
@@ -195,7 +194,10 @@
     var s=stateFor(root),candidate=s.countryId||g.OmegaMinistryViewCountry||(g.CountryIOS&&g.CountryIOS.activeCountry)||(g.Game&&(g.Game.currentActiveCountry||g.Game.selectedCountryId));
     if(candidate&&typeof candidate==='object')candidate=candidate.countryCode||candidate.iso3||candidate.countryId||candidate.code||candidate.name||candidate.id;
     var country=String(candidate||'').trim().toUpperCase(),gateway=g.OmegaCountryDataGateway||(g.Omega&&g.Omega.CountryDataGateway),snap=null;
-    try{if(country&&gateway&&typeof gateway.getSnapshot==='function')snap=gateway.getSnapshot(country);}catch(_){}
+    try{
+      if(country&&gateway&&typeof gateway.getSnapshotForView==='function')snap=gateway.getSnapshotForView(country);
+      else if(country&&gateway&&typeof gateway.getSnapshot==='function')snap=gateway.getSnapshot(country);
+    }catch(_){}
     var fields=snap&&snap.fields||{},keys=Object.keys(fields),available=keys.filter(function(k){return fields[k]&&fields[k].status==='AVAILABLE'&&fields[k].value!=null;}).length;
     function value(k){var r=fields[k];if(!r||r.status!=='AVAILABLE'||r.value==null||r.value==='')return'Not recorded';var v=r.value;if(typeof v==='number'&&Number.isFinite(v))v=v.toLocaleString('en-US',{maximumFractionDigits:2});return String(v)+(r.unit?' '+r.unit:'');}
     var finance=((g.Game&&g.Game.state&&g.Game.state.finance)||{})[country]||{},cash=finance.available!=null?finance.available:finance.cash;
@@ -281,6 +283,35 @@
     content.innerHTML = '<section class="omega-v2-shell"><div class="omega-v2-empty">This screen module has not been loaded. The game state was not altered.</div></section>';
     return { ok:false, code:'SCREEN_MODULE_UNAVAILABLE', route:state.route };
   }
+  function recordRenderFailure(route, error) {
+    var message = String(error && error.message || error || 'Unknown screen rendering error').slice(0, 240);
+    var diagnostic = { route:String(route || ''), message:message, timestamp:Date.now() };
+    try {
+      var metrics = g.__OMEGA_UI_V2_DIAGNOSTICS || {};
+      metrics.renderFailureCount = (Number(metrics.renderFailureCount) || 0) + 1;
+      metrics.lastRenderFailure = diagnostic;
+      g.__OMEGA_UI_V2_DIAGNOSTICS = metrics;
+    } catch (_) {}
+    try {
+      if (g.console && typeof g.console.error === 'function') {
+        g.console.error('[OMEGA UI v2] Screen render failed; navigation remains available.', diagnostic);
+      }
+    } catch (_) {}
+  }
+  function renderFailureMarkup() {
+    return '<section class="omega-v2-shell" role="alert">' +
+      '<header class="omega-v2-heading"><div><div class="omega-v2-eyebrow">OMEGA / SCREEN RECOVERY</div>' +
+      '<h1 class="omega-v2-title">This screen could not be opened</h1>' +
+      '<p class="omega-v2-subtitle">The current section failed to render. Navigation remains available; choose another section or return here later.</p>' +
+      '</div><span class="omega-v2-status" data-state="attention">RECOVERY MODE</span></header>' +
+      '<div class="omega-v2-card"><h2 class="omega-v2-card-title">Continue using OMEGA</h2>' +
+      '<div class="omega-v2-actions">' +
+      '<button type="button" class="omega-v2-button omega-v2-button--primary" data-omega-v2-global-nav="government">Government</button>' +
+      '<button type="button" class="omega-v2-button" data-omega-v2-global-nav="overview">Country overview</button>' +
+      '<button type="button" class="omega-v2-button" data-omega-v2-global-nav="economy">Economy</button>' +
+      '<button type="button" class="omega-v2-button omega-v2-button--quiet" data-omega-v2-global-nav="more">All sections</button>' +
+      '</div></div></section>';
+  }
   function render(root) {
     var state = stateFor(root);
     var countryChoices = Array.isArray(state.options.countryOptions) ? state.options.countryOptions : [];
@@ -292,7 +323,11 @@
       }).join('') + '</select>'
       : '<span class="omega-v2-country-badge">COUNTRY ' + esc(state.countryId || 'NOT RECORDED') + '</span>';
     var oldMain = root.querySelector && root.querySelector('[data-omega-v2-main]');
-    if (oldMain && g.OmegaUIV2Government && typeof g.OmegaUIV2Government.stopAutoRotation === 'function') g.OmegaUIV2Government.stopAutoRotation(oldMain);
+    if (oldMain && g.OmegaUIV2Government && typeof g.OmegaUIV2Government.stopAutoRotation === 'function') {
+      try { g.OmegaUIV2Government.stopAutoRotation(oldMain); } catch (_) {
+        // Stale screen-cleanup hooks must never prevent the next destination opening.
+      }
+    }
     root.classList.add('omega-v2-app-root');
     root.innerHTML = '<div class="omega-v2-app-frame">' +
       '<header class="omega-v2-app-header"><button class="omega-v2-button omega-v2-button--quiet" type="button" data-omega-v2-back aria-label="Go back">‹ Back</button><div class="omega-v2-app-brand"><span class="omega-v2-brand-mark">Ω</span><div><strong>OMEGA</strong><small>GLOBAL COMMAND</small></div></div>' +
@@ -303,7 +338,18 @@
       navButton('map','World',state.route) + navButton('overview','Overview',state.route) + navButton('government','Government',state.route) + navButton('economy','Economy',state.route) + navButton('more','More',state.route) +
       '</nav></div>';
     var main = root.querySelector('[data-omega-v2-main]');
-    var result = routeScreen(root, main);
+    var result;
+    try {
+      result = routeScreen(root, main);
+    } catch (error) {
+      // An optional ministry/runtime can fail independently. Preserve the host
+      // shell and its delegated controls instead of leaving a blank dead screen.
+      recordRenderFailure(state.route, error);
+      if (main) main.innerHTML = renderFailureMarkup();
+      // The shell is still mounted and its shared navigation works; report
+      // recovery as an active mount so the integration bridge does not close it.
+      result = { ok:true, code:'SCREEN_RENDER_FAILED', route:state.route, screenRecovery:true };
+    }
     var backButton = root.querySelector('[data-omega-v2-back]');
     if (backButton) backButton.disabled = !state.history.length && state.route === 'map';
     root.setAttribute('data-omega-v2-route', state.route);

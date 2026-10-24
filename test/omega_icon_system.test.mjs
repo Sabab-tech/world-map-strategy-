@@ -12,7 +12,7 @@ const iconContext = { window: {} };
 vm.runInNewContext(iconSource, iconContext, { filename: 'omega_icon_system_v1.js' });
 const icons = iconContext.window.OMEGA_ICON_SYSTEM_V1;
 
-test('custom icon system is wired locally before active runtime and has no remote runtime dependency', () => {
+test('custom icon system stays local while the retired UI adapter remains disconnected', () => {
   const html = read('index.html');
   assert.doesNotMatch(html, /<link[^>]+href="omega_icon_system_v1\.css"/i, 'legacy icon stylesheet remains inactive');
   assert.ok(fs.existsSync(path.join(root, 'omega_icon_system_v1.css')), 'legacy icon CSS file remains on disk');
@@ -22,6 +22,7 @@ test('custom icon system is wired locally before active runtime and has no remot
   assert.ok(html.indexOf('omega_icon_system_v1.js') < html.indexOf('map-engine-1.js'));
   assert.equal(html.includes('presentation-engine.js'), false, 'retired presentation engine must not be boot-loaded');
   assert.equal(html.includes('ui_engine_core.js'), false, 'retired adapter renderer must not be boot-loaded');
+  assert.ok(fs.existsSync(path.join(root, 'ui_engine_core.js')), 'legacy UI source remains available for reference and rollback');
   assert.equal(html.includes('fonts.googleapis.com'), false, 'startup must not wait on remote font CSS');
   assert.doesNotMatch(iconSource, /https?:\/\/(?:unpkg\.com|cdn\.jsdelivr\.net|cdnjs\.cloudflare\.com|fonts\.googleapis\.com)/i);
 });

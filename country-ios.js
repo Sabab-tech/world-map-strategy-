@@ -370,7 +370,9 @@ window.CountryIOS = {
     renderChapter1_Overview(countryKey, econ, pop, rel) {
         const countryRuntime = window.OmegaCountryRuntimeData;
         const gateway = window.OmegaCountryDataGateway;
-        const shared = gateway && gateway.getSnapshot(countryKey);
+        const shared = gateway && (typeof gateway.getSnapshotForView === 'function'
+            ? gateway.getSnapshotForView(countryKey)
+            : typeof gateway.getSnapshot === 'function' ? gateway.getSnapshot(countryKey) : null);
         const sharedFields = shared && shared.countryCode ? shared.fields || {} : {};
         const sharedValue = key => sharedFields[key] && sharedFields[key].status === 'AVAILABLE' ? sharedFields[key].value : null;
         const describeField = key => {
@@ -1473,7 +1475,9 @@ window.CountryIOS = {
                 ? window.WorldEcosystemEngine.getCountryProfile(countryKey) : null;
         } catch (_) {}
         const gateway = window.OmegaCountryDataGateway;
-        const countrySnapshot = gateway && gateway.getSnapshot(countryKey);
+        const countrySnapshot = gateway && (typeof gateway.getSnapshotForView === 'function'
+            ? gateway.getSnapshotForView(countryKey)
+            : typeof gateway.getSnapshot === 'function' ? gateway.getSnapshot(countryKey) : null);
         const hasResolvedSnapshot = !!(countrySnapshot && countrySnapshot.countryCode);
         const sharedValue = key => hasResolvedSnapshot && countrySnapshot.fields?.[key]?.status === 'AVAILABLE'
             ? countrySnapshot.fields[key].value : null;

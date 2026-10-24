@@ -58,8 +58,11 @@
   }
   function snapshot(countryId) {
     var gateway = g.OmegaCountryDataGateway || (g.Omega && g.Omega.CountryDataGateway);
-    if (!gateway || typeof gateway.getSnapshot !== 'function') return null;
-    try { return gateway.getSnapshot(countryId); } catch (_) { return null; }
+    if (!gateway) return null;
+    try {
+      if (typeof gateway.getSnapshotForView === 'function') return gateway.getSnapshotForView(countryId);
+      return typeof gateway.getSnapshot === 'function' ? gateway.getSnapshot(countryId) : null;
+    } catch (_) { return null; }
   }
   function field(snapshotData, key) {
     var row = snapshotData && snapshotData.fields && snapshotData.fields[key];

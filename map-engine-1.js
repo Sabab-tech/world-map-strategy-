@@ -469,7 +469,10 @@ var Game = window.Game = {
             ? generalRuntime.getCountryRecord(identity && (identity.iso3 || identity.countryCode) || countryName) : null;
         const generalMetrics = generalCountryRecord && generalCountryRecord.metrics || {};
         const generalMetadata = generalCountryRecord && generalCountryRecord.metricMetadata || {};
-        const countrySnapshot = window.OmegaCountryDataGateway && window.OmegaCountryDataGateway.getSnapshot(countryName);
+        const countryGateway = window.OmegaCountryDataGateway;
+        const countrySnapshot = countryGateway && (typeof countryGateway.getSnapshotForView === 'function'
+            ? countryGateway.getSnapshotForView(countryName)
+            : typeof countryGateway.getSnapshot === 'function' ? countryGateway.getSnapshot(countryName) : null);
         const sharedField = key => countrySnapshot && countrySnapshot.countryCode && countrySnapshot.fields
             && countrySnapshot.fields[key] && countrySnapshot.fields[key].status === 'AVAILABLE' ? countrySnapshot.fields[key] : null;
         const sharedSourceTitle = field => field

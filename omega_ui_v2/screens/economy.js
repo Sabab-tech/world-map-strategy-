@@ -36,7 +36,10 @@
   }
   function getCountrySnapshot(country) {
     var gateway = g.OmegaCountryDataGateway || (g.Omega && g.Omega.CountryDataGateway);
-    try { return gateway && gateway.getSnapshot ? gateway.getSnapshot(country) : null; } catch (_) { return null; }
+    try {
+      if (gateway && typeof gateway.getSnapshotForView === 'function') return gateway.getSnapshotForView(country);
+      return gateway && gateway.getSnapshot ? gateway.getSnapshot(country) : null;
+    } catch (_) { return null; }
   }
   function buildViewModel(options) {
     options = options || {};
