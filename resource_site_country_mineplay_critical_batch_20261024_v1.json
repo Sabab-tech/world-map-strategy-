@@ -5811,7 +5811,7 @@
           "quantitativeValuesAreSimulated": true,
           "sourceReportedRealWorldStatus": "OPERATOR IDENTIFIES BULQIZA AS ITS CHROME MINE; GAMEPLAY PRODUCTION VALUES ARE SIMULATED"
         },
-        "statusNote": "AlbChrome identifies Bulqiza as its chrome mine and documents mining and beneficiation activity. Gameplay reserve, grade, recovery, production, capacity and throughput values remain simulated and are not represented as observed mine output."
+        "statusNote": "AlbChrome identifies Bulqiza as its chrome mine and documents mining and beneficiation activity. The row represents a documented mine identity and source context, not an assertion that every player scenario is currently licensed or operating. Gameplay reserve, grade, recovery, production, capacity and throughput values remain simulated and are not represented as observed mine output; prospective or historical sites are not represented as currently operating in the real world."
       },
       "sources": [
         {
