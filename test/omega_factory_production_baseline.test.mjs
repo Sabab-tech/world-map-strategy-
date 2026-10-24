@@ -56,7 +56,7 @@ test('canonical factory catalog, type profiles, offline icons and recipe coeffic
   const { catalog, api } = makeRuntime();
   const audit = api.factoryCatalogDiagnostics();
   assert.equal(audit.status, 'HEALTHY', JSON.stringify(audit.issues));
-  assert.equal(Object.keys(catalog.processingRules).length, 41);
+  assert.equal(Object.keys(catalog.processingRules).length, 42);
   assert.equal(new Set(Object.values(catalog.processingRules).map(row => row.factoryType)).size, 37);
   assert.equal(Object.keys(catalog.factoryProfiles).length, 58);
   assert.equal(Object.keys(catalog.downstreamFactoryRecipes).length, 22);
@@ -698,7 +698,7 @@ test('production requirements expose per-unit inputs, outputs, rated daily flow,
     assert.equal(row.ratedCapacityPerDay, catalog.factoryProfiles[recipe.factoryType].defaultCapacityPerDay);
     checked += 1;
   }
-  assert.equal(checked, 63);
+  assert.equal(checked, 64);
 });
 
 test('all recipe rows declare a common simulation quantity basis and in-game cycle-time unit', () => {
