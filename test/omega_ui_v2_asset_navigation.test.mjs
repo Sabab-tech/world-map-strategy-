@@ -92,6 +92,6 @@ test("government and ministry detail screens render local photo paths before the
   const details = read("omega_ui_v2/screens/ministry-detail.js");
   assert.ok(government.includes("assets/ui-photos/' + safeId + '.webp"));
   assert.ok(details.includes("assets/ui-photos/' + safeId + '.webp"));
-  assert.match(government, /loading=\\"lazy\\" decoding=\\"async\\"/);
-  assert.match(details, /loading=\\"lazy\\" decoding=\\"async\\"/);
+  assert.match(government, /loading="lazy" decoding="async"/);
+  assert.match(details, /loading="lazy" decoding="async"/);
 });
