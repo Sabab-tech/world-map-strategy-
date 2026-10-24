@@ -96,6 +96,7 @@ jobs:
           run_gate siteIntegrity 30 node test/omega_resource_milestone_a_integrity.test.mjs
           run_gate siteDataContract 15 node --test test/omega_resource_site_data_contract.test.mjs
           run_gate siteDataCompleteness 15 node test/omega_resource_site_data_completeness.test.mjs
+          run_gate siteUnifiedPipelineProfile 30 node --test test/omega_resource_unified_site_pipeline_profile.test.mjs
           run_gate resourceReferenceLossless 15 node test/omega_resource_reference_lossless.test.mjs
           run_gate resourceEconomy 15 node --test test/omega_resource_economy_runtime_v2.test.mjs
           run_gate authoritativeAdapter 15 node --test test/omega_resource_authoritative_adapter.test.mjs
