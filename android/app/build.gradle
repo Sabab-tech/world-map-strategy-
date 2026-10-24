@@ -53,6 +53,8 @@ tasks.register('syncOmegaWebAssets', Sync) {
         include '*.webp'
         include '*.svg'
         include 'assets/**'
+        // UI v2 lives in a directory, so root-only globs do not package its modules.
+        include 'omega_ui_v2/**'
         exclude 'android/**'
         exclude 'test/**'
         exclude 'reports/**'
