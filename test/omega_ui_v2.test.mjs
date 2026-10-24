@@ -550,7 +550,7 @@ test('universal navigation, reliable Exit/Escape behavior and responsive visuals
   assert.match(app, /state\.history\.length = 0/);
   assert.match(app, /root\.addEventListener\('keydown'/);
   assert.match(html, /omega_ui_v2\/ministry-visual-refresh\.css/);
-  assert.match(worker, /omega-offline-atlas-shell-v32/);
+  assert.match(worker, /omega-offline-atlas-shell-v33/);
   assert.match(worker, /omega_ui_v2\/ministry-visual-refresh\.css/);
   assert.match(refreshCss, /omega-v2-ministry-detail-cover-image/);
   assert.match(refreshCss, /@media \(max-width: 760px\)/);
