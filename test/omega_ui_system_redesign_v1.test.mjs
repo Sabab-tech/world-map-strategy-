@@ -15,21 +15,20 @@ test('legacy redesign CSS remains stored while the v2 visual shell is active', (
   assert.match(html, /<link[^>]+href="omega_ui_v2\/omega-ui-v2\.css"/);
 });
 
-test('redesign runtime loads after gameplay runtimes without replacing them', () => {
+test('legacy redesign runtime remains stored but is disconnected from the production shell', () => {
   const html = read('index.html');
-  const runtime = html.indexOf('src="omega_ui_system_redesign_v1.js"');
-  assert.ok(runtime >= 0, 'viewport runtime must be linked');
-  assert.ok(runtime > html.indexOf('omega_home_ministry_police_capability_runtime_v1.js'));
-  assert.match(html.slice(runtime - 24, runtime + 100), /defer/);
+  assert.ok(fs.existsSync(path.join(root, 'omega_ui_system_redesign_v1.js')), 'historical source is retained');
+  assert.doesNotMatch(html, /<script[^>]+src=["']omega_ui_system_redesign_v1\\.js["']/i);
+  assert.doesNotMatch(html, /<script[^>]+src=["']omega_ui_interaction_guard\\.js["']/i);
+  assert.doesNotMatch(html, /<script[^>]+src=["']omega_ui_button_system_v1\\.js["']/i);
+  assert.match(html, /omega_ui_v2\\/legacy-disconnect\\.css/);
   for (const required of [
     'map-engine-1.js',
     'map-engine-2.js',
     'omega_finance_ministry_runtime_v1.js',
     'omega_home_ministry_engine_v1.js',
     'omega_resource_gameplay_binding_v1.js'
-  ]) {
-    assert.ok(html.includes(required), `existing engine reference was lost: ${required}`);
-  }
+  ]) assert.ok(html.includes(required), 'existing engine reference was lost: ' + required);
 });
 
 test('viewport and panel layout stay bounded and scroll within their own surfaces', () => {
@@ -82,49 +81,41 @@ test('runtime exposes a read-only UI audit and uses Visual Viewport updates', ()
   assert.match(js, /event\.key !== 'Escape'/);
 });
 
-test('map ministry entry is outside map stacking and has independent click recovery', () => {
+test('ministry entry and backward-compatible routes dispatch only to UI v2', () => {
   const html = read('index.html');
   const navStart = html.indexOf('<nav id="omega-ministry-entry" class="ui-bottom-navigation omega-ministry-entry"');
-  assert.ok(navStart >= 0, 'the standalone ministry entry remains in the page');
+  assert.ok(navStart >= 0, 'the legacy visual nav stays in the markup for compatibility');
   const uiRootStart = html.indexOf('<div id="ui-engine-root">');
-  const rootCloseMatch = /<\/div>\s*<!-- Independent ministry entry/.exec(html);
+  const rootCloseMatch = /<\\/div>\\s*<!-- Independent ministry entry/.exec(html);
   const rootEndMarker = rootCloseMatch ? rootCloseMatch.index : -1;
   assert.ok(uiRootStart >= 0 && rootEndMarker > uiRootStart && navStart > rootEndMarker,
-    'the entry is moved after the map UI root');
+    'the entry is outside the map UI root');
   const buttonStart = html.indexOf('id="btn-ministry-dock"', navStart);
   const buttonEnd = html.indexOf('</button>', buttonStart);
-  assert.ok(buttonStart > navStart && buttonEnd > buttonStart, 'the ministry button is inside the standalone nav');
-  assert.match(html.slice(buttonStart, buttonEnd), /OMEGAMinistryDock/, 'markup keeps a direct recovery fallback');
+  assert.ok(buttonStart > navStart && buttonEnd > buttonStart, 'the ministry button exists');
+  assert.match(html.slice(buttonStart, buttonEnd), /OMEGAGovEntryV3/);
+  assert.doesNotMatch(html.slice(buttonStart, buttonEnd), /openMainMinistryView|OmegaLayerManager|OMEGAMinistryDock/);
 
   const mapEngine = read('map-engine-1.js');
-  assert.doesNotMatch(mapEngine, /const btnMinistryDock\s*=\s*document\.getElementById\(['"]btn-ministry-dock['"]\)/,
-    'map engine must not register a second ministry-dock route');
+  assert.doesNotMatch(mapEngine, /const btnCardCab = document\\.getElementById\\('btn-card-cabinet'\\)/,
+    'the map engine must not add a second Cabinet click route');
 
   const display = read('display_and_layer_system.js');
-  assert.ok(display.includes("bindDockBtn('btn-ministry-dock', window.openMainMinistryView)"),
-    'legacy semantic click binding remains available as a fallback');
+  assert.doesNotMatch(display, /bindDockBtn\\('btn-ministry-dock', window\\.openMainMinistryView\\)/,
+    'the old layer-manager dock listener is disconnected');
+  const entryAliasStart = display.indexOf('window.openMainMinistryView = function(e)');
+  const entryAliasEnd = display.indexOf('window.openReligionIdeologySystem = function(e)', entryAliasStart);
+  assert.ok(entryAliasStart >= 0 && entryAliasEnd > entryAliasStart);
+  const alias = display.slice(entryAliasStart, entryAliasEnd);
+  assert.match(alias, /OmegaUIV2Integration/);
+  assert.doesNotMatch(alias, /OmegaLayerManager\\.setLayer|OmegaCabinetUI\\.renderCabinet|Game\\.closeAllDrawers/);
 
   const runtime = read('omega_ui_system_redesign_v1.js');
   assert.ok(runtime.includes("addEventListener('click', handleMapMinistryDockClick, true)"),
-    'late-loaded recovery listens in document capture phase');
-  assert.ok(runtime.includes('function openCabinet(event)'));
-  assert.ok(runtime.includes('cabinetUI.renderCabinet(activeCountry())'), 'the recovery route renders the current-country cabinet without re-entering the blocking layer manager');
-  assert.ok(!runtime.includes('global.openMainMinistryView();'), 'deferred recovery must not re-enter the legacy layer manager');
-  assert.ok(runtime.includes('data-last-open-result'));
-  assert.ok(runtime.includes("function syncDockPosition()"));
-  assert.ok(runtime.includes("rect.bottom + 8"));
-  assert.ok(runtime.includes("new global.ResizeObserver(syncDockPosition)"),
-    'button placement follows the status header when it wraps on mobile');
-  assert.ok(runtime.includes("data-omega-map-active"));
-  assert.ok(!runtime.includes("dock.style.display = onMap ? 'flex' : 'none'"),
-    'returning to the map must not depend on clearing a sticky inline display style');
-
-  const css = read('omega_ui_system_redesign_v1.css');
-  assert.ok(css.includes('.omega-ministry-entry.ui-bottom-navigation'));
-  assert.ok(css.includes('z-index: 2147483000 !important'),
-    'the entry is above the map renderer and its interaction layers');
+    'historical source documents the old capture-phase handler which is no longer loaded');
+  assert.doesNotMatch(html, /src="omega_ui_system_redesign_v1\\.js"/);
 });
-
+ 
 test('Government HQ stays busy until deferred council content is actually rendered', () => {
   const engine = read('ministry_engine.js');
   const navigation = read('omega_ui_system_redesign_v1.js');
