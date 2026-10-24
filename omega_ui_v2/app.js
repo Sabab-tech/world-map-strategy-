@@ -254,16 +254,16 @@
       if (g.OmegaUIV2ResourceMinistry && typeof g.OmegaUIV2ResourceMinistry.render === 'function') {
         return g.OmegaUIV2ResourceMinistry.render(content, Object.assign({}, options, { countryId:state.countryId,
           onOpenSite:function (siteId) { state.resourceSiteId = siteId; return navigate(root, 'mine-detail'); },
-          onLocateSite:options.onLocateMine, getInventoryForSite:options.getInventoryForSite, onOpenOperationalConsole:openOperationalConsole }));
+          onLocateSite:options.onLocateMine, getInventoryForSite:options.getInventoryForSite }));
       }
     } else if (state.route === 'mine-detail') {
-      if (g.OmegaUIV2MineDetail && typeof g.OmegaUIV2MineDetail.render === 'function') return g.OmegaUIV2MineDetail.render(content, Object.assign({}, options, { countryId:state.countryId, siteId:state.resourceSiteId, onBack:function () { back(root); }, onOpenOperationalConsole:openOperationalConsole }));
+      if (g.OmegaUIV2MineDetail && typeof g.OmegaUIV2MineDetail.render === 'function') return g.OmegaUIV2MineDetail.render(content, Object.assign({}, options, { countryId:state.countryId, siteId:state.resourceSiteId, onBack:function () { back(root); } }));
     } else if (state.route === 'reports') {
       if (g.OmegaUIV2Reports && typeof g.OmegaUIV2Reports.render === 'function') return g.OmegaUIV2Reports.render(content, Object.assign({}, options, { countryId:state.countryId, onOpenDomain:function (id) { return openDomain(root, id); } }));
     } else if (state.route === 'ministry-detail') {
       if (g.OmegaUIV2MinistryDetail && typeof g.OmegaUIV2MinistryDetail.render === 'function') {
         return g.OmegaUIV2MinistryDetail.render(content, Object.assign({}, options, { countryId:state.countryId, ministryId:state.ministryId,
-          onNavigate:function (destination) { return navigate(root, destination); }, onOpenOperationalConsole:openOperationalConsole, section:state.section }));
+          onNavigate:function (destination) { return navigate(root, destination); }, section:state.section }));
       }
     }
     if (state.route === 'map') {
