@@ -147,7 +147,7 @@ test('interaction guard does not rewrite observed attributes/styles on every ref
 
   const guard = harness.context.window.OmegaUIInteractionGuard;
   assert.ok(guard, 'interaction guard should expose its refresh API');
-  assert.equal(guard.version, '2.4.0');
+  assert.equal(guard.version, '2.5.0');
 
   const targets = [harness.ministry, harness.interrogation, harness.cabinet, harness.command];
   const before = targets.reduce((sum, el) => sum + el.attributeWrites + el.styleWrites, 0);
@@ -168,10 +168,20 @@ test('active OMEGA UI v2 cabinet accepts touch and click events over a visible l
 
   assert.equal(harness.cabinet.getAttribute('aria-hidden'), 'false',
     'the legacy ministry overlay must not mark the active UI v2 cabinet inaccessible');
-  const injectedStyles = harness.context.document.getElementById('omega-ui-interaction-guard-v22');
+  assert.equal(harness.ministry.getAttribute('aria-hidden'), 'true',
+    'an active UI v2 cabinet must hide the legacy ministry overlay');
+  assert.equal(harness.ministry.classList.contains('omega-ui-active'), false,
+    'the guard must not keep the legacy dashboard alive through its own visibility class');
+  assert.equal(harness.body.classList.contains('omega-ui-v2-cabinet-active'), true,
+    'the active host state must be synchronized onto the body');
+  const injectedStyles = harness.context.document.getElementById('omega-ui-interaction-guard-v25');
   assert.ok(injectedStyles, 'interaction guard styles should be installed');
   assert.match(injectedStyles.textContent, /#cabinet-full-window\[data-omega-ui-v2-active="true"\]/,
     'active UI v2 cabinet and its controls must override the legacy pointer-event shield');
+  assert.match(injectedStyles.textContent, /z-index:2147483000!important/,
+    'the active UI v2 cabinet must outrank the legacy dashboard at z-index 9000');
+  assert.match(injectedStyles.textContent, /body\.omega-ui-v2-cabinet-active #ministry-dashboard-view\{display:none!important/,
+    'the legacy scroll surface must not remain visible above UI v2');
 
   for (const type of ['pointerdown', 'pointerup', 'click', 'touchstart', 'touchend', 'mousedown', 'mouseup']) {
     const handler = (harness.documentListeners.get(type) || []).find((entry) => entry.options === true);
