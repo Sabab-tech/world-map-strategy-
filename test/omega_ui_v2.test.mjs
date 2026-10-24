@@ -381,7 +381,7 @@ test('production shell loads UI v2 and excludes retired UI controllers from the 
     assert.ok(index.includes(modulePath), 'index.html must load ' + modulePath);
     assert.ok(sw.includes(modulePath), 'offline service worker must pre-cache ' + modulePath);
   }
-  assert.ok(sw.includes('omega-offline-atlas-shell-v35'));
+  assert.ok(sw.includes('omega-offline-atlas-shell-v36'));
   assert.ok(entry.includes('OmegaUIV2Integration'));
   assert.ok(entry.includes('opened-ui-v2'));
   assert.equal(entry.includes('openMainMinistryView'), false);
@@ -588,7 +588,7 @@ test('universal navigation and the isolated legacy-free shell are wired into the
   assert.ok(app.includes('root.contains(ownControl)'));
   assert.ok(app.includes('event.stopPropagation()'));
   assert.ok(html.includes('omega_ui_v2/ministry-visual-refresh.css'));
-  assert.ok(worker.includes('omega-offline-atlas-shell-v35'));
+  assert.ok(worker.includes('omega-offline-atlas-shell-v36'));
   assert.ok(worker.includes('"./omega_ui_v2/legacy-disconnect.css"'));
   assert.ok(refreshCss.includes('omega-v2-ministry-detail-cover-image'));
   assert.ok(refreshCss.includes('min-height: 48px'));
