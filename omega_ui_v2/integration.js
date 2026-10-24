@@ -8,8 +8,6 @@
   var enabled = true;
   var lastMount = null;
   var lastError = null;
-  var resumeOnCabinetReturn = false;
-  var resumeUiState = null;
 
   function cabinetRoot() {
     return g.document && g.document.getElementById('cabinet-full-window') || null;
