@@ -260,7 +260,7 @@
         };
         let mineplaySourceRecordCount=0,mineplayUniqueRecordCount=0;
         try{
-          // These two batches are required production data, not optional map decoration.
+          // These three batches are required production data, not optional map decoration.
           // A missing batch must make runtime initialization fail visibly rather than silently
           // publishing READY with only the historical 315-site catalog.
           const baseResponse=await fetch(mineplayBatchCoverage.base.file+'?v='+Date.now(),{cache:'no-store'});
@@ -1943,8 +1943,9 @@ function batchFromExtraction(x,record){
         const mineplaySupplementReady=canonicalCatalogData.status==='READY'&&
           mineplayCoverage.base?.status==='READY'&&Number(mineplayCoverage.base?.recordCount)===44&&
           mineplayCoverage.expanded?.status==='READY'&&Number(mineplayCoverage.expanded?.recordCount)===108&&
-          Number(canonicalCatalogData.mineplaySourceRecordCount)===152&&
-          Number(canonicalCatalogData.mineplayUniqueRecordCount)>=151;
+          mineplayCoverage.critical?.status==='READY'&&Number(mineplayCoverage.critical?.recordCount)===58&&
+          Number(canonicalCatalogData.mineplaySourceRecordCount)===210&&
+          Number(canonicalCatalogData.mineplayUniqueRecordCount)===210;
         if(!mineplaySupplementReady&&!dependencyLightContext)return{
           status:'FAILED',reason:'MINEPLAY_SUPPLEMENTAL_DATASET_INCOMPLETE',
           detail:{coverage:mineplayCoverage,sourceRecordCount:canonicalCatalogData.mineplaySourceRecordCount,

@@ -6,8 +6,8 @@
   "recordCount": 58,
   "countryCount": 23,
   "authority": "SOURCE_GROUNDED_SITE_IDENTITY_WITH_SIMULATION_ONLY_GAMEPLAY_PROFILE",
-  "note": "Additive critical-mineral and industrial-mineral site batch. Each site has a unique country-scoped identifier, coordinates, map eligibility, reserve, rate, capacity, extraction method, raw warehouse, transport route, compatible factory binding, processing outputs and source lineage. Project/deposit/quarry records preserve non-operating or uncertain real-world status separately from OMEGA's simulated playable state. Two additional coral-aggregate resource areas are documented for Majuro, Marshall Islands and Funafuti Lagoon, Tuvalu; their source-status flags explicitly do not assert current operating mine permits.",
-  "sourcePolicy": "Public operator, government, regulator or academic sources support site/project/commodity context. All quantitative production, grade, recovery, purity, capacity and 400-year reserves are deterministic gameplay-only simulation values and are never represented as measured real-world facts. Coral-aggregate resource-area records are sourced from regional studies/government project documents; current permits and operator status are not asserted, and all production/reserve values remain simulation-only.",
+  "note": "Additive critical-mineral and industrial-mineral site batch. Each site has a unique country-scoped identifier, coordinates, map eligibility, reserve, rate, capacity, extraction method, raw warehouse, transport route, compatible factory binding, processing outputs and source lineage. Project/deposit/quarry records preserve non-operating or uncertain real-world status separately from OMEGA's simulated playable state. Two additional coral-aggregate resource areas are documented for Majuro, Marshall Islands and Funafuti Lagoon, Tuvalu; their source-status flags explicitly do not assert current operating mine permits. The duplicate Estonia Ojamaa identifier was replaced with the USGS-documented Piceance Basin oil-shale resource area in Colorado; its real-world status explicitly does not claim a currently operating mine.",
+  "sourcePolicy": "Public operator, government, regulator or academic sources support site/project/commodity context. All quantitative production, grade, recovery, purity, capacity and 400-year reserves are deterministic gameplay-only simulation values and are never represented as measured real-world facts. Coral-aggregate resource-area records are sourced from regional studies/government project documents; current permits and operator status are not asserted, and all production/reserve values remain simulation-only. Resource-area profiles based on USGS geological assessments do not imply an operating or licensed mine; all generated quantities remain simulation-only.",
   "records": [
     {
       "schemaVersion": "1.0.0",
@@ -4349,39 +4349,39 @@
     },
     {
       "schemaVersion": "1.0.0",
-      "siteId": "SITE_EST_ojamaa_oil_shale_mine",
-      "countryId": "EST",
-      "siteName": "Ojamaa Oil Shale Mine",
+      "siteId": "SITE_USA_piceance_basin_oil_shale_resource_area",
+      "countryId": "USA",
+      "siteName": "Piceance Basin Oil Shale Resource Area",
       "identity": {
-        "countryIso3": "EST",
-        "countryName": "Estonia",
-        "siteType": "OIL_SHALE_MINE",
+        "countryIso3": "USA",
+        "countryName": "United States",
+        "siteType": "OIL_SHALE_RESOURCE_AREA",
         "resourceTypeId": "oil_shale",
         "resourceName": "Oil shale",
         "ontologyKey": "OIL_SHALE",
         "aliases": []
       },
       "location": {
-        "countryName": "Estonia",
-        "adminRegion": "Ida-Viru County, near Ojamaa",
-        "locality": "Ida-Viru County, near Ojamaa",
+        "countryName": "United States",
+        "adminRegion": "Western Colorado, Piceance Creek Basin, Green River Formation",
+        "locality": "Piceance Creek Basin, western Colorado",
         "coordinates": {
-          "lat": 59.33,
-          "lng": 27.1
+          "lat": 39.8,
+          "lng": -108.2
         },
         "coordinateStatus": "REGIONAL_APPROXIMATION",
-        "coordinateAuthority": "PUBLIC_SITE_OR_PROJECT_REFERENCE; COORDINATE_IS_APPROXIMATE_NOT_SURVEY_GRADE",
+        "coordinateAuthority": "USGS_GEOLOGICAL_RESOURCE_ASSESSMENT; COORDINATE_IS_APPROXIMATE_NOT_SURVEY_GRADE",
         "coordinatePrecision": "REGIONAL_APPROXIMATION",
-        "countryBoundaryKey": "EST"
+        "countryBoundaryKey": "USA"
       },
       "ownership": {
-        "owner": "VKG",
-        "operator": "VKG",
-        "ownerEvidenceStatus": "SOURCE_REPORTED_WITH_STATUS_CAVEAT",
-        "operatorEvidenceStatus": "SOURCE_REPORTED_WITH_STATUS_CAVEAT",
-        "authority": "SOURCE_REFERENCE_WITH_CURRENT_STATUS_CAVEAT",
-        "equityControlCountry": "EST",
-        "operatorContractId": "OPCONTRACT_SITE_EST_ojamaa_oil_shale_mine"
+        "owner": "No commercial operator asserted; USGS geological resource assessment only",
+        "operator": "No current commercial oil-shale mine operator asserted",
+        "ownerEvidenceStatus": "NO_COMMERCIAL_OPERATOR_ASSERTED",
+        "operatorEvidenceStatus": "NO_CURRENT_OPERATING_MINE_ASSERTED",
+        "authority": "USGS_GEOLOGICAL_RESOURCE_ASSESSMENT_WITH_STATUS_CAVEAT",
+        "equityControlCountry": "USA",
+        "operatorContractId": "OPCONTRACT_SITE_USA_piceance_basin_oil_shale_resource_area"
       },
       "operation": {
         "status": "SIMULATED_OPERATIONAL_SCENARIO",
@@ -4392,8 +4392,8 @@
         "commercialExtraction": true,
         "siteCommissioningLevel": 5,
         "mineLevel": 5,
-        "statusAuthority": "REAL_WORLD_STATUS_IS_SOURCE_CONTEXT; SIMULATION_STATUS_AND_PLAYER_COMMISSIONING_ARE_SEPARATE",
-        "realWorldStatus": "OPERATING_MINE_REPORTED_IN_ESTONIAN_MINING_CONTEXT",
+        "statusAuthority": "USGS_DOCUMENTS_RESOURCE_BASIN_NOT_CURRENT_COMMERCIAL_MINE; SIMULATION_STATUS_AND_PLAYER_COMMISSIONING_ARE_SEPARATE",
+        "realWorldStatus": "USGS-DOCUMENTED OIL-SHALE RESOURCE BASIN; THIS RECORD IS NOT A CLAIM OF A CURRENT OPERATING MINE OR LICENSED EXTRACTION SITE",
         "gameplayConstructionAllowed": true
       },
       "processing": {
@@ -4410,19 +4410,19 @@
         ]
       },
       "logistics": {
-        "warehouseCountryId": "EST",
-        "warehouseSiteId": "WH-EST-RAW",
+        "warehouseCountryId": "USA",
+        "warehouseSiteId": "WH-USA-RAW",
         "inventoryRouteStatus": "RUNTIME_ROUTE_VALIDATION_REQUIRED",
         "factoryRouteStatus": "SITE_BOUND_COMPATIBLE_FACTORY_REQUIRED",
         "routeStatus": "SIMULATED_ROUTE_TO_BE_VALIDATED_BY_RUNTIME",
         "transport": {
-          "routeId": "ROUTE_SITE_SITE_EST_ojamaa_oil_shale_mine_RAW_TO_FACTORY",
+          "routeId": "ROUTE_SITE_SITE_USA_piceance_basin_oil_shale_resource_area_RAW_TO_FACTORY",
           "routeType": "ROAD_RAIL",
-          "originSiteId": "SITE_EST_ojamaa_oil_shale_mine",
-          "originCountryId": "EST",
-          "warehouseId": "WH-EST-RAW",
+          "originSiteId": "SITE_USA_piceance_basin_oil_shale_resource_area",
+          "originCountryId": "USA",
+          "warehouseId": "WH-USA-RAW",
           "destinationFactoryId": "AUTO_SELECT_COMPATIBLE_FACTORY",
-          "destinationCountryId": "EST",
+          "destinationCountryId": "USA",
           "distanceKm": null,
           "averageSpeedKmPerDay": null,
           "estimatedTravelDays": null,
@@ -4486,9 +4486,9 @@
           "measuredProductionPromoted": false,
           "quantitativeValuesAreSimulated": true,
           "sourceUrls": [
-            "https://www.vkg.ee/en/"
+            "https://www.usgs.gov/centers/central-energy-resources-science-center/science/oil-shale"
           ],
-          "generatedAt": "2026-10-24"
+          "generatedAt": "2026-10-25"
         },
         "completeness": {
           "reserve": "SIMULATED",
@@ -4530,7 +4530,7 @@
         "recovery": 70,
         "transportRoute": [
           {
-            "routeId": "SIM_ROUTE:EST:SITE_EST_ojamaa_oil_shale_mine",
+            "routeId": "SIM_ROUTE:USA:SITE_USA_piceance_basin_oil_shale_resource_area",
             "mode": "rail",
             "transportMode": "rail",
             "distanceKm": null,
@@ -4539,13 +4539,13 @@
             "blockableByWar": true,
             "blockableByNeighborControl": true,
             "blockableByNavalInterdiction": true,
-            "countryIsolationKey": "EST"
+            "countryIsolationKey": "USA"
           }
         ],
-        "rawWarehouseId": "WH-EST-RAW",
+        "rawWarehouseId": "WH-USA-RAW",
         "factoryBinding": {
-          "factoryId": "FACTORY_EST_OIL_SHALE_SITE_EST_ojamaa_oil_shale_mine",
-          "countryId": "EST",
+          "factoryId": "FACTORY_USA_OIL_SHALE_SITE_USA_piceance_basin_oil_shale_resource_area",
+          "countryId": "USA",
           "inputResourceId": "oil_shale",
           "status": "SIMULATED_READY",
           "authority": "SIMULATED_GAMEPLAY_RULE"
@@ -4554,7 +4554,7 @@
       },
       "map": {
         "markerEligible": true,
-        "countryIsolationKey": "EST",
+        "countryIsolationKey": "USA",
         "coordinatePrecision": "REGIONAL_APPROXIMATION"
       },
       "runtime": {
@@ -4566,24 +4566,24 @@
         "sourceStatusIsNotGameplayCommissioning": true
       },
       "sourceReference": {
-        "sourcePath": "https://www.vkg.ee/en/",
-        "sourceType": "OPERATOR_PRIMARY",
-        "accessed": "2026-10-24",
+        "sourcePath": "https://www.usgs.gov/centers/central-energy-resources-science-center/science/oil-shale",
+        "sourceType": "USGS_GEOLOGICAL_RESOURCE_ASSESSMENT",
+        "accessed": "2026-10-25",
         "facts": {
           "sourceSupportsSiteOrResourceContext": true,
           "measuredReservePromoted": false,
           "measuredProductionPromoted": false,
           "quantitativeValuesAreSimulated": true,
-          "sourceReportedRealWorldStatus": "OPERATING_MINE_REPORTED_IN_ESTONIAN_MINING_CONTEXT"
+          "sourceReportedRealWorldStatus": "USGS-DOCUMENTED OIL-SHALE RESOURCE BASIN; THIS RECORD IS NOT A CLAIM OF A CURRENT OPERATING MINE OR LICENSED EXTRACTION SITE"
         },
-        "statusNote": "Source documents the real-world mine, project, quarry, deposit or commodity context; quantitative reserves, grades, capacity, recovery and production are generated for OMEGA gameplay only. A prospective or historical site is not represented as currently operating in the real world."
+        "statusNote": "The U.S. Geological Survey documents the Piceance Basin as a major oil-shale resource area. This record represents the geological resource area for OMEGA gameplay, not a verified currently operating mine or licensed site. All quantitative reserve, grade, recovery, capacity and production fields in this record are gameplay-only simulation values."
       },
       "sources": [
         {
-          "url": "https://www.vkg.ee/en/",
-          "sourceType": "OPERATOR_PRIMARY",
-          "accessed": "2026-10-24",
-          "scope": "documented_site_or_project_identity_commodity_location_and_real_world_status_context"
+          "url": "https://www.usgs.gov/centers/central-energy-resources-science-center/science/oil-shale",
+          "sourceType": "USGS_GEOLOGICAL_RESOURCE_ASSESSMENT",
+          "accessed": "2026-10-25",
+          "scope": "documented_oil_shale_resource_basin_and_geologic_context; no_current_operating_mine_asserted"
         }
       ],
       "observedFacts": []

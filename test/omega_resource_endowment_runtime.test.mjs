@@ -153,7 +153,7 @@ assert.equal(mineplayReadiness?.mineplayBatchCoverage?.expanded?.recordCount,108
 assert.equal(mineplayReadiness?.mineplayBatchCoverage?.critical?.status,'READY',JSON.stringify(mineplayReadiness?.mineplayBatchCoverage));
 assert.equal(mineplayReadiness?.mineplayBatchCoverage?.critical?.recordCount,56);
 assert.equal(mineplayReadiness?.mineplaySourceRecordCount,210);
-assert.ok(Number(mineplayReadiness?.mineplayUniqueRecordCount)>=209,'all 58 added sites must be unique alongside at least 151 existing supplemental identities');
+assert.equal(mineplayReadiness?.mineplayUniqueRecordCount,210,'the base, expanded and critical batches must contain 210 unique site identities');
 assert.equal(mineplayReadiness?.legacyLoadedParts,6);
 assert.ok(Number(mineplayReadiness?.totalSiteCount)>=500,
   'canonical runtime catalog must contain the 315-site authority plus eligible legacy and mineplay additions');
