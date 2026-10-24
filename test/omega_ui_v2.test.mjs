@@ -43,6 +43,15 @@ test('registry exposes 18 canonical ministry destinations with local visual asse
   assert.ok(visuals.get('intelligence_cyber').gallery.includes('assets/images (14).jpeg'));
 });
 
+test('newly uploaded national-security, research and trade references are assigned to ministry galleries', () => {
+  const visuals = globalThis.OmegaUIV2MinistryVisualRegistry;
+  assert.ok(visuals.get('science_research').gallery.includes('assets/1776286900118.png'));
+  assert.ok(visuals.get('trade').gallery.includes('assets/futuristic-digital-visualization-global-import-260nw-2615199881.jpg'));
+  assert.ok(visuals.get('defense').gallery.includes('assets/vecteezy_ai-generated-futuristic-army-combatants-in-a-firefight-with_35839258.jpg'));
+  assert.ok(visuals.get('intelligence_cyber').gallery.includes('assets/1783055273164.jpg'));
+  assert.ok(visuals.get('intelligence_cyber').gallery.includes('assets/1783068102501.jpg'));
+});
+
 test('all ministry cover photos, gallery assets and uploaded logos exist in the repository', () => {
   const visuals = globalThis.OmegaUIV2MinistryVisualRegistry;
   for (const visual of visuals.list()) {
