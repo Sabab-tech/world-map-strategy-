@@ -59,7 +59,6 @@ test("More command cards use the uploaded local imagery and every action has a d
     "assets/images (15).jpeg",
     "assets/China_Military_Facilities_What_Satellites_Reveal_f6efe2c1b2.jpg",
     "assets/images (17).jpeg",
-    "assets/factories/omega_factory_atlas_03.webp"
   ];
   for (const asset of requiredUploadedAssets) {
     assert.ok(app.includes(asset), "command card must use the mapped upload: " + asset);
@@ -67,6 +66,7 @@ test("More command cards use the uploaded local imagery and every action has a d
     assert.ok(fs.existsSync(absolute) && fs.statSync(absolute).size > 0, "uploaded image must exist: " + asset);
   }
 
+  assert.ok(read("omega_ui_v2/ministry-visual-registry.js").includes("assets/factories/omega_factory_atlas_03.webp"), "additional factory atlas images must stay connected to a local ministry gallery");
   assert.ok(app.includes("data-omega-v2-global-nav"));
   assert.ok(app.includes("data-omega-v2-more-ministry"));
   assert.ok(app.includes("target.closest('[data-omega-v2-global-nav]')"), "global navigation buttons must have a delegated click handler");
