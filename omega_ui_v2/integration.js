@@ -239,6 +239,7 @@
     if (!manager || typeof manager.setLayer !== 'function') return false;
     if (manager.__omegaUIV2LayerBridgeInstalled === true) return true;
     var originalSetLayer = manager.setLayer;
+    var originalPopLayer = typeof manager.popLayer === 'function' ? manager.popLayer : null;
     manager.setLayer = function (layerNum, data) {
       var target = Number(layerNum);
       var api = g.OmegaUIV2Integration;
@@ -266,6 +267,18 @@
       }
       return originalSetLayer.apply(this, arguments);
     };
+    if (originalPopLayer) {
+      manager.popLayer = function () {
+        var api = g.OmegaUIV2Integration;
+        var root = cabinetRoot();
+        var activeV2 = !!(root && root.getAttribute && root.getAttribute(ACTIVE_ATTR) === 'true' && root.__omegaUIV2State);
+        if (activeV2 && api && g.OmegaUIV2App && typeof g.OmegaUIV2App.back === 'function') {
+          return g.OmegaUIV2App.back(root) === true;
+        }
+        return originalPopLayer.apply(this, arguments);
+      };
+      manager.__omegaUIV2OriginalPopLayer = originalPopLayer;
+    }
     manager.__omegaUIV2LayerBridgeInstalled = true;
     manager.__omegaUIV2OriginalSetLayer = originalSetLayer;
     return true;
