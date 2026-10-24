@@ -441,10 +441,21 @@ test('Government exposes emblems, minister recruitment and a stable future portr
     assert.match(root.innerHTML, /data-omega-v2-minister-portrait-slot/);
     assert.match(root.innerHTML, /Recruit \/ Replace/);
     assert.match(root.innerHTML, /<svg/);
-    assert.ok(root.innerHTML.includes('assets/Military_Ministry_Logo_Concept_A.png.jpg') || root.innerHTML.includes('assets/IMG_20260703_180105.jpg'));
+    assert.ok(root.innerHTML.includes('assets/ui-photos/bangladesh-police-headquarters.webp') || root.innerHTML.includes('assets/economy_bg.jpg.jpg'));
   } finally {
     globalThis.OmegaCabinetUI = previousCabinet;
   }
+});
+
+test('Universal navigation keeps the World tab internal and supplies a separate exit action', () => {
+  const appSource = readFileSync(new URL('../omega_ui_v2/app.js', import.meta.url), 'utf8');
+  const bridgeSource = readFileSync(new URL('../omega_ui_v2/integration.js', import.meta.url), 'utf8');
+  assert.ok(appSource.includes('data-omega-v2-jump-ministry'));
+  assert.ok(appSource.includes('data-omega-v2-jump-route'));
+  assert.ok(appSource.includes('data-omega-v2-exit'));
+  assert.ok(appSource.includes('historySnapshot(state)'));
+  assert.equal(appSource.includes("destination === 'map' && stateFor(root).options"), false);
+  assert.equal(bridgeSource.includes('renderMap:function () { return closeToWorldMap(); }'), false);
 });
 
 test('Finance has six separate data-backed tabs', () => {
