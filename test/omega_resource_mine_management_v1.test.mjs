@@ -9,6 +9,7 @@ const canonicalSiteCatalog = JSON.parse(fs.readFileSync(new URL('resource_site_c
 const masterSiteRegistry = JSON.parse(fs.readFileSync(new URL('resource_site_master_registry_v1.json', repoRoot), 'utf8'));
 const supplement = JSON.parse(fs.readFileSync(new URL('resource_site_country_mineplay_batch_20261020_v1.json', repoRoot), 'utf8'));
 const expandedCoverageBatch = JSON.parse(fs.readFileSync(new URL('resource_site_country_mineplay_batch_20261024_v1.json', repoRoot), 'utf8'));
+const criticalMineralsBatch = JSON.parse(fs.readFileSync(new URL('resource_site_country_mineplay_critical_batch_20261024_v1.json', repoRoot), 'utf8'));
 const reserveRegistry = JSON.parse(fs.readFileSync(new URL('resource_site_reserve_simulation_v1.json', repoRoot), 'utf8'));
 const legacySiteRegistries = [1,2,3,4,5,6].map(n =>
   JSON.parse(fs.readFileSync(new URL('resource_site_legacy_gameplay_expansion_part_' + n + '_v1.json', repoRoot), 'utf8'))
@@ -512,4 +513,119 @@ test('every mapped resource site joins the executable runtime and has a one-tap 
   assert.match(uiSource, /country!==playerCountry\(\)/,
     'the one-tap action must stay within the active player-country boundary');
   assert.match(uiSource, /No duplicate extraction was created/);
+});
+
+
+test('critical mineral batch has complete runtime profiles and joins the canonical mine system', () => {
+  assert.equal(criticalMineralsBatch.datasetId, 'OMEGA_RESOURCE_SITE_COUNTRY_MINEPLAY_BATCH_V1');
+  assert.equal(criticalMineralsBatch.batchId, 'COUNTRY_MINEPLAY_CRITICAL_MINERALS_20261024');
+  assert.equal(criticalMineralsBatch.recordCount, 56);
+  assert.equal(criticalMineralsBatch.records.length, 56);
+  assert.equal(criticalMineralsBatch.countryCount, 21);
+  assert.ok(bindingSource.includes('resource_site_country_mineplay_critical_batch_20261024_v1.json'));
+  assert.ok(endowmentSource.includes('resource_site_country_mineplay_critical_batch_20261024_v1.json'));
+  assert.ok(serviceWorkerSource.includes('resource_site_country_mineplay_critical_batch_20261024_v1.json'));
+  assert.match(serviceWorkerSource, /omega-offline-atlas-shell-v36/);
+  assert.ok(catalog.resourceRules.aragonite, 'aragonite extraction must be a catalog rule');
+  assert.ok(catalog.processingRules.aragonite, 'aragonite processing must be a catalog recipe');
+
+  const normalize = v => String(v ?? '').normalize('NFKD').replace(/\\p{M}/gu, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  const country = row => String(row?.countryId || row?.identity?.countryIso3 || row?.location?.countryBoundaryKey || '').toUpperCase();
+  const resource = row => String(row?.resourceId || row?.identity?.resourceTypeId || row?.real?.resourceId || '').toLowerCase();
+  const siteName = row => normalize(row?.siteName || row?.name);
+  const coord = row => {
+    const c = row?.location?.coordinates || {};
+    return Number.isFinite(Number(c.lat)) && Number.isFinite(Number(c.lng)) ? { lat: Number(c.lat), lng: Number(c.lng) } : null;
+  };
+  const distanceKm = (a,b) => {
+    const rad=Math.PI/180,dl=(b.lat-a.lat)*rad,dg=(b.lng-a.lng)*rad,la=a.lat*rad,lb=b.lat*rad;
+    const h=Math.sin(dl/2)**2+Math.cos(la)*Math.cos(lb)*Math.sin(dg/2)**2;
+    return 6371*2*Math.asin(Math.min(1,Math.sqrt(h)));
+  };
+  const existing = [
+    ...(canonicalSiteCatalog.sites || []), ...(masterSiteRegistry.sites || []),
+    ...reserveRegistry.records, ...supplement.records, ...expandedCoverageBatch.records,
+    ...legacySiteRegistries.flatMap(x => x.records || []),
+    ...expandedSiteRegistries.flatMap(x => x.sites || [])
+  ];
+  const ids = new Set(existing.map(x => String(x?.siteId || '')).filter(Boolean));
+  const names = new Set(existing.map(x => country(x) + '|' + siteName(x)).filter(x => !x.endsWith('|')));
+  const sameCommoditySites = existing.filter(x => country(x) && resource(x) && coord(x));
+  const candidateIds = new Set();
+  const candidateNames = new Set();
+  const candidateRows = [];
+  for (const row of criticalMineralsBatch.records) {
+    assert.ok(row.siteId && /^SITE_[A-Z]{3}_[a-z0-9_]+$/.test(row.siteId), row.siteId + ': stable site identity');
+    assert.equal(candidateIds.has(row.siteId), false, row.siteId + ': duplicate ID within critical batch');
+    assert.equal(ids.has(row.siteId), false, row.siteId + ': duplicate ID in existing registries');
+    assert.match(row.countryId, /^[A-Z]{3}$/);
+    assert.equal(row.identity.countryIso3, row.countryId);
+    assert.equal(row.identity.resourceTypeId, resource(row));
+    assert.equal(row.location.countryBoundaryKey, row.countryId);
+    assert.equal(row.map.countryIsolationKey, row.countryId);
+    const p=coord(row);
+    assert.ok(p && Math.abs(p.lat)<=90 && Math.abs(p.lng)<=180, row.siteId + ': map coordinates');
+    assert.equal(row.map.markerEligible, true);
+    assert.equal(row.operation.status, 'SIMULATED_OPERATIONAL_SCENARIO');
+    assert.equal(row.operation.operationalStatus, 'SIMULATED_ACTIVE');
+    assert.equal(row.operation.commercialExtraction, true);
+    assert.equal(row.operation.siteCommissioningLevel, 5);
+    assert.equal(row.operation.gameplayConstructionAllowed, true);
+    assert.equal(row.runtime.requiresSiteSpecificRoute, true);
+    assert.equal(row.runtime.requiresFactoryBinding, true);
+    assert.equal(row.logistics.warehouseCountryId, row.countryId);
+    assert.equal(row.logistics.transport.originSiteId, row.siteId);
+    assert.equal(row.logistics.transport.originCountryId, row.countryId);
+    assert.equal(row.logistics.transport.destinationCountryId, row.countryId);
+    assert.equal(row.logistics.transport.warehouseId, 'WH-' + row.countryId + '-RAW');
+    assert.equal(row.simulation.rawWarehouseId, 'WH-' + row.countryId + '-RAW');
+    assert.equal(row.simulation.factoryBinding.countryId, row.countryId);
+    assert.equal(row.simulation.factoryBinding.inputResourceId, resource(row));
+    assert.equal(row.simulation.factoryBinding.status, 'SIMULATED_READY');
+    assert.ok(row.simulation.factoryBinding.factoryId);
+    assert.ok(row.simulation.transportRoute.length > 0);
+    assert.ok(row.processing.refinedOutputs.length > 0);
+    assert.ok(catalog.resourceRules[resource(row)], row.siteId + ': missing extraction catalog rule');
+    assert.ok(catalog.processingRules[resource(row)], row.siteId + ': missing processing catalog recipe');
+    const q=row.quantitative;
+    for(const field of ['reserve','production','grade','recovery','throughput','purity','capacity']) {
+      assert.equal(q[field].status,'SIMULATED',row.siteId+': '+field+' must be gameplay-only');
+      assert.equal(q.completeness[field],'SIMULATED',row.siteId+': '+field+' completeness');
+    }
+    assert.ok(q.reserve.quantity>0);
+    assert.equal(q.production.annual,q.production.rate*365);
+    assert.equal(q.reserve.quantity,q.production.annual*400);
+    assert.ok(q.production.rate>0 && q.production.annual>0);
+    assert.ok(q.grade.value>0 && q.recovery.value>0 && q.recovery.value<=100);
+    assert.ok(q.throughput.value>0 && q.purity.value>0 && q.purity.value<=100);
+    assert.ok(q.capacity.minimum>0 && q.capacity.minimum<=q.capacity.nominal && q.capacity.nominal<=q.capacity.maximum);
+    assert.equal(q.quantitativeProvenance.authority,'SCENARIO_SIMULATION_DATA');
+    assert.equal(q.quantitativeProvenance.gameplayHorizonYears,400);
+    assert.equal(q.quantitativeProvenance.realWorldDataRequired,false);
+    assert.equal(q.completeness.overall,'GAMEPLAY_SIMULATION_COMPLETE');
+    assert.deepEqual(row.observedFacts,[]);
+    assert.ok(Array.isArray(row.sources) && row.sources.some(source=>/^https?:\\/\\//.test(source.url)),row.siteId+': source lineage');
+    assert.equal(row.sourceReference.facts.measuredReservePromoted,false);
+    assert.equal(row.sourceReference.facts.measuredProductionPromoted,false);
+    assert.equal(row.sourceReference.facts.quantitativeValuesAreSimulated,true);
+    assert.ok(row.operation.realWorldStatus && row.sourceReference.statusNote.includes('not represented as currently operating'),
+      row.siteId + ': preserve actual real-world/project status separately');
+    const normalizedName=country(row)+'|'+siteName(row);
+    assert.equal(candidateNames.has(normalizedName),false,row.siteId+': duplicate name within critical batch');
+    assert.equal(names.has(normalizedName),false,row.siteId+': duplicate name in existing registries');
+    for(const old of sameCommoditySites) {
+      if(country(old)!==country(row)||resource(old)!==resource(row)) continue;
+      const oldPoint=coord(old);
+      if(oldPoint)assert.ok(distanceKm(p,oldPoint)>=2,row.siteId+': possible same-commodity duplicate of '+old.siteId);
+    }
+    for(const old of candidateRows) {
+      if(country(old)!==country(row)||resource(old)!==resource(row))continue;
+      const oldPoint=coord(old);
+      if(oldPoint)assert.ok(distanceKm(p,oldPoint)>=2,row.siteId+': duplicate/overlapping candidate site '+old.siteId);
+    }
+    ids.add(row.siteId);candidateIds.add(row.siteId);names.add(normalizedName);candidateNames.add(normalizedName);candidateRows.push(row);
+  }
+  const counts=criticalMineralsBatch.records.reduce((out,row)=>{const id=resource(row);out[id]=(out[id]||0)+1;return out;},{});
+  assert.ok(counts.rare_earth>=5,'rare-earth site coverage was not expanded');
+  for(const id of ['graphite','platinum','tungsten','potash','salt','ilmenite','tin','chromite']) assert.ok(counts[id]>=3,id+' site coverage was not expanded');
 });
