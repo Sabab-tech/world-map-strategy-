@@ -123,7 +123,7 @@ for(const site of sites){
   assert.ok(Number(pre.warehouse?.reservedByResource?.[site.resourceId]||0)>0,
     site.siteId+': shipment did not reserve sovereign warehouse stock');
   advanceToTurn(Number(result.shipment?.etaTurn)||((Number(game.state.simulation.turn)||1)+1));
-  const deliveryResult=industry.advanceShipments(site.countryId);
+  // Isolate this site's committed shipment from unrelated baseline extraction batches.\n  // The base regression intentionally preloads every mine's raw stock; without this guard,\n  // advanceShipments would auto-dispatch those unrelated batches to whichever compatible\n  // factory happens to be first, masking the target site's own factory-cycle lineage.\n  const countryRuntime=runtime.countryResourceState(site.countryId)||{};\n  for(const flow of countryRuntime.industrialNetwork?.siteFlowLedger||[])flow.lastResidualDispatchTurn=Number(game.state.simulation.turn)||1;\n  const deliveryResult=industry.advanceShipments(site.countryId);
   const delivered=(deliveryResult.shipments||[]).find(x=>String(x.shipmentId)===String(result.shipmentId));
   if(!delivered||delivered.destinationStatus!=='FACTORY_RECEIVED'){
     failures.push({siteId:site.siteId,countryId:site.countryId,resourceId:site.resourceId,
