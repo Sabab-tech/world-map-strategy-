@@ -13590,13 +13590,13 @@
       "location": {
         "countryName": "Marshall Islands",
         "adminRegion": "Majuro Atoll, nearshore lagoon and coastal resource area",
-        "locality": "Majuro Atoll, nearshore lagoon and coastal resource area",
+        "locality": "Majuro Atoll, regional nearshore lagoon and coastal resource area",
         "coordinates": {
-          "lat": 7.09,
-          "lng": 171.38
+          "lat": 7.12,
+          "lng": 171.35
         },
         "coordinateStatus": "REGIONAL_APPROXIMATION",
-        "coordinateAuthority": "PUBLIC_REGIONAL_REPORT_REFERENCE; COORDINATE_IS_APPROXIMATE_NOT_SURVEY_GRADE",
+        "coordinateAuthority": "PUBLIC_REGIONAL_REPORT_REFERENCE; APPROXIMATE REGIONAL PIN, NOT SURVEY-GRADE COORDINATES",
         "coordinatePrecision": "REGIONAL_APPROXIMATION",
         "countryBoundaryKey": "MHL"
       },
@@ -13832,13 +13832,13 @@
       "location": {
         "countryName": "Tuvalu",
         "adminRegion": "Funafuti Lagoon, proposed aggregate resource area",
-        "locality": "Funafuti Lagoon, proposed aggregate resource area",
+        "locality": "Funafuti Lagoon, regional proposed aggregate resource area",
         "coordinates": {
-          "lat": -8.52,
-          "lng": 179.2
+          "lat": -8.55,
+          "lng": 179.17
         },
         "coordinateStatus": "REGIONAL_APPROXIMATION",
-        "coordinateAuthority": "PUBLIC_REGIONAL_REPORT_REFERENCE; COORDINATE_IS_APPROXIMATE_NOT_SURVEY_GRADE",
+        "coordinateAuthority": "PUBLIC_REGIONAL_REPORT_REFERENCE; APPROXIMATE REGIONAL PIN, NOT SURVEY-GRADE COORDINATES",
         "coordinatePrecision": "REGIONAL_APPROXIMATION",
         "countryBoundaryKey": "TUV"
       },
