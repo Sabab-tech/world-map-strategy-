@@ -1071,9 +1071,17 @@ for(const siteId of exhaustivePipelineCandidateIds){
           }:null,
           flowStages:(detail.flow?.stages||[]).map(row=>({stage:row.stage,status:row.status,reason:row.reason})),
           historyCount:(detail.history||[]).length,
-          lastHistory:(detail.history||[]).slice(-3).map(row=>({
+          lastHistory:(detail.history||[]).slice(-5).map(row=>({
             turn:row.turn,date:row.date,cycleId:row.cycleId,cycleStatus:row.cycleStatus,
-            completedCount:row.completedCount,startedCount:row.startedCount
+            completedCount:row.completedCount,startedCount:row.startedCount,
+            blocked:(row.blocked||[]).map(item=>({
+              factoryId:item.factoryId,reason:item.reason,
+              missingInputs:(item.missingInputs||[]).map(input=>({
+                resourceId:input.resourceId,available:input.available,required:input.required,tracked:input.tracked
+              })),
+              utilityStatus:item.utilityStatus,technologyStatus:item.technologyStatus,
+              workforceStatus:item.workforceStatus,warehouseTransferStatus:item.warehouseTransferStatus
+            }))
           }))
         });
       }catch(_){reason='SOURCE_BATCH_FACTORY_CYCLE_NOT_COMPLETED';}
