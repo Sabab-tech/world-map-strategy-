@@ -505,7 +505,7 @@ test('economy USD formatting works in the legacy Android 9 WebView NumberFormat 
   const result = sandbox.OmegaUIV2Economy.render(root, { countryId:'USA', tab:'overview' });
   assert.equal(result.ok, true);
   assert.match(root.innerHTML, /\$2\.5B/);
-  assert.match(root.innerHTML, /\$3\.5M/);
+  assert.match(root.innerHTML, /\$3,500,000\.00/);
   assert.match(root.innerHTML, /\$7T/);
 });
 
