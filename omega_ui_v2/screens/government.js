@@ -215,7 +215,7 @@
     var safeLocalImage = /^(assets|images)\/[a-z0-9/_-]+\.(webp|png|jpe?g)$/i.test(source);
     var name = row && row.ministerName || profile.baseName || profile.name || 'Minister not assigned';
     return '<div class="omega-v2-minister-portrait" data-omega-v2-minister-portrait-slot aria-label="Minister portrait slot for ' + esc(name) + '">' +
-      (safeLocalImage ? '<img data-omega-v2-minister-portrait src="' + esc(source) + '" loading="lazy" decoding="async" alt="Portrait of ' + esc(name) + '">' : '<span class="omega-v2-minister-portrait-placeholder">NO PHOTO</span>') +
+      (safeLocalImage ? '<img data-omega-v2-minister-portrait src="' + esc(source) + '" loading="lazy" decoding="async" alt="Portrait of ' + esc(name) + '">' : '<span class="omega-v2-minister-portrait-placeholder">MINISTER PORTRAIT</span>') +
       '</div>';
   }
   function ministerRecruitmentTable(rows) {
