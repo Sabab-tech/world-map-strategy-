@@ -548,6 +548,11 @@ test('universal navigation and the isolated legacy-free shell are wired into the
   assert.ok(isolationCss.includes('z-index: 2147483000 !important'));
   assert.ok(!/restoreLegacy|resumeAfterOperationalConsole|OmegaCabinetUI\.renderCabinet/.test(integration));
   assert.equal(integration.includes('manager.setLayer('),false);
+  assert.ok(integration.includes('function installLegacyLayerBridge()'));
+  assert.ok(integration.includes('manager.setLayer = function (layerNum, data)'));
+  assert.ok(integration.includes('installLegacyLayerBridge();'));
+  assert.ok(integration.includes("api.openRoute('government') === true"));
+
   for (const screenPath of ['industry.js','resource-ministry.js','ministry-detail.js','mine-detail.js','home-affairs.js']) {
     const screen = readFileSync(new URL('../omega_ui_v2/screens/' + screenPath, import.meta.url), 'utf8');
     assert.equal(screen.includes('onOpenOperationalConsole'),false, screenPath + ' must not expose the retired console callback');
