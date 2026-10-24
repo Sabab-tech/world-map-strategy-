@@ -899,6 +899,149 @@ assert.ok((part6PostDelivery.industrialNetwork?.siteExecutions||[]).some(item=>
   'Part 6 industrial ledger must retain the exact site, batch and occurrence identities');
 
 
+
+
+// Exhaustive individual SITE -> extraction -> raw warehouse -> shipment ->
+// site-specific factory -> completed processing -> finished-goods output audit.
+// Global extraction coverage alone is not sufficient: each eligible physical site
+// must successfully dispatch and complete its own source-linked industrial flow.
+const exhaustivePipelineCandidateIds=[...new Set(commercialCatalogIds.map(String))];
+const exhaustiveSourceRows=[
+  ...(canonicalScenario.sites||[]),
+  ...expandedReferenceRows,
+  ...(reserveScenario.records||[]),
+  ...legacyExpansionRows,
+  ...(mineplayScenario.records||[])
+];
+const exhaustiveSourceById=new Map();
+for(const row of exhaustiveSourceRows){
+  const siteId=String(row?.siteId||'').trim();
+  if(siteId)exhaustiveSourceById.set(siteId,row);
+}
+const exhaustiveRuntimeRefById=new Map(
+  unifiedReferences.map(row=>[String(row?.siteReferenceKey||row?.siteId||''),row])
+);
+const exhaustivePipelineFailures=[];
+let exhaustivePipelinePassed=0;
+for(const siteId of exhaustivePipelineCandidateIds){
+  const ref=exhaustiveRuntimeRefById.get(siteId);
+  const raw=exhaustiveSourceById.get(siteId)||ref?.rawSiteReference||ref||{};
+  if(!ref){
+    exhaustivePipelineFailures.push({siteId,stage:'SITE_BINDING',reason:'CANONICAL_RUNTIME_REFERENCE_MISSING'});
+    continue;
+  }
+  const countryId=String(ref.countryId||ref.identity?.countryIso3||raw.countryId||raw.countryCode||raw.identity?.countryIso3||'').trim().toUpperCase();
+  const rawResource=raw.real?.resourceId||raw.sourceSiteRecord?.resourceId||raw.sourceSiteRecord?.resourceTypeId||
+    raw.resourceId||raw.resourceTypeId||raw.identity?.resourceTypeId||
+    ref.real?.resourceId||ref.resourceId||ref.resourceTypeId||ref.identity?.resourceTypeId;
+  const resourceId=String(rawResource||'').replace(/^RES_TYPE:/i,'').trim().toLowerCase().replace(/[\s-]+/g,'_');
+  if(!/^[A-Z]{3}$/.test(countryId)||!resourceId){
+    exhaustivePipelineFailures.push({siteId,stage:'SITE_IDENTITY',countryId,resourceId:resourceId||null,reason:'COUNTRY_OR_RESOURCE_ID_MISSING'});
+    continue;
+  }
+
+  // Use ample, explicitly simulation-only test capacity. This removes artificial
+  // fixture starvation without bypassing production, reserve, country or route gates.
+  const testState=globalThis.Game.state;
+  const econ=testState.economy[countryId]||(testState.economy[countryId]={productionAssets:[]});
+  if(!Array.isArray(econ.productionAssets))econ.productionAssets=[];
+  econ.unemploymentCount=Math.max(1000000000,Number(econ.unemploymentCount)||0);
+  econ.laborForce=Math.max(10000000000,Number(econ.laborForce)||0);
+  econ.unemployment_rate=10;
+  const transport=testState.transport[countryId]||(testState.transport[countryId]={});
+  const infra=transport.infrastructure||(transport.infrastructure={});
+  for(const mode of ['roads','rail','ports','bridges','pipelines']){
+    const entry=infra[mode]||(infra[mode]={});
+    entry.capacityPerDay=Math.max(1000000000,Number(entry.capacityPerDay)||0);
+    entry.quality=1;
+  }
+  infra.utilitySupply={
+    ...(infra.utilitySupply||{}),
+    electricityMWhPerDay:Math.max(1000000000,Number(infra.utilitySupply?.electricityMWhPerDay)||0),
+    waterM3PerDay:Math.max(1000000000,Number(infra.utilitySupply?.waterM3PerDay)||0),
+    authority:'TEST_FIXTURE',status:'AVAILABLE',simulationOnly:true,assets:[]
+  };
+  const finance=testState.finance[countryId]||(testState.finance[countryId]={});
+  finance.available=Math.max(1000000000000,Number(finance.available)||0);
+
+  // Each site gets a separate game turn so per-turn idempotency and route
+  // capacity checks remain active and no two fixture dispatches share a turn.
+  advanceOneGameTurn(testState);
+  let run;
+  try{
+    run=await industrial.executeSitePipeline({
+      countryId,siteId,resourceId,autoCommissionFactory:true
+    });
+  }catch(error){
+    exhaustivePipelineFailures.push({siteId,countryId,resourceId,stage:'EXECUTE_SITE_PIPELINE',reason:String(error?.message||error)});
+    continue;
+  }
+  if(run?.status!=='IN_TRANSIT'||run?.extractionStatus!=='COMMITTED'||
+     !run?.batchId||!run?.shipmentId||!run?.factoryId){
+    exhaustivePipelineFailures.push({
+      siteId,countryId,resourceId,stage:'EXTRACTION_OR_DISPATCH',
+      status:run?.status||null,reason:run?.reason||run?.shipment?.reason||null,
+      extractionStatus:run?.extractionStatus||null,shipmentStatus:run?.shipmentStatus||null,
+      detail:run?.detail||run?.shipment?.details||null
+    });
+    continue;
+  }
+  const route=run.shipment?.route||run.route;
+  if(!route||!Number(route.totalDistanceKm||route.distanceKm||0)){
+    exhaustivePipelineFailures.push({siteId,countryId,resourceId,stage:'ROUTE',reason:'SITE_SPECIFIC_ROUTE_DISTANCE_MISSING',shipmentId:run.shipmentId});
+    continue;
+  }
+  try{
+    advanceToGameTurn(testState,Number(run.shipment?.etaTurn||route.etaTurn||testState.simulation.turn));
+    const arrival=industrial.advanceShipments(countryId);
+    const delivered=(arrival?.shipments||[]).find(row=>String(row?.shipmentId||'')===String(run.shipmentId));
+    if(!delivered||!['DELIVERED','FACTORY_RECEIVED'].includes(String(delivered.status||delivered.destinationStatus||''))){
+      exhaustivePipelineFailures.push({
+        siteId,countryId,resourceId,stage:'FACTORY_DELIVERY',
+        shipmentId:run.shipmentId,arrivalStatus:arrival?.status||null,
+        delivered:delivered?{status:delivered.status,destinationStatus:delivered.destinationStatus,processingStatus:delivered.processingStatus}:null
+      });
+      continue;
+    }
+    completeFactoryCycle(testState,industrial,countryId,run.factoryId,run.batchId,32);
+    const after=runtime.countryResourceState(countryId)||{};
+    const flow=(after.industrialNetwork?.siteFlowLedger||[]).find(row=>String(row?.batchId||'')===String(run.batchId));
+    const processingComplete=(flow?.stages||[]).some(row=>row.stage==='PROCESSING'&&row.status==='COMPLETED');
+    const finished=(after.batches||[]).filter(row=>row.stage==='FINISHED'&&
+      (row.sourceBatchIds||[]).map(String).includes(String(run.batchId))&&Number(row.remainingQuantity??row.quantity)>0);
+    if(!processingComplete||finished.length===0){
+      exhaustivePipelineFailures.push({
+        siteId,countryId,resourceId,stage:'FINISHED_OUTPUT',
+        processingComplete,finishedBatchCount:finished.length,flowStatus:flow?.status||null,
+        stages:(flow?.stages||[]).map(row=>({stage:row.stage,status:row.status,reason:row.reason}))
+      });
+      continue;
+    }
+    const factory=(econ.productionAssets||[]).find(row=>String(row.id||row.assetId||row.projectId)===String(run.factoryId));
+    if(!factory||String(factory.sourceSiteId||factory.siteId||'')!==siteId){
+      exhaustivePipelineFailures.push({siteId,countryId,resourceId,stage:'SITE_FACTORY_BINDING',factoryId:run.factoryId,sourceSiteId:factory?.sourceSiteId||factory?.siteId||null});
+      continue;
+    }
+    exhaustivePipelinePassed++;
+  }catch(error){
+    exhaustivePipelineFailures.push({siteId,countryId,resourceId,stage:'DELIVERY_OR_PROCESSING',reason:String(error?.message||error),batchId:run.batchId,factoryId:run.factoryId});
+  }
+}
+console.log('OMEGA ALL-COMMERCIAL-SITE PIPELINE AUDIT '+JSON.stringify({
+  candidateCount:exhaustivePipelineCandidateIds.length,
+  passedCount:exhaustivePipelinePassed,
+  failedCount:exhaustivePipelineFailures.length,
+  failures:exhaustivePipelineFailures.slice(0,40)
+},null,2));
+assert.equal(exhaustivePipelinePassed,exhaustivePipelineCandidateIds.length,
+  'every eligible commercial site must complete its own extraction -> warehouse -> route -> factory -> processing -> finished output pipeline; '+JSON.stringify({
+    candidateCount:exhaustivePipelineCandidateIds.length,
+    passedCount:exhaustivePipelinePassed,
+    failedCount:exhaustivePipelineFailures.length,
+    failures:exhaustivePipelineFailures.slice(0,40)
+  })
+);
+
 if(nativeFetch)globalThis.fetch=nativeFetch;
 // This completion line is reached only after the real site pipeline assertions above pass.
 console.log('OMEGA RESOURCE JSON -> MINE -> BATCH -> WAREHOUSE -> FACTORY EVENT TEST PASSED');
