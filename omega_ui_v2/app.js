@@ -177,11 +177,6 @@
     render(root);
     return true;
   }
-  function openOperationalConsole(id) {
-    var integration = g.OmegaUIV2Integration;
-    if (!integration || typeof integration.openOperationalConsole !== 'function') return { ok:false, code:'OPERATIONAL_CONSOLE_BRIDGE_UNAVAILABLE' };
-    return integration.openOperationalConsole(id);
-  }
   function safeLocalAssetPath(value) {
     var path = String(value || '');
     return /^assets\/[A-Za-z0-9_ .()\/-]+\.(?:webp|png|jpe?g|svg)$/i.test(path) && path.indexOf('..') < 0 ? path : '';
@@ -238,7 +233,7 @@
     content.innerHTML='<section class="omega-v2-shell omega-v2-religion"><header class="omega-v2-heading"><div><div class="omega-v2-eyebrow">ATLAS COMMAND / SOCIETY</div><h1 class="omega-v2-title">Religion & Ideology</h1><p class="omega-v2-subtitle">Country '+esc(country||'Not recorded')+' · existing religion and ideology system</p></div><span class="omega-v2-status" data-state="operational">CANONICAL HANDOFF</span></header>'+
       photoMarkup('mosque-architecture','Mosque architecture, representative reference image for religion and society','RELIGION & IDEOLOGY',false)+
       '<div class="omega-v2-note">The photo is illustrative and does not indicate that the selected country follows a particular religion. Religious shares and government ideology are shown only by the existing authoritative system.</div>'+
-      '<section class="omega-v2-card omega-v2-domain-handoff"><div class="omega-v2-eyebrow">EXISTING GAME SYSTEM</div><h2 class="omega-v2-card-title">Religion & ideology policy</h2><p class="omega-v2-card-meta">Open the original canonical system to inspect and manage recorded religion and ideology state. This interface does not create duplicate values.</p><div class="omega-v2-actions"><button type="button" class="omega-v2-button omega-v2-button--primary" data-omega-v2-open-religion>Open Religion & Ideology ↗</button><button type="button" class="omega-v2-button omega-v2-button--quiet" data-omega-v2-global-nav="more">Return to all domains</button></div></section></section>';
+      '<section class="omega-v2-card omega-v2-domain-handoff"><div class="omega-v2-eyebrow">RELIGION & IDEOLOGY</div><h2 class="omega-v2-card-title">Recorded policy overview</h2><p class="omega-v2-card-meta">This view remains inside UI v2. Registered religion and ideology information is displayed without opening the retired interface or duplicating game state.</p><div class="omega-v2-actions"><button type="button" class="omega-v2-button omega-v2-button--primary" data-omega-v2-global-nav="government">Return to Government</button><button type="button" class="omega-v2-button omega-v2-button--quiet" data-omega-v2-global-nav="more">All strategic domains</button></div></section></section>';
     return {ok:true,route:'religion',countryId:country||null,canonicalHandoff:true};
   }
   function routeScreen(root, content) {
@@ -259,23 +254,23 @@
         return g.OmegaUIV2Economy.render(content, Object.assign({}, options, { countryId:state.countryId, onOpenMinistry:function (id) { return openMinistry(root, id); } }));
       }
     } else if (state.route === 'industry' || (state.route === 'ministry-detail' && state.ministryId === 'production')) {
-      if (g.OmegaUIV2Industry && typeof g.OmegaUIV2Industry.render === 'function') return g.OmegaUIV2Industry.render(content, Object.assign({}, options, { countryId:state.countryId, onOpenFactory:options.onOpenFactory, onOpenOperationalConsole:openOperationalConsole }));
+      if (g.OmegaUIV2Industry && typeof g.OmegaUIV2Industry.render === 'function') return g.OmegaUIV2Industry.render(content, Object.assign({}, options, { countryId:state.countryId, onOpenFactory:options.onOpenFactory }));
     } else if (state.route === 'home-affairs' || (state.route === 'ministry-detail' && state.ministryId === 'interior_security')) {
-      if (g.OmegaUIV2HomeAffairs && typeof g.OmegaUIV2HomeAffairs.render === 'function') return g.OmegaUIV2HomeAffairs.render(content, Object.assign({}, options, { countryId:state.countryId, tab:state.section, onOpenOperationalConsole:openOperationalConsole }));
+      if (g.OmegaUIV2HomeAffairs && typeof g.OmegaUIV2HomeAffairs.render === 'function') return g.OmegaUIV2HomeAffairs.render(content, Object.assign({}, options, { countryId:state.countryId, tab:state.section }));
     } else if (state.route === 'resources' || (state.route === 'ministry-detail' && state.ministryId === 'energy_mining')) {
       if (g.OmegaUIV2ResourceMinistry && typeof g.OmegaUIV2ResourceMinistry.render === 'function') {
         return g.OmegaUIV2ResourceMinistry.render(content, Object.assign({}, options, { countryId:state.countryId,
           onOpenSite:function (siteId) { state.resourceSiteId = siteId; return navigate(root, 'mine-detail'); },
-          onLocateSite:options.onLocateMine, getInventoryForSite:options.getInventoryForSite, onOpenOperationalConsole:openOperationalConsole }));
+          onLocateSite:options.onLocateMine, getInventoryForSite:options.getInventoryForSite }));
       }
     } else if (state.route === 'mine-detail') {
-      if (g.OmegaUIV2MineDetail && typeof g.OmegaUIV2MineDetail.render === 'function') return g.OmegaUIV2MineDetail.render(content, Object.assign({}, options, { countryId:state.countryId, siteId:state.resourceSiteId, onBack:function () { back(root); }, onOpenOperationalConsole:openOperationalConsole }));
+      if (g.OmegaUIV2MineDetail && typeof g.OmegaUIV2MineDetail.render === 'function') return g.OmegaUIV2MineDetail.render(content, Object.assign({}, options, { countryId:state.countryId, siteId:state.resourceSiteId, onBack:function () { back(root); } }));
     } else if (state.route === 'reports') {
       if (g.OmegaUIV2Reports && typeof g.OmegaUIV2Reports.render === 'function') return g.OmegaUIV2Reports.render(content, Object.assign({}, options, { countryId:state.countryId, onOpenDomain:function (id) { return openDomain(root, id); } }));
     } else if (state.route === 'ministry-detail') {
       if (g.OmegaUIV2MinistryDetail && typeof g.OmegaUIV2MinistryDetail.render === 'function') {
         return g.OmegaUIV2MinistryDetail.render(content, Object.assign({}, options, { countryId:state.countryId, ministryId:state.ministryId,
-          onNavigate:function (destination) { return navigate(root, destination); }, onOpenOperationalConsole:openOperationalConsole, section:state.section }));
+          onNavigate:function (destination) { return navigate(root, destination); }, section:state.section }));
       }
     }
     if (state.route === 'map') {
@@ -323,29 +318,30 @@
       root.addEventListener('click', function (event) {
         var target = event && event.target;
         if (!target || typeof target.closest !== 'function') return;
+        // Stop app-owned controls at the UI v2 boundary after screen-local handlers
+        // have run. This prevents document-level map and retired UI listeners from
+        // acting on the same tap and duplicating expensive state transitions.
+        var ownControl = target.closest('button,a[href],[role="button"],summary');
+        if (ownControl && root.contains(ownControl) && event && typeof event.stopPropagation === 'function') {
+          event.stopPropagation();
+        }
         var exit = target.closest('[data-omega-v2-exit]');
         if (exit && root.contains(exit)) {
+          if (event.preventDefault) event.preventDefault();
           exitToMap(root);
           return;
         }
         var jumpMinistry = target.closest('[data-omega-v2-jump-ministry]');
-        if (jumpMinistry && root.contains(jumpMinistry)) { openMinistry(root, jumpMinistry.getAttribute('data-omega-v2-jump-ministry')); return; }
+        if (jumpMinistry && root.contains(jumpMinistry)) { if (event.preventDefault) event.preventDefault(); openMinistry(root, jumpMinistry.getAttribute('data-omega-v2-jump-ministry')); return; }
         var jumpRoute = target.closest('[data-omega-v2-jump-route]');
-        if (jumpRoute && root.contains(jumpRoute)) { navigate(root, jumpRoute.getAttribute('data-omega-v2-jump-route')); return; }
+        if (jumpRoute && root.contains(jumpRoute)) { if (event.preventDefault) event.preventDefault(); navigate(root, jumpRoute.getAttribute('data-omega-v2-jump-route')); return; }
         var nav = target.closest('[data-omega-v2-global-nav]');
-        if (nav && root.contains(nav)) { navigate(root, nav.getAttribute('data-omega-v2-global-nav')); return; }
+        if (nav && root.contains(nav)) { if (event.preventDefault) event.preventDefault(); navigate(root, nav.getAttribute('data-omega-v2-global-nav')); return; }
         var domain = target.closest('[data-omega-v2-more-ministry]');
-        if (domain && root.contains(domain)) { openMinistry(root, domain.getAttribute('data-omega-v2-more-ministry')); return; }
-        var religionButton = target.closest('[data-omega-v2-open-religion]');
-        if (religionButton && root.contains(religionButton)) {
-          var bridge = g.OmegaUIV2Integration;
-          if (bridge && typeof bridge.closeToWorldMap === 'function') bridge.closeToWorldMap();
-          if (typeof g.openReligionIdeologySystem === 'function') g.openReligionIdeologySystem(event);
-          else if (typeof g.showOmegaNotification === 'function') g.showOmegaNotification('RELIGION MODULE UNAVAILABLE','The canonical Religion & Ideology handler is not available. No state was changed.','warning');
-          return;
-        }
-        if (target.closest('[data-omega-v2-back]') && root.contains(target)) { back(root); return; }
+        if (domain && root.contains(domain)) { if (event.preventDefault) event.preventDefault(); openMinistry(root, domain.getAttribute('data-omega-v2-more-ministry')); return; }
+        if (target.closest('[data-omega-v2-back]') && root.contains(target)) { if (event.preventDefault) event.preventDefault(); back(root); return; }
         if (target.closest('[data-omega-v2-action="back-to-map"]') && root.contains(target)) {
+          if (event.preventDefault) event.preventDefault();
           exitToMap(root);
           return;
         }

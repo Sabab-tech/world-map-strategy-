@@ -1,5 +1,5 @@
 /* OMEGA UI v2 integration bridge.
- * Reuses the existing Cabinet layer as the host and keeps a recovery path.
+ * Mounts UI v2 into the cabinet host; legacy presentation and navigation are disabled.
  */
 (function (g) {
   'use strict';
@@ -8,8 +8,6 @@
   var enabled = true;
   var lastMount = null;
   var lastError = null;
-  var resumeOnCabinetReturn = false;
-  var resumeUiState = null;
 
   function cabinetRoot() {
     return g.document && g.document.getElementById('cabinet-full-window') || null;
@@ -27,8 +25,6 @@
       else if (active && typeof classes.add === 'function') classes.add('omega-ui-v2-cabinet-active');
       else if (!active && typeof classes.remove === 'function') classes.remove('omega-ui-v2-cabinet-active');
     }
-    var guard = g.OmegaUIInteractionGuard;
-    if (guard && typeof guard.scheduleRefresh === 'function') guard.scheduleRefresh();
   }
   function selectedCountry() {
     var values = [
@@ -66,12 +62,48 @@
       return { id:id, name:label };
     });
   }
-  function restoreLegacy(root, country) {
+  function failClosed(root) {
     setV2CabinetActive(root, false);
     try {
-      var cabinet = g.OmegaCabinetUI;
-      if (cabinet && typeof cabinet.renderCabinet === 'function') cabinet.renderCabinet(country || selectedCountry());
+      if (root && root.__omegaUIV2State && g.OmegaUIV2App && typeof g.OmegaUIV2App.unmount === 'function') {
+        g.OmegaUIV2App.unmount(root);
+      }
     } catch (_) {}
+    var dashboard = g.document && g.document.getElementById('ministry-dashboard-view');
+    if (dashboard && dashboard.style) {
+      dashboard.style.display = 'none';
+      dashboard.style.visibility = 'hidden';
+      dashboard.style.opacity = '0';
+      dashboard.style.pointerEvents = 'none';
+      if (dashboard.setAttribute) dashboard.setAttribute('aria-hidden', 'true');
+    }
+    if (root) {
+      if (root.innerHTML !== undefined) root.innerHTML = '';
+      if (root.style) {
+        root.style.display = 'none';
+        root.style.visibility = 'hidden';
+        root.style.opacity = '0';
+        root.style.pointerEvents = 'none';
+      }
+      if (root.setAttribute) root.setAttribute('aria-hidden', 'true');
+      if (root.removeAttribute) root.removeAttribute(ACTIVE_ATTR);
+    }
+    var body = g.document && g.document.body;
+    if (body) {
+      if (body.setAttribute) body.setAttribute('data-active-layer', '0');
+      if (body.classList && typeof body.classList.remove === 'function') body.classList.remove('modal-open');
+    }
+    var worldUi = g.document && g.document.getElementById('world-ui-root');
+    if (worldUi && worldUi.style) {
+      worldUi.style.filter = 'none';
+      worldUi.style.opacity = '1';
+      worldUi.style.pointerEvents = 'auto';
+    }
+    var manager = g.OmegaLayerManager;
+    if (manager) {
+      manager.currentLayer = 0;
+      if (Array.isArray(manager.layerStack)) manager.layerStack = [0];
+    }
   }
   function mountIntoCabinet(root, mountOptions) {
     mountOptions = mountOptions || {};
@@ -105,9 +137,7 @@
       if (layerManager) {
         layerManager.currentLayer = 1;
         if (Array.isArray(layerManager.layerStack) && layerManager.layerStack[layerManager.layerStack.length - 1] !== 1) layerManager.layerStack.push(1);
-        if (typeof layerManager.updateRightSidebar === 'function') layerManager.updateRightSidebar(1);
       }
-      if (typeof g.updateGlobalBackButtonVisibility === 'function') g.updateGlobalBackButtonVisibility();
       if (country) g.OmegaMinistryViewCountry = country;
       var supportedRoutes = ['map','overview','government','economy','more','industry','reports','religion','home-affairs','resources','ministry-detail','mine-detail'];
       var initialRoute = supportedRoutes.indexOf(mountOptions.initialRoute) >= 0 ? mountOptions.initialRoute : 'government';
@@ -125,91 +155,31 @@
           var code = String(id || '').trim().toUpperCase();
           if (code) g.OmegaMinistryViewCountry = code;
         },
-        onOpenOperations:function () {
-          var adapter = g.OMEGA_UI_ADAPTER;
-          if (adapter && typeof adapter.openPoliceCommand === 'function') return adapter.openPoliceCommand();
-          return false;
-        }
       });
       if (!result || result.ok === false || result.mounted !== true) {
         lastError = result && result.code || 'UI_V2_MOUNT_FAILED';
-        restoreLegacy(root, country);
+        failClosed(root);
         return { ok:false, code:lastError };
       }
       lastMount = { countryId:country || null, route:result.route || initialRoute || 'government', mounted:true };
       lastError = null;
-      if (mountOptions.ministryId && g.OmegaUIV2App && typeof g.OmegaUIV2App.openMinistry === 'function') { if (!g.OmegaUIV2App.openMinistry(root, mountOptions.ministryId)) return { ok:false, code:'UI_V2_MINISTRY_ROUTE_FAILED' }; lastMount.route = 'ministry-detail'; }
+      if (mountOptions.ministryId && g.OmegaUIV2App && typeof g.OmegaUIV2App.openMinistry === 'function') { if (!g.OmegaUIV2App.openMinistry(root, mountOptions.ministryId)) { lastError = 'UI_V2_MINISTRY_ROUTE_FAILED'; failClosed(root); return { ok:false, code:lastError }; } lastMount.route = 'ministry-detail'; }
       return { ok:true, countryId:country || null, result:result, route:lastMount.route || mountOptions.initialRoute || 'government' };
     } catch (error) {
       lastError = String(error && error.message || error || 'UI_V2_MOUNT_EXCEPTION');
-      restoreLegacy(root, country);
+      failClosed(root);
       return { ok:false, code:'UI_V2_MOUNT_EXCEPTION', message:lastError };
     }
   }
-  function installOperationalConsoleResumeHook(manager) {
-    if (!manager || typeof manager.popLayer !== 'function' || manager.__omegaUIV2ResumeHookInstalled) return;
-    var originalPopLayer = manager.popLayer;
-    manager.popLayer = function () {
-      var result = originalPopLayer.apply(this, arguments);
-      var active = Number(this.currentLayer);
-      try {
-        if (!Number.isFinite(active) && g.document && g.document.body) active = Number(g.document.body.getAttribute('data-active-layer'));
-      } catch (_) {}
-      if (resumeOnCabinetReturn && active === 1) {
-        var resumed = resumeAfterOperationalConsole();
-        if (!resumed) resumeOnCabinetReturn = false;
-      }
-      return result;
-    };
-    manager.__omegaUIV2ResumeHookInstalled = true;
-  }
-
-  function captureUiStateForResume() {
-    var root = cabinetRoot();
-    var state = root && root.__omegaUIV2State;
-    if (!state) return null;
-    return {
-      initialRoute:state.route || 'government',
-      initialMinistryId:state.ministryId || null,
-      initialSection:state.section || 'dashboard',
-      initialResourceSiteId:state.resourceSiteId || null,
-      initialGovernmentView:state.governmentView === 'all-ministries' ? 'all-ministries' : 'executive-ministry',
-      initialHistory:Array.isArray(state.history) ? state.history.map(function (item) {
-        item = item || {};
-        return { route:item.route || 'map', ministryId:item.ministryId || null, section:item.section || 'dashboard',
-          resourceSiteId:item.resourceSiteId || null,
-          governmentView:item.governmentView === 'all-ministries' ? 'all-ministries' : 'executive-ministry' };
-      }) : [],
-      countryId:String(state.countryId || selectedCountry() || '').toUpperCase()
-    };
-  }
-
   function openOperationalConsole(ministryId) {
     var id = String(ministryId || '').trim();
-    var manager = g.OmegaLayerManager;
-    if (!id || !manager || typeof manager.setLayer !== 'function') return { ok:false, code:'LEGACY_OPERATIONAL_CONSOLE_UNAVAILABLE' };
-    resumeUiState = captureUiStateForResume();
-    setV2CabinetActive(cabinetRoot(), false);
-    resumeOnCabinetReturn = true;
-    installOperationalConsoleResumeHook(manager);
-    try {
-      manager.setLayer(2, { ministryId:id });
-      return { ok:true, ministryId:id, destination:'EXISTING_CANONICAL_MINISTRY_CONSOLE' };
-    } catch (error) {
-      resumeOnCabinetReturn = false;
-      setV2CabinetActive(cabinetRoot(), true);
-      return { ok:false, code:'LEGACY_OPERATIONAL_CONSOLE_OPEN_FAILED', message:String(error && error.message || error) };
+    var result = { ok:false, code:'LEGACY_UI_DISCONNECTED', ministryId:id || null,
+      message:'The retired operational UI is disconnected. Use actions available in the active UI v2 screen.' };
+    if (typeof g.showOmegaNotification === 'function') {
+      g.showOmegaNotification('LEGACY UI DISCONNECTED', result.message, 'warning');
     }
+    return result;
   }
-  function resumeAfterOperationalConsole(root) {
-    if (!resumeOnCabinetReturn) return false;
-    resumeOnCabinetReturn = false;
-    var restore = resumeUiState;
-    resumeUiState = null;
-    var result = mountIntoCabinet(root || cabinetRoot(), restore || {});
-    return result && result.ok === true;
-  }
-
   function openRoute(route) {
     route=String(route||'').trim().toLowerCase();
     if(!enabled||!g.OmegaUIV2App)return false;
@@ -226,31 +196,94 @@
     var root = cabinetRoot();
     setV2CabinetActive(root, false);
     try {
-      if (root && g.OmegaUIV2App && root.__omegaUIV2State && typeof g.OmegaUIV2App.unmount === 'function') g.OmegaUIV2App.unmount(root);
+      if (root && g.OmegaUIV2App && root.__omegaUIV2State && typeof g.OmegaUIV2App.unmount === 'function') {
+        g.OmegaUIV2App.unmount(root);
+      }
     } catch (_) {}
     if (root) {
-      if (root.removeAttribute) root.removeAttribute(ACTIVE_ATTR);
+      if (root.removeAttribute) {
+        root.removeAttribute(ACTIVE_ATTR);
+        root.removeAttribute('aria-busy');
+      }
       if (root.style) {
         root.style.display = 'none';
         root.style.visibility = 'hidden';
+        root.style.opacity = '0';
+        root.style.pointerEvents = 'none';
       }
+      if (root.setAttribute) root.setAttribute('aria-hidden', 'true');
     }
     var manager = g.OmegaLayerManager;
-    try {
-      // Do not call popLayer here: legacy cabinet subsystems can consume Back
-      // before closing the active UI-v2 host. Return directly to World Map.
-      if (manager && typeof manager.setLayer === 'function') {
-        manager.setLayer(0, {}, true);
-        manager.currentLayer = 0;
-        if (Array.isArray(manager.layerStack)) manager.layerStack = [0];
-      } else if (g.document && g.document.body && g.document.body.setAttribute) {
-        g.document.body.setAttribute('data-active-layer','0');
-      }
-      // Layer 0 owns visibility of the old dashboard; do not resurrect it over the map.
-      if (typeof g.updateGlobalBackButtonVisibility === 'function') g.updateGlobalBackButtonVisibility();
-    } catch (_) {}
+    if (manager) {
+      manager.currentLayer = 0;
+      if (Array.isArray(manager.layerStack)) manager.layerStack = [0];
+    }
+    var body = g.document && g.document.body;
+    if (body) {
+      if (body.setAttribute) body.setAttribute('data-active-layer', '0');
+      if (body.classList && typeof body.classList.remove === 'function') body.classList.remove('modal-open');
+    }
+    var worldUi = g.document && g.document.getElementById('world-ui-root');
+    if (worldUi && worldUi.style) {
+      worldUi.style.filter = 'none';
+      worldUi.style.opacity = '1';
+      worldUi.style.pointerEvents = 'auto';
+    }
     return true;
   }
+  // Central compatibility guard: any old caller that requests Cabinet or ministry
+  // layers is redirected into UI v2. It cannot reach OmegaCabinetUI.renderCabinet or
+  // renderMinistryDashboard, even if a forgotten legacy button still invokes setLayer.
+  function installLegacyLayerBridge() {
+    var manager = g.OmegaLayerManager;
+    if (!manager || typeof manager.setLayer !== 'function') return false;
+    if (manager.__omegaUIV2LayerBridgeInstalled === true) return true;
+    var originalSetLayer = manager.setLayer;
+    var originalPopLayer = typeof manager.popLayer === 'function' ? manager.popLayer : null;
+    manager.setLayer = function (layerNum, data) {
+      var target = Number(layerNum);
+      var api = g.OmegaUIV2Integration;
+      if (api) {
+        var root = cabinetRoot();
+        var activeV2 = !!(root && root.getAttribute && root.getAttribute(ACTIVE_ATTR) === 'true' && root.__omegaUIV2State);
+        if (target === 0 && activeV2) {
+          return api.closeToWorldMap() === true;
+        }
+        if (target === 1) {
+          return api.isEnabled() ? api.openRoute('government') === true : false;
+        }
+        if (target === 2 || target === 3) {
+          if (!api.isEnabled()) return false;
+          var ministryId = data && (data.ministryId || data.ministry_id || data.id);
+          if (ministryId) {
+            if (activeV2 && g.OmegaUIV2App && typeof g.OmegaUIV2App.openMinistry === 'function') {
+              return g.OmegaUIV2App.openMinistry(root, ministryId) === true;
+            }
+            var mounted = api.mountIntoCabinet(root, { initialRoute:'government', ministryId:ministryId });
+            return !!(mounted && mounted.ok);
+          }
+          return api.openRoute('government') === true;
+        }
+      }
+      return originalSetLayer.apply(this, arguments);
+    };
+    if (originalPopLayer) {
+      manager.popLayer = function () {
+        var api = g.OmegaUIV2Integration;
+        var root = cabinetRoot();
+        var activeV2 = !!(root && root.getAttribute && root.getAttribute(ACTIVE_ATTR) === 'true' && root.__omegaUIV2State);
+        if (activeV2 && api && g.OmegaUIV2App && typeof g.OmegaUIV2App.back === 'function') {
+          return g.OmegaUIV2App.back(root) === true;
+        }
+        return originalPopLayer.apply(this, arguments);
+      };
+      manager.__omegaUIV2OriginalPopLayer = originalPopLayer;
+    }
+    manager.__omegaUIV2LayerBridgeInstalled = true;
+    manager.__omegaUIV2OriginalSetLayer = originalSetLayer;
+    return true;
+  }
+
   function audit() {
     var root = cabinetRoot();
     return {
@@ -271,8 +304,9 @@
     mountIntoCabinet:mountIntoCabinet,
     openRoute:openRoute,
     openOperationalConsole:openOperationalConsole,
-    resumeAfterOperationalConsole:resumeAfterOperationalConsole,
     closeToWorldMap:closeToWorldMap,
+    installLegacyLayerBridge:installLegacyLayerBridge,
     audit:audit
   });
+  installLegacyLayerBridge();
 })(typeof window !== 'undefined' ? window : globalThis);

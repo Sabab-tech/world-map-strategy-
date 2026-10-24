@@ -58,7 +58,6 @@ const MINISTER_STATE_SCRIPT = '<script src="/omega_minister_state_system.js"></s
 const MINISTER_RECRUITMENT_SCRIPT = '<script src="/minister_recruitment_engine.js"></script>';
 const MINISTER_BOOTSTRAP_SCRIPT = '<script src="/omega_minister_bootstrap.js"></script>';
 const MINISTER_RUNTIME_SCRIPT = '<script src="/omega_minister_runtime_v2.js"></script>';
-const UI_INTERACTION_GUARD_SCRIPT = '<script src="/omega_ui_interaction_guard.js"></script>';
 const COGNITIVE_SCRIPT = '<script src="/omega_cognitive_engine.js"></script>';
 const REASONING_SCRIPT = '<script src="/omega_reasoning_dispatcher.js"></script>';
 const COUNTRY_BRIDGE_SCRIPT = '<script src="/omega_country_semantic_bridge.js"></script>';
@@ -182,7 +181,7 @@ function renderIndex(res, next) {
       MINISTRY_INTEROPERABILITY_SCRIPT, MINISTRY_RUNTIME_V1_SCRIPT, SIMULATION_RUNTIME_SCRIPT, RESOURCE_SCENARIO_ENGINEERING_SCRIPT, RESOURCE_RESEARCH_SCRIPT, RESOURCE_ENDOWMENT_SCRIPT, RESOURCE_ECONOMY_SCRIPT, RESOURCE_AUTHORITATIVE_ADAPTER_SCRIPT, OPPONENT_DEEP_MEMORY_SCRIPT, OPPONENT_MEMORY_TRACE_SCRIPT, OPPONENT_INTELLIGENCE_SCRIPT, COUNTRY_GENERAL_DATA_SCRIPT, OPPONENT_STRATEGY_SCRIPT, OPPONENT_COUNTRY_RULES_SCRIPT, OPPONENT_AUTONOMY_SCRIPT, RESOURCE_ACTION_EXECUTION_SCRIPT, RESOURCE_MINE_MANAGEMENT_SCRIPT, GLOBAL_MARKET_SCRIPT, OPPONENT_TRADE_SCRIPT, OPPONENT_TREATY_SCRIPT, OPPONENT_CONSEQUENCE_SCRIPT,
       MINISTER_CAPABILITY_SCRIPT, MINISTER_STATE_SCRIPT,
       MINISTER_RECRUITMENT_SCRIPT, MINISTER_BOOTSTRAP_SCRIPT, MINISTER_RUNTIME_SCRIPT, COGNITIVE_SCRIPT,
-      REASONING_SCRIPT, UNIVERSAL_AI_SCRIPT, MINISTER_INTELLIGENCE_PIPELINE_SCRIPT, AI_INTEGRITY_SCRIPT, HEALTH_LOGO_SCRIPT, UI_INTERACTION_GUARD_SCRIPT
+      REASONING_SCRIPT, UNIVERSAL_AI_SCRIPT, MINISTER_INTELLIGENCE_PIPELINE_SCRIPT, AI_INTEGRITY_SCRIPT, HEALTH_LOGO_SCRIPT
     ];
     for (const script of scripts) { const src = script.match(/src="([^"]+)"/)?.[1]; const pathOnly = src ? (src.charAt(0) === '/' ? src.slice(1) : src) : ''; const alreadyLoaded = src && (output.includes('src="' + src + '"') || output.includes('src="' + pathOnly + '"') || output.includes('src="/' + pathOnly + '"')); if (src && !alreadyLoaded) output = output.replace('</body>', `    ${script}\n</body>`); }
     res.type('html').send(output);

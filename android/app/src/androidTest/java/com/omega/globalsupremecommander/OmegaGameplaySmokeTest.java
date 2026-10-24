@@ -79,8 +79,8 @@ public final class OmegaGameplaySmokeTest {
                     " document.readyState === 'complete' &&" +
                     " document.getElementById('app') &&" +
                     " document.getElementById('map') &&" +
-                    " document.getElementById('btn-ministry-dock') &&" +
-                    " typeof window.openMainMinistryView === 'function' &&" +
+                    " document.getElementById('omega-gov-entry-v3') &&" +
+                    " typeof window.openMainMinistryView === 'function' && window.OmegaUIV2App && window.OmegaUIV2Integration && typeof window.OmegaUIV2Integration.installLegacyLayerBridge === 'function' &&" +
                     " window.OMEGA_ANDROID_OFFLINE === true &&" +
                     " typeof Array.prototype.flatMap === 'function' &&" +
                     " window.OMEGA_ICON_SYSTEM_V1 && typeof window.OMEGA_ICON_SYSTEM_V1.nameForEmoji === 'function' &&" +
@@ -131,55 +131,55 @@ public final class OmegaGameplaySmokeTest {
             android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=OPEN_MINISTRY");
             final String ministryNavigationScript =
                     "(function() {" +
-                    " var button = document.getElementById('btn-ministry-dock');" +
+                    " var button = document.getElementById('omega-gov-entry-v3');" +
                     " if (!button) return false;" +
                     " button.click();" +
-                    " return !!(window.OmegaLayerManager &&" +
-                    " window.OmegaLayerManager.currentLayer === 1 &&" +
+                    " var cabinet = document.getElementById('cabinet-full-window');" +
+                    " return !!(cabinet && cabinet.getAttribute('data-omega-ui-v2-active') === 'true' &&" +
+                    " cabinet.__omegaUIV2State && cabinet.getAttribute('data-omega-v2-route') === 'government' &&" +
+                    " window.OmegaLayerManager && Number(window.OmegaLayerManager.currentLayer) === 1 &&" +
                     " document.body.getAttribute('data-active-layer') === '1');" +
                     "})()";
             final String ministryOpened =
                     evaluate(instrumentation, webViewRef.get(), ministryNavigationScript);
             assertEquals(
-                    "Tapping the real Ministry dock must enter Government HQ Layer 1 without blocking WebView",
+                    "Tapping the real Government entry must mount UI v2 without blocking WebView",
                     "true", ministryOpened
             );
 
-            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=MINISTRY_LAYER_OPENED");
-            // Wait for the production renderer's explicit ready state instead of assuming
-            // the nested low-memory WebView timers finish within an arbitrary 350 ms.
-            // The deadline remains bounded and the assertion still requires actual council DOM.
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=UI_V2_GOVERNMENT_OPENED");
             final String cabinetSurfaceReadyScript =
                     "(function() {" +
                     " var cabinet = document.getElementById('cabinet-full-window');" +
-                    " var root = document.getElementById('cabinet-subsystem-root');" +
+                    " var main = cabinet && cabinet.querySelector('[data-omega-v2-main]');" +
+                    " var government = main && main.querySelector('.omega-v2-government');" +
                     " return !!(cabinet && cabinet.style.display === 'flex' &&" +
-                    " cabinet.querySelector('.parchment-cabinet-container') && root &&" +
-                    " !root.querySelector('.omega-cabinet-subsystem-loading') &&" +
-                    " !root.querySelector('.omega-cabinet-subsystem-error') &&" +
-                    " root.childElementCount > 0 &&" +
-                    " cabinet.getAttribute('data-cabinet-render-state') === 'ready' &&" +
-                    " cabinet.getAttribute('aria-busy') === 'false' && window.OmegaLayerManager &&" +
+                    " cabinet.getAttribute('data-omega-ui-v2-active') === 'true' &&" +
+                    " cabinet.getAttribute('data-omega-v2-route') === 'government' &&" +
+                    " cabinet.querySelector('.omega-v2-app-frame') && main && government &&" +
+                    " main.childElementCount > 0 && window.OmegaLayerManager &&" +
                     " Number(window.OmegaLayerManager.currentLayer) === 1 &&" +
                     " document.body.getAttribute('data-active-layer') === '1');" +
                     "})()";
             final String cabinetDiagnosticScript =
                     "(function() {" +
                     " var cabinet = document.getElementById('cabinet-full-window');" +
-                    " var root = document.getElementById('cabinet-subsystem-root');" +
-                    " var dock = document.getElementById('omega-ministry-entry');" +
+                    " var main = cabinet && cabinet.querySelector('[data-omega-v2-main]');" +
+                    " var dashboard = document.getElementById('ministry-dashboard-view');" +
+                    " var button = document.getElementById('omega-gov-entry-v3');" +
+                    " var audit = window.OmegaUIV2Integration && window.OmegaUIV2Integration.audit();" +
                     " return JSON.stringify({" +
                     " display: cabinet ? cabinet.style.display : null," +
-                    " renderState: cabinet ? cabinet.getAttribute('data-cabinet-render-state') : null," +
-                    " busy: cabinet ? cabinet.getAttribute('aria-busy') : null," +
-                    " cabinetShell: !!(cabinet && cabinet.querySelector('.parchment-cabinet-container'))," +
-                    " rootPresent: !!root," +
-                    " rootChildren: root ? root.childElementCount : -1," +
-                    " loading: !!(root && root.querySelector('.omega-cabinet-subsystem-loading'))," +
-                    " renderError: !!(root && root.querySelector('.omega-cabinet-subsystem-error'))," +
+                    " active: cabinet ? cabinet.getAttribute('data-omega-ui-v2-active') : null," +
+                    " route: cabinet ? cabinet.getAttribute('data-omega-v2-route') : null," +
+                    " frame: !!(cabinet && cabinet.querySelector('.omega-v2-app-frame'))," +
+                    " mainPresent: !!main," +
+                    " governmentPresent: !!(main && main.querySelector('.omega-v2-government'))," +
+                    " legacyDashboardHidden: !!(dashboard && getComputedStyle(dashboard).display === 'none')," +
                     " layer: window.OmegaLayerManager ? window.OmegaLayerManager.currentLayer : null," +
                     " activeLayer: document.body.getAttribute('data-active-layer')," +
-                    " dockResult: dock ? dock.getAttribute('data-last-open-result') : null" +
+                    " entryResult: button ? button.getAttribute('data-last-open-result') : null," +
+                    " audit: audit || null" +
                     " });" +
                     "})()";
             android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=WAIT_CABINET_READY");
@@ -192,11 +192,58 @@ public final class OmegaGameplaySmokeTest {
             final String cabinetDiagnostics = "true".equals(cabinetReady) ? "" :
                     evaluate(instrumentation, webViewRef.get(), cabinetDiagnosticScript, JAVASCRIPT_CALLBACK_TIMEOUT_SECONDS);
             assertEquals(
-                    "Government HQ must render its council content within 150 seconds; diagnostics=" + cabinetDiagnostics,
+                    "Government UI v2 must render its active screen within 150 seconds; diagnostics=" + cabinetDiagnostics,
                     "true", cabinetReady
             );
 
-            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=CABINET_READY");
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=UI_V2_GOVERNMENT_READY");
+            // Exercise repeated real UI v2 navigation taps, exit, and reopen. This
+            // specifically catches event bubbling into the retired layer renderers.
+            final String repeatedUiNavigationScript =
+                    "(function() {" +
+                    " var entry = document.getElementById('omega-gov-entry-v3');" +
+                    " var cabinet = document.getElementById('cabinet-full-window');" +
+                    " if (!entry || !cabinet || !cabinet.__omegaUIV2State) return false;" +
+                    " var sequence = ['economy','government','more','economy','government'];" +
+                    " for (var i = 0; i < sequence.length; i++) {" +
+                    "   var route = sequence[i];" +
+                    "   var control = cabinet.querySelector('[data-omega-v2-global-nav=\"' + route + '\"]');" +
+                    "   if (!control) return false;" +
+                    "   control.click();" +
+                    "   if (cabinet.getAttribute('data-omega-v2-route') !== route) return false;" +
+                    " }" +
+                    " var exit = cabinet.querySelector('[data-omega-v2-exit]');" +
+                    " if (!exit) return false;" +
+                    " exit.click();" +
+                    " if (cabinet.getAttribute('data-omega-ui-v2-active') === 'true' ||" +
+                    "     document.body.getAttribute('data-active-layer') !== '0' ||" +
+                    "     Number(window.OmegaLayerManager.currentLayer) !== 0) return false;" +
+                    " entry.click();" +
+                    " return !!(cabinet.getAttribute('data-omega-ui-v2-active') === 'true' &&" +
+                    "   cabinet.getAttribute('data-omega-v2-route') === 'government' &&" +
+                    "   Number(window.OmegaLayerManager.currentLayer) === 1 &&" +
+                    "   document.body.getAttribute('data-active-layer') === '1');" +
+                    "})()";
+            assertEquals(
+                    "UI v2 buttons must keep navigating on repeated taps, exit to map and reopen without legacy UI",
+                    "true", evaluate(instrumentation, webViewRef.get(), repeatedUiNavigationScript)
+            );
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=UI_V2_REPEATED_BUTTON_NAV_READY");
+            final String finalExitScript =
+                    "(function() {" +
+                    " var cabinet = document.getElementById('cabinet-full-window');" +
+                    " var exit = cabinet && cabinet.querySelector('[data-omega-v2-exit]');" +
+                    " if (!exit) return false;" +
+                    " exit.click();" +
+                    " return !!(cabinet.getAttribute('data-omega-ui-v2-active') !== 'true' &&" +
+                    " document.body.getAttribute('data-active-layer') === '0');" +
+                    "})()";
+            assertEquals(
+                    "UI v2 exit must restore the world map after repeated navigation",
+                    "true", evaluate(instrumentation, webViewRef.get(), finalExitScript)
+            );
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=UI_V2_EXITED_TO_MAP");
+
             // Exercise the actual player-facing Industry/Factories panel for a selected country.
             // The panel must distinguish owned live factory assets from catalog profiles instead
             // of inventing an operational asset just because a profile exists in the catalog.

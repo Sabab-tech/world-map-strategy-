@@ -321,18 +321,8 @@ var Game = window.Game = {
             btnCloseCard.addEventListener('click', () => self.closeCountryInfoCard());
         }
 
-        const btnCardCab = document.getElementById('btn-card-cabinet');
-        if (btnCardCab) {
-            btnCardCab.addEventListener('click', (e) => {
-                if (typeof window.openMainMinistryView === 'function') {
-                    window.openMainMinistryView(e);
-                } else if (window.OmegaLayerManager) {
-                    window.OmegaLayerManager.setLayer(1);
-                } else {
-                    self.toggleMainCabinet(true);
-                }
-            });
-        }
+        // btn-card-cabinet routes to UI v2 from index.html; do not add a second layer-manager handler.
+
         const btnCardDip = document.getElementById('btn-card-diplomacy');
         if (btnCardDip) {
             btnCardDip.addEventListener('click', () => {

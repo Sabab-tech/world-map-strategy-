@@ -346,26 +346,29 @@ window.applyRelationsMapFilter = function(focusCountry) {
 
 // ৬. সম্পূর্ণ ক্যাবিনেট হাব কন্ট্রোল লজিক
 window.toggleMainCabinet = function(show) {
-    if (window.OmegaLayerManager) {
-        if (show) {
-            window.OmegaLayerManager.setLayer(1);
-        } else {
-            window.OmegaLayerManager.setLayer(0);
-        }
-    } else {
-        const cabinet = document.getElementById('cabinet-full-window');
-        if (!cabinet) return;
-        if (show) {
-            const country = (window.CountryIOS && window.CountryIOS.activeCountry) || window.currentActiveCountry || "USA";
-            if (window.OmegaCabinetUI && window.OmegaCabinetUI.renderCabinet) {
-                window.OmegaCabinetUI.renderCabinet(country);
-            }
-            cabinet.style.display = 'flex';
-        } else {
-            cabinet.style.display = 'none';
-        }
+    const bridge = window.OmegaUIV2Integration;
+    if (show) {
+        if (bridge && typeof bridge.openRoute === 'function') return bridge.openRoute('government') === true;
+        const entry = window.OMEGAGovEntryV3;
+        if (entry && typeof entry.open === 'function') return entry.open() === true;
+        return false;
     }
-};
+    if (bridge && typeof bridge.closeToWorldMap === 'function') return bridge.closeToWorldMap() === true;
+    const mapEntry = window.openMainMapView;
+    if (typeof mapEntry === 'function') return mapEntry() === true;
+    const cabinet = document.getElementById('cabinet-full-window');
+    if (cabinet && cabinet.style) {
+        cabinet.style.display = 'none';
+        cabinet.style.visibility = 'hidden';
+        cabinet.style.opacity = '0';
+        cabinet.style.pointerEvents = 'none';
+    }
+    if (document.body) {
+        document.body.setAttribute('data-active-layer', '0');
+        document.body.classList.remove('modal-open');
+    }
+    return true;
+}
 
 // ডম লোড হলে ডেটাবেজ ইনিশিয়ালাইজেশন
 document.addEventListener("DOMContentLoaded", function() {

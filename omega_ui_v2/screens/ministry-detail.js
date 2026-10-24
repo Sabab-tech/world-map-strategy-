@@ -98,14 +98,11 @@
     var enabled = options && typeof options.onNavigate === 'function';
     return '<div class="omega-v2-actions"><button type="button" class="omega-v2-button omega-v2-button--primary" data-omega-v2-detail-navigate="' + esc(route[0]) + '"' + (enabled ? '' : ' disabled title="Navigation callback is unavailable."') + '>' + esc(route[1]) + '</button></div>';
   }
-  function operationalConsoleCard(id, options) {
-    var available = options && typeof options.onOpenOperationalConsole === 'function';
+  function operationalCoverageCard(id) {
     return '<article class="omega-v2-card omega-v2-operational-console-card">' +
-      '<h2 class="omega-v2-card-title">Existing operational controls</h2>' +
-      '<p class="omega-v2-card-meta">Actions not yet reimplemented in UI v2 remain available through the canonical gameplay console. This preserves existing command, staffing, budget and asset workflows.</p>' +
-      '<div class="omega-v2-actions"><button type="button" class="omega-v2-button omega-v2-button--primary" data-omega-v2-open-operational-console="' + esc(id) + '"' +
-      (available ? '' : ' disabled title="The existing operational-console bridge is unavailable."') +
-      '>Open operational console</button></div></article>';
+      '<h2 class="omega-v2-card-title">Operational coverage</h2>' +
+      '<p class="omega-v2-card-meta">This ministry is displayed inside UI v2. Legacy screen navigation is disconnected; only actions implemented in the current screen are enabled.</p>' +
+      '<div class="omega-v2-status" data-state="attention">V2 CONTROLS ONLY</div></article>';
   }
   function render(root, options) {
     options = options || {};
@@ -146,7 +143,6 @@
       ministryVisualMarkup(id, row) +
       '<div class="omega-v2-filterbar" role="group" aria-label="Ministry page sections">' + SECTIONS.map(function (key) { return '<button type="button" class="omega-v2-button ' + (section === key ? 'omega-v2-button--accent' : 'omega-v2-button--quiet') + '" data-omega-v2-ministry-section="' + key + '" aria-pressed="' + (section === key ? 'true' : 'false') + '">' + esc(SECTION_LABELS[key]) + '</button>'; }).join('') + '</div>' +
       relatedLinks(id, options) +
-      operationalConsoleCard(id, options) +
       '<div class="omega-v2-section-title">' + esc(SECTION_LABELS[section]) + '</div>' + content +
       '<p class="omega-v2-source">The current panel is read-only. Procurement, recruitment, resource transfers and project execution must route through an authoritative handler and display a result only after game state confirms it.</p></section>';
     if (!root.__omegaV2MinistryDetailBound && typeof root.addEventListener === 'function') {
@@ -157,14 +153,6 @@
         if (tab && root.contains(tab)) {
           var current = root.__omegaV2MinistryDetailOptions || {};
           render(root, Object.assign({}, current, { section:tab.getAttribute('data-omega-v2-ministry-section') }));
-          return;
-        }
-        var consoleButton = target.closest('[data-omega-v2-open-operational-console]');
-        if (consoleButton && root.contains(consoleButton) && !consoleButton.disabled) {
-          var consoleOptions = root.__omegaV2MinistryDetailOptions || {};
-          if (typeof consoleOptions.onOpenOperationalConsole === 'function') {
-            consoleOptions.onOpenOperationalConsole(consoleButton.getAttribute('data-omega-v2-open-operational-console'));
-          }
           return;
         }
         var route = target.closest('[data-omega-v2-detail-navigate]');

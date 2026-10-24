@@ -264,15 +264,27 @@ test('large world GeoJSON is rendered incrementally rather than monopolizing the
 });
 
 
-test('interaction guard is loaded by the production shell and cached for offline/Android use', () => {
+test('production shell fully disconnects legacy UI scripts and caches the isolated UI v2 shell', () => {
   const html = read('index.html');
+  const server = read('server.js');
   const serviceWorker = read('omega-offline-map-sw.js');
-  assert.match(html, /<script src="omega_ui_interaction_guard\.js" defer><\/script>/);
-  assert.match(serviceWorker, /CACHE_NAME = "omega-offline-atlas-shell-v34"/);
+  const isolationCss = read('omega_ui_v2/legacy-disconnect.css');
+  const retired = ['omega_ui_system_redesign_v1.js', 'omega_ui_interaction_guard.js', 'omega_ui_button_system_v1.js'];
+  for (const script of retired) {
+    assert.equal(html.includes('<script src="' + script + '"'), false, script + ' must not be loaded');
+    assert.equal(serviceWorker.includes('"./' + script + '"'), false, script + ' must not be precached');
+  }
+  assert.equal(server.includes('UI_INTERACTION_GUARD_SCRIPT'), false, 'server must not inject the retired click interceptor');
+  assert.equal(server.includes('omega_ui_interaction_guard.js'), false, 'server must not inject the retired click interceptor');
+  assert.ok(html.includes('omega_ui_v2/legacy-disconnect.css'));
+  assert.ok(serviceWorker.includes('CACHE_NAME = "omega-offline-atlas-shell-v35"'));
   const coreStart = serviceWorker.indexOf('const CORE_ASSETS');
   const coreEnd = serviceWorker.indexOf('];', coreStart);
-  assert.ok(serviceWorker.slice(coreStart, coreEnd).includes('"./omega_ui_interaction_guard.js"'),
-    'the interaction guard must be included in the offline core asset bundle');
+  const coreAssets = serviceWorker.slice(coreStart, coreEnd);
+  assert.ok(coreAssets.includes('"./omega_ui_v2/legacy-disconnect.css"'));
+  assert.ok(isolationCss.includes('#ministry-dashboard-view'));
+  assert.ok(isolationCss.includes('display: none !important'));
+  assert.ok(isolationCss.includes('z-index: 2147483000 !important'));
 });
 
 test('slow simulation frames and data-heavy ministry panels bound repeated UI work', () => {

@@ -166,9 +166,9 @@ test("browser shell resources are cached locally for offline relaunch", () => {
   assert.match(serviceWorker, /key !== CACHE_NAME/,
     'activation must preserve the current shell cache while pruning older versions');
   assert.doesNotMatch(serviceWorker, /"\.\/omega_ui_system_redesign_v1\.css"/, 'legacy redesign CSS is not eagerly cached');
-  assert.match(serviceWorker, /omega_ui_system_redesign_v1[.]js/);
+  assert.doesNotMatch(serviceWorker, /omega_ui_system_redesign_v1[.]js/, 'retired redesign runtime must not be pre-cached');
   assert.doesNotMatch(serviceWorker, /"\.\/omega_ui_button_system_v1\.css"/, 'legacy button CSS is not eagerly cached');
-  assert.match(serviceWorker, /omega_ui_button_system_v1[.]js/);
+  assert.doesNotMatch(serviceWorker, /omega_ui_button_system_v1[.]js/, 'retired button controller must not be pre-cached');
   assert.match(serviceWorker, /omega_home_ministry_country_police_baseline_v1[.]json/);
   assert.match(serviceWorker, /omega_home_ministry_police_operations_ui_v1[.]js/);
   assert.match(serviceWorker, /military_command_catalog_v1[.]json/);

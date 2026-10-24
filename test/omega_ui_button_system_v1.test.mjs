@@ -80,7 +80,7 @@ function makeHarness(buttons) {
   return { context, document, listeners, observers, buttons };
 }
 
-test('legacy button CSS stays on disk but the v2 stylesheet is the active visual layer', () => {
+test('legacy button CSS stays on disk while every old button controller is unloaded', () => {
   const html = read('index.html');
   for (const legacyCss of ['omega_ui_visual_system_v1.css', 'omega_ui_system_redesign_v1.css', 'omega_ui_button_system_v1.css']) {
     assert.ok(fs.existsSync(path.join(root, legacyCss)), legacyCss + ' must remain on disk');
@@ -88,10 +88,11 @@ test('legacy button CSS stays on disk but the v2 stylesheet is the active visual
   assert.doesNotMatch(html, /<link[^>]+href="omega_ui_visual_system_v1\.css"/i);
   assert.doesNotMatch(html, /<link[^>]+href="omega_ui_system_redesign_v1\.css"/i);
   assert.doesNotMatch(html, /<link[^>]+href="omega_ui_button_system_v1\.css"/i);
-  assert.match(html, /<link[^>]+href="omega_ui_v2\/omega-ui-v2\.css"/);
-  const runtime = html.indexOf('src="omega_ui_button_system_v1.js"');
-  assert.ok(runtime > html.indexOf('src="omega_ui_system_redesign_v1.js"'), 'button inventory runtime remains after the layout runtime');
-  assert.ok(runtime < html.indexOf('</body>'));
+  assert.ok(html.includes('omega_ui_v2/omega-ui-v2.css'));
+  assert.ok(html.includes('omega_ui_v2/legacy-disconnect.css'));
+  for (const retired of ['omega_ui_button_system_v1.js', 'omega_ui_system_redesign_v1.js', 'omega_ui_interaction_guard.js']) {
+    assert.equal(html.includes('<script src="' + retired + '"'), false, retired + ' must not load');
+  }
   for (const required of ['map-engine-1.js', 'map-engine-2.js', 'omega_home_ministry_engine_v1.js', 'omega_resource_gameplay_binding_v1.js']) {
     assert.ok(html.includes(required), 'keep existing runtime loaded: ' + required);
   }

@@ -92,12 +92,10 @@
   function patrolsHtml(state, options) {
     var plan = state && state.patrolPlan && typeof state.patrolPlan === 'object' ? state.patrolPlan : null;
     var entries = plan ? Object.keys(plan).map(function (key) { return '<div class="omega-v2-material-row"><span>' + esc(key.replace(/[_-]+/g, ' ')) + '</span><strong>' + fmt(plan[key]) + '%</strong></div>'; }).join('') : '';
-    var adapter = g.OMEGA_UI_ADAPTER;
-    var canOpen = options && typeof options.onOpenOperations === 'function' || adapter && typeof adapter.openPoliceCommand === 'function';
     return '<article class="omega-v2-card"><h2 class="omega-v2-section-title">Recorded patrol plan</h2>' +
       (entries ? '<div class="omega-v2-materials">' + entries + '</div>' : '<div class="omega-v2-empty">No authoritative patrol allocation was returned for this country.</div>') +
       '<p class="omega-v2-note">Assignment is only accepted when the real runtime confirms an owned/available vehicle, eligible personnel, country scope and mission requirements. This summary does not invent routes or active units.</p>' +
-      '<div class="omega-v2-actions"><button type="button" class="omega-v2-button omega-v2-button--primary" data-omega-v2-action="open-operations"' + (canOpen ? '' : ' disabled title="The existing police operations route is unavailable."') + '>Open police operations</button></div></article>';
+      '<div class="omega-v2-actions"><button type="button" class="omega-v2-button omega-v2-button--primary" data-omega-v2-home-tab="personnel">Review police personnel</button></div></article>';
   }
   function facilitiesHtml(state) {
     var facilities = state && state.facilityLevels && typeof state.facilityLevels === 'object' ? state.facilityLevels : null;
@@ -192,7 +190,7 @@
     root.innerHTML = '<section class="omega-v2-shell omega-v2-home-affairs">' +
       '<header class="omega-v2-heading"><div><div class="omega-v2-eyebrow">CIVIL ADMINISTRATION · HOME AFFAIRS</div><h1 class="omega-v2-title">Public Safety & Police</h1><p class="omega-v2-subtitle">Country ' + esc(country || 'Not recorded') + ' · canonical personnel, fleet and incident state</p></div><span class="omega-v2-status" data-state="' + (e ? 'operational' : 'unknown') + '">' + (e ? 'POLICE RUNTIME CONNECTED' : 'POLICE RUNTIME UNAVAILABLE') + '</span></header>' +
       tabBar(active) + '<div data-omega-v2-home-content>' + content + '</div>' +
-      '<div class="omega-v2-actions omega-v2-legacy-console-link"><button type="button" class="omega-v2-button omega-v2-button--quiet" data-omega-v2-open-operational-console="interior_security"' + (typeof options.onOpenOperationalConsole === 'function' ? '' : ' disabled title="Existing operational console bridge is unavailable."') + '>Open existing police operations console</button></div></section>';
+      '<p class="omega-v2-source">Police personnel, fleet and patrol records are managed within this UI v2 screen. The retired console is disconnected.</p></section>';
 
     if (!root.__omegaV2HomeBound && typeof root.addEventListener === 'function') {
       root.addEventListener('click', function (event) {
@@ -202,12 +200,6 @@
         if (tab && root.contains(tab)) {
           root.__omegaV2HomeTab = tab.getAttribute('data-omega-v2-home-tab');
           render(root, Object.assign({}, root.__omegaV2HomeOptions || {}, { tab:root.__omegaV2HomeTab }));
-          return;
-        }
-        var legacyConsole = target.closest('[data-omega-v2-open-operational-console]');
-        if (legacyConsole && root.contains(legacyConsole) && !legacyConsole.disabled) {
-          var legacyOptions = root.__omegaV2HomeOptions || {};
-          if (typeof legacyOptions.onOpenOperationalConsole === 'function') legacyOptions.onOpenOperationalConsole('interior_security');
           return;
         }
         var action = target.closest('[data-omega-v2-action]');
@@ -230,9 +222,6 @@
           if (result && result.ok) root.__omegaV2RecruitOutcome = 'Recruitment accepted by the canonical runtime for ' + fmt(amount) + ' officer(s). Recorded cost: ' + money(result.upfrontCostUsd !== undefined ? result.upfrontCostUsd : result.costUsd !== undefined ? result.costUsd : result.cost) + '.';
           else root.__omegaV2RecruitOutcome = 'Recruitment not executed: ' + String(result && (result.message || result.code || result.reason) || 'RUNTIME_REJECTED') + '.';
           render(root, Object.assign({}, currentOptions, { tab:'personnel' }));
-        } else if (actionId === 'open-operations') {
-          if (typeof currentOptions.onOpenOperations === 'function') currentOptions.onOpenOperations();
-          else if (g.OMEGA_UI_ADAPTER && typeof g.OMEGA_UI_ADAPTER.openPoliceCommand === 'function') g.OMEGA_UI_ADAPTER.openPoliceCommand();
         }
       });
       root.addEventListener('input', function (event) {

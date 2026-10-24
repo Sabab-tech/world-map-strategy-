@@ -185,7 +185,7 @@
       tabButton('inventory', 'Input Inventory', active) +
       tabButton('projects', 'Build Projects', active) +
       '</div><div data-omega-v2-industry-content>' + content + '</div>' +
-      '<div class="omega-v2-actions omega-v2-legacy-console-link"><button type="button" class="omega-v2-button omega-v2-button--quiet" data-omega-v2-open-operational-console="production"' + (typeof options.onOpenOperationalConsole === 'function' ? '' : ' disabled title="Existing production console bridge is unavailable."') + '>Open existing production operations</button></div>' +
+      '<p class="omega-v2-source">Factory and production records remain in this UI v2 screen. Retired console navigation is disabled.</p>' +
       '<p class="omega-v2-source">Read source: ' + esc(model.source) + '. Recent site-flow ledger entries available: ' + fmt(model.recentFlowCount) + '.</p></section>';
 
     if (!root.__omegaV2IndustryBound && typeof root.addEventListener === 'function') {
@@ -196,12 +196,6 @@
         if (tab && root.contains(tab)) {
           root.__omegaV2IndustryTab = tab.getAttribute('data-omega-v2-industry-tab');
           render(root, Object.assign({}, root.__omegaV2IndustryOptions || {}, { tab: root.__omegaV2IndustryTab }));
-          return;
-        }
-        var legacyConsole = target.closest('[data-omega-v2-open-operational-console]');
-        if (legacyConsole && root.contains(legacyConsole) && !legacyConsole.disabled) {
-          var consoleOptions = root.__omegaV2IndustryOptions || {};
-          if (typeof consoleOptions.onOpenOperationalConsole === 'function') consoleOptions.onOpenOperationalConsole('production');
           return;
         }
         var factory = target.closest('[data-omega-v2-open-factory]');
