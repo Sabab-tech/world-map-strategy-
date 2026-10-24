@@ -28,7 +28,7 @@ for(const site of criticalBatch.records){
   assert.equal(site.map?.resourceFilterKey,resourceId);
   assert.ok(Number(site.quantitative?.production?.rate)>0,site.siteId+': positive production rate required');
   assert.ok(Number(site.quantitative?.reserve?.quantity)>0,site.siteId+': positive simulation reserve required');
-  assert.ok(site.sources?.some(x=>/^https?:\\/\\//.test(x.url)),site.siteId+': source URL evidence missing');
+  assert.ok(site.sources?.some(x=>/^https?:\/\//.test(x.url)),site.siteId+': source URL evidence missing');
 }
 
 const world=game.state.resource||{};
