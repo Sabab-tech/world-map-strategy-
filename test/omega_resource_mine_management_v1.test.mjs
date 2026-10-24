@@ -519,9 +519,9 @@ test('every mapped resource site joins the executable runtime and has a one-tap 
 test('critical mineral batch has complete runtime profiles and joins the canonical mine system', () => {
   assert.equal(criticalMineralsBatch.datasetId, 'OMEGA_RESOURCE_SITE_COUNTRY_MINEPLAY_BATCH_V1');
   assert.equal(criticalMineralsBatch.batchId, 'COUNTRY_MINEPLAY_CRITICAL_MINERALS_20261024');
-  assert.equal(criticalMineralsBatch.recordCount, 56);
-  assert.equal(criticalMineralsBatch.records.length, 56);
-  assert.equal(criticalMineralsBatch.countryCount, 21);
+  assert.equal(criticalMineralsBatch.recordCount, 58);
+  assert.equal(criticalMineralsBatch.records.length, 58);
+  assert.equal(criticalMineralsBatch.countryCount, 23);
   assert.ok(bindingSource.includes('resource_site_country_mineplay_critical_batch_20261024_v1.json'));
   assert.ok(endowmentSource.includes('resource_site_country_mineplay_critical_batch_20261024_v1.json'));
   assert.ok(serviceWorkerSource.includes('resource_site_country_mineplay_critical_batch_20261024_v1.json'));
@@ -627,5 +627,6 @@ test('critical mineral batch has complete runtime profiles and joins the canonic
   }
   const counts=criticalMineralsBatch.records.reduce((out,row)=>{const id=resource(row);out[id]=(out[id]||0)+1;return out;},{});
   assert.ok(counts.rare_earth>=5,'rare-earth site coverage was not expanded');
+  assert.ok(counts.coral_aggregate>=2,'coral aggregate source-area coverage was not expanded');
   for(const id of ['graphite','platinum','tungsten','potash','salt','ilmenite','tin','chromite']) assert.ok(counts[id]>=3,id+' site coverage was not expanded');
 });
