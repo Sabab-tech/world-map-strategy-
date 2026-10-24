@@ -104,6 +104,14 @@ test('ministry entry and backward-compatible routes dispatch only to UI v2', () 
     'the map engine must not add a second Cabinet click route');
 
   const display = read('display_and_layer_system.js');
+  assert.ok(!display.includes('btnGovt.onclick = () => window.OmegaLayerManager.setLayer(1)'));
+  assert.equal(display.includes('btnGovt.onclick = (event) => window.openMainMinistryView(event)'),true);
+  assert.equal(display.includes('btnGovt.onclick = (event) => window.openMainMapView(event)'),true);
+  const gameLogic = read('game-logic.js');
+  const countryIos = read('country-ios.js');
+  assert.equal(gameLogic.includes('window.OmegaLayerManager.setLayer(1)'),false);
+  assert.equal(countryIos.includes('window.OmegaLayerManager.setLayer(1)'),false);
+
   assert.ok(!display.includes("bindDockBtn('btn-ministry-dock', window.openMainMinistryView)"),
     'the old layer-manager dock listener is disconnected');
   const aliasStart = display.indexOf('window.openMainMinistryView = function(e)');
