@@ -337,8 +337,12 @@
         if (state.paused || !g.document || g.document.visibilityState === 'hidden') return;
         var rotator = root.querySelector('[data-omega-v2-ministry-rotator]');
         if (!rotator) { stopMinistryRotation(root); return; }
-        try { if (rotator.matches && rotator.matches(':hover')) return; } catch (_) {}
-        if (g.document.activeElement && rotator.contains(g.document.activeElement)) return;
+        var coarsePointer = false;
+        try { coarsePointer = !!(g.matchMedia && g.matchMedia('(pointer: coarse)').matches); } catch (_) {}
+        // Touch browsers can leave :hover/focus stuck after a tap. Pause for mouse hover only.
+        if (!coarsePointer) {
+          try { if (rotator.matches && rotator.matches(':hover')) return; } catch (_) {}
+        }
         setMinistryRotationSlide(root, state.index + 1);
       }, 7000);
     } else {

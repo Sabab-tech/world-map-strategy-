@@ -553,3 +553,168 @@ test('universal navigation, reliable Exit/Escape behavior and responsive visuals
     assert.equal(html.includes("href='" + legacyCss + "'"), false, legacyCss + ' must not be loaded by index.html');
   }
 });
+
+
+test('all 18 ministry detail pages render their registry cover and any matching uploaded logo', () => {
+  const previousCabinet = globalThis.OmegaCabinetUI;
+  globalThis.OmegaCabinetUI = { ministriesDatabase: Object.fromEntries(
+    globalThis.OmegaUIV2Navigation.ministryIds.map((id) => [id, { id, title:id.replace(/_/g, ' ') }])
+  ) };
+  try {
+    for (const id of globalThis.OmegaUIV2Navigation.ministryIds) {
+      const visual = globalThis.OmegaUIV2MinistryVisualRegistry.get(id);
+      const root = { classList:{ add(){} }, addEventListener(){}, innerHTML:'' };
+      const result = globalThis.OmegaUIV2MinistryDetail.render(root, { ministryId:id, countryId:'BGD' });
+      assert.equal(result.ok, true, id + ' detail should render');
+      assert.ok(root.innerHTML.includes(visual.image), id + ' detail must render its mapped cover image');
+      for (const galleryPath of visual.gallery || []) {
+        assert.ok(root.innerHTML.includes(galleryPath), id + ' detail must render gallery image ' + galleryPath);
+      }
+      if (visual.logo) assert.ok(root.innerHTML.includes(visual.logo), id + ' detail must render its uploaded logo');
+    }
+  } finally {
+    if (previousCabinet === undefined) delete globalThis.OmegaCabinetUI;
+    else globalThis.OmegaCabinetUI = previousCabinet;
+  }
+});
+
+test('UI v2 restores internal ministry routes and Escape returns to the previous screen', () => {
+  const previousCabinet = globalThis.OmegaCabinetUI;
+  const previousCountry = globalThis.OmegaMinistryViewCountry;
+  const previousDocument = globalThis.document;
+  // The production mount deliberately requires a browser document. Supply the
+  // smallest shell here; omitting createElement keeps the rotator timer inert.
+  globalThis.document = {};
+  const handlers = Object.create(null);
+  const main = {
+    classList:{ add(){} },
+    addEventListener(name, handler){ handlers['main:' + name] = handler; },
+    querySelector(){ return null; },
+    querySelectorAll(){ return []; },
+    innerHTML:''
+  };
+  const backButton = { disabled:false };
+  const attrs = Object.create(null);
+  const root = {
+    innerHTML:'',
+    classList:{ add(){} },
+    addEventListener(name, handler){ handlers[name] = handler; },
+    querySelector(selector) {
+      if (selector === '[data-omega-v2-main]') return main;
+      if (selector === '[data-omega-v2-back]') return backButton;
+      return null;
+    },
+    setAttribute(name, value){ attrs[name] = String(value); },
+    getAttribute(name){ return attrs[name] || null; },
+    contains(){ return true; }
+  };
+  globalThis.OmegaCabinetUI = { ministriesDatabase: {
+    defense:{ id:'defense', title:'Defense & Armed Forces', category:'defense' },
+    cabinet_council:{ id:'cabinet_council', title:'Executive Cabinet', category:'governance' }
+  } };
+  globalThis.OmegaMinistryViewCountry = 'BGD';
+  try {
+    const mounted = globalThis.OmegaUIV2App.mount(root, {
+      initialRoute:'ministry-detail', initialMinistryId:'defense', initialSection:'assets', countryId:'BGD',
+      initialHistory:[{ route:'government', ministryId:null, section:'dashboard', governmentView:'all-ministries' }]
+    });
+    assert.equal(mounted.mounted, true);
+    assert.equal(root.__omegaUIV2State.route, 'ministry-detail');
+    assert.equal(root.__omegaUIV2State.ministryId, 'defense');
+    assert.equal(root.__omegaUIV2State.section, 'assets');
+    assert.equal(root.__omegaUIV2State.history.length, 1);
+    let prevented = false;
+    handlers.keydown({ key:'Escape', preventDefault(){ prevented = true; } });
+    assert.equal(prevented, true);
+    assert.equal(root.__omegaUIV2State.route, 'government');
+    assert.equal(root.__omegaUIV2State.governmentView, 'all-ministries');
+
+    assert.equal(globalThis.OmegaUIV2App.openMinistry(root, 'defense'), true);
+    let altLeftPrevented = false;
+    handlers.keydown({ key:'ArrowLeft', altKey:true, preventDefault(){ altLeftPrevented = true; } });
+    assert.equal(altLeftPrevented, true);
+    assert.equal(root.__omegaUIV2State.route, 'government');
+    assert.equal(root.__omegaUIV2State.governmentView, 'all-ministries');
+  } finally {
+    if (previousCabinet === undefined) delete globalThis.OmegaCabinetUI;
+    else globalThis.OmegaCabinetUI = previousCabinet;
+    if (previousCountry === undefined) delete globalThis.OmegaMinistryViewCountry;
+    else globalThis.OmegaMinistryViewCountry = previousCountry;
+    if (previousDocument === undefined) delete globalThis.document;
+    else globalThis.document = previousDocument;
+  }
+});
+
+test('returning from a legacy console restores the exact ministry, selected tab and navigation history', () => {
+  const previous = {
+    document:globalThis.document, app:globalThis.OmegaUIV2App, manager:globalThis.OmegaLayerManager,
+    country:globalThis.OmegaMinistryViewCountry, cabinet:globalThis.OmegaCabinetUI,
+    updateBack:globalThis.updateGlobalBackButtonVisibility
+  };
+  const attrs = Object.create(null), receivedOptions = [];
+  const root = {
+    style:{}, classList:{ add(){}, remove(){} },
+    __omegaUIV2State:{
+      route:'ministry-detail', ministryId:'defense', section:'assets', resourceSiteId:null,
+      governmentView:'executive-ministry', countryId:'BGD',
+      history:[{ route:'government', ministryId:null, section:'dashboard', governmentView:'all-ministries' }],
+      options:{}
+    },
+    setAttribute(key,value){ attrs[key] = String(value); },
+    getAttribute(key){ return attrs[key] || null; },
+    removeAttribute(key){ delete attrs[key]; }
+  };
+  attrs['data-omega-ui-v2-active'] = 'true';
+  const dashboard={style:{},setAttribute(){},removeAttribute(){}}, world={style:{}};
+  const manager={
+    currentLayer:1, layerStack:[0,1],
+    updateRightSidebar(){},
+    setLayer(layer){ this.currentLayer = layer; if(layer===2) this.layerStack=[0,1,2]; },
+    popLayer(){ this.currentLayer=1; this.layerStack=[0,1]; return true; }
+  };
+  globalThis.document={
+    getElementById(id){return id==='cabinet-full-window'?root:id==='ministry-dashboard-view'?dashboard:id==='world-ui-root'?world:null;},
+    body:{setAttribute(){},classList:{add(){}}}
+  };
+  globalThis.OmegaMinistryViewCountry='BGD';
+  globalThis.OmegaCabinetUI={ activeCountry:'BGD' };
+  globalThis.OmegaUIV2App={
+    destinations:['map','overview','government','economy','more','industry','reports','religion'],
+    mount(target,options){
+      receivedOptions.push(options);
+      target.__omegaUIV2State={
+        route:options.initialRoute, ministryId:options.initialMinistryId,
+        section:options.initialSection, resourceSiteId:options.initialResourceSiteId,
+        governmentView:options.initialGovernmentView, history:options.initialHistory,
+        countryId:options.countryId, options
+      };
+      return {ok:true,mounted:true,route:options.initialRoute};
+    },
+    unmount(){return {ok:true};}
+  };
+  globalThis.OmegaLayerManager=manager;
+  globalThis.updateGlobalBackButtonVisibility=()=>{};
+  try {
+    const opened=globalThis.OmegaUIV2Integration.openOperationalConsole('defense');
+    assert.equal(opened.ok,true);
+    assert.equal(manager.currentLayer,2);
+    manager.popLayer();
+    assert.equal(manager.currentLayer,1);
+    assert.equal(receivedOptions.length,1);
+    assert.equal(receivedOptions[0].initialRoute,'ministry-detail');
+    assert.equal(receivedOptions[0].initialMinistryId,'defense');
+    assert.equal(receivedOptions[0].initialSection,'assets');
+    assert.equal(receivedOptions[0].initialHistory.length,1);
+    assert.equal(root.__omegaUIV2State.route,'ministry-detail');
+    assert.equal(root.__omegaUIV2State.ministryId,'defense');
+    assert.equal(root.__omegaUIV2State.section,'assets');
+    assert.equal(globalThis.OmegaUIV2Integration.audit().mounted,true);
+  } finally {
+    if(previous.document===undefined)delete globalThis.document;else globalThis.document=previous.document;
+    if(previous.app===undefined)delete globalThis.OmegaUIV2App;else globalThis.OmegaUIV2App=previous.app;
+    if(previous.manager===undefined)delete globalThis.OmegaLayerManager;else globalThis.OmegaLayerManager=previous.manager;
+    if(previous.country===undefined)delete globalThis.OmegaMinistryViewCountry;else globalThis.OmegaMinistryViewCountry=previous.country;
+    if(previous.cabinet===undefined)delete globalThis.OmegaCabinetUI;else globalThis.OmegaCabinetUI=previous.cabinet;
+    if(previous.updateBack===undefined)delete globalThis.updateGlobalBackButtonVisibility;else globalThis.updateGlobalBackButtonVisibility=previous.updateBack;
+  }
+});

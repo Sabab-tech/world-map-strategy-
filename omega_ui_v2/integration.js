@@ -9,6 +9,7 @@
   var lastMount = null;
   var lastError = null;
   var resumeOnCabinetReturn = false;
+  var resumeUiState = null;
 
   function cabinetRoot() {
     return g.document && g.document.getElementById('cabinet-full-window') || null;
@@ -60,7 +61,7 @@
     mountOptions = mountOptions || {};
     root = root || cabinetRoot();
     if (!enabled || !root || !g.OmegaUIV2App || typeof g.OmegaUIV2App.mount !== 'function') return { ok:false, code:'UI_V2_INTEGRATION_UNAVAILABLE' };
-    var country = selectedCountry();
+    var country = String(mountOptions.countryId || selectedCountry() || '').trim().toUpperCase();
     try {
       // Open the already-existing cabinet surface without rendering the legacy cabinet HTML first.
       var dashboard = g.document && g.document.getElementById('ministry-dashboard-view');
@@ -91,8 +92,15 @@
       }
       if (typeof g.updateGlobalBackButtonVisibility === 'function') g.updateGlobalBackButtonVisibility();
       if (country) g.OmegaMinistryViewCountry = country;
+      var supportedRoutes = ['map','overview','government','economy','more','industry','reports','religion','home-affairs','resources','ministry-detail','mine-detail'];
+      var initialRoute = supportedRoutes.indexOf(mountOptions.initialRoute) >= 0 ? mountOptions.initialRoute : 'government';
       var result = g.OmegaUIV2App.mount(root, {
-        initialRoute:mountOptions.initialRoute && g.OmegaUIV2App.destinations.indexOf(mountOptions.initialRoute) >= 0 ? mountOptions.initialRoute : 'government',
+        initialRoute:initialRoute,
+        initialMinistryId:mountOptions.initialMinistryId || null,
+        initialSection:mountOptions.initialSection || 'dashboard',
+        initialResourceSiteId:mountOptions.initialResourceSiteId || null,
+        initialGovernmentView:mountOptions.initialGovernmentView === 'all-ministries' ? 'all-ministries' : 'executive-ministry',
+        initialHistory:Array.isArray(mountOptions.initialHistory) ? mountOptions.initialHistory : [],
         countryId:country,
         countryOptions:availableCountryOptions(country),
         onBackToMap:closeToWorldMap,
@@ -112,7 +120,7 @@
         return { ok:false, code:lastError };
       }
       if (root.setAttribute) root.setAttribute(ACTIVE_ATTR, 'true');
-      lastMount = { countryId:country || null, route:result.route || 'government', mounted:true };
+      lastMount = { countryId:country || null, route:result.route || initialRoute || 'government', mounted:true };
       lastError = null;
       if (mountOptions.ministryId && g.OmegaUIV2App && typeof g.OmegaUIV2App.openMinistry === 'function') { if (!g.OmegaUIV2App.openMinistry(root, mountOptions.ministryId)) return { ok:false, code:'UI_V2_MINISTRY_ROUTE_FAILED' }; lastMount.route = 'ministry-detail'; }
       return { ok:true, countryId:country || null, result:result, route:lastMount.route || mountOptions.initialRoute || 'government' };
@@ -140,10 +148,31 @@
     manager.__omegaUIV2ResumeHookInstalled = true;
   }
 
+  function captureUiStateForResume() {
+    var root = cabinetRoot();
+    var state = root && root.__omegaUIV2State;
+    if (!state) return null;
+    return {
+      initialRoute:state.route || 'government',
+      initialMinistryId:state.ministryId || null,
+      initialSection:state.section || 'dashboard',
+      initialResourceSiteId:state.resourceSiteId || null,
+      initialGovernmentView:state.governmentView === 'all-ministries' ? 'all-ministries' : 'executive-ministry',
+      initialHistory:Array.isArray(state.history) ? state.history.map(function (item) {
+        item = item || {};
+        return { route:item.route || 'map', ministryId:item.ministryId || null, section:item.section || 'dashboard',
+          resourceSiteId:item.resourceSiteId || null,
+          governmentView:item.governmentView === 'all-ministries' ? 'all-ministries' : 'executive-ministry' };
+      }) : [],
+      countryId:String(state.countryId || selectedCountry() || '').toUpperCase()
+    };
+  }
+
   function openOperationalConsole(ministryId) {
     var id = String(ministryId || '').trim();
     var manager = g.OmegaLayerManager;
     if (!id || !manager || typeof manager.setLayer !== 'function') return { ok:false, code:'LEGACY_OPERATIONAL_CONSOLE_UNAVAILABLE' };
+    resumeUiState = captureUiStateForResume();
     resumeOnCabinetReturn = true;
     installOperationalConsoleResumeHook(manager);
     try {
@@ -157,7 +186,9 @@
   function resumeAfterOperationalConsole(root) {
     if (!resumeOnCabinetReturn) return false;
     resumeOnCabinetReturn = false;
-    var result = mountIntoCabinet(root || cabinetRoot());
+    var restore = resumeUiState;
+    resumeUiState = null;
+    var result = mountIntoCabinet(root || cabinetRoot(), restore || {});
     return result && result.ok === true;
   }
 

@@ -353,25 +353,43 @@
         render(root);
       });
       root.addEventListener('keydown', function (event) {
-        if (!event || event.key !== 'Escape') return;
+        if (!event || (event.key !== 'Escape' && !(event.altKey && event.key === 'ArrowLeft'))) return;
+        var isEscape = event.key === 'Escape';
         var target = event.target;
-        var openMenu = root.querySelector && root.querySelector('.omega-v2-route-switcher[open]');
+        var openMenu = isEscape && root.querySelector && root.querySelector('.omega-v2-route-switcher[open]');
         if (openMenu) {
           openMenu.removeAttribute('open');
           if (event.preventDefault) event.preventDefault();
           return;
         }
-        if (target && typeof target.closest === 'function' && target.closest('input, select, textarea, [contenteditable="true"]')) return;
+        if (isEscape && target && typeof target.closest === 'function' &&
+            target.closest('input, select, textarea, [contenteditable="true"]')) return;
         if (event.preventDefault) event.preventDefault();
         back(root);
       });
       root.__omegaUIV2Bound = true;
     }
+    var internalRoutes = ['home-affairs', 'resources', 'ministry-detail', 'mine-detail'];
+    var acceptedRoutes = ROUTES.concat(internalRoutes);
+    var initialRoute = acceptedRoutes.indexOf(options.initialRoute) >= 0 ? options.initialRoute : 'map';
+    var initialHistory = Array.isArray(options.initialHistory) ? options.initialHistory.map(function (item) {
+      item = item || {};
+      return {
+        route:item.route || 'map',
+        ministryId:item.ministryId || null,
+        section:item.section || 'dashboard',
+        resourceSiteId:item.resourceSiteId || null,
+        governmentView:item.governmentView === 'all-ministries' ? 'all-ministries' : 'executive-ministry'
+      };
+    }) : [];
     root.__omegaUIV2State = {
-      route: options.initialRoute && ROUTES.indexOf(options.initialRoute) >= 0 ? options.initialRoute : 'map',
-      ministryId:null, section:'dashboard', resourceSiteId:null, governmentView:'executive-ministry',
+      route:initialRoute,
+      ministryId:options.initialMinistryId ? String(options.initialMinistryId) : null,
+      section:options.initialSection || 'dashboard',
+      resourceSiteId:options.initialResourceSiteId || null,
+      governmentView:options.initialGovernmentView === 'all-ministries' ? 'all-ministries' : 'executive-ministry',
       countryId:String(options.countryId || currentCountry() || '').toUpperCase(),
-      history:[], options:options
+      history:initialHistory, options:options
     };
     return Object.assign({ mounted:true }, render(root));
   }
