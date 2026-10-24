@@ -67,7 +67,14 @@ function completeFactoryCycle(state,industry,countryId,factoryId,sourceBatchId,m
   assert.ok(completed(),JSON.stringify({reason:'SOURCE_BATCH_FACTORY_CYCLE_NOT_COMPLETED',countryId,factoryId,sourceBatchId,
     flow:flowSummary(),cycle:cycle?{cycleId:cycle.cycleId,status:cycle.status,startDate:cycle.startDate,finishDate:cycle.finishDate,
       finishTurn:cycle.finishTurn,sourceBatchIds:cycle.sourceBatchIds,inputQuantities:cycle.inputQuantities,
-      expectedOutputs:cycle.expectedOutputs,utilityConsumption:cycle.utilityConsumption,reason:cycle.reason}:null,history}));
+      expectedOutputs:cycle.expectedOutputs,utilityConsumption:cycle.utilityConsumption,reason:cycle.reason,
+      lastBlockedReason:cycle.lastBlockedReason||null,lastBlockedDetail:cycle.lastBlockedDetail||null}:null,
+    cycleHistory:(resourceState().industrialNetwork?.factoryProductionCycleHistory||[])
+      .filter(row=>String(row?.factoryId||'')===String(factoryId)).slice(-8).map(row=>({
+        cycleId:row.cycleId,status:row.status,lastBlockedReason:row.lastBlockedReason||null,
+        lastBlockedDetail:row.lastBlockedDetail||null,sourceBatchIds:row.sourceBatchIds,
+        inputBatchReservations:row.inputBatchReservations,finishDate:row.finishDate,finishTurn:row.finishTurn
+      })),history}));
   return{status:'COMPLETED',sourceBatchId,flow:flowSummary(),history};
 }
 const resourceFiles=new Map([
@@ -1067,7 +1074,8 @@ for(const siteId of exhaustivePipelineCandidateIds){
           currentCycle:detail.cycle?{
             cycleId:detail.cycle.cycleId,status:detail.cycle.status,
             sourceBatchIds:detail.cycle.sourceBatchIds,finishDate:detail.cycle.finishDate,
-            finishTurn:detail.cycle.finishTurn
+            finishTurn:detail.cycle.finishTurn,lastBlockedReason:detail.cycle.lastBlockedReason||null,
+            lastBlockedDetail:detail.cycle.lastBlockedDetail||null
           }:null,
           flowStages:(detail.flow?.stages||[]).map(row=>({stage:row.stage,status:row.status,reason:row.reason})),
           historyCount:(detail.history||[]).length,
