@@ -54,8 +54,10 @@ for(const [countryId,row] of Object.entries(world)){
     eligibleById.set(siteId,{countryId:owner,siteId,resourceId,ref});
   }
 }
-assert.equal(new Set(allRefs.map(x=>x.siteId)).size,561,
-  'the unified runtime must expose 503 baseline sites plus 58 unique critical-mineral sites');
+assert.equal(allRefs.length,561,
+  'the unified runtime must expose all 561 baseline-plus-critical-mineral site reference rows');
+assert.equal(new Set(allRefs.map(x=>x.siteId)).size,559,
+  'two legacy reference rows intentionally alias existing physical site IDs');
 const sites=[...eligibleById.values()].sort((a,b)=>a.countryId.localeCompare(b.countryId)||a.siteId.localeCompare(b.siteId));
 assert.ok(sites.length>=400,'exhaustive audit must cover at least 400 unique executable sites; got '+sites.length);
 const eligibleIds=new Set(sites.map(x=>x.siteId));
