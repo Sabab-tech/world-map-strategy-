@@ -3,11 +3,11 @@
   "datasetId": "OMEGA_RESOURCE_SITE_COUNTRY_MINEPLAY_BATCH_V1",
   "batchId": "COUNTRY_MINEPLAY_CRITICAL_MINERALS_20261024",
   "generatedAt": "2026-10-24",
-  "recordCount": 56,
-  "countryCount": 21,
+  "recordCount": 58,
+  "countryCount": 23,
   "authority": "SOURCE_GROUNDED_SITE_IDENTITY_WITH_SIMULATION_ONLY_GAMEPLAY_PROFILE",
-  "note": "Additive critical-mineral and industrial-mineral site batch. Each site has a unique country-scoped identifier, coordinates, map eligibility, reserve, rate, capacity, extraction method, raw warehouse, transport route, compatible factory binding, processing outputs and source lineage. Project/deposit/quarry records preserve non-operating or uncertain real-world status separately from OMEGA's simulated playable state.",
-  "sourcePolicy": "Public operator, government, regulator or academic sources support site/project/commodity context. All quantitative production, grade, recovery, purity, capacity and 400-year reserves are deterministic gameplay-only simulation values and are never represented as measured real-world facts.",
+  "note": "Additive critical-mineral and industrial-mineral site batch. Each site has a unique country-scoped identifier, coordinates, map eligibility, reserve, rate, capacity, extraction method, raw warehouse, transport route, compatible factory binding, processing outputs and source lineage. Project/deposit/quarry records preserve non-operating or uncertain real-world status separately from OMEGA's simulated playable state. Two additional coral-aggregate resource areas are documented for Majuro, Marshall Islands and Funafuti Lagoon, Tuvalu; their source-status flags explicitly do not assert current operating mine permits.",
+  "sourcePolicy": "Public operator, government, regulator or academic sources support site/project/commodity context. All quantitative production, grade, recovery, purity, capacity and 400-year reserves are deterministic gameplay-only simulation values and are never represented as measured real-world facts. Coral-aggregate resource-area records are sourced from regional studies/government project documents; current permits and operator status are not asserted, and all production/reserve values remain simulation-only.",
   "records": [
     {
       "schemaVersion": "1.0.0",
@@ -13501,6 +13501,488 @@
           "sourceType": "STATE_MINERAL_RESOURCE_REGISTER",
           "accessed": "2026-10-24",
           "scope": "documented_site_or_project_identity_commodity_location_and_real_world_status_context"
+        }
+      ],
+      "observedFacts": []
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "siteId": "SITE_MHL_majuro_atoll_coral_aggregate_extraction_area",
+      "countryId": "MHL",
+      "siteName": "Majuro Atoll Coral Aggregate Extraction Area",
+      "identity": {
+        "countryIso3": "MHL",
+        "countryName": "Marshall Islands",
+        "siteType": "CORAL_AGGREGATE_EXTRACTION_AREA",
+        "resourceTypeId": "coral_aggregate",
+        "resourceName": "Coral aggregate",
+        "ontologyKey": "CORAL_AGGREGATE",
+        "aliases": []
+      },
+      "location": {
+        "countryName": "Marshall Islands",
+        "adminRegion": "Majuro Atoll, nearshore lagoon and coastal resource area",
+        "locality": "Majuro Atoll, nearshore lagoon and coastal resource area",
+        "coordinates": {
+          "lat": 7.09,
+          "lng": 171.38
+        },
+        "coordinateStatus": "REGIONAL_APPROXIMATION",
+        "coordinateAuthority": "PUBLIC_REGIONAL_REPORT_REFERENCE; COORDINATE_IS_APPROXIMATE_NOT_SURVEY_GRADE",
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "countryBoundaryKey": "MHL"
+      },
+      "ownership": {
+        "owner": "Current mine operator/permit holder not asserted; regional resource and extraction area only",
+        "operator": "Current mine operator/permit holder not asserted; regional resource and extraction area only",
+        "ownerEvidenceStatus": "NO_CURRENT_OPERATOR_OR_PERMIT_CLAIMED",
+        "operatorEvidenceStatus": "NO_CURRENT_OPERATOR_OR_PERMIT_CLAIMED",
+        "authority": "REGIONAL_RESOURCE_STUDY_WITH_STATUS_CAVEAT",
+        "equityControlCountry": "MHL",
+        "operatorContractId": "OPCONTRACT_SITE_MHL_majuro_atoll_coral_aggregate_extraction_area"
+      },
+      "operation": {
+        "status": "SIMULATED_OPERATIONAL_SCENARIO",
+        "operationalStatus": "SIMULATED_ACTIVE",
+        "extractionMethod": "QUARRY_CRUSH_SCREEN",
+        "fallbackMethod": "DREDGING",
+        "extractionEligibility": "SIMULATED_GAMEPLAY_EXECUTABLE_SUBJECT_TO_RUNTIME_GATES",
+        "commercialExtraction": true,
+        "siteCommissioningLevel": 5,
+        "mineLevel": 5,
+        "statusAuthority": "REGIONAL_SOURCE_CONTEXT_IS_NOT_PROOF_OF_A_CURRENT_LICENSE; SIMULATION_STATUS_AND_PLAYER_COMMISSIONING_ARE_SEPARATE",
+        "realWorldStatus": "DOCUMENTED BEACH MINING AND NEARSHORE DREDGING/REEF EXTRACTION REGION IN REGIONAL REPORTS; CURRENT PERMITS AND ACTIVE SITE OPERATOR NOT ASSERTED",
+        "gameplayConstructionAllowed": true
+      },
+      "processing": {
+        "upstreamProcess": "QUARRY_CRUSH_SCREEN",
+        "midstreamProcess": "CORAL_AGGREGATE_GRADING_AND_SIZE_CLASSIFICATION",
+        "refinedOutputs": [
+          "CONSTRUCTION_AGGREGATE",
+          "PROCESSING_RESIDUE"
+        ],
+        "downstreamSectors": [
+          "construction aggregate",
+          "coastal protection",
+          "concrete and fill where compliant"
+        ]
+      },
+      "logistics": {
+        "warehouseCountryId": "MHL",
+        "warehouseSiteId": "WH-MHL-RAW",
+        "inventoryRouteStatus": "RUNTIME_ROUTE_VALIDATION_REQUIRED",
+        "factoryRouteStatus": "SITE_BOUND_COMPATIBLE_FACTORY_REQUIRED",
+        "routeStatus": "SIMULATED_ROUTE_TO_BE_VALIDATED_BY_RUNTIME",
+        "transport": {
+          "routeId": "ROUTE_SITE_SITE_MHL_majuro_atoll_coral_aggregate_extraction_area_RAW_TO_FACTORY",
+          "routeType": "ROAD_RAIL_PORT",
+          "originSiteId": "SITE_MHL_majuro_atoll_coral_aggregate_extraction_area",
+          "originCountryId": "MHL",
+          "warehouseId": "WH-MHL-RAW",
+          "destinationFactoryId": "AUTO_SELECT_COMPATIBLE_FACTORY",
+          "destinationCountryId": "MHL",
+          "distanceKm": null,
+          "averageSpeedKmPerDay": null,
+          "estimatedTravelDays": null,
+          "routeStatus": "RUNTIME_ROUTING_REQUIRED",
+          "canBeBlockedByWar": true,
+          "canBeBlockedByNeighborControl": true,
+          "canBeBlockedByNavalInterdiction": true,
+          "strategicRouteNotRoadSurvey": true,
+          "routeCapacityPerDay": null
+        }
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": 262800000,
+          "unit": "TONNES_ORE",
+          "status": "SIMULATED",
+          "basis": "SITE_SPECIFIC_GAMEPLAY_RESERVE_ONLY_NOT_A_GEOLOGICAL_RESERVE",
+          "authority": "SCENARIO_SIMULATION_DATA"
+        },
+        "production": {
+          "annual": 657000,
+          "annualUnit": "TONNES_PER_YEAR",
+          "rate": 1800,
+          "unit": "TONNES_PER_DAY",
+          "status": "SIMULATED",
+          "basis": "DETERMINISTIC_GAMEPLAY_OUTPUT_ONLY_NOT_OBSERVED_SITE_PRODUCTION"
+        },
+        "grade": {
+          "value": 76,
+          "unit": "PERCENT",
+          "status": "SIMULATED"
+        },
+        "recovery": {
+          "value": 86,
+          "unit": "PERCENT",
+          "status": "SIMULATED"
+        },
+        "throughput": {
+          "value": 1800,
+          "unit": "TONNES_PER_DAY",
+          "status": "SIMULATED"
+        },
+        "purity": {
+          "value": 89,
+          "unit": "PERCENT",
+          "status": "SIMULATED"
+        },
+        "capacity": {
+          "minimum": 1260,
+          "nominal": 1800,
+          "maximum": 2340,
+          "unit": "TONNES_PER_DAY",
+          "status": "SIMULATED"
+        },
+        "quantitativeProvenance": {
+          "authority": "SCENARIO_SIMULATION_DATA",
+          "gameplayHorizonYears": 400,
+          "realWorldDataRequired": false,
+          "simulatedReserveSeparate": true,
+          "measuredReservePromoted": false,
+          "measuredProductionPromoted": false,
+          "quantitativeValuesAreSimulated": true,
+          "sourceUrls": [
+            "https://portals.iucn.org/library/efiles/documents/2011-060.pdf"
+          ],
+          "generatedAt": "2026-10-24"
+        },
+        "completeness": {
+          "reserve": "SIMULATED",
+          "production": "SIMULATED",
+          "grade": "SIMULATED",
+          "recovery": "SIMULATED",
+          "throughput": "SIMULATED",
+          "purity": "SIMULATED",
+          "capacity": "SIMULATED",
+          "overall": "GAMEPLAY_SIMULATION_COMPLETE"
+        }
+      },
+      "reserve": {
+        "quantity": 262800000,
+        "unit": "TONNES_ORE",
+        "status": "SIMULATED",
+        "basis": "SITE_SPECIFIC_GAMEPLAY_RESERVE_ONLY_NOT_A_GEOLOGICAL_RESERVE",
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "generatedAt": "2026-10-24"
+      },
+      "simulation": {
+        "simulationOnly": true,
+        "reserve": {
+          "quantity": 262800000,
+          "unit": "TONNES_ORE",
+          "status": "SIMULATED",
+          "basis": "SITE_SPECIFIC_GAMEPLAY_RESERVE_ONLY_NOT_A_GEOLOGICAL_RESERVE",
+          "authority": "SCENARIO_SIMULATION_DATA",
+          "generatedAt": "2026-10-24"
+        },
+        "reserveHorizonYears": 400,
+        "reserveAuthority": "SCENARIO_SIMULATION_DATA",
+        "nominalDailyCapacity": 1800,
+        "minimumDailyCapacity": 1260,
+        "maximumDailyCapacity": 2340,
+        "productionRate": 1800,
+        "productionRateUnit": "TONNES_PER_DAY",
+        "utilization": 0.7,
+        "recovery": 86,
+        "transportRoute": [
+          {
+            "routeId": "SIM_ROUTE:MHL:SITE_MHL_majuro_atoll_coral_aggregate_extraction_area",
+            "mode": "barge",
+            "transportMode": "barge",
+            "distanceKm": null,
+            "estimatedTravelDays": null,
+            "status": "SIMULATED_ROUTE_REQUIRES_RUNTIME_PLAN",
+            "blockableByWar": true,
+            "blockableByNeighborControl": true,
+            "blockableByNavalInterdiction": true,
+            "countryIsolationKey": "MHL"
+          }
+        ],
+        "rawWarehouseId": "WH-MHL-RAW",
+        "factoryBinding": {
+          "factoryId": "FACTORY_MHL_CORAL_AGGREGATE_SITE_MHL_majuro_atoll_coral_aggregate_extraction_area",
+          "countryId": "MHL",
+          "inputResourceId": "coral_aggregate",
+          "status": "SIMULATED_READY",
+          "authority": "SIMULATED_GAMEPLAY_RULE"
+        },
+        "gameplayConstructionAllowed": true
+      },
+      "map": {
+        "markerEligible": true,
+        "countryIsolationKey": "MHL",
+        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+      },
+      "runtime": {
+        "identityAuthority": "COUNTRY_MINEPLAY_CRITICAL_MINERALS_V1",
+        "quantityAuthority": "SCENARIO_SIMULATION_DATA",
+        "productionAuthority": "SCENARIO_SIMULATION_DATA",
+        "requiresFactoryBinding": true,
+        "requiresSiteSpecificRoute": true,
+        "sourceStatusIsNotGameplayCommissioning": true
+      },
+      "sourceReference": {
+        "sourcePath": "https://portals.iucn.org/library/efiles/documents/2011-060.pdf",
+        "sourceType": "REGIONAL_COASTAL_RESOURCE_AND_AGGREGATE_STUDY",
+        "accessed": "2026-10-24",
+        "facts": {
+          "sourceSupportsSiteOrResourceContext": true,
+          "measuredReservePromoted": false,
+          "measuredProductionPromoted": false,
+          "quantitativeValuesAreSimulated": true,
+          "sourceReportedRealWorldStatus": "DOCUMENTED BEACH MINING AND NEARSHORE DREDGING/REEF EXTRACTION REGION IN REGIONAL REPORTS; CURRENT PERMITS AND ACTIVE SITE OPERATOR NOT ASSERTED"
+        },
+        "statusNote": "The source documents coral aggregate extraction practices around Majuro, including onshore beach mining and nearshore dredging. This row represents a regional resource/extraction area, not a verified current licensed mine. Quantitative production, grade, recovery, capacity and 400-year reserves are gameplay-only simulation values. The site is not represented as currently operating in the real world."
+      },
+      "sources": [
+        {
+          "url": "https://portals.iucn.org/library/efiles/documents/2011-060.pdf",
+          "sourceType": "REGIONAL_COASTAL_RESOURCE_AND_AGGREGATE_STUDY",
+          "accessed": "2026-10-24",
+          "scope": "documented_coral_aggregate_resource_or_extraction_area; current_license_and_operator_not_asserted"
+        }
+      ],
+      "observedFacts": []
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "siteId": "SITE_TUV_funafuti_lagoon_coral_aggregate_source_area",
+      "countryId": "TUV",
+      "siteName": "Funafuti Lagoon Coral Aggregate Source Area",
+      "identity": {
+        "countryIso3": "TUV",
+        "countryName": "Tuvalu",
+        "siteType": "CORAL_AGGREGATE_PROJECT_RESOURCE_AREA",
+        "resourceTypeId": "coral_aggregate",
+        "resourceName": "Coral aggregate",
+        "ontologyKey": "CORAL_AGGREGATE",
+        "aliases": []
+      },
+      "location": {
+        "countryName": "Tuvalu",
+        "adminRegion": "Funafuti Lagoon, proposed aggregate resource area",
+        "locality": "Funafuti Lagoon, proposed aggregate resource area",
+        "coordinates": {
+          "lat": -8.52,
+          "lng": 179.2
+        },
+        "coordinateStatus": "REGIONAL_APPROXIMATION",
+        "coordinateAuthority": "PUBLIC_REGIONAL_REPORT_REFERENCE; COORDINATE_IS_APPROXIMATE_NOT_SURVEY_GRADE",
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "countryBoundaryKey": "TUV"
+      },
+      "ownership": {
+        "owner": "Tuvalu coastal-reclamation project resource area; current mine operator/permit holder not asserted",
+        "operator": "Tuvalu coastal-reclamation project resource area; current mine operator/permit holder not asserted",
+        "ownerEvidenceStatus": "NO_CURRENT_OPERATOR_OR_PERMIT_CLAIMED",
+        "operatorEvidenceStatus": "NO_CURRENT_OPERATOR_OR_PERMIT_CLAIMED",
+        "authority": "REGIONAL_RESOURCE_STUDY_WITH_STATUS_CAVEAT",
+        "equityControlCountry": "TUV",
+        "operatorContractId": "OPCONTRACT_SITE_TUV_funafuti_lagoon_coral_aggregate_source_area"
+      },
+      "operation": {
+        "status": "SIMULATED_OPERATIONAL_SCENARIO",
+        "operationalStatus": "SIMULATED_ACTIVE",
+        "extractionMethod": "QUARRY_CRUSH_SCREEN",
+        "fallbackMethod": "DREDGING",
+        "extractionEligibility": "SIMULATED_GAMEPLAY_EXECUTABLE_SUBJECT_TO_RUNTIME_GATES",
+        "commercialExtraction": true,
+        "siteCommissioningLevel": 5,
+        "mineLevel": 5,
+        "statusAuthority": "REGIONAL_SOURCE_CONTEXT_IS_NOT_PROOF_OF_A_CURRENT_LICENSE; SIMULATION_STATUS_AND_PLAYER_COMMISSIONING_ARE_SEPARATE",
+        "realWorldStatus": "FUNAFUTI LAGOON IDENTIFIED AS AN AGGREGATE SOURCE AREA FOR RECLAMATION PROJECTS; NOT ASSERTED AS A CURRENT OPERATING MINE",
+        "gameplayConstructionAllowed": true
+      },
+      "processing": {
+        "upstreamProcess": "QUARRY_CRUSH_SCREEN",
+        "midstreamProcess": "CORAL_AGGREGATE_GRADING_AND_SIZE_CLASSIFICATION",
+        "refinedOutputs": [
+          "CONSTRUCTION_AGGREGATE",
+          "PROCESSING_RESIDUE"
+        ],
+        "downstreamSectors": [
+          "construction aggregate",
+          "coastal protection",
+          "concrete and fill where compliant"
+        ]
+      },
+      "logistics": {
+        "warehouseCountryId": "TUV",
+        "warehouseSiteId": "WH-TUV-RAW",
+        "inventoryRouteStatus": "RUNTIME_ROUTE_VALIDATION_REQUIRED",
+        "factoryRouteStatus": "SITE_BOUND_COMPATIBLE_FACTORY_REQUIRED",
+        "routeStatus": "SIMULATED_ROUTE_TO_BE_VALIDATED_BY_RUNTIME",
+        "transport": {
+          "routeId": "ROUTE_SITE_SITE_TUV_funafuti_lagoon_coral_aggregate_source_area_RAW_TO_FACTORY",
+          "routeType": "ROAD_RAIL_PORT",
+          "originSiteId": "SITE_TUV_funafuti_lagoon_coral_aggregate_source_area",
+          "originCountryId": "TUV",
+          "warehouseId": "WH-TUV-RAW",
+          "destinationFactoryId": "AUTO_SELECT_COMPATIBLE_FACTORY",
+          "destinationCountryId": "TUV",
+          "distanceKm": null,
+          "averageSpeedKmPerDay": null,
+          "estimatedTravelDays": null,
+          "routeStatus": "RUNTIME_ROUTING_REQUIRED",
+          "canBeBlockedByWar": true,
+          "canBeBlockedByNeighborControl": true,
+          "canBeBlockedByNavalInterdiction": true,
+          "strategicRouteNotRoadSurvey": true,
+          "routeCapacityPerDay": null
+        }
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": 350400000,
+          "unit": "TONNES_ORE",
+          "status": "SIMULATED",
+          "basis": "SITE_SPECIFIC_GAMEPLAY_RESERVE_ONLY_NOT_A_GEOLOGICAL_RESERVE",
+          "authority": "SCENARIO_SIMULATION_DATA"
+        },
+        "production": {
+          "annual": 876000,
+          "annualUnit": "TONNES_PER_YEAR",
+          "rate": 2400,
+          "unit": "TONNES_PER_DAY",
+          "status": "SIMULATED",
+          "basis": "DETERMINISTIC_GAMEPLAY_OUTPUT_ONLY_NOT_OBSERVED_SITE_PRODUCTION"
+        },
+        "grade": {
+          "value": 81,
+          "unit": "PERCENT",
+          "status": "SIMULATED"
+        },
+        "recovery": {
+          "value": 88,
+          "unit": "PERCENT",
+          "status": "SIMULATED"
+        },
+        "throughput": {
+          "value": 2400,
+          "unit": "TONNES_PER_DAY",
+          "status": "SIMULATED"
+        },
+        "purity": {
+          "value": 91,
+          "unit": "PERCENT",
+          "status": "SIMULATED"
+        },
+        "capacity": {
+          "minimum": 1680,
+          "nominal": 2400,
+          "maximum": 3120,
+          "unit": "TONNES_PER_DAY",
+          "status": "SIMULATED"
+        },
+        "quantitativeProvenance": {
+          "authority": "SCENARIO_SIMULATION_DATA",
+          "gameplayHorizonYears": 400,
+          "realWorldDataRequired": false,
+          "simulatedReserveSeparate": true,
+          "measuredReservePromoted": false,
+          "measuredProductionPromoted": false,
+          "quantitativeValuesAreSimulated": true,
+          "sourceUrls": [
+            "https://www.idi.no/images/2025/07/Tuvalu%20CCAA%20FINAL%20AUDIT%20REPORT.pdf"
+          ],
+          "generatedAt": "2026-10-24"
+        },
+        "completeness": {
+          "reserve": "SIMULATED",
+          "production": "SIMULATED",
+          "grade": "SIMULATED",
+          "recovery": "SIMULATED",
+          "throughput": "SIMULATED",
+          "purity": "SIMULATED",
+          "capacity": "SIMULATED",
+          "overall": "GAMEPLAY_SIMULATION_COMPLETE"
+        }
+      },
+      "reserve": {
+        "quantity": 350400000,
+        "unit": "TONNES_ORE",
+        "status": "SIMULATED",
+        "basis": "SITE_SPECIFIC_GAMEPLAY_RESERVE_ONLY_NOT_A_GEOLOGICAL_RESERVE",
+        "authority": "SCENARIO_SIMULATION_DATA",
+        "generatedAt": "2026-10-24"
+      },
+      "simulation": {
+        "simulationOnly": true,
+        "reserve": {
+          "quantity": 350400000,
+          "unit": "TONNES_ORE",
+          "status": "SIMULATED",
+          "basis": "SITE_SPECIFIC_GAMEPLAY_RESERVE_ONLY_NOT_A_GEOLOGICAL_RESERVE",
+          "authority": "SCENARIO_SIMULATION_DATA",
+          "generatedAt": "2026-10-24"
+        },
+        "reserveHorizonYears": 400,
+        "reserveAuthority": "SCENARIO_SIMULATION_DATA",
+        "nominalDailyCapacity": 2400,
+        "minimumDailyCapacity": 1680,
+        "maximumDailyCapacity": 3120,
+        "productionRate": 2400,
+        "productionRateUnit": "TONNES_PER_DAY",
+        "utilization": 0.7,
+        "recovery": 88,
+        "transportRoute": [
+          {
+            "routeId": "SIM_ROUTE:TUV:SITE_TUV_funafuti_lagoon_coral_aggregate_source_area",
+            "mode": "barge",
+            "transportMode": "barge",
+            "distanceKm": null,
+            "estimatedTravelDays": null,
+            "status": "SIMULATED_ROUTE_REQUIRES_RUNTIME_PLAN",
+            "blockableByWar": true,
+            "blockableByNeighborControl": true,
+            "blockableByNavalInterdiction": true,
+            "countryIsolationKey": "TUV"
+          }
+        ],
+        "rawWarehouseId": "WH-TUV-RAW",
+        "factoryBinding": {
+          "factoryId": "FACTORY_TUV_CORAL_AGGREGATE_SITE_TUV_funafuti_lagoon_coral_aggregate_source_area",
+          "countryId": "TUV",
+          "inputResourceId": "coral_aggregate",
+          "status": "SIMULATED_READY",
+          "authority": "SIMULATED_GAMEPLAY_RULE"
+        },
+        "gameplayConstructionAllowed": true
+      },
+      "map": {
+        "markerEligible": true,
+        "countryIsolationKey": "TUV",
+        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+      },
+      "runtime": {
+        "identityAuthority": "COUNTRY_MINEPLAY_CRITICAL_MINERALS_V1",
+        "quantityAuthority": "SCENARIO_SIMULATION_DATA",
+        "productionAuthority": "SCENARIO_SIMULATION_DATA",
+        "requiresFactoryBinding": true,
+        "requiresSiteSpecificRoute": true,
+        "sourceStatusIsNotGameplayCommissioning": true
+      },
+      "sourceReference": {
+        "sourcePath": "https://www.idi.no/images/2025/07/Tuvalu%20CCAA%20FINAL%20AUDIT%20REPORT.pdf",
+        "sourceType": "AUDITOR_GENERAL_REPORT_AND_PROJECT_RESOURCE_ASSESSMENT",
+        "accessed": "2026-10-24",
+        "facts": {
+          "sourceSupportsSiteOrResourceContext": true,
+          "measuredReservePromoted": false,
+          "measuredProductionPromoted": false,
+          "quantitativeValuesAreSimulated": true,
+          "sourceReportedRealWorldStatus": "FUNAFUTI LAGOON IDENTIFIED AS AN AGGREGATE SOURCE AREA FOR RECLAMATION PROJECTS; NOT ASSERTED AS A CURRENT OPERATING MINE"
+        },
+        "statusNote": "The source identifies an indicative Funafuti lagoon aggregate source area for reclamation planning. This row is a documented resource/project area, not a claim of a standing operating mine. Quantitative production, grade, recovery, capacity and 400-year reserves are gameplay-only simulation values. The site is not represented as currently operating in the real world."
+      },
+      "sources": [
+        {
+          "url": "https://www.idi.no/images/2025/07/Tuvalu%20CCAA%20FINAL%20AUDIT%20REPORT.pdf",
+          "sourceType": "AUDITOR_GENERAL_REPORT_AND_PROJECT_RESOURCE_ASSESSMENT",
+          "accessed": "2026-10-24",
+          "scope": "documented_coral_aggregate_resource_or_extraction_area; current_license_and_operator_not_asserted"
         }
       ],
       "observedFacts": []
