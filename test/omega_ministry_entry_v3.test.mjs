@@ -34,7 +34,9 @@ test('v3 ministry entry is a new body-level button outside #app with an independ
   assert.ok(buttonAt > appClose, 'new button is outside #app and the map/UI tree');
   assert.ok(buttonAt >= 0, 'new button exists');
   assert.ok(!html.slice(buttonAt, buttonAt + 900).includes('id="btn-ministry-dock"'), 'does not reuse the old button id');
-  assert.ok(html.includes('omega_ministry_entry_v3.css'));
+  assert.ok(fs.existsSync(path.join(root, 'omega_ministry_entry_v3.css')), 'legacy entry CSS remains on disk');
+  assert.doesNotMatch(html, /<link[^>]+href="omega_ministry_entry_v3\.css"/i);
+  assert.match(html, /omega_ui_v2\/omega-ui-v2\.css/);
   assert.ok(html.includes('<script src="omega_ministry_entry_v3.js" defer></script>'));
 });
 
