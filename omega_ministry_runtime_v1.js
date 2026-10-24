@@ -540,6 +540,8 @@
         uniqueInstances,
         initialized,
         engineRegistryHealthy:registryHealth.ok,
+        engineRegistryReason:registryHealth.reason||null,
+        missingEngineIds:Array.isArray(registryHealth.missing)?registryHealth.missing.slice():[],
         interoperability:interoperability && typeof interoperability.health==='function'
           ? interoperability.health()
           : null

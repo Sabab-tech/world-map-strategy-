@@ -39,8 +39,11 @@
   }
   function getSnapshot(country) {
     var gateway = g.OmegaCountryDataGateway || (g.Omega && g.Omega.CountryDataGateway);
-    if (!gateway || typeof gateway.getSnapshot !== 'function') return null;
-    try { return gateway.getSnapshot(country); } catch (_) { return null; }
+    if (!gateway) return null;
+    try {
+      if (typeof gateway.getSnapshotForView === 'function') return gateway.getSnapshotForView(country);
+      return typeof gateway.getSnapshot === 'function' ? gateway.getSnapshot(country) : null;
+    } catch (_) { return null; }
   }
   function availableMetrics(snapshot) {
     var fields = snapshot && snapshot.fields || {};

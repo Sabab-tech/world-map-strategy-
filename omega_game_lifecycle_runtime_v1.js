@@ -628,10 +628,21 @@
 
   function init() {
     if (!g.document) return;
-    registerLifecycleFinalizer();
-    installMutationEventSaveBridge();
+
+    // Bind the authoritative clock controls first. Optional autosave hooks must never
+    // prevent interaction handlers from being installed on Android WebView during boot.
     g.document.addEventListener('click', clickHandler, true);
     g.document.addEventListener('visibilitychange', onVisibilityChange);
+    try {
+      registerLifecycleFinalizer();
+    } catch (error) {
+      setSaveStatus('AUTOSAVE FINALIZER UNAVAILABLE');
+    }
+    try {
+      installMutationEventSaveBridge();
+    } catch (error) {
+      setSaveStatus('AUTOSAVE EVENT BRIDGE UNAVAILABLE');
+    }
     g.document.addEventListener('freeze', onPageExit);
     g.document.addEventListener('resume', function () {
       if (!restoreFinished) restoreOnReady().catch(function () {});

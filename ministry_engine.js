@@ -649,7 +649,9 @@ window.OmegaCabinetUI = {
         const generalFacts = countryRecord?.generalFacts || {};
         const identityCode = identity?.countryCode || identity?.code || null;
         const gateway = window.OmegaCountryDataGateway;
-        const sharedSnapshot = identityCode && gateway?.getSnapshot?.(identityCode) || null;
+        const sharedSnapshot = identityCode && (typeof gateway?.getSnapshotForView === 'function'
+            ? gateway.getSnapshotForView(identityCode)
+            : gateway?.getSnapshot?.(identityCode)) || null;
         const sharedField = key => sharedSnapshot?.countryCode && sharedSnapshot.fields?.[key]?.status === 'AVAILABLE'
             ? sharedSnapshot.fields[key] : null;
         const sharedValue = key => sharedField(key)?.value ?? null;
