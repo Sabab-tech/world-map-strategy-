@@ -151,7 +151,7 @@ assert.equal(mineplayReadiness?.mineplayBatchCoverage?.base?.recordCount,44);
 assert.equal(mineplayReadiness?.mineplayBatchCoverage?.expanded?.status,'READY',JSON.stringify(mineplayReadiness?.mineplayBatchCoverage));
 assert.equal(mineplayReadiness?.mineplayBatchCoverage?.expanded?.recordCount,108);
 assert.equal(mineplayReadiness?.mineplayBatchCoverage?.critical?.status,'READY',JSON.stringify(mineplayReadiness?.mineplayBatchCoverage));
-assert.equal(mineplayReadiness?.mineplayBatchCoverage?.critical?.recordCount,56);
+assert.equal(mineplayReadiness?.mineplayBatchCoverage?.critical?.recordCount,58);
 assert.equal(mineplayReadiness?.mineplaySourceRecordCount,210);
 assert.equal(mineplayReadiness?.mineplayUniqueRecordCount,210,'the base, expanded and critical batches must contain 210 unique site identities');
 assert.equal(mineplayReadiness?.legacyLoadedParts,6);
