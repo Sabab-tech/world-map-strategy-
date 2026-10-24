@@ -13,6 +13,7 @@ const binding=read('omega_resource_gameplay_binding_v1.js');
 const scenarioSource=read('omega_resource_scenario_engineering_data_v1.js');
 const scenarioText=scenarioSource.slice(scenarioSource.indexOf('const DATA=')+'const DATA='.length,scenarioSource.indexOf(';\ng.OmegaResourceScenarioEngineeringData=DATA;'));
 const scenario=JSON.parse(scenarioText);
+const criticalMineplayBatch=JSON.parse(read('resource_site_country_mineplay_critical_batch_20261024_v1.json'));
 
 assert.equal(catalog.siteCount,315,'canonical catalog count');
 assert.equal(catalog.sites.length,315,'canonical catalog contains the 250 baseline + 65 additive records');
@@ -45,6 +46,7 @@ const runtimeContext={
  OmegaResourceSiteMasterResearchData:master,
  OmegaResourceSiteReserveSimulationData:reserves,
   OmegaResourceSiteCountryExpansionData:expansion,
+  OmegaResourceSiteCanonicalCatalogData:{siteCount:catalog.sites.length+criticalMineplayBatch.records.length,sites:[...catalog.sites,...criticalMineplayBatch.records]},
  OmegaResourceIndustrialCatalogData:JSON.parse(read('resource_industrial_catalog_v1.json')),
  OmegaMinistryInteroperability:{registerAction(){},registerCommandHandler(){},dispatchCommand(){return {status:'COMMITTED',records:[]}},emitEvent(){return true}},
  Omega:{}
@@ -71,10 +73,23 @@ assert.equal(expandedPlan.siteId,expandedSite.siteId,'expansion plan must retain
 assert.equal(expandedPlan.countryId,expandedSite.countryId,'expansion plan must preserve country isolation');
 assert.equal(expandedPlan.warehouseCountryId,expandedSite.countryId,'expansion extraction must bind to its own country warehouse');
 
+assert.equal(criticalMineplayBatch.records.length,58,'the expanded mineplay batch must be tested as engine input');
+for(const criticalSite of criticalMineplayBatch.records){
+ const resourceId=criticalSite.identity.resourceTypeId;
+ const sitePlan=liveApi.planExtraction({countryId:criticalSite.countryId,siteId:criticalSite.siteId,resourceId});
+ assert.equal(sitePlan.status,'PLANNED',criticalSite.siteId+' must resolve through the same extraction planner; '+String(sitePlan.reason||''));
+ assert.equal(sitePlan.siteId,criticalSite.siteId,criticalSite.siteId+' must retain its own site identity');
+ assert.equal(sitePlan.countryId,criticalSite.countryId,criticalSite.siteId+' must retain country isolation');
+ assert.equal(sitePlan.warehouseCountryId,criticalSite.countryId,criticalSite.siteId+' must bind to its own-country raw warehouse');
+ assert.ok(sitePlan.dailyRate>0 || sitePlan.productionRate>0 || sitePlan.capacity>0,
+   criticalSite.siteId+' must expose positive planned production capacity');
+}
+
 
 console.log('OMEGA INDIVIDUAL RESOURCE GAMEPLAY BINDING TEST PASSED');
 console.log('Canonical/master/reserve/scenario site counts: 315/250/250/250');
 console.log('Expansion sites resolved by existing extraction planner: PASS');
+console.log('All 58 critical/industrial mineplay sites resolve to planned production with country-isolated warehouses: PASS');
 console.log('Unique site IDs and exact per-site catalog joins: PASS');
 console.log('Playable index wiring + individual selection + extraction API binding: PASS');
 console.log('Actual master-registry -> realism/hardening -> industrial runtime extraction plan: PASS');
