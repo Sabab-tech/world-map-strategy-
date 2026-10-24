@@ -269,22 +269,24 @@ test('production shell fully disconnects legacy UI scripts and caches the isolat
   const server = read('server.js');
   const serviceWorker = read('omega-offline-map-sw.js');
   const isolationCss = read('omega_ui_v2/legacy-disconnect.css');
-  for (const retiredRuntime of ['omega_ui_system_redesign_v1.js', 'omega_ui_interaction_guard.js', 'omega_ui_button_system_v1.js']) {
-    assert.doesNotMatch(html, new RegExp('<script[^>]+src=["\\\\\\']' + retiredRuntime.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&') + '["\\\\\\']'));
-    assert.doesNotMatch(serviceWorker, new RegExp('["\\\\\\']\\\\.\\\\/' + retiredRuntime.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&') + '["\\\\\\']'));
+  const retired = ['omega_ui_system_redesign_v1.js', 'omega_ui_interaction_guard.js', 'omega_ui_button_system_v1.js'];
+  for (const script of retired) {
+    assert.equal(html.includes('<script src="' + script + '"'), false, script + ' must not be loaded');
+    assert.equal(serviceWorker.includes('"./' + script + '"'), false, script + ' must not be precached');
   }
-  assert.doesNotMatch(server, /UI_INTERACTION_GUARD_SCRIPT|omega_ui_interaction_guard\\.js/,
-    'the production server must not inject the retired click interceptor');
-  assert.match(html, /omega_ui_v2\\/legacy-disconnect\\.css/);
-  assert.match(serviceWorker, /CACHE_NAME = "omega-offline-atlas-shell-v35"/);
+  assert.equal(server.includes('UI_INTERACTION_GUARD_SCRIPT'), false, 'server must not inject the retired click interceptor');
+  assert.equal(server.includes('omega_ui_interaction_guard.js'), false, 'server must not inject the retired click interceptor');
+  assert.ok(html.includes('omega_ui_v2/legacy-disconnect.css'));
+  assert.ok(serviceWorker.includes('CACHE_NAME = "omega-offline-atlas-shell-v35"'));
   const coreStart = serviceWorker.indexOf('const CORE_ASSETS');
   const coreEnd = serviceWorker.indexOf('];', coreStart);
   const coreAssets = serviceWorker.slice(coreStart, coreEnd);
   assert.ok(coreAssets.includes('"./omega_ui_v2/legacy-disconnect.css"'));
-  assert.match(isolationCss, /#ministry-dashboard-view[^]*display: none !important/s);
-  assert.match(isolationCss, /z-index: 2147483000 !important/);
+  assert.ok(isolationCss.includes('#ministry-dashboard-view'));
+  assert.ok(isolationCss.includes('display: none !important'));
+  assert.ok(isolationCss.includes('z-index: 2147483000 !important'));
 });
- 
+
 test('slow simulation frames and data-heavy ministry panels bound repeated UI work', () => {
   const simulation = read('omega_simulation_runtime.js');
   assert.match(simulation, /MAX_PENDING_REAL_DELTA_MS\s*=\s*STEP_MS/);
