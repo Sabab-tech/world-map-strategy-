@@ -549,6 +549,7 @@ test('universal navigation, reliable Exit/Escape behavior and responsive visuals
   for (const legacyCss of ['omega_ui_interaction_fix_v2.css', 'omega_ui_visual_system_v1.css',
     'omega_ui_system_redesign_v1.css', 'omega_ministry_layout_repair_v1.css', 'omega_ministry_entry_v3.css']) {
     assert.ok(existsSync(new URL('../' + legacyCss, import.meta.url)), legacyCss + ' must remain in the repository');
-    assert.doesNotMatch(html, new RegExp('<link[^>]+href=["\\\\'][^"\\\\']*' + legacyCss.replaceAll('.', '\\\\.') + '["\\\\']'));
+    assert.equal(html.includes('href="' + legacyCss + '"'), false, legacyCss + ' must not be loaded by index.html');
+    assert.equal(html.includes("href='" + legacyCss + "'"), false, legacyCss + ' must not be loaded by index.html');
   }
 });
