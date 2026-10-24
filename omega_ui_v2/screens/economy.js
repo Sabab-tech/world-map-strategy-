@@ -17,10 +17,11 @@
       if (absolute >= 1e12) { divisor = 1e12; suffix = 'T'; }
       else if (absolute >= 1e9) { divisor = 1e9; suffix = 'B'; }
       var fractionDigits = suffix ? 1 : 2;
+      var minimumFractionDigits = suffix ? 0 : 2;
       var formatted = new Intl.NumberFormat('en-US', {
         style:'currency',
         currency:'USD',
-        minimumFractionDigits:0,
+        minimumFractionDigits:minimumFractionDigits,
         maximumFractionDigits:fractionDigits
       }).format(n / divisor);
       return formatted + suffix;
