@@ -91,7 +91,7 @@
     var enabled = options && typeof options.onNavigate === 'function';
     return '<div class="omega-v2-actions"><button type="button" class="omega-v2-button omega-v2-button--primary" data-omega-v2-detail-navigate="' + esc(route[0]) + '"' + (enabled ? '' : ' disabled title="Navigation callback is unavailable."') + '>' + esc(route[1]) + '</button></div>';
   }
-  function operationalConsoleCard(id, options) {
+  function operationalCoverageCard(id) {
     return '<article class="omega-v2-card omega-v2-operational-console-card">' +
       '<h2 class="omega-v2-card-title">Operational coverage</h2>' +
       '<p class="omega-v2-card-meta">This ministry is displayed inside UI v2. Legacy screen navigation is disconnected; only actions implemented in the current screen are enabled.</p>' +
@@ -147,14 +147,6 @@
         if (tab && root.contains(tab)) {
           var current = root.__omegaV2MinistryDetailOptions || {};
           render(root, Object.assign({}, current, { section:tab.getAttribute('data-omega-v2-ministry-section') }));
-          return;
-        }
-        var consoleButton = target.closest('[data-omega-v2-open-operational-console]');
-        if (consoleButton && root.contains(consoleButton) && !consoleButton.disabled) {
-          var consoleOptions = root.__omegaV2MinistryDetailOptions || {};
-          if (typeof consoleOptions.onOpenOperationalConsole === 'function') {
-            consoleOptions.onOpenOperationalConsole(consoleButton.getAttribute('data-omega-v2-open-operational-console'));
-          }
           return;
         }
         var route = target.closest('[data-omega-v2-detail-navigate]');
