@@ -254,6 +254,17 @@ test('large world GeoJSON is rendered incrementally rather than monopolizing the
 });
 
 
+test('interaction guard is loaded by the production shell and cached for offline/Android use', () => {
+  const html = read('index.html');
+  const serviceWorker = read('omega-offline-map-sw.js');
+  assert.match(html, /<script src="omega_ui_interaction_guard\.js" defer><\/script>/);
+  assert.match(serviceWorker, /CACHE_NAME = "omega-offline-atlas-shell-v33"/);
+  const coreStart = serviceWorker.indexOf('const CORE_ASSETS');
+  const coreEnd = serviceWorker.indexOf('];', coreStart);
+  assert.ok(serviceWorker.slice(coreStart, coreEnd).includes('"./omega_ui_interaction_guard.js"'),
+    'the interaction guard must be included in the offline core asset bundle');
+});
+
 test('slow simulation frames and data-heavy ministry panels bound repeated UI work', () => {
   const simulation = read('omega_simulation_runtime.js');
   assert.match(simulation, /MAX_PENDING_REAL_DELTA_MS\s*=\s*STEP_MS/);
@@ -273,7 +284,7 @@ test('slow simulation frames and data-heavy ministry panels bound repeated UI wo
 
   const serviceWorker = read('omega-offline-map-sw.js');
   const cacheVersion = Number(serviceWorker.match(/CACHE_NAME = "omega-offline-atlas-shell-v(\d+)"/)?.[1] || 0);
-  assert.ok(cacheVersion >= 30, 'Android/offline installs must receive the updated anti-hang runtime scripts');
+  assert.ok(cacheVersion >= 33, 'Android/offline installs must receive the active interaction-guard runtime');
 });
 
 
