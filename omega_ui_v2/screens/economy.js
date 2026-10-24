@@ -6,7 +6,26 @@
   function fmt(v, unit) {
     var n = num(v);
     if (n === null) return v == null || v === '' ? 'Not recorded' : esc(v);
-    if (String(unit || '').toUpperCase() === 'USD') return new Intl.NumberFormat('en-US', { style:'currency', currency:'USD', maximumFractionDigits:1, notation:Math.abs(n) >= 1e9 ? 'compact' : 'standard' }).format(n);
+    if (String(unit || '').toUpperCase() === 'USD') {
+      // Android 9's Chromium 66 WebView can reject currency formatting when
+      // maximumFractionDigits is below the currency's default minimum (2).
+      // Its Intl.NumberFormat also predates the "notation" compact option, so
+      // scale large values explicitly and provide a valid minimum/maximum pair.
+      var absolute = Math.abs(n);
+      var divisor = 1;
+      var suffix = '';
+      if (absolute >= 1e12) { divisor = 1e12; suffix = 'T'; }
+      else if (absolute >= 1e9) { divisor = 1e9; suffix = 'B'; }
+      var fractionDigits = suffix ? 1 : 2;
+      var minimumFractionDigits = suffix ? 0 : 2;
+      var formatted = new Intl.NumberFormat('en-US', {
+        style:'currency',
+        currency:'USD',
+        minimumFractionDigits:minimumFractionDigits,
+        maximumFractionDigits:fractionDigits
+      }).format(n / divisor);
+      return formatted + suffix;
+    }
     return new Intl.NumberFormat('en-US', { maximumFractionDigits:2 }).format(n) + (unit ? ' ' + esc(unit) : '');
   }
   function getBucket(root, country) {

@@ -1,4 +1,5 @@
 import test from 'node:test';
+import vm from 'node:vm';
 import assert from 'node:assert/strict';
 
 import '../omega_ui_v2/navigation-registry.js';
@@ -458,6 +459,54 @@ test('Universal navigation keeps the World tab internal and supplies a separate 
   assert.ok(appSource.includes('historySnapshot(state)'));
   assert.equal(appSource.includes("destination === 'map' && stateFor(root).options"), false);
   assert.equal(bridgeSource.includes('renderMap:function () { return closeToWorldMap(); }'), false);
+});
+
+test('economy USD formatting works in the legacy Android 9 WebView NumberFormat implementation', () => {
+  const source = readFileSync(new URL('../omega_ui_v2/screens/economy.js', import.meta.url), 'utf8');
+  const nativeNumberFormat = Intl.NumberFormat;
+  const sandbox = {};
+  sandbox.Intl = {
+    NumberFormat: function (locale, options) {
+      // Chromium 66 could fail when currency maximumFractionDigits is set to 1
+      // without also overriding the currency's default minimumFractionDigits (2).
+      if (options && options.style === 'currency' &&
+          options.minimumFractionDigits === undefined &&
+          options.maximumFractionDigits !== undefined && options.maximumFractionDigits < 2) {
+        throw new RangeError('maximumFractionDigits value is out of range');
+      }
+      // Android 9 WebView predates the Intl compact-notation option.
+      const compatibleOptions = Object.assign({}, options || {});
+      delete compatibleOptions.notation;
+      return new nativeNumberFormat(locale, compatibleOptions);
+    }
+  };
+  sandbox.window = sandbox;
+  vm.createContext(sandbox);
+  vm.runInContext(source, sandbox, { filename:'omega_ui_v2/screens/economy.js', timeout:1000 });
+  sandbox.Game = { state: { finance: { USA: {
+    available:2500000000, revenue:3500000, expenditure:1000000, budgetBalance:250000000
+  } }, economy: { USA:{} } } };
+  sandbox.OmegaCountryDataGateway = {
+    getSnapshot: () => ({ fields: {
+      gdp:{status:'AVAILABLE', value:7000000000000, unit:'USD', sourceName:'fixture'},
+      inflation:{status:'UNAVAILABLE', value:null},
+      debtToGdpPct:{status:'UNAVAILABLE', value:null},
+      reserves:{status:'UNAVAILABLE', value:null},
+      debt:{status:'UNAVAILABLE', value:null},
+      tradeBalance:{status:'UNAVAILABLE', value:null}
+    } })
+  };
+  const root = {
+    innerHTML:'',
+    classList:{ add(){} },
+    addEventListener(){},
+    __omegaV2EconomyBound:true
+  };
+  const result = sandbox.OmegaUIV2Economy.render(root, { countryId:'USA', tab:'overview' });
+  assert.equal(result.ok, true);
+  assert.match(root.innerHTML, /\$2\.5B/);
+  assert.match(root.innerHTML, /\$3,500,000\.00/);
+  assert.match(root.innerHTML, /\$7T/);
 });
 
 test('Finance has six separate data-backed tabs', () => {
