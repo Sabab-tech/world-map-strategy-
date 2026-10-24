@@ -1,4 +1,4 @@
-/* OMEGA UI INTERACTION GUARD v2.4.0
+/* OMEGA UI INTERACTION GUARD v2.5.0
  * Modal-aware interaction gate. The minister interrogation dialog is an
  * authorized interactive surface and must never be blocked by the ministry
  * outside-click shield.
@@ -10,9 +10,9 @@
  */
 (function(global){
 'use strict';
-if(global.__OMEGA_UI_INTERACTION_GUARD_V21__)return;
-global.__OMEGA_UI_INTERACTION_GUARD_V21__=true;
-const MINISTRY='#ministry-dashboard-view',INTERROGATION='#minister-interrogation-modal',CABINET='#cabinet-full-window',COMMAND='#command-hub-modal',STYLE_ID='omega-ui-interaction-guard-v22';
+if(global.__OMEGA_UI_INTERACTION_GUARD_V25__)return;
+global.__OMEGA_UI_INTERACTION_GUARD_V25__=true;
+const MINISTRY='#ministry-dashboard-view',INTERROGATION='#minister-interrogation-modal',CABINET='#cabinet-full-window',COMMAND='#command-hub-modal',STYLE_ID='omega-ui-interaction-guard-v25';
 const SURFACE_SELECTOR=[MINISTRY,INTERROGATION,CABINET,COMMAND].join(',');
 let pendingSyncFrame=null;
 const visible=el=>{if(!el)return false;const s=getComputedStyle(el),r=el.getBoundingClientRect();return s.display!=='none'&&s.visibility!=='hidden'&&Number(s.opacity)!==0&&r.width>0&&r.height>0;};
@@ -42,6 +42,8 @@ function install(){
  ${INTERROGATION} input,${INTERROGATION} button,${INTERROGATION} textarea,${INTERROGATION} select,${INTERROGATION} [role="button"]{pointer-events:auto!important;touch-action:manipulation!important;position:relative!important;z-index:100001!important}
  ${CABINET},${COMMAND},#render-engine-root,#map,.ui-bottom-navigation,.ui-right-controls,#special-map-controls{isolation:isolate}
  ${CABINET}{z-index:4000!important}
+ body.omega-ui-v2-cabinet-active ${CABINET}[data-omega-ui-v2-active="true"]{z-index:2147483000!important;height:var(--omega-app-height,100vh)!important;max-height:var(--omega-app-height,100vh)!important;min-height:0!important;overflow:hidden!important;pointer-events:auto!important;visibility:visible!important}
+ body.omega-ui-v2-cabinet-active ${MINISTRY}{display:none!important;visibility:hidden!important;pointer-events:none!important}
  body.omega-ministry-active ${CABINET}:not([data-omega-ui-v2-active="true"]),body.omega-ministry-active ${COMMAND},body.omega-ministry-active #render-engine-root,body.omega-ministry-active #map,body.omega-ministry-active #special-map-controls,body.omega-ministry-active .ui-bottom-navigation,body.omega-ministry-active .ui-right-controls{pointer-events:none!important}
  body.omega-ministry-active ${CABINET}[data-omega-ui-v2-active="true"],body.omega-ministry-active ${CABINET}[data-omega-ui-v2-active="true"] *{pointer-events:auto!important}
  body.omega-ministry-active ${MINISTRY},body.omega-ministry-active ${MINISTRY} *{pointer-events:auto!important}
@@ -50,8 +52,8 @@ function install(){
  document.head.appendChild(s);
 }
 function setSurface(){
- const m=document.querySelector(MINISTRY),content=document.querySelector('#ministry-dashboard-content'),interrogation=document.querySelector(INTERROGATION),on=active(),overlay=interactiveOverlay();
- if(document.body&&document.body.classList)document.body.classList.toggle('omega-ministry-active',on);
+ const m=document.querySelector(MINISTRY),content=document.querySelector('#ministry-dashboard-content'),interrogation=document.querySelector(INTERROGATION),v2CabinetActive=activeV2Cabinet(),on=!v2CabinetActive&&active(),overlay=interactiveOverlay();
+ if(document.body&&document.body.classList){document.body.classList.toggle('omega-ministry-active',on);document.body.classList.toggle('omega-ui-v2-cabinet-active',v2CabinetActive);}
  if(m){m.classList.toggle('omega-ui-active',on);setAttributeIfChanged(m,'aria-hidden',on?'false':'true');}
  if(content&&!content.classList.contains('omega-ministry-scroll-surface'))content.classList.add('omega-ministry-scroll-surface');
  if(interrogation){
@@ -65,12 +67,12 @@ function setSurface(){
      });
    }
  }
- const c=document.querySelector(CABINET),cmd=document.querySelector(COMMAND),v2CabinetActive=activeV2Cabinet();
- setAttributeIfChanged(c,'aria-hidden',on&&!v2CabinetActive?'true':'false');
+ const c=document.querySelector(CABINET),cmd=document.querySelector(COMMAND);
+ setAttributeIfChanged(c,'aria-hidden',on?'true':'false');
  setAttributeIfChanged(cmd,'aria-hidden',on?'true':'false');
 }
 function allowedTarget(target){const m=document.querySelector(MINISTRY),i=document.querySelector(INTERROGATION),c=document.querySelector(CABINET);return!!(m?.contains(target)||i?.contains(target)||(activeV2Cabinet()&&c?.contains(target)));}
-function blockOutside(e){if(!active())return;if(allowedTarget(e.target))return;e.preventDefault();e.stopImmediatePropagation();}
+function blockOutside(e){if(activeV2Cabinet()||!active())return;if(allowedTarget(e.target))return;e.preventDefault();e.stopImmediatePropagation();}
 function containsSurface(el){
  if(!el||el.nodeType!==1)return false;
  if(el.matches&&el.matches(SURFACE_SELECTOR))return true;
@@ -99,10 +101,10 @@ function relevantMutations(records){
 function boot(){
  install();
  for(const t of ['pointerdown','pointerup','click','touchstart','touchend','mousedown','mouseup','focusin'])document.addEventListener(t,blockOutside,true);
- document.addEventListener('wheel',e=>{if(!active())return;if(allowedTarget(e.target))return;e.preventDefault();e.stopImmediatePropagation();},{capture:true,passive:false});
+ document.addEventListener('wheel',e=>{if(activeV2Cabinet()||!active())return;if(allowedTarget(e.target))return;e.preventDefault();e.stopImmediatePropagation();},{capture:true,passive:false});
  if(typeof global.MutationObserver==='function'){
    const observer=new global.MutationObserver(records=>{if(relevantMutations(records))scheduleSurfaceSync();});
-   observer.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['style','class','hidden','aria-hidden']});
+   observer.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['style','class','hidden','aria-hidden','data-omega-ui-v2-active']});
  }
  global.addEventListener('pageshow',scheduleSurfaceSync);
  global.addEventListener('resize',scheduleSurfaceSync,{passive:true});
@@ -111,5 +113,5 @@ function boot(){
  setSurface();
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
-global.OmegaUIInteractionGuard={version:'2.4.0',refresh:setSurface,scheduleRefresh:scheduleSurfaceSync};
+global.OmegaUIInteractionGuard={version:'2.5.0',refresh:setSurface,scheduleRefresh:scheduleSurfaceSync};
 })(window);
