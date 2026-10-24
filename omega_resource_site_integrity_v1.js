@@ -267,7 +267,7 @@ function buildSimulationPipelineProfile(raw,options={}){
     operation.commercialExtraction=false;
     operation.extractionEligibility='NON_EXECUTABLE';
     row.operation=operation;
-    row.map={...(row.map||{}),markerEligible:row.map?.markerEligible===true,countryIsolationKey:country};
+    row.map={...(row.map||{}),markerEligible:false,countryIsolationKey:country};
     row.runtime={...row.runtime,requiresSiteSpecificRoute:false,requiresFactoryBinding:false,
       pipeline:{version:'OMEGA_SITE_PIPELINE_PROFILE_V1',profileAuthority:'NOT_APPLICABLE_NO_RESOURCE',
         site:'REGISTERED_NOT_APPLICABLE',extraction:'NOT_APPLICABLE',batch:'NOT_APPLICABLE',
@@ -318,7 +318,7 @@ function buildSimulationPipelineProfile(raw,options={}){
   const annualUnit=String(simulation.annualProductionUnit||(rateUnit==='BARRELS_PER_DAY'?'BARRELS_PER_YEAR':rateUnit==='MMCF_PER_DAY'?'MMCF_PER_YEAR':rateUnit.replace(/_PER_DAY$/,'_PER_YEAR')));
   const utilizationRaw=Number(simulation.utilization);
   const utilization=Number.isFinite(utilizationRaw)&&utilizationRaw>0&&utilizationRaw<=1?utilizationRaw:Math.min(.94,Math.max(.62,.68+(seed%251)/1000));
-  const nominal=sitePipelinePositive(simulation.nominalDailyCapacity)||Math.max(dailyRate,Math.round(dailyRate/Math.max(.55,utilization)));
+  const nominal=Math.max(dailyRate,sitePipelinePositive(simulation.nominalDailyCapacity)||Math.round(dailyRate/Math.max(.55,utilization)));
   const minimum=Math.min(nominal,sitePipelinePositive(simulation.minimumDailyCapacity)||Math.max(1,Math.round(nominal*.62)));
   const maximum=Math.max(nominal,sitePipelinePositive(simulation.maximumDailyCapacity)||Math.round(nominal*1.28));
   const reserveSource=simulation.reserve&&typeof simulation.reserve==='object'?simulation.reserve:
@@ -334,7 +334,7 @@ function buildSimulationPipelineProfile(raw,options={}){
   simulation.recovery=sitePipelinePositive(simulation.recovery)||Math.round((.68+(seed%261)/1000)*10000)/10000;
   const oldGrade=simulation.grade;
   if(!(oldGrade&&typeof oldGrade==='object'&&sitePipelinePositive(oldGrade.value))&&!(sitePipelinePositive(oldGrade))){
-    const gradeBase=resource==='gold'?1.2:resource==='copper'?.85:resource==='iron_ore'?58:resource==='coal'?6200:resource==='natural_gas'?91:resource==='crude_oil'?32:resource==='limestone'?88:20;
+    const gradeBase=resource==='gold' ? 1.2 : resource==='copper' ? 0.85 : resource==='iron_ore' ? 58 : resource==='coal' ? 6200 : resource==='natural_gas' ? 91 : resource==='crude_oil' ? 32 : resource==='limestone' ? 88 : 20;
     simulation.grade={value:Math.round((gradeBase*(.75+(seed%501)/1000))*1000)/1000,unit:band.gradeUnit,
       year,metric:'RESOURCE_SPECIFIC_SIMULATED_QUALITY',status:'SIMULATED',
       basis:'SITE_ID_SEEDED_COMMODITY_BAND_NOT_ASSAY'};
@@ -407,11 +407,11 @@ function buildSimulationPipelineProfile(raw,options={}){
     countryWarehouseId:warehouseId,requiresSiteSpecificRoute:true,requiresFactoryBinding:true,
     pipeline:{version:'OMEGA_SITE_PIPELINE_PROFILE_V1',
       profileAuthority:'SIMULATION_ONLY_RUNTIME_COMPLETION',
-      site:'BOUND',extraction:operation.commercialExtraction===false?'BLOCKED_BY_OPERATION_ELIGIBILITY':'SIMULATED_ENGINEERING_READY',
+      site:'BOUND',extraction:operation.commercialExtraction===true?'SIMULATED_ENGINEERING_READY':operation.commercialExtraction===false?'BLOCKED_BY_OPERATION_ELIGIBILITY':'REQUIRES_COMMERCIAL_ELIGIBILITY',
       batch:'SITE_ID_KEYED',rawWarehouse:'BOUND_TO_OWNER_COUNTRY',transport:'SIMULATED_STRATEGIC_ROUTE_READY',
       factory:'SITE_AND_COUNTRY_BOUND',processing:'RESOURCE_SPECIFIC_SIMULATED_PROCESS',
       output:'SIMULATED_PRODUCT_STREAM',economy:'COUNTRY_ISOLATED_SIMULATED_OUTPUT',
-      extractionExecutable:operation.commercialExtraction!==false}};
+      extractionExecutable:operation.commercialExtraction===true}};
   row.operation=operation;
   simulation.simulationOnly=true;simulation.pipelineProfileVersion='OMEGA_SITE_PIPELINE_PROFILE_V1';
   simulation.pipelineProfileStatus='READY';simulation.pipelineProfileAuthority='SIMULATION_ONLY_RUNTIME_COMPLETION';
