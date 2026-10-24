@@ -1,4 +1,4 @@
-/* OMEGA UI INTERACTION GUARD v2.3.0
+/* OMEGA UI INTERACTION GUARD v2.4.0
  * Modal-aware interaction gate. The minister interrogation dialog is an
  * authorized interactive surface and must never be blocked by the ministry
  * outside-click shield.
@@ -18,6 +18,9 @@ let pendingSyncFrame=null;
 const visible=el=>{if(!el)return false;const s=getComputedStyle(el),r=el.getBoundingClientRect();return s.display!=='none'&&s.visibility!=='hidden'&&Number(s.opacity)!==0&&r.width>0&&r.height>0;};
 const active=()=>visible(document.querySelector(MINISTRY));
 const interactiveOverlay=()=>visible(document.querySelector(INTERROGATION));
+// UI v2 reuses the cabinet as its host. Preserve its interaction surface when
+// a legacy ministry overlay briefly remains active during a layer transition.
+const activeV2Cabinet=()=>{const c=document.querySelector(CABINET);return!!(c&&c.getAttribute('data-omega-ui-v2-active')==='true');};
 function setAttributeIfChanged(el,name,value){
  if(el&&el.getAttribute(name)!==value)el.setAttribute(name,value);
 }
@@ -39,7 +42,8 @@ function install(){
  ${INTERROGATION} input,${INTERROGATION} button,${INTERROGATION} textarea,${INTERROGATION} select,${INTERROGATION} [role="button"]{pointer-events:auto!important;touch-action:manipulation!important;position:relative!important;z-index:100001!important}
  ${CABINET},${COMMAND},#render-engine-root,#map,.ui-bottom-navigation,.ui-right-controls,#special-map-controls{isolation:isolate}
  ${CABINET}{z-index:4000!important}
- body.omega-ministry-active ${CABINET},body.omega-ministry-active ${COMMAND},body.omega-ministry-active #render-engine-root,body.omega-ministry-active #map,body.omega-ministry-active #special-map-controls,body.omega-ministry-active .ui-bottom-navigation,body.omega-ministry-active .ui-right-controls{pointer-events:none!important}
+ body.omega-ministry-active ${CABINET}:not([data-omega-ui-v2-active="true"]),body.omega-ministry-active ${COMMAND},body.omega-ministry-active #render-engine-root,body.omega-ministry-active #map,body.omega-ministry-active #special-map-controls,body.omega-ministry-active .ui-bottom-navigation,body.omega-ministry-active .ui-right-controls{pointer-events:none!important}
+ body.omega-ministry-active ${CABINET}[data-omega-ui-v2-active="true"],body.omega-ministry-active ${CABINET}[data-omega-ui-v2-active="true"] *{pointer-events:auto!important}
  body.omega-ministry-active ${MINISTRY},body.omega-ministry-active ${MINISTRY} *{pointer-events:auto!important}
  .omega-ministry-scroll-surface{overflow:auto!important;overflow-y:scroll!important;touch-action:pan-y pinch-zoom!important;-webkit-overflow-scrolling:touch!important;overscroll-behavior:contain!important}
  `;
@@ -61,11 +65,11 @@ function setSurface(){
      });
    }
  }
- const c=document.querySelector(CABINET),cmd=document.querySelector(COMMAND);
- setAttributeIfChanged(c,'aria-hidden',on?'true':'false');
+ const c=document.querySelector(CABINET),cmd=document.querySelector(COMMAND),v2CabinetActive=activeV2Cabinet();
+ setAttributeIfChanged(c,'aria-hidden',on&&!v2CabinetActive?'true':'false');
  setAttributeIfChanged(cmd,'aria-hidden',on?'true':'false');
 }
-function allowedTarget(target){const m=document.querySelector(MINISTRY),i=document.querySelector(INTERROGATION);return!!(m?.contains(target)||i?.contains(target));}
+function allowedTarget(target){const m=document.querySelector(MINISTRY),i=document.querySelector(INTERROGATION),c=document.querySelector(CABINET);return!!(m?.contains(target)||i?.contains(target)||(activeV2Cabinet()&&c?.contains(target)));}
 function blockOutside(e){if(!active())return;if(allowedTarget(e.target))return;e.preventDefault();e.stopImmediatePropagation();}
 function containsSurface(el){
  if(!el||el.nodeType!==1)return false;
@@ -107,5 +111,5 @@ function boot(){
  setSurface();
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
-global.OmegaUIInteractionGuard={version:'2.3.0',refresh:setSurface,scheduleRefresh:scheduleSurfaceSync};
+global.OmegaUIInteractionGuard={version:'2.4.0',refresh:setSurface,scheduleRefresh:scheduleSurfaceSync};
 })(window);
