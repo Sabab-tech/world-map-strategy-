@@ -130,8 +130,17 @@
                     console.warn("[OMEGA] OmegaMinistry.createRuntime not found.");
                 }
 
-                let isPaused = false;
-                let rafId = null;
+                // The simulation clock advances in 10-second steps. Polling it at display
+                // refresh rate repeatedly hydrated world state while no game turn was due.
+                // A 100 ms scheduler is responsive for the day-based clock without tying
+                // simulation work to the screen's 60 Hz paint loop.
+                const SIMULATION_FRAME_INTERVAL_MS = 100;
+                // Preserve bounded catch-up during a slow asynchronous turn.
+                const MAX_FRAME_DELTA_MS = 10000;
+                let isPaused = document.hidden === true;
+                let loopTimerId = null;
+                let loopInProgress = false;
+                let shutdownRequested = false;
                 let lastTime = performance.now();
                 let frameTick = 0;
 
@@ -149,46 +158,64 @@
                 window.addEventListener("POLICY_VOTE_CAST", () => {});
                 window.addEventListener("DECISION_ENACTED", () => {});
 
-                document.addEventListener("visibilitychange", () => {
-                    isPaused = document.hidden;
-                    lastTime = performance.now();
-                    window.__LOG_EVENT__(isPaused ? "CORE_SLEEP" : "CORE_WAKE");
-                });
+                function scheduleEngineLoop(delayMs) {
+                    if (isPaused || shutdownRequested || loopInProgress || loopTimerId !== null) return;
+                    loopTimerId = window.setTimeout(() => {
+                        loopTimerId = null;
+                        engineLoop();
+                    }, Math.max(0, delayMs));
+                }
 
-                function engineLoop(now) {
-                    if (isPaused) {
+                async function engineLoop() {
+                    if (isPaused || shutdownRequested || loopInProgress) return;
+                    loopInProgress = true;
+                    try {
+                        const now = performance.now();
+                        const dt = Math.min(MAX_FRAME_DELTA_MS, Math.max(0, now - lastTime));
                         lastTime = now;
-                        rafId = requestAnimationFrame(engineLoop);
-                        return;
-                    }
+                        frameTick += 1;
+                        if (window.__OMEGA_DIAG__ && window.__OMEGA_DIAG__.metrics) {
+                            window.__OMEGA_DIAG__.metrics.tick = frameTick;
+                        }
 
-                    const dt = Math.min(250, Math.max(0, now - lastTime));
-                    lastTime = now;
-                    frameTick += 1;
-                    window.__OMEGA_DIAG__.metrics.tick = frameTick;
+                        const simulation = window.Omega?.Simulation;
+                        if (simulation && typeof simulation.frame === "function") {
+                            await simulation.frame(dt);
+                        }
 
-                    const simulation = window.Omega?.Simulation;
-                    if (simulation && typeof simulation.frame === "function") {
-                        simulation.frame(dt).catch((error) => {
+                        if (frameTick === 1) {
+                            window.setTimeout(() => {
+                                const mapInst = window.map || (window.Game && window.Game.Map && window.Game.Map.map);
+                                if (mapInst && typeof mapInst.invalidateSize === 'function') mapInst.invalidateSize();
+                            }, 200);
+                        }
+                    } catch (error) {
+                        try {
                             window.__OMEGA_DIAG__.errors.push({
                                 msg: error?.message || String(error),
                                 type: "SIMULATION_RUNTIME"
                             });
-                            try { window.__LOG_EVENT__("SIMULATION_STEP_FAILED"); } catch (_) {}
-                        });
+                        } catch (_) {}
+                        try { window.__LOG_EVENT__("SIMULATION_STEP_FAILED"); } catch (_) {}
+                    } finally {
+                        loopInProgress = false;
+                        scheduleEngineLoop(SIMULATION_FRAME_INTERVAL_MS);
                     }
-
-                    if (frameTick === 1) {
-                        setTimeout(() => {
-                            const mapInst = window.map || (window.Game && window.Game.Map && window.Game.Map.map);
-                            if (mapInst && typeof mapInst.invalidateSize === 'function') mapInst.invalidateSize();
-                        }, 200);
-                    }
-
-                    rafId = requestAnimationFrame(engineLoop);
                 }
 
-                rafId = requestAnimationFrame(engineLoop);
+                document.addEventListener("visibilitychange", () => {
+                    isPaused = document.hidden === true;
+                    if (isPaused) {
+                        if (loopTimerId !== null) window.clearTimeout(loopTimerId);
+                        loopTimerId = null;
+                        window.__LOG_EVENT__("CORE_SLEEP");
+                        return;
+                    }
+                    // Do not count time spent in the background as active simulation time.
+                    lastTime = performance.now();
+                    window.__LOG_EVENT__("CORE_WAKE");
+                    scheduleEngineLoop(0);
+                });
 
                 // Auto transition disabled on boot so player lands cleanly on primary interface
                 // if (presentation && typeof presentation.triggerTransition === "function") {
@@ -204,12 +231,17 @@
 
                 // [FIX P1/P2] Universal Cleanup & Shutdown
                 const shutdown = () => {
+                    if (shutdownRequested) return;
+                    shutdownRequested = true;
+                    isPaused = true;
+                    if (loopTimerId !== null) window.clearTimeout(loopTimerId);
+                    loopTimerId = null;
                     window.__LOG_EVENT__("SYSTEM_SHUTDOWN_CLEANUP");
-                    if (rafId) cancelAnimationFrame(rafId);
                     if (kernel && typeof kernel.stopOrchestratedPipeline === 'function') kernel.stopOrchestratedPipeline();
                     if (presentation && typeof presentation.destroy === 'function') presentation.destroy();
                 };
 
+                scheduleEngineLoop(0);
                 window.Omega.App.stopLoop = shutdown;
                 window.addEventListener("beforeunload", shutdown);
 
