@@ -513,3 +513,43 @@ test('factory and police fleet screens show local reference photography inside t
   assert.match(fleet, /assets\/ui-photos\/bangladesh-police-headquarters\.webp/);
   assert.match(fleet, /fleetHeroPhoto\(\)/);
 });
+
+
+test('all ministry detail pages use the matching local cover, uploaded logo and gallery registry', () => {
+  const detail = readFileSync(new URL('../omega_ui_v2/screens/ministry-detail.js', import.meta.url), 'utf8');
+  const visualRegistry = globalThis.OmegaUIV2MinistryVisualRegistry;
+  assert.equal(visualRegistry.count, 18);
+  assert.match(detail, /function ministryVisualMarkup\(/);
+  assert.match(detail, /visual\.image/);
+  assert.match(detail, /visual\.logo/);
+  assert.match(detail, /visual\.gallery/);
+  assert.match(detail, /data-omega-v2-ministry-visual/);
+  for (const id of globalThis.OmegaUIV2Navigation.ministryIds) {
+    const visual = visualRegistry.get(id);
+    assert.ok(visual && visual.image, id + ' must have a ministry-specific cover image');
+  }
+});
+
+test('universal navigation, reliable Exit/Escape behavior and responsive visuals are wired into the offline shell', () => {
+  const app = readFileSync(new URL('../omega_ui_v2/app.js', import.meta.url), 'utf8');
+  const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  const worker = readFileSync(new URL('../omega-offline-map-sw.js', import.meta.url), 'utf8');
+  const refreshCss = readFileSync(new URL('../omega_ui_v2/ministry-visual-refresh.css', import.meta.url), 'utf8');
+  assert.match(app, /data-omega-v2-jump-route/);
+  assert.match(app, /data-omega-v2-jump-ministry/);
+  assert.match(app, /function exitToMap\(/);
+  assert.match(app, /state\.history\.length = 0/);
+  assert.match(app, /root\.addEventListener\('keydown'/);
+  assert.match(html, /omega_ui_v2\/ministry-visual-refresh\.css/);
+  assert.match(worker, /omega-offline-atlas-shell-v32/);
+  assert.match(worker, /omega_ui_v2\/ministry-visual-refresh\.css/);
+  assert.match(refreshCss, /omega-v2-ministry-detail-cover-image/);
+  assert.match(refreshCss, /@media \(max-width: 760px\)/);
+  assert.match(refreshCss, /min-height: 48px/);
+  for (const legacyCss of ['omega_ui_interaction_fix_v2.css', 'omega_ui_visual_system_v1.css',
+    'omega_ui_system_redesign_v1.css', 'omega_ministry_layout_repair_v1.css', 'omega_ministry_entry_v3.css']) {
+    assert.ok(existsSync(new URL('../' + legacyCss, import.meta.url)), legacyCss + ' must remain in the repository');
+    assert.equal(html.includes('href="' + legacyCss + '"'), false, legacyCss + ' must not be loaded by index.html');
+    assert.equal(html.includes("href='" + legacyCss + "'"), false, legacyCss + ' must not be loaded by index.html');
+  }
+});

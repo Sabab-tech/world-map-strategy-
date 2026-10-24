@@ -161,6 +161,22 @@
     render(root);
     return true;
   }
+  function exitToMap(root) {
+    var state = stateFor(root);
+    if (!state) return false;
+    state.history.length = 0;
+    state.route = 'map';
+    state.ministryId = null;
+    state.section = 'dashboard';
+    state.resourceSiteId = null;
+    state.governmentView = 'executive-ministry';
+    if (state.options && typeof state.options.onBackToMap === 'function') {
+      state.options.onBackToMap();
+      return true;
+    }
+    render(root);
+    return true;
+  }
   function openOperationalConsole(id) {
     var integration = g.OmegaUIV2Integration;
     if (!integration || typeof integration.openOperationalConsole !== 'function') return { ok:false, code:'OPERATIONAL_CONSOLE_BRIDGE_UNAVAILABLE' };
@@ -302,9 +318,7 @@
         if (!target || typeof target.closest !== 'function') return;
         var exit = target.closest('[data-omega-v2-exit]');
         if (exit && root.contains(exit)) {
-          var exitState = stateFor(root);
-          if (exitState.options && typeof exitState.options.onBackToMap === 'function') exitState.options.onBackToMap();
-          else { exitState.route = 'map'; exitState.ministryId = null; render(root); }
+          exitToMap(root);
           return;
         }
         var jumpMinistry = target.closest('[data-omega-v2-jump-ministry]');
@@ -325,8 +339,7 @@
         }
         if (target.closest('[data-omega-v2-back]') && root.contains(target)) { back(root); return; }
         if (target.closest('[data-omega-v2-action="back-to-map"]') && root.contains(target)) {
-          var state = stateFor(root);
-          if (state.options && typeof state.options.onBackToMap === 'function') state.options.onBackToMap();
+          exitToMap(root);
           return;
         }
       });
@@ -338,6 +351,19 @@
         g.OmegaMinistryViewCountry = state.countryId;
         if (state.options && typeof state.options.onCountryChange === 'function') state.options.onCountryChange(state.countryId);
         render(root);
+      });
+      root.addEventListener('keydown', function (event) {
+        if (!event || event.key !== 'Escape') return;
+        var target = event.target;
+        var openMenu = root.querySelector && root.querySelector('.omega-v2-route-switcher[open]');
+        if (openMenu) {
+          openMenu.removeAttribute('open');
+          if (event.preventDefault) event.preventDefault();
+          return;
+        }
+        if (target && typeof target.closest === 'function' && target.closest('input, select, textarea, [contenteditable="true"]')) return;
+        if (event.preventDefault) event.preventDefault();
+        back(root);
       });
       root.__omegaUIV2Bound = true;
     }

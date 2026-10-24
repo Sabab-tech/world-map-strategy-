@@ -47,6 +47,38 @@
     if (!item || !/^assets\/ui-photos\/[a-z0-9-]+\.webp$/.test(String(item.path || ''))) return '';
     return '<figure class="omega-v2-photo"><img loading="lazy" decoding="async" src="' + esc(item.path) + '" alt="' + esc(alt || item.caption || 'Reference photo') + '"><figcaption>' + esc(item.caption || 'Reference photo') + '<small>Reference only</small></figcaption></figure>';
   }
+  function safeVisualPath(value) {
+    var path = String(value || '');
+    return /^assets\/[a-zA-Z0-9_ .()\/-]+\.(?:webp|png|jpe?g|svg)$/i.test(path) && path.indexOf('..') < 0 ? path : '';
+  }
+  function ministryVisualMarkup(id, row) {
+    var registry = g.OmegaUIV2MinistryVisualRegistry;
+    var visual = registry && typeof registry.get === 'function' ? registry.get(id) : null;
+    if (!visual) {
+      var fallback = PHOTO_BY_MINISTRY[id];
+      return fallback ? photo(fallback, (row && row.title || id) + ' reference image') : '';
+    }
+    function image(path, alt, className) {
+      var safe = safeVisualPath(path);
+      if (!safe) return '';
+      return '<img class="' + className + '" loading="lazy" decoding="async" src="' + esc(safe) + '" alt="' + esc(alt || visual.title || id) + '">';
+    }
+    var cover = image(visual.image, visual.alt || visual.title || id, 'omega-v2-ministry-detail-cover-image');
+    var gallery = Array.isArray(visual.gallery) ? visual.gallery.filter(function (path) { return !!safeVisualPath(path); }).slice(0, 4) : [];
+    var galleryMarkup = gallery.map(function (path, index) {
+      return '<figure class="omega-v2-ministry-detail-gallery-item">' +
+        image(path, visual.title + ' additional reference ' + (index + 1), 'omega-v2-ministry-detail-gallery-image') +
+        '<figcaption>Additional reference asset</figcaption></figure>';
+    }).join('');
+    if (!cover && !galleryMarkup) return '';
+    return '<section class="omega-v2-ministry-visual" data-omega-v2-ministry-visual="' + esc(id) + '" aria-label="' + esc((visual.title || id) + ' visual profile') + '">' +
+      (cover ? '<figure class="omega-v2-ministry-detail-cover">' + cover +
+        '<figcaption><strong>' + esc(visual.title || row && row.title || id) + '</strong><small>' +
+        esc(visual.alt || 'Local ministry reference image') +
+        ' · Illustrative imagery, not proof of current ownership or activity</small></figcaption></figure>' : '') +
+      (galleryMarkup ? '<div class="omega-v2-ministry-detail-gallery" aria-label="Additional ministry assets">' + galleryMarkup + '</div>' : '') +
+      '</section>';
+  }
   function relatedLinks(id, options) {
     var routes = {
       energy_mining:['resources','Open Mines & Fields'],
@@ -93,13 +125,18 @@
         (rawRows.length ? '<div class="omega-v2-vehicle-stats">' + rawRows.map(function (item) { return '<div><span>' + esc(item.key) + '</span><strong>' + esc(item.value) + '</strong></div>'; }).join('') + '</div>' : '<p class="omega-v2-card-meta">The registered domain record contains no scalar fields suitable for this overview.</p>') + '</div>';
     }
     root.classList.add('omega-v2-screen');
-    var emblem = row && g.OmegaUIV2Government && typeof g.OmegaUIV2Government.ministryEmblem === 'function' ? g.OmegaUIV2Government.ministryEmblem(row) : '';
+    var visualRegistry = g.OmegaUIV2MinistryVisualRegistry;
+    var visual = visualRegistry && typeof visualRegistry.get === 'function' ? visualRegistry.get(id) : null;
+    var visualLogo = visual && safeVisualPath(visual.logo);
+    var emblem = visualLogo
+      ? '<img class="omega-v2-ministry-detail-logo" loading="lazy" decoding="async" src="' + esc(visualLogo) + '" alt="' + esc(visual.logoAlt || visual.title || id) + '">'
+      : (row && g.OmegaUIV2Government && typeof g.OmegaUIV2Government.ministryEmblem === 'function' ? g.OmegaUIV2Government.ministryEmblem(row) : '');
     var activeMinisterName = row && row.ministerName || 'Minister not recorded';
     var portraitSlot = row && g.OmegaUIV2Government && typeof g.OmegaUIV2Government.renderMinisterPortrait === 'function' ? g.OmegaUIV2Government.renderMinisterPortrait(row) : '';
     root.innerHTML = '<section class="omega-v2-shell omega-v2-ministry-detail">' +
       '<header class="omega-v2-heading"><div class="omega-v2-ministry-detail-mark">' + emblem + '<div><div class="omega-v2-eyebrow">ALL MINISTRIES · ' + esc(id.replace(/[_-]+/g,' ').toUpperCase()) + '</div><h1 class="omega-v2-title">' + esc(row ? row.title : id || 'Ministry') + '</h1><p class="omega-v2-subtitle">Country ' + esc(country || 'Not recorded') + ' · registered ministry profile and source-backed domain record</p></div></div><span class="omega-v2-status" data-state="' + (domain && domain.record ? 'operational' : 'unknown') + '">' + (domain && domain.record ? 'DOMAIN RECORD AVAILABLE' : esc(domain.reason || 'DOMAIN RECORD NOT RECORDED')) + '</span></header>' +
       '<div class="omega-v2-card omega-v2-ministry-appointed-minister"><h2 class="omega-v2-card-title">Minister</h2><div class="omega-v2-minister-table-person">' + (portraitSlot || '<div class="omega-v2-minister-portrait" data-omega-v2-minister-portrait-slot><span class="omega-v2-minister-portrait-placeholder">MINISTER PORTRAIT</span><small>Image pending</small></div>') + '<strong>' + esc(activeMinisterName) + '</strong></div></div>' +
-      (PHOTO_BY_MINISTRY[id] ? photo(PHOTO_BY_MINISTRY[id], (row && row.title || id) + ' reference image') : '') +
+      ministryVisualMarkup(id, row) +
       '<div class="omega-v2-filterbar" role="group" aria-label="Ministry page sections">' + SECTIONS.map(function (key) { return '<button type="button" class="omega-v2-button ' + (section === key ? 'omega-v2-button--accent' : 'omega-v2-button--quiet') + '" data-omega-v2-ministry-section="' + key + '" aria-pressed="' + (section === key ? 'true' : 'false') + '">' + esc(SECTION_LABELS[key]) + '</button>'; }).join('') + '</div>' +
       relatedLinks(id, options) +
       operationalConsoleCard(id, options) +
