@@ -35,7 +35,31 @@ for (const item of model.sites) {
   assert.equal(item.raw.simulation.productionRate, undefined, item.siteId + ': do not invent a production rate');
   assert.equal(item.raw.simulation.reserve, undefined, item.siteId + ': do not invent a reserve');
 }
+const modeledSite = {
+  siteId: 'SITE_TEST_SIMULATED_GOLD_MINE',
+  countryId: 'UZB',
+  siteName: 'Test Simulated Gold Mine',
+  resourceId: 'gold',
+  operation: { status: 'SIMULATED_ACTIVE', commercialExtraction: true },
+  quantitative: {
+    reserve: { quantity: null, unit: null, status: 'UNOBSERVED' },
+    production: { rate: null, annual: null, unit: null, status: 'UNOBSERVED' }
+  },
+  simulation: {
+    simulationOnly: true,
+    productionRate: 125,
+    productionRateUnit: 'TONNES_PER_DAY',
+    pipelineProfileAuthority: 'SIMULATION_ONLY_RUNTIME_COMPLETION'
+  }
+};
+const modeledModel = api.buildViewModel({ sites: [modeledSite] });
+assert.equal(modeledModel.siteCount, 1);
+assert.equal(modeledModel.sites[0].production.value, null, 'modelled output must not replace the measured production field');
+assert.equal(modeledModel.sites[0].modeledProduction.modeledValue, 125, 'gameplay rate must be visible separately');
+assert.equal(modeledModel.sites[0].modeledProduction.unit, 'TONNES_PER_DAY');
+assert.equal(modeledModel.sites[0].modeledProduction.status, 'SIMULATED');
 const screenSource = read('omega_ui_v2/screens/resource-ministry.js');
+assert.ok(screenSource.includes('Modeled gameplay rate'), 'the Mines & Fields card must expose its separate simulation rate');
 assert.ok(screenSource.includes('No verified commercial mining site is registered for this country'),
   'N/A cards must state why no production is possible');
 assert.ok(screenSource.includes('No physical mine marker exists for this record.'),
