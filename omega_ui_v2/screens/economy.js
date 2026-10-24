@@ -75,7 +75,7 @@
     return '<div class="omega-v2-kpi"><span>' + esc(label) + '</span><strong>' + esc(value) + '</strong>' + (source ? '<small>' + esc(source) + '</small>' : '') + '</div>';
   }
   function metric(label, record) {
-    var source = record.source ? String(record.source) + (record.year ? ' · ' + record.year : '') : 'Source not recorded';
+    var source = record.year ? 'Year ' + String(record.year) : '';
     return item(label, fmt(record.value, record.unit), source);
   }
   function photoMarkup(id,alt,caption) {
@@ -117,34 +117,34 @@
     var content = '';
     if (active === 'overview') {
       content = photoMarkup('container-ship', 'Container ship at an international port, representative trade reference image', 'TRADE & NATIONAL ACCOUNTS') +
-        '<div class="omega-v2-note">Game treasury cash, public debt and published national indicators are different concepts. Reference exchange rates never execute a treasury transfer; missing values are not filled with defaults.</div>' +
+        '<div class="omega-v2-note">Treasury balances, public debt and national economic indicators describe different parts of the economy.</div>' +
         '<h2 class="omega-v2-section-title">National finance snapshot</h2><div class="omega-v2-kpis">' +
-        item('Available treasury', fmt(model.treasuryCash,'USD'), 'Game finance state') + item('Recorded revenue', fmt(model.revenue,'USD'), 'Game finance state') +
+        item('Available treasury', fmt(model.treasuryCash,'USD'), 'Treasury ledger') + item('Recorded revenue', fmt(model.revenue,'USD'), 'Game finance state') +
         item('Recorded expenditure', fmt(model.expenditure,'USD'), 'Game finance state') + item('Budget balance', fmt(model.budgetBalance,'USD'), 'Game finance state') +
         metric('GDP',model.gdp) + metric('Inflation',model.inflation) + metric('Public debt / GDP',model.debtToGdp) + metric('Foreign-exchange reserves',model.fxReserves) + '</div>';
     } else if (active === 'treasury') {
-      content = '<div class="omega-v2-note">Treasury values come from the selected country’s live game finance state. This tab reports ledger counts and balances; it does not fabricate transactions.</div><h2 class="omega-v2-section-title">Treasury &amp; ledger</h2><div class="omega-v2-kpis">' +
+      content = '<div class="omega-v2-note">Review the current treasury balance, reserves and recorded transactions.</div><h2 class="omega-v2-section-title">Treasury &amp; ledger</h2><div class="omega-v2-kpis">' +
         item('Available treasury',fmt(model.treasuryCash,'USD'),'Game finance state') + item('Treasury reserves',fmt(model.treasuryReserves,'USD'),'Game finance state') +
-        item('Currency',model.currencyCode || 'Not recorded','Game finance/economy state') + item('Ledger rows',fmt(model.fiscalLedgerCount),'Recorded transactions only') + '</div>' + financeLinks([links[0]],options);
+        item('Currency',model.currencyCode || 'Not recorded','Selected currency') + item('Ledger rows',fmt(model.fiscalLedgerCount),'Recorded transactions only') + '</div>' + financeLinks([links[0]],options);
     } else if (active === 'budget') {
       content = '<h2 class="omega-v2-section-title">Budget &amp; fiscal period</h2><div class="omega-v2-kpis">' +
         item('Recorded revenue',fmt(model.revenue,'USD'),'Game finance state') + item('Recorded expenditure',fmt(model.expenditure,'USD'),'Game finance state') +
-        item('Budget balance',fmt(model.budgetBalance,'USD'),'Game finance state') + '</div><div class="omega-v2-note">Revenue, expenditure and budget balance remain separate ledger fields. Unrecorded fields are not filled with derived values.</div>' + financeLinks([links[0],links[1]],options);
+        item('Budget balance',fmt(model.budgetBalance,'USD'),'Game finance state') + '</div><div class="omega-v2-note">Revenue, expenditure and budget balance are separate figures. Unavailable values remain Not recorded.</div>' + financeLinks([links[0],links[1]],options);
     } else if (active === 'debt') {
       content = '<h2 class="omega-v2-section-title">Public debt &amp; fiscal sustainability</h2><div class="omega-v2-kpis">' +
-        metric('Public debt',model.debt) + metric('Public debt / GDP',model.debtToGdp) + metric('GDP',model.gdp) + '</div><div class="omega-v2-note">No debt service, repayment schedule or maturity is shown unless the canonical finance record supplies it.</div>' + financeLinks([links[0]],options);
+        metric('Public debt',model.debt) + metric('Public debt / GDP',model.debtToGdp) + metric('GDP',model.gdp) + '</div><div class="omega-v2-note">Debt schedules and maturity details appear when they have been recorded.</div>' + financeLinks([links[0]],options);
     } else if (active === 'monetary') {
       content = '<h2 class="omega-v2-section-title">Monetary indicators &amp; foreign exchange</h2><div class="omega-v2-kpis">' +
-        item('Currency',model.currencyCode || 'Not recorded','Game finance/economy state') + metric('Inflation',model.inflation) + metric('Foreign-exchange reserves',model.fxReserves) + '</div><div class="omega-v2-note">Published indicators and reference exchange rates are informational. They do not execute currency conversion or treasury transfers.</div>' + financeLinks([links[2]],options);
+        item('Currency',model.currencyCode || 'Not recorded','Game finance/economy state') + metric('Inflation',model.inflation) + metric('Foreign-exchange reserves',model.fxReserves) + '</div><div class="omega-v2-note">Economic indicators describe the economy; they do not change treasury balances.</div>' + financeLinks([links[2]],options);
     } else {
       content = '<h2 class="omega-v2-section-title">Trade balance &amp; national revenue links</h2><div class="omega-v2-kpis">' +
         metric('Trade balance',model.tradeBalance) + item('Recorded revenue',fmt(model.revenue,'USD'),'Game finance state') + '</div>' + financeLinks([links[3],links[1]],options);
     }
     root.classList.add('omega-v2-screen');
     root.innerHTML = '<section class="omega-v2-shell omega-v2-economy">' +
-      '<header class="omega-v2-heading"><div><div class="omega-v2-eyebrow">ECONOMY · FINANCE</div><h1 class="omega-v2-title">Economy &amp; Treasury</h1><p class="omega-v2-subtitle">Country ' + esc(model.countryId || 'Not recorded') + ' · recorded game ledger and source-backed country indicators</p></div><span class="omega-v2-status" data-state="' + (model.snapshot ? 'operational' : 'unknown') + '">' + (model.snapshot ? 'DATA GATEWAY CONNECTED' : 'REFERENCE SNAPSHOT UNAVAILABLE') + '</span></header>' +
+      '<header class="omega-v2-heading"><div><div class="omega-v2-eyebrow">ECONOMY · FINANCE</div><h1 class="omega-v2-title">Economy &amp; Treasury</h1><p class="omega-v2-subtitle">Country ' + esc(model.countryId || 'Not recorded') + ' · national accounts and government finances</p></div><span class="omega-v2-status" data-state="' + (model.snapshot ? 'operational' : 'unknown') + '">' + (model.snapshot ? 'INDICATORS AVAILABLE' : 'INDICATORS UNAVAILABLE') + '</span></header>' +
       tabBar(active) + '<section class="omega-v2-finance-tab-panel" role="tabpanel" data-omega-v2-finance-panel="' + esc(active) + '">' + content + '</section>' +
-      '<p class="omega-v2-source">Data authority: ' + esc(model.source) + '</p></section>';
+      '</section>';
     if (!root.__omegaV2EconomyBound && typeof root.addEventListener === 'function') {
       root.addEventListener('click', function (event) {
         var target = event && event.target;
