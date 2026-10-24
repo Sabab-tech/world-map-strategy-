@@ -297,7 +297,7 @@ test('Government entry mount synchronizes existing layer, sidebar and map visibi
     assert.equal(bodyAttrs['data-active-layer'],'1');
     assert.ok(bodyClasses.has('modal-open'));
     assert.equal(manager.currentLayer,1);
-    assert.equal(manager.sidebarLayer,1);
+    assert.equal(manager.sidebarLayer,null,'UI v2 mount must not invoke the retired sidebar renderer');
     assert.deepEqual(manager.layerStack,[0,1]);
     assert.equal(world.style.opacity,'0.5');
     assert.equal(world.style.pointerEvents,'none');
@@ -312,46 +312,32 @@ test('Government entry mount synchronizes existing layer, sidebar and map visibi
   }
 });
 
-test('Legacy operational console Back resumes UI v2 in the existing cabinet host', () => {
+test('retired operational-console bridge cannot mutate the active UI or legacy layer stack', () => {
   const bridge = globalThis.OmegaUIV2Integration;
-  const previous = {
-    document:globalThis.document, app:globalThis.OmegaUIV2App, manager:globalThis.OmegaLayerManager,
-    country:globalThis.OmegaMinistryViewCountry, updateBack:globalThis.updateGlobalBackButtonVisibility
-  };
-  const attrs = Object.create(null), bodyAttrs = Object.create(null), classes = new Set();
-  const root = { style:{}, classList:{add(){},remove(){}},
+  const previous = { document:globalThis.document, manager:globalThis.OmegaLayerManager, notification:globalThis.showOmegaNotification };
+  const attrs = { 'data-omega-ui-v2-active':'true' };
+  const root = { style:{display:'flex'}, __omegaUIV2State:{route:'ministry-detail',ministryId:'defense'},
     setAttribute(k,v){attrs[k]=String(v);}, getAttribute(k){return attrs[k]||null;}, removeAttribute(k){delete attrs[k];} };
-  const dashboard={style:{},setAttribute(){},removeAttribute(){}}, world={style:{}};
-  const manager={
-    currentLayer:1,layerStack:[0,1],updates:[],
-    updateRightSidebar(layer){this.updates.push(layer);},
-    setLayer(layer){this.currentLayer=layer;},
-    popLayer(){this.setLayer(1);return true;}
-  };
-  globalThis.document={
-    getElementById(id){return id==='cabinet-full-window'?root:id==='ministry-dashboard-view'?dashboard:id==='world-ui-root'?world:null;},
-    body:{setAttribute(k,v){bodyAttrs[k]=String(v);},classList:{add(k){classes.add(k);}}}
-  };
-  globalThis.OmegaUIV2App={mount(){return {ok:true,mounted:true,route:'government'};},unmount(){return {ok:true};}};
+  const dashboard={style:{}}, world={style:{}}, bodyAttrs={};
+  const manager={currentLayer:1,layerStack:[0,1],setLayerCalls:0,sidebarCalls:0,
+    setLayer(){this.setLayerCalls+=1;},updateRightSidebar(){this.sidebarCalls+=1;}};
+  globalThis.document={getElementById(id){return id==='cabinet-full-window'?root:id==='ministry-dashboard-view'?dashboard:id==='world-ui-root'?world:null;},
+    body:{setAttribute(k,v){bodyAttrs[k]=String(v);},classList:{add(){},remove(){}}}};
   globalThis.OmegaLayerManager=manager;
-  globalThis.OmegaMinistryViewCountry='BGD';
-  globalThis.updateGlobalBackButtonVisibility=()=>{};
-  try{
-    const opened=bridge.openOperationalConsole('defense');
-    assert.equal(opened.ok,true);
-    assert.equal(manager.currentLayer,2);
-    assert.equal(bridge.audit().mounted,false);
-    manager.popLayer();
+  globalThis.showOmegaNotification=()=>{};
+  try {
+    const result=bridge.openOperationalConsole('defense');
+    assert.equal(result.ok,false);
+    assert.equal(result.code,'LEGACY_UI_DISCONNECTED');
     assert.equal(manager.currentLayer,1);
-    assert.equal(attrs['data-omega-ui-v2-active'],'true');
-    assert.equal(bridge.audit().mounted,true);
-    assert.equal(dashboard.style.display,'none');
+    assert.equal(manager.setLayerCalls,0);
+    assert.equal(manager.sidebarCalls,0);
+    assert.equal(root.__omegaUIV2State.route,'ministry-detail');
+    assert.equal(root.getAttribute('data-omega-ui-v2-active'),'true');
   } finally {
     if(previous.document===undefined)delete globalThis.document;else globalThis.document=previous.document;
-    if(previous.app===undefined)delete globalThis.OmegaUIV2App;else globalThis.OmegaUIV2App=previous.app;
     if(previous.manager===undefined)delete globalThis.OmegaLayerManager;else globalThis.OmegaLayerManager=previous.manager;
-    if(previous.country===undefined)delete globalThis.OmegaMinistryViewCountry;else globalThis.OmegaMinistryViewCountry=previous.country;
-    if(previous.updateBack===undefined)delete globalThis.updateGlobalBackButtonVisibility;else globalThis.updateGlobalBackButtonVisibility=previous.updateBack;
+    if(previous.notification===undefined)delete globalThis.showOmegaNotification;else globalThis.showOmegaNotification=previous.notification;
   }
 });
 
@@ -377,36 +363,32 @@ test('Back-to-Map bypasses legacy cabinet subsystem stack traps', () => {
   }
 });
 
-test('production shell loads and offline-preloads every UI v2 module', () => {
+test('production shell loads UI v2 and excludes retired UI controllers from the active cache', () => {
   const index = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
   const sw = readFileSync(new URL('../omega-offline-map-sw.js', import.meta.url), 'utf8');
   const entry = readFileSync(new URL('../omega_ministry_entry_v3.js', import.meta.url), 'utf8');
   const modules = [
-    'omega_ui_v2/omega-ui-v2.css',
-    'omega_ui_v2/navigation-registry.js',
-    'omega_ui_v2/screens/government.js',
-    'omega_ui_v2/screens/ministry-detail.js',
-    'omega_ui_v2/screens/economy.js',
-    'omega_ui_v2/screens/resource-ministry.js',
-    'omega_ui_v2/screens/mine-detail.js',
-    'omega_ui_v2/screens/industry.js',
-    'omega_ui_v2/screens/home-affairs.js',
-    'omega_ui_v2/screens/police-fleet.js',
-    'omega_ui_v2/screens/reports.js',
-    'omega_ui_v2/app.js',
-    'omega_ui_v2/integration.js',
-    'omega_ui_v2/world-command-dock.js'
+    'omega_ui_v2/omega-ui-v2.css','omega_ui_v2/navigation-registry.js',
+    'omega_ui_v2/screens/government.js','omega_ui_v2/screens/ministry-detail.js',
+    'omega_ui_v2/screens/economy.js','omega_ui_v2/screens/resource-ministry.js',
+    'omega_ui_v2/screens/mine-detail.js','omega_ui_v2/screens/industry.js',
+    'omega_ui_v2/screens/home-affairs.js','omega_ui_v2/screens/police-fleet.js',
+    'omega_ui_v2/screens/reports.js','omega_ui_v2/app.js',
+    'omega_ui_v2/integration.js','omega_ui_v2/world-command-dock.js'
   ];
   for (const modulePath of modules) {
     assert.ok(index.includes(modulePath), 'index.html must load ' + modulePath);
     assert.ok(sw.includes(modulePath), 'offline service worker must pre-cache ' + modulePath);
   }
-  assert.match(sw, /omega-offline-atlas-shell-v\d+/);
-  assert.match(entry, /OmegaUIV2Integration/);
-  assert.match(entry, /opened-ui-v2/);
-  assert.match(entry, /opened-primary/);
+  assert.match(sw, /omega-offline-atlas-shell-v\\d+/);
+  assert.ok(entry.includes('OmegaUIV2Integration'));
+  assert.ok(entry.includes('opened-ui-v2'));
+  assert.ok(!/openMainMinistryView|OmegaLayerManager\\.setLayer|renderCabinet\\(/.test(entry));
+  for (const retired of ['omega_ui_system_redesign_v1.js','omega_ui_interaction_guard.js','omega_ui_button_system_v1.js']) {
+    assert.equal(index.includes('src="' + retired + '"'),false, retired + ' must not load');
+    assert.equal(sw.includes('"./' + retired + '"'),false, retired + ' must not be pre-cached');
+  }
 });
-
 
 test('world command dock exposes the unified mobile-first primary routes', () => {
   const dock = globalThis.OmegaUIV2WorldCommandDock;
@@ -417,17 +399,17 @@ test('world command dock exposes the unified mobile-first primary routes', () =>
 });
 
 
-test('religion and ideology routes to the existing canonical system', () => {
+test('religion and ideology navigation stays inside UI v2', () => {
   const app = globalThis.OmegaUIV2App;
   assert.ok(app.destinations.includes('religion'));
   const source = readFileSync(new URL('../omega_ui_v2/app.js', import.meta.url), 'utf8');
   assert.match(source, /mosque-architecture/);
-  assert.match(source, /openReligionIdeologySystem\(event\)/);
-  assert.match(source, /data-omega-v2-open-religion/);
-  assert.match(source, /photoMarkup\('mosque-architecture'/);
-  assert.doesNotMatch(source, /domainPhoto\('mosque-architecture'/);
+  assert.doesNotMatch(source, /openReligionIdeologySystem\\(event\\)/);
+  assert.doesNotMatch(source, /data-omega-v2-open-religion/);
+  assert.ok(source.includes('data-omega-v2-global-nav="government"'));
+  assert.match(source, /photoMarkup\\('mosque-architecture'/);
+  assert.doesNotMatch(source, /domainPhoto\\('mosque-architecture'/);
 });
-
 
 test('Government exposes emblems, minister recruitment and a stable future portrait slot', () => {
   const government = readFileSync(new URL('../omega_ui_v2/screens/government.js', import.meta.url), 'utf8');
@@ -539,43 +521,38 @@ test('all ministry detail pages use the matching local cover, uploaded logo and 
   }
 });
 
-test('universal navigation, reliable Exit/Escape behavior and responsive visuals are wired into the offline shell', () => {
+test('universal navigation and the isolated legacy-free shell are wired into the offline cache', () => {
   const app = readFileSync(new URL('../omega_ui_v2/app.js', import.meta.url), 'utf8');
   const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
   const worker = readFileSync(new URL('../omega-offline-map-sw.js', import.meta.url), 'utf8');
   const refreshCss = readFileSync(new URL('../omega_ui_v2/ministry-visual-refresh.css', import.meta.url), 'utf8');
   const shellCss = readFileSync(new URL('../omega_ui_v2/omega-ui-v2.css', import.meta.url), 'utf8');
-  const guard = readFileSync(new URL('../omega_ui_interaction_guard.js', import.meta.url), 'utf8');
+  const isolationCss = readFileSync(new URL('../omega_ui_v2/legacy-disconnect.css', import.meta.url), 'utf8');
   const integration = readFileSync(new URL('../omega_ui_v2/integration.js', import.meta.url), 'utf8');
   assert.match(app, /data-omega-v2-jump-route/);
   assert.match(app, /data-omega-v2-jump-ministry/);
-  assert.match(app, /function exitToMap\(/);
-  assert.match(app, /state\.history\.length = 0/);
-  assert.match(app, /root\.addEventListener\('keydown'/);
-  assert.match(html, /omega_ui_v2\/ministry-visual-refresh\.css/);
-  assert.match(worker, /omega-offline-atlas-shell-v34/);
-  assert.match(worker, /omega_ui_v2\/ministry-visual-refresh\.css/);
-  assert.match(refreshCss, /omega-v2-ministry-detail-cover-image/);
-  assert.match(refreshCss, /@media \(max-width: 760px\)/);
-  assert.match(refreshCss, /min-height: 48px/);
-  assert.match(shellCss, /\.omega-v2-app-frame \{[^}]*height:100%;[^}]*min-height:0;[^}]*overflow:hidden/s,
-    'the host frame must stay within the portrait viewport');
-  assert.match(shellCss, /\.omega-v2-app-main \{[^}]*min-height:0;[^}]*overflow-y:auto;[^}]*touch-action:pan-y pinch-zoom/s,
-    'screen content must own a touch-scroll container rather than relying on the old dashboard');
-  assert.match(guard, /body\.omega-ui-v2-cabinet-active \$\{CABINET\}\[data-omega-ui-v2-active="true"\]\{z-index:2147483000!important/,
-    'the active Cabinet must be above legacy ministry z-index 9000');
-  assert.match(guard, /body\.omega-ui-v2-cabinet-active \$\{MINISTRY\}\{display:none!important/,
-    'the legacy ministry layer must not intercept UI v2 taps');
-  assert.match(integration, /setV2CabinetActive\(root, true\)/);
-  assert.match(integration, /setV2CabinetActive\(root, false\)/);
-  for (const legacyCss of ['omega_ui_interaction_fix_v2.css', 'omega_ui_visual_system_v1.css',
-    'omega_ui_system_redesign_v1.css', 'omega_ministry_layout_repair_v1.css', 'omega_ministry_entry_v3.css']) {
-    assert.ok(existsSync(new URL('../' + legacyCss, import.meta.url)), legacyCss + ' must remain in the repository');
-    assert.equal(html.includes('href="' + legacyCss + '"'), false, legacyCss + ' must not be loaded by index.html');
-    assert.equal(html.includes("href='" + legacyCss + "'"), false, legacyCss + ' must not be loaded by index.html');
+  assert.match(app, /function exitToMap\\(/);
+  assert.match(app, /state\\.history\\.length = 0/);
+  assert.match(app, /root\\.addEventListener\\('keydown'/);
+  assert.ok(app.includes('root.contains(ownControl)'));
+  assert.ok(app.includes('event.stopPropagation()'));
+  assert.ok(html.includes('omega_ui_v2/ministry-visual-refresh.css'));
+  assert.match(worker, /omega-offline-atlas-shell-v35/);
+  assert.ok(worker.includes('"./omega_ui_v2/legacy-disconnect.css"'));
+  assert.ok(refreshCss.includes('omega-v2-ministry-detail-cover-image'));
+  assert.ok(refreshCss.includes('min-height: 48px'));
+  assert.match(shellCss, /\\.omega-v2-app-frame \\{[^}]*height:100%;[^}]*min-height:0;[^}]*overflow:hidden/s);
+  assert.match(shellCss, /\\.omega-v2-app-main \\{[^}]*min-height:0;[^}]*overflow-y:auto;[^}]*touch-action:pan-y pinch-zoom/s);
+  assert.ok(isolationCss.includes('#ministry-dashboard-view'));
+  assert.ok(isolationCss.includes('display: none !important'));
+  assert.ok(isolationCss.includes('z-index: 2147483000 !important'));
+  assert.doesNotMatch(integration, /restoreLegacy|resumeAfterOperationalConsole|OmegaCabinetUI\\.renderCabinet/);
+  assert.doesNotMatch(integration, /manager\\.setLayer\\(/);
+  for (const retired of ['omega_ui_system_redesign_v1.js','omega_ui_interaction_guard.js','omega_ui_button_system_v1.js']) {
+    assert.equal(html.includes('src="' + retired + '"'),false);
+    assert.equal(worker.includes('"./' + retired + '"'),false);
   }
 });
-
 
 test('all 18 ministry detail pages render their registry cover and any matching uploaded logo', () => {
   const previousCabinet = globalThis.OmegaCabinetUI;
@@ -667,6 +644,49 @@ test('UI v2 restores internal ministry routes and Escape returns to the previous
   }
 });
 
+test('failed UI v2 mount fails closed and never revives the legacy Cabinet', () => {
+  const bridge = globalThis.OmegaUIV2Integration;
+  const previous = {
+    document:globalThis.document, app:globalThis.OmegaUIV2App, manager:globalThis.OmegaLayerManager,
+    country:globalThis.OmegaMinistryViewCountry, cabinet:globalThis.OmegaCabinetUI,
+    updateBack:globalThis.updateGlobalBackButtonVisibility
+  };
+  const attrs = Object.create(null), calls = [];
+  const root = { style:{display:'flex',visibility:'visible',pointerEvents:'auto'}, innerHTML:'legacy markup',
+    setAttribute(k,v){attrs[k]=String(v);}, getAttribute(k){return attrs[k]||null;}, removeAttribute(k){delete attrs[k];} };
+  const dashboard={style:{display:'flex',visibility:'visible',opacity:'1'},setAttribute(){},removeAttribute(){}};
+  const world={style:{opacity:'0.5',pointerEvents:'none'}}, bodyAttrs={};
+  const manager={currentLayer:0,layerStack:[0],setLayer(){calls.push('setLayer');},updateRightSidebar(){calls.push('sidebar');}};
+  globalThis.document={getElementById(id){return id==='cabinet-full-window'?root:id==='ministry-dashboard-view'?dashboard:id==='world-ui-root'?world:null;},
+    body:{setAttribute(k,v){bodyAttrs[k]=String(v);},classList:{add(){},remove(){}}}};
+  globalThis.OmegaUIV2App={mount(){throw new Error('simulated v2 render failure');},unmount(){return {ok:true};}};
+  globalThis.OmegaLayerManager=manager;
+  globalThis.OmegaMinistryViewCountry='BGD';
+  globalThis.OmegaCabinetUI={renderCabinet(){calls.push('legacy-render');}};
+  globalThis.updateGlobalBackButtonVisibility=()=>calls.push('legacy-back-update');
+  try {
+    const result=bridge.mountIntoCabinet(root);
+    assert.equal(result.ok,false);
+    assert.equal(result.code,'UI_V2_MOUNT_EXCEPTION');
+    assert.equal(root.style.display,'none');
+    assert.equal(root.style.pointerEvents,'none');
+    assert.equal(root.innerHTML,'');
+    assert.equal(root.getAttribute('data-omega-ui-v2-active'),null);
+    assert.equal(dashboard.style.display,'none');
+    assert.equal(world.style.opacity,'1');
+    assert.equal(world.style.pointerEvents,'auto');
+    assert.equal(bodyAttrs['data-active-layer'],'0');
+    assert.equal(manager.currentLayer,0);
+    assert.deepEqual(calls,[]);
+  } finally {
+    if(previous.document===undefined)delete globalThis.document;else globalThis.document=previous.document;
+    if(previous.app===undefined)delete globalThis.OmegaUIV2App;else globalThis.OmegaUIV2App=previous.app;
+    if(previous.manager===undefined)delete globalThis.OmegaLayerManager;else globalThis.OmegaLayerManager=previous.manager;
+    if(previous.country===undefined)delete globalThis.OmegaMinistryViewCountry;else globalThis.OmegaMinistryViewCountry=previous.country;
+    if(previous.cabinet===undefined)delete globalThis.OmegaCabinetUI;else globalThis.OmegaCabinetUI=previous.cabinet;
+    if(previous.updateBack===undefined)delete globalThis.updateGlobalBackButtonVisibility;else globalThis.updateGlobalBackButtonVisibility=previous.updateBack;
+  }
+});
 test('returning from a legacy console restores the exact ministry, selected tab and navigation history', () => {
   const previous = {
     document:globalThis.document, app:globalThis.OmegaUIV2App, manager:globalThis.OmegaLayerManager,
