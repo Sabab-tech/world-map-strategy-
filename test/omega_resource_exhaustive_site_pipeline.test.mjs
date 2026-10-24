@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 // Reuse the authoritative runtime fixture and its existing single-site end-to-end regressions.
@@ -7,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 // This test then adds the missing exhaustive pass over every eligible physical site.
 await import('./omega_resource_endowment_runtime.test.mjs');
 
+test('OMEGA exhaustive every-eligible-mine production pipeline', async () => {
 const readJson = name => JSON.parse(fs.readFileSync(new URL('../' + name, import.meta.url), 'utf8'));
 const runtime = globalThis.Omega?.ResourceEndowmentRuntime || globalThis.OmegaResourceEndowmentRuntime;
 const industry = globalThis.Omega?.ResourceIndustrialNetwork || globalThis.OmegaResourceIndustrialNetwork;
@@ -280,10 +282,31 @@ for (const target of pipelines) {
       ? Object.keys(delivery.processing.outputs) : [];
     const finishedGoodsPresent = outputs.some(id => Number(country.inventory?.[id]) > 0);
     const flowCompleted = flow?.stages?.some(stage => stage.stage === 'PROCESSING' && stage.status === 'COMPLETED');
-    if (delivery?.processingStatus !== 'PROCESSED' || !flowCompleted || !outputs.length || !finishedGoodsPresent) {
+    const processingTx = String(delivery?.processingTransactionId || delivery?.processing?.transactionId ||
+      flow?.processingTransactionId || '');
+    const outputBatchIds = new Set([
+      ...(Array.isArray(delivery?.processing?.createdBatchIds) ? delivery.processing.createdBatchIds : []),
+      ...(Array.isArray(flow?.createdBatchIds) ? flow.createdBatchIds : [])
+    ].map(String));
+    const outputBatches = (country.batches || []).filter(row => outputBatchIds.has(String(row?.batchId || '')));
+    const exactOutputBatch = outputBatches.some(row =>
+      String(row?.stage || '').toUpperCase() === 'FINISHED' &&
+      (row?.sourceBatchIds || []).map(String).includes(String(target.batchId)) &&
+      outputs.includes(String(row?.resourceId || '')) &&
+      String(row?.countryId || '').toUpperCase() === target.countryId &&
+      String(row?.warehouseId || '') === 'WH-' + target.countryId + '-PROCESSED' &&
+      (!processingTx || String(row?.processId || '') === processingTx));
+    const finishedLedgerEntry = (country.finishedGoodsLedger || []).find(row =>
+      String(row?.factoryId || '') === String(target.factoryId) &&
+      (row?.sourceBatchIds || []).map(String).includes(String(target.batchId)) &&
+      (row?.createdBatchIds || []).some(id => outputBatchIds.has(String(id))));
+    if (delivery?.processingStatus !== 'PROCESSED' || !flowCompleted || !outputs.length ||
+        !finishedGoodsPresent || !exactOutputBatch || !finishedLedgerEntry) {
       processingFailures.push({ siteId: target.siteId, countryId: target.countryId, batchId: target.batchId,
-        shipmentId: target.shipmentId, reason: 'FINISHED_GOODS_NOT_COMMITTED',
+        shipmentId: target.shipmentId, reason: 'FINISHED_GOODS_LINEAGE_NOT_COMMITTED',
         processingStatus: delivery?.processingStatus || null, outputs, finishedGoodsPresent, flowCompleted,
+        processingTx: processingTx || null, outputBatchCount: outputBatches.length, exactOutputBatch,
+        finishedLedgerEntryFound: Boolean(finishedLedgerEntry),
         flowStages: (flow?.stages || []).map(stage => ({ stage: stage.stage, status: stage.status, reason: stage.reason || null })) });
     } else {
       processedCount++;
@@ -302,3 +325,4 @@ assert.equal(processingFailures.length, 0,
 assert.equal(processedCount, eligibleSites.length,
   'all eligible physical mines must complete the same site-to-output gameplay path');
 console.log('OMEGA EXHAUSTIVE ALL-SITE PRODUCTION PIPELINE PASSED');
+});
