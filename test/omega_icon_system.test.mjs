@@ -22,6 +22,7 @@ test('custom icon system is wired locally before active runtime and has no remot
   assert.ok(html.indexOf('omega_icon_system_v1.js') < html.indexOf('map-engine-1.js'));
   assert.equal(html.includes('presentation-engine.js'), false, 'retired presentation engine must not be boot-loaded');
   assert.equal(html.includes('ui_engine_core.js'), false, 'retired adapter renderer must not be boot-loaded');
+  assert.equal(html.includes('fonts.googleapis.com'), false, 'startup must not wait on remote font CSS');
   assert.doesNotMatch(iconSource, /https?:\/\/(?:unpkg\.com|cdn\.jsdelivr\.net|cdnjs\.cloudflare\.com|fonts\.googleapis\.com)/i);
 });
 
