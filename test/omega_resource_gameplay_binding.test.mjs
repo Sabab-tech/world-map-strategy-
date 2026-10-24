@@ -81,7 +81,7 @@ for(const criticalSite of criticalMineplayBatch.records){
  assert.equal(sitePlan.siteId,criticalSite.siteId,criticalSite.siteId+' must retain its own site identity');
  assert.equal(sitePlan.countryId,criticalSite.countryId,criticalSite.siteId+' must retain country isolation');
  assert.equal(sitePlan.warehouseCountryId,criticalSite.countryId,criticalSite.siteId+' must bind to its own-country raw warehouse');
- assert.ok(sitePlan.dailyRate>0 || sitePlan.productionRate>0 || sitePlan.capacity>0,
+ assert.ok(sitePlan.dailyCapacity>0,
    criticalSite.siteId+' must expose positive planned production capacity');
 }
 
