@@ -224,12 +224,25 @@ function renderSiteDetail(s){
  const purityMetric=makeMeasure(purityRaw,purity.unit||sim.purity?.unit||'%',purity.value!==undefined?'RECORDED':'SIMULATED',purity);
  if(purityMetric)metrics.push({label:'Purity',...purityMetric});
  let recoveryRaw=recovery.value;
+ let recoveryUnit=recovery.unit||'%';
+ let recoveryRecord=recovery;
  let recoveryFallback=recovery.value!==undefined?'RECORDED':'SIMULATED';
  if(recoveryRaw===undefined&&sim.recovery!==undefined){
-  const numeric=Number(sim.recovery);
-  recoveryRaw=Number.isFinite(numeric)?numeric*100:sim.recovery;
+  const modeled=sim.recovery;
+  if(modeled&&typeof modeled==='object'&&!Array.isArray(modeled)){
+   recoveryRaw=modeled.value??modeled.quantity??modeled.amount??modeled.rate;
+   recoveryUnit=modeled.unit||modeled.units||modeled.measurementUnit||'%';
+   recoveryRecord=modeled;
+   const status=String(modeled.status||modeled.authority||'').toUpperCase();
+   recoveryFallback=/OBSERVED|REPORTED|VERIFIED/.test(status)?'RECORDED':'SIMULATED';
+  }else{
+   const numeric=Number(modeled);
+   recoveryRaw=Number.isFinite(numeric)?numeric*100:modeled;
+   recoveryUnit='%';
+   recoveryRecord={authority:'SIMULATED',status:'SIMULATED'};
+  }
  }
- const recoveryMetric=makeMeasure(recoveryRaw,recovery.unit||'%',recoveryFallback,recovery);
+ const recoveryMetric=makeMeasure(recoveryRaw,recoveryUnit,recoveryFallback,recoveryRecord);
  if(recoveryMetric)metrics.push({label:'Recovery',...recoveryMetric});
  const throughputMetric=makeMeasure(throughput.value??sim.dailyThroughput,throughput.unit||sim.dailyThroughputUnit||'',throughput.value!==undefined?'RECORDED':'SIMULATED',throughput);
  if(throughputMetric)metrics.push({label:'Daily throughput',...throughputMetric});

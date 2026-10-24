@@ -34,9 +34,13 @@
   }
 
   function resourceId(row) {
-    return String(row && (row.identity && (row.identity.resourceId || row.identity.resourceTypeId || row.identity.resourceName) ||
+    var resource = String(row && (row.identity && (row.identity.resourceId || row.identity.resourceTypeId || row.identity.resourceName) ||
       row.sourceSiteRecord && (row.sourceSiteRecord.resourceId || row.sourceSiteRecord.resourceTypeId) ||
       row.resourceId || row.resourceTypeId || row.resId) || '').trim();
+    var status = String(row && row.operation && (row.operation.status || row.operation.operationalStatus) ||
+      row && row.status || row && row.sourceSiteRecord && row.sourceSiteRecord.status || '').trim().toUpperCase();
+    // Presentation-only classification. This is not a commodity identity and must never enter extraction.
+    return resource || status === 'NOT_APPLICABLE' ? (resource || 'NOT_APPLICABLE') : '';
   }
 
   function uniqueSiteRows(rows) {
@@ -84,12 +88,21 @@
       var production = observedMetric(row.quantitative && row.quantitative.production || row.production);
       var modeledReserveRaw = row.simulation && row.simulation.reserve || (row.reserve && String(row.reserve.status || '').toUpperCase() === 'SIMULATED' ? row.reserve : null);
       var modeledReserve = modeledReserveRaw ? observedMetric(Object.assign({ status: 'SIMULATED' }, modeledReserveRaw)) : null;
+      var modeledProductionRate = numberOrNull(row.simulation && row.simulation.productionRate);
+      var modeledProduction = modeledProductionRate !== null ? observedMetric({
+        quantity: modeledProductionRate,
+        unit: String(row.simulation.productionRateUnit || 'simulation units per day'),
+        status: 'SIMULATED',
+        basis: String(row.simulation.pipelineProfileAuthority || row.simulation.pipelineProfileVersion || 'SIMULATION_ONLY_RUNTIME_COMPLETION')
+      }) : null;
       var inventory = null;
       if (typeof options.getInventoryForSite === 'function') {
         try { inventory = options.getInventoryForSite(siteId(row)); } catch (_) { inventory = null; }
       }
       var inventoryKnown = inventory && typeof inventory === 'object' && numberOrNull(inventory.quantity) !== null;
       var rawStatus = row.operation && (row.operation.status || row.operation.realWorldStatus) || row.status || row.sourceSiteRecord && row.sourceSiteRecord.status;
+      var notApplicable = String(rawStatus || '').trim().toUpperCase() === 'NOT_APPLICABLE' ||
+        String(row.runtime && row.runtime.pipeline && row.runtime.pipeline.site || '').toUpperCase() === 'REGISTERED_NOT_APPLICABLE';
       return {
         siteId: siteId(row),
         countryId: countryId(row),
@@ -98,9 +111,11 @@
         location: String(row.location && (row.location.region || row.location.area || row.location.locality) ||
           row.region || row.province || row.sourceSiteRecord && (row.sourceSiteRecord.region || row.sourceSiteRecord.province) || 'Not recorded'),
         status: String(rawStatus || 'UNOBSERVED').toUpperCase(),
+        notApplicable: notApplicable,
         reserve: reserve,
         modeledReserve: modeledReserve,
         production: production,
+        modeledProduction: modeledProduction,
         stock: inventoryKnown ? { quantity: numberOrNull(inventory.quantity), unit: String(inventory.unit || 'unit not recorded'), source: String(inventory.source || 'inventory adapter') } : null,
         coordinates: row.coordinates || row.location && row.location.coordinates || row.map && row.map.coordinates || null,
         source: String(row.provenance && (row.provenance.source || row.provenance.sourceDataset) ||
@@ -183,16 +198,22 @@
         site.modeledReserve && site.modeledReserve.modeledValue !== null ? fmt(site.modeledReserve.modeledValue) + ' ' + esc(site.modeledReserve.unit) + ' · MODELED' :
           esc(site.reserve.status);
       var productionLabel = site.production.value !== null ? fmt(site.production.value) + ' ' + esc(site.production.unit) + ' · ' + esc(site.production.status) : esc(site.production.status);
-      var openEnabled = typeof options.onOpenSite === 'function';
-      var locateEnabled = typeof options.onLocateSite === 'function';
+      var modeledProductionLabel = site.notApplicable ? 'Not applicable' :
+        site.modeledProduction && site.modeledProduction.modeledValue !== null
+          ? fmt(site.modeledProduction.modeledValue) + ' ' + esc(site.modeledProduction.unit) + ' · SIMULATED'
+          : 'Not recorded';
+      var openEnabled = !site.notApplicable && typeof options.onOpenSite === 'function';
+      var locateEnabled = !site.notApplicable && typeof options.onLocateSite === 'function';
       return '<article class="omega-v2-card" data-omega-v2-site-card data-site-id="' + esc(site.siteId) + '" data-resource="' + esc(site.resourceId) + '" data-search="' + esc((site.name + ' ' + site.resourceId + ' ' + site.location + ' ' + site.status).toLowerCase()) + '">' +
         '<div class="omega-v2-card-header"><div><div class="omega-v2-eyebrow">' + esc(site.resourceId.replace(/[_-]+/g, ' ')) + '</div><h3 class="omega-v2-card-title">' + esc(site.name) + '</h3><div class="omega-v2-card-meta">' + esc(site.countryId) + ' · ' + esc(site.location) + '</div></div><span class="omega-v2-status" data-state="' + (site.status === 'OPERATIONAL' || site.status === 'ACTIVE' ? 'operational' : site.status === 'UNOBSERVED' ? 'unknown' : 'attention') + '">' + esc(site.status) + '</span></div>' +
         '<div class="omega-v2-vehicle-stats"><div><span>Reported reserve</span><strong>' + reserveLabel + '</strong></div>' +
         '<div><span>Current warehouse stock</span><strong>' + stockLabel + '</strong></div><div><span>Measured production</span><strong>' + productionLabel + '</strong></div>' +
+        '<div><span>Modeled gameplay rate</span><strong>' + modeledProductionLabel + '</strong></div>' +
         '<div><span>Coordinates</span><strong>' + (site.coordinates ? esc((site.coordinates.latitude !== undefined ? site.coordinates.latitude : site.coordinates.lat) + ', ' + (site.coordinates.longitude !== undefined ? site.coordinates.longitude : site.coordinates.lng)) : 'Not recorded') + '</strong></div></div>' +
         '<div class="omega-v2-source">Site ID: ' + esc(site.siteId) + ' · Source: ' + esc(site.source) + '</div>' +
-        '<div class="omega-v2-actions"><button type="button" class="omega-v2-button omega-v2-button--primary" data-omega-v2-site-action="open" data-site-id="' + esc(site.siteId) + '"' + (openEnabled ? '' : ' disabled title="No canonical site-detail route is connected."') + '>View site</button>' +
-        '<button type="button" class="omega-v2-button omega-v2-button--quiet" data-omega-v2-site-action="locate" data-site-id="' + esc(site.siteId) + '"' + (locateEnabled ? '' : ' disabled title="No map locator adapter is connected."') + '>Locate on map</button></div></article>';
+        (site.notApplicable ? '<p class="omega-v2-source">No verified commercial mining site is registered for this country. This record is retained for coverage only and cannot extract, ship or process material.</p>' : '') +
+        '<div class="omega-v2-actions"><button type="button" class="omega-v2-button omega-v2-button--primary" data-omega-v2-site-action="open" data-site-id="' + esc(site.siteId) + '"' + (openEnabled ? '' : ' disabled title="' + (site.notApplicable ? 'This country has no applicable commercial mining site.' : 'No canonical site-detail route is connected.') + '"') + '>View site</button>' +
+        '<button type="button" class="omega-v2-button omega-v2-button--quiet" data-omega-v2-site-action="locate" data-site-id="' + esc(site.siteId) + '"' + (locateEnabled ? '' : ' disabled title="' + (site.notApplicable ? 'No physical mine marker exists for this record.' : 'No map locator adapter is connected.') + '"') + '>Locate on map</button></div></article>';
     }).join('');
     var tabRows = [
       ['dashboard','Dashboard'],['mines','Mines & Fields'],['reserves','Reserves'],

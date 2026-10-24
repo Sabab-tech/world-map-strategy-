@@ -314,8 +314,13 @@
           mineplayRows=[];
         }
         const rows=baseRows.concat(acceptedExpansion,acceptedLegacy,mineplayRows);
-        const normalizedRows=rows.map(row=>normalizeSiteRecord(applyPlayerMineCommissionOverlay(row)));
         const integrity=g.OmegaResourceSiteIntegrity||g.Omega?.ResourceSiteIntegrity;
+        const normalizedRows=rows.map(row=>{
+          const normalized=normalizeSiteRecord(applyPlayerMineCommissionOverlay(row));
+          return typeof integrity?.buildSimulationPipelineProfile==='function'
+            ?integrity.buildSimulationPipelineProfile(normalized,{aliasMap:LEGACY_CANONICAL_ALIAS_IDS,year:simulationYear()})
+            :normalized;
+        });
         if(typeof integrity?.auditRegistry==='function'){
           const integrityReport=integrity.auditRegistry(normalizedRows,{aliasMap:LEGACY_CANONICAL_ALIAS_IDS});
           g.OmegaResourceSiteIntegrityReport=integrityReport;
