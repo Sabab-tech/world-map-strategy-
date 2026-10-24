@@ -37,7 +37,7 @@
     var site = model && model.sites ? model.sites.find(function (item) { return item.siteId === siteId; }) : null;
     if (!site) {
       root.classList.add('omega-v2-screen');
-      root.innerHTML = '<section class="omega-v2-shell"><h1 class="omega-v2-title">Mine / Resource Site</h1><div class="omega-v2-empty">This mine record could not be found for the selected country.</div></section>';
+      root.innerHTML = '<section class="omega-v2-shell"><h1 class="omega-v2-title">Mine / Resource Site</h1><div class="omega-v2-empty">This mine record could not be found for the selected country.</div><details class="omega-v2-record-details"><summary>Site record details</summary><p class="omega-v2-card-meta">Site reference: ' + esc(siteId || 'Not recorded') + ' · Country: ' + esc(country || 'Not recorded') + '</p></details></section>';
       return { ok:false, code:'CANONICAL_SITE_ID_NOT_FOUND', siteId:siteId || null, countryId:country || null };
     }
     var raw = site.raw || {};
