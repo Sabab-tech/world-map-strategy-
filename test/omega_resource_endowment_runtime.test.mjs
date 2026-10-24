@@ -453,8 +453,8 @@ const profileMineOutputs=allMineOutputs.filter(x=>x?.assetType==='MINE_SITE');
 const siteLinkedExecutionOutputs=allMineOutputs.filter(x=>x?.siteReferenceKey&&Number(x?.producedQuantity)>0);
 const simulatedMineOutputs=profileMineOutputs.filter(x=>x?.simulationGenerated===true);
 const simulatedFieldOutputs=allMineOutputs.filter(x=>x?.simulationGenerated===true&&['OIL_FIELD','GAS_FIELD'].includes(x?.assetType));
-assert.equal(siteReferenceRows,503);
-assert.equal(siteControllerRows,503);
+assert.equal(siteReferenceRows,561,'site reference rows include all 58 new unique mineplay sites');
+assert.equal(siteControllerRows,561,'site controllers include all 58 new unique mineplay sites');
 
 // Every new Part 6 mine must use the same authoritative runtime identity and extraction path.
 const part6Data=JSON.parse(fs.readFileSync(new URL('../resource_site_legacy_gameplay_expansion_part_6_v1.json',import.meta.url),'utf8'));
