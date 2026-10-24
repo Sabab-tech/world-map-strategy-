@@ -50,3 +50,32 @@ test('Android 9 smoke treats legacy runtime compatibility as a boot requirement'
   assert.ok(smokeSource.includes("typeof Array.prototype.flatMap === 'function'"));
   assert.ok(smokeSource.includes('window.OMEGA_ICON_SYSTEM_V1'));
 });
+
+
+test('Android asset sync packages every local OMEGA UI v2 module referenced by the app shell', () => {
+  const gradle = read('android/app/build.gradle');
+  const serviceWorker = read('omega-offline-map-sw.js');
+  const requiredAssets = [
+    'omega_ui_v2/omega-ui-v2.css',
+    'omega_ui_v2/navigation-registry.js',
+    'omega_ui_v2/screens/government.js',
+    'omega_ui_v2/screens/ministry-detail.js',
+    'omega_ui_v2/screens/economy.js',
+    'omega_ui_v2/screens/resource-ministry.js',
+    'omega_ui_v2/screens/mine-detail.js',
+    'omega_ui_v2/screens/industry.js',
+    'omega_ui_v2/screens/home-affairs.js',
+    'omega_ui_v2/screens/police-fleet.js',
+    'omega_ui_v2/screens/reports.js',
+    'omega_ui_v2/app.js',
+    'omega_ui_v2/integration.js',
+    'omega_ui_v2/world-command-dock.js'
+  ];
+
+  assert.match(gradle, /include ['"]omega_ui_v2\/\*\*['"]/,
+    'Android asset sync must copy the nested UI-v2 modules into APK assets');
+  for (const asset of requiredAssets) {
+    assert.ok(html.includes(asset), 'index.html must reference ' + asset);
+    assert.ok(serviceWorker.includes('"./' + asset + '"'), 'offline cache must include ' + asset);
+  }
+});
