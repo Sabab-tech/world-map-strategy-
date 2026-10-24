@@ -380,7 +380,7 @@ test('production shell loads UI v2 and excludes retired UI controllers from the 
     assert.ok(index.includes(modulePath), 'index.html must load ' + modulePath);
     assert.ok(sw.includes(modulePath), 'offline service worker must pre-cache ' + modulePath);
   }
-  assert.match(sw, /omega-offline-atlas-shell-v\\d+/);
+  assert.ok(sw.includes('omega-offline-atlas-shell-v35'));
   assert.ok(entry.includes('OmegaUIV2Integration'));
   assert.ok(entry.includes('opened-ui-v2'));
   assert.ok(!/openMainMinistryView|OmegaLayerManager\\.setLayer|renderCabinet\\(/.test(entry));
