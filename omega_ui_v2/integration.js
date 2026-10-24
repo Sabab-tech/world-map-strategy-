@@ -14,6 +14,22 @@
   function cabinetRoot() {
     return g.document && g.document.getElementById('cabinet-full-window') || null;
   }
+  function setV2CabinetActive(root, active) {
+    root = root || cabinetRoot();
+    if (root) {
+      if (active && root.setAttribute) root.setAttribute(ACTIVE_ATTR, 'true');
+      else if (!active && root.removeAttribute) root.removeAttribute(ACTIVE_ATTR);
+    }
+    var body = g.document && g.document.body;
+    var classes = body && body.classList;
+    if (classes) {
+      if (typeof classes.toggle === 'function') classes.toggle('omega-ui-v2-cabinet-active', !!active);
+      else if (active && typeof classes.add === 'function') classes.add('omega-ui-v2-cabinet-active');
+      else if (!active && typeof classes.remove === 'function') classes.remove('omega-ui-v2-cabinet-active');
+    }
+    var guard = g.OmegaUIInteractionGuard;
+    if (guard && typeof guard.scheduleRefresh === 'function') guard.scheduleRefresh();
+  }
   function selectedCountry() {
     var values = [
       g.OmegaMinistryViewCountry,
@@ -51,11 +67,11 @@
     });
   }
   function restoreLegacy(root, country) {
+    setV2CabinetActive(root, false);
     try {
       var cabinet = g.OmegaCabinetUI;
       if (cabinet && typeof cabinet.renderCabinet === 'function') cabinet.renderCabinet(country || selectedCountry());
     } catch (_) {}
-    if (root && root.removeAttribute) root.removeAttribute(ACTIVE_ATTR);
   }
   function mountIntoCabinet(root, mountOptions) {
     mountOptions = mountOptions || {};
@@ -75,6 +91,7 @@
         display:'flex', position:'fixed', inset:'0', width:'100vw', height:'100vh',
         minHeight:'100%', opacity:'1', visibility:'visible', pointerEvents:'auto', zIndex:'999999'
       });
+      setV2CabinetActive(root, true);
       if (root.setAttribute) root.setAttribute('aria-hidden','false');
       if (g.document.body && g.document.body.setAttribute) g.document.body.setAttribute('data-active-layer','1');
       if (g.document.body && g.document.body.classList) g.document.body.classList.add('modal-open');
@@ -119,7 +136,6 @@
         restoreLegacy(root, country);
         return { ok:false, code:lastError };
       }
-      if (root.setAttribute) root.setAttribute(ACTIVE_ATTR, 'true');
       lastMount = { countryId:country || null, route:result.route || initialRoute || 'government', mounted:true };
       lastError = null;
       if (mountOptions.ministryId && g.OmegaUIV2App && typeof g.OmegaUIV2App.openMinistry === 'function') { if (!g.OmegaUIV2App.openMinistry(root, mountOptions.ministryId)) return { ok:false, code:'UI_V2_MINISTRY_ROUTE_FAILED' }; lastMount.route = 'ministry-detail'; }
@@ -173,6 +189,7 @@
     var manager = g.OmegaLayerManager;
     if (!id || !manager || typeof manager.setLayer !== 'function') return { ok:false, code:'LEGACY_OPERATIONAL_CONSOLE_UNAVAILABLE' };
     resumeUiState = captureUiStateForResume();
+    setV2CabinetActive(cabinetRoot(), false);
     resumeOnCabinetReturn = true;
     installOperationalConsoleResumeHook(manager);
     try {
@@ -180,6 +197,7 @@
       return { ok:true, ministryId:id, destination:'EXISTING_CANONICAL_MINISTRY_CONSOLE' };
     } catch (error) {
       resumeOnCabinetReturn = false;
+      setV2CabinetActive(cabinetRoot(), true);
       return { ok:false, code:'LEGACY_OPERATIONAL_CONSOLE_OPEN_FAILED', message:String(error && error.message || error) };
     }
   }
@@ -206,6 +224,7 @@
   }
   function closeToWorldMap() {
     var root = cabinetRoot();
+    setV2CabinetActive(root, false);
     try {
       if (root && g.OmegaUIV2App && root.__omegaUIV2State && typeof g.OmegaUIV2App.unmount === 'function') g.OmegaUIV2App.unmount(root);
     } catch (_) {}

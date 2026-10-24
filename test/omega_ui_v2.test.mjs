@@ -544,17 +544,30 @@ test('universal navigation, reliable Exit/Escape behavior and responsive visuals
   const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
   const worker = readFileSync(new URL('../omega-offline-map-sw.js', import.meta.url), 'utf8');
   const refreshCss = readFileSync(new URL('../omega_ui_v2/ministry-visual-refresh.css', import.meta.url), 'utf8');
+  const shellCss = readFileSync(new URL('../omega_ui_v2/omega-ui-v2.css', import.meta.url), 'utf8');
+  const guard = readFileSync(new URL('../omega_ui_interaction_guard.js', import.meta.url), 'utf8');
+  const integration = readFileSync(new URL('../omega_ui_v2/integration.js', import.meta.url), 'utf8');
   assert.match(app, /data-omega-v2-jump-route/);
   assert.match(app, /data-omega-v2-jump-ministry/);
   assert.match(app, /function exitToMap\(/);
   assert.match(app, /state\.history\.length = 0/);
   assert.match(app, /root\.addEventListener\('keydown'/);
   assert.match(html, /omega_ui_v2\/ministry-visual-refresh\.css/);
-  assert.match(worker, /omega-offline-atlas-shell-v33/);
+  assert.match(worker, /omega-offline-atlas-shell-v34/);
   assert.match(worker, /omega_ui_v2\/ministry-visual-refresh\.css/);
   assert.match(refreshCss, /omega-v2-ministry-detail-cover-image/);
   assert.match(refreshCss, /@media \(max-width: 760px\)/);
   assert.match(refreshCss, /min-height: 48px/);
+  assert.match(shellCss, /\.omega-v2-app-frame \{[^}]*height:100%;[^}]*min-height:0;[^}]*overflow:hidden/s,
+    'the host frame must stay within the portrait viewport');
+  assert.match(shellCss, /\.omega-v2-app-main \{[^}]*min-height:0;[^}]*overflow-y:auto;[^}]*touch-action:pan-y pinch-zoom/s,
+    'screen content must own a touch-scroll container rather than relying on the old dashboard');
+  assert.match(guard, /body\.omega-ui-v2-cabinet-active \$\{CABINET\}\[data-omega-ui-v2-active="true"\]\{z-index:2147483000!important/,
+    'the active Cabinet must be above legacy ministry z-index 9000');
+  assert.match(guard, /body\.omega-ui-v2-cabinet-active \$\{MINISTRY\}\{display:none!important/,
+    'the legacy ministry layer must not intercept UI v2 taps');
+  assert.match(integration, /setV2CabinetActive\(root, true\)/);
+  assert.match(integration, /setV2CabinetActive\(root, false\)/);
   for (const legacyCss of ['omega_ui_interaction_fix_v2.css', 'omega_ui_visual_system_v1.css',
     'omega_ui_system_redesign_v1.css', 'omega_ministry_layout_repair_v1.css', 'omega_ministry_entry_v3.css']) {
     assert.ok(existsSync(new URL('../' + legacyCss, import.meta.url)), legacyCss + ' must remain in the repository');
