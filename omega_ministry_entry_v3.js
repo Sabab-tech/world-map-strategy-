@@ -66,76 +66,18 @@
     return 'USA';
   }
 
-  function setLayerState(layer) {
-    if (!doc.body) return;
-    doc.body.setAttribute('data-active-layer', String(layer));
-    if (doc.body.classList) {
-      if (layer === 0) doc.body.classList.remove('modal-open');
-      else doc.body.classList.add('modal-open');
-    }
-  }
-
   function closeCompetingDrawers() {
-    try {
-      if (global.Game && typeof global.Game.closeAllDrawers === 'function') {
-        global.Game.closeAllDrawers();
-        return;
-      }
-    } catch (error) {
-      if (global.console && typeof global.console.warn === 'function') {
-        global.console.warn('[OMEGA GOV ENTRY v3] Drawer close helper failed; using targeted fallback.', error);
-      }
-    }
     [
       'command-hub-modal', 'country-info-card', 'city-detail-bar',
       'search-drawer', 'events-drawer', 'layers-drawer',
       'resource-filter-box', 'relation-filter-box', 'daily-quests-modal'
     ].forEach(function (id) {
       const panel = element(id);
-      if (panel && panel.style) panel.style.display = 'none';
-    });
-  }
-
-  function directCabinetFallback(cabinet) {
-    const dashboard = element(DASHBOARD_ID);
-    if (dashboard && dashboard.style) {
-      dashboard.style.display = 'none';
-      dashboard.style.opacity = '0';
-      dashboard.style.pointerEvents = 'none';
-      if (typeof dashboard.setAttribute === 'function') dashboard.setAttribute('aria-hidden', 'true');
-    }
-
-    Object.assign(cabinet.style, {
-      display: 'flex',
-      position: 'fixed',
-      inset: '0',
-      width: '100vw',
-      height: '100vh',
-      minHeight: '100%',
-      opacity: '1',
-      visibility: 'visible',
-      pointerEvents: 'auto',
-      zIndex: '999999'
-    });
-    if (typeof cabinet.setAttribute === 'function') cabinet.setAttribute('aria-hidden', 'false');
-    setLayerState(1);
-
-    const manager = global.OmegaLayerManager;
-    if (manager) {
-      manager.currentLayer = 1;
-      if (Array.isArray(manager.layerStack) && manager.layerStack[manager.layerStack.length - 1] !== 1) {
-        manager.layerStack.push(1);
+      if (panel && panel.style) {
+        panel.style.display = 'none';
+        panel.style.pointerEvents = 'none';
       }
-    }
-
-    const cabinetUI = global.OmegaCabinetUI;
-    if (cabinetUI && typeof cabinetUI.renderCabinet === 'function') {
-      cabinetUI.renderCabinet(activeCountry());
-    }
-    if (typeof global.updateGlobalBackButtonVisibility === 'function') {
-      global.updateGlobalBackButtonVisibility();
-    }
-    return visible(cabinet);
+    });
   }
 
   function syncVisibility() {
@@ -150,6 +92,36 @@
     button.setAttribute('aria-hidden', shouldShow ? 'false' : 'true');
   }
 
+  function failClosed(cabinet, button, reason) {
+    if (cabinet) {
+      if (cabinet.removeAttribute) cabinet.removeAttribute('data-omega-ui-v2-active');
+      if (cabinet.style) {
+        cabinet.style.display = 'none';
+        cabinet.style.visibility = 'hidden';
+        cabinet.style.opacity = '0';
+        cabinet.style.pointerEvents = 'none';
+      }
+      if (cabinet.setAttribute) cabinet.setAttribute('aria-hidden', 'true');
+      const dashboard = element(DASHBOARD_ID);
+      if (dashboard && dashboard.style) {
+        dashboard.style.display = 'none';
+        dashboard.style.visibility = 'hidden';
+        dashboard.style.opacity = '0';
+        dashboard.style.pointerEvents = 'none';
+      }
+    }
+    if (doc.body) {
+      if (doc.body.setAttribute) doc.body.setAttribute('data-active-layer', '0');
+      if (doc.body.classList && doc.body.classList.remove) {
+        doc.body.classList.remove('modal-open');
+        doc.body.classList.remove('omega-ui-v2-cabinet-active');
+        doc.body.classList.remove('omega-ministry-active');
+      }
+    }
+    if (button) button.setAttribute('data-last-open-result', reason);
+    syncVisibility();
+  }
+
   function open(event) {
     const button = element(BUTTON_ID);
     const cabinet = element(CABINET_ID);
@@ -160,78 +132,43 @@
     }
     if (!cabinet || !cabinet.style) {
       if (button) button.setAttribute('data-last-open-result', 'failed-no-cabinet');
-      if (global.console && typeof global.console.error === 'function') {
-        global.console.error('[OMEGA GOV ENTRY v3] Cabinet surface is missing.');
-      }
       return false;
     }
 
     closeCompetingDrawers();
-
     const uiV2 = global.OmegaUIV2Integration;
-    if (uiV2 && typeof uiV2.isEnabled === 'function' && uiV2.isEnabled() && typeof uiV2.mountIntoCabinet === 'function') {
-      try {
-        const mountResult = uiV2.mountIntoCabinet(cabinet);
-        if (mountResult && mountResult.ok === true) {
-          if (button) button.setAttribute('data-last-open-result', 'opened-ui-v2');
-          syncVisibility();
-          return true;
-        }
-      } catch (error) {
-        if (global.console && typeof global.console.warn === 'function') global.console.warn('[OMEGA GOV ENTRY v3] UI v2 mount failed; retaining legacy fallback.', error);
+    if (!uiV2 || typeof uiV2.isEnabled !== 'function' || uiV2.isEnabled() !== true ||
+        typeof uiV2.mountIntoCabinet !== 'function') {
+      failClosed(cabinet, button, 'failed-ui-v2-unavailable');
+      if (typeof global.showOmegaNotification === 'function') {
+        global.showOmegaNotification('GOVERNMENT UI UNAVAILABLE',
+          'The new government interface could not start. The retired interface is disabled.', 'warning');
       }
+      return false;
     }
 
     try {
-      if (typeof global.openMainMinistryView === 'function') {
-        global.openMainMinistryView(event || {
-          preventDefault: function () {},
-          stopPropagation: function () {},
-          stopImmediatePropagation: function () {}
-        });
-        if (visible(cabinet)) {
-          if (button) button.setAttribute('data-last-open-result', 'opened-primary');
-          syncVisibility();
-          return true;
-        }
-      }
-    } catch (error) {
-      if (global.console && typeof global.console.warn === 'function') {
-        global.console.warn('[OMEGA GOV ENTRY v3] Primary ministry route failed.', error);
-      }
-    }
-
-    try {
-      const manager = global.OmegaLayerManager;
-      if (manager && typeof manager.setLayer === 'function') manager.setLayer(1);
-      if (visible(cabinet)) {
-        if (button) button.setAttribute('data-last-open-result', 'opened-layer-manager');
+      const result = uiV2.mountIntoCabinet(cabinet);
+      if (result && result.ok === true) {
+        if (button) button.setAttribute('data-last-open-result', 'opened-ui-v2');
         syncVisibility();
         return true;
       }
-    } catch (error) {
-      if (global.console && typeof global.console.warn === 'function') {
-        global.console.warn('[OMEGA GOV ENTRY v3] Layer-manager route failed.', error);
+      failClosed(cabinet, button, 'failed-ui-v2-mount');
+      if (typeof global.showOmegaNotification === 'function') {
+        global.showOmegaNotification('GOVERNMENT UI UNAVAILABLE',
+          'The new government interface failed to mount. Reload after updating; no legacy UI fallback was started.', 'warning');
       }
-    }
-
-    try {
-      const opened = directCabinetFallback(cabinet);
-      if (button) button.setAttribute('data-last-open-result', opened ? 'opened-direct-fallback' : 'failed');
-      if (!opened && typeof global.showOmegaNotification === 'function') {
-        global.showOmegaNotification('MINISTRY ENTRY FAILED', 'The government cabinet did not become visible. Check OMEGA diagnostics.', 'danger');
-      }
-      syncVisibility();
-      return opened;
+      return false;
     } catch (error) {
-      if (button) button.setAttribute('data-last-open-result', 'failed-exception');
+      failClosed(cabinet, button, 'failed-ui-v2-exception');
       if (global.console && typeof global.console.error === 'function') {
-        global.console.error('[OMEGA GOV ENTRY v3] All cabinet routes failed.', error);
+        global.console.error('[OMEGA GOV ENTRY v3] UI v2 mount failed.', error);
       }
       if (typeof global.showOmegaNotification === 'function') {
-        global.showOmegaNotification('MINISTRY ENTRY FAILED', 'The government cabinet could not be initialized. Check OMEGA diagnostics.', 'danger');
+        global.showOmegaNotification('GOVERNMENT UI UNAVAILABLE',
+          'The new government interface encountered an error. The retired interface remains disabled.', 'warning');
       }
-      syncVisibility();
       return false;
     }
   }
