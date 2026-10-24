@@ -51,6 +51,38 @@ test('single country contract canonicalizes aliases and keeps per-field provenan
   assert.equal(api.getDomainRecord('Country Not In Registry','economy').record,null);
 });
 
+test('UI view snapshots skip large geography/catalogue scans while the full snapshot retains them',()=>{
+  const api=fixture({world:{type:'FeatureCollection',features:[
+    {type:'Feature',id:'BGD',properties:{name:'Bangladesh',ISO_A2:'BD',ISO_A3:'BGD'}},
+    {type:'Feature',id:'USA',properties:{name:'United States',ISO_A2:'US',ISO_A3:'USA'}}
+  ]}});
+  const view=api.getSnapshotForView('BD');
+  assert.equal(view.fields.gdp.value,460000000000);
+  assert.equal(view.fields.population.value,170000000);
+  assert.equal(view.sources.length,0);
+  assert.equal(Object.keys(view.records).length,0);
+  assert.equal(view.raw.worldFeature,undefined,'screen snapshots must not carry/map-scan world geometry');
+  const full=api.getSnapshot('BD');
+  assert.equal(full.raw.worldFeature.properties.name,'Bangladesh');
+  assert.ok(full.sources.some(v=>v.sourceId==='world.json'));
+});
+
+test('UI view snapshots skip exhaustive audits while explicit diagnostics remain authoritative',()=>{
+  const api=fixture();
+  const view=api.getSnapshotForView('BD');
+  assert.equal(view.status,'READY_UNAUDITED');
+  assert.equal(view.diagnostics.auditPerformed,false);
+  assert.equal(view.diagnostics.ok,null,'an unaudited view must not claim that the full audit passed');
+  assert.equal(view.countryCode,'BD');
+  assert.equal(view.fields.population.value,170000000);
+  assert.equal(view.fields.gdp.value,460000000000);
+  assert.ok(Array.isArray(view.diagnostics.missingFields));
+  const audited=api.getSnapshot('BD');
+  assert.equal(audited.status,'READY');
+  assert.equal(audited.diagnostics.ok,true);
+  assert.equal(api.auditCountry('BD').ok,true);
+});
+
 test('live simulation values win and do not overwrite shared baselines',()=>{
   const api=fixture({live:{economy:{BD:{gdp:510000000000,currency_code:'BDT'}},population:{BD:{population:175000000}}}});
   const snap=api.getSnapshot('Bangladesh');
@@ -116,6 +148,13 @@ test('new overview, gateway and legacy screen files are wired through the same c
   const html=read('index.html');
   assert.match(html,/omega_country_data_gateway_v1\.js/);
   assert.match(read('country-ios.js'),/gateway\.getValue\(requested, domains, paths\)/);
+  assert.match(read('omega_ui_v2/app.js'),/getSnapshotForView\(country\)/);
+  assert.match(read('omega_ui_v2/screens/economy.js'),/getSnapshotForView\(country\)/);
+  assert.match(read('omega_ui_v2/screens/government.js'),/getSnapshotForView\(countryId\)/);
+  assert.match(read('omega_ui_v2/screens/reports.js'),/getSnapshotForView\(country\)/);
+  const gateway=read('omega_country_data_gateway_v1.js');
+  assert.match(gateway,/OMEGA_COUNTRY_CONTEXT_CHANGED[\s\S]*?snapshot:getSnapshotForView\(country\)/);
+  assert.match(gateway,/OMEGA_SIMULATION_TURN_COMMITTED[\s\S]*?snapshot:getSnapshotForView\(country\)/);
   assert.match(read('ministry_engine.js'),/OmegaCountryDataGateway/);
   assert.match(read('map-engine-1.js'),/OmegaCountryDataGateway/);
   assert.match(read('omega_country_overview_ministry_ui_v1.js'),/auditAllCountries/);

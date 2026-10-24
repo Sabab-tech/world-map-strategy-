@@ -154,15 +154,26 @@
   }
   function fieldBase(name, row, keys, sourceId, unit) { if (!obj(row)) return null; for (const key of keys) { const value=key.split('.').reduce((v,k)=>v==null?undefined:v[k],row); if(value!=null&&value!==''){const observationYear=row.year||row.observationYear||(key==='population_2015'?2015:null);return field(name,value,sourceId,sourceId,observationYear,'SOURCE_BASELINE',unit,{key});} } return null; }
 
-  function getSnapshot(countryValue) {
+  function getSnapshot(countryValue, options) {
+    options = options && typeof options === 'object' ? options : {};
+    const runAudit = options.audit !== false;
     const identity=resolveCountry(countryValue);
     if (!identity) return {schemaVersion:VERSION,selectedCountry:str(countryValue),countryCode:null,status:'COUNTRY_NOT_RESOLVED',identity:null,fields:{},records:{},sources:[],diagnostics:{ok:false,errors:['COUNTRY_IDENTITY_UNRESOLVED'],warnings:[],missingFields:[]}};
     const code=identity.countryCode||identity.iso2||identity.iso3, profile=runtime()?.getProfile?.(code)||null, gen=generalRecord(code);
     let ecosystem=null; try { ecosystem=root.WorldEcosystemEngine?.getCountryProfile?.(code)||root.WorldEcosystemEngine?.getCountryProfile?.(identity.name)||null; } catch (_) {}
     const economy=record('economy',code), population=record('population',code);
-    const economySource=sourceRecord('economy.json',code), populationSource=sourceRecord('population.json',code), societySource=sourceRecord('society.json',code);
-    const profileSource=sourceRecord('economy_global_profiles_v1.json',code), generalSource=sourceRecord('country_general_data_registry_v1.json',code);
-    const world=sourceRecord('world.json',code), roster=sourceRecord('countries.json',code), cities=sourceRecord('cities.json',code);
+    // In full-audit mode, retain the existing cross-source diagnostic scans.
+    // In view mode, the merged runtime records and the canonical general registry
+    // provide the display values; scanning GeoJSON, city catalogues and every
+    // registered source for each button press is unnecessary UI-thread work.
+    const economySource=runAudit?sourceRecord('economy.json',code):null;
+    const populationSource=runAudit?sourceRecord('population.json',code):null;
+    const societySource=runAudit?sourceRecord('society.json',code):null;
+    const profileSource=runAudit?sourceRecord('economy_global_profiles_v1.json',code):null;
+    const generalSource=runAudit?sourceRecord('country_general_data_registry_v1.json',code):null;
+    const world=runAudit?sourceRecord('world.json',code):null;
+    const roster=runAudit?sourceRecord('countries.json',code):null;
+    const cities=runAudit?sourceRecord('cities.json',code):null;
     const fields={}; const choose=(key,candidates)=>fields[key]=candidates.find(v=>v?.status==='AVAILABLE')||missing(key);
     choose('population',[
       fieldLive('population',['population'],['populationTotal','population_total','totalPopulation','population','population_2015'],code,'people'),
@@ -221,28 +232,40 @@
     for (const [alias,origin] of aliases) fields[alias] = fields[origin]?.status==='AVAILABLE'
       ? Object.assign({},fields[origin],{field:alias}) : missing(alias);
     const domains={};
-    for (const domain of ['economy','population','society','government','politics','defense','military','foreign','diplomacy','trade','health','education','infrastructure','resources']) { const r=live(domain,code); if(obj(r))domains[domain]={record:r,sourceId:'LIVE_GAME_STATE:'+domain,authority:'LIVE_STATE'}; }
-    if(obj(ecosystem))domains.worldEcosystem={record:ecosystem,sourceId:'WorldEcosystemEngine:getCountryProfile',authority:'ENGINE_RECORD'};
-    const registered=[...sources.keys()];
-    const sourceRows=[
-      {sourceId:'OmegaCountryRuntimeData',available:!!profile,role:'CANONICAL_IDENTITY_AND_BASELINE'},
-      {sourceId:'OmegaCountryGeneralDataRuntime',available:!!gen,role:'SOURCED_COUNTRY_FACTS_AND_METRICS'},
-      {sourceId:'OmegaCountryRuntimeData:economy',available:!!economy,role:'MERGED_ECONOMY_BASELINE',inputFiles:['economy.json','economy_global_profiles_v1.json']},
-      {sourceId:'OmegaCountryRuntimeData:population',available:!!population,role:'MERGED_POPULATION_BASELINE',inputFiles:['population.json','economy_global_profiles_v1.json']},
-      {sourceId:'economy.json',available:!!economySource,role:'LEGACY_ECONOMY_SOURCE'},
-      {sourceId:'population.json',available:!!populationSource,role:'LEGACY_POPULATION_SOURCE'},
-      {sourceId:'society.json',available:!!societySource,role:'SOCIETY_SOURCE'},
-      {sourceId:'economy_global_profiles_v1.json',available:!!profileSource,role:'CANONICAL_BASELINE_PROFILE_SOURCE'},
-      {sourceId:'country_general_data_registry_v1.json',available:!!generalSource,role:'SOURCED_GENERAL_DATA_REGISTRY'},
-      {sourceId:'world.json',available:!!world,role:'GEOGRAPHIC_IDENTITY'},
-      {sourceId:'countries.json',available:!!roster,role:'MAP_COUNTRY_ROSTER'},
-      {sourceId:'cities.json',available:!!cities,role:'CITY_AND_CAPITAL_CATALOGUE'},
-      ...registered.filter(id=>!['world.json','countries.json','cities.json'].includes(id)).map(sourceId=>({sourceId,available:!!sourceRecord(sourceId,code),role:'REGISTERED_DATASET'}))
-    ];
-    const diagnostics=audit(identity,gen,fields,{economy:economySource?.record||economy,population:populationSource?.record||population,world,roster,cities});
-    return {schemaVersion:VERSION,selectedCountry:str(countryValue),countryCode:code,status:diagnostics.errors.length?'DEGRADED':'READY',
+    let sourceRows=[];
+    if(runAudit){
+      for (const domain of ['economy','population','society','government','politics','defense','military','foreign','diplomacy','trade','health','education','infrastructure','resources']) { const r=live(domain,code); if(obj(r))domains[domain]={record:r,sourceId:'LIVE_GAME_STATE:'+domain,authority:'LIVE_STATE'}; }
+      if(obj(ecosystem))domains.worldEcosystem={record:ecosystem,sourceId:'WorldEcosystemEngine:getCountryProfile',authority:'ENGINE_RECORD'};
+      const registered=[...sources.keys()];
+      sourceRows=[
+        {sourceId:'OmegaCountryRuntimeData',available:!!profile,role:'CANONICAL_IDENTITY_AND_BASELINE'},
+        {sourceId:'OmegaCountryGeneralDataRuntime',available:!!gen,role:'SOURCED_COUNTRY_FACTS_AND_METRICS'},
+        {sourceId:'OmegaCountryRuntimeData:economy',available:!!economy,role:'MERGED_ECONOMY_BASELINE',inputFiles:['economy.json','economy_global_profiles_v1.json']},
+        {sourceId:'OmegaCountryRuntimeData:population',available:!!population,role:'MERGED_POPULATION_BASELINE',inputFiles:['population.json','economy_global_profiles_v1.json']},
+        {sourceId:'economy.json',available:!!economySource,role:'LEGACY_ECONOMY_SOURCE'},
+        {sourceId:'population.json',available:!!populationSource,role:'LEGACY_POPULATION_SOURCE'},
+        {sourceId:'society.json',available:!!societySource,role:'SOCIETY_SOURCE'},
+        {sourceId:'economy_global_profiles_v1.json',available:!!profileSource,role:'CANONICAL_BASELINE_PROFILE_SOURCE'},
+        {sourceId:'country_general_data_registry_v1.json',available:!!generalSource,role:'SOURCED_GENERAL_DATA_REGISTRY'},
+        {sourceId:'world.json',available:!!world,role:'GEOGRAPHIC_IDENTITY'},
+        {sourceId:'countries.json',available:!!roster,role:'MAP_COUNTRY_ROSTER'},
+        {sourceId:'cities.json',available:!!cities,role:'CITY_AND_CAPITAL_CATALOGUE'},
+        ...registered.filter(id=>!['world.json','countries.json','cities.json'].includes(id)).map(sourceId=>({sourceId,available:!!sourceRecord(sourceId,code),role:'REGISTERED_DATASET'}))
+      ];
+    }
+    // A screen render only needs sourced values. The full audit scans every source
+    // and live-state alias and stringifies duplicate records; keep it out of the hot UI
+    // path on low-memory Android WebViews. Explicit audits retain the full validation.
+    const diagnostics = runAudit
+      ? audit(identity,gen,fields,{economy:economySource?.record||economy,population:populationSource?.record||population,world,roster,cities})
+      : {ok:null,auditPerformed:false,countryCode:code,errors:[],warnings:[],comparisons:[],
+          missingFields:Object.keys(fields).filter(k=>fields[k].status!=='AVAILABLE')};
+    return {schemaVersion:VERSION,selectedCountry:str(countryValue),countryCode:code,status:runAudit?(diagnostics.errors.length?'DEGRADED':'READY'):'READY_UNAUDITED',
       identity:{countryCode:code,iso2:identity.iso2||code,iso3:identity.iso3||null,name:identity.name||identity.officialName||gen?.identity?.name||str(countryValue),flag:runtime()?.flagFor?.(code)||null},
-      fields,records:domains,sources:sourceRows,diagnostics,raw:{economy,population,countryGeneralRecord:gen,worldFeature:world?.record||null,rosterRecord:roster?.record||null,cityRecord:cities?.record||null}};
+      fields,records:domains,sources:sourceRows,diagnostics,
+      raw:runAudit
+        ? {economy,population,countryGeneralRecord:gen,worldFeature:world?.record||null,rosterRecord:roster?.record||null,cityRecord:cities?.record||null}
+        : {economy,population,countryGeneralRecord:gen}};
   }
   function audit(identity,gen,fields,refs) {
     const errors=[],warnings=[],comparisons=[],code=identity.countryCode||identity.iso2||identity.iso3;
@@ -323,15 +346,28 @@
     for(const [key,v]of Object.entries(fields)){if(v.status==='AVAILABLE'&&v.value===null)errors.push({code:'VALUE_STATUS_CONTRADICTION',field:key});if(v.status==='UNAVAILABLE'&&v.value!==null)errors.push({code:'MISSING_VALUE_POLICY_VIOLATION',field:key});}
     return {ok:errors.length===0,countryCode:code,errors,warnings,comparisons,sourcesChecked:['OmegaCountryRuntimeData','OmegaCountryGeneralDataRuntime','economy.json','population.json','society.json','countries.json','world.json','cities.json'],missingFields:Object.keys(fields).filter(k=>fields[k].status!=='AVAILABLE')};
   }
+  // Lightweight view contract: same authoritative fields, without running the
+  // exhaustive diagnostics pass during navigation. Use auditCountry/auditAllCountries
+  // for validation screens and CI certificates.
+  function getSnapshotForView(value){return getSnapshot(value,{audit:false});}
   function auditCountry(value){return getSnapshot(value).diagnostics;}
   function auditAllCountries(){const profiles=runtime()?.listProfiles?.()||[],reports=profiles.map(p=>({countryCode:p.countryCode,name:p.name,...auditCountry(p.countryCode)})),errors=reports.flatMap(r=>r.errors.map(e=>({countryCode:r.countryCode,name:r.name,...e}))),warnings=reports.flatMap(r=>r.warnings.map(e=>({countryCode:r.countryCode,name:r.name,...e})));return{schemaVersion:VERSION,countryCount:reports.length,ok:errors.length===0,errorCount:errors.length,warningCount:warnings.length,missingFieldCount:reports.reduce((n,r)=>n+r.missingFields.length,0),errors,warnings,reports};}
   function getField(country,key){return getSnapshot(country).fields[key]||missing(key);}
   function diagnostics(){return{version:VERSION,sourceCount:sources.size,sourceIds:[...sources.keys()],runtimeAvailable:!!runtime(),runtimeReady:!!runtime()?.isReady?.(),generalRuntimeAvailable:!!general(),generalRuntimeReady:!!general()?.diagnostics?.().ready,countryCount:runtime()?.diagnostics?.().profileCount||0};}
   function init(){const tasks=[];if(runtime()?.ready)tasks.push(Promise.resolve(runtime().ready));if(general()?.init)tasks.push(Promise.resolve(general().init()));return Promise.all(tasks).then(()=>{for(const id of ['economy_global_profiles_v1.json','cities.json','economy.json','population.json','society.json','country_general_data_registry_v1.json']){const data=runtime()?.getSourceDataset?.(id);if(data&&!sources.has(id))registerSource(id,data,{authority:'EXISTING_RUNTIME_SOURCE'});}const geo=root.Game?.Map?.countryGeoJSON||root.Game?.Map?.geoData||root.worldGeoJSON||root.worldData;if(geo&&!sources.has('world.json'))registerSource('world.json',geo,{authority:'GEOGRAPHIC_REFERENCE'});const roster=root.OmegaGeographicRegionSystem?.countries||root.countryRoster||root.countriesData;if(roster&&!sources.has('countries.json'))registerSource('countries.json',roster,{authority:'CANONICAL_MAP_ROSTER'});return diagnostics();});}
-  root.OmegaCountryDataGateway=Object.freeze({VERSION,init,resolveCountry,getSnapshot,getField,getValue,getDomainRecord,auditCountry,auditAllCountries,registerSource,diagnostics});
+  root.OmegaCountryDataGateway=Object.freeze({VERSION,init,resolveCountry,getSnapshot,getSnapshotForView,getField,getValue,getDomainRecord,auditCountry,auditAllCountries,registerSource,diagnostics});
   root.Omega=root.Omega||{};root.Omega.CountryDataGateway=root.OmegaCountryDataGateway;
   function emit(type,detail){try{if(typeof root.CustomEvent==='function')root.dispatchEvent?.(new root.CustomEvent(type,{detail}));}catch(_){}}
-  root.addEventListener?.('OMEGA_COUNTRY_CONTEXT_CHANGED',event=>{const country=event?.detail?.countryId||event?.detail?.country;if(country)emit('OMEGA_COUNTRY_DATA_CONTEXT_READY',{countryId:country,snapshot:getSnapshot(country)});});
-  root.addEventListener?.('OMEGA_SIMULATION_TURN_COMMITTED',()=>{const country=root.CountryIOS?.activeCountry||root.OmegaMinistryViewCountry||root.Game?.currentActiveCountry;if(country)emit('OMEGA_COUNTRY_DATA_REFRESHED',{countryId:country,snapshot:getSnapshot(country)});});
+  // These notifications may occur during navigation or every committed game turn.
+  // Publish the same authoritative display fields without running the exhaustive
+  // cross-source audit synchronously on the WebView main thread.
+  root.addEventListener?.('OMEGA_COUNTRY_CONTEXT_CHANGED',event=>{
+    const country=event?.detail?.countryId||event?.detail?.country;
+    if(country)emit('OMEGA_COUNTRY_DATA_CONTEXT_READY',{countryId:country,snapshot:getSnapshotForView(country)});
+  });
+  root.addEventListener?.('OMEGA_SIMULATION_TURN_COMMITTED',()=>{
+    const country=root.CountryIOS?.activeCountry||root.OmegaMinistryViewCountry||root.Game?.currentActiveCountry;
+    if(country)emit('OMEGA_COUNTRY_DATA_REFRESHED',{countryId:country,snapshot:getSnapshotForView(country)});
+  });
   init().catch(error=>root.console?.warn?.('[Country Data Gateway] Initialization deferred:',error?.message||error));
 })(typeof window!=='undefined'?window:globalThis);

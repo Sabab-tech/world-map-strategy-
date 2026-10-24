@@ -6,6 +6,8 @@ import static org.junit.Assert.assertTrue;
 
 import android.content.Intent;
 import android.os.SystemClock;
+import android.view.InputDevice;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.WebView;
@@ -13,6 +15,7 @@ import android.webkit.WebView;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
 
+import org.json.JSONObject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -110,6 +113,26 @@ public final class OmegaGameplaySmokeTest {
             );
 
             android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=OFFLINE_BRIDGE_READY");
+            // A fatal overlay can leave the DOM and route state intact while intercepting
+            // every physical tap. Assert its actual visibility before touching any controls,
+            // and include the original message if boot stopped in recovery mode.
+            final String fatalDiagnosticScript =
+                    "(function() {" +
+                    " var screen = document.getElementById('fatal-screen');" +
+                    " var message = document.getElementById('fatal-msg');" +
+                    " return JSON.stringify({visible:!!(screen && getComputedStyle(screen).display !== 'none')," +
+                    " display:screen ? getComputedStyle(screen).display : null," +
+                    " message:message ? message.textContent : null});" +
+                    "})()";
+            final String fatalDiagnostic = evaluate(instrumentation, webViewRef.get(), fatalDiagnosticScript);
+            final String fatalVisibleScript =
+                    "(function() { var screen=document.getElementById('fatal-screen');" +
+                    " return screen && getComputedStyle(screen).display !== 'none' ? 'true' : 'false'; })()";
+            assertEquals(
+                    "The enterprise boot must not leave a full-screen fatal overlay that blocks real taps; diagnostic=" + fatalDiagnostic,
+                    "false", evaluate(instrumentation, webViewRef.get(), fatalVisibleScript)
+            );
+
             final String speedControlScript =
                     "(function() {" +
                     " if (!window.Omega || !window.Omega.GameLifecycle || !window.Game) return false;" +
@@ -197,52 +220,90 @@ public final class OmegaGameplaySmokeTest {
             );
 
             android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=UI_V2_GOVERNMENT_READY");
-            // Exercise repeated real UI v2 navigation taps, exit, and reopen. This
-            // specifically catches event bubbling into the retired layer renderers.
-            final String repeatedUiNavigationScript =
-                    "(function() {" +
-                    " var entry = document.getElementById('omega-gov-entry-v3');" +
-                    " var cabinet = document.getElementById('cabinet-full-window');" +
-                    " if (!entry || !cabinet || !cabinet.__omegaUIV2State) return false;" +
-                    " var sequence = ['economy','government','more','economy','government'];" +
-                    " for (var i = 0; i < sequence.length; i++) {" +
-                    "   var route = sequence[i];" +
-                    "   var control = cabinet.querySelector('[data-omega-v2-global-nav=\"' + route + '\"]');" +
-                    "   if (!control) return false;" +
-                    "   control.click();" +
-                    "   if (cabinet.getAttribute('data-omega-v2-route') !== route) return false;" +
-                    " }" +
-                    " var exit = cabinet.querySelector('[data-omega-v2-exit]');" +
-                    " if (!exit) return false;" +
-                    " exit.click();" +
-                    " if (cabinet.getAttribute('data-omega-ui-v2-active') === 'true' ||" +
-                    "     document.body.getAttribute('data-active-layer') !== '0' ||" +
-                    "     Number(window.OmegaLayerManager.currentLayer) !== 0) return false;" +
-                    " entry.click();" +
-                    " return !!(cabinet.getAttribute('data-omega-ui-v2-active') === 'true' &&" +
-                    "   cabinet.getAttribute('data-omega-v2-route') === 'government' &&" +
-                    "   Number(window.OmegaLayerManager.currentLayer) === 1 &&" +
-                    "   document.body.getAttribute('data-active-layer') === '1');" +
-                    "})()";
-            assertEquals(
-                    "UI v2 buttons must keep navigating on repeated taps, exit to map and reopen without legacy UI",
-                    "true", evaluate(instrumentation, webViewRef.get(), repeatedUiNavigationScript)
-            );
-            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=UI_V2_REPEATED_BUTTON_NAV_READY");
-            final String finalExitScript =
+            // Exercise native Android touch events instead of JavaScript .click().
+            // Checking only data-omega-v2-route was insufficient: the route could change
+            // even when the screen renderer threw and left a blank panel.
+            final String activeShellScript =
                     "(function() {" +
                     " var cabinet = document.getElementById('cabinet-full-window');" +
-                    " var exit = cabinet && cabinet.querySelector('[data-omega-v2-exit]');" +
-                    " if (!exit) return false;" +
-                    " exit.click();" +
-                    " return !!(cabinet.getAttribute('data-omega-ui-v2-active') !== 'true' &&" +
-                    " document.body.getAttribute('data-active-layer') === '0');" +
+                    " return !!(document.getElementById('omega-gov-entry-v3') && cabinet && cabinet.__omegaUIV2State &&" +
+                    " cabinet.getAttribute('data-omega-ui-v2-active') === 'true');" +
+                    "})()";
+            assertEquals("Government shell should be active before touch navigation", "true",
+                    evaluate(instrumentation, webViewRef.get(), activeShellScript));
+
+            final String[] navigationSequence = {"economy", "government", "more", "economy", "government"};
+            for (String route : navigationSequence) {
+                final String selector = ".omega-v2-nav-button[data-omega-v2-global-nav=\"" + route + "\"]";
+                tapWebViewElement(instrumentation, webViewRef.get(), selector);
+                final String expectedScreen = "economy".equals(route) ? ".omega-v2-economy"
+                        : "government".equals(route) ? ".omega-v2-government"
+                        : ".omega-v2-more-page";
+                final String screenReadyScript =
+                        "(function() {" +
+                        " var cabinet = document.getElementById('cabinet-full-window');" +
+                        " var main = cabinet && cabinet.querySelector('[data-omega-v2-main]');" +
+                        " return !!(cabinet && cabinet.getAttribute('data-omega-v2-route') === '" + route + "'" +
+                        " && main && main.querySelector('" + expectedScreen + "')" +
+                        " && (main.textContent || '').indexOf('This screen could not be opened') < 0);" +
+                        "})()";
+                String screenReady = evaluate(instrumentation, webViewRef.get(), screenReadyScript);
+                if (!"true".equals(screenReady)) {
+                    final String screenDiagnosticScript =
+                            "(function() { var cabinet=document.getElementById('cabinet-full-window');" +
+                            " var main=cabinet&&cabinet.querySelector('[data-omega-v2-main]');" +
+                            " var metrics=window.__OMEGA_UI_V2_DIAGNOSTICS||{};" +
+                            " return JSON.stringify({route:cabinet&&cabinet.getAttribute('data-omega-v2-route')," +
+                            " active:cabinet&&cabinet.getAttribute('data-omega-ui-v2-active')," +
+                            " expectedScreen:!!(main&&main.querySelector('" + expectedScreen + "'))," +
+                            " recoveryText:!!(main&&(main.textContent||'').indexOf('This screen could not be opened')>=0)," +
+                            " mainText:main?(main.textContent||'').trim().slice(0,360):null," +
+                            " renderFailure:metrics.lastRenderFailure||null," +
+                            " pointHit:window.__OMEGA_SMOKE_LAST_TAP_POINT||null," +
+                            " tapEvents:window.__OMEGA_SMOKE_TAP_EVENTS||[]}); })()";
+                    String screenDiagnostic = evaluate(instrumentation, webViewRef.get(), screenDiagnosticScript);
+                    android.util.Log.e("OMEGA_ANDROID_SMOKE", "TOUCH_NAV_DIAGNOSTIC_" + route.toUpperCase() + "=" + screenDiagnostic);
+                    assertEquals(
+                            "A real Android touch must render the " + route + " screen; diagnostic=" + screenDiagnostic,
+                            "true", screenReady
+                    );
+                }
+                android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=TOUCH_NAV_" + route.toUpperCase() + "_RENDERED");
+            }
+
+            tapWebViewElement(instrumentation, webViewRef.get(), "[data-omega-v2-exit]");
+            final String exitedToMapScript =
+                    "(function() {" +
+                    " var cabinet = document.getElementById('cabinet-full-window');" +
+                    " return !!(cabinet && cabinet.getAttribute('data-omega-ui-v2-active') !== 'true' &&" +
+                    " document.body.getAttribute('data-active-layer') === '0' &&" +
+                    " Number(window.OmegaLayerManager.currentLayer) === 0);" +
                     "})()";
             assertEquals(
-                    "UI v2 exit must restore the world map after repeated navigation",
-                    "true", evaluate(instrumentation, webViewRef.get(), finalExitScript)
+                    "A real Android touch on Exit must restore the live map",
+                    "true", evaluate(instrumentation, webViewRef.get(), exitedToMapScript)
             );
             android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=UI_V2_EXITED_TO_MAP");
+
+            // Reopen through the visible Atlas command dock, not the hidden fallback
+            // entry button that JavaScript .click() could activate off-screen.
+            tapWebViewElement(instrumentation, webViewRef.get(),
+                    "#omega-atlas-command-dock [data-omega-atlas-route=\"government\"]");
+            final String reopenedShellScript =
+                    "(function() {" +
+                    " var cabinet = document.getElementById('cabinet-full-window');" +
+                    " var main = cabinet && cabinet.querySelector('[data-omega-v2-main]');" +
+                    " return !!(cabinet && cabinet.getAttribute('data-omega-ui-v2-active') === 'true' &&" +
+                    " cabinet.getAttribute('data-omega-v2-route') === 'government' &&" +
+                    " main && main.querySelector('.omega-v2-government') &&" +
+                    " Number(window.OmegaLayerManager.currentLayer) === 1 &&" +
+                    " document.body.getAttribute('data-active-layer') === '1');" +
+                    "})()";
+            assertEquals(
+                    "A real Android touch on the visible Government dock button must reopen the ministry UI",
+                    "true", evaluate(instrumentation, webViewRef.get(), reopenedShellScript)
+            );
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=UI_V2_REOPENED_BY_TOUCH");
 
             // Exercise the actual player-facing Industry/Factories panel for a selected country.
             // The panel must distinguish owned live factory assets from catalog profiles instead
@@ -288,6 +349,88 @@ public final class OmegaGameplaySmokeTest {
                 launchedActivity.runOnUiThread(launchedActivity::finish);
             }
             instrumentation.removeMonitor(activityMonitor);
+        }
+    }
+
+    private static void tapWebViewElement(
+            android.app.Instrumentation instrumentation,
+            WebView webView,
+            String selector
+    ) throws Exception {
+        assertNotNull("WebView reference should be initialized before a physical tap", webView);
+        final String escapedSelector = selector.replace("\\", "\\\\").replace("'", "\\'");
+        final String pointScript =
+                "(function() {" +
+                " var cabinet = document.getElementById('cabinet-full-window');" +
+                " var element = cabinet && cabinet.getAttribute('data-omega-ui-v2-active') === 'true'" +
+                "   ? cabinet.querySelector('" + escapedSelector + "') : null;" +
+                " if (!element) element = document.querySelector('" + escapedSelector + "');" +
+                " if (!element) return null;" +
+                " var rect = element.getBoundingClientRect();" +
+                " if (!rect.width || !rect.height || rect.bottom <= 0 || rect.right <= 0 ||" +
+                "     rect.top >= window.innerHeight || rect.left >= window.innerWidth) return null;" +
+                " var ratio = window.devicePixelRatio || 1;" +
+                " var cssX=rect.left+rect.width/2, cssY=rect.top+rect.height/2;" +
+                " var hit=document.elementFromPoint(cssX,cssY);" +
+                " var info={x:Math.round(cssX*ratio),y:Math.round(cssY*ratio),cssX:cssX,cssY:cssY,ratio:ratio," +
+                " viewport:{width:window.innerWidth,height:window.innerHeight}," +
+                " target:{tag:element.tagName,id:element.id,cls:String(element.className||''),text:(element.innerText||element.textContent||'').trim().slice(0,80)}," +
+                " hit:{tag:hit&&hit.tagName,id:hit&&hit.id,cls:hit&&String(hit.className||''),nav:hit&&hit.closest&&hit.closest('[data-omega-v2-global-nav]')&&hit.closest('[data-omega-v2-global-nav]').getAttribute('data-omega-v2-global-nav')}," +
+                " rect:{left:rect.left,top:rect.top,right:rect.right,bottom:rect.bottom},scroll:{x:window.scrollX,y:window.scrollY}};" +
+                " window.__OMEGA_SMOKE_LAST_TAP_POINT=info; return info;" +
+                "})()";
+        final String pointJson = evaluate(instrumentation, webView, pointScript);
+        assertTrue("Visible touch target was not found: " + selector + " (result=" + pointJson + ")",
+                pointJson != null && !pointJson.equals("null"));
+        final JSONObject point = new JSONObject(pointJson);
+        android.util.Log.i("OMEGA_ANDROID_SMOKE", "TAP_POINT=" + pointJson);
+        final String armTapScript =
+                "(function() { window.__OMEGA_SMOKE_TAP_EVENTS=[];" +
+                " ['touchstart','touchend','pointerdown','pointerup','click'].forEach(function(type) {" +
+                " document.addEventListener(type,function(event) {" +
+                " var t=event.target, b=t&&t.closest?t.closest('button,a,[role=button],[data-omega-v2-global-nav]'):null;" +
+                " window.__OMEGA_SMOKE_TAP_EVENTS.push({type:type,tag:t&&t.tagName,id:t&&t.id," +
+                " cls:t&&String(t.className||''),button:b&&String(b.innerText||b.textContent||'').trim().slice(0,60)," +
+                " nav:b&&b.getAttribute('data-omega-v2-global-nav'),x:event.clientX,y:event.clientY});" +
+                " },true); }); return 'armed'; })()";
+        evaluate(instrumentation, webView, armTapScript);
+        final int[] webViewOrigin = new int[2];
+        final CountDownLatch locationLatch = new CountDownLatch(1);
+        final boolean posted = webView.post(() -> {
+            webView.getLocationOnScreen(webViewOrigin);
+            locationLatch.countDown();
+        });
+        assertTrue("WebView must accept the bounded screen-position task", posted);
+        assertTrue("WebView screen position should be available within 5 seconds",
+                locationLatch.await(5, TimeUnit.SECONDS));
+
+        final float x = webViewOrigin[0] + (float) point.getDouble("x");
+        final float y = webViewOrigin[1] + (float) point.getDouble("y");
+        final long downTime = SystemClock.uptimeMillis();
+        final MotionEvent down = MotionEvent.obtain(
+                downTime, downTime, MotionEvent.ACTION_DOWN, x, y, 0);
+        down.setSource(InputDevice.SOURCE_TOUCHSCREEN);
+        try {
+            instrumentation.sendPointerSync(down);
+        } finally {
+            down.recycle();
+        }
+        SystemClock.sleep(60L);
+        final MotionEvent up = MotionEvent.obtain(
+                downTime, SystemClock.uptimeMillis(), MotionEvent.ACTION_UP, x, y, 0);
+        up.setSource(InputDevice.SOURCE_TOUCHSCREEN);
+        try {
+            instrumentation.sendPointerSync(up);
+        } finally {
+            up.recycle();
+        }
+        SystemClock.sleep(100L);
+        try {
+            String tapEvents = evaluate(instrumentation, webView,
+                    "JSON.stringify(window.__OMEGA_SMOKE_TAP_EVENTS||[])");
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "TAP_EVENTS=" + tapEvents);
+        } catch (Exception diagnosticError) {
+            android.util.Log.w("OMEGA_ANDROID_SMOKE", "TAP_EVENTS_UNAVAILABLE=" + diagnosticError.getMessage());
         }
     }
 

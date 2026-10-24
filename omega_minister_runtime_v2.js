@@ -66,15 +66,30 @@
     const region=window.Game?.state?.playerRegion || window.Game?.playerRegion || window.Omega?.World?.playerRegion;
     return (rn && region && rn[region]) || profile?.baseName || profile?.name || profile?.id || 'Minister';
   }
+  // Copy profile records without object-spread helpers. Android 9's WebView
+  // previously failed inside the minified spread helper during the boot-time
+  // profile normalization path, which left the minister runtime unavailable.
+  function copyPlainRecord(value){
+    if(!value || typeof value!=='object' || Array.isArray(value)) return {};
+    const copy={};
+    for(const key of Object.keys(value)){
+      if(key!=='__proto__') copy[key]=value[key];
+    }
+    return copy;
+  }
   function normalizeProfiles(raw){
     const db=raw?.ministers_database || raw?.ministers || raw;
-    if(!db || typeof db!=='object') throw new Error('INVALID_MINISTERS_JSON');
+    if(!db || typeof db!=='object' || Array.isArray(db)) throw new Error('INVALID_MINISTERS_JSON');
     for(const [ministry,arr] of Object.entries(db)) if(Array.isArray(arr)) for(const p0 of arr){
-      if(!p0?.id) continue;
-      const p={...p0, ministryId:p0.ministryId||ministry, baseName:p0.baseName||p0.name||null,
-        baseAge:Number(p0.baseAge ?? p0.age ?? 0), baseStats:{...(p0.baseStats||p0.stats||{})},
-        efficiencyProfile:{...(p0.efficiencyProfile||p0.efficiency||{})}, personalityProfile:{...(p0.personalityProfile||p0.personality||{})},
-        regionalNames:{...(p0.regionalNames||p0.regional_names||{})}};
+      if(!p0 || typeof p0!=='object' || !p0.id) continue;
+      const p=Object.assign({},p0);
+      p.ministryId=p0.ministryId||ministry;
+      p.baseName=p0.baseName||p0.name||null;
+      p.baseAge=Number(p0.baseAge ?? p0.age ?? 0);
+      p.baseStats=copyPlainRecord(p0.baseStats||p0.stats);
+      p.efficiencyProfile=copyPlainRecord(p0.efficiencyProfile||p0.efficiency);
+      p.personalityProfile=copyPlainRecord(p0.personalityProfile||p0.personality);
+      p.regionalNames=copyPlainRecord(p0.regionalNames||p0.regional_names);
       registry.registerProfile(p);
     }
     engine.profilesLoaded=true;
@@ -220,8 +235,11 @@
       window.OmegaMinisterSystem.openForMinistry=openPanel;
       console.info('[OMEGA Minister Runtime V2] ready',registry.profiles.size,'profiles');
     }catch(e){
-      console.error('[OMEGA Minister Runtime V2] boot failed:', e && (e.stack || e.message) || String(e));
-      window.__OMEGA_DIAG__?.errors?.push({msg:String(e && (e.stack || e.message) || e),type:'MINISTER_RUNTIME_BOOT'});
+      const detail=String(e && (e.stack || e.message) || e || 'UNKNOWN_MINISTER_RUNTIME_BOOT_ERROR').slice(0,3000);
+      window.__OMEGA_DIAG__?.errors?.push({msg:detail,type:'MINISTER_RUNTIME_BOOT'});
+      // Keep the error and stack in a single console message so Android WebView
+      // diagnostics do not lose the exception when console.error has several args.
+      console.error('[OMEGA Minister Runtime V2] boot failed: '+detail);
     }
   }
   // A safe, single delegated click hook. It never steals clicks from unrelated UI.
