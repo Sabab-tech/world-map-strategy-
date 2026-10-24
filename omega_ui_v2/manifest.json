@@ -59,7 +59,7 @@
   "integrationPolicy": {
     "entry": "omega_ministry_entry_v3.js",
     "trigger": "Single global Atlas Command dock; legacy government entry retained hidden for compatibility",
-    "fallback": "legacy cabinet is retained and re-rendered if UI v2 mount fails",
+    "fallback": "UI v2 mount fails closed; legacy cabinet renderers are not revived",
     "navigation": "World closes the cabinet layer; Overview, Government, Economy and More use one shared UI-v2 app and canonical source modules.",
     "productionRoot": "cabinet-full-window",
     "enabledByDefault": true

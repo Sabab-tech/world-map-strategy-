@@ -50,6 +50,8 @@ test('the V2 dock is the only visible government entry; the old bridge remains h
   const end = html.indexOf('</button>', start);
   assert.ok(start >= 0 && end > start);
   assert.match(html.slice(start, end), /aria-label="Open Ministries and Government"/);
+  assert.match(html.slice(start, end), /\bhidden\b/);
+  assert.match(html.slice(start, end), /style="display:none!important;visibility:hidden!important;pointer-events:none!important"/);
   assert.ok(html.includes('omega_ui_v2/world-command-dock.js'));
 
   const css = read('omega_ministry_entry_v3.css');
