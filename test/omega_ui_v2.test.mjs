@@ -548,6 +548,12 @@ test('universal navigation and the isolated legacy-free shell are wired into the
   assert.ok(isolationCss.includes('z-index: 2147483000 !important'));
   assert.ok(!/restoreLegacy|resumeAfterOperationalConsole|OmegaCabinetUI\.renderCabinet/.test(integration));
   assert.equal(integration.includes('manager.setLayer('),false);
+  for (const screenPath of ['industry.js','resource-ministry.js','ministry-detail.js','mine-detail.js','home-affairs.js']) {
+    const screen = readFileSync(new URL('../omega_ui_v2/screens/' + screenPath, import.meta.url), 'utf8');
+    assert.equal(screen.includes('onOpenOperationalConsole'),false, screenPath + ' must not expose the retired console callback');
+    assert.equal(screen.includes('data-omega-v2-open-operational-console'),false, screenPath + ' must not expose the retired console control');
+    assert.equal(screen.includes('open-console'),false, screenPath + ' must not route to the retired console');
+  }
   for (const retired of ['omega_ui_system_redesign_v1.js','omega_ui_interaction_guard.js','omega_ui_button_system_v1.js']) {
     assert.equal(html.includes('src="' + retired + '"'),false);
     assert.equal(worker.includes('"./' + retired + '"'),false);
