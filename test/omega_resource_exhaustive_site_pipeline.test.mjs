@@ -18,7 +18,17 @@ const initialized = await runtime.initialize();
 assert.equal(initialized.status, 'READY', JSON.stringify(initialized));
 assert.equal((await industry.loadCatalog()).status, 'READY');
 
+const liveCatalog = globalThis.OmegaResourceSiteCanonicalCatalogData ||
+  globalThis.Omega?.ResourceSiteCanonicalCatalogData;
+const liveCatalogRows = Array.isArray(liveCatalog?.sites) ? liveCatalog.sites : [];
+assert.ok(liveCatalogRows.length >= 500,
+  'the live canonical runtime catalog must cover at least 500 distinct site records; count=' + liveCatalogRows.length);
+assert.equal(Number(liveCatalog?.totalSiteCount), liveCatalogRows.length,
+  'runtime catalog totalSiteCount must match its actual site rows');
 const sourceRows = [
+  // The live catalog is the execution authority, including approved country expansion rows.
+  // Then add raw source batches to catch rows accidentally omitted from runtime authority.
+  ...liveCatalogRows,
   ...(readJson('resource_site_canonical_catalog_v1.json').sites || []),
   ...(readJson('resource_site_country_mineplay_batch_20261020_v1.json').records || []),
   ...(readJson('resource_site_country_mineplay_batch_20261024_v1.json').records || []),
