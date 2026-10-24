@@ -2635,7 +2635,7 @@ function batchFromExtraction(x,record){
       // Runtime-registered simulation sites extend the live catalog; keep its published
       // record count synchronized so audits and UI coverage do not under-report them.
       data.totalSiteCount=data.sites.length;
-      data.dynamicSimulationSiteCount=Math.max(0,num(data.dynamicSimulationSiteCount)||0)+1;
+      data.dynamicSimulationSiteCount=Math.max(0,n(data.dynamicSimulationSiteCount)||0)+1;
     }
     mineSiteReferenceCache.clear();siteExecutionRowsCache.clear();siteExecutionRowsCacheTurn=-1;
     return{status:'REGISTERED',siteId,countryId,resourceId,identityAuthority:'CANONICAL_SITE_REGISTRY',
