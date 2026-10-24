@@ -206,7 +206,7 @@
     if (active === 'mines') {
       contentMarkup = '<div class="omega-v2-filterbar"><input type="search" aria-label="Search mine sites" placeholder="Search site, commodity or region" data-omega-v2-site-search><select aria-label="Filter by resource" data-omega-v2-resource-filter>' + selectOptions + '</select></div>' +
         '<div class="omega-v2-card-meta">Found <strong data-omega-v2-site-visible-count>' + fmt(model.siteCount) + '</strong> registered site(s).</div>' +
-        (model.siteCount ? '<div class="omega-v2-grid" data-omega-v2-site-grid>' + cards + '</div>' : '<div class="omega-v2-empty">No canonical site records are available for this context. ' + esc(model.emptyReason) + '</div>');
+        (model.siteCount ? '<div class="omega-v2-grid" data-omega-v2-site-grid>' + cards + '</div>' : '<div class="omega-v2-empty">No mine sites are listed for this selection yet. ' + esc(model.emptyReason) + '</div>');
     } else if (active === 'reserves') {
       contentMarkup = model.sites.length ? '<div class="omega-v2-grid">' + model.sites.map(function (site) {
         var observed = site.reserve.value !== null ? fmt(site.reserve.value) + ' ' + esc(site.reserve.unit) + ' · ' + esc(displayStatus(site.reserve.status)) : 'Not recorded';
@@ -226,7 +226,7 @@
       var observedReserves = model.sites.filter(function (site) { return site.reserve.value !== null; }).length;
       var measuredProduction = model.sites.filter(function (site) { return site.production.value !== null; }).length;
       contentMarkup = '<div class="omega-v2-kpis"><div class="omega-v2-kpi"><span>Registered sites</span><strong>' + fmt(model.siteCount) + '</strong></div><div class="omega-v2-kpi"><span>Sites with reported reserves</span><strong>' + fmt(observedReserves) + '</strong></div><div class="omega-v2-kpi"><span>Sites with measured production</span><strong>' + fmt(measuredProduction) + '</strong></div><div class="omega-v2-kpi"><span>Inventory rows returned</span><strong>' + fmt(inventoryRows.length) + '</strong></div><div class="omega-v2-kpi"><span>Shipment rows returned</span><strong>' + fmt(shipments ? shipments.length : null) + '</strong></div><div class="omega-v2-kpi"><span>Project rows returned</span><strong>' + fmt(projects.length) + '</strong></div></div>' +
-        '<div class="omega-v2-card"><h3 class="omega-v2-card-title">Coverage & interpretation</h3><p class="omega-v2-card-meta">Production values are visible only when their source declares an observed/reported status. Estimated reserves are shown separately from measured production and stock. Rate and stock units are never added together.</p><p class="omega-v2-source">Extraction/flow ledger rows: ' + fmt(flows.length) + ' · shipment provenance must be inspected before claiming delivery.</p></div>';
+        '<div class="omega-v2-card"><h3 class="omega-v2-card-title">Coverage & interpretation</h3><p class="omega-v2-card-meta">Measured production, estimated reserves and stored stock are shown separately.</p><p class="omega-v2-source">Material movements are shown separately from completed deliveries.</p></div>';
     } else {
       var byStatus = model.statusCounts || {};
       var operational = (byStatus.OPERATIONAL || 0) + (byStatus.ACTIVE || 0);
