@@ -964,6 +964,27 @@ for(const siteId of exhaustivePipelineCandidateIds){
   const finance=testState.finance[countryId]||(testState.finance[countryId]={});
   finance.available=Math.max(1000000000000,Number(finance.available)||0);
 
+  // Earlier tests exercise world-wide automatic extraction, which may leave queued
+  // shipments and in-progress cycles in this country's shared factory network.
+  // A per-site readiness audit must start with a clean industrial ledger and only
+  // the selected site's factory; otherwise unrelated batches can monopolize cycles
+  // and falsely make this mine appear unable to finish its own output.
+  const rs=testState.resource[countryId];
+  if(rs){
+    const previousNetwork=rs.industrialNetwork||{};
+    rs.industrialNetwork={
+      ...previousNetwork,
+      shipments:[],projects:[],extractions:[],reservations:{},deliveries:[],
+      siteFlowLedger:[],infrastructure:{nodes:{},edges:{},corridors:{}},
+      events:[],factoryRuntime:{},technologyContracts:[],
+      factoryProductionCycles:{},siteExecutions:[]
+    };
+    if(rs.warehouse&&typeof rs.warehouse==='object')rs.warehouse.reservedByResource={};
+  }
+  // Factory construction is asserted below, not inherited from an earlier fixture.
+  econ.productionAssets=[];
+
+
   // Each site gets a separate game turn so per-turn idempotency and route
   // capacity checks remain active and no two fixture dispatches share a turn.
   advanceOneGameTurn(testState);
@@ -1024,7 +1045,27 @@ for(const siteId of exhaustivePipelineCandidateIds){
     }
     exhaustivePipelinePassed++;
   }catch(error){
-    exhaustivePipelineFailures.push({siteId,countryId,resourceId,stage:'DELIVERY_OR_PROCESSING',reason:String(error?.message||error),batchId:run.batchId,factoryId:run.factoryId});
+    let reason=String(error?.message||error);
+    if(reason.includes('SOURCE_BATCH_FACTORY_CYCLE_NOT_COMPLETED')){
+      try{
+        const detail=JSON.parse(reason);
+        reason=JSON.stringify({
+          reason:detail.reason,
+          currentCycle:detail.cycle?{
+            cycleId:detail.cycle.cycleId,status:detail.cycle.status,
+            sourceBatchIds:detail.cycle.sourceBatchIds,finishDate:detail.cycle.finishDate,
+            finishTurn:detail.cycle.finishTurn
+          }:null,
+          flowStages:(detail.flow?.stages||[]).map(row=>({stage:row.stage,status:row.status,reason:row.reason})),
+          historyCount:(detail.history||[]).length,
+          lastHistory:(detail.history||[]).slice(-3).map(row=>({
+            turn:row.turn,date:row.date,cycleId:row.cycleId,cycleStatus:row.cycleStatus,
+            completedCount:row.completedCount,startedCount:row.startedCount
+          }))
+        });
+      }catch(_){reason='SOURCE_BATCH_FACTORY_CYCLE_NOT_COMPLETED';}
+    }
+    exhaustivePipelineFailures.push({siteId,countryId,resourceId,stage:'DELIVERY_OR_PROCESSING',reason,batchId:run.batchId,factoryId:run.factoryId});
   }
 }
 console.log('OMEGA ALL-COMMERCIAL-SITE PIPELINE AUDIT '+JSON.stringify({
