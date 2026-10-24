@@ -100,6 +100,26 @@ public final class OmegaGameplaySmokeTest {
             );
 
             android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=CORE_RUNTIME_READY");
+            // Snapshot exact map geometry progress without delaying or failing ordinary smoke checks.
+            // A second snapshot at FACTORY_PANEL_READY reveals whether the map completed later.
+            final String mapRenderMetricsScript =
+                    "(function() {" +
+                    " var p = window.__OMEGA_MAP_PIPELINE_METRICS_V1__;" +
+                    " var m = window.__OMEGA_MAP_RENDER_METRICS_V1__;" +
+                    " var now = window.performance && typeof window.performance.now === 'function' ? window.performance.now() : Date.now();" +
+                    " if (!p) return 'NO_PIPELINE_METRICS|' + (m ? 'RENDER_METRICS_PRESENT' : 'NO_RENDER_METRICS');" +
+                    " var pipelineMs = Math.max(0, now - Number(p.startedAtMs || now));" +
+                    " var render = !m ? 'NO_RENDER_METRICS' : (m.complete ? 'COMPLETE' : 'PROGRESS') +" +
+                    " ',' + Math.round(Number(m.durationMs) || 0) + ',' + Number(m.sourceFeatureCount || 0) +" +
+                    " ',' + Number(m.renderedFeatureCount || 0) + ',' + Number(m.frameCount || 0) +" +
+                    " ',' + Math.round(Number(m.totalChunkWorkMs) || 0) + ',' + Math.round(Number(m.maxChunkWorkMs) || 0);" +
+                    " return 'PIPELINE|' + String(p.stage || 'UNKNOWN') + '|' + Math.round(pipelineMs) +" +
+                    " '|' + Number(p.worldFeatureCount || 0) + '|' + (p.renderCalled ? '1' : '0') +" +
+                    " '|' + (p.renderCallReturned ? '1' : '0') + '|' + String(p.error || '') + '|' + render;" +
+                    "})()";
+            final String mapMetricsAtCoreReady = evaluate(instrumentation, webViewRef.get(), mapRenderMetricsScript);
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "MAP_RENDER_METRICS_CORE_READY=" + mapMetricsAtCoreReady);
+
             final String offlineBridgeScript =
                     "(function() { return !!(window.OmegaAndroid && " +
                     "window.OmegaAndroid.isAndroidApp() === true && " +
@@ -233,6 +253,8 @@ public final class OmegaGameplaySmokeTest {
                     "true", evaluate(instrumentation, webViewRef.get(), factoryPanelScript)
             );
             android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=FACTORY_PANEL_READY");
+            final String mapMetricsAtFactoryReady = evaluate(instrumentation, webViewRef.get(), mapRenderMetricsScript);
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "MAP_RENDER_METRICS_FACTORY_READY=" + mapMetricsAtFactoryReady);
         } finally {
             if (activity != null) {
                 final MainActivity launchedActivity = activity;

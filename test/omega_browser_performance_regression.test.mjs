@@ -254,6 +254,16 @@ test('large world GeoJSON is rendered incrementally rather than monopolizing the
     'the shared Canvas renderer should be attached to the canonical GeoJSON layer options');
   assert.match(renderer, /CHUNK_THRESHOLD\s*=\s*24/);
   assert.match(renderer, /smoothFactor:\s*1\.2/);
+  assert.match(renderer, /__OMEGA_MAP_RENDER_METRICS_V1__/);
+  assert.match(renderer, /renderMetrics\.durationMs/);
+  assert.match(renderer, /renderMetrics\.renderedFeatureCount/);
+  assert.match(renderer, /renderMetrics\.maxChunkWorkMs/);
+  assert.match(renderer, /renderMetrics\.renderedFeatureCount = typeof layer\.getLayers === "function"/);
+  assert.match(renderer, /renderMetrics\.frameCount \+= 1/);
+  assert.match(source, /__OMEGA_MAP_PIPELINE_METRICS_V1__/);
+  assert.match(source, /markMapPipelineStage\("WORLD_JSON_FETCH_START"\)/);
+  assert.match(source, /markMapPipelineStage\("GEOJSON_RENDER_START",/);
+  assert.match(source, /markMapPipelineStage\("BILATERAL_RELATIONS_START"\)/);
   assert.match(renderer, /MAX_FEATURES_PER_FRAME\s*=\s*8/);
   assert.match(renderer, /FRAME_BUDGET_MS\s*=\s*7/);
   assert.match(renderer, /requestAnimationFrame\(addFeatureChunk\)/);
