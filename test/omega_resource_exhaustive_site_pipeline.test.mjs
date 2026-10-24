@@ -49,7 +49,7 @@ function advance(turn,date){
 }
 function finishCycle(countryId,factoryId,batchId){
   const state=runtime.countryResourceState(countryId)||{};
-  for(let i=0;i<32;i++){
+  for(let i=0;i<256;i++){
     const flow=(runtime.countryResourceState(countryId)?.industrialNetwork?.siteFlowLedger||[])
       .find(x=>String(x.batchId)===String(batchId));
     if(flow?.stages?.some(x=>x.stage==='PROCESSING'&&x.status==='COMPLETED'))return flow;
