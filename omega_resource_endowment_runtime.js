@@ -209,8 +209,11 @@
   }
 
   async function loadCanonicalSiteCatalogData(){
-    if(canonicalSiteCatalogMap)return{status:'READY',count:Object.keys(canonicalSiteCatalogMap).length,reused:true};
+    // Await the in-flight catalog promise before consulting the partially populated map.
+    // The map is assigned before supplemental batch coverage is finalized; checking it first
+    // can leak a premature READY report with no mineplayBatchCoverage to concurrent callers.
     if(canonicalSiteCatalogPromise)return canonicalSiteCatalogPromise;
+    if(canonicalSiteCatalogMap)return{status:'READY',count:Object.keys(canonicalSiteCatalogMap).length,reused:true};
     canonicalSiteCatalogPromise=(async()=>{
       try{
         const inline=g.OmegaResourceSiteCanonicalCatalogData||g.Omega?.ResourceSiteCanonicalCatalogData;
