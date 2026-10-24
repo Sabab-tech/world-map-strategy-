@@ -65,6 +65,47 @@ const eligibleSites = [...sourceById.values()];
 assert.ok(eligibleSites.length >= 400,
   'the exhaustive test must cover the expanded physical-site population; count=' + eligibleSites.length);
 
+function commissionGameplayMine(entry) {
+  const { siteId, countryId, resourceId, source } = entry;
+  const root = globalThis.Game?.state || globalThis.gameState;
+  const row = root?.resource?.[countryId] || {};
+  if (!root?.resource) throw new Error('EXHAUSTIVE_SITE_GAME_STATE_RESOURCE_MISSING');
+  if (!root.resource[countryId]) root.resource[countryId] = row;
+  row.mineAssets = Array.isArray(row.mineAssets) ? row.mineAssets : [];
+  let asset = row.mineAssets.find(x => String(x?.siteId || '') === siteId &&
+    String(x?.status || '').toUpperCase() === 'OPERATIONAL');
+  if (!asset) {
+    asset = {
+      mineId: 'TEST-COMMISSIONED-MINE:' + countryId + ':' + siteId,
+      id: 'TEST-COMMISSIONED-MINE:' + countryId + ':' + siteId,
+      siteId, siteName: source?.siteName || entry.site?.siteName || siteId,
+      resourceId, countryId, ownerCountryId: countryId, status: 'OPERATIONAL',
+      buildProjectId: 'TEST-COMMISSION:' + siteId, commissionedTurn: Number(root.simulation?.turn) || 1,
+      capacityMultiplier: 1, workersRequired: 1, workersCommitted: 1,
+      sourceSiteStatus: String(source?.operation?.status || source?.status || 'NOT_RECORDED'),
+      siteIdentityAuthority: 'CANONICAL_SITE_REGISTRY',
+      authority: 'SIMULATED_PLAYER_MINE_ASSET_TEST_FIXTURE',
+      productionStatus: 'READY_FOR_EXTRACTION', lastProductionTurn: null
+    };
+    row.mineAssets.push(asset);
+  }
+  row.commissionedSites = Array.isArray(row.commissionedSites) ? row.commissionedSites : [];
+  if (!row.commissionedSites.some(x => String(x?.siteId || '') === siteId &&
+      String(x?.status || '').toUpperCase() === 'COMMISSIONED')) {
+    row.commissionedSites.push({
+      siteId, resourceId, status: 'COMMISSIONED',
+      commissionedTurn: Number(root.simulation?.turn) || 1,
+      authority: 'SIMULATED_PLAYER_MINE_ASSET_TEST_FIXTURE'
+    });
+  }
+  if (typeof globalThis.dispatchEvent === 'function' && typeof globalThis.CustomEvent === 'function') {
+    globalThis.dispatchEvent(new CustomEvent('OMEGA_RESOURCE_MINE_COMMISSIONED', {
+      detail: { countryId, payload: { countryId, siteId, resourceId, mineId: asset.mineId,
+        status: 'OPERATIONAL', sourceSiteStatus: asset.sourceSiteStatus,
+        authority: 'SIMULATED_PLAYER_MINE_ASSET_TEST_FIXTURE' } }
+    }));
+  }
+}
 function provisionCountry(countryId) {
   for (const root of [globalThis.Game?.state, globalThis.OmegaMinistryStateProvider?.getState?.()].filter(Boolean)) {
     root.transport = root.transport || {};
@@ -155,6 +196,10 @@ for (const entry of eligibleSites) {
   const { siteId, countryId, resourceId, source } = entry;
   provisionCountry(countryId);
   turnState.simulation.turn = Number(turnState.simulation.turn || 0) + 1;
+  // This is a post-commission capability audit. Construction costs/material checks
+  // are tested by the normal mine-management suite; here every mine is explicitly
+  // commissioned so source-world inactive/development status cannot fake a pipeline bug.
+  commissionGameplayMine(entry);
   const pipeline = await industry.executeSitePipeline({
     countryId, siteId, resourceId, quantity: 1, autoCommissionFactory: true,
     transportMode: source?.simulation?.transportRoute?.[0]?.mode || entry.site?.simulation?.transportRoute?.[0]?.mode || 'rail'
