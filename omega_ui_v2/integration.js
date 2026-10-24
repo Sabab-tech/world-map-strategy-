@@ -231,6 +231,46 @@
     }
     return true;
   }
+  // Central compatibility guard: any old caller that requests Cabinet or ministry
+  // layers is redirected into UI v2. It cannot reach OmegaCabinetUI.renderCabinet or
+  // renderMinistryDashboard, even if a forgotten legacy button still invokes setLayer.
+  function installLegacyLayerBridge() {
+    var manager = g.OmegaLayerManager;
+    if (!manager || typeof manager.setLayer !== 'function') return false;
+    if (manager.__omegaUIV2LayerBridgeInstalled === true) return true;
+    var originalSetLayer = manager.setLayer;
+    manager.setLayer = function (layerNum, data) {
+      var target = Number(layerNum);
+      var api = g.OmegaUIV2Integration;
+      if (api) {
+        var root = cabinetRoot();
+        var activeV2 = !!(root && root.getAttribute && root.getAttribute(ACTIVE_ATTR) === 'true' && root.__omegaUIV2State);
+        if (target === 0 && activeV2) {
+          return api.closeToWorldMap() === true;
+        }
+        if (target === 1) {
+          return api.isEnabled() ? api.openRoute('government') === true : false;
+        }
+        if (target === 2 || target === 3) {
+          if (!api.isEnabled()) return false;
+          var ministryId = data && (data.ministryId || data.ministry_id || data.id);
+          if (ministryId) {
+            if (activeV2 && g.OmegaUIV2App && typeof g.OmegaUIV2App.openMinistry === 'function') {
+              return g.OmegaUIV2App.openMinistry(root, ministryId) === true;
+            }
+            var mounted = api.mountIntoCabinet(root, { initialRoute:'government', ministryId:ministryId });
+            return !!(mounted && mounted.ok);
+          }
+          return api.openRoute('government') === true;
+        }
+      }
+      return originalSetLayer.apply(this, arguments);
+    };
+    manager.__omegaUIV2LayerBridgeInstalled = true;
+    manager.__omegaUIV2OriginalSetLayer = originalSetLayer;
+    return true;
+  }
+
   function audit() {
     var root = cabinetRoot();
     return {
@@ -252,6 +292,8 @@
     openRoute:openRoute,
     openOperationalConsole:openOperationalConsole,
     closeToWorldMap:closeToWorldMap,
+    installLegacyLayerBridge:installLegacyLayerBridge,
     audit:audit
   });
+  installLegacyLayerBridge();
 })(typeof window !== 'undefined' ? window : globalThis);
