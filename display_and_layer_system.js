@@ -597,15 +597,15 @@
                 if (layerNum === 0) {
                     btnGovt.innerHTML = `<span>🏛️</span><span class="btn-lbl">GOVERNMENT</span>`;
                     btnGovt.title = "Open Government HQ";
-                    btnGovt.onclick = () => window.OmegaLayerManager.setLayer(1);
+                    btnGovt.onclick = (event) => window.openMainMinistryView(event);
                 } else if (layerNum === 1) {
                     btnGovt.innerHTML = `<span>🌍</span><span class="btn-lbl">WORLD MAP</span>`;
                     btnGovt.title = "Return to World Map";
-                    btnGovt.onclick = () => window.OmegaLayerManager.setLayer(0);
+                    btnGovt.onclick = (event) => window.openMainMapView(event);
                 } else {
                     btnGovt.innerHTML = `<span>🏛️</span><span class="btn-lbl">GOVT HQ</span>`;
                     btnGovt.title = "Back to Government HQ";
-                    btnGovt.onclick = () => window.OmegaLayerManager.setLayer(1);
+                    btnGovt.onclick = (event) => window.openMainMinistryView(event);
                 }
             }
         }
