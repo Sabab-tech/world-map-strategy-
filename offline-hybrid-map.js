@@ -7,7 +7,8 @@
   var L=window.L, Game=window.Game, active=false, oceanLayer=null, gridLayer=null,
       coordinateLabels=null, atlasButton=null, offlineBadge=null;
   var GRID_PANE="omegaOfflineGraticulePane", LABEL_PANE="omegaOfflineCoordinateLabelsPane";
-  var originalSwitchMapLayer=Game.switchMapLayer, originalRenderGeoJSON=Game.Map.renderGeoJSON,
+  var mapSwitchOwner=Game.Map&&typeof Game.Map.switchMapLayer==="function"?Game.Map:Game;
+  var originalSwitchMapLayer=mapSwitchOwner.switchMapLayer, originalRenderGeoJSON=Game.Map.renderGeoJSON,
       originalSelectCountry=Game.selectCountryByName;
 
   function clamp(v,min,max){return Math.max(min,Math.min(max,v));}
@@ -167,7 +168,7 @@
     var result=originalRenderGeoJSON.apply(this,arguments);if(active){styleCountries();updateCoordinateLabels();}return result;};
   if(typeof originalSelectCountry==="function")Game.selectCountryByName=function(){
     var result=originalSelectCountry.apply(this,arguments);if(active)styleCountries();return result;};
-  if(typeof originalSwitchMapLayer==="function")Game.switchMapLayer=function(layerType){
+  if(typeof originalSwitchMapLayer==="function")mapSwitchOwner.switchMapLayer=function(layerType){
     if(layerType==="offline-hybrid")return activate();
     if(isNetworkUnavailable()&&layerType!=="resources"){
       if(typeof Game.showNotification==="function")Game.showNotification("ONLINE MAP UNAVAILABLE",
@@ -179,6 +180,9 @@
     deactivate();
     return originalSwitchMapLayer.apply(this,arguments);
   };
+  if(mapSwitchOwner!==Game&&typeof Game.switchMapLayer!=="function"){
+    Game.switchMapLayer=function(layerType){return mapSwitchOwner.switchMapLayer.apply(mapSwitchOwner,arguments);};
+  }
 
   function updateVisibleViewportSize(){
     var v=window.visualViewport,h=v&&v.height?v.height:window.innerHeight,top=v&&Number.isFinite(v.offsetTop)?v.offsetTop:0;
@@ -203,8 +207,9 @@
           syncButton();
           return;
         }
-        var switcher=window.Game&&window.Game.switchMapLayer;if(typeof switcher!=="function")throw new Error("Map layer controller is unavailable.");
-        var switchResult=switcher.call(window.Game,layerType);
+        var switchOwner=window.Game&&window.Game.Map&&typeof window.Game.Map.switchMapLayer==="function"?window.Game.Map:window.Game;
+        var switcher=switchOwner&&switchOwner.switchMapLayer;if(typeof switcher!=="function")throw new Error("Map layer controller is unavailable.");
+        var switchResult=switcher.call(switchOwner,layerType);
         if(switchResult===false){syncButton();return;}
       }
       var activeButton=button;
