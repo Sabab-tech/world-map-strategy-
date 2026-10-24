@@ -62,7 +62,7 @@ function finishCycle(countryId,factoryId,batchId){
     .find(x=>String(x.batchId)===String(batchId));
   assert.ok(finalFlow?.stages?.some(x=>x.stage==='PROCESSING'&&x.status==='COMPLETED'),
     JSON.stringify({reason:'FACTORY_OUTPUT_NOT_COMMITTED',countryId,factoryId,batchId,flow:finalFlow,
-      cycle:runtime.countryResourceState(countryId)?.industrialNetwork?.factoryProductionCycles?.[String(factoryId]}));
+      cycle:runtime.countryResourceState(countryId)?.industrialNetwork?.factoryProductionCycles?.[String(factoryId)]}));
   return finalFlow;
 }
 
