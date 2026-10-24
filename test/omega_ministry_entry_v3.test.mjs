@@ -27,20 +27,20 @@ function matchingDivClose(source, start) {
   return -1;
 }
 
-test('v3 ministry entry is a new body-level button outside #app with an independent stylesheet/runtime', () => {
+test('v3 ministry entry is a body-level UI v2 entry and retired controllers are disconnected', () => {
   const html = read('index.html');
   const appClose = matchingDivClose(html);
   const buttonAt = html.indexOf('id="omega-gov-entry-v3"');
   assert.ok(buttonAt > appClose, 'new button is outside #app and the map/UI tree');
   assert.ok(buttonAt >= 0, 'new button exists');
   assert.ok(!html.slice(buttonAt, buttonAt + 900).includes('id="btn-ministry-dock"'), 'does not reuse the old button id');
-  assert.ok(fs.existsSync(path.join(root, 'omega_ministry_entry_v3.css')), 'legacy entry CSS remains on disk');
+  assert.ok(fs.existsSync(path.join(root, 'omega_ministry_entry_v3.css')), 'historical entry CSS remains on disk');
   assert.doesNotMatch(html, /<link[^>]+href="omega_ministry_entry_v3\.css"/i);
-  assert.match(html, /omega_ui_v2\/omega-ui-v2\.css/);
+  assert.ok(html.includes('omega_ui_v2/omega-ui-v2.css'));
+  assert.ok(html.includes('omega_ui_v2/legacy-disconnect.css'));
   assert.ok(html.includes('<script src="omega_ministry_entry_v3.js" defer></script>'));
-  assert.match(html, /omega_ui_v2\\/legacy-disconnect\\.css/);
   for (const retired of ['omega_ui_system_redesign_v1.js', 'omega_ui_interaction_guard.js', 'omega_ui_button_system_v1.js']) {
-    assert.doesNotMatch(html, new RegExp('<script[^>]+src=["\\\\\\']' + retired.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\  assert.ok(html.includes('<script src="omega_ministry_entry_v3.js" defer></script>'));') + '["\\\\\\']'));
+    assert.equal(html.includes('<script src="' + retired + '"'), false, retired + ' must not be loaded');
   }
 });
 
