@@ -222,15 +222,15 @@ test('slow simulation frames and data-heavy ministry panels bound repeated UI wo
 
 test('simulation coordinator throttles asynchronous work and pauses cleanly in the background', () => {
   const root = read('omega_enterprise_composition_root_v10.js');
-  assert.match(root, /SIMULATION_FRAME_INTERVAL_MS\\s*=\\s*100/);
-  assert.match(root, /MAX_FRAME_DELTA_MS\\s*=\\s*10000/);
-  assert.match(root, /async function engineLoop\\(\\)/);
-  assert.match(root, /await simulation\\.frame\\(dt\\)/);
-  assert.match(root, /scheduleEngineLoop\\(SIMULATION_FRAME_INTERVAL_MS\\)/);
+  assert.match(root, /SIMULATION_FRAME_INTERVAL_MS\s*=\s*100/);
+  assert.match(root, /MAX_FRAME_DELTA_MS\s*=\s*10000/);
+  assert.match(root, /async function engineLoop\(\)/);
+  assert.match(root, /await simulation\.frame\(dt\)/);
+  assert.match(root, /scheduleEngineLoop\(SIMULATION_FRAME_INTERVAL_MS\)/);
   assert.match(root, /loopInProgress/);
-  assert.match(root, /document\\.hidden === true/);
-  assert.match(root, /window\\.clearTimeout\\(loopTimerId\\)/);
-  assert.doesNotMatch(root, /requestAnimationFrame\\(engineLoop\\)/);
+  assert.match(root, /document\.hidden === true/);
+  assert.match(root, /window\.clearTimeout\(loopTimerId\)/);
+  assert.doesNotMatch(root, /requestAnimationFrame\(engineLoop\)/);
 });
 
 test('performance monitor cancels its animation-frame loop while the app is backgrounded', () => {
