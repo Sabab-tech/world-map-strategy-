@@ -32,6 +32,9 @@
     "religion": "app.js#religion (existing canonical Religion & Ideology handoff)"
   },
   "sharedStyles": "omega_ui_v2/omega-ui-v2.css",
+  "additionalStyles": [
+    "omega_ui_v2/ministry-visual-refresh.css"
+  ],
   "canonicalAdapters": {
     "policeEngine": "OmegaHomeMinistryEngine",
     "vehicleIllustration": "OMEGA_UI_ADAPTER.getPoliceVehicleSvg",
