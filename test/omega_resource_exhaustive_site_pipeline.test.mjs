@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 // Reuse the authoritative runtime fixture and its existing single-site end-to-end regressions.
+// Unlike a sample-only test, this audit requires an extraction-to-finished-goods proof for each eligible physical site.
 // This test then adds the missing exhaustive pass over every eligible physical site.
 await import('./omega_resource_endowment_runtime.test.mjs');
 
