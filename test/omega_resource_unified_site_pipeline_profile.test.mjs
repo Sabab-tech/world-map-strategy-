@@ -142,6 +142,7 @@ for (const row of resourceRows) {
   assert.equal(sim.factoryBinding?.countryId, country, row.siteId + ': factory country isolation');
   assert.equal(String(sim.factoryBinding?.inputResourceId).toLowerCase(), resourceId, row.siteId + ': factory input commodity');
   assert.equal(sim.factoryBinding?.requiresSameCountryWarehouse, true, row.siteId + ': same-country factory guard');
+  assert.equal(sim.factoryBinding?.factoryId, 'FAC-SIM:' + country + ':' + row.siteId.replace(/[^A-Za-z0-9_-]/g, '_') + ':' + resourceId, row.siteId + ': exact site-bound factory identity');
   assert.ok(Array.isArray(sim.transportRoute) && sim.transportRoute.length > 0, row.siteId + ': route exists');
   const route = sim.transportRoute[0];
   assert.equal(route.countryId, country, row.siteId + ': route country');
