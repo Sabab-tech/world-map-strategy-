@@ -207,7 +207,7 @@ public final class OmegaGameplaySmokeTest {
                     " var sequence = ['economy','government','more','economy','government'];" +
                     " for (var i = 0; i < sequence.length; i++) {" +
                     "   var route = sequence[i];" +
-                    "   var control = cabinet.querySelector('[data-omega-v2-global-nav=\\"' + route + '\\"]');" +
+                    "   var control = cabinet.querySelector('[data-omega-v2-global-nav=\"' + route + '\"]');" +
                     "   if (!control) return false;" +
                     "   control.click();" +
                     "   if (cabinet.getAttribute('data-omega-v2-route') !== route) return false;" +
