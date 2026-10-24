@@ -1,5 +1,6 @@
 /* OMEGA UI v2 is the only active ministry presentation and navigation layer.
-   Retired UI assets remain in the repository for history, but cannot cover the live shell. */
+   Retired assets remain on disk for history but are neither loaded nor visible. */
+#omega-ministry-entry { display:none !important; visibility:hidden !important; pointer-events:none !important; }
 #ministry-dashboard-view,
 #ministry-dashboard-view.omega-ui-active,
 #ministry-dashboard-view[aria-hidden="false"] {
