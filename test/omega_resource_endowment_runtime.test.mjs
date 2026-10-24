@@ -152,8 +152,8 @@ assert.equal(mineplayReadiness?.mineplayBatchCoverage?.expanded?.status,'READY',
 assert.equal(mineplayReadiness?.mineplayBatchCoverage?.expanded?.recordCount,108);
 assert.equal(mineplayReadiness?.mineplayBatchCoverage?.critical?.status,'READY',JSON.stringify(mineplayReadiness?.mineplayBatchCoverage));
 assert.equal(mineplayReadiness?.mineplayBatchCoverage?.critical?.recordCount,56);
-assert.equal(mineplayReadiness?.mineplaySourceRecordCount,208);
-assert.equal(mineplayReadiness?.mineplayUniqueRecordCount,208,'all three batches must merge without duplicate site IDs');
+assert.equal(mineplayReadiness?.mineplaySourceRecordCount,210);
+assert.equal(mineplayReadiness?.mineplayUniqueRecordCount,210,'all three batches must merge without duplicate site IDs');
 assert.equal(mineplayReadiness?.legacyLoadedParts,6);
 assert.ok(Number(mineplayReadiness?.totalSiteCount)>=500,
   'canonical runtime catalog must contain the 315-site authority plus eligible legacy and mineplay additions');
@@ -162,7 +162,7 @@ const mineplayExpandedScenario=JSON.parse(fs.readFileSync(new URL('../resource_s
 const mineplayCriticalScenario=JSON.parse(fs.readFileSync(new URL('../resource_site_country_mineplay_critical_batch_20261024_v1.json',import.meta.url),'utf8'));
 assert.equal(mineplayBaseScenario.records.length,44);
 assert.equal(mineplayExpandedScenario.records.length,108);
-assert.equal(mineplayCriticalScenario.records.length,56);
+assert.equal(mineplayCriticalScenario.records.length,58);
 const mineplayScenarioRows=[
   ...mineplayBaseScenario.records,
   ...mineplayExpandedScenario.records.filter(site=>
