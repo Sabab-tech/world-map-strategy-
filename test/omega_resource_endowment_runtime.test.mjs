@@ -76,6 +76,7 @@ const resourceFiles=new Map([
   ['resource_site_reserve_simulation_v1.json',new URL('../resource_site_reserve_simulation_v1.json',import.meta.url)],
   ['resource_site_country_mineplay_batch_20261020_v1.json',new URL('../resource_site_country_mineplay_batch_20261020_v1.json',import.meta.url)],
   ['resource_site_country_mineplay_batch_20261024_v1.json',new URL('../resource_site_country_mineplay_batch_20261024_v1.json',import.meta.url)],
+  ['resource_site_country_mineplay_critical_batch_20261024_v1.json',new URL('../resource_site_country_mineplay_critical_batch_20261024_v1.json',import.meta.url)],
   ['resource_site_canonical_catalog_v1.json',new URL('../resource_site_canonical_catalog_v1.json',import.meta.url)],
   ['resource_site_master_registry_v1.json',new URL('../resource_site_master_registry_v1.json',import.meta.url)],
   ['resource_site_reference_expanded_manifest.json',new URL('../resource_site_reference_expanded_manifest.json',import.meta.url)],
@@ -149,27 +150,32 @@ assert.equal(mineplayReadiness?.mineplayBatchCoverage?.base?.status,'READY',JSON
 assert.equal(mineplayReadiness?.mineplayBatchCoverage?.base?.recordCount,44);
 assert.equal(mineplayReadiness?.mineplayBatchCoverage?.expanded?.status,'READY',JSON.stringify(mineplayReadiness?.mineplayBatchCoverage));
 assert.equal(mineplayReadiness?.mineplayBatchCoverage?.expanded?.recordCount,108);
-assert.equal(mineplayReadiness?.mineplaySourceRecordCount,152);
-assert.ok(Number(mineplayReadiness?.mineplayUniqueRecordCount)>=151);
+assert.equal(mineplayReadiness?.mineplayBatchCoverage?.critical?.status,'READY',JSON.stringify(mineplayReadiness?.mineplayBatchCoverage));
+assert.equal(mineplayReadiness?.mineplayBatchCoverage?.critical?.recordCount,56);
+assert.equal(mineplayReadiness?.mineplaySourceRecordCount,208);
+assert.equal(mineplayReadiness?.mineplayUniqueRecordCount,208,'all three batches must merge without duplicate site IDs');
 assert.equal(mineplayReadiness?.legacyLoadedParts,6);
 assert.ok(Number(mineplayReadiness?.totalSiteCount)>=500,
   'canonical runtime catalog must contain the 315-site authority plus eligible legacy and mineplay additions');
 const mineplayBaseScenario=JSON.parse(fs.readFileSync(new URL('../resource_site_country_mineplay_batch_20261020_v1.json',import.meta.url),'utf8'));
 const mineplayExpandedScenario=JSON.parse(fs.readFileSync(new URL('../resource_site_country_mineplay_batch_20261024_v1.json',import.meta.url),'utf8'));
+const mineplayCriticalScenario=JSON.parse(fs.readFileSync(new URL('../resource_site_country_mineplay_critical_batch_20261024_v1.json',import.meta.url),'utf8'));
 assert.equal(mineplayBaseScenario.records.length,44);
 assert.equal(mineplayExpandedScenario.records.length,108);
+assert.equal(mineplayCriticalScenario.records.length,56);
+const mineplayScenarioRows=[
+  ...mineplayBaseScenario.records,
+  ...mineplayExpandedScenario.records.filter(site=>
+    !site?.runtime?.aliasOfSiteId&&site?.map?.markerEligible!==false&&
+    String(site?.siteId||'')!=='SITE_PRK_musan_iron_ore_mine'),
+  ...mineplayCriticalScenario.records.filter(site=>
+    !site?.runtime?.aliasOfSiteId&&site?.map?.markerEligible!==false)
+];
 const mineplayScenario={
   ...mineplayBaseScenario,
   batchId:'COUNTRY_MINEPLAY_COMBINED_TEST_FIXTURE',
-  recordCount:mineplayBaseScenario.records.length+mineplayExpandedScenario.records.filter(site=>
-    !site?.runtime?.aliasOfSiteId&&site?.map?.markerEligible!==false&&
-    String(site?.siteId||'')!=='SITE_PRK_musan_iron_ore_mine').length,
-  records:[
-    ...mineplayBaseScenario.records,
-    ...mineplayExpandedScenario.records.filter(site=>
-      !site?.runtime?.aliasOfSiteId&&site?.map?.markerEligible!==false&&
-      String(site?.siteId||'')!=='SITE_PRK_musan_iron_ore_mine')
-  ]
+  recordCount:mineplayScenarioRows.length,
+  records:mineplayScenarioRows
 };
 const reserveScenario=JSON.parse(fs.readFileSync(new URL('../resource_site_reserve_simulation_v1.json',import.meta.url),'utf8'));
 assert.equal(reserveScenario.siteCount,250);
@@ -182,6 +188,7 @@ const unifiedProfileRows=[
   ...(canonicalScenario.sites||[]),
   ...(mineplayBaseScenario.records||[]),
   ...(mineplayExpandedScenario.records||[]),
+  ...(mineplayCriticalScenario.records||[]),
   ...[1,2,3,4,5,6].flatMap(part=>JSON.parse(fs.readFileSync(
     new URL('../resource_site_legacy_gameplay_expansion_part_'+part+'_v1.json',import.meta.url),'utf8')).records||[])
 ];
