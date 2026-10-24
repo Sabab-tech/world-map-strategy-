@@ -539,6 +539,18 @@
         "ship"
       ],
       "batchDays": 1
+    },
+    "aragonite": {
+      "method": "QUARRY_CRUSH_SCREEN",
+      "fallbackMethod": "DREDGING",
+      "preferredModes": [
+        "truck",
+        "barge",
+        "ship"
+      ],
+      "batchDays": 1,
+      "simulationOnly": true,
+      "sourcePolicy": "Resource extraction is a gameplay scenario; site-level extraction does not assert a real-world licensed mine."
     }
   },
   "processingRules": {
@@ -1277,6 +1289,25 @@
       "outputs": {
         "CONSTRUCTION_AGGREGATE": 0.95,
         "PROCESSING_RESIDUE": 0.05
+      },
+      "cycleDays": 1,
+      "authority": "SIMULATED_GAMEPLAY_RULE",
+      "inputUnit": "SIMULATION_RESOURCE_UNIT",
+      "outputUnit": "SIMULATION_RESOURCE_UNIT",
+      "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
+      "cycleTimeUnit": "IN_GAME_DAYS",
+      "requiresAllInputs": true,
+      "missingInputPolicy": "BLOCK_CYCLE",
+      "simulationOnly": true
+    },
+    "aragonite": {
+      "factoryType": "AGGREGATE_CRUSHING_PLANT",
+      "inputs": {
+        "aragonite": 1
+      },
+      "outputs": {
+        "ARAGONITE_SAND": 0.96,
+        "PROCESSING_RESIDUE": 0.04
       },
       "cycleDays": 1,
       "authority": "SIMULATED_GAMEPLAY_RULE",
