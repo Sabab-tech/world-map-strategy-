@@ -713,122 +713,60 @@
         }
     };
 
+    // Backward-compatible API name, intentionally routed through UI v2 only.
+    // Do not call closeAllDrawers(), OmegaLayerManager.setLayer(1), or legacy Cabinet renderers here.
     window.openMainMinistryView = function(e) {
         if (e && typeof e.preventDefault === 'function') e.preventDefault();
         if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
-
-        console.log('[OMEGA NAV] openMainMinistryView triggered directly');
-
-        // Close all overlapping drawers or modals
-        if (window.Game && typeof window.Game.closeAllDrawers === 'function') {
-            window.Game.closeAllDrawers();
-        } else {
-            const drawers = ['command-hub-modal', 'country-info-card', 'city-detail-bar', 'search-drawer', 'events-drawer', 'layers-drawer', 'resource-filter-box', 'relation-filter-box', 'daily-quests-modal'];
-            drawers.forEach(id => {
-                const el = document.getElementById(id);
-                if (el) el.style.display = 'none';
-            });
-        }
-
-        if (window.OmegaLayerManager) {
-            window.OmegaLayerManager.setLayer(1);
-        } else {
-            const fullWin = document.getElementById('cabinet-full-window');
-            if (fullWin) {
-                fullWin.style.display = 'flex';
-                fullWin.style.position = 'fixed';
-                fullWin.style.inset = '0';
-                fullWin.style.width = '100vw';
-                fullWin.style.height = '100vh';
-                fullWin.style.opacity = '1';
-                fullWin.style.pointerEvents = 'auto';
-                fullWin.style.visibility = 'visible';
-                fullWin.style.zIndex = '999999';
-            }
-            document.body.classList.add('modal-open');
-            const activeCountry = (window.Game && window.Game.currentActiveCountry) || window.currentActiveCountry || 'BANGLADESH';
-            if (window.OmegaCabinetUI && typeof window.OmegaCabinetUI.renderCabinet === 'function') {
-                window.OmegaCabinetUI.renderCabinet(activeCountry);
-            }
-        }
-        if (window.updateGlobalBackButtonVisibility) {
-            window.updateGlobalBackButtonVisibility();
-        }
+        if (e && typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+        const bridge = window.OmegaUIV2Integration;
+        if (bridge && typeof bridge.openRoute === 'function') return bridge.openRoute('government') === true;
+        const entry = window.OMEGAGovEntryV3;
+        if (entry && typeof entry.open === 'function') return entry.open(e) === true;
+        return false;
     };
 
+    // Compatibility alias for old callers; Religion now lives inside UI v2.
     window.openReligionIdeologySystem = function(e) {
         if (e && typeof e.preventDefault === 'function') e.preventDefault();
         if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
-
-        console.log('[OMEGA NAV] openReligionIdeologySystem triggered directly');
-
-        if (window.Game && typeof window.Game.closeAllDrawers === 'function') {
-            window.Game.closeAllDrawers();
-        } else {
-            const drawers = ['command-hub-modal', 'country-info-card', 'city-detail-bar', 'search-drawer', 'events-drawer', 'layers-drawer', 'resource-filter-box', 'relation-filter-box', 'daily-quests-modal'];
-            drawers.forEach(id => {
-                const el = document.getElementById(id);
-                if (el) el.style.display = 'none';
-            });
-        }
-
-        if (window.OmegaCabinetEngine) {
-            window.OmegaCabinetEngine.activeSubsystem = 'governance';
-            window.OmegaCabinetEngine.govSubView = 'overview';
-        }
-
-        if (window.OmegaLayerManager) {
-            window.OmegaLayerManager.setLayer(1);
-        } else {
-            const fullWin = document.getElementById('cabinet-full-window');
-            if (fullWin) {
-                fullWin.style.display = 'flex';
-                fullWin.style.position = 'fixed';
-                fullWin.style.inset = '0';
-                fullWin.style.width = '100vw';
-                fullWin.style.height = '100vh';
-                fullWin.style.opacity = '1';
-                fullWin.style.pointerEvents = 'auto';
-                fullWin.style.visibility = 'visible';
-                fullWin.style.zIndex = '999999';
-            }
-            document.body.classList.add('modal-open');
-            const activeCountry = (window.Game && window.Game.currentActiveCountry) || window.currentActiveCountry || 'BANGLADESH';
-            if (window.OmegaCabinetUI && typeof window.OmegaCabinetUI.renderCabinet === 'function') {
-                window.OmegaCabinetUI.renderCabinet(activeCountry);
-            }
-        }
-
-        if (window.OmegaCabinetEngine && typeof window.OmegaCabinetEngine.setSubsystem === 'function') {
-            window.OmegaCabinetEngine.setSubsystem('governance');
-        }
+        if (e && typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+        const bridge = window.OmegaUIV2Integration;
+        if (bridge && typeof bridge.openRoute === 'function') return bridge.openRoute('religion') === true;
+        return false;
     };
 
+    // Map return is a direct UI v2 state transition, never a legacy layer render.
     window.openMainMapView = function(e) {
         if (e && typeof e.preventDefault === 'function') e.preventDefault();
         if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
-
-        console.log('[OMEGA NAV] openMainMapView triggered directly');
-
-        if (window.OmegaLayerManager) {
-            window.OmegaLayerManager.setLayer(0);
-        } else {
-            const fullWin = document.getElementById('cabinet-full-window');
-            const dashWin = document.getElementById('ministry-dashboard-view');
-            const interrogModal = document.getElementById('minister-interrogation-modal');
-            if (fullWin) fullWin.style.display = 'none';
-            if (dashWin) dashWin.style.display = 'none';
-            if (interrogModal) interrogModal.style.display = 'none';
+        if (e && typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+        const bridge = window.OmegaUIV2Integration;
+        if (bridge && typeof bridge.closeToWorldMap === 'function') return bridge.closeToWorldMap();
+        const cabinet = document.getElementById('cabinet-full-window');
+        if (cabinet && cabinet.style) {
+            cabinet.style.display = 'none';
+            cabinet.style.visibility = 'hidden';
+            cabinet.style.opacity = '0';
+            cabinet.style.pointerEvents = 'none';
+        }
+        if (document.body) {
+            document.body.setAttribute('data-active-layer', '0');
             document.body.classList.remove('modal-open');
         }
-
-        if (window.map && typeof window.map.invalidateSize === 'function') {
-            setTimeout(() => { window.map.invalidateSize(); }, 50);
+        const manager = window.OmegaLayerManager;
+        if (manager) {
+            manager.currentLayer = 0;
+            if (Array.isArray(manager.layerStack)) manager.layerStack = [0];
         }
-
-        if (window.updateGlobalBackButtonVisibility) {
-            window.updateGlobalBackButtonVisibility();
+        const worldUi = document.getElementById('world-ui-root');
+        if (worldUi && worldUi.style) {
+            worldUi.style.opacity = '1';
+            worldUi.style.pointerEvents = 'auto';
+            worldUi.style.filter = 'none';
         }
+        if (window.map && typeof window.map.invalidateSize === 'function') setTimeout(() => window.map.invalidateSize(), 50);
+        return true;
     };
 
     // Auto-init on script load
@@ -855,7 +793,7 @@
             }, { passive: false });
         };
 
-        bindDockBtn('btn-ministry-dock', window.openMainMinistryView);
+        // btn-ministry-dock owns a single UI v2 click route in index.html; no duplicate listener.
         bindDockBtn('btn-religion-ideology', window.openReligionIdeologySystem);
 
         // Global Touch Scroll Lockup Prevention for Mobile WebViews & Touch Devices
