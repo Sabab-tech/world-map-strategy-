@@ -899,6 +899,118 @@ assert.ok((part6PostDelivery.industrialNetwork?.siteExecutions||[]).some(item=>
   'Part 6 industrial ledger must retain the exact site, batch and occurrence identities');
 
 
+
+// Exhaustive site-by-site execution audit. Profile normalization alone is not enough:
+// each eligible physical site must commit a batch, bind its sovereign raw warehouse,
+// dispatch a same-country shipment, and target a concrete factory asset.
+const exhaustiveSourceById=new Map();
+for(const site of unifiedProfileRows){
+  const siteId=String(site?.siteId||'').trim();
+  if(!siteId||exhaustiveSourceById.has(siteId)||site?.runtime?.aliasOfSiteId||
+     site?.map?.markerEligible===false||site?.operation?.commercialExtraction===false||
+     site?.commercialExtraction===false||
+     String(site?.operation?.status||site?.operation?.operationalStatus||site?.status||'').toUpperCase()==='NOT_APPLICABLE')continue;
+  exhaustiveSourceById.set(siteId,site);
+}
+const exhaustiveEligibleIds=[...auditedMineIds].filter(siteId=>exhaustiveSourceById.has(siteId));
+assert.equal(exhaustiveEligibleIds.length,unifiedProfileCount,
+  'exhaustive pipeline scope must match every normalized eligible physical site');
+const exhaustiveFailures=[];
+const exhaustiveCounts={eligible:exhaustiveEligibleIds.length,dispatched:0,blocked:0,invalidLedger:0};
+const provisionExhaustiveCountry=(countryId)=>{
+  for(const root of [globalThis.Game?.state,globalThis.OmegaMinistryStateProvider?.getState?.()].filter(Boolean)){
+    root.transport=root.transport||{};
+    root.transport[countryId]=root.transport[countryId]||{};
+    const transport=root.transport[countryId];
+    transport.infrastructure=transport.infrastructure||{};
+    for(const key of ['roads','rail','ports','bridges','pipelines']){
+      transport.infrastructure[key]=transport.infrastructure[key]||{capacityPerDay:1000000,quality:0.95};
+    }
+    transport.infrastructure.utilitySupply=transport.infrastructure.utilitySupply||{
+      electricityMWhPerDay:1000000,waterM3PerDay:1000000,
+      authority:'TEST_FIXTURE',status:'AVAILABLE',simulationOnly:true,assets:[]
+    };
+    root.economy=root.economy||{};
+    root.economy[countryId]=root.economy[countryId]||{productionAssets:[]};
+    const economy=root.economy[countryId];
+    if(!Array.isArray(economy.productionAssets))economy.productionAssets=[];
+    economy.unemploymentCount=1000000;
+    economy.laborForce=1000000;
+    economy.unemployment_rate=10;
+    root.finance=root.finance||{};
+    root.finance[countryId]=root.finance[countryId]||{available:1e15,reserves:1e15};
+    if(!Number.isFinite(Number(root.finance[countryId].available))||Number(root.finance[countryId].available)<1e12)
+      root.finance[countryId].available=1e15;
+  }
+};
+for(const siteId of exhaustiveEligibleIds){
+  const sourceSite=exhaustiveSourceById.get(siteId);
+  const countryId=String(sourceSite?.countryId||sourceSite?.identity?.countryIso3||sourceSite?.countryCode||'').toUpperCase();
+  const resourceId=String(sourceSite?.real?.resourceId||sourceSite?.sourceSiteRecord?.resourceId||
+    sourceSite?.sourceSiteRecord?.resourceTypeId||sourceSite?.identity?.resourceTypeId||sourceSite?.resourceId||'').trim().toLowerCase();
+  if(!/^[A-Z]{3}$/.test(countryId)||!resourceId){
+    exhaustiveCounts.blocked++;
+    exhaustiveFailures.push({siteId,countryId,resourceId,reason:'SOURCE_IDENTITY_INCOMPLETE'});
+    continue;
+  }
+  provisionExhaustiveCountry(countryId);
+  globalThis.Game.state.simulation.turn=Number(globalThis.Game.state.simulation.turn||0)+1;
+  const pipeline=await industrial.executeSitePipeline({
+    countryId,siteId,resourceId,quantity:1,autoCommissionFactory:true,
+    transportMode:sourceSite?.simulation?.transportRoute?.[0]?.mode||'rail'
+  });
+  if(pipeline?.status!=='IN_TRANSIT'||pipeline?.extractionStatus!=='COMMITTED'||
+     pipeline?.shipmentStatus!=='DISPATCHED'||!pipeline?.batchId||!pipeline?.shipmentId||!pipeline?.factoryId){
+    exhaustiveCounts.blocked++;
+    exhaustiveFailures.push({
+      siteId,countryId,resourceId,status:pipeline?.status||null,reason:pipeline?.reason||null,
+      extractionStatus:pipeline?.extractionStatus||null,shipmentStatus:pipeline?.shipmentStatus||null,
+      detail:pipeline?.detail||pipeline?.shipment?.reason||null,
+      linkedOccurrenceCount:pipeline?.linkedOccurrenceCount??null
+    });
+    continue;
+  }
+  const countryResource=runtime.countryResourceState(countryId)||{};
+  const batch=(countryResource.batches||[]).find(row=>String(row?.batchId||'')===String(pipeline.batchId));
+  const shipment=(countryResource.industrialNetwork?.shipments||[]).find(row=>String(row?.shipmentId||'')===String(pipeline.shipmentId));
+  const flow=(countryResource.industrialNetwork?.siteFlowLedger||[]).find(row=>String(row?.batchId||'')===String(pipeline.batchId));
+  const factoryRoots=[globalThis.Game?.state,globalThis.OmegaMinistryStateProvider?.getState?.()].filter(Boolean);
+  const factoryExists=factoryRoots.some(root=>(root?.economy?.[countryId]?.productionAssets||[])
+    .some(asset=>String(asset?.id||asset?.assetId||asset?.projectId||'')===String(pipeline.factoryId)));
+  const rawAvailable=Number(countryResource.warehouse?.availableByResource?.[resourceId]||0);
+  const rawReserved=Number(countryResource.warehouse?.reservedByResource?.[resourceId]||0);
+  const valid=Boolean(batch&&shipment&&flow&&factoryExists&&
+    String(batch.countryId||'').toUpperCase()===countryId&&
+    String(batch.sourceCountryId||countryId).toUpperCase()===countryId&&
+    String(batch.warehouseId||'')==='WH-'+countryId+'-RAW'&&
+    String(shipment.countryId||countryId).toUpperCase()===countryId&&
+    String(shipment.factoryId||'')===String(pipeline.factoryId)&&
+    String(flow.siteId||'')===siteId&&String(flow.countryId||'').toUpperCase()===countryId&&
+    (rawAvailable>0||rawReserved>0)&&pipeline.route?.crossBorderRequired===false);
+  if(!valid){
+    exhaustiveCounts.invalidLedger++;
+    exhaustiveFailures.push({
+      siteId,countryId,resourceId,reason:'BATCH_WAREHOUSE_SHIPMENT_FACTORY_LEDGER_MISMATCH',
+      batchFound:Boolean(batch),shipmentFound:Boolean(shipment),flowFound:Boolean(flow),factoryExists,
+      rawAvailable,rawReserved,crossBorderRequired:pipeline.route?.crossBorderRequired??null
+    });
+    continue;
+  }
+  exhaustiveCounts.dispatched++;
+}
+console.log('OMEGA EXHAUSTIVE SITE PIPELINE AUDIT '+JSON.stringify({
+  ...exhaustiveCounts,failureCount:exhaustiveFailures.length,failures:exhaustiveFailures.slice(0,60)
+}));
+assert.equal(exhaustiveEligibleIds.length>=400,true,
+  'the exhaustive audit must cover the full expanded eligible site population');
+assert.equal(exhaustiveCounts.blocked,0,
+  'every eligible mine must commit extraction and dispatch a site-specific shipment: '+JSON.stringify(exhaustiveFailures.slice(0,25)));
+assert.equal(exhaustiveCounts.invalidLedger,0,
+  'every eligible mine must preserve batch, warehouse, shipment and factory lineage: '+JSON.stringify(exhaustiveFailures.slice(0,25)));
+assert.equal(exhaustiveCounts.dispatched,exhaustiveCounts.eligible,
+  'every eligible mine must enter the shared production pipeline');
+
+
 if(nativeFetch)globalThis.fetch=nativeFetch;
 // This completion line is reached only after the real site pipeline assertions above pass.
 console.log('OMEGA RESOURCE JSON -> MINE -> BATCH -> WAREHOUSE -> FACTORY EVENT TEST PASSED');
