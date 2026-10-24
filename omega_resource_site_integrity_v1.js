@@ -200,6 +200,227 @@ function normalizeSiteRecord(raw){
     requiresFactoryBinding:row.runtime?.requiresFactoryBinding!==false};
   return row;
 }
+
+const SITE_PIPELINE_COMMODITY_BANDS=Object.freeze({
+  crude_oil:{rate:85000,rateUnit:'BARRELS_PER_DAY',reserveUnit:'BARRELS',gradeUnit:'API_GRAVITY',output:'REFINED_PETROLEUM_PRODUCTS',mode:'pipeline'},
+  natural_gas:{rate:420,rateUnit:'MMCF_PER_DAY',reserveUnit:'MMCF',gradeUnit:'PERCENT_METHANE',output:'PROCESSED_NATURAL_GAS',mode:'pipeline'},
+  gold:{rate:14500,rateUnit:'TONNES_PER_DAY',reserveUnit:'TONNES_ORE',gradeUnit:'GRAMS_PER_TONNE_AU',output:'GOLD_DORE',mode:'rail'},
+  silver:{rate:12500,rateUnit:'TONNES_PER_DAY',reserveUnit:'TONNES_ORE',gradeUnit:'GRAMS_PER_TONNE_AG',output:'SILVER_CONCENTRATE',mode:'rail'},
+  platinum:{rate:9000,rateUnit:'TONNES_PER_DAY',reserveUnit:'TONNES_ORE',gradeUnit:'GRAMS_PER_TONNE_PGM',output:'PLATINUM_GROUP_CONCENTRATE',mode:'rail'},
+  diamond:{rate:4500,rateUnit:'TONNES_PER_DAY',reserveUnit:'TONNES_ORE',gradeUnit:'CARATS_PER_TONNE',output:'DIAMOND_RECOVERY_STREAM',mode:'road'},
+  ruby:{rate:2000,rateUnit:'TONNES_PER_DAY',reserveUnit:'TONNES_ORE',gradeUnit:'CARATS_PER_TONNE',output:'GEMSTONE_RECOVERY_STREAM',mode:'road'},
+  coal:{rate:32000,rateUnit:'TONNES_PER_DAY',reserveUnit:'TONNES_ORE',gradeUnit:'KCAL_PER_KG',output:'THERMAL_OR_METALLURGICAL_COAL',mode:'rail'},
+  iron_ore:{rate:38000,rateUnit:'TONNES_PER_DAY',reserveUnit:'TONNES_ORE',gradeUnit:'PERCENT_FE',output:'IRON_ORE_CONCENTRATE',mode:'rail'},
+  copper:{rate:24000,rateUnit:'TONNES_PER_DAY',reserveUnit:'TONNES_ORE',gradeUnit:'PERCENT_CU',output:'COPPER_CONCENTRATE',mode:'rail'},
+  nickel:{rate:15000,rateUnit:'TONNES_PER_DAY',reserveUnit:'TONNES_ORE',gradeUnit:'PERCENT_NI',output:'NICKEL_CONCENTRATE',mode:'rail'},
+  cobalt:{rate:9000,rateUnit:'TONNES_PER_DAY',reserveUnit:'TONNES_ORE',gradeUnit:'PERCENT_CO',output:'COBALT_CONCENTRATE',mode:'rail'},
+  lithium:{rate:12000,rateUnit:'TONNES_PER_DAY',reserveUnit:'TONNES_ORE',gradeUnit:'PERCENT_LI2O',output:'LITHIUM_CONCENTRATE',mode:'rail'},
+  rare_earth:{rate:8000,rateUnit:'TONNES_PER_DAY',reserveUnit:'TONNES_ORE',gradeUnit:'PERCENT_REO',output:'RARE_EARTH_CONCENTRATE',mode:'rail'},
+  niobium:{rate:6000,rateUnit:'TONNES_PER_DAY',reserveUnit:'TONNES_ORE',gradeUnit:'PERCENT_NB2O5',output:'NIOBIUM_CONCENTRATE',mode:'rail'},
+  uranium:{rate:6000,rateUnit:'TONNES_PER_DAY',reserveUnit:'TONNES_ORE',gradeUnit:'PERCENT_U3O8',output:'URANIUM_CONCENTRATE',mode:'rail'},
+  bauxite:{rate:24000,rateUnit:'TONNES_PER_DAY',reserveUnit:'TONNES_ORE',gradeUnit:'PERCENT_AL2O3',output:'BAUXITE_CONCENTRATE',mode:'rail'},
+  phosphate:{rate:18000,rateUnit:'TONNES_PER_DAY',reserveUnit:'TONNES_ORE',gradeUnit:'PERCENT_P2O5',output:'PHOSPHATE_ROCK',mode:'rail'},
+  potash:{rate:15000,rateUnit:'TONNES_PER_DAY',reserveUnit:'TONNES_ORE',gradeUnit:'PERCENT_K2O',output:'POTASH_PRODUCT',mode:'rail'},
+  zinc:{rate:12000,rateUnit:'TONNES_PER_DAY',reserveUnit:'TONNES_ORE',gradeUnit:'PERCENT_ZN',output:'ZINC_CONCENTRATE',mode:'rail'},
+  tin:{rate:5000,rateUnit:'TONNES_PER_DAY',reserveUnit:'TONNES_ORE',gradeUnit:'PERCENT_SN',output:'TIN_CONCENTRATE',mode:'rail'},
+  tungsten:{rate:5000,rateUnit:'TONNES_PER_DAY',reserveUnit:'TONNES_ORE',gradeUnit:'PERCENT_WO3',output:'TUNGSTEN_CONCENTRATE',mode:'rail'},
+  chromite:{rate:12000,rateUnit:'TONNES_PER_DAY',reserveUnit:'TONNES_ORE',gradeUnit:'PERCENT_CR2O3',output:'CHROMITE_CONCENTRATE',mode:'rail'},
+  manganese:{rate:12000,rateUnit:'TONNES_PER_DAY',reserveUnit:'TONNES_ORE',gradeUnit:'PERCENT_MN',output:'MANGANESE_CONCENTRATE',mode:'rail'},
+  graphite:{rate:7000,rateUnit:'TONNES_PER_DAY',reserveUnit:'TONNES_ORE',gradeUnit:'PERCENT_CARBON',output:'GRAPHITE_CONCENTRATE',mode:'rail'},
+  rutile:{rate:6500,rateUnit:'TONNES_PER_DAY',reserveUnit:'TONNES_ORE',gradeUnit:'PERCENT_TIO2',output:'RUTILE_CONCENTRATE',mode:'rail'},
+  ilmenite:{rate:11000,rateUnit:'TONNES_PER_DAY',reserveUnit:'TONNES_ORE',gradeUnit:'PERCENT_TIO2',output:'ILMENITE_CONCENTRATE',mode:'rail'},
+  limestone:{rate:18000,rateUnit:'TONNES_PER_DAY',reserveUnit:'TONNES_ORE',gradeUnit:'PERCENT_CACO3',output:'LIMESTONE_FEED',mode:'road'},
+  construction_aggregate:{rate:10000,rateUnit:'TONNES_PER_DAY',reserveUnit:'TONNES_ORE',gradeUnit:'SIMULATED_AGGREGATE_QUALITY_INDEX',output:'CONSTRUCTION_AGGREGATE',mode:'road'},
+  coral_aggregate:{rate:3500,rateUnit:'TONNES_PER_DAY',reserveUnit:'TONNES_ORE',gradeUnit:'SIMULATED_AGGREGATE_QUALITY_INDEX',output:'CORAL_AGGREGATE',mode:'road'},
+  basalt:{rate:8000,rateUnit:'TONNES_PER_DAY',reserveUnit:'TONNES_ORE',gradeUnit:'SIMULATED_AGGREGATE_QUALITY_INDEX',output:'BASALT_AGGREGATE',mode:'road'},
+  granite:{rate:6000,rateUnit:'TONNES_PER_DAY',reserveUnit:'TONNES_ORE',gradeUnit:'SIMULATED_STONE_QUALITY_INDEX',output:'GRANITE_BLOCKS_AND_AGGREGATE',mode:'road'},
+  marble:{rate:4000,rateUnit:'TONNES_PER_DAY',reserveUnit:'TONNES_ORE',gradeUnit:'SIMULATED_STONE_QUALITY_INDEX',output:'MARBLE_BLOCKS',mode:'road'},
+  gypsum:{rate:8000,rateUnit:'TONNES_PER_DAY',reserveUnit:'TONNES_ORE',gradeUnit:'PERCENT_CASO4',output:'GYPSUM_FEED',mode:'road'},
+  salt:{rate:7000,rateUnit:'TONNES_PER_DAY',reserveUnit:'TONNES_ORE',gradeUnit:'PERCENT_NACL',output:'INDUSTRIAL_SALT',mode:'road'},
+  dolomite:{rate:7000,rateUnit:'TONNES_PER_DAY',reserveUnit:'TONNES_ORE',gradeUnit:'PERCENT_MGCO3',output:'DOLOMITE_FEED',mode:'road'},
+  magnesite:{rate:5000,rateUnit:'TONNES_PER_DAY',reserveUnit:'TONNES_ORE',gradeUnit:'PERCENT_MGO',output:'MAGNESITE_FEED',mode:'road'},
+  oil_shale:{rate:14000,rateUnit:'TONNES_PER_DAY',reserveUnit:'TONNES_ORE',gradeUnit:'LITRES_PER_TONNE_OIL',output:'SHALE_OIL_FEED',mode:'rail'},
+  boron:{rate:5000,rateUnit:'TONNES_PER_DAY',reserveUnit:'TONNES_ORE',gradeUnit:'PERCENT_B2O3',output:'BORATE_CONCENTRATE',mode:'rail'},
+  aragonite:{rate:2500,rateUnit:'TONNES_PER_DAY',reserveUnit:'TONNES_ORE',gradeUnit:'SIMULATED_MINERAL_QUALITY_INDEX',output:'ARAGONITE_PRODUCT',mode:'road'},
+  diatomite:{rate:2500,rateUnit:'TONNES_PER_DAY',reserveUnit:'TONNES_ORE',gradeUnit:'SIMULATED_MINERAL_QUALITY_INDEX',output:'DIATOMITE_PRODUCT',mode:'road'}
+});
+function sitePipelineHash(value){
+  const text=String(value||'');let h=2166136261;
+  for(let i=0;i<text.length;i++)h=Math.imul(h^text.charCodeAt(i),16777619);
+  return h>>>0;
+}
+function sitePipelinePositive(value){const n=Number(value);return Number.isFinite(n)&&n>0?n:null;}
+function buildSimulationPipelineProfile(raw,options={}){
+  const row=clone(raw||{});
+  const siteId=String(row.siteId||row.id||'').trim();
+  const country=canonCountry(row.countryId||row.identity?.countryIso3||row.countryCode||row.location?.countryBoundaryKey);
+  const resource=canonResource(row.resourceId||row.identity?.resourceTypeId||row.resourceTypeId||row.resourceTypeKey);
+  row.siteId=siteId;row.countryId=country;
+  row.identity={...(row.identity||{}),countryIso3:canonCountry(row.identity?.countryIso3||country)};
+  const operation={...(row.operation||{})};
+  const status=String(operation.status||operation.operationalStatus||row.status||'').trim().toUpperCase();
+  const alias=isAlias(row,options.aliasMap||{});
+  row.simulation={...(row.simulation||{})};
+  row.logistics={...(row.logistics||{})};
+  row.runtime={...(row.runtime||{})};
+  if(status==='NOT_APPLICABLE'||operation.extractionEligibility==='NON_EXECUTABLE'&&!resource){
+    operation.commercialExtraction=false;
+    operation.extractionEligibility='NON_EXECUTABLE';
+    row.operation=operation;
+    row.map={...(row.map||{}),markerEligible:row.map?.markerEligible===true,countryIsolationKey:country};
+    row.runtime={...row.runtime,requiresSiteSpecificRoute:false,requiresFactoryBinding:false,
+      pipeline:{version:'OMEGA_SITE_PIPELINE_PROFILE_V1',profileAuthority:'NOT_APPLICABLE_NO_RESOURCE',
+        site:'REGISTERED_NOT_APPLICABLE',extraction:'NOT_APPLICABLE',batch:'NOT_APPLICABLE',
+        rawWarehouse:'NOT_APPLICABLE',transport:'NOT_APPLICABLE',factory:'NOT_APPLICABLE',
+        processing:'NOT_APPLICABLE',output:'NOT_APPLICABLE',economy:'NO_COMMODITY_OUTPUT',
+        extractionExecutable:false}};
+    row.simulation.pipelineProfileStatus='NOT_APPLICABLE';
+    row.simulation.pipelineProfileAuthority='NOT_APPLICABLE_NO_RESOURCE';
+    return row;
+  }
+  if(alias){
+    operation.commercialExtraction=false;
+    operation.extractionEligibility='NON_EXECUTABLE_ALIAS';
+    row.operation=operation;
+    row.map={...(row.map||{}),markerEligible:false};
+    row.runtime={...row.runtime,aliasOfSiteId:alias,requiresSiteSpecificRoute:false,requiresFactoryBinding:false,
+      pipeline:{version:'OMEGA_SITE_PIPELINE_PROFILE_V1',profileAuthority:'ALIAS_REFERENCE',
+        site:'ALIAS_REFERENCE',extraction:'NON_EXECUTABLE_ALIAS',batch:'NON_EXECUTABLE_ALIAS',
+        rawWarehouse:'NON_EXECUTABLE_ALIAS',transport:'NON_EXECUTABLE_ALIAS',factory:'NON_EXECUTABLE_ALIAS',
+        processing:'NON_EXECUTABLE_ALIAS',output:'NON_EXECUTABLE_ALIAS',economy:'NON_EXECUTABLE_ALIAS',
+        extractionExecutable:false}};
+    row.simulation.pipelineProfileStatus='ALIAS_REFERENCE';
+    row.simulation.pipelineProfileAuthority='ALIAS_REFERENCE';
+    return row;
+  }
+  if(!siteId||!/^[A-Z]{3}$/.test(country)||!resource||['unknown','unknown_resource','not_applicable','n_a'].includes(resource)){
+    row.runtime.pipeline={version:'OMEGA_SITE_PIPELINE_PROFILE_V1',profileAuthority:'INCOMPLETE_IDENTITY',
+      site:siteId?'BOUND':'BLOCKED_SITE_ID',extraction:'BLOCKED_RESOURCE_IDENTITY',
+      batch:'BLOCKED_RESOURCE_IDENTITY',rawWarehouse:'BLOCKED_RESOURCE_IDENTITY',
+      transport:'BLOCKED_RESOURCE_IDENTITY',factory:'BLOCKED_RESOURCE_IDENTITY',
+      processing:'BLOCKED_RESOURCE_IDENTITY',output:'BLOCKED_RESOURCE_IDENTITY',
+      economy:'BLOCKED_RESOURCE_IDENTITY',extractionExecutable:false};
+    row.simulation.pipelineProfileStatus='BLOCKED_INCOMPLETE_IDENTITY';
+    return row;
+  }
+  const band=SITE_PIPELINE_COMMODITY_BANDS[resource]||{
+    rate:9000,rateUnit:'TONNES_PER_DAY',reserveUnit:'TONNES_ORE',
+    gradeUnit:'SIMULATED_RESOURCE_QUALITY_INDEX',output:resource.toUpperCase()+'_CONCENTRATE',mode:'rail'
+  };
+  const seed=sitePipelineHash(siteId+'|'+country+'|'+resource);
+  const variability=0.70+(seed%601)/1000;
+  const year=Math.max(2000,Math.floor(Number(options.year||row.quantitative?.production?.year||row.quantitative?.reserve?.year||2026)||2026));
+  const horizon=sitePipelinePositive(row.simulation.reserveHorizonYears)||350+(seed%101);
+  const simulation=row.simulation;
+  let dailyRate=sitePipelinePositive(simulation.productionRate)||Math.max(1,Math.round(band.rate*variability));
+  const rateUnit=String(simulation.productionRateUnit||band.rateUnit);
+  let annualProduction=sitePipelinePositive(simulation.annualProduction)||Math.round(dailyRate*365);
+  const annualUnit=String(simulation.annualProductionUnit||(rateUnit==='BARRELS_PER_DAY'?'BARRELS_PER_YEAR':rateUnit==='MMCF_PER_DAY'?'MMCF_PER_YEAR':rateUnit.replace(/_PER_DAY$/,'_PER_YEAR')));
+  const utilizationRaw=Number(simulation.utilization);
+  const utilization=Number.isFinite(utilizationRaw)&&utilizationRaw>0&&utilizationRaw<=1?utilizationRaw:Math.min(.94,Math.max(.62,.68+(seed%251)/1000));
+  const nominal=sitePipelinePositive(simulation.nominalDailyCapacity)||Math.max(dailyRate,Math.round(dailyRate/Math.max(.55,utilization)));
+  const minimum=Math.min(nominal,sitePipelinePositive(simulation.minimumDailyCapacity)||Math.max(1,Math.round(nominal*.62)));
+  const maximum=Math.max(nominal,sitePipelinePositive(simulation.maximumDailyCapacity)||Math.round(nominal*1.28));
+  const reserveSource=simulation.reserve&&typeof simulation.reserve==='object'?simulation.reserve:
+    (String(row.reserve?.status||'').toUpperCase()==='SIMULATED'?row.reserve:null);
+  const reserveQuantity=sitePipelinePositive(reserveSource?.quantity)||Math.max(1,Math.round(annualProduction*horizon));
+  const reserveUnit=String(reserveSource?.unit||band.reserveUnit);
+  simulation.reserve={...(reserveSource||{}),quantity:reserveQuantity,unit:reserveUnit,status:'SIMULATED',
+    basis:reserveSource?.basis||'SITE_ID_SEEDED_MULTICENTURY_GAMEPLAY_RESERVE'};
+  simulation.productionRate=dailyRate;simulation.productionRateUnit=rateUnit;
+  simulation.annualProduction=annualProduction;simulation.annualProductionUnit=annualUnit;
+  simulation.reserveHorizonYears=horizon;simulation.utilization=utilization;
+  simulation.nominalDailyCapacity=nominal;simulation.minimumDailyCapacity=minimum;simulation.maximumDailyCapacity=maximum;
+  simulation.recovery=sitePipelinePositive(simulation.recovery)||Math.round((.68+(seed%261)/1000)*10000)/10000;
+  const oldGrade=simulation.grade;
+  if(!(oldGrade&&typeof oldGrade==='object'&&sitePipelinePositive(oldGrade.value))&&!(sitePipelinePositive(oldGrade))){
+    const gradeBase=resource==='gold'?1.2:resource==='copper'?.85:resource==='iron_ore'?58:resource==='coal'?6200:resource==='natural_gas'?91:resource==='crude_oil'?32:resource==='limestone'?88:20;
+    simulation.grade={value:Math.round((gradeBase*(.75+(seed%501)/1000))*1000)/1000,unit:band.gradeUnit,
+      year,metric:'RESOURCE_SPECIFIC_SIMULATED_QUALITY',status:'SIMULATED',
+      basis:'SITE_ID_SEEDED_COMMODITY_BAND_NOT_ASSAY'};
+  }
+  const oldPurity=simulation.purity;
+  if(!(oldPurity&&typeof oldPurity==='object'&&sitePipelinePositive(oldPurity.value))&&!sitePipelinePositive(oldPurity)){
+    simulation.purity={value:Math.round((86+(seed%125)/10)*100)/100,unit:'PERCENT',year,
+      status:'SIMULATED',basis:'SITE_ID_SEEDED_PRODUCT_QUALITY_NOT_ASSAY'};
+  }
+  simulation.throughput={...(simulation.throughput&&typeof simulation.throughput==='object'?simulation.throughput:{}),
+    value:sitePipelinePositive(simulation.throughput?.value)||Math.max(1,Math.round(dailyRate*utilization)),
+    unit:simulation.throughput?.unit||rateUnit,status:'SIMULATED',
+    basis:simulation.throughput?.basis||'SITE_ID_SEEDED_THROUGHPUT_NOT_OBSERVED'};
+  const warehouseId='WH-'+country+'-RAW';
+  const factoryId='FACTORY_'+country+'_'+resource;
+  const existingFactory=simulation.factoryBinding;
+  const factoryCompatible=existingFactory&&
+    String(existingFactory.countryId||country).toUpperCase()===country&&
+    String(existingFactory.inputResourceId||resource).toLowerCase()===resource&&
+    String(existingFactory.factoryId||'').startsWith('FACTORY_'+country+'_');
+  const factoryBinding=factoryCompatible?{...existingFactory,factoryId,countryId:country,inputResourceId:resource,status:'SIMULATED_READY',requiresSameCountryWarehouse:true}:
+    {factoryId,countryId:country,inputResourceId:resource,outputResourceId:band.output,
+     status:'SIMULATED_READY',processingMethod:resource.toUpperCase()+'_PROCESSING_PLANT',
+     requiresSameCountryWarehouse:true,simulationOnly:true};
+  simulation.factoryBinding=factoryBinding;
+  simulation.factoryOutputs=Array.isArray(simulation.factoryOutputs)&&simulation.factoryOutputs.length?
+    simulation.factoryOutputs:[band.output.replace(/_/g,' ').toLowerCase()];
+  const mode=String(band.mode||'rail');
+  const speed=mode==='pipeline'?500:mode==='road'?65:300;
+  const oldRoutes=Array.isArray(simulation.transportRoute)?simulation.transportRoute:[];
+  const matchingRoute=oldRoutes.find(route=>String(route?.countryId||country).toUpperCase()===country&&
+    String(route?.originSiteId||siteId)===siteId&&
+    String(route?.warehouseId||warehouseId)===warehouseId&&
+    String(route?.factoryId||factoryId)===factoryId);
+  const distance=sitePipelinePositive(matchingRoute?.distanceKm)||40+(seed%1161);
+  const route={...(matchingRoute||{}),routeId:String(matchingRoute?.routeId||('ROUTE_'+siteId+'_RAW_TO_FACTORY')),
+    countryId:country,originSiteId:siteId,warehouseId,factoryId,mode,distanceKm:distance,
+    estimatedTravelDays:Math.max(1,Math.ceil(distance/speed)),status:'SIMULATED_ROUTE_READY',
+    routeCapacityPerDay:Math.max(maximum,sitePipelinePositive(matchingRoute?.routeCapacityPerDay)||0),
+    blockableByWar:true,blockableByNeighborControl:true,blockableByNavalInterdiction:mode==='pipeline',
+    simulationOnly:true};
+  simulation.transportRoute=[route];
+  simulation.rawWarehouseId=warehouseId;
+  const oldTransport=row.logistics.transport;
+  const transportCompatible=oldTransport&&
+    String(oldTransport.originCountryId||country).toUpperCase()===country&&
+    String(oldTransport.destinationCountryId||country).toUpperCase()===country&&
+    String(oldTransport.originSiteId||siteId)===siteId&&
+    String(oldTransport.warehouseId||warehouseId)===warehouseId&&
+    String(oldTransport.destinationFactoryId||factoryId)===factoryId;
+  row.logistics={...row.logistics,warehouseCountryId:country,warehouseSiteId:warehouseId,
+    inventoryRouteStatus:'SIMULATED_ROUTE_READY',factoryRouteStatus:'SIMULATED_FACTORY_BINDING_READY',
+    routeStatus:'SIMULATED_ROUTE_READY',
+    transport:transportCompatible?{...oldTransport,originCountryId:country,destinationCountryId:country,
+      originSiteId:siteId,warehouseId,destinationFactoryId:factoryId,routeStatus:'SIMULATED_ROUTE_READY',
+      routeCapacityPerDay:Math.max(maximum,sitePipelinePositive(oldTransport.routeCapacityPerDay)||0)}:
+      {routeId:route.routeId,routeType:mode.toUpperCase(),mode,originSiteId:siteId,originCountryId:country,
+       warehouseId,destinationFactoryId:factoryId,destinationCountryId:country,distanceKm:distance,
+       averageSpeedKmPerDay:speed,estimatedTravelDays:route.estimatedTravelDays,
+       routeStatus:'SIMULATED_ROUTE_READY',routeCapacityPerDay:route.routeCapacityPerDay,
+       canBeBlockedByWar:true,canBeBlockedByNeighborControl:true,
+       canBeBlockedByNavalInterdiction:mode==='pipeline',simulationOnly:true}};
+  row.processing={...(row.processing||{}),
+    upstreamProcess:row.processing?.upstreamProcess||operation.extractionMethod||'SITE_SPECIFIC_EXTRACTION',
+    midstreamProcess:row.processing?.midstreamProcess||factoryBinding.processingMethod,
+    refinedOutputs:row.processing?.refinedOutputs||simulation.factoryOutputs,
+    downstreamSectors:row.processing?.downstreamSectors||[resource]};
+  row.runtime={...row.runtime,identityAuthority:row.runtime.identityAuthority||'CANONICAL_SITE_REGISTRY',
+    quantityAuthority:'SIMULATION_RUNTIME',productionAuthority:'SIMULATION_RUNTIME',
+    countryWarehouseId:warehouseId,requiresSiteSpecificRoute:true,requiresFactoryBinding:true,
+    pipeline:{version:'OMEGA_SITE_PIPELINE_PROFILE_V1',
+      profileAuthority:'SIMULATION_ONLY_RUNTIME_COMPLETION',
+      site:'BOUND',extraction:operation.commercialExtraction===false?'BLOCKED_BY_OPERATION_ELIGIBILITY':'SIMULATED_ENGINEERING_READY',
+      batch:'SITE_ID_KEYED',rawWarehouse:'BOUND_TO_OWNER_COUNTRY',transport:'SIMULATED_STRATEGIC_ROUTE_READY',
+      factory:'SITE_AND_COUNTRY_BOUND',processing:'RESOURCE_SPECIFIC_SIMULATED_PROCESS',
+      output:'SIMULATED_PRODUCT_STREAM',economy:'COUNTRY_ISOLATED_SIMULATED_OUTPUT',
+      extractionExecutable:operation.commercialExtraction!==false}};
+  row.operation=operation;
+  simulation.simulationOnly=true;simulation.pipelineProfileVersion='OMEGA_SITE_PIPELINE_PROFILE_V1';
+  simulation.pipelineProfileStatus='READY';simulation.pipelineProfileAuthority='SIMULATION_ONLY_RUNTIME_COMPLETION';
+  simulation.pipelineProfile={version:'OMEGA_SITE_PIPELINE_PROFILE_V1',status:'READY',
+    authority:'SIMULATION_ONLY_RUNTIME_COMPLETION',sourceSiteId:siteId,resourceId:resource,countryId:country,
+    reserveHorizonYears:horizon,warehouseId,factoryId,routeId:route.routeId,routeMode:mode};
+  return row;
+}
+
 function isAlias(row,aliasMap={}){
   const id=String(row?.siteId||'');
   return String(row?.runtime?.aliasOfSiteId||row?.map?.aliasOfSiteId||row?.identity?.aliasOfSiteId||row?.identity?.aliasOf||aliasMap[id]||'').trim()||null;
@@ -416,7 +637,7 @@ function auditRegistry(rows,options={}){
     errorCount:errors.length,warningCount:warnings.length,errors,warnings,sites:perSite
   };
 }
-const API=Object.freeze({VERSION,FIELDS,normalizeQuantitative,normalizeSiteRecord,isAlias,unitFactorToBase,compatibleAnnualProduction,auditSiteRecord,auditRegistry});
+const API=Object.freeze({VERSION,FIELDS,normalizeQuantitative,normalizeSiteRecord,buildSimulationPipelineProfile,isAlias,unitFactorToBase,compatibleAnnualProduction,auditSiteRecord,auditRegistry});
 g.Omega=g.Omega||{};
 g.Omega.ResourceSiteIntegrity=API;
 g.OmegaResourceSiteIntegrity=API;
