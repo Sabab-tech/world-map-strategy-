@@ -216,5 +216,62 @@ test('slow simulation frames and data-heavy ministry panels bound repeated UI wo
 
   const serviceWorker = read('omega-offline-map-sw.js');
   const cacheVersion = Number(serviceWorker.match(/CACHE_NAME = "omega-offline-atlas-shell-v(\d+)"/)?.[1] || 0);
-  assert.ok(cacheVersion >= 24, 'Android/offline installs must receive the updated anti-hang runtime scripts');
+  assert.ok(cacheVersion >= 30, 'Android/offline installs must receive the updated anti-hang runtime scripts');
+});
+
+
+test('simulation coordinator throttles asynchronous work and pauses cleanly in the background', () => {
+  const root = read('omega_enterprise_composition_root_v10.js');
+  assert.match(root, /SIMULATION_FRAME_INTERVAL_MS\s*=\s*100/);
+  assert.match(root, /MAX_FRAME_DELTA_MS\s*=\s*10000/);
+  assert.match(root, /async function engineLoop\(\)/);
+  assert.match(root, /await simulation\.frame\(dt\)/);
+  assert.match(root, /scheduleEngineLoop\(SIMULATION_FRAME_INTERVAL_MS\)/);
+  assert.match(root, /loopInProgress/);
+  assert.match(root, /document\.hidden === true/);
+  assert.match(root, /window\.clearTimeout\(loopTimerId\)/);
+  assert.doesNotMatch(root, /requestAnimationFrame\(engineLoop\)/);
+});
+
+test('performance monitor cancels its animation-frame loop while the app is backgrounded', () => {
+  const frames = new Map();
+  const listeners = new Map();
+  let nextFrameId = 1;
+  let now = 0;
+  const document = {
+    hidden: false,
+    addEventListener(type, callback) { listeners.set(type, callback); }
+  };
+  const window = {
+    document,
+    __OMEGA_DIAG__: { metrics: { fps: 0 } },
+    requestAnimationFrame(callback) {
+      const id = nextFrameId++;
+      frames.set(id, callback);
+      return id;
+    },
+    cancelAnimationFrame(id) { frames.delete(id); }
+  };
+  const context = { window, document, performance: { now: () => now } };
+
+  vm.runInNewContext(read('omega_boot_performance_monitor_v1.js'), context, {
+    filename: 'omega_boot_performance_monitor_v1.js'
+  });
+  assert.equal(frames.size, 1, 'monitor should schedule one frame while visible');
+
+  document.hidden = true;
+  listeners.get('visibilitychange')();
+  assert.equal(frames.size, 0, 'monitor frame must be cancelled in the background');
+
+  now = 5000;
+  document.hidden = false;
+  listeners.get('visibilitychange')();
+  assert.equal(frames.size, 1, 'monitor should resume once the app is visible');
+
+  const [id, callback] = frames.entries().next().value;
+  frames.delete(id);
+  now += 1000;
+  callback(now);
+  assert.equal(window.__OMEGA_DIAG__.metrics.fps, 1, 'diagnostic FPS metric should still update');
+  assert.equal(frames.size, 1, 'monitor should retain its visible-screen sampling loop');
 });
