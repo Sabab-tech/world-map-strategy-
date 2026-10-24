@@ -38,6 +38,10 @@ test('v3 ministry entry is a new body-level button outside #app with an independ
   assert.doesNotMatch(html, /<link[^>]+href="omega_ministry_entry_v3\.css"/i);
   assert.match(html, /omega_ui_v2\/omega-ui-v2\.css/);
   assert.ok(html.includes('<script src="omega_ministry_entry_v3.js" defer></script>'));
+  assert.match(html, /omega_ui_v2\\/legacy-disconnect\\.css/);
+  for (const retired of ['omega_ui_system_redesign_v1.js', 'omega_ui_interaction_guard.js', 'omega_ui_button_system_v1.js']) {
+    assert.doesNotMatch(html, new RegExp('<script[^>]+src=["\\\\\\']' + retired.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\  assert.ok(html.includes('<script src="omega_ministry_entry_v3.js" defer></script>'));') + '["\\\\\\']'));
+  }
 });
 
 test('v3 styles do not inherit old navigation class and create a separate accessible tap target', () => {
@@ -56,7 +60,7 @@ test('v3 styles do not inherit old navigation class and create a separate access
   ]) assert.ok(css.includes(needle), 'missing independent button rule: ' + needle);
 });
 
-function harness({ primaryFails = false, managerFails = false } = {}) {
+function harness({ v2Fails = false } = {}) {
   const windowListeners = {};
   const calls = [];
   const attrs = {};
@@ -111,6 +115,18 @@ function harness({ primaryFails = false, managerFails = false } = {}) {
     MutationObserver: class { observe() {} },
     Game: { currentActiveCountry: 'BANGLADESH' },
     OmegaCabinetUI: { renderCabinet(country) { calls.push('render:' + country); } },
+    OmegaUIV2Integration: {
+      isEnabled() { return true; },
+      mountIntoCabinet(target) {
+        calls.push('ui-v2');
+        if (v2Fails) return { ok:false, code:'UI_V2_MOUNT_FAILED' };
+        target.style.display = 'flex'; target.style.opacity = '1';
+        target.style.visibility = 'visible'; target.style.pointerEvents = 'auto';
+        target.setAttribute('data-omega-ui-v2-active', 'true');
+        body.setAttribute('data-active-layer', '1');
+        return { ok:true, route:'government' };
+      }
+    },
     updateGlobalBackButtonVisibility() { calls.push('back-button-sync'); },
     addEventListener(type, handler, capture) { if (!windowListeners[type]) windowListeners[type] = []; windowListeners[type].push({ handler, capture }); },
     openMainMinistryView() {
@@ -142,27 +158,32 @@ function harness({ primaryFails = false, managerFails = false } = {}) {
   return { context, windowListeners, event, calls, button, cabinet, bodyClasses, attrs };
 }
 
-test('v3 window-capture route opens the cabinet and suppresses legacy handlers', () => {
+test('v3 routes exclusively through UI v2 and suppresses duplicate legacy click handlers', () => {
   const h = harness();
   assert.ok(h.windowListeners.click?.some((item) => item.capture === true), 'window capture handler registered');
   h.windowListeners.click.forEach((item) => item.handler(h.event));
   assert.equal(h.cabinet.style.display, 'flex');
   assert.equal(h.attrs['data-active-layer'], '1');
-  assert.equal(h.button.attrs['data-last-open-result'], 'opened-primary');
+  assert.equal(h.button.attrs['data-last-open-result'], 'opened-ui-v2');
+  assert.ok(h.calls.includes('ui-v2'));
+  assert.equal(h.calls.includes('primary'), false, 'must not call the legacy main-ministry route');
+  assert.equal(h.calls.some((call) => call.startsWith('manager:')), false, 'must not enter the legacy layer manager');
+  assert.equal(h.calls.some((call) => call.startsWith('render:')), false, 'must not render legacy cabinet HTML');
   assert.equal(h.event.prevented, true);
   assert.equal(h.event.stoppedImmediate, true);
   assert.equal(h.context.OMEGAGovEntryV3.audit().cabinetVisible, true);
 });
 
-test('v3 falls back to the layer manager then direct cabinet reveal if upstream routes fail', () => {
-  const h = harness({ primaryFails: true, managerFails: true });
+test('v3 fails closed when UI v2 cannot mount and never starts legacy fallbacks', () => {
+  const h = harness({ v2Fails:true });
   h.windowListeners.click.forEach((item) => item.handler(h.event));
-  assert.equal(h.cabinet.style.display, 'flex');
-  assert.equal(h.cabinet.style.pointerEvents, 'auto');
-  assert.equal(h.attrs['data-active-layer'], '1');
-  assert.equal(h.button.attrs['data-last-open-result'], 'opened-direct-fallback');
-  assert.ok(h.calls.includes('render:BANGLADESH'));
-  assert.ok(h.calls.includes('back-button-sync'));
+  assert.equal(h.cabinet.style.display, 'none');
+  assert.equal(h.cabinet.style.pointerEvents, 'none');
+  assert.equal(h.attrs['data-active-layer'], '0');
+  assert.equal(h.button.attrs['data-last-open-result'], 'failed-ui-v2-mount');
+  assert.equal(h.calls.includes('primary'), false);
+  assert.equal(h.calls.some((call) => call.startsWith('manager:')), false);
+  assert.equal(h.calls.some((call) => call.startsWith('render:')), false);
 });
 
 test('v3 hides the new entry while a ministry layer is active', () => {
