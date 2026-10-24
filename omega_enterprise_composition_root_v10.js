@@ -13,7 +13,7 @@
                 if (missing.length > 0) throw new Error("Contract Violation: Missing IDs " + missing.join(", "));
                 
                 // [FIX P1] Verify Script Load Status
-                const critical = ['leaflet.js', 'omega_kernel.js', 'presentation-engine.js'];
+                const critical = ['leaflet.js', 'omega_kernel.js'];
                 critical.forEach(src => {
                     if(window.__OMEGA_DIAG__.boot.scriptStatus[src] === 'ERROR') {
                         console.warn(`[OMEGA WARN] Script load warning for: ${src}`);

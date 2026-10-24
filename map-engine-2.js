@@ -1020,13 +1020,14 @@ Game.Map.renderGeoJSON = function(geoData) {
             var config = Game.findCountryConfig(geoName);
             var defaultColor = "#2c4235";
             if (config) defaultColor = window.getCountryColor(config.name);
+            const zoom = window.map && typeof window.map.getZoom === "function" ? window.map.getZoom() : 2.5;
             return {
-                color: "rgba(255, 255, 255, 0.85)",
-                weight: 1.2,
-                opacity: 0.9,
+                color: "#dce7df",
+                weight: zoom >= 8 ? 1.55 : (zoom >= 5 ? 1.25 : 1.05),
+                opacity: 0.96,
                 dashArray: null,
                 fillColor: defaultColor,
-                fillOpacity: 0.25
+                fillOpacity: 0.22
             };
         },
         onEachFeature: function(feature, layer) {

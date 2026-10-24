@@ -44,24 +44,23 @@ test('v3 ministry entry is a body-level UI v2 entry and retired controllers are 
   }
 });
 
-test('v3 styles do not inherit old navigation class and create a separate accessible tap target', () => {
+test('the V2 dock is the only visible government entry; the old bridge remains hidden', () => {
   const html = read('index.html');
   const start = html.indexOf('id="omega-gov-entry-v3"');
   const end = html.indexOf('</button>', start);
   assert.ok(start >= 0 && end > start);
   assert.match(html.slice(start, end), /aria-label="Open Ministries and Government"/);
-  assert.doesNotMatch(html.slice(start, end), /ui-bottom-navigation|nav-btn|btn-ministry-dock/);
+  assert.ok(html.includes('omega_ui_v2/world-command-dock.js'));
 
   const css = read('omega_ministry_entry_v3.css');
   const activeShellCss = read('omega_ui_v2/legacy-disconnect.css');
-  assert.match(activeShellCss, /#omega-gov-entry-v3\s*\{[^}]*position:\s*fixed\s*!important/s,
-    'the fallback government entry must keep its tap target when the retired stylesheet is unloaded');
-  assert.match(activeShellCss, /#omega-gov-entry-v3[^}]*touch-action:\s*manipulation\s*!important/s);
+  assert.match(activeShellCss, /Single visible navigation surface: the Atlas Command dock owns app navigation/);
+  assert.match(activeShellCss, /#omega-gov-entry-v3\s*\{[^}]*display:\s*none\s*!important;[^}]*visibility:\s*hidden\s*!important;[^}]*pointer-events:\s*none\s*!important/s);
   for (const needle of [
     '#omega-gov-entry-v3', 'position: fixed !important', 'pointer-events: auto !important',
     'touch-action: manipulation !important', 'z-index: 99998 !important',
     '#omega-ministry-entry', 'env(safe-area-inset-bottom'
-  ]) assert.ok(css.includes(needle), 'missing independent button rule: ' + needle);
+  ]) assert.ok(css.includes(needle), 'historical entry style reference missing: ' + needle);
 });
 
 function harness({ v2Fails = false } = {}) {

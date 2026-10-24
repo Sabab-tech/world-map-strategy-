@@ -855,9 +855,33 @@ var Game = window.Game = {
     },
 
     switchMapLayer(layerType) {
-        this.showNotification("MAP SPECTRUM", `MAP TERRAIN SWITCHED TO: ${layerType.toUpperCase()}`, "info");
-        
-        if (!window.map || typeof L === 'undefined') return;
+        if (!window.map || typeof L === 'undefined') return false;
+
+        if (layerType === 'offline-hybrid') {
+            if (window.OmegaOfflineHybridAtlas && typeof window.OmegaOfflineHybridAtlas.activate === 'function') {
+                return window.OmegaOfflineHybridAtlas.activate();
+            }
+            return false;
+        }
+
+        const offlineShell = Boolean(window.OMEGA_ANDROID_OFFLINE)
+            || (typeof navigator !== 'undefined' && navigator.onLine === false);
+        if (offlineShell && layerType !== 'resources') {
+            this.showNotification(
+                "ONLINE MAP UNAVAILABLE",
+                "This map layer needs a network connection. Select Offline Map to activate the local atlas.",
+                "warning"
+            );
+            return false;
+        }
+
+        this.showNotification("MAP SPECTRUM", `MAP TERRAIN SWITCHED TO: ${String(layerType || '').toUpperCase()}`, "info");
+
+        // Resource visibility is an overlay toggle, not a basemap replacement.
+        if (layerType === 'resources') {
+            if (Game.Map && Game.Map.toggleResourceOverlay) Game.Map.toggleResourceOverlay();
+            return true;
+        }
 
         if (window.currentMapTileLayer) {
             window.map.removeLayer(window.currentMapTileLayer);
@@ -879,31 +903,15 @@ var Game = window.Game = {
             attr = 'OpenTopoMap Weather Grid';
         }
 
-        const offlineShell = Boolean(window.OMEGA_ANDROID_OFFLINE)
-            || (typeof navigator !== 'undefined' && navigator.onLine === false);
-        if (offlineShell) {
-            // Never request online map tiles from the APK or an explicitly offline browser.
-            window.currentMapTileLayer = null;
-            if (window.OmegaOfflineHybridAtlas && typeof window.OmegaOfflineHybridAtlas.activate === 'function') {
-                window.OmegaOfflineHybridAtlas.activate();
-            }
-        } else {
-            window.currentMapTileLayer = L.tileLayer(tileUrl, {
-                attribution: attr,
-                maxZoom: 18,
-                opacity: 0.95,
-                keepBuffer: 2,
-                updateWhenIdle: true
-            }).addTo(window.map);
+        window.currentMapTileLayer = L.tileLayer(tileUrl, {
+            attribution: attr, maxZoom: 18, opacity: 0.95,
+            keepBuffer: 1, updateWhenIdle: true, updateWhenZooming: false
+        }).addTo(window.map);
+        if (window.currentMapTileLayer && typeof window.currentMapTileLayer.bringToBack === 'function') {
             window.currentMapTileLayer.bringToBack();
         }
-        if (layerType === "resources") {
-            if (Game.Map && Game.Map.toggleResourceOverlay) {
-                Game.Map.toggleResourceOverlay();
-            }
-        }
+        return true;
     },
-
     executeExecutiveAction(action) {
         this.showNotification("EXECUTIVE DIRECTIVE", `Directive initiated: ${action.toUpperCase()}`, "info");
     },
@@ -1014,8 +1022,25 @@ window.map = L.map('map', {
     zoomControl: false
 }).setView([20, 0], 2.5);
 
-// The default basemap is the local offline atlas. Remote raster layers are opt-in.
+// Online satellite imagery is the default only when network access is available.
+// Android/offline shells stay local and activate the offline atlas only on explicit selection.
+window.currentMapTileLayer = null;
 window.satelliteLayer = null;
+(function initializeOnlineBasemap() {
+    const offlineShell = Boolean(window.OMEGA_ANDROID_OFFLINE)
+        || (typeof navigator !== 'undefined' && navigator.onLine === false);
+    if (offlineShell || typeof L.tileLayer !== 'function') return;
+    window.currentMapTileLayer = L.tileLayer(
+        'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+        {
+            attribution: 'Esri World Imagery Satellite', maxZoom: 18, opacity: 0.95,
+            keepBuffer: 1, updateWhenIdle: true, updateWhenZooming: false
+        }
+    ).addTo(window.map);
+    if (window.currentMapTileLayer && typeof window.currentMapTileLayer.bringToBack === 'function') {
+        window.currentMapTileLayer.bringToBack();
+    }
+})();
 
 window.hubsGroupLayer = L.layerGroup().addTo(window.map);
 
