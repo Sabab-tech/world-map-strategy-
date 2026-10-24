@@ -10,13 +10,23 @@ const notApplicable = (canonical.sites || []).filter(row =>
 assert.equal(notApplicable.length, 4, 'the canonical registry must retain four explicit non-applicable country coverage records');
 assert.deepEqual(notApplicable.map(row => row.countryId).sort(), ['LIE','MCO','SMR','VAT']);
 
-const sandbox = {
-  console,
-  OmegaResourceSiteCanonicalCatalogData: { datasetId: 'TEST_CANONICAL_REGISTRY', sites: notApplicable }
-};
-sandbox.Omega = { ResourceSiteCanonicalCatalogData: sandbox.OmegaResourceSiteCanonicalCatalogData };
+const sandbox = { console };
+sandbox.Omega = {};
 sandbox.globalThis = sandbox;
 vm.createContext(sandbox);
+new vm.Script(read('omega_resource_site_integrity_v1.js'), {
+  filename: 'omega_resource_site_integrity_v1.js'
+}).runInContext(sandbox);
+const integrity = sandbox.Omega.ResourceSiteIntegrity;
+assert.ok(integrity && typeof integrity.buildSimulationPipelineProfile === 'function');
+const profiledNotApplicable = notApplicable.map(row =>
+  integrity.buildSimulationPipelineProfile(integrity.normalizeSiteRecord(row), { year: 2026 })
+);
+sandbox.OmegaResourceSiteCanonicalCatalogData = {
+  datasetId: 'TEST_CANONICAL_REGISTRY',
+  sites: profiledNotApplicable
+};
+sandbox.Omega.ResourceSiteCanonicalCatalogData = sandbox.OmegaResourceSiteCanonicalCatalogData;
 new vm.Script(read('omega_ui_v2/screens/resource-ministry.js'), {
   filename: 'omega_ui_v2/screens/resource-ministry.js'
 }).runInContext(sandbox);
