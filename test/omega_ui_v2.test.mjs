@@ -383,7 +383,9 @@ test('production shell loads UI v2 and excludes retired UI controllers from the 
   assert.ok(sw.includes('omega-offline-atlas-shell-v35'));
   assert.ok(entry.includes('OmegaUIV2Integration'));
   assert.ok(entry.includes('opened-ui-v2'));
-  assert.ok(!/openMainMinistryView|OmegaLayerManager\\.setLayer|renderCabinet\\(/.test(entry));
+  assert.equal(entry.includes('openMainMinistryView'), false);
+  assert.equal(entry.includes('OmegaLayerManager.setLayer'), false);
+  assert.equal(entry.includes('renderCabinet('), false);
   for (const retired of ['omega_ui_system_redesign_v1.js','omega_ui_interaction_guard.js','omega_ui_button_system_v1.js']) {
     assert.equal(index.includes('src="' + retired + '"'),false, retired + ' must not load');
     assert.equal(sw.includes('"./' + retired + '"'),false, retired + ' must not be pre-cached');
