@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import '../omega_ui_v2/navigation-registry.js';
+import '../omega_ui_v2/ministry-visual-registry.js';
 import '../omega_ui_v2/screens/police-fleet.js';
 import '../omega_ui_v2/screens/resource-ministry.js';
 import '../omega_ui_v2/screens/government.js';
@@ -14,7 +15,7 @@ import '../omega_ui_v2/screens/economy.js';
 import '../omega_ui_v2/app.js';
 import '../omega_ui_v2/integration.js';
 import '../omega_ui_v2/world-command-dock.js';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 
 test('Government navigation has exactly Executive Ministry and All Ministries', () => {
   const nav = globalThis.OmegaUIV2Navigation;
@@ -25,13 +26,30 @@ test('Government navigation has exactly Executive Ministry and All Ministries', 
   assert.equal(nav.normalizeGovernmentDestination('overview'), 'executive-ministry');
 });
 
-test('registry exposes only confirmed regular ministry IDs while documenting count mismatch', () => {
+test('registry exposes 18 canonical ministry destinations with local visual assets', () => {
   const nav = globalThis.OmegaUIV2Navigation;
-  assert.equal(nav.ministryIds.length, 17);
-  assert.equal(new Set(nav.ministryIds).size, 17);
-  assert.equal(nav.unresolvedDirectoryLabelCount, 18);
-  assert.ok(nav.unresolvedCountNote.includes('reconcile'));
-  assert.equal(nav.ministryIds.includes('cabinet_council'), false);
+  const visuals = globalThis.OmegaUIV2MinistryVisualRegistry;
+  assert.equal(nav.ministryIds.length, 18);
+  assert.equal(new Set(nav.ministryIds).size, 18);
+  assert.equal(nav.visibleRegularMinistryCount, 17);
+  assert.equal(nav.visibleMinistryCount, 18);
+  assert.equal(nav.unresolvedDirectoryLabelCount, 0);
+  assert.ok(nav.ministryIds.includes('cabinet_council'));
+  assert.equal(visuals.count, 18);
+  assert.deepEqual(visuals.ids, nav.ministryIds);
+  assert.equal(visuals.get('defense').logo, 'assets/Military_Ministry_Logo_Concept_A.png.jpg');
+  assert.equal(visuals.get('foreign_affairs').logo, 'assets/IMG_20260703_180105.jpg');
+  assert.ok(visuals.get('intelligence_cyber').image.includes('China_Military_Facilities_What_Satellites_Reveal'));
+  assert.ok(visuals.get('intelligence_cyber').gallery.includes('assets/images (14).jpeg'));
+});
+
+test('all ministry cover photos, gallery assets and uploaded logos exist in the repository', () => {
+  const visuals = globalThis.OmegaUIV2MinistryVisualRegistry;
+  for (const visual of visuals.list()) {
+    for (const asset of [visual.image, visual.logo, ...(visual.gallery || [])].filter(Boolean)) {
+      assert.ok(existsSync(new URL('../' + asset, import.meta.url)), visual.title + ' is missing asset ' + asset);
+    }
+  }
 });
 
 test('police fleet view model reads all 15 canonical profiles and preserves missing values', () => {
@@ -114,7 +132,7 @@ test('resource view model keeps simulated reserve out of reported reserve', () =
 });
 
 
-test('Government directory never duplicates the Executive Cabinet as an ordinary ministry', () => {
+test('Government directory includes every canonical cabinet record', () => {
   globalThis.OmegaCabinetUI = {
     ministriesDatabase: {
       cabinet_council: { id:'cabinet_council', title:'Executive Cabinet', category:'governance' },
@@ -123,8 +141,8 @@ test('Government directory never duplicates the Executive Cabinet as an ordinary
     }
   };
   const rows = globalThis.OmegaUIV2Government.getMinistryRows();
-  assert.deepEqual(rows.map((row) => row.id), ['interior_security', 'energy_mining']);
-  assert.equal(rows.some((row) => row.id === 'cabinet_council'), false);
+  assert.deepEqual(rows.map((row) => row.id), ['cabinet_council', 'interior_security', 'energy_mining']);
+  assert.equal(rows.length, 3);
 });
 
 test('Home Affairs provides all six planned sections and does not create a separate recruitment destination', () => {
@@ -426,14 +444,27 @@ test('Government exposes emblems, minister recruitment and a stable future portr
   const root = { classList:{ add(){} }, addEventListener(){}, querySelector(){ return null; }, querySelectorAll(){ return []; }, innerHTML:'', contains(){ return true; } };
   try {
     const rendered = globalThis.OmegaUIV2Government.render(root, { view:'all-ministries', countryId:'BGD' });
-    assert.equal(rendered.ministryCount, 2);
-    assert.match(root.innerHTML, /omega-v2-minister-table/);
+    assert.equal(rendered.ministryCount, 3);
+    assert.match(root.innerHTML, /omega-v2-ministry-grid/);
+    assert.match(root.innerHTML, /data-omega-v2-ministry-rotator/);
     assert.match(root.innerHTML, /data-omega-v2-minister-portrait-slot/);
     assert.match(root.innerHTML, /Recruit \/ Replace/);
     assert.match(root.innerHTML, /<svg/);
+    assert.ok(root.innerHTML.includes('assets/ui-photos/bangladesh-police-headquarters.webp') || root.innerHTML.includes('assets/economy_bg.jpg.jpg'));
   } finally {
     globalThis.OmegaCabinetUI = previousCabinet;
   }
+});
+
+test('Universal navigation keeps the World tab internal and supplies a separate exit action', () => {
+  const appSource = readFileSync(new URL('../omega_ui_v2/app.js', import.meta.url), 'utf8');
+  const bridgeSource = readFileSync(new URL('../omega_ui_v2/integration.js', import.meta.url), 'utf8');
+  assert.ok(appSource.includes('data-omega-v2-jump-ministry'));
+  assert.ok(appSource.includes('data-omega-v2-jump-route'));
+  assert.ok(appSource.includes('data-omega-v2-exit'));
+  assert.ok(appSource.includes('historySnapshot(state)'));
+  assert.equal(appSource.includes("destination === 'map' && stateFor(root).options"), false);
+  assert.equal(bridgeSource.includes('renderMap:function () { return closeToWorldMap(); }'), false);
 });
 
 test('Finance has six separate data-backed tabs', () => {

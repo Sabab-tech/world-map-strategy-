@@ -8,12 +8,11 @@ import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const read = (name) => fs.readFileSync(path.join(root, name), 'utf8');
 
-test('redesign styles load after every legacy UI stylesheet', () => {
+test('legacy redesign CSS remains stored while the v2 visual shell is active', () => {
   const html = read('index.html');
-  const css = html.indexOf('omega_ui_system_redesign_v1.css');
-  assert.ok(css >= 0, 'the additive redesign stylesheet must be linked');
-  assert.ok(css < html.indexOf('</head>'), 'the stylesheet must load in the document head');
-  assert.ok(css > html.indexOf('omega_ministry_layout_repair_v1.css'), 'redesign must be the final style authority');
+  assert.ok(fs.existsSync(path.join(root, 'omega_ui_system_redesign_v1.css')), 'legacy redesign CSS file remains available');
+  assert.doesNotMatch(html, /<link[^>]+href="omega_ui_system_redesign_v1\.css"/i);
+  assert.match(html, /<link[^>]+href="omega_ui_v2\/omega-ui-v2\.css"/);
 });
 
 test('redesign runtime loads after gameplay runtimes without replacing them', () => {

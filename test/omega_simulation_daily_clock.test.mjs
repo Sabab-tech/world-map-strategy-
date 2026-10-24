@@ -265,7 +265,9 @@ test('index, finance, bank and offline shell use the daily lifecycle assets', ()
   assert.match(lifecycle, /event\.stopImmediatePropagation\(\)/,
     'the unified speed control must prevent legacy click handlers from overwriting the authoritative clock speed');
   assert.match(index, /src="omega_game_lifecycle_runtime_v1\.js" defer/);
-  assert.match(index, /href="omega_game_lifecycle_runtime_v1\.css"/);
+  assert.ok(fs.existsSync(path.join(root, 'omega_game_lifecycle_runtime_v1.css')), 'legacy lifecycle CSS stays on disk');
+  assert.doesNotMatch(index, /<link[^>]+href="omega_game_lifecycle_runtime_v1\.css"/i);
+  assert.match(index, /<link[^>]+href="omega_ui_v2\/omega-ui-v2\.css"/);
   assert.ok(index.indexOf('src="omega_simulation_runtime.js"') < index.indexOf('src="map-engine-1.js"'),
     'the canonical clock bridge must load before map and ministry runtime initialization');
   assert.ok(index.indexOf('src="omega_simulation_runtime.js"') < index.indexOf('src="omega_ministry_registry.js"'),
@@ -286,7 +288,8 @@ test('index, finance, bank and offline shell use the daily lifecycle assets', ()
   const offlineShellVersion = Number(cacheVersionMatch?.[1] || 0);
   assert.ok(offlineShellVersion >= 23, 'the offline shell cache must invalidate stale UI assets after the country overview changes');
   assert.match(serviceWorker, /omega_game_lifecycle_runtime_v1\.js/);
-  assert.match(serviceWorker, /omega_game_lifecycle_runtime_v1\.css/);
+  assert.doesNotMatch(serviceWorker, /"\.\/omega_game_lifecycle_runtime_v1\.css"/, 'legacy lifecycle CSS is not preloaded');
+  assert.match(serviceWorker, /"\.\/omega_ui_v2\/omega-ui-v2\.css"/);
   assert.match(serviceWorker, /resource_industrial_catalog_v1\.json/);
   assert.match(core, /registerTurnParticipant\(id,handler,options=\{\}\)/);
   assert.match(core, /installEventLedgerTurnBridge/);

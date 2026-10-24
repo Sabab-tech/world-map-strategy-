@@ -42,10 +42,13 @@ const expandedWdiMetrics = {
 
 test('country sector UI is wired into the existing page and offline app shell', () => {
  const html=read('index.html'),sw=read('omega-offline-map-sw.js');
- assert.match(html,/omega_country_sector_profile_ui_v1\.css/);
+ assert.ok(read('omega_country_sector_profile_ui_v1.css').length > 0, 'legacy sector CSS file stays on disk');
+ assert.doesNotMatch(html,/<link[^>]+href="omega_country_sector_profile_ui_v1\.css"/i);
+ assert.match(html,/<link[^>]+href="omega_ui_v2\/omega-ui-v2\.css"/);
  assert.match(html,/omega_country_sector_profile_ui_v1\.js/);
  assert.match(html,/omega_country_overview_ministry_ui_v1\.js/);
- assert.match(sw,/omega_country_sector_profile_ui_v1\.css/);
+ assert.doesNotMatch(sw,/"\.\/omega_country_sector_profile_ui_v1\.css"/,'legacy sector CSS is not preloaded');
+ assert.match(sw,/"\.\/omega_ui_v2\/omega-ui-v2\.css"/);
  assert.match(sw,/omega_country_sector_profile_ui_v1\.js/);
  assert.match(sw,/country_sector_profiles_v1\.json/);
  assert.match(sw,/country_sector_profile_schema_v1\.json/);

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import vm from 'node:vm';
 
@@ -259,7 +259,9 @@ test('all nine Finance section buttons respond to click delegation',async()=>{
 });
 
 test('ministry viewport layout confines scrolling and keeps Finance navigation compact',()=>{
-  assert.match(indexHtml,/omega_ministry_layout_repair_v1\.css/);
+  assert.ok(existsSync('omega_ministry_layout_repair_v1.css'), 'legacy layout CSS file remains present');
+  assert.doesNotMatch(indexHtml, /<link[^>]+href="omega_ministry_layout_repair_v1\.css"/i);
+  assert.match(indexHtml, /<link[^>]+href="omega_ui_v2\/omega-ui-v2\.css"/);
   assert.match(layoutRepairCss,/height: 100dvh !important/);
   assert.match(layoutRepairCss,/overflow: hidden !important/);
   assert.match(layoutRepairCss,/min-height: 0 !important/);

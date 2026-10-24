@@ -7,11 +7,17 @@ import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const read = (name) => fs.readFileSync(path.join(root, name), 'utf8');
 
-test('unified visual system loads after legacy UI styles', () => {
+test('new UI loads only its stylesheet while legacy CSS files remain present but inactive', () => {
   const html = read('index.html');
-  const legacy = html.indexOf('omega_ui_interaction_fix_v2.css');
-  const visual = html.indexOf('omega_ui_visual_system_v1.css');
-  assert.ok(legacy >= 0 && visual > legacy, 'visual system must override older CSS');
+  const linkedStylesheets = [...html.matchAll(/<link\b(?=[^>]*rel=["']stylesheet["'])[^>]*href=["']([^"']+\.css)["'][^>]*>/gi)].map((m) => m[1]);
+  assert.ok(linkedStylesheets.includes('leaflet.css'));
+  assert.ok(linkedStylesheets.includes('style.css'));
+  assert.ok(linkedStylesheets.includes('offline-hybrid-map.css'));
+  assert.ok(linkedStylesheets.includes('omega_ui_v2/omega-ui-v2.css'));
+  for (const oldCss of ['omega_ui_interaction_fix_v2.css','omega_ui_visual_system_v1.css','omega_ui_system_redesign_v1.css','omega_ui_photo_asset_system_v1.css','omega_ui_button_system_v1.css']) {
+    assert.equal(linkedStylesheets.includes(oldCss), false, oldCss + ' must not load from index.html');
+    assert.ok(fs.existsSync(path.join(root, oldCss)), oldCss + ' must remain on disk');
+  }
 });
 
 test('visual system uses stable surfaces and low-overhead rendering', () => {

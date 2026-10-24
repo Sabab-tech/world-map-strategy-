@@ -14,7 +14,9 @@ const icons = iconContext.window.OMEGA_ICON_SYSTEM_V1;
 
 test('custom icon system is wired locally before UI renderers and has no remote runtime dependency', () => {
   const html = read('index.html');
-  assert.match(html, /href="omega_icon_system_v1\.css"/);
+  assert.doesNotMatch(html, /<link[^>]+href="omega_icon_system_v1\.css"/i, 'legacy icon stylesheet remains inactive');
+  assert.ok(fs.existsSync(path.join(root, 'omega_icon_system_v1.css')), 'legacy icon CSS file remains on disk');
+  assert.match(html, /omega_ui_v2\/omega-ui-v2\.css/);
   assert.match(html, /src="omega_icon_system_v1\.js"/);
   assert.ok(html.indexOf('omega_icon_system_v1.css') < html.indexOf('</head>'));
   assert.ok(html.indexOf('omega_icon_system_v1.js') < html.indexOf('map-engine-1.js'));

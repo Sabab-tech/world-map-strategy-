@@ -287,3 +287,87 @@ body.omega-atlas-dock-ready .ui-bottom-navigation{display:none!important;}
 .omega-v2-police-fleet>.omega-v2-fleet-hero{margin:12px 0 16px;}
 .omega-v2-fleet-hero img{aspect-ratio:16/7;max-height:280px;object-fit:cover;}
 @media(max-width:390px){.omega-v2-factory-art .omega-v2-factory-photo img{max-height:150px;}.omega-v2-police-fleet>.omega-v2-fleet-hero img{aspect-ratio:16/9;max-height:200px;}}
+
+
+/* Ministry directory refresh: responsive visual cards and universal navigation. */
+.omega-v2-app-header{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 12px;background:#081626;border-bottom:1px solid #294158;}
+.omega-v2-app-header>.omega-v2-app-brand{flex:0 0 auto;}
+.omega-v2-app-header>.omega-v2-country-select,.omega-v2-app-header>.omega-v2-country-badge{min-width:92px;max-width:170px;flex:0 1 auto;}
+.omega-v2-button--exit{background:#30251d;border-color:#8c6245;color:#ffddb3;min-width:58px;}
+.omega-v2-route-switcher{position:relative;flex:0 1 auto;z-index:35;}
+.omega-v2-route-switcher>summary{min-height:40px;display:flex;align-items:center;justify-content:center;padding:8px 10px;border:1px solid #3e6685;border-radius:9px;background:#10283c;color:#edf3fa;font-size:12px;font-weight:750;cursor:pointer;list-style:none;white-space:nowrap;}
+.omega-v2-route-switcher>summary::-webkit-details-marker{display:none;}
+.omega-v2-route-switcher[open]>summary{border-color:#72b7ea;}
+.omega-v2-route-menu{position:absolute;top:calc(100% + 8px);left:0;width:88vw;max-width:440px;max-height:70vh;overflow:auto;padding:12px;background:#0a1929;border:1px solid #35516c;border-radius:13px;box-shadow:0 14px 34px rgba(0,0,0,.45);}
+.omega-v2-route-menu section+section{border-top:1px solid #294158;margin-top:10px;padding-top:10px;}
+.omega-v2-route-menu h2{margin:0 0 8px;color:#91acc5;font-size:10px;letter-spacing:.12em;}
+.omega-v2-route-menu-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;}
+.omega-v2-route-link{min-width:0;min-height:40px;padding:7px 9px;text-align:left;border:1px solid #294158;border-radius:8px;background:#102338;color:#dce8f4;font:inherit;font-size:11px;overflow-wrap:anywhere;cursor:pointer;}
+.omega-v2-route-link.is-current{border-color:#72b7ea;color:#fff;background:#173e58;}
+.omega-v2-ministry-directory{margin-top:10px;}
+.omega-v2-ministry-rotator{display:grid;grid-template-columns:minmax(0,1.02fr) minmax(0,1fr);overflow:hidden;margin:8px 0 16px;border:1px solid #36536d;border-radius:16px;background:linear-gradient(125deg,#10283b,#0a1726 68%);box-shadow:0 10px 25px rgba(0,0,0,.16);}
+.omega-v2-ministry-rotator-image{position:relative;min-width:0;min-height:210px;background:#071321;}
+.omega-v2-ministry-rotator-photo{display:block;width:100%;height:100%;min-height:210px;max-height:300px;object-fit:cover;object-position:center;opacity:.95;}
+.omega-v2-ministry-rotator-kicker{position:absolute;left:10px;top:10px;padding:5px 8px;border-radius:999px;background:rgba(5,16,28,.82);border:1px solid rgba(126,175,209,.4);color:#dce8f4;font-size:9px;font-weight:800;letter-spacing:.08em;}
+.omega-v2-ministry-rotator-copy{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:8px;min-width:0;padding:16px;}
+.omega-v2-ministry-rotator-category{color:#e1c077;font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;}
+.omega-v2-ministry-rotator-copy h2{margin:0;color:#f0f6fd;font-size:24px;line-height:1.2;overflow-wrap:anywhere;}
+.omega-v2-ministry-rotator-copy p{margin:0;color:#aabed1;font-size:12px;}
+.omega-v2-ministry-rotator-copy>.omega-v2-actions{gap:6px;margin-top:2px;}
+.omega-v2-ministry-rotator-copy .omega-v2-button{min-height:38px;padding:6px 9px;font-size:11px;}
+.omega-v2-ministry-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;}
+.omega-v2-ministry-card{display:flex;min-width:0;flex-direction:column;overflow:hidden;border:1px solid #294158;border-radius:14px;background:linear-gradient(160deg,#11273a,#091724 78%);box-shadow:0 5px 16px rgba(0,0,0,.12);}
+.omega-v2-ministry-card[hidden]{display:none!important;}
+.omega-v2-ministry-card-media{position:relative;display:block;width:100%;height:150px;padding:0;aspect-ratio:16/8.5;border:0;border-bottom:1px solid #294158;background:#071321;overflow:hidden;text-align:left;cursor:pointer;}
+.omega-v2-ministry-card-media:focus-visible{outline:2px solid #72b7ea;outline-offset:-3px;}
+.omega-v2-ministry-cover{display:block;width:100%;height:100%;object-fit:cover;object-position:center;transition:transform .18s ease;}
+.omega-v2-ministry-card-media:hover .omega-v2-ministry-cover{transform:scale(1.025);}
+.omega-v2-ministry-category{position:absolute;left:8px;bottom:8px;max-width:calc(100% - 16px);padding:4px 7px;border:1px solid rgba(151,190,219,.35);border-radius:999px;background:rgba(4,15,27,.86);color:#d8e7f5;font-size:9px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;}
+.omega-v2-ministry-card-content{display:flex;flex:1;flex-direction:column;gap:9px;padding:11px;}
+.omega-v2-ministry-card-heading{display:flex;align-items:center;gap:9px;min-width:0;}
+.omega-v2-ministry-logo{display:flex;flex:0 0 42px;align-items:center;justify-content:center;width:42px;height:42px;overflow:hidden;border:1px solid #3b5269;border-radius:10px;background:#091725;color:#85b9db;}
+.omega-v2-ministry-logo .omega-v2-ministry-icon{display:flex;width:24px;height:24px;align-items:center;justify-content:center;}
+.omega-v2-ministry-logo svg{width:24px;height:24px;}
+.omega-v2-ministry-logo-image{display:block;width:100%;height:100%;object-fit:cover;}
+.omega-v2-ministry-heading-copy{min-width:0;}
+.omega-v2-ministry-heading-copy h3{margin:0;color:#edf4fb;font-size:13px;line-height:1.3;overflow-wrap:anywhere;}
+.omega-v2-ministry-heading-copy p{margin:4px 0 0;color:#9fb2c7;font-size:10px;line-height:1.4;overflow-wrap:anywhere;}
+.omega-v2-ministry-card-meta{display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap;}
+.omega-v2-ministry-person{display:flex;align-items:center;gap:6px;min-width:0;color:#aabed1;font-size:9px;}
+.omega-v2-ministry-person>span{max-width:118px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.omega-v2-ministry-card .omega-v2-minister-portrait{width:32px;height:32px;min-width:32px;margin:0;overflow:hidden;border-radius:50%;}
+.omega-v2-ministry-card .omega-v2-minister-portrait-placeholder{font-size:5px;line-height:1.05;}
+.omega-v2-ministry-card .omega-v2-minister-portrait small{display:none;}
+.omega-v2-ministry-gallery{display:flex;gap:5px;max-height:52px;overflow:hidden;}
+.omega-v2-ministry-gallery-image{width:calc(50% - 3px);height:48px;object-fit:cover;border:1px solid #294158;border-radius:6px;}
+.omega-v2-ministry-actions{margin-top:auto;gap:6px;}
+.omega-v2-ministry-actions .omega-v2-button{flex:1 1 100px;min-height:38px;padding:6px 8px;font-size:10px;}
+.omega-v2-ministry-image-placeholder{display:flex;align-items:center;justify-content:center;width:100%;height:100%;min-height:90px;color:#91acc5;font-size:10px;letter-spacing:.1em;background:#0b1b2b;}
+@media(max-width:900px){.omega-v2-ministry-grid{grid-template-columns:repeat(2,minmax(0,1fr));}.omega-v2-ministry-rotator{grid-template-columns:minmax(0,1fr) minmax(0,1fr);}}
+@media(max-width:600px){
+ .omega-v2-app-header{gap:6px;padding:7px 9px;}
+ .omega-v2-app-brand{order:0;flex:1 1 auto!important;}
+ .omega-v2-route-switcher{order:1;flex:0 0 auto;}
+ .omega-v2-route-switcher>summary{min-height:36px;padding:6px 8px;font-size:11px;}
+ .omega-v2-app-header>.omega-v2-country-select,.omega-v2-app-header>.omega-v2-country-badge{order:2;flex:1 1 110px;max-width:none;min-height:36px;}
+ .omega-v2-app-header>.omega-v2-button--exit{order:3;min-height:36px;padding:5px 8px;}
+ .omega-v2-app-header>[data-omega-v2-back]{order:0;min-height:36px;padding:5px 8px;}
+ .omega-v2-route-menu{left:auto;right:0;width:92vw;max-width:390px;max-height:65vh;}
+ .omega-v2-ministry-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
+ .omega-v2-ministry-card-content{padding:8px;gap:7px;}
+ .omega-v2-ministry-card-heading{gap:6px;align-items:flex-start;}
+ .omega-v2-ministry-logo{flex-basis:34px;width:34px;height:34px;border-radius:8px;}
+ .omega-v2-ministry-heading-copy h3{font-size:12px;}
+ .omega-v2-ministry-heading-copy p{font-size:9px;}
+ .omega-v2-ministry-card-media{height:138px;aspect-ratio:4/3;}
+ .omega-v2-ministry-rotator{grid-template-columns:1fr;}
+ .omega-v2-ministry-rotator-image,.omega-v2-ministry-rotator-photo{min-height:0;height:auto;max-height:none;aspect-ratio:16/8;}
+ .omega-v2-ministry-rotator-copy{padding:12px;}
+ .omega-v2-ministry-rotator-copy h2{font-size:21px;}
+ .omega-v2-ministry-rotator-copy .omega-v2-actions .omega-v2-button{flex:1 1 auto;}
+ .omega-v2-ministry-gallery-image{height:38px;}
+ .omega-v2-ministry-person>span{max-width:68px;}
+}
+@media(max-width:360px){.omega-v2-ministry-grid{grid-template-columns:1fr;}.omega-v2-route-menu-grid{grid-template-columns:1fr;}.omega-v2-ministry-card-media{height:160px;aspect-ratio:16/8;}}
+@media(hover:none),(pointer:coarse){.omega-v2-ministry-cover{transition:none;}}
+@media(prefers-reduced-motion:reduce){.omega-v2-ministry-cover{transition:none!important;}.omega-v2-ministry-rotator *{scroll-behavior:auto!important;}}

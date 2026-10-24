@@ -25,7 +25,9 @@ test('the deployed HTML loads factory visuals before the Resource Command Center
   const commandCenterTag = html.indexOf('src="omega_resource_command_center_ui_v1.js"');
   assert.ok(visual >= 0, 'factory visual runtime script must be loaded');
   assert.ok(commandCenterTag > visual, 'factory visual runtime must load before the UI that renders its icons');
-  assert.match(html, /href="omega_factory_visual_catalog_v1\.css"/, 'factory visual styles must be loaded');
+  assert.ok(fs.existsSync('omega_factory_visual_catalog_v1.css'), 'legacy factory stylesheet stays on disk');
+  assert.doesNotMatch(html, /<link[^>]+href="omega_factory_visual_catalog_v1\.css"/i, 'legacy factory stylesheet remains inactive');
+  assert.match(html, /omega_ui_v2\/omega-ui-v2\.css/);
   assert.match(commandCenter, /g\.OmegaFactoryVisualCatalog/, 'factory UI must use the visual catalog API');
   assert.match(commandCenter, /function panelIndustrial/, 'the My Factories panel renderer must exist');
   assert.match(commandCenter, /function panelProcessing/, 'the Production Lines panel renderer must exist');

@@ -149,13 +149,15 @@ test("runtime composition root executes in the ordered deferred script queue", (
 test("browser shell resources are cached locally for offline relaunch", () => {
   assert.match(html, /navigator\.serviceWorker\.register\('\.\/omega-offline-map-sw\.js'/);
   assert.match(serviceWorker, /CORE_ASSETS/);
+  assert.match(serviceWorker, /\.\/omega_ui_v2\/omega-ui-v2\.css/);
+  assert.match(serviceWorker, /\.\/omega_ui_v2\/ministry-visual-registry\.js/);
   assert.match(serviceWorker, /omega_finance_ministry_runtime_v1\.js/);
-  assert.match(serviceWorker, /omega_finance_ministry_v1\.css/);
+  assert.doesNotMatch(serviceWorker, /"\.\/omega_finance_ministry_v1\.css"/, 'legacy finance CSS is not eagerly cached');
   assert.match(serviceWorker, /economy_global_profiles_v1\.json/);
   assert.match(serviceWorker, /finance_runtime_rules_v1\.json/);
   assert.match(serviceWorker, /finance_sector_registry_v1\.json/);
   assert.match(serviceWorker, /omega_macro_stability_runtime_v1\.js/);
-  assert.match(serviceWorker, /omega_macro_stability_v1\.css/);
+  assert.doesNotMatch(serviceWorker, /"\.\/omega_macro_stability_v1\.css"/, 'legacy stability CSS is not eagerly cached');
   assert.match(serviceWorker, /economy_raw_financial_data_v2\.json/);
   assert.match(serviceWorker, /finance_macro_stability_rules_v1\.json/);
   assert.match(serviceWorker, /omega-offline-atlas-shell-v\d+/);
@@ -163,9 +165,9 @@ test("browser shell resources are cached locally for offline relaunch", () => {
   assert.ok(activeCache, 'service worker must expose one explicit, versioned app-shell cache name');
   assert.match(serviceWorker, /key !== CACHE_NAME/,
     'activation must preserve the current shell cache while pruning older versions');
-  assert.match(serviceWorker, /omega_ui_system_redesign_v1[.]css/);
+  assert.doesNotMatch(serviceWorker, /"\.\/omega_ui_system_redesign_v1\.css"/, 'legacy redesign CSS is not eagerly cached');
   assert.match(serviceWorker, /omega_ui_system_redesign_v1[.]js/);
-  assert.match(serviceWorker, /omega_ui_button_system_v1[.]css/);
+  assert.doesNotMatch(serviceWorker, /"\.\/omega_ui_button_system_v1\.css"/, 'legacy button CSS is not eagerly cached');
   assert.match(serviceWorker, /omega_ui_button_system_v1[.]js/);
   assert.match(serviceWorker, /omega_home_ministry_country_police_baseline_v1[.]json/);
   assert.match(serviceWorker, /omega_home_ministry_police_operations_ui_v1[.]js/);
