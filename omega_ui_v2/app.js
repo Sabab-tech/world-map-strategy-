@@ -307,6 +307,24 @@
           else { exitState.route = 'map'; exitState.ministryId = null; render(root); }
           return;
         }
+        // Root-level fallback keeps ministry navigation working even if a
+        // screen-specific delegated handler is missing or is re-mounted late.
+        var openMinistryButton = target.closest('[data-omega-v2-open-ministry]');
+        if (openMinistryButton && root.contains(openMinistryButton)) {
+          openMinistry(root, openMinistryButton.getAttribute('data-omega-v2-open-ministry'));
+          return;
+        }
+        var detailRouteButton = target.closest('[data-omega-v2-detail-navigate]');
+        if (detailRouteButton && root.contains(detailRouteButton)) {
+          navigate(root, detailRouteButton.getAttribute('data-omega-v2-detail-navigate'));
+          return;
+        }
+        var ministrySectionButton = target.closest('[data-omega-v2-ministry-section]');
+        if (ministrySectionButton && root.contains(ministrySectionButton)) {
+          stateFor(root).section = ministrySectionButton.getAttribute('data-omega-v2-ministry-section') || 'dashboard';
+          render(root);
+          return;
+        }
         var jumpMinistry = target.closest('[data-omega-v2-jump-ministry]');
         if (jumpMinistry && root.contains(jumpMinistry)) { openMinistry(root, jumpMinistry.getAttribute('data-omega-v2-jump-ministry')); return; }
         var jumpRoute = target.closest('[data-omega-v2-jump-route]');
