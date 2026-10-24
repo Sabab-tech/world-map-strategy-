@@ -143,3 +143,12 @@ body[data-active-layer]:not([data-active-layer="0"]) #omega-gov-entry-v3 {
     padding: 0 13px !important;
   }
 }
+
+
+/* Single visible navigation surface: the Atlas Command dock owns app navigation.
+   Retain the old entry node and bridge for compatibility, but do not paint its duplicate button during boot. */
+#omega-gov-entry-v3 {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}

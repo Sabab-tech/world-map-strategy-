@@ -381,7 +381,7 @@ test('production shell loads UI v2 and excludes retired UI controllers from the 
     assert.ok(index.includes(modulePath), 'index.html must load ' + modulePath);
     assert.ok(sw.includes(modulePath), 'offline service worker must pre-cache ' + modulePath);
   }
-  assert.ok(sw.includes('omega-offline-atlas-shell-v35'));
+  assert.ok(sw.includes('omega-offline-atlas-shell-v36'));
   assert.ok(entry.includes('OmegaUIV2Integration'));
   assert.ok(entry.includes('opened-ui-v2'));
   assert.equal(entry.includes('openMainMinistryView'), false);
@@ -580,6 +580,12 @@ test('universal navigation and the isolated legacy-free shell are wired into the
   const shellCss = readFileSync(new URL('../omega_ui_v2/omega-ui-v2.css', import.meta.url), 'utf8');
   const isolationCss = readFileSync(new URL('../omega_ui_v2/legacy-disconnect.css', import.meta.url), 'utf8');
   const integration = readFileSync(new URL('../omega_ui_v2/integration.js', import.meta.url), 'utf8');
+  assert.equal(html.includes('<script src="presentation-engine.js"'), false,
+    'retired PresentationEngine must not start in the production shell');
+  assert.equal(html.includes('<script src="ui_engine_core.js"'), false,
+    'retired adapter renderer and its polling loop must not start in the production shell');
+  assert.equal(html.includes('unpkg.com/react@18'), false,
+    'unused render-blocking React/Recharts libraries must not delay app startup');
   assert.ok(app.includes('data-omega-v2-jump-route'));
   assert.ok(app.includes('data-omega-v2-jump-ministry'));
   assert.ok(app.includes('function exitToMap('));
@@ -588,7 +594,7 @@ test('universal navigation and the isolated legacy-free shell are wired into the
   assert.ok(app.includes('root.contains(ownControl)'));
   assert.ok(app.includes('event.stopPropagation()'));
   assert.ok(html.includes('omega_ui_v2/ministry-visual-refresh.css'));
-  assert.ok(worker.includes('omega-offline-atlas-shell-v35'));
+  assert.ok(worker.includes('omega-offline-atlas-shell-v36'));
   assert.ok(worker.includes('"./omega_ui_v2/legacy-disconnect.css"'));
   assert.ok(refreshCss.includes('omega-v2-ministry-detail-cover-image'));
   assert.ok(refreshCss.includes('min-height: 48px'));

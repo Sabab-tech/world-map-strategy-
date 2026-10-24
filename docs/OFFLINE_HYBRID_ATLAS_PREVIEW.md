@@ -9,7 +9,7 @@ This change replaces the flat vector-only preview with a genuine imagery-first m
 - Uses the cached NASA raster below Esri tiles, so unavailable remote tiles can fall back to a recognizable Earth surface after the image has been cached.
 - Keeps the canonical `world.json` country polygons, current country selection, city markers, resource deposit overlays, and search interaction. Countries use thin borders and transparent fills over imagery.
 - Retains the 30-degree longitude / 15-degree latitude graticule, but lowers its visual emphasis.
-- Android starts in the hybrid mode. The explicit satellite layer option is also allowed in the Android shell.
+- Connected browsers start with online satellite imagery; the local offline atlas activates only after the player explicitly selects Offline Map. Android/offline shells never request remote tiles and keep local country geometry available before the optional atlas is selected.
 
 ## Honest offline limitation
 

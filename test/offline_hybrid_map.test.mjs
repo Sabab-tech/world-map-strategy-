@@ -68,13 +68,48 @@ test("latitude and longitude graticule stays subtle and accurate", () => {
   assert.match(css, /omega-offline-coordinate-label/);
 });
 
-test("offline atlas starts without a first-online-load requirement", () => {
-  assert.match(js, /function startOfflineAtlas\(\)\{syncButton\(\);activate\(\);\}/);
-  assert.match(js, /document\.addEventListener\("DOMContentLoaded",startOfflineAtlas,\{once:true\}\)/);
-  assert.doesNotMatch(js, /first online connection|NASA Blue Marble|cache unavailable/i);
-  assert.match(js, /offlineBasemap:true/);
+test("online imagery is the connected default and offline atlas is opt-in", () => {
+  assert.match(mapEngine, /function initializeOnlineBasemap\(\)/);
+  assert.match(mapEngine, /ArcGIS\/rest\/services\/World_Imagery/);
+  assert.match(mapEngine, /const offlineShell = Boolean\(window\.OMEGA_ANDROID_OFFLINE\)/);
+  assert.match(js, /function initializeAtlasControls\(\)\{syncButton\(\);\}/);
+  assert.doesNotMatch(js, /function startOfflineAtlas\(\)\{syncButton\(\);activate\(\);\}/);
+  assert.doesNotMatch(js, /if\(isNetworkUnavailable\(\)&&layerType!=="resources"\)return activate\(\)/);
+  assert.match(js, /if\(layerType==="offline-hybrid"\)return activate\(\)/);
   assert.match(js, /externalMapRequests:0/);
   assert.match(css, /omega-offline-atlas-badge/);
+});
+test("offline startup does not activate the atlas before the player selects it", () => {
+  const listeners = {};
+  const bodyClasses = new Set();
+  const buttonClasses = new Set();
+  const attributes = { "data-layer":"offline-hybrid", "aria-pressed":"false" };
+  const button = {
+    disabled:false,
+    classList:{
+      add(name){buttonClasses.add(name);},
+      remove(name){buttonClasses.delete(name);},
+      toggle(name,force){const next=force===undefined?!buttonClasses.has(name):!!force;if(next)buttonClasses.add(name);else buttonClasses.delete(name);return next;}
+    },
+    getAttribute(name){return attributes[name]||null;},
+    setAttribute(name,value){attributes[name]=String(value);},
+    closest(){return this;}
+  };
+  const Game={Map:{renderGeoJSON(){}},geojsonLayer:null,selectedLayer:null,selectCountryByName(){},findCountryConfig(){return null;},showNotification(){}};
+  const window={L:{},Game,map:{on(){},getZoom(){return 2.5;}},addEventListener(){},OMEGA_ANDROID_OFFLINE:true};
+  const document={
+    readyState:"complete",
+    addEventListener(type,handler){listeners[type]=handler;},
+    getElementById(){return null;},
+    querySelector(){return button;},
+    querySelectorAll(){return [button];},
+    body:{classList:{add(name){bodyClasses.add(name);},remove(name){bodyClasses.delete(name);}}},
+    documentElement:{style:{setProperty(){}}}
+  };
+  runInNewContext(js,{window,document,L:window.L,Game,navigator:{onLine:false},console});
+  assert.equal(window.OmegaOfflineHybridAtlas.isActive(),false);
+  assert.equal(bodyClasses.has("omega-offline-hybrid-active"),false);
+  assert.equal(attributes["aria-pressed"],"false");
 });
 test("Android WebView serves bundled assets locally and blocks every off-origin request", () => {
   assert.match(mainActivity, /if \(isAppAssetUri\(uri\)\) return missingAssetResponse\(uri\);/);
@@ -243,7 +278,7 @@ test("layer drawer click routing executes the controller and tracks the visible 
     selectCountryByName() {},
     findCountryConfig() { return null; },
     showNotification() {},
-    switchMapLayer(layer) { switchedLayer = layer; }
+    switchMapLayer(layer) { switchedLayer = layer; return true; }
   };
   const map = { on() {} };
   const visualViewport = {

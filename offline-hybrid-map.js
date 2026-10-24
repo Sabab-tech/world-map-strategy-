@@ -27,8 +27,9 @@
     return hex(base.map(function(v,i){return v*.74+tone[i]*.26;}));
   }
   function countryStyle(feature){
-    return {color:"#9eb5a9",weight:window.map.getZoom()>=8?.82:(window.map.getZoom()>=5?.68:.58),
-      opacity:.78,fillColor:mutedFill(sourceName(feature)),fillOpacity:active?.96:.88,
+    var zoom=window.map&&typeof window.map.getZoom==="function"?window.map.getZoom():2.5;
+    return {color:"#e0e9e2",weight:zoom>=8?1.65:(zoom>=5?1.3:.98),
+      opacity:.98,fillColor:mutedFill(sourceName(feature)),fillOpacity:.78,
       lineCap:"round",lineJoin:"round",dashArray:null};
   }
   function selectedStyle(){return {color:"#ffe0a0",weight:1.9,opacity:1,fillColor:"#9b8861",fillOpacity:active?.98:.94,dashArray:null};}
@@ -168,8 +169,15 @@
     var result=originalSelectCountry.apply(this,arguments);if(active)styleCountries();return result;};
   if(typeof originalSwitchMapLayer==="function")Game.switchMapLayer=function(layerType){
     if(layerType==="offline-hybrid")return activate();
-    if(isNetworkUnavailable()&&layerType!=="resources")return activate();
-    deactivate();return originalSwitchMapLayer.apply(this,arguments);
+    if(isNetworkUnavailable()&&layerType!=="resources"){
+      if(typeof Game.showNotification==="function")Game.showNotification("ONLINE MAP UNAVAILABLE",
+        "Choose Offline Map to activate the local atlas while offline.","warning");
+      syncButton();
+      return false;
+    }
+    if(isNetworkUnavailable()&&layerType==="resources")return originalSwitchMapLayer.apply(this,arguments);
+    deactivate();
+    return originalSwitchMapLayer.apply(this,arguments);
   };
 
   function updateVisibleViewportSize(){
@@ -189,12 +197,17 @@
         if(!window.OmegaOfflineHybridAtlas||typeof window.OmegaOfflineHybridAtlas.activate!=="function")throw new Error("Offline atlas runtime is unavailable.");
         window.OmegaOfflineHybridAtlas.activate();
       }else{
+        if(isNetworkUnavailable()&&layerType!=="resources"){
+          if(window.Game&&typeof window.Game.showNotification==="function")
+            window.Game.showNotification("ONLINE MAP UNAVAILABLE","Choose Offline Map to activate the local atlas while offline.","warning");
+          syncButton();
+          return;
+        }
         var switcher=window.Game&&window.Game.switchMapLayer;if(typeof switcher!=="function")throw new Error("Map layer controller is unavailable.");
-        switcher.call(window.Game,layerType);
+        var switchResult=switcher.call(window.Game,layerType);
+        if(switchResult===false){syncButton();return;}
       }
       var activeButton=button;
-      if(isNetworkUnavailable()&&layerType!=="resources"&&layerType!=="offline-hybrid")
-        activeButton=document.querySelector('#layers-drawer .layer-opt-btn[data-layer="offline-hybrid"]')||button;
       document.querySelectorAll("#layers-drawer .layer-opt-btn").forEach(function(item){
         item.classList.toggle("active",item===activeButton);item.setAttribute("aria-pressed",String(item===activeButton));
       });
@@ -208,8 +221,10 @@
   window.addEventListener("resize",updateVisibleViewportSize,{passive:true});
   window.addEventListener("orientationchange",updateVisibleViewportSize,{passive:true});
   if(window.visualViewport){window.visualViewport.addEventListener("resize",updateVisibleViewportSize,{passive:true});window.visualViewport.addEventListener("scroll",updateVisibleViewportSize,{passive:true});}
-  window.map.on("moveend zoomend",updateCoordinateLabels);
-  function startOfflineAtlas(){syncButton();activate();}
-  if(document.readyState==="complete"||document.readyState==="interactive")startOfflineAtlas();
-  else document.addEventListener("DOMContentLoaded",startOfflineAtlas,{once:true});
+  window.OMEGA_OFFLINE_ATLAS_STATUS={active:false,offlineBasemap:false,remoteImagery:false,externalMapRequests:0,rasterSource:null};
+  window.map.on("moveend",updateCoordinateLabels);
+  window.map.on("zoomend",function(){if(active)styleCountries();updateCoordinateLabels();});
+  function initializeAtlasControls(){syncButton();}
+  if(document.readyState==="complete"||document.readyState==="interactive")initializeAtlasControls();
+  else document.addEventListener("DOMContentLoaded",initializeAtlasControls,{once:true});
 })();

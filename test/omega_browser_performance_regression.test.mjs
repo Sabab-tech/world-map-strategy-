@@ -277,7 +277,7 @@ test('production shell fully disconnects legacy UI scripts and caches the isolat
   assert.equal(server.includes('UI_INTERACTION_GUARD_SCRIPT'), false, 'server must not inject the retired click interceptor');
   assert.equal(server.includes('omega_ui_interaction_guard.js'), false, 'server must not inject the retired click interceptor');
   assert.ok(html.includes('omega_ui_v2/legacy-disconnect.css'));
-  assert.ok(serviceWorker.includes('CACHE_NAME = "omega-offline-atlas-shell-v35"'));
+  assert.ok(serviceWorker.includes('CACHE_NAME = "omega-offline-atlas-shell-v36"'));
   const coreStart = serviceWorker.indexOf('const CORE_ASSETS');
   const coreEnd = serviceWorker.indexOf('];', coreStart);
   const coreAssets = serviceWorker.slice(coreStart, coreEnd);
