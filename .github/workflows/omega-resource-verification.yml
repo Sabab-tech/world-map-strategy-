@@ -97,6 +97,7 @@ jobs:
           run_gate siteDataContract 15 node --test test/omega_resource_site_data_contract.test.mjs
           run_gate siteDataCompleteness 15 node test/omega_resource_site_data_completeness.test.mjs
           run_gate siteUnifiedPipelineProfile 30 node --test test/omega_resource_unified_site_pipeline_profile.test.mjs
+          run_gate siteMinistryNotApplicableVisibility 10 node --test test/omega_resource_ministry_na_site_visibility.test.mjs
           run_gate resourceReferenceLossless 15 node test/omega_resource_reference_lossless.test.mjs
           run_gate resourceEconomy 15 node --test test/omega_resource_economy_runtime_v2.test.mjs
           run_gate authoritativeAdapter 15 node --test test/omega_resource_authoritative_adapter.test.mjs
@@ -121,6 +122,7 @@ jobs:
           export OMEGA_GATE_SITEINTEGRITY="${GATES[siteIntegrity]}"
           export OMEGA_GATE_SITEDATACONTRACT="${GATES[siteDataContract]}"
           export OMEGA_GATE_SITEDATACOMPLETENESS="${GATES[siteDataCompleteness]}"
+          export OMEGA_GATE_SITEMINISTRYNOTAPPLICABLEVISIBILITY="${GATES[siteMinistryNotApplicableVisibility]}"
           export OMEGA_GATE_RESOURCEREFERENCELOSSLESS="${GATES[resourceReferenceLossless]}"
           export OMEGA_GATE_RESOURCEECONOMY="${GATES[resourceEconomy]}"
           export OMEGA_GATE_AUTHORITATIVEADAPTER="${GATES[authoritativeAdapter]}"
@@ -148,6 +150,7 @@ jobs:
             siteDataContract: process.env.OMEGA_GATE_SITEDATACONTRACT,
             resourceEndowment: process.env.OMEGA_GATE_RESOURCEENDOWMENT,
             siteDataCompleteness: process.env.OMEGA_GATE_SITEDATACOMPLETENESS,
+            siteMinistryNotApplicableVisibility: process.env.OMEGA_GATE_SITEMINISTRYNOTAPPLICABLEVISIBILITY,
             resourceReferenceLossless: process.env.OMEGA_GATE_RESOURCEREFERENCELOSSLESS,
             resourceEconomy: process.env.OMEGA_GATE_RESOURCEECONOMY,
             authoritativeAdapter: process.env.OMEGA_GATE_AUTHORITATIVEADAPTER,
