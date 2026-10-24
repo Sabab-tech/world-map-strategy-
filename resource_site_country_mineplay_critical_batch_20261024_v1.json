@@ -4576,7 +4576,7 @@
           "quantitativeValuesAreSimulated": true,
           "sourceReportedRealWorldStatus": "USGS-DOCUMENTED OIL-SHALE RESOURCE BASIN; THIS RECORD IS NOT A CLAIM OF A CURRENT OPERATING MINE OR LICENSED EXTRACTION SITE"
         },
-        "statusNote": "The U.S. Geological Survey documents the Piceance Basin as a major oil-shale resource area. This record represents the geological resource area for OMEGA gameplay, not a verified currently operating mine or licensed site. All quantitative reserve, grade, recovery, capacity and production fields in this record are gameplay-only simulation values."
+        "statusNote": "The USGS documents the Piceance Basin as a major oil-shale resource area. This resource-area record is not represented as currently operating in the real world and is not a claim of a current licensed mine or active extraction permit. All quantitative reserve, grade, recovery, capacity and production fields are OMEGA gameplay-only simulation values."
       },
       "sources": [
         {
