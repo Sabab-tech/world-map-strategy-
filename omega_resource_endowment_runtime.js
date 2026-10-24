@@ -213,7 +213,7 @@
     // The map is assigned before supplemental batch coverage is finalized; checking it first
     // can leak a premature READY report with no mineplayBatchCoverage to concurrent callers.
     if(canonicalSiteCatalogPromise)return canonicalSiteCatalogPromise;
-    if(canonicalSiteCatalogMap)return canonicalSiteCatalogLoadReport||{status:'READY',count:Object.keys(canonicalSiteCatalogMap).length,reused:true};
+    if(canonicalSiteCatalogMap&&canonicalSiteCatalogLoadReport)return canonicalSiteCatalogLoadReport;
     canonicalSiteCatalogPromise=(async()=>{
       try{
         const inline=g.OmegaResourceSiteCanonicalCatalogData||g.Omega?.ResourceSiteCanonicalCatalogData;
