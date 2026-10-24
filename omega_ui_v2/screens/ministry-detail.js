@@ -136,7 +136,6 @@
       ministryVisualMarkup(id, row) +
       '<div class="omega-v2-filterbar" role="group" aria-label="Ministry page sections">' + SECTIONS.map(function (key) { return '<button type="button" class="omega-v2-button ' + (section === key ? 'omega-v2-button--accent' : 'omega-v2-button--quiet') + '" data-omega-v2-ministry-section="' + key + '" aria-pressed="' + (section === key ? 'true' : 'false') + '">' + esc(SECTION_LABELS[key]) + '</button>'; }).join('') + '</div>' +
       relatedLinks(id, options) +
-      operationalConsoleCard(id, options) +
       '<div class="omega-v2-section-title">' + esc(SECTION_LABELS[section]) + '</div>' + content +
       '<p class="omega-v2-source">The current panel is read-only. Procurement, recruitment, resource transfers and project execution must route through an authoritative handler and display a result only after game state confirms it.</p></section>';
     if (!root.__omegaV2MinistryDetailBound && typeof root.addEventListener === 'function') {
