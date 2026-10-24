@@ -432,6 +432,69 @@ test('mine project rejects cross-country identity and player-only actions requir
 });
 
 
+test('Mine Management prefers hydrated canonical runtime profiles over sparse duplicate source rows', () => {
+  const siteId = 'SITE_BWA_PROFILE_PRECEDENCE_TEST';
+  const sourceSite = {
+    siteId, countryId: 'BWA', siteName: 'Test Gold Mine',
+    identity: { countryIso3: 'BWA', resourceTypeId: 'gold' },
+    location: { coordinates: { lat: -21.2, lng: 25.5 } },
+    operation: { status: 'OPERATING', commercialExtraction: true },
+    real: { resourceId: 'gold' },
+    quantitative: {
+      production: { rate: null, annual: null, unit: 'TONNES_PER_DAY', status: 'UNOBSERVED' },
+      reserve: { quantity: null, unit: 'TONNES', status: 'UNOBSERVED' }
+    },
+    sourceSiteRecord: { siteId, countryCode: 'BWA', resourceId: 'gold', status: 'OPERATING' },
+    map: { markerEligible: true, countryIsolationKey: 'BWA' },
+    runtime: { identityAuthority: 'SOURCE_CATALOG' }
+  };
+  const runtimeSite = {
+    ...sourceSite, resourceId: 'gold',
+    operation: { status: 'SIMULATED_PLAYER_MINE_OPERATIONAL', realWorldStatus: 'OPERATING', commercialExtraction: true },
+    quantitative: {
+      production: { rate: 123.5, annual: 45077.5, unit: 'TONNES_PER_DAY', annualUnit: 'TONNES_PER_YEAR', status: 'SIMULATED', authority: 'GAMEPLAY_SIMULATION' },
+      reserve: { quantity: 9000000, unit: 'TONNES', status: 'SIMULATED', authority: 'GAMEPLAY_SIMULATION' },
+      grade: { value: 2.4, unit: 'PERCENT', status: 'SIMULATED' },
+      recovery: { value: 82, unit: 'PERCENT', status: 'SIMULATED' },
+      purity: { value: 91, unit: 'PERCENT', status: 'SIMULATED' },
+      throughput: { value: 110, unit: 'TONNES_PER_DAY', status: 'SIMULATED' },
+      capacity: { minimum: 80, nominal: 150, maximum: 200, unit: 'TONNES_PER_DAY', status: 'SIMULATED' }
+    },
+    simulation: {
+      productionReadiness: 'CAPACITY_READY', gameplayProductionEnabled: true,
+      productionRate: 123.5, productionRateUnit: 'TONNES_PER_DAY',
+      annualProduction: 45077.5, annualProductionUnit: 'TONNES_PER_YEAR'
+    },
+    runtime: { identityAuthority: 'CANONICAL_SITE_REGISTRY', countryWarehouseId: 'WH-BWA-RAW' }
+  };
+  const context = {
+    console,
+    Game: { state: { simulation: { session: { playerCountryId: 'BWA' } }, resource: {} } },
+    OmegaResourceSiteCanonicalCatalogData: { sites: [sourceSite] },
+    OmegaIndividualResourceSiteBinding: { sites: [sourceSite] },
+    OmegaResourceEndowmentRuntime: { countryMineSiteReferences: country => country === 'BWA' ? [runtimeSite] : [] },
+    document: { readyState: 'loading', addEventListener() {} }
+  };
+  context.globalThis = context;
+  vm.createContext(context);
+  vm.runInContext(uiSource, context, { filename: 'omega_resource_mine_management_v1.js' });
+  const api = context.Omega.ResourceMineManagementUI;
+  const sites = api.getCountrySites('BWA');
+  assert.equal(sites.length, 1, 'deduplication should keep one physical site');
+  const merged = sites[0];
+  assert.equal(merged.quantitative.production.rate, 123.5, 'runtime profile must fill the sparse source record');
+  assert.equal(merged.quantitative.production.status, 'SIMULATED', 'generated output must remain visibly simulated');
+  assert.equal(merged.quantitative.reserve.quantity, 9000000);
+  assert.equal(merged.simulation.productionReadiness, 'CAPACITY_READY');
+  assert.equal(merged.runtime.countryWarehouseId, 'WH-BWA-RAW');
+  assert.equal(merged.operation.realWorldStatus, 'OPERATING', 'runtime status must not erase separate real-world status');
+  const summary = api.getProductionSummary(merged);
+  assert.match(summary, /Gameplay rate: 123\.5 tonnes per day \(SIMULATED\)/);
+  assert.match(summary, /Gameplay daily capacity: 80\.00-200\.00 tonnes per day \(nominal 150\.00\) \(SIMULATED\)/);
+  assert.match(summary, /Profile ready for gameplay/);
+  assert.match(summary, /actual extraction remains subject to runtime gates/);
+});
+
 test('every mapped resource site joins the executable runtime and has a one-tap country production action', () => {
   assert.match(endowmentSource, /function normalizeBoundSiteForRuntime/);
   assert.match(endowmentSource, /function syncBoundSiteRegistry/);
