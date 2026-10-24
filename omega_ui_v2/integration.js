@@ -164,7 +164,7 @@
   function openRoute(route) {
     route=String(route||'').trim().toLowerCase();
     if(!enabled||!g.OmegaUIV2App)return false;
-    if(route==='map'||route==='world'){var active=cabinetRoot();if(active&&active.getAttribute&&active.getAttribute(ACTIVE_ATTR)==='true')return closeToWorldMap();return true;}
+    if(route==='map'||route==='world'){var active=cabinetRoot();if(active&&active.getAttribute&&active.getAttribute(ACTIVE_ATTR)==='true'&&active.__omegaUIV2State)return !!g.OmegaUIV2App.navigate(active,'map');return true;}
     var mappings={resources:'energy_mining',security:'interior_security','public-safety':'interior_security',logistics:'trade',foreign:'foreign_affairs',defense:'defense',research:'science_research',society:'infrastructure',projects:'mega_projects',agriculture:'agriculture_food',health:'health_welfare',laws:'laws',education:'education',taxes:'taxes',treasury:'treasury_finance','central-bank':'central_bank',cabinet_council:'cabinet_council'};
     var ministryId=mappings[route]||null,destinations=g.OmegaUIV2App.destinations||[];
     if(destinations.indexOf(route)<0&&!ministryId)return false;
