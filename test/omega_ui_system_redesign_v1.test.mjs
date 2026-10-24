@@ -86,7 +86,7 @@ test('ministry entry and backward-compatible routes dispatch only to UI v2', () 
   const navStart = html.indexOf('<nav id="omega-ministry-entry" class="ui-bottom-navigation omega-ministry-entry"');
   assert.ok(navStart >= 0, 'navigation markup remains available for compatibility');
   const uiRootStart = html.indexOf('<div id="ui-engine-root">');
-  const rootCloseMatch = /<\\/div>\\s*<!-- Independent ministry entry/.exec(html);
+  const rootCloseMatch = /<\/div>\s*<!-- Independent ministry entry/.exec(html);
   const rootEndMarker = rootCloseMatch ? rootCloseMatch.index : -1;
   assert.ok(uiRootStart >= 0 && rootEndMarker > uiRootStart && navStart > rootEndMarker,
     'the entry is outside the map UI root');
