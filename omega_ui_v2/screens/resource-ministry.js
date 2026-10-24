@@ -260,12 +260,6 @@
           render(root, Object.assign({}, root.__omegaV2ResourceOptions || {}, { tab:root.__omegaV2ResourceTab }));
           return;
         }
-        var legacyConsole = target.closest('[data-omega-v2-open-operational-console]');
-        if (legacyConsole && root.contains(legacyConsole) && !legacyConsole.disabled) {
-          var consoleOptions = root.__omegaV2ResourceOptions || {};
-          if (typeof consoleOptions.onOpenOperationalConsole === 'function') consoleOptions.onOpenOperationalConsole('energy_mining');
-          return;
-        }
         var button = target.closest('[data-omega-v2-site-action]');
         if (!button || !root.contains(button) || button.disabled) return;
         var id = button.getAttribute('data-site-id');
