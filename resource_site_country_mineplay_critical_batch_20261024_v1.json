@@ -217,7 +217,8 @@
       "map": {
         "markerEligible": true,
         "countryIsolationKey": "CAN",
-        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "resourceFilterKey": "graphite"
       },
       "runtime": {
         "identityAuthority": "COUNTRY_MINEPLAY_CRITICAL_MINERALS_V1",
@@ -458,7 +459,8 @@
       "map": {
         "markerEligible": true,
         "countryIsolationKey": "NAM",
-        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "resourceFilterKey": "graphite"
       },
       "runtime": {
         "identityAuthority": "COUNTRY_MINEPLAY_CRITICAL_MINERALS_V1",
@@ -699,7 +701,8 @@
       "map": {
         "markerEligible": true,
         "countryIsolationKey": "CAN",
-        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "resourceFilterKey": "graphite"
       },
       "runtime": {
         "identityAuthority": "COUNTRY_MINEPLAY_CRITICAL_MINERALS_V1",
@@ -940,7 +943,8 @@
       "map": {
         "markerEligible": true,
         "countryIsolationKey": "ZAF",
-        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "resourceFilterKey": "platinum"
       },
       "runtime": {
         "identityAuthority": "COUNTRY_MINEPLAY_CRITICAL_MINERALS_V1",
@@ -1181,7 +1185,8 @@
       "map": {
         "markerEligible": true,
         "countryIsolationKey": "ZAF",
-        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "resourceFilterKey": "platinum"
       },
       "runtime": {
         "identityAuthority": "COUNTRY_MINEPLAY_CRITICAL_MINERALS_V1",
@@ -1422,7 +1427,8 @@
       "map": {
         "markerEligible": true,
         "countryIsolationKey": "ZAF",
-        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "resourceFilterKey": "platinum"
       },
       "runtime": {
         "identityAuthority": "COUNTRY_MINEPLAY_CRITICAL_MINERALS_V1",
@@ -1663,7 +1669,8 @@
       "map": {
         "markerEligible": true,
         "countryIsolationKey": "KAZ",
-        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "resourceFilterKey": "tungsten"
       },
       "runtime": {
         "identityAuthority": "COUNTRY_MINEPLAY_CRITICAL_MINERALS_V1",
@@ -1904,7 +1911,8 @@
       "map": {
         "markerEligible": true,
         "countryIsolationKey": "AUS",
-        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "resourceFilterKey": "tungsten"
       },
       "runtime": {
         "identityAuthority": "COUNTRY_MINEPLAY_CRITICAL_MINERALS_V1",
@@ -2145,7 +2153,8 @@
       "map": {
         "markerEligible": true,
         "countryIsolationKey": "KOR",
-        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "resourceFilterKey": "tungsten"
       },
       "runtime": {
         "identityAuthority": "COUNTRY_MINEPLAY_CRITICAL_MINERALS_V1",
@@ -2386,7 +2395,8 @@
       "map": {
         "markerEligible": true,
         "countryIsolationKey": "CAN",
-        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "resourceFilterKey": "potash"
       },
       "runtime": {
         "identityAuthority": "COUNTRY_MINEPLAY_CRITICAL_MINERALS_V1",
@@ -2627,7 +2637,8 @@
       "map": {
         "markerEligible": true,
         "countryIsolationKey": "CAN",
-        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "resourceFilterKey": "potash"
       },
       "runtime": {
         "identityAuthority": "COUNTRY_MINEPLAY_CRITICAL_MINERALS_V1",
@@ -2868,7 +2879,8 @@
       "map": {
         "markerEligible": true,
         "countryIsolationKey": "CAN",
-        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "resourceFilterKey": "potash"
       },
       "runtime": {
         "identityAuthority": "COUNTRY_MINEPLAY_CRITICAL_MINERALS_V1",
@@ -3109,7 +3121,8 @@
       "map": {
         "markerEligible": true,
         "countryIsolationKey": "CAN",
-        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "resourceFilterKey": "salt"
       },
       "runtime": {
         "identityAuthority": "COUNTRY_MINEPLAY_CRITICAL_MINERALS_V1",
@@ -3350,7 +3363,8 @@
       "map": {
         "markerEligible": true,
         "countryIsolationKey": "PAK",
-        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "resourceFilterKey": "salt"
       },
       "runtime": {
         "identityAuthority": "COUNTRY_MINEPLAY_CRITICAL_MINERALS_V1",
@@ -3591,7 +3605,8 @@
       "map": {
         "markerEligible": true,
         "countryIsolationKey": "BHS",
-        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "resourceFilterKey": "salt"
       },
       "runtime": {
         "identityAuthority": "COUNTRY_MINEPLAY_CRITICAL_MINERALS_V1",
@@ -3832,7 +3847,8 @@
       "map": {
         "markerEligible": true,
         "countryIsolationKey": "MDG",
-        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "resourceFilterKey": "ilmenite"
       },
       "runtime": {
         "identityAuthority": "COUNTRY_MINEPLAY_CRITICAL_MINERALS_V1",
@@ -4073,7 +4089,8 @@
       "map": {
         "markerEligible": true,
         "countryIsolationKey": "MOZ",
-        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "resourceFilterKey": "ilmenite"
       },
       "runtime": {
         "identityAuthority": "COUNTRY_MINEPLAY_CRITICAL_MINERALS_V1",
@@ -4314,7 +4331,8 @@
       "map": {
         "markerEligible": true,
         "countryIsolationKey": "AUS",
-        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "resourceFilterKey": "ilmenite"
       },
       "runtime": {
         "identityAuthority": "COUNTRY_MINEPLAY_CRITICAL_MINERALS_V1",
@@ -4555,7 +4573,8 @@
       "map": {
         "markerEligible": true,
         "countryIsolationKey": "USA",
-        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "resourceFilterKey": "oil_shale"
       },
       "runtime": {
         "identityAuthority": "COUNTRY_MINEPLAY_CRITICAL_MINERALS_V1",
@@ -4796,7 +4815,8 @@
       "map": {
         "markerEligible": true,
         "countryIsolationKey": "EST",
-        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "resourceFilterKey": "oil_shale"
       },
       "runtime": {
         "identityAuthority": "COUNTRY_MINEPLAY_CRITICAL_MINERALS_V1",
@@ -5037,7 +5057,8 @@
       "map": {
         "markerEligible": true,
         "countryIsolationKey": "COD",
-        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "resourceFilterKey": "tin"
       },
       "runtime": {
         "identityAuthority": "COUNTRY_MINEPLAY_CRITICAL_MINERALS_V1",
@@ -5278,7 +5299,8 @@
       "map": {
         "markerEligible": true,
         "countryIsolationKey": "PER",
-        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "resourceFilterKey": "tin"
       },
       "runtime": {
         "identityAuthority": "COUNTRY_MINEPLAY_CRITICAL_MINERALS_V1",
@@ -5519,7 +5541,8 @@
       "map": {
         "markerEligible": true,
         "countryIsolationKey": "BRA",
-        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "resourceFilterKey": "tin"
       },
       "runtime": {
         "identityAuthority": "COUNTRY_MINEPLAY_CRITICAL_MINERALS_V1",
@@ -5554,80 +5577,88 @@
     },
     {
       "schemaVersion": "1.0.0",
-      "siteId": "SITE_FIN_kemi_chromite_mine",
-      "countryId": "FIN",
-      "siteName": "Kemi Chromite Mine",
+      "siteId": "SITE_ZAF_dwarsrivier_chromite_mine",
+      "countryId": "ZAF",
+      "siteName": "Dwarsrivier Chromite Mine",
       "identity": {
-        "countryIso3": "FIN",
-        "countryName": "Finland",
-        "siteType": "CHROMITE_MINE",
+        "countryIso3": "ZAF",
+        "countryName": "South Africa",
+        "siteType": "UNDERGROUND_CHROMITE_MINE",
         "resourceTypeId": "chromite",
         "resourceName": "Chromite",
         "ontologyKey": "CHROMITE",
-        "aliases": []
+        "aliases": [
+          "Dwarsrivier Chrome Mine",
+          "Dwarsrivier Chromite Mine"
+        ]
       },
       "location": {
-        "countryName": "Finland",
-        "adminRegion": "Lapland, Kemi",
-        "locality": "Lapland, Kemi",
+        "countryName": "South Africa",
+        "adminRegion": "Limpopo Province, Steelpoort area",
+        "locality": "Dwarsrivier 372KT, near Steelpoort",
         "coordinates": {
-          "lat": 65.77,
-          "lng": 24.54
+          "lat": -24.9369,
+          "lng": 30.1276
         },
         "coordinateStatus": "REGIONAL_APPROXIMATION",
-        "coordinateAuthority": "PUBLIC_SITE_OR_PROJECT_REFERENCE; COORDINATE_IS_APPROXIMATE_NOT_SURVEY_GRADE",
+        "coordinateAuthority": "OFFICIAL_OPERATOR_SITE_CONTEXT_AND_PUBLISHED_MINE_LOCALITY; APPROXIMATE MAP PIN",
         "coordinatePrecision": "REGIONAL_APPROXIMATION",
-        "countryBoundaryKey": "FIN"
+        "countryBoundaryKey": "ZAF"
       },
       "ownership": {
-        "owner": "Outokumpu Chrome Oy",
-        "operator": "Outokumpu Chrome Oy",
-        "ownerEvidenceStatus": "SOURCE_REPORTED_WITH_STATUS_CAVEAT",
-        "operatorEvidenceStatus": "SOURCE_REPORTED_WITH_STATUS_CAVEAT",
-        "authority": "SOURCE_REFERENCE_WITH_CURRENT_STATUS_CAVEAT",
-        "equityControlCountry": "FIN",
-        "operatorContractId": "OPCONTRACT_SITE_FIN_kemi_chromite_mine"
+        "owner": "Dwarsrivier Chrome Mine Proprietary Limited (Assore South Africa)",
+        "operator": "Dwarsrivier Chrome Mine Proprietary Limited",
+        "ownerEvidenceStatus": "OPERATOR_PRIMARY_SOURCE",
+        "operatorEvidenceStatus": "OPERATOR_PRIMARY_SOURCE",
+        "authority": "OFFICIAL_MINE_OPERATOR_SOURCE",
+        "equityControlCountry": "ZAF",
+        "operatorContractId": "OPCONTRACT_SITE_ZAF_dwarsrivier_chromite_mine"
       },
       "operation": {
         "status": "SIMULATED_OPERATIONAL_SCENARIO",
         "operationalStatus": "SIMULATED_ACTIVE",
-        "extractionMethod": "OPEN_PIT_DRILL_BLAST",
-        "fallbackMethod": "UNDERGROUND_ROOM_PILLAR",
+        "extractionMethod": "UNDERGROUND_BORD_AND_PILLAR",
+        "fallbackMethod": "MECHANISED_UNDERGROUND_CHROMITE_EXTRACTION",
         "extractionEligibility": "SIMULATED_GAMEPLAY_EXECUTABLE_SUBJECT_TO_RUNTIME_GATES",
         "commercialExtraction": true,
         "siteCommissioningLevel": 5,
         "mineLevel": 5,
-        "statusAuthority": "REAL_WORLD_STATUS_IS_SOURCE_CONTEXT; SIMULATION_STATUS_AND_PLAYER_COMMISSIONING_ARE_SEPARATE",
-        "realWorldStatus": "OPERATING; UNDERGROUND CHROMITE EXTRACTION REPORTED BY OPERATOR",
+        "statusAuthority": "OPERATOR_SOURCE_REPORTS_UNDERGROUND_CHROMITE_EXTRACTION; GAMEPLAY COMMISSIONING IS SEPARATE",
+        "realWorldStatus": "OPERATOR REPORTS UNDERGROUND CHROMITE EXTRACTION AND BENEFICIATION; GAMEPLAY PRODUCTION VALUES ARE SIMULATED",
         "gameplayConstructionAllowed": true
       },
       "processing": {
-        "upstreamProcess": "OPEN_PIT_DRILL_BLAST",
-        "midstreamProcess": "COMMODITY_SPECIFIC_BENEFICIATION_AND_GRADE_CONTROL",
+        "upstreamProcess": "UNDERGROUND_BORD_AND_PILLAR",
+        "midstreamProcess": "CRUSHING_SCREENING_DENSE_MEDIA_SEPARATION_MILLING_AND_SPIRAL_BENEFICIATION",
         "refinedOutputs": [
           "CHROMITE_CONCENTRATE",
+          "METALLURGICAL_CHROME_ORE",
+          "CHEMICAL_GRADE_CHROME",
+          "FOUNDRY_GRADE_CHROME",
           "TAILINGS"
         ],
         "downstreamSectors": [
           "stainless steel",
+          "ferrochrome",
           "refractories",
-          "chemical industry"
+          "chemical industry",
+          "foundry sand"
         ]
       },
       "logistics": {
-        "warehouseCountryId": "FIN",
-        "warehouseSiteId": "WH-FIN-RAW",
+        "warehouseCountryId": "ZAF",
+        "warehouseSiteId": "WH-ZAF-RAW",
         "inventoryRouteStatus": "RUNTIME_ROUTE_VALIDATION_REQUIRED",
         "factoryRouteStatus": "SITE_BOUND_COMPATIBLE_FACTORY_REQUIRED",
         "routeStatus": "SIMULATED_ROUTE_TO_BE_VALIDATED_BY_RUNTIME",
         "transport": {
-          "routeId": "ROUTE_SITE_SITE_FIN_kemi_chromite_mine_RAW_TO_FACTORY",
+          "routeId": "ROUTE_SITE_SITE_ZAF_dwarsrivier_chromite_mine_RAW_TO_FACTORY",
           "routeType": "ROAD_RAIL",
-          "originSiteId": "SITE_FIN_kemi_chromite_mine",
-          "originCountryId": "FIN",
-          "warehouseId": "WH-FIN-RAW",
+          "originSiteId": "SITE_ZAF_dwarsrivier_chromite_mine",
+          "originCountryId": "ZAF",
+          "warehouseId": "WH-ZAF-RAW",
           "destinationFactoryId": "AUTO_SELECT_COMPATIBLE_FACTORY",
-          "destinationCountryId": "FIN",
+          "destinationCountryId": "ZAF",
           "distanceKm": null,
           "averageSpeedKmPerDay": null,
           "estimatedTravelDays": null,
@@ -5691,7 +5722,8 @@
           "measuredProductionPromoted": false,
           "quantitativeValuesAreSimulated": true,
           "sourceUrls": [
-            "https://www.outokumpu.com/en/locations/kemimine"
+            "https://dwarsriviermine.co.za/",
+            "https://dwarsriviermine.co.za/chrome-ore/"
           ],
           "generatedAt": "2026-10-24"
         },
@@ -5735,22 +5767,22 @@
         "recovery": 80,
         "transportRoute": [
           {
-            "routeId": "SIM_ROUTE:FIN:SITE_FIN_kemi_chromite_mine",
-            "mode": "rail",
-            "transportMode": "rail",
+            "routeId": "SIM_ROUTE:ZAF:SITE_ZAF_dwarsrivier_chromite_mine",
+            "mode": "road_rail",
+            "transportMode": "road_rail",
             "distanceKm": null,
             "estimatedTravelDays": null,
             "status": "SIMULATED_ROUTE_REQUIRES_RUNTIME_PLAN",
             "blockableByWar": true,
             "blockableByNeighborControl": true,
             "blockableByNavalInterdiction": true,
-            "countryIsolationKey": "FIN"
+            "countryIsolationKey": "ZAF"
           }
         ],
-        "rawWarehouseId": "WH-FIN-RAW",
+        "rawWarehouseId": "WH-ZAF-RAW",
         "factoryBinding": {
-          "factoryId": "FACTORY_FIN_CHROMITE_SITE_FIN_kemi_chromite_mine",
-          "countryId": "FIN",
+          "factoryId": "FACTORY_ZAF_CHROMITE_SITE_ZAF_dwarsrivier_chromite_mine",
+          "countryId": "ZAF",
           "inputResourceId": "chromite",
           "status": "SIMULATED_READY",
           "authority": "SIMULATED_GAMEPLAY_RULE"
@@ -5759,8 +5791,9 @@
       },
       "map": {
         "markerEligible": true,
-        "countryIsolationKey": "FIN",
-        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+        "countryIsolationKey": "ZAF",
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "resourceFilterKey": "chromite"
       },
       "runtime": {
         "identityAuthority": "COUNTRY_MINEPLAY_CRITICAL_MINERALS_V1",
@@ -5771,7 +5804,7 @@
         "sourceStatusIsNotGameplayCommissioning": true
       },
       "sourceReference": {
-        "sourcePath": "https://www.outokumpu.com/en/locations/kemimine",
+        "sourcePath": "https://dwarsriviermine.co.za/chrome-ore/",
         "sourceType": "OPERATOR_PRIMARY",
         "accessed": "2026-10-24",
         "facts": {
@@ -5779,16 +5812,22 @@
           "measuredReservePromoted": false,
           "measuredProductionPromoted": false,
           "quantitativeValuesAreSimulated": true,
-          "sourceReportedRealWorldStatus": "OPERATING; UNDERGROUND CHROMITE EXTRACTION REPORTED BY OPERATOR"
+          "sourceReportedRealWorldStatus": "OPERATOR REPORTS UNDERGROUND CHROMITE EXTRACTION AND BENEFICIATION; GAMEPLAY PRODUCTION VALUES ARE SIMULATED"
         },
-        "statusNote": "Source documents the real-world mine, project, quarry, deposit or commodity context; quantitative reserves, grades, capacity, recovery and production are generated for OMEGA gameplay only. A prospective or historical site is not represented as currently operating in the real world."
+        "statusNote": "Official mine operator documents underground chromite extraction and beneficiation at Dwarsrivier. Gameplay reserve, grade, recovery, production, capacity and throughput values remain simulated and are not represented as observed mine output."
       },
       "sources": [
         {
-          "url": "https://www.outokumpu.com/en/locations/kemimine",
+          "url": "https://dwarsriviermine.co.za/",
           "sourceType": "OPERATOR_PRIMARY",
-          "accessed": "2026-10-24",
-          "scope": "documented_site_or_project_identity_commodity_location_and_real_world_status_context"
+          "accessed": "2026-10-25",
+          "scope": "mine identity and operator"
+        },
+        {
+          "url": "https://dwarsriviermine.co.za/chrome-ore/",
+          "sourceType": "OPERATOR_PRIMARY",
+          "accessed": "2026-10-25",
+          "scope": "chromite extraction and beneficiation process"
         }
       ],
       "observedFacts": []
@@ -6001,7 +6040,8 @@
       "map": {
         "markerEligible": true,
         "countryIsolationKey": "IND",
-        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "resourceFilterKey": "chromite"
       },
       "runtime": {
         "identityAuthority": "COUNTRY_MINEPLAY_CRITICAL_MINERALS_V1",
@@ -6242,7 +6282,8 @@
       "map": {
         "markerEligible": true,
         "countryIsolationKey": "ZAF",
-        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "resourceFilterKey": "chromite"
       },
       "runtime": {
         "identityAuthority": "COUNTRY_MINEPLAY_CRITICAL_MINERALS_V1",
@@ -6483,7 +6524,8 @@
       "map": {
         "markerEligible": true,
         "countryIsolationKey": "ZAF",
-        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "resourceFilterKey": "rutile"
       },
       "runtime": {
         "identityAuthority": "COUNTRY_MINEPLAY_CRITICAL_MINERALS_V1",
@@ -6724,7 +6766,8 @@
       "map": {
         "markerEligible": true,
         "countryIsolationKey": "AUS",
-        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "resourceFilterKey": "rutile"
       },
       "runtime": {
         "identityAuthority": "COUNTRY_MINEPLAY_CRITICAL_MINERALS_V1",
@@ -6965,7 +7008,8 @@
       "map": {
         "markerEligible": true,
         "countryIsolationKey": "GHA",
-        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "resourceFilterKey": "manganese"
       },
       "runtime": {
         "identityAuthority": "COUNTRY_MINEPLAY_CRITICAL_MINERALS_V1",
@@ -7206,7 +7250,8 @@
       "map": {
         "markerEligible": true,
         "countryIsolationKey": "AUS",
-        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "resourceFilterKey": "manganese"
       },
       "runtime": {
         "identityAuthority": "COUNTRY_MINEPLAY_CRITICAL_MINERALS_V1",
@@ -7447,7 +7492,8 @@
       "map": {
         "markerEligible": true,
         "countryIsolationKey": "COD",
-        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "resourceFilterKey": "cobalt"
       },
       "runtime": {
         "identityAuthority": "COUNTRY_MINEPLAY_CRITICAL_MINERALS_V1",
@@ -7688,7 +7734,8 @@
       "map": {
         "markerEligible": true,
         "countryIsolationKey": "COD",
-        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "resourceFilterKey": "cobalt"
       },
       "runtime": {
         "identityAuthority": "COUNTRY_MINEPLAY_CRITICAL_MINERALS_V1",
@@ -7929,7 +7976,8 @@
       "map": {
         "markerEligible": true,
         "countryIsolationKey": "USA",
-        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "resourceFilterKey": "rare_earth"
       },
       "runtime": {
         "identityAuthority": "COUNTRY_MINEPLAY_CRITICAL_MINERALS_V1",
@@ -8170,7 +8218,8 @@
       "map": {
         "markerEligible": true,
         "countryIsolationKey": "AUS",
-        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "resourceFilterKey": "rare_earth"
       },
       "runtime": {
         "identityAuthority": "COUNTRY_MINEPLAY_CRITICAL_MINERALS_V1",
@@ -8411,7 +8460,8 @@
       "map": {
         "markerEligible": true,
         "countryIsolationKey": "CAN",
-        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "resourceFilterKey": "rare_earth"
       },
       "runtime": {
         "identityAuthority": "COUNTRY_MINEPLAY_CRITICAL_MINERALS_V1",
@@ -8652,7 +8702,8 @@
       "map": {
         "markerEligible": true,
         "countryIsolationKey": "TUR",
-        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "resourceFilterKey": "rare_earth"
       },
       "runtime": {
         "identityAuthority": "COUNTRY_MINEPLAY_CRITICAL_MINERALS_V1",
@@ -8893,7 +8944,8 @@
       "map": {
         "markerEligible": true,
         "countryIsolationKey": "USA",
-        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "resourceFilterKey": "rare_earth"
       },
       "runtime": {
         "identityAuthority": "COUNTRY_MINEPLAY_CRITICAL_MINERALS_V1",
@@ -9134,7 +9186,8 @@
       "map": {
         "markerEligible": true,
         "countryIsolationKey": "AUS",
-        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "resourceFilterKey": "gypsum"
       },
       "runtime": {
         "identityAuthority": "COUNTRY_MINEPLAY_CRITICAL_MINERALS_V1",
@@ -9375,7 +9428,8 @@
       "map": {
         "markerEligible": true,
         "countryIsolationKey": "AUS",
-        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "resourceFilterKey": "gypsum"
       },
       "runtime": {
         "identityAuthority": "COUNTRY_MINEPLAY_CRITICAL_MINERALS_V1",
@@ -9616,7 +9670,8 @@
       "map": {
         "markerEligible": true,
         "countryIsolationKey": "USA",
-        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "resourceFilterKey": "diatomite"
       },
       "runtime": {
         "identityAuthority": "COUNTRY_MINEPLAY_CRITICAL_MINERALS_V1",
@@ -9857,7 +9912,8 @@
       "map": {
         "markerEligible": true,
         "countryIsolationKey": "USA",
-        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "resourceFilterKey": "diatomite"
       },
       "runtime": {
         "identityAuthority": "COUNTRY_MINEPLAY_CRITICAL_MINERALS_V1",
@@ -10098,7 +10154,8 @@
       "map": {
         "markerEligible": true,
         "countryIsolationKey": "TUR",
-        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "resourceFilterKey": "boron"
       },
       "runtime": {
         "identityAuthority": "COUNTRY_MINEPLAY_CRITICAL_MINERALS_V1",
@@ -10339,7 +10396,8 @@
       "map": {
         "markerEligible": true,
         "countryIsolationKey": "TUR",
-        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "resourceFilterKey": "boron"
       },
       "runtime": {
         "identityAuthority": "COUNTRY_MINEPLAY_CRITICAL_MINERALS_V1",
@@ -10580,7 +10638,8 @@
       "map": {
         "markerEligible": true,
         "countryIsolationKey": "GRC",
-        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "resourceFilterKey": "magnesite"
       },
       "runtime": {
         "identityAuthority": "COUNTRY_MINEPLAY_CRITICAL_MINERALS_V1",
@@ -10821,7 +10880,8 @@
       "map": {
         "markerEligible": true,
         "countryIsolationKey": "BRA",
-        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "resourceFilterKey": "magnesite"
       },
       "runtime": {
         "identityAuthority": "COUNTRY_MINEPLAY_CRITICAL_MINERALS_V1",
@@ -11062,7 +11122,8 @@
       "map": {
         "markerEligible": true,
         "countryIsolationKey": "IND",
-        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "resourceFilterKey": "dolomite"
       },
       "runtime": {
         "identityAuthority": "COUNTRY_MINEPLAY_CRITICAL_MINERALS_V1",
@@ -11303,7 +11364,8 @@
       "map": {
         "markerEligible": true,
         "countryIsolationKey": "IND",
-        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "resourceFilterKey": "dolomite"
       },
       "runtime": {
         "identityAuthority": "COUNTRY_MINEPLAY_CRITICAL_MINERALS_V1",
@@ -11544,7 +11606,8 @@
       "map": {
         "markerEligible": true,
         "countryIsolationKey": "BHS",
-        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "resourceFilterKey": "aragonite"
       },
       "runtime": {
         "identityAuthority": "COUNTRY_MINEPLAY_CRITICAL_MINERALS_V1",
@@ -11785,7 +11848,8 @@
       "map": {
         "markerEligible": true,
         "countryIsolationKey": "BRA",
-        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "resourceFilterKey": "niobium"
       },
       "runtime": {
         "identityAuthority": "COUNTRY_MINEPLAY_CRITICAL_MINERALS_V1",
@@ -12026,7 +12090,8 @@
       "map": {
         "markerEligible": true,
         "countryIsolationKey": "BRA",
-        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "resourceFilterKey": "niobium"
       },
       "runtime": {
         "identityAuthority": "COUNTRY_MINEPLAY_CRITICAL_MINERALS_V1",
@@ -12267,7 +12332,8 @@
       "map": {
         "markerEligible": true,
         "countryIsolationKey": "CAN",
-        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "resourceFilterKey": "niobium"
       },
       "runtime": {
         "identityAuthority": "COUNTRY_MINEPLAY_CRITICAL_MINERALS_V1",
@@ -12508,7 +12574,8 @@
       "map": {
         "markerEligible": true,
         "countryIsolationKey": "MMR",
-        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "resourceFilterKey": "ruby"
       },
       "runtime": {
         "identityAuthority": "COUNTRY_MINEPLAY_CRITICAL_MINERALS_V1",
@@ -12749,7 +12816,8 @@
       "map": {
         "markerEligible": true,
         "countryIsolationKey": "MMR",
-        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "resourceFilterKey": "ruby"
       },
       "runtime": {
         "identityAuthority": "COUNTRY_MINEPLAY_CRITICAL_MINERALS_V1",
@@ -12990,7 +13058,8 @@
       "map": {
         "markerEligible": true,
         "countryIsolationKey": "AUS",
-        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "resourceFilterKey": "basalt"
       },
       "runtime": {
         "identityAuthority": "COUNTRY_MINEPLAY_CRITICAL_MINERALS_V1",
@@ -13231,7 +13300,8 @@
       "map": {
         "markerEligible": true,
         "countryIsolationKey": "IND",
-        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "resourceFilterKey": "granite"
       },
       "runtime": {
         "identityAuthority": "COUNTRY_MINEPLAY_CRITICAL_MINERALS_V1",
@@ -13472,7 +13542,8 @@
       "map": {
         "markerEligible": true,
         "countryIsolationKey": "IND",
-        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "resourceFilterKey": "marble"
       },
       "runtime": {
         "identityAuthority": "COUNTRY_MINEPLAY_CRITICAL_MINERALS_V1",
@@ -13713,7 +13784,8 @@
       "map": {
         "markerEligible": true,
         "countryIsolationKey": "MHL",
-        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "resourceFilterKey": "coral_aggregate"
       },
       "runtime": {
         "identityAuthority": "COUNTRY_MINEPLAY_CRITICAL_MINERALS_V1",
@@ -13954,7 +14026,8 @@
       "map": {
         "markerEligible": true,
         "countryIsolationKey": "TUV",
-        "coordinatePrecision": "REGIONAL_APPROXIMATION"
+        "coordinatePrecision": "REGIONAL_APPROXIMATION",
+        "resourceFilterKey": "coral_aggregate"
       },
       "runtime": {
         "identityAuthority": "COUNTRY_MINEPLAY_CRITICAL_MINERALS_V1",
