@@ -575,6 +575,16 @@
     }
     return entry;
   }
+  function evaluatePlayerCountry() {
+    const bank=store(true),profile=playerProfile();
+    if(!profile)return{ok:true,skipped:true,reason:'PLAYER_COUNTRY_NOT_SELECTED'};
+    const root=rootState(),facility=getFacilitySnapshot(bank);
+    const assessment=scoreCountry(profile,{root:root,bank:bank,facility:facility});
+    if(!assessment)return{ok:true,skipped:true,reason:'PLAYER_COUNTRY_ASSESSMENT_UNAVAILABLE'};
+    bank.assessmentsByCountry[assessment.countryCode]=assessment;
+    bank.lastPlayerAssessmentTurn=currentTurn();
+    return{ok:true,turn:currentTurn(),countriesAssessed:1,assessment:clone(assessment)};
+  }
   function evaluateAll(force) {
     const bank = store(true);
     const turnNumber = currentTurn();
@@ -2100,8 +2110,7 @@
         // both advance on the authoritative OMEGA daily clock, exactly once per turn.
         processTurn(turn, stepDurationMs);
         serviceCountryLoansOnTurn(turn, stepDurationMs);
-        evaluateAll(true);
-        refreshWorldBankData(false).catch(() => {});
+        evaluatePlayerCountry();
         queueRender(true);
       });
       global.addEventListener && global.addEventListener('OMEGA_FINANCE_STATE_UPDATED', function (event) {
