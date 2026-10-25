@@ -825,7 +825,7 @@
   function panelIndustrial(country){
     const network = g.Omega && g.Omega.ResourceIndustrialNetwork;
     const diag = network && network.diagnostics ? network.diagnostics(country) : null;
-    const pipeline = network && network.gameplayPipelineDiagnostics ? network.gameplayPipelineDiagnostics() : null;
+    const pipeline = network && network.gameplayPipelineDiagnostics ? network.gameplayPipelineDiagnostics(country) : null;
     const perCountry = pipeline && Array.isArray(pipeline.perCountry)
       ? pipeline.perCountry.find(x => normaliseCountry(x.countryId) === activeCountry(country)) : null;
     const catalog = g.OmegaResourceIndustrialCatalogData || (g.Omega && g.Omega.ResourceIndustrialCatalogData) || {};
