@@ -54,8 +54,11 @@ test('country-scoped city layer remains gated by country selection', () => {
   const start = js.indexOf('renderCountryHubs() {');
   assert.ok(start >= 0);
   const body = js.slice(start, js.indexOf('\n    },', start));
-  assert.match(body, /if \(!Game\.currentActiveCountry\) return/);
-  assert.match(body, /Game\.locationsRegistry\[countryId\]/);
+  assert.match(body, /const countryName = Game\.currentActiveCountry;/);
+  assert.match(body, /if \(!countryName\) return/);
+  assert.match(body, /registry\[countryId\]/);
+  assert.match(body, /countryRuntime\.getCities\(countryName\)/);
+  assert.match(body, /this\.resourceState && this\.resourceState\.enabled/);
   assert.match(js, /normalizedScope === 'WORLD'/);
   assert.match(js, /SELECT A COUNTRY FOR NATION SCOPE/);
   assert.match(js, /if \(scope === 'NATION' && !activeCountryRaw\)/);
