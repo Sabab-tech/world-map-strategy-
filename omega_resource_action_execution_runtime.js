@@ -680,14 +680,23 @@
       else resolve();
     });
   }
+  function playerSimulationCountryId(){
+    const sim=g.Omega?.Simulation,simState=sim?.world?.state||state();
+    const session=simState?.simulation?.session||state()?.simulation?.session||{};
+    const candidates=[session?.playerCountryId,
+      typeof sim?.getPlayerCountryId==='function'?sim.getPlayerCountryId():null,
+      simState?.playerCountryId,state()?.playerCountryId,
+      g.Game?.playerCountry,g.Game?.currentActiveCountry,
+      g.CountryIOS?.activeCountry,g.currentActiveCountry];
+    for(const value of candidates){const cid=canonicalCountry(value);if(cid&&cid!=='[OBJECT OBJECT]')return cid;}
+    return null;
+  }
+
   async function processAllForTurn(){
-    const cs=countryIds(),results=[];
-    for(let i=0;i<cs.length;i++){
-      const c=cs[i];
-      results.push({countryId:c,result:processCountry(c)});
-      if((i+1)%2===0&&i+1<cs.length)await yieldTurnToUi();
-    }
-    return{status:'COMPLETED',turn:turn(),countryCount:cs.length,results};
+    const countryId=playerSimulationCountryId();
+    if(!countryId)return{status:'SKIPPED',reason:'PLAYER_COUNTRY_NOT_SELECTED',turn:turn(),countryCount:0,results:[]};
+    return{status:'COMPLETED',turn:turn(),countryCount:1,
+      results:[{countryId,result:processCountry(countryId)}]};
   }
 
   function diagnostics(){
