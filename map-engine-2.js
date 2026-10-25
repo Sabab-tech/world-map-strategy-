@@ -304,9 +304,11 @@ Game.Diplomacy = {
         "RUSSIA": { "CHINA": { hist: 30, dipl: 40 }, "UKRAINE": { hist: -95, dipl: -95 } }
     },
 
-    generateAllBilateralRelations() {
-        const countries = Object.keys(Game.state.economy);
-        if (countries.length === 0) return;
+    generateAllBilateralRelations(countrySubset) {
+        const allCountries = Object.keys(Game.state.economy || {});
+        const requestedCountries = Array.isArray(countrySubset) ? new Set(countrySubset) : null;
+        const countries = requestedCountries ? allCountries.filter(country => requestedCountries.has(country)) : allCountries;
+        if (allCountries.length === 0 || countries.length === 0) return;
 
         Game.state.relations = Game.state.relations || {};
         
@@ -326,7 +328,7 @@ Game.Diplomacy = {
             const salienceA = salience[c1] || salience[c1.replace(/_/g, " ")] || null;
             const paramsA = salienceA ? salienceA.parameters : null;
 
-            countries.forEach(c2 => {
+            allCountries.forEach(c2 => {
                 if (c1 === c2) return;
 
                 const A = Game.state.economy[c1] || {};
@@ -452,7 +454,23 @@ Game.DataLoader = {
             }
 
             if (Game.Diplomacy && typeof Game.Diplomacy.generateAllBilateralRelations === 'function') {
-                Game.Diplomacy.generateAllBilateralRelations();
+                // Build the complete relation table without monopolising the first WebView frame.
+                // Each slice computes only a few source countries while retaining every target country.
+                const relationCountries = Object.keys(Game.state.economy || {});
+                const RELATION_COUNTRIES_PER_FRAME = 2;
+                let relationCursor = 0;
+                const scheduleRelationChunk = typeof window.requestAnimationFrame === 'function'
+                    ? callback => window.requestAnimationFrame(callback)
+                    : callback => window.setTimeout(callback, 0);
+                const processRelationChunk = function () {
+                    if (relationCursor >= relationCountries.length) return;
+                    const chunk = relationCountries.slice(relationCursor, relationCursor + RELATION_COUNTRIES_PER_FRAME);
+                    Game.Diplomacy.generateAllBilateralRelations(chunk);
+                    relationCursor += chunk.length;
+                    if (relationCursor < relationCountries.length) scheduleRelationChunk(processRelationChunk);
+                };
+                // Yield once so the map and primary controls can paint before background indexing begins.
+                window.setTimeout(processRelationChunk, 0);
             }
 
             const relSelector = (Game.dom && Game.dom.relSelector) || document.getElementById('relation-selector'); 
@@ -613,8 +631,10 @@ Game.Map = {
             if (Game.geojsonLayer) {
                 Game.geojsonLayer.eachLayer(function(layer) {
                     if (layer !== Game.selectedLayer) {
-                        layer.setStyle({ 
-                            weight: currentZoom > 5.5 ? 1.4 : 0.9,
+                        layer.setStyle({
+                            color: "#f8fafc",
+                            opacity: 1.0,
+                            weight: currentZoom > 5.5 ? 1.55 : 1.25,
                             dashArray: null
                         });
                     } else {
@@ -785,42 +805,96 @@ Game.Map = {
 
     renderCountryHubs() {
         if (!this.hubsGroupLayer) return;
-        this.hubsGroupLayer.clearLayers(); 
-        if (!Game.currentActiveCountry) return; // STRICT REQUIREMENT: Only render cities for selected country!
+        this.hubsGroupLayer.clearLayers();
+        const countryName = Game.currentActiveCountry;
+        if (!countryName) return;
 
-        // MUTUAL EXCLUSIVITY: When Resource Overlay mode is active, hide city hubs!
-        if (this.activeResourceFilter && this.activeResourceFilter !== 'NONE') {
-            return;
+        // Resource and city markers are mutually exclusive. Only suppress cities while
+        // the authoritative resource mode is active, not merely while its menu is open.
+        if ((this.resourceState && this.resourceState.enabled) || this.isResourceModeActive) return;
+
+        const countryId = Game.getCountryId(countryName);
+        const registry = Game.locationsRegistry || {};
+        const countryData = registry[countryId] || registry[Game.normalizeName(countryName)] || {};
+        const hubs = [];
+        const seenNames = new Set();
+        const normalizeCityName = value => String(value == null ? '' : value)
+            .normalize('NFKC').trim().toLowerCase().replace(/[^a-z0-9]+/g, '');
+
+        const appendHub = (row, role) => {
+            if (!row || typeof row !== 'object') return;
+            const name = String(row.name || row.cityName || row.city || row.label || '').trim();
+            if (!name) return;
+            const nameKey = normalizeCityName(name);
+            if (nameKey && seenNames.has(nameKey)) return;
+
+            const coordinates = row.coordinates || row.location && row.location.coordinates || {};
+            const latitude = Number(row.lat ?? row.latitude ?? coordinates.lat ?? coordinates.latitude);
+            const longitude = Number(row.lon ?? row.lng ?? row.longitude ?? coordinates.lon ?? coordinates.lng ?? coordinates.longitude);
+            if (!Number.isFinite(latitude) || !Number.isFinite(longitude) ||
+                latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) return;
+
+            if (nameKey) seenNames.add(nameKey);
+            const actualRole = row.isCapital === true || String(row.role || role || '').toLowerCase() === 'capital'
+                ? 'capital'
+                : String(row.role || role || 'city').toLowerCase();
+            hubs.push(Object.assign({}, row, { name, lat: latitude, lon: longitude, role: actualRole }));
+        };
+
+        // Preserve the detailed hub registry when it exists.
+        appendHub(countryData.capital, 'capital');
+        ['economic', 'military', 'secret', 'cities'].forEach(role => {
+            const items = countryData[role];
+            if (Array.isArray(items)) items.forEach(item => appendHub(item, role === 'cities' ? 'city' : role));
+        });
+
+        // cities.json is owned by the country runtime, not locationsRegistry.
+        // Read only the selected country's indexed rows; legacy data groups hubs by role.
+        const countryRuntime = window.OmegaCountryRuntimeData;
+        if (countryRuntime && typeof countryRuntime.getCities === 'function') {
+            try {
+                const runtimeCities = countryRuntime.getCities(countryName);
+                if (Array.isArray(runtimeCities)) runtimeCities.forEach(city => appendHub(city, city && city.role || 'city'));
+
+                // The map can become interactive before cities.json finishes loading.
+                // Schedule one refresh per selected country once the existing runtime is ready.
+                if ((!Array.isArray(runtimeCities) || runtimeCities.length === 0) &&
+                    typeof countryRuntime.isReady === 'function' && !countryRuntime.isReady() &&
+                    countryRuntime.ready && typeof countryRuntime.ready.then === 'function') {
+                    const pending = window.__OMEGA_CITY_RUNTIME_REFRESH_PENDING__ ||
+                        (window.__OMEGA_CITY_RUNTIME_REFRESH_PENDING__ = new Set());
+                    const pendingKey = Game.getCountryId(countryName) || countryName;
+                    if (!pending.has(pendingKey)) {
+                        pending.add(pendingKey);
+                        Promise.resolve(countryRuntime.ready).then(ready => {
+                            pending.delete(pendingKey);
+                            if (ready && Game.currentActiveCountry === countryName &&
+                                !(Game.Map.resourceState && Game.Map.resourceState.enabled) &&
+                                typeof Game.Map.renderCountryHubs === 'function') {
+                                Game.Map.renderCountryHubs();
+                            }
+                        }).catch(() => pending.delete(pendingKey));
+                    }
+                }
+            } catch (error) {
+                console.warn('[OMEGA Map] Selected-country city lookup failed:', error);
+            }
         }
 
-        const countryId = Game.getCountryId(Game.currentActiveCountry);
-        const countryData = Game.locationsRegistry ? Game.locationsRegistry[countryId] : null;
-        if (!countryData) return;
-
-        let hubs = [];
-        if (countryData.capital) hubs.push(Object.assign({}, countryData.capital, { role: 'capital' }));
-        if (countryData.economic) countryData.economic.forEach(h => hubs.push(Object.assign({}, h, { role: 'economic' })));
-        if (countryData.military) countryData.military.forEach(h => hubs.push(Object.assign({}, h, { role: 'military' })));
-        if (countryData.secret) countryData.secret.forEach(h => hubs.push(Object.assign({}, h, { role: 'secret' })));
-
         const currentZoom = this.map ? this.map.getZoom() : 4;
+        // Show a limited summary at world scale, then all recorded hubs for the selected country when zoomed in.
+        const visibleHubs = hubs.slice(0, currentZoom < 3.2 ? 8 : 60);
+        visibleHubs.forEach(hub => {
+            const roleColor = hub.role === 'capital' ? '#ffd700'
+                : hub.role === 'economic' ? '#f59e0b'
+                : hub.role === 'military' ? '#ef4444'
+                : hub.role === 'secret' ? '#a855f7' : '#00e5ff';
+            const roleTitle = hub.role === 'capital' ? 'Capital Command Hub'
+                : hub.role === 'economic' ? 'Industrial Economic Hub'
+                : hub.role === 'military' ? 'Military Defense Station'
+                : hub.role === 'secret' ? 'Strategic Intelligence Base' : 'City';
 
-        hubs.forEach(hub => {
-            var latitude = hub.lat, longitude = hub.lon !== undefined ? hub.lon : hub.lng;
-            if (!latitude || longitude === undefined) return;
-
-            // When zoomed far out (zoom < 3.2), only show capital to prevent clutter
-            if (currentZoom < 3.2 && hub.role !== 'capital') return;
-
-            var roleColor = '#00e5ff';
-            var roleTitle = 'Regional Hub';
-
-            if (hub.role === 'capital') { roleColor = '#ffd700'; roleTitle = 'Capital Command Hub'; }
-            else if (hub.role === 'economic') { roleColor = '#f59e0b'; roleTitle = 'Industrial Economic Hub'; }
-            else if (hub.role === 'military') { roleColor = '#ef4444'; roleTitle = 'Military Defense Station'; }
-            else if (hub.role === 'secret') { roleColor = '#a855f7'; roleTitle = 'Strategic Intelligence Base'; }
-
-            var hubIcon = L.divIcon({
+            const hubIcon = L.divIcon({
                 className: 'city-btn-marker-container',
                 html: `
                     <div class="city-btn-marker" style="
@@ -835,17 +909,14 @@ Game.Map = {
                 iconSize: [0, 0]
             });
 
-            var hubMarker = L.marker([latitude, longitude], { icon: hubIcon });
-
-            hubMarker.on('click', function(e) {
-                L.DomEvent.stopPropagation(e);
-                Game.Map.openCityDetailBar(hub, Game.currentActiveCountry, roleColor, roleTitle);
+            const hubMarker = L.marker([hub.lat, hub.lon], { icon: hubIcon });
+            hubMarker.on('click', function (event) {
+                L.DomEvent.stopPropagation(event);
+                Game.Map.openCityDetailBar(hub, countryName, roleColor, roleTitle);
             });
-
             this.hubsGroupLayer.addLayer(hubMarker);
         });
     },
-
     renderGlobalCapitalHubs() {
         if (!this.hubsGroupLayer) return;
         this.hubsGroupLayer.clearLayers(); // Clean slate, do not render global hubs when unselected
@@ -1022,9 +1093,10 @@ Game.Map.renderGeoJSON = function(geoData) {
             if (config) defaultColor = window.getCountryColor(config.name);
             const zoom = window.map && typeof window.map.getZoom === "function" ? window.map.getZoom() : 2.5;
             return {
-                color: "#dce7df",
-                weight: zoom >= 8 ? 1.55 : (zoom >= 5 ? 1.25 : 1.05),
-                opacity: 0.96,
+                // High-contrast outlines remain selectable on both dark and satellite basemaps.
+                color: "#f8fafc",
+                weight: zoom >= 8 ? 1.8 : (zoom >= 5 ? 1.5 : 1.25),
+                opacity: 1.0,
                 dashArray: null,
                 fillColor: defaultColor,
                 fillOpacity: 0.22
@@ -1435,6 +1507,7 @@ Game.Map.deselectAllResourceTypes = function() {
 Game.Map.clearAndResetResourceMode = function() {
     this.resourceState.enabled = false;
     this.isResourceModeActive = false;
+    this.activeResourceFilter = 'NONE';
     this.resourceState.selectedResources.clear();
     this.hideResourceFilterMenu();
     
@@ -1452,8 +1525,10 @@ Game.Map.clearAndResetResourceMode = function() {
         btn.style.background = '';
     }
 
-    // Restore Cities
-    if (typeof this.renderGlobalCapitalHubs === 'function') {
+    // Restore only the selected country's cities; never fall back to world-wide city markers.
+    if (Game.currentActiveCountry && typeof this.renderCountryHubs === 'function') {
+        this.renderCountryHubs();
+    } else if (typeof this.renderGlobalCapitalHubs === 'function') {
         this.renderGlobalCapitalHubs();
     } else if (typeof this.renderCountryHubs === 'function') {
         this.renderCountryHubs();
@@ -1488,6 +1563,24 @@ Game.Map.renderResourceDeposits = function() {
 
     // CRITICAL MANDATE 11: ONE LAYER ONLY. Always clear before adding new markers.
     this.resourceDepositsLayer.clearLayers();
+
+    // The individual-site renderer is the canonical resource layer. Avoid rescanning
+    // the legacy world-wide deposit array when that asynchronous country-scoped layer
+    // is ready or still loading; the binding refresh hook will paint its bounded markers.
+    const individualSiteBinding = window.OmegaIndividualResourceSiteBinding ||
+        (window.Omega && window.Omega.IndividualResourceSiteBinding);
+    if (this.resourceState && this.resourceState.enabled &&
+        (individualSiteBinding || window.__OMEGA_RESOURCE_SITE_BINDING_INIT__)) {
+        const summaryCountElem = document.getElementById('resource-summary-count');
+        const activeCountry = Game.currentActiveCountry ||
+            (window.CountryIOS && window.CountryIOS.activeCountry) || '';
+        if (summaryCountElem) {
+            summaryCountElem.textContent = !activeCountry && String(this.resourceState.scope || 'NATION') !== 'WORLD'
+                ? 'Select a country'
+                : (individualSiteBinding ? 'Country resource sites shown on map' : 'Preparing resource sites…');
+        }
+        return;
+    }
 
     // Auto-populate all catalog resources if selectedResources is empty but enabled
     if (this.resourceState && this.resourceState.enabled && (!this.resourceState.selectedResources || this.resourceState.selectedResources.size === 0)) {
@@ -1755,7 +1848,10 @@ Game.Map.applyResourceMapFilter = function(resourceType) {
     }
     const countrySelected = !!(Game.currentActiveCountry ||
         (window.CountryIOS && window.CountryIOS.activeCountry));
-    state.scope = countrySelected ? 'NATION' : 'WORLD';
+    // NATION is the safe default. WORLD remains available only when the player
+    // explicitly selected it in the resource-scope control.
+    const configuredScope = String(state.scope || 'NATION').toUpperCase();
+    state.scope = countrySelected ? 'NATION' : (configuredScope === 'WORLD' ? 'WORLD' : 'NATION');
 
     if (isNone) {
         state.enabled = false;
@@ -1861,7 +1957,7 @@ Game.Map.applyRelationsMapFilter = function(focusCountry) {
             else if (score < -15) color = '#f97316'; // বৈরী (কমলা)
             else color = '#64748b'; // নিরপেক্ষ (স্লেট গ্রে)
         }
-        layer.setStyle({ fillColor: color, fillOpacity: opacity, color: 'rgba(255,255,255,0.1)', weight: 0.5 });
+        layer.setStyle({ fillColor: color, fillOpacity: opacity, color: '#f8fafc', weight: 1.25, opacity: 1.0 });
     });
 };
 
@@ -1906,8 +2002,10 @@ Game.Map.toggleResourceMode = function() {
             btnMode.style.boxShadow = '';
             btnMode.style.background = '';
         }
-        // Restore cities layer
-        if (typeof this.renderGlobalCapitalHubs === 'function') {
+        // Restore only the chosen country's cities after resource mode closes.
+        if (Game.currentActiveCountry && typeof this.renderCountryHubs === 'function') {
+            this.renderCountryHubs();
+        } else if (typeof this.renderGlobalCapitalHubs === 'function') {
             this.renderGlobalCapitalHubs();
         } else if (typeof this.renderCountryHubs === 'function') {
             this.renderCountryHubs();
