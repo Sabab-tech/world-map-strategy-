@@ -111,6 +111,48 @@ test('one 10-second real-time interval advances exactly one shared game day', as
   assert.equal(turnEvent.detail.payload.simulationDate, '2015-01-02T00:00:00.000Z');
 });
 
+test('turn diagnostics retain summaries instead of duplicating large resource payloads into saves', async () => {
+  const { sim, gameState } = createRuntime();
+  const payloadSize = 250;
+  sim.registerSubsystem('test.large-resource-result', async (_event, context) => ({
+    status: 'COMPLETED',
+    turn: context.turn,
+    totalCountryCount: payloadSize,
+    processedCountryCount: payloadSize,
+    results: Array.from({ length: payloadSize }, (_, index) => ({
+      countryId: 'C' + index,
+      siteResults: Array.from({ length: 8 }, (__, siteIndex) => ({
+        siteId: 'SITE-' + index + '-' + siteIndex,
+        payload: 'resource-runtime-detail-'.repeat(20)
+      }))
+    }))
+  }), { priority: 10 });
+
+  sim.startSession({ playerCountryId: 'BGD' });
+  await sim.frame(STEP_MS);
+
+  const participant = sim.diagnostics().lastTurnParticipantResults.find(
+    row => row.id === 'test.large-resource-result'
+  );
+  assert.ok(participant);
+  assert.equal(participant.status, 'COMPLETED');
+  assert.equal(participant.result.totalCountryCount, payloadSize);
+  assert.equal(participant.result.resultsCount, payloadSize);
+  assert.equal(Object.hasOwn(participant.result, 'results'), false,
+    'retained diagnostics must not keep the full per-country payload array');
+
+  const persistedParticipant = gameState.simulation.lastTurnParticipantResults.find(
+    row => row.id === 'test.large-resource-result'
+  );
+  assert.equal(persistedParticipant.result.resultsCount, payloadSize);
+  assert.equal(Object.hasOwn(persistedParticipant.result, 'results'), false,
+    'authoritative state must retain only the compact participant summary');
+
+  const serializedSave = JSON.stringify(sim.saveState());
+  assert.ok(serializedSave.length < 30000,
+    'save envelope must not duplicate the synthetic multi-country payload: ' + serializedSave.length);
+});
+
 test('save slot restores selected country, game date and authoritative state', async () => {
   const { sim, gameState, storage } = createRuntime();
   sim.startSession({ playerCountryId: 'BGD' });
