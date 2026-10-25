@@ -901,8 +901,8 @@
       const sim=global.Omega&&global.Omega.Simulation;
       const candidates=[selectedCountryValue,session.playerCountryId,root&&root.simulation&&root.simulation.playerCountryId,
         root&&root.playerCountryId,root&&root.playerCountryCode,sim&&typeof sim.getPlayerCountryId==='function'?sim.getPlayerCountryId():null,
-        global.Game&&(global.Game.playerCountryId||global.Game.playerCountry||global.Game.currentActiveCountry),
-        global.CountryIOS&&global.CountryIOS.activeCountry,global.currentActiveCountry];
+        global.Game&&(global.Game.playerCountryId||global.Game.playerCountry||global.Game.playerCountryCode),
+        global.OMEGA_PLAYER_COUNTRY_ID,global.playerCountry];
       for(const value of candidates){
         if(value==null||String(value).trim()==='')continue;
         try{activeProfile=finance&&typeof finance.resolveCountry==='function'?finance.resolveCountry(value):null;}catch(_){}
