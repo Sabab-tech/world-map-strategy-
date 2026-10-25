@@ -222,10 +222,13 @@
                     scheduleEngineLoop(0);
                 }
                 // A paused/stopped session has no scheduled background engine work.
-                window.addEventListener("OMEGA_GAME_SESSION_STARTED", resumeEngineTimer);
-                window.addEventListener("OMEGA_GAME_SESSION_RESUMED", resumeEngineTimer);
-                window.addEventListener("OMEGA_GAME_SESSION_PAUSED", cancelEngineTimer);
-                window.addEventListener("OMEGA_GAME_SESSION_STOPPED", cancelEngineTimer);
+                if (simulationRuntime?.events && typeof simulationRuntime.events.subscribe === "function") {
+                    // Session lifecycle events live on the canonical in-memory ledger, not window.
+                    simulationRuntime.events.subscribe("OMEGA_GAME_SESSION_STARTED", resumeEngineTimer);
+                    simulationRuntime.events.subscribe("OMEGA_GAME_SESSION_RESUMED", resumeEngineTimer);
+                    simulationRuntime.events.subscribe("OMEGA_GAME_SESSION_PAUSED", cancelEngineTimer);
+                    simulationRuntime.events.subscribe("OMEGA_GAME_SESSION_STOPPED", cancelEngineTimer);
+                }
 
                 document.addEventListener("visibilitychange", () => {
                     isPaused = document.hidden === true;
