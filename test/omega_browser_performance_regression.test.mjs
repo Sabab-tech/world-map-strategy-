@@ -319,6 +319,14 @@ test('simulation coordinator throttles asynchronous work and pauses cleanly in t
   assert.match(root, /scheduleEngineLoop\(SIMULATION_FRAME_INTERVAL_MS\)/);
   assert.match(root, /loopInProgress/);
   assert.match(root, /document\.hidden === true/);
+  assert.match(root, /function simulationIsRunning\(\)/,
+    'the main coordinator must gate background work on the authoritative session state');
+  assert.match(root, /!simulationIsRunning\(\)/);
+  assert.match(root, /simulationRuntime\.events\.subscribe\("OMEGA_GAME_SESSION_STARTED"/);
+  assert.match(root, /simulationRuntime\.events\.subscribe\("OMEGA_GAME_SESSION_RESUMED"/);
+  assert.match(root, /simulationRuntime\.events\.subscribe\("OMEGA_GAME_SESSION_PAUSED"/);
+  assert.match(root, /if \(simulationIsRunning\(\)\) scheduleEngineLoop\(SIMULATION_FRAME_INTERVAL_MS\)/,
+    'paused sessions must not reschedule the 100 ms coordinator timer');
   assert.match(root, /window\.clearTimeout\(loopTimerId\)/);
   assert.doesNotMatch(root, /requestAnimationFrame\(engineLoop\)/);
 });

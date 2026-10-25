@@ -3290,21 +3290,9 @@ window.OmegaCabinetUI = {
 
         renderFrame();
 
+        // Resource charts are presentation only. Do not run a synthetic random production loop.
         if (window._resourceChartTimer) clearInterval(window._resourceChartTimer);
-        window._resourceChartTimer = setInterval(() => {
-            if (!document.getElementById('resource-live-canvas')) {
-                clearInterval(window._resourceChartTimer);
-                return;
-            }
-            const data = window._resourceGraphHistory;
-            if (!data) return;
-            const last = data[data.length - 1];
-            const delta = (Math.random() - 0.47) * (last * 0.035);
-            const nextVal = Number(Math.max(1, last + delta).toFixed(2));
-            data.shift();
-            data.push(nextVal);
-            renderFrame();
-        }, 3000);
+        window._resourceChartTimer = null;
     },
 
     executeResourceDirective(directiveType) {

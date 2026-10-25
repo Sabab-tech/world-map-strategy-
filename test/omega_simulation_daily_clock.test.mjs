@@ -84,6 +84,29 @@ function createRuntime() {
   return { win, sim, gameState, storage, dispatched, worldTicks };
 }
 
+function attachLifecycle(win, sim) {
+  const documentListeners = new Map();
+  win.document = {
+    readyState: 'interactive',
+    visibilityState: 'visible',
+    addEventListener(type, handler) {
+      const rows = documentListeners.get(type) || [];
+      rows.push(handler);
+      documentListeners.set(type, rows);
+    },
+    querySelector() { return null; },
+    querySelectorAll() { return []; }
+  };
+  win.Omega.App = { state: 'READY', simulation: sim };
+  const lifecycleSource = fs.readFileSync(path.join(root, 'omega_game_lifecycle_runtime_v1.js'), 'utf8');
+  const lifecycleContext = vm.createContext({
+    window: win, globalThis: win, console, setTimeout, clearTimeout,
+    Date, JSON, Number, String, Math, Promise, Map, Object, Array, Error, Intl
+  });
+  vm.runInContext(lifecycleSource, lifecycleContext, { filename: 'omega_game_lifecycle_runtime_v1.js' });
+  return { documentListeners, lifecycle: win.Omega.GameLifecycle };
+}
+
 test('one 10-second real-time interval advances exactly one shared game day', async () => {
   const { win, sim, gameState, dispatched, worldTicks } = createRuntime();
   assert.equal(sim.clock.stepDurationMs, DAY_MS);
@@ -246,6 +269,9 @@ test('index, finance, bank and offline shell use the daily lifecycle assets', ()
   const endowment = fs.readFileSync(path.join(root, 'omega_resource_endowment_runtime.js'), 'utf8');
   const resourceEconomy = fs.readFileSync(path.join(root, 'omega_resource_economy_runtime_v2.js'), 'utf8');
   const macro = fs.readFileSync(path.join(root, 'omega_macro_stability_runtime_v1.js'), 'utf8');
+  const ministryEngine = fs.readFileSync(path.join(root, 'ministry_engine.js'), 'utf8');
+  const ministerIntegration = fs.readFileSync(path.join(root, 'omega_minister_integration.js'), 'utf8');
+  const liveOps = fs.readFileSync(path.join(root, 'omega_live_operations_observability_v1.js'), 'utf8');
 
   assert.match(index, /id="omega-global-time-hud"/);
   const topHeaderStart = index.indexOf('id="top-status-bar"');
@@ -308,6 +334,14 @@ test('index, finance, bank and offline shell use the daily lifecycle assets', ()
   assert.doesNotMatch(lifecycle, /Math\.floor\(turn\) % 3/);
   assert.match(lifecycle, /function saveNow\(options\)/);
   assert.match(lifecycle, /function onPageExit\(\)/);
+  assert.match(lifecycle, /stopAllBackgroundRuns/);
+  assert.match(lifecycle, /startAllBackgroundRuns/);
+  assert.doesNotMatch(ministryEngine, /window\._resourceChartTimer = setInterval/,
+    'resource visual charts must not own a continuously running synthetic production timer');
+  assert.doesNotMatch(ministerIntegration, /setInterval\(/,
+    'minister consistency checks must be driven by state-change events');
+  assert.doesNotMatch(liveOps, /refreshHandle = g\.setInterval/,
+    'Live Operations must refresh from events instead of a background poll');
   assert.match(endowment, /function onTurn\(\)\{return extractAll\(\);\}/);
   assert.match(resourceEconomy, /return runTurn\(\);/);
   assert.match(macro, /return init\(\)\.then\(\(\)=>advanceTurn\(turn,duration\)\)/);
@@ -419,28 +453,71 @@ test('a failed sector stops future days and exposes the exact failed participant
     row.id === 'test.failing-sector' && row.status === 'FAILED' && row.error.includes('SYNTHETIC_SECTOR_FAILURE')));
 });
 
+test('boot and app-background transitions stop every automatic game turn until Play is explicitly pressed', async () => {
+  const { win, sim, storage } = createRuntime();
+  const { documentListeners, lifecycle } = attachLifecycle(win, sim);
+  await lifecycle.restore();
+
+  assert.equal(sim.status, 'PAUSED');
+  assert.equal(sim.clock.paused, true);
+  assert.equal(lifecycle.getDiagnostics().backgroundRunsEnabled, false);
+  assert.match(lifecycle.getDiagnostics().status, /BACKGROUND SYSTEMS PAUSED/);
+  const bootFrame = await sim.frame(STEP_MS * 3);
+  assert.equal(bootFrame.steps, 0);
+  assert.equal(sim.clock.turn, 0, 'restoring a country must not start resource, factory, economy or AI turns');
+
+  assert.equal(lifecycle.startAllBackgroundRuns(), true, 'Play should explicitly re-enable game turns');
+  assert.equal(sim.status, 'RUNNING');
+  await sim.frame(STEP_MS);
+  const committedTurn = sim.clock.turn;
+  assert.equal(committedTurn, 1);
+
+  win.document.visibilityState = 'hidden';
+  for (const listener of documentListeners.get('visibilitychange') || []) listener();
+  assert.equal(sim.status, 'PAUSED');
+  assert.equal(sim.clock.paused, true);
+  let saved = JSON.parse(storage.get('omega.game.save.default'));
+  assert.equal(saved.status, 'PAUSED');
+  assert.equal(saved.worldState.simulation.session.status, 'PAUSED',
+    'the saved checkpoint must record the pause instead of a RUNNING session');
+
+  win.document.visibilityState = 'visible';
+  for (const listener of documentListeners.get('visibilitychange') || []) listener();
+  assert.equal(sim.status, 'PAUSED', 'returning to the app must not restart background runs');
+  assert.equal(lifecycle.getDiagnostics().backgroundRunsEnabled, false);
+  const foregroundFrame = await sim.frame(STEP_MS * 3);
+  assert.equal(foregroundFrame.steps, 0);
+  assert.equal(sim.clock.turn, committedTurn);
+});
+
+test('restoring a previously RUNNING save preserves the world but keeps all automated sectors paused', async () => {
+  const { win, sim, gameState, storage } = createRuntime();
+  sim.startSession({ playerCountryId: 'BGD' });
+  await sim.advance(2);
+  gameState.economy.BGD.treasury = 987654;
+  const previousRunningSave = sim.saveState();
+  assert.equal(previousRunningSave.status, 'RUNNING');
+  storage.set('omega.game.save.default', JSON.stringify(previousRunningSave));
+  sim.stopSession();
+
+  const { lifecycle } = attachLifecycle(win, sim);
+  await lifecycle.restore();
+  assert.equal(sim.status, 'PAUSED');
+  assert.equal(sim.clock.paused, true);
+  assert.equal(sim.clock.turn, 2);
+  assert.equal(gameState.economy.BGD.treasury, 987654, 'pausing must not discard the saved economy state');
+  assert.equal(lifecycle.getDiagnostics().backgroundRunsEnabled, false);
+  const frame = await sim.frame(STEP_MS);
+  assert.equal(frame.steps, 0);
+  assert.equal(sim.clock.turn, 2);
+});
+
 test('lifecycle autosaves only after async sector work and catches pagehide without Back navigation', async () => {
   const { win, sim, gameState, storage } = createRuntime();
-  const documentListeners = new Map();
-  win.document = {
-    readyState: 'interactive',
-    visibilityState: 'visible',
-    addEventListener(type, handler) {
-      const rows = documentListeners.get(type) || [];
-      rows.push(handler);
-      documentListeners.set(type, rows);
-    },
-    querySelector() { return null; },
-    querySelectorAll() { return []; }
-  };
-  win.Omega.App = { state: 'READY', simulation: sim };
-  const lifecycleSource = fs.readFileSync(path.join(root, 'omega_game_lifecycle_runtime_v1.js'), 'utf8');
-  const lifecycleContext = vm.createContext({
-    window: win, globalThis: win, console, setTimeout, clearTimeout,
-    Date, JSON, Number, String, Math, Promise, Map, Object, Array, Error, Intl
-  });
-  vm.runInContext(lifecycleSource, lifecycleContext, { filename: 'omega_game_lifecycle_runtime_v1.js' });
+  attachLifecycle(win, sim);
   await win.Omega.GameLifecycle.restore();
+  assert.equal(win.Omega.GameLifecycle.startAllBackgroundRuns(), true,
+    'the existing lifecycle save test must explicitly resume after the new safe boot pause');
 
   win.addEventListener('OMEGA_SIMULATION_TURN_COMMITTED', async () => {
     await new Promise(resolve => setTimeout(resolve, 5));
