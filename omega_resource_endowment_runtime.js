@@ -853,7 +853,7 @@
         resourceId:identity.resourceTypeId||profile?.resourceId||null,
         resourceTypeId:identity.resourceTypeId||profile?.resourceTypeId||null,
         siteType:identity.siteType||profile?.siteType||null,
-        status:operation.status||profile?.status||'ACTIVE_SITE_REFERENCE',commercialExtraction:operation.commercialExtraction!==false&&String(operation.status||'').toUpperCase()!=='NOT_APPLICABLE',
+        status:operation.status||profile?.status||'ACTIVE_SITE_REFERENCE',commercialExtraction:operation.commercialExtraction===true&&String(operation.status||'').toUpperCase()!=='NOT_APPLICABLE',
         owner:ownership.owner||profile?.owner||null,operator:ownership.operator||profile?.operator||null,
         lat:location.coordinates?.lat??profile?.lat??null,lon:location.coordinates?.lng??profile?.lon??null,
         quantitative:clone(q),simulation:clone(sim),quantitativeProvenance:clone(q.quantitativeProvenance||{}),
@@ -875,7 +875,7 @@
         extractionExecutable:false
       })||rawSite;
       canonicalRows.push({
-        siteReferenceKey:siteId,siteId,countryId:wanted,countryCode:wanted,commercialExtraction:operation.commercialExtraction!==false&&String(operation.status||'').toUpperCase()!=='NOT_APPLICABLE',
+        siteReferenceKey:siteId,siteId,countryId:wanted,countryCode:wanted,commercialExtraction:operation.commercialExtraction===true&&String(operation.status||'').toUpperCase()!=='NOT_APPLICABLE',
         countryId:wanted,countryCode:wanted,resourceId:identity.resourceTypeId||profile?.resourceId||null,
         resourceTypeId:identity.resourceTypeId||profile?.resourceTypeId||null,resourceTypeKey:identity.resourceTypeId||profile?.resourceTypeKey||null,
         profileKey:'CANONICAL_SITE_CATALOG',
