@@ -149,6 +149,30 @@ function ensureCountryInventory(country){
  rs.mineStates=rs.mineStates&&typeof rs.mineStates==='object'?rs.mineStates:{};
  return rs;
 }
+function ensureStarterTechnologies(country,sites,rs){
+ const industryCatalog=g.OmegaResourceIndustrialCatalogData||g.Omega?.ResourceIndustrialCatalogData||{};
+ const rules=industryCatalog.processingRules||{},profiles=industryCatalog.factoryProfiles||{};
+ const required=new Set();
+ for(const site of sites){
+  const rid=siteResource(site),rule=rules[rid];
+  const profile=profiles[String(rule?.factoryType||'').toUpperCase()]||{};
+  for(const id of Array.isArray(profile.requiredTechnologyIds)?profile.requiredTechnologyIds:[]){
+   const technologyId=String(id||'').trim();if(technologyId)required.add(technologyId);
+  }
+ }
+ rs.technologyCapabilities=Array.isArray(rs.technologyCapabilities)?rs.technologyCapabilities:[];
+ const added=[];
+ for(const technologyId of required){
+  const prior=rs.technologyCapabilities.find(row=>String(row?.technologyId||'').toUpperCase()===technologyId.toUpperCase()&&
+   ['COMPLETE','COMPLETED','AVAILABLE','UNLOCKED','OPERATIONAL','ACTIVE'].includes(String(row?.status||'').toUpperCase()));
+  if(prior)continue;
+  rs.technologyCapabilities.push({technologyId,status:'COMPLETE',level:1,commissionedTurn:num(state()?.simulation?.turn)||0,
+   source:'SIMULATED_PLAYER_COUNTRY_STARTER_TECHNOLOGY',authority:'SIMULATED_PLAYER_COUNTRY_STARTER_TECHNOLOGY',
+   simulationOnly:true,autoProvisioned:true});
+  added.push(technologyId);
+ }
+ return{status:'READY',requiredTechnologyCount:required.size,addedTechnologyCount:added.length,addedTechnologyIds:added};
+}
 function autoStaffAsset(country,site,rs){
  const siteId=String(site.siteId),rid=siteResource(site),workers=workerRequirement(site,rid),capacity=siteDailyCapacity(site,rid);
  const assets=rs.mineAssets;
@@ -234,6 +258,12 @@ async function bootstrapCountry(countryId,options={}){
   const ready=await endowment.initialize();
   if(ready?.status!=='READY')return{status:'BLOCKED',reason:'RESOURCE_ENDOWMENT_NOT_READY',detail:ready,countryId:active};
   if(playerCountryId()!==active)return{status:'SKIPPED',reason:'PLAYER_COUNTRY_CHANGED_DURING_INITIALIZATION',countryId:active};
+  const industry=g.Omega?.ResourceIndustrialNetwork||g.OmegaResourceIndustrialNetwork;
+  if(typeof industry?.loadCatalog==='function'){
+   const catalogReady=await industry.loadCatalog();
+   if(catalogReady?.status==='FAILED')return{status:'BLOCKED',reason:'INDUSTRIAL_CATALOG_NOT_READY',detail:catalogReady,countryId:active};
+  }
+  if(playerCountryId()!==active)return{status:'SKIPPED',reason:'PLAYER_COUNTRY_CHANGED_DURING_CATALOG_LOAD',countryId:active};
   const sites=allSites().filter(site=>eligibleSite(site,active));
   if(!sites.length)return{status:'BLOCKED',reason:'NO_ELIGIBLE_COUNTRY_SITES',countryId:active};
   const firstHydration=await endowment.hydrateCountry(active);
@@ -268,11 +298,43 @@ async function bootstrapCountry(countryId,options={}){
    authority:'SIMULATED_PLAYER_COUNTRY_STARTER_WORKFORCE',simulationOnly:true,
    updatedTurn:num(state()?.simulation?.turn)||0
   };
+  // A starter workforce pool is simulation-only and country-local. Preserve source values,
+  // but prevent a missing/tiny unemployment ledger from stopping every new starter factory.
+  if(economy.starterWorkforceProvisioning?.version!==VERSION){
+   const countKeys=['unemploymentCount','unemployedCount','unemployedPeople','unemployed_people','unemployment_count','joblessCount'];
+   const rateKeys=['unemployment_rate','unemploymentRatePct','unemploymentRate','unemployment_rate_pct'];
+   const laborKeys=['laborForce','labor_force','laborForceSize','labor_force_size','totalLaborForce','total_labor_force'];
+   const firstNumber=keys=>{for(const key of keys){const value=num(economy[key]);if(value!==null&&value>=0)return{value,key};}return{value:null,key:null};};
+   const sourceCount=firstNumber(countKeys),sourceRate=firstNumber(rateKeys),sourceLabor=firstNumber(laborKeys);
+   const inferred=sourceCount.value!==null?sourceCount.value:
+    (sourceRate.value!==null&&sourceLabor.value!==null?Math.round(sourceLabor.value*sourceRate.value/100):0);
+   const minimumPool=Math.max(1000000,totalWorkersRequired+sites.length*2500+50000);
+   const starterPool=Math.max(minimumPool,inferred||0);
+   const starterLaborForce=Math.max(sourceLabor.value||0,starterPool*10,10000000);
+   economy.starterWorkforceOriginal={unemploymentCount:sourceCount.value,unemploymentCountField:sourceCount.key,
+    unemploymentRatePct:sourceRate.value,unemploymentRateField:sourceRate.key,
+    labourForce:sourceLabor.value,labourForceField:sourceLabor.key};
+   economy.unemploymentCount=starterPool;
+   economy.laborForce=starterLaborForce;
+   economy.unemployment_rate=Number((starterPool/starterLaborForce*100).toFixed(6));
+   for(const key of countKeys)if(Object.prototype.hasOwnProperty.call(economy,key))economy[key]=starterPool;
+   for(const key of laborKeys)if(Object.prototype.hasOwnProperty.call(economy,key))economy[key]=starterLaborForce;
+   for(const key of rateKeys)if(Object.prototype.hasOwnProperty.call(economy,key))economy[key]=economy.unemployment_rate;
+   economy.starterWorkforceProvisioning={version:VERSION,status:'READY',countryId:active,
+    availableWorkers:starterPool,labourForce:starterLaborForce,minimumStarterPool:minimumPool,
+    sourceAuthority:sourceCount.value!==null||sourceRate.value!==null?'SOURCE_VALUES_PRESERVED_IN_STARTER_WORKFORCE_ORIGINAL':'NO_RECORDED_LABOUR_BASELINE',
+    authority:'SIMULATED_PLAYER_COUNTRY_STARTER_WORKFORCE',simulationOnly:true,
+    updatedTurn:num(state()?.simulation?.turn)||0};
+  }
+  const technologyProvisioning=ensureStarterTechnologies(active,sites,rs);
+  let workforceReconciliation=null;
+  try{workforceReconciliation=industry?.reconcileFactoryEmployment?.(active)||null;}catch(_){}
   rs.autoMineProvisioning={
    version:VERSION,status:'READY',countryId:active,turn:num(state()?.simulation?.turn)||0,
    eligibleSiteCount:sites.length,autoStaffedSiteCount:autoStaffed,totalWorkersRequired,
    totalAssignedWorkers:totalWorkers,totalAssignedVehicles:totalVehicles,
-   mineEmployment:economy.mineEmployment,infrastructureStatus:infra.normalized,
+   mineEmployment:economy.mineEmployment,starterWorkforce:economy.starterWorkforceProvisioning,
+   technologyProvisioning,workforceReconciliation,infrastructureStatus:infra.normalized,
    starterResourcesAvailable:true,allEligibleMinesCommissioned:true,
    authority:'SIMULATED_PLAYER_COUNTRY_STARTER_PROVISIONING'
   };
