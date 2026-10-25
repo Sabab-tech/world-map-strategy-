@@ -68,8 +68,12 @@
   }
 
   function checksumSnapshot(value){
-    const payload=clone(value||{});
-    if(payload&&typeof payload==='object')delete payload.checksum;
+    // saveState() already creates a detached snapshot. Deep-cloning it again before
+    // hashing traverses a potentially large world twice on Android's UI thread.
+    // A shallow envelope copy preserves the caller's object and lets stableStringify
+    // make the single canonical traversal without mutating the stored snapshot.
+    const payload=value&&typeof value==='object'&&!Array.isArray(value)?{...value}:clone(value||{});
+    if(payload&&typeof payload==='object'&&!Array.isArray(payload))delete payload.checksum;
     const text=stableStringify(payload);
     let hash=2166136261;
     for(let i=0;i<text.length;i++){hash^=text.charCodeAt(i);hash=Math.imul(hash,16777619);}
