@@ -421,7 +421,8 @@ test('index, finance, bank and offline shell use the daily lifecycle assets', ()
     'global trade settlement must yield between request batches');
   assert.match(industrialNetwork, /await new Promise\(resolve=>\{/,
     'industrial country processing must yield to WebView input and layout');
-  assert.match(macro, /return init\(\)\.then\(\(\)=>advanceTurn\(turn,duration\)\)/);
+  assert.match(macro, /return init\(\)\.then\(\(\)=>advanceTurn\(turn,duration,playerCountryId,true\)\)/,
+    'the macro turn participant must pass the authoritative player country into the daily runtime');
 });
 
 
@@ -734,7 +735,7 @@ test('automatic production and resource pipelines advance only the player-select
   const worldBankTurnStart=worldBank.indexOf("OMEGA_SIMULATION_TURN_COMMITTED");
   const worldBankTurnEnd=worldBank.indexOf("OMEGA_FINANCE_STATE_UPDATED",worldBankTurnStart);
   const worldBankTurn=worldBank.slice(worldBankTurnStart,worldBankTurnEnd);
-  assert.match(worldBankTurn, /const playerCountryValue=detail\.countryId\|\|\(detail\.payload&&detail\.payload\.countryId\);[\s\S]*?processTurn\(turn, stepDurationMs, playerCountryValue, true\)[\s\S]*?serviceCountryLoansOnTurn\(turn, stepDurationMs, playerCountryValue, true\)[\s\S]*?evaluatePlayerCountry\(playerCountryValue\)/,
+  assert.match(worldBankTurn, /const playerCountryValue=detail\.countryId\|\|\(detail\.payload&&detail\.payload\.countryId\)\|\|session\.playerCountryId[\s\S]*?processTurn\(turn, stepDurationMs, playerCountryValue, true\)[\s\S]*?serviceCountryLoansOnTurn\(turn, stepDurationMs, playerCountryValue, true\)[\s\S]*?evaluatePlayerCountry\(playerCountryValue\)/,
     'World Bank automatic loan accrual, debt service and assessment must use the authoritative player ID');
   assert.match(worldBank, /function processTurn\(turnNumber, stepDurationMs, selectedCountryValue, backgroundTurn\)[\s\S]*?if\(backgroundTurn\)[\s\S]*?codeOf\(lenderProfile\)!==selectedCode/,
     'non-player World Bank funding claims must not accrue in background turns');
