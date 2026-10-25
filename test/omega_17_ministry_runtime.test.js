@@ -102,6 +102,19 @@ test('OMEGA canonical 17-ministry runtime is independently engine-backed and bin
         economy:{BANGLADESH:{gdp:100,debt:20,budget:15,inflation:4,unemployment:5,production:80}},
         population:{BANGLADESH:{total:100000000}},
         relations:{BANGLADESH:{INDIA:{score:55}}},
+        interior:{BANGLADESH:{
+          stability:75,corruption:25,security:80,
+          police:{
+            baselineVersion:1,baselineSource:'OMEGA_COUNTRY_POLICE_BASELINE_V1',
+            policeCount:120000,policeEfficiency:78,policeTrust:64,
+            facilityLevels:{station:4,academy:3},vehiclesOwned:{'1':1200,'2':350},
+            patrolPlan:{urban:35,rural:25,border:20,traffic:20},
+            crimeModel:{totalIncidents:4200,openedCases:700,clearedCases:400},
+            pendingCapabilityProjects:[{id:'POLICE-UPGRADE-TEST',status:'IN_PROGRESS'}],
+            completedCapabilityProjects:[{id:'POLICE-UPGRADE-DONE',status:'COMPLETED'}],
+            trainingQualityLevel:3,policeRecruitmentLevel:2,unlockedVehicleLevel:4
+          }
+        }},
         resources:{BANGLADESH:{oil:10}}
       },
       currentActiveCountry:'BANGLADESH'
@@ -170,6 +183,15 @@ test('OMEGA canonical 17-ministry runtime is independently engine-backed and bin
       goalStack:[]
     };
     const telemetry=runtime.tick(id,16.7,42,store,null);
+    if(id==='interior'){
+      const observed=telemetry.domainExecution.observedInputs;
+      assert.equal(observed['interior.police.policeCount'],120000,'Interior must read live police personnel from this country bucket');
+      assert.equal(observed['interior.police.policeEfficiency'],78,'Interior must read this country’s current police efficiency');
+      assert.equal(observed['interior.police.policeTrust'],64,'Interior must read this country’s public trust value');
+      assert.equal(observed['interior.police.pendingCapabilityProjects'][0].id,'POLICE-UPGRADE-TEST');
+      assert.equal(observed['interior.police.vehiclesOwned']['2'],350);
+      assert.equal(observed['interior.police.baselineVersion'],1);
+    }
     assert.equal(telemetry.id,id);
     assert.equal(telemetry.engineId,id);
     assert.equal(telemetry.engineVersion,ENGINE_VERSION);
