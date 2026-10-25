@@ -99,7 +99,7 @@ test('individual site map markers use resource-specific catalog glyphs and acces
   const css = read('omega_ui_visual_system_v1.css');
   assert.match(binding, /L\.marker\(\[lat,?\s*lng\],\{icon,title:/);
   assert.match(binding, /resourceCatalog\.find/);
-  assert.match(binding, /siteName\|\|site\.name\|\|site\.siteId/);
+  assert.match(binding, /siteName\|\|site\.siteId/);
   assert.match(binding, /siteCount:sites\.length/);
   assert.match(binding, /discoverSourceSites/,'raw resource JSONs must be scanned for individual site records');
   assert.match(binding, /resources\.json/,'primary resource JSON must feed the global site map');
