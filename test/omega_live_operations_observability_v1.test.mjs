@@ -295,7 +295,7 @@ test('Live Operations is opened from Resource Ministry, without redundant map la
   assert.match(liveOps, /open:openPanel/, 'the existing panel exposes a callable open method');
   assert.doesNotMatch(liveOps, /omega-liveops-launch/, 'the global floating Live Ops launcher is removed');
   assert.doesNotMatch(binding, /omega-individual-resource-open/, 'no separate Individual Sites button is injected');
-  assert.match(binding, /m\.on\('click',\(\)=>setSelected\(s\.siteId\)\)/, 'clicking a resource marker still selects that exact site');
+  assert.match(binding, /marker\.on\('click',\(\)=>setSelected\(site\.siteId\)\)/, 'clicking a resource marker still selects that exact site');
   assert.match(binding, /if\(panel\)panel\.style\.display='block'/, 'the selected-site details panel still opens from marker selection');
   assert.doesNotMatch(css, /omega-resource-open-button/, 'removed launcher styling does not remain');
 });
