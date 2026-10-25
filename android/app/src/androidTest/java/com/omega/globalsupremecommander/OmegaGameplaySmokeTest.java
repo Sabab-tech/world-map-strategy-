@@ -6,6 +6,7 @@ import static org.junit.Assert.assertTrue;
 
 import android.content.Intent;
 import android.os.SystemClock;
+import android.os.Debug;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.WebView;
@@ -15,6 +16,7 @@ import androidx.test.platform.app.InstrumentationRegistry;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.json.JSONObject;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -127,23 +129,27 @@ public final class OmegaGameplaySmokeTest {
             android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=OFFLINE_BRIDGE_READY");
             final String speedControlScript =
                     "(function() {" +
-                    " if (!window.Omega || !window.Omega.GameLifecycle || !window.Game) return false;" +
-                    // A speed selection must be tested in a started game, not an unowned world.
+                    " if (!window.Omega || !window.Omega.GameLifecycle || !window.Game) return {error:'GAME_LIFECYCLE_MISSING'};" +
+                    // Select the test player, then use the same real speed control a player uses.
                     " window.Game.currentActiveCountry = 'USA';" +
                     " window.Game.playerCountry = 'USA';" +
                     " if (window.CountryIOS) window.CountryIOS.activeCountry = 'USA';" +
                     " var button = document.querySelector('.speed-btn[data-speed=\\\"2\\\"]');" +
-                    " if (!button) return false;" +
+                    " if (!button) return {error:'SPEED_CONTROL_MISSING'};" +
                     " button.click();" +
-                    // Read the authoritative clock directly. GameLifecycle diagnostics must
-                    // never serialize/checksum the entire world just to inspect one scalar.
                     " var simulation = window.Omega.Simulation;" +
-                    " return !!(simulation && simulation.clock && Number(simulation.clock.speed) === 2);" +
+                    " if (!simulation || !simulation.clock) return {error:'SIMULATION_CLOCK_MISSING'};" +
+                    " return {speed:Number(simulation.clock.speed), status:String(simulation.status||'')," +
+                    " paused:!!simulation.clock.paused, turn:Number(simulation.clock.turn)||0};" +
                     "})()";
-            assertEquals(
-                    "Play must return promptly and set the authoritative OMEGA simulation clock to speed 2",
-                    "true", evaluate(instrumentation, webViewRef.get(), speedControlScript, 12L)
-            );
+            final String startedSessionRaw = evaluate(instrumentation, webViewRef.get(), speedControlScript, 12L);
+            final JSONObject startedSession = new JSONObject(startedSessionRaw);
+            assertTrue("The game must expose a session/clock after starting: " + startedSessionRaw,
+                    !startedSession.has("error"));
+            assertEquals("The selected game speed must take effect", 2, startedSession.getInt("speed"));
+            assertEquals("The game must actually enter RUNNING state", "RUNNING", startedSession.getString("status"));
+            assertTrue("The game clock must not remain paused after Play: " + startedSessionRaw,
+                    !startedSession.getBoolean("paused"));
             android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=PLAY_ACTION_RESPONSIVE");
 
             // The previous smoke covered boot and taps but ended before the reported
@@ -155,57 +161,97 @@ public final class OmegaGameplaySmokeTest {
                     "(function() {" +
                     " var sim = window.Omega && window.Omega.Simulation;" +
                     " var metrics = window.__OMEGA_DIAG__ && window.__OMEGA_DIAG__.metrics;" +
-                    " if (!sim || !sim.clock || !metrics) return 'RUNTIME_DIAGNOSTICS_MISSING';" +
-                    " return JSON.stringify({tick: metrics.tick || 0, turn: sim.clock.turn || 0," +
-                    " status: sim.status || null, now: Math.floor(performance.now())});" +
+                    " if (!sim || !sim.clock || !metrics) return {error:'RUNTIME_DIAGNOSTICS_MISSING'};" +
+                    " return {tick:Number(metrics.tick)||0, turn:Number(sim.clock.turn)||0," +
+                    " status:String(sim.status||''), paused:!!sim.clock.paused," +
+                    " speed:Number(sim.clock.speed)||0, now:Math.floor(performance.now())};" +
                     "})()";
             final String warmupHeartbeat = evaluate(instrumentation, webViewRef.get(), heartbeatScript, 15L);
-            assertNotNull("WebView must answer the warm-up heartbeat before the timed gameplay probe", warmupHeartbeat);
-            assertTrue("Warm-up heartbeat must expose simulation diagnostics: " + warmupHeartbeat,
-                    warmupHeartbeat.contains("tick") && warmupHeartbeat.contains("turn"));
-            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=LONG_RUN_GAMEPLAY_BEGIN");
+            final JSONObject warmupState = new JSONObject(warmupHeartbeat);
+            assertTrue("WebView heartbeat must expose simulation diagnostics: " + warmupHeartbeat,
+                    !warmupState.has("error"));
+            assertEquals("The soak test must run a real, active simulation", "RUNNING",
+                    warmupState.getString("status"));
+            assertTrue("The game clock must be active before the soak begins: " + warmupHeartbeat,
+                    !warmupState.getBoolean("paused") && warmupState.getDouble("speed") > 0.0);
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=FOUR_HOUR_GAMEPLAY_SOAK_BEGIN");
             final long longRunStarted = SystemClock.elapsedRealtime();
-            final long longRunDurationMs = 80000L;
+            final long longRunDurationMs = TimeUnit.HOURS.toMillis(4L);
+            final long maxTurnStallMs = TimeUnit.SECONDS.toMillis(45L);
             long lastProgressLog = 0L;
+            long lastTurnProgressElapsedMs = 0L;
+            long lastObservedTurn = warmupState.getLong("turn");
+            final long startingTurn = lastObservedTurn;
             while (SystemClock.elapsedRealtime() - longRunStarted < longRunDurationMs) {
                 final long elapsedMs = SystemClock.elapsedRealtime() - longRunStarted;
                 final String heartbeat;
+                final JSONObject heartbeatState;
                 try {
                     heartbeat = evaluate(instrumentation, webViewRef.get(), heartbeatScript, 3L);
+                    heartbeatState = new JSONObject(heartbeat);
                 } catch (Throwable failure) {
                     android.util.Log.e(
                             "OMEGA_ANDROID_SMOKE",
-                            "LONG_RUN_FREEZE elapsed_ms=" + elapsedMs,
+                            "FOUR_HOUR_SOAK_FREEZE elapsed_ms=" + elapsedMs,
                             failure
                     );
                     throw new AssertionError(
-                            "Android 9 WebView stopped responding during continuous gameplay at " +
-                                    elapsedMs + " ms; inspect LONG_RUN_FREEZE diagnostics",
+                            "Android 9 WebView stopped answering during the four-hour continuous gameplay soak at " +
+                                    elapsedMs + " ms; inspect FOUR_HOUR_SOAK_FREEZE diagnostics",
                             failure
                     );
                 }
-                assertNotNull(
-                        "WebView heartbeat must return during continuous gameplay at " + elapsedMs + " ms",
-                        heartbeat
+                assertTrue(
+                        "Runtime diagnostics disappeared during the four-hour soak at " + elapsedMs +
+                                " ms; response=" + heartbeat,
+                        !heartbeatState.has("error")
+                );
+                assertEquals(
+                        "Simulation must remain RUNNING throughout the four-hour soak at " + elapsedMs +
+                                " ms; response=" + heartbeat,
+                        "RUNNING",
+                        heartbeatState.getString("status")
                 );
                 assertTrue(
-                        "Simulation runtime diagnostics must remain available during continuous gameplay at " +
-                                elapsedMs + " ms; response=" + heartbeat,
-                        heartbeat.contains("tick") && heartbeat.contains("turn")
+                        "Simulation clock became paused/stopped during the four-hour soak at " + elapsedMs +
+                                " ms; response=" + heartbeat,
+                        !heartbeatState.getBoolean("paused") && heartbeatState.getDouble("speed") > 0.0
                 );
-                if (elapsedMs - lastProgressLog >= 10000L) {
+                final long observedTurn = heartbeatState.getLong("turn");
+                assertTrue("Simulation turn moved backwards at " + elapsedMs + " ms: " + heartbeat,
+                        observedTurn >= lastObservedTurn);
+                if (observedTurn > lastObservedTurn) {
+                    lastObservedTurn = observedTurn;
+                    lastTurnProgressElapsedMs = elapsedMs;
+                } else {
+                    assertTrue(
+                            "Simulation clock made no progress for more than 45 seconds; elapsed_ms=" +
+                                    elapsedMs + ", last_turn=" + lastObservedTurn + ", response=" + heartbeat,
+                            elapsedMs - lastTurnProgressElapsedMs <= maxTurnStallMs
+                    );
+                }
+                if (elapsedMs - lastProgressLog >= TimeUnit.MINUTES.toMillis(5L)) {
+                    final Debug.MemoryInfo memoryInfo = new Debug.MemoryInfo();
+                    Debug.getMemoryInfo(memoryInfo);
                     android.util.Log.i(
                             "OMEGA_ANDROID_SMOKE",
-                            "LONG_RUN_HEARTBEAT elapsed_ms=" + elapsedMs + " response=" + heartbeat
+                            "FOUR_HOUR_SOAK_HEARTBEAT elapsed_ms=" + elapsedMs +
+                                    " pss_kb=" + memoryInfo.getTotalPss() +
+                                    " response=" + heartbeat
                     );
                     lastProgressLog = elapsedMs;
                 }
-                SystemClock.sleep(1000L);
+                SystemClock.sleep(5000L);
             }
+            final long actualSoakDurationMs = SystemClock.elapsedRealtime() - longRunStarted;
+            assertTrue("The test must complete at least four continuous hours; elapsed_ms=" + actualSoakDurationMs,
+                    actualSoakDurationMs >= longRunDurationMs);
+            assertTrue("The simulation turn must progress during the four-hour soak",
+                    lastObservedTurn > startingTurn);
             android.util.Log.i(
                     "OMEGA_ANDROID_SMOKE",
-                    "STAGE=LONG_RUN_GAMEPLAY_PASS elapsed_ms=" +
-                            (SystemClock.elapsedRealtime() - longRunStarted)
+                    "STAGE=FOUR_HOUR_GAMEPLAY_SOAK_PASS elapsed_ms=" + actualSoakDurationMs +
+                            " starting_turn=" + startingTurn + " ending_turn=" + lastObservedTurn
             );
 
             android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=OPEN_MINISTRY");
