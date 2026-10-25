@@ -1725,27 +1725,53 @@
     return true;
   }
 
+  function playerSimulationCountryId(){
+    const sim=getSimulation(),root=g.Game?.state||g.gameState||{};
+    const session=root?.simulation?.session||{};
+    const candidates=[session.playerCountryId,
+      typeof sim?.getPlayerCountryId==='function'?sim.getPlayerCountryId():null,
+      root?.simulation?.playerCountryId,root?.playerCountryId,root?.playerCountryCode,
+      g.Game?.playerCountryId,g.Game?.playerCountry,g.Game?.playerCountryCode,
+      g.OMEGA_PLAYER_COUNTRY_ID,g.playerCountry];
+    for(const value of candidates){
+      if(value==null||String(value).trim()==='')continue;
+      const cid=canonicalId(value);
+      if(cid&&cid!=='GLOBAL'&&cid!=='WORLD')return cid;
+    }
+    return null;
+  }
+
   function tickProjects(){
     const sim=getSimulation();
     const state=g.Game?.state||g.gameState||{};
-    const projects=state?.projects||{};
-    for(const country of Object.keys(projects)){
-      const list=Array.isArray(projects[country]?.registry)?projects[country].registry:[];
-      if(list.some(p=>p?.autonomy&&['UNDER_CONSTRUCTION','COMMISSIONING'].includes(String(p.status||'').toUpperCase()))){
-        try{sim?.enqueueCommand?.({
-          commandId:'OAS-TICK-'+turn()+'-'+id(country),
+    const selected=playerSimulationCountryId();
+    if(!selected)return{status:'SKIPPED',reason:'PLAYER_COUNTRY_NOT_SELECTED',queued:0};
+    const projects=state?.projects||{},military=state?.military||{};
+    const countryKey=Object.keys(projects).find(key=>canonicalId(key)===selected)||selected;
+    const projectRows=Array.isArray(projects[countryKey]?.registry)?projects[countryKey].registry:[];
+    let queued=0;
+    if(projectRows.some(p=>p?.autonomy&&['UNDER_CONSTRUCTION','COMMISSIONING'].includes(String(p.status||'').toUpperCase()))){
+      try{
+        sim?.enqueueCommand?.({
+          commandId:'OAS-TICK-'+turn()+'-'+selected,
           commandType:'OMEGA_AUTO_PROJECT_TICK',actionId:'OMEGA_AUTO_PROJECT_TICK',
-          sourceMinistryId:'projects',countryId:canonicalId(country),payload:{countryId:canonicalId(country)},options:{origin:'OMEGA_AUTONOMY_PROJECT_CLOCK'}
-        });}catch(_){}
-      }
-      if(Array.isArray(state?.military?.[id(country)]?.trainingQueue)&&state.military[id(country)].trainingQueue.some(x=>x.status==='IN_TRAINING')){
-        try{sim?.enqueueCommand?.({
-          commandId:'OAS-MIL-TICK-'+turn()+'-'+id(country),
-          commandType:'OMEGA_AUTO_MILITARY_TICK',actionId:'OMEGA_AUTO_MILITARY_TICK',
-          sourceMinistryId:'military',countryId:canonicalId(country),payload:{countryId:canonicalId(country)},options:{origin:'OMEGA_AUTONOMY_MILITARY_CLOCK'}
-        });}catch(_){}
-      }
+          sourceMinistryId:'projects',countryId:selected,payload:{countryId:selected},options:{origin:'OMEGA_AUTONOMY_PROJECT_CLOCK'}
+        });
+        queued++;
+      }catch(_){}
     }
+    const militaryKey=Object.keys(military).find(key=>canonicalId(key)===selected)||selected;
+    if(Array.isArray(military[militaryKey]?.trainingQueue)&&military[militaryKey].trainingQueue.some(x=>x.status==='IN_TRAINING')){
+      try{
+        sim?.enqueueCommand?.({
+          commandId:'OAS-MIL-TICK-'+turn()+'-'+selected,
+          commandType:'OMEGA_AUTO_MILITARY_TICK',actionId:'OMEGA_AUTO_MILITARY_TICK',
+          sourceMinistryId:'military',countryId:selected,payload:{countryId:selected},options:{origin:'OMEGA_AUTONOMY_MILITARY_CLOCK'}
+        });
+        queued++;
+      }catch(_){}
+    }
+    return{status:'COMPLETED',countryId:selected,queued};
   }
 
   function diagnostics(){
