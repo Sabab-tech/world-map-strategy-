@@ -104,6 +104,28 @@
   const siteExecutionRowsCache=new Map();
   let siteExecutionRowsCacheTurn=null;
   let mineSiteReferenceCacheYear=null;
+  let engineDepositKeySource=null,engineDepositKeySourceLength=-1,engineDepositKeySet=new Set(),engineDepositKeyBuildCount=0;
+  // ResourceMinistryEngine publishes its deposit array as a stable data snapshot. Build
+  // the ID index once per snapshot instead of rescanning every deposit for every country.
+  function engineDepositKeyIndex(e){
+    const deposits=Array.isArray(e?.deposits)?e.deposits:[];
+    if(engineDepositKeySource===deposits&&engineDepositKeySourceLength===deposits.length)return engineDepositKeySet;
+    const next=new Set();
+    for(const row of deposits){
+      for(const key of [row?.id,row?.depositId,row?.mineId]){
+        const value=String(key??'').trim();
+        if(value)next.add(value);
+      }
+    }
+    engineDepositKeySource=deposits;
+    engineDepositKeySourceLength=deposits.length;
+    engineDepositKeySet=next;
+    engineDepositKeyBuildCount++;
+    g.__OmegaResourceDepositKeyIndexDiagnostics={
+      buildCount:engineDepositKeyBuildCount,depositCount:deposits.length,indexedIdCount:next.size
+    };
+    return engineDepositKeySet;
+  }
   async function loadSimulationReserveData(){
     if(simulationReserveMap)return{status:'READY',count:Object.keys(simulationReserveMap).length,reused:true};
     if(simulationReservePromise)return simulationReservePromise;
@@ -897,13 +919,7 @@
     const reg=g.__OmegaResourceIdentityRegistry;const e=engine();const rr=g.__OmegaResourceReserveRegistry;if(!reg||!e||!rr)return[];
     const wanted=canonical(c),out=[],seen=new Set();
     try{
-      const engineDepositKeys=new Set();
-      for(const row of (Array.isArray(e.deposits)?e.deposits:[])){
-        for(const key of [row?.id,row?.depositId,row?.mineId]){
-          const s=String(key??'').trim();
-          if(s)engineDepositKeys.add(s);
-        }
-      }
+      const engineDepositKeys=engineDepositKeyIndex(e);
       const occurrences=reg.getOccurrencesByCountry?.(wanted)||[];
       for(const occ of occurrences){
         const depositKey=String(occ?.depositKey??'').trim();
