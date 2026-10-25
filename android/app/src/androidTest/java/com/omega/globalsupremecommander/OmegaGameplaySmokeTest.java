@@ -169,7 +169,7 @@ public final class OmegaGameplaySmokeTest {
                     " var lastResults=sim.lastTurnParticipantResults||(worldState.simulation&&worldState.simulation.lastTurnParticipantResults)||[];" +
                     " return {tick:Number(metrics.tick)||0, turn:Number(sim.clock.turn)||0," +
                     " status:String(sim.status||''), paused:!!sim.clock.paused," +
-                    " lastError:String(sim.lastError||''), sessionStatus:String(session.status||'')," +
+                    " lastError:String(sim.lastError||''), lastErrorStack:String(sim.lastErrorStack||''), sessionStatus:String(session.status||'')," +
                     " sessionLastError:String(session.lastError||''), failedParticipant:String(session.failedParticipant||'')," +
                     " lastParticipants:lastResults.slice(-8).map(function(x){return {id:x.id||null,status:x.status||null,error:x.error||null};})," +
                     " speed:Number(sim.clock.speed)||0, now:Math.floor(performance.now())};" +

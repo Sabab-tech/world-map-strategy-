@@ -454,6 +454,7 @@
       this.status='READY';
       this.stepInProgress=false;
       this.lastError=null;
+      this.lastErrorStack=null;
       this.lastLoadIntegrity='NOT_LOADED';
       this.lastStepSummary=null;
       this.stepCount=0;
@@ -890,6 +891,7 @@
       if(this.status==='ERROR')throw new Error('SIMULATION_IN_ERROR:'+String(this.lastError||'UNKNOWN'));
       this.stepInProgress=true;
       this.lastError=null;
+      this.lastErrorStack=null;
       const finalizersAtTurnStart=[...this.turnFinalizers.values()];
       const commandResults=[];
       try{
@@ -956,6 +958,7 @@
         return clone(this.lastStepSummary);
       }catch(error){
         this.lastError=String(error?.message||error);
+        this.lastErrorStack=String(error?.stack||'');
         this.status='ERROR';
         this.clock.pause();
         const session=this.world.state.simulation?.session||{};
@@ -1058,6 +1061,7 @@
       }
       this.status=String(snapshot.status||this.world.state.simulation?.session?.status||'READY');
       this.lastError=null;
+      this.lastErrorStack=null;
       return this.diagnostics();
     }
 
@@ -1097,6 +1101,7 @@
         stepCount:this.stepCount,
         lastStep:clone(this.lastStepSummary),
         lastError:this.lastError,
+        lastErrorStack:this.lastErrorStack||'',
         lastLoadIntegrity:this.lastLoadIntegrity,
         turnParticipantCount:this.turnParticipants.size,
         turnParticipants:this.participantDiagnostics(),

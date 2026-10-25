@@ -2046,8 +2046,11 @@ function batchFromExtraction(x,record){
     const wanted=canonical(countryId),keys=[];
     if(!wanted)return keys;
     const rows=occurrenceRows(wanted),excludedStatuses=new Set([
-      'NOT_APPLICABLE','NOT_APPLICABLE_SITE','N_A','NA','NON_COMMERCIAL','INACTIVE',
-      'CLOSED','DECOMMISSIONED','ABANDONED','EXHAUSTED','DEPLETED','CANCELLED','CANCELED'
+      'NOT_APPLICABLE','NOT_APPLICABLE_SITE','N_A','NA','NON_COMMERCIAL','INACTIVE','NOT_ACTIVE',
+      'HISTORICAL','HISTORICALLY','CARE_AND_MAINTENANCE','SUSPEND','SUSPENDED','BLOCKED',
+      'CLOSED','DECOMMISSIONED','ABANDON','ABANDONED','EXHAUSTED','DEPLETED','CANCELLED','CANCELED',
+      'DEVELOPMENT','RESTARTING','CESSATION_OF_PRODUCTION','DISRUPTED','NO_CURRENT_CONCESSION',
+      'PERMIT_PROCESSING','RESOURCE_IDENTITY_UNVERIFIED','DISPUTED_OPERATION','RESTRICTED'
     ]);
     for(const row of rows){
       const key=String(row?.occurrenceKey||'').trim();

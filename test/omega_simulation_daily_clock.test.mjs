@@ -734,8 +734,8 @@ test('automatic production and resource pipelines advance only the player-select
   const autonomy = source('omega_opponent_autonomy_system.js');
   const deepMemory = source('omega_opponent_deep_memory_system.js');
 
-  assert.match(endowment, /if\(options\.activeOnly===true\)\{[\s\S]*?const selected=playerSimulationCountryId\(\);[\s\S]*?return allCountries\.filter\(country=>canonical\(country\)===selected\);/,
-    'active mine extraction must be bounded to the selected player country');
+  assert.match(endowment, /if\(options\.activeOnly===true\)\{[\s\S]*?const selected=playerSimulationCountryId\(\);[\s\S]*?const match=allCountries\.find\(country=>canonical\(country\)===selected\);[\s\S]*?return match\?\[match\]:\[selected\];/,
+    'active mine extraction must process only the selected player country, with a selected-country fallback');
   assert.match(economy, /var activeCountry=playerSimulationCountryId\(\);[\s\S]*?var allCountries=countries\(\);[\s\S]*?var activeCountries=\[activeCountry\];/,
     'resource inventory, factory and ledger turns must use one authoritative player country');
   assert.match(industry, /const selectedCountryId=playerSimulationCountryId\(\);[\s\S]*?const countries=\[selectedCountryId\]/,
