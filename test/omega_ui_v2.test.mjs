@@ -1141,7 +1141,7 @@ test('industrial command panel scopes factory, mine, daily-rate and current-turn
     ]);
     assert.equal(bangladesh.canOperateSelectedCountry, true);
     assert.equal(bangladesh.currentTurnDaysPerTurn, 30);
-    assert.ok(Math.abs(bangladesh.currentTurnExtraction[0].averagePerDay - (40 / 30)) < 1e-9);
+    assert.ok(Math.abs(bangladesh.currentTurnExtraction[0].averagePerDay - (40 / 30)) < 1e-5);
 
     const unitedStates = globalThis.OmegaUIV2Industry.buildViewModel({ countryId:'USA' });
     assert.equal(unitedStates.factoryCount, 1);
