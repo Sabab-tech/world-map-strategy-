@@ -550,6 +550,12 @@ const allCommercialBaselineSiteIds=(globalThis.OmegaResourceSiteReserveSimulatio
   .filter(x=>x.commercialExtraction===true).map(x=>String(x.siteId));
 const inactiveCommercialBaselineSiteIds=allCommercialBaselineSiteIds
   .filter(siteId=>explicitlyNonOperationalStatus(expandedSiteStatusById.get(siteId)));
+const inactiveCanonicalCommercialSiteIds=(canonicalScenario.sites||[])
+  .filter(site=>site?.operation?.commercialExtraction===true&&
+    explicitlyNonOperationalStatus(String(site?.operation?.status||site?.operation?.operationalStatus||
+      site?.currentStatus||site?.sourceSiteRecord?.status||site?.status||'')))
+  .map(site=>String(site.siteId));
+const inactiveCommercialSiteIds=[...new Set([...inactiveCommercialBaselineSiteIds,...inactiveCanonicalCommercialSiteIds])];
 const baseCommercialCatalogIds=allCommercialBaselineSiteIds
   .filter(siteId=>!explicitlyNonOperationalStatus(expandedSiteStatusById.get(siteId)));
 const legacyExpansionRows=[1,2,3,4,5,6].flatMap(part=>{
@@ -568,16 +574,7 @@ const expandedCommercialCatalogIds=legacyExpansionRows
 const mineplayCommercialCatalogIds=mineplayScenario.records
   .filter(site=>site?.operation?.commercialExtraction===true&&site?.map?.markerEligible!==false)
   .map(site=>String(site.siteId));
-// The canonical 315-site catalog contains commercial identities that are not all
-// represented in the 250-row reserve simulation pack. Include that authoritative
-// source as well, otherwise valid canonical production appears as 39 unexpected sites.
-const canonicalCommercialCatalogIds=(canonicalScenario.sites||[])
-  .filter(site=>site?.operation?.commercialExtraction===true&&site?.map?.markerEligible!==false&&
-    !site?.runtime?.aliasOfSiteId&&!legacyCanonicalAliasIds.has(String(site?.siteId||''))&&
-    !explicitlyNonOperationalStatus(String(site?.operation?.status||site?.operation?.operationalStatus||
-      site?.currentStatus||site?.status||expandedSiteStatusById.get(String(site?.siteId||''))||'')))
-  .map(site=>String(site.siteId));
-const commercialCatalogIds=[...new Set([...canonicalCommercialCatalogIds,...baseCommercialCatalogIds,...expandedCommercialCatalogIds,...mineplayCommercialCatalogIds])];
+const commercialCatalogIds=[...new Set([...baseCommercialCatalogIds,...expandedCommercialCatalogIds,...mineplayCommercialCatalogIds])];
 const canonicalSiteIds=new Set((globalThis.OmegaResourceSiteCanonicalCatalogData?.sites||[]).map(x=>x.siteId).filter(Boolean));
 const executedProfileSiteIds=new Set(siteLinkedExecutionOutputs.map(x=>x.siteReferenceKey).filter(x=>canonicalSiteIds.has(x)));
 const missingCommercialSiteIds=commercialCatalogIds.filter(siteId=>!executedProfileSiteIds.has(siteId));
@@ -589,9 +586,11 @@ assert.equal(executedProfileSiteIds.size,commercialCatalogIds.length,
 // Commercial classification alone must never force a suspended, development, disputed,
 // historically inactive, or otherwise explicitly non-operational deposit to produce stock.
 // Every such site still needs its own country controller and a traceable blocked output.
-for(const siteId of inactiveCommercialBaselineSiteIds){
-  const site=expandedReferenceById.get(siteId);
+for(const siteId of inactiveCommercialSiteIds){
+  const site=expandedReferenceById.get(siteId)||(canonicalScenario.sites||[]).find(row=>String(row?.siteId||'')===siteId);
   assert(site,siteId+': explicit non-operational status source record missing');
+  const lifecycleStatus=String(site?.operation?.status||site?.operation?.operationalStatus||
+    site?.currentStatus||site?.sourceSiteRecord?.status||site?.status||expandedSiteStatusById.get(siteId)||'').toUpperCase();
   const countryId=String(site.countryId||site.identity?.countryIso3||'').toUpperCase();
   const countryRow=worldState[countryId];
   assert(countryRow,siteId+': owning country runtime state missing for blocked site');
@@ -601,7 +600,7 @@ for(const siteId of inactiveCommercialBaselineSiteIds){
   const blockedOutput=controller.linkedOccurrenceKeys
     .map(key=>countryRow.mineOutputs?.[key])
     .find(output=>String(output?.blockReason||'').toUpperCase()==='MINE_NOT_OPERATIONAL');
-  assert(blockedOutput,siteId+': status '+expandedSiteStatusById.get(siteId)+' must produce an explicit MINE_NOT_OPERATIONAL diagnostic, not positive output');
+  assert(blockedOutput,siteId+': status '+lifecycleStatus+' must produce an explicit MINE_NOT_OPERATIONAL diagnostic, not positive output');
   assert.equal(Number(blockedOutput.producedQuantity)||0,0,siteId+': non-operational deposit must not create inventory');
 }
 assert(simulatedFieldOutputs.length>0,'expected hydrocarbon field execution assets');
@@ -615,7 +614,9 @@ for(const [countryId,row] of Object.entries(worldState)){
     assert.equal(controller.countryId,countryId);
     assert.equal(controller.controllerStatus,'RUNNING');
     const reserveRecord=(globalThis.OmegaResourceSiteReserveSimulationData?.records||[]).find(x=>x.siteId===siteKey);
-    const commercial=controller.rawSiteReference?.commercialExtraction===true || reserveRecord?.commercialExtraction===true;
+    const commercial=controller.rawSiteReference?.commercialExtraction===true ||
+      controller.rawSiteReference?.operation?.commercialExtraction===true ||
+      controller.rawSiteReference?.sourceSiteRecord?.commercialExtraction===true || reserveRecord?.commercialExtraction===true;
     const rawSite=controller.rawSiteReference||{};
     const lifecycleStatus=String(rawSite.operation?.status||rawSite.operation?.operationalStatus||
       rawSite.sourceSiteRecord?.status||rawSite.status||expandedSiteStatusById.get(siteKey)||'').toUpperCase();
