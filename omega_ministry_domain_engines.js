@@ -547,7 +547,13 @@
       'intelligence.state','intelligence.cyber','intelligence.threats','intelligence.sources'
     ]),
     interior:config('interior','civil_administration','CIVIL_REVIEW',[
-      'interior.stability','interior.corruption','interior.security','population'
+      'interior.stability','interior.corruption','interior.security',
+      'interior.police.baselineVersion','interior.police.baselineSource',
+      'interior.police.policeCount','interior.police.policeEfficiency','interior.police.policeTrust',
+      'interior.police.facilityLevels','interior.police.vehiclesOwned','interior.police.patrolPlan',
+      'interior.police.crimeModel','interior.police.pendingCapabilityProjects',
+      'interior.police.completedCapabilityProjects','interior.police.trainingQualityLevel',
+      'interior.police.policeRecruitmentLevel','interior.police.unlockedVehicleLevel','population'
     ]),
     transport:config('transport','infrastructure_logistics','INFRASTRUCTURE_REVIEW',[
       'transport.infrastructure','transport.logistics','transport.ports','transport.rail'
