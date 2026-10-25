@@ -2814,7 +2814,31 @@ function completeFactoryProductionCycle(countryId,asset,cycle,result){
     factoryId:cycle.factoryId,outputQuantities:cycle.outputQuantities,finishDate:cycle.finishDate,actualCompletionDate:cycle.actualCompletionDate});
   return{status:'COMPLETED',cycleId:cycle.cycleId,transactionId:result.transactionId,outputQuantities:cycle.outputQuantities};
 }
-function processPendingFactoryInputs(countryId){
+function activeMineSiteIds(countryId){
+  const cid=canonicalCountry(countryId),resource=state()?.resource?.[cid]||{};
+  const activeKeys=new Set(Array.isArray(resource.activeMineOccurrenceKeys)?resource.activeMineOccurrenceKeys.map(String):[]);
+  if(!activeKeys.size)return new Set();
+  const ids=new Set(),mineStates=resource.mineStates&&typeof resource.mineStates==='object'?resource.mineStates:{};
+  for(const key of activeKeys){
+    const row=mineStates[key]||{};
+    const siteId=String(row.siteReferenceKey||row.siteId||row.sourceSiteId||'').trim();
+    if(siteId)ids.add(siteId);
+  }
+  for(const [siteKey,controller] of Object.entries(resource.mineSiteControllers||{})){
+    if((Array.isArray(controller?.linkedOccurrenceKeys)?controller.linkedOccurrenceKeys:[]).some(key=>activeKeys.has(String(key)))){
+      const siteId=String(controller?.siteReferenceKey||siteKey||'').trim();
+      if(siteId)ids.add(siteId);
+    }
+  }
+  return ids;
+}
+function factoryAutoStartAllowed(countryId,asset){
+  if(asset?.autoProductionEnabled===true||asset?.backgroundProductionEnabled===true)return true;
+  const sourceSiteId=String(asset?.sourceSiteId||asset?.siteId||'').trim();
+  return !!sourceSiteId&&activeMineSiteIds(countryId).has(sourceSiteId);
+}
+
+function processPendingFactoryInputs(countryId,options={} ){
   const cid=canonicalCountry(countryId),n=factoryCycleStore(cid),assets=factoryAssets(cid),completed=[],started=[],blocked=[],transfers=[];
   const completedThisTurn=new Set();
   // First finish any cycle whose date has arrived. Output is not posted before this point.
@@ -2861,6 +2885,10 @@ function processPendingFactoryInputs(countryId){
         continue;
       }
     }
+    // Turn-driven factory auto-start is restricted to explicitly activated mine sites
+    // or assets whose owner explicitly enabled automatic production. Manual API calls keep
+    // the historical behavior; existing active cycles still complete above.
+    if(options.activeOnly===true&&!factoryAutoStartAllowed(cid,asset))continue;
     const gate=factoryOperationGate(cid,asset);
     if(gate.status!=='READY'){
       factorySetProductionHealth(asset,'STOPPED',0,num(asset.capacityPerDay??asset.capacity),{reason:gate.reason,gate});
@@ -3388,7 +3416,7 @@ function boot(){
         try{
           await advanceShipments(countryId);
           await advanceProjects(countryId);
-          await processPendingFactoryInputs(countryId);
+          await processPendingFactoryInputs(countryId,{activeOnly:true});
           reconcileFactoryEmployment(countryId);
         }catch(error){
           failures.push(countryId+':'+String(error?.message||error));
