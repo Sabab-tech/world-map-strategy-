@@ -1663,6 +1663,8 @@ function batchFromExtraction(x,record){
       const operational=!!commissionedMineAsset||
         (!isExplicitlyNonOperational(operationalStatus)&&!isExplicitlyNonOperational(sourceStatus)&&
           (isOperationalStatus(operationalStatus)||isOperationalStatus(sourceStatus)));
+      const autoStarterMine=!!commissionedMineAsset&&
+        (commissionedMineAsset.authority==='SIMULATED_PLAYER_MINE_AUTO_PROVISION'||commissionedMineAsset.autoProvisioningVersion==='1.0.0');
       if(!operational){
         const reason={occurrenceKey:x.occurrenceKey,resourceId:x.resourceId,reason:'MINE_NOT_OPERATIONAL',operationalStatus:operationalStatus||'UNKNOWN',sourceStatus:sourceStatus||null};
         blocked.push(reason);
@@ -1677,9 +1679,12 @@ function batchFromExtraction(x,record){
         markPathBlocked(reason.reason);continue;
       }
       let windowQuantity=0;try{windowQuantity=n(capacity.computeWindowCapacity(windowHours)?.windowCapacity)||0;}catch(_){windowQuantity=(n(capacity.activeRate)||n(capacity.nominalRate)||0)*turnDays;}
-      const environmentalMultiplier=strategicPolicy?.extractionMultiplier?.(c,policySiteId||x.occurrenceKey,x.resourceId,ctx.stateTransaction);
-      if(n(environmentalMultiplier)!==null)windowQuantity*=Math.max(0,Math.min(1,n(environmentalMultiplier)));
-      const resourceKey=rid(x.resourceId),demandConstrained=Object.prototype.hasOwnProperty.call(demandTargetByResource,resourceKey)&&Number(demandTargetByResource[resourceKey])>0;
+      // Starter mines are intentionally provisioned with the basic inputs and operate
+      // independently at game start. Strategic demand and quota rules continue to apply
+      // to ordinary mines, but must not leave a starter asset idle on its first production tick.
+      const environmentalMultiplier=autoStarterMine?1:strategicPolicy?.extractionMultiplier?.(c,policySiteId||x.occurrenceKey,x.resourceId,ctx.stateTransaction);
+      if(!autoStarterMine&&n(environmentalMultiplier)!==null)windowQuantity*=Math.max(0,Math.min(1,n(environmentalMultiplier)));
+      const resourceKey=rid(x.resourceId),demandConstrained=!autoStarterMine&&Object.prototype.hasOwnProperty.call(demandTargetByResource,resourceKey)&&Number(demandTargetByResource[resourceKey])>0;
       if(demandConstrained){
         const aggregateCapacity=Math.max(totalWindowByResource[resourceKey]||0,0);
         const turnDemand=Math.max(0,remainingDemandByResource[resourceKey]||0);
