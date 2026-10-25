@@ -62,6 +62,16 @@ assert.ok(completion.records.every(row=>row.reserve?.status==='SIMULATED'&&Numbe
  'completion quantities must be positive, explicitly simulated and resource-bound');
 assert.ok(completion.records.every(row=>row.provenance?.simulationOnly===true&&row.provenance?.gameplayHorizonYears===400),
  'completion rows must identify simulation-only provenance and the gameplay horizon');
+assert.ok(completion.records.every(row=>row.reserve?.unit===(
+ row.resourceId==='crude_oil'?'BBL':row.resourceId==='natural_gas'?'BCM':
+ ['gold','silver','platinum'].includes(row.resourceId)?'TROY_OUNCES':
+ ['diamond','ruby'].includes(row.resourceId)?'CARATS':'TONNES')),
+ 'every completion reserve must use one canonical unit per resource type');
+assert.ok(completion.records.every(row=>row.reserve?.quantityNormalization?.version==='1.0.0'&&
+ row.reserve?.quantityNormalization?.field==='quantity'&&row.provenance?.sourceReserveQuantityPreserved===true),
+ 'canonical reserves must retain their original source quantity/unit in provenance');
+assert.ok(completion.records.every(row=>row.reserve.quantity+1e-7>=row.simulation.production.rate*365*400),
+ 'each completion reserve must cover at least the configured 400 gameplay-year starter horizon');
 
 const definitions=new Set();
 for(const file of [resources1,resources2]){
