@@ -147,7 +147,9 @@
         }
         const rows=Array.isArray(data?.records)?data.records:[];
         const map={};
-        for(const row of rows)if(row?.siteId)map[String(row.siteId)]=clone(row);
+        const quantityNormalizer=g.Omega?.ResourceQuantityNormalization||g.OmegaResourceQuantityNormalization;
+        const normalizeReserveRow=row=>quantityNormalizer?.normalizeSiteQuantities?.(clone(row))||clone(row);
+        for(const row of rows)if(row?.siteId)map[String(row.siteId)]=normalizeReserveRow(row);
         // Additive completion data fills only site IDs absent from the authoritative 250-row
         // reserve dataset. It is explicitly simulation-only and never replaces source rows.
         let quantityCompletionAdded=0,quantityCompletionRecordCount=0;
@@ -186,7 +188,7 @@
         for(const row of (legacy.rows||[])){
           const siteId=String(row?.siteId||'');
           if(!siteId||row.runtime?.aliasOfSiteId||LEGACY_CANONICAL_ALIAS_IDS[siteId])continue;
-          if(!map[siteId]&&row.reserve?.status==='SIMULATED'&&Number(row.reserve.quantity)>0){map[siteId]=clone(row);legacyAdded++;}
+          if(!map[siteId]&&row.reserve?.status==='SIMULATED'&&Number(row.reserve.quantity)>0){map[siteId]=normalizeReserveRow(row);legacyAdded++;}
         }
         let mineplayAdded=0;
         try{
@@ -216,7 +218,7 @@
               const siteId=String(row?.siteId||'').trim(),country=String(row?.countryId||row?.identity?.countryIso3||'').trim().toUpperCase();
               const reserve=row?.reserve;
               if(!siteId||!/^[A-Z]{3}$/.test(country)||!reserve||String(reserve.status).toUpperCase()!=='SIMULATED'||!(Number(reserve.quantity)>0))continue;
-              if(!map[siteId]){map[siteId]=clone(row);mineplayAdded++;}
+              if(!map[siteId]){map[siteId]=normalizeReserveRow(row);mineplayAdded++;}
             }
             g.OmegaResourceCountryMineplaySupplementData=supplement;g.Omega=g.Omega||{};g.Omega.ResourceCountryMineplaySupplementData=supplement;
           }
