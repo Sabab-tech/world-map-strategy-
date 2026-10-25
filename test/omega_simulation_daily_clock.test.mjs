@@ -134,6 +134,48 @@ test('one 10-second real-time interval advances exactly one shared game day', as
   assert.equal(turnEvent.detail.payload.simulationDate, '2015-01-02T00:00:00.000Z');
 });
 
+test('turn diagnostics retain summaries instead of duplicating large resource payloads into saves', async () => {
+  const { sim, gameState } = createRuntime();
+  const payloadSize = 250;
+  sim.registerSubsystem('test.large-resource-result', async (_event, context) => ({
+    status: 'COMPLETED',
+    turn: context.turn,
+    totalCountryCount: payloadSize,
+    processedCountryCount: payloadSize,
+    results: Array.from({ length: payloadSize }, (_, index) => ({
+      countryId: 'C' + index,
+      siteResults: Array.from({ length: 8 }, (__, siteIndex) => ({
+        siteId: 'SITE-' + index + '-' + siteIndex,
+        payload: 'resource-runtime-detail-'.repeat(20)
+      }))
+    }))
+  }), { priority: 10 });
+
+  sim.startSession({ playerCountryId: 'BGD' });
+  await sim.frame(STEP_MS);
+
+  const participant = sim.diagnostics().lastTurnParticipantResults.find(
+    row => row.id === 'test.large-resource-result'
+  );
+  assert.ok(participant);
+  assert.equal(participant.status, 'COMPLETED');
+  assert.equal(participant.result.totalCountryCount, payloadSize);
+  assert.equal(participant.result.resultsCount, payloadSize);
+  assert.equal(Object.hasOwn(participant.result, 'results'), false,
+    'retained diagnostics must not keep the full per-country payload array');
+
+  const persistedParticipant = gameState.simulation.lastTurnParticipantResults.find(
+    row => row.id === 'test.large-resource-result'
+  );
+  assert.equal(persistedParticipant.result.resultsCount, payloadSize);
+  assert.equal(Object.hasOwn(persistedParticipant.result, 'results'), false,
+    'authoritative state must retain only the compact participant summary');
+
+  const serializedSave = JSON.stringify(sim.saveState());
+  assert.ok(serializedSave.length < 30000,
+    'save envelope must not duplicate the synthetic multi-country payload: ' + serializedSave.length);
+});
+
 test('save slot restores selected country, game date and authoritative state', async () => {
   const { sim, gameState, storage } = createRuntime();
   sim.startSession({ playerCountryId: 'BGD' });
@@ -342,7 +384,12 @@ test('index, finance, bank and offline shell use the daily lifecycle assets', ()
     'minister consistency checks must be driven by state-change events');
   assert.doesNotMatch(liveOps, /refreshHandle = g\.setInterval/,
     'Live Operations must refresh from events instead of a background poll');
-  assert.match(endowment, /function onTurn\(\)\{return extractAll\(\);\}/);
+  assert.match(endowment, /function onTurn\(\)\{return extractAll\(\{activeOnly:true\}\);\}/,
+    'turn-driven resource extraction must only process mine occurrences explicitly activated by the player');
+  assert.match(endowment, /BOOTSTRAP_HYDRATION_ONLY/,
+    'site bootstrap must hydrate and index sites without starting production for every country');
+  assert.match(resourceEconomy, /extractAll\(\{activeOnly:true\}\)/,
+    'the economy turn must use the active-site extraction policy instead of global all-site extraction');
   assert.match(resourceEconomy, /return runTurn\(\);/);
   assert.match(macro, /return init\(\)\.then\(\(\)=>advanceTurn\(turn,duration\)\)/);
 });
@@ -372,6 +419,10 @@ test('finance, FX, macro and ministry time fallbacks treat one turn as one day',
   assert.match(military, /simTurn\(\) \* 86400000/);
   assert.match(industrial, /clock\?\.stepDurationMs/);
   assert.match(industrial, /if\(num\(clock\?\.stepDurationMs\)!==null\)return 1/);
+  assert.match(industrial, /processPendingFactoryInputs\(countryId,\{activeOnly:true\}\)/,
+    'turn-driven factories must not auto-start work outside activated source sites');
+  assert.match(industrial, /factoryAutoStartAllowed/,
+    'manual factory calls remain available while automatic starts are restricted');
   assert.match(hardening, /OMEGA_SIMULATION_TURN_COMMITTED',[() =>]*\{ensureFactoryRecipes\(\);\}/);
   assert.equal(industrialCatalog.turnAssumption.daysPerTurn, 1);
 });
