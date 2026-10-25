@@ -1253,11 +1253,14 @@
     }
     return rows;
   }
-  function processPendingTransfers() {
+  function processPendingTransfers(countryValue) {
     const bank = bankingState(true);
+    const selected = countryValue == null || String(countryValue).trim()==='' ? null : resolveProfile(countryValue);
     const rows = Object.values(bank.pendingTransfers || {});
     const out = [];
     for (const row of rows) {
+      if (selected && profileId(selected)!==profileId(resolveProfile(row.sourceCountryCode)||{}) &&
+          profileId(selected)!==profileId(resolveProfile(row.destinationCountryCode)||{})) continue;
       if (row.status !== 'PENDING' || turn() < (num(row.dueTurn) || 0)) continue;
       const input = {
         sourceCountryId: row.sourceCountryCode, destinationCountryId: row.destinationCountryCode,
@@ -1437,12 +1440,20 @@
     for (const p of profiles) {
       try {
         if (!obj(bankingState(false).accountsByCountry[profileId(p)])) continue;
-        // A Finance cash delta outside Government Banking (payroll, spending, new receipts)
-        // is preserved and explicitly reconciled into the USD clearing sub-account.
         results.push({ countryCode: profileId(p), result: reconcileCountry(p) });
       } catch (error) { results.push({ countryCode: profileId(p), error: String(error && error.message || error) }); }
     }
     return results;
+  }
+  function reconcileOneCountry(value) {
+    const profile=resolveProfile(value)||playerProfile();
+    if(!profile)return{ok:false,code:'PLAYER_COUNTRY_NOT_SELECTED'};
+    try {
+      if(!obj(bankingState(false).accountsByCountry[profileId(profile)]))return{ok:true,skipped:true,code:'COUNTRY_ACCOUNT_NOT_INITIALIZED'};
+      return{countryCode:profileId(profile),result:reconcileCountry(profile)};
+    } catch(error) {
+      return{countryCode:profileId(profile),ok:false,code:String(error&&error.message||error)};
+    }
   }
   function diagnostics() {
     const bank = bankingState(true);
@@ -1502,8 +1513,10 @@
       g.Omega.GovernmentBanking = api;
       g.OmegaGovernmentBanking = api;
       g.addEventListener?.('OMEGA_SIMULATION_TURN_COMMITTED', function () {
-        processPendingTransfers();
-        revalueOrReconcileAll();
+        const player=playerProfile();
+        if(!player)return;
+        processPendingTransfers(profileId(player));
+        reconcileOneCountry(profileId(player));
         refreshPanel();
       });
       g.addEventListener?.('OMEGA_FX_MARKET_UPDATED', function (event) {
@@ -1511,7 +1524,11 @@
         updateFxReference({ provider: 'FRANKFURTER_V2', date: d.referenceRateDate, status: 'SIMULATION_MARKET_UPDATED' });
         refreshPanel();
       });
-      g.addEventListener?.('OMEGA_FINANCE_STATE_UPDATED', function () { revalueOrReconcileAll(); refreshPanel(); });
+      g.addEventListener?.('OMEGA_FINANCE_STATE_UPDATED', function (event) {
+        const detail=event&&event.detail||{};
+        reconcileOneCountry(detail.countryCode||detail.countryId||playerProfile()?.countryCode);
+        refreshPanel();
+      });
       g.addEventListener?.('OMEGA_FINANCE_RUNTIME_READY', function () { init().catch(() => {}); });
       g.addEventListener?.('OMEGA_READY', function () { init().catch(() => {}); });
       installObserver(); queueRender();
