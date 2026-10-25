@@ -184,8 +184,16 @@ test('industry view reads current country assets, cycles and projects without sy
   assert.equal(globalThis.OmegaUIV2Industry.buildViewModel({countryId:'USA'}).factoryCount,0);
 });
 
-test('industry screen exposes the country-wide unbounded inventory without replacing factory input stock', () => {
-  const previous = globalThis.OmegaCountryInventoryRuntime;
+test('resource inventory lists only canonical natural resources once, with clean names and units', () => {
+  const previousInventory = globalThis.OmegaCountryInventoryRuntime;
+  const previousResources = globalThis.OmegaResourceMinistryEngine;
+  globalThis.OmegaResourceMinistryEngine = {
+    resourceTypes: [
+      { id: 'iron_ore', name: 'Iron Ore', category: 'bulk_commodities', unit: 'metric_tons' },
+      { id: 'copper', name: 'Copper', category: 'strategic_metals', unit: 'metric_tons' },
+      { id: 'natural_gas', name: 'Natural Gas / LNG', category: 'hydrocarbons', unit: 'bcm' }
+    ]
+  };
   globalThis.OmegaCountryInventoryRuntime = {
     getInventory(countryId, options) {
       assert.equal(options.includeZero, true);
@@ -197,34 +205,47 @@ test('industry screen exposes the country-wide unbounded inventory without repla
         active: countryId === 'BGD',
         readOnly: countryId !== 'BGD',
         unbounded: true,
-        items: [{
-          productId: 'steel',
-          name: 'Steel',
-          base: 5,
-          quantity: 9,
-          deltaFromBase: 4,
-          unit: 'SIMULATION_RESOURCE_UNIT'
-        }]
+        items: [
+          { productId: 'steel', name: 'Steel', base: 5, quantity: 9, deltaFromBase: 4, unit: 'SIMULATION_RESOURCE_UNIT' },
+          { productId: 'iron_ore', name: 'Iron Ore', base: 0, quantity: 7, deltaFromBase: 7, unit: 'SIMULATION_RESOURCE_UNIT' },
+          { productId: 'copper', name: 'Copper', base: 0, quantity: 0, deltaFromBase: 0, unit: 'SIMULATION_RESOURCE_UNIT' },
+          { productId: 'iron_concentrate', name: 'Iron Concentrate', base: 0, quantity: 3, deltaFromBase: 3, unit: 'SIMULATION_RESOURCE_UNIT' }
+        ]
       };
     }
   };
   try {
     const model = globalThis.OmegaUIV2Industry.buildViewModel({ countryId: 'BGD' });
-    assert.equal(model.nationalInventory.items[0].quantity, 9);
+    assert.deepEqual(model.resourceInventory.items.map((row) => row.name), ['Copper', 'Iron Ore', 'Natural Gas']);
+    assert.equal(model.resourceInventory.items.find((row) => row.name === 'Iron Ore').quantity, 7);
+    assert.equal(model.resourceInventory.items.find((row) => row.name === 'Copper').quantity, 0);
+    assert.deepEqual(model.nationalInventory.items.map((row) => row.productId), ['steel', 'iron_concentrate']);
+    assert.equal(model.nationalInventory.items.find((row) => row.productId === 'steel').quantity, 9);
+
     const root = {
       classList: { add() {} },
       addEventListener() {},
       innerHTML: ''
     };
-    const result = globalThis.OmegaUIV2Industry.render(root, { countryId: 'BGD', tab: 'national-inventory' });
+    const result = globalThis.OmegaUIV2Industry.render(root, { countryId: 'BGD', tab: 'resource-inventory' });
     assert.equal(result.ok, true);
-    assert.match(root.innerHTML, /National Inventory/);
+    assert.match(root.innerHTML, /Resource Inventory/);
+    assert.match(root.innerHTML, /Iron Ore/);
+    assert.match(root.innerHTML, /Copper/);
+    assert.match(root.innerHTML, /tonnes/);
+    assert.doesNotMatch(root.innerHTML, /Product ID|deltaFromBase|UNBOUNDED STOCK LOG|SIMULATION_RESOURCE_UNIT/);
+
+    globalThis.OmegaUIV2Industry.render(root, { countryId: 'BGD', tab: 'industrial-inventory' });
+    assert.match(root.innerHTML, /Industrial Inventory/);
     assert.match(root.innerHTML, /Steel/);
-    assert.match(root.innerHTML, /UNBOUNDED STOCK LOG/);
-    assert.match(root.innerHTML, /Input Inventory/);
+    assert.match(root.innerHTML, /Iron Concentrate/);
+    assert.doesNotMatch(root.innerHTML, /Iron Ore/);
+    assert.doesNotMatch(root.innerHTML, /SIMULATION_RESOURCE_UNIT/);
   } finally {
-    if (previous === undefined) delete globalThis.OmegaCountryInventoryRuntime;
-    else globalThis.OmegaCountryInventoryRuntime = previous;
+    if (previousInventory === undefined) delete globalThis.OmegaCountryInventoryRuntime;
+    else globalThis.OmegaCountryInventoryRuntime = previousInventory;
+    if (previousResources === undefined) delete globalThis.OmegaResourceMinistryEngine;
+    else globalThis.OmegaResourceMinistryEngine = previousResources;
   }
 });
 
