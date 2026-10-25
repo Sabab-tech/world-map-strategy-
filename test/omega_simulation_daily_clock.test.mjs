@@ -733,8 +733,12 @@ test('automatic production and resource pipelines advance only the player-select
   const worldBankTurnStart=worldBank.indexOf("OMEGA_SIMULATION_TURN_COMMITTED");
   const worldBankTurnEnd=worldBank.indexOf("OMEGA_FINANCE_STATE_UPDATED",worldBankTurnStart);
   const worldBankTurn=worldBank.slice(worldBankTurnStart,worldBankTurnEnd);
-  assert.match(worldBankTurn, /evaluatePlayerCountry\(\)/,
-    'World Bank credit assessment must only recompute the player-country assessment each turn');
+  assert.match(worldBankTurn, /const playerCountryValue=detail\.countryId\|\|\(detail\.payload&&detail\.payload\.countryId\);[\s\S]*?processTurn\(turn, stepDurationMs, playerCountryValue, true\)[\s\S]*?serviceCountryLoansOnTurn\(turn, stepDurationMs, playerCountryValue, true\)[\s\S]*?evaluatePlayerCountry\(playerCountryValue\)/,
+    'World Bank automatic loan accrual, debt service and assessment must use the authoritative player ID');
+  assert.match(worldBank, /function processTurn\(turnNumber, stepDurationMs, selectedCountryValue, backgroundTurn\)[\s\S]*?if\(backgroundTurn\)[\s\S]*?codeOf\(lenderProfile\)!==selectedCode/,
+    'non-player World Bank funding claims must not accrue in background turns');
+  assert.match(worldBank, /function serviceCountryLoansOnTurn\(turnNumber, stepDurationMs, selectedCountryValue, backgroundTurn\)[\s\S]*?resolveProfile\(selectedCountryValue\)/,
+    'scheduled country debt service must not fall back to the viewed ministry country');
   assert.doesNotMatch(worldBankTurn, /evaluateAll\(true\)/,
     'World Bank turns must not rerun the 249-country assessment loop');
   assert.match(treaties, /OMEGA_SIMULATION_TURN_COMMITTED',processPlayerTurn\)/,
