@@ -254,6 +254,17 @@
       return true;
     }catch(_){return false;}
   }
+  function playerSimulationCountryId(){
+    const sim=g.Omega?.Simulation,simState=sim?.world?.state||state();
+    const session=simState?.simulation?.session||state()?.simulation?.session||{};
+    const candidates=[session?.playerCountryId,
+      typeof sim?.getPlayerCountryId==='function'?sim.getPlayerCountryId():null,
+      simState?.playerCountryId,state()?.playerCountryId,
+      g.Game?.playerCountry,g.Game?.currentActiveCountry,
+      g.CountryIOS?.activeCountry,g.currentActiveCountry];
+    for(const value of candidates){const cid=canonical(value);if(cid&&cid!=='[OBJECT OBJECT]')return cid;}
+    return null;
+  }
   function yieldTurnToUi(){
     return new Promise(resolve=>{
       if(typeof g.setTimeout==='function')g.setTimeout(resolve,0);
@@ -261,16 +272,13 @@
     });
   }
   async function onTurn(){
+    const countryId=playerSimulationCountryId();
+    if(!countryId)return;
     install();
-    const markets=rebuild(),countryIds=countries(),resourceCount=Object.keys(markets).length;
-    // Publishing a full cloned market projection for every country is costly on Android 9.
-    // Yield after small batches so input and screen rendering are never starved by the market.
-    for(let index=0;index<countryIds.length;index++){
-      const c=countryIds[index];
-      writeProjection(c,markets);
-      try{interop()?.emitEvent?.('OMEGA_MARKET_PRICE_UPDATED',c,'trade',{turn:turn(),resources:resourceCount},{turn:turn(),correlationId:'MARKET-'+turn()+'-'+c});}catch(_){}
-      if((index+1)%2===0&&index+1<countryIds.length)await yieldTurnToUi();
-    }
+    // Preserve shared quote inputs, but only publish changing state for the player.
+    const markets=rebuild(),resourceCount=Object.keys(markets).length;
+    writeProjection(countryId,markets);
+    try{interop()?.emitEvent?.('OMEGA_MARKET_PRICE_UPDATED',countryId,'trade',{turn:turn(),resources:resourceCount},{turn:turn(),correlationId:'MARKET-'+turn()+'-'+countryId});}catch(_){}
   }
   function diagnostics(){
     const markets=g.__OmegaMarketBooks||{},rows=Object.values(markets);
