@@ -621,8 +621,9 @@
   function currentDayLabel() {
     return 'SIM DAY ' + String(Math.max(0, Math.floor(finite(state.simulationDay) || 0))).padStart(3, '0');
   }
-  function appendSimHistories() {
-    currencies.forEach(function (_, code) {
+  function appendSimHistories(selectedCurrency) {
+    const codes=selectedCurrency?[selectedCurrency]:Array.from(currencies.keys());
+    codes.forEach(function (code) {
       const rate = rateFor(code, 'SIMULATION');
       if (rate === null) return;
       state.simulationHistory[code] = appendHistoryPoint(state.simulationHistory[code], {
@@ -650,8 +651,8 @@
       const r = rateFor(code, 'SIMULATION');
       if (r !== null) fxMarket.simulationRates[code] = r;
     });
-    profiles.forEach(function (profile) {
-      if(selectedProfile&&getProfileId(profile)!==getProfileId(selectedProfile))return;
+    const targetProfiles=selectedProfile?[selectedProfile]:profiles;
+    targetProfiles.forEach(function (profile) {
       const id = getProfileId(profile);
       const code = getCountryCurrency(profile);
       const source = sourceValues(profile);
@@ -921,9 +922,9 @@
     const usPolicyRate = finite(usMacro.policyRatePct) ?? 3;
 
     let processedCurrencyCount=0;
-    currencies.forEach(function (_, code) {
+    const turnCurrencies=backgroundTurn?(activeCurrency?[activeCurrency]:[]):Array.from(currencies.keys());
+    turnCurrencies.forEach(function (code) {
       if (code === 'USD') return;
-      if(backgroundTurn&&code!==activeCurrency)return;
       const anchorRecord = anchorByCurrency.get(code);
       const profile = anchorRecord && anchorRecord.profile;
       const rateItem = state.simulationRates[code];
@@ -999,7 +1000,7 @@
     while (state.elapsedSimulationMs >= DAY_MS) {
       state.elapsedSimulationMs -= DAY_MS;
       state.simulationDay = (finite(state.simulationDay) || 0) + 1;
-      appendSimHistories();
+      appendSimHistories(backgroundTurn?activeCurrency:null);
     }
     state.lastProcessedTurn = turnNumber;
     syncAllCountries(backgroundTurn?activeProfile:null);
