@@ -1094,7 +1094,8 @@
       rulesLoaded:!!g.__OmegaResourceEconomyRules};
   }
 
-  function runTurn(){
+  function runTurn(options){
+    options=options&&typeof options==='object'?options:{};
     return loadRules().then(async function(){
       installHandlers();installEvents();
       ui();
@@ -1107,7 +1108,7 @@
         catch(error){emit('OMEGA_RESOURCE_DEMAND_RUNTIME_HEALTH','GLOBAL',{status:'DEGRADED',reason:String(error&&error.message||error),turn:turn()},'resource-economy');}
       }
       var extractionResult=null;
-      if(g.OmegaResourceEndowmentRuntime&&typeof g.OmegaResourceEndowmentRuntime.extractAll==='function'){
+      if(options.skipExtraction!==true&&g.OmegaResourceEndowmentRuntime&&typeof g.OmegaResourceEndowmentRuntime.extractAll==='function'){
         try{
           extractionResult=await g.OmegaResourceEndowmentRuntime.extractAll({activeOnly:true});
           if(extractionResult&&['FAILED','WAITING_DEPENDENCIES'].includes(String(extractionResult.status||'').toUpperCase())){
@@ -1233,7 +1234,7 @@
     if(typeof document!=='undefined'&&(document.readyState==='interactive'||document.readyState==='complete'))ui();
     else if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',ui,{once:true});
     if(typeof g.addEventListener==='function'){
-      g.addEventListener('OMEGA_SIMULATION_TURN_COMMITTED',function(){var t=turn();if(g.__OmegaResourceEconomyV2Turn===t)return;g.__OmegaResourceEconomyV2Turn=t;return runTurn();});
+      g.addEventListener('OMEGA_SIMULATION_TURN_COMMITTED',function(){var t=turn();if(g.__OmegaResourceEconomyV2Turn===t)return;g.__OmegaResourceEconomyV2Turn=t;return runTurn({skipExtraction:true});});
       g.addEventListener('OMEGA_READY',function(){installHandlers();installEvents();ui();refreshUI();});
       g.addEventListener('OMEGA_GAME_SESSION_STARTED',function(){installHandlers();installEvents();ui();refreshUI();});
       g.addEventListener('RESOURCE_STATE_UPDATED',function(event){
