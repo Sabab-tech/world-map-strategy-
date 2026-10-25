@@ -29,6 +29,11 @@ assert.equal(annualRate.quantitative.production.rateUnit,'TONNES_PER_DAY');
 context.Game={state:{simulation:{daysPerTurn:30}}};
 const perTurnRate=api.normalizeSiteRecord({resourceId:'coal',quantitative:{production:{rate:3000,rateUnit:'TONNES_PER_TURN',unit:'TONNES_PER_TURN',status:'SIMULATED'}}});
 assert.equal(perTurnRate.quantitative.production.rate,100,'per-turn output must be converted using the current turn duration');
+
+const annualCapacity=api.normalizeSiteRecord({resourceId:'iron_ore',capacity:{nominal:365,minimum:182.5,maximum:730,unit:'TONNES_PER_YEAR',status:'SIMULATED',simulationOnly:true}});
+assert.equal(annualCapacity.capacity.nominal,1,'annual capacity must normalize into daily capacity');
+assert.equal(annualCapacity.capacity.minimum,0.5);
+assert.equal(annualCapacity.capacity.maximum,2);
 const simulated=api.normalizeSiteRecord({
  siteId:'SITE_TEST_COPPER',countryId:'BGD',resourceId:'copper',
  reserve:{quantity:2204.62262185,unit:'POUNDS_COPPER',status:'SIMULATED'},
