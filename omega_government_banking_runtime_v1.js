@@ -1446,14 +1446,31 @@
     return results;
   }
   function reconcileOneCountry(value) {
-    const profile=resolveProfile(value)||playerProfile();
-    if(!profile)return{ok:false,code:'PLAYER_COUNTRY_NOT_SELECTED'};
+    const profile=value==null||String(value).trim()===''?null:resolveProfile(value);
+    if(!profile)return{ok:true,skipped:true,code:'PLAYER_COUNTRY_NOT_SELECTED'};
     try {
-      if(!obj(bankingState(false).accountsByCountry[profileId(profile)]))return{ok:true,skipped:true,code:'COUNTRY_ACCOUNT_NOT_INITIALIZED'};
+      const bank=bankingState(false);
+      if(!bank||!obj(bank.accountsByCountry&&bank.accountsByCountry[profileId(profile)]))
+        return{ok:true,skipped:true,code:'COUNTRY_ACCOUNT_NOT_INITIALIZED'};
       return{countryCode:profileId(profile),result:reconcileCountry(profile)};
     } catch(error) {
       return{countryCode:profileId(profile),ok:false,code:String(error&&error.message||error)};
     }
+  }
+  function selectedRuntimeProfile(value) {
+    const root=rootState(),session=root&&root.simulation&&root.simulation.session||{};
+    const sim=g.Omega&&g.Omega.Simulation;
+    const candidates=[value,session.playerCountryId,root&&root.simulation&&root.simulation.playerCountryId,
+      root&&root.playerCountryId,root&&root.playerCountryCode,
+      sim&&typeof sim.getPlayerCountryId==='function'?sim.getPlayerCountryId():null,
+      g.Game&&(g.Game.playerCountryId||g.Game.playerCountry||g.Game.playerCountryCode),
+      g.OMEGA_PLAYER_COUNTRY_ID,g.playerCountry];
+    for(const candidate of candidates){
+      if(candidate==null||String(candidate).trim()==='')continue;
+      const profile=resolveProfile(candidate);
+      if(profile)return profile;
+    }
+    return null;
   }
   function diagnostics() {
     const bank = bankingState(true);
@@ -1512,8 +1529,9 @@
       g.Omega = g.Omega || {};
       g.Omega.GovernmentBanking = api;
       g.OmegaGovernmentBanking = api;
-      g.addEventListener?.('OMEGA_SIMULATION_TURN_COMMITTED', function () {
-        const player=playerProfile();
+      g.addEventListener?.('OMEGA_SIMULATION_TURN_COMMITTED', function (event) {
+        const detail=event&&event.detail||{};
+        const player=selectedRuntimeProfile(detail.countryId||detail.payload&&detail.payload.countryId);
         if(!player)return;
         processPendingTransfers(profileId(player));
         reconcileOneCountry(profileId(player));
@@ -1526,7 +1544,8 @@
       });
       g.addEventListener?.('OMEGA_FINANCE_STATE_UPDATED', function (event) {
         const detail=event&&event.detail||{};
-        reconcileOneCountry(detail.countryCode||detail.countryId||playerProfile()?.countryCode);
+        const changedCountry=detail.countryCode||detail.countryId;
+        if(changedCountry)reconcileOneCountry(changedCountry);
         refreshPanel();
       });
       g.addEventListener?.('OMEGA_FINANCE_RUNTIME_READY', function () { init().catch(() => {}); });
