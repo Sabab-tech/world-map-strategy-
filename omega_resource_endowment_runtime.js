@@ -2050,11 +2050,18 @@ function batchFromExtraction(x,record){
   }
   function extractAll(){
     const t=turn();
-    if(g.__omegaResourceExtractionTurn===t){
-      if(g.__omegaResourceExtractionPromiseTurn===t&&g.__omegaResourceExtractionPromise)return g.__omegaResourceExtractionPromise;
-      return Promise.resolve({status:'ALREADY_EXTRACTED',turn:t});
+    // A bootstrap pass can overlap the first live game turn. Keep one global pass in
+    // flight; queue a newer turn behind it instead of running two country-wide passes.
+    if(g.__omegaResourceExtractionPromise){
+      if(g.__omegaResourceExtractionPromiseTurn===t)return g.__omegaResourceExtractionPromise;
+      const pending=g.__omegaResourceExtractionPromise;
+      return pending.then(()=>{
+        const latestTurn=turn();
+        if(g.__omegaResourceExtractionTurn===latestTurn)return{status:'ALREADY_EXTRACTED',turn:latestTurn};
+        return extractAll();
+      });
     }
-    if(g.__omegaResourceExtractionPromiseTurn===t&&g.__omegaResourceExtractionPromise)return g.__omegaResourceExtractionPromise;
+    if(g.__omegaResourceExtractionTurn===t)return Promise.resolve({status:'ALREADY_EXTRACTED',turn:t});
     let shared=null;
     const workPromise=(async()=>{
       const initialized=await initialize();
