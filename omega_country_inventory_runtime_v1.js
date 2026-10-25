@@ -647,11 +647,15 @@
       var consumedBatchIds = Array.isArray(sourceRow.consumed)
         ? sourceRow.consumed.map(function (row) { return row && row.batchId; }).filter(Boolean).join(',')
         : '';
+      // Multiple real consumption transactions can legitimately have the same product,
+      // amount, reason and turn. Include batch lineage and row position in the fallback
+      // identity so such transactions are not collapsed into one ledger event.
+      var fallbackReference = type + ':T' + String(sourceRow.turn == null ? turn() : sourceRow.turn) + ':' +
+        normalizeProductId(sourceRow.resourceId) + ':' + String(amount) + ':' +
+        token(sourceRow.reason || sourceRow.action || 'UNSPECIFIED') + ':BATCHES:' +
+        token(consumedBatchIds || 'NO_BATCH_IDS') + ':ROW:' + String(index);
       var reference = sourceRow.settlementId || sourceRow.transactionId || sourceRow.transferId ||
-        sourceRow.consumptionId || sourceRow.batchId ||
-        (type + ':T' + String(sourceRow.turn == null ? turn() : sourceRow.turn) + ':' +
-          normalizeProductId(sourceRow.resourceId) + ':' + String(amount) + ':' +
-          token(sourceRow.reason || sourceRow.action || consumedBatchIds || index));
+        sourceRow.consumptionId || sourceRow.batchId || fallbackReference;
       var result = appendEntry(cid, action, sourceRow.resourceId, deltaSign * amount, {
         eventId: 'SOURCE_LEDGER:' + type + ':' + reference + ':' + normalizeProductId(sourceRow.resourceId),
         source: 'EXISTING_RESOURCE_INVENTORY_LEDGER',
