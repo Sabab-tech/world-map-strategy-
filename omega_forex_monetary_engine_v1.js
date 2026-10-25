@@ -1551,8 +1551,23 @@
         && global.Omega.Simulation.clock.stepDurationMs) ?? DAY_MS;
       simulationTick(turn, duration, detail.countryId||(detail.payload&&detail.payload.countryId), true);
     });
-    global.addEventListener && global.addEventListener('OMEGA_FINANCE_STATE_UPDATED', function () {
-      syncAllCountries();
+    global.addEventListener && global.addEventListener('OMEGA_FINANCE_STATE_UPDATED', function (event) {
+      const detail=event&&event.detail||{},root=rootState();
+      const session=root&&root.simulation&&root.simulation.session||{},sim=global.Omega&&global.Omega.Simulation;
+      const candidates=[detail.countryCode||detail.countryId||detail.country,
+        session.playerCountryId,root&&root.simulation&&root.simulation.playerCountryId,
+        root&&root.playerCountryId,root&&root.playerCountryCode,
+        sim&&typeof sim.getPlayerCountryId==='function'?sim.getPlayerCountryId():null,
+        global.Game&&(global.Game.playerCountryId||global.Game.playerCountry||global.Game.playerCountryCode),
+        global.OMEGA_PLAYER_COUNTRY_ID,global.playerCountry];
+      let selectedProfile=null;
+      for(const value of candidates){
+        if(value==null||String(value).trim()==='')continue;
+        try{selectedProfile=finance&&typeof finance.resolveCountry==='function'?finance.resolveCountry(value):null;}catch(_){}
+        if(!selectedProfile)selectedProfile=profileByCode.get(normalizeCode(value))||null;
+        if(selectedProfile)break;
+      }
+      if(selectedProfile)syncAllCountries(selectedProfile);
       refreshPanelMetrics();
     });
     global.addEventListener && global.addEventListener('visibilitychange', function () {
