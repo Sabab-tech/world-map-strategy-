@@ -22,6 +22,13 @@ const unknownUnit=api.normalizeQuantity('copper',12,'FURLONGS');
 assert.equal(unknownUnit.quantity,null,'unknown physical units must not be silently coerced');
 assert.equal(unknownUnit.unit,'FURLONGS','unknown-unit quantities retain their source unit');
 assert.equal(unknownUnit.method,'UNIT_UNRECOGNIZED_OR_INCOMPATIBLE_NOT_CONVERTED');
+
+const annualRate=api.normalizeSiteRecord({resourceId:'copper',quantitative:{production:{rate:365,rateUnit:'TONNES_PER_YEAR',unit:'TONNES_PER_YEAR',status:'SIMULATED'}}});
+assert.equal(annualRate.quantitative.production.rate,1,'annual site output must be converted to one day of production');
+assert.equal(annualRate.quantitative.production.rateUnit,'TONNES_PER_DAY');
+context.Game={state:{simulation:{daysPerTurn:30}}};
+const perTurnRate=api.normalizeSiteRecord({resourceId:'coal',quantitative:{production:{rate:3000,rateUnit:'TONNES_PER_TURN',unit:'TONNES_PER_TURN',status:'SIMULATED'}}});
+assert.equal(perTurnRate.quantitative.production.rate,100,'per-turn output must be converted using the current turn duration');
 const simulated=api.normalizeSiteRecord({
  siteId:'SITE_TEST_COPPER',countryId:'BGD',resourceId:'copper',
  reserve:{quantity:2204.62262185,unit:'POUNDS_COPPER',status:'SIMULATED'},
