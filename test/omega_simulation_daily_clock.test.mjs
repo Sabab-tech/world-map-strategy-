@@ -688,6 +688,8 @@ test('automatic production and resource pipelines advance only the player-select
   const banking = source('omega_government_banking_runtime_v1.js');
   const worldBank = source('omega_world_bank_lending_runtime_v1.js');
   const treaties = source('omega_opponent_treaty_lifecycle_system.js');
+  const autonomy = source('omega_opponent_autonomy_system.js');
+  const deepMemory = source('omega_opponent_deep_memory_system.js');
 
   assert.match(endowment, /if\(options\.activeOnly===true\)\{[\s\S]*?const selected=playerSimulationCountryId\(\);[\s\S]*?return allCountries\.filter\(country=>canonical\(country\)===selected\);/,
     'active mine extraction must be bounded to the selected player country');
@@ -737,4 +739,8 @@ test('automatic production and resource pipelines advance only the player-select
     'World Bank turns must not rerun the 249-country assessment loop');
   assert.match(treaties, /OMEGA_SIMULATION_TURN_COMMITTED',processPlayerTurn\)/,
     'automatic treaty negotiation must only process player-country requests');
+  assert.match(autonomy, /function tickProjects\(\)\{[\s\S]*?const selected=playerSimulationCountryId\(\);[\s\S]*?const countryKey=Object\.keys\(projects\)\.find\(key=>canonicalId\(key\)===selected\)\|\|selected/,
+    'autonomous construction and military training ticks must only use the player country');
+  assert.match(deepMemory, /function tick\(\)\{[\s\S]*?const selected=playerSimulationCountryId\(\);[\s\S]*?createCommand\('OMEGA_MEMORY_CONSOLIDATE',selected/,
+    'opponent memory consolidation must not run for every country each turn');
 });
