@@ -380,11 +380,14 @@ test('map and ministry rendering stay responsive and scoped to the selected coun
   const resourceScreen = read('omega_ui_v2/screens/resource-ministry.js');
   const resourceBinding = read('omega_resource_gameplay_binding_v1.js');
   const uiIntegration = read('omega_ui_v2/integration.js');
+  const mapController = read('map-engine-1.js');
   const uiApp = read('omega_ui_v2/app.js');
   const industry = read('omega_ui_v2/screens/industry.js');
   const economy = read('omega_ui_v2/screens/economy.js');
   const reports = read('omega_ui_v2/screens/reports.js');
 
+  assert.ok(mapController.includes('const selectedContextCode = identity && (identity.iso3 || identity.alpha3 || identity.cca3 || identity.countryIso3 || identity.countryCode) || null;'),
+    'the map selection controller must store the country ISO3 as the canonical ministry context, not ISO2');
   assert.ok(uiIntegration.includes('function canonicalCountry(value)'),
     'map and legacy country aliases must resolve to one ISO3 identity before ministry mounting');
   assert.ok(uiIntegration.includes('var country = canonicalCountry(mountOptions.countryId || selectedCountry() || \'\')'));
