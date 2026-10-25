@@ -2605,7 +2605,7 @@ function batchFromExtraction(x,record){
         }
       }
       const prior=g.__omegaResourceEndowmentLastBootstrap;
-      const hasNewExecutionSites=Object.keys(bindingSync.executionSiteIdsByCountry||{}).length>0;
+      const hasNewExecutionSites=(bindingSync.executionSiteIdsByCountry[selectedCountryId]||[]).length>0;
       if(prior&&Number(prior.turn)===t&&['COMPLETED','DEGRADED','NO_OUTPUT'].includes(String(prior.status))&&!hasNewExecutionSites){
         prior.bindingSync={status:bindingSync.status,registeredCount:bindingSync.registeredCount,enrichedCount:bindingSync.enrichedCount,
           rejectedCount:bindingSync.rejectedCount,siteCount:bindingSync.siteCount};
