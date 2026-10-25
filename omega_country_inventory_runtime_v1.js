@@ -315,7 +315,7 @@
       Object.keys(balances).forEach(function (key) {
         var pid = normalizeProductId(key), value = number(balances[key]);
         if (!pid || value === null) return;
-        map[pid] = value;
+        map[pid] = Math.max(0, value);
       });
       return map;
     }
@@ -324,7 +324,13 @@
     Object.keys(inventory).forEach(function (key) {
       var pid = normalizeProductId(key), value = number(inventory[key]);
       if (!pid || value === null) return;
-      map[pid] = (number(map[pid]) || 0) + value;
+      // Runtime state may receive direct writes from older subsystems. Repair a
+      // negative balance at the authoritative inventory boundary, not just in the UI.
+      if (value < 0) {
+        inventory[key] = 0;
+        value = 0;
+      }
+      map[pid] = Math.max(0, (number(map[pid]) || 0) + value);
     });
     return map;
   }
@@ -547,13 +553,15 @@
         return;
       }
       var key = keyInfo.key;
-      var live = number(inventory[key]) || 0;
+      var rawLive = number(inventory[key]);
+      var live = Math.max(0, rawLive || 0);
+      if (rawLive !== null && rawLive < 0) inventory[key] = 0;
       var previous = number(row.observedBalances[pid]);
       if (previous === null) previous = live;
       var observedDelta = live - previous;
       var correction = expectedDelta - observedDelta;
       if (Math.abs(correction) > EPSILON) {
-        adjustments.push({ productId: pid, key: key, before: live, correction: correction, after: live + correction });
+        adjustments.push({ productId: pid, key: key, before: live, correction: correction, after: Math.max(0, live + correction) });
       }
     });
 
@@ -844,6 +852,10 @@
     var key = inventoryKey(inventory, productId);
     if (key.ambiguous) return { status: 'BLOCKED', reason: 'AMBIGUOUS_INVENTORY_PRODUCT_KEYS', keys: key.ambiguous };
     var current = number(inventory[key.key]) || 0;
+    if (current < 0) {
+      inventory[key.key] = 0;
+      current = 0;
+    }
     var delta = positive ? quantity : -quantity;
     if (negative && current + EPSILON < quantity) {
       return { status: 'BLOCKED', reason: 'INSUFFICIENT_INVENTORY', available: current, requested: quantity };
@@ -861,7 +873,7 @@
         if (warehouseResult.status !== 'RECORDED') return warehouseResult;
       }
     } else {
-      inventory[key.key] = current + delta;
+      inventory[key.key] = Math.max(0, current + delta);
       debitWarehouseAndBatches(cid, productId, quantity, action);
     }
 
