@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" role="img" aria-labelledby="title desc">
+<title id="title">Education ministry university campus illustration</title>
+<desc id="desc">A modern university campus with library architecture, open book motifs and a graduation cap. No person or portrait is used.</desc>
+<defs>
+  <linearGradient id="sky" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#102b47"/><stop offset=".58" stop-color="#28618a"/><stop offset="1" stop-color="#83cbe8"/></linearGradient>
+  <linearGradient id="campus" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e9f1f7"/><stop offset="1" stop-color="#a6bed1"/></linearGradient>
+  <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#70c9f1"/><stop offset="1" stop-color="#153955"/></linearGradient>
+  <linearGradient id="ground" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#507c91"/><stop offset="1" stop-color="#142b41"/></linearGradient>
+</defs>
+<rect width="1280" height="720" fill="url(#sky)"/>
+<circle cx="1010" cy="135" r="64" fill="#d2f0fb" opacity=".82"/>
+<path d="M0 350 190 235 350 336 510 214 690 347 860 245 1070 347 1280 220V500H0Z" fill="#5487a6" opacity=".38"/>
+<path d="M0 415 195 338 340 395 510 315 730 415 925 324 1110 413 1280 342V580H0Z" fill="#163b59" opacity=".38"/>
+<rect y="535" width="1280" height="185" fill="url(#ground)"/>
+<path d="M120 558 280 519 1000 519 1160 558" fill="none" stroke="#abd4e7" stroke-width="7" opacity=".62"/>
+<g transform="translate(190 190)">
+  <rect x="0" y="126" width="900" height="250" rx="7" fill="#173853" opacity=".45"/>
+  <path d="M18 128 450 0 882 128Z" fill="#dce8f1" stroke="#8aa9bf" stroke-width="7"/>
+  <path d="M71 131h758v48H71z" fill="#d2e0ea"/>
+  <rect x="86" y="177" width="728" height="178" fill="url(#campus)" stroke="#f4f8fb" stroke-width="5"/>
+  <path d="M86 224h728M86 293h728" stroke="#8ba8bf" stroke-width="5"/>
+  <g fill="url(#glass)" stroke="#6f92aa" stroke-width="4">
+    <rect x="115" y="188" width="82" height="30" rx="3"/><rect x="222" y="188" width="82" height="30" rx="3"/><rect x="329" y="188" width="82" height="30" rx="3"/><rect x="436" y="188" width="82" height="30" rx="3"/><rect x="543" y="188" width="82" height="30" rx="3"/><rect x="650" y="188" width="82" height="30" rx="3"/><rect x="756" y="188" width="36" height="30" rx="3"/>
+    <rect x="115" y="238" width="82" height="43" rx="3"/><rect x="222" y="238" width="82" height="43" rx="3"/><rect x="329" y="238" width="82" height="43" rx="3"/><rect x="543" y="238" width="82" height="43" rx="3"/><rect x="650" y="238" width="82" height="43" rx="3"/><rect x="756" y="238" width="36" height="43" rx="3"/>
+  </g>
+  <rect x="430" y="239" width="150" height="116" rx="4" fill="#0b263d"/>
+  <path d="M451 355V273h108v82" fill="none" stroke="#77c8f2" stroke-width="5"/>
+  <path d="M466 355v-65m23 65v-65m23 65v-65m23 65v-65" stroke="#d8e6ef" stroke-width="7"/>
+  <path d="M0 376h900" stroke="#c5d8e6" stroke-width="10"/>
+  <path d="M-20 392h940" stroke="#0b2238" stroke-width="14" opacity=".7"/>
+</g>
+<g transform="translate(850 420)">
+  <path d="M-20 124 70 80 160 124 70 168Z" fill="#f4f8fb" stroke="#77c8f2" stroke-width="5"/>
+  <path d="M16 124v43c30 24 78 24 108 0v-43" fill="#9fb9cb" stroke="#e3edf6" stroke-width="5"/>
+  <path d="M-20 124 70 80 160 124 70 168Z" fill="#0b2238" stroke="#77c8f2" stroke-width="5"/>
+  <path d="M70 80v-22" stroke="#e3edf6" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="70" cy="53" r="6" fill="#77c8f2"/>
+</g>
+<path d="M0 660 230 615 440 660 650 615 870 660 1080 615 1280 650V720H0Z" fill="#091a2b" opacity=".68"/>
+<path d="M0 690h1280" stroke="#77c8f2" stroke-width="4" opacity=".75"/>
+</svg>
