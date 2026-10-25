@@ -1571,6 +1571,11 @@ Game.Map.renderResourceDeposits = function() {
         (window.Omega && window.Omega.IndividualResourceSiteBinding);
     if (this.resourceState && this.resourceState.enabled &&
         (individualSiteBinding || window.__OMEGA_RESOURCE_SITE_BINDING_INIT__)) {
+        // The site binding may still be loading, but city markers must disappear
+        // immediately when resource mode is activated, not after its first marker batch.
+        if (this.hubsGroupLayer && typeof this.hubsGroupLayer.clearLayers === 'function') {
+            this.hubsGroupLayer.clearLayers();
+        }
         const summaryCountElem = document.getElementById('resource-summary-count');
         const activeCountry = Game.currentActiveCountry ||
             (window.CountryIOS && window.CountryIOS.activeCountry) || '';
