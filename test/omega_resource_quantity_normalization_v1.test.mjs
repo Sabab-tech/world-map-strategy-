@@ -11,6 +11,7 @@ assert.equal(api.normalizeQuantity('copper',320400000000,'POUNDS_COPPER').unit,'
 assert.ok(Math.abs(api.normalizeQuantity('copper',320400000000,'POUNDS_COPPER').quantity-145331221.4)<1);
 assert.equal(api.normalizeQuantity('natural_gas',1,'BCF').unit,'BCM');
 assert.ok(Math.abs(api.normalizeQuantity('natural_gas',1,'BCF').quantity-0.028316846592)<1e-9);
+assert.ok(Math.abs(api.normalizeQuantity('natural_gas',1,'BCF_PER_DAY').quantity-0.028316846592)<1e-9,'rate unit suffixes must not suppress conversion');
 assert.equal(api.normalizeQuantity('gold',1,'TONNES_ORE').unit,'TROY_OUNCES');
 assert.ok(api.normalizeQuantity('gold',1,'TONNES_ORE').quantity>32000);
 assert.equal(api.normalizeQuantity('diamond',1,'TONNES').quantity,5000000);
