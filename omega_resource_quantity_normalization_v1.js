@@ -37,9 +37,9 @@ function cleanUnit(unit){
  return u;
 }
 function daysPerProductionPeriod(sourceUnit){
- const period=String(sourceUnit??'').trim().toUpperCase().replace(/[\\s-]+/g,'_');
- if(/(?:_PER_YEAR|_YEAR|_YR|_ANNUAL|_PER_ANNUM|\\/YEAR|\\/YR)$/.test(period))return 365;
- if(/(?:_PER_TURN|_TURN|\\/TURN)$/.test(period))
+ const period=String(sourceUnit??'').trim().toUpperCase().replace(/[\s-]+/g,'_');
+ if(/(?:_PER_YEAR|_YEAR|_YR|_ANNUAL|_PER_ANNUM|\/YEAR|\/YR)$/.test(period))return 365;
+ if(/(?:_PER_TURN|_TURN|\/TURN)$/.test(period))
   return Math.max(1,num(g.Game?.state?.simulation?.daysPerTurn)||num(g.gameState?.simulation?.daysPerTurn)||1);
  return 1;
 }
