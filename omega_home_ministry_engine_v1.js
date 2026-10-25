@@ -266,18 +266,27 @@
       (sim&&typeof sim.getPlayerCountryId==='function'&&sim.getPlayerCountryId())||
       (g.CountryIOS&&g.CountryIOS.activeCountry)||g.currentActiveCountry||
       (g.Game&&(g.Game.selectedCountryId||g.Game.activeCountry||g.Game.currentActiveCountry||g.Game.playerCountry||g.Game.countryId))||
-      g.playerCountry||'USA';
+      g.playerCountry||'';
     return normalizeCountry(raw);
   }
+  // Operational work is pinned to the session/player identity. Browsing a foreign
+  // country in a ministry screen must never switch the simulation target.
   function playerCountry(){
     const sim=g.Omega&&g.Omega.Simulation,root=rootState();
+    const session=root&&root.simulation&&root.simulation.session;
     let raw=null;
     try{if(sim&&typeof sim.getPlayerCountryId==='function')raw=sim.getPlayerCountryId();}catch(_){}
-    raw=raw||root&&root.simulation&&root.simulation.session&&root.simulation.session.playerCountryId||
+    raw=raw||session&&session.playerCountryId||
       root&&root.simulation&&root.simulation.playerCountryId||root&&root.playerCountryId||root&&root.playerCountryCode||
       g.Game&&(g.Game.playerCountryId||g.Game.playerCountryCode||g.Game.playerCountry)||
-      g.playerCountry||g.OMEGA_PLAYER_COUNTRY_ID||g.Game&&(g.Game.countryId||g.Game.currentActiveCountry)||
-      g.CountryIOS&&g.CountryIOS.activeCountry||g.currentActiveCountry||'USA';
+      g.OMEGA_PLAYER_COUNTRY_ID;
+    if(!raw){
+      const finance=financeApi();
+      try{
+        const player=finance&&typeof finance.getPlayerCountry==='function'?finance.getPlayerCountry():null;
+        raw=player&&(player.iso3||player.countryCode||player.countryId||player.code||player.name);
+      }catch(_){}
+    }
     return normalizeCountry(raw);
   }
   function rootState(){return g.Game&&g.Game.state&&typeof g.Game.state==='object'?g.Game.state:(g.gameState&&typeof g.gameState==='object'?g.gameState:null);}
@@ -2034,12 +2043,15 @@
   }
 
   function onTurnCommitted(){
-    const now=simulationTimeMs(),day=Math.floor(now/DAY_MS),failures=[];
-    for(const cid of simulationCountryIds()){
-      try{processCountryTurn(cid,now,day);}
-      catch(error){failures.push(cid+':'+String(error&&error.message||error));}
+    const cid=playerCountry();
+    if(!cid)return {status:'SKIPPED',reason:'PLAYER_COUNTRY_NOT_SELECTED'};
+    const now=simulationTimeMs(),day=Math.floor(now/DAY_MS);
+    try{
+      processCountryTurn(cid,now,day);
+      return {status:'COMPLETED',countryId:cid,turn:turn(),day:day};
+    }catch(error){
+      throw new Error('HOME_MINISTRY_TURN_FAILED:'+cid+':'+String(error&&error.message||error));
     }
-    if(failures.length)throw new Error('HOME_MINISTRY_TURN_FAILED:'+failures.join('|'));
   }
   function processSelectedCountryTurn(event){
     const detail=event&&event.detail||{},payload=detail.payload||detail;
