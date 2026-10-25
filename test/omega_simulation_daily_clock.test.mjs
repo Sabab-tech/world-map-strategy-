@@ -452,7 +452,8 @@ test('finance, FX, macro and ministry time fallbacks treat one turn as one day',
     'turn-driven factories must not auto-start work outside activated source sites');
   assert.match(industrial, /factoryAutoStartAllowed/,
     'manual factory calls remain available while automatic starts are restricted');
-  assert.match(hardening, /OMEGA_SIMULATION_TURN_COMMITTED',[() =>]*\{ensureFactoryRecipes\(\);\}/);
+  assert.match(hardening, /OMEGA_SIMULATION_TURN_COMMITTED[\s\S]{0,180}ensureFactoryRecipes\(selected\)/,
+    'factory recipe hydration must be limited to the selected player country');
   assert.equal(industrialCatalog.turnAssumption.daysPerTurn, 1);
 });
 
