@@ -184,6 +184,49 @@ test('industry view reads current country assets, cycles and projects without sy
   assert.equal(globalThis.OmegaUIV2Industry.buildViewModel({countryId:'USA'}).factoryCount,0);
 });
 
+test('industry research and technology records remain isolated to the selected country', () => {
+  const previous = {
+    Game:globalThis.Game, runtime:globalThis.OmegaCountryRuntimeData,
+    catalog:globalThis.OmegaResourceIndustrialCatalogData, inventory:globalThis.OmegaCountryInventoryRuntime,
+    omega:globalThis.Omega
+  };
+  globalThis.Omega = {};
+  globalThis.OmegaCountryRuntimeData = null;
+  globalThis.OmegaCountryInventoryRuntime = null;
+  globalThis.OmegaResourceIndustrialCatalogData = { factoryProfiles:{} };
+  globalThis.Game = { state:{
+    resource:{
+      BGD:{
+        technologyResearchProjects:[{projectId:'BGD-TECH-1',technologyId:'ORE_SORTING',technologyName:'Ore Sorting',status:'IN_PROGRESS',progress:35,progressUnits:7,requiredUnits:20,startedTurn:4}],
+        technologyTransfers:[{projectId:'BGD-IMPORT-1',technologyId:'MINE_AUTOMATION',status:'COMPLETED',donorCountryId:'USA',progress:100}],
+        technologyCapabilities:[{capabilityId:'BGD-CAP-1',technologyId:'ORE_SORTING',sourceType:'RESEARCH',completedTurn:9}],
+        industrialNetwork:{projects:[],factoryProductionCycles:{},factoryRuntime:{},siteFlowLedger:[]}
+      },
+      USA:{technologyResearchProjects:[{projectId:'USA-SECRET-1',technologyId:'UNRELATED_TECH',technologyName:'Foreign-only record',status:'IN_PROGRESS'}],
+        technologyTransfers:[],technologyCapabilities:[],industrialNetwork:{projects:[],factoryProductionCycles:{},factoryRuntime:{},siteFlowLedger:[]}}
+    },
+    economy:{BGD:{productionAssets:[]},USA:{productionAssets:[]}}
+  }};
+  try {
+    const model = globalThis.OmegaUIV2Industry.buildViewModel({countryId:'BGD'});
+    assert.deepEqual(model.researchProjects.map(row=>row.projectId), ['BGD-TECH-1']);
+    assert.deepEqual(model.technologyTransfers.map(row=>row.projectId), ['BGD-IMPORT-1']);
+    assert.deepEqual(model.technologyCapabilities.map(row=>row.capabilityId), ['BGD-CAP-1']);
+    const root = {classList:{add(){}}, addEventListener(){}, contains(){return true}};
+    const rendered = globalThis.OmegaUIV2Industry.render(root,{countryId:'BGD',tab:'research'});
+    assert.equal(rendered.ok,true);
+    assert.match(root.innerHTML,/Ore Sorting/);
+    assert.match(root.innerHTML,/MINE_AUTOMATION/);
+    assert.doesNotMatch(root.innerHTML,/Foreign-only record|USA-SECRET-1|UNRELATED_TECH/);
+  } finally {
+    if (previous.Game === undefined) delete globalThis.Game; else globalThis.Game = previous.Game;
+    if (previous.runtime === undefined) delete globalThis.OmegaCountryRuntimeData; else globalThis.OmegaCountryRuntimeData = previous.runtime;
+    if (previous.catalog === undefined) delete globalThis.OmegaResourceIndustrialCatalogData; else globalThis.OmegaResourceIndustrialCatalogData = previous.catalog;
+    if (previous.inventory === undefined) delete globalThis.OmegaCountryInventoryRuntime; else globalThis.OmegaCountryInventoryRuntime = previous.inventory;
+    if (previous.omega === undefined) delete globalThis.Omega; else globalThis.Omega = previous.omega;
+  }
+});
+
 test('selected ISO3 country resolves name-keyed economy data across Economy, Industry and Reports tabs', () => {
   const previous = {
     Game:globalThis.Game, runtime:globalThis.OmegaCountryRuntimeData,
