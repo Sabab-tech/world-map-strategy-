@@ -407,6 +407,7 @@
     var cid = canonicalCountry(countryId);
     if (!cid) return { status: 'BLOCKED', reason: 'PLAYER_COUNTRY_NOT_SELECTED' };
     var row = ensureCountry(cid);
+    var firstSnapshot = row.openingSnapshotInitialized !== true;
     var resource = resourceState(cid, true);
     var actual = inventoryValues(cid);
     var catalog = root().productCatalog;
@@ -414,7 +415,8 @@
     Object.keys(catalog).forEach(function (pid) {
       var sourceId = catalog[pid].sourceId || pid;
       var quantity = number(actual[pid]) || 0;
-      baseProduct(cid, sourceId, quantity, catalog[pid].name, catalog[pid].unit);
+      var product = baseProduct(cid, sourceId, quantity, catalog[pid].name, catalog[pid].unit);
+      if (firstSnapshot && product) product.base = quantity;
       row.observedBalances[pid] = quantity;
     });
 
@@ -423,7 +425,8 @@
       if (!pid) return;
       var unit = resource.inventoryUnits && (resource.inventoryUnits[key] || resource.inventoryUnits[pid]);
       var quantity = number(actual[pid]) || 0;
-      baseProduct(cid, key, quantity, null, unit);
+      var product = baseProduct(cid, key, quantity, null, unit);
+      if (firstSnapshot && product) product.base = quantity;
       row.observedBalances[pid] = quantity;
     });
 
