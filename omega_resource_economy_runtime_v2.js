@@ -1113,14 +1113,9 @@
         },'resource-economy');}
       },2);
 
-      await yieldTurnWork();
-      if(g.OmegaGlobalMarket&&typeof g.OmegaGlobalMarket.rebuild==='function'){
-        try{g.OmegaGlobalMarket.rebuild();}catch(_){}
-      }
-      await yieldTurnWork();
-      if(g.OmegaGlobalTrade&&typeof g.OmegaGlobalTrade.processAll==='function'){
-        try{g.OmegaGlobalTrade.processAll();}catch(_){}
-      }
+      // Global Market and Global Trade are already registered as awaited
+      // OMEGA_SIMULATION_TURN_COMMITTED participants. Calling rebuild/processAll here
+      // repeated their world-wide work a second time in the same turn.
 
       // World counts are computed once per turn. The former loop built a full, deeply
       // cloned dashboard for every country, and dashboard() itself rescanned every country,
