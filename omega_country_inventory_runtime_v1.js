@@ -827,6 +827,14 @@
     if (!pid || quantity === null || quantity <= 0 || !Number.isFinite(quantity) || (!positive && !negative)) {
       return { status: 'BLOCKED', reason: 'INVENTORY_TRANSACTION_INVALID' };
     }
+    var transactionEventId = String(input.eventId || '');
+    var existingCountry = root().countries[cid];
+    if (transactionEventId && existingCountry && existingCountry.eventIds &&
+        Object.prototype.hasOwnProperty.call(existingCountry.eventIds, transactionEventId)) {
+      return { status: 'DUPLICATE', reason: 'INVENTORY_TRANSACTION_ALREADY_APPLIED',
+        countryId: cid, productId: pid, action: action,
+        balance: currentBalance(cid, productId), eventId: transactionEventId };
+    }
     var resource = resourceState(cid, true);
     var inventory = resource.inventory;
     var key = inventoryKey(inventory, productId);
