@@ -855,6 +855,27 @@ Game.Map = {
             try {
                 const runtimeCities = countryRuntime.getCities(countryName);
                 if (Array.isArray(runtimeCities)) runtimeCities.forEach(city => appendHub(city, city && city.role || 'city'));
+
+                // The map can become interactive before cities.json finishes loading.
+                // Schedule one refresh per selected country once the existing runtime is ready.
+                if ((!Array.isArray(runtimeCities) || runtimeCities.length === 0) &&
+                    typeof countryRuntime.isReady === 'function' && !countryRuntime.isReady() &&
+                    countryRuntime.ready && typeof countryRuntime.ready.then === 'function') {
+                    const pending = window.__OMEGA_CITY_RUNTIME_REFRESH_PENDING__ ||
+                        (window.__OMEGA_CITY_RUNTIME_REFRESH_PENDING__ = new Set());
+                    const pendingKey = Game.getCountryId(countryName) || countryName;
+                    if (!pending.has(pendingKey)) {
+                        pending.add(pendingKey);
+                        Promise.resolve(countryRuntime.ready).then(ready => {
+                            pending.delete(pendingKey);
+                            if (ready && Game.currentActiveCountry === countryName &&
+                                !(Game.Map.resourceState && Game.Map.resourceState.enabled) &&
+                                typeof Game.Map.renderCountryHubs === 'function') {
+                                Game.Map.renderCountryHubs();
+                            }
+                        }).catch(() => pending.delete(pendingKey));
+                    }
+                }
             } catch (error) {
                 console.warn('[OMEGA Map] Selected-country city lookup failed:', error);
             }
