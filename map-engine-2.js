@@ -1543,6 +1543,24 @@ Game.Map.renderResourceDeposits = function() {
     // CRITICAL MANDATE 11: ONE LAYER ONLY. Always clear before adding new markers.
     this.resourceDepositsLayer.clearLayers();
 
+    // The individual-site renderer is the canonical resource layer. Avoid rescanning
+    // the legacy world-wide deposit array when that asynchronous country-scoped layer
+    // is ready or still loading; the binding refresh hook will paint its bounded markers.
+    const individualSiteBinding = window.OmegaIndividualResourceSiteBinding ||
+        (window.Omega && window.Omega.IndividualResourceSiteBinding);
+    if (this.resourceState && this.resourceState.enabled &&
+        (individualSiteBinding || window.__OMEGA_RESOURCE_SITE_BINDING_INIT__)) {
+        const summaryCountElem = document.getElementById('resource-summary-count');
+        const activeCountry = Game.currentActiveCountry ||
+            (window.CountryIOS && window.CountryIOS.activeCountry) || '';
+        if (summaryCountElem) {
+            summaryCountElem.textContent = !activeCountry && String(this.resourceState.scope || 'NATION') !== 'WORLD'
+                ? 'Select a country'
+                : (individualSiteBinding ? 'Country resource sites shown on map' : 'Preparing resource sites…');
+        }
+        return;
+    }
+
     // Auto-populate all catalog resources if selectedResources is empty but enabled
     if (this.resourceState && this.resourceState.enabled && (!this.resourceState.selectedResources || this.resourceState.selectedResources.size === 0)) {
         if (Array.isArray(this.resourceCatalog)) {
