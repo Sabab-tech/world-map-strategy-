@@ -1085,7 +1085,8 @@
       ui();
       var activeCountry=currentCountryId();
       if(!activeCountry)return{status:'SKIPPED',reason:'PLAYER_COUNTRY_NOT_SELECTED',turn:turn()};
-      var allCountries=[activeCountry];
+      var allCountries=countries();
+      var activeCountries=[activeCountry];
       if(g.OmegaResourceNationalDemandRuntime&&typeof g.OmegaResourceNationalDemandRuntime.prepare==='function'){
         try{await g.OmegaResourceNationalDemandRuntime.prepare();}
         catch(error){emit('OMEGA_RESOURCE_DEMAND_RUNTIME_HEALTH','GLOBAL',{status:'DEGRADED',reason:String(error&&error.message||error),turn:turn()},'resource-economy');}
@@ -1109,7 +1110,7 @@
 
       // Never run all countries' inventory, factory and ledger reconciliation in one
       // uninterrupted WebView task. Yield between small deterministic country batches.
-      await forEachCooperatively(allCountries,function(c){
+      await forEachCooperatively(activeCountries,function(c){
         try{processCountry(c);}
         catch(e){emit('OMEGA_RESOURCE_ECONOMY_RUNTIME_HEALTH',c,{
           status:'DEGRADED',reason:String(e&&e.message||e)
@@ -1124,7 +1125,7 @@
       // cloned dashboard for every country, and dashboard() itself rescanned every country,
       // making the publication phase quadratic on a large world.
       var globalSummary=worldMineSummary(allCountries),activeCountry=currentCountryId();
-      await forEachCooperatively(allCountries,function(c){
+      await forEachCooperatively(activeCountries,function(c){
         var health=countryHealth(c,globalSummary);
         emit('OMEGA_RESOURCE_ECONOMY_RUNTIME_HEALTH',c,health,'resource-economy');
         var detail;
