@@ -15,6 +15,15 @@ const state=()=>g.Game?.state||g.gameState||{};
 const turn=()=>num(state()?.simulation?.turn??state()?.turn??state()?.simulationTurn)??0;
 const year=()=>{const d=state()?.simulation?.date;if(d){const y=Number(String(d).slice(0,4));if(Number.isFinite(y))return y;}return num(state()?.simulation?.startYear)??2015;};
 const country=v=>{const raw=String(v??'').trim();if(!raw)return null;try{const b=g.OmegaCanonicalIdentityRegistry||g.OmegaCountrySemanticBridge||g.Omega?.CanonicalIdentity;const r=b?.resolveCountry?.(raw);if(r?.id)return id(r.id);}catch(_){}return id(raw);};
+const playerSimulationCountryId=()=>{
+ const sim=g.Omega?.Simulation,simState=sim?.world?.state||state();
+ const session=simState?.simulation?.session||state()?.simulation?.session||{};
+ const candidates=[session?.playerCountryId,typeof sim?.getPlayerCountryId==='function'?sim.getPlayerCountryId():null,
+  simState?.playerCountryId,state()?.playerCountryId,g.Game?.playerCountry,g.Game?.currentActiveCountry,
+  g.CountryIOS?.activeCountry,g.currentActiveCountry];
+ for(const value of candidates){const cid=country(value);if(cid&&cid!=='[OBJECT OBJECT]')return cid;}
+ return null;
+};
 const resourceState=c=>{const root=state().resource||(state().resource={}),cid=country(c);if(!root[cid])root[cid]={};return root[cid];};
 
 function rowsOf(name){
@@ -162,16 +171,24 @@ function processModel(resourceId){
  return{resourceId:rid,inputCoefficient:1,outputs:Object.fromEntries(outs.map(x=>[tok(x),share])),wasteFraction:outs.length?0.12:0,energyPerInput:0.03,waterPerInput:0.015,
    upstreamProcess:row.upstreamProcess||null,midstreamProcess:row.midstreamProcess||null,authority:'SIMULATION_RULES_FROM_CANONICAL_ONTOLOGY'};
 }
-function ensureFactoryRecipes(){
- const root=state().economy||{},changed=[];
- for(const [c,econ] of Object.entries(root)){
-   if(!econ||!Array.isArray(econ.productionAssets))continue;let n=0;
-   econ.productionAssets=econ.productionAssets.map(asset=>{const a=clone(asset),rid=tok(a.resourceId||a.inputResourceId||a.inputResource||a.feedstockResourceId||a.feedstock);if(!rid)return a;const m=processModel(rid);
-     if((!a.inputCoefficients||!Object.keys(a.inputCoefficients).length)&&m.inputCoefficient>0){a.inputCoefficients={[rid]:m.inputCoefficient};a.processModelAuthority=m.authority;n++;}
-     if((!a.outputProfile||!Object.keys(a.outputProfile).length)&&Object.keys(m.outputs).length){a.outputProfile=clone(m.outputs);a.processModelAuthority=m.authority;n++;}
-     if(!a.processModel)a.processModel=clone(m);return a;});
-   if(n)changed.push({countryId:country(c),changed:n});
- }
+function ensureFactoryRecipes(countryId=null){
+ const root=state().economy||{},changed=[],selected=countryId?country(countryId):playerSimulationCountryId();
+ if(!selected)return changed;
+ const key=Object.keys(root).find(c=>country(c)===selected);
+ if(!key)return changed;
+ const econ=root[key];
+ if(!econ||!Array.isArray(econ.productionAssets))return changed;
+ let n=0;
+ econ.productionAssets=econ.productionAssets.map(asset=>{
+   const a=clone(asset),rid=tok(a.resourceId||a.inputResourceId||a.inputResource||a.feedstockResourceId||a.feedstock);
+   if(!rid)return a;
+   const m=processModel(rid);
+   if((!a.inputCoefficients||!Object.keys(a.inputCoefficients).length)&&m.inputCoefficient>0){a.inputCoefficients={[rid]:m.inputCoefficient};a.processModelAuthority=m.authority;n++;}
+   if((!a.outputProfile||!Object.keys(a.outputProfile).length)&&Object.keys(m.outputs).length){a.outputProfile=clone(m.outputs);a.processModelAuthority=m.authority;n++;}
+   if(!a.processModel)a.processModel=clone(m);
+   return a;
+ });
+ if(n)changed.push({countryId:selected,changed:n});
  return changed;
 }
 
@@ -202,5 +219,5 @@ function diagnostics(){
 }
 function apply(){patchSiteModel();patchExtraction();ensureFactoryRecipes();patchLogistics();g.Omega=g.Omega||{};g.Omega.ResourceSystemHardening={VERSION,TARGET_HORIZON_YEARS,MIN_HORIZON_YEARS,MAX_HORIZON_YEARS,resolveSimulation,processModel,ensureFactoryRecipes,logisticsConstraints,constrainedLogisticsPlan,auditCountry,diagnostics};g.OmegaResourceSystemHardening=g.Omega.ResourceSystemHardening;}
 try{apply();}catch(e){g.OmegaResourceSystemHardeningError=String(e?.message||e);}
-try{g.addEventListener?.('OMEGA_READY',apply);g.addEventListener?.('OMEGA_GAME_SESSION_STARTED',apply);g.addEventListener?.('OMEGA_SIMULATION_TURN_COMMITTED',()=>{ensureFactoryRecipes();});}catch(_){}
+try{g.addEventListener?.('OMEGA_READY',apply);g.addEventListener?.('OMEGA_GAME_SESSION_STARTED',apply);g.addEventListener?.('OMEGA_SIMULATION_TURN_COMMITTED',()=>{const selected=playerSimulationCountryId();if(selected)ensureFactoryRecipes(selected);});}catch(_){}
 })(typeof window!=='undefined'?window:globalThis);
