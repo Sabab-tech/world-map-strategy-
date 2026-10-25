@@ -178,7 +178,7 @@ public final class OmegaGameplaySmokeTest {
             final JSONObject warmupState = new JSONObject(warmupHeartbeat);
             assertTrue("WebView heartbeat must expose simulation diagnostics: " + warmupHeartbeat,
                     !warmupState.has("error"));
-            assertEquals("The soak test must run a real, active simulation", "RUNNING",
+            assertEquals("The soak test must run a real, active simulation; turn diagnostics: " + warmupHeartbeat, "RUNNING",
                     warmupState.getString("status"));
             assertTrue("The game clock must be active before the soak begins: " + warmupHeartbeat,
                     !warmupState.getBoolean("paused") && warmupState.getDouble("speed") > 0.0);
