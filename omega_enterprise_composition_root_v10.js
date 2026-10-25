@@ -273,8 +273,12 @@
                 window.addEventListener("beforeunload", shutdown);
 
             } catch (err) {
-                triggerFatal(err.message);
-                console.error("[FATAL]", err);
+                const message = String(err && (err.stack || err.message) || err);
+                try {
+                    window.__OMEGA_DIAG__?.errors?.push({ msg: message, type: "ENTERPRISE_BOOT" });
+                } catch (_) {}
+                triggerFatal(err && err.message || message);
+                console.error("[FATAL] " + message);
             }
         };
 
