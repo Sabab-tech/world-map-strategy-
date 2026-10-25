@@ -206,6 +206,9 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
     'the empty ZZZ fixture must not enter the extraction loop');
   assert.ok(globalResult.yieldedBatchCount>0,
     'global resource processing must yield to the UI between country batches');
+  assert.equal(context.__OmegaResourceDepositKeyIndexDiagnostics?.buildCount,1,
+    'the global deposit ID index must be built once, not rebuilt per country');
+  assert.equal(context.__OmegaResourceDepositKeyIndexDiagnostics?.depositCount,engine.deposits.length);
   assert.equal(state.resource.ZZZ.mineSiteReferences,undefined,
     'skipped empty country must not be hydrated as a side effect');
   const allCountryResults=globalResult.results.map(x=>x.result?.result||x.result||{});
