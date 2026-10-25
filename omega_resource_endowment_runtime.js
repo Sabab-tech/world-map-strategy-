@@ -226,7 +226,17 @@
         g.OmegaResourceSiteReserveSimulationData=data;
         g.Omega=g.Omega||{};
         g.Omega.ResourceSiteReserveSimulationData=data;
-        g.OmegaResourceLegacyGameplayExpansion={status:legacy.status,count:legacy.count,activeAdded:legacyAdded,loadedParts:legacy.loadedParts||0};
+        // Keep the canonical catalogue's physical-site expansion count distinct from
+        // how many reserve rows were newly mapped this load. Quantity completion deliberately
+        // pre-fills reserve rows, so reusing legacyAdded as activeAdded would corrupt the
+        // long-standing 102-site expansion certificate.
+        const priorExpansion=g.OmegaResourceLegacyGameplayExpansion||g.Omega?.ResourceLegacyGameplayExpansion||{};
+        g.OmegaResourceLegacyGameplayExpansion={
+          ...priorExpansion,status:priorExpansion.status==='READY'?'READY':legacy.status,
+          count:Math.max(Number(priorExpansion.count)||0,Number(legacy.count)||0),
+          activeAdded:Number.isFinite(Number(priorExpansion.activeAdded))?Number(priorExpansion.activeAdded):legacyAdded,
+          reserveRowsAdded:legacyAdded,loadedParts:legacy.loadedParts||priorExpansion.loadedParts||0
+        };
         g.Omega.ResourceLegacyGameplayExpansion=g.OmegaResourceLegacyGameplayExpansion;
         return{status:'READY',count:Object.keys(map).length,baseSiteCount:Number(data?.siteCount)||rows.length,legacyAdded,mineplayAdded,quantityCompletionAdded,quantityCompletionRecordCount,legacyCandidateCount:legacy.count};
       }catch(e){
