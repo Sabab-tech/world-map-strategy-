@@ -100,6 +100,21 @@ public final class OmegaGameplaySmokeTest {
             );
 
             android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=CORE_RUNTIME_READY");
+            final String bootDiagnosticsScript =
+                    "(function() {" +
+                    " var d = window.__OMEGA_DIAG__ || {};" +
+                    " var screen = document.getElementById('fatal-screen');" +
+                    " var message = document.getElementById('fatal-msg');" +
+                    " return JSON.stringify({state:d.state||null," +
+                    " fatalVisible:!!(screen && getComputedStyle(screen).display !== 'none')," +
+                    " fatalMessage:message ? message.textContent : null," +
+                    " errors:(d.errors||[]).slice(-8).map(function(x){return {type:x.type||null,msg:x.msg||null};})});" +
+                    "})()";
+            final String bootDiagnostics = evaluate(instrumentation, webViewRef.get(), bootDiagnosticsScript, 10L);
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "BOOT_DIAGNOSTICS=" + bootDiagnostics);
+            assertTrue("Enterprise boot must not expose a fatal overlay: " + bootDiagnostics,
+                    !bootDiagnostics.contains("\"fatalVisible\":true") &&
+                    !bootDiagnostics.contains("\"state\":\"FAILED\""));
             final String offlineBridgeScript =
                     "(function() { return !!(window.OmegaAndroid && " +
                     "window.OmegaAndroid.isAndroidApp() === true && " +
@@ -120,13 +135,16 @@ public final class OmegaGameplaySmokeTest {
                     " var button = document.querySelector('.speed-btn[data-speed=\\\"2\\\"]');" +
                     " if (!button) return false;" +
                     " button.click();" +
-                    " var diagnostics = window.Omega.GameLifecycle.getDiagnostics();" +
-                    " return !!(diagnostics && diagnostics.clock && Number(diagnostics.clock.speed) === 2);" +
+                    // Read the authoritative clock directly. GameLifecycle diagnostics must
+                    // never serialize/checksum the entire world just to inspect one scalar.
+                    " var simulation = window.Omega.Simulation;" +
+                    " return !!(simulation && simulation.clock && Number(simulation.clock.speed) === 2);" +
                     "})()";
             assertEquals(
-                    "Tapping the 2x control must set the authoritative OMEGA simulation clock to speed 2",
-                    "true", evaluate(instrumentation, webViewRef.get(), speedControlScript)
+                    "Play must return promptly and set the authoritative OMEGA simulation clock to speed 2",
+                    "true", evaluate(instrumentation, webViewRef.get(), speedControlScript, 12L)
             );
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=PLAY_ACTION_RESPONSIVE");
 
             // The previous smoke covered boot and taps but ended before the reported
             // one-minute freeze window. Keep the actual 2x game session running for 80 seconds
