@@ -2022,6 +2022,17 @@ function batchFromExtraction(x,record){
   // inputs. The previous boot path eagerly hydrated every country profile, including
   // empty countries, in one uninterrupted WebView task. On low-memory Android devices
   // that task could starve UI rendering and button events for several seconds.
+  function playerSimulationCountryId(){
+    const sim=g.Omega?.Simulation,simState=sim?.world?.state||state();
+    const session=simState?.simulation?.session||state()?.simulation?.session||{};
+    const candidates=[session?.playerCountryId,
+      typeof sim?.getPlayerCountryId==='function'?sim.getPlayerCountryId():null,
+      simState?.playerCountryId,state()?.playerCountryId,
+      g.Game?.playerCountry,g.Game?.currentActiveCountry,
+      g.CountryIOS?.activeCountry,g.currentActiveCountry];
+    for(const value of candidates){const cid=canonical(value);if(cid&&cid!=='[OBJECT OBJECT]')return cid;}
+    return null;
+  }
   function resourceExtractionWorkCountries(allCountries,options={}){
     const work=new Set();
     const add=value=>{
@@ -2030,11 +2041,15 @@ function batchFromExtraction(x,record){
       if(cid)work.add(cid);
     };
     if(options.activeOnly===true){
+      // Keep every country's catalog/data intact, but only the selected player's active mine
+      // occurrences may consume an automatic simulation turn on this device.
+      const selected=playerSimulationCountryId();
+      if(!selected)return [];
       const activeRoot=state()?.resource||{};
-      for(const [countryId,row] of Object.entries(activeRoot)){
-        if(Array.isArray(row?.activeMineOccurrenceKeys)&&row.activeMineOccurrenceKeys.length)add(countryId);
-      }
-      return allCountries.filter(country=>work.has(canonical(country)));
+      const selectedKey=Object.keys(activeRoot).find(key=>canonical(key)===selected);
+      const row=activeRoot[selectedKey||selected];
+      if(!Array.isArray(row?.activeMineOccurrenceKeys)||row.activeMineOccurrenceKeys.length===0)return [];
+      return allCountries.filter(country=>canonical(country)===selected);
     }
     const e=engine();
     const profiles=e?.countryProfiles&&typeof e.countryProfiles==='object'?e.countryProfiles:{};
