@@ -378,6 +378,7 @@ test('map and ministry rendering stay responsive and scoped to the selected coun
   const map = read('map-engine-2.js');
   const countryRuntime = read('omega_country_runtime_data_v1.js');
   const resourceScreen = read('omega_ui_v2/screens/resource-ministry.js');
+  const resourceBinding = read('omega_resource_gameplay_binding_v1.js');
 
   assert.ok(map.includes('generateAllBilateralRelations(countrySubset)'),
     'relation generation must support a small source-country slice');
@@ -395,6 +396,24 @@ test('map and ministry rendering stay responsive and scoped to the selected coun
   assert.ok(countryRuntime.includes("add(row.economic,'economic')"));
   assert.ok(countryRuntime.includes("add(row.military,'military')"));
   assert.ok(countryRuntime.includes("add(row.secret,'secret')"));
+  assert.ok(map.includes("state.scope = countrySelected ? 'NATION' : (configuredScope === 'WORLD' ? 'WORLD' : 'NATION')"),
+    'resource mode must not switch to global scope merely because no country has been selected');
+  assert.ok(map.includes('individualSiteBinding || window.__OMEGA_RESOURCE_SITE_BINDING_INIT__'),
+    'the legacy deposit renderer must not scan the global list while the country-scoped binding owns the map');
+  assert.ok(resourceBinding.includes('async function discoverSourceSites(root)'),
+    'large source discovery must yield rather than monopolize the WebView');
+  assert.ok(resourceBinding.includes('visited%400===0)await yieldResourceWorkToUi()'));
+  assert.ok(resourceBinding.includes('candidateIndex%300===0)await yieldResourceWorkToUi()'));
+  assert.ok(resourceBinding.includes('await rebuildSiteIndexes()'));
+  assert.ok(resourceBinding.includes('collectVisibleSites(sitesForCountry(activeCountry),bounds,matchesResource,MAX_MAP_RESOURCE_MARKERS)'),
+    'nation scope must render only the selected country');
+  assert.ok(resourceBinding.includes('sitesInCurrentViewport(map,bounds,matchesResource,MAX_MAP_RESOURCE_MARKERS)'),
+    'world scope must use spatial buckets and a bounded marker set');
+  assert.ok(resourceBinding.includes('function refreshSiteSelectorForCountry(value)'));
+  assert.ok(!resourceBinding.includes('selectNode.innerHTML=sites.map(s=>'),
+    'the site selector must not allocate a DOM option for every global site');
+  assert.ok(resourceBinding.includes("new g.CustomEvent('OMEGA_RESOURCE_SITE_BINDING_READY'"),
+    'the runtime readiness event must remain intact for extraction and factory systems');
   assert.ok(resourceScreen.includes('function sourceCatalogs(selectedCountry)'));
   assert.ok(resourceScreen.includes('if (countryId(sites[i]) === countryFilter)'),
     'country filtering must happen before global catalogue deduplication/sorting');
