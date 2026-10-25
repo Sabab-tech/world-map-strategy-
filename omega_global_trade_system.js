@@ -1179,12 +1179,16 @@
     const selected=playerSimulationCountryId(),target=canonical(countryId||selected);
     if(!selected)return{status:'SKIPPED',reason:'PLAYER_COUNTRY_NOT_SELECTED'};
     if(target!==selected)return{status:'SKIPPED',reason:'PLAYER_COUNTRY_SCOPE_VIOLATION',countryId:target,playerCountryId:selected};
-    return processCountryRequests(selected);
+    return processPlayerCountryTurn();
   }
   function processPlayerCountryTurn(){
     const selected=playerSimulationCountryId();
     if(!selected)return{status:'SKIPPED',reason:'PLAYER_COUNTRY_NOT_SELECTED'};
-    return processCountryRequests(selected);
+    const token=String(turn())+':'+selected;
+    if(g.__omegaGlobalTradeProcessedToken===token)return{status:'ALREADY_UPDATED',countryId:selected,turn:turn()};
+    const result=processCountryRequests(selected);
+    g.__omegaGlobalTradeProcessedToken=token;
+    return result;
   }  function onTurn(){return processPlayerCountryTurn();}
   function processAll(){
     if(g.__omegaGlobalTradeProcessing)return;
