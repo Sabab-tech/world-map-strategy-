@@ -622,14 +622,17 @@
     fm.fiscalModel.annualBudgetBalanceUsd=fm.fiscalModel.annualRevenueUsd-fm.fiscalModel.annualSpendingUsd;
     initializeSectorAllocations(fm);
   }
-  function advanceTurn(turn,stepDurationMs){
+  function advanceTurn(turn,stepDurationMs,selectedCountryValue,backgroundTurn){
     if(!initialized)return {ok:false,reason:'NOT_INITIALIZED',processed:0};
     const turnNumber=finite(turn)??currentTurn()+1;
     const dt=Math.max(0,finite(stepDurationMs)??Number(rules.simulationTurnDurationMs||DAY_MS));
     const years=dt/Number(rules.annualizationMs||YEAR_MS);if(years<=0)return {ok:true,turn:turnNumber,processed:0};
     const root=rootState();let processed=0;
     const newYearIndex=fiscalYearIndexFor(turnNumber,dt);
-    for(const p of profiles){
+    const activeProfile=backgroundTurn?resolveProfile(selectedCountryValue):null;
+    if(backgroundTurn&&!activeProfile)return{ok:true,turn:turnNumber,processed:0,skipped:true,reason:'PLAYER_COUNTRY_NOT_SELECTED'};
+    const workProfiles=backgroundTurn?[activeProfile]:profiles;
+    for(const p of workProfiles){
       if(!isPlayable(p))continue;
       const fm=ensureFinanceState(p,root);
       const externalTreasuryChanged=reconcileExternalTreasury(p,fm,root);
@@ -935,7 +938,7 @@
     global.addEventListener?.('OMEGA_SIMULATION_TURN_COMMITTED',function(event){
       const d=event?.detail||{},turn=finite(d.simulationTurn)??finite(d.payload?.turn)??finite(d.turn);
       const duration=finite(global.Omega?.Simulation?.clock?.stepDurationMs)??Number(rules.simulationTurnDurationMs||DAY_MS);
-      advanceTurn(turn,duration);
+      advanceTurn(turn,duration,d.countryId||d.payload?.countryId,true);
     });
     global.addEventListener?.('OMEGA_READY',function(){if(!initialized)init().catch(error=>console.error('[OMEGA FINANCE INIT]',error));});
     global.addEventListener?.('MINISTRY_SELECTED',function(event){const d=event?.detail||{};const id=d.ministryId||d.id||d.ministry;if(isFinanceMinistryId(id))renderDashboard(id);});
