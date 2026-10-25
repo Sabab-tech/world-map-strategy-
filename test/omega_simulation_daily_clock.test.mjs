@@ -411,8 +411,10 @@ test('index, finance, bank and offline shell use the daily lifecycle assets', ()
   assert.doesNotMatch(resourceEconomy, /g\.OmegaGlobalTrade\.processAll\(\)/,
     'resource economy must not repeat the global trade turn participant');
   assert.match(globalMarket, /async function onTurn\(\)/);
-  assert.match(globalMarket, /await yieldTurnToUi\(\)/,
-    'global market publication must yield between country projections');
+  assert.match(globalMarket, /const countryId=playerSimulationCountryId\(\);[\s\S]*?writeProjection\(countryId,markets\)/,
+    'global market publication must update only the selected player country');
+  assert.doesNotMatch(globalMarket, /for\(let index=0;index<countryIds\.length;index\+\+\)/,
+    'global market turns must not iterate every country in the background');
   assert.match(globalTrade, /async function onTurn\(\)/);
   assert.match(globalTrade, /await yieldTurnToUi\(\)/,
     'global trade settlement must yield between request batches');
