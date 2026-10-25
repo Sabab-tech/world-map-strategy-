@@ -1101,7 +1101,7 @@ test('industrial command panel scopes factory, mine, daily-rate and current-turn
     }
   ] };
   globalThis.Game = { state: {
-    simulation:{ turn:3, session:{ playerCountryId:'BGD' } },
+    simulation:{ turn:3, daysPerTurn:30, session:{ playerCountryId:'BGD' } },
     resource:{
       BGD:{
         mineAssets:[{ siteId:'BGD-MINE-1', status:'OPERATIONAL' }],
@@ -1140,6 +1140,8 @@ test('industrial command panel scopes factory, mine, daily-rate and current-turn
       { resourceId:'iron_ore', quantity:40 }
     ]);
     assert.equal(bangladesh.canOperateSelectedCountry, true);
+    assert.equal(bangladesh.currentTurnDaysPerTurn, 30);
+    assert.ok(Math.abs(bangladesh.currentTurnExtraction[0].averagePerDay - (40 / 30)) < 1e-9);
 
     const unitedStates = globalThis.OmegaUIV2Industry.buildViewModel({ countryId:'USA' });
     assert.equal(unitedStates.factoryCount, 1);
@@ -1159,6 +1161,7 @@ test('industrial command panel scopes factory, mine, daily-rate and current-turn
     assert.match(root.innerHTML, /Bangladesh Alloy Works/);
     assert.match(root.innerHTML, /Bangladesh Iron Mine/);
     assert.match(root.innerHTML, /12 tonnes\/day/);
+    assert.match(root.innerHTML, /1\.33 tonnes\/game-day/, 'new resources are also displayed as an average per simulation day');
     assert.match(root.innerHTML, /Build \/ view mines/);
     assert.match(root.innerHTML, /Technology development/);
     assert.match(root.innerHTML, /Roads &amp; logistics/);
