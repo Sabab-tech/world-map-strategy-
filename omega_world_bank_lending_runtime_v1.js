@@ -575,8 +575,8 @@
     }
     return entry;
   }
-  function evaluatePlayerCountry() {
-    const bank=store(true),profile=playerProfile();
+  function evaluatePlayerCountry(countryValue) {
+    const bank=store(true),profile=countryValue?resolveProfile(countryValue):playerProfile();
     if(!profile)return{ok:true,skipped:true,reason:'PLAYER_COUNTRY_NOT_SELECTED'};
     const root=rootState(),facility=getFacilitySnapshot(bank);
     const assessment=scoreCountry(profile,{root:root,bank:bank,facility:facility});
@@ -1921,24 +1921,23 @@
       renderPanel(doForce);
     }
   }
-  function scheduleAssessment(force) {
-    forceAssessmentPending = forceAssessmentPending || !!force;
-    if (assessmentQueued) return;
-    if (typeof global.setTimeout !== 'function') {
-      const runForce = forceAssessmentPending;
-      forceAssessmentPending = false;
-      evaluateAll(runForce);
-      queueRender(true);
-      return;
+  let playerAssessmentCountryPending = null;
+  function scheduleAssessment(force,countryValue) {
+    const active=playerProfile(),changed=countryValue?resolveProfile(countryValue):active;
+    if(!active||!changed||codeOf(active)!==codeOf(changed))return;
+    playerAssessmentCountryPending=codeOf(active);
+    if(assessmentQueued)return;
+    if(typeof global.setTimeout!=='function'){
+      const target=playerAssessmentCountryPending;playerAssessmentCountryPending=null;
+      evaluatePlayerCountry(target);queueRender(true);return;
     }
-    assessmentQueued = true;
-    global.setTimeout(() => {
-      const runForce = forceAssessmentPending;
-      assessmentQueued = false;
-      forceAssessmentPending = false;
-      evaluateAll(runForce);
+    assessmentQueued=true;
+    global.setTimeout(()=>{
+      const target=playerAssessmentCountryPending;
+      assessmentQueued=false;playerAssessmentCountryPending=null;
+      if(target)evaluatePlayerCountry(target);
       queueRender(true);
-    }, 0);
+    },0);
   }
   function installUiEvents() {
     const content = global.document && global.document.getElementById && global.document.getElementById('ministry-dashboard-content');
@@ -2115,7 +2114,7 @@
       });
       global.addEventListener && global.addEventListener('OMEGA_FINANCE_STATE_UPDATED', function (event) {
         const detail = event && event.detail || {};
-        scheduleAssessment(!!detail.action);
+        scheduleAssessment(!!detail.action,detail.countryCode||detail.countryId);
         queueRender(true);
       });
       global.addEventListener && global.addEventListener('OMEGA_WORLD_BANK_LENDING_UPDATED', function () {
