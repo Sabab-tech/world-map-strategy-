@@ -253,6 +253,33 @@ test('trade settlements update the player inventory even when the event names th
   assert.equal(api.getInventory('USA', { includeZero: true }).readOnly, true);
 });
 
+test('authoritative INVENTORY_CONSUMED events are recorded as negative ledger movements', async () => {
+  const { context, state, api } = makeRuntime();
+  await api.init();
+
+  state.resource.BGD.inventory.STEEL = 1;
+  state.resource.BGD.inventoryLedger.push({
+    type: 'INVENTORY_CONSUMED',
+    resourceId: 'STEEL',
+    quantity: 2,
+    reason: 'FACTORY_INPUT',
+    turn: 1,
+    consumed: [{ batchId: 'INPUT-BATCH-1', quantity: 2 }]
+  });
+  context.dispatchEvent(new context.CustomEvent('OMEGA_RESOURCE_CONSUMPTION_COMPLETED', {
+    detail: { eventType: 'OMEGA_RESOURCE_CONSUMPTION_COMPLETED', countryId: 'BGD', payload: { countryId: 'BGD' } }
+  }));
+
+  const ledger = api.getInventory('BGD').ledger;
+  assert.equal(item(api.getInventory('BGD', { includeZero: true }), 'steel').quantity, 1);
+  assert.equal(ledger.filter(row => row.action === 'CONSUMPTION' && row.productId === 'steel' && row.delta === -2).length, 1);
+
+  context.dispatchEvent(new context.CustomEvent('OMEGA_RESOURCE_CONSUMPTION_COMPLETED', {
+    detail: { eventType: 'OMEGA_RESOURCE_CONSUMPTION_COMPLETED', countryId: 'BGD', payload: { countryId: 'BGD' } }
+  }));
+  assert.equal(api.getInventory('BGD').ledger.filter(row => row.action === 'CONSUMPTION' && row.productId === 'steel' && row.delta === -2).length, 1);
+});
+
 test('factory output and input consumption are logged once without double-crediting stock', async () => {
   const { context, state, api } = makeRuntime();
   await api.init();
