@@ -215,6 +215,15 @@
     const d=evt?.detail||{},p=d.payload||d;
     const country=canonical(p.countryId||d.countryId||''),siteId=String(p.siteId||'').trim();
     if(!/^[A-Z]{3}$/.test(country)||!siteId)return;
+    const selectedCountryId=playerSimulationCountryId();
+    if(!selectedCountryId){
+      g.__OmegaLastMineCommissionBinding={countryId:country,siteId,status:'WAITING_FOR_PLAYER_COUNTRY',turn:turn()};
+      return;
+    }
+    if(country!==selectedCountryId){
+      g.__OmegaLastMineCommissionBinding={countryId:country,siteId,status:'IGNORED_FOREIGN_COUNTRY',reason:'PLAYER_COUNTRY_SCOPE_VIOLATION',playerCountryId:selectedCountryId,turn:turn()};
+      return;
+    }
     const existing=canonicalSiteCatalogMap?.[siteId];
     if(existing&&canonical(existing.countryId||existing.identity?.countryIso3)===country){
       canonicalSiteCatalogMap[siteId]=normalizeSiteRecord(applyPlayerMineCommissionOverlay(existing));

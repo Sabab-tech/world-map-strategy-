@@ -80,6 +80,24 @@ test('country selection after catalog readiness retries only when a player count
   assert.match(ready, /waitingCountrySelected/);
 });
 
+test('request events and mine-commission callbacks cannot trigger work for a foreign country', () => {
+  const actions = read('omega_resource_action_execution_runtime.js');
+  const actionEvent = between(actions, 'function onEvent(e){', 'function onTurn(){');
+  assert.match(actionEvent, /const selected=playerSimulationCountryId\(\)/);
+  assert.match(actionEvent, /if\(!selected\)return \{status:'SKIPPED',reason:'PLAYER_COUNTRY_NOT_SELECTED'\}/);
+  assert.match(actionEvent, /if\(!cid\|\|cid!==selected\)return \{status:'SKIPPED',reason:'PLAYER_COUNTRY_SCOPE_VIOLATION'/);
+  assert.match(actionEvent, /return processCountry\(selected\)/);
+  assert.doesNotMatch(actionEvent, /if\(c\)processCountry\(c\)/);
+
+  const endowment = read('omega_resource_endowment_runtime.js');
+  const mineCommission = between(endowment, 'function onMineCommissioned(evt){', 'async function loadCanonicalSiteCatalogData(){');
+  assert.match(mineCommission, /const selectedCountryId=playerSimulationCountryId\(\)/);
+  assert.match(mineCommission, /if\(!selectedCountryId\)/);
+  assert.match(mineCommission, /if\(country!==selectedCountryId\)/);
+  assert.ok(mineCommission.indexOf('if(country!==selectedCountryId)') < mineCommission.indexOf('hydrateCountry(country)'),
+    'foreign mine commission events must be rejected before country hydration');
+});
+
 test('mine extraction is not automatically ticked for every country at startup or turn commit', () => {
   const source = read('omega_resource_endowment_runtime.js');
   assert.match(source, /function playerSimulationCountryId\(\)/, 'endowment scope must resolve the authoritative player country');

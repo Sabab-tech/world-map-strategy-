@@ -713,8 +713,11 @@
   }
 
   function onEvent(e){
-    const c=e?.detail?.countryId||e?.countryId;
-    if(c)processCountry(c);
+    const selected=playerSimulationCountryId();
+    const cid=canonicalCountry(e?.detail?.countryId||e?.countryId);
+    if(!selected)return {status:'SKIPPED',reason:'PLAYER_COUNTRY_NOT_SELECTED'};
+    if(!cid||cid!==selected)return {status:'SKIPPED',reason:'PLAYER_COUNTRY_SCOPE_VIOLATION',countryId:cid||null,playerCountryId:selected};
+    return processCountry(selected);
   }
   function onTurn(){const countryId=playerSimulationCountryId();if(countryId)return processCountry(countryId);return{status:'SKIPPED',reason:'PLAYER_COUNTRY_NOT_SELECTED'};}
 
