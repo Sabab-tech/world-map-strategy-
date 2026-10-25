@@ -47,7 +47,8 @@ concurrency:
 jobs:
   offline-gameplay-smoke:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    # The Android 9 gameplay soak runs for four real hours, plus boot and test setup.
+    timeout-minutes: 330
     steps:
       - name: Checkout
         uses: actions/checkout@v4
