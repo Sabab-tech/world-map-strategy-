@@ -61,6 +61,20 @@
     const s = rootState(), id = s.simulation && (s.simulation.session && s.simulation.session.playerCountryId || s.simulation.playerCountryId);
     return resolveProfile(id) || resolveProfile('BGD') || profiles[0] || null;
   }
+  function selectedSimulationProfile(candidate) {
+    const s=rootState(),session=s.simulation&&s.simulation.session||{};
+    const sim=g.Omega&&g.Omega.Simulation;
+    const candidates=[candidate,session.playerCountryId,s.simulation&&s.simulation.playerCountryId,
+      s.playerCountryId,s.playerCountryCode,sim&&typeof sim.getPlayerCountryId==='function'?sim.getPlayerCountryId():null,
+      g.Game&&(g.Game.playerCountryId||g.Game.playerCountry||g.Game.currentActiveCountry),
+      g.CountryIOS&&g.CountryIOS.activeCountry,g.currentActiveCountry];
+    for(const value of candidates){
+      if(value==null||String(value).trim()==='')continue;
+      const profile=resolveProfile(value);
+      if(profile)return profile;
+    }
+    return null;
+  }
   function rootTransmissionStore() {
     const root = rootState();
     if (!obj(root.governmentBanking)) root.governmentBanking = {};
@@ -401,7 +415,7 @@
     }
     bankStore.monetaryStressByCurrency = out;
   }
-  function step(turnNumber, durationMs) {
+  function step(turnNumber, durationMs, selectedCountryValue, backgroundTurn) {
     if (!initialized) return { ok: false, code: 'NOT_INITIALIZED' };
     const t = num(turnNumber) ?? currentTurn() + 1;
     if (store && num(store.lastProcessedTurn) !== null && t <= store.lastProcessedTurn)
@@ -412,7 +426,10 @@
     const simDay = currentSimulationDay();
     const failures = [];
     let processed = 0;
-    for (const p of profiles) {
+    const activeProfile=backgroundTurn?selectedSimulationProfile(selectedCountryValue):null;
+    if(backgroundTurn&&!activeProfile)return{ok:true,turn:t,processed:0,skipped:true,reason:'PLAYER_COUNTRY_NOT_SELECTED'};
+    const workProfiles=backgroundTurn?[activeProfile]:profiles;
+    for (const p of workProfiles) {
       if (!p || !p.economyKey) continue;
       try {
         const result = updateOne(p, t, dt, averageInflation, simDay);
@@ -717,7 +734,7 @@
       const d=event&&event.detail||{};
       const t=num(d.simulationTurn)??num(d.payload&&d.payload.turn)??num(d.turn)??currentTurn()+1;
       const dt=num(d.stepDurationMs)??num(d.durationMs)??num(g.Omega&&g.Omega.Simulation&&g.Omega.Simulation.clock&&g.Omega.Simulation.clock.stepDurationMs)??DAY_MS;
-      step(t,dt);
+      step(t,dt,d.countryId||(d.payload&&d.payload.countryId),true);
     });
     g.addEventListener?.('OMEGA_FINANCE_RUNTIME_READY',function(){initialize().catch(()=>{});});
     g.addEventListener?.('OMEGA_FX_MONETARY_RUNTIME_READY',function(){initialize().catch(()=>{});});
