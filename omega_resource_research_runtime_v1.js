@@ -292,8 +292,7 @@ function playerSimulationCountryId(){
   const candidates=[session?.playerCountryId,
     typeof sim?.getPlayerCountryId==='function'?sim.getPlayerCountryId():null,
     simState?.playerCountryId,state()?.playerCountryId,
-    g.Game?.playerCountry,g.Game?.currentActiveCountry,
-    g.CountryIOS?.activeCountry,g.currentActiveCountry];
+    g.Game?.playerCountryId,g.Game?.playerCountry,g.Game?.playerCountryCode,g.OMEGA_PLAYER_COUNTRY_ID,g.playerCountry];
   for(const value of candidates){const cid=canonicalCountry(value);if(cid&&cid!=='[OBJECT OBJECT]')return cid;}
   return null;
 }
