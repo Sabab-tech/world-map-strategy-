@@ -96,7 +96,7 @@ function makeUiHarness(vehicleInventory = null, recordedAssets = null) {
     renderTacticsMenu() {},
   };
   const world = {
-    Game: { state, countryId: 'AAA' },
+    Game: { state, playerCountryId: 'AAA', countryId: 'AAA' },
     CountryIOS: { activeCountry: 'AAA' },
     Omega: {},
     OMEGA_UI_ADAPTER: uiAdapter,
