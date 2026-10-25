@@ -1957,7 +1957,7 @@ Game.Map.applyRelationsMapFilter = function(focusCountry) {
             else if (score < -15) color = '#f97316'; // বৈরী (কমলা)
             else color = '#64748b'; // নিরপেক্ষ (স্লেট গ্রে)
         }
-        layer.setStyle({ fillColor: color, fillOpacity: opacity, color: 'rgba(255,255,255,0.1)', weight: 0.5 });
+        layer.setStyle({ fillColor: color, fillOpacity: opacity, color: '#f8fafc', weight: 1.25, opacity: 1.0 });
     });
 };
 
