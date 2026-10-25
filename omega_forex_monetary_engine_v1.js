@@ -631,7 +631,7 @@
     });
   }
 
-  function syncAllCountries() {
+  function syncAllCountries(selectedProfile) {
     if (!state || !finance) return;
     const root = rootState();
     const bank = bankingRoot();
@@ -651,6 +651,7 @@
       if (r !== null) fxMarket.simulationRates[code] = r;
     });
     profiles.forEach(function (profile) {
+      if(selectedProfile&&getProfileId(profile)!==getProfileId(selectedProfile))return;
       const id = getProfileId(profile);
       const code = getCountryCurrency(profile);
       const source = sourceValues(profile);
@@ -884,7 +885,7 @@
     });
   }
 
-  function simulationTick(turn, durationMs) {
+  function simulationTick(turn, durationMs, selectedCountryValue, backgroundTurn) {
     if (!initialized || !state) return { ok: false, code: 'NOT_INITIALIZED' };
     const currentTurnValue = finite(turn);
     const last = finite(state.lastProcessedTurn);
@@ -893,14 +894,36 @@
     const dt = clamp(finite(durationMs) ?? DAY_MS, 0, 30 * DAY_MS);
     const years = dt / YEAR_MS;
     if (years <= 0) return { ok: true, turn: turnNumber, processed: 0 };
+    let activeProfile=null;
+    if(backgroundTurn){
+      const root=rootState(),session=root&&root.simulation&&root.simulation.session||{};
+      const sim=global.Omega&&global.Omega.Simulation;
+      const candidates=[selectedCountryValue,session.playerCountryId,root&&root.simulation&&root.simulation.playerCountryId,
+        root&&root.playerCountryId,root&&root.playerCountryCode,sim&&typeof sim.getPlayerCountryId==='function'?sim.getPlayerCountryId():null,
+        global.Game&&(global.Game.playerCountryId||global.Game.playerCountry||global.Game.currentActiveCountry),
+        global.CountryIOS&&global.CountryIOS.activeCountry,global.currentActiveCountry];
+      for(const value of candidates){
+        if(value==null||String(value).trim()==='')continue;
+        try{activeProfile=finance&&typeof finance.resolveCountry==='function'?finance.resolveCountry(value):null;}catch(_){}
+        if(!activeProfile){
+          const key=normalizeCode(value);
+          activeProfile=profileByCode.get(key)||null;
+        }
+        if(activeProfile)break;
+      }
+      if(!activeProfile)return{ok:true,turn:turnNumber,processed:0,skipped:true,reason:'PLAYER_COUNTRY_NOT_SELECTED'};
+    }
+    const activeCurrency=backgroundTurn?getCountryCurrency(activeProfile):null;
     const usAnchor = anchorByCurrency.get('USD');
     const usMacro = usAnchor ? getMacro(usAnchor.profile) : {};
     const usInflation = finite(usMacro.inflation) ?? 2;
     const usGrowth = finite(usMacro.growth) ?? 2;
     const usPolicyRate = finite(usMacro.policyRatePct) ?? 3;
 
+    let processedCurrencyCount=0;
     currencies.forEach(function (_, code) {
       if (code === 'USD') return;
+      if(backgroundTurn&&code!==activeCurrency)return;
       const anchorRecord = anchorByCurrency.get(code);
       const profile = anchorRecord && anchorRecord.profile;
       const rateItem = state.simulationRates[code];
@@ -954,6 +977,7 @@
         localPerUsd: nextRate, source: 'OMEGA_MONETARY_MODEL',
         updatedTurn: turnNumber, annualDriftPct: drift
       });
+      processedCurrencyCount++;
       const econ = getEconomyRecord(profile);
       if (econ) {
         const updatedInflation = evolveInflation({
@@ -978,15 +1002,16 @@
       appendSimHistories();
     }
     state.lastProcessedTurn = turnNumber;
-    syncAllCountries();
+    syncAllCountries(backgroundTurn?activeProfile:null);
     if (Math.floor(turnNumber) % 3 === 0) localStorageWrite();
     dispatch('OMEGA_FX_MARKET_UPDATED', {
       turn: turnNumber, simulationDay: state.simulationDay,
-      currencyCount: currencies.size, baseCurrency: 'USD'
+      currencyCount: backgroundTurn?processedCurrencyCount:currencies.size, baseCurrency: 'USD',
+      playerCountryCode:backgroundTurn?getProfileId(activeProfile):null
     });
     refreshPanelMetrics();
     if ((finite(state.simulationDay) || 0) !== dayBefore) renderCurrentCharts(false);
-    return { ok: true, turn: turnNumber, processed: currencies.size, simulationDay: state.simulationDay };
+    return { ok: true, turn: turnNumber, processed: backgroundTurn?processedCurrencyCount:currencies.size, simulationDay: state.simulationDay };
   }
 
   function fmtRate(value) {
@@ -1520,7 +1545,7 @@
       const turn = finite(detail.simulationTurn) ?? finite(detail.payload && detail.payload.turn) ?? finite(detail.turn);
       const duration = finite(global.Omega && global.Omega.Simulation && global.Omega.Simulation.clock
         && global.Omega.Simulation.clock.stepDurationMs) ?? DAY_MS;
-      simulationTick(turn, duration);
+      simulationTick(turn, duration, detail.countryId||(detail.payload&&detail.payload.countryId), true);
     });
     global.addEventListener && global.addEventListener('OMEGA_FINANCE_STATE_UPDATED', function () {
       syncAllCountries();
