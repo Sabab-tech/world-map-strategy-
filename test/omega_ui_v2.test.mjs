@@ -809,6 +809,17 @@ test('resource ministry reads only selected-country rows from the global site re
   const bindingKey = 'OmegaIndividualResourceSiteBinding';
   const previousCanonical = globalThis[canonicalKey];
   const previousBinding = globalThis[bindingKey];
+  const previousCountryRuntime = globalThis.OmegaCountryRuntimeData;
+  globalThis.OmegaCountryRuntimeData = {
+    resolveCountry(value) {
+      const key = String(value || '').trim().toUpperCase();
+      return key === 'BANGLADESH' || key === 'BGD'
+        ? { countryCode:'BGD', name:'Bangladesh' }
+        : key === 'UNITED STATES' || key === 'USA'
+          ? { countryCode:'USA', name:'United States' }
+          : null;
+    }
+  };
   globalThis[canonicalKey] = {
     sites: [
       { siteId:'BGD-COAL-01', countryId:'BGD', resourceId:'coal', siteName:'Bangladesh coal' },
@@ -828,6 +839,15 @@ test('resource ministry reads only selected-country rows from the global site re
     assert.deepEqual(new Set(selected.sites.map((site) => site.countryId)), new Set(['BGD']));
     assert.deepEqual(new Set(selected.sites.map((site) => site.siteId)), new Set(['BGD-COAL-01', 'BGD-GAS-01']));
 
+    const selectedByName = globalThis.OmegaUIV2ResourceMinistry.buildViewModel({ countryId:'BANGLADESH' });
+    assert.equal(selectedByName.siteCount, 2, 'display-name country IDs must normalize to canonical ISO3 resource IDs');
+    assert.deepEqual(new Set(selectedByName.sites.map((site) => site.countryId)), new Set(['BGD']));
+    assert.deepEqual(new Set(selectedByName.sites.map((site) => site.siteId)), new Set(['BGD-COAL-01', 'BGD-GAS-01']));
+
+    const selectedByIso3 = globalThis.OmegaUIV2ResourceMinistry.buildViewModel({ countryId:'USA' });
+    assert.equal(selectedByIso3.siteCount, 1);
+    assert.deepEqual(new Set(selectedByIso3.sites.map((site) => site.siteId)), new Set(['USA-OIL-01']));
+
     const noCountry = globalThis.OmegaUIV2ResourceMinistry.buildViewModel({});
     assert.equal(noCountry.siteCount, 0, 'no selected nation must not render the entire global site catalog');
   } finally {
@@ -835,5 +855,7 @@ test('resource ministry reads only selected-country rows from the global site re
     else globalThis[canonicalKey] = previousCanonical;
     if (previousBinding === undefined) delete globalThis[bindingKey];
     else globalThis[bindingKey] = previousBinding;
+    if (previousCountryRuntime === undefined) delete globalThis.OmegaCountryRuntimeData;
+    else globalThis.OmegaCountryRuntimeData = previousCountryRuntime;
   }
 });
