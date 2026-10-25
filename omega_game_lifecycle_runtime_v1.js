@@ -22,7 +22,7 @@
   var dbWriteChain = Promise.resolve();
   var saveStatus = 'AUTOSAVE READY';
   var tickSaveQueued = false;
-  // Gameplay automation is opt-in after every boot and remains paused in the background.
+  // Selected-country gameplay starts automatically; the explicit Pause control remains authoritative.
   var backgroundRunsEnabled = false;
 
   function runtime() {
@@ -487,16 +487,32 @@
         return;
       }
       if (savedSpeed !== null && savedSpeed > 0) lastKnownSpeed = savedSpeed;
-      // Restore the player's world, but never restart autonomous simulation on boot.
-      backgroundRunsEnabled = false;
-      try { sim.clock.setSpeed(0); } catch (_) {}
-      try {
-        if (typeof sim.pauseSession === 'function') sim.pauseSession();
-        else sim.status = 'PAUSED';
-      } catch (_) { sim.status = 'PAUSED'; }
-      updateHud();
-      saveNow({ force: true });
-      setSaveStatus('BACKGROUND SYSTEMS PAUSED · PRESS PLAY TO RESUME');
+      var restoredSession = sim.world && sim.world.state && sim.world.state.simulation &&
+        sim.world.state.simulation.session;
+      if (restoredSession && restoredSession.userPaused === true) {
+        backgroundRunsEnabled = false;
+        try { sim.clock.setSpeed(0); } catch (_) {}
+        try {
+          if (typeof sim.pauseSession === 'function') sim.pauseSession();
+          else sim.status = 'PAUSED';
+        } catch (_) { sim.status = 'PAUSED'; }
+        updateHud();
+        saveNow({ force: true });
+        setSaveStatus('BACKGROUND SYSTEMS PAUSED · PRESS PLAY TO RESUME');
+        return;
+      }
+      var restoredCountry = playerCountry(sim);
+      if (!restoredCountry) {
+        backgroundRunsEnabled = false;
+        try { sim.clock.setSpeed(0); } catch (_) {}
+        try { if (typeof sim.pauseSession === 'function') sim.pauseSession(); else sim.status = 'PAUSED'; } catch (_) {}
+        setSaveStatus('SELECT COUNTRY TO START');
+        updateHud();
+        return;
+      }
+      syncSelectedCountry(restoredCountry);
+      var resumeSpeed = savedSpeed !== null && savedSpeed > 0 ? savedSpeed : (lastKnownSpeed || 1);
+      setSpeed(resumeSpeed, true);
       return;
     }
 
@@ -509,18 +525,20 @@
         if ((!session || !session.playerCountryId) && typeof sim.createSession === 'function') {
           sim.createSession({ playerCountryId: country });
         }
-        // Create/select the session without allowing unattended country/resource ticks.
-        try { sim.clock.setSpeed(0); } catch (_) {}
-        if (typeof sim.pauseSession === 'function') sim.pauseSession();
-        else sim.status = 'PAUSED';
-        backgroundRunsEnabled = false;
-        lastKnownSpeed = 1;
-        updateHud();
-        saveNow({ force: true });
-        setSaveStatus('BACKGROUND SYSTEMS PAUSED · PRESS PLAY TO RESUME');
+        session = sim.world && sim.world.state && sim.world.state.simulation &&
+          sim.world.state.simulation.session;
+        if (session && session.userPaused === true) {
+          backgroundRunsEnabled = false;
+          try { sim.clock.setSpeed(0); } catch (_) {}
+          try { if (typeof sim.pauseSession === 'function') sim.pauseSession(); else sim.status = 'PAUSED'; } catch (_) {}
+          setSaveStatus('BACKGROUND SYSTEMS PAUSED · PRESS PLAY TO RESUME');
+        } else {
+          lastKnownSpeed = lastKnownSpeed > 0 ? lastKnownSpeed : 1;
+          setSpeed(lastKnownSpeed, true);
+        }
       } catch (error) {
         backgroundRunsEnabled = false;
-        setSaveStatus('CLOCK READY · SELECT COUNTRY');
+        setSaveStatus('CLOCK ERROR · ' + String(error && error.message || error).slice(0, 48));
       }
     } else {
       backgroundRunsEnabled = false;
@@ -542,6 +560,9 @@
     if (speed === 0) {
       lastKnownSpeed = number(sim.clock.speed) > 0 ? sim.clock.speed : lastKnownSpeed;
       backgroundRunsEnabled = false;
+      var pausedSession = sim.world && sim.world.state && sim.world.state.simulation &&
+        sim.world.state.simulation.session;
+      if (pausedSession) pausedSession.userPaused = true;
       try { sim.clock.setSpeed(0); } catch (_) {}
       try { if (typeof sim.pauseSession === 'function') sim.pauseSession(); } catch (_) {}
       saveNow({ force: true });
@@ -560,6 +581,12 @@
     }
     syncSelectedCountry(country);
     try {
+      var activeSession = sim.world && sim.world.state && sim.world.state.simulation &&
+        sim.world.state.simulation.session;
+      if (activeSession) {
+        activeSession.userPaused = false;
+        if (sim.world && typeof sim.world.setSession === 'function') sim.world.setSession(activeSession);
+      }
       var status = String(sim.status || '').toUpperCase();
       if (status === 'PAUSED') sim.resumeSession();
       else if (status !== 'RUNNING' || explicitStart) sim.startSession({ playerCountryId: country });
@@ -733,6 +760,43 @@
     });
     ['COUNTRY_SELECTED', 'COUNTRY_CHANGED', 'OMEGA_COUNTRY_SELECTED', 'OMEGA_PLAYER_COUNTRY_CHANGED', 'MINISTRY_SELECTED'].forEach(function (type) {
       g.addEventListener && g.addEventListener(type, function () { updateHud(); scheduleStateSave(); });
+    });
+    g.addEventListener && g.addEventListener('OMEGA_PLAYER_COUNTRY_CHANGED', function (event) {
+      var detail = event && event.detail || {};
+      var selected = countryCode(detail.playerCountryId || detail.countryId || detail.countryCode ||
+        detail.iso3 || detail.code || (detail.country && (detail.country.iso3 || detail.country.countryCode || detail.country.id)) ||
+        (typeof detail.country === 'string' ? detail.country : null));
+      var sim = runtime();
+      if (!selected || !sim || !sim.clock) return;
+      var currentSession = sim.world && sim.world.state && sim.world.state.simulation &&
+        sim.world.state.simulation.session;
+      var wasManuallyPaused = !!(currentSession && currentSession.userPaused === true);
+      try {
+        if (typeof sim.createSession === 'function') {
+          sim.createSession({ playerCountryId: selected, startTurn: sim.clock.turn,
+            simulationTimeMs: sim.clock.simulationTimeMs });
+        } else if (currentSession) {
+          currentSession.playerCountryId = selected;
+        }
+        syncSelectedCountry(selected);
+        var nextSession = sim.world && sim.world.state && sim.world.state.simulation &&
+          sim.world.state.simulation.session;
+        if (nextSession) nextSession.userPaused = wasManuallyPaused;
+        if (wasManuallyPaused) {
+          try { sim.clock.setSpeed(0); } catch (_) {}
+          try { if (typeof sim.pauseSession === 'function') sim.pauseSession(); else sim.status = 'PAUSED'; } catch (_) {}
+          backgroundRunsEnabled = false;
+          saveNow({ force: true });
+          setSaveStatus('BACKGROUND SYSTEMS PAUSED · PRESS PLAY TO RESUME');
+        } else {
+          setSpeed(lastKnownSpeed || 1, true);
+        }
+        updateHud();
+        scheduleStateSave();
+      } catch (error) {
+        setSaveStatus('CLOCK ERROR · ' + String(error && error.message || error).slice(0, 48));
+        updateHud();
+      }
     });
     g.addEventListener && g.addEventListener('RESOURCE_STATE_UPDATED', updateHud);
     g.addEventListener && g.addEventListener('OMEGA_READY', function () {

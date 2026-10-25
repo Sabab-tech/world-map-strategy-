@@ -400,7 +400,16 @@ test('index, finance, bank and offline shell use the daily lifecycle assets', ()
   assert.doesNotMatch(liveOps, /refreshHandle = g\.setInterval/,
     'Live Operations must refresh from events instead of a background poll');
   assert.match(endowment, /function onTurn\(\)\{return extractAll\(\{activeOnly:true\}\);\}/,
-    'turn-driven resource extraction must only process mine occurrences explicitly activated by the player');
+    'automatic mine extraction must be driven by the authoritative daily game clock');
+  assert.match(endowment, /function automaticMineOccurrenceKeys\(countryId\)/,
+    'all eligible mine occurrences in the selected country must be discovered automatically');
+  assert.match(endowment, /function ensureAutomaticMineProduction\(countryId\)/,
+    'eligible mine occurrences must be activated without a manual per-mine action');
+  assert.match(endowment, /AUTOMATIC_MINE_EXTRACTION_CHUNK_SIZE=32/,
+    'large daily extraction workloads must be split into bounded chunks');
+  assert.match(endowment, /reserveKeysByParent=new Map\(\)/);
+  assert.match(endowment, /reserveBySiteResource=new Map\(\)/,
+    'reserve lookup must avoid repeated full-registry scans while extracting many sites');
   assert.match(endowment, /BOOTSTRAP_HYDRATION_ONLY/,
     'site bootstrap must hydrate and index sites without starting production for every country');
   assert.match(resourceEconomy, /extractAll\(\{activeOnly:true\}\)/,
@@ -536,24 +545,21 @@ test('a failed sector stops future days and exposes the exact failed participant
     row.id === 'test.failing-sector' && row.status === 'FAILED' && row.error.includes('SYNTHETIC_SECTOR_FAILURE')));
 });
 
-test('boot and app-background transitions stop every automatic game turn until Play is explicitly pressed', async () => {
+test('boot starts the selected-country daily clock automatically; app-background pause remains safe', async () => {
   const { win, sim, storage } = createRuntime();
   const { documentListeners, lifecycle } = attachLifecycle(win, sim);
   await lifecycle.restore();
 
-  assert.equal(sim.status, 'PAUSED');
-  assert.equal(sim.clock.paused, true);
-  assert.equal(lifecycle.getDiagnostics().backgroundRunsEnabled, false);
-  assert.match(lifecycle.getDiagnostics().status, /BACKGROUND SYSTEMS PAUSED/);
-  const bootFrame = await sim.frame(STEP_MS * 3);
-  assert.equal(bootFrame.steps, 0);
-  assert.equal(sim.clock.turn, 0, 'restoring a country must not start resource, factory, economy or AI turns');
-
-  assert.equal(lifecycle.startAllBackgroundRuns(), true, 'Play should explicitly re-enable game turns');
   assert.equal(sim.status, 'RUNNING');
-  await sim.frame(STEP_MS);
+  assert.equal(sim.clock.paused, false);
+  assert.equal(lifecycle.getDiagnostics().backgroundRunsEnabled, true);
+  const firstFrame = await sim.frame(STEP_MS);
+  assert.equal(firstFrame.steps, 1);
+  assert.equal(sim.clock.turn, 1, 'the game day must advance without pressing Play first');
+  const secondFrame = await sim.frame(STEP_MS);
+  assert.equal(secondFrame.steps, 1);
+  assert.equal(sim.clock.turn, 2, 'the automatic clock must continue to advance each day');
   const committedTurn = sim.clock.turn;
-  assert.equal(committedTurn, 1);
 
   win.document.visibilityState = 'hidden';
   for (const listener of documentListeners.get('visibilitychange') || []) listener();
@@ -562,18 +568,28 @@ test('boot and app-background transitions stop every automatic game turn until P
   let saved = JSON.parse(storage.get('omega.game.save.default'));
   assert.equal(saved.status, 'PAUSED');
   assert.equal(saved.worldState.simulation.session.status, 'PAUSED',
-    'the saved checkpoint must record the pause instead of a RUNNING session');
+    'the saved checkpoint must record the background pause');
 
   win.document.visibilityState = 'visible';
   for (const listener of documentListeners.get('visibilitychange') || []) listener();
-  assert.equal(sim.status, 'PAUSED', 'returning to the app must not restart background runs');
+  assert.equal(sim.status, 'PAUSED', 'foreground return does not silently override a pause');
   assert.equal(lifecycle.getDiagnostics().backgroundRunsEnabled, false);
   const foregroundFrame = await sim.frame(STEP_MS * 3);
   assert.equal(foregroundFrame.steps, 0);
   assert.equal(sim.clock.turn, committedTurn);
-});
 
-test('restoring a previously RUNNING save preserves the world but keeps all automated sectors paused', async () => {
+  assert.equal(lifecycle.startAllBackgroundRuns(), true, 'Play must resume the paused selected-country session');
+  assert.equal(sim.status, 'RUNNING');
+  await sim.frame(STEP_MS);
+  assert.equal(sim.clock.turn, committedTurn + 1);
+  assert.equal(lifecycle.stopAllBackgroundRuns(), true, 'the player must still be able to pause the clock');
+  assert.equal(sim.status, 'PAUSED');
+  assert.equal(sim.world.state.simulation.session.userPaused, true);
+  saved = JSON.parse(storage.get('omega.game.save.default'));
+  assert.equal(saved.worldState.simulation.session.userPaused, true,
+    'an explicit player pause must persist across reloads');
+});
+test('restoring a previously RUNNING save preserves the world and resumes unless the player paused it', async () => {
   const { win, sim, gameState, storage } = createRuntime();
   sim.startSession({ playerCountryId: 'BGD' });
   await sim.advance(2);
@@ -585,16 +601,41 @@ test('restoring a previously RUNNING save preserves the world but keeps all auto
 
   const { lifecycle } = attachLifecycle(win, sim);
   await lifecycle.restore();
-  assert.equal(sim.status, 'PAUSED');
-  assert.equal(sim.clock.paused, true);
+  assert.equal(sim.status, 'RUNNING');
+  assert.equal(sim.clock.paused, false);
   assert.equal(sim.clock.turn, 2);
-  assert.equal(gameState.economy.BGD.treasury, 987654, 'pausing must not discard the saved economy state');
-  assert.equal(lifecycle.getDiagnostics().backgroundRunsEnabled, false);
+  assert.equal(gameState.economy.BGD.treasury, 987654, 'resuming must not discard the saved economy state');
+  assert.equal(lifecycle.getDiagnostics().backgroundRunsEnabled, true);
   const frame = await sim.frame(STEP_MS);
-  assert.equal(frame.steps, 0);
-  assert.equal(sim.clock.turn, 2);
+  assert.equal(frame.steps, 1);
+  assert.equal(sim.clock.turn, 3);
 });
+test('an explicit player pause survives reload and Play clears it', async () => {
+  const first = createRuntime();
+  const { lifecycle } = attachLifecycle(first.win, first.sim);
+  await lifecycle.restore();
+  assert.equal(first.sim.status, 'RUNNING');
+  assert.equal(lifecycle.stopAllBackgroundRuns(), true);
+  const saved = JSON.parse(first.storage.get('omega.game.save.default'));
+  assert.equal(saved.worldState.simulation.session.userPaused, true);
 
+  const second = createRuntime();
+  second.storage.set('omega.game.save.default', JSON.stringify(saved));
+  const { lifecycle: restoredLifecycle } = attachLifecycle(second.win, second.sim);
+  await restoredLifecycle.restore();
+  assert.equal(second.sim.status, 'PAUSED');
+  assert.equal(second.sim.clock.paused, true);
+  assert.equal(restoredLifecycle.getDiagnostics().backgroundRunsEnabled, false);
+  const turn = second.sim.clock.turn;
+  assert.equal((await second.sim.frame(STEP_MS * 2)).steps, 0);
+  assert.equal(second.sim.clock.turn, turn);
+
+  assert.equal(restoredLifecycle.startAllBackgroundRuns(), true);
+  assert.equal(second.sim.status, 'RUNNING');
+  await second.sim.frame(STEP_MS);
+  assert.equal(second.sim.clock.turn, turn + 1);
+  assert.equal(second.sim.world.state.simulation.session.userPaused, false);
+});
 test('lifecycle autosaves only after async sector work and catches pagehide without Back navigation', async () => {
   const { win, sim, gameState, storage } = createRuntime();
   attachLifecycle(win, sim);
