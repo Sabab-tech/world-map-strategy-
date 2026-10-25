@@ -1143,7 +1143,36 @@
     command('trade','OMEGA_TRADE_SCHEDULE_RETRY',c,{requestId:req.requestId,cooldownTurns:RETRY_COOLDOWN,refusalCount:refusal});
   }
 
-  function onTurn(){processAll();}
+  function yieldTurnToUi(){
+    return new Promise(resolve=>{
+      if(typeof g.setTimeout==='function')g.setTimeout(resolve,0);
+      else resolve();
+    });
+  }
+  async function onTurn(){
+    if(g.__omegaGlobalTradeProcessing)return;
+    g.__omegaGlobalTradeProcessing=true;
+    try{
+      const seen=new Set(),countryIds=ids();
+      let processed=0;
+      for(let countryIndex=0;countryIndex<countryIds.length;countryIndex++){
+        const c=countryIds[countryIndex],reqs=countryValue(c,'trade.importRequests');
+        if(Array.isArray(reqs)){
+          for(const req of reqs.slice(-MAX_HISTORY)){
+            const key=String(c)+'::'+String(req.requestId);
+            if(seen.has(key))continue;
+            seen.add(key);
+            processRequest(req);
+            processed++;
+            // Pending trade requests can expand rapidly as history accumulates. Yield
+            // between bounded batches to prevent a whole-world settlement loop blocking taps.
+            if(processed%8===0)await yieldTurnToUi();
+          }
+        }
+        if((countryIndex+1)%2===0&&countryIndex+1<countryIds.length)await yieldTurnToUi();
+      }
+    }finally{g.__omegaGlobalTradeProcessing=false;}
+  }
   function processAll(){
     if(g.__omegaGlobalTradeProcessing)return;
     g.__omegaGlobalTradeProcessing=true;
@@ -1154,7 +1183,8 @@
         if(!Array.isArray(reqs))continue;
         for(const req of reqs.slice(-MAX_HISTORY)){
           const key=String(c)+'::'+String(req.requestId);
-          if(seen.has(key))continue;seen.add(key);
+          if(seen.has(key))continue;
+          seen.add(key);
           processRequest(req);
         }
       }
