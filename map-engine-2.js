@@ -1963,8 +1963,10 @@ Game.Map.toggleResourceMode = function() {
             btnMode.style.boxShadow = '';
             btnMode.style.background = '';
         }
-        // Restore cities layer
-        if (typeof this.renderGlobalCapitalHubs === 'function') {
+        // Restore only the chosen country's cities after resource mode closes.
+        if (Game.currentActiveCountry && typeof this.renderCountryHubs === 'function') {
+            this.renderCountryHubs();
+        } else if (typeof this.renderGlobalCapitalHubs === 'function') {
             this.renderGlobalCapitalHubs();
         } else if (typeof this.renderCountryHubs === 'function') {
             this.renderCountryHubs();
