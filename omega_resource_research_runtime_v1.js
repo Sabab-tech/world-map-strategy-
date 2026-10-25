@@ -286,6 +286,17 @@ function countryIds(){
   try{const profiles=g.ResourceMinistryEngine?.countryProfiles||{};Object.keys(profiles).forEach(c=>out.add(canonicalCountry(c)));}catch(_){}
   return [...out].filter(Boolean).sort();
 }
+function playerSimulationCountryId(){
+  const sim=g.Omega?.Simulation,simState=sim?.world?.state||state();
+  const session=simState?.simulation?.session||state()?.simulation?.session||{};
+  const candidates=[session?.playerCountryId,
+    typeof sim?.getPlayerCountryId==='function'?sim.getPlayerCountryId():null,
+    simState?.playerCountryId,state()?.playerCountryId,
+    g.Game?.playerCountry,g.Game?.currentActiveCountry,
+    g.CountryIOS?.activeCountry,g.currentActiveCountry];
+  for(const value of candidates){const cid=canonicalCountry(value);if(cid&&cid!=='[OBJECT OBJECT]')return cid;}
+  return null;
+}
 function activeResearchCountries(){
   const s=state();
   return countryIds().filter(c=>{
@@ -306,13 +317,11 @@ function yieldTurnToUi(){
   });
 }
 async function processAllForTurn(){
-  const active=activeResearchCountries(),results=[];
-  for(let i=0;i<active.length;i++){
-    const c=active[i];
-    results.push({countryId:c,result:processCountry(c)});
-    if((i+1)%2===0&&i+1<active.length)await yieldTurnToUi();
-  }
-  return{status:'COMPLETED',turn:turn(),countryCount:active.length,results};
+  const selected=playerSimulationCountryId();
+  if(!selected)return{status:'SKIPPED',reason:'PLAYER_COUNTRY_NOT_SELECTED',turn:turn(),countryCount:0,results:[]};
+  if(!activeResearchCountries().includes(selected))return{status:'COMPLETED',turn:turn(),countryCount:0,results:[]};
+  return{status:'COMPLETED',turn:turn(),countryCount:1,
+    results:[{countryId:selected,result:processCountry(selected)}]};
 }
 function diagnostics(){
   const cs=countryIds(),s=state();let projects=0,imports=0,caps=0;
