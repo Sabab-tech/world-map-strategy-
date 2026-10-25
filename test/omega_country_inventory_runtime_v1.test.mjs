@@ -294,6 +294,49 @@ test('authoritative INVENTORY_CONSUMED events are recorded as negative ledger mo
   assert.equal(api.getInventory('BGD').ledger.filter(row => row.action === 'CONSUMPTION' && row.productId === 'steel' && row.delta === -2).length, 1);
 });
 
+test('separate same-turn consumption rows remain distinct even with matching product, amount and reason', async () => {
+  const { context, state, api } = makeRuntime();
+  await api.init();
+
+  // Both transactions use the same quantity, reason and simulation turn. Their source
+  // batch IDs distinguish them, so neither may be mistaken for a replay of the other.
+  state.resource.BGD.inventory.STEEL = 0;
+  state.resource.BGD.inventoryLedger.push(
+    {
+      type: 'INVENTORY_CONSUMED',
+      resourceId: 'STEEL',
+      quantity: 1.5,
+      reason: 'FACTORY_INPUT',
+      turn: 1,
+      consumed: [{ batchId: 'STEEL-BATCH-A', quantity: 1.5 }]
+    },
+    {
+      type: 'INVENTORY_CONSUMED',
+      resourceId: 'STEEL',
+      quantity: 1.5,
+      reason: 'FACTORY_INPUT',
+      turn: 1,
+      consumed: [{ batchId: 'STEEL-BATCH-B', quantity: 1.5 }]
+    }
+  );
+  context.dispatchEvent(new context.CustomEvent('OMEGA_RESOURCE_CONSUMPTION_COMPLETED', {
+    detail: { eventType: 'OMEGA_RESOURCE_CONSUMPTION_COMPLETED', countryId: 'BGD', payload: { countryId: 'BGD' } }
+  }));
+
+  const movements = api.getInventory('BGD').ledger.filter(row =>
+    row.action === 'CONSUMPTION' && row.productId === 'steel' && row.delta === -1.5
+  );
+  assert.equal(movements.length, 2, 'two different batch movements must create two entries');
+  assert.notEqual(movements[0].eventId, movements[1].eventId);
+
+  context.dispatchEvent(new context.CustomEvent('OMEGA_RESOURCE_CONSUMPTION_COMPLETED', {
+    detail: { eventType: 'OMEGA_RESOURCE_CONSUMPTION_COMPLETED', countryId: 'BGD', payload: { countryId: 'BGD' } }
+  }));
+  assert.equal(api.getInventory('BGD').ledger.filter(row =>
+    row.action === 'CONSUMPTION' && row.productId === 'steel' && row.delta === -1.5
+  ).length, 2, 'resynchronizing the same source rows must remain idempotent');
+});
+
 test('factory output and input consumption are logged once without double-crediting stock', async () => {
   const { context, state, api } = makeRuntime();
   await api.init();
