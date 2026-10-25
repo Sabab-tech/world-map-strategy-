@@ -77,6 +77,21 @@
     }
     return out.sort();
   }
+  function playerSimulationCountryId(){
+    var sim=g.Omega&&g.Omega.Simulation,root=state();
+    var session=root&&root.simulation&&root.simulation.session||{};
+    var candidates=[session.playerCountryId,
+      root&&root.simulation&&root.simulation.playerCountryId,
+      root&&root.playerCountryId,root&&root.playerCountryCode,
+      sim&&typeof sim.getPlayerCountryId==='function'?sim.getPlayerCountryId():null,
+      g.Game&&(g.Game.playerCountryId||g.Game.playerCountry||g.Game.playerCountryCode),
+      g.OMEGA_PLAYER_COUNTRY_ID,g.playerCountry];
+    for(var i=0;i<candidates.length;i++){
+      var cid=canonical(candidates[i]);
+      if(cid&&cid!=='[OBJECT OBJECT]')return cid;
+    }
+    return null;
+  }
   function currentCountryId(){
     var sim=g.Omega&&g.Omega.Simulation,session=sim&&sim.world&&sim.world.state&&sim.world.state.simulation&&sim.world.state.simulation.session;
     var candidates=[session&&session.playerCountryId,g.Game&&g.Game.playerCountry,g.Game&&g.Game.currentActiveCountry,
@@ -1083,7 +1098,7 @@
     return loadRules().then(async function(){
       installHandlers();installEvents();
       ui();
-      var activeCountry=currentCountryId();
+      var activeCountry=playerSimulationCountryId();
       if(!activeCountry)return{status:'SKIPPED',reason:'PLAYER_COUNTRY_NOT_SELECTED',turn:turn()};
       var allCountries=countries();
       var activeCountries=[activeCountry];
