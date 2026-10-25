@@ -138,11 +138,16 @@ function normalizeMetricObject(object, resourceId, kind){
   return out;
  }
  if(kind==='capacity'){
+  const sourceUnit=out.rateUnit||out.unit||rawUnit;
+  const sourcePeriod=String(sourceUnit||'').toUpperCase();
+  const dayDivisor=/_PER_YEAR(?:$|_)/.test(sourcePeriod)?365:
+   /_PER_TURN(?:$|_)/.test(sourcePeriod)?Math.max(1,num(g.Game?.state?.simulation?.daysPerTurn)||num(g.gameState?.simulation?.daysPerTurn)||1):1;
   for(const key of ['nominal','minimum','maximum','activeRate','dailyRate','productionRate','nominalCapacity','minimumCapacity','maximumCapacity']){
    if(num(out[key])===null)continue;
-   const n=normalizeQuantity(resourceId,out[key],out.unit||out.rateUnit||rawUnit,{simulationOnly:true});
-   out[key]=n.quantity;
-   out[key+'Normalization']={...n,field:key};
+   const n=normalizeQuantity(resourceId,out[key],sourceUnit,{simulationOnly:true});
+   out[key]=n.quantity===null?null:Number((n.quantity/dayDivisor).toFixed(9));
+   out[key+'Normalization']={...n,field:key,sourcePeriod,sourcePeriodDays:dayDivisor,
+    normalizedPeriod:out[key]===null?'UNRECOGNIZED':'PER_DAY'};
    out.unit=n.unit;
   }
   if(out.unit&&out.rateUnit)out.rateUnit=canonicalUnit(resourceId)+'_PER_DAY';
