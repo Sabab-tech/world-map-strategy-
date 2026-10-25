@@ -29,6 +29,8 @@ public final class OmegaGameplaySmokeTest {
     // Keep this finite, but do not confuse a delayed renderer callback with a failed boot.
     // The overall gameplay readiness checks remain bounded by PAGE_LOAD_TIMEOUT_MS.
     private static final long JAVASCRIPT_CALLBACK_TIMEOUT_SECONDS = 45L;
+    // The CI emulator is configured with 3 GB RAM to approximate the target low-end handset.
+    private static final int MAX_PROCESS_PSS_KB = 1_200_000;
 
     @Test
     public void offlineWebViewBootsAndMinistryNavigationResponds() throws Exception {
@@ -232,6 +234,11 @@ public final class OmegaGameplaySmokeTest {
                 if (elapsedMs - lastProgressLog >= TimeUnit.MINUTES.toMillis(5L)) {
                     final Debug.MemoryInfo memoryInfo = new Debug.MemoryInfo();
                     Debug.getMemoryInfo(memoryInfo);
+                    assertTrue(
+                            "Game process PSS exceeded the 3 GB Android memory budget at " + elapsedMs +
+                                    " ms: pss_kb=" + memoryInfo.getTotalPss(),
+                            memoryInfo.getTotalPss() <= MAX_PROCESS_PSS_KB
+                    );
                     android.util.Log.i(
                             "OMEGA_ANDROID_SMOKE",
                             "FOUR_HOUR_SOAK_HEARTBEAT elapsed_ms=" + elapsedMs +
