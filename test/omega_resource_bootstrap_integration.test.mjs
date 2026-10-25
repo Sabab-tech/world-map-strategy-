@@ -22,14 +22,16 @@ test('canonical site binding notifies the extraction runtime only after publishi
   assert.ok(binding.includes('siteCount:sites.length'), 'the event must expose the real bound-site count');
 });
 
-test('site readiness starts the idempotent extraction runtime and exposes per-site readiness evidence', () => {
+test('site readiness hydrates the canonical registry without starting background production', () => {
   const runtime = read('omega_resource_endowment_runtime.js');
   assert.ok(runtime.includes('function onSiteBindingReady()'));
   assert.ok(runtime.includes("g.addEventListener?.('OMEGA_RESOURCE_SITE_BINDING_READY',onSiteBindingReady)"));
   const bindingSyncIndex=runtime.indexOf('const bindingSync=await syncBoundSiteRegistry(binding.sites);');
-  const extractionIndex=runtime.indexOf('let result=await extractAll();');
-  assert.ok(bindingSyncIndex>=0 && extractionIndex>bindingSyncIndex,
-    'registry readiness must synchronize bound sites before the authoritative country extraction pass');
+  const bootstrapOnlyIndex=runtime.indexOf("reason:'BOOTSTRAP_HYDRATION_ONLY'");
+  assert.ok(bindingSyncIndex>=0 && bootstrapOnlyIndex>bindingSyncIndex,
+    'site binding must finish hydration before reporting readiness, without extracting every country in the background');
+  assert.doesNotMatch(runtime.slice(bindingSyncIndex,bootstrapOnlyIndex), /await extractAll\(|await startCountryProduction\(/,
+    'bootstrap must not start global extraction or production for all countries');
   assert.ok(runtime.includes('productionCapableSiteCount'));
   assert.ok(runtime.includes('productionCapablePercent'));
   assert.ok(runtime.includes('currentTurnProducingSiteCount'));
