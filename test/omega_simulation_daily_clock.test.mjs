@@ -375,6 +375,18 @@ test('index, finance, bank and offline shell use the daily lifecycle assets', ()
   assert.match(lifecycle, /GAME ERROR · LAST COMPLETE SAVE PRESERVED/);
   assert.doesNotMatch(lifecycle, /Math\.floor\(turn\) % 3/);
   assert.match(lifecycle, /function saveNow\(options\)/);
+  assert.match(lifecycle, /var lastSavedChecksum = null/);
+  assert.match(lifecycle, /options\.committedTurn === true && g\.indexedDB/,
+    'committed turn snapshots must use the asynchronous IndexedDB path when available');
+  assert.doesNotMatch(lifecycle, /savedChecksum: lastSavedSerialized \? \(sim && sim\.saveState/,
+    'reading lifecycle diagnostics must not rebuild and checksum the full world');
+  assert.doesNotMatch(lifecycle, /if \(restoreFailed\) \{ restoreFailed = false; saveNow\(\{ force: true \}\); \}/,
+    'pressing Play must not synchronously snapshot and serialize the entire world');
+  assert.match(resourceEconomy, /async function forEachCooperatively/);
+  assert.match(resourceEconomy, /function worldMineSummary/);
+  assert.match(resourceEconomy, /summaryOnly:true/);
+  assert.match(resourceEconomy, /if\(!isCurrentCountryEvent\(event\)\)return/,
+    'background country updates must not repeatedly rerender the player country UI');
   assert.match(lifecycle, /function onPageExit\(\)/);
   assert.match(lifecycle, /stopAllBackgroundRuns/);
   assert.match(lifecycle, /startAllBackgroundRuns/);
