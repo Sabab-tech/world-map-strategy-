@@ -638,14 +638,20 @@
         action = 'EXPORT'; deltaSign = -1;
       } else if (type === 'INTERNATIONAL_TRADE_IMPORT' || type === 'IMPORT' || type === 'TRADE_IMPORT') {
         action = 'IMPORT'; deltaSign = 1;
-      } else if (/^(CONSUMPTION|CONSUMED|RESOURCE_CONSUMPTION)$/.test(type)) {
+      } else if (/^(CONSUMPTION|CONSUMED|RESOURCE_CONSUMPTION|INVENTORY_CONSUMED)$/.test(type)) {
         action = 'CONSUMPTION'; deltaSign = -1;
       }
       if (!action || !sourceRow.resourceId) return;
       var amount = number(sourceRow.quantity);
       if (amount === null || amount <= 0) return;
+      var consumedBatchIds = Array.isArray(sourceRow.consumed)
+        ? sourceRow.consumed.map(function (row) { return row && row.batchId; }).filter(Boolean).join(',')
+        : '';
       var reference = sourceRow.settlementId || sourceRow.transactionId || sourceRow.transferId ||
-        sourceRow.batchId || (type + ':T' + String(sourceRow.turn == null ? turn() : sourceRow.turn) + ':' + index);
+        sourceRow.consumptionId || sourceRow.batchId ||
+        (type + ':T' + String(sourceRow.turn == null ? turn() : sourceRow.turn) + ':' +
+          normalizeProductId(sourceRow.resourceId) + ':' + String(amount) + ':' +
+          token(sourceRow.reason || sourceRow.action || consumedBatchIds || index));
       var result = appendEntry(cid, action, sourceRow.resourceId, deltaSign * amount, {
         eventId: 'SOURCE_LEDGER:' + type + ':' + reference + ':' + normalizeProductId(sourceRow.resourceId),
         source: 'EXISTING_RESOURCE_INVENTORY_LEDGER',
