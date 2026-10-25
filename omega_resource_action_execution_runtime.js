@@ -668,6 +668,21 @@
     });
   }
 
+  function playerSimulationCountryId(){
+    const sim=g.Omega?.Simulation,root=state()||{};
+    const session=root.simulation?.session||sim?.world?.state?.simulation?.session||{};
+    let direct=null;
+    try{if(typeof sim?.getPlayerCountryId==='function')direct=sim.getPlayerCountryId();}catch(_){}
+    const candidates=[session.playerCountryId,direct,root.simulation?.playerCountryId,root.playerCountryId,root.playerCountryCode,
+      g.Game?.playerCountryId,g.Game?.playerCountryCode,g.Game?.playerCountry,g.OMEGA_PLAYER_COUNTRY_ID];
+    for(const value of candidates){
+      const raw=value&&typeof value==='object'?(value.iso3||value.iso3Code||value.countryCode||value.countryId||value.code||value.id||value.name):value;
+      const cid=canonicalCountry(raw);
+      if(cid&&cid!=='GLOBAL'&&cid!=='WORLD'&&/^[A-Z0-9]{2,3}$/.test(cid))return cid;
+    }
+    return null;
+  }
+
   function processAll(){
     const cs=countryIds();
     const results=[];
@@ -701,7 +716,7 @@
     const c=e?.detail?.countryId||e?.countryId;
     if(c)processCountry(c);
   }
-  function onTurn(){processAll();}
+  function onTurn(){const countryId=playerSimulationCountryId();if(countryId)return processCountry(countryId);return{status:'SKIPPED',reason:'PLAYER_COUNTRY_NOT_SELECTED'};}
 
   g.Omega=g.Omega||{};
   const API=Object.freeze({VERSION,register,processCountry,processAll,diagnostics});

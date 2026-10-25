@@ -186,6 +186,66 @@ test('hiring impact is calculated from population, current skill and current veh
   assert.ok(after.projectedAnnualIncidentEstimate < before.projectedAnnualIncidentEstimate);
 });
 
+test('opening Home Ministry efficiency and trust are modeled from each country baseline rather than shared constants', () => {
+  const previousInterior = globalThis.Game.state.interior;
+  globalThis.Game.state.interior = {};
+  try {
+    const boot = engine.bootstrapCountryPoliceBaselines(baselineData.countries);
+    assert.equal(boot.ok, true, JSON.stringify(boot));
+    const bangladesh = engine.getState('BD');
+    const japan = engine.getState('JP');
+    const nigeria = engine.getState('NG');
+    assert.equal(bangladesh.openingConditionModel, 'MODELED_COUNTRY_SPECIFIC_POLICE_FLEET_CRIME_GEOGRAPHY_V1');
+    assert.equal(bangladesh.baselinePolicePersonnel, baselineData.countries.find(row => row.code === 'BD').baselinePolice.activePersonnel);
+    assert.notEqual(bangladesh.policeEfficiency, japan.policeEfficiency, 'country-specific fleet, staffing and geography should change the opening efficiency index');
+    assert.notEqual(bangladesh.policeTrust, nigeria.policeTrust, 'country-specific crime baselines should change the opening trust index');
+    assert.notEqual(bangladesh.publicSatisfaction, japan.publicSatisfaction, 'opening satisfaction should not be one shared constant');
+  } finally {
+    if (previousInterior === undefined) delete globalThis.Game.state.interior;
+    else globalThis.Game.state.interior = previousInterior;
+  }
+});
+
+test('untouched persisted police baselines migrate shared 60/55 opening constants without resetting the fleet', () => {
+  const previousInterior = globalThis.Game.state.interior;
+  const row = baselineData.countries.find(country => country.code === 'BD');
+  assert.ok(row, 'Bangladesh baseline is present');
+  const fleetCounts = Object.assign({}, row.baselineFleet.countsByTier || {});
+  globalThis.Game.state.interior = {
+    BD: { police: {
+      baselineVersion: 1,
+      fleetProfileModelVersion: 1,
+      baselineSource: 'OMEGA_COUNTRY_POLICE_BASELINE_V1',
+      baselinePolicePersonnel: row.baselinePolice.activePersonnel,
+      baselineFleetUnits: row.baselineFleet.totalUnits,
+      policeCount: row.baselinePolice.activePersonnel,
+      policeEfficiency: 60,
+      policeTrust: 55,
+      publicSatisfaction: 55,
+      misconductRiskPct: 20,
+      privacyRiskPct: 20,
+      vehiclesOwned: fleetCounts,
+      vehicleFleet: [],
+      lastUpdatedTurn: 0
+    } }
+  };
+  try {
+    const boot = engine.bootstrapCountryPoliceBaselines(baselineData.countries);
+    assert.equal(boot.ok, true, JSON.stringify(boot));
+    const migrated = engine.getState('BD');
+    assert.equal(migrated.openingConditionModel, 'MODELED_COUNTRY_SPECIFIC_POLICE_FLEET_CRIME_GEOGRAPHY_V1');
+    assert.equal(migrated.policeCount, row.baselinePolice.activePersonnel, 'migration must preserve police personnel');
+    assert.deepEqual(migrated.vehiclesOwned, fleetCounts, 'migration must preserve the existing per-tier fleet inventory');
+    assert.notEqual(migrated.policeEfficiency, 60, 'legacy shared efficiency must be replaced by the country model');
+    assert.notEqual(migrated.policeTrust, 55, 'legacy shared trust must be replaced by the country crime model');
+    assert.equal(migrated.baselineSource, 'OMEGA_COUNTRY_POLICE_BASELINE_V1');
+    assert.notEqual(migrated.crimeBaseline.referenceEfficiency, 60, 'crime reference efficiency must match the country model');
+  } finally {
+    if (previousInterior === undefined) delete globalThis.Game.state.interior;
+    else globalThis.Game.state.interior = previousInterior;
+  }
+});
+
 test('patrol plan and active police rules change crime outputs, satisfaction and real Finance ledger', () => {
   engine.bootstrapCountryPoliceBaselines(baselineData.countries);
   const before = engine.getCrimeSnapshot('BD');
@@ -195,10 +255,11 @@ test('patrol plan and active police rules change crime outputs, satisfaction and
   const afterPatrol = engine.getCrimeSnapshot('BD');
   assert.ok(afterPatrol.categories.theft.projectedRatePer100k < before.categories.theft.projectedRatePer100k);
   const cashBefore = financeModel.treasuryBalanceUsd;
+  const satisfactionBeforePolicy = engine.getState('BD').publicSatisfaction;
   const policy = engine.setPolicePolicyRule('body_camera_audit', true, 'BD');
   assert.equal(policy.ok, true, JSON.stringify(policy));
   assert.equal(engine.getState('BD').policeRules.body_camera_audit, true);
-  assert.equal(engine.getState('BD').publicSatisfaction, 61);
+  assert.equal(engine.getState('BD').publicSatisfaction, Math.min(100, satisfactionBeforePolicy + 6));
   assert.ok(engine.getState('BD').misconductRiskPct < 20);
   assert.equal(financeModel.treasuryBalanceUsd, cashBefore - 180_000);
   assert.match(financeModel.ledger.at(-1).description, /^OMEGA_HOME_BUDGET:operations\|POLICE_POLICY_BODY_CAMERA_AUDIT$/);

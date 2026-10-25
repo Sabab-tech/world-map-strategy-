@@ -184,6 +184,150 @@ test('industry view reads current country assets, cycles and projects without sy
   assert.equal(globalThis.OmegaUIV2Industry.buildViewModel({countryId:'USA'}).factoryCount,0);
 });
 
+test('industry research and technology records remain isolated to the selected country', () => {
+  const previous = {
+    Game:globalThis.Game, runtime:globalThis.OmegaCountryRuntimeData,
+    catalog:globalThis.OmegaResourceIndustrialCatalogData, inventory:globalThis.OmegaCountryInventoryRuntime,
+    omega:globalThis.Omega
+  };
+  globalThis.Omega = {};
+  globalThis.OmegaCountryRuntimeData = null;
+  globalThis.OmegaCountryInventoryRuntime = null;
+  globalThis.OmegaResourceIndustrialCatalogData = { factoryProfiles:{} };
+  globalThis.Game = { state:{
+    resource:{
+      BGD:{
+        technologyResearchProjects:[{projectId:'BGD-TECH-1',technologyId:'ORE_SORTING',technologyName:'Ore Sorting',status:'IN_PROGRESS',progress:35,progressUnits:7,requiredUnits:20,startedTurn:4}],
+        technologyTransfers:[{projectId:'BGD-IMPORT-1',technologyId:'MINE_AUTOMATION',status:'COMPLETED',donorCountryId:'USA',progress:100}],
+        technologyCapabilities:[{capabilityId:'BGD-CAP-1',technologyId:'ORE_SORTING',sourceType:'RESEARCH',completedTurn:9}],
+        industrialNetwork:{projects:[],factoryProductionCycles:{},factoryRuntime:{},siteFlowLedger:[]}
+      },
+      USA:{technologyResearchProjects:[{projectId:'USA-SECRET-1',technologyId:'UNRELATED_TECH',technologyName:'Foreign-only record',status:'IN_PROGRESS'}],
+        technologyTransfers:[],technologyCapabilities:[],industrialNetwork:{projects:[],factoryProductionCycles:{},factoryRuntime:{},siteFlowLedger:[]}}
+    },
+    economy:{BGD:{productionAssets:[]},USA:{productionAssets:[]}}
+  }};
+  try {
+    const model = globalThis.OmegaUIV2Industry.buildViewModel({countryId:'BGD'});
+    assert.deepEqual(model.researchProjects.map(row=>row.projectId), ['BGD-TECH-1']);
+    assert.deepEqual(model.technologyTransfers.map(row=>row.projectId), ['BGD-IMPORT-1']);
+    assert.deepEqual(model.technologyCapabilities.map(row=>row.capabilityId), ['BGD-CAP-1']);
+    const root = {classList:{add(){}}, addEventListener(){}, contains(){return true}};
+    const rendered = globalThis.OmegaUIV2Industry.render(root,{countryId:'BGD',tab:'research'});
+    assert.equal(rendered.ok,true);
+    assert.match(root.innerHTML,/Ore Sorting/);
+    assert.match(root.innerHTML,/MINE_AUTOMATION/);
+    assert.doesNotMatch(root.innerHTML,/Foreign-only record|USA-SECRET-1|UNRELATED_TECH/);
+  } finally {
+    if (previous.Game === undefined) delete globalThis.Game; else globalThis.Game = previous.Game;
+    if (previous.runtime === undefined) delete globalThis.OmegaCountryRuntimeData; else globalThis.OmegaCountryRuntimeData = previous.runtime;
+    if (previous.catalog === undefined) delete globalThis.OmegaResourceIndustrialCatalogData; else globalThis.OmegaResourceIndustrialCatalogData = previous.catalog;
+    if (previous.inventory === undefined) delete globalThis.OmegaCountryInventoryRuntime; else globalThis.OmegaCountryInventoryRuntime = previous.inventory;
+    if (previous.omega === undefined) delete globalThis.Omega; else globalThis.Omega = previous.omega;
+  }
+});
+
+test('selected ISO3 country resolves name-keyed economy data across Economy, Industry and Reports tabs', () => {
+  const previous = {
+    Game:globalThis.Game, runtime:globalThis.OmegaCountryRuntimeData,
+    catalog:globalThis.OmegaResourceSiteCanonicalCatalogData, industrial:globalThis.OmegaResourceIndustrialCatalogData,
+    inventory:globalThis.OmegaCountryInventoryRuntime, ministryCountry:globalThis.OmegaMinistryViewCountry,
+    homeEngine:globalThis.OmegaHomeMinistryEngine, gateway:globalThis.OmegaCountryDataGateway, omega:globalThis.Omega
+  };
+  globalThis.Omega = {};
+  globalThis.OmegaCountryRuntimeData = {
+    resolveCountry(value) {
+      const key = String(value || '').trim().toUpperCase();
+      return key === 'BANGLADESH' || key === 'BGD' || key === 'BD'
+        ? { countryCode:'BD', iso3:'BGD', numericCode:'050', name:'Bangladesh', economyKey:'BANGLADESH', populationKey:'BANGLADESH' }
+        : key === 'UNITED STATES' || key === 'USA' || key === 'US'
+          ? { countryCode:'US', iso3:'USA', numericCode:'840', name:'United States', economyKey:'USA', populationKey:'USA' }
+          : null;
+    }
+  };
+  globalThis.Game = {
+    state:{
+      resource:{ BGD:{ industrialNetwork:{ projects:[], factoryProductionCycles:{}, factoryRuntime:{}, siteFlowLedger:[] } } },
+      economy:{ BANGLADESH:{ currencyCode:'BDT', gdp:195000000000,
+        productionAssets:[{ id:'BGD-SMELTER-01', name:'National smelter', factoryType:'SMELTER', status:'ACTIVE' }],
+        projects:[] } },
+      finance:{ BANGLADESH:{ available:123456, currencyCode:'BDT', ledger:[] } }
+    }
+  };
+  globalThis.OmegaResourceSiteCanonicalCatalogData = { sites:[
+    { siteId:'BGD-MINE-01', countryId:'BGD', resourceId:'coal', siteName:'Bangladesh coal' },
+    { siteId:'USA-MINE-01', countryId:'USA', resourceId:'copper', siteName:'United States copper' }
+  ] };
+  globalThis.OmegaResourceIndustrialCatalogData = { factoryProfiles:{ SMELTER:{ name:'Smelter', authority:'TEST' } } };
+  globalThis.OmegaCountryInventoryRuntime = { getInventory(countryId) { return { status:'READY', countryId:countryId, items:[], unbounded:true }; } };
+  globalThis.OmegaMinistryViewCountry = 'BD';
+  globalThis.OmegaHomeMinistryEngine = null;
+  globalThis.OmegaCountryDataGateway = null;
+  try {
+    const industry = globalThis.OmegaUIV2Industry.buildViewModel({ countryId:'BD' });
+    assert.equal(industry.countryId, 'BGD');
+    assert.equal(industry.factoryCount, 1, 'Industry must resolve legacy BANGLADESH-keyed economy assets');
+    const economy = globalThis.OmegaUIV2Economy.buildViewModel({ countryId:'BD' });
+    assert.equal(economy.countryId, 'BGD');
+    assert.equal(economy.treasuryCash, 123456, 'Economy must resolve legacy BANGLADESH-keyed finance data');
+    assert.equal(economy.currencyCode, 'BDT');
+    const reports = globalThis.OmegaUIV2Reports.buildViewModel({ countryId:'BANGLADESH' });
+    assert.equal(reports.countryId, 'BGD');
+    assert.equal(reports.siteCount, 1, 'Reports must count only the selected country in the canonical site registry');
+    assert.equal(reports.factoryCount, 1, 'Reports must resolve selected-country factories from the legacy economy bucket');
+  } finally {
+    if (previous.Game === undefined) delete globalThis.Game; else globalThis.Game = previous.Game;
+    if (previous.runtime === undefined) delete globalThis.OmegaCountryRuntimeData; else globalThis.OmegaCountryRuntimeData = previous.runtime;
+    if (previous.catalog === undefined) delete globalThis.OmegaResourceSiteCanonicalCatalogData; else globalThis.OmegaResourceSiteCanonicalCatalogData = previous.catalog;
+    if (previous.industrial === undefined) delete globalThis.OmegaResourceIndustrialCatalogData; else globalThis.OmegaResourceIndustrialCatalogData = previous.industrial;
+    if (previous.inventory === undefined) delete globalThis.OmegaCountryInventoryRuntime; else globalThis.OmegaCountryInventoryRuntime = previous.inventory;
+    if (previous.ministryCountry === undefined) delete globalThis.OmegaMinistryViewCountry; else globalThis.OmegaMinistryViewCountry = previous.ministryCountry;
+    if (previous.homeEngine === undefined) delete globalThis.OmegaHomeMinistryEngine; else globalThis.OmegaHomeMinistryEngine = previous.homeEngine;
+    if (previous.gateway === undefined) delete globalThis.OmegaCountryDataGateway; else globalThis.OmegaCountryDataGateway = previous.gateway;
+    if (previous.omega === undefined) delete globalThis.Omega; else globalThis.Omega = previous.omega;
+  }
+});
+
+test('UI v2 integration normalizes map-selected aliases before mounting country screens', () => {
+  const previous = {
+    app:globalThis.OmegaUIV2App, runtime:globalThis.OmegaCountryRuntimeData,
+    document:globalThis.document, ministryCountry:globalThis.OmegaMinistryViewCountry,
+    homeEngine:globalThis.OmegaHomeMinistryEngine, gateway:globalThis.OmegaCountryDataGateway, omega:globalThis.Omega
+  };
+  let mountedOptions = null;
+  globalThis.Omega = {};
+  globalThis.OmegaCountryRuntimeData = {
+    resolveCountry(value) {
+      const key = String(value || '').trim().toUpperCase();
+      return key === 'BANGLADESH' || key === 'BGD' || key === 'BD'
+        ? { countryCode:'BD', iso3:'BGD', numericCode:'050', name:'Bangladesh', economyKey:'BANGLADESH' }
+        : null;
+    }
+  };
+  globalThis.OmegaHomeMinistryEngine = null;
+  globalThis.OmegaCountryDataGateway = null;
+  globalThis.document = { body:{ setAttribute(){}, classList:{ add(){}, remove(){}, toggle(){} } }, getElementById(){ return null; } };
+  globalThis.OmegaUIV2App = { mount(root, options) { mountedOptions = options; return { mounted:true, route:options.initialRoute }; } };
+  const root = { style:{}, setAttribute(){}, removeAttribute(){}, getAttribute(){ return null; } };
+  try {
+    const result = globalThis.OmegaUIV2Integration.mountIntoCabinet(root, { countryId:'BANGLADESH', initialRoute:'economy' });
+    assert.equal(result.ok, true);
+    assert.equal(result.countryId, 'BGD');
+    assert.equal(mountedOptions.countryId, 'BGD');
+    assert.equal(mountedOptions.countryOptions[0].id, 'BGD');
+    mountedOptions.onCountryChange('BD');
+    assert.equal(globalThis.OmegaMinistryViewCountry, 'BGD');
+  } finally {
+    if (previous.app === undefined) delete globalThis.OmegaUIV2App; else globalThis.OmegaUIV2App = previous.app;
+    if (previous.runtime === undefined) delete globalThis.OmegaCountryRuntimeData; else globalThis.OmegaCountryRuntimeData = previous.runtime;
+    if (previous.document === undefined) delete globalThis.document; else globalThis.document = previous.document;
+    if (previous.ministryCountry === undefined) delete globalThis.OmegaMinistryViewCountry; else globalThis.OmegaMinistryViewCountry = previous.ministryCountry;
+    if (previous.homeEngine === undefined) delete globalThis.OmegaHomeMinistryEngine; else globalThis.OmegaHomeMinistryEngine = previous.homeEngine;
+    if (previous.gateway === undefined) delete globalThis.OmegaCountryDataGateway; else globalThis.OmegaCountryDataGateway = previous.gateway;
+    if (previous.omega === undefined) delete globalThis.Omega; else globalThis.Omega = previous.omega;
+  }
+});
+
 test('industry screen exposes the country-wide unbounded inventory without replacing factory input stock', () => {
   const previous = globalThis.OmegaCountryInventoryRuntime;
   globalThis.OmegaCountryInventoryRuntime = {
@@ -569,6 +713,65 @@ test('Finance has six separate data-backed tabs', () => {
   }
 });
 
+test('Home Affairs hides unready shared placeholders and shows the Bangladesh reference photo only for Bangladesh', () => {
+  const keys = ['OmegaHomeMinistryEngine','OmegaCountryRuntimeData','OmegaCountryDataGateway','OmegaUIPhotoAssets','OmegaMinistryViewCountry'];
+  const prior = Object.fromEntries(keys.map(key => [key, globalThis[key]]));
+  globalThis.OmegaMinistryViewCountry = '';
+  globalThis.OmegaCountryRuntimeData = {
+    resolveCountry(value) {
+      const raw = String(value || '').trim().toUpperCase();
+      if (['BD','BGD','BDG','BANGLADESH'].includes(raw)) return { countryCode:'BD', iso3:'BGD', name:'Bangladesh' };
+      if (['US','USA','UNITED STATES'].includes(raw)) return { countryCode:'US', iso3:'USA', name:'United States' };
+      return null;
+    }
+  };
+  globalThis.OmegaCountryDataGateway = null;
+  globalThis.OmegaUIPhotoAssets = {
+    get(id) {
+      return id === 'bangladesh-police-headquarters'
+        ? { path:'assets/ui-photos/bangladesh-police-headquarters.webp', caption:'Bangladesh police headquarters' }
+        : null;
+    }
+  };
+  globalThis.OmegaHomeMinistryEngine = {
+    getState(country) {
+      if (String(country).toUpperCase() === 'USA') {
+        return { baselineVersion:0, baselineSource:null, policeCount:250, policeEfficiency:60, policeTrust:55, publicSatisfaction:55, vehiclesOwned:{}, incidentLedger:[], unlockedVehicleLevel:1, specialAgents:0, recruitmentFeePerOfficerUsd:500, dailySalaryPerOfficerUsd:1, facilityLevels:{station:1}, trainingQualityLevel:1, policeRecruitmentLevel:1, patrolPlan:{urban:25} };
+      }
+      return { baselineVersion:1, baselineSource:'OMEGA_COUNTRY_POLICE_BASELINE_V1',
+        openingConditionModel:'MODELED_COUNTRY_SPECIFIC_POLICE_FLEET_CRIME_GEOGRAPHY_V1',
+        policeCount:205417, policeEfficiency:61, policeTrust:67, publicSatisfaction:65,
+        vehiclesOwned:{'1':2894}, incidentLedger:[], unlockedVehicleLevel:1, specialAgents:0,
+        recruitmentFeePerOfficerUsd:500, dailySalaryPerOfficerUsd:1.88, facilityLevels:{station:1},
+        trainingQualityLevel:1, policeRecruitmentLevel:1, patrolPlan:{urban:25} };
+    },
+    estimateRecruitmentImpact() { return { ok:true, upfrontCostUsd:500, addedDailyPayrollUsd:1, additionalIncidentsAvoidedPerYear:1 }; },
+    getCountryFleetSnapshot() { return { ownedUnits:0 }; }
+  };
+  try {
+    const usRoot = { classList:{ add(){} }, addEventListener(){}, contains(){return true;} };
+    const usRender = globalThis.OmegaUIV2HomeAffairs.render(usRoot,{countryId:'USA'});
+    assert.equal(usRender.ok,true);
+    assert.match(usRoot.innerHTML,/COUNTRY BASELINE LOADING/);
+    assert.match(usRoot.innerHTML,/Not recorded/);
+    assert.doesNotMatch(usRoot.innerHTML,/<strong>250<\/strong>|<strong>60%<\/strong>|<strong>55%<\/strong>/);
+    assert.doesNotMatch(usRoot.innerHTML,/bangladesh-police-headquarters/);
+
+    const bdRoot = { classList:{ add(){} }, addEventListener(){}, contains(){return true;} };
+    const bdRender = globalThis.OmegaUIV2HomeAffairs.render(bdRoot,{countryId:'BDG'});
+    assert.equal(bdRender.ok,true);
+    assert.match(bdRoot.innerHTML,/COUNTRY BASELINE READY/);
+    assert.match(bdRoot.innerHTML,/bangladesh-police-headquarters\.webp/);
+    assert.match(bdRoot.innerHTML,/<strong>205,417<\/strong>/);
+    assert.match(bdRoot.innerHTML,/<strong>61%<\/strong>/);
+  } finally {
+    for (const key of keys) {
+      if (prior[key] === undefined) delete globalThis[key];
+      else globalThis[key] = prior[key];
+    }
+  }
+});
+
 test('Home Affairs legal register shows stored law sections and never fabricates missing law text', () => {
   const previousEngine = globalThis.OmegaHomeMinistryEngine;
   globalThis.OmegaHomeMinistryEngine = {
@@ -801,5 +1004,68 @@ test('failed UI v2 mount fails closed and never revives the legacy Cabinet', () 
     if(previous.country===undefined)delete globalThis.OmegaMinistryViewCountry;else globalThis.OmegaMinistryViewCountry=previous.country;
     if(previous.cabinet===undefined)delete globalThis.OmegaCabinetUI;else globalThis.OmegaCabinetUI=previous.cabinet;
     if(previous.updateBack===undefined)delete globalThis.updateGlobalBackButtonVisibility;else globalThis.updateGlobalBackButtonVisibility=previous.updateBack;
+  }
+});
+
+test('resource ministry reads only selected-country rows from the global site registries', () => {
+  const canonicalKey = 'OmegaResourceSiteCanonicalCatalogData';
+  const bindingKey = 'OmegaIndividualResourceSiteBinding';
+  const previousCanonical = globalThis[canonicalKey];
+  const previousBinding = globalThis[bindingKey];
+  const previousCountryRuntime = globalThis.OmegaCountryRuntimeData;
+  globalThis.OmegaCountryRuntimeData = {
+    resolveCountry(value) {
+      const key = String(value || '').trim().toUpperCase();
+      return key === 'BANGLADESH' || key === 'BGD' || key === 'BD'
+        ? { countryCode:'BD', iso3:'BGD', numericCode:'050', name:'Bangladesh' }
+        : key === 'UNITED STATES' || key === 'USA' || key === 'US'
+          ? { countryCode:'US', iso3:'USA', numericCode:'840', name:'United States' }
+          : null;
+    }
+  };
+  globalThis[canonicalKey] = {
+    sites: [
+      { siteId:'BGD-COAL-01', countryId:'BGD', resourceId:'coal', siteName:'Bangladesh coal' },
+      { siteId:'USA-OIL-01', countryId:'USA', resourceId:'crude_oil', siteName:'United States oil' }
+    ]
+  };
+  globalThis[bindingKey] = {
+    sites: [
+      { siteId:'BGD-COAL-01', countryId:'BGD', resourceId:'coal', siteName:'Duplicate Bangladesh coal' },
+      { siteId:'BGD-GAS-01', countryId:'BGD', resourceId:'natural_gas', siteName:'Bangladesh gas' },
+      { siteId:'IND-IRON-01', countryId:'IND', resourceId:'iron_ore', siteName:'India iron ore' }
+    ]
+  };
+  try {
+    const selected = globalThis.OmegaUIV2ResourceMinistry.buildViewModel({ countryId:'BGD' });
+    assert.equal(selected.siteCount, 2);
+    assert.deepEqual(new Set(selected.sites.map((site) => site.countryId)), new Set(['BGD']));
+    assert.deepEqual(new Set(selected.sites.map((site) => site.siteId)), new Set(['BGD-COAL-01', 'BGD-GAS-01']));
+
+    const selectedByName = globalThis.OmegaUIV2ResourceMinistry.buildViewModel({ countryId:'BANGLADESH' });
+    assert.equal(selectedByName.siteCount, 2, 'display-name country IDs must normalize to canonical ISO3 resource IDs');
+    assert.deepEqual(new Set(selectedByName.sites.map((site) => site.countryId)), new Set(['BGD']));
+    assert.deepEqual(new Set(selectedByName.sites.map((site) => site.siteId)), new Set(['BGD-COAL-01', 'BGD-GAS-01']));
+
+    const selectedByIso3 = globalThis.OmegaUIV2ResourceMinistry.buildViewModel({ countryId:'USA' });
+    assert.equal(selectedByIso3.siteCount, 1);
+    assert.deepEqual(new Set(selectedByIso3.sites.map((site) => site.siteId)), new Set(['USA-OIL-01']));
+
+    const nameBasedSite = globalThis.OmegaUIV2ResourceMinistry.buildViewModel({
+      countryId:'BANGLADESH',
+      sites:[{siteId:'NAME-BASED-BGD',siteName:'Name-based Bangladesh site',countryId:'Bangladesh',resourceId:'copper'}]
+    });
+    assert.equal(nameBasedSite.siteCount, 1, 'legacy rows with country names must normalize before filtering');
+    assert.equal(nameBasedSite.sites[0].siteId, 'NAME-BASED-BGD');
+
+    const noCountry = globalThis.OmegaUIV2ResourceMinistry.buildViewModel({});
+    assert.equal(noCountry.siteCount, 0, 'no selected nation must not render the entire global site catalog');
+  } finally {
+    if (previousCanonical === undefined) delete globalThis[canonicalKey];
+    else globalThis[canonicalKey] = previousCanonical;
+    if (previousBinding === undefined) delete globalThis[bindingKey];
+    else globalThis[bindingKey] = previousBinding;
+    if (previousCountryRuntime === undefined) delete globalThis.OmegaCountryRuntimeData;
+    else globalThis.OmegaCountryRuntimeData = previousCountryRuntime;
   }
 });

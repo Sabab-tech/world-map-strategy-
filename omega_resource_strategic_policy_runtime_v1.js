@@ -696,6 +696,20 @@ function install(){
  ];
  let n=0;for(const [t,f,owner='resource'] of defs)if(handlerFor(t,f,owner))n++;registeredHandlerCount=n;handlersReady=n===defs.length;return{ready:handlersReady,registered:n,required:defs.length,errors:registrationErrors.slice()};
 }
+function playerSimulationCountryId(){
+ const sim=g.Omega?.Simulation,root=state()||{};
+ const session=root.simulation?.session||sim?.world?.state?.simulation?.session||{};
+ let direct=null;
+ try{if(typeof sim?.getPlayerCountryId==='function')direct=sim.getPlayerCountryId();}catch(_){}
+ const candidates=[session.playerCountryId,direct,root.simulation?.playerCountryId,root.playerCountryId,root.playerCountryCode,
+  g.Game?.playerCountryId,g.Game?.playerCountryCode,g.Game?.playerCountry,g.OMEGA_PLAYER_COUNTRY_ID];
+ for(const value of candidates){
+  const raw=value&&typeof value==='object'?(value.iso3||value.iso3Code||value.countryCode||value.countryId||value.code||value.id||value.name):value;
+  const cid=country(raw);
+  if(cid&&cid!=='GLOBAL'&&cid!=='WORLD'&&/^[A-Z0-9]{2,3}$/.test(cid))return cid;
+ }
+ return null;
+}
 function countryIds(){
  const out=new Set(Object.keys(state()?.resource||{}).map(country).filter(Boolean));
  try{const b=g.OmegaCanonicalIdentityRegistry||g.OmegaCountrySemanticBridge||g.Omega?.CanonicalIdentity;for(const x of b?.list?.('COUNTRY')||b?.list?.()||[]){const r=typeof x==='object'?(x.iso3||x.countryId||x.id||x.code):x;if(r)out.add(country(r));}}catch(_){}
@@ -737,7 +751,13 @@ install();
 if(typeof g.addEventListener==='function'){
  g.addEventListener('OMEGA_READY',()=>{loadRules().then(()=>install()).catch(()=>{});});
  g.addEventListener('OMEGA_GAME_SESSION_STARTED',()=>{loadRules().then(()=>install()).catch(()=>{});});
- g.addEventListener('OMEGA_SIMULATION_TURN_COMMITTED',async()=>{processAll();for(const c of countryIds())await processPowerCountry(c);});
+ g.addEventListener('OMEGA_SIMULATION_TURN_COMMITTED',async()=>{
+  const selected=playerSimulationCountryId();
+  if(!selected)return{status:'SKIPPED',reason:'PLAYER_COUNTRY_NOT_SELECTED'};
+  const exploration=processCountry(selected);
+  const power=await processPowerCountry(selected);
+  return{status:'COMPLETED',countryId:selected,exploration,power};
+ });
  const processingImpactListener=e=>{
   const d=e?.detail||{},p=d.payload||d,cc=country(p.countryId||d.countryId);
   const tx=String(p.transactionId||p.processId||'');if(!cc||!tx)return;

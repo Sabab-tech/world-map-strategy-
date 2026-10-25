@@ -9,16 +9,48 @@
   function num(value) { if (value === null || value === undefined || value === '') return null; var n = Number(value); return Number.isFinite(n) ? n : null; }
   function fmt(value, unit) { var n = num(value); return n === null ? 'Not recorded' : n.toLocaleString('en-US', { maximumFractionDigits: 2 }) + (unit ? ' ' + esc(unit) : ''); }
   function stateRoot() { return g.Game && g.Game.state || g.gameState || null; }
+  function countryProfile(value) {
+    var runtime = g.OmegaCountryRuntimeData || (g.Omega && g.Omega.CountryRuntimeData);
+    if (runtime && typeof runtime.resolveCountry === 'function') {
+      try { var profile = runtime.resolveCountry(value); if (profile) return profile; } catch (_) {}
+    }
+    return null;
+  }
+  function countryAliases(value) {
+    var aliases = [], seen = Object.create(null);
+    function add(item) { var key = String(item == null ? '' : item).trim().toUpperCase(); if (key && !seen[key]) { seen[key] = true; aliases.push(key); } }
+    add(value);
+    var profile = countryProfile(value), identity = profile && (profile.identity || profile.country || profile);
+    [profile && profile.iso3, profile && profile.alpha3, profile && profile.cca3, profile && profile.countryCode,
+      profile && profile.numericCode, profile && profile.name, profile && profile.officialName, profile && profile.shortName,
+      profile && profile.economyKey, profile && profile.populationKey,
+      identity && identity.iso3, identity && identity.countryIso3, identity && identity.countryCode,
+      identity && identity.name, identity && identity.officialName].forEach(add);
+    return aliases;
+  }
+  function canonicalCountry(value) {
+    var raw = String(value == null ? '' : value).trim();
+    if (!raw) return '';
+    var profile = countryProfile(raw), identity = profile && (profile.identity || profile.country || profile);
+    var code = String(profile && (profile.iso3 || profile.alpha3 || profile.cca3 || profile.countryIso3) ||
+      identity && (identity.iso3 || identity.alpha3 || identity.cca3 || identity.countryIso3) || '').trim().toUpperCase();
+    return /^[A-Z]{3}$/.test(code) ? code : raw.toUpperCase();
+  }
   function pickCountryBucket(root, country) {
     if (!root || typeof root !== 'object') return null;
-    var code = String(country || '').trim().toUpperCase();
-    if (code && root[code] && typeof root[code] === 'object') return root[code];
+    var aliases = countryAliases(country);
+    for (var a = 0; a < aliases.length; a += 1) {
+      var direct = root[aliases[a]];
+      if (direct && typeof direct === 'object') return direct;
+    }
     var keys = Object.keys(root);
-    for (var i = 0; i < keys.length; i += 1) if (keys[i].trim().toUpperCase() === code && root[keys[i]] && typeof root[keys[i]] === 'object') return root[keys[i]];
+    for (var i = 0; i < keys.length; i += 1) {
+      if (aliases.indexOf(keys[i].trim().toUpperCase()) >= 0 && root[keys[i]] && typeof root[keys[i]] === 'object') return root[keys[i]];
+    }
     return null;
   }
   function countryContext(country) {
-    var code = String(country || g.OmegaMinistryViewCountry || (g.OmegaCabinetUI && g.OmegaCabinetUI.activeCountry) || g.currentActiveCountry || '').trim().toUpperCase();
+    var code = canonicalCountry(country || g.OmegaMinistryViewCountry || (g.OmegaCabinetUI && g.OmegaCabinetUI.activeCountry) || g.currentActiveCountry || '');
     var root = stateRoot() || {};
     return {
       countryId: code || null,
@@ -43,6 +75,10 @@
     }
     var assets = Array.isArray(economy.productionAssets) ? economy.productionAssets : [];
     var projects = Array.isArray(industrial.projects) ? industrial.projects : (Array.isArray(economy.projects) ? economy.projects : []);
+    var researchProjects = Array.isArray(resource.technologyResearchProjects) ? resource.technologyResearchProjects : [];
+    var technologyTransfers = Array.isArray(resource.technologyTransfers) ? resource.technologyTransfers : [];
+    var technologyCapabilities = Array.isArray(resource.technologyCapabilities) ? resource.technologyCapabilities : [];
+    var technologyContracts = Array.isArray(industrial.technologyContracts) ? industrial.technologyContracts : [];
     var cycles = industrial.factoryProductionCycles && typeof industrial.factoryProductionCycles === 'object' ? industrial.factoryProductionCycles : {};
     var runs = industrial.factoryRuntime && typeof industrial.factoryRuntime === 'object' ? industrial.factoryRuntime : {};
     var profiles = catalog.factoryProfiles && typeof catalog.factoryProfiles === 'object' ? catalog.factoryProfiles : {};
@@ -88,6 +124,10 @@
       factoryCount: mappedAssets.length,
       factories: mappedAssets,
       projects: projects.slice(),
+      researchProjects: researchProjects.slice(),
+      technologyTransfers: technologyTransfers.slice(),
+      technologyCapabilities: technologyCapabilities.slice(),
+      technologyContracts: technologyContracts.slice(),
       cycles: cyclesList,
       recentFlowCount: flows.length,
       recentFlows: flows.slice(-20).reverse(),
@@ -174,6 +214,28 @@
       var rows = [];
       model.factories.forEach(function (factory) { factory.inputRows.forEach(function (item) { rows.push({ factory: factory.id || factory.name, resource: item.resourceId, quantity: item.quantity }); }); });
       content = rows.length ? '<div class="omega-v2-card"><div class="omega-v2-table-wrap"><table><thead><tr><th>Factory</th><th>Input resource</th><th>Recorded quantity</th></tr></thead><tbody>' + rows.map(function (row) { return '<tr><td>' + esc(row.factory) + '</td><td>' + esc(row.resource) + '</td><td>' + fmt(row.quantity) + '</td></tr>'; }).join('') + '</tbody></table></div><p class="omega-v2-source">Rows reflect per-factory input inventory only. They do not assert country-wide warehouse availability or a completed logistics receipt.</p></div>' : '<div class="omega-v2-empty">No per-factory input quantities are recorded. Shared warehouse stock is not inferred.</div>';
+    } else if (active === 'research') {
+      var researchRows = model.researchProjects.map(function (item) { return Object.assign({ recordType:'RESEARCH' }, item || {}); })
+        .concat(model.technologyTransfers.map(function (item) { return Object.assign({ recordType:'TECHNOLOGY TRANSFER' }, item || {}); }))
+        .concat(model.technologyContracts.map(function (item) { return Object.assign({ recordType:'TECHNOLOGY CONTRACT' }, item || {}); }));
+      var researchCards = researchRows.map(function (item) {
+        var title = item.technologyName || item.name || item.title || item.technologyId || item.projectId || item.id || item.contractId || 'Technology record';
+        var progress = num(item.progressPct !== undefined ? item.progressPct : item.progress);
+        var progressText = progress === null ? 'Not recorded' : fmt(Math.max(0, Math.min(100, progress)), '%');
+        var progressUnits = item.progressUnits !== undefined || item.requiredUnits !== undefined
+          ? fmt(item.progressUnits) + ' / ' + fmt(item.requiredUnits) : 'Not recorded';
+        var source = item.donorCountryName || item.donorCountryId || item.sourceCountryId || item.source || 'Not recorded';
+        return '<article class="omega-v2-card"><div class="omega-v2-card-header"><div><h3 class="omega-v2-card-title">' + esc(title) + '</h3><div class="omega-v2-card-meta">' + esc(item.recordType) + ' · ' + esc(item.technologyId || item.projectId || item.id || 'ID not recorded') + '</div></div><span class="omega-v2-status">' + esc(item.status || 'NOT_RECORDED') + '</span></div><div class="omega-v2-vehicle-stats"><div><span>Progress</span><strong>' + progressText + '</strong></div><div><span>Progress units</span><strong>' + progressUnits + '</strong></div><div><span>Research / transfer rate</span><strong>' + fmt(item.researchRate !== undefined ? item.researchRate : item.transferRate) + '</strong></div><div><span>Source / donor</span><strong>' + esc(source) + '</strong></div><div><span>Started turn</span><strong>' + fmt(item.startedTurn !== undefined ? item.startedTurn : item.requestedTurn) + '</strong></div><div><span>Completed turn</span><strong>' + fmt(item.completedTurn) + '</strong></div></div></article>';
+      }).join('');
+      var capabilityCards = model.technologyCapabilities.map(function (item) {
+        var title = item.technologyName || item.name || item.technologyId || item.capabilityId || item.id || 'Technology capability';
+        return '<article class="omega-v2-card"><div class="omega-v2-card-header"><h3 class="omega-v2-card-title">' + esc(title) + '</h3><span class="omega-v2-status">' + esc(item.status || item.sourceType || 'UNLOCKED') + '</span></div><div class="omega-v2-vehicle-stats"><div><span>Capability ID</span><strong>' + esc(item.capabilityId || item.technologyId || item.id || 'Not recorded') + '</strong></div><div><span>Source</span><strong>' + esc(item.sourceType || item.source || 'Not recorded') + '</strong></div><div><span>Completed turn</span><strong>' + fmt(item.completedTurn) + '</strong></div></div></article>';
+      }).join('');
+      content = '<section><h3 class="omega-v2-section-title">Research projects and technology transfers</h3>' +
+        (researchCards ? '<div class="omega-v2-grid">' + researchCards + '</div>' : '<div class="omega-v2-empty">No research or technology-transfer records are recorded for ' + esc(model.countryId || 'the selected country') + '.</div>') +
+        '<h3 class="omega-v2-section-title">Unlocked technology capabilities</h3>' +
+        (capabilityCards ? '<div class="omega-v2-grid">' + capabilityCards + '</div>' : '<div class="omega-v2-empty">No technology capabilities are recorded for this country.</div>') +
+        '<p class="omega-v2-source">Research, transfer and capability rows are read from this country’s authoritative resource state. Foreign-country project rows are not copied into this view.</p></section>';
     } else if (active === 'national-inventory') {
       var snapshot = model.nationalInventory;
       if (snapshot && snapshot.status === 'READY') {
@@ -203,6 +265,7 @@
       tabButton('production-lines', 'Production Lines', active) +
       tabButton('inventory', 'Input Inventory', active) +
       tabButton('national-inventory', 'National Inventory', active) +
+      tabButton('research', 'Research & Technology', active) +
       tabButton('projects', 'Build Projects', active) +
       '</div><div data-omega-v2-industry-content>' + content + '</div>' +
       '<p class="omega-v2-source">Factory and production records remain in this UI v2 screen. Retired console navigation is disabled.</p>' +

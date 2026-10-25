@@ -12,7 +12,7 @@ globalThis.dispatchEvent = event => { for (const fn of events.get(event.type) ||
 globalThis.updateGlobalResourceHUD = () => {};
 globalThis.Omega = {};
 function setup(treasury = 10000000) {
-  globalThis.Game = { countryId: 'AAA', state: {
+  globalThis.Game = { playerCountryId: 'AAA', countryId: 'AAA', state: {
     economy: { AAA: { treasury } },
     population: { AAA: { population: 1000000 } },
     simulation: { turn: 0, simulationTimeMs: 0 }
@@ -188,7 +188,7 @@ test('finance spending uses the finance-owned transaction when OMEGA interop is 
     }
   };
   const world = {
-    Game: { state, countryId: 'AAA' },
+    Game: { state, playerCountryId: 'AAA', countryId: 'AAA' },
     CountryIOS: { activeCountry: 'AAA' },
     Omega: { MinistryInteroperability: mesh },
     CustomEvent: class CustomEvent { constructor(type, init = {}) { this.type = type; this.detail = init.detail || null; } },
@@ -416,6 +416,7 @@ test('world fleet registry includes every baseline country and ties vehicle orde
   const rows = baselineData.countries;
   setup(1000000000);
   globalThis.Game.countryId = 'BD';
+  globalThis.Game.playerCountryId = 'BD';
   globalThis.CountryIOS.activeCountry = 'BD';
   globalThis.Game.state.economy.BD = { treasury: 1000000000 };
   globalThis.Game.state.population.BD = { population: rows.find(row => row.code === 'BD').population.value };

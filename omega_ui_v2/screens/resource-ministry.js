@@ -30,7 +30,37 @@
   }
 
   function countryId(row) {
-    return key(row && (row.countryId || row.countryCode || row.identity && row.identity.countryIso3 || row.sourceSiteRecord && row.sourceSiteRecord.countryCode) || '');
+    var value = key(row && (row.countryId || row.countryCode || row.identity && row.identity.countryIso3 || row.sourceSiteRecord && row.sourceSiteRecord.countryCode) || '');
+    if (!value || /^[A-Z]{3}$/.test(value)) return value;
+    return selectedCountryKey(value);
+  }
+
+  function selectedCountryKey(value) {
+    var requested = key(value);
+    if (!requested) return '';
+    // Map/legacy ministry controls may pass a display name (for example BANGLADESH),
+    // while authoritative mine/site records use ISO3 (BGD). Resolve the identity once
+    // before filtering so a valid country never gets an empty resource screen.
+    var runtime = g.OmegaCountryRuntimeData || (g.Omega && g.Omega.CountryRuntimeData);
+    if (runtime && typeof runtime.resolveCountry === 'function') {
+      try {
+        var profile = runtime.resolveCountry(value);
+        // Country Runtime countryCode is ISO2 (BD), while resource registries use ISO3 (BGD).
+        // Prefer explicit alpha-3 identity keys before the shorter countryCode fallback.
+        var resolved = key(profile && (profile.iso3 || profile.alpha3 || profile.cca3 ||
+          profile.identity && profile.identity.countryIso3 || profile.countryId ||
+          profile.countryCode || profile.identity && profile.identity.countryCode));
+        if (resolved) return resolved;
+      } catch (_) {}
+    }
+    var game = g.Game;
+    if (game && typeof game.getCountryId === 'function') {
+      try {
+        var resolvedId = key(game.getCountryId(value));
+        if (resolvedId) return resolvedId;
+      } catch (_) {}
+    }
+    return requested;
   }
 
   function resourceId(row) {
@@ -51,12 +81,26 @@
     });
   }
 
-  function sourceCatalogs() {
+  function sourceCatalogs(selectedCountry) {
     var rows = [];
+    var countryFilter = selectedCountryKey(selectedCountry);
+    var appendSelectedCountry = function (sites) {
+      if (!Array.isArray(sites)) return;
+      // Filter before concatenating/deduping/sorting the global registry. Only the
+      // selected nation's rows should be walked when opening this ministry.
+      if (countryFilter) {
+        for (var i = 0; i < sites.length; i += 1) {
+          if (countryId(sites[i]) === countryFilter) rows.push(sites[i]);
+        }
+      } else {
+        // A player without a selected nation must not trigger a world-wide site view.
+        return;
+      }
+    };
     var canonical = g.OmegaResourceSiteCanonicalCatalogData || (g.Omega && g.Omega.ResourceSiteCanonicalCatalogData);
     var binding = g.OmegaIndividualResourceSiteBinding || (g.Omega && g.Omega.IndividualResourceSiteBinding);
-    if (canonical && Array.isArray(canonical.sites)) rows = rows.concat(canonical.sites);
-    if (binding && Array.isArray(binding.sites)) rows = rows.concat(binding.sites);
+    if (canonical && Array.isArray(canonical.sites)) appendSelectedCountry(canonical.sites);
+    if (binding && Array.isArray(binding.sites)) appendSelectedCountry(binding.sites);
     return uniqueSiteRows(rows);
   }
 
@@ -76,9 +120,16 @@
 
   function buildViewModel(options) {
     options = options || {};
-    var rows = Array.isArray(options.sites) ? uniqueSiteRows(options.sites) : sourceCatalogs();
-    var selectedCountry = key(options.countryId || '');
-    if (selectedCountry) rows = rows.filter(function (row) { return countryId(row) === selectedCountry; });
+    var selectedCountry = selectedCountryKey(options.countryId || '');
+    var rows;
+    if (Array.isArray(options.sites)) {
+      var providedRows = options.sites;
+      rows = selectedCountry
+        ? uniqueSiteRows(providedRows.filter(function (row) { return countryId(row) === selectedCountry; }))
+        : [];
+    } else {
+      rows = sourceCatalogs(selectedCountry);
+    }
     var items = rows.map(function (row) {
       var reserve = observedMetric(row.quantitative && row.quantitative.reserve || row.reserve);
       var production = observedMetric(row.quantitative && row.quantitative.production || row.production);

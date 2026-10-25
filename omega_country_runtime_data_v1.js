@@ -126,7 +126,34 @@
   }
   function getCities(value) {
     const p=resolveCountry(value), row=p&&state.cities.get(p.countryCode);
-    return row&&Array.isArray(row.cities)?row.cities.map(item=>Object.assign({},item)):[];
+    if(!row||typeof row!=='object')return [];
+
+    // The canonical cities.json schema stores city locations in grouped fields
+    // (capital/economic/military/secret), not necessarily in a flat cities[] list.
+    // Return one country-scoped, deduplicated list without loading other countries.
+    const byName=new Map();
+    const add=(items,role)=>{
+      const list=Array.isArray(items)?items:(items&&typeof items==='object'?[items]:[]);
+      for(const item of list){
+        if(!item||typeof item!=='object')continue;
+        const name=s(item.name||item.cityName||item.city||item.label);
+        if(!name)continue;
+        const key=norm(name).toLowerCase();
+        const prior=byName.get(key);
+        const normalized=Object.assign({},prior||{},item,{
+          name,
+          role:item.role||role,
+          isCapital:item.isCapital===true||role==='capital'||String(item.role||'').toLowerCase()==='capital'
+        });
+        byName.set(key,normalized);
+      }
+    };
+    add(row.capital,'capital');
+    add(row.economic,'economic');
+    add(row.military,'military');
+    add(row.secret,'secret');
+    add(row.cities,'city');
+    return Array.from(byName.values());
   }
   function getCapital(value) {
     const p=resolveCountry(value), row=p&&state.cities.get(p.countryCode);

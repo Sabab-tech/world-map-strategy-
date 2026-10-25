@@ -42,16 +42,35 @@
     if (!item || !/^assets\/ui-photos\/[a-z0-9-]+\.webp$/.test(String(item.path || ''))) return '';
     return '<figure class="omega-v2-photo"><img src="' + esc(item.path) + '" loading="lazy" decoding="async" alt="' + esc(alt || item.caption || 'Reference photo') + '"><figcaption>' + esc(item.caption || 'Reference image') + '<small>Reference image, not evidence of current operations</small></figcaption></figure>';
   }
+  function countryBaselineReady(state) {
+    return !!(state && Number(state.baselineVersion) >= 1 && state.baselineSource);
+  }
+  function countryIso3(value) {
+    const resolvers=[g.OmegaCountryRuntimeData,g.OmegaCountryDataGateway,g.OmegaCanonicalIdentityRegistry,g.OmegaCountrySemanticBridge,g.Omega&&g.Omega.CanonicalIdentity];
+    for (var i=0;i<resolvers.length;i++) {
+      var resolver=resolvers[i];
+      if (!resolver || typeof resolver.resolveCountry!=='function') continue;
+      try {
+        var row=resolver.resolveCountry(value);
+        var id=row&&(row.iso3||row.iso3Code||row.countryIso3||row.alpha3||row.cca3||row.countryCode||row.id);
+        if (id) return String(id).trim().toUpperCase();
+      } catch (_) {}
+    }
+    return String(value||'').trim().toUpperCase();
+  }
   function stateSummary(state, fleet) {
     state = state || {};
-    var vehicles = state.vehiclesOwned && typeof state.vehiclesOwned === 'object' ? state.vehiclesOwned : null;
+    var ready=countryBaselineReady(state);
+    var vehicles = ready && state.vehiclesOwned && typeof state.vehiclesOwned === 'object' ? state.vehiclesOwned : null;
     var owned = vehicles ? Object.keys(vehicles).reduce(function (sum, key) { var value = num(vehicles[key]); return sum + (value === null ? 0 : Math.max(0, value)); }, 0) : null;
-    var incidents = Array.isArray(state.incidentLedger) ? state.incidentLedger : null;
+    var incidents = ready && Array.isArray(state.incidentLedger) ? state.incidentLedger : null;
     return [
-      { label:'Police personnel', value:fmt(state.policeCount), source:'Current Home Ministry state' },
-      { label:'Owned vehicle units', value:owned === null ? (fleet && num(fleet.ownedUnits) !== null ? fmt(fleet.ownedUnits) : 'Not recorded') : fmt(owned), source:'Country fleet state' },
-      { label:'Recorded incidents', value:incidents ? fmt(incidents.length) : 'Not recorded', source:'Incident ledger' },
-      { label:'Highest unlocked vehicle tier', value:fmt(state.unlockedVehicleLevel), source:'Vehicle unlock state' }
+      { label:'Police personnel', value:ready?fmt(state.policeCount):'Not recorded', source:ready?'Country Home Ministry state':'Country baseline loading status' },
+      { label:'Operational efficiency', value:ready?String(Math.round(Number(state.policeEfficiency)||0))+'%':'Not recorded', source:ready?(state.openingConditionModel||'Country Home Ministry simulation state'):'Country baseline loading status' },
+      { label:'Public trust', value:ready?String(Math.round(Number(state.policeTrust)||0))+'%':'Not recorded', source:ready?(state.openingConditionModel||'Country Home Ministry simulation state'):'Country baseline loading status' },
+      { label:'Owned vehicle units', value:!ready?'Not recorded':(owned === null ? (fleet && num(fleet.ownedUnits) !== null ? fmt(fleet.ownedUnits) : 'Not recorded') : fmt(owned)), source:'Country fleet state' },
+      { label:'Recorded incidents', value:ready&&incidents ? fmt(incidents.length) : 'Not recorded', source:'Country incident ledger' },
+      { label:'Highest unlocked vehicle tier', value:ready?fmt(state.unlockedVehicleLevel):'Not recorded', source:'Country vehicle unlock state' }
     ];
   }
   function tabBar(active) {
@@ -61,8 +80,9 @@
   }
   function dashboardHtml(state, fleet, country) {
     var summary = stateSummary(state, fleet);
-    return '<div class="omega-v2-home-dashboard">' +
-      getPhoto('bangladesh-police-headquarters', 'Police headquarters reference photo') +
+    var baselineNotice=countryBaselineReady(state)?'':'<div class="omega-v2-note" role="status">Country-specific Home Ministry baseline is still loading or unavailable. Default placeholder numbers are withheld.</div>';
+    return '<div class="omega-v2-home-dashboard">' + baselineNotice +
+      (countryIso3(country)==='BGD' ? getPhoto('bangladesh-police-headquarters', 'Bangladesh police headquarters reference photo') : '') +
       '<div class="omega-v2-kpis">' + summary.map(function (item) { return '<div class="omega-v2-kpi"><span>' + esc(item.label) + '</span><strong>' + esc(item.value) + '</strong><small>' + esc(item.source) + '</small></div>'; }).join('') + '</div>' +
       '<h2 class="omega-v2-section-title">Operational sections</h2><div class="omega-v2-grid">' +
       [
@@ -76,13 +96,14 @@
   }
   function personnelHtml(state, country, quote, outcome, canRecruit) {
     state = state || {};
-    var payroll = quote && quote.ok ? money(quote.addedDailyPayrollUsd) : 'Unavailable';
-    var cost = quote && quote.ok ? money(quote.upfrontCostUsd) : 'Unavailable';
-    var forecast = quote && quote.ok && quote.additionalIncidentsAvoidedPerYear !== null ? fmt(quote.additionalIncidentsAvoidedPerYear) : 'Not recorded';
+    var ready=countryBaselineReady(state);
+    var payroll = ready && quote && quote.ok ? money(quote.addedDailyPayrollUsd) : 'Unavailable';
+    var cost = ready && quote && quote.ok ? money(quote.upfrontCostUsd) : 'Unavailable';
+    var forecast = ready && quote && quote.ok && quote.additionalIncidentsAvoidedPerYear !== null ? fmt(quote.additionalIncidentsAvoidedPerYear) : 'Not recorded';
     var message = outcome ? '<div class="omega-v2-note" role="status">' + esc(outcome) + '</div>' : '';
-    var quoteWarning = quote && !quote.ok ? '<div class="omega-v2-note">Recruitment estimate is blocked or unavailable (' + esc(quote.code || quote.reason || 'NO_QUOTE') + '). The official recruitment runtime will validate the action; no costs are guessed.</div>' : '';
+    var quoteWarning = !ready ? '<div class="omega-v2-note" role="status">Country-specific Home Ministry data is not ready. Recruitment is disabled until the country baseline loads.</div>' : (quote && !quote.ok ? '<div class="omega-v2-note">Recruitment estimate is blocked or unavailable (' + esc(quote.code || quote.reason || 'NO_QUOTE') + '). The official recruitment runtime will validate the action; no costs are guessed.</div>' : '');
     return '<div class="omega-v2-home-personnel">' + message + '<h2 class="omega-v2-section-title">Current personnel</h2>' +
-      '<div class="omega-v2-kpis"><div class="omega-v2-kpi"><span>Police officers</span><strong>' + fmt(state.policeCount) + '</strong></div><div class="omega-v2-kpi"><span>Special agents</span><strong>' + fmt(state.specialAgents) + '</strong></div><div class="omega-v2-kpi"><span>Recruitment fee per officer</span><strong>' + money(state.recruitmentFeePerOfficerUsd) + '</strong></div><div class="omega-v2-kpi"><span>Daily salary per officer</span><strong>' + money(state.dailySalaryPerOfficerUsd) + '</strong></div></div>' +
+      '<div class="omega-v2-kpis"><div class="omega-v2-kpi"><span>Police officers</span><strong>' + (ready?fmt(state.policeCount):'Not recorded') + '</strong></div><div class="omega-v2-kpi"><span>Operational efficiency</span><strong>' + (ready?String(Math.round(Number(state.policeEfficiency)||0))+'%':'Not recorded') + '</strong></div><div class="omega-v2-kpi"><span>Public trust</span><strong>' + (ready?String(Math.round(Number(state.policeTrust)||0))+'%':'Not recorded') + '</strong></div><div class="omega-v2-kpi"><span>Special agents</span><strong>' + (ready?fmt(state.specialAgents):'Not recorded') + '</strong></div><div class="omega-v2-kpi"><span>Recruitment fee per officer</span><strong>' + (ready?money(state.recruitmentFeePerOfficerUsd):'Not recorded') + '</strong></div><div class="omega-v2-kpi"><span>Daily salary per officer</span><strong>' + (ready?money(state.dailySalaryPerOfficerUsd):'Not recorded') + '</strong></div></div>' +
       '<article class="omega-v2-card"><h2 class="omega-v2-title">Recruit Police</h2><p class="omega-v2-card-meta">Recruitment is executed through the existing Home Ministry engine. Recruitment costs, payroll, country rules and treasury checks remain authoritative.</p>' +
       '<label class="omega-v2-field-label" for="omega-v2-police-recruit-quantity">Number of officers</label><input class="omega-v2-number-input" id="omega-v2-police-recruit-quantity" type="number" min="1" max="100000" step="1" value="1" inputmode="numeric" data-omega-v2-recruit-quantity>' +
       '<div class="omega-v2-vehicle-stats"><div><span>Upfront cost estimate</span><strong data-omega-v2-recruit-cost>' + cost + '</strong></div><div><span>Added daily payroll estimate</span><strong data-omega-v2-recruit-payroll>' + payroll + '</strong></div><div><span>Projected annual incidents avoided</span><strong data-omega-v2-recruit-forecast>' + forecast + '</strong></div></div>' +
@@ -90,6 +111,7 @@
       '<p class="omega-v2-source">A successful result is shown only after the authoritative engine returns an accepted mutation. After recruitment, staff still need valid training/availability before deployment.</p></article></div>';
   }
   function patrolsHtml(state, options) {
+    if (!countryBaselineReady(state)) return '<h2 class="omega-v2-section-title">Recorded patrol plan</h2><div class="omega-v2-empty" role="status">Country-specific patrol data has not loaded. Generic patrol defaults are not displayed.</div>';
     var plan = state && state.patrolPlan && typeof state.patrolPlan === 'object' ? state.patrolPlan : null;
     var entries = plan ? Object.keys(plan).map(function (key) { return '<div class="omega-v2-material-row"><span>' + esc(key.replace(/[_-]+/g, ' ')) + '</span><strong>' + fmt(plan[key]) + '%</strong></div>'; }).join('') : '';
     return '<article class="omega-v2-card"><h2 class="omega-v2-section-title">Recorded patrol plan</h2>' +
@@ -98,6 +120,7 @@
       '<div class="omega-v2-actions"><button type="button" class="omega-v2-button omega-v2-button--primary" data-omega-v2-home-tab="personnel">Review police personnel</button></div></article>';
   }
   function facilitiesHtml(state) {
+    if (!countryBaselineReady(state)) return '<h2 class="omega-v2-section-title">Facilities &amp; Equipment</h2><div class="omega-v2-empty" role="status">Country-specific facility data has not loaded. Generic facility levels are not displayed.</div>';
     var facilities = state && state.facilityLevels && typeof state.facilityLevels === 'object' ? state.facilityLevels : null;
     var rows = facilities ? Object.keys(facilities).map(function (key) { return '<div class="omega-v2-kpi"><span>' + esc(key.replace(/[_-]+/g, ' ')) + '</span><strong>' + fmt(facilities[key]) + '</strong></div>'; }).join('') : '';
     return '<h2 class="omega-v2-section-title">Facilities & Equipment</h2>' +
@@ -105,6 +128,7 @@
       '<div class="omega-v2-kpis"><div class="omega-v2-kpi"><span>Training quality level</span><strong>' + fmt(state && state.trainingQualityLevel) + '</strong></div><div class="omega-v2-kpi"><span>Recruitment level</span><strong>' + fmt(state && state.policeRecruitmentLevel) + '</strong></div></div>';
   }
   function incidentsHtml(state) {
+    if (!countryBaselineReady(state)) return '<h2 class="omega-v2-section-title">Recorded incidents</h2><div class="omega-v2-empty" role="status">Country incident state is not ready; no generic values are shown.</div>';
     var rows = state && Array.isArray(state.incidentLedger) ? state.incidentLedger.slice().reverse().slice(0, 30) : [];
     return '<h2 class="omega-v2-section-title">Recorded incidents</h2>' +
       (rows.length ? '<div class="omega-v2-grid">' + rows.map(function (item) {
@@ -175,11 +199,12 @@
     var fleet = fleetSnapshot(country);
     var active = options.tab || root.__omegaV2HomeTab || 'dashboard';
     var quoteQuantity = 1;
-    var quote = estimateRecruitment(quoteQuantity, country);
-    var canRecruit = !!(e && typeof e.recruitPolice === 'function' && country);
+    var baselineReady=countryBaselineReady(state);
+    var quote = baselineReady ? estimateRecruitment(quoteQuantity, country) : { ok:false, code:'COUNTRY_BASELINE_NOT_READY' };
+    var canRecruit = !!(e && typeof e.recruitPolice === 'function' && country && baselineReady);
     var content;
     if (active === 'personnel') content = personnelHtml(state, country, quote, root.__omegaV2RecruitOutcome || '', canRecruit);
-    else if (active === 'fleet') content = '<div data-omega-v2-home-fleet-root></div>';
+    else if (active === 'fleet') content = baselineReady ? '<div data-omega-v2-home-fleet-root></div>' : '<div class="omega-v2-empty" role="status">Country-specific fleet baseline is loading or unavailable. No shared fleet data is displayed.</div>';
     else if (active === 'patrols') content = patrolsHtml(state, options);
     else if (active === 'facilities') content = facilitiesHtml(state);
     else if (active === 'incidents') content = incidentsHtml(state);
@@ -188,7 +213,7 @@
 
     root.classList.add('omega-v2-screen');
     root.innerHTML = '<section class="omega-v2-shell omega-v2-home-affairs">' +
-      '<header class="omega-v2-heading"><div><div class="omega-v2-eyebrow">CIVIL ADMINISTRATION · HOME AFFAIRS</div><h1 class="omega-v2-title">Public Safety & Police</h1><p class="omega-v2-subtitle">Country ' + esc(country || 'Not recorded') + ' · canonical personnel, fleet and incident state</p></div><span class="omega-v2-status" data-state="' + (e ? 'operational' : 'unknown') + '">' + (e ? 'POLICE RUNTIME CONNECTED' : 'POLICE RUNTIME UNAVAILABLE') + '</span></header>' +
+      '<header class="omega-v2-heading"><div><div class="omega-v2-eyebrow">CIVIL ADMINISTRATION · HOME AFFAIRS</div><h1 class="omega-v2-title">Public Safety & Police</h1><p class="omega-v2-subtitle">Country ' + esc(country || 'Not recorded') + ' · canonical personnel, fleet and incident state</p></div><span class="omega-v2-status" data-state="' + (baselineReady ? 'operational' : 'unknown') + '">' + (!e ? 'POLICE RUNTIME UNAVAILABLE' : baselineReady ? 'COUNTRY BASELINE READY' : 'COUNTRY BASELINE LOADING') + '</span></header>' +
       tabBar(active) + '<div data-omega-v2-home-content>' + content + '</div>' +
       '<p class="omega-v2-source">Police personnel, fleet and patrol records are managed within this UI v2 screen. The retired console is disconnected.</p></section>';
 

@@ -286,6 +286,29 @@ function countryIds(){
   try{const profiles=g.ResourceMinistryEngine?.countryProfiles||{};Object.keys(profiles).forEach(c=>out.add(canonicalCountry(c)));}catch(_){}
   return [...out].filter(Boolean).sort();
 }
+function playerSimulationCountryId(){
+  const sim=g.Omega?.Simulation,root=state()||{};
+  const session=root.simulation?.session||sim?.world?.state?.simulation?.session||{};
+  let direct=null;
+  try{if(typeof sim?.getPlayerCountryId==='function')direct=sim.getPlayerCountryId();}catch(_){}
+  const candidates=[session.playerCountryId,direct,root.simulation?.playerCountryId,root.playerCountryId,root.playerCountryCode,
+    g.Game?.playerCountryId,g.Game?.playerCountryCode,g.Game?.playerCountry,g.OMEGA_PLAYER_COUNTRY_ID];
+  for(const value of candidates){
+    const raw=value&&typeof value==='object'?(value.iso3||value.iso3Code||value.countryCode||value.countryId||value.code||value.id||value.name):value;
+    const cid=canonicalCountry(raw);
+    if(cid&&cid!=='GLOBAL'&&cid!=='WORLD'&&/^[A-Z0-9]{2,3}$/.test(cid))return cid;
+  }
+  return null;
+}
+function processPlayerCountryForTurn(){
+  const c=playerSimulationCountryId();
+  if(!c)return{status:'SKIPPED',reason:'PLAYER_COUNTRY_NOT_SELECTED',turn:turn(),countryCount:0,results:[]};
+  const r=state()?.resource?.[c]||{};
+  const active=(Array.isArray(r.technologyResearchProjects)&&r.technologyResearchProjects.some(x=>['REQUESTED','IN_PROGRESS'].includes(String(x?.status||'').toUpperCase())))||
+    (Array.isArray(r.technologyTransfers)&&r.technologyTransfers.some(x=>['REQUESTED','IN_PROGRESS'].includes(String(x?.status||'').toUpperCase())));
+  if(!active)return{status:'COMPLETED',turn:turn(),countryCount:0,results:[]};
+  return{status:'COMPLETED',turn:turn(),countryCount:1,results:[{countryId:c,result:processCountry(c)}]};
+}
 function processAll(){
   const s=state(),active=countryIds().filter(c=>{
     const r=s.resource?.[c]||{};
@@ -313,7 +336,7 @@ if(typeof g.addEventListener==='function'){
   g.addEventListener('OMEGA_RESOURCE_TECHNOLOGY_IMPORT_REQUESTED',e=>{const d=e?.detail?.payload||e?.detail||e||{};const c=d?.countryId||e?.countryId;if(c)dispatch('OMEGA_RESOURCE_TECHNOLOGY_IMPORT',c,d);});
   g.addEventListener('OMEGA_READY',()=>{register();loadCatalog().catch(()=>{});});
   g.addEventListener('OMEGA_GAME_SESSION_STARTED',()=>{register();loadCatalog().catch(()=>{});});
-  g.addEventListener('OMEGA_SIMULATION_TURN_COMMITTED',()=>processAll());
+  g.addEventListener('OMEGA_SIMULATION_TURN_COMMITTED',processPlayerCountryForTurn);
 }
 register();
 })(typeof window!=='undefined'?window:globalThis);

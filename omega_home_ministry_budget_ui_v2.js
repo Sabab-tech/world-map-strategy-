@@ -21,7 +21,7 @@
     try { if (e && e.getCurrentCountryId) return e.getCurrentCountryId(); } catch (_) {}
     var sim = g.Omega && g.Omega.Simulation;
     return (sim && sim.getPlayerCountryId && sim.getPlayerCountryId()) ||
-      (g.CountryIOS && g.CountryIOS.activeCountry) || (g.Game && (g.Game.currentActiveCountry || g.Game.playerCountry || g.Game.countryId)) || 'USA';
+      (g.CountryIOS && g.CountryIOS.activeCountry) || (g.Game && (g.Game.currentActiveCountry || g.Game.playerCountry || g.Game.countryId)) || '';
   }
   function esc(v) { return String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
   function money(v) {

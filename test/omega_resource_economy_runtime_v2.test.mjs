@@ -158,7 +158,7 @@ function createContext(){
     addEventListener:events.addEventListener.bind(events),
     removeEventListener:events.removeEventListener.bind(events),
     dispatchEvent:events.dispatchEvent.bind(events),
-    Game:{state:worldState},
+    Game:{state:worldState,playerCountryId:'BGD'},
     gameState:worldState,
     OmegaCanonicalIdentityRegistry:countryRegistry,
     CountryIOS:{

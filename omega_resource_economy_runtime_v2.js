@@ -77,6 +77,21 @@
     }
     return out.sort();
   }
+  function playerSimulationCountryId(){
+    var sim=g.Omega&&g.Omega.Simulation,root=state()||{};
+    var session=root.simulation&&root.simulation.session||sim&&sim.world&&sim.world.state&&sim.world.state.simulation&&sim.world.state.simulation.session||{};
+    var direct=null;
+    try{if(sim&&typeof sim.getPlayerCountryId==='function')direct=sim.getPlayerCountryId();}catch(_){}
+    var candidates=[session.playerCountryId,direct,root.simulation&&root.simulation.playerCountryId,root.playerCountryId,root.playerCountryCode,
+      g.Game&&(g.Game.playerCountryId||g.Game.playerCountryCode||g.Game.playerCountry),g.OMEGA_PLAYER_COUNTRY_ID];
+    for(var i=0;i<candidates.length;i++){
+      var value=candidates[i],raw=value&&typeof value==='object'?(value.iso3||value.iso3Code||value.countryCode||value.countryId||value.code||value.id||value.name):value;
+      var cid=canonical(raw);
+      if(cid&&cid!=='GLOBAL'&&cid!=='WORLD'&&/^[A-Z0-9]{2,3}$/.test(cid))return cid;
+    }
+    return null;
+  }
+
   function bucket(c,domain){
     var root=state()[domain];if(!root||typeof root!=='object')return null;
     var cid=canonical(c);
@@ -1005,58 +1020,67 @@
   function diagnostics(){var cs=countries(),mine=0,active=0,blocked=0;cs.forEach(function(c){var d=dashboard(c);mine+=d.mines.total;active+=d.mines.active;blocked+=d.mines.blocked;});return{version:VERSION,countryCount:cs.length,mineCount:mine,activeMines:active,blockedMines:blocked,allMineRowsUncapped:true,handlersReady:handlerInstallReport.ready,commandHandlersInstalled:handlerInstallReport.registered,commandHandlerCount:handlerInstallReport.total,handlerInstallErrors:clone(handlerInstallReport.errors),actionRegistrationWarnings:clone(handlerInstallReport.actionRegistrationWarnings),rulesLoaded:!!g.__OmegaResourceEconomyRules};}
 
   function runTurn(){
+    var cid=playerSimulationCountryId();
+    if(!cid)return Promise.resolve({status:'SKIPPED',reason:'PLAYER_COUNTRY_NOT_SELECTED',turn:turn()});
     return loadRules().then(async function(){
       installHandlers();installEvents();
-      if(g.OmegaResourceNationalDemandRuntime&&typeof g.OmegaResourceNationalDemandRuntime.prepare==='function'){
-        try{await g.OmegaResourceNationalDemandRuntime.prepare();}
-        catch(error){emit('OMEGA_RESOURCE_DEMAND_RUNTIME_HEALTH','GLOBAL',{status:'DEGRADED',reason:String(error&&error.message||error),turn:turn()},'resource-economy');}
-      }
-      var extractionResult=null;
-      if(g.OmegaResourceEndowmentRuntime&&typeof g.OmegaResourceEndowmentRuntime.extractAll==='function'){
+      if(g.OmegaResourceNationalDemandRuntime){
         try{
-          extractionResult=await g.OmegaResourceEndowmentRuntime.extractAll();
-          if(extractionResult&&['FAILED','WAITING_DEPENDENCIES'].includes(String(extractionResult.status||'').toUpperCase())){
-            emit('OMEGA_RESOURCE_ECONOMY_RUNTIME_HEALTH','GLOBAL',{
-              status:'DEGRADED',
-              reason:extractionResult.reason||'RESOURCE_EXTRACTION_FAILED',
-              turn:turn()
-            },'resource-economy');
+          if(typeof g.OmegaResourceNationalDemandRuntime.prepareCountry==='function')await g.OmegaResourceNationalDemandRuntime.prepareCountry(cid);
+          else if(!g.__OmegaResourceNationalDemandPrepared&&typeof g.OmegaResourceNationalDemandRuntime.prepare==='function'){
+            await g.OmegaResourceNationalDemandRuntime.prepare();
+            g.__OmegaResourceNationalDemandPrepared=true;
+          }
+        }catch(error){
+          emit('OMEGA_RESOURCE_DEMAND_RUNTIME_HEALTH',cid,{status:'DEGRADED',reason:String(error&&error.message||error),turn:turn()},'resource-economy');
+        }
+      }
+      var extractionResult={status:'NOT_AVAILABLE',reason:'COUNTRY_SCOPED_EXTRACTION_UNAVAILABLE'};
+      var endowment=g.OmegaResourceEndowmentRuntime||g.Omega&&g.Omega.ResourceEndowmentRuntime;
+      if(endowment&&typeof endowment.extractCountry==='function'){
+        try{
+          var initialized=typeof endowment.initialize==='function'?await endowment.initialize():null;
+          if(initialized&&['FAILED','WAITING_DEPENDENCIES'].includes(String(initialized.status||'').toUpperCase())){
+            extractionResult={status:'FAILED',reason:initialized.reason||'RESOURCE_ENDOWMENT_NOT_READY',detail:initialized};
+          }else{
+            var selectedResourceState=bucket(cid,'resource')||{};
+            if((!Array.isArray(selectedResourceState.mineSiteReferences)||!selectedResourceState.mineSiteControllers)&&typeof endowment.hydrateCountry==='function'){
+              var hydration=await endowment.hydrateCountry(cid);
+              if(hydration&&hydration.status&&!['APPLIED','READY','COMPLETED'].includes(String(hydration.status).toUpperCase())){
+                extractionResult={status:'FAILED',reason:'PLAYER_COUNTRY_HYDRATION_FAILED',detail:hydration};
+              }
+            }
+            if(extractionResult.status!=='FAILED')extractionResult=await endowment.extractCountry(cid);
+          }
+          if(extractionResult&&['FAILED','BLOCKED','WAITING_DEPENDENCIES'].includes(String(extractionResult.status||'').toUpperCase())){
+            emit('OMEGA_RESOURCE_ECONOMY_RUNTIME_HEALTH',cid,{status:'DEGRADED',reason:extractionResult.reason||'RESOURCE_EXTRACTION_FAILED',turn:turn()},'resource-economy');
           }
         }catch(error){
           extractionResult={status:'FAILED',reason:String(error&&error.message||error)};
-          emit('OMEGA_RESOURCE_ECONOMY_RUNTIME_HEALTH','GLOBAL',{
-            status:'DEGRADED',
-            reason:extractionResult.reason,
-            turn:turn()
-          },'resource-economy');
+          emit('OMEGA_RESOURCE_ECONOMY_RUNTIME_HEALTH',cid,{status:'DEGRADED',reason:extractionResult.reason,turn:turn()},'resource-economy');
         }
       }
 
-      countries().forEach(function(c){
-        try{processCountry(c);}
-        catch(e){
-          emit('OMEGA_RESOURCE_ECONOMY_RUNTIME_HEALTH',c,{
-            status:'DEGRADED',
-            reason:String(e&&e.message||e)
-          },'resource-economy');
+      try{processCountry(cid);}
+      catch(error){
+        emit('OMEGA_RESOURCE_ECONOMY_RUNTIME_HEALTH',cid,{status:'DEGRADED',reason:String(error&&error.message||error),turn:turn()},'resource-economy');
+      }
+      // World market data may be read as a shared reference; state-changing trade,
+      // inventory and production ticks are invoked only for the player country.
+      if(g.OmegaGlobalMarket&&typeof g.OmegaGlobalMarket.rebuildCountry==='function'){
+        try{g.OmegaGlobalMarket.rebuildCountry(cid);}catch(_){}
+      }
+      if(g.OmegaGlobalTrade&&typeof g.OmegaGlobalTrade.processCountry==='function'){
+        try{g.OmegaGlobalTrade.processCountry(cid);}catch(_){}
+      }
+      var dashboardRow=dashboard(cid);
+      emit('OMEGA_RESOURCE_ECONOMY_RUNTIME_HEALTH',cid,dashboardRow.health,'resource-economy');
+      try{
+        if(typeof g.dispatchEvent==='function'&&typeof g.CustomEvent==='function'){
+          g.dispatchEvent(new g.CustomEvent('OMEGA_RESOURCE_ECONOMY_UPDATED',{detail:dashboardRow}));
         }
-      });
-      if(g.OmegaGlobalMarket&&typeof g.OmegaGlobalMarket.rebuild==='function'){
-        try{g.OmegaGlobalMarket.rebuild();}catch(_){}
-      }
-      if(g.OmegaGlobalTrade&&typeof g.OmegaGlobalTrade.processAll==='function'){
-        try{g.OmegaGlobalTrade.processAll();}catch(_){}
-      }
-      countries().forEach(function(c){
-        var d=dashboard(c);
-        emit('OMEGA_RESOURCE_ECONOMY_RUNTIME_HEALTH',c,d.health,'resource-economy');
-        try{
-          if(typeof g.dispatchEvent==='function'&&typeof g.CustomEvent==='function'){
-            g.dispatchEvent(new g.CustomEvent('OMEGA_RESOURCE_ECONOMY_UPDATED',{detail:d}));
-          }
-        }catch(_){}
-      });
-      return{status:'COMPLETED',turn:turn(),extraction:extractionResult};
+      }catch(_){}
+      return{status:'COMPLETED',turn:turn(),countryId:cid,extraction:extractionResult};
     });
   }
   var uiOriginal=null;
@@ -1122,7 +1146,11 @@
     if(typeof document!=='undefined'&&(document.readyState==='interactive'||document.readyState==='complete'))ui();
     else if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',ui,{once:true});
     if(typeof g.addEventListener==='function'){
-      g.addEventListener('OMEGA_SIMULATION_TURN_COMMITTED',function(){var t=turn();if(g.__OmegaResourceEconomyV2Turn===t)return;g.__OmegaResourceEconomyV2Turn=t;return runTurn();});
+      g.addEventListener('OMEGA_SIMULATION_TURN_COMMITTED',function(){
+        var cid=playerSimulationCountryId();if(!cid)return;
+        var token=String(turn())+':'+cid;if(g.__OmegaResourceEconomyV2Turn===token)return;
+        g.__OmegaResourceEconomyV2Turn=token;return runTurn();
+      });
       g.addEventListener('OMEGA_READY',function(){installHandlers();installEvents();ui();refreshUI();});
       g.addEventListener('OMEGA_GAME_SESSION_STARTED',function(){installHandlers();installEvents();ui();refreshUI();});
       g.addEventListener('RESOURCE_STATE_UPDATED',function(){ui();refreshUI();});

@@ -26,6 +26,37 @@
       else if (!active && typeof classes.remove === 'function') classes.remove('omega-ui-v2-cabinet-active');
     }
   }
+  function countryProfile(value) {
+    var runtime = g.OmegaCountryRuntimeData || (g.Omega && g.Omega.CountryRuntimeData);
+    if (runtime && typeof runtime.resolveCountry === 'function') {
+      try { var profile = runtime.resolveCountry(value); if (profile) return profile; } catch (_) {}
+    }
+    var gateway = g.OmegaCountryDataGateway || (g.Omega && g.Omega.CountryDataGateway);
+    if (gateway && typeof gateway.resolveCountry === 'function') {
+      try { var resolved = gateway.resolveCountry(value); if (resolved) return resolved; } catch (_) {}
+    }
+    return null;
+  }
+  function canonicalCountry(value) {
+    var raw = String(value == null ? '' : value).trim();
+    if (!raw) return '';
+    var profile = countryProfile(raw);
+    var identity = profile && (profile.identity || profile.country || profile);
+    var code = String(profile && (profile.iso3 || profile.alpha3 || profile.cca3 || profile.countryIso3) ||
+      identity && (identity.iso3 || identity.alpha3 || identity.cca3 || identity.countryIso3) || '').trim().toUpperCase();
+    if (/^[A-Z]{3}$/.test(code)) return code;
+    try {
+      var game = g.Game;
+      var mapped = game && typeof game.getCountryId === 'function' ? String(game.getCountryId(raw) || '').trim().toUpperCase() : '';
+      if (/^[A-Z]{3}$/.test(mapped)) return mapped;
+      var mappedProfile = mapped ? countryProfile(mapped) : null;
+      var mappedIdentity = mappedProfile && (mappedProfile.identity || mappedProfile.country || mappedProfile);
+      var mappedIso3 = String(mappedProfile && (mappedProfile.iso3 || mappedProfile.alpha3 || mappedProfile.cca3) ||
+        mappedIdentity && (mappedIdentity.iso3 || mappedIdentity.alpha3 || mappedIdentity.cca3 || mappedIdentity.countryIso3) || '').trim().toUpperCase();
+      if (/^[A-Z]{3}$/.test(mappedIso3)) return mappedIso3;
+    } catch (_) {}
+    return raw.toUpperCase();
+  }
   function selectedCountry() {
     var values = [
       g.OmegaMinistryViewCountry,
@@ -38,7 +69,7 @@
       g.playerCountry
     ];
     for (var i = 0; i < values.length; i += 1) {
-      if (values[i] != null && String(values[i]).trim()) return String(values[i]).trim().toUpperCase();
+      if (values[i] != null && String(values[i]).trim()) return canonicalCountry(values[i]);
     }
     return '';
   }
@@ -50,12 +81,13 @@
       var additional = engine && typeof engine.getAvailableCountries === 'function' ? engine.getAvailableCountries(country) : [];
       if (Array.isArray(additional)) ids = ids.concat(additional);
     } catch (_) {}
-    ids = Array.from(new Set(ids.map(function (id) { return String(id || '').trim().toUpperCase(); }).filter(Boolean))).slice(0, 300);
+    ids = Array.from(new Set(ids.map(canonicalCountry).filter(Boolean))).slice(0, 300);
     var gateway = g.OmegaCountryDataGateway || g.Omega && g.Omega.CountryDataGateway;
     return ids.map(function (id) {
       var label = id;
       try {
         var resolved = gateway && typeof gateway.resolveCountry === 'function' ? gateway.resolveCountry(id) : null;
+        if (!resolved) { var runtime = g.OmegaCountryRuntimeData || (g.Omega && g.Omega.CountryRuntimeData); try { resolved = runtime && runtime.resolveCountry ? runtime.resolveCountry(id) : null; } catch (_) {} }
         var identity = resolved && (resolved.identity || resolved.country || resolved);
         label = String(identity && (identity.officialName || identity.name || identity.countryName) || id) + ' (' + id + ')';
       } catch (_) {}
@@ -109,7 +141,7 @@
     mountOptions = mountOptions || {};
     root = root || cabinetRoot();
     if (!enabled || !root || !g.OmegaUIV2App || typeof g.OmegaUIV2App.mount !== 'function') return { ok:false, code:'UI_V2_INTEGRATION_UNAVAILABLE' };
-    var country = String(mountOptions.countryId || selectedCountry() || '').trim().toUpperCase();
+    var country = canonicalCountry(mountOptions.countryId || selectedCountry() || '');
     try {
       // Open the already-existing cabinet surface without rendering the legacy cabinet HTML first.
       var dashboard = g.document && g.document.getElementById('ministry-dashboard-view');
@@ -152,7 +184,7 @@
         countryOptions:availableCountryOptions(country),
         onBackToMap:closeToWorldMap,
         onCountryChange:function (id) {
-          var code = String(id || '').trim().toUpperCase();
+          var code = canonicalCountry(id);
           if (code) g.OmegaMinistryViewCountry = code;
         },
       });
