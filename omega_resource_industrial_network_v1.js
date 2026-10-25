@@ -282,6 +282,20 @@ function runtimeCountryIds(){
   }
   return [...ids];
 }
+function playerSimulationCountryId(){
+  const sim=g.Omega?.Simulation,root=state()||{};
+  const session=root.simulation?.session||sim?.world?.state?.simulation?.session||{};
+  let direct=null;
+  try{if(typeof sim?.getPlayerCountryId==='function')direct=sim.getPlayerCountryId();}catch(_){}
+  const candidates=[session.playerCountryId,direct,root.simulation?.playerCountryId,root.playerCountryId,root.playerCountryCode,
+    g.Game?.playerCountryId,g.Game?.playerCountryCode,g.Game?.playerCountry,g.OMEGA_PLAYER_COUNTRY_ID];
+  for(const value of candidates){
+    const raw=value&&typeof value==='object'?(value.iso3||value.iso3Code||value.countryCode||value.countryId||value.code||value.id||value.name):value;
+    const cid=canonicalCountry(raw);
+    if(cid&&cid!=='GLOBAL'&&cid!=='WORLD'&&/^[A-Z0-9]{2,3}$/.test(cid))return cid;
+  }
+  return null;
+}
 function siteById(siteId){
   const key=String(siteId||'').trim();
   const site=masterSites().find(x=>String(x?.siteId||'')===key)||null;
@@ -3381,20 +3395,18 @@ function boot(){
   loadCatalog().then(()=>{emit('OMEGA_RESOURCE_INDUSTRIAL_NETWORK_READY','GLOBAL',{version:VERSION,catalogResourceRules:Object.keys(rules()).length,factoryRules:Object.keys(processRules()).length})}).catch(()=>{});
   if(typeof g.addEventListener==='function'){
     g.addEventListener('OMEGA_SIMULATION_TURN_COMMITTED',async()=>{
-      // Catalog readiness and every country update are awaited by the authoritative turn runner.
+      const countryId=playerSimulationCountryId();
+      if(!countryId)return {status:'SKIPPED',reason:'PLAYER_COUNTRY_NOT_SELECTED'};
       await loadCatalog();
-      const countries=runtimeCountryIds(),failures=[];
-      for(const countryId of countries){
-        try{
-          await advanceShipments(countryId);
-          await advanceProjects(countryId);
-          await processPendingFactoryInputs(countryId);
-          reconcileFactoryEmployment(countryId);
-        }catch(error){
-          failures.push(countryId+':'+String(error?.message||error));
-        }
+      try{
+        await advanceShipments(countryId);
+        await advanceProjects(countryId);
+        await processPendingFactoryInputs(countryId);
+        reconcileFactoryEmployment(countryId);
+        return {status:'COMPLETED',countryId,turn:turn()};
+      }catch(error){
+        throw new Error('INDUSTRIAL_TURN_FAILED:'+countryId+':'+String(error?.message||error));
       }
-      if(failures.length)throw new Error('INDUSTRIAL_TURN_FAILED:'+failures.join('|'));
     });
     g.addEventListener('OMEGA_RESOURCE_EXTRACTION_COMPLETED',onExtractionCommitted);
     g.addEventListener('OMEGA_RESOURCE_EXTRACTION_BLOCKED',onExtractionBlocked);
