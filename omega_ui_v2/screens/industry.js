@@ -189,6 +189,8 @@
   function currentTurnResourceAdded(resource, countryId) {
     var root = stateRoot() || {}, sim = root.simulation || {};
     var turn = num(sim.turn !== undefined ? sim.turn : root.turn !== undefined ? root.turn : root.simulationTurn);
+    var daysPerTurn = num(sim.daysPerTurn !== undefined ? sim.daysPerTurn : root.daysPerTurn);
+    if (daysPerTurn !== null && daysPerTurn <= 0) daysPerTurn = null;
     var industrial = resource && resource.industrialNetwork || {};
     var flows = Array.isArray(industrial.siteFlowLedger) ? industrial.siteFlowLedger :
       resource && Array.isArray(resource.siteFlowLedger) ? resource.siteFlowLedger : [];
@@ -217,8 +219,10 @@
       turn: turn,
       rows: ordered.map(function (key) {
         var row = groups[key];
-        return { resourceId: row.resourceId, unit: row.unit, quantity: row.quantity, batchCount: row.batchCount, siteCount: Object.keys(row.siteIds).length };
-      })
+        return { resourceId: row.resourceId, unit: row.unit, quantity: row.quantity, batchCount: row.batchCount,
+          siteCount: Object.keys(row.siteIds).length, averagePerDay: daysPerTurn === null ? null : Number((row.quantity / daysPerTurn).toFixed(6)) };
+      }),
+      daysPerTurn: daysPerTurn
     };
   }
   function mineAssetRows(resource) {
@@ -330,6 +334,7 @@
       dailyProductionKnownCount: dailyProductionKnownCount,
       currentTurnExtraction: currentExtractionRows,
       currentTurnNumber: currentExtraction.turn,
+      currentTurnDaysPerTurn: currentExtraction.daysPerTurn,
       projects: projects.slice(),
       researchProjects: researchProjects.slice(),
       technologyTransfers: technologyTransfers.slice(),
@@ -421,7 +426,7 @@
     }).join('');
     var additions = model.currentTurnExtraction.length
       ? model.currentTurnExtraction.map(function (row) {
-        return '<div class="omega-v2-industry-addition"><span><strong>' + esc(row.resourceId) + '</strong><small>' + fmt(row.batchCount) + ' batch(es) · ' + fmt(row.siteCount) + ' site(s)</small></span><b>' + fmt(row.quantity, row.unit) + '</b></div>';
+        return '<div class="omega-v2-industry-addition"><span><strong>' + esc(row.resourceId) + '</strong><small>' + fmt(row.batchCount) + ' batch(es) · ' + fmt(row.siteCount) + ' site(s)</small><small>Average per simulation day: ' + (row.averagePerDay === null ? 'Not recorded (days per turn unavailable)' : fmt(row.averagePerDay, row.unit + '/game-day')) + '</small></span><b>' + fmt(row.quantity, row.unit) + '</b></div>';
       }).join('')
       : '<p class="omega-v2-industry-muted">No new extraction batches are recorded for ' + (model.currentTurnNumber === null ? 'the current turn' : 'turn ' + fmt(model.currentTurnNumber)) + '.</p>';
     var readOnly = !model.canOperateSelectedCountry;
@@ -575,6 +580,18 @@
         }
       });
       root.__omegaV2IndustryBound = true;
+    }
+    if (!root.__omegaV2IndustryEventsBound && typeof g.addEventListener === 'function') {
+      ['OMEGA_RESOURCE_EXTRACTION_COMPLETED','OMEGA_RESOURCE_SITE_FLOW_DISPATCHED','OMEGA_RESOURCE_INVENTORY_CHANGED',
+       'OMEGA_RESOURCE_FINISHED_GOODS_AVAILABLE','OMEGA_RESOURCE_PROCESSING_COMPLETED','OMEGA_RESOURCE_TECHNOLOGY_PROJECT_STARTED',
+       'OMEGA_INFRASTRUCTURE_PROJECT_STARTED','OMEGA_RESOURCE_MINE_PROJECT_STARTED','OMEGA_SIMULATION_TURN_COMMITTED',
+       'OMEGA_FACTORY_CAPACITY_CHANGED'].forEach(function (eventName) {
+        g.addEventListener(eventName, function () {
+          if (!root.querySelector || !root.querySelector('.omega-v2-industry-command')) return;
+          render(root, Object.assign({}, root.__omegaV2IndustryOptions || {}, { tab: root.__omegaV2IndustryTab || 'factories' }));
+        });
+      });
+      root.__omegaV2IndustryEventsBound = true;
     }
     root.__omegaV2IndustryOptions = options;
     root.__omegaV2IndustryModel = model;
