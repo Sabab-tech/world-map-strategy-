@@ -332,7 +332,7 @@
     if (profile.economyKey && obj(root.economy) && obj(root.economy[profile.economyKey]))
       root.economy[profile.economyKey].financialTransmission = clone(model.latest);
     appendHistory(model, simDay, turnNumber);
-    aggregateCurrencyStress(bankStore);
+    aggregateCurrencyStress(bankStore,backgroundTurn?activeProfile:null);
     return model.latest;
   }
   function appendHistory(model, simDay, turnNumber) {
@@ -359,18 +359,46 @@
     } catch (_) {}
     return Math.floor(currentTurn());
   }
+  let cachedGlobalInflationMedian = null;
   function globalInflationMean() {
+    if(cachedGlobalInflationMedian!==null)return cachedGlobalInflationMedian;
     const vals = [];
+    const root=rootState(),economies=obj(root.economy)?root.economy:{};
     for (const p of profiles) {
-      const e = rootState().economy && p.economyKey && rootState().economy[p.economyKey];
+      const e = p.economyKey && economies[p.economyKey];
       const v = num(e && e.inflation) ?? num(p.indicators && p.indicators.inflationRatePct);
       if (v !== null) vals.push(v);
     }
-    if (!vals.length) return 2;
+    if (!vals.length) return (cachedGlobalInflationMedian=2);
     vals.sort((a, b) => a - b);
-    return vals[Math.floor(vals.length / 2)];
+    cachedGlobalInflationMedian=vals[Math.floor(vals.length / 2)];
+    return cachedGlobalInflationMedian;
   }
-  function aggregateCurrencyStress(bankStore) {
+  function aggregateCurrencyStress(bankStore, selectedProfile) {
+    if(selectedProfile){
+      const id=profileId(selectedProfile),model=bankStore.economicTransmissionByCountry[id],latest=model&&model.latest;
+      const code=String(latest&&latest.currencyCode||'').toUpperCase();
+      if(!code)return;
+      const fxPolicy=fx&&typeof fx.getPolicy==='function'?fx.getPolicy(code)||{}:{};
+      const currentRate=num(latest.localPerUsd),baseRate=num(model.baseLocalPerUsd);
+      let pegAttack=0;
+      if(String(fxPolicy.currencyRegime||'').toUpperCase()==='PEG'){
+        const peg=num(fxPolicy.pegTargetLocalPerUsd);
+        if(peg!==null&&peg>0&&currentRate!==null){
+          const deviation=Math.abs(currentRate/peg-1)*100,band=num(fxPolicy.regimeBandPct)||0.5;
+          pegAttack=clamp((deviation-band)*2,0,40);
+        }
+      }
+      bankStore.monetaryStressByCurrency=bankStore.monetaryStressByCurrency||{};
+      bankStore.monetaryStressByCurrency[code]={
+        currencyCode:code,capitalFlowToGdpPct:num(latest.capitalFlowToGdpPct),
+        confidenceIndex:100-(num(latest.economicPressureIndex)||0),
+        reserveCoverMonths:num(latest.reserveCoverMonths),pegAttackPressurePct:pegAttack,
+        source:'OMEGA_FINANCIAL_TRANSMISSION_SIMULATION',countryCount:1,updatedTurn:currentTurn(),
+        activeCountryCode:id
+      };
+      return;
+    }
     const grouped = {};
     for (const p of profiles) {
       const model = bankStore.economicTransmissionByCountry[profileId(p)];
