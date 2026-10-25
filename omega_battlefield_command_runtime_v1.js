@@ -718,19 +718,29 @@
     saveState(profile, state);
   }
 
+  function selectedSimulationCountry() {
+    var sim=g.Omega&&g.Omega.Simulation,root=stateRoot();
+    var session=root&&root.simulation&&root.simulation.session||{};
+    var candidates=[
+      session.playerCountryId,
+      root&&root.simulation&&root.simulation.playerCountryId,
+      root&&root.playerCountryId,root&&root.playerCountryCode,
+      sim&&typeof sim.getPlayerCountryId==='function'?sim.getPlayerCountryId():null,
+      g.Game&&(g.Game.playerCountryId||g.Game.playerCountry||g.Game.currentActiveCountry),
+      g.CountryIOS&&g.CountryIOS.activeCountry,g.currentActiveCountry,g.playerCountry
+    ];
+    for(var i=0;i<candidates.length;i++){
+      if(candidates[i]==null||String(candidates[i]).trim()==='')continue;
+      var profile=resolveCountryRow(candidates[i]);
+      if(profile)return profile;
+    }
+    return null;
+  }
   function onTurn() {
     if (!ready || !data.catalog) return;
-    var nextDay = Math.floor(simTimeMs() / 86400000), failures = [];
-    var seen = new Set();
-    for (var i = 0; i < data.countries.length; i++) {
-      var profile = data.countries[i];
-      var key = countryKey(profile);
-      if (!key || seen.has(key)) continue;
-      seen.add(key);
-      try { processCountryPayroll(profile, nextDay); }
-      catch (error) { failures.push(key + ':' + String(error && error.message || error)); }
-    }
-    if (failures.length) throw new Error('MILITARY_DAILY_TURN_FAILED:' + failures.join('|'));
+    var profile=selectedSimulationCountry();
+    if(!profile)return;
+    processCountryPayroll(profile,Math.floor(simTimeMs()/86400000));
   }
   function diagnostics() {
     var current = currentPlayerCountry();
