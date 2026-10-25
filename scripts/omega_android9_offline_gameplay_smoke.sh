@@ -88,10 +88,9 @@ max_attempts=3
 while [[ "$attempt" -le "$max_attempts" ]]; do
   log_file="$artifact_dir/gradle-attempt-$attempt.log"
   echo "Offline gameplay instrumentation attempt $attempt/$max_attempts"
-  # Android instrumentation must not be allowed to occupy the workflow forever.
-  # The Java test has bounded Activity/WebView waits; this is a final process-level
-  # guard that still leaves time for logs and artifact upload before the job limit.
-  if timeout --signal=TERM --kill-after=20s 10m \
+  # The test includes a four-hour wall-clock gameplay soak. Keep a finite process guard,
+  # but leave 4.5 hours for instrumentation and preserve time for artifacts before the job limit.
+  if timeout --signal=TERM --kill-after=20s 270m \
       gradle -p android connectedDebugAndroidTest --no-daemon >"$log_file" 2>&1; then
     cat "$log_file"
     echo "PASS: API 28 offline gameplay instrumentation completed"
@@ -112,7 +111,7 @@ while [[ "$attempt" -le "$max_attempts" ]]; do
   done
 
   if [[ "$test_exit" -eq 124 || "$test_exit" -eq 137 ]]; then
-    echo "ERROR: Android instrumentation exceeded the 10-minute hard deadline; live logcat and Gradle output are saved." >&2
+    echo "ERROR: Android instrumentation exceeded the 270-minute hard deadline; live logcat and Gradle output are saved." >&2
     exit "$test_exit"
   fi
 
