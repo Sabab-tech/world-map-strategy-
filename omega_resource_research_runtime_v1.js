@@ -286,14 +286,33 @@ function countryIds(){
   try{const profiles=g.ResourceMinistryEngine?.countryProfiles||{};Object.keys(profiles).forEach(c=>out.add(canonicalCountry(c)));}catch(_){}
   return [...out].filter(Boolean).sort();
 }
-function processAll(){
-  const s=state(),active=countryIds().filter(c=>{
+function activeResearchCountries(){
+  const s=state();
+  return countryIds().filter(c=>{
     const r=s.resource?.[c]||{};
     const p=Array.isArray(r.technologyResearchProjects)&&r.technologyResearchProjects.some(x=>['REQUESTED','IN_PROGRESS'].includes(String(x?.status||'').toUpperCase()));
     const t=Array.isArray(r.technologyTransfers)&&r.technologyTransfers.some(x=>['REQUESTED','IN_PROGRESS'].includes(String(x?.status||'').toUpperCase()));
     return p||t;
   });
+}
+function processAll(){
+  const active=activeResearchCountries();
   return{status:'COMPLETED',turn:turn(),countryCount:active.length,results:active.map(c=>({countryId:c,result:processCountry(c)}))};
+}
+function yieldTurnToUi(){
+  return new Promise(resolve=>{
+    if(typeof g.setTimeout==='function')g.setTimeout(resolve,0);
+    else resolve();
+  });
+}
+async function processAllForTurn(){
+  const active=activeResearchCountries(),results=[];
+  for(let i=0;i<active.length;i++){
+    const c=active[i];
+    results.push({countryId:c,result:processCountry(c)});
+    if((i+1)%2===0&&i+1<active.length)await yieldTurnToUi();
+  }
+  return{status:'COMPLETED',turn:turn(),countryCount:active.length,results};
 }
 function diagnostics(){
   const cs=countryIds(),s=state();let projects=0,imports=0,caps=0;
@@ -313,7 +332,7 @@ if(typeof g.addEventListener==='function'){
   g.addEventListener('OMEGA_RESOURCE_TECHNOLOGY_IMPORT_REQUESTED',e=>{const d=e?.detail?.payload||e?.detail||e||{};const c=d?.countryId||e?.countryId;if(c)dispatch('OMEGA_RESOURCE_TECHNOLOGY_IMPORT',c,d);});
   g.addEventListener('OMEGA_READY',()=>{register();loadCatalog().catch(()=>{});});
   g.addEventListener('OMEGA_GAME_SESSION_STARTED',()=>{register();loadCatalog().catch(()=>{});});
-  g.addEventListener('OMEGA_SIMULATION_TURN_COMMITTED',()=>processAll());
+  g.addEventListener('OMEGA_SIMULATION_TURN_COMMITTED',()=>processAllForTurn());
 }
 register();
 })(typeof window!=='undefined'?window:globalThis);
