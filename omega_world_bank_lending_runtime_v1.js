@@ -1168,14 +1168,16 @@
     return { ok: true, proposal: clone(proposed), loan: clone(loan) };
   }
 
-  function serviceCountryLoansOnTurn(turnNumber, stepDurationMs) {
+  function serviceCountryLoansOnTurn(turnNumber, stepDurationMs, selectedCountryValue, backgroundTurn) {
     const bank = store(true);
     const turn = finite(turnNumber) ?? currentTurn();
     const durationMs = Math.max(0, finite(stepDurationMs) ?? DAY_MS);
     const years = durationMs / DAY_MS / 365;
     if (years <= 0) return { ok: true, turn, processed: 0, paidUsd: 0 };
-    const profile = playerProfile();
-    if (!profile) return { ok: false, code: 'PLAYER_COUNTRY_UNAVAILABLE', turn, processed: 0, paidUsd: 0 };
+    const profile = backgroundTurn
+      ? (selectedCountryValue==null||String(selectedCountryValue).trim()===''?null:resolveProfile(selectedCountryValue))
+      : playerProfile();
+    if (!profile) return { ok: true, skipped: true, code: 'PLAYER_COUNTRY_NOT_SELECTED', turn, processed: 0, paidUsd: 0 };
     const countryCode = codeOf(profile);
     const loans = bank.loansByCountry[countryCode] || [];
     const activeLoans = loans.filter(loan => loan && loan.status !== 'REPAID'
@@ -1253,7 +1255,7 @@
       arrearsUsd: payment.arrearsUsd, entries: clone(payment.entries || []) };
   }
 
-  function processTurn(turnNumber, stepDurationMs) {
+  function processTurn(turnNumber, stepDurationMs, selectedCountryValue, backgroundTurn) {
     const bank = store(true);
     const turn = finite(turnNumber) ?? currentTurn();
     if (finite(bank.lastInstitutionTurn) === turn) return { ok: true, cached: true, turn: turn, processed: 0 };
@@ -1262,8 +1264,15 @@
     if (years <= 0) return { ok: true, turn: turn, processed: 0 };
     let processed = 0, repayments = 0, accrued = 0;
     const banking = global.OmegaGovernmentBanking || (global.Omega && global.Omega.GovernmentBanking) || null;
+    const selectedProfile=backgroundTurn?resolveProfile(selectedCountryValue):null;
+    if(backgroundTurn&&!selectedProfile)return{ok:true,turn,processed:0,repayments:0,accruedInterestUsd:0,skipped:true,reason:'PLAYER_COUNTRY_NOT_SELECTED'};
+    const selectedCode=backgroundTurn?codeOf(selectedProfile):null;
     for (const loan of bank.fundingLoans || []) {
       if (!loan || ['REPAID', 'CANCELLED'].includes(String(loan.status || '').toUpperCase())) continue;
+      if(backgroundTurn){
+        const lenderProfile=resolveProfile(loan.lenderCountryCode||loan.countryCode||'');
+        if(!lenderProfile||codeOf(lenderProfile)!==selectedCode)continue;
+      }
       if (finite(loan.lastAccruedTurn) !== null && turn <= loan.lastAccruedTurn) continue;
       const principal = Math.max(0, finite(loan.outstandingPrincipalUsd) || 0);
       const interestBalance = Math.max(0, finite(loan.accruedInterestUsd) || 0);
@@ -2105,11 +2114,13 @@
         const stepDurationMs = finite(detail.stepDurationMs) ?? finite(detail.durationMs)
           ?? finite(global.Omega && global.Omega.Simulation && global.Omega.Simulation.clock
             && global.Omega.Simulation.clock.stepDurationMs) ?? DAY_MS;
-        // The institution's own funding claims and the borrower's scheduled contracts
-        // both advance on the authoritative OMEGA daily clock, exactly once per turn.
-        processTurn(turn, stepDurationMs);
-        serviceCountryLoansOnTurn(turn, stepDurationMs);
-        evaluatePlayerCountry();
+        // Only funding claims and debt service belonging to the active player country
+        // accrue on this device. Other contracts remain stored as frozen reference state.
+        const playerCountryValue=detail.countryId||(detail.payload&&detail.payload.countryId);
+        if(!playerCountryValue){queueRender(true);return;}
+        processTurn(turn, stepDurationMs, playerCountryValue, true);
+        serviceCountryLoansOnTurn(turn, stepDurationMs, playerCountryValue, true);
+        evaluatePlayerCountry(playerCountryValue);
         queueRender(true);
       });
       global.addEventListener && global.addEventListener('OMEGA_FINANCE_STATE_UPDATED', function (event) {
