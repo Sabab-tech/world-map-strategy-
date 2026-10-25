@@ -701,6 +701,16 @@ function countryIds(){
  try{const b=g.OmegaCanonicalIdentityRegistry||g.OmegaCountrySemanticBridge||g.Omega?.CanonicalIdentity;for(const x of b?.list?.('COUNTRY')||b?.list?.()||[]){const r=typeof x==='object'?(x.iso3||x.countryId||x.id||x.code):x;if(r)out.add(country(r));}}catch(_){}
  return [...out].filter(Boolean).sort();
 }
+function playerSimulationCountryId(){
+ const sim=g.Omega?.Simulation,simState=sim?.world?.state||state();
+ const session=simState?.simulation?.session||state()?.simulation?.session||{};
+ const candidates=[session?.playerCountryId,
+  typeof sim?.getPlayerCountryId==='function'?sim.getPlayerCountryId():null,
+  simState?.playerCountryId,state()?.playerCountryId,
+  g.Game?.playerCountry,g.Game?.currentActiveCountry,g.CountryIOS?.activeCountry,g.currentActiveCountry];
+ for(const value of candidates){const cid=country(value);if(cid&&cid!=='[OBJECT OBJECT]')return cid;}
+ return null;
+}
 function processCountry(c){install();const cc=country(c);if(!cc)return{status:'SKIPPED',reason:'COUNTRY_REQUIRED'};return dispatch('resource','OMEGA_RESOURCE_EXPLORATION_TICK',cc,{correlationId:'EXPLORATION-TICK:'+cc+':'+turn()});}
 function processAll(){return countryIds().map(processCountry);}
 function yieldTurnToUi(){
@@ -710,21 +720,16 @@ function yieldTurnToUi(){
  });
 }
 async function processAllForTurn(){
- const cs=countryIds(),results=[];
- for(let i=0;i<cs.length;i++){
-  const c=cs[i];
-  results.push({countryId:c,result:processCountry(c)});
-  if((i+1)%2===0&&i+1<cs.length)await yieldTurnToUi();
- }
- return{status:'COMPLETED',turn:turn(),countryCount:cs.length,results};
+ const selected=playerSimulationCountryId();
+ if(!selected)return{status:'SKIPPED',reason:'PLAYER_COUNTRY_NOT_SELECTED',turn:turn(),countryCount:0,results:[]};
+ return{status:'COMPLETED',turn:turn(),countryCount:1,
+  results:[{countryId:selected,result:processCountry(selected)}]};
 }
 async function onTurnCommitted(){
+ const selected=playerSimulationCountryId();
+ if(!selected)return;
  await processAllForTurn();
- const cs=countryIds();
- for(let i=0;i<cs.length;i++){
-  await processPowerCountry(cs[i]);
-  if((i+1)%2===0&&i+1<cs.length)await yieldTurnToUi();
- }
+ await processPowerCountry(selected);
 }
 function setCarbonQuota(c,p={}){return carbonQuotaSet(c,p);}
 function recordEmission(c,p={}){return recordCarbonEmission(c,p);}
