@@ -104,6 +104,28 @@
   const siteExecutionRowsCache=new Map();
   let siteExecutionRowsCacheTurn=null;
   let mineSiteReferenceCacheYear=null;
+  let engineDepositKeySource=null,engineDepositKeySourceLength=-1,engineDepositKeySet=new Set(),engineDepositKeyBuildCount=0;
+  // ResourceMinistryEngine publishes its deposit array as a stable data snapshot. Build
+  // the ID index once per snapshot instead of rescanning every deposit for every country.
+  function engineDepositKeyIndex(e){
+    const deposits=Array.isArray(e?.deposits)?e.deposits:[];
+    if(engineDepositKeySource===deposits&&engineDepositKeySourceLength===deposits.length)return engineDepositKeySet;
+    const next=new Set();
+    for(const row of deposits){
+      for(const key of [row?.id,row?.depositId,row?.mineId]){
+        const value=String(key??'').trim();
+        if(value)next.add(value);
+      }
+    }
+    engineDepositKeySource=deposits;
+    engineDepositKeySourceLength=deposits.length;
+    engineDepositKeySet=next;
+    engineDepositKeyBuildCount++;
+    g.__OmegaResourceDepositKeyIndexDiagnostics={
+      buildCount:engineDepositKeyBuildCount,depositCount:deposits.length,indexedIdCount:next.size
+    };
+    return engineDepositKeySet;
+  }
   async function loadSimulationReserveData(){
     if(simulationReserveMap)return{status:'READY',count:Object.keys(simulationReserveMap).length,reused:true};
     if(simulationReservePromise)return simulationReservePromise;
@@ -897,13 +919,7 @@
     const reg=g.__OmegaResourceIdentityRegistry;const e=engine();const rr=g.__OmegaResourceReserveRegistry;if(!reg||!e||!rr)return[];
     const wanted=canonical(c),out=[],seen=new Set();
     try{
-      const engineDepositKeys=new Set();
-      for(const row of (Array.isArray(e.deposits)?e.deposits:[])){
-        for(const key of [row?.id,row?.depositId,row?.mineId]){
-          const s=String(key??'').trim();
-          if(s)engineDepositKeys.add(s);
-        }
-      }
+      const engineDepositKeys=engineDepositKeyIndex(e);
       const occurrences=reg.getOccurrencesByCountry?.(wanted)||[];
       for(const occ of occurrences){
         const depositKey=String(occ?.depositKey??'').trim();
@@ -1981,41 +1997,130 @@ function batchFromExtraction(x,record){
     })();
     return g.__omegaResourceEndowmentPromise;
   }
+  // A country's resource extraction pass is needed only if it owns deposit/site
+  // inputs. The previous boot path eagerly hydrated every country profile, including
+  // empty countries, in one uninterrupted WebView task. On low-memory Android devices
+  // that task could starve UI rendering and button events for several seconds.
+  function resourceExtractionWorkCountries(allCountries){
+    const work=new Set();
+    const add=value=>{
+      if(value===null||value===undefined||String(value).trim()==='')return;
+      const cid=canonical(value);
+      if(cid)work.add(cid);
+    };
+    const e=engine();
+    const profiles=e?.countryProfiles&&typeof e.countryProfiles==='object'?e.countryProfiles:{};
+    for(const [key,p0] of Object.entries(profiles)){
+      const p=p0||{},identity=p.identity||p;
+      const c=identity.iso3||identity.countryId||identity.countryCode||identity.country_code||key;
+      const modern=p.resource_infrastructure_context?.mineSites;
+      const legacy=p.infrastructure_context?.mineSites;
+      if((Array.isArray(modern)&&modern.length)||(Array.isArray(legacy)&&legacy.length))add(c);
+    }
+    for(const row of (Array.isArray(e?.deposits)?e.deposits:[])){
+      add(row?.countryCode||row?.countryIso3||row?.countryId||row?.iso3||row?.country);
+    }
+    try{
+      const refs=g.__OmegaResourceIdentityRegistry?.listMineSiteReferences?.()||[];
+      for(const row of refs)add(row?.countryId||row?.countryCode||row?.countryIso3);
+    }catch(_){}
+    for(const site of Object.values(canonicalSiteCatalogMap||{})){
+      const siteId=String(site?.siteId||'').trim();
+      if(!siteId||site?.map?.markerEligible===false||site?.runtime?.aliasOfSiteId||LEGACY_CANONICAL_ALIAS_IDS[siteId])continue;
+      add(site.countryId||site.identity?.countryIso3);
+    }
+    const root=state()?.resource||{};
+    for(const [countryId,row] of Object.entries(root)){
+      if(!row||typeof row!=='object')continue;
+      if((Array.isArray(row.mineSiteReferences)&&row.mineSiteReferences.length)||
+         (row.mineSiteControllers&&typeof row.mineSiteControllers==='object'&&Object.keys(row.mineSiteControllers).length)||
+         (Array.isArray(row.mines)&&row.mines.length)||
+         (row.mineOutputs&&typeof row.mineOutputs==='object'&&Object.keys(row.mineOutputs).length)||
+         (Array.isArray(row.mineProductionLedger)&&row.mineProductionLedger.length)){
+        add(countryId);
+      }
+    }
+    return allCountries.filter(country=>work.has(canonical(country)));
+  }
+  function yieldResourceExtractionToUi(){
+    return new Promise(resolve=>{
+      if(typeof g.setTimeout==='function')g.setTimeout(resolve,0);
+      else Promise.resolve().then(resolve);
+    });
+  }
   function extractAll(){
     const t=turn();
-    if(g.__omegaResourceExtractionTurn===t){
-      if(g.__omegaResourceExtractionPromiseTurn===t&&g.__omegaResourceExtractionPromise)return g.__omegaResourceExtractionPromise;
-      return Promise.resolve({status:'ALREADY_EXTRACTED',turn:t});
+    // A bootstrap pass can overlap the first live game turn. Keep one global pass in
+    // flight; queue a newer turn behind it instead of running two country-wide passes.
+    if(g.__omegaResourceExtractionPromise){
+      if(g.__omegaResourceExtractionPromiseTurn===t)return g.__omegaResourceExtractionPromise;
+      const pending=g.__omegaResourceExtractionPromise;
+      return pending.then(()=>{
+        const latestTurn=turn();
+        if(g.__omegaResourceExtractionTurn===latestTurn)return{status:'ALREADY_EXTRACTED',turn:latestTurn};
+        return extractAll();
+      });
     }
-    if(g.__omegaResourceExtractionPromiseTurn===t&&g.__omegaResourceExtractionPromise)return g.__omegaResourceExtractionPromise;
+    if(g.__omegaResourceExtractionTurn===t)return Promise.resolve({status:'ALREADY_EXTRACTED',turn:t});
     let shared=null;
-    const work=(async()=>{
+    const workPromise=(async()=>{
       const initialized=await initialize();
       if(!g.__OmegaResourceReserveRegistry||initialized?.status==='FAILED'||initialized?.status==='WAITING_DEPENDENCIES')
         return initialized||{status:'WAITING_DEPENDENCIES'};
       const strategicPolicy=g.Omega?.ResourceStrategicPolicyRuntime||g.OmegaResourceStrategicPolicyRuntime;
-      if(strategicPolicy?.loadRules){const ready=await strategicPolicy.loadRules();if(ready?.status!=='READY')return{status:'FAILED',reason:'STRATEGIC_RESOURCE_POLICY_RULES_NOT_READY',detail:ready};}
+      if(strategicPolicy?.loadRules){
+        const ready=await strategicPolicy.loadRules();
+        if(ready?.status!=='READY')return{status:'FAILED',reason:'STRATEGIC_RESOURCE_POLICY_RULES_NOT_READY',detail:ready};
+      }
       // Recheck after initialization so a concurrent caller cannot start a second extraction pass.
       if(g.__omegaResourceExtractionTurn===t)return{status:'ALREADY_EXTRACTED',turn:t};
       g.__omegaResourceExtractionTurn=t;
       install();
+      const allCountries=countries();
+      const workCountries=resourceExtractionWorkCountries(allCountries);
+      const diagnostics={
+        status:'RUNNING',turn:t,totalCountryCount:allCountries.length,
+        workCountryCount:workCountries.length,processedCountryCount:0,
+        skippedCountryCount:allCountries.length-workCountries.length,yieldedBatchCount:0,
+        startedAtMs:Date.now(),durationMs:null
+      };
+      g.__omegaResourceExtractionDiagnostics=diagnostics;
       const results=[];
-      for(const c of countries()){
+      const COUNTRIES_PER_UI_SLICE=4;
+      for(let index=0;index<workCountries.length;index++){
+        const c=workCountries[index];
         const existing=state()?.resource?.[c]||{};
+        let hydrationFailed=false;
         if(!Array.isArray(existing.mineSiteReferences)||!existing.mineSiteControllers){
           const hydrate=dispatch('OMEGA_RESOURCE_ENDOWMENT_HYDRATE',c,{correlationId:'RESOURCE-HYDRATE-LAZY-'+t+'-'+c});
           if(hydrate?.status!=='APPLIED'){
             results.push({countryId:c,result:{status:'FAILED',reason:'COUNTRY_HYDRATION_NOT_APPLIED',detail:hydrate}});
-            continue;
+            hydrationFailed=true;
           }
         }
-        const result=dispatch('OMEGA_RESOURCE_EXTRACT_TICK',c,{correlationId:'RESOURCE-EXTRACT-'+t+'-'+c});
-        publishCommittedExtractionEvents(c,result);
-        results.push({countryId:c,result});
+        if(!hydrationFailed){
+          const result=dispatch('OMEGA_RESOURCE_EXTRACT_TICK',c,{correlationId:'RESOURCE-EXTRACT-'+t+'-'+c});
+          publishCommittedExtractionEvents(c,result);
+          results.push({countryId:c,result});
+        }
+        diagnostics.processedCountryCount=results.length;
+        if((index+1)%COUNTRIES_PER_UI_SLICE===0&&index+1<workCountries.length){
+          diagnostics.yieldedBatchCount++;
+          await yieldResourceExtractionToUi();
+        }
       }
-      return{status:'COMPLETED',turn:t,results};
+      diagnostics.status='COMPLETED';
+      diagnostics.durationMs=Math.max(0,Date.now()-diagnostics.startedAtMs);
+      return{
+        status:'COMPLETED',turn:t,results,
+        totalCountryCount:diagnostics.totalCountryCount,
+        processedCountryCount:diagnostics.processedCountryCount,
+        skippedCountryCount:diagnostics.skippedCountryCount,
+        yieldedBatchCount:diagnostics.yieldedBatchCount,
+        durationMs:diagnostics.durationMs
+      };
     })();
-    shared=work.finally(()=>{
+    shared=workPromise.finally(()=>{
       if(g.__omegaResourceExtractionPromise===shared){
         g.__omegaResourceExtractionPromise=null;
         g.__omegaResourceExtractionPromiseTurn=null;
@@ -2452,12 +2557,19 @@ function batchFromExtraction(x,record){
         publishBootstrapStatus(snapshot);
         return snapshot;
       }
-      for(const countryId of Object.keys(bindingSync.executionSiteIdsByCountry||{})){
+      const hydrationCountryIds=Object.keys(bindingSync.executionSiteIdsByCountry||{});
+      for(let hydrationIndex=0;hydrationIndex<hydrationCountryIds.length;hydrationIndex++){
+        const countryId=hydrationCountryIds[hydrationIndex];
         const hydration=hydrateCountry(countryId);
         const payload=hydration?.result||hydration;
         if(hydration?.status!=='APPLIED'||payload?.accepted===false){
           bindingSync.hydrationFailures=bindingSync.hydrationFailures||[];
           bindingSync.hydrationFailures.push({countryId,status:hydration?.status||'UNAVAILABLE',reason:payload?.reason||hydration?.reason||'SITE_BINDING_HYDRATION_NOT_COMMITTED'});
+        }
+        // Hydration can be expensive on Android 9. Let the WebView render and
+        // dispatch navigation/input events between small country batches.
+        if((hydrationIndex+1)%4===0&&hydrationIndex+1<hydrationCountryIds.length){
+          await yieldResourceExtractionToUi();
         }
       }
       const prior=g.__omegaResourceEndowmentLastBootstrap;
