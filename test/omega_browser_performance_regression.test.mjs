@@ -373,3 +373,23 @@ test('performance monitor cancels its animation-frame loop while the app is back
   assert.equal(window.__OMEGA_DIAG__.metrics.fps, 1, 'diagnostic FPS metric should still update');
   assert.equal(frames.size, 1, 'monitor should retain its visible-screen sampling loop');
 });
+
+test('country borders stay visible in base map and visual overlays', () => {
+  const map = read('map-engine-2.js');
+  const worker = read('omega-offline-map-sw.js');
+  const cacheVersionMatch = worker.match(/CACHE_NAME = "omega-offline-atlas-shell-v(\d+)"/);
+  const cacheVersion = Number(cacheVersionMatch?.[1] || 0);
+  assert.ok(cacheVersion >= 39, 'offline Android clients must invalidate stale map code');
+  assert.ok(map.includes('color: "#f8fafc",\n                weight: zoom >= 8 ? 1.8 : (zoom >= 5 ? 1.5 : 1.25),\n                opacity: 1.0,'),
+    'base country polygons need opaque, high-contrast borders');
+  assert.ok(map.includes('weight: currentZoom > 5.5 ? 1.55 : 1.25'),
+    'zoom changes must not make country borders too thin');
+  assert.ok(map.includes("if (hasResource) layer.setStyle({ fillColor: '#ca8a04', fillOpacity: 0.85, color: '#f8fafc', weight: 1.5, opacity: 1.0 });"),
+    'countries with resource data must retain a visible border');
+  assert.ok(map.includes("else layer.setStyle({ fillColor: '#0f172a', fillOpacity: 0.15, color: '#f8fafc', weight: 1.25, opacity: 1.0 });"),
+    'countries without resource data must retain a visible border too');
+  assert.ok(map.includes("layer.setStyle({ fillColor: color, fillOpacity: opacity, color: '#f8fafc', weight: 1.25, opacity: 1.0 });"),
+    'diplomacy overlay must not replace borders with nearly transparent strokes');
+  assert.ok(!map.includes('rgba(255,255,255,0.05)') && !map.includes('rgba(255,255,255,0.1)'),
+    'map overlays must not use the old almost-invisible border styles');
+});

@@ -613,8 +613,10 @@ Game.Map = {
             if (Game.geojsonLayer) {
                 Game.geojsonLayer.eachLayer(function(layer) {
                     if (layer !== Game.selectedLayer) {
-                        layer.setStyle({ 
-                            weight: currentZoom > 5.5 ? 1.4 : 0.9,
+                        layer.setStyle({
+                            color: "#f8fafc",
+                            opacity: 1.0,
+                            weight: currentZoom > 5.5 ? 1.55 : 1.25,
                             dashArray: null
                         });
                     } else {
@@ -1022,9 +1024,9 @@ Game.Map.renderGeoJSON = function(geoData) {
             if (config) defaultColor = window.getCountryColor(config.name);
             const zoom = window.map && typeof window.map.getZoom === "function" ? window.map.getZoom() : 2.5;
             return {
-                color: "#dce7df",
-                weight: zoom >= 8 ? 1.55 : (zoom >= 5 ? 1.25 : 1.05),
-                opacity: 0.96,
+                color: "#f8fafc",
+                weight: zoom >= 8 ? 1.8 : (zoom >= 5 ? 1.5 : 1.25),
+                opacity: 1.0,
                 dashArray: null,
                 fillColor: defaultColor,
                 fillOpacity: 0.22
@@ -1815,8 +1817,8 @@ Game.Map.applyResourceMapFilter = function(resourceType) {
             }
         }
 
-        if (hasResource) layer.setStyle({ fillColor: '#ca8a04', fillOpacity: 0.85, color: '#ffffff', weight: 1.5 });
-        else layer.setStyle({ fillColor: '#0f172a', fillOpacity: 0.15, color: 'rgba(255,255,255,0.05)', weight: 0.5 });
+        if (hasResource) layer.setStyle({ fillColor: '#ca8a04', fillOpacity: 0.85, color: '#f8fafc', weight: 1.5, opacity: 1.0 });
+        else layer.setStyle({ fillColor: '#0f172a', fillOpacity: 0.15, color: '#f8fafc', weight: 1.25, opacity: 1.0 });
     });
 };
 
@@ -1861,7 +1863,7 @@ Game.Map.applyRelationsMapFilter = function(focusCountry) {
             else if (score < -15) color = '#f97316'; // বৈরী (কমলা)
             else color = '#64748b'; // নিরপেক্ষ (স্লেট গ্রে)
         }
-        layer.setStyle({ fillColor: color, fillOpacity: opacity, color: 'rgba(255,255,255,0.1)', weight: 0.5 });
+        layer.setStyle({ fillColor: color, fillOpacity: opacity, color: '#f8fafc', weight: 1.25, opacity: 1.0 });
     });
 };
 
@@ -2060,8 +2062,9 @@ Game.Map.setMapMetric = function(metric) {
         layer.setStyle({
             fillColor: color,
             fillOpacity: 0.65,
-            color: 'rgba(255,255,255,0.7)',
-            weight: 1.0
+            color: '#f8fafc',
+            weight: 1.25,
+            opacity: 1.0
         });
     });
 };
