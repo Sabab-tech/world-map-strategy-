@@ -30,7 +30,9 @@
   }
 
   function countryId(row) {
-    return key(row && (row.countryId || row.countryCode || row.identity && row.identity.countryIso3 || row.sourceSiteRecord && row.sourceSiteRecord.countryCode) || '');
+    var value = key(row && (row.countryId || row.countryCode || row.identity && row.identity.countryIso3 || row.sourceSiteRecord && row.sourceSiteRecord.countryCode) || '');
+    if (!value || /^[A-Z]{3}$/.test(value)) return value;
+    return selectedCountryKey(value);
   }
 
   function selectedCountryKey(value) {
