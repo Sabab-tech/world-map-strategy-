@@ -2,7 +2,7 @@
  * Same-origin app files are cached for offline relaunch; remote map tiles are never cached here.
  */
 "use strict";
-const CACHE_NAME = "omega-offline-atlas-shell-v36";
+const CACHE_NAME = "omega-offline-atlas-shell-v37";
 const APP_BASE = new URL("./", self.location.href);
 const INDEX_URL = new URL("index.html", APP_BASE).href;
 const CORE_ASSETS = [
@@ -51,7 +51,27 @@ const CORE_ASSETS = [
   "./omega_ui_v2/screens/reports.js",
   "./omega_ui_v2/app.js",
   "./omega_ui_v2/integration.js",
-  "./omega_ui_v2/world-command-dock.js",];
+  "./omega_ui_v2/world-command-dock.js",
+  "./assets/ministry-logos/cabinet_council.svg",
+  "./assets/ministry-logos/trade.svg",
+  "./assets/ministry-logos/production.svg",
+  "./assets/ministry-logos/taxes.svg",
+  "./assets/ministry-logos/central_bank.svg",
+  "./assets/ministry-logos/laws.svg",
+  "./assets/ministry-logos/education.svg",
+  "./assets/ministry-logos/infrastructure.svg",
+  "./assets/ministry-logos/science_research.svg",
+  "./assets/ministry-logos/agriculture_food.svg",
+  "./assets/ministry-logos/interior_security.svg",
+  "./assets/ministry-logos/energy_mining.svg",
+  "./assets/ministry-logos/intelligence_cyber.svg",
+  "./assets/ministry-logos/treasury_finance.svg",
+  "./assets/ministry-logos/mega_projects.svg",
+  "./assets/Military_Ministry_Logo_Concept_A.png.jpg",
+  "./assets/IMG_20260703_180105.jpg",
+  "./assets/ministers/health.svg",
+  "./assets/ui-photos/education-university.svg",
+];
 
 function isLocalAppUrl(value) {
   try {
