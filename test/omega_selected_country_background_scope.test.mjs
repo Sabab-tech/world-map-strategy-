@@ -75,6 +75,7 @@ test('global market and trade background handlers do not write or tick every cou
 
 test('mine extraction is not automatically ticked for every country at startup or turn commit', () => {
   const source = read('omega_resource_endowment_runtime.js');
+  assert.match(source, /function playerSimulationCountryId\(\)/, 'endowment scope must resolve the authoritative player country');
   const bootstrap = between(source, 'function onSiteBindingReady(){', 'function diagnostics(){');
   assert.match(bootstrap, /const selectedCountryId=playerSimulationCountryId\(\)/);
   assert.match(bootstrap, /PRODUCTION_TICK_DEFERRED_TO_PLAYER_COUNTRY_TURN/);
