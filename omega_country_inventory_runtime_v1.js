@@ -121,14 +121,12 @@
   function displayName(value) {
     var raw = String(value == null ? '' : value).trim().replace(/[_-]+/g, ' ').replace(/\s+/g, ' ');
     if (!raw) return 'Unknown product';
-    if (/^[A-Z0-9][A-Z0-9 _/-]*$/.test(raw) && /[A-Z]/.test(raw)) {
-      return raw.split(/\s+/).map(function (word) {
-        if (/^[A-Z0-9]{2,5}$/.test(word)) return word;
-        return word.charAt(0) + word.slice(1).toLowerCase();
-      }).join(' ');
-    }
+    var acronyms = new Set(['CNG', 'DAP', 'DME', 'HDPE', 'LDPE', 'LNG', 'LPG', 'MAP', 'NPK', 'PET', 'PGE', 'PVC', 'REE', 'U3O8']);
     return raw.split(' ').map(function (word) {
-      return word ? word.charAt(0).toUpperCase() + word.slice(1) : word;
+      if (!word) return word;
+      var upper = word.toUpperCase();
+      if (acronyms.has(upper) || /^\d+$/.test(word)) return upper;
+      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
     }).join(' ');
   }
 
