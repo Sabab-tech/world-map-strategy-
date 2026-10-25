@@ -49,20 +49,27 @@
   }
   function normalizeSiteRecord(raw){
     const sharedIntegrity=g.OmegaResourceSiteIntegrity||g.Omega?.ResourceSiteIntegrity;
-    if(typeof sharedIntegrity?.normalizeSiteRecord==='function')return sharedIntegrity.normalizeSiteRecord(raw);
-    const row=clone(raw||{});
-    const country=String(row.countryId||row.identity?.countryIso3||row.countryCode||'').trim().toUpperCase();
-    row.countryId=country;
-    row.identity={...(row.identity||{}),countryIso3:row.identity?.countryIso3||country};
-    row.quantitative=normalizeSiteQuantitative(row);
-    row.map={...(row.map||{}),markerEligible:row.map?.markerEligible!==false,countryIsolationKey:row.map?.countryIsolationKey||country};
-    row.runtime={...(row.runtime||{}),identityAuthority:row.runtime?.identityAuthority||'SITE_REFERENCE',
-      quantityAuthority:row.runtime?.quantityAuthority||'SIMULATION_RUNTIME',
-      productionAuthority:row.runtime?.productionAuthority||'SIMULATION_RUNTIME',
-      qualityAuthority:row.runtime?.qualityAuthority||'OBSERVED_OR_EXPLICITLY_UNOBSERVED',
-      countryWarehouseId:row.runtime?.countryWarehouseId||('WH-'+country+'-RAW'),
-      requiresSiteSpecificRoute:row.runtime?.requiresSiteSpecificRoute!==false,
-      requiresFactoryBinding:row.runtime?.requiresFactoryBinding!==false};
+    let row;
+    if(typeof sharedIntegrity?.normalizeSiteRecord==='function'){
+      row=sharedIntegrity.normalizeSiteRecord(raw)||clone(raw||{});
+    }else{
+      row=clone(raw||{});
+      const country=String(row.countryId||row.identity?.countryIso3||row.countryCode||'').trim().toUpperCase();
+      row.countryId=country;
+      row.identity={...(row.identity||{}),countryIso3:row.identity?.countryIso3||country};
+      row.quantitative=normalizeSiteQuantitative(row);
+      row.map={...(row.map||{}),markerEligible:row.map?.markerEligible!==false,countryIsolationKey:row.map?.countryIsolationKey||country};
+      row.runtime={...(row.runtime||{}),identityAuthority:row.runtime?.identityAuthority||'SITE_REFERENCE',
+        quantityAuthority:row.runtime?.quantityAuthority||'SIMULATION_RUNTIME',
+        productionAuthority:row.runtime?.productionAuthority||'SIMULATION_RUNTIME',
+        qualityAuthority:row.runtime?.qualityAuthority||'OBSERVED_OR_EXPLICITLY_UNOBSERVED',
+        countryWarehouseId:row.runtime?.countryWarehouseId||('WH-'+country+'-RAW'),
+        requiresSiteSpecificRoute:row.runtime?.requiresSiteSpecificRoute!==false,
+        requiresFactoryBinding:row.runtime?.requiresFactoryBinding!==false};
+    }
+    const quantityNormalizer=g.Omega?.ResourceQuantityNormalization||g.OmegaResourceQuantityNormalization;
+    if(typeof quantityNormalizer?.normalizeSiteRecord==='function')row=quantityNormalizer.normalizeSiteRecord(row)||row;
+    else if(typeof quantityNormalizer?.normalizeSiteQuantities==='function')row=quantityNormalizer.normalizeSiteQuantities(row)||row;
     return row;
   }
   g.OmegaResourceSiteDataContract={version:'1.0.0',normalizeSiteRecord,normalizeSiteQuantitative};
@@ -141,6 +148,40 @@
         const rows=Array.isArray(data?.records)?data.records:[];
         const map={};
         for(const row of rows)if(row?.siteId)map[String(row.siteId)]=clone(row);
+        // Additive completion data fills only site IDs absent from the authoritative 250-row
+        // reserve dataset. It is explicitly simulation-only and never replaces source rows.
+        let quantityCompletionAdded=0,quantityCompletionRecordCount=0;
+        try{
+          const inlineCompletion=g.OmegaResourceSiteQuantityCompletionData||g.Omega?.ResourceSiteQuantityCompletionData;
+          let completion=inlineCompletion||null;
+          if(!completion){
+            const completionResponse=await fetch('resource_site_quantity_completion_v1.json?v='+Date.now(),{cache:'no-store'});
+            if(completionResponse?.ok)completion=await completionResponse.json();
+          }
+          const completionRows=Array.isArray(completion?.records)?completion.records:[];
+          const completionIds=new Set(completionRows.map(row=>String(row?.siteId||'').trim()).filter(Boolean));
+          const completionValid=completion?.datasetId==='OMEGA_RESOURCE_SITE_QUANTITY_COMPLETION_V1'&&
+            Number(completion?.recordCount)===completionRows.length&&completionIds.size===completionRows.length;
+          if(completionValid){
+            quantityCompletionRecordCount=completionRows.length;
+            const quantityNormalizer=g.Omega?.ResourceQuantityNormalization||g.OmegaResourceQuantityNormalization;
+            for(const row of completionRows){
+              const siteId=String(row?.siteId||'').trim();
+              const country=String(row?.countryId||row?.identity?.countryIso3||'').trim().toUpperCase();
+              const reserve=row?.reserve;
+              const resourceId=String(row?.resourceId||row?.identity?.resourceTypeId||'').trim().toLowerCase();
+              if(!siteId||!/^[A-Z]{3}$/.test(country)||!resourceId||!reserve||
+                 String(reserve.status||'').toUpperCase()!=='SIMULATED'||!(Number(reserve.quantity)>0)||map[siteId])continue;
+              const normalized=quantityNormalizer?.normalizeSiteRecord?.(clone(row))||
+                quantityNormalizer?.normalizeSiteQuantities?.(clone(row))||clone(row);
+              map[siteId]=normalized;
+              quantityCompletionAdded++;
+            }
+            g.OmegaResourceSiteQuantityCompletionData=completion;
+            g.Omega=g.Omega||{};
+            g.Omega.ResourceSiteQuantityCompletionData=completion;
+          }
+        }catch(_){}
         const legacy=await loadLegacyGameplayExpansionRows();let legacyAdded=0;
         for(const row of (legacy.rows||[])){
           const siteId=String(row?.siteId||'');
@@ -187,7 +228,7 @@
         g.Omega.ResourceSiteReserveSimulationData=data;
         g.OmegaResourceLegacyGameplayExpansion={status:legacy.status,count:legacy.count,activeAdded:legacyAdded,loadedParts:legacy.loadedParts||0};
         g.Omega.ResourceLegacyGameplayExpansion=g.OmegaResourceLegacyGameplayExpansion;
-        return{status:'READY',count:Object.keys(map).length,baseSiteCount:Number(data?.siteCount)||rows.length,legacyAdded,mineplayAdded,legacyCandidateCount:legacy.count};
+        return{status:'READY',count:Object.keys(map).length,baseSiteCount:Number(data?.siteCount)||rows.length,legacyAdded,mineplayAdded,quantityCompletionAdded,quantityCompletionRecordCount,legacyCandidateCount:legacy.count};
       }catch(e){
         simulationReserveMap={};
         return{status:'FAILED',count:0,reason:String(e?.message||e)};
@@ -1612,10 +1653,16 @@ function batchFromExtraction(x,record){
       const isExplicitlyNonOperational=status=>(/(^|_)(INACTIVE|NOT_ACTIVE|HISTORICAL|HISTORICALLY|CARE_AND_MAINTENANCE|SUSPEND|SUSPENDED|BLOCKED|CLOSED|ABANDON|ABANDONED|DEPLETED|DEVELOPMENT|RESTARTING|CESSATION_OF_PRODUCTION|DISRUPTED|NOT_APPLICABLE|NO_CURRENT_CONCESSION|PERMIT_PROCESSING|RESOURCE_IDENTITY_UNVERIFIED|DISPUTED_OPERATION|RESTRICTED)(_|$)/.test(status));
       const isOperationalStatus=status=>!isExplicitlyNonOperational(status)&&
         /(^|_)(ACTIVE_EXTRACTION|ACTIVE_PRODUCING|ACTIVE|DEPLETING|RESERVE_DEPLETING|OPERATING|RUNNING|PRODUCING)(_|$)/.test(status);
-      // Negative operational evidence wins. In particular HISTORICAL_INACTIVE must not match
-      // a plain substring search for ACTIVE.
-      const operational=!isExplicitlyNonOperational(operationalStatus)&&!isExplicitlyNonOperational(sourceStatus)&&
-        (isOperationalStatus(operationalStatus)||isOperationalStatus(sourceStatus));
+      // Real-world/source status remains historical evidence. A player-commissioned starter
+      // mine is a separate simulation asset, so it may operate in-game without rewriting that evidence.
+      const policySiteId=String(x.siteReferenceKey||x.rawDeposit?.siteId||x.rawDeposit?.siteReferenceKey||'').trim();
+      const commissionedMineAsset=policySiteId?
+        (Array.isArray(state()?.resource?.[c]?.mineAssets)?state().resource[c].mineAssets:[])
+          .find(asset=>String(asset?.siteId||asset?.siteReferenceKey||'')===policySiteId&&
+            String(asset?.status||'').toUpperCase()==='OPERATIONAL'):null;
+      const operational=!!commissionedMineAsset||
+        (!isExplicitlyNonOperational(operationalStatus)&&!isExplicitlyNonOperational(sourceStatus)&&
+          (isOperationalStatus(operationalStatus)||isOperationalStatus(sourceStatus)));
       if(!operational){
         const reason={occurrenceKey:x.occurrenceKey,resourceId:x.resourceId,reason:'MINE_NOT_OPERATIONAL',operationalStatus:operationalStatus||'UNKNOWN',sourceStatus:sourceStatus||null};
         blocked.push(reason);
@@ -1877,6 +1924,8 @@ function batchFromExtraction(x,record){
   async function startCountryProduction(countryId,siteIds=null){
     const c=canonical(countryId);
     if(!/^[A-Z]{3}$/.test(c))return{status:'BLOCKED',reason:'COUNTRY_ID_INVALID',countryId:c||null};
+    const playerCountry=playerSimulationCountryId();
+    if(playerCountry&&playerCountry!==c)return{status:'BLOCKED',reason:'PLAYER_COUNTRY_SCOPE_VIOLATION',countryId:c,playerCountryId:playerCountry};
     const initialized=await initialize();
     if(initialized?.status!=='READY')return{status:'BLOCKED',reason:'RESOURCE_ENDOWMENT_NOT_READY',detail:initialized,countryId:c};
     const refreshed=await hydrateCountry(c),hydration=refreshed?.result||refreshed;
