@@ -95,9 +95,10 @@ function siteDailyCapacity(site,rid){
   }
  }
  // Stable site-specific gameplay capacity, separate from unobserved geology and production.
- const seed=String(site?.siteId||rid);let hash=2166136261;
+ const country=String(site?.countryId||site?.identity?.countryIso3||'').toUpperCase();
+ const seed=String(site?.siteId||'')+'|'+country+'|'+rid;let hash=2166136261;
  for(let i=0;i<seed.length;i++)hash=Math.imul(hash^seed.charCodeAt(i),16777619)>>>0;
- return 5+((hash%196)+1)/10;
+ return 0.5+((hash%200)+1)/10;
 }
 function gameplayUnit(rid){
  return quantityApi()?.canonicalUnit?.(rid)||'TONNES';
