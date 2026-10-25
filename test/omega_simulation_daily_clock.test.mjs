@@ -678,7 +678,7 @@ test('automatic production and resource pipelines advance only the player-select
 
   assert.match(endowment, /if\(options\.activeOnly===true\)\{[\s\S]*?const selected=playerSimulationCountryId\(\);[\s\S]*?return allCountries\.filter\(country=>canonical\(country\)===selected\);/,
     'active mine extraction must be bounded to the selected player country');
-  assert.match(economy, /var activeCountry=currentCountryId\(\);[\s\S]*?var allCountries=\[activeCountry\];/,
+  assert.match(economy, /var activeCountry=currentCountryId\(\);[\s\S]*?var allCountries=countries\(\);[\s\S]*?var activeCountries=\[activeCountry\];/,
     'resource inventory, factory and ledger turns must use one selected country');
   assert.match(industry, /const selectedCountryId=playerSimulationCountryId\(\);[\s\S]*?const countries=\[selectedCountryId\]/,
     'factory cycles, projects, logistics and mine employment must advance for one country only');
