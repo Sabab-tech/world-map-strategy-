@@ -19,8 +19,7 @@ const playerSimulationCountryId=()=>{
  const sim=g.Omega?.Simulation,simState=sim?.world?.state||state();
  const session=simState?.simulation?.session||state()?.simulation?.session||{};
  const candidates=[session?.playerCountryId,typeof sim?.getPlayerCountryId==='function'?sim.getPlayerCountryId():null,
-  simState?.playerCountryId,state()?.playerCountryId,g.Game?.playerCountry,g.Game?.currentActiveCountry,
-  g.CountryIOS?.activeCountry,g.currentActiveCountry];
+  simState?.playerCountryId,state()?.playerCountryId,g.Game?.playerCountryId,g.Game?.playerCountry,g.Game?.playerCountryCode,g.OMEGA_PLAYER_COUNTRY_ID,g.playerCountry];
  for(const value of candidates){const cid=country(value);if(cid&&cid!=='[OBJECT OBJECT]')return cid;}
  return null;
 };
