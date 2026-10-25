@@ -376,3 +376,371 @@ body.omega-atlas-dock-ready .ui-bottom-navigation{display:none!important;}
 @media(max-width:360px){.omega-v2-ministry-grid{grid-template-columns:1fr;}.omega-v2-route-menu-grid{grid-template-columns:1fr;}.omega-v2-ministry-card-media{height:160px;aspect-ratio:16/8;}}
 @media(hover:none),(pointer:coarse){.omega-v2-ministry-cover{transition:none;}}
 @media(prefers-reduced-motion:reduce){.omega-v2-ministry-cover{transition:none!important;}.omega-v2-ministry-rotator *{scroll-behavior:auto!important;}}
+
+
+/* OMEGA industrial command plate: brushed-metal accents, country-scoped metrics,
+   and an intentionally empty local SVG slot for the factory artwork. */
+.omega-v2-industry-command {
+  background:
+    radial-gradient(ellipse at 50% -15%, rgba(109, 177, 216, .16), transparent 58%),
+    linear-gradient(145deg, #0c1b2b 0%, #14283a 48%, #091725 100%);
+  border: 1px solid #526e86;
+  border-radius: 16px;
+  box-shadow: 0 12px 25px rgba(0, 0, 0, .3), inset 0 1px 0 rgba(222, 238, 250, .15), inset 0 0 0 2px rgba(3, 13, 23, .55);
+  margin: 14px 0;
+  overflow: hidden;
+  padding: 12px;
+  position: relative;
+}
+.omega-v2-industry-command::before {
+  background: linear-gradient(90deg, transparent, rgba(194, 218, 235, .65), transparent);
+  content: "";
+  height: 1px;
+  left: 8%;
+  position: absolute;
+  right: 8%;
+  top: 0;
+}
+.omega-v2-industry-command-head {
+  align-items: flex-start;
+  border-bottom: 1px solid rgba(122, 158, 188, .36);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  padding: 2px 2px 12px;
+}
+.omega-v2-industry-command-head h2 {
+  color: #edf5fb;
+  font-size: clamp(17px, 4vw, 22px);
+  letter-spacing: .015em;
+  margin: 3px 0;
+}
+.omega-v2-industry-command-head p {
+  color: #a9bdcf;
+  font-size: 11px;
+  margin: 3px 0 0;
+}
+.omega-v2-industry-command-head p strong { color: #dce8f2; }
+.omega-v2-industry-access {
+  background: linear-gradient(180deg, #283d4f, #152536);
+  border: 1px solid #526c81;
+  border-radius: 5px;
+  color: #d8e6ef;
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: .07em;
+  padding: 5px 7px;
+}
+.omega-v2-industry-access[data-mode="player"] {
+  border-color: #3a9b83;
+  color: #91f0d0;
+}
+.omega-v2-industry-access[data-mode="readonly"] {
+  border-color: #987945;
+  color: #f4d18c;
+}
+.omega-v2-industry-command-grid {
+  align-items: stretch;
+  display: grid;
+  gap: 9px;
+  grid-template-columns: minmax(108px, .72fr) minmax(145px, 1fr) minmax(160px, 1.2fr);
+}
+.omega-v2-metal-plate {
+  border: 1px solid rgba(221, 237, 248, .44);
+  border-radius: 10px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .48), inset 0 -5px 10px rgba(9, 24, 38, .16), 0 5px 12px rgba(0, 0, 0, .2);
+  color: #102236;
+  min-width: 0;
+  overflow: hidden;
+  padding: 11px;
+  position: relative;
+}
+.omega-v2-metal-plate::after {
+  border: 1px solid rgba(255, 255, 255, .28);
+  border-radius: 6px;
+  content: "";
+  inset: 4px;
+  pointer-events: none;
+  position: absolute;
+}
+.omega-v2-metal-plate--gold {
+  background: linear-gradient(135deg, #f5dfa3 0%, #bd9c5c 24%, #ead39a 44%, #9f7c3f 68%, #e6ca85 100%);
+}
+.omega-v2-metal-plate--silver {
+  background: linear-gradient(145deg, #f0f4f7 0%, #a6b5c2 24%, #dbe3e8 48%, #8698a8 75%, #ced8e0 100%);
+}
+.omega-v2-metal-plate--blue {
+  background: linear-gradient(145deg, #9dd9f2 0%, #4786a8 30%, #a2d4e7 58%, #326984 100%);
+}
+.omega-v2-metal-plate--copper {
+  background: linear-gradient(145deg, #e8bb9a 0%, #a96042 27%, #edc2a4 53%, #88472f 100%);
+}
+.omega-v2-metal-plate--steel {
+  background: linear-gradient(145deg, #e1e9ef 0%, #7f91a0 25%, #c6d3dc 52%, #718391 100%);
+}
+.omega-v2-metal-label {
+  color: #223a4f;
+  display: block;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .1em;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+  position: relative;
+  text-transform: uppercase;
+  z-index: 1;
+}
+.omega-v2-metal-number {
+  color: #081b2a;
+  display: block;
+  font-size: clamp(26px, 5vw, 39px);
+  font-weight: 950;
+  letter-spacing: -.04em;
+  line-height: 1.1;
+  margin: 10px 0 5px;
+  overflow-wrap: anywhere;
+  position: relative;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, .55);
+  z-index: 1;
+}
+.omega-v2-metal-plate > small {
+  color: #29465d;
+  display: block;
+  font-size: 10px;
+  line-height: 1.4;
+  position: relative;
+  z-index: 1;
+}
+.omega-v2-metal-stamp {
+  border: 1px solid rgba(24, 44, 60, .45);
+  border-radius: 3px;
+  color: #243c50;
+  display: inline-block;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  margin-top: 11px;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  padding: 3px 5px;
+  position: relative;
+  z-index: 1;
+}
+.omega-v2-industry-svg-slot {
+  align-items: center;
+  background:
+    linear-gradient(135deg, rgba(190, 216, 235, .08), transparent 42%),
+    repeating-linear-gradient(135deg, rgba(107, 140, 165, .08) 0 7px, transparent 7px 14px),
+    #071522;
+  border: 1px dashed #7795ad;
+  border-radius: 10px;
+  display: flex;
+  justify-content: center;
+  min-height: 174px;
+  overflow: hidden;
+  padding: 10px;
+  position: relative;
+}
+.omega-v2-industry-svg-frame {
+  align-items: center;
+  border: 1px solid rgba(125, 162, 189, .4);
+  border-radius: 7px;
+  color: #82a3bc;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  justify-content: center;
+  min-height: 145px;
+  padding: 12px;
+  text-align: center;
+  width: 100%;
+}
+.omega-v2-industry-svg-frame::before {
+  border: 1px solid rgba(125, 162, 189, .6);
+  border-radius: 50%;
+  content: "";
+  height: 18px;
+  margin-bottom: 3px;
+  width: 18px;
+}
+.omega-v2-industry-svg-frame span {
+  color: #b6cbd9;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .11em;
+}
+.omega-v2-industry-svg-frame small {
+  color: #7291a9;
+  font-size: 9px;
+}
+.omega-v2-industry-register {
+  display: flex;
+  flex-direction: column;
+  min-height: 174px;
+}
+.omega-v2-industry-register-count {
+  color: #223b50;
+  font-size: 11px;
+  font-weight: 850;
+  margin: 4px 0 7px;
+  position: relative;
+  z-index: 1;
+}
+.omega-v2-industry-register ul {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 5px;
+  list-style: none;
+  margin: 0;
+  max-height: 156px;
+  overflow-y: auto;
+  padding: 0 4px 3px 0;
+  position: relative;
+  z-index: 1;
+}
+.omega-v2-industry-register li {
+  align-items: flex-start;
+  border-bottom: 1px solid rgba(35, 57, 76, .2);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px 1px;
+}
+.omega-v2-industry-register li strong {
+  color: #132a3d;
+  font-size: 11px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+.omega-v2-industry-register li span,
+.omega-v2-industry-register li small {
+  color: #3d5a70;
+  font-size: 9px;
+  overflow-wrap: anywhere;
+}
+.omega-v2-industry-register .omega-v2-industry-register-empty {
+  color: #29465d;
+  font-size: 10px;
+  line-height: 1.5;
+}
+.omega-v2-industry-resource-stats {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 9px;
+}
+.omega-v2-industry-resource-stats .omega-v2-metal-plate { padding: 10px; }
+.omega-v2-industry-resource-stats .omega-v2-metal-number { font-size: clamp(21px, 4vw, 30px); margin: 7px 0 4px; }
+.omega-v2-industry-production-row {
+  display: grid;
+  gap: 9px;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  margin-top: 9px;
+}
+.omega-v2-industry-panel {
+  background: linear-gradient(145deg, rgba(17, 39, 57, .96), rgba(8, 22, 35, .98));
+  border: 1px solid #334f67;
+  border-radius: 10px;
+  min-width: 0;
+  padding: 10px;
+}
+.omega-v2-industry-panel h3 {
+  color: #e4edf5;
+  font-size: 13px;
+  margin: 1px 0 5px;
+}
+.omega-v2-industry-panel > p,
+.omega-v2-industry-panel > small {
+  color: #9cb3c6;
+  display: block;
+  font-size: 10px;
+  line-height: 1.5;
+  margin: 3px 0 8px;
+}
+.omega-v2-industry-table-wrap {
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+.omega-v2-industry-table-wrap table {
+  border-collapse: collapse;
+  font-size: 10px;
+  min-width: 440px;
+  width: 100%;
+}
+.omega-v2-industry-table-wrap th,
+.omega-v2-industry-table-wrap td {
+  border-bottom: 1px solid rgba(113, 148, 174, .23);
+  padding: 7px 6px;
+  text-align: left;
+  vertical-align: top;
+}
+.omega-v2-industry-table-wrap th {
+  color: #94b6ce;
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.omega-v2-industry-table-wrap td { color: #d9e5ed; }
+.omega-v2-industry-table-wrap td strong,
+.omega-v2-industry-table-wrap td small { display: block; }
+.omega-v2-industry-table-wrap td small { color: #8fa9be; font-size: 9px; margin-top: 3px; }
+.omega-v2-industry-additions { display: flex; flex-direction: column; gap: 6px; }
+.omega-v2-industry-addition {
+  align-items: center;
+  background: linear-gradient(120deg, #1c3549, #102438);
+  border: 1px solid #3d6079;
+  border-radius: 7px;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  padding: 8px;
+}
+.omega-v2-industry-addition span { display: flex; flex-direction: column; min-width: 0; }
+.omega-v2-industry-addition strong { color: #e7f0f7; font-size: 11px; overflow-wrap: anywhere; }
+.omega-v2-industry-addition small { color: #9db7ca; font-size: 9px; }
+.omega-v2-industry-addition b {
+  color: #a7ebd4;
+  font-size: 12px;
+  text-align: right;
+  white-space: nowrap;
+}
+.omega-v2-industry-muted { color: #9bb1c3; font-size: 11px; line-height: 1.5; }
+.omega-v2-industry-actions {
+  align-items: stretch;
+  border-top: 1px solid rgba(113, 148, 174, .26);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 10px;
+  padding-top: 10px;
+}
+.omega-v2-industry-actions .omega-v2-button { flex: 1 1 140px; min-height: 44px; }
+.omega-v2-industry-footnote {
+  color: #8fa9be;
+  font-size: 9px;
+  line-height: 1.55;
+  margin: 9px 1px 1px;
+}
+@media (max-width: 720px) {
+  .omega-v2-industry-command-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .omega-v2-industry-svg-slot { min-height: 150px; }
+  .omega-v2-industry-register { grid-column: 1 / -1; min-height: 0; }
+  .omega-v2-industry-register ul { max-height: 190px; }
+  .omega-v2-industry-production-row { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 420px) {
+  .omega-v2-industry-command { padding: 9px; }
+  .omega-v2-industry-command-grid { grid-template-columns: minmax(0, 1fr); }
+  .omega-v2-industry-svg-slot { min-height: 160px; }
+  .omega-v2-industry-register { grid-column: auto; }
+  .omega-v2-industry-resource-stats { grid-template-columns: minmax(0, 1fr); }
+  .omega-v2-industry-resource-stats .omega-v2-metal-plate { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 8px; }
+  .omega-v2-industry-resource-stats .omega-v2-metal-label { grid-column: 1 / -1; }
+  .omega-v2-industry-resource-stats .omega-v2-metal-number { grid-column: 1; }
+  .omega-v2-industry-resource-stats .omega-v2-metal-plate small { align-self: end; grid-column: 1 / -1; }
+}
