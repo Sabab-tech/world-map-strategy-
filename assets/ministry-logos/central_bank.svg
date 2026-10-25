@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
+  <title id="title">Central Bank emblem</title>
+  <desc id="desc">Original OMEGA ministry emblem in navy, steel silver and signal blue.</desc>
+  <rect x="4" y="4" width="120" height="120" rx="25" fill="#edf3f8" stroke="#68849d" stroke-width="3"/>
+  <circle cx="64" cy="64" r="47" fill="#0b2238" stroke="#77c8f2" stroke-width="2.5"/>
+  <circle cx="64" cy="64" r="39" fill="none" stroke="#9fb4c8" stroke-width="1.2" opacity=".6"/>
+  <g fill="none" stroke="#e3edf6" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"><path d="M26 49 64 28 102 49zM31 54h66M37 57v29m17-29v29m20-29v29m17-29v29M29 91h70M23 100h82"/></g>
+  <g fill="none" stroke="#77c8f2" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="87" cy="36" r="10"/><path d="M87 30v12m-4-9h7m-7 6h7"/></g>
+</svg>
