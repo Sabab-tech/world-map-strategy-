@@ -134,6 +134,49 @@
     return Number.isFinite(n)?n:fallback;
   }
 
+  // Turn participants may return large all-country/resource payloads. Those values
+  // are useful while executing a turn, but retaining and cloning them in diagnostics
+  // and save snapshots can block low-memory WebViews. Persist only bounded summaries.
+  function summarizeDiagnosticValue(value){
+    if(value===null||value===undefined||typeof value!=='object')return value??null;
+    if(Array.isArray(value))return{itemCount:value.length};
+    const summary={};
+    const scalarFields=[
+      'status','turn','day','countryId','reason','error','message','duration','durationMs',
+      'startedAtMs','totalCountryCount','workCountryCount','processedCountryCount',
+      'skippedCountryCount','yieldedBatchCount','countryCount','acceptedCount','rejectedCount',
+      'failedCount','completedCount','startedCount','blockedCount','siteCount','transactionId',
+      'resultCount','worldStateRevision','committed','checkpointed','stepDurationMs',
+      'simulationDate','stateRootAuthority','resultStatus','source','type','ready','loaded'
+    ];
+    for(const key of scalarFields){
+      const field=value[key];
+      if(field===null||['string','number','boolean'].includes(typeof field))summary[key]=field;
+    }
+    const arrayFields=[
+      'results','participants','completed','started','blocked','transfers','outputs','events',
+      'commands','failures','errors','sites','countries','shipments','factories','records','changes'
+    ];
+    for(const key of arrayFields){
+      if(Array.isArray(value[key]))summary[key+'Count']=value[key].length;
+    }
+    for(const key of ['result','worldResult','ministryResult']){
+      if(value[key]!==undefined&&value[key]!==null){
+        summary[key]=Array.isArray(value[key])
+          ?{itemCount:value[key].length}
+          :summarizeDiagnosticValue(value[key]);
+      }
+    }
+    if(!Object.keys(summary).length)summary.keyCount=Object.keys(value).length;
+    return summary;
+  }
+
+  function summarizePhaseResults(phases){
+    const summary={};
+    for(const key of Object.keys(phases||{}))summary[key]=summarizeDiagnosticValue(phases[key]);
+    return summary;
+  }
+
   class SimulationClock{
     constructor(options={}){
       this.version=VERSION;
@@ -461,7 +504,7 @@
           });
           this.world.state.simulation.subsystemTurns=this.world.state.simulation.subsystemTurns||{};
           this.world.state.simulation.subsystemTurns[entry.id]=turn;
-          results.push({id:entry.id,turn,status:'COMPLETED',result:value===undefined?null:clone(value)});
+          results.push({id:entry.id,turn,status:'COMPLETED',result:summarizeDiagnosticValue(value)});
           this.lastTurnParticipantResults=results.slice(-256);
           this.world.state.simulation.lastTurnParticipantResults=clone(this.lastTurnParticipantResults);
         }catch(error){
@@ -522,7 +565,7 @@
         if(this.turnFinalizers.get(entry.id)!==entry)continue;
         try{
           const value=await entry.handler.call(global,context);
-          results.push({id:entry.id,turn:context.turn,status:'COMPLETED',result:value===undefined?null:clone(value)});
+          results.push({id:entry.id,turn:context.turn,status:'COMPLETED',result:summarizeDiagnosticValue(value)});
         }catch(error){
           const failure={id:entry.id,turn:context.turn,status:'FAILED',error:String(error?.message||error)};
           results.push(failure);
@@ -875,8 +918,8 @@
         this.stepCount+=1;
         this.lastStepSummary={
           turn,
-          phases:clone(phaseResults),
-          commandResults:clone(commandResults),
+          phases:summarizePhaseResults(phaseResults),
+          commandResults:{itemCount:commandResults.length},
           stateRevision:this.world.state.simulation.worldStateRevision
         };
         this.events.emit('OMEGA_SIMULATION_STEP_COMPLETED',this.lastStepSummary,turn);
@@ -893,7 +936,7 @@
           clock:this.clock,
           simulation:this
         },finalizersAtTurnStart));
-        this.lastStepSummary.phases=clone(phaseResults);
+        this.lastStepSummary.phases=summarizePhaseResults(phaseResults);
         return clone(this.lastStepSummary);
       }catch(error){
         this.lastError=String(error?.message||error);
