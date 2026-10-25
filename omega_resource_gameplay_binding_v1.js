@@ -555,51 +555,44 @@ function addMapMarkers(){
  if(markerLayer&&map.hasLayer?.(markerLayer))map.removeLayer(markerLayer);
  markerLayer=L.layerGroup();
  const mapApi=g.Game?.Map||{},resourceState=mapApi.resourceState||{};
- // The legacy deposit layer duplicates many of these locations. The individual-site layer is authoritative while resource mode is active.
  if(resourceState.enabled&&mapApi.resourceDepositsLayer?.clearLayers)mapApi.resourceDepositsLayer.clearLayers();
  if(!resourceState.enabled)return;
  const scope=String(resourceState.scope||'NATION').toUpperCase();
  const activeCountry=String(g.Game?.currentActiveCountry||g.CountryIOS?.activeCountry||'').trim();
  if(scope!=='WORLD'&&!activeCountry)return;
- const norm=v=>String(v||'').replace(/[_-]+/g,' ').replace(/\s+/g,' ').trim().toUpperCase();
  const aliases={oil:'crude_oil',crudeoil:'crude_oil',gas:'natural_gas',naturalgas:'natural_gas',iron:'iron_ore',ironore:'iron_ore',rareearth:'rare_earth'};
  const canonical=id=>{const raw=String(id||'').trim().toLowerCase();const compact=raw.replace(/[\s_-]+/g,'');return aliases[compact]||raw.replace(/[\s-]+/g,'_');};
  const selected=resourceState.selectedResources instanceof Set?resourceState.selectedResources:new Set();
  const selectedKeys=new Set(Array.from(selected,canonical));
  const selectedAll=selectedKeys.has('all');
  const resourceCatalog=mapApi.resourceCatalog||g.Game?.resourceCatalog||[];
- const visibleSites=sites.filter(s=>{
-  const c=s.coordinates||s.location?.coordinates||{},lat=Number(c.lat),lng=Number(c.lng);
-  if(!Number.isFinite(lat)||!Number.isFinite(lng)||lat < -90||lat > 90||lng < -180||lng > 180)return false;
-  const rawResource=String(s.real?.resourceId||s.sourceSiteRecord?.resourceId||s.sourceSiteRecord?.resourceTypeId||s.sourceSiteRecord?.resId||s.identity?.resourceTypeId||'').toLowerCase();
-  const resourceId=canonical(rawResource);
-  if(selected.size>0&&!selectedAll&&!selectedKeys.has(resourceId)&&!selectedKeys.has(canonical(rawResource)))return false;
-  if(scope!=='WORLD'){
-   const candidateCountries=[s.countryId,s.countryName,s.location?.countryName,s.sourceSiteRecord?.country,s.sourceSiteRecord?.countryCode,s.sourceSiteRecord?.countryId].map(norm).filter(Boolean);
-   if(!candidateCountries.includes(norm(activeCountry)))return false;
-  }
-  return true;
- });
- // Cluster markers by their current screen-space proximity, not just identical coordinates.
- // The visual offsets never modify a site's true latitude or longitude.
+ const matchesResource=site=>{
+  if(selected.size===0||selectedAll)return true;
+  const raw=String(site.real?.resourceId||site.sourceSiteRecord?.resourceId||site.sourceSiteRecord?.resourceTypeId||site.sourceSiteRecord?.resId||site.identity?.resourceTypeId||'').toLowerCase();
+  return selectedKeys.has(canonical(raw));
+ };
+ const bounds=typeof map.getBounds==='function'?map.getBounds():null;
+ const visibleSites=scope==='WORLD'
+  ?sitesInCurrentViewport(map,bounds,matchesResource,MAX_MAP_RESOURCE_MARKERS)
+  :collectVisibleSites(sitesForCountry(activeCountry),bounds,matchesResource,MAX_MAP_RESOURCE_MARKERS);
  const collisionGroups=[],collisionGroupBySite=new Map();
  for(const site of visibleSites){
-  const c=site.coordinates||site.location?.coordinates||{},lat=Number(c.lat),lng=Number(c.lng);
+  const c=site.coordinates||site.location?.coordinates||{},lat=Number(c.lat??c.latitude),lng=Number(c.lng??c.lon??c.longitude);
   const point=typeof map.latLngToLayerPoint==='function'?map.latLngToLayerPoint([lat,lng]):{x:lng,y:lat};
   let group=collisionGroups.find(items=>items.some(item=>Math.hypot(item.point.x-point.x,item.point.y-point.y)<30));
   if(!group){group=[];collisionGroups.push(group);}
   group.push({site,point});collisionGroupBySite.set(site.siteId,group);
  }
- let rendered=0,offsetMarkerCount=0,overlapGroupCount=0;
+ let rendered=0,offsetMarkerCount=0;
  const renderedCoordinateKeys=new Set();
- for(const s of visibleSites){
-  const c=s.coordinates||s.location?.coordinates||{},lat=Number(c.lat),lng=Number(c.lng);
-  const rawResource=String(s.real?.resourceId||s.sourceSiteRecord?.resourceId||s.sourceSiteRecord?.resourceTypeId||s.sourceSiteRecord?.resId||s.identity?.resourceTypeId||'').toLowerCase();
+ for(const site of visibleSites){
+  const c=site.coordinates||site.location?.coordinates||{},lat=Number(c.lat??c.latitude),lng=Number(c.lng??c.lon??c.longitude);
+  const rawResource=String(site.real?.resourceId||site.sourceSiteRecord?.resourceId||site.sourceSiteRecord?.resourceTypeId||site.sourceSiteRecord?.resId||site.identity?.resourceTypeId||'').toLowerCase();
   const resourceId=canonical(rawResource);
-  const resource=resourceCatalog.find(r=>canonical(r.id)===resourceId||String(r.id||'').toLowerCase()===rawResource);
+  const resource=resourceCatalog.find(row=>canonical(row.id)===resourceId||String(row.id||'').toLowerCase()===rawResource);
   const glyph=String(resource?.icon||resourceId.slice(0,2).toUpperCase()||'RS').replace(/[<>&"]/g,'');
   const color=/^#[0-9a-f]{6}$/i.test(resource?.color||'')?resource.color:'#76b7d8';
-  const group=collisionGroupBySite.get(s.siteId)||[{site:s}],position=group.findIndex(item=>item.site.siteId===s.siteId);
+  const group=collisionGroupBySite.get(site.siteId)||[{site}],position=group.findIndex(item=>item.site.siteId===site.siteId);
   let dx=0,dy=0;
   if(group.length>1){
    renderedCoordinateKeys.add(group.map(item=>item.site.siteId).sort().join('|'));
@@ -608,16 +601,17 @@ function addMapMarkers(){
    dx=Math.round(Math.cos(angle)*radius);dy=Math.round(Math.sin(angle)*radius);offsetMarkerCount++;
   }
   const icon=L.divIcon({className:'omega-individual-site-marker',html:'<span style="--site-color:'+color+'">'+esc(glyph)+'</span>',iconSize:[26,26],iconAnchor:[13-dx,13-dy],tooltipAnchor:[-dx,-12-dy]});
-  const m=L.marker([lat,lng],{icon,title:String(s.siteName||s.siteId),keyboard:true,alt:String(s.siteName||s.siteId)});
-  m.bindTooltip?.(String(s.siteName||s.siteId)+' · '+s.countryId+' · '+rawResource,{direction:'top',sticky:true});
-  m.on('click',()=>setSelected(s.siteId));m.addTo(markerLayer);rendered++;
+  const marker=L.marker([lat,lng],{icon,title:String(site.siteName||site.siteId),keyboard:true,alt:String(site.siteName||site.siteId)});
+  marker.bindTooltip?.(String(site.siteName||site.siteId)+' · '+site.countryId+' · '+rawResource,{direction:'top',sticky:true});
+  marker.on('click',()=>setSelected(site.siteId));marker.addTo(markerLayer);rendered++;
  }
  markerLayer.addTo(map);
- g.__OMEGA_INDIVIDUAL_RESOURCE_MARKER_DIAGNOSTICS__={loadedSiteCount:sites.length,renderedMarkerCount:rendered,scope,activeCountry:activeCountry||null,resourceFilterCount:selected.size,overlapGroupCount:renderedCoordinateKeys.size,offsetMarkerCount};
+ g.__OMEGA_INDIVIDUAL_RESOURCE_MARKER_DIAGNOSTICS__={loadedSiteCount:sites.length,renderedMarkerCount:rendered,scope,activeCountry:activeCountry||null,resourceFilterCount:selected.size,overlapGroupCount:renderedCoordinateKeys.size,offsetMarkerCount,markerLimit:MAX_MAP_RESOURCE_MARKERS};
 }
 function attachMapRefreshHooks(){
  const targets=[
   {object:g.Game?.Map,names:['renderResourceDeposits','setResourceScope','applyResourceMapFilter','applyMultiResourceFilter','handleResourceCheckboxChange','toggleResourceMode','toggleResourceOverlay','toggleResourceChip','selectResourcePreset','applyResourceFilterAndClose','clearAndResetResourceMode','toggleResourceType','toggleResourceCheckbox','selectAllResourceTypes','deselectAllResourceTypes','renderResourceCheckboxesInPanel']},
+  {object:g.Game,names:['selectCountryByName']},
   {object:g.CountryIOS,names:['open']}
  ];
  for(const target of targets){
@@ -627,7 +621,10 @@ function attachMapRefreshHooks(){
    if(typeof original!=='function'||original.__omegaSiteRefreshWrapped)continue;
    const wrapped=function(...args){
     const result=original.apply(this,args);
-    setTimeout(()=>addMapMarkers(),0);
+    setTimeout(()=>{
+     refreshSiteSelectorForCountry(g.Game?.currentActiveCountry||g.CountryIOS?.activeCountry);
+     addMapMarkers();
+    },0);
     return result;
    };
    wrapped.__omegaSiteRefreshWrapped=true;
