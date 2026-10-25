@@ -703,6 +703,29 @@ function countryIds(){
 }
 function processCountry(c){install();const cc=country(c);if(!cc)return{status:'SKIPPED',reason:'COUNTRY_REQUIRED'};return dispatch('resource','OMEGA_RESOURCE_EXPLORATION_TICK',cc,{correlationId:'EXPLORATION-TICK:'+cc+':'+turn()});}
 function processAll(){return countryIds().map(processCountry);}
+function yieldTurnToUi(){
+ return new Promise(resolve=>{
+  if(typeof g.setTimeout==='function')g.setTimeout(resolve,0);
+  else resolve();
+ });
+}
+async function processAllForTurn(){
+ const cs=countryIds(),results=[];
+ for(let i=0;i<cs.length;i++){
+  const c=cs[i];
+  results.push({countryId:c,result:processCountry(c)});
+  if((i+1)%2===0&&i+1<cs.length)await yieldTurnToUi();
+ }
+ return{status:'COMPLETED',turn:turn(),countryCount:cs.length,results};
+}
+async function onTurnCommitted(){
+ await processAllForTurn();
+ const cs=countryIds();
+ for(let i=0;i<cs.length;i++){
+  await processPowerCountry(cs[i]);
+  if((i+1)%2===0&&i+1<cs.length)await yieldTurnToUi();
+ }
+}
 function setCarbonQuota(c,p={}){return carbonQuotaSet(c,p);}
 function recordEmission(c,p={}){return recordCarbonEmission(c,p);}
 function declareEmbargo(c,p={}){install();return dispatch('trade','OMEGA_RESOURCE_EMBARGO_DECLARE',c,p);}
