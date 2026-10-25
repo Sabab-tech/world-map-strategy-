@@ -458,6 +458,8 @@ test('legacy resource filter selection synchronizes individual site scope and co
   assert.equal(calls.length, 1);
 
   context.Game.currentActiveCountry = '';
+  // The world selector is an explicit user choice, not the default when no nation is active.
+  context.Game.Map.resourceState.scope = 'WORLD';
   context.Game.Map.applyResourceMapFilter(['iron-ore', 'copper']);
   assert.equal(context.Game.Map.resourceState.scope, 'WORLD',
     'without a selected country, resource filters must apply to the world scope');
