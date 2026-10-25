@@ -2148,7 +2148,9 @@ function batchFromExtraction(x,record){
     void initialize().then(function(initialized){
       const binding=g.Omega?.IndividualResourceSiteBinding||g.OmegaIndividualResourceSiteBinding;
       const last=g.__omegaResourceEndowmentLastBootstrap;
-      if(initialized?.status==='READY'&&binding&&Array.isArray(binding.sites)&&binding.sites.length&&(!last||['FAILED','WAITING_FOR_PLAYER_COUNTRY'].includes(last.status)))void onSiteBindingReady();
+      const waitingCountrySelected=last?.status==='WAITING_FOR_PLAYER_COUNTRY'&&!!playerSimulationCountryId();
+      if(initialized?.status==='READY'&&binding&&Array.isArray(binding.sites)&&binding.sites.length&&
+         (!last||last.status==='FAILED'||waitingCountrySelected))void onSiteBindingReady();
     });
   }
   function publishBootstrapStatus(snapshot){
