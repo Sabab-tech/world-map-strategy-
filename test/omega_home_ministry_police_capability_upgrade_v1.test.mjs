@@ -83,7 +83,7 @@ test('capability projects require facilities, charge Finance on start, and compl
       inventory: { CONSTRUCTION_AGGREGATE: 1000, COPPER: 1000, BAUXITE_ALUMINUM: 1000, CRUDE_OIL: 1000, IRON_ORE: 1000 },
       tradeAvailability: {}, strategicReserve: { availableByResource: { CONSTRUCTION_AGGREGATE: 995 } }
     } },
-    simulation: { turn: 0, simulationTimeMs: 0 }
+    simulation: { turn: 0, simulationTimeMs: 0, session: { playerCountryId: 'AAA' } }
   } };
 
   // Minimal authoritative state-transaction adapter for this runtime integration test.

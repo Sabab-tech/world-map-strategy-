@@ -28,7 +28,7 @@ function deepSet(root,path,value){
 function createContext(){
   const events=new EventTargetMock();
   const worldState={
-    simulation:{turn:1},
+    simulation:{turn:1,session:{playerCountryId:'BGD'}},
     resource:{
       BGD:{
         mines:[{

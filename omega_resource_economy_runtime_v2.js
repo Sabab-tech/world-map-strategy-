@@ -1133,9 +1133,8 @@
         },'resource-economy');}
       },2);
 
-      // Global Market and Global Trade are already registered as awaited
-      // OMEGA_SIMULATION_TURN_COMMITTED participants. Calling rebuild/processAll here
-      // repeated their world-wide work a second time in the same turn.
+      // Market and trade already run as awaited committed-turn participants.
+      // Re-entering either global pathway here duplicates the settlement pass.
 
       // World counts are computed once per turn. The former loop built a full, deeply
       // cloned dashboard for every country, and dashboard() itself rescanned every country,

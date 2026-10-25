@@ -405,7 +405,8 @@ test('index, finance, bank and offline shell use the daily lifecycle assets', ()
     'site bootstrap must hydrate and index sites without starting production for every country');
   assert.match(resourceEconomy, /extractAll\(\{activeOnly:true\}\)/,
     'the economy turn must use the active-site extraction policy instead of global all-site extraction');
-  assert.match(resourceEconomy, /return runTurn\(\);/);
+  assert.match(resourceEconomy, /return runTurn\(\{skipExtraction:true\}\);/,
+    'the economy turn must not extract a second time after the authoritative mine turn participant');
   assert.doesNotMatch(resourceEconomy, /g\.OmegaGlobalMarket\.rebuild\(\)/,
     'resource economy must not repeat the global market turn participant');
   assert.doesNotMatch(resourceEconomy, /g\.OmegaGlobalTrade\.processAll\(\)/,

@@ -4,7 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 globalThis.Game={state:{
-  simulation:{turn:1,simulationTurn:1},
+  simulation:{turn:1,simulationTurn:1,session:{playerCountryId:'BD'}},
   finance:{BD:{available:100000,reserves:120000,committed:0}},
   economy:{BD:{gdp:1000000,debt:100000,productionCapacity:500}},
   population:{BD:{labor:{available:10000}}},

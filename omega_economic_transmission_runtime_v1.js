@@ -215,7 +215,7 @@
       initializedTurn: num(base.initializedTurn) ?? currentTurn()
     };
   }
-  function updateOne(profile, turnNumber, dt, globalInflationPct, simDay) {
+  function updateOne(profile, turnNumber, dt, globalInflationPct, simDay, backgroundTurn, activeProfile) {
     if (!profile || !profile.economyKey) return null;
     const root = rootState(), bankStore = rootTransmissionStore(), id = profileId(profile);
     const facts = factRows(profile);
@@ -460,7 +460,7 @@
     for (const p of workProfiles) {
       if (!p || !p.economyKey) continue;
       try {
-        const result = updateOne(p, t, dt, averageInflation, simDay);
+        const result = updateOne(p, t, dt, averageInflation, simDay, backgroundTurn === true, activeProfile);
         if (result) processed++;
       } catch (error) {
         failures.push({ countryCode: profileId(p), error: String(error && error.message || error) });
