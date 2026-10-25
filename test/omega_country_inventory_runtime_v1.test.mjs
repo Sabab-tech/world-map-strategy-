@@ -285,6 +285,48 @@ test('factory output and input consumption are logged once without double-credit
   assert.equal(item(api.getInventory('BGD', { includeZero: true }), 'steel').quantity, 6);
 });
 
+test('multi-input factory output is credited when the factory commits only to processed warehouse', async () => {
+  const { context, state, api } = makeRuntime();
+  await api.init();
+
+  // Model delivery to the factory input lot before production. The national on-hand
+  // balance was already debited at delivery, so the production event must not debit it again.
+  state.resource.BGD.inventory.iron_concentrate = 8;
+  context.dispatchEvent(new context.CustomEvent('OMEGA_RESOURCE_INVENTORY_CHANGED', {
+    detail: { eventType: 'OMEGA_RESOURCE_INVENTORY_CHANGED', countryId: 'BGD', payload: { countryId: 'BGD' } }
+  }));
+
+  // Multi-input factory cycles publish finished goods to processedWarehouse but do not
+  // increment resource.inventory. The national inventory must still receive the output.
+  state.resource.BGD.processedWarehouse.availableByResource.STEEL = 3;
+  const payload = {
+    transactionId: 'MULTI-FACTORY:BGD:FAC-2:T1:1',
+    countryId: 'BGD',
+    factoryId: 'FAC-2',
+    inputSource: 'TRACKED_FACTORY_INPUT',
+    inputTrackingStatus: 'TRACKED_FACTORY_INPUT_LOTS',
+    inputQuantities: { iron_concentrate: 2 },
+    outputQuantities: { STEEL: 3 }
+  };
+  context.dispatchEvent(new context.CustomEvent('OMEGA_INDUSTRIAL_PRODUCTION_COMPLETED', {
+    detail: { eventType: 'OMEGA_INDUSTRIAL_PRODUCTION_COMPLETED', countryId: 'BGD', payload }
+  }));
+  context.dispatchEvent(new context.CustomEvent('OMEGA_RESOURCE_FINISHED_GOODS_AVAILABLE', {
+    detail: {
+      eventType: 'OMEGA_RESOURCE_FINISHED_GOODS_AVAILABLE',
+      countryId: 'BGD',
+      payload: { ...payload, outputs: payload.outputQuantities }
+    }
+  }));
+
+  assert.equal(state.resource.BGD.inventory.iron_concentrate, 8, 'factory input must not be deducted twice after delivery');
+  assert.equal(state.resource.BGD.inventory.STEEL, 6, 'warehouse-only factory output must be added to on-hand inventory');
+  assert.equal(item(api.getInventory('BGD', { includeZero: true }), 'steel').quantity, 6);
+  const ledger = api.getInventory('BGD').ledger;
+  assert.equal(ledger.filter(row => row.action === 'PRODUCTION' && row.referenceId === payload.transactionId && row.productId === 'steel').length, 1);
+  assert.equal(ledger.filter(row => row.action === 'CONSUMPTION' && row.referenceId === payload.transactionId && row.productId === 'iron_concentrate').length, 1);
+});
+
 test('inventory has no stock cap or fixed 2,048-entry ledger truncation', async () => {
   const { api } = makeRuntime();
   await api.init();
