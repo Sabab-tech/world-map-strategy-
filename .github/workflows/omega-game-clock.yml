@@ -10,6 +10,7 @@ on:
       - main
     paths:
       - 'omega_simulation_runtime.js'
+      - 'omega_enterprise_composition_root_v10.js'
       - 'omega_game_lifecycle_runtime_v1.js'
       - 'omega_game_lifecycle_runtime_v1.css'
       - 'omega_finance_ministry_runtime_v1.js'
@@ -56,6 +57,7 @@ jobs:
       - name: Verify JavaScript syntax
         run: |
           node --check omega_simulation_runtime.js
+          node --check omega_enterprise_composition_root_v10.js
           node --check omega_game_lifecycle_runtime_v1.js
           node --check omega_finance_ministry_runtime_v1.js
           node --check omega_government_banking_runtime_v1.js
