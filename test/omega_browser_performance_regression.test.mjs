@@ -376,6 +376,10 @@ test('performance monitor cancels its animation-frame loop while the app is back
 
 test('country borders stay visible in base map and visual overlays', () => {
   const map = read('map-engine-2.js');
+  const worker = read('omega-offline-map-sw.js');
+  const cacheVersionMatch = worker.match(/CACHE_NAME = "omega-offline-atlas-shell-v(\d+)"/);
+  const cacheVersion = Number(cacheVersionMatch?.[1] || 0);
+  assert.ok(cacheVersion >= 39, 'offline Android clients must invalidate stale map code');
   assert.ok(map.includes('color: "#f8fafc",\n                weight: zoom >= 8 ? 1.8 : (zoom >= 5 ? 1.5 : 1.25),\n                opacity: 1.0,'),
     'base country polygons need opaque, high-contrast borders');
   assert.ok(map.includes('weight: currentZoom > 5.5 ? 1.55 : 1.25'),
