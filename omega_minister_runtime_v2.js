@@ -18,6 +18,10 @@
   const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, Number.isFinite(Number(n)) ? Number(n) : lo));
   const now = () => Date.now();
   const deepClone = o => JSON.parse(JSON.stringify(o));
+  // Explicit record copying is intentional here: Android 9's older WebView and
+  // the APK's ES2017 transpilation must not receive nullable object-spread inputs.
+  const copyRecord = value => value && typeof value === 'object' && !Array.isArray(value)
+    ? Object.assign({}, value) : {};
 
   class EventBus {
     constructor(){ this.map = new Map(); }
@@ -59,7 +63,7 @@
   function readConfig(raw){
     if(!raw || typeof raw!=='object') return;
     const src=raw.ministerRuntime || raw.minister_runtime || raw;
-    for(const k of ['workload','stress','learning']) if(src[k] && typeof src[k]==='object') engine.config[k]={...engine.config[k],...src[k]};
+    for(const k of ['workload','stress','learning']) if(src[k] && typeof src[k]==='object') engine.config[k]=Object.assign({},copyRecord(engine.config[k]),copyRecord(src[k]));
   }
   function profileName(profile){
     const rn=profile?.regional_names||profile?.regionalNames;
@@ -71,10 +75,15 @@
     if(!db || typeof db!=='object') throw new Error('INVALID_MINISTERS_JSON');
     for(const [ministry,arr] of Object.entries(db)) if(Array.isArray(arr)) for(const p0 of arr){
       if(!p0?.id) continue;
-      const p={...p0, ministryId:p0.ministryId||ministry, baseName:p0.baseName||p0.name||null,
-        baseAge:Number(p0.baseAge ?? p0.age ?? 0), baseStats:{...(p0.baseStats||p0.stats||{})},
-        efficiencyProfile:{...(p0.efficiencyProfile||p0.efficiency||{})}, personalityProfile:{...(p0.personalityProfile||p0.personality||{})},
-        regionalNames:{...(p0.regionalNames||p0.regional_names||{})}};
+      const p=Object.assign({},copyRecord(p0),{
+        ministryId:p0.ministryId||ministry,
+        baseName:p0.baseName||p0.name||null,
+        baseAge:Number(p0.baseAge ?? p0.age ?? 0),
+        baseStats:copyRecord(p0.baseStats||p0.stats),
+        efficiencyProfile:copyRecord(p0.efficiencyProfile||p0.efficiency),
+        personalityProfile:copyRecord(p0.personalityProfile||p0.personality),
+        regionalNames:copyRecord(p0.regionalNames||p0.regional_names)
+      });
       registry.registerProfile(p);
     }
     engine.profilesLoaded=true;
@@ -214,7 +223,7 @@
     try{
       const [ministers,config]=await Promise.all([loadJson('ministers.json'),loadJson('minister_system_config.json').catch(()=>null)]);
       normalizeProfiles(ministers); readConfig(config); restore(); synchronize();
-      window.OmegaMinisterSystem={...engine,recruit,fire,tick,recordOutcome,applyExposure,resolveFactors,getActive:(c,m)=>registry.getActiveMinister(c,m),openRecruitment:openPanel,getCandidates:candidateList,getMinister:id=>registry.getEffectiveState(id),persist,synchronize};
+      window.OmegaMinisterSystem=Object.assign({},engine,{recruit,fire,tick,recordOutcome,applyExposure,resolveFactors,getActive:(c,m)=>registry.getActiveMinister(c,m),openRecruitment:openPanel,getCandidates:candidateList,getMinister:id=>registry.getEffectiveState(id),persist,synchronize});
       window.dispatchEvent(new CustomEvent('OMEGA_MINISTER_RUNTIME_READY',{detail:{version:VERSION,profileCount:registry.profiles.size}}));
       // Public command hook for existing ministry UI. Existing buttons may call this without owning state.
       window.OmegaMinisterSystem.openForMinistry=openPanel;
