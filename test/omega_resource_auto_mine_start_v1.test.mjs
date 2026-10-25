@@ -60,6 +60,12 @@ assert.ok(state.resource.BGD.mineAssets.every(x=>x.status==='OPERATIONAL'));
 assert.ok(state.resource.BGD.mineAssets.every(x=>x.workersAssigned>=x.workersRequired));
 assert.ok(state.resource.BGD.mineAssets.every(x=>x.fleet.vehiclesAssigned>=x.fleet.vehiclesRequired));
 assert.equal(state.resource.BGD.commissionedSites.length,2);
+assert.equal(state.economy.BGD.mineEmployment.workersAssigned,
+ state.resource.BGD.mineAssets.reduce((sum,asset)=>sum+asset.workersAssigned,0),
+ 'every mine worker assignment must be recorded in the country employment ledger');
+assert.ok(state.economy.BGD.starterWorkforceProvisioning.availableWorkers>=state.economy.BGD.mineEmployment.workersRequired,
+ 'the selected country must have an adequate initial worker pool');
+assert.equal(state.economy.CHL,undefined,'foreign economy/workforce state must not be created');
 assert.ok(state.transport.BGD.infrastructure.roads.capacityPerDay>0);
 assert.ok(state.transport.BGD.infrastructure.utilitySupply.electricityMWhPerDay>0);
 assert.equal(state.resource.CHL,undefined,'foreign country state must not be created or mutated');
