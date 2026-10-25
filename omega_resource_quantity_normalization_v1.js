@@ -17,7 +17,7 @@ function canonicalUnit(resourceId){
  return CANONICAL_UNIT_BY_RESOURCE[rid]||'TONNES';
 }
 function cleanUnit(unit){
- const u=String(unit??'').trim().toUpperCase().replace(/[^A-Z0-9]+/g,'_').replace(/^_+|_+$/g,'').replace(/_(PER_DAY|PER_YEAR|PER_TURN|PER_SIMULATION_PRODUCTION_UNIT)$/,'');
+ const u=String(unit??'').trim().toUpperCase().replace(/[^A-Z0-9]+/g,'_').replace(/^_+|_+$/g,'').replace(/_(PER_DAY|PER_YEAR|PER_TURN|PER_SIMULATION_PRODUCTION_UNIT|DAY|DAILY|YEAR|YR|ANNUAL|PER_ANNUM|TURN)$/,'');
  if(!u||['UNKNOWN','UNOBSERVED','NOT_RECORDED','UNIT_UNKNOWN','SIMULATION_RESOURCE_UNIT'].includes(u))return'UNIT_UNKNOWN';
  if(['T','TON','TONNE','TONNES','METRIC_TON','METRIC_TONS','METRIC_TONNE','METRIC_TONNES','TONNES_ORE','TONNES_GRAPHITE','TONNES_PER_DAY','TONNES_PER_YEAR','METRIC_TONNES_U3O8'].includes(u))return'TONNES';
  if(['KG','KGS','KILOGRAM','KILOGRAMS'].includes(u))return'KG';
@@ -35,6 +35,13 @@ function cleanUnit(unit){
  if(['M3','CUBIC_METRE','CUBIC_METRES','CUBIC_METER','CUBIC_METERS'].includes(u))return'M3';
  if(['TONNES_U3O8','METRIC_TONNES_U3O8','TONNE_U3O8'].includes(u))return'TONNES';
  return u;
+}
+function daysPerProductionPeriod(sourceUnit){
+ const period=String(sourceUnit??'').trim().toUpperCase().replace(/[\\s-]+/g,'_');
+ if(/(?:_PER_YEAR|_YEAR|_YR|_ANNUAL|_PER_ANNUM|\\/YEAR|\\/YR)$/.test(period))return 365;
+ if(/(?:_PER_TURN|_TURN|\\/TURN)$/.test(period))
+  return Math.max(1,num(g.Game?.state?.simulation?.daysPerTurn)||num(g.gameState?.simulation?.daysPerTurn)||1);
+ return 1;
 }
 function factorToCanonical(resourceId, sourceUnit, targetUnit){
  const u=cleanUnit(sourceUnit),target=cleanUnit(targetUnit),rid=tok(resourceId);
@@ -120,8 +127,7 @@ function normalizeMetricObject(object, resourceId, kind){
    const sourceUnit=out.rateUnit||out.unit||rawUnit;
    const n=normalizeQuantity(resourceId,out.rate,sourceUnit,{simulationOnly:true});
    const period=String(sourceUnit||'').toUpperCase();
-   const dayDivisor=/_PER_YEAR(?:$|_)/.test(period)?365:
-    /_PER_TURN(?:$|_)/.test(period)?Math.max(1,num(g.Game?.state?.simulation?.daysPerTurn)||num(g.gameState?.simulation?.daysPerTurn)||1):1;
+   const dayDivisor=daysPerProductionPeriod(period);
    out.rate=n.quantity===null?null:Number((n.quantity/dayDivisor).toFixed(9));
    out.rateUnit=n.quantity===null?n.unit:n.unit+'_PER_DAY';
    out.unit=n.unit;
@@ -138,8 +144,7 @@ function normalizeMetricObject(object, resourceId, kind){
  if(kind==='capacity'){
   const sourceUnit=out.rateUnit||out.unit||rawUnit;
   const sourcePeriod=String(sourceUnit||'').toUpperCase();
-  const dayDivisor=/_PER_YEAR(?:$|_)/.test(sourcePeriod)?365:
-   /_PER_TURN(?:$|_)/.test(sourcePeriod)?Math.max(1,num(g.Game?.state?.simulation?.daysPerTurn)||num(g.gameState?.simulation?.daysPerTurn)||1):1;
+  const dayDivisor=daysPerProductionPeriod(sourcePeriod);
   for(const key of ['nominal','minimum','maximum','activeRate','dailyRate','productionRate','nominalCapacity','minimumCapacity','maximumCapacity']){
    if(num(out[key])===null)continue;
    const n=normalizeQuantity(resourceId,out[key],sourceUnit,{simulationOnly:true});
