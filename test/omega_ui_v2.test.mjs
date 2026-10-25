@@ -187,6 +187,12 @@ test('industry view reads current country assets, cycles and projects without sy
 test('resource inventory lists only canonical natural resources once, with clean names and units', () => {
   const previousInventory = globalThis.OmegaCountryInventoryRuntime;
   const previousResources = globalThis.OmegaResourceMinistryEngine;
+  const previousRawResources = globalThis.ResourceMinistryEngine;
+  const previousSiteCatalog = globalThis.OmegaResourceSiteCanonicalCatalogData;
+  const previousIdentityRegistry = globalThis.OmegaCanonicalIdentityRegistry;
+  globalThis.ResourceMinistryEngine = undefined;
+  globalThis.OmegaResourceSiteCanonicalCatalogData = { sites: [] };
+  globalThis.OmegaCanonicalIdentityRegistry = { getDataset: () => null };
   globalThis.OmegaResourceMinistryEngine = {
     resourceTypes: [
       { id: 'iron_ore', name: 'Iron Ore', category: 'bulk_commodities', unit: 'metric_tons' },
@@ -246,6 +252,12 @@ test('resource inventory lists only canonical natural resources once, with clean
     else globalThis.OmegaCountryInventoryRuntime = previousInventory;
     if (previousResources === undefined) delete globalThis.OmegaResourceMinistryEngine;
     else globalThis.OmegaResourceMinistryEngine = previousResources;
+    if (previousRawResources === undefined) delete globalThis.ResourceMinistryEngine;
+    else globalThis.ResourceMinistryEngine = previousRawResources;
+    if (previousSiteCatalog === undefined) delete globalThis.OmegaResourceSiteCanonicalCatalogData;
+    else globalThis.OmegaResourceSiteCanonicalCatalogData = previousSiteCatalog;
+    if (previousIdentityRegistry === undefined) delete globalThis.OmegaCanonicalIdentityRegistry;
+    else globalThis.OmegaCanonicalIdentityRegistry = previousIdentityRegistry;
   }
 });
 
