@@ -184,6 +184,50 @@ test('industry view reads current country assets, cycles and projects without sy
   assert.equal(globalThis.OmegaUIV2Industry.buildViewModel({countryId:'USA'}).factoryCount,0);
 });
 
+test('industry screen exposes the country-wide unbounded inventory without replacing factory input stock', () => {
+  const previous = globalThis.OmegaCountryInventoryRuntime;
+  globalThis.OmegaCountryInventoryRuntime = {
+    getInventory(countryId, options) {
+      assert.equal(options.includeZero, true);
+      assert.equal(options.includeLedger, false);
+      return {
+        status: 'READY',
+        countryId: countryId,
+        countryName: 'Bangladesh',
+        active: countryId === 'BGD',
+        readOnly: countryId !== 'BGD',
+        unbounded: true,
+        items: [{
+          productId: 'steel',
+          name: 'Steel',
+          base: 5,
+          quantity: 9,
+          deltaFromBase: 4,
+          unit: 'SIMULATION_RESOURCE_UNIT'
+        }]
+      };
+    }
+  };
+  try {
+    const model = globalThis.OmegaUIV2Industry.buildViewModel({ countryId: 'BGD' });
+    assert.equal(model.nationalInventory.items[0].quantity, 9);
+    const root = {
+      classList: { add() {} },
+      addEventListener() {},
+      innerHTML: ''
+    };
+    const result = globalThis.OmegaUIV2Industry.render(root, { countryId: 'BGD', tab: 'national-inventory' });
+    assert.equal(result.ok, true);
+    assert.match(root.innerHTML, /National Inventory/);
+    assert.match(root.innerHTML, /Steel/);
+    assert.match(root.innerHTML, /UNBOUNDED STOCK LOG/);
+    assert.match(root.innerHTML, /Input Inventory/);
+  } finally {
+    if (previous === undefined) delete globalThis.OmegaCountryInventoryRuntime;
+    else globalThis.OmegaCountryInventoryRuntime = previous;
+  }
+});
+
 test('reports list nine source-linked report categories and do not treat missing data as zero', () => {
   globalThis.Game = { state: { resource:{BGD:{industrialNetwork:{projects:[]}}}, economy:{BGD:{productionAssets:[]}} } };
   globalThis.OmegaCountryDataGateway = {
