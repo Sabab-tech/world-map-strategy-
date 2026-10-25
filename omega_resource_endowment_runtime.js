@@ -1655,10 +1655,10 @@ function batchFromExtraction(x,record){
         /(^|_)(ACTIVE_EXTRACTION|ACTIVE_PRODUCING|ACTIVE|DEPLETING|RESERVE_DEPLETING|OPERATING|RUNNING|PRODUCING)(_|$)/.test(status);
       // Real-world/source status remains historical evidence. A player-commissioned starter
       // mine is a separate simulation asset, so it may operate in-game without rewriting that evidence.
-      const policySiteId=String(x.siteReferenceKey||x.rawDeposit?.siteId||x.rawDeposit?.siteReferenceKey||'').trim();
-      const commissionedMineAsset=policySiteId?
+      const commissionedSiteId=String(x.siteReferenceKey||x.rawDeposit?.siteId||x.rawDeposit?.siteReferenceKey||'').trim();
+      const commissionedMineAsset=commissionedSiteId?
         (Array.isArray(state()?.resource?.[c]?.mineAssets)?state().resource[c].mineAssets:[])
-          .find(asset=>String(asset?.siteId||asset?.siteReferenceKey||'')===policySiteId&&
+          .find(asset=>String(asset?.siteId||asset?.siteReferenceKey||'')===commissionedSiteId&&
             String(asset?.status||'').toUpperCase()==='OPERATIONAL'):null;
       const operational=!!commissionedMineAsset||
         (!isExplicitlyNonOperational(operationalStatus)&&!isExplicitlyNonOperational(sourceStatus)&&
