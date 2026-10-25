@@ -310,6 +310,9 @@ test('index, finance, bank and offline shell use the daily lifecycle assets', ()
   const core = fs.readFileSync(path.join(root, 'omega_simulation_runtime.js'), 'utf8');
   const endowment = fs.readFileSync(path.join(root, 'omega_resource_endowment_runtime.js'), 'utf8');
   const resourceEconomy = fs.readFileSync(path.join(root, 'omega_resource_economy_runtime_v2.js'), 'utf8');
+  const globalMarket = fs.readFileSync(path.join(root, 'omega_global_market_system.js'), 'utf8');
+  const globalTrade = fs.readFileSync(path.join(root, 'omega_global_trade_system.js'), 'utf8');
+  const industrialNetwork = fs.readFileSync(path.join(root, 'omega_resource_industrial_network_v1.js'), 'utf8');
   const macro = fs.readFileSync(path.join(root, 'omega_macro_stability_runtime_v1.js'), 'utf8');
   const ministryEngine = fs.readFileSync(path.join(root, 'ministry_engine.js'), 'utf8');
   const ministerIntegration = fs.readFileSync(path.join(root, 'omega_minister_integration.js'), 'utf8');
@@ -403,6 +406,18 @@ test('index, finance, bank and offline shell use the daily lifecycle assets', ()
   assert.match(resourceEconomy, /extractAll\(\{activeOnly:true\}\)/,
     'the economy turn must use the active-site extraction policy instead of global all-site extraction');
   assert.match(resourceEconomy, /return runTurn\(\);/);
+  assert.doesNotMatch(resourceEconomy, /g\.OmegaGlobalMarket\.rebuild\(\)/,
+    'resource economy must not repeat the global market turn participant');
+  assert.doesNotMatch(resourceEconomy, /g\.OmegaGlobalTrade\.processAll\(\)/,
+    'resource economy must not repeat the global trade turn participant');
+  assert.match(globalMarket, /async function onTurn\(\)/);
+  assert.match(globalMarket, /await yieldTurnToUi\(\)/,
+    'global market publication must yield between country projections');
+  assert.match(globalTrade, /async function onTurn\(\)/);
+  assert.match(globalTrade, /await yieldTurnToUi\(\)/,
+    'global trade settlement must yield between request batches');
+  assert.match(industrialNetwork, /await new Promise\(resolve=>\{/,
+    'industrial country processing must yield to WebView input and layout');
   assert.match(macro, /return init\(\)\.then\(\(\)=>advanceTurn\(turn,duration\)\)/);
 });
 
