@@ -74,6 +74,7 @@ const resourceFiles=new Map([
   ['resources.json',new URL('../resources.json',import.meta.url)],
   ['resources_2.json',new URL('../resources_2.json',import.meta.url)],
   ['resource_site_reserve_simulation_v1.json',new URL('../resource_site_reserve_simulation_v1.json',import.meta.url)],
+  ['resource_site_quantity_completion_v1.json',new URL('../resource_site_quantity_completion_v1.json',import.meta.url)],
   ['resource_site_country_mineplay_batch_20261020_v1.json',new URL('../resource_site_country_mineplay_batch_20261020_v1.json',import.meta.url)],
   ['resource_site_country_mineplay_batch_20261024_v1.json',new URL('../resource_site_country_mineplay_batch_20261024_v1.json',import.meta.url)],
   ['resource_site_country_mineplay_critical_batch_20261024_v1.json',new URL('../resource_site_country_mineplay_critical_batch_20261024_v1.json',import.meta.url)],
@@ -143,6 +144,8 @@ await import('../omega_resource_endowment_runtime.js');
 const runtime=globalThis.OmegaResourceEndowmentRuntime;
 const initialized=await runtime.initialize();
 assert.equal(initialized.status,'READY',JSON.stringify(initialized));
+assert.equal(globalThis.OmegaResourceSiteQuantityCompletionData?.recordCount,305,'the full additive site quantity completion file must load');
+assert.equal(new Set((globalThis.OmegaResourceSiteQuantityCompletionData?.records||[]).map(x=>x.siteId)).size,305,'completion rows must remain unique in runtime');
 assert.equal(initialized.countries,Object.keys(engine.countryProfiles||{}).length);
 // Startup must not claim READY if either supplemental production batch is absent or partial.
 const mineplayReadiness=globalThis.OmegaResourceSiteCanonicalCatalogData;
