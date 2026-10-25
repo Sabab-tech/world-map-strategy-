@@ -254,12 +254,22 @@
       return true;
     }catch(_){return false;}
   }
-  function onTurn(){
+  function yieldTurnToUi(){
+    return new Promise(resolve=>{
+      if(typeof g.setTimeout==='function')g.setTimeout(resolve,0);
+      else resolve();
+    });
+  }
+  async function onTurn(){
     install();
-    const markets=rebuild();
-    for(const c of countries()){
+    const markets=rebuild(),countryIds=countries(),resourceCount=Object.keys(markets).length;
+    // Publishing a full cloned market projection for every country is costly on Android 9.
+    // Yield after small batches so input and screen rendering are never starved by the market.
+    for(let index=0;index<countryIds.length;index++){
+      const c=countryIds[index];
       writeProjection(c,markets);
-      try{interop()?.emitEvent?.('OMEGA_MARKET_PRICE_UPDATED',c,'trade',{turn:turn(),resources:Object.keys(markets).length},{turn:turn(),correlationId:'MARKET-'+turn()+'-'+c});}catch(_){}
+      try{interop()?.emitEvent?.('OMEGA_MARKET_PRICE_UPDATED',c,'trade',{turn:turn(),resources:resourceCount},{turn:turn(),correlationId:'MARKET-'+turn()+'-'+c});}catch(_){}
+      if((index+1)%2===0&&index+1<countryIds.length)await yieldTurnToUi();
     }
   }
   function diagnostics(){
