@@ -2117,7 +2117,7 @@
         // Only funding claims and debt service belonging to the active player country
         // accrue on this device. Other contracts remain stored as frozen reference state.
         const session=global.Omega&&global.Omega.Simulation&&global.Omega.Simulation.session||{};
-        const playerCountryValue=detail.countryId||(detail.payload&&detail.payload.countryId)||session.playerCountryId||session.countryId||global.Game&&global.Game.state&&(global.Game.state.playerCountryId||global.Game.state.simulation&&global.Game.state.simulation.session&&global.Game.state.simulation.session.playerCountryId);
+        const playerCountryValue=detail.countryId||(detail.payload&&detail.payload.countryId)||session.playerCountryId||session.countryId||(global.Omega&&global.Omega.Simulation&&typeof global.Omega.Simulation.getPlayerCountryId==='function'&&global.Omega.Simulation.getPlayerCountryId())||rootState().simulation&&rootState().simulation.session&&rootState().simulation.session.playerCountryId||global.Game&&global.Game.state&&(global.Game.state.playerCountryId||global.Game.state.simulation&&global.Game.state.simulation.session&&global.Game.state.simulation.session.playerCountryId);
         if(!playerCountryValue){queueRender(true);return;}
         processTurn(turn, stepDurationMs, playerCountryValue, true);
         serviceCountryLoansOnTurn(turn, stepDurationMs, playerCountryValue, true);
