@@ -274,7 +274,7 @@
       var employment = asset.employment && typeof asset.employment === 'object' ? asset.employment : {};
       return {
         id: id || null,
-        name: String(profile.name || asset.name || type || id || 'Unnamed registered factory'),
+        name: String(asset.name || asset.factoryName || profile.name || type || id || 'Unnamed registered factory'),
         type: type || 'Not recorded',
         recipeId: String(asset.recipeId || profile.defaultRecipeId || 'Not recorded'),
         status: String(asset.status || 'NOT_RECORDED'),
@@ -550,7 +550,7 @@
               else mineUi.open('mines', selected);
             } else {
               var app = g.OmegaUIV2App;
-              if (app && typeof app.navigate === 'function') app.navigate(root.closest('[data-omega-v2-app-root]') || root, 'resources');
+              if (app && typeof app.navigate === 'function') app.navigate(root.closest('.omega-v2-app-root') || root, 'resources');
               else if (typeof g.dispatchEvent === 'function' && typeof g.CustomEvent === 'function') {
                 g.dispatchEvent(new g.CustomEvent('OMEGA_OPEN_RESOURCE_MINE_MANAGEMENT', { detail: { countryId: activeModel.countryId, view: actionName === 'open-extraction' ? 'my-mines' : 'mines' } }));
               }
