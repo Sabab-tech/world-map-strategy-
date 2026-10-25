@@ -713,6 +713,65 @@ test('Finance has six separate data-backed tabs', () => {
   }
 });
 
+test('Home Affairs hides unready shared placeholders and shows the Bangladesh reference photo only for Bangladesh', () => {
+  const keys = ['OmegaHomeMinistryEngine','OmegaCountryRuntimeData','OmegaCountryDataGateway','OmegaUIPhotoAssets','OmegaMinistryViewCountry'];
+  const prior = Object.fromEntries(keys.map(key => [key, globalThis[key]]));
+  globalThis.OmegaMinistryViewCountry = '';
+  globalThis.OmegaCountryRuntimeData = {
+    resolveCountry(value) {
+      const raw = String(value || '').trim().toUpperCase();
+      if (['BD','BGD','BANGLADESH'].includes(raw)) return { countryCode:'BD', iso3:'BGD', name:'Bangladesh' };
+      if (['US','USA','UNITED STATES'].includes(raw)) return { countryCode:'US', iso3:'USA', name:'United States' };
+      return null;
+    }
+  };
+  globalThis.OmegaCountryDataGateway = null;
+  globalThis.OmegaUIPhotoAssets = {
+    get(id) {
+      return id === 'bangladesh-police-headquarters'
+        ? { path:'assets/ui-photos/bangladesh-police-headquarters.webp', caption:'Bangladesh police headquarters' }
+        : null;
+    }
+  };
+  globalThis.OmegaHomeMinistryEngine = {
+    getState(country) {
+      if (String(country).toUpperCase() === 'USA') {
+        return { baselineVersion:0, baselineSource:null, policeCount:250, policeEfficiency:60, policeTrust:55, publicSatisfaction:55, vehiclesOwned:{}, incidentLedger:[], unlockedVehicleLevel:1, specialAgents:0, recruitmentFeePerOfficerUsd:500, dailySalaryPerOfficerUsd:1, facilityLevels:{station:1}, trainingQualityLevel:1, policeRecruitmentLevel:1, patrolPlan:{urban:25} };
+      }
+      return { baselineVersion:1, baselineSource:'OMEGA_COUNTRY_POLICE_BASELINE_V1',
+        openingConditionModel:'MODELED_COUNTRY_SPECIFIC_POLICE_FLEET_CRIME_GEOGRAPHY_V1',
+        policeCount:205417, policeEfficiency:61, policeTrust:67, publicSatisfaction:65,
+        vehiclesOwned:{'1':2894}, incidentLedger:[], unlockedVehicleLevel:1, specialAgents:0,
+        recruitmentFeePerOfficerUsd:500, dailySalaryPerOfficerUsd:1.88, facilityLevels:{station:1},
+        trainingQualityLevel:1, policeRecruitmentLevel:1, patrolPlan:{urban:25} };
+    },
+    estimateRecruitmentImpact() { return { ok:true, upfrontCostUsd:500, addedDailyPayrollUsd:1, additionalIncidentsAvoidedPerYear:1 }; },
+    getCountryFleetSnapshot() { return { ownedUnits:0 }; }
+  };
+  try {
+    const usRoot = { classList:{ add(){} }, addEventListener(){}, contains(){return true;} };
+    const usRender = globalThis.OmegaUIV2HomeAffairs.render(usRoot,{countryId:'USA'});
+    assert.equal(usRender.ok,true);
+    assert.match(usRoot.innerHTML,/COUNTRY BASELINE LOADING/);
+    assert.match(usRoot.innerHTML,/Not recorded/);
+    assert.doesNotMatch(usRoot.innerHTML,/<strong>250<\/strong>|<strong>60%<\/strong>|<strong>55%<\/strong>/);
+    assert.doesNotMatch(usRoot.innerHTML,/bangladesh-police-headquarters/);
+
+    const bdRoot = { classList:{ add(){} }, addEventListener(){}, contains(){return true;} };
+    const bdRender = globalThis.OmegaUIV2HomeAffairs.render(bdRoot,{countryId:'BDG'});
+    assert.equal(bdRender.ok,true);
+    assert.match(bdRoot.innerHTML,/COUNTRY BASELINE READY/);
+    assert.match(bdRoot.innerHTML,/bangladesh-police-headquarters\.webp/);
+    assert.match(bdRoot.innerHTML,/<strong>205417<\/strong>/);
+    assert.match(bdRoot.innerHTML,/<strong>61%<\/strong>/);
+  } finally {
+    for (const key of keys) {
+      if (prior[key] === undefined) delete globalThis[key];
+      else globalThis[key] = prior[key];
+    }
+  }
+});
+
 test('Home Affairs legal register shows stored law sections and never fabricates missing law text', () => {
   const previousEngine = globalThis.OmegaHomeMinistryEngine;
   globalThis.OmegaHomeMinistryEngine = {
