@@ -2116,7 +2116,8 @@
             && global.Omega.Simulation.clock.stepDurationMs) ?? DAY_MS;
         // Only funding claims and debt service belonging to the active player country
         // accrue on this device. Other contracts remain stored as frozen reference state.
-        const playerCountryValue=detail.countryId||(detail.payload&&detail.payload.countryId);
+        const session=global.Omega&&global.Omega.Simulation&&global.Omega.Simulation.session||{};
+        const playerCountryValue=detail.countryId||(detail.payload&&detail.payload.countryId)||session.playerCountryId||session.countryId||global.Game&&global.Game.state&&(global.Game.state.playerCountryId||global.Game.state.simulation&&global.Game.state.simulation.session&&global.Game.state.simulation.session.playerCountryId);
         if(!playerCountryValue){queueRender(true);return;}
         processTurn(turn, stepDurationMs, playerCountryValue, true);
         serviceCountryLoansOnTurn(turn, stepDurationMs, playerCountryValue, true);
