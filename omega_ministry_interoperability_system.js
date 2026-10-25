@@ -225,7 +225,13 @@
       'military.recruitmentQueue','military.trainingQueue','military.organizationQueue','military.equipmentQueue','military.equipmentInventory','military.facilities'
     ],
     interior:[
-      'interior.stability','interior.corruption','interior.security','interior.housingAssets','cities.housing.available'
+      'interior.stability','interior.corruption','interior.security','interior.housingAssets','cities.housing.available',
+      'interior.police.baselineVersion','interior.police.baselineSource',
+      'interior.police.policeCount','interior.police.policeEfficiency','interior.police.policeTrust',
+      'interior.police.facilityLevels','interior.police.vehiclesOwned','interior.police.patrolPlan',
+      'interior.police.crimeModel','interior.police.pendingCapabilityProjects',
+      'interior.police.completedCapabilityProjects','interior.police.trainingQualityLevel',
+      'interior.police.policeRecruitmentLevel','interior.police.unlockedVehicleLevel'
     ],
     transport:[
       'transport.infrastructure','transport.infrastructure.capacity','transport.logistics','transport.ports','transport.rail','transport.resourceRevenue'
