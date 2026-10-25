@@ -59,7 +59,7 @@ assert.equal(state.resource.BGD.mineAssets.length,2);
 assert.ok(state.resource.BGD.mineAssets.every(x=>x.status==='OPERATIONAL'));
 assert.ok(state.resource.BGD.mineAssets.every(x=>x.workersAssigned>=x.workersRequired));
 assert.ok(state.resource.BGD.mineAssets.every(x=>x.fleet.vehiclesAssigned>=x.fleet.vehiclesRequired));
-assert.ok(state.resource.BGD.mineAssets.every(x=>x.equipment.allRequiredEquipmentAvailable&&x.equipmentStatus===undefined?false:x.equipment?.equipmentStatus==='AVAILABLE'),
+assert.ok(state.resource.BGD.mineAssets.every(x=>x.equipment?.allRequiredEquipmentAvailable&&x.equipment?.equipmentStatus==='AVAILABLE'),
  'all starter mines must have the required equipment available');
 assert.ok(state.resource.BGD.mineAssets.every(x=>x.operatingSupplies?.status==='READY'&&x.operatingSupplies?.fuelAvailable&&x.operatingSupplies?.sparePartsAvailable),
  'starter consumables, fuel and spare parts must be provisioned');
