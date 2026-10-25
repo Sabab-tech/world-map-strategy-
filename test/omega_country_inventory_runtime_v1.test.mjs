@@ -122,7 +122,7 @@ test('inventory runtime loads after the factory runtime and before resource adap
   assert.ok(adapter > inventory, 'inventory hooks must be available before resource action adapters');
 });
 
-test('all registered countries have saved product rows, while only the selected country reads live stock', async () => {
+test('all countries have saved inventory shells and shared product rows, while only the selected country reads live stock', async () => {
   const { state, api } = makeRuntime();
   const initialized = await api.init();
   assert.equal(initialized.status, 'READY');
@@ -132,15 +132,16 @@ test('all registered countries have saved product rows, while only the selected 
   const savedBangladesh = api.getCountryRecord('BGD');
   const savedUnitedStates = api.getCountryRecord('USA');
   const savedGermany = api.getCountryRecord('DEU');
-  assert.ok(Object.keys(savedBangladesh.products).length >= 4);
-  assert.ok(Object.keys(savedUnitedStates.products).length >= 4);
-  assert.ok(Object.keys(savedGermany.products).length >= 4);
-  assert.equal(savedUnitedStates.products.steel.base, 0);
-  assert.equal(savedUnitedStates.observedBalances.steel, 0);
+  assert.ok(Object.keys(savedBangladesh.products).length >= 4, 'the active country gets a materialized product balance map');
+  assert.equal(Object.keys(savedUnitedStates.products).length, 0, 'inactive product maps stay lazy to avoid bloating autosaves');
+  assert.equal(Object.keys(savedGermany.products).length, 0, 'every other country still has a saved inventory shell');
+  assert.ok(api.getInventory('USA', { includeZero: true }).items.length >= 4, 'the shared catalog renders inactive-country products');
+  assert.ok(api.getInventory('DEU', { includeZero: true }).items.length >= 4, 'the catalog is available for every registered country');
 
   const usaInactive = api.getInventory('USA', { includeZero: true });
   assert.equal(usaInactive.readOnly, true);
   assert.equal(usaInactive.active, false);
+  assert.equal(item(usaInactive, 'steel').base, 0);
   assert.equal(item(usaInactive, 'steel').quantity, 0);
 
   // Inactive country mutations in another subsystem are not polled into the saved inventory.
