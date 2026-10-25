@@ -64,7 +64,40 @@
     }
     return{ok:errors.length===0&&limitations.length===0,errors,count:errors.length,limitations,checkedAt:Date.now()};
   }
-  function install(){global.addEventListener('MINISTER_SYSTEM_SYNCHRONIZED',e=>sync(e.detail?.effective));global.addEventListener('MINISTER_RECRUITED',onRecruit);global.addEventListener('MINISTER_FIRED',onFire);['GAME_TIME_ADVANCED','GAME_TICK','ECONOMY_TICK'].forEach(evt=>global.addEventListener(evt,onGameTime));global.addEventListener('OMEGA_MINISTER_CHANGED',e=>{const d=e.detail;if(!d?.candidate?.id)return;const r=registry();if(!r)return;try{const old=r.getActiveMinister(d.countryCode,d.ministryId);if(old&&old.ministerId!==d.candidate.id)r.removeMinister(old.ministerId,'REPLACED',d.timestamp||0);if(!r.getMinister(d.candidate.id))r.recruitCandidate({...d.candidate,name:d.candidate.displayName||d.candidate.name},d.countryCode,d.ministryId,d.timestamp||0);else r.assignMinister(d.candidate.id,d.countryCode,d.ministryId,d.timestamp||0)}catch(err){try{global.dispatchEvent(new CustomEvent('MINISTER_SYSTEM_SYNC_ERROR',{detail:{message:err.message}}))}catch(_){}}});setInterval(()=>{const c=strictCheck();if(!c.ok)try{global.dispatchEvent(new CustomEvent('MINISTER_STATE_INCONSISTENCY',{detail:c}))}catch(_){}},5000);}
+  function scheduleStrictCheck(){
+    const run=()=>{
+      const result=strictCheck();
+      if(!result.ok){
+        try{global.dispatchEvent(new CustomEvent('MINISTER_STATE_INCONSISTENCY',{detail:result}))}catch(_){}
+      }
+    };
+    if(typeof global.queueMicrotask==='function')global.queueMicrotask(run);
+    else if(typeof global.setTimeout==='function')global.setTimeout(run,0);
+    else run();
+  }
+  function install(){
+    global.addEventListener('MINISTER_SYSTEM_SYNCHRONIZED',e=>sync(e.detail?.effective));
+    global.addEventListener('MINISTER_RECRUITED',onRecruit);
+    global.addEventListener('MINISTER_FIRED',onFire);
+    ['GAME_TIME_ADVANCED','GAME_TICK','ECONOMY_TICK'].forEach(evt=>global.addEventListener(evt,onGameTime));
+    global.addEventListener('OMEGA_MINISTER_CHANGED',e=>{
+      const d=e.detail;
+      if(!d?.candidate?.id)return;
+      const r=registry();
+      if(!r)return;
+      try{
+        const old=r.getActiveMinister(d.countryCode,d.ministryId);
+        if(old&&old.ministerId!==d.candidate.id)r.removeMinister(old.ministerId,'REPLACED',d.timestamp||0);
+        if(!r.getMinister(d.candidate.id))r.recruitCandidate({...d.candidate,name:d.candidate.displayName||d.candidate.name},d.countryCode,d.ministryId,d.timestamp||0);
+        else r.assignMinister(d.candidate.id,d.countryCode,d.ministryId,d.timestamp||0);
+      }catch(err){
+        try{global.dispatchEvent(new CustomEvent('MINISTER_SYSTEM_SYNC_ERROR',{detail:{message:err.message}}))}catch(_){}
+      }
+    });
+    // Validate only after the events that mutate minister state, not on a permanent timer.
+    ['MINISTER_SYSTEM_SYNCHRONIZED','MINISTER_RECRUITED','MINISTER_FIRED','OMEGA_MINISTER_CHANGED']
+      .forEach(evt=>global.addEventListener(evt,scheduleStrictCheck));
+  }
   install();
   global.OmegaMinisterIntegration={version:'1.2.0',sync,debug,strictCheck};
   global.MinisterStateConsistencyChecker={check:strictCheck};
