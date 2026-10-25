@@ -85,6 +85,9 @@ function siteDailyCapacity(site,rid){
  for(const [value,unit] of candidates){
   const q=num(value);if(q!==null&&q>0){
    const normalized=unitApi?.normalizeQuantity?.(rid,q,unit||'UNIT_UNKNOWN',{simulationOnly:true});
+   // If the unit is unknown/incompatible, do not treat the raw quantity as the
+   // canonical unit. Skip it and use the deterministic simulation fallback below.
+   if(unitApi&&normalized?.quantity==null)continue;
    return Math.max(.1,num(normalized?.quantity)??q);
   }
  }
