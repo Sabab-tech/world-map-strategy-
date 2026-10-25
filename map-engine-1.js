@@ -434,7 +434,7 @@ var Game = window.Game = {
         const runtime = window.OmegaCountryRuntimeData;
         const identity = runtime && runtime.resolveCountry(countryName);
         const id = Game.getCountryId ? Game.getCountryId(countryName) : countryName.toUpperCase();
-        const selectedContextCode = identity && (identity.countryCode || identity.iso3) || null;
+        const selectedContextCode = identity && (identity.iso3 || identity.alpha3 || identity.cca3 || identity.countryIso3 || identity.countryCode) || null;
         if (selectedContextCode) {
             const previousContext = window.OmegaMinistryViewCountry || '';
             window.OmegaMinistryViewCountry = selectedContextCode;
