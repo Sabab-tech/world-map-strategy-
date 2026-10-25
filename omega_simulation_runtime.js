@@ -138,6 +138,16 @@
     return Number.isFinite(n)?n:fallback;
   }
 
+  // Promise continuations only drain microtasks; they do not let Android WebView
+  // paint or service taps. Explicitly yield to the task queue between authoritative
+  // turn participants so a full-world turn cannot monopolize the UI thread.
+  function yieldToHost(){
+    return new Promise(resolve=>{
+      if(typeof global.setTimeout==='function')global.setTimeout(resolve,0);
+      else resolve();
+    });
+  }
+
   // Turn participants may return large all-country/resource payloads. Those values
   // are useful while executing a turn, but retaining and cloning them in diagnostics
   // and save snapshots can block low-memory WebViews. Persist only bounded summaries.
@@ -527,6 +537,8 @@
           this.world.setSession(session);
           try{console.error('[OMEGA TURN PARTICIPANT]',failure);}catch(_){}
         }
+        // Browser UI/input gets a task-queue turn before the next participant starts.
+        if(global.document&&typeof global.setTimeout==='function')await yieldToHost();
       }
       }finally{
         global.__OMEGA_SIMULATION_PIPELINE_ACTIVE__=false;
