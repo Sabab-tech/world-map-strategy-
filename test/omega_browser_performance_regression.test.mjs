@@ -402,6 +402,8 @@ test('map and ministry rendering stay responsive and scoped to the selected coun
     'resource mode must not switch to global scope merely because no country has been selected');
   assert.ok(map.includes('individualSiteBinding || window.__OMEGA_RESOURCE_SITE_BINDING_INIT__'),
     'the legacy deposit renderer must not scan the global list while the country-scoped binding owns the map');
+  assert.ok(map.includes('if (this.hubsGroupLayer && typeof this.hubsGroupLayer.clearLayers === \'function\')'),
+    'city markers must be cleared immediately, even while resource-site loading is still in progress');
   assert.ok(resourceBinding.includes('async function discoverSourceSites(root)'),
     'large source discovery must yield rather than monopolize the WebView');
   assert.ok(resourceBinding.includes('visited%400===0)await yieldResourceWorkToUi()'));
