@@ -17,7 +17,7 @@ function canonicalUnit(resourceId){
  return CANONICAL_UNIT_BY_RESOURCE[rid]||'TONNES';
 }
 function cleanUnit(unit){
- const u=String(unit??'').trim().toUpperCase().replace(/[^A-Z0-9]+/g,'_').replace(/^_+|_+$/g,'');
+ const u=String(unit??'').trim().toUpperCase().replace(/[^A-Z0-9]+/g,'_').replace(/^_+|_+$/g,'').replace(/_(PER_DAY|PER_YEAR|PER_TURN|PER_SIMULATION_PRODUCTION_UNIT)$/,'');
  if(!u||['UNKNOWN','UNOBSERVED','NOT_RECORDED','UNIT_UNKNOWN','SIMULATION_RESOURCE_UNIT'].includes(u))return'UNIT_UNKNOWN';
  if(['T','TON','TONNE','TONNES','METRIC_TON','METRIC_TONS','METRIC_TONNE','METRIC_TONNES','TONNES_ORE','TONNES_GRAPHITE','TONNES_PER_DAY','TONNES_PER_YEAR','METRIC_TONNES_U3O8'].includes(u))return'TONNES';
  if(['KG','KGS','KILOGRAM','KILOGRAMS'].includes(u))return'KG';
