@@ -174,6 +174,13 @@ test('imports add inventory, consumption and exports subtract, and inactive-coun
   assert.equal(imported.status, 'COMPLETED');
   assert.equal(imported.balance, 7);
 
+  const duplicateImport = api.importProduct({
+    countryId: 'BGD', productId: 'STEEL', quantity: 4,
+    unit: 'SIMULATION_RESOURCE_UNIT', eventId: 'TEST-IMPORT-1'
+  });
+  assert.equal(duplicateImport.status, 'DUPLICATE');
+  assert.equal(duplicateImport.balance, 7, 'replayed import must not credit stock twice');
+
   const consumed = api.consumeProduct({
     countryId: 'BGD', productId: 'STEEL', quantity: 3,
     eventId: 'TEST-CONSUMPTION-1'
@@ -187,6 +194,13 @@ test('imports add inventory, consumption and exports subtract, and inactive-coun
   });
   assert.equal(exported.status, 'COMPLETED');
   assert.equal(exported.balance, 2);
+
+  const duplicateExport = api.exportProduct({
+    countryId: 'BGD', productId: 'STEEL', quantity: 2,
+    eventId: 'TEST-EXPORT-1', counterpartyCountryId: 'USA'
+  });
+  assert.equal(duplicateExport.status, 'DUPLICATE');
+  assert.equal(duplicateExport.balance, 2, 'replayed export must not debit stock twice');
 
   const before = state.resource.BGD.inventory.STEEL;
   const overdraw = api.exportProduct({
