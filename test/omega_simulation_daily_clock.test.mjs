@@ -679,17 +679,30 @@ test('automatic production and resource pipelines advance only the player-select
   const research = source('omega_resource_research_runtime_v1.js');
   const strategic = source('omega_resource_strategic_policy_runtime_v1.js');
   const hardening = source('omega_resource_system_hardening_v1.js');
+  const finance = source('omega_finance_ministry_runtime_v1.js');
+  const forex = source('omega_forex_monetary_engine_v1.js');
+  const transmission = source('omega_economic_transmission_runtime_v1.js');
+  const macro = source('omega_macro_stability_runtime_v1.js');
+  const home = source('omega_home_ministry_engine_v1.js');
+  const military = source('omega_battlefield_command_runtime_v1.js');
+  const banking = source('omega_government_banking_runtime_v1.js');
+  const worldBank = source('omega_world_bank_lending_runtime_v1.js');
+  const treaties = source('omega_opponent_treaty_lifecycle_system.js');
 
   assert.match(endowment, /if\(options\.activeOnly===true\)\{[\s\S]*?const selected=playerSimulationCountryId\(\);[\s\S]*?return allCountries\.filter\(country=>canonical\(country\)===selected\);/,
     'active mine extraction must be bounded to the selected player country');
-  assert.match(economy, /var activeCountry=currentCountryId\(\);[\s\S]*?var allCountries=countries\(\);[\s\S]*?var activeCountries=\[activeCountry\];/,
-    'resource inventory, factory and ledger turns must use one selected country');
+  assert.match(economy, /var activeCountry=playerSimulationCountryId\(\);[\s\S]*?var allCountries=countries\(\);[\s\S]*?var activeCountries=\[activeCountry\];/,
+    'resource inventory, factory and ledger turns must use one authoritative player country');
   assert.match(industry, /const selectedCountryId=playerSimulationCountryId\(\);[\s\S]*?const countries=\[selectedCountryId\]/,
     'factory cycles, projects, logistics and mine employment must advance for one country only');
   assert.match(actions, /async function processAllForTurn\(\)\{[\s\S]*?const countryId=playerSimulationCountryId\(\);[\s\S]*?countryCount:1/,
     'automated resource actions must not tick every country pending projects');
-  assert.match(market, /async function onTurn\(\)\{[\s\S]*?const countryId=playerSimulationCountryId\(\);[\s\S]*?writeProjection\(countryId,markets\)/,
-    'market turn publication must only update the player country projection');
+  assert.match(market, /function rebuildPlayerProjection\(countryId\)/,
+    'the market must be able to retain cached world quotes while refreshing one country');
+  assert.match(market, /async function onTurn\(\)\{[\s\S]*?const countryId=playerSimulationCountryId\(\);[\s\S]*?rebuildPlayerProjection\(countryId\)[\s\S]*?writeProjection\(countryId,markets\)/,
+    'market turns must refresh and publish only the player country projection');
+  assert.doesNotMatch(market, /if\(state\(\)\?\.simulation\?\.turn!==undefined\)rebuild\(\)/,
+    'market startup must not rebuild whole-world order books synchronously');
   assert.match(trade, /async function onTurn\(\)\{[\s\S]*?const countryId=playerSimulationCountryId\(\);[\s\S]*?countryValue\(countryId,'trade\.importRequests'\)/,
     'automatic trade processing must only advance requests owned by the player country');
   assert.match(research, /async function processAllForTurn\(\)\{[\s\S]*?const selected=playerSimulationCountryId\(\);[\s\S]*?processCountry\(selected\)/,
@@ -698,4 +711,30 @@ test('automatic production and resource pipelines advance only the player-select
     'resource exploration, strategic actions and power projects must progress only for the player country');
   assert.match(hardening, /function ensureFactoryRecipes\(countryId=null\)\{[\s\S]*?selected=countryId\?country\(countryId\):playerSimulationCountryId\(\);[\s\S]*?return changed;/,
     'factory recipe hydration must not traverse other countries during a background turn');
+
+  assert.match(finance, /function advanceTurn\(turn,stepDurationMs,selectedCountryValue,backgroundTurn\)\{[\s\S]*?const workProfiles=backgroundTurn\?\[activeProfile\]:profiles;[\s\S]*?for\(const p of workProfiles\)/,
+    'automatic Finance accrual must not advance every country's fiscal state');
+  assert.match(forex, /const turnCurrencies=backgroundTurn\?\(activeCurrency\?\[activeCurrency\]:\[\]\):Array\.from\(currencies\.keys\(\)\)/,
+    'automatic FX rate and history updates must only tick the player's currency');
+  assert.match(forex, /syncAllCountries\(backgroundTurn\?activeProfile:null\)/,
+    'automatic FX projection sync must write only the player country');
+  assert.match(transmission, /const workProfiles=backgroundTurn\?\[activeProfile\]:profiles/,
+    'economic transmission must not evolve non-player countries each turn');
+  assert.match(macro, /const workProfiles=backgroundTurn\?\[activeProfile\]:profiles/,
+    'macro stability must not evolve non-player GDP and employment each turn');
+  assert.match(home, /function onTurnCommitted\(\)\{[\s\S]{0,240}const cid=selectedSimulationCountry\(\);[\s\S]{0,180}processCountryTurn\(cid,now,day\)/,
+    'Home Affairs daily police work must be player-country scoped');
+  assert.match(military, /function onTurn\(\)\s*\{[\s\S]{0,220}var profile=selectedSimulationCountry\(\);[\s\S]{0,150}processCountryPayroll\(profile/,
+    'military payroll must advance only the player's country');
+  assert.match(banking, /OMEGA_SIMULATION_TURN_COMMITTED[\s\S]{0,280}selectedRuntimeProfile\(detail\.countryId\|\|detail\.payload&&detail\.payload\.countryId\)[\s\S]{0,180}processPendingTransfers\(profileId\(player\)\)/,
+    'automatic banking transfers and reconciliation must be scoped to the player');
+  const worldBankTurnStart=worldBank.indexOf("OMEGA_SIMULATION_TURN_COMMITTED");
+  const worldBankTurnEnd=worldBank.indexOf("OMEGA_FINANCE_STATE_UPDATED",worldBankTurnStart);
+  const worldBankTurn=worldBank.slice(worldBankTurnStart,worldBankTurnEnd);
+  assert.match(worldBankTurn, /evaluatePlayerCountry\(\)/,
+    'World Bank credit assessment must only recompute the player's assessment each turn');
+  assert.doesNotMatch(worldBankTurn, /evaluateAll\(true\)/,
+    'World Bank turns must not rerun the 249-country assessment loop');
+  assert.match(treaties, /OMEGA_SIMULATION_TURN_COMMITTED',processPlayerTurn\)/,
+    'automatic treaty negotiation must only process player-country requests');
 });
