@@ -43,6 +43,8 @@
     if (!raw || /^SIMULATION(?:_|\s)/i.test(raw)) return '';
     var key = raw.toLowerCase().replace(/\s+/g, '_');
     var known = {
+      ton: 'tonne',
+      tons: 'tonnes',
       metric_tons: 'tonnes',
       metric_tonnes: 'tonnes',
       metric_tons_lce: 'tonnes (LCE)',
