@@ -379,7 +379,22 @@ test('map and ministry rendering stay responsive and scoped to the selected coun
   const countryRuntime = read('omega_country_runtime_data_v1.js');
   const resourceScreen = read('omega_ui_v2/screens/resource-ministry.js');
   const resourceBinding = read('omega_resource_gameplay_binding_v1.js');
+  const uiIntegration = read('omega_ui_v2/integration.js');
+  const uiApp = read('omega_ui_v2/app.js');
+  const industry = read('omega_ui_v2/screens/industry.js');
+  const economy = read('omega_ui_v2/screens/economy.js');
+  const reports = read('omega_ui_v2/screens/reports.js');
 
+  assert.ok(uiIntegration.includes('function canonicalCountry(value)'),
+    'map and legacy country aliases must resolve to one ISO3 identity before ministry mounting');
+  assert.ok(uiIntegration.includes('var country = canonicalCountry(mountOptions.countryId || selectedCountry() || \'\')'));
+  assert.ok(uiIntegration.includes('ids = Array.from(new Set(ids.map(canonicalCountry).filter(Boolean)))'),
+    'the country selector must not duplicate ISO2, ISO3 and display-name entries');
+  assert.ok(uiApp.includes('countryId:canonicalCountry(options.countryId || currentCountry() || \'\')'));
+  assert.ok(industry.includes('function countryAliases(value)'));
+  assert.ok(economy.includes('function countryAliases(value)'));
+  assert.ok(reports.includes('function countryAliases(value)'),
+    'country-name keyed economy buckets must resolve from the selected ISO3 country');
   assert.ok(map.includes('generateAllBilateralRelations(countrySubset)'),
     'relation generation must support a small source-country slice');
   assert.ok(map.includes('RELATION_COUNTRIES_PER_FRAME = 2'));

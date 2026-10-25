@@ -9,16 +9,48 @@
   function num(value) { if (value === null || value === undefined || value === '') return null; var n = Number(value); return Number.isFinite(n) ? n : null; }
   function fmt(value, unit) { var n = num(value); return n === null ? 'Not recorded' : n.toLocaleString('en-US', { maximumFractionDigits: 2 }) + (unit ? ' ' + esc(unit) : ''); }
   function stateRoot() { return g.Game && g.Game.state || g.gameState || null; }
+  function countryProfile(value) {
+    var runtime = g.OmegaCountryRuntimeData || (g.Omega && g.Omega.CountryRuntimeData);
+    if (runtime && typeof runtime.resolveCountry === 'function') {
+      try { var profile = runtime.resolveCountry(value); if (profile) return profile; } catch (_) {}
+    }
+    return null;
+  }
+  function countryAliases(value) {
+    var aliases = [], seen = Object.create(null);
+    function add(item) { var key = String(item == null ? '' : item).trim().toUpperCase(); if (key && !seen[key]) { seen[key] = true; aliases.push(key); } }
+    add(value);
+    var profile = countryProfile(value), identity = profile && (profile.identity || profile.country || profile);
+    [profile && profile.iso3, profile && profile.alpha3, profile && profile.cca3, profile && profile.countryCode,
+      profile && profile.numericCode, profile && profile.name, profile && profile.officialName, profile && profile.shortName,
+      profile && profile.economyKey, profile && profile.populationKey,
+      identity && identity.iso3, identity && identity.countryIso3, identity && identity.countryCode,
+      identity && identity.name, identity && identity.officialName].forEach(add);
+    return aliases;
+  }
+  function canonicalCountry(value) {
+    var raw = String(value == null ? '' : value).trim();
+    if (!raw) return '';
+    var profile = countryProfile(raw), identity = profile && (profile.identity || profile.country || profile);
+    var code = String(profile && (profile.iso3 || profile.alpha3 || profile.cca3 || profile.countryIso3) ||
+      identity && (identity.iso3 || identity.alpha3 || identity.cca3 || identity.countryIso3) || '').trim().toUpperCase();
+    return /^[A-Z]{3}$/.test(code) ? code : raw.toUpperCase();
+  }
   function pickCountryBucket(root, country) {
     if (!root || typeof root !== 'object') return null;
-    var code = String(country || '').trim().toUpperCase();
-    if (code && root[code] && typeof root[code] === 'object') return root[code];
+    var aliases = countryAliases(country);
+    for (var a = 0; a < aliases.length; a += 1) {
+      var direct = root[aliases[a]];
+      if (direct && typeof direct === 'object') return direct;
+    }
     var keys = Object.keys(root);
-    for (var i = 0; i < keys.length; i += 1) if (keys[i].trim().toUpperCase() === code && root[keys[i]] && typeof root[keys[i]] === 'object') return root[keys[i]];
+    for (var i = 0; i < keys.length; i += 1) {
+      if (aliases.indexOf(keys[i].trim().toUpperCase()) >= 0 && root[keys[i]] && typeof root[keys[i]] === 'object') return root[keys[i]];
+    }
     return null;
   }
   function countryContext(country) {
-    var code = String(country || g.OmegaMinistryViewCountry || (g.OmegaCabinetUI && g.OmegaCabinetUI.activeCountry) || g.currentActiveCountry || '').trim().toUpperCase();
+    var code = canonicalCountry(country || g.OmegaMinistryViewCountry || (g.OmegaCabinetUI && g.OmegaCabinetUI.activeCountry) || g.currentActiveCountry || '');
     var root = stateRoot() || {};
     return {
       countryId: code || null,

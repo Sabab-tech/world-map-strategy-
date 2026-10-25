@@ -24,12 +24,39 @@
     'health_welfare':'health_welfare'
   };
   function esc(value) { return String(value == null ? '' : value).replace(/[&<>"']/g, function (ch) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch]; }); }
+  function countryProfile(value) {
+    var runtime = g.OmegaCountryRuntimeData || (g.Omega && g.Omega.CountryRuntimeData);
+    if (runtime && typeof runtime.resolveCountry === 'function') {
+      try { var profile = runtime.resolveCountry(value); if (profile) return profile; } catch (_) {}
+    }
+    return null;
+  }
+  function countryAliases(value) {
+    var aliases = [], seen = Object.create(null);
+    function add(item) { var key = String(item == null ? '' : item).trim().toUpperCase(); if (key && !seen[key]) { seen[key] = true; aliases.push(key); } }
+    add(value);
+    var profile = countryProfile(value), identity = profile && (profile.identity || profile.country || profile);
+    [profile && profile.iso3, profile && profile.alpha3, profile && profile.cca3, profile && profile.countryCode,
+      profile && profile.numericCode, profile && profile.name, profile && profile.officialName, profile && profile.shortName,
+      profile && profile.economyKey, profile && profile.populationKey,
+      identity && identity.iso3, identity && identity.countryIso3, identity && identity.countryCode,
+      identity && identity.name, identity && identity.officialName].forEach(add);
+    return aliases;
+  }
+  function canonicalCountry(value) {
+    var raw = String(value == null ? '' : value).trim();
+    if (!raw) return '';
+    var profile = countryProfile(raw), identity = profile && (profile.identity || profile.country || profile);
+    var code = String(profile && (profile.iso3 || profile.alpha3 || profile.cca3 || profile.countryIso3) ||
+      identity && (identity.iso3 || identity.alpha3 || identity.cca3 || identity.countryIso3) || '').trim().toUpperCase();
+    return /^[A-Z]{3}$/.test(code) ? code : raw.toUpperCase();
+  }
   function bucket(root, country) {
     if (!root || typeof root !== 'object') return null;
-    var key = String(country || '').trim().toUpperCase();
-    if (root[key]) return root[key];
+    var aliases = countryAliases(country);
+    for (var a = 0; a < aliases.length; a += 1) if (root[aliases[a]] && typeof root[aliases[a]] === 'object') return root[aliases[a]];
     var names = Object.keys(root);
-    for (var i = 0; i < names.length; i += 1) if (names[i].trim().toUpperCase() === key) return root[names[i]];
+    for (var i = 0; i < names.length; i += 1) if (aliases.indexOf(names[i].trim().toUpperCase()) >= 0 && root[names[i]] && typeof root[names[i]] === 'object') return root[names[i]];
     return null;
   }
   function liveState(country) {
@@ -51,7 +78,7 @@
   }
   function buildViewModel(options) {
     options = options || {};
-    var country = String(options.countryId || g.OmegaMinistryViewCountry || g.currentActiveCountry || '').trim().toUpperCase();
+    var country = canonicalCountry(options.countryId || g.OmegaMinistryViewCountry || g.currentActiveCountry || '');
     var snapshot = getSnapshot(country);
     var state = liveState(country);
     var resources = state.resource || {};
@@ -59,7 +86,7 @@
     var factories = Array.isArray((state.economy || {}).productionAssets) ? state.economy.productionAssets : [];
     var projects = Array.isArray(network.projects) ? network.projects : Array.isArray((state.economy || {}).projects) ? state.economy.projects : [];
     var sites = g.OmegaResourceSiteCanonicalCatalogData || (g.Omega && g.Omega.ResourceSiteCanonicalCatalogData);
-    var siteRows = sites && Array.isArray(sites.sites) ? sites.sites.filter(function (site) { return String(site.countryId || site.identity && site.identity.countryIso3 || '').trim().toUpperCase() === country; }) : [];
+    var siteRows = sites && Array.isArray(sites.sites) ? sites.sites.filter(function (site) { return canonicalCountry(site.countryId || site.identity && site.identity.countryIso3 || site.countryName || '') === country; }) : [];
     var fleetEngine = g.OmegaHomeMinistryEngine || (g.Omega && g.Omega.HomeMinistry);
     var fleetSummary = null;
     try { if (fleetEngine && typeof fleetEngine.getCountryFleetSnapshot === 'function') fleetSummary = fleetEngine.getCountryFleetSnapshot(country); } catch (_) {}

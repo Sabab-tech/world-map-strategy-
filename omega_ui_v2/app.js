@@ -6,11 +6,22 @@
 
   var ROUTES = ['map', 'overview', 'government', 'economy', 'more', 'industry', 'reports', 'religion'];
   function esc(v) { return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) { return ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[c]; }); }
+  function canonicalCountry(value) {
+    var raw = String(value == null ? '' : value).trim();
+    if (!raw) return '';
+    var runtime = g.OmegaCountryRuntimeData || (g.Omega && g.Omega.CountryRuntimeData);
+    var profile = null;
+    try { if (runtime && typeof runtime.resolveCountry === 'function') profile = runtime.resolveCountry(raw); } catch (_) {}
+    var identity = profile && (profile.identity || profile.country || profile);
+    var code = String(profile && (profile.iso3 || profile.alpha3 || profile.cca3 || profile.countryIso3) ||
+      identity && (identity.iso3 || identity.alpha3 || identity.cca3 || identity.countryIso3) || '').trim().toUpperCase();
+    return /^[A-Z]{3}$/.test(code) ? code : raw.toUpperCase();
+  }
   function currentCountry() {
     var candidates = [g.OmegaMinistryViewCountry, g.OmegaCabinetUI && g.OmegaCabinetUI.activeCountry,
       g.CountryIOS && g.CountryIOS.activeCountry, g.Game && (g.Game.currentActiveCountry || g.Game.selectedCountryId),
       g.currentActiveCountry, g.playerCountryId, g.playerCountry];
-    for (var i = 0; i < candidates.length; i += 1) if (candidates[i] != null && String(candidates[i]).trim()) return String(candidates[i]).trim().toUpperCase();
+    for (var i = 0; i < candidates.length; i += 1) if (candidates[i] != null && String(candidates[i]).trim()) return canonicalCountry(candidates[i]);
     return '';
   }
   function stateFor(root) { return root.__omegaUIV2State; }
@@ -286,7 +297,7 @@
     var countryChoices = Array.isArray(state.options.countryOptions) ? state.options.countryOptions : [];
     var countryControl = countryChoices.length
       ? '<select class="omega-v2-country-select" data-omega-v2-country aria-label="Selected country">' + countryChoices.map(function (item) {
-        var id = typeof item === 'string' ? item : item.id || item.iso3 || item.countryCode || item.value;
+        var id = canonicalCountry(typeof item === 'string' ? item : item.id || item.iso3 || item.countryCode || item.value);
         var label = typeof item === 'string' ? item : item.name || item.label || id;
         return '<option value="' + esc(id) + '"' + (String(id).toUpperCase() === String(state.countryId).toUpperCase() ? ' selected' : '') + '>' + esc(label) + '</option>';
       }).join('') + '</select>'
@@ -350,7 +361,7 @@
         var target = event && event.target;
         if (!target || !target.matches || !target.matches('[data-omega-v2-country]')) return;
         var state = stateFor(root);
-        state.countryId = String(target.value || '').trim().toUpperCase();
+        state.countryId = canonicalCountry(target.value);
         g.OmegaMinistryViewCountry = state.countryId;
         if (state.options && typeof state.options.onCountryChange === 'function') state.options.onCountryChange(state.countryId);
         render(root);
@@ -391,7 +402,7 @@
       section:options.initialSection || 'dashboard',
       resourceSiteId:options.initialResourceSiteId || null,
       governmentView:options.initialGovernmentView === 'all-ministries' ? 'all-ministries' : 'executive-ministry',
-      countryId:String(options.countryId || currentCountry() || '').toUpperCase(),
+      countryId:canonicalCountry(options.countryId || currentCountry() || ''),
       history:initialHistory, options:options
     };
     return Object.assign({ mounted:true }, render(root));

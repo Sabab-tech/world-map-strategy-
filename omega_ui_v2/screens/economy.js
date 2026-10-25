@@ -28,11 +28,40 @@
     }
     return new Intl.NumberFormat('en-US', { maximumFractionDigits:2 }).format(n) + (unit ? ' ' + esc(unit) : '');
   }
+  function countryProfile(value) {
+    var runtime = g.OmegaCountryRuntimeData || (g.Omega && g.Omega.CountryRuntimeData);
+    if (runtime && typeof runtime.resolveCountry === 'function') {
+      try { var profile = runtime.resolveCountry(value); if (profile) return profile; } catch (_) {}
+    }
+    return null;
+  }
+  function countryAliases(value) {
+    var aliases = [], seen = Object.create(null);
+    function add(item) { var key = String(item == null ? '' : item).trim().toUpperCase(); if (key && !seen[key]) { seen[key] = true; aliases.push(key); } }
+    add(value);
+    var profile = countryProfile(value), identity = profile && (profile.identity || profile.country || profile);
+    [profile && profile.iso3, profile && profile.alpha3, profile && profile.cca3, profile && profile.countryCode,
+      profile && profile.numericCode, profile && profile.name, profile && profile.officialName, profile && profile.shortName,
+      profile && profile.economyKey, profile && profile.populationKey,
+      identity && identity.iso3, identity && identity.countryIso3, identity && identity.countryCode,
+      identity && identity.name, identity && identity.officialName].forEach(add);
+    return aliases;
+  }
+  function canonicalCountry(value) {
+    var raw = String(value == null ? '' : value).trim();
+    if (!raw) return '';
+    var profile = countryProfile(raw), identity = profile && (profile.identity || profile.country || profile);
+    var code = String(profile && (profile.iso3 || profile.alpha3 || profile.cca3 || profile.countryIso3) ||
+      identity && (identity.iso3 || identity.alpha3 || identity.cca3 || identity.countryIso3) || '').trim().toUpperCase();
+    return /^[A-Z]{3}$/.test(code) ? code : raw.toUpperCase();
+  }
   function getBucket(root, country) {
     if (!root || typeof root !== 'object') return null;
-    var key = String(country || '').toUpperCase();
-    if (root[key]) return root[key];
-    return Object.keys(root).reduce(function (found, k) { return found || (k.toUpperCase() === key ? root[k] : null); }, null);
+    var aliases = countryAliases(country);
+    for (var i = 0; i < aliases.length; i += 1) if (root[aliases[i]] && typeof root[aliases[i]] === 'object') return root[aliases[i]];
+    var keys = Object.keys(root);
+    for (var j = 0; j < keys.length; j += 1) if (aliases.indexOf(keys[j].trim().toUpperCase()) >= 0 && root[keys[j]] && typeof root[keys[j]] === 'object') return root[keys[j]];
+    return null;
   }
   function getCountrySnapshot(country) {
     var gateway = g.OmegaCountryDataGateway || (g.Omega && g.Omega.CountryDataGateway);
@@ -40,7 +69,7 @@
   }
   function buildViewModel(options) {
     options = options || {};
-    var country = String(options.countryId || g.OmegaMinistryViewCountry || (g.OmegaCabinetUI && g.OmegaCabinetUI.activeCountry) || g.currentActiveCountry || '').toUpperCase();
+    var country = canonicalCountry(options.countryId || g.OmegaMinistryViewCountry || (g.OmegaCabinetUI && g.OmegaCabinetUI.activeCountry) || g.currentActiveCountry || '');
     var root = g.Game && g.Game.state || g.gameState || {};
     var finance = getBucket(root.finance, country) || {};
     var economy = getBucket(root.economy, country) || {};

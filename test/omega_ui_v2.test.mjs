@@ -184,6 +184,107 @@ test('industry view reads current country assets, cycles and projects without sy
   assert.equal(globalThis.OmegaUIV2Industry.buildViewModel({countryId:'USA'}).factoryCount,0);
 });
 
+test('selected ISO3 country resolves name-keyed economy data across Economy, Industry and Reports tabs', () => {
+  const previous = {
+    Game:globalThis.Game, runtime:globalThis.OmegaCountryRuntimeData,
+    catalog:globalThis.OmegaResourceSiteCanonicalCatalogData, industrial:globalThis.OmegaResourceIndustrialCatalogData,
+    inventory:globalThis.OmegaCountryInventoryRuntime, ministryCountry:globalThis.OmegaMinistryViewCountry,
+    homeEngine:globalThis.OmegaHomeMinistryEngine, gateway:globalThis.OmegaCountryDataGateway, omega:globalThis.Omega
+  };
+  globalThis.Omega = {};
+  globalThis.OmegaCountryRuntimeData = {
+    resolveCountry(value) {
+      const key = String(value || '').trim().toUpperCase();
+      return key === 'BANGLADESH' || key === 'BGD' || key === 'BD'
+        ? { countryCode:'BD', iso3:'BGD', numericCode:'050', name:'Bangladesh', economyKey:'BANGLADESH', populationKey:'BANGLADESH' }
+        : key === 'UNITED STATES' || key === 'USA' || key === 'US'
+          ? { countryCode:'US', iso3:'USA', numericCode:'840', name:'United States', economyKey:'USA', populationKey:'USA' }
+          : null;
+    }
+  };
+  globalThis.Game = {
+    state:{
+      resource:{ BGD:{ industrialNetwork:{ projects:[], factoryProductionCycles:{}, factoryRuntime:{}, siteFlowLedger:[] } } },
+      economy:{ BANGLADESH:{ currencyCode:'BDT', gdp:195000000000,
+        productionAssets:[{ id:'BGD-SMELTER-01', name:'National smelter', factoryType:'SMELTER', status:'ACTIVE' }],
+        projects:[] } },
+      finance:{ BANGLADESH:{ available:123456, currencyCode:'BDT', ledger:[] } }
+    }
+  };
+  globalThis.OmegaResourceSiteCanonicalCatalogData = { sites:[
+    { siteId:'BGD-MINE-01', countryId:'BGD', resourceId:'coal', siteName:'Bangladesh coal' },
+    { siteId:'USA-MINE-01', countryId:'USA', resourceId:'copper', siteName:'United States copper' }
+  ] };
+  globalThis.OmegaResourceIndustrialCatalogData = { factoryProfiles:{ SMELTER:{ name:'Smelter', authority:'TEST' } } };
+  globalThis.OmegaCountryInventoryRuntime = { getInventory(countryId) { return { status:'READY', countryId:countryId, items:[], unbounded:true }; } };
+  globalThis.OmegaMinistryViewCountry = 'BD';
+  globalThis.OmegaHomeMinistryEngine = null;
+  globalThis.OmegaCountryDataGateway = null;
+  try {
+    const industry = globalThis.OmegaUIV2Industry.buildViewModel({ countryId:'BD' });
+    assert.equal(industry.countryId, 'BGD');
+    assert.equal(industry.factoryCount, 1, 'Industry must resolve legacy BANGLADESH-keyed economy assets');
+    const economy = globalThis.OmegaUIV2Economy.buildViewModel({ countryId:'BD' });
+    assert.equal(economy.countryId, 'BGD');
+    assert.equal(economy.treasuryCash, 123456, 'Economy must resolve legacy BANGLADESH-keyed finance data');
+    assert.equal(economy.currencyCode, 'BDT');
+    const reports = globalThis.OmegaUIV2Reports.buildViewModel({ countryId:'BANGLADESH' });
+    assert.equal(reports.countryId, 'BGD');
+    assert.equal(reports.siteCount, 1, 'Reports must count only the selected country in the canonical site registry');
+    assert.equal(reports.factoryCount, 1, 'Reports must resolve selected-country factories from the legacy economy bucket');
+  } finally {
+    if (previous.Game === undefined) delete globalThis.Game; else globalThis.Game = previous.Game;
+    if (previous.runtime === undefined) delete globalThis.OmegaCountryRuntimeData; else globalThis.OmegaCountryRuntimeData = previous.runtime;
+    if (previous.catalog === undefined) delete globalThis.OmegaResourceSiteCanonicalCatalogData; else globalThis.OmegaResourceSiteCanonicalCatalogData = previous.catalog;
+    if (previous.industrial === undefined) delete globalThis.OmegaResourceIndustrialCatalogData; else globalThis.OmegaResourceIndustrialCatalogData = previous.industrial;
+    if (previous.inventory === undefined) delete globalThis.OmegaCountryInventoryRuntime; else globalThis.OmegaCountryInventoryRuntime = previous.inventory;
+    if (previous.ministryCountry === undefined) delete globalThis.OmegaMinistryViewCountry; else globalThis.OmegaMinistryViewCountry = previous.ministryCountry;
+    if (previous.homeEngine === undefined) delete globalThis.OmegaHomeMinistryEngine; else globalThis.OmegaHomeMinistryEngine = previous.homeEngine;
+    if (previous.gateway === undefined) delete globalThis.OmegaCountryDataGateway; else globalThis.OmegaCountryDataGateway = previous.gateway;
+    if (previous.omega === undefined) delete globalThis.Omega; else globalThis.Omega = previous.omega;
+  }
+});
+
+test('UI v2 integration normalizes map-selected aliases before mounting country screens', () => {
+  const previous = {
+    app:globalThis.OmegaUIV2App, runtime:globalThis.OmegaCountryRuntimeData,
+    document:globalThis.document, ministryCountry:globalThis.OmegaMinistryViewCountry,
+    homeEngine:globalThis.OmegaHomeMinistryEngine, gateway:globalThis.OmegaCountryDataGateway, omega:globalThis.Omega
+  };
+  let mountedOptions = null;
+  globalThis.Omega = {};
+  globalThis.OmegaCountryRuntimeData = {
+    resolveCountry(value) {
+      const key = String(value || '').trim().toUpperCase();
+      return key === 'BANGLADESH' || key === 'BGD' || key === 'BD'
+        ? { countryCode:'BD', iso3:'BGD', numericCode:'050', name:'Bangladesh', economyKey:'BANGLADESH' }
+        : null;
+    }
+  };
+  globalThis.OmegaHomeMinistryEngine = null;
+  globalThis.OmegaCountryDataGateway = null;
+  globalThis.document = { body:{ setAttribute(){}, classList:{ add(){}, remove(){}, toggle(){} } }, getElementById(){ return null; } };
+  globalThis.OmegaUIV2App = { mount(root, options) { mountedOptions = options; return { mounted:true, route:options.initialRoute }; } };
+  const root = { style:{}, setAttribute(){}, removeAttribute(){}, getAttribute(){ return null; } };
+  try {
+    const result = globalThis.OmegaUIV2Integration.mountIntoCabinet(root, { countryId:'BANGLADESH', initialRoute:'economy' });
+    assert.equal(result.ok, true);
+    assert.equal(result.countryId, 'BGD');
+    assert.equal(mountedOptions.countryId, 'BGD');
+    assert.equal(mountedOptions.countryOptions[0].id, 'BGD');
+    mountedOptions.onCountryChange('BD');
+    assert.equal(globalThis.OmegaMinistryViewCountry, 'BGD');
+  } finally {
+    if (previous.app === undefined) delete globalThis.OmegaUIV2App; else globalThis.OmegaUIV2App = previous.app;
+    if (previous.runtime === undefined) delete globalThis.OmegaCountryRuntimeData; else globalThis.OmegaCountryRuntimeData = previous.runtime;
+    if (previous.document === undefined) delete globalThis.document; else globalThis.document = previous.document;
+    if (previous.ministryCountry === undefined) delete globalThis.OmegaMinistryViewCountry; else globalThis.OmegaMinistryViewCountry = previous.ministryCountry;
+    if (previous.homeEngine === undefined) delete globalThis.OmegaHomeMinistryEngine; else globalThis.OmegaHomeMinistryEngine = previous.homeEngine;
+    if (previous.gateway === undefined) delete globalThis.OmegaCountryDataGateway; else globalThis.OmegaCountryDataGateway = previous.gateway;
+    if (previous.omega === undefined) delete globalThis.Omega; else globalThis.Omega = previous.omega;
+  }
+});
+
 test('industry screen exposes the country-wide unbounded inventory without replacing factory input stock', () => {
   const previous = globalThis.OmegaCountryInventoryRuntime;
   globalThis.OmegaCountryInventoryRuntime = {
