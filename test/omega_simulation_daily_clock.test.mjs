@@ -350,7 +350,12 @@ test('index, finance, bank and offline shell use the daily lifecycle assets', ()
   assert.doesNotMatch(lifecycle, /Math\.floor\(turn\) % 3/);
   assert.match(lifecycle, /function saveNow\(options\)/);
   assert.match(lifecycle, /function onPageExit\(\)/);
-  assert.match(endowment, /function onTurn\(\)\{return extractAll\(\);\}/);
+  assert.match(endowment, /function onTurn\(\)\{return extractAll\(\{activeOnly:true\}\);\}/,
+    'turn-driven resource extraction must only process mine occurrences explicitly activated by the player');
+  assert.match(endowment, /BOOTSTRAP_HYDRATION_ONLY/,
+    'site bootstrap must hydrate and index sites without starting production for every country');
+  assert.match(resourceEconomy, /extractAll\(\{activeOnly:true\}\)/,
+    'the economy turn must use the active-site extraction policy instead of global all-site extraction');
   assert.match(resourceEconomy, /return runTurn\(\);/);
   assert.match(macro, /return init\(\)\.then\(\(\)=>advanceTurn\(turn,duration\)\)/);
 });
