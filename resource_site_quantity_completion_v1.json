@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "1.0.0",
+  "datasetId": "OMEGA_RESOURCE_SITE_QUANTITY_COMPLETION_V1",
+  "generatedAt": "2026-10-25",
+  "authority": "SIMULATED_GAMEPLAY_COMPLETION_ONLY",
+  "baseReserveDatasetId": "OMEGA_RESOURCE_SITE_RESERVE_SIMULATION_V1",
+  "purpose": "Additive per-site simulation quantities for eligible sites missing a reserve-map entry. Does not replace observed records or the 250-record reserve authority.",
+  "simulationOnly": true,
+  "gameplayHorizonYears": 400,
+  "recordCount": 0,
+  "uniqueSiteCount": 0,
+  "notes": [
+    "Every value in records is simulation-only gameplay data, not verified geology or real-world output.",
+    "Canonical resource units are applied at runtime by omega_resource_quantity_normalization_v1.js.",
+    "Existing reserve rows take precedence. The runtime only uses these records to fill missing site IDs."
+  ],
+  "records": []
+}
