@@ -38,9 +38,19 @@
     getLearning(id){ return this.learning.get(String(id)) || null; }
     getActiveMinister(countryId, ministryId){ const id=this.active.get(this.key(countryId,ministryId)); return id ? this.getEffectiveState(id) : null; }
     getEffectiveState(id){ const p=this.getMinister(id); const r=this.getRuntime(id); const l=this.getLearning(id); if(!p||!r||!l) return null; return {profile:deepClone(p),runtime:deepClone(r),learning:deepClone(l)}; }
-    activeIds(){ return [...this.active.values()]; }
-    setRuntime(id, patch){ const old=this.states.get(String(id))||{}; this.states.set(String(id), {...old,...deepClone(patch),ministerId:String(id)}); this.version++; }
-    setLearning(id, patch){ const old=this.learning.get(String(id))||{}; this.learning.set(String(id), {...old,...deepClone(patch),ministerId:String(id)}); this.version++; }
+    activeIds(){ return Array.from(this.active.values()); }
+    setRuntime(id, patch){
+      const old=this.states.get(String(id))||{};
+      const incoming=patch&&typeof patch==='object'&&!Array.isArray(patch)?deepClone(patch):{};
+      this.states.set(String(id),Object.assign({},old,incoming||{},{ministerId:String(id)}));
+      this.version++;
+    }
+    setLearning(id, patch){
+      const old=this.learning.get(String(id))||{};
+      const incoming=patch&&typeof patch==='object'&&!Array.isArray(patch)?deepClone(patch):{};
+      this.learning.set(String(id),Object.assign({},old,incoming||{},{ministerId:String(id)}));
+      this.version++;
+    }
     assign(id,countryId,ministryId,time){
       const key=this.key(countryId,ministryId), existing=this.active.get(key);
       if(existing && existing !== String(id)) throw new Error('MINISTRY_ALREADY_OCCUPIED');
@@ -91,7 +101,7 @@
   async function loadJson(path){ const r=await fetch(path,{cache:'no-store'}); if(!r.ok) throw new Error(`${path}: HTTP ${r.status}`); return r.json(); }
   function restore(){ try{ const s=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null'); if(s) registry.restore(s); }catch(e){ console.warn('[OMEGA Minister] state restore skipped',e); } }
   function persist(){ try{ localStorage.setItem(STORAGE_KEY,JSON.stringify(registry.snapshot())); }catch(e){ console.warn('[OMEGA Minister] persist failed',e); } }
-  function candidateList(ministryId){ return [...registry.profiles.values()].filter(p=>p.ministryId===ministryId); }
+  function candidateList(ministryId){ return Array.from(registry.profiles.values()).filter(p=>p.ministryId===ministryId); }
   function initLearning(id){ return {ministerId:id,totalServiceTime:0,totalTaskExposure:0,domainExperience:{},crisisExperience:0,decisionExperience:0,successfulDecisions:0,failedDecisions:0,completedPlans:0,failedPlans:0,learnedLessons:[],forecastCalibration:0.5,strategyEffectiveness:0.5,skillEvolution:{},specialization:{}}; }
   function initRuntime(id,countryId,ministryId,time){ return {ministerId:id,countryId,ministryId,status:'ACTIVE',recruitmentTime:time,assignmentTime:time,lastUpdateTick:time,workload:0,cognitiveLoad:0,stress:0,fatigue:0,politicalPressure:0,economicPressure:0,crisisPressure:0,confidence:0.5,trust:0.5,activeTasks:[],activePlans:[],pendingDecisions:[],currentObjectives:[],currentAttention:[],currentStrategicPosture:'BALANCED'}; }
   function recruit(id,countryId,ministryId){
@@ -144,9 +154,9 @@
   function recordOutcome(id,task={},outcome={}){
     const r=registry.getRuntime(id), l=registry.getLearning(id); if(!r||!l||r.status!=='ACTIVE') return;
     const domain=String(task.domain||'general'), gain=engine.config.learning.base*Math.pow(1/(1+Number(l.domainExperience?.[domain]||0)*engine.config.learning.diminishing),.5);
-    const evolution={...(l.skillEvolution||{})}; evolution[domain]=clamp(Number(evolution[domain]||0)+gain*(outcome.success?1:.35),0,engine.config.learning.maxSkillGain);
-    const de={...(l.domainExperience||{})}; de[domain]=clamp(Number(de[domain]||0)+gain,0,100000);
-    const lessons=[...(l.learnedLessons||[])]; if(outcome.lesson) lessons.push({time:now(),domain,lesson:String(outcome.lesson)}); if(lessons.length>100) lessons.splice(0,lessons.length-100);
+    const evolution=copyRecord(l.skillEvolution); evolution[domain]=clamp(Number(evolution[domain]||0)+gain*(outcome.success?1:.35),0,engine.config.learning.maxSkillGain);
+    const de=copyRecord(l.domainExperience); de[domain]=clamp(Number(de[domain]||0)+gain,0,100000);
+    const lessons=Array.isArray(l.learnedLessons)?l.learnedLessons.slice():[]; if(outcome.lesson) lessons.push({time:now(),domain,lesson:String(outcome.lesson)}); if(lessons.length>100) lessons.splice(0,lessons.length-100);
     registry.setLearning(id,{totalTaskExposure:Number(l.totalTaskExposure||0)+1,domainExperience:de,skillEvolution:evolution,learnedLessons:lessons,successfulDecisions:Number(l.successfulDecisions||0)+(outcome.success?1:0),failedDecisions:Number(l.failedDecisions||0)+(outcome.success?0:1),decisionExperience:Number(l.decisionExperience||0)+gain});
     persist(); bus.emit(EVENTS.STATE,{ministerId:id,reason:'LEARNING'});
   }
@@ -159,7 +169,7 @@
     persist(); synchronize();
   }
   function synchronize(){
-    const active=[...registry.active.values()]; const byKey={}; for(const [k,id] of registry.active) byKey[k]=id;
+    const active=Array.from(registry.active.values()); const byKey={}; for(const [k,id] of registry.active) byKey[k]=id;
     const snapshot={version:registry.version,activeIds:active,assignments:byKey};
     window.OmegaMinisterState=window.OmegaMinisterState||{}; window.OmegaMinisterState.registry=registry; window.OmegaMinisterState.snapshot=()=>deepClone(snapshot);
     // Notify existing engines without inventing parallel authoritative state.
