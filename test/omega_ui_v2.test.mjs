@@ -762,7 +762,7 @@ test('Home Affairs hides unready shared placeholders and shows the Bangladesh re
     assert.equal(bdRender.ok,true);
     assert.match(bdRoot.innerHTML,/COUNTRY BASELINE READY/);
     assert.match(bdRoot.innerHTML,/bangladesh-police-headquarters\.webp/);
-    assert.match(bdRoot.innerHTML,/<strong>205417<\/strong>/);
+    assert.match(bdRoot.innerHTML,/<strong>205,417<\/strong>/);
     assert.match(bdRoot.innerHTML,/<strong>61%<\/strong>/);
   } finally {
     for (const key of keys) {
