@@ -95,3 +95,40 @@ test("government and ministry detail screens render local photo paths before the
   assert.match(government, /loading="lazy" decoding="async"/);
   assert.match(details, /loading="lazy" decoding="async"/);
 });
+
+ 
+test("all 18 ministries have distinct local logos, and Education uses education-specific artwork offline", () => {
+  const registrySource = read("omega_ui_v2/ministry-visual-registry.js");
+  const entries = [...registrySource.matchAll(/^\\s{4}([a-z_]+): \\{([^}\\n]+)\\},?$/gm)];
+  assert.equal(entries.length, 18, "all canonical ministry visual records must be found");
+  const logoMap = new Map();
+  for (const [, id, body] of entries) {
+    const match = body.match(/\\blogo:'([^']+)'/);
+    assert.ok(match, id + " must map a ministry logo rather than a portrait or generic glyph");
+    const logo = match[1];
+    assert.ok(logo.startsWith("assets/"), id + " logo must be bundled locally");
+    const file = path.join(root, logo);
+    assert.ok(fs.existsSync(file) && fs.statSync(file).size > 0, id + " logo must exist: " + logo);
+    assert.match(fs.readFileSync(file, "utf8"), /<svg\\b/, id + " logo/);
+    assert.equal([...logoMap.values()].includes(logo), false, id + " must not reuse another ministry's logo");
+    logoMap.set(id, logo);
+  }
+  assert.equal(logoMap.size, 18, "every ministry must receive a unique logo assignment");
+  assert.equal(logoMap.get("defense"), "assets/Military_Ministry_Logo_Concept_A.png.jpg",
+    "preserve the provided Defense Ministry logo");
+  assert.equal(logoMap.get("foreign_affairs"), "assets/IMG_20260703_180105.jpg",
+    "preserve the provided Foreign Affairs emblem");
+  assert.equal(logoMap.get("health_welfare"), "assets/ministers/health.svg",
+    "preserve the existing Health Ministry emblem");
+  const education = entries.find(([, id]) => id === "education")[2];
+  assert.match(education, /image:'assets\\/ui-photos\\/education-university\\.svg'/);
+  assert.match(education, /logo:'assets\\/ministry-logos\\/education\\.svg'/);
+  assert.doesNotMatch(education, /dhaka-skyline/);
+  const worker = read("omega-offline-map-sw.js");
+  assert.match(worker, /omega-offline-atlas-shell-v37/);
+  for (const logo of logoMap.values()) {
+    assert.ok(worker.includes('"./' + logo + '"'), "offline shell must cache every ministry logo: " + logo);
+  }
+  assert.ok(worker.includes('"./assets/ui-photos/education-university.svg"'),
+    "education artwork must be available offline");
+});
