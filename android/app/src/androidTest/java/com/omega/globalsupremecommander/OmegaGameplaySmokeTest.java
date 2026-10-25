@@ -128,6 +128,64 @@ public final class OmegaGameplaySmokeTest {
                     "true", evaluate(instrumentation, webViewRef.get(), speedControlScript)
             );
 
+            // The previous smoke covered boot and taps but ended before the reported
+            // one-minute freeze window. Keep the actual 2x game session running for 80 seconds
+            // and require the Android 9 WebView to answer a small JS heartbeat every second.
+            // Each callback has a 3-second deadline so a renderer hang fails with elapsed-time
+            // diagnostics instead of making the CI job look successful or wait indefinitely.
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=LONG_RUN_GAMEPLAY_BEGIN");
+            final long longRunStarted = SystemClock.elapsedRealtime();
+            final long longRunDurationMs = 80000L;
+            long lastProgressLog = 0L;
+            while (SystemClock.elapsedRealtime() - longRunStarted < longRunDurationMs) {
+                final long elapsedMs = SystemClock.elapsedRealtime() - longRunStarted;
+                final String heartbeatScript =
+                        "(function() {" +
+                        " var sim = window.Omega && window.Omega.Simulation;" +
+                        " var metrics = window.__OMEGA_DIAG__ && window.__OMEGA_DIAG__.metrics;" +
+                        " if (!sim || !sim.clock || !metrics) return 'RUNTIME_DIAGNOSTICS_MISSING';" +
+                        " return JSON.stringify({tick: metrics.tick || 0, turn: sim.clock.turn || 0," +
+                        " status: sim.status || null, now: Math.floor(performance.now())});" +
+                        "})()";
+                final String heartbeat;
+                try {
+                    heartbeat = evaluate(instrumentation, webViewRef.get(), heartbeatScript, 3L);
+                } catch (Throwable failure) {
+                    android.util.Log.e(
+                            "OMEGA_ANDROID_SMOKE",
+                            "LONG_RUN_FREEZE elapsed_ms=" + elapsedMs,
+                            failure
+                    );
+                    throw new AssertionError(
+                            "Android 9 WebView stopped responding during continuous gameplay at " +
+                                    elapsedMs + " ms; inspect LONG_RUN_FREEZE diagnostics",
+                            failure
+                    );
+                }
+                assertNotNull(
+                        "WebView heartbeat must return during continuous gameplay at " + elapsedMs + " ms",
+                        heartbeat
+                );
+                assertTrue(
+                        "Simulation runtime diagnostics must remain available during continuous gameplay at " +
+                                elapsedMs + " ms; response=" + heartbeat,
+                        heartbeat.contains("tick") && heartbeat.contains("turn")
+                );
+                if (elapsedMs - lastProgressLog >= 10000L) {
+                    android.util.Log.i(
+                            "OMEGA_ANDROID_SMOKE",
+                            "LONG_RUN_HEARTBEAT elapsed_ms=" + elapsedMs + " response=" + heartbeat
+                    );
+                    lastProgressLog = elapsedMs;
+                }
+                SystemClock.sleep(1000L);
+            }
+            android.util.Log.i(
+                    "OMEGA_ANDROID_SMOKE",
+                    "STAGE=LONG_RUN_GAMEPLAY_PASS elapsed_ms=" +
+                            (SystemClock.elapsedRealtime() - longRunStarted)
+            );
+
             android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=OPEN_MINISTRY");
             final String ministryNavigationScript =
                     "(function() {" +
