@@ -282,6 +282,17 @@ function runtimeCountryIds(){
   }
   return [...ids];
 }
+function playerSimulationCountryId(){
+  const sim=g.Omega?.Simulation,simState=sim?.world?.state||state();
+  const session=simState?.simulation?.session||state()?.simulation?.session||{};
+  const candidates=[session?.playerCountryId,
+    typeof sim?.getPlayerCountryId==='function'?sim.getPlayerCountryId():null,
+    simState?.playerCountryId,state()?.playerCountryId,
+    g.Game?.playerCountry,g.Game?.currentActiveCountry,
+    g.CountryIOS?.activeCountry,g.currentActiveCountry];
+  for(const value of candidates){const cid=canonicalCountry(value);if(cid&&cid!=='[OBJECT OBJECT]')return cid;}
+  return null;
+}
 function siteById(siteId){
   const key=String(siteId||'').trim();
   const site=masterSites().find(x=>String(x?.siteId||'')===key)||null;
@@ -3409,9 +3420,11 @@ function boot(){
   loadCatalog().then(()=>{emit('OMEGA_RESOURCE_INDUSTRIAL_NETWORK_READY','GLOBAL',{version:VERSION,catalogResourceRules:Object.keys(rules()).length,factoryRules:Object.keys(processRules()).length})}).catch(()=>{});
   if(typeof g.addEventListener==='function'){
     g.addEventListener('OMEGA_SIMULATION_TURN_COMMITTED',async()=>{
-      // Catalog readiness and every country update are awaited by the authoritative turn runner.
+      // Keep the full catalog available; only the player's operational state advances.
+      const selectedCountryId=playerSimulationCountryId();
+      if(!selectedCountryId)return;
       await loadCatalog();
-      const countries=runtimeCountryIds(),failures=[];
+      const countries=[selectedCountryId],failures=[];
       for(let index=0;index<countries.length;index++){
         const countryId=countries[index];
         try{
