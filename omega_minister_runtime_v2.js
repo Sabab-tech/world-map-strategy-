@@ -220,7 +220,7 @@
       window.OmegaMinisterSystem.openForMinistry=openPanel;
       console.info('[OMEGA Minister Runtime V2] ready',registry.profiles.size,'profiles');
     }catch(e){
-      console.error('[OMEGA Minister Runtime V2] boot failed:', e && (e.stack || e.message) || String(e));
+      console.error('[OMEGA Minister Runtime V2] boot failed: ' + String(e && (e.stack || e.message) || e));
       window.__OMEGA_DIAG__?.errors?.push({msg:String(e && (e.stack || e.message) || e),type:'MINISTER_RUNTIME_BOOT'});
     }
   }
