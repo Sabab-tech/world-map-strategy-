@@ -813,10 +813,10 @@ test('resource ministry reads only selected-country rows from the global site re
   globalThis.OmegaCountryRuntimeData = {
     resolveCountry(value) {
       const key = String(value || '').trim().toUpperCase();
-      return key === 'BANGLADESH' || key === 'BGD'
-        ? { countryCode:'BGD', name:'Bangladesh' }
-        : key === 'UNITED STATES' || key === 'USA'
-          ? { countryCode:'USA', name:'United States' }
+      return key === 'BANGLADESH' || key === 'BGD' || key === 'BD'
+        ? { countryCode:'BD', iso3:'BGD', numericCode:'050', name:'Bangladesh' }
+        : key === 'UNITED STATES' || key === 'USA' || key === 'US'
+          ? { countryCode:'US', iso3:'USA', numericCode:'840', name:'United States' }
           : null;
     }
   };
