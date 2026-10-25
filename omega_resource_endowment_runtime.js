@@ -66,6 +66,13 @@
       requiresFactoryBinding:row.runtime?.requiresFactoryBinding!==false};
     return row;
   }
+  function explicitNonOperationalSiteStatus(...values){
+    for(const value of values){
+      const status=String(value||'').toUpperCase().replace(/[^A-Z0-9]+/g,'_');
+      if(/(^|_)(INACTIVE|NOT_ACTIVE|HISTORICAL|HISTORICALLY|CARE_AND_MAINTENANCE|SUSPEND|SUSPENDED|BLOCKED|CLOSED|ABANDON|ABANDONED|DEPLETED|DEVELOPMENT|RESTARTING|CESSATION_OF_PRODUCTION|DISRUPTED|NOT_APPLICABLE|NO_CURRENT_CONCESSION|PERMIT_PROCESSING|RESOURCE_IDENTITY_UNVERIFIED|DISPUTED_OPERATION|RESTRICTED)(_|$)/.test(status))return status;
+    }
+    return '';
+  }
   g.OmegaResourceSiteDataContract={version:'1.0.0',normalizeSiteRecord,normalizeSiteQuantitative};
   const id=v=>String(v??'').trim().toUpperCase();
   const rid=v=>String(v??'').replace(/^RES_TYPE:/i,'').trim().toLowerCase();
@@ -1236,12 +1243,21 @@ function batchFromExtraction(x,record){
         }
         if(seen.has(occurrenceKey))continue;seen.add(occurrenceKey);
         const old=existing?.mineStates?.[occurrenceKey],unit=stream.reserve.unit,prod=stream.production,q=stream.quality;
+        // Canonical commercial classification is not proof that a site is operating.
+        // Preserve explicit lifecycle evidence through the generated reserve state so the
+        // authoritative extraction pass emits MINE_NOT_OPERATIONAL instead of stock.
+        const blockedLifecycleStatus=explicitNonOperationalSiteStatus(
+          asset?.operation?.operationalStatus,asset?.operation?.status,
+          asset?.sourceSiteRecord?.status,asset?.sourceSiteRecord?.realWorldStatus,
+          asset?.currentStatus,asset?.status);
         const generated={occurrenceKey,countryId:canonical(c),depositKey:'SIM_'+tok(occurrenceKey),resourceId:stream.resourceId,
           geologicalQuantity:stream.reserve.quantity,recoverableQuantity:stream.reserve.quantity,residualQuantity:stream.reserve.quantity,unit,
-          operationalStatus:'ACTIVE_EXTRACTION',stateVersion:1,quality:q,productionModel:prod,
+          operationalStatus:blockedLifecycleStatus||'ACTIVE_EXTRACTION',stateVersion:1,quality:q,productionModel:prod,
           provenance:{sourceAuthority:'RESOURCE_JSON.countryProfiles',stateAuthority:'SIMULATED',sourceDatasetId:'resources.json.countryProfiles',sourcePath:asset?.sourcePath||null,
             quantityAuthority:stream.reserve.authority||'SIMULATED',productionAuthority:prod.authority||'SIMULATED',qualityAuthority:q.gradeStatus==='OBSERVED'?'OBSERVED':'SIMULATED',simulationRuleVersion:realism?.VERSION||null}};
-        const merged=realism?.firewall&&old&&typeof old==='object'?realism.firewall(clone(old),generated):generated;
+        const mergedBase=realism?.firewall&&old&&typeof old==='object'?realism.firewall(clone(old),generated):generated;
+        const merged=blockedLifecycleStatus&&mergedBase&&typeof mergedBase==='object'
+          ?{...clone(mergedBase),operationalStatus:blockedLifecycleStatus}:mergedBase;
         const previous=merged?new p5.ReserveState(clone(merged)):null;
         const reserve=previous||new p5.ReserveState({
           occurrenceKey,countryId:canonical(c),depositKey:'SIM_'+tok(occurrenceKey),resourceId:stream.resourceId,
@@ -1266,11 +1282,11 @@ function batchFromExtraction(x,record){
           computeWindowCapacity(hours){const h=n(hours);return{windowCapacity:(this.activeRate||this.nominalRate||0)*(h===null?1:Math.max(0,h/24))};}};
         rows.push({
           occurrenceKey,parentOccurrenceKey:streams.length>1?baseOccurrenceKey:null,siteReferenceKey:siteKey,depositKey:'SIM_'+tok(occurrenceKey),linkedDepositId:asset?.linkedDepositId||asset?.depositKey||null,depositName:siteName,resourceId:stream.resourceId,countryId:canonical(c),resourceTypeKey:stream.resourceId,
-          locationNodeKey:'ASSET:'+canonical(c)+':'+tok(siteName),ownerKey:null,operatorKey:null,status:'ACTIVE_PRODUCING',
-          rawDeposit:{id:occurrenceKey,name:siteName,linkedDepositId:asset?.linkedDepositId||asset?.depositKey||null,countryCode:canonical(c),resId:stream.resourceId,status:'ACTIVE_PRODUCING',assetType,simulation:true,stateAuthority:reserve.provenance?.stateAuthority||'SIMULATED',
+          locationNodeKey:'ASSET:'+canonical(c)+':'+tok(siteName),ownerKey:null,operatorKey:null,status:blockedLifecycleStatus?'BLOCKED':'ACTIVE_PRODUCING',
+          rawDeposit:{id:occurrenceKey,name:siteName,linkedDepositId:asset?.linkedDepositId||asset?.depositKey||null,countryCode:canonical(c),resId:stream.resourceId,status:blockedLifecycleStatus||'ACTIVE_PRODUCING',assetType,simulation:true,stateAuthority:reserve.provenance?.stateAuthority||'SIMULATED',
             sourceDatasetId:'RESOURCE_JSON.countryProfiles',sourcePath:asset?.sourcePath||null,productionModel:prod,quality:q,reserveModel:stream.reserve},
           sourceDatasetId:'RESOURCE_JSON.countryProfiles',
-          lifecycle:{status:'ACTIVE_EXTRACTION',mode:'PROFILE_DERIVED_SITE_MODEL',assetType,authority:prod.authority||'SIMULATED'},
+          lifecycle:{status:blockedLifecycleStatus||'ACTIVE_EXTRACTION',mode:'PROFILE_DERIVED_SITE_MODEL',assetType,authority:prod.authority||'SIMULATED'},
           accessibility:{state:'AVAILABLE',sourceAuthority:'RESOURCE_JSON_PROFILE',stateAuthority:reserve.provenance?.stateAuthority||'SIMULATED'},
           reserveState:reserve,capacity,isSimulationGenerated:(prod.authority||'SIMULATED')!=='OBSERVED'||stream.reserve.authority!=='OBSERVED',assetType,siteModel:model,
           dataAuthority:{reserve:stream.reserve.authority||'SIMULATED',production:prod.authority||'SIMULATED',quality:q.gradeStatus==='OBSERVED'?'OBSERVED':'SIMULATED'}
