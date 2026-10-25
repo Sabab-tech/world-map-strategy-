@@ -388,6 +388,8 @@ test('map and ministry rendering stay responsive and scoped to the selected coun
     'each selected source country still calculates relations to the complete country roster');
   assert.ok(map.includes('color: "#f8fafc"'),
     'country outlines must remain visible on the map basemap');
+  assert.ok(map.includes("color: '#f8fafc', weight: 1.25, opacity: 1.0"),
+    'diplomacy overlay must not reset country outlines to nearly invisible strokes');
   assert.ok(map.includes('countryRuntime.getCities(countryName)'),
     'city rendering must ask for the selected country, not all country city records');
   assert.ok(map.includes("this.activeResourceFilter = 'NONE';"),
