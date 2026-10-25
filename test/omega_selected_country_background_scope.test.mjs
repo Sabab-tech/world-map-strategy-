@@ -78,6 +78,10 @@ test('mine extraction is not automatically ticked for every country at startup o
   const bootstrap = between(source, 'function onSiteBindingReady(){', 'function diagnostics(){');
   assert.match(bootstrap, /const selectedCountryId=playerSimulationCountryId\(\)/);
   assert.match(bootstrap, /PRODUCTION_TICK_DEFERRED_TO_PLAYER_COUNTRY_TURN/);
+  assert.match(bootstrap, /const hydrationCountryIds=activeCountrySites\.length\?\[selectedCountryId\]:\[\]/);
+  assert.match(bootstrap, /for\(const rawCountryId of \[selectedCountryId\]\)/);
+  assert.match(bootstrap, /for\(const site of activeCountrySites\)/);
+  assert.doesNotMatch(bootstrap, /Object\.keys\(bindingSync\.executionSiteIdsByCountry\|\|\{\}\)/);
   assert.doesNotMatch(bootstrap, /await extractAll\(\)|startCountryProduction\(countryId,siteIds\)/);
   assert.doesNotMatch(source, /function onTurn\(\)\{return extractAll\(\);\}/);
   assert.doesNotMatch(source, /addEventListener\?\.\('OMEGA_SIMULATION_TURN_COMMITTED',onTurn\)/);
