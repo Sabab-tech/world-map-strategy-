@@ -209,6 +209,50 @@ test('imports add inventory, consumption and exports subtract, and inactive-coun
   assert.equal(api.getInventory('BGD').unbounded, true);
 });
 
+test('trade settlements update the player inventory even when the event names the counterparty country', async () => {
+  const { context, state, api } = makeRuntime();
+  await api.init();
+
+  state.resource.BGD.inventory.STEEL = 1;
+  state.resource.BGD.inventoryLedger.push({
+    type: 'INTERNATIONAL_TRADE_EXPORT',
+    settlementId: 'TRADE-EXPORT-1',
+    resourceId: 'STEEL',
+    quantity: 2,
+    turn: 1
+  });
+  context.dispatchEvent(new context.CustomEvent('OMEGA_TRADE_SETTLEMENT_COMPLETED', {
+    detail: {
+      eventType: 'OMEGA_TRADE_SETTLEMENT_COMPLETED',
+      countryId: 'USA',
+      payload: { settlementId: 'TRADE-EXPORT-1', sourceCountryId: 'BGD', destinationCountryId: 'USA', resourceId: 'STEEL', quantity: 2 }
+    }
+  }));
+
+  state.resource.BGD.inventory.STEEL = 4;
+  state.resource.BGD.inventoryLedger.push({
+    type: 'INTERNATIONAL_TRADE_IMPORT',
+    settlementId: 'TRADE-IMPORT-1',
+    resourceId: 'STEEL',
+    quantity: 3,
+    sourceCountryId: 'USA',
+    turn: 1
+  });
+  context.dispatchEvent(new context.CustomEvent('OMEGA_TRADE_SETTLEMENT_COMPLETED', {
+    detail: {
+      eventType: 'OMEGA_TRADE_SETTLEMENT_COMPLETED',
+      countryId: 'USA',
+      payload: { settlementId: 'TRADE-IMPORT-1', sourceCountryId: 'USA', destinationCountryId: 'BGD', resourceId: 'STEEL', quantity: 3 }
+    }
+  }));
+
+  const ledger = api.getInventory('BGD').ledger;
+  assert.equal(item(api.getInventory('BGD', { includeZero: true }), 'steel').quantity, 4);
+  assert.equal(ledger.filter(row => row.action === 'EXPORT' && row.referenceId === 'TRADE-EXPORT-1').length, 1);
+  assert.equal(ledger.filter(row => row.action === 'IMPORT' && row.referenceId === 'TRADE-IMPORT-1').length, 1);
+  assert.equal(api.getInventory('USA', { includeZero: true }).readOnly, true);
+});
+
 test('factory output and input consumption are logged once without double-crediting stock', async () => {
   const { context, state, api } = makeRuntime();
   await api.init();
