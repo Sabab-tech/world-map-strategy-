@@ -277,7 +277,7 @@ test('production shell fully disconnects legacy UI scripts and caches the isolat
   assert.equal(server.includes('UI_INTERACTION_GUARD_SCRIPT'), false, 'server must not inject the retired click interceptor');
   assert.equal(server.includes('omega_ui_interaction_guard.js'), false, 'server must not inject the retired click interceptor');
   assert.ok(html.includes('omega_ui_v2/legacy-disconnect.css'));
-  assert.ok(serviceWorker.includes('CACHE_NAME = "omega-offline-atlas-shell-v37"'));
+  assert.ok(serviceWorker.includes('CACHE_NAME = "omega-offline-atlas-shell-v38"'));
   const coreStart = serviceWorker.indexOf('const CORE_ASSETS');
   const coreEnd = serviceWorker.indexOf('];', coreStart);
   const coreAssets = serviceWorker.slice(coreStart, coreEnd);
@@ -373,3 +373,31 @@ test('performance monitor cancels its animation-frame loop while the app is back
   assert.equal(window.__OMEGA_DIAG__.metrics.fps, 1, 'diagnostic FPS metric should still update');
   assert.equal(frames.size, 1, 'monitor should retain its visible-screen sampling loop');
 });
+
+test('map and ministry rendering stay responsive and scoped to the selected country', () => {
+  const map = read('map-engine-2.js');
+  const countryRuntime = read('omega_country_runtime_data_v1.js');
+  const resourceScreen = read('omega_ui_v2/screens/resource-ministry.js');
+
+  assert.match(map, /generateAllBilateralRelations\\(countrySubset\\)/,
+    'relation generation must support a small source-country slice');
+  assert.match(map, /RELATION_COUNTRIES_PER_FRAME\\s*=\\s*2/);
+  assert.match(map, /generateAllBilateralRelations\\(chunk\\)/);
+  assert.match(map, /allCountries\\.forEach\\(c2/,
+    'each selected source country still calculates relations to the complete country roster');
+  assert.match(map, /color: "#f8fafc"/,
+    'country outlines must remain visible on the map basemap');
+  assert.match(map, /countryRuntime\\.getCities\\(countryName\\)/,
+    'city rendering must ask for the selected country, not all country city records');
+  assert.match(map, /this\\.activeResourceFilter = 'NONE';/,
+    'leaving resource mode must restore city markers');
+  assert.match(countryRuntime, /add\\(row\\.capital, 'capital'\\)/);
+  assert.match(countryRuntime, /add\\(row\\.economic, 'economic'\\)/);
+  assert.match(countryRuntime, /add\\(row\\.military, 'military'\\)/);
+  assert.match(countryRuntime, /add\\(row\\.secret, 'secret'\\)/);
+  assert.match(resourceScreen, /function sourceCatalogs\\(selectedCountry\\)/);
+  assert.match(resourceScreen, /countryId\\(sites\\[i\\]\\) === countryFilter/,
+    'country filtering must happen before global catalogue deduplication/sorting');
+  assert.match(resourceScreen, /uniqueSiteRows\\(providedRows\\.filter\\(function \\(row\\) \\{ return countryId\\(row\\) === selectedCountry; \\}\\)\\)/);
+});
+
