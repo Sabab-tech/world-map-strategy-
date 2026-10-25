@@ -597,10 +597,13 @@ for(const siteId of inactiveCommercialSiteIds){
   const controller=countryRow.mineSiteControllers?.[siteId];
   assert(controller,siteId+': non-operational site controller missing');
   assert(controller.linkedOccurrenceKeys?.length,siteId+': blocked site must retain its exact occurrence link');
-  const blockedOutput=controller.linkedOccurrenceKeys
-    .map(key=>countryRow.mineOutputs?.[key])
-    .find(output=>String(output?.blockReason||'').toUpperCase()==='MINE_NOT_OPERATIONAL');
+  const linkedOutputs=controller.linkedOccurrenceKeys
+    .map(key=>countryRow.mineOutputs?.[key]).filter(Boolean);
+  const blockedOutput=linkedOutputs.find(output=>String(output?.blockReason||'').toUpperCase()==='MINE_NOT_OPERATIONAL');
   assert(blockedOutput,siteId+': status '+lifecycleStatus+' must produce an explicit MINE_NOT_OPERATIONAL diagnostic, not positive output');
+  assert(linkedOutputs.every(output=>String(output?.blockReason||'').toUpperCase()==='MINE_NOT_OPERATIONAL'&&
+    (Number(output?.producedQuantity)||0)===0&&output?.batchId===undefined),
+    siteId+': every occurrence for a non-operational deposit must be blocked and must not create inventory');
   assert.equal(Number(blockedOutput.producedQuantity)||0,0,siteId+': non-operational deposit must not create inventory');
 }
 assert(simulatedFieldOutputs.length>0,'expected hydrocarbon field execution assets');
