@@ -45,8 +45,11 @@
     if (runtime && typeof runtime.resolveCountry === 'function') {
       try {
         var profile = runtime.resolveCountry(value);
-        var resolved = key(profile && (profile.countryCode || profile.iso3 || profile.alpha3 ||
-          profile.countryId || profile.identity && (profile.identity.countryCode || profile.identity.countryIso3)));
+        // Country Runtime countryCode is ISO2 (BD), while resource registries use ISO3 (BGD).
+        // Prefer explicit alpha-3 identity keys before the shorter countryCode fallback.
+        var resolved = key(profile && (profile.iso3 || profile.alpha3 || profile.cca3 ||
+          profile.identity && profile.identity.countryIso3 || profile.countryId ||
+          profile.countryCode || profile.identity && profile.identity.countryCode));
         if (resolved) return resolved;
       } catch (_) {}
     }
