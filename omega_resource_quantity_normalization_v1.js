@@ -121,8 +121,14 @@ function normalizeMetricObject(object, resourceId, kind){
   if(num(out.rate)!==null){
    const sourceUnit=out.rateUnit||out.unit||rawUnit;
    const n=normalizeQuantity(resourceId,out.rate,sourceUnit,{simulationOnly:true});
-   out.rate=n.quantity;out.rateUnit=n.unit+'_PER_DAY';out.unit=n.unit;
-   out.rateNormalization={...n,field:'rate'};
+   const period=String(sourceUnit||'').toUpperCase();
+   const dayDivisor=/_PER_YEAR(?:$|_)/.test(period)?365:
+    /_PER_TURN(?:$|_)/.test(period)?Math.max(1,num(g.Game?.state?.simulation?.daysPerTurn)||num(g.gameState?.simulation?.daysPerTurn)||1):1;
+   out.rate=n.quantity===null?null:Number((n.quantity/dayDivisor).toFixed(9));
+   out.rateUnit=n.quantity===null?n.unit:n.unit+'_PER_DAY';
+   out.unit=n.unit;
+   out.rateNormalization={...n,field:'rate',sourcePeriod:period,sourcePeriodDays:dayDivisor,
+    normalizedPeriod:out.rate===null?'UNRECOGNIZED':'PER_DAY'};
   }
   if(num(out.annual)!==null){
    const sourceUnit=out.annualUnit||out.unit||rawUnit;
