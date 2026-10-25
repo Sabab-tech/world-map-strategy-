@@ -133,6 +133,7 @@ test('all countries have saved inventory shells and shared product rows, while o
   const savedUnitedStates = api.getCountryRecord('USA');
   const savedGermany = api.getCountryRecord('DEU');
   assert.ok(Object.keys(savedBangladesh.products).length >= 4, 'the active country gets a materialized product balance map');
+  assert.equal(item(api.getInventory('BGD', { includeZero: true }), 'steel').name, 'Steel');
   assert.equal(Object.keys(savedUnitedStates.products).length, 0, 'inactive product maps stay lazy to avoid bloating autosaves');
   assert.equal(Object.keys(savedGermany.products).length, 0, 'every other country still has a saved inventory shell');
   assert.ok(api.getInventory('USA', { includeZero: true }).items.length >= 4, 'the shared catalog renders inactive-country products');
