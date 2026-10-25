@@ -720,7 +720,7 @@ test('Home Affairs hides unready shared placeholders and shows the Bangladesh re
   globalThis.OmegaCountryRuntimeData = {
     resolveCountry(value) {
       const raw = String(value || '').trim().toUpperCase();
-      if (['BD','BGD','BANGLADESH'].includes(raw)) return { countryCode:'BD', iso3:'BGD', name:'Bangladesh' };
+      if (['BD','BGD','BDG','BANGLADESH'].includes(raw)) return { countryCode:'BD', iso3:'BGD', name:'Bangladesh' };
       if (['US','USA','UNITED STATES'].includes(raw)) return { countryCode:'US', iso3:'USA', name:'United States' };
       return null;
     }
