@@ -277,7 +277,7 @@ test('production shell fully disconnects legacy UI scripts and caches the isolat
   assert.equal(server.includes('UI_INTERACTION_GUARD_SCRIPT'), false, 'server must not inject the retired click interceptor');
   assert.equal(server.includes('omega_ui_interaction_guard.js'), false, 'server must not inject the retired click interceptor');
   assert.ok(html.includes('omega_ui_v2/legacy-disconnect.css'));
-  assert.ok(serviceWorker.includes('CACHE_NAME = "omega-offline-atlas-shell-v37"'));
+  assert.ok(serviceWorker.includes('CACHE_NAME = "omega-offline-atlas-shell-v38"'));
   const coreStart = serviceWorker.indexOf('const CORE_ASSETS');
   const coreEnd = serviceWorker.indexOf('];', coreStart);
   const coreAssets = serviceWorker.slice(coreStart, coreEnd);
@@ -373,3 +373,52 @@ test('performance monitor cancels its animation-frame loop while the app is back
   assert.equal(window.__OMEGA_DIAG__.metrics.fps, 1, 'diagnostic FPS metric should still update');
   assert.equal(frames.size, 1, 'monitor should retain its visible-screen sampling loop');
 });
+
+test('map and ministry rendering stay responsive and scoped to the selected country', () => {
+  const map = read('map-engine-2.js');
+  const countryRuntime = read('omega_country_runtime_data_v1.js');
+  const resourceScreen = read('omega_ui_v2/screens/resource-ministry.js');
+  const resourceBinding = read('omega_resource_gameplay_binding_v1.js');
+
+  assert.ok(map.includes('generateAllBilateralRelations(countrySubset)'),
+    'relation generation must support a small source-country slice');
+  assert.ok(map.includes('RELATION_COUNTRIES_PER_FRAME = 2'));
+  assert.ok(map.includes('generateAllBilateralRelations(chunk)'));
+  assert.ok(map.includes('allCountries.forEach(c2 => {'),
+    'each selected source country still calculates relations to the complete country roster');
+  assert.ok(map.includes('color: "#f8fafc"'),
+    'country outlines must remain visible on the map basemap');
+  assert.ok(map.includes("color: '#f8fafc', weight: 1.25, opacity: 1.0"),
+    'diplomacy overlay must not reset country outlines to nearly invisible strokes');
+  assert.ok(map.includes('countryRuntime.getCities(countryName)'),
+    'city rendering must ask for the selected country, not all country city records');
+  assert.ok(map.includes("this.activeResourceFilter = 'NONE';"),
+    'leaving resource mode must restore city markers');
+  assert.ok(countryRuntime.includes("add(row.capital,'capital')"));
+  assert.ok(countryRuntime.includes("add(row.economic,'economic')"));
+  assert.ok(countryRuntime.includes("add(row.military,'military')"));
+  assert.ok(countryRuntime.includes("add(row.secret,'secret')"));
+  assert.ok(map.includes("state.scope = countrySelected ? 'NATION' : (configuredScope === 'WORLD' ? 'WORLD' : 'NATION')"),
+    'resource mode must not switch to global scope merely because no country has been selected');
+  assert.ok(map.includes('individualSiteBinding || window.__OMEGA_RESOURCE_SITE_BINDING_INIT__'),
+    'the legacy deposit renderer must not scan the global list while the country-scoped binding owns the map');
+  assert.ok(resourceBinding.includes('async function discoverSourceSites(root)'),
+    'large source discovery must yield rather than monopolize the WebView');
+  assert.ok(resourceBinding.includes('visited%400===0)await yieldResourceWorkToUi()'));
+  assert.ok(resourceBinding.includes('candidateIndex%300===0)await yieldResourceWorkToUi()'));
+  assert.ok(resourceBinding.includes('await rebuildSiteIndexes()'));
+  assert.ok(resourceBinding.includes('collectVisibleSites(sitesForCountry(activeCountry),bounds,matchesResource,MAX_MAP_RESOURCE_MARKERS)'),
+    'nation scope must render only the selected country');
+  assert.ok(resourceBinding.includes('sitesInCurrentViewport(map,bounds,matchesResource,MAX_MAP_RESOURCE_MARKERS)'),
+    'world scope must use spatial buckets and a bounded marker set');
+  assert.ok(resourceBinding.includes('function refreshSiteSelectorForCountry(value)'));
+  assert.ok(!resourceBinding.includes('selectNode.innerHTML=sites.map(s=>'),
+    'the site selector must not allocate a DOM option for every global site');
+  assert.ok(resourceBinding.includes("new g.CustomEvent('OMEGA_RESOURCE_SITE_BINDING_READY'"),
+    'the runtime readiness event must remain intact for extraction and factory systems');
+  assert.ok(resourceScreen.includes('function sourceCatalogs(selectedCountry)'));
+  assert.ok(resourceScreen.includes('if (countryId(sites[i]) === countryFilter)'),
+    'country filtering must happen before global catalogue deduplication/sorting');
+  assert.ok(resourceScreen.includes('uniqueSiteRows(providedRows.filter(function (row) { return countryId(row) === selectedCountry; }))'));
+});
+
