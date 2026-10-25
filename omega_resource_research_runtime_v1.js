@@ -319,7 +319,10 @@ function yieldTurnToUi(){
 async function processAllForTurn(){
   const selected=playerSimulationCountryId();
   if(!selected)return{status:'SKIPPED',reason:'PLAYER_COUNTRY_NOT_SELECTED',turn:turn(),countryCount:0,results:[]};
-  if(!activeResearchCountries().includes(selected))return{status:'COMPLETED',turn:turn(),countryCount:0,results:[]};
+  const row=state()?.resource?.[selected]||{};
+  const hasActiveWork=(Array.isArray(row.technologyResearchProjects)&&row.technologyResearchProjects.some(x=>['REQUESTED','IN_PROGRESS'].includes(String(x?.status||'').toUpperCase())))||
+    (Array.isArray(row.technologyTransfers)&&row.technologyTransfers.some(x=>['REQUESTED','IN_PROGRESS'].includes(String(x?.status||'').toUpperCase())));
+  if(!hasActiveWork)return{status:'COMPLETED',turn:turn(),countryCount:0,results:[]};
   return{status:'COMPLETED',turn:turn(),countryCount:1,
     results:[{countryId:selected,result:processCountry(selected)}]};
 }
