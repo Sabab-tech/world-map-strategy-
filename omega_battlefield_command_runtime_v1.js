@@ -726,8 +726,7 @@
       root&&root.simulation&&root.simulation.playerCountryId,
       root&&root.playerCountryId,root&&root.playerCountryCode,
       sim&&typeof sim.getPlayerCountryId==='function'?sim.getPlayerCountryId():null,
-      g.Game&&(g.Game.playerCountryId||g.Game.playerCountry||g.Game.currentActiveCountry),
-      g.CountryIOS&&g.CountryIOS.activeCountry,g.currentActiveCountry,g.playerCountry
+      g.Game&&(g.Game.playerCountryId||g.Game.playerCountry||g.Game.playerCountryCode),g.OMEGA_PLAYER_COUNTRY_ID,g.playerCountry,g.playerCountry
     ];
     for(var i=0;i<candidates.length;i++){
       if(candidates[i]==null||String(candidates[i]).trim()==='')continue;
