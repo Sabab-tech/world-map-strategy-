@@ -28,6 +28,9 @@ on:
       - 'omega_resource_system_hardening_v1.js'
       - 'SIMULATION_PIPELINE.md'
       - 'omega_resource_industrial_network_v1.js'
+      - 'ministry_engine.js'
+      - 'omega_minister_integration.js'
+      - 'omega_live_operations_observability_v1.js'
       - 'resource_industrial_catalog_v1.json'
       - 'test/omega_resource_industrial_network_v1.test.mjs'
       - 'test/omega_simulation_runtime.test.js'
@@ -66,6 +69,9 @@ jobs:
           node --check omega_resource_strategic_policy_runtime_v1.js
           node --check omega_resource_system_hardening_v1.js
           node --check omega_resource_industrial_network_v1.js
+          node --check ministry_engine.js
+          node --check omega_minister_integration.js
+          node --check omega_live_operations_observability_v1.js
           node --check omega-offline-map-sw.js
       - name: Test shared daily clock, saves and lifecycle wiring
         run: node --test test/omega_simulation_daily_clock.test.mjs test/omega_simulation_runtime.test.js test/omega_resource_industrial_network_v1.test.mjs
