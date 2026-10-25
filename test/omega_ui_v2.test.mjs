@@ -443,7 +443,7 @@ test('Government exposes emblems, minister recruitment and a stable future portr
     assert.match(root.innerHTML, /data-omega-v2-ministry-rotator/);
     assert.match(root.innerHTML, /data-omega-v2-minister-portrait-slot/);
     assert.match(root.innerHTML, /Recruit \/ Replace/);
-    assert.match(root.innerHTML, /<svg/);
+    assert.match(root.innerHTML, /class="omega-v2-ministry-logo-image"/, 'ministry logo asset must be rendered in the directory card');
     assert.ok(root.innerHTML.includes('assets/ui-photos/bangladesh-police-headquarters.webp') || root.innerHTML.includes('assets/economy_bg.jpg.jpg'));
   } finally {
     globalThis.OmegaCabinetUI = previousCabinet;
