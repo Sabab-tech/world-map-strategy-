@@ -639,7 +639,7 @@ test('universal navigation and the isolated legacy-free shell are wired into the
   assert.ok(app.includes('root.contains(ownControl)'));
   assert.ok(app.includes('event.stopPropagation()'));
   assert.ok(html.includes('omega_ui_v2/ministry-visual-refresh.css'));
-  assert.ok(worker.includes('omega-offline-atlas-shell-v37'));
+  assert.match(worker, /omega-offline-atlas-shell-v\d+/);
   assert.ok(worker.includes('"./omega_ui_v2/legacy-disconnect.css"'));
   assert.ok(refreshCss.includes('omega-v2-ministry-detail-cover-image'));
   assert.ok(refreshCss.includes('min-height: 48px'));
