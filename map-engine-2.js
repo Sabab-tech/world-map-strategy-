@@ -631,8 +631,10 @@ Game.Map = {
             if (Game.geojsonLayer) {
                 Game.geojsonLayer.eachLayer(function(layer) {
                     if (layer !== Game.selectedLayer) {
-                        layer.setStyle({ 
-                            weight: currentZoom > 5.5 ? 1.4 : 0.9,
+                        layer.setStyle({
+                            color: "#f8fafc",
+                            opacity: 1.0,
+                            weight: currentZoom > 5.5 ? 1.55 : 1.25,
                             dashArray: null
                         });
                     } else {
