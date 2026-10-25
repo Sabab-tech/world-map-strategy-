@@ -33,6 +33,31 @@
     return key(row && (row.countryId || row.countryCode || row.identity && row.identity.countryIso3 || row.sourceSiteRecord && row.sourceSiteRecord.countryCode) || '');
   }
 
+  function selectedCountryKey(value) {
+    var requested = key(value);
+    if (!requested) return '';
+    // Map/legacy ministry controls may pass a display name (for example BANGLADESH),
+    // while authoritative mine/site records use ISO3 (BGD). Resolve the identity once
+    // before filtering so a valid country never gets an empty resource screen.
+    var runtime = g.OmegaCountryRuntimeData || (g.Omega && g.Omega.CountryRuntimeData);
+    if (runtime && typeof runtime.resolveCountry === 'function') {
+      try {
+        var profile = runtime.resolveCountry(value);
+        var resolved = key(profile && (profile.countryCode || profile.iso3 || profile.alpha3 ||
+          profile.countryId || profile.identity && (profile.identity.countryCode || profile.identity.countryIso3)));
+        if (resolved) return resolved;
+      } catch (_) {}
+    }
+    var game = g.Game;
+    if (game && typeof game.getCountryId === 'function') {
+      try {
+        var resolvedId = key(game.getCountryId(value));
+        if (resolvedId) return resolvedId;
+      } catch (_) {}
+    }
+    return requested;
+  }
+
   function resourceId(row) {
     return String(row && (row.identity && (row.identity.resourceId || row.identity.resourceTypeId || row.identity.resourceName) ||
       row.sourceSiteRecord && (row.sourceSiteRecord.resourceId || row.sourceSiteRecord.resourceTypeId) ||
@@ -53,7 +78,7 @@
 
   function sourceCatalogs(selectedCountry) {
     var rows = [];
-    var countryFilter = key(selectedCountry || '');
+    var countryFilter = selectedCountryKey(selectedCountry);
     var appendSelectedCountry = function (sites) {
       if (!Array.isArray(sites)) return;
       // Filter before concatenating/deduping/sorting the global registry. Only the
@@ -90,7 +115,7 @@
 
   function buildViewModel(options) {
     options = options || {};
-    var selectedCountry = key(options.countryId || '');
+    var selectedCountry = selectedCountryKey(options.countryId || '');
     var rows;
     if (Array.isArray(options.sites)) {
       var providedRows = options.sites;
