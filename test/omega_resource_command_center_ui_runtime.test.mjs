@@ -118,9 +118,11 @@ globalThis.Omega = {
     registerCommandHandler() {}, registerAction() {}, configure() {}, emitEvent() { return { status: 'APPLIED' }; }
   }
 };
+globalThis.__pipelineDiagnosticScope = null;
 globalThis.Omega.ResourceIndustrialNetwork = {
   diagnostics() { return { version: 'TEST_RUNTIME', projectCount: 1 }; },
-  gameplayPipelineDiagnostics() {
+  gameplayPipelineDiagnostics(countryScope) {
+    globalThis.__pipelineDiagnosticScope = countryScope ?? null;
     return { perCountry: [{ countryId: 'BGD', extractionFlows: 1, dispatched: 1, processed: 1, stages: { EXTRACTION: 1 } }] };
   },
   candidateFactories(country, resourceId) {
@@ -149,6 +151,13 @@ globalThis.OmegaCognitiveOS = {};
 
 await import('../omega_resource_command_center_ui_v1.js');
 const ui = globalThis.OmegaResourceCommandCenterUI;
+
+test('industrial panel requests scoped diagnostics for the selected country', () => {
+  globalThis.__pipelineDiagnosticScope = null;
+  ui.open('BGD', 'industrial');
+  assert.equal(globalThis.__pipelineDiagnosticScope, 'BGD',
+    'opening one country must not request a full global ledger scan');
+});
 
 test('all sixteen panels render without runtime exceptions', () => {
   const panels = ['matrix','ontology','reserves','deposits','extraction','processing','inventory','logistics','industrial','market','trade','value','cascade','cognitive','power','environment'];

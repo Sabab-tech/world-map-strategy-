@@ -3346,8 +3346,19 @@ function factoryCatalogDiagnostics(){
     profileCount:Object.keys(profiles).length,downstreamRecipeCount:Object.keys(downstream).length,categoryCount:(catalog.factoryCatalogPolicy?.categoryOrder||[]).length,
     issues};
 }
-function gameplayPipelineDiagnostics(){
-  const sites=masterSites(),countries=runtimeCountryIds();
+function gameplayPipelineDiagnostics(countryScope){
+  const sites=masterSites();
+  // UI callers that inspect one selected country must not synchronously scan every
+  // country's ledger on the WebView main thread. Keep the no-argument global contract
+  // intact for world diagnostics and aggregate pipeline verification.
+  const scopeText=countryScope==null?'':String(countryScope).trim();
+  const scopedCountry=scopeText?canonicalCountry(scopeText):null;
+  const countries=scopedCountry?[scopedCountry]:runtimeCountryIds();
+  const siteCounts=Object.create(null);
+  for(const site of sites){
+    const cid=canonicalCountry(site?.countryId);
+    if(cid)siteCounts[cid]=(siteCounts[cid]||0)+1;
+  }
   const isCurrentlyBlocked=flow=>{
     const status=String(flow?.status||'').toUpperCase();
     return status.includes('BLOCKED')||status==='PUBLICATION_ATTEMPTED'||
@@ -3356,7 +3367,7 @@ function gameplayPipelineDiagnostics(){
   const perCountry=countries.map(c=>{
     const rs=resourceState(c),flows=siteFlowRows(c),network=netState(c),stages={};
     for(const flow of flows)for(const step of flow.stages||[])stages[step.stage]=(stages[step.stage]||0)+1;
-    return{countryId:c,registrySiteCount:sites.filter(x=>canonicalCountry(x.countryId)===c).length,
+    return{countryId:c,registrySiteCount:siteCounts[c]||0,
       extractionFlows:flows.length,dispatched:flows.filter(x=>(x.stages||[]).some(s=>s.stage==='TRANSPORT'&&['IN_TRANSIT','DELIVERED'].includes(s.status))).length,
       processed:flows.filter(x=>(x.stages||[]).some(s=>s.stage==='PROCESSING'&&s.status==='COMPLETED')).length,
       marketPublished:flows.filter(x=>(x.stages||[]).some(s=>s.stage==='MARKET'&&s.status==='PUBLISHED')).length,

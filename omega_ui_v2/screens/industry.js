@@ -29,6 +29,102 @@
   function safeNetwork() { return g.OmegaResourceIndustrialNetwork || (g.Omega && g.Omega.ResourceIndustrialNetwork) || null; }
   function safeCatalog() { return g.OmegaResourceIndustrialCatalogData || (g.Omega && g.Omega.ResourceIndustrialCatalogData) || null; }
 
+  function normalizeResourceId(value) {
+    return String(value == null ? '' : value).normalize('NFKC').trim().toLowerCase()
+      .replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+  }
+  function cleanResourceName(value, fallbackId) {
+    var name = String(value || '').trim();
+    if (!name) name = String(fallbackId || '').replace(/[_-]+/g, ' ').replace(/\b[a-z]/g, function (letter) { return letter.toUpperCase(); });
+    return name.split(/\s+[\/&]\s+/)[0].trim();
+  }
+  function readableResourceUnit(value) {
+    var raw = String(value || '').trim();
+    if (!raw || /^SIMULATION(?:_|\s)/i.test(raw)) return '';
+    var key = raw.toLowerCase().replace(/\s+/g, '_');
+    var known = {
+      ton: 'tonne',
+      tons: 'tonnes',
+      metric_tons: 'tonnes',
+      metric_tonnes: 'tonnes',
+      metric_tons_lce: 'tonnes (LCE)',
+      metric_tons_u: 'tonnes (U)',
+      barrels_per_day: 'barrels/day',
+      troy_ounces: 'troy ounces',
+      carats: 'carats',
+      bcm: 'billion cubic metres',
+      bcf: 'billion cubic feet',
+      mcf: 'thousand cubic feet',
+      cubic_meters: 'm³',
+      tonnes: 'tonnes',
+      kilograms: 'kg',
+      metric_tons_per_year: 'tonnes/year'
+    };
+    return known[key] || raw.replace(/[_-]+/g, ' ');
+  }
+  function addNaturalResource(target, row, fallbackId) {
+    if (!row || typeof row !== 'object') return;
+    var rawId = row.resourceId || row.resourceTypeId || row.resourceTypeKey || row.resId ||
+      row.id || row.code || fallbackId;
+    var id = normalizeResourceId(rawId);
+    if (!id || /^(?:resource_types|resources|gsrsk_master_resource_data_v14|gsrsk_master_countryprofiles_v14|runtime_deposit_schema)$/.test(id)) return;
+    var name = cleanResourceName(row.displayName || row.resourceName || row.commodityName || row.name || row.label, id);
+    var unit = readableResourceUnit(row.unit || row.baseUnit || row.measurementUnit || row.reserveUnit);
+    var existing = target[id];
+    target[id] = {
+      resourceId: id,
+      name: existing && existing.name ? existing.name : name,
+      unit: (existing && existing.unit) || unit || ''
+    };
+  }
+  function addResourceTypeSource(target, source) {
+    if (Array.isArray(source)) {
+      source.forEach(function (row) { addNaturalResource(target, row, null); });
+      return;
+    }
+    if (!source || typeof source !== 'object') return;
+    Object.keys(source).forEach(function (key) { addNaturalResource(target, source[key], key); });
+  }
+  function naturalResourceCatalog() {
+    var byId = Object.create(null);
+    var engine = g.ResourceMinistryEngine || g.OmegaResourceMinistryEngine ||
+      (g.Omega && g.Omega.ResourceMinistryEngine);
+    addResourceTypeSource(byId, engine && engine.resourceTypes);
+    var bridge = g.OmegaCanonicalIdentityRegistry || g.OmegaCountrySemanticBridge ||
+      (g.Omega && g.Omega.CanonicalIdentity);
+    if (bridge && typeof bridge.getDataset === 'function') {
+      ['resources.json', 'resources_2.json'].forEach(function (path) {
+        try {
+          var data = bridge.getDataset(path);
+          if (!data || typeof data !== 'object') return;
+          addResourceTypeSource(byId, data.resource_types || data.resourceTypes);
+          var master = data.GSRSK_Master_Resource_Data_v14 || data.GSRSk_Master_Resource_Data_v14;
+          addResourceTypeSource(byId, master && (master.resource_types || master.resourceTypes));
+        } catch (_) {}
+      });
+    }
+    var sites = g.OmegaResourceSiteCanonicalCatalogData ||
+      (g.Omega && g.Omega.ResourceSiteCanonicalCatalogData);
+    if (sites && Array.isArray(sites.sites)) {
+      sites.sites.forEach(function (site) {
+        if (!site || typeof site !== 'object') return;
+        var identity = site.identity || {};
+        var source = site.sourceSiteRecord || site.real || site;
+        var id = identity.resourceTypeId || identity.resourceId || source.resourceTypeId ||
+          source.resourceId || source.resId || site.resourceTypeId || site.resourceId;
+        if (!id) return;
+        addNaturalResource(byId, {
+          id: id,
+          name: identity.resourceName || source.resourceName || source.resourceName ||
+            source.name || site.resourceName || site.resourceName,
+          unit: source.unit || site.unit || identity.unit
+        }, id);
+      });
+    }
+    return Object.keys(byId).map(function (id) { return byId[id]; })
+      .sort(function (a, b) { return a.name.localeCompare(b.name); });
+  }
+
   function buildViewModel(options) {
     options = options || {};
     var context = countryContext(options.countryId);
@@ -37,9 +133,42 @@
     var industrial = resource.industrialNetwork && typeof resource.industrialNetwork === 'object' ? resource.industrialNetwork : {};
     var catalog = safeCatalog() || {};
     var inventoryRuntime = g.OmegaCountryInventoryRuntime || (g.Omega && g.Omega.CountryInventoryRuntime) || null;
+    var inventorySnapshot = null;
     var nationalInventory = null;
+    var resourceInventory = null;
     if (context.countryId && inventoryRuntime && typeof inventoryRuntime.getInventory === 'function') {
-      try { nationalInventory = inventoryRuntime.getInventory(context.countryId, { includeZero: true, includeLedger: false }); } catch (_) { nationalInventory = null; }
+      try { inventorySnapshot = inventoryRuntime.getInventory(context.countryId, { includeZero: true, includeLedger: false }); } catch (_) { inventorySnapshot = null; }
+    }
+    if (inventorySnapshot && inventorySnapshot.status === 'READY') {
+      var resourceTypes = naturalResourceCatalog();
+      var resourceIds = Object.create(null);
+      resourceTypes.forEach(function (row) { resourceIds[row.resourceId] = true; });
+      var balances = Object.create(null);
+      (Array.isArray(inventorySnapshot.items) ? inventorySnapshot.items : []).forEach(function (row) {
+        var id = normalizeResourceId(row && row.productId);
+        if (!id) return;
+        balances[id] = Math.max(0, num(row.quantity) || 0);
+      });
+      resourceInventory = Object.assign({}, inventorySnapshot, {
+        resourceTypesOnly: true,
+        items: resourceTypes.map(function (row) {
+          return {
+            resourceId: row.resourceId,
+            name: row.name,
+            quantity: Math.max(0, num(balances[row.resourceId]) || 0),
+            unit: row.unit || ''
+          };
+        })
+      });
+      nationalInventory = Object.assign({}, inventorySnapshot, {
+        items: (Array.isArray(inventorySnapshot.items) ? inventorySnapshot.items : []).filter(function (row) {
+          var id = normalizeResourceId(row && row.productId);
+          return !!id && !resourceIds[id] && Math.max(0, num(row.quantity) || 0) > 0;
+        })
+      });
+    } else if (inventorySnapshot) {
+      resourceInventory = Object.assign({}, inventorySnapshot, { resourceTypesOnly: true, items: [] });
+      nationalInventory = Object.assign({}, inventorySnapshot, { items: [] });
     }
     var assets = Array.isArray(economy.productionAssets) ? economy.productionAssets : [];
     var projects = Array.isArray(industrial.projects) ? industrial.projects : (Array.isArray(economy.projects) ? economy.projects : []);
@@ -94,6 +223,7 @@
       catalogProfileCount: Object.keys(profiles).length,
       catalogProfiles: profiles,
       inputInventoryCount: mappedAssets.reduce(function (total, row) { return total + row.inputRows.filter(function (input) { return input.quantity !== null && input.quantity > 0; }).length; }, 0),
+      resourceInventory: resourceInventory,
       nationalInventory: nationalInventory,
       source: 'Game.state.resource[country].industrialNetwork + Game.state.economy[country].productionAssets + canonical industrial catalogue'
     };
@@ -163,6 +293,8 @@
     if (!root) return { ok: false, code: 'INDUSTRY_ROOT_REQUIRED' };
     var model = buildViewModel(options);
     var active = options.tab || root.__omegaV2IndustryTab || 'factories';
+    // Migrate the retired all-products inventory tab to the new natural-resource view.
+    if (active === 'national-inventory') active = 'resource-inventory';
     var content = '';
     if (active === 'factories') {
       content = model.factories.length ? '<div class="omega-v2-grid">' + model.factories.map(function (row) { return factoryCard(row, options); }).join('') + '</div>' : '<div class="omega-v2-empty">No commissioned production assets are recorded for ' + esc(model.countryId || 'the selected country') + '. Catalog profiles are not counted as owned factories.</div>';
@@ -174,16 +306,29 @@
       var rows = [];
       model.factories.forEach(function (factory) { factory.inputRows.forEach(function (item) { rows.push({ factory: factory.id || factory.name, resource: item.resourceId, quantity: item.quantity }); }); });
       content = rows.length ? '<div class="omega-v2-card"><div class="omega-v2-table-wrap"><table><thead><tr><th>Factory</th><th>Input resource</th><th>Recorded quantity</th></tr></thead><tbody>' + rows.map(function (row) { return '<tr><td>' + esc(row.factory) + '</td><td>' + esc(row.resource) + '</td><td>' + fmt(row.quantity) + '</td></tr>'; }).join('') + '</tbody></table></div><p class="omega-v2-source">Rows reflect per-factory input inventory only. They do not assert country-wide warehouse availability or a completed logistics receipt.</p></div>' : '<div class="omega-v2-empty">No per-factory input quantities are recorded. Shared warehouse stock is not inferred.</div>';
-    } else if (active === 'national-inventory') {
+    } else if (active === 'resource-inventory') {
+      var resourceSnapshot = model.resourceInventory;
+      if (resourceSnapshot && resourceSnapshot.status === 'READY') {
+        var resourceRows = Array.isArray(resourceSnapshot.items) ? resourceSnapshot.items : [];
+        var resourceStatus = resourceSnapshot.active ? 'ACTIVE COUNTRY' : 'READ-ONLY SNAPSHOT';
+        content = '<div class="omega-v2-card"><div class="omega-v2-card-header"><div><h3 class="omega-v2-card-title">' + esc(resourceSnapshot.countryName || resourceSnapshot.countryId || model.countryId) + ' · Resource Inventory</h3><div class="omega-v2-card-meta">' + esc(resourceStatus) + ' · ' + fmt(resourceRows.length) + ' natural resource types</div></div></div>' +
+          (resourceRows.length ? '<div class="omega-v2-table-wrap"><table><thead><tr><th>Resource</th><th>Quantity</th><th>Unit</th></tr></thead><tbody>' + resourceRows.map(function (row) {
+            return '<tr><td>' + esc(row.name) + '</td><td><strong>' + fmt(Math.max(0, num(row.quantity) || 0)) + '</strong></td><td>' + esc(row.unit || 'Not recorded') + '</td></tr>';
+          }).join('') + '</tbody></table></div>' : '<p class="omega-v2-empty">The canonical natural-resource catalogue is still loading. Processed materials are not shown in this list.</p>') +
+          '<p class="omega-v2-source">This inventory contains natural resources only. Each resource appears once; industrial products and factory outputs are kept in Industrial Inventory.</p></div>';
+      } else {
+        content = '<div class="omega-v2-empty">Country inventory runtime is initializing or no country has been selected.</div>';
+      }
+    } else if (active === 'industrial-inventory' || active === 'national-inventory') {
       var snapshot = model.nationalInventory;
       if (snapshot && snapshot.status === 'READY') {
         var stockRows = Array.isArray(snapshot.items) ? snapshot.items : [];
-        var inventoryStatus = snapshot.active ? 'PLAYER INVENTORY · ACTIVE' : 'READ-ONLY SNAPSHOT';
-        content = '<div class="omega-v2-card"><div class="omega-v2-card-header"><div><h3 class="omega-v2-card-title">' + esc(snapshot.countryName || snapshot.countryId || model.countryId) + ' inventory</h3><div class="omega-v2-card-meta">' + esc(inventoryStatus) + ' · ' + fmt(stockRows.length) + ' product records</div></div><span class="omega-v2-status">' + (snapshot.unbounded ? 'UNBOUNDED STOCK LOG' : 'STOCK STATUS') + '</span></div>' +
-          (stockRows.length ? '<div class="omega-v2-table-wrap"><table><thead><tr><th>Product</th><th>Product ID</th><th>Base</th><th>On hand</th><th>Change</th><th>Unit</th></tr></thead><tbody>' + stockRows.map(function (row) {
-            return '<tr><td>' + esc(row.name) + '</td><td>' + esc(row.productId) + '</td><td>' + fmt(row.base) + '</td><td><strong>' + fmt(row.quantity) + '</strong></td><td>' + fmt(row.deltaFromBase) + '</td><td>' + esc(row.unit || 'Not recorded') + '</td></tr>';
-          }).join('') + '</tbody></table></div>' : '<p class="omega-v2-empty">No product catalog rows are available for this country yet.</p>') +
-          '<p class="omega-v2-source">Factory output, imports, consumption and exports are recorded against the selected country. Other countries are read-only snapshots until selected by the player. Inventory has no fixed capacity or ledger-entry cap.</p></div>';
+        var inventoryStatus = snapshot.active ? 'ACTIVE COUNTRY' : 'READ-ONLY SNAPSHOT';
+        content = '<div class="omega-v2-card"><div class="omega-v2-card-header"><div><h3 class="omega-v2-card-title">' + esc(snapshot.countryName || snapshot.countryId || model.countryId) + ' · Industrial Inventory</h3><div class="omega-v2-card-meta">' + esc(inventoryStatus) + ' · ' + fmt(stockRows.length) + ' stocked products</div></div></div>' +
+          (stockRows.length ? '<div class="omega-v2-table-wrap"><table><thead><tr><th>Product</th><th>Quantity</th></tr></thead><tbody>' + stockRows.map(function (row) {
+            return '<tr><td>' + esc(row.name) + '</td><td><strong>' + fmt(Math.max(0, num(row.quantity) || 0)) + '</strong></td></tr>';
+          }).join('') + '</tbody></table></div>' : '<p class="omega-v2-empty">No industrial products are currently in stock for this country.</p>') +
+          '<p class="omega-v2-source">Factory outputs, imports, consumption and exports update this inventory. Raw natural resources are listed separately in Resource Inventory.</p></div>';
       } else {
         content = '<div class="omega-v2-empty">Country inventory runtime is initializing or no country has been selected.</div>';
       }
@@ -202,7 +347,8 @@
       tabButton('factories', 'My Factories', active) +
       tabButton('production-lines', 'Production Lines', active) +
       tabButton('inventory', 'Input Inventory', active) +
-      tabButton('national-inventory', 'National Inventory', active) +
+      tabButton('resource-inventory', 'Resource Inventory', active) +
+      tabButton('industrial-inventory', 'Industrial Inventory', active) +
       tabButton('projects', 'Build Projects', active) +
       '</div><div data-omega-v2-industry-content>' + content + '</div>' +
       '<p class="omega-v2-source">Factory and production records remain in this UI v2 screen. Retired console navigation is disabled.</p>' +
