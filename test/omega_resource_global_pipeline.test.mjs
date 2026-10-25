@@ -98,10 +98,15 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
     list(){return Object.keys(engine.countryProfiles);}
   };
   const {interop}=makeInterop(state);
+  let macrotaskYieldCount=0;
+  const runtimeSetTimeout=(callback,delay,...args)=>{
+    if(Number(delay)===0)macrotaskYieldCount++;
+    return setTimeout(callback,delay,...args);
+  };
 
   const context={
     console,Math,Number,String,Object,Array,Set,Map,WeakMap,Promise,JSON,Date,Intl,
-    CustomEvent:CustomEventMock,
+    CustomEvent:CustomEventMock,setTimeout:runtimeSetTimeout,clearTimeout,
     addEventListener(){},dispatchEvent(){return true},
     Game:{state},gameState:state,
     OmegaCanonicalIdentityRegistry:identity,
@@ -206,6 +211,8 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
     'the empty ZZZ fixture must not enter the extraction loop');
   assert.ok(globalResult.yieldedBatchCount>0,
     'global resource processing must yield to the UI between country batches');
+  assert.ok(macrotaskYieldCount>=globalResult.yieldedBatchCount,
+    'the resource pipeline must give the host event loop real macrotask opportunities');
   assert.equal(context.__OmegaResourceDepositKeyIndexDiagnostics?.buildCount,1,
     'the global deposit ID index must be built once, not rebuilt per country');
   assert.equal(context.__OmegaResourceDepositKeyIndexDiagnostics?.depositCount,engine.deposits.length);
