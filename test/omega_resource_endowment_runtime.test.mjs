@@ -906,7 +906,8 @@ assert.ok((part6PostDelivery.industrialNetwork?.siteExecutions||[]).some(item=>
   'Part 6 industrial ledger must retain the exact site, batch and occurrence identities');
 
 
-// A new turn may process only occurrence keys explicitly activated by a player action.
+// A new turn may process only the player's explicitly activated mine occurrences.
+globalThis.Game.state.simulation.session=Object.assign({},globalThis.Game.state.simulation.session||{},{playerCountryId:'BGD'});
 const activatedKeys=globalThis.Game.state.resource.BGD.activeMineOccurrenceKeys||[];
 assert.ok(activatedKeys.length>0,'one-tap production must persist the exact active occurrence keys');
 globalThis.Game.state.simulation.turn=Number(globalThis.Game.state.simulation.turn||0)+1;
