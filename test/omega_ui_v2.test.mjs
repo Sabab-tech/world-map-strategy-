@@ -848,6 +848,13 @@ test('resource ministry reads only selected-country rows from the global site re
     assert.equal(selectedByIso3.siteCount, 1);
     assert.deepEqual(new Set(selectedByIso3.sites.map((site) => site.siteId)), new Set(['USA-OIL-01']));
 
+    const nameBasedSite = globalThis.OmegaUIV2ResourceMinistry.buildViewModel({
+      countryId:'BANGLADESH',
+      sites:[{siteId:'NAME-BASED-BGD',siteName:'Name-based Bangladesh site',countryId:'Bangladesh',resourceId:'copper'}]
+    });
+    assert.equal(nameBasedSite.siteCount, 1, 'legacy rows with country names must normalize before filtering');
+    assert.equal(nameBasedSite.sites[0].siteId, 'NAME-BASED-BGD');
+
     const noCountry = globalThis.OmegaUIV2ResourceMinistry.buildViewModel({});
     assert.equal(noCountry.siteCount, 0, 'no selected nation must not render the entire global site catalog');
   } finally {
