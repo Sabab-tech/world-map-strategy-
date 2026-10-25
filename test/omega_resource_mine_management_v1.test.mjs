@@ -525,7 +525,7 @@ test('critical mineral batch has complete runtime profiles and joins the canonic
   assert.ok(bindingSource.includes('resource_site_country_mineplay_critical_batch_20261024_v1.json'));
   assert.ok(endowmentSource.includes('resource_site_country_mineplay_critical_batch_20261024_v1.json'));
   assert.ok(serviceWorkerSource.includes('resource_site_country_mineplay_critical_batch_20261024_v1.json'));
-  assert.match(serviceWorkerSource, /omega-offline-atlas-shell-v36/);
+  assert.match(serviceWorkerSource, /omega-offline-atlas-shell-v37/);
   assert.ok(catalog.resourceRules.aragonite, 'aragonite extraction must be a catalog rule');
   assert.ok(catalog.processingRules.aragonite, 'aragonite processing must be a catalog recipe');
 
