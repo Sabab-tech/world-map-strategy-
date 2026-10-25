@@ -29,30 +29,35 @@ window.OmegaMinistry = window.OmegaMinistry || {};
     });
 
     class DynamicEventRegistry {
-        #registry = new Set([
-            "SYS_INIT", "SYS_SHUTDOWN", "SYS_ERROR",
-            "MINISTRY_REGISTERED", "MINISTRY_UNLOADED",
-            "UI_BUTTON_CLICKED", "UI_SCREEN_CHANGED",
-            "MINISTER_SELECTED", "POLICY_APPROVED",
-            "WAR_DECLARED", "CABINET_UPDATED", "ECONOMY_TICK"
-        ]);
-        #kernelSyncCallback = null;
+        // Use ordinary instance fields instead of private class fields. The Android APK
+        // transpiles this legacy module for the Android 9 WebView, where the old private-field
+        // helper path previously threw "Cannot convert undefined or null to object" at boot.
+        constructor() {
+            this._registry = new Set([
+                "SYS_INIT", "SYS_SHUTDOWN", "SYS_ERROR",
+                "MINISTRY_REGISTERED", "MINISTRY_UNLOADED",
+                "UI_BUTTON_CLICKED", "UI_SCREEN_CHANGED",
+                "MINISTER_SELECTED", "POLICY_APPROVED",
+                "WAR_DECLARED", "CABINET_UPDATED", "ECONOMY_TICK"
+            ]);
+            this._kernelSyncCallback = null;
+        }
 
         linkKernelWhitelistSync(syncFn) {
             if (typeof syncFn === "function") {
-                this.#kernelSyncCallback = syncFn;
-                for (const topic of this.#registry) { try { syncFn(topic); } catch(e){} }
+                this._kernelSyncCallback = syncFn;
+                for (const topic of this._registry) { try { syncFn(topic); } catch(e){} }
             }
         }
 
         registerEvent(topic) {
-            if (typeof topic === "string" && !this.#registry.has(topic)) {
-                this.#registry.add(topic);
-                if (this.#kernelSyncCallback) { try { this.#kernelSyncCallback(topic); } catch(e){} }
+            if (typeof topic === "string" && !this._registry.has(topic)) {
+                this._registry.add(topic);
+                if (this._kernelSyncCallback) { try { this._kernelSyncCallback(topic); } catch(e){} }
             }
         }
-        hasEvent(topic) { return this.#registry.has(topic); }
-        getAllEvents() { return Array.from(this.#registry); }
+        hasEvent(topic) { return this._registry.has(topic); }
+        getAllEvents() { return Array.from(this._registry); }
     }
 
     class OmegaFrameworkException extends Error {
