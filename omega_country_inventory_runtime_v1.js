@@ -837,8 +837,19 @@
 
   function onSourceEvent(event) {
     var data = eventData(event);
-    if (!data.countryId || data.countryId !== playerCountry()) return;
-    recordSourceRow(data.countryId, event && event.type, data.payload);
+    var type = String(event && event.type || '');
+    var active = playerCountry();
+    if (!active) return;
+    // Trade settlement emits a single cross-border event, but may identify only the
+    // counterparty country. Reconcile the player's own committed trade ledger regardless
+    // of which side the event payload names so exports are not missed by the seller.
+    if (type === 'OMEGA_TRADE_SETTLEMENT_COMPLETED') {
+      syncSourceInventoryLedger(active);
+      reconcileCountry(active, 'TRADE_SETTLEMENT_RECONCILIATION');
+      return;
+    }
+    if (!data.countryId || data.countryId !== active) return;
+    recordSourceRow(data.countryId, type, data.payload);
   }
 
   function onTurnEvent() {
