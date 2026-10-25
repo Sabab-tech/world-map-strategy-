@@ -62,11 +62,12 @@
     const p=n(price),r=usdRate(c);if(p===null||r===null)return null;
     return currency(c)==='USD'?p:p/r;
   }
-  function resourceIds(){
+  function resourceIds(countryFilter){
     const ids=new Set;
     const rt=g.ResourceMinistryEngine?.resourceTypes;
     if(Array.isArray(rt))for(const x of rt)if(x?.id)ids.add(String(x.id));
-    for(const c of countries()){
+    const countryRows=countryFilter?[canonical(countryFilter)]:countries();
+    for(const c of countryRows){
       const inv=countryValue(c,'resource.inventory'),prod=countryValue(c,'resource.production'),cons=countryValue(c,'resource.consumption');
       for(const source of [inv,prod,cons])if(source&&typeof source==='object')for(const k of Object.keys(source))ids.add(k);
       const req=countryValue(c,'trade.importRequests');if(Array.isArray(req))for(const x of req)if(x?.resourceId)ids.add(x.resourceId);
@@ -85,9 +86,10 @@
     return p===null?null:{price:p,unit:row?.unit||null,source:'ResourceMinistryEngine.resourceTypes.basePrice',referenceOnly:true};
   }
   function pushOrder(book,order){if(!order.resourceId||order.quantity<=0||order.price===null)return;const key=String(order.resourceId);if(!book[key])book[key]={bids:[],asks:[]};book[key][order.side].push(order);}
-  function collectOrders(rid){
+  function collectOrders(rid,countryFilter){
     const book={bids:[],asks:[]};
-    for(const c of countries()){
+    const countryRows=countryFilter?[canonical(countryFilter)]:countries();
+    for(const c of countryRows){
       const reqs=countryValue(c,'trade.importRequests');
       if(Array.isArray(reqs))for(const q of reqs.slice(-256)){
         if(token(q?.resourceId)!==token(rid)||!['SENT','COUNTER_OFFERED','ACCEPTED'].includes(id(q?.status)))continue;
@@ -178,6 +180,49 @@
       const h=Array.isArray(persisted?.[rid])?persisted[rid]:[];
       const clearing=clearResource(rid,orders,h);
       markets[rid]={orders,clearing,history:h.concat([{turn:turn(),...clearing}]).slice(-MAX_MARKET_HISTORY)};
+    }
+    g.__OmegaMarketBooks=markets;
+    return markets;
+  }
+  function rebuildPlayerProjection(countryId){
+    const selected=canonical(countryId);
+    if(!selected)return g.__OmegaMarketBooks||{};
+    const previous=g.__OmegaMarketBooks||{};
+    const persisted=countryValue(selected,'trade.marketHistory')||{};
+    const ids=new Set([...Object.keys(previous),...resourceIds(selected)]);
+    const markets={};
+    for(const rid of ids){
+      const old=previous[rid]||null;
+      const fresh=collectOrders(rid,selected);
+      const merged={bids:[],asks:[]};
+      for(const side of ['bids','asks']){
+        const cached=Array.isArray(old?.orders?.[side])?old.orders[side]:[];
+        for(const order of cached){
+          if(canonical(order?.countryId)!==selected)merged[side].push(clone(order));
+        }
+        for(const order of fresh[side]||[]){
+          if(canonical(order?.countryId)===selected)merged[side].push(clone(order));
+        }
+        merged[side]=merged[side].slice(-MAX_ORDERS);
+      }
+      const history=Array.isArray(old?.history)?old.history:
+        (Array.isArray(persisted?.[rid])?persisted[rid]:[]);
+      const clearing=clearResource(rid,merged,history);
+      markets[rid]={orders:merged,clearing,history:history.concat([{turn:turn(),...clearing}]).slice(-MAX_MARKET_HISTORY)};
+    }
+    g.__OmegaMarketBooks=markets;
+    return markets;
+  }
+  function seedCatalogMarkets(){
+    const markets=g.__OmegaMarketBooks&&typeof g.__OmegaMarketBooks==='object'?g.__OmegaMarketBooks:{};
+    const rt=g.ResourceMinistryEngine?.resourceTypes||[];
+    if(Array.isArray(rt)){
+      for(const row of rt){
+        const rid=String(row?.id||'').trim();
+        if(!rid||markets[rid])continue;
+        const orders={bids:[],asks:[]};
+        markets[rid]={orders,clearing:clearResource(rid,orders,[]),history:[]};
+      }
     }
     g.__OmegaMarketBooks=markets;
     return markets;
@@ -278,7 +323,7 @@
     // World order books remain read-only price-discovery inputs here. This turn
     // advances no non-player inventory, production or projects; only the player's
     // market projection is written to operational country state.
-    const markets=rebuild(),resourceCount=Object.keys(markets).length;
+    const markets=rebuildPlayerProjection(countryId),resourceCount=Object.keys(markets).length;
     writeProjection(countryId,markets);
     try{interop()?.emitEvent?.('OMEGA_MARKET_PRICE_UPDATED',countryId,'trade',{turn:turn(),resources:resourceCount},{turn:turn(),correlationId:'MARKET-'+turn()+'-'+countryId});}catch(_){}
   }
@@ -294,7 +339,7 @@
       g.addEventListener?.('OMEGA_READY',install);
       g.addEventListener?.('OMEGA_GAME_SESSION_STARTED',install);
     }
-    if(state()?.simulation?.turn!==undefined)rebuild();
+    seedCatalogMarkets();
     return diagnostics();
   }
   const API=Object.freeze({VERSION,diagnostics,rebuild,quote,localPrice,suppliers});
