@@ -275,7 +275,9 @@
     const countryId=playerSimulationCountryId();
     if(!countryId)return;
     install();
-    // Preserve shared quote inputs, but only publish changing state for the player.
+    // World order books remain read-only price-discovery inputs here. This turn
+    // advances no non-player inventory, production or projects; only the player's
+    // market projection is written to operational country state.
     const markets=rebuild(),resourceCount=Object.keys(markets).length;
     writeProjection(countryId,markets);
     try{interop()?.emitEvent?.('OMEGA_MARKET_PRICE_UPDATED',countryId,'trade',{turn:turn(),resources:resourceCount},{turn:turn(),correlationId:'MARKET-'+turn()+'-'+countryId});}catch(_){}
