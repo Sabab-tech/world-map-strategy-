@@ -174,6 +174,13 @@ test('imports add inventory, consumption and exports subtract, and inactive-coun
   assert.equal(imported.status, 'COMPLETED');
   assert.equal(imported.balance, 7);
 
+  const duplicateImport = api.importProduct({
+    countryId: 'BGD', productId: 'STEEL', quantity: 4,
+    unit: 'SIMULATION_RESOURCE_UNIT', eventId: 'TEST-IMPORT-1'
+  });
+  assert.equal(duplicateImport.status, 'DUPLICATE');
+  assert.equal(duplicateImport.balance, 7, 'replayed import must not credit stock twice');
+
   const consumed = api.consumeProduct({
     countryId: 'BGD', productId: 'STEEL', quantity: 3,
     eventId: 'TEST-CONSUMPTION-1'
@@ -187,6 +194,13 @@ test('imports add inventory, consumption and exports subtract, and inactive-coun
   });
   assert.equal(exported.status, 'COMPLETED');
   assert.equal(exported.balance, 2);
+
+  const duplicateExport = api.exportProduct({
+    countryId: 'BGD', productId: 'STEEL', quantity: 2,
+    eventId: 'TEST-EXPORT-1', counterpartyCountryId: 'USA'
+  });
+  assert.equal(duplicateExport.status, 'DUPLICATE');
+  assert.equal(duplicateExport.balance, 2, 'replayed export must not debit stock twice');
 
   const before = state.resource.BGD.inventory.STEEL;
   const overdraw = api.exportProduct({
@@ -253,6 +267,33 @@ test('trade settlements update the player inventory even when the event names th
   assert.equal(api.getInventory('USA', { includeZero: true }).readOnly, true);
 });
 
+test('authoritative INVENTORY_CONSUMED events are recorded as negative ledger movements', async () => {
+  const { context, state, api } = makeRuntime();
+  await api.init();
+
+  state.resource.BGD.inventory.STEEL = 1;
+  state.resource.BGD.inventoryLedger.push({
+    type: 'INVENTORY_CONSUMED',
+    resourceId: 'STEEL',
+    quantity: 2,
+    reason: 'FACTORY_INPUT',
+    turn: 1,
+    consumed: [{ batchId: 'INPUT-BATCH-1', quantity: 2 }]
+  });
+  context.dispatchEvent(new context.CustomEvent('OMEGA_RESOURCE_CONSUMPTION_COMPLETED', {
+    detail: { eventType: 'OMEGA_RESOURCE_CONSUMPTION_COMPLETED', countryId: 'BGD', payload: { countryId: 'BGD' } }
+  }));
+
+  const ledger = api.getInventory('BGD').ledger;
+  assert.equal(item(api.getInventory('BGD', { includeZero: true }), 'steel').quantity, 1);
+  assert.equal(ledger.filter(row => row.action === 'CONSUMPTION' && row.productId === 'steel' && row.delta === -2).length, 1);
+
+  context.dispatchEvent(new context.CustomEvent('OMEGA_RESOURCE_CONSUMPTION_COMPLETED', {
+    detail: { eventType: 'OMEGA_RESOURCE_CONSUMPTION_COMPLETED', countryId: 'BGD', payload: { countryId: 'BGD' } }
+  }));
+  assert.equal(api.getInventory('BGD').ledger.filter(row => row.action === 'CONSUMPTION' && row.productId === 'steel' && row.delta === -2).length, 1);
+});
+
 test('factory output and input consumption are logged once without double-crediting stock', async () => {
   const { context, state, api } = makeRuntime();
   await api.init();
@@ -283,6 +324,48 @@ test('factory output and input consumption are logged once without double-credit
   assert.equal(ledger.filter(row => row.action === 'PRODUCTION' && row.referenceId === payload.transactionId && row.productId === 'steel').length, 1);
   assert.equal(ledger.filter(row => row.action === 'CONSUMPTION' && row.referenceId === payload.transactionId && row.productId === 'iron_concentrate').length, 1);
   assert.equal(item(api.getInventory('BGD', { includeZero: true }), 'steel').quantity, 6);
+});
+
+test('multi-input factory output is credited when the factory commits only to processed warehouse', async () => {
+  const { context, state, api } = makeRuntime();
+  await api.init();
+
+  // Model delivery to the factory input lot before production. The national on-hand
+  // balance was already debited at delivery, so the production event must not debit it again.
+  state.resource.BGD.inventory.iron_concentrate = 8;
+  context.dispatchEvent(new context.CustomEvent('OMEGA_RESOURCE_INVENTORY_CHANGED', {
+    detail: { eventType: 'OMEGA_RESOURCE_INVENTORY_CHANGED', countryId: 'BGD', payload: { countryId: 'BGD' } }
+  }));
+
+  // Multi-input factory cycles publish finished goods to processedWarehouse but do not
+  // increment resource.inventory. The national inventory must still receive the output.
+  state.resource.BGD.processedWarehouse.availableByResource.STEEL = 3;
+  const payload = {
+    transactionId: 'MULTI-FACTORY:BGD:FAC-2:T1:1',
+    countryId: 'BGD',
+    factoryId: 'FAC-2',
+    inputSource: 'TRACKED_FACTORY_INPUT',
+    inputTrackingStatus: 'TRACKED_FACTORY_INPUT_LOTS',
+    inputQuantities: { iron_concentrate: 2 },
+    outputQuantities: { STEEL: 3 }
+  };
+  context.dispatchEvent(new context.CustomEvent('OMEGA_INDUSTRIAL_PRODUCTION_COMPLETED', {
+    detail: { eventType: 'OMEGA_INDUSTRIAL_PRODUCTION_COMPLETED', countryId: 'BGD', payload }
+  }));
+  context.dispatchEvent(new context.CustomEvent('OMEGA_RESOURCE_FINISHED_GOODS_AVAILABLE', {
+    detail: {
+      eventType: 'OMEGA_RESOURCE_FINISHED_GOODS_AVAILABLE',
+      countryId: 'BGD',
+      payload: { ...payload, outputs: payload.outputQuantities }
+    }
+  }));
+
+  assert.equal(state.resource.BGD.inventory.iron_concentrate, 8, 'factory input must not be deducted twice after delivery');
+  assert.equal(state.resource.BGD.inventory.STEEL, 6, 'warehouse-only factory output must be added to on-hand inventory');
+  assert.equal(item(api.getInventory('BGD', { includeZero: true }), 'steel').quantity, 6);
+  const ledger = api.getInventory('BGD').ledger;
+  assert.equal(ledger.filter(row => row.action === 'PRODUCTION' && row.referenceId === payload.transactionId && row.productId === 'steel').length, 1);
+  assert.equal(ledger.filter(row => row.action === 'CONSUMPTION' && row.referenceId === payload.transactionId && row.productId === 'iron_concentrate').length, 1);
 });
 
 test('inventory has no stock cap or fixed 2,048-entry ledger truncation', async () => {
