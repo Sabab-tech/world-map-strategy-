@@ -458,28 +458,6 @@
     return cid;
   }
 
-  function initializeBlankCountryProducts(countryId) {
-    var cid = canonicalCountry(countryId);
-    if (!cid || cid === playerCountry()) return { status: 'IGNORED', reason: 'ACTIVE_COUNTRY_USES_LIVE_SNAPSHOT' };
-    var row = ensureCountry(cid);
-    var catalog = root().productCatalog;
-    Object.keys(catalog).forEach(function (pid) {
-      var meta = catalog[pid] || {};
-      if (!object(row.products[pid])) {
-        row.products[pid] = {
-          productId: pid,
-          sourceId: meta.sourceId || pid,
-          name: meta.name || displayName(pid),
-          base: 0,
-          unit: meta.unit || 'SIMULATION_RESOURCE_UNIT'
-        };
-      }
-      if (!Object.prototype.hasOwnProperty.call(row.observedBalances, pid)) row.observedBalances[pid] = 0;
-    });
-    row.updatedTurn = turn();
-    return { status: 'READY', countryId: cid, productCount: Object.keys(row.products).length };
-  }
-
   function appendEntry(countryId, action, productId, delta, detail) {
     detail = object(detail) ? detail : {};
     var cid = canonicalCountry(countryId), pid = normalizeProductId(productId);
@@ -979,11 +957,6 @@
         baselineCountry(active);
         applySourceEvents(active);
       }
-      // Create zero-based product inventories for every country, but do not read or
-      // advance their live simulation buckets until that country is selected by the player.
-      roster.forEach(function (row) {
-        if (row.countryId !== active) initializeBlankCountryProducts(row.countryId);
-      });
       installEventListeners();
       return diagnostics();
     })();
