@@ -518,25 +518,31 @@ function normalizeSourceSite(raw,countryHint){
   identity:{...identity,countryIso3:countryId,resourceTypeId:resourceId,siteType:identity.siteType||raw.siteType||raw.type||'RESOURCE_SITE'},
   operation:raw.operation||p.operation||raw.extractionProfile||null,processing:raw.processing||p.processing||raw.extractionProfile?.processing||null};
 }
-function discoverSourceSites(root){
- const found=[],seenObjects=new Set();
- function walk(node,path,countryHint,insideSiteCollection){
-  if(!node||typeof node!=='object'||seenObjects.has(node))return;
-  seenObjects.add(node);
-  if(Array.isArray(node)){for(const item of node)walk(item,path,countryHint,insideSiteCollection);return;}
-  const country=cid(node.countryId||node.countryCode||node.identity?.countryIso3||node.identity?.countryId||node.identity?.countryCode||node.siteDataPackage?.identity?.countryIso3||countryHint);
-  if(insideSiteCollection){
+async function discoverSourceSites(root){
+ const found=[],seenObjects=new Set(),stack=[{node:root,path:'',countryHint:'',insideSiteCollection:false}];
+ let visited=0;
+ while(stack.length){
+  const frame=stack.pop(),node=frame&&frame.node;
+  if(!node||typeof node!=='object'||seenObjects.has(node))continue;
+  seenObjects.add(node);visited++;
+  if(visited%400===0)await yieldResourceWorkToUi();
+  if(Array.isArray(node)){
+   for(let i=node.length-1;i>=0;i--)stack.push({node:node[i],path:frame.path,countryHint:frame.countryHint,insideSiteCollection:frame.insideSiteCollection});
+   continue;
+  }
+  const country=cid(node.countryId||node.countryCode||node.identity?.countryIso3||node.identity?.countryId||node.identity?.countryCode||node.siteDataPackage?.identity?.countryIso3||frame.countryHint);
+  if(frame.insideSiteCollection){
    const normalized=normalizeSourceSite(node,country);
    if(normalized)found.push(normalized);
   }
-  for(const [key,value] of Object.entries(node)){
+  const entries=Object.entries(node);
+  for(let i=entries.length-1;i>=0;i--){
+   const key=entries[i][0],value=entries[i][1];
    if(value&&typeof value==='object'){
-    const inCollection=insideSiteCollection||SITE_COLLECTION_KEY.test(key);
-    walk(value,path+'.'+key,country,inCollection);
+    stack.push({node:value,path:frame.path+'.'+key,countryHint:country,insideSiteCollection:frame.insideSiteCollection||SITE_COLLECTION_KEY.test(key)});
    }
   }
  }
- walk(root,'', '',false);
  return found;
 }
 function scheduleMarkerRender(attempt=0){
@@ -683,11 +689,17 @@ async function init(){
  mount();
  try{
   const urls=['resources.json','resources_2.json',CATALOG_URL,MASTER_URL,EXPANSION_URL,MINEPLAY_BATCH_URL,MINEPLAY_EXTRA_BATCH_URL,MINEPLAY_CRITICAL_BATCH_URL,...LEGACY_GAMEPLAY_URLS];
-  const loaded=await Promise.all(urls.map(async url=>{
-   try{const response=await fetch(url,{cache:'no-store'});if(!response.ok)return null;return {url,data:await response.json()};}
+  const fetched=await Promise.all(urls.map(async url=>{
+   try{const response=await fetch(url,{cache:'no-store'});return response.ok?{url,response}:null;}
    catch(_){return null;}
   }));
-  const sources=loaded.filter(Boolean);
+  // Download in parallel, but parse one JSON asset at a time and yield between files.
+  const sources=[];
+  for(let index=0;index<fetched.length;index++){
+   const entry=fetched[index];
+   if(entry){try{sources.push({url:entry.url,data:await entry.response.json()});}catch(_){}}
+   await yieldResourceWorkToUi();
+  }
   const getData=url=>sources.find(x=>x.url===url)?.data||null;
   const catalog=getData(CATALOG_URL),master=getData(MASTER_URL),expansion=getData(EXPANSION_URL),mineplay=getData(MINEPLAY_BATCH_URL),mineplayExtra=getData(MINEPLAY_EXTRA_BATCH_URL),mineplayCritical=getData(MINEPLAY_CRITICAL_BATCH_URL);
   const mineplayRows=[...(mineplay?.datasetId==='OMEGA_RESOURCE_SITE_COUNTRY_MINEPLAY_BATCH_V1'&&Array.isArray(mineplay.records)?mineplay.records:[]),...(mineplayExtra?.datasetId==='OMEGA_RESOURCE_SITE_COUNTRY_MINEPLAY_BATCH_V1'&&Array.isArray(mineplayExtra.records)?mineplayExtra.records:[]),...(mineplayCritical?.datasetId==='OMEGA_RESOURCE_SITE_COUNTRY_MINEPLAY_BATCH_V1'&&Array.isArray(mineplayCritical.records)?mineplayCritical.records:[])];
@@ -725,12 +737,20 @@ async function init(){
   g.Omega=g.Omega||{};g.Omega.ResourceLegacyGameplayExpansion=g.OmegaResourceLegacyGameplayExpansion;
   const masterById=new Map(masterSites.map(s=>[String(s.siteId),s]));
   const catalogById=new Map(catalogSites.map(s=>[String(s.siteId),s]));
-  const discovered=sources.filter(x=>x.url==='resources.json'||x.url==='resources_2.json').flatMap(x=>discoverSourceSites(x.data));
-  const candidates=[...catalogSites.map(s=>normalizeSourceSite(s,s.countryId)||s),...masterSites.map(s=>normalizeSourceSite(s,s.countryId)||s),...discovered];
+  const discoveredGroups=[];
+  for(const source of sources){
+   if(source.url!=='resources.json'&&source.url!=='resources_2.json')continue;
+   discoveredGroups.push(await discoverSourceSites(source.data));
+  }
+  const candidateGroups=[{rows:catalogSites,normalize:true},{rows:masterSites,normalize:true},...discoveredGroups.map(rows=>({rows,normalize:false}))];
   const byId=new Map(),physicalIndex=new Map();
-  let mergedDepositAliases=0;
-  for(const candidate of candidates){
-   const normalized=normalizeSourceSite(candidate,candidate.countryId)||candidate;
+  let mergedDepositAliases=0,candidateIndex=0;
+  for(const group of candidateGroups){
+   for(const sourceCandidate of group.rows){
+    candidateIndex++;
+    if(candidateIndex%300===0)await yieldResourceWorkToUi();
+    const candidate=group.normalize?(normalizeSourceSite(sourceCandidate,sourceCandidate.countryId)||sourceCandidate):sourceCandidate;
+    const normalized=normalizeSourceSite(candidate,candidate.countryId)||candidate;
    const id=String(normalized.siteId||'').trim(),coords=coordsOf(normalized);
    if(!id||!coords||!normalized.countryId)continue;
     if(normalized.runtime?.aliasOfSiteId||LEGACY_CANONICAL_ALIAS_IDS[id]||normalized.map?.markerEligible===false)continue;
@@ -769,8 +789,10 @@ async function init(){
     sources:normalized.sources||source.sources||catalogRow.sources||[]
    });
    if(!isDeposit)physicalIndex.set(physicalKey,id);
+   }
   }
-  sites=[...byId.values()];
+  sites=Array.from(byId.values());
+  await rebuildSiteIndexes();
   const mapApi=g.Game?.Map,resourceState=mapApi?.resourceState,resourceCatalog=mapApi?.resourceCatalog;
   if(Array.isArray(resourceCatalog)){
    const known=new Set(resourceCatalog.map(r=>String(r.id||'').toLowerCase()));
@@ -781,16 +803,16 @@ async function init(){
    }
   }
   if(resourceState?.__omegaDefaultSelection&&resourceState.selectedResources instanceof Set){
-   for(const s of sites){
-    const id=String(s.real?.resourceId||s.sourceSiteRecord?.resourceId||s.sourceSiteRecord?.resourceTypeId||s.sourceSiteRecord?.resId||s.identity?.resourceTypeId||'').trim().toLowerCase();
+   for(let index=0;index<sites.length;index++){
+    if(index>0&&index%500===0)await yieldResourceWorkToUi();
+    const site=sites[index],id=String(site.real?.resourceId||site.sourceSiteRecord?.resourceId||site.sourceSiteRecord?.resourceTypeId||site.sourceSiteRecord?.resId||site.identity?.resourceTypeId||'').trim().toLowerCase();
     if(id)resourceState.selectedResources.add(id);
    }
   }
   if(!sites.length)throw new Error('NO_INDIVIDUAL_RESOURCE_SITES_WITH_VALID_COORDINATES');
-  if(new Set(sites.map(s=>s.siteId)).size!==sites.length)throw new Error('INDIVIDUAL_SITE_IDENTITY_NOT_UNIQUE');
-  sites.sort((a,b)=>a.countryId.localeCompare(b.countryId)||a.siteName.localeCompare(b.siteName));
-  selectNode.innerHTML=sites.map(s=>'<option value="'+esc(s.siteId)+'">'+esc((s.siteName||s.name||'Resource site')+' · '+humanize(s.location?.countryName||s.countryName||s.countryId)+' · '+humanize(s.real?.resourceId||s.sourceSiteRecord?.resourceId||s.identity?.resourceTypeId||'Resource'))+'</option>').join('');
-  selected=sites[0].siteId;selectNode.value=selected;detail(chosenSite());
+  if(sitesById.size!==sites.length)throw new Error('INDIVIDUAL_SITE_IDENTITY_NOT_UNIQUE');
+  refreshSiteSelectorForCountry(g.Game?.currentActiveCountry||g.CountryIOS?.activeCountry);
+  if(!String(g.Game?.currentActiveCountry||g.CountryIOS?.activeCountry||'').trim())setStatus('Resource site catalog ready. Select a country to view its sites.');
   g.Omega=g.Omega||{};
   g.Omega.IndividualResourceSiteBinding={version:VERSION,sites,select:setSelected,refresh:addMapMarkers,diagnostics:()=>{
    const coordinateStatusCounts={};
