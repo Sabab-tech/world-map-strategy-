@@ -39,7 +39,7 @@ function cleanUnit(unit){
 function factorToCanonical(resourceId, sourceUnit, targetUnit){
  const u=cleanUnit(sourceUnit),target=cleanUnit(targetUnit),rid=tok(resourceId);
  if(u===target)return{factor:1,method:'UNIT_ALREADY_CANONICAL'};
- if(u==='UNIT_UNKNOWN')return{factor:1,method:'SIMULATION_BASE_UNIT_ASSUMED'};
+ if(u==='UNIT_UNKNOWN')return{factor:null,method:'UNIT_UNKNOWN_NOT_CONVERTED'};
  const tonneToTarget={
    TONNES:1,KG:0.001,GRAMS:0.000001,POUNDS:1/2204.62262185,
    SHORT_TONS:0.90718474,LONG_TONS:1.0160469088,OUNCES:1/35273.96195,
@@ -65,17 +65,16 @@ function factorToCanonical(resourceId, sourceUnit, targetUnit){
  if(target==='BBL'){
    if(u==='TONNES')return{factor:7.33,method:'SIMULATED_CRUDE_OIL_DENSITY_CONVERSION'};
    if(u==='M3')return{factor:6.28981077,method:'VOLUME_UNIT_CONVERSION'};
-   if(u==='MCM')return{factor:1,method:'SIMULATION_BASE_UNIT_ASSUMED'};
+   if(u==='MCM')return{factor:6289810.77,method:'VOLUME_UNIT_CONVERSION'};
  }
  if(target==='BCM'){
    if(u==='BCF')return{factor:0.028316846592,method:'VOLUME_UNIT_CONVERSION'};
    if(u==='MCM')return{factor:0.001,method:'VOLUME_UNIT_CONVERSION'};
    if(u==='M3')return{factor:1e-9,method:'VOLUME_UNIT_CONVERSION'};
  }
- // The simulation layer must be internally consistent even when historical source
- // labels describe ore mass while the gameplay ledger tracks the extracted commodity.
- // Preserve that mismatch as provenance and use a deterministic, simulation-only scale.
- return{factor:1,method:'SIMULATION_BASE_UNIT_ASSUMED'};
+ // Never label an unrecognized or dimensionally incompatible quantity as canonical.
+ // Explicitly simulated site datasets should provide a compatible unit or pre-normalized value.
+ return{factor:null,method:'UNIT_UNRECOGNIZED_OR_INCOMPATIBLE_NOT_CONVERTED'};
 }
 function normalizeQuantity(resourceId, quantity, unit, options={}){
  const value=num(quantity);
@@ -84,11 +83,11 @@ function normalizeQuantity(resourceId, quantity, unit, options={}){
  if(value===null)return{quantity:null,unit:target,sourceQuantity:quantity,sourceUnit:source,method:'QUANTITY_UNAVAILABLE',version:VERSION,simulationOnly:options.simulationOnly!==false};
  const normalizedSource=cleanUnit(source);
  const conversion=factorToCanonical(resourceId,normalizedSource,target);
- const normalized=value*conversion.factor;
+ const normalized=conversion.factor===null?null:value*conversion.factor;
  return{
-  quantity:Number.isFinite(normalized)?Number(normalized.toFixed(9)):null,
-  unit:target,sourceQuantity:value,sourceUnit:source,normalizedSourceUnit:normalizedSource,
-  method:conversion.method,version:VERSION,simulationOnly:options.simulationOnly!==false
+  quantity:normalized!==null&&Number.isFinite(normalized)?Number(normalized.toFixed(9)):null,
+  unit:conversion.factor===null?normalizedSource:target,sourceQuantity:value,sourceUnit:source,normalizedSourceUnit:normalizedSource,
+  factor:conversion.factor,method:conversion.method,version:VERSION,simulationOnly:options.simulationOnly!==false
  };
 }
 function normalizeAmountObject(object, resourceId, amountKey, unitKey, options={}){
