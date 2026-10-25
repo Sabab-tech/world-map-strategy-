@@ -568,7 +568,16 @@ const expandedCommercialCatalogIds=legacyExpansionRows
 const mineplayCommercialCatalogIds=mineplayScenario.records
   .filter(site=>site?.operation?.commercialExtraction===true&&site?.map?.markerEligible!==false)
   .map(site=>String(site.siteId));
-const commercialCatalogIds=[...new Set([...baseCommercialCatalogIds,...expandedCommercialCatalogIds,...mineplayCommercialCatalogIds])];
+// The canonical 315-site catalog contains commercial identities that are not all
+// represented in the 250-row reserve simulation pack. Include that authoritative
+// source as well, otherwise valid canonical production appears as 39 unexpected sites.
+const canonicalCommercialCatalogIds=(canonicalScenario.sites||[])
+  .filter(site=>site?.operation?.commercialExtraction===true&&site?.map?.markerEligible!==false&&
+    !site?.runtime?.aliasOfSiteId&&!legacyCanonicalAliasIds.has(String(site?.siteId||''))&&
+    !explicitlyNonOperationalStatus(String(site?.operation?.status||site?.operation?.operationalStatus||
+      site?.currentStatus||site?.status||expandedSiteStatusById.get(String(site?.siteId||''))||'')))
+  .map(site=>String(site.siteId));
+const commercialCatalogIds=[...new Set([...canonicalCommercialCatalogIds,...baseCommercialCatalogIds,...expandedCommercialCatalogIds,...mineplayCommercialCatalogIds])];
 const canonicalSiteIds=new Set((globalThis.OmegaResourceSiteCanonicalCatalogData?.sites||[]).map(x=>x.siteId).filter(Boolean));
 const executedProfileSiteIds=new Set(siteLinkedExecutionOutputs.map(x=>x.siteReferenceKey).filter(x=>canonicalSiteIds.has(x)));
 const missingCommercialSiteIds=commercialCatalogIds.filter(siteId=>!executedProfileSiteIds.has(siteId));
