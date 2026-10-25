@@ -260,12 +260,33 @@
     return true;
   }
 
-  function tick(){
-    const ids=(g.OmegaCanonicalIdentityRegistry?.list?.('COUNTRY')||g.OmegaCountrySemanticBridge?.list?.('COUNTRY')||[]).map(canonical).filter(Boolean);
-    for(const c of ids){
-      const m=state()?.cabinet?.[c]?.opponentMemory;
-      if(m&&turn()-(m.consolidation?.lastTurn||0)>=8)createCommand('OMEGA_MEMORY_CONSOLIDATE',c,{correlationId:'MEM-CONSOLIDATE-'+turn()+'-'+c});
+  function playerSimulationCountryId(){
+    const sim=g.Omega?.Simulation,root=state()||{};
+    const session=root?.simulation?.session||{};
+    const candidates=[session.playerCountryId,
+      typeof sim?.getPlayerCountryId==='function'?sim.getPlayerCountryId():null,
+      root?.simulation?.playerCountryId,root?.playerCountryId,root?.playerCountryCode,
+      g.Game?.playerCountryId,g.Game?.playerCountry,g.Game?.playerCountryCode,
+      g.OMEGA_PLAYER_COUNTRY_ID,g.playerCountry];
+    for(const value of candidates){
+      if(value==null||String(value).trim()==='')continue;
+      const cid=canonical(value);
+      if(cid&&cid!=='GLOBAL'&&cid!=='WORLD')return cid;
     }
+    return null;
+  }
+
+  function tick(){
+    const selected=playerSimulationCountryId();
+    if(!selected)return{status:'SKIPPED',reason:'PLAYER_COUNTRY_NOT_SELECTED',queued:0};
+    const cabinet=state()?.cabinet||{};
+    const key=Object.keys(cabinet).find(value=>canonical(value)===selected)||selected;
+    const m=cabinet[key]?.opponentMemory;
+    if(m&&turn()-(m.consolidation?.lastTurn||0)>=8){
+      const result=createCommand('OMEGA_MEMORY_CONSOLIDATE',selected,{correlationId:'MEM-CONSOLIDATE-'+turn()+'-'+selected});
+      return{status:'COMPLETED',countryId:selected,queued:1,resultStatus:result?.status||null};
+    }
+    return{status:'COMPLETED',countryId:selected,queued:0};
   }
 
   function diagnostics(){
