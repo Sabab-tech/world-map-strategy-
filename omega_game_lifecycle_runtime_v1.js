@@ -10,6 +10,7 @@
   var lastSavedTurn = -1;
   var lastSavedAt = 0;
   var lastSavedSerialized = '';
+  var lastSavedChecksum = null;
   var stateSaveTimer = null;
   var saveInProgress = false;
   var lifecycleFinalizerUnregister = null;
@@ -289,7 +290,7 @@
     // the OS backgrounds or terminates the app midway through an awaited turn.
     // The pipeline's final autosave uses committedTurn=true after all sectors finish.
     if (sim.stepInProgress && !options.committedTurn) {
-      setSaveStatus(lastSavedSerialized ? 'LAST COMPLETE TURN PRESERVED' : 'SAVE DEFERRED · TURN IN PROGRESS');
+      setSaveStatus(lastSavedChecksum ? 'LAST COMPLETE TURN PRESERVED' : 'SAVE DEFERRED · TURN IN PROGRESS');
       return false;
     }
     var turn = Math.max(0, Math.floor(number(sim.clock && sim.clock.turn) || 0));
@@ -302,13 +303,52 @@
       setSaveStatus('SAVE FAILED');
       return false;
     }
+    var checksum = snapshot && snapshot.checksum != null ? String(snapshot.checksum) : null;
+    // The canonical checksum already covers the complete snapshot. Comparing it avoids
+    // serializing the same world a second time just to detect an unchanged save.
+    if (!options.force && checksum && checksum === lastSavedChecksum) return true;
+
+    // A committed turn must not synchronously stringify and write the whole world into
+    // localStorage on the WebView UI thread. IndexedDB accepts the snapshot object directly;
+    // the finalizer awaits the transaction before reporting the turn durable.
+    if (options.committedTurn === true && g.indexedDB) {
+      saveNow.lastLocalSaved = false;
+      var committedBackupPromise = persistBackup(snapshot).then(function () {
+        lastSavedTurn = turn;
+        lastSavedAt = Date.now();
+        lastSavedChecksum = checksum;
+        lastSavedSerialized = '';
+        setSaveStatus('AUTO-SAVED · DAY ' + (turn + 1));
+        return true;
+      }).catch(function () {
+        // Keep a synchronous localStorage fallback for browsers where IndexedDB fails.
+        try {
+          if (!g.localStorage) throw new Error('LOCAL_STORAGE_UNAVAILABLE');
+          var fallbackSerialized = JSON.stringify(snapshot);
+          g.localStorage.setItem(SAVE_KEY, fallbackSerialized);
+          saveNow.lastLocalSaved = true;
+          lastSavedTurn = turn;
+          lastSavedAt = Date.now();
+          lastSavedChecksum = checksum;
+          lastSavedSerialized = fallbackSerialized;
+          setSaveStatus('AUTO-SAVED · DAY ' + (turn + 1));
+          return true;
+        } catch (_) {
+          setSaveStatus(lastSavedChecksum ? 'SAVE FAILED · LAST COMPLETE SAVE PRESERVED' : 'SAVE FAILED');
+          return false;
+        }
+      });
+      saveNow.lastBackupPromise = committedBackupPromise;
+      setSaveStatus('SAVING DEVICE BACKUP…');
+      return true;
+    }
+
     var serialized;
     try { serialized = JSON.stringify(snapshot); }
     catch (_) {
       setSaveStatus('SAVE FAILED · SNAPSHOT NOT SERIALIZABLE');
       return false;
     }
-    if (!options.force && serialized === lastSavedSerialized) return true;
 
     var localSaved = false;
     try {
@@ -323,7 +363,8 @@
       if (!localSaved) {
         lastSavedTurn = turn;
         lastSavedAt = Date.now();
-        lastSavedSerialized = serialized;
+        lastSavedChecksum = checksum;
+        lastSavedSerialized = '';
         setSaveStatus('DEVICE BACKUP SAVED · DAY ' + (turn + 1));
       }
       return true;
@@ -334,6 +375,8 @@
 
     if (localSaved) {
       lastSavedTurn = turn;
+      lastSavedAt = Date.now();
+      lastSavedChecksum = checksum;
       lastSavedAt = Date.now();
       lastSavedSerialized = serialized;
       setSaveStatus('AUTO-SAVED · DAY ' + (turn + 1));
@@ -348,6 +391,7 @@
   function saveNow(options) {
     if (saveInProgress) return true;
     saveInProgress = true;
+    saveNow.lastLocalSaved = false;
     try { return writeSnapshotNow(options); }
     finally { saveInProgress = false; }
   }
@@ -384,6 +428,7 @@
     if (!candidate || !candidate.snapshot) return false;
     try {
       sim.loadState(candidate.snapshot);
+      lastSavedChecksum = candidate.snapshot.checksum == null ? null : String(candidate.snapshot.checksum);
       var country = playerCountry(sim);
       if (!country) throw new Error('SAVED_PLAYER_COUNTRY_MISSING');
       syncSelectedCountry(country);
@@ -521,8 +566,10 @@
       if (sim.clock.speed !== speed) sim.clock.setSpeed(speed);
       backgroundRunsEnabled = true;
       setSaveStatus('GAME RUNNING · AUTOSAVE ON');
-      if (restoreFailed) { restoreFailed = false; saveNow({ force: true }); }
-      else saveNow({ force: true });
+      // The last committed checkpoint is already durable. Do not clone, checksum,
+      // stringify and synchronously persist the complete world on the Play tap; the
+      // turn finalizer saves the next coherent state and pause/page-exit still flushes.
+      if (restoreFailed) restoreFailed = false;
       updateHud();
       return true;
     } catch (error) {
@@ -717,7 +764,7 @@
         slot: SLOT,
         saveKey: SAVE_KEY,
         savedTurn: lastSavedTurn,
-        savedChecksum: lastSavedSerialized ? (sim && sim.saveState ? safeCall(function () { return sim.saveState().checksum; }) : null) : null,
+        savedChecksum: lastSavedChecksum,
         status: saveStatus,
         participantCount: sim && typeof sim.participantDiagnostics === 'function' ? sim.participantDiagnostics().length : null,
         restoreFinished: restoreFinished,
