@@ -21,8 +21,8 @@ const api=()=>g.Omega?.ResourceIndustrialNetwork||g.OmegaResourceIndustrialNetwo
 const endowment=()=>g.Omega?.ResourceEndowmentRuntime||g.OmegaResourceEndowmentRuntime;
 const cid=v=>String(v||'').trim().toUpperCase();
 const normalizeCountryKey=value=>String(value==null?'':value).normalize('NFKD')
- .replace(/[\\u0300-\\u036f]/g,'').replace(/&/g,' AND ')
- .replace(/[_’'-]+/g,' ').replace(/[^A-Z0-9]+/gi,' ').trim().toUpperCase().replace(/\\s+/g,' ');
+ .replace(/[\u0300-\u036f]/g,'').replace(/&/g,' AND ')
+ .replace(/[_’'-]+/g,' ').replace(/[^A-Z0-9]+/gi,' ').trim().toUpperCase().replace(/\s+/g,' ');
 function yieldResourceWorkToUi(){return new Promise(resolve=>setTimeout(resolve,0));}
 function addProfileCountryKeys(keys,profile){
  if(!profile||typeof profile!=='object')return;
@@ -182,7 +182,7 @@ function refreshSiteSelectorForCountry(value){
  setStatus('Showing '+visibleCountrySites.length+' of '+allCountrySites.length+' map-ready resource sites for '+countryName+'.');
 }
 function setStatus(s){if(statusNode)statusNode.textContent=String(s||'');}
-function chosenSite(){return sites.find(s=>s.siteId===selected)||null;}
+function chosenSite(){return selected?sitesById.get(String(selected))||sites.find(s=>String(s.siteId)===String(selected))||null:null;}
 const PLACEHOLDER_VALUES=new Set(['','unknown','unspecified','not specified','not supplied','not recorded','not available','n/a','na','n.a.','none','null','undefined','source_status_not_set','source_status_unspecified','source status unspecified','coordinate status not supplied','unobserved','simulation data']);
 function isPlaceholder(value){
  if(value===null||value===undefined)return true;
