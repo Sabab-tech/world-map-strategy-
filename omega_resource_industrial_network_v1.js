@@ -3412,7 +3412,8 @@ function boot(){
       // Catalog readiness and every country update are awaited by the authoritative turn runner.
       await loadCatalog();
       const countries=runtimeCountryIds(),failures=[];
-      for(const countryId of countries){
+      for(let index=0;index<countries.length;index++){
+        const countryId=countries[index];
         try{
           await advanceShipments(countryId);
           await advanceProjects(countryId);
@@ -3420,6 +3421,14 @@ function boot(){
           reconcileFactoryEmployment(countryId);
         }catch(error){
           failures.push(countryId+':'+String(error?.message||error));
+        }
+        // Awaiting an already-resolved promise only drains microtasks. Explicitly yield to
+        // the WebView event loop so taps, layout and navigation remain responsive.
+        if((index+1)%2===0&&index+1<countries.length){
+          await new Promise(resolve=>{
+            if(typeof g.setTimeout==='function')g.setTimeout(resolve,0);
+            else resolve();
+          });
         }
       }
       if(failures.length)throw new Error('INDUSTRIAL_TURN_FAILED:'+failures.join('|'));
