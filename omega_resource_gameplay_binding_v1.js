@@ -796,7 +796,13 @@ async function init(){
   const mapApi=g.Game?.Map,resourceState=mapApi?.resourceState,resourceCatalog=mapApi?.resourceCatalog;
   if(Array.isArray(resourceCatalog)){
    const known=new Set(resourceCatalog.map(r=>String(r.id||'').toLowerCase()));
-   for(const resourceId of new Set(sites.map(s=>String(s.real?.resourceId||s.sourceSiteRecord?.resourceId||s.sourceSiteRecord?.resourceTypeId||s.sourceSiteRecord?.resId||s.identity?.resourceTypeId||'').trim().toLowerCase()).filter(Boolean))){
+   const knownSiteResourceIds=new Set();
+   for(let index=0;index<sites.length;index++){
+    if(index>0&&index%500===0)await yieldResourceWorkToUi();
+    const site=sites[index];
+    const resourceId=String(site.real?.resourceId||site.sourceSiteRecord?.resourceId||site.sourceSiteRecord?.resourceTypeId||site.sourceSiteRecord?.resId||site.identity?.resourceTypeId||'').trim().toLowerCase();
+    if(!resourceId||knownSiteResourceIds.has(resourceId))continue;
+    knownSiteResourceIds.add(resourceId);
     if(known.has(resourceId))continue;
     resourceCatalog.push({id:resourceId,name:resourceId.replace(/[_-]+/g,' ').replace(/\b\w/g,c=>c.toUpperCase()),icon:resourceId.split(/[_-]+/).map(part=>part.slice(0,1)).join('').toUpperCase().slice(0,3)||'RS',color:'#76b7d8'});
     known.add(resourceId);
