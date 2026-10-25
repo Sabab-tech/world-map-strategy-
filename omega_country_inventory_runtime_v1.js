@@ -307,8 +307,21 @@
   }
 
   function inventoryValues(countryId) {
-    var row = resourceState(countryId, false);
+    var cid = canonicalCountry(countryId);
     var map = Object.create(null);
+    // Inactive countries expose their last saved snapshot only; their live state is not
+    // polled or treated as an executing inventory while another country is the player.
+    if (cid && cid !== playerCountry()) {
+      var saved = root().countries[cid];
+      var balances = saved && object(saved.observedBalances) ? saved.observedBalances : {};
+      Object.keys(balances).forEach(function (key) {
+        var pid = normalizeProductId(key), value = number(balances[key]);
+        if (!pid || value === null) return;
+        map[pid] = value;
+      });
+      return map;
+    }
+    var row = resourceState(cid, false);
     var inventory = row && object(row.inventory) ? row.inventory : {};
     Object.keys(inventory).forEach(function (key) {
       var pid = normalizeProductId(key), value = number(inventory[key]);
@@ -422,6 +435,7 @@
 
   function refreshActiveCountry() {
     var data = root();
+    var previousCountryId = data.activeCountryId || null;
     var cid = playerCountry();
     data.activeCountryId = cid;
     Object.keys(data.countries).forEach(function (key) {
@@ -433,12 +447,34 @@
       ensureCountry(cid, name);
     }
     var row = ensureCountry(cid);
-    if (!row.openingSnapshotInitialized) baselineCountry(cid);
+    if (!row.openingSnapshotInitialized || previousCountryId !== cid) baselineCountry(cid);
     else {
       row.active = true;
       row.updatedTurn = turn();
     }
     return cid;
+  }
+
+  function initializeBlankCountryProducts(countryId) {
+    var cid = canonicalCountry(countryId);
+    if (!cid || cid === playerCountry()) return { status: 'IGNORED', reason: 'ACTIVE_COUNTRY_USES_LIVE_SNAPSHOT' };
+    var row = ensureCountry(cid);
+    var catalog = root().productCatalog;
+    Object.keys(catalog).forEach(function (pid) {
+      var meta = catalog[pid] || {};
+      if (!object(row.products[pid])) {
+        row.products[pid] = {
+          productId: pid,
+          sourceId: meta.sourceId || pid,
+          name: meta.name || displayName(pid),
+          base: 0,
+          unit: meta.unit || 'SIMULATION_RESOURCE_UNIT'
+        };
+      }
+      if (!Object.prototype.hasOwnProperty.call(row.observedBalances, pid)) row.observedBalances[pid] = 0;
+    });
+    row.updatedTurn = turn();
+    return { status: 'READY', countryId: cid, productCount: Object.keys(row.products).length };
   }
 
   function appendEntry(countryId, action, productId, delta, detail) {
@@ -940,6 +976,11 @@
         baselineCountry(active);
         applySourceEvents(active);
       }
+      // Create zero-based product inventories for every country, but do not read or
+      // advance their live simulation buckets until that country is selected by the player.
+      roster.forEach(function (row) {
+        if (row.countryId !== active) initializeBlankCountryProducts(row.countryId);
+      });
       installEventListeners();
       return diagnostics();
     })();
