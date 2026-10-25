@@ -46,7 +46,7 @@ function factorToCanonical(resourceId, sourceUnit, targetUnit){
    TROY_OUNCES:1/32150.7465686,CARATS:1/5000000
  };
  if(target==='TONNES'){
-   if(tonneToTarget[u]!==undefined)return{factor:1/tonneToTarget[u],method:'MASS_UNIT_CONVERSION'};
+   if(tonneToTarget[u]!==undefined)return{factor:tonneToTarget[u],method:'MASS_UNIT_CONVERSION'};
    if(u==='BCM')return{factor:1,method:'UNIT_ALREADY_CANONICAL'};
    if(u==='METRIC_TONNES_U3O8')return{factor:1,method:'MASS_UNIT_CONVERSION'};
    if(u==='BBL'&&rid==='crude_oil')return{factor:1/7.33,method:'SIMULATED_CRUDE_OIL_DENSITY_CONVERSION'};
