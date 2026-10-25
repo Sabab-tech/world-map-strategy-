@@ -150,7 +150,7 @@ function patchExtraction(){
  if(typeof all!=='function'||typeof countryExtract!=='function'||!Object.isExtensible(rt)||
     !canAssign('extractCountry')||!canAssign('extractAll')||!canAssign('__resourceSystemHardeningExtraction'))return false;
  rt.extractCountry=async(c,keys)=>{const r=await countryExtract.call(rt,c,keys);auditCountry(c);return r;};
- rt.extractAll=async()=>{const r=await all.call(rt);for(const x of r?.results||[])auditCountry(x?.countryId);return r;};
+ rt.extractAll=async(options)=>{const r=await all.call(rt,options);for(const x of r?.results||[])auditCountry(x?.countryId);return r;};
  rt.__resourceSystemHardeningExtraction=true;return true;
 }
 
