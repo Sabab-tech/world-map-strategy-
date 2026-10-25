@@ -17,6 +17,11 @@ assert.ok(api.normalizeQuantity('gold',1,'TONNES_ORE').quantity>32000);
 assert.equal(api.normalizeQuantity('diamond',1,'TONNES').quantity,5000000);
 assert.equal(api.normalizeQuantity('crude_oil',1,'TONNES').unit,'BBL');
 assert.equal(api.normalizeQuantity('graphite',125,'TONNES_GRAPHITE').quantity,125);
+
+const unknownUnit=api.normalizeQuantity('copper',12,'FURLONGS');
+assert.equal(unknownUnit.quantity,null,'unknown physical units must not be silently coerced');
+assert.equal(unknownUnit.unit,'FURLONGS','unknown-unit quantities retain their source unit');
+assert.equal(unknownUnit.method,'UNIT_UNRECOGNIZED_OR_INCOMPATIBLE_NOT_CONVERTED');
 const simulated=api.normalizeSiteRecord({
  siteId:'SITE_TEST_COPPER',countryId:'BGD',resourceId:'copper',
  reserve:{quantity:2204.62262185,unit:'POUNDS_COPPER',status:'SIMULATED'},
