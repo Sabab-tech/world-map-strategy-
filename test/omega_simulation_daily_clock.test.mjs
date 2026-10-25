@@ -664,3 +664,32 @@ test('daily tick supplies the same turn, duration and date to every subsystem', 
   }
   assert.equal(dispatched.filter(event => event.type === 'OMEGA_SIMULATION_TURN_COMMITTED').length, 5);
 });
+ 
+test('automatic production and resource pipelines advance only the player-selected country', () => {
+  const source = name => fs.readFileSync(path.join(root, name), 'utf8');
+  const endowment = source('omega_resource_endowment_runtime.js');
+  const economy = source('omega_resource_economy_runtime_v2.js');
+  const industry = source('omega_resource_industrial_network_v1.js');
+  const actions = source('omega_resource_action_execution_runtime.js');
+  const market = source('omega_global_market_system.js');
+  const trade = source('omega_global_trade_system.js');
+  const research = source('omega_resource_research_runtime_v1.js');
+  const strategic = source('omega_resource_strategic_policy_runtime_v1.js');
+
+  assert.match(endowment, /if\(options\.activeOnly===true\)\{[\s\S]*?const selected=playerSimulationCountryId\(\);[\s\S]*?return allCountries\.filter\(country=>canonical\(country\)===selected\);/,
+    'active mine extraction must be bounded to the selected player country');
+  assert.match(economy, /var activeCountry=currentCountryId\(\);[\s\S]*?var allCountries=\[activeCountry\];/,
+    'resource inventory, factory and ledger turns must use one selected country');
+  assert.match(industry, /const selectedCountryId=playerSimulationCountryId\(\);[\s\S]*?const countries=\[selectedCountryId\]/,
+    'factory cycles, projects, logistics and mine employment must advance for one country only');
+  assert.match(actions, /async function processAllForTurn\(\)\{[\s\S]*?const countryId=playerSimulationCountryId\(\);[\s\S]*?countryCount:1/,
+    'automated resource actions must not tick every country pending projects');
+  assert.match(market, /async function onTurn\(\)\{[\s\S]*?const countryId=playerSimulationCountryId\(\);[\s\S]*?writeProjection\(countryId,markets\)/,
+    'market turn publication must only update the player country projection');
+  assert.match(trade, /async function onTurn\(\)\{[\s\S]*?const countryId=playerSimulationCountryId\(\);[\s\S]*?countryValue\(countryId,'trade\.importRequests'\)/,
+    'automatic trade processing must only advance requests owned by the player country');
+  assert.match(research, /async function processAllForTurn\(\)\{[\s\S]*?const selected=playerSimulationCountryId\(\);[\s\S]*?processCountry\(selected\)/,
+    'resource research and technology transfers must progress only for the player country');
+  assert.match(strategic, /async function onTurnCommitted\(\)\{[\s\S]*?const selected=playerSimulationCountryId\(\);[\s\S]*?processPowerCountry\(selected\)/,
+    'resource exploration, strategic actions and power projects must progress only for the player country');
+});
