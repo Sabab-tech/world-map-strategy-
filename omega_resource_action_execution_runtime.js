@@ -674,6 +674,21 @@
     for(const c of cs)results.push({countryId:c,result:processCountry(c)});
     return{status:'COMPLETED',turn:turn(),countryCount:cs.length,results};
   }
+  function yieldTurnToUi(){
+    return new Promise(resolve=>{
+      if(typeof g.setTimeout==='function')g.setTimeout(resolve,0);
+      else resolve();
+    });
+  }
+  async function processAllForTurn(){
+    const cs=countryIds(),results=[];
+    for(let i=0;i<cs.length;i++){
+      const c=cs[i];
+      results.push({countryId:c,result:processCountry(c)});
+      if((i+1)%2===0&&i+1<cs.length)await yieldTurnToUi();
+    }
+    return{status:'COMPLETED',turn:turn(),countryCount:cs.length,results};
+  }
 
   function diagnostics(){
     const s=state(),cs=countryIds();
@@ -701,7 +716,7 @@
     const c=e?.detail?.countryId||e?.countryId;
     if(c)processCountry(c);
   }
-  function onTurn(){processAll();}
+  async function onTurn(){await processAllForTurn();}
 
   g.Omega=g.Omega||{};
   const API=Object.freeze({VERSION,register,processCountry,processAll,diagnostics});
