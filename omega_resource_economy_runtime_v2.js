@@ -1081,7 +1081,7 @@
 
   function runTurn(){
     return loadRules().then(async function(){
-      installHandlers();installEvents();
+      installHandlers();installEvents();ui();
       var allCountries=countries();
       if(g.OmegaResourceNationalDemandRuntime&&typeof g.OmegaResourceNationalDemandRuntime.prepare==='function'){
         try{await g.OmegaResourceNationalDemandRuntime.prepare();}
