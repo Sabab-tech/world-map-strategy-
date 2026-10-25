@@ -300,6 +300,30 @@
       "unit": "metric_tons",
       "strategicImportance": "high",
       "description": "Ilmenite titanium-iron mineral."
+    },
+    "gypsum": {
+      "id": "gypsum",
+      "name": "Gypsum",
+      "category": "industrial_minerals",
+      "unit": "metric_tons",
+      "strategicImportance": "medium",
+      "description": "Industrial mineral feedstock for cement, plaster and construction materials."
+    },
+    "niobium": {
+      "id": "niobium",
+      "name": "Niobium",
+      "category": "critical_minerals",
+      "unit": "metric_tons",
+      "strategicImportance": "high",
+      "description": "Critical alloying mineral used in high-strength steel and advanced materials."
+    },
+    "ruby": {
+      "id": "ruby",
+      "name": "Ruby",
+      "category": "gemstones",
+      "unit": "carats",
+      "strategicImportance": "medium",
+      "description": "Gemstone commodity represented in the simulation's mineral and gemstone chain."
     }
   },
   "GSRSK_Master_Resource_Data_v14": {
@@ -606,6 +630,36 @@
         "unit": "metric_tons",
         "strategicImportance": "high",
         "description": "Ilmenite titanium-iron mineral."
+      },
+      "gypsum": {
+        "id": "gypsum",
+        "name": "Gypsum",
+        "category": "industrial_minerals",
+        "unit": "metric_tons",
+        "strategicImportance": "medium",
+        "description": "Industrial mineral feedstock for cement, plaster and construction materials.",
+        "sourceAuthority": "OMEGA_SIMULATION_RESOURCE_ONTOLOGY",
+        "simulationOnly": true
+      },
+      "niobium": {
+        "id": "niobium",
+        "name": "Niobium",
+        "category": "critical_minerals",
+        "unit": "metric_tons",
+        "strategicImportance": "high",
+        "description": "Critical alloying mineral used in high-strength steel and advanced materials.",
+        "sourceAuthority": "OMEGA_SIMULATION_RESOURCE_ONTOLOGY",
+        "simulationOnly": true
+      },
+      "ruby": {
+        "id": "ruby",
+        "name": "Ruby",
+        "category": "gemstones",
+        "unit": "carats",
+        "strategicImportance": "medium",
+        "description": "Gemstone commodity represented in the simulation's mineral and gemstone chain.",
+        "sourceAuthority": "OMEGA_SIMULATION_RESOURCE_ONTOLOGY",
+        "simulationOnly": true
       }
     },
     "processing_plants": {
