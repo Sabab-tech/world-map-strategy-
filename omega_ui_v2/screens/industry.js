@@ -448,7 +448,7 @@
         '<button type="button" class="omega-v2-button" data-omega-v2-industry-action="factory-projects">Factory projects</button>' +
         '<button type="button" class="omega-v2-button" data-omega-v2-industry-action="research">Research records</button>' +
         '<button type="button" class="omega-v2-button" data-omega-v2-jump-ministry="science_research">Technology development</button>' +
-        '<button type="button" class="omega-v2-button" data-omega-v2-jump-ministry="infrastructure">Roads & logistics</button>' +
+        '<button type="button" class="omega-v2-button" data-omega-v2-jump-ministry="infrastructure">Roads &amp; logistics</button>' +
       '</div>' +
       '<p class="omega-v2-industry-footnote">Real-world reported quantities and simulated gameplay capacity are kept distinct. Unknown values stay “Not recorded”. Buttons open existing game systems; they do not fabricate a build, extraction, road or technology result.</p>' +
     '</section>';
