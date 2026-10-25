@@ -2557,12 +2557,19 @@ function batchFromExtraction(x,record){
         publishBootstrapStatus(snapshot);
         return snapshot;
       }
-      for(const countryId of Object.keys(bindingSync.executionSiteIdsByCountry||{})){
+      const hydrationCountryIds=Object.keys(bindingSync.executionSiteIdsByCountry||{});
+      for(let hydrationIndex=0;hydrationIndex<hydrationCountryIds.length;hydrationIndex++){
+        const countryId=hydrationCountryIds[hydrationIndex];
         const hydration=hydrateCountry(countryId);
         const payload=hydration?.result||hydration;
         if(hydration?.status!=='APPLIED'||payload?.accepted===false){
           bindingSync.hydrationFailures=bindingSync.hydrationFailures||[];
           bindingSync.hydrationFailures.push({countryId,status:hydration?.status||'UNAVAILABLE',reason:payload?.reason||hydration?.reason||'SITE_BINDING_HYDRATION_NOT_COMMITTED'});
+        }
+        // Hydration can be expensive on Android 9. Let the WebView render and
+        // dispatch navigation/input events between small country batches.
+        if((hydrationIndex+1)%4===0&&hydrationIndex+1<hydrationCountryIds.length){
+          await yieldResourceExtractionToUi();
         }
       }
       const prior=g.__omegaResourceEndowmentLastBootstrap;
