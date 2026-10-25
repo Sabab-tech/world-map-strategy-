@@ -36,6 +36,11 @@
     var economy = context.economy || {};
     var industrial = resource.industrialNetwork && typeof resource.industrialNetwork === 'object' ? resource.industrialNetwork : {};
     var catalog = safeCatalog() || {};
+    var inventoryRuntime = g.OmegaCountryInventoryRuntime || (g.Omega && g.Omega.CountryInventoryRuntime) || null;
+    var nationalInventory = null;
+    if (context.countryId && inventoryRuntime && typeof inventoryRuntime.getInventory === 'function') {
+      try { nationalInventory = inventoryRuntime.getInventory(context.countryId, { includeZero: true, includeLedger: false }); } catch (_) { nationalInventory = null; }
+    }
     var assets = Array.isArray(economy.productionAssets) ? economy.productionAssets : [];
     var projects = Array.isArray(industrial.projects) ? industrial.projects : (Array.isArray(economy.projects) ? economy.projects : []);
     var cycles = industrial.factoryProductionCycles && typeof industrial.factoryProductionCycles === 'object' ? industrial.factoryProductionCycles : {};
@@ -89,6 +94,7 @@
       catalogProfileCount: Object.keys(profiles).length,
       catalogProfiles: profiles,
       inputInventoryCount: mappedAssets.reduce(function (total, row) { return total + row.inputRows.filter(function (input) { return input.quantity !== null && input.quantity > 0; }).length; }, 0),
+      nationalInventory: nationalInventory,
       source: 'Game.state.resource[country].industrialNetwork + Game.state.economy[country].productionAssets + canonical industrial catalogue'
     };
   }
@@ -168,6 +174,19 @@
       var rows = [];
       model.factories.forEach(function (factory) { factory.inputRows.forEach(function (item) { rows.push({ factory: factory.id || factory.name, resource: item.resourceId, quantity: item.quantity }); }); });
       content = rows.length ? '<div class="omega-v2-card"><div class="omega-v2-table-wrap"><table><thead><tr><th>Factory</th><th>Input resource</th><th>Recorded quantity</th></tr></thead><tbody>' + rows.map(function (row) { return '<tr><td>' + esc(row.factory) + '</td><td>' + esc(row.resource) + '</td><td>' + fmt(row.quantity) + '</td></tr>'; }).join('') + '</tbody></table></div><p class="omega-v2-source">Rows reflect per-factory input inventory only. They do not assert country-wide warehouse availability or a completed logistics receipt.</p></div>' : '<div class="omega-v2-empty">No per-factory input quantities are recorded. Shared warehouse stock is not inferred.</div>';
+    } else if (active === 'national-inventory') {
+      var snapshot = model.nationalInventory;
+      if (snapshot && snapshot.status === 'READY') {
+        var stockRows = Array.isArray(snapshot.items) ? snapshot.items : [];
+        var inventoryStatus = snapshot.active ? 'PLAYER INVENTORY · ACTIVE' : 'READ-ONLY SNAPSHOT';
+        content = '<div class="omega-v2-card"><div class="omega-v2-card-header"><div><h3 class="omega-v2-card-title">' + esc(snapshot.countryName || snapshot.countryId || model.countryId) + ' inventory</h3><div class="omega-v2-card-meta">' + esc(inventoryStatus) + ' · ' + fmt(stockRows.length) + ' product records</div></div><span class="omega-v2-status">' + (snapshot.unbounded ? 'UNBOUNDED STOCK LOG' : 'STOCK STATUS') + '</span></div>' +
+          (stockRows.length ? '<div class="omega-v2-table-wrap"><table><thead><tr><th>Product</th><th>Product ID</th><th>Base</th><th>On hand</th><th>Change</th><th>Unit</th></tr></thead><tbody>' + stockRows.map(function (row) {
+            return '<tr><td>' + esc(row.name) + '</td><td>' + esc(row.productId) + '</td><td>' + fmt(row.base) + '</td><td><strong>' + fmt(row.quantity) + '</strong></td><td>' + fmt(row.deltaFromBase) + '</td><td>' + esc(row.unit || 'Not recorded') + '</td></tr>';
+          }).join('') + '</tbody></table></div>' : '<p class="omega-v2-empty">No product catalog rows are available for this country yet.</p>') +
+          '<p class="omega-v2-source">Factory output, imports, consumption and exports are recorded against the selected country. Other countries are read-only snapshots until selected by the player. Inventory has no fixed capacity or ledger-entry cap.</p></div>';
+      } else {
+        content = '<div class="omega-v2-empty">Country inventory runtime is initializing or no country has been selected.</div>';
+      }
     } else {
       content = model.projects.length ? '<div class="omega-v2-grid">' + model.projects.slice().reverse().map(function (project) {
         return '<article class="omega-v2-card"><div class="omega-v2-card-header"><h3 class="omega-v2-card-title">' + esc(project.projectType || 'Industrial project') + '</h3><span class="omega-v2-status">' + esc(project.status || 'NOT_RECORDED') + '</span></div><div class="omega-v2-vehicle-stats"><div><span>Project ID</span><strong>' + esc(project.projectId || 'Not recorded') + '</strong></div><div><span>Site / factory</span><strong>' + esc(project.siteId || project.factoryId || 'Not recorded') + '</strong></div><div><span>Start turn</span><strong>' + fmt(project.createdTurn !== undefined ? project.createdTurn : project.startedTurn) + '</strong></div><div><span>Cost</span><strong>' + (num(project.costUsd) === null ? 'Not recorded' : new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(num(project.costUsd))) + '</strong></div></div></article>';
@@ -183,6 +202,7 @@
       tabButton('factories', 'My Factories', active) +
       tabButton('production-lines', 'Production Lines', active) +
       tabButton('inventory', 'Input Inventory', active) +
+      tabButton('national-inventory', 'National Inventory', active) +
       tabButton('projects', 'Build Projects', active) +
       '</div><div data-omega-v2-industry-content>' + content + '</div>' +
       '<p class="omega-v2-source">Factory and production records remain in this UI v2 screen. Retired console navigation is disabled.</p>' +
