@@ -956,18 +956,9 @@
     sampleAll();
     render();
     lastPolledTurn = currentTurn();
+    // The live operations panel refreshes from game/engine events, not a background polling timer.
     if (refreshHandle !== null) g.clearInterval(refreshHandle);
-    // Keep the low-cost HUD current; rebuild the expensive view only after a new turn/event
-    // or an explicit user refresh. This avoids repeated full-ledger scans on a short timer.
-    refreshHandle = g.setInterval(() => {
-      if (!panelOpen) return;
-      sampleAll();
-      const turn = currentTurn();
-      if (turn !== lastPolledTurn) {
-        lastPolledTurn = turn;
-        scheduleRender();
-      }
-    }, 15000);
+    refreshHandle = null;
   }
   function closePanel() {
     panelOpen = false;
@@ -1005,7 +996,7 @@
       authoritativeStateRoot:g.Game && g.Game.state ? 'Game.state' : (g.gameState ? 'gameState compatibility root' : 'NOT_AVAILABLE'),
       canonicalSiteRegistryAvailable:resourceSiteRecords().length>0,
       dataSource:'Game.state + existing canonical resource-site registry + existing engine ledgers',
-      polling:panelOpen?'active while the panel is open':'inactive while the panel is closed'};
+      polling:'disabled; refresh is event-driven',refreshMode:panelOpen?'event-driven while the panel is open':'inactive while the panel is closed'};
   }
   const api = {
     VERSION:'1.2.0', open:openPanel, close:closePanel, diagnostics, resolveCountryId, getCountryMetrics:countryId => metricsFor(resolveCountryId(countryId) || id(countryId)), getCountryOperationalSummary:countryId => observedStateSummary([resolveCountryId(countryId) || id(countryId)]), getTrendSeries, snapshot:()=>({
@@ -1024,7 +1015,11 @@
           sampleAll(true, reportedTurn);
           pushEvent(type,{...detail,simulationTurn:reportedTurn},'SIMULATION_EVENT');
         } else pushEvent(type,detail,'SIMULATION_EVENT');
-      } else pushEvent(type,e && e.detail,'ENGINE_EVENT');
+      } else {
+        pushEvent(type,e && e.detail,'ENGINE_EVENT');
+        if (panelOpen) sampleAll();
+      }
+      if (panelOpen) scheduleRender();
     }); } catch (_) {}
   });
   function init() {
