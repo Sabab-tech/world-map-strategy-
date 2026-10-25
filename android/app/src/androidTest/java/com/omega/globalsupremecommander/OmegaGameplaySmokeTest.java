@@ -152,11 +152,10 @@ public final class OmegaGameplaySmokeTest {
                     !startedSession.getBoolean("paused"));
             android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=PLAY_ACTION_RESPONSIVE");
 
-            // The previous smoke covered boot and taps but ended before the reported
-            // one-minute freeze window. Keep the actual 2x game session running for 80 seconds
-            // and require the Android 9 WebView to answer a small JS heartbeat every second.
-            // Each callback has a 3-second deadline so a renderer hang fails with elapsed-time
-            // diagnostics instead of making the CI job look successful or wait indefinitely.
+            // Keep a real 2x game session running for four wall-clock hours.
+            // Poll every five seconds and require the Android 9 WebView to answer within
+            // three seconds; this detects renderer hangs as well as a simulation that stops
+            // advancing while JavaScript callbacks remain responsive.
             final String heartbeatScript =
                     "(function() {" +
                     " var sim = window.Omega && window.Omega.Simulation;" +
