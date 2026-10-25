@@ -273,7 +273,10 @@ test('Live Operations bounds event/turn work and preserves scroll during refresh
   assert.ok(source.includes('const observe = new Set([playerCountry(), selectedCountry()])'));
   assert.ok(source.includes('renderScheduleHandle = g.setTimeout'));
   assert.ok(source.includes('panel.scrollTop = scrollTop'));
-  assert.ok(source.includes('}, 15000);'));
+  assert.equal(source.includes('refreshHandle = g.setInterval'), false,
+    'Live Operations must not poll every 15 seconds while open');
+  assert.ok(source.includes("polling:'disabled; refresh is event-driven'"),
+    'diagnostics must make event-driven refresh explicit');
   assert.equal(source.includes("if (panelOpen) { buildCountrySelect(); sampleAll(); render(); }"), false);
 });
 
