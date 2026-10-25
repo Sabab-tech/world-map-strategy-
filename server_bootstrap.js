@@ -140,6 +140,7 @@ const CANONICAL_AI_SCRIPTS = Object.freeze([
   'omega_resource_economy_runtime_v2.js',
   'omega_resource_national_demand_runtime_v1.js',
   'omega_resource_industrial_network_v1.js',
+  'omega_country_inventory_runtime_v1.js',
   'omega_resource_authoritative_adapter.js',
   'omega_resource_action_execution_runtime.js',
   'omega_opponent_deep_memory_system.js',
