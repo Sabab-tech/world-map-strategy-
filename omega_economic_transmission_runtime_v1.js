@@ -66,8 +66,8 @@
     const sim=g.Omega&&g.Omega.Simulation;
     const candidates=[candidate,session.playerCountryId,s.simulation&&s.simulation.playerCountryId,
       s.playerCountryId,s.playerCountryCode,sim&&typeof sim.getPlayerCountryId==='function'?sim.getPlayerCountryId():null,
-      g.Game&&(g.Game.playerCountryId||g.Game.playerCountry||g.Game.currentActiveCountry),
-      g.CountryIOS&&g.CountryIOS.activeCountry,g.currentActiveCountry];
+      g.Game&&(g.Game.playerCountryId||g.Game.playerCountry||g.Game.playerCountryCode),
+      g.OMEGA_PLAYER_COUNTRY_ID,g.playerCountry];
     for(const value of candidates){
       if(value==null||String(value).trim()==='')continue;
       const profile=resolveProfile(value);
