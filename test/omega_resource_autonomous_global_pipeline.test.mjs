@@ -172,7 +172,9 @@ test('every committed deposit event is routed country-by-country through factory
   assert.equal(first.flowCount,2);
   // Selected-country UI diagnostics must remain bounded to that country's ledger,
   // while the no-argument form continues to provide the existing global totals.
+  assert.equal(first.diagnosticScope,'GLOBAL');
   const scoped=industry.gameplayPipelineDiagnostics('BGD');
+  assert.equal(scoped.diagnosticScope,'BGD');
   assert.equal(scoped.countryCount,1);
   assert.equal(scoped.perCountry.length,1);
   assert.equal(scoped.perCountry[0].countryId,'BGD');
