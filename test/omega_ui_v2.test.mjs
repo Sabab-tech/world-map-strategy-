@@ -381,7 +381,7 @@ test('production shell loads UI v2 and excludes retired UI controllers from the 
     assert.ok(index.includes(modulePath), 'index.html must load ' + modulePath);
     assert.ok(sw.includes(modulePath), 'offline service worker must pre-cache ' + modulePath);
   }
-  assert.ok(sw.includes('omega-offline-atlas-shell-v36'));
+  assert.ok(sw.includes('omega-offline-atlas-shell-v37'));
   assert.ok(entry.includes('OmegaUIV2Integration'));
   assert.ok(entry.includes('opened-ui-v2'));
   assert.equal(entry.includes('openMainMinistryView'), false);
@@ -443,7 +443,7 @@ test('Government exposes emblems, minister recruitment and a stable future portr
     assert.match(root.innerHTML, /data-omega-v2-ministry-rotator/);
     assert.match(root.innerHTML, /data-omega-v2-minister-portrait-slot/);
     assert.match(root.innerHTML, /Recruit \/ Replace/);
-    assert.match(root.innerHTML, /<svg/);
+    assert.match(root.innerHTML, /class="omega-v2-ministry-logo-image"/, 'ministry logo asset must be rendered in the directory card');
     assert.ok(root.innerHTML.includes('assets/ui-photos/bangladesh-police-headquarters.webp') || root.innerHTML.includes('assets/economy_bg.jpg.jpg'));
   } finally {
     globalThis.OmegaCabinetUI = previousCabinet;
@@ -569,6 +569,7 @@ test('all ministry detail pages use the matching local cover, uploaded logo and 
   for (const id of globalThis.OmegaUIV2Navigation.ministryIds) {
     const visual = visualRegistry.get(id);
     assert.ok(visual && visual.image, id + ' must have a ministry-specific cover image');
+    assert.ok(visual.logo, id + ' must have a ministry-specific logo');
   }
 });
 
@@ -594,7 +595,7 @@ test('universal navigation and the isolated legacy-free shell are wired into the
   assert.ok(app.includes('root.contains(ownControl)'));
   assert.ok(app.includes('event.stopPropagation()'));
   assert.ok(html.includes('omega_ui_v2/ministry-visual-refresh.css'));
-  assert.ok(worker.includes('omega-offline-atlas-shell-v36'));
+  assert.ok(worker.includes('omega-offline-atlas-shell-v37'));
   assert.ok(worker.includes('"./omega_ui_v2/legacy-disconnect.css"'));
   assert.ok(refreshCss.includes('omega-v2-ministry-detail-cover-image'));
   assert.ok(refreshCss.includes('min-height: 48px'));

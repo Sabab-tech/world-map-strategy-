@@ -259,3 +259,50 @@
     transform: none;
   }
 }
+
+
+/* OMEGA ministry identity pass: logos are distinct, framed assets rather than minister portraits. */
+.omega-v2-ministry-logo {
+  background: linear-gradient(145deg, #ffffff 0%, #e5eef6 100%);
+  border: 1px solid rgba(107, 139, 165, .72);
+  box-shadow: 0 5px 13px rgba(3, 14, 27, .24), inset 0 1px rgba(255, 255, 255, .9);
+  flex-basis: 52px;
+  height: 52px;
+  width: 52px;
+}
+.omega-v2-ministry-logo-image {
+  object-fit: contain;
+  padding: 2px;
+}
+.omega-v2-ministry-detail-logo {
+  background: linear-gradient(145deg, #ffffff 0%, #e5eef6 100%);
+  border: 1px solid rgba(107, 139, 165, .72);
+  border-radius: 14px;
+  box-shadow: 0 6px 16px rgba(3, 14, 27, .22), inset 0 1px rgba(255, 255, 255, .9);
+  flex-basis: 60px;
+  height: 60px;
+  padding: 3px;
+  width: 60px;
+}
+.omega-v2-ministry-detail-mark > .omega-v2-ministry-icon {
+  flex-basis: 60px;
+  height: 60px;
+  width: 60px;
+}
+.omega-v2-ministry-detail-mark > .omega-v2-ministry-icon svg {
+  height: 34px;
+  width: 34px;
+}
+@media (max-width: 420px) {
+  .omega-v2-ministry-logo {
+    flex-basis: 48px;
+    height: 48px;
+    width: 48px;
+  }
+  .omega-v2-ministry-detail-logo,
+  .omega-v2-ministry-detail-mark > .omega-v2-ministry-icon {
+    flex-basis: 52px;
+    height: 52px;
+    width: 52px;
+  }
+}
