@@ -1143,6 +1143,18 @@
     command('trade','OMEGA_TRADE_SCHEDULE_RETRY',c,{requestId:req.requestId,cooldownTurns:RETRY_COOLDOWN,refusalCount:refusal});
   }
 
+  function playerSimulationCountryId(){
+    const sim=g.Omega?.Simulation,simState=sim?.world?.state||state();
+    const session=simState?.simulation?.session||state()?.simulation?.session||{};
+    const candidates=[session?.playerCountryId,
+      typeof sim?.getPlayerCountryId==='function'?sim.getPlayerCountryId():null,
+      simState?.playerCountryId,state()?.playerCountryId,
+      g.Game?.playerCountry,g.Game?.currentActiveCountry,
+      g.CountryIOS?.activeCountry,g.currentActiveCountry];
+    for(const value of candidates){const cid=canonical(value);if(cid&&cid!=='[OBJECT OBJECT]')return cid;}
+    return null;
+  }
+
   function yieldTurnToUi(){
     return new Promise(resolve=>{
       if(typeof g.setTimeout==='function')g.setTimeout(resolve,0);
@@ -1151,25 +1163,20 @@
   }
   async function onTurn(){
     if(g.__omegaGlobalTradeProcessing)return;
+    const countryId=playerSimulationCountryId();
+    if(!countryId)return;
     g.__omegaGlobalTradeProcessing=true;
     try{
-      const seen=new Set(),countryIds=ids();
+      const seen=new Set(),reqs=countryValue(countryId,'trade.importRequests');
+      if(!Array.isArray(reqs))return;
       let processed=0;
-      for(let countryIndex=0;countryIndex<countryIds.length;countryIndex++){
-        const c=countryIds[countryIndex],reqs=countryValue(c,'trade.importRequests');
-        if(Array.isArray(reqs)){
-          for(const req of reqs.slice(-MAX_HISTORY)){
-            const key=String(c)+'::'+String(req.requestId);
-            if(seen.has(key))continue;
-            seen.add(key);
-            processRequest(req);
-            processed++;
-            // Pending trade requests can expand rapidly as history accumulates. Yield
-            // between bounded batches to prevent a whole-world settlement loop blocking taps.
-            if(processed%8===0)await yieldTurnToUi();
-          }
-        }
-        if((countryIndex+1)%2===0&&countryIndex+1<countryIds.length)await yieldTurnToUi();
+      for(const req of reqs.slice(-MAX_HISTORY)){
+        const key=String(countryId)+'::'+String(req.requestId);
+        if(seen.has(key))continue;
+        seen.add(key);
+        processRequest(req);
+        processed++;
+        if(processed%8===0)await yieldTurnToUi();
       }
     }finally{g.__omegaGlobalTradeProcessing=false;}
   }
