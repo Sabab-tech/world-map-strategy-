@@ -906,6 +906,16 @@ assert.ok((part6PostDelivery.industrialNetwork?.siteExecutions||[]).some(item=>
   'Part 6 industrial ledger must retain the exact site, batch and occurrence identities');
 
 
-if(nativeFetch)globalThis.fetch=nativeFetch;
+// A new turn may process only occurrence keys explicitly activated by a player action.
+const activatedKeys=globalThis.Game.state.resource.BGD.activeMineOccurrenceKeys||[];
+assert.ok(activatedKeys.length>0,'one-tap production must persist the exact active occurrence keys');
+globalThis.Game.state.simulation.turn=Number(globalThis.Game.state.simulation.turn||0)+1;
+const activeOnlyResult=await runtime.extractAll({activeOnly:true});
+assert.equal(activeOnlyResult.status,'COMPLETED',JSON.stringify(activeOnlyResult));
+assert.deepEqual(activeOnlyResult.results.map(row=>row.countryId),['BGD'],
+  'turn-driven extraction must not run mines in countries without explicitly activated occurrence keys');
+assert.equal(activeOnlyResult.processedCountryCount,1);
+
 // This completion line is reached only after the real site pipeline assertions above pass.
+if(nativeFetch)globalThis.fetch=nativeFetch;
 console.log('OMEGA RESOURCE JSON -> MINE -> BATCH -> WAREHOUSE -> FACTORY EVENT TEST PASSED');
