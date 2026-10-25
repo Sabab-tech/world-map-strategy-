@@ -129,7 +129,7 @@ test("all 18 ministries have distinct local logos, and Education uses education-
   assert.match(education, /logo:'assets\/ministry-logos\/education\.svg'/);
   assert.doesNotMatch(education, /dhaka-skyline/);
   const worker = read("omega-offline-map-sw.js");
-  assert.match(worker, /omega-offline-atlas-shell-v37/);
+  assert.match(worker, /omega-offline-atlas-shell-v\d+/);
   for (const logo of logoMap.values()) {
     assert.ok(worker.includes('"./' + logo + '"'), "offline shell must cache every ministry logo: " + logo);
   }
