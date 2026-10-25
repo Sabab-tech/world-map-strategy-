@@ -242,7 +242,7 @@ async function bootstrapCountry(countryId,options={}){
   if(playerCountryId()!==active)return{status:'SKIPPED',reason:'PLAYER_COUNTRY_CHANGED_DURING_HYDRATION',countryId:active};
   const rs=ensureCountryInventory(active);
   const infra=ensureInfrastructure(active,sites.length);
-  let autoStaffed=0,alreadyOperational=0,totalWorkers=0,totalVehicles=0;
+  let autoStaffed=0,alreadyOperational=0,totalWorkers=0,totalWorkersRequired=0,totalVehicles=0;
   for(let index=0;index<sites.length;index++){
    if(playerCountryId()!==active)return{status:'SKIPPED',reason:'PLAYER_COUNTRY_CHANGED_DURING_PROVISIONING',countryId:active,autoStaffed};
    const site=sites[index],previous=rs.mineAssets.find(x=>String(x?.siteId||x?.siteReferenceKey||'')===String(site.siteId));
@@ -250,16 +250,29 @@ async function bootstrapCountry(countryId,options={}){
    const asset=autoStaffAsset(active,site,rs);
    autoStaffed++;
    totalWorkers+=Math.max(0,num(asset.workersAssigned)||0);
+   totalWorkersRequired+=Math.max(0,num(asset.workersRequired)||0);
    totalVehicles+=Math.max(0,num(asset.fleet?.vehiclesAssigned)||0);
    if(index>0&&index%16===0)await new Promise(resolve=>setTimeout(resolve,0));
   }
   rs.mineAssets=rs.mineAssets.slice(-4096);
   rs.commissionedSites=rs.commissionedSites.slice(-4096);
   rs.mineSiteReferences=rs.mineSiteReferences.slice(-8192);
+  const root=state();
+  root.economy=root.economy&&typeof root.economy==='object'?root.economy:{};
+  const economy=root.economy[active]=root.economy[active]&&typeof root.economy[active]==='object'?root.economy[active]:{};
+  economy.mineEmployment={
+   schemaVersion:'1.0.0',model:'SIMULATED_MINE_EMPLOYMENT_V1',countryId:active,
+   staffedSiteCount:autoStaffed,jobsSupported:totalWorkersRequired,jobsFilled:totalWorkers,
+   workersRequired:totalWorkersRequired,workersAssigned:totalWorkers,
+   vacancies:Math.max(0,totalWorkersRequired-totalWorkers),status:'FULLY_STAFFED',
+   authority:'SIMULATED_PLAYER_COUNTRY_STARTER_WORKFORCE',simulationOnly:true,
+   updatedTurn:num(state()?.simulation?.turn)||0
+  };
   rs.autoMineProvisioning={
    version:VERSION,status:'READY',countryId:active,turn:num(state()?.simulation?.turn)||0,
-   eligibleSiteCount:sites.length,autoStaffedSiteCount:autoStaffed,totalAssignedWorkers:totalWorkers,
-   totalAssignedVehicles:totalVehicles,infrastructureStatus:infra.normalized,
+   eligibleSiteCount:sites.length,autoStaffedSiteCount:autoStaffed,totalWorkersRequired,
+   totalAssignedWorkers:totalWorkers,totalAssignedVehicles:totalVehicles,
+   mineEmployment:economy.mineEmployment,infrastructureStatus:infra.normalized,
    starterResourcesAvailable:true,allEligibleMinesCommissioned:true,
    authority:'SIMULATED_PLAYER_COUNTRY_STARTER_PROVISIONING'
   };
