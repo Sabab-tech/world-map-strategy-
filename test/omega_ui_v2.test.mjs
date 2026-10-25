@@ -803,3 +803,37 @@ test('failed UI v2 mount fails closed and never revives the legacy Cabinet', () 
     if(previous.updateBack===undefined)delete globalThis.updateGlobalBackButtonVisibility;else globalThis.updateGlobalBackButtonVisibility=previous.updateBack;
   }
 });
+
+test('resource ministry reads only selected-country rows from the global site registries', () => {
+  const canonicalKey = 'OmegaResourceSiteCanonicalCatalogData';
+  const bindingKey = 'OmegaIndividualResourceSiteBinding';
+  const previousCanonical = globalThis[canonicalKey];
+  const previousBinding = globalThis[bindingKey];
+  globalThis[canonicalKey] = {
+    sites: [
+      { siteId:'BGD-COAL-01', countryId:'BGD', resourceId:'coal', siteName:'Bangladesh coal' },
+      { siteId:'USA-OIL-01', countryId:'USA', resourceId:'crude_oil', siteName:'United States oil' }
+    ]
+  };
+  globalThis[bindingKey] = {
+    sites: [
+      { siteId:'BGD-COAL-01', countryId:'BGD', resourceId:'coal', siteName:'Duplicate Bangladesh coal' },
+      { siteId:'BGD-GAS-01', countryId:'BGD', resourceId:'natural_gas', siteName:'Bangladesh gas' },
+      { siteId:'IND-IRON-01', countryId:'IND', resourceId:'iron_ore', siteName:'India iron ore' }
+    ]
+  };
+  try {
+    const selected = globalThis.OmegaUIV2ResourceMinistry.buildViewModel({ countryId:'BGD' });
+    assert.equal(selected.siteCount, 2);
+    assert.deepEqual(new Set(selected.sites.map((site) => site.countryId)), new Set(['BGD']));
+    assert.deepEqual(new Set(selected.sites.map((site) => site.siteId)), new Set(['BGD-COAL-01', 'BGD-GAS-01']));
+
+    const noCountry = globalThis.OmegaUIV2ResourceMinistry.buildViewModel({});
+    assert.equal(noCountry.siteCount, 0, 'no selected nation must not render the entire global site catalog');
+  } finally {
+    if (previousCanonical === undefined) delete globalThis[canonicalKey];
+    else globalThis[canonicalKey] = previousCanonical;
+    if (previousBinding === undefined) delete globalThis[bindingKey];
+    else globalThis[bindingKey] = previousBinding;
+  }
+});
