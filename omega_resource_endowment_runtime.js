@@ -2148,7 +2148,7 @@ function batchFromExtraction(x,record){
     void initialize().then(function(initialized){
       const binding=g.Omega?.IndividualResourceSiteBinding||g.OmegaIndividualResourceSiteBinding;
       const last=g.__omegaResourceEndowmentLastBootstrap;
-      if(initialized?.status==='READY'&&binding&&Array.isArray(binding.sites)&&binding.sites.length&&(!last||last.status==='FAILED'))void onSiteBindingReady();
+      if(initialized?.status==='READY'&&binding&&Array.isArray(binding.sites)&&binding.sites.length&&(!last||['FAILED','WAITING_FOR_PLAYER_COUNTRY'].includes(last.status)))void onSiteBindingReady();
     });
   }
   function publishBootstrapStatus(snapshot){
@@ -2548,11 +2548,14 @@ function batchFromExtraction(x,record){
     const t=turn(),last=g.__omegaResourceEndowmentLastBootstrap;
     if(g.__omegaResourceEndowmentBootstrapPromise)return;
     const sites=binding.sites.filter(isCommercialBootstrapSite);
+    const selectedCountryId=playerSimulationCountryId();
+    const activeCountrySites=selectedCountryId?sites.filter(site=>
+      canonical(site?.countryId||site?.identity?.countryIso3||'')===selectedCountryId):[];
     const failureSnapshot=(initialized)=>({
       status:'FAILED',resultStatus:initialized?.status||'FAILED',turn:t,siteCount:binding.sites.length,
-      commercialCandidateCount:sites.length,productionCapableSiteCount:null,productionCapablePercent:null,
+      commercialCandidateCount:activeCountrySites.length,productionCapableSiteCount:null,productionCapablePercent:null,
       currentTurnProducingSiteCount:null,extractedRecordCount:0,blockedOccurrenceCount:0,
-      failedCountryCount:null,blockedSiteCount:null,unverifiedSiteCount:sites.length,blockedSites:[],
+      failedCountryCount:null,blockedSiteCount:null,unverifiedSiteCount:activeCountrySites.length,blockedSites:[],
       reason:initialized?.reason||'RESOURCE_RUNTIME_NOT_READY',detail:clone(initialized||null)
     });
     const work=(async function(){
@@ -2571,19 +2574,34 @@ function batchFromExtraction(x,record){
         publishBootstrapStatus(snapshot);
         return snapshot;
       }
-      const hydrationCountryIds=Object.keys(bindingSync.executionSiteIdsByCountry||{});
+      // The canonical catalog is shared static reference data. Only hydrate
+      // operational records for the authoritative player country, never every
+      // country's production state while the WebView is starting.
+      if(!selectedCountryId){
+        const snapshot={
+          status:'WAITING_FOR_PLAYER_COUNTRY',turn:t,siteCount:binding.sites.length,
+          commercialCandidateCount:0,productionCapableSiteCount:null,productionCapablePercent:null,
+          currentTurnProducingSiteCount:0,extractedRecordCount:0,blockedOccurrenceCount:0,
+          failedCountryCount:0,blockedSiteCount:0,unverifiedSiteCount:0,blockedSites:[],
+          bindingSync:{status:bindingSync.status,siteCount:bindingSync.siteCount,
+            registeredCount:bindingSync.registeredCount,enrichedCount:bindingSync.enrichedCount,
+            rejectedCount:bindingSync.rejectedCount},
+          reason:'PLAYER_COUNTRY_NOT_SELECTED'
+        };
+        g.__omegaResourceEndowmentLastBootstrap=snapshot;
+        publishBootstrapStatus(snapshot);
+        return snapshot;
+      }
+      const hydrationCountryIds=activeCountrySites.length?[selectedCountryId]:[];
       for(let hydrationIndex=0;hydrationIndex<hydrationCountryIds.length;hydrationIndex++){
         const countryId=hydrationCountryIds[hydrationIndex];
-        const hydration=hydrateCountry(countryId);
+        const bucket=state()?.resource?.[countryId]||{};
+        if(Array.isArray(bucket.mineSiteReferences)&&bucket.mineSiteControllers&&typeof bucket.mineSiteControllers==='object')continue;
+        const hydration=await hydrateCountry(countryId);
         const payload=hydration?.result||hydration;
         if(hydration?.status!=='APPLIED'||payload?.accepted===false){
           bindingSync.hydrationFailures=bindingSync.hydrationFailures||[];
           bindingSync.hydrationFailures.push({countryId,status:hydration?.status||'UNAVAILABLE',reason:payload?.reason||hydration?.reason||'SITE_BINDING_HYDRATION_NOT_COMMITTED'});
-        }
-        // Hydration can be expensive on Android 9. Let the WebView render and
-        // dispatch navigation/input events between small country batches.
-        if((hydrationIndex+1)%4===0&&hydrationIndex+1<hydrationCountryIds.length){
-          await yieldResourceExtractionToUi();
         }
       }
       const prior=g.__omegaResourceEndowmentLastBootstrap;
@@ -2594,11 +2612,9 @@ function batchFromExtraction(x,record){
         g.__omegaResourceEndowmentLastBootstrap=prior;
         return prior;
       }
-      const selectedCountryId=playerSimulationCountryId();
-      // Site binding prepares every country's mine-site data, but never starts
-      // production globally. The selected-country economy runtime owns each
-      // simulation-turn extraction tick; this avoids startup production and
-      // duplicate or cross-country extraction on low-memory WebViews.
+      // Bootstrap only registers shared static reference data. The selected-country
+      // economy runtime owns the per-turn extraction tick; startup must not advance
+      // production or touch another country's operational state.
       const result={
         status:'COMPLETED',turn:t,results:[],countryId:selectedCountryId||null,
         reason:selectedCountryId?'PRODUCTION_TICK_DEFERRED_TO_PLAYER_COUNTRY_TURN':'PLAYER_COUNTRY_NOT_SELECTED',
@@ -2619,7 +2635,7 @@ function batchFromExtraction(x,record){
       }
       const outputKeys=new Set(),producingSiteIds=new Set();
       const root=state()?.resource||{};
-      for(const rawCountryId of Object.keys(root)){
+      for(const rawCountryId of [selectedCountryId]){
         const cid=canonical(rawCountryId),countryState=resourceBucketForCountry(cid);
         const outputs=Object.values(countryState.mineOutputs&&typeof countryState.mineOutputs==='object'?countryState.mineOutputs:{});
         for(const output of outputs){
@@ -2649,7 +2665,7 @@ function batchFromExtraction(x,record){
       }
       const blockedSites=[];
       let productionCapableSiteCount=0;
-      for(const site of sites){
+      for(const site of activeCountrySites){
         const siteId=String(site.siteId||'').trim(),cid=canonical(site.countryId||site.identity?.countryIso3||'');
         const countryState=resourceBucketForCountry(cid);
         const controller=countryState.mineSiteControllers&&typeof countryState.mineSiteControllers==='object'?countryState.mineSiteControllers[siteId]:null;
@@ -2668,8 +2684,8 @@ function batchFromExtraction(x,record){
         if(produced||(!reason&&controller?.extractionExecutable===true&&linked.length>0))productionCapableSiteCount++;
         else blockedSites.push({siteId,siteName:String(site.siteName||site.name||siteId),countryId:cid,reason:reason||'PRODUCTION_CAPABILITY_NOT_CONFIRMED'});
       }
-      const blockedSiteCount=Math.max(0,sites.length-productionCapableSiteCount);
-      const productionCapablePercent=sites.length?Math.round(productionCapableSiteCount/sites.length*1000)/10:0;
+      const blockedSiteCount=Math.max(0,activeCountrySites.length-productionCapableSiteCount);
+      const productionCapablePercent=activeCountrySites.length?Math.round(productionCapableSiteCount/activeCountrySites.length*1000)/10:0;
       const rawStatus=String(result?.status||'UNKNOWN');
       const extractedRecordCount=outputKeys.size;
       const status=rawStatus==='COMPLETED'
@@ -2680,7 +2696,7 @@ function batchFromExtraction(x,record){
       const snapshot={
         bindingSync:{status:bindingSync.status,siteCount:bindingSync.siteCount,registeredCount:bindingSync.registeredCount,enrichedCount:bindingSync.enrichedCount,rejectedCount:bindingSync.rejectedCount,hydrationFailures:bindingSync.hydrationFailures||[]},
         status,resultStatus:rawStatus,productionStatus:producingSiteIds.size?'ACTIVE_THIS_TURN':'NO_CURRENT_TURN_OUTPUT',
-        turn:t,siteCount:binding.sites.length,commercialCandidateCount:sites.length,
+        turn:t,siteCount:binding.sites.length,commercialCandidateCount:activeCountrySites.length,
         productionCapableSiteCount,productionCapablePercent,currentTurnProducingSiteCount:producingSiteIds.size,
         extractedRecordCount,blockedOccurrenceCount,failedCountryCount:failedCountryRows.length,
         blockedSiteCount,unverifiedSiteCount:0,blockedSites:blockedSites.slice(0,80),reason
