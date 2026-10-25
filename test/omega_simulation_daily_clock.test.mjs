@@ -675,6 +675,7 @@ test('automatic production and resource pipelines advance only the player-select
   const trade = source('omega_global_trade_system.js');
   const research = source('omega_resource_research_runtime_v1.js');
   const strategic = source('omega_resource_strategic_policy_runtime_v1.js');
+  const hardening = source('omega_resource_system_hardening_v1.js');
 
   assert.match(endowment, /if\(options\.activeOnly===true\)\{[\s\S]*?const selected=playerSimulationCountryId\(\);[\s\S]*?return allCountries\.filter\(country=>canonical\(country\)===selected\);/,
     'active mine extraction must be bounded to the selected player country');
@@ -692,4 +693,6 @@ test('automatic production and resource pipelines advance only the player-select
     'resource research and technology transfers must progress only for the player country');
   assert.match(strategic, /async function onTurnCommitted\(\)\{[\s\S]*?const selected=playerSimulationCountryId\(\);[\s\S]*?processPowerCountry\(selected\)/,
     'resource exploration, strategic actions and power projects must progress only for the player country');
+  assert.match(hardening, /function ensureFactoryRecipes\(countryId=null\)\{[\s\S]*?selected=countryId\?country\(countryId\):playerSimulationCountryId\(\);[\s\S]*?return changed;/,
+    'factory recipe hydration must not traverse other countries during a background turn');
 });
