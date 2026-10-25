@@ -2041,8 +2041,7 @@
       root&&root.simulation&&root.simulation.playerCountryId,
       root&&root.playerCountryId,root&&root.playerCountryCode,
       sim&&typeof sim.getPlayerCountryId==='function'?sim.getPlayerCountryId():null,
-      g.Game&&(g.Game.playerCountryId||g.Game.playerCountry||g.Game.currentActiveCountry),
-      g.CountryIOS&&g.CountryIOS.activeCountry,g.currentActiveCountry
+      g.Game&&(g.Game.playerCountryId||g.Game.playerCountry||g.Game.playerCountryCode),g.OMEGA_PLAYER_COUNTRY_ID,g.playerCountry
     ];
     for(const value of candidates){const cid=normalizeCountry(value);if(cid&&cid!=='GLOBAL'&&cid!=='WORLD'&&/^[A-Z0-9]{2,3}$/.test(cid))return cid;}
     return null;
