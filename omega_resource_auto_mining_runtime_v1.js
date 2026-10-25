@@ -88,7 +88,10 @@ function siteDailyCapacity(site,rid){
    // If the unit is unknown/incompatible, do not treat the raw quantity as the
    // canonical unit. Skip it and use the deterministic simulation fallback below.
    if(unitApi&&normalized?.quantity==null)continue;
-   return Math.max(.1,num(normalized?.quantity)??q);
+   const period=String(unit||'').toUpperCase();
+   const divisor=/_PER_YEAR(?:$|_)/.test(period)?365:
+    /_PER_TURN(?:$|_)/.test(period)?Math.max(1,num(state()?.simulation?.daysPerTurn)||1):1;
+   return Math.max(.1,(num(normalized?.quantity)??q)/divisor);
   }
  }
  // Stable site-specific gameplay capacity, separate from unobserved geology and production.
