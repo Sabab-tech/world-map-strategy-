@@ -385,6 +385,10 @@ test('finance, FX, macro and ministry time fallbacks treat one turn as one day',
   assert.match(military, /simTurn\(\) \* 86400000/);
   assert.match(industrial, /clock\?\.stepDurationMs/);
   assert.match(industrial, /if\(num\(clock\?\.stepDurationMs\)!==null\)return 1/);
+  assert.match(industrial, /processPendingFactoryInputs\(countryId,\{activeOnly:true\}\)/,
+    'turn-driven factories must not auto-start work outside activated source sites');
+  assert.match(industrial, /factoryAutoStartAllowed/,
+    'manual factory calls remain available while automatic starts are restricted');
   assert.match(hardening, /OMEGA_SIMULATION_TURN_COMMITTED',[() =>]*\{ensureFactoryRecipes\(\);\}/);
   assert.equal(industrialCatalog.turnAssumption.daysPerTurn, 1);
 });
