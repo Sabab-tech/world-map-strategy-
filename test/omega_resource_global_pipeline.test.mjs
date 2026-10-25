@@ -79,6 +79,11 @@ function makeInterop(state){
 
 test('global resource pipeline runs every RESOURCE_JSON mine and keeps each result sovereign',async()=>{
   const engine=buildEngine();
+  // A country profile with no resource deposits or site references must not be
+  // hydrated/extracted just because it exists in the world roster.
+  engine.countryProfiles.ZZZ={
+    identity:{id:'ZZZ',iso3:'ZZZ',countryId:'ZZZ',name:'Empty resource regression fixture'}
+  };
   const {mineSiteReferenceCount}=engine;
   const state={simulation:{turn:1},resource:{},finance:{}};
   const identity={
@@ -194,6 +199,15 @@ test('global resource pipeline runs every RESOURCE_JSON mine and keeps each resu
 
   const globalResult=await runtime.extractAll();
   assert.equal(globalResult.status,'COMPLETED',JSON.stringify(globalResult));
+  assert.ok(globalResult.totalCountryCount>globalResult.processedCountryCount,
+    'empty country profiles must be skipped rather than hydrated and extracted');
+  assert.ok(globalResult.skippedCountryCount>=1);
+  assert.ok(!globalResult.results.some(row=>String(row.countryId).toUpperCase()==='ZZZ'),
+    'the empty ZZZ fixture must not enter the extraction loop');
+  assert.ok(globalResult.yieldedBatchCount>0,
+    'global resource processing must yield to the UI between country batches');
+  assert.equal(state.resource.ZZZ.mineSiteReferences,undefined,
+    'skipped empty country must not be hydrated as a side effect');
   const allCountryResults=globalResult.results.map(x=>x.result?.result||x.result||{});
   const extractedRecords=allCountryResults.flatMap(x=>Array.isArray(x.records)?x.records:[]);
   const reserveStates=Array.isArray(reserveResult.registry?.listReserveStates?.())
