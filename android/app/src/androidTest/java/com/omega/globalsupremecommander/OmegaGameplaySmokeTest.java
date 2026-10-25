@@ -109,16 +109,17 @@ public final class OmegaGameplaySmokeTest {
                     " var d = window.__OMEGA_DIAG__ || {};" +
                     " var screen = document.getElementById('fatal-screen');" +
                     " var message = document.getElementById('fatal-msg');" +
-                    " return JSON.stringify({state:d.state||null," +
+                    " return {state:d.state||null," +
                     " fatalVisible:!!(screen && getComputedStyle(screen).display !== 'none')," +
                     " fatalMessage:message ? message.textContent : null," +
-                    " errors:(d.errors||[]).slice(-8).map(function(x){return {type:x.type||null,msg:x.msg||null};})});" +
+                    " errors:(d.errors||[]).slice(-8).map(function(x){return {type:x.type||null,msg:x.msg||null};})};" +
                     "})()";
-            final String bootDiagnostics = evaluate(instrumentation, webViewRef.get(), bootDiagnosticsScript, 10L);
+            final String bootDiagnosticsRaw = evaluate(instrumentation, webViewRef.get(), bootDiagnosticsScript, 10L);
+            final JSONObject bootDiagnostics = new JSONObject(bootDiagnosticsRaw);
             android.util.Log.i("OMEGA_ANDROID_SMOKE", "BOOT_DIAGNOSTICS=" + bootDiagnostics);
             assertTrue("Enterprise boot must not expose a fatal overlay: " + bootDiagnostics,
-                    !bootDiagnostics.contains("\"fatalVisible\":true") &&
-                    !bootDiagnostics.contains("\"state\":\"FAILED\""));
+                    !bootDiagnostics.optBoolean("fatalVisible", false) &&
+                    !"FAILED".equals(bootDiagnostics.optString("state", "")));
             final String offlineBridgeScript =
                     "(function() { return !!(window.OmegaAndroid && " +
                     "window.OmegaAndroid.isAndroidApp() === true && " +
