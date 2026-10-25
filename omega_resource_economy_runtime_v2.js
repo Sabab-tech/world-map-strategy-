@@ -1083,7 +1083,9 @@
     return loadRules().then(async function(){
       installHandlers();installEvents();
       ui();
-      var allCountries=countries();
+      var activeCountry=currentCountryId();
+      if(!activeCountry)return{status:'SKIPPED',reason:'PLAYER_COUNTRY_NOT_SELECTED',turn:turn()};
+      var allCountries=[activeCountry];
       if(g.OmegaResourceNationalDemandRuntime&&typeof g.OmegaResourceNationalDemandRuntime.prepare==='function'){
         try{await g.OmegaResourceNationalDemandRuntime.prepare();}
         catch(error){emit('OMEGA_RESOURCE_DEMAND_RUNTIME_HEALTH','GLOBAL',{status:'DEGRADED',reason:String(error&&error.message||error),turn:turn()},'resource-economy');}
