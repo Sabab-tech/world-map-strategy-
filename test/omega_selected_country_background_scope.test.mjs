@@ -76,7 +76,7 @@ test('global market and trade background handlers do not write or tick every cou
 test('country selection after catalog readiness retries only when a player country exists', () => {
   const source = read('omega_resource_endowment_runtime.js');
   const ready = between(source, 'function onReady(){', 'function publishBootstrapStatus(');
-  assert.match(ready, /last\\?\\.status==='WAITING_FOR_PLAYER_COUNTRY'&&!!playerSimulationCountryId\\(\\)/);
+  assert.ok(ready.includes("last?.status==='WAITING_FOR_PLAYER_COUNTRY'&&!!playerSimulationCountryId()"));
   assert.match(ready, /waitingCountrySelected/);
 });
 
