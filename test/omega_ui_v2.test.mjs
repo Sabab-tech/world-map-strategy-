@@ -196,7 +196,7 @@ test('resource inventory lists only canonical natural resources once, with clean
   globalThis.OmegaResourceMinistryEngine = {
     resourceTypes: [
       { id: 'iron_ore', name: 'Iron Ore', category: 'bulk_commodities', unit: 'metric_tons' },
-      { id: 'copper', name: 'Copper', category: 'strategic_metals', unit: 'metric_tons' },
+      { id: 'copper', name: 'Copper', category: 'strategic_metals', unit: 'TONS' },
       { id: 'natural_gas', name: 'Natural Gas / LNG', category: 'hydrocarbons', unit: 'bcm' }
     ]
   };
@@ -225,6 +225,7 @@ test('resource inventory lists only canonical natural resources once, with clean
     assert.deepEqual(model.resourceInventory.items.map((row) => row.name), ['Copper', 'Iron Ore', 'Natural Gas']);
     assert.equal(model.resourceInventory.items.find((row) => row.name === 'Iron Ore').quantity, 7);
     assert.equal(model.resourceInventory.items.find((row) => row.name === 'Copper').quantity, 0);
+    assert.equal(model.resourceInventory.items.find((row) => row.name === 'Copper').unit, 'tonnes');
     assert.deepEqual(model.nationalInventory.items.map((row) => row.productId), ['steel', 'iron_concentrate']);
     assert.equal(model.nationalInventory.items.find((row) => row.productId === 'steel').quantity, 9);
 
