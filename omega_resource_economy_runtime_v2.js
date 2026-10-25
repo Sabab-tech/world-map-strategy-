@@ -1014,7 +1014,7 @@
       var extractionResult=null;
       if(g.OmegaResourceEndowmentRuntime&&typeof g.OmegaResourceEndowmentRuntime.extractAll==='function'){
         try{
-          extractionResult=await g.OmegaResourceEndowmentRuntime.extractAll();
+          extractionResult=await g.OmegaResourceEndowmentRuntime.extractAll({activeOnly:true});
           if(extractionResult&&['FAILED','WAITING_DEPENDENCIES'].includes(String(extractionResult.status||'').toUpperCase())){
             emit('OMEGA_RESOURCE_ECONOMY_RUNTIME_HEALTH','GLOBAL',{
               status:'DEGRADED',
