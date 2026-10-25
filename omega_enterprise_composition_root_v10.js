@@ -144,6 +144,14 @@
                 let lastTime = performance.now();
                 let frameTick = 0;
 
+                // The coordinator is dormant unless the authoritative game session is running.
+                // This stops the 100 ms scheduler itself, not just the game-clock's turn work.
+                function simulationIsRunning() {
+                    const simulation = window.Omega?.Simulation;
+                    return !!(simulation && String(simulation.status || "").toUpperCase() === "RUNNING" &&
+                        simulation.clock && simulation.clock.paused !== true);
+                }
+
                 window.Omega.markMinistryDirty = (id) => {
                     window.__LOG_EVENT__("MINISTRY_REFRESH_REQUEST:" + String(id || "ALL"));
                 };
@@ -159,7 +167,8 @@
                 window.addEventListener("DECISION_ENACTED", () => {});
 
                 function scheduleEngineLoop(delayMs) {
-                    if (isPaused || shutdownRequested || loopInProgress || loopTimerId !== null) return;
+                    if (isPaused || shutdownRequested || !simulationIsRunning() ||
+                        loopInProgress || loopTimerId !== null) return;
                     loopTimerId = window.setTimeout(() => {
                         loopTimerId = null;
                         engineLoop();
@@ -167,7 +176,7 @@
                 }
 
                 async function engineLoop() {
-                    if (isPaused || shutdownRequested || loopInProgress) return;
+                    if (isPaused || shutdownRequested || !simulationIsRunning() || loopInProgress) return;
                     loopInProgress = true;
                     try {
                         const now = performance.now();
@@ -199,9 +208,24 @@
                         try { window.__LOG_EVENT__("SIMULATION_STEP_FAILED"); } catch (_) {}
                     } finally {
                         loopInProgress = false;
-                        scheduleEngineLoop(SIMULATION_FRAME_INTERVAL_MS);
+                        if (simulationIsRunning()) scheduleEngineLoop(SIMULATION_FRAME_INTERVAL_MS);
                     }
                 }
+
+                function cancelEngineTimer() {
+                    if (loopTimerId !== null) window.clearTimeout(loopTimerId);
+                    loopTimerId = null;
+                }
+                function resumeEngineTimer() {
+                    if (document.hidden === true || shutdownRequested || !simulationIsRunning()) return;
+                    lastTime = performance.now();
+                    scheduleEngineLoop(0);
+                }
+                // A paused/stopped session has no scheduled background engine work.
+                window.addEventListener("OMEGA_GAME_SESSION_STARTED", resumeEngineTimer);
+                window.addEventListener("OMEGA_GAME_SESSION_RESUMED", resumeEngineTimer);
+                window.addEventListener("OMEGA_GAME_SESSION_PAUSED", cancelEngineTimer);
+                window.addEventListener("OMEGA_GAME_SESSION_STOPPED", cancelEngineTimer);
 
                 document.addEventListener("visibilitychange", () => {
                     isPaused = document.hidden === true;
