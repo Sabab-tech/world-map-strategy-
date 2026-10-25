@@ -224,9 +224,22 @@ function autoStaffAsset(country,site,rs){
   excavators:Math.max(1,num(asset.equipment?.excavators)||0),
   loaders:Math.max(1,num(asset.equipment?.loaders)||0),
   haulTrucks:Math.max(vehicleCount,num(asset.equipment?.haulTrucks)||0),
-  equipmentStatus:'AVAILABLE',authority:'SIMULATED_PLAYER_COUNTRY_STARTER_EQUIPMENT'
+  pumps:Math.max(/crude_oil|natural_gas|brine|salt/.test(rid)?2:1,num(asset.equipment?.pumps)||0),
+  crushingUnits:Math.max(/ore|coal|bauxite|phosphate|limestone|copper|nickel|zinc|chromite/.test(rid)?1:0,num(asset.equipment?.crushingUnits)||0),
+  conveyorSystems:Math.max(1,num(asset.equipment?.conveyorSystems)||0),
+  processingUnits:Math.max(1,num(asset.equipment?.processingUnits)||0),
+  storageTanks:Math.max(/crude_oil|natural_gas|brine|salt/.test(rid)?2:1,num(asset.equipment?.storageTanks)||0),
+  sparePartsKits:Math.max(1,num(asset.equipment?.sparePartsKits)||0),
+  equipmentStatus:'AVAILABLE',allRequiredEquipmentAvailable:true,
+  authority:'SIMULATED_PLAYER_COUNTRY_STARTER_EQUIPMENT',simulationOnly:true
+ };
+ asset.operatingSupplies={
+  status:'READY',fuelAvailable:true,drillingConsumablesAvailable:true,sparePartsAvailable:true,
+  waterSupplyAvailable:true,maintenanceMaterialsAvailable:true,
+  extractionConsumablesAvailable:true,authority:'SIMULATED_PLAYER_COUNTRY_STARTER_SUPPLIES',simulationOnly:true
  };
  asset.roadAccess={available:true,transportMode:asset.fleet.transportMode,routeStatus:'READY',
+  vehicleAccessAvailable:true,routeCapacityPerDay:Math.max(capacity,num(asset.dailyCapacity)||0),
   authority:'SIMULATED_PLAYER_COUNTRY_STARTER_LOGISTICS',simulationOnly:true};
  asset.reserveStatus='SIMULATED_RUNTIME_RESERVE';
  asset.autoProvisioningVersion=VERSION;
