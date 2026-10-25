@@ -116,18 +116,31 @@
                     window.__LOG_EVENT__("SIMULATION_COORDINATOR_CONFIGURED");
                 }
 
-                if (window.OmegaMinistry && typeof window.OmegaMinistry.createRuntime === "function") {
-                    const ministryRuntime = window.OmegaMinistry.createRuntime();
-                    if (ministryRuntime && typeof ministryRuntime.init === "function") {
-                        ministryRuntime.init(sharedBridge);
-                        window.__LOG_EVENT__("MINISTRY_RUNTIME_INIT_CALLED");
+                // A canonical 17-ministry controller was initialized above. Do not
+                // instantiate the retired legacy ministry runtime beside it: on Android 9
+                // that duplicate constructor can throw and turn an otherwise valid boot fatal.
+                // Keep the legacy files available for explicit compatibility fallback only.
+                if (!ministryRuntimeController &&
+                    window.OmegaMinistry && typeof window.OmegaMinistry.createRuntime === "function") {
+                    try {
+                        const ministryRuntime = window.OmegaMinistry.createRuntime();
+                        if (ministryRuntime && typeof ministryRuntime.init === "function") {
+                            ministryRuntime.init(sharedBridge);
+                            window.__LOG_EVENT__("MINISTRY_RUNTIME_INIT_CALLED");
+                        }
+                        if (window.OMEGA_UI_ADAPTER) {
+                            window.OMEGA_UI_ADAPTER.init(ministryRuntime, sharedBridge, presentation);
+                            window.__LOG_EVENT__("UI_ADAPTER_MANUAL_INIT_CALLED");
+                        }
+                    } catch (legacyRuntimeError) {
+                        // A legacy adapter is optional; its failure must not stop the canonical
+                        // game, clock, resource economy or UI v2 from starting.
+                        console.warn("[OMEGA] Legacy ministry runtime unavailable; canonical controller remains active.",
+                            legacyRuntimeError);
+                        window.__LOG_EVENT__("LEGACY_MINISTRY_RUNTIME_SKIPPED");
                     }
-                    if (window.OMEGA_UI_ADAPTER) {
-                        window.OMEGA_UI_ADAPTER.init(ministryRuntime, sharedBridge, presentation);
-                        window.__LOG_EVENT__("UI_ADAPTER_MANUAL_INIT_CALLED");
-                    }
-                } else {
-                    console.warn("[OMEGA] OmegaMinistry.createRuntime not found.");
+                } else if (ministryRuntimeController) {
+                    window.__LOG_EVENT__("LEGACY_MINISTRY_RUNTIME_SKIPPED_CANONICAL_ACTIVE");
                 }
 
                 // The simulation clock advances in 10-second steps. Polling it at display
