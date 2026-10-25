@@ -1069,3 +1069,105 @@ test('resource ministry reads only selected-country rows from the global site re
     else globalThis.OmegaCountryRuntimeData = previousCountryRuntime;
   }
 });
+
+
+test('industrial command panel scopes factory, mine, daily-rate and current-turn extraction data to the selected country', () => {
+  const keys = ['Game','Omega','OmegaCountryRuntimeData','OmegaResourceIndustrialCatalogData',
+    'OmegaResourceSiteCanonicalCatalogData','OmegaIndividualResourceSiteBinding','OmegaMinistryViewCountry','currentActiveCountry'];
+  const previous = Object.fromEntries(keys.map((key) => [key, globalThis[key]]));
+  globalThis.Omega = {};
+  globalThis.OmegaCountryRuntimeData = null;
+  globalThis.OmegaIndividualResourceSiteBinding = null;
+  globalThis.OmegaMinistryViewCountry = 'BGD';
+  globalThis.currentActiveCountry = 'BGD';
+  globalThis.OmegaResourceIndustrialCatalogData = {
+    factoryProfiles: {
+      STEEL_MILL: { name:'Catalog Steel Mill', defaultRecipeId:'STEEL-RECIPE' },
+      CATALOG_ONLY_PROFILE: { name:'Profile must not count as a factory' }
+    }
+  };
+  globalThis.OmegaResourceSiteCanonicalCatalogData = { sites: [
+    {
+      siteId:'BGD-MINE-1', countryId:'BGD', siteName:'Bangladesh Iron Mine',
+      identity:{ countryIso3:'BGD', resourceTypeId:'iron_ore', resourceName:'Iron Ore' },
+      quantitative:{ production:{ rate:12, unit:'tonnes/day', status:'REPORTED' } },
+      operation:{ status:'OPERATING' }
+    },
+    {
+      siteId:'USA-MINE-1', countryId:'USA', siteName:'United States Copper Mine',
+      identity:{ countryIso3:'USA', resourceTypeId:'copper', resourceName:'Copper' },
+      quantitative:{ production:{ rate:900, unit:'tonnes/day', status:'REPORTED' } },
+      operation:{ status:'OPERATING' }
+    }
+  ] };
+  globalThis.Game = { state: {
+    simulation:{ turn:3, session:{ playerCountryId:'BGD' } },
+    resource:{
+      BGD:{
+        mineAssets:[{ siteId:'BGD-MINE-1', status:'OPERATIONAL' }],
+        industrialNetwork:{
+          factoryAssets:[{ id:'BGD-NET-FACTORY', name:'Bangladesh Alloy Works', factoryType:'STEEL_MILL', status:'ACTIVE' }],
+          siteFlowLedger:[
+            { countryId:'BGD', siteId:'BGD-MINE-1', resourceId:'iron_ore', unit:'tonnes', quantity:40, extractionTurn:3, status:'EXTRACTION_COMMITTED' },
+            { countryId:'BGD', siteId:'BGD-MINE-1', resourceId:'iron_ore', unit:'tonnes', quantity:150, extractionTurn:2, status:'EXTRACTION_COMMITTED' },
+            { countryId:'USA', siteId:'USA-MINE-1', resourceId:'copper', unit:'tonnes', quantity:999, extractionTurn:3, status:'EXTRACTION_COMMITTED' }
+          ]
+        }
+      },
+      USA:{
+        mineAssets:[],
+        industrialNetwork:{ factoryAssets:[], siteFlowLedger:[
+          { countryId:'USA', siteId:'USA-MINE-1', resourceId:'copper', unit:'tonnes', quantity:9, extractionTurn:3, status:'EXTRACTION_COMMITTED' }
+        ] }
+      }
+    },
+    economy:{
+      BGD:{ productionAssets:[{ id:'BGD-STEEL-1', name:'Bangladesh Steelworks', factoryType:'STEEL_MILL', capacityPerDay:30, status:'OPERATIONAL' }] },
+      USA:{ productionAssets:[{ id:'USA-COPPER-1', name:'United States Copper Refinery', factoryType:'COPPER_REFINERY', status:'ACTIVE' }] }
+    }
+  } };
+
+  try {
+    const bangladesh = globalThis.OmegaUIV2Industry.buildViewModel({ countryId:'BGD' });
+    assert.equal(bangladesh.factoryCount, 2, 'only registered game-state factory assets count, not catalog profiles');
+    assert.deepEqual(bangladesh.factoryNames.sort(), ['Bangladesh Alloy Works','Bangladesh Steelworks'].sort());
+    assert.equal(bangladesh.registeredMineSiteCount, 1);
+    assert.equal(bangladesh.operatingMineCount, 1);
+    assert.equal(bangladesh.dailyProductionKnownCount, 1);
+    assert.equal(bangladesh.mineSites[0].dailyProduction.value, 12);
+    assert.match(bangladesh.mineSites[0].dailyProduction.unit, /tonnes\/day/i);
+    assert.deepEqual(bangladesh.currentTurnExtraction.map((row) => ({ resourceId:row.resourceId, quantity:row.quantity })), [
+      { resourceId:'iron_ore', quantity:40 }
+    ]);
+    assert.equal(bangladesh.canOperateSelectedCountry, true);
+
+    const unitedStates = globalThis.OmegaUIV2Industry.buildViewModel({ countryId:'USA' });
+    assert.equal(unitedStates.factoryCount, 1);
+    assert.deepEqual(unitedStates.factoryNames, ['United States Copper Refinery']);
+    assert.equal(unitedStates.registeredMineSiteCount, 1);
+    assert.deepEqual(unitedStates.currentTurnExtraction.map((row) => ({ resourceId:row.resourceId, quantity:row.quantity })), [
+      { resourceId:'copper', quantity:9 }
+    ]);
+    assert.equal(unitedStates.canOperateSelectedCountry, false);
+
+    const root = { classList:{ add(){} }, addEventListener(){}, contains(){ return true; } };
+    const rendered = globalThis.OmegaUIV2Industry.render(root, { countryId:'BGD' });
+    assert.equal(rendered.ok, true);
+    assert.match(root.innerHTML, /omega-v2-industry-command/);
+    assert.match(root.innerHTML, /data-omega-factory-svg-slot/);
+    assert.match(root.innerHTML, /FACTORY SVG SLOT/);
+    assert.match(root.innerHTML, /Bangladesh Alloy Works/);
+    assert.match(root.innerHTML, /Bangladesh Iron Mine/);
+    assert.match(root.innerHTML, /12 tonnes\/day/);
+    assert.match(root.innerHTML, /Build \/ view mines/);
+    assert.match(root.innerHTML, /Technology development/);
+    assert.match(root.innerHTML, /Roads &amp; logistics/);
+    assert.doesNotMatch(root.innerHTML, /United States Copper Refinery|United States Copper Mine|USA-MINE-1/,
+      'the selected-country panel must not render another country’s factory or mine rows');
+  } finally {
+    for (const key of keys) {
+      if (previous[key] === undefined) delete globalThis[key];
+      else globalThis[key] = previous[key];
+    }
+  }
+});
