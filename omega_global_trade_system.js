@@ -1143,7 +1143,49 @@
     command('trade','OMEGA_TRADE_SCHEDULE_RETRY',c,{requestId:req.requestId,cooldownTurns:RETRY_COOLDOWN,refusalCount:refusal});
   }
 
-  function onTurn(){processAll();}
+  function playerSimulationCountryId(){
+    const sim=g.Omega&&g.Omega.Simulation,root=state()||{};
+    const session=root.simulation&&root.simulation.session||sim&&sim.world&&sim.world.state&&sim.world.state.simulation&&sim.world.state.simulation.session||{};
+    let direct=null;
+    try{if(sim&&typeof sim.getPlayerCountryId==='function')direct=sim.getPlayerCountryId();}catch(_){}
+    const candidates=[session.playerCountryId,direct,root.simulation&&root.simulation.playerCountryId,root.playerCountryId,root.playerCountryCode,
+      g.Game&&(g.Game.playerCountryId||g.Game.playerCountryCode||g.Game.playerCountry),g.OMEGA_PLAYER_COUNTRY_ID];
+    for(const value of candidates){
+      const raw=value&&typeof value==='object'?(value.iso3||value.iso3Code||value.countryCode||value.countryId||value.code||value.id||value.name):value;
+      const cid=canonical(raw);
+      if(cid&&cid!=='GLOBAL'&&cid!=='WORLD'&&/^[A-Z0-9]{2,3}$/.test(cid))return cid;
+    }
+    return null;
+  }
+  function processCountryRequests(countryId){
+    const c=canonical(countryId),reqs=countryValue(c,'trade.importRequests');
+    if(!c||!Array.isArray(reqs))return{status:'COMPLETED',countryId:c||null,requestCount:0};
+    if(g.__omegaGlobalTradeProcessing)return{status:'SKIPPED',reason:'TRADE_PROCESSING_ALREADY_ACTIVE',countryId:c};
+    g.__omegaGlobalTradeProcessing=true;
+    let processed=0;
+    try{
+      const seen=new Set();
+      for(const req of reqs.slice(-MAX_HISTORY)){
+        const key=String(c)+'::'+String(req.requestId);
+        if(seen.has(key))continue;
+        seen.add(key);
+        processRequest(req);
+        processed++;
+      }
+    }finally{g.__omegaGlobalTradeProcessing=false;}
+    return{status:'COMPLETED',countryId:c,turn:turn(),requestCount:processed};
+  }
+  function processCountry(countryId){
+    const selected=playerSimulationCountryId(),target=canonical(countryId||selected);
+    if(!selected)return{status:'SKIPPED',reason:'PLAYER_COUNTRY_NOT_SELECTED'};
+    if(target!==selected)return{status:'SKIPPED',reason:'PLAYER_COUNTRY_SCOPE_VIOLATION',countryId:target,playerCountryId:selected};
+    return processCountryRequests(selected);
+  }
+  function processPlayerCountryTurn(){
+    const selected=playerSimulationCountryId();
+    if(!selected)return{status:'SKIPPED',reason:'PLAYER_COUNTRY_NOT_SELECTED'};
+    return processCountryRequests(selected);
+  }  function onTurn(){return processPlayerCountryTurn();}
   function processAll(){
     if(g.__omegaGlobalTradeProcessing)return;
     g.__omegaGlobalTradeProcessing=true;
@@ -1189,7 +1231,7 @@
     const result=command('trade','OMEGA_TRADE_CREATE_IMPORT_REQUEST',countryId,{...clone(payload),requestId});
     return result&&['APPLIED','FAILED'].includes(String(result.status||''))&&result.result?result.result:result;
   }
-  const API=Object.freeze({VERSION,TYPES,diagnostics,processAll,reviewRequest:sellerReviewDecision,createRequest,relationScore,marketPrice,inventory,currencyOf,fxRate,settlementValues});
+  const API=Object.freeze({VERSION,TYPES,diagnostics,processAll,processCountry,reviewRequest:sellerReviewDecision,createRequest,relationScore,marketPrice,inventory,currencyOf,fxRate,settlementValues});
   g.Omega=g.Omega||{};g.Omega.GlobalTrade=API;g.OmegaGlobalTrade=API;
   try{init();}catch(e){g.OmegaGlobalTradeError=String(e?.message||e);}
 })(typeof window!=='undefined'?window:globalThis);
