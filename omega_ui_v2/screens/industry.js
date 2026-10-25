@@ -35,7 +35,7 @@
   }
   function cleanResourceName(value, fallbackId) {
     var name = String(value || '').trim();
-    if (!name) name = String(fallbackId || '').replace(/[_-]+/g, ' ');
+    if (!name) name = String(fallbackId || '').replace(/[_-]+/g, ' ').replace(/\b[a-z]/g, function (letter) { return letter.toUpperCase(); });
     return name.split(/\s+[\/&]\s+/)[0].trim();
   }
   function readableResourceUnit(value) {
@@ -71,8 +71,8 @@
     var existing = target[id];
     target[id] = {
       resourceId: id,
-      name: existing && existing.name && existing.name.length > name.length ? existing.name : name,
-      unit: unit || (existing && existing.unit) || ''
+      name: existing && existing.name ? existing.name : name,
+      unit: (existing && existing.unit) || unit || ''
     };
   }
   function addResourceTypeSource(target, source) {
@@ -291,6 +291,8 @@
     if (!root) return { ok: false, code: 'INDUSTRY_ROOT_REQUIRED' };
     var model = buildViewModel(options);
     var active = options.tab || root.__omegaV2IndustryTab || 'factories';
+    // Migrate the retired all-products inventory tab to the new natural-resource view.
+    if (active === 'national-inventory') active = 'resource-inventory';
     var content = '';
     if (active === 'factories') {
       content = model.factories.length ? '<div class="omega-v2-grid">' + model.factories.map(function (row) { return factoryCard(row, options); }).join('') + '</div>' : '<div class="omega-v2-empty">No commissioned production assets are recorded for ' + esc(model.countryId || 'the selected country') + '. Catalog profiles are not counted as owned factories.</div>';
