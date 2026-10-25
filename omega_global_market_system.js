@@ -254,13 +254,37 @@
       return true;
     }catch(_){return false;}
   }
-  function onTurn(){
+  function playerSimulationCountryId(){
+    const sim=g.Omega&&g.Omega.Simulation,root=state()||{};
+    const session=root.simulation&&root.simulation.session||sim&&sim.world&&sim.world.state&&sim.world.state.simulation&&sim.world.state.simulation.session||{};
+    let direct=null;
+    try{if(sim&&typeof sim.getPlayerCountryId==='function')direct=sim.getPlayerCountryId();}catch(_){}
+    const candidates=[session.playerCountryId,direct,root.simulation&&root.simulation.playerCountryId,root.playerCountryId,root.playerCountryCode,
+      g.Game&&(g.Game.playerCountryId||g.Game.playerCountryCode||g.Game.playerCountry),g.OMEGA_PLAYER_COUNTRY_ID];
+    for(const value of candidates){
+      const raw=value&&typeof value==='object'?(value.iso3||value.iso3Code||value.countryCode||value.countryId||value.code||value.id||value.name):value;
+      const cid=canonical(raw);
+      if(cid&&cid!=='GLOBAL'&&cid!=='WORLD'&&/^[A-Z0-9]{2,3}$/.test(cid))return cid;
+    }
+    return null;
+  }
+  function rebuildCountry(countryId){
+    const selected=playerSimulationCountryId(),target=canonical(countryId||selected);
+    if(!selected)return{status:'SKIPPED',reason:'PLAYER_COUNTRY_NOT_SELECTED'};
+    if(target!==selected)return{status:'SKIPPED',reason:'PLAYER_COUNTRY_SCOPE_VIOLATION',countryId:target,playerCountryId:selected};
+    const token=String(turn())+':'+selected;
+    if(g.__omegaGlobalMarketProjectedToken===token)return{status:'ALREADY_UPDATED',countryId:selected,turn:turn()};
     install();
     const markets=rebuild();
-    for(const c of countries()){
-      writeProjection(c,markets);
-      try{interop()?.emitEvent?.('OMEGA_MARKET_PRICE_UPDATED',c,'trade',{turn:turn(),resources:Object.keys(markets).length},{turn:turn(),correlationId:'MARKET-'+turn()+'-'+c});}catch(_){}
-    }
+    const result=writeProjection(selected,markets);
+    try{interop()?.emitEvent?.('OMEGA_MARKET_PRICE_UPDATED',selected,'trade',{turn:turn(),resources:Object.keys(markets).length},{turn:turn(),correlationId:'MARKET-'+turn()+'-'+selected});}catch(_){}
+    g.__omegaGlobalMarketProjectedToken=token;
+    return{status:'COMPLETED',countryId:selected,turn:turn(),resourceCount:Object.keys(markets).length,projection:result};
+  }
+  function onTurn(){
+    const selected=playerSimulationCountryId();
+    if(!selected)return {status:'SKIPPED',reason:'PLAYER_COUNTRY_NOT_SELECTED'};
+    return rebuildCountry(selected);
   }
   function diagnostics(){
     const markets=g.__OmegaMarketBooks||{},rows=Object.values(markets);
@@ -277,7 +301,7 @@
     if(state()?.simulation?.turn!==undefined)rebuild();
     return diagnostics();
   }
-  const API=Object.freeze({VERSION,diagnostics,rebuild,quote,localPrice,suppliers});
+  const API=Object.freeze({VERSION,diagnostics,rebuild,rebuildCountry,quote,localPrice,suppliers});
   g.Omega=g.Omega||{};g.Omega.GlobalMarket=API;g.OmegaGlobalMarket=API;
   try{init();}catch(e){g.OmegaGlobalMarketError=String(e?.message||e);}
 })(typeof window!=='undefined'?window:globalThis);
