@@ -505,6 +505,69 @@
     return { status: 'RECORDED', entry: entry, balance: liveBalance };
   }
 
+  function ensureFactoryInventoryDeltas(countryId, reference, inputMap, outputMap, inputSource) {
+    var cid = canonicalCountry(countryId);
+    if (!cid || cid !== playerCountry()) return { status: 'IGNORED', reason: 'INACTIVE_COUNTRY' };
+    var row = ensureCountry(cid);
+    var resource = resourceState(cid, true);
+    var inventory = resource.inventory;
+    var centralInput = !inputSource || String(inputSource).toUpperCase() === 'CENTRAL_INVENTORY';
+    var inputs = Object.create(null), outputs = Object.create(null), products = Object.create(null);
+
+    function collect(target, source) {
+      if (!object(source)) return;
+      Object.keys(source).forEach(function (rawId) {
+        var pid = normalizeProductId(rawId), amount = number(source[rawId]);
+        if (!pid || amount === null || amount <= 0) return;
+        target[pid] = (number(target[pid]) || 0) + amount;
+        products[pid] = true;
+      });
+    }
+    collect(inputs, inputMap);
+    collect(outputs, outputMap);
+
+    var adjustments = [];
+    Object.keys(products).forEach(function (pid) {
+      var inputEventId = 'FACTORY:' + reference + ':CONSUMPTION:' + pid;
+      var outputEventId = 'FACTORY:' + reference + ':PRODUCTION:' + pid;
+      var consumed = Object.prototype.hasOwnProperty.call(row.eventIds, inputEventId) ? 0 : (number(inputs[pid]) || 0);
+      var produced = Object.prototype.hasOwnProperty.call(row.eventIds, outputEventId) ? 0 : (number(outputs[pid]) || 0);
+      // Country inventory reflects on-hand stock, not a second copy of factory-input lots.
+      // Central inventory inputs are already debited by the factory engine. Inputs sourced
+      // from a delivered/warehouse factory lot were moved out earlier, so do not debit them
+      // again at the cycle boundary. Outputs are different: multi-input cycles may publish
+      // only to processedWarehouse, so credit any production amount the country inventory
+      // map has not received yet.
+      var expectedDelta = produced - (centralInput ? consumed : 0);
+      if (Math.abs(expectedDelta) <= EPSILON) return;
+
+      var keyInfo = inventoryKey(inventory, pid);
+      if (keyInfo.ambiguous) {
+        adjustments.push({ status: 'BLOCKED', reason: 'AMBIGUOUS_INVENTORY_PRODUCT_KEYS', productId: pid, keys: keyInfo.ambiguous });
+        return;
+      }
+      var key = keyInfo.key;
+      var live = number(inventory[key]) || 0;
+      var previous = number(row.observedBalances[pid]);
+      if (previous === null) previous = live;
+      var observedDelta = live - previous;
+      var correction = expectedDelta - observedDelta;
+      if (Math.abs(correction) > EPSILON) {
+        adjustments.push({ productId: pid, key: key, before: live, correction: correction, after: live + correction });
+      }
+    });
+
+    var blocked = adjustments.find(function (row) { return row.status === 'BLOCKED'; });
+    if (blocked) return blocked;
+    adjustments.forEach(function (adjustment) {
+      if (!adjustment.productId || !adjustment.key) return;
+      inventory[adjustment.key] = adjustment.after;
+      if (!object(resource.inventoryUnits)) resource.inventoryUnits = {};
+      resource.inventoryUnits[adjustment.key] = resource.inventoryUnits[adjustment.key] || 'SIMULATION_RESOURCE_UNIT';
+    });
+    return { status: 'RECONCILED', adjustments: adjustments.filter(function (row) { return row.productId; }) };
+  }
+
   function recordFactoryEvent(countryId, payload, fallbackReference) {
     var cid = canonicalCountry(countryId);
     if (!cid || cid !== playerCountry()) return { status: 'IGNORED', reason: 'INACTIVE_COUNTRY' };
@@ -527,6 +590,9 @@
         inputMap[id] = (number(inputMap[id]) || 0) + Number(row.quantity);
       });
     }
+
+    var balanceSync = ensureFactoryInventoryDeltas(cid, reference, inputMap, outputMap, p.inputSource);
+    if (balanceSync.status === 'BLOCKED') return balanceSync;
 
     if (inputMap) {
       Object.keys(inputMap).forEach(function (pid) {
@@ -572,14 +638,20 @@
         action = 'EXPORT'; deltaSign = -1;
       } else if (type === 'INTERNATIONAL_TRADE_IMPORT' || type === 'IMPORT' || type === 'TRADE_IMPORT') {
         action = 'IMPORT'; deltaSign = 1;
-      } else if (/^(CONSUMPTION|CONSUMED|RESOURCE_CONSUMPTION)$/.test(type)) {
+      } else if (/^(CONSUMPTION|CONSUMED|RESOURCE_CONSUMPTION|INVENTORY_CONSUMED)$/.test(type)) {
         action = 'CONSUMPTION'; deltaSign = -1;
       }
       if (!action || !sourceRow.resourceId) return;
       var amount = number(sourceRow.quantity);
       if (amount === null || amount <= 0) return;
+      var consumedBatchIds = Array.isArray(sourceRow.consumed)
+        ? sourceRow.consumed.map(function (row) { return row && row.batchId; }).filter(Boolean).join(',')
+        : '';
       var reference = sourceRow.settlementId || sourceRow.transactionId || sourceRow.transferId ||
-        sourceRow.batchId || (type + ':T' + String(sourceRow.turn == null ? turn() : sourceRow.turn) + ':' + index);
+        sourceRow.consumptionId || sourceRow.batchId ||
+        (type + ':T' + String(sourceRow.turn == null ? turn() : sourceRow.turn) + ':' +
+          normalizeProductId(sourceRow.resourceId) + ':' + String(amount) + ':' +
+          token(sourceRow.reason || sourceRow.action || consumedBatchIds || index));
       var result = appendEntry(cid, action, sourceRow.resourceId, deltaSign * amount, {
         eventId: 'SOURCE_LEDGER:' + type + ':' + reference + ':' + normalizeProductId(sourceRow.resourceId),
         source: 'EXISTING_RESOURCE_INVENTORY_LEDGER',
@@ -754,6 +826,14 @@
     var negative = ['CONSUMPTION', 'EXPORT', 'TRANSFER_OUT', 'DEBIT', 'ADJUSTMENT_OUT'].includes(action);
     if (!pid || quantity === null || quantity <= 0 || !Number.isFinite(quantity) || (!positive && !negative)) {
       return { status: 'BLOCKED', reason: 'INVENTORY_TRANSACTION_INVALID' };
+    }
+    var transactionEventId = String(input.eventId || '');
+    var existingCountry = root().countries[cid];
+    if (transactionEventId && existingCountry && existingCountry.eventIds &&
+        Object.prototype.hasOwnProperty.call(existingCountry.eventIds, transactionEventId)) {
+      return { status: 'DUPLICATE', reason: 'INVENTORY_TRANSACTION_ALREADY_APPLIED',
+        countryId: cid, productId: pid, action: action,
+        balance: currentBalance(cid, productId), eventId: transactionEventId };
     }
     var resource = resourceState(cid, true);
     var inventory = resource.inventory;
