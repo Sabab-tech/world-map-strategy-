@@ -133,20 +133,24 @@ public final class OmegaGameplaySmokeTest {
             // and require the Android 9 WebView to answer a small JS heartbeat every second.
             // Each callback has a 3-second deadline so a renderer hang fails with elapsed-time
             // diagnostics instead of making the CI job look successful or wait indefinitely.
+            final String heartbeatScript =
+                    "(function() {" +
+                    " var sim = window.Omega && window.Omega.Simulation;" +
+                    " var metrics = window.__OMEGA_DIAG__ && window.__OMEGA_DIAG__.metrics;" +
+                    " if (!sim || !sim.clock || !metrics) return 'RUNTIME_DIAGNOSTICS_MISSING';" +
+                    " return JSON.stringify({tick: metrics.tick || 0, turn: sim.clock.turn || 0," +
+                    " status: sim.status || null, now: Math.floor(performance.now())});" +
+                    "})()";
+            final String warmupHeartbeat = evaluate(instrumentation, webViewRef.get(), heartbeatScript, 15L);
+            assertNotNull("WebView must answer the warm-up heartbeat before the timed gameplay probe", warmupHeartbeat);
+            assertTrue("Warm-up heartbeat must expose simulation diagnostics: " + warmupHeartbeat,
+                    warmupHeartbeat.contains("tick") && warmupHeartbeat.contains("turn"));
             android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=LONG_RUN_GAMEPLAY_BEGIN");
             final long longRunStarted = SystemClock.elapsedRealtime();
             final long longRunDurationMs = 80000L;
             long lastProgressLog = 0L;
             while (SystemClock.elapsedRealtime() - longRunStarted < longRunDurationMs) {
                 final long elapsedMs = SystemClock.elapsedRealtime() - longRunStarted;
-                final String heartbeatScript =
-                        "(function() {" +
-                        " var sim = window.Omega && window.Omega.Simulation;" +
-                        " var metrics = window.__OMEGA_DIAG__ && window.__OMEGA_DIAG__.metrics;" +
-                        " if (!sim || !sim.clock || !metrics) return 'RUNTIME_DIAGNOSTICS_MISSING';" +
-                        " return JSON.stringify({tick: metrics.tick || 0, turn: sim.clock.turn || 0," +
-                        " status: sim.status || null, now: Math.floor(performance.now())});" +
-                        "})()";
                 final String heartbeat;
                 try {
                     heartbeat = evaluate(instrumentation, webViewRef.get(), heartbeatScript, 3L);
