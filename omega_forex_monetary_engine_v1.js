@@ -926,7 +926,10 @@
     turnCurrencies.forEach(function (code) {
       if (code === 'USD') return;
       const anchorRecord = anchorByCurrency.get(code);
-      const profile = anchorRecord && anchorRecord.profile;
+      // A shared currency can be anchored to another country's catalog row. During
+      // a live player turn, calculate and write macro changes against the selected
+      // country, never the arbitrary first profile that happens to use this currency.
+      const profile = backgroundTurn && activeProfile ? activeProfile : (anchorRecord && anchorRecord.profile);
       const rateItem = state.simulationRates[code];
       const oldRate = finite(rateItem && rateItem.localPerUsd);
       if (!profile || oldRate === null || oldRate <= 0) return;
