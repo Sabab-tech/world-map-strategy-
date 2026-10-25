@@ -404,6 +404,41 @@ test('Q: newly populated data is hot-plugged on the next publication',()=>{
   assert.equal(second.publishedFacts['finance.available'].value,42);
 });
 
+test('Q2: Interior runtime reads and publishes Home Ministry police state for the selected country',()=>{
+  const s=createSandbox();
+  const police={
+    baselineVersion:1,
+    baselineSource:'OMEGA_COUNTRY_POLICE_BASELINE_V1',
+    policeCount:1234,
+    policeEfficiency:78,
+    policeTrust:64,
+    facilityLevels:{station:3,academy:2},
+    vehiclesOwned:{'1':4,'2':2},
+    patrolPlan:{urban:35,rural:25,border:20,traffic:20},
+    crimeModel:{totalIncidents:42,openedCases:7,clearedCases:4},
+    pendingCapabilityProjects:[{id:'HOME-CAP-1',status:'IN_PROGRESS'}],
+    completedCapabilityProjects:[{id:'HOME-CAP-0',status:'COMPLETED'}],
+    trainingQualityLevel:3,
+    policeRecruitmentLevel:2,
+    unlockedVehicleLevel:4
+  };
+  s.state.interior[s.countryA].police=police;
+
+  const telemetry=s.tick('interior',1);
+  const observed=telemetry.domainExecution.observedInputs;
+  assert.equal(observed['interior.police.policeCount'],1234);
+  assert.equal(observed['interior.police.policeEfficiency'],78);
+  assert.equal(observed['interior.police.pendingCapabilityProjects'][0].id,'HOME-CAP-1');
+
+  const peer=s.mesh.getPeerState('cabinet','interior',s.countryA,{currentTurn:1});
+  assert.equal(peer.publishedFacts['interior.police.policeCount'].availability,'AVAILABLE');
+  assert.equal(peer.publishedFacts['interior.police.policeCount'].value,1234);
+  assert.equal(peer.publishedFacts['interior.police.policeEfficiency'].value,78);
+  assert.equal(peer.publishedFacts['interior.police.vehiclesOwned'].value['2'],2);
+  assert.equal(peer.publishedFacts['interior.police.pendingCapabilityProjects'].value[0].id,'HOME-CAP-1');
+  assert.equal(peer.publishedFacts['interior.police.policeCount'].countryId,s.countryA);
+});
+
 test('R: save/load restores logically equivalent interoperability state',()=>{
   const s=createSandbox();
   s.tickAll(1);
