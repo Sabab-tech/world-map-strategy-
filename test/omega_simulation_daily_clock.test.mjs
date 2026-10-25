@@ -713,9 +713,9 @@ test('automatic production and resource pipelines advance only the player-select
     'factory recipe hydration must not traverse other countries during a background turn');
 
   assert.match(finance, /function advanceTurn\(turn,stepDurationMs,selectedCountryValue,backgroundTurn\)\{[\s\S]*?const workProfiles=backgroundTurn\?\[activeProfile\]:profiles;[\s\S]*?for\(const p of workProfiles\)/,
-    'automatic Finance accrual must not advance every country's fiscal state');
+    'automatic Finance accrual must not advance fiscal state for every country');
   assert.match(forex, /const turnCurrencies=backgroundTurn\?\(activeCurrency\?\[activeCurrency\]:\[\]\):Array\.from\(currencies\.keys\(\)\)/,
-    'automatic FX rate and history updates must only tick the player's currency');
+    'automatic FX rate and history updates must only tick the player currency');
   assert.match(forex, /syncAllCountries\(backgroundTurn\?activeProfile:null\)/,
     'automatic FX projection sync must write only the player country');
   assert.match(transmission, /const workProfiles=backgroundTurn\?\[activeProfile\]:profiles/,
@@ -725,14 +725,14 @@ test('automatic production and resource pipelines advance only the player-select
   assert.match(home, /function onTurnCommitted\(\)\{[\s\S]{0,240}const cid=selectedSimulationCountry\(\);[\s\S]{0,180}processCountryTurn\(cid,now,day\)/,
     'Home Affairs daily police work must be player-country scoped');
   assert.match(military, /function onTurn\(\)\s*\{[\s\S]{0,220}var profile=selectedSimulationCountry\(\);[\s\S]{0,150}processCountryPayroll\(profile/,
-    'military payroll must advance only the player's country');
+    'military payroll must advance only the player country');
   assert.match(banking, /OMEGA_SIMULATION_TURN_COMMITTED[\s\S]{0,280}selectedRuntimeProfile\(detail\.countryId\|\|detail\.payload&&detail\.payload\.countryId\)[\s\S]{0,180}processPendingTransfers\(profileId\(player\)\)/,
     'automatic banking transfers and reconciliation must be scoped to the player');
   const worldBankTurnStart=worldBank.indexOf("OMEGA_SIMULATION_TURN_COMMITTED");
   const worldBankTurnEnd=worldBank.indexOf("OMEGA_FINANCE_STATE_UPDATED",worldBankTurnStart);
   const worldBankTurn=worldBank.slice(worldBankTurnStart,worldBankTurnEnd);
   assert.match(worldBankTurn, /evaluatePlayerCountry\(\)/,
-    'World Bank credit assessment must only recompute the player's assessment each turn');
+    'World Bank credit assessment must only recompute the player-country assessment each turn');
   assert.doesNotMatch(worldBankTurn, /evaluateAll\(true\)/,
     'World Bank turns must not rerun the 249-country assessment loop');
   assert.match(treaties, /OMEGA_SIMULATION_TURN_COMMITTED',processPlayerTurn\)/,
