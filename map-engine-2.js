@@ -1809,7 +1809,10 @@ Game.Map.applyResourceMapFilter = function(resourceType) {
     }
     const countrySelected = !!(Game.currentActiveCountry ||
         (window.CountryIOS && window.CountryIOS.activeCountry));
-    state.scope = countrySelected ? 'NATION' : 'WORLD';
+    // NATION is the safe default. WORLD remains available only when the player
+    // explicitly selected it in the resource-scope control.
+    const configuredScope = String(state.scope || 'NATION').toUpperCase();
+    state.scope = countrySelected ? 'NATION' : (configuredScope === 'WORLD' ? 'WORLD' : 'NATION');
 
     if (isNone) {
         state.enabled = false;
