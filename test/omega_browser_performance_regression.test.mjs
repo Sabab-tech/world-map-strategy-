@@ -379,25 +379,25 @@ test('map and ministry rendering stay responsive and scoped to the selected coun
   const countryRuntime = read('omega_country_runtime_data_v1.js');
   const resourceScreen = read('omega_ui_v2/screens/resource-ministry.js');
 
-  assert.match(map, /generateAllBilateralRelations\\(countrySubset\\)/,
+  assert.ok(map.includes('generateAllBilateralRelations(countrySubset)'),
     'relation generation must support a small source-country slice');
-  assert.match(map, /RELATION_COUNTRIES_PER_FRAME\\s*=\\s*2/);
-  assert.match(map, /generateAllBilateralRelations\\(chunk\\)/);
-  assert.match(map, /allCountries\\.forEach\\(c2/,
+  assert.ok(map.includes('RELATION_COUNTRIES_PER_FRAME = 2'));
+  assert.ok(map.includes('generateAllBilateralRelations(chunk)'));
+  assert.ok(map.includes('allCountries.forEach(c2 => {'),
     'each selected source country still calculates relations to the complete country roster');
-  assert.match(map, /color: "#f8fafc"/,
+  assert.ok(map.includes('color: "#f8fafc"'),
     'country outlines must remain visible on the map basemap');
-  assert.match(map, /countryRuntime\\.getCities\\(countryName\\)/,
+  assert.ok(map.includes('countryRuntime.getCities(countryName)'),
     'city rendering must ask for the selected country, not all country city records');
-  assert.match(map, /this\\.activeResourceFilter = 'NONE';/,
+  assert.ok(map.includes("this.activeResourceFilter = 'NONE';"),
     'leaving resource mode must restore city markers');
-  assert.match(countryRuntime, /add\\(row\\.capital, 'capital'\\)/);
-  assert.match(countryRuntime, /add\\(row\\.economic, 'economic'\\)/);
-  assert.match(countryRuntime, /add\\(row\\.military, 'military'\\)/);
-  assert.match(countryRuntime, /add\\(row\\.secret, 'secret'\\)/);
-  assert.match(resourceScreen, /function sourceCatalogs\\(selectedCountry\\)/);
-  assert.match(resourceScreen, /countryId\\(sites\\[i\\]\\) === countryFilter/,
+  assert.ok(countryRuntime.includes("add(row.capital,'capital')"));
+  assert.ok(countryRuntime.includes("add(row.economic,'economic')"));
+  assert.ok(countryRuntime.includes("add(row.military,'military')"));
+  assert.ok(countryRuntime.includes("add(row.secret,'secret')"));
+  assert.ok(resourceScreen.includes('function sourceCatalogs(selectedCountry)'));
+  assert.ok(resourceScreen.includes('if (countryId(sites[i]) === countryFilter)'),
     'country filtering must happen before global catalogue deduplication/sorting');
-  assert.match(resourceScreen, /uniqueSiteRows\\(providedRows\\.filter\\(function \\(row\\) \\{ return countryId\\(row\\) === selectedCountry; \\}\\)\\)/);
+  assert.ok(resourceScreen.includes('uniqueSiteRows(providedRows.filter(function (row) { return countryId(row) === selectedCountry; }))'));
 });
 
