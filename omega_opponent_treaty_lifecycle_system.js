@@ -113,29 +113,53 @@
     emit(status==='SUSPENDED'?'OMEGA_TREATY_SUSPENDED':'OMEGA_TREATY_TERMINATED',c,{targetCountryId:target,treaty:treaties[target]});
     return{accepted:true,status};
   }
-  function processAll(){
-    for(const c of ids()){
-      const f=bucket(c,'foreign');const neg=f?.negotiations;
-      if(!neg||typeof neg!=='object')continue;
-      for(const [targetKey,n] of Object.entries(neg)){
-        const target=canonical(targetKey);
-        if(String(n.status||'').toUpperCase()==='REQUESTED'&&num(n.createdTurn)!==turn()){
-          const req={...clone(n),countryId:canonical(c),targetCountryId:target,negotiationId:n.negotiationId||n.decisionId||'NEG-'+turn()+'-'+c+'-'+target};
-          const reviewResult=command('foreign','OMEGA_TREATY_REVIEW_NEGOTIATION',target,{request:req});
-          if(reviewResult?.status!=='APPLIED')continue;
-          const d=reviewResult.result?.decision;
-          if(!d||d.decision==='WAITING_DATA')continue;
-          const requesterResult=command('foreign','OMEGA_TREATY_APPLY_NEGOTIATION_RESPONSE',c,{targetCountryId:target,decision:d.decision,terms:d.terms||n.terms||{},negotiationId:req.negotiationId});
-          if(d.decision==='ACCEPT'&&requesterResult?.status==='APPLIED'){
-            const terms=d.terms||n.terms||{},treatyType=n.treatyType||'BILATERAL_AGREEMENT';
-            command('foreign','OMEGA_TREATY_ACTIVATE',c,{negotiationId:req.negotiationId,targetCountryId:target,terms,treatyType});
-            command('foreign','OMEGA_TREATY_ACTIVATE',target,{negotiationId:req.negotiationId,targetCountryId:c,terms,treatyType});
-          } else if(d.decision==='COUNTER') {
-            emit('OMEGA_TREATY_COUNTER_OFFERED',c,{targetCountryId:target,terms:d.terms||{},negotiationId:req.negotiationId});
-          }
-        }
+  function processCountry(countryValue){
+    const c=canonical(countryValue);
+    if(!c)return{status:'SKIPPED',reason:'COUNTRY_REQUIRED',processed:0};
+    const f=bucket(c,'foreign'),neg=f?.negotiations;
+    if(!neg||typeof neg!=='object')return{status:'COMPLETED',countryId:c,processed:0};
+    let processed=0,failures=[];
+    for(const [targetKey,n] of Object.entries(neg)){
+      const target=canonical(targetKey);
+      if(String(n.status||'').toUpperCase()!=='REQUESTED'||num(n.createdTurn)===turn())continue;
+      const req={...clone(n),countryId:c,targetCountryId:target,negotiationId:n.negotiationId||n.decisionId||'NEG-'+turn()+'-'+c+'-'+target};
+      const reviewResult=command('foreign','OMEGA_TREATY_REVIEW_NEGOTIATION',target,{request:req});
+      if(reviewResult?.status!=='APPLIED')continue;
+      const d=reviewResult.result?.decision;
+      if(!d||d.decision==='WAITING_DATA')continue;
+      const requesterResult=command('foreign','OMEGA_TREATY_APPLY_NEGOTIATION_RESPONSE',c,{targetCountryId:target,decision:d.decision,terms:d.terms||n.terms||{},negotiationId:req.negotiationId});
+      if(d.decision==='ACCEPT'&&requesterResult?.status==='APPLIED'){
+        const terms=d.terms||n.terms||{},treatyType=n.treatyType||'BILATERAL_AGREEMENT';
+        command('foreign','OMEGA_TREATY_ACTIVATE',c,{negotiationId:req.negotiationId,targetCountryId:target,terms,treatyType});
+        command('foreign','OMEGA_TREATY_ACTIVATE',target,{negotiationId:req.negotiationId,targetCountryId:c,terms,treatyType});
+      } else if(d.decision==='COUNTER') {
+        emit('OMEGA_TREATY_COUNTER_OFFERED',c,{targetCountryId:target,terms:d.terms||{},negotiationId:req.negotiationId});
       }
+      processed++;
     }
+    return{status:'COMPLETED',countryId:c,processed,failures};
+  }
+  function processAll(){
+    const results=[];
+    for(const c of ids())results.push(processCountry(c));
+    return{status:'COMPLETED',countryCount:results.length,results};
+  }
+  function playerSimulationCountryId(){
+    const sim=g.Omega?.Simulation,root=sim?.world?.state||state();
+    const session=root?.simulation?.session||state()?.simulation?.session||{};
+    const candidates=[session?.playerCountryId,
+      typeof sim?.getPlayerCountryId==='function'?sim.getPlayerCountryId():null,
+      root?.simulation?.playerCountryId,state()?.simulation?.playerCountryId,
+      root?.playerCountryId,state()?.playerCountryId,
+      g.Game?.playerCountryId,g.Game?.playerCountry,g.Game?.playerCountryCode,
+      g.OMEGA_PLAYER_COUNTRY_ID,g.playerCountry];
+    for(const value of candidates){const cid=canonical(value);if(cid&&cid!=='GLOBAL'&&cid!=='WORLD')return cid;}
+    return null;
+  }
+  function processPlayerTurn(){
+    const selected=playerSimulationCountryId();
+    if(!selected)return{status:'SKIPPED',reason:'PLAYER_COUNTRY_NOT_SELECTED',processed:0};
+    return processCountry(selected);
   }
   function ids(){try{return[...new Set((registry()?.list?.('COUNTRY')||registry()?.list?.()||[]).map(canonical).filter(Boolean))];}catch(_){return Object.keys(state()?.foreign||{}).map(canonical);}}
   function install(){
@@ -149,7 +173,7 @@
     ];
     try{for(const [t,o,h] of defs){mesh.registerAction?.(t,{actionId:t,stateOwnerMinistry:o,authority:'OMEGA_TREATY_LIFECYCLE'});mesh.registerCommandHandler(t,o,h);}return true;}catch(_){return false;}
   }
-  function init(){install();if(!g.__omegaTreatyTurnHook){g.__omegaTreatyTurnHook=true;g.addEventListener?.('OMEGA_SIMULATION_TURN_COMMITTED',processAll);g.addEventListener?.('OMEGA_READY',install);g.addEventListener?.('OMEGA_GAME_SESSION_STARTED',install);}return diagnostics();}
+  function init(){install();if(!g.__omegaTreatyTurnHook){g.__omegaTreatyTurnHook=true;g.addEventListener?.('OMEGA_SIMULATION_TURN_COMMITTED',processPlayerTurn);g.addEventListener?.('OMEGA_READY',install);g.addEventListener?.('OMEGA_GAME_SESSION_STARTED',install);}return diagnostics();}
   function diagnostics(){return{version:VERSION,handlerInstalled:true,worldCountryCount:ids().length};}
   const API=Object.freeze({VERSION,TYPES:['REQUESTED','COUNTER_OFFERED','ACCEPTED','ACTIVE','SUSPENDED','TERMINATED'],diagnostics,processAll,review});
   g.Omega=g.Omega||{};g.Omega.OpponentTreatyLifecycle=API;g.OmegaOpponentTreatyLifecycle=API;try{init();}catch(e){g.OmegaOpponentTreatyLifecycleError=String(e?.message||e);}
