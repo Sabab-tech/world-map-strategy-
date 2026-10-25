@@ -162,7 +162,7 @@ test('global map source data preserves every coordinate-backed mine site and run
 });
 
 
-test('runtime renders all global sites and applies nation/resource scope without country averages', async () => {
+test('runtime retains all global sites and bounds visible markers by scope', async () => {
   const rawSources = {
     'resources.json': JSON.parse(read('resources.json')),
     'resources_2.json': JSON.parse(read('resources_2.json')),
