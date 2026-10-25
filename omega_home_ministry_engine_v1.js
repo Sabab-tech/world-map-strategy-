@@ -2033,13 +2033,25 @@
     return [...ids].sort();
   }
 
+  function selectedSimulationCountry(){
+    const sim=g.Omega&&g.Omega.Simulation,root=rootState();
+    const session=root&&root.simulation&&root.simulation.session||{};
+    const candidates=[
+      session.playerCountryId,
+      root&&root.simulation&&root.simulation.playerCountryId,
+      root&&root.playerCountryId,root&&root.playerCountryCode,
+      sim&&typeof sim.getPlayerCountryId==='function'?sim.getPlayerCountryId():null,
+      g.Game&&(g.Game.playerCountryId||g.Game.playerCountry||g.Game.currentActiveCountry),
+      g.CountryIOS&&g.CountryIOS.activeCountry,g.currentActiveCountry
+    ];
+    for(const value of candidates){const cid=normalizeCountry(value);if(cid&&cid!=='GLOBAL'&&cid!=='WORLD'&&/^[A-Z0-9]{2,3}$/.test(cid))return cid;}
+    return null;
+  }
   function onTurnCommitted(){
-    const now=simulationTimeMs(),day=Math.floor(now/DAY_MS),failures=[];
-    for(const cid of simulationCountryIds()){
-      try{processCountryTurn(cid,now,day);}
-      catch(error){failures.push(cid+':'+String(error&&error.message||error));}
-    }
-    if(failures.length)throw new Error('HOME_MINISTRY_TURN_FAILED:'+failures.join('|'));
+    const cid=selectedSimulationCountry();
+    if(!cid)return;
+    const now=simulationTimeMs(),day=Math.floor(now/DAY_MS);
+    processCountryTurn(cid,now,day);
   }
   function processSelectedCountryTurn(event){
     const detail=event&&event.detail||{},payload=detail.payload||detail;
