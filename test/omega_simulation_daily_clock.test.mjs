@@ -342,7 +342,12 @@ test('index, finance, bank and offline shell use the daily lifecycle assets', ()
     'minister consistency checks must be driven by state-change events');
   assert.doesNotMatch(liveOps, /refreshHandle = g\.setInterval/,
     'Live Operations must refresh from events instead of a background poll');
-  assert.match(endowment, /function onTurn\(\)\{return extractAll\(\);\}/);
+  assert.doesNotMatch(endowment, /function onTurn\(\)\{return extractAll\(\);\}/,
+    'the endowment runtime must not attach a second global extraction tick');
+  assert.doesNotMatch(endowment, /addEventListener\?\.\('OMEGA_SIMULATION_TURN_COMMITTED',onTurn\)/,
+    'the country-scoped economy owns production ticks to prevent world-wide duplicate extraction');
+  assert.match(resourceEconomy, /endowment\.extractCountry\(cid\)/,
+    'the economy must invoke extraction through the selected player-country ID');
   assert.match(resourceEconomy, /return runTurn\(\);/);
   assert.match(macro, /return init\(\)\.then\(\(\)=>advanceTurn\(turn,duration\)\)/);
 });

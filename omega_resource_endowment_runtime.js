@@ -623,6 +623,20 @@
   const interop=()=>g.Omega?.MinistryInteroperability||g.OmegaMinistryInteroperability||null;
   const boundary=()=>g.Omega?.ResourceCountryBoundaryGuard||g.OmegaResourceCountryBoundaryGuard||null;
   const turn=()=>n(state()?.simulation?.turn??state()?.turn??state()?.simulationTurn??g.Omega?.Simulation?.clock?.turn)??0;
+  function playerSimulationCountryId(){
+    const sim=g.Omega?.Simulation,root=state()||{};
+    const session=root.simulation?.session||sim?.world?.state?.simulation?.session||{};
+    let direct=null;
+    try{if(typeof sim?.getPlayerCountryId==='function')direct=sim.getPlayerCountryId();}catch(_){}
+    const candidates=[session.playerCountryId,direct,root.simulation?.playerCountryId,root.playerCountryId,root.playerCountryCode,
+      g.Game?.playerCountryId,g.Game?.playerCountryCode,g.Game?.playerCountry,g.OMEGA_PLAYER_COUNTRY_ID];
+    for(const value of candidates){
+      const raw=value&&typeof value==='object'?(value.iso3||value.iso3Code||value.countryCode||value.countryId||value.code||value.id):value;
+      const cid=canonical(raw);
+      if(cid&&/^[A-Z]{3}$/.test(cid)&&cid!=='GLOBAL'&&cid!=='WORLD')return cid;
+    }
+    return null;
+  }
   const engine=()=>g.ResourceMinistryEngine||null;
   function countries(){
     if(Array.isArray(countryListCache))return countryListCache.slice();
@@ -2580,18 +2594,16 @@ function batchFromExtraction(x,record){
         g.__omegaResourceEndowmentLastBootstrap=prior;
         return prior;
       }
-      let result=await extractAll();
-      if(result?.status==='ALREADY_EXTRACTED'&&hasNewExecutionSites){
-        const retryResults=[];
-        for(const [countryId,siteIds] of Object.entries(bindingSync.executionSiteIdsByCountry)){
-          const started=await startCountryProduction(countryId,siteIds);
-          retryResults.push({countryId,started});
-        }
-        result={status:'COMPLETED',turn:t,bindingSync:clone(bindingSync),results:retryResults.map(({countryId,started})=>({
-          countryId,result:{status:['STARTED','PARTIALLY_STARTED','ALREADY_ACTIVE'].includes(started?.status)?'APPLIED':'FAILED',
-            result:{accepted:started?.status!=='BLOCKED',records:clone(started?.records||[]),blocked:Number(started?.blockedOccurrenceCount)||0}}
-        }))};
-      }
+      const selectedCountryId=playerSimulationCountryId();
+      // Site binding prepares every country's mine-site data, but never starts
+      // production globally. The selected-country economy runtime owns each
+      // simulation-turn extraction tick; this avoids startup production and
+      // duplicate or cross-country extraction on low-memory WebViews.
+      const result={
+        status:'COMPLETED',turn:t,results:[],countryId:selectedCountryId||null,
+        reason:selectedCountryId?'PRODUCTION_TICK_DEFERRED_TO_PLAYER_COUNTRY_TURN':'PLAYER_COUNTRY_NOT_SELECTED',
+        automaticProductionDeferred:true
+      };
       const countryResults=Array.isArray(result?.results)?result.results:[];
       const failedCountryRows=countryResults.filter(function(row){
         return row?.result?.status!=='APPLIED'||row?.result?.result?.accepted===false;
@@ -2687,7 +2699,6 @@ function batchFromExtraction(x,record){
     g.__omegaResourceEndowmentBootstrapPromise=work;
     return work;
   }
-  function onTurn(){return extractAll();}
   function diagnostics(){
     const r=g.__OmegaResourceReserveRegistry, e=engine(), mines=[];
     for(const c of countries()){
@@ -2726,7 +2737,6 @@ function batchFromExtraction(x,record){
     g.addEventListener?.('OMEGA_GAME_SESSION_STARTED',onReady);
     g.addEventListener?.('OMEGA_RESOURCE_SITE_BINDING_READY',onSiteBindingReady);
     g.addEventListener?.('OMEGA_RESOURCE_MINE_COMMISSIONED',onMineCommissioned);
-    g.addEventListener?.('OMEGA_SIMULATION_TURN_COMMITTED',onTurn);
     return diagnostics();
   }
   function registerCanonicalSiteSimulationRecord(input={}){

@@ -72,3 +72,15 @@ test('global market and trade background handlers do not write or tick every cou
   assert.match(trade, /function onTurn\(\)\{return processPlayerCountryTurn\(\);\}/);
   assert.match(trade, /function processPlayerCountryTurn\(\)/);
 });
+
+test('mine extraction is not automatically ticked for every country at startup or turn commit', () => {
+  const source = read('omega_resource_endowment_runtime.js');
+  const bootstrap = between(source, 'function onSiteBindingReady(){', 'function diagnostics(){');
+  assert.match(bootstrap, /const selectedCountryId=playerSimulationCountryId\(\)/);
+  assert.match(bootstrap, /PRODUCTION_TICK_DEFERRED_TO_PLAYER_COUNTRY_TURN/);
+  assert.doesNotMatch(bootstrap, /await extractAll\(\)|startCountryProduction\(countryId,siteIds\)/);
+  assert.doesNotMatch(source, /function onTurn\(\)\{return extractAll\(\);\}/);
+  assert.doesNotMatch(source, /addEventListener\?\.\('OMEGA_SIMULATION_TURN_COMMITTED',onTurn\)/);
+  assert.match(source, /function extractAll\(\)/,
+    'the explicit batch API can remain available without being wired to automatic background ticks');
+});

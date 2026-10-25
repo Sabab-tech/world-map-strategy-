@@ -27,9 +27,15 @@ test('site readiness starts the idempotent extraction runtime and exposes per-si
   assert.ok(runtime.includes('function onSiteBindingReady()'));
   assert.ok(runtime.includes("g.addEventListener?.('OMEGA_RESOURCE_SITE_BINDING_READY',onSiteBindingReady)"));
   const bindingSyncIndex=runtime.indexOf('const bindingSync=await syncBoundSiteRegistry(binding.sites);');
-  const extractionIndex=runtime.indexOf('let result=await extractAll();');
-  assert.ok(bindingSyncIndex>=0 && extractionIndex>bindingSyncIndex,
-    'registry readiness must synchronize bound sites before the authoritative country extraction pass');
+  const bootstrapStart=runtime.indexOf('function onSiteBindingReady(){');
+  const bootstrapEnd=runtime.indexOf('function diagnostics(){',bootstrapStart);
+  assert.ok(bootstrapStart>=0 && bindingSyncIndex>bootstrapStart && bootstrapEnd>bindingSyncIndex,
+    'site-binding readiness must synchronize the registry inside the bootstrap handler');
+  const bootstrap=runtime.slice(bootstrapStart,bootstrapEnd);
+  assert.doesNotMatch(bootstrap,/await extractAll\(\)|startCountryProduction\(countryId,siteIds\)/,
+    'startup may prepare country data but must defer every production tick to the selected-country game clock');
+  assert.match(bootstrap,/const selectedCountryId=playerSimulationCountryId\(\)/);
+  assert.match(bootstrap,/PRODUCTION_TICK_DEFERRED_TO_PLAYER_COUNTRY_TURN/);
   assert.ok(runtime.includes('productionCapableSiteCount'));
   assert.ok(runtime.includes('productionCapablePercent'));
   assert.ok(runtime.includes('currentTurnProducingSiteCount'));
