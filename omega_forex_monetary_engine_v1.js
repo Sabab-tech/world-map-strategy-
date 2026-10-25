@@ -621,8 +621,8 @@
   function currentDayLabel() {
     return 'SIM DAY ' + String(Math.max(0, Math.floor(finite(state.simulationDay) || 0))).padStart(3, '0');
   }
-  function appendSimHistories(selectedCurrency) {
-    const codes=selectedCurrency?[selectedCurrency]:Array.from(currencies.keys());
+  function appendSimHistories(selectedCurrency, restrictedToPlayer) {
+    const codes=restrictedToPlayer?(selectedCurrency?[selectedCurrency]:[]):Array.from(currencies.keys());
     codes.forEach(function (code) {
       const rate = rateFor(code, 'SIMULATION');
       if (rate === null) return;
@@ -1003,7 +1003,7 @@
     while (state.elapsedSimulationMs >= DAY_MS) {
       state.elapsedSimulationMs -= DAY_MS;
       state.simulationDay = (finite(state.simulationDay) || 0) + 1;
-      appendSimHistories(backgroundTurn?activeCurrency:null);
+      appendSimHistories(activeCurrency,backgroundTurn);
     }
     state.lastProcessedTurn = turnNumber;
     syncAllCountries(backgroundTurn?activeProfile:null);
