@@ -318,7 +318,10 @@ const builtOutputBatch=context.Game.state.resource.BGD.batches.find(row=>
   row.stage==='FINISHED'&&row.resourceId==='IRON_CONCENTRATE'&&
   (row.sourceBatchIds||[]).includes('BATCH-E2E-IRON-02'));
 assert.ok(builtOutputBatch,'finished product batch must retain lineage to the mine-produced source batch');
-assert.equal(builtDelivery.processingStatus,'PROCESSED',
+const builtDeliveryAfterCycle=(context.Game.state.resource.BGD.industrialNetwork.deliveries||[])
+  .find(row=>String(row.shipmentId)===String(builtFactoryRun.shipmentId));
+assert.ok(builtDeliveryAfterCycle,'the persisted delivered-input ledger row must survive cycle completion');
+assert.equal(builtDeliveryAfterCycle.processingStatus,'PROCESSED',
   'the delivered input record must reconcile with the actual factory cycle');
 context.Game.state.economy.BGD.productionAssets.forEach((asset,index)=>{
   if(factoryStatusSnapshot[index]===undefined)delete asset.status;
