@@ -8,7 +8,7 @@ context.window=context;context.globalThis=context;vm.createContext(context);vm.r
 const api=context.OmegaResourceQuantityNormalization;
 assert.ok(api,'quantity normalization API must be registered');
 assert.equal(api.normalizeQuantity('copper',320400000000,'POUNDS_COPPER').unit,'TONNES');
-assert.ok(Math.abs(api.normalizeQuantity('copper',320400000000,'POUNDS_COPPER').quantity-145331221.4)<1);
+assert.ok(Math.abs(api.normalizeQuantity('copper',320400000000,'POUNDS_COPPER').quantity-145330995.35)<1);
 assert.equal(api.normalizeQuantity('natural_gas',1,'BCF').unit,'BCM');
 assert.ok(Math.abs(api.normalizeQuantity('natural_gas',1,'BCF').quantity-0.028316846592)<1e-9);
 assert.ok(Math.abs(api.normalizeQuantity('natural_gas',1000,'MMCF').quantity-0.028316846592)<1e-9,'MMCF must normalize to BCM using an explicit volume bridge');
