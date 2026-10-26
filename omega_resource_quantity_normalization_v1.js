@@ -135,9 +135,18 @@ function normalizeMetricObject(object, resourceId, kind){
     normalizedPeriod:out.rate===null?'UNRECOGNIZED':'PER_DAY'};
   }
   if(num(out.annual)!==null){
+   const annualAuthority=String(out.annualStatus||out.annualAuthority||'').trim().toUpperCase();
    const sourceUnit=out.annualUnit||out.unit||rawUnit;
-   const n=normalizeQuantity(resourceId,out.annual,sourceUnit,{simulationOnly:true});
-   out.annual=n.quantity;out.annualUnit=n.unit+'_PER_YEAR';out.annualNormalization={...n,field:'annual'};
+   // A production object can carry a simulated daily rate beside a source-reported
+   // annual figure. Normalize the simulated field without rewriting the observed one.
+   if(['OBSERVED','REPORTED','OBSERVED_ATTRIBUTABLE','SOURCE_REPORTED'].includes(annualAuthority)){
+    out.annualNormalization={version:VERSION,field:'annual',sourceQuantity:out.annual,sourceUnit,
+     method:'SOURCE_VALUE_PRESERVED',simulationOnly:false};
+   }else{
+    const n=normalizeQuantity(resourceId,out.annual,sourceUnit,{simulationOnly:true});
+    if(n.quantity!==null){out.annual=n.quantity;out.annualUnit=n.unit+'_PER_YEAR';}
+    out.annualNormalization={...n,field:'annual'};
+   }
   }
   return out;
  }
