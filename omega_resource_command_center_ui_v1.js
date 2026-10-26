@@ -75,6 +75,14 @@
   function shortJson(value) {
     try { return esc(JSON.stringify(value)); } catch (_) { return 'Unavailable'; }
   }
+  function normalizeFactoryType(value, catalog) {
+    const data = catalog || g.OmegaResourceIndustrialCatalogData || (g.Omega && g.Omega.ResourceIndustrialCatalogData) || {};
+    const aliases = data.factoryTypeAliases || {};
+    let key = String(value || '').trim().toUpperCase();
+    const seen = Object.create(null);
+    while (aliases[key] && !seen[key]) { seen[key] = true; key = String(aliases[key]).trim().toUpperCase(); }
+    return key;
+  }
   function normaliseCountry(raw) {
     const candidate = String(raw || '').trim();
     if (!candidate) return 'BGD';
@@ -751,7 +759,8 @@
         const duration = p.durationMonthsRequested ? p.durationMonthsRequested + (p.durationMonthsRequested === 1 ? ' month' : ' months') + ' (' + number(p.durationDays, ' days') + ')' : formatDuration(p.durationDays);
         const completion = p.actualCompletionDate || p.estimatedCompletionDate || p.estimatedCommissioningDate;
         const pct = Number(p.progressPct);
-        return card(String((profiles[p.factoryType] && profiles[p.factoryType].name) || p.factoryType || 'Factory project'),
+        const projectType = normalizeFactoryType(p.factoryType, catalog);
+        return card(String((profiles[projectType] && profiles[projectType].name) || projectType || 'Factory project'),
           String(p.status || 'STATUS_NOT_RECORDED'),
           '<div class="omega-rescc-grid2">' +
           kv('Construction started', displayGameDate(p.startDate)) +
@@ -848,7 +857,7 @@
     const stages = perCountry && perCountry.stages || {}, sites = siteRows(country);
     const factoryCards = assets.map(function (asset) {
       const id = String(asset.id || asset.assetId || asset.projectId || 'FACTORY_ID_NOT_RECORDED');
-      const type = String(asset.factoryType || asset.type || asset.facilityType || 'FACTORY_TYPE_NOT_RECORDED').toUpperCase();
+      const type = normalizeFactoryType(asset.factoryType || asset.type || asset.facilityType || 'FACTORY_TYPE_NOT_RECORDED', catalog);
       const profile = profiles[type] || {};
       const recipeId = asset.recipeId || profile.defaultRecipeId || 'RECIPE_NOT_RECORDED';
       const stock = asset.inputInventory && typeof asset.inputInventory === 'object' ? asset.inputInventory : {};
