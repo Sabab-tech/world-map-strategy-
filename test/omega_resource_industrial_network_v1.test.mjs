@@ -289,4 +289,29 @@ const sharedTransport=context.Game.state.resource.BGD.industrialNetwork.transpor
 assert.equal(sharedTransport.usedByMode.truck,11000,'truck capacity must be counted jointly for all route legs in one turn');
 assert.equal(sharedTransport.shipments.length,2);
 
+// Selected-country UI diagnostics must not walk every country's industrial ledger.
+context.Game.state.resource.SAU={
+  inventory:{oil:1000},
+  industrialNetwork:{
+    siteFlowLedger:[{siteId:'SITE_SAU_TEST',resourceId:'oil',status:'BLOCKED',
+      stages:[{stage:'EXTRACTION',status:'BLOCKED'}]}],
+    shipments:[]
+  }
+};
+const scopedPipeline=N.gameplayPipelineDiagnostics('BGD');
+assert.equal(scopedPipeline.diagnosticScope,'BGD');
+assert.equal(scopedPipeline.countryCount,1);
+assert.deepEqual(scopedPipeline.perCountry.map(row=>row.countryId),['BGD']);
+assert.equal(scopedPipeline.perCountry[0].blockedFlows.some(row=>row.siteId==='SITE_SAU_TEST'),false,
+  'selected-country diagnostics must not read or report another country's flow ledger');
+const globalPipeline=N.gameplayPipelineDiagnostics();
+assert.equal(globalPipeline.diagnosticScope,'GLOBAL',
+  'no-argument diagnostics must preserve the global aggregate contract');
+assert.ok(globalPipeline.countryCount>1,
+  'world-level verification must continue to include multiple countries');
+const unresolvedPipeline=N.gameplayPipelineDiagnostics('NOT A REAL COUNTRY');
+assert.equal(unresolvedPipeline.diagnosticScope,'UNRESOLVED');
+assert.equal(unresolvedPipeline.countryCount,0,
+  'an invalid explicit country scope must not silently start the global scan');
+
 console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');
