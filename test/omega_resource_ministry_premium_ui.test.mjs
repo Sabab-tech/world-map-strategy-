@@ -44,10 +44,12 @@ test("resource visual layer is wired into the offline-first app without remote d
   assert.ok(uiManifest.additionalStyles.includes(cssPath), "UI v2 manifest must document the resource style");
   assert.match(sw, /omega-offline-atlas-shell-v48/, "offline cache must be invalidated for new visual assets");
   const coreAssets = sw.slice(sw.indexOf("const CORE_ASSETS"), sw.indexOf("];", sw.indexOf("const CORE_ASSETS")));
-  for (const icon of json("assets/omega-industrial-icons-v1/manifest.json").resources) {
-    assert.ok(coreAssets.includes('"./assets/omega-industrial-icons-v1/' + icon.file + '"'),
-      "offline shell must precache " + icon.file);
-  }
+  assert.ok(coreAssets.includes('"./' + cssPath + '"'), "premium stylesheet belongs in the precache list");
+  assert.ok(sw.includes("const resourceIcons = Array.isArray(factoryIconManifest.resources)"),
+    "offline install must enumerate the canonical resource icon manifest");
+  assert.ok(sw.includes(String.raw`/^resources\\/[a-z0-9-]+\\.svg$/`),
+    "offline install must accept only stable local resource SVG paths");
+  assert.equal(json("assets/omega-industrial-icons-v1/manifest.json").resources.length, 42);
   assert.doesNotMatch(cssText(), /https?:\/\//, "resource visual styling must not depend on remote assets");
 });
 
