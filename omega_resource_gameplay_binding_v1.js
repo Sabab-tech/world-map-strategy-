@@ -653,18 +653,28 @@ async function plan(){
 async function execute(){
  const s=chosenSite();if(!s)return setStatus('BLOCKED: select a site first');
  const net=api();if(!net?.executeSitePipeline)return setStatus('The extraction pipeline is unavailable. Nothing was executed.');
- setStatus('Running extraction, transport and factory delivery…');
+ setStatus('Running extraction and checking the commissioned factory route…');
  try{
-  const result=await net.executeSitePipeline({countryId:s.countryId,siteId:s.siteId,resourceId:s.real?.resourceId||s.sourceSiteRecord?.resourceId||s.sourceSiteRecord?.resourceTypeId||s.identity?.resourceTypeId,autoCommissionFactory:true});
+  // Normal gameplay must not auto-create a simulation-only factory. Explicit scenario
+  // fixtures may request that capability directly from the industrial runtime.
+  const result=await net.executeSitePipeline({countryId:s.countryId,siteId:s.siteId,resourceId:s.real?.resourceId||s.sourceSiteRecord?.resourceId||s.sourceSiteRecord?.resourceTypeId||s.identity?.resourceTypeId});
   g.__OMEGA_LAST_INDIVIDUAL_SITE_EXTRACTION__={siteId:s.siteId,result};
   if(result?.status==='IN_TRANSIT'){
-   setStatus('Site pipeline committed · Shipment dispatched'+(result.shipment?.etaTurn!==undefined?' · estimated arrival turn '+formatScalar(result.shipment.etaTurn):'')+'.');
+   setStatus('Extraction committed · shipment dispatched'+(result.shipment?.etaTurn!==undefined?' · estimated arrival turn '+formatScalar(result.shipment.etaTurn):'')+'.');
    return;
   }
-  setStatus('Site pipeline '+(humanize(result?.status)||'blocked')+' · '+(humanize(result?.reason||result?.blockReason)||'The engine did not confirm a completed delivery.')+'.');
+  if(result?.status==='EXTRACTED_AWAITING_FACTORY'){
+   setStatus('Extraction committed · batch '+formatScalar(result.batchId||'')+' remains in '+formatScalar(result.warehouseId||'the country raw warehouse')+'. No compatible commissioned factory was found; no factory was fabricated.');
+   return;
+  }
+  if(result?.status==='EXTRACTED_AWAITING_ROUTE'){
+   setStatus('Extraction committed · shipment is waiting for a valid route. '+(humanize(result?.reason||result?.blockReason)||'No dispatch was confirmed')+'.');
+   return;
+  }
+  setStatus('Site pipeline '+(humanize(result?.status)||'blocked')+' · '+(humanize(result?.reason||result?.blockReason)||'The engine did not confirm the next state transition')+'.');
  }catch(e){
   const reason=String(e?.message||e);g.__OMEGA_LAST_INDIVIDUAL_SITE_EXTRACTION__={siteId:s.siteId,status:'FAILED',reason};
-  setStatus('Site pipeline failed · '+(humanize(reason)||'The run stopped before completion.')+'.');
+  setStatus('Site pipeline failed · '+(humanize(reason)||'The run stopped before completion')+'.');
  }
 }
 function mount(){
