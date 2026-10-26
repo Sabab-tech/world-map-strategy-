@@ -2388,7 +2388,9 @@ function batchFromExtraction(x,record){
     const maximum=maxCandidate!==null&&maxCandidate>=nominal?maxCandidate:Math.max(nominal,Math.round(nominal*1.35*100)/100);
     const capacityStatus=suppliedNominal&&capacity.status?String(capacity.status).toUpperCase():'SIMULATED';
     q.capacity={
-      ...capacity,minimum,nominal,maximum,unit:capacity.unit||rateUnit,period:capacity.period||'DAILY',
+      ...capacity,minimum,nominal,maximum,unit:rateUnit,gameplayUnit:rateUnit,
+      sourceUnit:capacity.unit||capacity.sourceUnit||null,sourceStatus:capacity.status||null,
+      period:'DAILY',
       status:capacityStatus,authority:capacity.authority||(capacityStatus==='SIMULATED'?'GAMEPLAY_SIMULATION':'SOURCE_REPORTED'),
       basis:capacity.basis||(capacityStatus==='SIMULATED'?'DETERMINISTIC_SITE_CAPACITY_PROFILE_V1':null)
     };
