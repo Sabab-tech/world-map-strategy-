@@ -1,0 +1,18 @@
+
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-labelledby="omega-coal-title omega-coal-desc" data-omega-icon-kind="resource" data-omega-icon-id="coal">
+<title id="omega-coal-title">Coal</title><desc id="omega-coal-desc">Coal resource icon with material-specific colour and dimensional vector illustration.</desc>
+<defs>
+<linearGradient id="omega-coal-bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#24394c"/><stop offset=".5" stop-color="#132536"/><stop offset="1" stop-color="#08121d"/></linearGradient>
+<linearGradient id="omega-coal-metal" x1="0" y1="0" x2=".9" y2="1"><stop offset="0" stop-color="#87909a"/><stop offset=".32" stop-color="#353b43"/><stop offset=".7" stop-color="#181c22"/><stop offset="1" stop-color="#141b24"/></linearGradient>
+<linearGradient id="omega-coal-top" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffffff" stop-opacity=".9"/><stop offset=".22" stop-color="#87909a"/><stop offset="1" stop-color="#353b43"/></linearGradient>
+<linearGradient id="omega-coal-side" x1="0" y1="0" x2="1" y2=".7"><stop offset="0" stop-color="#353b43"/><stop offset="1" stop-color="#181c22"/></linearGradient>
+<linearGradient id="omega-coal-floor" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#41576b" stop-opacity=".85"/><stop offset="1" stop-color="#172534" stop-opacity=".25"/></linearGradient>
+<filter id="omega-coal-shadow" x="-40%" y="-40%" width="180%" height="200%"><feGaussianBlur stdDeviation="3.1"/></filter>
+</defs>
+<rect x="4.5" y="4.5" width="119" height="119" rx="21" fill="url(#omega-coal-bg)" stroke="#6b8297" stroke-opacity=".55" stroke-width="1"/>
+<path d="M16 28V18a3 3 0 0 1 3-3h13M96 15h10a6 6 0 0 1 6 6v8M15 93v14a5 5 0 0 0 5 5h12M97 112h9a7 7 0 0 0 7-7V94" fill="none" stroke="#87909a" stroke-opacity=".65" stroke-width="1.4"/>
+<path d="M15 34H113M15 95H113" stroke="#a5bac8" stroke-opacity=".11"/>
+<ellipse cx="64" cy="101" rx="43" ry="8.8" fill="#02070d" opacity=".7" filter="url(#omega-coal-shadow)"/>
+<ellipse cx="64" cy="98.5" rx="41" ry="7.3" fill="url(#omega-coal-floor)" stroke="#75889a" stroke-opacity=".38"/>
+<ellipse cx="64" cy="97.5" rx="32" ry="4.1" fill="#030a10" opacity=".52"/>
+<path d="M26 86 35 67 47 73 58 58 69 72 82 61 101 82 94 91H32Z" fill="url(#omega-coal-metal)" stroke="#181c22" stroke-width="1"/><path d="M20 69 25 56 35.5 58.6 40 68 32 82 22.5 77.45Z" fill="#181c22" stroke="#87909a" stroke-width="1"/><path d="M33 78 38.5 62 50.05 65.2 55 77 46.2 94 35.75 88.4Z" fill="#353b43" stroke="#87909a" stroke-width="1"/><path d="M46 69 52 56 64.6 58.6 70 68 60.4 82 49 77.45Z" fill="#181c22" stroke="#87909a" stroke-width="1"/><path d="M62 78 67 62 77.5 65.2 82 77 74 94 64.5 88.4Z" fill="#353b43" stroke="#87909a" stroke-width="1"/><path d="M75 69 80.5 56 92.05 58.6 97 68 88.2 82 77.75 77.45Z" fill="#181c22" stroke="#87909a" stroke-width="1"/><path d="M37 61 47 54M75 64 85 60M56 80 64 77" stroke="#fff" stroke-opacity=".65" stroke-width="1.4"/><path d="M24 40.5L24.6 42.4 26.5 43 24.6 43.6 24 45.5 23.4 43.6 21.5 43 23.4 42.4Z" fill="#87909a" opacity=".85"/><path d="M103 35.8L103.528 37.472 105.2 38 103.528 38.528 103 40.2 102.472 38.528 100.8 38 102.472 37.472Z" fill="#87909a" opacity=".85"/><path d="M94 55.3L94.408 56.592 95.7 57 94.408 57.408 94 58.7 93.592 57.408 92.3 57 93.592 56.592Z" fill="#fff" opacity=".85"/><path d="M27 99H101" stroke="#87909a" stroke-opacity=".42" stroke-width="1.1"/><circle cx="20" cy="83" r="1.3" fill="#87909a" opacity=".75"/><circle cx="108" cy="75" r="1.3" fill="#87909a" opacity=".75"/></svg>

@@ -1,0 +1,18 @@
+
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-labelledby="omega-gypsum-title omega-gypsum-desc" data-omega-icon-kind="resource" data-omega-icon-id="gypsum">
+<title id="omega-gypsum-title">Gypsum</title><desc id="omega-gypsum-desc">Gypsum resource icon with material-specific colour and dimensional vector illustration.</desc>
+<defs>
+<linearGradient id="omega-gypsum-bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#24394c"/><stop offset=".5" stop-color="#132536"/><stop offset="1" stop-color="#08121d"/></linearGradient>
+<linearGradient id="omega-gypsum-metal" x1="0" y1="0" x2=".9" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset=".32" stop-color="#e9dfc8"/><stop offset=".7" stop-color="#9b8b70"/><stop offset="1" stop-color="#141b24"/></linearGradient>
+<linearGradient id="omega-gypsum-top" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffffff" stop-opacity=".9"/><stop offset=".22" stop-color="#ffffff"/><stop offset="1" stop-color="#e9dfc8"/></linearGradient>
+<linearGradient id="omega-gypsum-side" x1="0" y1="0" x2="1" y2=".7"><stop offset="0" stop-color="#e9dfc8"/><stop offset="1" stop-color="#9b8b70"/></linearGradient>
+<linearGradient id="omega-gypsum-floor" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#41576b" stop-opacity=".85"/><stop offset="1" stop-color="#172534" stop-opacity=".25"/></linearGradient>
+<filter id="omega-gypsum-shadow" x="-40%" y="-40%" width="180%" height="200%"><feGaussianBlur stdDeviation="3.1"/></filter>
+</defs>
+<rect x="4.5" y="4.5" width="119" height="119" rx="21" fill="url(#omega-gypsum-bg)" stroke="#6b8297" stroke-opacity=".55" stroke-width="1"/>
+<path d="M16 28V18a3 3 0 0 1 3-3h13M96 15h10a6 6 0 0 1 6 6v8M15 93v14a5 5 0 0 0 5 5h12M97 112h9a7 7 0 0 0 7-7V94" fill="none" stroke="#ffffff" stroke-opacity=".65" stroke-width="1.4"/>
+<path d="M15 34H113M15 95H113" stroke="#a5bac8" stroke-opacity=".11"/>
+<ellipse cx="64" cy="101" rx="43" ry="8.8" fill="#02070d" opacity=".7" filter="url(#omega-gypsum-shadow)"/>
+<ellipse cx="64" cy="98.5" rx="41" ry="7.3" fill="url(#omega-gypsum-floor)" stroke="#75889a" stroke-opacity=".38"/>
+<ellipse cx="64" cy="97.5" rx="32" ry="4.1" fill="#030a10" opacity=".52"/>
+<path d="M25 85 37 69 49 73 59 56 72 68 83 64 102 85 94 92H31Z" fill="url(#omega-gypsum-metal)" stroke="#9b8b70" stroke-width="1"/><path d="M22 67 28.6 45 37.6 48 46 64 39.4 73.05 26.2 71.35Z" fill="#e9dfc8" stroke="#9b8b70" stroke-width="1.1" stroke-linejoin="round"/><path d="M33 75 41.8 59 53.8 62 65 72 56.2 77.15 38.6 76.05Z" fill="#ffffff" stroke="#9b8b70" stroke-width="1.1" stroke-linejoin="round"/><path d="M52 83 58.6 64 67.6 67 76 80 69.4 87.1 56.2 85.7Z" fill="#e9dfc8" stroke="#9b8b70" stroke-width="1.1" stroke-linejoin="round"/><path d="M63 67 71.8 46 83.8 49 95 64 86.2 72.4 68.6 70.8Z" fill="#ffffff" stroke="#9b8b70" stroke-width="1.1" stroke-linejoin="round"/><path d="M82 75 88.6 53 97.6 56 106 72 99.4 81.05 86.2 79.35Z" fill="#e9dfc8" stroke="#9b8b70" stroke-width="1.1" stroke-linejoin="round"/><path d="M37 62 44 57M76 69 82 67" stroke="#fff" stroke-opacity=".7" stroke-width="1.6"/><path d="M24 40.5L24.6 42.4 26.5 43 24.6 43.6 24 45.5 23.4 43.6 21.5 43 23.4 42.4Z" fill="#ffffff" opacity=".85"/><path d="M103 35.8L103.528 37.472 105.2 38 103.528 38.528 103 40.2 102.472 38.528 100.8 38 102.472 37.472Z" fill="#ffffff" opacity=".85"/><path d="M94 55.3L94.408 56.592 95.7 57 94.408 57.408 94 58.7 93.592 57.408 92.3 57 93.592 56.592Z" fill="#fff" opacity=".85"/><path d="M27 99H101" stroke="#ffffff" stroke-opacity=".42" stroke-width="1.1"/><circle cx="20" cy="83" r="1.3" fill="#ffffff" opacity=".75"/><circle cx="108" cy="75" r="1.3" fill="#ffffff" opacity=".75"/></svg>

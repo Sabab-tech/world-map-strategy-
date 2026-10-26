@@ -1,0 +1,18 @@
+
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-labelledby="omega-magnesite-title omega-magnesite-desc" data-omega-icon-kind="resource" data-omega-icon-id="magnesite">
+<title id="omega-magnesite-title">Magnesite</title><desc id="omega-magnesite-desc">Magnesite resource icon with material-specific colour and dimensional vector illustration.</desc>
+<defs>
+<linearGradient id="omega-magnesite-bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#24394c"/><stop offset=".5" stop-color="#132536"/><stop offset="1" stop-color="#08121d"/></linearGradient>
+<linearGradient id="omega-magnesite-metal" x1="0" y1="0" x2=".9" y2="1"><stop offset="0" stop-color="#fff9ee"/><stop offset=".32" stop-color="#d9d0c2"/><stop offset=".7" stop-color="#938777"/><stop offset="1" stop-color="#141b24"/></linearGradient>
+<linearGradient id="omega-magnesite-top" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffffff" stop-opacity=".9"/><stop offset=".22" stop-color="#fff9ee"/><stop offset="1" stop-color="#d9d0c2"/></linearGradient>
+<linearGradient id="omega-magnesite-side" x1="0" y1="0" x2="1" y2=".7"><stop offset="0" stop-color="#d9d0c2"/><stop offset="1" stop-color="#938777"/></linearGradient>
+<linearGradient id="omega-magnesite-floor" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#41576b" stop-opacity=".85"/><stop offset="1" stop-color="#172534" stop-opacity=".25"/></linearGradient>
+<filter id="omega-magnesite-shadow" x="-40%" y="-40%" width="180%" height="200%"><feGaussianBlur stdDeviation="3.1"/></filter>
+</defs>
+<rect x="4.5" y="4.5" width="119" height="119" rx="21" fill="url(#omega-magnesite-bg)" stroke="#6b8297" stroke-opacity=".55" stroke-width="1"/>
+<path d="M16 28V18a3 3 0 0 1 3-3h13M96 15h10a6 6 0 0 1 6 6v8M15 93v14a5 5 0 0 0 5 5h12M97 112h9a7 7 0 0 0 7-7V94" fill="none" stroke="#fff9ee" stroke-opacity=".65" stroke-width="1.4"/>
+<path d="M15 34H113M15 95H113" stroke="#a5bac8" stroke-opacity=".11"/>
+<ellipse cx="64" cy="101" rx="43" ry="8.8" fill="#02070d" opacity=".7" filter="url(#omega-magnesite-shadow)"/>
+<ellipse cx="64" cy="98.5" rx="41" ry="7.3" fill="url(#omega-magnesite-floor)" stroke="#75889a" stroke-opacity=".38"/>
+<ellipse cx="64" cy="97.5" rx="32" ry="4.1" fill="#030a10" opacity=".52"/>
+<path d="M28 60 48 48 91 53 103 67 91 86 42 89 26 74Z" fill="url(#omega-magnesite-top)" stroke="#938777" stroke-width="1.3" stroke-linejoin="round"/><path d="M26 74 42 89 91 86 103 67 100 92 44 98Z" fill="url(#omega-magnesite-metal)" stroke="#938777" stroke-width="1.1"/><path d="M42 89 44 98 26 82Z" fill="#938777" opacity=".85"/><path d="M24 40.5L24.6 42.4 26.5 43 24.6 43.6 24 45.5 23.4 43.6 21.5 43 23.4 42.4Z" fill="#fff9ee" opacity=".85"/><path d="M103 35.8L103.528 37.472 105.2 38 103.528 38.528 103 40.2 102.472 38.528 100.8 38 102.472 37.472Z" fill="#fff9ee" opacity=".85"/><path d="M94 55.3L94.408 56.592 95.7 57 94.408 57.408 94 58.7 93.592 57.408 92.3 57 93.592 56.592Z" fill="#fff" opacity=".85"/><path d="M27 99H101" stroke="#fff9ee" stroke-opacity=".42" stroke-width="1.1"/><circle cx="20" cy="83" r="1.3" fill="#fff9ee" opacity=".75"/><circle cx="108" cy="75" r="1.3" fill="#fff9ee" opacity=".75"/></svg>

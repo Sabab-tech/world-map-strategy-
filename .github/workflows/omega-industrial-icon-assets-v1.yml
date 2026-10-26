@@ -1,0 +1,31 @@
+name: OMEGA Industrial SVG Icon Assets
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/omega-industrial-icon-assets-v1.yml"
+      - "assets/omega-industrial-icons-v1/**"
+      - "test/omega_industrial_icon_assets_v1.test.mjs"
+      - "resource_industrial_catalog_v1.json"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/omega-industrial-icon-assets-v1.yml"
+      - "assets/omega-industrial-icons-v1/**"
+      - "test/omega_industrial_icon_assets_v1.test.mjs"
+      - "resource_industrial_catalog_v1.json"
+permissions:
+  contents: read
+concurrency:
+  group: omega-industrial-icon-assets-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify-svg-library:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Verify catalog coverage, SVG accessibility, offline references and unique scenes
+        run: node --test test/omega_industrial_icon_assets_v1.test.mjs
