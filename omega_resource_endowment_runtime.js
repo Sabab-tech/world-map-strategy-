@@ -2507,7 +2507,7 @@ function batchFromExtraction(x,record){
       ?(completionRecord.reserve||completionRecord.quantitative?.reserve||null):null;
     const currentReserve=sourceQuantitative.reserve&&typeof sourceQuantitative.reserve==='object'?sourceQuantitative.reserve:{};
     const currentReserveQuantity=mineplayMetricNumber(currentReserve,'quantity');
-    const currentReserveUnit=mineplayUsableUnit(currentReserve.unit,profile?.reserveUnit||'TONNES');
+    const currentReserveUnit=mineplayUsableUnit(currentReserve.unit,MINEPLAY_DEFAULT_PROFILE_V1[resourceId]?.reserveUnit||'TONNES');
     const currentReserveUsable=mineplayAuthorityAllowsValue(currentReserve,'quantity')&&
       mineplayQuantityUnitCompatible(resourceId,currentReserveQuantity,currentReserveUnit,currentReserve);
     if(completionReserve&&String(completionReserve.status||'').toUpperCase()==='SIMULATED'&&
