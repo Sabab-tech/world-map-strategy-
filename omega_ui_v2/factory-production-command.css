@@ -1355,3 +1355,164 @@
   .omega-v2-industry--factory-home .fp-card,
   .omega-v2-industry--factory-home .fp-card .omega-v2-factory-button { animation:none!important;transition:none!important; }
 }
+
+
+/* Final stacking and legacy-WebView reset:
+   Chromium versions without cqw keep the established flex-card layout instead
+   of applying partial reference geometry. */
+@supports (width: 1cqw) and (aspect-ratio: 1672 / 941) {
+  .omega-v2-industry--factory-home .fp-card {
+    border:.35cqw solid transparent;
+    background:
+      linear-gradient(135deg,rgba(255,255,255,.055),transparent 24% 78%,rgba(255,255,255,.025)) padding-box,
+      linear-gradient(135deg,#b4bec8,#4b5764 20%,#cfd8df 36%,#3b4551 54%,#a1adb8 74%,#3a4450) border-box;
+    box-shadow:inset 0 0 0 .22cqw var(--fp-c2),inset 0 0 1.2cqw var(--fp-cg);
+  }
+  .omega-v2-industry--factory-home .fp-card::before { display:none; }
+  .omega-v2-industry--factory-home .fp-card::after {
+    z-index:1;
+    inset:.9cqw;
+    border:.1cqw solid var(--fp-c);
+    border-radius:.25cqw;
+    box-shadow:inset 0 0 .5cqw var(--fp-cg);
+  }
+  .omega-v2-industry--factory-home .fp-card .omega-v2-factory-title strong { font-size:1.35cqw; }
+  .omega-v2-industry--factory-home .fp-card .omega-v2-factory-title small { font-size:.76cqw; }
+  .omega-v2-industry--factory-home .fp-card .omega-v2-factory-status-plate strong { font-size:1.35cqw; }
+  .omega-v2-industry--factory-home .fp-top-identity span { font-size:.7cqw; }
+  .omega-v2-industry--factory-home .fp-top-identity strong { font-size:1.08cqw; }
+  .omega-v2-industry--factory-home .fp-top-identity small { font-size:.62cqw; }
+  .omega-v2-industry--factory-home .fp-tabs .omega-v2-button { font-size:.82cqw; }
+}
+@supports not (width: 1cqw) {
+  .omega-v2-industry--factory-home .fp-stage {
+    width:100%;
+    min-height:calc(100vh - 104px);
+    height:auto;
+    padding:8px;
+    aspect-ratio:auto;
+  }
+  .omega-v2-industry--factory-home .fp-top {
+    position:relative;
+    left:auto;right:auto;top:auto;
+    display:flex;
+    flex-wrap:wrap;
+    height:auto;
+    min-height:48px;
+    margin:0 0 8px;
+    padding:5px 8px;
+  }
+  .omega-v2-industry--factory-home .fp-top-identity { flex:1 1 140px; }
+  .omega-v2-industry--factory-home .fp-tabs { flex-basis:100%;justify-content:flex-start; }
+  .omega-v2-industry--factory-home .fp-stage .omega-v2-factory-deck {
+    position:relative;
+    left:auto;top:auto;
+    width:100%;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:10px;
+    max-height:none;
+    min-height:0;
+    overflow:visible;
+    padding:0 0 18px;
+  }
+  .omega-v2-industry--factory-home .fp-card {
+    display:flex;
+    flex-direction:column;
+    position:relative;
+    height:auto;
+    min-height:330px;
+    padding:7px;
+    overflow:hidden;
+    border:1px solid #8b9ba9;
+    border-radius:8px;
+    clip-path:none;
+    background:linear-gradient(158deg,#152c40,#081a2a 45%,#061321);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 6px 14px rgba(0,0,0,.3);
+    filter:none;
+  }
+  .omega-v2-industry--factory-home .fp-card::before,
+  .omega-v2-industry--factory-home .fp-card::after,
+  .omega-v2-industry--factory-home .fp-badge { display:none; }
+  .omega-v2-industry--factory-home .fp-card .omega-v2-factory-title {
+    display:grid;
+    grid-template-columns:minmax(0,1fr) 12px;
+    position:relative;
+    left:auto;top:auto;
+    width:100%;height:auto;min-height:40px;
+    padding:2px 5px 5px;
+    border:0;border-bottom:1px solid rgba(110,158,191,.3);
+    border-radius:0;clip-path:none;
+    background:transparent;
+    text-align:left;
+    color:#eff8ff;
+  }
+  .omega-v2-industry--factory-home .fp-card .omega-v2-factory-title strong { font-size:clamp(10px,1.1vw,14px); }
+  .omega-v2-industry--factory-home .fp-card .omega-v2-factory-title small { font-size:8px; }
+  .omega-v2-industry--factory-home .fp-card .omega-v2-factory-title-mark { display:block; }
+  .omega-v2-industry--factory-home .fp-card .omega-v2-factory-art {
+    position:relative;left:auto;top:auto;
+    width:100%;height:auto;min-height:105px;max-height:225px;
+    margin:5px 0 4px;padding:4px;
+  }
+  .omega-v2-industry--factory-home .fp-card .omega-v2-factory-ring {
+    left:50%;top:50%;width:min(94%,240px);height:auto;
+    aspect-ratio:1;transform:translate(-50%,-50%);
+    border:2px solid var(--state-color,#5aa9e6);
+    box-shadow:0 0 0 4px rgba(88,127,153,.2),0 0 13px var(--state-halo);
+    mask-image:none;-webkit-mask-image:none;
+  }
+  .omega-v2-industry--factory-home .fp-card .omega-v2-factory-artwell {
+    position:relative;inset:auto;
+    width:min(90%,216px);height:auto;aspect-ratio:1;
+    padding:5px;
+  }
+  .omega-v2-industry--factory-home .fp-card .omega-v2-factory-status-plate {
+    display:grid;
+    grid-template-columns:10px minmax(0,1fr);
+    position:relative;left:auto;right:auto;top:auto;
+    min-height:52px;margin:0 1px;padding:6px 8px;
+    border:1px solid rgba(118,158,187,.45);
+    border-radius:6px;
+    background:linear-gradient(180deg,rgba(3,14,25,.96),rgba(9,28,43,.97));
+  }
+  .omega-v2-industry--factory-home .fp-card .omega-v2-factory-status-plate strong {
+    position:relative;left:auto;top:auto;
+    grid-column:2;grid-row:1;
+    height:auto;min-height:26px;padding:2px 4px;
+    border:0;clip-path:none;background:transparent;
+    color:#f4faff;font-size:10px;
+  }
+  .omega-v2-industry--factory-home .fp-card .omega-v2-factory-status-led {
+    position:relative;left:auto;top:auto;
+    grid-column:1;grid-row:1 / span 3;
+    width:9px;height:9px;
+  }
+  .omega-v2-industry--factory-home .fp-card .omega-v2-factory-output {
+    grid-column:2;grid-row:2;
+    min-height:24px;height:auto;
+    padding:2px 4px;
+    font-size:14px;
+  }
+  .omega-v2-industry--factory-home .fp-card .omega-v2-factory-output-product,
+  .omega-v2-industry--factory-home .fp-card .omega-v2-factory-reason { grid-column:2;font-size:8px; }
+  .omega-v2-industry--factory-home .fp-card .omega-v2-factory-count {
+    position:relative;left:auto;right:auto;top:auto;
+    height:auto;min-height:24px;margin:4px 0 5px;
+    padding:2px 5px;font-size:10px;
+  }
+  .omega-v2-industry--factory-home .fp-card .omega-v2-factory-count strong { font-size:12px; }
+  .omega-v2-industry--factory-home .fp-card .omega-v2-factory-actions {
+    position:relative;left:auto;right:auto;top:auto;
+    display:grid;grid-template-columns:1fr 1fr;gap:6px;
+    margin-top:auto;
+  }
+  .omega-v2-industry--factory-home .fp-card .omega-v2-factory-button { min-height:34px;height:auto;padding:5px 3px;font-size:10px; }
+  .omega-v2-industry--factory-home .fp-stage .fp-deck { display:none; }
+}
+@media (max-width:680px) and (orientation:portrait) {
+  .omega-v2-industry--factory-home .fp-stage .omega-v2-factory-deck {
+    grid-template-columns:minmax(0,1fr);
+  }
+  .omega-v2-industry--factory-home .fp-card { min-height:350px; }
+  .omega-v2-industry--factory-home .fp-card .omega-v2-factory-art { min-height:170px; }
+}
