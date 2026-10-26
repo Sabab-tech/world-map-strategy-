@@ -138,10 +138,13 @@ test('Mine Production Ministry renders country-scoped command actions without fa
     const root = {
       classList: { add() {} },
       addEventListener() {},
-      contains() { return true; }
+      contains() { return true; },
+      querySelector() { return null; },
+      querySelectorAll() { return []; }
     };
     const result = globalThis.OmegaUIV2ResourceMinistry.render(root, {
       countryId: 'BGD',
+      tab: 'mines',
       sites: [{
         siteId: 'BGD-COAL-01', countryId: 'BGD', resourceId: 'coal',
         siteName: 'Bangladesh Coal Site',
