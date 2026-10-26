@@ -14,7 +14,13 @@
   const active=m=>{
     const c=country();if(!c||!m)return null;
     const canonical=canonicalRegistry();
-    if(canonical){try{const state=canonical.getActiveMinister(c,m);return state?Object.assign({},state,{profile:state.staticProfile||{},runtime:state.runtimeState||{},learning:state.learningState||{}}):null}catch(_){return null}}
+    if(canonical){try{
+      // Ministry lists render many rows at once. Prefer a lightweight active assignment
+      // summary so opening a screen does not clone each minister's memory and learning logs.
+      const state=typeof canonical.getActiveMinisterSummary==='function'
+        ?canonical.getActiveMinisterSummary(c,m):canonical.getActiveMinister(c,m);
+      return state?Object.assign({},state,{profile:state.staticProfile||{},runtime:state.runtimeState||{},learning:state.learningState||{}}):null;
+    }catch(_){return null}}
     const legacy=legacyRegistry();
     try{return legacy&&typeof legacy.getActiveMinister==='function'?legacy.getActiveMinister(c,m):null}catch(_){return null}
   };
