@@ -422,6 +422,16 @@
     var raw = factory.raw && typeof factory.raw === 'object' ? factory.raw : {};
     var health = raw.productionHealth && typeof raw.productionHealth === 'object' ? raw.productionHealth : {};
     var run = factory.lastRun && typeof factory.lastRun === 'object' ? factory.lastRun : {};
+    var earlyHealthStatus = String(health.status || factory.healthStatus || '').trim().toUpperCase();
+    var earlyAssetStatus = String(raw.status || factory.status || '').trim().toUpperCase();
+    var earlyCycleStatus = String(factory.cycle && factory.cycle.status || '').trim().toUpperCase();
+    var earlyReason = String(health.reason || factory.healthReason || '').trim().toUpperCase();
+    if (/^(STOPPED|BLOCKED|FAILED|CLOSED|DECOMMISSIONED|DESTROYED|OFFLINE|DISABLED)$/.test(earlyHealthStatus) ||
+        /^(STOPPED|BLOCKED|FAILED|CLOSED|DECOMMISSIONED|DESTROYED|OFFLINE|DISABLED)$/.test(earlyAssetStatus) ||
+        /^(PAUSED|CANCELLED|BLOCKED|FAILED|STOPPED)$/.test(earlyCycleStatus) ||
+        /FACTORY_(INPUT|UTILITY|POWER|WORKFORCE|OPERATION).*SHORTAGE|FACTORY_DECOMMISSIONED_BY_PLAYER/.test(earlyReason)) {
+      return { value: 0, unit: String(health.outputUnit || raw.outputUnit || raw.productionUnit || ''), product: String(health.outputResourceId || raw.outputResourceId || ''), basis: 'Production stopped' };
+    }
     var candidates = [
       { value: health.actualOutputPerDay, unit: health.outputUnit || raw.outputUnit, product: health.outputResourceId || raw.outputResourceId },
       { value: health.outputPerDay, unit: health.outputUnit || raw.outputUnit, product: health.outputResourceId || raw.outputResourceId },
@@ -507,6 +517,14 @@
     return { key: 'unknown', label: 'Output not recorded', reason: reason };
   }
 
+  function factoryTypeLabel(factory) {
+    var catalog = safeCatalog() || {};
+    var type = normalizeFactoryType(factory && factory.type, catalog) || String(factory && factory.type || '').toUpperCase();
+    var profiles = catalog.factoryProfiles && typeof catalog.factoryProfiles === 'object' ? catalog.factoryProfiles : {};
+    var profile = profiles[type] || profiles[String(factory && factory.type || '').toUpperCase()] || {};
+    return String(profile.name || factory && factory.type || 'Factory');
+  }
+
   function factoryTypeOwnedCount(factory, model) {
     var catalog = safeCatalog() || {};
     var type = normalizeFactoryType(factory && factory.type, catalog) || String(factory && factory.type || '').toUpperCase();
@@ -538,7 +556,7 @@
       '" data-state="' + status.key + '" data-selected="' + (selected ? 'true' : 'false') +
       '" data-search="' + esc((factory.name + ' ' + id + ' ' + factory.type + ' ' + factory.recipeId).toLowerCase()) + '">' +
       '<button type="button" class="omega-v2-factory-title" data-omega-v2-factory-select="' + esc(id) + '" aria-pressed="' + (selected ? 'true' : 'false') + '" aria-label="Select ' + esc(factory.name) + '">' +
-        '<strong>' + esc(factory.name) + '</strong><small>' + esc(factory.type) + '</small><span class="omega-v2-factory-title-mark" aria-hidden="true"></span>' +
+        '<strong>' + esc(factory.name) + '</strong><small>' + esc(factoryTypeLabel(factory)) + '</small><span class="omega-v2-factory-title-mark" aria-hidden="true"></span>' +
       '</button>' +
       '<button type="button" class="omega-v2-factory-art" data-omega-v2-factory-select="' + esc(id) + '" aria-pressed="' + (selected ? 'true' : 'false') + '" aria-label="Select ' + esc(factory.name) + ' factory">' +
         '<span class="omega-v2-factory-ring" aria-hidden="true"></span><span class="omega-v2-factory-artwell">' + factorySvgMarkup(factory) + '</span>' +
