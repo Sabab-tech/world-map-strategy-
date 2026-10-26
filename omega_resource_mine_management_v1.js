@@ -221,18 +221,29 @@ function countrySelect(){return '<select class="omm-country" data-omm-country ar
 function topCards(country){
  const rs=playerState(country),projects=playerProjects(country),assets=assetRows(country),flows=Array.isArray(rs.industrialNetwork?.siteFlowLedger)?rs.industrialNetwork.siteFlowLedger:[];
  const networkState=rs.industrialNetwork||{},receipts=flows.reduce((n,f)=>n+(Array.isArray(f.treasurySettlements)?f.treasurySettlements.filter(x=>/SETTLED|POSTED/.test(String(x.status||''))).length:0),0);
- const blocked=flows.filter(f=>/BLOCKED|AWAITING_ROUTE/.test(String(f.status||''))).length;
+ const blocked=flows.filter(f=>/BLOCKED|AWAITING_ROUTE|AWAITING_CAPACITY|AWAITING_INPUTS|EXTRACTED_AWAITING_FACTORY|FACTORY_INPUT_SHORTAGE/.test(String(f.status||''))).length;
  const raw=rs.warehouse?.availableByResource||{},processed=rs.processedWarehouse?.availableByResource||{};
- const rawTotal=Object.values(raw).reduce((n,v)=>n+(num(v)||0),0),processedTotal=Object.values(processed).reduce((n,v)=>n+(num(v)||0),0);
+ function unitFor(id){
+  const catalog=g.OmegaResourceIndustrialCatalogData||g.Omega?.ResourceIndustrialCatalogData||{};
+  const rule=catalog.resourceRules&&catalog.resourceRules[id];
+  return unitLabel(rule&&(rule.unit||rule.baseUnit||rule.outputUnit)||'');
+ }
+ function stockPreview(source){
+  return Object.entries(source).filter(([,value])=>num(value)!==null&&num(value)>0).slice(0,4).map(([id,value])=>
+   '<div class="omm-stock-preview-row"><span>'+esc(label(id))+'</span><strong>'+formatNum(value,2)+(unitFor(id)?' '+esc(unitFor(id)):'')+'</strong></div>').join('')||
+   '<div class="omm-muted">No recorded stock</div>';
+ }
  return '<div class="omm-grid">'+
-  kpi('Commissioned player mines',assets.filter(a=>String(a.status).toUpperCase()==='OPERATIONAL').length)+
-  kpi('Mine projects',projects.filter(p=>p.projectType==='MINE_CONSTRUCTION'&&p.status==='UNDER_CONSTRUCTION').length)+
-  kpi('Raw warehouse stock',formatNum(rawTotal,2)+' t')+
-  kpi('Processed stock',formatNum(processedTotal,2)+' t')+
-  '</div><div class="omm-lines"><div class="omm-line"><span class="omm-muted">Site-flow ledger</span><br><strong>'+flows.length+'</strong> tracked batches / flows</div>'+
-  '<div class="omm-line"><span class="omm-muted">Treasury settlement records</span><br><strong>'+receipts+'</strong> receipt / settlement events</div>'+
-  '<div class="omm-line"><span class="omm-muted">Currently blocked flows</span><br><strong class="'+(blocked?'omm-short':'omm-ok')+'">'+blocked+'</strong></div>'+
-  '<div class="omm-line"><span class="omm-muted">Shipment records</span><br><strong>'+(Array.isArray(networkState.shipments)?networkState.shipments.length:0)+'</strong></div></div>';
+  kpi('Operating mines',assets.filter(a=>/OPERATIONAL|ACTIVE|COMMISSIONED|PRODUCING/.test(String(a.status||'').toUpperCase())&&!/DECOMMISSIONED|DESTROYED|STOPPED|INACTIVE/.test(String(a.status||'').toUpperCase())).length)+
+  kpi('Projects in progress',projects.filter(p=>p.projectType==='MINE_CONSTRUCTION'&&p.status==='UNDER_CONSTRUCTION').length)+
+  kpi('Raw stock types',Object.keys(raw).length)+
+  kpi('Processed stock types',Object.keys(processed).length)+
+  '</div><div class="omm-lines"><div class="omm-line"><h4>Raw warehouse</h4>'+stockPreview(raw)+'</div>'+
+  '<div class="omm-line"><h4>Processed inventory</h4>'+stockPreview(processed)+'</div></div>'+
+  '<div class="omm-lines"><div class="omm-line"><span class="omm-muted">Production flows</span><br><strong>'+flows.length+'</strong></div>'+
+  '<div class="omm-line"><span class="omm-muted">Recorded income events</span><br><strong>'+receipts+'</strong></div>'+
+  '<div class="omm-line"><span class="omm-muted">Blocked supply</span><br><strong class="'+(blocked?'omm-short':'omm-ok')+'">'+blocked+'</strong></div>'+
+  '<div class="omm-line"><span class="omm-muted">Shipments</span><br><strong>'+(Array.isArray(networkState.shipments)?networkState.shipments.length:0)+'</strong></div></div>';
 }
 function kpi(name,value){return '<div class="omm-kpi"><span>'+esc(name)+'</span><strong>'+esc(value)+'</strong></div>';}
 function materialMarkup(quote){
@@ -321,7 +332,7 @@ function stationDirectory(country){
 }
 function mineDirectory(country){
  const rows=sitesFor(country);
- if(!rows.length)return '<div class="omm-empty">No valid mine-site references loaded for '+esc(country)+'. Check the canonical site loader and supplemental dataset diagnostic.</div>';
+ if(!rows.length)return '<div class="omm-empty">Mine sites are not available for this country right now.</div>';
  const built=new Set(assetRows(country).filter(a=>String(a.status).toUpperCase()==='OPERATIONAL').map(a=>String(a.siteId)));
  return '<div class="omm-section"><h3>National mine-site portfolio</h3><p class="omm-sub">Explore this country’s mines, fields and extraction sites.</p></div>'+
  '<div class="omm-site-grid">'+rows.map(site=>siteCard(site,country,'mines')).join('')+'</div>'+stationDirectory(country);
