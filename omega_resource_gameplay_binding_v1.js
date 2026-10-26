@@ -698,7 +698,7 @@ async function init(){
  g.__OMEGA_RESOURCE_SITE_BINDING_INIT__=true;
  mount();
  try{
-  const urls=['resources.json','resources_2.json',CATALOG_URL,MASTER_URL,EXPANSION_URL,MINEPLAY_BATCH_URL,MINEPLAY_EXTRA_BATCH_URL,MINEPLAY_CRITICAL_BATCH_URL,...LEGACY_GAMEPLAY_URLS];
+  const urls=['resources.json','resources_2.json','resource_type_extensions_v1.json',CATALOG_URL,MASTER_URL,EXPANSION_URL,MINEPLAY_BATCH_URL,MINEPLAY_EXTRA_BATCH_URL,MINEPLAY_CRITICAL_BATCH_URL,...LEGACY_GAMEPLAY_URLS];
   const fetched=await Promise.all(urls.map(async url=>{
    try{const response=await fetch(url,{cache:'no-store'});return response.ok?{url,response}:null;}
    catch(_){return null;}
@@ -711,7 +711,7 @@ async function init(){
    await yieldResourceWorkToUi();
   }
   const getData=url=>sources.find(x=>x.url===url)?.data||null;
-  const catalog=getData(CATALOG_URL),master=getData(MASTER_URL),expansion=getData(EXPANSION_URL),mineplay=getData(MINEPLAY_BATCH_URL),mineplayExtra=getData(MINEPLAY_EXTRA_BATCH_URL),mineplayCritical=getData(MINEPLAY_CRITICAL_BATCH_URL);
+  const catalog=getData(CATALOG_URL),master=getData(MASTER_URL),expansion=getData(EXPANSION_URL),mineplay=getData(MINEPLAY_BATCH_URL),mineplayExtra=getData(MINEPLAY_EXTRA_BATCH_URL),mineplayCritical=getData(MINEPLAY_CRITICAL_BATCH_URL),typeExtensions=getData('resource_type_extensions_v1.json');
   const mineplayRows=[...(mineplay?.datasetId==='OMEGA_RESOURCE_SITE_COUNTRY_MINEPLAY_BATCH_V1'&&Array.isArray(mineplay.records)?mineplay.records:[]),...(mineplayExtra?.datasetId==='OMEGA_RESOURCE_SITE_COUNTRY_MINEPLAY_BATCH_V1'&&Array.isArray(mineplayExtra.records)?mineplayExtra.records:[]),...(mineplayCritical?.datasetId==='OMEGA_RESOURCE_SITE_COUNTRY_MINEPLAY_BATCH_V1'&&Array.isArray(mineplayCritical.records)?mineplayCritical.records:[])];
   const uniqueMineplayRows=Array.from(new Map(mineplayRows.filter(row=>row?.siteId).map(row=>[String(row.siteId),row])).values());
   const combinedMineplay=uniqueMineplayRows.length?{...(mineplay||mineplayExtra),batchId:'COUNTRY_MINEPLAY_COMBINED_20261024',recordCount:uniqueMineplayRows.length,countryCount:new Set(uniqueMineplayRows.map(row=>String(row?.countryId||row?.identity?.countryIso3||'').toUpperCase()).filter(Boolean)).size,records:uniqueMineplayRows}:null;
@@ -806,6 +806,7 @@ async function init(){
   const mapApi=g.Game?.Map,resourceState=mapApi?.resourceState,resourceCatalog=mapApi?.resourceCatalog;
   if(Array.isArray(resourceCatalog)){
    const known=new Set(resourceCatalog.map(r=>String(r.id||'').toLowerCase()));
+   const extendedTypes={...(typeExtensions?.resource_types||{}),...(typeExtensions?.GSRSK_Master_Resource_Data_v14?.resource_types||{})};
    const knownSiteResourceIds=new Set();
    for(let index=0;index<sites.length;index++){
     if(index>0&&index%500===0)await yieldResourceWorkToUi();
@@ -814,7 +815,8 @@ async function init(){
     if(!resourceId||knownSiteResourceIds.has(resourceId))continue;
     knownSiteResourceIds.add(resourceId);
     if(known.has(resourceId))continue;
-    resourceCatalog.push({id:resourceId,name:resourceId.replace(/[_-]+/g,' ').replace(/\b\w/g,c=>c.toUpperCase()),icon:resourceId.split(/[_-]+/).map(part=>part.slice(0,1)).join('').toUpperCase().slice(0,3)||'RS',color:'#76b7d8'});
+    const meta=extendedTypes[resourceId]||{};
+    resourceCatalog.push({id:resourceId,name:meta.name||resourceId.replace(/[_-]+/g,' ').replace(/\b\w/g,c=>c.toUpperCase()),icon:meta.icon||resourceId.split(/[_-]+/).map(part=>part.slice(0,1)).join('').toUpperCase().slice(0,3)||'RS',color:meta.color||'#76b7d8'});
     known.add(resourceId);
    }
   }
