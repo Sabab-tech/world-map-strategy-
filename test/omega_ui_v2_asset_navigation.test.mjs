@@ -87,7 +87,7 @@ test("More command cards use the uploaded local imagery and every action has a d
   const iconManifest = json("assets/omega-industrial-icons-v1/manifest.json");
   assert.match(sw, /omega-offline-atlas-shell-v43/);
   assert.match(sw, /factory-production-command\.css/);
-  assert.match(sw, /industrial-production-line\.webp/);
+  assert.doesNotMatch(sw.slice(sw.indexOf("const CORE_ASSETS"), sw.indexOf("];", sw.indexOf("const CORE_ASSETS"))), /industrial-production-line\.webp/);
   assert.match(sw, /factoryIconManifest\.factories/);
   assert.match(sw, /omega-industrial-icons-v1\/"\s*\+\s*file/);
   assert.ok(iconManifest.factories.length >= 30, "the canonical factory SVG manifest must stay available offline");
