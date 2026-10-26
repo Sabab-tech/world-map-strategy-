@@ -719,6 +719,7 @@
         : '<div class="omega-v2-factory-empty">No commissioned factories are recorded for ' + esc(model.countryId || 'the selected country') + '.</div>';
       root.innerHTML = '<section class="omega-v2-shell omega-v2-industry omega-v2-industry--factory-home">' +
         '<div class="omega-v2-factory-command" aria-label="Factory production control">' +
+        '<img class="omega-v2-factory-backdrop" src="assets/ui-photos/industrial-production-line.webp" alt="" aria-hidden="true" loading="lazy" decoding="async" width="1280" height="720">' +
         (root.__omegaV2IndustryNotice ? '<div class="omega-v2-factory-notice" role="status">' + esc(root.__omegaV2IndustryNotice) + '</div>' : '') +
         compactTabs + '<div class="omega-v2-factory-deck">' + factoryCards + '</div></div></section>';
     } else {
