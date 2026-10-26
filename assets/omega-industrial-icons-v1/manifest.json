@@ -16,7 +16,7 @@
     "totalIconCount": 63,
     "canonicalFactoryTypeCount": 21,
     "canonicalResourceRuleCount": 42,
-    "integratedIntoRuntime": false,
+    "integratedIntoRuntime": true,
     "legacyFactoryIconCount": 39
   },
   "resources": [
