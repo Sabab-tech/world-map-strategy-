@@ -328,32 +328,54 @@ function mineDirectory(country){
 }
 function myMines(country){
  const rs=playerState(country),assets=assetRows(country),projects=playerProjects(country).filter(p=>p.projectType==='MINE_CONSTRUCTION');
- const canonical=sitesFor(country),flow=Array.isArray(rs.industrialNetwork?.siteFlowLedger)?rs.industrialNetwork.siteFlowLedger.slice(-12).reverse():[];
+ const canonical=sitesFor(country),allFlows=Array.isArray(rs.industrialNetwork?.siteFlowLedger)?rs.industrialNetwork.siteFlowLedger:[];
+ const activeAssets=assets.filter(a=>/OPERATIONAL|ACTIVE|COMMISSIONED|PRODUCING/.test(String(a.status||'').toUpperCase())&&
+   !/DECOMMISSIONED|DESTROYED|STOPPED|INACTIVE/.test(String(a.status||'').toUpperCase()));
  let out=topCards(country);
- out+='<div class="omm-section"><h3>My mine assets</h3><p class="omm-sub">Assets commissioned for this country in the active save. Under-construction sites remain projects, not operating mines.</p>';
- if(!assets.length)out+='<div class="omm-empty">No player mine assets commissioned in '+esc(country)+'. Use the Mines section to compare deposits and construction requirements.</div>';
+ out+='<div class="omm-section"><h3>My mine assets</h3><p class="omm-sub">Mines commissioned in this country and their current output.</p>';
+ if(!assets.length)out+='<div class="omm-empty">No commissioned mine assets yet. Open Mines to review locations and construction requirements.</div>';
  else out+='<div class="omm-site-grid">'+assets.slice().reverse().map(a=>{
   const site=canonical.find(x=>siteIdOf(x)===String(a.siteId))||{siteId:a.siteId,siteName:a.siteName,identity:{resourceTypeId:a.resourceId}};
-  return '<article class="omm-card" data-omm-site-card="'+esc(a.siteId)+'"><div class="omm-card-head"><div><h3>'+esc(a.siteName||site.siteName||a.siteId)+'</h3><div class="omm-sub">'+esc(label(a.resourceId))+'</div></div><span class="omm-pill">'+esc(label(a.status))+'</span></div>'+
-  '<div class="omm-lines"><div class="omm-line"><span class="omm-muted">Commissioned</span><br>'+esc(a.commissionedTurn??'—')+'</div><div class="omm-line"><span class="omm-muted">Commissioning</span><br>'+esc(a.commissionedTurn??'—')+'</div><div class="omm-line"><span class="omm-muted">Construction cost</span><br>'+formatMoney(a.constructionCostUsd)+'</div><div class="omm-line"><span class="omm-muted">Staffed workforce</span><br>'+formatNum(a.workersCommitted)+' / '+formatNum(a.workersRequired)+'</div></div>'+
-  '<div class="omm-actions"><label for="omm-output-'+esc(a.siteId)+'">Ore quantity</label><input class="omm-input" id="omm-output-'+esc(a.siteId)+'" data-omm-quantity="'+esc(a.siteId)+'" type="number" min="1" step="1" value="1000" aria-label="Extraction quantity for '+esc(a.siteName||a.siteId)+'"><button data-omm-action="focus-site" data-site-id="'+esc(a.siteId)+'">'+SVG_MOUNTAIN+' View site</button><button data-omm-action="run-mine" data-site-id="'+esc(a.siteId)+'" data-resource-id="'+esc(a.resourceId)+'">Run extraction pipeline</button></div></article>';
+  const status=String(a.status||'').toUpperCase();
+  const active=/OPERATIONAL|ACTIVE|COMMISSIONED|PRODUCING/.test(status)&&!/DECOMMISSIONED|DESTROYED|STOPPED|INACTIVE/.test(status);
+  const rows=allFlows.filter(f=>String(f.siteId||'')===String(a.siteId)&&Number(f.extractionTurn??f.turn??f.lastUpdatedTurn)===turn());
+  const output=rows.reduce((sum,f)=>sum+Math.max(0,num(f.quantity)||0),0);
+  const rid=String(a.resourceId||resourceOf(site)),raw=num(rs.warehouse?.availableByResource?.[rid]),processed=num(rs.processedWarehouse?.availableByResource?.[rid]);
+  return '<article class="omm-card omm-mine-card" data-omm-site-card="'+esc(a.siteId)+'"><div class="omm-card-head"><div><h3>'+esc(a.siteName||site.siteName||resourceLabel(site))+'</h3><div class="omm-sub">'+esc(resourceLabel(rid))+'</div></div><span class="omm-pill">'+esc(label(status))+'</span></div>'+
+   '<div class="omm-lines"><div class="omm-line"><span class="omm-muted">Daily output</span><br>'+formatNum(output,2)+(output?' '+esc(unitLabel(rows[0]?.unit||'')):'')+'</div>'+
+   '<div class="omm-line"><span class="omm-muted">Commissioned</span><br>'+esc(a.commissionedTurn??'—')+'</div>'+
+   '<div class="omm-line"><span class="omm-muted">Raw stock</span><br>'+esc(raw===null?'—':formatNum(raw,2))+'</div>'+
+   '<div class="omm-line"><span class="omm-muted">Processed stock</span><br>'+esc(processed===null?'—':formatNum(processed,2))+'</div>'+
+   '<div class="omm-line"><span class="omm-muted">Workforce</span><br>'+formatNum(a.workersCommitted)+' / '+formatNum(a.workersRequired)+'</div>'+
+   '<div class="omm-line"><span class="omm-muted">Construction cost</span><br>'+formatMoney(a.constructionCostUsd)+'</div></div>'+
+   '<div class="omm-actions"><button data-omm-action="focus-site" data-site-id="'+esc(a.siteId)+'">'+SVG_MOUNTAIN+' View site</button>'+
+   (active?'<button data-omm-action="run-mine" data-site-id="'+esc(a.siteId)+'" data-resource-id="'+esc(rid)+'">Extract</button><button class="omm-danger" data-omm-action="decommission-mine" data-site-id="'+esc(a.siteId)+'" data-resource-id="'+esc(rid)+'">Demolish</button>':'')+
+   '</div></article>';
  }).join('')+'</div>';
- out+='<div class="omm-section"><h3>Mine construction & commissioning</h3>';
- if(!projects.length)out+='<div class="omm-empty">No mine construction projects yet.</div>';
+ out+='<div class="omm-section"><h3>Mine construction</h3>';
+ if(!projects.length)out+='<div class="omm-empty">No mine construction projects are in progress.</div>';
  else out+='<div class="omm-site-grid">'+projects.slice().reverse().map(p=>{
    const pct=Math.max(0,Math.min(100,Number(p.progressPct||0)*100));
-   return '<article class="omm-card"><div class="omm-card-head"><div><h3>'+esc(p.siteName||p.siteId)+'</h3><div class="omm-sub">'+esc(p.projectId)+'</div></div><span class="omm-pill">'+esc(label(p.status))+'</span></div>'+
-   '<div class="omm-progress"><span style="width:'+pct+'%"></span></div><div class="omm-lines"><div class="omm-line"><span class="omm-muted">Progress</span><br>'+pct.toFixed(1)+'%</div><div class="omm-line"><span class="omm-muted">Build time</span><br>'+formatNum(p.progressDays)+' / '+formatNum(p.durationDays)+' days</div><div class="omm-line"><span class="omm-muted">CAPEX</span><br>'+formatMoney(p.costUsd)+'</div><div class="omm-line"><span class="omm-muted">Construction materials</span><br>'+esc(label(p.constructionMaterialsStatus))+'</div></div>'+
-   '<div class="omm-sub">Commissioned turn: '+esc(p.commissionedTurn??'pending')+'</div></article>';
+   return '<article class="omm-card"><div class="omm-card-head"><div><h3>'+esc(p.siteName||p.siteId)+'</h3><div class="omm-sub">'+esc(resourceLabel(p.resourceId||''))+'</div></div><span class="omm-pill">'+esc(label(p.status))+'</span></div>'+
+   '<div class="omm-progress"><span style="width:'+pct+'%"></span></div><div class="omm-lines"><div class="omm-line"><span class="omm-muted">Progress</span><br>'+pct.toFixed(1)+'%</div>'+
+   '<div class="omm-line"><span class="omm-muted">Build time</span><br>'+formatNum(p.progressDays)+' / '+formatNum(p.durationDays)+' days</div>'+
+   '<div class="omm-line"><span class="omm-muted">Cost</span><br>'+formatMoney(p.costUsd)+'</div>'+
+   '<div class="omm-line"><span class="omm-muted">Materials</span><br>'+esc(label(p.constructionMaterialsStatus))+'</div></div>'+
+   '<div class="omm-sub">Expected completion: '+esc(p.expectedCompletionDate||p.completionDate||'—')+'</div></article>';
  }).join('')+'</div>';
- out+='</div><div class="omm-section"><h3>Extraction → inventory → factory → market / treasury pipeline</h3><p class="omm-sub">Raw goods enter the sovereign raw warehouse; processed output enters finished-goods inventory. Treasury receipts appear only on confirmed fiscal posting or settlement events.</p>';
- if(!flow.length)out+='<div class="omm-empty">No tracked mine flow yet. Start extraction from a commissioned mine to populate the live pipeline ledger.</div>';
- else out+='<div class="omm-table-wrap"><table><thead><tr><th>Site</th><th>Commodity</th><th>Batch</th><th>Latest state</th><th>Factory</th><th>Receipts</th><th>Reason</th></tr></thead><tbody>'+flow.map(f=>'<tr><td>'+esc(f.siteName||f.siteId)+'</td><td>'+esc(f.resourceId)+'</td><td>'+esc(f.batchId||'—')+'</td><td>'+esc(label(f.status))+'</td><td>'+esc(f.factoryId||'—')+'</td><td>'+formatNum((f.treasurySettlements||[]).length)+'</td><td>'+esc(label(f.blockReason||'—'))+'</td></tr>').join('')+'</tbody></table></div>';
+ out+='</div><div class="omm-section"><h3>Production flow</h3>';
+ if(!allFlows.length)out+='<div class="omm-empty">No production flow has been recorded yet.</div>';
+ else out+='<div class="omm-table-wrap"><table><thead><tr><th>Site</th><th>Resource</th><th>Status</th><th>Destination</th><th>Quantity</th></tr></thead><tbody>'+allFlows.slice(-16).reverse().map(f=>{
+  const site=canonical.find(x=>siteIdOf(x)===String(f.siteId||''));
+  return '<tr><td>'+esc(f.siteName||site?.siteName||'Mine')+'</td><td>'+esc(resourceLabel(f.resourceId))+'</td><td>'+esc(label(f.status))+'</td>'+
+   '<td>'+esc(f.factoryName||f.destinationFactoryName||f.destinationWarehouseName||'—')+'</td><td>'+formatNum(f.quantity,2)+' '+esc(unitLabel(f.unit||''))+'</td></tr>';
+ }).join('')+'</tbody></table></div>';
  const raw=rs.warehouse?.availableByResource||{},finished=rs.processedWarehouse?.availableByResource||{};
- out+='<div class="omm-lines"><div class="omm-line"><h4>Raw warehouse</h4>'+Object.entries(raw).slice(0,14).map(([k,v])=>'<div>'+esc(label(k))+': <strong>'+formatNum(v,2)+'</strong></div>').join('')+'</div>'+
- '<div class="omm-line"><h4>Processed inventory</h4>'+Object.entries(finished).slice(0,14).map(([k,v])=>'<div>'+esc(label(k))+': <strong>'+formatNum(v,2)+'</strong></div>').join('')+'</div></div></div>';
+ out+='<div class="omm-lines"><div class="omm-line"><h4>Raw warehouse</h4>'+Object.entries(raw).slice(0,12).map(([k,v])=>'<div>'+esc(resourceLabel(k))+': <strong>'+formatNum(v,2)+'</strong></div>').join('')+'</div>'+
+ '<div class="omm-line"><h4>Processed inventory</h4>'+Object.entries(finished).slice(0,12).map(([k,v])=>'<div>'+esc(resourceLabel(k))+': <strong>'+formatNum(v,2)+'</strong></div>').join('')+'</div></div></div>';
  return out;
 }
+
 function ensureModal(){
  shellStyle();let modal=g.document.getElementById('omega-mine-management-modal');if(modal)return modal;
  modal=g.document.createElement('div');modal.id='omega-mine-management-modal';modal.setAttribute('role','dialog');modal.setAttribute('aria-modal','true');modal.setAttribute('aria-label','Resource Ministry mine management');
