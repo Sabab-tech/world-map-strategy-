@@ -2383,14 +2383,24 @@ function batchFromExtraction(x,record){
     const reserve= suppliedReserve?mineplayMetricNumber(reserveMetric,'quantity'):
       Math.max(1,Math.round(rate*365*400));
     const reserveUnit=String(suppliedReserve?sourceReserveUnit:(profile.reserveUnit||'TONNES'));
-    const annualMetric=mineplayAuthorityAllowsValue(rateMetric,'annual')?mineplayMetricNumber(rateMetric,'annual'):null;
+    const sourceAnnualUnit=mineplayUsableUnit(rateMetric.annualUnit||rateMetric.unit||rateMetric.sourceRateUnit,rateUnit.replace(/_PER_DAY$/,'_PER_YEAR'));
+    const annualMetric=mineplayAuthorityAllowsValue(rateMetric,'annual')&&
+      mineplayQuantityUnitCompatible(resourceId,mineplayMetricNumber(rateMetric,'annual'),sourceAnnualUnit,rateMetric)
+        ?mineplayMetricNumber(rateMetric,'annual'):null;
     const productionStatus=suppliedRate&&rateMetric.status?String(rateMetric.status).toUpperCase():'SIMULATED';
     const annualStatus=annualMetric!==null?(rateMetric.annualStatus||rateMetric.status||'OBSERVED'):'SIMULATED';
     q.production={
       ...rateMetric,rate,annual:annualMetric!==null&&annualMetric>0?annualMetric:Math.round(rate*365*100)/100,
       unit:rateUnit,
-      annualUnit:annualMetric!==null?mineplayUsableUnit(rateMetric.annualUnit||rateMetric.unit||rateMetric.sourceRateUnit,'UNIT_UNKNOWN'):
-        mineplayUsableUnit(rateMetric.annualUnit,rateUnit.replace(/_PER_DAY$/,'_PER_YEAR')),
+      annualUnit:annualMetric!==null?sourceAnnualUnit:
+        mineplayUsableUnit(rateUnit.replace(/_PER_DAY$/,'_PER_YEAR'),rateUnit),
+      ...(annualMetric===null&&mineplayMetricNumber(rateMetric,'annual')!==null?{
+        sourceAnnualEvidence:{
+          quantity:mineplayMetricNumber(rateMetric,'annual'),unit:rateMetric.annualUnit||rateMetric.unit||null,
+          status:rateMetric.annualStatus||rateMetric.status||'UNOBSERVED',
+          disposition:'SOURCE_UNIT_INCOMPATIBLE_WITH_GAMEPLAY_RESOURCE_UNIT'
+        }
+      }:{}),
       rateStatus:rateMetric.rateStatus||(suppliedRate?(rateMetric.status||'SOURCE_REPORTED'):'SIMULATED'),
       annualStatus,
       period:rateMetric.period||'DAILY_AND_ANNUAL',status:productionStatus,
@@ -2412,16 +2422,25 @@ function batchFromExtraction(x,record){
       authority:reserveMetric.authority||(reserveStatus==='SIMULATED'?'GAMEPLAY_SIMULATION':'SOURCE_REPORTED'),
       basis:reserveMetric.basis||(reserveStatus==='SIMULATED'?'DETERMINISTIC_400_YEAR_GAMEPLAY_HORIZON':null)
     };
-    const unitlessFallback=(key,value,unit,period)=>{
+    const unitlessFallback=(key,value,unit,period,compatibilityResourceId=null)=>{
       const metric=q[key]&&typeof q[key]==='object'?clone(q[key]):{};
       const valueKey=key==='throughput'?'value':'value';
-      const valid=mineplayAuthorityAllowsValue(metric,valueKey);
+      const metricUnit=mineplayUsableUnit(metric.unit,unit);
+      const valid=mineplayAuthorityAllowsValue(metric,valueKey)&&
+        (!compatibilityResourceId||mineplayQuantityUnitCompatible(compatibilityResourceId,
+          mineplayMetricNumber(metric,valueKey),metricUnit,metric));
       const numeric=valid?mineplayMetricNumber(metric,valueKey):value;
       const status=valid&&metric.status?String(metric.status).toUpperCase():'SIMULATED';
       q[key]={
-        ...metric,[valueKey]:numeric,unit:valid?mineplayUsableUnit(metric.unit,'UNIT_UNKNOWN'):unit,
+        ...metric,[valueKey]:numeric,unit:valid?metricUnit:unit,
+        ...(valid?{}:{
+          sourceQuantityEvidence:mineplayMetricNumber(metric,valueKey)!==null?{
+            quantity:mineplayMetricNumber(metric,valueKey),unit:metric.unit||null,status:metric.status||'UNOBSERVED',
+            disposition:compatibilityResourceId?'SOURCE_UNIT_INCOMPATIBLE_WITH_GAMEPLAY_RESOURCE_UNIT':'GAMEPLAY_FALLBACK'
+          }:metric.sourceQuantityEvidence||null
+        }),
         ...(period?{period:metric.period||period}:{}),
-        status,authority:metric.authority||(status==='SIMULATED'?'GAMEPLAY_SIMULATION':'SOURCE_REPORTED'),
+        status,authority:valid?(metric.authority||(status==='SIMULATED'?'GAMEPLAY_SIMULATION':'SOURCE_REPORTED')):'GAMEPLAY_SIMULATION',
         basis:metric.basis||(status==='SIMULATED'?'DETERMINISTIC_SITE_PROFILE_V1':null)
       };
     };
@@ -2430,16 +2449,20 @@ function batchFromExtraction(x,record){
     unitlessFallback('recovery',Math.round((78+((Math.floor(factor*10000)%1500)/100))*100)/100,'PERCENT','PROCESSING_CYCLE');
     unitlessFallback('purity',Math.min(99.5,Math.round((profile.purity+((Math.floor(factor*10000)%501)/100))*100)/100),'PERCENT');
     const throughputExisting=q.throughput&&typeof q.throughput==='object'?clone(q.throughput):{};
-    const throughputUnit=mineplayAuthorityAllowsValue(throughputExisting,'value')?
-      mineplayUsableUnit(throughputExisting.unit,'UNIT_UNKNOWN'):rateUnit;
-    unitlessFallback('throughput',Math.max(0.01,Math.round(rate*0.88*100)/100),throughputUnit,'DAILY');
+    const throughputUnit=mineplayAuthorityAllowsValue(throughputExisting,'value')&&
+      mineplayQuantityUnitCompatible(resourceId,mineplayMetricNumber(throughputExisting,'value'),
+        mineplayUsableUnit(throughputExisting.unit,rateUnit),throughputExisting)
+        ?mineplayUsableUnit(throughputExisting.unit,rateUnit):rateUnit;
+    unitlessFallback('throughput',Math.max(0.01,Math.round(rate*0.88*100)/100),throughputUnit,'DAILY',resourceId);
     const capacity=q.capacity&&typeof q.capacity==='object'?clone(q.capacity):{};
     const sourceCapacityUnit=mineplayUsableUnit(capacity.gameplayUnit||capacity.rateUnit||capacity.unit,rateUnit);
-    const suppliedNominal=mineplayAuthorityAllowsValue(capacity,'nominal')&&
-      mineplayQuantityUnitCompatible(resourceId,mineplayMetricNumber(capacity,'nominal'),sourceCapacityUnit,capacity);
+    const capacityUnitCompatible=mineplayQuantityUnitCompatible(resourceId,
+      mineplayMetricNumber(capacity,'nominal')??mineplayMetricNumber(capacity,'maximum')??mineplayMetricNumber(capacity,'minimum')??1,
+      sourceCapacityUnit,capacity);
+    const suppliedNominal=mineplayAuthorityAllowsValue(capacity,'nominal')&&capacityUnitCompatible;
     const nominal=suppliedNominal?mineplayMetricNumber(capacity,'nominal'):Math.max(0.01,Math.round(rate*1.15*100)/100);
-    const minCandidate=mineplayMetricNumber(capacity,'minimum');
-    const maxCandidate=mineplayMetricNumber(capacity,'maximum');
+    const minCandidate=capacityUnitCompatible?mineplayMetricNumber(capacity,'minimum'):null;
+    const maxCandidate=capacityUnitCompatible?mineplayMetricNumber(capacity,'maximum'):null;
     const minimum=minCandidate!==null&&minCandidate>0&&minCandidate<=nominal?minCandidate:Math.max(0.01,Math.round(nominal*0.65*100)/100);
     const maximum=maxCandidate!==null&&maxCandidate>=nominal?maxCandidate:Math.max(nominal,Math.round(nominal*1.35*100)/100);
     const capacityStatus=suppliedNominal&&capacity.status?String(capacity.status).toUpperCase():'SIMULATED';
