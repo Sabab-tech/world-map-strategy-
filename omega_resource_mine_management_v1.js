@@ -341,7 +341,7 @@ function myMines(country){
   const rows=allFlows.filter(f=>String(f.siteId||'')===String(a.siteId)&&Number(f.extractionTurn??f.turn??f.lastUpdatedTurn)===turn());
   const output=rows.reduce((sum,f)=>sum+Math.max(0,num(f.quantity)||0),0);
   const rid=String(a.resourceId||resourceOf(site)),raw=num(rs.warehouse?.availableByResource?.[rid]),processed=num(rs.processedWarehouse?.availableByResource?.[rid]);
-  return '<article class="omm-card omm-mine-card" data-omm-site-card="'+esc(a.siteId)+'"><div class="omm-card-head"><div><h3>'+esc(a.siteName||site.siteName||resourceLabel(site))+'</h3><div class="omm-sub">'+esc(resourceLabel(rid))+'</div></div><span class="omm-pill">'+esc(label(status))+'</span></div>'+
+  return '<article class="omm-card omm-mine-card" data-omm-site-card="'+esc(a.siteId)+'"><div class="omm-card-head"><div><h3>'+esc(a.siteName||site.siteName||resourceLabel(site))+'</h3><div class="omm-sub">'+esc(label(rid))+'</div></div><span class="omm-pill">'+esc(label(status))+'</span></div>'+
    '<div class="omm-lines"><div class="omm-line"><span class="omm-muted">Daily output</span><br>'+formatNum(output,2)+(output?' '+esc(unitLabel(rows[0]?.unit||'')):'')+'</div>'+
    '<div class="omm-line"><span class="omm-muted">Commissioned</span><br>'+esc(a.commissionedTurn??'—')+'</div>'+
    '<div class="omm-line"><span class="omm-muted">Raw stock</span><br>'+esc(raw===null?'—':formatNum(raw,2))+'</div>'+
@@ -356,7 +356,7 @@ function myMines(country){
  if(!projects.length)out+='<div class="omm-empty">No mine construction projects are in progress.</div>';
  else out+='<div class="omm-site-grid">'+projects.slice().reverse().map(p=>{
    const pct=Math.max(0,Math.min(100,Number(p.progressPct||0)*100));
-   return '<article class="omm-card"><div class="omm-card-head"><div><h3>'+esc(p.siteName||p.siteId)+'</h3><div class="omm-sub">'+esc(resourceLabel(p.resourceId||''))+'</div></div><span class="omm-pill">'+esc(label(p.status))+'</span></div>'+
+   return '<article class="omm-card"><div class="omm-card-head"><div><h3>'+esc(p.siteName||p.siteId)+'</h3><div class="omm-sub">'+esc(label(p.resourceId||''))+'</div></div><span class="omm-pill">'+esc(label(p.status))+'</span></div>'+
    '<div class="omm-progress"><span style="width:'+pct+'%"></span></div><div class="omm-lines"><div class="omm-line"><span class="omm-muted">Progress</span><br>'+pct.toFixed(1)+'%</div>'+
    '<div class="omm-line"><span class="omm-muted">Build time</span><br>'+formatNum(p.progressDays)+' / '+formatNum(p.durationDays)+' days</div>'+
    '<div class="omm-line"><span class="omm-muted">Cost</span><br>'+formatMoney(p.costUsd)+'</div>'+
@@ -367,12 +367,12 @@ function myMines(country){
  if(!allFlows.length)out+='<div class="omm-empty">No production flow has been recorded yet.</div>';
  else out+='<div class="omm-table-wrap"><table><thead><tr><th>Site</th><th>Resource</th><th>Status</th><th>Destination</th><th>Quantity</th></tr></thead><tbody>'+allFlows.slice(-16).reverse().map(f=>{
   const site=canonical.find(x=>siteIdOf(x)===String(f.siteId||''));
-  return '<tr><td>'+esc(f.siteName||site?.siteName||'Mine')+'</td><td>'+esc(resourceLabel(f.resourceId))+'</td><td>'+esc(label(f.status))+'</td>'+
+  return '<tr><td>'+esc(f.siteName||site?.siteName||'Mine')+'</td><td>'+esc(label(f.resourceId))+'</td><td>'+esc(label(f.status))+'</td>'+
    '<td>'+esc(f.factoryName||f.destinationFactoryName||f.destinationWarehouseName||'—')+'</td><td>'+formatNum(f.quantity,2)+' '+esc(unitLabel(f.unit||''))+'</td></tr>';
  }).join('')+'</tbody></table></div>';
  const raw=rs.warehouse?.availableByResource||{},finished=rs.processedWarehouse?.availableByResource||{};
- out+='<div class="omm-lines"><div class="omm-line"><h4>Raw warehouse</h4>'+Object.entries(raw).slice(0,12).map(([k,v])=>'<div>'+esc(resourceLabel(k))+': <strong>'+formatNum(v,2)+'</strong></div>').join('')+'</div>'+
- '<div class="omm-line"><h4>Processed inventory</h4>'+Object.entries(finished).slice(0,12).map(([k,v])=>'<div>'+esc(resourceLabel(k))+': <strong>'+formatNum(v,2)+'</strong></div>').join('')+'</div></div></div>';
+ out+='<div class="omm-lines"><div class="omm-line"><h4>Raw warehouse</h4>'+Object.entries(raw).slice(0,12).map(([k,v])=>'<div>'+esc(label(k))+': <strong>'+formatNum(v,2)+'</strong></div>').join('')+'</div>'+
+ '<div class="omm-line"><h4>Processed inventory</h4>'+Object.entries(finished).slice(0,12).map(([k,v])=>'<div>'+esc(label(k))+': <strong>'+formatNum(v,2)+'</strong></div>').join('')+'</div></div></div>';
  return out;
 }
 
