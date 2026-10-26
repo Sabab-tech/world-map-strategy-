@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
-const files=['resources.json','resources_2.json'].map(name => JSON.parse(fs.readFileSync(new URL('../'+name, import.meta.url), 'utf8')));
+const files=['resources.json','resources_2.json','resource_type_extensions_v1.json'].map(name => JSON.parse(fs.readFileSync(new URL('../'+name, import.meta.url), 'utf8')));
 const profiles = Object.assign(
   {},
   files[0]?.GSRSK_Master_CountryProfiles_v14?.countryProfiles || {},

@@ -37,7 +37,11 @@ assert.match(index,/omega_resource_gameplay_binding_v1\.js/,'playable shell must
 assert.match(binding,/OMEGA_RESOURCE_SITE_SELECTED/,'site selection event must be emitted');
 assert.match(binding,/planExtraction/,'site selection UI must call industrial extraction planner');
 assert.match(binding,/executeSitePipeline/,'site UI must invoke the unified extraction-to-factory runtime pipeline');
-assert.match(read('omega_resource_industrial_network_v1.js'),/executeSitePipeline/,'industrial runtime must export the executable site pipeline API');
+assert.doesNotMatch(binding,/autoCommissionFactory\s*:\s*true/,'normal site actions must not auto-create simulation-only factories');
+const industrialSource=read('omega_resource_industrial_network_v1.js');
+assert.match(industrialSource,/if\(!factoryChoice&&input\.autoCommissionFactory===true\)/,'simulation factory bootstrap must require explicit opt-in');
+assert.match(industrialSource,/function routeModeCompatible\(/,'composite route mode normalization must be available');
+assert.match(industrialSource,/function executeSitePipeline\(/,'industrial runtime must expose the executable site pipeline API');
 assert.match(binding,/No country-average substitution/,'UI must explicitly prevent average mapping');
 
 const runtimeContext={

@@ -44,10 +44,10 @@ class EventTargetMock {
 class CustomEventMock {constructor(type,init={}){this.type=type;this.detail=init.detail;}}
 
 function buildContext(){
-  const a=readJson('resources.json'),b=readJson('resources_2.json');
+  const a=readJson('resources.json'),b=readJson('resources_2.json'),ext=readJson('resource_type_extensions_v1.json');
   const profiles={...(a.GSRSK_Master_CountryProfiles_v14?.countryProfiles||{}),...(b.GSRSK_Master_CountryProfiles_v14?.countryProfiles||{})};
   const deposits=[...(a.runtime_deposits||[]),...(b.runtime_deposits||[])];
-  const resourceTypes={...(a.resource_types||{}),...(b.resource_types||{}),...(a.GSRSK_Master_Resource_Data_v14?.resource_types||{}),...(b.GSRSK_Master_Resource_Data_v14?.resource_types||{})};
+  const resourceTypes={...(a.resource_types||{}),...(b.resource_types||{}),...(a.GSRSK_Master_Resource_Data_v14?.resource_types||{}),...(b.GSRSK_Master_Resource_Data_v14?.resource_types||{}),...(ext.resource_types||{}),...(ext.GSRSK_Master_Resource_Data_v14?.resource_types||{})};
   const profileRows=Object.entries(profiles);
   const identity={
     resolveCountry(value){

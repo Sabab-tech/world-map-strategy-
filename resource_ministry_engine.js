@@ -8572,7 +8572,12 @@ _globalScope.GSRSK_DataFoundation = (() => {
                             .catch(error => ({ name: 'resources.json', data: null, status: 'FAILED', error: String(error?.message || error) })),
                         fetcher('resources_2.json')
                             .then(data => ({ name: 'resources_2.json', data, status: 'LOADED' }))
-                            .catch(error => ({ name: 'resources_2.json', data: null, status: 'FAILED', error: String(error?.message || error) }))
+                            .catch(error => ({ name: 'resources_2.json', data: null, status: 'FAILED', error: String(error?.message || error) })),
+                        // This is an additive catalog supplement, not a replacement for the
+                        // long-standing resource files. Older/offline fixtures may lack it.
+                        fetcher('resource_type_extensions_v1.json')
+                            .then(data => ({ name: 'resource_type_extensions_v1.json', data, status: 'LOADED', optional: true }))
+                            .catch(error => ({ name: 'resource_type_extensions_v1.json', data: null, status: 'OPTIONAL_MISSING', optional: true, error: String(error?.message || error) }))
                     ]);
 
                     this.resourceTypes = [];
@@ -8594,7 +8599,7 @@ _globalScope.GSRSK_DataFoundation = (() => {
                     for (const entry of entries) {
                         this.dataLoadReport.datasets[entry.name] = { status: entry.status, error: entry.error || null };
                         if (!entry.data) {
-                            if (entry.error) this.dataLoadReport.errors.push({ dataset: entry.name, error: entry.error });
+                            if (entry.error && !entry.optional) this.dataLoadReport.errors.push({ dataset: entry.name, error: entry.error });
                             continue;
                         }
 
@@ -8615,7 +8620,7 @@ _globalScope.GSRSK_DataFoundation = (() => {
                     if (this.deposits.length === 0) throw new Error('RESOURCE_JSON_NO_RUNTIME_DEPOSITS');
                     if (Object.keys(this.countryProfiles).length === 0) throw new Error('RESOURCE_JSON_NO_COUNTRY_PROFILES');
 
-                    const failedDatasets = entries.filter(x => !x.data).length;
+                    const failedDatasets = entries.filter(x => !x.data && !x.optional).length;
                     this.dataLoadReport.status = failedDatasets ? 'DEGRADED' : 'READY';
                     if (global.GSRSK_MasterEngine && typeof global.GSRSK_MasterEngine.bootstrap === 'function') {
                         global.GSRSK_MasterEngine.bootstrap({

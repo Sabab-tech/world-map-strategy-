@@ -75,7 +75,7 @@ try {
   // These canonical resource files are the only sources for the two caches below.
   // Do not synchronously parse every repository JSON file during server startup:
   // generated registries and sector profiles can be tens of MiB and are unrelated.
-  for (const fileName of ['resources.json', 'resources_2.json']) {
+  for (const fileName of ['resources.json', 'resources_2.json', 'resource_type_extensions_v1.json']) {
     if (!/\.json$/i.test(fileName)) continue;
     const file = path.join(__dirname, fileName);
     let raw;

@@ -795,21 +795,50 @@ function candidateFactories(c,resourceId){
 
 function nodeToken(type,c,idv){return type+':'+canonicalCountry(c)+':'+String(idv||'').replace(/[^A-Za-z0-9_-]/g,'_')}
 
-function corridorDistance(site,asset,mode){
+function routeModeCompatible(route,mode){
+  const raw=tok(route?.mode||route?.transportMode||route?.routeType||route?.method);
+  const wanted=tok(mode);
+  const groups={
+    road_rail:['truck','rail'],road_and_rail:['truck','rail'],roadrail:['truck','rail'],
+    pipeline_and_sea_lane:['pipeline','ship'],pipeline_sea_lane:['pipeline','ship'],pipeline_and_sealanes:['pipeline','ship'],
+    road:['truck'],highway:['truck'],lorry:['truck'],truck_road:['truck'],
+    railway:['rail'],heavy_rail:['rail'],sea_lane:['ship'],seaway:['ship'],maritime:['ship'],
+    inland_waterway:['barge'],waterway:['barge']
+  };
+  if(groups[raw])return groups[raw].includes(wanted);
+  const aliases={road:'truck',highway:'truck',lorry:'truck',railway:'rail',heavy_rail:'rail',
+    sea_lane:'ship',seaway:'ship',maritime:'ship',inland_waterway:'barge',waterway:'barge'};
+  return (aliases[raw]||raw)===wanted;
+}
+function routeDestinationMatches(route,asset,resourceId){
+  const target=String(route?.factoryId||route?.destinationFactoryId||route?.toFactoryId||'').trim();
+  if(!target)return true;
+  const candidates=[asset?.id,asset?.assetId,asset?.factoryId,asset?.routeBindingId,asset?.routeProfileId,asset?.simulationRouteFactoryId];
+  if(candidates.some(value=>String(value||'').trim()===target))return true;
+  // Canonical site route assets use aliases such as FACTORY_BGD_limestone, while the
+  // actual player-built asset receives its own project ID. Resolve only this explicit
+  // country + commodity alias, and only for a factory already compatible with the input.
+  const alias=target.match(/^FACTORY_([A-Z]{3})_(.+)$/i);
+  return !!alias&&canonicalCountry(alias[1])===canonicalCountry(asset?.countryId)&&
+    tok(alias[2])===tok(resourceId)&&Object.keys(recipeFor(resourceId,asset).inputs||{}).some(key=>tok(key)===tok(resourceId));
+}
+function corridorDistance(site,asset,mode,resourceId){
   const explicit=simulationRouteFor(site);
-  const hit=explicit.find(x=>tok(x?.mode||x?.transportMode)===tok(mode));
+  const hit=explicit.find(row=>routeModeCompatible(row,mode)&&routeDestinationMatches(row,asset,resourceId));
   if(hit){
-    const d=num(hit.distanceKm??hit.distance??hit.km);if(d&&d>0)return{distanceKm:d,authority:'SITE_SIMULATION_ROUTE'};
+    const d=num(hit.distanceKm??hit.distance??hit.km);
+    if(d!==null&&d>0)return{distanceKm:d,authority:'SITE_SIMULATION_ROUTE',routeId:hit.routeId||hit.id||null};
   }
+  // The fallback is a deterministic gameplay estimate, not a surveyed geographic route.
   const seed=frac([site?.siteId,asset?.id||asset?.assetId||asset?.projectId,mode].join('|'));
   const base={truck:60,rail:450,barge:280,ship:1800,pipeline:350}[mode]||250;
-  return{distanceKm:Math.max(15,Math.round(base*(.55+seed*1.1))),authority:'SIMULATED_CORRIDOR_MODEL'};
+  return{distanceKm:Math.max(15,Math.round(base*(.55+seed*1.1))),authority:'SIMULATED_CORRIDOR_MODEL',routeId:null};
 }
 function routeSegments(site,asset,resourceId,mode,countryId){
   const cid=canonicalCountry(countryId),f=asset||{},access=Array.isArray(f.transportAccess)?f.transportAccess.map(tok):[];
   const pref=(rules()[resourceId]?.preferredModes||[]).map(tok);
   const chosen=tok(mode);
-  const distance=corridorDistance(site,f,chosen);
+  const distance=corridorDistance(site,f,chosen,resourceId);
   const sameNode=String(f.siteId||f.locationNodeKey||'').toUpperCase()===String(site?.siteId||'').toUpperCase();
   if(sameNode)return[{mode:'truck',distanceKm:5,edgeClass:'MINE_TO_SAME_SITE_FACTORY',sourceAuthority:'SIMULATED_NETWORK'}];
   if(chosen==='pipeline')return[{mode:'pipeline',distanceKm:distance.distanceKm,edgeClass:'PIPELINE_CORRIDOR',sourceAuthority:distance.authority}];
@@ -3032,8 +3061,10 @@ async function executeSitePipeline(input={}){
   let factoryChoice=preparedFactory||
     candidates.find(({asset})=>String(asset?.sourceSiteId||asset?.siteId||'')===String(site.siteId))?.asset||
     candidates[0]?.asset||null;
-  if(!factoryChoice&&input.autoCommissionFactory!==false){
-    factoryBootstrap=ensureSimulationFactory(cid,site,rid,quantity);
+  // A missing factory must never be silently fabricated during normal gameplay.
+  // Scenario/test callers may opt in explicitly with autoCommissionFactory:true.
+  if(!factoryChoice&&input.autoCommissionFactory===true){
+    factoryBootstrap=ensureSimulationFactory(cid,site,rid,quantity,{siteSpecific:true});
     factoryChoice=factoryBootstrap.factory||null;
   }
   if(!factoryChoice)return{status:'EXTRACTED_AWAITING_FACTORY',siteId:site.siteId,countryId:cid,resourceId:rid,quantity,unit:batch.unit||'TONNES',occurrenceKey:record.occurrenceKey,batchId:batch.batchId,warehouseId:batch.warehouseId||('WH-'+cid+'-RAW'),reason:'NO_MATCHING_FACTORY'};
