@@ -232,7 +232,6 @@
         // Do not let a reserve-only completion file mutate the long-standing physical-site
         // expansion counters. It enriches quantities, not the canonical site registry.
         const priorExpansion=g.OmegaResourceLegacyGameplayExpansion||g.Omega?.ResourceLegacyGameplayExpansion||{};
-        g.OmegaResourceLegacyExpansion=g.OmegaResourceLegacyExpansion||priorExpansion;
         g.OmegaResourceLegacyGameplayExpansion={
           ...priorExpansion,status:priorExpansion.status==='READY'?'READY':legacy.status,
           count:Math.max(Number(priorExpansion.count)||0,Number(legacy.count)||0),
