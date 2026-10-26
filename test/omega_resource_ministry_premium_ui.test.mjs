@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
 import "../omega_ui_v2/screens/resource-ministry.js";
+import "../omega_ui_v2/screens/mine-production-command.js";
 
 const root = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
 const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
@@ -42,7 +43,7 @@ test("resource visual layer is wired into the offline-first app without remote d
   assert.ok(html.includes(stylesheetTag), "premium resource stylesheet must be loaded by the app");
   assert.ok(sw.includes('"' + "./" + cssPath + '"'), "premium resource stylesheet must be precached offline");
   assert.ok(uiManifest.additionalStyles.includes(cssPath), "UI v2 manifest must document the resource style");
-  assert.match(sw, /omega-offline-atlas-shell-v48/, "offline cache must be invalidated for new visual assets");
+  assert.match(sw, /omega-offline-atlas-shell-v49/, "offline cache must be invalidated for new visual assets");
   const coreAssets = sw.slice(sw.indexOf("const CORE_ASSETS"), sw.indexOf("];", sw.indexOf("const CORE_ASSETS")));
   assert.ok(coreAssets.includes('"./' + cssPath + '"'), "premium stylesheet belongs in the precache list");
   assert.ok(sw.includes("const resourceIcons = Array.isArray(factoryIconManifest.resources)"),
@@ -63,4 +64,63 @@ test("resource renderer uses the canonical image map and labels mine archetypes"
   assert.match(source, /loading=\"lazy\" decoding=\"async\"/);
   assert.match(source, /data-mine-archetype/);
   assert.match(source, /RESERVE_NOT_RECORDED|UNOBSERVED/);
+});
+
+
+test("Mine Production command is the active resource route and is cached for offline mobile play", () => {
+  const app = read("omega_ui_v2/app.js");
+  const html = read("index.html");
+  const sw = read("omega-offline-map-sw.js");
+  const manifest = json("omega_ui_v2/manifest.json");
+  const source = read("omega_ui_v2/screens/mine-production-command.js");
+  assert.match(app, /OmegaUIV2MineProductionCommand\.render/);
+  assert.match(html, /omega_ui_v2\/screens\/mine-production-command\.js/);
+  assert.match(sw, /omega_ui_v2\/screens\/mine-production-command\.js/);
+  assert.equal(manifest.screens.mineProductionCommand, "omega_ui_v2/screens/mine-production-command.js");
+  assert.match(source, /data-mine-tab="logistics"/);
+  assert.match(source, /data-mine-tab="inventory"/);
+  assert.match(source, /data-mine-tab="reports"/);
+  assert.match(source, /quoteMineProject/);
+  assert.match(source, /executeSitePipeline/);
+  assert.match(source, /decommissionMine/);
+  assert.match(source, /data-mine-workers/);
+  assert.match(source, /PLAYER_COUNTRY_SCOPE_VIOLATION/);
+  assert.match(source, /resourceOutputForDemand/);
+  assert.doesNotMatch(source, /\\bSIMULATED\\b|catalog reference|dataset reference/i,
+    "user-facing mine screen must not expose simulation/data-reference labels");
+});
+
+test("mine production screen renders a clear, responsive tabbed command surface", () => {
+  const api = globalThis.OmegaUIV2MineProductionCommand;
+  assert.ok(api, "mine production command renderer is registered");
+  const previousGame = globalThis.Game;
+  const previousManager = globalThis.OmegaResourceMineManagementUI;
+  const previousApi = globalThis.OmegaUIV2ResourceMinistry;
+  try {
+    globalThis.Game = { state: { simulation: { turn: 3, session: { playerCountryId: "BGD" } },
+      resource: { BGD: { mineAssets: [], inventory: {}, warehouse: { availableByResource: {} },
+        industrialNetwork: { projects: [], siteFlowLedger: [], shipments: [] } } } } };
+    globalThis.OmegaResourceMineManagementUI = {
+      getCountrySites: (country) => country === "BGD" ? [{
+        siteId:"BGD-TEST-COAL-01", countryId:"BGD", siteName:"Test Coal Mine", resourceId:"coal",
+        siteType:"open pit mine", identity:{countryIso3:"BGD",resourceTypeId:"coal",resourceName:"Coal",siteType:"open pit mine"},
+        quantitative:{reserve:{quantity:1200,unit:"tonnes",status:"REPORTED"}}, map:{markerEligible:true},
+        operation:{status:"READY"}, location:{region:"North",countryId:"BGD"}
+      }] : []
+    };
+    const root = { classList:{add(){}}, addEventListener(){}, innerHTML:"", __omegaMineBound:true };
+    const result = api.render(root, {countryId:"BGD",tab:"mines"});
+    assert.equal(result.siteCount, 1);
+    assert.match(root.innerHTML, /Mine Production/);
+    assert.match(root.innerHTML, /Stock &amp; Logistics|Stock & Logistics/);
+    assert.match(root.innerHTML, /Inventory \\/ Warehouse/);
+    assert.match(root.innerHTML, /Reports/);
+    assert.match(root.innerHTML, /Test Coal Mine/);
+    assert.match(root.innerHTML, /Build mine/);
+    assert.doesNotMatch(root.innerHTML, /SIMULATED|DATASET|catalog reference/i);
+  } finally {
+    if (previousGame === undefined) delete globalThis.Game; else globalThis.Game = previousGame;
+    if (previousManager === undefined) delete globalThis.OmegaResourceMineManagementUI; else globalThis.OmegaResourceMineManagementUI = previousManager;
+    if (previousApi === undefined) delete globalThis.OmegaUIV2ResourceMinistry; else globalThis.OmegaUIV2ResourceMinistry = previousApi;
+  }
 });
