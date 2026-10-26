@@ -568,9 +568,10 @@
       ? '<small class="omega-v2-factory-reason">' + esc(reasonText.replace(/_/g, ' ').toLowerCase()) + '</small>' : '';
     var canOperate = model.canOperateSelectedCountry === true;
     var isDecommissioned = /^(DECOMMISSIONED|DESTROYED)$/.test(String(factory.status || '').toUpperCase());
-    return '<article class="omega-v2-factory-card" data-omega-v2-factory-card data-factory-id="' + esc(id) +
+    return '<article class="omega-v2-factory-card fp-card" data-omega-v2-factory-card data-factory-id="' + esc(id) +
       '" data-state="' + status.key + '" data-selected="' + (selected ? 'true' : 'false') +
       '" data-search="' + esc((factory.name + ' ' + id + ' ' + factory.type + ' ' + factory.recipeId).toLowerCase()) + '">' +
+      '<span class="fp-badge" aria-hidden="true">' + factorySvgMarkup(factory) + '</span>' +
       '<button type="button" class="omega-v2-factory-title" data-omega-v2-factory-select="' + esc(id) + '" aria-pressed="' + (selected ? 'true' : 'false') + '" aria-label="Select ' + esc(factory.name) + '">' +
         '<strong>' + esc(factory.name) + '</strong><small>' + esc(factoryTypeLabel(factory)) + '</small><span class="omega-v2-factory-title-mark" aria-hidden="true"></span>' +
       '</button>' +
@@ -703,13 +704,16 @@
 
     root.classList.add('omega-v2-screen');
     if (active === 'factories') {
-      var compactTabs = '<nav class="omega-v2-factory-tabs" aria-label="Industrial panels">' +
+      var compactTabs = '<header class="fp-top" aria-label="Factory production navigation">' +
+        '<div class="fp-logo" aria-hidden="true"><svg class="fp-ic" viewBox="0 0 24 24"><path d="M3 21V9l6 3V8l6 4V6l6 3v12Z"/><path d="M6 21v-5m5 5v-5m5 5v-5M3 21h18"/></svg></div>' +
+        '<div class="fp-top-identity"><span>OMEGA / INDUSTRIAL SYSTEMS</span><strong>FACTORY PRODUCTION</strong><small>COUNTRY: ' + esc(model.countryId || 'Not recorded') + ' · ' + (model.canOperateSelectedCountry ? 'PLAYER CONTROL' : 'REFERENCE VIEW') + '</small></div>' +
+        '<nav class="omega-v2-factory-tabs fp-tabs" aria-label="Industrial panels">' +
         tabButton('factories', 'Factories', active) +
         tabButton('production-lines', 'Lines', active) +
         tabButton('inventory', 'Inputs', active) +
         tabButton('national-inventory', 'Stock', active) +
         tabButton('research', 'R&D', active) +
-        tabButton('projects', 'Projects', active) + '</nav>';
+        tabButton('projects', 'Projects', active) + '</nav></header>';
       var factoryCards = model.factories.length
         ? model.factories.map(function (row) {
             return factoryCard(row, Object.assign({}, options, {
@@ -720,11 +724,11 @@
           }).join('')
         : '<div class="omega-v2-factory-empty">No commissioned factories are recorded for ' + esc(model.countryId || 'the selected country') + '.</div>';
       root.innerHTML = '<section class="omega-v2-shell omega-v2-industry omega-v2-industry--factory-home">' +
-        '<div class="omega-v2-factory-command" aria-label="Factory production control">' +
+        '<div class="omega-v2-factory-command fp-stage" data-glow="hover" aria-label="Factory production control">' +
         '<img class="omega-v2-factory-backdrop" src="assets/ui-photos/industrial-production-line.webp" alt="" aria-hidden="true" loading="lazy" decoding="async" width="1280" height="720">' +
         '<a class="omega-v2-factory-photo-credit" href="https://commons.wikimedia.org/wiki/File:Industrial_production_line_operating_in_a_large_modern_factory.jpg" target="_blank" rel="noopener noreferrer" aria-label="Photo credit: Shixart1985. CC BY 2.0 license. Image resized and converted to WebP.">Photo: <span class="omega-v2-factory-photo-author">Shixart1985</span></a><a class="omega-v2-factory-photo-license" href="https://creativecommons.org/licenses/by/2.0/" target="_blank" rel="license noopener noreferrer" aria-label="Creative Commons Attribution 2.0 license">CC BY 2.0</a><span class="omega-v2-factory-photo-credit__changes">Image resized and converted to WebP.</span>' +
         (root.__omegaV2IndustryNotice ? '<div class="omega-v2-factory-notice" role="status">' + esc(root.__omegaV2IndustryNotice) + '</div>' : '') +
-        compactTabs + '<div class="omega-v2-factory-deck">' + factoryCards + '</div></div></section>';
+        compactTabs + '<div class="omega-v2-factory-deck">' + factoryCards + '</div><div class="fp-deck" aria-hidden="true"></div></div></section>';
     } else {
     root.innerHTML = '<section class="omega-v2-shell omega-v2-industry">' +
       '<header class="omega-v2-heading"><div><div class="omega-v2-eyebrow">INDUSTRY · PRODUCTION SYSTEM</div><h1 class="omega-v2-title">Factories & Production</h1><p class="omega-v2-subtitle">Country ' + esc(model.countryId || 'Not recorded') + ' · canonical production assets and cycles only</p></div><span class="omega-v2-status">' + fmt(model.factoryCount) + ' commissioned assets</span></header>' +
