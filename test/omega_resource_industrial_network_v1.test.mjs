@@ -200,23 +200,28 @@ context.Omega.ResourceEndowmentRuntime={
     const rs=context.Game.state.resource[countryId]||(context.Game.state.resource[countryId]={inventory:{},warehouse:{availableByResource:{},reservedByResource:{}},mineSiteControllers:{}});
     rs.mineSiteControllers=rs.mineSiteControllers||{};
     rs.mineSiteControllers.SITE_BGD_COPPER_01={siteReferenceKey:'SITE_BGD_COPPER_01',linkedOccurrenceKeys:['SITE_OCC:BGD:SITE_BGD_COPPER_01'],controllerStatus:'RUNNING'};
-    rs.mineStates=rs.mineStates||{};rs.mineStates['SITE_OCC:BGD:SITE_BGD_COPPER_01']={resourceId:'copper',countryId};
+    rs.mineSiteControllers.SITE_BGD_IRON_01={siteReferenceKey:'SITE_BGD_IRON_01',linkedOccurrenceKeys:['SITE_OCC:BGD:SITE_BGD_IRON_01'],controllerStatus:'RUNNING'};
+    rs.mineStates=rs.mineStates||{};
+    rs.mineStates['SITE_OCC:BGD:SITE_BGD_COPPER_01']={resourceId:'copper',countryId};
+    rs.mineStates['SITE_OCC:BGD:SITE_BGD_IRON_01']={resourceId:'iron_ore',countryId};
     return{status:'APPLIED',result:{accepted:true,countryId}};
   },
   async extractCountry(countryId,occurrenceKeys){
-    assert.deepEqual(occurrenceKeys,['SITE_OCC:BGD:SITE_BGD_COPPER_01'],'execution must use the controller-linked occurrence key, not the display siteId');
+    assert.equal(occurrenceKeys.length,1,'execution must use one exact controller-linked occurrence key, not a display siteId');
     const rs=context.Game.state.resource[countryId],quantity=1200;
-    rs.inventory.copper=(Number(rs.inventory.copper)||0)+quantity;
-    rs.warehouse.availableByResource.copper=(Number(rs.warehouse.availableByResource.copper)||0)+quantity;
+    const resourceId=occurrenceKeys[0]==='SITE_OCC:BGD:SITE_BGD_IRON_01'?'iron_ore':'copper';
+    const batchId=resourceId==='iron_ore'?'BATCH-E2E-IRON':'BATCH-E2E-COPPER';
+    rs.inventory[resourceId]=(Number(rs.inventory[resourceId])||0)+quantity;
+    rs.warehouse.availableByResource[resourceId]=(Number(rs.warehouse.availableByResource[resourceId])||0)+quantity;
     rs.warehouse.warehouseId='WH-'+countryId+'-RAW';rs.warehouse.countryId=countryId;rs.warehouse.locationNodeKey='WAREHOUSE:'+countryId+':RAW';
     rs.warehouse.storedBatchIds=rs.warehouse.storedBatchIds||[];rs.batches=rs.batches||[];rs.inventoryLots=rs.inventoryLots||{};
-    const trackedBatch={batchId:'BATCH-E2E-COPPER',resourceId:'copper',materialIdentity:'copper',quantity,remainingQuantity:quantity,unit:'TONNES',
+    const trackedBatch={batchId,resourceId,materialIdentity:resourceId,quantity,remainingQuantity:quantity,unit:'TONNES',
       stage:'RAW_EXTRACTED',countryId,sourceCountryId:countryId,originCountryId:countryId,ownerCountryCode:countryId,destinationCountryId:countryId,
       warehouseId:'WH-'+countryId+'-RAW',locationNodeKey:'WAREHOUSE:'+countryId+':RAW',occurrenceKey:occurrenceKeys[0],sourceBatchIds:[],
       provenance:{sourceAuthority:'SIMULATED_TEST_FIXTURE'}};
-    rs.batches.push(trackedBatch);rs.inventoryLots[trackedBatch.batchId]={...trackedBatch,status:'AVAILABLE'};rs.warehouse.storedBatchIds.push(trackedBatch.batchId);
-    const record={occurrenceKey:occurrenceKeys[0],countryId,resourceId:'copper',approvedQuantity:quantity,
-      producedBatch:{batchId:'BATCH-E2E-COPPER',quantity,unit:'TONNES',warehouseId:'WH-'+countryId+'-RAW'}};
+    rs.batches.push(trackedBatch);rs.inventoryLots[batchId]={...trackedBatch,status:'AVAILABLE'};rs.warehouse.storedBatchIds.push(batchId);
+    const record={occurrenceKey:occurrenceKeys[0],countryId,resourceId,approvedQuantity:quantity,
+      producedBatch:{batchId,quantity,unit:'TONNES',warehouseId:'WH-'+countryId+'-RAW'}};
     return{status:'APPLIED',result:{accepted:true,records:[record]}};
   }
 };
@@ -250,6 +255,23 @@ const copperDeliveryRow=context.Game.state.resource.BGD.industrialNetwork.delive
 assert.equal(copperDeliveryRow.processingStatus,'PROCESSED','delivery record must reconcile when its cycle commits');
 assert.ok(context.Game.state.resource.BGD.industrialNetwork.events.some(x=>x.transactionId&&x.status==='COMPLETED'),
   'factory processing must be written to the runtime event ledger');
+
+// A normal gameplay site action must not manufacture a free simulation factory.
+// It commits the extracted batch to the sovereign raw warehouse and reports that the
+// country needs a real commissioned compatible factory.
+context.Game.state.simulation.turn=Number(context.Game.state.simulation.turn||0)+1;
+const assetsBeforeWaiting=context.Game.state.economy.BGD.productionAssets.length;
+const waitingForFactory=await N.executeSitePipeline({
+  countryId:'BGD',siteId:'SITE_BGD_IRON_01',resourceId:'iron_ore',transportMode:'rail'
+});
+assert.equal(waitingForFactory.status,'EXTRACTED_AWAITING_FACTORY',JSON.stringify(waitingForFactory));
+assert.equal(waitingForFactory.batchId,'BATCH-E2E-IRON');
+assert.equal(Number(context.Game.state.resource.BGD.warehouse.availableByResource.iron_ore),1200,
+  'unrouted extracted raw material remains available in the sovereign warehouse');
+assert.equal(context.Game.state.economy.BGD.productionAssets.length,assetsBeforeWaiting,
+  'a missing compatible factory must not be fabricated by a normal mine action');
+assert.ok(!context.Game.state.economy.BGD.productionAssets.some(x=>String(x.id||'').startsWith('FAC-SIM:BGD:SITE_BGD_IRON_01')),
+  'normal mine actions must not create an unapproved simulation-only factory');
 
 const kuwaitProject=N.startInfrastructureProject({
   countryId:'Kuwait',infrastructureType:'road',distanceKm:10,capacityPerDay:100,cost:100
