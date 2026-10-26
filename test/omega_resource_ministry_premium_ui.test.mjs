@@ -19,7 +19,10 @@ test("resource icon manifest is complete, local, unique and integrated with Reso
   for (const icon of manifest.resources) {
     const expected = "assets/omega-industrial-icons-v1/" + icon.file;
     assert.ok(fs.existsSync(path.join(root, expected)), "resource icon must exist: " + expected);
-    assert.match(read(expected), /<svg\b/, "resource icon must contain SVG source: " + expected);
+    const svg = read(expected);
+    assert.match(svg, /<svg\b/, "resource icon must contain SVG source: " + expected);
+    assert.match(svg, /stop-color="#f1f6fa"/, "resource icon needs a light high-contrast backing plate: " + expected);
+    assert.match(svg, /stop-color="#d8e5ed"/, "resource icon needs balanced silver plating: " + expected);
     assert.equal(api.resourceIconPath(icon.id), expected, "canonical icon mapping must be stable for " + icon.id);
   }
   assert.equal(api.resourceIconPath("unregistered_future_type"), "", "unknown types must use the safe text fallback");
