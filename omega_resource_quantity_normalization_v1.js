@@ -103,10 +103,15 @@ function normalizeQuantity(resourceId, quantity, unit, options={}){
 }
 function normalizeAmountObject(object, resourceId, amountKey, unitKey, options={}){
  if(!object||typeof object!=='object'||Array.isArray(object))return object;
- if(object.quantityNormalization?.version===VERSION&&object.quantityNormalization?.field===amountKey)return object;
  const value=num(object[amountKey]);
  if(value===null)return object;
  const sourceUnit=object[unitKey]||object.unit||options.defaultUnit||'UNIT_UNKNOWN';
+ const previous=object.quantityNormalization;
+ const previousNormalizedQuantity=num(previous?.quantity);
+ const previousNormalizedUnit=String(previous?.unit||'').trim();
+ const sameNormalizedValue=previousNormalizedQuantity!==null&&Math.abs(previousNormalizedQuantity-value)<=Math.max(1e-9,Math.abs(value)*1e-12);
+ if(previous?.version===VERSION&&previous?.field===amountKey&&sameNormalizedValue&&
+    previousNormalizedUnit&&cleanUnit(sourceUnit)===cleanUnit(previousNormalizedUnit))return object;
  const normalized=normalizeQuantity(resourceId,value,sourceUnit,{simulationOnly:options.simulationOnly!==false});
  const out={...object};
  out[amountKey]=normalized.quantity;
