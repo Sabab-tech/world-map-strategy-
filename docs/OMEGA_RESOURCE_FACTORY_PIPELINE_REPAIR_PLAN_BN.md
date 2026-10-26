@@ -56,6 +56,12 @@ Site route-এ composite modes আছে; runtime সাধারণত single m
 
 কিছু UI path `quantitative` পড়ে, কিন্তু legacy/enriched records-এ `quantitativeProfile` থাকতে পারে। Unavailable route বা metric-কে UI “সব null” দেখাতে পারে। **সমাধান:** shared read adapter normalize করবে, source evidence ধরে রাখবে এবং observed/simulated/unobserved status প্রকাশ করবে। route বা factual production মান অনুপস্থিত হলে তা চিহ্নিত হবে; বাস্তব হিসাবে বানিয়ে পূরণ হবে না। Scenario-only gameplay parameter প্রয়োজন হলে সেটি আলাদা simulation field/authority হবে।
 
+### R7 — resource master-এ তিনটি ব্যবহৃত commodity অনুপস্থিত
+
+রিসোর্স-রান পরীক্ষায় দেখা গেছে, ৩৮টি legacy master resource type-এর বাইরে সাইট-রেজিস্ট্রি ও industrial processing catalog-এ ব্যবহৃত `gypsum`, `niobium`, `ruby` আছে, কিন্তু master definitions নেই। ফলে site/recipe যুক্ত থাকলেও catalog labels ও resource identity lookup অসম্পূর্ণ হতে পারে।
+
+**সমাধান:** বড় `resources.json`/ `resources_2.json` ফাইল পুনর্লিখে ডুপ্লিকেট তৈরি না করে `resource_type_extensions_v1.json` additive authority যোগ করা হয়েছে। Resource Ministry engine, server registry, site map resource labels, offline cache এবং integrity tests একই extension পড়বে। এই dataset-এ শুধু তিনটি missing type থাকবে; বিদ্যমান master records মুছবে বা প্রতিস্থাপন করবে না। প্রত্যাশিত ইউনিয়ন: ৩৮টি legacy identity + ৩টি additive identity = ৪১টি resource types।
+
 ### R6 — green CI বাস্তব saved-game proof নয়
 
 বর্তমান CI-তে Resource Gameplay Pipeline, Mine Management, Exhaustive Every-Site Pipeline, Android 9 Offline Smoke এবং Pages deploy pass করেছে। তবে exhaustive test 561 references যাচাই করে, selected 58 critical sites full E2E চালায়; test-এ infrastructure, utilities ও factory bootstrap fixture নিজে provision করা হয়। তাই pass ফল saved game-এ সব route/assets বাস্তবে linked আছে তা প্রমাণ করে না।
@@ -153,6 +159,7 @@ Factory catalog availability, national actual asset count, construction project,
 - Show each selected country's known data without inventing built factory assets or globalizing all country's game state.
 
 ### Phase D — Data completeness without fabrication
+- Load the additive resource master extension in browser and server runtimes; verify all 41 type IDs resolve and every eligible site resource has both extraction and processing rules.
 - Normalize `quantitative`/`quantitativeProfile`, resource IDs, country IDs and route schema at a single adapter boundary.
 - Fill only simulation-policy fields with explicit simulation authority.
 - Preserve absent observed metrics as absent.
@@ -183,6 +190,8 @@ Simulation-only fixture data must be labelled; the fixture does not imply those 
 - Release: inspect the full diff, create PR, wait for all relevant GitHub Actions, correct failures, merge only after green gates, then verify the resulting main SHA and new workflows.
 
 ## 9. Work not to claim without evidence
+**Current implementation record (PR #260):** 305 simulation-only reserve rows are additive and ID-unique; the master-type extension covers `gypsum`, `niobium`, and `ruby`; the resource pipeline test, exhaustive site production run, Android build, and Android 9 offline smoke passed on a previous CI head. Re-run every relevant workflow after the latest extension/loader commits before merging. No new CI result should be inferred from prior-head checks.
+
 
 - Do not claim all 561 rows are unique real-world mines merely from the runtime-reference count.
 - Do not claim 21 types means 21 built factories in every country.
