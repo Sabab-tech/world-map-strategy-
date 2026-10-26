@@ -157,7 +157,12 @@ function normalizeMetricObject(object, resourceId, kind){
   return out;
  }
  if(kind==='capacity'){
-  const sourceUnit=out.rateUnit||out.unit||rawUnit;
+  // Some source capacity records use a separate per-well engineering unit, while the
+  // min/nominal/max values are synthesized gameplay output rates. Normalize only the
+  // gameplay rates and retain the source unit for the reported source-specific fields.
+  const gameplayUnit=out.gameplayUnit||out.rateUnit||null;
+  const sourceUnit=gameplayUnit||out.unit||rawUnit;
+  if(gameplayUnit&&out.unit&&!out.sourceUnit&&cleanUnit(out.unit)!==cleanUnit(gameplayUnit))out.sourceUnit=out.unit;
   const sourcePeriod=String(sourceUnit||'').toUpperCase();
   const dayDivisor=daysPerProductionPeriod(sourcePeriod);
   for(const key of ['nominal','minimum','maximum','activeRate','dailyRate','productionRate','nominalCapacity','minimumCapacity','maximumCapacity']){
@@ -168,7 +173,10 @@ function normalizeMetricObject(object, resourceId, kind){
     normalizedPeriod:out[key]===null?'UNRECOGNIZED':'PER_DAY'};
    out.unit=n.unit;
   }
-  if(out.unit&&out.rateUnit)out.rateUnit=canonicalUnit(resourceId)+'_PER_DAY';
+  if(out.unit&&(out.rateUnit||out.gameplayUnit)){
+   out.rateUnit=canonicalUnit(resourceId)+'_PER_DAY';
+   out.gameplayUnit=out.rateUnit;
+  }
   return out;
  }
  return out;
