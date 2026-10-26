@@ -429,7 +429,7 @@
     if (/^(STOPPED|BLOCKED|FAILED|CLOSED|DECOMMISSIONED|DESTROYED|OFFLINE|DISABLED)$/.test(earlyHealthStatus) ||
         /^(STOPPED|BLOCKED|FAILED|CLOSED|DECOMMISSIONED|DESTROYED|OFFLINE|DISABLED)$/.test(earlyAssetStatus) ||
         /^(PAUSED|CANCELLED|BLOCKED|FAILED|STOPPED)$/.test(earlyCycleStatus) ||
-        /FACTORY_(INPUT|UTILITY|POWER|WORKFORCE|OPERATION).*SHORTAGE|FACTORY_DECOMMISSIONED_BY_PLAYER/.test(earlyReason)) {
+        /FACTORY_DECOMMISSIONED_BY_PLAYER/.test(earlyReason)) {
       return { value: 0, unit: String(health.outputUnit || raw.outputUnit || raw.productionUnit || ''), product: String(health.outputResourceId || raw.outputResourceId || ''), basis: 'Production stopped' };
     }
     var candidates = [
@@ -500,10 +500,11 @@
     var actual = num(health.productionUnitsPerCycle);
     var daily = factoryDailyOutput(factory);
     var hasPositiveProduction = actual !== null && actual > 0 || !!(daily && daily.value > 0);
+    var blockingReason = /FACTORY_(INPUT|UTILITY|POWER|WORKFORCE|OPERATION).*SHORTAGE/.test(reason) || /FACTORY_DECOMMISSIONED_BY_PLAYER/.test(reason);
     var stopped = /^(STOPPED|BLOCKED|FAILED|CLOSED|DECOMMISSIONED|DESTROYED|OFFLINE|DISABLED|PAUSED)$/.test(healthStatus) ||
       /^(STOPPED|BLOCKED|FAILED|CLOSED|DECOMMISSIONED|DESTROYED|OFFLINE|DISABLED)$/.test(assetStatus) ||
       /^(PAUSED|CANCELLED|BLOCKED|FAILED|STOPPED)$/.test(cycleStatus) ||
-      /FACTORY_(INPUT|UTILITY|POWER|WORKFORCE|OPERATION).*SHORTAGE|FACTORY_DECOMMISSIONED_BY_PLAYER/.test(reason);
+      /FACTORY_DECOMMISSIONED_BY_PLAYER/.test(reason) || blockingReason && !hasPositiveProduction;
     if (stopped) return { key: 'stopped', label: /DECOMMISSIONED|DESTROYED/.test(assetStatus) ? 'Decommissioned' : 'Stopped', reason: reason };
     var productivity = num(health.productivityPct !== undefined ? health.productivityPct : factory.productivityPct);
     var degradedStatus = /^(REDUCED|DEGRADED|PARTIAL|UNDERPOWERED)$/.test(healthStatus);
