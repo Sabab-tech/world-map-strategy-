@@ -291,7 +291,7 @@
   width: min(94%, 240px);
   aspect-ratio: 1;
   max-height: 100%;
-  border: 2px solid color-mix(in srgb, var(--state-color) 78%, #a8c0d0 22%);
+  border: 2px solid var(--state-color);
   border-radius: 50%;
   opacity: .82;
   box-shadow: 0 0 0 4px rgba(88,127,153,.2), inset 0 0 0 3px rgba(114,150,175,.18), 0 0 13px var(--state-halo);
