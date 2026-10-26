@@ -458,6 +458,20 @@
       }
     }
 
+    var activeCycle = factory.cycle && typeof factory.cycle === 'object' ? factory.cycle : null;
+    var activeCycleStatus = String(activeCycle && activeCycle.status || '').trim().toUpperCase();
+    var activeCycleDays = num(activeCycle && (activeCycle.cycleDays !== undefined ? activeCycle.cycleDays : activeCycle.durationDays));
+    var activeCycleQuantity = num(activeCycle && activeCycle.productionQuantity);
+    if (activeCycleStatus === 'IN_PROGRESS' && activeCycleDays !== null && activeCycleDays > 0 &&
+        activeCycleQuantity !== null && activeCycleQuantity > 0) {
+      return {
+        value: activeCycleQuantity / activeCycleDays,
+        unit: String(health.outputUnit || raw.outputUnit || raw.productionUnit || run.outputUnit || ''),
+        product: String(health.outputResourceId || raw.outputResourceId || raw.primaryOutputResourceId || ''),
+        basis: 'Active cycle quantity averaged over ' + activeCycleDays + ' game-day(s)'
+      };
+    }
+
     var outputs = factory.latestOutputs;
     var days = num(run.cycleDays !== undefined ? run.cycleDays : run.durationDays);
     if (outputs && typeof outputs === 'object' && !Array.isArray(outputs) && days !== null && days > 0) {
@@ -568,7 +582,7 @@
       '</div>' +
       '<div class="omega-v2-factory-count"><span>Total:</span><strong>' + fmt(ownedCount) + '</strong></div>' +
       '<div class="omega-v2-factory-actions">' +
-        '<button type="button" class="omega-v2-factory-button omega-v2-factory-button--build" data-omega-v2-factory-build="' + esc(id) + '"' +
+        '<button type="button" class="omega-v2-factory-button omega-v2-factory-button--build" data-omega-v2-factory-build="' + esc(id) + '" data-factory-type="' + esc(factory.type) + '"' +
           (canOperate ? '' : ' disabled title="Build actions are available only for the active player country."') + '><span aria-hidden="true" class="omega-v2-action-icon omega-v2-action-icon--build"></span>Build</button>' +
         '<button type="button" class="omega-v2-factory-button omega-v2-factory-button--destroy" data-omega-v2-factory-destroy="' + esc(id) + '"' +
           (!canOperate || isDecommissioned ? ' disabled title="This factory cannot be decommissioned from the current country view."': '') +
@@ -750,8 +764,20 @@
         if (buildFactory && root.contains(buildFactory) && !buildFactory.disabled) {
           var buildModel = root.__omegaV2IndustryModel || model;
           var commandCenter = g.OmegaResourceCommandCenterUI || (g.Omega && g.Omega.ResourceCommandCenterUI);
+          var selectedFactoryType = buildFactory.getAttribute('data-factory-type') || '';
           if (commandCenter && typeof commandCenter.open === 'function') {
             commandCenter.open(buildModel.countryId, 'factories');
+            try {
+              var commandModal = g.document && g.document.getElementById('gsrsk-intelligence-modal');
+              var typeSelect = commandModal && commandModal.querySelector('form[data-form="factory-project"] select[name="factoryType"]');
+              var canonicalType = normalizeFactoryType(selectedFactoryType, safeCatalog() || {});
+              if (typeSelect && canonicalType) {
+                var typeOption = Array.prototype.slice.call(typeSelect.options || []).find(function (option) {
+                  return String(option.value || '').toUpperCase() === String(canonicalType).toUpperCase();
+                });
+                if (typeOption) typeSelect.value = typeOption.value;
+              }
+            } catch (_) {}
           } else if (commandCenter && typeof commandCenter.openPanel === 'function') {
             commandCenter.openPanel('factories');
           } else {
