@@ -481,4 +481,53 @@ assert.equal(N.decommissionFactory({countryId:'BGD',factoryId:decommissionAsset.
   'repeated decommission calls must be safe and idempotent');
 assert.equal(N.factoryProductionStatus('BGD',decommissionAsset.id).health.status,'STOPPED');
 
+
+// Mine decommissioning stops future extraction while preserving the site, batches and history.
+context.Game.state.simulation.session = { playerCountryId:'BGD' };
+const foreignMineAsset = {
+  id:'MINE-FOREIGN-DECOMMISSION-TEST',
+  siteId:'SITE_USA_COAL_01',
+  resourceId:'coal',
+  status:'OPERATIONAL'
+};
+context.Game.state.resource.USA = { mineAssets:[foreignMineAsset] };
+const foreignDecommission = N.decommissionMine({
+  countryId:'USA',siteId:'SITE_USA_COAL_01',confirmed:true
+});
+assert.equal(foreignDecommission.status,'BLOCKED');
+assert.equal(foreignDecommission.reason,'PLAYER_COUNTRY_SCOPE_VIOLATION');
+assert.equal(foreignMineAsset.status,'OPERATIONAL','a view/action for another country must not mutate its mine');
+const mineAssetForDecommission = {
+  id:'MINE-DECOMMISSION-TEST',
+  siteId:'SITE_BGD_COAL_01',
+  resourceId:'coal',
+  status:'OPERATIONAL',
+  workersCommitted:240,
+  constructionCostUsd:48000000
+};
+context.Game.state.resource.BGD.mineAssets = [mineAssetForDecommission];
+const mineRawStockBefore = context.Game.state.resource.BGD.warehouse.availableByResource.coal;
+const mineDecommissionConfirmation = N.decommissionMine({
+  countryId:'BGD',siteId:'SITE_BGD_COAL_01'
+});
+assert.equal(mineDecommissionConfirmation.status,'CONFIRMATION_REQUIRED');
+assert.equal(mineAssetForDecommission.status,'OPERATIONAL','missing confirmation must not alter the mine');
+const mineDecommissionResult = N.decommissionMine({
+  countryId:'BGD',siteId:'SITE_BGD_COAL_01',confirmed:true
+});
+assert.equal(mineDecommissionResult.status,'DECOMMISSIONED');
+assert.equal(mineAssetForDecommission.status,'DECOMMISSIONED');
+assert.equal(mineAssetForDecommission.productionStatus,'STOPPED');
+assert.equal(context.Game.state.resource.BGD.mineAssets.length,1,'the physical mine asset record must be retained');
+assert.equal(context.Game.state.resource.BGD.warehouse.availableByResource.coal,mineRawStockBefore,
+  'mine demolition must not delete raw warehouse stock');
+assert.ok(context.Game.state.resource.BGD.industrialNetwork.mineDecommissionHistory.some(row=>row.siteId==='SITE_BGD_COAL_01'),
+  'mine shutdown must be auditable');
+assert.equal(N.decommissionMine({countryId:'BGD',siteId:'SITE_BGD_COAL_01',confirmed:true}).idempotent,true,
+  'repeated demolition is safe and idempotent');
+const decommissionedSource = fs.readFileSync('omega_resource_industrial_network_v1.js','utf8');
+assert.match(decommissionedSource,/reason:'MINE_DECOMMISSIONED'/);
+const endowmentDecommissionGuard = fs.readFileSync('omega_resource_endowment_runtime.js','utf8');
+assert.match(endowmentDecommissionGuard,/decommissionedSiteIds/,'selected-country production must skip decommissioned mine sites');
+
 console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');

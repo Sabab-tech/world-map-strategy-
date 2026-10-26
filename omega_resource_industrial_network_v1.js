@@ -2989,6 +2989,10 @@ async function executeSitePipeline(input={}){
   const site=siteById(input.siteId);
   if(!site?.siteId)return{status:'BLOCKED',reason:'SITE_NOT_FOUND'};
   if(canonicalCountry(site.countryId)!==cid)return{status:'BLOCKED',reason:'SITE_COUNTRY_MISMATCH',siteCountryId:site.countryId,requestedCountryId:cid};
+  const registeredAssets=Array.isArray(state()?.resource?.[cid]?.mineAssets)?state().resource[cid].mineAssets:[];
+  const latestMineAsset=registeredAssets.slice().reverse().find(row=>String(row?.siteId||'')===String(site.siteId));
+  if(latestMineAsset&&/DECOMMISSIONED|DESTROYED|STOPPED/.test(String(latestMineAsset.status||'').toUpperCase()))
+    return{status:'BLOCKED',reason:'MINE_DECOMMISSIONED',siteId:site.siteId,countryId:cid};
   const strategicPolicy=g.Omega?.ResourceStrategicPolicyRuntime||g.OmegaResourceStrategicPolicyRuntime;
   const siteGate=strategicPolicy?.siteAvailableForExtraction?.(cid,site.siteId,site);
   if(siteGate&&!siteGate.allowed)return{status:'BLOCKED',reason:siteGate.reason||'SITE_EXPLORATION_GATE_BLOCKED',siteId:site.siteId,countryId:cid};
@@ -3370,6 +3374,45 @@ function decommissionFactory(input={}) {
   return record;
 }
 
+function decommissionMine(input={}) {
+  const cid=canonicalCountry(input.countryId),siteId=String(input.siteId||'').trim();
+  if(!cid||!/^[A-Z]{3}$/.test(cid))return{status:'BLOCKED',reason:'MINE_COUNTRY_INVALID',siteId:siteId||null};
+  const activePlayerCountry=playerSimulationCountryId();
+  if(!activePlayerCountry)return{status:'BLOCKED',reason:'PLAYER_COUNTRY_NOT_SELECTED',countryId:cid,siteId:siteId||null};
+  if(cid!==activePlayerCountry)return{status:'BLOCKED',reason:'PLAYER_COUNTRY_SCOPE_VIOLATION',countryId:cid,playerCountryId:activePlayerCountry,siteId:siteId||null};
+  if(!siteId)return{status:'BLOCKED',reason:'MINE_SITE_ID_REQUIRED',countryId:cid};
+  if(input.confirmed!==true)return{status:'CONFIRMATION_REQUIRED',reason:'MINE_DECOMMISSION_CONFIRMATION_REQUIRED',countryId:cid,siteId};
+  const resource=resourceState(cid),assets=Array.isArray(resource.mineAssets)?resource.mineAssets:[];
+  const asset=assets.slice().reverse().find(row=>String(row?.siteId||'')===siteId);
+  if(!asset)return{status:'NOT_FOUND',reason:'PLAYER_MINE_ASSET_NOT_FOUND',countryId:cid,siteId};
+  const previousStatus=String(asset.status||'NOT_RECORDED').trim().toUpperCase();
+  if(['DECOMMISSIONED','DESTROYED'].includes(previousStatus))
+    return{status:'DECOMMISSIONED',countryId:cid,siteId,idempotent:true,productionStatus:'STOPPED',historyPreserved:true};
+  asset.status='DECOMMISSIONED';
+  asset.operationalStatus='STOPPED';
+  asset.productionStatus='STOPPED';
+  asset.decommissionedTurn=turn();
+  asset.decommissionedDate=factoryCurrentGameDate();
+  asset.decommissionedByPlayer=true;
+  asset.activeProductionCycleId=null;
+  asset.productionHealth={...(asset.productionHealth||{}),status:'STOPPED',currentOutput:0,
+    reason:'MINE_DECOMMISSIONED_BY_PLAYER',updatedTurn:turn()};
+  const network=netState(cid);
+  network.mineDecommissionHistory=Array.isArray(network.mineDecommissionHistory)?network.mineDecommissionHistory:[];
+  const record={status:'DECOMMISSIONED',countryId:cid,siteId,resourceId:String(asset.resourceId||''),
+    mineAssetId:String(asset.id||asset.assetId||siteId),turn:turn(),date:asset.decommissionedDate,
+    priorStatus:previousStatus,productionStatus:'STOPPED',historyPreserved:true,
+    stockPreserved:true,authority:'OMEGA_MINE_DECOMMISSION_API_V1'};
+  network.mineDecommissionHistory.push(clone(record));
+  network.mineDecommissionHistory=network.mineDecommissionHistory.slice(-MAX_EVENTS);
+  network.events=Array.isArray(network.events)?network.events:[];
+  network.events.push(clone(record));
+  network.events=network.events.slice(-MAX_EVENTS);
+  emit('OMEGA_RESOURCE_MINE_DECOMMISSIONED',cid,record);
+  emit('OMEGA_RESOURCE_MINE_CAPACITY_CHANGED',cid,{siteId,resourceId:record.resourceId,status:'DECOMMISSIONED',turn:turn()});
+  return record;
+}
+
 function factoryCatalogDiagnostics(){
   const catalog=cat()||{},profiles=catalog.factoryProfiles||{},downstream=catalog.downstreamFactoryRecipes||{};
   const processing=processRules(),profileTypes=new Set(Object.keys(profiles));
@@ -3527,7 +3570,7 @@ function gameplayPipelineDiagnostics(countryScope){
     awaitingTransportCapacity:perCountry.reduce((n,x)=>n+x.awaitingTransportCapacity,0),perCountry};
 }
 function api(){
-  return Object.freeze({VERSION,loadCatalog,planExtraction,planShipment,dispatchShipment,dispatchFactoryInputShipment,advanceShipments,quoteMineProject,startMineProject,startFactoryProject,startInfrastructureProject,startPadmaCorridorProject,advanceProjects,startTechnologyProject,executeFactoryCycle,executeSitePipeline,diagnostics,gameplayPipelineDiagnostics,factoryCatalogDiagnostics,factoryProductionRequirements,factoryProductionStatus,decommissionFactory,startFactoryProductionCycle,transferFactoryInputsFromWarehouse,processPendingFactoryInputs,factoryUtilityDiagnostics,factoryConstructionMaterialQuote,reconcileFactoryEmployment,normalizeInfrastructure,candidateFactories,recipeFor,processPendingFactoryInputs,resourceMethod,buildRoute});
+  return Object.freeze({VERSION,loadCatalog,planExtraction,planShipment,dispatchShipment,dispatchFactoryInputShipment,advanceShipments,quoteMineProject,startMineProject,startFactoryProject,startInfrastructureProject,startPadmaCorridorProject,advanceProjects,startTechnologyProject,executeFactoryCycle,executeSitePipeline,diagnostics,gameplayPipelineDiagnostics,factoryCatalogDiagnostics,factoryProductionRequirements,factoryProductionStatus,decommissionFactory,decommissionMine,startFactoryProductionCycle,transferFactoryInputsFromWarehouse,processPendingFactoryInputs,factoryUtilityDiagnostics,factoryConstructionMaterialQuote,reconcileFactoryEmployment,normalizeInfrastructure,candidateFactories,recipeFor,processPendingFactoryInputs,resourceMethod,buildRoute});
 }
 g.Omega=g.Omega||{};g.Omega.ResourceIndustrialNetwork=api();g.OmegaResourceIndustrialNetwork=g.Omega.ResourceIndustrialNetwork;
 

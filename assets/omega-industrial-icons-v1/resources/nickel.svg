@@ -2,7 +2,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-labelledby="omega-nickel-title omega-nickel-desc" data-omega-icon-kind="resource" data-omega-icon-id="nickel">
 <title id="omega-nickel-title">Nickel</title><desc id="omega-nickel-desc">Nickel resource icon with material-specific colour and dimensional vector illustration.</desc>
 <defs>
-<linearGradient id="omega-nickel-bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#24394c"/><stop offset=".5" stop-color="#132536"/><stop offset="1" stop-color="#08121d"/></linearGradient>
+<linearGradient id="omega-nickel-bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f7fbfd"/><stop offset=".5" stop-color="#dce7ec"/><stop offset="1" stop-color="#b7c8d1"/></linearGradient>
 <linearGradient id="omega-nickel-metal" x1="0" y1="0" x2=".9" y2="1"><stop offset="0" stop-color="#edf4f7"/><stop offset=".32" stop-color="#a4b1bc"/><stop offset=".7" stop-color="#566a78"/><stop offset="1" stop-color="#141b24"/></linearGradient>
 <linearGradient id="omega-nickel-top" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffffff" stop-opacity=".9"/><stop offset=".22" stop-color="#edf4f7"/><stop offset="1" stop-color="#a4b1bc"/></linearGradient>
 <linearGradient id="omega-nickel-side" x1="0" y1="0" x2="1" y2=".7"><stop offset="0" stop-color="#a4b1bc"/><stop offset="1" stop-color="#566a78"/></linearGradient>
