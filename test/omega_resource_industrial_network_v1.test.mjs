@@ -261,6 +261,9 @@ assert.ok(context.Game.state.resource.BGD.industrialNetwork.events.some(x=>x.tra
 // country needs a real commissioned compatible factory.
 context.Game.state.simulation.turn=Number(context.Game.state.simulation.turn||0)+1;
 const assetsBeforeWaiting=context.Game.state.economy.BGD.productionAssets.length;
+const factoriesForWaiting=context.Game.state.economy.BGD.productionAssets;
+const originalFactoryStatuses=factoriesForWaiting.map(asset=>asset.status);
+factoriesForWaiting.forEach(asset=>{asset.status='CLOSED';});
 const ironWarehouseBefore=Number(context.Game.state.resource.BGD.warehouse.availableByResource.iron_ore)||0;
 const waitingForFactory=await N.executeSitePipeline({
   countryId:'BGD',siteId:'SITE_BGD_IRON_01',resourceId:'iron_ore',transportMode:'rail'
@@ -273,6 +276,10 @@ assert.equal(context.Game.state.economy.BGD.productionAssets.length,assetsBefore
   'a missing compatible factory must not be fabricated by a normal mine action');
 assert.ok(!context.Game.state.economy.BGD.productionAssets.some(x=>String(x.id||'').startsWith('FAC-SIM:BGD:SITE_BGD_IRON_01')),
   'normal mine actions must not create an unapproved simulation-only factory');
+factoriesForWaiting.forEach((asset,index)=>{
+  if(originalFactoryStatuses[index]===undefined)delete asset.status;
+  else asset.status=originalFactoryStatuses[index];
+});
 
 const kuwaitProject=N.startInfrastructureProject({
   countryId:'Kuwait',infrastructureType:'road',distanceKm:10,capacityPerDay:100,cost:100
