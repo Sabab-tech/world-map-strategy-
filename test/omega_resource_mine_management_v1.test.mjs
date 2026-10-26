@@ -509,10 +509,13 @@ test('every mapped resource site joins the executable runtime and has a one-tap 
   assert.match(endowmentSource, /NO_UNATTEMPTED_SITE_OCCURRENCES/);
   assert.match(endowmentSource, /registerCanonicalSiteSimulationRecord/);
   assert.match(uiSource, /data-omm-action="start-country-production"/);
-  assert.match(uiSource, /runtime\.startCountryProduction\(country\)/);
+  assert.match(uiSource, /runtime\.startCountryProduction\(country,batch\)/);
+  assert.match(uiSource, /const BATCH_SIZE=32/);
+  assert.match(uiSource, /await yieldToMobileUi\(\)/);
+  assert.match(uiSource, /countryMineSiteControllers\(country\)/);
   assert.match(uiSource, /country!==playerCountry\(\)/,
     'the one-tap action must stay within the active player-country boundary');
-  assert.match(uiSource, /No duplicate extraction was created/);
+  assert.match(uiSource, /if\(productionRunActive\)return/);
 });
 
 

@@ -1462,7 +1462,8 @@ function batchFromExtraction(x,record){
     const persistedMineStates=ctx.stateTransaction.get('resource.mineStates')||{};
     const canonicalRows=occurrenceRows(c);
     const siteRows=siteExecutionRows(c,{mineStates:persistedMineStates,requestedOccurrenceKeys:Array.isArray(cmd?.payload?.occurrenceKeys)?cmd.payload.occurrenceKeys.map(String):[]});
-    const gameplaySiteIds=new Set(Object.values(canonicalSiteCatalogMap||{}).filter(site=>site?.runtime?.identityAuthority==='LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE'&&site?.map?.markerEligible!==false&&!site?.runtime?.aliasOfSiteId&&!LEGACY_CANONICAL_ALIAS_IDS[String(site?.siteId||'')]).map(site=>String(site.siteId)));
+    // Canonical site metadata is shared reference data; avoid scanning every
+    // country's complete site catalog during each selected-country extraction pass.
     const signature=row=>[
       canonical(c),
       String(row?.resourceId||'').toLowerCase(),
@@ -1485,6 +1486,7 @@ function batchFromExtraction(x,record){
       const raw=row?.rawDeposit||{},direct=String(raw.siteId||raw.siteReferenceKey||raw.resourceSiteId||'').trim().toUpperCase();
       return direct?[canonical(row?.countryId||c),tok(row?.resourceId),'ID:'+direct].join('|'):null;
     }).filter(Boolean));
+    const canonicalDepositKeys=new Set(canonicalRows.map(row=>String(row?.depositKey||'').trim()).filter(Boolean));
     const siteDirectResourceSignature=row=>{
       const direct=String(row?.siteReferenceKey||row?.siteId||row?.rawDeposit?.siteId||'').trim().toUpperCase();
       return direct?[canonical(row?.countryId||c),tok(row?.resourceId),'ID:'+direct].join('|'):'';
@@ -1501,7 +1503,7 @@ function batchFromExtraction(x,record){
         canonicalSignatures.has(signature(row))||
         canonicalSiteResourceKeys.has(siteResourceSignature(row))||
         canonicalDirectSiteResourceKeys.has(siteDirectResourceSignature(row))||
-        (row?.linkedDepositId&&canonicalRows.some(x=>String(x?.depositKey||'')===String(row.linkedDepositId)))
+        (row?.linkedDepositId&&canonicalDepositKeys.has(String(row.linkedDepositId).trim()))
       );
       if(!isCanonicalOccurrence&&row?.assetType==='MINE_SITE'&&!isExplicitDedicatedGameplaySite&&duplicatesStructuredDeposit)continue;
       rowSeen.add(key);rows.push(row);
@@ -1521,7 +1523,9 @@ function batchFromExtraction(x,record){
     const exportDemand=ctx.stateTransaction.get('resource.exportDemand')||ctx.stateTransaction.get('trade.exportDemand')||{};
     const valueForResource=(obj,resourceId)=>{if(!obj||typeof obj!=='object')return null;if(Object.prototype.hasOwnProperty.call(obj,resourceId))return n(obj[resourceId]);const wanted=tok(resourceId);for(const k of Object.keys(obj))if(tok(k)===wanted)return n(obj[k]);return null;};
     const demandTargetByResource={},windowCapacityByOccurrence={},totalWindowByResource={};
-    for(const row of selected){
+    // Demand shares use the country's full occurrence set even when a UI action
+    // processes selected sites in small batches.
+    for(const row of rows){
       let capWindow=0;try{capWindow=n(row?.capacity?.computeWindowCapacity?.(windowHours)?.windowCapacity)||0;}catch(_){capWindow=(n(row?.capacity?.activeRate)||n(row?.capacity?.nominalRate)||0)*turnDays;}
       windowCapacityByOccurrence[row.occurrenceKey]=Math.max(0,capWindow);
       const rr=rid(row?.resourceId);totalWindowByResource[rr]=(totalWindowByResource[rr]||0)+Math.max(0,capWindow);
@@ -1529,7 +1533,15 @@ function batchFromExtraction(x,record){
       if(domestic!==null||foreign!==null)demandTargetByResource[rr]=Math.max(0,((domestic||0)+(foreign||0))*turnDays);
     }
     let remainingDemandByResource={...demandTargetByResource};
-    const allSiteKeys=Object.keys(mineSiteControllers);
+    const controllerKeyBySiteId=new Map(Object.entries(mineSiteControllers).map(([key,controller])=>
+      [String(controller?.siteReferenceKey||key),key]));
+    const allSiteKeys=explicitOccurrenceKeys.size
+      ?[...new Set([...explicitOccurrenceKeys].map(key=>{
+        const mine=persistedMineStates[key]||{};
+        const siteId=String(mine.siteReferenceKey||mine.siteId||mine.sourceSiteId||'');
+        return siteId?controllerKeyBySiteId.get(siteId):null;
+      }).filter(Boolean))]
+      :Object.keys(mineSiteControllers);
     for(const siteKey of allSiteKeys){
       const controller=mineSiteControllers[siteKey];
       const hasExecutable=Array.isArray(controller.linkedOccurrenceKeys)&&controller.linkedOccurrenceKeys.length>0;
@@ -1877,6 +1889,9 @@ function batchFromExtraction(x,record){
   async function startCountryProduction(countryId,siteIds=null){
     const c=canonical(countryId);
     if(!/^[A-Z]{3}$/.test(c))return{status:'BLOCKED',reason:'COUNTRY_ID_INVALID',countryId:c||null};
+    const selectedCountryId=playerSimulationCountryId();
+    if(!selectedCountryId)return{status:'BLOCKED',reason:'PLAYER_COUNTRY_NOT_SELECTED',countryId:c};
+    if(c!==selectedCountryId)return{status:'BLOCKED',reason:'PLAYER_COUNTRY_SCOPE_VIOLATION',countryId:c,playerCountryId:selectedCountryId};
     const initialized=await initialize();
     if(initialized?.status!=='READY')return{status:'BLOCKED',reason:'RESOURCE_ENDOWMENT_NOT_READY',detail:initialized,countryId:c};
     const refreshed=await hydrateCountry(c),hydration=refreshed?.result||refreshed;

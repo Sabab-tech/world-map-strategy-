@@ -203,7 +203,7 @@ function shellStyle(){
  '@media(max-width:760px){#omega-mine-management-modal{padding:4px}#omega-mine-management-modal .omm-shell{height:98vh;padding:11px;border-radius:10px}#omega-mine-management-modal .omm-grid{grid-template-columns:repeat(2,minmax(0,1fr))}#omega-mine-management-modal .omm-site-grid{grid-template-columns:1fr}#omega-mine-management-modal .omm-lines,#omega-mine-management-modal .omm-materials{grid-template-columns:1fr}#omega-mine-management-modal .omm-head{align-items:center}}';
  g.document.head.appendChild(style);
 }
-let currentView='my-mines',currentCountry='',lastOutcome='',isBound=false,observer=null;
+let currentView='my-mines',currentCountry='',lastOutcome='',isBound=false,observer=null,productionRunActive=false;
 function allCountryIds(){
  const rows=new Set([playerCountry()]);
  Object.keys(state()?.resource||{}).forEach(x=>rows.add(iso3(x)));
@@ -365,7 +365,7 @@ function ensureModal(){
 function render(){
  const modal=ensureModal(),country=currentCountry||playerCountry(),player=playerCountry();currentCountry=country;
  const isPlayer=country===player;
- modal.innerHTML='<div class="omm-shell"><header class="omm-head"><div><h2>'+SVG_MOUNTAIN+' Resource Ministry · Mine Management</h2><div class="omm-sub">Country-scoped site registry, mine construction, extraction and stock ledger · '+esc(VERSION)+'</div></div><div class="omm-actions">'+(currentView==='mines'?countrySelect():'<span class="omm-pill">PLAYER COUNTRY · '+esc(countryName(country))+'</span>')+'<button class="omm-primary" data-omm-action="start-country-production" '+(isPlayer?'':'disabled')+' aria-label="Start production for this country">Start production · 1 tap</button><button data-omm-action="refresh">Refresh</button><button class="omm-danger" data-omm-action="close" aria-label="Close mine management">Close</button></div></header>'+
+ modal.innerHTML='<div class="omm-shell"><header class="omm-head"><div><h2>'+SVG_MOUNTAIN+' Resource Ministry · Mine Management</h2><div class="omm-sub">Country-scoped site registry, mine construction, extraction and stock ledger · '+esc(VERSION)+'</div></div><div class="omm-actions">'+(currentView==='mines'?countrySelect():'<span class="omm-pill">PLAYER COUNTRY · '+esc(countryName(country))+'</span>')+'<button class="omm-primary" data-omm-action="start-country-production" '+(!isPlayer||productionRunActive?'disabled':'')+' aria-label="Start production for this country">'+(productionRunActive?'Production running…':'Start production · 1 tap')+'</button><button data-omm-action="refresh" '+(productionRunActive?'disabled':'')+'>Refresh</button><button class="omm-danger" data-omm-action="close" aria-label="Close mine management">Close</button></div></header>'+
  '<div class="omm-tabs"><button data-omm-action="tab-my-mines" class="'+(currentView==='my-mines'?'omm-primary':'')+'">'+SVG_PICKAXE+' My Mines</button><button data-omm-action="tab-mines" class="'+(currentView==='mines'?'omm-primary':'')+'">'+SVG_MOUNTAIN+' Mines</button></div>'+
  (!isPlayer?'<div class="omm-alert">Viewing '+esc(countryName(country))+' in read-only mode. Mine building and production are restricted to the active player country ('+esc(player||'UNRESOLVED')+').</div>':'')+
  (lastOutcome?'<div class="omm-status" role="status" aria-live="polite">'+esc(lastOutcome)+'</div>':'')+
@@ -373,6 +373,14 @@ function render(){
  modal.style.display='flex';
 }
 function close(){const modal=g.document.getElementById('omega-mine-management-modal');if(modal)modal.style.display='none';}
+function updateRunStatus(value){
+ lastOutcome=String(value||'');const modal=g.document.getElementById('omega-mine-management-modal');if(!modal)return;
+ let node=modal.querySelector('.omm-status');
+ if(!node){node=g.document.createElement('div');node.className='omm-status';node.setAttribute('role','status');node.setAttribute('aria-live','polite');
+  const shell=modal.querySelector('.omm-shell'),main=shell?.querySelector('main');if(main)shell.insertBefore(node,main);else shell?.appendChild(node);}
+ node.textContent=lastOutcome;
+}
+function yieldToMobileUi(){return new Promise(resolve=>{if(typeof g.setTimeout==='function')g.setTimeout(resolve,0);else Promise.resolve().then(resolve);});}
 function message(title,result){
  const inner=result?.result&&typeof result.result==='object'?result.result:result||{};
  return title+': '+label(inner.status||result?.status||'UNSPECIFIED')+' · '+label(inner.reason||result?.reason||inner.code||result?.code||'See project/flow details');
@@ -392,23 +400,48 @@ async function onClick(event){
  if(action==='close'){close();return;}
  if(action==='start-country-production'){
   if(country!==playerCountry()){lastOutcome='Rejected: production is restricted to the active player country.';render();return;}
+  if(productionRunActive)return;
   const runtime=endowment();
-  if(!runtime?.startCountryProduction){lastOutcome='One-tap production runtime unavailable.';render();return;}
-  button.disabled=true;button.textContent='Starting production…';
+  if(!runtime?.startCountryProduction||!runtime?.initialize||!runtime?.hydrateCountry||!runtime?.countryMineSiteControllers){
+   lastOutcome='Country-scoped production runtime unavailable.';render();return;
+  }
+  productionRunActive=true;updateRunStatus('Preparing the selected country production network…');render();
   try{
-   const result=await runtime.startCountryProduction(country);
-   const status=String(result?.status||'BLOCKED').toUpperCase();
-   if(status==='STARTED'||status==='PARTIALLY_STARTED'){
-    lastOutcome='Production started: '+formatNum(result.startedSiteCount||0)+' site(s), '+formatNum(result.extractedRecordCount||0)+' extraction record(s) committed'+((Number(result.blockedOccurrenceCount)||0)>0?'; '+formatNum(result.blockedOccurrenceCount)+' occurrence(s) blocked':'')+'.';
-   }else if(status==='ALREADY_ACTIVE'){
-    lastOutcome='Production is already active this turn at '+formatNum(result.activeSiteCount||0)+' site(s). No duplicate extraction was created.';
+   const initialized=await runtime.initialize();
+   if(initialized?.status!=='READY')throw new Error(initialized?.reason||'RESOURCE_ENDOWMENT_NOT_READY');
+   const hydrated=await runtime.hydrateCountry(country),hydration=hydrated?.result||hydrated;
+   if(hydrated?.status!=='APPLIED'||hydration?.accepted===false)throw new Error(hydration?.reason||hydrated?.reason||'COUNTRY_HYDRATION_NOT_COMMITTED');
+   const controllers=runtime.countryMineSiteControllers(country)||{};
+   const siteIds=[...new Set(Object.entries(controllers).filter(([,row])=>Array.isArray(row?.linkedOccurrenceKeys)&&row.linkedOccurrenceKeys.length>0)
+    .map(([key,row])=>String(row?.siteReferenceKey||key||'').trim()).filter(Boolean))];
+   if(!siteIds.length)throw new Error('NO_EXECUTABLE_MINE_SITE_OCCURRENCES_FOR_PLAYER_COUNTRY');
+   const BATCH_SIZE=32,totalBatches=Math.ceil(siteIds.length/BATCH_SIZE);
+   let startedSiteCount=0,extractedRecordCount=0,blockedOccurrenceCount=0,attemptedOccurrenceCount=0;
+   let processedBatchCount=0,failedBatchCount=0;const failures=[];
+   for(let offset=0;offset<siteIds.length;offset+=BATCH_SIZE){
+    const batch=siteIds.slice(offset,offset+BATCH_SIZE);
+    updateRunStatus('Starting production for '+country+': batch '+(processedBatchCount+1)+'/'+totalBatches+' · '+(offset+batch.length)+'/'+siteIds.length+' mine sites.');
+    const result=await runtime.startCountryProduction(country,batch),status=String(result?.status||'BLOCKED').toUpperCase();
+    startedSiteCount+=Math.max(0,Number(result?.startedSiteCount)||0);
+    extractedRecordCount+=Math.max(0,Number(result?.extractedRecordCount)||0);
+    blockedOccurrenceCount+=Math.max(0,Number(result?.blockedOccurrenceCount)||0);
+    attemptedOccurrenceCount+=Math.max(0,Number(result?.attemptedOccurrenceCount)||0);
+    processedBatchCount++;
+    if(!['STARTED','PARTIALLY_STARTED','ALREADY_ACTIVE'].includes(status)){failedBatchCount++;failures.push({batch:processedBatchCount,reason:result?.reason||status});}
+    if(offset+BATCH_SIZE<siteIds.length)await yieldToMobileUi();
+   }
+   const partial=blockedOccurrenceCount>0||failedBatchCount>0;
+   if(extractedRecordCount>0){
+    lastOutcome='Production '+(partial?'partially started':'started')+' for '+country+': '+formatNum(startedSiteCount)+' producing site(s), '+formatNum(extractedRecordCount)+' extraction record(s), '+formatNum(blockedOccurrenceCount)+' blocked occurrence(s). '+formatNum(processedBatchCount)+' responsive batch(es) processed.';
+    if(failedBatchCount)lastOutcome+=' Failed batches: '+formatNum(failedBatchCount)+'. First reason: '+label(failures[0]?.reason||'UNKNOWN')+'.';
    }else{
-    lastOutcome='Production did not start: '+label(result?.reason||status)+((Number(result?.blockedOccurrenceCount)||0)>0?' · '+formatNum(result.blockedOccurrenceCount)+' occurrence(s) blocked':'')+'.';
+    lastOutcome='No production output committed for '+country+'. '+formatNum(attemptedOccurrenceCount)+' occurrence(s) attempted; '+formatNum(blockedOccurrenceCount)+' blocked. '+label(failures[0]?.reason||'CHECK SITE STATUS, RESERVES, WORKERS AND POLICY')+'.';
    }
   }catch(error){lastOutcome='Production start failed: '+String(error?.message||error);}
+  finally{productionRunActive=false;}
   render();return;
  }
- if(action==='refresh'){lastOutcome='Refreshing resource data…';render();try{await api?.loadCatalog?.();await endowment()?.initialize?.();}catch(_){}lastOutcome='Refreshed from current runtime state.';render();return;}
+  if(action==='refresh'){lastOutcome='Refreshing resource data…';render();try{await api?.loadCatalog?.();await endowment()?.initialize?.();}catch(_){}lastOutcome='Refreshed from current runtime state.';render();return;}
  if(action==='tab-my-mines'){currentView='my-mines';currentCountry=playerCountry();lastOutcome='';render();return;}
  if(action==='tab-mines'){currentView='mines';lastOutcome='';render();return;}
  const siteId=String(button.getAttribute('data-site-id')||''),rid=String(button.getAttribute('data-resource-id')||'').toLowerCase();

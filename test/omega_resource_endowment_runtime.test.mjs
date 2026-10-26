@@ -836,6 +836,16 @@ const oneTapSite={
 };
 const oneTapRegistration=runtime.registerCanonicalSiteSimulationRecord(oneTapSite);
 assert.equal(oneTapRegistration.status,'REGISTERED',JSON.stringify(oneTapRegistration));
+// Production slices stay inside one country and avoid repeated world-catalog scans.
+const endowmentRuntimeSource=fs.readFileSync(new URL('../omega_resource_endowment_runtime.js',import.meta.url),'utf8');
+assert.doesNotMatch(endowmentRuntimeSource,/const gameplaySiteIds=new Set\(Object\.values\(canonicalSiteCatalogMap/);
+assert.match(endowmentRuntimeSource,/const canonicalDepositKeys=new Set/);
+assert.match(endowmentRuntimeSource,/const controllerKeyBySiteId=new Map/);
+assert.match(endowmentRuntimeSource,/PLAYER_COUNTRY_SCOPE_VIOLATION/);
+globalThis.Game.state.simulation.playerCountryId='BGD';
+const foreignCountryStart=await runtime.startCountryProduction('AUS');
+assert.equal(foreignCountryStart.status,'BLOCKED',JSON.stringify(foreignCountryStart));
+assert.equal(foreignCountryStart.reason,'PLAYER_COUNTRY_SCOPE_VIOLATION',JSON.stringify(foreignCountryStart));
 const oneTapStart=await runtime.startCountryProduction('BGD',[oneTapSite.siteId]);
 assert.ok(['STARTED','PARTIALLY_STARTED'].includes(oneTapStart.status),
   'one tap must start simulated extraction on an unattempted commercial site: '+JSON.stringify(oneTapStart));
