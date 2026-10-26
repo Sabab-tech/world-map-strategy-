@@ -827,7 +827,7 @@
           if (action === 'build' || action === 'extract') {
             var mineUi = g.OmegaResourceMineManagementUI || (g.Omega && g.Omega.ResourceMineManagementUI);
             if (mineUi && typeof mineUi.open === 'function') {
-              mineUi.open(action === 'extract' ? 'my-mines' : 'mines', countryKey, id, action);
+              mineUi.open('mines', countryKey, id, action);
             } else {
               root.__omegaV2ResourceNotice = 'Mine operations are not available right now.';
               render(root, Object.assign({}, root.__omegaV2ResourceOptions || {}, { tab:'mines' }));
