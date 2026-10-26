@@ -31,6 +31,9 @@ function cleanUnit(unit){
  if(['BBL','BBLS','BARREL','BARRELS','STOCK_TANK_BARRELS'].includes(u))return'BBL';
  if(['BCM','BILLION_CUBIC_METRES','BILLION_CUBIC_METERS'].includes(u))return'BCM';
  if(['BCF','BILLION_CUBIC_FEET'].includes(u))return'BCF';
+ if(['MMCF','MILLION_CUBIC_FEET'].includes(u))return'MMCF';
+ if(['MCF','THOUSAND_CUBIC_FEET'].includes(u))return'MCF';
+ if(['TCF','TRILLION_CUBIC_FEET'].includes(u))return'TCF';
  if(['MCM','MILLION_CUBIC_METRES','MILLION_CUBIC_METERS'].includes(u))return'MCM';
  if(['M3','CUBIC_METRE','CUBIC_METRES','CUBIC_METER','CUBIC_METERS'].includes(u))return'M3';
  if(['TONNES_U3O8','METRIC_TONNES_U3O8','TONNE_U3O8'].includes(u))return'TONNES';
@@ -73,7 +76,10 @@ function factorToCanonical(resourceId, sourceUnit, targetUnit){
    if(u==='MCM')return{factor:6289810.77,method:'VOLUME_UNIT_CONVERSION'};
  }
  if(target==='BCM'){
+   if(u==='TCF')return{factor:28.316846592,method:'VOLUME_UNIT_CONVERSION'};
    if(u==='BCF')return{factor:0.028316846592,method:'VOLUME_UNIT_CONVERSION'};
+   if(u==='MMCF')return{factor:0.000028316846592,method:'VOLUME_UNIT_CONVERSION'};
+   if(u==='MCF')return{factor:0.000000028316846592,method:'VOLUME_UNIT_CONVERSION'};
    if(u==='MCM')return{factor:0.001,method:'VOLUME_UNIT_CONVERSION'};
    if(u==='M3')return{factor:1e-9,method:'VOLUME_UNIT_CONVERSION'};
  }
