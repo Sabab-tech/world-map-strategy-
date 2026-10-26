@@ -269,11 +269,35 @@ for (const countryId of countries) {
 assert.equal(dispatchFailures.length, 0,
   'all site shipments must arrive in their owning country: ' + JSON.stringify(dispatchFailures.slice(0, 30)));
 
+function flowProcessingCompleted(countryId, batchId) {
+  return !!flowFor(countryId, batchId)?.stages?.some(stage =>
+    stage.stage === 'PROCESSING' && stage.status === 'COMPLETED');
+}
+
+// Advance the simulation as a shared clock, then tick every affected country.
+// Sequentially completing one factory at a time starves later sites of calendar advancement
+// and hides cross-factory scheduler interactions. This loop gives every pending cycle a due turn.
+let cycleDriverPasses = 0;
+for (; cycleDriverPasses < 128; cycleDriverPasses++) {
+  const pending = pipelines.filter(row => !flowProcessingCompleted(row.countryId, row.batchId));
+  if (!pending.length) break;
+  let targetTurn = (Number(turnState.simulation.turn) || 1) + 1;
+  let targetDate = String(turnState.simulation.date || '2015-01-01');
+  for (const item of pending) {
+    const countryState = runtime.countryResourceState(item.countryId) || {};
+    const cycle = countryState.industrialNetwork?.factoryProductionCycles?.[String(item.factoryId)];
+    if (!cycle) continue;
+    targetTurn = Math.max(targetTurn, Number(cycle.finishTurn) || targetTurn);
+    if (cycle.finishDate && String(cycle.finishDate) > targetDate) targetDate = String(cycle.finishDate);
+  }
+  advanceToCycleFinish(turnState, { finishTurn: targetTurn, finishDate: targetDate });
+  for (const countryId of countryIds) industry.processPendingFactoryInputs(countryId);
+}
+
 const processingFailures = [];
 let processedCount = 0;
 for (const target of pipelines) {
   try {
-    completeFactoryCycle(turnState, target.countryId, target.factoryId, target.batchId);
     const country = runtime.countryResourceState(target.countryId) || {};
     const flow = flowFor(target.countryId, target.batchId);
     const delivery = (country.industrialNetwork?.deliveries || [])
@@ -307,7 +331,15 @@ for (const target of pipelines) {
         processingStatus: delivery?.processingStatus || null, outputs, finishedGoodsPresent, flowCompleted,
         processingTx: processingTx || null, outputBatchCount: outputBatches.length, exactOutputBatch,
         finishedLedgerEntryFound: Boolean(finishedLedgerEntry),
-        flowStages: (flow?.stages || []).map(stage => ({ stage: stage.stage, status: stage.status, reason: stage.reason || null })) });
+        flowStages: (flow?.stages || []).map(stage => ({ stage: stage.stage, status: stage.status, reason: stage.reason || null })),
+        cycle: (() => {
+          const cycle = country.industrialNetwork?.factoryProductionCycles?.[String(target.factoryId)];
+          return cycle ? { status: cycle.status, finishDate: cycle.finishDate, finishTurn: cycle.finishTurn,
+            lastBlockedReason: cycle.lastBlockedReason || null, lastBlockedDetail: cycle.lastBlockedDetail || null } : null;
+        })(),
+        factoryHealth: (globalThis.Game?.state?.economy?.[target.countryId]?.productionAssets || [])
+          .find(asset => String(asset.id || asset.assetId || asset.projectId) === String(target.factoryId))?.productionHealth || null
+      });
     } else {
       processedCount++;
     }
