@@ -270,7 +270,8 @@
       var text = String(value == null ? '' : value).replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim();
       if (!text) return 'Not recorded';
       var upper = text.toUpperCase();
-      if (/SIMULATED|MODELED|MODELLED|UNOBSERVED|UNQUANTIFIED|SCENARIO|UNKNOWN/.test(upper)) return 'Available';
+      if (/UNOBSERVED|UNQUANTIFIED|UNKNOWN|NOT RECORDED|NOT AVAILABLE/.test(upper)) return 'Not recorded';
+      if (/SIMULATED|MODELED|MODELLED|SCENARIO/.test(upper)) return 'Available';
       if (/NOT APPLICABLE/.test(upper)) return 'Unavailable';
       if (/ACTIVE PRODUCING|OPERATIONAL|ACTIVE|COMMISSIONED/.test(upper)) return 'Active';
       if (/UNDER CONSTRUCTION|PENDING|PLANNED/.test(upper)) return 'In progress';
@@ -670,7 +671,7 @@
           }).join('') + '</div></section>';
       }).join('');
     var reportsMarkup = '<div class="omega-v2-kpis">' +
-      renderKpi('Mine sites', String(model.sites.filter(eligible).length), 'Unique active catalogue entries', 'neutral') +
+      renderKpi('Mine sites', String(model.sites.filter(eligible).length), 'Mine sites available to manage', 'neutral') +
       renderKpi('Producing this turn', String(producingSites.length), 'Mine sites with output', portfolioBalanceState) +
       renderKpi('Projects pending', String(mineProjects.length), 'Under construction', mineProjects.length ? 'shortage' : 'neutral') +
       renderKpi('Blocked supply flows', String(blockedFlows.length), 'Current flow ledger', blockedFlows.length ? 'shortage' : 'adequate') + '</div>' +
