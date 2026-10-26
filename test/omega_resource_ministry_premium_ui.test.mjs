@@ -158,3 +158,76 @@ test("all resource SVGs use a light metallic backplate for readable dark mineral
   assert.match(manifest.rendering.background, /light silver-metal.*factory SVGs retain their shared dark-navy/i);
   assert.match(read("omega-offline-map-sw.js"), /omega-offline-atlas-shell-v50/);
 });
+
+
+test("country selector browses canonical mine sites without granting foreign-country operation access", () => {
+  const api = globalThis.OmegaUIV2ResourceMinistry;
+  const priorGame = globalThis.Game;
+  const priorResourceEngine = globalThis.ResourceMinistryEngine;
+  const priorCatalog = globalThis.OmegaResourceSiteCanonicalCatalogData;
+  const site = (countryId, countryName, siteName, siteId) => ({
+    siteId, countryId, siteName, resourceId: "coal",
+    identity: { countryIso3: countryId, countryName, resourceTypeId: "coal" },
+    location: { countryName, region: "Mining region", coordinates: { lat: 12, lng: 24 } },
+    operation: { commercialExtraction: true, status: "REGISTERED" },
+    quantitative: {
+      reserve: { quantity: 100000, unit: "TONNES", status: "SIMULATED" },
+      production: { rate: 10, unit: "TONNES_PER_DAY", status: "SIMULATED" }
+    },
+    simulation: { reserve: { quantity: 100000, unit: "TONNES", status: "SIMULATED" } }
+  });
+  const bangladesh = site("BGD", "Bangladesh", "Bangladesh Coal Mine", "SITE_BGD_COUNTRY_SELECTOR");
+  const usa = site("USA", "United States", "United States Coal Mine", "SITE_USA_COUNTRY_SELECTOR");
+  const listeners = Object.create(null);
+  let foreignStateBefore = null;
+  globalThis.Game = { state: {
+    simulation: { turn: 4, session: { playerCountryId: "BGD" } },
+    resource: {
+      BGD: { mineAssets: [], industrialNetwork: { projects: [], shipments: [], siteFlowLedger: [] } },
+      USA: { mineAssets: [], industrialNetwork: { projects: [], shipments: [], siteFlowLedger: [] } }
+    }
+  } };
+  foreignStateBefore = JSON.stringify(globalThis.Game.state.resource.USA);
+  globalThis.ResourceMinistryEngine = {
+    countryProfiles: {
+      BGD: { identity: { iso3: "BGD", officialName: "Bangladesh" } },
+      USA: { identity: { iso3: "USA", officialName: "United States" } }
+    }
+  };
+  globalThis.OmegaResourceSiteCanonicalCatalogData = { sites: [bangladesh, usa] };
+  const root = {
+    innerHTML: "",
+    classList: { add() {} },
+    addEventListener(type, fn) { listeners[type] = fn; },
+    querySelector() { return null; },
+    querySelectorAll() { return []; },
+    contains() { return true; }
+  };
+  try {
+    const first = api.render(root, { countryId: "BGD", sites: [bangladesh, usa], tab: "mines" });
+    assert.equal(first.ok, true);
+    assert.match(root.innerHTML, /data-omega-v2-resource-country/);
+    assert.match(root.innerHTML, /Bangladesh \(BGD\)/);
+    assert.match(root.innerHTML, /United States \(USA\)/);
+    assert.match(root.innerHTML, /Bangladesh Coal Mine/);
+
+    listeners.change({
+      target: {
+        value: "USA",
+        matches(selector) { return selector === "[data-omega-v2-resource-country]"; }
+      }
+    });
+    assert.match(root.innerHTML, /United States \(USA\)/);
+    assert.match(root.innerHTML, /United States Coal Mine/);
+    assert.match(root.innerHTML, /data-omega-v2-mine-action="build"[^>]*disabled/);
+    assert.equal(JSON.stringify(globalThis.Game.state.resource.USA), foreignStateBefore,
+      "browsing a foreign country must remain read-only");
+    assert.doesNotMatch(root.innerHTML.replace(/<[^>]*>/g, " "), /\bSIMULATED\b/i);
+  } finally {
+    if (priorGame === undefined) delete globalThis.Game; else globalThis.Game = priorGame;
+    if (priorResourceEngine === undefined) delete globalThis.ResourceMinistryEngine;
+    else globalThis.ResourceMinistryEngine = priorResourceEngine;
+    if (priorCatalog === undefined) delete globalThis.OmegaResourceSiteCanonicalCatalogData;
+    else globalThis.OmegaResourceSiteCanonicalCatalogData = priorCatalog;
+  }
+});
