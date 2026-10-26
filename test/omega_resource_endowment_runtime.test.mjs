@@ -147,6 +147,9 @@ const initialized=await runtime.initialize();
 assert.equal(initialized.status,'READY',JSON.stringify(initialized));
 assert.equal(globalThis.OmegaResourceSiteQuantityCompletionData?.recordCount,305,'all additive missing-site gameplay quantities must load');
 assert.equal(new Set((globalThis.OmegaResourceSiteQuantityCompletionData?.records||[]).map(row=>row.siteId)).size,305,'quantity completion rows must preserve their unique physical site IDs');
+assert.equal(globalThis.OmegaResourceSiteQuantityCompletionReport?.recordsSeen,305,'all supplemental reserve rows must be audited');
+assert.ok(Number(globalThis.OmegaResourceSiteQuantityCompletionReport?.recordsRejectedForUnitProvenance)>=1,
+  'an incompatible source unit must be rejected rather than mislabeled as a canonical gameplay quantity');
 assert.equal(initialized.countries,Object.keys(engine.countryProfiles||{}).length);
 // Startup must not claim READY if either supplemental production batch is absent or partial.
 const mineplayReadiness=globalThis.OmegaResourceSiteCanonicalCatalogData;
