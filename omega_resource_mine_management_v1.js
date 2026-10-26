@@ -304,7 +304,7 @@ function stationRows(country){
 }
 function stationDirectory(country){
  const assets=stationRows(country),canBuild=country===playerCountry();
- let out='<div class="omm-section"><h3>Mine & processing stations</h3><p class="omm-sub">Existing processing facilities, their inputs/outputs and cycle capacity. Processing consumes inventory and produces tracked batches; it does not directly mint treasury cash.</p></div>';
+ let out='<div class="omm-section"><h3>Mine & processing stations</h3><p class="omm-sub">Available processing facilities, input needs and output capacity.</p></div>';
  if(!assets.length)return out+'<div class="omm-empty">No processing station is commissioned in this country. Commission a compatible factory through the existing Industrial Network before processing ore.</div>';
  return out+'<div class="omm-site-grid">'+assets.map(asset=>{
   const id=String(asset.id),name=asset.name||asset.factoryName||asset.factoryType||id,inputs=asset.inputCoefficients||{},outputs=asset.outputProfile||{},resource=Object.keys(inputs)[0]||'';
@@ -323,7 +323,7 @@ function mineDirectory(country){
  const rows=sitesFor(country);
  if(!rows.length)return '<div class="omm-empty">No valid mine-site references loaded for '+esc(country)+'. Check the canonical site loader and supplemental dataset diagnostic.</div>';
  const built=new Set(assetRows(country).filter(a=>String(a.status).toUpperCase()==='OPERATIONAL').map(a=>String(a.siteId)));
- return '<div class="omm-section"><h3>National mine-site portfolio</h3><p class="omm-sub">Known deposits and projects, not necessarily government-owned or player-operated. Commissioning changes only game state, never the source-reported real-world status.</p></div>'+
+ return '<div class="omm-section"><h3>National mine-site portfolio</h3><p class="omm-sub">Explore this country’s mines, fields and extraction sites.</p></div>'+
  '<div class="omm-site-grid">'+rows.map(site=>siteCard(site,country,'mines')).join('')+'</div>'+stationDirectory(country);
 }
 function myMines(country){
