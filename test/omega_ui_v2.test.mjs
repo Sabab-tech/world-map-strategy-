@@ -886,6 +886,26 @@ test('factory command cards use canonical SVGs, daily production state, type cou
     assert.match(root.innerHTML,/factory utility shortage/i);
     assert.match(root.innerHTML,/data-omega-v2-factory-build="FAC-STEEL"/);
     assert.match(root.innerHTML,/data-omega-v2-factory-destroy="FAC-STEEL"/);
+    assert.match(root.innerHTML,/class="fp-summary"/);
+    assert.match(root.innerHTML,/FACTORIES/);
+    assert.match(root.innerHTML,/PRODUCTION CYCLES/);
+
+    // Every industrial tab must remain inside the reference command stage.
+    // The old renderer used a different root for non-factory tabs, which discarded
+    // the new metal/neon interface as soon as any top-tab button was pressed.
+    for (const tab of ['production-lines','inventory','national-inventory','research','projects']) {
+      const tabResult = globalThis.OmegaUIV2Industry.render(root,{countryId:'BGD',tab});
+      assert.equal(tabResult.ok,true,tab + ' tab should render');
+      assert.match(root.innerHTML,/class="omega-v2-factory-command fp-stage"/,tab + ' must keep the command stage');
+      assert.match(root.innerHTML,/class="fp-top"/,tab + ' must keep the command header');
+      assert.match(root.innerHTML,/class="fp-summary"/,tab + ' must keep country data metrics');
+      assert.match(root.innerHTML,/class="fp-content"/,tab + ' content must render inside the themed shell');
+      assert.match(root.innerHTML,new RegExp('data-active-tab="' + tab + '"'),tab + ' must mark the active tab');
+      assert.doesNotMatch(root.innerHTML,/class="omega-v2-heading"/,tab + ' must not fall back to the legacy screen');
+    }
+    const returnToFactories = globalThis.OmegaUIV2Industry.render(root,{countryId:'BGD',tab:'factories'});
+    assert.equal(returnToFactories.ok,true);
+    assert.match(root.innerHTML,/data-omega-v2-factory-card/);
     assert.match(root.innerHTML,/commons\.wikimedia\.org\/wiki\/File:Industrial_production_line_operating_in_a_large_modern_factory\.jpg/);
     assert.match(root.innerHTML,/href="https:\/\/creativecommons\.org\/licenses\/by\/2\.0\//);
     assert.match(root.innerHTML,/Image resized and converted to WebP/);
@@ -903,6 +923,10 @@ test('factory command cards use canonical SVGs, daily production state, type cou
     assert.match(css,/aspect-ratio:\s*1672\/941/);
     assert.match(css,/@supports \(width:\s*1cqw\)/);
     assert.match(css,/prefers-reduced-motion:\s*reduce/);
+    assert.match(css,/FP persistent command view fixes/);
+    assert.match(css,/orientation:\s*landscape\) and \(max-height:\s*520px/);
+    assert.match(css,/fp-summary/);
+    assert.match(css,/@supports not \(width:\s*1cqw\)[\s\S]*?\.fp-badge\s*\{\s*display:\s*grid/);
     assert.match(css,/data-state="stopped"/);
     assert.match(css,/data-selected="true"\]\[data-state="running"/);
     assert.match(css,/data-selected="true"\]\[data-state="reduced"/);
