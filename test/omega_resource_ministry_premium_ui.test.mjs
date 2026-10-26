@@ -64,3 +64,78 @@ test("resource renderer uses the canonical image map and labels mine archetypes"
   assert.match(source, /data-mine-archetype/);
   assert.match(source, /RESERVE_NOT_RECORDED|UNOBSERVED/);
 });
+
+
+test("mine command screen has the requested tabs, per-site actions and clean player-facing text", () => {
+  const api = globalThis.OmegaUIV2ResourceMinistry;
+  const priorGame = globalThis.Game;
+  const priorCatalog = globalThis.OmegaResourceSiteCanonicalCatalogData;
+  const row = {
+    siteId: "SITE_BGD_TEST_COAL",
+    countryId: "BGD",
+    resourceId: "coal",
+    siteName: "Test Coal Mine",
+    status: "SIMULATED_OPERATIONAL_SCENARIO",
+    location: { region: "Sylhet", coordinates: { lat: 24.9, lng: 91.8 } },
+    operation: { commercialExtraction: true },
+    quantitative: {
+      reserve: { quantity: 1000000, unit: "TONNES", status: "SIMULATED" },
+      production: { rate: 100, unit: "TONNES_PER_DAY", status: "SIMULATED" }
+    },
+    simulation: { reserve: { quantity: 1000000, unit: "TONNES", status: "SIMULATED" } }
+  };
+  globalThis.Game = { state: {
+    simulation: { turn: 7, session: { playerCountryId: "BGD" } },
+    resource: { BGD: {
+      mineAssets: [{ siteId: row.siteId, resourceId: "coal", status: "OPERATIONAL", workersCommitted: 250, workersRequired: 300 }],
+      industrialNetwork: { projects: [], shipments: [], siteFlowLedger: [{
+        flowId: "FLOW-TEST-1", siteId: row.siteId, countryId: "BGD", resourceId: "coal",
+        batchId: "BATCH-TEST-1", quantity: 100, unit: "TONNES", status: "DELIVERED",
+        extractionTurn: 7, stages: [{ stage: "EXTRACTION", status: "COMPLETED", turn: 7 }]
+      }] },
+      warehouse: { availableByResource: { coal: 500 }, receipts: [] },
+      processedWarehouse: { availableByResource: { coal: 50 }, receipts: [] },
+      demandByResource: { coal: { dailyDemand: 120 } },
+      inventoryLedger: []
+    } }
+  } };
+  globalThis.OmegaResourceSiteCanonicalCatalogData = { sites: [row] };
+  const root = {
+    innerHTML: "",
+    classList: { add() {} },
+    addEventListener() {},
+    querySelector() { return null; },
+    querySelectorAll() { return []; },
+    contains() { return true; }
+  };
+  try {
+    const rendered = api.render(root, { countryId: "BGD", sites: [row], tab: "mines" });
+    assert.equal(rendered.ok, true);
+    assert.match(root.innerHTML, /Overview/);
+    assert.match(root.innerHTML, /Stock &amp; Logistics/);
+    assert.match(root.innerHTML, /Inventory \/ Warehouse/);
+    assert.match(root.innerHTML, /Reports/);
+    assert.match(root.innerHTML, /data-omega-v2-mine-action="build"/);
+    assert.match(root.innerHTML, /data-omega-v2-mine-action="extract"/);
+    assert.match(root.innerHTML, /data-omega-v2-mine-action="demolish"/);
+    assert.match(root.innerHTML, /data-balance-state="shortage"/);
+    const visibleText = root.innerHTML.replace(/<[^>]*>/g, " ").replace(/&amp;/g, "&");
+    assert.doesNotMatch(visibleText, /\b(simulated|modelled|modeled|catalog reference|source:|site id)\b/i);
+    api.render(root, { countryId: "BGD", sites: [row], tab: "reports" });
+    assert.match(root.innerHTML, /omega-v2-report-chart/);
+    assert.match(root.innerHTML, /omega-v2-chart-bar/);
+  } finally {
+    if (priorGame === undefined) delete globalThis.Game; else globalThis.Game = priorGame;
+    if (priorCatalog === undefined) delete globalThis.OmegaResourceSiteCanonicalCatalogData;
+    else globalThis.OmegaResourceSiteCanonicalCatalogData = priorCatalog;
+  }
+});
+
+test("resource status plating and charts stay local and unit-aware", () => {
+  const css = cssText();
+  assert.match(css, /omega-v2-mine-card\[data-balance-state="adequate"\]/);
+  assert.match(css, /omega-v2-mine-card\[data-balance-state="shortage"\]/);
+  assert.match(css, /omega-v2-mine-card\[data-balance-state="stopped"\]/);
+  assert.match(css, /omega-v2-resource-icon[\s\S]*#f6fafc/);
+  assert.doesNotMatch(css, /https?:\/\//);
+});
