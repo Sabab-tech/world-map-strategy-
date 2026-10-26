@@ -3411,7 +3411,6 @@ function decommissionMine(input={}) {
 }
 
 function factoryCatalogDiagnostics(){
-function factoryCatalogDiagnostics(){
   const catalog=cat()||{},profiles=catalog.factoryProfiles||{},downstream=catalog.downstreamFactoryRecipes||{};
   const processing=processRules(),profileTypes=new Set(Object.keys(profiles));
   const allTypes=new Set([...Object.values(processing).map(x=>String(x?.factoryType||'').toUpperCase()),...Object.keys(profiles),
