@@ -1290,7 +1290,7 @@ test('industrial command panel scopes factory, mine, daily-rate and current-turn
     assert.match(root.innerHTML, /omega-v2-factory-command/);
     assert.match(root.innerHTML, /data-omega-v2-factory-card/);
     assert.match(root.innerHTML, /Bangladesh Alloy Works/);
-    assert.match(root.innerHTML, /STEEL_MILL/);
+    assert.match(root.innerHTML, /Catalog Steel Mill/);
     assert.doesNotMatch(root.innerHTML, /Bangladesh Iron Mine|Daily mine production|Build \/ view mines|FACTORY SVG SLOT/);
     assert.doesNotMatch(root.innerHTML, /12 tonnes\/day|1\.33 tonnes\/game-day/);
     assert.doesNotMatch(root.innerHTML, /United States Copper Refinery|United States Copper Mine|USA-MINE-1/,
