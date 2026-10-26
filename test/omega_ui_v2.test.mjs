@@ -821,8 +821,8 @@ test('Home Affairs hides unready shared placeholders and shows the Bangladesh re
 });
 
 
-test('factory command cards use canonical SVGs, daily production state, type counts and conditional neon selection', () => {
-  const keys = ['Game','OmegaResourceIndustrialCatalogData','Omega','currentActiveCountry'];
+test('factory command cards use canonical SVGs, daily production state, type counts and conditional neon selection', async () => {
+  const keys = ['Game','OmegaResourceIndustrialCatalogData','Omega','currentActiveCountry','OmegaResourceIndustrialNetwork','OmegaResourceCommandCenterUI'];
   const previous = Object.fromEntries(keys.map((key) => [key, globalThis[key]]));
   globalThis.Omega = {};
   globalThis.currentActiveCountry = 'BGD';
@@ -832,7 +832,11 @@ test('factory command cards use canonical SVGs, daily production state, type cou
       INDUSTRIAL_CHEMICALS_GAS_PLANT: { name:'Industrial Chemicals and Gases' },
       RARE_EARTH_BENEFICIATION_PLANT: { name:'Rare Earth Processing' }
     },
-    factoryTypeAliases: {}
+    factoryTypeAliases: {},
+    downstreamFactoryRecipes: {
+      STEEL_PRIMARY_ROUTE_V1: { recipeId:'STEEL_PRIMARY_ROUTE_V1', factoryType:'STEEL_AND_ALLOY_WORKS', inputs:{iron_ore:1}, outputs:{steel:1} }
+    },
+    processingRules: {}
   };
   globalThis.Game = { state: {
     simulation: { session: { playerCountryId:'BGD' }, turn:4, daysPerTurn:1 },
@@ -917,6 +921,59 @@ test('factory command cards use canonical SVGs, daily production state, type cou
       return null;
     }}});
     assert.match(root.innerHTML,/data-factory-id="FAC-STEEL" data-state="running" data-selected="true"/);
+
+    const typeView = globalThis.OmegaUIV2Industry.render(root,{countryId:'BGD',tab:'factories',factoryView:'types'});
+    assert.equal(typeView.ok,true);
+    assert.match(root.innerHTML,/Factory types &amp; country totals/);
+    assert.equal((root.innerHTML.match(/data-omega-v2-factory-type-card/g)||[]).length,3);
+    assert.match(root.innerHTML,/Registered game assets/);
+    assert.match(root.innerHTML,/data-factory-view="types"/);
+
+    // Build stays within UI v2 rather than opening the retired command centre.
+    let legacyOpenCalls = 0;
+    let projectRequest = null;
+    globalThis.OmegaResourceCommandCenterUI = {
+      open(){ legacyOpenCalls += 1; },
+      openPanel(){ legacyOpenCalls += 1; }
+    };
+    globalThis.OmegaResourceIndustrialNetwork = {
+      async loadCatalog(){ return {status:'READY'}; },
+      startFactoryProject(input) {
+        projectRequest = input;
+        const project = {
+          projectId:'FACTORY:BGD:STEEL_AND_ALLOY_WORKS:TEST',
+          projectType:'FACTORY_CONSTRUCTION', countryId:input.countryId,
+          factoryType:input.factoryType, factoryId:'FAC-STEEL-NEW',
+          status:'UNDER_CONSTRUCTION', startTurn:4, cost:1000, resourceId:'iron_ore'
+        };
+        globalThis.Game.state.resource.BGD.industrialNetwork.projects.push(project);
+        return project;
+      }
+    };
+    click({target:{closest(selector){
+      if(selector==='[data-omega-v2-factory-build]')return{
+        disabled:false,
+        getAttribute(name){return name==='data-factory-type'?'STEEL_AND_ALLOY_WORKS':'CATALOG';}
+      };
+      return null;
+    }}});
+    assert.match(root.innerHTML,/data-omega-v2-factory-project-form/);
+    assert.match(root.innerHTML,/Start factory construction/);
+    assert.equal(legacyOpenCalls,0,'the Build button must not open the retired command centre');
+    assert.equal(typeof handlers.submit,'function','the in-UI form must expose a submit handler');
+    const projectForm = {elements:{
+      factoryType:{value:'STEEL_AND_ALLOY_WORKS'}, recipeId:{value:'STEEL_PRIMARY_ROUTE_V1'},
+      resourceId:{value:''}, cost:{value:''}, capacityPerDay:{value:''}, buildDays:{value:''}
+    }};
+    await handlers.submit({target:{closest(selector){
+      return selector==='[data-omega-v2-factory-project-form]'?projectForm:null;
+    }},preventDefault(){}});
+    assert.equal(projectRequest.countryId,'BGD');
+    assert.equal(projectRequest.factoryType,'STEEL_AND_ALLOY_WORKS');
+    assert.equal(projectRequest.recipeId,'STEEL_PRIMARY_ROUTE_V1');
+    assert.equal(legacyOpenCalls,0,'submitting Build must remain inside UI v2');
+    assert.match(root.innerHTML,/FACTORY:BGD:STEEL_AND_ALLOY_WORKS:TEST/);
+    assert.match(root.innerHTML,/class="omega-v2-factory-command fp-stage"/);
     const css = readFileSync(new URL('../omega_ui_v2/factory-production-command.css',import.meta.url),'utf8');
     assert.match(css,/grid-template-columns:\s*repeat\(3,\s*minmax\(0,\s*1fr\)\)/);
     assert.match(css,/FP Command Stage/);
