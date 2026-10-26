@@ -2,7 +2,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-labelledby="omega-magnesite-title omega-magnesite-desc" data-omega-icon-kind="resource" data-omega-icon-id="magnesite">
 <title id="omega-magnesite-title">Magnesite</title><desc id="omega-magnesite-desc">Magnesite resource icon with material-specific colour and dimensional vector illustration.</desc>
 <defs>
-<linearGradient id="omega-magnesite-bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#24394c"/><stop offset=".5" stop-color="#132536"/><stop offset="1" stop-color="#08121d"/></linearGradient>
+<linearGradient id="omega-magnesite-bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f1f6fa"/><stop offset=".52" stop-color="#d8e5ed"/><stop offset="1" stop-color="#aebfcb"/></linearGradient>
 <linearGradient id="omega-magnesite-metal" x1="0" y1="0" x2=".9" y2="1"><stop offset="0" stop-color="#fff9ee"/><stop offset=".32" stop-color="#d9d0c2"/><stop offset=".7" stop-color="#938777"/><stop offset="1" stop-color="#141b24"/></linearGradient>
 <linearGradient id="omega-magnesite-top" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffffff" stop-opacity=".9"/><stop offset=".22" stop-color="#fff9ee"/><stop offset="1" stop-color="#d9d0c2"/></linearGradient>
 <linearGradient id="omega-magnesite-side" x1="0" y1="0" x2="1" y2=".7"><stop offset="0" stop-color="#d9d0c2"/><stop offset="1" stop-color="#938777"/></linearGradient>
