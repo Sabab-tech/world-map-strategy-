@@ -220,7 +220,7 @@ test('industry command panel aggregates factory type totals using only selected-
     assert.equal(result.ok, true);
     assert.match(root.innerHTML, /FACTORY TYPE · TOTAL COUNT/);
     assert.match(root.innerHTML, /Steel Mill/);
-    assert.match(root.innerHTML, />2<\\/td>/);
+    assert.ok(root.innerHTML.includes('<td class="omega-v2-metal-number">2</td>'));
     assert.doesNotMatch(root.innerHTML, /Foreign Cement Plant|CEMENT_PLANT/);
   } finally {
     if (previousGame === undefined) delete globalThis.Game; else globalThis.Game = previousGame;
