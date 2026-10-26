@@ -474,8 +474,12 @@ function onExtractionCommitted(evt){
     addFlowStage(row,'TRANSPORT','IN_TRANSIT',{shipmentId:row.shipmentId,factoryId:row.factoryId,dispatchQuantity:row.quantity,etaTurn:sent.shipment.etaTurn});
     addFlowStage(row,'FACTORY_INPUT','AWAITING_DELIVERY',{factoryId:row.factoryId});
   }else{
-    addFlowStage(row,'TRANSPORT','BLOCKED',{reason:sent.reason||'SHIPMENT_DISPATCH_BLOCKED',detail:sent.details||null});
-    row.blockReason=sent.reason||'SHIPMENT_DISPATCH_BLOCKED';
+    const reason=sent.reason||'SHIPMENT_DISPATCH_BLOCKED';
+    const waitForCapacity=String(reason).toUpperCase()==='TRANSPORT_CAPACITY_EXHAUSTED';
+    addFlowStage(row,'TRANSPORT',waitForCapacity?'AWAITING_CAPACITY':'BLOCKED',{reason,detail:sent.details||null});
+    row.blockReason=waitForCapacity?null:reason;
+    row.transportQueueReason=waitForCapacity?reason:null;
+    row.lastResidualBlockReason=null;
   }
   row.factoryBootstrapStatus=bootstrap?.status||'EXISTING';
   saveSiteFlow(cid,row);
@@ -997,11 +1001,16 @@ function dispatchResidualSiteBatches(c){
       flow.shipmentIds=[...new Set([...(flow.shipmentIds||[]),sent.shipment.shipmentId])];
       flow.quantity=Math.max(num(flow.quantity)||0,remaining);
       flow.route=clone(sent.shipment.route);
+      flow.blockReason=null;flow.lastResidualBlockReason=null;flow.transportQueueReason=null;
       addFlowStage(flow,'TRANSPORT','IN_TRANSIT',{shipmentId:sent.shipment.shipmentId,dispatchQuantity:sent.shipment.quantity,
         etaTurn:sent.shipment.etaTurn,residualOf:(flow.shipmentIds||[]).length>1?flow.shipmentIds[flow.shipmentIds.length-2]:null});
     }else{
-      addFlowStage(flow,'TRANSPORT','RESIDUAL_BLOCKED',{reason:sent.reason||'RESIDUAL_SHIPMENT_BLOCKED',remainingQuantity:remaining});
-      flow.lastResidualBlockReason=sent.reason||'RESIDUAL_SHIPMENT_BLOCKED';
+      const reason=sent.reason||'RESIDUAL_SHIPMENT_BLOCKED';
+      const waitForCapacity=String(reason).toUpperCase()==='TRANSPORT_CAPACITY_EXHAUSTED';
+      addFlowStage(flow,'TRANSPORT',waitForCapacity?'AWAITING_CAPACITY':'RESIDUAL_BLOCKED',{reason,remainingQuantity:remaining});
+      flow.lastResidualBlockReason=waitForCapacity?null:reason;
+      flow.blockReason=waitForCapacity?null:reason;
+      flow.transportQueueReason=waitForCapacity?reason:null;
     }
     saveSiteFlow(cid,flow);
   }
@@ -3384,8 +3393,8 @@ function gameplayPipelineDiagnostics(countryScope){
   };
   const perCountry=countries.map(c=>{
     const flows=siteFlowRows(c),network=netState(c),stages={};
-    let dispatched=0,processed=0,marketPublished=0,treasuryReceipts=0,blocked=0;
-    const blockedFlows=[];
+    let dispatched=0,processed=0,marketPublished=0,treasuryReceipts=0,blocked=0,awaitingTransportCapacity=0;
+    const blockedFlows=[],awaitingCapacityFlows=[];
     for(const flow of flows){
       const flowStages=Array.isArray(flow?.stages)?flow.stages:[];
       let hasDispatched=false,hasProcessed=false,hasMarketPublication=false;
@@ -3400,6 +3409,11 @@ function gameplayPipelineDiagnostics(countryScope){
       if(hasProcessed)processed++;
       if(hasMarketPublication)marketPublished++;
       treasuryReceipts+=(Array.isArray(flow?.treasurySettlements)?flow.treasurySettlements.length:0);
+      if(String(flow?.status||'').toUpperCase()==='AWAITING_CAPACITY'){
+        awaitingTransportCapacity++;
+        awaitingCapacityFlows.push({siteId:flow.siteId,resourceId:flow.resourceId,batchId:flow.batchId,
+          reason:flow.transportQueueReason||'TRANSPORT_CAPACITY_EXHAUSTED'});
+      }
       if(isCurrentlyBlocked(flow)){
         blocked++;
         blockedFlows.push({siteId:flow.siteId,resourceId:flow.resourceId,batchId:flow.batchId,status:flow.status,
@@ -3410,13 +3424,14 @@ function gameplayPipelineDiagnostics(countryScope){
     }
     const shipments=Array.isArray(network.shipments)?network.shipments:[];
     return{countryId:c,registrySiteCount:siteCounts[c]||0,extractionFlows:flows.length,dispatched,processed,marketPublished,
-      treasuryReceipts,blocked,blockedFlows,shipmentCount:shipments.length,stages};
+      treasuryReceipts,blocked,blockedFlows,awaitingTransportCapacity,awaitingCapacityFlows,shipmentCount:shipments.length,stages};
   });
   return{contract:'OMEGA_SITE_FLOW_PIPELINE_V1',version:VERSION,turn:turn(),registrySiteCount:sites.length,
     diagnosticScope:scopedCountry||(hasScope?'UNRESOLVED':'GLOBAL'),countryCount:countries.length,
     flowCount:perCountry.reduce((n,x)=>n+x.extractionFlows,0),dispatched:perCountry.reduce((n,x)=>n+x.dispatched,0),
     processed:perCountry.reduce((n,x)=>n+x.processed,0),marketPublished:perCountry.reduce((n,x)=>n+x.marketPublished,0),
-    treasuryReceipts:perCountry.reduce((n,x)=>n+x.treasuryReceipts,0),blocked:perCountry.reduce((n,x)=>n+x.blocked,0),perCountry};
+    treasuryReceipts:perCountry.reduce((n,x)=>n+x.treasuryReceipts,0),blocked:perCountry.reduce((n,x)=>n+x.blocked,0),
+    awaitingTransportCapacity:perCountry.reduce((n,x)=>n+x.awaitingTransportCapacity,0),perCountry};
 }
 function api(){
   return Object.freeze({VERSION,loadCatalog,planExtraction,planShipment,dispatchShipment,dispatchFactoryInputShipment,advanceShipments,quoteMineProject,startMineProject,startFactoryProject,startInfrastructureProject,startPadmaCorridorProject,advanceProjects,startTechnologyProject,executeFactoryCycle,executeSitePipeline,diagnostics,gameplayPipelineDiagnostics,factoryCatalogDiagnostics,factoryProductionRequirements,factoryProductionStatus,startFactoryProductionCycle,transferFactoryInputsFromWarehouse,processPendingFactoryInputs,factoryUtilityDiagnostics,factoryConstructionMaterialQuote,reconcileFactoryEmployment,normalizeInfrastructure,candidateFactories,recipeFor,processPendingFactoryInputs,resourceMethod,buildRoute});
