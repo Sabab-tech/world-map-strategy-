@@ -52,6 +52,56 @@ const makeSteelAsset = (overrides = {}) => ({
   companyId: 'SIM-TEST-CO', status: 'OPERATIONAL', ...overrides
 });
 
+test('composite mine route modes use declared distance only for the bound factory destination', () => {
+  const { api } = makeRuntime();
+  const coalSite = {
+    siteId:'SITE_IND_ROUTE_TEST', countryId:'IND', real:{resourceId:'coal'},
+    simulation:{transportRoute:[{
+      routeId:'ROUTE_IND_COAL_TO_FACTORY', factoryId:'FACTORY_IND_coal',
+      mode:'ROAD_RAIL', distanceKm:149, estimatedTravelDays:2,
+      status:'SIMULATED_ROUTE_READY'
+    }]}
+  };
+  const coalFactory = {
+    id:'FACTORY_IND_coal', countryId:'IND',
+    transportAccess:['truck','rail'],
+    inputCoefficients:{coal:1}, outputProfile:{COAL_CONCENTRATE:0.85,COAL_REJECT:0.15}
+  };
+  const railRoute = api.buildRoute(coalSite, coalFactory, 'coal', 100, {
+    countryId:'IND', transportMode:'rail', unit:'SIMULATION_RESOURCE_UNIT'
+  });
+  assert.equal(railRoute.status,'PLANNED');
+  assert.equal(railRoute.distanceAuthority,'SITE_SIMULATION_ROUTE',
+    'ROAD_RAIL must match rail without losing the source route authority');
+  assert.equal(railRoute.totalDistanceKm,149,
+    'the declared route distance must survive rail leg decomposition');
+
+  const oilSite = {
+    siteId:'SITE_IND_PIPELINE_ROUTE_TEST', countryId:'IND', real:{resourceId:'crude_oil'},
+    simulation:{transportRoute:[{
+      routeId:'ROUTE_IND_OIL_TO_FACTORY', factoryId:'FACTORY_IND_crude_oil',
+      mode:'PIPELINE_AND_SEA_LANE', distanceKm:687, estimatedTravelDays:3,
+      status:'SIMULATED_ROUTE_READY'
+    }]}
+  };
+  const oilFactory = {
+    id:'FACTORY_IND_crude_oil', countryId:'IND', transportAccess:['pipeline'],
+    inputCoefficients:{crude_oil:1}, outputProfile:{REFINERY_FEEDSTOCK:1}
+  };
+  const pipelineRoute = api.buildRoute(oilSite, oilFactory, 'crude_oil', 100, {
+    countryId:'IND', transportMode:'pipeline', unit:'SIMULATION_RESOURCE_UNIT'
+  });
+  assert.equal(pipelineRoute.distanceAuthority,'SITE_SIMULATION_ROUTE',
+    'PIPELINE_AND_SEA_LANE must be compatible with a selected pipeline mode');
+  assert.equal(pipelineRoute.totalDistanceKm,687);
+
+  const wrongDestination = api.buildRoute(coalSite, {...coalFactory,id:'FAC-OTHER-COUNTRY-NODE'}, 'coal', 100, {
+    countryId:'IND', transportMode:'rail', unit:'SIMULATION_RESOURCE_UNIT'
+  });
+  assert.equal(wrongDestination.distanceAuthority,'SIMULATED_CORRIDOR_MODEL',
+    'a route bound to a different factory must not be silently applied to this destination');
+});
+
 test('canonical factory catalog, type profiles, offline icons and recipe coefficients are consistent', () => {
   const { catalog, api } = makeRuntime();
   const audit = api.factoryCatalogDiagnostics();
