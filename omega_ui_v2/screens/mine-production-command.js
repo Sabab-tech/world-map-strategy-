@@ -55,8 +55,12 @@
       row.resourceId || row.resourceTypeId || row.resId) || '').trim().toLowerCase();
   }
   function currentTurn(s) {
-    return num(s && s.simulation && (s.simulation.turn !== undefined ? s.simulation.turn : s.simulation.currentTurn)) ??
-      num(s && s.turn) ?? num(s && s.simulationTurn) ?? 0;
+    var value = num(s && s.simulation && (s.simulation.turn !== undefined ? s.simulation.turn : s.simulation.currentTurn));
+    if (value !== null) return value;
+    value = num(s && s.turn);
+    if (value !== null) return value;
+    value = num(s && s.simulationTurn);
+    return value === null ? 0 : value;
   }
   function isBlockedStatus(value) {
     return /BLOCKED|FAILED|AWAITING_FACTORY|NO_ROUTE|INSUFFICIENT|REJECTED|CANCELLED/.test(key(value));
@@ -85,7 +89,6 @@
       if (id) {
         if (!result.bySite[id]) result.bySite[id] = [];
         result.bySite[id].push(row);
-        if (isBlockedStatus(status) || row.blockReason) result.blockedSites[id] = true;
       }
       if (rowTurn(row) === turn && q !== null && q > 0 && rid) {
         var resourceKey = rid + '|' + unit;
@@ -97,6 +100,8 @@
     });
     Object.keys(result.bySite).forEach(function (id) {
       result.bySite[id].sort(function (a,b) { return (rowTurn(a) || 0) - (rowTurn(b) || 0); });
+      var latest = result.bySite[id][result.bySite[id].length - 1];
+      result.blockedSites[id] = !!(latest && (isBlockedStatus(latest.status || latest.stage) || latest.blockReason));
     });
     return result;
   }
@@ -202,9 +207,13 @@
         var linked = String(sh.siteId || sh.sourceSiteId || sh.originSiteId || sh.mineId || '') === String(id);
         return linked && isBlockedStatus(sh.status);
       });
+      var demand = demandForResource(rs, site.resourceId);
+      var comparableOutput = demand && demand.unit ? resourceOutputForDemand(grouped.byResource, site.resourceId, demand.unit) : null;
+      var shortage = demand && demand.unit && comparableOutput !== null && comparableOutput < demand.quantity;
       var status, statusState;
       if (project) { status = 'Under construction'; statusState = 'warning'; }
       else if (activeMine && output > 0 && (flowBlocked || shipmentBlocked)) { status = 'Supply constrained'; statusState = 'warning'; }
+      else if (activeMine && output > 0 && shortage) { status = 'Supply shortage'; statusState = 'warning'; }
       else if (activeMine && output > 0) { status = 'Producing'; statusState = 'good'; }
       else { status = 'Stopped'; statusState = 'danger'; }
       var stock = stockForResource(rs, site.resourceId);
@@ -230,6 +239,33 @@
       resourceState:rs, industrial:industrial, inventory:inventory, rawWarehouse:rawWarehouse, finishedWarehouse:finishedWarehouse,
       projects:projects, assets:assets, flows:flows, flowGroups:grouped, shipments:shipments, statusCounts:statusCounts
     };
+  }
+  function demandForResource(rs, resourceId) {
+    var maps = [rs && rs.consumption, rs && rs.demand, rs && rs.resourceDemand, rs && rs.nationalDemand, rs && rs.exportDemand];
+    var wanted = key(resourceId).replace(/[- ]+/g, '_');
+    for (var i = 0; i < maps.length; i += 1) {
+      var map = maps[i];
+      if (!map || typeof map !== 'object' || Array.isArray(map)) continue;
+      var keys = Object.keys(map);
+      for (var j = 0; j < keys.length; j += 1) {
+        if (key(keys[j]).replace(/[- ]+/g, '_') !== wanted) continue;
+        var raw = map[keys[j]], quantity = num(raw && typeof raw === 'object' ?
+          (raw.quantity !== undefined ? raw.quantity : raw.dailyConsumption !== undefined ? raw.dailyConsumption :
+            raw.consumption !== undefined ? raw.consumption : raw.amount !== undefined ? raw.amount : raw.value) : raw);
+        if (quantity !== null) return { quantity:quantity, unit:String(raw && typeof raw === 'object' ? raw.unit || raw.quantityUnit || '' : '') };
+      }
+    }
+    return null;
+  }
+  function resourceOutputForDemand(groups, resourceId, unit) {
+    var total = 0, found = false;
+    Object.keys(groups || {}).forEach(function (id) {
+      var row = groups[id];
+      if (row.resourceId !== String(resourceId || '').toLowerCase()) return;
+      if (!row.unit || !unit || key(row.unit) !== key(unit)) return;
+      total += row.quantity; found = true;
+    });
+    return found ? total : null;
   }
   function stockForResource(rs, resourceId) {
     var candidates = [rs && rs.warehouse && rs.warehouse.availableByResource, rs && rs.inventory && rs.inventory.availableByResource,
