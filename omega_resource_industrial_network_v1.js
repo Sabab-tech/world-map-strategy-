@@ -127,6 +127,11 @@ function processRules(){return cat()?.processingRules||{}}
 function modeRules(){return cat()?.transportModes||{}}
 function infraRules(){return cat()?.infrastructureTypes||{}}
 function techRules(){return cat()?.technologyProjects||{}}
+function normalizeFactoryType(value){
+  let key=id(value);const aliases=cat()?.factoryTypeAliases||{},seen=new Set();
+  while(aliases[key]&&!seen.has(key)){seen.add(key);key=id(aliases[key]);}
+  return key;
+}
 
 function resourceState(c){
   const s=state(),cid=canonicalCountry(c);s.resource=s.resource||{};s.resource[cid]=s.resource[cid]||{};return s.resource[cid];
@@ -747,7 +752,7 @@ function recipeFor(resourceId,asset={}){
   }
   const r=processRules()[rid]||null;
   const genericProduct=String(resourceId||'RESOURCE').trim().replace(/[^A-Za-z0-9]+/g,'_').replace(/^_+|_+$/g,'').toUpperCase()+'_PROCESSED';
-  const genericRule={factoryType:'GENERIC_RESOURCE_PROCESSING_PLANT',inputs:{[rid||'unknown_resource']:1},
+  const genericRule={factoryType:'MINERAL_PROCESSING_PLANT',inputs:{[rid||'unknown_resource']:1},
     outputs:{[genericProduct]:0.85,PROCESSING_RESIDUE:0.15},cycleDays:2,authority:'SIMULATED_GENERIC_FALLBACK'};
   const base=downstreamRule||r||genericRule;
   const inputSource=asset?.inputCoefficients||asset?.inputs||base.inputs||{};
@@ -1751,7 +1756,7 @@ function startFactoryProject(input={}){
   const n=netState(cid);
   if(input.requestId){const prior=n.projects.find(row=>row.projectType==='FACTORY_CONSTRUCTION'&&String(row.requestId||'')===String(input.requestId));if(prior)return{...clone(prior),idempotent:true};}
   if(input.factoryId){const prior=n.projects.find(row=>row.projectType==='FACTORY_CONSTRUCTION'&&String(row.factoryId||'')===String(input.factoryId)&&['UNDER_CONSTRUCTION','COMPLETED'].includes(String(row.status||'')));if(prior)return{...clone(prior),idempotent:true};}
-  const requestedType=String(input.factoryType||'').trim().toUpperCase();
+  const requestedType=normalizeFactoryType(input.factoryType);
   const profiles=cat()?.factoryProfiles||{},profile=requestedType?profiles[requestedType]||null:null;
   const downstream=cat()?.downstreamFactoryRecipes||{};
   const requestedRecipeId=String(input.recipeId||'').trim();
@@ -1879,7 +1884,7 @@ function advanceProjects(c){
       const econ=econState(cid);econ.productionAssets=Array.isArray(econ.productionAssets)?econ.productionAssets:[];
       const techReady=(p.requiredTechnologyIds||[]).every(t=>resourceState(cid).technologyCapabilities?.some(x=>tok(x?.technologyId).toUpperCase()===tok(t)));
       const assetStatus=techReady?'OPERATIONAL':'TECHNOLOGY_LOCKED';
-      const factoryProfile=p.factoryProfile||cat()?.factoryProfiles?.[p.factoryType]||{};
+      const factoryProfile=p.factoryProfile||cat()?.factoryProfiles?.[normalizeFactoryType(p.factoryType)]||{};
       econ.productionAssets.push({id:p.factoryId,countryId:cid,stage:'PROCESSING',factoryType:p.factoryType,
         recipeId:p.recipeId||p.recipe?.recipeId||null,recipeMode:p.recipeMode||p.recipe?.recipeMode||'SINGLE_INPUT',
         recipeAuthority:p.recipeAuthority||p.recipe?.recipeAuthority||'INDUSTRIAL_CATALOG_RULE',
@@ -2018,7 +2023,7 @@ function utilitySupplyValues(countryId){
 }
 function previewFactoryUtilityUse(countryId,asset,productionQuantity){
   const cid=canonicalCountry(countryId),factoryId=String(asset?.id||asset?.assetId||asset?.factoryId||asset?.projectId||'');
-  const type=String(asset?.factoryType||asset?.type||asset?.facilityType||'').toUpperCase();
+  const type=normalizeFactoryType(asset?.factoryType||asset?.type||asset?.facilityType||'');
   const profile=(cat()?.factoryProfiles||{})[type]||{};
   const utilities=asset?.utilityRequirements&&typeof asset.utilityRequirements==='object'&&
     (asset.utilityRequirements.electricityMWhPerDay!=null||asset.utilityRequirements.waterM3PerDay!=null)
@@ -2138,9 +2143,9 @@ function factoryOperationGate(countryId,asset){
   const employment=employmentModel.factories?.[factoryId]||asset.employment||{};
   if(employmentSummary?.baselineUnemployedCount==null||employmentModel.status==='UNEMPLOYMENT_HEADCOUNT_UNAVAILABLE')
     return{status:'BLOCKED',reason:'FACTORY_WORKFORCE_NOT_RECORDED',factoryId,
-      requiredWorkers:num((cat()?.factoryProfiles||{})[String(asset.factoryType||asset.type||'').toUpperCase()]?.employment?.coreOperatingCrew)||null,
+      requiredWorkers:num((cat()?.factoryProfiles||{})[normalizeFactoryType(asset.factoryType||asset.type||'')]?.employment?.coreOperatingCrew)||null,
       authority:employmentModel.unemploymentSource||'NOT_RECORDED'};
-  const profile=(cat()?.factoryProfiles||{})[String(asset.factoryType||asset.type||asset.facilityType||'').toUpperCase()]||{};
+  const profile=(cat()?.factoryProfiles||{})[normalizeFactoryType(asset.factoryType||asset.type||asset.facilityType||'')]||{};
   const requiredCrew=Math.max(1,num(profile.employment?.coreOperatingCrew)||
     ((num(profile.workforce?.operators)||0)+(num(profile.workforce?.engineers)||0))||
     (num(asset.workforce?.operators)||0)+(num(asset.workforce?.engineers)||0));
@@ -2715,7 +2720,7 @@ function startFactoryProductionCycle(input={}){
     factorySetProductionHealth(asset,'STOPPED',0,metrics.capacity,{reason:'FACTORY_INPUT_SHORTAGE',missingInputs:metrics.inputs.filter(row=>row.available<=1e-9).map(row=>({resourceId:row.resourceId,reason:'WAREHOUSE_AND_FACTORY_INPUT_STOCK_EMPTY'}))});
     return{status:'BLOCKED',reason:'FACTORY_INPUT_SHORTAGE',factoryId:fid};
   }
-  const utilityProfile=(cat()?.factoryProfiles||{})[String(asset.factoryType||asset.type||'').toUpperCase()]?.utilities||asset.utilityRequirements||{};
+  const utilityProfile=(cat()?.factoryProfiles||{})[normalizeFactoryType(asset.factoryType||asset.type||'')]?.utilities||asset.utilityRequirements||{};
   let utilityPreview=previewFactoryUtilityUse(cid,asset,quantity);
   if(utilityPreview.status==='BLOCKED'&&utilityPreview.reason==='FACTORY_UTILITY_SHORTAGE'){
     for(const shortage of utilityPreview.shortages||[]){
@@ -3190,7 +3195,7 @@ function reconcileFactoryEmployment(countryId){
 function factoryProductionRequirements(factoryType, recipeId){
   const catalog=cat()||{},profiles=catalog.factoryProfiles||{},processing=catalog.processingRules||{},
     downstream=catalog.downstreamFactoryRecipes||{};
-  const requestedType=String(factoryType||'').trim().toUpperCase();
+  const requestedType=normalizeFactoryType(factoryType);
   let key=String(recipeId||'').trim(),resourceId=null,recipe=null,kind=null;
   if(/^PROCESSING:/i.test(key)){resourceId=key.replace(/^PROCESSING:/i,'').trim();key=resourceId;}
   if(key&&downstream[key]){recipe=downstream[key];kind='DOWNSTREAM';key=String(recipe.recipeId||key);}

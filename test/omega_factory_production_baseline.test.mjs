@@ -57,13 +57,13 @@ test('canonical factory catalog, type profiles, offline icons and recipe coeffic
   const audit = api.factoryCatalogDiagnostics();
   assert.equal(audit.status, 'HEALTHY', JSON.stringify(audit.issues));
   assert.equal(Object.keys(catalog.processingRules).length, 42);
-  assert.equal(new Set(Object.values(catalog.processingRules).map(row => row.factoryType)).size, 37);
-  assert.equal(Object.keys(catalog.factoryProfiles).length, 58);
+  assert.equal(new Set(Object.values(catalog.processingRules).map(row => row.factoryType)).size, 15);
+  assert.equal(Object.keys(catalog.factoryProfiles).length, 35);
   assert.equal(Object.keys(catalog.downstreamFactoryRecipes).length, 22);
   assert.equal(catalog.factoryCatalogSummary.addedFactoryTypeCount, 20);
   assert.equal(catalog.factoryCatalogSummary.categoryCount, 12);
   assert.ok(catalog.processingRules.diatomite, 'diatomite deposits must have an explicit processing recipe');
-  assert.equal(catalog.processingRules.diatomite.factoryType, 'DIATOMITE_PROCESSING_PLANT');
+  assert.equal(catalog.processingRules.diatomite.factoryType, 'MINERAL_PROCESSING_PLANT');
   assert.ok(catalog.processingRules.coral_aggregate, 'coral aggregate deposits must have an explicit processing recipe');
   assert.equal(catalog.processingRules.coral_aggregate.factoryType, 'AGGREGATE_CRUSHING_PLANT');
   for (const recipe of Object.values(catalog.processingRules)) {
@@ -109,8 +109,8 @@ test('canonical factory catalog, type profiles, offline icons and recipe coeffic
       assert.ok(Number.isFinite(Number(quantity)) && Number(quantity) > 0, type + ': construction quantity must be positive: ' + material);
     }
   }
-  assert.equal(catalog.factoryCatalogSummary.profilesWithConstructionMaterials, 58);
-  assert.equal(catalog.factoryCatalogSummary.profilesWithEmployment, 58);
+  assert.equal(catalog.factoryCatalogSummary.profilesWithConstructionMaterials, 35);
+  assert.equal(catalog.factoryCatalogSummary.profilesWithEmployment, 35);
   for (const unit of ['TONNES_ORE', 'CARATS', 'MILLION_CUBIC_METRES', 'BARRELS']) {
     const bridge = catalog.factoryCatalogPolicy.unitNormalization.sourceUnits[unit];
     assert.ok(bridge, 'used source unit must have an explicit normalization bridge: ' + unit);
@@ -558,7 +558,7 @@ test('factory commissioning fills job slots from the unemployed pool exactly onc
 
 test('unknown generic production requires explicit opt-in and recorded construction materials', () => {
   const { context, catalog, api } = makeRuntime();
-  const profile = catalog.factoryProfiles.GENERIC_RESOURCE_PROCESSING_PLANT;
+  const profile = catalog.factoryProfiles.MINERAL_PROCESSING_PLANT;
   context.Game.state.economy.BGD = { unemploymentCount: 600000, laborForce: 6000000, unemployment_rate: 10, productionAssets: [] };
   const stock = context.Game.state.resource.BGD = {
     inventory: {}, batches: [], inventoryLots: {},
@@ -934,4 +934,22 @@ test('paused factory cycle resumes from new warehouse batches at the reduced att
   assert.equal(asset.productionHealth.productivityPct, 20);
   assert.equal(asset.inputInventory.coal_concentrate, 4);
   assert.equal(resource.processedWarehouse.availableByResource.coal_concentrate, 0);
+});
+
+
+test('specialty mineral processing types share one canonical factory profile while lithium remains separate', () => {
+  const { catalog, api } = makeRuntime();
+  assert.ok(catalog.factoryProfiles.MINERAL_PROCESSING_PLANT);
+  assert.equal(catalog.factoryProfiles.MINERAL_PROCESSING_PLANT.name, 'Mineral Processing Plant');
+  for (const type of ["ALUMINA_REFINERY","CHROMITE_CONCENTRATOR","COBALT_REFINERY","COPPER_CONCENTRATOR","DIAMOND_RECOVERY_PLANT","GOLD_PROCESSING_PLANT","GRAPHITE_CONCENTRATOR","GEMSTONE_SORTING_PLANT","MANGANESE_BENEFICIATION_PLANT","MINERAL_SANDS_PLANT","NICKEL_PROCESSING_PLANT","NIOBIUM_CONCENTRATION_PLANT","ORE_BENEFICIATION_PLANT","PGM_CONCENTRATOR","PHOSPHATE_BENEFICIATION_PLANT","POTASH_PROCESSING_PLANT","RARE_EARTH_BENEFICIATION_PLANT","SILVER_CONCENTRATOR","TIN_CONCENTRATOR","TUNGSTEN_CONCENTRATOR","URANIUM_MILL","ZINC_CONCENTRATOR","DIATOMITE_PROCESSING_PLANT","GENERIC_RESOURCE_PROCESSING_PLANT"]) {
+    assert.equal(catalog.factoryProfiles[type], undefined, type + ' must not be listed as a separate canonical type');
+    assert.equal(catalog.factoryTypeAliases[type], 'MINERAL_PROCESSING_PLANT');
+    assert.ok(catalog.legacyFactoryProfiles[type], type + ' legacy profile must be preserved');
+  }
+  assert.equal(catalog.processingRules.nickel.factoryType, 'MINERAL_PROCESSING_PLANT');
+  assert.equal(catalog.processingRules.potash.factoryType, 'MINERAL_PROCESSING_PLANT');
+  assert.equal(catalog.processingRules.niobium.factoryType, 'MINERAL_PROCESSING_PLANT');
+  assert.equal(catalog.processingRules.lithium.factoryType, 'LITHIUM_CONVERSION_PLANT');
+  assert.ok(catalog.factoryProfiles.LITHIUM_CONVERSION_PLANT, 'lithium factory type remains dedicated');
+  assert.equal(api.factoryCatalogDiagnostics().status, 'HEALTHY');
 });
