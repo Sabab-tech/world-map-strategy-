@@ -2321,10 +2321,19 @@ function batchFromExtraction(x,record){
     if(['UNOBSERVED','UNQUANTIFIED','NOT_RECORDED','NOT_REPORTED','REPORTED_TEXT_ONLY','UNKNOWN','UNSPECIFIED','SOURCE_STATUS_UNSPECIFIED','SOURCE_UNSPECIFIED','N/A','NA'].includes(status))return false;
     return true;
   }
-  function mineplayQuantityUnitCompatible(resourceId,quantity,unit){
+  function mineplayQuantityUnitCompatible(resourceId,quantity,unit,metric){
     const normalizer=g.Omega?.ResourceQuantityNormalization||g.OmegaResourceQuantityNormalization;
     if(typeof normalizer?.normalizeQuantity!=='function')return true;
     if(!String(unit||'').trim())return false;
+    const provenance=metric?.quantityNormalization&&typeof metric.quantityNormalization==='object'?metric.quantityNormalization:{};
+    const recordedSourceUnit=String(provenance.sourceUnit||metric?.sourceUnit||'').trim();
+    const recordedSourceQuantity=n(provenance.sourceQuantity??metric?.sourceQuantity);
+    if(recordedSourceUnit&&recordedSourceQuantity!==null){
+      const recomputed=normalizer.normalizeQuantity(resourceId,recordedSourceQuantity,recordedSourceUnit,{simulationOnly:true});
+      if(!Number.isFinite(Number(recomputed?.quantity))||Number(recomputed.quantity)<=0)return false;
+      const declaredOutput=n(provenance.normalizedQuantity??provenance.quantity??quantity);
+      if(declaredOutput!==null&&Math.abs(Number(recomputed.quantity)-declaredOutput)>Math.max(1e-6,Math.abs(declaredOutput)*1e-8))return false;
+    }
     const normalized=normalizer.normalizeQuantity(resourceId,quantity,unit,{simulationOnly:true});
     return Number.isFinite(Number(normalized?.quantity))&&Number(normalized.quantity)>0;
   }
@@ -2336,7 +2345,7 @@ function batchFromExtraction(x,record){
     const rateMetric=q.production&&typeof q.production==='object'?clone(q.production):{};
     const sourceRateUnit=mineplayUsableUnit(rateMetric.rateUnit||rateMetric.unit||rateMetric.sourceRateUnit,profile.rateUnit);
     const suppliedRate=mineplayAuthorityAllowsValue(rateMetric,'rate')&&
-      mineplayQuantityUnitCompatible(resourceId,mineplayMetricNumber(rateMetric,'rate'),sourceRateUnit);
+      mineplayQuantityUnitCompatible(resourceId,mineplayMetricNumber(rateMetric,'rate'),sourceRateUnit,rateMetric);
     const rawUnit=mineplayUsableUnit(rateMetric.unit||rateMetric.sourceRateUnit,profile.rateUnit);
     const rate=suppliedRate?mineplayMetricNumber(rateMetric,'rate'):Math.max(0.01,Math.round(profile.rate*factor*100)/100);
     // A simulated daily fallback uses a declared gameplay unit, not the potentially
@@ -2345,7 +2354,7 @@ function batchFromExtraction(x,record){
     const reserveMetric=q.reserve&&typeof q.reserve==='object'?clone(q.reserve):{};
     const sourceReserveUnit=mineplayUsableUnit(reserveMetric.unit,profile.reserveUnit);
     const suppliedReserve=mineplayAuthorityAllowsValue(reserveMetric,'quantity')&&
-      mineplayQuantityUnitCompatible(resourceId,mineplayMetricNumber(reserveMetric,'quantity'),sourceReserveUnit);
+      mineplayQuantityUnitCompatible(resourceId,mineplayMetricNumber(reserveMetric,'quantity'),sourceReserveUnit,reserveMetric);
     const reserve= suppliedReserve?mineplayMetricNumber(reserveMetric,'quantity'):
       Math.max(1,Math.round(rate*365*400));
     const reserveUnit=String(suppliedReserve?sourceReserveUnit:(profile.reserveUnit||'TONNES'));
@@ -2402,7 +2411,7 @@ function batchFromExtraction(x,record){
     const capacity=q.capacity&&typeof q.capacity==='object'?clone(q.capacity):{};
     const sourceCapacityUnit=mineplayUsableUnit(capacity.gameplayUnit||capacity.rateUnit||capacity.unit,rateUnit);
     const suppliedNominal=mineplayAuthorityAllowsValue(capacity,'nominal')&&
-      mineplayQuantityUnitCompatible(resourceId,mineplayMetricNumber(capacity,'nominal'),sourceCapacityUnit);
+      mineplayQuantityUnitCompatible(resourceId,mineplayMetricNumber(capacity,'nominal'),sourceCapacityUnit,capacity);
     const nominal=suppliedNominal?mineplayMetricNumber(capacity,'nominal'):Math.max(0.01,Math.round(rate*1.15*100)/100);
     const minCandidate=mineplayMetricNumber(capacity,'minimum');
     const maxCandidate=mineplayMetricNumber(capacity,'maximum');
