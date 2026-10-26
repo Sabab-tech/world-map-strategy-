@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.0.0",
   "datasetId": "OMEGA_INDUSTRIAL_SVG_ICON_LIBRARY_V1",
-  "purpose": "Standalone icon artwork only; intentionally not connected to gameplay or UI rendering.",
+  "purpose": "Canonical offline SVG library for OMEGA resources and consolidated factory types. Former specialty mineral factory records are retained under legacyFactories and are not displayed as separate canonical types.",
   "rendering": {
     "format": "SVG",
     "viewBox": "0 0 128 128",
@@ -12,11 +12,12 @@
   "sourceCatalog": "resource_industrial_catalog_v1.json",
   "summary": {
     "resourceIconCount": 42,
-    "factoryIconCount": 58,
-    "totalIconCount": 100,
-    "canonicalFactoryTypeCount": 58,
+    "factoryIconCount": 35,
+    "totalIconCount": 77,
+    "canonicalFactoryTypeCount": 35,
     "canonicalResourceRuleCount": 42,
-    "integratedIntoRuntime": false
+    "integratedIntoRuntime": false,
+    "legacyFactoryIconCount": 24
   },
   "resources": [
     {
@@ -288,13 +289,6 @@
       "color": "#cbb58b"
     },
     {
-      "id": "ALUMINA_REFINERY",
-      "label": "Alumina Refinery",
-      "category": "CHEMICALS_AND_POLYMERS",
-      "file": "factories/alumina-refinery.svg",
-      "color": "#48b8ca"
-    },
-    {
       "id": "BATTERY_ENERGY_STORAGE_PLANT",
       "label": "Battery and Energy Storage Plant",
       "category": "ELECTRONICS_AND_ENERGY_STORAGE",
@@ -323,13 +317,6 @@
       "color": "#cbb58b"
     },
     {
-      "id": "CHROMITE_CONCENTRATOR",
-      "label": "Chromite Concentrator",
-      "category": "RAW_RESOURCE_PROCESSING",
-      "file": "factories/chromite-concentrator.svg",
-      "color": "#b98c5b"
-    },
-    {
       "id": "COAL_PREPARATION_PLANT",
       "label": "Coal Preparation Plant",
       "category": "CHEMICALS_AND_POLYMERS",
@@ -337,39 +324,11 @@
       "color": "#48b8ca"
     },
     {
-      "id": "COBALT_REFINERY",
-      "label": "Cobalt Refinery",
-      "category": "CHEMICALS_AND_POLYMERS",
-      "file": "factories/cobalt-refinery.svg",
-      "color": "#48b8ca"
-    },
-    {
-      "id": "COPPER_CONCENTRATOR",
-      "label": "Copper Concentrator",
-      "category": "RAW_RESOURCE_PROCESSING",
-      "file": "factories/copper-concentrator.svg",
-      "color": "#b98c5b"
-    },
-    {
       "id": "DEFENSE_EQUIPMENT_FACTORY",
       "label": "Defence Equipment Factory",
       "category": "HEALTHCARE_AND_DEFENCE",
       "file": "factories/defense-equipment-factory.svg",
       "color": "#9cb19a"
-    },
-    {
-      "id": "DIAMOND_RECOVERY_PLANT",
-      "label": "Diamond Recovery Plant",
-      "category": "RAW_RESOURCE_PROCESSING",
-      "file": "factories/diamond-recovery-plant.svg",
-      "color": "#b98c5b"
-    },
-    {
-      "id": "DIATOMITE_PROCESSING_PLANT",
-      "label": "Diatomite Processing Plant",
-      "category": "RAW_RESOURCE_PROCESSING",
-      "file": "factories/diatomite-processing-plant.svg",
-      "color": "#b98c5b"
     },
     {
       "id": "DOLOMITE_PROCESSING_PLANT",
@@ -407,20 +366,6 @@
       "color": "#48b8ca"
     },
     {
-      "id": "GEMSTONE_SORTING_PLANT",
-      "label": "Gemstone Sorting Plant",
-      "category": "RAW_RESOURCE_PROCESSING",
-      "file": "factories/gemstone-sorting-plant.svg",
-      "color": "#b98c5b"
-    },
-    {
-      "id": "GENERIC_RESOURCE_PROCESSING_PLANT",
-      "label": "Generic Resource Processing Plant",
-      "category": "RAW_RESOURCE_PROCESSING",
-      "file": "factories/generic-resource-processing-plant.svg",
-      "color": "#b98c5b"
-    },
-    {
       "id": "GLASS_CERAMICS_PLANT",
       "label": "Glass and Ceramics Works",
       "category": "CONSTRUCTION_AND_GLASS",
@@ -433,20 +378,6 @@
       "category": "CONSTRUCTION_AND_GLASS",
       "file": "factories/glass-silica-plant.svg",
       "color": "#cbb58b"
-    },
-    {
-      "id": "GOLD_PROCESSING_PLANT",
-      "label": "Gold Processing Plant",
-      "category": "RAW_RESOURCE_PROCESSING",
-      "file": "factories/gold-processing-plant.svg",
-      "color": "#b98c5b"
-    },
-    {
-      "id": "GRAPHITE_CONCENTRATOR",
-      "label": "Graphite Concentrator",
-      "category": "RAW_RESOURCE_PROCESSING",
-      "file": "factories/graphite-concentrator.svg",
-      "color": "#b98c5b"
     },
     {
       "id": "GRID_EQUIPMENT_FACTORY",
@@ -491,31 +422,10 @@
       "color": "#cbb58b"
     },
     {
-      "id": "MANGANESE_BENEFICIATION_PLANT",
-      "label": "Manganese Beneficiation Plant",
+      "id": "MINERAL_PROCESSING_PLANT",
+      "label": "Mineral Processing Plant",
       "category": "RAW_RESOURCE_PROCESSING",
-      "file": "factories/manganese-beneficiation-plant.svg",
-      "color": "#b98c5b"
-    },
-    {
-      "id": "MINERAL_SANDS_PLANT",
-      "label": "Mineral Sands Plant",
-      "category": "CONSTRUCTION_AND_GLASS",
-      "file": "factories/mineral-sands-plant.svg",
-      "color": "#cbb58b"
-    },
-    {
-      "id": "NICKEL_PROCESSING_PLANT",
-      "label": "Nickel Processing Plant",
-      "category": "RAW_RESOURCE_PROCESSING",
-      "file": "factories/nickel-processing-plant.svg",
-      "color": "#b98c5b"
-    },
-    {
-      "id": "NIOBIUM_CONCENTRATION_PLANT",
-      "label": "Niobium Concentration Plant",
-      "category": "RAW_RESOURCE_PROCESSING",
-      "file": "factories/niobium-concentration-plant.svg",
+      "file": "factories/mineral-processing-plant.svg",
       "color": "#b98c5b"
     },
     {
@@ -533,13 +443,6 @@
       "color": "#48b8ca"
     },
     {
-      "id": "ORE_BENEFICIATION_PLANT",
-      "label": "Ore Beneficiation Plant",
-      "category": "RAW_RESOURCE_PROCESSING",
-      "file": "factories/ore-beneficiation-plant.svg",
-      "color": "#b98c5b"
-    },
-    {
       "id": "PAPER_PACKAGING_MILL",
       "label": "Paper and Packaging Mill",
       "category": "PAPER_AND_PACKAGING",
@@ -554,39 +457,11 @@
       "color": "#48b8ca"
     },
     {
-      "id": "PGM_CONCENTRATOR",
-      "label": "Platinum Group Metals Concentrator",
-      "category": "RAW_RESOURCE_PROCESSING",
-      "file": "factories/pgm-concentrator.svg",
-      "color": "#b98c5b"
-    },
-    {
       "id": "PHARMA_MEDICAL_SUPPLIES_PLANT",
       "label": "Pharmaceuticals and Medical Supplies",
       "category": "HEALTHCARE_AND_DEFENCE",
       "file": "factories/pharma-medical-supplies-plant.svg",
       "color": "#9cb19a"
-    },
-    {
-      "id": "PHOSPHATE_BENEFICIATION_PLANT",
-      "label": "Phosphate Beneficiation Plant",
-      "category": "RAW_RESOURCE_PROCESSING",
-      "file": "factories/phosphate-beneficiation-plant.svg",
-      "color": "#b98c5b"
-    },
-    {
-      "id": "POTASH_PROCESSING_PLANT",
-      "label": "Potash Processing Plant",
-      "category": "RAW_RESOURCE_PROCESSING",
-      "file": "factories/potash-processing-plant.svg",
-      "color": "#b98c5b"
-    },
-    {
-      "id": "RARE_EARTH_BENEFICIATION_PLANT",
-      "label": "Rare Earth Beneficiation Plant",
-      "category": "RAW_RESOURCE_PROCESSING",
-      "file": "factories/rare-earth-beneficiation-plant.svg",
-      "color": "#b98c5b"
     },
     {
       "id": "RECYCLING_WASTE_PROCESSING_PLANT",
@@ -617,13 +492,6 @@
       "color": "#8fa7c3"
     },
     {
-      "id": "SILVER_CONCENTRATOR",
-      "label": "Silver Concentrator",
-      "category": "RAW_RESOURCE_PROCESSING",
-      "file": "factories/silver-concentrator.svg",
-      "color": "#b98c5b"
-    },
-    {
       "id": "STEEL_AND_ALLOY_WORKS",
       "label": "Steel and Alloy Works",
       "category": "METALS_AND_ALLOYS",
@@ -645,39 +513,229 @@
       "color": "#b886d5"
     },
     {
+      "id": "VEHICLE_TRUCK_BUS_ASSEMBLY",
+      "label": "Vehicle, Truck and Bus Assembly",
+      "category": "TRANSPORT_AND_AEROSPACE",
+      "file": "factories/vehicle-truck-bus-assembly.svg",
+      "color": "#8fa7c3"
+    }
+  ],
+  "legacyFactories": [
+    {
+      "id": "ALUMINA_REFINERY",
+      "label": "Alumina Refinery",
+      "category": "CHEMICALS_AND_POLYMERS",
+      "file": "factories/alumina-refinery.svg",
+      "color": "#48b8ca",
+      "canonicalFactoryType": "MINERAL_PROCESSING_PLANT",
+      "legacy": true
+    },
+    {
+      "id": "CHROMITE_CONCENTRATOR",
+      "label": "Chromite Concentrator",
+      "category": "RAW_RESOURCE_PROCESSING",
+      "file": "factories/chromite-concentrator.svg",
+      "color": "#b98c5b",
+      "canonicalFactoryType": "MINERAL_PROCESSING_PLANT",
+      "legacy": true
+    },
+    {
+      "id": "COBALT_REFINERY",
+      "label": "Cobalt Refinery",
+      "category": "CHEMICALS_AND_POLYMERS",
+      "file": "factories/cobalt-refinery.svg",
+      "color": "#48b8ca",
+      "canonicalFactoryType": "MINERAL_PROCESSING_PLANT",
+      "legacy": true
+    },
+    {
+      "id": "COPPER_CONCENTRATOR",
+      "label": "Copper Concentrator",
+      "category": "RAW_RESOURCE_PROCESSING",
+      "file": "factories/copper-concentrator.svg",
+      "color": "#b98c5b",
+      "canonicalFactoryType": "MINERAL_PROCESSING_PLANT",
+      "legacy": true
+    },
+    {
+      "id": "DIAMOND_RECOVERY_PLANT",
+      "label": "Diamond Recovery Plant",
+      "category": "RAW_RESOURCE_PROCESSING",
+      "file": "factories/diamond-recovery-plant.svg",
+      "color": "#b98c5b",
+      "canonicalFactoryType": "MINERAL_PROCESSING_PLANT",
+      "legacy": true
+    },
+    {
+      "id": "DIATOMITE_PROCESSING_PLANT",
+      "label": "Diatomite Processing Plant",
+      "category": "RAW_RESOURCE_PROCESSING",
+      "file": "factories/diatomite-processing-plant.svg",
+      "color": "#b98c5b",
+      "canonicalFactoryType": "MINERAL_PROCESSING_PLANT",
+      "legacy": true
+    },
+    {
+      "id": "GEMSTONE_SORTING_PLANT",
+      "label": "Gemstone Sorting Plant",
+      "category": "RAW_RESOURCE_PROCESSING",
+      "file": "factories/gemstone-sorting-plant.svg",
+      "color": "#b98c5b",
+      "canonicalFactoryType": "MINERAL_PROCESSING_PLANT",
+      "legacy": true
+    },
+    {
+      "id": "GENERIC_RESOURCE_PROCESSING_PLANT",
+      "label": "Generic Resource Processing Plant",
+      "category": "RAW_RESOURCE_PROCESSING",
+      "file": "factories/generic-resource-processing-plant.svg",
+      "color": "#b98c5b",
+      "canonicalFactoryType": "MINERAL_PROCESSING_PLANT",
+      "legacy": true
+    },
+    {
+      "id": "GOLD_PROCESSING_PLANT",
+      "label": "Gold Processing Plant",
+      "category": "RAW_RESOURCE_PROCESSING",
+      "file": "factories/gold-processing-plant.svg",
+      "color": "#b98c5b",
+      "canonicalFactoryType": "MINERAL_PROCESSING_PLANT",
+      "legacy": true
+    },
+    {
+      "id": "GRAPHITE_CONCENTRATOR",
+      "label": "Graphite Concentrator",
+      "category": "RAW_RESOURCE_PROCESSING",
+      "file": "factories/graphite-concentrator.svg",
+      "color": "#b98c5b",
+      "canonicalFactoryType": "MINERAL_PROCESSING_PLANT",
+      "legacy": true
+    },
+    {
+      "id": "MANGANESE_BENEFICIATION_PLANT",
+      "label": "Manganese Beneficiation Plant",
+      "category": "RAW_RESOURCE_PROCESSING",
+      "file": "factories/manganese-beneficiation-plant.svg",
+      "color": "#b98c5b",
+      "canonicalFactoryType": "MINERAL_PROCESSING_PLANT",
+      "legacy": true
+    },
+    {
+      "id": "MINERAL_SANDS_PLANT",
+      "label": "Mineral Sands Plant",
+      "category": "CONSTRUCTION_AND_GLASS",
+      "file": "factories/mineral-sands-plant.svg",
+      "color": "#cbb58b",
+      "canonicalFactoryType": "MINERAL_PROCESSING_PLANT",
+      "legacy": true
+    },
+    {
+      "id": "NICKEL_PROCESSING_PLANT",
+      "label": "Nickel Processing Plant",
+      "category": "RAW_RESOURCE_PROCESSING",
+      "file": "factories/nickel-processing-plant.svg",
+      "color": "#b98c5b",
+      "canonicalFactoryType": "MINERAL_PROCESSING_PLANT",
+      "legacy": true
+    },
+    {
+      "id": "NIOBIUM_CONCENTRATION_PLANT",
+      "label": "Niobium Concentration Plant",
+      "category": "RAW_RESOURCE_PROCESSING",
+      "file": "factories/niobium-concentration-plant.svg",
+      "color": "#b98c5b",
+      "canonicalFactoryType": "MINERAL_PROCESSING_PLANT",
+      "legacy": true
+    },
+    {
+      "id": "ORE_BENEFICIATION_PLANT",
+      "label": "Ore Beneficiation Plant",
+      "category": "RAW_RESOURCE_PROCESSING",
+      "file": "factories/ore-beneficiation-plant.svg",
+      "color": "#b98c5b",
+      "canonicalFactoryType": "MINERAL_PROCESSING_PLANT",
+      "legacy": true
+    },
+    {
+      "id": "PGM_CONCENTRATOR",
+      "label": "Platinum Group Metals Concentrator",
+      "category": "RAW_RESOURCE_PROCESSING",
+      "file": "factories/pgm-concentrator.svg",
+      "color": "#b98c5b",
+      "canonicalFactoryType": "MINERAL_PROCESSING_PLANT",
+      "legacy": true
+    },
+    {
+      "id": "PHOSPHATE_BENEFICIATION_PLANT",
+      "label": "Phosphate Beneficiation Plant",
+      "category": "RAW_RESOURCE_PROCESSING",
+      "file": "factories/phosphate-beneficiation-plant.svg",
+      "color": "#b98c5b",
+      "canonicalFactoryType": "MINERAL_PROCESSING_PLANT",
+      "legacy": true
+    },
+    {
+      "id": "POTASH_PROCESSING_PLANT",
+      "label": "Potash Processing Plant",
+      "category": "RAW_RESOURCE_PROCESSING",
+      "file": "factories/potash-processing-plant.svg",
+      "color": "#b98c5b",
+      "canonicalFactoryType": "MINERAL_PROCESSING_PLANT",
+      "legacy": true
+    },
+    {
+      "id": "RARE_EARTH_BENEFICIATION_PLANT",
+      "label": "Rare Earth Beneficiation Plant",
+      "category": "RAW_RESOURCE_PROCESSING",
+      "file": "factories/rare-earth-beneficiation-plant.svg",
+      "color": "#b98c5b",
+      "canonicalFactoryType": "MINERAL_PROCESSING_PLANT",
+      "legacy": true
+    },
+    {
+      "id": "SILVER_CONCENTRATOR",
+      "label": "Silver Concentrator",
+      "category": "RAW_RESOURCE_PROCESSING",
+      "file": "factories/silver-concentrator.svg",
+      "color": "#b98c5b",
+      "canonicalFactoryType": "MINERAL_PROCESSING_PLANT",
+      "legacy": true
+    },
+    {
       "id": "TIN_CONCENTRATOR",
       "label": "Tin Concentrator",
       "category": "RAW_RESOURCE_PROCESSING",
       "file": "factories/tin-concentrator.svg",
-      "color": "#b98c5b"
+      "color": "#b98c5b",
+      "canonicalFactoryType": "MINERAL_PROCESSING_PLANT",
+      "legacy": true
     },
     {
       "id": "TUNGSTEN_CONCENTRATOR",
       "label": "Tungsten Concentrator",
       "category": "RAW_RESOURCE_PROCESSING",
       "file": "factories/tungsten-concentrator.svg",
-      "color": "#b98c5b"
+      "color": "#b98c5b",
+      "canonicalFactoryType": "MINERAL_PROCESSING_PLANT",
+      "legacy": true
     },
     {
       "id": "URANIUM_MILL",
       "label": "Uranium Mill",
       "category": "RAW_RESOURCE_PROCESSING",
       "file": "factories/uranium-mill.svg",
-      "color": "#b98c5b"
-    },
-    {
-      "id": "VEHICLE_TRUCK_BUS_ASSEMBLY",
-      "label": "Vehicle, Truck and Bus Assembly",
-      "category": "TRANSPORT_AND_AEROSPACE",
-      "file": "factories/vehicle-truck-bus-assembly.svg",
-      "color": "#8fa7c3"
+      "color": "#b98c5b",
+      "canonicalFactoryType": "MINERAL_PROCESSING_PLANT",
+      "legacy": true
     },
     {
       "id": "ZINC_CONCENTRATOR",
       "label": "Zinc Concentrator",
       "category": "RAW_RESOURCE_PROCESSING",
       "file": "factories/zinc-concentrator.svg",
-      "color": "#b98c5b"
+      "color": "#b98c5b",
+      "canonicalFactoryType": "MINERAL_PROCESSING_PLANT",
+      "legacy": true
     }
   ]
 }
