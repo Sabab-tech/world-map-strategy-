@@ -558,7 +558,7 @@ test('factory commissioning fills job slots from the unemployed pool exactly onc
 
 test('unknown generic production requires explicit opt-in and recorded construction materials', () => {
   const { context, catalog, api } = makeRuntime();
-  const profile = catalog.factoryProfiles.GENERIC_RESOURCE_PROCESSING_PLANT;
+  const profile = catalog.factoryProfiles.MINERAL_PROCESSING_PLANT;
   context.Game.state.economy.BGD = { unemploymentCount: 600000, laborForce: 6000000, unemployment_rate: 10, productionAssets: [] };
   const stock = context.Game.state.resource.BGD = {
     inventory: {}, batches: [], inventoryLots: {},
