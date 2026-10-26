@@ -1,0 +1,579 @@
+/* OMEGA Factory Production Command Deck
+ * A compact, landscape-first layer for canonical factory records and SVGs.
+ * Gameplay metrics and status labels are supplied by omega_ui_v2/screens/industry.js.
+ */
+.omega-v2-industry--factory-home {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+.omega-v2-industry--factory-home,
+.omega-v2-industry--factory-home * {
+  box-sizing: border-box;
+}
+.omega-v2-industry--factory-home .omega-v2-factory-command {
+  --factory-ink: #06111e;
+  --factory-metal: #8da4b7;
+  --factory-green: #20ff83;
+  --factory-amber: #ffcf31;
+  --factory-red: #ff334f;
+  width: 100%;
+  min-height: calc(100vh - 104px);
+  min-height: calc(100dvh - 104px);
+  padding: 8px;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border: 1px solid rgba(115, 160, 192, .75);
+  border-radius: 14px;
+  background:
+    linear-gradient(180deg, rgba(3, 14, 26, .78), rgba(3, 13, 23, .93)),
+    radial-gradient(ellipse at 50% 0%, rgba(36, 162, 229, .26), transparent 58%),
+    url("../assets/ui-photos/industrial-production-line.webp") center 49% / cover no-repeat,
+    #061321;
+  box-shadow:
+    inset 0 1px 0 rgba(238, 248, 255, .22),
+    inset 0 0 0 3px rgba(1, 9, 17, .65),
+    0 10px 26px rgba(0, 0, 0, .36);
+}
+.omega-v2-industry--factory-home .omega-v2-factory-command::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  pointer-events: none;
+  opacity: .56;
+  background:
+    repeating-linear-gradient(118deg, transparent 0 45px, rgba(114, 161, 194, .10) 46px, transparent 47px 86px),
+    linear-gradient(90deg, rgba(1, 11, 21, .48), transparent 25%, transparent 75%, rgba(1, 11, 21, .5));
+}
+.omega-v2-industry--factory-home .omega-v2-factory-command::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 4px;
+  border: 1px solid rgba(164, 197, 221, .18);
+  border-radius: 10px;
+  pointer-events: none;
+}
+.omega-v2-industry--factory-home .omega-v2-factory-notice {
+  color: #e4f5ff;
+  margin: 0 0 8px;
+  padding: 8px 10px;
+  background: linear-gradient(180deg, #15334b, #091a2a);
+  border: 1px solid #4e7693;
+  border-radius: 7px;
+  font-size: 11px;
+  line-height: 1.35;
+}
+.omega-v2-industry--factory-home .omega-v2-factory-tabs {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  overflow-x: auto;
+  padding: 0 0 8px;
+  margin: 0 0 3px;
+  scrollbar-width: none;
+}
+.omega-v2-industry--factory-home .omega-v2-factory-tabs::-webkit-scrollbar { display: none; }
+.omega-v2-industry--factory-home .omega-v2-factory-tabs .omega-v2-button {
+  flex: 0 0 auto;
+  min-height: 29px;
+  padding: 5px 12px;
+  border-radius: 5px;
+  border: 1px solid rgba(116, 163, 197, .42);
+  background: linear-gradient(180deg, #17334a, #0a1b2b);
+  color: #a9c2d6;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .035em;
+}
+.omega-v2-industry--factory-home .omega-v2-factory-tabs .omega-v2-button--accent {
+  color: #f3faff;
+  border-color: #66caff;
+  background: linear-gradient(180deg, #1a5c85, #0b2d49);
+  box-shadow: 0 0 10px rgba(45, 183, 255, .18), inset 0 1px 0 rgba(255,255,255,.2);
+}
+.omega-v2-industry--factory-home .omega-v2-factory-deck {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 9px;
+  width: 100%;
+  max-height: calc(100vh - 164px);
+  max-height: calc(100dvh - 164px);
+  min-height: 210px;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 3px 3px 10px;
+  scrollbar-color: #315a75 #071522;
+  scrollbar-width: thin;
+}
+.omega-v2-industry--factory-home .omega-v2-factory-card {
+  --state-color: #607d94;
+  --state-halo: rgba(76, 131, 170, .12);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  isolation: isolate;
+  min-width: 0;
+  min-height: 0;
+  padding: 7px;
+  gap: 0;
+  overflow: hidden;
+  border: 1px solid #8b9ba9;
+  border-radius: 11px;
+  color: #ecf6ff;
+  background:
+    linear-gradient(137deg, rgba(255,255,255,.07), transparent 17% 78%, rgba(255,255,255,.04)),
+    linear-gradient(158deg, #152c40 0%, #081a2a 36%, #061321 72%, #12283a 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.28),
+    inset 0 0 0 2px rgba(2,9,17,.88),
+    inset 0 0 0 4px rgba(120,151,174,.13),
+    0 7px 16px rgba(0,0,0,.36);
+  transition: border-color .16s ease, box-shadow .16s ease, filter .16s ease;
+}
+.omega-v2-industry--factory-home .omega-v2-factory-card::before {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  z-index: -1;
+  inset: 5px;
+  border: 1px solid rgba(165, 195, 216, .25);
+  border-radius: 6px;
+  background:
+    linear-gradient(135deg, transparent 0 19%, rgba(119,161,192,.07) 19.2%, transparent 20% 80%, rgba(119,161,192,.06) 80.2%, transparent 81%),
+    repeating-linear-gradient(0deg, transparent 0 25px, rgba(105,150,181,.035) 26px, transparent 27px 50px);
+}
+.omega-v2-industry--factory-home .omega-v2-factory-card::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  inset: 0;
+  border: 1px solid rgba(255,255,255,.11);
+  border-radius: 10px;
+  background:
+    radial-gradient(circle at 10px 10px, #b9cad6 0 1px, #213c52 1.5px 3px, transparent 3.5px),
+    radial-gradient(circle at calc(100% - 10px) 10px, #b9cad6 0 1px, #213c52 1.5px 3px, transparent 3.5px),
+    radial-gradient(circle at 10px calc(100% - 10px), #b9cad6 0 1px, #213c52 1.5px 3px, transparent 3.5px),
+    radial-gradient(circle at calc(100% - 10px) calc(100% - 10px), #b9cad6 0 1px, #213c52 1.5px 3px, transparent 3.5px);
+}
+.omega-v2-industry--factory-home .omega-v2-factory-card[data-selected="true"][data-state="running"] {
+  --state-color: var(--factory-green);
+  --state-halo: rgba(32,255,131,.2);
+  border-color: #6dffad;
+  box-shadow:
+    0 0 4px rgba(32,255,131,.95),
+    0 0 13px rgba(32,255,131,.72),
+    0 0 29px rgba(32,255,131,.32),
+    inset 0 0 0 2px rgba(3,35,23,.9),
+    inset 0 0 0 4px rgba(32,255,131,.42),
+    inset 0 1px 0 rgba(255,255,255,.38);
+}
+.omega-v2-industry--factory-home .omega-v2-factory-card[data-selected="true"][data-state="reduced"],
+.omega-v2-industry--factory-home .omega-v2-factory-card[data-selected="true"][data-state="unknown"] {
+  --state-color: var(--factory-amber);
+  --state-halo: rgba(255,207,49,.16);
+  border-color: #ffdf62;
+  box-shadow:
+    0 0 5px rgba(255,207,49,.85),
+    0 0 16px rgba(255,207,49,.53),
+    0 0 30px rgba(255,207,49,.2),
+    inset 0 0 0 2px rgba(41,28,1,.92),
+    inset 0 0 0 4px rgba(255,207,49,.32),
+    inset 0 1px 0 rgba(255,255,255,.38);
+}
+.omega-v2-industry--factory-home .omega-v2-factory-card[data-state="stopped"] {
+  --state-color: var(--factory-red);
+  --state-halo: rgba(255,51,79,.21);
+  border-color: #ff5668;
+  box-shadow:
+    0 0 4px rgba(255,51,79,.94),
+    0 0 15px rgba(255,51,79,.72),
+    0 0 27px rgba(255,51,79,.29),
+    inset 0 0 0 2px rgba(42,4,14,.93),
+    inset 0 0 0 4px rgba(255,51,79,.38),
+    inset 0 1px 0 rgba(255,255,255,.36);
+}
+.omega-v2-industry--factory-home .omega-v2-factory-title {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) 12px;
+  gap: 2px 6px;
+  align-items: center;
+  flex: 0 0 auto;
+  width: 100%;
+  min-width: 0;
+  min-height: 35px;
+  padding: 2px 6px 5px;
+  border: 0;
+  border-bottom: 1px solid rgba(110,158,191,.3);
+  background: transparent;
+  color: #eff8ff;
+  text-align: left;
+  cursor: pointer;
+}
+.omega-v2-industry--factory-home .omega-v2-factory-title strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: clamp(10px, 1.1vw, 14px);
+  font-weight: 850;
+  line-height: 1.15;
+  text-shadow: 0 1px 2px #000;
+}
+.omega-v2-industry--factory-home .omega-v2-factory-title small {
+  grid-column: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #86abc5;
+  font-size: 8px;
+  line-height: 1.2;
+  letter-spacing: .045em;
+}
+.omega-v2-industry--factory-home .omega-v2-factory-title-mark {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: 1px solid var(--state-color);
+  background: var(--state-color);
+  box-shadow: 0 0 8px var(--state-color);
+}
+.omega-v2-industry--factory-home .omega-v2-factory-art {
+  appearance: none;
+  -webkit-appearance: none;
+  display: flex;
+  position: relative;
+  align-items: center;
+  justify-content: center;
+  flex: 1 1 auto;
+  min-height: 105px;
+  max-height: 225px;
+  width: 100%;
+  margin: 5px 0 4px;
+  padding: 4px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  isolation: isolate;
+}
+.omega-v2-industry--factory-home .omega-v2-factory-art::before {
+  content: "";
+  position: absolute;
+  inset: 5px 4% 2px;
+  z-index: -1;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, var(--state-halo), rgba(14,37,55,.1) 43%, transparent 70%);
+}
+.omega-v2-industry--factory-home .omega-v2-factory-ring {
+  position: absolute;
+  width: min(94%, 240px);
+  aspect-ratio: 1;
+  max-height: 100%;
+  border: 2px solid color-mix(in srgb, var(--state-color) 78%, #a8c0d0 22%);
+  border-radius: 50%;
+  opacity: .82;
+  box-shadow: 0 0 0 4px rgba(88,127,153,.2), inset 0 0 0 3px rgba(114,150,175,.18), 0 0 13px var(--state-halo);
+  background:
+    radial-gradient(circle, transparent 56%, rgba(101,148,176,.11) 57%, transparent 61%),
+    repeating-conic-gradient(from 0deg, rgba(145,183,207,.6) 0deg 1deg, transparent 1deg 18deg);
+  -webkit-mask-image: radial-gradient(circle, transparent 0 52%, #000 54% 57%, transparent 59% 62%, #000 64% 66%, transparent 68%);
+  mask-image: radial-gradient(circle, transparent 0 52%, #000 54% 57%, transparent 59% 62%, #000 64% 66%, transparent 68%);
+}
+.omega-v2-industry--factory-home .omega-v2-factory-artwell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: min(90%, 216px);
+  aspect-ratio: 1;
+  max-height: 100%;
+  padding: 5px;
+  border: 1px solid rgba(144,181,205,.53);
+  border-radius: 50%;
+  background: radial-gradient(circle at 34% 20%, #1b3a52, #091827 64%, #030c15);
+  box-shadow:
+    inset 0 2px 4px rgba(255,255,255,.17),
+    inset 0 -6px 10px rgba(0,0,0,.8),
+    0 0 0 4px #162c3d,
+    0 0 0 5px rgba(162,190,209,.72),
+    0 0 0 8px rgba(5,16,27,.92),
+    0 0 17px var(--state-halo);
+}
+.omega-v2-industry--factory-home .omega-v2-factory-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: auto;
+  filter: drop-shadow(0 4px 5px rgba(0,0,0,.48));
+}
+.omega-v2-industry--factory-home .omega-v2-factory-status-plate {
+  display: grid;
+  grid-template-columns: 10px minmax(0,1fr);
+  gap: 4px 6px;
+  align-items: center;
+  flex: 0 0 auto;
+  min-width: 0;
+  min-height: 52px;
+  margin: 0 1px;
+  padding: 6px 8px;
+  border: 1px solid rgba(118,158,187,.45);
+  border-radius: 6px;
+  background: linear-gradient(180deg, rgba(3,14,25,.96), rgba(9,28,43,.97));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.07), 0 3px 7px rgba(0,0,0,.2);
+}
+.omega-v2-industry--factory-home .omega-v2-factory-status-plate[data-state="running"] {
+  border-color: rgba(32,255,131,.62);
+  background: linear-gradient(110deg, rgba(4,66,39,.94), rgba(3,22,24,.98));
+}
+.omega-v2-industry--factory-home .omega-v2-factory-status-plate[data-state="reduced"],
+.omega-v2-industry--factory-home .omega-v2-factory-status-plate[data-state="unknown"] {
+  border-color: rgba(255,207,49,.58);
+  background: linear-gradient(110deg, rgba(65,48,3,.93), rgba(23,20,12,.98));
+}
+.omega-v2-industry--factory-home .omega-v2-factory-status-plate[data-state="stopped"] {
+  border-color: rgba(255,51,79,.82);
+  background: linear-gradient(110deg, rgba(70,8,20,.95), rgba(24,7,17,.98));
+}
+.omega-v2-industry--factory-home .omega-v2-factory-status-led {
+  grid-column: 1;
+  grid-row: 1;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--state-color);
+  box-shadow: 0 0 8px var(--state-color);
+}
+.omega-v2-industry--factory-home .omega-v2-factory-status-plate strong {
+  grid-column: 2;
+  min-width: 0;
+  color: #f2f8fc;
+  font-size: 10px;
+  font-weight: 850;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+.omega-v2-industry--factory-home .omega-v2-factory-output {
+  grid-column: 1 / -1;
+  min-width: 0;
+  color: #f0f8ff;
+  font-size: clamp(12px, 1.35vw, 17px);
+  font-weight: 900;
+  letter-spacing: .01em;
+  line-height: 1.12;
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 1px 2px #000;
+}
+.omega-v2-industry--factory-home .omega-v2-factory-output-product,
+.omega-v2-industry--factory-home .omega-v2-factory-reason {
+  grid-column: 1 / -1;
+  display: block;
+  min-width: 0;
+  color: #abc2d2;
+  font-size: 8px;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+.omega-v2-industry--factory-home .omega-v2-factory-count {
+  display: flex;
+  flex: 0 0 auto;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+  min-height: 25px;
+  padding: 3px 7px 4px;
+  margin: 2px 2px 5px;
+  border-bottom: 1px solid rgba(122,161,190,.24);
+  color: #9dc1d9;
+  font-size: 10px;
+}
+.omega-v2-industry--factory-home .omega-v2-factory-count strong {
+  color: #edf9ff;
+  font-size: 13px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 8px rgba(54,190,255,.22);
+}
+.omega-v2-industry--factory-home .omega-v2-factory-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0,1fr));
+  gap: 6px;
+  flex: 0 0 auto;
+  padding: 0 1px 1px;
+}
+.omega-v2-industry--factory-home .omega-v2-factory-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-width: 0;
+  min-height: 36px;
+  padding: 5px 6px;
+  border: 1px solid #718ca1;
+  border-radius: 5px;
+  color: #eff9ff;
+  background: linear-gradient(180deg, #1c384e, #0a1b2a 75%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.21), inset 0 -2px 0 rgba(0,0,0,.25), 0 3px 6px rgba(0,0,0,.24);
+  font: inherit;
+  font-size: clamp(10px, 1vw, 13px);
+  font-weight: 850;
+  line-height: 1;
+  white-space: nowrap;
+  text-shadow: 0 1px 2px #000;
+  cursor: pointer;
+}
+.omega-v2-industry--factory-home .omega-v2-factory-button--build {
+  border-color: #32d98b;
+  background: linear-gradient(180deg, #0ca85e, #07502f 72%, #063b25);
+  box-shadow: inset 0 1px 0 rgba(211,255,234,.45), 0 0 7px rgba(17,230,127,.16), 0 3px 6px rgba(0,0,0,.28);
+}
+.omega-v2-industry--factory-home .omega-v2-factory-button--destroy {
+  border-color: #ff6375;
+  background: linear-gradient(180deg, #d9213d, #741325 72%, #4b0e1a);
+  box-shadow: inset 0 1px 0 rgba(255,222,226,.4), 0 0 7px rgba(255,51,79,.14), 0 3px 6px rgba(0,0,0,.28);
+}
+.omega-v2-industry--factory-home .omega-v2-factory-button:active {
+  transform: translateY(1px);
+  filter: brightness(1.14);
+}
+.omega-v2-industry--factory-home .omega-v2-factory-button:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+  filter: saturate(.5);
+}
+.omega-v2-industry--factory-home .omega-v2-action-icon {
+  display: inline-block;
+  position: relative;
+  width: 13px;
+  height: 13px;
+  flex: 0 0 13px;
+}
+.omega-v2-industry--factory-home .omega-v2-action-icon--build::before {
+  content: "";
+  position: absolute;
+  left: 1px;
+  top: 5px;
+  width: 12px;
+  height: 3px;
+  transform: rotate(-45deg);
+  border: 1px solid #e8f4ff;
+  border-radius: 1px;
+  background: linear-gradient(90deg, #d7e3ed 0 70%, #78563a 71%);
+}
+.omega-v2-industry--factory-home .omega-v2-action-icon--build::after {
+  content: "";
+  position: absolute;
+  width: 7px;
+  height: 4px;
+  top: 1px;
+  left: 0;
+  transform: rotate(-45deg);
+  border: 1px solid #f3f8fb;
+  border-radius: 2px;
+  background: #b9c7d4;
+}
+.omega-v2-industry--factory-home .omega-v2-action-icon--destroy::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 3px;
+  width: 8px;
+  height: 10px;
+  border: 1.5px solid #fff0f2;
+  border-radius: 1px;
+  background: repeating-linear-gradient(90deg, transparent 0 2px, rgba(255,240,242,.5) 2px 3px);
+}
+.omega-v2-industry--factory-home .omega-v2-action-icon--destroy::after {
+  content: "";
+  position: absolute;
+  left: 1px;
+  top: 1px;
+  width: 10px;
+  height: 2px;
+  border-radius: 1px;
+  background: #fff0f2;
+  box-shadow: 3px -2px 0 -0.3px #fff0f2;
+}
+.omega-v2-industry--factory-home .omega-v2-factory-empty {
+  grid-column: 1 / -1;
+  min-height: 140px;
+  display: grid;
+  place-items: center;
+  padding: 22px;
+  border: 1px solid #4a6b84;
+  border-radius: 8px;
+  background: rgba(4,17,29,.83);
+  color: #bcd2e2;
+  font-size: 13px;
+  text-align: center;
+}
+@media (min-width: 1050px) {
+  .omega-v2-industry--factory-home .omega-v2-factory-command { padding: 11px; }
+  .omega-v2-industry--factory-home .omega-v2-factory-deck { gap: 12px; padding: 4px 5px 12px; }
+  .omega-v2-industry--factory-home .omega-v2-factory-card { padding: 10px; }
+  .omega-v2-industry--factory-home .omega-v2-factory-art { min-height: 155px; }
+  .omega-v2-industry--factory-home .omega-v2-factory-title { min-height: 42px; }
+  .omega-v2-industry--factory-home .omega-v2-factory-status-plate { min-height: 60px; padding: 8px 10px; }
+  .omega-v2-industry--factory-home .omega-v2-factory-count { min-height: 29px; font-size: 11px; }
+  .omega-v2-industry--factory-home .omega-v2-factory-button { min-height: 42px; }
+}
+@media (max-height: 450px) and (orientation: landscape) {
+  .omega-v2-industry--factory-home .omega-v2-factory-command {
+    min-height: calc(100vh - 88px);
+    min-height: calc(100dvh - 88px);
+    padding: 5px 7px;
+    border-radius: 9px;
+  }
+  .omega-v2-industry--factory-home .omega-v2-factory-tabs { gap: 4px; padding-bottom: 4px; }
+  .omega-v2-industry--factory-home .omega-v2-factory-tabs .omega-v2-button { min-height: 24px; padding: 3px 9px; font-size: 9px; }
+  .omega-v2-industry--factory-home .omega-v2-factory-deck {
+    max-height: calc(100vh - 126px);
+    max-height: calc(100dvh - 126px);
+    gap: 7px;
+    min-height: 190px;
+  }
+  .omega-v2-industry--factory-home .omega-v2-factory-card { padding: 5px; border-radius: 8px; }
+  .omega-v2-industry--factory-home .omega-v2-factory-title { min-height: 29px; padding: 1px 4px 4px; }
+  .omega-v2-industry--factory-home .omega-v2-factory-title strong { font-size: 10px; }
+  .omega-v2-industry--factory-home .omega-v2-factory-title small { font-size: 7px; }
+  .omega-v2-industry--factory-home .omega-v2-factory-art { min-height: 73px; max-height: 132px; margin: 2px 0; padding: 1px; }
+  .omega-v2-industry--factory-home .omega-v2-factory-ring { width: min(78%, 124px); }
+  .omega-v2-industry--factory-home .omega-v2-factory-artwell { width: min(73%, 112px); padding: 3px; }
+  .omega-v2-industry--factory-home .omega-v2-factory-status-plate { min-height: 40px; padding: 4px 6px; gap: 3px 5px; }
+  .omega-v2-industry--factory-home .omega-v2-factory-status-plate strong { font-size: 9px; }
+  .omega-v2-industry--factory-home .omega-v2-factory-output { font-size: 12px; }
+  .omega-v2-industry--factory-home .omega-v2-factory-output-product,
+  .omega-v2-industry--factory-home .omega-v2-factory-reason { font-size: 7px; }
+  .omega-v2-industry--factory-home .omega-v2-factory-count { min-height: 20px; margin-bottom: 3px; padding: 1px 5px 2px; font-size: 9px; }
+  .omega-v2-industry--factory-home .omega-v2-factory-count strong { font-size: 11px; }
+  .omega-v2-industry--factory-home .omega-v2-factory-button { min-height: 29px; padding: 3px 4px; font-size: 10px; gap: 4px; }
+  .omega-v2-industry--factory-home .omega-v2-action-icon { transform: scale(.82); }
+}
+@media (max-width: 680px) and (orientation: portrait) {
+  .omega-v2-industry--factory-home .omega-v2-factory-command { min-height: calc(100vh - 110px); min-height: calc(100dvh - 110px); }
+  .omega-v2-industry--factory-home .omega-v2-factory-deck { grid-template-columns: minmax(0, 1fr); max-height: none; overflow: visible; }
+  .omega-v2-industry--factory-home .omega-v2-factory-card { min-height: 350px; }
+  .omega-v2-industry--factory-home .omega-v2-factory-art { min-height: 170px; }
+  .omega-v2-industry--factory-home .omega-v2-factory-ring { width: min(75%, 190px); }
+  .omega-v2-industry--factory-home .omega-v2-factory-artwell { width: min(70%, 175px); }
+  .omega-v2-industry--factory-home .omega-v2-factory-title strong { font-size: 13px; }
+  .omega-v2-industry--factory-home .omega-v2-factory-title small { font-size: 9px; }
+  .omega-v2-industry--factory-home .omega-v2-factory-status-plate strong { font-size: 11px; }
+  .omega-v2-industry--factory-home .omega-v2-factory-output { font-size: 16px; }
+  .omega-v2-industry--factory-home .omega-v2-factory-button { min-height: 40px; font-size: 12px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .omega-v2-industry--factory-home .omega-v2-factory-card,
+  .omega-v2-industry--factory-home .omega-v2-factory-button { transition: none; }
+}
