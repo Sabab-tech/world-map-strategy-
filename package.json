@@ -59,7 +59,7 @@
     "test:resource-gameplay-binding": "node --check omega_resource_gameplay_binding_v1.js && node test/omega_resource_gameplay_binding.test.mjs && node test/omega_resource_next_50_site_contract.test.mjs && node test/omega_resource_site_presentation.test.mjs",
     "test:resource-site-data-contract": "node --test test/omega_resource_site_data_contract.test.mjs && npm run test:resource-site-integrity",
     "test:resource-capacity-contract": "node test/omega_resource_production_capacity_contract.test.mjs",
-    "test:resource-site-integrity": "node test/omega_resource_milestone_a_integrity.test.mjs",
+    "test:resource-site-integrity": "node test/omega_resource_milestone_a_integrity.test.mjs && node test/omega_resource_site_data_completeness.test.mjs",
     "test:resource-e2e": "node --test test/omega_resource_true_e2e_pipeline.test.mjs",
     "test:resource-global-auto": "node --test test/omega_resource_autonomous_global_pipeline.test.mjs",
     "test:resource-recipe-coverage": "node --test test/omega_resource_recipe_coverage.test.mjs",
