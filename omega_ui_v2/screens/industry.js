@@ -723,11 +723,12 @@
       var byCategory = categoryA.localeCompare(categoryB);
       return byCategory || String(a && (a.name || a.type) || '').localeCompare(String(b && (b.name || b.type) || ''));
     });
+    var cardRows = rows.map(function (item) { return factoryTypeCard(item, model); });
     var cards = '', lastCategory = null;
-    rows.forEach(function (item) {
+    rows.forEach(function (item, index) {
       var category = String(item && item.category || 'Uncategorised');
       if (lastCategory !== null && category !== lastCategory) cards += '<div class="fp-type-catalog-divider" role="separator" aria-hidden="true"></div>';
-      cards += factoryTypeCard(item, model);
+      cards += cardRows[index];
       lastCategory = category;
     });
     var empty = '<div class="omega-v2-factory-type-empty">Factory type profiles are not loaded. No ownership or production figures have been invented.</div>';
