@@ -95,8 +95,8 @@ test('composite mine route modes use declared distance only for the bound factor
     'PIPELINE_AND_SEA_LANE must be compatible with a selected pipeline mode');
   assert.equal(pipelineRoute.totalDistanceKm,687);
 
-  const wrongDestination = api.buildRoute(coalSite, {...coalFactory,id:'FAC-OTHER-COUNTRY-NODE'}, 'coal', 100, {
-    countryId:'IND', transportMode:'rail', unit:'SIMULATION_RESOURCE_UNIT'
+  const wrongDestination = api.buildRoute(coalSite, {...coalFactory,id:'FAC-OTHER-COUNTRY-NODE',countryId:'KWT'}, 'coal', 100, {
+    countryId:'KWT', transportMode:'rail', unit:'SIMULATION_RESOURCE_UNIT'
   });
   assert.equal(wrongDestination.distanceAuthority,'SIMULATED_CORRIDOR_MODEL',
     'a route bound to a different factory must not be silently applied to this destination');
