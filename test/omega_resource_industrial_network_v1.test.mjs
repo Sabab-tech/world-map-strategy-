@@ -322,4 +322,61 @@ const industrialRuntimeSource=fs.readFileSync('omega_resource_industrial_network
 assert.match(industrialRuntimeSource,/waitForCapacity=String\(reason\)\.toUpperCase\(\)==='TRANSPORT_CAPACITY_EXHAUSTED'/);
 assert.match(industrialRuntimeSource,/flow\.blockReason=null;flow\.lastResidualBlockReason=null;flow\.transportQueueReason=null;/);
 assert.match(industrialRuntimeSource,/awaitingTransportCapacity/);
+
+// Decommissioning is an explicit, country-scoped action that stops future cycles
+// while preserving the physical asset record and historical production ledgers.
+const decommissionAsset = {
+  id:'FAC-DECOMMISSION-TEST',
+  factoryType:'STEEL_AND_ALLOY_WORKS',
+  status:'OPERATIONAL',
+  capacityPerDay:100,
+  inputBatchLots:[{
+    batchId:'INPUT:DECOMMISSION-TEST',
+    resourceId:'iron_ore',
+    quantity:20,
+    remainingQuantity:20,
+    status:'AVAILABLE',
+    cycleReservationId:'CYCLE-DECOMMISSION-TEST',
+    cycleReservedQuantity:20,
+    cycleReservedResourceId:'iron_ore',
+    cycleReservedTurn:43
+  }]
+};
+context.Game.state.economy.BGD.productionAssets.push(decommissionAsset);
+const decommissionNetwork = context.Game.state.resource.BGD.industrialNetwork;
+decommissionNetwork.factoryProductionCycles = decommissionNetwork.factoryProductionCycles || {};
+decommissionNetwork.factoryProductionCycleHistory = decommissionNetwork.factoryProductionCycleHistory || [];
+decommissionNetwork.factoryProductionCycles[decommissionAsset.id] = {
+  cycleId:'CYCLE-DECOMMISSION-TEST',
+  countryId:'BGD',
+  factoryId:decommissionAsset.id,
+  status:'IN_PROGRESS',
+  productionQuantity:20,
+  startTurn:43
+};
+decommissionAsset.activeProductionCycleId = 'CYCLE-DECOMMISSION-TEST';
+const confirmation = N.decommissionFactory({countryId:'BGD',factoryId:decommissionAsset.id});
+assert.equal(confirmation.status,'CONFIRMATION_REQUIRED');
+assert.equal(decommissionAsset.status,'OPERATIONAL','missing confirmation must not alter the factory');
+const decommissionResult = N.decommissionFactory({
+  countryId:'BGD',factoryId:decommissionAsset.id,confirmed:true
+});
+assert.equal(decommissionResult.status,'DECOMMISSIONED');
+assert.equal(decommissionAsset.status,'DECOMMISSIONED');
+assert.equal(decommissionAsset.productionHealth.status,'STOPPED');
+assert.equal(decommissionAsset.productionHealth.reason,'FACTORY_DECOMMISSIONED_BY_PLAYER');
+assert.equal(decommissionAsset.activeProductionCycleId,null);
+assert.equal(decommissionNetwork.factoryProductionCycles[decommissionAsset.id],undefined,
+  'an active cycle must not remain eligible after decommissioning');
+assert.equal(decommissionNetwork.factoryProductionCycleHistory.at(-1).status,'CANCELLED');
+assert.equal(decommissionAsset.inputBatchLots[0].cycleReservationId,undefined,
+  'reserved input batches must be released when a cycle is cancelled');
+assert.equal(decommissionAsset.inputBatchLots[0].remainingQuantity,20,
+  'decommissioning preserves the unconsumed input quantity');
+assert.ok(decommissionNetwork.factoryDecommissionHistory.some(row=>row.factoryId===decommissionAsset.id),
+  'decommissioning must be auditable without deleting the factory asset record');
+assert.equal(N.decommissionFactory({countryId:'BGD',factoryId:decommissionAsset.id,confirmed:true}).idempotent,true,
+  'repeated decommission calls must be safe and idempotent');
+assert.equal(N.factoryProductionStatus('BGD',decommissionAsset.id).health.status,'STOPPED');
+
 console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');

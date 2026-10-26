@@ -305,7 +305,7 @@
         authority: String(profile.authority || asset.authority || 'NOT_RECORDED'),
         raw: asset
       };
-    });
+    }).filter(function (factory) { return !/^(DECOMMISSIONED|DESTROYED)$/.test(String(factory.status || '').trim().toUpperCase()); });
     var mineSites = rawMineSites.map(function (site) {
       var quantitative = site.quantitative || site.real && site.real.quantitative || {};
       var production = mineDailyProduction(site);
@@ -402,35 +402,194 @@
     var credit=item&&item.author&&item.sourcePageUrl&&item.licenseUrl?'<small class="omega-v2-photo-credit">Photo: <a href="'+esc(item.sourcePageUrl)+'" target="_blank" rel="noopener noreferrer">'+esc(item.author)+'</a> · <a href="'+esc(item.licenseUrl)+'" target="_blank" rel="noopener noreferrer">'+esc(item.licenseShortName||'License')+'</a></small>':'';
     return '<figure class="omega-v2-photo omega-v2-photo--tile omega-v2-factory-photo"><img loading="lazy" decoding="async" width="1280" height="720" src="'+esc(path)+'" alt="'+esc(factory.name||factory.type||'Industrial production')+', representative factory reference photograph"><figcaption><strong>'+esc(item&&item.caption||'INDUSTRIAL PRODUCTION')+'</strong><small>Representative reference photography only. Actual ownership, location, operating status and output come from the canonical game state.</small>'+credit+'</figcaption></figure>';
   }
-  function factoryCard(factory, options) {
-    var status = factory.healthStatus || factory.status || 'NOT_RECORDED';
-    var statusKey = /STOPPED|BLOCKED|FAILED|CLOSED/.test(status) ? 'blocked' : /ACTIVE|OPERAT|RUNNING|READY|IN_PROGRESS/.test(status) ? 'operational' : 'unknown';
-    var inputRows = factory.inputRows.filter(function (row) { return row.quantity !== null && row.quantity > 0; }).map(function (row) {
-      return '<div class="omega-v2-material-row"><span>' + esc(row.resourceId) + '</span><strong>' + fmt(row.quantity) + '</strong></div>';
-    }).join('');
-    var cycle = factory.cycle;
-    var cycleLine = cycle && /IN_PROGRESS|PAUSED/.test(String(cycle.status || '').toUpperCase())
-      ? String(cycle.status).toUpperCase() + ' · ' + fmt(cycle.productionQuantity, 'units/cycle') + ' · ' + esc(cycle.finishDate || 'completion date not recorded')
-      : cycle ? esc(cycle.status || 'Cycle status not recorded') : 'No active cycle recorded';
-    var outputs = factory.latestOutputs;
-    var canOpen = options && typeof options.onOpenFactory === 'function';
-    return '<article class="omega-v2-card" data-omega-v2-factory-card data-search="' + esc((factory.name + ' ' + factory.id + ' ' + factory.type + ' ' + factory.recipeId).toLowerCase()) + '">' +
-      '<div class="omega-v2-card-header"><div><h3 class="omega-v2-card-title">' + esc(factory.name) + '</h3><div class="omega-v2-card-meta">' + esc(factory.id || 'Factory ID not recorded') + ' · ' + esc(factory.type) + '</div></div><span class="omega-v2-status" data-state="' + statusKey + '">' + esc(status) + '</span></div>' +
-      '<div class="omega-v2-factory-art">' + factoryPhoto(factory) + '</div>' +
-      '<div class="omega-v2-vehicle-stats">' +
-      '<div><span>Recipe</span><strong>' + esc(factory.recipeId) + '</strong></div>' +
-      '<div><span>Registered capacity/day</span><strong>' + fmt(factory.capacityPerDay) + '</strong></div>' +
-      '<div><span>Productivity</span><strong>' + (factory.productivityPct === null ? 'Not recorded' : fmt(factory.productivityPct, '%')) + '</strong></div>' +
-      '<div><span>Location</span><strong>' + esc(factory.location) + '</strong></div>' +
-      '<div><span>Jobs filled / supported</span><strong>' + fmt(factory.jobsFilled) + ' / ' + fmt(factory.jobSlots) + '</strong></div>' +
-      '<div><span>Vacancies</span><strong>' + fmt(factory.vacancies) + '</strong></div>' +
-      '</div><h4 class="omega-v2-section-title">Production cycle</h4><p class="omega-v2-card-meta">' + cycleLine + '</p>' +
-      '<h4 class="omega-v2-section-title">Tracked input inventory</h4>' + (inputRows ? '<div class="omega-v2-materials">' + inputRows + '</div>' : '<p class="omega-v2-card-meta">No positive tracked input batches are recorded in this asset inventory.</p>') +
-      '<h4 class="omega-v2-section-title">Latest output</h4><pre class="omega-v2-json">' + esc(outputs ? JSON.stringify(outputs, null, 2) : 'Not recorded') + '</pre>' +
-      '<p class="omega-v2-source">Authority: ' + esc(factory.authority) + '. A catalog profile is not evidence that a factory is owned or operating.</p>' +
-      '<div class="omega-v2-actions"><button class="omega-v2-button omega-v2-button--primary" data-omega-v2-open-factory="' + esc(factory.id || '') + '"' + (canOpen ? '' : ' disabled title="No canonical factory-detail navigation is connected."') + '>View factory</button></div></article>';
+  function factorySvgPath(factory) {
+    var catalog = safeCatalog() || {};
+    var type = normalizeFactoryType(factory && factory.type, catalog) || String(factory && factory.type || '');
+    var slug = String(type).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    if (!slug || slug.length > 90) slug = 'generic-resource-processing-plant';
+    return 'assets/omega-industrial-icons-v1/factories/' + slug + '.svg';
   }
 
+  function factorySvgMarkup(factory) {
+    var label = String(factory && (factory.name || factory.type) || 'Factory');
+    return '<img class="omega-v2-factory-svg" data-omega-v2-factory-svg src="' + esc(factorySvgPath(factory)) +
+      '" data-fallback="assets/omega-industrial-icons-v1/factories/generic-resource-processing-plant.svg" alt="' +
+      esc(label + ' factory illustration') + '" width="128" height="128" loading="eager" decoding="async">';
+  }
+
+  function factoryDailyOutput(factory) {
+    factory = factory && typeof factory === 'object' ? factory : {};
+    var raw = factory.raw && typeof factory.raw === 'object' ? factory.raw : {};
+    var health = raw.productionHealth && typeof raw.productionHealth === 'object' ? raw.productionHealth : {};
+    var run = factory.lastRun && typeof factory.lastRun === 'object' ? factory.lastRun : {};
+    var earlyHealthStatus = String(health.status || factory.healthStatus || '').trim().toUpperCase();
+    var earlyAssetStatus = String(raw.status || factory.status || '').trim().toUpperCase();
+    var earlyCycleStatus = String(factory.cycle && factory.cycle.status || '').trim().toUpperCase();
+    var earlyReason = String(health.reason || factory.healthReason || '').trim().toUpperCase();
+    if (/^(STOPPED|BLOCKED|FAILED|CLOSED|DECOMMISSIONED|DESTROYED|OFFLINE|DISABLED|UNDER_CONSTRUCTION|MAINTENANCE|TECHNOLOGY_LOCKED|READY)$/.test(earlyHealthStatus) ||
+        /^(STOPPED|BLOCKED|FAILED|CLOSED|DECOMMISSIONED|DESTROYED|OFFLINE|DISABLED|UNDER_CONSTRUCTION|MAINTENANCE|TECHNOLOGY_LOCKED|READY)$/.test(earlyAssetStatus) ||
+        /^(PAUSED|CANCELLED|BLOCKED|FAILED|STOPPED)$/.test(earlyCycleStatus) ||
+        /FACTORY_DECOMMISSIONED_BY_PLAYER/.test(earlyReason)) {
+      return { value: 0, unit: String(health.outputUnit || raw.outputUnit || raw.productionUnit || ''), product: String(health.outputResourceId || raw.outputResourceId || ''), basis: 'Production stopped' };
+    }
+    var candidates = [
+      { value: health.actualOutputPerDay, unit: health.outputUnit || raw.outputUnit, product: health.outputResourceId || raw.outputResourceId },
+      { value: health.outputPerDay, unit: health.outputUnit || raw.outputUnit, product: health.outputResourceId || raw.outputResourceId },
+      { value: health.dailyOutput, unit: health.outputUnit || raw.outputUnit, product: health.outputResourceId || raw.outputResourceId },
+      { value: raw.actualOutputPerDay, unit: raw.outputUnit || raw.productionUnit, product: raw.outputResourceId || raw.primaryOutputResourceId },
+      { value: raw.outputPerDay, unit: raw.outputUnit || raw.productionUnit, product: raw.outputResourceId || raw.primaryOutputResourceId },
+      { value: raw.dailyOutput, unit: raw.outputUnit || raw.productionUnit, product: raw.outputResourceId || raw.primaryOutputResourceId },
+      { value: run.actualOutputPerDay, unit: run.outputUnit || raw.outputUnit, product: run.outputResourceId || run.resourceId },
+      { value: run.outputPerDay, unit: run.outputUnit || raw.outputUnit, product: run.outputResourceId || run.resourceId }
+    ];
+    for (var i = 0; i < candidates.length; i += 1) {
+      var candidate = candidates[i], value = candidate.value, unit = candidate.unit || '';
+      if (value && typeof value === 'object') {
+        unit = value.unit || value.outputUnit || unit;
+        value = value.valuePerDay !== undefined ? value.valuePerDay :
+          value.quantityPerDay !== undefined ? value.quantityPerDay :
+          value.rate !== undefined ? value.rate :
+          value.quantity !== undefined ? value.quantity :
+          value.value !== undefined ? value.value : value.amount;
+      }
+      var number = num(value);
+      if (number !== null && number >= 0) {
+        return { value: number, unit: String(unit || ''), product: String(candidate.product || ''), basis: 'Recorded daily output' };
+      }
+    }
+
+    var activeCycle = factory.cycle && typeof factory.cycle === 'object' ? factory.cycle : null;
+    var activeCycleStatus = String(activeCycle && activeCycle.status || '').trim().toUpperCase();
+    var activeCycleDays = num(activeCycle && (activeCycle.cycleDays !== undefined ? activeCycle.cycleDays : activeCycle.durationDays));
+    var activeCycleQuantity = num(activeCycle && activeCycle.productionQuantity);
+    if (activeCycleStatus === 'IN_PROGRESS' && activeCycleDays !== null && activeCycleDays > 0 &&
+        activeCycleQuantity !== null && activeCycleQuantity > 0) {
+      return {
+        value: activeCycleQuantity / activeCycleDays,
+        unit: String(health.outputUnit || raw.outputUnit || raw.productionUnit || run.outputUnit || ''),
+        product: String(health.outputResourceId || raw.outputResourceId || raw.primaryOutputResourceId || ''),
+        basis: 'Active cycle quantity averaged over ' + activeCycleDays + ' game-day(s)'
+      };
+    }
+
+    var outputs = factory.latestOutputs;
+    var days = num(run.cycleDays !== undefined ? run.cycleDays : run.durationDays);
+    if (outputs && typeof outputs === 'object' && !Array.isArray(outputs) && days !== null && days > 0) {
+      var outputKeys = Object.keys(outputs);
+      for (var oi = 0; oi < outputKeys.length; oi += 1) {
+        var outputId = outputKeys[oi], outputValue = outputs[outputId];
+        if (outputValue && typeof outputValue === 'object') {
+          outputValue = outputValue.quantity !== undefined ? outputValue.quantity :
+            outputValue.value !== undefined ? outputValue.value : outputValue.amount;
+        }
+        var outputNumber = num(outputValue);
+        if (outputNumber !== null && outputNumber > 0) {
+          return {
+            value: outputNumber / days,
+            unit: String(run.outputUnit || raw.outputUnit || raw.productionUnit || ''),
+            product: String(outputId),
+            basis: 'Committed output averaged across ' + days + ' game-day(s)'
+          };
+        }
+      }
+    }
+
+    var healthStatus = String(health.status || factory.healthStatus || '').toUpperCase();
+    var assetStatus = String(raw.status || factory.status || '').toUpperCase();
+    if (/^(STOPPED|BLOCKED|FAILED|CLOSED|DECOMMISSIONED|DESTROYED|OFFLINE|DISABLED|UNDER_CONSTRUCTION|MAINTENANCE|TECHNOLOGY_LOCKED|READY)$/.test(healthStatus) ||
+        /^(STOPPED|BLOCKED|FAILED|CLOSED|DECOMMISSIONED|DESTROYED|OFFLINE|DISABLED|UNDER_CONSTRUCTION|MAINTENANCE|TECHNOLOGY_LOCKED|READY)$/.test(assetStatus)) {
+      return { value: 0, unit: String(health.outputUnit || raw.outputUnit || ''), product: String(raw.outputResourceId || ''), basis: 'Production stopped' };
+    }
+    return null;
+  }
+
+  function factoryProductionState(factory) {
+    factory = factory && typeof factory === 'object' ? factory : {};
+    var raw = factory.raw && typeof factory.raw === 'object' ? factory.raw : {};
+    var health = raw.productionHealth && typeof raw.productionHealth === 'object' ? raw.productionHealth : {};
+    var healthStatus = String(health.status || factory.healthStatus || '').trim().toUpperCase();
+    var assetStatus = String(raw.status || factory.status || '').trim().toUpperCase();
+    var cycleStatus = String(factory.cycle && factory.cycle.status || '').trim().toUpperCase();
+    var reason = String(health.reason || factory.healthReason || health.detail && health.detail.reason || '').trim().toUpperCase();
+    var actual = num(health.productionUnitsPerCycle);
+    var daily = factoryDailyOutput(factory);
+    var hasPositiveProduction = actual !== null && actual > 0 || !!(daily && daily.value > 0);
+    var blockingReason = /FACTORY_(INPUT|UTILITY|POWER|WORKFORCE|OPERATION).*SHORTAGE/.test(reason) || /FACTORY_DECOMMISSIONED_BY_PLAYER/.test(reason);
+    var stopped = /^(STOPPED|BLOCKED|FAILED|CLOSED|DECOMMISSIONED|DESTROYED|OFFLINE|DISABLED|UNDER_CONSTRUCTION|MAINTENANCE|TECHNOLOGY_LOCKED|PAUSED)$/.test(healthStatus) ||
+      /^(STOPPED|BLOCKED|FAILED|CLOSED|DECOMMISSIONED|DESTROYED|OFFLINE|DISABLED|UNDER_CONSTRUCTION|MAINTENANCE|TECHNOLOGY_LOCKED|READY)$/.test(assetStatus) ||
+      /^(PAUSED|CANCELLED|BLOCKED|FAILED|STOPPED)$/.test(cycleStatus) ||
+      /FACTORY_DECOMMISSIONED_BY_PLAYER/.test(reason) || blockingReason && !hasPositiveProduction;
+    if (stopped) return { key: 'stopped', label: /DECOMMISSIONED|DESTROYED/.test(assetStatus) ? 'Decommissioned' : 'Stopped', reason: reason };
+    var productivity = num(health.productivityPct !== undefined ? health.productivityPct : factory.productivityPct);
+    var degradedStatus = /^(REDUCED|DEGRADED|PARTIAL|UNDERPOWERED)$/.test(healthStatus);
+    if (degradedStatus || productivity !== null && productivity > 0 && productivity < 99.999) {
+      if (hasPositiveProduction || cycleStatus === 'IN_PROGRESS') return { key: 'reduced', label: 'Reduced output', reason: reason };
+      return { key: 'stopped', label: 'Stopped', reason: reason };
+    }
+    var claimsRunning = /^(RUNNING|PRODUCING)$/.test(healthStatus) || cycleStatus === 'IN_PROGRESS';
+    if (claimsRunning && hasPositiveProduction) return { key: 'running', label: 'Producing', reason: reason };
+    return { key: 'unknown', label: 'Output not recorded', reason: reason };
+  }
+
+  function factoryTypeLabel(factory) {
+    var catalog = safeCatalog() || {};
+    var type = normalizeFactoryType(factory && factory.type, catalog) || String(factory && factory.type || '').toUpperCase();
+    var profiles = catalog.factoryProfiles && typeof catalog.factoryProfiles === 'object' ? catalog.factoryProfiles : {};
+    var profile = profiles[type] || profiles[String(factory && factory.type || '').toUpperCase()] || {};
+    return String(profile.name || factory && factory.type || 'Factory');
+  }
+
+  function factoryTypeOwnedCount(factory, model) {
+    var catalog = safeCatalog() || {};
+    var type = normalizeFactoryType(factory && factory.type, catalog) || String(factory && factory.type || '').toUpperCase();
+    var rows = model && Array.isArray(model.factoryTypeCounts) ? model.factoryTypeCounts : [];
+    for (var i = 0; i < rows.length; i += 1) {
+      if ((normalizeFactoryType(rows[i].type, catalog) || String(rows[i].type || '').toUpperCase()) === type) {
+        return rows[i].count;
+      }
+    }
+    return 0;
+  }
+
+  function factoryCard(factory, options) {
+    options = options || {};
+    var model = options.model || {};
+    var id = String(factory.id || factory.raw && (factory.raw.id || factory.raw.assetId || factory.raw.projectId) || '');
+    var status = factoryProductionState(factory);
+    var daily = factoryDailyOutput(factory);
+    var selected = String(options.selectedFactoryId || '') === id;
+    var ownedCount = factoryTypeOwnedCount(factory, model);
+    var displayOutput = daily
+      ? (daily.value > 0 ? '+ ' : '') + fmt(daily.value) + (daily.unit ? ' ' + esc(daily.unit) : '') + '/day'
+      : 'Not recorded';
+    var outputProduct = daily && daily.product ? '<small class="omega-v2-factory-output-product">' + esc(daily.product) + '</small>' : '';
+    var reasonText = String(status.reason || '').trim();
+    var reason = reasonText && !/^(NOT_RECORDED|NOT RECORDED|UNKNOWN)$/.test(reasonText.toUpperCase())
+      ? '<small class="omega-v2-factory-reason">' + esc(reasonText.replace(/_/g, ' ').toLowerCase()) + '</small>' : '';
+    var canOperate = model.canOperateSelectedCountry === true;
+    var isDecommissioned = /^(DECOMMISSIONED|DESTROYED)$/.test(String(factory.status || '').toUpperCase());
+    return '<article class="omega-v2-factory-card" data-omega-v2-factory-card data-factory-id="' + esc(id) +
+      '" data-state="' + status.key + '" data-selected="' + (selected ? 'true' : 'false') +
+      '" data-search="' + esc((factory.name + ' ' + id + ' ' + factory.type + ' ' + factory.recipeId).toLowerCase()) + '">' +
+      '<button type="button" class="omega-v2-factory-title" data-omega-v2-factory-select="' + esc(id) + '" aria-pressed="' + (selected ? 'true' : 'false') + '" aria-label="Select ' + esc(factory.name) + '">' +
+        '<strong>' + esc(factory.name) + '</strong><small>' + esc(factoryTypeLabel(factory)) + '</small><span class="omega-v2-factory-title-mark" aria-hidden="true"></span>' +
+      '</button>' +
+      '<button type="button" class="omega-v2-factory-art" data-omega-v2-factory-select="' + esc(id) + '" aria-pressed="' + (selected ? 'true' : 'false') + '" aria-label="Select ' + esc(factory.name) + ' factory">' +
+        '<span class="omega-v2-factory-ring" aria-hidden="true"></span><span class="omega-v2-factory-artwell">' + factorySvgMarkup(factory) + '</span>' +
+      '</button>' +
+      '<div class="omega-v2-factory-status-plate" data-state="' + status.key + '">' +
+        '<span class="omega-v2-factory-status-led" aria-hidden="true"></span><strong>' + esc(status.label) + '</strong>' +
+        '<span class="omega-v2-factory-output">' + displayOutput + '</span>' + outputProduct + reason +
+      '</div>' +
+      '<div class="omega-v2-factory-count"><span>Total:</span><strong>' + fmt(ownedCount) + '</strong></div>' +
+      '<div class="omega-v2-factory-actions">' +
+        '<button type="button" class="omega-v2-factory-button omega-v2-factory-button--build" data-omega-v2-factory-build="' + esc(id) + '" data-factory-type="' + esc(factory.type) + '"' +
+          (canOperate ? '' : ' disabled title="Build actions are available only for the active player country."') + '><span aria-hidden="true" class="omega-v2-action-icon omega-v2-action-icon--build"></span>Build</button>' +
+        '<button type="button" class="omega-v2-factory-button omega-v2-factory-button--destroy" data-omega-v2-factory-destroy="' + esc(id) + '"' +
+          (!canOperate || isDecommissioned ? ' disabled title="This factory cannot be decommissioned from the current country view."': '') +
+          '><span aria-hidden="true" class="omega-v2-action-icon omega-v2-action-icon--destroy"></span>Destroy</button>' +
+      '</div></article>';
+  }
   function metalCommandCard(model) {
     var factoryNames = model.factories.length
       ? model.factories.map(function (factory) {
@@ -543,6 +702,30 @@
     }
 
     root.classList.add('omega-v2-screen');
+    if (active === 'factories') {
+      var compactTabs = '<nav class="omega-v2-factory-tabs" aria-label="Industrial panels">' +
+        tabButton('factories', 'Factories', active) +
+        tabButton('production-lines', 'Lines', active) +
+        tabButton('inventory', 'Inputs', active) +
+        tabButton('national-inventory', 'Stock', active) +
+        tabButton('research', 'R&D', active) +
+        tabButton('projects', 'Projects', active) + '</nav>';
+      var factoryCards = model.factories.length
+        ? model.factories.map(function (row) {
+            return factoryCard(row, Object.assign({}, options, {
+              model: model,
+              selectedFactoryId: root.__omegaV2SelectedFactoryId || '',
+              onOpenFactory: options.onOpenFactory
+            }));
+          }).join('')
+        : '<div class="omega-v2-factory-empty">No commissioned factories are recorded for ' + esc(model.countryId || 'the selected country') + '.</div>';
+      root.innerHTML = '<section class="omega-v2-shell omega-v2-industry omega-v2-industry--factory-home">' +
+        '<div class="omega-v2-factory-command" aria-label="Factory production control">' +
+        '<img class="omega-v2-factory-backdrop" src="assets/ui-photos/industrial-production-line.webp" alt="" aria-hidden="true" loading="lazy" decoding="async" width="1280" height="720">' +
+        '<a class="omega-v2-factory-photo-credit" href="https://commons.wikimedia.org/wiki/File:Industrial_production_line_operating_in_a_large_modern_factory.jpg" target="_blank" rel="noopener noreferrer" aria-label="Photo credit: Shixart1985. CC BY 2.0 license. Image resized and converted to WebP.">Photo: <span class="omega-v2-factory-photo-author">Shixart1985</span></a><a class="omega-v2-factory-photo-license" href="https://creativecommons.org/licenses/by/2.0/" target="_blank" rel="license noopener noreferrer" aria-label="Creative Commons Attribution 2.0 license">CC BY 2.0</a><span class="omega-v2-factory-photo-credit__changes">Image resized and converted to WebP.</span>' +
+        (root.__omegaV2IndustryNotice ? '<div class="omega-v2-factory-notice" role="status">' + esc(root.__omegaV2IndustryNotice) + '</div>' : '') +
+        compactTabs + '<div class="omega-v2-factory-deck">' + factoryCards + '</div></div></section>';
+    } else {
     root.innerHTML = '<section class="omega-v2-shell omega-v2-industry">' +
       '<header class="omega-v2-heading"><div><div class="omega-v2-eyebrow">INDUSTRY · PRODUCTION SYSTEM</div><h1 class="omega-v2-title">Factories & Production</h1><p class="omega-v2-subtitle">Country ' + esc(model.countryId || 'Not recorded') + ' · canonical production assets and cycles only</p></div><span class="omega-v2-status">' + fmt(model.factoryCount) + ' commissioned assets</span></header>' +
       metalCommandCard(model) +
@@ -558,11 +741,78 @@
       '</div><div data-omega-v2-industry-content>' + content + '</div>' +
       '<p class="omega-v2-source">Factory and production records remain in this UI v2 screen. Retired console navigation is disabled.</p>' +
       '<p class="omega-v2-source">Read source: ' + esc(model.source) + '. Recent site-flow ledger entries available: ' + fmt(model.recentFlowCount) + '.</p></section>';
+    }
 
     if (!root.__omegaV2IndustryBound && typeof root.addEventListener === 'function') {
+      root.addEventListener('error', function (event) {
+        var image = event && event.target;
+        if (!image || !image.matches || !image.matches('[data-omega-v2-factory-svg]')) return;
+        var fallback = image.getAttribute('data-fallback') || '';
+        if (!fallback || image.getAttribute('src') === fallback) return;
+        image.setAttribute('src', fallback);
+      }, true);
       root.addEventListener('click', function (event) {
         var target = event && event.target;
         if (!target || typeof target.closest !== 'function') return;
+
+        var factorySelect = target.closest('[data-omega-v2-factory-select]');
+        if (factorySelect && root.contains(factorySelect)) {
+          root.__omegaV2SelectedFactoryId = factorySelect.getAttribute('data-omega-v2-factory-select') || '';
+          root.__omegaV2IndustryNotice = '';
+          render(root, Object.assign({}, root.__omegaV2IndustryOptions || {}, { tab: 'factories' }));
+          return;
+        }
+
+        var buildFactory = target.closest('[data-omega-v2-factory-build]');
+        if (buildFactory && root.contains(buildFactory) && !buildFactory.disabled) {
+          var buildModel = root.__omegaV2IndustryModel || model;
+          var commandCenter = g.OmegaResourceCommandCenterUI || (g.Omega && g.Omega.ResourceCommandCenterUI);
+          var selectedFactoryType = buildFactory.getAttribute('data-factory-type') || '';
+          if (commandCenter && typeof commandCenter.open === 'function') {
+            commandCenter.open(buildModel.countryId, 'factories');
+            try {
+              var commandModal = g.document && g.document.getElementById('gsrsk-intelligence-modal');
+              var typeSelect = commandModal && commandModal.querySelector('form[data-form="factory-project"] select[name="factoryType"]');
+              var canonicalType = normalizeFactoryType(selectedFactoryType, safeCatalog() || {});
+              if (typeSelect && canonicalType) {
+                var typeOption = Array.prototype.slice.call(typeSelect.options || []).find(function (option) {
+                  return String(option.value || '').toUpperCase() === String(canonicalType).toUpperCase();
+                });
+                if (typeOption) typeSelect.value = typeOption.value;
+              }
+            } catch (_) {}
+          } else if (commandCenter && typeof commandCenter.openPanel === 'function') {
+            commandCenter.openPanel('factories');
+          } else {
+            root.__omegaV2IndustryNotice = 'Factory project controls are not available in this runtime.';
+            render(root, Object.assign({}, root.__omegaV2IndustryOptions || {}, { tab: 'factories' }));
+          }
+          return;
+        }
+
+        var destroyFactory = target.closest('[data-omega-v2-factory-destroy]');
+        if (destroyFactory && root.contains(destroyFactory) && !destroyFactory.disabled) {
+          var destroyModel = root.__omegaV2IndustryModel || model;
+          var factoryIdToDestroy = destroyFactory.getAttribute('data-omega-v2-factory-destroy') || '';
+          var industrialNetwork = safeNetwork();
+          if (!industrialNetwork || typeof industrialNetwork.decommissionFactory !== 'function') {
+            root.__omegaV2IndustryNotice = 'Factory decommissioning is unavailable; no game state was changed.';
+            render(root, Object.assign({}, root.__omegaV2IndustryOptions || {}, { tab: 'factories' }));
+            return;
+          }
+          var confirmed = typeof g.confirm === 'function' && g.confirm('Decommission this factory? Active production will stop. Historical records will be preserved.');
+          if (!confirmed) return;
+          var decommissionResult = industrialNetwork.decommissionFactory({
+            countryId: destroyModel.countryId, factoryId: factoryIdToDestroy, confirmed: true
+          });
+          var decommissionStatus = String(decommissionResult && decommissionResult.status || '').toUpperCase();
+          root.__omegaV2IndustryNotice = decommissionStatus === 'DECOMMISSIONED'
+            ? 'Factory decommissioned. Production stopped; history preserved.'
+            : 'Factory unchanged. ' + String(decommissionResult && (decommissionResult.reason || decommissionResult.status) || 'Runtime rejected the request').replace(/_/g, ' ').toLowerCase() + '.';
+          root.__omegaV2SelectedFactoryId = '';
+          render(root, Object.assign({}, root.__omegaV2IndustryOptions || {}, { tab: 'factories' }));
+          return;
+        }
         var tab = target.closest('[data-omega-v2-industry-tab]');
         if (tab && root.contains(tab)) {
           root.__omegaV2IndustryTab = tab.getAttribute('data-omega-v2-industry-tab');
@@ -614,7 +864,7 @@
        'OMEGA_RESOURCE_MINE_CAPACITY_CHANGED','OMEGA_SIMULATION_TURN_COMMITTED',
        'OMEGA_FACTORY_CAPACITY_CHANGED'].forEach(function (eventName) {
         g.addEventListener(eventName, function () {
-          if (!root.querySelector || !root.querySelector('.omega-v2-industry-command')) return;
+          if (!root.querySelector || !root.querySelector('.omega-v2-industry-command, .omega-v2-factory-command')) return;
           render(root, Object.assign({}, root.__omegaV2IndustryOptions || {}, { tab: root.__omegaV2IndustryTab || 'factories' }));
         });
       });
@@ -622,6 +872,7 @@
     }
     root.__omegaV2IndustryOptions = options;
     root.__omegaV2IndustryModel = model;
+    if (active !== 'factories') root.__omegaV2IndustryNotice = '';
     root.__omegaV2IndustryTab = active;
     try {
       var visuals = g.OmegaFactoryVisualCatalog;

@@ -2,7 +2,7 @@
  * Same-origin app files are cached for offline relaunch; remote map tiles are never cached here.
  */
 "use strict";
-const CACHE_NAME = "omega-offline-atlas-shell-v42";
+const CACHE_NAME = "omega-offline-atlas-shell-v43";
 const APP_BASE = new URL("./", self.location.href);
 const INDEX_URL = new URL("index.html", APP_BASE).href;
 const CORE_ASSETS = [
@@ -38,6 +38,7 @@ const CORE_ASSETS = [
   "./omega_ui_v2/ministry-visual-refresh.css",
   "./omega_ui_v2/atlas-command-polish.css",
   "./omega_ui_v2/legacy-disconnect.css",
+  "./omega_ui_v2/factory-production-command.css",
   "./omega_ui_v2/navigation-registry.js",
   "./omega_ui_v2/ministry-visual-registry.js",
   "./omega_ui_v2/screens/government.js",
@@ -108,6 +109,25 @@ self.addEventListener("install", event => {
       let match;
       while ((match = refs.exec(html)) !== null) {
         if (isLocalAppUrl(match[1])) assets.add(new URL(match[1], INDEX_URL).href);
+      }
+    }
+    // Precache the canonical factory SVG library from its manifest so factory cards
+    // remain fully illustrated after an offline relaunch. Never synthesize new icons.
+    const factoryIconManifestUrl = new URL("./assets/omega-industrial-icons-v1/manifest.json", APP_BASE).href;
+    assets.add(factoryIconManifestUrl);
+    const factoryIconManifestResponse = await fetchAndCache(cache, factoryIconManifestUrl);
+    if (factoryIconManifestResponse && factoryIconManifestResponse.ok) {
+      try {
+        const factoryIconManifest = await factoryIconManifestResponse.clone().json();
+        const factoryIcons = Array.isArray(factoryIconManifest.factories) ? factoryIconManifest.factories : [];
+        for (const icon of factoryIcons) {
+          const file = String(icon && icon.file || "");
+          if (/^factories\/[a-z0-9-]+\.svg$/.test(file)) {
+            assets.add(new URL("./assets/omega-industrial-icons-v1/" + file, APP_BASE).href);
+          }
+        }
+      } catch (_) {
+        // A malformed optional icon manifest must not prevent the shell from installing.
       }
     }
     await Promise.allSettled(Array.from(assets).map(url => fetchAndCache(cache, url)));

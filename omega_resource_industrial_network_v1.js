@@ -3282,6 +3282,53 @@ function factoryProductionStatus(countryId,factoryId){
   return{status:'READY',countryId:cid,factoryId:String(factoryId),health:clone(asset.productionHealth||{status:'NOT_RECORDED'}),
     cycle:clone(cycle),lastProductionCycleId:asset.lastProductionCycleId||null,updatedTurn:turn()};
 }
+function decommissionFactory(input={}) {
+  const cid=canonicalCountry(input.countryId),fid=String(input.factoryId||'').trim();
+  if(!cid)return{status:'BLOCKED',reason:'FACTORY_COUNTRY_INVALID',factoryId:fid};
+  if(!fid)return{status:'BLOCKED',reason:'FACTORY_ID_REQUIRED',countryId:cid};
+  if(input.confirmed!==true)return{status:'CONFIRMATION_REQUIRED',reason:'FACTORY_DECOMMISSION_CONFIRMATION_REQUIRED',countryId:cid,factoryId:fid};
+  const asset=factoryAssets(cid).find(row=>String(row?.id||row?.assetId||row?.projectId||'')===fid);
+  if(!asset)return{status:'NOT_FOUND',reason:'FACTORY_NOT_FOUND',countryId:cid,factoryId:fid};
+  const previousStatus=String(asset.status||'NOT_RECORDED').trim().toUpperCase();
+  if(['DECOMMISSIONED','DESTROYED'].includes(previousStatus))
+    return{status:'DECOMMISSIONED',countryId:cid,factoryId:fid,idempotent:true,productionStatus:'STOPPED'};
+  const network=netState(cid);
+  const cycleMap=factoryCycleStore(cid).factoryProductionCycles;
+  const cycle=cycleMap[fid]||null;
+  if(factoryCycleActive(cycle)){
+    cycle.status='CANCELLED';
+    cycle.cancelReason='FACTORY_DECOMMISSIONED_BY_PLAYER';
+    cycle.cancelledTurn=turn();
+    cycle.cancelledDate=factoryCurrentGameDate();
+    cycle.decommissionedByPlayer=true;
+    releaseFactoryCycleReservations(asset,cycle.cycleId);
+    network.factoryProductionCycleHistory.push(clone(cycle));
+    network.factoryProductionCycleHistory=network.factoryProductionCycleHistory.slice(-MAX_EVENTS);
+    delete cycleMap[fid];
+  }
+  asset.status='DECOMMISSIONED';
+  asset.decommissionedTurn=turn();
+  asset.decommissionedDate=factoryCurrentGameDate();
+  asset.decommissionedByPlayer=true;
+  asset.activeProductionCycleId=null;
+  const health=factorySetProductionHealth(asset,'STOPPED',0,num(asset.capacityPerDay??asset.capacity??asset.productionCapacity),{
+    reason:'FACTORY_DECOMMISSIONED_BY_PLAYER',
+    priorStatus:previousStatus,
+    cancelledCycleId:cycle?.cycleId||null
+  });
+  const record={status:'DECOMMISSIONED',countryId:cid,factoryId:fid,factoryType:String(asset.factoryType||asset.type||''),turn:turn(),
+    date:asset.decommissionedDate,priorStatus:previousStatus,cancelledCycleId:cycle?.cycleId||null,
+    productionHealth:clone(health),authority:'OMEGA_FACTORY_DECOMMISSION_API_V1',historyPreserved:true};
+  network.factoryDecommissionHistory=Array.isArray(network.factoryDecommissionHistory)?network.factoryDecommissionHistory:[];
+  network.factoryDecommissionHistory.push(clone(record));
+  network.factoryDecommissionHistory=network.factoryDecommissionHistory.slice(-MAX_EVENTS);
+  network.events=Array.isArray(network.events)?network.events:[];
+  network.events.push(clone(record));network.events=network.events.slice(-MAX_EVENTS);
+  emit('OMEGA_FACTORY_DECOMMISSIONED',cid,record);
+  emit('OMEGA_FACTORY_CAPACITY_CHANGED',cid,{factoryId:fid,status:'DECOMMISSIONED',turn:turn()});
+  return record;
+}
+
 function factoryCatalogDiagnostics(){
   const catalog=cat()||{},profiles=catalog.factoryProfiles||{},downstream=catalog.downstreamFactoryRecipes||{};
   const processing=processRules(),profileTypes=new Set(Object.keys(profiles));
@@ -3439,7 +3486,7 @@ function gameplayPipelineDiagnostics(countryScope){
     awaitingTransportCapacity:perCountry.reduce((n,x)=>n+x.awaitingTransportCapacity,0),perCountry};
 }
 function api(){
-  return Object.freeze({VERSION,loadCatalog,planExtraction,planShipment,dispatchShipment,dispatchFactoryInputShipment,advanceShipments,quoteMineProject,startMineProject,startFactoryProject,startInfrastructureProject,startPadmaCorridorProject,advanceProjects,startTechnologyProject,executeFactoryCycle,executeSitePipeline,diagnostics,gameplayPipelineDiagnostics,factoryCatalogDiagnostics,factoryProductionRequirements,factoryProductionStatus,startFactoryProductionCycle,transferFactoryInputsFromWarehouse,processPendingFactoryInputs,factoryUtilityDiagnostics,factoryConstructionMaterialQuote,reconcileFactoryEmployment,normalizeInfrastructure,candidateFactories,recipeFor,processPendingFactoryInputs,resourceMethod,buildRoute});
+  return Object.freeze({VERSION,loadCatalog,planExtraction,planShipment,dispatchShipment,dispatchFactoryInputShipment,advanceShipments,quoteMineProject,startMineProject,startFactoryProject,startInfrastructureProject,startPadmaCorridorProject,advanceProjects,startTechnologyProject,executeFactoryCycle,executeSitePipeline,diagnostics,gameplayPipelineDiagnostics,factoryCatalogDiagnostics,factoryProductionRequirements,factoryProductionStatus,decommissionFactory,startFactoryProductionCycle,transferFactoryInputsFromWarehouse,processPendingFactoryInputs,factoryUtilityDiagnostics,factoryConstructionMaterialQuote,reconcileFactoryEmployment,normalizeInfrastructure,candidateFactories,recipeFor,processPendingFactoryInputs,resourceMethod,buildRoute});
 }
 g.Omega=g.Omega||{};g.Omega.ResourceIndustrialNetwork=api();g.OmegaResourceIndustrialNetwork=g.Omega.ResourceIndustrialNetwork;
 
