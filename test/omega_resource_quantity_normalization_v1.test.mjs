@@ -28,6 +28,20 @@ const crossDimension=api.normalizeQuantity('copper',1,'BCM');
 assert.equal(crossDimension.quantity,null,'volume units must not be accepted as mass units');
 assert.equal(crossDimension.method,'UNIT_UNRECOGNIZED_OR_INCOMPATIBLE_NOT_CONVERTED');
 
+// Stale normalization metadata must not block a valid gameplay fallback value from
+// being normalized when its current quantity/unit differs from the historical record.
+const staleReserve=api.normalizeSiteRecord({
+ resourceId:'natural_gas',
+ quantitative:{reserve:{
+  quantity:5000,unit:'MMCF',status:'SIMULATED',simulationOnly:true,
+  quantityNormalization:{version:'1.0.0',field:'quantity',quantity:null,normalizedQuantity:null,
+   sourceQuantity:15330000000,sourceUnit:'TONNES_ORE',normalizedUnit:'BCM',
+   method:'UNIT_UNRECOGNIZED_OR_INCOMPATIBLE_NOT_CONVERTED',simulationOnly:true}
+ }}
+});
+assert.ok(staleReserve.quantitative.reserve.quantity>0,'valid reserve fallback must survive stale incompatible metadata');
+assert.ok(Math.abs(staleReserve.quantitative.reserve.quantity-0.14158423296)<1e-9);
+
 const annualRate=api.normalizeSiteRecord({resourceId:'copper',quantitative:{production:{rate:365,rateUnit:'TONNES_PER_YEAR',unit:'TONNES_PER_YEAR',status:'SIMULATED'}}});
 assert.equal(annualRate.quantitative.production.rate,1,'annual site output must be converted to one day of production');
 assert.equal(annualRate.quantitative.production.rateUnit,'TONNES_PER_DAY');
