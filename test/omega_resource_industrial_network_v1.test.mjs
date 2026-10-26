@@ -301,7 +301,7 @@ context.Game.state.resource.SAU={
 const scopedPipeline=N.gameplayPipelineDiagnostics('BGD');
 assert.equal(scopedPipeline.diagnosticScope,'BGD');
 assert.equal(scopedPipeline.countryCount,1);
-assert.deepEqual(scopedPipeline.perCountry.map(row=>row.countryId),['BGD']);
+assert.equal(Array.from(scopedPipeline.perCountry, row=>row.countryId).join(','),'BGD');
 assert.equal(
   scopedPipeline.perCountry[0].blockedFlows.some((row) => row.siteId === 'SITE_SAU_TEST'),
   false,
