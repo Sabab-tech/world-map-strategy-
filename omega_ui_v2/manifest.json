@@ -29,7 +29,8 @@
     "policeFleet": "omega_ui_v2/screens/police-fleet.js",
     "integration": "omega_ui_v2/integration.js",
     "worldCommandDock": "world-command-dock.js",
-    "religion": "app.js#religion (existing canonical Religion & Ideology handoff)"
+    "religion": "app.js#religion (existing canonical Religion & Ideology handoff)",
+    "mineProductionCommand": "omega_ui_v2/screens/mine-production-command.js"
   },
   "sharedStyles": "omega_ui_v2/omega-ui-v2.css",
   "additionalStyles": [
@@ -46,7 +47,8 @@
     "Resource sites retain unique siteId and countryId",
     "Reserve, stock, production rate and capacity are separate quantities",
     "Missing values remain Not recorded or Unavailable",
-    "Every action must be routed to the canonical handler"
+    "Every action must be routed to the canonical handler",
+    "Mine demolition preserves stock and history and prevents automatic restart"
   ],
   "gates": {
     "android9": true,
