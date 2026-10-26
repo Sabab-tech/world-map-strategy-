@@ -13,13 +13,13 @@ class CustomEventMock{constructor(type,init={}){this.type=type;this.detail=init.
 function loadJson(path){return JSON.parse(readFileSync(path,'utf8'));}
 
 function buildEngine(){
-  const a=loadJson('resources.json'),b=loadJson('resources_2.json');
+  const a=loadJson('resources.json'),b=loadJson('resources_2.json'),ext=loadJson('resource_type_extensions_v1.json');
   const profiles={
     ...(a.GSRSK_Master_CountryProfiles_v14?.countryProfiles||{}),
     ...(b.GSRSK_Master_CountryProfiles_v14?.countryProfiles||{})
   };
   const deposits=[...(a.runtime_deposits||[]),...(b.runtime_deposits||[])];
-  const resourceTypes={...(a.resource_types||{}),...(b.resource_types||{}),...(a.GSRSK_Master_Resource_Data_v14?.resource_types||{}),...(b.GSRSK_Master_Resource_Data_v14?.resource_types||{})};
+  const resourceTypes={...(a.resource_types||{}),...(b.resource_types||{}),...(a.GSRSK_Master_Resource_Data_v14?.resource_types||{}),...(b.GSRSK_Master_Resource_Data_v14?.resource_types||{}),...(ext.resource_types||{}),...(ext.GSRSK_Master_Resource_Data_v14?.resource_types||{})};
   const mineSiteReferenceCount=Object.values(profiles).reduce((sum,p)=>{
     const sites=p?.resource_infrastructure_context?.mineSites||p?.infrastructure_context?.mineSites||[];
     return sum+(Array.isArray(sites)?sites.length:0);
