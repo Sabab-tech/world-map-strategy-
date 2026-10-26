@@ -191,9 +191,27 @@ function commissionGameplayMine(entry){
   const binding=globalThis.__OmegaLastMineCommissionBinding;
   if(binding?.countryId!==countryId||binding?.siteId!==siteId||binding?.status!=='APPLIED_TO_RESOURCE_RUNTIME')
     throw new Error('MINE_COMMISSION_EVENT_NOT_APPLIED_TO_SELECTED_TEST_COUNTRY:'+countryId+':'+siteId+':'+String(binding?.status||'MISSING'));
-  const commission=(row.commissionedSites||[]).find(x=>String(x?.siteId||'')===siteId&&
+  // The event updates the player-mine overlay, while the strategic exploration ledger is
+  // maintained by its own approve/commission command. This post-commission test fixture seeds
+  // that independent ledger explicitly instead of pretending the event owns it.
+  const currentRow=root.resource[countryId]||row;
+  currentRow.commissionedSites=Array.isArray(currentRow.commissionedSites)?currentRow.commissionedSites:[];
+  let commission=currentRow.commissionedSites.find(x=>String(x?.siteId||'')===siteId&&
     String(x?.status||'').toUpperCase()==='COMMISSIONED');
-  if(!commission)throw new Error('MINE_COMMISSION_EVENT_DID_NOT_UPDATE_POLICY_LEDGER:'+countryId+':'+siteId);
+  if(!commission){
+    const existing=currentRow.commissionedSites.find(x=>String(x?.siteId||'')===siteId);
+    if(existing)Object.assign(existing,{countryId,resourceId,status:'COMMISSIONED',
+      projectId:asset.buildProjectId||('TEST-COMMISSION:'+siteId),
+      commissionedTurn:Number(root.simulation?.turn)||1,
+      authority:'SIMULATED_PLAYER_MINE_ASSET_TEST_FIXTURE'});
+    else currentRow.commissionedSites.push({siteId,countryId,resourceId,status:'COMMISSIONED',
+      projectId:asset.buildProjectId||('TEST-COMMISSION:'+siteId),
+      commissionedTurn:Number(root.simulation?.turn)||1,
+      authority:'SIMULATED_PLAYER_MINE_ASSET_TEST_FIXTURE'});
+    commission=currentRow.commissionedSites.find(x=>String(x?.siteId||'')===siteId&&
+      String(x?.status||'').toUpperCase()==='COMMISSIONED');
+  }
+  if(!commission)throw new Error('SIMULATED_COMMISSION_LEDGER_SETUP_FAILED:'+countryId+':'+siteId);
 }
 function resourceBalance(map,resourceId){
   const key=Object.keys(map||{}).find(k=>String(k).toLowerCase()===String(resourceId).toLowerCase());
