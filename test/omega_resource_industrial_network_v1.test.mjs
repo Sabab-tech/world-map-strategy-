@@ -302,8 +302,11 @@ const scopedPipeline=N.gameplayPipelineDiagnostics('BGD');
 assert.equal(scopedPipeline.diagnosticScope,'BGD');
 assert.equal(scopedPipeline.countryCount,1);
 assert.deepEqual(scopedPipeline.perCountry.map(row=>row.countryId),['BGD']);
-assert.equal(scopedPipeline.perCountry[0].blockedFlows.some(row=>row.siteId==='SITE_SAU_TEST'),false,
-  'selected-country diagnostics must not read or report another country's flow ledger');
+assert.equal(
+  scopedPipeline.perCountry[0].blockedFlows.some((row) => row.siteId === 'SITE_SAU_TEST'),
+  false,
+  'selected-country diagnostics must not read or report another country\'s flow ledger'
+);
 const globalPipeline=N.gameplayPipelineDiagnostics();
 assert.equal(globalPipeline.diagnosticScope,'GLOBAL',
   'no-argument diagnostics must preserve the global aggregate contract');
