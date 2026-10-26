@@ -1,23 +1,23 @@
 {
   "schemaVersion": "1.0.0",
   "datasetId": "OMEGA_INDUSTRIAL_SVG_ICON_LIBRARY_V1",
-  "purpose": "Canonical offline SVG library for OMEGA resources and consolidated factory types. Former specialty mineral factory records are retained under legacyFactories and are not displayed as separate canonical types.",
+  "purpose": "Canonical offline SVG library for OMEGA resources and the consolidated 21-type factory catalog. Former specialty factory SVGs remain preserved as legacy assets and are not displayed as separate canonical types.",
   "rendering": {
     "format": "SVG",
     "viewBox": "0 0 128 128",
-    "artDirection": "cohesive dimensional isometric vector scenes",
+    "artDirection": "cohesive dimensional object-led industrial vector icons with a shared navy backplate and category-specific focal symbols",
     "background": "self-contained dark-navy backplate",
     "dependencies": []
   },
   "sourceCatalog": "resource_industrial_catalog_v1.json",
   "summary": {
     "resourceIconCount": 42,
-    "factoryIconCount": 35,
-    "totalIconCount": 77,
-    "canonicalFactoryTypeCount": 35,
+    "factoryIconCount": 21,
+    "totalIconCount": 63,
+    "canonicalFactoryTypeCount": 21,
     "canonicalResourceRuleCount": 42,
     "integratedIntoRuntime": false,
-    "legacyFactoryIconCount": 24
+    "legacyFactoryIconCount": 39
   },
   "resources": [
     {
@@ -275,259 +275,209 @@
   ],
   "factories": [
     {
-      "id": "AEROSPACE_EQUIPMENT_PLANT",
-      "label": "Aerospace and Aircraft Equipment",
-      "category": "TRANSPORT_AND_AEROSPACE",
-      "file": "factories/aerospace-equipment-plant.svg",
-      "color": "#8fa7c3"
-    },
-    {
-      "id": "AGGREGATE_CRUSHING_PLANT",
-      "label": "Aggregate Crushing Plant",
-      "category": "CONSTRUCTION_AND_GLASS",
-      "file": "factories/aggregate-crushing-plant.svg",
-      "color": "#cbb58b"
-    },
-    {
-      "id": "BATTERY_ENERGY_STORAGE_PLANT",
-      "label": "Battery and Energy Storage Plant",
-      "category": "ELECTRONICS_AND_ENERGY_STORAGE",
-      "file": "factories/battery-energy-storage-plant.svg",
-      "color": "#53aee1"
-    },
-    {
-      "id": "BORATE_PROCESSING_PLANT",
-      "label": "Borate Processing Plant",
-      "category": "CONSTRUCTION_AND_GLASS",
-      "file": "factories/borate-processing-plant.svg",
-      "color": "#cbb58b"
-    },
-    {
-      "id": "CEMENT_CONCRETE_PLANT",
-      "label": "Cement and Concrete Works",
-      "category": "CONSTRUCTION_AND_GLASS",
-      "file": "factories/cement-concrete-plant.svg",
-      "color": "#cbb58b"
-    },
-    {
-      "id": "CEMENT_LIMESTONE_PLANT",
-      "label": "Cement Limestone Feed Plant",
-      "category": "CONSTRUCTION_AND_GLASS",
-      "file": "factories/cement-limestone-plant.svg",
-      "color": "#cbb58b"
-    },
-    {
-      "id": "COAL_PREPARATION_PLANT",
-      "label": "Coal Preparation Plant",
-      "category": "CHEMICALS_AND_POLYMERS",
-      "file": "factories/coal-preparation-plant.svg",
-      "color": "#48b8ca"
-    },
-    {
-      "id": "DEFENSE_EQUIPMENT_FACTORY",
-      "label": "Defence Equipment Factory",
-      "category": "HEALTHCARE_AND_DEFENCE",
-      "file": "factories/defense-equipment-factory.svg",
-      "color": "#9cb19a"
-    },
-    {
-      "id": "DOLOMITE_PROCESSING_PLANT",
-      "label": "Dolomite Processing Plant",
-      "category": "CONSTRUCTION_AND_GLASS",
-      "file": "factories/dolomite-processing-plant.svg",
-      "color": "#cbb58b"
-    },
-    {
-      "id": "ELECTRONICS_SEMICONDUCTOR_FAB",
-      "label": "Electronics and Semiconductor Fab",
-      "category": "ELECTRONICS_AND_ENERGY_STORAGE",
-      "file": "factories/electronics-semiconductor-fab.svg",
-      "color": "#53aee1"
-    },
-    {
       "id": "FERTILIZER_CHEMICAL_PLANT",
       "label": "Fertilizer and Agrochemicals",
       "category": "AGRICULTURE_AND_FOOD",
       "file": "factories/fertilizer-chemical-plant.svg",
-      "color": "#77b86b"
+      "color": "#77b86b",
+      "motif": "fertilizer-sprout"
     },
     {
       "id": "FOOD_PROCESSING_COLD_CHAIN",
       "label": "Food Processing and Cold Chain",
       "category": "AGRICULTURE_AND_FOOD",
       "file": "factories/food-processing-cold-chain.svg",
-      "color": "#77b86b"
-    },
-    {
-      "id": "GAS_PROCESSING_PLANT",
-      "label": "Natural Gas Processing Plant",
-      "category": "CHEMICALS_AND_POLYMERS",
-      "file": "factories/gas-processing-plant.svg",
-      "color": "#48b8ca"
-    },
-    {
-      "id": "GLASS_CERAMICS_PLANT",
-      "label": "Glass and Ceramics Works",
-      "category": "CONSTRUCTION_AND_GLASS",
-      "file": "factories/glass-ceramics-plant.svg",
-      "color": "#cbb58b"
-    },
-    {
-      "id": "GLASS_SILICA_PLANT",
-      "label": "Silica Processing Plant",
-      "category": "CONSTRUCTION_AND_GLASS",
-      "file": "factories/glass-silica-plant.svg",
-      "color": "#cbb58b"
-    },
-    {
-      "id": "GRID_EQUIPMENT_FACTORY",
-      "label": "Grid and Electrical Equipment",
-      "category": "MACHINERY_AND_CAPITAL_GOODS",
-      "file": "factories/grid-equipment-factory.svg",
-      "color": "#7a9eb9"
-    },
-    {
-      "id": "GYPSUM_PROCESSING_PLANT",
-      "label": "Gypsum Processing Plant",
-      "category": "CONSTRUCTION_AND_GLASS",
-      "file": "factories/gypsum-processing-plant.svg",
-      "color": "#cbb58b"
+      "color": "#77b86b",
+      "motif": "grain-and-food-jar"
     },
     {
       "id": "INDUSTRIAL_CHEMICALS_GAS_PLANT",
       "label": "Industrial Chemicals and Gases",
       "category": "CHEMICALS_AND_POLYMERS",
       "file": "factories/industrial-chemicals-gas-plant.svg",
-      "color": "#48b8ca"
-    },
-    {
-      "id": "INDUSTRIAL_MACHINERY_MACHINE_TOOLS",
-      "label": "Industrial Machinery and Machine Tools",
-      "category": "MACHINERY_AND_CAPITAL_GOODS",
-      "file": "factories/industrial-machinery-machine-tools.svg",
-      "color": "#7a9eb9"
-    },
-    {
-      "id": "LITHIUM_CONVERSION_PLANT",
-      "label": "Lithium Conversion Plant",
-      "category": "RAW_RESOURCE_PROCESSING",
-      "file": "factories/lithium-conversion-plant.svg",
-      "color": "#b98c5b"
-    },
-    {
-      "id": "MAGNESIA_PLANT",
-      "label": "Magnesia Plant",
-      "category": "CONSTRUCTION_AND_GLASS",
-      "file": "factories/magnesia-plant.svg",
-      "color": "#cbb58b"
-    },
-    {
-      "id": "MINERAL_PROCESSING_PLANT",
-      "label": "Mineral Processing Plant",
-      "category": "RAW_RESOURCE_PROCESSING",
-      "file": "factories/mineral-processing-plant.svg",
-      "color": "#b98c5b"
-    },
-    {
-      "id": "NON_FERROUS_METAL_SMELTER",
-      "label": "Non-Ferrous Metal Smelter",
-      "category": "METALS_AND_ALLOYS",
-      "file": "factories/non-ferrous-metal-smelter.svg",
-      "color": "#e37c50"
-    },
-    {
-      "id": "OIL_SHALE_RETORT",
-      "label": "Oil Shale Retort",
-      "category": "CHEMICALS_AND_POLYMERS",
-      "file": "factories/oil-shale-retort.svg",
-      "color": "#48b8ca"
-    },
-    {
-      "id": "PAPER_PACKAGING_MILL",
-      "label": "Paper and Packaging Mill",
-      "category": "PAPER_AND_PACKAGING",
-      "file": "factories/paper-packaging-mill.svg",
-      "color": "#c2a678"
+      "color": "#48b8ca",
+      "motif": "gas-cylinders-and-flask"
     },
     {
       "id": "PETROCHEMICAL_POLYMER_PLANT",
       "label": "Petrochemical, Plastics and Polymers",
       "category": "CHEMICALS_AND_POLYMERS",
       "file": "factories/petrochemical-polymer-plant.svg",
-      "color": "#48b8ca"
-    },
-    {
-      "id": "PHARMA_MEDICAL_SUPPLIES_PLANT",
-      "label": "Pharmaceuticals and Medical Supplies",
-      "category": "HEALTHCARE_AND_DEFENCE",
-      "file": "factories/pharma-medical-supplies-plant.svg",
-      "color": "#9cb19a"
+      "color": "#48b8ca",
+      "motif": "laboratory-flask-and-polymer-molecule"
     },
     {
       "id": "RECYCLING_WASTE_PROCESSING_PLANT",
       "label": "Recycling and Waste Processing Plant",
       "category": "CIRCULAR_INDUSTRY",
       "file": "factories/recycling-waste-processing-plant.svg",
-      "color": "#65b9a0"
+      "color": "#65b9a0",
+      "motif": "recycling-arrows-and-bin"
     },
     {
-      "id": "REFINERY",
-      "label": "Petroleum Refinery",
-      "category": "CHEMICALS_AND_POLYMERS",
-      "file": "factories/refinery.svg",
-      "color": "#48b8ca"
-    },
-    {
-      "id": "SALT_REFINERY",
-      "label": "Salt Refinery",
+      "id": "CEMENT_CONCRETE_PLANT",
+      "label": "Cement and Concrete Works",
       "category": "CONSTRUCTION_AND_GLASS",
-      "file": "factories/salt-refinery.svg",
-      "color": "#cbb58b"
+      "file": "factories/cement-concrete-plant.svg",
+      "color": "#cbb58b",
+      "motif": "cement-sack"
     },
     {
-      "id": "SHIP_RAIL_EQUIPMENT_YARD",
-      "label": "Shipbuilding and Rail Equipment Yard",
-      "category": "TRANSPORT_AND_AEROSPACE",
-      "file": "factories/ship-rail-equipment-yard.svg",
-      "color": "#8fa7c3"
+      "id": "GLASS_CERAMICS_PLANT",
+      "label": "Glass and Ceramics Works",
+      "category": "CONSTRUCTION_AND_GLASS",
+      "file": "factories/glass-ceramics-plant.svg",
+      "color": "#cbb58b",
+      "motif": "glassware-and-ceramic"
+    },
+    {
+      "id": "BATTERY_ENERGY_STORAGE_PLANT",
+      "label": "Battery and Energy Storage Plant",
+      "category": "ELECTRONICS_AND_ENERGY_STORAGE",
+      "file": "factories/battery-energy-storage-plant.svg",
+      "color": "#53aee1",
+      "motif": "battery"
+    },
+    {
+      "id": "ELECTRONICS_SEMICONDUCTOR_FAB",
+      "label": "Electronics and Semiconductor Fab",
+      "category": "ELECTRONICS_AND_ENERGY_STORAGE",
+      "file": "factories/electronics-semiconductor-fab.svg",
+      "color": "#53aee1",
+      "motif": "microchip"
+    },
+    {
+      "id": "DEFENSE_EQUIPMENT_FACTORY",
+      "label": "Defence Equipment Factory",
+      "category": "HEALTHCARE_AND_DEFENCE",
+      "file": "factories/defense-equipment-factory.svg",
+      "color": "#9cb19a",
+      "motif": "armored-vehicle"
+    },
+    {
+      "id": "PHARMA_MEDICAL_SUPPLIES_PLANT",
+      "label": "Pharmaceuticals and Medical Supplies",
+      "category": "HEALTHCARE_AND_DEFENCE",
+      "file": "factories/pharma-medical-supplies-plant.svg",
+      "color": "#9cb19a",
+      "motif": "capsule-tablet-and-cross"
+    },
+    {
+      "id": "GRID_EQUIPMENT_FACTORY",
+      "label": "Grid and Electrical Equipment",
+      "category": "MACHINERY_AND_CAPITAL_GOODS",
+      "file": "factories/grid-equipment-factory.svg",
+      "color": "#7a9eb9",
+      "motif": "power-transmission"
+    },
+    {
+      "id": "INDUSTRIAL_MACHINERY_MACHINE_TOOLS",
+      "label": "Industrial Machinery and Machine Tools",
+      "category": "MACHINERY_AND_CAPITAL_GOODS",
+      "file": "factories/industrial-machinery-machine-tools.svg",
+      "color": "#7a9eb9",
+      "motif": "gear-and-wrench"
+    },
+    {
+      "id": "NON_FERROUS_METAL_SMELTER",
+      "label": "Non-Ferrous Metal Smelter",
+      "category": "METALS_AND_ALLOYS",
+      "file": "factories/non-ferrous-metal-smelter.svg",
+      "color": "#e37c50",
+      "motif": "molten-metal-crucible"
     },
     {
       "id": "STEEL_AND_ALLOY_WORKS",
       "label": "Steel and Alloy Works",
       "category": "METALS_AND_ALLOYS",
       "file": "factories/steel-and-alloy-works.svg",
-      "color": "#e37c50"
+      "color": "#e37c50",
+      "motif": "steel-beam-and-ingot"
     },
     {
-      "id": "STONE_PROCESSING_PLANT",
-      "label": "Stone Processing Plant",
-      "category": "CONSTRUCTION_AND_GLASS",
-      "file": "factories/stone-processing-plant.svg",
-      "color": "#cbb58b"
+      "id": "PAPER_PACKAGING_MILL",
+      "label": "Paper and Packaging Mill",
+      "category": "PAPER_AND_PACKAGING",
+      "file": "factories/paper-packaging-mill.svg",
+      "color": "#c2a678",
+      "motif": "paper-roll-and-carton"
+    },
+    {
+      "id": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
+      "label": "Universal Materials & Elements Processing Plant",
+      "category": "RAW_RESOURCE_PROCESSING",
+      "file": "factories/universal-materials-elements-processing-plant.svg",
+      "color": "#b98c5b",
+      "motif": "mineral-crystals-and-sample-vials"
     },
     {
       "id": "TEXTILE_GARMENT_MILL",
       "label": "Textile and Garment Mill",
       "category": "TEXTILES_AND_APPAREL",
       "file": "factories/textile-garment-mill.svg",
-      "color": "#b886d5"
+      "color": "#b886d5",
+      "motif": "thread-spool-and-shirt"
+    },
+    {
+      "id": "AEROSPACE_EQUIPMENT_PLANT",
+      "label": "Aerospace and Aircraft Equipment",
+      "category": "TRANSPORT_AND_AEROSPACE",
+      "file": "factories/aerospace-equipment-plant.svg",
+      "color": "#8fa7c3",
+      "motif": "aircraft"
+    },
+    {
+      "id": "SHIP_RAIL_EQUIPMENT_YARD",
+      "label": "Shipbuilding and Rail Equipment Yard",
+      "category": "TRANSPORT_AND_AEROSPACE",
+      "file": "factories/ship-rail-equipment-yard.svg",
+      "color": "#8fa7c3",
+      "motif": "cargo-ship-and-rail-wheel"
     },
     {
       "id": "VEHICLE_TRUCK_BUS_ASSEMBLY",
       "label": "Vehicle, Truck and Bus Assembly",
       "category": "TRANSPORT_AND_AEROSPACE",
       "file": "factories/vehicle-truck-bus-assembly.svg",
-      "color": "#8fa7c3"
+      "color": "#8fa7c3",
+      "motif": "car-and-robotic-assembly-arm"
     }
   ],
   "legacyFactories": [
+    {
+      "id": "AGGREGATE_CRUSHING_PLANT",
+      "label": "Aggregate Crushing Plant",
+      "category": "CONSTRUCTION_AND_GLASS",
+      "file": "factories/aggregate-crushing-plant.svg",
+      "color": "#cbb58b",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
+      "legacy": true
+    },
     {
       "id": "ALUMINA_REFINERY",
       "label": "Alumina Refinery",
       "category": "CHEMICALS_AND_POLYMERS",
       "file": "factories/alumina-refinery.svg",
       "color": "#48b8ca",
-      "canonicalFactoryType": "MINERAL_PROCESSING_PLANT",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
+      "legacy": true
+    },
+    {
+      "id": "BORATE_PROCESSING_PLANT",
+      "label": "Borate Processing Plant",
+      "category": "CONSTRUCTION_AND_GLASS",
+      "file": "factories/borate-processing-plant.svg",
+      "color": "#cbb58b",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
+      "legacy": true
+    },
+    {
+      "id": "CEMENT_LIMESTONE_PLANT",
+      "label": "Cement Limestone Feed Plant",
+      "category": "CONSTRUCTION_AND_GLASS",
+      "file": "factories/cement-limestone-plant.svg",
+      "color": "#cbb58b",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
       "legacy": true
     },
     {
@@ -536,7 +486,16 @@
       "category": "RAW_RESOURCE_PROCESSING",
       "file": "factories/chromite-concentrator.svg",
       "color": "#b98c5b",
-      "canonicalFactoryType": "MINERAL_PROCESSING_PLANT",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
+      "legacy": true
+    },
+    {
+      "id": "COAL_PREPARATION_PLANT",
+      "label": "Coal Preparation Plant",
+      "category": "CHEMICALS_AND_POLYMERS",
+      "file": "factories/coal-preparation-plant.svg",
+      "color": "#48b8ca",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
       "legacy": true
     },
     {
@@ -545,7 +504,7 @@
       "category": "CHEMICALS_AND_POLYMERS",
       "file": "factories/cobalt-refinery.svg",
       "color": "#48b8ca",
-      "canonicalFactoryType": "MINERAL_PROCESSING_PLANT",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
       "legacy": true
     },
     {
@@ -554,7 +513,7 @@
       "category": "RAW_RESOURCE_PROCESSING",
       "file": "factories/copper-concentrator.svg",
       "color": "#b98c5b",
-      "canonicalFactoryType": "MINERAL_PROCESSING_PLANT",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
       "legacy": true
     },
     {
@@ -563,7 +522,7 @@
       "category": "RAW_RESOURCE_PROCESSING",
       "file": "factories/diamond-recovery-plant.svg",
       "color": "#b98c5b",
-      "canonicalFactoryType": "MINERAL_PROCESSING_PLANT",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
       "legacy": true
     },
     {
@@ -572,7 +531,25 @@
       "category": "RAW_RESOURCE_PROCESSING",
       "file": "factories/diatomite-processing-plant.svg",
       "color": "#b98c5b",
-      "canonicalFactoryType": "MINERAL_PROCESSING_PLANT",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
+      "legacy": true
+    },
+    {
+      "id": "DOLOMITE_PROCESSING_PLANT",
+      "label": "Dolomite Processing Plant",
+      "category": "CONSTRUCTION_AND_GLASS",
+      "file": "factories/dolomite-processing-plant.svg",
+      "color": "#cbb58b",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
+      "legacy": true
+    },
+    {
+      "id": "GAS_PROCESSING_PLANT",
+      "label": "Natural Gas Processing Plant",
+      "category": "CHEMICALS_AND_POLYMERS",
+      "file": "factories/gas-processing-plant.svg",
+      "color": "#48b8ca",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
       "legacy": true
     },
     {
@@ -581,7 +558,7 @@
       "category": "RAW_RESOURCE_PROCESSING",
       "file": "factories/gemstone-sorting-plant.svg",
       "color": "#b98c5b",
-      "canonicalFactoryType": "MINERAL_PROCESSING_PLANT",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
       "legacy": true
     },
     {
@@ -590,7 +567,16 @@
       "category": "RAW_RESOURCE_PROCESSING",
       "file": "factories/generic-resource-processing-plant.svg",
       "color": "#b98c5b",
-      "canonicalFactoryType": "MINERAL_PROCESSING_PLANT",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
+      "legacy": true
+    },
+    {
+      "id": "GLASS_SILICA_PLANT",
+      "label": "Silica Processing Plant",
+      "category": "CONSTRUCTION_AND_GLASS",
+      "file": "factories/glass-silica-plant.svg",
+      "color": "#cbb58b",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
       "legacy": true
     },
     {
@@ -599,7 +585,7 @@
       "category": "RAW_RESOURCE_PROCESSING",
       "file": "factories/gold-processing-plant.svg",
       "color": "#b98c5b",
-      "canonicalFactoryType": "MINERAL_PROCESSING_PLANT",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
       "legacy": true
     },
     {
@@ -608,7 +594,34 @@
       "category": "RAW_RESOURCE_PROCESSING",
       "file": "factories/graphite-concentrator.svg",
       "color": "#b98c5b",
-      "canonicalFactoryType": "MINERAL_PROCESSING_PLANT",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
+      "legacy": true
+    },
+    {
+      "id": "GYPSUM_PROCESSING_PLANT",
+      "label": "Gypsum Processing Plant",
+      "category": "CONSTRUCTION_AND_GLASS",
+      "file": "factories/gypsum-processing-plant.svg",
+      "color": "#cbb58b",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
+      "legacy": true
+    },
+    {
+      "id": "LITHIUM_CONVERSION_PLANT",
+      "label": "Lithium Conversion Plant",
+      "category": "RAW_RESOURCE_PROCESSING",
+      "file": "factories/lithium-conversion-plant.svg",
+      "color": "#b98c5b",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
+      "legacy": true
+    },
+    {
+      "id": "MAGNESIA_PLANT",
+      "label": "Magnesia Plant",
+      "category": "CONSTRUCTION_AND_GLASS",
+      "file": "factories/magnesia-plant.svg",
+      "color": "#cbb58b",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
       "legacy": true
     },
     {
@@ -617,7 +630,16 @@
       "category": "RAW_RESOURCE_PROCESSING",
       "file": "factories/manganese-beneficiation-plant.svg",
       "color": "#b98c5b",
-      "canonicalFactoryType": "MINERAL_PROCESSING_PLANT",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
+      "legacy": true
+    },
+    {
+      "id": "MINERAL_PROCESSING_PLANT",
+      "label": "Mineral Processing Plant",
+      "category": "RAW_RESOURCE_PROCESSING",
+      "file": "factories/mineral-processing-plant.svg",
+      "color": "#b98c5b",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
       "legacy": true
     },
     {
@@ -626,7 +648,7 @@
       "category": "CONSTRUCTION_AND_GLASS",
       "file": "factories/mineral-sands-plant.svg",
       "color": "#cbb58b",
-      "canonicalFactoryType": "MINERAL_PROCESSING_PLANT",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
       "legacy": true
     },
     {
@@ -635,7 +657,7 @@
       "category": "RAW_RESOURCE_PROCESSING",
       "file": "factories/nickel-processing-plant.svg",
       "color": "#b98c5b",
-      "canonicalFactoryType": "MINERAL_PROCESSING_PLANT",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
       "legacy": true
     },
     {
@@ -644,7 +666,16 @@
       "category": "RAW_RESOURCE_PROCESSING",
       "file": "factories/niobium-concentration-plant.svg",
       "color": "#b98c5b",
-      "canonicalFactoryType": "MINERAL_PROCESSING_PLANT",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
+      "legacy": true
+    },
+    {
+      "id": "OIL_SHALE_RETORT",
+      "label": "Oil Shale Retort",
+      "category": "CHEMICALS_AND_POLYMERS",
+      "file": "factories/oil-shale-retort.svg",
+      "color": "#48b8ca",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
       "legacy": true
     },
     {
@@ -653,7 +684,7 @@
       "category": "RAW_RESOURCE_PROCESSING",
       "file": "factories/ore-beneficiation-plant.svg",
       "color": "#b98c5b",
-      "canonicalFactoryType": "MINERAL_PROCESSING_PLANT",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
       "legacy": true
     },
     {
@@ -662,7 +693,7 @@
       "category": "RAW_RESOURCE_PROCESSING",
       "file": "factories/pgm-concentrator.svg",
       "color": "#b98c5b",
-      "canonicalFactoryType": "MINERAL_PROCESSING_PLANT",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
       "legacy": true
     },
     {
@@ -671,7 +702,7 @@
       "category": "RAW_RESOURCE_PROCESSING",
       "file": "factories/phosphate-beneficiation-plant.svg",
       "color": "#b98c5b",
-      "canonicalFactoryType": "MINERAL_PROCESSING_PLANT",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
       "legacy": true
     },
     {
@@ -680,7 +711,7 @@
       "category": "RAW_RESOURCE_PROCESSING",
       "file": "factories/potash-processing-plant.svg",
       "color": "#b98c5b",
-      "canonicalFactoryType": "MINERAL_PROCESSING_PLANT",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
       "legacy": true
     },
     {
@@ -689,7 +720,25 @@
       "category": "RAW_RESOURCE_PROCESSING",
       "file": "factories/rare-earth-beneficiation-plant.svg",
       "color": "#b98c5b",
-      "canonicalFactoryType": "MINERAL_PROCESSING_PLANT",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
+      "legacy": true
+    },
+    {
+      "id": "REFINERY",
+      "label": "Petroleum Refinery",
+      "category": "CHEMICALS_AND_POLYMERS",
+      "file": "factories/refinery.svg",
+      "color": "#48b8ca",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
+      "legacy": true
+    },
+    {
+      "id": "SALT_REFINERY",
+      "label": "Salt Refinery",
+      "category": "CONSTRUCTION_AND_GLASS",
+      "file": "factories/salt-refinery.svg",
+      "color": "#cbb58b",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
       "legacy": true
     },
     {
@@ -698,7 +747,16 @@
       "category": "RAW_RESOURCE_PROCESSING",
       "file": "factories/silver-concentrator.svg",
       "color": "#b98c5b",
-      "canonicalFactoryType": "MINERAL_PROCESSING_PLANT",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
+      "legacy": true
+    },
+    {
+      "id": "STONE_PROCESSING_PLANT",
+      "label": "Stone Processing Plant",
+      "category": "CONSTRUCTION_AND_GLASS",
+      "file": "factories/stone-processing-plant.svg",
+      "color": "#cbb58b",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
       "legacy": true
     },
     {
@@ -707,7 +765,7 @@
       "category": "RAW_RESOURCE_PROCESSING",
       "file": "factories/tin-concentrator.svg",
       "color": "#b98c5b",
-      "canonicalFactoryType": "MINERAL_PROCESSING_PLANT",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
       "legacy": true
     },
     {
@@ -716,7 +774,7 @@
       "category": "RAW_RESOURCE_PROCESSING",
       "file": "factories/tungsten-concentrator.svg",
       "color": "#b98c5b",
-      "canonicalFactoryType": "MINERAL_PROCESSING_PLANT",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
       "legacy": true
     },
     {
@@ -725,7 +783,7 @@
       "category": "RAW_RESOURCE_PROCESSING",
       "file": "factories/uranium-mill.svg",
       "color": "#b98c5b",
-      "canonicalFactoryType": "MINERAL_PROCESSING_PLANT",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
       "legacy": true
     },
     {
@@ -734,7 +792,7 @@
       "category": "RAW_RESOURCE_PROCESSING",
       "file": "factories/zinc-concentrator.svg",
       "color": "#b98c5b",
-      "canonicalFactoryType": "MINERAL_PROCESSING_PLANT",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
       "legacy": true
     }
   ]

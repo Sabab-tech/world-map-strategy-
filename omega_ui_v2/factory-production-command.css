@@ -2106,6 +2106,10 @@
 .omega-v2-industry--factory-home .fp-type-catalog-total { color:#d7e8f5; border:1px solid rgba(122,177,210,.34); background:rgba(20,55,81,.68); padding:4px 8px; font-size:10px; font-weight:800; }
 .omega-v2-industry--factory-home .fp-type-catalog-note { margin:0 0 9px; color:#a8bfd0; font-size:10px; line-height:1.45; }
 .omega-v2-industry--factory-home .fp-type-catalog-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); align-items:stretch; gap:8px; }
+.omega-v2-industry--factory-home .fp-type-catalog-divider {
+  grid-column:1 / -1; height:0; min-height:0; padding:0; margin:3px 0;
+  border:0; border-top:1px solid #506a7e; background:transparent; box-shadow:none;
+}
 .omega-v2-industry--factory-home .omega-v2-factory-type-card {
   display:flex; flex-direction:column; min-width:0; gap:7px; padding:8px; color:#eaf4ff;
   border:1px solid #506a7e; border-radius:8px; background:linear-gradient(145deg,rgba(23,48,68,.98),rgba(6,18,31,.98));

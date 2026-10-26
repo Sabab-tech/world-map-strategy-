@@ -740,6 +740,16 @@ function factoryAssets(c){
   const economy=econState(c);
   // A factory bootstrap must mutate the persisted country economy, not a detached fallback array.
   if(!Array.isArray(economy.productionAssets))economy.productionAssets=[];
+  // Migrate saved assets from retired material-processing IDs to the one canonical factory type.
+  // Commodity-specific inputs and outputs stay on the asset; only its factory type is canonicalized.
+  for(const asset of economy.productionAssets){
+    if(!asset||typeof asset!=='object')continue;
+    const rawType=String(asset.factoryType||asset.type||asset.facilityType||'').trim().toUpperCase();
+    if(!rawType)continue;
+    const canonicalType=normalizeFactoryType(rawType);
+    if(canonicalType&&cat()?.factoryProfiles?.[canonicalType]&&String(asset.factoryType||'').trim().toUpperCase()!==canonicalType)
+      asset.factoryType=canonicalType;
+  }
   return economy.productionAssets;
 }
 function recipeFor(resourceId,asset={}){
@@ -752,7 +762,7 @@ function recipeFor(resourceId,asset={}){
   }
   const r=processRules()[rid]||null;
   const genericProduct=String(resourceId||'RESOURCE').trim().replace(/[^A-Za-z0-9]+/g,'_').replace(/^_+|_+$/g,'').toUpperCase()+'_PROCESSED';
-  const genericRule={factoryType:'MINERAL_PROCESSING_PLANT',inputs:{[rid||'unknown_resource']:1},
+  const genericRule={factoryType:'UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT',inputs:{[rid||'unknown_resource']:1},
     outputs:{[genericProduct]:0.85,PROCESSING_RESIDUE:0.15},cycleDays:2,authority:'SIMULATED_GENERIC_FALLBACK'};
   const base=downstreamRule||r||genericRule;
   const inputSource=asset?.inputCoefficients||asset?.inputs||base.inputs||{};
@@ -766,7 +776,7 @@ function recipeFor(resourceId,asset={}){
     r?'INDUSTRIAL_CATALOG_RULE':(asset?.outputProfile||asset?.inputs||asset?.inputCoefficients?'ASSET_PROFILE':'SIMULATED_GENERIC_FALLBACK');
   return{
     recipeId:downstreamRule?.recipeId||asset?.recipeId||null,
-    factoryType:asset?.factoryType||asset?.type||base.factoryType||'RESOURCE_PROCESSING_PLANT',
+    factoryType:normalizeFactoryType(asset?.factoryType||asset?.type||base.factoryType||'RESOURCE_PROCESSING_PLANT'),
     inputs:normalizedInputs,outputs:clone(outputs),cycleDays:num(asset?.cycleDays)||num(base.cycleDays)||1,
     recipeAuthority,recipeMode:asset?.recipeMode||(Object.keys(normalizedInputs).length>1?'MULTI_INPUT':'SINGLE_INPUT'),
     inputUnit:base.inputUnit||asset?.inputUnit||null,outputUnit:base.outputUnit||asset?.outputUnit||null,

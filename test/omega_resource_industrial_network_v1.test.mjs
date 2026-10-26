@@ -154,7 +154,7 @@ assert.ok(context.Game.state.resource.BGD.batches.some(x=>x.stage==='FINISHED'&&
 assert.ok(Object.values(context.Game.state.resource.BGD.inventoryLots).some(x=>x.stage==='FINISHED'&&x.resourceId==='COAL_REJECT'));
 assert.equal(factory.inputBatchLots.reduce((sum,x)=>sum+(Number(x.remainingQuantity)||0),0),4000);
 
-const factoryBuildProfile=catalog.factoryProfiles.MINERAL_PROCESSING_PLANT;
+const factoryBuildProfile=catalog.factoryProfiles.UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT
 for(const [materialId,requiredQty] of Object.entries(factoryBuildProfile.constructionMaterials||{})){
   context.Game.state.resource.BGD.inventory[materialId]=(Number(context.Game.state.resource.BGD.inventory[materialId])||0)+Number(requiredQty);
   context.Game.state.resource.BGD.warehouse.availableByResource[materialId]=(Number(context.Game.state.resource.BGD.warehouse.availableByResource[materialId])||0)+Number(requiredQty);

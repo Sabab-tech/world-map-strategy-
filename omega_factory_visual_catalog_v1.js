@@ -19,7 +19,7 @@
     var aliases = manifest.factoryTypeAliases || {};
     var seen = Object.create(null);
     while (aliases[key] && !seen[key]) { seen[key] = true; key = normaliseType(aliases[key]); }
-    var profile = manifest.factoryTypes[key] || manifest.factoryTypes.MINERAL_PROCESSING_PLANT || manifest.factoryTypes.GENERIC_RESOURCE_PROCESSING_PLANT;
+    var profile = manifest.factoryTypes[key] || manifest.factoryTypes.UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT;
     if (!profile) return null;
     var visual = null;
     for (var i = 0; i < manifest.visuals.length; i += 1) {
