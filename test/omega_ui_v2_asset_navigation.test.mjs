@@ -80,8 +80,23 @@ test("More command cards use the uploaded local imagery and every action has a d
   const baseCssIndex = html.indexOf('href="omega_ui_v2/omega-ui-v2.css"');
   const refreshCssIndex = html.indexOf('href="omega_ui_v2/ministry-visual-refresh.css"');
   const polishCssIndex = html.indexOf('href="omega_ui_v2/atlas-command-polish.css"');
-  assert.ok(baseCssIndex >= 0 && refreshCssIndex > baseCssIndex && polishCssIndex > refreshCssIndex,
-    "responsive overrides must load after the existing UI styles");
+  const factoryCssIndex = html.indexOf('href="omega_ui_v2/factory-production-command.css"');
+  assert.ok(baseCssIndex >= 0 && refreshCssIndex > baseCssIndex && polishCssIndex > refreshCssIndex && factoryCssIndex > polishCssIndex,
+    "factory command overrides must load after the existing UI styles");
+  const sw = read("omega-offline-map-sw.js");
+  const iconManifest = json("assets/omega-industrial-icons-v1/manifest.json");
+  assert.match(sw, /omega-offline-atlas-shell-v43/);
+  assert.match(sw, /factory-production-command\.css/);
+  assert.match(sw, /industrial-production-line\.webp/);
+  assert.match(sw, /factoryIconManifest\.factories/);
+  assert.match(sw, /omega-industrial-icons-v1\/\s*\+ file/);
+  assert.ok(iconManifest.factories.length >= 30, "the canonical factory SVG manifest must stay available offline");
+  for (const icon of iconManifest.factories) {
+    const iconPath = "assets/omega-industrial-icons-v1/" + icon.file;
+    const absolute = path.join(root, iconPath);
+    assert.ok(fs.existsSync(absolute) && fs.statSync(absolute).size > 0, "factory SVG must exist: " + iconPath);
+  }
+  assert.ok(fs.existsSync(path.join(root, "omega_ui_v2/factory-production-command.css")));
   assert.match(css, /\.omega-v2-app-main[\s\S]*overflow-y:\s*auto/);
   assert.match(css, /@media\s*\(max-width:\s*420px\)/);
   assert.match(css, /touch-action:\s*manipulation/);
