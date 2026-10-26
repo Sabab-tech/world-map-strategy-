@@ -716,8 +716,20 @@
 
   function factoryTypeCatalogMarkup(model) {
     model = model || {};
-    var rows = Array.isArray(model.factoryTypeCatalog) ? model.factoryTypeCatalog : [];
-    var cards = rows.map(function (item) { return factoryTypeCard(item, model); }).join('');
+    var rows = Array.isArray(model.factoryTypeCatalog) ? model.factoryTypeCatalog.slice() : [];
+    rows.sort(function (a, b) {
+      var categoryA = String(a && a.category || 'Uncategorised');
+      var categoryB = String(b && b.category || 'Uncategorised');
+      var byCategory = categoryA.localeCompare(categoryB);
+      return byCategory || String(a && (a.name || a.type) || '').localeCompare(String(b && (b.name || b.type) || ''));
+    });
+    var cards = '', lastCategory = null;
+    rows.forEach(function (item) {
+      var category = String(item && item.category || 'Uncategorised');
+      if (lastCategory !== null && category !== lastCategory) cards += '<div class="fp-type-catalog-divider" role="separator" aria-hidden="true"></div>';
+      cards += factoryTypeCard(item, model);
+      lastCategory = category;
+    });
     var empty = '<div class="omega-v2-factory-type-empty">Factory type profiles are not loaded. No ownership or production figures have been invented.</div>';
     return '<section class="fp-type-catalog" aria-label="Factory types and selected-country totals">' +
       '<header class="fp-type-catalog-heading"><div><span>OMEGA / COUNTRY INDUSTRY REGISTER</span><strong>Factory types &amp; country totals</strong></div>' +

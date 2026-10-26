@@ -1,11 +1,11 @@
 {
   "schemaVersion": "1.0.0",
   "datasetId": "OMEGA_INDUSTRIAL_SVG_ICON_LIBRARY_V1",
-  "purpose": "Canonical offline SVG library for OMEGA resources and consolidated factory types. Former specialty mineral factory records are retained under legacyFactories and are not displayed as separate canonical types.",
+  "purpose": "Canonical offline SVG library for OMEGA resources and the consolidated 21-type factory catalog. Former specialty factory SVGs remain preserved as legacy assets and are not displayed as separate canonical types.",
   "rendering": {
     "format": "SVG",
     "viewBox": "0 0 128 128",
-    "artDirection": "cohesive dimensional isometric vector scenes",
+    "artDirection": "cohesive dimensional object-led industrial vector icons with a shared navy backplate and category-specific focal symbols",
     "background": "self-contained dark-navy backplate",
     "dependencies": []
   },
@@ -275,151 +275,172 @@
   ],
   "factories": [
     {
-      "id": "AEROSPACE_EQUIPMENT_PLANT",
-      "label": "Aerospace and Aircraft Equipment",
-      "category": "TRANSPORT_AND_AEROSPACE",
-      "file": "factories/aerospace-equipment-plant.svg",
-      "color": "#8fa7c3"
-    },
-    {
-      "id": "BATTERY_ENERGY_STORAGE_PLANT",
-      "label": "Battery and Energy Storage Plant",
-      "category": "ELECTRONICS_AND_ENERGY_STORAGE",
-      "file": "factories/battery-energy-storage-plant.svg",
-      "color": "#53aee1"
-    },
-    {
-      "id": "CEMENT_CONCRETE_PLANT",
-      "label": "Cement and Concrete Works",
-      "category": "CONSTRUCTION_AND_GLASS",
-      "file": "factories/cement-concrete-plant.svg",
-      "color": "#cbb58b"
-    },
-    {
-      "id": "DEFENSE_EQUIPMENT_FACTORY",
-      "label": "Defence Equipment Factory",
-      "category": "HEALTHCARE_AND_DEFENCE",
-      "file": "factories/defense-equipment-factory.svg",
-      "color": "#9cb19a"
-    },
-    {
-      "id": "ELECTRONICS_SEMICONDUCTOR_FAB",
-      "label": "Electronics and Semiconductor Fab",
-      "category": "ELECTRONICS_AND_ENERGY_STORAGE",
-      "file": "factories/electronics-semiconductor-fab.svg",
-      "color": "#53aee1"
-    },
-    {
       "id": "FERTILIZER_CHEMICAL_PLANT",
       "label": "Fertilizer and Agrochemicals",
       "category": "AGRICULTURE_AND_FOOD",
       "file": "factories/fertilizer-chemical-plant.svg",
-      "color": "#77b86b"
+      "color": "#77b86b",
+      "motif": "fertilizer-sprout"
     },
     {
       "id": "FOOD_PROCESSING_COLD_CHAIN",
       "label": "Food Processing and Cold Chain",
       "category": "AGRICULTURE_AND_FOOD",
       "file": "factories/food-processing-cold-chain.svg",
-      "color": "#77b86b"
-    },
-    {
-      "id": "GLASS_CERAMICS_PLANT",
-      "label": "Glass and Ceramics Works",
-      "category": "CONSTRUCTION_AND_GLASS",
-      "file": "factories/glass-ceramics-plant.svg",
-      "color": "#cbb58b"
-    },
-    {
-      "id": "GRID_EQUIPMENT_FACTORY",
-      "label": "Grid and Electrical Equipment",
-      "category": "MACHINERY_AND_CAPITAL_GOODS",
-      "file": "factories/grid-equipment-factory.svg",
-      "color": "#7a9eb9"
+      "color": "#77b86b",
+      "motif": "grain-and-food-jar"
     },
     {
       "id": "INDUSTRIAL_CHEMICALS_GAS_PLANT",
       "label": "Industrial Chemicals and Gases",
       "category": "CHEMICALS_AND_POLYMERS",
       "file": "factories/industrial-chemicals-gas-plant.svg",
-      "color": "#48b8ca"
-    },
-    {
-      "id": "INDUSTRIAL_MACHINERY_MACHINE_TOOLS",
-      "label": "Industrial Machinery and Machine Tools",
-      "category": "MACHINERY_AND_CAPITAL_GOODS",
-      "file": "factories/industrial-machinery-machine-tools.svg",
-      "color": "#7a9eb9"
-    },
-    {
-      "id": "NON_FERROUS_METAL_SMELTER",
-      "label": "Non-Ferrous Metal Smelter",
-      "category": "METALS_AND_ALLOYS",
-      "file": "factories/non-ferrous-metal-smelter.svg",
-      "color": "#e37c50"
-    },
-    {
-      "id": "PAPER_PACKAGING_MILL",
-      "label": "Paper and Packaging Mill",
-      "category": "PAPER_AND_PACKAGING",
-      "file": "factories/paper-packaging-mill.svg",
-      "color": "#c2a678"
+      "color": "#48b8ca",
+      "motif": "gas-cylinders-and-flask"
     },
     {
       "id": "PETROCHEMICAL_POLYMER_PLANT",
       "label": "Petrochemical, Plastics and Polymers",
       "category": "CHEMICALS_AND_POLYMERS",
       "file": "factories/petrochemical-polymer-plant.svg",
-      "color": "#48b8ca"
-    },
-    {
-      "id": "PHARMA_MEDICAL_SUPPLIES_PLANT",
-      "label": "Pharmaceuticals and Medical Supplies",
-      "category": "HEALTHCARE_AND_DEFENCE",
-      "file": "factories/pharma-medical-supplies-plant.svg",
-      "color": "#9cb19a"
+      "color": "#48b8ca",
+      "motif": "laboratory-flask-and-polymer-molecule"
     },
     {
       "id": "RECYCLING_WASTE_PROCESSING_PLANT",
       "label": "Recycling and Waste Processing Plant",
       "category": "CIRCULAR_INDUSTRY",
       "file": "factories/recycling-waste-processing-plant.svg",
-      "color": "#65b9a0"
+      "color": "#65b9a0",
+      "motif": "recycling-arrows-and-bin"
     },
     {
-      "id": "SHIP_RAIL_EQUIPMENT_YARD",
-      "label": "Shipbuilding and Rail Equipment Yard",
-      "category": "TRANSPORT_AND_AEROSPACE",
-      "file": "factories/ship-rail-equipment-yard.svg",
-      "color": "#8fa7c3"
+      "id": "CEMENT_CONCRETE_PLANT",
+      "label": "Cement and Concrete Works",
+      "category": "CONSTRUCTION_AND_GLASS",
+      "file": "factories/cement-concrete-plant.svg",
+      "color": "#cbb58b",
+      "motif": "cement-sack"
+    },
+    {
+      "id": "GLASS_CERAMICS_PLANT",
+      "label": "Glass and Ceramics Works",
+      "category": "CONSTRUCTION_AND_GLASS",
+      "file": "factories/glass-ceramics-plant.svg",
+      "color": "#cbb58b",
+      "motif": "glassware-and-ceramic"
+    },
+    {
+      "id": "BATTERY_ENERGY_STORAGE_PLANT",
+      "label": "Battery and Energy Storage Plant",
+      "category": "ELECTRONICS_AND_ENERGY_STORAGE",
+      "file": "factories/battery-energy-storage-plant.svg",
+      "color": "#53aee1",
+      "motif": "battery"
+    },
+    {
+      "id": "ELECTRONICS_SEMICONDUCTOR_FAB",
+      "label": "Electronics and Semiconductor Fab",
+      "category": "ELECTRONICS_AND_ENERGY_STORAGE",
+      "file": "factories/electronics-semiconductor-fab.svg",
+      "color": "#53aee1",
+      "motif": "microchip"
+    },
+    {
+      "id": "DEFENSE_EQUIPMENT_FACTORY",
+      "label": "Defence Equipment Factory",
+      "category": "HEALTHCARE_AND_DEFENCE",
+      "file": "factories/defense-equipment-factory.svg",
+      "color": "#9cb19a",
+      "motif": "armored-vehicle"
+    },
+    {
+      "id": "PHARMA_MEDICAL_SUPPLIES_PLANT",
+      "label": "Pharmaceuticals and Medical Supplies",
+      "category": "HEALTHCARE_AND_DEFENCE",
+      "file": "factories/pharma-medical-supplies-plant.svg",
+      "color": "#9cb19a",
+      "motif": "capsule-tablet-and-cross"
+    },
+    {
+      "id": "GRID_EQUIPMENT_FACTORY",
+      "label": "Grid and Electrical Equipment",
+      "category": "MACHINERY_AND_CAPITAL_GOODS",
+      "file": "factories/grid-equipment-factory.svg",
+      "color": "#7a9eb9",
+      "motif": "power-transmission"
+    },
+    {
+      "id": "INDUSTRIAL_MACHINERY_MACHINE_TOOLS",
+      "label": "Industrial Machinery and Machine Tools",
+      "category": "MACHINERY_AND_CAPITAL_GOODS",
+      "file": "factories/industrial-machinery-machine-tools.svg",
+      "color": "#7a9eb9",
+      "motif": "gear-and-wrench"
+    },
+    {
+      "id": "NON_FERROUS_METAL_SMELTER",
+      "label": "Non-Ferrous Metal Smelter",
+      "category": "METALS_AND_ALLOYS",
+      "file": "factories/non-ferrous-metal-smelter.svg",
+      "color": "#e37c50",
+      "motif": "molten-metal-crucible"
     },
     {
       "id": "STEEL_AND_ALLOY_WORKS",
       "label": "Steel and Alloy Works",
       "category": "METALS_AND_ALLOYS",
       "file": "factories/steel-and-alloy-works.svg",
-      "color": "#e37c50"
+      "color": "#e37c50",
+      "motif": "steel-beam-and-ingot"
     },
     {
-      "id": "TEXTILE_GARMENT_MILL",
-      "label": "Textile and Garment Mill",
-      "category": "TEXTILES_AND_APPAREL",
-      "file": "factories/textile-garment-mill.svg",
-      "color": "#b886d5"
+      "id": "PAPER_PACKAGING_MILL",
+      "label": "Paper and Packaging Mill",
+      "category": "PAPER_AND_PACKAGING",
+      "file": "factories/paper-packaging-mill.svg",
+      "color": "#c2a678",
+      "motif": "paper-roll-and-carton"
     },
     {
       "id": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
       "label": "Universal Materials & Elements Processing Plant",
       "category": "RAW_RESOURCE_PROCESSING",
       "file": "factories/universal-materials-elements-processing-plant.svg",
-      "color": "#b98c5b"
+      "color": "#b98c5b",
+      "motif": "mineral-crystals-and-sample-vials"
+    },
+    {
+      "id": "TEXTILE_GARMENT_MILL",
+      "label": "Textile and Garment Mill",
+      "category": "TEXTILES_AND_APPAREL",
+      "file": "factories/textile-garment-mill.svg",
+      "color": "#b886d5",
+      "motif": "thread-spool-and-shirt"
+    },
+    {
+      "id": "AEROSPACE_EQUIPMENT_PLANT",
+      "label": "Aerospace and Aircraft Equipment",
+      "category": "TRANSPORT_AND_AEROSPACE",
+      "file": "factories/aerospace-equipment-plant.svg",
+      "color": "#8fa7c3",
+      "motif": "aircraft"
+    },
+    {
+      "id": "SHIP_RAIL_EQUIPMENT_YARD",
+      "label": "Shipbuilding and Rail Equipment Yard",
+      "category": "TRANSPORT_AND_AEROSPACE",
+      "file": "factories/ship-rail-equipment-yard.svg",
+      "color": "#8fa7c3",
+      "motif": "cargo-ship-and-rail-wheel"
     },
     {
       "id": "VEHICLE_TRUCK_BUS_ASSEMBLY",
       "label": "Vehicle, Truck and Bus Assembly",
       "category": "TRANSPORT_AND_AEROSPACE",
       "file": "factories/vehicle-truck-bus-assembly.svg",
-      "color": "#8fa7c3"
+      "color": "#8fa7c3",
+      "motif": "car-and-robotic-assembly-arm"
     }
   ],
   "legacyFactories": [

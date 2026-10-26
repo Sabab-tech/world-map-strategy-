@@ -45,3 +45,38 @@ test("preview gallery is complete and independent of game runtime",()=>{
  const html=fs.readFileSync(path.join(assetRoot,"index.html"),"utf8");for(const o of [...manifest.resources,...manifest.factories])assert.ok(html.includes("./"+o.file),o.id+" missing preview card");
  assert.doesNotMatch(html,/omega_factory_visual_catalog_v1\.js|omega_icon_system_v1\.js|<script[^>]+src=/,"preview must be standalone");
 });
+
+test("active factory icons use a type-specific focal motif instead of a repeated generic factory block",()=>{
+ const expected={
+  "AEROSPACE_EQUIPMENT_PLANT": "aircraft",
+  "BATTERY_ENERGY_STORAGE_PLANT": "battery",
+  "CEMENT_CONCRETE_PLANT": "cement-sack",
+  "DEFENSE_EQUIPMENT_FACTORY": "armored-vehicle",
+  "ELECTRONICS_SEMICONDUCTOR_FAB": "microchip",
+  "FERTILIZER_CHEMICAL_PLANT": "fertilizer-sprout",
+  "FOOD_PROCESSING_COLD_CHAIN": "grain-and-food-jar",
+  "GLASS_CERAMICS_PLANT": "glassware-and-ceramic",
+  "GRID_EQUIPMENT_FACTORY": "power-transmission",
+  "INDUSTRIAL_CHEMICALS_GAS_PLANT": "gas-cylinders-and-flask",
+  "INDUSTRIAL_MACHINERY_MACHINE_TOOLS": "gear-and-wrench",
+  "NON_FERROUS_METAL_SMELTER": "molten-metal-crucible",
+  "PAPER_PACKAGING_MILL": "paper-roll-and-carton",
+  "PETROCHEMICAL_POLYMER_PLANT": "laboratory-flask-and-polymer-molecule",
+  "PHARMA_MEDICAL_SUPPLIES_PLANT": "capsule-tablet-and-cross",
+  "RECYCLING_WASTE_PROCESSING_PLANT": "recycling-arrows-and-bin",
+  "SHIP_RAIL_EQUIPMENT_YARD": "cargo-ship-and-rail-wheel",
+  "STEEL_AND_ALLOY_WORKS": "steel-beam-and-ingot",
+  "TEXTILE_GARMENT_MILL": "thread-spool-and-shirt",
+  "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT": "mineral-crystals-and-sample-vials",
+  "VEHICLE_TRUCK_BUS_ASSEMBLY": "car-and-robotic-assembly-arm"
+};
+ assert.deepEqual(Object.keys(expected).sort(),manifest.factories.map(x=>x.id).sort());
+ for(const row of manifest.factories){const src=fs.readFileSync(path.join(assetRoot,row.file),"utf8");assert.match(src,new RegExp('data-omega-icon-motif="'+expected[row.id]+'"'),row.id+" needs its semantic focal motif");}
+});
+test("canonical gallery groups only the 21 active factory icons with thin category dividers",()=>{
+ const html=fs.readFileSync(path.join(assetRoot,"index.html"),"utf8");
+ assert.match(html,/21 canonical factory types/);
+ assert.equal((html.match(/<article class="tile" data-kind="factory"/g)||[]).length,21);
+ assert.match(html,/class="factory-category-divider"/);
+ assert.doesNotMatch(html,/35 canonical factory types/);
+});

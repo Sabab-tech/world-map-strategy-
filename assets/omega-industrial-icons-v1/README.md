@@ -1,6 +1,8 @@
 # OMEGA Industrial SVG Icon Library v1
 
 ## Contents
+
+The 21 active factory icons use distinct object-led symbols and are listed by canonical production category. Retired SVG files remain preserved under the legacy folder entries for compatibility.
 - **42 resource icons**: one file per key in `resource_industrial_catalog_v1.json` → `resourceRules`.
 - **21 canonical factory icons**: one SVG per active key in the single `factoryProfiles` catalog, including `UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT`.
 - **39 retired factory SVGs retained** under `legacyFactories` in `manifest.json` for backwards compatibility; these files are archived and do not count as separate canonical factory types. All materials and elements use the universal processing factory.
