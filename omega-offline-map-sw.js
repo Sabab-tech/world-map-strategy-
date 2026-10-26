@@ -39,7 +39,6 @@ const CORE_ASSETS = [
   "./omega_ui_v2/atlas-command-polish.css",
   "./omega_ui_v2/legacy-disconnect.css",
   "./omega_ui_v2/factory-production-command.css",
-  "./assets/ui-photos/industrial-production-line.webp",
   "./omega_ui_v2/navigation-registry.js",
   "./omega_ui_v2/ministry-visual-registry.js",
   "./omega_ui_v2/screens/government.js",
