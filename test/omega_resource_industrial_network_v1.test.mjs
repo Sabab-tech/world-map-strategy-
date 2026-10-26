@@ -513,5 +513,7 @@ assert.equal(N.decommissionMine({countryId:'BGD',siteId:'SITE_BGD_COAL_01',confi
   'repeated demolition is safe and idempotent');
 const decommissionedSource = fs.readFileSync('omega_resource_industrial_network_v1.js','utf8');
 assert.match(decommissionedSource,/reason:'MINE_DECOMMISSIONED'/);
+const endowmentDecommissionGuard = fs.readFileSync('omega_resource_endowment_runtime.js','utf8');
+assert.match(endowmentDecommissionGuard,/decommissionedSiteIds/,'selected-country production must skip decommissioned mine sites');
 
 console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');
