@@ -110,6 +110,23 @@
 
   function getMinister(ministerId){const r=registry.get(String(ministerId));return r?getEffectiveState(ministerId,{}):null;}
   function getActiveMinister(countryId,ministryId){const id=assignmentIndex.get(key(countryId,ministryId));return id?getMinister(id):null;}
+  // UI roster rendering needs identity and a few live indicators, not cloned learning
+  // histories, memory, active tasks, and decision logs for every ministry.
+  function getActiveMinisterSummary(countryId,ministryId){
+    const id=assignmentIndex.get(key(countryId,ministryId));
+    const r=id?registry.get(id):null;
+    if(!r||r.runtime.status!=='ACTIVE')return null;
+    const x=r.runtime;
+    return{
+      ministerId:r.identity.ministerId,
+      staticProfile:r.identity,
+      runtimeState:{
+        ministerId:x.ministerId,countryId:x.countryId,ministryId:x.ministryId,status:x.status,
+        workload:x.workload,stress:x.stress,fatigue:x.fatigue,confidence:x.confidence,
+        trust:x.trust,lastUpdateTick:x.lastUpdateTick
+      }
+    };
+  }
 
   function applyRuntimePatch(ministerId,patch,reason='RUNTIME_UPDATE'){
     const r=registry.get(ministerId);if(!r)throw new Error('MINISTER_NOT_REGISTERED');if(r.identity&&!patch.identity){Object.assign(r.runtime,clone(patch));}else throw new Error('IDENTITY_IMMUTABLE');
@@ -165,7 +182,7 @@
     for(const evt of ['RESOURCE_STATE_UPDATED','ECONOMY_TICK','WAR_DECLARED','CRISIS_STARTED','CRISIS_RESOLVED','POLICY_VOTE_CAST'])global.addEventListener(evt,e=>{const d=e.detail||{};for(const r of registry.values())if(r.runtime.status==='ACTIVE'){if(d.countryId&&String(d.countryId).toUpperCase()!==String(r.runtime.countryId).toUpperCase())continue;const ctx={economicCondition:Number(d.economicPressure??d.economicCondition??0),politicalCondition:Number(d.politicalPressure??d.politicalCondition??0),crisisCondition:Number(d.crisisPressure??d.crisisCondition??(evt==='CRISIS_STARTED'?100:0)),crisisExposure:Number(d.crisisExposure??0),uncertainty:Number(d.uncertainty??0),timePressure:Number(d.timePressure??0)};updateStress(r.identity.ministerId,ctx,0);}});
   }
 
-  const API={VERSION,CONFIG_ID,getConfig,setConfig,registerMinister,recruitCandidate,assignMinister,removeMinister,getMinister,getActiveMinister,updateRuntimeState:applyRuntimePatch,updateLearningState:(id,patch)=>{const r=registry.get(id);if(!r)throw new Error('MINISTER_NOT_REGISTERED');Object.assign(r.learning,clone(patch));markDirty(r);emit('MINISTER_LEARNING_CHANGED',{ministerId:id,patch:clone(patch)});return getEffectiveState(id,{})},getEffectiveState,addPressure,addTask,finishTask,recomputeWorkload,updateStress,recordDecision,storeEpisode,storeLesson,retrieveMemory,retrieveInstitutional,sendMessage,delegateTask,onGameTime,persist,load,saveObject,consistencyCheck,getRegistry:()=>new Map(registry),getAssignments:()=>new Map(assignmentIndex),getInstitutionalMemory:()=>new Map(institutionalMemory)};
+  const API={VERSION,CONFIG_ID,getConfig,setConfig,registerMinister,recruitCandidate,assignMinister,removeMinister,getMinister,getActiveMinister,getActiveMinisterSummary,updateRuntimeState:applyRuntimePatch,updateLearningState:(id,patch)=>{const r=registry.get(id);if(!r)throw new Error('MINISTER_NOT_REGISTERED');Object.assign(r.learning,clone(patch));markDirty(r);emit('MINISTER_LEARNING_CHANGED',{ministerId:id,patch:clone(patch)});return getEffectiveState(id,{})},getEffectiveState,addPressure,addTask,finishTask,recomputeWorkload,updateStress,recordDecision,storeEpisode,storeLesson,retrieveMemory,retrieveInstitutional,sendMessage,delegateTask,onGameTime,persist,load,saveObject,consistencyCheck,getRegistry:()=>new Map(registry),getAssignments:()=>new Map(assignmentIndex),getInstitutionalMemory:()=>new Map(institutionalMemory)};
   global.OmegaMinisterStateRegistry=API;
   global.MinisterStateRegistry=API;
 
