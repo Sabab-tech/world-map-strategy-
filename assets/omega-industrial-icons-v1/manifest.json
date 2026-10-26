@@ -795,5 +795,11 @@
       "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
       "legacy": true
     }
-  ]
+  ],
+  "resourceIconPresentation": {
+    "backgroundPlate": "neutral silver-blue gradient",
+    "contrast": "high contrast on dark and light UI surfaces",
+    "artwork": "preserve each canonical resource-specific SVG illustration",
+    "note": "Resource icons are existing local SVG assets; no remote or generated images are required."
+  }
 }
