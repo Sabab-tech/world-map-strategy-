@@ -227,7 +227,13 @@
     });
     var activeAssetIds = Object.create(null);
     assets.filter(activeAsset).forEach(function (asset) { activeAssetIds[String(asset.siteId || '')] = true; });
-    var blockedSiteCount = Object.keys(grouped.blockedSites).filter(function (id) { return !!id; }).length;
+    var blockedMap = Object.create(null);
+    Object.keys(grouped.blockedSites).forEach(function (id) { if (grouped.blockedSites[id]) blockedMap[id] = true; });
+    shipments.forEach(function (shipment) {
+      if (!isBlockedStatus(shipment && shipment.status)) return;
+      blockedMap[String(shipment.siteId || shipment.sourceSiteId || shipment.shipmentId || shipment.id || 'blocked-shipment')] = true;
+    });
+    var blockedSiteCount = Object.keys(blockedMap).length;
     var statusCounts = {
       producing:siteModels.filter(function (site) { return site.currentOutput > 0 && site.asset; }).length,
       pending:projects.length,
