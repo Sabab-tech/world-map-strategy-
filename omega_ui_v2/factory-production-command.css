@@ -50,6 +50,39 @@
   filter: saturate(1.12) contrast(1.08);
   pointer-events: none;
 }
+.omega-v2-industry--factory-home .omega-v2-factory-photo-credit {
+  position: absolute;
+  z-index: 2;
+  right: 9px;
+  bottom: 5px;
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 3px;
+  max-width: 70%;
+  padding: 3px 6px;
+  color: #9ab7ca;
+  border: 1px solid rgba(119, 157, 183, .23);
+  border-radius: 4px;
+  background: rgba(3, 12, 21, .74);
+  font-size: 7px;
+  line-height: 1.2;
+  text-decoration: none;
+  opacity: .78;
+}
+.omega-v2-industry--factory-home .omega-v2-factory-photo-credit:hover,
+.omega-v2-industry--factory-home .omega-v2-factory-photo-credit:focus-visible { opacity: 1; color: #e5f3ff; outline-color: #65ceff; }
+.omega-v2-industry--factory-home .omega-v2-factory-photo-author,
+.omega-v2-industry--factory-home .omega-v2-factory-photo-license { color: #c2e2f4; text-decoration: underline; text-underline-offset: 2px; }
+.omega-v2-industry--factory-home .omega-v2-factory-photo-credit__changes {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
 .omega-v2-industry--factory-home .omega-v2-factory-command::before {
   content: "";
   position: absolute;

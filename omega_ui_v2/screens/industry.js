@@ -720,6 +720,7 @@
       root.innerHTML = '<section class="omega-v2-shell omega-v2-industry omega-v2-industry--factory-home">' +
         '<div class="omega-v2-factory-command" aria-label="Factory production control">' +
         '<img class="omega-v2-factory-backdrop" src="assets/ui-photos/industrial-production-line.webp" alt="" aria-hidden="true" loading="lazy" decoding="async" width="1280" height="720">' +
+        '<a class="omega-v2-factory-photo-credit" href="https://commons.wikimedia.org/wiki/File:Industrial_production_line_operating_in_a_large_modern_factory.jpg" target="_blank" rel="noopener noreferrer" aria-label="Photo credit: Shixart1985. CC BY 2.0. Image resized and converted to WebP.">Photo: <span class="omega-v2-factory-photo-author">Shixart1985</span> · <span class="omega-v2-factory-photo-license">CC BY 2.0</span><span class="omega-v2-factory-photo-credit__changes">Image resized and converted to WebP.</span></a>' +
         (root.__omegaV2IndustryNotice ? '<div class="omega-v2-factory-notice" role="status">' + esc(root.__omegaV2IndustryNotice) + '</div>' : '') +
         compactTabs + '<div class="omega-v2-factory-deck">' + factoryCards + '</div></div></section>';
     } else {
