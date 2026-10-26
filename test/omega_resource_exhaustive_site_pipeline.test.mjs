@@ -305,6 +305,40 @@ for(const countryId of countryIds){
 }
 assert.deepEqual(failures,[],'site dispatch/delivery failures: '+JSON.stringify(failures.slice(0,20)));
 
+// Idempotency probe: replay the same country's shipment tick without advancing time.
+// No target shipment may be delivered twice and no second debit of the same source batch is allowed.
+for(const countryId of countryIds){
+  const targets=pipelines.filter(x=>x.site.countryId===countryId);
+  const before=runtime.countryResourceState(countryId)||{};
+  const beforeNetwork=before.industrialNetwork||{};
+  const snapshot=targets.map(item=>{
+    const shipmentId=String(item.result.shipmentId),batchId=String(item.result.batchId);
+    const shipment=(beforeNetwork.shipments||[]).find(x=>String(x.shipmentId)===shipmentId);
+    const deliveries=(beforeNetwork.deliveries||[]).filter(x=>String(x.shipmentId)===shipmentId&&
+      String(x.destinationStatus||'').toUpperCase()==='FACTORY_RECEIVED');
+    const batch=(before.batches||[]).find(x=>String(x.batchId)===batchId);
+    return {shipmentId,batchId,status:shipment?.status||null,deliveryCount:deliveries.length,
+      remainingQuantity:Number(batch?.remainingQuantity??batch?.quantity)||0};
+  });
+  industry.advanceShipments(countryId);
+  const after=runtime.countryResourceState(countryId)||{};
+  const afterNetwork=after.industrialNetwork||{};
+  for(const row of snapshot){
+    const shipment=(afterNetwork.shipments||[]).find(x=>String(x.shipmentId)===row.shipmentId);
+    const deliveries=(afterNetwork.deliveries||[]).filter(x=>String(x.shipmentId)===row.shipmentId&&
+      String(x.destinationStatus||'').toUpperCase()==='FACTORY_RECEIVED');
+    const batch=(after.batches||[]).find(x=>String(x.batchId)===row.batchId);
+    const remainingQuantity=Number(batch?.remainingQuantity??batch?.quantity)||0;
+    if(row.status!=='DELIVERED'||row.deliveryCount!==1||shipment?.status!=='DELIVERED'||
+       deliveries.length!==1||!closeEnough(remainingQuantity,row.remainingQuantity)){
+      failures.push({countryId,stage:'REPLAY_IDEMPOTENCY',shipmentId:row.shipmentId,batchId:row.batchId,
+        before:{status:row.status,deliveryCount:row.deliveryCount,remainingQuantity:row.remainingQuantity},
+        after:{status:shipment?.status||null,deliveryCount:deliveries.length,remainingQuantity}});
+    }
+  }
+}
+assert.deepEqual(failures,[],'duplicate delivery or repeated raw-stock debit detected: '+JSON.stringify(failures.slice(0,20)));
+
 const targetPipelines=pipelines.filter(x=>flowFor(x.site.countryId,x.result.batchId));
 for(let pass=0;pass<128;pass++){
   const pending=targetPipelines.filter(x=>!flowProcessed(x.site.countryId,x.result.batchId));
