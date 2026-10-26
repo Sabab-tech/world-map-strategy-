@@ -3366,8 +3366,11 @@ function gameplayPipelineDiagnostics(countryScope){
   // country's ledger on the WebView main thread. Keep the no-argument global contract
   // intact for world diagnostics and aggregate pipeline verification.
   const scopeText=countryScope==null?'':String(countryScope).trim();
-  const scopedCountry=scopeText?canonicalCountry(scopeText):null;
-  const countries=scopedCountry?[scopedCountry]:runtimeCountryIds();
+  const hasScope=scopeText.length>0;
+  const scopedCountry=hasScope?canonicalCountry(scopeText):null;
+  // A supplied but unresolvable scope must fail closed instead of silently reverting
+  // to the expensive global scan.
+  const countries=hasScope?(scopedCountry?[scopedCountry]:[]):runtimeCountryIds();
   const siteCounts=Object.create(null);
   for(const site of sites){
     const cid=canonicalCountry(site?.countryId);
@@ -3409,7 +3412,7 @@ function gameplayPipelineDiagnostics(countryScope){
       treasuryReceipts,blocked,blockedFlows,shipmentCount:shipments.length,stages};
   });
   return{contract:'OMEGA_SITE_FLOW_PIPELINE_V1',version:VERSION,turn:turn(),registrySiteCount:sites.length,
-    diagnosticScope:scopedCountry||'GLOBAL',countryCount:countries.length,
+    diagnosticScope:scopedCountry||(hasScope?'UNRESOLVED':'GLOBAL'),countryCount:countries.length,
     flowCount:perCountry.reduce((n,x)=>n+x.extractionFlows,0),dispatched:perCountry.reduce((n,x)=>n+x.dispatched,0),
     processed:perCountry.reduce((n,x)=>n+x.processed,0),marketPublished:perCountry.reduce((n,x)=>n+x.marketPublished,0),
     treasuryReceipts:perCountry.reduce((n,x)=>n+x.treasuryReceipts,0),blocked:perCountry.reduce((n,x)=>n+x.blocked,0),perCountry};
