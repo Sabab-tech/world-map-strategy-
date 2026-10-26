@@ -869,6 +869,10 @@ test('factory command cards use canonical SVGs, daily production state, type cou
     const result = globalThis.OmegaUIV2Industry.render(root,{countryId:'BGD',tab:'factories'});
     assert.equal(result.ok,true);
     assert.equal(result.model.factoryCount,3);
+    assert.match(root.innerHTML,/class="omega-v2-factory-command fp-stage"/);
+    assert.match(root.innerHTML,/class="fp-top"/);
+    assert.match(root.innerHTML,/OMEGA \/ INDUSTRIAL SYSTEMS/);
+    assert.match(root.innerHTML,/class="fp-deck"/);
     assert.equal((root.innerHTML.match(/data-omega-v2-factory-card/g)||[]).length,3);
     assert.match(root.innerHTML,/assets\/omega-industrial-icons-v1\/factories\/steel-and-alloy-works\.svg/);
     assert.match(root.innerHTML,/assets\/omega-industrial-icons-v1\/factories\/industrial-chemicals-gas-plant\.svg/);
@@ -895,6 +899,10 @@ test('factory command cards use canonical SVGs, daily production state, type cou
     assert.match(root.innerHTML,/data-factory-id="FAC-STEEL" data-state="running" data-selected="true"/);
     const css = readFileSync(new URL('../omega_ui_v2/factory-production-command.css',import.meta.url),'utf8');
     assert.match(css,/grid-template-columns:\s*repeat\(3,\s*minmax\(0,\s*1fr\)\)/);
+    assert.match(css,/FP Command Stage/);
+    assert.match(css,/aspect-ratio:\s*1672\/941/);
+    assert.match(css,/@supports \(width:\s*1cqw\)/);
+    assert.match(css,/prefers-reduced-motion:\s*reduce/);
     assert.match(css,/data-state="stopped"/);
     assert.match(css,/data-selected="true"\]\[data-state="running"/);
     assert.match(css,/data-selected="true"\]\[data-state="reduced"/);
