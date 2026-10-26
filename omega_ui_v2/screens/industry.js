@@ -372,7 +372,18 @@
   }
 
   function tabButton(id, label, active) {
-    return '<button type="button" class="omega-v2-button ' + (active === id ? 'omega-v2-button--accent' : 'omega-v2-button--quiet') + '" data-omega-v2-industry-tab="' + esc(id) + '" aria-pressed="' + (active === id ? 'true' : 'false') + '">' + esc(label) + '</button>';
+    var fullLabels = {
+      factories:'Factories',
+      'production-lines':'Production Lines',
+      inventory:'Input Inventory',
+      'national-inventory':'National Inventory',
+      research:'Research & Technology',
+      projects:'Build Projects'
+    };
+    var accessibleLabel = fullLabels[id] || label;
+    return '<button type="button" class="omega-v2-button ' + (active === id ? 'omega-v2-button--accent' : 'omega-v2-button--quiet') +
+      '" data-omega-v2-industry-tab="' + esc(id) + '" aria-label="' + esc(accessibleLabel) + '" title="' + esc(accessibleLabel) +
+      '" aria-pressed="' + (active === id ? 'true' : 'false') + '">' + esc(label) + '</button>';
   }
   function factoryVisual(type, label) {
     var catalog = g.OmegaFactoryVisualCatalog;
