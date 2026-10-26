@@ -289,7 +289,7 @@ advanceToGameTurn(context.Game.state,builtFactoryRun.shipment.etaTurn);
 const builtDeliveryResult=N.advanceShipments('BGD');
 const builtDelivery=(builtDeliveryResult.shipments||[]).find(row=>String(row.shipmentId)===String(builtFactoryRun.shipmentId));
 assert.ok(builtDelivery,'the constructed-factory shipment must settle by its own shipment ID');
-assert.equal(builtDelivery.destinationFactoryId,builtFactoryId);
+assert.equal(builtDelivery.factoryId,builtFactoryId,'delivered shipment must retain its selected factory ID');
 assert.equal(builtDelivery.destinationStatus,'FACTORY_RECEIVED');
 assert.equal(builtDelivery.processingStatus,'IN_PROGRESS',
   'receiving input must schedule a dated cycle, not create finished goods immediately');
