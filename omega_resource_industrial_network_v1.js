@@ -3377,6 +3377,9 @@ function decommissionFactory(input={}) {
 function decommissionMine(input={}) {
   const cid=canonicalCountry(input.countryId),siteId=String(input.siteId||'').trim();
   if(!cid||!/^[A-Z]{3}$/.test(cid))return{status:'BLOCKED',reason:'MINE_COUNTRY_INVALID',siteId:siteId||null};
+  const activePlayerCountry=playerSimulationCountryId();
+  if(!activePlayerCountry)return{status:'BLOCKED',reason:'PLAYER_COUNTRY_NOT_SELECTED',countryId:cid,siteId:siteId||null};
+  if(cid!==activePlayerCountry)return{status:'BLOCKED',reason:'PLAYER_COUNTRY_SCOPE_VIOLATION',countryId:cid,playerCountryId:activePlayerCountry,siteId:siteId||null};
   if(!siteId)return{status:'BLOCKED',reason:'MINE_SITE_ID_REQUIRED',countryId:cid};
   if(input.confirmed!==true)return{status:'CONFIRMATION_REQUIRED',reason:'MINE_DECOMMISSION_CONFIRMATION_REQUIRED',countryId:cid,siteId};
   const resource=resourceState(cid),assets=Array.isArray(resource.mineAssets)?resource.mineAssets:[];
