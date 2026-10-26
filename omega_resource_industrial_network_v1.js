@@ -748,7 +748,7 @@ function recipeFor(resourceId,asset={}){
   }
   const r=processRules()[rid]||null;
   const genericProduct=String(resourceId||'RESOURCE').trim().replace(/[^A-Za-z0-9]+/g,'_').replace(/^_+|_+$/g,'').toUpperCase()+'_PROCESSED';
-  const genericRule={factoryType:'GENERIC_RESOURCE_PROCESSING_PLANT',inputs:{[rid||'unknown_resource']:1},
+  const genericRule={factoryType:'MINERAL_PROCESSING_PLANT',inputs:{[rid||'unknown_resource']:1},
     outputs:{[genericProduct]:0.85,PROCESSING_RESIDUE:0.15},cycleDays:2,authority:'SIMULATED_GENERIC_FALLBACK'};
   const base=downstreamRule||r||genericRule;
   const inputSource=asset?.inputCoefficients||asset?.inputs||base.inputs||{};
