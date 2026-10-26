@@ -2324,7 +2324,9 @@ function batchFromExtraction(x,record){
     const suppliedRate=mineplayAuthorityAllowsValue(rateMetric,'rate');
     const rawUnit=rateMetric.unit||rateMetric.sourceRateUnit||profile.rateUnit;
     const rate=suppliedRate?mineplayMetricNumber(rateMetric,'rate'):Math.max(0.01,Math.round(profile.rate*factor*100)/100);
-    const rateUnit=String(rawUnit||profile.rateUnit);
+    // A simulated daily fallback uses a declared gameplay unit, not the potentially
+    // incompatible unit attached to an observed annual figure (for example ROM ore).
+    const rateUnit=String(suppliedRate?rawUnit:(profile.rateUnit||'TONNES_PER_DAY'));
     const reserveMetric=q.reserve&&typeof q.reserve==='object'?clone(q.reserve):{};
     const suppliedReserve=mineplayAuthorityAllowsValue(reserveMetric,'quantity');
     const reserve= suppliedReserve?mineplayMetricNumber(reserveMetric,'quantity'):
@@ -2332,9 +2334,14 @@ function batchFromExtraction(x,record){
     const reserveUnit=String(reserveMetric.unit||profile.reserveUnit);
     const annualMetric=mineplayAuthorityAllowsValue(rateMetric,'annual')?mineplayMetricNumber(rateMetric,'annual'):null;
     const productionStatus=suppliedRate&&rateMetric.status?String(rateMetric.status).toUpperCase():'SIMULATED';
+    const annualStatus=annualMetric!==null?(rateMetric.annualStatus||rateMetric.status||'OBSERVED'):'SIMULATED';
     q.production={
       ...rateMetric,rate,annual:annualMetric!==null&&annualMetric>0?annualMetric:Math.round(rate*365*100)/100,
-      unit:rateUnit,annualUnit:rateMetric.annualUnit||rateUnit.replace(/_PER_DAY$/,'_PER_YEAR'),
+      unit:rateUnit,
+      annualUnit:annualMetric!==null?(rateMetric.annualUnit||rawUnit||rateUnit.replace(/_PER_DAY$/,'_PER_YEAR')):
+        (rateMetric.annualUnit||rateUnit.replace(/_PER_DAY$/,'_PER_YEAR')),
+      rateStatus:rateMetric.rateStatus||(suppliedRate?(rateMetric.status||'SOURCE_REPORTED'):'SIMULATED'),
+      annualStatus,
       period:rateMetric.period||'DAILY_AND_ANNUAL',status:productionStatus,
       authority:rateMetric.authority||(productionStatus==='SIMULATED'?'GAMEPLAY_SIMULATION':'SOURCE_REPORTED'),
       basis:rateMetric.basis||(productionStatus==='SIMULATED'?'DETERMINISTIC_SITE_PROFILE_V1':null)
