@@ -454,7 +454,7 @@
         '<div class="omega-v2-metal-plate omega-v2-metal-plate--gold"><span class="omega-v2-metal-label">TOTAL FACTORIES</span><strong class="omega-v2-metal-number">' + fmt(model.factoryCount) + '</strong><small>Registered factory assets</small><span class="omega-v2-metal-stamp">COUNTRY ' + esc(model.countryId || 'N/A') + '</span></div>' +
         '<div class="omega-v2-industry-svg-slot" data-omega-factory-svg-slot data-country-id="' + esc(model.countryId || '') + '" role="img" aria-label="Empty reserved factory SVG artwork area"><div class="omega-v2-industry-svg-frame"><span>FACTORY SVG SLOT</span><small>Paste the country factory SVG here</small></div></div>' +
         '<div class="omega-v2-metal-plate omega-v2-metal-plate--silver omega-v2-industry-register"><div class="omega-v2-metal-label">FACTORY TYPE · TOTAL COUNT</div><div class="omega-v2-industry-register-count">' + fmt(model.factoryCount) + ' recorded</div>' +
-          '<div class="omega-v2-industry-table-wrap"><table><thead><tr><th>Factory name / type</th><th>Total</th></tr></thead><tbody>' +
+          '<div class="omega-v2-industry-table-wrap omega-v2-industry-type-table"><table><thead><tr><th>Factory name / type</th><th>Total</th></tr></thead><tbody>' +
           (factoryTypeRows || '<tr><td colspan="2">No factory assets</td></tr>') + '</tbody></table></div>' +
           '<details class="omega-v2-industry-factory-names"><summary>Individual registered factory names (' + fmt(model.factoryNames.length) + ')</summary><ul>' + factoryNames + '</ul></details></div>' +
       '</div>' +
