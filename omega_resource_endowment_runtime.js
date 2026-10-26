@@ -2309,6 +2309,12 @@ function batchFromExtraction(x,record){
     const raw=value&&typeof value==='object'?(value.value??value.quantity??value.amount??value.rate):value;
     return n(raw);
   }
+  function mineplayUsableUnit(value,fallback){
+    const raw=String(value??'').trim(),key=raw.toUpperCase().replace(/[\\s-]+/g,'_');
+    if(!raw||['UNOBSERVED','UNQUANTIFIED','NOT_RECORDED','NOT_REPORTED','UNKNOWN','UNSPECIFIED',
+      'SOURCE_STATUS_UNSPECIFIED','SOURCE_UNSPECIFIED','N/A','NA','UNIT_UNKNOWN'].includes(key))return fallback;
+    return raw;
+  }
   function mineplayAuthorityAllowsValue(metric,key){
     const amount=mineplayMetricNumber(metric,key),status=String(metric?.status||'').trim().toUpperCase();
     if(amount===null||amount<=0)return false;
@@ -2322,24 +2328,24 @@ function batchFromExtraction(x,record){
     const factor=mineplayStableFactor(countryId,siteId,resourceId);
     const rateMetric=q.production&&typeof q.production==='object'?clone(q.production):{};
     const suppliedRate=mineplayAuthorityAllowsValue(rateMetric,'rate');
-    const rawUnit=rateMetric.unit||rateMetric.sourceRateUnit||profile.rateUnit;
+    const rawUnit=mineplayUsableUnit(rateMetric.unit||rateMetric.sourceRateUnit,profile.rateUnit);
     const rate=suppliedRate?mineplayMetricNumber(rateMetric,'rate'):Math.max(0.01,Math.round(profile.rate*factor*100)/100);
     // A simulated daily fallback uses a declared gameplay unit, not the potentially
     // incompatible unit attached to an observed annual figure (for example ROM ore).
-    const rateUnit=String(suppliedRate?rawUnit:(profile.rateUnit||'TONNES_PER_DAY'));
+    const rateUnit=String(suppliedRate?mineplayUsableUnit(rawUnit,'UNIT_UNKNOWN'):(profile.rateUnit||'TONNES_PER_DAY'));
     const reserveMetric=q.reserve&&typeof q.reserve==='object'?clone(q.reserve):{};
     const suppliedReserve=mineplayAuthorityAllowsValue(reserveMetric,'quantity');
     const reserve= suppliedReserve?mineplayMetricNumber(reserveMetric,'quantity'):
       Math.max(1,Math.round(rate*365*400));
-    const reserveUnit=String(reserveMetric.unit||profile.reserveUnit);
+    const reserveUnit=String(suppliedReserve?mineplayUsableUnit(reserveMetric.unit,'UNIT_UNKNOWN'):(profile.reserveUnit||'TONNES'));
     const annualMetric=mineplayAuthorityAllowsValue(rateMetric,'annual')?mineplayMetricNumber(rateMetric,'annual'):null;
     const productionStatus=suppliedRate&&rateMetric.status?String(rateMetric.status).toUpperCase():'SIMULATED';
     const annualStatus=annualMetric!==null?(rateMetric.annualStatus||rateMetric.status||'OBSERVED'):'SIMULATED';
     q.production={
       ...rateMetric,rate,annual:annualMetric!==null&&annualMetric>0?annualMetric:Math.round(rate*365*100)/100,
       unit:rateUnit,
-      annualUnit:annualMetric!==null?(rateMetric.annualUnit||rawUnit||rateUnit.replace(/_PER_DAY$/,'_PER_YEAR')):
-        (rateMetric.annualUnit||rateUnit.replace(/_PER_DAY$/,'_PER_YEAR')),
+      annualUnit:annualMetric!==null?mineplayUsableUnit(rateMetric.annualUnit||rateMetric.unit||rateMetric.sourceRateUnit,'UNIT_UNKNOWN'):
+        mineplayUsableUnit(rateMetric.annualUnit,rateUnit.replace(/_PER_DAY$/,'_PER_YEAR')),
       rateStatus:rateMetric.rateStatus||(suppliedRate?(rateMetric.status||'SOURCE_REPORTED'):'SIMULATED'),
       annualStatus,
       period:rateMetric.period||'DAILY_AND_ANNUAL',status:productionStatus,
@@ -2359,7 +2365,7 @@ function batchFromExtraction(x,record){
       const numeric=valid?mineplayMetricNumber(metric,valueKey):value;
       const status=valid&&metric.status?String(metric.status).toUpperCase():'SIMULATED';
       q[key]={
-        ...metric,[valueKey]:numeric,unit:metric.unit||unit,
+        ...metric,[valueKey]:numeric,unit:valid?mineplayUsableUnit(metric.unit,'UNIT_UNKNOWN'):unit,
         ...(period?{period:metric.period||period}:{}),
         status,authority:metric.authority||(status==='SIMULATED'?'GAMEPLAY_SIMULATION':'SOURCE_REPORTED'),
         basis:metric.basis||(status==='SIMULATED'?'DETERMINISTIC_SITE_PROFILE_V1':null)
@@ -2370,7 +2376,8 @@ function batchFromExtraction(x,record){
     unitlessFallback('recovery',Math.round((78+((Math.floor(factor*10000)%1500)/100))*100)/100,'PERCENT','PROCESSING_CYCLE');
     unitlessFallback('purity',Math.min(99.5,Math.round((profile.purity+((Math.floor(factor*10000)%501)/100))*100)/100),'PERCENT');
     const throughputExisting=q.throughput&&typeof q.throughput==='object'?clone(q.throughput):{};
-    const throughputUnit=throughputExisting.unit||rateUnit;
+    const throughputUnit=mineplayAuthorityAllowsValue(throughputExisting,'value')?
+      mineplayUsableUnit(throughputExisting.unit,'UNIT_UNKNOWN'):rateUnit;
     unitlessFallback('throughput',Math.max(0.01,Math.round(rate*0.88*100)/100),throughputUnit,'DAILY');
     const capacity=q.capacity&&typeof q.capacity==='object'?clone(q.capacity):{};
     const suppliedNominal=mineplayAuthorityAllowsValue(capacity,'nominal');
