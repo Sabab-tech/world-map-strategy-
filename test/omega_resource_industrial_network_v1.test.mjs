@@ -339,7 +339,7 @@ const decommissionAsset = {
     cycleReservationId:'CYCLE-DECOMMISSION-TEST',
     cycleReservedQuantity:20,
     cycleReservedResourceId:'iron_ore',
-    cycleReservedTurn:turn
+    cycleReservedTurn:43
   }]
 };
 context.Game.state.economy.BGD.productionAssets.push(decommissionAsset);
