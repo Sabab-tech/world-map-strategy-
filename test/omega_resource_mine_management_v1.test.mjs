@@ -406,6 +406,36 @@ test('mine construction blocks without changing ledgers when treasury, materials
   assert.equal(state.finance.BWA.available, 500000000);
 });
 
+
+test('mine decommission requires confirmation, is player-country scoped and preserves site records', () => {
+  const { ctx, state, events } = fixture();
+  const api = ctx.Omega.ResourceIndustrialNetwork;
+  const input = { countryId:'BWA', siteId:'SITE_BWA_TEST_GOLD_MINE', resourceId:'gold', assignedWorkers:1000, requestId:'DECOMMISSION-MINE-TEST' };
+  const project = api.startMineProject(input);
+  assert.equal(project.status, 'UNDER_CONSTRUCTION');
+  for (let i = 1; i <= Math.ceil(project.durationDays / 30); i++) {
+    state.simulation.turn = i;
+    api.advanceProjects('BWA');
+  }
+  const mine = state.resource.BWA.mineAssets.find(row => row.siteId === input.siteId && row.status === 'OPERATIONAL');
+  assert.ok(mine);
+  const wrongCountry = api.decommissionMine({ countryId:'ZWE', siteId:input.siteId, confirmed:true });
+  assert.equal(wrongCountry.status,'BLOCKED');
+  assert.equal(wrongCountry.reason,'PLAYER_COUNTRY_SCOPE_VIOLATION');
+  const confirmation = api.decommissionMine({ countryId:'BWA', siteId:input.siteId });
+  assert.equal(confirmation.status,'CONFIRMATION_REQUIRED');
+  assert.equal(mine.status,'OPERATIONAL','missing confirmation must not alter the mine');
+  const closed = api.decommissionMine({ countryId:'BWA', siteId:input.siteId, confirmed:true });
+  assert.equal(closed.status,'DECOMMISSIONED');
+  assert.equal(mine.status,'DECOMMISSIONED');
+  assert.equal(mine.productionStatus,'STOPPED');
+  assert.equal(mine.decommissionedByPlayer,true);
+  assert.equal(state.resource.BWA.mineDecommissionHistory.at(-1).siteId,input.siteId);
+  assert.ok(events.some(event => event.type === 'OMEGA_RESOURCE_MINE_DECOMMISSIONED' ||
+    event.detail?.eventType === 'OMEGA_RESOURCE_MINE_DECOMMISSIONED'));
+  assert.equal(api.decommissionMine({ countryId:'BWA', siteId:input.siteId, confirmed:true }).idempotent,true);
+});
+
 test('mine project rejects cross-country identity and player-only actions require explicit scope check in UI', () => {
   const { ctx, state } = fixture();
   const api = ctx.Omega.ResourceIndustrialNetwork;
@@ -413,6 +443,7 @@ test('mine project rejects cross-country identity and player-only actions requir
   assert.match(uiSource, /country!==playerCountry\(\)/);
   assert.match(uiSource, /startMineProject/);
   assert.match(uiSource, /quoteMineProject/);
+  assert.match(fs.readFileSync(new URL('omega_ui_v2/screens/mine-production-command.js', repoRoot), 'utf8'), /decommissionMine/);
   assert.match(uiSource, /My Mines/);
   assert.match(uiSource, /data-omega-mine-entry="my-mines"/);
   assert.match(uiSource, /setAttribute\('data-omega-mine-entry','mines'\)/);
