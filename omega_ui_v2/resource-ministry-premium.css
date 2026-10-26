@@ -473,3 +473,59 @@
 @media (max-width: 390px) {
   .omega-v2-resource-premium .omega-v2-resource-tabs { overflow-x: auto; grid-template-columns: repeat(5, minmax(78px, 1fr)); }
 }
+
+
+.omega-v2-resource-premium .omega-v2-resource-heading-actions {
+  align-items: flex-end;
+  display: flex;
+  flex: 0 1 360px;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.omega-v2-resource-premium .omega-v2-resource-country-select {
+  align-items: center;
+  display: flex;
+  gap: 9px;
+  justify-content: flex-end;
+  min-width: 0;
+  width: 100%;
+}
+.omega-v2-resource-premium .omega-v2-resource-country-select > span {
+  color: #a8bdca;
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: .035em;
+  white-space: nowrap;
+}
+.omega-v2-resource-premium .omega-v2-resource-country-select select {
+  appearance: auto;
+  background: linear-gradient(180deg, #122f45, #081a2a);
+  border: 1px solid rgba(65,190,237,.7);
+  border-radius: 7px 11px 7px 11px;
+  box-shadow: inset 0 1px rgba(255,255,255,.1), 0 0 10px rgba(0,169,228,.08);
+  color: #effaff;
+  font: inherit;
+  max-width: 248px;
+  min-height: 42px;
+  min-width: 0;
+  padding: 8px 32px 8px 11px;
+}
+.omega-v2-resource-premium .omega-v2-resource-country-select select:focus-visible {
+  outline: 2px solid #75dfff;
+  outline-offset: 2px;
+}
+@media (max-width: 620px) {
+  .omega-v2-resource-premium .omega-v2-resource-heading-actions {
+    align-items: stretch;
+    flex-basis: 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-between;
+  }
+  .omega-v2-resource-premium .omega-v2-resource-country-select {
+    flex: 1 1 220px;
+    justify-content: flex-start;
+  }
+  .omega-v2-resource-premium .omega-v2-resource-country-select select { max-width: 100%; flex: 1 1 auto; }
+}
