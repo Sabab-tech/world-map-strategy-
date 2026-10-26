@@ -883,8 +883,9 @@ test('factory command cards use canonical SVGs, daily production state, type cou
     assert.match(root.innerHTML,/data-omega-v2-factory-build="FAC-STEEL"/);
     assert.match(root.innerHTML,/data-omega-v2-factory-destroy="FAC-STEEL"/);
     assert.match(root.innerHTML,/commons\.wikimedia\.org\/wiki\/File:Industrial_production_line_operating_in_a_large_modern_factory\.jpg/);
-    assert.match(root.innerHTML,/creativecommons\.org\/licenses\/by\/2\.0\//);
+    assert.match(root.innerHTML,/href="https:\/\/creativecommons\.org\/licenses\/by\/2\.0\//);
     assert.match(root.innerHTML,/Image resized and converted to WebP/);
+    assert.doesNotMatch(root.innerHTML,/<small class="omega-v2-factory-reason">not recorded<\/small>/);
     const click = handlers.click;
     assert.equal(typeof click,'function');
     click({target:{closest(selector){

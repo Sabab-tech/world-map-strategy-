@@ -563,7 +563,9 @@
       ? (daily.value > 0 ? '+ ' : '') + fmt(daily.value) + (daily.unit ? ' ' + esc(daily.unit) : '') + '/day'
       : 'Not recorded';
     var outputProduct = daily && daily.product ? '<small class="omega-v2-factory-output-product">' + esc(daily.product) + '</small>' : '';
-    var reason = status.reason ? '<small class="omega-v2-factory-reason">' + esc(status.reason.replace(/_/g, ' ').toLowerCase()) + '</small>' : '';
+    var reasonText = String(status.reason || '').trim();
+    var reason = reasonText && !/^(NOT_RECORDED|NOT RECORDED|UNKNOWN)$/.test(reasonText.toUpperCase())
+      ? '<small class="omega-v2-factory-reason">' + esc(reasonText.replace(/_/g, ' ').toLowerCase()) + '</small>' : '';
     var canOperate = model.canOperateSelectedCountry === true;
     var isDecommissioned = /^(DECOMMISSIONED|DESTROYED)$/.test(String(factory.status || '').toUpperCase());
     return '<article class="omega-v2-factory-card" data-omega-v2-factory-card data-factory-id="' + esc(id) +
@@ -720,7 +722,7 @@
       root.innerHTML = '<section class="omega-v2-shell omega-v2-industry omega-v2-industry--factory-home">' +
         '<div class="omega-v2-factory-command" aria-label="Factory production control">' +
         '<img class="omega-v2-factory-backdrop" src="assets/ui-photos/industrial-production-line.webp" alt="" aria-hidden="true" loading="lazy" decoding="async" width="1280" height="720">' +
-        '<a class="omega-v2-factory-photo-credit" href="https://commons.wikimedia.org/wiki/File:Industrial_production_line_operating_in_a_large_modern_factory.jpg" target="_blank" rel="noopener noreferrer" aria-label="Photo credit: Shixart1985. CC BY 2.0. Image resized and converted to WebP.">Photo: <span class="omega-v2-factory-photo-author">Shixart1985</span> · <span class="omega-v2-factory-photo-license">CC BY 2.0</span><span class="omega-v2-factory-photo-credit__changes">Image resized and converted to WebP.</span></a>' +
+        '<a class="omega-v2-factory-photo-credit" href="https://commons.wikimedia.org/wiki/File:Industrial_production_line_operating_in_a_large_modern_factory.jpg" target="_blank" rel="noopener noreferrer" aria-label="Photo credit: Shixart1985. CC BY 2.0 license. Image resized and converted to WebP.">Photo: <span class="omega-v2-factory-photo-author">Shixart1985</span></a><a class="omega-v2-factory-photo-license" href="https://creativecommons.org/licenses/by/2.0/" target="_blank" rel="license noopener noreferrer" aria-label="Creative Commons Attribution 2.0 license">CC BY 2.0</a><span class="omega-v2-factory-photo-credit__changes">Image resized and converted to WebP.</span>' +
         (root.__omegaV2IndustryNotice ? '<div class="omega-v2-factory-notice" role="status">' + esc(root.__omegaV2IndustryNotice) + '</div>' : '') +
         compactTabs + '<div class="omega-v2-factory-deck">' + factoryCards + '</div></div></section>';
     } else {
