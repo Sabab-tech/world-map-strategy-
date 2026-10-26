@@ -162,6 +162,18 @@
     radial-gradient(circle at 10px calc(100% - 10px), #b9cad6 0 1px, #213c52 1.5px 3px, transparent 3.5px),
     radial-gradient(circle at calc(100% - 10px) calc(100% - 10px), #b9cad6 0 1px, #213c52 1.5px 3px, transparent 3.5px);
 }
+.omega-v2-industry--factory-home .omega-v2-factory-card[data-state="running"] {
+  --state-color: var(--factory-green);
+  --state-halo: rgba(32,255,131,.12);
+}
+.omega-v2-industry--factory-home .omega-v2-factory-card[data-state="reduced"] {
+  --state-color: var(--factory-amber);
+  --state-halo: rgba(255,207,49,.10);
+}
+.omega-v2-industry--factory-home .omega-v2-factory-card[data-state="unknown"] {
+  --state-color: #7db5d8;
+  --state-halo: rgba(72,169,221,.08);
+}
 .omega-v2-industry--factory-home .omega-v2-factory-card[data-selected="true"][data-state="running"] {
   --state-color: var(--factory-green);
   --state-halo: rgba(32,255,131,.2);
