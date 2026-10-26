@@ -2310,7 +2310,7 @@ function batchFromExtraction(x,record){
     return n(raw);
   }
   function mineplayUsableUnit(value,fallback){
-    const raw=String(value??'').trim(),key=raw.toUpperCase().replace(/[\\s-]+/g,'_');
+    const raw=String(value??'').trim(),key=raw.toUpperCase().replace(/[\s-]+/g,'_');
     if(!raw||['UNOBSERVED','UNQUANTIFIED','NOT_RECORDED','NOT_REPORTED','UNKNOWN','UNSPECIFIED',
       'SOURCE_STATUS_UNSPECIFIED','SOURCE_UNSPECIFIED','N/A','NA','UNIT_UNKNOWN'].includes(key))return fallback;
     return raw;
