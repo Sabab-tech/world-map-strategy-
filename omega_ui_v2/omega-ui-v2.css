@@ -744,3 +744,34 @@ body.omega-atlas-dock-ready .ui-bottom-navigation{display:none!important;}
   .omega-v2-industry-resource-stats .omega-v2-metal-number { grid-column: 1; }
   .omega-v2-industry-resource-stats .omega-v2-metal-plate small { align-self: end; grid-column: 1 / -1; }
 }
+
+
+/* Compact registered factory-type totals inside the metallic command plate. */
+.omega-v2-industry-type-table table {
+  min-width: 0;
+  width: 100%;
+  table-layout: fixed;
+}
+.omega-v2-industry-type-table th:first-child,
+.omega-v2-industry-type-table td:first-child {
+  overflow-wrap: anywhere;
+  width: 74%;
+}
+.omega-v2-industry-type-table th:last-child,
+.omega-v2-industry-type-table td:last-child {
+  text-align: right;
+  width: 26%;
+}
+.omega-v2-industry-factory-names {
+  border-top: 1px solid rgba(35, 57, 76, .22);
+  color: #223b50;
+  margin-top: 8px;
+  padding-top: 7px;
+}
+.omega-v2-industry-factory-names summary {
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: .02em;
+  list-style-position: inside;
+}
