@@ -27,6 +27,6 @@ test('one canonical 21-type factory catalog supplies cards for every selected co
     const api = makeScreen('BGD');
     const model = api.buildViewModel({ countryId: country });
     assert.equal(model.factoryTypeCatalog.length, 21, country + ' must load all 21 cards');
-    assert.deepEqual(model.factoryTypeCatalog.map(row => row.type).sort(), canonicalIds);
+    assert.deepEqual(Array.from(model.factoryTypeCatalog, row => row.type).sort(), canonicalIds);
   }
 });

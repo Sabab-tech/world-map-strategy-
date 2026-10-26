@@ -740,6 +740,16 @@ function factoryAssets(c){
   const economy=econState(c);
   // A factory bootstrap must mutate the persisted country economy, not a detached fallback array.
   if(!Array.isArray(economy.productionAssets))economy.productionAssets=[];
+  // Migrate saved assets from retired material-processing IDs to the one canonical factory type.
+  // Commodity-specific inputs and outputs stay on the asset; only its factory type is canonicalized.
+  for(const asset of economy.productionAssets){
+    if(!asset||typeof asset!=='object')continue;
+    const rawType=String(asset.factoryType||asset.type||asset.facilityType||'').trim().toUpperCase();
+    if(!rawType)continue;
+    const canonicalType=normalizeFactoryType(rawType);
+    if(canonicalType&&cat()?.factoryProfiles?.[canonicalType]&&String(asset.factoryType||'').trim().toUpperCase()!==canonicalType)
+      asset.factoryType=canonicalType;
+  }
   return economy.productionAssets;
 }
 function recipeFor(resourceId,asset={}){
