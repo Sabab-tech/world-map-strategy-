@@ -288,8 +288,8 @@
 
     root.classList.add('omega-v2-screen');
     root.innerHTML = '<section class="omega-v2-shell omega-v2-resource">' +
-      '<header class="omega-v2-heading"><div><div class="omega-v2-eyebrow">ENERGY & MINING</div><h1 class="omega-v2-title">Energy, Resources & Mining</h1><p class="omega-v2-subtitle">Country ' + esc(model.countryId || 'All countries') + ' · site identity uses unique canonical siteId</p></div><span class="omega-v2-status" data-state="' + (model.ready ? 'operational' : 'attention') + '">' + fmt(model.siteCount) + ' registered sites</span></header>' +
-      '<div class="omega-v2-note">Reserve is not warehouse stock. Modeled reserves are labeled MODELED; transfers are not complete until an authoritative shipment/warehouse runtime confirms receipt. This screen does not execute mine actions by itself.</div>' +
+      '<header class="omega-v2-heading"><div><div class="omega-v2-eyebrow">ATLAS COMMAND / MINE PRODUCTION</div><h1 class="omega-v2-title">Mine Production Ministry</h1><p class="omega-v2-subtitle">Country ' + esc(model.countryId || 'Not selected') + ' · canonical siteId registry</p></div><span class="omega-v2-status" data-state="' + (model.ready ? 'operational' : 'attention') + '">' + fmt(model.siteCount) + ' registered sites</span></header>' +
+      '<section class="omega-v2-mine-command" aria-label="Mine production controls"><div><div class="omega-v2-eyebrow">NATIONAL RESOURCE COMMAND</div><h2 class="omega-v2-card-title">Mine operations</h2><p class="omega-v2-card-meta">Open the existing canonical mine runtime for extraction and construction. Actions remain restricted to the active player country.</p></div><div class="omega-v2-actions"><button type="button" class="omega-v2-button omega-v2-button--primary" data-omega-v2-mine-command="production"' + (model.countryId ? '' : ' disabled title="Select a player country first."') + '>Start / manage production</button><button type="button" class="omega-v2-button omega-v2-button--accent" data-omega-v2-mine-command="develop"' + (model.countryId ? '' : ' disabled title="Select a country first."') + '>Develop mine</button></div></section>' + '<div class="omega-v2-note">Reserve is not warehouse stock. Modeled reserves are labeled MODELED; transfers are not complete until an authoritative shipment/warehouse runtime confirms receipt. Unknown values remain Not recorded. This screen does not fabricate output.</div>' +
       tabMarkup + '<div data-omega-v2-resource-content>' + contentMarkup + '</div>' +
       '<p class="omega-v2-source">Mine sites and recorded operational data are managed within this UI v2 screen. Retired console navigation is disabled.</p></section>';
 
@@ -309,6 +309,18 @@
         if (tab && root.contains(tab)) {
           root.__omegaV2ResourceTab = tab.getAttribute('data-omega-v2-resource-tab') || 'dashboard';
           render(root, Object.assign({}, root.__omegaV2ResourceOptions || {}, { tab:root.__omegaV2ResourceTab }));
+          return;
+        }
+        var command = target.closest('[data-omega-v2-mine-command]');
+        if (command && root.contains(command) && !command.disabled) {
+          var mineUI = g.OmegaResourceMineManagementUI || (g.Omega && g.Omega.ResourceMineManagementUI);
+          var country = String((root.__omegaV2ResourceOptions || {}).countryId || g.OmegaMinistryViewCountry || '').trim();
+          if (mineUI && typeof mineUI.open === 'function' && country) {
+            mineUI.open(command.getAttribute('data-omega-v2-mine-command') === 'develop' ? 'mines' : 'my-mines', country);
+          } else {
+            command.disabled = true;
+            command.setAttribute('title', 'Canonical mine management runtime is unavailable.');
+          }
           return;
         }
         var button = target.closest('[data-omega-v2-site-action]');
