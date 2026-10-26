@@ -1516,3 +1516,34 @@
   .omega-v2-industry--factory-home .fp-card { min-height:350px; }
   .omega-v2-industry--factory-home .fp-card .omega-v2-factory-art { min-height:170px; }
 }
+
+
+/* Keep the 16:9 panel usable on short landscape WebViews without container units. */
+@supports not (width: 1cqw) {
+  @media (max-height: 450px) and (orientation: landscape) {
+    .omega-v2-industry--factory-home .fp-stage { min-height:calc(100vh - 88px);padding:4px 6px; }
+    .omega-v2-industry--factory-home .fp-top { min-height:31px;gap:5px;margin-bottom:4px;padding:3px 5px; }
+    .omega-v2-industry--factory-home .fp-logo { flex-basis:30px;width:30px;height:25px; }
+    .omega-v2-industry--factory-home .fp-logo .fp-ic { width:20px;height:20px; }
+    .omega-v2-industry--factory-home .fp-top-identity span,
+    .omega-v2-industry--factory-home .fp-top-identity small { font-size:7px; }
+    .omega-v2-industry--factory-home .fp-top-identity strong { font-size:10px; }
+    .omega-v2-industry--factory-home .fp-tabs { flex-basis:auto;gap:3px; }
+    .omega-v2-industry--factory-home .fp-tabs .omega-v2-button { min-height:22px;padding:3px 5px;font-size:8px; }
+    .omega-v2-industry--factory-home .fp-stage .omega-v2-factory-deck { gap:6px;padding-bottom:8px; }
+    .omega-v2-industry--factory-home .fp-card { min-height:180px;padding:4px;border-radius:5px; }
+    .omega-v2-industry--factory-home .fp-card .omega-v2-factory-title { min-height:25px;padding:1px 3px 3px; }
+    .omega-v2-industry--factory-home .fp-card .omega-v2-factory-title strong { font-size:9px; }
+    .omega-v2-industry--factory-home .fp-card .omega-v2-factory-title small { font-size:7px; }
+    .omega-v2-industry--factory-home .fp-card .omega-v2-factory-art { min-height:56px;max-height:86px;margin:2px 0; }
+    .omega-v2-industry--factory-home .fp-card .omega-v2-factory-status-plate { min-height:34px;gap:2px 4px;padding:3px 4px; }
+    .omega-v2-industry--factory-home .fp-card .omega-v2-factory-status-plate strong { min-height:17px;font-size:8px; }
+    .omega-v2-industry--factory-home .fp-card .omega-v2-factory-output { min-height:17px;font-size:11px;padding:1px 3px; }
+    .omega-v2-industry--factory-home .fp-card .omega-v2-factory-output-product,
+    .omega-v2-industry--factory-home .fp-card .omega-v2-factory-reason { font-size:7px; }
+    .omega-v2-industry--factory-home .fp-card .omega-v2-factory-count { min-height:17px;margin:2px 0;font-size:8px; }
+    .omega-v2-industry--factory-home .fp-card .omega-v2-factory-count strong { font-size:10px; }
+    .omega-v2-industry--factory-home .fp-card .omega-v2-factory-button { min-height:24px;padding:3px;font-size:8px;gap:3px; }
+    .omega-v2-industry--factory-home .fp-card .omega-v2-action-icon { transform:scale(.75); }
+  }
+}
