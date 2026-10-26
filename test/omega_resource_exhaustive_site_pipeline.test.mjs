@@ -165,12 +165,32 @@ function commissionGameplayMine(entry){
     productionStatus:'READY_FOR_EXTRACTION',lastProductionTurn:null
   };
   if(!existing)row.mineAssets.push(asset);
-  if(typeof globalThis.dispatchEvent==='function'&&typeof globalThis.CustomEvent==='function'){
-    globalThis.dispatchEvent(new CustomEvent('OMEGA_RESOURCE_MINE_COMMISSIONED',{
-      detail:{countryId,payload:{countryId,siteId,resourceId,mineId:asset.mineId,status:'OPERATIONAL',
-        sourceSiteStatus:asset.sourceSiteStatus,authority:'SIMULATED_PLAYER_MINE_ASSET_TEST_FIXTURE'}}
-    }));
+  // The event handler correctly ignores foreign countries. To audit another country's isolated
+  // fixture, temporarily make that country the selected test player, dispatch synchronously, then
+  // restore the prior session before the next site. Do not weaken the production scope guard.
+  const simulation=root.simulation||(root.simulation={});
+  const hadSession=Object.prototype.hasOwnProperty.call(simulation,'session');
+  const oldSession=simulation.session;
+  const session=oldSession&&typeof oldSession==='object'?oldSession:(simulation.session={});
+  const hadPlayerCountry=Object.prototype.hasOwnProperty.call(session,'playerCountryId');
+  const oldPlayerCountry=session.playerCountryId;
+  session.playerCountryId=countryId;
+  try{
+    if(typeof globalThis.dispatchEvent==='function'&&typeof globalThis.CustomEvent==='function'){
+      globalThis.dispatchEvent(new CustomEvent('OMEGA_RESOURCE_MINE_COMMISSIONED',{
+        detail:{countryId,payload:{countryId,siteId,resourceId,mineId:asset.mineId,status:'OPERATIONAL',
+          sourceSiteStatus:asset.sourceSiteStatus,authority:'SIMULATED_PLAYER_MINE_ASSET_TEST_FIXTURE'}}
+      }));
+    }
+  }finally{
+    if(hadPlayerCountry)session.playerCountryId=oldPlayerCountry;
+    else delete session.playerCountryId;
+    if(hadSession)simulation.session=oldSession;
+    else delete simulation.session;
   }
+  const binding=globalThis.__OmegaLastMineCommissionBinding;
+  if(binding?.countryId!==countryId||binding?.siteId!==siteId||binding?.status!=='APPLIED_TO_RESOURCE_RUNTIME')
+    throw new Error('MINE_COMMISSION_EVENT_NOT_APPLIED_TO_SELECTED_TEST_COUNTRY:'+countryId+':'+siteId+':'+String(binding?.status||'MISSING'));
   const commission=(row.commissionedSites||[]).find(x=>String(x?.siteId||'')===siteId&&
     String(x?.status||'').toUpperCase()==='COMMISSIONED');
   if(!commission)throw new Error('MINE_COMMISSION_EVENT_DID_NOT_UPDATE_POLICY_LEDGER:'+countryId+':'+siteId);
