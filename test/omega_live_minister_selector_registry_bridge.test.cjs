@@ -86,7 +86,33 @@ function load(file) {
     'legacy candidate dossier source must remain readable without taking state ownership'
   );
 
+  assert.equal(typeof canonicalRegistry.getActiveMinisterSummary, 'function',
+    'canonical registry must expose a lightweight minister-summary read for UI lists');
+
   await selector.appoint('interior_security', candidateA);
+  const originalFullRead = canonicalRegistry.getActiveMinister;
+  let fullReadCount = 0;
+  canonicalRegistry.getActiveMinister = function () {
+    fullReadCount += 1;
+    return originalFullRead.apply(this, arguments);
+  };
+  const summary = canonicalRegistry.getActiveMinisterSummary('BGD', 'interior_security');
+  assert.equal(summary.ministerId, candidateA.id);
+  assert.equal(summary.staticProfile.baseName, 'Test Minister A');
+  assert.equal(summary.runtimeState.status, 'ACTIVE');
+  assert.equal(Object.hasOwn(summary, 'learningState'), false,
+    'summary must not clone learning history');
+  assert.equal(Object.hasOwn(summary, 'memoryState'), false,
+    'summary must not clone minister memory');
+  assert.equal(Object.hasOwn(summary.runtimeState, 'activeTasks'), false,
+    'summary must omit full runtime task arrays');
+  const rosterActive = selector.active('interior_security');
+  assert.equal(rosterActive.profile.baseName, 'Test Minister A');
+  assert.equal(rosterActive.runtime.status, 'ACTIVE');
+  assert.equal(fullReadCount, 0,
+    'UI active-minister lookup must prefer the lightweight summary API');
+  canonicalRegistry.getActiveMinister = originalFullRead;
+
   let active = canonicalRegistry.getActiveMinister('BGD', 'interior_security');
   assert.equal(active && active.ministerId, candidateA.id,
     'the real selector appointment must use canonical recruitment');
