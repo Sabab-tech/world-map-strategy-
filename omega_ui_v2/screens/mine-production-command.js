@@ -217,8 +217,7 @@
       else if (activeMine && output > 0) { status = 'Producing'; statusState = 'good'; }
       else { status = 'Stopped'; statusState = 'danger'; }
       var stock = stockForResource(rs, site.resourceId);
-      var reserve = site.reserve && site.reserve.value !== null ? fmt(site.reserve.value) + ' ' + site.reserve.unit :
-        site.modeledReserve && site.modeledReserve.modeledValue !== null ? fmt(site.modeledReserve.modeledValue) + ' ' + site.modeledReserve.unit : RESOURCE_FALLBACK;
+      var reserve = site.reserve && site.reserve.value !== null ? fmt(site.reserve.value) + ' ' + site.reserve.unit : RESOURCE_FALLBACK;
       return Object.assign({}, site, {
         asset:activeMine, assets:siteAssets, project:project, currentOutput:output, currentRows:currentRows,
         stock:stock, reserveText:reserve, flowBlocked:flowBlocked || shipmentBlocked,
@@ -329,7 +328,7 @@
       '" data-search="' + esc((site.name + ' ' + site.resourceId + ' ' + site.location + ' ' + kindLabel).toLowerCase()) + '" data-mine-type="' + esc(kind.toLowerCase()) + '">' +
       '<div class="omega-mpc-card-head"><div class="omega-mpc-identity"><span class="omega-mpc-resource-frame">' + icon(site.resourceId) + '</span><div class="omega-mpc-name"><span class="omega-mpc-kicker">' + esc(resourceName(site.resourceId)) + '</span><h3>' + esc(site.name) + '</h3><p>' + esc(site.location || data.countryId) + ' · ' + esc(kindLabel) + '</p></div></div>' +
       statusPill(site.statusLabel, site.statusState) + '</div>' +
-      '<div class="omega-mpc-metrics"><div><span>Production today</span><strong>' + esc(outputText) + '</strong></div><div><span>Warehouse stock</span><strong>' + esc(stockText) + '</strong></div><div><span>Mine reserve</span><strong>' + esc(reserveText) + '</strong></div><div><span>Capacity</span><strong>' + esc(site.production && site.production.value !== null ? fmt(site.production.value) + ' ' + site.production.unit : RESOURCE_FALLBACK) + '</strong></div></div>' +
+      '<div class="omega-mpc-metrics"><div><span>Output this turn</span><strong>' + esc(outputText) + '</strong></div><div><span>Warehouse stock</span><strong>' + esc(stockText) + '</strong></div><div><span>Mine reserve</span><strong>' + esc(reserveText) + '</strong></div><div><span>Capacity</span><strong>' + esc(site.production && site.production.value !== null ? fmt(site.production.value) + ' ' + site.production.unit : RESOURCE_FALLBACK) + '</strong></div></div>' +
       (site.project ? '<div class="omega-mpc-project"><span>Construction</span><strong>' + esc(label(site.project.status || 'Under construction')) + '</strong></div>' : '') +
       '<div class="omega-mpc-card-foot"><span class="omega-mpc-card-kind">' + esc(kindLabel) + '</span><button type="button" class="omega-mpc-text-action" data-mine-action="details" data-site-id="' + esc(site.siteId) + '">Details</button></div>' +
       '<div class="omega-mpc-operation-row">' +
