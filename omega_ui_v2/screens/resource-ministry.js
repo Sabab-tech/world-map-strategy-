@@ -471,6 +471,9 @@
     }
     var currentOutputGroups = resourceOutputRows(flows);
     var activeSiteCount = model.sites.filter(function (site) { return isOperationalAsset(assetFor(site.siteId)); }).length;
+    var outputShortageCount = currentOutputGroups.filter(function (row) { var demand=dailyDemand(row.resourceId); return demand!==null && row.quantity+1e-9<demand; }).length;
+    var outputDemandKnown = currentOutputGroups.length>0 && currentOutputGroups.every(function (row) { return dailyDemand(row.resourceId)!==null; });
+    var portfolioBalanceState = currentOutputGroups.length ? (outputShortageCount ? 'shortage' : outputDemandKnown ? 'adequate' : 'producing') : activeSiteCount ? 'stopped' : 'neutral';
     var producingSites = model.sites.filter(function (site) { return outputForSite(site.siteId, flows) > 0; });
     var blockedFlows = flows.filter(flowIsBlocked);
     var distinctResources = Array.from(new Set(model.sites.filter(eligible).map(function (site) { return site.resourceId; })));
@@ -530,7 +533,7 @@
         '<div class="omega-v2-resource-card-top"><button type="button" class="omega-v2-resource-card-identity omega-v2-mine-select" data-omega-v2-select-site="' + esc(site.siteId) + '" aria-label="Select ' + esc(site.name) + '">' +
         '<span class="omega-v2-resource-icon">' + resourceIconMarkup(site.resourceId, resourceLabel(site.resourceId)) + '</span>' +
         '<span class="omega-v2-resource-card-heading"><span class="omega-v2-eyebrow">' + esc(resourceLabel(site.resourceId)) + '</span><span class="omega-v2-card-title">' + esc(site.name) + '</span><span class="omega-v2-card-meta">' + esc(site.location) + '</span></span></button>' +
-        '<span class="omega-v2-resource-card-flags"><span class="omega-v2-status" data-state="' + (state === 'adequate' || state === 'producing' ? 'operational' : state === 'shortage' || state === 'building' ? 'attention' : state === 'stopped' ? 'danger' : 'unknown') + '">' + esc(balanceLabel(balance)) + '</span>' +
+        '<span class="omega-v2-resource-card-flags"><span class="omega-v2-status" data-state="' + (state === 'adequate' ? 'operational' : state === 'shortage' || state === 'building' ? 'attention' : state === 'stopped' ? 'danger' : 'unknown') + '">' + esc(balanceLabel(balance)) + '</span>' +
         '<span class="omega-v2-mine-kind">' + mineArchetypeMarkup(site.raw) + '<span>' + esc(kind) + '</span></span></span></div>' +
         '<div class="omega-v2-vehicle-stats omega-v2-mine-metrics"><div><span>Daily output</span><strong>' + (output > 0 ? amount(output, outputUnit) : '—') + '</strong></div>' +
         '<div><span>Reserve</span><strong>' + amount(reserveValue, site.reserve.unit || '') + '</strong></div>' +
@@ -560,7 +563,7 @@
       return '<section class="omega-v2-card omega-v2-mine-detail" data-omega-v2-mine-detail><div class="omega-v2-mine-detail-head"><span class="omega-v2-resource-icon omega-v2-resource-icon--large">' +
         resourceIconMarkup(site.resourceId, resourceLabel(site.resourceId)) + '</span><div><h2 class="omega-v2-card-title">' + esc(site.name) + '</h2><p class="omega-v2-card-meta">' +
         esc(site.location) + ' · ' + esc(resourceLabel(site.resourceId)) + '</p><span class="omega-v2-status" data-state="' +
-        (balance === 'adequate' || balance === 'producing' ? 'operational' : balance === 'shortage' || balance === 'building' ? 'attention' : balance === 'stopped' ? 'danger' : 'unknown') + '">' +
+        (balance === 'adequate' ? 'operational' : balance === 'shortage' || balance === 'building' ? 'attention' : balance === 'stopped' ? 'danger' : 'unknown') + '">' +
         esc(balanceLabel(balance)) + '</span></div></div><div class="omega-v2-vehicle-stats omega-v2-mine-metrics"><div><span>Daily output</span><strong>' +
         (output > 0 ? amount(output, outputUnit) : '—') + '</strong></div><div><span>Reserve</span><strong>' + amount(reserveValue, site.reserve.unit || '') +
         '</strong></div><div><span>Raw stock</span><strong>' + amount(stockFor(site.resourceId, rawStock), resourceUnit(site.resourceId)) + '</strong></div><div><span>Daily capacity</span><strong>' +
@@ -585,11 +588,11 @@
     var countryLabel = String(heroCountry && (heroCountry.officialName || heroCountry.name || heroCountry.countryName) || countryKey || 'Selected country');
     var dashMarkup = photoMarkup + '<div class="omega-v2-kpis omega-v2-resource-command-kpis">' +
       renderKpi('Registered mines', String(model.sites.filter(eligible).length), model.sites.length + ' sites', 'neutral') +
-      renderKpi('Producing now', String(producingSites.length), 'Recorded this turn', producingSites.length ? 'adequate' : 'stopped') +
+      renderKpi('Producing now', String(producingSites.length), 'Recorded this turn', portfolioBalanceState) +
       renderKpi('Pending projects', String(mineProjects.length), 'Mine construction', mineProjects.length ? 'shortage' : 'neutral') +
       renderKpi('Blocked supply', String(blockedFlows.length), 'Recorded unresolved flows', blockedFlows.length ? 'shortage' : 'adequate') +
       renderKpi('Resource types', String(distinctResources.length), 'Available in country', 'neutral') +
-      renderKpi('Today output', outputHeadline, 'Kept separate by unit', currentOutputGroups.length ? 'adequate' : 'neutral') +
+      renderKpi('Today output', outputHeadline, 'Kept separate by unit', portfolioBalanceState) +
       '</div><div class="omega-v2-mine-summary-grid"><section class="omega-v2-card omega-v2-mine-summary"><h2>Mine portfolio · ' + esc(countryLabel) +
       '</h2><p>Review mine projects, daily output and supply availability for this country.</p><div class="omega-v2-mine-summary-links">' +
       '<button class="omega-v2-button omega-v2-button--primary" data-omega-v2-resource-tab="mines">Mines</button>' +
@@ -668,7 +671,7 @@
       }).join('');
     var reportsMarkup = '<div class="omega-v2-kpis">' +
       renderKpi('Mine sites', String(model.sites.filter(eligible).length), 'Unique active catalogue entries', 'neutral') +
-      renderKpi('Producing this turn', String(producingSites.length), 'Mine sites with output', producingSites.length ? 'adequate' : 'stopped') +
+      renderKpi('Producing this turn', String(producingSites.length), 'Mine sites with output', portfolioBalanceState) +
       renderKpi('Projects pending', String(mineProjects.length), 'Under construction', mineProjects.length ? 'shortage' : 'neutral') +
       renderKpi('Blocked supply flows', String(blockedFlows.length), 'Current flow ledger', blockedFlows.length ? 'shortage' : 'adequate') + '</div>' +
       '<section class="omega-v2-card omega-v2-report-overview"><h2>National resource economy</h2><p>Production and stock remain grouped by their own units.</p><div class="omega-v2-report-unit-totals">' +
