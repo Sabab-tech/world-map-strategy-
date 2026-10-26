@@ -2007,11 +2007,15 @@ function batchFromExtraction(x,record){
       for(const key of Array.isArray(controller?.linkedOccurrenceKeys)?controller.linkedOccurrenceKeys:[])
         siteByOccurrence.set(String(key),String(controller.siteReferenceKey||siteKey));
     }
+    const decommissionedSiteIds=new Set((Array.isArray(bucket.mineAssets)?bucket.mineAssets:[])
+      .filter(asset=>/DECOMMISSIONED|DESTROYED|STOPPED/.test(String(asset?.status||'').toUpperCase()))
+      .map(asset=>String(asset?.siteId||'').trim()).filter(Boolean));
     const candidates=Object.keys(states).filter(key=>{
       if(successfulOccurrences.has(String(key)))return false;
       if(attempted.has(String(key))&&!retryableBlocked.has(String(key)))return false;
-      if(!requestedSites)return true;
       const row=states[key]||{},siteKey=String(row.siteReferenceKey||row.siteId||row.sourceSiteId||siteByOccurrence.get(String(key))||'');
+      if(decommissionedSiteIds.has(siteKey)||decommissionedSiteIds.has(String(siteByOccurrence.get(String(key))||'')))return false;
+      if(!requestedSites)return true;
       return requestedSites.has(siteKey)||requestedSites.has(String(siteByOccurrence.get(String(key))||''));
     });
     const currentSiteIds=new Set(currentLedger.filter(row=>n(row?.turn)===t&&(n(row?.quantity)||0)>0)
