@@ -269,6 +269,11 @@
     } else if (state.route === 'home-affairs' || (state.route === 'ministry-detail' && state.ministryId === 'interior_security')) {
       if (g.OmegaUIV2HomeAffairs && typeof g.OmegaUIV2HomeAffairs.render === 'function') return g.OmegaUIV2HomeAffairs.render(content, Object.assign({}, options, { countryId:state.countryId, tab:state.section }));
     } else if (state.route === 'resources' || (state.route === 'ministry-detail' && state.ministryId === 'energy_mining')) {
+      if (g.OmegaUIV2MineProductionCommand && typeof g.OmegaUIV2MineProductionCommand.render === 'function') {
+        return g.OmegaUIV2MineProductionCommand.render(content, Object.assign({}, options, { countryId:state.countryId,
+          onOpenSite:function (siteId) { state.resourceSiteId = siteId; return navigate(root, 'mine-detail'); },
+          onLocateMine:options.onLocateMine, onBackToMap:options.onBackToMap }));
+      }
       if (g.OmegaUIV2ResourceMinistry && typeof g.OmegaUIV2ResourceMinistry.render === 'function') {
         return g.OmegaUIV2ResourceMinistry.render(content, Object.assign({}, options, { countryId:state.countryId,
           onOpenSite:function (siteId) { state.resourceSiteId = siteId; return navigate(root, 'mine-detail'); },
