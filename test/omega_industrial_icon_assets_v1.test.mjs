@@ -33,7 +33,7 @@ test("all 21 canonical factory types have unique SVG source scenes",()=>{
   assert.equal(files.size,21);assert.equal(scenes.size,21,"canonical factory SVG scene source must be unique");
 });
 test("merged mineral factory aliases remain available as legacy assets",()=>{
-  assert.equal(manifest.legacyFactories.length,39;
+  assert.equal(manifest.legacyFactories.length,39);
   assert.deepEqual(manifest.legacyFactories.map(x=>x.id).sort(),Object.keys(catalog.factoryTypeAliases).sort());
   for(const row of manifest.legacyFactories){
     assert.equal(row.canonicalFactoryType,"UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",row.id+" must point to the universal materials plant");
