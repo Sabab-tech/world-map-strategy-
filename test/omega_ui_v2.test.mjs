@@ -126,6 +126,50 @@ test('resource site view model deduplicates by siteId and scopes country before 
   assert.equal(model.sites[0].stock, null);
 });
 
+test('Mine Production Ministry renders country-scoped command actions without fabricated metrics', () => {
+  const previous = {
+    mineUI: globalThis.OmegaResourceMineManagementUI,
+    omega: globalThis.Omega,
+    game: globalThis.Game
+  };
+  try {
+    globalThis.Omega = { ResourceMineManagementUI: { open() {} } };
+    globalThis.Game = { state: { resource: { BGD: { inventory: { batches: [] } } } } };
+    const root = {
+      classList: { add() {} },
+      addEventListener() {},
+      contains() { return true; }
+    };
+    const result = globalThis.OmegaUIV2ResourceMinistry.render(root, {
+      countryId: 'BGD',
+      sites: [{
+        siteId: 'BGD-COAL-01', countryId: 'BGD', resourceId: 'coal',
+        siteName: 'Bangladesh Coal Site',
+        operation: { status: 'ACTIVE' },
+        quantitative: {
+          reserve: { quantity: 20, unit: 'million tonnes', status: 'OBSERVED' },
+          production: { quantity: null, unit: 'tonnes/day', status: 'UNOBSERVED' }
+        }
+      }]
+    });
+    assert.equal(result.ok, true);
+    assert.equal(result.siteCount, 1);
+    assert.match(root.innerHTML, /Mine Production Ministry/);
+    assert.match(root.innerHTML, /data-omega-v2-mine-command="production"/);
+    assert.match(root.innerHTML, /data-omega-v2-mine-command="develop"/);
+    assert.match(root.innerHTML, /Bangladesh Coal Site/);
+    assert.match(root.innerHTML, /Not recorded|UNOBSERVED/);
+    assert.doesNotMatch(root.innerHTML, /daily output.*0 tonnes/i);
+  } finally {
+    if (previous.mineUI === undefined) delete globalThis.OmegaResourceMineManagementUI;
+    else globalThis.OmegaResourceMineManagementUI = previous.mineUI;
+    if (previous.omega === undefined) delete globalThis.Omega;
+    else globalThis.Omega = previous.omega;
+    if (previous.game === undefined) delete globalThis.Game;
+    else globalThis.Game = previous.game;
+  }
+});
+
 test('resource view model keeps simulated reserve out of reported reserve', () => {
   const model = globalThis.OmegaUIV2ResourceMinistry.buildViewModel({
     countryId: 'BGD',
