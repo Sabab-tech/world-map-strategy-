@@ -2,7 +2,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-labelledby="omega-manganese-title omega-manganese-desc" data-omega-icon-kind="resource" data-omega-icon-id="manganese">
 <title id="omega-manganese-title">Manganese</title><desc id="omega-manganese-desc">Manganese resource icon with material-specific colour and dimensional vector illustration.</desc>
 <defs>
-<linearGradient id="omega-manganese-bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#24394c"/><stop offset=".5" stop-color="#132536"/><stop offset="1" stop-color="#08121d"/></linearGradient>
+<linearGradient id="omega-manganese-bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f1f6fa"/><stop offset=".52" stop-color="#d8e5ed"/><stop offset="1" stop-color="#aebfcb"/></linearGradient>
 <linearGradient id="omega-manganese-metal" x1="0" y1="0" x2=".9" y2="1"><stop offset="0" stop-color="#c5b5d3"/><stop offset=".32" stop-color="#74677a"/><stop offset=".7" stop-color="#393044"/><stop offset="1" stop-color="#141b24"/></linearGradient>
 <linearGradient id="omega-manganese-top" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffffff" stop-opacity=".9"/><stop offset=".22" stop-color="#c5b5d3"/><stop offset="1" stop-color="#74677a"/></linearGradient>
 <linearGradient id="omega-manganese-side" x1="0" y1="0" x2="1" y2=".7"><stop offset="0" stop-color="#74677a"/><stop offset="1" stop-color="#393044"/></linearGradient>
