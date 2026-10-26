@@ -10,6 +10,7 @@ const mineplayExpanded=read('resource_site_country_mineplay_batch_20261024_v1.js
 const mineplayCritical=read('resource_site_country_mineplay_critical_batch_20261024_v1.json');
 const legacy=Array.from({length:6},(_,i)=>read('resource_site_legacy_gameplay_expansion_part_'+(i+1)+'_v1.json')).flatMap(x=>x.records||[]);
 const resources1=read('resources.json'),resources2=read('resources_2.json'),industrial=read('resource_industrial_catalog_v1.json');
+const typeExtensions=read('resource_type_extensions_v1.json');
 
 const aliases=new Set([
  'SITE_AUS_olympic_dam_uranium_copper','SITE_BRA_carajas_iron_ore_mine_legacy2',
@@ -78,10 +79,14 @@ for(const file of [resources1,resources2]){
  for(const key of Object.keys(file.resource_types||{}))definitions.add(String(key).toLowerCase());
  for(const key of Object.keys(file.GSRSK_Master_Resource_Data_v14?.resource_types||{}))definitions.add(String(key).toLowerCase());
 }
-assert.equal(definitions.size,41,'master resource definitions must include the 41 catalogued resource types');
+for(const key of Object.keys(typeExtensions.resource_types||{}))definitions.add(String(key).toLowerCase());
+for(const key of Object.keys(typeExtensions.GSRSK_Master_Resource_Data_v14?.resource_types||{}))definitions.add(String(key).toLowerCase());
+assert.deepEqual(Object.keys(typeExtensions.resource_types||{}).sort(),['gypsum','niobium','ruby'],
+ 'the additive extension must supply only the three resource types missing from the legacy master');
+assert.equal(definitions.size,41,'legacy masters plus the additive extension must expose all 41 resource type definitions');
 const siteResources=new Set(eligibleSites.map(resourceId));
 assert.ok([...siteResources].every(id=>definitions.has(id)),'every eligible site resource ID must have a master definition');
 assert.ok([...siteResources].every(id=>industrial.resourceRules?.[id]),'every eligible site resource ID must have extraction rules');
 assert.ok([...siteResources].every(id=>industrial.processingRules?.[id]),'every eligible site resource ID must have processing rules');
 
-console.log('PASS resource quantity completion: '+eligibleSites.length+' eligible sites, '+completion.records.length+' additive reserve rows, 41 resource definitions, and unit/provenance contracts.');
+console.log('PASS resource quantity completion: '+eligibleSites.length+' eligible sites, '+completion.records.length+' additive reserve rows, 41 complete resource definitions, and unit/provenance contracts.');
