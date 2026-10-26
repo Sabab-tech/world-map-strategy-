@@ -11,7 +11,7 @@ const manifest = JSON.parse(fs.readFileSync(path.join(root, "omega_factory_visua
 test("factory visual manifest maps every canonical factory profile to a relevant image", async () => {
   const profileIds = Object.keys(catalog.factoryProfiles || {}).sort();
   const mappedIds = Object.keys(manifest.factoryTypes || {}).sort();
-  assert.equal(profileIds.length, 58, "canonical factory profile count changed; review visual mappings");
+  assert.equal(profileIds.length, 35, "canonical factory profile count changed; review visual mappings");
   assert.deepEqual(mappedIds, profileIds, "every canonical factory profile must have one visual mapping");
   assert.equal(manifest.visuals.length, 25, "the visual atlas should expose 25 industrial scenes");
 
@@ -61,6 +61,15 @@ test("factory visual manifest maps every canonical factory profile to a relevant
     assert.ok(html.includes('class="omega-factory-visual"'));
     assert.ok(html.includes('data-factory-type="' + id + '"'));
   }
+
+  assert.deepEqual(manifest.factoryTypeAliases, catalog.factoryTypeAliases, "visual and production aliases must stay synchronized");
+  for (const [alias, canonical] of Object.entries(manifest.factoryTypeAliases || {})) {
+    assert.ok(manifest.factoryTypes[canonical], alias + " must point to a canonical visual type");
+    const resolved = api.resolve(alias);
+    assert.ok(resolved, alias + " must resolve through its compatibility alias");
+    assert.equal(resolved.type, canonical, alias + " should resolve to the canonical type");
+  }
+  assert.equal(api.resolve("LITHIUM_CONVERSION_PLANT").type, "LITHIUM_CONVERSION_PLANT");
 
   const sample = api.resolve("STEEL_AND_ALLOY_WORKS");
   const attrs = { "data-factory-type":"STEEL_AND_ALLOY_WORKS", "data-factory-label":"Steel mill preview" };

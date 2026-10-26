@@ -60,6 +60,12 @@
   }
   function safeNetwork() { return g.OmegaResourceIndustrialNetwork || (g.Omega && g.Omega.ResourceIndustrialNetwork) || null; }
   function safeCatalog() { return g.OmegaResourceIndustrialCatalogData || (g.Omega && g.Omega.ResourceIndustrialCatalogData) || null; }
+  function normalizeFactoryType(value, catalog) {
+    var aliases = (catalog || safeCatalog() || {}).factoryTypeAliases || {};
+    var key = String(value == null ? '' : value).trim().toUpperCase(), seen = Object.create(null);
+    while (aliases[key] && !seen[key]) { seen[key] = true; key = String(aliases[key]).trim().toUpperCase(); }
+    return key;
+  }
 
 
   function playerCountryId() {
@@ -268,8 +274,9 @@
     var mappedAssets = assets.map(function (asset) {
       asset = asset && typeof asset === 'object' ? asset : {};
       var id = String(asset.id || asset.assetId || asset.projectId || '');
-      var type = String(asset.factoryType || asset.type || asset.facilityType || '');
-      var profile = profiles[type.toUpperCase()] || profiles[type] || {};
+      var rawType = String(asset.factoryType || asset.type || asset.facilityType || '');
+      var type = normalizeFactoryType(rawType, catalog) || rawType;
+      var profile = profiles[type] || profiles[rawType.toUpperCase()] || profiles[rawType] || {};
       var cycle = cycles[id] || null;
       var run = runs[id] || null;
       var health = asset.productionHealth && typeof asset.productionHealth === 'object' ? asset.productionHealth : {};

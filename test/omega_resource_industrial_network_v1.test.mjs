@@ -154,7 +154,7 @@ assert.ok(context.Game.state.resource.BGD.batches.some(x=>x.stage==='FINISHED'&&
 assert.ok(Object.values(context.Game.state.resource.BGD.inventoryLots).some(x=>x.stage==='FINISHED'&&x.resourceId==='COAL_REJECT'));
 assert.equal(factory.inputBatchLots.reduce((sum,x)=>sum+(Number(x.remainingQuantity)||0),0),4000);
 
-const factoryBuildProfile=catalog.factoryProfiles.ORE_BENEFICIATION_PLANT;
+const factoryBuildProfile=catalog.factoryProfiles.MINERAL_PROCESSING_PLANT;
 for(const [materialId,requiredQty] of Object.entries(factoryBuildProfile.constructionMaterials||{})){
   context.Game.state.resource.BGD.inventory[materialId]=(Number(context.Game.state.resource.BGD.inventory[materialId])||0)+Number(requiredQty);
   context.Game.state.resource.BGD.warehouse.availableByResource[materialId]=(Number(context.Game.state.resource.BGD.warehouse.availableByResource[materialId])||0)+Number(requiredQty);
@@ -317,4 +317,9 @@ assert.equal(unresolvedPipeline.diagnosticScope,'UNRESOLVED');
 assert.equal(unresolvedPipeline.countryCount,0,
   'an invalid explicit country scope must not silently start the global scan');
 
+// Capacity exhaustion is queued for a later turn instead of being reported as a permanent route blockade.
+const industrialRuntimeSource=fs.readFileSync('omega_resource_industrial_network_v1.js','utf8');
+assert.match(industrialRuntimeSource,/waitForCapacity=String\(reason\)\.toUpperCase\(\)==='TRANSPORT_CAPACITY_EXHAUSTED'/);
+assert.match(industrialRuntimeSource,/flow\.blockReason=null;flow\.lastResidualBlockReason=null;flow\.transportQueueReason=null;/);
+assert.match(industrialRuntimeSource,/awaitingTransportCapacity/);
 console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');
