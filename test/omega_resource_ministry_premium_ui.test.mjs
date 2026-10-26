@@ -116,7 +116,7 @@ test("mine production screen renders a clear, responsive tabbed command surface"
     assert.equal(result.siteCount, 1);
     assert.match(root.innerHTML, /Mine Production/);
     assert.match(root.innerHTML, /Stock &amp; Logistics|Stock & Logistics/);
-    assert.match(root.innerHTML, /Inventory \\/ Warehouse/);
+    assert.match(root.innerHTML, /Inventory \/ Warehouse/);
     assert.match(root.innerHTML, /Reports/);
     assert.match(root.innerHTML, /Test Coal Mine/);
     assert.match(root.innerHTML, /Build mine/);
