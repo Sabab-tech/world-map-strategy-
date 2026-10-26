@@ -154,7 +154,7 @@
         for(const row of rows)if(row?.siteId)map[String(row.siteId)]=normalizeReserveRow(row);
         // This additive dataset fills only eligible site IDs absent from the authoritative
         // base reserve file. Every value is simulation-only and carries source-unit provenance.
-        let quantityCompletionAdded=0,quantityCompletionRecordCount=0;
+        let quantityCompletionAdded=0,quantityCompletionRecordCount=0,quantityCompletionRejectedCount=0;
         try{
           const inlineCompletion=g.OmegaResourceSiteQuantityCompletionData||g.Omega?.ResourceSiteQuantityCompletionData;
           let completion=inlineCompletion||null;
@@ -175,14 +175,36 @@
               const reserve=row?.reserve;
               if(!siteId||!/^[A-Z]{3}$/.test(country)||!resourceId||!reserve||
                  String(reserve.status||'').toUpperCase()!=='SIMULATED'||!(Number(reserve.quantity)>0)||map[siteId])continue;
+              // Validate declared source quantity/unit against its claimed canonical quantity.
+              // A simulation-only label is not permission to turn an incompatible mass into gas volume.
+              const provenance=reserve.quantityNormalization&&typeof reserve.quantityNormalization==='object'?reserve.quantityNormalization:{};
+              const sourceUnit=String(provenance.sourceUnit||reserve.sourceUnit||'').trim();
+              const sourceQuantity=n(provenance.sourceQuantity??reserve.sourceQuantity);
+              let provenanceValid=true;
+              if(sourceUnit&&sourceQuantity!==null&&typeof quantityNormalizer?.normalizeQuantity==='function'){
+                const recomputed=quantityNormalizer.normalizeQuantity(resourceId,sourceQuantity,sourceUnit,{simulationOnly:true});
+                const recomputedQuantity=n(recomputed?.quantity);
+                if(recomputedQuantity===null||recomputedQuantity<=0||
+                   Math.abs(recomputedQuantity-Number(reserve.quantity))>Math.max(1e-6,Math.abs(Number(reserve.quantity))*1e-8)){
+                  provenanceValid=false;
+                }
+              }
+              if(!provenanceValid){quantityCompletionRejectedCount++;continue;}
               const normalized=quantityNormalizer?.normalizeSiteRecord?.(clone(row))||
                 quantityNormalizer?.normalizeSiteQuantities?.(clone(row))||clone(row);
               map[siteId]=normalized;
               quantityCompletionAdded++;
             }
             g.OmegaResourceSiteQuantityCompletionData=completion;
+            g.OmegaResourceSiteQuantityCompletionReport={
+              status:quantityCompletionRejectedCount?'DEGRADED':'READY',
+              datasetId:completion.datasetId,recordsSeen:quantityCompletionRecordCount,
+              recordsAdded:quantityCompletionAdded,recordsRejectedForUnitProvenance:quantityCompletionRejectedCount,
+              authority:'SIMULATION_ONLY_SOURCE_UNIT_VALIDATED'
+            };
             g.Omega=g.Omega||{};
             g.Omega.ResourceSiteQuantityCompletionData=completion;
+            g.Omega.ResourceSiteQuantityCompletionReport=g.OmegaResourceSiteQuantityCompletionReport;
           }
         }catch(_){}
         const legacy=await loadLegacyGameplayExpansionRows();let legacyAdded=0;
@@ -240,7 +262,7 @@
         };
         g.Omega.ResourceLegacyGameplayExpansion=g.OmegaResourceLegacyGameplayExpansion;
         return{status:'READY',count:Object.keys(map).length,baseSiteCount:Number(data?.siteCount)||rows.length,
-          legacyAdded,mineplayAdded,quantityCompletionAdded,quantityCompletionRecordCount,legacyCandidateCount:legacy.count};
+          legacyAdded,mineplayAdded,quantityCompletionAdded,quantityCompletionRecordCount,quantityCompletionRejectedCount,legacyCandidateCount:legacy.count};
       }catch(e){
         simulationReserveMap={};
         return{status:'FAILED',count:0,reason:String(e?.message||e)};
