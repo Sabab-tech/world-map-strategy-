@@ -481,4 +481,78 @@ assert.equal(N.decommissionFactory({countryId:'BGD',factoryId:decommissionAsset.
   'repeated decommission calls must be safe and idempotent');
 assert.equal(N.factoryProductionStatus('BGD',decommissionAsset.id).health.status,'STOPPED');
 
+// Mixed-case legacy ledger regression: reserve and delivery must use the existing
+// warehouse key, debit exactly once, and never create a duplicate lowercase bucket.
+const caseState=context.Game.state.resource.BGD;
+const caseWarehouse=caseState.warehouse;
+const caseQuantity=137.25;
+const sumAndRekey=(map,canonicalKey)=>{
+  const keys=Object.keys(map).filter(key=>String(key).toLowerCase()===canonicalKey.toLowerCase());
+  const total=keys.reduce((sum,key)=>sum+(Number(map[key])||0),0);
+  for(const key of keys)delete map[key];
+  map[canonicalKey]=total;
+  return total;
+};
+caseWarehouse.availableByResource=caseWarehouse.availableByResource||{};
+caseWarehouse.reservedByResource=caseWarehouse.reservedByResource||{};
+const coalAvailableBefore=sumAndRekey(caseWarehouse.availableByResource,'COAL');
+const coalReservedBefore=sumAndRekey(caseWarehouse.reservedByResource,'COAL');
+const padding=coalReservedBefore+caseQuantity+1;
+caseWarehouse.availableByResource.COAL=coalAvailableBefore+padding;
+caseState.inventory=caseState.inventory||{};
+caseState.inventory.coal=(Number(caseState.inventory.coal)||0)+padding;
+const caseBatchId='BATCH:CASE-INSENSITIVE-WAREHOUSE';
+const caseBatch={
+  batchId:caseBatchId,siteId:'SITE_BGD_COAL_01',countryId:'BGD',resourceId:'coal',
+  quantity:caseQuantity,remainingQuantity:caseQuantity,unit:'TONNES',
+  warehouseId:'WH-BGD-RAW',stage:'RAW_EXTRACTED',status:'AVAILABLE',
+  occurrenceKey:'TEST:CASE-INSENSITIVE-WAREHOUSE',
+  provenance:{sourceAuthority:'SIMULATED_TEST_FIXTURE',simulationOnly:true}
+};
+caseState.batches=Array.isArray(caseState.batches)?caseState.batches:[];
+caseState.batches.push(caseBatch);
+caseState.inventoryLots=caseState.inventoryLots||{};
+caseState.inventoryLots[caseBatchId]={...caseBatch};
+caseWarehouse.storedBatchIds=Array.isArray(caseWarehouse.storedBatchIds)?caseWarehouse.storedBatchIds:[];
+caseWarehouse.storedBatchIds.push(caseBatchId);
+const caseRun=N.dispatchShipment({
+  countryId:'BGD',siteId:'SITE_BGD_COAL_01',resourceId:'coal',quantity:caseQuantity,
+  transportMode:'rail',batchId:caseBatchId,occurrenceKey:caseBatch.occurrenceKey,warehouseId:'WH-BGD-RAW'
+});
+assert.equal(caseRun.status,'DISPATCHED',JSON.stringify(caseRun));
+assert.equal(caseRun.shipment.quantity,caseQuantity);
+assert.equal(caseWarehouse.reservedByResource.COAL,coalReservedBefore+caseQuantity,
+  'mixed-case dispatch must reserve against the existing canonical resource key');
+assert.equal(caseWarehouse.reservedByResource.coal,undefined,
+  'dispatch must not create a duplicate lowercase reservation key');
+const caseBeforeDeliveryAvailable=Number(caseWarehouse.availableByResource.COAL)||0;
+const caseBeforeDeliveryReserved=Number(caseWarehouse.reservedByResource.COAL)||0;
+const caseTurnShipments=new Set((caseState.industrialNetwork?.shipments||[])
+  .filter(row=>String(row.status)==='IN_TRANSIT').map(row=>String(row.shipmentId)));
+advanceToGameTurn(context.Game.state,caseRun.shipment.etaTurn);
+const caseDeliveryResult=N.advanceShipments('BGD');
+const caseDelivery=(caseDeliveryResult.shipments||[]).find(row=>String(row.shipmentId)===String(caseRun.shipment.shipmentId));
+assert.ok(caseDelivery,'mixed-case shipment must be delivered by its shipment ID');
+assert.equal(caseDelivery.destinationStatus,'FACTORY_RECEIVED');
+const caseAfterDeliveryAvailable=Number(caseWarehouse.availableByResource.COAL)||0;
+const caseAfterDeliveryReserved=Number(caseWarehouse.reservedByResource.COAL)||0;
+const caseNewCoalDeliveries=(caseDeliveryResult.shipments||[]).filter(row=>
+  String(row.resourceId||'').toLowerCase()==='coal'&&String(row.destinationStatus||'').toUpperCase()==='FACTORY_RECEIVED')
+  .reduce((sum,row)=>sum+(Number(row.quantity)||0),0);
+assert.ok(Math.abs((caseBeforeDeliveryAvailable-caseAfterDeliveryAvailable)-caseNewCoalDeliveries)<1e-5,
+  'warehouse available balance must reconcile against all coal deliveries on this turn');
+const caseNewInTransitCoal=(caseState.industrialNetwork?.shipments||[]).filter(row=>
+  String(row.resourceId||'').toLowerCase()==='coal'&&String(row.status)==='IN_TRANSIT'&&
+  !caseTurnShipments.has(String(row.shipmentId)))
+  .reduce((sum,row)=>sum+(Number(row.quantity)||0),0);
+assert.ok(Math.abs(caseAfterDeliveryReserved-
+  (caseBeforeDeliveryReserved-caseNewCoalDeliveries+caseNewInTransitCoal))<1e-5,
+  'reserved balance must release delivered stock exactly once while retaining new in-transit reservations');
+assert.equal(Number(caseState.batches.find(row=>row.batchId===caseBatchId)?.remainingQuantity),0);
+assert.equal(Number(caseState.inventoryLots[caseBatchId]?.remainingQuantity),0);
+assert.equal(Object.keys(caseWarehouse.availableByResource).filter(key=>String(key).toLowerCase()==='coal').length,1,
+  'the delivery must not create a duplicate case-variant available-stock key');
+assert.equal(Object.keys(caseWarehouse.reservedByResource).filter(key=>String(key).toLowerCase()==='coal').length,1,
+  'the delivery must not create a duplicate case-variant reserved-stock key');
+
 console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');
