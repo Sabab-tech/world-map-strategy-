@@ -42,14 +42,28 @@ assert.equal(reserveSimulation.records.length,reserveSimulation.siteCount,
   'simulation reserve manifest count must match its data rows');
 assert.equal(new Set(reserveSimulation.records.map(row=>row.siteId)).size,reserveSimulation.records.length,
   'simulation reserve rows must retain unique canonical site IDs');
+let simulatedReserveRows=0,notApplicableReserveRows=0;
 for(const row of reserveSimulation.records){
   assert.match(String(row.siteId||''),/^SITE_[A-Z]{3}_/);
-  assert.equal(String(row.reserve?.status||'').toUpperCase(),'SIMULATED',row.siteId+': reserve must stay simulation-only');
   assert.equal(String(row.provenance?.authority||''),'SCENARIO_SIMULATION_DATA',row.siteId+': missing simulation authority');
   assert.equal(row.provenance?.realWorldDataRequired,false,row.siteId+': reserve must not claim real-world measurement');
+  if(row.commercialExtraction===false){
+    notApplicableReserveRows++;
+    assert.equal(String(row.reserve?.status||'').toUpperCase(),'NOT_APPLICABLE',
+      row.siteId+': non-commercial placeholder must not receive an invented reserve');
+    assert.equal(row.reserve?.quantity,null,row.siteId+': non-commercial placeholder quantity must remain null');
+    assert.equal(row.reserve?.unit,null,row.siteId+': non-commercial placeholder unit must remain null');
+    continue;
+  }
+  simulatedReserveRows++;
+  assert.equal(String(row.reserve?.status||'').toUpperCase(),'SIMULATED',row.siteId+': reserve must stay simulation-only');
   assert.ok(Number(row.reserve?.quantity)>0&&String(row.reserve?.unit||'').trim(),
     row.siteId+': simulated reserve requires a positive quantity and explicit unit');
 }
+assert.equal(simulatedReserveRows,reserveSimulation.commercialSiteCount,
+  'only the catalogued commercial sites may carry simulated reserves');
+assert.equal(notApplicableReserveRows,reserveSimulation.notApplicableSiteCount,
+  'the four non-commercial placeholder rows must remain NOT_APPLICABLE');
 
 const world=game.state.resource||{};
 const allRefs=[];
