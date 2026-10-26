@@ -261,13 +261,14 @@ assert.ok(context.Game.state.resource.BGD.industrialNetwork.events.some(x=>x.tra
 // country needs a real commissioned compatible factory.
 context.Game.state.simulation.turn=Number(context.Game.state.simulation.turn||0)+1;
 const assetsBeforeWaiting=context.Game.state.economy.BGD.productionAssets.length;
+const ironWarehouseBefore=Number(context.Game.state.resource.BGD.warehouse.availableByResource.iron_ore)||0;
 const waitingForFactory=await N.executeSitePipeline({
   countryId:'BGD',siteId:'SITE_BGD_IRON_01',resourceId:'iron_ore',transportMode:'rail'
 });
 assert.equal(waitingForFactory.status,'EXTRACTED_AWAITING_FACTORY',JSON.stringify(waitingForFactory));
 assert.equal(waitingForFactory.batchId,'BATCH-E2E-IRON');
-assert.equal(Number(context.Game.state.resource.BGD.warehouse.availableByResource.iron_ore),1200,
-  'unrouted extracted raw material remains available in the sovereign warehouse');
+assert.equal(Number(context.Game.state.resource.BGD.warehouse.availableByResource.iron_ore),ironWarehouseBefore+1200,
+  'unrouted extracted raw material remains in the sovereign warehouse and is credited exactly once');
 assert.equal(context.Game.state.economy.BGD.productionAssets.length,assetsBeforeWaiting,
   'a missing compatible factory must not be fabricated by a normal mine action');
 assert.ok(!context.Game.state.economy.BGD.productionAssets.some(x=>String(x.id||'').startsWith('FAC-SIM:BGD:SITE_BGD_IRON_01')),
