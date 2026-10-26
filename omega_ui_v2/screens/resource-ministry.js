@@ -655,7 +655,9 @@
     var outputHeadline = sumUnitGroups(currentOutputGroups);
     var heroCountry = g.OmegaCountryRuntimeData && typeof g.OmegaCountryRuntimeData.resolveCountry === 'function'
       ? g.OmegaCountryRuntimeData.resolveCountry(countryKey) : null;
-    var countryLabel = String(heroCountry && (heroCountry.officialName || heroCountry.name || heroCountry.countryName) || countryKey || 'Selected country');
+    var rosterCountry = countryRoster(countryKey).find(function (row) { return row.id === countryKey; });
+    var countryLabel = String(heroCountry && (heroCountry.officialName || heroCountry.name || heroCountry.countryName) ||
+      rosterCountry && rosterCountry.name || countryKey || 'Selected country');
     var dashMarkup = photoMarkup + '<div class="omega-v2-kpis omega-v2-resource-command-kpis">' +
       renderKpi('Registered mines', String(model.sites.filter(eligible).length), model.sites.length + ' sites', 'neutral') +
       renderKpi('Producing now', String(producingSites.length), 'Recorded this turn', portfolioBalanceState) +
