@@ -344,12 +344,18 @@ test('UI v2 integration normalizes map-selected aliases before mounting country 
   };
   let mountedOptions = null;
   globalThis.Omega = {};
+  const countryProfiles = [
+    { countryCode:'BD', iso3:'BGD', numericCode:'050', name:'Bangladesh', economyKey:'BANGLADESH' },
+    { countryCode:'US', iso3:'USA', numericCode:'840', name:'United States', economyKey:'USA' },
+    { countryCode:'JP', iso3:'JPN', numericCode:'392', name:'Japan', economyKey:'JPN' },
+    { countryCode:'CA', iso3:'CAN', numericCode:'124', name:'Canada', economyKey:'CAN' }
+  ];
   globalThis.OmegaCountryRuntimeData = {
+    listProfiles() { return countryProfiles.slice(); },
     resolveCountry(value) {
       const key = String(value || '').trim().toUpperCase();
-      return key === 'BANGLADESH' || key === 'BGD' || key === 'BD'
-        ? { countryCode:'BD', iso3:'BGD', numericCode:'050', name:'Bangladesh', economyKey:'BANGLADESH' }
-        : null;
+      if (key === 'BANGLADESH' || key === 'BD') return countryProfiles[0];
+      return countryProfiles.find(profile => [profile.iso3, profile.countryCode, profile.name].some(id => String(id || '').toUpperCase() === key)) || null;
     }
   };
   globalThis.OmegaHomeMinistryEngine = null;
@@ -363,6 +369,11 @@ test('UI v2 integration normalizes map-selected aliases before mounting country 
     assert.equal(result.countryId, 'BGD');
     assert.equal(mountedOptions.countryId, 'BGD');
     assert.equal(mountedOptions.countryOptions[0].id, 'BGD');
+    const selectable = new Set(mountedOptions.countryOptions.map(row => row.id));
+    for (const code of ['BGD','USA','JPN','CAN']) assert.ok(selectable.has(code), 'country browser must include canonical profile ' + code);
+    assert.equal(mountedOptions.countryOptions.length, 4, 'country options must be a deduplicated all-profile roster, not only countries with Home Ministry state');
+    mountedOptions.onCountryChange('JP');
+    assert.equal(globalThis.OmegaMinistryViewCountry, 'JPN', 'non-player browsing must select another country without changing the player-country action gate');
     mountedOptions.onCountryChange('BD');
     assert.equal(globalThis.OmegaMinistryViewCountry, 'BGD');
   } finally {
