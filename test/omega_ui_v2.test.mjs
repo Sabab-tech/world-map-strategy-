@@ -879,7 +879,7 @@ test('factory command cards use canonical SVGs, daily production state, type cou
     assert.match(root.innerHTML,/\+ 125 tonnes\/day/);
     assert.match(root.innerHTML,/\+ 62 tonnes\/day/);
     assert.match(root.innerHTML,/0 tonnes\/day/);
-    assert.match(root.innerHTML,/FACTORY_UTILITY_SHORTAGE/i);
+    assert.match(root.innerHTML,/factory utility shortage/i);
     assert.match(root.innerHTML,/data-omega-v2-factory-build="FAC-STEEL"/);
     assert.match(root.innerHTML,/data-omega-v2-factory-destroy="FAC-STEEL"/);
     const click = handlers.click;
