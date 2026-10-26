@@ -515,6 +515,9 @@ caseState.inventoryLots=caseState.inventoryLots||{};
 caseState.inventoryLots[caseBatchId]={...caseBatch};
 caseWarehouse.storedBatchIds=Array.isArray(caseWarehouse.storedBatchIds)?caseWarehouse.storedBatchIds:[];
 caseWarehouse.storedBatchIds.push(caseBatchId);
+// Keep this regression isolated from the shared-turn capacity already consumed by prior tests;
+// the production capacity guard remains enabled and unchanged.
+context.Game.state.simulation.turn=(Number(context.Game.state.simulation.turn)||1)+1;
 const caseRun=N.dispatchShipment({
   countryId:'BGD',siteId:'SITE_BGD_COAL_01',resourceId:'coal',quantity:caseQuantity,
   transportMode:'rail',batchId:caseBatchId,occurrenceKey:caseBatch.occurrenceKey,warehouseId:'WH-BGD-RAW'
