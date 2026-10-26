@@ -483,6 +483,20 @@ assert.equal(N.factoryProductionStatus('BGD',decommissionAsset.id).health.status
 
 
 // Mine decommissioning stops future extraction while preserving the site, batches and history.
+context.Game.state.simulation.session = { playerCountryId:'BGD' };
+const foreignMineAsset = {
+  id:'MINE-FOREIGN-DECOMMISSION-TEST',
+  siteId:'SITE_USA_COAL_01',
+  resourceId:'coal',
+  status:'OPERATIONAL'
+};
+context.Game.state.resource.USA = { mineAssets:[foreignMineAsset] };
+const foreignDecommission = N.decommissionMine({
+  countryId:'USA',siteId:'SITE_USA_COAL_01',confirmed:true
+});
+assert.equal(foreignDecommission.status,'BLOCKED');
+assert.equal(foreignDecommission.reason,'PLAYER_COUNTRY_SCOPE_VIOLATION');
+assert.equal(foreignMineAsset.status,'OPERATIONAL','a view/action for another country must not mutate its mine');
 const mineAssetForDecommission = {
   id:'MINE-DECOMMISSION-TEST',
   siteId:'SITE_BGD_COAL_01',
