@@ -69,6 +69,67 @@
       row.resourceId || row.resourceTypeId || row.resId) || '').trim();
   }
 
+  var RESOURCE_ICON_IDS = ["aragonite","basalt","bauxite","boron","chromite","coal","cobalt","construction_aggregate","copper","coral_aggregate","crude_oil","diamond","diatomite","dolomite","gold","granite","graphite","gypsum","ilmenite","iron_ore","limestone","lithium","magnesite","manganese","marble","natural_gas","nickel","niobium","oil_shale","phosphate","platinum","potash","rare_earth","ruby","rutile","salt","silica_sand","silver","tin","tungsten","uranium","zinc"];
+
+  function resourceIconPath(value) {
+    var id = String(value == null ? '' : value).trim().toLowerCase()
+      .replace(/^res[_-]?type[:_\/-]?/, '')
+      .replace(/[\s-]+/g, '_');
+    if (RESOURCE_ICON_IDS.indexOf(id) < 0) return '';
+    return 'assets/omega-industrial-icons-v1/resources/' + id.replace(/_/g, '-') + '.svg';
+  }
+
+  function resourceIconMarkup(value, label) {
+    var path = resourceIconPath(value);
+    var safeLabel = String(label || value || 'Resource');
+    if (path) {
+      return '<img class="omega-v2-resource-icon-image" src="' + esc(path) + '" loading="lazy" decoding="async" alt="' + esc(safeLabel) + ' resource icon" data-omega-v2-resource-icon="' + esc(String(value || '').toLowerCase()) + '">';
+    }
+    var normalized = String(value || '?').replace(/[_-]+/g, ' ').trim();
+    var initials = normalized.split(/\s+/).filter(Boolean).slice(0, 2).map(function (part) {
+      return part.charAt(0).toUpperCase();
+    }).join('') || '?';
+    return '<span class="omega-v2-resource-icon--fallback" role="img" aria-label="' + esc(safeLabel) + ' resource icon">' + esc(initials) + '</span>';
+  }
+
+  function mineArchetype(site) {
+    site = site && typeof site === 'object' ? site : {};
+    var identity = site.identity && typeof site.identity === 'object' ? site.identity : {};
+    var location = site.location && typeof site.location === 'object' ? site.location : {};
+    var textValue = [
+      site.siteType, site.extractionMethod, site.method, site.extractionMode, site.siteName, site.name,
+      site.resourceId, site.resourceTypeId, identity.resourceTypeId, location.siteType
+    ].filter(Boolean).join(' ').toLowerCase().replace(/[_-]+/g, ' ');
+    if (/offshore|platform|marine field|subsea|floating production/.test(textValue)) return 'OFFSHORE_PLATFORM';
+    if (/underground|deep shaft|subterranean|shaft mine|tunnel mine/.test(textValue)) return 'UNDERGROUND_MINE';
+    if (/quarry|open quarry|stone pit|aggregate pit/.test(textValue)) return 'QUARRY';
+    if (/crude oil|natural gas|oil field|gas field|petroleum|wellhead|drilling well/.test(textValue)) return 'OIL_GAS_FIELD';
+    return 'OPEN_PIT';
+  }
+
+  function mineArchetypeLabel(site) {
+    var labels = {
+      OPEN_PIT: 'Open-pit mine',
+      UNDERGROUND_MINE: 'Underground mine',
+      QUARRY: 'Quarry',
+      OIL_GAS_FIELD: 'Oil & gas field',
+      OFFSHORE_PLATFORM: 'Offshore platform'
+    };
+    return labels[mineArchetype(site)] || labels.OPEN_PIT;
+  }
+
+  function mineArchetypeMarkup(site) {
+    var kind = mineArchetype(site);
+    var motifs = {
+      OPEN_PIT: '<path d="M3 25h26M5 23h6v-4h6v-4h6V8h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="m18 8 5-3 4 3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
+      UNDERGROUND_MINE: '<path d="M3 26h26M6 25V15h20v10M10 15V6h12v9M13 6V3h6v3" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M11 20h3m4 0h3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
+      QUARRY: '<path d="M3 26h26M5 23h7v-5h7v-5h7V7h2" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="m19 8 3-4 5 3" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>',
+      OIL_GAS_FIELD: '<path d="M4 25h24M8 24l5-12 5 12M13 12l11-5m-8-2 8 2-2 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="24" cy="7" r="2" fill="currentColor"/>',
+      OFFSHORE_PLATFORM: '<path d="M3 26h26M5 23l3-5h16l3 5M10 18V9h12v9M13 9V5h6v4M16 5V3M3 29c3-2 5-2 8 0s5 2 8 0 5-2 8 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'
+    };
+    return '<span class="omega-v2-mine-kind-art" data-mine-archetype="' + kind + '" aria-hidden="true"><svg viewBox="0 0 32 32" focusable="false">' + (motifs[kind] || motifs.OPEN_PIT) + '</svg></span>';
+  }
+
   function uniqueSiteRows(rows) {
     var byId = Object.create(null);
     (Array.isArray(rows) ? rows : []).forEach(function (row) {
@@ -236,8 +297,13 @@
       var productionLabel = site.production.value !== null ? fmt(site.production.value) + ' ' + esc(site.production.unit) + ' · ' + esc(site.production.status) : esc(site.production.status);
       var openEnabled = typeof options.onOpenSite === 'function';
       var locateEnabled = typeof options.onLocateSite === 'function';
-      return '<article class="omega-v2-card" data-omega-v2-site-card data-site-id="' + esc(site.siteId) + '" data-resource="' + esc(site.resourceId) + '" data-search="' + esc((site.name + ' ' + site.resourceId + ' ' + site.location + ' ' + site.status).toLowerCase()) + '">' +
-        '<div class="omega-v2-card-header"><div><div class="omega-v2-eyebrow">' + esc(site.resourceId.replace(/[_-]+/g, ' ')) + '</div><h3 class="omega-v2-card-title">' + esc(site.name) + '</h3><div class="omega-v2-card-meta">' + esc(site.countryId) + ' · ' + esc(site.location) + '</div></div><span class="omega-v2-status" data-state="' + (site.status === 'OPERATIONAL' || site.status === 'ACTIVE' ? 'operational' : site.status === 'UNOBSERVED' ? 'unknown' : 'attention') + '">' + esc(site.status) + '</span></div>' +
+      var kind = mineArchetype(site.raw);
+      var statusState = site.status === 'OPERATIONAL' || site.status === 'ACTIVE' || site.status === 'ACTIVE_PRODUCING' ? 'operational' :
+        site.status === 'UNOBSERVED' || site.status === 'UNKNOWN' ? 'unknown' : 'attention';
+      return '<article class="omega-v2-card omega-v2-resource-site-card" data-omega-v2-site-card data-site-id="' + esc(site.siteId) + '" data-resource="' + esc(site.resourceId) + '" data-search="' + esc((site.name + ' ' + site.resourceId + ' ' + site.location + ' ' + site.status).toLowerCase()) + '">' +
+        '<div class="omega-v2-resource-card-top"><div class="omega-v2-resource-card-identity"><span class="omega-v2-resource-icon">' + resourceIconMarkup(site.resourceId, site.resourceId.replace(/[_-]+/g, ' ')) + '</span>' +
+        '<div class="omega-v2-resource-card-heading"><div class="omega-v2-eyebrow">' + esc(site.resourceId.replace(/[_-]+/g, ' ')) + '</div><h3 class="omega-v2-card-title">' + esc(site.name) + '</h3><div class="omega-v2-card-meta">' + esc(site.countryId) + ' · ' + esc(site.location) + '</div></div></div>' +
+        '<div class="omega-v2-resource-card-flags"><span class="omega-v2-status" data-state="' + statusState + '">' + esc(site.status.replace(/[_-]+/g, ' ')) + '</span><span class="omega-v2-mine-kind">' + mineArchetypeMarkup(site.raw) + '<span>' + esc(mineArchetypeLabel(site.raw)) + '</span></span></div></div>' +
         '<div class="omega-v2-vehicle-stats"><div><span>Reported reserve</span><strong>' + reserveLabel + '</strong></div>' +
         '<div><span>Current warehouse stock</span><strong>' + stockLabel + '</strong></div><div><span>Measured production</span><strong>' + productionLabel + '</strong></div>' +
         '<div><span>Coordinates</span><strong>' + (site.coordinates ? esc((site.coordinates.latitude !== undefined ? site.coordinates.latitude : site.coordinates.lat) + ', ' + (site.coordinates.longitude !== undefined ? site.coordinates.longitude : site.coordinates.lng)) : 'Not recorded') + '</strong></div></div>' +
@@ -261,7 +327,7 @@
       contentMarkup = model.sites.length ? '<div class="omega-v2-grid">' + model.sites.map(function (site) {
         var observed = site.reserve.value !== null ? fmt(site.reserve.value) + ' ' + esc(site.reserve.unit) + ' · ' + esc(site.reserve.status) : 'Not recorded (' + esc(site.reserve.status) + ')';
         var modeled = site.modeledReserve && site.modeledReserve.modeledValue !== null ? fmt(site.modeledReserve.modeledValue) + ' ' + esc(site.modeledReserve.unit) + ' · MODELED' : 'Not recorded';
-        return '<article class="omega-v2-card"><h3 class="omega-v2-card-title">' + esc(site.name) + '</h3><p class="omega-v2-card-meta">' + esc(site.siteId) + ' · ' + esc(site.resourceId) + '</p><div class="omega-v2-vehicle-stats"><div><span>Reported / observed reserve</span><strong>' + observed + '</strong></div><div><span>Modeled gameplay reserve</span><strong>' + modeled + '</strong></div></div><p class="omega-v2-source">Source: ' + esc(site.source) + '</p></article>';
+        return '<article class="omega-v2-card omega-v2-resource-reserve-card"><span class="omega-v2-resource-icon">' + resourceIconMarkup(site.resourceId, site.resourceId.replace(/[_-]+/g, ' ')) + '</span><div><h3 class="omega-v2-card-title">' + esc(site.name) + '</h3><p class="omega-v2-card-meta">' + esc(site.siteId) + ' · ' + esc(site.resourceId) + '</p><div class="omega-v2-vehicle-stats"><div><span>Reported / observed reserve</span><strong>' + observed + '</strong></div><div><span>Modeled gameplay reserve</span><strong>' + modeled + '</strong></div></div><p class="omega-v2-source">Source: ' + esc(site.source) + '</p></div></article>';
       }).join('') + '</div>' : '<div class="omega-v2-empty">No site reserves can be listed because the selected country has no resolved canonical site records.</div>';
     } else if (active === 'warehouses') {
       contentMarkup = inventoryRows.length ? '<div class="omega-v2-card"><div class="omega-v2-table-wrap"><table><thead><tr><th>Batch / record</th><th>Resource</th><th>Recorded quantity</th><th>Location</th><th>Status</th><th>Source</th></tr></thead><tbody>' + inventoryRows.map(function (row) {
@@ -287,8 +353,8 @@
     }
 
     root.classList.add('omega-v2-screen');
-    root.innerHTML = '<section class="omega-v2-shell omega-v2-resource">' +
-      '<header class="omega-v2-heading"><div><div class="omega-v2-eyebrow">ENERGY & MINING</div><h1 class="omega-v2-title">Energy, Resources & Mining</h1><p class="omega-v2-subtitle">Country ' + esc(model.countryId || 'All countries') + ' · site identity uses unique canonical siteId</p></div><span class="omega-v2-status" data-state="' + (model.ready ? 'operational' : 'attention') + '">' + fmt(model.siteCount) + ' registered sites</span></header>' +
+    root.innerHTML = '<section class="omega-v2-shell omega-v2-resource omega-v2-resource-premium" data-resource-ui-version="premium-v1">' +
+      '<header class="omega-v2-heading omega-v2-resource-heading"><div class="omega-v2-resource-heading-copy"><img class="omega-v2-resource-ministry-mark" src="assets/ministry-logos/energy_mining.svg" alt="Energy and Mining Ministry emblem" loading="lazy" decoding="async"><div><div class="omega-v2-eyebrow">ENERGY & MINING · RESOURCE COMMAND</div><h1 class="omega-v2-title">Energy, Resources & Mining</h1><p class="omega-v2-subtitle">Country ' + esc(model.countryId || 'All countries') + ' · canonical site identity · live-state only</p></div></div><span class="omega-v2-status" data-state="' + (model.ready ? 'operational' : 'attention') + '">' + fmt(model.siteCount) + ' registered sites</span></header>' +
       '<div class="omega-v2-note">Reserve is not warehouse stock. Modeled reserves are labeled MODELED; transfers are not complete until an authoritative shipment/warehouse runtime confirms receipt. This screen does not execute mine actions by itself.</div>' +
       tabMarkup + '<div data-omega-v2-resource-content>' + contentMarkup + '</div>' +
       '<p class="omega-v2-source">Mine sites and recorded operational data are managed within this UI v2 screen. Retired console navigation is disabled.</p></section>';
@@ -345,7 +411,10 @@
   }
 
   g.OmegaUIV2ResourceMinistry = Object.freeze({
-    version: '1.0.0',
+    version: '1.1.0',
+    resourceIconIds: RESOURCE_ICON_IDS.slice(),
+    resourceIconPath: resourceIconPath,
+    mineArchetype: mineArchetype,
     buildViewModel: buildViewModel,
     render: render
   });

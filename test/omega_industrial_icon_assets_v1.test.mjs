@@ -19,7 +19,7 @@ function readSvg(rel,id,label){
  return src;
 }
 test("manifest exactly covers canonical resource and factory catalogs",()=>{
- assert.equal(manifest.summary.resourceIconCount,42);assert.equal(manifest.summary.factoryIconCount,21);assert.equal(manifest.summary.totalIconCount,63);assert.equal(manifest.summary.legacyFactoryIconCount,39);assert.equal(manifest.summary.integratedIntoRuntime,false);
+ assert.equal(manifest.summary.resourceIconCount,42);assert.equal(manifest.summary.factoryIconCount,21);assert.equal(manifest.summary.totalIconCount,63);assert.equal(manifest.summary.legacyFactoryIconCount,39);assert.equal(manifest.summary.integratedIntoRuntime,true,"resource SVGs are integrated into the Resource Ministry UI");
  assert.deepEqual(manifest.resources.map(x=>x.id).sort(),Object.keys(catalog.resourceRules).sort());
  assert.deepEqual(manifest.factories.map(x=>x.id).sort(),Object.keys(catalog.factoryProfiles).sort());
 });

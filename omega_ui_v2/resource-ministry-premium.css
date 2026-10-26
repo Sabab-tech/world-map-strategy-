@@ -1,0 +1,211 @@
+/* OMEGA Resource Ministry premium visual layer.
+ * Scoped to the resource route; shared runtime, other ministries and legacy UI stay untouched.
+ */
+.omega-v2-resource-premium {
+  --resource-brass: #d9bd7b;
+  --resource-cool: #83bed8;
+  --resource-surface: rgba(15, 31, 47, .96);
+  --resource-line: rgba(128, 158, 180, .25);
+  background:
+    radial-gradient(ellipse at 8% 0%, rgba(217, 189, 123, .075), transparent 38%),
+    linear-gradient(180deg, #081624 0%, #091522 58%, #07121e 100%);
+  isolation: isolate;
+}
+.omega-v2-resource-premium .omega-v2-resource-heading {
+  align-items: center;
+  background:
+    linear-gradient(115deg, rgba(217,189,123,.075), transparent 44%),
+    linear-gradient(145deg, rgba(20,39,57,.98), rgba(10,23,36,.96));
+  border: 1px solid var(--resource-line);
+  border-bottom-color: rgba(217,189,123,.36);
+  border-radius: 17px;
+  box-shadow: 0 14px 34px rgba(0,0,0,.16), inset 0 1px rgba(255,255,255,.035);
+  gap: 12px;
+  margin-bottom: 12px;
+  padding: 15px;
+  position: relative;
+  overflow: hidden;
+}
+.omega-v2-resource-premium .omega-v2-resource-heading::after {
+  background: linear-gradient(90deg, transparent, rgba(217,189,123,.68), transparent);
+  bottom: 0;
+  content: "";
+  height: 1px;
+  left: 10%;
+  opacity: .7;
+  position: absolute;
+  right: 10%;
+}
+.omega-v2-resource-heading-copy { align-items: center; display: flex; gap: 12px; min-width: 0; }
+.omega-v2-resource-ministry-mark {
+  background: linear-gradient(150deg, #1c3549, #0a1826);
+  border: 1px solid rgba(217,189,123,.53);
+  border-radius: 13px;
+  box-shadow: inset 0 1px rgba(255,255,255,.07), 0 7px 18px rgba(0,0,0,.2);
+  flex: 0 0 54px;
+  height: 54px;
+  object-fit: contain;
+  padding: 7px;
+  width: 54px;
+}
+.omega-v2-resource-premium .omega-v2-eyebrow { color: var(--resource-brass); letter-spacing: .16em; }
+.omega-v2-resource-premium .omega-v2-title { font-size: clamp(21px, 4.7vw, 29px); letter-spacing: -.025em; }
+.omega-v2-resource-premium .omega-v2-subtitle { line-height: 1.55; }
+.omega-v2-resource-premium .omega-v2-note {
+  background: rgba(18,35,51,.74);
+  border: 1px solid rgba(107,143,169,.23);
+  border-left: 2px solid rgba(217,189,123,.72);
+  border-radius: 10px;
+  color: #b9c9d6;
+  line-height: 1.55;
+  margin: 12px 0;
+  padding: 10px 12px;
+}
+.omega-v2-resource-premium .omega-v2-resource-tabs {
+  background: rgba(5,15,25,.68);
+  border: 1px solid rgba(112,145,168,.19);
+  border-radius: 13px;
+  display: grid;
+  gap: 6px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 12px 0 14px;
+  padding: 6px;
+}
+.omega-v2-resource-premium .omega-v2-resource-tabs .omega-v2-button {
+  background: transparent;
+  border-color: transparent;
+  color: #a9bbc9;
+  font-size: 11px;
+  font-weight: 680;
+  min-height: 43px;
+  padding: 8px 5px;
+  touch-action: manipulation;
+}
+.omega-v2-resource-premium .omega-v2-resource-tabs .omega-v2-button--accent {
+  background: linear-gradient(145deg, rgba(217,189,123,.17), rgba(131,190,216,.065));
+  border-color: rgba(217,189,123,.43);
+  box-shadow: inset 0 1px rgba(255,255,255,.04);
+  color: #f1dfb1;
+}
+.omega-v2-resource-premium .omega-v2-kpis { gap: 9px; }
+.omega-v2-resource-premium .omega-v2-kpi {
+  background: linear-gradient(145deg, rgba(19,39,57,.96), rgba(10,25,39,.98));
+  border-color: rgba(115,150,174,.25);
+  border-radius: 13px;
+  padding: 12px;
+}
+.omega-v2-resource-premium .omega-v2-kpi span { letter-spacing: .015em; }
+.omega-v2-resource-premium .omega-v2-kpi strong { color: #f0e6cc; font-size: clamp(17px, 3vw, 22px); font-variant-numeric: tabular-nums; }
+.omega-v2-resource-premium .omega-v2-grid[data-omega-v2-site-grid] { align-items: stretch; }
+.omega-v2-resource-premium .omega-v2-resource-site-card {
+  background:
+    radial-gradient(ellipse at 0 0, rgba(217,189,123,.05), transparent 48%),
+    linear-gradient(145deg, rgba(20,40,58,.98), rgba(10,24,38,.99));
+  border-color: rgba(113,150,175,.27);
+  border-radius: 15px;
+  box-shadow: 0 7px 21px rgba(0,0,0,.13), inset 0 1px rgba(255,255,255,.025);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  transition: border-color .15s ease, transform .15s ease, box-shadow .15s ease;
+}
+.omega-v2-resource-premium .omega-v2-resource-site-card:hover {
+  border-color: rgba(217,189,123,.49);
+  box-shadow: 0 10px 26px rgba(0,0,0,.19), inset 0 1px rgba(255,255,255,.04);
+}
+.omega-v2-resource-card-top { align-items: flex-start; display: flex; gap: 10px; justify-content: space-between; min-width: 0; }
+.omega-v2-resource-card-identity { align-items: center; display: flex; gap: 11px; min-width: 0; }
+.omega-v2-resource-card-heading { min-width: 0; }
+.omega-v2-resource-icon {
+  align-items: center;
+  background: linear-gradient(145deg, #1a344a, #091725);
+  border: 1px solid rgba(125,158,181,.31);
+  border-radius: 12px;
+  box-shadow: inset 0 1px rgba(255,255,255,.045);
+  display: flex;
+  flex: 0 0 62px;
+  height: 62px;
+  justify-content: center;
+  overflow: hidden;
+  padding: 3px;
+  width: 62px;
+}
+.omega-v2-resource-icon img { display: block; height: 100%; object-fit: contain; width: 100%; }
+.omega-v2-resource-icon--fallback { color: var(--resource-brass); font-size: 14px; font-weight: 800; letter-spacing: .04em; }
+.omega-v2-resource-premium .omega-v2-resource-site-card .omega-v2-eyebrow { font-size: 9px; margin-bottom: 3px; }
+.omega-v2-resource-premium .omega-v2-resource-site-card .omega-v2-card-title { color: #f2f1e9; font-size: 14px; font-weight: 730; line-height: 1.32; margin: 0 0 4px; }
+.omega-v2-resource-card-flags { align-items: flex-end; display: flex; flex: 0 0 auto; flex-direction: column; gap: 6px; max-width: 45%; }
+.omega-v2-resource-premium .omega-v2-resource-site-card .omega-v2-status { font-size: 9px; max-width: 100%; text-align: center; }
+.omega-v2-mine-kind {
+  align-items: center;
+  color: #a9bdcc;
+  display: inline-flex;
+  font-size: 9px;
+  gap: 4px;
+  justify-content: flex-end;
+  line-height: 1.3;
+  text-align: right;
+}
+.omega-v2-mine-kind-art { color: var(--resource-brass); display: inline-flex; flex: 0 0 18px; height: 18px; width: 18px; }
+.omega-v2-mine-kind-art svg { display: block; height: 100%; width: 100%; }
+.omega-v2-resource-premium .omega-v2-vehicle-stats { gap: 7px; margin-top: 0; }
+.omega-v2-resource-premium .omega-v2-vehicle-stats > div {
+  background: rgba(5,16,26,.36);
+  border: 1px solid rgba(111,146,168,.13);
+  border-radius: 9px;
+  min-width: 0;
+  padding: 8px;
+}
+.omega-v2-resource-premium .omega-v2-vehicle-stats span { color: #91a7b8; font-size: 10px; }
+.omega-v2-resource-premium .omega-v2-vehicle-stats strong { color: #e8edf0; font-size: 11px; line-height: 1.4; overflow-wrap: anywhere; }
+.omega-v2-resource-premium .omega-v2-source { border-top: 1px solid rgba(114,148,170,.16); color: #93a9b9; font-size: 10px; line-height: 1.45; padding-top: 8px; }
+.omega-v2-resource-premium .omega-v2-resource-site-card .omega-v2-actions { margin-top: auto; padding-top: 2px; }
+.omega-v2-resource-premium .omega-v2-resource-site-card .omega-v2-button { flex: 1 1 110px; min-height: 42px; }
+.omega-v2-resource-premium .omega-v2-resource-site-card .omega-v2-button--primary {
+  background: linear-gradient(135deg, #34536a, #1c3b50);
+  border-color: rgba(131,190,216,.48);
+}
+.omega-v2-resource-premium .omega-v2-resource-site-card .omega-v2-button--quiet { background: rgba(5,16,26,.22); }
+.omega-v2-resource-premium .omega-v2-resource-reserve-card { align-items: center; display: flex; gap: 11px; }
+.omega-v2-resource-premium .omega-v2-resource-reserve-card .omega-v2-resource-icon { flex-basis: 52px; height: 52px; width: 52px; }
+.omega-v2-resource-premium .omega-v2-empty { border: 1px dashed rgba(123,157,180,.38); border-radius: 13px; background: rgba(11,25,39,.5); line-height: 1.55; padding: 20px 14px; }
+.omega-v2-resource-premium .omega-v2-filterbar input,
+.omega-v2-resource-premium .omega-v2-filterbar select { border-color: rgba(125,158,181,.32); border-radius: 10px; min-height: 44px; }
+.omega-v2-resource-premium .omega-v2-filterbar input { flex: 1 1 200px; }
+@media (min-width: 620px) {
+  .omega-v2-resource-premium .omega-v2-resource-tabs { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .omega-v2-resource-premium .omega-v2-grid[data-omega-v2-site-grid] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .omega-v2-resource-premium .omega-v2-resource-heading { padding: 18px; }
+}
+@media (min-width: 1000px) {
+  .omega-v2-resource-premium .omega-v2-grid[data-omega-v2-site-grid] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 420px) {
+  .omega-v2-resource-premium .omega-v2-resource-heading { align-items: flex-start; padding: 11px; }
+  .omega-v2-resource-ministry-mark { flex-basis: 44px; height: 44px; padding: 5px; width: 44px; }
+  .omega-v2-resource-heading-copy { gap: 8px; }
+  .omega-v2-resource-premium .omega-v2-title { font-size: 20px; }
+  .omega-v2-resource-card-top { gap: 7px; }
+  .omega-v2-resource-card-identity { align-items: flex-start; gap: 8px; }
+  .omega-v2-resource-icon { flex-basis: 48px; height: 48px; width: 48px; }
+  .omega-v2-resource-card-flags { max-width: 42%; }
+  .omega-v2-resource-premium .omega-v2-resource-site-card { padding: 9px; }
+  .omega-v2-resource-premium .omega-v2-resource-site-card .omega-v2-card-title { font-size: 12px; }
+}
+@media (max-width: 359px) {
+  .omega-v2-resource-premium .omega-v2-resource-tabs { gap: 4px; padding: 4px; }
+  .omega-v2-resource-premium .omega-v2-resource-tabs .omega-v2-button { font-size: 10px; min-height: 40px; padding-inline: 2px; }
+  .omega-v2-resource-premium .omega-v2-resource-icon { flex-basis: 42px; height: 42px; width: 42px; }
+  .omega-v2-resource-premium .omega-v2-resource-card-flags { max-width: 40%; }
+}
+@media (orientation: landscape) and (max-height: 500px) {
+  .omega-v2-resource-premium .omega-v2-resource-heading { padding: 9px 12px; }
+  .omega-v2-resource-ministry-mark { flex-basis: 40px; height: 40px; width: 40px; }
+  .omega-v2-resource-premium .omega-v2-resource-tabs { margin-block: 8px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .omega-v2-resource-premium *,
+  .omega-v2-resource-premium *::before,
+  .omega-v2-resource-premium *::after { animation: none !important; scroll-behavior: auto !important; transition: none !important; }
+}
