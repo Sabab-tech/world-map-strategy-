@@ -243,6 +243,75 @@
     };
   }
 
+  function countryRoster(currentCountry) {
+    var rows = Object.create(null);
+    function add(rawId, rawName) {
+      var id = selectedCountryKey(rawId);
+      if (!/^[A-Z]{3}$/.test(id)) return;
+      var name = String(rawName || '').trim();
+      if (!name || name.toUpperCase() === id) name = id;
+      if (!rows[id] || rows[id].name === id) rows[id] = { id:id, name:name };
+    }
+    var engine = g.ResourceMinistryEngine;
+    var profiles = engine && engine.countryProfiles;
+    if (profiles && typeof profiles === 'object') {
+      Object.keys(profiles).forEach(function (rawId) {
+        var profile = profiles[rawId] || {};
+        var identity = profile.identity || profile.country || profile;
+        add(identity.iso3 || identity.iso3Code || identity.alpha3 || identity.cca3 ||
+          identity.countryId || identity.countryCode || rawId,
+          identity.officialName || identity.countryName || identity.name || profile.officialName || profile.name || rawId);
+      });
+    }
+    var canonical = g.OmegaResourceSiteCanonicalCatalogData || (g.Omega && g.Omega.ResourceSiteCanonicalCatalogData);
+    var binding = g.OmegaIndividualResourceSiteBinding || (g.Omega && g.Omega.IndividualResourceSiteBinding);
+    [canonical && canonical.sites, binding && binding.sites].forEach(function (sites) {
+      if (!Array.isArray(sites)) return;
+      sites.forEach(function (site) {
+        var identity = site.identity || {};
+        var location = site.location || {};
+        add(site.countryId || identity.countryIso3 || site.countryCode,
+          identity.countryName || identity.officialName || location.countryName || site.countryName || site.countryId);
+      });
+    });
+    var gameState = g.Game && g.Game.state || g.gameState || {};
+    [gameState.resource, gameState.resources].forEach(function (buckets) {
+      if (!buckets || typeof buckets !== 'object') return;
+      Object.keys(buckets).forEach(function (rawId) {
+        var bucket = buckets[rawId] || {};
+        add(rawId, bucket.countryName || bucket.identity && bucket.identity.countryName || rawId);
+      });
+    });
+    add(currentCountry, rows[currentCountry] && rows[currentCountry].name || currentCountry);
+    var result = Object.keys(rows).map(function (id) { return rows[id]; });
+    var playerId = '';
+    try {
+      var sim = g.Omega && g.Omega.Simulation;
+      if (sim && typeof sim.getPlayerCountryId === 'function') playerId = selectedCountryKey(sim.getPlayerCountryId());
+    } catch (_) {}
+    if (!playerId) {
+      var st = g.Game && g.Game.state || g.gameState || {};
+      playerId = selectedCountryKey(st.simulation && st.simulation.session && st.simulation.session.playerCountryId ||
+        st.simulation && st.simulation.playerCountryId || st.playerCountryId || g.Game && g.Game.playerCountryId || '');
+    }
+    return result.sort(function (a, b) {
+      if (a.id === currentCountry) return -1;
+      if (b.id === currentCountry) return 1;
+      if (a.id === playerId) return -1;
+      if (b.id === playerId) return 1;
+      return a.name.localeCompare(b.name);
+    });
+  }
+
+  function countrySelectMarkup(currentCountry) {
+    var rows = countryRoster(currentCountry);
+    return '<label class="omega-v2-resource-country-select"><span>Selected country</span><select data-omega-v2-resource-country aria-label="Browse resource country">' +
+      rows.map(function (row) {
+        return '<option value="' + esc(row.id) + '"' + (row.id === currentCountry ? ' selected' : '') + '>' +
+          esc(row.name) + ' (' + esc(row.id) + ')</option>';
+      }).join('') + '</select></label>';
+  }
+
   function render(root, options) {
     options = options || {};
     if (!root || typeof root !== 'object') return { ok:false, code:'RESOURCE_ROOT_REQUIRED' };
@@ -704,10 +773,11 @@
     var notice = root.__omegaV2ResourceNotice ? '<div class="omega-v2-note omega-v2-resource-notice" role="status" aria-live="polite">' + esc(root.__omegaV2ResourceNotice) + '</div>' : '';
     root.classList.add('omega-v2-screen');
     root.innerHTML = '<section class="omega-v2-shell omega-v2-resource omega-v2-resource-premium" data-resource-ui-version="command-v2">' +
-      '<header class="omega-v2-heading omega-v2-resource-heading"><div class="omega-v2-resource-heading-copy"><img class="omega-v2-resource-ministry-mark" src="assets/ministry-logos/energy_mining.svg" alt="Mining Ministry" loading="lazy" decoding="async"><div>' +
+      '<header class="omega-v2-heading omega-v2-resource-heading"><div class="omega-v2-resource-heading-copy"><img class="omega-v2-resource-ministry-mark" src="assets/ministry-logos/energy_mining.svg" alt="" aria-hidden="true" loading="lazy" decoding="async"><div>' +
       '<div class="omega-v2-eyebrow">RESOURCE COMMAND</div><h1 class="omega-v2-title">Mine Production Ministry</h1><p class="omega-v2-subtitle">' + esc(countryLabel) +
-      ' · Resource Extraction · National Wealth</p></div></div><span class="omega-v2-status" data-state="' + (model.ready ? 'operational' : 'attention') + '">' +
-      fmt(model.sites.filter(eligible).length) + ' mines</span></header>' + notice + tabMarkup + '<div data-omega-v2-resource-content>' + contentMarkup + '</div></section>';
+      ' · Resource Extraction · National Wealth</p></div></div><div class="omega-v2-resource-heading-actions">' + countrySelectMarkup(countryKey) +
+      '<span class="omega-v2-status" data-state="' + (model.ready ? 'operational' : 'attention') + '">' +
+      fmt(model.sites.filter(eligible).length) + ' mines</span></div></header>' + notice + tabMarkup + '<div data-omega-v2-resource-content>' + contentMarkup + '</div></section>';
     if (!root.__omegaV2ResourceBound && typeof root.addEventListener === 'function') {
       root.addEventListener('input', function (event) {
         if (!event || !event.target) return;
@@ -715,7 +785,18 @@
       });
       root.addEventListener('change', function (event) {
         if (!event || !event.target) return;
-        if (event.target.matches && event.target.matches('[data-omega-v2-resource-filter]')) applySiteFilter(root);
+        if (event.target.matches && event.target.matches('[data-omega-v2-resource-filter]')) {
+          applySiteFilter(root);
+          return;
+        }
+        if (event.target.matches && event.target.matches('[data-omega-v2-resource-country]')) {
+          var viewedCountry = selectedCountryKey(event.target.value);
+          var prior = root.__omegaV2ResourceOptions || {};
+          // Country browsing changes only this view. All mutations remain player-country guarded.
+          root.__omegaV2ResourceNotice = '';
+          root.__omegaV2ResourceSelectedCountryId = viewedCountry;
+          render(root, Object.assign({}, prior, { countryId:viewedCountry, tab:root.__omegaV2ResourceTab || 'dashboard' }));
+        }
       });
       root.addEventListener('click', function (event) {
         var target = event && event.target;
@@ -782,7 +863,7 @@
       });
       root.__omegaV2ResourceBound = true;
     }
-    root.__omegaV2ResourceOptions = options;
+    root.__omegaV2ResourceOptions = Object.assign({}, options, { countryId:countryKey });
     root.__omegaV2ResourceTab = active;
     if (active === 'mines') applySiteFilter(root);
     return { ok:true, tab:active, siteCount:model.siteCount, model:model, inventoryRowCount:inventoryRows.length,
