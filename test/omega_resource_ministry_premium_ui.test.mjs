@@ -108,7 +108,7 @@ test("mine production screen renders a clear, responsive tabbed command surface"
         operation:{status:"READY"}, location:{region:"North",countryId:"BGD"}
       }] : []
     };
-    const root = { classList:{add(){}}, addEventListener(){}, innerHTML:"", __omegaMineBound:true };
+    const root = { classList:{add(){}}, addEventListener(){}, querySelector(){ return null; }, querySelectorAll(){ return []; }, contains(){ return true; }, innerHTML:"", __omegaMineBound:true };
     const result = api.render(root, {countryId:"BGD",tab:"mines"});
     assert.equal(result.siteCount, 1);
     assert.match(root.innerHTML, /Mine Production/);
