@@ -192,7 +192,10 @@
               if(!provenanceValid){quantityCompletionRejectedCount++;continue;}
               const normalized=quantityNormalizer?.normalizeSiteRecord?.(clone(row))||
                 quantityNormalizer?.normalizeSiteQuantities?.(clone(row))||clone(row);
-              map[siteId]=normalized;
+              map[siteId]={
+                ...normalized,quantityCompletionDatasetId:completion.datasetId,
+                quantityCompletionSource:'resource_site_quantity_completion_v1.json'
+              };
               quantityCompletionAdded++;
             }
             g.OmegaResourceSiteQuantityCompletionData=completion;
@@ -2495,10 +2498,36 @@ function batchFromExtraction(x,record){
       String(status).toUpperCase()!=='NOT_APPLICABLE';
     if(!commercialExtraction)return{status:'REJECTED',reason:'NON_COMMERCIAL_SITE',siteId,countryId,resourceId};
     const siteType=String(source.siteType||identity.siteType||raw.siteType||raw.assetType||'RESOURCE_SITE');
-    const sourceQuantitative=fillRuntimeMissing(
+    let sourceQuantitative=fillRuntimeMissing(
       fillRuntimeMissing(clone(source.quantitative||{}),real.quantitative||{}),raw.quantitative||{});
     const realQuantitative=fillRuntimeMissing(
       fillRuntimeMissing(clone(real.quantitative||{}),source.quantitative||{}),raw.quantitative||{});
+    const completionRecord=simulationReserveMap?.[siteId]||null;
+    const completionReserve=completionRecord?.quantityCompletionDatasetId==='OMEGA_RESOURCE_SITE_QUANTITY_COMPLETION_V1'
+      ?(completionRecord.reserve||completionRecord.quantitative?.reserve||null):null;
+    const currentReserve=sourceQuantitative.reserve&&typeof sourceQuantitative.reserve==='object'?sourceQuantitative.reserve:{};
+    const currentReserveQuantity=mineplayMetricNumber(currentReserve,'quantity');
+    const currentReserveUnit=mineplayUsableUnit(currentReserve.unit,profile?.reserveUnit||'TONNES');
+    const currentReserveUsable=mineplayAuthorityAllowsValue(currentReserve,'quantity')&&
+      mineplayQuantityUnitCompatible(resourceId,currentReserveQuantity,currentReserveUnit,currentReserve);
+    if(completionReserve&&String(completionReserve.status||'').toUpperCase()==='SIMULATED'&&
+       mineplayQuantityUnitCompatible(resourceId,completionReserve.quantity,completionReserve.unit,completionReserve)&&
+       !currentReserveUsable){
+      sourceQuantitative={
+        ...sourceQuantitative,
+        reserve:{
+          ...completionReserve,status:'SIMULATED',authority:'SIMULATED_SITE_QUANTITY_COMPLETION_V1',
+          sourceUnit:completionReserve.sourceUnit||completionReserve.quantityNormalization?.sourceUnit||completionReserve.unit,
+          quantityNormalization:null,
+          sourceEvidence:completionReserve.sourceEvidence||{
+            source:'resource_site_quantity_completion_v1.json',
+            authority:'SIMULATION_ONLY_SOURCE_UNIT_VALIDATED',
+            sourceQuantity:completionReserve.sourceQuantity??completionReserve.quantity,
+            sourceUnit:completionReserve.sourceUnit||completionReserve.quantityNormalization?.sourceUnit||completionReserve.unit
+          }
+        }
+      };
+    }
     const quantitative=completeMineplayQuantitativeV1(sourceQuantitative,countryId,siteId,resourceId);
     const preferredMode=['crude_oil','natural_gas'].includes(resourceId)?'pipeline':
       ['coal','iron_ore','limestone','construction_aggregate','phosphate','bauxite','potash','salt'].includes(resourceId)?'rail':'truck';
