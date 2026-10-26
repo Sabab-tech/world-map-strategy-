@@ -3367,7 +3367,8 @@ function gameplayPipelineDiagnostics(countryScope){
   // intact for world diagnostics and aggregate pipeline verification.
   const scopeText=countryScope==null?'':String(countryScope).trim();
   const hasScope=scopeText.length>0;
-  const scopedCountry=hasScope?canonicalCountry(scopeText):null;
+  const resolvedScope=hasScope?canonicalCountry(scopeText):null;
+  const scopedCountry=resolvedScope&&/^[A-Z]{3}$/.test(resolvedScope)?resolvedScope:null;
   // A supplied but unresolvable scope must fail closed instead of silently reverting
   // to the expensive global scan.
   const countries=hasScope?(scopedCountry?[scopedCountry]:[]):runtimeCountryIds();
