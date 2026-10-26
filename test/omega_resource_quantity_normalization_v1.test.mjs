@@ -38,6 +38,21 @@ assert.equal(perTurnRate.quantitative.production.rate,100,'per-turn output must 
 const annualCapacity=api.normalizeSiteRecord({resourceId:'iron_ore',capacity:{nominal:365,minimum:182.5,maximum:730,unit:'TONNES_PER_YEAR',status:'SIMULATED',simulationOnly:true}});
 assert.equal(annualCapacity.capacity.nominal,1,'annual capacity must normalize into daily capacity');
 assert.equal(annualCapacity.capacity.minimum,0.5);
+
+const mixedCapacity=api.normalizeSiteRecord({
+ resourceId:'natural_gas',
+ quantitative:{capacity:{
+  minimum:10,nominal:20,maximum:30,
+  unit:'M3_PER_DAY_PER_WELL',sourceUnit:'M3_PER_DAY_PER_WELL',
+  gameplayUnit:'MMCF_PER_DAY',status:'SIMULATED',simulationOnly:true
+ }}
+});
+assert.ok(mixedCapacity.quantitative.capacity.minimum>0,'gameplay minimum must survive unrelated source per-well units');
+assert.ok(mixedCapacity.quantitative.capacity.minimum<=mixedCapacity.quantitative.capacity.nominal);
+assert.ok(mixedCapacity.quantitative.capacity.nominal<=mixedCapacity.quantitative.capacity.maximum);
+assert.equal(mixedCapacity.quantitative.capacity.rateUnit,'BCM_PER_DAY');
+assert.equal(mixedCapacity.quantitative.capacity.sourceUnit,'M3_PER_DAY_PER_WELL',
+  'source per-well unit must remain available for evidence and diagnostics');
 assert.equal(annualCapacity.capacity.maximum,2);
 
 // A missing daily rate may be simulated while the same record retains an observed
