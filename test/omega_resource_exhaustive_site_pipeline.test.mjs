@@ -65,6 +65,46 @@ assert.equal(simulatedReserveRows,reserveSimulation.commercialSiteCount,
 assert.equal(notApplicableReserveRows,reserveSimulation.notApplicableSiteCount,
   'the four non-commercial placeholder rows must remain NOT_APPLICABLE');
 
+// The additive 305-site quantity-completion dataset is intentionally optional until its own
+// change lands on this branch. Once present, assert its complete scenario-only provenance contract.
+const completionPath=new URL('../resource_site_quantity_completion_v1.json',import.meta.url);
+if(fs.existsSync(completionPath)){
+  const completion=JSON.parse(fs.readFileSync(completionPath,'utf8'));
+  const completionRows=Array.isArray(completion.records)?completion.records:[];
+  assert.equal(completion.datasetId,'OMEGA_RESOURCE_SITE_QUANTITY_COMPLETION_V1');
+  assert.equal(completion.authority,'SIMULATED_GAMEPLAY_COMPLETION_ONLY');
+  assert.equal(completion.simulationOnly,true);
+  assert.equal(completion.recordCount,305,'the additive simulation-only tranche must retain 305 rows');
+  assert.equal(completionRows.length,completion.recordCount);
+  assert.equal(completion.uniqueSiteCount,new Set(completionRows.map(row=>row.siteId)).size);
+  assert.equal(completion.uniqueSiteCount,completionRows.length,'simulation completion site IDs must be unique');
+  for(const row of completionRows){
+    const siteId=String(row.siteId||'');
+    const reserve=row.reserve||{},normalization=reserve.quantityNormalization||{},provenance=row.provenance||{};
+    assert.match(siteId,/^SITE_[A-Z]{3}_/,siteId+': invalid site identity');
+    assert.equal(String(reserve.status||'').toUpperCase(),'SIMULATED',siteId+': completion reserve must be simulation-only');
+    assert.equal(String(reserve.authority||''),'SCENARIO_SIMULATION_DATA',siteId+': reserve authority must stay simulation-only');
+    assert.equal(String(provenance.authority||''),'SIMULATED_GAMEPLAY_COMPLETION_ONLY',siteId+': completion authority mismatch');
+    assert.equal(provenance.simulationOnly,true,siteId+': completion record must be simulation-only');
+    assert.equal(provenance.sourceQuantityPreserved,true,siteId+': source quantity must be preserved');
+    assert.ok(Number(provenance.sourceReserveQuantity)>0&&String(provenance.sourceReserveUnit||'').trim(),
+      siteId+': original source quantity and unit are required');
+    assert.ok(Number(reserve.quantity)>0&&String(reserve.unit||'').trim(),
+      siteId+': canonical simulated quantity and unit are required');
+    assert.equal(normalization.simulationOnly,true,siteId+': normalization may not claim geological measurement');
+    assert.equal(normalization.normalizedUnit,reserve.unit,siteId+': normalized unit must match gameplay unit');
+    assert.ok(closeEnough(normalization.normalizedQuantity,reserve.quantity),
+      siteId+': normalized quantity must match the simulated reserve value');
+    assert.ok(closeEnough(normalization.sourceQuantity,provenance.sourceReserveQuantity),
+      siteId+': normalization and provenance must preserve the source quantity');
+    assert.equal(normalization.sourceUnit,provenance.sourceReserveUnit,
+      siteId+': normalization and provenance must preserve the source unit');
+    assert.equal(row.simulation?.simulationOnly,true,siteId+': nested simulation payload must remain flagged');
+    assert.equal(String(row.simulation?.production?.status||'').toUpperCase(),'SIMULATED',
+      siteId+': production rate must remain simulation-only');
+  }
+}
+
 const world=game.state.resource||{};
 const allRefs=[];
 const eligibleById=new Map();
