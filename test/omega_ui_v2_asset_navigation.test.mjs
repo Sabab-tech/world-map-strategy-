@@ -81,11 +81,14 @@ test("More command cards use the uploaded local imagery and every action has a d
   const refreshCssIndex = html.indexOf('href="omega_ui_v2/ministry-visual-refresh.css"');
   const polishCssIndex = html.indexOf('href="omega_ui_v2/atlas-command-polish.css"');
   const factoryCssIndex = html.indexOf('href="omega_ui_v2/factory-production-command.css"');
-  assert.ok(baseCssIndex >= 0 && refreshCssIndex > baseCssIndex && polishCssIndex > refreshCssIndex && factoryCssIndex > polishCssIndex,
-    "factory command overrides must load after the existing UI styles");
+  const resourcePremiumCssIndex = html.indexOf('href="omega_ui_v2/resource-ministry-premium.css"');
+  assert.ok(baseCssIndex >= 0 && refreshCssIndex > baseCssIndex && polishCssIndex > refreshCssIndex && factoryCssIndex > polishCssIndex && resourcePremiumCssIndex > factoryCssIndex,
+    "factory and Resource Ministry overrides must load after the existing UI styles");
   const sw = read("omega-offline-map-sw.js");
   const iconManifest = json("assets/omega-industrial-icons-v1/manifest.json");
-  assert.match(sw, /omega-offline-atlas-shell-v47/);
+  assert.match(sw, /omega-offline-atlas-shell-v48/);
+  assert.match(sw, /resource-ministry-premium\.css/);
+  assert.match(sw, /factoryIconManifest\.resources/);
   assert.match(sw, /factory-production-command\.css/);
   assert.doesNotMatch(sw.slice(sw.indexOf("const CORE_ASSETS"), sw.indexOf("];", sw.indexOf("const CORE_ASSETS"))), /industrial-production-line\.webp/);
   assert.match(sw, /factoryIconManifest\.factories/);
