@@ -218,10 +218,13 @@ test('industry command panel aggregates factory type totals using only selected-
     const root = { classList:{ add(){} }, addEventListener(){}, contains(){ return true; } };
     const result = globalThis.OmegaUIV2Industry.render(root, { countryId:'BGD', tab:'factories' });
     assert.equal(result.ok, true);
-    assert.match(root.innerHTML, /FACTORY TYPE · TOTAL COUNT/);
+    assert.match(root.innerHTML, /omega-v2-factory-command/);
+    assert.match(root.innerHTML, /data-omega-v2-factory-card/);
     assert.match(root.innerHTML, /Steel Mill/);
-    assert.ok(root.innerHTML.includes('<td class="omega-v2-metal-number">2</td>'));
+    assert.match(root.innerHTML, /data-state="unknown"/);
+    assert.match(root.innerHTML, /Total:<\/span><strong>2<\/strong>/);
     assert.doesNotMatch(root.innerHTML, /Foreign Cement Plant|CEMENT_PLANT/);
+    assert.doesNotMatch(root.innerHTML, /Bangladesh Iron Mine|Daily mine production|FACTORY SVG SLOT/);
   } finally {
     if (previousGame === undefined) delete globalThis.Game; else globalThis.Game = previousGame;
     if (previousCatalog === undefined) delete globalThis.OmegaResourceIndustrialCatalogData;
@@ -817,6 +820,88 @@ test('Home Affairs hides unready shared placeholders and shows the Bangladesh re
   }
 });
 
+
+test('factory command cards use canonical SVGs, daily production state, type counts and conditional neon selection', () => {
+  const keys = ['Game','OmegaResourceIndustrialCatalogData','Omega','currentActiveCountry'];
+  const previous = Object.fromEntries(keys.map((key) => [key, globalThis[key]]));
+  globalThis.Omega = {};
+  globalThis.currentActiveCountry = 'BGD';
+  globalThis.OmegaResourceIndustrialCatalogData = {
+    factoryProfiles: {
+      STEEL_AND_ALLOY_WORKS: { name:'Steel and Alloy Works' },
+      INDUSTRIAL_CHEMICALS_GAS_PLANT: { name:'Industrial Chemicals and Gases' },
+      RARE_EARTH_BENEFICIATION_PLANT: { name:'Rare Earth Processing' }
+    },
+    factoryTypeAliases: {}
+  };
+  globalThis.Game = { state: {
+    simulation: { session: { playerCountryId:'BGD' }, turn:4, daysPerTurn:1 },
+    resource: { BGD: { industrialNetwork: {
+      projects:[],
+      factoryProductionCycles:{
+        'FAC-STEEL':{status:'IN_PROGRESS',productionQuantity:125,cycleDays:1},
+        'FAC-CHEM':{status:'IN_PROGRESS',productionQuantity:62,cycleDays:1},
+        'FAC-STOP':{status:'PAUSED',productionQuantity:0,cycleDays:1}
+      },
+      factoryRuntime:{}, siteFlowLedger:[]
+    } } },
+    economy: { BGD: { productionAssets:[
+      {id:'FAC-STEEL',name:'Steel Factory',factoryType:'STEEL_AND_ALLOY_WORKS',status:'OPERATIONAL',
+        capacityPerDay:125,outputPerDay:125,outputUnit:'tonnes',outputResourceId:'steel',
+        productionHealth:{status:'RUNNING',productivityPct:100,productionUnitsPerCycle:125,outputPerDay:125,outputUnit:'tonnes',outputResourceId:'steel'}},
+      {id:'FAC-CHEM',name:'Chemical Factory',factoryType:'INDUSTRIAL_CHEMICALS_GAS_PLANT',status:'OPERATIONAL',
+        capacityPerDay:125,outputPerDay:62,outputUnit:'tonnes',outputResourceId:'chemicals',
+        productionHealth:{status:'REDUCED',productivityPct:49.6,productionUnitsPerCycle:62,outputPerDay:62,outputUnit:'tonnes',outputResourceId:'chemicals',reason:'FACTORY_UTILITY_SHORTAGE'}},
+      {id:'FAC-STOP',name:'Rare Materials Factory',factoryType:'RARE_EARTH_BENEFICIATION_PLANT',status:'OPERATIONAL',
+        capacityPerDay:90,outputPerDay:70,outputUnit:'tonnes',outputResourceId:'rare_materials',
+        productionHealth:{status:'STOPPED',productivityPct:0,productionUnitsPerCycle:0,outputPerDay:70,outputUnit:'tonnes',outputResourceId:'rare_materials',reason:'FACTORY_INPUT_SHORTAGE'}}
+    ] } }
+  } };
+  const handlers = {};
+  const root = {
+    classList:{add(){}},
+    addEventListener(name,handler){handlers[name]=handler;},
+    contains(){return true;},
+    querySelector(){return null;},
+    innerHTML:''
+  };
+  try {
+    const result = globalThis.OmegaUIV2Industry.render(root,{countryId:'BGD',tab:'factories'});
+    assert.equal(result.ok,true);
+    assert.equal(result.model.factoryCount,3);
+    assert.equal((root.innerHTML.match(/data-omega-v2-factory-card/g)||[]).length,3);
+    assert.match(root.innerHTML,/assets\/omega-industrial-icons-v1\/factories\/steel-and-alloy-works\.svg/);
+    assert.match(root.innerHTML,/assets\/omega-industrial-icons-v1\/factories\/industrial-chemicals-gas-plant\.svg/);
+    assert.match(root.innerHTML,/assets\/omega-industrial-icons-v1\/factories\/rare-earth-beneficiation-plant\.svg/);
+    assert.match(root.innerHTML,/data-state="running"/);
+    assert.match(root.innerHTML,/data-state="reduced"/);
+    assert.match(root.innerHTML,/data-state="stopped"/);
+    assert.match(root.innerHTML,/\+ 125 tonnes\/day/);
+    assert.match(root.innerHTML,/\+ 62 tonnes\/day/);
+    assert.match(root.innerHTML,/0 tonnes\/day/);
+    assert.match(root.innerHTML,/FACTORY_UTILITY_SHORTAGE/i);
+    assert.match(root.innerHTML,/data-omega-v2-factory-build="FAC-STEEL"/);
+    assert.match(root.innerHTML,/data-omega-v2-factory-destroy="FAC-STEEL"/);
+    const click = handlers.click;
+    assert.equal(typeof click,'function');
+    click({target:{closest(selector){
+      if(selector==='[data-omega-v2-factory-select]')return{getAttribute(){return 'FAC-STEEL';}};
+      return null;
+    }}});
+    assert.match(root.innerHTML,/data-factory-id="FAC-STEEL" data-state="running" data-selected="true"/);
+    const css = readFileSync(new URL('../omega_ui_v2/factory-production-command.css',import.meta.url),'utf8');
+    assert.match(css,/grid-template-columns:\s*repeat\(3,\s*minmax\(0,\s*1fr\)\)/);
+    assert.match(css,/data-state="stopped"/);
+    assert.match(css,/data-selected="true"\]\[data-state="running"/);
+    assert.match(css,/data-selected="true"\]\[data-state="reduced"/);
+  } finally {
+    for(const key of keys) {
+      if(previous[key]===undefined)delete globalThis[key];
+      else globalThis[key]=previous[key];
+    }
+  }
+});
+
 test('Home Affairs legal register shows stored law sections and never fabricates missing law text', () => {
   const previousEngine = globalThis.OmegaHomeMinistryEngine;
   globalThis.OmegaHomeMinistryEngine = {
@@ -837,12 +922,13 @@ test('Home Affairs legal register shows stored law sections and never fabricates
   }
 });
 
-test('factory and police fleet screens show local reference photography inside their domain views', () => {
+test('factory screen uses canonical local SVG art while fleet screens keep their local photos', () => {
   const industry = readFileSync(new URL('../omega_ui_v2/screens/industry.js', import.meta.url), 'utf8');
   const fleet = readFileSync(new URL('../omega_ui_v2/screens/police-fleet.js', import.meta.url), 'utf8');
-  assert.match(industry, /function factoryPhoto\(factory\)/);
-  assert.match(industry, /assets\/ui-photos\/industrial-production-line\.webp/);
-  assert.match(industry, /factoryPhoto\(factory\)/);
+  assert.match(industry, /function factorySvgMarkup\(factory\)/);
+  assert.match(industry, /assets\/omega-industrial-icons-v1\/factories\//);
+  assert.match(industry, /data-omega-v2-factory-svg/);
+  assert.match(industry, /factorySvgMarkup\(factory\)/);
   assert.match(fleet, /function fleetHeroPhoto\(\)/);
   assert.match(fleet, /assets\/ui-photos\/bangladesh-police-headquarters\.webp/);
   assert.match(fleet, /fleetHeroPhoto\(\)/);
@@ -1200,18 +1286,15 @@ test('industrial command panel scopes factory, mine, daily-rate and current-turn
     const root = { classList:{ add(){} }, addEventListener(){}, contains(){ return true; } };
     const rendered = globalThis.OmegaUIV2Industry.render(root, { countryId:'BGD' });
     assert.equal(rendered.ok, true);
-    assert.match(root.innerHTML, /omega-v2-industry-command/);
-    assert.match(root.innerHTML, /data-omega-factory-svg-slot/);
-    assert.match(root.innerHTML, /FACTORY SVG SLOT/);
+    assert.match(root.innerHTML, /omega-v2-industry--factory-home/);
+    assert.match(root.innerHTML, /omega-v2-factory-command/);
+    assert.match(root.innerHTML, /data-omega-v2-factory-card/);
     assert.match(root.innerHTML, /Bangladesh Alloy Works/);
-    assert.match(root.innerHTML, /Bangladesh Iron Mine/);
-    assert.match(root.innerHTML, /12 tonnes\/day/);
-    assert.match(root.innerHTML, /1\.33 tonnes\/game-day/, 'new resources are also displayed as an average per simulation day');
-    assert.match(root.innerHTML, /Build \/ view mines/);
-    assert.match(root.innerHTML, /Technology development/);
-    assert.match(root.innerHTML, /Roads &amp; logistics/);
+    assert.match(root.innerHTML, /STEEL_MILL/);
+    assert.doesNotMatch(root.innerHTML, /Bangladesh Iron Mine|Daily mine production|Build \/ view mines|FACTORY SVG SLOT/);
+    assert.doesNotMatch(root.innerHTML, /12 tonnes\/day|1\.33 tonnes\/game-day/);
     assert.doesNotMatch(root.innerHTML, /United States Copper Refinery|United States Copper Mine|USA-MINE-1/,
-      'the selected-country panel must not render another country’s factory or mine rows');
+      'the selected-country factory panel must not render another country’s factory or mine rows');
   } finally {
     for (const key of keys) {
       if (previous[key] === undefined) delete globalThis[key];
