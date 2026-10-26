@@ -184,6 +184,51 @@ test('industry view reads current country assets, cycles and projects without sy
   assert.equal(globalThis.OmegaUIV2Industry.buildViewModel({countryId:'USA'}).factoryCount,0);
 });
 
+test('industry command panel aggregates factory type totals using only selected-country assets', () => {
+  const previousGame = globalThis.Game;
+  const previousCatalog = globalThis.OmegaResourceIndustrialCatalogData;
+  globalThis.Game = { state: {
+    simulation: { session: { playerCountryId: 'BGD' }, turn: 12, daysPerTurn: 1 },
+    resource: {
+      BGD: { industrialNetwork: { projects: [], factoryProductionCycles: {}, factoryRuntime: {}, siteFlowLedger: [] } },
+      USA: { industrialNetwork: { projects: [], factoryProductionCycles: {}, factoryRuntime: {}, siteFlowLedger: [] } }
+    },
+    economy: {
+      BGD: { productionAssets: [
+        { id:'BGD-STEEL-1', factoryType:'STEEL_MILL', name:'East Steel Works', capacityPerDay:120 },
+        { id:'BGD-STEEL-2', factoryType:'STEEL_MILL', name:'West Steel Works', capacityPerDay:90 }
+      ] },
+      USA: { productionAssets: [
+        { id:'USA-CEMENT-1', factoryType:'CEMENT_PLANT', name:'Foreign Cement Plant', capacityPerDay:400 }
+      ] }
+    }
+  } };
+  globalThis.OmegaResourceIndustrialCatalogData = {
+    factoryProfiles: {
+      STEEL_MILL: { name:'Steel Mill', defaultRecipeId:'STEEL-RECIPE' },
+      CEMENT_PLANT: { name:'Cement Plant', defaultRecipeId:'CEMENT-RECIPE' }
+    }
+  };
+  try {
+    const model = globalThis.OmegaUIV2Industry.buildViewModel({ countryId:'BGD' });
+    assert.equal(model.factoryCount, 2);
+    assert.deepEqual(model.factoryTypeCounts.map((row) => ({ name:row.name, count:row.count })), [
+      { name:'Steel Mill', count:2 }
+    ]);
+    const root = { classList:{ add(){} }, addEventListener(){}, contains(){ return true; } };
+    const result = globalThis.OmegaUIV2Industry.render(root, { countryId:'BGD', tab:'factories' });
+    assert.equal(result.ok, true);
+    assert.match(root.innerHTML, /FACTORY TYPE · TOTAL COUNT/);
+    assert.match(root.innerHTML, /Steel Mill/);
+    assert.ok(root.innerHTML.includes('<td class="omega-v2-metal-number">2</td>'));
+    assert.doesNotMatch(root.innerHTML, /Foreign Cement Plant|CEMENT_PLANT/);
+  } finally {
+    if (previousGame === undefined) delete globalThis.Game; else globalThis.Game = previousGame;
+    if (previousCatalog === undefined) delete globalThis.OmegaResourceIndustrialCatalogData;
+    else globalThis.OmegaResourceIndustrialCatalogData = previousCatalog;
+  }
+});
+
 test('industry research and technology records remain isolated to the selected country', () => {
   const previous = {
     Game:globalThis.Game, runtime:globalThis.OmegaCountryRuntimeData,
