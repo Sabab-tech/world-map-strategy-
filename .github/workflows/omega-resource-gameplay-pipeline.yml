@@ -120,6 +120,8 @@ jobs:
         run: npm run test:liveops
       - name: Milestone A complete registry audit
         run: npm run test:resource-site-integrity
+      - name: Source-preserving quantity normalization and missing-site coverage
+        run: npm run test:resource-quantity-normalization && npm run test:resource-quantity-completion
       - name: Endowment runtime regression
         run: npm run test:resource-endowment
       - name: Every-deposit resource recipe coverage
