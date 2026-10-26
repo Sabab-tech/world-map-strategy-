@@ -2,8 +2,8 @@
 
 ## Contents
 - **42 resource icons**: one file per key in `resource_industrial_catalog_v1.json` → `resourceRules`.
-- **35 canonical factory icons**: one distinct SVG scene per canonical key in `factoryProfiles`, including `MINERAL_PROCESSING_PLANT`.
-- **24 legacy factory SVGs retained** under `legacyFactories` in `manifest.json` for compatibility; these files are archived and do not count as separate canonical factory types. Lithium conversion remains its own factory type.
+- **21 canonical factory icons**: one SVG per active key in the single `factoryProfiles` catalog, including `UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT`.
+- **39 retired factory SVGs retained** under `legacyFactories` in `manifest.json` for backwards compatibility; these files are archived and do not count as separate canonical factory types. All materials and elements use the universal processing factory.
 - `manifest.json`: canonical IDs, names, paths, categories and palette metadata.
 - `index.html`: standalone offline preview gallery for review.
 

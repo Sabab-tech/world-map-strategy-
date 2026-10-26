@@ -19,7 +19,7 @@ function readSvg(rel,id,label){
  return src;
 }
 test("manifest exactly covers canonical resource and factory catalogs",()=>{
- assert.equal(manifest.summary.resourceIconCount,42);assert.equal(manifest.summary.factoryIconCount,35);assert.equal(manifest.summary.totalIconCount,77);assert.equal(manifest.summary.legacyFactoryIconCount,24);assert.equal(manifest.summary.integratedIntoRuntime,false);
+ assert.equal(manifest.summary.resourceIconCount,42);assert.equal(manifest.summary.factoryIconCount,21);assert.equal(manifest.summary.totalIconCount,63);assert.equal(manifest.summary.legacyFactoryIconCount,39);assert.equal(manifest.summary.integratedIntoRuntime,false);
  assert.deepEqual(manifest.resources.map(x=>x.id).sort(),Object.keys(catalog.resourceRules).sort());
  assert.deepEqual(manifest.factories.map(x=>x.id).sort(),Object.keys(catalog.factoryProfiles).sort());
 });
@@ -28,16 +28,16 @@ test("each resource has a unique offline and accessible SVG",()=>{
  assert.match(fs.readFileSync(path.join(assetRoot,"resources/gold.svg"),"utf8"),/>GOLD<\/text>/,"gold needs central GOLD stamp");
  assert.match(fs.readFileSync(path.join(assetRoot,"resources/silver.svg"),"utf8"),/>SILVER<\/text>/,"silver needs central SILVER stamp");
 });
-test("all 35 canonical factory types have unique SVG source scenes",()=>{
+test("all 21 canonical factory types have unique SVG source scenes",()=>{
   const files=new Set(),scenes=new Set();for(const o of manifest.factories){assert.ok(o.label&&o.category&&o.color&&o.file);assert.ok(!files.has(o.file));files.add(o.file);scenes.add(readSvg(o.file,o.id,o.label));}
-  assert.equal(files.size,35);assert.equal(scenes.size,35,"canonical factory SVG scene source must be unique");
+  assert.equal(files.size,21);assert.equal(scenes.size,21,"canonical factory SVG scene source must be unique");
 });
 test("merged mineral factory aliases remain available as legacy assets",()=>{
   assert.equal(manifest.legacyFactories.length,24);
   assert.deepEqual(manifest.legacyFactories.map(x=>x.id).sort(),Object.keys(catalog.factoryTypeAliases).sort());
   for(const row of manifest.legacyFactories){
-    assert.equal(row.canonicalFactoryType,"MINERAL_PROCESSING_PLANT",row.id+" must point to the canonical mineral plant");
-    assert.equal(catalog.factoryTypeAliases[row.id],"MINERAL_PROCESSING_PLANT");
+    assert.equal(row.canonicalFactoryType,"UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",row.id+" must point to the universal materials plant");
+    assert.equal(catalog.factoryTypeAliases[row.id],"UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT");
     assert.ok(fs.existsSync(path.join(assetRoot,row.file)),row.id+" legacy SVG file must be preserved");
   }
 });
