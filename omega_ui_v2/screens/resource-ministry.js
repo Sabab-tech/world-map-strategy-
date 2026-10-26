@@ -123,7 +123,7 @@
     var motifs = {
       OPEN_PIT: '<path d="M3 25h26M5 23h6v-4h6v-4h6V8h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="m18 8 5-3 4 3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
       UNDERGROUND_MINE: '<path d="M3 26h26M6 25V15h20v10M10 15V6h12v9M13 6V3h6v3" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M11 20h3m4 0h3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
-      QUARRY: '<path d="M3 26h26M5 23h7v-5h7v-5h7V7h2" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="m19 8 3-4 5 3" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>',
+      QUARRY: '<path d="M2 29h28M3 26h6v-4h6v-4h6v-4h7V6" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M4 26h5v-4h6v-4h6v-4h7V7l2-2" fill="currentColor" opacity=".18"/><path d="M7 22h7v-4h6v-4h7V9" fill="none" stroke="currentColor" stroke-opacity=".8" stroke-width="1.2"/><path d="M5 24h8l2 2H5zM15 24h8l2 2h-8z" fill="currentColor" opacity=".85"/><circle cx="8" cy="27" r="1.2" fill="currentColor"/><circle cx="18" cy="27" r="1.2" fill="currentColor"/><path d="M24 8h6M26 5h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>',
       OIL_GAS_FIELD: '<path d="M4 25h24M8 24l5-12 5 12M13 12l11-5m-8-2 8 2-2 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="24" cy="7" r="2" fill="currentColor"/>',
       OFFSHORE_PLATFORM: '<path d="M3 26h26M5 23l3-5h16l3 5M10 18V9h12v9M13 9V5h6v4M16 5V3M3 29c3-2 5-2 8 0s5 2 8 0 5-2 8 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'
     };
@@ -331,7 +331,15 @@
       Array.isArray(gameResource.shipmentLedger) ? gameResource.shipmentLedger :
       Array.isArray(gameResource.shipments) ? gameResource.shipments :
       Array.isArray(gameResource.transportLedger) ? gameResource.transportLedger : [];
-    var projects = safeArray(industrial.projects).concat(safeArray(gameResource.projects));
+    var projectRows = safeArray(industrial.projects).concat(safeArray(gameResource.projects));
+    var seenProjects = Object.create(null);
+    var projects = projectRows.filter(function (row) {
+      var id = String(row.projectId || row.requestId || row.id ||
+        [row.projectType || row.kind || row.type || '', row.siteId || '', row.factoryId || '', row.createdTurn || row.startedTurn || ''].join('|'));
+      if (seenProjects[id]) return false;
+      seenProjects[id] = true;
+      return true;
+    });
     var mineProjects = projects.filter(function (row) {
       return /MINE_CONSTRUCTION/.test(String(row.projectType || row.kind || row.type || '').toUpperCase()) &&
         !/COMPLETED|COMMISSIONED|CANCELLED|FAILED|REJECTED/.test(String(row.status || '').toUpperCase());
