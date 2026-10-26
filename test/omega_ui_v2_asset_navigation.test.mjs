@@ -89,7 +89,7 @@ test("More command cards use the uploaded local imagery and every action has a d
   assert.match(sw, /factory-production-command\.css/);
   assert.match(sw, /industrial-production-line\.webp/);
   assert.match(sw, /factoryIconManifest\.factories/);
-  assert.match(sw, /omega-industrial-icons-v1\/\s*\+ file/);
+  assert.match(sw, /omega-industrial-icons-v1\/"\s*\+\s*file/);
   assert.ok(iconManifest.factories.length >= 30, "the canonical factory SVG manifest must stay available offline");
   for (const icon of iconManifest.factories) {
     const iconPath = "assets/omega-industrial-icons-v1/" + icon.file;
