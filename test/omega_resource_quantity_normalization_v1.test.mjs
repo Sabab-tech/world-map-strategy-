@@ -37,6 +37,21 @@ const annualCapacity=api.normalizeSiteRecord({resourceId:'iron_ore',capacity:{no
 assert.equal(annualCapacity.capacity.nominal,1,'annual capacity must normalize into daily capacity');
 assert.equal(annualCapacity.capacity.minimum,0.5);
 assert.equal(annualCapacity.capacity.maximum,2);
+
+// A missing daily rate may be simulated while the same record retains an observed
+// annual ROM figure with a different source unit. Never null or relabel that evidence.
+const mixedProduction=api.normalizeSiteRecord({
+ resourceId:'graphite',
+ quantitative:{production:{
+  rate:120,rateUnit:'TONNES_PER_DAY',unit:'TONNES_PER_DAY',
+  annual:405,annualUnit:'metric_tons_graphite_ore_ROM',annualStatus:'OBSERVED',status:'SIMULATED'
+ }}
+});
+assert.equal(mixedProduction.quantitative.production.rate,120,'simulated daily rate must normalize into the declared gameplay unit');
+assert.equal(mixedProduction.quantitative.production.annual,405,'observed annual production must remain numerically intact');
+assert.equal(mixedProduction.quantitative.production.annualUnit,'metric_tons_graphite_ore_ROM','observed source unit must not be relabeled as tonnes/year');
+assert.equal(mixedProduction.quantitative.production.annualNormalization.method,'SOURCE_VALUE_PRESERVED');
+
 const simulated=api.normalizeSiteRecord({
  siteId:'SITE_TEST_COPPER',countryId:'BGD',resourceId:'copper',
  reserve:{quantity:2204.62262185,unit:'POUNDS_COPPER',status:'SIMULATED'},
