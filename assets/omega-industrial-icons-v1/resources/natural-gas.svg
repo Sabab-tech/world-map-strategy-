@@ -2,7 +2,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-labelledby="omega-natural-gas-title omega-natural-gas-desc" data-omega-icon-kind="resource" data-omega-icon-id="natural_gas">
 <title id="omega-natural-gas-title">Natural Gas</title><desc id="omega-natural-gas-desc">Natural Gas resource icon with material-specific colour and dimensional vector illustration.</desc>
 <defs>
-<linearGradient id="omega-natural-gas-bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#24394c"/><stop offset=".5" stop-color="#132536"/><stop offset="1" stop-color="#08121d"/></linearGradient>
+<linearGradient id="omega-natural-gas-bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f1f6fa"/><stop offset=".52" stop-color="#d8e5ed"/><stop offset="1" stop-color="#aebfcb"/></linearGradient>
 <linearGradient id="omega-natural-gas-metal" x1="0" y1="0" x2=".9" y2="1"><stop offset="0" stop-color="#bcecff"/><stop offset=".32" stop-color="#69b9eb"/><stop offset=".7" stop-color="#3976b3"/><stop offset="1" stop-color="#141b24"/></linearGradient>
 <linearGradient id="omega-natural-gas-top" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffffff" stop-opacity=".9"/><stop offset=".22" stop-color="#bcecff"/><stop offset="1" stop-color="#69b9eb"/></linearGradient>
 <linearGradient id="omega-natural-gas-side" x1="0" y1="0" x2="1" y2=".7"><stop offset="0" stop-color="#69b9eb"/><stop offset="1" stop-color="#3976b3"/></linearGradient>
