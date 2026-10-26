@@ -3360,28 +3360,56 @@ function factoryCatalogDiagnostics(){
     profileCount:Object.keys(profiles).length,downstreamRecipeCount:Object.keys(downstream).length,categoryCount:(catalog.factoryCatalogPolicy?.categoryOrder||[]).length,
     issues};
 }
-function gameplayPipelineDiagnostics(){
-  const sites=masterSites(),countries=runtimeCountryIds();
+function gameplayPipelineDiagnostics(countryScope){
+  const sites=masterSites();
+  // UI callers that inspect one selected country must not synchronously scan every
+  // country's ledger on the WebView main thread. Keep the no-argument global contract
+  // intact for world diagnostics and aggregate pipeline verification.
+  const scopeText=countryScope==null?'':String(countryScope).trim();
+  const scopedCountry=scopeText?canonicalCountry(scopeText):null;
+  const countries=scopedCountry?[scopedCountry]:runtimeCountryIds();
+  const siteCounts=Object.create(null);
+  for(const site of sites){
+    const cid=canonicalCountry(site?.countryId);
+    if(cid)siteCounts[cid]=(siteCounts[cid]||0)+1;
+  }
   const isCurrentlyBlocked=flow=>{
     const status=String(flow?.status||'').toUpperCase();
     return status.includes('BLOCKED')||status==='PUBLICATION_ATTEMPTED'||
       status==='EXTRACTED_AWAITING_ROUTE'||status==='EXTRACTED_AWAITING_FACTORY';
   };
   const perCountry=countries.map(c=>{
-    const rs=resourceState(c),flows=siteFlowRows(c),network=netState(c),stages={};
-    for(const flow of flows)for(const step of flow.stages||[])stages[step.stage]=(stages[step.stage]||0)+1;
-    return{countryId:c,registrySiteCount:sites.filter(x=>canonicalCountry(x.countryId)===c).length,
-      extractionFlows:flows.length,dispatched:flows.filter(x=>(x.stages||[]).some(s=>s.stage==='TRANSPORT'&&['IN_TRANSIT','DELIVERED'].includes(s.status))).length,
-      processed:flows.filter(x=>(x.stages||[]).some(s=>s.stage==='PROCESSING'&&s.status==='COMPLETED')).length,
-      marketPublished:flows.filter(x=>(x.stages||[]).some(s=>s.stage==='MARKET'&&s.status==='PUBLISHED')).length,
-      treasuryReceipts:flows.reduce((n,x)=>n+(x.treasurySettlements||[]).length,0),
-      blocked:flows.filter(isCurrentlyBlocked).length,
-      blockedFlows:flows.filter(isCurrentlyBlocked)
-        .map(x=>({siteId:x.siteId,resourceId:x.resourceId,batchId:x.batchId,status:x.status,blockReason:x.blockReason||x.lastResidualBlockReason||null,
-          stages:(x.stages||[]).filter(s=>['BLOCKED','RESIDUAL_BLOCKED'].includes(s.status)).map(s=>({stage:s.stage,status:s.status,reason:s.reason||null,detail:s.detail||null}))})),
-      shipmentCount:network.shipments.length,stages};
+    const flows=siteFlowRows(c),network=netState(c),stages={};
+    let dispatched=0,processed=0,marketPublished=0,treasuryReceipts=0,blocked=0;
+    const blockedFlows=[];
+    for(const flow of flows){
+      const flowStages=Array.isArray(flow?.stages)?flow.stages:[];
+      let hasDispatched=false,hasProcessed=false,hasMarketPublication=false;
+      for(const step of flowStages){
+        stages[step.stage]=(stages[step.stage]||0)+1;
+        const stage=String(step.stage||'').toUpperCase(),status=String(step.status||'').toUpperCase();
+        if(stage==='TRANSPORT'&&['IN_TRANSIT','DELIVERED'].includes(status))hasDispatched=true;
+        if(stage==='PROCESSING'&&status==='COMPLETED')hasProcessed=true;
+        if(stage==='MARKET'&&status==='PUBLISHED')hasMarketPublication=true;
+      }
+      if(hasDispatched)dispatched++;
+      if(hasProcessed)processed++;
+      if(hasMarketPublication)marketPublished++;
+      treasuryReceipts+=(Array.isArray(flow?.treasurySettlements)?flow.treasurySettlements.length:0);
+      if(isCurrentlyBlocked(flow)){
+        blocked++;
+        blockedFlows.push({siteId:flow.siteId,resourceId:flow.resourceId,batchId:flow.batchId,status:flow.status,
+          blockReason:flow.blockReason||flow.lastResidualBlockReason||null,
+          stages:flowStages.filter(s=>['BLOCKED','RESIDUAL_BLOCKED'].includes(s.status))
+            .map(s=>({stage:s.stage,status:s.status,reason:s.reason||null,detail:s.detail||null}))});
+      }
+    }
+    const shipments=Array.isArray(network.shipments)?network.shipments:[];
+    return{countryId:c,registrySiteCount:siteCounts[c]||0,extractionFlows:flows.length,dispatched,processed,marketPublished,
+      treasuryReceipts,blocked,blockedFlows,shipmentCount:shipments.length,stages};
   });
-  return{contract:'OMEGA_SITE_FLOW_PIPELINE_V1',version:VERSION,turn:turn(),registrySiteCount:sites.length,countryCount:countries.length,
+  return{contract:'OMEGA_SITE_FLOW_PIPELINE_V1',version:VERSION,turn:turn(),registrySiteCount:sites.length,
+    diagnosticScope:scopedCountry||'GLOBAL',countryCount:countries.length,
     flowCount:perCountry.reduce((n,x)=>n+x.extractionFlows,0),dispatched:perCountry.reduce((n,x)=>n+x.dispatched,0),
     processed:perCountry.reduce((n,x)=>n+x.processed,0),marketPublished:perCountry.reduce((n,x)=>n+x.marketPublished,0),
     treasuryReceipts:perCountry.reduce((n,x)=>n+x.treasuryReceipts,0),blocked:perCountry.reduce((n,x)=>n+x.blocked,0),perCountry};
