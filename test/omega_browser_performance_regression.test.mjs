@@ -391,8 +391,12 @@ test('map and ministry rendering stay responsive and scoped to the selected coun
   assert.ok(uiIntegration.includes('function canonicalCountry(value)'),
     'map and legacy country aliases must resolve to one ISO3 identity before ministry mounting');
   assert.ok(uiIntegration.includes('var country = canonicalCountry(mountOptions.countryId || selectedCountry() || \'\')'));
-  assert.ok(uiIntegration.includes('ids = Array.from(new Set(ids.map(canonicalCountry).filter(Boolean)))'),
-    'the country selector must not duplicate ISO2, ISO3 and display-name entries');
+  assert.ok(uiIntegration.includes('var ids = [], seen = Object.create(null), labels = Object.create(null), aliasToIso3 = Object.create(null)'));
+  assert.ok(uiIntegration.includes('profiles.forEach(registerProfileAliases)'));
+  assert.ok(uiIntegration.includes('var code = aliasToIso3[key] || canonicalCountry(raw)'),
+    'the country selector must canonicalize ISO2, ISO3, numeric and display-name aliases before de-duplication');
+  assert.ok(uiIntegration.includes('if (!seen[code]) { seen[code] = true; ids.push(code); }'),
+    'each canonical ISO-3 country must appear exactly once in the selector');
   assert.ok(uiApp.includes('countryId:canonicalCountry(options.countryId || currentCountry() || \'\')'));
   assert.ok(industry.includes('function countryAliases(value)'));
   assert.ok(economy.includes('function countryAliases(value)'));
