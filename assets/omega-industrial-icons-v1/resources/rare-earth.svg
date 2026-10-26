@@ -2,7 +2,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-labelledby="omega-rare-earth-title omega-rare-earth-desc" data-omega-icon-kind="resource" data-omega-icon-id="rare_earth">
 <title id="omega-rare-earth-title">Rare Earth Elements</title><desc id="omega-rare-earth-desc">Rare Earth Elements resource icon with material-specific colour and dimensional vector illustration.</desc>
 <defs>
-<linearGradient id="omega-rare-earth-bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#24394c"/><stop offset=".5" stop-color="#132536"/><stop offset="1" stop-color="#08121d"/></linearGradient>
+<linearGradient id="omega-rare-earth-bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f7fbfd"/><stop offset=".5" stop-color="#dce7ec"/><stop offset="1" stop-color="#b7c8d1"/></linearGradient>
 <linearGradient id="omega-rare-earth-metal" x1="0" y1="0" x2=".9" y2="1"><stop offset="0" stop-color="#d9c8ff"/><stop offset=".32" stop-color="#9c82d7"/><stop offset=".7" stop-color="#493c91"/><stop offset="1" stop-color="#141b24"/></linearGradient>
 <linearGradient id="omega-rare-earth-top" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffffff" stop-opacity=".9"/><stop offset=".22" stop-color="#d9c8ff"/><stop offset="1" stop-color="#9c82d7"/></linearGradient>
 <linearGradient id="omega-rare-earth-side" x1="0" y1="0" x2="1" y2=".7"><stop offset="0" stop-color="#9c82d7"/><stop offset="1" stop-color="#493c91"/></linearGradient>
