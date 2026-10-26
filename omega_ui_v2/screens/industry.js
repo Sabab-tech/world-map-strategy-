@@ -707,7 +707,7 @@
       factories:'Factory assets',
       'production-lines':'Production lines',
       inventory:'Factory input records',
-      'national-inventory':'National inventory',
+      'national-inventory':'National Inventory',
       research:'Research & technology',
       projects:'Industrial projects'
     };
