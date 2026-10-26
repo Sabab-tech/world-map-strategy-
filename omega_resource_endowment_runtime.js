@@ -2321,23 +2321,34 @@ function batchFromExtraction(x,record){
     if(['UNOBSERVED','UNQUANTIFIED','NOT_RECORDED','NOT_REPORTED','REPORTED_TEXT_ONLY','UNKNOWN','UNSPECIFIED','SOURCE_STATUS_UNSPECIFIED','SOURCE_UNSPECIFIED','N/A','NA'].includes(status))return false;
     return true;
   }
+  function mineplayQuantityUnitCompatible(resourceId,quantity,unit){
+    const normalizer=g.Omega?.ResourceQuantityNormalization||g.OmegaResourceQuantityNormalization;
+    if(typeof normalizer?.normalizeQuantity!=='function')return true;
+    if(!String(unit||'').trim())return false;
+    const normalized=normalizer.normalizeQuantity(resourceId,quantity,unit,{simulationOnly:true});
+    return Number.isFinite(Number(normalized?.quantity))&&Number(normalized.quantity)>0;
+  }
   function completeMineplayQuantitativeV1(rawQuantitative,countryId,siteId,resourceId){
     const q=clone(rawQuantitative||{}),profile=MINEPLAY_DEFAULT_PROFILE_V1[resourceId]||{
       rate:2000,rateUnit:'TONNES_PER_DAY',reserveUnit:'TONNES',grade:35,gradeUnit:'PERCENT',purity:90
     };
     const factor=mineplayStableFactor(countryId,siteId,resourceId);
     const rateMetric=q.production&&typeof q.production==='object'?clone(q.production):{};
-    const suppliedRate=mineplayAuthorityAllowsValue(rateMetric,'rate');
+    const sourceRateUnit=mineplayUsableUnit(rateMetric.rateUnit||rateMetric.unit||rateMetric.sourceRateUnit,profile.rateUnit);
+    const suppliedRate=mineplayAuthorityAllowsValue(rateMetric,'rate')&&
+      mineplayQuantityUnitCompatible(resourceId,mineplayMetricNumber(rateMetric,'rate'),sourceRateUnit);
     const rawUnit=mineplayUsableUnit(rateMetric.unit||rateMetric.sourceRateUnit,profile.rateUnit);
     const rate=suppliedRate?mineplayMetricNumber(rateMetric,'rate'):Math.max(0.01,Math.round(profile.rate*factor*100)/100);
     // A simulated daily fallback uses a declared gameplay unit, not the potentially
     // incompatible unit attached to an observed annual figure (for example ROM ore).
     const rateUnit=String(suppliedRate?mineplayUsableUnit(rawUnit,'UNIT_UNKNOWN'):(profile.rateUnit||'TONNES_PER_DAY'));
     const reserveMetric=q.reserve&&typeof q.reserve==='object'?clone(q.reserve):{};
-    const suppliedReserve=mineplayAuthorityAllowsValue(reserveMetric,'quantity');
+    const sourceReserveUnit=mineplayUsableUnit(reserveMetric.unit,profile.reserveUnit);
+    const suppliedReserve=mineplayAuthorityAllowsValue(reserveMetric,'quantity')&&
+      mineplayQuantityUnitCompatible(resourceId,mineplayMetricNumber(reserveMetric,'quantity'),sourceReserveUnit);
     const reserve= suppliedReserve?mineplayMetricNumber(reserveMetric,'quantity'):
       Math.max(1,Math.round(rate*365*400));
-    const reserveUnit=String(suppliedReserve?mineplayUsableUnit(reserveMetric.unit,'UNIT_UNKNOWN'):(profile.reserveUnit||'TONNES'));
+    const reserveUnit=String(suppliedReserve?sourceReserveUnit:(profile.reserveUnit||'TONNES'));
     const annualMetric=mineplayAuthorityAllowsValue(rateMetric,'annual')?mineplayMetricNumber(rateMetric,'annual'):null;
     const productionStatus=suppliedRate&&rateMetric.status?String(rateMetric.status).toUpperCase():'SIMULATED';
     const annualStatus=annualMetric!==null?(rateMetric.annualStatus||rateMetric.status||'OBSERVED'):'SIMULATED';
@@ -2355,6 +2366,15 @@ function batchFromExtraction(x,record){
     const reserveStatus=suppliedReserve&&reserveMetric.status?String(reserveMetric.status).toUpperCase():'SIMULATED';
     q.reserve={
       ...reserveMetric,quantity:reserve,unit:reserveUnit,status:reserveStatus,
+      ...(suppliedReserve?{}:{
+        sourceReserveEvidence:mineplayMetricNumber(reserveMetric,'quantity')!==null?{
+          quantity:mineplayMetricNumber(reserveMetric,'quantity'),unit:reserveMetric.unit||null,
+          status:reserveMetric.status||'UNOBSERVED',authority:reserveMetric.authority||null,
+          quantityNormalization:clone(reserveMetric.quantityNormalization||null),
+          disposition:'SOURCE_UNIT_INCOMPATIBLE_WITH_GAMEPLAY_RESOURCE_UNIT'
+        }:reserveMetric.sourceReserveEvidence||null,
+        quantityNormalization:null
+      }),
       authority:reserveMetric.authority||(reserveStatus==='SIMULATED'?'GAMEPLAY_SIMULATION':'SOURCE_REPORTED'),
       basis:reserveMetric.basis||(reserveStatus==='SIMULATED'?'DETERMINISTIC_400_YEAR_GAMEPLAY_HORIZON':null)
     };
@@ -2380,7 +2400,9 @@ function batchFromExtraction(x,record){
       mineplayUsableUnit(throughputExisting.unit,'UNIT_UNKNOWN'):rateUnit;
     unitlessFallback('throughput',Math.max(0.01,Math.round(rate*0.88*100)/100),throughputUnit,'DAILY');
     const capacity=q.capacity&&typeof q.capacity==='object'?clone(q.capacity):{};
-    const suppliedNominal=mineplayAuthorityAllowsValue(capacity,'nominal');
+    const sourceCapacityUnit=mineplayUsableUnit(capacity.gameplayUnit||capacity.rateUnit||capacity.unit,rateUnit);
+    const suppliedNominal=mineplayAuthorityAllowsValue(capacity,'nominal')&&
+      mineplayQuantityUnitCompatible(resourceId,mineplayMetricNumber(capacity,'nominal'),sourceCapacityUnit);
     const nominal=suppliedNominal?mineplayMetricNumber(capacity,'nominal'):Math.max(0.01,Math.round(rate*1.15*100)/100);
     const minCandidate=mineplayMetricNumber(capacity,'minimum');
     const maxCandidate=mineplayMetricNumber(capacity,'maximum');
@@ -2390,6 +2412,13 @@ function batchFromExtraction(x,record){
     q.capacity={
       ...capacity,minimum,nominal,maximum,unit:rateUnit,gameplayUnit:rateUnit,
       sourceUnit:capacity.unit||capacity.sourceUnit||null,sourceStatus:capacity.status||null,
+      ...(suppliedNominal?{}:{
+        sourceCapacityEvidence:capacity.nominal!==undefined?{
+          nominal:capacity.nominal,minimum:capacity.minimum,maximum:capacity.maximum,
+          unit:capacity.unit||null,status:capacity.status||'UNOBSERVED',
+          disposition:'SOURCE_UNIT_INCOMPATIBLE_WITH_GAMEPLAY_RESOURCE_UNIT'
+        }:capacity.sourceCapacityEvidence||null
+      }),
       period:'DAILY',
       status:capacityStatus,authority:capacity.authority||(capacityStatus==='SIMULATED'?'GAMEPLAY_SIMULATION':'SOURCE_REPORTED'),
       basis:capacity.basis||(capacityStatus==='SIMULATED'?'DETERMINISTIC_SITE_CAPACITY_PROFILE_V1':null)
