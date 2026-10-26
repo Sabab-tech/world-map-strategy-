@@ -306,3 +306,27 @@
     width: 52px;
   }
 }
+
+/* Mine Production Ministry: compact command surface for Android-sized screens. */
+.omega-v2-mine-command {
+  align-items: center;
+  background: linear-gradient(145deg, #102b40, #0d1b2b 78%);
+  border: 1px solid #32627d;
+  border-radius: 14px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: space-between;
+  margin: 12px 0;
+  min-width: 0;
+  padding: 14px;
+}
+.omega-v2-mine-command > div:first-child { flex: 1 1 190px; min-width: 0; }
+.omega-v2-mine-command .omega-v2-actions { margin-top: 0; }
+.omega-v2-resource-quicklink { cursor: pointer; font: inherit; min-height: 88px; text-align: left; touch-action: manipulation; }
+.omega-v2-resource-quicklink:focus-visible { outline: 2px solid #72b7ea; outline-offset: 2px; }
+@media (max-width: 420px) {
+  .omega-v2-mine-command { align-items: stretch; padding: 11px; }
+  .omega-v2-mine-command .omega-v2-actions { display: grid; grid-template-columns: 1fr; }
+  .omega-v2-mine-command .omega-v2-button { width: 100%; }
+}
