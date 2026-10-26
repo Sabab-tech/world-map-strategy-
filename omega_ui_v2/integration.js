@@ -80,12 +80,47 @@
     var runtime = g.OmegaCountryRuntimeData || (g.Omega && g.Omega.CountryRuntimeData);
     var gateway = g.OmegaCountryDataGateway || g.Omega && g.Omega.CountryDataGateway;
     var engine = g.OmegaHomeMinistryEngine || g.Omega && g.Omega.HomeMinistry;
-    var ids = [], seen = Object.create(null), labels = Object.create(null);
+    var ids = [], seen = Object.create(null), labels = Object.create(null), aliasToIso3 = Object.create(null);
+    var profiles = [];
+    try {
+      var listedProfiles = runtime && typeof runtime.listProfiles === 'function' ? runtime.listProfiles() : [];
+      if (Array.isArray(listedProfiles)) profiles = listedProfiles;
+    } catch (_) {}
+    function aliasKey(value) { return String(value == null ? '' : value).trim().toUpperCase(); }
+    function registerProfileAliases(profile) {
+      if (!profile || typeof profile !== 'object') return;
+      var identity = profile.identity || profile.country || profile;
+      var iso3 = String(profile.iso3 || profile.alpha3 || profile.cca3 || profile.countryIso3 ||
+        identity && (identity.iso3 || identity.alpha3 || identity.cca3 || identity.countryIso3) || '').trim().toUpperCase();
+      if (!/^[A-Z]{3}$/.test(iso3)) return;
+      [
+        profile.iso3, profile.alpha3, profile.cca3, profile.countryIso3,
+        profile.countryCode, profile.countryId, profile.code, profile.id, profile.value,
+        profile.numericCode, profile.numeric_code, profile.name, profile.officialName, profile.shortName,
+        profile.economyKey, profile.populationKey,
+        identity && identity.iso3, identity && identity.alpha3, identity && identity.cca3,
+        identity && identity.countryIso3, identity && identity.countryCode, identity && identity.countryId,
+        identity && identity.code, identity && identity.id, identity && identity.numericCode,
+        identity && identity.name, identity && identity.officialName, identity && identity.shortName,
+        identity && identity.economyKey, identity && identity.populationKey
+      ].forEach(function (alias) {
+        var key = aliasKey(alias);
+        if (key) aliasToIso3[key] = iso3;
+      });
+      var label = identity && (identity.officialName || identity.name || identity.countryName) || iso3;
+      if (!labels[iso3]) labels[iso3] = String(label);
+    }
+    profiles.forEach(registerProfileAliases);
     function codeOf(value) {
       var raw = value;
-      if (value && typeof value === 'object') raw = value.iso3 || value.alpha3 || value.cca3 ||
-        value.countryIso3 || value.countryCode || value.countryId || value.code || value.id || value.value || '';
-      var code = canonicalCountry(raw);
+      if (value && typeof value === 'object') {
+        var identity = value.identity || value.country || value;
+        raw = value.iso3 || value.alpha3 || value.cca3 || value.countryIso3 ||
+          identity && (identity.iso3 || identity.alpha3 || identity.cca3 || identity.countryIso3) ||
+          value.countryCode || value.countryId || value.code || value.id || value.value || '';
+      }
+      var key = aliasKey(raw);
+      var code = aliasToIso3[key] || canonicalCountry(raw);
       return /^[A-Z]{3}$/.test(code) ? code : '';
     }
     function add(value, label) {
@@ -96,13 +131,10 @@
     }
     var active = codeOf(country);
     if (active) add(active);
-    try {
-      var profiles = runtime && typeof runtime.listProfiles === 'function' ? runtime.listProfiles() : [];
-      if (Array.isArray(profiles)) profiles.forEach(function (profile) {
-        var identity = profile && (profile.identity || profile.country || profile);
-        add(profile, identity && (identity.officialName || identity.name || identity.countryName));
-      });
-    } catch (_) {}
+    profiles.forEach(function (profile) {
+      var identity = profile && (profile.identity || profile.country || profile);
+      add(profile, identity && (identity.officialName || identity.name || identity.countryName));
+    });
     try {
       var additional = engine && typeof engine.getAvailableCountries === 'function' ? engine.getAvailableCountries(country) : [];
       if (Array.isArray(additional)) additional.forEach(function (value) { add(value); });
