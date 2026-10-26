@@ -322,10 +322,10 @@
       "altText": "Aggregate Crushing Plant industrial facility",
       "category": "CONSTRUCTION_AND_GLASS"
     },
-    "ALUMINA_REFINERY": {
+    "MINERAL_PROCESSING_PLANT": {
       "visualId": "metal-processing",
-      "altText": "Alumina Refinery industrial facility",
-      "category": "CHEMICALS_AND_POLYMERS"
+      "altText": "Mineral Processing Plant industrial facility",
+      "category": "RAW_RESOURCE_PROCESSING"
     },
     "BORATE_PROCESSING_PLANT": {
       "visualId": "chemical-plant",
@@ -337,30 +337,10 @@
       "altText": "Cement Limestone Feed Plant industrial facility",
       "category": "CONSTRUCTION_AND_GLASS"
     },
-    "CHROMITE_CONCENTRATOR": {
-      "visualId": "metal-processing",
-      "altText": "Chromite Concentrator industrial facility",
-      "category": "RAW_RESOURCE_PROCESSING"
-    },
     "COAL_PREPARATION_PLANT": {
       "visualId": "chemical-plant",
       "altText": "Coal Preparation Plant industrial facility",
       "category": "CHEMICALS_AND_POLYMERS"
-    },
-    "COBALT_REFINERY": {
-      "visualId": "chemical-plant",
-      "altText": "Cobalt Refinery industrial facility",
-      "category": "CHEMICALS_AND_POLYMERS"
-    },
-    "COPPER_CONCENTRATOR": {
-      "visualId": "metal-processing",
-      "altText": "Copper Concentrator industrial facility",
-      "category": "RAW_RESOURCE_PROCESSING"
-    },
-    "DIAMOND_RECOVERY_PLANT": {
-      "visualId": "metal-processing",
-      "altText": "Diamond Recovery Plant industrial facility",
-      "category": "RAW_RESOURCE_PROCESSING"
     },
     "DOLOMITE_PROCESSING_PLANT": {
       "visualId": "building-materials-factory",
@@ -372,25 +352,10 @@
       "altText": "Natural Gas Processing Plant industrial facility",
       "category": "CHEMICALS_AND_POLYMERS"
     },
-    "GEMSTONE_SORTING_PLANT": {
-      "visualId": "metal-processing",
-      "altText": "Gemstone Sorting Plant industrial facility",
-      "category": "RAW_RESOURCE_PROCESSING"
-    },
     "GLASS_SILICA_PLANT": {
       "visualId": "glass-factory",
       "altText": "Silica Processing Plant industrial facility",
       "category": "CONSTRUCTION_AND_GLASS"
-    },
-    "GOLD_PROCESSING_PLANT": {
-      "visualId": "metal-processing",
-      "altText": "Gold Processing Plant industrial facility",
-      "category": "RAW_RESOURCE_PROCESSING"
-    },
-    "GRAPHITE_CONCENTRATOR": {
-      "visualId": "metal-processing",
-      "altText": "Graphite Concentrator industrial facility",
-      "category": "RAW_RESOURCE_PROCESSING"
     },
     "GYPSUM_PROCESSING_PLANT": {
       "visualId": "cement-factory",
@@ -407,55 +372,10 @@
       "altText": "Magnesia Plant industrial facility",
       "category": "CONSTRUCTION_AND_GLASS"
     },
-    "MANGANESE_BENEFICIATION_PLANT": {
-      "visualId": "metal-processing",
-      "altText": "Manganese Beneficiation Plant industrial facility",
-      "category": "RAW_RESOURCE_PROCESSING"
-    },
-    "MINERAL_SANDS_PLANT": {
-      "visualId": "metal-processing",
-      "altText": "Mineral Sands Plant industrial facility",
-      "category": "CONSTRUCTION_AND_GLASS"
-    },
-    "NICKEL_PROCESSING_PLANT": {
-      "visualId": "metal-processing",
-      "altText": "Nickel Processing Plant industrial facility",
-      "category": "RAW_RESOURCE_PROCESSING"
-    },
-    "NIOBIUM_CONCENTRATION_PLANT": {
-      "visualId": "metal-processing",
-      "altText": "Niobium Concentration Plant industrial facility",
-      "category": "RAW_RESOURCE_PROCESSING"
-    },
     "OIL_SHALE_RETORT": {
       "visualId": "oil-refinery",
       "altText": "Oil Shale Retort industrial facility",
       "category": "CHEMICALS_AND_POLYMERS"
-    },
-    "ORE_BENEFICIATION_PLANT": {
-      "visualId": "metal-processing",
-      "altText": "Ore Beneficiation Plant industrial facility",
-      "category": "RAW_RESOURCE_PROCESSING"
-    },
-    "PGM_CONCENTRATOR": {
-      "visualId": "metal-processing",
-      "altText": "Platinum Group Metals Concentrator industrial facility",
-      "category": "RAW_RESOURCE_PROCESSING"
-    },
-    "PHOSPHATE_BENEFICIATION_PLANT": {
-      "visualId": "fertilizer-plant",
-      "altText": "Phosphate Beneficiation Plant industrial facility",
-      "category": "RAW_RESOURCE_PROCESSING"
-    },
-    "POTASH_PROCESSING_PLANT": {
-      "visualId": "fertilizer-plant",
-      "altText": "Potash Processing Plant industrial facility",
-      "category": "RAW_RESOURCE_PROCESSING"
-    },
-    "RARE_EARTH_BENEFICIATION_PLANT": {
-      "visualId": "metal-processing",
-      "altText": "Rare Earth Beneficiation Plant industrial facility",
-      "category": "RAW_RESOURCE_PROCESSING"
     },
     "REFINERY": {
       "visualId": "oil-refinery",
@@ -467,35 +387,10 @@
       "altText": "Salt Refinery industrial facility",
       "category": "CONSTRUCTION_AND_GLASS"
     },
-    "SILVER_CONCENTRATOR": {
-      "visualId": "metal-processing",
-      "altText": "Silver Concentrator industrial facility",
-      "category": "RAW_RESOURCE_PROCESSING"
-    },
     "STONE_PROCESSING_PLANT": {
       "visualId": "building-materials-factory",
       "altText": "Stone Processing Plant industrial facility",
       "category": "CONSTRUCTION_AND_GLASS"
-    },
-    "TIN_CONCENTRATOR": {
-      "visualId": "metal-processing",
-      "altText": "Tin Concentrator industrial facility",
-      "category": "RAW_RESOURCE_PROCESSING"
-    },
-    "TUNGSTEN_CONCENTRATOR": {
-      "visualId": "metal-processing",
-      "altText": "Tungsten Concentrator industrial facility",
-      "category": "RAW_RESOURCE_PROCESSING"
-    },
-    "URANIUM_MILL": {
-      "visualId": "chemical-plant",
-      "altText": "Uranium Mill industrial facility",
-      "category": "RAW_RESOURCE_PROCESSING"
-    },
-    "ZINC_CONCENTRATOR": {
-      "visualId": "metal-processing",
-      "altText": "Zinc Concentrator industrial facility",
-      "category": "RAW_RESOURCE_PROCESSING"
     },
     "STEEL_AND_ALLOY_WORKS": {
       "visualId": "steel-mill",
@@ -596,6 +491,118 @@
       "visualId": "metal-processing",
       "altText": "Recycling and Waste Processing Plant industrial facility",
       "category": "CIRCULAR_INDUSTRY"
+    }
+  },
+  "legacyFactoryTypes": {
+    "ALUMINA_REFINERY": {
+      "visualId": "metal-processing",
+      "altText": "Alumina Refinery industrial facility",
+      "category": "CHEMICALS_AND_POLYMERS"
+    },
+    "CHROMITE_CONCENTRATOR": {
+      "visualId": "metal-processing",
+      "altText": "Chromite Concentrator industrial facility",
+      "category": "RAW_RESOURCE_PROCESSING"
+    },
+    "COBALT_REFINERY": {
+      "visualId": "chemical-plant",
+      "altText": "Cobalt Refinery industrial facility",
+      "category": "CHEMICALS_AND_POLYMERS"
+    },
+    "COPPER_CONCENTRATOR": {
+      "visualId": "metal-processing",
+      "altText": "Copper Concentrator industrial facility",
+      "category": "RAW_RESOURCE_PROCESSING"
+    },
+    "DIAMOND_RECOVERY_PLANT": {
+      "visualId": "metal-processing",
+      "altText": "Diamond Recovery Plant industrial facility",
+      "category": "RAW_RESOURCE_PROCESSING"
+    },
+    "GOLD_PROCESSING_PLANT": {
+      "visualId": "metal-processing",
+      "altText": "Gold Processing Plant industrial facility",
+      "category": "RAW_RESOURCE_PROCESSING"
+    },
+    "GRAPHITE_CONCENTRATOR": {
+      "visualId": "metal-processing",
+      "altText": "Graphite Concentrator industrial facility",
+      "category": "RAW_RESOURCE_PROCESSING"
+    },
+    "GEMSTONE_SORTING_PLANT": {
+      "visualId": "metal-processing",
+      "altText": "Gemstone Sorting Plant industrial facility",
+      "category": "RAW_RESOURCE_PROCESSING"
+    },
+    "MANGANESE_BENEFICIATION_PLANT": {
+      "visualId": "metal-processing",
+      "altText": "Manganese Beneficiation Plant industrial facility",
+      "category": "RAW_RESOURCE_PROCESSING"
+    },
+    "MINERAL_SANDS_PLANT": {
+      "visualId": "metal-processing",
+      "altText": "Mineral Sands Plant industrial facility",
+      "category": "CONSTRUCTION_AND_GLASS"
+    },
+    "NICKEL_PROCESSING_PLANT": {
+      "visualId": "metal-processing",
+      "altText": "Nickel Processing Plant industrial facility",
+      "category": "RAW_RESOURCE_PROCESSING"
+    },
+    "NIOBIUM_CONCENTRATION_PLANT": {
+      "visualId": "metal-processing",
+      "altText": "Niobium Concentration Plant industrial facility",
+      "category": "RAW_RESOURCE_PROCESSING"
+    },
+    "ORE_BENEFICIATION_PLANT": {
+      "visualId": "metal-processing",
+      "altText": "Ore Beneficiation Plant industrial facility",
+      "category": "RAW_RESOURCE_PROCESSING"
+    },
+    "PGM_CONCENTRATOR": {
+      "visualId": "metal-processing",
+      "altText": "Platinum Group Metals Concentrator industrial facility",
+      "category": "RAW_RESOURCE_PROCESSING"
+    },
+    "PHOSPHATE_BENEFICIATION_PLANT": {
+      "visualId": "fertilizer-plant",
+      "altText": "Phosphate Beneficiation Plant industrial facility",
+      "category": "RAW_RESOURCE_PROCESSING"
+    },
+    "POTASH_PROCESSING_PLANT": {
+      "visualId": "fertilizer-plant",
+      "altText": "Potash Processing Plant industrial facility",
+      "category": "RAW_RESOURCE_PROCESSING"
+    },
+    "RARE_EARTH_BENEFICIATION_PLANT": {
+      "visualId": "metal-processing",
+      "altText": "Rare Earth Beneficiation Plant industrial facility",
+      "category": "RAW_RESOURCE_PROCESSING"
+    },
+    "SILVER_CONCENTRATOR": {
+      "visualId": "metal-processing",
+      "altText": "Silver Concentrator industrial facility",
+      "category": "RAW_RESOURCE_PROCESSING"
+    },
+    "TIN_CONCENTRATOR": {
+      "visualId": "metal-processing",
+      "altText": "Tin Concentrator industrial facility",
+      "category": "RAW_RESOURCE_PROCESSING"
+    },
+    "TUNGSTEN_CONCENTRATOR": {
+      "visualId": "metal-processing",
+      "altText": "Tungsten Concentrator industrial facility",
+      "category": "RAW_RESOURCE_PROCESSING"
+    },
+    "URANIUM_MILL": {
+      "visualId": "chemical-plant",
+      "altText": "Uranium Mill industrial facility",
+      "category": "RAW_RESOURCE_PROCESSING"
+    },
+    "ZINC_CONCENTRATOR": {
+      "visualId": "metal-processing",
+      "altText": "Zinc Concentrator industrial facility",
+      "category": "RAW_RESOURCE_PROCESSING"
     },
     "DIATOMITE_PROCESSING_PLANT": {
       "visualId": "chemical-plant",
@@ -607,5 +614,31 @@
       "altText": "Generic Resource Processing Plant industrial facility",
       "category": "RAW_RESOURCE_PROCESSING"
     }
+  },
+  "factoryTypeAliases": {
+    "ALUMINA_REFINERY": "MINERAL_PROCESSING_PLANT",
+    "CHROMITE_CONCENTRATOR": "MINERAL_PROCESSING_PLANT",
+    "COBALT_REFINERY": "MINERAL_PROCESSING_PLANT",
+    "COPPER_CONCENTRATOR": "MINERAL_PROCESSING_PLANT",
+    "DIAMOND_RECOVERY_PLANT": "MINERAL_PROCESSING_PLANT",
+    "GOLD_PROCESSING_PLANT": "MINERAL_PROCESSING_PLANT",
+    "GRAPHITE_CONCENTRATOR": "MINERAL_PROCESSING_PLANT",
+    "GEMSTONE_SORTING_PLANT": "MINERAL_PROCESSING_PLANT",
+    "MANGANESE_BENEFICIATION_PLANT": "MINERAL_PROCESSING_PLANT",
+    "MINERAL_SANDS_PLANT": "MINERAL_PROCESSING_PLANT",
+    "NICKEL_PROCESSING_PLANT": "MINERAL_PROCESSING_PLANT",
+    "NIOBIUM_CONCENTRATION_PLANT": "MINERAL_PROCESSING_PLANT",
+    "ORE_BENEFICIATION_PLANT": "MINERAL_PROCESSING_PLANT",
+    "PGM_CONCENTRATOR": "MINERAL_PROCESSING_PLANT",
+    "PHOSPHATE_BENEFICIATION_PLANT": "MINERAL_PROCESSING_PLANT",
+    "POTASH_PROCESSING_PLANT": "MINERAL_PROCESSING_PLANT",
+    "RARE_EARTH_BENEFICIATION_PLANT": "MINERAL_PROCESSING_PLANT",
+    "SILVER_CONCENTRATOR": "MINERAL_PROCESSING_PLANT",
+    "TIN_CONCENTRATOR": "MINERAL_PROCESSING_PLANT",
+    "TUNGSTEN_CONCENTRATOR": "MINERAL_PROCESSING_PLANT",
+    "URANIUM_MILL": "MINERAL_PROCESSING_PLANT",
+    "ZINC_CONCENTRATOR": "MINERAL_PROCESSING_PLANT",
+    "DIATOMITE_PROCESSING_PLANT": "MINERAL_PROCESSING_PLANT",
+    "GENERIC_RESOURCE_PROCESSING_PLANT": "MINERAL_PROCESSING_PLANT"
   }
 }
