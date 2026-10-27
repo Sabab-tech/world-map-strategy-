@@ -173,6 +173,9 @@
     return {
       status: meta.factoryAssetsInitialized && meta.minesInitialized ? 'READY' : meta.factoryAssetsInitialized ? 'PARTIAL' : 'NOT_INITIALIZED',
       countryId: cid, countryName: source && source.countryName || s.countryNames && s.countryNames[cid] || cid,
+      factoriesInitialized: meta.factoryAssetsInitialized === true,
+      minesInitialized: meta.minesInitialized === true,
+      primaryStocksInitialized: meta.primaryStocksInitialized === true,
       factoryCount: factories.length, operationalFactoryCount: operationalFactories.length,
       starterFactoryCount: factories.filter(asset => /^FAC-START:/.test(String(asset.id || asset.assetId || ''))).length,
       operationalMineCount: operatingMines.length,
@@ -180,8 +183,9 @@
         const status = upper(asset && asset.status);
         return !!String(asset.siteId || '').trim() && !/REMOVED|CANCELLED/.test(status);
       }).length,
-      availableSiteCount: num(meta.availableSiteCount) || 0,
-      primaryResourceTypeCount: primaryStock.length, primaryResourceStocks: primaryStock,
+      availableSiteCount: meta.minesInitialized ? (num(meta.availableSiteCount) || 0) : null,
+      primaryResourceTypeCount: meta.primaryStocksInitialized ? primaryStock.length : null,
+      primaryResourceStocks: meta.primaryStocksInitialized ? primaryStock : [],
       openingStockSeeded: meta.primaryStocksInitialized === true, sourceAuthority: meta.authority || 'SIMULATED_STARTUP_ECONOMY_V1',
       simulationOnly: true, permanentFactories: true, finiteConsumableStocks: true
     };
@@ -279,7 +283,7 @@
       const rs = ensureStateBucket(s.resource, cid);
       rs.startupBaseline = Object.assign({}, meta, { version: VERSION, factoryAssetsInitialized: true,
         minesInitialized: false, primaryStocksInitialized: false, skippedLegacyFactorySeed: false,
-        seededFactoryCount: arr(source.factoryAssets).length, createdFactoryCount: arr(source.factoryAssets).length,
+        seededFactoryCount: arr(source.factoryAssets).length, createdFactoryCount: created,
         authority: 'OMEGA_COUNTRY_STARTUP_BASELINE_V1', initializedTurn: turn() });
       countryCount++;
     }
