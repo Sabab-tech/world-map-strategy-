@@ -66,9 +66,10 @@
     return value && typeof value === 'object' && !Array.isArray(value) ? value : null;
   }
   function rootState() {
-    return (g.Omega && g.Omega.SimulationRuntime && g.Omega.SimulationRuntime.world &&
+    return (g.Game && g.Game.state) || g.gameState ||
+      (g.Omega && g.Omega.SimulationRuntime && g.Omega.SimulationRuntime.world &&
       g.Omega.SimulationRuntime.world.state) || (g.Omega && g.Omega.Simulation && g.Omega.Simulation.world &&
-      g.Omega.Simulation.world.state) || (g.Game && g.Game.state) || g.gameState || null;
+      g.Omega.Simulation.world.state) || null;
   }
   function currentTurn(state) {
     state = state || rootState() || {};
@@ -694,15 +695,15 @@
       ? (storedPopulation > 0 ? storedPopulation : null)
       : positive(siteProfile.population_2015);
     var resourceProfiles = data.resourceProfiles;
-    var seeded = 0, preserved = 0, unresolved = [], sourceCounts = Object.create(null), rows = [];
+    var seeded = 0, preserved = 0, unresolved = [], sourceCounts = Object.create(null), rows = [], preservedIds = [];
     var existingAssets = Array.isArray(economy.productionAssets) ? economy.productionAssets : [];
     Object.keys(resourceProfiles).forEach(function (resourceId) {
       var profileRow = resourceProfiles[resourceId] || {};
       var existingKey = findKeyByToken(inventory, resourceId);
       if (existingKey !== null) {
         preserved++;
+        preservedIds.push(resourceId);
         sourceCounts.PRESERVED_EXISTING_STOCK = (sourceCounts.PRESERVED_EXISTING_STOCK || 0) + 1;
-        rows.push({ resourceId: resourceId, status: 'PRESERVED_EXISTING_STOCK', inventoryKey: existingKey });
         return;
       }
       var consumption = object(resource.consumption) || {};
@@ -733,12 +734,10 @@
       }
       if (rate === null || !(rate > 0) || !Number.isFinite(rate)) {
         unresolved.push(resourceId);
-        rows.push({ resourceId: resourceId, status: 'UNKNOWN_NO_POSITIVE_DEMAND_SIGNAL' });
         return;
       }
       if (!stockUnit) {
         unresolved.push(resourceId);
-        rows.push({ resourceId: resourceId, status: 'UNKNOWN_OR_UNMAPPED_STOCK_UNIT', demandSource: source });
         return;
       }
       var days = positive(policies.coverageDays);
@@ -746,7 +745,6 @@
       var quantity = Number((rate * days).toPrecision(12));
       if (!(quantity > 0) || !Number.isFinite(quantity)) {
         unresolved.push(resourceId);
-        rows.push({ resourceId: resourceId, status: 'UNKNOWN_INVALID_STARTING_QUANTITY', demandSource: source });
         return;
       }
       inventory[resourceId] = quantity;
@@ -758,20 +756,19 @@
       }
       seeded++;
       sourceCounts[source] = (sourceCounts[source] || 0) + 1;
+      // Compact per-resource provenance keeps the persisted save bounded on Android.
+      // Common authority, source files, coverage days, and source definitions live on
+      // the country marker rather than being repeated for every resource.
       rows.push({
         resourceId: resourceId,
-        status: 'SEEDED_SIMULATED_OPENING_STOCK',
         quantity: quantity,
         unit: stockUnit,
-        coverageDays: days,
-        modeledDailyRate: rate,
-        dailyRateSource: source,
-        dailyRateUnit: profileRow.unit || null,
+        dailyRate: rate,
+        demandSource: source,
+        profileRateUnit: profileRow.unit || null,
         populationUsed: populationForRate,
         unitSource: unitSource,
-        factoryIds: factoryInput && factoryInput.factoryIds || [],
-        authority: policies.stockAuthority || 'SIMULATED_STARTUP_STOCK',
-        sourceFiles: [PATHS.economyRules, PATHS.countryProfiles]
+        factoryIds: factoryInput && factoryInput.factoryIds || []
       });
     });
     var countryId = id(profile.iso3);
@@ -786,10 +783,14 @@
       openingStockSeededCount: seeded,
       existingStockPreservedCount: preserved,
       unknownResourceIds: unresolved,
+      preservedResourceIds: preservedIds,
       stockSourceCounts: sourceCounts,
       authority: 'SIMULATED_STARTUP_BASELINE_V1',
       sourceFiles: [PATHS.economyRules, PATHS.countryProfiles],
       stockRows: rows,
+      stockRowsEncoding: 'COMPACT_PER_RESOURCE_PROVENANCE_V1',
+      stockAuthority: policies.stockAuthority || 'SIMULATED_STARTUP_STOCK',
+      sourceFiles: [PATHS.policy, PATHS.economyRules, PATHS.countryProfiles],
       geologicalReserveQuantityUsedAsStock: false,
       previousMarkerVersion: previousMarker.version && previousMarker.version !== VERSION ? previousMarker.version : null,
       previousMarker: previousMarker.version && previousMarker.version !== VERSION ? clone(previousMarker) : null
@@ -823,7 +824,7 @@
       factoryStatus: factoryResult && factoryResult.status || 'NOT_RUN',
       factoryAssetsCreated: factoryResult && factoryResult.created || 0,
       factoryAssetsPresent: factoryResult && factoryResult.assetCount || economyMarker.factoryAssetsPresentAfterInitialization || 0,
-      factoryTypesUsed: clone(factoryResult && factoryResult.factoryTypesUsed || economyMarker.factoryProfileTypesUsed || []),
+      factoryTypesUsed: clone(factoryResult && factoryResult.factoryTypesUsed && factoryResult.factoryTypesUsed.length ? factoryResult.factoryTypesUsed : economyMarker.factoryProfileTypesUsed || []),
       factoryAssetIdsCreated: clone(economyMarker.factoryAssetIdsCreated || []),
       factoryContextAuthority: 'SIMULATED_STARTUP_BASELINE_V1',
       stockAuthority: resourceMarker.authority || 'SIMULATED_STARTUP_BASELINE_V1'
