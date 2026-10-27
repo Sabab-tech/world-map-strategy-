@@ -181,6 +181,9 @@
   }
   function failClosed(root) {
     setV2CabinetActive(root, false);
+    if (g.Game && g.Game.Map && typeof g.Game.Map.setUiActive === 'function') {
+      try { g.Game.Map.setUiActive(true); } catch (_) {}
+    }
     try {
       if (root && root.__omegaUIV2State && g.OmegaUIV2App && typeof g.OmegaUIV2App.unmount === 'function') {
         g.OmegaUIV2App.unmount(root);
@@ -228,6 +231,11 @@
     if (!enabled || !root || !g.OmegaUIV2App || typeof g.OmegaUIV2App.mount !== 'function') return { ok:false, code:'UI_V2_INTEGRATION_UNAVAILABLE' };
     var country = canonicalCountry(mountOptions.countryId || selectedCountry() || '');
     try {
+      // A ministry owns the screen: stop map-only rendering, remove its display layers,
+      // and abort an unfinished map-geometry request while keeping the simulation alive.
+      if (g.Game && g.Game.Map && typeof g.Game.Map.setUiActive === 'function') {
+        g.Game.Map.setUiActive(false);
+      }
       // Open the already-existing cabinet surface without rendering the legacy cabinet HTML first.
       var dashboard = g.document && g.document.getElementById('ministry-dashboard-view');
       if (dashboard && dashboard.style) {
@@ -247,7 +255,8 @@
       var worldUi = g.document && g.document.getElementById('world-ui-root');
       if (worldUi && worldUi.style) {
         worldUi.style.filter = 'none';
-        worldUi.style.opacity = '0.5';
+        // Never dim the parent of the active cabinet. The map canvas itself is parked separately.
+        worldUi.style.opacity = '1';
         worldUi.style.pointerEvents = 'none';
       }
       var layerManager = g.OmegaLayerManager;
@@ -301,7 +310,12 @@
   function openRoute(route) {
     route=String(route||'').trim().toLowerCase();
     if(!enabled||!g.OmegaUIV2App)return false;
-    if(route==='map'||route==='world'){var active=cabinetRoot();if(active&&active.getAttribute&&active.getAttribute(ACTIVE_ATTR)==='true'&&active.__omegaUIV2State)return !!g.OmegaUIV2App.navigate(active,'map');return true;}
+    if(route==='map'||route==='world'){
+      var active=cabinetRoot();
+      if(active&&active.getAttribute&&active.getAttribute(ACTIVE_ATTR)==='true'&&active.__omegaUIV2State)return closeToWorldMap()===true;
+      if(g.Game&&g.Game.Map&&typeof g.Game.Map.setUiActive==='function')g.Game.Map.setUiActive(true);
+      return true;
+    }
     var mappings={resources:'energy_mining',security:'interior_security','public-safety':'interior_security',logistics:'trade',foreign:'foreign_affairs',defense:'defense',research:'science_research',society:'infrastructure',projects:'mega_projects',agriculture:'agriculture_food',health:'health_welfare',laws:'laws',education:'education',taxes:'taxes',treasury:'treasury_finance','central-bank':'central_bank',cabinet_council:'cabinet_council'};
     var ministryId=mappings[route]||null,destinations=g.OmegaUIV2App.destinations||[];
     if(destinations.indexOf(route)<0&&!ministryId)return false;
@@ -370,6 +384,11 @@
       worldUi.style.filter = 'none';
       worldUi.style.opacity = '1';
       worldUi.style.pointerEvents = 'auto';
+    }
+    // Resume the cached map layers after the cabinet is fully detached. The geometry
+    // is reused; completed country polygons are never downloaded or parsed a second time.
+    if (g.Game && g.Game.Map && typeof g.Game.Map.setUiActive === 'function') {
+      try { g.Game.Map.setUiActive(true); } catch (_) {}
     }
     return true;
   }
