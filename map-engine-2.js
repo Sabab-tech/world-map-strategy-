@@ -1601,7 +1601,7 @@ Game.Map.renderGeoJSON = function(geoData) {
 
     const featureCollection = geoData && geoData.type === "FeatureCollection" &&
         Array.isArray(geoData.features) ? geoData.features : null;
-    const featureCount = featureCollection ? featureCollection.features.length : 0;
+    const featureCount = featureCollection ? featureCollection.length : 0;
     const recoverableFeatureErrorLimit = Math.max(3, Math.floor(featureCount * 0.05));
     const addFeatureSafely = function(feature, index) {
         try {
@@ -1673,7 +1673,7 @@ Game.Map.renderGeoJSON = function(geoData) {
     const CHUNK_THRESHOLD = 24;
     const MAX_FEATURES_PER_FRAME = 8;
     const FRAME_BUDGET_MS = 7;
-    if (!featureCollection || featureCollection.features.length <= CHUNK_THRESHOLD ||
+    if (!featureCollection || featureCollection.length <= CHUNK_THRESHOLD ||
         typeof window.requestAnimationFrame !== "function") {
         if (featureCollection) {
             for (let index = 0; index < featureCollection.length; index++) {
@@ -1710,7 +1710,7 @@ Game.Map.renderGeoJSON = function(geoData) {
                 addFeatureSafely(featureCollection[nextFeature], nextFeature);
                 nextFeature += 1;
                 added += 1;
-            } while (nextFeature < featureCollection.features.length &&
+            } while (nextFeature < featureCollection.length &&
                 added < MAX_FEATURES_PER_FRAME && now() - startedAt < FRAME_BUDGET_MS);
         } catch (error) {
             console.error('[OMEGA Map] Country boundary chunk failed.', error);
@@ -1718,14 +1718,14 @@ Game.Map.renderGeoJSON = function(geoData) {
             return;
         }
 
-        const fraction = nextFeature / Math.max(1, featureCollection.features.length);
+        const fraction = nextFeature / Math.max(1, featureCollection.length);
         const skippedSoFar = Array.isArray(Game.__omegaGeoJSONRenderErrors)
             ? Game.__omegaGeoJSONRenderErrors.length : 0;
         self.updateMapLoadingProgress(18 + fraction * 78,
             'Drawing country borders ' + Math.floor(fraction * 100) + '%' +
                 (skippedSoFar ? ' · skipped ' + skippedSoFar + ' invalid feature(s)' : ''),
             'loading');
-        if (nextFeature < featureCollection.features.length) scheduleFeatureChunk();
+        if (nextFeature < featureCollection.length) scheduleFeatureChunk();
         else finishRender();
     };
     Game.__omegaGeoJSONResumeRender = scheduleFeatureChunk;
