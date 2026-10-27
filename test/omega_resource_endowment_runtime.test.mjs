@@ -323,7 +323,7 @@ function provisionIndustrialTestResources(countryId){
   }
 }
 for(const cid of ['AUS','KWT','BGD','CHL'])provisionIndustrialTestResources(cid);
-const pilbaraPipeline=await industrialPipelineRuntime.executeSitePipeline({countryId:'AUS',siteId:'SITE_AUS_pilbara_iron_ore_range',resourceId:'iron_ore',quantity:100});
+const pilbaraPipeline=await industrialPipelineRuntime.executeSitePipeline({countryId:'AUS',siteId:'SITE_AUS_pilbara_iron_ore_range',resourceId:'iron_ore',quantity:100,autoCommissionFactory:true});
 assert.equal(pilbaraPipeline.status,'IN_TRANSIT',JSON.stringify(pilbaraPipeline));
 assert.equal(pilbaraPipeline.countryId,'AUS');
 assert.equal(pilbaraPipeline.extractionStatus,'COMMITTED');
