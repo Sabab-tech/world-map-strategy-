@@ -1036,6 +1036,62 @@
       actionButton('refresh-market', 'Rebuild current market snapshot', {}) +
       (rows || empty('No resource IDs are available to quote.'));
   }
+  function panelPlayerSupplyLifeline(country) {
+    const runtime = g.OmegaResourceNationalDemandRuntime || g.Omega && g.Omega.ResourceNationalDemandRuntime;
+    const apiReady = !!(runtime && typeof runtime.getPlayerSupplyLifeline === 'function' &&
+      typeof runtime.authorizePlayerSupplyLifeline === 'function');
+    const current = apiReady ? runtime.getPlayerSupplyLifeline(country) : { accepted: false, status: 'UNAVAILABLE' };
+    const policy = current && current.policy && typeof current.policy === 'object' ? current.policy : (current || {});
+    const status = String(policy.status || current.status || 'UNAVAILABLE').toUpperCase();
+    const resource = resourceBucket(country);
+    const inventoryReady = !!(resource && resource.inventory && typeof resource.inventory === 'object');
+    const playerEligible = status !== 'NOT_PLAYER_COUNTRY';
+    const needsAuthorization = status === 'NOT_APPROVED' || status === 'EXPIRED';
+    const canAuthorize = apiReady && needsAuthorization && playerEligible && inventoryReady;
+    let actions = '';
+    if (needsAuthorization) {
+      actions = actionButton('authorize-player-supply-lifeline',
+        status === 'EXPIRED' ? 'Renew 100-day automatic supply' : 'Authorize 100-day automatic supply',
+        {}, !canAuthorize);
+    }
+    const term = Number.isFinite(Number(policy.termDays)) ? Number(policy.termDays) : 100;
+    const elapsed = Number.isFinite(Number(policy.elapsedGameDays)) ? Number(policy.elapsedGameDays) : 0;
+    const remaining = Number.isFinite(Number(policy.remainingGameDays)) ? Math.max(0, Number(policy.remainingGameDays)) : null;
+    const body = '<div class="omega-rescc-grid2">' +
+      kv('Authorization term', term + ' game-days') +
+      kv('Elapsed', elapsed + ' game-days') +
+      kv('Remaining', remaining === null ? '—' : remaining + ' game-days') +
+      kv('Automatic renewal', policy.automaticRenewal === true ? 'Enabled' : 'Disabled') +
+      '</div><p class="omega-rescc-note">' +
+      (status === 'ACTIVE'
+        ? 'Automatic replenishment is authorized for this 100-day window. Review the warnings below and renew manually when the window expires.'
+        : status === 'SCHEDULED'
+          ? 'The authorization is saved and will start on the next eligible simulation turn.'
+          : status === 'EXPIRED'
+            ? 'The automatic replenishment window has expired. Existing inventory and already placed inbound shipments remain valid; no stock is removed by expiry.'
+            : status === 'NOT_PLAYER_COUNTRY'
+              ? 'Supply authorization is available only for the currently selected player country.'
+              : status === 'UNAVAILABLE'
+                ? 'The national demand runtime is not available in this session.'
+                : !inventoryReady
+                  ? 'The authoritative inventory has not loaded yet. Authorization stays disabled rather than inventing stock.'
+                  : 'Authorize a 100-day window for stock-aware automatic replenishment. Approval is never renewed silently.') +
+      '</p>';
+    const alerts = Array.isArray(policy.alerts) ? policy.alerts.filter(function (a) {
+      return a && a.status !== 'RESOLVED';
+    }).slice(-5).reverse() : [];
+    const alertBody = alerts.length
+      ? '<h4 class="omega-rescc-section-title">Supply warnings</h4>' + alerts.map(function (a) {
+          const detail = a.detail || {};
+          const resourceId = detail.resourceId || detail.resource || '';
+          const time = Number.isFinite(Number(a.remainingGameDays)) ? ' · ' + number(Number(a.remainingGameDays)) + ' days left' : '';
+          return '<div class="omega-rescc-warning"><strong>' + esc(String(a.type || 'SUPPLY ALERT').replace(/_/g, ' ')) +
+            '</strong>' + (resourceId ? ' · ' + esc(resourceName(resourceId)) : '') +
+            time + '<div>' + esc(a.requiredAction || 'Review supply policy') + '</div></div>';
+        }).join('')
+      : '<p class="omega-rescc-note">No persisted supply warnings for this authorization.</p>';
+    return card('100-day automatic supply', status, body + alertBody, actions);
+  }
   function panelTrade(country) {
     const trade = g.OmegaGlobalTrade || g.Omega && g.Omega.GlobalTrade;
     const requests = Array.isArray(bucket('trade', country).importRequests) ? bucket('trade', country).importRequests : [];
@@ -1055,7 +1111,8 @@
       '<button class="omega-rescc-button" type="submit"' + ((!trade || typeof trade.createRequest !== 'function' || !others.length || !resourceOpts) ? ' disabled' : '') +
       '>Submit supply request</button></form>';
     return (trade && trade.diagnostics ? diagnosticCard('Global trade diagnostics', trade.diagnostics()) : empty('Global trade engine is not available.')) +
-      form + '<h3 class="omega-rescc-section-title">Import requests and settlement status</h3>' + statusRows(requests) +
+      panelPlayerSupplyLifeline(country) + form +
+      '<h3 class="omega-rescc-section-title">Import requests and settlement status</h3>' + statusRows(requests) +
       '<h3 class="omega-rescc-section-title">Global trade ledger</h3>' + diagnosticCard('Ledger counters', {
         requests: Array.isArray(ledger.requests) ? ledger.requests.length : 0,
         decisions: Array.isArray(ledger.decisions) ? ledger.decisions.length : 0,
@@ -1439,7 +1496,8 @@
     [
       'RESOURCE_STATE_UPDATED','OMEGA_RESOURCE_SITE_BINDING_READY','OMEGA_READY','OMEGA_GAME_SESSION_STARTED',
       'OMEGA_SIMULATION_TURN_COMMITTED','OMEGA_RESOURCE_EXTRACTION_COMPLETED','OMEGA_RESOURCE_BATCH_CREATED',
-      'OMEGA_RESOURCE_INVENTORY_CHANGED','OMEGA_RESOURCE_PROCESSING_COMPLETED','OMEGA_TRADE_SETTLEMENT_COMPLETED'
+      'OMEGA_RESOURCE_INVENTORY_CHANGED','OMEGA_RESOURCE_PROCESSING_COMPLETED','OMEGA_TRADE_SETTLEMENT_COMPLETED',
+      'OMEGA_RESOURCE_SUPPLY_ALERT_CREATED'
     ].forEach(function (name) {
       try { g.addEventListener(name, function () { resourceDataWarmupAttempted = false; scheduleVisiblePanelRefresh(); }); } catch (_) {}
     });
@@ -1522,6 +1580,15 @@
     try {
       if (action === 'close') { close(); return; }
       if (action === 'refresh-panel') { resourceDataWarmupAttempted = false; render(c, activePanel); ensureResourceDataReady(true); return; }
+      if (action === 'authorize-player-supply-lifeline') {
+        const runtime = g.OmegaResourceNationalDemandRuntime || g.Omega && g.Omega.ResourceNationalDemandRuntime;
+        if (!runtime || typeof runtime.authorizePlayerSupplyLifeline !== 'function')
+          result = { status: 'UNAVAILABLE', reason: 'RESOURCE_NATIONAL_DEMAND_RUNTIME_UNAVAILABLE' };
+        else result = runtime.authorizePlayerSupplyLifeline(c);
+        setOutcome('100-day automatic supply policy', result);
+        render(c, activePanel);
+        return;
+      }
       if (action === 'start-exploration' || action === 'approve-exploration-investment' || action === 'commission-exploration-site') {
         const policy = g.OmegaResourceStrategicPolicyRuntime || g.Omega && g.Omega.ResourceStrategicPolicyRuntime;
         if (!policy) result = { status: 'UNAVAILABLE', reason: 'STRATEGIC_RESOURCE_POLICY_RUNTIME_UNAVAILABLE' };
