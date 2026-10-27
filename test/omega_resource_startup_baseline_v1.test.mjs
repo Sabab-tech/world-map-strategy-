@@ -178,6 +178,27 @@ test('fresh session seeds bounded opening stock and source-context-driven factor
   assert.deepEqual(Object.keys(starter.inputCoefficients).map(token).sort(), ['coal']);
   assert.equal(starter.productionHealth.status, 'STOPPED', 'starter assets do not receive fabricated feedstock or output');
 
+  const indiaAssets = state.economy.IND.productionAssets;
+  const indiaSteelWorks = indiaAssets.find(asset => asset.factoryType === 'STEEL_AND_ALLOY_WORKS');
+  assert.ok(indiaSteelWorks,
+    'India has both coal and iron-ore production sources, so a steel starter is eligible even though external input goods are not yet delivered');
+  assert.equal(indiaSteelWorks.startupBaselineV1.notObservedFacility, true);
+  assert.equal(indiaSteelWorks.startupBaselineV1.locallySupportedInputShare, 0.5);
+  assert.deepEqual(indiaSteelWorks.startupBaselineV1.locallySupportedInputIds, ['iron_concentrate', 'coal_concentrate']);
+  assert.deepEqual(indiaSteelWorks.startupBaselineV1.externalInputResourceIds, ['cement_feed', 'copper_concentrate']);
+  assert.equal(indiaSteelWorks.startupBaselineV1.externalInputsRequireConfirmedSupply, true);
+  assert.equal(Object.keys(indiaSteelWorks.inputInventory).length, 0,
+    'catalog inputs and local output capability are not warehouse stock');
+  assert.equal(indiaSteelWorks.inputBatchLots.length, 0,
+    'no fake delivered batches may be attached to a startup factory');
+  assert.equal(indiaSteelWorks.productionHealth.status, 'STOPPED',
+    'starter factory remains stopped until its actual recipe inputs are delivered');
+  assert.equal(indiaAssets.filter(asset => asset.recipeId).length, 1,
+    'newly planned idle factory outputs must not recursively justify a fake chain of additional factories');
+  assert.ok(indiaAssets.every(asset => !String(asset.id || '').startsWith('STARTUP-FAC-10-') ||
+    asset.startupBaselineV1.externalInputsRequireConfirmedSupply !== false),
+    'new downstream assets must retain their confirmed-supply dependency flag');
+
   const indiaProfile = profileFor('IND');
   const indiaResource = state.resource.IND;
   const indiaCoalBaseline = economyRules.demand.resourceProfiles.coal;
