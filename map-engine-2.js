@@ -1170,6 +1170,7 @@ Game.Map.updateMapLoadingProgress = function(percent, message, status) {
     const percentLabel = document.getElementById('omega-map-load-percent');
     const progressBar = document.querySelector('#omega-map-load-overlay [role="progressbar"]');
     const statusLabel = document.getElementById('omega-map-load-status');
+    const mapRoot = document.getElementById('render-engine-root');
     const retryButton = document.getElementById('omega-map-load-retry');
     if (!overlay || this.__omegaMapUiActive === false) return;
     const bounded = Math.max(0, Math.min(100, Number(percent) || 0));
@@ -1178,6 +1179,7 @@ Game.Map.updateMapLoadingProgress = function(percent, message, status) {
     overlay.setAttribute('aria-hidden', 'false');
     overlay.setAttribute('aria-busy', status === 'complete' ? 'false' : 'true');
     overlay.setAttribute('data-state', status || 'loading');
+    if (mapRoot) mapRoot.setAttribute('data-omega-map-loading', 'true');
     if (progress) progress.style.width = bounded + '%';
     if (progressBar) progressBar.setAttribute('aria-valuenow', String(Math.floor(bounded)));
     if (percentLabel) percentLabel.textContent = Math.floor(bounded) + '%';
@@ -1195,6 +1197,8 @@ Game.Map.updateMapLoadingProgress = function(percent, message, status) {
                 Game.__omegaGeoJSONRenderComplete === true && overlay.getAttribute('data-state') === 'complete') {
                 overlay.classList.add('is-hidden');
                 overlay.setAttribute('aria-hidden', 'true');
+                const mapRoot = document.getElementById('render-engine-root');
+                if (mapRoot) mapRoot.removeAttribute('data-omega-map-loading');
             }
         }, 260);
     }
@@ -1225,6 +1229,7 @@ Game.Map.setUiActive = function(active) {
             overlay.setAttribute('aria-hidden', 'true');
             overlay.setAttribute('aria-busy', 'false');
         }
+        if (root) root.removeAttribute('data-omega-map-loading');
         if (Game.__omegaGeoJSONRenderFrame !== null && Game.__omegaGeoJSONRenderFrame !== undefined &&
             typeof window.cancelAnimationFrame === 'function') {
             window.cancelAnimationFrame(Game.__omegaGeoJSONRenderFrame);
