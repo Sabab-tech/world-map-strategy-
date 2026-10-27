@@ -1291,7 +1291,14 @@ Game.Map.setUiActive = function(active) {
     }
 
     if (Game.__omegaGeoJSONRenderComplete === true && this.countryGeoJSON) {
-        this.updateMapLoadingProgress(100, 'World map ready', 'complete');
+        // A cached map returns instantly: do not flash the startup loader on every ministry exit.
+        var readyOverlay = document.getElementById('omega-map-load-overlay');
+        if (readyOverlay) {
+            readyOverlay.classList.add('is-hidden');
+            readyOverlay.setAttribute('aria-hidden', 'true');
+            readyOverlay.setAttribute('aria-busy', 'false');
+        }
+        if (root) root.removeAttribute('data-omega-map-loading');
     } else {
         this.updateMapLoadingProgress(this.__omegaMapLoadingProgress || 2, 'Preparing world map…', 'loading');
         if (typeof Game.__omegaGeoJSONResumeRender === 'function') {
