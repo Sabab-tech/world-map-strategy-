@@ -1601,7 +1601,7 @@ Game.Map.renderGeoJSON = function(geoData) {
 
     const featureCollection = geoData && geoData.type === "FeatureCollection" &&
         Array.isArray(geoData.features) ? geoData.features : null;
-    const featureCount = featureCollection ? featureCollection.length : 0;
+    const featureCount = featureCollection ? featureCollection.features.length : 0;
     const recoverableFeatureErrorLimit = Math.max(3, Math.floor(featureCount * 0.05));
     const addFeatureSafely = function(feature, index) {
         try {
