@@ -132,9 +132,11 @@ function load(file) {
 
   // A Government screen can target a country that differs from the legacy cabinet's
   // current country. The explicit screen context must win, without moving the old appointment.
-  await selector.appoint('interior_security', candidateA, 'USA');
+  const usaAppointment = await selector.appoint('interior_security', candidateA, 'USA');
   assert.equal(canonicalRegistry.getActiveMinister('BGD', 'interior_security').ministerId, candidateB.id,
     'country-scoped appointment must not replace the minister in the previously active country');
+  assert.equal(usaAppointment.ministerId || usaAppointment.staticProfile?.ministerId || usaAppointment.staticProfile?.id, candidateA.id,
+    'appointment result must return the minister assigned in the explicit country context');
   assert.equal(canonicalRegistry.getActiveMinister('USA', 'interior_security').ministerId, candidateA.id,
     'country-scoped appointment must assign the selected candidate to the screen country');
   assert.equal(canonicalRegistry.consistencyCheck().ok, true,
