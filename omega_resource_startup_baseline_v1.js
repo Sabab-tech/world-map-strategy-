@@ -822,6 +822,7 @@
           var mappedUnit = inventoryUnitFor(resourceId, profileRow, inventoryUnits, 'RULE_PROFILE_POPULATION_BASELINE');
           stockUnit = mappedUnit.unit;
           unitSource = mappedUnit.source;
+          quantityFactor = finite(mappedUnit.quantityFactor) || 1;
         } else if (factoryInput) {
           // Metadata-only resource identities may be modeled only when an actual
           // eligible factory input supplies a rate; never invent their profile rate.
