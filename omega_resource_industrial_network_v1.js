@@ -2651,6 +2651,21 @@ function factorySourceWarehouse(rs,batch){
     return{kind:'PROCESSED',warehouse:rs.processedWarehouse||(rs.processedWarehouse={warehouseId:'WH-'+canonicalCountry(batch?.countryId||'' )+'-PROCESSED',availableByResource:{},reservedByResource:{}})};
   return{kind:'RAW',warehouse:rs.warehouse||(rs.warehouse={warehouseId:'WH-'+canonicalCountry(batch?.countryId||'')+'-RAW',availableByResource:{},reservedByResource:{}})};
 }
+function batchBelongsToBoundFactorySite(rs,batch,sourceSiteId,flowSiteByBatchId){
+  const wanted=String(sourceSiteId||'').trim();
+  if(!wanted)return true;
+  const batchId=String(batch?.batchId||'').trim();
+  const flowSite=flowSiteByBatchId.get(batchId);
+  // A recorded site-flow entry is the strongest source identity for extracted batches.
+  if(flowSite)return flowSite===wanted;
+  const directIds=[batch?.siteReferenceKey,batch?.siteId,batch?.sourceSiteId,batch?.originSiteId,
+    batch?.provenance?.siteId,batch?.provenance?.sourceSiteId]
+    .map(value=>String(value||'').trim()).filter(Boolean);
+  if(directIds.includes(wanted))return true;
+  const occurrence=String(batch?.occurrenceKey||batch?.sourceOccurrenceKey||batch?.provenance?.occurrenceKey||'').trim();
+  if(occurrence===wanted||occurrence.includes(':'+wanted+':'))return true;
+  return false;
+}
 function transferFactoryInputsFromWarehouse(countryId,asset,recipe){
   const cid=canonicalCountry(countryId),rs=resourceState(cid),n=netState(cid);
   const stock=asset.inputInventory&&typeof asset.inputInventory==='object'?asset.inputInventory:(asset.inputInventory={});
@@ -2660,6 +2675,13 @@ function transferFactoryInputsFromWarehouse(countryId,asset,recipe){
   if(!(capacity>1e-9))return{status:'BLOCKED',reason:'PRODUCTION_CAPACITY_UNAVAILABLE',transfers,blocked};
   const batches=Array.isArray(rs.batches)?rs.batches:[];
   const nonTransferable=new Set(['CONSUMED','SOLD','TRANSFERRED_OUT','EXHAUSTED','IN_TRANSIT','RESERVED','DECOMMISSIONED']);
+  // Mine-bound simulation factories must not silently consume a different mine's
+  // same-resource stock just because it is older in the national warehouse FIFO.
+  // Generic factories without a source-site binding retain normal pooled-warehouse behavior.
+  const boundSourceSiteId=String(asset?.sourceSiteId||asset?.siteId||'').trim();
+  const siteFlowRows=Array.isArray(rs.industrialNetwork?.siteFlowLedger)?rs.industrialNetwork.siteFlowLedger:[];
+  const flowSiteByBatchId=new Map(siteFlowRows.filter(row=>row?.batchId&&row?.siteId)
+    .map(row=>[String(row.batchId),String(row.siteId)]));
   for(const [rawId,rawCoefficient] of Object.entries(recipe?.inputs||{})){
     const rid=tok(rawId),coefficient=num(rawCoefficient);
     if(!rid||coefficient===null||coefficient<=0){blocked.push({resourceId:rid||rawId,reason:'FACTORY_RECIPE_COEFFICIENT_INVALID'});continue;}
@@ -2674,7 +2696,8 @@ function transferFactoryInputsFromWarehouse(countryId,asset,recipe){
     if(remaining<=1e-9)continue;
     const candidates=batches.filter(batch=>tok(batch?.resourceId||batch?.materialIdentity)===rid&&
       !nonTransferable.has(String(batch?.status||'').toUpperCase())&&
-      Math.max(0,num(batch?.remainingQuantity!=null?batch.remainingQuantity:batch?.quantity)||0)>1e-9)
+      Math.max(0,num(batch?.remainingQuantity!=null?batch.remainingQuantity:batch?.quantity)||0)>1e-9&&
+      batchBelongsToBoundFactorySite(rs,batch,boundSourceSiteId,flowSiteByBatchId))
       .sort((a,b)=>(num(a?.createdTurn)||0)-(num(b?.createdTurn)||0));
     for(const batch of candidates){
       if(remaining<=1e-9)break;
