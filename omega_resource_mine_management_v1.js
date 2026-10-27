@@ -201,7 +201,7 @@ function shellStyle(){
  '@media(max-width:760px){#omega-mine-management-modal{padding:4px}#omega-mine-management-modal .omm-shell{height:98vh;padding:11px;border-radius:10px}#omega-mine-management-modal .omm-grid{grid-template-columns:repeat(2,minmax(0,1fr))}#omega-mine-management-modal .omm-site-grid{grid-template-columns:1fr}#omega-mine-management-modal .omm-lines,#omega-mine-management-modal .omm-materials{grid-template-columns:1fr}#omega-mine-management-modal .omm-head{align-items:center}}';
  g.document.head.appendChild(style);
 }
-let currentView='my-mines',currentCountry='',lastOutcome='',isBound=false,observer=null,productionRunActive=false,currentTargetSiteId='',currentTargetAction='',activeActionProgress=null;
+let currentView='my-mines',currentCountry='',lastOutcome='',isBound=false,observer=null,productionRunActive=false,currentTargetSiteId='',currentTargetAction='';
 function allCountryIds(){
  const rows=new Set([playerCountry()]);
  Object.keys(state()?.resource||{}).forEach(x=>rows.add(iso3(x)));
@@ -435,7 +435,7 @@ function focusSite(siteId,country){
  }
  lastOutcome='Selected site: '+(site?.siteName||siteId)+' · '+(lat===null||lng===null?'coordinates unavailable':'regional coordinates only');render();
 }
-async function handleClickAction(event){
+async function handleClickAction(event, actionProgress){
  const button=event.target?.closest?.('[data-omm-action]');if(!button)return;
  const action=button.getAttribute('data-omm-action'),country=currentCountry||playerCountry(),api=network();
  if(action==='close'){close();return;}
@@ -468,7 +468,7 @@ async function handleClickAction(event){
     blockedOccurrenceCount+=Math.max(0,Number(result?.blockedOccurrenceCount)||0);
     attemptedOccurrenceCount+=Math.max(0,Number(result?.attemptedOccurrenceCount)||0);
     processedBatchCount++;
-     if(activeActionProgress)activeActionProgress.setProgress(processedBatchCount/Math.max(1,totalBatches)*100,
+     if(actionProgress)actionProgress.setProgress(processedBatchCount/Math.max(1,totalBatches)*100,
       'Production for '+country+': batch '+processedBatchCount+'/'+totalBatches+' · '+(offset+batch.length)+'/'+siteIds.length+' sites processed.');
     if(!['STARTED','PARTIALLY_STARTED','ALREADY_ACTIVE'].includes(status)){failedBatchCount++;failures.push({batch:processedBatchCount,reason:result?.reason||status});}
     if(offset+BATCH_SIZE<siteIds.length)await yieldToMobileUi();
@@ -569,14 +569,12 @@ async function onClick(event){
  }
  try{
   await progress.run(title,async function(handle){
-   activeActionProgress=handle;
    handle.setPhase(action==='build-mine'?'Checking construction prerequisites…':
     action==='start-country-production'?'Preparing selected-country mine network…':
     action==='run-mine'?'Checking the selected site and raw-stock ledger…':
     action==='run-factory'?'Checking factory inputs and processing capacity…':
     action==='decommission-mine'?'Validating mine shutdown request…':'Loading current resource records…');
-   try{return await handleClickAction(event);}
-   finally{activeActionProgress=null;}
+   return await handleClickAction(event,handle);
   },{
    detail:'Starting the selected operation…',
    timeoutMs:60000,
