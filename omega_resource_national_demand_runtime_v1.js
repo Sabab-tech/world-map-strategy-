@@ -459,28 +459,54 @@
   function baselineFor(resourceId, resource, profile, runtime, metrics, factoryInput) {
     var map = object(runtime.baselineByResource) || {};
     var existing = map[resourceId];
-    if (existing && finite(existing.rate) !== null && finite(existing.rate) >= 0) return clone(existing);
+    if (existing && finite(existing.rate) !== null && finite(existing.rate) >= 0) {
+      var cached = clone(existing);
+      // Preserve legacy rates, but disclose that the old source label omitted whether the
+      // domestic-use share was observed, profile-derived, or supplied by a general default.
+      if (cached.source === 'OBSERVED_PRODUCTION_DOMESTIC_SHARE' && !cached.provenance) {
+        cached.legacySource = cached.source;
+        cached.source = 'LEGACY_ESTIMATED_PRODUCTION_DOMESTIC_SHARE';
+        cached.provenance = 'LEGACY_ESTIMATE_PROVENANCE_UNKNOWN';
+      }
+      return cached;
+    }
     var consumption = object(resource.consumption) || {};
     var observed = resourceValue(consumption, resourceId);
     if (observed !== null && observed > 0) {
-      return { rate: observed, source: 'OBSERVED_RESOURCE_CONSUMPTION', createdTurn: currentTurn() };
+      return { rate: observed, source: 'OBSERVED_RESOURCE_CONSUMPTION', provenance: 'OBSERVED', evidencePath: 'resource.consumption', createdTurn: currentTurn() };
     }
     var coefficient = finite(profile && profile.basePerMillionPopulation);
     if (coefficient !== null && coefficient > 0 && metrics.current.population.value !== null && metrics.current.population.value > 0) {
       return {
         rate: coefficient * metrics.current.population.value / 1000000,
         source: 'RULE_PROFILE_POPULATION_BASELINE_PER_DAY',
+        provenance: 'RULE_PROFILE_ESTIMATE',
+        coefficientSource: 'resource_economy_rules.json:demand.resourceProfiles.basePerMillionPopulation',
         createdTurn: currentTurn()
       };
     }
     var produced = resourceValue(resource.production, resourceId);
     var domesticShare = finite(profile && profile.domesticUseShare);
-    if (domesticShare === null) domesticShare = finite(rules().defaultDomesticUseShare);
-    if (domesticShare === null) domesticShare = 0.15;
-    if (produced !== null && produced > 0) {
-      return { rate: produced * clamp(domesticShare, 0, 1), source: 'OBSERVED_PRODUCTION_DOMESTIC_SHARE', createdTurn: currentTurn() };
+    var domesticShareSource = domesticShare !== null ? 'RESOURCE_PROFILE' : null;
+    if (domesticShare === null) {
+      domesticShare = finite(rules().defaultDomesticUseShare);
+      if (domesticShare !== null) domesticShareSource = 'RULE_DEFAULT_SIMULATED';
     }
-    if (factoryInput > 0) return { rate: factoryInput, source: 'OBSERVED_FACTORY_INPUT_FLOOR_PER_DAY', createdTurn: currentTurn() };
+    if (produced !== null && produced > 0 && domesticShare !== null) {
+      var boundedDomesticShare = clamp(domesticShare, 0, 1);
+      return {
+        rate: produced * boundedDomesticShare,
+        source: 'ESTIMATED_PRODUCTION_DOMESTIC_SHARE',
+        provenance: 'SIMULATED_ESTIMATE',
+        productionEvidenceSource: 'OBSERVED_RESOURCE_PRODUCTION',
+        domesticUseShare: boundedDomesticShare,
+        domesticUseShareSource: domesticShareSource,
+        createdTurn: currentTurn()
+      };
+    }
+    if (factoryInput > 0) {
+      return { rate: factoryInput, source: 'OBSERVED_FACTORY_INPUT_FLOOR_PER_DAY', provenance: 'OBSERVED_FACTORY_INPUT_PROXY', evidencePath: 'factory.recipe.inputRate', createdTurn: currentTurn() };
+    }
     return null;
   }
 
@@ -792,6 +818,10 @@
         resourceId: rid, unit: profile.unit || null,
         status: stock === null ? 'WAITING_FOR_INVENTORY' : (unmet > 1e-9 ? 'SHORTAGE' : (lowStockCoverage ? 'LOW_COVERAGE' : 'BALANCED')),
         baselineRate: baseline.rate, baselineSource: baseline.source,
+        baselineProvenance: baseline.provenance || 'LEGACY_PROVENANCE_UNSPECIFIED',
+        baselineEvidenceSource: baseline.productionEvidenceSource || baseline.evidencePath || baseline.coefficientSource || null,
+        baselineDomesticUseShare: finite(baseline.domesticUseShare),
+        baselineDomesticUseShareSource: baseline.domesticUseShareSource || null,
         demand: demanded, demandPerDay: demanded, demandThisTurn: demandThisTurn,
         factoryConsumption: inputQty, nationalConsumption: consumed,
         fulfilledDemand: fulfilled, unmetDemand: unmet,
