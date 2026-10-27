@@ -2274,7 +2274,7 @@ Game.Map.applyRelationsMapFilter = function(focusCountry) {
             else if (score < -15) color = '#f97316'; // বৈরী (কমলা)
             else color = '#64748b'; // নিরপেক্ষ (স্লেট গ্রে)
         }
-        layer.setStyle({ fillColor: color, fillOpacity: opacity, color: '#f8fafc', weight: 1.25, opacity: 1.0 });
+        layer.setStyle({ fillColor: color, fillOpacity: opacity, color: '#f4f8ff', weight: 1.45, opacity: 1.0 });
     });
 };
 
@@ -2475,8 +2475,9 @@ Game.Map.setMapMetric = function(metric) {
         layer.setStyle({
             fillColor: color,
             fillOpacity: 0.65,
-            color: 'rgba(255,255,255,0.7)',
-            weight: 1.0
+            color: '#f4f8ff',
+            weight: 1.45,
+            opacity: 1.0
         });
     });
 };
