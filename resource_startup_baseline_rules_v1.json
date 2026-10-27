@@ -43,7 +43,26 @@
     "countryPopulationSource": "economy_global_profiles_v1.json:populationValues",
     "liveConsumptionSource": "Game.state.resource.*.consumption",
     "factoryInputSource": "Existing operational catalog factory recipe input × rated daily capacity",
-    "neverDeleteStockAtExpiry": true
+    "neverDeleteStockAtExpiry": true,
+    "coverageDaysByPriority": {
+      "criticalPriorityMin": 8.5,
+      "critical": 40,
+      "standardPriorityMin": 6,
+      "standard": 24,
+      "nonCritical": 10,
+      "fallback": 14,
+      "authority": "SIMULATED_STARTUP_BASELINE_V1"
+    },
+    "inventoryMaterialization": {
+      "createRawBatchForEveryNewStockRow": true,
+      "writeInventoryLots": true,
+      "writeRawWarehouseReceipt": true,
+      "writeInventoryLedgerEntry": true,
+      "stableBatchIdFormat": "STARTUP-STOCK-V1-{ISO3}-{RESOURCE_ID}",
+      "preserveExplicitZeroInventory": true,
+      "blockOnInconsistentExistingStockLayers": true,
+      "quantityAuthority": "SIMULATED"
+    }
   },
   "countryContext": {
     "populationRuntimeField": "population_2015",
