@@ -82,9 +82,8 @@ globalThis.Game.state.simulation.turn = 101;
 const late = autonomy.dispatch('OMEGA_AUTO_RESOURCE_IMPORT_REQUEST', 'BD', {
   ...payload, requestId: 'SUPPLY-WINDOW-IMP-LATE-1', decisionId: 'SUPPLY-WINDOW-DEC-LATE-1'
 });
-assert.equal(late.status, 'APPLIED');
-assert.equal(late.result?.accepted, false);
-assert.equal(late.result?.reason, 'PLAYER_SUPPLY_WINDOW_EXPIRED');
+assert.equal(late.status, 'FAILED', 'a stale queued import must be rejected by the final command authority');
+assert.equal(late.result?.reason || late.reason, 'PLAYER_SUPPLY_WINDOW_EXPIRED');
 assert.equal(globalThis.Game.state.trade.BD.importRequests.length, 1,
   'expired supply windows must not create a new import request');
 
