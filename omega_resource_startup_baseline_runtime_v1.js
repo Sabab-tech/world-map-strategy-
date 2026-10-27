@@ -228,6 +228,7 @@
     let created = 0, preserved = 0, countryCount = 0;
     for (const cid of arr(baseline.countryOrder)) {
       const source = baseline.countries[cid]; if (!source) continue;
+      let countryCreated = 0;
       const existingResource = s.resource[cid];
       const existingEconomy = s.economy[cid];
       const existingAssets = productionAssetRows(cid);
@@ -279,12 +280,12 @@
           starterAsset: true
         };
         makeFactoryInputLots(asset, descriptor, cid);
-        economy.productionAssets.push(asset); existingIds.add(id); created++;
+        economy.productionAssets.push(asset); existingIds.add(id); created++; countryCreated++;
       }
       const rs = ensureStateBucket(s.resource, cid);
       rs.startupBaseline = Object.assign({}, meta, { version: VERSION, factoryAssetsInitialized: true,
         minesInitialized: false, primaryStocksInitialized: false, skippedLegacyFactorySeed: false,
-        seededFactoryCount: arr(source.factoryAssets).length, createdFactoryCount: created,
+        seededFactoryCount: arr(source.factoryAssets).length, createdFactoryCount: countryCreated,
         authority: 'OMEGA_COUNTRY_STARTUP_BASELINE_V1', initializedTurn: turn() });
       countryCount++;
     }
