@@ -63,6 +63,7 @@
     "fallback": "UI v2 mount fails closed; legacy cabinet renderers are not revived",
     "navigation": "World closes the cabinet layer; Overview, Government, Economy and More use one shared UI-v2 app and canonical source modules.",
     "productionRoot": "cabinet-full-window",
+    "resourceMinistryLegacyBridge": "omega_ui_v2/resource-ministry-legacy-bridge.js",
     "enabledByDefault": true
   }
 }
