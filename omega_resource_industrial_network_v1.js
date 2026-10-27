@@ -3088,6 +3088,9 @@ async function executeSitePipeline(input={}){
   const registeredAssets=Array.isArray(state()?.resource?.[cid]?.mineAssets)?state().resource[cid].mineAssets:[];
   const latestMineAsset=registeredAssets.slice().reverse().find(row=>String(row?.siteId||'')===String(site.siteId));
   const startupMeta=state()?.resource?.[cid]?.startupBaseline;
+  if(startupMeta?.factoryAssetsInitialized===true&&startupMeta?.minesInitialized!==true)
+    return{status:'BLOCKED',reason:'STARTUP_MINE_REGISTRY_NOT_READY',siteId:site.siteId,countryId:cid,
+      message:'Starting mine assets are still being initialized. No extraction was committed.'};
   if(startupMeta?.minesInitialized===true){
     const operationalMine=registeredAssets.slice().reverse().find(row=>
       String(row?.siteId||'')===String(site.siteId)&&
