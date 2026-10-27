@@ -503,21 +503,46 @@
     const rawIds = new Set();
     Object.values(baseline.countries || {}).forEach(row =>
       arr(row && row.primaryResourceStockPolicy && row.primaryResourceStockPolicy.eligibleResourceIds).forEach(rid => rawIds.add(token(rid))));
-    const knownResources = rawIds;
     const grouped = Object.create(null);
-    siteDescriptors.forEach(row => {
-      const key = row.countryId + '|' + row.resourceId;
-      if (!grouped[key]) grouped[key] = { countryId: row.countryId, resourceId: row.resourceId, dailyCapacity: 0, unit: row.unit, siteIds: [] };
-      const group = grouped[key]; group.dailyCapacity += row.dailyCapacity; group.siteIds.push(row.siteId);
+    arr(siteDescriptors).forEach(row => {
+      const rid = token(row && row.resourceId), cid = canonical(row && row.countryId);
+      if (!cid || !rawIds.has(rid) || !(num(row.dailyCapacity) > 0)) return;
+      const key = cid + '|' + rid;
+      if (!grouped[key]) grouped[key] = { countryId: cid, resourceId: rid, dailyCapacity: 0, unit: row.unit, siteIds: [] };
+      const group = grouped[key];
+      group.dailyCapacity += num(row.dailyCapacity) || 0;
+      group.siteIds.push(String(row.siteId));
       if (!group.unit || group.unit === 'SIMULATION_RESOURCE_UNIT') group.unit = row.unit;
     });
+    const planMap = Object.create(null);
+    for (const cid of arr(baseline.countryOrder)) {
+      const source = baseline.countries[cid];
+      arr(source && source.primaryResourceStocks).forEach(plan => {
+        const rid = token(plan && plan.resourceId);
+        if (!rid || !rawIds.has(rid) || !(num(plan.quantity) > 0)) return;
+        planMap[cid + '|' + rid] = plan;
+      });
+    }
     const byCountry = Object.create(null);
     Object.values(grouped).forEach(group => {
-      if (!knownResources.has(group.resourceId) || !rawIds.has(group.resourceId)) return;
       if (!byCountry[group.countryId]) byCountry[group.countryId] = [];
-      byCountry[group.countryId].push(group);
+      const plan = planMap[group.countryId + '|' + group.resourceId] || null;
+      const expectedIds = arr(plan && plan.siteIds).map(String).sort();
+      const activeIds = group.siteIds.map(String).sort();
+      const sameSites = expectedIds.length > 0 && expectedIds.length === activeIds.length &&
+        expectedIds.every((id, index) => id === activeIds[index]);
+      const plannedDaily = num(plan && plan.dailyOutputCapacity);
+      const rateMatches = plannedDaily !== null &&
+        Math.abs(plannedDaily - group.dailyCapacity) <= Math.max(1e-6, Math.abs(plannedDaily) * 1e-8);
+      byCountry[group.countryId].push(Object.assign({}, group, {
+        staticBaselinePlan: plan,
+        staticBaselineMatched: !!(sameSites && rateMatches),
+        staticBaselineSiteSetMatched: sameSites,
+        staticBaselineRateMatched: !!rateMatches
+      }));
     });
     let seededCountries = 0, seededTypes = 0, preservedTypes = 0, skippedLateCountries = 0;
+    let stockPlanMatchedCount = 0, stockPlanRecomputedCount = 0, unmatchedStockPlanCount = 0;
     for (const cid of arr(baseline.countryOrder)) {
       const source = baseline.countries[cid]; if (!source) continue;
       const rs = ensureStateBucket(s.resource, cid), meta = obj(rs.startupBaseline) ? rs.startupBaseline : {};
@@ -528,40 +553,57 @@
       if (hasCurrentActivity) {
         const existingRaw = obj(rs.warehouse && rs.warehouse.availableByResource) ? rs.warehouse.availableByResource : {};
         const existingRows = Object.keys(existingRaw).filter(key => rawIds.has(token(key)) && (num(existingRaw[key]) || 0) > 0)
-          .map(key => ({ resourceId: token(key), quantity: num(existingRaw[key]), unit: batchUnit(rs, key), openingAuthority: 'EXISTING_SAVE_STOCK_NOT_RESEEDED' }));
+          .map(key => ({ resourceId: token(key), quantity: num(existingRaw[key]), unit: batchUnit(rs, key),
+            openingAuthority: 'EXISTING_SAVE_STOCK_NOT_RESEEDED' }));
         rs.startupBaseline = Object.assign({}, meta, { version: VERSION, primaryStocksInitialized: true,
           openingStocksSkippedForExistingGame: true, openingPrimaryResourceStocks: existingRows,
-          openingStockTypesCreated: 0, authority: 'OMEGA_COUNTRY_STARTUP_BASELINE_V1' });
+          openingStockTypesCreated: 0, staticStockPlanMatchedCount: 0, staticStockPlanRecomputedCount: 0,
+          authority: 'OMEGA_COUNTRY_STARTUP_BASELINE_V1' });
         skippedLateCountries++; continue;
       }
       const inv = obj(rs.inventory) ? rs.inventory : (rs.inventory = {});
+      const units = obj(rs.inventoryUnits) ? rs.inventoryUnits : (rs.inventoryUnits = {});
       const warehouse = ensureWarehouse(rs, cid);
-      let seededAny = false;
+      let seededAny = false, countryMatched = 0, countryRecomputed = 0, countryUnmatched = 0;
       for (const group of byCountry[cid] || []) {
-        if (!knownResources.has(group.resourceId)) continue;
+        if (!rawIds.has(group.resourceId)) continue;
         const invKey = findKeyByToken(inv, group.resourceId), whKey = findKeyByToken(warehouse.availableByResource, group.resourceId);
         if (invKey === false || whKey === false) { preservedTypes++; continue; }
         if ((invKey !== null && invKey !== false && (num(inv[invKey]) || 0) > 0) ||
             (whKey !== null && whKey !== false && (num(warehouse.availableByResource[whKey]) || 0) > 0) ||
             hasResourceHistory(rs, group.resourceId)) { preservedTypes++; continue; }
-        const quantity = Math.max(0, group.dailyCapacity * Math.max(1, Number(source.primaryResourceStockPolicy.daysOfSiteOutput) || 3));
-        if (!(quantity > 0)) continue;
+        const stockPlan = group.staticBaselinePlan;
+        const matched = group.staticBaselineMatched && num(stockPlan && stockPlan.quantity) > 0;
+        const days = Math.max(1, Number(source.primaryResourceStockPolicy && source.primaryResourceStockPolicy.daysOfSiteOutput) || 3);
+        const computedQuantity = Math.max(0, group.dailyCapacity * days);
+        const quantity = matched ? num(stockPlan.quantity) : computedQuantity;
+        if (!(quantity > 0)) { if (stockPlan) { countryUnmatched++; unmatchedStockPlanCount++; } continue; }
         const batchId = 'STARTUP-STOCK:' + cid + ':' + group.resourceId + ':V1';
         if (arr(rs.batches).some(row => String(row && row.batchId || '') === batchId)) { preservedTypes++; continue; }
-        const unit = group.unit || 'SIMULATION_RESOURCE_UNIT', newBatch = {
+        const unit = matched ? String(stockPlan.unit || group.unit || 'SIMULATION_RESOURCE_UNIT') : String(group.unit || 'SIMULATION_RESOURCE_UNIT');
+        const sourceSiteIds = matched ? arr(stockPlan.siteIds).map(String) : group.siteIds.map(String);
+        const newBatch = {
           batchId, resourceId: group.resourceId, materialIdentity: group.resourceId,
           quantity, remainingQuantity: quantity, unit, stage: 'RAW', countryId: cid,
           sourceCountryId: cid, originCountryId: cid, destinationCountryId: cid, ownerCountryCode: cid,
           warehouseId: warehouse.warehouseId, locationNodeKey: warehouse.locationNodeKey,
           status: 'AVAILABLE', createdTurn: turn(), lastMovementTurn: turn(),
-          sourceSiteIds: group.siteIds.slice(), provenance: { source: 'OMEGA_COUNTRY_STARTUP_BASELINE_V1',
-            authority: 'SIMULATED_STARTING_RAW_STOCK_V1', reserveIsNotInventory: true,
-            quantityBasis: 'SUM_OF_ELIGIBLE_SITE_DAILY_CAPACITY_X_OPENING_STOCK_DAYS',
-            siteIds: group.siteIds.slice(), daysOfSiteOutput: Number(source.primaryResourceStockPolicy.daysOfSiteOutput) || 3,
-            simulationOnly: true, finiteAndConsumable: true }
+          sourceSiteIds: sourceSiteIds.slice(), provenance: {
+            source: 'OMEGA_COUNTRY_STARTUP_BASELINE_V1', authority: 'SIMULATED_STARTING_RAW_STOCK_V1',
+            reserveIsNotInventory: true,
+            quantityBasis: matched ? 'STATIC_COUNTRY_STARTUP_BASELINE_PRIMARY_RESOURCE_STOCK' : 'MATCHED_STARTING_MINE_OUTPUT_X_OPENING_STOCK_DAYS',
+            siteIds: sourceSiteIds.slice(), dailyOutputCapacity: Number(group.dailyCapacity.toFixed(9)),
+            daysOfSiteOutput: matched ? num(stockPlan.daysOfSiteOutput) || days : days,
+            staticBaselineQuantity: num(stockPlan && stockPlan.quantity),
+            staticBaselineMatched: matched,
+            staticBaselineMismatchReason: stockPlan ? (!group.staticBaselineSiteSetMatched ? 'PLANNED_SITE_SET_DOES_NOT_MATCH_RUNTIME_REGISTRY' :
+              !group.staticBaselineRateMatched ? 'PLANNED_OUTPUT_RATE_DOES_NOT_MATCH_RUNTIME_RATE' : null) : 'NO_STATIC_STOCK_ROW_FOR_RESOURCE',
+            simulationOnly: true, finiteAndConsumable: true
+          }
         };
         inv[invKey !== null && invKey !== false ? invKey : group.resourceId] = quantity;
         warehouse.availableByResource[whKey !== null && whKey !== false ? whKey : group.resourceId] = quantity;
+        if (units[group.resourceId] == null) units[group.resourceId] = unit;
         rs.batches = arr(rs.batches); rs.batches.push(newBatch);
         rs.inventoryLots = obj(rs.inventoryLots) ? rs.inventoryLots : {};
         rs.inventoryLots[batchId] = clone(newBatch);
@@ -570,53 +612,80 @@
           batchId, resourceId: group.resourceId, quantity, unit, simulationTurn: turn(),
           status: 'RECEIVED', authority: 'SIMULATED_STARTING_RAW_STOCK_V1' });
         seededTypes++; seededAny = true;
+        if (matched) { countryMatched++; stockPlanMatchedCount++; }
+        else { countryRecomputed++; stockPlanRecomputedCount++; if (stockPlan) { countryUnmatched++; unmatchedStockPlanCount++; } }
       }
       const openingRows = arr(rs.batches).filter(row => String(row && row.batchId || '').indexOf('STARTUP-STOCK:' + cid + ':') === 0)
         .map(row => ({ resourceId: token(row.resourceId || row.materialIdentity), quantity: num(row.quantity) || 0,
           remainingQuantity: num(row.remainingQuantity != null ? row.remainingQuantity : row.quantity) || 0,
           unit: row.unit || 'SIMULATION_RESOURCE_UNIT', siteIds: arr(row.sourceSiteIds).slice(),
-          authority: row.provenance && row.provenance.authority || 'SIMULATED_STARTING_RAW_STOCK_V1' }));
+          authority: row.provenance && row.provenance.authority || 'SIMULATED_STARTING_RAW_STOCK_V1',
+          staticBaselineMatched: row.provenance && row.provenance.staticBaselineMatched === true }));
       rs.startupBaseline = Object.assign({}, meta, { version: VERSION, primaryStocksInitialized: true,
         openingStocksSkippedForExistingGame: false, openingPrimaryResourceStocks: openingRows,
         openingStockTypesCreated: openingRows.length,
+        staticStockPlanMatchedCount: countryMatched, staticStockPlanRecomputedCount: countryRecomputed,
+        staticStockPlanUnmatchedCount: countryUnmatched,
         authority: 'OMEGA_COUNTRY_STARTUP_BASELINE_V1' });
       if (seededAny) seededCountries++;
     }
     return { status: 'READY', seededCountries, seededResourceTypes: seededTypes,
-      preservedResourceTypes: preservedTypes, skippedExistingGameCountries: skippedLateCountries };
+      preservedResourceTypes: preservedTypes, skippedExistingGameCountries: skippedLateCountries,
+      staticStockPlanMatchedCount: stockPlanMatchedCount, staticStockPlanRecomputedCount: stockPlanRecomputedCount,
+      staticStockPlanUnmatchedCount: unmatchedStockPlanCount };
   }
   function seedMinesAndStocks() {
     if (!baseline || !catalog) return { status: 'BLOCKED', reason: 'BASELINE_OR_CATALOG_UNAVAILABLE' };
-    const registryRows = siteRows(), resources = new Set(Object.keys(catalog.resourceRules || {}).map(token));
-    const descriptors = [];
+    const canonicalResources = new Set();
+    Object.values(baseline.countries || {}).forEach(row =>
+      arr(row && row.primaryResourceStockPolicy && row.primaryResourceStockPolicy.eligibleResourceIds).forEach(rid => canonicalResources.add(token(rid))));
+    const registryRows = siteRows(), descriptorsBySite = new Map();
     for (const site of registryRows) {
-      const descriptor = operationalMineDescriptor(site, resources);
-      if (descriptor) descriptors.push(descriptor);
+      const descriptor = operationalMineDescriptor(site, canonicalResources);
+      if (descriptor && !descriptorsBySite.has(descriptor.siteId)) descriptorsBySite.set(descriptor.siteId, descriptor);
     }
     const s = state(); s.resource = obj(s.resource) ? s.resource : {};
-    const existingByCountry = Object.create(null);
-    for (const row of descriptors) {
-      if (!existingByCountry[row.countryId]) existingByCountry[row.countryId] = new Map();
-      existingByCountry[row.countryId].set(row.siteId, row);
-    }
-    let seededMines = 0, preservedMines = 0, eligibleSites = 0, initializedCountries = 0;
+    let seededMines = 0, preservedMines = 0, eligibleSites = 0, initializedCountries = 0, unmatchedPlannedMineCount = 0;
+    const descriptors = [];
     for (const cid of arr(baseline.countryOrder)) {
       const source = baseline.countries[cid]; if (!source) continue;
       const rs = ensureStateBucket(s.resource, cid), meta = obj(rs.startupBaseline) ? rs.startupBaseline : {};
       if (meta.minesInitialized) continue;
       const existing = arr(rs.mineAssets);
       const bySite = new Set(existing.map(asset => String(asset && asset.siteId || '')).filter(Boolean));
-      const candidates = Array.from((existingByCountry[cid] || new Map()).values());
-      eligibleSites += candidates.length;
       rs.mineAssets = existing;
       if (meta.skippedLegacyFactorySeed === true) {
         rs.startupBaseline = Object.assign({}, meta, { version: VERSION, minesInitialized: true,
-          primaryStocksInitialized: true, availableSiteCount: candidates.length,
+          primaryStocksInitialized: true, availableSiteCount: 0, plannedMineCount: arr(source.startingMineAssets).length,
+          unmatchedPlannedMineCount: arr(source.startingMineAssets).length,
           openingStocksSkippedForExistingGame: true, skippedLegacyMineSeed: true,
           authority: 'OMEGA_COUNTRY_STARTUP_BASELINE_V1' });
         initializedCountries++;
         continue;
       }
+      const plannedRows = arr(source.startingMineAssets), candidates = [];
+      const seenPlanned = new Set();
+      for (const plan of plannedRows) {
+        const siteId = String(plan && plan.siteId || '').trim(), rid = token(plan && plan.resourceId);
+        if (!siteId || seenPlanned.has(siteId) || !canonicalResources.has(rid)) { if (siteId) unmatchedPlannedMineCount++; continue; }
+        seenPlanned.add(siteId);
+        const descriptor = descriptorsBySite.get(siteId);
+        if (!descriptor || descriptor.countryId !== cid || token(descriptor.resourceId) !== rid) {
+          unmatchedPlannedMineCount++; continue;
+        }
+        const plannedRate = num(plan.dailyCapacity), plannedReserve = num(plan.reserveQuantity);
+        if (!(plannedRate > 0) || !(plannedReserve > 0)) { unmatchedPlannedMineCount++; continue; }
+        candidates.push(Object.assign({}, descriptor, {
+          dailyCapacity: plannedRate, reserveQuantity: plannedReserve,
+          unit: String(plan.unit || descriptor.unit), rateUnit: String(plan.rateUnit || (String(plan.unit || descriptor.unit) + '_PER_DAY')),
+          reserveAuthority: String(plan.sourceAuthority || 'SIMULATED_STARTING_MINE_ASSET_V1'),
+          capacityAuthority: 'SIMULATED_STARTING_MINE_BASELINE_V1',
+          plannedStartingDailyCapacity: plannedRate, plannedReserveQuantity: plannedReserve,
+          plannedSourceAuthority: String(plan.sourceAuthority || 'SIMULATED_STARTING_MINE_ASSET_V1'),
+          plannedMineId: 'MINE-START:' + cid + ':' + siteId
+        }));
+      }
+      eligibleSites += candidates.length;
       candidates.forEach(row => {
         if (bySite.has(row.siteId)) { preservedMines++; return; }
         const asset = {
@@ -624,7 +693,10 @@
           siteId: row.siteId, countryId: cid, siteName: row.siteName, resourceId: row.resourceId,
           status: 'OPERATIONAL', productionStatus: 'READY_FOR_EXTRACTION', capacityPerDay: row.dailyCapacity,
           nominalDailyCapacity: row.dailyCapacity, productionRate: row.dailyCapacity, productionRateUnit: row.rateUnit,
-          outputUnit: row.unit, reserveAuthority: row.reserveAuthority, capacityAuthority: row.capacityAuthority,
+          outputUnit: row.unit, reserveQuantity: row.reserveQuantity, reserveUnit: row.unit,
+          reserveAuthority: row.reserveAuthority, capacityAuthority: row.capacityAuthority,
+          plannedStartingDailyCapacity: row.plannedStartingDailyCapacity,
+          plannedReserveQuantity: row.plannedReserveQuantity, plannedSourceAuthority: row.plannedSourceAuthority,
           sourceSiteStatus: row.sourceSiteStatus, siteSnapshot: clone(row.siteSnapshot),
           workersRequired: null, workersCommitted: null, staffingStatus: 'SIMULATED_STARTING_MINE_STAFFED',
           constructionCostUsd: null, commissioningLevel: 1, capacityMultiplier: 1,
@@ -634,15 +706,22 @@
         };
         rs.mineAssets.push(asset); bySite.add(row.siteId); seededMines++;
       });
+      const countryUnmatched = Math.max(0, plannedRows.length - candidates.length);
+      unmatchedPlannedMineCount += countryUnmatched;
       rs.startupBaseline = Object.assign({}, meta, { version: VERSION, factoryAssetsInitialized: true,
-        minesInitialized: true, availableSiteCount: candidates.length, operationalMineCount: rs.mineAssets.filter(isOperationalMine).length,
+        minesInitialized: true, availableSiteCount: candidates.length, plannedMineCount: plannedRows.length,
+        unmatchedPlannedMineCount: countryUnmatched,
+        operationalMineCount: rs.mineAssets.filter(isOperationalMine).length,
         permanentMineAssetsSeeded: (num(meta.permanentMineAssetsSeeded) || 0) + candidates.filter(row => !existing.some(a => String(a && a.siteId || '') === row.siteId)).length,
         authority: 'OMEGA_COUNTRY_STARTUP_BASELINE_V1', mineInitializedTurn: turn() });
       initializedCountries++;
+      descriptors.push(...candidates);
     }
     const stockResult = seedOpeningStocks(descriptors);
     return { status: 'READY', countryCount: initializedCountries, eligibleSiteCount: eligibleSites,
-      seededMineCount: seededMines, preservedMineCount: preservedMines, stock: stockResult };
+      plannedMineCount: Object.values(baseline.countries || {}).reduce((sum, row) => sum + arr(row && row.startingMineAssets).length, 0),
+      seededMineCount: seededMines, preservedMineCount: preservedMines, unmatchedPlannedMineCount,
+      stock: stockResult };
   }
   async function initialize(reason) {
     if (initialized) return diagnostics();
