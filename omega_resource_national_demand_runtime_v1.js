@@ -275,6 +275,82 @@
     });
     return totals;
   }
+
+  function factoryInputUnitBridge(sourceUnit, targetUnit) {
+    var source = String(sourceUnit || '').trim(), target = String(targetUnit || '').trim();
+    if (!source || !target) return null;
+    if (token(source) === token(target)) return { factor: 1, sourceUnit: source, targetUnit: target };
+    var catalog = g.OmegaResourceIndustrialCatalogData ||
+      (g.Omega && g.Omega.ResourceIndustrialCatalogData) || null;
+    var normalization = object(catalog && catalog.factoryCatalogPolicy &&
+      catalog.factoryCatalogPolicy.unitNormalization) || {};
+    var sourceUnits = object(normalization.sourceUnits) || {};
+    var row = sourceUnits[source.toUpperCase()] || sourceUnits[token(source).toUpperCase()] || null;
+    var factor = finite(row && row.factor);
+    if (!row || row.simulationOnly !== true || token(row.targetUnit) !== token(target) ||
+        factor === null || factor <= 0) return null;
+    return { factor: factor, sourceUnit: source, targetUnit: target,
+      authority: row.authority || normalization.authority || 'SIMULATION_ONLY_UNIT_NORMALIZATION',
+      simulationOnly: true };
+  }
+
+  function activeFactoryInputDailyRates(factoryAssets, resource) {
+    var rates = {}, sources = {}, units = object(resource && resource.inventoryUnits) || {};
+    var stockUnitByRateUnit = object(rules().stockUnitByRateUnit) || {};
+    var excluded = ['CLOSED', 'DECOMMISSIONED', 'BLOCKED', 'TECHNOLOGY_LOCKED',
+      'UNDER_CONSTRUCTION', 'MAINTENANCE', 'CANCELLED', 'CANCELED', 'DESTROYED',
+      'OFFLINE', 'PAUSED', 'SUSPENDED', 'FAILED'];
+    (Array.isArray(factoryAssets) ? factoryAssets : []).forEach(function (asset) {
+      if (!asset || excluded.indexOf(id(asset.status)) >= 0) return;
+      var inputs = object(asset.inputCoefficients) || object(asset.inputs) || {};
+      if (!Object.keys(inputs).length) return;
+      var capacity = finite(asset.capacityPerDay);
+      if (capacity === null || capacity <= 0) capacity = finite(asset.ratedCapacityPerDay);
+      if (capacity === null || capacity <= 0) capacity = finite(asset.productionCapacity);
+      if (capacity === null || capacity <= 0) capacity = finite(asset.capacity);
+      if (capacity === null || capacity <= 0) return;
+      var cycleDays = finite(asset.cycleDays);
+      if (cycleDays === null || cycleDays <= 0) cycleDays = 1;
+      var assetUnitMap = object(asset.inputUnits) || {};
+      Object.keys(inputs).forEach(function (resourceId) {
+        var coefficient = finite(inputs[resourceId]);
+        if (coefficient === null || coefficient <= 0) return;
+        var inventoryKey = resourceKey(units, resourceId);
+        var recordedStockUnit = inventoryKey === null ? null : String(units[inventoryKey] || '').trim() || null;
+        var profile = profileFor(resourceId) || {};
+        var expectedStockUnit = stockUnitByRateUnit[String(profile.unit || '').trim()] || null;
+        var sourceUnit = recordedStockUnit || expectedStockUnit;
+        var assetUnitKey = resourceKey(assetUnitMap, resourceId);
+        var targetUnit = (assetUnitKey === null ? null : String(assetUnitMap[assetUnitKey] || '').trim()) ||
+          String(asset.inputUnit || asset.recipeInputUnit || '').trim() || null;
+
+        if (!sourceUnit) sourceUnit = targetUnit;
+        if (!sourceUnit || !targetUnit) return;
+        var bridge = factoryInputUnitBridge(sourceUnit, targetUnit);
+        if (!bridge) return;
+
+        // Recipe coefficients are expressed in the factory's declared input unit.
+        // Convert back to the resource's stock unit so demand coverage uses a
+        // compatible quantity. Simulation-only bridges remain explicitly identified.
+        var dailyRate = capacity * coefficient / cycleDays / bridge.factor;
+        if (!(dailyRate > 0) || !Number.isFinite(dailyRate)) return;
+        var key = resourceKey(rates, resourceId) || token(resourceId);
+        rates[key] = (rates[key] || 0) + dailyRate;
+        if (!sources[key]) sources[key] = [];
+        sources[key].push({
+          factoryId: String(asset.id || asset.factoryId || asset.factoryType || 'UNNAMED_FACTORY'),
+          resourceId: token(resourceId),
+          quantityPerDay: dailyRate,
+          sourceUnit: sourceUnit,
+          factoryInputUnit: targetUnit,
+          unitBridgeAuthority: bridge.authority || 'IDENTICAL_DECLARED_UNIT',
+          simulationOnlyUnitBridge: bridge.simulationOnly === true,
+          source: 'ACTIVE_FACTORY_RECIPE_CAPACITY'
+        });
+      });
+    });
+    return { rates: rates, sources: sources };
+  }
   function protectedStock(resource, resourceId) {
     var strategic = object(resource.strategicReserve) || {};
     var map = strategic.availableByResource || strategic.protectedByResource || strategic.minimumByResource ||
@@ -468,7 +544,7 @@
       }
     };
   }
-  function baselineFor(resourceId, resource, profile, runtime, metrics, factoryInput) {
+  function baselineFor(resourceId, resource, profile, runtime, metrics, factoryInput, activeFactoryInput) {
     var map = object(runtime.baselineByResource) || {};
     var existing = map[resourceId];
     if (existing && finite(existing.rate) !== null && finite(existing.rate) >= 0) {
@@ -517,7 +593,17 @@
       };
     }
     if (factoryInput > 0) {
-      return { rate: factoryInput, source: 'OBSERVED_FACTORY_INPUT_FLOOR_PER_DAY', provenance: 'OBSERVED_FACTORY_INPUT_PROXY', evidencePath: 'factory.recipe.inputRate', createdTurn: currentTurn() };
+      if (activeFactoryInput > 0 && activeFactoryInput >= factoryInput) {
+        return {
+          rate: activeFactoryInput,
+          source: 'ACTIVE_FACTORY_INPUT_REQUIREMENT_PROXY',
+          provenance: 'SIMULATED_FACTORY_RECIPE_CAPACITY',
+          evidencePath: 'economy.productionAssets.inputCoefficients',
+          createdTurn: currentTurn()
+        };
+      }
+      return { rate: factoryInput, source: 'OBSERVED_FACTORY_INPUT_FLOOR_PER_DAY',
+        provenance: 'OBSERVED_FACTORY_INPUT_PROXY', evidencePath: 'factory.recipe.inputRate', createdTurn: currentTurn() };
     }
     return null;
   }
@@ -697,12 +783,19 @@
     Object.keys(factoryInputs).forEach(function (resourceId) {
       factoryInputDailyRates[resourceId] = factoryInputs[resourceId] / turnDays;
     });
+    var nationalEconomy = bucket(cid, 'economy') || {};
+    var activeFactoryDemand = activeFactoryInputDailyRates(nationalEconomy.productionAssets, resource);
+    var activeFactoryInputDailyRatesByResource = activeFactoryDemand.rates;
+    var activeFactoryInputSourcesByResource = activeFactoryDemand.sources;
     var allConsumption = object(resource.consumption) || {};
     var resourceIds = Object.keys(profiles());
     Object.keys(allConsumption).forEach(function (rid) {
       if (!resourceIds.some(function (existing) { return token(existing) === token(rid); })) resourceIds.push(rid);
     });
     Object.keys(factoryInputs).forEach(function (rid) {
+      if (!resourceIds.some(function (existing) { return token(existing) === token(rid); })) resourceIds.push(rid);
+    });
+    Object.keys(activeFactoryInputDailyRatesByResource).forEach(function (rid) {
       if (!resourceIds.some(function (existing) { return token(existing) === token(rid); })) resourceIds.push(rid);
     });
     var outputConsumption = clone(allConsumption), summaries = [], pendingByResource = {};
@@ -735,7 +828,11 @@
       if (inputQty === null) inputQty = 0;
       var inputDailyRate = resourceValue(factoryInputDailyRates, rid);
       if (inputDailyRate === null) inputDailyRate = 0;
-      var baseline = baselineFor(rid, resource, profile, runtime, metrics, inputDailyRate);
+      var activeFactoryInputDailyRate = resourceValue(activeFactoryInputDailyRatesByResource, rid);
+      if (activeFactoryInputDailyRate === null) activeFactoryInputDailyRate = 0;
+      var combinedFactoryInputFloor = Math.max(inputDailyRate, activeFactoryInputDailyRate);
+      var baseline = baselineFor(rid, resource, profile, runtime, metrics,
+        combinedFactoryInputFloor, activeFactoryInputDailyRate);
       if (!baseline) {
         summaries.push({
           resourceId: rid, status: 'UNKNOWN', source: 'NO_BASELINE_OR_REQUIRED_METRICS',
@@ -786,7 +883,16 @@
       // Resource demand falls with reduced real household purchasing power; higher import
       // costs also enter the existing price-elasticity formula above. Industry/producer
       // cost pressure is supplied to the strategy telemetry and trade unit-price runtime.
-      var demanded = Math.max(inputDailyRate, factors.demand) * purchasingPowerMultiplier;
+      var hasActiveFactoryInputSignal = activeFactoryInputDailyRate > 0;
+      var factoryOnlyBaseline = baseline.source === 'ACTIVE_FACTORY_INPUT_REQUIREMENT_PROXY';
+      var consumerDemanded = factoryOnlyBaseline ? 0 : Math.max(0, factors.demand) * purchasingPowerMultiplier;
+      var factoryDemanded = Math.max(inputDailyRate, activeFactoryInputDailyRate);
+      // Forecast coverage includes a current recipe's active input requirement even
+      // before a first production cycle can consume tracked stock. The active input
+      // floor must not be charged a second time as household consumption.
+      var demanded = hasActiveFactoryInputSignal
+        ? Math.max(consumerDemanded, factoryDemanded)
+        : Math.max(inputDailyRate, factors.demand) * purchasingPowerMultiplier;
       factors.factors.financialTransmission = {
         householdPurchasingPowerMultiplier: purchasingPowerMultiplier,
         importCostMultiplier: importCostMultiplier,
@@ -795,12 +901,13 @@
       };
       factors.transmittedDemand = demanded;
       var demandThisTurn = demanded * turnDays;
+      var consumerDemandThisTurn = (hasActiveFactoryInputSignal ? consumerDemanded : demanded) * turnDays;
       var consumptionKey = resourceKey(outputConsumption, rid) || rid;
-      outputConsumption[consumptionKey] = demanded;
+      outputConsumption[consumptionKey] = hasActiveFactoryInputSignal ? consumerDemanded : demanded;
       var stock = hasInventoryBook ? (resourceValue(inventory, rid) == null ? 0 : Math.max(0, resourceValue(inventory, rid))) : null;
       var protectedQty = stock === null ? null : Math.min(stock, protectedStock(resource, rid));
       var spendable = stock === null ? null : Math.max(0, stock - protectedQty);
-      var nonFactoryDemand = Math.max(0, demandThisTurn - inputQty);
+      var nonFactoryDemand = Math.max(0, consumerDemandThisTurn - inputQty);
       var consumeRequest = stock === null ? 0 : Math.min(nonFactoryDemand, spendable);
       var consumed = 0, consumeStatus = stock === null ? 'UNKNOWN_INVENTORY' : (consumeRequest > 0 ? 'NOT_ATTEMPTED' : 'NO_DEBIT_REQUIRED');
       if (consumeRequest > 0) {
@@ -818,8 +925,8 @@
       }
       var inventoryAfter = hasInventoryBook ? resourceValue((bucket(cid, 'resource') || {}).inventory, rid) : null;
       if (hasInventoryBook && inventoryAfter === null) inventoryAfter = 0;
-      var fulfilled = stock === null ? null : Math.min(demandThisTurn, inputQty + consumed);
-      var unmet = fulfilled === null ? null : Math.max(0, demandThisTurn - fulfilled);
+      var fulfilled = stock === null ? null : Math.min(consumerDemandThisTurn, inputQty + consumed);
+      var unmet = fulfilled === null ? null : Math.max(0, consumerDemandThisTurn - fulfilled);
       var remainingSpendable = inventoryAfter === null ? null : Math.max(0, inventoryAfter - protectedStock(bucket(cid, 'resource') || resource, rid));
       var coverage = remainingSpendable === null ? null : (demanded > 0 ? remainingSpendable / demanded : null);
       var pending = pendingByResource[token(rid)] || 0;
@@ -829,7 +936,7 @@
           ? (finite(profile.stockCoverageTurns) === null ? minCoverageDays : finite(profile.stockCoverageTurns))
           : finite(profile.stockCoverageDays));
       var lowStockCoverage = coverage !== null && demanded > 0 && coverage < coverageTarget;
-      var shortagePressure = unmet !== null && demandThisTurn > 0 ? clamp(unmet / demandThisTurn, 0, 1) : 0;
+      var shortagePressure = unmet !== null && consumerDemandThisTurn > 0 ? clamp(unmet / consumerDemandThisTurn, 0, 1) : 0;
       var coveragePressure = coverage !== null && coverageTarget > 0 ? clamp((coverageTarget - coverage) / coverageTarget, 0, 1) : 0;
       var score = Math.max(shortagePressure, lowStockCoverage ? coveragePressure : 0) * (finite(profile.priority) || 1);
       var summary = {
@@ -841,6 +948,13 @@
         baselineDomesticUseShare: finite(baseline.domesticUseShare),
         baselineDomesticUseShareSource: baseline.domesticUseShareSource || null,
         demand: demanded, demandPerDay: demanded, demandThisTurn: demandThisTurn,
+        consumerDemandPerDay: hasActiveFactoryInputSignal ? consumerDemanded : demanded,
+        activeFactoryInputDemandPerDay: activeFactoryInputDailyRate,
+        activeFactoryInputDemandSources: clone(activeFactoryInputSourcesByResource[token(rid)] ||
+          activeFactoryInputSourcesByResource[rid] || []),
+        activeFactoryInputDemandIsSimulationOnly: (activeFactoryInputSourcesByResource[token(rid)] ||
+          activeFactoryInputSourcesByResource[rid] || []).some(function (row) { return row.simulationOnlyUnitBridge === true; }),
+        completedFactoryInputRatePerDay: inputDailyRate,
         factoryConsumption: inputQty, nationalConsumption: consumed,
         fulfilledDemand: fulfilled, unmetDemand: unmet,
         inventoryBefore: stock, inventoryAfter: inventoryAfter, protectedStock: protectedQty,
