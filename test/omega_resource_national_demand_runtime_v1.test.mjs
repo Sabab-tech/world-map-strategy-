@@ -253,6 +253,8 @@ test('the canonical demand catalog covers exactly the existing 41 resource ident
     assert.ok(demandRules.resourceProfiles[id], id + ' must already exist in the canonical resource identity sources');
     assert.equal(demandRules.resourceProfiles[id].basePerMillionPopulation, undefined,
       id + ' must remain unknown until an evidence-backed demand rate exists');
+    assert.equal(demandRules.resourceProfiles[id].domesticUseShare, undefined,
+      id + ' must not get an invented domestic-use estimate');
   }
 });
 
