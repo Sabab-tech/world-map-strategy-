@@ -401,6 +401,9 @@
       [simulation.nominalDailyCapacity, simulation.productionRateUnit || simulation.nominalDailyCapacityUnit || scenario && scenario.unit],
       [simulation.productionRate, simulation.productionRateUnit || simulation.production && simulation.production.rateUnit || scenario && scenario.unit],
       [simulation.dailyCapacity, simulation.productionRateUnit || scenario && scenario.unit],
+      [simulation.production && simulation.production.rate, simulation.production.rateUnit || simulation.production.unit || simulation.productionRateUnit],
+      [simulation.capacity && (simulation.capacity.nominalCapacity ?? simulation.capacity.nominal ?? simulation.capacity.value),
+        simulation.capacity.rateUnit || simulation.capacity.unit || simulation.productionRateUnit],
       [scenario && scenario.nominalCapacity, scenario && (scenario.rateUnit || scenario.unit)],
       [scenario && scenario.dailyProduction, scenario && (scenario.rateUnit || scenario.unit)],
       [model.nominalCapacity, model.rateUnit || model.unit || scenario && scenario.unit],
@@ -424,7 +427,8 @@
       [site && site.quantitative && site.quantitative.reserve && site.quantitative.reserve.quantity, site && site.quantitative && site.quantitative.reserve && site.quantitative.reserve.unit],
       [site && site.sourceSiteRecord && site.sourceSiteRecord.simulation && site.sourceSiteRecord.simulation.reserve && site.sourceSiteRecord.simulation.reserve.quantity,
         site && site.sourceSiteRecord && site.sourceSiteRecord.simulation && site.sourceSiteRecord.simulation.reserve && site.sourceSiteRecord.simulation.reserve.unit],
-      [scenario && scenario.reserveQuantity, scenario && (scenario.reserveUnit || scenario.unit)]
+      [scenario && scenario.reserveQuantity, scenario && (scenario.reserveUnit || scenario.unit)],
+      [scenario && scenario.reserve && scenario.reserve.quantity, scenario && scenario.reserve && scenario.reserve.unit]
     ];
     for (const [quantity, unit] of candidates) {
       if (!(num(quantity) > 0) || !unit) continue;
