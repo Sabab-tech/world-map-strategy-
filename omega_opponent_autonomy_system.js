@@ -969,10 +969,14 @@
   // Player-approved supply windows are revalidated at the final request boundary.
   // A decision queued near expiry must not create a new import after its 100-day
   // authorization ends. Existing request IDs stay idempotent below.
-  function validatePlayerSupplyWindow(countryId,payload){
+  function validatePlayerSupplyWindow(countryId,payload,stateTransaction){
     const windowId=String(payload?.supplyWindowId||'').trim();
     if(!windowId)return{accepted:true};
-    const hit=readState(countryId,'resource.demandRuntime.playerSupplyLifeline');
+    // Read the policy through the same country-scoped transaction used to create
+    // the request. This avoids stale/provider alias gaps for ISO-2 legacy saves.
+    const transactional=stateTransaction&&typeof stateTransaction.get==='function'
+      ?stateTransaction.get('resource.demandRuntime.playerSupplyLifeline'):undefined;
+    const hit=transactional===undefined?readState(countryId,'resource.demandRuntime.playerSupplyLifeline'):{value:transactional};
     const policy=hit&&hit.value&&typeof hit.value==='object'?hit.value:null;
     if(!policy||String(policy.policyId||'')!==windowId){
       return{accepted:false,reason:'PLAYER_SUPPLY_WINDOW_NOT_FOUND',supplyWindowId:windowId};
@@ -1018,7 +1022,7 @@
     const existing=Array.isArray(ctx.stateTransaction.get('trade.importRequests'))?ctx.stateTransaction.get('trade.importRequests'):[];
     const duplicate=existing.find(x=>String(x.requestId)===String(p.requestId||''));
     if(duplicate)return{accepted:true,request:clone(duplicate),duplicate:true,executionState:duplicate.status||'SENT'};
-    const windowValidation=validatePlayerSupplyWindow(c,p);
+    const windowValidation=validatePlayerSupplyWindow(c,p,ctx.stateTransaction);
     if(!windowValidation.accepted)return windowValidation;
     const request={
       requestId:String(p.requestId||('IMP-REQ-'+turn()+'-'+c+'-'+target+'-'+String(p.decisionId||''))),
