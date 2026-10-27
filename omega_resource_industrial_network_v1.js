@@ -143,12 +143,27 @@ function transportState(c){
   const s=state(),cid=canonicalCountry(c);s.transport=s.transport||{};s.transport[cid]=s.transport[cid]||{};return s.transport[cid];
 }
 function netState(c){
-  const r=resourceState(c);r.industrialNetwork=r.industrialNetwork||{
-    schemaVersion:VERSION,shipments:[],projects:[],extractions:[],reservations:{},deliveries:[],siteFlowLedger:[],
-    infrastructure:{nodes:{},edges:{},corridors:{}},events:[],factoryRuntime:{},technologyContracts:[]
-  };
-  if(!Array.isArray(r.industrialNetwork.siteFlowLedger))r.industrialNetwork.siteFlowLedger=[];
-  return r.industrialNetwork;
+  const r=resourceState(c);
+  if(!r.industrialNetwork||typeof r.industrialNetwork!=='object'||Array.isArray(r.industrialNetwork)){
+    r.industrialNetwork={
+      schemaVersion:VERSION,shipments:[],projects:[],extractions:[],reservations:{},deliveries:[],siteFlowLedger:[],
+      infrastructure:{nodes:{},edges:{},corridors:{}},events:[],factoryRuntime:{},technologyContracts:[]
+    };
+  }
+  const n=r.industrialNetwork;
+  // Older saves can persist a partial network object. Normalize collections before
+  // any extraction, dispatch, delivery or production action mutates them.
+  for(const key of ['shipments','projects','extractions','deliveries','siteFlowLedger','events','technologyContracts']){
+    if(!Array.isArray(n[key]))n[key]=[];
+  }
+  for(const key of ['reservations','factoryRuntime']){
+    if(!n[key]||typeof n[key]!=='object'||Array.isArray(n[key]))n[key]={};
+  }
+  if(!n.infrastructure||typeof n.infrastructure!=='object'||Array.isArray(n.infrastructure))n.infrastructure={};
+  for(const key of ['nodes','edges','corridors']){
+    if(!n.infrastructure[key]||typeof n.infrastructure[key]!=='object'||Array.isArray(n.infrastructure[key]))n.infrastructure[key]={};
+  }
+  return n;
 }
 function emit(type,c,payload,source='resource-industrial-network'){
   const m=interop(),cid=canonicalCountry(c),body={countryId:cid,payload:clone(payload||{}),source,simulationTurn:turn()};
@@ -904,8 +919,29 @@ function planShipment(input={}){
   const strategicPolicy=g.Omega?.ResourceStrategicPolicyRuntime||g.OmegaResourceStrategicPolicyRuntime;
   const siteGate=strategicPolicy?.siteAvailableForExtraction?.(cid,site.siteId,site);
   if(siteGate&&!siteGate.allowed)return{status:'BLOCKED',reason:siteGate.reason||'SITE_EXPLORATION_GATE_BLOCKED',siteId:site.siteId,countryId:cid,resourceId:rid};
-  const candidates=candidateFactories(cid,rid);
-  if(input.factoryId){const f=candidates.find(x=>String(x.asset?.id||x.asset?.assetId||x.asset?.projectId)===String(input.factoryId));if(!f)return{status:'BLOCKED',reason:'FACTORY_NOT_CAPABLE'};candidates.splice(0,candidates.length,f)}
+  let candidates=candidateFactories(cid,rid);
+  const sourceSiteId=String(site?.siteId||'').trim();
+  const sourceSiteFactories=candidates.filter(({asset})=>
+    String(asset?.sourceSiteId||asset?.siteId||'').trim()===sourceSiteId);
+  // When a physical site has its own commissioned factory, route only to that factory.
+  // Otherwise the shortest-route planner may send this mine's batch to another mine's
+  // dedicated factory simply because it happens to be geographically closer.
+  if(sourceSiteFactories.length){
+    if(input.factoryId){
+      const chosen=sourceSiteFactories.find(x=>
+        String(x.asset?.id||x.asset?.assetId||x.asset?.projectId)===String(input.factoryId));
+      if(!chosen)return{status:'BLOCKED',reason:'SOURCE_SITE_FACTORY_BINDING_MISMATCH',
+        siteId:sourceSiteId,requestedFactoryId:String(input.factoryId),
+        requiredFactoryIds:sourceSiteFactories.map(x=>String(x.asset?.id||x.asset?.assetId||x.asset?.projectId))};
+      candidates=[chosen];
+    }else{
+      candidates=sourceSiteFactories;
+    }
+  }else if(input.factoryId){
+    const chosen=candidates.find(x=>String(x.asset?.id||x.asset?.assetId||x.asset?.projectId)===String(input.factoryId));
+    if(!chosen)return{status:'BLOCKED',reason:'FACTORY_NOT_CAPABLE'};
+    candidates=[chosen];
+  }
   if(!candidates.length)return{status:'BLOCKED',reason:'NO_MATCHING_FACTORY',countryId:cid,siteId:site.siteId,resourceId:rid};
   const ordered=candidates.sort((a,b)=>String(a.asset?.priority??999)-String(b.asset?.priority??999));
   let best=null,policyBlockedRoute=null;
@@ -935,9 +971,15 @@ function reserveInventoryForShipment(c,resourceId,quantity,shipmentId){
   w.availableByResource=w.availableByResource||{};w.reservedByResource=w.reservedByResource||{};
   const available=Math.max(0,num(w.availableByResource[resourceId])||0);
   const reserved=Math.max(0,num(w.reservedByResource[resourceId])||0);
-  if(available-reserved<quantity)return{ok:false,reason:'WAREHOUSE_AVAILABLE_AFTER_RESERVATIONS_TOO_LOW',available:available-reserved};
-  w.reservedByResource[resourceId]=reserved+quantity;n.reservations[shipmentId]={resourceId,quantity,status:'RESERVED'};
-  return{ok:true};
+  const free=Math.max(0,available-reserved);
+  const requested=Math.max(0,num(quantity)||0);
+  const approved=Math.min(requested,free);
+  if(approved<=1e-9)return{ok:false,reason:'WAREHOUSE_AVAILABLE_AFTER_RESERVATIONS_TOO_LOW',
+    available:free,requestedQuantity:requested,dispatchableQuantity:0};
+  w.reservedByResource[resourceId]=reserved+approved;
+  n.reservations[shipmentId]={resourceId,quantity:approved,status:'RESERVED'};
+  return{ok:true,quantity:approved,requestedQuantity:requested,adjusted:approved+1e-6<requested,
+    reason:approved+1e-6<requested?'WAREHOUSE_AVAILABLE_AFTER_RESERVATIONS':'SOURCE_BATCH_WITHIN_AVAILABLE_WAREHOUSE_BALANCE'};
 }
 function resizeRouteForDispatch(route,actualQuantity,plannedQuantity){
   const out=clone(route||{}),actual=Math.max(0,num(actualQuantity)||0);
@@ -1008,6 +1050,9 @@ function dispatchShipment(input={}){
   }
   if(quantity<=0)return{status:'BLOCKED',reason:'SOURCE_BATCH_QUANTITY_ZERO',batchId:sourceBatchId||null,plan,capacity:capacityPreview};
   const reserved=reserveInventoryForShipment(cid,plan.resourceId,quantity,shipmentId);if(!reserved.ok)return{status:'BLOCKED',reason:reserved.reason,details:reserved,plan};
+  if(Number.isFinite(Number(reserved.quantity))&&reserved.quantity>0&&reserved.quantity<quantity){
+    quantity=reserved.quantity;quantityAdjustmentReason='WAREHOUSE_AVAILABLE_AFTER_RESERVATIONS';
+  }
   const route=resizeRouteForDispatch(plan.route,quantity,plannedQuantity);
   const capacityUse=commitTransportCapacity(cid,route,quantity,shipmentId);
   route.capacityUse=capacityUse;
@@ -1238,6 +1283,18 @@ function settleFactoryInputShipment(countryId,shipment){
   if(!factory)return{status:'BLOCKED',reason:'FACTORY_NOT_FOUND_AT_INPUT_DELIVERY',factoryId};
   if(canonicalCountry(factory.countryId||cid)!==cid)return{status:'BLOCKED',reason:'FACTORY_COUNTRY_MISMATCH',factoryId};
   if(tok(sourceBatch.resourceId||sourceBatch.materialIdentity)!==rid)return{status:'BLOCKED',reason:'SOURCE_BATCH_RESOURCE_MISMATCH',batchId,resourceId:rid};
+  const boundSiteId=String(factory.sourceSiteId||factory.siteId||'').trim();
+  if(boundSiteId){
+    const sourceFlow=siteFlowRows(cid).find(row=>String(row?.batchId||'')===batchId);
+    const sourceSiteCandidates=[sourceBatch?.siteReferenceKey,sourceBatch?.siteId,sourceBatch?.sourceSiteId,
+      sourceBatch?.originSiteId,sourceFlow?.siteId,sourceFlow?.siteSnapshot?.siteId,
+      sourceFlow?.siteSnapshot?.sourceSiteRecord?.siteId]
+      .map(value=>String(value||'').trim()).filter(Boolean);
+    if(!sourceSiteCandidates.length)return{status:'BLOCKED',reason:'SOURCE_SITE_IDENTITY_MISSING_FOR_BOUND_FACTORY',
+      batchId,factoryId,boundSiteId};
+    if(!sourceSiteCandidates.includes(boundSiteId))return{status:'BLOCKED',reason:'SOURCE_SITE_FACTORY_BINDING_MISMATCH',
+      batchId,factoryId,boundSiteId,sourceSiteCandidates:[...new Set(sourceSiteCandidates)]};
+  }
   const key=quantityObjectKey(availableMap,rid),reservedKey=quantityObjectKey(reservedMap,rid);
   const available=key===null?0:Math.max(0,num(availableMap[key])||0);
   const reserved=reservedKey===null?0:Math.max(0,num(reservedMap[reservedKey])||0);
@@ -2651,6 +2708,21 @@ function factorySourceWarehouse(rs,batch){
     return{kind:'PROCESSED',warehouse:rs.processedWarehouse||(rs.processedWarehouse={warehouseId:'WH-'+canonicalCountry(batch?.countryId||'' )+'-PROCESSED',availableByResource:{},reservedByResource:{}})};
   return{kind:'RAW',warehouse:rs.warehouse||(rs.warehouse={warehouseId:'WH-'+canonicalCountry(batch?.countryId||'')+'-RAW',availableByResource:{},reservedByResource:{}})};
 }
+function batchBelongsToBoundFactorySite(rs,batch,sourceSiteId,flowSiteByBatchId){
+  const wanted=String(sourceSiteId||'').trim();
+  if(!wanted)return true;
+  const batchId=String(batch?.batchId||'').trim();
+  const flowSite=flowSiteByBatchId.get(batchId);
+  // A recorded site-flow entry is the strongest source identity for extracted batches.
+  if(flowSite)return flowSite===wanted;
+  const directIds=[batch?.siteReferenceKey,batch?.siteId,batch?.sourceSiteId,batch?.originSiteId,
+    batch?.provenance?.siteId,batch?.provenance?.sourceSiteId]
+    .map(value=>String(value||'').trim()).filter(Boolean);
+  if(directIds.includes(wanted))return true;
+  const occurrence=String(batch?.occurrenceKey||batch?.sourceOccurrenceKey||batch?.provenance?.occurrenceKey||'').trim();
+  if(occurrence===wanted||occurrence.includes(':'+wanted+':'))return true;
+  return false;
+}
 function transferFactoryInputsFromWarehouse(countryId,asset,recipe){
   const cid=canonicalCountry(countryId),rs=resourceState(cid),n=netState(cid);
   const stock=asset.inputInventory&&typeof asset.inputInventory==='object'?asset.inputInventory:(asset.inputInventory={});
@@ -2660,6 +2732,13 @@ function transferFactoryInputsFromWarehouse(countryId,asset,recipe){
   if(!(capacity>1e-9))return{status:'BLOCKED',reason:'PRODUCTION_CAPACITY_UNAVAILABLE',transfers,blocked};
   const batches=Array.isArray(rs.batches)?rs.batches:[];
   const nonTransferable=new Set(['CONSUMED','SOLD','TRANSFERRED_OUT','EXHAUSTED','IN_TRANSIT','RESERVED','DECOMMISSIONED']);
+  // Mine-bound simulation factories must not silently consume a different mine's
+  // same-resource stock just because it is older in the national warehouse FIFO.
+  // Generic factories without a source-site binding retain normal pooled-warehouse behavior.
+  const boundSourceSiteId=String(asset?.sourceSiteId||asset?.siteId||'').trim();
+  const siteFlowRows=Array.isArray(rs.industrialNetwork?.siteFlowLedger)?rs.industrialNetwork.siteFlowLedger:[];
+  const flowSiteByBatchId=new Map(siteFlowRows.filter(row=>row?.batchId&&row?.siteId)
+    .map(row=>[String(row.batchId),String(row.siteId)]));
   for(const [rawId,rawCoefficient] of Object.entries(recipe?.inputs||{})){
     const rid=tok(rawId),coefficient=num(rawCoefficient);
     if(!rid||coefficient===null||coefficient<=0){blocked.push({resourceId:rid||rawId,reason:'FACTORY_RECIPE_COEFFICIENT_INVALID'});continue;}
@@ -2674,7 +2753,8 @@ function transferFactoryInputsFromWarehouse(countryId,asset,recipe){
     if(remaining<=1e-9)continue;
     const candidates=batches.filter(batch=>tok(batch?.resourceId||batch?.materialIdentity)===rid&&
       !nonTransferable.has(String(batch?.status||'').toUpperCase())&&
-      Math.max(0,num(batch?.remainingQuantity!=null?batch.remainingQuantity:batch?.quantity)||0)>1e-9)
+      Math.max(0,num(batch?.remainingQuantity!=null?batch.remainingQuantity:batch?.quantity)||0)>1e-9&&
+      batchBelongsToBoundFactorySite(rs,batch,boundSourceSiteId,flowSiteByBatchId))
       .sort((a,b)=>(num(a?.createdTurn)||0)-(num(b?.createdTurn)||0));
     for(const batch of candidates){
       if(remaining<=1e-9)break;
@@ -3088,8 +3168,9 @@ async function executeSitePipeline(input={}){
   if(!factoryChoice)return{status:'EXTRACTED_AWAITING_FACTORY',siteId:site.siteId,countryId:cid,resourceId:rid,quantity,unit:batch.unit||'TONNES',occurrenceKey:record.occurrenceKey,batchId:batch.batchId,warehouseId:batch.warehouseId||('WH-'+cid+'-RAW'),reason:'NO_MATCHING_FACTORY'};
   const sent=dispatchShipment({countryId:cid,siteId:site.siteId,resourceId:rid,quantity,unit:batch.unit||'TONNES',transportMode:input.transportMode,
     factoryId:String(factoryChoice.id||factoryChoice.assetId||factoryChoice.projectId),batchId:batch.batchId,occurrenceKey:record.occurrenceKey,warehouseId:batch.warehouseId||('WH-'+cid+'-RAW')});
+  const dispatchedQuantity=sent.status==='DISPATCHED'?Math.max(0,num(sent.shipment?.quantity)||0):quantity;
   const execution={executionId:'SITE-PIPELINE:'+cid+':'+site.siteId+':T'+turn(),siteId:site.siteId,countryId:cid,resourceId:rid,occurrenceKey:record.occurrenceKey,batchId:batch.batchId,
-    quantity,unit:batch.unit||'TONNES',turn:turn(),factoryId:String(factoryChoice.id||factoryChoice.assetId||factoryChoice.projectId),factoryBootstrapStatus:factoryBootstrap?.status||'EXISTING',
+    quantity:dispatchedQuantity,extractedQuantity:quantity,unit:batch.unit||'TONNES',turn:turn(),factoryId:String(factoryChoice.id||factoryChoice.assetId||factoryChoice.projectId),factoryBootstrapStatus:factoryBootstrap?.status||'EXISTING',
     extractionStatus:'COMMITTED',extractionPlanId:extractionPlan.planId,shipmentStatus:sent.status,shipmentId:sent.shipment?.shipmentId||null,route:clone(sent.shipment?.route||sent.plan?.route||null),status:sent.status==='DISPATCHED'?'IN_TRANSIT':sent.status};
   const ledger=netState(cid);ledger.siteExecutions=Array.isArray(ledger.siteExecutions)?ledger.siteExecutions:[];ledger.siteExecutions.push(clone(execution));ledger.siteExecutions=ledger.siteExecutions.slice(-MAX_EVENTS);
   if(sent.status!=='DISPATCHED')return{...execution,status:'EXTRACTED_AWAITING_ROUTE',reason:sent.reason||'SHIPMENT_DISPATCH_BLOCKED',shipment:sent};

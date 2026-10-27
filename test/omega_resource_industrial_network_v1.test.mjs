@@ -90,7 +90,14 @@ function advanceToCycleFinish(state,cycle){
   }
 }
 
+// Older save states may persist a partial industrial-network object without the extraction ledger.
+context.Game.state.resource.BGD.industrialNetwork={
+  schemaVersion:'1.0.0',shipments:[],projects:[],reservations:{},deliveries:[],siteFlowLedger:[],
+  infrastructure:{nodes:{},edges:{},corridors:{}},events:[],factoryRuntime:{},technologyContracts:[]
+};
 const extraction=N.planExtraction({countryId:'BGD',siteId:'SITE_BGD_COAL_01',resourceId:'coal',quantity:2000});
+assert.ok(Array.isArray(context.Game.state.resource.BGD.industrialNetwork.extractions),
+  'legacy network state must initialize its extraction ledger before appending a plan');
 assert.equal(extraction.status,'PLANNED');
 assert.equal(extraction.method,'UNDERGROUND_LONGWALL');
 assert.ok(extraction.totalDurationDays>0);
@@ -558,3 +565,71 @@ assert.equal(Object.keys(transportLedgerTurn.usedByMode).length, 0);
 assert.equal(transportLedgerTurn.shipments.length, 0);
 
 console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');
+
+
+// Regression: a factory commissioned for one mine must not drain older, same-resource
+// stock from another mine just because the country warehouse is FIFO-sorted.
+{
+  const countryId='NPL';
+  const boundSiteId='SITE_NPL_BOUND_IRON_MINE';
+  const unrelatedSiteId='SITE_NPL_UNRELATED_IRON_MINE';
+  const unrelatedBatchId='BATCH-NPL-UNRELATED-IRON';
+  const boundBatchId='BATCH-NPL-BOUND-IRON';
+  const makeBatch=(batchId,siteId,quantity,createdTurn)=>({
+    batchId,resourceId:'iron_ore',quantity,remainingQuantity:quantity,unit:'TONNES',
+    stage:'RAW_EXTRACTED',status:'AVAILABLE',countryId,sourceCountryId:countryId,
+    warehouseId:'WH-'+countryId+'-RAW',siteReferenceKey:siteId,
+    occurrenceKey:'SITE_RUNTIME:'+countryId+':'+siteId+':iron_ore',
+    sourceBatchIds:[],createdTurn
+  });
+  const unrelated=makeBatch(unrelatedBatchId,unrelatedSiteId,10,1);
+  const bound=makeBatch(boundBatchId,boundSiteId,5,2);
+  context.Game.state.resource[countryId]={
+    inventory:{iron_ore:15},
+    warehouse:{warehouseId:'WH-'+countryId+'-RAW',countryId,
+      availableByResource:{iron_ore:15},reservedByResource:{iron_ore:0},
+      storedBatchIds:[unrelatedBatchId,boundBatchId]},
+    batches:[unrelated,bound],
+    inventoryLots:{
+      [unrelatedBatchId]:{...unrelated,status:'AVAILABLE'},
+      [boundBatchId]:{...bound,status:'AVAILABLE'}
+    },
+    industrialNetwork:{
+      siteFlowLedger:[
+        {batchId:unrelatedBatchId,siteId:unrelatedSiteId,countryId,resourceId:'iron_ore'},
+        {batchId:boundBatchId,siteId:boundSiteId,countryId,resourceId:'iron_ore'}
+      ],
+      shipments:[],deliveries:[],factoryInputTransfers:[],factoryProductionCycles:{}
+    }
+  };
+  const boundFactory={
+    id:'FAC-SIM:'+countryId+':'+boundSiteId+':iron_ore',countryId,
+    sourceSiteId:boundSiteId,factoryType:'UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT',
+    capacityPerDay:5,inputCoefficients:{iron_ore:1},inputInventory:{},inputBatchLots:[],
+    status:'OPERATIONAL'
+  };
+  const recipe={inputs:{iron_ore:1},outputs:{IRON_CONCENTRATE:.8},inputUnit:'TONNES'};
+  const boundTransfer=N.transferFactoryInputsFromWarehouse(countryId,boundFactory,recipe);
+  assert.equal(boundTransfer.transferCount,1,'source-bound factory should receive one matching mine batch');
+  assert.equal(boundTransfer.transfers[0].sourceBatchId,boundBatchId,
+    'source-bound factory must not pull older stock from a different mine');
+  assert.equal(unrelated.remainingQuantity,10,'unrelated mine batch must remain untouched');
+  assert.equal(bound.remainingQuantity,0,'the destination mine batch should be transferred once');
+  assert.equal(boundFactory.inputBatchLots.length,1);
+  assert.deepEqual(Array.from(boundFactory.inputBatchLots[0].sourceBatchIds),[boundBatchId]);
+  assert.equal(context.Game.state.resource[countryId].inventory.iron_ore,10);
+  assert.equal(context.Game.state.resource[countryId].warehouse.availableByResource.iron_ore,10);
+
+  // Non-bound factories continue using the shared sovereign warehouse.
+  const pooledFactory={
+    id:'FAC-POOL:'+countryId+':iron_ore',countryId,
+    factoryType:'UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT',
+    capacityPerDay:5,inputCoefficients:{iron_ore:1},inputInventory:{},inputBatchLots:[],
+    status:'OPERATIONAL'
+  };
+  const pooledTransfer=N.transferFactoryInputsFromWarehouse(countryId,pooledFactory,recipe);
+  assert.equal(pooledTransfer.transferCount,1,'generic factory must retain shared warehouse behavior');
+  assert.equal(pooledTransfer.transfers[0].sourceBatchId,unrelatedBatchId);
+  assert.equal(unrelated.remainingQuantity,5);
+  console.log('OMEGA MINE-BOUND FACTORY INPUT ISOLATION PASSED');
+}
