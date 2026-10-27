@@ -412,127 +412,212 @@ Game.Diplomacy = {
 };
 
 Game.DataLoader = {
-    async loadAssets() {
-        try {
-            const fetcher = window.fetchResilient || (async (f) => {
-                const res = await fetch(f + '?v=' + Date.now());
-                return res.ok ? await res.json() : null;
+    __worldLoadPromise: null,
+    __countryConfigPromise: null,
+
+    getFetcher() {
+        return window.fetchResilient || (async function (filename, options) {
+            const response = await fetch(filename, options && options.signal ? { signal:options.signal } : undefined);
+            if (!response || !response.ok) return null;
+            return response.json();
+        });
+    },
+
+    applyCountryConfig(countryConfig) {
+        if (!Array.isArray(countryConfig)) return null;
+        countryConfig.forEach(function (country) {
+            if (country && country.name) Game.countryLookup[Game.normalizeName(country.name)] = country;
+        });
+        window.OmegaCountryDataGateway?.registerSource('countries.json', countryConfig, {
+            authority:'CANONICAL_MAP_ROSTER'
+        });
+        return countryConfig;
+    },
+
+    loadCountryConfig(fetcher) {
+        if (this.__countryConfigPromise) return this.__countryConfigPromise;
+        fetcher = fetcher || this.getFetcher();
+        const loader = this;
+        this.__countryConfigPromise = Promise.resolve().then(function () {
+            return fetcher('countries.json');
+        }).then(function (data) {
+            return loader.applyCountryConfig(data);
+        }).catch(function (error) {
+            console.warn('[OMEGA Map] Country roster could not be loaded; world boundaries can still render.', error);
+            return null;
+        });
+        return this.__countryConfigPromise;
+    },
+
+    loadWorldMap(fetcher) {
+        if (Game.__omegaGeoJSONRenderComplete === true && Game.Map.countryGeoJSON && Game.geojsonLayer) {
+            Game.Map.updateMapLoadingProgress(100, 'World map ready', 'complete');
+            return Promise.resolve(Game.Map.countryGeoJSON);
+        }
+        if (this.__worldLoadPromise) return this.__worldLoadPromise;
+
+        fetcher = fetcher || this.getFetcher();
+        const loader = this;
+        const controller = typeof AbortController === 'function' ? new AbortController() : null;
+        Game.Map.__omegaWorldMapAbortController = controller;
+        Game.Map.ensureMapLoadingOverlay();
+        Game.Map.updateMapLoadingProgress(2, 'Loading world geography…', 'loading');
+
+        const countriesPromise = this.loadCountryConfig(fetcher);
+        const worldPromise = Promise.resolve().then(function () {
+            return fetcher('world.json', {
+                signal:controller ? controller.signal : undefined,
+                onProgress:function (ratio, received, total) {
+                    if (Game.Map.__omegaMapUiActive === false) return;
+                    const next = typeof ratio === 'number' ? 4 + ratio * 12 : 5;
+                    const detail = total > 0
+                        ? 'Downloading world geometry (' + Math.round(received / 1024) + ' KB)'
+                        : 'Downloading world geometry…';
+                    Game.Map.updateMapLoadingProgress(next, detail, 'loading');
+                }
             });
+        });
 
-            const popData = await fetcher('population.json');
-            if (popData && typeof popData === 'object') {
-                Game.state.population = popData;
+        const promise = Promise.all([worldPromise, countriesPromise]).then(function (rows) {
+            const geoData = rows[0];
+            if (!geoData || typeof geoData.type !== 'string') {
+                if (Game.Map.__omegaMapUiActive !== false) {
+                    Game.Map.updateMapLoadingProgress(
+                        Game.Map.__omegaMapLoadingProgress || 5,
+                        'World map data is unavailable. Check the offline cache or network and retry.',
+                        'error'
+                    );
+                }
+                return null;
             }
+            Game.Map.countryGeoJSON = geoData;
+            Game.Map.__omegaGeoJSONPendingData = geoData;
+            window.OmegaCountryDataGateway?.registerSource('world.json', geoData, {
+                authority:'GEOGRAPHIC_REFERENCE'
+            });
+            if (Game.Map.__omegaMapUiActive === false) return geoData;
 
-            const econData = await fetcher('economy.json');
-            if (econData && typeof econData === 'object') {
-                Game.state.economy = econData;
-            }
-
-            // Load relation generation engine and baseline relations
-            const [rgeData, relData, minData] = await Promise.all([
-                fetcher('relation_generation_engine.json'),
-                fetcher('relations.json'),
-                fetcher('ministers.json')
-            ]);
-
-            if (rgeData && rgeData.RELATION_GENERATION_ENGINE) {
-                Game.state.relationEngine = rgeData;
-                if (Game.Diplomacy) Game.Diplomacy._rgeEngine = rgeData.RELATION_GENERATION_ENGINE;
-            }
-
-            if (relData && typeof relData === 'object') {
-                if (Game.Diplomacy) Game.Diplomacy._legacyRelations = relData;
-            }
-
-            if (minData && minData.ministers_database) {
-                window.OmegaMinistersDB = minData.ministers_database;
-                Game.state.ministersDB = minData.ministers_database;
-                if (window.OmegaCabinetUI && typeof window.OmegaCabinetUI.syncMinistersDatabase === 'function') {
-                    window.OmegaCabinetUI.syncMinistersDatabase(minData.ministers_database);
+            Game.Map.updateMapLoadingProgress(18, 'Preparing country boundaries…', 'loading');
+            Game.Map.renderGeoJSON(geoData);
+            return geoData;
+        }).catch(function (error) {
+            const aborted = (controller && controller.signal && controller.signal.aborted) ||
+                (error && error.name === 'AbortError');
+            if (!aborted) {
+                console.error('[OMEGA Map] World geometry load failed.', error);
+                if (Game.Map.__omegaMapUiActive !== false) {
+                    Game.Map.updateMapLoadingProgress(
+                        Game.Map.__omegaMapLoadingProgress || 5,
+                        'World map could not load. Retry when the map is visible.',
+                        'error'
+                    );
                 }
             }
+            return null;
+        }).finally(function () {
+            if (Game.Map.__omegaWorldMapAbortController === controller) Game.Map.__omegaWorldMapAbortController = null;
+            if (loader.__worldLoadPromise === promise) loader.__worldLoadPromise = null;
+        });
+        this.__worldLoadPromise = promise;
+        return promise;
+    },
 
-            if (Game.Diplomacy && typeof Game.Diplomacy.generateAllBilateralRelations === 'function') {
-                // Build the complete relation table without monopolising the first WebView frame.
-                // Each slice computes only a few source countries while retaining every target country.
-                const relationCountries = Object.keys(Game.state.economy || {});
-                const RELATION_COUNTRIES_PER_FRAME = 2;
-                let relationCursor = 0;
-                const scheduleRelationChunk = typeof window.requestAnimationFrame === 'function'
-                    ? callback => window.requestAnimationFrame(callback)
-                    : callback => window.setTimeout(callback, 0);
-                const processRelationChunk = function () {
-                    if (relationCursor >= relationCountries.length) return;
-                    const chunk = relationCountries.slice(relationCursor, relationCursor + RELATION_COUNTRIES_PER_FRAME);
-                    Game.Diplomacy.generateAllBilateralRelations(chunk);
-                    relationCursor += chunk.length;
-                    if (relationCursor < relationCountries.length) scheduleRelationChunk(processRelationChunk);
-                };
-                // Yield once so the map and primary controls can paint before background indexing begins.
-                window.setTimeout(processRelationChunk, 0);
-            }
+    async loadAssets() {
+        const fetcher = this.getFetcher();
+        // Fetch and begin drawing the world's only canonical GeoJSON immediately.
+        // Economy, relation and minister datasets are independent and must not hold up map borders.
+        const worldTask = this.loadWorldMap(fetcher);
+        const supportTask = (async function () {
+            try {
+                const [popData, econData] = await Promise.all([
+                    fetcher('population.json'),
+                    fetcher('economy.json')
+                ]);
+                if (popData && typeof popData === 'object') Game.state.population = popData;
+                if (econData && typeof econData === 'object') Game.state.economy = econData;
 
-            const relSelector = (Game.dom && Game.dom.relSelector) || document.getElementById('relation-selector'); 
-            if (relSelector && Game.state.economy) {
-                relSelector.innerHTML = '<option value="NONE">-- Select Target --</option>';
-                Object.keys(Game.state.economy).sort().forEach(countryKey => {
-                    const opt = document.createElement('option');
-                    opt.value = countryKey;
-                    opt.innerText = countryKey.replace(/_/g, " ");
-                    relSelector.appendChild(opt);
-                });
-            }
+                const [rgeData, relData, minData] = await Promise.all([
+                    fetcher('relation_generation_engine.json'),
+                    fetcher('relations.json'),
+                    fetcher('ministers.json')
+                ]);
 
-            // ম্যাপ লোড হওয়ার পর ডাইনামিক্যালি প্রতিটি দেশের জন্য সিমুলেশন ডাটা জেনারেট করা হয়
-            if (Game.state.economy) {
-                Object.keys(Game.state.economy).forEach(countryKey => {
-                    const econ = Game.state.economy[countryKey];
-                    if (!econ) return;
-                    let ai_type = "survival";
-                    if (econ.gdp > 500000000000) { 
-                        ai_type = "greedy";
+                if (rgeData && rgeData.RELATION_GENERATION_ENGINE) {
+                    Game.state.relationEngine = rgeData;
+                    if (Game.Diplomacy) Game.Diplomacy._rgeEngine = rgeData.RELATION_GENERATION_ENGINE;
+                }
+                if (relData && typeof relData === 'object' && Game.Diplomacy) {
+                    Game.Diplomacy._legacyRelations = relData;
+                }
+                if (minData && minData.ministers_database) {
+                    window.OmegaMinistersDB = minData.ministers_database;
+                    Game.state.ministersDB = minData.ministers_database;
+                    if (window.OmegaCabinetUI && typeof window.OmegaCabinetUI.syncMinistersDatabase === 'function') {
+                        window.OmegaCabinetUI.syncMinistersDatabase(minData.ministers_database);
                     }
-                    if (countryKey === "CHINA" || countryKey === "USA" || countryKey === "RUSSIA") {
-                        ai_type = "aggressive";
-                    }
-                    if (countryKey === "BANGLADESH") {
-                        ai_type = "survival";
-                    }
-                    econ.ai = ai_type;
-                    econ.money = econ.money || 500;
-                    econ.debt = econ.debt || 0;
-                    econ.stock = econ.stock || {"food": 100, "oil": 80, "metal": 90};
-                    econ.production = econ.production || 120;
-                    econ.trade_power = econ.trade_power || 100;
-                });
-            }
+                }
 
-            const countryConfig = await fetcher('countries.json');
-            if (Array.isArray(countryConfig)) {
-                countryConfig.forEach(c => {
-                    if (c && c.name) {
-                        Game.countryLookup[Game.normalizeName(c.name)] = c;
-                    }
-                });
-                // Register the already-loaded roster by reference; the data gateway never clones it.
-                window.OmegaCountryDataGateway?.registerSource('countries.json', countryConfig, { authority: 'CANONICAL_MAP_ROSTER' });
-            }
+                if (Game.Diplomacy && typeof Game.Diplomacy.generateAllBilateralRelations === 'function') {
+                    // This is simulation/game-state work, not map presentation. It may continue independently.
+                    const relationCountries = Object.keys(Game.state.economy || {});
+                    const RELATION_COUNTRIES_PER_FRAME = 2;
+                    let relationCursor = 0;
+                    const scheduleRelationChunk = typeof window.requestAnimationFrame === 'function'
+                        ? callback => window.requestAnimationFrame(callback)
+                        : callback => window.setTimeout(callback, 0);
+                    const processRelationChunk = function () {
+                        if (relationCursor >= relationCountries.length) return;
+                        const chunk = relationCountries.slice(relationCursor, relationCursor + RELATION_COUNTRIES_PER_FRAME);
+                        Game.Diplomacy.generateAllBilateralRelations(chunk);
+                        relationCursor += chunk.length;
+                        if (relationCursor < relationCountries.length) scheduleRelationChunk(processRelationChunk);
+                    };
+                    window.setTimeout(processRelationChunk, 0);
+                }
 
-            const geoData = await fetcher('world.json');
-            if (geoData && geoData.type) {
-                // Keep the actual map source available for identity cross-checks.
-                Game.Map.countryGeoJSON = geoData;
-                window.OmegaCountryDataGateway?.registerSource('world.json', geoData, { authority: 'GEOGRAPHIC_REFERENCE' });
-                Game.Map.renderGeoJSON(geoData);
-            }
+                const relSelector = (Game.dom && Game.dom.relSelector) || document.getElementById('relation-selector');
+                if (relSelector && Game.state.economy) {
+                    relSelector.innerHTML = '<option value="NONE">-- Select Target --</option>';
+                    Object.keys(Game.state.economy).sort().forEach(function (countryKey) {
+                        const option = document.createElement('option');
+                        option.value = countryKey;
+                        option.innerText = countryKey.replace(/_/g, ' ');
+                        relSelector.appendChild(option);
+                    });
+                }
 
-        } catch (error) {
-            console.error("❌ ডাটা পাইপলাইন এরর:", error);
-        }
+                if (Game.state.economy) {
+                    Object.keys(Game.state.economy).forEach(function (countryKey) {
+                        const econ = Game.state.economy[countryKey];
+                        if (!econ) return;
+                        let aiType = 'survival';
+                        if (econ.gdp > 500000000000) aiType = 'greedy';
+                        if (countryKey === 'CHINA' || countryKey === 'USA' || countryKey === 'RUSSIA') aiType = 'aggressive';
+                        if (countryKey === 'BANGLADESH') aiType = 'survival';
+                        econ.ai = aiType;
+                        econ.money = econ.money || 500;
+                        econ.debt = econ.debt || 0;
+                        econ.stock = econ.stock || { food:100, oil:80, metal:90 };
+                        econ.production = econ.production || 120;
+                        econ.trade_power = econ.trade_power || 100;
+                    });
+                }
+
+                await this.loadCountryConfig(fetcher);
+            } catch (error) {
+                // Failure of supporting data must not prevent an already-started world map from appearing.
+                console.error('[OMEGA DataLoader] Supporting game data failed.', error);
+            }
+        }).call(this);
+
+        await Promise.allSettled([worldTask, supportTask]);
+        return {
+            mapLoaded:Game.__omegaGeoJSONRenderComplete === true,
+            countryCount:Array.isArray(Game.Map.countryGeoJSON && Game.Map.countryGeoJSON.features)
+                ? Game.Map.countryGeoJSON.features.length : 0
+        };
     }
 };
-
 Game.LabelSystem = {
     updateCountryLabels() {
         if(!Game.Map.map || Game.Map.__omegaMapUiActive === false) return;
