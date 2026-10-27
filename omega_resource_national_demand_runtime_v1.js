@@ -656,7 +656,8 @@
     return { accepted: true, status: policy.status, policy: clone(policy) };
   }
 
-  function processCountry(countryId, completedFactoryRows) {
+  function processCountry(countryId, completedFactoryRows, options) {
+    var previewOnly = !!(object(options) && options.previewOnly === true);
     var cfg = rules();
     if (cfg.enabled !== true) return { countryId: canonical(countryId), status: 'DISABLED', reason: 'DEMAND_RULES_DISABLED' };
     var cid = canonical(countryId), resource = bucket(cid, 'resource'), trade = bucket(cid, 'trade') || {};
@@ -664,7 +665,7 @@
       return { countryId: cid, turn: currentTurn(), status: 'WAITING_FOR_EVIDENCE', reason: 'RESOURCE_STATE_NOT_OBSERVED' };
     }
     var savedRuntime = object(resource.demandRuntime);
-    if (savedRuntime && finite(savedRuntime.lastTurn) === currentTurn() && object(savedRuntime.lastSummary) && object(savedRuntime.byResource)) {
+    if (!previewOnly && savedRuntime && finite(savedRuntime.lastTurn) === currentTurn() && object(savedRuntime.lastSummary) && object(savedRuntime.byResource)) {
       var cachedRows = Object.keys(savedRuntime.byResource).map(function (key) { return clone(savedRuntime.byResource[key]); });
       return {
         countryId: cid, turn: currentTurn(), status: savedRuntime.status || 'ACTIVE',
@@ -801,8 +802,8 @@
       var protectedQty = stock === null ? null : Math.min(stock, protectedStock(resource, rid));
       var spendable = stock === null ? null : Math.max(0, stock - protectedQty);
       var nonFactoryDemand = Math.max(0, demandThisTurn - inputQty);
-      var consumeRequest = stock === null ? 0 : Math.min(nonFactoryDemand, spendable);
-      var consumed = 0, consumeStatus = stock === null ? 'UNKNOWN_INVENTORY' : (consumeRequest > 0 ? 'NOT_ATTEMPTED' : 'NO_DEBIT_REQUIRED');
+      var consumeRequest = previewOnly || stock === null ? 0 : Math.min(nonFactoryDemand, spendable);
+      var consumed = 0, consumeStatus = previewOnly ? 'PREVIEW_ONLY' : (stock === null ? 'UNKNOWN_INVENTORY' : (consumeRequest > 0 ? 'NOT_ATTEMPTED' : 'NO_DEBIT_REQUIRED'));
       if (consumeRequest > 0) {
         var tx = 'NAT-CONSUME-' + currentTurn() + '-' + cid + '-' + token(rid);
         var debit = dispatch('resource', 'OMEGA_RESOURCE_ECON_CONSUME_INVENTORY', cid, {
@@ -854,6 +855,18 @@
       };
       summaries.push(summary);
     });
+
+    if (previewOnly) {
+      return {
+        countryId: cid, turn: currentTurn(), status: 'PREVIEW_ONLY',
+        resourceCount: summaries.length,
+        modeled: summaries.filter(function (row) { return row.demandPerDay !== null && row.demandPerDay !== undefined; }).length,
+        unknown: summaries.filter(function (row) { return row.status === 'UNKNOWN'; }).length,
+        resources: summaries.map(function (row) { return clone(row); }),
+        consumedResourceCount: 0,
+        procurement: []
+      };
+    }
 
     if (playerSupplyWindowActive) {
       var lifelineCfg = playerSupplyLifelineConfig();
@@ -1035,6 +1048,7 @@
     VERSION: VERSION,
     prepare: prepare,
     processCountry: processCountry,
+    previewCountry: function (countryId, completedFactoryRows) { return processCountry(countryId, completedFactoryRows, { previewOnly: true }); },
     calculateDemand: calculateDemand,
     authorizePlayerSupplyLifeline: authorizePlayerSupplyLifeline,
     getPlayerSupplyLifeline: getPlayerSupplyLifeline,
