@@ -459,9 +459,16 @@ async function onClick(event){
    const hydrated=await runtime.hydrateCountry(country),hydration=hydrated?.result||hydrated;
    if(hydrated?.status!=='APPLIED'||hydration?.accepted===false)throw new Error(hydration?.reason||hydrated?.reason||'COUNTRY_HYDRATION_NOT_COMMITTED');
    const controllers=runtime.countryMineSiteControllers(country)||{};
+   const startupCountry=state()?.resource?.[country]||{},startupMeta=startupCountry.startupBaseline||{};
+   const commissionedSites=new Set((Array.isArray(startupCountry.mineAssets)?startupCountry.mineAssets:[])
+    .filter(asset=>/^(OPERATIONAL|ACTIVE|COMMISSIONED|PRODUCING)$/.test(String(asset?.status||'').toUpperCase())&&
+      !/DECOMMISSIONED|DESTROYED|STOPPED|INACTIVE|CLOSED/.test(String(asset?.status||'').toUpperCase())&&
+      (num(asset?.capacityPerDay??asset?.nominalDailyCapacity??asset?.productionRate)||0)>0)
+    .map(asset=>String(asset.siteId||'').trim()).filter(Boolean));
    const siteIds=[...new Set(Object.entries(controllers).filter(([,row])=>Array.isArray(row?.linkedOccurrenceKeys)&&row.linkedOccurrenceKeys.length>0)
-    .map(([key,row])=>String(row?.siteReferenceKey||key||'').trim()).filter(Boolean))];
-   if(!siteIds.length)throw new Error('NO_EXECUTABLE_MINE_SITE_OCCURRENCES_FOR_PLAYER_COUNTRY');
+    .map(([key,row])=>String(row?.siteReferenceKey||key||'').trim()).filter(Boolean))]
+    .filter(siteId=>startupMeta.minesInitialized!==true||commissionedSites.has(siteId));
+   if(!siteIds.length)throw new Error(startupMeta.minesInitialized===true?'NO_BUILT_OPERATIONAL_MINES_FOR_PLAYER_COUNTRY':'NO_EXECUTABLE_MINE_SITE_OCCURRENCES_FOR_PLAYER_COUNTRY');
    const BATCH_SIZE=32,totalBatches=Math.ceil(siteIds.length/BATCH_SIZE);
    let startedSiteCount=0,extractedRecordCount=0,blockedOccurrenceCount=0,attemptedOccurrenceCount=0;
    let processedBatchCount=0,failedBatchCount=0;const failures=[];
