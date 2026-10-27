@@ -296,6 +296,55 @@ test('the canonical demand catalog covers exactly the existing 41 resource ident
   }
 });
 
+test('100-day target counts confirmed inbound goods but not undecided trade requests', async () => {
+  const { context, worldState } = createRuntimeContext({
+    inventory: { iron_ore: 100 },
+    consumption: { iron_ore: 10 }
+  });
+  const runtime = context.OmegaResourceNationalDemandRuntime;
+  context.__OmegaResourceEconomyRules.demand.resourceProfiles = {
+    iron_ore: structuredClone(demandRules.resourceProfiles.iron_ore)
+  };
+  context.Omega.Simulation.getPlayerCountryId = () => 'BGD';
+  worldState.simulation.session.playerCountryId = 'BGD';
+  worldState.trade.BGD.importRequests = [
+    {
+      requestId: 'WAITING-FOR-COUNTERPARTY',
+      resourceId: 'iron_ore', quantity: 500,
+      status: 'SENT', stage: 'COUNTERPARTY_DECISION_PENDING'
+    },
+    {
+      requestId: 'CONFIRMED-IN-TRANSIT',
+      resourceId: 'iron_ore', quantity: 25, remainingQuantity: 20,
+      status: 'IN_TRANSIT', stage: 'SHIPPED'
+    },
+    {
+      requestId: 'ALREADY-REJECTED',
+      resourceId: 'iron_ore', quantity: 300,
+      status: 'REJECTED', stage: 'COUNTERPARTY_REJECTED'
+    }
+  ];
+  context.OmegaOpponentAutonomy = {
+    routeDecision(decision) {
+      return { status: 'READY_TO_QUEUE', command: { commandId: 'SUPPLY-' + decision.decisionId },
+        route: { selectedAction: 'IMPORT' } };
+    }
+  };
+  await runtime.prepare();
+  const approved = runtime.authorizePlayerSupplyLifeline('BGD');
+  assert.equal(approved.accepted, true);
+  const report = runtime.processCountry('BGD', []);
+  const row = worldState.resource.BGD.demandRuntime.byResource.iron_ore;
+
+  assert.equal(row.stockCoverageTargetDays, 100);
+  assert.equal(row.pendingImportQuantity, 20,
+    'only the confirmed, remaining shipment quantity counts toward the 100-day coverage target');
+  assert.equal(row.unresolvedImportRequestCount, 1,
+    'the undecided order remains visible as unresolved but does not pretend to be inbound stock');
+  assert.equal(report.procurement.length, 0,
+    'an unresolved request suppresses duplicate ordering without inflating confirmed inbound coverage');
+});
+
 test('player 100-day supply lifeline needs explicit consent, targets 100 days, and expires without deleting inventory', async () => {
   const { context, worldState, calls } = createRuntimeContext({ inventory: { iron_ore: 100 }, consumption: { iron_ore: 10 } });
   const runtime = context.OmegaResourceNationalDemandRuntime;
