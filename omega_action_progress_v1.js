@@ -262,10 +262,9 @@
       var status = parent.querySelector('[role="status"][aria-live="polite"],[role="alert"],[data-status="pending"],[data-state="pending"]');
       if (status && WORKING.test(text(status.textContent))) return true;
     }
-    return Date.now() - job.startedAt < 1200;
+    return Date.now() - job.startedAt < 2500;
   }
   function watchControl(el, title) {
-    if (current) return;
     var h = begin(title || controlLabel(el), { detail:'Action submitted; waiting for the section to update.', timeoutMs:55000 });
     var job = current;
     var attempt = 0;
