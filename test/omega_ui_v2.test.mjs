@@ -981,7 +981,7 @@ test('factory command cards use canonical SVGs, daily production state, type cou
     // Every industrial tab must remain inside the reference command stage.
     // The old renderer used a different root for non-factory tabs, which discarded
     // the new metal/neon interface as soon as any top-tab button was pressed.
-    for (const tab of ['production-lines','inventory','national-inventory','research','projects']) {
+    for (const tab of ['production-lines','inventory','resource-inventory','industrial-inventory','research','projects']) {
       const tabResult = globalThis.OmegaUIV2Industry.render(root,{countryId:'BGD',tab});
       assert.equal(tabResult.ok,true,tab + ' tab should render');
       assert.match(root.innerHTML,/class="omega-v2-factory-command fp-stage"/,tab + ' must keep the command stage');
