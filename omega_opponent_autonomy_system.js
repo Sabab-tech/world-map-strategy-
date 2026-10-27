@@ -993,6 +993,10 @@
       unitPrice:price,totalValue:qty*price,currency:p.currency||null,
       status:'SENT',stage:'COUNTERPARTY_DECISION_PENDING',createdTurn:turn(),
       decisionId:p.decisionId||null,reservationId:p.reservationId||null,
+      supplyWindowId:typeof p.supplyWindowId==='string'&&p.supplyWindowId.trim()?p.supplyWindowId.trim():null,
+      supplyWindowTermDays:num(p.supplyWindowTermDays),
+      supplyWindowRemainingDaysAtRequest:num(p.supplyWindowRemainingDaysAtRequest),
+      supplyWindowTargetCoverageDays:num(p.supplyWindowTargetCoverageDays),
       relationSnapshot:clone(relation),agreementStatus:relation.trade_agreement===true?'EXISTS':'NOT_OBSERVED_OR_NOT_CONCLUDED'
     };
     ctx.stateTransaction.set('trade.importRequests',existing.concat([request]).slice(-256));
@@ -1589,6 +1593,10 @@
       result=dispatch('trade','OMEGA_AUTO_RESOURCE_IMPORT_REQUEST',c,{
         resourceId:route.resourceId||route.decision?.runtimeMeasurement?.resourceId||route.decision?.measurement?.resourceId,
         targetCountryId:plan.targetCountryId,quantity:plan.plan.quantity,unitPrice:plan.unitPrice,
+        supplyWindowId:route.supplyWindowId||null,
+        supplyWindowTermDays:num(route.supplyWindowTermDays),
+        supplyWindowRemainingDaysAtRequest:num(route.supplyWindowRemainingDays),
+        supplyWindowTargetCoverageDays:num(route.supplyWindowTargetCoverageDays),
         reservationId,decisionId,correlationId:decisionId
       },decisionId);
     }else if(['HOUSING_BUILD','INDUSTRY_BUILD','DOMESTIC_EXPANSION','PROCESSING_EXPANSION','INFRASTRUCTURE_EXPANSION'].includes(a)){
