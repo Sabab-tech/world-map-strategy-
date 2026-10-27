@@ -505,8 +505,8 @@
       }
       fm.revision+=1;result={ok:true,code:'BUDGET_ALLOCATED',message:'Annual budget ceiling updated; this action does not spend cash.'};
     }else if(type==='transfer-budget'||type==='transfer-allocation'){
-      const from=String(action.sourceDepartment||action.fromDepartment||'').toLowerCase().replace(/[\\s-]+/g,'_');
-      const to=String(action.targetDepartment||action.toDepartment||'').toLowerCase().replace(/[\\s-]+/g,'_');
+      const from=String(action.sourceDepartment||action.fromDepartment||'').toLowerCase().replace(/[\s-]+/g,'_');
+      const to=String(action.targetDepartment||action.toDepartment||'').toLowerCase().replace(/[\s-]+/g,'_');
       if(!from||!to||!budgetSectorById(from)||!budgetSectorById(to))
         return {ok:false,code:'BUDGET_TRANSFER_SECTOR_INVALID',message:'Choose two valid budgeted ministries in this country.'};
       if(from===to)return {ok:false,code:'BUDGET_TRANSFER_SAME_MINISTRY',message:'Source and destination ministries must be different.'};
