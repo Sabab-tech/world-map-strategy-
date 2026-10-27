@@ -535,7 +535,7 @@ Game.DataLoader = {
 
 Game.LabelSystem = {
     updateCountryLabels() {
-        if(!Game.Map.map) return;
+        if(!Game.Map.map || Game.Map.__omegaMapUiActive === false) return;
         var zoom = Game.Map.map.getZoom();
         
         Game.countryLabels.forEach(item => {
@@ -627,6 +627,7 @@ Game.Map = {
         this.bindMapUIProtection();
 
         this.map.on('zoomend', function() {
+            if (Game.Map.__omegaMapUiActive === false) return;
             var currentZoom = window.map.getZoom();
             if (Game.geojsonLayer) {
                 Game.geojsonLayer.eachLayer(function(layer) {
@@ -659,6 +660,7 @@ Game.Map = {
         });
 
         this.map.on('click', function() {
+            if (Game.Map.__omegaMapUiActive === false) return;
             if (Game.selectedLayer && Game.geojsonLayer) {
                 Game.geojsonLayer.resetStyle(Game.selectedLayer);
                 Game.selectedLayer = null;
@@ -1072,8 +1074,157 @@ Game.Map = {
    MAP ENGINE 2: PART 3 - GEOJSON OVERLAYS & BOOTSTRAP
    ============================================================================ */
 
+Game.Map.__omegaMapUiActive = true;
+Game.Map.__omegaDetachedLayers = [];
+Game.Map.__omegaMapRootDisplay = null;
+Game.Map.__omegaMapLoadingProgress = 0;
+
+Game.Map.updateMapLoadingProgress = function(percent, message, status) {
+    const overlay = document.getElementById('omega-map-load-overlay');
+    const progress = document.getElementById('omega-map-load-progress');
+    const percentLabel = document.getElementById('omega-map-load-percent');
+    const statusLabel = document.getElementById('omega-map-load-status');
+    const retryButton = document.getElementById('omega-map-load-retry');
+    if (!overlay || this.__omegaMapUiActive === false) return;
+    const bounded = Math.max(0, Math.min(100, Number(percent) || 0));
+    this.__omegaMapLoadingProgress = bounded;
+    overlay.classList.remove('is-hidden');
+    overlay.setAttribute('aria-hidden', 'false');
+    overlay.setAttribute('aria-busy', status === 'complete' ? 'false' : 'true');
+    overlay.setAttribute('data-state', status || 'loading');
+    if (progress) progress.style.width = bounded + '%';
+    if (percentLabel) percentLabel.textContent = Math.floor(bounded) + '%';
+    if (statusLabel && message) statusLabel.textContent = String(message);
+    if (retryButton) retryButton.hidden = status !== 'error';
+    if (status === 'complete') {
+        const map = this.map || window.map;
+        if (map && typeof map.invalidateSize === 'function') {
+            window.setTimeout(function () {
+                if (Game.Map.__omegaMapUiActive !== false) map.invalidateSize({ pan:false, debounceMoveend:true });
+            }, 0);
+        }
+        window.setTimeout(function () {
+            if (Game.Map.__omegaMapUiActive !== false &&
+                Game.__omegaGeoJSONRenderComplete === true && overlay.getAttribute('data-state') === 'complete') {
+                overlay.classList.add('is-hidden');
+                overlay.setAttribute('aria-hidden', 'true');
+            }
+        }, 260);
+    }
+};
+Game.Map.ensureMapLoadingOverlay = function() {
+    const retryButton = document.getElementById('omega-map-load-retry');
+    if (retryButton && !retryButton.__omegaBound) {
+        retryButton.__omegaBound = true;
+        retryButton.addEventListener('click', function () {
+            if (Game.Map.__omegaMapUiActive === false) return;
+            if (Game.DataLoader && typeof Game.DataLoader.loadWorldMap === 'function') {
+                Game.DataLoader.loadWorldMap();
+            }
+        });
+    }
+};
+Game.Map.setUiActive = function(active) {
+    const nextActive = active === true;
+    if (this.__omegaMapUiActive === nextActive) return true;
+    this.__omegaMapUiActive = nextActive;
+    const root = document.getElementById('render-engine-root');
+    const map = this.map || window.map;
+
+    if (!nextActive) {
+        const overlay = document.getElementById('omega-map-load-overlay');
+        if (overlay) {
+            overlay.classList.add('is-hidden');
+            overlay.setAttribute('aria-hidden', 'true');
+            overlay.setAttribute('aria-busy', 'false');
+        }
+        if (Game.__omegaGeoJSONRenderFrame !== null && Game.__omegaGeoJSONRenderFrame !== undefined &&
+            typeof window.cancelAnimationFrame === 'function') {
+            window.cancelAnimationFrame(Game.__omegaGeoJSONRenderFrame);
+        }
+        Game.__omegaGeoJSONRenderFrame = null;
+        if (Game.__omegaGeoJSONRenderComplete !== true) Game.__omegaGeoJSONRenderPaused = true;
+
+        // If the large map JSON is still downloading, stop that map-only request.
+        // Game simulation and shared country/resource systems remain untouched.
+        if (!this.countryGeoJSON && this.__omegaWorldMapAbortController &&
+            typeof this.__omegaWorldMapAbortController.abort === 'function') {
+            try { this.__omegaWorldMapAbortController.abort(); } catch (_) {}
+        }
+
+        if (map && typeof map.eachLayer === 'function' && typeof map.removeLayer === 'function') {
+            const layers = [];
+            map.eachLayer(function (layer) { layers.push(layer); });
+            layers.forEach(function (layer) {
+                if (map.hasLayer && map.hasLayer(layer)) {
+                    try { map.removeLayer(layer); } catch (_) {}
+                }
+            });
+            this.__omegaDetachedLayers = layers;
+        }
+        if (root) {
+            if (this.__omegaMapRootDisplay === null) this.__omegaMapRootDisplay = root.style.display || '';
+            root.setAttribute('data-omega-map-suspended', 'true');
+            root.style.display = 'none';
+        }
+        return true;
+    }
+
+    if (root) {
+        root.style.display = this.__omegaMapRootDisplay === null ? '' : this.__omegaMapRootDisplay;
+        root.removeAttribute('data-omega-map-suspended');
+    }
+    if (map) {
+        (this.__omegaDetachedLayers || []).forEach(function (layer) {
+            try {
+                if (!map.hasLayer || !map.hasLayer(layer)) map.addLayer(layer);
+            } catch (_) {}
+        });
+        this.__omegaDetachedLayers = [];
+        if (typeof map.invalidateSize === 'function') {
+            window.requestAnimationFrame(function () {
+                if (Game.Map.__omegaMapUiActive !== false) map.invalidateSize({ pan:false, debounceMoveend:true });
+            });
+        }
+    }
+
+    if (Game.__omegaGeoJSONRenderComplete === true && this.countryGeoJSON) {
+        this.updateMapLoadingProgress(100, 'World map ready', 'complete');
+    } else {
+        this.updateMapLoadingProgress(this.__omegaMapLoadingProgress || 2, 'Preparing world map…', 'loading');
+        if (typeof Game.__omegaGeoJSONResumeRender === 'function') {
+            Game.__omegaGeoJSONResumeRender();
+        } else if (this.countryGeoJSON && !Game.geojsonLayer) {
+            this.renderGeoJSON(this.countryGeoJSON);
+        } else if (Game.DataLoader && typeof Game.DataLoader.loadWorldMap === 'function') {
+            window.setTimeout(function () {
+                if (Game.Map.__omegaMapUiActive !== false &&
+                    !Game.Map.countryGeoJSON && !Game.Map.__omegaWorldMapAbortController) {
+                    Game.DataLoader.loadWorldMap();
+                }
+            }, 0);
+        }
+    }
+    return true;
+};
+
 Game.Map.renderGeoJSON = function(geoData) {
     const self = this;
+    if (!geoData || typeof geoData !== 'object') return Game.geojsonLayer || null;
+    this.countryGeoJSON = geoData;
+    if (this.__omegaMapUiActive === false) {
+        Game.__omegaGeoJSONPendingData = geoData;
+        return Game.geojsonLayer || null;
+    }
+    if (Game.__omegaGeoJSONRenderComplete === true &&
+        Game.__omegaGeoJSONSource === geoData && Game.geojsonLayer) {
+        return Game.geojsonLayer;
+    }
+    if (Game.__omegaGeoJSONSource === geoData && Game.geojsonLayer &&
+        Game.__omegaGeoJSONRenderComplete !== true && typeof Game.__omegaGeoJSONResumeRender === 'function') {
+        Game.__omegaGeoJSONResumeRender();
+        return Game.geojsonLayer;
+    }
     const renderOptions = {
         // Simplify country paths slightly to reduce Canvas drawing cost.
         smoothFactor: 1.2,
@@ -1094,8 +1245,8 @@ Game.Map.renderGeoJSON = function(geoData) {
             const zoom = window.map && typeof window.map.getZoom === "function" ? window.map.getZoom() : 2.5;
             return {
                 // High-contrast outlines remain selectable on both dark and satellite basemaps.
-                color: "#f8fafc",
-                weight: zoom >= 8 ? 1.8 : (zoom >= 5 ? 1.5 : 1.25),
+                color: "#f4f8ff",
+                weight: zoom >= 8 ? 2.1 : (zoom >= 5 ? 1.7 : 1.45),
                 opacity: 1.0,
                 dashArray: null,
                 fillColor: defaultColor,
@@ -1177,13 +1328,21 @@ Game.Map.renderGeoJSON = function(geoData) {
     // boot without waiting for every country polygon to be parsed and mounted.
     const layer = L.geoJSON(null, renderOptions);
     Game.geojsonLayer = layer;
+    Game.__omegaGeoJSONSource = geoData;
+    Game.__omegaGeoJSONRenderComplete = false;
+    Game.__omegaGeoJSONRenderPaused = false;
     layer.addTo(this.map);
 
     const featureCollection = geoData && geoData.type === "FeatureCollection" &&
         Array.isArray(geoData.features) ? geoData.features : null;
     const finishRender = function() {
-        if (renderToken !== Game.__omegaGeoJSONRenderToken || Game.geojsonLayer !== layer) return;
+        if (renderToken !== Game.__omegaGeoJSONRenderToken || Game.geojsonLayer !== layer ||
+            self.__omegaMapUiActive === false) return;
         Game.__omegaGeoJSONRenderFrame = null;
+        Game.__omegaGeoJSONRenderPaused = false;
+        Game.__omegaGeoJSONRenderComplete = true;
+        Game.__omegaGeoJSONResumeRender = null;
+        self.updateMapLoadingProgress(100, 'World map ready', 'complete');
         Game.LabelSystem.updateCountryLabels();
         self.renderOceanLabels();
         // A geographic-region selection may have been applied while the
@@ -1197,10 +1356,9 @@ Game.Map.renderGeoJSON = function(geoData) {
             }
         }
         window.setTimeout(() => {
-            if (renderToken !== Game.__omegaGeoJSONRenderToken || Game.geojsonLayer !== layer) return;
-            if (typeof self.renderResourceDeposits === "function") {
-                self.renderResourceDeposits("NONE");
-            }
+            if (renderToken !== Game.__omegaGeoJSONRenderToken || Game.geojsonLayer !== layer ||
+                self.__omegaMapUiActive === false) return;
+            if (typeof self.renderResourceDeposits === "function") self.renderResourceDeposits("NONE");
         }, 200);
     };
 
@@ -1213,6 +1371,7 @@ Game.Map.renderGeoJSON = function(geoData) {
     if (!featureCollection || featureCollection.features.length <= CHUNK_THRESHOLD ||
         typeof window.requestAnimationFrame !== "function") {
         layer.addData(geoData);
+        self.updateMapLoadingProgress(96, 'Finishing country boundaries', 'loading');
         finishRender();
         return layer;
     }
@@ -1220,8 +1379,19 @@ Game.Map.renderGeoJSON = function(geoData) {
     let nextFeature = 0;
     const now = () => window.performance && typeof window.performance.now === "function"
         ? window.performance.now() : Date.now();
+    const scheduleFeatureChunk = function() {
+        if (renderToken !== Game.__omegaGeoJSONRenderToken || Game.geojsonLayer !== layer ||
+            self.__omegaMapUiActive === false || Game.__omegaGeoJSONRenderFrame !== null) return;
+        Game.__omegaGeoJSONRenderPaused = false;
+        Game.__omegaGeoJSONRenderFrame = window.requestAnimationFrame(addFeatureChunk);
+    };
     const addFeatureChunk = function() {
+        Game.__omegaGeoJSONRenderFrame = null;
         if (renderToken !== Game.__omegaGeoJSONRenderToken || Game.geojsonLayer !== layer) return;
+        if (self.__omegaMapUiActive === false) {
+            Game.__omegaGeoJSONRenderPaused = true;
+            return;
+        }
         const startedAt = now();
         let added = 0;
         do {
@@ -1231,13 +1401,18 @@ Game.Map.renderGeoJSON = function(geoData) {
         } while (nextFeature < featureCollection.features.length &&
             added < MAX_FEATURES_PER_FRAME && now() - startedAt < FRAME_BUDGET_MS);
 
-        if (nextFeature < featureCollection.features.length) {
-            Game.__omegaGeoJSONRenderFrame = window.requestAnimationFrame(addFeatureChunk);
-        } else {
-            finishRender();
-        }
+        const fraction = nextFeature / Math.max(1, featureCollection.features.length);
+        self.updateMapLoadingProgress(18 + fraction * 78,
+            'Drawing country borders ' + Math.floor(fraction * 100) + '%', 'loading');
+        if (nextFeature < featureCollection.features.length) scheduleFeatureChunk();
+        else finishRender();
     };
-    Game.__omegaGeoJSONRenderFrame = window.requestAnimationFrame(addFeatureChunk);
+    Game.__omegaGeoJSONResumeRender = scheduleFeatureChunk;
+    if (this.__omegaMapUiActive === false) {
+        Game.__omegaGeoJSONRenderPaused = true;
+    } else {
+        scheduleFeatureChunk();
+    }
     return layer;
 }
 
@@ -2275,6 +2450,33 @@ window.loadGameCities = async function() {
     }
 };
 
+// Map-only presentation functions are parked while the ministry shell owns the screen.
+(function installMapUiRenderGuards() {
+    if (Game.Map.__omegaUiRenderGuardsInstalled) return;
+    Game.Map.__omegaUiRenderGuardsInstalled = true;
+    ['renderCountryHubs', 'renderGlobalCapitalHubs', 'renderOceanLabels', 'renderResourceDeposits']
+        .forEach(function (name) {
+            const original = Game.Map[name];
+            if (typeof original !== 'function' || original.__omegaSuspensionGuard) return;
+            const wrapped = function () {
+                if (Game.Map.__omegaMapUiActive === false) return null;
+                return original.apply(this, arguments);
+            };
+            wrapped.__omegaSuspensionGuard = true;
+            wrapped.__omegaOriginal = original;
+            Game.Map[name] = wrapped;
+        });
+    if (Game.LabelSystem && typeof Game.LabelSystem.updateCountryLabels === 'function' &&
+        !Game.LabelSystem.updateCountryLabels.__omegaSuspensionGuard) {
+        const originalLabels = Game.LabelSystem.updateCountryLabels;
+        const wrappedLabels = function () {
+            if (Game.Map.__omegaMapUiActive === false) return;
+            return originalLabels.apply(this, arguments);
+        };
+        wrappedLabels.__omegaSuspensionGuard = true;
+        Game.LabelSystem.updateCountryLabels = wrappedLabels;
+    }
+})();
 function safeAppEngineBootstrap() {
     if (window.map && Game.init && typeof window.loadGameCities === 'function') {
         window.loadGameCities();
