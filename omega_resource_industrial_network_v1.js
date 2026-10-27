@@ -904,8 +904,29 @@ function planShipment(input={}){
   const strategicPolicy=g.Omega?.ResourceStrategicPolicyRuntime||g.OmegaResourceStrategicPolicyRuntime;
   const siteGate=strategicPolicy?.siteAvailableForExtraction?.(cid,site.siteId,site);
   if(siteGate&&!siteGate.allowed)return{status:'BLOCKED',reason:siteGate.reason||'SITE_EXPLORATION_GATE_BLOCKED',siteId:site.siteId,countryId:cid,resourceId:rid};
-  const candidates=candidateFactories(cid,rid);
-  if(input.factoryId){const f=candidates.find(x=>String(x.asset?.id||x.asset?.assetId||x.asset?.projectId)===String(input.factoryId));if(!f)return{status:'BLOCKED',reason:'FACTORY_NOT_CAPABLE'};candidates.splice(0,candidates.length,f)}
+  let candidates=candidateFactories(cid,rid);
+  const sourceSiteId=String(site?.siteId||'').trim();
+  const sourceSiteFactories=candidates.filter(({asset})=>
+    String(asset?.sourceSiteId||asset?.siteId||'').trim()===sourceSiteId);
+  // When a physical site has its own commissioned factory, route only to that factory.
+  // Otherwise the shortest-route planner may send this mine's batch to another mine's
+  // dedicated factory simply because it happens to be geographically closer.
+  if(sourceSiteFactories.length){
+    if(input.factoryId){
+      const chosen=sourceSiteFactories.find(x=>
+        String(x.asset?.id||x.asset?.assetId||x.asset?.projectId)===String(input.factoryId));
+      if(!chosen)return{status:'BLOCKED',reason:'SOURCE_SITE_FACTORY_BINDING_MISMATCH',
+        siteId:sourceSiteId,requestedFactoryId:String(input.factoryId),
+        requiredFactoryIds:sourceSiteFactories.map(x=>String(x.asset?.id||x.asset?.assetId||x.asset?.projectId))};
+      candidates=[chosen];
+    }else{
+      candidates=sourceSiteFactories;
+    }
+  }else if(input.factoryId){
+    const chosen=candidates.find(x=>String(x.asset?.id||x.asset?.assetId||x.asset?.projectId)===String(input.factoryId));
+    if(!chosen)return{status:'BLOCKED',reason:'FACTORY_NOT_CAPABLE'};
+    candidates=[chosen];
+  }
   if(!candidates.length)return{status:'BLOCKED',reason:'NO_MATCHING_FACTORY',countryId:cid,siteId:site.siteId,resourceId:rid};
   const ordered=candidates.sort((a,b)=>String(a.asset?.priority??999)-String(b.asset?.priority??999));
   let best=null,policyBlockedRoute=null;
@@ -1238,6 +1259,18 @@ function settleFactoryInputShipment(countryId,shipment){
   if(!factory)return{status:'BLOCKED',reason:'FACTORY_NOT_FOUND_AT_INPUT_DELIVERY',factoryId};
   if(canonicalCountry(factory.countryId||cid)!==cid)return{status:'BLOCKED',reason:'FACTORY_COUNTRY_MISMATCH',factoryId};
   if(tok(sourceBatch.resourceId||sourceBatch.materialIdentity)!==rid)return{status:'BLOCKED',reason:'SOURCE_BATCH_RESOURCE_MISMATCH',batchId,resourceId:rid};
+  const boundSiteId=String(factory.sourceSiteId||factory.siteId||'').trim();
+  if(boundSiteId){
+    const sourceFlow=siteFlowRows(cid).find(row=>String(row?.batchId||'')===batchId);
+    const sourceSiteCandidates=[sourceBatch?.siteReferenceKey,sourceBatch?.siteId,sourceBatch?.sourceSiteId,
+      sourceBatch?.originSiteId,sourceFlow?.siteId,sourceFlow?.siteSnapshot?.siteId,
+      sourceFlow?.siteSnapshot?.sourceSiteRecord?.siteId]
+      .map(value=>String(value||'').trim()).filter(Boolean);
+    if(!sourceSiteCandidates.length)return{status:'BLOCKED',reason:'SOURCE_SITE_IDENTITY_MISSING_FOR_BOUND_FACTORY',
+      batchId,factoryId,boundSiteId};
+    if(!sourceSiteCandidates.includes(boundSiteId))return{status:'BLOCKED',reason:'SOURCE_SITE_FACTORY_BINDING_MISMATCH',
+      batchId,factoryId,boundSiteId,sourceSiteCandidates:[...new Set(sourceSiteCandidates)]};
+  }
   const key=quantityObjectKey(availableMap,rid),reservedKey=quantityObjectKey(reservedMap,rid);
   const available=key===null?0:Math.max(0,num(availableMap[key])||0);
   const reserved=reservedKey===null?0:Math.max(0,num(reservedMap[reservedKey])||0);
