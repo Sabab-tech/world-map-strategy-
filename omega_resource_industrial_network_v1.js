@@ -3132,7 +3132,7 @@ async function executeSitePipeline(input={}){
     return !!exactSiteName&&identityWords(sourceName)===exactSiteName;
   });
   const keys=sourceDepositKeys.length?sourceDepositKeys:
-    (dedicatedSiteKeys.length?dedicatedSiteKeys:(matchingKeys.length?matchingKeys:(stateBoundKeys.length?stateBoundKeys:(referenceResource===rid?linkedKeys:[]))));
+    (dedicatedSiteKeys.length?dedicatedSiteKeys:(stateBoundKeys.length?stateBoundKeys:(matchingKeys.length?matchingKeys:(referenceResource===rid?linkedKeys:[]))));
   if(!keys.length)return{status:'BLOCKED',reason:linkedKeys.length?'SITE_RESOURCE_OCCURRENCE_NOT_FOUND':'SITE_HAS_NO_EXECUTABLE_OCCURRENCE',siteId:site.siteId,countryId:cid,resourceId:rid,controllerStatus:controller?.controllerStatus||null,linkedOccurrenceCount:linkedKeys.length,siteStateOccurrenceCount:stateBoundKeys.length,referenceResource:referenceResource||null};
   const already=netState(cid).siteExecutions||[];
   const duplicate=already.find(x=>x.siteId===site.siteId&&Number(x.turn)===turn()&&x.status!=='FAILED');
