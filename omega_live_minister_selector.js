@@ -11,8 +11,8 @@
   const canonicalRegistry=()=>{const r=global.OmegaMinisterStateRegistry;return r&&typeof r.recruitCandidate==='function'&&typeof r.getActiveMinister==='function'?r:null};
   const registry=()=>legacyRegistry()||canonicalRegistry()||null, ministerId=p=>String(p?.id||p?.ministerId||''), safeName=p=>text(p?.baseName||p?.name||p?.ministerName||ministerId(p)||'Minister');
   const candidates=m=>{const r=registry();return r?.profiles?[...r.profiles.values()].filter(p=>norm(p?.ministryId)===norm(m)):[]};
-  const active=m=>{
-    const c=country();if(!c||!m)return null;
+  const active=(m,countryOverride)=>{
+    const c=text(countryOverride).toUpperCase().replace(/\\s+/g,'_')||country();if(!c||!m)return null;
     const canonical=canonicalRegistry();
     if(canonical){try{
       // Ministry lists render many rows at once. Prefer a lightweight active assignment
@@ -26,14 +26,16 @@
   };
   // Never alias the legacy V2 registry over the canonical lifecycle authority.
   function ensureGlobalRegistryAlias(){return canonicalRegistry()||legacyRegistry()}
-  async function appoint(m,p){
-    const c=country(),id=ministerId(p);
+  async function appoint(m,p,countryOverride){
+    // The calling screen owns the selected-country context. Never silently appoint
+    // into whichever country happens to be active in the legacy cabinet globals.
+    const c=text(countryOverride).toUpperCase().replace(/\\s+/g,'_')||country(),id=ministerId(p);
     if(!c)throw Error('COUNTRY_CONTEXT_UNRESOLVED');
     if(!m)throw Error('MINISTRY_CONTEXT_UNRESOLVED');
     if(!id)throw Error('MINISTER_ID_UNRESOLVED');
     const engine=global.OmegaMinisterRecruitment;
     if(!engine||typeof engine.recruit!=='function'||typeof engine.fire!=='function')throw Error('MINISTER_RECRUITMENT_ENGINE_UNAVAILABLE');
-    const current=active(m);
+    const current=active(m,c);
     const currentId=String(current?.ministerId||current?.profile?.id||current?.profile?.ministerId||'');
     if(currentId===id){
       try{localStorage.setItem('OMEGA_MINISTER_SELECTED_V9::'+c+'::'+m,id)}catch(_){}
