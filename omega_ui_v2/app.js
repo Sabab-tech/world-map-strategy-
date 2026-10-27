@@ -538,8 +538,15 @@
     var activeMain = root && root.querySelector && root.querySelector('[data-omega-v2-main]');
     if (!state || (screenRoot && activeMain !== screenRoot)) return false;
     return scheduleDeferredTransition(root, label || 'Updating this section', function () {
-      if (typeof callback === 'function') return callback();
-      return renderCurrentScreen(root, stateFor(root), true);
+      var activeState = stateFor(root);
+      var route = activeState && activeState.route;
+      var started = monotonicNow();
+      try {
+        if (typeof callback === 'function') return callback();
+        return renderCurrentScreen(root, activeState, true);
+      } finally {
+        recordScreenDuration(route, monotonicNow() - started);
+      }
     });
   }
   function screenIdentity(state) {
