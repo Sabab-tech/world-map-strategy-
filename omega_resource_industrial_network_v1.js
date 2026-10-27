@@ -3356,7 +3356,7 @@ function decommissionMine(input={}){
   asset.decommissionedDate=factoryCurrentGameDate();asset.decommissionedByPlayer=true;
   asset.decommissionReason='PLAYER_ORDER';asset.activeProductionCycleId=null;
   const record={status:'DECOMMISSIONED',countryId:cid,siteId,mineId:String(asset.mineId||asset.id||''),resourceId:String(asset.resourceId||''),
-    turn:turn(),date:asset.decommissionedDate,priorStatus,productionStatus:'STOPPED',stockPreserved:true,historyPreserved:true,
+    turn:turn(),date:asset.decommissionedDate,priorStatus:previousStatus,productionStatus:'STOPPED',stockPreserved:true,historyPreserved:true,
     authority:'OMEGA_RESOURCE_MINE_DECOMMISSION_API_V1'};
   rs.mineDecommissionHistory=Array.isArray(rs.mineDecommissionHistory)?rs.mineDecommissionHistory:[];
   rs.mineDecommissionHistory.push(clone(record));rs.mineDecommissionHistory=rs.mineDecommissionHistory.slice(-MAX_EVENTS);
