@@ -452,6 +452,8 @@ test('mine project rejects cross-country identity and player-only actions requir
   assert.match(uiSource, /executeFactoryCycle/);
   assert.match(uiSource, /<svg/);
   assert.match(indexSource, /omega_resource_mine_management_v1\.js/);
+  assert.match(indexSource, /omega_resource_auto_mining_runtime_v1\.js/);
+  assert.match(serviceWorkerSource, /\.\/omega_resource_auto_mining_runtime_v1\.js/);
   assert.match(fs.readFileSync(new URL('server.js', repoRoot), 'utf8'), /RESOURCE_MINE_MANAGEMENT_SCRIPT/);
   assert.match(serviceWorkerSource, /omega-offline-atlas-shell-v\d+/);
   assert.match(serviceWorkerSource, /\.\/omega_resource_mine_management_v1\.js/);
