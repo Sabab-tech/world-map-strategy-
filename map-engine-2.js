@@ -454,6 +454,11 @@ Game.DataLoader = {
             Game.Map.updateMapLoadingProgress(100, 'World map ready', 'complete');
             return Promise.resolve(Game.Map.countryGeoJSON);
         }
+        // A hidden map must not start a new geometry request. The request is restarted
+        // by setUiActive(true) when the player returns to the world view.
+        if (Game.Map.__omegaMapUiActive === false && !this.__worldLoadPromise) {
+            return Promise.resolve(Game.Map.countryGeoJSON || Game.__omegaGeoJSONPendingData || null);
+        }
         if (this.__worldLoadPromise) return this.__worldLoadPromise;
 
         fetcher = fetcher || this.getFetcher();
@@ -759,6 +764,7 @@ Game.Map = {
 
         // Render global capitals on start
         setTimeout(() => {
+            if (Game.Map.__omegaMapUiActive === false) return;
             this.renderGlobalCapitalHubs();
             this.bindMapUIProtection();
         }, 500);
