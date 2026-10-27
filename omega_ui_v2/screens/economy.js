@@ -131,6 +131,15 @@
       return '<article class="omega-v2-card"><h3 class="omega-v2-card-title">' + esc(link[1]) + '</h3><p class="omega-v2-card-meta">' + esc(link[2]) + '</p><div class="omega-v2-actions"><button type="button" class="omega-v2-button omega-v2-button--primary" data-omega-v2-open-economic-ministry="' + esc(link[0]) + '"' + (enabled ? '' : ' disabled') + '>Open ministry</button></div></article>';
     }).join('') + '</div>';
   }
+  function scheduleRender(root, options, label) {
+    options = options || {};
+    var scheduler = options.onScheduleRender;
+    if (typeof scheduler === 'function') {
+      return scheduler(function () { return render(root, options); }, label || 'Updating this section', root);
+    }
+    return render(root, options);
+  }
+
   function render(root, options) {
     options = options || {};
     if (!root) return { ok:false, code:'ECONOMY_ROOT_REQUIRED' };
@@ -180,7 +189,7 @@
         if (!target || typeof target.closest !== 'function') return;
         var tabButton = target.closest('[data-omega-v2-economy-tab]');
         if (tabButton && root.contains(tabButton)) {
-          render(root, Object.assign({}, root.__omegaV2EconomyOptions || {}, { tab:tabButton.getAttribute('data-omega-v2-economy-tab') }));
+          scheduleRender(root, Object.assign({}, root.__omegaV2EconomyOptions || {}, { tab:tabButton.getAttribute('data-omega-v2-economy-tab') }));
           return;
         }
         var button = target.closest('[data-omega-v2-open-economic-ministry]');
