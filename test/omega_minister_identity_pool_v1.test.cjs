@@ -9,7 +9,7 @@ const countries = JSON.parse(fs.readFileSync(path.join(root, 'countries.json'), 
 const resourceIndex = JSON.parse(fs.readFileSync(path.join(root, 'resource_country_resource_context_index.json'), 'utf8'));
 const manifest = JSON.parse(fs.readFileSync(path.join(root, 'minister_country_roster_manifest_v1.json'), 'utf8'));
 const templates = JSON.parse(fs.readFileSync(path.join(root, 'ministers.json'), 'utf8'));
-const sandbox = { console, fetch: async () => ({ ok:false, status:404, json:async()=>({}) }) };
+const sandbox = { console, setInterval:()=>1, clearInterval:()=>{}, setTimeout, clearTimeout, fetch: async () => ({ ok:false, status:404, json:async()=>({}) }) };
 sandbox.window = sandbox;
 sandbox.globalThis = sandbox;
 vm.runInNewContext(fs.readFileSync(path.join(root, 'omega_minister_identity_pool_v1.js'), 'utf8'), sandbox, {
@@ -63,6 +63,20 @@ const configured = pool.configure({ manifest, templates });
     assert.equal(names.size, 90, countryCode + ' must have 90 distinct names across 18 ministries');
   }
   assert.equal(ids.size, 17730, 'all generated identities must be globally unique');
+
+  // Exercise the actual recruitment engine's offline path, not only the pure generator.
+  vm.runInNewContext(fs.readFileSync(path.join(root, 'minister_recruitment_engine.js'), 'utf8'), sandbox, {
+    filename:'minister_recruitment_engine.js'
+  });
+  const recruitment = sandbox.OmegaMinisterRecruitment;
+  assert.ok(recruitment && typeof recruitment.fetchRoster === 'function');
+  const runtimeRoster = await recruitment.fetchRoster('interior_security', 'BGD');
+  assert.equal(runtimeRoster.length, 5);
+  assert.ok(runtimeRoster.every(p => p.countryCode === 'BGD' && p.ministryId === 'interior_security'));
+  assert.ok(runtimeRoster.every(p => p.rosterSource === 'COUNTRY_MINISTRY_ROSTER_V1'));
+  const runtimeOtherCountry = await recruitment.fetchRoster('interior_security', 'USA');
+  assert.ok(runtimeOtherCountry.every(p => p.countryCode === 'USA'));
+  assert.notEqual(runtimeRoster[0].id, runtimeOtherCountry[0].id);
 
   const bangladesh = await pool.getCandidates('BGD', 'interior_security');
   const sameAgain = await pool.getCandidates('Bangladesh', 'interior_security');
