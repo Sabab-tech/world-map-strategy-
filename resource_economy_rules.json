@@ -592,26 +592,18 @@
       },
       "gypsum": {
         "unit": "METRIC_TONS_PER_DAY",
-        "priority": 6.5,
-        "domesticUseShare": 0.2,
         "stockCoverageDays": 3
       },
       "niobium": {
         "unit": "METRIC_TONS_PER_DAY",
-        "priority": 8.7,
-        "domesticUseShare": 0.15,
         "stockCoverageDays": 3
       },
       "ruby": {
         "unit": "CARATS_PER_DAY",
-        "priority": 2.5,
-        "domesticUseShare": 0.02,
         "stockCoverageDays": 2
       },
       "limestone": {
         "unit": "METRIC_TONS_PER_DAY",
-        "priority": 7,
-        "domesticUseShare": 0.28,
         "stockCoverageDays": 3
       }
     },
