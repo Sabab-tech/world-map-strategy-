@@ -64,7 +64,7 @@
       onOpenMinistry: function (id) { return openMinistry(root, id, true); },
       onOpenDomain: function (domain) { return openDomain(root, domain, true); },
       onNavigate: function (destination) { return navigate(root, destination, true); },
-      onScheduleRender: function (callback, label) { return scheduleScreenRefresh(root, callback, label); },
+      onScheduleRender: function (callback, label, screenRoot) { return scheduleScreenRefresh(root, callback, label, screenRoot); },
       onViewChange: function (view) {
         state.governmentView = view === 'all-ministries' ? 'all-ministries' : 'executive-ministry';
       },
@@ -164,7 +164,7 @@
         if (deferRender) {
           return scheduleDeferredTransition(root, 'Returning to the world map', function () {
             return state.options.onBackToMap();
-          });
+          }, true);
         }
         return state.options.onBackToMap();
       }
@@ -194,7 +194,7 @@
       if (deferAction) {
         scheduleDeferredTransition(root, 'Returning to the world map', function () {
           return state.options.onBackToMap();
-        });
+        }, true);
         return true;
       }
       state.options.onBackToMap();
@@ -469,6 +469,7 @@
       result = { ok:true, code:'SCREEN_RENDER_FAILED', route:state.route, screenRecovery:true };
     } finally {
       recordScreenDuration(state.route, monotonicNow() - started);
+      state.lastRenderedScreenIdentity = screenIdentity(state);
       state.navigationPending = false;
       if (main.removeAttribute) main.removeAttribute('aria-busy');
       if (root.removeAttribute) root.removeAttribute('data-omega-v2-navigation-pending');
@@ -505,12 +506,13 @@
     });
     state.pendingFrames = [first];
   }
-  function scheduleDeferredTransition(root, label, callback) {
+  function scheduleDeferredTransition(root, label, callback, replaceMain) {
     var state = stateFor(root);
     if (!state) return false;
     state.navigationGeneration = (Number(state.navigationGeneration) || 0) + 1;
     var generation = state.navigationGeneration;
     cancelPendingFrames(state);
+    if (replaceMain) replaceMainForNavigation(root);
     ensureShell(root, state);
     syncNavigationChrome(root, state);
     var main = root.querySelector && root.querySelector('[data-omega-v2-main]');
@@ -529,18 +531,39 @@
     if (!state) return false;
     return scheduleDeferredTransition(root, 'Opening ' + navigationLabel(state), function () {
       renderCurrentScreen(root, state, true);
-    });
+    }, true);
   }
-  function scheduleScreenRefresh(root, callback, label) {
+  function scheduleScreenRefresh(root, callback, label, screenRoot) {
+    var state = stateFor(root);
+    var activeMain = root && root.querySelector && root.querySelector('[data-omega-v2-main]');
+    if (!state || (screenRoot && activeMain !== screenRoot)) return false;
     return scheduleDeferredTransition(root, label || 'Updating this section', function () {
       if (typeof callback === 'function') return callback();
       return renderCurrentScreen(root, stateFor(root), true);
     });
   }
+  function screenIdentity(state) {
+    return [state.route || '', state.ministryId || '', state.resourceSiteId || ''].join('|');
+  }
+  function replaceMainForNavigation(root) {
+    var current = root && root.querySelector && root.querySelector('[data-omega-v2-main]');
+    if (!current) return false;
+    stopScreenRotation(current);
+    try {
+      if (typeof current.cloneNode === 'function' && current.parentNode && typeof current.parentNode.replaceChild === 'function') {
+        var replacement = current.cloneNode(false);
+        if (replacement.removeAttribute) replacement.removeAttribute('aria-busy');
+        current.parentNode.replaceChild(replacement, current);
+        return true;
+      }
+    } catch (_) {}
+    current.innerHTML = '';
+    return false;
+  }
   function withScheduledScreenRefresh(root, options) {
     var output = Object.assign({}, options || {});
-    output.onScheduleRender = function (callback, label) {
-      return scheduleScreenRefresh(root, callback, label);
+    output.onScheduleRender = function (callback, label, screenRoot) {
+      return scheduleScreenRefresh(root, callback, label, screenRoot);
     };
     return output;
   }
@@ -548,6 +571,7 @@
     var state = stateFor(root);
     if (!root || !state) return { ok:false, code:'UI_V2_NOT_MOUNTED' };
     invalidatePendingRender(state);
+    if (state.shellMounted && state.lastRenderedScreenIdentity !== screenIdentity(state)) replaceMainForNavigation(root);
     ensureShell(root, state);
     return renderCurrentScreen(root, state, false);
   }
