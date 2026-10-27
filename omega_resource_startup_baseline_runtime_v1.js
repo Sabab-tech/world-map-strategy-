@@ -639,35 +639,63 @@
     const canonicalResources = new Set();
     Object.values(baseline.countries || {}).forEach(row =>
       arr(row && row.primaryResourceStockPolicy && row.primaryResourceStockPolicy.eligibleResourceIds).forEach(rid => canonicalResources.add(token(rid))));
-    const registryRows = siteRows(), descriptorsBySite = new Map();
-    for (const site of registryRows) {
-      const descriptor = operationalMineDescriptor(site, canonicalResources);
-      if (descriptor && !descriptorsBySite.has(descriptor.siteId)) descriptorsBySite.set(descriptor.siteId, descriptor);
-    }
+    const registryRows = siteRows(), registryBySite = new Map();
+    registryRows.forEach(site => {
+      const siteId = String(site && (site.siteId || site.siteReferenceKey) || '').trim();
+      if (siteId && !registryBySite.has(siteId)) registryBySite.set(siteId, site);
+    });
     const s = state(); s.resource = obj(s.resource) ? s.resource : {};
     let seededMines = 0, preservedMines = 0, eligibleSites = 0, initializedCountries = 0, unmatchedPlannedMineCount = 0;
     const descriptors = [];
+    function plannedSiteDescriptor(cid, plan, site) {
+      const siteId = String(plan && plan.siteId || '').trim(), rid = token(plan && plan.resourceId);
+      if (!siteId || !canonicalResources.has(rid) || !site) return null;
+      const rowCountry = canonical(site.countryId || site.identity && site.identity.countryIso3 ||
+        site.sourceSiteRecord && (site.sourceSiteRecord.countryCode || site.sourceSiteRecord.countryId));
+      const rowResource = resourceIdOf(site);
+      if (rowCountry !== cid || rowResource !== rid) return null;
+      if (site.runtime && site.runtime.aliasOfSiteId || site.map && site.map.markerEligible === false) return null;
+      const operation = site.operation || {}, source = site.sourceSiteRecord || {};
+      if (operation.commercialExtraction === false || source.commercialExtraction === false ||
+          operation.gameplayConstructionAllowed === false || source.gameplayConstructionAllowed === false ||
+          String(operation.realWorldStatus || operation.status || source.realWorldStatus || source.status || '').toUpperCase() === 'NOT_APPLICABLE') return null;
+      const plannedRate = num(plan.dailyCapacity), plannedReserve = num(plan.reserveQuantity);
+      if (!(plannedRate > 0) || !(plannedReserve > 0) || !plan.unit) return null;
+      const name = String(site.siteName || site.name || plan.siteName || siteId);
+      return {
+        countryId: cid, siteId, resourceId: rid, siteName: name,
+        dailyCapacity: plannedRate, reserveQuantity: plannedReserve,
+        unit: String(plan.unit), rateUnit: String(plan.rateUnit || (String(plan.unit) + '_PER_DAY')),
+        reserveAuthority: String(plan.sourceAuthority || 'SIMULATED_STARTING_MINE_ASSET_V1'),
+        capacityAuthority: 'SIMULATED_STARTING_MINE_BASELINE_V1',
+        plannedStartingDailyCapacity: plannedRate, plannedReserveQuantity: plannedReserve,
+        plannedSourceAuthority: String(plan.sourceAuthority || 'SIMULATED_STARTING_MINE_ASSET_V1'),
+        plannedMineId: 'MINE-START:' + cid + ':' + siteId,
+        sourceSiteStatus: String(operation.realWorldStatus || operation.status || source.realWorldStatus || source.status || 'UNOBSERVED'),
+        siteSnapshot: { siteId, countryId: cid, siteName: name, identity: clone(site.identity || {}),
+          location: clone(site.location || {}), resourceId: rid, sourceSiteRecord: clone(source) }
+      };
+    }
     for (const cid of arr(baseline.countryOrder)) {
       const source = baseline.countries[cid]; if (!source) continue;
       const rs = ensureStateBucket(s.resource, cid), meta = obj(rs.startupBaseline) ? rs.startupBaseline : {};
+      const plannedRows = arr(source.startingMineAssets);
       if (meta.minesInitialized) {
         if (meta.skippedLegacyFactorySeed !== true && meta.primaryStocksInitialized !== true) {
-          const plans = new Map(arr(source.startingMineAssets).map(plan => [String(plan && plan.siteId || ''), plan]));
+          const plans = new Map(plannedRows.map(plan => [String(plan && plan.siteId || ''), plan]));
           for (const asset of arr(rs.mineAssets)) {
-            const siteId = String(asset && asset.siteId || ''), plan = plans.get(siteId);
-            const status = upper(asset && asset.status);
+            const siteId = String(asset && asset.siteId || ''), plan = plans.get(siteId), status = upper(asset && asset.status);
             if (!plan || !isOperationalMine(asset) || /DECOMMISSIONED|DESTROYED|STOPPED|INACTIVE|CLOSED/.test(status)) continue;
-            descriptors.push({
-              countryId: cid, siteId, resourceId: token(plan.resourceId),
-              siteName: String(asset.siteName || plan.siteName || siteId),
-              dailyCapacity: num(asset.capacityPerDay ?? asset.nominalDailyCapacity ?? asset.productionRate) ?? num(plan.dailyCapacity),
-              unit: String(asset.outputUnit || plan.unit || 'SIMULATION_RESOURCE_UNIT'),
-              rateUnit: String(asset.productionRateUnit || plan.rateUnit || (plan.unit + '_PER_DAY')),
-              reserveQuantity: num(asset.reserveQuantity) ?? num(plan.reserveQuantity),
-              reserveAuthority: String(asset.reserveAuthority || plan.sourceAuthority || 'SIMULATED_STARTING_MINE_ASSET_V1'),
-              capacityAuthority: String(asset.capacityAuthority || 'SIMULATED_STARTING_MINE_BASELINE_V1'),
-              plannedStartingDailyCapacity: num(plan.dailyCapacity), plannedReserveQuantity: num(plan.reserveQuantity)
-            });
+            const site = registryBySite.get(siteId);
+            const descriptor = plannedSiteDescriptor(cid, plan, site);
+            if (descriptor) descriptors.push(Object.assign({}, descriptor, {
+              dailyCapacity: num(asset.capacityPerDay ?? asset.nominalDailyCapacity ?? asset.productionRate) ?? descriptor.dailyCapacity,
+              unit: String(asset.outputUnit || descriptor.unit),
+              rateUnit: String(asset.productionRateUnit || descriptor.rateUnit),
+              reserveQuantity: num(asset.reserveQuantity) ?? descriptor.reserveQuantity,
+              reserveAuthority: String(asset.reserveAuthority || descriptor.reserveAuthority),
+              capacityAuthority: String(asset.capacityAuthority || descriptor.capacityAuthority)
+            }));
           }
         }
         continue;
@@ -677,34 +705,21 @@
       rs.mineAssets = existing;
       if (meta.skippedLegacyFactorySeed === true) {
         rs.startupBaseline = Object.assign({}, meta, { version: VERSION, minesInitialized: true,
-          primaryStocksInitialized: true, availableSiteCount: 0, plannedMineCount: arr(source.startingMineAssets).length,
-          unmatchedPlannedMineCount: arr(source.startingMineAssets).length,
+          primaryStocksInitialized: true, availableSiteCount: 0, plannedMineCount: plannedRows.length,
+          unmatchedPlannedMineCount: plannedRows.length,
           openingStocksSkippedForExistingGame: true, skippedLegacyMineSeed: true,
           authority: 'OMEGA_COUNTRY_STARTUP_BASELINE_V1' });
         initializedCountries++;
         continue;
       }
-      const plannedRows = arr(source.startingMineAssets), candidates = [];
-      const seenPlanned = new Set();
+      const candidates = [], seenPlanned = new Set();
       for (const plan of plannedRows) {
-        const siteId = String(plan && plan.siteId || '').trim(), rid = token(plan && plan.resourceId);
-        if (!siteId || seenPlanned.has(siteId) || !canonicalResources.has(rid)) continue;
+        const siteId = String(plan && plan.siteId || '').trim();
+        if (!siteId || seenPlanned.has(siteId)) continue;
         seenPlanned.add(siteId);
-        const descriptor = descriptorsBySite.get(siteId);
-        if (!descriptor || descriptor.countryId !== cid || token(descriptor.resourceId) !== rid) {
-          continue;
-        }
-        const plannedRate = num(plan.dailyCapacity), plannedReserve = num(plan.reserveQuantity);
-        if (!(plannedRate > 0) || !(plannedReserve > 0)) continue;
-        candidates.push(Object.assign({}, descriptor, {
-          dailyCapacity: plannedRate, reserveQuantity: plannedReserve,
-          unit: String(plan.unit || descriptor.unit), rateUnit: String(plan.rateUnit || (String(plan.unit || descriptor.unit) + '_PER_DAY')),
-          reserveAuthority: String(plan.sourceAuthority || 'SIMULATED_STARTING_MINE_ASSET_V1'),
-          capacityAuthority: 'SIMULATED_STARTING_MINE_BASELINE_V1',
-          plannedStartingDailyCapacity: plannedRate, plannedReserveQuantity: plannedReserve,
-          plannedSourceAuthority: String(plan.sourceAuthority || 'SIMULATED_STARTING_MINE_ASSET_V1'),
-          plannedMineId: 'MINE-START:' + cid + ':' + siteId
-        }));
+        const descriptor = plannedSiteDescriptor(cid, plan, registryBySite.get(siteId));
+        if (!descriptor) continue;
+        candidates.push(descriptor);
       }
       eligibleSites += candidates.length;
       candidates.forEach(row => {
