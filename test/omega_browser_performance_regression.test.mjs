@@ -257,7 +257,8 @@ test('large world GeoJSON is rendered incrementally rather than monopolizing the
   assert.match(renderer, /MAX_FEATURES_PER_FRAME\s*=\s*8/);
   assert.match(renderer, /FRAME_BUDGET_MS\s*=\s*7/);
   assert.match(renderer, /requestAnimationFrame\(addFeatureChunk\)/);
-  assert.match(renderer, /layer\.addData\(featureCollection\.features\[nextFeature\]\)/);
+  assert.match(renderer, /addFeatureSafely\(featureCollection\.features\[nextFeature\],\s*nextFeature\)/,
+    'isolated bad country geometry must be caught without abandoning the remaining world features');
   assert.match(renderer, /renderToken !== Game\.__omegaGeoJSONRenderToken/);
   assert.match(renderer, /OMEGAGeographicRegionSystem/);
   assert.match(renderer, /Game\.countryLabels\.length = 0/);
@@ -547,4 +548,6 @@ test('universal action progress covers legacy controls, mining actions and resou
     'map failures must identify the renderer stage and preserve cached geography');
   assert.ok(map.includes('Country boundary chunk failed.'),
     'asynchronous feature-render exceptions must be caught instead of silently stranding the progress bar');
+  assert.ok(map.includes('Skipping malformed country geometry.') && map.includes('WORLD_FEATURE_RENDER_FAILURE_RATE'),
+    'a small number of bad country features should be isolated, while widespread render failures get a diagnostic');
 });
