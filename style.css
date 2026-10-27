@@ -5417,3 +5417,46 @@ body.modal-open .ui-bottom-navigation {
 .ocov-country-data-audit button { min-height: 36px; padding: 8px 12px; border: 1px solid rgba(233, 189, 87, 0.55); border-radius: 7px; background: rgba(233, 189, 87, 0.12); color: #f8e7b0; font-weight: 700; font-size: 11px; cursor: pointer; }
 .ocov-country-data-audit pre { margin: 10px 0 0; max-height: 420px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; font: 10px/1.55 system-ui, sans-serif; color: #cbd5e1; }
 @media (max-width: 420px) { .ocov-country-data { padding: 9px; } .ocov-country-data-row { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: 4px 7px; } .ocov-country-data-value { font-size: 10px; } }
+
+
+/* OMEGA world-geometry startup: progress follows actual download bytes and parsed features. */
+#render-engine-root { position:fixed; inset:0; z-index:1; overflow:hidden; }
+#map { width:100%; height:100%; }
+#render-engine-root[data-omega-map-suspended="true"] { display:none !important; }
+#render-engine-root[data-omega-map-loading="true"] { z-index:2000 !important; pointer-events:auto !important; }
+
+.omega-map-load-overlay {
+  align-items:center;
+  background:rgba(4,13,25,.96);
+  color:#edf5ff;
+  display:flex;
+  inset:0;
+  justify-content:center;
+  padding:24px;
+  position:absolute;
+  z-index:1400;
+}
+.omega-map-load-overlay.is-hidden { display:none !important; }
+.omega-map-load-card {
+  background:#0a1929;
+  border:1px solid #36526e;
+  border-radius:14px;
+  box-shadow:0 14px 40px rgba(0,0,0,.32);
+  max-width:440px;
+  padding:24px;
+  width:min(100%,440px);
+}
+.omega-map-load-kicker { color:#8dc9f4; font-size:10px; font-weight:800; letter-spacing:.16em; }
+.omega-map-load-card h1 { font:700 20px/1.25 system-ui,sans-serif; margin:12px 0 8px; }
+.omega-map-load-card p { color:#aebfd2; font-size:13px; line-height:1.5; margin:0 0 20px; min-height:20px; }
+.omega-map-load-track { background:#172b40; border:1px solid #2a4560; border-radius:999px; height:10px; overflow:hidden; width:100%; }
+.omega-map-load-track span { background:linear-gradient(90deg,#4ea5e5,#b7ddfa); border-radius:inherit; display:block; height:100%; transition:width 100ms linear; width:0; }
+.omega-map-load-footer { align-items:center; color:#91a7bd; display:flex; font-size:9px; font-weight:800; justify-content:space-between; letter-spacing:.12em; margin-top:10px; }
+.omega-map-load-footer strong { color:#e7f4ff; font-size:12px; letter-spacing:0; }
+.omega-map-load-overlay[data-state="error"] .omega-map-load-track span { background:#e68d8d; }
+#omega-map-load-retry { background:#142f48; border:1px solid #5484aa; border-radius:8px; color:#edf5ff; cursor:pointer; margin-top:18px; min-height:40px; padding:8px 14px; }
+#omega-map-load-retry[hidden] { display:none !important; }
+@media (prefers-reduced-motion:reduce) {
+  .omega-map-load-track span { transition:none; }
+}
+

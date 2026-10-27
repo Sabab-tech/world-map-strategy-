@@ -408,10 +408,11 @@ test('map and ministry rendering stay responsive and scoped to the selected coun
   assert.ok(map.includes('generateAllBilateralRelations(chunk)'));
   assert.ok(map.includes('allCountries.forEach(c2 => {'),
     'each selected source country still calculates relations to the complete country roster');
-  assert.ok(map.includes('color: "#f8fafc"'),
-    'country outlines must remain visible on the map basemap');
-  assert.ok(map.includes("color: '#f8fafc', weight: 1.25, opacity: 1.0"),
-    'diplomacy overlay must not reset country outlines to nearly invisible strokes');
+  assert.ok(map.includes('color: "#f4f8ff"') && map.includes('opacity: 1.0') &&
+    map.includes('weight: currentZoom > 5.5 ? 1.7 : 1.45'),
+    'country outlines must remain visible on the map basemap through zoom changes');
+  assert.ok(map.includes("color: '#f4f8ff', weight: 1.45, opacity: 1.0"),
+    'diplomacy overlays must preserve opaque, high-contrast country outlines');
   assert.ok(map.includes('countryRuntime.getCities(countryName)'),
     'city rendering must ask for the selected country, not all country city records');
   assert.ok(map.includes("this.activeResourceFilter = 'NONE';"),
@@ -451,17 +452,65 @@ test('country borders stay visible in base map and visual overlays', () => {
   const worker = read('omega-offline-map-sw.js');
   const cacheVersionMatch = worker.match(/CACHE_NAME = "omega-offline-atlas-shell-v(\d+)"/);
   const cacheVersion = Number(cacheVersionMatch?.[1] || 0);
-  assert.ok(cacheVersion >= 39, 'offline Android clients must invalidate stale map code');
-  assert.ok(map.includes('color: "#f8fafc",\n                weight: zoom >= 8 ? 1.8 : (zoom >= 5 ? 1.5 : 1.25),\n                opacity: 1.0,'),
+  assert.ok(cacheVersion >= 54, 'offline Android clients must invalidate cached map lifecycle and border fixes');
+  assert.ok(map.includes('color:"#f4f8ff",\n        weight:zoom >= 8 ? 2.1 : (zoom >= 5 ? 1.7 : 1.45),\n        opacity:1,'),
     'base country polygons need opaque, high-contrast borders');
-  assert.ok(map.includes('weight: currentZoom > 5.5 ? 1.55 : 1.25'),
+  assert.ok(map.includes('weight: currentZoom > 5.5 ? 1.7 : 1.45'),
     'zoom changes must not make country borders too thin');
-  assert.ok(map.includes("if (hasResource) layer.setStyle({ fillColor: '#ca8a04', fillOpacity: 0.85, color: '#f8fafc', weight: 1.5, opacity: 1.0 });"),
+  assert.ok(map.includes("if (hasResource) layer.setStyle({ fillColor: '#ca8a04', fillOpacity: 0.85, color: '#f4f8ff', weight: 1.7, opacity: 1.0 });"),
     'countries with resource data must retain a visible border');
-  assert.ok(map.includes("else layer.setStyle({ fillColor: '#0f172a', fillOpacity: 0.15, color: '#f8fafc', weight: 1.25, opacity: 1.0 });"),
+  assert.ok(map.includes("else layer.setStyle({ fillColor: '#0f172a', fillOpacity: 0.15, color: '#f4f8ff', weight: 1.45, opacity: 1.0 });"),
     'countries without resource data must retain a visible border too');
-  assert.ok(map.includes("layer.setStyle({ fillColor: color, fillOpacity: opacity, color: '#f8fafc', weight: 1.25, opacity: 1.0 });"),
+  assert.ok(map.includes("layer.setStyle({ fillColor: color, fillOpacity: opacity, color: '#f4f8ff', weight: 1.45, opacity: 1.0 });"),
     'diplomacy overlay must not replace borders with nearly transparent strokes');
+  assert.ok(map.includes("color: '#f4f8ff',\n            weight: 1.45,\n            opacity: 1.0"),
+    'country metric overlays must preserve high-contrast outlines too');
   assert.ok(!map.includes('rgba(255,255,255,0.05)') && !map.includes('rgba(255,255,255,0.1)'),
     'map overlays must not use the old almost-invisible border styles');
 });
+
+test('world geometry loads before support datasets, shows real progress, caches once and pauses with ministry UI', () => {
+  const map = read('map-engine-2.js');
+  const html = read('index.html');
+  const css = read('style.css');
+  const designTokens = read('design-tokens.js');
+  const integration = read('omega_ui_v2/integration.js');
+  const resourceBinding = read('omega_resource_gameplay_binding_v1.js');
+  const worker = read('omega-offline-map-sw.js');
+  const coreAssets = worker.slice(worker.indexOf('const CORE_ASSETS'), worker.indexOf('];', worker.indexOf('const CORE_ASSETS')));
+  const loaderStart = map.indexOf('async loadAssets()');
+  const startWorld = map.indexOf('const worldTask = this.loadWorldMap(fetcher);', loaderStart);
+  const firstSupportData = map.indexOf("fetcher('population.json')", loaderStart);
+
+  assert.ok(loaderStart >= 0 && startWorld > loaderStart && startWorld < firstSupportData,
+    'canonical world geometry must start before economy, relation and ministry support data');
+  assert.ok(map.includes("return fetcher('world.json', {"),
+    'world geometry must use the abortable data loader');
+  assert.ok(map.includes("onProgress:function (ratio, received, total)"),
+    'the loader progress must be based on transferred bytes when the response exposes a stream');
+  assert.ok(designTokens.includes("response.body.getReader()") && designTokens.includes("onProgress(total > 0 ? 0 : null, 0, total)"),
+    'the shared resilient fetch must report actual streaming progress rather than a timer estimate');
+  assert.ok(html.includes('id="omega-map-load-overlay"') && html.includes('id="omega-map-load-progress"') &&
+    html.includes('id="omega-map-load-percent"'),
+    'the startup progress overlay and proportional bar must exist in the production shell');
+  assert.ok(coreAssets.includes('"./design-tokens.js"'),
+    'offline relaunch must include the abortable streaming fetch helper needed by map startup');
+  assert.ok(css.includes('#render-engine-root[data-omega-map-loading="true"] { z-index:2000'),
+    'the real startup loader must sit above map controls until initialization settles');
+  assert.ok(map.includes('Game.Map.setUiActive = function(active)'));
+  assert.ok(map.includes('this.__omegaWorldMapAbortController.abort()'),
+    'leaving the world view must abort an unfinished map-only request');
+  assert.ok(map.includes('Game.__omegaGeoJSONResumeRender = scheduleFeatureChunk'),
+    'incomplete geometry must resume from its existing feature cursor, not restart from zero');
+  assert.ok(map.includes('Game.__omegaGeoJSONRenderComplete === true && Game.Map.countryGeoJSON && Game.geojsonLayer'),
+    'a completed world layer must be reused rather than downloaded or parsed again');
+  assert.ok(map.includes('Game.Map.refreshCountryPolygonStyles = function()'),
+    'late country metadata must restyle the existing geometry without a second GeoJSON pass');
+  assert.ok(integration.includes('g.Game.Map.setUiActive(false)') && integration.includes('g.Game.Map.setUiActive(true)'),
+    'opening a ministry must suspend map presentation and returning must resume its cached layers');
+  assert.ok(!integration.includes("worldUi.style.opacity = '0.5'"),
+    'the map and ministry must never be shown as one half-transparent composite');
+  assert.ok(resourceBinding.includes('if(g.Game?.Map?.__omegaMapUiActive===false)return;'),
+    'resource markers must not redraw during ministry navigation');
+});
+

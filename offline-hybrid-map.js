@@ -28,8 +28,8 @@
   }
   function countryStyle(feature){
     var zoom=window.map&&typeof window.map.getZoom==="function"?window.map.getZoom():2.5;
-    return {color:"#e0e9e2",weight:zoom>=8?1.65:(zoom>=5?1.3:.98),
-      opacity:.98,fillColor:mutedFill(sourceName(feature)),fillOpacity:.78,
+    return {color:"#f4f8ff",weight:zoom>=8?2.1:(zoom>=5?1.7:1.45),
+      opacity:1,fillColor:mutedFill(sourceName(feature)),fillOpacity:.78,
       lineCap:"round",lineJoin:"round",dashArray:null};
   }
   function selectedStyle(){return {color:"#ffe0a0",weight:1.9,opacity:1,fillColor:"#9b8861",fillOpacity:active?.98:.94,dashArray:null};}

@@ -502,7 +502,8 @@ test('Government entry mount synchronizes existing layer, sidebar and map visibi
     app:globalThis.OmegaUIV2App,
     manager:globalThis.OmegaLayerManager,
     country:globalThis.OmegaMinistryViewCountry,
-    updateBack:globalThis.updateGlobalBackButtonVisibility
+    updateBack:globalThis.updateGlobalBackButtonVisibility,
+    game:globalThis.Game
   };
   const attributes = Object.create(null);
   const dashboard = { style:{}, setAttribute() {}, removeAttribute() {} };
@@ -535,6 +536,7 @@ test('Government entry mount synchronizes existing layer, sidebar and map visibi
     }
   };
   globalThis.OmegaUIV2App = { mount() { return { ok:true, mounted:true, route:'government' }; } };
+  globalThis.Game = { Map:{ active:true, setUiActive(active) { this.active=active === true; return true; } } };
   globalThis.OmegaLayerManager = manager;
   globalThis.OmegaMinistryViewCountry = 'BGD';
   globalThis.updateGlobalBackButtonVisibility = () => {};
@@ -547,7 +549,8 @@ test('Government entry mount synchronizes existing layer, sidebar and map visibi
     assert.equal(manager.currentLayer,1);
     assert.equal(manager.sidebarLayer,null,'UI v2 mount must not invoke the retired sidebar renderer');
     assert.deepEqual(manager.layerStack,[0,1]);
-    assert.equal(world.style.opacity,'0.5');
+    assert.equal(world.style.opacity,'1','the ministry parent must remain opaque because the map is hidden independently');
+    assert.equal(globalThis.Game.Map.active,false,'map presentation must suspend when the ministry opens');
     assert.equal(world.style.pointerEvents,'none');
     assert.equal(dashboard.style.display,'none');
     assert.equal(root.style.display,'flex');
@@ -557,6 +560,7 @@ test('Government entry mount synchronizes existing layer, sidebar and map visibi
     if (previous.manager === undefined) delete globalThis.OmegaLayerManager; else globalThis.OmegaLayerManager=previous.manager;
     if (previous.country === undefined) delete globalThis.OmegaMinistryViewCountry; else globalThis.OmegaMinistryViewCountry=previous.country;
     if (previous.updateBack === undefined) delete globalThis.updateGlobalBackButtonVisibility; else globalThis.updateGlobalBackButtonVisibility=previous.updateBack;
+    if (previous.game === undefined) delete globalThis.Game; else globalThis.Game=previous.game;
   }
 });
 
@@ -1707,6 +1711,109 @@ test('cabinet exit updates the world-map layer immediately and cancels stale cle
     flushFrames();
     assert.equal(closeCount, 0, 'stale teardown must never close the newly opened cabinet');
     assert.equal(worldMapActive, true);
+  } finally {
+    if (previous.document === undefined) delete globalThis.document; else globalThis.document = previous.document;
+    if (previous.diagnostics === undefined) delete globalThis.__OMEGA_UI_V2_DIAGNOSTICS; else globalThis.__OMEGA_UI_V2_DIAGNOSTICS = previous.diagnostics;
+    if (previous.requestAnimationFrame === undefined) delete globalThis.requestAnimationFrame; else globalThis.requestAnimationFrame = previous.requestAnimationFrame;
+    if (previous.cancelAnimationFrame === undefined) delete globalThis.cancelAnimationFrame; else globalThis.cancelAnimationFrame = previous.cancelAnimationFrame;
+    if (previous.government === undefined) delete globalThis.OmegaUIV2Government; else globalThis.OmegaUIV2Government = previous.government;
+  }
+});
+
+test('each newer destination aborts the previous screen work signal before scheduling its own render', () => {
+  const previous = {
+    document:globalThis.document,
+    diagnostics:globalThis.__OMEGA_UI_V2_DIAGNOSTICS,
+    requestAnimationFrame:globalThis.requestAnimationFrame,
+    cancelAnimationFrame:globalThis.cancelAnimationFrame,
+    government:globalThis.OmegaUIV2Government
+  };
+  const handlers = Object.create(null);
+  const attrs = Object.create(null);
+  const main = {
+    innerHTML:'',
+    setAttribute(){},
+    removeAttribute(){}
+  };
+  let shellHtml = '';
+  const root = {
+    get innerHTML() { return shellHtml; },
+    set innerHTML(value) { shellHtml = value; main.innerHTML = ''; },
+    classList:{ add(){}, remove(){} },
+    addEventListener(type, handler) { handlers[type] = handler; },
+    contains() { return true; },
+    querySelector(selector) {
+      if (selector === '[data-omega-v2-main]') return main;
+      if (selector === '[data-omega-v2-back]') return { disabled:false };
+      return null;
+    },
+    querySelectorAll() { return []; },
+    setAttribute(key,value) { attrs[key] = String(value); },
+    removeAttribute(key) { delete attrs[key]; },
+    getAttribute(key) { return Object.prototype.hasOwnProperty.call(attrs,key) ? attrs[key] : null; }
+  };
+  const frames = new Map();
+  let nextFrame = 1;
+  globalThis.requestAnimationFrame = callback => {
+    const id = nextFrame++;
+    frames.set(id,callback);
+    return id;
+  };
+  globalThis.cancelAnimationFrame = id => frames.delete(id);
+  const seenSignals = [];
+  function clickRoute(route) {
+    const control = {
+      closest(selector) {
+        if (selector === 'button,a[href],[role="button"],summary' ||
+            selector === '[data-omega-v2-global-nav]') return this;
+        return null;
+      },
+      getAttribute(name) { return name === 'data-omega-v2-global-nav' ? route : null; }
+    };
+    handlers.click({ target:control, preventDefault(){}, stopPropagation(){} });
+  }
+  function flushFrames() {
+    let turns = 0;
+    while (frames.size && turns < 12) {
+      const first = frames.entries().next().value;
+      frames.delete(first[0]);
+      first[1](16);
+      turns += 1;
+    }
+    assert.equal(frames.size,0,'only the latest navigation may retain scheduled frame work');
+  }
+
+  globalThis.document = {};
+  globalThis.OmegaUIV2Government = {
+    render(target,options) {
+      seenSignals.push(options && options.screenSignal);
+      target.innerHTML = '<section>Government screen</section>';
+      return { ok:true };
+    },
+    stopAutoRotation(){}
+  };
+  try {
+    const mounted = globalThis.OmegaUIV2App.mount(root,{initialRoute:'government'});
+    assert.equal(mounted.mounted,true);
+    const firstSignal = seenSignals[seenSignals.length-1];
+    assert.ok(firstSignal && typeof firstSignal.aborted === 'boolean',
+      'screen renderers must receive a per-destination AbortSignal');
+
+    clickRoute('overview');
+    const secondSignal = root.__omegaUIV2State.screenAbortController.signal;
+    assert.equal(firstSignal.aborted,true,
+      'the previous screen request must be cancelled synchronously on the first new tap');
+    assert.equal(secondSignal.aborted,false);
+
+    clickRoute('more');
+    assert.equal(secondSignal.aborted,true,
+      'a rapid second tap must cancel the pending work for the intermediate destination too');
+    assert.equal(frames.size,1,'superseded destination frames must be discarded instead of queued');
+
+    flushFrames();
+    assert.equal(root.getAttribute('data-omega-v2-route'),'more');
+    assert.match(main.innerHTML,/Command Center/);
+    assert.equal(root.getAttribute('data-omega-v2-navigation-pending'),null);
   } finally {
     if (previous.document === undefined) delete globalThis.document; else globalThis.document = previous.document;
     if (previous.diagnostics === undefined) delete globalThis.__OMEGA_UI_V2_DIAGNOSTICS; else globalThis.__OMEGA_UI_V2_DIAGNOSTICS = previous.diagnostics;

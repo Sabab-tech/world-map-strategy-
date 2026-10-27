@@ -24,7 +24,30 @@
     for (var i = 0; i < candidates.length; i += 1) if (candidates[i] != null && String(candidates[i]).trim()) return canonicalCountry(candidates[i]);
     return '';
   }
-  function stateFor(root) { return root.__omegaUIV2State; }
+  function stateFor(root) { return root && root.__omegaUIV2State; }
+  function rotateScreenWork(state) {
+    if (!state) return null;
+    var previous = state.screenAbortController;
+    if (previous && typeof previous.abort === 'function') {
+      try { previous.abort(); } catch (_) {}
+    }
+    state.screenWorkGeneration = (Number(state.screenWorkGeneration) || 0) + 1;
+    state.screenAbortController = typeof g.AbortController === 'function' ? new g.AbortController() : null;
+    return state.screenAbortController;
+  }
+  function screenWorkContext(state) {
+    var controller = state && state.screenAbortController;
+    var generation = Number(state && state.screenWorkGeneration) || 0;
+    return {
+      screenSignal:controller ? controller.signal : null,
+      screenWorkGeneration:generation,
+      isScreenWorkCurrent:function () {
+        return !!state && stateFor(state.root) === state &&
+          state.screenWorkGeneration === generation &&
+          !(controller && controller.signal && controller.signal.aborted);
+      }
+    };
+  }
   function photoCount() {
     var lib = g.OmegaUIPhotoAssets;
     try { return lib && typeof lib.list === 'function' ? lib.list().length : null; } catch (_) { return null; }
@@ -58,7 +81,7 @@
   }
   function ministryOptions(root) {
     var state = stateFor(root);
-    return {
+    return Object.assign(screenWorkContext(state), {
       countryId: state.countryId,
       view: state.governmentView,
       onOpenMinistry: function (id) { return openMinistry(root, id, true); },
@@ -72,7 +95,7 @@
         state.countryId = String(countryId || '').trim().toUpperCase();
         g.OmegaMinistryViewCountry = state.countryId;
       }
-    };
+    });
   }
   function historySnapshot(state) {
     return { route:state.route, ministryId:state.ministryId, section:state.section,
@@ -127,9 +150,13 @@
   }
   function navigate(root, route, deferRender) {
     var state = stateFor(root);
+    if (!state) return false;
     route = String(route || '').trim();
     if (!route) return false;
     if (route === 'world') route = 'map';
+    if (route === 'map' && state.options && typeof state.options.onBackToMap === 'function') {
+      return exitToMap(root, deferRender);
+    }
     if (route === 'executive-ministry') return openMinistry(root, 'cabinet_council', deferRender);
     if (route === 'all-ministries' || route === 'ministry-directory') {
       if (state.route !== 'government' || state.governmentView !== 'all-ministries') state.history.push(historySnapshot(state));
@@ -274,7 +301,7 @@
   }
   function routeScreen(root, content) {
     var state = stateFor(root);
-    var options = state.options || {};
+    var options = Object.assign({}, state.options || {}, screenWorkContext(state));
     if (state.route === 'overview') {
       return renderOverview(root, content);
     } else if (state.route === 'more') {
@@ -391,6 +418,7 @@
   function invalidatePendingRender(state) {
     if (!state) return;
     state.navigationGeneration = (Number(state.navigationGeneration) || 0) + 1;
+    rotateScreenWork(state);
     cancelPendingFrames(state);
     state.navigationPending = false;
   }
@@ -519,6 +547,7 @@
   function scheduleDeferredTransition(root, label, callback, replaceMain) {
     var state = stateFor(root);
     if (!state) return false;
+    rotateScreenWork(state);
     state.navigationGeneration = (Number(state.navigationGeneration) || 0) + 1;
     var generation = state.navigationGeneration;
     cancelPendingFrames(state);
@@ -578,7 +607,7 @@
     return false;
   }
   function withScheduledScreenRefresh(root, options) {
-    var output = Object.assign({}, options || {});
+    var output = Object.assign({}, options || {}, screenWorkContext(stateFor(root)));
     output.onScheduleRender = function (callback, label, screenRoot) {
       return scheduleScreenRefresh(root, callback, label, screenRoot);
     };
@@ -670,8 +699,11 @@
     }) : [];
     if (root.__omegaUIV2State) invalidatePendingRender(root.__omegaUIV2State);
     root.__omegaUIV2State = {
+      root:root,
       shellMounted:false,
       navigationGeneration:0,
+      screenWorkGeneration:0,
+      screenAbortController:null,
       pendingFrames:[],
       navigationPending:false,
       route:initialRoute,

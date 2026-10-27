@@ -42,10 +42,12 @@ console.log("[OMEGA DESIGN TOKENS] System loaded successfully.");
 /**
  * Global Resilient Fetch Utility for JSON resources with multiple path attempts and retries
  */
-window.fetchResilient = async function(filename) {
+window.fetchResilient = async function(filename, options) {
+    options = options && typeof options === 'object' ? options : {};
     if (!filename) return null;
     const cleanName = filename.replace(/^\/+/, '');
-    
+    const signal = options.signal || null;
+    const onProgress = typeof options.onProgress === 'function' ? options.onProgress : null;
     const candidates = [
         cleanName,
         './' + cleanName,
@@ -64,21 +66,68 @@ window.fetchResilient = async function(filename) {
     const cacheBuster = '?v=' + Date.now();
 
     for (let attempt = 0; attempt < 3; attempt++) {
+        if (signal && signal.aborted) {
+            const aborted = new Error('FETCH_ABORTED:' + cleanName);
+            aborted.name = 'AbortError';
+            throw aborted;
+        }
         for (const url of uniqueCandidates) {
             try {
-                const response = await fetch(url + cacheBuster);
-                if (response.ok) {
+                const response = await fetch(url + cacheBuster, signal ? { signal:signal } : undefined);
+                if (!response.ok) continue;
+                if (!onProgress || !response.body || typeof response.body.getReader !== 'function' ||
+                    typeof TextDecoder === 'undefined') {
                     const data = await response.json();
+                    if (onProgress) onProgress(1, 1, 1);
                     return data;
                 }
+
+                const total = Number(response.headers && response.headers.get('content-length')) || 0;
+                const reader = response.body.getReader();
+                const chunks = [];
+                let received = 0;
+                let completed = false;
+                try {
+                    onProgress(total > 0 ? 0 : null, 0, total);
+                    while (!completed) {
+                        if (signal && signal.aborted) {
+                            try { await reader.cancel(); } catch (_) {}
+                            const aborted = new Error('FETCH_ABORTED:' + cleanName);
+                            aborted.name = 'AbortError';
+                            throw aborted;
+                        }
+                        const part = await reader.read();
+                        completed = part.done === true;
+                        if (completed) break;
+                        if (part.value) {
+                            chunks.push(part.value);
+                            received += part.value.byteLength;
+                            onProgress(total > 0 ? Math.min(1, received / total) : null, received, total);
+                        }
+                    }
+                } catch (readError) {
+                    try { await reader.cancel(); } catch (_) {}
+                    throw readError;
+                }
+
+                const bytes = new Uint8Array(received);
+                let offset = 0;
+                chunks.forEach(function (chunk) {
+                    bytes.set(chunk, offset);
+                    offset += chunk.byteLength;
+                });
+                const text = new TextDecoder('utf-8').decode(bytes);
+                const data = JSON.parse(text);
+                onProgress(1, received, total || received);
+                return data;
             } catch (e) {
-                // Silently try next path or retry attempt
+                if ((signal && signal.aborted) || (e && e.name === 'AbortError')) throw e;
+                // Silently try next path or retry attempt.
             }
         }
-        await new Promise(r => setTimeout(r, 150));
+        if (attempt < 2) await new Promise(r => setTimeout(r, 150));
     }
 
-    console.warn(`[ResilientFetch] Could not fetch "${filename}" after retries.`);
+    console.warn('[ResilientFetch] Could not fetch "' + filename + '" after retries.');
     return null;
 };
-
