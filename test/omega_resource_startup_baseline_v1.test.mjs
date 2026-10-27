@@ -63,11 +63,26 @@ function makeState(overrides = {}) {
 
 function makeHarness(state) {
   const listeners = new Map();
+  const simulationListeners = new Map();
   const emittedEvents = [];
+  const simulationEvents = {
+    subscribe(type, callback) {
+      const rows = simulationListeners.get(type) || [];
+      rows.push(callback);
+      simulationListeners.set(type, rows);
+      return () => simulationListeners.set(type, (simulationListeners.get(type) || []).filter(fn => fn !== callback));
+    },
+    emit(type, payload) {
+      const row = { eventType: type, payload: JSON.parse(JSON.stringify(payload)) };
+      for (const callback of simulationListeners.get(type) || []) callback(row);
+      return row;
+    }
+  };
   const context = {
     console,
     Game: { state },
     gameState: state,
+    Omega: { SimulationRuntime: { events: simulationEvents, world: { state } } },
     module: { exports: {} },
     fetch: async url => {
       const name = String(url).split('/').pop();
@@ -98,7 +113,7 @@ function makeHarness(state) {
   };
   context.globalThis = context;
   vm.runInNewContext(runtimeSource, context, { filename: 'omega_resource_startup_baseline_v1.js' });
-  return { context, api: context.OmegaResourceStartupBaseline, emittedEvents, state };
+  return { context, api: context.OmegaResourceStartupBaseline, emittedEvents, state, emitSimulationEvent: (type, payload) => simulationEvents.emit(type, payload) };
 }
 
 const positive = value => typeof value === 'number' && Number.isFinite(value) && value > 0;
@@ -126,9 +141,9 @@ test('fresh session seeds bounded opening stock and source-context-driven factor
   assert.equal(ready.resourceProfileCount, 41);
   assert.equal(ready.factoryProfileCount, 21);
 
-  context.dispatchEvent(new context.CustomEvent('OMEGA_GAME_SESSION_CREATED', {
+  emitSimulationEvent('OMEGA_GAME_SESSION_CREATED', {
     detail: JSON.parse(JSON.stringify(state.simulation.session))
-  }));
+  });
   const initialized = await api.waitForPendingInitialization();
   assert.ok(['COMPLETED_WITH_REPORTED_GAPS', 'COMPLETED'].includes(initialized.status));
   assert.equal(state.resource.BGD.inventory.coal, 0, 'explicit zero stock is a real saved value and must be preserved');
@@ -208,9 +223,9 @@ test('metadata-only resources stay unknown unless an existing factory input supp
   const state = makeState();
   const { context, api } = makeHarness(state);
   await api.ready;
-  context.dispatchEvent(new context.CustomEvent('OMEGA_GAME_SESSION_CREATED', {
+  emitSimulationEvent('OMEGA_GAME_SESSION_CREATED', {
     detail: JSON.parse(JSON.stringify(state.simulation.session))
-  }));
+  });
   await api.waitForPendingInitialization();
 
   for (const rid of ['gypsum', 'niobium', 'ruby', 'limestone']) {
@@ -234,7 +249,7 @@ test('repeated startup calls and depletion after initialization never replenish 
   const { context, api } = makeHarness(state);
   await api.ready;
   const session = JSON.parse(JSON.stringify(state.simulation.session));
-  context.dispatchEvent(new context.CustomEvent('OMEGA_GAME_SESSION_CREATED', { detail: session }));
+  emitSimulationEvent('OMEGA_GAME_SESSION_CREATED', { detail: session }));
   await api.waitForPendingInitialization();
 
   const beforeAssets = state.economy.IND.productionAssets.map(asset => asset.id).sort();
@@ -272,9 +287,9 @@ test('mid-game and late-save sessions are skipped rather than given a fresh star
   });
   const { context, api } = makeHarness(state);
   await api.ready;
-  context.dispatchEvent(new context.CustomEvent('OMEGA_GAME_SESSION_CREATED', {
+  emitSimulationEvent('OMEGA_GAME_SESSION_CREATED', {
     detail: JSON.parse(JSON.stringify(state.simulation.session))
-  }));
+  });
   const result = await api.waitForPendingInitialization();
   assert.equal(result.status, 'SKIPPED_NOT_NEW_GAME');
   assert.equal(state.simulation.startupBaselineV1, undefined);
