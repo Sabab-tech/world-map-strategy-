@@ -502,7 +502,8 @@ test('Government entry mount synchronizes existing layer, sidebar and map visibi
     app:globalThis.OmegaUIV2App,
     manager:globalThis.OmegaLayerManager,
     country:globalThis.OmegaMinistryViewCountry,
-    updateBack:globalThis.updateGlobalBackButtonVisibility
+    updateBack:globalThis.updateGlobalBackButtonVisibility,
+    game:globalThis.Game
   };
   const attributes = Object.create(null);
   const dashboard = { style:{}, setAttribute() {}, removeAttribute() {} };
@@ -535,6 +536,7 @@ test('Government entry mount synchronizes existing layer, sidebar and map visibi
     }
   };
   globalThis.OmegaUIV2App = { mount() { return { ok:true, mounted:true, route:'government' }; } };
+  globalThis.Game = { Map:{ active:true, setUiActive(active) { this.active=active === true; return true; } } };
   globalThis.OmegaLayerManager = manager;
   globalThis.OmegaMinistryViewCountry = 'BGD';
   globalThis.updateGlobalBackButtonVisibility = () => {};
@@ -547,7 +549,8 @@ test('Government entry mount synchronizes existing layer, sidebar and map visibi
     assert.equal(manager.currentLayer,1);
     assert.equal(manager.sidebarLayer,null,'UI v2 mount must not invoke the retired sidebar renderer');
     assert.deepEqual(manager.layerStack,[0,1]);
-    assert.equal(world.style.opacity,'0.5');
+    assert.equal(world.style.opacity,'1','the ministry parent must remain opaque because the map is hidden independently');
+    assert.equal(globalThis.Game.Map.active,false,'map presentation must suspend when the ministry opens');
     assert.equal(world.style.pointerEvents,'none');
     assert.equal(dashboard.style.display,'none');
     assert.equal(root.style.display,'flex');
@@ -557,6 +560,7 @@ test('Government entry mount synchronizes existing layer, sidebar and map visibi
     if (previous.manager === undefined) delete globalThis.OmegaLayerManager; else globalThis.OmegaLayerManager=previous.manager;
     if (previous.country === undefined) delete globalThis.OmegaMinistryViewCountry; else globalThis.OmegaMinistryViewCountry=previous.country;
     if (previous.updateBack === undefined) delete globalThis.updateGlobalBackButtonVisibility; else globalThis.updateGlobalBackButtonVisibility=previous.updateBack;
+    if (previous.game === undefined) delete globalThis.Game; else globalThis.Game=previous.game;
   }
 });
 
