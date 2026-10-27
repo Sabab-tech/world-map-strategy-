@@ -3087,6 +3087,18 @@ async function executeSitePipeline(input={}){
   if(canonicalCountry(site.countryId)!==cid)return{status:'BLOCKED',reason:'SITE_COUNTRY_MISMATCH',siteCountryId:site.countryId,requestedCountryId:cid};
   const registeredAssets=Array.isArray(state()?.resource?.[cid]?.mineAssets)?state().resource[cid].mineAssets:[];
   const latestMineAsset=registeredAssets.slice().reverse().find(row=>String(row?.siteId||'')===String(site.siteId));
+  const startupMeta=state()?.resource?.[cid]?.startupBaseline;
+  if(startupMeta?.minesInitialized===true){
+    const operationalMine=registeredAssets.slice().reverse().find(row=>
+      String(row?.siteId||'')===String(site.siteId)&&
+      /^(OPERATIONAL|ACTIVE|COMMISSIONED|PRODUCING)$/.test(String(row?.status||'').toUpperCase())&&
+      !/DECOMMISSIONED|DESTROYED|STOPPED|INACTIVE|CLOSED/.test(String(row?.status||'').toUpperCase())&&
+      /^(READY_FOR_EXTRACTION|ACTIVE|PRODUCING|OPERATIONAL)$/.test(String(row?.productionStatus||'READY_FOR_EXTRACTION').toUpperCase())&&
+      (num(row?.capacityPerDay??row?.nominalDailyCapacity??row?.productionRate)||0)>0);
+    if(!operationalMine)
+      return{status:'BLOCKED',reason:'MINE_NOT_COMMISSIONED',siteId:site.siteId,countryId:cid,
+        message:'This site is not a built, operational mine. Build and commission it before extraction.'};
+  }
   if(latestMineAsset&&/DECOMMISSIONED|DESTROYED|STOPPED/.test(String(latestMineAsset.status||'').toUpperCase()))
     return{status:'BLOCKED',reason:'MINE_DECOMMISSIONED',siteId:site.siteId,countryId:cid};
   const strategicPolicy=g.Omega?.ResourceStrategicPolicyRuntime||g.OmegaResourceStrategicPolicyRuntime;
