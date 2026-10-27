@@ -454,8 +454,7 @@ Game.DataLoader = {
             Game.Map.updateMapLoadingProgress(100, 'World map ready', 'complete');
             return Promise.resolve(Game.Map.countryGeoJSON);
         }
-        // A hidden map must not start a new geometry request. The request is restarted
-        // by setUiActive(true) when the player returns to the world view.
+        // A hidden map must not start a new geometry request.
         if (Game.Map.__omegaMapUiActive === false && !this.__worldLoadPromise) {
             return Promise.resolve(Game.Map.countryGeoJSON || Game.__omegaGeoJSONPendingData || null);
         }
@@ -468,8 +467,17 @@ Game.DataLoader = {
         Game.Map.ensureMapLoadingOverlay();
         Game.Map.updateMapLoadingProgress(2, 'Loading world geography…', 'loading');
 
+        // Country profiles start in parallel but never block the world geometry itself.
         const countriesPromise = this.loadCountryConfig(fetcher);
-        const worldPromise = Promise.resolve().then(function () {
+        countriesPromise.then(function (rows) {
+            if (!rows || Game.Map.__omegaMapUiActive === false) return;
+            Game.Map.__omegaCountryStyleRefreshPending = true;
+            if (typeof Game.Map.refreshCountryPolygonStyles === 'function' &&
+                Game.__omegaGeoJSONRenderComplete === true) Game.Map.refreshCountryPolygonStyles();
+        }).catch(function () {});
+
+        let promise;
+        promise = Promise.resolve().then(function () {
             return fetcher('world.json', {
                 signal:controller ? controller.signal : undefined,
                 onProgress:function (ratio, received, total) {
@@ -481,10 +489,7 @@ Game.DataLoader = {
                     Game.Map.updateMapLoadingProgress(next, detail, 'loading');
                 }
             });
-        });
-
-        const promise = Promise.all([worldPromise, countriesPromise]).then(function (rows) {
-            const geoData = rows[0];
+        }).then(function (geoData) {
             if (!geoData || typeof geoData.type !== 'string') {
                 if (Game.Map.__omegaMapUiActive !== false) {
                     Game.Map.updateMapLoadingProgress(
@@ -496,7 +501,7 @@ Game.DataLoader = {
                 return null;
             }
             Game.Map.countryGeoJSON = geoData;
-            Game.Map.__omegaGeoJSONPendingData = geoData;
+            Game.__omegaGeoJSONPendingData = geoData;
             window.OmegaCountryDataGateway?.registerSource('world.json', geoData, {
                 authority:'GEOGRAPHIC_REFERENCE'
             });
@@ -526,7 +531,6 @@ Game.DataLoader = {
         this.__worldLoadPromise = promise;
         return promise;
     },
-
     async loadAssets() {
         const fetcher = this.getFetcher();
         // Fetch and begin drawing the world's only canonical GeoJSON immediately.
@@ -1306,6 +1310,46 @@ Game.Map.setUiActive = function(active) {
     return true;
 };
 
+Game.Map.getCountryPolygonStyle = function(feature) {
+    var props = feature && feature.properties || {};
+    var geoName = props.ADMIN || props.name || props.NAME || "";
+    if (/^(west bank|gaza|gaza strip)$/i.test(geoName)) geoName = "Palestine";
+    var config = Game.findCountryConfig(geoName);
+    var fill = config ? window.getCountryColor(config.name) : "#2c4235";
+    var zoom = window.map && typeof window.map.getZoom === "function" ? window.map.getZoom() : 2.5;
+    return {
+        color:"#f4f8ff",
+        weight:zoom >= 8 ? 2.1 : (zoom >= 5 ? 1.7 : 1.45),
+        opacity:1,
+        dashArray:null,
+        fillColor:fill,
+        fillOpacity:0.22
+    };
+};
+Game.Map.refreshCountryPolygonStyles = function() {
+    if (Game.Map.__omegaMapUiActive === false) {
+        Game.Map.__omegaCountryStyleRefreshPending = true;
+        return false;
+    }
+    var layer = Game.geojsonLayer;
+    if (!layer || typeof layer.eachLayer !== "function") return false;
+    layer.eachLayer(function (child) {
+        if (!child || !child.feature || child === Game.selectedLayer || typeof child.setStyle !== "function") return;
+        child.setStyle(Game.Map.getCountryPolygonStyle(child.feature));
+    });
+    if (Array.isArray(Game.countryLabels)) {
+        Game.countryLabels.forEach(function (row) {
+            if (!row || !row.feature || !row.config) return;
+            var props = row.feature.properties || {};
+            var config = Game.findCountryConfig(props.ADMIN || props.name || props.NAME || "");
+            if (config) row.config = config;
+        });
+    }
+    Game.Map.__omegaCountryStyleRefreshPending = false;
+    if (Game.LabelSystem && typeof Game.LabelSystem.updateCountryLabels === "function") Game.LabelSystem.updateCountryLabels();
+    return true;
+};
+
 Game.Map.renderGeoJSON = function(geoData) {
     const self = this;
     if (!geoData || typeof geoData !== 'object') return Game.geojsonLayer || null;
@@ -1331,26 +1375,7 @@ Game.Map.renderGeoJSON = function(geoData) {
             var geoName = (props.ADMIN || props.name || props.NAME || "").toLowerCase().trim();
             return geoName !== "northern cyprus" && geoName !== "somaliland" && geoName !== "somaliland region";
         },
-        style: function(feature) {
-            var props = feature.properties || {};
-            var geoName = props.ADMIN || props.name || props.NAME || "";
-            if (geoName.toLowerCase() === "west bank" || geoName.toLowerCase() === "gaza" || geoName.toLowerCase() === "gaza strip") {
-                geoName = "Palestine";
-            }
-            var config = Game.findCountryConfig(geoName);
-            var defaultColor = "#2c4235";
-            if (config) defaultColor = window.getCountryColor(config.name);
-            const zoom = window.map && typeof window.map.getZoom === "function" ? window.map.getZoom() : 2.5;
-            return {
-                // High-contrast outlines remain selectable on both dark and satellite basemaps.
-                color: "#f4f8ff",
-                weight: zoom >= 8 ? 2.1 : (zoom >= 5 ? 1.7 : 1.45),
-                opacity: 1.0,
-                dashArray: null,
-                fillColor: defaultColor,
-                fillOpacity: 0.22
-            };
-        },
+        style: function(feature) { return self.getCountryPolygonStyle(feature); },
         onEachFeature: function(feature, layer) {
             var props = feature.properties || {};
             var geoName = props.ADMIN || props.name || props.NAME || "";
@@ -1378,8 +1403,8 @@ Game.Map.renderGeoJSON = function(geoData) {
                 interactive: false
             });
 
-            if (config) Game.countryLabels.push({ marker: marker, config: config });
-            else Game.countryLabels.push({ marker: marker, config: { name: displayName, code: props.ISO_A2 || "", importance: 3, minZoom: 3.8, maxZoom: 9 } });
+            if (config) Game.countryLabels.push({ marker: marker, config: config, feature:feature });
+            else Game.countryLabels.push({ marker: marker, config: { name: displayName, code: props.ISO_A2 || "", importance: 3, minZoom: 3.8, maxZoom: 9 }, feature:feature });
 
             layer.on({
                 click: function(e) {
@@ -1441,6 +1466,7 @@ Game.Map.renderGeoJSON = function(geoData) {
         Game.__omegaGeoJSONRenderComplete = true;
         Game.__omegaGeoJSONResumeRender = null;
         self.updateMapLoadingProgress(100, 'World map ready', 'complete');
+        if (Game.Map.__omegaCountryStyleRefreshPending === true) Game.Map.refreshCountryPolygonStyles();
         Game.LabelSystem.updateCountryLabels();
         self.renderOceanLabels();
         // A geographic-region selection may have been applied while the
