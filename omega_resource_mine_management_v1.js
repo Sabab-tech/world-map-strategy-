@@ -223,6 +223,12 @@ function topCards(country){
  const rs=playerState(country),projects=playerProjects(country),assets=assetRows(country),flows=Array.isArray(rs.industrialNetwork?.siteFlowLedger)?rs.industrialNetwork.siteFlowLedger:[];
  const networkState=rs.industrialNetwork||{},receipts=flows.reduce((n,f)=>n+(Array.isArray(f.treasurySettlements)?f.treasurySettlements.filter(x=>/SETTLED|POSTED/.test(String(x.status||''))).length:0),0);
  const blocked=flows.filter(f=>/BLOCKED|AWAITING_ROUTE|AWAITING_CAPACITY|AWAITING_INPUTS|EXTRACTED_AWAITING_FACTORY|FACTORY_INPUT_SHORTAGE/.test(String(f.status||''))).length;
+ const startupApi=g.Omega?.ResourceStartupBaseline||g.OmegaResourceStartupBaseline;
+ let startup=null;try{startup=startupApi?.getCountrySummary?.(country)||null;}catch(_){}
+ const factoryCount=startup?.factoriesInitialized?formatNum(startup.factoryCount):'Loading';
+ const operatingMineCount=startup?.minesInitialized?formatNum(startup.operationalMineCount):'Loading';
+ const builtMineCount=startup?.minesInitialized?formatNum(startup.builtMineCount):'Loading';
+ const stockTypeCount=startup?.primaryStocksInitialized?formatNum(startup.primaryResourceTypeCount):'Loading';
  const raw=rs.warehouse?.availableByResource||{},processed=rs.processedWarehouse?.availableByResource||{};
  function unitFor(id){
   const catalog=g.OmegaResourceIndustrialCatalogData||g.Omega?.ResourceIndustrialCatalogData||{};
@@ -235,10 +241,10 @@ function topCards(country){
    '<div class="omm-muted">No recorded stock</div>';
  }
  return '<div class="omm-grid">'+
-  kpi('Operating mines',assets.filter(a=>/OPERATIONAL|ACTIVE|COMMISSIONED|PRODUCING/.test(String(a.status||'').toUpperCase())&&!/DECOMMISSIONED|DESTROYED|STOPPED|INACTIVE/.test(String(a.status||'').toUpperCase())).length)+
-  kpi('Projects in progress',projects.filter(p=>p.projectType==='MINE_CONSTRUCTION'&&p.status==='UNDER_CONSTRUCTION').length)+
-  kpi('Raw stock types',Object.keys(raw).length)+
-  kpi('Processed stock types',Object.keys(processed).length)+
+  kpi('Permanent factories',factoryCount)+
+  kpi('Built mines ready to work',operatingMineCount)+
+  kpi('Total built mine assets',builtMineCount)+
+  kpi('Primary resource types in stock',stockTypeCount)+
   '</div><div class="omm-lines"><div class="omm-line"><h4>Raw warehouse</h4>'+stockPreview(raw)+'</div>'+
   '<div class="omm-line"><h4>Processed inventory</h4>'+stockPreview(processed)+'</div></div>'+
   '<div class="omm-lines"><div class="omm-line"><span class="omm-muted">Production flows</span><br><strong>'+flows.length+'</strong></div>'+
@@ -335,7 +341,7 @@ function mineDirectory(country){
  const rows=sitesFor(country);
  if(!rows.length)return '<div class="omm-empty">Mine sites are not available for this country right now.</div>';
  const built=new Set(assetRows(country).filter(a=>String(a.status).toUpperCase()==='OPERATIONAL').map(a=>String(a.siteId)));
- return '<div class="omm-section"><h3>National mine-site portfolio</h3><p class="omm-sub">Explore this country’s mines, fields and extraction sites.</p></div>'+
+ return topCards(country)+'<div class="omm-section"><h3>National mine-site portfolio</h3><p class="omm-sub">Explore this country’s mines, fields and extraction sites.</p></div>'+
  '<div class="omm-site-grid">'+rows.map(site=>siteCard(site,country,'mines')).join('')+'</div>'+stationDirectory(country);
 }
 function myMines(country){
@@ -562,7 +568,7 @@ function boot(){
   observer=new MutationObserver(injectButtons);
   observer.observe(g.document.body,{childList:true,subtree:true});
  }
- for(const name of ['OMEGA_RESOURCE_MINE_PROJECT_STARTED','OMEGA_RESOURCE_MINE_COMMISSIONED','OMEGA_SIMULATION_TURN_COMMITTED','OMEGA_RESOURCE_EXTRACTION_COMPLETED','OMEGA_RESOURCE_INVENTORY_CHANGED','OMEGA_RESOURCE_PROCESSING_COMPLETED','OMEGA_TRADE_SETTLEMENT_COMPLETED','OMEGA_RESOURCE_FISCAL_RECEIPT_POSTED','OMEGA_RESOURCE_TRADE_RECONCILED','OMEGA_RESOURCE_SITE_BINDING_SYNCED','OMEGA_RESOURCE_BOOTSTRAP_STATUS']){
+ for(const name of ['OMEGA_COUNTRY_STARTUP_BASELINE_READY','OMEGA_COUNTRY_STARTUP_FACTORY_ASSETS_INITIALIZED','OMEGA_RESOURCE_MINE_PROJECT_STARTED','OMEGA_RESOURCE_MINE_COMMISSIONED','OMEGA_SIMULATION_TURN_COMMITTED','OMEGA_RESOURCE_EXTRACTION_COMPLETED','OMEGA_RESOURCE_INVENTORY_CHANGED','OMEGA_RESOURCE_PROCESSING_COMPLETED','OMEGA_TRADE_SETTLEMENT_COMPLETED','OMEGA_RESOURCE_FISCAL_RECEIPT_POSTED','OMEGA_RESOURCE_TRADE_RECONCILED','OMEGA_RESOURCE_SITE_BINDING_SYNCED','OMEGA_RESOURCE_BOOTSTRAP_STATUS']){
   g.addEventListener?.(name,function(){const modal=g.document.getElementById('omega-mine-management-modal');if(modal?.style.display==='flex')render();});
  }
  for(const name of ['MINISTRY_SELECTED','OMEGA_MINISTRY_VIEW_COUNTRY_CHANGED','OMEGA_COUNTRY_SELECTED','COUNTRY_SELECTED','OMEGA_COUNTRY_CONTEXT_CHANGED','OMEGA_SELECTED_COUNTRY_CHANGED']){
