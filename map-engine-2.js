@@ -470,8 +470,9 @@ Game.DataLoader = {
         // Country profiles start in parallel but never block the world geometry itself.
         const countriesPromise = this.loadCountryConfig(fetcher);
         countriesPromise.then(function (rows) {
-            if (!rows || Game.Map.__omegaMapUiActive === false) return;
+            if (!rows) return;
             Game.Map.__omegaCountryStyleRefreshPending = true;
+            if (Game.Map.__omegaMapUiActive === false) return;
             if (typeof Game.Map.refreshCountryPolygonStyles === 'function' &&
                 Game.__omegaGeoJSONRenderComplete === true) Game.Map.refreshCountryPolygonStyles();
         }).catch(function () {});
@@ -1283,6 +1284,11 @@ Game.Map.setUiActive = function(active) {
             } catch (_) {}
         });
         this.__omegaDetachedLayers = [];
+        if (Game.__omegaGeoJSONRenderComplete === true &&
+            Game.Map.__omegaCountryStyleRefreshPending === true &&
+            typeof Game.Map.refreshCountryPolygonStyles === 'function') {
+            Game.Map.refreshCountryPolygonStyles();
+        }
         if (typeof map.invalidateSize === 'function') {
             window.requestAnimationFrame(function () {
                 if (Game.Map.__omegaMapUiActive !== false) map.invalidateSize({ pan:false, debounceMoveend:true });
