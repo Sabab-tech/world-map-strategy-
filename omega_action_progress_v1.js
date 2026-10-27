@@ -11,7 +11,7 @@
   var styleId = 'omega-action-progress-style-v1';
   var rootId = 'omega-action-progress-v1';
   var WORKING = /working|loading|pending|processing|validating|saving|submitting|starting|building|constructing|running|please wait|চলছে|অপেক্ষা|তৈরি হচ্ছে|সংরক্ষণ হচ্ছে/i;
-  var MUTATING = /execute|submit|create|build|start|stop|launch|sign|approve|transfer|purchase|recruit|deploy|research|trade|train|construct|upgrade|negotiate|order|assign|accept|reject|vote|invest|change.?policy|save|delete|remove|extract|commission|authorize|settle|import|export|produce|production|mine|factory|treaty|project|operation|action|command|run|send|dispatch|confirm|hire|fire|fund|allocate|enact|reform|repair|expand|activate/i;
+  var MUTATING = /execute|submit|create|build|start|stop|launch|sign|approve|transfer|purchase|recruit|deploy|research|trade|train|construct|upgrade|negotiate|order|assign|accept|reject|vote|invest|change.?policy|apply|implement|configure|enact|issue|establish|amend|mobilize|budget|policy|set.?policy|save|delete|remove|extract|commission|authorize|settle|import|export|produce|production|mine|factory|treaty|project|operation|action|command|run|send|dispatch|confirm|hire|fire|fund|allocate|reform|repair|expand|activate/i;
   var NAVIGATION = /^(back|back-to-map|exit|close|cancel|dismiss|tab-[\w-]+|open-panel|focus-map|focus-site|refresh-panel|refresh)$/i;
 
   function text(value) { return String(value == null ? '' : value).replace(/\s+/g, ' ').trim(); }
