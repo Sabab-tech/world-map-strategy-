@@ -155,6 +155,29 @@
       '</article>';
   }
 
+  function startupAssetMarkup(countryId) {
+    const api = g.Omega && g.Omega.ResourceStartupBaseline || g.OmegaResourceStartupBaseline;
+    let summary = null;
+    try { summary = api && typeof api.getCountrySummary === 'function' ? api.getCountrySummary(countryId) : null; } catch (_) {}
+    const factories = summary && summary.factoriesInitialized ? summary.factoryCount : null;
+    const operationalMines = summary && summary.minesInitialized ? summary.operationalMineCount : null;
+    const builtMines = summary && summary.minesInitialized ? summary.builtMineCount : null;
+    const stockTypes = summary && summary.primaryStocksInitialized ? summary.primaryResourceTypeCount : null;
+    const stockRows = summary && summary.primaryStocksInitialized && Array.isArray(summary.primaryResourceStocks) ? summary.primaryResourceStocks : [];
+    const stockHtml = stockRows.length ? '<div class="ocov-startup-stock-grid">' + stockRows.slice().sort((a, b) => (Number(b.quantity) || 0) - (Number(a.quantity) || 0)).slice(0, 6).map(row =>
+      '<div class="ocov-country-data-row"><span class="ocov-country-data-label">' + esc(row.resourceId || 'Primary resource') + '</span><strong class="ocov-country-data-value">' +
+      esc(Number(row.quantity).toLocaleString('en-US', { maximumFractionDigits: 2 })) + ' ' + esc(row.unit || 'simulation units') + '</strong></div>').join('') + '</div>' :
+      summary && summary.primaryStocksInitialized ? '<p class="ocov-empty">No eligible opening raw-material stock is recorded for this country.</p>' :
+      '<p class="ocov-empty">Opening primary-resource stocks are loading from the eligible site registry.</p>';
+    return '<div class="ocov-section-heading"><span>02</span><div><h3>Starting industry & resources</h3><p>Live counts from the game runtime, not catalog totals.</p></div></div>' +
+      '<div class="ocov-kpi-grid">' +
+      metricCard('Permanent factories', factories, '', 'Built scenario assets; do not expire with supply contracts') +
+      metricCard('Built mines ready to produce', operationalMines, '', 'Commissioned mine assets with positive output capacity') +
+      metricCard('Total built mine assets', builtMines, '', 'Includes temporarily stopped but still-built mines') +
+      metricCard('Primary resources in stock', stockTypes, '', 'Distinct resource types with positive warehouse stock') +
+      '</div><p class="ocov-note">Opening factory assets are permanent. Starting resources are finite and are consumed by production; mines are counted only when the runtime has commissioned an eligible site. These are gameplay scenario values, not claims about current real-world factories or warehouse quantities.</p>' + stockHtml;
+  }
+
   function countryDataApi() {
     return g.OmegaCountryGeneralDataRuntime || g.Omega?.CountryGeneralData || null;
   }
@@ -843,6 +866,7 @@
       metricCard('Trade balance', displayMetric('tradeBalanceUsd').value, 'USD', displayMetric('tradeBalanceUsd').source) +
       metricCard('Foreign-exchange reserves', displayMetric('fxReservesUsd').value, 'USD', displayMetric('fxReservesUsd').source) +
       '</div>' +
+      startupAssetMarkup(value) +
       renderCountryDataCoverage(value, generalRecord) +
       '<div class="ocov-domain-grid">' +
       panel('General country facts', 'Identity, geography, currency, languages, and country classifications.', '<ul class="ocov-list">' +
@@ -951,6 +975,7 @@
 
     g.addEventListener?.('OMEGA_COUNTRY_CONTEXT_CHANGED', onCountryContext);
     g.addEventListener?.('OMEGA_COUNTRY_BEHAVIOR_READY', scheduleOverviewRender);
+    g.addEventListener?.('OMEGA_COUNTRY_STARTUP_BASELINE_READY', scheduleOverviewRender);
     g.addEventListener?.('OMEGA_SIMULATION_TURN_COMMITTED', scheduleOverviewRender);
     Promise.resolve(runtime()?.ready).then(scheduleOverviewRender).catch(() => {});
     return true;
