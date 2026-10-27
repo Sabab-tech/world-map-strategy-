@@ -245,6 +245,22 @@
     return null;
   }
 
+  function rawCountryScopedValue(countryId,path){
+    const root=g.Game?.state||g.gameState||{};
+    const parts=String(path||'').split('.');
+    const domain=parts.shift();
+    const countries=root?.[domain];
+    if(!countries||typeof countries!=='object'||Array.isArray(countries))return undefined;
+    const cid=canonicalId(countryId),wanted=canonicalCountryScope(countryId);
+    const key=Object.prototype.hasOwnProperty.call(countries,cid)?cid:
+      Object.keys(countries).find(x=>id(x)===cid||canonicalCountryScope(x)===wanted);
+    if(key===undefined)return undefined;
+    return read(countries[key],parts.join('.'));
+  }
+  function isEmptyStateContainer(value){
+    return !!value&&typeof value==='object'&&!Array.isArray(value)&&Object.keys(value).length===0;
+  }
+
   function readState(countryId,path){
     const provider=g.Omega?.MinistryStateProvider?.instance||g.OmegaMinistryStateProvider?.instance;
     const cid=canonicalId(countryId);
@@ -252,6 +268,17 @@
       try{
         const d=provider.describe(cid,path);
         if(d && d.value !== null && d.value !== undefined){
+          // Some older saves keep a country's live relations/contracts beneath an ISO-2
+          // bucket while the ministry provider has already materialized an empty ISO-3
+          // bucket. For the same canonical country, prefer the populated legacy bucket
+          // over an empty provider placeholder; never override a populated provider value.
+          if(isEmptyStateContainer(d.value)){
+            const legacy=rawCountryScopedValue(countryId,path);
+            if(legacy!==undefined&&legacy!==null&&!isEmptyStateContainer(legacy)){
+              return {value:legacy,availability:'AVAILABLE',sourceType:'LEGACY_COUNTRY_SCOPE_ALIAS',
+                source:'Game.state canonical ISO alias',path,authority:true};
+            }
+          }
           return {value:d.value,availability:d.availability||'AVAILABLE',sourceType:d?.provenance?.sourceType||'AUTHORITATIVE_RUNTIME_STATE',source:d?.provenance?.source||'Game.state',path,authority:true};
         }
         if(d && ['INVALID','STALE'].includes(String(d.availability||'').toUpperCase())){
