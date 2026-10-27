@@ -534,7 +534,7 @@ test('universal action progress covers legacy controls, mining actions and resou
   assert.ok(progress.includes('setProgress:') && progress.includes('setPhase:') &&
     progress.includes('async function run(') && progress.includes('bindGenericActionWatchers'),
     'the shared loader must expose operation phases, measured progress and generic legacy-action coverage');
-  assert.ok(mine.includes('progress.run(title') && mine.includes('activeActionProgress.setProgress'),
+  assert.ok(mine.includes('progress.run(title') && mine.includes('actionProgress.setProgress'),
     'mine construction, extraction, factory cycles and batched country production must use shared progress');
   assert.ok(commandCenter.includes("progress.run('Resource command · ' + label"),
     'resource command-center actions must use the same shared loader');
