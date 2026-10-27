@@ -131,18 +131,18 @@ assert.equal(globalThis.Game.state.trade.BD.importRequests[0].supplyWindowTermDa
 assert.equal(globalThis.Game.state.trade.BD.importRequests[0].supplyWindowRemainingDaysAtRequest,72);
 assert.equal(globalThis.Game.state.trade.BD.importRequests[0].supplyWindowTargetCoverageDays,100);
 
-// Existing autonomy routing must preserve approval provenance on the queued command.
-const lifelineRoute=autonomy.routeDecision({
+// Existing autonomy planning must preserve approval provenance for the executor.
+const lifelinePlan=autonomy.planDecision({
   decisionId:'TEST-SUPPLY-WINDOW-ROUTE',countryId:'BD',scenarioId:'RESOURCE_DEFICIT',
   supplyWindowId:'PLAYER-SUPPLY-LIFELINE-BD-1',supplyWindowTermDays:100,
   supplyWindowRemainingDays:72,supplyWindowTargetCoverageDays:100,
-  candidateActions:['IMPORT'],
+  selectedActions:['IMPORT'],
   runtimeMeasurement:{resourceId:'crude_oil',required:100,available:0,gap:100,selected:{action:'IMPORT',quantity:100}}
-},1);
-assert.equal(lifelineRoute.status,'READY_TO_QUEUE');
-assert.equal(lifelineRoute.command.payload.route.supplyWindowId,'PLAYER-SUPPLY-LIFELINE-BD-1');
-assert.equal(lifelineRoute.command.payload.route.supplyWindowTermDays,100);
-assert.equal(lifelineRoute.command.payload.route.supplyWindowRemainingDays,72);
+});
+assert.equal(lifelinePlan.supplyWindowId,'PLAYER-SUPPLY-LIFELINE-BD-1');
+assert.equal(lifelinePlan.supplyWindowTermDays,100);
+assert.equal(lifelinePlan.supplyWindowRemainingDays,72);
+assert.equal(lifelinePlan.supplyWindowTargetCoverageDays,100);
 
 const supplier=autonomy.chooseImportSupplier('Bangladesh',{
   countryId:'Bangladesh',
