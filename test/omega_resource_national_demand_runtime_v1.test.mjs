@@ -266,6 +266,10 @@ test('player 100-day supply lifeline needs explicit consent, targets 100 days, a
   };
   context.Omega.Simulation.getPlayerCountryId = () => 'BGD';
   worldState.simulation.session.playerCountryId = 'BGD';
+  worldState.trade.BGD.importRequests = [{
+    requestId: 'ALREADY-IN-TRANSIT', resourceId: 'iron_ore',
+    quantity: 25, remainingQuantity: 25, status: 'IN_TRANSIT', stage: 'SHIPPED'
+  }];
   context.OmegaOpponentAutonomy = {
     routeDecision(decision) {
       return { status: 'READY_TO_QUEUE', command: { commandId: 'SUPPLY-' + decision.decisionId },
@@ -294,6 +298,15 @@ test('player 100-day supply lifeline needs explicit consent, targets 100 days, a
 
   assert.equal(runtime.authorizePlayerSupplyLifeline('BGD').duplicate, true);
   const stockAfterFirstDay = worldState.resource.BGD.inventory.iron_ore;
+
+  worldState.simulation.turn = 2;
+  runtime.processCountry('BGD', []);
+  const dayTwoPolicy = runtime.getPlayerSupplyLifeline('BGD');
+  assert.equal(dayTwoPolicy.alerts.filter(x => x.type === 'LOW_STOCK_COVERAGE').length, 1,
+    'repeated low-stock observations must not duplicate the same alert');
+  // Simulate the existing save/load serialization path for the runtime-owned policy and alerts.
+  worldState.resource.BGD.demandRuntime = JSON.parse(JSON.stringify(worldState.resource.BGD.demandRuntime));
+
   worldState.simulation.turn = 101;
   const day101 = runtime.processCountry('BGD', []);
   const policy = runtime.getPlayerSupplyLifeline('BGD');
@@ -307,9 +320,20 @@ test('player 100-day supply lifeline needs explicit consent, targets 100 days, a
     'actual modeled consumption, not expiry, is the only stock change in this test');
   assert.ok(policy.alerts.some(x => x.type === 'SUPPLY_WINDOW_EXPIRED'));
   assert.ok(policy.alerts.some(x => x.type === 'CONTRACT_WINDOW_EXPIRING'));
+  assert.equal(worldState.trade.BGD.importRequests.length, 1,
+    'expiry must not delete an already placed inbound request');
+  assert.equal(worldState.trade.BGD.importRequests[0].requestId, 'ALREADY-IN-TRANSIT');
+  assert.equal(worldState.trade.BGD.importRequests[0].stage, 'SHIPPED');
   assert.equal(calls.some(x => x.type === 'OMEGA_RESOURCE_ECON_PUBLISH_DEMAND_RUNTIME' &&
     x.payload.demandRuntime && x.payload.demandRuntime.playerSupplyLifeline &&
     x.payload.demandRuntime.playerSupplyLifeline.status === 'EXPIRED'), true);
+
+  const renewed = runtime.authorizePlayerSupplyLifeline('BGD');
+  assert.equal(renewed.accepted, true, 'the player can manually renew after expiry');
+  assert.equal(renewed.status, 'SCHEDULED', 'renewal after processing a turn starts next turn');
+  assert.notEqual(renewed.policy.policyId, policy.policyId);
+  assert.equal(renewed.policy.termDays, 100);
+  assert.equal(renewed.policy.automaticRenewal, false);
 });
 
 test('player lifeline approval is scoped to the active player country and scheduled after an already-processed turn', async () => {
