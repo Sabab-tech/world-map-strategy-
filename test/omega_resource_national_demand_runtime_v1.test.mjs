@@ -195,6 +195,11 @@ test('a finite inventory shortfall is recorded as unmet demand rather than negat
 
 test('daily demand remains stable over 365 turns and keeps bounded history without inventory underflow', async () => {
   const { context, worldState } = createRuntimeContext({ inventory: { iron_ore: 10000 }, consumption: { iron_ore: 10 } });
+  // This regression asserts one commodity over 365 turns; keep its fixture focused so that
+  // the runtime does not copy unrelated 41-resource history rows hundreds of times.
+  context.__OmegaResourceEconomyRules.demand.resourceProfiles = {
+    iron_ore: structuredClone(demandRules.resourceProfiles.iron_ore)
+  };
   context.Omega.Simulation.clock.stepDurationMs = 86400000;
   const runtime = context.OmegaResourceNationalDemandRuntime;
   await runtime.prepare();
@@ -308,6 +313,9 @@ test('player 100-day supply lifeline needs explicit consent, targets 100 days, a
 test('player lifeline approval is scoped to the active player country and scheduled after an already-processed turn', async () => {
   const { context, worldState } = createRuntimeContext();
   const runtime = context.OmegaResourceNationalDemandRuntime;
+  context.__OmegaResourceEconomyRules.demand.resourceProfiles = {
+    iron_ore: structuredClone(demandRules.resourceProfiles.iron_ore)
+  };
   await runtime.prepare();
   assert.equal(runtime.authorizePlayerSupplyLifeline('BGD').accepted, false);
   context.Omega.Simulation.getPlayerCountryId = () => 'BGD';
