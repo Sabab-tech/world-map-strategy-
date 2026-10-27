@@ -2,12 +2,12 @@
  * Same-origin app files are cached for offline relaunch; remote map tiles are never cached here.
  */
 "use strict";
-const CACHE_NAME = "omega-offline-atlas-shell-v54";
+const CACHE_NAME = "omega-offline-atlas-shell-v55";
 const APP_BASE = new URL("./", self.location.href);
 const INDEX_URL = new URL("index.html", APP_BASE).href;
 const CORE_ASSETS = [
   "./", "./index.html", "./world.json", "./leaflet.js", "./leaflet.css",
-  "./style.css", "./design-tokens.js", "./map-engine-1.js", "./map-engine-2.js",
+  "./style.css", "./design-tokens.js", "./omega_action_progress_v1.js", "./map-engine-1.js", "./map-engine-2.js",
   "./omega_game_lifecycle_runtime_v1.js", 
   "./omega_shared_number_format_v1.js",
   "./omega_boot_performance_monitor_v1.js", "./omega_enterprise_composition_root_v10.js",
