@@ -255,7 +255,8 @@
         if (!profile) continue;
         const status = upper(descriptor.status) || 'OPERATIONAL';
         const asset = {
-          id, assetId: id, countryId: cid, stage: 'PROCESSING', factoryType: type, recipeId: descriptor.recipeId || null,
+          id, assetId: id, countryId: cid, name: String(profile.name || type) + (descriptor.resourceId ? ' · ' + String(descriptor.resourceId).replace(/[_-]+/g, ' ') : ''),
+          resourceId: descriptor.resourceId || null, stage: 'PROCESSING', factoryType: type, recipeId: descriptor.recipeId || null,
           recipeMode: Object.keys(descriptor.inputCoefficients || {}).length > 1 ? 'MULTI_INPUT' : 'SINGLE_INPUT',
           recipeAuthority: descriptor.recipeAuthority || 'SIMULATED_STARTUP_BASELINE_RECIPE',
           capacity: Math.max(1, num(descriptor.capacityPerDay) || num(profile.defaultCapacityPerDay) || 500),
@@ -413,8 +414,12 @@
       const hasCurrentActivity = !startupScenarioInitialized &&
         (turn() > 1 || arr(rs.batches).length > 0 || arr(rs.mineAssets).length > 0);
       if (hasCurrentActivity) {
+        const existingRaw = obj(rs.warehouse && rs.warehouse.availableByResource) ? rs.warehouse.availableByResource : {};
+        const existingRows = Object.keys(existingRaw).filter(key => rawIds.has(token(key)) && (num(existingRaw[key]) || 0) > 0)
+          .map(key => ({ resourceId: token(key), quantity: num(existingRaw[key]), unit: batchUnit(rs, key), openingAuthority: 'EXISTING_SAVE_STOCK_NOT_RESEEDED' }));
         rs.startupBaseline = Object.assign({}, meta, { version: VERSION, primaryStocksInitialized: true,
-          openingStocksSkippedForExistingGame: true, authority: 'OMEGA_COUNTRY_STARTUP_BASELINE_V1' });
+          openingStocksSkippedForExistingGame: true, openingPrimaryResourceStocks: existingRows,
+          openingStockTypesCreated: 0, authority: 'OMEGA_COUNTRY_STARTUP_BASELINE_V1' });
         skippedLateCountries++; continue;
       }
       const inv = obj(rs.inventory) ? rs.inventory : (rs.inventory = {});
@@ -423,6 +428,7 @@
       for (const group of byCountry[cid] || []) {
         if (!knownResources.has(group.resourceId)) continue;
         const invKey = findKeyByToken(inv, group.resourceId), whKey = findKeyByToken(warehouse.availableByResource, group.resourceId);
+        if (invKey === false || whKey === false) { preservedTypes++; continue; }
         if ((invKey !== null && invKey !== false && (num(inv[invKey]) || 0) > 0) ||
             (whKey !== null && whKey !== false && (num(warehouse.availableByResource[whKey]) || 0) > 0) ||
             hasResourceHistory(rs, group.resourceId)) { preservedTypes++; continue; }
@@ -453,9 +459,14 @@
           status: 'RECEIVED', authority: 'SIMULATED_STARTING_RAW_STOCK_V1' });
         seededTypes++; seededAny = true;
       }
+      const openingRows = arr(rs.batches).filter(row => String(row && row.batchId || '').indexOf('STARTUP-STOCK:' + cid + ':') === 0)
+        .map(row => ({ resourceId: token(row.resourceId || row.materialIdentity), quantity: num(row.quantity) || 0,
+          remainingQuantity: num(row.remainingQuantity != null ? row.remainingQuantity : row.quantity) || 0,
+          unit: row.unit || 'SIMULATION_RESOURCE_UNIT', siteIds: arr(row.sourceSiteIds).slice(),
+          authority: row.provenance && row.provenance.authority || 'SIMULATED_STARTING_RAW_STOCK_V1' }));
       rs.startupBaseline = Object.assign({}, meta, { version: VERSION, primaryStocksInitialized: true,
-        openingStocksSkippedForExistingGame: false, openingStockTypesCreated: seededAny ?
-          arr(rs.batches).filter(row => String(row && row.batchId || '').indexOf('STARTUP-STOCK:' + cid + ':') === 0).length : 0,
+        openingStocksSkippedForExistingGame: false, openingPrimaryResourceStocks: openingRows,
+        openingStockTypesCreated: openingRows.length,
         authority: 'OMEGA_COUNTRY_STARTUP_BASELINE_V1' });
       if (seededAny) seededCountries++;
     }
