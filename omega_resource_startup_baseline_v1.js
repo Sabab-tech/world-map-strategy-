@@ -674,36 +674,89 @@
       unemploymentKnown: finite(economy.unemployment_rate) !== null
     };
   }
-  function inventoryUnitFor(resourceId, profile, existingUnits) {
-    var existingKey = findKeyByToken(existingUnits, resourceId);
-    if (existingKey !== null && String(existingUnits[existingKey] || '').trim()) {
-      return { unit: String(existingUnits[existingKey]), source: 'EXISTING_INVENTORY_UNIT' };
-    }
-    var rateUnit = String(profile && profile.unit || '');
-    var table = data.economyRules.demand.stockUnitByRateUnit || {};
-    if (own(table, rateUnit) && String(table[rateUnit] || '').trim()) {
-      return { unit: String(table[rateUnit]), source: 'BASELINE_RULES_UNIT_MAP' };
-    }
-    return { unit: null, source: 'UNKNOWN_UNIT' };
+  function declaredUnitBridge(sourceUnit, targetUnit) {
+    var source = String(sourceUnit || '').trim(), target = String(targetUnit || '').trim();
+    if (!source || !target) return null;
+    if (token(source) === token(target)) return { factor: 1, sourceUnit: source, targetUnit: target };
+    var normalization = object(data.industrialCatalog.factoryCatalogPolicy &&
+      data.industrialCatalog.factoryCatalogPolicy.unitNormalization) || {};
+    var sourceUnits = object(normalization.sourceUnits) || {};
+    var row = sourceUnits[source.toUpperCase()] || sourceUnits[token(source).toUpperCase()] || null;
+    var factor = finite(row && row.factor);
+    if (!row || row.simulationOnly !== true || token(row.targetUnit) !== token(target) ||
+        factor === null || factor <= 0) return null;
+    return { factor: factor, sourceUnit: source, targetUnit: target,
+      authority: row.authority || normalization.authority || 'SIMULATION_ONLY_UNIT_NORMALIZATION',
+      simulationOnly: true };
   }
-  function observedFactoryInputRate(resourceId, assets) {
-    var total = 0, unit = null, factories = [];
+  function mappedStockUnit(profile) {
+    var rateUnit = String(profile && profile.unit || '').trim();
+    var table = data.economyRules.demand.stockUnitByRateUnit || {};
+    return own(table, rateUnit) && String(table[rateUnit] || '').trim()
+      ? String(table[rateUnit]).trim() : null;
+  }
+  function inventoryUnitFor(resourceId, profile, existingUnits, rateSource) {
+    var existingKey = findKeyByToken(existingUnits, resourceId);
+    var recorded = existingKey !== null ? String(existingUnits[existingKey] || '').trim() : '';
+    var expected = mappedStockUnit(profile);
+    var sourceType = String(rateSource || 'RULE_PROFILE_POPULATION_BASELINE');
+    if (sourceType === 'OBSERVED_RESOURCE_CONSUMPTION') {
+      if (recorded) return { unit: recorded, source: 'EXISTING_INVENTORY_UNIT', quantityFactor: 1 };
+      if (expected) return { unit: expected, source: 'BASELINE_RULES_UNIT_MAP', quantityFactor: 1 };
+      return { unit: null, source: 'UNKNOWN_OBSERVED_CONSUMPTION_UNIT', quantityFactor: 1 };
+    }
+    if (!expected) {
+      // A per-capita coefficient has no trustworthy unit without a declared profile
+      // rate-unit mapping. An existing unit label alone cannot repair that gap.
+      return { unit: null, source: 'UNKNOWN_PROFILE_RATE_UNIT', quantityFactor: 1 };
+    }
+    if (!recorded) return { unit: expected, source: 'BASELINE_RULES_UNIT_MAP', quantityFactor: 1 };
+    var bridge = declaredUnitBridge(expected, recorded);
+    if (!bridge) return { unit: null, source: 'INCOMPATIBLE_EXISTING_STOCK_UNIT', quantityFactor: 1 };
+    return {
+      unit: recorded,
+      source: bridge.simulationOnly ? 'DECLARED_SIMULATION_UNIT_BRIDGE' : 'EXISTING_INVENTORY_UNIT',
+      quantityFactor: bridge.factor,
+      unitBridgeAuthority: bridge.authority || 'IDENTICAL_DECLARED_UNIT',
+      simulationOnlyUnitBridge: bridge.simulationOnly === true
+    };
+  }
+  function observedFactoryInputRate(resourceId, assets, resource) {
+    var total = 0, stockUnit = null, factories = [], units = object(resource && resource.inventoryUnits) || {};
+    var profile = data.resourceProfiles[resourceId] || data.resourceProfiles[token(resourceId)] || null;
+    var existingKey = findKeyByToken(units, resourceId);
+    var recordedUnit = existingKey === null ? null : String(units[existingKey] || '').trim() || null;
+    var expectedUnit = mappedStockUnit(profile);
+    var storageUnit = recordedUnit || expectedUnit;
     (Array.isArray(assets) ? assets : []).forEach(function (asset) {
-      if (!asset || ['CLOSED', 'DECOMMISSIONED', 'BLOCKED', 'TECHNOLOGY_LOCKED', 'UNDER_CONSTRUCTION', 'MAINTENANCE'].indexOf(id(asset.status)) >= 0) return;
+      if (!asset || ['CLOSED', 'DECOMMISSIONED', 'BLOCKED', 'TECHNOLOGY_LOCKED', 'UNDER_CONSTRUCTION',
+        'MAINTENANCE', 'CANCELLED', 'CANCELED', 'DESTROYED', 'OFFLINE', 'PAUSED', 'SUSPENDED', 'FAILED']
+        .indexOf(id(asset.status)) >= 0) return;
       var inputs = object(asset.inputCoefficients || asset.inputs) || {};
       var key = findKeyByToken(inputs, resourceId);
       if (key === null) return;
       var coefficient = positive(inputs[key]);
-      var capacity = positive(asset.capacityPerDay || asset.capacity || asset.productionCapacity);
+      var capacity = positive(asset.capacityPerDay || asset.ratedCapacityPerDay ||
+        asset.productionCapacity || asset.capacity);
       var cycle = positive(asset.cycleDays) || 1;
       if (coefficient === null || capacity === null) return;
-      var rate = capacity * coefficient / cycle;
-      if (!(rate > 0)) return;
+      var inputUnits = object(asset.inputUnits) || {};
+      var inputUnitKey = findKeyByToken(inputUnits, resourceId);
+      var targetUnit = inputUnitKey !== null && String(inputUnits[inputUnitKey] || '').trim()
+        ? String(inputUnits[inputUnitKey]).trim()
+        : String(asset.inputUnit || asset.recipeInputUnit || 'SIMULATION_RESOURCE_UNIT').trim();
+      var currentStockUnit = storageUnit || targetUnit;
+      var bridge = declaredUnitBridge(currentStockUnit, targetUnit);
+      if (!bridge) return;
+      var rate = capacity * coefficient / cycle / bridge.factor;
+      if (!(rate > 0) || !Number.isFinite(rate)) return;
+      if (stockUnit && token(stockUnit) !== token(currentStockUnit)) return;
+      stockUnit = currentStockUnit;
+      storageUnit = currentStockUnit;
       total += rate;
-      unit = unit || asset.inputUnit || 'SIMULATION_RESOURCE_UNIT';
       factories.push(String(asset.id || asset.assetId || asset.factoryType || 'UNNAMED_FACTORY'));
     });
-    return total > 0 ? { rate: total, unit: String(unit || 'SIMULATION_RESOURCE_UNIT'),
+    return total > 0 ? { rate: total, unit: String(stockUnit || 'SIMULATION_RESOURCE_UNIT'),
       source: 'EXISTING_FACTORY_INPUT_RATE', factoryIds: factories } : null;
   }
   function seedCountryStock(state, profile, economy, resource, assets, turn) {
@@ -751,21 +804,22 @@
       }
       var consumption = object(resource.consumption) || {};
       var observedConsumption = positive(mapValue(consumption, resourceId));
-      var factoryInput = observedFactoryInputRate(resourceId, existingAssets);
-      var rate = null, source = null, stockUnit = null, unitSource = null, populationForRate = null;
+      var factoryInput = observedFactoryInputRate(resourceId, existingAssets, resource);
+      var rate = null, source = null, stockUnit = null, unitSource = null, populationForRate = null, quantityFactor = 1;
       if (observedConsumption !== null) {
         rate = observedConsumption;
         source = 'OBSERVED_RESOURCE_CONSUMPTION';
-        var observedUnit = inventoryUnitFor(resourceId, profileRow, inventoryUnits);
+        var observedUnit = inventoryUnitFor(resourceId, profileRow, inventoryUnits, 'OBSERVED_RESOURCE_CONSUMPTION');
         stockUnit = observedUnit.unit;
         unitSource = observedUnit.source;
+        quantityFactor = finite(observedUnit.quantityFactor) || 1;
       } else {
         var coefficient = positive(profileRow.basePerMillionPopulation);
         if (coefficient !== null && currentPopulation !== null) {
           rate = coefficient * currentPopulation / 1000000;
           source = 'RULE_PROFILE_POPULATION_BASELINE';
           populationForRate = currentPopulation;
-          var mappedUnit = inventoryUnitFor(resourceId, profileRow, inventoryUnits);
+          var mappedUnit = inventoryUnitFor(resourceId, profileRow, inventoryUnits, 'RULE_PROFILE_POPULATION_BASELINE');
           stockUnit = mappedUnit.unit;
           unitSource = mappedUnit.source;
         } else if (factoryInput) {
@@ -787,7 +841,7 @@
       }
       var days = positive(policies.coverageDays);
       if (days === null) days = 14;
-      var quantity = Number((rate * days).toPrecision(12));
+      var quantity = Number((rate * days * quantityFactor).toPrecision(12));
       if (!(quantity > 0) || !Number.isFinite(quantity)) {
         unresolved.push(resourceId);
         return;
@@ -813,6 +867,7 @@
         profileRateUnit: profileRow.unit || null,
         populationUsed: populationForRate,
         unitSource: unitSource,
+        unitConversionFactor: quantityFactor,
         factoryIds: factoryInput && factoryInput.factoryIds || []
       });
     });
@@ -831,7 +886,6 @@
       preservedResourceIds: preservedIds,
       stockSourceCounts: sourceCounts,
       authority: 'SIMULATED_STARTUP_BASELINE_V1',
-      sourceFiles: [PATHS.economyRules, PATHS.countryProfiles],
       stockRows: rows,
       stockRowsEncoding: 'COMPACT_PER_RESOURCE_PROVENANCE_V1',
       stockAuthority: policies.stockAuthority || 'SIMULATED_STARTUP_STOCK',
