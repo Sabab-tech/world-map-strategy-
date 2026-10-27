@@ -488,7 +488,7 @@
         ? valid.map(function (candidate) { return ministerCandidateCard(candidate, ''); }).join('')
         : '<div class="omega-v2-minister-roster-empty">No verified candidates were returned for this ministry and country. No assignment was changed.</div>';
       if (button) {
-        button.disabled = valid.length === 0;
+        button.disabled = true;
         button.textContent = root.__omegaV2RecruitmentHasCurrentMinister ? 'Replace Minister' : 'Appoint Minister';
       }
       if (status) status.textContent = valid.length
