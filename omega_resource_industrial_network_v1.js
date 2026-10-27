@@ -714,6 +714,12 @@ function planExtraction(input={}){
     String(row?.siteReferenceKey||row?.siteId||row?.sourceSiteId||'')===String(site.siteId)&&
     tok(row?.resourceId||row?.resourceTypeId)===resourceId);
   const reserveState=matchingState?.[1]||null,occurrenceKey=matchingState?.[0]||reserveState?.occurrenceKey||null;
+  const startupMine=Array.isArray(countryResource.mineAssets)?countryResource.mineAssets.find(asset=>
+    String(asset?.siteId||'')===String(site.siteId)&&tok(asset?.resourceId)===resourceId&&
+    /^(OPERATIONAL|ACTIVE|COMMISSIONED|PRODUCING)$/.test(String(asset?.status||'').toUpperCase())&&
+    !/DECOMMISSIONED|DESTROYED|STOPPED|INACTIVE|CLOSED|RESERVE_EXHAUSTED/.test(String(asset?.status||'').toUpperCase())):null;
+  const startupMineCapacity=num(startupMine?.capacityPerDay??startupMine?.nominalDailyCapacity??startupMine?.productionRate);
+  const startupMineReserve=num(startupMine?.remainingReserveQuantity??startupMine?.reserveQuantity);
   const reserveRegistry=g.__OmegaResourceReserveRegistry||g.OmegaResourceReserveRegistry;
   const registeredCapacity=occurrenceKey?reserveRegistry?.getCapacityForOccurrence?.(occurrenceKey):null;
   const registryReserveValue=num(reserveState?.residualQuantity);
@@ -722,37 +728,38 @@ function planExtraction(input={}){
   const sourceReserve=num(input.remainingReserve)??(registryReserve!==null&&registryReserve>0?registryReserve:null);
   const sr=scenarioFor(site,resourceId),modelInput={
     ...clone(site),siteId:site.siteId,siteReferenceKey:site.siteId,siteName:site.siteName,siteType:site.siteType,resourceId,
-    simulationReserveQuantity:sourceReserve??sr?.reserve?.quantity??input.reserveQuantity??site.simulationReserveQuantity??site.quantitative?.reserve?.quantity,
-    simulationReserveUnit:reserveState?.unit||sr?.reserve?.unit||input.reserveUnit||site.simulationReserveUnit||site.quantitative?.reserve?.unit,
-    capacity:{...clone(site.capacity||{}),activeRate:registryRate||num(site.capacity?.activeRate)||null,
-      dailyRate:registryRate||num(site.capacity?.dailyRate)||null,nominalCapacity:registryRate||num(site.capacity?.nominalCapacity)||null,
-      unit:registeredCapacity?.unit||site.capacity?.unit||null,
-      authority:registeredCapacity?.authority||site.capacity?.authority||'SIMULATED'},
-    productionModel:{...clone(site.productionModel||{}),activeRate:registryRate||num(site.productionModel?.activeRate)||null,
-      dailyRate:registryRate||num(site.productionModel?.dailyRate)||null,nominalCapacity:registryRate||num(site.productionModel?.nominalCapacity)||null,
-      authority:registeredCapacity?.authority||site.productionModel?.authority||'SIMULATED'}
+    simulationReserveQuantity:sourceReserve??sr?.reserve?.quantity??input.reserveQuantity??site.simulationReserveQuantity??site.quantitative?.reserve?.quantity??startupMineReserve,
+    simulationReserveUnit:reserveState?.unit||sr?.reserve?.unit||input.reserveUnit||site.simulationReserveUnit||site.quantitative?.reserve?.unit||startupMine?.reserveUnit||startupMine?.outputUnit,
+    capacity:{...clone(site.capacity||{}),activeRate:registryRate||num(site.capacity?.activeRate)||startupMineCapacity||null,
+      dailyRate:registryRate||num(site.capacity?.dailyRate)||startupMineCapacity||null,nominalCapacity:registryRate||num(site.capacity?.nominalCapacity)||startupMineCapacity||null,
+      unit:registeredCapacity?.unit||site.capacity?.unit||startupMine?.outputUnit||null,
+      authority:registeredCapacity?.authority||site.capacity?.authority||startupMine?.capacityAuthority||'SIMULATED'},
+    productionModel:{...clone(site.productionModel||{}),activeRate:registryRate||num(site.productionModel?.activeRate)||startupMineCapacity||null,
+      dailyRate:registryRate||num(site.productionModel?.dailyRate)||startupMineCapacity||null,nominalCapacity:registryRate||num(site.productionModel?.nominalCapacity)||startupMineCapacity||null,
+      authority:registeredCapacity?.authority||site.productionModel?.authority||startupMine?.capacityAuthority||'SIMULATED'}
   };
   const model=g.Omega?.ResourceRealism?.siteModel?.(modelInput,null,cid);
   const stream=model?.commodityStreams?.find(x=>tok(x.resourceId)===resourceId);
   if(!stream)return{status:'BLOCKED',reason:'NO_COMMODITY_STREAM'};
   const meth=resourceMethod(site,resourceId),m=methodRules()[meth.method];if(!m)return{status:'BLOCKED',reason:'EXTRACTION_METHOD_UNDEFINED'};
   const tech=getTechnologyEffect(cid,site.siteId,resourceId,site.siteType);
-  const daily=Math.max(.000001,num(stream.production?.activeRate)||num(stream.production?.nominalCapacity)||registryRate||0)*Math.max(.1,num(tech.capacityMultiplier)||1);
+  const daily=Math.max(0,num(stream.production?.activeRate)||num(stream.production?.nominalCapacity)||registryRate||startupMineCapacity||0)*Math.max(.1,num(tech.capacityMultiplier)||1);
   if(daily<=0)return{status:'BLOCKED',reason:'ZERO_EXTRACTION_CAPACITY'};
   const requested=Math.max(0,num(input.quantity)||daily*Number(rules()[resourceId]?.batchDays||1));
-  const currentReserve=Math.max(0,num(input.remainingReserve)??(registryReserve!==null&&registryReserve>0?registryReserve:null)??num(stream.reserve?.quantity)??0);
+  const currentReserve=Math.max(0,num(input.remainingReserve)??(registryReserve!==null?registryReserve:null)??num(stream.reserve?.quantity)??startupMineReserve??0);
   if(currentReserve<=0)return{status:'BLOCKED',reason:'RESERVE_EXHAUSTED',remainingReserve:currentReserve};
   const quantity=Math.min(requested,currentReserve,daily*Math.max(1,Number(rules()[resourceId]?.batchDays||1)));
   const haulDays=Math.max(0,num(input.mineToWarehouseDays)??0);
   const extractionDays=Math.max(1,quantity/daily)+Number(m.prepDays||0)/Math.max(1,Number(rules()[resourceId]?.batchDays||1));
   const totalDays=extractionDays+haulDays,path='MINE_PATH:'+cid+':'+site.siteId;
   const plan={status:'PLANNED',planId:'EXT:'+cid+':'+site.siteId+':'+resourceId+':T'+turn(),countryId:cid,siteId:site.siteId,siteName:site.siteName,resourceId,
-    occurrenceKey:occurrenceKey||null,reserveStateAuthority:reserveState?.provenance?.sourceAuthority||reserveState?.provenance?.quantityAuthority||sr?.reserve?.authority||'SIMULATED',
+    occurrenceKey:occurrenceKey||null,reserveStateAuthority:reserveState?.provenance?.sourceAuthority||reserveState?.provenance?.quantityAuthority||sr?.reserve?.authority||startupMine?.reserveAuthority||'SIMULATED',
+    startupMineAssetId:startupMine?.assetId||startupMine?.mineId||null,
     method:meth.method,methodAuthority:meth.source,methodDetails:clone(m),requestedQuantity:requested,approvedQuantity:quantity,
-    unit:stream.reserve?.unit||reserveState?.unit||sr?.reserve?.unit||'TONNES',dailyCapacity:daily,
+    unit:stream.reserve?.unit||reserveState?.unit||sr?.reserve?.unit||startupMine?.outputUnit||'TONNES',dailyCapacity:daily,
     extractionDays:Number(extractionDays.toFixed(3)),haulDays:Number(haulDays.toFixed(3)),totalDurationDays:Number(totalDays.toFixed(3)),
     crewRequired:m.crew,equipmentRequired:clone(m.equipment),batchCycleDays:rules()[resourceId]?.batchDays||1,recovery:stream.production?.recovery??null,
-    technologyEffects:clone(tech),minePath:path,warehouseCountryId:cid,sourceAuthority:stream.reserve?.authority||reserveState?.provenance?.quantityAuthority||'SIMULATED',simulationYear:year()
+    technologyEffects:clone(tech),minePath:path,warehouseCountryId:cid,sourceAuthority:stream.reserve?.authority||reserveState?.provenance?.quantityAuthority||startupMine?.authority||'SIMULATED',simulationYear:year()
   };
   netState(cid).extractions.push(plan);netState(cid).extractions=netState(cid).extractions.slice(-MAX_EVENTS);
   emit('OMEGA_RESOURCE_EXTRACTION_PLAN_CREATED',cid,plan);
