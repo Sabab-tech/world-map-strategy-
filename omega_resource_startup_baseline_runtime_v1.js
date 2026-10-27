@@ -222,6 +222,87 @@
     if (!obj(map)) return false;
     return Object.keys(map).some(name => token(name) === token(key));
   }
+  function seedFactoryOperationalSupport(countryId, source, seededAssets) {
+    const cid = canonical(countryId), s = state();
+    if (!cid || !Array.isArray(seededAssets) || !seededAssets.length) return { utility: 'NOT_REQUIRED', labor: 'NOT_REQUIRED' };
+    s.economy = obj(s.economy) ? s.economy : {};
+    const econ = ensureStateBucket(s.economy, cid);
+    const input = source && source.modelInputs || {}, policy = source && source.laborStartupPolicy || {};
+    const population = num(input.population);
+    const countKeys = ['unemploymentCount','unemployedCount','unemployedPeople','unemployed_people','unemployment_count','joblessCount'];
+    const hasDirectCount = countKeys.some(key => num(econ[key]) !== null && num(econ[key]) >= 0);
+    const rateKeys = ['unemployment_rate','unemploymentRatePct','unemploymentRate','unemployment_rate_pct'];
+    let rate = rateKeys.map(key => num(econ[key])).find(value => value !== undefined && value !== null && value >= 0 && value <= 100);
+    let laborAuthority = 'EXISTING_COUNTRY_LABOR_INPUT_PRESERVED';
+    if (rate === undefined) rate = null;
+    if (rate === null && num(input.unemploymentRatePct) !== null) {
+      rate = num(input.unemploymentRatePct);
+      if (num(econ.unemployment_rate) === null) econ.unemployment_rate = rate;
+      laborAuthority = 'ECONOMY_JSON_SCENARIO_INPUT';
+    }
+    if (rate === null) {
+      rate = Math.max(0, Math.min(100, num(policy.unemploymentFallbackPct) ?? 6));
+      if (num(econ.unemployment_rate) === null) econ.unemployment_rate = rate;
+      laborAuthority = 'SIMULATED_STARTUP_LABOR_RATE_FALLBACK';
+    }
+    if (population !== null && population > 0 &&
+        num(econ.population_2015) === null && num(econ.population) === null && num(econ.populationTotal) === null)
+      econ.population_2015 = population;
+    const supportedJobs = seededAssets.reduce((sum, asset) => {
+      const profile = catalog && catalog.factoryProfiles && catalog.factoryProfiles[upper(asset.factoryType)] || {};
+      return sum + Math.max(0, Math.floor(num(profile.employment && profile.employment.jobsPerFactory) ??
+        num(asset.employmentProfile && asset.employmentProfile.jobsPerFactory) ?? 0));
+    }, 0);
+    if (!hasDirectCount) {
+      if (population !== null && population > 0) {
+        const participation = Math.max(1, Math.min(100, num(policy.populationLabourForceParticipationPct) ?? 60));
+        econ.unemploymentCount = Math.round(population * participation / 100 * rate / 100);
+        laborAuthority = laborAuthority === 'ECONOMY_JSON_SCENARIO_INPUT'
+          ? 'ECONOMY_JSON_SCENARIO_UNEMPLOYMENT_X_SIMULATED_LABOR_FORCE' : 'SIMULATED_STARTUP_LABOR_BASELINE_V1';
+      } else {
+        econ.unemploymentCount = Math.max(1, supportedJobs);
+        laborAuthority = 'SIMULATED_STARTUP_POOL_SIZED_TO_STARTER_FACTORY_JOBS';
+      }
+    }
+    econ.startupLaborBaseline = {
+      authority: laborAuthority, simulationOnly: true, populationInput: population,
+      unemploymentRatePct: rate, supportedStarterJobs: supportedJobs, finiteInitialUnemployedPool: true
+    };
+    s.transport = obj(s.transport) ? s.transport : {};
+    const t = ensureStateBucket(s.transport, cid);
+    t.infrastructure = obj(t.infrastructure) ? t.infrastructure : {};
+    const infra = t.infrastructure, existing = obj(infra.utilitySupply) ? infra.utilitySupply : {};
+    const requiredPower = seededAssets.reduce((sum, asset) => {
+      const profile = catalog && catalog.factoryProfiles && catalog.factoryProfiles[upper(asset.factoryType)] || {};
+      return sum + Math.max(0, num(profile.utilities && profile.utilities.electricityMWhPerDay) || 0);
+    }, 0);
+    const requiredWater = seededAssets.reduce((sum, asset) => {
+      const profile = catalog && catalog.factoryProfiles && catalog.factoryProfiles[upper(asset.factoryType)] || {};
+      return sum + Math.max(0, num(profile.utilities && profile.utilities.waterM3PerDay) || 0);
+    }, 0);
+    const needPower = num(existing.electricityMWhPerDay) === null;
+    const needWater = num(existing.waterM3PerDay) === null;
+    if (needPower || needWater) {
+      const assetId = 'UTIL-START:' + cid + ':V1';
+      const utilityAsset = { assetId, countryId: cid, status: 'OPERATIONAL',
+        electricityMWhPerDay: needPower ? Number((requiredPower * 1.25 + 1).toFixed(3)) : num(existing.electricityMWhPerDay),
+        waterM3PerDay: needWater ? Number((requiredWater * 1.25 + 1).toFixed(3)) : num(existing.waterM3PerDay),
+        authority: 'SIMULATED_STARTUP_UTILITY_CAPACITY_V1', simulationOnly: true,
+        provisionedForStarterFactoryCount: seededAssets.length };
+      const assets = arr(existing.assets).filter(row => String(row && row.assetId || '') !== assetId);
+      assets.push(utilityAsset);
+      infra.utilitySupply = Object.assign({}, existing, {
+        electricityMWhPerDay: needPower ? utilityAsset.electricityMWhPerDay : existing.electricityMWhPerDay,
+        waterM3PerDay: needWater ? utilityAsset.waterM3PerDay : existing.waterM3PerDay,
+        status: 'OPERATIONAL', assets,
+        authority: needPower && needWater && !existing.authority ? 'SIMULATED_STARTUP_UTILITY_CAPACITY_V1' : 'MIXED_RECORDED_AND_SIMULATED_STARTUP_UTILITY_V1',
+        simulationOnly: true
+      });
+      return { utility: 'SEEDED_MISSING_SUPPLY', labor: laborAuthority };
+    }
+    return { utility: 'EXISTING_SUPPLY_PRESERVED', labor: laborAuthority };
+  }
+
   function seedFactories() {
     if (!baseline || !catalog) return { status: 'BLOCKED', reason: 'BASELINE_OR_CATALOG_UNAVAILABLE' };
     const s = state(); s.economy = obj(s.economy) ? s.economy : {}; s.resource = obj(s.resource) ? s.resource : {};
@@ -283,11 +364,13 @@
         makeFactoryInputLots(asset, descriptor, cid);
         economy.productionAssets.push(asset); existingIds.add(id); created++; countryCreated++;
       }
+      const seededAssets = economy.productionAssets.filter(asset => String(asset && (asset.id || asset.assetId || asset.factoryId) || '').startsWith('FAC-START:' + cid + ':'));
+      const support = seedFactoryOperationalSupport(cid, source, seededAssets);
       const rs = ensureStateBucket(s.resource, cid);
       rs.startupBaseline = Object.assign({}, meta, { version: VERSION, factoryAssetsInitialized: true,
         minesInitialized: false, primaryStocksInitialized: false, skippedLegacyFactorySeed: false,
         seededFactoryCount: arr(source.factoryAssets).length, createdFactoryCount: countryCreated,
-        authority: 'OMEGA_COUNTRY_STARTUP_BASELINE_V1', initializedTurn: turn() });
+        operationalSupport: support, authority: 'OMEGA_COUNTRY_STARTUP_BASELINE_V1', initializedTurn: turn() });
       countryCount++;
     }
     emit('OMEGA_COUNTRY_STARTUP_FACTORY_ASSETS_INITIALIZED', { version: VERSION, countryCount, created, preserved, turn: turn() });
@@ -388,10 +471,11 @@
   }
   function seedOpeningStocks(siteDescriptors) {
     if (!baseline) return { status: 'BLOCKED', reason: 'STARTUP_BASELINE_UNAVAILABLE' };
-    const s = state(), knownResources = new Set(arr(baseline.coverage && Object.keys(catalog && catalog.resourceRules || {})).map(token));
+    const s = state();
     const rawIds = new Set();
     Object.values(baseline.countries || {}).forEach(row =>
       arr(row && row.primaryResourceStockPolicy && row.primaryResourceStockPolicy.eligibleResourceIds).forEach(rid => rawIds.add(token(rid))));
+    const knownResources = rawIds;
     const grouped = Object.create(null);
     siteDescriptors.forEach(row => {
       const key = row.countryId + '|' + row.resourceId;
