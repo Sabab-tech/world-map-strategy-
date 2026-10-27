@@ -473,6 +473,8 @@ test('world geometry loads before support datasets, shows real progress, caches 
   const designTokens = read('design-tokens.js');
   const integration = read('omega_ui_v2/integration.js');
   const resourceBinding = read('omega_resource_gameplay_binding_v1.js');
+  const worker = read('omega-offline-map-sw.js');
+  const coreAssets = worker.slice(worker.indexOf('const CORE_ASSETS'), worker.indexOf('];', worker.indexOf('const CORE_ASSETS')));
   const loaderStart = map.indexOf('async loadAssets()');
   const startWorld = map.indexOf('const worldTask = this.loadWorldMap(fetcher);', loaderStart);
   const firstSupportData = map.indexOf("fetcher('population.json')", loaderStart);
@@ -488,6 +490,8 @@ test('world geometry loads before support datasets, shows real progress, caches 
   assert.ok(html.includes('id="omega-map-load-overlay"') && html.includes('id="omega-map-load-progress"') &&
     html.includes('id="omega-map-load-percent"'),
     'the startup progress overlay and proportional bar must exist in the production shell');
+  assert.ok(coreAssets.includes('"./design-tokens.js"'),
+    'offline relaunch must include the abortable streaming fetch helper needed by map startup');
   assert.ok(css.includes('#render-engine-root[data-omega-map-loading="true"] { z-index:2000'),
     'the real startup loader must sit above map controls until initialization settles');
   assert.ok(map.includes('Game.Map.setUiActive = function(active)'));
