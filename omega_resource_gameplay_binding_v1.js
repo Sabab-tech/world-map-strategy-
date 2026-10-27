@@ -546,12 +546,14 @@ async function discoverSourceSites(root){
  return found;
 }
 function scheduleMarkerRender(attempt=0){
+ if(g.Game?.Map?.__omegaMapUiActive===false)return;
  const map=g.Game?.Map?.map||g.map;
  if(map&&g.L){addMapMarkers();map.whenReady?.(()=>addMapMarkers());return;}
  if(attempt<12)setTimeout(()=>scheduleMarkerRender(attempt+1),500);
 }
 
 function addMapMarkers(){
+ if(g.Game?.Map?.__omegaMapUiActive===false)return;
  const map=g.Game?.Map?.map||g.map,L=g.L;
  if(!map||!L||typeof L.marker!=='function'||typeof L.divIcon!=='function')return;
  if(!map.__omegaIndividualCollisionRefreshBound&&typeof map.on==='function'){
@@ -628,6 +630,7 @@ function attachMapRefreshHooks(){
    const wrapped=function(...args){
     const result=original.apply(this,args);
     setTimeout(()=>{
+     if(g.Game?.Map?.__omegaMapUiActive===false)return;
      refreshSiteSelectorForCountry(g.Game?.currentActiveCountry||g.CountryIOS?.activeCountry);
      addMapMarkers();
     },0);
