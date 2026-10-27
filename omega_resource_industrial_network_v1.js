@@ -2031,7 +2031,14 @@ function currentTurnLedgerBucket(countryId,ledgerName,initialBucket){
     if(Number.isFinite(oldTurn)&&oldTurn<currentTurn-30)delete ledger.turns[oldKey];
   }
   let bucket=ledger.turns[key];
-  if(!bucket||typeof bucket!=='object')bucket=ledger.turns[key]={turn:currentTurn,...clone(initialBucket||{})};
+  if(!bucket||typeof bucket!=='object'||Array.isArray(bucket)){
+    // Avoid object-spread initialization here: the Android 9 WebView path can throw
+    // from the transpiled spread helper while the utility ledger is first created.
+    const defaults=clone(initialBucket||{});
+    bucket=defaults&&typeof defaults==='object'&&!Array.isArray(defaults)?defaults:{};
+    bucket.turn=currentTurn;
+    ledger.turns[key]=bucket;
+  }
   bucket.turn=currentTurn;
   return bucket;
 }
