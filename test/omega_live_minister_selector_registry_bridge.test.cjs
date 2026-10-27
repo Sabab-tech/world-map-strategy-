@@ -130,6 +130,16 @@ function load(file) {
   assert.equal(canonicalRegistry.consistencyCheck().ok, true,
     'canonical assignment index must remain consistent after replacement');
 
+  // A Government screen can target a country that differs from the legacy cabinet's
+  // current country. The explicit screen context must win, without moving the old appointment.
+  await selector.appoint('interior_security', candidateA, 'USA');
+  assert.equal(canonicalRegistry.getActiveMinister('BGD', 'interior_security').ministerId, candidateB.id,
+    'country-scoped appointment must not replace the minister in the previously active country');
+  assert.equal(canonicalRegistry.getActiveMinister('USA', 'interior_security').ministerId, candidateA.id,
+    'country-scoped appointment must assign the selected candidate to the screen country');
+  assert.equal(canonicalRegistry.consistencyCheck().ok, true,
+    'cross-country recruitment must preserve canonical assignment consistency');
+
   const liveRecruitment = sandbox.OmegaMinisterRecruitment;
   sandbox.OmegaMinisterRecruitment = null;
   await assert.rejects(
