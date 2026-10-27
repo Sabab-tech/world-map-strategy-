@@ -667,14 +667,14 @@
       const seenPlanned = new Set();
       for (const plan of plannedRows) {
         const siteId = String(plan && plan.siteId || '').trim(), rid = token(plan && plan.resourceId);
-        if (!siteId || seenPlanned.has(siteId) || !canonicalResources.has(rid)) { if (siteId) unmatchedPlannedMineCount++; continue; }
+        if (!siteId || seenPlanned.has(siteId) || !canonicalResources.has(rid)) continue;
         seenPlanned.add(siteId);
         const descriptor = descriptorsBySite.get(siteId);
         if (!descriptor || descriptor.countryId !== cid || token(descriptor.resourceId) !== rid) {
-          unmatchedPlannedMineCount++; continue;
+          continue;
         }
         const plannedRate = num(plan.dailyCapacity), plannedReserve = num(plan.reserveQuantity);
-        if (!(plannedRate > 0) || !(plannedReserve > 0)) { unmatchedPlannedMineCount++; continue; }
+        if (!(plannedRate > 0) || !(plannedReserve > 0)) continue;
         candidates.push(Object.assign({}, descriptor, {
           dailyCapacity: plannedRate, reserveQuantity: plannedReserve,
           unit: String(plan.unit || descriptor.unit), rateUnit: String(plan.rateUnit || (String(plan.unit || descriptor.unit) + '_PER_DAY')),
