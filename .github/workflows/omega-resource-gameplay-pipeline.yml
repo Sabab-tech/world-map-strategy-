@@ -12,6 +12,8 @@ on:
       - 'omega_resource_ai_decision_service.js'
       - 'test/omega_resource_ai_decision_service.test.mjs'
       - 'omega_resource_command_center_ui_v1.js'
+      - 'test/omega_resource_command_center_ui_v1.test.mjs'
+      - 'test/omega_resource_command_center_ui_v1_integration.test.mjs'
       - 'omega_global_trade_system.js'
       - 'test/omega_global_trade_system.test.mjs'
       - 'omega_resource_strategic_policy_runtime_v1.js'
@@ -83,6 +85,8 @@ on:
       - 'omega_resource_ai_decision_service.js'
       - 'test/omega_resource_ai_decision_service.test.mjs'
       - 'omega_resource_command_center_ui_v1.js'
+      - 'test/omega_resource_command_center_ui_v1.test.mjs'
+      - 'test/omega_resource_command_center_ui_v1_integration.test.mjs'
       - 'omega_global_trade_system.js'
       - 'test/omega_global_trade_system.test.mjs'
       - 'omega_resource_strategic_policy_runtime_v1.js'
@@ -172,6 +176,8 @@ jobs:
         run: npm run test:resource-production-model && npm run test:resource-realism
       - name: National demand and player supply lifeline regression
         run: npm run test:resource-demand
+      - name: Resource Command Center supply policy UI regression
+        run: node --test test/omega_resource_command_center_ui_v1.test.mjs test/omega_resource_command_center_ui_v1_integration.test.mjs
       - name: Resource state hardening regression
         run: npm run test:resource-system-hardening
       - name: Industrial network regression
