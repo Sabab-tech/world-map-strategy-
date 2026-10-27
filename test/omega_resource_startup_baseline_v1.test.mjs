@@ -142,7 +142,7 @@ test('fresh session seeds bounded opening stock and source-context-driven factor
   assert.equal(ready.factoryProfileCount, 21);
 
   emitSimulationEvent('OMEGA_GAME_SESSION_CREATED', {
-    detail: JSON.parse(JSON.stringify(state.simulation.session))
+    session: JSON.parse(JSON.stringify(state.simulation.session))
   });
   const initialized = await api.waitForPendingInitialization();
   assert.ok(['COMPLETED_WITH_REPORTED_GAPS', 'COMPLETED'].includes(initialized.status));
@@ -224,7 +224,7 @@ test('metadata-only resources stay unknown unless an existing factory input supp
   const { context, api } = makeHarness(state);
   await api.ready;
   emitSimulationEvent('OMEGA_GAME_SESSION_CREATED', {
-    detail: JSON.parse(JSON.stringify(state.simulation.session))
+    session: JSON.parse(JSON.stringify(state.simulation.session))
   });
   await api.waitForPendingInitialization();
 
@@ -249,7 +249,7 @@ test('repeated startup calls and depletion after initialization never replenish 
   const { context, api } = makeHarness(state);
   await api.ready;
   const session = JSON.parse(JSON.stringify(state.simulation.session));
-  emitSimulationEvent('OMEGA_GAME_SESSION_CREATED', { detail: session }));
+  emitSimulationEvent('OMEGA_GAME_SESSION_CREATED', { session });
   await api.waitForPendingInitialization();
 
   const beforeAssets = state.economy.IND.productionAssets.map(asset => asset.id).sort();
@@ -288,7 +288,7 @@ test('mid-game and late-save sessions are skipped rather than given a fresh star
   const { context, api } = makeHarness(state);
   await api.ready;
   emitSimulationEvent('OMEGA_GAME_SESSION_CREATED', {
-    detail: JSON.parse(JSON.stringify(state.simulation.session))
+    session: JSON.parse(JSON.stringify(state.simulation.session))
   });
   const result = await api.waitForPendingInitialization();
   assert.equal(result.status, 'SKIPPED_NOT_NEW_GAME');
