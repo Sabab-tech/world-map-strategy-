@@ -115,6 +115,44 @@ test('demand formula combines population, income, industry and military elastici
   assert.equal(formula.factors.price.multiplier, 1);
 });
 
+test('production-based demand is explicitly marked as estimated, and missing share rules do not fall back to a hard-coded coefficient', async () => {
+  const { context, worldState } = createRuntimeContext({
+    inventory: { gypsum: 100 },
+    consumption: {},
+    production: { gypsum: 100 }
+  });
+  context.__OmegaResourceEconomyRules.demand.resourceProfiles = {
+    gypsum: structuredClone(demandRules.resourceProfiles.gypsum)
+  };
+  const runtime = context.OmegaResourceNationalDemandRuntime;
+  await runtime.prepare();
+  runtime.processCountry('BGD', []);
+  const estimated = worldState.resource.BGD.demandRuntime.byResource.gypsum;
+  assert.equal(estimated.baselineRate, 15);
+  assert.equal(estimated.baselineSource, 'ESTIMATED_PRODUCTION_DOMESTIC_SHARE');
+  assert.equal(estimated.baselineProvenance, 'SIMULATED_ESTIMATE');
+  assert.equal(estimated.baselineEvidenceSource, 'OBSERVED_RESOURCE_PRODUCTION');
+  assert.equal(estimated.baselineDomesticUseShare, 0.15);
+  assert.equal(estimated.baselineDomesticUseShareSource, 'RULE_DEFAULT_SIMULATED');
+
+  // Without a profile coefficient, domestic-use share, or configured default, production by
+  // itself is not misrepresented as measured national demand.
+  const second = createRuntimeContext({
+    inventory: { gypsum: 100 },
+    consumption: {},
+    production: { gypsum: 100 }
+  });
+  second.context.__OmegaResourceEconomyRules.demand.resourceProfiles = {
+    gypsum: structuredClone(demandRules.resourceProfiles.gypsum)
+  };
+  delete second.context.__OmegaResourceEconomyRules.demand.defaultDomesticUseShare;
+  await second.context.OmegaResourceNationalDemandRuntime.prepare();
+  const unknownReport = second.context.OmegaResourceNationalDemandRuntime.processCountry('BGD', []);
+  const unknown = unknownReport.resources.find(row => row.resourceId === 'gypsum');
+  assert.equal(unknown.status, 'UNKNOWN');
+  assert.equal(unknown.demand, null);
+});
+
 test('country demand is updated once per turn, factory inputs are not double-charged, and protected stock is not consumed', async () => {
   const { context, worldState, calls } = createRuntimeContext();
   const runtime = context.OmegaResourceNationalDemandRuntime;
