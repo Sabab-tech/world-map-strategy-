@@ -106,7 +106,7 @@ jobs:
           node --check test/omega_home_ministry_world_police_runtime_v1.test.mjs
 
       - name: Autonomy import policy provenance regression
-        run: node --test test/omega_opponent_autonomy_system.test.mjs
+        run: node --test test/omega_resource_supply_provenance.test.mjs
 
       - name: Industry & Factories UI entry-point regression
         run: node --test test/omega_industry_factory_entry_v1.test.mjs
