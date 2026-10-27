@@ -77,6 +77,14 @@ test("More command cards use the uploaded local imagery and every action has a d
   assert.ok(app.includes("function navigate(root, route, deferRender)"));
   assert.ok(app.includes("function back(root, deferRender)"));
   assert.ok(app.includes("function exitToMap(root, deferAction)"));
+  assert.ok(app.includes("function rotateScreenWork(state)"), "a newer destination must cancel older screen-owned async work");
+  assert.ok(app.includes("controller.abort()"), "screen transitions must abort any cooperative pending data request");
+  assert.ok(app.includes("screenSignal:controller ? controller.signal : null"), "screen renderers must receive their cancellable work signal");
+  assert.ok(app.includes("return exitToMap(root, deferRender);"), "World/Map navigation must close the active ministry instead of painting a fake map screen");
+  assert.ok(integration.includes("g.Game.Map.setUiActive(false)"), "opening a ministry must suspend map-only rendering");
+  assert.ok(integration.includes("g.Game.Map.setUiActive(true)"), "closing a ministry must resume cached map layers");
+  assert.ok(!integration.includes("worldUi.style.opacity = '0.5'"), "the old map must not remain as a half-transparent background");
+  assert.ok(html.includes('id="omega-map-load-overlay"'), "the startup world loader must be mounted in the main shell");
   assert.ok(integration.includes("function prepareCloseToWorldMap()"), "the cabinet layer state must flip immediately before heavy exit cleanup");
   assert.ok(integration.includes("onPrepareBackToMap:prepareCloseToWorldMap"), "UI v2 must wire synchronous map-exit preparation");
 
