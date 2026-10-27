@@ -29,8 +29,8 @@
     "stockAuthority": "SIMULATED_STARTUP_STOCK",
     "dailyRatePriority": [
       "OBSERVED_RESOURCE_CONSUMPTION",
-      "EXISTING_FACTORY_INPUT_RATE",
-      "RULE_PROFILE_POPULATION_BASELINE"
+      "RULE_PROFILE_POPULATION_BASELINE",
+      "EXISTING_FACTORY_INPUT_RATE"
     ],
     "profilePopulationField": "populationValues.population_2015",
     "baselineRateFormula": "basePerMillionPopulation * population / 1000000",
