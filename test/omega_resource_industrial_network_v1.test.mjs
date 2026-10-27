@@ -550,10 +550,11 @@ const utilityTurnKey = String(context.Game.state.simulation.turn);
 const utilityLedgerTurn = utilityCountryState.industrialNetwork.utilityLedger.turns[utilityTurnKey];
 const transportLedgerTurn = utilityCountryState.industrialNetwork.transportCapacityLedger.turns[utilityTurnKey];
 assert.ok(utilityLedgerTurn, 'the current utility ledger turn must be created');
-assert.deepEqual(utilityLedgerTurn.used, { electricityMWh:0, waterM3:0 });
-assert.deepEqual(utilityLedgerTurn.transactions, []);
+assert.equal(utilityLedgerTurn.used.electricityMWh, 0);
+assert.equal(utilityLedgerTurn.used.waterM3, 0);
+assert.equal(utilityLedgerTurn.transactions.length, 0);
 assert.ok(transportLedgerTurn, 'the current transport ledger turn must be created');
-assert.deepEqual(transportLedgerTurn.usedByMode, {});
-assert.deepEqual(transportLedgerTurn.shipments, []);
+assert.equal(Object.keys(transportLedgerTurn.usedByMode).length, 0);
+assert.equal(transportLedgerTurn.shipments.length, 0);
 
 console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');
