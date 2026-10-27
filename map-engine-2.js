@@ -718,9 +718,9 @@ Game.Map = {
                 Game.geojsonLayer.eachLayer(function(layer) {
                     if (layer !== Game.selectedLayer) {
                         layer.setStyle({
-                            color: "#f8fafc",
+                            color: "#f4f8ff",
                             opacity: 1.0,
-                            weight: currentZoom > 5.5 ? 1.55 : 1.25,
+                            weight: currentZoom > 5.5 ? 1.7 : 1.45,
                             dashArray: null
                         });
                     } else {
@@ -2176,8 +2176,8 @@ Game.Map.applyResourceMapFilter = function(resourceType) {
             }
         }
 
-        if (hasResource) layer.setStyle({ fillColor: '#ca8a04', fillOpacity: 0.85, color: '#f8fafc', weight: 1.5, opacity: 1.0 });
-        else layer.setStyle({ fillColor: '#0f172a', fillOpacity: 0.15, color: '#f8fafc', weight: 1.25, opacity: 1.0 });
+        if (hasResource) layer.setStyle({ fillColor: '#ca8a04', fillOpacity: 0.85, color: '#f4f8ff', weight: 1.7, opacity: 1.0 });
+        else layer.setStyle({ fillColor: '#0f172a', fillOpacity: 0.15, color: '#f4f8ff', weight: 1.45, opacity: 1.0 });
     });
 };
 
