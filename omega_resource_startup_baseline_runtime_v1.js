@@ -385,27 +385,53 @@
     for (const value of rows) { const n = num(value); if (n !== null && n > 0) return n; }
     return null;
   }
+  function normalizeSiteQuantity(resourceId, quantity, unit) {
+    const value = num(quantity), sourceUnit = String(unit || '').trim();
+    if (value === null || value <= 0 || !sourceUnit) return null;
+    const normalization = g.Omega && g.Omega.ResourceQuantityNormalization || g.OmegaResourceQuantityNormalization;
+    if (!normalization || typeof normalization.normalizeQuantity !== 'function') return null;
+    const result = normalization.normalizeQuantity(resourceId, value, sourceUnit, { simulationOnly: true });
+    return num(result && result.quantity) > 0 ? { quantity: num(result.quantity), unit: String(result.unit || normalization.canonicalUnit(resourceId)), method: result.method || 'NORMALIZED_SIMULATION_QUANTITY' } : null;
+  }
   function dailyCapacity(site, scenario) {
     const quantitative = site && site.quantitative || {}, simulation = site && site.simulation || {}, production = quantitative.production || {},
-      throughput = quantitative.throughput || {}, capacity = quantitative.capacity || {}, model = site && site.productionModel || {};
-    return positiveFrom([
-      simulation.nominalDailyCapacity, simulation.productionRate, simulation.dailyCapacity,
-      scenario && scenario.nominalCapacity, scenario && scenario.dailyProduction,
-      model.nominalCapacity, model.productionRate,
-      throughput.value,
-      production.rate && /PER_DAY|\/DAY|DAILY/i.test(String(production.unit || '')) ? production.rate : null,
-      capacity.nominal && /PER_DAY|\/DAY|DAILY/i.test(String(capacity.unit || '')) ? capacity.nominal : null
-    ]);
+      throughput = quantitative.throughput || {}, capacity = quantitative.capacity || {}, model = site && site.productionModel || {},
+      rid = resourceIdOf(site);
+    const candidates = [
+      [simulation.nominalDailyCapacity, simulation.productionRateUnit || simulation.nominalDailyCapacityUnit || scenario && scenario.unit],
+      [simulation.productionRate, simulation.productionRateUnit || simulation.production && simulation.production.rateUnit || scenario && scenario.unit],
+      [simulation.dailyCapacity, simulation.productionRateUnit || scenario && scenario.unit],
+      [scenario && scenario.nominalCapacity, scenario && (scenario.rateUnit || scenario.unit)],
+      [scenario && scenario.dailyProduction, scenario && (scenario.rateUnit || scenario.unit)],
+      [model.nominalCapacity, model.rateUnit || model.unit || scenario && scenario.unit],
+      [model.productionRate, model.rateUnit || model.unit || scenario && scenario.unit],
+      [throughput.value, throughput.unit],
+      [production.rate && /PER_DAY|\/DAY|DAILY/i.test(String(production.unit || '')) ? production.rate : null, production.unit],
+      [capacity.nominal && /PER_DAY|\/DAY|DAILY/i.test(String(capacity.unit || '')) ? capacity.nominal : null, capacity.rateUnit || capacity.unit]
+    ];
+    for (const [value, unit] of candidates) {
+      if (!(num(value) > 0) || !unit) continue;
+      const normalized = normalizeSiteQuantity(rid, value, unit);
+      if (normalized) return normalized.quantity;
+    }
+    return null;
   }
   function reserveQuantity(site, scenario) {
+    const rid = resourceIdOf(site);
     const candidates = [
-      site && site.simulation && site.simulation.reserve && site.simulation.reserve.quantity,
-      site && site.reserve && site.reserve.quantity,
-      site && site.quantitative && site.quantitative.reserve && site.quantitative.reserve.quantity,
-      site && site.sourceSiteRecord && site.sourceSiteRecord.simulation && site.sourceSiteRecord.simulation.reserve && site.sourceSiteRecord.simulation.reserve.quantity,
-      scenario && scenario.reserveQuantity
+      [site && site.simulation && site.simulation.reserve && site.simulation.reserve.quantity, site && site.simulation && site.simulation.reserve && site.simulation.reserve.unit],
+      [site && site.reserve && site.reserve.quantity, site && site.reserve && site.reserve.unit],
+      [site && site.quantitative && site.quantitative.reserve && site.quantitative.reserve.quantity, site && site.quantitative && site.quantitative.reserve && site.quantitative.reserve.unit],
+      [site && site.sourceSiteRecord && site.sourceSiteRecord.simulation && site.sourceSiteRecord.simulation.reserve && site.sourceSiteRecord.simulation.reserve.quantity,
+        site && site.sourceSiteRecord && site.sourceSiteRecord.simulation && site.sourceSiteRecord.simulation.reserve && site.sourceSiteRecord.simulation.reserve.unit],
+      [scenario && scenario.reserveQuantity, scenario && (scenario.reserveUnit || scenario.unit)]
     ];
-    return positiveFrom(candidates);
+    for (const [quantity, unit] of candidates) {
+      if (!(num(quantity) > 0) || !unit) continue;
+      const normalized = normalizeSiteQuantity(rid, quantity, unit);
+      if (normalized) return normalized.quantity;
+    }
+    return null;
   }
   function resourceIdOf(site) {
     const source = site && site.sourceSiteRecord || {}, identity = site && site.identity || {}, real = site && site.real || {};
@@ -435,17 +461,15 @@
     const reserve = reserveQuantity(site, scenario), capacity = dailyCapacity(site, scenario);
     if (!(reserve > 0) || !(capacity > 0)) return null;
     const simulation = site.simulation || {}, quantitative = site.quantitative || {};
-    const rateUnit = simulation.productionRateUnit || scenario && scenario.unit ||
-      quantitative.production && quantitative.production.unit || quantitative.capacity && quantitative.capacity.unit ||
-      'SIMULATION_RESOURCE_UNIT';
-    const stockUnit = String(rateUnit).replace(/_PER_DAY$/i, '').replace(/_DAY$/i, '').replace(/\/DAY$/i, '') || 'SIMULATION_RESOURCE_UNIT';
+    const normalization = g.Omega && g.Omega.ResourceQuantityNormalization || g.OmegaResourceQuantityNormalization;
+    const stockUnit = normalization && typeof normalization.canonicalUnit === 'function' ? normalization.canonicalUnit(rid) :
+      String(simulation.productionRateUnit || scenario && scenario.unit || quantitative.production && quantitative.production.unit || 'SIMULATION_RESOURCE_UNIT').replace(/_PER_DAY$/i, '');
+    const rateUnit = stockUnit + '_PER_DAY';
     const reserveAuthority = simulation.reserveAuthority || simulation.reserve && simulation.reserve.authority ||
       site.reserve && site.reserve.authority || quantitative.reserve && quantitative.reserve.authority ||
       source.reserve && source.reserve.authority || 'SIMULATED_GAMEPLAY_RESERVE';
     return { countryId: cid, siteId, siteName: String(site.siteName || site.name || siteId), resourceId: rid,
       reserveQuantity: reserve, dailyCapacity: capacity, unit: stockUnit, rateUnit,
-      reserveAuthority: String(reserveAuthority), capacityAuthority: scenario ? 'SIMULATED_SCENARIO_ENGINEERING_DATA' :
-        simulation.nominalDailyCapacity ? 'SIMULATED_SITE_CAPACITY' : 'SITE_QUANTITATIVE_CAPACITY',
       sourceSiteStatus: operation.realWorldStatus || operation.status || source.realWorldStatus || source.status || 'UNOBSERVED',
       siteSnapshot: { siteId, countryId: cid, siteName: String(site.siteName || site.name || siteId),
         identity: clone(site.identity || {}), location: clone(site.location || {}), resourceId: rid }
