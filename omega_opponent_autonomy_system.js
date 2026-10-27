@@ -192,13 +192,34 @@
   }
 
   function canonicalCountry(value){
-    const raw=String(value??'').trim(),direct=id(raw);
-    if(/^[A-Z]{3}$/i.test(raw))return{id:direct,raw:null,authority:'OMEGA_RUNTIME_ISO3_INPUT'};
+    const input=String(value??'').trim(),direct=id(input);
+    if(/^[A-Z]{3}$/i.test(input))return{id:direct,raw:null,authority:'OMEGA_RUNTIME_ISO3_INPUT'};
     const bridge=g.OmegaCanonicalIdentityRegistry||g.OmegaCountrySemanticBridge||g.Omega?.CanonicalIdentity;
-    try{const hit=bridge?.resolveCountry?.(value);if(hit?.id){const raw=clone(hit.raw||null);return{id:id(hit.id),raw,authority:'OMEGA_CANONICAL_COUNTRY_IDENTITY'};}}catch(_){}
+    try{
+      const hit=bridge?.resolveCountry?.(value);
+      if(hit?.id){
+        const raw=clone(hit.raw||null);
+        // The canonical bridge can expose a legacy ISO-2 display ID (for example
+        // BD) while the same saved policy/runtime is scoped by ISO-3 (BGD).
+        // Prefer the ISO-3 field from the exact matched canonical record when it
+        // exists; this is identity normalization only, not a new country alias.
+        const record=raw?.raw||raw?.datasets?.['countries.json']||raw?.['countries.json']||raw||{};
+        const iso3=record?.iso3||record?.iso3Code||record?.iso3_code||
+          hit?.iso3||hit?.iso3Code||hit?.iso3_code;
+        if(iso3&&/^[A-Z]{3}$/i.test(String(iso3).trim())){
+          return{id:id(iso3),raw,authority:'OMEGA_CANONICAL_COUNTRY_IDENTITY'};
+        }
+        return{id:id(hit.id),raw,authority:'OMEGA_CANONICAL_COUNTRY_IDENTITY'};
+      }
+    }catch(_){}
     return direct?{id:direct,raw:null,authority:'UNVERIFIED_INPUT'}:null;
   }
   function canonicalId(value){const hit=canonicalCountry(value);return hit?.id||id(value);}
+  function canonicalCountryScope(value){
+    const hit=canonicalCountry(value);
+    const raw=hit?.raw?.raw||hit?.raw||{};
+    return id(raw.iso3||raw.iso3Code||raw.ISO_A3||raw.iso_a3||raw.ISO3||hit?.id||value);
+  }
 
   function surfaces(countryId){
     const c=canonicalCountry(countryId),r=c?.raw||{};
@@ -224,6 +245,22 @@
     return null;
   }
 
+  function rawCountryScopedValue(countryId,path){
+    const root=g.Game?.state||g.gameState||{};
+    const parts=String(path||'').split('.');
+    const domain=parts.shift();
+    const countries=root?.[domain];
+    if(!countries||typeof countries!=='object'||Array.isArray(countries))return undefined;
+    const cid=canonicalId(countryId),wanted=canonicalCountryScope(countryId);
+    const key=Object.prototype.hasOwnProperty.call(countries,cid)?cid:
+      Object.keys(countries).find(x=>id(x)===cid||canonicalCountryScope(x)===wanted);
+    if(key===undefined)return undefined;
+    return read(countries[key],parts.join('.'));
+  }
+  function isEmptyStateContainer(value){
+    return !!value&&typeof value==='object'&&!Array.isArray(value)&&Object.keys(value).length===0;
+  }
+
   function readState(countryId,path){
     const provider=g.Omega?.MinistryStateProvider?.instance||g.OmegaMinistryStateProvider?.instance;
     const cid=canonicalId(countryId);
@@ -231,6 +268,17 @@
       try{
         const d=provider.describe(cid,path);
         if(d && d.value !== null && d.value !== undefined){
+          // Some older saves keep a country's live relations/contracts beneath an ISO-2
+          // bucket while the ministry provider has already materialized an empty ISO-3
+          // bucket. For the same canonical country, prefer the populated legacy bucket
+          // over an empty provider placeholder; never override a populated provider value.
+          if(isEmptyStateContainer(d.value)){
+            const legacy=rawCountryScopedValue(countryId,path);
+            if(legacy!==undefined&&legacy!==null&&!isEmptyStateContainer(legacy)){
+              return {value:legacy,availability:'AVAILABLE',sourceType:'LEGACY_COUNTRY_SCOPE_ALIAS',
+                source:'Game.state canonical ISO alias',path,authority:true};
+            }
+          }
           return {value:d.value,availability:d.availability||'AVAILABLE',sourceType:d?.provenance?.sourceType||'AUTHORITATIVE_RUNTIME_STATE',source:d?.provenance?.source||'Game.state',path,authority:true};
         }
         if(d && ['INVALID','STALE'].includes(String(d.availability||'').toUpperCase())){
@@ -244,7 +292,8 @@
     let bucket=state?.[domain];
     if(bucket&&bucket[cid]!==undefined)bucket=bucket[cid];
     else if(bucket&&typeof bucket==='object'){
-      const k=Object.keys(bucket).find(x=>id(x)===cid);
+      const wanted=canonicalCountryScope(cid);
+      const k=Object.keys(bucket).find(x=>id(x)===cid||canonicalCountryScope(x)===wanted);
       bucket=k!==undefined?bucket[k]:undefined;
     }else bucket=undefined;
     const v=read(bucket,parts.join('.'));
@@ -306,17 +355,34 @@
   }
 
   function relationRecord(countryId,targetId){
-    const a=canonicalId(countryId),b=canonicalId(targetId);
-    const exact=[
-      readState(a,'foreign.relations')?.value?.[b],
-      readState(a,'trade.relations')?.value?.[b],
-      readState(a,'relations')?.value?.[b],
-      readState(a,'foreign.treaties')?.value?.[b]
-    ].find(x=>x!==undefined);
+    const a=canonicalId(countryId),b=canonicalId(targetId),targetScope=canonicalCountryScope(targetId);
+    const findTarget=(map)=>{
+      if(!map||typeof map!=='object'||Array.isArray(map))return undefined;
+      const key=Object.keys(map).find(x=>id(x)===id(targetId)||id(x)===b||
+        token(x)===token(targetId)||canonicalCountryScope(x)===targetScope);
+      return key===undefined?undefined:map[key];
+    };
+    const readRelation=(path)=>{
+      // Prefer the authoritative scoped provider when it actually has this target.
+      // Older saved relations may still be keyed by ISO-2, so also inspect the same
+      // country's raw bucket before concluding that supplier relations are unknown.
+      const primary=readState(a,path)?.value;
+      const exact=findTarget(primary);
+      if(exact!==undefined&&exact!==null)return exact;
+      const legacy=rawCountryScopedValue(a,path);
+      const fallback=findTarget(legacy);
+      return fallback!==undefined&&fallback!==null?fallback:undefined;
+    };
+    const paths=['foreign.relations','trade.relations','relations','foreign.treaties'];
+    let exact;
+    for(const path of paths){
+      exact=readRelation(path);
+      if(exact!==undefined)break;
+    }
     if(exact!==undefined){
       const base=clone(exact);
-      const adjustments=readState(a,'foreign.relationAdjustments')?.value?.[b];
-      const rows=Array.isArray(adjustments)?adjustments:[];
+      const adjustmentMap=readRelation('foreign.relationAdjustments');
+      const rows=Array.isArray(adjustmentMap)?adjustmentMap:[];
       const delta=rows.reduce((s,x)=>s+(num(x?.delta)||0),0);
       if(delta!==0){
         for(const k of ['overall','political']){
@@ -331,7 +397,8 @@
       const raw=rt?.gw?.get('relations');
       const source=raw?.[a]||raw?.[String(a)]||null;
       if(source){
-        const k=Object.keys(source).find(x=>id(x)===b||token(x)===token(b));
+        const k=Object.keys(source).find(x=>id(x)===id(targetId)||id(x)===b||
+          token(x)===token(targetId)||canonicalCountryScope(x)===targetScope);
         if(k!==undefined)return source[k];
       }
     }catch(_){}
@@ -966,6 +1033,65 @@
     return{accepted:true,reservationId:rid};
   }
 
+  // Player-approved supply windows are revalidated at the final request boundary.
+  // A decision queued near expiry must not create a new import after its 100-day
+  // authorization ends. Existing request IDs stay idempotent below.
+  function validatePlayerSupplyWindow(countryId,payload,stateTransaction){
+    const windowId=String(payload?.supplyWindowId||'').trim();
+    if(!windowId)return{accepted:true};
+    // Read the policy through the same country-scoped transaction used to create
+    // the request. This avoids stale/provider alias gaps for ISO-2 legacy saves.
+    const transactional=stateTransaction&&typeof stateTransaction.get==='function'
+      ?stateTransaction.get('resource.demandRuntime.playerSupplyLifeline'):undefined;
+    let policy=transactional&&typeof transactional==='object'&&!Array.isArray(transactional)?transactional:null;
+    // Legacy saves may keep the country's resource bucket under ISO-2 (for example
+    // BD) while the transaction resolves its scope to ISO-3 (BGD). If the scoped
+    // transaction cannot resolve that alias, locate the existing bucket by the
+    // canonical country bridge rather than treating a valid approval as missing.
+    if(!policy){
+      const state=g.Game?.state||g.gameState||{};
+      const rows=state?.resource;
+      if(rows&&typeof rows==='object'&&!Array.isArray(rows)){
+        const wanted=canonicalId(countryId);
+        const key=Object.keys(rows).find(k=>id(k)===id(countryId)||canonicalId(k)===wanted);
+        const bucket=key===undefined?null:rows[key];
+        const candidate=bucket?.demandRuntime?.playerSupplyLifeline;
+        if(candidate&&typeof candidate==='object'&&!Array.isArray(candidate))policy=candidate;
+      }
+    }
+    if(!policy){
+      const hit=readState(countryId,'resource.demandRuntime.playerSupplyLifeline');
+      if(hit?.value&&typeof hit.value==='object'&&!Array.isArray(hit.value))policy=hit.value;
+    }
+    if(!policy||String(policy.policyId||'')!==windowId){
+      return{accepted:false,reason:'PLAYER_SUPPLY_WINDOW_NOT_FOUND',supplyWindowId:windowId};
+    }
+    const policyCountry=canonicalCountry(policy.countryId||countryId);
+    const policyRaw=policyCountry?.raw?.raw||policyCountry?.raw||{};
+    const policyIso3=id(policyRaw.iso3||policyRaw.iso3Code||policyRaw.ISO_A3||policyRaw.iso_a3||policyRaw.ISO3);
+    const policyCanonical=policyIso3||policyCountry?.id||id(policy.countryId||countryId);
+    const requestedCanonical=canonicalId(countryId);
+    if(policy.approved!==true||policyCanonical!==requestedCanonical){
+      return{accepted:false,reason:'PLAYER_SUPPLY_WINDOW_NOT_AUTHORIZED',supplyWindowId:windowId,
+        policyCountryId:policy.countryId||null,policyCanonicalCountryId:policyCanonical,requestedCountryId:countryId,requestedCanonicalCountryId:requestedCanonical};
+    }
+    if(String(policy.status||'').toUpperCase()!=='ACTIVE'){
+      return{accepted:false,reason:'PLAYER_SUPPLY_WINDOW_NOT_ACTIVE',supplyWindowId:windowId,status:policy.status||'UNKNOWN'};
+    }
+    const termDays=num(policy.termDays);
+    const lastAdvancedTurn=num(policy.lastAdvancedTurn);
+    if(termDays===null||termDays<=0||lastAdvancedTurn===null){
+      return{accepted:false,reason:'PLAYER_SUPPLY_WINDOW_CLOCK_NOT_OBSERVED',supplyWindowId:windowId};
+    }
+    const state=g.Game?.state||g.gameState||{};
+    const stepMs=Math.max(1,num(g.Omega?.Simulation?.clock?.stepDurationMs)??num(state?.simulation?.stepDurationMs)??86400000);
+    const elapsed=Math.max(0,num(policy.elapsedGameDays)||0)+Math.max(0,turn()-lastAdvancedTurn)*(stepMs/86400000);
+    if(elapsed>=termDays-1e-9){
+      return{accepted:false,reason:'PLAYER_SUPPLY_WINDOW_EXPIRED',supplyWindowId:windowId,termDays,elapsedGameDays:Math.min(termDays,elapsed)};
+    }
+    return{accepted:true,supplyWindowId:windowId,remainingGameDays:Math.max(0,termDays-elapsed)};
+  }
+
   function importHandler(cmd,ctx){
     const c=id(ctx.countryId),p=cmd?.payload||{};
     const target=id(p.targetCountryId);
@@ -987,6 +1113,8 @@
     const existing=Array.isArray(ctx.stateTransaction.get('trade.importRequests'))?ctx.stateTransaction.get('trade.importRequests'):[];
     const duplicate=existing.find(x=>String(x.requestId)===String(p.requestId||''));
     if(duplicate)return{accepted:true,request:clone(duplicate),duplicate:true,executionState:duplicate.status||'SENT'};
+    const windowValidation=validatePlayerSupplyWindow(c,p,ctx.stateTransaction);
+    if(!windowValidation.accepted)return windowValidation;
     const request={
       requestId:String(p.requestId||('IMP-REQ-'+turn()+'-'+c+'-'+target+'-'+String(p.decisionId||''))),
       countryId:c,targetCountryId:target,resourceId:String(p.resourceId),quantity:qty,
