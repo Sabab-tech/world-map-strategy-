@@ -31,7 +31,7 @@
     return copy;
   };
   const state = () => g.Game && g.Game.state || g.gameState || g.Omega && g.Omega.Simulation && g.Omega.Simulation.world && g.Omega.Simulation.world.state || {};
-  const turn = () => num(state().simulation && state().simulation.turn ?? state().turn ?? state().simulationTurn) ?? 0;
+  const turn = () => num((state().simulation && state().simulation.turn) ?? state().turn ?? state().simulationTurn) ?? 0;
   function canonical(value) {
     const raw = typeof value === 'object' && value ? value.iso3 || value.iso3Code || value.countryId || value.countryCode || value.code || value.id : value;
     const text = upper(raw);
