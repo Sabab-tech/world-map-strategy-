@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
 import "../omega_ui_v2/screens/resource-ministry.js";
+import "../omega_ui_v2/resource-ministry-legacy-bridge.js";
 
 const root = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
 const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
@@ -39,10 +40,14 @@ test("resource visual layer is wired into the offline-first app without remote d
   const uiManifest = json("omega_ui_v2/manifest.json");
   const cssPath = "omega_ui_v2/resource-ministry-premium.css";
   const stylesheetTag = '<link rel="stylesheet" href="' + cssPath + '">';
+  const handoffPath = "omega_ui_v2/resource-ministry-legacy-bridge.js";
+  assert.ok(html.includes('<script src="' + handoffPath + '" defer></script>'), "legacy Resource Ministry entry points must be routed through the UI v2 guard");
+  assert.ok(sw.includes('"./' + handoffPath + '" '.trim()), "legacy handoff guard must be precached offline");
+  assert.equal(uiManifest.integrationPolicy.resourceMinistryLegacyBridge, handoffPath, "the UI manifest must document the Resource Ministry guard");
   assert.ok(html.includes(stylesheetTag), "premium resource stylesheet must be loaded by the app");
   assert.ok(sw.includes('"' + "./" + cssPath + '"'), "premium resource stylesheet must be precached offline");
   assert.ok(uiManifest.additionalStyles.includes(cssPath), "UI v2 manifest must document the resource style");
-  assert.match(sw, /omega-offline-atlas-shell-v50/, "offline cache must be invalidated for new visual assets");
+  assert.match(sw, /omega-offline-atlas-shell-v51/, "offline cache must be invalidated for new visual assets");
   const coreAssets = sw.slice(sw.indexOf("const CORE_ASSETS"), sw.indexOf("];", sw.indexOf("const CORE_ASSETS")));
   assert.ok(coreAssets.includes('"./' + cssPath + '"'), "premium stylesheet belongs in the precache list");
   assert.ok(sw.includes("const resourceIcons = Array.isArray(factoryIconManifest.resources)"),
@@ -156,7 +161,7 @@ test("all resource SVGs use a light metallic backplate for readable dark mineral
     assert.match(svg, /data-omega-icon-kind="resource"/);
   }
   assert.match(manifest.rendering.background, /light silver-metal.*factory SVGs retain their shared dark-navy/i);
-  assert.match(read("omega-offline-map-sw.js"), /omega-offline-atlas-shell-v50/);
+  assert.match(read("omega-offline-map-sw.js"), /omega-offline-atlas-shell-v51/);
 });
 
 
@@ -229,5 +234,114 @@ test("country selector browses canonical mine sites without granting foreign-cou
     else globalThis.ResourceMinistryEngine = priorResourceEngine;
     if (priorCatalog === undefined) delete globalThis.OmegaResourceSiteCanonicalCatalogData;
     else globalThis.OmegaResourceSiteCanonicalCatalogData = priorCatalog;
+  }
+});
+
+
+test("legacy Resource & Mining renderer entry points hand off to UI v2 without duplicate rendering", () => {
+  const bridge = globalThis.OmegaUIV2ResourceLegacyBridge;
+  assert.ok(bridge, "Resource Ministry legacy bridge must be registered");
+  const previous = {
+    document: globalThis.document,
+    cabinet: globalThis.OmegaCabinetUI,
+    integration: globalThis.OmegaUIV2Integration,
+    app: globalThis.OmegaUIV2App,
+    notification: globalThis.showOmegaNotification
+  };
+  const attributes = Object.create(null);
+  const root = {
+    style: {},
+    __omegaUIV2State: null,
+    setAttribute(key, value) { attributes[key] = String(value); },
+    getAttribute(key) { return attributes[key] || null; },
+    removeAttribute(key) { delete attributes[key]; }
+  };
+  const dashboard = { style: {}, setAttribute() {} };
+  const mountCalls = [];
+  const openCalls = [];
+  let legacyCalls = 0;
+  globalThis.document = {
+    getElementById(id) {
+      if (id === "cabinet-full-window") return root;
+      if (id === "ministry-dashboard-view") return dashboard;
+      return null;
+    }
+  };
+  globalThis.OmegaUIV2Integration = {
+    isEnabled() { return true; },
+    mountIntoCabinet(node, options) {
+      mountCalls.push({ node, options });
+      node.setAttribute("data-omega-ui-v2-active", "true");
+      node.__omegaUIV2State = { route: "resources", ministryId: "energy_mining", section: "dashboard" };
+      return { ok: true, route: "resources" };
+    }
+  };
+  globalThis.OmegaUIV2App = {
+    openMinistry(node, id) {
+      openCalls.push(id);
+      node.__omegaUIV2State = { route: "resources", ministryId: id, section: "dashboard" };
+      return true;
+    }
+  };
+  globalThis.showOmegaNotification = () => {};
+  const legacy = {
+    activeCountry: "BGD",
+    getActiveCountryKey() { return "BGD"; },
+    renderMinistryDashboard() { legacyCalls += 1; },
+    renderResourceMinistryDashboard() { legacyCalls += 1; }
+  };
+  globalThis.OmegaCabinetUI = legacy;
+  try {
+    assert.equal(bridge.install(), true);
+    assert.equal(legacy.renderMinistryDashboard("energy_mining"), true);
+    assert.equal(mountCalls.length, 1, "direct ministry entry must mount the unified UI once");
+    assert.equal(mountCalls[0].options.initialRoute, "government");
+    assert.equal(mountCalls[0].options.ministryId, "energy_mining");
+    assert.equal(mountCalls[0].options.countryId, "BGD");
+    assert.equal(legacy.renderResourceMinistryDashboard({ id: "energy_mining" }, {}), true);
+    assert.deepEqual(openCalls, ["energy_mining"], "an active UI v2 screen must be reused rather than re-mounted");
+    assert.equal(legacyCalls, 0, "retired resource renderers must never produce legacy markup");
+    legacy.renderMinistryDashboard("defense");
+    assert.equal(legacyCalls, 1, "unrelated ministry rendering must remain unchanged");
+  } finally {
+    if (previous.document === undefined) delete globalThis.document; else globalThis.document = previous.document;
+    if (previous.cabinet === undefined) delete globalThis.OmegaCabinetUI; else globalThis.OmegaCabinetUI = previous.cabinet;
+    if (previous.integration === undefined) delete globalThis.OmegaUIV2Integration; else globalThis.OmegaUIV2Integration = previous.integration;
+    if (previous.app === undefined) delete globalThis.OmegaUIV2App; else globalThis.OmegaUIV2App = previous.app;
+    if (previous.notification === undefined) delete globalThis.showOmegaNotification; else globalThis.showOmegaNotification = previous.notification;
+  }
+});
+
+test("Resource & Mining never falls back to the retired UI when UI v2 is unavailable", () => {
+  const bridge = globalThis.OmegaUIV2ResourceLegacyBridge;
+  const previous = {
+    document: globalThis.document,
+    cabinet: globalThis.OmegaCabinetUI,
+    integration: globalThis.OmegaUIV2Integration,
+    app: globalThis.OmegaUIV2App,
+    notification: globalThis.showOmegaNotification
+  };
+  const root = { style: {}, getAttribute() { return null; } };
+  let legacyCalls = 0;
+  globalThis.document = { getElementById(id) { return id === "cabinet-full-window" ? root : null; } };
+  globalThis.OmegaUIV2Integration = undefined;
+  globalThis.OmegaUIV2App = undefined;
+  globalThis.showOmegaNotification = () => {};
+  const legacy = {
+    renderMinistryDashboard() { legacyCalls += 1; },
+    renderResourceMinistryDashboard() { legacyCalls += 1; }
+  };
+  globalThis.OmegaCabinetUI = legacy;
+  try {
+    assert.equal(bridge.install(), true);
+    assert.equal(legacy.renderMinistryDashboard("resource"), false);
+    assert.equal(legacy.renderResourceMinistryDashboard({ id: "resource" }), false);
+    assert.equal(legacyCalls, 0, "a failed UI v2 mount must not revive the previous Resource Ministry UI");
+  } finally {
+    if (previous.document === undefined) delete globalThis.document; else globalThis.document = previous.document;
+    if (previous.cabinet === undefined) delete globalThis.OmegaCabinetUI; else globalThis.OmegaCabinetUI = previous.cabinet;
+    if (previous.integration === undefined) delete globalThis.OmegaUIV2Integration; else globalThis.OmegaUIV2Integration = previous.integration;
+    if (previous.app === undefined) delete globalThis.OmegaUIV2App; else globalThis.OmegaUIV2App = previous.app;
+    if (previous.notification === undefined) delete globalThis.showOmegaNotification; else globalThis.showOmegaNotification = previous.notification;
   }
 });
