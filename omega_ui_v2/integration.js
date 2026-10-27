@@ -268,6 +268,7 @@
         countryId:country,
         countryOptions:availableCountryOptions(country),
         onBackToMap:closeToWorldMap,
+        onPrepareBackToMap:prepareCloseToWorldMap,
         onCountryChange:function (id) {
           var code = canonicalCountry(id);
           if (code) g.OmegaMinistryViewCountry = code;
@@ -308,6 +309,30 @@
     try{if(root&&root.getAttribute&&root.getAttribute(ACTIVE_ATTR)==='true'&&root.__omegaUIV2State){if(ministryId)return !!g.OmegaUIV2App.openMinistry(root,ministryId);g.OmegaUIV2App.navigate(root,route);return true;}
       var initial=destinations.indexOf(route)>=0?route:'government';return !!(mountIntoCabinet(root,{initialRoute:initial,ministryId:ministryId})||{}).ok;
     }catch(_){return false;}
+  }
+  function prepareCloseToWorldMap() {
+    var root = cabinetRoot();
+    // Flip the active-layer contract immediately, then let UI v2 defer the heavier DOM
+    // teardown until after the loading state has had a frame to paint.
+    setV2CabinetActive(root, false);
+    if (root && root.style) root.style.pointerEvents = 'none';
+    var manager = g.OmegaLayerManager;
+    if (manager) {
+      manager.currentLayer = 0;
+      if (Array.isArray(manager.layerStack)) manager.layerStack = [0];
+    }
+    var body = g.document && g.document.body;
+    if (body) {
+      if (body.setAttribute) body.setAttribute('data-active-layer', '0');
+      if (body.classList && typeof body.classList.remove === 'function') body.classList.remove('modal-open');
+    }
+    var worldUi = g.document && g.document.getElementById('world-ui-root');
+    if (worldUi && worldUi.style) {
+      worldUi.style.filter = 'none';
+      worldUi.style.opacity = '1';
+      worldUi.style.pointerEvents = 'auto';
+    }
+    return true;
   }
   function closeToWorldMap() {
     var root = cabinetRoot();

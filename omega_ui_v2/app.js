@@ -61,9 +61,10 @@
     return {
       countryId: state.countryId,
       view: state.governmentView,
-      onOpenMinistry: function (id) { return openMinistry(root, id); },
-      onOpenDomain: function (domain) { return openDomain(root, domain); },
-      onNavigate: function (destination) { return navigate(root, destination); },
+      onOpenMinistry: function (id) { return openMinistry(root, id, true); },
+      onOpenDomain: function (domain) { return openDomain(root, domain, true); },
+      onNavigate: function (destination) { return navigate(root, destination, true); },
+      onScheduleRender: function (callback, label, screenRoot) { return scheduleScreenRefresh(root, callback, label, screenRoot); },
       onViewChange: function (view) {
         state.governmentView = view === 'all-ministries' ? 'all-ministries' : 'executive-ministry';
       },
@@ -85,7 +86,10 @@
     if (value === 'interior_security') return 'home-affairs';
     return 'ministry-detail';
   }
-  function openMinistry(root, id) {
+  function refreshAfterStateChange(root, deferRender) {
+    return deferRender ? scheduleNavigationRender(root) : render(root);
+  }
+  function openMinistry(root, id, deferRender) {
     var state = stateFor(root);
     id = String(id || '').trim();
     if (!id) return false;
@@ -96,7 +100,7 @@
       state.section = 'dashboard';
       state.resourceSiteId = null;
       state.governmentView = 'executive-ministry';
-      render(root);
+      refreshAfterStateChange(root, deferRender);
       return true;
     }
     var next = routeName(id);
@@ -107,37 +111,37 @@
     state.resourceSiteId = null;
     state.route = next;
     if (next === 'government') state.governmentView = 'executive-ministry';
-    render(root);
+    refreshAfterStateChange(root, deferRender);
     return true;
   }
-  function openDomain(root, domain) {
-    if (domain === 'country-overview' || domain === 'executive-ministry') return navigate(root, 'government');
-    if (domain === 'resources-mining' || domain === 'energy_mining') return openMinistry(root, 'energy_mining');
-    if (domain === 'industry-production' || domain === 'production') return openMinistry(root, 'production');
-    if (domain === 'security-police' || domain === 'interior_security') return openMinistry(root, 'interior_security');
-    if (domain === 'diplomacy') return openMinistry(root, 'foreign_affairs');
-    if (domain === 'society-culture' || domain === 'health_welfare') return openMinistry(root, 'health_welfare');
-    if (domain === 'economy-finance' || domain === 'treasury_finance') return navigate(root, 'economy');
-    if (domain === 'mega-projects' || domain === 'mega_projects') return openMinistry(root, 'mega_projects');
+  function openDomain(root, domain, deferRender) {
+    if (domain === 'country-overview' || domain === 'executive-ministry') return navigate(root, 'government', deferRender);
+    if (domain === 'resources-mining' || domain === 'energy_mining') return openMinistry(root, 'energy_mining', deferRender);
+    if (domain === 'industry-production' || domain === 'production') return openMinistry(root, 'production', deferRender);
+    if (domain === 'security-police' || domain === 'interior_security') return openMinistry(root, 'interior_security', deferRender);
+    if (domain === 'diplomacy') return openMinistry(root, 'foreign_affairs', deferRender);
+    if (domain === 'society-culture' || domain === 'health_welfare') return openMinistry(root, 'health_welfare', deferRender);
+    if (domain === 'economy-finance' || domain === 'treasury_finance') return navigate(root, 'economy', deferRender);
+    if (domain === 'mega-projects' || domain === 'mega_projects') return openMinistry(root, 'mega_projects', deferRender);
     return false;
   }
-  function navigate(root, route) {
+  function navigate(root, route, deferRender) {
     var state = stateFor(root);
     route = String(route || '').trim();
     if (!route) return false;
     if (route === 'world') route = 'map';
-    if (route === 'executive-ministry') return openMinistry(root, 'cabinet_council');
+    if (route === 'executive-ministry') return openMinistry(root, 'cabinet_council', deferRender);
     if (route === 'all-ministries' || route === 'ministry-directory') {
       if (state.route !== 'government' || state.governmentView !== 'all-ministries') state.history.push(historySnapshot(state));
       state.route = 'government';
       state.ministryId = null;
       state.section = 'dashboard';
       state.governmentView = 'all-ministries';
-      render(root);
+      refreshAfterStateChange(root, deferRender);
       return true;
     }
     var ministryIds = g.OmegaUIV2Navigation && g.OmegaUIV2Navigation.ministryIds;
-    if (Array.isArray(ministryIds) && ministryIds.indexOf(route) >= 0) return openMinistry(root, route);
+    if (Array.isArray(ministryIds) && ministryIds.indexOf(route) >= 0) return openMinistry(root, route, deferRender);
     if (ROUTES.indexOf(route) >= 0 || route === 'home-affairs' || route === 'resources' ||
         route === 'ministry-detail' || route === 'mine-detail') {
       if (state.route === route && !(route === 'government' && state.governmentView !== 'executive-ministry')) return true;
@@ -147,30 +151,46 @@
       state.section = 'dashboard';
       state.resourceSiteId = null;
       if (route === 'government') state.governmentView = 'executive-ministry';
-      render(root);
+      refreshAfterStateChange(root, deferRender);
       return true;
     }
     return false;
   }
-  function back(root) {
+  function prepareBackToMap(state) {
+    var prepare = state && state.options && state.options.onPrepareBackToMap;
+    if (typeof prepare === 'function') {
+      try { prepare(); } catch (_) {
+        // Keep the world-map exit path available even if optional transition preparation fails.
+      }
+    }
+  }
+  function back(root, deferRender) {
     var state = stateFor(root);
     var previous = state.history.pop();
     if (!previous) {
-      if (typeof state.options.onBackToMap === 'function') return state.options.onBackToMap();
+      if (typeof state.options.onBackToMap === 'function') {
+        if (deferRender) {
+          prepareBackToMap(state);
+          return scheduleDeferredTransition(root, 'Returning to the world map', function () {
+            return state.options.onBackToMap();
+          }, true);
+        }
+        return state.options.onBackToMap();
+      }
       state.route = 'map';
       state.ministryId = null;
-      render(root);
-      return true;
+      state.section = 'dashboard';
+      return refreshAfterStateChange(root, deferRender) || true;
     }
     state.route = previous.route || 'map';
     state.ministryId = previous.ministryId || null;
     state.section = previous.section || 'dashboard';
     state.resourceSiteId = previous.resourceSiteId || null;
     state.governmentView = previous.governmentView === 'all-ministries' ? 'all-ministries' : 'executive-ministry';
-    render(root);
+    refreshAfterStateChange(root, deferRender);
     return true;
   }
-  function exitToMap(root) {
+  function exitToMap(root, deferAction) {
     var state = stateFor(root);
     if (!state) return false;
     state.history.length = 0;
@@ -180,10 +200,17 @@
     state.resourceSiteId = null;
     state.governmentView = 'executive-ministry';
     if (state.options && typeof state.options.onBackToMap === 'function') {
+      if (deferAction) {
+        prepareBackToMap(state);
+        scheduleDeferredTransition(root, 'Returning to the world map', function () {
+          return state.options.onBackToMap();
+        }, true);
+        return true;
+      }
       state.options.onBackToMap();
       return true;
     }
-    render(root);
+    refreshAfterStateChange(root, deferAction);
     return true;
   }
   function safeLocalAssetPath(value) {
@@ -260,26 +287,26 @@
       }
     } else if (state.route === 'economy') {
       if (g.OmegaUIV2Economy && typeof g.OmegaUIV2Economy.render === 'function') {
-        return g.OmegaUIV2Economy.render(content, Object.assign({}, options, { countryId:state.countryId, onOpenMinistry:function (id) { return openMinistry(root, id); } }));
+        return g.OmegaUIV2Economy.render(content, withScheduledScreenRefresh(root, Object.assign({}, options, { countryId:state.countryId, onOpenMinistry:function (id) { return openMinistry(root, id, true); } })));
       }
     } else if (state.route === 'industry' || (state.route === 'ministry-detail' && state.ministryId === 'production')) {
-      if (g.OmegaUIV2Industry && typeof g.OmegaUIV2Industry.render === 'function') return g.OmegaUIV2Industry.render(content, Object.assign({}, options, { countryId:state.countryId, onOpenFactory:options.onOpenFactory }));
+      if (g.OmegaUIV2Industry && typeof g.OmegaUIV2Industry.render === 'function') return g.OmegaUIV2Industry.render(content, withScheduledScreenRefresh(root, Object.assign({}, options, { countryId:state.countryId, onOpenFactory:options.onOpenFactory })));
     } else if (state.route === 'home-affairs' || (state.route === 'ministry-detail' && state.ministryId === 'interior_security')) {
-      if (g.OmegaUIV2HomeAffairs && typeof g.OmegaUIV2HomeAffairs.render === 'function') return g.OmegaUIV2HomeAffairs.render(content, Object.assign({}, options, { countryId:state.countryId, tab:state.section }));
+      if (g.OmegaUIV2HomeAffairs && typeof g.OmegaUIV2HomeAffairs.render === 'function') return g.OmegaUIV2HomeAffairs.render(content, withScheduledScreenRefresh(root, Object.assign({}, options, { countryId:state.countryId, tab:state.section })));
     } else if (state.route === 'resources' || (state.route === 'ministry-detail' && state.ministryId === 'energy_mining')) {
       if (g.OmegaUIV2ResourceMinistry && typeof g.OmegaUIV2ResourceMinistry.render === 'function') {
-        return g.OmegaUIV2ResourceMinistry.render(content, Object.assign({}, options, { countryId:state.countryId,
-          onOpenSite:function (siteId) { state.resourceSiteId = siteId; return navigate(root, 'mine-detail'); },
-          onLocateSite:options.onLocateMine, getInventoryForSite:options.getInventoryForSite }));
+        return g.OmegaUIV2ResourceMinistry.render(content, withScheduledScreenRefresh(root, Object.assign({}, options, { countryId:state.countryId,
+          onOpenSite:function (siteId) { state.resourceSiteId = siteId; return navigate(root, 'mine-detail', true); },
+          onLocateSite:options.onLocateMine, getInventoryForSite:options.getInventoryForSite })));
       }
     } else if (state.route === 'mine-detail') {
-      if (g.OmegaUIV2MineDetail && typeof g.OmegaUIV2MineDetail.render === 'function') return g.OmegaUIV2MineDetail.render(content, Object.assign({}, options, { countryId:state.countryId, siteId:state.resourceSiteId, onBack:function () { back(root); } }));
+      if (g.OmegaUIV2MineDetail && typeof g.OmegaUIV2MineDetail.render === 'function') return g.OmegaUIV2MineDetail.render(content, withScheduledScreenRefresh(root, Object.assign({}, options, { countryId:state.countryId, siteId:state.resourceSiteId, onBack:function () { back(root, true); } })));
     } else if (state.route === 'reports') {
-      if (g.OmegaUIV2Reports && typeof g.OmegaUIV2Reports.render === 'function') return g.OmegaUIV2Reports.render(content, Object.assign({}, options, { countryId:state.countryId, onOpenDomain:function (id) { return openDomain(root, id); } }));
+      if (g.OmegaUIV2Reports && typeof g.OmegaUIV2Reports.render === 'function') return g.OmegaUIV2Reports.render(content, withScheduledScreenRefresh(root, Object.assign({}, options, { countryId:state.countryId, onOpenDomain:function (id) { return openDomain(root, id, true); } })));
     } else if (state.route === 'ministry-detail') {
       if (g.OmegaUIV2MinistryDetail && typeof g.OmegaUIV2MinistryDetail.render === 'function') {
-        return g.OmegaUIV2MinistryDetail.render(content, Object.assign({}, options, { countryId:state.countryId, ministryId:state.ministryId,
-          onNavigate:function (destination) { return navigate(root, destination); }, section:state.section }));
+        return g.OmegaUIV2MinistryDetail.render(content, withScheduledScreenRefresh(root, Object.assign({}, options, { countryId:state.countryId, ministryId:state.ministryId,
+          onNavigate:function (destination) { return navigate(root, destination, true); }, section:state.section })));
       }
     }
     if (state.route === 'map') {
@@ -319,8 +346,88 @@
       '<button type="button" class="omega-v2-button omega-v2-button--quiet" data-omega-v2-global-nav="more">All sections</button>' +
       '</div></div></section>';
   }
-  function render(root) {
-    var state = stateFor(root);
+  function navigationLabel(state) {
+    if (state.route === 'government') return state.governmentView === 'all-ministries' ? 'All Ministries' : 'Executive Ministry';
+    if (state.ministryId) return String(state.ministryId).replace(/[_-]+/g, ' ').replace(/\b\w/g, function (ch) { return ch.toUpperCase(); });
+    var labels = {
+      map:'World map', overview:'Country overview', economy:'Economy & finance',
+      more:'Command Center', industry:'Factories & industry', resources:'Resources & Mining',
+      'home-affairs':'Public Safety', 'ministry-detail':'Ministry details',
+      'mine-detail':'Mine details', reports:'Reports', religion:'Religion & ideology'
+    };
+    return labels[state.route] || 'the selected section';
+  }
+  function renderLoadingMarkup(state, label) {
+    var target = String(label || ('Opening ' + navigationLabel(state)));
+    return '<section class="omega-v2-shell omega-v2-navigation-loading" role="status" aria-live="polite">' +
+      '<div class="omega-v2-navigation-loading-panel"><span class="omega-v2-navigation-loading-mark" aria-hidden="true"></span>' +
+      '<div class="omega-v2-navigation-loading-copy"><div class="omega-v2-eyebrow">OMEGA / NAVIGATION</div>' +
+      '<h1 class="omega-v2-title">' + esc(target) + '</h1>' +
+      '<p class="omega-v2-subtitle">Preparing this section. Navigation remains available.</p>' +
+      '<div class="omega-v2-navigation-progress" aria-hidden="true"><span></span></div></div></div></section>';
+  }
+  function requestFrame(callback) {
+    if (typeof g.requestAnimationFrame === 'function') {
+      return { kind:'raf', id:g.requestAnimationFrame(callback) };
+    }
+    var timer = typeof g.setTimeout === 'function' ? g.setTimeout : setTimeout;
+    return { kind:'timeout', id:timer(callback, 16) };
+  }
+  function cancelFrame(handle) {
+    if (!handle) return;
+    try {
+      if (handle.kind === 'raf' && typeof g.cancelAnimationFrame === 'function') g.cancelAnimationFrame(handle.id);
+      else if (handle.kind === 'timeout') {
+        var clear = typeof g.clearTimeout === 'function' ? g.clearTimeout : clearTimeout;
+        clear(handle.id);
+      }
+    } catch (_) {}
+  }
+  function cancelPendingFrames(state) {
+    var frames = Array.isArray(state && state.pendingFrames) ? state.pendingFrames : [];
+    frames.forEach(cancelFrame);
+    if (state) state.pendingFrames = [];
+  }
+  function invalidatePendingRender(state) {
+    if (!state) return;
+    state.navigationGeneration = (Number(state.navigationGeneration) || 0) + 1;
+    cancelPendingFrames(state);
+    state.navigationPending = false;
+  }
+  function stopScreenRotation(main) {
+    if (!main || !g.OmegaUIV2Government || typeof g.OmegaUIV2Government.stopAutoRotation !== 'function') return;
+    try { g.OmegaUIV2Government.stopAutoRotation(main); } catch (_) {
+      // Stale screen-cleanup hooks must never prevent the next destination opening.
+    }
+  }
+  function syncNavigationChrome(root, state) {
+    if (root.querySelectorAll) {
+      var navButtons = root.querySelectorAll('.omega-v2-bottom-nav [data-omega-v2-global-nav]');
+      Array.prototype.forEach.call(navButtons, function (button) {
+        var id = button.getAttribute('data-omega-v2-global-nav');
+        var active = id === state.route || (id === 'more' &&
+          ['industry','reports','religion','home-affairs','resources','ministry-detail','mine-detail'].indexOf(state.route) >= 0);
+        if (button.classList) {
+          if (active && button.classList.add) button.classList.add('is-active');
+          else if (!active && button.classList.remove) button.classList.remove('is-active');
+        }
+        if (button.setAttribute) button.setAttribute('aria-current', active ? 'page' : 'false');
+      });
+      var routeButtons = root.querySelectorAll('[data-omega-v2-jump-route]');
+      Array.prototype.forEach.call(routeButtons, function (button) {
+        var active = button.getAttribute('data-omega-v2-jump-route') === state.route;
+        if (button.classList) {
+          if (active && button.classList.add) button.classList.add('is-current');
+          else if (!active && button.classList.remove) button.classList.remove('is-current');
+        }
+      });
+    }
+    var backButton = root.querySelector && root.querySelector('[data-omega-v2-back]');
+    if (backButton) backButton.disabled = !state.history.length && state.route === 'map';
+    if (root.setAttribute) root.setAttribute('data-omega-v2-route', state.route);
+  }
+  function ensureShell(root, state) {
+    if (state.shellMounted) return;
     var countryChoices = Array.isArray(state.options.countryOptions) ? state.options.countryOptions : [];
     var countryControl = countryChoices.length
       ? '<select class="omega-v2-country-select" data-omega-v2-country aria-label="Selected country">' + countryChoices.map(function (item) {
@@ -329,12 +436,6 @@
         return '<option value="' + esc(id) + '"' + (String(id).toUpperCase() === String(state.countryId).toUpperCase() ? ' selected' : '') + '>' + esc(label) + '</option>';
       }).join('') + '</select>'
       : '<span class="omega-v2-country-badge">COUNTRY ' + esc(state.countryId || 'NOT RECORDED') + '</span>';
-    var oldMain = root.querySelector && root.querySelector('[data-omega-v2-main]');
-    if (oldMain && g.OmegaUIV2Government && typeof g.OmegaUIV2Government.stopAutoRotation === 'function') {
-      try { g.OmegaUIV2Government.stopAutoRotation(oldMain); } catch (_) {
-        // Stale screen-cleanup hooks must never prevent the next destination opening.
-      }
-    }
     root.classList.add('omega-v2-app-root');
     root.innerHTML = '<div class="omega-v2-app-frame">' +
       '<header class="omega-v2-app-header"><button class="omega-v2-button omega-v2-button--quiet" type="button" data-omega-v2-back aria-label="Go back">‹ Back</button><div class="omega-v2-app-brand"><span class="omega-v2-brand-mark">Ω</span><div><strong>OMEGA</strong><small>GLOBAL COMMAND</small></div></div>' +
@@ -344,21 +445,152 @@
       '<nav class="omega-v2-bottom-nav" aria-label="Main navigation">' +
       navButton('map','World',state.route) + navButton('overview','Overview',state.route) + navButton('government','Government',state.route) + navButton('economy','Economy',state.route) + navButton('more','More',state.route) +
       '</nav></div>';
-    var main = root.querySelector('[data-omega-v2-main]');
+    state.shellMounted = true;
+  }
+  function monotonicNow() {
+    try { if (g.performance && typeof g.performance.now === 'function') return g.performance.now(); } catch (_) {}
+    return Date.now();
+  }
+  function recordScreenDuration(route, duration) {
+    try {
+      var diagnostics = g.__OMEGA_UI_V2_DIAGNOSTICS || {};
+      var rounded = Math.round(Math.max(0, Number(duration) || 0) * 10) / 10;
+      var event = { route:String(route || ''), durationMs:rounded, timestamp:Date.now() };
+      diagnostics.screenRenderCount = (Number(diagnostics.screenRenderCount) || 0) + 1;
+      diagnostics.lastScreenRender = event;
+      if (rounded >= 50) {
+        diagnostics.slowScreenRenderCount = (Number(diagnostics.slowScreenRenderCount) || 0) + 1;
+        diagnostics.lastSlowScreenRender = event;
+      }
+      g.__OMEGA_UI_V2_DIAGNOSTICS = diagnostics;
+    } catch (_) {}
+  }
+  function renderCurrentScreen(root, state, skipCleanup) {
+    var main = root.querySelector && root.querySelector('[data-omega-v2-main]');
+    if (!main) return { ok:false, code:'UI_V2_MAIN_NOT_FOUND', route:state.route };
+    if (!skipCleanup) stopScreenRotation(main);
+    var started = monotonicNow();
     var result;
     try {
       result = routeScreen(root, main);
     } catch (error) {
-      // An optional ministry/runtime can fail independently. Preserve the host
-      // shell and its delegated controls instead of leaving a blank dead screen.
       recordRenderFailure(state.route, error);
-      if (main) main.innerHTML = renderFailureMarkup();
+      main.innerHTML = renderFailureMarkup();
       result = { ok:true, code:'SCREEN_RENDER_FAILED', route:state.route, screenRecovery:true };
+    } finally {
+      recordScreenDuration(state.route, monotonicNow() - started);
+      state.lastRenderedScreenIdentity = screenIdentity(state);
+      state.navigationPending = false;
+      if (main.removeAttribute) main.removeAttribute('aria-busy');
+      if (root.removeAttribute) root.removeAttribute('data-omega-v2-navigation-pending');
     }
-    var backButton = root.querySelector('[data-omega-v2-back]');
-    if (backButton) backButton.disabled = !state.history.length && state.route === 'map';
-    root.setAttribute('data-omega-v2-route', state.route);
+    syncNavigationChrome(root, state);
     return result;
+  }
+  function queueAfterPaint(root, state, generation, callback) {
+    function isCurrent() {
+      return stateFor(root) === state && state.navigationGeneration === generation;
+    }
+    var first = requestFrame(function () {
+      state.pendingFrames = [];
+      if (!isCurrent()) return;
+      var second = requestFrame(function () {
+        state.pendingFrames = [];
+        if (!isCurrent()) return;
+        try {
+          callback();
+        } catch (error) {
+          recordRenderFailure(state.route, error);
+          renderCurrentScreen(root, state, true);
+        } finally {
+          if (stateFor(root) === state) {
+            state.navigationPending = false;
+            if (root.removeAttribute) root.removeAttribute('data-omega-v2-navigation-pending');
+            var main = root.querySelector && root.querySelector('[data-omega-v2-main]');
+            if (main && main.removeAttribute) main.removeAttribute('aria-busy');
+            syncNavigationChrome(root, state);
+          }
+        }
+      });
+      state.pendingFrames = [second];
+    });
+    state.pendingFrames = [first];
+  }
+  function scheduleDeferredTransition(root, label, callback, replaceMain) {
+    var state = stateFor(root);
+    if (!state) return false;
+    state.navigationGeneration = (Number(state.navigationGeneration) || 0) + 1;
+    var generation = state.navigationGeneration;
+    cancelPendingFrames(state);
+    if (replaceMain) replaceMainForNavigation(root);
+    ensureShell(root, state);
+    syncNavigationChrome(root, state);
+    var main = root.querySelector && root.querySelector('[data-omega-v2-main]');
+    stopScreenRotation(main);
+    if (main) {
+      if (main.setAttribute) main.setAttribute('aria-busy', 'true');
+      main.innerHTML = renderLoadingMarkup(state, label || ('Opening ' + navigationLabel(state)));
+    }
+    state.navigationPending = true;
+    if (root.setAttribute) root.setAttribute('data-omega-v2-navigation-pending', 'true');
+    queueAfterPaint(root, state, generation, callback);
+    return true;
+  }
+  function scheduleNavigationRender(root) {
+    var state = stateFor(root);
+    if (!state) return false;
+    return scheduleDeferredTransition(root, 'Opening ' + navigationLabel(state), function () {
+      renderCurrentScreen(root, state, true);
+    }, true);
+  }
+  function scheduleScreenRefresh(root, callback, label, screenRoot) {
+    var state = stateFor(root);
+    var activeMain = root && root.querySelector && root.querySelector('[data-omega-v2-main]');
+    if (!state || (screenRoot && activeMain !== screenRoot)) return false;
+    return scheduleDeferredTransition(root, label || 'Updating this section', function () {
+      var activeState = stateFor(root);
+      var route = activeState && activeState.route;
+      var started = monotonicNow();
+      try {
+        if (typeof callback === 'function') return callback();
+        return renderCurrentScreen(root, activeState, true);
+      } finally {
+        recordScreenDuration(route, monotonicNow() - started);
+      }
+    });
+  }
+  function screenIdentity(state) {
+    return [state.route || '', state.ministryId || '', state.resourceSiteId || ''].join('|');
+  }
+  function replaceMainForNavigation(root) {
+    var current = root && root.querySelector && root.querySelector('[data-omega-v2-main]');
+    if (!current) return false;
+    stopScreenRotation(current);
+    try {
+      if (typeof current.cloneNode === 'function' && current.parentNode && typeof current.parentNode.replaceChild === 'function') {
+        var replacement = current.cloneNode(false);
+        if (replacement.removeAttribute) replacement.removeAttribute('aria-busy');
+        current.parentNode.replaceChild(replacement, current);
+        return true;
+      }
+    } catch (_) {}
+    current.innerHTML = '';
+    return false;
+  }
+  function withScheduledScreenRefresh(root, options) {
+    var output = Object.assign({}, options || {});
+    output.onScheduleRender = function (callback, label, screenRoot) {
+      return scheduleScreenRefresh(root, callback, label, screenRoot);
+    };
+    return output;
+  }
+  function render(root) {
+    var state = stateFor(root);
+    if (!root || !state) return { ok:false, code:'UI_V2_NOT_MOUNTED' };
+    invalidatePendingRender(state);
+    if (state.shellMounted && state.lastRenderedScreenIdentity !== screenIdentity(state)) replaceMainForNavigation(root);
+    ensureShell(root, state);
+    return renderCurrentScreen(root, state, false);
   }
   function mount(root, options) {
     options = options || {};
@@ -379,21 +611,21 @@
         var exit = target.closest('[data-omega-v2-exit]');
         if (exit && root.contains(exit)) {
           if (event.preventDefault) event.preventDefault();
-          exitToMap(root);
+          exitToMap(root, true);
           return;
         }
         var jumpMinistry = target.closest('[data-omega-v2-jump-ministry]');
-        if (jumpMinistry && root.contains(jumpMinistry)) { if (event.preventDefault) event.preventDefault(); openMinistry(root, jumpMinistry.getAttribute('data-omega-v2-jump-ministry')); return; }
+        if (jumpMinistry && root.contains(jumpMinistry)) { if (event.preventDefault) event.preventDefault(); openMinistry(root, jumpMinistry.getAttribute('data-omega-v2-jump-ministry'), true); return; }
         var jumpRoute = target.closest('[data-omega-v2-jump-route]');
-        if (jumpRoute && root.contains(jumpRoute)) { if (event.preventDefault) event.preventDefault(); navigate(root, jumpRoute.getAttribute('data-omega-v2-jump-route')); return; }
+        if (jumpRoute && root.contains(jumpRoute)) { if (event.preventDefault) event.preventDefault(); navigate(root, jumpRoute.getAttribute('data-omega-v2-jump-route'), true); return; }
         var nav = target.closest('[data-omega-v2-global-nav]');
-        if (nav && root.contains(nav)) { if (event.preventDefault) event.preventDefault(); navigate(root, nav.getAttribute('data-omega-v2-global-nav')); return; }
+        if (nav && root.contains(nav)) { if (event.preventDefault) event.preventDefault(); navigate(root, nav.getAttribute('data-omega-v2-global-nav'), true); return; }
         var domain = target.closest('[data-omega-v2-more-ministry]');
-        if (domain && root.contains(domain)) { if (event.preventDefault) event.preventDefault(); openMinistry(root, domain.getAttribute('data-omega-v2-more-ministry')); return; }
-        if (target.closest('[data-omega-v2-back]') && root.contains(target)) { if (event.preventDefault) event.preventDefault(); back(root); return; }
+        if (domain && root.contains(domain)) { if (event.preventDefault) event.preventDefault(); openMinistry(root, domain.getAttribute('data-omega-v2-more-ministry'), true); return; }
+        if (target.closest('[data-omega-v2-back]') && root.contains(target)) { if (event.preventDefault) event.preventDefault(); back(root, true); return; }
         if (target.closest('[data-omega-v2-action="back-to-map"]') && root.contains(target)) {
           if (event.preventDefault) event.preventDefault();
-          exitToMap(root);
+          exitToMap(root, true);
           return;
         }
       });
@@ -404,7 +636,7 @@
         state.countryId = canonicalCountry(target.value);
         g.OmegaMinistryViewCountry = state.countryId;
         if (state.options && typeof state.options.onCountryChange === 'function') state.options.onCountryChange(state.countryId);
-        render(root);
+        scheduleNavigationRender(root);
       });
       root.addEventListener('keydown', function (event) {
         if (!event || (event.key !== 'Escape' && !(event.altKey && event.key === 'ArrowLeft'))) return;
@@ -419,7 +651,7 @@
         if (isEscape && target && typeof target.closest === 'function' &&
             target.closest('input, select, textarea, [contenteditable="true"]')) return;
         if (event.preventDefault) event.preventDefault();
-        back(root);
+        back(root, true);
       });
       root.__omegaUIV2Bound = true;
     }
@@ -436,7 +668,12 @@
         governmentView:item.governmentView === 'all-ministries' ? 'all-ministries' : 'executive-ministry'
       };
     }) : [];
+    if (root.__omegaUIV2State) invalidatePendingRender(root.__omegaUIV2State);
     root.__omegaUIV2State = {
+      shellMounted:false,
+      navigationGeneration:0,
+      pendingFrames:[],
+      navigationPending:false,
       route:initialRoute,
       ministryId:options.initialMinistryId ? String(options.initialMinistryId) : null,
       section:options.initialSection || 'dashboard',
@@ -450,6 +687,7 @@
   function unmount(root) {
     if (typeof root === 'string') root = g.document && g.document.querySelector(root);
     if (!root || !root.__omegaUIV2State) return { ok:false, code:'UI_V2_NOT_MOUNTED' };
+    invalidatePendingRender(root.__omegaUIV2State);
     root.innerHTML = '';
     delete root.__omegaUIV2State;
     root.classList.remove('omega-v2-app-root');

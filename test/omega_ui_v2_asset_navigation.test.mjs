@@ -52,6 +52,7 @@ test("every image referenced by the canonical 18-ministry visual registry exists
 
 test("More command cards use the uploaded local imagery and every action has a delegated handler", () => {
   const app = read("omega_ui_v2/app.js");
+  const integration = read("omega_ui_v2/integration.js");
   const html = read("index.html");
   const css = read("omega_ui_v2/atlas-command-polish.css");
   const requiredUploadedAssets = [
@@ -73,9 +74,11 @@ test("More command cards use the uploaded local imagery and every action has a d
   assert.ok(app.includes("target.closest('[data-omega-v2-more-ministry]')"), "ministry buttons must have a delegated click handler");
   assert.ok(app.includes("target.closest('[data-omega-v2-back]')"), "Back must be actionable");
   assert.ok(app.includes("target.closest('[data-omega-v2-exit]')"), "Exit must be actionable");
-  assert.ok(app.includes("function navigate(root, route)"));
-  assert.ok(app.includes("function back(root)"));
-  assert.ok(app.includes("function exitToMap(root)"));
+  assert.ok(app.includes("function navigate(root, route, deferRender)"));
+  assert.ok(app.includes("function back(root, deferRender)"));
+  assert.ok(app.includes("function exitToMap(root, deferAction)"));
+  assert.ok(integration.includes("function prepareCloseToWorldMap()"), "the cabinet layer state must flip immediately before heavy exit cleanup");
+  assert.ok(integration.includes("onPrepareBackToMap:prepareCloseToWorldMap"), "UI v2 must wire synchronous map-exit preparation");
 
   const baseCssIndex = html.indexOf('href="omega_ui_v2/omega-ui-v2.css"');
   const refreshCssIndex = html.indexOf('href="omega_ui_v2/ministry-visual-refresh.css"');
@@ -86,7 +89,7 @@ test("More command cards use the uploaded local imagery and every action has a d
     "factory and Resource Ministry overrides must load after the existing UI styles");
   const sw = read("omega-offline-map-sw.js");
   const iconManifest = json("assets/omega-industrial-icons-v1/manifest.json");
-  assert.match(sw, /omega-offline-atlas-shell-v52/);
+  assert.match(sw, /omega-offline-atlas-shell-v53/);
   assert.match(sw, /resource-ministry-premium\.css/);
   assert.ok(html.includes("omega_ui_v2/resource-ministry-legacy-bridge.js"), "Resource Ministry handoff must be loaded by the application shell");
   assert.ok(sw.includes("omega_ui_v2/resource-ministry-legacy-bridge.js"), "Resource Ministry handoff must be cached offline");

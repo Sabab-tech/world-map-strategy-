@@ -312,6 +312,15 @@
       }).join('') + '</select></label>';
   }
 
+  function scheduleRender(root, options, label) {
+    options = options || {};
+    var scheduler = options.onScheduleRender;
+    if (typeof scheduler === 'function') {
+      return scheduler(function () { return render(root, options); }, label || 'Updating this section', root);
+    }
+    return render(root, options);
+  }
+
   function render(root, options) {
     options = options || {};
     if (!root || typeof root !== 'object') return { ok:false, code:'RESOURCE_ROOT_REQUIRED' };
@@ -797,7 +806,7 @@
           // Country browsing changes only this view. All mutations remain player-country guarded.
           root.__omegaV2ResourceNotice = '';
           root.__omegaV2ResourceSelectedCountryId = viewedCountry;
-          render(root, Object.assign({}, prior, { countryId:viewedCountry, tab:root.__omegaV2ResourceTab || 'dashboard' }));
+          scheduleRender(root, Object.assign({}, prior, { countryId:viewedCountry, tab:root.__omegaV2ResourceTab || 'dashboard' }));
         }
       });
       root.addEventListener('click', function (event) {
@@ -806,13 +815,13 @@
         var tab = target.closest('[data-omega-v2-resource-tab]');
         if (tab && root.contains(tab)) {
           root.__omegaV2ResourceTab = tab.getAttribute('data-omega-v2-resource-tab') || 'dashboard';
-          render(root, Object.assign({}, root.__omegaV2ResourceOptions || {}, { tab:root.__omegaV2ResourceTab }));
+          scheduleRender(root, Object.assign({}, root.__omegaV2ResourceOptions || {}, { tab:root.__omegaV2ResourceTab }));
           return;
         }
         var selectSite = target.closest('[data-omega-v2-select-site]');
         if (selectSite && root.contains(selectSite)) {
           root.__omegaV2SelectedMineId = selectSite.getAttribute('data-omega-v2-select-site') || '';
-          render(root, Object.assign({}, root.__omegaV2ResourceOptions || {}, { tab:root.__omegaV2ResourceTab || 'mines' }));
+          scheduleRender(root, Object.assign({}, root.__omegaV2ResourceOptions || {}, { tab:root.__omegaV2ResourceTab || 'mines' }));
           return;
         }
         var actionButton = target.closest('[data-omega-v2-mine-action]');
@@ -821,7 +830,7 @@
           var id = actionButton.getAttribute('data-site-id') || '';
           if (!canOperate) {
             root.__omegaV2ResourceNotice = 'Operations are available only for the active player country.';
-            render(root, Object.assign({}, root.__omegaV2ResourceOptions || {}, { tab:'mines' }));
+            scheduleRender(root, Object.assign({}, root.__omegaV2ResourceOptions || {}, { tab:'mines' }));
             return;
           }
           if (action === 'build' || action === 'extract') {
@@ -830,7 +839,7 @@
               mineUi.open('mines', countryKey, id, action);
             } else {
               root.__omegaV2ResourceNotice = 'Mine operations are not available right now.';
-              render(root, Object.assign({}, root.__omegaV2ResourceOptions || {}, { tab:'mines' }));
+              scheduleRender(root, Object.assign({}, root.__omegaV2ResourceOptions || {}, { tab:'mines' }));
             }
             return;
           }
@@ -850,7 +859,7 @@
                 root.__omegaV2ResourceNotice = 'Mine could not be stopped. No stock was deleted.';
               }
             }
-            render(root, Object.assign({}, root.__omegaV2ResourceOptions || {}, { tab:'mines' }));
+            scheduleRender(root, Object.assign({}, root.__omegaV2ResourceOptions || {}, { tab:'mines' }));
             return;
           }
         }

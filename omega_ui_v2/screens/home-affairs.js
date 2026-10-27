@@ -190,6 +190,15 @@
       (rows.length ? '<div class="omega-v2-table-wrap omega-v2-laws-table-wrap"><table><thead><tr><th scope="col">Law / Act</th><th scope="col">Section / Article</th><th scope="col">Title &amp; provision</th><th scope="col">Status</th><th scope="col">Source</th></tr></thead><tbody>' + body + '</tbody></table></div>' : '<div class="omega-v2-empty" role="status">No Home Affairs laws or section text are registered for ' + esc(country || 'the selected country') + '. The legal register is empty or unavailable; no act, article or punishment has been invented.</div>') +
       '<p class="omega-v2-source">Authoritative legal display requires jurisdiction, current version and a registered source. This view never substitutes fictional provisions for missing legal records.</p></section>';
   }
+  function scheduleRender(root, options, label) {
+    options = options || {};
+    var scheduler = options.onScheduleRender;
+    if (typeof scheduler === 'function') {
+      return scheduler(function () { return render(root, options); }, label || 'Updating this section', root);
+    }
+    return render(root, options);
+  }
+
   function render(root, options) {
     options = options || {};
     if (!root) return { ok:false, code:'HOME_AFFAIRS_ROOT_REQUIRED' };
@@ -224,7 +233,7 @@
         var tab = target.closest('[data-omega-v2-home-tab]');
         if (tab && root.contains(tab)) {
           root.__omegaV2HomeTab = tab.getAttribute('data-omega-v2-home-tab');
-          render(root, Object.assign({}, root.__omegaV2HomeOptions || {}, { tab:root.__omegaV2HomeTab }));
+          scheduleRender(root, Object.assign({}, root.__omegaV2HomeOptions || {}, { tab:root.__omegaV2HomeTab }));
           return;
         }
         var action = target.closest('[data-omega-v2-action]');
@@ -237,7 +246,7 @@
           var estimate = estimateRecruitment(amount, countryId(currentOptions));
           if (!estimate.ok) {
             root.__omegaV2RecruitOutcome = 'Recruitment blocked: ' + (estimate.code || estimate.reason || 'QUOTE_UNAVAILABLE') + '. No recruitment was committed.';
-            render(root, Object.assign({}, currentOptions, { tab:'personnel' }));
+            scheduleRender(root, Object.assign({}, currentOptions, { tab:'personnel' }));
             return;
           }
           var engineNow = engine();
@@ -246,7 +255,7 @@
           catch (error) { result = { ok:false, code:'RECRUITMENT_RUNTIME_EXCEPTION', message:String(error && error.message || error) }; }
           if (result && result.ok) root.__omegaV2RecruitOutcome = 'Recruitment accepted by the canonical runtime for ' + fmt(amount) + ' officer(s). Recorded cost: ' + money(result.upfrontCostUsd !== undefined ? result.upfrontCostUsd : result.costUsd !== undefined ? result.costUsd : result.cost) + '.';
           else root.__omegaV2RecruitOutcome = 'Recruitment not executed: ' + String(result && (result.message || result.code || result.reason) || 'RUNTIME_REJECTED') + '.';
-          render(root, Object.assign({}, currentOptions, { tab:'personnel' }));
+          scheduleRender(root, Object.assign({}, currentOptions, { tab:'personnel' }));
         }
       });
       root.addEventListener('input', function (event) {

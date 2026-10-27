@@ -104,6 +104,15 @@
       '<p class="omega-v2-card-meta">This ministry is displayed inside UI v2. Legacy screen navigation is disconnected; only actions implemented in the current screen are enabled.</p>' +
       '<div class="omega-v2-status" data-state="attention">V2 CONTROLS ONLY</div></article>';
   }
+  function scheduleRender(root, options, label) {
+    options = options || {};
+    var scheduler = options.onScheduleRender;
+    if (typeof scheduler === 'function') {
+      return scheduler(function () { return render(root, options); }, label || 'Updating this section', root);
+    }
+    return render(root, options);
+  }
+
   function render(root, options) {
     options = options || {};
     if (!root) return { ok:false, code:'MINISTRY_DETAIL_ROOT_REQUIRED' };
@@ -152,7 +161,7 @@
         var tab = target.closest('[data-omega-v2-ministry-section]');
         if (tab && root.contains(tab)) {
           var current = root.__omegaV2MinistryDetailOptions || {};
-          render(root, Object.assign({}, current, { section:tab.getAttribute('data-omega-v2-ministry-section') }));
+          scheduleRender(root, Object.assign({}, current, { section:tab.getAttribute('data-omega-v2-ministry-section') }));
           return;
         }
         var route = target.closest('[data-omega-v2-detail-navigate]');

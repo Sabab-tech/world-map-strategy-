@@ -778,6 +778,15 @@
       '<button type="button" class="omega-v2-factory-button fp-project-cancel" data-omega-v2-factory-project-cancel>Cancel</button></div></form></section></div>';
   }
 
+  function scheduleRender(root, options, label) {
+    options = options || {};
+    var scheduler = options.onScheduleRender;
+    if (typeof scheduler === 'function') {
+      return scheduler(function () { return render(root, options); }, label || 'Updating this section', root);
+    }
+    return render(root, options);
+  }
+
   function render(root, options) {
     options = options || {};
     if (!root) return { ok: false, code: 'INDUSTRY_ROOT_REQUIRED' };
@@ -919,14 +928,14 @@
           root.__omegaV2IndustryFactoryView = factoryView === 'types' ? 'assets' : 'types';
           root.__omegaV2IndustryFactoryViewExplicit = true;
           root.__omegaV2IndustryNotice = '';
-          render(root, Object.assign({}, root.__omegaV2IndustryOptions || {}, { tab: 'factories', factoryView: root.__omegaV2IndustryFactoryView }));
+          scheduleRender(root, Object.assign({}, root.__omegaV2IndustryOptions || {}, { tab: 'factories', factoryView: root.__omegaV2IndustryFactoryView }));
           return;
         }
         var cancelProject = target.closest('[data-omega-v2-factory-project-cancel]');
         if (cancelProject && root.contains(cancelProject)) {
           root.__omegaV2IndustryBuildFactoryType = '';
           root.__omegaV2IndustryNotice = '';
-          render(root, Object.assign({}, root.__omegaV2IndustryOptions || {}, { tab: root.__omegaV2IndustryTab || 'factories' }));
+          scheduleRender(root, Object.assign({}, root.__omegaV2IndustryOptions || {}, { tab: root.__omegaV2IndustryTab || 'factories' }));
           return;
         }
 
@@ -934,7 +943,7 @@
         if (factorySelect && root.contains(factorySelect)) {
           root.__omegaV2SelectedFactoryId = factorySelect.getAttribute('data-omega-v2-factory-select') || '';
           root.__omegaV2IndustryNotice = '';
-          render(root, Object.assign({}, root.__omegaV2IndustryOptions || {}, { tab: 'factories' }));
+          scheduleRender(root, Object.assign({}, root.__omegaV2IndustryOptions || {}, { tab: 'factories' }));
           return;
         }
 
@@ -943,12 +952,12 @@
           var selectedFactoryType = normalizeFactoryType(buildFactory.getAttribute('data-factory-type') || '', safeCatalog() || {});
           if (!selectedFactoryType) {
             root.__omegaV2IndustryNotice = 'This factory type is not registered in the canonical catalogue.';
-            render(root, Object.assign({}, root.__omegaV2IndustryOptions || {}, { tab: 'factories' }));
+            scheduleRender(root, Object.assign({}, root.__omegaV2IndustryOptions || {}, { tab: 'factories' }));
             return;
           }
           root.__omegaV2IndustryBuildFactoryType = selectedFactoryType;
           root.__omegaV2IndustryNotice = '';
-          render(root, Object.assign({}, root.__omegaV2IndustryOptions || {}, { tab: 'factories' }));
+          scheduleRender(root, Object.assign({}, root.__omegaV2IndustryOptions || {}, { tab: 'factories' }));
           return;
         }
 
@@ -959,7 +968,7 @@
           var industrialNetwork = safeNetwork();
           if (!industrialNetwork || typeof industrialNetwork.decommissionFactory !== 'function') {
             root.__omegaV2IndustryNotice = 'Factory decommissioning is unavailable; no game state was changed.';
-            render(root, Object.assign({}, root.__omegaV2IndustryOptions || {}, { tab: 'factories' }));
+            scheduleRender(root, Object.assign({}, root.__omegaV2IndustryOptions || {}, { tab: 'factories' }));
             return;
           }
           var confirmed = typeof g.confirm === 'function' && g.confirm('Decommission this factory? Active production will stop. Historical records will be preserved.');
@@ -972,13 +981,13 @@
             ? 'Factory decommissioned. Production stopped; history preserved.'
             : 'Factory unchanged. ' + String(decommissionResult && (decommissionResult.reason || decommissionResult.status) || 'Runtime rejected the request').replace(/_/g, ' ').toLowerCase() + '.';
           root.__omegaV2SelectedFactoryId = '';
-          render(root, Object.assign({}, root.__omegaV2IndustryOptions || {}, { tab: 'factories' }));
+          scheduleRender(root, Object.assign({}, root.__omegaV2IndustryOptions || {}, { tab: 'factories' }));
           return;
         }
         var tab = target.closest('[data-omega-v2-industry-tab]');
         if (tab && root.contains(tab)) {
           root.__omegaV2IndustryTab = tab.getAttribute('data-omega-v2-industry-tab');
-          render(root, Object.assign({}, root.__omegaV2IndustryOptions || {}, { tab: root.__omegaV2IndustryTab }));
+          scheduleRender(root, Object.assign({}, root.__omegaV2IndustryOptions || {}, { tab: root.__omegaV2IndustryTab }));
           return;
         }
         var commandAction = target.closest('[data-omega-v2-industry-action]');
@@ -1002,12 +1011,12 @@
           }
           if (actionName === 'factory-projects') {
             root.__omegaV2IndustryTab = 'projects';
-            render(root, Object.assign({}, root.__omegaV2IndustryOptions || {}, { tab: 'projects' }));
+            scheduleRender(root, Object.assign({}, root.__omegaV2IndustryOptions || {}, { tab: 'projects' }));
             return;
           }
           if (actionName === 'research') {
             root.__omegaV2IndustryTab = 'research';
-            render(root, Object.assign({}, root.__omegaV2IndustryOptions || {}, { tab: 'research' }));
+            scheduleRender(root, Object.assign({}, root.__omegaV2IndustryOptions || {}, { tab: 'research' }));
             return;
           }
         }
@@ -1040,18 +1049,18 @@
         if (!type || type !== modalType) {
           root.__omegaV2IndustryNotice = 'Construction cancelled: the selected factory type changed.';
           root.__omegaV2IndustryBuildFactoryType = '';
-          render(root, Object.assign({}, root.__omegaV2IndustryOptions || {}, { tab: 'factories' }));
+          scheduleRender(root, Object.assign({}, root.__omegaV2IndustryOptions || {}, { tab: 'factories' }));
           return;
         }
         if (!activeModel.canOperateSelectedCountry) {
           root.__omegaV2IndustryNotice = 'Construction blocked: only the active player country may start factory projects.';
-          render(root, Object.assign({}, root.__omegaV2IndustryOptions || {}, { tab: 'factories' }));
+          scheduleRender(root, Object.assign({}, root.__omegaV2IndustryOptions || {}, { tab: 'factories' }));
           return;
         }
         var network = safeNetwork();
         if (!network || typeof network.startFactoryProject !== 'function') {
           root.__omegaV2IndustryNotice = 'Factory construction runtime is unavailable. No game state was changed.';
-          render(root, Object.assign({}, root.__omegaV2IndustryOptions || {}, { tab: 'factories' }));
+          scheduleRender(root, Object.assign({}, root.__omegaV2IndustryOptions || {}, { tab: 'factories' }));
           return;
         }
         var request = {
@@ -1076,15 +1085,15 @@
             root.__omegaV2IndustryBuildFactoryType = '';
             root.__omegaV2IndustryFactoryView = 'assets';
             root.__omegaV2IndustryFactoryViewExplicit = true;
-            render(root, Object.assign({}, root.__omegaV2IndustryOptions || {}, { tab: 'projects', factoryView: 'assets' }));
+            scheduleRender(root, Object.assign({}, root.__omegaV2IndustryOptions || {}, { tab: 'projects', factoryView: 'assets' }));
           } else {
             var reason = String(result && (result.reason || result.status) || 'FACTORY_PROJECT_NOT_STARTED').replace(/_/g, ' ').toLowerCase();
             root.__omegaV2IndustryNotice = 'Factory project not started. ' + reason + '. The runtime did not confirm construction.';
-            render(root, Object.assign({}, root.__omegaV2IndustryOptions || {}, { tab: 'factories' }));
+            scheduleRender(root, Object.assign({}, root.__omegaV2IndustryOptions || {}, { tab: 'factories' }));
           }
         } catch (error) {
           root.__omegaV2IndustryNotice = 'Factory construction failed safely: ' + String(error && error.message || error || 'runtime error') + '.';
-          render(root, Object.assign({}, root.__omegaV2IndustryOptions || {}, { tab: 'factories' }));
+          scheduleRender(root, Object.assign({}, root.__omegaV2IndustryOptions || {}, { tab: 'factories' }));
         }
       });
       root.addEventListener('keydown', function (event) {
@@ -1093,7 +1102,7 @@
         root.__omegaV2IndustryNotice = '';
         if (typeof event.preventDefault === 'function') event.preventDefault();
         if (typeof event.stopPropagation === 'function') event.stopPropagation();
-        render(root, Object.assign({}, root.__omegaV2IndustryOptions || {}, { tab: root.__omegaV2IndustryTab || 'factories' }));
+        scheduleRender(root, Object.assign({}, root.__omegaV2IndustryOptions || {}, { tab: root.__omegaV2IndustryTab || 'factories' }));
       });
       root.__omegaV2IndustryBound = true;
     }
@@ -1105,7 +1114,7 @@
        'OMEGA_FACTORY_CAPACITY_CHANGED'].forEach(function (eventName) {
         g.addEventListener(eventName, function () {
           if (!root.querySelector || !root.querySelector('.omega-v2-industry-command, .omega-v2-factory-command')) return;
-          render(root, Object.assign({}, root.__omegaV2IndustryOptions || {}, { tab: root.__omegaV2IndustryTab || 'factories' }));
+          scheduleRender(root, Object.assign({}, root.__omegaV2IndustryOptions || {}, { tab: root.__omegaV2IndustryTab || 'factories' }));
         });
       });
       root.__omegaV2IndustryEventsBound = true;

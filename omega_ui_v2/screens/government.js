@@ -423,6 +423,15 @@
     var visible = root.querySelectorAll('[data-omega-v2-ministry-card]:not([hidden])').length;
     if (countNode) countNode.textContent = String(visible);
   }
+  function scheduleRender(root, options, label) {
+    options = options || {};
+    var scheduler = options.onScheduleRender;
+    if (typeof scheduler === 'function') {
+      return scheduler(function () { return render(root, options); }, label || 'Updating this section', root);
+    }
+    return render(root, options);
+  }
+
   function render(root, options) {
     options = options || {};
     if (!root) return { ok: false, code: 'GOVERNMENT_ROOT_REQUIRED' };
@@ -467,19 +476,19 @@
           root.__omegaV2GovernmentView = tab.getAttribute('data-omega-v2-government-view');
           var activeOptions = root.__omegaV2GovernmentOptions || {};
           if (typeof activeOptions.onViewChange === 'function') activeOptions.onViewChange(root.__omegaV2GovernmentView);
-          render(root, Object.assign({}, activeOptions, { view: root.__omegaV2GovernmentView }));
+          scheduleRender(root, Object.assign({}, activeOptions, { view: root.__omegaV2GovernmentView }));
           return;
         }
         var recruit = target.closest('[data-omega-v2-minister-recruitment]');
         if (recruit && root.contains(recruit)) {
           root.__omegaV2RecruitingMinistry = recruit.getAttribute('data-omega-v2-minister-recruitment');
-          render(root, Object.assign({}, root.__omegaV2GovernmentOptions || {}, { view:'all-ministries' }));
+          scheduleRender(root, Object.assign({}, root.__omegaV2GovernmentOptions || {}, { view:'all-ministries' }));
           return;
         }
         var cancelRecruitment = target.closest('[data-omega-v2-cancel-minister-recruitment]');
         if (cancelRecruitment && root.contains(cancelRecruitment)) {
           root.__omegaV2RecruitingMinistry = null;
-          render(root, Object.assign({}, root.__omegaV2GovernmentOptions || {}, { view:'all-ministries' }));
+          scheduleRender(root, Object.assign({}, root.__omegaV2GovernmentOptions || {}, { view:'all-ministries' }));
           return;
         }
         var confirmRecruitment = target.closest('[data-omega-v2-confirm-minister]');
@@ -502,7 +511,7 @@
             : engine && typeof engine.recruit === 'function' ? engine.recruit(recruitingId, candidate, country) : Promise.reject(new Error('MINISTER_APPOINTMENT_RUNTIME_UNAVAILABLE'));
           Promise.resolve(appointment).then(function () {
             root.__omegaV2RecruitingMinistry = null;
-            render(root, Object.assign({}, activeOptions, { view:'all-ministries' }));
+            scheduleRender(root, Object.assign({}, activeOptions, { view:'all-ministries' }));
           }).catch(function (error) {
             if (status) status.textContent = 'Appointment rejected: ' + String(error && error.message || error || 'RUNTIME_REJECTED') + '. No success was reported.';
             confirmRecruitment.disabled = false;
