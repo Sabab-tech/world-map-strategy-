@@ -311,6 +311,18 @@
         if(i>=0)data.sites[i]=clone(canonicalSiteCatalogMap[siteId]);
       }
     }
+    // Keep the exploration ledger aligned with the authoritative player mine-commission event.
+    // This is a simulation operation state, not a claim that the real-world site is active.
+    const resourceRow=state()?.resource?.[country];
+    if(resourceRow&&String(p.status||'').toUpperCase()==='OPERATIONAL'&&p.mineId){
+      resourceRow.commissionedSites=Array.isArray(resourceRow.commissionedSites)?resourceRow.commissionedSites:[];
+      if(!resourceRow.commissionedSites.some(x=>String(x?.siteId||'')===siteId&&String(x?.status||'').toUpperCase()==='COMMISSIONED')){
+        resourceRow.commissionedSites.push({siteId,resourceId:p.resourceId||existing?.identity?.resourceTypeId||null,
+          mineId:p.mineId,projectId:p.projectId||null,status:'COMMISSIONED',commissionedTurn:turn(),
+          authority:'SIMULATED_PLAYER_MINE_ASSET'});
+        resourceRow.commissionedSites=resourceRow.commissionedSites.slice(-2048);
+      }
+    }
     try{mineSiteReferenceCache?.clear?.();siteExecutionRowsCache?.clear?.();siteExecutionRowsCacheTurn=-1;}catch(_){}
     let hydration=null;
     try{hydration=hydrateCountry(country);}catch(error){hydration={status:'FAILED',reason:String(error?.message||error)};}
@@ -1704,8 +1716,14 @@ function batchFromExtraction(x,record){
         /(^|_)(ACTIVE_EXTRACTION|ACTIVE_PRODUCING|ACTIVE|DEPLETING|RESERVE_DEPLETING|OPERATING|RUNNING|PRODUCING)(_|$)/.test(status);
       // Negative operational evidence wins. In particular HISTORICAL_INACTIVE must not match
       // a plain substring search for ACTIVE.
-      const operational=!isExplicitlyNonOperational(operationalStatus)&&!isExplicitlyNonOperational(sourceStatus)&&
-        (isOperationalStatus(operationalStatus)||isOperationalStatus(sourceStatus));
+      // A commissioned in-game mine has gameplay authorization independently of the
+      // preserved real-world operational status. Never rewrite the source evidence.
+      const commissionedMineAsset=(Array.isArray(state()?.resource?.[c]?.mineAssets)?state().resource[c].mineAssets:[])
+        .find(asset=>String(asset?.siteId||'')===String(policySiteId||x.siteReferenceKey||'')&&
+          String(asset?.status||'').toUpperCase()==='OPERATIONAL');
+      const operational=!!commissionedMineAsset||
+        (!isExplicitlyNonOperational(operationalStatus)&&!isExplicitlyNonOperational(sourceStatus)&&
+        (isOperationalStatus(operationalStatus)||isOperationalStatus(sourceStatus)));
       if(!operational){
         const reason={occurrenceKey:x.occurrenceKey,resourceId:x.resourceId,reason:'MINE_NOT_OPERATIONAL',operationalStatus:operationalStatus||'UNKNOWN',sourceStatus:sourceStatus||null};
         blocked.push(reason);
@@ -2984,7 +3002,11 @@ function batchFromExtraction(x,record){
       productionAuthority:'SIMULATED',requiresFactoryBinding:true,requiresSiteSpecificRoute:true};
     canonicalSiteCatalogMap[siteId]=row;
     const data=g.OmegaResourceSiteCanonicalCatalogData||g.Omega?.ResourceSiteCanonicalCatalogData;
-    if(data&&Array.isArray(data.sites)&&!data.sites.some(x=>String(x?.siteId||'')===siteId))data.sites.push(clone(row));
+    if(data&&Array.isArray(data.sites)&&!data.sites.some(x=>String(x?.siteId||'')===siteId)){
+      data.sites.push(clone(row));
+      data.totalSiteCount=data.sites.length;
+      data.dynamicSimulationSiteCount=Math.max(0,n(data.dynamicSimulationSiteCount)||0)+1;
+    }
     mineSiteReferenceCache.clear();siteExecutionRowsCache.clear();siteExecutionRowsCacheTurn=-1;
     return{status:'REGISTERED',siteId,countryId,resourceId,identityAuthority:'CANONICAL_SITE_REGISTRY',
       quantityAuthority:'SIMULATED',productionAuthority:'SIMULATED'};
