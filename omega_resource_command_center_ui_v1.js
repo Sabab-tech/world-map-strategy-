@@ -1056,11 +1056,13 @@
     }
     const term = Number.isFinite(Number(policy.termDays)) ? Number(policy.termDays) : 100;
     const elapsed = Number.isFinite(Number(policy.elapsedGameDays)) ? Number(policy.elapsedGameDays) : 0;
-    const remaining = Number.isFinite(Number(policy.remainingGameDays)) ? Math.max(0, Number(policy.remainingGameDays)) : null;
+    const remaining = Number.isFinite(Number(policy.remainingGameDays))
+      ? Math.max(0, Number(policy.remainingGameDays))
+      : (status === 'NOT_APPROVED' ? term : null);
     const body = '<div class="omega-rescc-grid2">' +
-      kv('Authorization term', term + ' game-days') +
-      kv('Elapsed', elapsed + ' game-days') +
-      kv('Remaining', remaining === null ? '—' : remaining + ' game-days') +
+      kv('Authorization term', term, 'game-days') +
+      kv('Elapsed', elapsed, 'game-days') +
+      kv('Remaining', remaining === null ? '—' : remaining, remaining === null ? '' : 'game-days') +
       kv('Automatic renewal', policy.automaticRenewal === true ? 'Enabled' : 'Disabled') +
       '</div><p class="omega-rescc-note">' +
       (status === 'ACTIVE'
