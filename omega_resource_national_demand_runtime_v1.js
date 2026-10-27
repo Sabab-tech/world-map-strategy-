@@ -275,6 +275,79 @@
     });
     return totals;
   }
+
+  function factoryInputUnitBridge(sourceUnit, targetUnit) {
+    var source = String(sourceUnit || '').trim(), target = String(targetUnit || '').trim();
+    if (!source || !target) return null;
+    if (token(source) === token(target)) return { factor: 1, sourceUnit: source, targetUnit: target };
+    var catalog = g.OmegaResourceIndustrialCatalogData ||
+      (g.Omega && g.Omega.ResourceIndustrialCatalogData) || null;
+    var normalization = object(catalog && catalog.factoryCatalogPolicy &&
+      catalog.factoryCatalogPolicy.unitNormalization) || {};
+    var sourceUnits = object(normalization.sourceUnits) || {};
+    var row = sourceUnits[source.toUpperCase()] || sourceUnits[token(source).toUpperCase()] || null;
+    var factor = finite(row && row.factor);
+    if (!row || row.simulationOnly !== true || token(row.targetUnit) !== token(target) ||
+        factor === null || factor <= 0) return null;
+    return { factor: factor, sourceUnit: source, targetUnit: target,
+      authority: row.authority || normalization.authority || 'SIMULATION_ONLY_UNIT_NORMALIZATION',
+      simulationOnly: true };
+  }
+
+  function activeFactoryInputDailyRates(factoryAssets, resource) {
+    var rates = {}, sources = {}, units = object(resource && resource.inventoryUnits) || {};
+    var stockUnitByRateUnit = object(rules().stockUnitByRateUnit) || {};
+    var excluded = ['CLOSED', 'DECOMMISSIONED', 'BLOCKED', 'TECHNOLOGY_LOCKED',
+      'UNDER_CONSTRUCTION', 'MAINTENANCE', 'CANCELLED', 'CANCELED', 'DESTROYED',
+      'OFFLINE', 'PAUSED', 'SUSPENDED', 'FAILED'];
+    (Array.isArray(factoryAssets) ? factoryAssets : []).forEach(function (asset) {
+      if (!asset || excluded.indexOf(id(asset.status)) >= 0) return;
+      var inputs = object(asset.inputCoefficients) || object(asset.inputs) || {};
+      if (!Object.keys(inputs).length) return;
+      var capacity = positive(asset.capacityPerDay) || positive(asset.ratedCapacityPerDay) ||
+        positive(asset.productionCapacity) || positive(asset.capacity);
+      if (capacity === null) return;
+      var cycleDays = positive(asset.cycleDays) || 1;
+      var assetUnitMap = object(asset.inputUnits) || {};
+      Object.keys(inputs).forEach(function (resourceId) {
+        var coefficient = finite(inputs[resourceId]);
+        if (coefficient === null || coefficient <= 0) return;
+        var inventoryKey = resourceKey(units, resourceId);
+        var recordedStockUnit = inventoryKey === null ? null : String(units[inventoryKey] || '').trim() || null;
+        var profile = profileFor(resourceId) || {};
+        var expectedStockUnit = stockUnitByRateUnit[String(profile.unit || '').trim()] || null;
+        var sourceUnit = recordedStockUnit || expectedStockUnit;
+        var assetUnitKey = resourceKey(assetUnitMap, resourceId);
+        var targetUnit = (assetUnitKey === null ? null : String(assetUnitMap[assetUnitKey] || '').trim()) ||
+          String(asset.inputUnit || asset.recipeInputUnit || '').trim() || null;
+
+        if (!sourceUnit) sourceUnit = targetUnit;
+        if (!sourceUnit || !targetUnit) return;
+        var bridge = factoryInputUnitBridge(sourceUnit, targetUnit);
+        if (!bridge) return;
+
+        // Recipe coefficients are expressed in the factory's declared input unit.
+        // Convert back to the resource's stock unit so demand coverage uses a
+        // compatible quantity. Simulation-only bridges remain explicitly identified.
+        var dailyRate = capacity * coefficient / cycleDays / bridge.factor;
+        if (!(dailyRate > 0) || !Number.isFinite(dailyRate)) return;
+        var key = resourceKey(rates, resourceId) || token(resourceId);
+        rates[key] = (rates[key] || 0) + dailyRate;
+        if (!sources[key]) sources[key] = [];
+        sources[key].push({
+          factoryId: String(asset.id || asset.factoryId || asset.factoryType || 'UNNAMED_FACTORY'),
+          resourceId: token(resourceId),
+          quantityPerDay: dailyRate,
+          sourceUnit: sourceUnit,
+          factoryInputUnit: targetUnit,
+          unitBridgeAuthority: bridge.authority || 'IDENTICAL_DECLARED_UNIT',
+          simulationOnlyUnitBridge: bridge.simulationOnly === true,
+          source: 'ACTIVE_FACTORY_RECIPE_CAPACITY'
+        });
+      });
+    });
+    return { rates: rates, sources: sources };
+  }
   function protectedStock(resource, resourceId) {
     var strategic = object(resource.strategicReserve) || {};
     var map = strategic.availableByResource || strategic.protectedByResource || strategic.minimumByResource ||
