@@ -919,6 +919,8 @@
           var queued = routed && routed.status === 'READY_TO_QUEUE' && !!routed.command;
           return {
             resourceId: entry.row.resourceId, decisionId: decisionId, quantity: entry.quantity,
+            supplyWindowId: playerSupplyWindowActive ? lifeline.policyId : null,
+            supplyWindowTermDays: playerSupplyWindowActive ? lifeline.termDays : null,
             status: queued ? 'QUEUED' : (routed && routed.status || 'WAITING_FOR_EVIDENCE'),
             selectedAction: routed && routed.route && routed.route.selectedAction || null,
             reason: queued ? null : (routed && routed.route && (routed.route.reason || routed.route.status) || 'AUTONOMY_DID_NOT_QUEUE'),
