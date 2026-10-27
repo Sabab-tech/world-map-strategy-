@@ -680,7 +680,7 @@
       return { unit: String(existingUnits[existingKey]), source: 'EXISTING_INVENTORY_UNIT' };
     }
     var rateUnit = String(profile && profile.unit || '');
-    var table = data.policy.openingStock.rateUnitToStockUnit || {};
+    var table = data.economyRules.demand.stockUnitByRateUnit || {};
     if (own(table, rateUnit) && String(table[rateUnit] || '').trim()) {
       return { unit: String(table[rateUnit]), source: 'BASELINE_RULES_UNIT_MAP' };
     }
