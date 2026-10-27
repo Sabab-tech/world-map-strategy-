@@ -192,10 +192,26 @@
   }
 
   function canonicalCountry(value){
-    const raw=String(value??'').trim(),direct=id(raw);
-    if(/^[A-Z]{3}$/i.test(raw))return{id:direct,raw:null,authority:'OMEGA_RUNTIME_ISO3_INPUT'};
+    const input=String(value??'').trim(),direct=id(input);
+    if(/^[A-Z]{3}$/i.test(input))return{id:direct,raw:null,authority:'OMEGA_RUNTIME_ISO3_INPUT'};
     const bridge=g.OmegaCanonicalIdentityRegistry||g.OmegaCountrySemanticBridge||g.Omega?.CanonicalIdentity;
-    try{const hit=bridge?.resolveCountry?.(value);if(hit?.id){const raw=clone(hit.raw||null);return{id:id(hit.id),raw,authority:'OMEGA_CANONICAL_COUNTRY_IDENTITY'};}}catch(_){}
+    try{
+      const hit=bridge?.resolveCountry?.(value);
+      if(hit?.id){
+        const raw=clone(hit.raw||null);
+        // The canonical bridge can expose a legacy ISO-2 display ID (for example
+        // BD) while the same saved policy/runtime is scoped by ISO-3 (BGD).
+        // Prefer the ISO-3 field from the exact matched canonical record when it
+        // exists; this is identity normalization only, not a new country alias.
+        const record=raw?.raw||raw?.datasets?.['countries.json']||raw?.['countries.json']||raw||{};
+        const iso3=record?.iso3||record?.iso3Code||record?.iso3_code||
+          hit?.iso3||hit?.iso3Code||hit?.iso3_code;
+        if(iso3&&/^[A-Z]{3}$/i.test(String(iso3).trim())){
+          return{id:id(iso3),raw,authority:'OMEGA_CANONICAL_COUNTRY_IDENTITY'};
+        }
+        return{id:id(hit.id),raw,authority:'OMEGA_CANONICAL_COUNTRY_IDENTITY'};
+      }
+    }catch(_){}
     return direct?{id:direct,raw:null,authority:'UNVERIFIED_INPUT'}:null;
   }
   function canonicalId(value){const hit=canonicalCountry(value);return hit?.id||id(value);}
