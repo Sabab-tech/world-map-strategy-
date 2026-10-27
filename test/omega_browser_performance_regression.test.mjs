@@ -514,3 +514,37 @@ test('world geometry loads before support datasets, shows real progress, caches 
     'resource markers must not redraw during ministry navigation');
 });
 
+
+
+test('universal action progress covers legacy controls, mining actions and resource command center; map retry reuses cached geography', () => {
+  const html = read('index.html');
+  const worker = read('omega-offline-map-sw.js');
+  const progress = read('omega_action_progress_v1.js');
+  const map = read('map-engine-2.js');
+  const mine = read('omega_resource_mine_management_v1.js');
+  const commandCenter = read('omega_resource_command_center_ui_v1.js');
+  const coreAssets = worker.slice(worker.indexOf('const CORE_ASSETS'), worker.indexOf('];', worker.indexOf('const CORE_ASSETS')));
+
+  assert.ok(html.includes('<script src="omega_action_progress_v1.js" defer></script>'),
+    'the universal action loader must be loaded by the production shell');
+  assert.match(worker, /omega-offline-atlas-shell-v55/,
+    'the offline shell cache must be invalidated for the new loader');
+  assert.ok(coreAssets.includes('"./omega_action_progress_v1.js"'),
+    'the universal action loader must work after offline relaunch');
+  assert.ok(progress.includes('setProgress:') && progress.includes('setPhase:') &&
+    progress.includes('async function run(') && progress.includes('bindGenericActionWatchers'),
+    'the shared loader must expose operation phases, measured progress and generic legacy-action coverage');
+  assert.ok(mine.includes('progress.run(title') && mine.includes('activeActionProgress.setProgress'),
+    'mine construction, extraction, factory cycles and batched country production must use shared progress');
+  assert.ok(commandCenter.includes("progress.run('Resource command · ' + label"),
+    'resource command-center actions must use the same shared loader');
+
+  assert.ok(map.includes('waitForMapRenderer(controller)') && map.includes('MAP_RENDERER_NOT_READY'),
+    'map rendering must wait for Leaflet and the map surface to become ready');
+  assert.ok(map.includes('const cachedGeometry = Game.Map.countryGeoJSON || Game.__omegaGeoJSONPendingData'),
+    'retry must reuse the downloaded GeoJSON instead of forcing the same network request again');
+  assert.ok(map.includes('handleWorldMapRenderFailure') && map.includes('Downloaded geography is retained'),
+    'map failures must identify the renderer stage and preserve cached geography');
+  assert.ok(map.includes('Country boundary chunk failed.'),
+    'asynchronous feature-render exceptions must be caught instead of silently stranding the progress bar');
+});
