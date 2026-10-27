@@ -976,8 +976,26 @@
     // the request. This avoids stale/provider alias gaps for ISO-2 legacy saves.
     const transactional=stateTransaction&&typeof stateTransaction.get==='function'
       ?stateTransaction.get('resource.demandRuntime.playerSupplyLifeline'):undefined;
-    const hit=transactional===undefined?readState(countryId,'resource.demandRuntime.playerSupplyLifeline'):{value:transactional};
-    const policy=hit&&hit.value&&typeof hit.value==='object'?hit.value:null;
+    let policy=transactional&&typeof transactional==='object'&&!Array.isArray(transactional)?transactional:null;
+    // Legacy saves may keep the country's resource bucket under ISO-2 (for example
+    // BD) while the transaction resolves its scope to ISO-3 (BGD). If the scoped
+    // transaction cannot resolve that alias, locate the existing bucket by the
+    // canonical country bridge rather than treating a valid approval as missing.
+    if(!policy){
+      const state=g.Game?.state||g.gameState||{};
+      const rows=state?.resource;
+      if(rows&&typeof rows==='object'&&!Array.isArray(rows)){
+        const wanted=canonicalId(countryId);
+        const key=Object.keys(rows).find(k=>id(k)===id(countryId)||canonicalId(k)===wanted);
+        const bucket=key===undefined?null:rows[key];
+        const candidate=bucket?.demandRuntime?.playerSupplyLifeline;
+        if(candidate&&typeof candidate==='object'&&!Array.isArray(candidate))policy=candidate;
+      }
+    }
+    if(!policy){
+      const hit=readState(countryId,'resource.demandRuntime.playerSupplyLifeline');
+      if(hit?.value&&typeof hit.value==='object'&&!Array.isArray(hit.value))policy=hit.value;
+    }
     if(!policy||String(policy.policyId||'')!==windowId){
       return{accepted:false,reason:'PLAYER_SUPPLY_WINDOW_NOT_FOUND',supplyWindowId:windowId};
     }
