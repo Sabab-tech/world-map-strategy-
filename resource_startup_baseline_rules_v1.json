@@ -69,7 +69,7 @@
     "oneProcessorPerCountryResource": true,
     "processorFactoryTypeAuthority": "resource_industrial_catalog_v1.json:processingRules",
     "downstreamCatalogAuthority": "resource_industrial_catalog_v1.json:downstreamFactoryRecipes",
-    "downstreamFactoryEligibility": "Every recipe input must have a producer from an eligible local site processor, an existing compatible asset output, or an earlier eligible catalog recipe in the same country.",
+    "downstreamFactoryEligibility": "A downstream factory may be seeded only when at least the configured minimum number and fraction of its recipe input identities have existing production sources in this country. Other recipe inputs remain explicit external dependencies and no input stock is fabricated. Newly seeded downstream factories do not count as input-output evidence for seeding another downstream factory.",
     "externalSectorInputs": "Do not fabricate agriculture, livestock, or other non-resource-sector batches; recipes that need missing external inputs remain unseeded.",
     "reserveQuantityUsedAsWarehouseStock": false,
     "factoryAssetAuthority": "SIMULATED_STARTUP_FACTORY_ASSET",
@@ -88,7 +88,12 @@
     "seedTechnologyCapabilitiesForStarterAssets": true,
     "technologyCapabilityAuthority": "SIMULATED_STARTUP_BASELINE_CAPABILITY",
     "neverSeedTechnologyOutsideSelectedStarterAssets": true,
-    "outputAuthority": "Existing catalog recipe only; startup assets receive no fabricated input batches or finished goods"
+    "outputAuthority": "Existing catalog recipe only; startup assets receive no fabricated input batches or finished goods",
+    "minimumLocallySupportedInputCount": 2,
+    "minimumLocallySupportedInputShare": 0.5,
+    "maxDownstreamAssetsPerCountry": 3,
+    "doNotCountNewDownstreamAssetsAsEvidence": true,
+    "missingInputsDoNotCreateStock": true
   },
   "simulatedUtilities": {
     "enabled": true,
