@@ -452,7 +452,7 @@ test('country borders stay visible in base map and visual overlays', () => {
   const cacheVersionMatch = worker.match(/CACHE_NAME = "omega-offline-atlas-shell-v(\d+)"/);
   const cacheVersion = Number(cacheVersionMatch?.[1] || 0);
   assert.ok(cacheVersion >= 54, 'offline Android clients must invalidate cached map lifecycle and border fixes');
-  assert.ok(map.includes('color: "#f4f8ff",\n        weight:zoom >= 8 ? 2.1 : (zoom >= 5 ? 1.7 : 1.45),\n        opacity:1,'),
+  assert.ok(map.includes('color:"#f4f8ff",\n        weight:zoom >= 8 ? 2.1 : (zoom >= 5 ? 1.7 : 1.45),\n        opacity:1,'),
     'base country polygons need opaque, high-contrast borders');
   assert.ok(map.includes('weight: currentZoom > 5.5 ? 1.7 : 1.45'),
     'zoom changes must not make country borders too thin');
