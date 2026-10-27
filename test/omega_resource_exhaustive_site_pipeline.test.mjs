@@ -2,9 +2,9 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
 // The base regression boots the authoritative resource runtime and verifies the
-// complete 503-site reference/controller registry. This test then exercises all
-// eligible sites in a batch so unrelated background residual shipments cannot
-// steal factory capacity from a site under test.
+// complete reference/controller registry. The exhaustive matrix is split into
+// deterministic country shards so every eligible site is tested without forcing
+// one CI job to serially process the entire world.
 await import('./omega_resource_endowment_runtime.test.mjs');
 
 const game=globalThis.Game;
@@ -31,6 +31,78 @@ for(const site of criticalBatch.records){
   assert.ok(Number(site.quantitative?.reserve?.quantity)>0,site.siteId+': simulation reserve missing');
   assert.ok(site.sources?.some(x=>typeof x.url==='string'&&/^https?:/.test(x.url)),
     site.siteId+': source URL evidence missing');
+}
+
+// Reserve quantities are gameplay/scenario parameters unless separately source-verified.
+// Keep this provenance boundary executable so quantity values cannot be mistaken for geological facts.
+const reserveSimulation=JSON.parse(fs.readFileSync(
+  new URL('../resource_site_reserve_simulation_v1.json',import.meta.url),'utf8'));
+assert.equal(reserveSimulation.authority,'SCENARIO_SIMULATION_DATA');
+assert.equal(reserveSimulation.records.length,reserveSimulation.siteCount,
+  'simulation reserve manifest count must match its data rows');
+assert.equal(new Set(reserveSimulation.records.map(row=>row.siteId)).size,reserveSimulation.records.length,
+  'simulation reserve rows must retain unique canonical site IDs');
+let simulatedReserveRows=0,notApplicableReserveRows=0;
+for(const row of reserveSimulation.records){
+  assert.match(String(row.siteId||''),/^SITE_[A-Z]{3}_/);
+  assert.equal(String(row.provenance?.authority||''),'SCENARIO_SIMULATION_DATA',row.siteId+': missing simulation authority');
+  assert.equal(row.provenance?.realWorldDataRequired,false,row.siteId+': reserve must not claim real-world measurement');
+  if(row.commercialExtraction===false){
+    notApplicableReserveRows++;
+    assert.equal(String(row.reserve?.status||'').toUpperCase(),'NOT_APPLICABLE',
+      row.siteId+': non-commercial placeholder must not receive an invented reserve');
+    assert.equal(row.reserve?.quantity,null,row.siteId+': non-commercial placeholder quantity must remain null');
+    assert.equal(row.reserve?.unit,null,row.siteId+': non-commercial placeholder unit must remain null');
+    continue;
+  }
+  simulatedReserveRows++;
+  assert.equal(String(row.reserve?.status||'').toUpperCase(),'SIMULATED',row.siteId+': reserve must stay simulation-only');
+  assert.ok(Number(row.reserve?.quantity)>0&&String(row.reserve?.unit||'').trim(),
+    row.siteId+': simulated reserve requires a positive quantity and explicit unit');
+}
+assert.equal(simulatedReserveRows,reserveSimulation.commercialSiteCount,
+  'only the catalogued commercial sites may carry simulated reserves');
+assert.equal(notApplicableReserveRows,reserveSimulation.notApplicableSiteCount,
+  'the four non-commercial placeholder rows must remain NOT_APPLICABLE');
+
+// The additive 305-site quantity-completion dataset is intentionally optional until its own
+// change lands on this branch. Once present, assert its complete scenario-only provenance contract.
+const completionPath=new URL('../resource_site_quantity_completion_v1.json',import.meta.url);
+if(fs.existsSync(completionPath)){
+  const completion=JSON.parse(fs.readFileSync(completionPath,'utf8'));
+  const completionRows=Array.isArray(completion.records)?completion.records:[];
+  assert.equal(completion.datasetId,'OMEGA_RESOURCE_SITE_QUANTITY_COMPLETION_V1');
+  assert.equal(completion.authority,'SIMULATED_GAMEPLAY_COMPLETION_ONLY');
+  assert.equal(completion.simulationOnly,true);
+  assert.equal(completion.recordCount,305,'the additive simulation-only tranche must retain 305 rows');
+  assert.equal(completionRows.length,completion.recordCount);
+  assert.equal(completion.uniqueSiteCount,new Set(completionRows.map(row=>row.siteId)).size);
+  assert.equal(completion.uniqueSiteCount,completionRows.length,'simulation completion site IDs must be unique');
+  for(const row of completionRows){
+    const siteId=String(row.siteId||'');
+    const reserve=row.reserve||{},normalization=reserve.quantityNormalization||{},provenance=row.provenance||{};
+    assert.match(siteId,/^SITE_[A-Z]{3}_/,siteId+': invalid site identity');
+    assert.equal(String(reserve.status||'').toUpperCase(),'SIMULATED',siteId+': completion reserve must be simulation-only');
+    assert.equal(String(reserve.authority||''),'SCENARIO_SIMULATION_DATA',siteId+': reserve authority must stay simulation-only');
+    assert.equal(String(provenance.authority||''),'SIMULATED_GAMEPLAY_COMPLETION_ONLY',siteId+': completion authority mismatch');
+    assert.equal(provenance.simulationOnly,true,siteId+': completion record must be simulation-only');
+    assert.equal(provenance.sourceQuantityPreserved,true,siteId+': source quantity must be preserved');
+    assert.ok(Number(provenance.sourceReserveQuantity)>0&&String(provenance.sourceReserveUnit||'').trim(),
+      siteId+': original source quantity and unit are required');
+    assert.ok(Number(reserve.quantity)>0&&String(reserve.unit||'').trim(),
+      siteId+': canonical simulated quantity and unit are required');
+    assert.equal(normalization.simulationOnly,true,siteId+': normalization may not claim geological measurement');
+    assert.equal(normalization.normalizedUnit,reserve.unit,siteId+': normalized unit must match gameplay unit');
+    assert.ok(closeEnough(normalization.normalizedQuantity,reserve.quantity),
+      siteId+': normalized quantity must match the simulated reserve value');
+    assert.ok(closeEnough(normalization.sourceQuantity,provenance.sourceReserveQuantity),
+      siteId+': normalization and provenance must preserve the source quantity');
+    assert.equal(normalization.sourceUnit,provenance.sourceReserveUnit,
+      siteId+': normalization and provenance must preserve the source unit');
+    assert.equal(row.simulation?.simulationOnly,true,siteId+': nested simulation payload must remain flagged');
+    assert.equal(String(row.simulation?.production?.status||'').toUpperCase(),'SIMULATED',
+      siteId+': production rate must remain simulation-only');
+  }
 }
 
 const world=game.state.resource||{};
@@ -65,13 +137,108 @@ const eligibleIds=new Set(allEligibleSites.map(x=>x.siteId));
 for(const site of criticalBatch.records){
   assert.ok(eligibleIds.has(site.siteId),site.siteId+': critical-mineral site missing from executable runtime references');
 }
-// Run the 58 new critical-mineral sites end-to-end in this isolated fixture. The
-// 503 baseline references are verified above, but running all 561 mines at once
-// artificially over-reserves shared warehouses and starves unrelated sites.
-const sites=criticalBatch.records.map(row=>eligibleById.get(row.siteId));
-assert.equal(sites.length,58);
-assert.ok(sites.every(Boolean),'every critical-mineral site must resolve to a live executable reference');
 
+const shardIndex=Number(process.env.OMEGA_EXHAUSTIVE_SITE_SHARD_INDEX??0);
+const shardCount=Number(process.env.OMEGA_EXHAUSTIVE_SITE_SHARD_COUNT??1);
+assert.ok(Number.isInteger(shardIndex)&&Number.isInteger(shardCount)&&shardCount>=1&&shardIndex>=0&&shardIndex<shardCount,
+  'invalid exhaustive-site shard configuration: index='+shardIndex+' count='+shardCount);
+// Keep each country's sites in one isolated worker. Greedy balancing by site count
+// avoids a single shard receiving a country with a disproportionate site portfolio.
+const countrySiteCounts=new Map();
+for(const site of allEligibleSites)countrySiteCounts.set(site.countryId,(countrySiteCounts.get(site.countryId)||0)+1);
+const shardBuckets=Array.from({length:shardCount},()=>({siteCount:0,countries:[]}));
+for(const [countryId,siteCount] of [...countrySiteCounts.entries()].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]))){
+  let target=0;
+  for(let i=1;i<shardBuckets.length;i++)if(shardBuckets[i].siteCount<shardBuckets[target].siteCount)target=i;
+  shardBuckets[target].siteCount+=siteCount;
+  shardBuckets[target].countries.push(countryId);
+}
+const countryShard=new Map();
+shardBuckets.forEach((bucket,index)=>bucket.countries.forEach(countryId=>countryShard.set(countryId,index)));
+// Across the complete CI matrix, these deterministic, disjoint country sets cover
+// all eligible sites exactly once. Each job still validates the complete registry.
+const sites=allEligibleSites.filter(site=>countryShard.get(site.countryId)===shardIndex);
+assert.ok(sites.length>0,'shard '+shardIndex+' has no eligible sites');
+assert.ok(sites.every(Boolean),'every eligible site must resolve to a live executable reference');
+assert.ok(sites.every(site=>countryShard.get(site.countryId)===shardIndex),'a country leaked across exhaustive test shards');
+console.log('EXHAUSTIVE_SITE_SHARD_START '+JSON.stringify({shardIndex,shardCount,siteCount:sites.length,totalEligibleSites:allEligibleSites.length,countries:shardBuckets[shardIndex].countries.length}));
+function commissionGameplayMine(entry){
+  const {siteId,countryId,resourceId,ref}=entry;
+  const root=game.state;
+  if(!root.resource)throw new Error('EXHAUSTIVE_TEST_RESOURCE_STATE_MISSING');
+  const row=root.resource[countryId]||(root.resource[countryId]={});
+  row.mineAssets=Array.isArray(row.mineAssets)?row.mineAssets:[];
+  const existing=row.mineAssets.find(x=>String(x?.siteId||'')===siteId&&
+    String(x?.status||'').toUpperCase()==='OPERATIONAL');
+  const asset=existing||{
+    mineId:'TEST-COMMISSIONED-MINE:'+countryId+':'+siteId,
+    id:'TEST-COMMISSIONED-MINE:'+countryId+':'+siteId,
+    siteId,siteName:ref?.siteName||ref?.rawSiteReference?.siteName||siteId,
+    resourceId,countryId,ownerCountryId:countryId,status:'OPERATIONAL',
+    buildProjectId:'TEST-COMMISSION:'+siteId,commissionedTurn:Number(root.simulation?.turn)||1,
+    capacityMultiplier:1,workersRequired:1,workersCommitted:1,
+    sourceSiteStatus:String(ref?.operation?.status||ref?.status||'NOT_RECORDED'),
+    siteIdentityAuthority:'CANONICAL_SITE_REGISTRY',
+    authority:'SIMULATED_PLAYER_MINE_ASSET_TEST_FIXTURE',
+    productionStatus:'READY_FOR_EXTRACTION',lastProductionTurn:null
+  };
+  if(!existing)row.mineAssets.push(asset);
+  // The event handler correctly ignores foreign countries. To audit another country's isolated
+  // fixture, temporarily make that country the selected test player, dispatch synchronously, then
+  // restore the prior session before the next site. Do not weaken the production scope guard.
+  const simulation=root.simulation||(root.simulation={});
+  const hadSession=Object.prototype.hasOwnProperty.call(simulation,'session');
+  const oldSession=simulation.session;
+  const session=oldSession&&typeof oldSession==='object'?oldSession:(simulation.session={});
+  const hadPlayerCountry=Object.prototype.hasOwnProperty.call(session,'playerCountryId');
+  const oldPlayerCountry=session.playerCountryId;
+  session.playerCountryId=countryId;
+  try{
+    if(typeof globalThis.dispatchEvent==='function'&&typeof globalThis.CustomEvent==='function'){
+      globalThis.dispatchEvent(new CustomEvent('OMEGA_RESOURCE_MINE_COMMISSIONED',{
+        detail:{countryId,payload:{countryId,siteId,resourceId,mineId:asset.mineId,status:'OPERATIONAL',
+          sourceSiteStatus:asset.sourceSiteStatus,authority:'SIMULATED_PLAYER_MINE_ASSET_TEST_FIXTURE'}}
+      }));
+    }
+  }finally{
+    if(hadPlayerCountry)session.playerCountryId=oldPlayerCountry;
+    else delete session.playerCountryId;
+    if(hadSession)simulation.session=oldSession;
+    else delete simulation.session;
+  }
+  const binding=globalThis.__OmegaLastMineCommissionBinding;
+  if(binding?.countryId!==countryId||binding?.siteId!==siteId||binding?.status!=='APPLIED_TO_RESOURCE_RUNTIME')
+    throw new Error('MINE_COMMISSION_EVENT_NOT_APPLIED_TO_SELECTED_TEST_COUNTRY:'+countryId+':'+siteId+':'+String(binding?.status||'MISSING'));
+  // The event updates the player-mine overlay, while the strategic exploration ledger is
+  // maintained by its own approve/commission command. This post-commission test fixture seeds
+  // that independent ledger explicitly instead of pretending the event owns it.
+  const currentRow=root.resource[countryId]||row;
+  currentRow.commissionedSites=Array.isArray(currentRow.commissionedSites)?currentRow.commissionedSites:[];
+  let commission=currentRow.commissionedSites.find(x=>String(x?.siteId||'')===siteId&&
+    String(x?.status||'').toUpperCase()==='COMMISSIONED');
+  if(!commission){
+    const existing=currentRow.commissionedSites.find(x=>String(x?.siteId||'')===siteId);
+    if(existing)Object.assign(existing,{countryId,resourceId,status:'COMMISSIONED',
+      projectId:asset.buildProjectId||('TEST-COMMISSION:'+siteId),
+      commissionedTurn:Number(root.simulation?.turn)||1,
+      authority:'SIMULATED_PLAYER_MINE_ASSET_TEST_FIXTURE'});
+    else currentRow.commissionedSites.push({siteId,countryId,resourceId,status:'COMMISSIONED',
+      projectId:asset.buildProjectId||('TEST-COMMISSION:'+siteId),
+      commissionedTurn:Number(root.simulation?.turn)||1,
+      authority:'SIMULATED_PLAYER_MINE_ASSET_TEST_FIXTURE'});
+    commission=currentRow.commissionedSites.find(x=>String(x?.siteId||'')===siteId&&
+      String(x?.status||'').toUpperCase()==='COMMISSIONED');
+  }
+  if(!commission)throw new Error('SIMULATED_COMMISSION_LEDGER_SETUP_FAILED:'+countryId+':'+siteId);
+}
+function resourceBalance(map,resourceId){
+  const key=Object.keys(map||{}).find(k=>String(k).toLowerCase()===String(resourceId).toLowerCase());
+  return key===undefined?0:(Number(map[key])||0);
+}
+function closeEnough(a,b){
+  const left=Number(a)||0,right=Number(b)||0;
+  return Math.abs(left-right)<=1e-5*Math.max(1,Math.abs(left),Math.abs(right));
+}
 function advanceOneTurn(){
   const sim=game.state.simulation||(game.state.simulation={});
   const date=new Date(String(sim.date||'2015-01-01')+'T00:00:00.000Z');
@@ -126,12 +293,15 @@ const counts={references:new Set(allRefs.map(x=>x.siteId)).size,baselineEligible
 const failures=[];
 const pipelines=[];
 const countryIds=new Set();
-for(const site of sites){
+for(let siteIndex=0;siteIndex<sites.length;siteIndex++){
+  const site=sites[siteIndex];
+  console.log('EXHAUSTIVE_SITE_SHARD_SITE '+JSON.stringify({shardIndex,shardCount,siteIndex:siteIndex+1,total:sites.length,siteId:site.siteId,countryId:site.countryId}));
   provisionSimulationInfrastructure(site.countryId);
   countryIds.add(site.countryId);
   game.state.simulation=game.state.simulation||{};
   game.state.simulation.turn=(Number(game.state.simulation.turn)||1)+1;
   if(!game.state.simulation.date)game.state.simulation.date='2015-01-01';
+  commissionGameplayMine(site);
   const result=await industry.executeSitePipeline({
     countryId:site.countryId,siteId:site.siteId,resourceId:site.resourceId,
     quantity:1,autoCommissionFactory:true,transportMode:'rail'
@@ -150,7 +320,7 @@ for(const site of sites){
   assert.equal(batch.countryId,site.countryId,site.siteId+': batch country mismatch');
   assert.equal(batch.warehouseId,'WH-'+site.countryId+'-RAW',site.siteId+': raw warehouse mismatch');
   assert.ok(Number(batch.quantity)>0,site.siteId+': extraction quantity must be positive');
-  pipelines.push({site,result});
+  pipelines.push({site,result,initialBatchRemaining:Number(batch.remainingQuantity??batch.quantity)||0});
 }
 assert.deepEqual(failures,[],'site extraction/dispatch failures: '+JSON.stringify(failures.slice(0,20)));
 
@@ -163,41 +333,166 @@ for(const countryId of countryIds){
   // this targeted batch run; each pipeline shipment is already explicitly dispatched.
   const network=liveCountryState(countryId).industrialNetwork;
   for(const flow of network?.siteFlowLedger||[])flow.lastResidualDispatchTurn=Number(game.state.simulation.turn)||1;
+  const countryPipelines=pipelines.filter(x=>x.site.countryId===countryId);
+  const deliveryStateBefore=runtime.countryResourceState(countryId)||{};
+  const preNetwork=deliveryStateBefore.industrialNetwork||{};
+  const preDeliveryStatus=new Map((preNetwork.deliveries||[]).map(x=>[String(x.shipmentId||''),String(x.status||'')+'|'+String(x.destinationStatus||'')]));
+  const preShipmentStatus=new Map((preNetwork.shipments||[]).map(x=>[String(x.shipmentId||''),String(x.status||'')]));
+  const balanceBefore=new Map([...new Set(countryPipelines.map(x=>x.site.resourceId))].map(resourceId=>[resourceId,{
+    inventory:resourceBalance(deliveryStateBefore.inventory,resourceId),
+    warehouse:resourceBalance(deliveryStateBefore.warehouse?.availableByResource,resourceId),
+    reserved:resourceBalance(deliveryStateBefore.warehouse?.reservedByResource,resourceId)
+  }]));
   const deliveryResult=industry.advanceShipments(countryId);
-  for(const pipeline of pipelines.filter(x=>x.site.countryId===countryId)){
-    const shipmentId=String(pipeline.result.shipmentId);
-    const delivered=(runtime.countryResourceState(countryId)?.industrialNetwork?.deliveries||[])
-      .find(x=>String(x.shipmentId)===shipmentId)||
-      (deliveryResult.shipments||[]).find(x=>String(x.shipmentId)===shipmentId);
-    if(!delivered||delivered.destinationStatus!=='FACTORY_RECEIVED'){
-      failures.push({siteId:pipeline.site.siteId,countryId,resourceId:pipeline.site.resourceId,
-        stage:'DELIVERY',shipmentId,deliveryStatus:delivered?.destinationStatus||null,deliveryResult});
-      continue;
+  const deliveryStateAfter=runtime.countryResourceState(countryId)||{};
+  for(const [resourceId,before] of balanceBefore){
+    const network=deliveryStateAfter.industrialNetwork||{};
+    const currentDeliveries=(network.deliveries||[]).filter(x=>
+      String(x.resourceId||'').toLowerCase()===String(resourceId).toLowerCase()&&
+      (String(x.status||'').toUpperCase()==='DELIVERED'||String(x.destinationStatus||'').toUpperCase()==='FACTORY_RECEIVED')&&
+      preDeliveryStatus.get(String(x.shipmentId||''))!==String(x.status||'')+'|'+String(x.destinationStatus||''));
+    const deliveredQuantity=currentDeliveries.reduce((sum,x)=>sum+(Number(x.quantity)||0),0);
+    const newTransitQuantity=(network.shipments||[]).filter(x=>
+      String(x.resourceId||'').toLowerCase()===String(resourceId).toLowerCase()&&
+      String(x.status||'').toUpperCase()==='IN_TRANSIT'&&preShipmentStatus.get(String(x.shipmentId||''))!=='IN_TRANSIT')
+      .reduce((sum,x)=>sum+(Number(x.quantity)||0),0);
+    const afterInventory=resourceBalance(deliveryStateAfter.inventory,resourceId);
+    const afterWarehouse=resourceBalance(deliveryStateAfter.warehouse?.availableByResource,resourceId);
+    const afterReserved=resourceBalance(deliveryStateAfter.warehouse?.reservedByResource,resourceId);
+    if(!closeEnough(before.inventory-afterInventory,deliveredQuantity)||
+       !closeEnough(before.warehouse-afterWarehouse,deliveredQuantity)||
+       !closeEnough(afterReserved,before.reserved-deliveredQuantity+newTransitQuantity)){
+      failures.push({countryId,resourceId,stage:'DELIVERY_BALANCE_RECONCILIATION',
+        before,after:{inventory:afterInventory,warehouse:afterWarehouse,reserved:afterReserved},
+        deliveredQuantity,newTransitQuantity,
+        inventoryDebit:Number((before.inventory-afterInventory).toFixed(6)),
+        warehouseDebit:Number((before.warehouse-afterWarehouse).toFixed(6))});
     }
-    counts.delivered++;
+  }
+  for(const pipeline of countryPipelines){
+    const shipmentId=String(pipeline.result.shipmentId);
+    const post=runtime.countryResourceState(countryId)||{};
+    const network=post.industrialNetwork||{};
+    const deliveredRows=(network.deliveries||[]).filter(x=>String(x.shipmentId)===shipmentId&&
+      String(x.destinationStatus||'').toUpperCase()==='FACTORY_RECEIVED');
+    const delivered=deliveredRows[0]||(deliveryResult.shipments||[]).find(x=>String(x.shipmentId)===shipmentId);
+    const shipment=(network.shipments||[]).find(x=>String(x.shipmentId)===shipmentId);
+    const sourceBatch=(post.batches||[]).find(x=>String(x.batchId)===String(pipeline.result.batchId));
+    const sourceLot=post.inventoryLots?.[pipeline.result.batchId];
+    const reservationId=String(delivered?.reservationId||shipment?.reservationId||'');
+    const reservation=reservationId?network.reservations?.[reservationId]:null;
+    const factory=(game.state.economy?.[countryId]?.productionAssets||[]).find(x=>
+      String(x.id||x.assetId||x.projectId)===String(pipeline.result.factoryId));
+    const inputLot=(factory?.inputBatchLots||[]).find(x=>
+      String(x.batchId)===String(delivered?.factoryInputBatchId)||
+      (Array.isArray(x.sourceBatchIds)&&x.sourceBatchIds.map(String).includes(String(pipeline.result.batchId))));
+    const deliveryOkay=!!delivered&&delivered.destinationStatus==='FACTORY_RECEIVED'&&
+      deliveredRows.length===1&&String(delivered.countryId||countryId).toUpperCase()===countryId&&
+      String(delivered.batchId||'')===String(pipeline.result.batchId)&&
+      String(shipment?.countryId||countryId).toUpperCase()===countryId&&
+      String(shipment?.factoryId||'')===String(pipeline.result.factoryId)&&
+      String(sourceBatch?.countryId||'').toUpperCase()===countryId&&
+      String(sourceBatch?.warehouseId||'')==='WH-'+countryId+'-RAW'&&
+      closeEnough(delivered.quantity,shipment?.quantity)&&
+      closeEnough(Number(sourceBatch?.remainingQuantity)||0,pipeline.initialBatchRemaining-(Number(delivered.quantity)||0))&&
+      (!sourceLot||closeEnough(sourceLot.remainingQuantity,sourceBatch?.remainingQuantity))&&
+      String(reservation?.status||'').toUpperCase()==='DELIVERED'&&
+      Number(reservation?.quantity||delivered?.quantity)>0&&
+      String(factory?.countryId||'').toUpperCase()===countryId&&
+      !!inputLot&&(inputLot.sourceBatchIds||[]).map(String).includes(String(pipeline.result.batchId));
+    if(!deliveryOkay){
+      failures.push({siteId:pipeline.site.siteId,countryId,resourceId:pipeline.site.resourceId,
+        stage:'DELIVERY_LINEAGE_OR_RESERVATION',
+        shipmentStatus:shipment?.status||null,deliveryStatus:delivered?.destinationStatus||null,
+        duplicateDeliveryCount:deliveredRows.length,shipmentCountry:shipment?.countryId||null,
+        deliveryCountry:delivered?.countryId||null,batchCountry:sourceBatch?.countryId||null,
+        initialBatchRemaining:pipeline.initialBatchRemaining,deliveredQuantity:delivered?.quantity??null,
+        finalBatchRemaining:sourceBatch?.remainingQuantity??null,reservationStatus:reservation?.status||null,
+        factoryCountry:factory?.countryId||null,inputLotFound:!!inputLot,
+        inputLotSourceBatchIds:inputLot?.sourceBatchIds||[]});
+    } else {
+      counts.delivered++;
+    }
   }
 }
 assert.deepEqual(failures,[],'site dispatch/delivery failures: '+JSON.stringify(failures.slice(0,20)));
 
-const targetPipelines=pipelines.filter(x=>flowFor(x.site.countryId,x.result.batchId));
-for(let pass=0;pass<128;pass++){
-  const pending=targetPipelines.filter(x=>!flowProcessed(x.site.countryId,x.result.batchId));
-  if(!pending.length)break;
-  let targetTurn=(Number(game.state.simulation.turn)||1)+1;
-  let targetDate=String(game.state.simulation.date||'2015-01-01');
-  for(const item of pending){
-    const cycle=cycleFor(item.site.countryId,item.result.factoryId);
-    if(!cycle){
-      failures.push({siteId:item.site.siteId,countryId:item.site.countryId,stage:'FACTORY_CYCLE',
-        reason:'FACTORY_CYCLE_NOT_CREATED',batchId:item.result.batchId,factoryId:item.result.factoryId});
-      continue;
+// Idempotency probe: replay the same country's shipment tick without advancing time.
+// No target shipment may be delivered twice and no second debit of the same source batch is allowed.
+for(const countryId of countryIds){
+  const targets=pipelines.filter(x=>x.site.countryId===countryId);
+  const before=runtime.countryResourceState(countryId)||{};
+  const beforeNetwork=before.industrialNetwork||{};
+  const snapshot=targets.map(item=>{
+    const shipmentId=String(item.result.shipmentId),batchId=String(item.result.batchId);
+    const shipment=(beforeNetwork.shipments||[]).find(x=>String(x.shipmentId)===shipmentId);
+    const deliveries=(beforeNetwork.deliveries||[]).filter(x=>String(x.shipmentId)===shipmentId&&
+      String(x.destinationStatus||'').toUpperCase()==='FACTORY_RECEIVED');
+    const batch=(before.batches||[]).find(x=>String(x.batchId)===batchId);
+    return {shipmentId,batchId,status:shipment?.status||null,deliveryCount:deliveries.length,
+      remainingQuantity:Number(batch?.remainingQuantity??batch?.quantity)||0};
+  });
+  industry.advanceShipments(countryId);
+  const after=runtime.countryResourceState(countryId)||{};
+  const afterNetwork=after.industrialNetwork||{};
+  for(const row of snapshot){
+    const shipment=(afterNetwork.shipments||[]).find(x=>String(x.shipmentId)===row.shipmentId);
+    const deliveries=(afterNetwork.deliveries||[]).filter(x=>String(x.shipmentId)===row.shipmentId&&
+      String(x.destinationStatus||'').toUpperCase()==='FACTORY_RECEIVED');
+    const batch=(after.batches||[]).find(x=>String(x.batchId)===row.batchId);
+    const remainingQuantity=Number(batch?.remainingQuantity??batch?.quantity)||0;
+    if(row.status!=='DELIVERED'||row.deliveryCount!==1||shipment?.status!=='DELIVERED'||
+       deliveries.length!==1||!closeEnough(remainingQuantity,row.remainingQuantity)){
+      failures.push({countryId,stage:'REPLAY_IDEMPOTENCY',shipmentId:row.shipmentId,batchId:row.batchId,
+        before:{status:row.status,deliveryCount:row.deliveryCount,remainingQuantity:row.remainingQuantity},
+        after:{status:shipment?.status||null,deliveryCount:deliveries.length,remainingQuantity}});
     }
-    targetTurn=Math.max(targetTurn,Number(cycle.finishTurn)||targetTurn);
-    if(cycle.finishDate&&String(cycle.finishDate)>targetDate)targetDate=String(cycle.finishDate);
   }
-  advanceTo(targetTurn,targetDate);
-  for(const countryId of countryIds)industry.processPendingFactoryInputs(countryId);
 }
+assert.deepEqual(failures,[],'duplicate delivery or repeated raw-stock debit detected: '+JSON.stringify(failures.slice(0,20)));
+
+const targetPipelines=pipelines.filter(x=>flowFor(x.site.countryId,x.result.batchId));
+// Finish each exact source batch through its own country-local factory cycle. A country may
+// have older, unrelated factory cycles, so reaching some cycle's finish date is not proof
+// that this mine's batch has become finished goods.
+for(const item of targetPipelines){
+  const {site,result}=item,countryId=site.countryId,batchId=String(result.batchId);
+  const history=[];
+  for(let pass=0;pass<64&&!flowProcessed(countryId,batchId);pass++){
+    const cycle=cycleFor(countryId,result.factoryId);
+    const cycleStatus=String(cycle?.status||'').toUpperCase();
+    if(cycle&&cycleStatus==='IN_PROGRESS'&&cycle.finishDate){
+      const nextTurn=Math.max((Number(game.state.simulation.turn)||1)+1,Number(cycle.finishTurn)||0);
+      advanceTo(nextTurn,String(cycle.finishDate));
+    }else{
+      // A paused/older cycle must be re-evaluated on a later game turn before the target
+      // batch can claim the factory; the runtime remains scoped to this country only.
+      advanceOneTurn();
+    }
+    const processing=industry.processPendingFactoryInputs(countryId);
+    history.push({
+      turn:Number(game.state.simulation.turn)||1,
+      date:String(game.state.simulation.date||''),
+      cycleStatus,
+      cycleFinishDate:cycle?.finishDate||null,
+      completedCount:Number(processing?.completedCount)||0,
+      startedCount:Number(processing?.startedCount)||0,
+      blocked:(processing?.blocked||[]).slice(0,3).map(row=>({
+        factoryId:row.factoryId||null,reason:row.reason||null
+      }))
+    });
+    if(history.length>6)history.shift();
+  }
+  if(!flowProcessed(countryId,batchId)){
+    failures.push({
+      siteId:site.siteId,countryId,resourceId:site.resourceId,
+      stage:'PROCESSING',reason:'SOURCE_BATCH_NOT_COMMITTED_AFTER_CYCLE_ADVANCES',
+      batchId,factoryId:result.factoryId,
+      cycle:cycleFor(countryId,result.factoryId),history
+    });
+  }
+}
+
 for(const item of targetPipelines){
   const {site,result}=item,countryId=site.countryId;
   if(!flowProcessed(countryId,result.batchId)){
@@ -228,6 +523,29 @@ for(const item of targetPipelines){
       reason:'POSITIVE_OUTPUT_NOT_IN_SOVEREIGN_INVENTORY',outputs,inventoryKeys:Object.keys(inventory).slice(0,40)});
     continue;
   }
+  const flow=flowFor(countryId,result.batchId)||{};
+  const createdBatchIds=new Set([
+    ...(Array.isArray(delivery.processing?.createdBatchIds)?delivery.processing.createdBatchIds:[]),
+    ...(Array.isArray(flow.createdBatchIds)?flow.createdBatchIds:[])
+  ].map(String));
+  const transactionId=String(delivery.processingTransactionId||delivery.processing?.transactionId||flow.processingTransactionId||'');
+  const finishedBatch=(finalState.batches||[]).find(x=>
+    createdBatchIds.has(String(x.batchId||''))&&String(x.stage||'').toUpperCase()==='FINISHED'&&
+    (x.sourceBatchIds||[]).map(String).includes(String(result.batchId))&&
+    Object.keys(outputs).some(rid=>String(rid).toLowerCase()===String(x.resourceId||'').toLowerCase())&&
+    String(x.countryId||'').toUpperCase()===countryId&&String(x.warehouseId||'')==='WH-'+countryId+'-PROCESSED'&&
+    (!transactionId||String(x.processId||'')===transactionId));
+  const ledger=(finalState.finishedGoodsLedger||[]).find(x=>
+    (!transactionId||String(x.transactionId||'')===transactionId)&&
+    String(x.factoryId||'')===String(result.factoryId)&&
+    (x.sourceBatchIds||[]).map(String).includes(String(result.batchId))&&
+    (x.createdBatchIds||[]).some(id=>createdBatchIds.has(String(id))));
+  if(!finishedBatch||!ledger){
+    failures.push({siteId:site.siteId,countryId,stage:'FINISHED_GOODS_LINEAGE',
+      transactionId:transactionId||null,createdBatchIds:[...createdBatchIds],
+      finishedBatchFound:!!finishedBatch,ledgerFound:!!ledger});
+    continue;
+  }
   counts.processed++;
 }
 assert.deepEqual(failures,[],'every-site production failures: '+JSON.stringify(failures.slice(0,20)));
@@ -235,5 +553,6 @@ assert.equal(counts.started,counts.eligible,'every eligible site must dispatch: 
 assert.equal(counts.delivered,counts.eligible,'every eligible site must deliver to its factory: '+JSON.stringify(counts));
 assert.equal(counts.processed,counts.eligible,'every eligible site must commit finished goods: '+JSON.stringify(counts));
 console.log('OMEGA EXHAUSTIVE EVERY-SITE PRODUCTION PIPELINE PASSED '+JSON.stringify({
-  ...counts,countries:countryIds.size,criticalMineralSites:criticalBatch.records.length
+  ...counts,shardIndex,shardCount,allEligibleSites:allEligibleSites.length,
+  countries:countryIds.size,criticalMineralSites:criticalBatch.records.length
 }));
