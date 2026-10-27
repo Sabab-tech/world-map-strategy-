@@ -355,17 +355,34 @@
   }
 
   function relationRecord(countryId,targetId){
-    const a=canonicalId(countryId),b=canonicalId(targetId);
-    const exact=[
-      readState(a,'foreign.relations')?.value?.[b],
-      readState(a,'trade.relations')?.value?.[b],
-      readState(a,'relations')?.value?.[b],
-      readState(a,'foreign.treaties')?.value?.[b]
-    ].find(x=>x!==undefined);
+    const a=canonicalId(countryId),b=canonicalId(targetId),targetScope=canonicalCountryScope(targetId);
+    const findTarget=(map)=>{
+      if(!map||typeof map!=='object'||Array.isArray(map))return undefined;
+      const key=Object.keys(map).find(x=>id(x)===id(targetId)||id(x)===b||
+        token(x)===token(targetId)||canonicalCountryScope(x)===targetScope);
+      return key===undefined?undefined:map[key];
+    };
+    const readRelation=(path)=>{
+      // Prefer the authoritative scoped provider when it actually has this target.
+      // Older saved relations may still be keyed by ISO-2, so also inspect the same
+      // country's raw bucket before concluding that supplier relations are unknown.
+      const primary=readState(a,path)?.value;
+      const exact=findTarget(primary);
+      if(exact!==undefined&&exact!==null)return exact;
+      const legacy=rawCountryScopedValue(a,path);
+      const fallback=findTarget(legacy);
+      return fallback!==undefined&&fallback!==null?fallback:undefined;
+    };
+    const paths=['foreign.relations','trade.relations','relations','foreign.treaties'];
+    let exact;
+    for(const path of paths){
+      exact=readRelation(path);
+      if(exact!==undefined)break;
+    }
     if(exact!==undefined){
       const base=clone(exact);
-      const adjustments=readState(a,'foreign.relationAdjustments')?.value?.[b];
-      const rows=Array.isArray(adjustments)?adjustments:[];
+      const adjustmentMap=readRelation('foreign.relationAdjustments');
+      const rows=Array.isArray(adjustmentMap)?adjustmentMap:[];
       const delta=rows.reduce((s,x)=>s+(num(x?.delta)||0),0);
       if(delta!==0){
         for(const k of ['overall','political']){
@@ -380,7 +397,8 @@
       const raw=rt?.gw?.get('relations');
       const source=raw?.[a]||raw?.[String(a)]||null;
       if(source){
-        const k=Object.keys(source).find(x=>id(x)===b||token(x)===token(b));
+        const k=Object.keys(source).find(x=>id(x)===id(targetId)||id(x)===b||
+          token(x)===token(targetId)||canonicalCountryScope(x)===targetScope);
         if(k!==undefined)return source[k];
       }
     }catch(_){}
