@@ -37,15 +37,6 @@
     "neverUseGeologicalReservesAsStock": true,
     "preservePresentZeroStock": true,
     "onlySeedCanonicalProfileResources": true,
-    "rateUnitToStockUnit": {
-      "METRIC_TONS_PER_DAY": "TONNES",
-      "METRIC_TONS_LCE_PER_DAY": "TONNES",
-      "BARRELS_PER_DAY": "BBL",
-      "BCM_PER_DAY": "BCM",
-      "METRIC_TONS_U": "TONNES",
-      "TROY_OUNCES_PER_DAY": "TROY_OUNCES",
-      "CARATS_PER_DAY": "CARATS"
-    },
     "unknownRateFallbackUnit": "SIMULATION_RESOURCE_UNIT",
     "unknownDemandPolicy": "PRESERVE_UNKNOWN_NO_INVENTED_RATE_OR_STOCK",
     "profileRateSource": "resource_economy_rules.json:demand.resourceProfiles",
