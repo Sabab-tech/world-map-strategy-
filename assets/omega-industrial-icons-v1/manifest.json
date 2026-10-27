@@ -5,8 +5,8 @@
   "rendering": {
     "format": "SVG",
     "viewBox": "0 0 128 128",
-    "artDirection": "cohesive dimensional object-led industrial vector icons with a shared navy backplate and category-specific focal symbols",
-    "background": "self-contained dark-navy backplate",
+    "artDirection": "Cohesive dimensional object-led industrial vector icons; resource icons use a light metallic contrast field with commodity-specific focal artwork, while factory icons retain the dark-navy category plate.",
+    "background": "Resource SVGs use a light silver-metal backplate for contrast; canonical factory SVGs retain their shared dark-navy backplate.",
     "dependencies": []
   },
   "sourceCatalog": "resource_industrial_catalog_v1.json",

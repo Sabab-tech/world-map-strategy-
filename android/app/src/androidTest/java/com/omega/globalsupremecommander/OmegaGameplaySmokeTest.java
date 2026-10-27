@@ -258,7 +258,9 @@ public final class OmegaGameplaySmokeTest {
                     " }" +
                     " if (window.CountryIOS) window.CountryIOS.activeCountry = 'USA';" +
                     " window.currentActiveCountry = 'USA';" +
-                    " ui.open('USA', 'industrial');" +
+                    " try { ui.open('USA', 'industrial'); } catch (error) {" +
+                    "   return 'FACTORY_PANEL_EXCEPTION:' + String(error && (error.stack || error.message) || error);" +
+                    " }" +
                     " var viewState = ui.getState();" +
                     " var modal = document.getElementById('gsrsk-intelligence-modal');" +
                     " var content = document.getElementById('omega-rescc-content');" +

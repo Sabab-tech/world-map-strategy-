@@ -489,12 +489,13 @@ test('Mine Management prefers hydrated canonical runtime profiles over sparse du
   assert.equal(merged.simulation.productionReadiness, 'CAPACITY_READY');
   assert.equal(merged.runtime.countryWarehouseId, 'WH-BWA-RAW');
   assert.equal(merged.operation.realWorldStatus, 'OPERATING', 'runtime status must not erase separate real-world status');
-  assert.match(api.getReserveSummary(merged), /Gameplay reserve: 9,000,000 tonnes \(SIMULATED\)/);
+  assert.equal(api.getReserveSummary(merged), '9,000,000 tonnes',
+    'the player-facing reserve summary must not expose simulation terminology');
   const summary = api.getProductionSummary(merged);
-  assert.match(summary, /Gameplay rate: 123\.5 tonnes per day \(SIMULATED\)/);
-  assert.match(summary, /Gameplay daily capacity: 80-200 tonnes per day \(nominal 150\) \(SIMULATED\)/);
-  assert.match(summary, /Profile ready for gameplay/);
-  assert.match(summary, /actual extraction remains subject to runtime gates/);
+  assert.match(summary, /Daily output 123\.5 tonnes per day/);
+  assert.match(summary, /Annual output 45,077\.5 tonnes per year/);
+  assert.match(summary, /Daily capacity 80–200 tonnes per day/);
+  assert.doesNotMatch(summary, /SIMULATED|MODELED|GAMEPLAY_SIMULATION|actual extraction remains subject to runtime gates/i);
 });
 
 test('every mapped resource site joins the executable runtime and has a one-tap country production action', () => {

@@ -2,7 +2,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-labelledby="omega-rutile-title omega-rutile-desc" data-omega-icon-kind="resource" data-omega-icon-id="rutile">
 <title id="omega-rutile-title">Rutile</title><desc id="omega-rutile-desc">Rutile resource icon with material-specific colour and dimensional vector illustration.</desc>
 <defs>
-<linearGradient id="omega-rutile-bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#24394c"/><stop offset=".5" stop-color="#132536"/><stop offset="1" stop-color="#08121d"/></linearGradient>
+<linearGradient id="omega-rutile-bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f7fbfd"/><stop offset=".5" stop-color="#dce7ec"/><stop offset="1" stop-color="#b7c8d1"/></linearGradient>
 <linearGradient id="omega-rutile-metal" x1="0" y1="0" x2=".9" y2="1"><stop offset="0" stop-color="#f0ad8d"/><stop offset=".32" stop-color="#b75d4b"/><stop offset=".7" stop-color="#6d302a"/><stop offset="1" stop-color="#141b24"/></linearGradient>
 <linearGradient id="omega-rutile-top" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffffff" stop-opacity=".9"/><stop offset=".22" stop-color="#f0ad8d"/><stop offset="1" stop-color="#b75d4b"/></linearGradient>
 <linearGradient id="omega-rutile-side" x1="0" y1="0" x2="1" y2=".7"><stop offset="0" stop-color="#b75d4b"/><stop offset="1" stop-color="#6d302a"/></linearGradient>

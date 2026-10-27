@@ -481,4 +481,80 @@ assert.equal(N.decommissionFactory({countryId:'BGD',factoryId:decommissionAsset.
   'repeated decommission calls must be safe and idempotent');
 assert.equal(N.factoryProductionStatus('BGD',decommissionAsset.id).health.status,'STOPPED');
 
+
+// Mine decommissioning stops future extraction while preserving the site, batches and history.
+context.Game.state.simulation.session = { playerCountryId:'BGD' };
+const foreignMineAsset = {
+  id:'MINE-FOREIGN-DECOMMISSION-TEST',
+  siteId:'SITE_USA_COAL_01',
+  resourceId:'coal',
+  status:'OPERATIONAL'
+};
+context.Game.state.resource.USA = { mineAssets:[foreignMineAsset] };
+const foreignDecommission = N.decommissionMine({
+  countryId:'USA',siteId:'SITE_USA_COAL_01',confirmed:true
+});
+assert.equal(foreignDecommission.status,'BLOCKED');
+assert.equal(foreignDecommission.reason,'PLAYER_COUNTRY_SCOPE_VIOLATION');
+assert.equal(foreignMineAsset.status,'OPERATIONAL','a view/action for another country must not mutate its mine');
+const mineAssetForDecommission = {
+  id:'MINE-DECOMMISSION-TEST',
+  siteId:'SITE_BGD_COAL_01',
+  resourceId:'coal',
+  status:'OPERATIONAL',
+  workersCommitted:240,
+  constructionCostUsd:48000000
+};
+context.Game.state.resource.BGD.mineAssets = [mineAssetForDecommission];
+const mineRawStockBefore = context.Game.state.resource.BGD.warehouse.availableByResource.coal;
+const mineDecommissionConfirmation = N.decommissionMine({
+  countryId:'BGD',siteId:'SITE_BGD_COAL_01'
+});
+assert.equal(mineDecommissionConfirmation.status,'CONFIRMATION_REQUIRED');
+assert.equal(mineAssetForDecommission.status,'OPERATIONAL','missing confirmation must not alter the mine');
+const mineDecommissionResult = N.decommissionMine({
+  countryId:'BGD',siteId:'SITE_BGD_COAL_01',confirmed:true
+});
+assert.equal(mineDecommissionResult.status,'DECOMMISSIONED');
+assert.equal(mineAssetForDecommission.status,'DECOMMISSIONED');
+assert.equal(mineAssetForDecommission.productionStatus,'STOPPED');
+assert.equal(context.Game.state.resource.BGD.mineAssets.length,1,'the physical mine asset record must be retained');
+assert.equal(context.Game.state.resource.BGD.warehouse.availableByResource.coal,mineRawStockBefore,
+  'mine demolition must not delete raw warehouse stock');
+assert.ok(context.Game.state.resource.BGD.industrialNetwork.mineDecommissionHistory.some(row=>row.siteId==='SITE_BGD_COAL_01'),
+  'mine shutdown must be auditable');
+assert.equal(N.decommissionMine({countryId:'BGD',siteId:'SITE_BGD_COAL_01',confirmed:true}).idempotent,true,
+  'repeated demolition is safe and idempotent');
+const decommissionedSource = fs.readFileSync('omega_resource_industrial_network_v1.js','utf8');
+assert.match(decommissionedSource,/reason:'MINE_DECOMMISSIONED'/);
+const endowmentDecommissionGuard = fs.readFileSync('omega_resource_endowment_runtime.js','utf8');
+assert.match(endowmentDecommissionGuard,/decommissionedSiteIds/,'selected-country production must skip decommissioned mine sites');
+
+// Android 9 regression: lazily initialize turn-scoped utility and transport ledgers
+// without relying on object-spread behavior in the WebView compatibility path.
+context.Game.state.simulation.turn = Math.max(1, Number(context.Game.state.simulation.turn) || 1);
+const utilityCountryState = context.Game.state.resource.USA;
+utilityCountryState.industrialNetwork = {
+  utilityLedger: { schemaVersion:'1.0.0', turns:{} },
+  transportCapacityLedger: { schemaVersion:'1.0.0', turns:{} }
+};
+assert.doesNotThrow(() => N.factoryUtilityDiagnostics('USA'),
+  'factory utility diagnostics must initialize empty turn ledgers safely');
+assert.equal(utilityCountryState.industrialNetwork.infrastructure.baselineInitialized, true,
+  'diagnostics must restore a missing infrastructure bucket without discarding the turn ledgers');
+assert.ok(utilityCountryState.industrialNetwork.infrastructure.nodes &&
+  utilityCountryState.industrialNetwork.infrastructure.edges &&
+  utilityCountryState.industrialNetwork.infrastructure.corridors,
+  'partial infrastructure state must regain the canonical nested route ledgers');
+const utilityTurnKey = String(context.Game.state.simulation.turn);
+const utilityLedgerTurn = utilityCountryState.industrialNetwork.utilityLedger.turns[utilityTurnKey];
+const transportLedgerTurn = utilityCountryState.industrialNetwork.transportCapacityLedger.turns[utilityTurnKey];
+assert.ok(utilityLedgerTurn, 'the current utility ledger turn must be created');
+assert.equal(utilityLedgerTurn.used.electricityMWh, 0);
+assert.equal(utilityLedgerTurn.used.waterM3, 0);
+assert.equal(utilityLedgerTurn.transactions.length, 0);
+assert.ok(transportLedgerTurn, 'the current transport ledger turn must be created');
+assert.equal(Object.keys(transportLedgerTurn.usedByMode).length, 0);
+assert.equal(transportLedgerTurn.shipments.length, 0);
+
 console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');

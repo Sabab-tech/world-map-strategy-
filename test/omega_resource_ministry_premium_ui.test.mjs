@@ -42,7 +42,7 @@ test("resource visual layer is wired into the offline-first app without remote d
   assert.ok(html.includes(stylesheetTag), "premium resource stylesheet must be loaded by the app");
   assert.ok(sw.includes('"' + "./" + cssPath + '"'), "premium resource stylesheet must be precached offline");
   assert.ok(uiManifest.additionalStyles.includes(cssPath), "UI v2 manifest must document the resource style");
-  assert.match(sw, /omega-offline-atlas-shell-v48/, "offline cache must be invalidated for new visual assets");
+  assert.match(sw, /omega-offline-atlas-shell-v50/, "offline cache must be invalidated for new visual assets");
   const coreAssets = sw.slice(sw.indexOf("const CORE_ASSETS"), sw.indexOf("];", sw.indexOf("const CORE_ASSETS")));
   assert.ok(coreAssets.includes('"./' + cssPath + '"'), "premium stylesheet belongs in the precache list");
   assert.ok(sw.includes("const resourceIcons = Array.isArray(factoryIconManifest.resources)"),
@@ -63,4 +63,171 @@ test("resource renderer uses the canonical image map and labels mine archetypes"
   assert.match(source, /loading=\"lazy\" decoding=\"async\"/);
   assert.match(source, /data-mine-archetype/);
   assert.match(source, /RESERVE_NOT_RECORDED|UNOBSERVED/);
+});
+
+
+test("mine command screen has the requested tabs, per-site actions and clean player-facing text", () => {
+  const api = globalThis.OmegaUIV2ResourceMinistry;
+  const priorGame = globalThis.Game;
+  const priorCatalog = globalThis.OmegaResourceSiteCanonicalCatalogData;
+  const row = {
+    siteId: "SITE_BGD_TEST_COAL",
+    countryId: "BGD",
+    resourceId: "coal",
+    siteName: "Test Coal Mine",
+    status: "SIMULATED_OPERATIONAL_SCENARIO",
+    location: { region: "Sylhet", coordinates: { lat: 24.9, lng: 91.8 } },
+    operation: { commercialExtraction: true },
+    quantitative: {
+      reserve: { quantity: 1000000, unit: "TONNES", status: "SIMULATED" },
+      production: { rate: 100, unit: "TONNES_PER_DAY", status: "SIMULATED" }
+    },
+    simulation: { reserve: { quantity: 1000000, unit: "TONNES", status: "SIMULATED" } }
+  };
+  globalThis.Game = { state: {
+    simulation: { turn: 7, session: { playerCountryId: "BGD" } },
+    resource: { BGD: {
+      mineAssets: [{ siteId: row.siteId, resourceId: "coal", status: "OPERATIONAL", workersCommitted: 250, workersRequired: 300 }],
+      industrialNetwork: { projects: [], shipments: [], siteFlowLedger: [{
+        flowId: "FLOW-TEST-1", siteId: row.siteId, countryId: "BGD", resourceId: "coal",
+        batchId: "BATCH-TEST-1", quantity: 100, unit: "TONNES", status: "DELIVERED",
+        extractionTurn: 7, stages: [{ stage: "EXTRACTION", status: "COMPLETED", turn: 7 }]
+      }] },
+      warehouse: { availableByResource: { coal: 500 }, receipts: [] },
+      processedWarehouse: { availableByResource: { coal: 50 }, receipts: [] },
+      demandByResource: { coal: { dailyDemand: 120 } },
+      inventoryLedger: []
+    } }
+  } };
+  globalThis.OmegaResourceSiteCanonicalCatalogData = { sites: [row] };
+  const root = {
+    innerHTML: "",
+    classList: { add() {} },
+    addEventListener() {},
+    querySelector() { return null; },
+    querySelectorAll() { return []; },
+    contains() { return true; }
+  };
+  try {
+    const rendered = api.render(root, { countryId: "BGD", sites: [row], tab: "mines" });
+    assert.equal(rendered.ok, true);
+    assert.match(root.innerHTML, /Overview/);
+    assert.match(root.innerHTML, /Stock &amp; Logistics/);
+    assert.match(root.innerHTML, /Inventory \/ Warehouse/);
+    assert.match(root.innerHTML, /Reports/);
+    assert.match(root.innerHTML, /data-omega-v2-mine-action="build"/);
+    assert.match(root.innerHTML, /data-omega-v2-mine-action="extract"/);
+    assert.match(root.innerHTML, /data-omega-v2-mine-action="demolish"/);
+    assert.match(root.innerHTML, /data-balance-state="shortage"/);
+    const visibleText = root.innerHTML.replace(/<[^>]*>/g, " ").replace(/&amp;/g, "&");
+    assert.doesNotMatch(visibleText, /\b(simulated|modelled|modeled|catalog reference|source:|site id)\b/i);
+    api.render(root, { countryId: "BGD", sites: [row], tab: "reports" });
+    assert.match(root.innerHTML, /omega-v2-report-chart/);
+    assert.match(root.innerHTML, /omega-v2-chart-bar/);
+  } finally {
+    if (priorGame === undefined) delete globalThis.Game; else globalThis.Game = priorGame;
+    if (priorCatalog === undefined) delete globalThis.OmegaResourceSiteCanonicalCatalogData;
+    else globalThis.OmegaResourceSiteCanonicalCatalogData = priorCatalog;
+  }
+});
+
+test("resource status plating and charts stay local and unit-aware", () => {
+  const css = cssText();
+  assert.match(css, /omega-v2-mine-card\[data-balance-state="adequate"\]/);
+  assert.match(css, /omega-v2-mine-card\[data-balance-state="shortage"\]/);
+  assert.match(css, /omega-v2-mine-card\[data-balance-state="stopped"\]/);
+  assert.match(css, /omega-v2-resource-icon[\s\S]*#f6fafc/);
+  assert.doesNotMatch(css, /https?:\/\//);
+});
+
+
+test("all resource SVGs use a light metallic backplate for readable dark minerals", () => {
+  const manifest = json("assets/omega-industrial-icons-v1/manifest.json");
+  assert.equal(manifest.resources.length, 42);
+  assert.equal(manifest.factories.length, 21);
+  for (const item of manifest.resources) {
+    const file = "assets/omega-industrial-icons-v1/" + item.file;
+    const svg = read(file);
+    const match = svg.match(/<linearGradient id="[^"]+-bg"[^>]*>([\s\S]*?)<\/linearGradient>/);
+    assert.ok(match, file + ": backplate gradient required");
+    assert.match(match[1], /stop-color="#f7fbfd"/, file + ": light upper metallic layer");
+    assert.match(match[1], /stop-color="#dce7ec"/, file + ": silver main surface");
+    assert.match(match[1], /stop-color="#b7c8d1"/, file + ": readable lower edge");
+    assert.match(svg, /data-omega-icon-kind="resource"/);
+  }
+  assert.match(manifest.rendering.background, /light silver-metal.*factory SVGs retain their shared dark-navy/i);
+  assert.match(read("omega-offline-map-sw.js"), /omega-offline-atlas-shell-v50/);
+});
+
+
+test("country selector browses canonical mine sites without granting foreign-country operation access", () => {
+  const api = globalThis.OmegaUIV2ResourceMinistry;
+  const priorGame = globalThis.Game;
+  const priorResourceEngine = globalThis.ResourceMinistryEngine;
+  const priorCatalog = globalThis.OmegaResourceSiteCanonicalCatalogData;
+  const site = (countryId, countryName, siteName, siteId) => ({
+    siteId, countryId, siteName, resourceId: "coal",
+    identity: { countryIso3: countryId, countryName, resourceTypeId: "coal" },
+    location: { countryName, region: "Mining region", coordinates: { lat: 12, lng: 24 } },
+    operation: { commercialExtraction: true, status: "REGISTERED" },
+    quantitative: {
+      reserve: { quantity: 100000, unit: "TONNES", status: "SIMULATED" },
+      production: { rate: 10, unit: "TONNES_PER_DAY", status: "SIMULATED" }
+    },
+    simulation: { reserve: { quantity: 100000, unit: "TONNES", status: "SIMULATED" } }
+  });
+  const bangladesh = site("BGD", "Bangladesh", "Bangladesh Coal Mine", "SITE_BGD_COUNTRY_SELECTOR");
+  const usa = site("USA", "United States", "United States Coal Mine", "SITE_USA_COUNTRY_SELECTOR");
+  const listeners = Object.create(null);
+  let foreignStateBefore = null;
+  globalThis.Game = { state: {
+    simulation: { turn: 4, session: { playerCountryId: "BGD" } },
+    resource: {
+      BGD: { mineAssets: [], industrialNetwork: { projects: [], shipments: [], siteFlowLedger: [] } },
+      USA: { mineAssets: [], industrialNetwork: { projects: [], shipments: [], siteFlowLedger: [] } }
+    }
+  } };
+  foreignStateBefore = JSON.stringify(globalThis.Game.state.resource.USA);
+  globalThis.ResourceMinistryEngine = {
+    countryProfiles: {
+      BGD: { identity: { iso3: "BGD", officialName: "Bangladesh" } },
+      USA: { identity: { iso3: "USA", officialName: "United States" } }
+    }
+  };
+  globalThis.OmegaResourceSiteCanonicalCatalogData = { sites: [bangladesh, usa] };
+  const root = {
+    innerHTML: "",
+    classList: { add() {} },
+    addEventListener(type, fn) { listeners[type] = fn; },
+    querySelector() { return null; },
+    querySelectorAll() { return []; },
+    contains() { return true; }
+  };
+  try {
+    const first = api.render(root, { countryId: "BGD", sites: [bangladesh, usa], tab: "mines" });
+    assert.equal(first.ok, true);
+    assert.match(root.innerHTML, /data-omega-v2-resource-country/);
+    assert.match(root.innerHTML, /Bangladesh \(BGD\)/);
+    assert.match(root.innerHTML, /United States \(USA\)/);
+    assert.match(root.innerHTML, /Bangladesh Coal Mine/);
+
+    listeners.change({
+      target: {
+        value: "USA",
+        matches(selector) { return selector === "[data-omega-v2-resource-country]"; }
+      }
+    });
+    assert.match(root.innerHTML, /United States \(USA\)/);
+    assert.match(root.innerHTML, /United States Coal Mine/);
+    assert.match(root.innerHTML, /data-omega-v2-mine-action="build"[^>]*disabled/);
+    assert.equal(JSON.stringify(globalThis.Game.state.resource.USA), foreignStateBefore,
+      "browsing a foreign country must remain read-only");
+    assert.doesNotMatch(root.innerHTML.replace(/<[^>]*>/g, " "), /\bSIMULATED\b/i);
+  } finally {
+    if (priorGame === undefined) delete globalThis.Game; else globalThis.Game = priorGame;
+    if (priorResourceEngine === undefined) delete globalThis.ResourceMinistryEngine;
+    else globalThis.ResourceMinistryEngine = priorResourceEngine;
+    if (priorCatalog === undefined) delete globalThis.OmegaResourceSiteCanonicalCatalogData;
+    else globalThis.OmegaResourceSiteCanonicalCatalogData = priorCatalog;
+  }
 });
