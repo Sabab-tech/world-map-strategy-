@@ -459,29 +459,189 @@
   function baselineFor(resourceId, resource, profile, runtime, metrics, factoryInput) {
     var map = object(runtime.baselineByResource) || {};
     var existing = map[resourceId];
-    if (existing && finite(existing.rate) !== null && finite(existing.rate) >= 0) return clone(existing);
+    if (existing && finite(existing.rate) !== null && finite(existing.rate) >= 0) {
+      var cached = clone(existing);
+      // Preserve legacy rates, but disclose that the old source label omitted whether the
+      // domestic-use share was observed, profile-derived, or supplied by a general default.
+      if (cached.source === 'OBSERVED_PRODUCTION_DOMESTIC_SHARE' && !cached.provenance) {
+        cached.legacySource = cached.source;
+        cached.source = 'LEGACY_ESTIMATED_PRODUCTION_DOMESTIC_SHARE';
+        cached.provenance = 'LEGACY_ESTIMATE_PROVENANCE_UNKNOWN';
+      }
+      return cached;
+    }
     var consumption = object(resource.consumption) || {};
     var observed = resourceValue(consumption, resourceId);
     if (observed !== null && observed > 0) {
-      return { rate: observed, source: 'OBSERVED_RESOURCE_CONSUMPTION', createdTurn: currentTurn() };
+      return { rate: observed, source: 'OBSERVED_RESOURCE_CONSUMPTION', provenance: 'OBSERVED', evidencePath: 'resource.consumption', createdTurn: currentTurn() };
     }
     var coefficient = finite(profile && profile.basePerMillionPopulation);
     if (coefficient !== null && coefficient > 0 && metrics.current.population.value !== null && metrics.current.population.value > 0) {
       return {
         rate: coefficient * metrics.current.population.value / 1000000,
         source: 'RULE_PROFILE_POPULATION_BASELINE_PER_DAY',
+        provenance: 'RULE_PROFILE_ESTIMATE',
+        coefficientSource: 'resource_economy_rules.json:demand.resourceProfiles.basePerMillionPopulation',
         createdTurn: currentTurn()
       };
     }
     var produced = resourceValue(resource.production, resourceId);
     var domesticShare = finite(profile && profile.domesticUseShare);
-    if (domesticShare === null) domesticShare = finite(rules().defaultDomesticUseShare);
-    if (domesticShare === null) domesticShare = 0.15;
-    if (produced !== null && produced > 0) {
-      return { rate: produced * clamp(domesticShare, 0, 1), source: 'OBSERVED_PRODUCTION_DOMESTIC_SHARE', createdTurn: currentTurn() };
+    var domesticShareSource = domesticShare !== null ? 'RESOURCE_PROFILE' : null;
+    if (domesticShare === null) {
+      domesticShare = finite(rules().defaultDomesticUseShare);
+      if (domesticShare !== null) domesticShareSource = 'RULE_DEFAULT_SIMULATED';
     }
-    if (factoryInput > 0) return { rate: factoryInput, source: 'OBSERVED_FACTORY_INPUT_FLOOR_PER_DAY', createdTurn: currentTurn() };
+    if (produced !== null && produced > 0 && domesticShare !== null) {
+      var boundedDomesticShare = clamp(domesticShare, 0, 1);
+      return {
+        rate: produced * boundedDomesticShare,
+        source: 'ESTIMATED_PRODUCTION_DOMESTIC_SHARE',
+        provenance: 'SIMULATED_ESTIMATE',
+        productionEvidenceSource: 'OBSERVED_RESOURCE_PRODUCTION',
+        domesticUseShare: boundedDomesticShare,
+        domesticUseShareSource: domesticShareSource,
+        createdTurn: currentTurn()
+      };
+    }
+    if (factoryInput > 0) {
+      return { rate: factoryInput, source: 'OBSERVED_FACTORY_INPUT_FLOOR_PER_DAY', provenance: 'OBSERVED_FACTORY_INPUT_PROXY', evidencePath: 'factory.recipe.inputRate', createdTurn: currentTurn() };
+    }
     return null;
+  }
+
+  function playerSupplyLifelineConfig() {
+    return object(rules().playerSupplyLifeline) || {};
+  }
+  function pushSupplyAlert(runtime, policy, countryId, type, alertKey, detail) {
+    if (!policy || !policy.policyId) return null;
+    if (!Array.isArray(policy.alerts)) policy.alerts = [];
+    if (!Array.isArray(policy.alertedKeys)) policy.alertedKeys = [];
+    if (policy.alertedKeys.indexOf(alertKey) >= 0) return null;
+    var cfg = playerSupplyLifelineConfig();
+    var alert = {
+      alertId: String(policy.policyId) + ':' + String(alertKey),
+      policyId: policy.policyId, countryId: canonical(countryId), type: type,
+      turn: currentTurn(), elapsedGameDays: Math.max(0, finite(policy.elapsedGameDays) || 0),
+      remainingGameDays: Math.max(0, finite(policy.remainingGameDays) || 0),
+      status: 'OPEN',
+      requiredAction: type === 'SUPPLY_WINDOW_EXPIRED' ? 'REAUTHORIZE_SUPPLY_POLICY'
+        : (type === 'CONTRACT_WINDOW_EXPIRING' ? 'REVIEW_AND_REAUTHORIZE_SUPPLY_POLICY'
+        : (type === 'LOW_STOCK_COVERAGE' ? 'REVIEW_REPLENISHMENT_AND_SUPPLY_RISK'
+        : (type === 'DEMAND_RISING_STOCK_FALLING' ? 'REVIEW_DEMAND_AND_REPLENISHMENT'
+        : 'REVIEW_IMPORT_FAILURE_AND_ALTERNATIVES'))),
+      detail: clone(detail || {})
+    };
+    policy.alertedKeys.push(alertKey);
+    policy.alerts.push(alert);
+    var cap = Math.max(8, Math.floor(finite(cfg.maxPersistedAlerts) || 64));
+    if (policy.alerts.length > cap) policy.alerts.splice(0, policy.alerts.length - cap);
+    if (policy.alertedKeys.length > cap * 8) policy.alertedKeys.splice(0, policy.alertedKeys.length - cap * 8);
+    try {
+      if (typeof g.dispatchEvent === 'function' && typeof g.CustomEvent === 'function') {
+        g.dispatchEvent(new g.CustomEvent('OMEGA_RESOURCE_SUPPLY_ALERT_CREATED', { detail: clone(alert) }));
+      }
+    } catch (_) {}
+    return alert;
+  }
+  function advancePlayerSupplyLifeline(runtime, countryId, turnDays) {
+    var policy = object(runtime.playerSupplyLifeline);
+    if (!policy || policy.approved !== true) return null;
+    var cfg = playerSupplyLifelineConfig(), now = currentTurn();
+    var termDays = Math.max(1, finite(policy.termDays) || finite(cfg.termDays) || 100);
+    policy.termDays = termDays;
+    policy.targetCoverageDays = Math.max(1, finite(policy.targetCoverageDays) || finite(cfg.targetCoverageDays) || 100);
+    policy.automaticRenewal = false;
+    if (!Array.isArray(policy.alerts)) policy.alerts = [];
+    if (!Array.isArray(policy.alertedKeys)) policy.alertedKeys = [];
+    if (policy.status === 'SCHEDULED' && now >= (finite(policy.startTurn) || now)) {
+      policy.status = 'ACTIVE';
+      policy.lastAdvancedTurn = now;
+    } else if (policy.status === 'ACTIVE') {
+      var last = finite(policy.lastAdvancedTurn);
+      if (last === null) last = finite(policy.startTurn) === null ? now : finite(policy.startTurn);
+      var elapsed = Math.max(0, finite(policy.elapsedGameDays) || 0);
+      if (now > last) elapsed += (now - last) * Math.max(1 / 86400000, finite(turnDays) || 1);
+      policy.elapsedGameDays = Math.min(termDays, elapsed);
+      policy.lastAdvancedTurn = now;
+      if (policy.elapsedGameDays >= termDays - 1e-9) {
+        policy.elapsedGameDays = termDays;
+        policy.status = 'EXPIRED';
+      }
+    }
+    if (policy.status === 'SCHEDULED') {
+      policy.elapsedGameDays = Math.max(0, finite(policy.elapsedGameDays) || 0);
+      policy.remainingGameDays = termDays;
+    } else {
+      policy.elapsedGameDays = Math.max(0, finite(policy.elapsedGameDays) || 0);
+      policy.remainingGameDays = Math.max(0, termDays - policy.elapsedGameDays);
+      // Catch up missed warning thresholds after a skipped turn or save/load.
+      var offsets = Array.isArray(cfg.expiryWarningDays) ? cfg.expiryWarningDays : [30, 14, 7];
+      offsets.map(finite).filter(function (x) { return x !== null && x > 0; })
+        .sort(function (a, b) { return b - a; }).forEach(function (offset) {
+          if (policy.remainingGameDays <= offset + 1e-9) {
+            pushSupplyAlert(runtime, policy, countryId, 'CONTRACT_WINDOW_EXPIRING', 'CONTRACT_WINDOW_EXPIRING:' + offset, {
+              warningDays: offset, remainingGameDays: policy.remainingGameDays,
+              crossedThresholdAtRemainingDays: offset,
+              message: 'The automatic supply authorization is approaching expiry.'
+            });
+          }
+        });
+      if (policy.status === 'EXPIRED') {
+        pushSupplyAlert(runtime, policy, countryId, 'SUPPLY_WINDOW_EXPIRED', 'SUPPLY_WINDOW_EXPIRED', {
+          termDays: termDays,
+          message: 'Automatic replenishment has ended; existing stock and inbound shipments remain valid.'
+        });
+      }
+    }
+    policy.updatedTurn = now;
+    return policy;
+  }
+  function getPlayerSupplyLifeline(countryId) {
+    var cid = canonical(countryId), player = playerCountryId();
+    if (!cid || !player || cid !== player) return { accepted: false, status: 'NOT_PLAYER_COUNTRY', countryId: cid || null };
+    var resource = bucket(cid, 'resource');
+    var saved = resource && object(resource.demandRuntime);
+    var policy = saved && object(saved.playerSupplyLifeline);
+    return policy ? clone(policy) : { accepted: true, status: 'NOT_APPROVED', approved: false, countryId: cid };
+  }
+  function authorizePlayerSupplyLifeline(countryId) {
+    var cid = canonical(countryId), player = playerCountryId(), cfg = playerSupplyLifelineConfig();
+    if (!cid || !player || cid !== player) return { accepted: false, status: 'NOT_PLAYER_COUNTRY', reason: 'PLAYER_COUNTRY_ID_MISMATCH', countryId: cid || null };
+    if (cfg.enabled !== true || cfg.requiresExplicitPlayerApproval !== true) return { accepted: false, status: 'DISABLED', reason: 'PLAYER_SUPPLY_LIFELINE_NOT_ENABLED' };
+    var resource = bucket(cid, 'resource');
+    if (!resource || !object(resource.inventory)) return { accepted: false, status: 'WAITING_FOR_INVENTORY', reason: 'AUTHORITATIVE_INVENTORY_REQUIRED' };
+    var savedRuntime = object(resource.demandRuntime) || {};
+    var current = object(savedRuntime.playerSupplyLifeline);
+    if (current && current.approved === true && (current.status === 'ACTIVE' || current.status === 'SCHEDULED')) {
+      return { accepted: true, duplicate: true, status: current.status, policy: clone(current) };
+    }
+    var runtime = clone(savedRuntime);
+    if (!Array.isArray(runtime.playerSupplyLifelineHistory)) runtime.playerSupplyLifelineHistory = [];
+    if (current) runtime.playerSupplyLifelineHistory.push(clone(current));
+    if (runtime.playerSupplyLifelineHistory.length > 16) runtime.playerSupplyLifelineHistory.splice(0, runtime.playerSupplyLifelineHistory.length - 16);
+    var alreadyProcessed = finite(runtime.lastTurn) === currentTurn();
+    var startTurn = currentTurn() + (alreadyProcessed ? 1 : 0);
+    var termDays = Math.max(1, finite(cfg.termDays) || 100);
+    var policy = {
+      policyId: 'PLAYER-SUPPLY-LIFELINE-' + cid + '-' + startTurn,
+      countryId: cid, approved: true, approvedBy: 'PLAYER',
+      status: startTurn > currentTurn() ? 'SCHEDULED' : 'ACTIVE',
+      startTurn: startTurn, lastAdvancedTurn: startTurn,
+      elapsedGameDays: 0, remainingGameDays: termDays, termDays: termDays,
+      targetCoverageDays: Math.max(1, finite(cfg.targetCoverageDays) || 100),
+      automaticRenewal: false, nextManualActionRequiredAtExpiry: true,
+      approvedTurn: currentTurn(), alerts: [], alertedKeys: []
+    };
+    runtime.playerSupplyLifeline = policy;
+    var saved = dispatch('resource', 'OMEGA_RESOURCE_ECON_PUBLISH_DEMAND_RUNTIME', cid, {
+      demandRuntime: runtime, correlationId: 'SUPPLY-LIFELINE-APPROVE-' + policy.policyId
+    });
+    if (!saved || saved.status !== 'APPLIED' || (saved.result && saved.result.accepted === false)) {
+      return { accepted: false, status: saved && saved.status || 'UNKNOWN',
+        reason: saved && saved.result && saved.result.reason || saved && saved.reason || 'SUPPLY_POLICY_PERSIST_FAILED' };
+    }
+    return { accepted: true, status: policy.status, policy: clone(policy) };
   }
 
   function processCountry(countryId, completedFactoryRows) {
@@ -511,6 +671,13 @@
     if (!object(runtime.baselineByResource)) runtime.baselineByResource = {};
     if (!Array.isArray(runtime.history)) runtime.history = [];
     if (!Array.isArray(runtime.procurementDecisions)) runtime.procurementDecisions = [];
+    var priorByResource = clone(object(runtime.byResource) || {});
+    var player = playerCountryId();
+    var lifeline = advancePlayerSupplyLifeline(runtime, cid, turnDays);
+    var playerSupplyWindowActive = !!(player === cid && lifeline && lifeline.approved === true && lifeline.status === 'ACTIVE');
+    var playerSupplyTargetDays = playerSupplyWindowActive
+      ? Math.max(1, finite(lifeline.targetCoverageDays) || finite(playerSupplyLifelineConfig().targetCoverageDays) || 100)
+      : 0;
     var metrics = referenceContext(resource, cid, runtime);
     runtime.referenceContext = metrics.reference;
     var factoryInputs = factoryInputTotals(completedFactoryRows);
@@ -531,8 +698,7 @@
     var maxLedger = Math.max(1, Math.floor(finite(cfg.maxLedgerEntries) || 2048));
     var minCoverageDays = Math.max(0, finite(cfg.stockCoverageDays) || finite(cfg.stockCoverageTurns) || 3);
     var bufferDays = Math.max(0, finite(cfg.procurementBufferDays) || finite(cfg.procurementBufferTurns) || 2);
-    var maxPurchaseDays = Math.max(bufferDays, finite(cfg.maxPurchaseCoverageDays) || finite(cfg.maxPurchaseCoverageTurns) || 6);
-    var player = playerCountryId();
+    var maxPurchaseDays = Math.max(bufferDays, finite(cfg.maxPurchaseCoverageDays) || finite(cfg.maxPurchaseCoverageTurns) || 6, playerSupplyTargetDays);
     var allowPlayerProcurement = !!(cfg.automaticProcurement && cfg.automaticProcurement.forPlayerCountry === true);
     var autoProcure = !!(cfg.automaticProcurement && cfg.automaticProcurement.enabled === true);
     var pendingRows = Array.isArray(trade.importRequests) ? trade.importRequests : [];
@@ -639,9 +805,11 @@
       var remainingSpendable = inventoryAfter === null ? null : Math.max(0, inventoryAfter - protectedStock(bucket(cid, 'resource') || resource, rid));
       var coverage = remainingSpendable === null ? null : (demanded > 0 ? remainingSpendable / demanded : null);
       var pending = pendingByResource[token(rid)] || 0;
-      var coverageTarget = Math.max(0, finite(profile.stockCoverageDays) === null
-        ? (finite(profile.stockCoverageTurns) === null ? minCoverageDays : finite(profile.stockCoverageTurns))
-        : finite(profile.stockCoverageDays));
+      var coverageTarget = playerSupplyWindowActive
+        ? playerSupplyTargetDays
+        : Math.max(0, finite(profile.stockCoverageDays) === null
+          ? (finite(profile.stockCoverageTurns) === null ? minCoverageDays : finite(profile.stockCoverageTurns))
+          : finite(profile.stockCoverageDays));
       var lowStockCoverage = coverage !== null && demanded > 0 && coverage < coverageTarget;
       var shortagePressure = unmet !== null && demandThisTurn > 0 ? clamp(unmet / demandThisTurn, 0, 1) : 0;
       var coveragePressure = coverage !== null && coverageTarget > 0 ? clamp((coverageTarget - coverage) / coverageTarget, 0, 1) : 0;
@@ -650,6 +818,10 @@
         resourceId: rid, unit: profile.unit || null,
         status: stock === null ? 'WAITING_FOR_INVENTORY' : (unmet > 1e-9 ? 'SHORTAGE' : (lowStockCoverage ? 'LOW_COVERAGE' : 'BALANCED')),
         baselineRate: baseline.rate, baselineSource: baseline.source,
+        baselineProvenance: baseline.provenance || 'LEGACY_PROVENANCE_UNSPECIFIED',
+        baselineEvidenceSource: baseline.productionEvidenceSource || baseline.evidencePath || baseline.coefficientSource || null,
+        baselineDomesticUseShare: finite(baseline.domesticUseShare),
+        baselineDomesticUseShareSource: baseline.domesticUseShareSource || null,
         demand: demanded, demandPerDay: demanded, demandThisTurn: demandThisTurn,
         factoryConsumption: inputQty, nationalConsumption: consumed,
         fulfilledDemand: fulfilled, unmetDemand: unmet,
@@ -663,6 +835,30 @@
       };
       summaries.push(summary);
     });
+
+    if (playerSupplyWindowActive) {
+      var lifelineCfg = playerSupplyLifelineConfig();
+      var lowStockWarningDays = Math.max(0, finite(lifelineCfg.lowStockWarningDays) || 30);
+      var demandIncreaseThreshold = Math.max(0, finite(lifelineCfg.demandIncreaseAlertFraction) || 0.1);
+      summaries.forEach(function (row) {
+        if (row.stockCoverageDays !== null && row.stockCoverageDays <= lowStockWarningDays) {
+          pushSupplyAlert(runtime, lifeline, cid, 'LOW_STOCK_COVERAGE', 'LOW_STOCK_COVERAGE:' + token(row.resourceId), {
+            resourceId: row.resourceId, stockCoverageDays: row.stockCoverageDays, targetCoverageDays: playerSupplyTargetDays
+          });
+        }
+        var prior = object(priorByResource[row.resourceId]);
+        var priorDemand = prior && finite(prior.demandPerDay), priorStock = prior && finite(prior.inventoryAfter);
+        var currentDemand = finite(row.demandPerDay), currentStock = finite(row.inventoryAfter);
+        if (priorDemand !== null && priorDemand !== undefined && priorStock !== null && priorStock !== undefined &&
+            currentDemand !== null && currentStock !== null &&
+            currentDemand > priorDemand * (1 + demandIncreaseThreshold) && currentStock < priorStock) {
+          pushSupplyAlert(runtime, lifeline, cid, 'DEMAND_RISING_STOCK_FALLING', 'DEMAND_RISING_STOCK_FALLING:' + token(row.resourceId), {
+            resourceId: row.resourceId, previousDemandPerDay: priorDemand, currentDemandPerDay: currentDemand,
+            previousInventory: priorStock, currentInventory: currentStock, thresholdFraction: demandIncreaseThreshold
+          });
+        }
+      });
+    }
 
     // The per-resource consumption rate and decision snapshot are written through
     // the existing resource-economy command authority, never as a parallel save file.
@@ -709,7 +905,8 @@
     // Rank unmet critical needs and ask the existing autonomy orchestrator to route
     // at most N procurement decisions. It may wait for supplier/price/access evidence.
     var procurement = [];
-    var canProcure = autoProcure && !!player && (player !== cid || allowPlayerProcurement) &&
+    var canProcure = autoProcure && !!player &&
+      (player !== cid || allowPlayerProcurement || playerSupplyWindowActive) &&
       hasInventoryBook && g.OmegaOpponentAutonomy && typeof g.OmegaOpponentAutonomy.routeDecision === 'function';
     if (canProcure) {
       summaries.forEach(function (row) {
@@ -726,12 +923,18 @@
         procurement.push({ row: row, quantity: quantity, score: row.procurementScore || 0 });
       });
       procurement.sort(function (a, b) { return b.score - a.score || token(a.row.resourceId).localeCompare(token(b.row.resourceId)); });
-      var maxDecisions = Math.max(0, Math.floor(finite(cfg.maxProcurementDecisionsPerCountryPerTurn) || 2));
+      var maxDecisions = playerSupplyWindowActive
+        ? Math.max(1, Math.floor(finite(playerSupplyLifelineConfig().maxDecisionsPerTurn) || 4))
+        : Math.max(0, Math.floor(finite(cfg.maxProcurementDecisionsPerCountryPerTurn) || 2));
       procurement = procurement.slice(0, maxDecisions);
       procurement = procurement.map(function (entry) {
         var decisionId = 'RESOURCE-NEED-' + currentTurn() + '-' + cid + '-' + token(entry.row.resourceId);
         var decision = {
           decisionId: decisionId, countryId: cid, scenarioId: 'RESOURCE_DEFICIT',
+          supplyWindowId: playerSupplyWindowActive ? lifeline.policyId : null,
+          supplyWindowTermDays: playerSupplyWindowActive ? lifeline.termDays : null,
+          supplyWindowRemainingDays: playerSupplyWindowActive ? lifeline.remainingGameDays : null,
+          supplyWindowTargetCoverageDays: playerSupplyWindowActive ? playerSupplyTargetDays : null,
           candidateActions: ['IMPORT', 'RESERVE_RELEASE', 'DOMESTIC_EXPANSION', 'SUBSTITUTION', 'EFFICIENCY', 'SUPPLIER_CHANGE'],
           goal: { priorityClass: entry.row.priority >= 8 ? 'PRESSURE' : 'OPPORTUNITY' },
           runtimeMeasurement: {
@@ -748,6 +951,8 @@
           var queued = routed && routed.status === 'READY_TO_QUEUE' && !!routed.command;
           return {
             resourceId: entry.row.resourceId, decisionId: decisionId, quantity: entry.quantity,
+            supplyWindowId: playerSupplyWindowActive ? lifeline.policyId : null,
+            supplyWindowTermDays: playerSupplyWindowActive ? lifeline.termDays : null,
             status: queued ? 'QUEUED' : (routed && routed.status || 'WAITING_FOR_EVIDENCE'),
             selectedAction: routed && routed.route && routed.route.selectedAction || null,
             reason: queued ? null : (routed && routed.route && (routed.route.reason || routed.route.status) || 'AUTONOMY_DID_NOT_QUEUE'),
@@ -760,6 +965,15 @@
       });
       runtime.procurementDecisions = (runtime.procurementDecisions || []).concat(procurement).slice(-rowLimit);
       runtime.lastProcurementTurn = currentTurn();
+      if (playerSupplyWindowActive && lifeline) {
+        procurement.forEach(function (row) {
+          if (row.status !== 'QUEUED') {
+            pushSupplyAlert(runtime, lifeline, cid, 'PROCUREMENT_BLOCKED', 'PROCUREMENT_BLOCKED:' + token(row.resourceId) + ':' + token(row.reason || row.status), {
+              resourceId: row.resourceId, procurementStatus: row.status, reason: row.reason || null
+            });
+          }
+        });
+      }
     }
     var finalPublish = dispatch('resource', 'OMEGA_RESOURCE_ECON_PUBLISH_DEMAND_RUNTIME', cid, {
       consumption: {}, demandRuntime: clone(runtime),
@@ -800,6 +1014,8 @@
     prepare: prepare,
     processCountry: processCountry,
     calculateDemand: calculateDemand,
+    authorizePlayerSupplyLifeline: authorizePlayerSupplyLifeline,
+    getPlayerSupplyLifeline: getPlayerSupplyLifeline,
     diagnostics: diagnostics
   });
   g.Omega = g.Omega || {};

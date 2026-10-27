@@ -12,6 +12,8 @@ on:
       - 'omega_resource_ai_decision_service.js'
       - 'test/omega_resource_ai_decision_service.test.mjs'
       - 'omega_resource_command_center_ui_v1.js'
+      - 'test/omega_resource_command_center_ui_v1.test.mjs'
+      - 'test/omega_resource_command_center_ui_v1_integration.test.mjs'
       - 'omega_global_trade_system.js'
       - 'test/omega_global_trade_system.test.mjs'
       - 'omega_resource_strategic_policy_runtime_v1.js'
@@ -42,6 +44,10 @@ on:
       - 'omega_global_trade_system.js'
       - 'resource*.json'
       - 'resources*.json'
+      - 'omega_resource_national_demand_runtime_v1.js'
+      - 'test/omega_resource_national_demand_runtime_v1.test.mjs'
+      - 'omega_opponent_autonomy_system.js'
+      - 'test/omega_resource_supply_provenance.test.mjs'
       - 'test/omega_resource_recipe_coverage.test.mjs'
       - 'resource_industrial_catalog_v1.json'
       - 'resource_site_canonical_catalog_v1.json'
@@ -79,6 +85,8 @@ on:
       - 'omega_resource_ai_decision_service.js'
       - 'test/omega_resource_ai_decision_service.test.mjs'
       - 'omega_resource_command_center_ui_v1.js'
+      - 'test/omega_resource_command_center_ui_v1.test.mjs'
+      - 'test/omega_resource_command_center_ui_v1_integration.test.mjs'
       - 'omega_global_trade_system.js'
       - 'test/omega_global_trade_system.test.mjs'
       - 'omega_resource_strategic_policy_runtime_v1.js'
@@ -102,6 +110,10 @@ on:
       - 'omega_global_trade_system.js'
       - 'resource*.json'
       - 'resources*.json'
+      - 'omega_resource_national_demand_runtime_v1.js'
+      - 'test/omega_resource_national_demand_runtime_v1.test.mjs'
+      - 'omega_opponent_autonomy_system.js'
+      - 'test/omega_resource_supply_provenance.test.mjs'
       - 'test/omega_resource_true_e2e_pipeline.test.mjs'
       - 'test/omega_resource_global_pipeline.test.mjs'
       - 'test/omega_resource_industrial_network_v1.test.mjs'
@@ -124,7 +136,7 @@ permissions:
 jobs:
   real-resource-gameplay-pipeline:
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -162,6 +174,10 @@ jobs:
         run: npm run test:resource-actions && npm run test:resource-request
       - name: Production and realism regressions
         run: npm run test:resource-production-model && npm run test:resource-realism
+      - name: National demand and player supply lifeline regression
+        run: npm run test:resource-demand
+      - name: Resource Command Center supply policy UI regression
+        run: node --test test/omega_resource_command_center_ui_v1.test.mjs test/omega_resource_command_center_ui_v1_integration.test.mjs
       - name: Resource state hardening regression
         run: npm run test:resource-system-hardening
       - name: Industrial network regression

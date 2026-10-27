@@ -589,12 +589,46 @@
         "wartimeMultiplier": 1.15,
         "stockCoverageTurns": 3,
         "stockCoverageDays": 3
+      },
+      "gypsum": {
+        "unit": "METRIC_TONS_PER_DAY",
+        "stockCoverageDays": 3
+      },
+      "niobium": {
+        "unit": "METRIC_TONS_PER_DAY",
+        "stockCoverageDays": 3
+      },
+      "ruby": {
+        "unit": "CARATS_PER_DAY",
+        "stockCoverageDays": 2
+      },
+      "limestone": {
+        "unit": "METRIC_TONS_PER_DAY",
+        "stockCoverageDays": 3
       }
     },
     "maxHistoryTurns": 128,
     "defaultTurnDurationMs": 86400000,
     "stockCoverageDays": 3,
     "procurementBufferDays": 2,
-    "maxPurchaseCoverageDays": 6
+    "maxPurchaseCoverageDays": 6,
+    "playerSupplyLifeline": {
+      "enabled": true,
+      "termDays": 100,
+      "targetCoverageDays": 100,
+      "automaticRenewal": false,
+      "requiresExplicitPlayerApproval": true,
+      "maxDecisionsPerTurn": 4,
+      "expiryWarningDays": [
+        30,
+        14,
+        7
+      ],
+      "lowStockWarningDays": 30,
+      "demandIncreaseAlertFraction": 0.1,
+      "maxPersistedAlerts": 64,
+      "postExpiryPolicy": "STOP_NEW_AUTOMATIC_IMPORT_DECISIONS_KEEP_EXISTING_STOCK_AND_INBOUND_SHIPMENTS",
+      "unknownDemandPolicy": "PRESERVE_UNKNOWN_DO_NOT_INVENT_DEMAND_OR_STOCK"
+    }
   }
 }

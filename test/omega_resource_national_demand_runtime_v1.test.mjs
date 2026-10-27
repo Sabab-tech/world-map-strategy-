@@ -115,6 +115,44 @@ test('demand formula combines population, income, industry and military elastici
   assert.equal(formula.factors.price.multiplier, 1);
 });
 
+test('production-based demand is explicitly marked as estimated, and missing share rules do not fall back to a hard-coded coefficient', async () => {
+  const { context, worldState } = createRuntimeContext({
+    inventory: { gypsum: 100 },
+    consumption: {},
+    production: { gypsum: 100 }
+  });
+  context.__OmegaResourceEconomyRules.demand.resourceProfiles = {
+    gypsum: structuredClone(demandRules.resourceProfiles.gypsum)
+  };
+  const runtime = context.OmegaResourceNationalDemandRuntime;
+  await runtime.prepare();
+  runtime.processCountry('BGD', []);
+  const estimated = worldState.resource.BGD.demandRuntime.byResource.gypsum;
+  assert.equal(estimated.baselineRate, 15);
+  assert.equal(estimated.baselineSource, 'ESTIMATED_PRODUCTION_DOMESTIC_SHARE');
+  assert.equal(estimated.baselineProvenance, 'SIMULATED_ESTIMATE');
+  assert.equal(estimated.baselineEvidenceSource, 'OBSERVED_RESOURCE_PRODUCTION');
+  assert.equal(estimated.baselineDomesticUseShare, 0.15);
+  assert.equal(estimated.baselineDomesticUseShareSource, 'RULE_DEFAULT_SIMULATED');
+
+  // Without a profile coefficient, domestic-use share, or configured default, production by
+  // itself is not misrepresented as measured national demand.
+  const second = createRuntimeContext({
+    inventory: { gypsum: 100 },
+    consumption: {},
+    production: { gypsum: 100 }
+  });
+  second.context.__OmegaResourceEconomyRules.demand.resourceProfiles = {
+    gypsum: structuredClone(demandRules.resourceProfiles.gypsum)
+  };
+  delete second.context.__OmegaResourceEconomyRules.demand.defaultDomesticUseShare;
+  await second.context.OmegaResourceNationalDemandRuntime.prepare();
+  const unknownReport = second.context.OmegaResourceNationalDemandRuntime.processCountry('BGD', []);
+  const unknown = unknownReport.resources.find(row => row.resourceId === 'gypsum');
+  assert.equal(unknown.status, 'UNKNOWN');
+  assert.equal(unknown.demand, null);
+});
+
 test('country demand is updated once per turn, factory inputs are not double-charged, and protected stock is not consumed', async () => {
   const { context, worldState, calls } = createRuntimeContext();
   const runtime = context.OmegaResourceNationalDemandRuntime;
@@ -195,6 +233,11 @@ test('a finite inventory shortfall is recorded as unmet demand rather than negat
 
 test('daily demand remains stable over 365 turns and keeps bounded history without inventory underflow', async () => {
   const { context, worldState } = createRuntimeContext({ inventory: { iron_ore: 10000 }, consumption: { iron_ore: 10 } });
+  // This regression asserts one commodity over 365 turns; keep its fixture focused so that
+  // the runtime does not copy unrelated 41-resource history rows hundreds of times.
+  context.__OmegaResourceEconomyRules.demand.resourceProfiles = {
+    iron_ore: structuredClone(demandRules.resourceProfiles.iron_ore)
+  };
   context.Omega.Simulation.clock.stepDurationMs = 86400000;
   const runtime = context.OmegaResourceNationalDemandRuntime;
   await runtime.prepare();
@@ -240,6 +283,115 @@ test('opponent procurement is evidence-routed, rate-limited, and never auto-issu
   assert.equal(playerReport.procurement.length, 0);
 });
 
+
+test('the canonical demand catalog covers exactly the existing 41 resource identities without inventing demand for four metadata-only resources', () => {
+  const ids = Object.keys(demandRules.resourceProfiles).sort();
+  assert.equal(ids.length, 41);
+  for (const id of ['gypsum', 'niobium', 'ruby', 'limestone']) {
+    assert.ok(demandRules.resourceProfiles[id], id + ' must already exist in the canonical resource identity sources');
+    assert.equal(demandRules.resourceProfiles[id].basePerMillionPopulation, undefined,
+      id + ' must remain unknown until an evidence-backed demand rate exists');
+    assert.equal(demandRules.resourceProfiles[id].domesticUseShare, undefined,
+      id + ' must not get an invented domestic-use estimate');
+  }
+});
+
+test('player 100-day supply lifeline needs explicit consent, targets 100 days, and expires without deleting inventory', async () => {
+  const { context, worldState, calls } = createRuntimeContext({ inventory: { iron_ore: 100 }, consumption: { iron_ore: 10 } });
+  const runtime = context.OmegaResourceNationalDemandRuntime;
+  context.__OmegaResourceEconomyRules.demand.resourceProfiles = {
+    iron_ore: structuredClone(demandRules.resourceProfiles.iron_ore)
+  };
+  context.Omega.Simulation.getPlayerCountryId = () => 'BGD';
+  worldState.simulation.session.playerCountryId = 'BGD';
+  worldState.trade.BGD.importRequests = [{
+    requestId: 'ALREADY-IN-TRANSIT', resourceId: 'iron_ore',
+    quantity: 25, remainingQuantity: 25, status: 'IN_TRANSIT', stage: 'SHIPPED'
+  }];
+  context.OmegaOpponentAutonomy = {
+    routeDecision(decision) {
+      return { status: 'READY_TO_QUEUE', command: { commandId: 'SUPPLY-' + decision.decisionId },
+        route: { selectedAction: 'IMPORT' } };
+    }
+  };
+  await runtime.prepare();
+
+  const approved = runtime.authorizePlayerSupplyLifeline('BGD');
+  assert.equal(approved.accepted, true);
+  assert.equal(approved.status, 'ACTIVE');
+  assert.equal(approved.policy.termDays, 100);
+  assert.equal(approved.policy.automaticRenewal, false);
+
+  const dayOne = runtime.processCountry('BGD', []);
+  const row = worldState.resource.BGD.demandRuntime.byResource.iron_ore;
+  assert.equal(dayOne.status, 'ACTIVE');
+  assert.equal(row.stockCoverageTargetDays, 100);
+  assert.ok(row.stockCoverageDays < 100);
+  assert.ok(dayOne.procurement.length > 0, 'an active, explicitly authorized window may route existing import decisions');
+  assert.ok(dayOne.procurement.every(x => x.quantity <= row.demandPerDay * 100 + 1e-8));
+  assert.ok(dayOne.procurement.every(x => {
+    const decision = worldState.resource.BGD.demandRuntime.procurementDecisions.find(d => d.decisionId === x.decisionId);
+    return decision && decision.supplyWindowId === approved.policy.policyId;
+  }));
+
+  assert.equal(runtime.authorizePlayerSupplyLifeline('BGD').duplicate, true);
+  const stockAfterFirstDay = worldState.resource.BGD.inventory.iron_ore;
+
+  worldState.simulation.turn = 2;
+  runtime.processCountry('BGD', []);
+  const dayTwoPolicy = runtime.getPlayerSupplyLifeline('BGD');
+  assert.equal(dayTwoPolicy.alerts.filter(x => x.type === 'LOW_STOCK_COVERAGE').length, 1,
+    'repeated low-stock observations must not duplicate the same alert');
+  // Simulate the existing save/load serialization path for the runtime-owned policy and alerts.
+  worldState.resource.BGD.demandRuntime = JSON.parse(JSON.stringify(worldState.resource.BGD.demandRuntime));
+
+  worldState.simulation.turn = 101;
+  const day101 = runtime.processCountry('BGD', []);
+  const policy = runtime.getPlayerSupplyLifeline('BGD');
+  assert.equal(policy.status, 'EXPIRED');
+  assert.equal(policy.elapsedGameDays, 100);
+  assert.equal(day101.procurement.length, 0, 'expired policy must not create new automatic import decisions');
+  assert.equal(day101.resources.find(x => x.resourceId === 'iron_ore').stockCoverageTargetDays, 3,
+    'ordinary stock coverage returns after the supply window expires');
+  assert.ok(worldState.resource.BGD.inventory.iron_ore >= 0);
+  assert.ok(worldState.resource.BGD.inventory.iron_ore < stockAfterFirstDay,
+    'actual modeled consumption, not expiry, is the only stock change in this test');
+  assert.ok(policy.alerts.some(x => x.type === 'SUPPLY_WINDOW_EXPIRED'));
+  assert.ok(policy.alerts.some(x => x.type === 'CONTRACT_WINDOW_EXPIRING'));
+  assert.equal(worldState.trade.BGD.importRequests.length, 1,
+    'expiry must not delete an already placed inbound request');
+  assert.equal(worldState.trade.BGD.importRequests[0].requestId, 'ALREADY-IN-TRANSIT');
+  assert.equal(worldState.trade.BGD.importRequests[0].stage, 'SHIPPED');
+  assert.equal(calls.some(x => x.type === 'OMEGA_RESOURCE_ECON_PUBLISH_DEMAND_RUNTIME' &&
+    x.payload.demandRuntime && x.payload.demandRuntime.playerSupplyLifeline &&
+    x.payload.demandRuntime.playerSupplyLifeline.status === 'EXPIRED'), true);
+
+  const renewed = runtime.authorizePlayerSupplyLifeline('BGD');
+  assert.equal(renewed.accepted, true, 'the player can manually renew after expiry');
+  assert.equal(renewed.status, 'SCHEDULED', 'renewal after processing a turn starts next turn');
+  assert.notEqual(renewed.policy.policyId, policy.policyId);
+  assert.equal(renewed.policy.termDays, 100);
+  assert.equal(renewed.policy.automaticRenewal, false);
+});
+
+test('player lifeline approval is scoped to the active player country and scheduled after an already-processed turn', async () => {
+  const { context, worldState } = createRuntimeContext();
+  const runtime = context.OmegaResourceNationalDemandRuntime;
+  context.__OmegaResourceEconomyRules.demand.resourceProfiles = {
+    iron_ore: structuredClone(demandRules.resourceProfiles.iron_ore)
+  };
+  await runtime.prepare();
+  assert.equal(runtime.authorizePlayerSupplyLifeline('BGD').accepted, false);
+  context.Omega.Simulation.getPlayerCountryId = () => 'BGD';
+  worldState.simulation.session.playerCountryId = 'BGD';
+  runtime.processCountry('BGD', []);
+  const approved = runtime.authorizePlayerSupplyLifeline('BGD');
+  assert.equal(approved.accepted, true);
+  assert.equal(approved.status, 'SCHEDULED');
+  worldState.simulation.turn = 2;
+  runtime.processCountry('BGD', []);
+  assert.equal(runtime.getPlayerSupplyLifeline('BGD').status, 'ACTIVE');
+});
 
 test('economic transmission reduces resource demand when household purchasing power falls', async () => {
   const { context, worldState } = createRuntimeContext({

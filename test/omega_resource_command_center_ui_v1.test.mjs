@@ -33,7 +33,7 @@ test('legacy p05/p06/p15/p16 cards route to panels instead of unsupported fake b
 test('the resource command-center UI is loaded after the authoritative runtimes', () => {
   const uiTag = html.indexOf('omega_resource_command_center_ui_v1.js');
   assert.ok(uiTag >= 0, 'new UI bridge must be loaded');
-  for (const name of ['omega_resource_authoritative_adapter.js','omega_resource_action_execution_runtime.js','omega_global_market_system.js','omega_global_trade_system.js']) {
+  for (const name of ['omega_resource_authoritative_adapter.js','omega_resource_action_execution_runtime.js','omega_global_market_system.js','omega_global_trade_system.js','omega_resource_national_demand_runtime_v1.js']) {
     assert.ok(html.indexOf(name) >= 0 && html.indexOf(name) < uiTag, name + ' must load before the UI bridge');
   }
 });
@@ -76,6 +76,14 @@ test('actual industrial flow and technology project state paths are rendered', (
   assert.match(ui, /data-search-item data-form=/);
 });
 
+
+test('the 100-day supply policy is visible and preserves stock/shipment semantics', () => {
+  assert.match(ui, /panelPlayerSupplyLifeline/);
+  assert.match(ui, /authorize-player-supply-lifeline/);
+  assert.match(ui, /Renew 100-day automatic supply/);
+  assert.match(ui, /Existing inventory and already placed inbound shipments remain valid/);
+  assert.match(ui, /OMEGA_RESOURCE_SUPPLY_ALERT_CREATED/);
+});
 
 test('resource panels avoid navigation clutter, raw diagnostics, and pinned top content', () => {
   assert.ok(ui.includes('omega-rescc-panel-select'));
