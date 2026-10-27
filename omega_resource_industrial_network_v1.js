@@ -477,7 +477,7 @@ function onExtractionCommitted(evt){
   }
   const compatible=candidateFactories(cid,rid);
   let factoryChoice=compatible.find(({asset})=>String(asset?.sourceSiteId||asset?.siteId||'')===String(site.siteId))?.asset||compatible[0]?.asset||null,bootstrap=null;
-  if(!factoryChoice){bootstrap=ensureSimulationFactory(cid,site,rid,Math.min(quantity,Math.max(1,num(stored.remainingQuantity)||quantity)));factoryChoice=bootstrap.factory||null;}
+  if(!factoryChoice&&input.autoCommissionFactory===true){bootstrap=ensureSimulationFactory(cid,site,rid,Math.min(quantity,Math.max(1,num(stored.remainingQuantity)||quantity)));factoryChoice=bootstrap.factory||null;}
   if(!factoryChoice){
     addFlowStage(row,'FACTORY','BLOCKED',{reason:bootstrap?.reason||'NO_COMPATIBLE_FACTORY_RECIPE'});
     row.blockReason=bootstrap?.reason||'NO_COMPATIBLE_FACTORY_RECIPE';saveSiteFlow(cid,row);
