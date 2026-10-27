@@ -47,7 +47,8 @@ test('startup baseline covers every country using only the canonical catalog ide
     }
     for (const mine of country.startingMineAssets) {
       assert.ok(resourceIds.includes(mine.resourceId), mine.siteId + ' must use a canonical resource ID');
-      assert.equal(mine.countryId, undefined, 'country membership is represented by the containing country, not a conflicting ID');
+      assert.ok(!mine.countryId || mine.countryId === country.countryId,
+        mine.siteId + ' must belong to the containing country');
       assert.equal(mine.permanentAsset, true);
       assert.equal(mine.simulationOnly, true);
       assert.ok(Number(mine.dailyCapacity) > 0 && Number(mine.reserveQuantity) > 0);
