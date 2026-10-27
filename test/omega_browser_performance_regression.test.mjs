@@ -408,10 +408,11 @@ test('map and ministry rendering stay responsive and scoped to the selected coun
   assert.ok(map.includes('generateAllBilateralRelations(chunk)'));
   assert.ok(map.includes('allCountries.forEach(c2 => {'),
     'each selected source country still calculates relations to the complete country roster');
-  assert.ok(map.includes('color: "#f8fafc"'),
-    'country outlines must remain visible on the map basemap');
-  assert.ok(map.includes("color: '#f8fafc', weight: 1.25, opacity: 1.0"),
-    'diplomacy overlay must not reset country outlines to nearly invisible strokes');
+  assert.ok(map.includes('color: "#f4f8ff"') && map.includes('opacity: 1.0') &&
+    map.includes('weight: currentZoom > 5.5 ? 1.7 : 1.45'),
+    'country outlines must remain visible on the map basemap through zoom changes');
+  assert.ok(map.includes("color: '#f4f8ff', weight: 1.45, opacity: 1.0"),
+    'diplomacy overlays must preserve opaque, high-contrast country outlines');
   assert.ok(map.includes('countryRuntime.getCities(countryName)'),
     'city rendering must ask for the selected country, not all country city records');
   assert.ok(map.includes("this.activeResourceFilter = 'NONE';"),
@@ -462,6 +463,8 @@ test('country borders stay visible in base map and visual overlays', () => {
     'countries without resource data must retain a visible border too');
   assert.ok(map.includes("layer.setStyle({ fillColor: color, fillOpacity: opacity, color: '#f4f8ff', weight: 1.45, opacity: 1.0 });"),
     'diplomacy overlay must not replace borders with nearly transparent strokes');
+  assert.ok(map.includes("color: '#f4f8ff',\n            weight: 1.45,\n            opacity: 1.0"),
+    'country metric overlays must preserve high-contrast outlines too');
   assert.ok(!map.includes('rgba(255,255,255,0.05)') && !map.includes('rgba(255,255,255,0.1)'),
     'map overlays must not use the old almost-invisible border styles');
 });
