@@ -21,6 +21,7 @@
   var loadPromise = null;
   var lastReport = null;
   var pendingSession = null;
+  var pendingInitialization = Promise.resolve(null);
   var running = Object.create(null);
   var installed = false;
 
@@ -143,16 +144,6 @@
       key = id(aliases[key]);
     }
     return key;
-  }
-  function profileFor(countryId) {
-    if (!data) return null;
-    var wanted = id(countryId);
-    for (var i = 0; i < data.countryProfiles.length; i++) {
-      var row = data.countryProfiles[i];
-      if (id(row.iso3) === wanted || id(row.countryCode) === wanted ||
-          id(row.economyKey) === wanted || id(row.populationKey) === wanted) return row;
-    }
-    return null;
   }
   function siteGroupsByCountry() {
     var grouped = Object.create(null), identities = data.economyRules.demand.resourceProfiles;
@@ -411,14 +402,13 @@
     }
     var countryId = id(profile.iso3);
     var policy = data.policy.startupFactories || {};
-    var created = [], existingCount = assets.length, known = 0;
+    var created = [], existingCount = assets.length;
     if (marker && marker.version === VERSION && marker.factoryAssetsInitialized === true) {
       return { status: 'ALREADY_INITIALIZED', countryId: countryId, created: 0,
         assetCount: assets.length, existingCount: assets.length, siteResourceGroupCount: (groups || []).length };
     }
     var factoryProfiles = data.factoryProfiles;
     var processingRules = data.processingRules;
-    var typeAliases = data.industrialCatalog.factoryTypeAliases || {};
     var groupList = groups || [];
     var availableProducts = sourceAssetOutputs(assets);
     var chosenDownstreamTypes = Object.create(null);
@@ -426,7 +416,6 @@
       var t = assetType(asset);
       if (t) chosenDownstreamTypes[t] = true;
     });
-    var producerAssets = [];
     groupList.forEach(function (group) {
       var recipe = processingRules[group.resourceId];
       if (!recipe) return;
@@ -434,7 +423,6 @@
       if (!own(factoryProfiles, normalizedType)) return;
       var duplicate = existingProcessor(assets, group, recipe);
       if (duplicate) {
-        known++;
         outputKeys(duplicate).forEach(function (product) { availableProducts[product] = true; });
         return;
       }
@@ -469,7 +457,6 @@
       asset.startupBaselineV1.siteCapacityMultiplier = multiplier || 1;
       assets.push(asset);
       created.push(asset);
-      producerAssets.push(asset);
       addProductOutputs(availableProducts, asset.outputProfile);
     });
 
@@ -510,7 +497,6 @@
         }, status, turn);
         assets.push(asset);
         created.push(asset);
-        producerAssets.push(asset);
         chosenDownstreamTypes[factoryType] = true;
         addProductOutputs(availableProducts, outputs);
         changed = true;
@@ -547,8 +533,9 @@
       unemploymentContextAvailable: unemploymentKnown,
       utilitySupply: utilityResult,
       factoryAssetsNotObservedFacilities: true,
-      previousBaselineMarkerPreserved: false,
-      previousMarkerVersion: existingMarker.version || null
+      previousBaselineMarkerPreserved: !!(existingMarker.version && existingMarker.version !== VERSION),
+      previousMarkerVersion: existingMarker.version || null,
+      previousMarker: existingMarker.version && existingMarker.version !== VERSION ? clone(existingMarker) : null
     };
     created.forEach(function (asset) {
       dispatchEvent('OMEGA_FACTORY_CAPACITY_CHANGED', {
@@ -702,7 +689,10 @@
     }
     if (!inventoryUnits) inventoryUnits = resource.inventoryUnits = {};
     var siteProfile = profile.populationValues || {};
-    var currentPopulation = positive(economy.population_2015) || positive(siteProfile.population_2015);
+    var storedPopulation = finite(economy.population_2015);
+    var currentPopulation = storedPopulation !== null
+      ? (storedPopulation > 0 ? storedPopulation : null)
+      : positive(siteProfile.population_2015);
     var resourceProfiles = data.resourceProfiles;
     var seeded = 0, preserved = 0, unresolved = [], sourceCounts = Object.create(null), rows = [];
     var existingAssets = Array.isArray(economy.productionAssets) ? economy.productionAssets : [];
@@ -785,6 +775,7 @@
       });
     });
     var countryId = id(profile.iso3);
+    var previousMarker = object(resource.startupBaselineV1) || {};
     resource.startupBaselineV1 = {
       version: VERSION,
       status: unresolved.length ? 'INITIALIZED_WITH_UNKNOWN_ROWS' : 'INITIALIZED',
@@ -799,7 +790,9 @@
       authority: 'SIMULATED_STARTUP_BASELINE_V1',
       sourceFiles: [PATHS.economyRules, PATHS.countryProfiles],
       stockRows: rows,
-      geologicalReserveQuantityUsedAsStock: false
+      geologicalReserveQuantityUsedAsStock: false,
+      previousMarkerVersion: previousMarker.version && previousMarker.version !== VERSION ? previousMarker.version : null,
+      previousMarker: previousMarker.version && previousMarker.version !== VERSION ? clone(previousMarker) : null
     };
     return { status: unresolved.length ? 'INITIALIZED_WITH_UNKNOWN_ROWS' : 'INITIALIZED',
       seeded: seeded, preserved: preserved, unknownResourceIds: unresolved, sourceCounts: sourceCounts };
@@ -907,7 +900,6 @@
       factoryTypesCreated: Object.create(null),
       unknownProfileResources: 0
     };
-    var countryStatus = [];
     data.countryProfiles.forEach(function (profile) {
       var countryId = id(profile.iso3);
       if (!countryId) {
@@ -933,21 +925,16 @@
       totals.openingStocksSeeded += finite(stockResult.seeded) || 0;
       totals.existingStocksPreserved += finite(stockResult.preserved) || 0;
       totals.unknownStockRows += (stockResult.unknownResourceIds || []).length;
-      totals.unknownProfileResources += Object.keys(data.resourceProfiles).filter(function (rid) {
-        return !(positive(data.resourceProfiles[rid].basePerMillionPopulation) &&
-          positive(profile.populationValues && profile.populationValues.population_2015));
-      }).length;
       totals.simulatedSiteResourceGroups += groupList.length;
       totals.factoryAssetsCreated += finite(factoryResult.created) || 0;
       if ((finite(factoryResult.created) || 0) > 0) totals.factoryAssetCountries++;
       (factoryResult.factoryTypesUsed || []).forEach(function (type) {
         totals.factoryTypesCreated[type] = (totals.factoryTypesCreated[type] || 0) + 1;
       });
-      countryStatus.push(countryId + ':' + String(country.factoryStatus || '') + '/' + String(country.openingStockStatus || ''));
     });
     var report = {
       version: VERSION,
-      status: totals.countriesBlocked ? 'COMPLETED_WITH_REPORTED_GAPS' : 'COMPLETED',
+      status: (totals.countriesBlocked || totals.unknownStockRows) ? 'COMPLETED_WITH_REPORTED_GAPS' : 'COMPLETED',
       sessionId: String(session.sessionId || runKey),
       playerCountryId: playerCountryId,
       initializedTurn: turn,
@@ -1033,15 +1020,15 @@
     var session = object(detail.session) || object(detail);
     if (!session || !session.playerCountryId) return;
     pendingSession = clone(session);
-    loadSources().then(function (result) {
-      if (result.status !== 'READY' || !pendingSession) return;
+    pendingInitialization = loadSources().then(function (result) {
+      if (result.status !== 'READY' || !pendingSession) return result;
       var target = pendingSession;
       var state = rootState(), current = sessionFromState(state);
-      if (current && target.sessionId && current.sessionId !== target.sessionId) return;
+      if (current && target.sessionId && current.sessionId !== target.sessionId) return { status: 'STALE_SESSION_IGNORED' };
       return initializeForSession(target).catch(function (error) {
         lastReport = { version: VERSION, status: 'BLOCKED', reason: String(error && error.message || error) };
         dispatchEvent('OMEGA_RESOURCE_STARTUP_BASELINE_FAILED', lastReport);
-        return null;
+        return lastReport;
       });
     });
   }
@@ -1062,6 +1049,7 @@
     initializeForSession: initializeForSession,
     diagnostics: diagnostics,
     getCountryReport: getCountryReport,
+    waitForPendingInitialization: function () { return pendingInitialization; },
     getSourceStatus: function () {
       return { status: data ? 'READY' : (loadPromise ? 'LOADING' : 'BLOCKED'), version: VERSION,
         sourcePaths: clone(PATHS), reason: data ? null : lastReport && lastReport.reason || null };
