@@ -41,6 +41,10 @@ jobs:
   exhaustive-site-production:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5]
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -48,5 +52,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Execute every eligible mine through extraction, sovereign storage, transport, factory and finished goods
+      - name: Execute every eligible mine through extraction, sovereign storage, transport, factory and finished goods (shard ${{ matrix.shard }})
+        env:
+          OMEGA_EXHAUSTIVE_SITE_SHARD_INDEX: ${{ matrix.shard }}
+          OMEGA_EXHAUSTIVE_SITE_SHARD_COUNT: 6
         run: node test/omega_resource_exhaustive_site_pipeline.test.mjs
