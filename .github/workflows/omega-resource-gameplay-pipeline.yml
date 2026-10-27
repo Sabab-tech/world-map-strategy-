@@ -44,6 +44,8 @@ on:
       - 'resources*.json'
       - 'omega_resource_national_demand_runtime_v1.js'
       - 'test/omega_resource_national_demand_runtime_v1.test.mjs'
+      - 'omega_resource_national_demand_runtime_v1.js'
+      - 'test/omega_resource_national_demand_runtime_v1.test.mjs'
       - 'test/omega_resource_recipe_coverage.test.mjs'
       - 'resource_industrial_catalog_v1.json'
       - 'resource_site_canonical_catalog_v1.json'
