@@ -485,7 +485,13 @@ for(let pass=0;pass<128;pass++){
     const finishTurn=Number(cycle?.finishTurn);
     return ['IN_PROGRESS','SCHEDULED','QUEUED'].includes(status)&&Number.isFinite(finishTurn)&&finishTurn>=currentTurn;
   });
-  if(stillPending.length>=pendingCount&&!pendingCycleCanAdvance){
+  const pendingFlowCanQueue=stillPending.some(item=>{
+    const flow=flowFor(item.site.countryId,item.result.batchId);
+    const processingStages=(flow?.stages||[]).filter(stage=>stage.stage==='PROCESSING');
+    const latest=processingStages[processingStages.length-1];
+    return String(latest?.status||'').toUpperCase()==='AWAITING_CYCLE';
+  });
+  if(stillPending.length>=pendingCount&&!pendingCycleCanAdvance&&!pendingFlowCanQueue){
     failures.push(...stillPending.slice(0,20).map(item=>({siteId:item.site.siteId,countryId:item.site.countryId,
       stage:'PROCESSING_NO_PROGRESS',reason:'NO_SITE_REACHED_FINISHED_GOODS_AFTER_TURN_ADVANCE',
       batchId:item.result.batchId,factoryId:item.result.factoryId,
