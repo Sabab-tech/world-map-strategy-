@@ -396,6 +396,27 @@ window.CountryIOS = {
         const relationVal = (rel && rel.standing !== undefined && rel.standing !== null && rel.standing !== '')
             ? rel.standing : "NOT RECORDED";
         const flag = (countryRuntime && countryRuntime.flagFor(countryKey)) || "🏳️";
+        const startupApi = window.Omega && window.Omega.ResourceStartupBaseline || window.OmegaResourceStartupBaseline;
+        let startup = null;
+        try { startup = startupApi && typeof startupApi.getCountrySummary === 'function' ? startupApi.getCountrySummary(countryKey) : null; } catch (_) {}
+        const startupCount = (value, ready) => !ready ? 'LOADING' : (value === null || value === undefined || !Number.isFinite(Number(value)) ? 'NOT RECORDED' : Number(value).toLocaleString(undefined, { maximumFractionDigits: 0 }));
+        const startupStocks = startup && startup.primaryStocksInitialized && Array.isArray(startup.primaryResourceStocks) ? startup.primaryResourceStocks : [];
+        const startupStockMarkup = startupStocks.length ? '<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-top:8px;">' +
+          startupStocks.slice().sort((a,b)=>(Number(b.quantity)||0)-(Number(a.quantity)||0)).slice(0,4).map(row =>
+            '<div style="background:rgba(7,18,31,.72);border:1px solid rgba(0,229,255,.16);border-radius:7px;padding:8px;display:flex;justify-content:space-between;gap:8px;font-size:11px;"><span>' +
+            escapeAttribute(String(row.resourceId||'Primary resource').replace(/[_-]+/g,' ')) + '</span><strong>' +
+            escapeAttribute(Number(row.quantity).toLocaleString(undefined,{maximumFractionDigits:2})+' '+(row.unit||'simulation units')) + '</strong></div>').join('') + '</div>' :
+          '<p class="ios-card-sub">' + (startup && startup.primaryStocksInitialized ? 'No eligible primary-resource opening stock is recorded.' : 'Opening raw stock is loading from eligible mine sites.') + '</p>';
+        const startupAssetMarkup = '<section class="ios-card" style="margin:14px 0;border:1px solid rgba(0,229,255,.42);box-shadow:0 0 14px rgba(0,229,255,.08);">' +
+          '<div class="ios-card-title">STARTING INDUSTRY & PRIMARY RESOURCES</div>' +
+          '<div class="ios-grid-2">' +
+          '<div><div class="ios-card-sub">Permanent factories</div><div class="ios-card-val" style="color:#00e5ff;">' + startupCount(startup && startup.factoryCount, !!(startup && startup.factoriesInitialized)) + '</div></div>' +
+          '<div><div class="ios-card-sub">Built mines ready to produce</div><div class="ios-card-val" style="color:#4ade80;">' + startupCount(startup && startup.operationalMineCount, !!(startup && startup.minesInitialized)) + '</div></div>' +
+          '<div><div class="ios-card-sub">Total built mine assets</div><div class="ios-card-val">' + startupCount(startup && startup.builtMineCount, !!(startup && startup.minesInitialized)) + '</div></div>' +
+          '<div><div class="ios-card-sub">Primary resource types in stock</div><div class="ios-card-val">' + startupCount(startup && startup.primaryResourceTypeCount, !!(startup && startup.primaryStocksInitialized)) + '</div></div>' +
+          '</div>' + startupStockMarkup +
+          '<p class="ios-card-sub" style="margin-top:8px;">Gameplay starting scenario only. Factory assets are permanent; raw-material stock is finite and consumed. Resource deposits are not warehouse inventory.</p>' +
+          '</section>';
 
         return `
             <div class="command-tactical-container">
@@ -413,6 +434,8 @@ window.CountryIOS = {
                     </div>
                     <div class="banner-flag-badge">${flag}</div>
                 </div>
+
+                ${startupAssetMarkup}
 
                 <!-- ⚔️ 8 STRATEGIC ACTION BUTTONS GRID (EXACT SCREENSHOT MATCH) -->
                 <div class="tactical-actions-grid">
@@ -1836,5 +1859,11 @@ document.addEventListener('DOMContentLoaded', () => {
 window.addEventListener('RESOURCE_STATE_UPDATED', () => {
     if (window.CountryIOS && window.CountryIOS.activeChapter === 5 && window.CountryIOS.activeCountry) {
         window.CountryIOS.switchChapter(5);
+    }
+});
+
+window.addEventListener('OMEGA_COUNTRY_STARTUP_BASELINE_READY', () => {
+    if (window.CountryIOS && window.CountryIOS.activeChapter === 1 && window.CountryIOS.activeCountry) {
+        window.CountryIOS.switchChapter(1);
     }
 });
