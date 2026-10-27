@@ -141,7 +141,7 @@ function seedTestFactory(state,site,resourceId){
   const processing=catalog.processingRules?.[resourceId]||{
     factoryType:'UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT',
     inputs:{[resourceId]:1},
-    outputs:{[String(resourceId).replace(/[^A-Za-z0-9]+/g,'_').replace(/^_+|_+$/g,'').toUpperCase()+'_PROCESSED':0.85,PROCESSING_RESIDUE:0.15},
+    outputs:{[String(resourceId).replace(/[^A-Za-z0-9]+/g,'_').replace(/^_+|_+$/g,'').toUpperCase()+'_PROCESSED']:0.85,PROCESSING_RESIDUE:0.15},
     cycleDays:2,
     inputUnit:'SIMULATION_RESOURCE_UNIT',
     outputUnit:'SIMULATION_RESOURCE_UNIT',
