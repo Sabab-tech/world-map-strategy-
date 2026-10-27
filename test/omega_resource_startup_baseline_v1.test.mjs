@@ -278,6 +278,15 @@ test('fresh session seeds bounded opening stock and source-context-driven factor
   }
   assert.ok(seededTypes.size > 0);
   assert.ok(seededTypes.size <= 21);
+  for (const code of Object.keys(state.resource)) {
+    const rows = state.resource[code] && state.resource[code].startupBaselineV1 &&
+      state.resource[code].startupBaselineV1.stockRows || [];
+    for (const row of rows) {
+      if (row.demandSource !== 'EXISTING_FACTORY_INPUT_RATE') continue;
+      assert.ok((row.factoryIds || []).every(id => !String(id).startsWith('STARTUP-FAC-')),
+        'a factory created by this baseline cannot justify its own opening stock: ' + code + '/' + row.resourceId);
+    }
+  }
 });
 
 test('metadata-only resources stay unknown unless an existing factory input supplies a modeled rate', async () => {
