@@ -476,7 +476,16 @@ for(let pass=0;pass<128;pass++){
   // inside a pass remains scoped to the countries under test.
   for(const countryId of pendingCountries)industry.processPendingFactoryInputs(countryId);
   const stillPending=targetPipelines.filter(x=>!flowProcessed(x.site.countryId,x.result.batchId));
-  if(stillPending.length>=pendingCount){
+  // A cycle can be scheduled by processPendingFactoryInputs at the end of this pass.
+  // If its finish turn is still ahead, this is not a stall: advance to that turn on the next pass.
+  const currentTurn=Number(game.state.simulation.turn)||1;
+  const pendingCycleCanAdvance=stillPending.some(item=>{
+    const cycle=cycleFor(item.site.countryId,item.result.factoryId);
+    const status=String(cycle?.status||'').toUpperCase();
+    const finishTurn=Number(cycle?.finishTurn);
+    return ['IN_PROGRESS','SCHEDULED','QUEUED'].includes(status)&&Number.isFinite(finishTurn)&&finishTurn>=currentTurn;
+  });
+  if(stillPending.length>=pendingCount&&!pendingCycleCanAdvance){
     failures.push(...stillPending.slice(0,20).map(item=>({siteId:item.site.siteId,countryId:item.site.countryId,
       stage:'PROCESSING_NO_PROGRESS',reason:'NO_SITE_REACHED_FINISHED_GOODS_AFTER_TURN_ADVANCE',
       batchId:item.result.batchId,factoryId:item.result.factoryId,
