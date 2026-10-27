@@ -44,8 +44,8 @@ on:
       - 'resources*.json'
       - 'omega_resource_national_demand_runtime_v1.js'
       - 'test/omega_resource_national_demand_runtime_v1.test.mjs'
-      - 'omega_resource_national_demand_runtime_v1.js'
-      - 'test/omega_resource_national_demand_runtime_v1.test.mjs'
+      - 'omega_opponent_autonomy_system.js'
+      - 'test/omega_opponent_autonomy_system.test.mjs'
       - 'test/omega_resource_recipe_coverage.test.mjs'
       - 'resource_industrial_catalog_v1.json'
       - 'resource_site_canonical_catalog_v1.json'
@@ -106,6 +106,10 @@ on:
       - 'omega_global_trade_system.js'
       - 'resource*.json'
       - 'resources*.json'
+      - 'omega_resource_national_demand_runtime_v1.js'
+      - 'test/omega_resource_national_demand_runtime_v1.test.mjs'
+      - 'omega_opponent_autonomy_system.js'
+      - 'test/omega_opponent_autonomy_system.test.mjs'
       - 'test/omega_resource_true_e2e_pipeline.test.mjs'
       - 'test/omega_resource_global_pipeline.test.mjs'
       - 'test/omega_resource_industrial_network_v1.test.mjs'
@@ -128,7 +132,7 @@ permissions:
 jobs:
   real-resource-gameplay-pipeline:
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v4
