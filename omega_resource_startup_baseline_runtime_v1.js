@@ -140,7 +140,8 @@
   }
   function isOperationalFactory(asset) {
     const status = upper(asset && asset.status);
-    return !/CLOSED|DECOMMISSIONED|DESTROYED|REMOVED|DEMOLISHED|CANCELLED|TECHNOLOGY_LOCKED|INACTIVE/.test(status);
+    return /^(OPERATIONAL|ACTIVE|COMMISSIONED|PRODUCING|RUNNING)$/.test(status) &&
+      !/DECOMMISSIONED|DESTROYED|CLOSED|INACTIVE|TECHNOLOGY_LOCKED/.test(status);
   }
   function isOperationalMine(asset) {
     const status = upper(asset && asset.status), production = upper(asset && asset.productionStatus);
@@ -407,7 +408,9 @@
       const source = baseline.countries[cid]; if (!source) continue;
       const rs = ensureStateBucket(s.resource, cid), meta = obj(rs.startupBaseline) ? rs.startupBaseline : {};
       if (meta.primaryStocksInitialized) continue;
-      const hasCurrentActivity = turn() > 1 || arr(rs.batches).length > 0 || arr(rs.mineAssets).length > 0;
+      const startupScenarioInitialized = meta.factoryAssetsInitialized === true && meta.skippedLegacyFactorySeed === false;
+      const hasCurrentActivity = !startupScenarioInitialized &&
+        (turn() > 1 || arr(rs.batches).length > 0 || arr(rs.mineAssets).length > 0);
       if (hasCurrentActivity) {
         rs.startupBaseline = Object.assign({}, meta, { version: VERSION, primaryStocksInitialized: true,
           openingStocksSkippedForExistingGame: true, authority: 'OMEGA_COUNTRY_STARTUP_BASELINE_V1' });
@@ -482,6 +485,14 @@
       const candidates = Array.from((existingByCountry[cid] || new Map()).values());
       eligibleSites += candidates.length;
       rs.mineAssets = existing;
+      if (meta.skippedLegacyFactorySeed === true) {
+        rs.startupBaseline = Object.assign({}, meta, { version: VERSION, minesInitialized: true,
+          primaryStocksInitialized: true, availableSiteCount: candidates.length,
+          openingStocksSkippedForExistingGame: true, skippedLegacyMineSeed: true,
+          authority: 'OMEGA_COUNTRY_STARTUP_BASELINE_V1' });
+        initializedCountries++;
+        continue;
+      }
       candidates.forEach(row => {
         if (bySite.has(row.siteId)) { preservedMines++; return; }
         const asset = {
