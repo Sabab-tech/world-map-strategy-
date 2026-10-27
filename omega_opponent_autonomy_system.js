@@ -215,6 +215,11 @@
     return direct?{id:direct,raw:null,authority:'UNVERIFIED_INPUT'}:null;
   }
   function canonicalId(value){const hit=canonicalCountry(value);return hit?.id||id(value);}
+  function canonicalCountryScope(value){
+    const hit=canonicalCountry(value);
+    const raw=hit?.raw?.raw||hit?.raw||{};
+    return id(raw.iso3||raw.iso3Code||raw.ISO_A3||raw.iso_a3||raw.ISO3||hit?.id||value);
+  }
 
   function surfaces(countryId){
     const c=canonicalCountry(countryId),r=c?.raw||{};
@@ -260,7 +265,8 @@
     let bucket=state?.[domain];
     if(bucket&&bucket[cid]!==undefined)bucket=bucket[cid];
     else if(bucket&&typeof bucket==='object'){
-      const k=Object.keys(bucket).find(x=>id(x)===cid);
+      const wanted=canonicalCountryScope(cid);
+      const k=Object.keys(bucket).find(x=>id(x)===cid||canonicalCountryScope(x)===wanted);
       bucket=k!==undefined?bucket[k]:undefined;
     }else bucket=undefined;
     const v=read(bucket,parts.join('.'));
