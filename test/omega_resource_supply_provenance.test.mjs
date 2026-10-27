@@ -65,7 +65,7 @@ const payload = {
   supplyWindowTargetCoverageDays: 100
 };
 const result = autonomy.dispatch('OMEGA_AUTO_RESOURCE_IMPORT_REQUEST', 'BD', payload);
-assert.equal(result.status, 'APPLIED');
+assert.equal(result.status, 'APPLIED', 'initial approved import failed: ' + JSON.stringify(result));
 const requests = globalThis.Game.state.trade.BD.importRequests;
 assert.equal(requests.length, 1);
 assert.equal(requests[0].requestId, payload.requestId);
