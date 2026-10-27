@@ -616,6 +616,13 @@ function normalizeInfrastructure(c){
   if(infra.ports==null)infra.ports={capacityPerDay:180000,quality:0.60};
   if(infra.bridges==null)infra.bridges={capacityPerDay:45000,quality:0.60};
   if(infra.pipelines==null)infra.pipelines={capacityPerDay:350000,quality:0.60};
+  // Legacy or partially saved industrial-network objects may omit the infrastructure bucket.
+  // Preserve any existing route data while restoring the minimum safe ledger shape.
+  if(!n.infrastructure||typeof n.infrastructure!=='object'||Array.isArray(n.infrastructure))
+    n.infrastructure={nodes:{},edges:{},corridors:{}};
+  if(!n.infrastructure.nodes||typeof n.infrastructure.nodes!=='object'||Array.isArray(n.infrastructure.nodes))n.infrastructure.nodes={};
+  if(!n.infrastructure.edges||typeof n.infrastructure.edges!=='object'||Array.isArray(n.infrastructure.edges))n.infrastructure.edges={};
+  if(!n.infrastructure.corridors||typeof n.infrastructure.corridors!=='object'||Array.isArray(n.infrastructure.corridors))n.infrastructure.corridors={};
   n.infrastructure.baselineInitialized=true;
   return{infra,n};
 }
