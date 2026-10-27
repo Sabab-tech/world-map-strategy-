@@ -249,9 +249,17 @@
       });
       return { ready: missing.length === 0, required: required, missing: missing };
     }
+    var missing = [], seededCount = 0;
     required.forEach(function (tech) {
-      var existing = capabilities.find(function (row) { return id(row && row.technologyId) === tech; });
-      if (existing) return;
+      var matching = capabilities.filter(function (row) { return id(row && row.technologyId) === tech; });
+      if (matching.some(capabilityAvailable)) return;
+      // Do not turn an explicitly LOCKED/RESEARCHING/FAILED capability into an
+      // available technology. Preserve that gameplay state and keep the starter
+      // factory gated until the player completes the real technology path.
+      if (matching.length) {
+        missing.push(tech);
+        return;
+      }
       capabilities.push({
         technologyId: tech,
         targetSiteId: '*',
@@ -269,8 +277,9 @@
           statement: 'Scenario capability for an explicitly simulated opening factory asset; not a real-world technology observation.'
         }
       });
+      seededCount++;
     });
-    return { ready: true, required: required, seededCount: required.length };
+    return { ready: missing.length === 0, required: required, seededCount: seededCount, missing: missing };
   }
   function inputKeys(asset) {
     var map = object(asset && (asset.inputCoefficients || asset.inputs)) || {};
