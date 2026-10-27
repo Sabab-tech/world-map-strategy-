@@ -183,7 +183,8 @@ function ensureStarterTechnologies(country,sites,rs){
 function autoStaffAsset(country,site,rs){
  const siteId=String(site.siteId),rid=siteResource(site),workers=workerRequirement(site,rid),capacity=siteDailyCapacity(site,rid);
  const assets=rs.mineAssets;
- let asset=assets.find(x=>String(x?.siteId||x?.siteReferenceKey||'')===siteId);
+ const matchingAssets=assets.filter(x=>String(x?.siteId||x?.siteReferenceKey||'')===siteId);
+  let asset=matchingAssets.length?matchingAssets[matchingAssets.length-1]:null;
  const sourceStatus=String(site.operation?.realWorldStatus||site.operation?.status||site.sourceSiteRecord?.status||'UNOBSERVED');
  const priorStatus=String(asset?.status||'').toUpperCase();
  const vehicleCount=Math.max(2,Math.ceil(capacity/1000));
@@ -292,13 +293,18 @@ async function bootstrapCountry(countryId,options={}){
   if(playerCountryId()!==active)return{status:'SKIPPED',reason:'PLAYER_COUNTRY_CHANGED_DURING_HYDRATION',countryId:active};
   const rs=ensureCountryInventory(active);
   const infra=ensureInfrastructure(active,sites.length);
-  let autoStaffed=0,alreadyOperational=0,totalWorkers=0,totalWorkersRequired=0,totalVehicles=0;
+  let autoStaffed=0,alreadyOperational=0,decommissionedSiteCount=0,totalWorkers=0,totalWorkersRequired=0,totalVehicles=0;
   for(let index=0;index<sites.length;index++){
    if(playerCountryId()!==active)return{status:'SKIPPED',reason:'PLAYER_COUNTRY_CHANGED_DURING_PROVISIONING',countryId:active,autoStaffed};
-   const site=sites[index],previous=rs.mineAssets.find(x=>String(x?.siteId||x?.siteReferenceKey||'')===String(site.siteId));
-   if(previous&&String(previous.status||'').toUpperCase()==='OPERATIONAL')alreadyOperational++;
-   const asset=autoStaffAsset(active,site,rs);
-   autoStaffed++;
+   const site=sites[index],priorAssets=rs.mineAssets.filter(x=>String(x?.siteId||x?.siteReferenceKey||'')===String(site.siteId));
+    const previous=priorAssets.length?priorAssets[priorAssets.length-1]:null;
+    const previousStatus=String(previous?.status||'').toUpperCase();
+    // A player-closed mine is an intentional decision, not a missing starter asset.
+    // Never reopen it automatically on a later turn or after the offline runtime reloads.
+    if(previousStatus==='DECOMMISSIONED'&&previous.decommissionedByPlayer===true){decommissionedSiteCount++;continue;}
+    if(previousStatus==='OPERATIONAL')alreadyOperational++;
+    const asset=autoStaffAsset(active,site,rs);
+    autoStaffed++;
    totalWorkers+=Math.max(0,num(asset.workersAssigned)||0);
    totalWorkersRequired+=Math.max(0,num(asset.workersRequired)||0);
    totalVehicles+=Math.max(0,num(asset.fleet?.vehiclesAssigned)||0);
@@ -351,11 +357,12 @@ async function bootstrapCountry(countryId,options={}){
   try{workforceReconciliation=industry?.reconcileFactoryEmployment?.(active)||null;}catch(_){}
   rs.autoMineProvisioning={
    version:VERSION,status:'READY',countryId:active,turn:num(state()?.simulation?.turn)||0,
-   eligibleSiteCount:sites.length,autoStaffedSiteCount:autoStaffed,totalWorkersRequired,
+   eligibleSiteCount:sites.length,autoStaffedSiteCount:autoStaffed,decommissionedSiteCount,totalWorkersRequired,
    totalAssignedWorkers:totalWorkers,totalAssignedVehicles:totalVehicles,
    mineEmployment:economy.mineEmployment,starterWorkforce:economy.starterWorkforceProvisioning,
    technologyProvisioning,workforceReconciliation,infrastructureStatus:infra.normalized,
-   starterResourcesAvailable:true,allEligibleMinesCommissioned:true,
+   starterResourcesAvailable:true,allEligibleMinesCommissioned:decommissionedSiteCount===0&&autoStaffed===sites.length,
+    allEligibleSitesAccountedFor:autoStaffed+decommissionedSiteCount===sites.length,
    authority:'SIMULATED_PLAYER_COUNTRY_STARTER_PROVISIONING'
   };
   lastProvisionReport[active]=rs.autoMineProvisioning;
