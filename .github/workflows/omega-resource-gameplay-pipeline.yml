@@ -44,6 +44,10 @@ on:
       - 'omega_global_trade_system.js'
       - 'resource*.json'
       - 'resources*.json'
+      - 'omega_resource_startup_baseline_v1.js'
+      - 'test/omega_resource_startup_baseline_v1.test.mjs'
+      - 'test/offline_hybrid_map.test.mjs'
+      - 'test/offline_hybrid_map.test.mjs'
       - 'omega_resource_national_demand_runtime_v1.js'
       - 'test/omega_resource_national_demand_runtime_v1.test.mjs'
       - 'omega_opponent_autonomy_system.js'
@@ -110,6 +114,8 @@ on:
       - 'omega_global_trade_system.js'
       - 'resource*.json'
       - 'resources*.json'
+      - 'omega_resource_startup_baseline_v1.js'
+      - 'test/omega_resource_startup_baseline_v1.test.mjs'
       - 'omega_resource_national_demand_runtime_v1.js'
       - 'test/omega_resource_national_demand_runtime_v1.test.mjs'
       - 'omega_opponent_autonomy_system.js'
@@ -176,6 +182,10 @@ jobs:
         run: npm run test:resource-production-model && npm run test:resource-realism
       - name: National demand and player supply lifeline regression
         run: npm run test:resource-demand
+      - name: Country startup inventory and factory baseline regression
+        run: npm run test:resource-startup-baseline
+      - name: Offline startup baseline cache and boot-order regression
+        run: npm run test:offline-shell
       - name: Resource Command Center supply policy UI regression
         run: node --test test/omega_resource_command_center_ui_v1.test.mjs test/omega_resource_command_center_ui_v1_integration.test.mjs
       - name: Resource state hardening regression
