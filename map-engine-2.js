@@ -1188,7 +1188,7 @@ Game.Map.updateMapLoadingProgress = function(percent, message, status) {
     this.__omegaMapLoadingProgress = bounded;
     overlay.classList.remove('is-hidden');
     overlay.setAttribute('aria-hidden', 'false');
-    overlay.setAttribute('aria-busy', status === 'complete' ? 'false' : 'true');
+    overlay.setAttribute('aria-busy', status === 'loading' ? 'true' : 'false');
     overlay.setAttribute('data-state', status || 'loading');
     if (mapRoot) mapRoot.setAttribute('data-omega-map-loading', 'true');
     if (progress) progress.style.width = bounded + '%';
