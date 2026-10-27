@@ -1015,8 +1015,14 @@
     if(!policy||String(policy.policyId||'')!==windowId){
       return{accepted:false,reason:'PLAYER_SUPPLY_WINDOW_NOT_FOUND',supplyWindowId:windowId};
     }
-    if(policy.approved!==true||canonicalId(policy.countryId||countryId)!==canonicalId(countryId)){
-      return{accepted:false,reason:'PLAYER_SUPPLY_WINDOW_NOT_AUTHORIZED',supplyWindowId:windowId};
+    const policyCountry=canonicalCountry(policy.countryId||countryId);
+    const policyRaw=policyCountry?.raw?.raw||policyCountry?.raw||{};
+    const policyIso3=id(policyRaw.iso3||policyRaw.iso3Code||policyRaw.ISO_A3||policyRaw.iso_a3||policyRaw.ISO3);
+    const policyCanonical=policyIso3||policyCountry?.id||id(policy.countryId||countryId);
+    const requestedCanonical=canonicalId(countryId);
+    if(policy.approved!==true||policyCanonical!==requestedCanonical){
+      return{accepted:false,reason:'PLAYER_SUPPLY_WINDOW_NOT_AUTHORIZED',supplyWindowId:windowId,
+        policyCountryId:policy.countryId||null,policyCanonicalCountryId:policyCanonical,requestedCountryId:countryId,requestedCanonicalCountryId:requestedCanonical};
     }
     if(String(policy.status||'').toUpperCase()!=='ACTIVE'){
       return{accepted:false,reason:'PLAYER_SUPPLY_WINDOW_NOT_ACTIVE',supplyWindowId:windowId,status:policy.status||'UNKNOWN'};
