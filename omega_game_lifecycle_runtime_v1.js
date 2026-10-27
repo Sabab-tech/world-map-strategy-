@@ -464,6 +464,22 @@
         if ((!session || !session.playerCountryId) && typeof sim.createSession === 'function') {
           sim.createSession({ playerCountryId: country });
         }
+        // Seed a demand-based opening stock only when no local or indexed save exists.
+        // Save restoration returns above, so this never replenishes a continuing game.
+        var openingStockRuntime = g.OmegaResourceStartupInventoryBaseline || (g.Omega && g.Omega.ResourceStartupInventoryBaseline);
+        if (openingStockRuntime && typeof openingStockRuntime.initializeNewGame === 'function') {
+          try {
+            var openingStockResult = await openingStockRuntime.initializeNewGame(country, {
+              reason: 'FRESH_SESSION_NO_SAVE', noSave: true
+            });
+            if (!openingStockResult || !['READY', 'PARTIAL', 'SKIPPED'].includes(String(openingStockResult.status || '').toUpperCase())) {
+              g.__OMEGA_STARTUP_STOCK_BASELINE_WARNING = openingStockResult || { status: 'FAILED', reason: 'NO_RESULT' };
+            }
+          } catch (openingStockError) {
+            // Baseline failure must not discard the player-selected country or save path.
+            g.__OMEGA_STARTUP_STOCK_BASELINE_WARNING = String(openingStockError && openingStockError.message || openingStockError);
+          }
+        }
         // Create/select the session without allowing unattended country/resource ticks.
         try { sim.clock.setSpeed(0); } catch (_) {}
         if (typeof sim.pauseSession === 'function') sim.pauseSession();
