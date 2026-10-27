@@ -9,6 +9,7 @@ import './omega_production_semantic_runtime_v3.js';
 import './offline_semantic_brain.js';
 import './offline_query_engine.js';
 import './minister_query_router.js';
+import './omega_minister_identity_pool_v1.js';
 import './omega_cognitive_engine.js';
 import './omega_reasoning_dispatcher.js';
 
@@ -53,6 +54,7 @@ const OPPONENT_AUTONOMY_SCRIPT = '<script src="/omega_opponent_autonomy_system.j
 const OPPONENT_TRADE_SCRIPT = '<script src="/omega_global_trade_system.js"></script>';
 const OPPONENT_TREATY_SCRIPT = '<script src="/omega_opponent_treaty_lifecycle_system.js"></script>';
 const OPPONENT_CONSEQUENCE_SCRIPT = '<script src="/omega_opponent_second_order_consequence_system.js"></script>';
+const MINISTER_IDENTITY_POOL_SCRIPT = '<script src="/omega_minister_identity_pool_v1.js"></script>';
 const MINISTER_CAPABILITY_SCRIPT = '<script src="/minister_capability_engine.js"></script>';
 const MINISTER_STATE_SCRIPT = '<script src="/omega_minister_state_system.js"></script>';
 const MINISTER_RECRUITMENT_SCRIPT = '<script src="/minister_recruitment_engine.js"></script>';
@@ -103,6 +105,17 @@ console.log('[Cognitive Bridge] Dispatcher:', OmegaReasoningDispatcher?.VERSION 
 let cachedMinisters = {};
 try { const file = path.join(__dirname, 'ministers.json'); if (fs.existsSync(file)) cachedMinisters = JSON.parse(fs.readFileSync(file, 'utf8')); }
 catch (e) { console.warn('[Server DB] Minister dataset warning:', e.message); }
+let cachedMinisterRosterManifest = null;
+try {
+  const file = path.join(__dirname, 'minister_country_roster_manifest_v1.json');
+  if (fs.existsSync(file)) cachedMinisterRosterManifest = JSON.parse(fs.readFileSync(file, 'utf8'));
+  if (cachedMinisterRosterManifest && globalThis.OmegaMinisterIdentityPool) {
+    globalThis.OmegaMinisterIdentityPool.configure({ manifest:cachedMinisterRosterManifest, templates:cachedMinisters });
+    console.info('[Minister Identity Pool] Ready:', globalThis.OmegaMinisterIdentityPool.getCoverage());
+  }
+} catch (e) {
+  console.warn('[Minister Identity Pool] Configuration warning:', e.message);
+}
 
 function normalizeKey(value) { return String(value || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, ''); }
 function tokens(value) { return new Set(normalizeKey(value).split('_').filter(Boolean)); }
@@ -179,7 +192,7 @@ function renderIndex(res, next) {
       MINISTRY_REGISTRY_SCRIPT, MINISTRY_STATE_PROVIDER_SCRIPT, MINISTRY_INFORMATION_POLICY_SCRIPT,
       MINISTRY_DECISION_FRAMEWORK_SCRIPT, MINISTRY_STATE_TRANSACTION_SCRIPT, MINISTRY_DOMAIN_ENGINES_SCRIPT,
       MINISTRY_INTEROPERABILITY_SCRIPT, MINISTRY_RUNTIME_V1_SCRIPT, SIMULATION_RUNTIME_SCRIPT, RESOURCE_SCENARIO_ENGINEERING_SCRIPT, RESOURCE_RESEARCH_SCRIPT, RESOURCE_ENDOWMENT_SCRIPT, RESOURCE_ECONOMY_SCRIPT, RESOURCE_AUTHORITATIVE_ADAPTER_SCRIPT, OPPONENT_DEEP_MEMORY_SCRIPT, OPPONENT_MEMORY_TRACE_SCRIPT, OPPONENT_INTELLIGENCE_SCRIPT, COUNTRY_GENERAL_DATA_SCRIPT, OPPONENT_STRATEGY_SCRIPT, OPPONENT_COUNTRY_RULES_SCRIPT, OPPONENT_AUTONOMY_SCRIPT, RESOURCE_ACTION_EXECUTION_SCRIPT, RESOURCE_MINE_MANAGEMENT_SCRIPT, GLOBAL_MARKET_SCRIPT, OPPONENT_TRADE_SCRIPT, OPPONENT_TREATY_SCRIPT, OPPONENT_CONSEQUENCE_SCRIPT,
-      MINISTER_CAPABILITY_SCRIPT, MINISTER_STATE_SCRIPT,
+      MINISTER_IDENTITY_POOL_SCRIPT, MINISTER_CAPABILITY_SCRIPT, MINISTER_STATE_SCRIPT,
       MINISTER_RECRUITMENT_SCRIPT, MINISTER_BOOTSTRAP_SCRIPT, MINISTER_RUNTIME_SCRIPT, COGNITIVE_SCRIPT,
       REASONING_SCRIPT, UNIVERSAL_AI_SCRIPT, MINISTER_INTELLIGENCE_PIPELINE_SCRIPT, AI_INTEGRITY_SCRIPT, HEALTH_LOGO_SCRIPT
     ];
@@ -199,9 +212,42 @@ app.use('/api/deep-core', (req, res, next) => {
     .catch(error => res.status(503).json({ ok: false, error: 'DEEP_CORE_INITIALIZATION_FAILED', message: error.message }));
 });
 
-app.get('/api/minister-candidates', (req, res) => {
-  try { const ministryId = String(req.query.ministryId || '').trim(), countryCode = String(req.query.countryCode || '').trim().toUpperCase(); if (!ministryId) return res.status(400).json({ ok: false, error: 'ministryId is required' }); const candidates = ministerCandidates(ministryId, countryCode); if (candidates.length !== 5) return res.status(404).json({ ok: false, error: `Five verified candidates are required but only ${candidates.length} were available in ministers.json.`, candidateCount: candidates.length, required: 5 }); res.json({ ok: true, ministryId, countryCode, candidates, source: 'ministers.json', count: candidates.length }); }
-  catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+app.get('/api/minister-candidates', async (req, res) => {
+  const ministryId = String(req.query.ministryId || '').trim();
+  const countryCode = String(req.query.countryCode || '').trim();
+  if (!ministryId) return res.status(400).json({ ok:false, error:'MINISTRY_REQUIRED' });
+  if (!countryCode) return res.status(400).json({ ok:false, error:'COUNTRY_REQUIRED' });
+  const pool = globalThis.OmegaMinisterIdentityPool;
+  if (!pool || typeof pool.getCandidates !== 'function') {
+    // Keep the legacy helper reachable for diagnostic compatibility, but never return
+    // its generic templates as if they were country-specific identities.
+    const legacyCount = ministerCandidates(ministryId, countryCode).length;
+    return res.status(503).json({ ok:false, error:'MINISTER_IDENTITY_POOL_UNAVAILABLE', legacyCandidateCount:legacyCount });
+  }
+  try {
+    const candidates = await pool.getCandidates(countryCode, ministryId);
+    if (!Array.isArray(candidates) || candidates.length !== 5 ||
+        new Set(candidates.map(candidate => candidate.id)).size !== 5 ||
+        candidates.some(candidate => candidate.countryCode !== candidates[0].countryCode ||
+          candidate.ministryId !== candidates[0].ministryId || candidate.isFictional !== true)) {
+      return res.status(503).json({ ok:false, error:'COUNTRY_MINISTRY_ROSTER_INVALID' });
+    }
+    return res.json({
+      ok:true,
+      ministryId:candidates[0].ministryId,
+      countryCode:candidates[0].countryCode,
+      candidates,
+      source:'COUNTRY_MINISTRY_ROSTER_V1',
+      identityType:'SIMULATED_FICTIONAL',
+      count:candidates.length
+    });
+  } catch (error) {
+    const code = String(error && (error.code || error.message) || 'MINISTER_ROSTER_FAILED');
+    const clientError = code === 'COUNTRY_ROSTER_COUNTRY_NOT_FOUND' ||
+      code === 'COUNTRY_ROSTER_COUNTRY_REQUIRED' ||
+      code === 'COUNTRY_MINISTRY_ROSTER_NOT_FOUND';
+    return res.status(clientError ? 404 : 500).json({ ok:false, error:code });
+  }
 });
 
 app.get('/api/ai/status', (req, res) => { const hasKey = !!process.env.GEMINI_API_KEY; res.json({ ok: true, aiAvailable: hasKey, models: CANDIDATE_MODELS, primaryModel: CANDIDATE_MODELS[0], resourceDecisionAI: { endpoint: '/api/resource-decision/ai-evaluate', configured: hasKey, inputQuestions: 12, authority: 'OMEGA_SERVER_RESOURCE_DECISION_AI' }, integrityLayer: '2.1.0', ministerStateSystem: '1.0.0', ministerAI: { endpoint: '/api/ai/minister-consult', configured: hasKey, models: CANDIDATE_MODELS, fallback: 'DETERMINISTIC_OFFLINE' }, ministerIntelligencePipeline: '1.0.0', languageSystem: '1.4.0', deepCore: OfflineQueryEngine?.VERSION || null, semanticRuntime: { authority: ProductionSemanticRuntime?.VERSION || null, diagnostics: ProductionSemanticRuntime?.diagnostics?.() || canonicalSemanticRuntime }, cognitiveBridge: { authority: OmegaReasoningDispatcher?.VERSION || null, full40: OmegaReasoningDispatcher?.full40 === true }, timestamp: new Date().toISOString() }); });

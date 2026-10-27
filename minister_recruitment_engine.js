@@ -102,6 +102,10 @@
   }
 
   async function offlineRoster(ministryId, countryId) {
+    const identityPool = global.OmegaMinisterIdentityPool;
+    if (identityPool && typeof identityPool.getCandidates === 'function') {
+      return identityPool.getCandidates(countryId || countryCode(), ministryId);
+    }
     let source = global.OmegaMinistersDB;
     if (!source || !Object.values(source).some(Array.isArray)) {
       try {
