@@ -257,7 +257,7 @@ test('large world GeoJSON is rendered incrementally rather than monopolizing the
   assert.match(renderer, /MAX_FEATURES_PER_FRAME\s*=\s*8/);
   assert.match(renderer, /FRAME_BUDGET_MS\s*=\s*7/);
   assert.match(renderer, /requestAnimationFrame\(addFeatureChunk\)/);
-  assert.match(renderer, /addFeatureSafely\(featureCollection\.features\[nextFeature\],\s*nextFeature\)/,
+  assert.match(renderer, /addFeatureSafely\(featureCollection\[nextFeature\],\s*nextFeature\)/,
     'isolated bad country geometry must be caught without abandoning the remaining world features');
   assert.match(renderer, /renderToken !== Game\.__omegaGeoJSONRenderToken/);
   assert.match(renderer, /OMEGAGeographicRegionSystem/);
