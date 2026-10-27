@@ -1411,17 +1411,25 @@ test('screen render failures preserve a working navigation shell and skip duplic
   const previous = {
     document:globalThis.document,
     government:globalThis.OmegaUIV2Government,
-    diagnostics:globalThis.__OMEGA_UI_V2_DIAGNOSTICS
+    diagnostics:globalThis.__OMEGA_UI_V2_DIAGNOSTICS,
+    requestAnimationFrame:globalThis.requestAnimationFrame,
+    cancelAnimationFrame:globalThis.cancelAnimationFrame
   };
   let rowsCalled = 0;
   const handlers = Object.create(null);
   const attrs = Object.create(null);
-  const main = { innerHTML:'' };
+  const mainAttrs = Object.create(null);
+  const main = {
+    innerHTML:'',
+    setAttribute(key, value) { mainAttrs[key] = String(value); },
+    removeAttribute(key) { delete mainAttrs[key]; }
+  };
   const backButton = { disabled:false };
   let shellHtml = '';
+  let shellWrites = 0;
   const root = {
     get innerHTML() { return shellHtml; },
-    set innerHTML(value) { shellHtml = value; main.innerHTML = ''; },
+    set innerHTML(value) { shellWrites += 1; shellHtml = value; main.innerHTML = ''; },
     classList:{ add(){}, remove(){} },
     addEventListener(type, handler) { handlers[type] = handler; },
     contains() { return true; },
@@ -1430,9 +1438,29 @@ test('screen render failures preserve a working navigation shell and skip duplic
       if (selector === '[data-omega-v2-back]') return backButton;
       return null;
     },
+    querySelectorAll() { return []; },
     setAttribute(key, value) { attrs[key] = String(value); },
+    removeAttribute(key) { delete attrs[key]; },
     getAttribute(key) { return Object.prototype.hasOwnProperty.call(attrs, key) ? attrs[key] : null; }
   };
+  const frames = new Map();
+  let nextFrame = 1;
+  globalThis.requestAnimationFrame = (callback) => {
+    const id = nextFrame++;
+    frames.set(id, callback);
+    return id;
+  };
+  globalThis.cancelAnimationFrame = (id) => frames.delete(id);
+  function flushFrames() {
+    let turns = 0;
+    while (frames.size && turns < 10) {
+      const first = frames.entries().next().value;
+      frames.delete(first[0]);
+      first[1](16);
+      turns += 1;
+    }
+    assert.equal(frames.size, 0, 'scheduled render should settle within its two animation frames');
+  }
   globalThis.document = {};
   globalThis.OmegaUIV2Government = {
     getMinistryRows() { rowsCalled += 1; throw new Error('duplicate ministry lookup should not run'); },
@@ -1464,10 +1492,120 @@ test('screen render failures preserve a working navigation shell and skip duplic
       stopPropagation(){}
     });
     assert.equal(root.getAttribute('data-omega-v2-route'), 'more');
+    assert.match(main.innerHTML, /Preparing this section/);
+    assert.equal(frames.size, 1, 'navigation work must be deferred so the loading state can paint');
+    flushFrames();
     assert.match(main.innerHTML, /Command Center/);
+    assert.equal(shellWrites, 1, 'rendering a new destination must not rebuild the whole app shell');
   } finally {
     if (previous.document === undefined) delete globalThis.document; else globalThis.document = previous.document;
     if (previous.government === undefined) delete globalThis.OmegaUIV2Government; else globalThis.OmegaUIV2Government = previous.government;
     if (previous.diagnostics === undefined) delete globalThis.__OMEGA_UI_V2_DIAGNOSTICS; else globalThis.__OMEGA_UI_V2_DIAGNOSTICS = previous.diagnostics;
+    if (previous.requestAnimationFrame === undefined) delete globalThis.requestAnimationFrame; else globalThis.requestAnimationFrame = previous.requestAnimationFrame;
+    if (previous.cancelAnimationFrame === undefined) delete globalThis.cancelAnimationFrame; else globalThis.cancelAnimationFrame = previous.cancelAnimationFrame;
+  }
+});
+
+test('rapid navigation reuses the app shell, paints feedback, cancels stale renders and measures screen time', () => {
+  const previous = {
+    document:globalThis.document,
+    diagnostics:globalThis.__OMEGA_UI_V2_DIAGNOSTICS,
+    requestAnimationFrame:globalThis.requestAnimationFrame,
+    cancelAnimationFrame:globalThis.cancelAnimationFrame,
+    government:globalThis.OmegaUIV2Government
+  };
+  const handlers = Object.create(null);
+  const attrs = Object.create(null);
+  const mainAttrs = Object.create(null);
+  const main = {
+    innerHTML:'',
+    setAttribute(key, value) { mainAttrs[key] = String(value); },
+    removeAttribute(key) { delete mainAttrs[key]; }
+  };
+  const backButton = { disabled:false };
+  let shellHtml = '';
+  let shellWrites = 0;
+  const root = {
+    get innerHTML() { return shellHtml; },
+    set innerHTML(value) { shellWrites += 1; shellHtml = value; main.innerHTML = ''; },
+    classList:{ add(){}, remove(){} },
+    addEventListener(type, handler) { handlers[type] = handler; },
+    contains() { return true; },
+    querySelector(selector) {
+      if (selector === '[data-omega-v2-main]') return main;
+      if (selector === '[data-omega-v2-back]') return backButton;
+      return null;
+    },
+    querySelectorAll() { return []; },
+    setAttribute(key, value) { attrs[key] = String(value); },
+    removeAttribute(key) { delete attrs[key]; },
+    getAttribute(key) { return Object.prototype.hasOwnProperty.call(attrs, key) ? attrs[key] : null; }
+  };
+  const frames = new Map();
+  let nextFrame = 1;
+  globalThis.requestAnimationFrame = (callback) => {
+    const id = nextFrame++;
+    frames.set(id, callback);
+    return id;
+  };
+  globalThis.cancelAnimationFrame = (id) => frames.delete(id);
+  function clickRoute(route) {
+    const control = {
+      closest(selector) {
+        if (selector === 'button,a[href],[role="button"],summary' ||
+            selector === '[data-omega-v2-global-nav]') return this;
+        return null;
+      },
+      getAttribute(name) { return name === 'data-omega-v2-global-nav' ? route : null; }
+    };
+    handlers.click({ target:control, preventDefault(){}, stopPropagation(){} });
+  }
+  function flushFrames() {
+    let turns = 0;
+    while (frames.size && turns < 12) {
+      const first = frames.entries().next().value;
+      frames.delete(first[0]);
+      first[1](16);
+      turns += 1;
+    }
+    assert.equal(frames.size, 0, 'the latest screen render must settle without a stale animation frame');
+  }
+
+  globalThis.document = {};
+  globalThis.OmegaUIV2Government = {
+    render(root) { root.innerHTML = '<section>Government screen</section>'; return { ok:true }; },
+    stopAutoRotation() {}
+  };
+  try {
+    const mounted = globalThis.OmegaUIV2App.mount(root, { initialRoute:'government' });
+    assert.equal(mounted.mounted, true);
+    assert.match(main.innerHTML, /Government screen/);
+    assert.equal(shellWrites, 1);
+
+    clickRoute('overview');
+    assert.equal(root.getAttribute('data-omega-v2-route'), 'overview');
+    assert.match(main.innerHTML, /Preparing this section/);
+    assert.equal(mainAttrs['aria-busy'], 'true');
+
+    clickRoute('more');
+    assert.equal(root.getAttribute('data-omega-v2-route'), 'more');
+    assert.match(main.innerHTML, /Preparing this section/);
+    assert.equal(frames.size, 1, 'the new tap replaces the previous screen render rather than queueing both');
+    assert.equal(shellWrites, 1, 'the header and bottom navigation must survive subsequent route changes');
+    flushFrames();
+
+    assert.match(main.innerHTML, /Command Center/);
+    assert.doesNotMatch(main.innerHTML, /Country Overview/);
+    assert.equal(root.getAttribute('data-omega-v2-route'), 'more');
+    assert.equal(root.getAttribute('data-omega-v2-navigation-pending'), null);
+    assert.equal(mainAttrs['aria-busy'], undefined);
+    assert.equal(globalThis.__OMEGA_UI_V2_DIAGNOSTICS.lastScreenRender.route, 'more');
+    assert.ok(globalThis.__OMEGA_UI_V2_DIAGNOSTICS.screenRenderCount >= 2);
+  } finally {
+    if (previous.document === undefined) delete globalThis.document; else globalThis.document = previous.document;
+    if (previous.diagnostics === undefined) delete globalThis.__OMEGA_UI_V2_DIAGNOSTICS; else globalThis.__OMEGA_UI_V2_DIAGNOSTICS = previous.diagnostics;
+    if (previous.requestAnimationFrame === undefined) delete globalThis.requestAnimationFrame; else globalThis.requestAnimationFrame = previous.requestAnimationFrame;
+    if (previous.cancelAnimationFrame === undefined) delete globalThis.cancelAnimationFrame; else globalThis.cancelAnimationFrame = previous.cancelAnimationFrame;
+    if (previous.government === undefined) delete globalThis.OmegaUIV2Government; else globalThis.OmegaUIV2Government = previous.government;
   }
 });
