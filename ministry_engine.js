@@ -1145,6 +1145,29 @@ window.OmegaCabinetUI = {
 
     openCountryInfoDrawer() {
         const c = this.getCountryDetails(this.activeCountry);
+        const startupApi = window.Omega && window.Omega.ResourceStartupBaseline || window.OmegaResourceStartupBaseline;
+        let startup = null;
+        try { startup = startupApi && typeof startupApi.getCountrySummary === 'function' ? startupApi.getCountrySummary(this.activeCountry) : null; } catch (_) {}
+        const startupCount = (value, ready) => !ready ? 'LOADING' : (value === null || value === undefined || !Number.isFinite(Number(value)) ? 'NOT RECORDED' : Number(value).toLocaleString(undefined, { maximumFractionDigits: 0 }));
+        const safeStartupText = value => String(value == null ? '' : value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        const startupStocks = startup && startup.primaryStocksInitialized && Array.isArray(startup.primaryResourceStocks) ? startup.primaryResourceStocks : [];
+        const startupStockMarkup = startupStocks.length ? '<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-top:10px;">' +
+          startupStocks.slice().sort((a,b)=>(Number(b.quantity)||0)-(Number(a.quantity)||0)).slice(0,4).map(row =>
+            '<div style="background:rgba(0,229,255,.045);border:1px solid rgba(0,229,255,.16);border-radius:7px;padding:7px 9px;display:flex;justify-content:space-between;gap:8px;font-size:11px;"><span>' +
+            safeStartupText(String(row.resourceId||'Primary resource').replace(/[_-]+/g,' ')) + '</span><strong>' +
+            safeStartupText(Number(row.quantity).toLocaleString(undefined,{maximumFractionDigits:2})+' '+(row.unit||'simulation units')) + '</strong></div>').join('') + '</div>' :
+          '<div style="color:#94a3b8;font-size:11px;margin-top:6px;">' +
+          (startup && startup.primaryStocksInitialized ? 'No eligible opening primary-resource stock is recorded.' : 'Opening raw-material stock is loading from eligible mine sites.') +
+          '</div>';
+        const startupAssetCard = '<section aria-label="Starting industry and resources" style="margin-top:14px;padding:12px;border:1px solid rgba(0,229,255,.45);border-radius:10px;background:linear-gradient(135deg,rgba(0,229,255,.07),rgba(255,255,255,.025));">' +
+          '<div style="font-size:12px;font-weight:bold;color:#00e5ff;letter-spacing:.4px;margin-bottom:9px;">STARTING INDUSTRY & PRIMARY RESOURCES</div>' +
+          '<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;font-size:12px;">' +
+          '<div style="padding:8px;border-radius:7px;background:rgba(255,255,255,.04);"><span style="color:#94a3b8;font-size:10px;">PERMANENT FACTORIES</span><br><strong style="font-size:20px;color:#00e5ff;">' + startupCount(startup && startup.factoryCount, !!(startup && startup.factoriesInitialized)) + '</strong></div>' +
+          '<div style="padding:8px;border-radius:7px;background:rgba(255,255,255,.04);"><span style="color:#94a3b8;font-size:10px;">BUILT MINES READY TO WORK</span><br><strong style="font-size:20px;color:#4ade80;">' + startupCount(startup && startup.operationalMineCount, !!(startup && startup.minesInitialized)) + '</strong></div>' +
+          '<div style="padding:8px;border-radius:7px;background:rgba(255,255,255,.04);"><span style="color:#94a3b8;font-size:10px;">TOTAL BUILT MINE ASSETS</span><br><strong style="font-size:18px;">' + startupCount(startup && startup.builtMineCount, !!(startup && startup.minesInitialized)) + '</strong></div>' +
+          '<div style="padding:8px;border-radius:7px;background:rgba(255,255,255,.04);"><span style="color:#94a3b8;font-size:10px;">PRIMARY RESOURCE TYPES IN STOCK</span><br><strong style="font-size:18px;">' + startupCount(startup && startup.primaryResourceTypeCount, !!(startup && startup.primaryStocksInitialized)) + '</strong></div>' +
+          '</div>' + startupStockMarkup +
+          '<div style="font-size:10px;color:#94a3b8;line-height:1.45;margin-top:9px;">Simulation startup values, not real-world installed asset counts. Factory assets are permanent; raw stock is finite and consumed by production.</div></section>';
         let modal = document.getElementById('country-info-modal');
         if (!modal) {
             modal = document.createElement('div');
@@ -1201,6 +1224,7 @@ window.OmegaCabinetUI = {
                         <strong style="color:#f8fafc;">${c.leader}</strong> | Currency: <strong style="color:#ffd700;">${c.currency}</strong> | Language: <strong style="color:#00e5ff;">${c.language}</strong>
                     </div>
                 </div>
+                ${startupAssetCard}
             </div>
         `;
         modal.style.display = 'flex';
@@ -3717,6 +3741,14 @@ if (document.readyState === 'complete' || document.readyState === 'interactive')
 
 window.OmegaCognitiveEngine = window.OmegaCognitiveEngine || window.OmegaMinistry;
 window.OmegaCognitiveRuntime = window.OmegaMinistry;
+
+window.addEventListener('OMEGA_COUNTRY_STARTUP_BASELINE_READY', () => {
+    const modal = document.getElementById('country-info-modal');
+    if (modal && modal.style.display === 'flex' && window.OmegaCabinetUI &&
+        typeof window.OmegaCabinetUI.openCountryInfoDrawer === 'function') {
+        window.OmegaCabinetUI.openCountryInfoDrawer();
+    }
+});
 
 // Auto-load ministers.json on boot to ensure 100% data availability
 (async function initMinisters() {
