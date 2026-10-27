@@ -477,7 +477,9 @@ function onExtractionCommitted(evt){
   }
   const compatible=candidateFactories(cid,rid);
   let factoryChoice=compatible.find(({asset})=>String(asset?.sourceSiteId||asset?.siteId||'')===String(site.siteId))?.asset||compatible[0]?.asset||null,bootstrap=null;
-  if(!factoryChoice){bootstrap=ensureSimulationFactory(cid,site,rid,Math.min(quantity,Math.max(1,num(stored.remainingQuantity)||quantity)));factoryChoice=bootstrap.factory||null;}
+  // Extraction commit callbacks receive the normalized event payload, not executeSitePipeline's local input.
+  // Requiring an explicit event flag keeps ordinary extraction from inventing a factory and avoids a stale global reference.
+  if(!factoryChoice&&p.autoCommissionFactory===true){bootstrap=ensureSimulationFactory(cid,site,rid,Math.min(quantity,Math.max(1,num(stored.remainingQuantity)||quantity)));factoryChoice=bootstrap.factory||null;}
   if(!factoryChoice){
     addFlowStage(row,'FACTORY','BLOCKED',{reason:bootstrap?.reason||'NO_COMPATIBLE_FACTORY_RECIPE'});
     row.blockReason=bootstrap?.reason||'NO_COMPATIBLE_FACTORY_RECIPE';saveSiteFlow(cid,row);

@@ -133,6 +133,38 @@ function makeContext(siteOverride=null){
   return{context,state,bus,sites};
 }
 
+// Explicit country-owned factories for pipeline integration tests. These are fixture assets,
+ // not production bootstrap behavior: the runtime must never create a factory simply because a mine ran.
+function seedTestFactory(state,site,resourceId){
+  const cid=String(site.countryId||'').toUpperCase();
+  const catalog=readJson('resource_industrial_catalog_v1.json');
+  const processing=catalog.processingRules?.[resourceId]||{
+    factoryType:'UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT',
+    inputs:{[resourceId]:1},
+    outputs:{[String(resourceId).replace(/[^A-Za-z0-9]+/g,'_').replace(/^_+|_+$/g,'').toUpperCase()+'_PROCESSED']:0.85,PROCESSING_RESIDUE:0.15},
+    cycleDays:2,
+    inputUnit:'SIMULATION_RESOURCE_UNIT',
+    outputUnit:'SIMULATION_RESOURCE_UNIT',
+    requiresAllInputs:true,
+    missingInputPolicy:'BLOCK_CYCLE',
+    simulationOnly:true
+  };
+  const id='TEST-FAC:'+cid+':'+String(site.siteId).replace(/[^A-Za-z0-9_-]/g,'_');
+  const assets=state.economy[cid].productionAssets;
+  if(assets.some(a=>String(a.id||a.assetId||a.projectId)===id))return assets.find(a=>String(a.id||a.assetId||a.projectId)===id);
+  const asset={
+    id,countryId:cid,sourceSiteId:site.siteId,factoryType:processing.factoryType||'UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT',
+    status:'OPERATIONAL',stage:'PROCESSING',capacity:100000,
+    inputCoefficients:{...(processing.inputs||{[resourceId]:1})},
+    outputProfile:{...(processing.outputs||{})},cycleDays:Number(processing.cycleDays)||1,
+    inputInventory:{},inputBatchLots:[],transportAccess:['truck','rail','ship','pipeline'],
+    locationNodeKey:'TEST_FACTORY:'+cid+':'+site.siteId,
+    simulationOnly:true,authority:'SIMULATED_TEST_FIXTURE'
+  };
+  assets.push(asset);
+  return asset;
+}
+
 function seedExtractedBatch(state,site,resourceId,batchId,occurrenceKey,quantity){
   const c=site.countryId,rs=state.resource[c];
   const batch={batchId,resourceId,materialIdentity:resourceId,quantity,remainingQuantity:quantity,unit:'TONNES',stage:'RAW_EXTRACTED',
@@ -160,6 +192,7 @@ test('every committed deposit event is routed country-by-country through factory
     {site:h.sites[1],resourceId:'copper',batchId:'BATCH-CHL-AUTO-COPPER',occurrenceKey:'SITE_OCC:CHL:SITE_CHL_collahuasi_copper_mine',quantity:1500,output:'COPPER_CONCENTRATE'}
   ];
   for(const f of fixtures){
+    seedTestFactory(state,f.site,f.resourceId);
     seedExtractedBatch(state,f.site,f.resourceId,f.batchId,f.occurrenceKey,f.quantity);
     g.dispatchEvent(new CustomEventMock('OMEGA_RESOURCE_EXTRACTION_COMPLETED',{detail:{eventType:'OMEGA_RESOURCE_EXTRACTION_COMPLETED',
       countryId:f.site.countryId,payload:{countryId:f.site.countryId,siteReferenceKey:f.site.siteId,siteName:f.site.siteName,
@@ -304,6 +337,7 @@ test('all expanded deposits receive explicit flow status; active sites dispatch 
       continue;
     }
     const batchId='BATCH-ALL-SITE:'+site.siteId,quantity=100+(index%17);
+    seedTestFactory(state,site,rid);
     seedExtractedBatch(state,site,rid,batchId,occurrenceKey,quantity);
     expectedBatchIds.push(batchId);
     g.dispatchEvent(new CustomEventMock('OMEGA_RESOURCE_EXTRACTION_COMPLETED',{detail:{eventType:'OMEGA_RESOURCE_EXTRACTION_COMPLETED',
