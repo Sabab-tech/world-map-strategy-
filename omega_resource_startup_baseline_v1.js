@@ -22,6 +22,7 @@
   var lastReport = null;
   var pendingSession = null;
   var pendingInitialization = Promise.resolve(null);
+  var simulationUnsubscribe = null;
   var running = Object.create(null);
   var installed = false;
 
@@ -505,9 +506,14 @@
     }
 
     var utilityTarget = { electricityMWhPerDay: 0, waterM3PerDay: 0 };
-    created.forEach(function (asset) {
-      if (id(asset.status) !== 'OPERATIONAL') return;
-      var utility = object(asset.utilityRequirements) || {};
+    // If national utility capacity is absent, ensure a scenario opening allowance
+    // for all already-built and newly-seeded operational assets, not only new ones.
+    assets.forEach(function (asset) {
+      if (!asset || id(asset.status || 'OPERATIONAL') !== 'OPERATIONAL') return;
+      var assetTypeKey = assetType(asset);
+      var typeProfile = factoryProfiles[assetTypeKey] || {};
+      var recordedUtility = object(asset.utilityRequirements);
+      var utility = recordedUtility || object(typeProfile.utilities) || {};
       utilityTarget.electricityMWhPerDay += Math.max(0, finite(utility.electricityMWhPerDay) || 0);
       utilityTarget.waterM3PerDay += Math.max(0, finite(utility.waterM3PerDay) || 0);
     });
@@ -824,7 +830,8 @@
       unknownResourceIds: clone(stockResult && stockResult.unknownResourceIds || []),
       stockSourceCounts: clone(stockResult && stockResult.sourceCounts || {}),
       factoryStatus: factoryResult && factoryResult.status || 'NOT_RUN',
-      factoryAssetsCreated: factoryResult && factoryResult.created || 0,
+      factoryAssetsCreated: factoryResult && factoryResult.status === 'ALREADY_INITIALIZED'
+        ? (economyMarker.factoryAssetsCreated || 0) : (factoryResult && factoryResult.created || 0),
       factoryAssetsPresent: factoryResult && factoryResult.assetCount || economyMarker.factoryAssetsPresentAfterInitialization || 0,
       factoryTypesUsed: clone(factoryResult && factoryResult.factoryTypesUsed && factoryResult.factoryTypesUsed.length ? factoryResult.factoryTypesUsed : economyMarker.factoryProfileTypesUsed || []),
       factoryAssetIdsCreated: clone(economyMarker.factoryAssetIdsCreated || []),
@@ -1019,12 +1026,19 @@
     return row ? clone(row) : null;
   }
   function onSessionCreated(event) {
-    var detail = event && event.detail || {};
+    var detail = event && event.detail !== undefined ? event.detail
+      : (event && event.payload !== undefined ? event.payload : event || {});
+    if (detail && detail.payload && !detail.session && detail.payload.session) detail = detail.payload;
     var session = object(detail.session) || object(detail);
     if (!session || !session.playerCountryId) return;
     pendingSession = clone(session);
     pendingInitialization = loadSources().then(function (result) {
-      if (result.status !== 'READY' || !pendingSession) return result;
+      if (!pendingSession) return result;
+      if (result.status !== 'READY') {
+        lastReport = { version: VERSION, status: 'BLOCKED', reason: result.reason || 'STARTUP_BASELINE_SOURCES_NOT_READY' };
+        dispatchEvent('OMEGA_RESOURCE_STARTUP_BASELINE_FAILED', lastReport);
+        return result;
+      }
       var target = pendingSession;
       var state = rootState(), current = sessionFromState(state);
       if (current && target.sessionId && current.sessionId !== target.sessionId) return { status: 'STALE_SESSION_IGNORED' };
@@ -1035,10 +1049,40 @@
       });
     });
   }
+  function attachSimulationEventBus() {
+    if (simulationUnsubscribe) return true;
+    var runtime = g.Omega && (g.Omega.SimulationRuntime || g.Omega.Simulation);
+    var ledger = runtime && runtime.events;
+    if (!ledger || typeof ledger.subscribe !== 'function') return false;
+    try {
+      simulationUnsubscribe = ledger.subscribe('OMEGA_GAME_SESSION_CREATED', function (row) {
+        var payload = row && row.payload !== undefined ? row.payload : row;
+        onSessionCreated({ detail: payload });
+      });
+      return typeof simulationUnsubscribe === 'function' || !!simulationUnsubscribe;
+    } catch (error) {
+      simulationUnsubscribe = null;
+      lastReport = { version: VERSION, status: 'BLOCKED', reason: 'SIMULATION_EVENT_SUBSCRIPTION_FAILED' };
+      return false;
+    }
+  }
   function install() {
-    if (installed || typeof g.addEventListener !== 'function') return;
+    if (installed) return;
     installed = true;
-    g.addEventListener('OMEGA_GAME_SESSION_CREATED', onSessionCreated);
+    if (typeof g.addEventListener === 'function') {
+      // Older builds may dispatch this as a browser CustomEvent. The current
+      // SimulationRuntime uses its own EventLedger, so both supported paths are wired.
+      g.addEventListener('OMEGA_GAME_SESSION_CREATED', onSessionCreated);
+      g.addEventListener('OMEGA_READY', attachSimulationEventBus);
+      if (g.document && typeof g.document.addEventListener === 'function') {
+        if (g.document.readyState === 'loading') {
+          g.document.addEventListener('DOMContentLoaded', attachSimulationEventBus, { once: true });
+        } else {
+          attachSimulationEventBus();
+        }
+      }
+    }
+    attachSimulationEventBus();
   }
   function init() {
     install();
