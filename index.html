@@ -231,6 +231,20 @@
     <div id="app" role="main">
         <div id="render-engine-root">
             <div id="map"></div>
+            <section id="omega-map-load-overlay" class="omega-map-load-overlay" role="status"
+                aria-live="polite" aria-busy="true" data-state="loading">
+                <div class="omega-map-load-card">
+                    <div class="omega-map-load-kicker">OMEGA / WORLD SYSTEM</div>
+                    <h1>Preparing the world map</h1>
+                    <p id="omega-map-load-status">Loading canonical country geometry…</p>
+                    <div class="omega-map-load-track" role="progressbar" aria-label="World map loading progress"
+                        aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                        <span id="omega-map-load-progress"></span>
+                    </div>
+                    <div class="omega-map-load-footer"><span>COUNTRY BOUNDARIES</span><strong id="omega-map-load-percent">0%</strong></div>
+                    <button id="omega-map-load-retry" type="button" hidden>Retry map loading</button>
+                </div>
+            </section>
         </div>
         
         <div id="ui-engine-root">
