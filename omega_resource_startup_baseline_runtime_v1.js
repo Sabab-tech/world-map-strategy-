@@ -673,7 +673,7 @@
         plannedMineId: 'MINE-START:' + cid + ':' + siteId,
         sourceSiteStatus: String(operation.realWorldStatus || operation.status || source.realWorldStatus || source.status || 'UNOBSERVED'),
         siteSnapshot: { siteId, countryId: cid, siteName: name, identity: clone(site.identity || {}),
-          location: clone(site.location || {}), resourceId: rid, sourceSiteRecord: clone(source) }
+          location: clone(site.location || {}), resourceId: rid }
       };
     }
     for (const cid of arr(baseline.countryOrder)) {
