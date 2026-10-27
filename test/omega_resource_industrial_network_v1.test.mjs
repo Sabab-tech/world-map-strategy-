@@ -540,6 +540,12 @@ utilityCountryState.industrialNetwork = {
 };
 assert.doesNotThrow(() => N.factoryUtilityDiagnostics('USA'),
   'factory utility diagnostics must initialize empty turn ledgers safely');
+assert.equal(utilityCountryState.industrialNetwork.infrastructure.baselineInitialized, true,
+  'diagnostics must restore a missing infrastructure bucket without discarding the turn ledgers');
+assert.ok(utilityCountryState.industrialNetwork.infrastructure.nodes &&
+  utilityCountryState.industrialNetwork.infrastructure.edges &&
+  utilityCountryState.industrialNetwork.infrastructure.corridors,
+  'partial infrastructure state must regain the canonical nested route ledgers');
 const utilityTurnKey = String(context.Game.state.simulation.turn);
 const utilityLedgerTurn = utilityCountryState.industrialNetwork.utilityLedger.turns[utilityTurnKey];
 const transportLedgerTurn = utilityCountryState.industrialNetwork.transportCapacityLedger.turns[utilityTurnKey];
