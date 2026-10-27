@@ -143,12 +143,27 @@ function transportState(c){
   const s=state(),cid=canonicalCountry(c);s.transport=s.transport||{};s.transport[cid]=s.transport[cid]||{};return s.transport[cid];
 }
 function netState(c){
-  const r=resourceState(c);r.industrialNetwork=r.industrialNetwork||{
-    schemaVersion:VERSION,shipments:[],projects:[],extractions:[],reservations:{},deliveries:[],siteFlowLedger:[],
-    infrastructure:{nodes:{},edges:{},corridors:{}},events:[],factoryRuntime:{},technologyContracts:[]
-  };
-  if(!Array.isArray(r.industrialNetwork.siteFlowLedger))r.industrialNetwork.siteFlowLedger=[];
-  return r.industrialNetwork;
+  const r=resourceState(c);
+  if(!r.industrialNetwork||typeof r.industrialNetwork!=='object'||Array.isArray(r.industrialNetwork)){
+    r.industrialNetwork={
+      schemaVersion:VERSION,shipments:[],projects:[],extractions:[],reservations:{},deliveries:[],siteFlowLedger:[],
+      infrastructure:{nodes:{},edges:{},corridors:{}},events:[],factoryRuntime:{},technologyContracts:[]
+    };
+  }
+  const n=r.industrialNetwork;
+  // Older saves can persist a partial network object. Normalize collections before
+  // any extraction, dispatch, delivery or production action mutates them.
+  for(const key of ['shipments','projects','extractions','deliveries','siteFlowLedger','events','technologyContracts']){
+    if(!Array.isArray(n[key]))n[key]=[];
+  }
+  for(const key of ['reservations','factoryRuntime']){
+    if(!n[key]||typeof n[key]!=='object'||Array.isArray(n[key]))n[key]={};
+  }
+  if(!n.infrastructure||typeof n.infrastructure!=='object'||Array.isArray(n.infrastructure))n.infrastructure={};
+  for(const key of ['nodes','edges','corridors']){
+    if(!n.infrastructure[key]||typeof n.infrastructure[key]!=='object'||Array.isArray(n.infrastructure[key]))n.infrastructure[key]={};
+  }
+  return n;
 }
 function emit(type,c,payload,source='resource-industrial-network'){
   const m=interop(),cid=canonicalCountry(c),body={countryId:cid,payload:clone(payload||{}),source,simulationTurn:turn()};

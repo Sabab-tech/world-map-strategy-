@@ -90,7 +90,14 @@ function advanceToCycleFinish(state,cycle){
   }
 }
 
+// Older save states may persist a partial industrial-network object without the extraction ledger.
+context.Game.state.resource.BGD.industrialNetwork={
+  schemaVersion:'1.0.0',shipments:[],projects:[],reservations:{},deliveries:[],siteFlowLedger:[],
+  infrastructure:{nodes:{},edges:{},corridors:{}},events:[],factoryRuntime:{},technologyContracts:[]
+};
 const extraction=N.planExtraction({countryId:'BGD',siteId:'SITE_BGD_COAL_01',resourceId:'coal',quantity:2000});
+assert.ok(Array.isArray(context.Game.state.resource.BGD.industrialNetwork.extractions),
+  'legacy network state must initialize its extraction ledger before appending a plan');
 assert.equal(extraction.status,'PLANNED');
 assert.equal(extraction.method,'UNDERGROUND_LONGWALL');
 assert.ok(extraction.totalDurationDays>0);
