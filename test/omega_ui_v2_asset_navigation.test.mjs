@@ -168,3 +168,19 @@ test("all 18 ministries have distinct local logos, and Education uses education-
   assert.ok(worker.includes('"./assets/ui-photos/education-university.svg"'),
     "education artwork must be available offline");
 });
+
+
+test("UI v2 navigation and deferred section refresh use the shared action progress surface", () => {
+  const app = read("omega_ui_v2/app.js");
+  const html = read("index.html");
+  assert.ok(html.includes('<script src="omega_action_progress_v1.js" defer></script>'),
+    "the shared progress runtime must load in the application shell");
+  assert.ok(app.includes("var progress = g.OmegaActionProgress;") &&
+    app.includes("state.navigationProgressHandle = progressHandle"),
+    "screen navigation must open a shared progress handle");
+  assert.ok(app.includes("progressHandle.complete('Screen ready.'") &&
+    app.includes("progressHandle.fail(error, 'The screen could not finish rendering.')"),
+    "navigation progress must finish or report the screen render error");
+  assert.ok(app.includes("function scheduleScreenRefresh(root, callback, label, screenRoot)"),
+    "the same deferred transition path must cover section refreshes, not only route entry");
+});
