@@ -86,6 +86,7 @@
       this.commandId=String(commandId||'');
       this.transactionId='OMI-TX-'+this.turn+'-'+this.ownerMinistry+'-'+this.commandId;
       this.operations=[];
+      this.writeBaseline=new Map();
       this.closed=false;
     }
 
@@ -121,6 +122,29 @@
       return out;
     }
 
+    _readLivePath(path){
+      const ref=this._countryContainer(path,false);
+      if(!ref)return undefined;
+      let cur=ref.container;
+      for(const part of ref.parts){
+        if(cur==null||!Object.prototype.hasOwnProperty.call(Object(cur),part))return undefined;
+        cur=cur[part];
+      }
+      return clone(cur);
+    }
+
+    _valueFingerprint(value){
+      return hash({present:value!==undefined,value});
+    }
+
+    _writeSetFingerprint(readCurrent=false){
+      const rows=[...this.writeBaseline.keys()].sort().map(path=>{
+        const value=readCurrent?this._readLivePath(path):this.writeBaseline.get(path);
+        return{path,present:value!==undefined,value};
+      });
+      return hash(rows);
+    }
+
     _countryContainer(path,create){
       const parts=String(path).split('.');
       const domain=parts.shift();
@@ -145,6 +169,7 @@
     set(path,value){
       this._assertOpen();
       const p=this._assertOwnedPath(path);
+      if(!this.writeBaseline.has(p))this.writeBaseline.set(p,this._readLivePath(p));
       const existing=this.get(p);
       this.operations.push({op:'SET',path:p,before:clone(existing),after:clone(value)});
       return clone(value);
@@ -153,6 +178,7 @@
     delete(path){
       this._assertOpen();
       const p=this._assertOwnedPath(path);
+      if(!this.writeBaseline.has(p))this.writeBaseline.set(p,this._readLivePath(p));
       const existing=this.get(p);
       this.operations.push({op:'DELETE',path:p,before:clone(existing),after:undefined});
       return existing;
@@ -175,15 +201,22 @@
 
     commit(){
       this._assertOpen();
-      // Transactions are sovereign/country scoped. Hash only the owned country
-      // state instead of the entire global Game.state. The previous global hash made
-      // every country commit scan all already-materialized countries, producing O(N²)
-      // extraction cost during world-scale resource simulation.
-      const beforeDigest=hash({
-        ownerMinistry:this.ownerMinistry,
-        countryId:this.countryId,
-        scope:this._scopeSnapshot()
-      });
+      // Snapshot only the exact write set: same-path concurrent writes conflict,
+      // while unrelated state updates in this country or another country can proceed.
+      const beforeDigest=this._writeSetFingerprint(false);
+      for(const [path,expected] of this.writeBaseline.entries()){
+        const actual=this._readLivePath(path);
+        if(this._valueFingerprint(actual)!==this._valueFingerprint(expected)){
+          this.closed=true;
+          const conflict=new Error('STATE_TRANSACTION_CONFLICT');
+          conflict.code='STATE_TRANSACTION_CONFLICT';
+          conflict.transactionId=this.transactionId;
+          conflict.path=path;
+          conflict.expectedRevision='CONTENT:'+this._valueFingerprint(expected);
+          conflict.actualRevision='CONTENT:'+this._valueFingerprint(actual);
+          throw conflict;
+        }
+      }
       const applied=[];
       for(const operation of this.operations){
         const ref=this._countryContainer(operation.path,true);
@@ -203,11 +236,7 @@
           after:clone(operation.after)
         });
       }
-      const afterDigest=hash({
-        ownerMinistry:this.ownerMinistry,
-        countryId:this.countryId,
-        scope:this._scopeSnapshot()
-      });
+      const afterDigest=this._writeSetFingerprint(true);
       this.closed=true;
       return Object.freeze({
         transactionId:this.transactionId,
@@ -225,6 +254,7 @@
     rollback(){
       this.closed=true;
       this.operations=[];
+      this.writeBaseline.clear();
       return true;
     }
   }
