@@ -355,6 +355,14 @@ for(let siteIndex=0;siteIndex<sites.length;siteIndex++){
   assert.ok(result.batchId&&result.shipmentId&&result.factoryId&&result.occurrenceKey,
     site.siteId+': execution must persist batch, shipment, factory and occurrence IDs');
   const pre=runtime.countryResourceState(site.countryId)||{};
+  const sourceFlow=flowFor(site.countryId,result.batchId);
+  assert.ok(sourceFlow,site.siteId+': extracted batch must have an authoritative site-flow record');
+  assert.equal(String(sourceFlow.siteId||''),site.siteId,
+    site.siteId+': extracted batch must remain attributed to the exact physical site');
+  assert.equal(String(sourceFlow.countryId||'').toUpperCase(),site.countryId,
+    site.siteId+': extracted batch flow must remain in the source country');
+  assert.equal(String(sourceFlow.resourceId||'').toLowerCase(),site.resourceId,
+    site.siteId+': extracted batch flow must preserve its selected commodity');
   const batch=(pre.batches||[]).find(x=>String(x.batchId)===String(result.batchId));
   assert.ok(batch,site.siteId+': extracted batch missing from country state');
   assert.equal(batch.countryId,site.countryId,site.siteId+': batch country mismatch');
