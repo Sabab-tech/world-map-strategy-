@@ -141,6 +141,7 @@ test('fresh session seeds bounded opening stock and source-context-driven factor
   assert.equal(ready.resourceProfileCount, 41);
   assert.equal(ready.factoryProfileCount, 21);
 
+  state.resource.BGD.inventoryUnits.natural_gas = 'UNREGISTERED_STOCK_UNIT';
   emitSimulationEvent('OMEGA_GAME_SESSION_CREATED', {
     session: JSON.parse(JSON.stringify(state.simulation.session))
   });
@@ -148,6 +149,12 @@ test('fresh session seeds bounded opening stock and source-context-driven factor
   assert.ok(['COMPLETED_WITH_REPORTED_GAPS', 'COMPLETED'].includes(initialized.status));
   assert.equal(state.resource.BGD.inventory.coal, 0, 'explicit zero stock is a real saved value and must be preserved');
   assert.equal(state.resource.BGD.inventoryUnits.coal, 'TONNES');
+  assert.equal(state.resource.BGD.inventoryUnits.natural_gas, 'UNREGISTERED_STOCK_UNIT',
+    'unknown pre-existing unit metadata must be preserved without inventing a conversion');
+  assert.equal(Object.prototype.hasOwnProperty.call(state.resource.BGD.inventory, 'natural_gas'), false,
+    'a profile rate with an incompatible existing unit must not seed positive stock');
+  assert.ok(state.resource.BGD.startupBaselineV1.unknownResourceIds.includes('natural_gas'),
+    'incompatible unit coverage must be visible as unknown');
   assert.equal(state.economy.BGD.population_2015, 123456789, 'existing population context must not be overwritten');
   assert.equal(state.economy.BGD.unemployment_rate, 7, 'existing unemployment context must not be overwritten');
   assert.equal(state.transport.BGD.infrastructure.utilitySupply.electricityMWhPerDay, 0,
