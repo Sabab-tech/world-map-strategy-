@@ -223,6 +223,25 @@ test('imports add inventory, consumption and exports subtract, and inactive-coun
   assert.equal(api.getInventory('BGD').unbounded, true);
 });
 
+test('negative source balances are repaired to zero and cannot be debited below zero', async () => {
+  const { state, api } = makeRuntime();
+  await api.init();
+
+  state.resource.BGD.inventory.STEEL = -12;
+  const view = api.getInventory('BGD', { includeZero: true });
+  assert.equal(item(view, 'steel').quantity, 0);
+  assert.equal(state.resource.BGD.inventory.STEEL, 0, 'authoritative inventory state is repaired, not only its display');
+
+  const exportResult = api.exportProduct({
+    countryId: 'BGD', productId: 'STEEL', quantity: 1, eventId: 'TEST-NEGATIVE-STOCK-EXPORT'
+  });
+  assert.equal(exportResult.status, 'BLOCKED');
+  assert.equal(exportResult.reason, 'INSUFFICIENT_INVENTORY');
+  assert.equal(state.resource.BGD.inventory.STEEL, 0);
+  assert.ok(api.getInventory('BGD', { includeZero: true }).items.every(row => row.quantity >= 0));
+});
+
+
 test('trade settlements update the player inventory even when the event names the counterparty country', async () => {
   const { context, state, api } = makeRuntime();
   await api.init();

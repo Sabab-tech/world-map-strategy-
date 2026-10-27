@@ -170,6 +170,16 @@ test('every committed deposit event is routed country-by-country through factory
   const first=industry.gameplayPipelineDiagnostics();
   assert.equal(first.countryCount,2);
   assert.equal(first.flowCount,2);
+  // Country UI diagnostics must only scan the selected country's ledger;
+  // the no-argument method remains globally aggregate for verification.
+  assert.equal(first.diagnosticScope,'GLOBAL');
+  const scoped=industry.gameplayPipelineDiagnostics('BGD');
+  assert.equal(scoped.diagnosticScope,'BGD');
+  assert.equal(scoped.countryCount,1);
+  assert.equal(scoped.perCountry.length,1);
+  assert.equal(scoped.perCountry[0].countryId,'BGD');
+  assert.equal(scoped.flowCount,1);
+  assert.equal(scoped.dispatched,1);
   const flowDebug=['BGD','CHL'].map(c=>({countryId:c,flows:state.resource[c].industrialNetwork.siteFlowLedger}));
   assert.equal(first.dispatched,2,"one new shipment must be dispatched for each country's committed extraction batch: "+JSON.stringify({first,flowDebug}));
   for(const f of fixtures){
