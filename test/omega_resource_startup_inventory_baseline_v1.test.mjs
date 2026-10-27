@@ -152,3 +152,17 @@ test('startup baseline refuses restore/reload callers and country-scope mismatch
   assert.equal(dispatches.length, 0);
   assert.deepEqual(endowmentCalls, []);
 });
+
+
+test('index loads startup baseline and lifecycle calls it only in the no-save fresh-session branch', () => {
+  const html = readFileSync('index.html', 'utf8');
+  const lifecycle = readFileSync('omega_game_lifecycle_runtime_v1.js', 'utf8');
+  const restoreReturn = lifecycle.indexOf("setSaveStatus('BACKGROUND SYSTEMS PAUSED · PRESS PLAY TO RESUME');\n      return;");
+  const freshCountry = lifecycle.indexOf('var country = playerCountry(sim);');
+  const initializerCall = lifecycle.indexOf('initializeNewGame(country, {');
+  assert.ok(html.includes('<script src="omega_resource_startup_inventory_baseline_v1.js" defer></script>'));
+  assert.ok(restoreReturn >= 0, 'save restore must keep its early return');
+  assert.ok(freshCountry > restoreReturn, 'fresh-game branch begins after the save restore return');
+  assert.ok(initializerCall > freshCountry, 'opening stock is initialized only in the fresh-game branch');
+  assert.ok(lifecycle.includes("reason: 'FRESH_SESSION_NO_SAVE', noSave: true"));
+});
