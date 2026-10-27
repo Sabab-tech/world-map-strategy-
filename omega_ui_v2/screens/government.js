@@ -4,6 +4,7 @@
  */
 (function (g) {
   'use strict';
+  var startupOverviewRoots = new Set();
 
   var CATEGORY_LABELS = {
     economy: 'Economy & Finance',
@@ -151,6 +152,32 @@
     var detail = source + year + (metric.status && metric.status !== 'AVAILABLE' ? ' · ' + metric.status : '');
     return '<div class="omega-v2-kpi"><span>' + esc(title) + '</span><strong>' + fmt(metric.value, metric.unit) + '</strong><small>' + esc(detail) + '</small></div>';
   }
+  function startupAssetPanel(countryId) {
+    var api = g.Omega && g.Omega.ResourceStartupBaseline || g.OmegaResourceStartupBaseline;
+    var summary = null;
+    try { summary = api && typeof api.getCountrySummary === 'function' ? api.getCountrySummary(countryId) : null; } catch (_) {}
+    function count(value, ready) {
+      return !ready ? 'Loading' : num(value) === null ? 'Not recorded' : Number(value).toLocaleString('en-US', { maximumFractionDigits: 0 });
+    }
+    var stockRows = summary && summary.primaryStocksInitialized && Array.isArray(summary.primaryResourceStocks) ? summary.primaryResourceStocks : [];
+    var stockMarkup = stockRows.length
+      ? '<div class="omega-v2-card" style="margin-top:10px"><div class="omega-v2-card-title">Opening primary-resource stock</div><div class="omega-v2-stock-list">' +
+        stockRows.slice().sort(function (a, b) { return (Number(b.quantity) || 0) - (Number(a.quantity) || 0); }).slice(0, 6).map(function (row) {
+          return '<div class="omega-v2-stock-row" style="display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid rgba(140,170,200,.16)"><span>' +
+            esc(String(row.resourceId || 'Primary resource').replace(/[_-]+/g, ' ')) + '</span><strong>' +
+            esc(Number(row.quantity).toLocaleString('en-US', { maximumFractionDigits: 2 })) + ' ' + esc(row.unit || 'simulation units') + '</strong></div>';
+        }).join('') + '</div></div>'
+      : '<div class="omega-v2-card" style="margin-top:10px"><p class="omega-v2-card-meta">' +
+        (summary && summary.primaryStocksInitialized ? 'No eligible opening raw-material stock is recorded for this country.' : 'Opening stock is loading from the eligible country mine registry.') + '</p></div>';
+    return '<h2 class="omega-v2-section-title">Starting industry & resources</h2>' +
+      '<div class="omega-v2-kpis">' +
+      '<div class="omega-v2-kpi"><span>Permanent factories</span><strong>' + count(summary && summary.factoryCount, !!(summary && summary.factoriesInitialized)) + '</strong><small>Stable built assets; never expire with supply contracts.</small></div>' +
+      '<div class="omega-v2-kpi"><span>Built mines ready to work</span><strong>' + count(summary && summary.operationalMineCount, !!(summary && summary.minesInitialized)) + '</strong><small>Commissioned mine assets with positive capacity.</small></div>' +
+      '<div class="omega-v2-kpi"><span>Total built mine assets</span><strong>' + count(summary && summary.builtMineCount, !!(summary && summary.minesInitialized)) + '</strong><small>Built assets, including stopped mines.</small></div>' +
+      '<div class="omega-v2-kpi"><span>Primary resource types in stock</span><strong>' + count(summary && summary.primaryResourceTypeCount, !!(summary && summary.primaryStocksInitialized)) + '</strong><small>Positive stock types in the raw warehouse.</small></div>' +
+      '</div><p class="omega-v2-card-meta">These opening factory, mine and stock values belong to the simulation scenario. They are not reported real-world factory or warehouse counts. Factories persist; starting raw materials are finite and consumed by production.</p>' + stockMarkup;
+  }
+
   function overviewHtml(countryId, options) {
     var data = snapshot(countryId);
     if (!data || !data.identity) {
@@ -178,6 +205,7 @@
       '<span class="omega-v2-status" data-state="' + (data.status === 'OK' || data.status === 'AVAILABLE' ? 'operational' : 'attention') + '">' + esc(data.status || 'DATA STATUS NOT RECORDED') + '</span></header>' +
       (String(data.countryCode || '').toUpperCase() === 'BGD' ? photoMarkup('bangladesh-parliament', 'Bangladesh parliament building, reference image') : photoMarkup('un-assembly-building', 'United Nations Assembly building, international reference image')) +
       '<h2 class="omega-v2-section-title">National snapshot</h2><div class="omega-v2-kpis">' + cards + '</div>' +
+      startupAssetPanel(countryId) +
       '<h2 class="omega-v2-section-title">Executive priorities and alerts</h2><div class="omega-v2-note">Only alerts and decisions returned by a registered gameplay source should be placed here. This UI foundation does not invent crisis alerts.</div>' +
       '<h2 class="omega-v2-section-title">Government, security, resources and industry</h2><div class="omega-v2-grid">' + shortcuts + '</div>' +
       '<h2 class="omega-v2-section-title">Data coverage & missing fields</h2><div class="omega-v2-card"><div class="omega-v2-card-title">' +
@@ -435,6 +463,7 @@
   function render(root, options) {
     options = options || {};
     if (!root) return { ok: false, code: 'GOVERNMENT_ROOT_REQUIRED' };
+    startupOverviewRoots.add(root);
     stopMinistryRotation(root);
     var countryId = options.countryId || activeCountry();
     var view = options.view === 'all-ministries' ? 'all-ministries' : 'executive-ministry';
@@ -548,6 +577,14 @@
     return { ok: true, view: view, ministryCount: rows.length, countryId: countryId || null };
   }
 
+  g.addEventListener && g.addEventListener('OMEGA_COUNTRY_STARTUP_BASELINE_READY', function () {
+    startupOverviewRoots.forEach(function (root) {
+      if (!root || root.isConnected === false) { startupOverviewRoots.delete(root); return; }
+      if (root.__omegaV2GovernmentView === 'all-ministries') return;
+      var options = root.__omegaV2GovernmentOptions || {};
+      scheduleRender(root, Object.assign({}, options, { countryId: options.countryId || activeCountry(), view: 'executive-ministry' }), 'Updating startup economy counts');
+    });
+  });
   g.OmegaUIV2Government = Object.freeze({
     version: '1.0.0',
     render: render,
