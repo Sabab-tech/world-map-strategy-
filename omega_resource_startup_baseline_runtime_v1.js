@@ -650,7 +650,28 @@
     for (const cid of arr(baseline.countryOrder)) {
       const source = baseline.countries[cid]; if (!source) continue;
       const rs = ensureStateBucket(s.resource, cid), meta = obj(rs.startupBaseline) ? rs.startupBaseline : {};
-      if (meta.minesInitialized) continue;
+      if (meta.minesInitialized) {
+        if (meta.skippedLegacyFactorySeed !== true && meta.primaryStocksInitialized !== true) {
+          const plans = new Map(arr(source.startingMineAssets).map(plan => [String(plan && plan.siteId || ''), plan]));
+          for (const asset of arr(rs.mineAssets)) {
+            const siteId = String(asset && asset.siteId || ''), plan = plans.get(siteId);
+            const status = upper(asset && asset.status);
+            if (!plan || !isOperationalMine(asset) || /DECOMMISSIONED|DESTROYED|STOPPED|INACTIVE|CLOSED/.test(status)) continue;
+            descriptors.push({
+              countryId: cid, siteId, resourceId: token(plan.resourceId),
+              siteName: String(asset.siteName || plan.siteName || siteId),
+              dailyCapacity: num(asset.capacityPerDay ?? asset.nominalDailyCapacity ?? asset.productionRate) ?? num(plan.dailyCapacity),
+              unit: String(asset.outputUnit || plan.unit || 'SIMULATION_RESOURCE_UNIT'),
+              rateUnit: String(asset.productionRateUnit || plan.rateUnit || (plan.unit + '_PER_DAY')),
+              reserveQuantity: num(asset.reserveQuantity) ?? num(plan.reserveQuantity),
+              reserveAuthority: String(asset.reserveAuthority || plan.sourceAuthority || 'SIMULATED_STARTING_MINE_ASSET_V1'),
+              capacityAuthority: String(asset.capacityAuthority || 'SIMULATED_STARTING_MINE_BASELINE_V1'),
+              plannedStartingDailyCapacity: num(plan.dailyCapacity), plannedReserveQuantity: num(plan.reserveQuantity)
+            });
+          }
+        }
+        continue;
+      }
       const existing = arr(rs.mineAssets);
       const bySite = new Set(existing.map(asset => String(asset && asset.siteId || '')).filter(Boolean));
       rs.mineAssets = existing;
