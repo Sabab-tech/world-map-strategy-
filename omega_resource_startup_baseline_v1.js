@@ -416,6 +416,8 @@
     var created = [], existingCount = assets.length;
     if (marker && marker.version === VERSION && marker.factoryAssetsInitialized === true) {
       return { status: 'ALREADY_INITIALIZED', countryId: countryId, created: 0,
+        createdCount: finite(marker.factoryAssetsCreated) || 0,
+        factoryTypesUsed: clone(marker.factoryProfileTypesUsed || []),
         assetCount: assets.length, existingCount: assets.length, siteResourceGroupCount: (groups || []).length };
     }
     var factoryProfiles = data.factoryProfiles;
@@ -872,7 +874,7 @@
       : positive(siteProfile.population_2015);
     var resourceProfiles = data.resourceProfiles;
     var seeded = 0, preserved = 0, unresolved = [], stateMismatch = [],
-      sourceCounts = Object.create(null), rows = [], preservedIds = [], batchIds = [];
+      sourceCounts = Object.create(null), rows = [], preservedIds = [], batchIds = [], inventoryChangeEvents = [];
     var existingAssets = Array.isArray(assets) ? assets : [];
     var maxBatches = Math.max(1, Math.floor(finite(data.economyRules.runtime && data.economyRules.runtime.maxBatches) || 8192));
     var maxLedgerEntries = Math.max(1, Math.floor(finite(data.economyRules.runtime && data.economyRules.runtime.maxLedgerEntries) || 2048));
@@ -1086,7 +1088,7 @@
         unitConversionFactor: quantityFactor,
         factoryIds: factoryInput && factoryInput.factoryIds || []
       });
-      dispatchEvent('OMEGA_RESOURCE_INVENTORY_CHANGED', {
+      inventoryChangeEvents.push({
         countryId: countryId,
         resourceId: resourceId,
         delta: quantity,
@@ -1110,6 +1112,9 @@
       resource.inventoryLots = lots;
       resource.inventoryLedger = ledger;
       resource.warehouse = warehouse;
+      inventoryChangeEvents.forEach(function (detail) {
+        dispatchEvent('OMEGA_RESOURCE_INVENTORY_CHANGED', detail);
+      });
     } else {
       // Still materialize additive empty maps only where absent; do not replace
       // any explicit malformed or populated save state.
@@ -1167,7 +1172,9 @@
       openingStockSeeded: stockResult && stockResult.seeded || 0,
       openingStockPreserved: stockResult && stockResult.preserved || 0,
       unknownResourceIds: clone(stockResult && stockResult.unknownResourceIds || []),
+      stateMismatchResourceIds: clone(stockResult && stockResult.stateMismatchResourceIds || []),
       stockSourceCounts: clone(stockResult && stockResult.sourceCounts || {}),
+      openingStockCoverageDaysByPriority: clone(resourceMarker.openingStockCoverageDaysByPriority || (data && data.policy && data.policy.openingStock && data.policy.openingStock.coverageDaysByPriority) || null),
       factoryStatus: factoryResult && factoryResult.status || 'NOT_RUN',
       factoryAssetsCreated: factoryResult && factoryResult.status === 'ALREADY_INITIALIZED'
         ? (economyMarker.factoryAssetsCreated || 0) : (factoryResult && factoryResult.created || 0),
@@ -1229,11 +1236,16 @@
       if (own(state, 'simulation') && state.simulation !== null) return { status: 'BLOCKED', reason: 'SIMULATION_STATE_INVALID' };
       state.simulation = {};
     }
-    if (object(state.simulation.startupBaselineV1) &&
-        state.simulation.startupBaselineV1.version === VERSION &&
-        state.simulation.startupBaselineV1.sessionId === String(session.sessionId || '')) {
-      lastReport = clone(state.simulation.startupBaselineV1);
-      return { status: 'ALREADY_INITIALIZED', report: diagnostics() };
+    var previousGlobalBaseline = object(state.simulation.startupBaselineV1);
+    if (previousGlobalBaseline &&
+        previousGlobalBaseline.version === VERSION &&
+        previousGlobalBaseline.sessionId === String(session.sessionId || '')) {
+      var previousCounts = object(previousGlobalBaseline.counts) || {};
+      if ((finite(previousCounts.countriesBlocked) || 0) === 0) {
+        lastReport = clone(previousGlobalBaseline);
+        return { status: 'ALREADY_INITIALIZED', report: diagnostics() };
+      }
+      // Retry blocked country buckets; per-country markers make completed rows idempotent.
     }
     var groups = siteGroupsByCountry(), results = [], totals = {
       countriesConsidered: data.countryProfiles.length,
@@ -1257,13 +1269,33 @@
       }
       var context = seedCountryContext(state, profile);
       var groupList = groups[countryId] || [];
+      // Demand from factory inputs must be measured before simulated starter assets are added.
+      var resourceHit = bucketFor(state, 'resource', profile, true);
+      var economyHit = bucketFor(state, 'economy', profile, true);
+      if (resourceHit.invalid || economyHit.invalid || !resourceHit.value || !economyHit.value) {
+        totals.countriesBlocked++;
+        results.push({
+          countryId: countryId, countryCode: profile.countryCode || null,
+          name: profile.name || profile.officialName || null,
+          profileStatus: profile.profileStatus || 'UNKNOWN',
+          openingStockStatus: 'BLOCKED', factoryStatus: 'BLOCKED',
+          factoryContextAuthority: 'SIMULATED_STARTUP_BASELINE_V1',
+          stockAuthority: 'SIMULATED_STARTUP_BASELINE_V1',
+          unknownResourceIds: Object.keys(data.resourceProfiles),
+          reason: 'COUNTRY_STARTUP_STATE_BUCKET_INVALID'
+        });
+        return;
+      }
+      var economy = economyHit.value;
+      var resource = resourceHit.value;
+      var preExistingAssets = Array.isArray(economy.productionAssets) ? economy.productionAssets.slice() : [];
+      var stockResult = seedCountryStock(state, profile, economy, resource, preExistingAssets, turn);
       var factoryResult = startupFactoryCountry(state, profile, turn, groupList);
-      var economyHit = bucketFor(state, 'economy', profile, false);
-      var resourceHit = bucketFor(state, 'resource', profile, false);
-      var economy = economyHit.value || {};
-      var resource = resourceHit.value || {};
-      var assets = Array.isArray(economy.productionAssets) ? economy.productionAssets : [];
-      var stockResult = seedCountryStock(state, profile, economy, resource, assets, turn);
+      // Refresh views after additive factory/utility writes.
+      economyHit = bucketFor(state, 'economy', profile, false);
+      resourceHit = bucketFor(state, 'resource', profile, false);
+      economy = economyHit.value || economy;
+      resource = resourceHit.value || resource;
       var country = reportCountry(state, profile, groupList, factoryResult, stockResult, context);
       results.push(country);
       if (context.status === 'BLOCKED' || factoryResult.status === 'BLOCKED' || stockResult.status === 'BLOCKED') {
@@ -1271,13 +1303,20 @@
       } else {
         totals.countriesCompleted++;
       }
-      totals.openingStocksSeeded += finite(stockResult.seeded) || 0;
+      var stockMarker = object(resource.startupBaselineV1) || {};
+      var factoryMarker = object(economy.startupBaselineV1) || {};
+      totals.openingStocksSeeded += stockResult.status === 'ALREADY_INITIALIZED'
+        ? (finite(stockMarker.openingStockSeededCount) || 0) : (finite(stockResult.seeded) || 0);
       totals.existingStocksPreserved += finite(stockResult.preserved) || 0;
       totals.unknownStockRows += (stockResult.unknownResourceIds || []).length;
       totals.simulatedSiteResourceGroups += groupList.length;
-      totals.factoryAssetsCreated += finite(factoryResult.created) || 0;
-      if ((finite(factoryResult.created) || 0) > 0) totals.factoryAssetCountries++;
-      (factoryResult.factoryTypesUsed || []).forEach(function (type) {
+      var createdFactories = factoryResult.status === 'ALREADY_INITIALIZED'
+        ? (finite(factoryMarker.factoryAssetsCreated) || 0) : (finite(factoryResult.created) || 0);
+      totals.factoryAssetsCreated += createdFactories;
+      if (createdFactories > 0) totals.factoryAssetCountries++;
+      var usedTypes = factoryResult.factoryTypesUsed ||
+        (factoryResult.status === 'ALREADY_INITIALIZED' ? factoryMarker.factoryProfileTypesUsed : []) || [];
+      usedTypes.forEach(function (type) {
         totals.factoryTypesCreated[type] = (totals.factoryTypesCreated[type] || 0) + 1;
       });
     });
