@@ -303,3 +303,45 @@ test('all modeled mine rows are not capped by the removed legacy 512-row limiter
   assert.doesNotMatch(code,/slice\(0,\s*MAX_MINES\)/);
   assert.match(code,/OMEGA_RESOURCE_EXTRACT_TICK/);
 });
+
+test('resource inventory command credits a stable batch only once and rejects conflicting batch-ID reuse', async()=>{
+  const {context,worldState}=createContext();
+  const code=readFileSync('omega_resource_economy_runtime_v2.js','utf8');
+  vm.runInNewContext(code,context,{filename:'omega_resource_economy_runtime_v2.js'});
+  await context.OmegaResourceEconomy.runTurn();
+
+  const payload={
+    resourceId:'iron_ore',quantity:25,stage:'RAW',unit:'SIMULATION_RESOURCE_UNIT',
+    batchId:'OMEGA-STARTUP-STOCK-V1-BGD-IRON_ORE',
+    transactionId:'OMEGA-STARTUP-STOCK-V1-BGD-IRON_ORE',
+    provenance:{source:'OMEGA_RESOURCE_STARTUP_INVENTORY_BASELINE_V1',quantityAuthority:'SIMULATED'}
+  };
+  const before=worldState.resource.BGD.inventory.iron_ore;
+  const batchCount=worldState.resource.BGD.batches.length;
+  const ledgerCount=worldState.resource.BGD.inventoryLedger.length;
+  const first=context.Omega.MinistryInteroperability.dispatchCommand('resource','OMEGA_RESOURCE_ECON_ADD_INVENTORY','BGD',payload);
+  assert.equal(first.status,'APPLIED');
+  assert.equal(first.result.accepted,true);
+  assert.equal(worldState.resource.BGD.inventory.iron_ore,before+25);
+  assert.equal(worldState.resource.BGD.batches.length,batchCount+1);
+  assert.equal(worldState.resource.BGD.inventoryLedger.length,ledgerCount+1);
+
+  const second=context.Omega.MinistryInteroperability.dispatchCommand('resource','OMEGA_RESOURCE_ECON_ADD_INVENTORY','BGD',payload);
+  assert.equal(second.status,'APPLIED');
+  assert.equal(second.result.accepted,true);
+  assert.equal(second.result.duplicate,true);
+  assert.equal(worldState.resource.BGD.inventory.iron_ore,before+25,
+    'retrying the same baseline batch must not credit inventory twice');
+  assert.equal(worldState.resource.BGD.batches.length,batchCount+1);
+  assert.equal(worldState.resource.BGD.inventoryLedger.length,ledgerCount+1);
+  assert.equal(worldState.resource.BGD.warehouse.availableByResource.iron_ore,75);
+
+  const conflict=context.Omega.MinistryInteroperability.dispatchCommand('resource','OMEGA_RESOURCE_ECON_ADD_INVENTORY','BGD',{
+    ...payload,quantity:26
+  });
+  assert.equal(conflict.status,'APPLIED');
+  assert.equal(conflict.result.accepted,false);
+  assert.equal(conflict.result.reason,'BATCH_ID_CONFLICT');
+  assert.equal(worldState.resource.BGD.inventory.iron_ore,before+25);
+  assert.equal(worldState.resource.BGD.batches.length,batchCount+1);
+});
