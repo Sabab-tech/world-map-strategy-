@@ -471,48 +471,76 @@
       addProductOutputs(availableProducts, asset.outputProfile);
     });
 
-    var changed = true, rounds = 0;
-    var recipeEntries = Object.keys(data.downstreamRecipes).map(function (recipeId) {
-      return { recipeId: recipeId, recipe: data.downstreamRecipes[recipeId] };
+    var factoryPolicy = policy.startupFactories || {};
+    var minLocalCount = Math.max(1, Math.floor(finite(factoryPolicy.minimumLocallySupportedInputCount) || 2));
+    var minLocalShare = Math.max(0, Math.min(1, finite(factoryPolicy.minimumLocallySupportedInputShare) === null
+      ? 0.5 : finite(factoryPolicy.minimumLocallySupportedInputShare)));
+    var maxDownstream = Math.max(0, Math.floor(finite(factoryPolicy.maxDownstreamAssetsPerCountry) === null
+      ? 3 : finite(factoryPolicy.maxDownstreamAssetsPerCountry)));
+    var downstreamEntries = Object.keys(data.downstreamRecipes).map(function (recipeId) {
+      var recipe = data.downstreamRecipes[recipeId] || {};
+      var inputs = object(recipe.inputs) || {};
+      var inputNames = Object.keys(inputs).map(token).filter(Boolean);
+      var locallySupported = inputNames.filter(function (name) { return !!availableProducts[name]; });
+      return {
+        recipeId: recipeId,
+        recipe: recipe,
+        factoryType: normalizeFactoryType(recipe.factoryType),
+        inputNames: inputNames,
+        locallySupportedInputIds: locallySupported,
+        externalInputResourceIds: inputNames.filter(function (name) { return !availableProducts[name]; }),
+        localInputShare: inputNames.length ? locallySupported.length / inputNames.length : 0
+      };
+    }).filter(function (entry) {
+      return !!entry.factoryType && own(factoryProfiles, entry.factoryType) &&
+        entry.inputNames.length > 0 && Object.keys(entry.recipe.outputs || {}).length > 0;
+    }).sort(function (a, b) {
+      return b.localInputShare - a.localInputShare ||
+        b.locallySupportedInputIds.length - a.locallySupportedInputIds.length ||
+        a.recipeId.localeCompare(b.recipeId);
     });
-    while (changed && rounds <= recipeEntries.length) {
-      changed = false;
-      rounds++;
-      recipeEntries.forEach(function (entry) {
-        var recipe = entry.recipe || {};
-        var recipeId = entry.recipeId;
-        var factoryType = normalizeFactoryType(recipe.factoryType);
-        if (!factoryType || !own(factoryProfiles, factoryType)) return;
-        if (chosenDownstreamTypes[factoryType]) return;
-        var inputs = object(recipe.inputs) || {}, outputs = object(recipe.outputs) || {};
-        var inputNames = Object.keys(inputs).map(token).filter(Boolean);
-        if (!inputNames.length || !Object.keys(outputs).length) return;
-        if (!inputNames.every(function (name) { return !!availableProducts[name]; })) return;
-        var existing = existingRecipe(assets, recipeId, factoryType);
-        if (existing) {
-          chosenDownstreamTypes[factoryType] = true;
-          outputKeys(existing).forEach(function (product) { availableProducts[product] = true; });
-          return;
-        }
-        // Do not add a second downstream asset of a type that already exists in this country.
-        var alreadyType = assets.some(function (asset) { return asset && assetType(asset) === factoryType; });
-        if (alreadyType) return;
-        var typeProfile = factoryProfiles[factoryType];
-        var tech = installStarterTechnology(resource, typeProfile, countryId, turn);
-        var status = tech.ready ? 'OPERATIONAL' : 'TECHNOLOGY_LOCKED';
-        var asset = makeFactoryAsset(countryId, factoryType, recipeId, recipe, typeProfile, {
-          assetId: 'STARTUP-FAC-10-' + countryId + '-' + factoryType,
-          priority: '10',
-          sourceResourceIds: inputNames,
-          sourceFile: 'resource_industrial_catalog_v1.json:downstreamFactoryRecipes'
-        }, status, turn);
-        assets.push(asset);
-        created.push(asset);
+    var downstreamCreated = 0;
+    downstreamEntries.forEach(function (entry) {
+      var recipe = entry.recipe;
+      var recipeId = entry.recipeId;
+      var factoryType = entry.factoryType;
+      var inputs = object(recipe.inputs) || {};
+      var outputs = object(recipe.outputs) || {};
+      var inputNames = entry.inputNames;
+      if (chosenDownstreamTypes[factoryType]) return;
+      if (entry.locallySupportedInputIds.length < minLocalCount || entry.localInputShare + 1e-9 < minLocalShare) return;
+      if (downstreamCreated >= maxDownstream) return;
+      var existing = existingRecipe(assets, recipeId, factoryType);
+      if (existing) {
         chosenDownstreamTypes[factoryType] = true;
-        addProductOutputs(availableProducts, outputs);
-        changed = true;
-      });
-    }
+        outputKeys(existing).forEach(function (product) { availableProducts[product] = true; });
+        return;
+      }
+      // Existing country assets are authoritative. A starter baseline never adds a
+      // duplicate factory type just because a different recipe might also fit.
+      var alreadyType = assets.some(function (asset) { return asset && assetType(asset) === factoryType; });
+      if (alreadyType) return;
+      var typeProfile = factoryProfiles[factoryType];
+      var tech = installStarterTechnology(resource, typeProfile, countryId, turn);
+      var status = tech.ready ? 'OPERATIONAL' : 'TECHNOLOGY_LOCKED';
+      var asset = makeFactoryAsset(countryId, factoryType, recipeId, recipe, typeProfile, {
+        assetId: 'STARTUP-FAC-10-' + countryId + '-' + factoryType,
+        priority: '10',
+        sourceResourceIds: entry.locallySupportedInputIds,
+        sourceFile: 'resource_industrial_catalog_v1.json:downstreamFactoryRecipes'
+      }, status, turn);
+      asset.startupBaselineV1.locallySupportedInputIds = clone(entry.locallySupportedInputIds);
+      asset.startupBaselineV1.locallySupportedInputShare = entry.localInputShare;
+      asset.startupBaselineV1.externalInputResourceIds = clone(entry.externalInputResourceIds);
+      asset.startupBaselineV1.externalInputsRequireConfirmedSupply = entry.externalInputResourceIds.length > 0;
+      asset.startupBaselineV1.newStarterOutputsDoNotSeedAdditionalFactoryAssets = true;
+      assets.push(asset);
+      created.push(asset);
+      chosenDownstreamTypes[factoryType] = true;
+      downstreamCreated++;
+      // Intentionally do not add these unstocked, inactive recipe outputs to
+      // availableProducts. A planned/idle factory is not a delivered producer.
+    });
 
     var utilityTarget = { electricityMWhPerDay: 0, waterM3PerDay: 0 };
     // If national utility capacity is absent, ensure a scenario opening allowance
