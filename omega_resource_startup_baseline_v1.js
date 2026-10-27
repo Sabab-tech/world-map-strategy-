@@ -716,11 +716,6 @@
         var observedUnit = inventoryUnitFor(resourceId, profileRow, inventoryUnits);
         stockUnit = observedUnit.unit;
         unitSource = observedUnit.source;
-      } else if (factoryInput) {
-        rate = factoryInput.rate;
-        source = factoryInput.source;
-        stockUnit = factoryInput.unit || 'SIMULATION_RESOURCE_UNIT';
-        unitSource = 'EXISTING_FACTORY_RECIPE_UNIT';
       } else {
         var coefficient = positive(profileRow.basePerMillionPopulation);
         if (coefficient !== null && currentPopulation !== null) {
@@ -730,6 +725,13 @@
           var mappedUnit = inventoryUnitFor(resourceId, profileRow, inventoryUnits);
           stockUnit = mappedUnit.unit;
           unitSource = mappedUnit.source;
+        } else if (factoryInput) {
+          // Metadata-only resource identities may be modeled only when an actual
+          // eligible factory input supplies a rate; never invent their profile rate.
+          rate = factoryInput.rate;
+          source = factoryInput.source;
+          stockUnit = factoryInput.unit || 'SIMULATION_RESOURCE_UNIT';
+          unitSource = 'EXISTING_FACTORY_RECIPE_UNIT';
         }
       }
       if (rate === null || !(rate > 0) || !Number.isFinite(rate)) {
