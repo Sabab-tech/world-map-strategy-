@@ -902,7 +902,9 @@
         var decision = {
           decisionId: decisionId, countryId: cid, scenarioId: 'RESOURCE_DEFICIT',
           supplyWindowId: playerSupplyWindowActive ? lifeline.policyId : null,
-          supplyWindowExpiresAfterDays: playerSupplyWindowActive ? playerSupplyTargetDays : null,
+          supplyWindowTermDays: playerSupplyWindowActive ? lifeline.termDays : null,
+          supplyWindowRemainingDays: playerSupplyWindowActive ? lifeline.remainingGameDays : null,
+          supplyWindowTargetCoverageDays: playerSupplyWindowActive ? playerSupplyTargetDays : null,
           candidateActions: ['IMPORT', 'RESERVE_RELEASE', 'DOMESTIC_EXPANSION', 'SUBSTITUTION', 'EFFICIENCY', 'SUPPLIER_CHANGE'],
           goal: { priorityClass: entry.row.priority >= 8 ? 'PRESSURE' : 'OPPORTUNITY' },
           runtimeMeasurement: {
