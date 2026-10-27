@@ -10,8 +10,7 @@
   var RESOURCE_IDS = Object.freeze([
     'resource',
     'resources',
-    'energy_mining',
-    'energy-mining',
+    'energy mining',
     'energy & mining',
     'resources & mining'
   ]);
