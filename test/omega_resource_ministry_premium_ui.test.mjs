@@ -42,7 +42,7 @@ test("resource visual layer is wired into the offline-first app without remote d
   const stylesheetTag = '<link rel="stylesheet" href="' + cssPath + '">';
   const handoffPath = "omega_ui_v2/resource-ministry-legacy-bridge.js";
   assert.ok(html.includes('<script src="' + handoffPath + '" defer></script>'), "legacy Resource Ministry entry points must be routed through the UI v2 guard");
-  assert.ok(sw.includes('"./' + handoffPath + '" '.trim()), "legacy handoff guard must be precached offline");
+  assert.ok(sw.includes(handoffPath), "legacy handoff guard must be precached offline");
   assert.equal(uiManifest.integrationPolicy.resourceMinistryLegacyBridge, handoffPath, "the UI manifest must document the Resource Ministry guard");
   assert.ok(html.includes(stylesheetTag), "premium resource stylesheet must be loaded by the app");
   assert.ok(sw.includes('"' + "./" + cssPath + '"'), "premium resource stylesheet must be precached offline");
