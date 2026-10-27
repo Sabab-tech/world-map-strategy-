@@ -471,7 +471,7 @@
       addProductOutputs(availableProducts, asset.outputProfile);
     });
 
-    var factoryPolicy = policy.startupFactories || {};
+    var factoryPolicy = policy;
     var minLocalCount = Math.max(1, Math.floor(finite(factoryPolicy.minimumLocallySupportedInputCount) || 2));
     var minLocalShare = Math.max(0, Math.min(1, finite(factoryPolicy.minimumLocallySupportedInputShare) === null
       ? 0.5 : finite(factoryPolicy.minimumLocallySupportedInputShare)));
