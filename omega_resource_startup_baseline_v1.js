@@ -1048,7 +1048,7 @@
   var api = {
     VERSION: VERSION,
     init: init,
-    ready: loadSources(),
+    get ready() { return loadSources(); },
     initializeForSession: initializeForSession,
     diagnostics: diagnostics,
     getCountryReport: getCountryReport,
