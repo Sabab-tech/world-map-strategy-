@@ -835,7 +835,7 @@ body.omega-atlas-dock-ready .ui-bottom-navigation{display:none!important;}
 .omega-v2-minister-recruitment-panel { margin-top: 18px; overflow: hidden; }
 .omega-v2-minister-recruitment-panel .omega-v2-card-header { align-items: flex-start; gap: 14px; }
 .omega-v2-minister-current {
-  align-items: center; background: linear-gradient(100deg, rgba(30, 72, 89, .09), rgba(255,255,255,.72));
+  align-items: center; background: linear-gradient(100deg, rgba(114, 183, 234, .10), var(--omega-v2-surface-raised, #12253a));
   border: 1px solid var(--omega-v2-border); border-radius: 12px; display: flex; gap: 12px;
   margin: 14px 0; min-width: 0; padding: 12px 14px;
 }
@@ -912,6 +912,10 @@ body.omega-atlas-dock-ready .ui-bottom-navigation{display:none!important;}
 @media (max-width: 620px) {
   .omega-v2-minister-candidate-grid { grid-template-columns: minmax(0,1fr); }
   .omega-v2-minister-recruitment-panel .omega-v2-card-header { align-items: flex-start; }
+}
+@media (max-width: 420px) {
+  .omega-v2-minister-current { align-items: flex-start; flex-wrap: wrap; }
+  .omega-v2-minister-current-status { margin-left: 0; }
 }
 @media (max-width: 380px) {
   .omega-v2-minister-card-top { gap: 8px; }
