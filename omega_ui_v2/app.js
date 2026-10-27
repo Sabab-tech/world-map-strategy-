@@ -156,12 +156,21 @@
     }
     return false;
   }
+  function prepareBackToMap(state) {
+    var prepare = state && state.options && state.options.onPrepareBackToMap;
+    if (typeof prepare === 'function') {
+      try { prepare(); } catch (_) {
+        // Keep the world-map exit path available even if optional transition preparation fails.
+      }
+    }
+  }
   function back(root, deferRender) {
     var state = stateFor(root);
     var previous = state.history.pop();
     if (!previous) {
       if (typeof state.options.onBackToMap === 'function') {
         if (deferRender) {
+          prepareBackToMap(state);
           return scheduleDeferredTransition(root, 'Returning to the world map', function () {
             return state.options.onBackToMap();
           }, true);
@@ -192,6 +201,7 @@
     state.governmentView = 'executive-ministry';
     if (state.options && typeof state.options.onBackToMap === 'function') {
       if (deferAction) {
+        prepareBackToMap(state);
         scheduleDeferredTransition(root, 'Returning to the world map', function () {
           return state.options.onBackToMap();
         }, true);
