@@ -2,9 +2,9 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
 // The base regression boots the authoritative resource runtime and verifies the
-// complete 503-site reference/controller registry. This test then exercises all
-// eligible sites in a batch so unrelated background residual shipments cannot
-// steal factory capacity from a site under test.
+// complete reference/controller registry. The exhaustive matrix is split into
+// deterministic country shards so every eligible site is tested without forcing
+// one CI job to serially process the entire world.
 await import('./omega_resource_endowment_runtime.test.mjs');
 
 const game=globalThis.Game;
@@ -137,13 +137,31 @@ const eligibleIds=new Set(allEligibleSites.map(x=>x.siteId));
 for(const site of criticalBatch.records){
   assert.ok(eligibleIds.has(site.siteId),site.siteId+': critical-mineral site missing from executable runtime references');
 }
-// Run every eligible, unique, canonical site through extraction, shipment, receipt, and factory output.
-// The test provisions simulation-only infrastructure and an explicitly commissioned test asset per site;
-// it does not claim every real-game save contains these assets or facilities.
-const sites=allEligibleSites;
-assert.ok(sites.length>=400,'the end-to-end matrix must run every eligible site, got '+sites.length);
-assert.ok(sites.every(Boolean),'every eligible site must resolve to a live executable reference');
 
+const shardIndex=Number(process.env.OMEGA_EXHAUSTIVE_SITE_SHARD_INDEX??0);
+const shardCount=Number(process.env.OMEGA_EXHAUSTIVE_SITE_SHARD_COUNT??1);
+assert.ok(Number.isInteger(shardIndex)&&Number.isInteger(shardCount)&&shardCount>=1&&shardIndex>=0&&shardIndex<shardCount,
+  'invalid exhaustive-site shard configuration: index='+shardIndex+' count='+shardCount);
+// Keep each country's sites in one isolated worker. Greedy balancing by site count
+// avoids a single shard receiving a country with a disproportionate site portfolio.
+const countrySiteCounts=new Map();
+for(const site of allEligibleSites)countrySiteCounts.set(site.countryId,(countrySiteCounts.get(site.countryId)||0)+1);
+const shardBuckets=Array.from({length:shardCount},()=>({siteCount:0,countries:[]}));
+for(const [countryId,siteCount] of [...countrySiteCounts.entries()].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]))){
+  let target=0;
+  for(let i=1;i<shardBuckets.length;i++)if(shardBuckets[i].siteCount<shardBuckets[target].siteCount)target=i;
+  shardBuckets[target].siteCount+=siteCount;
+  shardBuckets[target].countries.push(countryId);
+}
+const countryShard=new Map();
+shardBuckets.forEach((bucket,index)=>bucket.countries.forEach(countryId=>countryShard.set(countryId,index)));
+// Across the complete CI matrix, these deterministic, disjoint country sets cover
+// all eligible sites exactly once. Each job still validates the complete registry.
+const sites=allEligibleSites.filter(site=>countryShard.get(site.countryId)===shardIndex);
+assert.ok(sites.length>0,'shard '+shardIndex+' has no eligible sites');
+assert.ok(sites.every(Boolean),'every eligible site must resolve to a live executable reference');
+assert.ok(sites.every(site=>countryShard.get(site.countryId)===shardIndex),'a country leaked across exhaustive test shards');
+console.log('EXHAUSTIVE_SITE_SHARD_START '+JSON.stringify({shardIndex,shardCount,siteCount:sites.length,totalEligibleSites:allEligibleSites.length,countries:shardBuckets[shardIndex].countries.length}));
 function commissionGameplayMine(entry){
   const {siteId,countryId,resourceId,ref}=entry;
   const root=game.state;
@@ -275,7 +293,9 @@ const counts={references:new Set(allRefs.map(x=>x.siteId)).size,baselineEligible
 const failures=[];
 const pipelines=[];
 const countryIds=new Set();
-for(const site of sites){
+for(let siteIndex=0;siteIndex<sites.length;siteIndex++){
+  const site=sites[siteIndex];
+  console.log('EXHAUSTIVE_SITE_SHARD_SITE '+JSON.stringify({shardIndex,shardCount,siteIndex:siteIndex+1,total:sites.length,siteId:site.siteId,countryId:site.countryId}));
   provisionSimulationInfrastructure(site.countryId);
   countryIds.add(site.countryId);
   game.state.simulation=game.state.simulation||{};
@@ -435,20 +455,34 @@ const targetPipelines=pipelines.filter(x=>flowFor(x.site.countryId,x.result.batc
 for(let pass=0;pass<128;pass++){
   const pending=targetPipelines.filter(x=>!flowProcessed(x.site.countryId,x.result.batchId));
   if(!pending.length)break;
+  const missingCycles=pending.filter(item=>!cycleFor(item.site.countryId,item.result.factoryId));
+  if(missingCycles.length){
+    failures.push(...missingCycles.map(item=>({siteId:item.site.siteId,countryId:item.site.countryId,stage:'FACTORY_CYCLE',
+      reason:'FACTORY_CYCLE_NOT_CREATED',batchId:item.result.batchId,factoryId:item.result.factoryId})));
+    break;
+  }
   let targetTurn=(Number(game.state.simulation.turn)||1)+1;
   let targetDate=String(game.state.simulation.date||'2015-01-01');
   for(const item of pending){
     const cycle=cycleFor(item.site.countryId,item.result.factoryId);
-    if(!cycle){
-      failures.push({siteId:item.site.siteId,countryId:item.site.countryId,stage:'FACTORY_CYCLE',
-        reason:'FACTORY_CYCLE_NOT_CREATED',batchId:item.result.batchId,factoryId:item.result.factoryId});
-      continue;
-    }
     targetTurn=Math.max(targetTurn,Number(cycle.finishTurn)||targetTurn);
     if(cycle.finishDate&&String(cycle.finishDate)>targetDate)targetDate=String(cycle.finishDate);
   }
+  const pendingCountries=new Set(pending.map(item=>item.site.countryId));
+  const pendingCount=pending.length;
   advanceTo(targetTurn,targetDate);
-  for(const countryId of countryIds)industry.processPendingFactoryInputs(countryId);
+  // Only advance factory input processing for countries that still have pending
+  // target batches. The exhaustive audit is cross-country by design; each operation
+  // inside a pass remains scoped to the countries under test.
+  for(const countryId of pendingCountries)industry.processPendingFactoryInputs(countryId);
+  const stillPending=targetPipelines.filter(x=>!flowProcessed(x.site.countryId,x.result.batchId));
+  if(stillPending.length>=pendingCount){
+    failures.push(...stillPending.slice(0,20).map(item=>({siteId:item.site.siteId,countryId:item.site.countryId,
+      stage:'PROCESSING_NO_PROGRESS',reason:'NO_SITE_REACHED_FINISHED_GOODS_AFTER_TURN_ADVANCE',
+      batchId:item.result.batchId,factoryId:item.result.factoryId,
+      cycle:cycleFor(item.site.countryId,item.result.factoryId),flow:flowFor(item.site.countryId,item.result.batchId)})));
+    break;
+  }
 }
 for(const item of targetPipelines){
   const {site,result}=item,countryId=site.countryId;
@@ -510,5 +544,6 @@ assert.equal(counts.started,counts.eligible,'every eligible site must dispatch: 
 assert.equal(counts.delivered,counts.eligible,'every eligible site must deliver to its factory: '+JSON.stringify(counts));
 assert.equal(counts.processed,counts.eligible,'every eligible site must commit finished goods: '+JSON.stringify(counts));
 console.log('OMEGA EXHAUSTIVE EVERY-SITE PRODUCTION PIPELINE PASSED '+JSON.stringify({
-  ...counts,countries:countryIds.size,criticalMineralSites:criticalBatch.records.length
+  ...counts,shardIndex,shardCount,allEligibleSites:allEligibleSites.length,
+  countries:countryIds.size,criticalMineralSites:criticalBatch.records.length
 }));
