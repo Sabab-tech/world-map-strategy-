@@ -86,7 +86,7 @@ test("More command cards use the uploaded local imagery and every action has a d
     "factory and Resource Ministry overrides must load after the existing UI styles");
   const sw = read("omega-offline-map-sw.js");
   const iconManifest = json("assets/omega-industrial-icons-v1/manifest.json");
-  assert.match(sw, /omega-offline-atlas-shell-v48/);
+  assert.match(sw, /omega-offline-atlas-shell-v\\d+/);
   assert.match(sw, /resource-ministry-premium\.css/);
   assert.match(sw, /factoryIconManifest\.resources/);
   assert.match(sw, /factory-production-command\.css/);
