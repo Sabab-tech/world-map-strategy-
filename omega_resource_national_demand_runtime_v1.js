@@ -282,14 +282,26 @@
     var value = resourceValue(map, resourceId);
     return value !== null && value > 0 ? value : 0;
   }
+  function isTerminalImportRequest(row) {
+    var status = id(row && row.status), stage = id(row && row.stage);
+    return ['SETTLED', 'DELIVERED', 'COMPLETED', 'FULFILLED', 'REJECTED', 'CANCELLED', 'CANCELED', 'FAILED', 'EXPIRED'].indexOf(status) >= 0 ||
+      ['SETTLED', 'DELIVERED', 'COMPLETED', 'FULFILLED', 'CANCELLED', 'CANCELED', 'FAILED', 'EXPIRED'].indexOf(stage) >= 0;
+  }
+  function isConfirmedInboundImport(row) {
+    if (!row || isTerminalImportRequest(row)) return false;
+    var status = id(row.status), stage = id(row.stage);
+    // Only already-approved supply commitments count toward forecast cover.
+    // SENT/COUNTER_OFFERED requests are not yet dependable inbound goods.
+    return ['ACCEPTED', 'SETTLEMENT_PREPARING', 'IN_TRANSIT', 'SHIPPED', 'DISPATCHED',
+      'AWAITING_DELIVERY', 'CONFIRMED', 'CONTRACTED', 'LOADED'].indexOf(status) >= 0 ||
+      ['COUNTERPARTY_ACCEPTED', 'COUNTER_OFFER_ACCEPTED', 'SETTLEMENT_PREPARING', 'IN_TRANSIT',
+      'SHIPPED', 'DISPATCHED', 'AWAITING_DELIVERY', 'CONFIRMED', 'CONTRACTED', 'LOADED'].indexOf(stage) >= 0;
+  }
   function pendingImports(countryId, resourceId, trade) {
     var rows = trade && Array.isArray(trade.importRequests) ? trade.importRequests : [];
     var pending = 0;
     rows.forEach(function (row) {
-      if (!row || token(row.resourceId) !== token(resourceId)) return;
-      var status = id(row.status), stage = id(row.stage);
-      if (['SETTLED', 'DELIVERED', 'COMPLETED', 'FULFILLED', 'REJECTED', 'CANCELLED', 'CANCELED', 'FAILED', 'EXPIRED'].indexOf(status) >= 0 ||
-          ['SETTLED', 'DELIVERED', 'COMPLETED', 'FULFILLED', 'CANCELLED', 'CANCELED', 'FAILED', 'EXPIRED'].indexOf(stage) >= 0) return;
+      if (!row || token(row.resourceId) !== token(resourceId) || !isConfirmedInboundImport(row)) return;
       var quantity = finite(row.remainingQuantity != null ? row.remainingQuantity : row.quantity);
       if (quantity !== null && quantity > 0) pending += quantity;
     });
@@ -702,13 +714,19 @@
     var allowPlayerProcurement = !!(cfg.automaticProcurement && cfg.automaticProcurement.forPlayerCountry === true);
     var autoProcure = !!(cfg.automaticProcurement && cfg.automaticProcurement.enabled === true);
     var pendingRows = Array.isArray(trade.importRequests) ? trade.importRequests : [];
+    var unresolvedImportRequestsByResource = {};
     pendingRows.forEach(function (row) {
-      if (!row || !row.resourceId) return;
-      var status = id(row.status), stage = id(row.stage);
-      if (['SETTLED', 'DELIVERED', 'COMPLETED', 'FULFILLED', 'REJECTED', 'CANCELLED', 'CANCELED', 'FAILED', 'EXPIRED'].indexOf(status) >= 0 ||
-          ['SETTLED', 'DELIVERED', 'COMPLETED', 'FULFILLED', 'CANCELLED', 'CANCELED', 'FAILED', 'EXPIRED'].indexOf(stage) >= 0) return;
+      if (!row || !row.resourceId || isTerminalImportRequest(row)) return;
+      var key = token(row.resourceId);
       var q = finite(row.remainingQuantity != null ? row.remainingQuantity : row.quantity);
-      if (q !== null && q > 0) pendingByResource[token(row.resourceId)] = (pendingByResource[token(row.resourceId)] || 0) + q;
+      if (!(q > 0)) return;
+      if (isConfirmedInboundImport(row)) {
+        pendingByResource[key] = (pendingByResource[key] || 0) + q;
+      } else {
+        // Preserve the open request as a duplicate-order guard, but do not tell the
+        // coverage planner that undecided/counter-offered goods will arrive.
+        unresolvedImportRequestsByResource[key] = (unresolvedImportRequestsByResource[key] || 0) + 1;
+      }
     });
 
     resourceIds.forEach(function (rid) {
@@ -829,6 +847,7 @@
         spendableStockAfter: remainingSpendable, stockCoverageDays: coverage, stockCoverageTurns: coverage,
         stockCoverageTargetDays: coverageTarget, stockCoverageTargetTurns: coverageTarget,
         lowStockCoverage: lowStockCoverage, pendingImportQuantity: pending,
+        unresolvedImportRequestCount: unresolvedImportRequestsByResource[token(rid)] || 0,
         priority: finite(profile.priority) || 1, procurementScore: score,
         consumeStatus: consumeStatus, price: currentPrice.value, turnDurationDays: turnDays,
         formula: factors
@@ -912,6 +931,9 @@
       summaries.forEach(function (row) {
         if (row.demandPerDay === null || row.demandPerDay <= 0 ||
             !((row.unmetDemand !== null && row.unmetDemand > 1e-9) || row.lowStockCoverage === true)) return;
+        // Do not duplicate an undecided trade request. It is not counted as inbound
+        // inventory; once accepted/rejected, the next tick reevaluates the coverage.
+        if ((unresolvedImportRequestsByResource[token(row.resourceId)] || 0) > 0) return;
         var availablePending = pendingByResource[token(row.resourceId)] || 0;
         var targetDays = Math.max(bufferDays, finite(row.stockCoverageTargetDays) || finite(row.stockCoverageTargetTurns) || 0);
         var spendable = Math.max(0, row.spendableStockAfter || 0);
