@@ -507,7 +507,7 @@
           if (!candidate || !recruitingId) { if (status) status.textContent = 'Choose a valid candidate. No assignment was changed.'; confirmRecruitment.disabled = false; return; }
           if (status) status.textContent = 'Submitting appointment to the canonical ministry lifecycle…';
           var appointment = selector && typeof selector.appoint === 'function'
-            ? selector.appoint(recruitingId, candidate)
+            ? selector.appoint(recruitingId, candidate, country)
             : engine && typeof engine.recruit === 'function' ? engine.recruit(recruitingId, candidate, country) : Promise.reject(new Error('MINISTER_APPOINTMENT_RUNTIME_UNAVAILABLE'));
           Promise.resolve(appointment).then(function () {
             root.__omegaV2RecruitingMinistry = null;
