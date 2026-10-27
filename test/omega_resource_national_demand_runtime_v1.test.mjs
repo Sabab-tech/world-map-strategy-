@@ -460,3 +460,28 @@ test('economic transmission reduces resource demand when household purchasing po
   assert.ok(row.nationalConsumption <= row.demandThisTurn,
     'actual stock debit must remain bounded by transmitted demand');
 });
+
+
+test('previewCountry calculates opening-stock demand without consuming inventory or publishing runtime state', async () => {
+  const { context, worldState, calls } = createRuntimeContext({
+    inventory: { iron_ore: 100 },
+    consumption: { iron_ore: 10 }
+  });
+  context.Omega.ResourceNationalDemandRuntime = undefined;
+  const code = readFileSync('omega_resource_national_demand_runtime_v1.js', 'utf8');
+  vm.runInNewContext(code, context, { filename: 'omega_resource_national_demand_runtime_v1.js' });
+
+  const runtime = context.OmegaResourceNationalDemandRuntime || context.Omega.ResourceNationalDemandRuntime;
+  await runtime.prepare();
+  const originalInventory = structuredClone(worldState.resource.BGD.inventory);
+  const originalDemandRuntime = worldState.resource.BGD.demandRuntime;
+  const result = runtime.previewCountry('BGD', []);
+
+  assert.equal(result.status, 'PREVIEW_ONLY');
+  assert.ok(result.resources.some(row => row.resourceId === 'iron_ore' && row.demandPerDay > 0));
+  assert.equal(worldState.resource.BGD.inventory.iron_ore, originalInventory.iron_ore);
+  assert.deepEqual(worldState.resource.BGD.inventory, originalInventory);
+  assert.equal(worldState.resource.BGD.demandRuntime, originalDemandRuntime);
+  assert.equal(calls.filter(call => call.type === 'OMEGA_RESOURCE_ECON_CONSUME_INVENTORY').length, 0);
+  assert.equal(calls.filter(call => /PROCUREMENT|PUBLISH_DEMAND|SUPPLY_ALERT/.test(call.type)).length, 0);
+});
