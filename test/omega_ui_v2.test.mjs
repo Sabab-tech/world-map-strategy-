@@ -1406,3 +1406,68 @@ test('industrial command panel scopes factory, mine, daily-rate and current-turn
     }
   }
 });
+
+test('screen render failures preserve a working navigation shell and skip duplicate ministry lookup work', () => {
+  const previous = {
+    document:globalThis.document,
+    government:globalThis.OmegaUIV2Government,
+    diagnostics:globalThis.__OMEGA_UI_V2_DIAGNOSTICS
+  };
+  let rowsCalled = 0;
+  const handlers = Object.create(null);
+  const attrs = Object.create(null);
+  const main = { innerHTML:'' };
+  const backButton = { disabled:false };
+  let shellHtml = '';
+  const root = {
+    get innerHTML() { return shellHtml; },
+    set innerHTML(value) { shellHtml = value; main.innerHTML = ''; },
+    classList:{ add(){}, remove(){} },
+    addEventListener(type, handler) { handlers[type] = handler; },
+    contains() { return true; },
+    querySelector(selector) {
+      if (selector === '[data-omega-v2-main]') return main;
+      if (selector === '[data-omega-v2-back]') return backButton;
+      return null;
+    },
+    setAttribute(key, value) { attrs[key] = String(value); },
+    getAttribute(key) { return Object.prototype.hasOwnProperty.call(attrs, key) ? attrs[key] : null; }
+  };
+  globalThis.document = {};
+  globalThis.OmegaUIV2Government = {
+    getMinistryRows() { rowsCalled += 1; throw new Error('duplicate ministry lookup should not run'); },
+    render() { throw new Error('simulated ministry renderer crash'); }
+  };
+  try {
+    const result = globalThis.OmegaUIV2App.mount(root, { initialRoute:'government' });
+    assert.equal(result.ok, true, 'the fallback shell remains a valid mounted UI');
+    assert.equal(result.code, 'SCREEN_RENDER_FAILED');
+    assert.equal(result.screenRecovery, true);
+    assert.equal(root.getAttribute('data-omega-v2-route'), 'government');
+    assert.match(main.innerHTML, /This screen could not be opened/);
+    assert.match(main.innerHTML, /data-omega-v2-global-nav="more"/);
+    assert.equal(rowsCalled, 0, 'the global route menu must not trigger an extra ministry database read');
+    assert.equal(globalThis.__OMEGA_UI_V2_DIAGNOSTICS.lastRenderFailure.route, 'government');
+    assert.match(globalThis.__OMEGA_UI_V2_DIAGNOSTICS.lastRenderFailure.message, /simulated ministry renderer crash/);
+
+    const control = {
+      closest(selector) {
+        if (selector === 'button,a[href],[role="button"],summary' ||
+            selector === '[data-omega-v2-global-nav]') return this;
+        return null;
+      },
+      getAttribute(name) { return name === 'data-omega-v2-global-nav' ? 'more' : null; }
+    };
+    handlers.click({
+      target:control,
+      preventDefault(){},
+      stopPropagation(){}
+    });
+    assert.equal(root.getAttribute('data-omega-v2-route'), 'more');
+    assert.match(main.innerHTML, /Command Center/);
+  } finally {
+    if (previous.document === undefined) delete globalThis.document; else globalThis.document = previous.document;
+    if (previous.government === undefined) delete globalThis.OmegaUIV2Government; else globalThis.OmegaUIV2Government = previous.government;
+    if (previous.diagnostics === undefined) delete globalThis.__OMEGA_UI_V2_DIAGNOSTICS; else globalThis.__OMEGA_UI_V2_DIAGNOSTICS = previous.diagnostics;
+  }
+});
