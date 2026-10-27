@@ -629,6 +629,15 @@
       "maxPersistedAlerts": 64,
       "postExpiryPolicy": "STOP_NEW_AUTOMATIC_IMPORT_DECISIONS_KEEP_EXISTING_STOCK_AND_INBOUND_SHIPMENTS",
       "unknownDemandPolicy": "PRESERVE_UNKNOWN_DO_NOT_INVENT_DEMAND_OR_STOCK"
+    },
+    "stockUnitByRateUnit": {
+      "METRIC_TONS_PER_DAY": "TONNES",
+      "METRIC_TONS_LCE_PER_DAY": "TONNES",
+      "BARRELS_PER_DAY": "BBL",
+      "BCM_PER_DAY": "BCM",
+      "METRIC_TONS_U": "TONNES",
+      "TROY_OUNCES_PER_DAY": "TROY_OUNCES",
+      "CARATS_PER_DAY": "CARATS"
     }
   }
 }

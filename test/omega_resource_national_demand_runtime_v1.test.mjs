@@ -284,6 +284,83 @@ test('opponent procurement is evidence-routed, rate-limited, and never auto-issu
 });
 
 
+test('active recipe inputs create forecast demand before the first factory cycle without double-debiting inventory', async () => {
+  const { context, worldState } = createRuntimeContext({
+    inventory: { gypsum: 100 },
+    consumption: {},
+    production: {}
+  });
+  context.__OmegaResourceEconomyRules.demand.resourceProfiles = {
+    gypsum: structuredClone(demandRules.resourceProfiles.gypsum)
+  };
+  context.OmegaResourceIndustrialCatalogData = readJson('resource_industrial_catalog_v1.json');
+  worldState.resource.BGD.inventoryUnits = { gypsum: 'TONNES' };
+  worldState.economy.BGD.productionAssets = [{
+    id: 'FAC-GYPSUM-ACTIVE-01',
+    countryId: 'BGD',
+    factoryType: 'UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT',
+    status: 'OPERATIONAL',
+    capacityPerDay: 40,
+    cycleDays: 1,
+    inputCoefficients: { gypsum: 0.25 },
+    inputUnit: 'SIMULATION_RESOURCE_UNIT',
+    inputInventory: {},
+    inputBatchLots: [],
+    productionHealth: { status: 'STOPPED', reason: 'NO_FACTORY_INPUTS' }
+  }];
+
+  const runtime = context.OmegaResourceNationalDemandRuntime;
+  await runtime.prepare();
+  const report = runtime.processCountry('BGD', []);
+  const row = worldState.resource.BGD.demandRuntime.byResource.gypsum;
+  assert.equal(report.status, 'ACTIVE');
+  assert.equal(row.baselineSource, 'ACTIVE_FACTORY_INPUT_REQUIREMENT_PROXY');
+  assert.equal(row.baselineRate, 10);
+  assert.equal(row.activeFactoryInputDemandPerDay, 10);
+  assert.equal(row.demandPerDay, 10);
+  assert.equal(row.consumerDemandPerDay, 0,
+    'an active factory-only signal must not be reclassified as household consumption');
+  assert.equal(row.nationalConsumption, 0,
+    'a waiting factory forecast must not debit stock before an authoritative factory cycle consumes inputs');
+  assert.equal(worldState.resource.BGD.inventory.gypsum, 100,
+    'opening stock remains unchanged until an authoritative factory cycle or consumer debit commits');
+  assert.equal(row.stockCoverageDays, 10);
+  assert.equal(row.activeFactoryInputDemandSources[0].factoryId, 'FAC-GYPSUM-ACTIVE-01');
+  assert.equal(row.activeFactoryInputDemandIsSimulationOnly, true,
+    'physical-to-simulation input normalization is disclosed as a gameplay-only bridge');
+});
+
+test('active factory input demand is ignored when no declared unit bridge exists', async () => {
+  const { context, worldState } = createRuntimeContext({
+    inventory: { gypsum: 100 },
+    consumption: {},
+    production: {}
+  });
+  context.__OmegaResourceEconomyRules.demand.resourceProfiles = {
+    gypsum: structuredClone(demandRules.resourceProfiles.gypsum)
+  };
+  context.OmegaResourceIndustrialCatalogData = readJson('resource_industrial_catalog_v1.json');
+  worldState.resource.BGD.inventoryUnits = { gypsum: 'TONNES' };
+  worldState.economy.BGD.productionAssets = [{
+    id: 'FAC-GYPSUM-UNKNOWN-UNIT',
+    factoryType: 'UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT',
+    status: 'OPERATIONAL',
+    capacityPerDay: 40,
+    cycleDays: 1,
+    inputCoefficients: { gypsum: 0.25 },
+    inputUnit: 'UNREGISTERED_CUSTOM_UNIT'
+  }];
+
+  const runtime = context.OmegaResourceNationalDemandRuntime;
+  await runtime.prepare();
+  runtime.processCountry('BGD', []);
+  const row = worldState.resource.BGD.demandRuntime.byResource.gypsum;
+  assert.equal(row.status, 'UNKNOWN',
+    'unknown unit conversion cannot manufacture a demand rate');
+  assert.equal(row.demandPerDay, undefined);
+  assert.equal(worldState.resource.BGD.inventory.gypsum, 100);
+});
+
 test('the canonical demand catalog covers exactly the existing 41 resource identities without inventing demand for four metadata-only resources', () => {
   const ids = Object.keys(demandRules.resourceProfiles).sort();
   assert.equal(ids.length, 41);

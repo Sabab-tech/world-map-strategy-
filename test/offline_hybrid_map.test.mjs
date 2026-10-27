@@ -181,6 +181,23 @@ test("runtime composition root executes in the ordered deferred script queue", (
     "the composition root must not run before earlier defer scripts have executed");
 });
 
+test("resource startup baseline and demand rules are present in the offline shell", () => {
+  const startupScript = html.indexOf('src="omega_resource_startup_baseline_v1.js"');
+  const simulationScript = html.indexOf('src="omega_simulation_runtime.js"');
+  assert.ok(startupScript >= 0 && simulationScript > startupScript,
+    "startup baseline must register its session-event listener before the simulation runtime can create a new game");
+  for (const asset of [
+    "omega_resource_startup_baseline_v1.js",
+    "resource_startup_baseline_rules_v1.json",
+    "resource_economy_rules.json"
+  ]) {
+    assert.ok(serviceWorker.includes('"./' + asset + '"'),
+      "offline shell must precache startup baseline dependency " + asset);
+    assert.ok(androidOfflineWorkflow.includes('      - "' + asset + '"'),
+      "Android 9 offline smoke must rerun whenever startup baseline dependency changes: " + asset);
+  }
+});
+
 test("browser shell resources are cached locally for offline relaunch", () => {
   assert.match(html, /navigator\.serviceWorker\.register\('\.\/omega-offline-map-sw\.js'/);
   assert.match(serviceWorker, /CORE_ASSETS/);

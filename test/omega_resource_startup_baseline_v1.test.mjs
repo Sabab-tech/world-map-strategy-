@@ -191,9 +191,9 @@ test('fresh session seeds bounded opening stock and source-context-driven factor
   assert.ok(emittedEvents.some(event => event.type === 'OMEGA_RESOURCE_STARTUP_BASELINE_COMPLETED'));
   assert.ok(committedStockEvents.length > 0);
   assert.ok(committedStockEvents.every(row => row.batch && row.lot && row.receipt),
-    'opening-stock events are emitted only after the aggregate inventory, batch, lot, and warehouse receipt are committed');
+    'opening-stock events emit only after inventory, batch, lot and warehouse receipt are committed');
   assert.ok(committedStockEvents.every(row => Math.abs(row.aggregate - row.warehouseQuantity) < 1e-9),
-    'opening-stock quantity shown by the warehouse agrees with the aggregate inventory at event time');
+    'aggregate inventory and warehouse quantity agree when listeners receive the stock event');
 
   const bangladesh = state.economy.BGD.productionAssets;
   assert.ok(bangladesh.some(asset => asset.factoryType === 'UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT'),
@@ -235,22 +235,21 @@ test('fresh session seeds bounded opening stock and source-context-driven factor
   const coalStockRow = indiaResource.startupBaselineV1.stockRows.find(row => row.resourceId === 'coal');
   assert.ok(coalStockRow);
   assert.equal(coalStockRow.targetCoverageDays, 40,
-    'critical coal stock uses the configured 40-day opening buffer, not the 100-day contract term');
+    'critical coal has a 40-day opening buffer, independent of the 100-day supply authorization');
   const expectedIndiaCoal = indiaCoalBaseline.basePerMillionPopulation *
     indiaProfile.populationValues.population_2015 / 1000000 * coalStockRow.targetCoverageDays;
   assert.ok(Math.abs(indiaResource.inventory.coal - expectedIndiaCoal) < 1e-6,
-    'opening stock is derived from the configured daily rate and priority buffer, never geological reserve quantity');
+    'opening stock is derived from its configured daily rate and priority buffer, never geological reserve quantity');
   assert.equal(indiaResource.inventoryUnits.coal, 'TONNES');
-  assert.equal(indiaResource.startupBaselineV1.openingStockCoverageDays, 14,
-    'the legacy fallback remains 14 days while priority-specific target days are recorded per stock row');
+  assert.equal(indiaResource.startupBaselineV1.openingStockCoverageDays, 14);
   assert.deepEqual(indiaResource.startupBaselineV1.openingStockCoverageDaysByPriority, policy.openingStock.coverageDaysByPriority);
   assert.equal(indiaResource.startupBaselineV1.geologicalReserveQuantityUsedAsStock, false);
   assert.ok(indiaResource.startupBaselineV1.stockRowsEncoding === 'COMPACT_PER_RESOURCE_PROVENANCE_V1');
-  assert.ok(coalStockRow.demandSource === 'RULE_PROFILE_POPULATION_BASELINE');
+  assert.equal(coalStockRow.demandSource, 'RULE_PROFILE_POPULATION_BASELINE');
   assert.ok(coalStockRow.batchId.startsWith('STARTUP-STOCK-V1-IND-COAL'));
   assert.ok(indiaResource.batches.some(row => row.batchId === coalStockRow.batchId && row.stage === 'RAW'));
   assert.ok(indiaResource.inventoryLots[coalStockRow.batchId]);
-  assert.ok(indiaResource.warehouse.availableByResource.coal === indiaResource.inventory.coal);
+  assert.equal(indiaResource.warehouse.availableByResource.coal, indiaResource.inventory.coal);
   assert.ok(indiaResource.warehouse.storedBatchIds.includes(coalStockRow.batchId));
   assert.ok(indiaResource.warehouse.receipts.some(row => row.batchId === coalStockRow.batchId));
   assert.ok(indiaResource.inventoryLedger.some(row => row.batchId === coalStockRow.batchId && row.type === 'INVENTORY_CREATED'));
@@ -279,6 +278,15 @@ test('fresh session seeds bounded opening stock and source-context-driven factor
   }
   assert.ok(seededTypes.size > 0);
   assert.ok(seededTypes.size <= 21);
+  for (const code of Object.keys(state.resource)) {
+    const rows = state.resource[code] && state.resource[code].startupBaselineV1 &&
+      state.resource[code].startupBaselineV1.stockRows || [];
+    for (const row of rows) {
+      if (row.demandSource !== 'EXISTING_FACTORY_INPUT_RATE') continue;
+      assert.ok((row.factoryIds || []).every(id => !String(id).startsWith('STARTUP-FAC-')),
+        'a factory created by this baseline cannot justify its own opening stock: ' + code + '/' + row.resourceId);
+    }
+  }
 });
 
 test('metadata-only resources stay unknown unless an existing factory input supplies a modeled rate', async () => {
