@@ -680,6 +680,8 @@ test('Government exposes emblems, minister recruitment and a stable future portr
   assert.match(government, /__omegaV2RecruitmentRequestId/);
   assert.match(government, /button\.disabled = true;\s*button\.textContent = root\.__omegaV2RecruitmentHasCurrentMinister/);
   assert.match(government, /selector\.appoint\(recruitingId, candidate, country\)/);
+  assert.match(government, /appointmentScreenStillCurrent/);
+  assert.match(government, /activeOptions\.isScreenWorkCurrent\(\)/);
   assert.doesNotMatch(government, /id="omega-v2-minister-candidate" data-omega-v2-minister-candidate/);
   const ministerStyles = readFileSync(new URL('../omega_ui_v2/omega-ui-v2.css', import.meta.url), 'utf8');
   assert.match(ministerStyles, /\.omega-v2-minister-candidate-card\.is-selected/);

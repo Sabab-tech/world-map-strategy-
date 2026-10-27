@@ -651,12 +651,17 @@
           var appointment = selector && typeof selector.appoint === 'function'
             ? selector.appoint(recruitingId, candidate, country)
             : engine && typeof engine.recruit === 'function' ? engine.recruit(recruitingId, candidate, country) : Promise.reject(new Error('MINISTER_APPOINTMENT_RUNTIME_UNAVAILABLE'));
+          var appointmentScreenStillCurrent = function () {
+            return typeof activeOptions.isScreenWorkCurrent !== 'function' || activeOptions.isScreenWorkCurrent();
+          };
           Promise.resolve(appointment).then(function () {
+            if (!appointmentScreenStillCurrent()) return;
             root.__omegaV2RecruitingMinistry = null;
             root.__omegaV2SelectedMinisterCandidate = '';
             root.__omegaV2MinisterCandidates = [];
             scheduleRender(root, Object.assign({}, activeOptions, { view:'all-ministries' }));
           }).catch(function (error) {
+            if (!appointmentScreenStillCurrent()) return;
             if (status) status.textContent = 'Appointment rejected: ' + String(error && error.message || error || 'RUNTIME_REJECTED') + '. No success was reported.';
             confirmRecruitment.disabled = false;
           });
