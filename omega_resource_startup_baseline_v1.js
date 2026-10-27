@@ -1231,6 +1231,7 @@
   }
   async function runNewGameBaseline(state, session, runKey) {
     var turn = currentTurn(state);
+    var playerCountryId = id(session && session.playerCountryId || '');
     var policy = data.policy || {};
     if (!object(state.simulation)) {
       if (own(state, 'simulation') && state.simulation !== null) return { status: 'BLOCKED', reason: 'SIMULATION_STATE_INVALID' };
