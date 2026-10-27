@@ -4,7 +4,7 @@
     "datasetId": "OMEGA_COUNTRY_GENERAL_DATA_REGISTRY_V1",
     "title": "OMEGA Unified Country General Data Registry",
     "description": "Canonical common-schema registry aggregating identity, basic facts, economy, demographics, general indexes, resource context, public-safety summary and a source-aware strategic country profile for every identity in countries.json.",
-    "generatedAt": "2026-10-26T21:33:11.099Z",
+    "generatedAt": "2026-10-27T03:34:18.468Z",
     "countryAndTerritoryCount": 249,
     "uniqueIso3Count": 249,
     "baselineYear": 2015,
