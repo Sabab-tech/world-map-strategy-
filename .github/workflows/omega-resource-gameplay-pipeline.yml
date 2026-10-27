@@ -42,6 +42,8 @@ on:
       - 'omega_global_trade_system.js'
       - 'resource*.json'
       - 'resources*.json'
+      - 'omega_resource_national_demand_runtime_v1.js'
+      - 'test/omega_resource_national_demand_runtime_v1.test.mjs'
       - 'test/omega_resource_recipe_coverage.test.mjs'
       - 'resource_industrial_catalog_v1.json'
       - 'resource_site_canonical_catalog_v1.json'
@@ -162,6 +164,8 @@ jobs:
         run: npm run test:resource-actions && npm run test:resource-request
       - name: Production and realism regressions
         run: npm run test:resource-production-model && npm run test:resource-realism
+      - name: National demand and player supply lifeline regression
+        run: npm run test:resource-demand
       - name: Resource state hardening regression
         run: npm run test:resource-system-hardening
       - name: Industrial network regression
