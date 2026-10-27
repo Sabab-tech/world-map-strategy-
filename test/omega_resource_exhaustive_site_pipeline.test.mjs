@@ -161,7 +161,43 @@ const sites=allEligibleSites.filter(site=>countryShard.get(site.countryId)===sha
 assert.ok(sites.length>0,'shard '+shardIndex+' has no eligible sites');
 assert.ok(sites.every(Boolean),'every eligible site must resolve to a live executable reference');
 assert.ok(sites.every(site=>countryShard.get(site.countryId)===shardIndex),'a country leaked across exhaustive test shards');
-console.log('EXHAUSTIVE_SITE_SHARD_START '+JSON.stringify({shardIndex,shardCount,siteCount:sites.length,totalEligibleSites:allEligibleSites.length,countries:shardBuckets[shardIndex].countries.length}));
+
+// The imported endowment regression intentionally leaves unrelated batches and pending
+// shipments in global test state. Start this exhaustive post-commission audit from a clean
+// operational ledger per selected country so stale fixture reservations cannot impersonate
+// mine-to-factory failures. Keep the authoritative site registry, mine states/reserves,
+// policies, country identities, and transport infrastructure intact.
+function resetCountryOperationalLedgersForExhaustiveAudit(countryId){
+  const row=game.state.resource[countryId]||(game.state.resource[countryId]={});
+  row.inventory={};
+  row.batches=[];
+  row.inventoryLots={};
+  row.warehouse={
+    warehouseId:'WH-'+countryId+'-RAW',countryId,locationNodeKey:'WAREHOUSE:'+countryId+':RAW',
+    status:'OPERATIONAL',availableByResource:{},reservedByResource:{},storedBatchIds:[],receipts:[],transfers:[]
+  };
+  row.processedWarehouse={
+    warehouseId:'WH-'+countryId+'-PROCESSED',countryId,locationNodeKey:'WAREHOUSE:'+countryId+':PROCESSED',
+    status:'OPERATIONAL',availableByResource:{},reservedByResource:{},storedBatchIds:[],receipts:[],transfers:[]
+  };
+  row.mineAssets=[];
+  row.commissionedSites=[];
+  row.industrialNetwork={
+    version:1,shipments:[],deliveries:[],reservations:{},siteFlowLedger:[],siteExecutions:[],
+    factoryProductionCycles:{},factoryProductionCycleHistory:[],factoryInputTransfers:[],
+    factoryInputTransferSequence:0,factoryProductionCycleSequence:0,events:[],inventoryLedger:[],
+    warehouseTransfers:[],finishedGoodsLedger:[]
+  };
+  const economy=game.state.economy||(game.state.economy={});
+  const countryEconomy=economy[countryId]||(economy[countryId]={});
+  countryEconomy.productionAssets=[];
+  delete countryEconomy.factoryEmployment;
+  delete countryEconomy.industrialRuntime;
+}
+for(const countryId of new Set(sites.map(site=>site.countryId))){
+  resetCountryOperationalLedgersForExhaustiveAudit(countryId);
+}
+console.log('EXHAUSTIVE_SITE_SHARD_START '+JSON.stringify({shardIndex,shardCount,siteCount:sites.length,totalEligibleSites:allEligibleSites.length,countries:shardBuckets[shardIndex].countries.length,fixture:'CLEAN_COUNTRY_OPERATIONAL_LEDGERS'}));
 function commissionGameplayMine(entry){
   const {siteId,countryId,resourceId,ref}=entry;
   const root=game.state;
