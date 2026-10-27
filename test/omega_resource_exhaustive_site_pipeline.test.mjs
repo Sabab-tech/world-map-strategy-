@@ -308,7 +308,11 @@ for(let siteIndex=0;siteIndex<sites.length;siteIndex++){
   });
   if(result?.status!=='IN_TRANSIT'){
     failures.push({siteId:site.siteId,countryId:site.countryId,resourceId:site.resourceId,
-      stage:'START',status:result?.status,reason:result?.reason,detail:result?.detail});
+      stage:'START',status:result?.status,reason:result?.reason,detail:result?.detail,
+      shipmentStatus:result?.shipment?.status||null,shipmentReason:result?.shipment?.reason||null,
+      reservationDetails:result?.shipment?.details||null,
+      factoryId:result?.factoryId||result?.shipment?.plan?.factoryId||null,
+      availableAfterReservations:result?.shipment?.details?.available??null});
     continue;
   }
   counts.started++;
