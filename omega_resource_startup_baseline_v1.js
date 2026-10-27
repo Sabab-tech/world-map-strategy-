@@ -1356,6 +1356,7 @@
       factoryTypesCreated: totals.factoryTypesCreated,
       notRealWorldFacilityCount: totals.factoryAssetsCreated,
       openingStockCoverageDays: positive(policy.openingStock && policy.openingStock.coverageDays) || 14,
+      openingStockCoverageDaysByPriority: clone(policy.openingStock && policy.openingStock.coverageDaysByPriority || null),
       automaticSupplyWindowDays: positive(data.economyRules.demand.playerSupplyLifeline &&
         data.economyRules.demand.playerSupplyLifeline.termDays) || 100,
       automaticSupplyRenewal: false,
