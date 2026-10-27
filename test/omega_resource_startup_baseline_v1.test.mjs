@@ -142,6 +142,23 @@ test('fresh session seeds bounded opening stock and source-context-driven factor
   assert.equal(ready.factoryProfileCount, 21);
 
   state.resource.BGD.inventoryUnits.natural_gas = 'UNREGISTERED_STOCK_UNIT';
+  const committedStockEvents = [];
+  context.addEventListener('OMEGA_RESOURCE_INVENTORY_CHANGED', event => {
+    const detail = event && event.detail || {};
+    if (!detail.provenance || detail.provenance.source !== 'SIMULATED_STARTUP_BASELINE_V1') return;
+    const bucket = state.resource[detail.countryId];
+    const batch = (bucket.batches || []).find(row => row.batchId === detail.transactionId);
+    const lot = bucket.inventoryLots && bucket.inventoryLots[detail.transactionId];
+    const receipt = (bucket.warehouse && bucket.warehouse.receipts || []).find(row => row.batchId === detail.transactionId);
+    committedStockEvents.push({
+      resourceId: detail.resourceId,
+      aggregate: bucket.inventory[detail.resourceId],
+      batch: !!batch,
+      lot: !!lot,
+      warehouseQuantity: bucket.warehouse && bucket.warehouse.availableByResource[detail.resourceId],
+      receipt: !!receipt
+    });
+  });
   emitSimulationEvent('OMEGA_GAME_SESSION_CREATED', {
     session: JSON.parse(JSON.stringify(state.simulation.session))
   });
@@ -172,6 +189,11 @@ test('fresh session seeds bounded opening stock and source-context-driven factor
   assert.equal(report.automaticSupplyRenewal, false);
   assert.equal(report.countrySummaries.length, 249);
   assert.ok(emittedEvents.some(event => event.type === 'OMEGA_RESOURCE_STARTUP_BASELINE_COMPLETED'));
+  assert.ok(committedStockEvents.length > 0);
+  assert.ok(committedStockEvents.every(row => row.batch && row.lot && row.receipt),
+    'opening-stock events emit only after inventory, batch, lot and warehouse receipt are committed');
+  assert.ok(committedStockEvents.every(row => Math.abs(row.aggregate - row.warehouseQuantity) < 1e-9),
+    'aggregate inventory and warehouse quantity agree when listeners receive the stock event');
 
   const bangladesh = state.economy.BGD.productionAssets;
   assert.ok(bangladesh.some(asset => asset.factoryType === 'UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT'),
@@ -210,16 +232,27 @@ test('fresh session seeds bounded opening stock and source-context-driven factor
   const indiaResource = state.resource.IND;
   const indiaCoalBaseline = economyRules.demand.resourceProfiles.coal;
   assert.ok(positive(indiaResource.inventory.coal));
+  const coalStockRow = indiaResource.startupBaselineV1.stockRows.find(row => row.resourceId === 'coal');
+  assert.ok(coalStockRow);
+  assert.equal(coalStockRow.targetCoverageDays, 40,
+    'critical coal has a 40-day opening buffer, independent of the 100-day supply authorization');
   const expectedIndiaCoal = indiaCoalBaseline.basePerMillionPopulation *
-    indiaProfile.populationValues.population_2015 / 1000000 * policy.openingStock.coverageDays;
+    indiaProfile.populationValues.population_2015 / 1000000 * coalStockRow.targetCoverageDays;
   assert.ok(Math.abs(indiaResource.inventory.coal - expectedIndiaCoal) < 1e-6,
-    'opening stock is derived from the configured daily rate and population, never geological reserve quantity');
+    'opening stock is derived from its configured daily rate and priority buffer, never geological reserve quantity');
   assert.equal(indiaResource.inventoryUnits.coal, 'TONNES');
   assert.equal(indiaResource.startupBaselineV1.openingStockCoverageDays, 14);
+  assert.deepEqual(indiaResource.startupBaselineV1.openingStockCoverageDaysByPriority, policy.openingStock.coverageDaysByPriority);
   assert.equal(indiaResource.startupBaselineV1.geologicalReserveQuantityUsedAsStock, false);
   assert.ok(indiaResource.startupBaselineV1.stockRowsEncoding === 'COMPACT_PER_RESOURCE_PROVENANCE_V1');
-  assert.ok(indiaResource.startupBaselineV1.stockRows.some(row =>
-    row.resourceId === 'coal' && row.demandSource === 'RULE_PROFILE_POPULATION_BASELINE'));
+  assert.equal(coalStockRow.demandSource, 'RULE_PROFILE_POPULATION_BASELINE');
+  assert.ok(coalStockRow.batchId.startsWith('STARTUP-STOCK-V1-IND-COAL'));
+  assert.ok(indiaResource.batches.some(row => row.batchId === coalStockRow.batchId && row.stage === 'RAW'));
+  assert.ok(indiaResource.inventoryLots[coalStockRow.batchId]);
+  assert.equal(indiaResource.warehouse.availableByResource.coal, indiaResource.inventory.coal);
+  assert.ok(indiaResource.warehouse.storedBatchIds.includes(coalStockRow.batchId));
+  assert.ok(indiaResource.warehouse.receipts.some(row => row.batchId === coalStockRow.batchId));
+  assert.ok(indiaResource.inventoryLedger.some(row => row.batchId === coalStockRow.batchId && row.type === 'INVENTORY_CREATED'));
 
   for (const code of Object.keys(state.resource)) {
     const bucket = state.resource[code];
