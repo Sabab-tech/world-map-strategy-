@@ -185,9 +185,9 @@ test('runtime does not overwrite a legacy save with a startup baseline', async (
   const api = context.Omega.ResourceStartupBaseline;
   await api.initialize('TEST_LEGACY_SAVE');
   const rs = state.resource.BGD;
-  assert.deepEqual(state.economy.BGD.productionAssets.map(asset => asset.id), ['OLD-FACTORY']);
+  assert.equal(JSON.stringify(state.economy.BGD.productionAssets.map(asset => asset.id)), '["OLD-FACTORY"]');
   assert.equal(rs.inventory.coal, 123);
   assert.equal(rs.warehouse.availableByResource.coal, 123);
-  assert.deepEqual(rs.batches.map(batch => batch.batchId), ['OLD-BATCH']);
+  assert.equal(JSON.stringify(rs.batches.map(batch => batch.batchId)), '["OLD-BATCH"]');
   assert.equal(rs.startupBaseline.skippedLegacyFactorySeed, true);
 });
