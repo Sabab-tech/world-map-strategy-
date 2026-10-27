@@ -775,3 +775,57 @@ body.omega-atlas-dock-ready .ui-bottom-navigation{display:none!important;}
   letter-spacing: .02em;
   list-style-position: inside;
 }
+
+/* Navigation feedback is visible before a destination renderer consumes the main thread. */
+.omega-v2-navigation-loading {
+  align-items: center;
+  display: flex;
+  min-height: min(50vh, 420px);
+}
+.omega-v2-navigation-loading-panel {
+  align-items: center;
+  background: var(--omega-v2-surface);
+  border: 1px solid var(--omega-v2-border);
+  border-radius: 14px;
+  display: flex;
+  gap: 16px;
+  margin: 0 auto;
+  max-width: 540px;
+  padding: 22px;
+  width: 100%;
+}
+.omega-v2-navigation-loading-mark {
+  animation: omega-v2-navigation-spin .8s linear infinite;
+  border: 3px solid var(--omega-v2-border);
+  border-radius: 50%;
+  border-top-color: var(--omega-v2-accent-blue);
+  flex: 0 0 auto;
+  height: 32px;
+  width: 32px;
+}
+.omega-v2-navigation-loading-copy { flex: 1; min-width: 0; }
+.omega-v2-navigation-loading-copy .omega-v2-title { font-size: 18px; }
+.omega-v2-navigation-progress {
+  background: var(--omega-v2-border);
+  border-radius: 999px;
+  height: 3px;
+  margin-top: 14px;
+  overflow: hidden;
+}
+.omega-v2-navigation-progress span {
+  animation: omega-v2-navigation-progress 1s ease-in-out infinite;
+  background: var(--omega-v2-accent-blue);
+  display: block;
+  height: 100%;
+  width: 35%;
+}
+@keyframes omega-v2-navigation-spin { to { transform: rotate(360deg); } }
+@keyframes omega-v2-navigation-progress {
+  0% { transform: translateX(-120%); }
+  100% { transform: translateX(340%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .omega-v2-navigation-loading-mark,
+  .omega-v2-navigation-progress span { animation: none; }
+  .omega-v2-navigation-progress span { width: 100%; }
+}
