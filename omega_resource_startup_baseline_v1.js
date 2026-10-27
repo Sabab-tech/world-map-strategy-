@@ -759,6 +759,19 @@
     return total > 0 ? { rate: total, unit: String(stockUnit || 'SIMULATION_RESOURCE_UNIT'),
       source: 'EXISTING_FACTORY_INPUT_RATE', factoryIds: factories } : null;
   }
+  function coverageDaysForProfile(profileRow, policies) {
+    var tiers = object(policies && policies.coverageDaysByPriority) || {};
+    var priority = finite(profileRow && profileRow.priority);
+    var fallback = positive(tiers.fallback) || positive(policies && policies.coverageDays) || 14;
+    if (priority === null) return fallback;
+    if (priority >= (finite(tiers.criticalPriorityMin) === null ? 8.5 : finite(tiers.criticalPriorityMin))) {
+      return positive(tiers.critical) || fallback;
+    }
+    if (priority >= (finite(tiers.standardPriorityMin) === null ? 6 : finite(tiers.standardPriorityMin))) {
+      return positive(tiers.standard) || fallback;
+    }
+    return positive(tiers.nonCritical) || fallback;
+  }
   function seedCountryStock(state, profile, economy, resource, assets, turn) {
     var marker = object(resource.startupBaselineV1);
     if (marker && marker.version === VERSION && marker.openingStockInitialized === true) {
@@ -767,7 +780,8 @@
         seeded: 0,
         preserved: marker.existingStockPreservedCount || 0,
         unknownResourceIds: clone(marker.unknownResourceIds || []),
-        sourceCounts: clone(marker.stockSourceCounts || {})
+        sourceCounts: clone(marker.stockSourceCounts || {}),
+        stateMismatchResourceIds: clone(marker.stateMismatchResourceIds || [])
       };
     }
     var policies = data.policy.openingStock || {};
@@ -777,22 +791,92 @@
       return { status: 'BLOCKED', reason: 'EXISTING_RESOURCE_INVENTORY_STATE_INVALID',
         seeded: 0, preserved: 0, unknownResourceIds: Object.keys(data.resourceProfiles) };
     }
-    if (!inventory) inventory = resource.inventory = {};
+    inventory = inventory ? clone(inventory) : {};
     var unitsPresent = own(resource, 'inventoryUnits');
     var inventoryUnits = object(resource.inventoryUnits);
     if (!inventoryUnits && unitsPresent) {
-      return { status: 'BLOCKED', reason: 'EXISTING_RESOURCE_INVENTORY_UNITS_INVALID',
+      return { status: 'BLOCKED', reason: 'EXISTING_RESOURCE_INVENTORY_UNITS_STATE_INVALID',
         seeded: 0, preserved: 0, unknownResourceIds: Object.keys(data.resourceProfiles) };
     }
-    if (!inventoryUnits) inventoryUnits = resource.inventoryUnits = {};
+    inventoryUnits = inventoryUnits ? clone(inventoryUnits) : {};
+
+    var batchesPresent = own(resource, 'batches');
+    var batches = Array.isArray(resource.batches) ? clone(resource.batches) : [];
+    if (batchesPresent && !Array.isArray(resource.batches)) {
+      return { status: 'BLOCKED', reason: 'EXISTING_RESOURCE_BATCH_STATE_INVALID',
+        seeded: 0, preserved: 0, unknownResourceIds: Object.keys(data.resourceProfiles) };
+    }
+    var lotsPresent = own(resource, 'inventoryLots');
+    var lots = object(resource.inventoryLots);
+    if (lotsPresent && !lots) {
+      return { status: 'BLOCKED', reason: 'EXISTING_RESOURCE_INVENTORY_LOTS_STATE_INVALID',
+        seeded: 0, preserved: 0, unknownResourceIds: Object.keys(data.resourceProfiles) };
+    }
+    lots = lots ? clone(lots) : {};
+    var ledgerPresent = own(resource, 'inventoryLedger');
+    var ledger = Array.isArray(resource.inventoryLedger) ? clone(resource.inventoryLedger) : [];
+    if (ledgerPresent && !Array.isArray(resource.inventoryLedger)) {
+      return { status: 'BLOCKED', reason: 'EXISTING_RESOURCE_INVENTORY_LEDGER_STATE_INVALID',
+        seeded: 0, preserved: 0, unknownResourceIds: Object.keys(data.resourceProfiles) };
+    }
+    var warehousePresent = own(resource, 'warehouse');
+    var warehouse = object(resource.warehouse);
+    if (warehousePresent && !warehouse) {
+      return { status: 'BLOCKED', reason: 'EXISTING_RAW_WAREHOUSE_STATE_INVALID',
+        seeded: 0, preserved: 0, unknownResourceIds: Object.keys(data.resourceProfiles) };
+    }
+    warehouse = warehouse ? clone(warehouse) : {
+      warehouseId: 'WH-' + id(profile.iso3) + '-RAW',
+      countryId: id(profile.iso3),
+      type: 'SOVEREIGN_RAW_MATERIAL_WAREHOUSE',
+      locationNodeKey: 'WAREHOUSE:' + id(profile.iso3) + ':RAW',
+      status: 'OPERATIONAL',
+      availableByResource: {},
+      storedBatchIds: [],
+      receipts: []
+    };
+    if (own(warehouse, 'availableByResource') && !object(warehouse.availableByResource)) {
+      return { status: 'BLOCKED', reason: 'EXISTING_RAW_WAREHOUSE_QUANTITY_STATE_INVALID',
+        seeded: 0, preserved: 0, unknownResourceIds: Object.keys(data.resourceProfiles) };
+    }
+    if (own(warehouse, 'storedBatchIds') && !Array.isArray(warehouse.storedBatchIds)) {
+      return { status: 'BLOCKED', reason: 'EXISTING_RAW_WAREHOUSE_BATCH_INDEX_INVALID',
+        seeded: 0, preserved: 0, unknownResourceIds: Object.keys(data.resourceProfiles) };
+    }
+    if (own(warehouse, 'receipts') && !Array.isArray(warehouse.receipts)) {
+      return { status: 'BLOCKED', reason: 'EXISTING_RAW_WAREHOUSE_RECEIPT_LEDGER_INVALID',
+        seeded: 0, preserved: 0, unknownResourceIds: Object.keys(data.resourceProfiles) };
+    }
+    warehouse.availableByResource = object(warehouse.availableByResource) || {};
+    warehouse.storedBatchIds = Array.isArray(warehouse.storedBatchIds) ? warehouse.storedBatchIds : [];
+    warehouse.receipts = Array.isArray(warehouse.receipts) ? warehouse.receipts : [];
+    if (!warehouse.warehouseId) warehouse.warehouseId = 'WH-' + id(profile.iso3) + '-RAW';
+    if (!warehouse.countryId) warehouse.countryId = id(profile.iso3);
+    if (!warehouse.locationNodeKey) warehouse.locationNodeKey = 'WAREHOUSE:' + id(profile.iso3) + ':RAW';
+    if (!warehouse.type) warehouse.type = 'SOVEREIGN_RAW_MATERIAL_WAREHOUSE';
+    if (!warehouse.status) warehouse.status = 'OPERATIONAL';
+
+    var countryId = id(profile.iso3);
+    var boundary = g.OmegaResourceCountryBoundaryGuard || g.Omega && g.Omega.ResourceCountryBoundaryGuard;
+    var warehouseCheck = boundary && typeof boundary.validateWarehouse === 'function'
+      ? boundary.validateWarehouse(warehouse, countryId) : null;
+    if (warehouseCheck && warehouseCheck.ok === false) {
+      return { status: 'BLOCKED', reason: warehouseCheck.reason || 'RAW_WAREHOUSE_COUNTRY_SCOPE_INVALID',
+        seeded: 0, preserved: 0, unknownResourceIds: Object.keys(data.resourceProfiles),
+        stateMismatchResourceIds: [] };
+    }
     var siteProfile = profile.populationValues || {};
     var storedPopulation = finite(economy.population_2015);
     var currentPopulation = storedPopulation !== null
       ? (storedPopulation > 0 ? storedPopulation : null)
       : positive(siteProfile.population_2015);
     var resourceProfiles = data.resourceProfiles;
-    var seeded = 0, preserved = 0, unresolved = [], sourceCounts = Object.create(null), rows = [], preservedIds = [];
-    var existingAssets = Array.isArray(economy.productionAssets) ? economy.productionAssets : [];
+    var seeded = 0, preserved = 0, unresolved = [], stateMismatch = [],
+      sourceCounts = Object.create(null), rows = [], preservedIds = [], batchIds = [];
+    var existingAssets = Array.isArray(assets) ? assets : [];
+    var maxBatches = Math.max(1, Math.floor(finite(data.economyRules.runtime && data.economyRules.runtime.maxBatches) || 8192));
+    var maxLedgerEntries = Math.max(1, Math.floor(finite(data.economyRules.runtime && data.economyRules.runtime.maxLedgerEntries) || 2048));
+
     Object.keys(resourceProfiles).forEach(function (resourceId) {
       var profileRow = resourceProfiles[resourceId] || {};
       var existingKey = findKeyByToken(inventory, resourceId);
@@ -824,8 +908,8 @@
           unitSource = mappedUnit.source;
           quantityFactor = finite(mappedUnit.quantityFactor) || 1;
         } else if (factoryInput) {
-          // Metadata-only resource identities may be modeled only when an actual
-          // eligible factory input supplies a rate; never invent their profile rate.
+          // Use only factory input from assets that existed before this startup baseline.
+          // Newly seeded starter assets are deliberately not evidence for their own input demand.
           rate = factoryInput.rate;
           source = factoryInput.source;
           stockUnit = factoryInput.unit || 'SIMULATION_RESOURCE_UNIT';
@@ -840,30 +924,161 @@
         unresolved.push(resourceId);
         return;
       }
-      var days = positive(policies.coverageDays);
-      if (days === null) days = 14;
+      var days = coverageDaysForProfile(profileRow, policies);
       var quantity = Number((rate * days * quantityFactor).toPrecision(12));
       if (!(quantity > 0) || !Number.isFinite(quantity)) {
         unresolved.push(resourceId);
         return;
       }
-      inventory[resourceId] = quantity;
+      var batchId = 'STARTUP-STOCK-V1-' + countryId + '-' + token(resourceId).toUpperCase();
+      var existingBatch = batches.some(function (row) { return row && String(row.batchId || '') === batchId; });
+      if (existingBatch || own(lots, batchId)) {
+        // A prior batch without a corresponding aggregate inventory key is an
+        // inconsistent save. Do not guess whether it was consumed or credit it again.
+        unresolved.push(resourceId);
+        stateMismatch.push(resourceId);
+        return;
+      }
+      var existingWarehouseKey = findKeyByToken(warehouse.availableByResource, resourceId);
+      var existingWarehouseQuantity = existingWarehouseKey === null ? null : finite(warehouse.availableByResource[existingWarehouseKey]);
+      if (existingWarehouseKey !== null && existingWarehouseQuantity === null) {
+        unresolved.push(resourceId);
+        stateMismatch.push(resourceId);
+        return;
+      }
+      var existingBatchQuantity = batches.reduce(function (sum, row) {
+        if (!row || token(row.resourceId || row.materialIdentity) !== token(resourceId)) return sum;
+        var remaining = finite(row.remainingQuantity != null ? row.remainingQuantity : row.quantity);
+        return sum + Math.max(0, remaining === null ? 0 : remaining);
+      }, 0);
+      var existingLotQuantity = Object.keys(lots).reduce(function (sum, key) {
+        var lot = lots[key];
+        if (!lot || token(lot.resourceId || lot.materialIdentity) !== token(resourceId)) return sum;
+        var remaining = finite(lot.remainingQuantity != null ? lot.remainingQuantity : lot.quantity);
+        return sum + Math.max(0, remaining === null ? 0 : remaining);
+      }, 0);
+      if (existingBatchQuantity > 1e-9 || existingLotQuantity > 1e-9 ||
+          (existingWarehouseQuantity !== null && existingWarehouseQuantity > 1e-9)) {
+        // The aggregate inventory key is absent but one of its supporting stock
+        // layers already has value. Leave it untouched for the inventory-integrity
+        // runtime rather than duplicating the same opening stock.
+        unresolved.push(resourceId);
+        stateMismatch.push(resourceId);
+        return;
+      }
+      if (batches.length >= maxBatches) {
+        unresolved.push(resourceId);
+        stateMismatch.push(resourceId);
+        return;
+      }
+
+      var provenance = {
+        source: 'SIMULATED_STARTUP_BASELINE_V1',
+        authority: 'SIMULATED_STARTUP_BASELINE_V1',
+        quantityAuthority: 'SIMULATED',
+        countryId: countryId,
+        resourceId: resourceId,
+        demandSource: source,
+        dailyRate: rate,
+        dailyRateUnit: stockUnit,
+        targetCoverageDays: days,
+        profileRateUnit: profileRow.unit || null,
+        populationUsed: populationForRate,
+        unitSource: unitSource,
+        unitConversionFactor: quantityFactor,
+        sourceFiles: [PATHS.policy, PATHS.economyRules, PATHS.countryProfiles],
+        simulationOnly: true,
+        statement: 'One-time opening stock estimate. This is not a geological reserve, observed warehouse quantity, or verified trade delivery.'
+      };
+      var batch = {
+        batchId: batchId,
+        resourceId: resourceId,
+        materialIdentity: resourceId,
+        quantity: quantity,
+        remainingQuantity: quantity,
+        unit: stockUnit,
+        stage: 'RAW',
+        ownerCountryCode: countryId,
+        ownerCompanyId: 'STATE_INDUSTRY_' + countryId,
+        sourceBatchIds: [],
+        countryId: countryId,
+        sourceCountryId: countryId,
+        originCountryId: countryId,
+        destinationCountryId: countryId,
+        custodianKey: countryId,
+        warehouseId: warehouse.warehouseId,
+        locationNodeKey: warehouse.locationNodeKey,
+        timestampTurn: turn,
+        transferType: 'LOCAL_RUNTIME',
+        provenance: clone(provenance)
+      };
+      var batchCheck = boundary && typeof boundary.validateLocalBatch === 'function'
+        ? boundary.validateLocalBatch(batch, countryId) : null;
+      if (batchCheck && batchCheck.ok === false) {
+        unresolved.push(resourceId);
+        stateMismatch.push(resourceId);
+        return;
+      }
       if (!own(inventoryUnits, resourceId) && findKeyByToken(inventoryUnits, resourceId) === null) {
         inventoryUnits[resourceId] = stockUnit;
-      } else {
-        var unitKey = findKeyByToken(inventoryUnits, resourceId);
-        if (unitKey === null) inventoryUnits[resourceId] = stockUnit;
       }
+      inventory[resourceId] = quantity;
+      batches.push(batch);
+      lots[batchId] = {
+        batchId: batchId,
+        resourceId: resourceId,
+        quantity: quantity,
+        remainingQuantity: quantity,
+        unit: stockUnit,
+        stage: 'RAW',
+        countryId: countryId,
+        warehouseId: warehouse.warehouseId,
+        locationNodeKey: warehouse.locationNodeKey,
+        ownerCompanyId: batch.ownerCompanyId,
+        sourceBatchIds: [],
+        status: 'AVAILABLE',
+        provenance: clone(provenance),
+        createdTurn: turn
+      };
+      warehouse.availableByResource[existingWarehouseKey === null ? resourceId : existingWarehouseKey] =
+        Math.max(0, existingWarehouseQuantity || 0) + quantity;
+      if (warehouse.storedBatchIds.indexOf(batchId) < 0) warehouse.storedBatchIds.push(batchId);
+      warehouse.receipts.push({
+        receiptId: 'WH-REC-' + batchId,
+        warehouseId: warehouse.warehouseId,
+        countryId: countryId,
+        batchId: batchId,
+        resourceId: resourceId,
+        quantity: quantity,
+        unit: stockUnit,
+        simulationTurn: turn,
+        status: 'RECEIVED',
+        source: 'SIMULATED_STARTUP_BASELINE_V1',
+        provenance: clone(provenance)
+      });
+      ledger.push({
+        type: 'INVENTORY_CREATED',
+        resourceId: resourceId,
+        quantity: quantity,
+        unit: stockUnit,
+        stage: 'RAW',
+        turn: turn,
+        batchId: batchId,
+        source: 'SIMULATED_STARTUP_BASELINE_V1',
+        targetCoverageDays: days,
+        demandSource: source,
+        provenance: clone(provenance)
+      });
       seeded++;
+      batchIds.push(batchId);
       sourceCounts[source] = (sourceCounts[source] || 0) + 1;
-      // Compact per-resource provenance keeps the persisted save bounded on Android.
-      // Common authority, source files, coverage days, and source definitions live on
-      // the country marker rather than being repeated for every resource.
       rows.push({
         resourceId: resourceId,
         quantity: quantity,
         unit: stockUnit,
         dailyRate: rate,
+        targetCoverageDays: days,
+        batchId: batchId,
         demandSource: source,
         profileRateUnit: profileRow.unit || null,
         populationUsed: populationForRate,
@@ -871,8 +1086,36 @@
         unitConversionFactor: quantityFactor,
         factoryIds: factoryInput && factoryInput.factoryIds || []
       });
+      dispatchEvent('OMEGA_RESOURCE_INVENTORY_CHANGED', {
+        countryId: countryId,
+        resourceId: resourceId,
+        delta: quantity,
+        newQuantity: quantity,
+        warehouseQuantity: warehouse.availableByResource[existingWarehouseKey === null ? resourceId : existingWarehouseKey],
+        stage: 'RAW',
+        transactionId: batchId,
+        provenance: clone(provenance)
+      });
     });
-    var countryId = id(profile.iso3);
+
+    // Publish all opening stock layers together after a country row set has been
+    // validated. Every new aggregate quantity now has a matching batch, lot,
+    // warehouse receipt, and inventory ledger record.
+    if (seeded > 0) {
+      while (batches.length > maxBatches) batches.shift();
+      while (ledger.length > maxLedgerEntries) ledger.shift();
+      resource.inventory = inventory;
+      resource.inventoryUnits = inventoryUnits;
+      resource.batches = batches;
+      resource.inventoryLots = lots;
+      resource.inventoryLedger = ledger;
+      resource.warehouse = warehouse;
+    } else {
+      // Still materialize additive empty maps only where absent; do not replace
+      // any explicit malformed or populated save state.
+      if (!inventoryPresent) resource.inventory = inventory;
+      if (!unitsPresent) resource.inventoryUnits = inventoryUnits;
+    }
     var previousMarker = object(resource.startupBaselineV1) || {};
     resource.startupBaselineV1 = {
       version: VERSION,
@@ -881,11 +1124,14 @@
       countryId: countryId,
       initializedTurn: turn,
       openingStockCoverageDays: positive(policies.coverageDays) || 14,
+      openingStockCoverageDaysByPriority: clone(policies.coverageDaysByPriority || null),
       openingStockSeededCount: seeded,
       existingStockPreservedCount: preserved,
       unknownResourceIds: unresolved,
+      stateMismatchResourceIds: stateMismatch,
       preservedResourceIds: preservedIds,
       stockSourceCounts: sourceCounts,
+      stockBatchIds: batchIds,
       authority: 'SIMULATED_STARTUP_BASELINE_V1',
       stockRows: rows,
       stockRowsEncoding: 'COMPACT_PER_RESOURCE_PROVENANCE_V1',
@@ -896,7 +1142,8 @@
       previousMarker: previousMarker.version && previousMarker.version !== VERSION ? clone(previousMarker) : null
     };
     return { status: unresolved.length ? 'INITIALIZED_WITH_UNKNOWN_ROWS' : 'INITIALIZED',
-      seeded: seeded, preserved: preserved, unknownResourceIds: unresolved, sourceCounts: sourceCounts };
+      seeded: seeded, preserved: preserved, unknownResourceIds: unresolved, stateMismatchResourceIds: stateMismatch,
+      sourceCounts: sourceCounts, batchIds: batchIds };
   }
   function seedCountryContext(state, profile) {
     var econHit = bucketFor(state, 'economy', profile, true);
