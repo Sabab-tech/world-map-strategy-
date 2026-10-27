@@ -933,11 +933,22 @@ function planShipment(input={}){
 function reserveInventoryForShipment(c,resourceId,quantity,shipmentId){
   const r=resourceState(c),n=netState(c);r.warehouse=r.warehouse||{availableByResource:{},reservedByResource:{}};const w=r.warehouse;
   w.availableByResource=w.availableByResource||{};w.reservedByResource=w.reservedByResource||{};
-  const available=Math.max(0,num(w.availableByResource[resourceId])||0);
-  const reserved=Math.max(0,num(w.reservedByResource[resourceId])||0);
-  if(available-reserved<quantity)return{ok:false,reason:'WAREHOUSE_AVAILABLE_AFTER_RESERVATIONS_TOO_LOW',available:available-reserved};
-  w.reservedByResource[resourceId]=reserved+quantity;n.reservations[shipmentId]={resourceId,quantity,status:'RESERVED'};
-  return{ok:true};
+  // Resource IDs can be serialized with different casing by legacy save data and the
+  // canonical endowment runtime. Resolve the existing ledger keys instead of treating
+  // a spelling difference as missing stock or creating a second reservation bucket.
+  const availableMatch=quantityObjectKey(w.availableByResource,resourceId);
+  const reservedMatch=quantityObjectKey(w.reservedByResource,resourceId);
+  const available=availableMatch===null?0:Math.max(0,num(w.availableByResource[availableMatch])||0);
+  const reserved=reservedMatch===null?0:Math.max(0,num(w.reservedByResource[reservedMatch])||0);
+  const availableAfterReservations=available-reserved;
+  if(availableMatch===null||availableAfterReservations+1e-9<quantity){
+    return{ok:false,reason:'WAREHOUSE_AVAILABLE_AFTER_RESERVATIONS_TOO_LOW',available,reserved,
+      availableAfterReservations,requestedQuantity:quantity,availableKey:availableMatch,reservedKey:reservedMatch};
+  }
+  const reservationKey=reservedMatch||availableMatch;
+  w.reservedByResource[reservationKey]=reserved+quantity;
+  n.reservations[shipmentId]={resourceId,quantity,status:'RESERVED'};
+  return{ok:true,available,reserved,availableAfterReservations,availableKey:availableMatch,reservedKey:reservationKey};
 }
 function resizeRouteForDispatch(route,actualQuantity,plannedQuantity){
   const out=clone(route||{}),actual=Math.max(0,num(actualQuantity)||0);
@@ -1392,11 +1403,15 @@ function advanceShipments(c){
       continue;
     }
     const rid=tok(s.resourceId),quantity=Math.max(0,num(s.quantity)||0),r=resourceState(cid);
-    const warehouse=r.warehouse||{},available=Math.max(0,num(warehouse.availableByResource?.[rid])||0);
-    const reserved=Math.max(0,num(warehouse.reservedByResource?.[rid])||0);
-    if(quantity<=0||available+1e-9<quantity||reserved+1e-9<quantity){
+    const warehouse=r.warehouse||{};
+    const availableKey=quantityObjectKey(warehouse.availableByResource||{},rid);
+    const reservedKey=quantityObjectKey(warehouse.reservedByResource||{},rid);
+    const available=availableKey===null?0:Math.max(0,num(warehouse.availableByResource[availableKey])||0);
+    const reserved=reservedKey===null?0:Math.max(0,num(warehouse.reservedByResource[reservedKey])||0);
+    if(quantity<=0||availableKey===null||reservedKey===null||available+1e-9<quantity||reserved+1e-9<quantity){
       s.status='BLOCKED_LEDGER_MISMATCH';s.blockReason='WAREHOUSE_AVAILABLE_OR_RESERVATION_MISMATCH';s.blockedTurn=turn();
-      emit('OMEGA_RESOURCE_DELIVERY_BLOCKED',cid,{shipmentId:s.shipmentId,siteId:s.siteId,resourceId:rid,quantity,available,reserved,reason:s.blockReason});
+      emit('OMEGA_RESOURCE_DELIVERY_BLOCKED',cid,{shipmentId:s.shipmentId,siteId:s.siteId,resourceId:rid,quantity,available,reserved,
+        availableKey,reservedKey,reason:s.blockReason});
       continue;
     }
     const factory=factoryAssets(cid).find(a=>String(a?.id||a?.assetId||a?.projectId)===String(s.factoryId));
@@ -1423,7 +1438,10 @@ function advanceShipments(c){
       }
     }
     warehouse.availableByResource=warehouse.availableByResource||{};warehouse.reservedByResource=warehouse.reservedByResource||{};
-    warehouse.availableByResource[rid]=Math.max(0,available-quantity);warehouse.reservedByResource[rid]=Math.max(0,reserved-quantity);
+    // Debit the exact ledger keys that were reserved, preserving canonical stock
+    // across upper/lower-case save representations and avoiding alias-key leakage.
+    warehouse.availableByResource[availableKey]=Math.max(0,available-quantity);
+    warehouse.reservedByResource[reservedKey]=Math.max(0,reserved-quantity);
     if(sourceBatch){
       const sourceRemaining=Math.max(0,num(sourceBatch.remainingQuantity!=null?sourceBatch.remainingQuantity:sourceBatch.quantity)||0);
       sourceBatch.remainingQuantity=Math.max(0,sourceRemaining-quantity);
