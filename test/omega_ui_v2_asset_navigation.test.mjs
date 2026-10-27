@@ -73,9 +73,9 @@ test("More command cards use the uploaded local imagery and every action has a d
   assert.ok(app.includes("target.closest('[data-omega-v2-more-ministry]')"), "ministry buttons must have a delegated click handler");
   assert.ok(app.includes("target.closest('[data-omega-v2-back]')"), "Back must be actionable");
   assert.ok(app.includes("target.closest('[data-omega-v2-exit]')"), "Exit must be actionable");
-  assert.ok(app.includes("function navigate(root, route)"));
-  assert.ok(app.includes("function back(root)"));
-  assert.ok(app.includes("function exitToMap(root)"));
+  assert.ok(app.includes("function navigate(root, route, deferRender)"));
+  assert.ok(app.includes("function back(root, deferRender)"));
+  assert.ok(app.includes("function exitToMap(root, deferAction)"));
 
   const baseCssIndex = html.indexOf('href="omega_ui_v2/omega-ui-v2.css"');
   const refreshCssIndex = html.indexOf('href="omega_ui_v2/ministry-visual-refresh.css"');
