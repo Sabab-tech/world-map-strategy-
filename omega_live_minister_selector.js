@@ -12,7 +12,7 @@
   const registry=()=>legacyRegistry()||canonicalRegistry()||null, ministerId=p=>String(p?.id||p?.ministerId||''), safeName=p=>text(p?.baseName||p?.name||p?.ministerName||ministerId(p)||'Minister');
   const candidates=m=>{const r=registry();return r?.profiles?[...r.profiles.values()].filter(p=>norm(p?.ministryId)===norm(m)):[]};
   const active=(m,countryOverride)=>{
-    const c=text(countryOverride).toUpperCase().replace(/\\s+/g,'_')||country();if(!c||!m)return null;
+    const c=text(countryOverride).toUpperCase().replace(/\s+/g,'_')||country();if(!c||!m)return null;
     const canonical=canonicalRegistry();
     if(canonical){try{
       // Ministry lists render many rows at once. Prefer a lightweight active assignment
@@ -29,7 +29,7 @@
   async function appoint(m,p,countryOverride){
     // The calling screen owns the selected-country context. Never silently appoint
     // into whichever country happens to be active in the legacy cabinet globals.
-    const c=text(countryOverride).toUpperCase().replace(/\\s+/g,'_')||country(),id=ministerId(p);
+    const c=text(countryOverride).toUpperCase().replace(/\s+/g,'_')||country(),id=ministerId(p);
     if(!c)throw Error('COUNTRY_CONTEXT_UNRESOLVED');
     if(!m)throw Error('MINISTRY_CONTEXT_UNRESOLVED');
     if(!id)throw Error('MINISTER_ID_UNRESOLVED');
