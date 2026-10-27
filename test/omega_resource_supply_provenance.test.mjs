@@ -64,6 +64,16 @@ const payload = {
   supplyWindowRemainingDaysAtRequest: 72,
   supplyWindowTargetCoverageDays: 100
 };
+console.log('SUPPLY_WINDOW_DIAGNOSTIC', JSON.stringify({
+  resolveBD: countryBridge.resolveCountry('BD')?.id,
+  resolveBGD: countryBridge.resolveCountry('BGD')?.id,
+  resolveSA: countryBridge.resolveCountry('SA')?.id,
+  providerBGD: globalThis.OmegaMinistryStateProvider?.instance?.describe('BGD','foreign.relations'),
+  providerBD: globalThis.OmegaMinistryStateProvider?.instance?.describe('BD','foreign.relations'),
+  providerSA: globalThis.OmegaMinistryStateProvider?.instance?.describe('SA','foreign.relations'),
+  gameForeignBD: globalThis.Game.state.foreign.BD,
+  gameRelationsBD: globalThis.Game.state.relations.BD
+}));
 const result = autonomy.dispatch('OMEGA_AUTO_RESOURCE_IMPORT_REQUEST', 'BD', payload);
 assert.equal(result.status, 'APPLIED', 'initial approved import failed: ' + JSON.stringify(result));
 const requests = globalThis.Game.state.trade.BD.importRequests;
