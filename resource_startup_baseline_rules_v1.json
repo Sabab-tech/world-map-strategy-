@@ -1,0 +1,110 @@
+{
+  "schemaVersion": "1.0.0",
+  "datasetId": "OMEGA_RESOURCE_STARTUP_BASELINE_RULES_V1",
+  "purpose": "Additive new-game opening stock and factory asset baseline. This policy creates explicitly simulated gameplay stock and factory assets from existing country profiles, existing 41 resource identities, existing mine-site scenario records, and existing 21 factory profiles. It never converts simulated geological reserves into warehouse stock or claims a startup asset is an observed real-world facility.",
+  "authority": "SIMULATED_STARTUP_BASELINE_POLICY",
+  "bootstrap": {
+    "newGameSessionEvent": "OMEGA_GAME_SESSION_CREATED",
+    "allowTurnAtOrBefore": 1,
+    "idempotencyMarker": "startupBaselineV1",
+    "preserveExistingSaveData": true,
+    "addOnlyMissingCountryFields": true,
+    "neverResetExistingInventory": true,
+    "neverReplenishAfterInitialization": true,
+    "requireMatchingSessionBeforeApply": true
+  },
+  "canonicalIdentityPolicy": {
+    "resourceProfileCount": 41,
+    "factoryProfileCount": 21,
+    "resourceIdentityAuthority": "resource_economy_rules.json:demand.resourceProfiles",
+    "factoryTypeAuthority": "resource_industrial_catalog_v1.json:factoryProfiles",
+    "noNewResourceTypes": true,
+    "noNewFactoryTypes": true,
+    "countryIdentityAuthority": "economy_global_profiles_v1.json:countries"
+  },
+  "openingStock": {
+    "enabled": true,
+    "coverageDays": 14,
+    "quantityBasis": "SIMULATED_RESOURCE_NATIVE_OPENING_STOCK",
+    "stockAuthority": "SIMULATED_STARTUP_STOCK",
+    "dailyRatePriority": [
+      "OBSERVED_RESOURCE_CONSUMPTION",
+      "EXISTING_FACTORY_INPUT_RATE",
+      "RULE_PROFILE_POPULATION_BASELINE"
+    ],
+    "profilePopulationField": "populationValues.population_2015",
+    "baselineRateFormula": "basePerMillionPopulation * population / 1000000",
+    "neverUseGeologicalReservesAsStock": true,
+    "preservePresentZeroStock": true,
+    "onlySeedCanonicalProfileResources": true,
+    "rateUnitToStockUnit": {
+      "METRIC_TONS_PER_DAY": "TONNES",
+      "METRIC_TONS_LCE_PER_DAY": "TONNES",
+      "BARRELS_PER_DAY": "BBL",
+      "BCM_PER_DAY": "BCM",
+      "METRIC_TONS_U": "TONNES",
+      "TROY_OUNCES_PER_DAY": "TROY_OUNCES",
+      "CARATS_PER_DAY": "CARATS"
+    },
+    "unknownRateFallbackUnit": "SIMULATION_RESOURCE_UNIT",
+    "unknownDemandPolicy": "PRESERVE_UNKNOWN_NO_INVENTED_RATE_OR_STOCK",
+    "profileRateSource": "resource_economy_rules.json:demand.resourceProfiles",
+    "countryPopulationSource": "economy_global_profiles_v1.json:populationValues",
+    "liveConsumptionSource": "Game.state.resource.*.consumption",
+    "factoryInputSource": "Existing operational catalog factory recipe input × rated daily capacity",
+    "neverDeleteStockAtExpiry": true
+  },
+  "countryContext": {
+    "populationRuntimeField": "population_2015",
+    "unemploymentRuntimeField": "unemployment_rate",
+    "populateOnlyWhenFieldIsAbsent": true,
+    "contextAuthority": "EXISTING_GAME_BASELINE_NOT_EXTERNALLY_REVALIDATED",
+    "unknownContextPolicy": "PRESERVE_UNKNOWN"
+  },
+  "startupFactories": {
+    "enabled": true,
+    "sourceSiteFile": "resource_site_reserve_simulation_v1.json",
+    "sourceSiteAuthority": "SCENARIO_SIMULATION_DATA",
+    "eligibleSiteRule": "commercialExtraction === true AND resourceId belongs to canonical 41-resource profile set AND matching processingRules entry exists",
+    "oneProcessorPerCountryResource": true,
+    "processorFactoryTypeAuthority": "resource_industrial_catalog_v1.json:processingRules",
+    "downstreamCatalogAuthority": "resource_industrial_catalog_v1.json:downstreamFactoryRecipes",
+    "downstreamFactoryEligibility": "Every recipe input must have a producer from an eligible local site processor, an existing compatible asset output, or an earlier eligible catalog recipe in the same country.",
+    "externalSectorInputs": "Do not fabricate agriculture, livestock, or other non-resource-sector batches; recipes that need missing external inputs remain unseeded.",
+    "reserveQuantityUsedAsWarehouseStock": false,
+    "factoryAssetAuthority": "SIMULATED_STARTUP_FACTORY_ASSET",
+    "assetIdPrefix": "STARTUP-FAC",
+    "preserveExistingAssets": true,
+    "preventExactRecipeDuplicates": true,
+    "maxOneDownstreamAssetPerFactoryTypePerCountry": true,
+    "deriveCapacityFromCatalog": true,
+    "scaleProcessorCapacityBySiteCount": true,
+    "processorSiteCountCapacityMultipliers": {
+      "1": 1,
+      "2": 1.5,
+      "3": 2,
+      "4plus": 2.5
+    },
+    "seedTechnologyCapabilitiesForStarterAssets": true,
+    "technologyCapabilityAuthority": "SIMULATED_STARTUP_BASELINE_CAPABILITY",
+    "neverSeedTechnologyOutsideSelectedStarterAssets": true,
+    "outputAuthority": "Existing catalog recipe only; startup assets receive no fabricated input batches or finished goods"
+  },
+  "simulatedUtilities": {
+    "enabled": true,
+    "seedOnlyWhenUtilityCapacityIsAbsent": true,
+    "authority": "SIMULATED_STARTUP_UTILITY_BASELINE",
+    "reserveMultiplier": 1.15,
+    "capacityBasis": "Sum of existing catalog utility requirements of newly seeded operational starter assets × reserveMultiplier",
+    "preserveObservedOrExistingCapacity": true,
+    "zeroCapacityWhenNoApplicableAssets": false
+  },
+  "reporting": {
+    "globalReportPath": "Game.state.simulation.startupBaselineV1",
+    "resourceCountryMarkerPath": "Game.state.resource.<country>.startupBaselineV1",
+    "economyCountryMarkerPath": "Game.state.economy.<country>.startupBaselineV1",
+    "reportCountryLevelUnknowns": true,
+    "reportStockSeedCountsAndFactoryCounts": true,
+    "reportDataSourcesAndSimulationAuthority": true
+  }
+}
