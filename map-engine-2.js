@@ -455,6 +455,11 @@ Game.DataLoader = {
             let settled = false;
             function check() {
                 if (settled) return;
+                if (Game.Map && Game.Map.__omegaMapUiActive === false) {
+                    settled = true;
+                    resolve(null);
+                    return;
+                }
                 const signal = controller && controller.signal;
                 if (signal && signal.aborted) {
                     const aborted = new Error('Map renderer wait was cancelled.');
@@ -1417,8 +1422,24 @@ Game.Map.setUiActive = function(active) {
         this.updateMapLoadingProgress(this.__omegaMapLoadingProgress || 2, 'Preparing world map…', 'loading');
         if (typeof Game.__omegaGeoJSONResumeRender === 'function') {
             Game.__omegaGeoJSONResumeRender();
-        } else if (this.countryGeoJSON && !Game.geojsonLayer) {
-            this.renderGeoJSON(this.countryGeoJSON);
+        } else if (this.countryGeoJSON && !Game.geojsonLayer &&
+            Game.DataLoader && typeof Game.DataLoader.loadWorldMap === 'function') {
+            const loader = Game.DataLoader;
+            const resumeCachedMap = function() {
+                window.setTimeout(function () {
+                    if (Game.Map.__omegaMapUiActive !== false &&
+                        Game.__omegaGeoJSONRenderComplete !== true &&
+                        Game.Map.countryGeoJSON && !Game.geojsonLayer &&
+                        !loader.__worldLoadPromise) {
+                        loader.loadWorldMap();
+                    }
+                }, 0);
+            };
+            if (loader.__worldLoadPromise && typeof loader.__worldLoadPromise.then === 'function') {
+                loader.__worldLoadPromise.then(resumeCachedMap, resumeCachedMap);
+            } else {
+                resumeCachedMap();
+            }
         } else if (Game.DataLoader && typeof Game.DataLoader.loadWorldMap === 'function') {
             window.setTimeout(function () {
                 if (Game.Map.__omegaMapUiActive !== false &&
