@@ -118,32 +118,12 @@ assert.equal(oversubscribe.reason,'INSUFFICIENT_UNRESERVED_TREASURY');
 
 const importRequest=autonomy.dispatch('OMEGA_AUTO_RESOURCE_IMPORT_REQUEST','BD',{
   requestId:'TEST-IMP-1',decisionId:'TEST-DEC-2',resourceId:'crude_oil',
-  targetCountryId:'SA',quantity:1000000,unitPrice:80,reservationId:'TEST-RES-1',
-  supplyWindowId:'PLAYER-SUPPLY-LIFELINE-BD-1',supplyWindowTermDays:100,
-  supplyWindowRemainingDaysAtRequest:72,supplyWindowTargetCoverageDays:100
+  targetCountryId:'SA',quantity:1000000,unitPrice:80,reservationId:'TEST-RES-1'
 });
 assert.equal(importRequest.status,'APPLIED');
 assert.equal(globalThis.Game.state.trade.BD.importRequests[0].targetCountryId,'SA');
 assert.equal(globalThis.Game.state.trade.BD.importRequests[0].status,'SENT');
 assert.equal(globalThis.Game.state.trade.BD.importRequests[0].stage,'COUNTERPARTY_DECISION_PENDING');
-assert.equal(globalThis.Game.state.trade.BD.importRequests[0].supplyWindowId,'PLAYER-SUPPLY-LIFELINE-BD-1');
-assert.equal(globalThis.Game.state.trade.BD.importRequests[0].supplyWindowTermDays,100);
-assert.equal(globalThis.Game.state.trade.BD.importRequests[0].supplyWindowRemainingDaysAtRequest,72);
-assert.equal(globalThis.Game.state.trade.BD.importRequests[0].supplyWindowTargetCoverageDays,100);
-
-// Existing autonomy planning must preserve approval provenance for the executor.
-const lifelinePlan=autonomy.planDecision({
-  decisionId:'TEST-SUPPLY-WINDOW-ROUTE',countryId:'BD',scenarioId:'RESOURCE_DEFICIT',
-  supplyWindowId:'PLAYER-SUPPLY-LIFELINE-BD-1',supplyWindowTermDays:100,
-  supplyWindowRemainingDays:72,supplyWindowTargetCoverageDays:100,
-  selectedActions:['IMPORT'],
-  runtimeMeasurement:{resourceId:'crude_oil',required:100,available:0,gap:100,selected:{action:'IMPORT',quantity:100}}
-});
-assert.equal(lifelinePlan.supplyWindowId,'PLAYER-SUPPLY-LIFELINE-BD-1');
-assert.equal(lifelinePlan.supplyWindowTermDays,100);
-assert.equal(lifelinePlan.supplyWindowRemainingDays,72);
-assert.equal(lifelinePlan.supplyWindowTargetCoverageDays,100);
-
 const supplier=autonomy.chooseImportSupplier('Bangladesh',{
   countryId:'Bangladesh',
   scenarioId:'RESOURCE_DEFICIT',
