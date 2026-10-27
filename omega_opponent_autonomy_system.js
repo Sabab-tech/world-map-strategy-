@@ -966,6 +966,37 @@
     return{accepted:true,reservationId:rid};
   }
 
+  // Player-approved supply windows are revalidated at the final request boundary.
+  // A decision queued near expiry must not create a new import after its 100-day
+  // authorization ends. Existing request IDs stay idempotent below.
+  function validatePlayerSupplyWindow(countryId,payload){
+    const windowId=String(payload?.supplyWindowId||'').trim();
+    if(!windowId)return{accepted:true};
+    const hit=readState(countryId,'resource.demandRuntime.playerSupplyLifeline');
+    const policy=hit&&hit.value&&typeof hit.value==='object'?hit.value:null;
+    if(!policy||String(policy.policyId||'')!==windowId){
+      return{accepted:false,reason:'PLAYER_SUPPLY_WINDOW_NOT_FOUND',supplyWindowId:windowId};
+    }
+    if(policy.approved!==true||canonicalId(policy.countryId||countryId)!==canonicalId(countryId)){
+      return{accepted:false,reason:'PLAYER_SUPPLY_WINDOW_NOT_AUTHORIZED',supplyWindowId:windowId};
+    }
+    if(String(policy.status||'').toUpperCase()!=='ACTIVE'){
+      return{accepted:false,reason:'PLAYER_SUPPLY_WINDOW_NOT_ACTIVE',supplyWindowId:windowId,status:policy.status||'UNKNOWN'};
+    }
+    const termDays=num(policy.termDays);
+    const lastAdvancedTurn=num(policy.lastAdvancedTurn);
+    if(termDays===null||termDays<=0||lastAdvancedTurn===null){
+      return{accepted:false,reason:'PLAYER_SUPPLY_WINDOW_CLOCK_NOT_OBSERVED',supplyWindowId:windowId};
+    }
+    const state=g.Game?.state||g.gameState||{};
+    const stepMs=Math.max(1,num(g.Omega?.Simulation?.clock?.stepDurationMs)??num(state?.simulation?.stepDurationMs)??86400000);
+    const elapsed=Math.max(0,num(policy.elapsedGameDays)||0)+Math.max(0,turn()-lastAdvancedTurn)*(stepMs/86400000);
+    if(elapsed>=termDays-1e-9){
+      return{accepted:false,reason:'PLAYER_SUPPLY_WINDOW_EXPIRED',supplyWindowId:windowId,termDays,elapsedGameDays:Math.min(termDays,elapsed)};
+    }
+    return{accepted:true,supplyWindowId:windowId,remainingGameDays:Math.max(0,termDays-elapsed)};
+  }
+
   function importHandler(cmd,ctx){
     const c=id(ctx.countryId),p=cmd?.payload||{};
     const target=id(p.targetCountryId);
@@ -987,6 +1018,8 @@
     const existing=Array.isArray(ctx.stateTransaction.get('trade.importRequests'))?ctx.stateTransaction.get('trade.importRequests'):[];
     const duplicate=existing.find(x=>String(x.requestId)===String(p.requestId||''));
     if(duplicate)return{accepted:true,request:clone(duplicate),duplicate:true,executionState:duplicate.status||'SENT'};
+    const windowValidation=validatePlayerSupplyWindow(c,p);
+    if(!windowValidation.accepted)return windowValidation;
     const request={
       requestId:String(p.requestId||('IMP-REQ-'+turn()+'-'+c+'-'+target+'-'+String(p.decisionId||''))),
       countryId:c,targetCountryId:target,resourceId:String(p.resourceId),quantity:qty,
