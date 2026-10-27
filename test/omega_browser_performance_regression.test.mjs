@@ -499,7 +499,7 @@ test('world geometry loads before support datasets, shows real progress, caches 
     'leaving the world view must abort an unfinished map-only request');
   assert.ok(map.includes('Game.__omegaGeoJSONResumeRender = scheduleFeatureChunk'),
     'incomplete geometry must resume from its existing feature cursor, not restart from zero');
-  assert.ok(map.includes('Game.__omegaGeoJSONRenderComplete === true && this.countryGeoJSON && Game.geojsonLayer'),
+  assert.ok(map.includes('Game.__omegaGeoJSONRenderComplete === true && Game.Map.countryGeoJSON && Game.geojsonLayer'),
     'a completed world layer must be reused rather than downloaded or parsed again');
   assert.ok(map.includes('Game.Map.refreshCountryPolygonStyles = function()'),
     'late country metadata must restyle the existing geometry without a second GeoJSON pass');
