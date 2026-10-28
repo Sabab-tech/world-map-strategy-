@@ -562,14 +562,44 @@
     }
     state.navigationPending = true;
     if (root.setAttribute) root.setAttribute('data-omega-v2-navigation-pending', 'true');
-    queueAfterPaint(root, state, generation, callback);
+
+    // Shared top-level progress for every UI v2 route and deferred section refresh.
+    // A later tap replaces this handle; an older navigation generation cannot complete it.
+    var progress = g.OmegaActionProgress;
+    var progressHandle = progress && typeof progress.begin === 'function'
+      ? progress.begin(label || ('Opening ' + navigationLabel(state)), {
+          detail:'Preparing the next screen…',
+          timeoutMs:30000
+        })
+      : null;
+    state.navigationProgressHandle = progressHandle;
+    queueAfterPaint(root, state, generation, function () {
+      try {
+        var result = callback();
+        if (stateFor(root) === state && state.navigationProgressHandle === progressHandle && progressHandle) {
+          state.navigationProgressHandle = null;
+          if (result && result.code === 'SCREEN_RENDER_FAILED') {
+            progressHandle.fail(result.message || result.code, 'The screen could not finish rendering. Its recovery view is shown.');
+          } else {
+            progressHandle.complete('Screen ready.', label || ('Opened ' + navigationLabel(state)));
+          }
+        }
+        return result;
+      } catch (error) {
+        if (stateFor(root) === state && state.navigationProgressHandle === progressHandle && progressHandle) {
+          state.navigationProgressHandle = null;
+          progressHandle.fail(error, 'The screen could not finish rendering.');
+        }
+        throw error;
+      }
+    });
     return true;
   }
   function scheduleNavigationRender(root) {
     var state = stateFor(root);
     if (!state) return false;
     return scheduleDeferredTransition(root, 'Opening ' + navigationLabel(state), function () {
-      renderCurrentScreen(root, state, true);
+      return renderCurrentScreen(root, state, true);
     }, true);
   }
   function scheduleScreenRefresh(root, callback, label, screenRoot) {

@@ -1412,7 +1412,23 @@
         const action = target.getAttribute('data-action');
         if (!action) return;
         event.preventDefault();
-        performAction(action, target);
+        const progress = g.OmegaActionProgress;
+        const simpleActions = ['close', 'refresh-panel', 'focus-map'];
+        if (progress && typeof progress.run === 'function' && !simpleActions.includes(action)) {
+          const label = String(action || 'resource command').replace(/[-_]+/g, ' ');
+          progress.run('Resource command · ' + label, function () {
+            return performAction(action, target);
+          }, {
+            detail: 'Preparing the resource command…',
+            timeoutMs: 60000,
+            successMessage: 'Command handler finished. Review its recorded result in this panel.',
+            failureMessage: 'The resource command failed. Review its recorded result before retrying.'
+          }).catch(function (error) {
+            console.error('[OMEGA Resource Command Center] Action failed.', error);
+          });
+        } else {
+          performAction(action, target);
+        }
       });
       modal.addEventListener('input', function (event) {
         if (event.target && event.target.id === 'omega-rescc-search') applySearch(event.target.value);
