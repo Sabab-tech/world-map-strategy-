@@ -56,6 +56,28 @@
     }
     return '';
   }
+  function normalizeCountryId(value) {
+    var recruitment = g.OmegaMinisterRecruitment;
+    try {
+      if (recruitment && typeof recruitment.normalizeCountryCode === 'function') {
+        var normalized = recruitment.normalizeCountryCode(value);
+        if (normalized) return String(normalized).trim().toUpperCase();
+      }
+    } catch (_) {}
+    var raw = value && typeof value === 'object'
+      ? value.iso3 || value.iso || value.isoCode || value.countryCode || value.country_code || value.code || value.id || value.name || value.countryName
+      : value;
+    var label = String(raw == null ? '' : raw).trim();
+    if (!label) return '';
+    if (/^[a-z]{3}$/i.test(label)) return label.toUpperCase();
+    var resolver = g.OmegaCanonicalIdentityRegistry || g.OmegaCountrySemanticBridge;
+    try {
+      var resolved = resolver && typeof resolver.resolveCountry === 'function' ? resolver.resolveCountry(label) : null;
+      var id = resolved && (resolved.id || resolved.code || resolved.iso3 || resolved.iso);
+      if (id) return String(id).trim().toUpperCase();
+    } catch (_) {}
+    return label.toUpperCase().replace(/\s+/g, '_');
+  }
   function snapshot(countryId) {
     var gateway = g.OmegaCountryDataGateway || (g.Omega && g.Omega.CountryDataGateway);
     if (!gateway || typeof gateway.getSnapshot !== 'function') return null;
@@ -95,28 +117,33 @@
     }
     return null;
   }
-  function activeMinisterProfile(ministryId) {
+  function activeMinisterProfile(ministryId, countryId) {
     var selector = g.OmegaLiveMinisterSelectorV9;
     if (!selector || typeof selector.active !== 'function') return null;
-    try { var active = selector.active(ministryId); return active && (active.profile || active.staticProfile) || null; }
+    var countryKey = normalizeCountryId(countryId || activeCountry());
+    try { var active = selector.active(ministryId, countryKey); return active && (active.profile || active.staticProfile) || null; }
     catch (_) { return null; }
   }
-  function ministryRows() {
+  function ministryRows(countryId) {
     var db = ministryDatabase();
     var rows = [];
+    var countryKey = normalizeCountryId(countryId || activeCountry());
+    var canonicalRegistry = g.OmegaMinisterStateRegistry;
+    var hasCanonicalMinisterState = !!canonicalRegistry &&
+      (typeof canonicalRegistry.getActiveMinisterSummary === 'function' || typeof canonicalRegistry.getActiveMinister === 'function');
     if (db) {
       Object.keys(db).forEach(function (id) {
         var row = db[id];
         if (!row) return;
         var canonicalId = String(row.id || id);
-        var activeProfile = activeMinisterProfile(canonicalId) || {};
+        var activeProfile = activeMinisterProfile(canonicalId, countryKey) || {};
         rows.push({
           id: canonicalId,
           title: String(row.title || row.bnTitle || id.replace(/[_-]+/g, ' ')),
           subtitle: String(row.bnTitle || ''),
           category: categoryOf(row),
           status: String(row.status || 'NOT_RECORDED'),
-          ministerName: activeProfile.baseName || activeProfile.name || activeProfile.ministerName || row.ministerName || null,
+          ministerName: activeProfile.baseName || activeProfile.name || activeProfile.ministerName || (!hasCanonicalMinisterState ? row.ministerName || null : null),
           ministerPortraitUrl: row.ministerPortraitUrl || row.ministerPortraitPath || row.portraitUrl || row.portrait || row.ministerPhotoUrl || row.ministerPhotoPath || row.ministerPhoto || row.imagePath || activeProfile.portraitUrl || activeProfile.portraitPath || activeProfile.avatarUrl || activeProfile.photoUrl || activeProfile.photoPath || activeProfile.imagePath || activeProfile.imageUrl || null,
           avatar: row.icon3D || row.avatar || null,
           activeMinisterProfile: activeProfile,
@@ -132,13 +159,13 @@
       return { id: id, title: id.replace(/[_-]+/g, ' ').replace(/\b\w/g, function (ch) { return ch.toUpperCase(); }), subtitle: '', category: 'other', status: 'NOT_RECORDED', ministerName: null, avatar: null, source: 'OmegaUIV2Navigation fallback', raw: null };
     });
   }
-  function findMinistry(id) {
-    var rows = ministryRows();
+  function findMinistry(id, countryId) {
+    var rows = ministryRows(countryId);
     for (var i = 0; i < rows.length; i += 1) if (rows[i].id === String(id)) return rows[i];
     return null;
   }
   function callOpenMinistry(id, options) {
-    if (options && typeof options.onOpenMinistry === 'function') return options.onOpenMinistry(id, findMinistry(id));
+    if (options && typeof options.onOpenMinistry === 'function') return options.onOpenMinistry(id, findMinistry(id, options.countryId || activeCountry()));
     var manager = g.OmegaLayerManager;
     if (manager && typeof manager.setLayer === 'function') {
       return manager.setLayer(2, { ministryId: id });
@@ -361,13 +388,14 @@
   }
   function activeMinisterRecord(countryId, ministryId) {
     var registry = g.OmegaMinisterStateRegistry;
-    if (!registry || !countryId || !ministryId) return null;
+    var countryKey = normalizeCountryId(countryId);
+    if (!registry || !countryKey || !ministryId) return null;
     try {
       if (typeof registry.getActiveMinisterSummary === 'function') {
-        return registry.getActiveMinisterSummary(countryId, ministryId) || null;
+        return registry.getActiveMinisterSummary(countryKey, ministryId) || null;
       }
       if (typeof registry.getActiveMinister === 'function') {
-        return registry.getActiveMinister(countryId, ministryId) || null;
+        return registry.getActiveMinister(countryKey, ministryId) || null;
       }
     } catch (_) {}
     return null;
@@ -461,7 +489,7 @@
     var grid = panel.querySelector('[data-omega-v2-minister-candidate-grid]');
     var button = panel.querySelector('[data-omega-v2-confirm-minister]');
     var engine = g.OmegaMinisterRecruitment;
-    var countryKey = String(countryId || '').trim().toUpperCase();
+    var countryKey = normalizeCountryId(countryId);
     var requestId = (Number(root.__omegaV2RecruitmentRequestId) || 0) + 1;
     root.__omegaV2RecruitmentRequestId = requestId;
     root.__omegaV2RecruitingCountry = countryKey;
@@ -544,7 +572,7 @@
     if (!root) return { ok: false, code: 'GOVERNMENT_ROOT_REQUIRED' };
     stopMinistryRotation(root);
     var countryId = options.countryId || activeCountry();
-    var countryKey = String(countryId || '').trim().toUpperCase();
+    var countryKey = normalizeCountryId(countryId);
     if (root.__omegaV2RecruitingCountry && root.__omegaV2RecruitingCountry !== countryKey) {
       root.__omegaV2RecruitmentRequestId = (Number(root.__omegaV2RecruitmentRequestId) || 0) + 1;
       root.__omegaV2MinisterCandidates = [];
@@ -552,7 +580,7 @@
     }
     root.__omegaV2RecruitingCountry = countryKey;
     var view = options.view === 'all-ministries' ? 'all-ministries' : 'executive-ministry';
-    var rows = ministryRows();
+    var rows = ministryRows(countryId);
     var nav = g.OmegaUIV2Navigation;
     root.classList.add('omega-v2-screen');
     root.innerHTML = '<section class="omega-v2-shell omega-v2-government">' +
@@ -596,7 +624,7 @@
         var recruit = target.closest('[data-omega-v2-minister-recruitment]');
         if (recruit && root.contains(recruit)) {
           root.__omegaV2RecruitingMinistry = recruit.getAttribute('data-omega-v2-minister-recruitment');
-          root.__omegaV2RecruitingCountry = String((root.__omegaV2GovernmentOptions || {}).countryId || activeCountry() || '').trim().toUpperCase();
+          root.__omegaV2RecruitingCountry = normalizeCountryId((root.__omegaV2GovernmentOptions || {}).countryId || activeCountry());
           root.__omegaV2SelectedMinisterCandidate = '';
           root.__omegaV2MinisterCandidates = [];
           scheduleRender(root, Object.assign({}, root.__omegaV2GovernmentOptions || {}, { view:'all-ministries' }));
