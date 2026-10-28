@@ -733,6 +733,20 @@
       while(queue.length&&seen.size<64){
         var id=String(queue.shift()||'');if(!id||seen.has(id))continue;seen.add(id);
         var source=batches.find(function(x){return String(x?.batchId||'')===id;});if(!source)continue;
+        // A source batch can be re-staged as partially hauled, warehouse-received,
+        // or transferred to a factory. The authoritative site-flow ledger outlives those
+        // physical stages and remains the canonical origin identity for finished goods.
+        var sourceFlow=(Array.isArray(network.siteFlowLedger)?network.siteFlowLedger:[])
+          .find(function(flow){return String(flow?.batchId||'')===id&&
+            (flow.siteId||flow.siteReferenceKey||flow.occurrenceKey);});
+        if(sourceFlow&&!originBatchId){
+          originBatchId=id;originResourceId=source.resourceId||source.materialIdentity||null;
+        }
+        if(sourceFlow&&!site){
+          site={siteId:sourceFlow.siteId||sourceFlow.siteReferenceKey||null,
+            occurrenceKey:sourceFlow.occurrenceKey||null,
+            sourceCountryId:sourceFlow.countryId||source.originCountryId||source.sourceCountryId||source.countryId||null};
+        }
         if(!originBatchId&&['RAW','RAW_EXTRACTED','EXTRACTED','LEGACY_UNTRACKED'].includes(String(source.stage||'').toUpperCase())){originBatchId=id;originResourceId=source.resourceId||source.materialIdentity||null;}
         if(!site&&(source.siteReferenceKey||source.siteId||source.sourceSiteId||source.occurrenceKey)){
           site={siteId:source.siteReferenceKey||source.siteId||source.sourceSiteId||null,occurrenceKey:source.occurrenceKey||source.sourceOccurrenceKey||null,
