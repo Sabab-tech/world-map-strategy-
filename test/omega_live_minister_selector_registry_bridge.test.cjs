@@ -44,6 +44,12 @@ const sandbox = {
   CustomEvent: TestCustomEvent,
   OmegaMinisterState: { registry: legacyRegistry },
   Game: { currentActiveCountry: 'BGD', playerCountry: 'BGD', state: { countryId: 'BGD', playerCountryId: 'BGD' } },
+  OmegaCountrySemanticBridge: { resolveCountry(value) {
+    const label = String(value == null ? '' : value).trim().toLowerCase();
+    if (label === 'bangladesh') return { id: 'BGD' };
+    if (label === 'united states' || label === 'united states of america') return { id: 'USA' };
+    return null;
+  } },
   localStorage: { setItem() {}, getItem() { return null; } },
   setInterval() { return 1; },
   clearInterval() {},
@@ -142,6 +148,29 @@ function load(file) {
   assert.equal(canonicalRegistry.consistencyCheck().ok, true,
     'cross-country recruitment must preserve canonical assignment consistency');
 
+  const candidateC = {
+    id: 'TEST_MINISTER_C', name: 'Bangladesh Trade Minister', age: 39,
+    background: 'Trade policy', ministryId: 'trade',
+    stats: { capability: 72 }, efficiency: { efficiency: 73 }
+  };
+  await selector.appoint('trade', candidateC, 'Bangladesh');
+  assert.equal(canonicalRegistry.getActiveMinister('BGD', 'trade').ministerId, candidateC.id,
+    'country-name appointment must persist under the canonical ISO country key');
+  assert.equal(selector.active('trade', 'Bangladesh').ministerId, candidateC.id,
+    'country-name active-minister lookup must read the same canonical assignment');
+  const candidateD = {
+    id: 'TEST_MINISTER_D', name: 'Replacement Trade Minister', age: 46,
+    background: 'Commercial administration', ministryId: 'trade',
+    stats: { capability: 78 }, efficiency: { efficiency: 76 }
+  };
+  await selector.appoint('trade', candidateD, 'Bangladesh');
+  assert.equal(canonicalRegistry.getActiveMinister('BGD', 'trade').ministerId, candidateD.id,
+    'replacing by country name must detect and replace the existing canonical assignment');
+  assert.equal(canonicalRegistry.getMinister(candidateC.id).runtimeState.status, 'FIRED',
+    'replaced country-name appointment must preserve outgoing minister lifecycle');
+  assert.equal(canonicalRegistry.consistencyCheck().ok, true,
+    'country-name assignment and replacement must preserve canonical consistency');
+
   const liveRecruitment = sandbox.OmegaMinisterRecruitment;
   sandbox.OmegaMinisterRecruitment = null;
   await assert.rejects(
@@ -152,6 +181,31 @@ function load(file) {
   sandbox.OmegaMinisterRecruitment = liveRecruitment;
   assert.equal(sandbox.OmegaMinisterStateRegistry, canonicalRegistry,
     'missing-engine diagnostics must not corrupt canonical registry wiring');
+
+  const previousPool = sandbox.OmegaMinisterIdentityPool;
+  const previousDatabase = sandbox.OmegaMinistersDB;
+  sandbox.OmegaMinisterIdentityPool = {
+    getCandidates: async () => { throw new Error('COUNTRY_ROSTER_MANIFEST_UNAVAILABLE'); }
+  };
+  sandbox.OmegaMinistersDB = {
+    Home_Affairs: Array.from({ length: 5 }, (_, index) => ({
+      id: 'OFFLINE_INTERIOR_MINISTER_' + (index + 1),
+      name: 'Offline Interior Candidate ' + (index + 1),
+      age: 35 + index,
+      background: 'Public administration',
+      stats: { capability: 60 + index },
+      efficiency: { efficiency: 55 + index }
+    }))
+  };
+  const offlineFallback = await liveRecruitment.fetchRoster('interior_security', 'BGD');
+  assert.equal(offlineFallback.length, 5,
+    'a failed generated-country roster must fall back to the already-loaded ministers.json templates');
+  assert.equal(new Set(offlineFallback.map(candidate => candidate.id)).size, 5,
+    'offline fallback must preserve five unique candidate identities');
+  if (previousPool === undefined) delete sandbox.OmegaMinisterIdentityPool;
+  else sandbox.OmegaMinisterIdentityPool = previousPool;
+  if (previousDatabase === undefined) delete sandbox.OmegaMinistersDB;
+  else sandbox.OmegaMinistersDB = previousDatabase;
 
   console.log('OMEGA LIVE MINISTER REGISTRY BRIDGE: PASS');
   console.log('Canonical registry preserved against legacy V2 alias collision: PASS');

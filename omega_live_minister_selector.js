@@ -5,14 +5,24 @@
 (function(global){'use strict';
   if(global.__OMEGA_MINISTER_CONTROL_V9_1_1__) return; global.__OMEGA_MINISTER_CONTROL_V9_1_1__=true;
   const text=v=>v==null?'':String(v).trim(), norm=v=>text(v).normalize('NFKC').toLowerCase().replace(/[._-]+/g,' ').replace(/\s+/g,' ').trim();
-  const country=()=>{const v=[global.OmegaCabinetUI?.activeCountry,global.Game?.state?.countryId,global.Game?.state?.playerCountryId,global.Game?.currentActiveCountry,global.Omega?.World?.state?.countryId,document.body?.dataset?.countryId].find(x=>x!==undefined&&x!==null&&text(x));return text(v).toUpperCase().replace(/\s+/g,'_')||null};
+  const normalizeCountryCode=value=>{
+    const label=text(value&&typeof value==='object'?(value.iso3||value.iso||value.isoCode||value.countryCode||value.country_code||value.code||value.id||value.name||value.countryName):value);
+    if(!label)return '';
+    const engine=global.OmegaMinisterRecruitment;
+    try{const code=engine&&typeof engine.normalizeCountryCode==='function'?engine.normalizeCountryCode(label):'';if(code)return text(code).toUpperCase()}catch(_){}
+    if(/^[a-z]{3}$/i.test(label))return label.toUpperCase();
+    const resolver=global.OmegaCanonicalIdentityRegistry||global.OmegaCountrySemanticBridge;
+    try{const resolved=resolver&&typeof resolver.resolveCountry==='function'?resolver.resolveCountry(label):null;const id=resolved&&(resolved.id||resolved.code||resolved.iso3||resolved.iso);if(id)return text(id).toUpperCase()}catch(_){}
+    return label.toUpperCase().replace(/\s+/g,'_');
+  };
+  const country=()=>{const v=[global.OmegaMinistryViewCountry,global.OmegaCabinetUI?.activeCountry,global.Game?.state?.countryId,global.Game?.state?.playerCountryId,global.Game?.currentActiveCountry,global.Omega?.World?.state?.countryId,document.body?.dataset?.countryId].find(x=>x!==undefined&&x!==null&&text(x));return normalizeCountryCode(v)||null};
   const ministry=()=>text(global.OmegaLayerManager?.activeMinistryId||global.OmegaCabinetUI?.currentDashboardMinistryId||global.OmegaCabinetUI?.activeMinistryId||global.OmegaCabinetUI?.currentMinistryId||global.Game?.state?.activeMinistryId);
   const legacyRegistry=()=>global.OmegaMinisterState?.registry||null;
   const canonicalRegistry=()=>{const r=global.OmegaMinisterStateRegistry;return r&&typeof r.recruitCandidate==='function'&&typeof r.getActiveMinister==='function'?r:null};
   const registry=()=>legacyRegistry()||canonicalRegistry()||null, ministerId=p=>String(p?.id||p?.ministerId||''), safeName=p=>text(p?.baseName||p?.name||p?.ministerName||ministerId(p)||'Minister');
   const candidates=m=>{const r=registry();return r?.profiles?[...r.profiles.values()].filter(p=>norm(p?.ministryId)===norm(m)):[]};
   const active=(m,countryOverride)=>{
-    const c=text(countryOverride).toUpperCase().replace(/\s+/g,'_')||country();if(!c||!m)return null;
+    const c=normalizeCountryCode(countryOverride)||country();if(!c||!m)return null;
     const canonical=canonicalRegistry();
     if(canonical){try{
       // Ministry lists render many rows at once. Prefer a lightweight active assignment
@@ -29,7 +39,7 @@
   async function appoint(m,p,countryOverride){
     // The calling screen owns the selected-country context. Never silently appoint
     // into whichever country happens to be active in the legacy cabinet globals.
-    const c=text(countryOverride).toUpperCase().replace(/\s+/g,'_')||country(),id=ministerId(p);
+    const c=normalizeCountryCode(countryOverride)||country(),id=ministerId(p);
     if(!c)throw Error('COUNTRY_CONTEXT_UNRESOLVED');
     if(!m)throw Error('MINISTRY_CONTEXT_UNRESOLVED');
     if(!id)throw Error('MINISTER_ID_UNRESOLVED');

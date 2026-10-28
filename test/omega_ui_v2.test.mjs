@@ -155,6 +155,66 @@ test('Government directory includes every canonical cabinet record', () => {
   assert.equal(rows.length, 3);
 });
 
+test('Government ministry rows show the canonical active minister for the explicitly selected country', () => {
+  const previous = {
+    OmegaCabinetUI: globalThis.OmegaCabinetUI,
+    OmegaMinisterRecruitment: globalThis.OmegaMinisterRecruitment,
+    OmegaMinisterStateRegistry: globalThis.OmegaMinisterStateRegistry,
+    OmegaLiveMinisterSelectorV9: globalThis.OmegaLiveMinisterSelectorV9
+  };
+  globalThis.OmegaCabinetUI = {
+    activeCountry: 'USA',
+    ministriesDatabase: {
+      interior_security: {
+        id: 'interior_security',
+        title: 'Interior & Security',
+        category: 'governance',
+        ministerName: 'Stale minister from another country'
+      }
+    }
+  };
+  globalThis.OmegaMinisterRecruitment = {
+    normalizeCountryCode(value) {
+      const label = String(value == null ? '' : value).trim().toUpperCase();
+      return label === 'BANGLADESH' || label === 'BGD' ? 'BGD' : label;
+    }
+  };
+  globalThis.OmegaMinisterStateRegistry = {
+    getActiveMinisterSummary(countryId, ministryId) {
+      return countryId === 'BGD' && ministryId === 'interior_security'
+        ? {
+            ministerId: 'BGD-INTERIOR-01',
+            staticProfile: { ministerId: 'BGD-INTERIOR-01', baseName: 'Country-scoped Minister' },
+            runtimeState: { status: 'ACTIVE' }
+          }
+        : null;
+    }
+  };
+  globalThis.OmegaLiveMinisterSelectorV9 = {
+    active(ministryId, countryId) {
+      const normalized = globalThis.OmegaMinisterRecruitment.normalizeCountryCode(countryId);
+      const active = globalThis.OmegaMinisterStateRegistry.getActiveMinisterSummary(normalized, ministryId);
+      return active ? {
+        ministerId: active.ministerId,
+        staticProfile: active.staticProfile,
+        profile: active.staticProfile,
+        runtime: active.runtimeState
+      } : null;
+    }
+  };
+  try {
+    const rows = globalThis.OmegaUIV2Government.getMinistryRows('Bangladesh');
+    const ministry = rows.find((row) => row.id === 'interior_security');
+    assert.equal(ministry.ministerName, 'Country-scoped Minister');
+    assert.doesNotMatch(ministry.ministerName, /Stale minister/);
+  } finally {
+    for (const [key, value] of Object.entries(previous)) {
+      if (value === undefined) delete globalThis[key];
+      else globalThis[key] = value;
+    }
+  }
+});
+
 test('Home Affairs provides all six planned sections and does not create a separate recruitment destination', () => {
   const tabs = globalThis.OmegaUIV2HomeAffairs.tabs;
   assert.deepEqual(tabs.map((item) => item.id), ['dashboard', 'personnel', 'fleet', 'patrols', 'facilities', 'incidents', 'laws']);
