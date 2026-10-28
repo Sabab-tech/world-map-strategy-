@@ -784,6 +784,9 @@ function onExtractionCommitted(evt){
     row.blockReason='NON_COMMERCIAL_SITE';saveSiteFlow(cid,row);return;
   }
   if(routeProfileAtExtraction){
+    const routeCompatible=candidateFactories(cid,rid);
+    const routeFactory=routeCompatible.find(({asset})=>String(asset?.sourceSiteId||asset?.siteId||'')===String(site.siteId))?.asset||routeCompatible[0]?.asset||null;
+    if(routeFactory)row.factoryId=String(routeFactory.id||routeFactory.assetId||routeFactory.projectId||'');
     row.mineLogisticsRouteId=routeProfileAtExtraction.routeId;row.mineLogisticsStatus='PENDING';
     const haul=dispatchMineToWarehouse(cid,site,row,stored,routeProfileAtExtraction);
     if(haul.status==='DISPATCHED'){
