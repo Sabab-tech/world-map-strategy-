@@ -4384,6 +4384,11 @@
     "niobium": 1.30, "platinum": 1.25, "ruby": 1.20, "gold": 1.12,
     "tungsten": 1.12, "copper": 1.10, "tin": 1.08
   },
+  "mineResourceAdjustments": {
+    "uranium": {"durationMultiplier": 1.15, "workforceMultiplier": 1.12},
+    "rare_earth": {"durationMultiplier": 1.15, "workforceMultiplier": 1.12},
+    "niobium": {"durationMultiplier": 1, "workforceMultiplier": 1.12}
+  },
   "mineConstructionProfiles": {
     "OPEN_PIT": {
       "costUsd": 48000000, "durationDays": 180, "workersRequired": 520,
@@ -4397,7 +4402,7 @@
     },
     "TAILINGS": {
       "costUsd": 18500000, "durationDays": 100, "workersRequired": 190,
-      "materials": {"iron_ore": 2400, "copper": 180, "limestone": 5200, "coal": 1150, "crude_oil": 420, "construction_aggregate": 7200, "cement": 420, "steel": 190, "recycling_feedstock": 120},
+      "materials": {"iron_ore": 2400, "copper": 180, "limestone": 5200, "coal": 1150, "crude_oil": 420, "construction_aggregate": 7200, "cement": 420, "steel": 190, "recycled_feedstock": 120},
       "authority": "SIMULATED_MINE_CONSTRUCTION_PROFILE_V1"
     },
     "BRINE": {
