@@ -364,7 +364,6 @@ function dispatchMineToWarehouse(countryId,site,flow,sourceBatch,routeProfile){
   // The complete source quantity is already held out of inventory. Record only the
   // actual dispatched portion as in transit; remaining held cargo stays at the mine.
   flow.mineHeldQuantity=Math.max(0,(num(flow.mineHeldQuantity)||0)-quantity);
-  flow.mineWarehouseDispatchedQuantity=(num(flow.mineWarehouseDispatchedQuantity)||0)+quantity;
   batchInFlight.stage=flow.mineHeldQuantity>1e-9?'PARTIALLY_MINE_HAULED':'MINE_TO_WAREHOUSE_IN_TRANSIT';
   batchInFlight.status='IN_TRANSIT_TO_RAW_WAREHOUSE';
   batchInFlight.sourceWarehouseId=batchInFlight.sourceWarehouseId||batchInFlight.warehouseId||('WH-'+cid+'-RAW');

@@ -216,6 +216,8 @@ test('real site extraction flows through raw warehouse, transport, factory, fini
   const initialFlow=resource.industrialNetwork.siteFlowLedger.find(row=>String(row.batchId)===String(run.batchId));
   assert.ok(initialFlow,'the mine flow must have its own authoritative batch ledger row');
   const heldAfterFirstDispatch=Number(initialFlow.mineHeldQuantity)||0;
+  assert.ok(Math.abs((Number(initialFlow.mineWarehouseDispatchedQuantity)||0)-Number(run.shipment.quantity))<1e-5,
+    'the flow ledger must account for each mine-haul dispatch exactly once');
   assert.equal(sourceBatch.stage,heldAfterFirstDispatch>1e-6?'PARTIALLY_MINE_HAULED':'MINE_TO_WAREHOUSE_IN_TRANSIT');
   assert.equal(resource.inventoryLots[run.batchId].stage,sourceBatch.stage);
   assert.equal(sourceBatch.warehouseId,null,'the batch is not in the raw warehouse while its mine haul is in transit');
