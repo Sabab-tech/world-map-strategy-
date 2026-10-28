@@ -382,7 +382,7 @@ const delivery=industrialPipelineRuntime.advanceShipments('AUS');
 assert.equal(delivery.status,'ADVANCED',JSON.stringify(delivery));
 assert.ok(delivery.delivered>=1,JSON.stringify(delivery));
 const pilbaraDelivered=delivery.shipments.find(x=>x.shipmentId===pilbaraFactoryShipment.shipmentId);
-assert.ok(pilbaraDelivered,'the selected country's second-leg shipment must reach the factory');
+assert.ok(pilbaraDelivered,"the selected country's second-leg shipment must reach the factory");
 assert.equal(pilbaraDelivered.status,'DELIVERED');
 assert.equal(pilbaraDelivered.processingStatus,'IN_PROGRESS',JSON.stringify(pilbaraDelivered.processing));
 const ausAfterDelivery=runtime.countryResourceState('AUS')||{};

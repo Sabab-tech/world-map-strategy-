@@ -3,9 +3,35 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 
 const catalog=JSON.parse(fs.readFileSync('resource_industrial_catalog_v1.json','utf8'));
+const testSiteLogisticsRoutes=[
+  ['SITE_BGD_COAL_01','coal'],
+  ['SITE_BGD_IRON_01','iron_ore'],
+  ['SITE_BGD_IRON_02','iron_ore'],
+  ['SITE_BGD_COPPER_01','copper']
+].map(([siteId,resourceId])=>({
+  countryId:'BGD',siteId,resourceId,routeId:'TEST_MINE_ROUTE:'+siteId,
+  routePlan:{
+    routeStatus:'TEST_FIXTURE_SIMULATION_ONLY',
+    capacityBottleneckPerDay:120000,
+    estimatedRouteDistanceKm:100,
+    plannedTransitDays:1,
+    minimumTransitDays:1,
+    legs:[{transportMode:'rail',estimatedDistanceKm:100,estimatedTravelHours:24,
+      designCapacityPerDay:120000,designCapacityUnit:'tonnes'}]
+  },
+  quantityUnitBridge:{sourceProductionUnit:'tonnes',cargoCapacityUnit:'tonnes'},
+  provenance:{authority:'TEST_FIXTURE_SIMULATION_ONLY'}
+}));
 const context={
   console,Math,Number,String,Object,Array,Set,Map,WeakMap,JSON,Date,Promise,Intl,
   OmegaResourceIndustrialCatalogData:catalog,
+  OmegaResourceSiteLogisticsRoutesManifestData:{
+    schemaVersion:'1.0.0',datasetId:'TEST_SITE_LOGISTICS_ROUTES_BGD',
+    authority:'TEST_FIXTURE_SIMULATION_ONLY',
+    countryToPart:{BGD:1},
+    parts:[{part:1,file:'test_resource_site_logistics_routes_bgd.json',routeCount:4,countries:['BGD']}]
+  },
+  fetch:async()=>({ok:true,json:async()=>({schemaVersion:'1.0.0',routes:testSiteLogisticsRoutes})}),
   OmegaCanonicalIdentityRegistry:{
     resolveCountry(value){
       const key=String(value??'').trim().toUpperCase();
@@ -245,7 +271,7 @@ context.Omega.ResourceEndowmentRuntime={
   }
 };
 const siteRun=await N.executeSitePipeline({countryId:'BGD',siteId:'SITE_BGD_COPPER_01',resourceId:'copper',autoCommissionFactory:true,transportMode:'rail'});
-assert.equal(siteRun.status,'IN_TRANSIT','a selected resource site must commit extraction and dispatch a real shipment record');
+assert.equal(siteRun.status,'IN_TRANSIT','a selected resource site must commit extraction and dispatch a real shipment record: '+JSON.stringify(siteRun));
 assert.equal(siteRun.extractionStatus,'COMMITTED');
 assert.equal(siteRun.batchId,'BATCH-E2E-COPPER');
 assert.ok(siteRun.extractionPlanId,'industrial extraction planner must be part of the same site action');
