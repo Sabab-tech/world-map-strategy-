@@ -338,6 +338,9 @@ for(let siteIndex=0;siteIndex<sites.length;siteIndex++){
   game.state.simulation.turn=(Number(game.state.simulation.turn)||1)+1;
   if(!game.state.simulation.date)game.state.simulation.date='2015-01-01';
   commissionGameplayMine(site);
+  game.state.simulation.playerCountryId=site.countryId;
+  game.state.simulation.session=game.state.simulation.session||{};
+  game.state.simulation.session.playerCountryId=site.countryId;
   const result=await industry.executeSitePipeline({
     countryId:site.countryId,siteId:site.siteId,resourceId:site.resourceId,
     quantity:1,autoCommissionFactory:true,transportMode:'rail'
@@ -366,7 +369,8 @@ for(let siteIndex=0;siteIndex<sites.length;siteIndex++){
   const batch=(pre.batches||[]).find(x=>String(x.batchId)===String(result.batchId));
   assert.ok(batch,site.siteId+': extracted batch missing from country state');
   assert.equal(batch.countryId,site.countryId,site.siteId+': batch country mismatch');
-  assert.equal(batch.warehouseId,'WH-'+site.countryId+'-RAW',site.siteId+': raw warehouse mismatch');
+  assert.equal(batch.warehouseId,null,site.siteId+': raw batch must remain at the mine until its first-leg receipt');
+  assert.equal(batch.stage,'MINE_TO_WAREHOUSE_IN_TRANSIT',site.siteId+': batch stage must reflect the active mine haul');
   assert.ok(Number(batch.quantity)>0,site.siteId+': extraction quantity must be positive');
   pipelines.push({site,result,initialBatchRemaining:Number(batch.remainingQuantity??batch.quantity)||0});
 }
