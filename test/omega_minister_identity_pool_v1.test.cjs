@@ -9,7 +9,8 @@ const countries = JSON.parse(fs.readFileSync(path.join(root, 'countries.json'), 
 const resourceIndex = JSON.parse(fs.readFileSync(path.join(root, 'resource_country_resource_context_index.json'), 'utf8'));
 const manifest = JSON.parse(fs.readFileSync(path.join(root, 'minister_country_roster_manifest_v1.json'), 'utf8'));
 const templates = JSON.parse(fs.readFileSync(path.join(root, 'ministers.json'), 'utf8'));
-const sandbox = { console, setInterval:()=>1, clearInterval:()=>{}, setTimeout, clearTimeout, fetch: async () => ({ ok:false, status:404, json:async()=>({}) }) };
+const requested = [];
+const sandbox = { console, setInterval:()=>1, clearInterval:()=>{}, setTimeout, clearTimeout, fetch: async (url) => { requested.push(String(url)); return { ok:false, status:404, json:async()=>({}) }; } };
 sandbox.window = sandbox;
 sandbox.globalThis = sandbox;
 vm.runInNewContext(fs.readFileSync(path.join(root, 'omega_minister_identity_pool_v1.js'), 'utf8'), sandbox, {
