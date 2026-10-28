@@ -40,7 +40,7 @@ const context={
   },
   Game:{
     state:{
-      simulation:{turn:1,startYear:2015,date:'2015-01-01',daysPerTurn:30},
+      simulation:{turn:1,startYear:2015,date:'2015-01-01',daysPerTurn:30,playerCountryId:'BGD'},
       resource:{BGD:{inventory:{coal:50000,iron_ore:50000},warehouse:{availableByResource:{coal:50000,iron_ore:50000},reservedByResource:{}},technologyCapabilities:[]}},
       economy:{BGD:{unemploymentCount:600000,laborForce:6000000,unemployment_rate:10,productionAssets:[]}},
       transport:{BGD:{infrastructure:{roads:{capacityPerDay:50000,quality:.9},rail:{capacityPerDay:120000,quality:.8},ports:{capacityPerDay:200000,quality:.9},bridges:{capacityPerDay:50000,quality:.8},pipelines:{capacityPerDay:400000,quality:.8},
@@ -130,6 +130,13 @@ const sent=N.dispatchShipment({countryId:'BGD',siteId:'SITE_BGD_COAL_01',resourc
 assert.equal(sent.status,'DISPATCHED');
 assert.equal(context.Game.state.resource.BGD.warehouse.reservedByResource.coal,5000);
 
+const selectedPlayerBeforePause=context.Game.state.simulation.playerCountryId;
+delete context.Game.state.simulation.playerCountryId;
+const paused=N.advanceShipments('BGD');
+assert.equal(paused.status,'SKIPPED','logistics must not advance any country without a selected player');
+assert.equal(context.Game.state.resource.BGD.industrialNetwork.shipments.find(x=>x.shipmentId===sent.shipment.shipmentId)?.status,'IN_TRANSIT',
+  'a missing player selection must not deliver an in-transit shipment');
+context.Game.state.simulation.playerCountryId=selectedPlayerBeforePause;
 advanceToGameTurn(context.Game.state,sent.shipment.etaTurn);
 const advanced=N.advanceShipments('BGD');
 assert.equal(advanced.delivered,1);
