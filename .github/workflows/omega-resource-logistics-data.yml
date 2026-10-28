@@ -1,0 +1,32 @@
+name: OMEGA Resource Site Logistics Data
+on:
+  pull_request:
+    paths:
+      - 'resource_site_logistics_routes_v1.json'
+      - 'resource_site_logistics_routes_v1_part_*.json'
+      - 'test/omega_resource_site_logistics_routes_v1.test.mjs'
+      - '.github/workflows/omega-resource-logistics-data.yml'
+      - 'resource_site_canonical_catalog_v1.json'
+      - 'resource_site_country_mineplay_batch_20261020_v1.json'
+      - 'resource_site_country_mineplay_batch_20261024_v1.json'
+      - 'resource_site_country_mineplay_critical_batch_20261024_v1.json'
+      - 'resource_site_legacy_gameplay_expansion_part_6_v1.json'
+      - 'assets/omega-industrial-icons-v1/manifest.json'
+      - 'assets/omega-industrial-icons-v1/resources/**'
+      - 'assets/omega-industrial-icons-v1/transport/**'
+      - 'countries.json'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate-logistics-data:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Validate every mine-to-inventory route and local icon asset
+        run: node --test test/omega_resource_site_logistics_routes_v1.test.mjs
