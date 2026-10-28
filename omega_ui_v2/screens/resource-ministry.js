@@ -366,6 +366,32 @@
       if (n === null) return '—';
       return fmt(n, 2) + (unit ? ' ' + String(unit) : '');
     }
+    function compactBuildNumber(value) {
+      var n = numberOrNull(value);
+      if (n === null) return '—';
+      var magnitude = Math.abs(n), divisor = 1, suffix = '';
+      if (magnitude >= 1e12) { divisor = 1e12; suffix = 'T'; }
+      else if (magnitude >= 1e9) { divisor = 1e9; suffix = 'B'; }
+      else if (magnitude >= 1e6) { divisor = 1e6; suffix = 'M'; }
+      else if (magnitude >= 1e3) { divisor = 1e3; suffix = 'K'; }
+      if (!suffix) return fmt(n, 2);
+      var scaled = n / divisor;
+      var digits = Math.abs(scaled) < 10 ? 2 : (Math.abs(scaled) < 100 ? 1 : 0);
+      return scaled.toLocaleString('en-US', { maximumFractionDigits: digits }) + suffix;
+    }
+    function buildDisplayUnit(unit) {
+      var normalized = String(unit == null ? '' : unit).trim().replace(/[_-]+/g, ' ');
+      if (!normalized || /SIMULATION.*UNIT/i.test(normalized)) return '';
+      return normalized.toLowerCase().replace(/\b[a-z]/g, function (ch) { return ch.toUpperCase(); });
+    }
+    function buildResourceAmount(value, unit) {
+      var n = numberOrNull(value);
+      if (n === null) return '—';
+      var displayUnit = buildDisplayUnit(unit);
+      var precise = fmt(n, 2) + (displayUnit ? ' ' + displayUnit : '');
+      return '<span class="omega-v2-build-amount" title="' + esc(precise) + '">' +
+        esc(compactBuildNumber(n)) + (displayUnit ? ' ' + esc(displayUnit) : '') + '</span>';
+    }
     function currentTurn() {
       return numberOrNull(stateRoot.simulation && (stateRoot.simulation.turn || stateRoot.simulation.currentTurn)) ||
         numberOrNull(stateRoot.turn) || 0;
@@ -648,8 +674,12 @@
       if (!q||q.status!=='QUOTED') return '<div class="omega-v2-build-notice" role="status">Build quote unavailable: '+esc(human(q&&(q.reason||q.status)||'runtime unavailable'))+'.</div>';
       var treasury=q.treasury||{};
       var rows=safeArray(q.materials).map(function(m){
-        return '<div class="omega-v2-build-material"><span><strong>'+esc(resourceLabel(m.resourceId))+'</strong><small>Available: '+amount(m.available,m.unit||'')+'</small></span>'+
-          '<span><strong>'+amount(m.required,m.unit||'')+'</strong><small>'+(m.sufficient?'In stock':'Short by '+amount(m.shortfall,m.unit||''))+'</small></span></div>';
+        var name=resourceLabel(m.resourceId);
+        return '<div class="omega-v2-build-material" data-resource-id="'+esc(m.resourceId||'')+'">'+
+          '<div class="omega-v2-build-material-resource">'+resourceIconMarkup(m.resourceId,name)+
+            '<span class="omega-v2-build-material-copy"><strong>'+esc(name)+'</strong><small>Available: '+buildResourceAmount(m.available,m.unit||'')+'</small></span></div>'+
+          '<div class="omega-v2-build-material-need"><strong><em>Need '+buildResourceAmount(m.required,m.unit||'')+'</em></strong>'+
+            '<small class="'+(m.sufficient?'is-stocked':'is-short')+'">'+(m.sufficient?'In stock':'Short by '+buildResourceAmount(m.shortfall,m.unit||''))+'</small></div></div>';
       }).join('');
       var ready=q.ready===true&&country===livePlayerCountryKey();
       var reason=!q.staffingReady?'Commit at least '+fmt(q.workersRequired||0)+' workers.':
@@ -661,7 +691,7 @@
         '<div><span>Build duration</span><strong>'+fmt(q.durationDays||0)+' days</strong><small>'+fmt(q.estimatedTurns||0)+' game turns</small></div>'+
         '<div><span>Workers required</span><strong>'+fmt(q.workersRequired||0)+'</strong><small>'+fmt(q.workersRequiredPerAsset||0)+' per mine · committed '+fmt(q.assignedWorkers||0)+'</small></div>'+
         '<div><span>Treasury</span><strong>'+(treasury.sufficient?'Funds available':'Insufficient / unknown')+'</strong><small>$'+fmt(treasury.available,0)+' available · $'+fmt(treasury.required||q.costUsd||0,0)+' required</small></div></div>'+
-        '<h4>Construction materials · '+fmt(count)+' mine unit(s)</h4>'+
+        '<h4 class="omega-v2-build-material-heading">Resources needed to establish this mine <span>· '+fmt(count)+' mine unit(s)</span></h4>'+
         (rows?'<div class="omega-v2-build-material-list">'+rows+'</div>':'<div class="omega-v2-build-notice">Material requirements are unavailable.</div>')+
         '<div class="omega-v2-build-notice" role="status" aria-live="polite">'+(ready?'Treasury, materials, workforce and project checks passed.':esc(reason))+'</div>'+
         '<button type="button" class="omega-v2-button omega-v2-button--primary" data-omega-v2-build-submit'+(ready?'':' disabled')+'>Start construction</button>';
