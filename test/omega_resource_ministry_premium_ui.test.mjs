@@ -390,6 +390,15 @@ test("v2 Build opens an actionable plan and Start construction calls the authori
     assert.equal(legacyOpens,0,"Build must not merely open the retired modal");
     fire("input",{target:{value:"2",matches(s){return s==="[data-omega-v2-build-count]";}}});
     assert.match(previewNode.innerHTML,/data-omega-v2-build-submit>(Start construction)<\/button>/,"ready quote must enable Start construction");
+    assert.match(previewNode.innerHTML,/Resources needed to establish this mine/,"build preview should explain why these resources are listed");
+    assert.match(previewNode.innerHTML,/class="omega-v2-build-material-resource"/,"each required resource gets a compact icon-and-label row");
+    assert.match(previewNode.innerHTML,/assets\/omega-industrial-icons-v1\/resources\/iron-ore\.svg/,"the existing canonical resource SVG is shown beside the name");
+    assert.match(previewNode.innerHTML,/Need <span[^>]*>17K<\/span>/,"resource requirements use compact thousands notation");
+    assert.match(previewNode.innerHTML,/Available: <span[^>]*>100K<\/span>/,"available inventory uses compact thousands notation");
+    assert.doesNotMatch(previewNode.innerHTML,/SIMULATION(?:_RESOURCE)?_UNIT/i,"internal simulation unit labels stay out of the player UI");
+    const buildCss=read("omega_ui_v2/omega-ui-v2.css");
+    assert.match(buildCss,/\.omega-v2-mine-build-plan/,"premium styling is scoped to the mine build section");
+    assert.match(buildCss,/text-decoration:\s*none\s*!important/i,"underlines are removed inside the mine build section");
     click("[data-omega-v2-build-submit]",{"data-omega-v2-build-submit":"true"});
     assert.equal(starts.length,1,"authoritative startMineProject must run exactly once");
     assert.equal(starts[0].countryId,"BGD");assert.equal(starts[0].siteId,row.siteId);assert.equal(starts[0].resourceId,"coal");
