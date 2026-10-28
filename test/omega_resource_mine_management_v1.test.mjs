@@ -525,6 +525,8 @@ test('mine project rejects cross-country identity and player-only actions requir
   assert.match(uiSource, /selectedMinistryCountry\(\)/);
   assert.match(bindingSource, /MINEPLAY_BATCH_URL/);
   assert.match(endowmentSource, /OMEGA_RESOURCE_MINE_COMMISSIONED/);
+  assert.match(endowmentSource, /const operationalMineSiteIds=new Set/);
+  assert.match(endowmentSource, /A site is paused only when none of its commissioned mine units remain operational/);
   assert.match(bindingSource, /resource_site_country_mineplay_batch_20261020_v1\.json/);
 });
 
