@@ -15,7 +15,7 @@ function makeRuntime() {
   };
   const context = {
     console, Math, Number, String, Object, Array, Set, Map, WeakMap, Promise, JSON, Date, Intl,
-    Game: { state: { simulation: { turn: 1, startYear: 2015, date: '2015-01-01', daysPerTurn: 1 },
+    Game: { state: { simulation: { turn: 1, startYear: 2015, date: '2015-01-01', daysPerTurn: 1, playerCountryId:'BGD' },
       resource: {}, economy: {}, transport: {}, trade: {}, finance: {}, foreign: {} } },
     Omega: { ResourceIndustrialCatalogData: catalog }, OmegaResourceIndustrialCatalogData: catalog,
     ResourceMinistryEngine: { resourceTypes: [] },
