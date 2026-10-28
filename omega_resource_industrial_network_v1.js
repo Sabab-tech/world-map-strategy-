@@ -1566,10 +1566,11 @@ function dispatchShipment(input={}){
       sourceBatchQuantity:sourceBatch?Math.max(0,num(sourceBatch.remainingQuantity!=null?sourceBatch.remainingQuantity:sourceBatch.quantity)||0):null,
       plannedDispatchQuantity:plannedQuantity,actualDispatchQuantity:quantity}};
   const n=netState(cid);n.shipments.push(s);n.shipments=n.shipments.slice(-MAX_SHIPMENTS);
-  // A RAW_TO_FACTORY dispatch moves this batch out of the raw warehouse's single-location
-  // model. Keep the country/batch identity and quantities, but don't label in-transit cargo
-  // as physically stored at the warehouse. The reserved balance remains authoritative.
-  if(sourceBatch){
+  // Mine-logistics batches can be split across the mine, raw warehouse and a downstream
+  // factory leg. Keep legacy warehouse transfers on their established location semantics.
+  const flowForDispatch=sourceBatchId?siteFlowRows(cid).find(row=>String(row.batchId||'')===sourceBatchId):null;
+  const isMineLogisticsBatch=!!(flowForDispatch?.mineLogisticsRouteId||flowForDispatch?.mineLogisticsStockDebited===true);
+  if(sourceBatch&&isMineLogisticsBatch){
     const mixedLocation='MIXED:RAW_WAREHOUSE_OR_TRANSIT';
     sourceBatch.warehouseId=null;sourceBatch.locationNodeKey=mixedLocation;sourceBatch.currentLocationNodeId=null;
     sourceBatch.lastMovementType='RAW_TO_FACTORY_DISPATCH';sourceBatch.lastMovementTurn=turn();
@@ -1582,7 +1583,7 @@ function dispatchShipment(input={}){
     if(Array.isArray(dispatchWarehouse.storedBatchIds)){
       const batchStillHasWarehouseQuantity=Math.max(0,
         (num(sourceBatch.remainingQuantity!=null?sourceBatch.remainingQuantity:sourceBatch.quantity)||0)-
-        (num(siteFlowRows(cid).find(row=>String(row.batchId||'')===sourceBatchId)?.mineHeldQuantity)||0)-
+        (num(flowForDispatch?.mineHeldQuantity)||0)-
         n.shipments.filter(item=>String(item.batchId||'')===sourceBatchId&&
           ['MINE_TO_WAREHOUSE','RAW_TO_FACTORY'].includes(String(item.shipmentType||''))&&
           ['IN_TRANSIT','BLOCKED_ROUTE_BLOCKADE','BLOCKED_LEDGER_MISMATCH'].includes(String(item.status||'')))
@@ -2110,6 +2111,7 @@ function advanceShipments(c){
       // stock in the raw warehouse, mine-held remainder, or another active logistics leg.
       const flow=siteFlowRows(cid).find(row=>String(row.batchId||'')===sourceBatchId);
       const mineHeld=Math.max(0,num(flow?.mineHeldQuantity)||0);
+      const isMineLogisticsBatch=!!(flow?.mineLogisticsRouteId||flow?.mineLogisticsStockDebited===true);
       const otherActiveLeg=n.shipments.some(item=>String(item.batchId||'')===sourceBatchId&&
         String(item.shipmentId||'')!==String(s.shipmentId||'')&&
         ['MINE_TO_WAREHOUSE','RAW_TO_FACTORY'].includes(String(item.shipmentType||''))&&
@@ -2123,7 +2125,7 @@ function advanceShipments(c){
           sourceLot.stage='TRANSFERRED_TO_FACTORY';sourceLot.warehouseId=null;sourceLot.locationNodeKey=factoryLocation;
           sourceLot.lastMovementType='TRANSFER_TO_FACTORY';sourceLot.lastMovementTurn=turn();
         }
-      }else if(mineHeld>1e-6||otherActiveLeg){
+      }else if(isMineLogisticsBatch&&(mineHeld>1e-6||otherActiveLeg)){
         const mixedLocation='MIXED:MINE_RAW_WAREHOUSE_OR_TRANSIT';
         sourceBatch.stage='PARTIALLY_IN_RAW_INVENTORY';sourceBatch.warehouseId=null;
         sourceBatch.locationNodeKey=mixedLocation;sourceBatch.currentLocationNodeId=null;
