@@ -755,16 +755,16 @@ function onExtractionCommitted(evt){
   const rid=tok(p.resourceId||batch?.resourceId||batch?.materialIdentity||''),batchId=String(batch?.batchId||p.batchId||'').trim();
   if(!cid||!rid||!batchId)return;
   const selectedPlayer=playerSimulationCountryId();
-  // The mine logistics tick belongs exclusively to the active player country.
-  // Test harnesses and saved games without a chosen country keep legacy extraction
-  // behavior instead of quietly moving cargo for arbitrary countries.
-  if(!selectedPlayer||selectedPlayer!==cid)return;
-  if(siteLogisticsActiveCountry!==cid){
+  // Automatic mine-to-warehouse logistics only runs for the active player country.
+  // Without a selected country, preserve the legacy site-flow observer/warehouse-to-factory
+  // path, but never start a mine-haul shipment.
+  if(selectedPlayer&&selectedPlayer!==cid)return;
+  if(selectedPlayer&&siteLogisticsActiveCountry!==cid){
     if(!pendingSiteLogisticsBatches.has(batchId)){
       pendingSiteLogisticsBatches.add(batchId);
       void loadSiteLogisticsRoutes(cid).then(result=>{
         pendingSiteLogisticsBatches.delete(batchId);
-        if(result?.status==='READY'&&(!playerSimulationCountryId()||playerSimulationCountryId()===cid))onExtractionCommitted(evt);
+        if(result?.status==='READY'&&playerSimulationCountryId()===cid)onExtractionCommitted(evt);
       }).catch(()=>pendingSiteLogisticsBatches.delete(batchId));
     }
     return;
@@ -785,7 +785,7 @@ function onExtractionCommitted(evt){
     emit('OMEGA_RESOURCE_SITE_FLOW_BLOCKED',cid,{siteId:row.siteId,batchId,occurrenceKey:occ,resourceId:rid,reason:row.blockReason},'resource-industrial-network');
     return;
   }
-  const routeProfileAtExtraction=siteLogisticsRouteFor(cid,site.siteId);
+  const routeProfileAtExtraction=selectedPlayer===cid?siteLogisticsRouteFor(cid,site.siteId):null;
   addFlowStage(row,'RAW_INVENTORY',routeProfileAtExtraction?'PENDING_MINE_LOGISTICS':'AVAILABLE',{warehouseId:row.warehouseId,quantity:Math.max(0,num(stored.remainingQuantity!=null?stored.remainingQuantity:stored.quantity)||0),routeId:routeProfileAtExtraction?.routeId||null});
   if(quantity<=0||Math.max(0,num(stored.remainingQuantity!=null?stored.remainingQuantity:stored.quantity)||0)<=0){
     addFlowStage(row,'TRANSPORT','BLOCKED',{reason:'EXTRACTION_BATCH_QUANTITY_INVALID'});
