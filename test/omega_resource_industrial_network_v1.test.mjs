@@ -76,6 +76,7 @@ const context={
   }
 };
 context.globalThis=context;
+// Mirror the game runtime's extraction event bridge so the test exercises real mine-haul dispatch.
 const browserEventHandlers=new Map();
 context.addEventListener=(type,handler)=>{
   const listeners=browserEventHandlers.get(type)||[];
