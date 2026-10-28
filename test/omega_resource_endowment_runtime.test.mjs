@@ -851,7 +851,10 @@ assert.ok(Math.abs(Number(postDeliveryState.warehouse.availableByResource[realPi
   (beforeWarehouse-sameResourceDeliveredQuantity))<1e-5,
   'raw warehouse stock must fall by exactly the combined quantity of same-resource shipments delivered this turn');
 const newlyReservedOtherShipments=(postDeliveryState.industrialNetwork?.shipments||[])
-  .filter(x=>String(x.resourceId)===String(realPipelineResourceId)&&String(x.status)==='IN_TRANSIT'&&!inTransitBeforeDelivery.has(String(x.shipmentId)))
+  // Only RAW_TO_FACTORY shipments reserve the raw warehouse. Mine-haul shipments
+  // debit warehouse stock and hold cargo at the mine/in transit until receipt.
+  .filter(x=>String(x.resourceId)===String(realPipelineResourceId)&&String(x.shipmentType||'')==='RAW_TO_FACTORY'&&
+    String(x.status)==='IN_TRANSIT'&&!inTransitBeforeDelivery.has(String(x.shipmentId)))
   .reduce((sum,x)=>sum+(Number(x.quantity)||0),0);
 assert.ok(Math.abs(Number(postDeliveryState.warehouse.reservedByResource[realPipelineResourceId])-
   (beforeReserved-sameResourceDeliveredQuantity+newlyReservedOtherShipments))<1e-5,
