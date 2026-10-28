@@ -537,8 +537,9 @@ test('mine project rejects cross-country identity and player-only actions requir
   assert.match(uiSource, /executeFactoryCycle/);
   assert.match(uiSource, /<svg/);
   assert.match(uiSource, /omm-mine-flip/);
-  assert.ok(uiSource.includes('.omm-mine-flip.is-flipped .omm-face-front{display:none!important}'), 'flipped card must hide the front face on mobile');
-  assert.ok(uiSource.includes('.omm-mine-flip.is-flipped .omm-face-back{display:block;'), 'flipped card must reveal the back face');
+  assert.ok(uiSource.includes('.omm-mine-flip.is-flipped .omm-flip-inner{transform:rotateY(180deg)}'), 'flipped card must rotate the 3D card stack');
+  assert.ok(uiSource.includes('overflow:visible;backface-visibility:hidden;'), '3D faces must not flatten the card with a scrolling overflow context');
+  assert.ok(uiSource.includes('.omm-action-panel{max-height:calc(100% - 4px);overflow:auto;'), 'long build data must scroll inside the panel without breaking 3D flipping');
   assert.match(uiSource, /data-omm-build-count/);
   assert.match(uiSource, /data-omm-build-workers/);
   assert.match(uiSource, /OMEGA_RESOURCE_MINE_PROJECT_PROGRESS/);
