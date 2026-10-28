@@ -283,11 +283,16 @@ function dispatchMineToWarehouse(countryId,site,flow,sourceBatch,routeProfile){
   if(inventory[inventoryKey]<1e-8)inventory[inventoryKey]=0;
   if(availableMap[warehouseKey]<1e-8)availableMap[warehouseKey]=0;
   batchInFlight.stage='MINE_TO_WAREHOUSE_IN_TRANSIT';batchInFlight.status='IN_TRANSIT_TO_RAW_WAREHOUSE';
+  batchInFlight.sourceWarehouseId=batchInFlight.warehouseId||('WH-'+cid+'-RAW');batchInFlight.destinationWarehouseId='WH-'+cid+'-RAW';
+  batchInFlight.warehouseId=null;batchInFlight.locationNodeKey='MINE_SITE:'+siteId;batchInFlight.currentLocationNodeId=siteId;
   batchInFlight.lastMovementType='MINE_TO_WAREHOUSE_DISPATCH';batchInFlight.lastMovementTurn=turn();
   batchInFlight.mineLogisticsShipmentId=shipmentId;
+  if(Array.isArray(w.storedBatchIds))w.storedBatchIds=w.storedBatchIds.filter(id=>String(id)!==batchId);
   if(rs.inventoryLots?.[batchId]){
     rs.inventoryLots[batchId].stage='MINE_TO_WAREHOUSE_IN_TRANSIT';rs.inventoryLots[batchId].status='IN_TRANSIT';
-    rs.inventoryLots[batchId].mineLogisticsShipmentId=shipmentId;
+    rs.inventoryLots[batchId].sourceWarehouseId=rs.inventoryLots[batchId].warehouseId||('WH-'+cid+'-RAW');
+    rs.inventoryLots[batchId].destinationWarehouseId='WH-'+cid+'-RAW';rs.inventoryLots[batchId].warehouseId=null;
+    rs.inventoryLots[batchId].locationNodeKey='MINE_SITE:'+siteId;rs.inventoryLots[batchId].mineLogisticsShipmentId=shipmentId;
   }
   if(Array.isArray(w.receipts))for(const receipt of w.receipts){
     if(String(receipt?.batchId||'')===batchId&&String(receipt?.receivedFrom||'')==='MINE_EXTRACTION'&&String(receipt?.status||'')==='RECEIVED'){
@@ -376,9 +381,11 @@ function receiveMineWarehouseShipment(countryId,shipment){
     simulationTurn:turn(),gameDate:factoryCurrentGameDate(),status:'RECEIVED',
     provenance:{source:'OMEGA_RESOURCE_SITE_LOGISTICS_RUNTIME',simulationOnly:true,idempotentReceipt:true}};
   receipts.push(receipt);w.receipts=receipts.slice(-MAX_EVENTS);w.lastReceiptTurn=turn();rs.warehouse=w;
-  batch.stage='RAW_INVENTORY';batch.status='AVAILABLE_TO_FACTORY';batch.lastMovementType='MINE_TO_RAW_WAREHOUSE_RECEIPT';
-  batch.lastMovementTurn=turn();batch.warehouseReceiptId=receiptId;delete batch.mineLogisticsShipmentId;
-  lot.stage='RAW_INVENTORY';lot.status='AVAILABLE';lot.warehouseReceiptId=receiptId;delete lot.mineLogisticsShipmentId;
+  batch.stage='RAW_INVENTORY';batch.status='AVAILABLE_TO_FACTORY';batch.warehouseId=shipment.warehouseId;
+  batch.locationNodeKey='WAREHOUSE:'+cid+':RAW';batch.currentLocationNodeId=shipment.warehouseId;
+  batch.lastMovementType='MINE_TO_RAW_WAREHOUSE_RECEIPT';batch.lastMovementTurn=turn();batch.warehouseReceiptId=receiptId;delete batch.mineLogisticsShipmentId;
+  lot.stage='RAW_INVENTORY';lot.status='AVAILABLE';lot.warehouseId=shipment.warehouseId;lot.locationNodeKey='WAREHOUSE:'+cid+':RAW';
+  lot.warehouseReceiptId=receiptId;delete lot.mineLogisticsShipmentId;
   const flow=siteFlowRows(cid).find(item=>String(item.batchId||'')===batchId);
   if(flow){
     flow.mineWarehouseReceivedQuantity=(num(flow.mineWarehouseReceivedQuantity)||0)+quantity;
