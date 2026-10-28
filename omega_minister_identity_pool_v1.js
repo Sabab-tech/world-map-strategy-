@@ -43,7 +43,8 @@
     if (!generation || !generation.namePools || !Array.isArray(generation.middleNames) ||
         !generation.profileText || !Array.isArray(generation.profileText.summaryTemplates) ||
         !Array.isArray(generation.profileText.leadershipStyles) ||
-        !Array.isArray(generation.profileText.decisionStyles)) {
+        !Array.isArray(generation.profileText.decisionStyles) ||
+        !Array.isArray(generation.profileText.ideologyTypes) || !Array.isArray(generation.profileText.genderBySlot)) {
       fail('COUNTRY_ROSTER_PROFILE_DATA_INVALID');
     }
     for (const identity of Object.values(manifestData.countries)) {
@@ -229,7 +230,7 @@
           baseName:name,
           displayName:name,
           age:age,
-          gender:String(template.gender || generation.genderBySlot && generation.genderBySlot[slot % generation.genderBySlot.length] || 'not recorded'),
+          gender:String(template.gender || profileText.genderBySlot && profileText.genderBySlot[slot % profileText.genderBySlot.length] || 'not recorded'),
           background:background,
           education:education,
           careerBackground:careerBackground,
@@ -244,7 +245,7 @@
           stats:stats,
           efficiency:efficiency,
           ideology:{type:String(template.ideology && (template.ideology.type || template.ideology.name) ||
-            generation.ideologyTypes[(ordinal + mi + slot) % generation.ideologyTypes.length])},
+            profileText.ideologyTypes[(ordinal + mi + slot) % profileText.ideologyTypes.length])},
           personalityProfile:Object.assign({},stats,{
             learningAgility:clamp100(100 - Math.abs(70 - efficiency.accuracy) + ((ordinal + mi * 2 + slot * 3) % 13) - 6),
             stressTolerance:clamp100((stats.discipline + efficiency.crisis_handling + stats.empathy) / 3)

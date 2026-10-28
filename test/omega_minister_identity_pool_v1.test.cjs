@@ -47,6 +47,8 @@ const configured = pool.configure({ manifest, templates });
         assert.equal(candidate.countryCode, countryCode);
         assert.equal(candidate.ministryId, def.id);
         assert.equal(candidate.isFictional, true);
+        assert.ok(candidate.ideology && candidate.ideology.type, 'candidate ideology must be populated from profile data');
+        assert.ok(candidate.gender, 'candidate gender field must be present');
         assert.equal(candidate.recordType, 'SIMULATED_FICTIONAL');
         assert.ok(candidate.profileDetails && candidate.profileDetails.summary);
         assert.ok(candidate.profileDetails.professionalBackground);
