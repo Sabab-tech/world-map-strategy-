@@ -892,14 +892,21 @@
             scheduleRender(root, Object.assign({}, root.__omegaV2ResourceOptions || {}, { tab:'mines' }));
             return;
           }
-          if (action === 'build' || action === 'extract') {
+          if (action === 'build') {
+            root.__omegaV2SelectedMineId = id;
+            root.__omegaV2BuildSiteId = id;
+            root.__omegaV2MineAction = 'build';
+            root.__omegaV2BuildQuantity = 1;
+            root.__omegaV2BuildWorkers = 0;
+            root.__omegaV2ResourceNotice = '';
+            scheduleRender(root,Object.assign({},root.__omegaV2ResourceOptions||{},{tab:'mines'}));
+            return;
+          }
+          if (action === 'extract') {
             var mineUi = g.OmegaResourceMineManagementUI || (g.Omega && g.Omega.ResourceMineManagementUI);
-            if (mineUi && typeof mineUi.open === 'function') {
-              mineUi.open('mines', countryKey, id, action);
-            } else {
-              root.__omegaV2ResourceNotice = 'Mine operations are not available right now.';
-              scheduleRender(root, Object.assign({}, root.__omegaV2ResourceOptions || {}, { tab:'mines' }));
-            }
+            if (mineUi && typeof mineUi.open === 'function') mineUi.open('mines',countryKey,id,action);
+            else { root.__omegaV2ResourceNotice = 'Mine extraction is not available right now.';
+              scheduleRender(root,Object.assign({},root.__omegaV2ResourceOptions||{},{tab:'mines'})); }
             return;
           }
           if (action === 'demolish') {
@@ -931,9 +938,101 @@
           root.__omegaV2ResourceOptions.onLocateSite(id);
         }
       });
+      root.addEventListener('input', function (event) {
+        var target = event && event.target;
+        if (!target || typeof target.matches !== 'function') return;
+        if (!target.matches('[data-omega-v2-build-count]') && !target.matches('[data-omega-v2-build-workers]')) return;
+        var countNode = root.querySelector('[data-omega-v2-build-count]');
+        var workersNode = root.querySelector('[data-omega-v2-build-workers]');
+        var count = numberOrNull(countNode && countNode.value);
+        var workers = numberOrNull(workersNode && workersNode.value);
+        root.__omegaV2BuildQuantity = count;
+        root.__omegaV2BuildWorkers = workers;
+        var siteId = root.__omegaV2BuildSiteId || '';
+        var model = root.__omegaV2ResourceModel;
+        var site = model && Array.isArray(model.sites) ? model.sites.find(function (s) { return String(s.siteId) === String(siteId); }) : null;
+        var country = selectedCountryKey((root.__omegaV2ResourceOptions || {}).countryId || root.__omegaV2CurrentCountryKey || '');
+        var preview = root.querySelector('[data-omega-v2-build-preview]');
+        if (preview && site) preview.innerHTML = mineBuildQuoteMarkup(site,country,count,workers);
+      });
+      root.addEventListener('click', function (event) {
+        var target = event && event.target;
+        if (!target || typeof target.closest !== 'function') return;
+        var options = root.__omegaV2ResourceOptions || {};
+        var cancel = target.closest('[data-omega-v2-build-cancel]');
+        if (cancel && root.contains(cancel)) {
+          root.__omegaV2MineAction = '';
+          root.__omegaV2BuildSiteId = '';
+          root.__omegaV2ResourceNotice = '';
+          scheduleRender(root,Object.assign({},options,{tab:'mines'}));
+          return;
+        }
+        var submit = target.closest('[data-omega-v2-build-submit]');
+        if (!submit || !root.contains(submit) || submit.disabled) return;
+        var country = selectedCountryKey(options.countryId || root.__omegaV2CurrentCountryKey || '');
+        if (!country || country !== livePlayerCountryKey()) {
+          root.__omegaV2ResourceNotice = 'Construction is available only for the active player country.';
+          scheduleRender(root,Object.assign({},options,{tab:'mines'}));
+          return;
+        }
+        if (root.__omegaV2BuildInFlight) return;
+        var siteId = String(root.__omegaV2BuildSiteId || '');
+        var model = root.__omegaV2ResourceModel;
+        var site = model && Array.isArray(model.sites) ? model.sites.find(function (s) { return String(s.siteId) === siteId; }) : null;
+        var countNode = root.querySelector('[data-omega-v2-build-count]');
+        var workersNode = root.querySelector('[data-omega-v2-build-workers]');
+        var count = numberOrNull(countNode && countNode.value);
+        var workers = numberOrNull(workersNode && workersNode.value);
+        var network = g.OmegaResourceIndustrialNetwork || g.Omega && g.Omega.ResourceIndustrialNetwork;
+        if (!site || !Number.isInteger(count) || count < 1 || count > 100 || !Number.isInteger(workers) || workers < 0 ||
+            !network || typeof network.quoteMineProject !== 'function' || typeof network.startMineProject !== 'function') {
+          root.__omegaV2ResourceNotice = 'Invalid construction request or runtime unavailable. No resources have been committed.';
+          scheduleRender(root,Object.assign({},options,{tab:'mines'}));
+          return;
+        }
+        root.__omegaV2BuildInFlight = true;
+        try {
+          var quote = network.quoteMineProject({countryId:country,siteId:site.siteId,resourceId:site.resourceId,quantity:count,assignedWorkers:workers});
+          if (!quote || quote.status !== 'QUOTED' || quote.ready !== true) {
+            root.__omegaV2BuildQuantity = count;
+            root.__omegaV2BuildWorkers = workers;
+            root.__omegaV2ResourceNotice = 'Construction blocked: ' + human(quote && (quote.reason || (!quote.staffingReady ? 'INSUFFICIENT_WORKER_COMMITMENT' : 'CONSTRUCTION_REQUIREMENTS_NOT_MET')) || 'requirements not verified') + '. No resources were committed.';
+          } else {
+            var state = g.Game && g.Game.state || g.gameState || {};
+            var activeTurn = numberOrNull(state.simulation && (state.simulation.turn || state.simulation.currentTurn)) || numberOrNull(state.turn) || 0;
+            root.__omegaV2BuildAttempt = (numberOrNull(root.__omegaV2BuildAttempt) || 0) + 1;
+            var result = network.startMineProject({countryId:country,siteId:site.siteId,resourceId:site.resourceId,quantity:count,assignedWorkers:workers,
+              requestId:'MINE_UI_V2:' + country + ':' + site.siteId + ':N' + count + ':W' + workers + ':T' + activeTurn + ':A' + root.__omegaV2BuildAttempt});
+            if (result && result.status === 'UNDER_CONSTRUCTION') {
+              root.__omegaV2MineAction = '';
+              root.__omegaV2ResourceNotice = fmt(result.assetCount || count) + ' mine unit(s) started. $' +
+                fmt(result.costUsd || quote.costUsd || 0,0) + ' committed; ' +
+                fmt(result.remainingDays !== undefined ? result.remainingDays : result.durationDays) + ' days remaining. Expected completion: ' +
+                String(result.expectedCompletionDate || result.estimatedCompletionDate || 'game date unavailable') + '.';
+            } else {
+              root.__omegaV2BuildQuantity = count;
+              root.__omegaV2BuildWorkers = workers;
+              root.__omegaV2ResourceNotice = 'Construction did not start: ' + human(result && (result.reason || result.status) || 'runtime rejected the request') + '.';
+            }
+          }
+        } catch (_) {
+          root.__omegaV2ResourceNotice = 'Construction failed before confirmation. No success was recorded.';
+        } finally {
+          root.__omegaV2BuildInFlight = false;
+        }
+        scheduleRender(root,Object.assign({},options,{tab:'mines'}));
+      });
+      if (!root.__omegaV2RuntimeEventsBound && typeof g.addEventListener === 'function') {
+        ['OMEGA_RESOURCE_MINE_PROJECT_STARTED','OMEGA_RESOURCE_MINE_PROJECT_PROGRESS','OMEGA_RESOURCE_MINE_COMMISSIONED','OMEGA_SIMULATION_TURN_COMMITTED'].forEach(function (name) {
+          g.addEventListener(name,function(){ if(root.__omegaV2ResourceOptions) scheduleRender(root,Object.assign({},root.__omegaV2ResourceOptions,{tab:root.__omegaV2ResourceTab||'mines'})); });
+        });
+        root.__omegaV2RuntimeEventsBound = true;
+      }
       root.__omegaV2ResourceBound = true;
     }
     root.__omegaV2ResourceOptions = Object.assign({}, options, { countryId:countryKey });
+    root.__omegaV2ResourceModel = model;
+    root.__omegaV2CurrentCountryKey = countryKey;
     root.__omegaV2ResourceTab = active;
     if (active === 'mines') applySiteFilter(root);
     return { ok:true, tab:active, siteCount:model.siteCount, model:model, inventoryRowCount:inventoryRows.length,
