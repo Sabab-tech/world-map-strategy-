@@ -830,7 +830,21 @@
     if (!root.__omegaV2ResourceBound && typeof root.addEventListener === 'function') {
       root.addEventListener('input', function (event) {
         if (!event || !event.target) return;
-        if (event.target.matches && event.target.matches('[data-omega-v2-site-search]')) applySiteFilter(root);
+        if (event.target.matches && event.target.matches('[data-omega-v2-site-search]')) { applySiteFilter(root); return; }
+        if (event.target.matches && (event.target.matches('[data-omega-v2-build-count]') || event.target.matches('[data-omega-v2-build-workers]'))) {
+          var quantityInput = root.querySelector('[data-omega-v2-build-count]');
+          var workerInput = root.querySelector('[data-omega-v2-build-workers]');
+          var quantity = numberOrNull(quantityInput && quantityInput.value);
+          var workers = numberOrNull(workerInput && workerInput.value);
+          root.__omegaV2BuildQuantity = quantity;
+          root.__omegaV2BuildWorkers = workers;
+          var activeSiteId = root.__omegaV2BuildSiteId || root.__omegaV2SelectedMineId || '';
+          var activeModel = root.__omegaV2ResourceModel;
+          var activeSite = activeModel && Array.isArray(activeModel.sites) ? activeModel.sites.find(function (item) { return item.siteId === activeSiteId; }) : null;
+          var activeCountry = selectedCountryKey((root.__omegaV2ResourceOptions || {}).countryId || root.__omegaV2CurrentCountryKey || '');
+          var preview = root.querySelector('[data-omega-v2-build-preview]');
+          if (preview && activeSite) preview.innerHTML = mineBuildQuoteMarkup(activeSite, activeCountry, quantity, workers);
+        }
       });
       root.addEventListener('change', function (event) {
         if (!event || !event.target) return;
