@@ -76,6 +76,19 @@ const context={
   }
 };
 context.globalThis=context;
+const browserEventHandlers=new Map();
+context.addEventListener=(type,handler)=>{
+  const listeners=browserEventHandlers.get(type)||[];
+  listeners.push(handler);
+  browserEventHandlers.set(type,listeners);
+};
+context.dispatchEvent=(event)=>{
+  for(const handler of browserEventHandlers.get(event?.type)||[])handler.call(context,event);
+  return true;
+};
+context.CustomEvent=class CustomEvent{
+  constructor(type,options={}){this.type=type;this.detail=options.detail||null;}
+};
 const handlers=new Map();
 context.Omega.MinistryInteroperability={
   registerAction(){},
@@ -267,6 +280,11 @@ context.Omega.ResourceEndowmentRuntime={
     rs.batches.push(trackedBatch);rs.inventoryLots[batchId]={...trackedBatch,status:'AVAILABLE'};rs.warehouse.storedBatchIds.push(batchId);
     const record={occurrenceKey:occurrenceKeys[0],countryId,resourceId,approvedQuantity:quantity,
       producedBatch:{batchId,quantity,unit:'TONNES',warehouseId:'WH-'+countryId+'-RAW'}};
+    context.dispatchEvent(new context.CustomEvent('OMEGA_RESOURCE_EXTRACTION_COMPLETED',{detail:{
+      eventType:'OMEGA_RESOURCE_EXTRACTION_COMPLETED',countryId,
+      payload:{countryId,resourceId,quantity,occurrenceKey:occurrenceKeys[0],batch:trackedBatch,
+        sourceAuthority:'SIMULATED_TEST_FIXTURE'}
+    }}));
     return{status:'APPLIED',result:{accepted:true,records:[record]}};
   }
 };
