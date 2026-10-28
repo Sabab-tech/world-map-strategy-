@@ -303,6 +303,18 @@ function dispatchMineToWarehouse(countryId,site,flow,sourceBatch,routeProfile){
     if(availableMap[warehouseKey]<1e-8)availableMap[warehouseKey]=0;
     flow.mineLogisticsStockDebited=true;flow.mineLogisticsStockDebitedQuantity=stockToHold;
     flow.mineHeldQuantity=stockToHold;flow.mineLogisticsStockDebitedTurn=turn();
+    const batchInMine=Array.isArray(rs.batches)?rs.batches.find(batch=>String(batch?.batchId||'')===batchId):null;
+    if(!batchInMine)return{status:'BLOCKED',reason:'SOURCE_BATCH_NOT_FOUND',batchId};
+    batchInMine.sourceWarehouseId=batchInMine.sourceWarehouseId||batchInMine.warehouseId||('WH-'+cid+'-RAW');
+    batchInMine.destinationWarehouseId='WH-'+cid+'-RAW';batchInMine.warehouseId=null;
+    batchInMine.stage='MINE_AWAITING_HAUL';batchInMine.status='AVAILABLE_AT_MINE_PENDING_HAUL';
+    batchInMine.locationNodeKey='MINE_SITE:'+siteId;batchInMine.currentLocationNodeId=siteId;
+    if(rs.inventoryLots?.[batchId]){
+      const lot=rs.inventoryLots[batchId];
+      lot.sourceWarehouseId=lot.sourceWarehouseId||lot.warehouseId||('WH-'+cid+'-RAW');
+      lot.destinationWarehouseId='WH-'+cid+'-RAW';lot.warehouseId=null;
+      lot.stage='MINE_AWAITING_HAUL';lot.status='AVAILABLE_AT_MINE_PENDING_HAUL';lot.locationNodeKey='MINE_SITE:'+siteId;
+    }
     // This is a physical location change, not a destruction or new receipt.
     if(Array.isArray(w.storedBatchIds))w.storedBatchIds=w.storedBatchIds.filter(id=>String(id)!==batchId);
     if(Array.isArray(w.receipts))for(const receipt of w.receipts){
