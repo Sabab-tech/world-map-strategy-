@@ -549,6 +549,11 @@ function receiveMineWarehouseShipment(countryId,shipment){
         siteRuntime.status=siteRuntime.currentStage==='RAW_TO_FACTORY'?'IN_TRANSIT_TO_FACTORY':'IN_TRANSIT_TO_WAREHOUSE';
       }
       appendSiteLogisticsStage(siteRuntime,'RAW_INVENTORY','AVAILABLE',{receiptId,batchId,quantity,unit:shipment.unit});
+      // Audit history must not overwrite the operational status of another shipment still moving.
+      if(siteRuntime.runtimeActive){
+        siteRuntime.currentStage=String(siteRuntime.currentStage||'MINE_TO_WAREHOUSE');
+        siteRuntime.status=siteRuntime.currentStage==='RAW_TO_FACTORY'?'IN_TRANSIT_TO_FACTORY':'IN_TRANSIT_TO_WAREHOUSE';
+      }
     }
   }
   recomputeSiteLogisticsTradeAvailability(rs);
