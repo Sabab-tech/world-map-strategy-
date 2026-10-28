@@ -459,9 +459,12 @@ function dispatchResidualMineHauls(countryId){
     if(!route)continue;
     const source=(Array.isArray(resourceState(cid).batches)?resourceState(cid).batches:[]).find(batch=>String(batch?.batchId||'')===batchId);
     if(!source)continue;
-    const active=network.shipments.some(item=>String(item?.batchId||'')===batchId&&
-      ['IN_TRANSIT','BLOCKED_ROUTE_BLOCKADE'].includes(String(item?.status||'')));
-    if(active)continue;
+    // Only an existing mine-to-warehouse leg blocks another mine dispatch.
+    // A parallel factory leg can be in transit while residual cargo is still hauled.
+    const activeMineHaul=network.shipments.some(item=>String(item?.batchId||'')===batchId&&
+      String(item?.shipmentType||'')==='MINE_TO_WAREHOUSE'&&
+      ['IN_TRANSIT','BLOCKED_ROUTE_BLOCKADE','BLOCKED_LEDGER_MISMATCH'].includes(String(item?.status||'')));
+    if(activeMineHaul)continue;
     const total=Math.max(0,num(source.quantity)||num(source.remainingQuantity)||0);
     const alreadyDispatched=Math.max(0,num(flow.mineWarehouseDispatchedQuantity)||0);
     const sourceRemaining=Math.max(0,num(source.remainingQuantity!=null?source.remainingQuantity:source.quantity)||0);
