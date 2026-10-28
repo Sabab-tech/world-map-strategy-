@@ -253,6 +253,8 @@ test('real site extraction flows through raw warehouse, transport, factory, fini
   const blockedMineArrival=await industry.advanceShipments('BGD');
   assert.equal(blockedMineArrival.mineDelivered,0,'a blockade on an intermediate rail leg must stop the whole mine route');
   assert.equal(resource.industrialNetwork.shipments.find(x=>String(x.shipmentId)===String(run.shipmentId))?.status,'BLOCKED_ROUTE_BLOCKADE');
+  assert.equal(resource.industrialNetwork.siteLogisticsBySiteId[site.siteId].status,'BLOCKED_ROUTE',
+    'a mine runtime must show route blockade state instead of appearing idle or healthy');
   assert.equal(resource.warehouse.receipts.some(x=>String(x.receiptId)==='MINE-WH-REC:'+String(run.shipmentId)),false,
     'a blocked shipment must not post a premature warehouse receipt');
   if(priorStrategicPolicy){g.Omega.ResourceStrategicPolicyRuntime=priorStrategicPolicy;g.OmegaResourceStrategicPolicyRuntime=priorStrategicPolicy;}

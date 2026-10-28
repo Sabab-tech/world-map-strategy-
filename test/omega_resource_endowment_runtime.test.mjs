@@ -91,7 +91,14 @@ const resourceFiles=new Map([
   ['resource_site_legacy_gameplay_expansion_part_4_v1.json',new URL('../resource_site_legacy_gameplay_expansion_part_4_v1.json',import.meta.url)],
   ['resource_site_legacy_gameplay_expansion_part_5_v1.json',new URL('../resource_site_legacy_gameplay_expansion_part_5_v1.json',import.meta.url)],
   ['resource_site_legacy_gameplay_expansion_part_6_v1.json',new URL('../resource_site_legacy_gameplay_expansion_part_6_v1.json',import.meta.url)],
-  ['resource_industrial_catalog_v1.json',new URL('../resource_industrial_catalog_v1.json',import.meta.url)]
+  ['resource_industrial_catalog_v1.json',new URL('../resource_industrial_catalog_v1.json',import.meta.url)],
+  ['resource_site_logistics_routes_v1.json',new URL('../resource_site_logistics_routes_v1.json',import.meta.url)],
+  ['resource_site_logistics_routes_v1_part_01.json',new URL('../resource_site_logistics_routes_v1_part_01.json',import.meta.url)],
+  ['resource_site_logistics_routes_v1_part_02.json',new URL('../resource_site_logistics_routes_v1_part_02.json',import.meta.url)],
+  ['resource_site_logistics_routes_v1_part_03.json',new URL('../resource_site_logistics_routes_v1_part_03.json',import.meta.url)],
+  ['resource_site_logistics_routes_v1_part_04.json',new URL('../resource_site_logistics_routes_v1_part_04.json',import.meta.url)],
+  ['resource_site_logistics_routes_v1_part_05.json',new URL('../resource_site_logistics_routes_v1_part_05.json',import.meta.url)],
+  ['resource_site_logistics_routes_v1_part_06.json',new URL('../resource_site_logistics_routes_v1_part_06.json',import.meta.url)]
 ]);
 const nativeFetch=globalThis.fetch;
 globalThis.fetch=async function(input){
