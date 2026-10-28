@@ -392,7 +392,7 @@ test('all expanded deposits receive explicit flow status; active sites dispatch 
     if(flow?.status==='BLOCKED'||flow?.status==='EXTRACTED_AWAITING_ROUTE'||flow?.status==='EXTRACTED_AWAITING_FACTORY')
       failedActive.push({siteId:site.siteId,countryId:cid,resourceId:rid,status:flow.status,reason:flow.blockReason||null,
         stages:(flow.stages||[]).filter(x=>/BLOCKED/.test(x.status)).map(x=>({stage:x.stage,reason:x.reason,detail:x.detail||null}))});
-    if(flow&&flow.stages.some(x=>x.stage==='TRANSPORT'&&['IN_TRANSIT','DELIVERED'].includes(x.status)))committed++;
+    if(flow&&flow.stages.some(x=>x.stage==='TRANSPORT'&&['IN_TRANSIT','IN_TRANSIT_TO_RAW_WAREHOUSE','IN_TRANSIT_TO_WAREHOUSE','IN_TRANSIT_TO_FACTORY','DELIVERED'].includes(x.status)))committed++;
   }
   const expected=new Set(expectedBatchIds),actual=new Set(),actualBlocked=new Set();
   let totalFlows=0,untracked=[];
