@@ -518,14 +518,12 @@ function expectedRawWarehouseForBatch(countryRow,countryId,batchId){
     String(shipment.batchId||'')===String(batchId||'')&&
     String(shipment.shipmentType||'')==='MINE_TO_WAREHOUSE'&&
     ['IN_TRANSIT','BLOCKED_ROUTE_BLOCKADE','BLOCKED_LEDGER_MISMATCH'].includes(String(shipment.status||'')));
-  // A legacy/raw-factory transfer may leave the remainder of its batch in the raw
-  // warehouse. Only a mine-logistics batch whose warehouse receipt triggered a
-  // downstream haul has mixed physical locations and should keep batch-level location null.
-  const activeDownstreamHaul=flow.mineLogisticsStockDebited===true&&
-    (network.shipments||[]).some(shipment=>
-      String(shipment.batchId||'')===String(batchId||'')&&
-      String(shipment.shipmentType||'')==='RAW_TO_FACTORY'&&
-      ['IN_TRANSIT','BLOCKED_ROUTE_BLOCKADE','BLOCKED_LEDGER_MISMATCH'].includes(String(shipment.status||'')));
+  // Any in-flight factory transfer makes the batch-level location mixed, even if
+  // part of the remaining batch is still physically available at the raw warehouse.
+  const activeDownstreamHaul=(network.shipments||[]).some(shipment=>
+    String(shipment.batchId||'')===String(batchId||'')&&
+    String(shipment.shipmentType||'')==='RAW_TO_FACTORY'&&
+    ['IN_TRANSIT','BLOCKED_ROUTE_BLOCKADE','BLOCKED_LEDGER_MISMATCH'].includes(String(shipment.status||'')));
   const cargoHeldAtMine=flow.mineLogisticsStockDebited===true&&Number(flow.mineHeldQuantity||0)>1e-6;
   return activeMineHaul||activeDownstreamHaul||cargoHeldAtMine?null:'WH-'+countryId+'-RAW';
 }
