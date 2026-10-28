@@ -1622,7 +1622,13 @@ function dispatchResidualSiteBatches(c){
     // this epsilon to the whole reserve silently stranded that received warehouse cargo.
     const epsilon=1e-6;
     if(remaining<=epsilon)continue;
-    if(network.shipments.some(x=>String(x?.batchId||'')===batchId&&String(x?.status||'')==='IN_TRANSIT'))continue;
+    // Mine-logistics batches can have a received portion in the warehouse while a
+    // residual portion is still moving from the mine. Only an active factory-bound leg
+    // may block another factory dispatch; a mine-haul leg must not strand received cargo.
+    const activeFactoryLeg=network.shipments.some(x=>String(x?.batchId||'')===batchId&&
+      ['IN_TRANSIT','BLOCKED_ROUTE_BLOCKADE','BLOCKED_LEDGER_MISMATCH'].includes(String(x?.status||''))&&
+      (!flow.mineLogisticsRouteId||String(x?.shipmentType||'')==='RAW_TO_FACTORY'));
+    if(activeFactoryLeg)continue;
     const site=siteById(flow.siteId)||flow.siteSnapshot||{
       siteId:flow.siteId,countryId:cid,siteName:flow.siteName,real:{resourceId:flow.resourceId},
       sourceSiteRecord:{siteId:flow.siteId,resourceId:flow.resourceId,countryCode:cid,commercialExtraction:true},
