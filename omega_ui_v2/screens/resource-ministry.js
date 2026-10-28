@@ -647,25 +647,53 @@
       if (!Number.isInteger(workers) || workers < 0) return '<div class="omega-v2-build-notice" role="status">Enter a non-negative whole-number workforce commitment.</div>';
       if (!country || country !== livePlayerCountryKey()) return '<div class="omega-v2-build-notice" role="status">Construction is available only for the active player country.</div>';
       var network = g.OmegaResourceIndustrialNetwork || g.Omega && g.Omega.ResourceIndustrialNetwork;
-      if (!network || typeof network.quoteMineProject !== 'function' || typeof network.startMineProject !== 'function') {
-        return '<div class="omega-v2-build-notice" role="status">The mine construction runtime is unavailable. No resources have been committed.</div>';
-      }
+      if (!network || typeof network.quoteMineProject !== 'function' || typeof network.startMineProject !== 'function') return '<div class="omega-v2-build-notice" role="status">Mine construction runtime unavailable. No resources committed.</div>';
       var quote;
-      try { quote = network.quoteMineProject({ countryId:country, siteId:site.siteId, resourceId:site.resourceId, quantity:count, assignedWorkers:workers }); }
-      catch (_) { return '<div class="omega-v2-build-notice" role="status">The construction quote failed. No resources have been committed.</div>'; }
+      try { quote = network.quoteMineProject({countryId:country,siteId:site.siteId,resourceId:site.resourceId,quantity:count,assignedWorkers:workers}); }
+      catch (_) { return '<div class="omega-v2-build-notice" role="status">Construction quote failed. No resources committed.</div>'; }
       if (!quote || quote.status !== 'QUOTED') return '<div class="omega-v2-build-notice" role="status">Build quote unavailable: ' + esc(human(quote && (quote.reason || quote.status) || 'Runtime unavailable')) + '.</div>';
       var treasury = quote.treasury || {};
-      var materialRows = safeArray(quote.materials).map(function (item) {
-        return '<div class="omega-v2-build-material"><span><strong>' + esc(resourceLabel(item.resourceId)) + '</strong><small>Available: ' + amount(item.available, item.unit || '') + '</small></span>' +
-          '<span><strong>' + amount(item.required, item.unit || '') + '</strong><small>' + (item.sufficient ? 'Available in stock' : 'Short by ' + amount(item.shortfall, item.unit || '')) + '</small></span></div>';
+      var materials = safeArray(quote.materials);
+      var rows = materials.map(function (m) {
+        return '<div class="omega-v2-build-material"><span><strong>' + esc(resourceLabel(m.resourceId)) + '</strong><small>Available: ' + amount(m.available,m.unit || '') + '</small></span>' +
+          '<span><strong>' + amount(m.required,m.unit || '') + '</strong><small>' + (m.sufficient ? 'In stock' : 'Short by ' + amount(m.shortfall,m.unit || '')) + '</small></span></div>';
       }).join('');
       var ready = quote.ready === true && country === livePlayerCountryKey();
       var blocked = !quote.staffingReady ? 'Commit at least ' + fmt(quote.workersRequired || 0) + ' workers.' :
-        treasury.sufficient !== true ? 'Treasury funds are insufficient or unavailable.' :
+        treasury.sufficient !== true ? 'Treasury funds insufficient or unavailable.' :
         quote.materialsReady !== true ? 'Required construction materials are missing.' :
-        quote.commissioningReady === false ? 'A construction project is already active at this site.' :
-        'Review the requirements shown above before building.';
-      return '<div class="omega-v2-build-summary-grid"><div><span>Total construction cost</span><strong>
+        quote.commissioningReady === false ? 'A construction project is already active at this site.' : 'Review the requirements before building.';
+      return '<div class="omega-v2-build-summary-grid">' +
+        '<div><span>Total construction cost</span><strong>$' + fmt(quote.costUsd || 0,0) + '</strong><small>$' + fmt(quote.unitCostUsd || 0,0) + ' per mine</small></div>' +
+        '<div><span>Build duration</span><strong>' + fmt(quote.durationDays || 0) + ' days</strong><small>' + fmt(quote.estimatedTurns || 0) + ' game turn(s)</small></div>' +
+        '<div><span>Workers required</span><strong>' + fmt(quote.workersRequired || 0) + '</strong><small>' + fmt(quote.workersRequiredPerAsset || 0) + ' per mine · committed ' + fmt(quote.assignedWorkers || 0) + '</small></div>' +
+        '<div><span>Treasury</span><strong>' + (treasury.sufficient ? 'Funds available' : 'Insufficient / unknown') + '</strong><small>$' + fmt(treasury.available,0) + ' available · $' + fmt(treasury.required || quote.costUsd || 0,0) + ' required</small></div></div>' +
+        '<h4>Construction materials · ' + fmt(count) + ' mine unit(s)</h4>' +
+        (rows ? '<div class="omega-v2-build-material-list">' + rows + '</div>' : '<div class="omega-v2-build-notice">Material requirements unavailable.</div>') +
+        '<div class="omega-v2-build-notice" role="status" aria-live="polite">' + (ready ? 'All treasury, material, staffing and project checks passed.' : esc(blocked)) + '</div>' +
+        '<button type="button" class="omega-v2-button omega-v2-button--primary" data-omega-v2-build-submit' + (ready ? '' : ' disabled') + '>Start construction</button>';
+    }
+    function mineConstructionMarkup(site) {
+      var project = projectFor(site.siteId);
+      if (project) {
+        var pct = Math.max(0,Math.min(100,Number(project.progressPct || 0)*100));
+        var remaining = project.remainingDays !== undefined ? project.remainingDays : Math.max(0,(numberOrNull(project.durationDays)||0)-(numberOrNull(project.progressDays)||0));
+        return '<section class="omega-v2-card omega-v2-mine-construction-progress"><div class="omega-v2-card-header"><h3>Construction in progress</h3><strong>' + fmt(pct,1) + '%</strong></div>' +
+          '<div class="omega-v2-progress-track"><span style="width:' + pct + '%"></span></div><div class="omega-v2-build-progress-meta"><span>' + fmt(project.progressDays||0) + ' / ' + fmt(project.durationDays||0) + ' days completed</span><strong>' + fmt(remaining) + ' days remaining</strong></div>' +
+          '<div class="omega-v2-build-project-metrics"><div><span>Units</span><strong>' + fmt(project.assetCount||1) + '</strong></div><div><span>Committed workers</span><strong>' + fmt(project.workersCommitted||0) + ' / ' + fmt(project.workersRequired||0) + '</strong></div></div>' +
+          '<p>Expected completion: ' + esc(project.expectedCompletionDate || project.estimatedCompletionDate || 'Game date unavailable') + '</p></section>';
+      }
+      if (root.__omegaV2MineAction !== 'build' || String(root.__omegaV2BuildSiteId || '') !== String(site.siteId)) return '';
+      var country = selectedCountryKey((root.__omegaV2ResourceOptions || {}).countryId || root.__omegaV2CurrentCountryKey || '');
+      var count = numberOrNull(root.__omegaV2BuildQuantity); if (count === null) count = 1;
+      var workers = numberOrNull(root.__omegaV2BuildWorkers); if (workers === null) workers = 0;
+      return '<section class="omega-v2-card omega-v2-mine-build-plan" data-omega-v2-build-plan data-site-id="' + esc(site.siteId) + '">' +
+        '<div class="omega-v2-card-header"><div><span class="omega-v2-eyebrow">NEW CONSTRUCTION</span><h3>Build at ' + esc(site.name) + '</h3><p>Select batch size and explicitly commit the required workforce.</p></div><button type="button" class="omega-v2-button omega-v2-button--quiet" data-omega-v2-build-cancel>Cancel</button></div>' +
+        '<div class="omega-v2-build-plan-fields"><label><span>Mine units to build</span><input type="number" min="1" max="100" step="1" value="' + esc(count) + '" data-omega-v2-build-count aria-label="Mine units to build"></label>' +
+        '<label><span>Workers committed</span><input type="number" min="0" step="1" value="' + esc(workers) + '" data-omega-v2-build-workers aria-label="Workers committed to construction"></label></div>' +
+        '<div class="omega-v2-build-preview" data-omega-v2-build-preview>' + mineBuildQuoteMarkup(site,country,count,workers) + '</div></section>';
+    }
+    function selectedSiteDetail(site) {
       if (!site) return '<div class="omega-v2-empty">No mine sites are available for this country.</div>';
       var asset = assetFor(site.siteId), output = outputForSite(site.siteId, flows);
       var reserveValue = site.reserve.value !== null ? site.reserve.value :
@@ -693,7 +721,7 @@
           return '<span class="omega-v2-flow-step"><span class="omega-v2-flow-icon" data-flow-icon="' + step[1] + '">' +
             ({mine:'⛏',warehouse:'▤',truck:'⇢',factory:'▥',chart:'↗'}[step[1]]) + '</span><span>' + step[0] + '</span>' +
             (i < 4 ? '<span class="omega-v2-flow-arrow">›</span>' : '') + '</span>';
-        }).join('') + '</div></div></section>';
+        }).join('') + '</div></div></section>' + mineConstructionMarkup(site);
     }
     function renderKpi(labelText, value, meta, stateClass) {
       return '<div class="omega-v2-kpi" data-kpi-state="' + esc(stateClass || 'neutral') + '"><span>' + esc(labelText) + '</span><strong>' +
