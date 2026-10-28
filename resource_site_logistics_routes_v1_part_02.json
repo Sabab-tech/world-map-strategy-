@@ -14,7 +14,7 @@
       "countryId": "AND",
       "siteName": "Llorts Iron Mine",
       "resourceId": "iron_ore",
-      "resourceIconKey": "iron-ore",
+      "resourceIconKey": "iron_ore",
       "commodityGroup": "BULK_MINERAL_OR_ORE",
       "siteType": "HISTORICAL_MINE",
       "sourceOperationalStatus": "HISTORICAL_INACTIVE",
@@ -95,7 +95,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           }
         ],
         "estimatedRouteDistanceKm": 11,
@@ -128,7 +131,7 @@
         "noDuplicateBatchReceipt": true
       },
       "uiPresentation": {
-        "resourceIconKey": "iron-ore",
+        "resourceIconKey": "iron_ore",
         "transportIconKeys": [
           "truck"
         ],
@@ -142,7 +145,12 @@
           "routeStatus"
         ],
         "actualFleetCountDisplay": "UNKNOWN_NOT_ZERO_AND_NOT_ASSUMED",
-        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM"
+        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM",
+        "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/iron-ore.svg",
+        "resourceIconSource": "OMEGA_INDUSTRIAL_ICONS_V1_MANIFEST",
+        "transportIconAssetPaths": [
+          "assets/omega-industrial-icons-v1/transport/truck.svg"
+        ]
       },
       "provenance": {
         "authority": "SCENARIO_LOGISTICS_DESIGN_ONLY",
@@ -157,7 +165,9 @@
         "sourceResourceId": "iron_ore",
         "sourceCountryId": "AND",
         "note": "Planning template only; not a surveyed corridor, active vehicle, or real-world capacity."
-      }
+      },
+      "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/iron-ore.svg",
+      "resourceIconStatus": "EXACT_MATCH_TO_EXISTING_RESOURCE_SVG_MANIFEST"
     },
     {
       "routeId": "ROUTE_SITE_BEL_ANTOING_LIMESTONE_QUARRY_MINE_TO_RAW_INVENTORY_V1",
@@ -246,7 +256,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           }
         ],
         "estimatedRouteDistanceKm": 82,
@@ -293,7 +306,12 @@
           "routeStatus"
         ],
         "actualFleetCountDisplay": "UNKNOWN_NOT_ZERO_AND_NOT_ASSUMED",
-        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM"
+        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM",
+        "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/limestone.svg",
+        "resourceIconSource": "OMEGA_INDUSTRIAL_ICONS_V1_MANIFEST",
+        "transportIconAssetPaths": [
+          "assets/omega-industrial-icons-v1/transport/truck.svg"
+        ]
       },
       "provenance": {
         "authority": "SCENARIO_LOGISTICS_DESIGN_ONLY",
@@ -308,7 +326,9 @@
         "sourceResourceId": "limestone",
         "sourceCountryId": "BEL",
         "note": "Planning template only; not a surveyed corridor, active vehicle, or real-world capacity."
-      }
+      },
+      "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/limestone.svg",
+      "resourceIconStatus": "EXACT_MATCH_TO_EXISTING_RESOURCE_SVG_MANIFEST"
     },
     {
       "routeId": "ROUTE_SITE_BGD_BARAPUKURIA_COAL_MINE_MINE_TO_RAW_INVENTORY_V1",
@@ -397,7 +417,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           },
           {
             "legId": "ROUTE_SITE_BGD_BARAPUKURIA_COAL_MINE_MINE_TO_RAW_INVENTORY_V1_LEG_02",
@@ -421,7 +444,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "train",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/train.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           },
           {
             "legId": "ROUTE_SITE_BGD_BARAPUKURIA_COAL_MINE_MINE_TO_RAW_INVENTORY_V1_LEG_03",
@@ -445,7 +471,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           }
         ],
         "estimatedRouteDistanceKm": 296,
@@ -481,8 +510,7 @@
         "resourceIconKey": "coal",
         "transportIconKeys": [
           "truck",
-          "train",
-          "truck"
+          "train"
         ],
         "displayFields": [
           "plannedTransitDays",
@@ -494,7 +522,13 @@
           "routeStatus"
         ],
         "actualFleetCountDisplay": "UNKNOWN_NOT_ZERO_AND_NOT_ASSUMED",
-        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM"
+        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM",
+        "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/coal.svg",
+        "resourceIconSource": "OMEGA_INDUSTRIAL_ICONS_V1_MANIFEST",
+        "transportIconAssetPaths": [
+          "assets/omega-industrial-icons-v1/transport/truck.svg",
+          "assets/omega-industrial-icons-v1/transport/train.svg"
+        ]
       },
       "provenance": {
         "authority": "SCENARIO_LOGISTICS_DESIGN_ONLY",
@@ -509,7 +543,9 @@
         "sourceResourceId": "coal",
         "sourceCountryId": "BGD",
         "note": "Planning template only; not a surveyed corridor, active vehicle, or real-world capacity."
-      }
+      },
+      "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/coal.svg",
+      "resourceIconStatus": "EXACT_MATCH_TO_EXISTING_RESOURCE_SVG_MANIFEST"
     },
     {
       "routeId": "ROUTE_SITE_BGD_BIBIYANA_GAS_FIELD_MINE_TO_RAW_INVENTORY_V1",
@@ -517,7 +553,7 @@
       "countryId": "BGD",
       "siteName": "Bibiyana Gas Field",
       "resourceId": "natural_gas",
-      "resourceIconKey": "natural-gas",
+      "resourceIconKey": "natural_gas",
       "commodityGroup": "ENERGY_GAS",
       "siteType": "GAS_FIELD",
       "sourceOperationalStatus": "SIMULATED_OPERATIONAL_SCENARIO",
@@ -598,7 +634,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "pipeline",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/pipeline.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           }
         ],
         "estimatedRouteDistanceKm": 199,
@@ -631,7 +670,7 @@
         "noDuplicateBatchReceipt": true
       },
       "uiPresentation": {
-        "resourceIconKey": "natural-gas",
+        "resourceIconKey": "natural_gas",
         "transportIconKeys": [
           "pipeline"
         ],
@@ -645,7 +684,12 @@
           "routeStatus"
         ],
         "actualFleetCountDisplay": "UNKNOWN_NOT_ZERO_AND_NOT_ASSUMED",
-        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM"
+        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM",
+        "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/natural-gas.svg",
+        "resourceIconSource": "OMEGA_INDUSTRIAL_ICONS_V1_MANIFEST",
+        "transportIconAssetPaths": [
+          "assets/omega-industrial-icons-v1/transport/pipeline.svg"
+        ]
       },
       "provenance": {
         "authority": "SCENARIO_LOGISTICS_DESIGN_ONLY",
@@ -660,7 +704,9 @@
         "sourceResourceId": "natural_gas",
         "sourceCountryId": "BGD",
         "note": "Planning template only; not a surveyed corridor, active vehicle, or real-world capacity."
-      }
+      },
+      "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/natural-gas.svg",
+      "resourceIconStatus": "EXACT_MATCH_TO_EXISTING_RESOURCE_SVG_MANIFEST"
     },
     {
       "routeId": "ROUTE_SITE_BGD_SYLHET_CHHATAK_LIMESTONE_QUARRY_MINE_TO_RAW_INVENTORY_V1",
@@ -749,7 +795,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           },
           {
             "legId": "ROUTE_SITE_BGD_SYLHET_CHHATAK_LIMESTONE_QUARRY_MINE_TO_RAW_INVENTORY_V1_LEG_02",
@@ -773,7 +822,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "train",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/train.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           },
           {
             "legId": "ROUTE_SITE_BGD_SYLHET_CHHATAK_LIMESTONE_QUARRY_MINE_TO_RAW_INVENTORY_V1_LEG_03",
@@ -797,7 +849,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           }
         ],
         "estimatedRouteDistanceKm": 237,
@@ -833,8 +888,7 @@
         "resourceIconKey": "limestone",
         "transportIconKeys": [
           "truck",
-          "train",
-          "truck"
+          "train"
         ],
         "displayFields": [
           "plannedTransitDays",
@@ -846,7 +900,13 @@
           "routeStatus"
         ],
         "actualFleetCountDisplay": "UNKNOWN_NOT_ZERO_AND_NOT_ASSUMED",
-        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM"
+        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM",
+        "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/limestone.svg",
+        "resourceIconSource": "OMEGA_INDUSTRIAL_ICONS_V1_MANIFEST",
+        "transportIconAssetPaths": [
+          "assets/omega-industrial-icons-v1/transport/truck.svg",
+          "assets/omega-industrial-icons-v1/transport/train.svg"
+        ]
       },
       "provenance": {
         "authority": "SCENARIO_LOGISTICS_DESIGN_ONLY",
@@ -861,7 +921,9 @@
         "sourceResourceId": "limestone",
         "sourceCountryId": "BGD",
         "note": "Planning template only; not a surveyed corridor, active vehicle, or real-world capacity."
-      }
+      },
+      "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/limestone.svg",
+      "resourceIconStatus": "EXACT_MATCH_TO_EXISTING_RESOURCE_SVG_MANIFEST"
     },
     {
       "routeId": "ROUTE_SITE_BGD_TITAS_GAS_DEPOSIT_MINE_TO_RAW_INVENTORY_V1",
@@ -869,7 +931,7 @@
       "countryId": "BGD",
       "siteName": "Titas Gas Deposit",
       "resourceId": "natural_gas",
-      "resourceIconKey": "natural-gas",
+      "resourceIconKey": "natural_gas",
       "commodityGroup": "ENERGY_GAS",
       "siteType": "GAS_FIELD",
       "sourceOperationalStatus": "SIMULATED_OPERATIONAL_SCENARIO",
@@ -950,7 +1012,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "pipeline",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/pipeline.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           }
         ],
         "estimatedRouteDistanceKm": 98,
@@ -983,7 +1048,7 @@
         "noDuplicateBatchReceipt": true
       },
       "uiPresentation": {
-        "resourceIconKey": "natural-gas",
+        "resourceIconKey": "natural_gas",
         "transportIconKeys": [
           "pipeline"
         ],
@@ -997,7 +1062,12 @@
           "routeStatus"
         ],
         "actualFleetCountDisplay": "UNKNOWN_NOT_ZERO_AND_NOT_ASSUMED",
-        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM"
+        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM",
+        "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/natural-gas.svg",
+        "resourceIconSource": "OMEGA_INDUSTRIAL_ICONS_V1_MANIFEST",
+        "transportIconAssetPaths": [
+          "assets/omega-industrial-icons-v1/transport/pipeline.svg"
+        ]
       },
       "provenance": {
         "authority": "SCENARIO_LOGISTICS_DESIGN_ONLY",
@@ -1012,7 +1082,9 @@
         "sourceResourceId": "natural_gas",
         "sourceCountryId": "BGD",
         "note": "Planning template only; not a surveyed corridor, active vehicle, or real-world capacity."
-      }
+      },
+      "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/natural-gas.svg",
+      "resourceIconStatus": "EXACT_MATCH_TO_EXISTING_RESOURCE_SVG_MANIFEST"
     },
     {
       "routeId": "ROUTE_SITE_BIH_VARE_SILVER_LEAD_ZINC_MINE_MINE_TO_RAW_INVENTORY_V1",
@@ -1101,7 +1173,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           }
         ],
         "estimatedRouteDistanceKm": 26,
@@ -1148,7 +1223,12 @@
           "routeStatus"
         ],
         "actualFleetCountDisplay": "UNKNOWN_NOT_ZERO_AND_NOT_ASSUMED",
-        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM"
+        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM",
+        "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/silver.svg",
+        "resourceIconSource": "OMEGA_INDUSTRIAL_ICONS_V1_MANIFEST",
+        "transportIconAssetPaths": [
+          "assets/omega-industrial-icons-v1/transport/truck.svg"
+        ]
       },
       "provenance": {
         "authority": "SCENARIO_LOGISTICS_DESIGN_ONLY",
@@ -1163,7 +1243,9 @@
         "sourceResourceId": "silver",
         "sourceCountryId": "BIH",
         "note": "Planning template only; not a surveyed corridor, active vehicle, or real-world capacity."
-      }
+      },
+      "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/silver.svg",
+      "resourceIconStatus": "EXACT_MATCH_TO_EXISTING_RESOURCE_SVG_MANIFEST"
     },
     {
       "routeId": "ROUTE_SITE_CHN_ANSHAN_IRON_ORE_COMPLEX_MINE_TO_RAW_INVENTORY_V1",
@@ -1171,7 +1253,7 @@
       "countryId": "CHN",
       "siteName": "Anshan Iron Ore Complex",
       "resourceId": "iron_ore",
-      "resourceIconKey": "iron-ore",
+      "resourceIconKey": "iron_ore",
       "commodityGroup": "BULK_MINERAL_OR_ORE",
       "siteType": "IRON_ORE_SITE",
       "sourceOperationalStatus": "SIMULATED_OPERATIONAL_SCENARIO",
@@ -1252,7 +1334,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           },
           {
             "legId": "ROUTE_SITE_CHN_ANSHAN_IRON_ORE_COMPLEX_MINE_TO_RAW_INVENTORY_V1_LEG_02",
@@ -1276,7 +1361,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "train",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/train.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           },
           {
             "legId": "ROUTE_SITE_CHN_ANSHAN_IRON_ORE_COMPLEX_MINE_TO_RAW_INVENTORY_V1_LEG_03",
@@ -1300,7 +1388,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           }
         ],
         "estimatedRouteDistanceKm": 2043,
@@ -1333,11 +1424,10 @@
         "noDuplicateBatchReceipt": true
       },
       "uiPresentation": {
-        "resourceIconKey": "iron-ore",
+        "resourceIconKey": "iron_ore",
         "transportIconKeys": [
           "truck",
-          "train",
-          "truck"
+          "train"
         ],
         "displayFields": [
           "plannedTransitDays",
@@ -1349,7 +1439,13 @@
           "routeStatus"
         ],
         "actualFleetCountDisplay": "UNKNOWN_NOT_ZERO_AND_NOT_ASSUMED",
-        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM"
+        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM",
+        "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/iron-ore.svg",
+        "resourceIconSource": "OMEGA_INDUSTRIAL_ICONS_V1_MANIFEST",
+        "transportIconAssetPaths": [
+          "assets/omega-industrial-icons-v1/transport/truck.svg",
+          "assets/omega-industrial-icons-v1/transport/train.svg"
+        ]
       },
       "provenance": {
         "authority": "SCENARIO_LOGISTICS_DESIGN_ONLY",
@@ -1364,7 +1460,9 @@
         "sourceResourceId": "iron_ore",
         "sourceCountryId": "CHN",
         "note": "Planning template only; not a surveyed corridor, active vehicle, or real-world capacity."
-      }
+      },
+      "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/iron-ore.svg",
+      "resourceIconStatus": "EXACT_MATCH_TO_EXISTING_RESOURCE_SVG_MANIFEST"
     },
     {
       "routeId": "ROUTE_SITE_CHN_DAQING_OILFIELD_MINE_TO_RAW_INVENTORY_V1",
@@ -1372,7 +1470,7 @@
       "countryId": "CHN",
       "siteName": "Daqing Oilfield",
       "resourceId": "crude_oil",
-      "resourceIconKey": "crude-oil",
+      "resourceIconKey": "crude_oil",
       "commodityGroup": "ENERGY_LIQUID",
       "siteType": "OIL_FIELD",
       "sourceOperationalStatus": "SIMULATED_OPERATIONAL_SCENARIO",
@@ -1453,7 +1551,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "pipeline",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/pipeline.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           }
         ],
         "estimatedRouteDistanceKm": 2478,
@@ -1486,7 +1587,7 @@
         "noDuplicateBatchReceipt": true
       },
       "uiPresentation": {
-        "resourceIconKey": "crude-oil",
+        "resourceIconKey": "crude_oil",
         "transportIconKeys": [
           "pipeline"
         ],
@@ -1500,7 +1601,12 @@
           "routeStatus"
         ],
         "actualFleetCountDisplay": "UNKNOWN_NOT_ZERO_AND_NOT_ASSUMED",
-        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM"
+        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM",
+        "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/crude-oil.svg",
+        "resourceIconSource": "OMEGA_INDUSTRIAL_ICONS_V1_MANIFEST",
+        "transportIconAssetPaths": [
+          "assets/omega-industrial-icons-v1/transport/pipeline.svg"
+        ]
       },
       "provenance": {
         "authority": "SCENARIO_LOGISTICS_DESIGN_ONLY",
@@ -1515,7 +1621,9 @@
         "sourceResourceId": "crude_oil",
         "sourceCountryId": "CHN",
         "note": "Planning template only; not a surveyed corridor, active vehicle, or real-world capacity."
-      }
+      },
+      "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/crude-oil.svg",
+      "resourceIconStatus": "EXACT_MATCH_TO_EXISTING_RESOURCE_SVG_MANIFEST"
     },
     {
       "routeId": "ROUTE_SITE_CHN_JINCHUAN_NICKEL_MINE_COMPLEX_MINE_TO_RAW_INVENTORY_V1",
@@ -1604,7 +1712,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           },
           {
             "legId": "ROUTE_SITE_CHN_JINCHUAN_NICKEL_MINE_COMPLEX_MINE_TO_RAW_INVENTORY_V1_LEG_02",
@@ -1628,7 +1739,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "train",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/train.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           },
           {
             "legId": "ROUTE_SITE_CHN_JINCHUAN_NICKEL_MINE_COMPLEX_MINE_TO_RAW_INVENTORY_V1_LEG_03",
@@ -1652,7 +1766,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           }
         ],
         "estimatedRouteDistanceKm": 405,
@@ -1688,8 +1805,7 @@
         "resourceIconKey": "nickel",
         "transportIconKeys": [
           "truck",
-          "train",
-          "truck"
+          "train"
         ],
         "displayFields": [
           "plannedTransitDays",
@@ -1701,7 +1817,13 @@
           "routeStatus"
         ],
         "actualFleetCountDisplay": "UNKNOWN_NOT_ZERO_AND_NOT_ASSUMED",
-        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM"
+        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM",
+        "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/nickel.svg",
+        "resourceIconSource": "OMEGA_INDUSTRIAL_ICONS_V1_MANIFEST",
+        "transportIconAssetPaths": [
+          "assets/omega-industrial-icons-v1/transport/truck.svg",
+          "assets/omega-industrial-icons-v1/transport/train.svg"
+        ]
       },
       "provenance": {
         "authority": "SCENARIO_LOGISTICS_DESIGN_ONLY",
@@ -1716,7 +1838,9 @@
         "sourceResourceId": "nickel",
         "sourceCountryId": "CHN",
         "note": "Planning template only; not a surveyed corridor, active vehicle, or real-world capacity."
-      }
+      },
+      "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/nickel.svg",
+      "resourceIconStatus": "EXACT_MATCH_TO_EXISTING_RESOURCE_SVG_MANIFEST"
     },
     {
       "routeId": "ROUTE_SITE_CHN_SHANXI_COAL_SUPERBASIN_MINE_TO_RAW_INVENTORY_V1",
@@ -1805,7 +1929,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           },
           {
             "legId": "ROUTE_SITE_CHN_SHANXI_COAL_SUPERBASIN_MINE_TO_RAW_INVENTORY_V1_LEG_02",
@@ -1829,7 +1956,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "train",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/train.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           },
           {
             "legId": "ROUTE_SITE_CHN_SHANXI_COAL_SUPERBASIN_MINE_TO_RAW_INVENTORY_V1_LEG_03",
@@ -1853,7 +1983,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           }
         ],
         "estimatedRouteDistanceKm": 915,
@@ -1889,8 +2022,7 @@
         "resourceIconKey": "coal",
         "transportIconKeys": [
           "truck",
-          "train",
-          "truck"
+          "train"
         ],
         "displayFields": [
           "plannedTransitDays",
@@ -1902,7 +2034,13 @@
           "routeStatus"
         ],
         "actualFleetCountDisplay": "UNKNOWN_NOT_ZERO_AND_NOT_ASSUMED",
-        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM"
+        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM",
+        "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/coal.svg",
+        "resourceIconSource": "OMEGA_INDUSTRIAL_ICONS_V1_MANIFEST",
+        "transportIconAssetPaths": [
+          "assets/omega-industrial-icons-v1/transport/truck.svg",
+          "assets/omega-industrial-icons-v1/transport/train.svg"
+        ]
       },
       "provenance": {
         "authority": "SCENARIO_LOGISTICS_DESIGN_ONLY",
@@ -1917,7 +2055,9 @@
         "sourceResourceId": "coal",
         "sourceCountryId": "CHN",
         "note": "Planning template only; not a surveyed corridor, active vehicle, or real-world capacity."
-      }
+      },
+      "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/coal.svg",
+      "resourceIconStatus": "EXACT_MATCH_TO_EXISTING_RESOURCE_SVG_MANIFEST"
     },
     {
       "routeId": "ROUTE_SITE_COG_AVIMA_IRON_ORE_PROJECT_MINE_TO_RAW_INVENTORY_V1",
@@ -1925,7 +2065,7 @@
       "countryId": "COG",
       "siteName": "Avima Iron Ore Project",
       "resourceId": "iron_ore",
-      "resourceIconKey": "iron-ore",
+      "resourceIconKey": "iron_ore",
       "commodityGroup": "BULK_MINERAL_OR_ORE",
       "siteType": "IRON_ORE_MINE_OR_DEPOSIT",
       "sourceOperationalStatus": "SIMULATED_OPERATIONAL_SCENARIO",
@@ -2006,7 +2146,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           },
           {
             "legId": "ROUTE_SITE_COG_AVIMA_IRON_ORE_PROJECT_MINE_TO_RAW_INVENTORY_V1_LEG_02",
@@ -2030,7 +2173,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "train",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/train.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           },
           {
             "legId": "ROUTE_SITE_COG_AVIMA_IRON_ORE_PROJECT_MINE_TO_RAW_INVENTORY_V1_LEG_03",
@@ -2054,7 +2200,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           }
         ],
         "estimatedRouteDistanceKm": 558,
@@ -2087,11 +2236,10 @@
         "noDuplicateBatchReceipt": true
       },
       "uiPresentation": {
-        "resourceIconKey": "iron-ore",
+        "resourceIconKey": "iron_ore",
         "transportIconKeys": [
           "truck",
-          "train",
-          "truck"
+          "train"
         ],
         "displayFields": [
           "plannedTransitDays",
@@ -2103,7 +2251,13 @@
           "routeStatus"
         ],
         "actualFleetCountDisplay": "UNKNOWN_NOT_ZERO_AND_NOT_ASSUMED",
-        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM"
+        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM",
+        "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/iron-ore.svg",
+        "resourceIconSource": "OMEGA_INDUSTRIAL_ICONS_V1_MANIFEST",
+        "transportIconAssetPaths": [
+          "assets/omega-industrial-icons-v1/transport/truck.svg",
+          "assets/omega-industrial-icons-v1/transport/train.svg"
+        ]
       },
       "provenance": {
         "authority": "SCENARIO_LOGISTICS_DESIGN_ONLY",
@@ -2118,7 +2272,9 @@
         "sourceResourceId": "iron_ore",
         "sourceCountryId": "COG",
         "note": "Planning template only; not a surveyed corridor, active vehicle, or real-world capacity."
-      }
+      },
+      "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/iron-ore.svg",
+      "resourceIconStatus": "EXACT_MATCH_TO_EXISTING_RESOURCE_SVG_MANIFEST"
     },
     {
       "routeId": "ROUTE_SITE_COG_KOLA_POTASH_PROJECT_MINE_TO_RAW_INVENTORY_V1",
@@ -2207,7 +2363,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           },
           {
             "legId": "ROUTE_SITE_COG_KOLA_POTASH_PROJECT_MINE_TO_RAW_INVENTORY_V1_LEG_02",
@@ -2231,7 +2390,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "train",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/train.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           },
           {
             "legId": "ROUTE_SITE_COG_KOLA_POTASH_PROJECT_MINE_TO_RAW_INVENTORY_V1_LEG_03",
@@ -2255,7 +2417,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           }
         ],
         "estimatedRouteDistanceKm": 714,
@@ -2291,8 +2456,7 @@
         "resourceIconKey": "potash",
         "transportIconKeys": [
           "truck",
-          "train",
-          "truck"
+          "train"
         ],
         "displayFields": [
           "plannedTransitDays",
@@ -2304,7 +2468,13 @@
           "routeStatus"
         ],
         "actualFleetCountDisplay": "UNKNOWN_NOT_ZERO_AND_NOT_ASSUMED",
-        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM"
+        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM",
+        "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/potash.svg",
+        "resourceIconSource": "OMEGA_INDUSTRIAL_ICONS_V1_MANIFEST",
+        "transportIconAssetPaths": [
+          "assets/omega-industrial-icons-v1/transport/truck.svg",
+          "assets/omega-industrial-icons-v1/transport/train.svg"
+        ]
       },
       "provenance": {
         "authority": "SCENARIO_LOGISTICS_DESIGN_ONLY",
@@ -2319,7 +2489,9 @@
         "sourceResourceId": "potash",
         "sourceCountryId": "COG",
         "note": "Planning template only; not a surveyed corridor, active vehicle, or real-world capacity."
-      }
+      },
+      "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/potash.svg",
+      "resourceIconStatus": "EXACT_MATCH_TO_EXISTING_RESOURCE_SVG_MANIFEST"
     },
     {
       "routeId": "ROUTE_SITE_COG_MAYOKO_IRON_ORE_MINE_MINE_TO_RAW_INVENTORY_V1",
@@ -2327,7 +2499,7 @@
       "countryId": "COG",
       "siteName": "Mayoko Iron Ore Mine",
       "resourceId": "iron_ore",
-      "resourceIconKey": "iron-ore",
+      "resourceIconKey": "iron_ore",
       "commodityGroup": "BULK_MINERAL_OR_ORE",
       "siteType": "MINE",
       "sourceOperationalStatus": "SUSPENDED",
@@ -2408,7 +2580,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           },
           {
             "legId": "ROUTE_SITE_COG_MAYOKO_IRON_ORE_MINE_MINE_TO_RAW_INVENTORY_V1_LEG_02",
@@ -2432,7 +2607,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "train",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/train.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           },
           {
             "legId": "ROUTE_SITE_COG_MAYOKO_IRON_ORE_MINE_MINE_TO_RAW_INVENTORY_V1_LEG_03",
@@ -2456,7 +2634,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           }
         ],
         "estimatedRouteDistanceKm": 631,
@@ -2489,11 +2670,10 @@
         "noDuplicateBatchReceipt": true
       },
       "uiPresentation": {
-        "resourceIconKey": "iron-ore",
+        "resourceIconKey": "iron_ore",
         "transportIconKeys": [
           "truck",
-          "train",
-          "truck"
+          "train"
         ],
         "displayFields": [
           "plannedTransitDays",
@@ -2505,7 +2685,13 @@
           "routeStatus"
         ],
         "actualFleetCountDisplay": "UNKNOWN_NOT_ZERO_AND_NOT_ASSUMED",
-        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM"
+        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM",
+        "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/iron-ore.svg",
+        "resourceIconSource": "OMEGA_INDUSTRIAL_ICONS_V1_MANIFEST",
+        "transportIconAssetPaths": [
+          "assets/omega-industrial-icons-v1/transport/truck.svg",
+          "assets/omega-industrial-icons-v1/transport/train.svg"
+        ]
       },
       "provenance": {
         "authority": "SCENARIO_LOGISTICS_DESIGN_ONLY",
@@ -2520,7 +2706,9 @@
         "sourceResourceId": "iron_ore",
         "sourceCountryId": "COG",
         "note": "Planning template only; not a surveyed corridor, active vehicle, or real-world capacity."
-      }
+      },
+      "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/iron-ore.svg",
+      "resourceIconStatus": "EXACT_MATCH_TO_EXISTING_RESOURCE_SVG_MANIFEST"
     },
     {
       "routeId": "ROUTE_SITE_COG_ZANAGA_IRON_ORE_PROJECT_MINE_TO_RAW_INVENTORY_V1",
@@ -2528,7 +2716,7 @@
       "countryId": "COG",
       "siteName": "Zanaga Iron Ore Project",
       "resourceId": "iron_ore",
-      "resourceIconKey": "iron-ore",
+      "resourceIconKey": "iron_ore",
       "commodityGroup": "BULK_MINERAL_OR_ORE",
       "siteType": "IRON_ORE_MINE_OR_DEPOSIT",
       "sourceOperationalStatus": "SIMULATED_OPERATIONAL_SCENARIO",
@@ -2609,7 +2797,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           },
           {
             "legId": "ROUTE_SITE_COG_ZANAGA_IRON_ORE_PROJECT_MINE_TO_RAW_INVENTORY_V1_LEG_02",
@@ -2633,7 +2824,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "train",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/train.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           },
           {
             "legId": "ROUTE_SITE_COG_ZANAGA_IRON_ORE_PROJECT_MINE_TO_RAW_INVENTORY_V1_LEG_03",
@@ -2657,7 +2851,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           }
         ],
         "estimatedRouteDistanceKm": 697,
@@ -2690,11 +2887,10 @@
         "noDuplicateBatchReceipt": true
       },
       "uiPresentation": {
-        "resourceIconKey": "iron-ore",
+        "resourceIconKey": "iron_ore",
         "transportIconKeys": [
           "truck",
-          "train",
-          "truck"
+          "train"
         ],
         "displayFields": [
           "plannedTransitDays",
@@ -2706,7 +2902,13 @@
           "routeStatus"
         ],
         "actualFleetCountDisplay": "UNKNOWN_NOT_ZERO_AND_NOT_ASSUMED",
-        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM"
+        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM",
+        "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/iron-ore.svg",
+        "resourceIconSource": "OMEGA_INDUSTRIAL_ICONS_V1_MANIFEST",
+        "transportIconAssetPaths": [
+          "assets/omega-industrial-icons-v1/transport/truck.svg",
+          "assets/omega-industrial-icons-v1/transport/train.svg"
+        ]
       },
       "provenance": {
         "authority": "SCENARIO_LOGISTICS_DESIGN_ONLY",
@@ -2721,7 +2923,9 @@
         "sourceResourceId": "iron_ore",
         "sourceCountryId": "COG",
         "note": "Planning template only; not a surveyed corridor, active vehicle, or real-world capacity."
-      }
+      },
+      "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/iron-ore.svg",
+      "resourceIconStatus": "EXACT_MATCH_TO_EXISTING_RESOURCE_SVG_MANIFEST"
     },
     {
       "routeId": "ROUTE_SITE_COM_GRANDE_COMORE_BASALT_AGGREGATE_SITES_MINE_TO_RAW_INVENTORY_V1",
@@ -2729,7 +2933,7 @@
       "countryId": "COM",
       "siteName": "Grande Comore Basalt Aggregate Sites",
       "resourceId": "basalt",
-      "resourceIconKey": "industrial-mineral",
+      "resourceIconKey": "basalt",
       "commodityGroup": "INDUSTRIAL_OR_CONSTRUCTION_MINERAL",
       "siteType": "QUARRY",
       "sourceOperationalStatus": "LIMITED",
@@ -2810,7 +3014,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           }
         ],
         "estimatedRouteDistanceKm": 12,
@@ -2843,7 +3050,7 @@
         "noDuplicateBatchReceipt": true
       },
       "uiPresentation": {
-        "resourceIconKey": "industrial-mineral",
+        "resourceIconKey": "basalt",
         "transportIconKeys": [
           "truck"
         ],
@@ -2857,7 +3064,12 @@
           "routeStatus"
         ],
         "actualFleetCountDisplay": "UNKNOWN_NOT_ZERO_AND_NOT_ASSUMED",
-        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM"
+        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM",
+        "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/basalt.svg",
+        "resourceIconSource": "OMEGA_INDUSTRIAL_ICONS_V1_MANIFEST",
+        "transportIconAssetPaths": [
+          "assets/omega-industrial-icons-v1/transport/truck.svg"
+        ]
       },
       "provenance": {
         "authority": "SCENARIO_LOGISTICS_DESIGN_ONLY",
@@ -2872,7 +3084,9 @@
         "sourceResourceId": "basalt",
         "sourceCountryId": "COM",
         "note": "Planning template only; not a surveyed corridor, active vehicle, or real-world capacity."
-      }
+      },
+      "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/basalt.svg",
+      "resourceIconStatus": "EXACT_MATCH_TO_EXISTING_RESOURCE_SVG_MANIFEST"
     },
     {
       "routeId": "ROUTE_SITE_DZA_GARA_DJEBILET_IRON_MINE_MINE_TO_RAW_INVENTORY_V1",
@@ -2880,7 +3094,7 @@
       "countryId": "DZA",
       "siteName": "Gara Djebilet Iron Mine",
       "resourceId": "iron_ore",
-      "resourceIconKey": "iron-ore",
+      "resourceIconKey": "iron_ore",
       "commodityGroup": "BULK_MINERAL_OR_ORE",
       "siteType": "PROJECT",
       "sourceOperationalStatus": "LIMITED",
@@ -2961,7 +3175,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           },
           {
             "legId": "ROUTE_SITE_DZA_GARA_DJEBILET_IRON_MINE_MINE_TO_RAW_INVENTORY_V1_LEG_02",
@@ -2985,7 +3202,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "train",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/train.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           },
           {
             "legId": "ROUTE_SITE_DZA_GARA_DJEBILET_IRON_MINE_MINE_TO_RAW_INVENTORY_V1_LEG_03",
@@ -3009,7 +3229,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           }
         ],
         "estimatedRouteDistanceKm": 1188,
@@ -3042,11 +3265,10 @@
         "noDuplicateBatchReceipt": true
       },
       "uiPresentation": {
-        "resourceIconKey": "iron-ore",
+        "resourceIconKey": "iron_ore",
         "transportIconKeys": [
           "truck",
-          "train",
-          "truck"
+          "train"
         ],
         "displayFields": [
           "plannedTransitDays",
@@ -3058,7 +3280,13 @@
           "routeStatus"
         ],
         "actualFleetCountDisplay": "UNKNOWN_NOT_ZERO_AND_NOT_ASSUMED",
-        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM"
+        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM",
+        "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/iron-ore.svg",
+        "resourceIconSource": "OMEGA_INDUSTRIAL_ICONS_V1_MANIFEST",
+        "transportIconAssetPaths": [
+          "assets/omega-industrial-icons-v1/transport/truck.svg",
+          "assets/omega-industrial-icons-v1/transport/train.svg"
+        ]
       },
       "provenance": {
         "authority": "SCENARIO_LOGISTICS_DESIGN_ONLY",
@@ -3073,7 +3301,9 @@
         "sourceResourceId": "iron_ore",
         "sourceCountryId": "DZA",
         "note": "Planning template only; not a surveyed corridor, active vehicle, or real-world capacity."
-      }
+      },
+      "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/iron-ore.svg",
+      "resourceIconStatus": "EXACT_MATCH_TO_EXISTING_RESOURCE_SVG_MANIFEST"
     },
     {
       "routeId": "ROUTE_SITE_DZA_GARA_DJEBILET_IRON_ORE_MINE_MINE_TO_RAW_INVENTORY_V1",
@@ -3081,7 +3311,7 @@
       "countryId": "DZA",
       "siteName": "Gara Djebilet Iron Ore Mine",
       "resourceId": "iron_ore",
-      "resourceIconKey": "iron-ore",
+      "resourceIconKey": "iron_ore",
       "commodityGroup": "BULK_MINERAL_OR_ORE",
       "siteType": "IRON_ORE_SITE",
       "sourceOperationalStatus": "SIMULATED_OPERATIONAL_SCENARIO",
@@ -3162,7 +3392,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           },
           {
             "legId": "ROUTE_SITE_DZA_GARA_DJEBILET_IRON_ORE_MINE_MINE_TO_RAW_INVENTORY_V1_LEG_02",
@@ -3186,7 +3419,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "train",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/train.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           },
           {
             "legId": "ROUTE_SITE_DZA_GARA_DJEBILET_IRON_ORE_MINE_MINE_TO_RAW_INVENTORY_V1_LEG_03",
@@ -3210,7 +3446,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           }
         ],
         "estimatedRouteDistanceKm": 1022,
@@ -3243,11 +3482,10 @@
         "noDuplicateBatchReceipt": true
       },
       "uiPresentation": {
-        "resourceIconKey": "iron-ore",
+        "resourceIconKey": "iron_ore",
         "transportIconKeys": [
           "truck",
-          "train",
-          "truck"
+          "train"
         ],
         "displayFields": [
           "plannedTransitDays",
@@ -3259,7 +3497,13 @@
           "routeStatus"
         ],
         "actualFleetCountDisplay": "UNKNOWN_NOT_ZERO_AND_NOT_ASSUMED",
-        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM"
+        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM",
+        "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/iron-ore.svg",
+        "resourceIconSource": "OMEGA_INDUSTRIAL_ICONS_V1_MANIFEST",
+        "transportIconAssetPaths": [
+          "assets/omega-industrial-icons-v1/transport/truck.svg",
+          "assets/omega-industrial-icons-v1/transport/train.svg"
+        ]
       },
       "provenance": {
         "authority": "SCENARIO_LOGISTICS_DESIGN_ONLY",
@@ -3274,7 +3518,9 @@
         "sourceResourceId": "iron_ore",
         "sourceCountryId": "DZA",
         "note": "Planning template only; not a surveyed corridor, active vehicle, or real-world capacity."
-      }
+      },
+      "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/iron-ore.svg",
+      "resourceIconStatus": "EXACT_MATCH_TO_EXISTING_RESOURCE_SVG_MANIFEST"
     },
     {
       "routeId": "ROUTE_SITE_DZA_HASSI_MESSAOUD_CRUDE_OIL_FIELD_MINE_TO_RAW_INVENTORY_V1",
@@ -3282,7 +3528,7 @@
       "countryId": "DZA",
       "siteName": "Hassi Messaoud Crude Oil Field",
       "resourceId": "crude_oil",
-      "resourceIconKey": "crude-oil",
+      "resourceIconKey": "crude_oil",
       "commodityGroup": "ENERGY_LIQUID",
       "siteType": "OIL_FIELD",
       "sourceOperationalStatus": "SIMULATED_OPERATIONAL_SCENARIO",
@@ -3363,7 +3609,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "pipeline",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/pipeline.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           }
         ],
         "estimatedRouteDistanceKm": 709,
@@ -3396,7 +3645,7 @@
         "noDuplicateBatchReceipt": true
       },
       "uiPresentation": {
-        "resourceIconKey": "crude-oil",
+        "resourceIconKey": "crude_oil",
         "transportIconKeys": [
           "pipeline"
         ],
@@ -3410,7 +3659,12 @@
           "routeStatus"
         ],
         "actualFleetCountDisplay": "UNKNOWN_NOT_ZERO_AND_NOT_ASSUMED",
-        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM"
+        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM",
+        "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/crude-oil.svg",
+        "resourceIconSource": "OMEGA_INDUSTRIAL_ICONS_V1_MANIFEST",
+        "transportIconAssetPaths": [
+          "assets/omega-industrial-icons-v1/transport/pipeline.svg"
+        ]
       },
       "provenance": {
         "authority": "SCENARIO_LOGISTICS_DESIGN_ONLY",
@@ -3425,7 +3679,9 @@
         "sourceResourceId": "crude_oil",
         "sourceCountryId": "DZA",
         "note": "Planning template only; not a surveyed corridor, active vehicle, or real-world capacity."
-      }
+      },
+      "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/crude-oil.svg",
+      "resourceIconStatus": "EXACT_MATCH_TO_EXISTING_RESOURCE_SVG_MANIFEST"
     },
     {
       "routeId": "ROUTE_SITE_DZA_HASSI_R_MEL_NATURAL_GAS_BASIN_MINE_TO_RAW_INVENTORY_V1",
@@ -3433,7 +3689,7 @@
       "countryId": "DZA",
       "siteName": "Hassi R'Mel Natural Gas Basin",
       "resourceId": "natural_gas",
-      "resourceIconKey": "natural-gas",
+      "resourceIconKey": "natural_gas",
       "commodityGroup": "ENERGY_GAS",
       "siteType": "GAS_FIELD",
       "sourceOperationalStatus": "SIMULATED_OPERATIONAL_SCENARIO",
@@ -3514,7 +3770,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "pipeline",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/pipeline.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           }
         ],
         "estimatedRouteDistanceKm": 613,
@@ -3547,7 +3806,7 @@
         "noDuplicateBatchReceipt": true
       },
       "uiPresentation": {
-        "resourceIconKey": "natural-gas",
+        "resourceIconKey": "natural_gas",
         "transportIconKeys": [
           "pipeline"
         ],
@@ -3561,7 +3820,12 @@
           "routeStatus"
         ],
         "actualFleetCountDisplay": "UNKNOWN_NOT_ZERO_AND_NOT_ASSUMED",
-        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM"
+        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM",
+        "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/natural-gas.svg",
+        "resourceIconSource": "OMEGA_INDUSTRIAL_ICONS_V1_MANIFEST",
+        "transportIconAssetPaths": [
+          "assets/omega-industrial-icons-v1/transport/pipeline.svg"
+        ]
       },
       "provenance": {
         "authority": "SCENARIO_LOGISTICS_DESIGN_ONLY",
@@ -3576,7 +3840,9 @@
         "sourceResourceId": "natural_gas",
         "sourceCountryId": "DZA",
         "note": "Planning template only; not a surveyed corridor, active vehicle, or real-world capacity."
-      }
+      },
+      "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/natural-gas.svg",
+      "resourceIconStatus": "EXACT_MATCH_TO_EXISTING_RESOURCE_SVG_MANIFEST"
     },
     {
       "routeId": "ROUTE_SITE_DZA_HASSI_RMEL_GAS_FIELD_MINE_TO_RAW_INVENTORY_V1",
@@ -3584,7 +3850,7 @@
       "countryId": "DZA",
       "siteName": "Hassi R'Mel Gas Field",
       "resourceId": "natural_gas",
-      "resourceIconKey": "natural-gas",
+      "resourceIconKey": "natural_gas",
       "commodityGroup": "ENERGY_GAS",
       "siteType": "NATURAL_GAS_FIELD",
       "sourceOperationalStatus": "OPERATING_AS_REPORTED_OPERATOR_CONTEXT",
@@ -3665,7 +3931,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "pipeline",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/pipeline.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           }
         ],
         "estimatedRouteDistanceKm": 692,
@@ -3698,7 +3967,7 @@
         "noDuplicateBatchReceipt": true
       },
       "uiPresentation": {
-        "resourceIconKey": "natural-gas",
+        "resourceIconKey": "natural_gas",
         "transportIconKeys": [
           "pipeline"
         ],
@@ -3712,7 +3981,12 @@
           "routeStatus"
         ],
         "actualFleetCountDisplay": "UNKNOWN_NOT_ZERO_AND_NOT_ASSUMED",
-        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM"
+        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM",
+        "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/natural-gas.svg",
+        "resourceIconSource": "OMEGA_INDUSTRIAL_ICONS_V1_MANIFEST",
+        "transportIconAssetPaths": [
+          "assets/omega-industrial-icons-v1/transport/pipeline.svg"
+        ]
       },
       "provenance": {
         "authority": "SCENARIO_LOGISTICS_DESIGN_ONLY",
@@ -3727,7 +4001,9 @@
         "sourceResourceId": "natural_gas",
         "sourceCountryId": "DZA",
         "note": "Planning template only; not a surveyed corridor, active vehicle, or real-world capacity."
-      }
+      },
+      "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/natural-gas.svg",
+      "resourceIconStatus": "EXACT_MATCH_TO_EXISTING_RESOURCE_SVG_MANIFEST"
     },
     {
       "routeId": "ROUTE_SITE_DZA_HOGGAR_SHIELD_GOLD_URANIUM_BELT_MINE_TO_RAW_INVENTORY_V1",
@@ -3816,7 +4092,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           },
           {
             "legId": "ROUTE_SITE_DZA_HOGGAR_SHIELD_GOLD_URANIUM_BELT_MINE_TO_RAW_INVENTORY_V1_LEG_02",
@@ -3840,7 +4119,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "train",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/train.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           },
           {
             "legId": "ROUTE_SITE_DZA_HOGGAR_SHIELD_GOLD_URANIUM_BELT_MINE_TO_RAW_INVENTORY_V1_LEG_03",
@@ -3864,7 +4146,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           }
         ],
         "estimatedRouteDistanceKm": 827,
@@ -3900,8 +4185,7 @@
         "resourceIconKey": "gold",
         "transportIconKeys": [
           "truck",
-          "train",
-          "truck"
+          "train"
         ],
         "displayFields": [
           "plannedTransitDays",
@@ -3913,7 +4197,13 @@
           "routeStatus"
         ],
         "actualFleetCountDisplay": "UNKNOWN_NOT_ZERO_AND_NOT_ASSUMED",
-        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM"
+        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM",
+        "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/gold.svg",
+        "resourceIconSource": "OMEGA_INDUSTRIAL_ICONS_V1_MANIFEST",
+        "transportIconAssetPaths": [
+          "assets/omega-industrial-icons-v1/transport/truck.svg",
+          "assets/omega-industrial-icons-v1/transport/train.svg"
+        ]
       },
       "provenance": {
         "authority": "SCENARIO_LOGISTICS_DESIGN_ONLY",
@@ -3928,7 +4218,9 @@
         "sourceResourceId": "gold",
         "sourceCountryId": "DZA",
         "note": "Planning template only; not a surveyed corridor, active vehicle, or real-world capacity."
-      }
+      },
+      "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/gold.svg",
+      "resourceIconStatus": "EXACT_MATCH_TO_EXISTING_RESOURCE_SVG_MANIFEST"
     },
     {
       "routeId": "ROUTE_SITE_DZA_OURHOUD_OIL_FIELD_MINE_TO_RAW_INVENTORY_V1",
@@ -3936,7 +4228,7 @@
       "countryId": "DZA",
       "siteName": "Ourhoud Oil Field",
       "resourceId": "crude_oil",
-      "resourceIconKey": "crude-oil",
+      "resourceIconKey": "crude_oil",
       "commodityGroup": "ENERGY_LIQUID",
       "siteType": "OIL_FIELD",
       "sourceOperationalStatus": "OPERATING_AS_REPORTED_OPERATOR_CONTEXT",
@@ -4017,7 +4309,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "pipeline",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/pipeline.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           }
         ],
         "estimatedRouteDistanceKm": 716,
@@ -4050,7 +4345,7 @@
         "noDuplicateBatchReceipt": true
       },
       "uiPresentation": {
-        "resourceIconKey": "crude-oil",
+        "resourceIconKey": "crude_oil",
         "transportIconKeys": [
           "pipeline"
         ],
@@ -4064,7 +4359,12 @@
           "routeStatus"
         ],
         "actualFleetCountDisplay": "UNKNOWN_NOT_ZERO_AND_NOT_ASSUMED",
-        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM"
+        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM",
+        "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/crude-oil.svg",
+        "resourceIconSource": "OMEGA_INDUSTRIAL_ICONS_V1_MANIFEST",
+        "transportIconAssetPaths": [
+          "assets/omega-industrial-icons-v1/transport/pipeline.svg"
+        ]
       },
       "provenance": {
         "authority": "SCENARIO_LOGISTICS_DESIGN_ONLY",
@@ -4079,7 +4379,9 @@
         "sourceResourceId": "crude_oil",
         "sourceCountryId": "DZA",
         "note": "Planning template only; not a surveyed corridor, active vehicle, or real-world capacity."
-      }
+      },
+      "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/crude-oil.svg",
+      "resourceIconStatus": "EXACT_MATCH_TO_EXISTING_RESOURCE_SVG_MANIFEST"
     },
     {
       "routeId": "ROUTE_SITE_EGY_SUKARI_GOLD_MINE_MINE_TO_RAW_INVENTORY_V1",
@@ -4168,7 +4470,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           },
           {
             "legId": "ROUTE_SITE_EGY_SUKARI_GOLD_MINE_MINE_TO_RAW_INVENTORY_V1_LEG_02",
@@ -4192,7 +4497,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "train",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/train.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           },
           {
             "legId": "ROUTE_SITE_EGY_SUKARI_GOLD_MINE_MINE_TO_RAW_INVENTORY_V1_LEG_03",
@@ -4216,7 +4524,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           }
         ],
         "estimatedRouteDistanceKm": 575,
@@ -4252,8 +4563,7 @@
         "resourceIconKey": "gold",
         "transportIconKeys": [
           "truck",
-          "train",
-          "truck"
+          "train"
         ],
         "displayFields": [
           "plannedTransitDays",
@@ -4265,7 +4575,13 @@
           "routeStatus"
         ],
         "actualFleetCountDisplay": "UNKNOWN_NOT_ZERO_AND_NOT_ASSUMED",
-        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM"
+        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM",
+        "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/gold.svg",
+        "resourceIconSource": "OMEGA_INDUSTRIAL_ICONS_V1_MANIFEST",
+        "transportIconAssetPaths": [
+          "assets/omega-industrial-icons-v1/transport/truck.svg",
+          "assets/omega-industrial-icons-v1/transport/train.svg"
+        ]
       },
       "provenance": {
         "authority": "SCENARIO_LOGISTICS_DESIGN_ONLY",
@@ -4280,7 +4596,9 @@
         "sourceResourceId": "gold",
         "sourceCountryId": "EGY",
         "note": "Planning template only; not a surveyed corridor, active vehicle, or real-world capacity."
-      }
+      },
+      "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/gold.svg",
+      "resourceIconStatus": "EXACT_MATCH_TO_EXISTING_RESOURCE_SVG_MANIFEST"
     },
     {
       "routeId": "ROUTE_SITE_EGY_SUKARI_OROGENIC_GOLD_MINE_MINE_TO_RAW_INVENTORY_V1",
@@ -4369,7 +4687,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           },
           {
             "legId": "ROUTE_SITE_EGY_SUKARI_OROGENIC_GOLD_MINE_MINE_TO_RAW_INVENTORY_V1_LEG_02",
@@ -4393,7 +4714,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "train",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/train.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           },
           {
             "legId": "ROUTE_SITE_EGY_SUKARI_OROGENIC_GOLD_MINE_MINE_TO_RAW_INVENTORY_V1_LEG_03",
@@ -4417,7 +4741,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           }
         ],
         "estimatedRouteDistanceKm": 522,
@@ -4453,8 +4780,7 @@
         "resourceIconKey": "gold",
         "transportIconKeys": [
           "truck",
-          "train",
-          "truck"
+          "train"
         ],
         "displayFields": [
           "plannedTransitDays",
@@ -4466,7 +4792,13 @@
           "routeStatus"
         ],
         "actualFleetCountDisplay": "UNKNOWN_NOT_ZERO_AND_NOT_ASSUMED",
-        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM"
+        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM",
+        "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/gold.svg",
+        "resourceIconSource": "OMEGA_INDUSTRIAL_ICONS_V1_MANIFEST",
+        "transportIconAssetPaths": [
+          "assets/omega-industrial-icons-v1/transport/truck.svg",
+          "assets/omega-industrial-icons-v1/transport/train.svg"
+        ]
       },
       "provenance": {
         "authority": "SCENARIO_LOGISTICS_DESIGN_ONLY",
@@ -4481,7 +4813,9 @@
         "sourceResourceId": "gold",
         "sourceCountryId": "EGY",
         "note": "Planning template only; not a surveyed corridor, active vehicle, or real-world capacity."
-      }
+      },
+      "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/gold.svg",
+      "resourceIconStatus": "EXACT_MATCH_TO_EXISTING_RESOURCE_SVG_MANIFEST"
     },
     {
       "routeId": "ROUTE_SITE_EGY_WESTERN_DESERT_OIL_FIELDS_MINE_TO_RAW_INVENTORY_V1",
@@ -4489,7 +4823,7 @@
       "countryId": "EGY",
       "siteName": "Western Desert Oil Fields",
       "resourceId": "crude_oil",
-      "resourceIconKey": "crude-oil",
+      "resourceIconKey": "crude_oil",
       "commodityGroup": "ENERGY_LIQUID",
       "siteType": "OIL_FIELD",
       "sourceOperationalStatus": "SIMULATED_OPERATIONAL_SCENARIO",
@@ -4570,7 +4904,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "pipeline",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/pipeline.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           }
         ],
         "estimatedRouteDistanceKm": 510,
@@ -4603,7 +4940,7 @@
         "noDuplicateBatchReceipt": true
       },
       "uiPresentation": {
-        "resourceIconKey": "crude-oil",
+        "resourceIconKey": "crude_oil",
         "transportIconKeys": [
           "pipeline"
         ],
@@ -4617,7 +4954,12 @@
           "routeStatus"
         ],
         "actualFleetCountDisplay": "UNKNOWN_NOT_ZERO_AND_NOT_ASSUMED",
-        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM"
+        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM",
+        "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/crude-oil.svg",
+        "resourceIconSource": "OMEGA_INDUSTRIAL_ICONS_V1_MANIFEST",
+        "transportIconAssetPaths": [
+          "assets/omega-industrial-icons-v1/transport/pipeline.svg"
+        ]
       },
       "provenance": {
         "authority": "SCENARIO_LOGISTICS_DESIGN_ONLY",
@@ -4632,7 +4974,9 @@
         "sourceResourceId": "crude_oil",
         "sourceCountryId": "EGY",
         "note": "Planning template only; not a surveyed corridor, active vehicle, or real-world capacity."
-      }
+      },
+      "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/crude-oil.svg",
+      "resourceIconStatus": "EXACT_MATCH_TO_EXISTING_RESOURCE_SVG_MANIFEST"
     },
     {
       "routeId": "ROUTE_SITE_EGY_ZOHR_GAS_FIELD_MEDITERRANEAN_MINE_TO_RAW_INVENTORY_V1",
@@ -4640,7 +4984,7 @@
       "countryId": "EGY",
       "siteName": "Zohr Gas Field Mediterranean",
       "resourceId": "natural_gas",
-      "resourceIconKey": "natural-gas",
+      "resourceIconKey": "natural_gas",
       "commodityGroup": "ENERGY_GAS",
       "siteType": "GAS_FIELD",
       "sourceOperationalStatus": "SIMULATED_OPERATIONAL_SCENARIO",
@@ -4721,7 +5065,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "pipeline",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/pipeline.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           }
         ],
         "estimatedRouteDistanceKm": 754,
@@ -4754,7 +5101,7 @@
         "noDuplicateBatchReceipt": true
       },
       "uiPresentation": {
-        "resourceIconKey": "natural-gas",
+        "resourceIconKey": "natural_gas",
         "transportIconKeys": [
           "pipeline"
         ],
@@ -4768,7 +5115,12 @@
           "routeStatus"
         ],
         "actualFleetCountDisplay": "UNKNOWN_NOT_ZERO_AND_NOT_ASSUMED",
-        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM"
+        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM",
+        "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/natural-gas.svg",
+        "resourceIconSource": "OMEGA_INDUSTRIAL_ICONS_V1_MANIFEST",
+        "transportIconAssetPaths": [
+          "assets/omega-industrial-icons-v1/transport/pipeline.svg"
+        ]
       },
       "provenance": {
         "authority": "SCENARIO_LOGISTICS_DESIGN_ONLY",
@@ -4783,7 +5135,9 @@
         "sourceResourceId": "natural_gas",
         "sourceCountryId": "EGY",
         "note": "Planning template only; not a surveyed corridor, active vehicle, or real-world capacity."
-      }
+      },
+      "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/natural-gas.svg",
+      "resourceIconStatus": "EXACT_MATCH_TO_EXISTING_RESOURCE_SVG_MANIFEST"
     },
     {
       "routeId": "ROUTE_SITE_FJI_VATUKOULA_GOLD_MINE_MINE_TO_RAW_INVENTORY_V1",
@@ -4872,7 +5226,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           }
         ],
         "estimatedRouteDistanceKm": 68,
@@ -4919,7 +5276,12 @@
           "routeStatus"
         ],
         "actualFleetCountDisplay": "UNKNOWN_NOT_ZERO_AND_NOT_ASSUMED",
-        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM"
+        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM",
+        "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/gold.svg",
+        "resourceIconSource": "OMEGA_INDUSTRIAL_ICONS_V1_MANIFEST",
+        "transportIconAssetPaths": [
+          "assets/omega-industrial-icons-v1/transport/truck.svg"
+        ]
       },
       "provenance": {
         "authority": "SCENARIO_LOGISTICS_DESIGN_ONLY",
@@ -4934,7 +5296,9 @@
         "sourceResourceId": "gold",
         "sourceCountryId": "FJI",
         "note": "Planning template only; not a surveyed corridor, active vehicle, or real-world capacity."
-      }
+      },
+      "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/gold.svg",
+      "resourceIconStatus": "EXACT_MATCH_TO_EXISTING_RESOURCE_SVG_MANIFEST"
     },
     {
       "routeId": "ROUTE_SITE_FRA_PRASVILLE_LIMESTONE_QUARRY_MINE_TO_RAW_INVENTORY_V1",
@@ -5023,7 +5387,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           },
           {
             "legId": "ROUTE_SITE_FRA_PRASVILLE_LIMESTONE_QUARRY_MINE_TO_RAW_INVENTORY_V1_LEG_02",
@@ -5047,7 +5414,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "train",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/train.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           },
           {
             "legId": "ROUTE_SITE_FRA_PRASVILLE_LIMESTONE_QUARRY_MINE_TO_RAW_INVENTORY_V1_LEG_03",
@@ -5071,7 +5441,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           }
         ],
         "estimatedRouteDistanceKm": 285,
@@ -5107,8 +5480,7 @@
         "resourceIconKey": "limestone",
         "transportIconKeys": [
           "truck",
-          "train",
-          "truck"
+          "train"
         ],
         "displayFields": [
           "plannedTransitDays",
@@ -5120,7 +5492,13 @@
           "routeStatus"
         ],
         "actualFleetCountDisplay": "UNKNOWN_NOT_ZERO_AND_NOT_ASSUMED",
-        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM"
+        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM",
+        "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/limestone.svg",
+        "resourceIconSource": "OMEGA_INDUSTRIAL_ICONS_V1_MANIFEST",
+        "transportIconAssetPaths": [
+          "assets/omega-industrial-icons-v1/transport/truck.svg",
+          "assets/omega-industrial-icons-v1/transport/train.svg"
+        ]
       },
       "provenance": {
         "authority": "SCENARIO_LOGISTICS_DESIGN_ONLY",
@@ -5135,7 +5513,9 @@
         "sourceResourceId": "limestone",
         "sourceCountryId": "FRA",
         "note": "Planning template only; not a surveyed corridor, active vehicle, or real-world capacity."
-      }
+      },
+      "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/limestone.svg",
+      "resourceIconStatus": "EXACT_MATCH_TO_EXISTING_RESOURCE_SVG_MANIFEST"
     },
     {
       "routeId": "ROUTE_SITE_HTI_GONA_VES_LIMESTONE_QUARRY_ZONE_MINE_TO_RAW_INVENTORY_V1",
@@ -5224,7 +5604,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           }
         ],
         "estimatedRouteDistanceKm": 80,
@@ -5271,7 +5654,12 @@
           "routeStatus"
         ],
         "actualFleetCountDisplay": "UNKNOWN_NOT_ZERO_AND_NOT_ASSUMED",
-        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM"
+        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM",
+        "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/limestone.svg",
+        "resourceIconSource": "OMEGA_INDUSTRIAL_ICONS_V1_MANIFEST",
+        "transportIconAssetPaths": [
+          "assets/omega-industrial-icons-v1/transport/truck.svg"
+        ]
       },
       "provenance": {
         "authority": "SCENARIO_LOGISTICS_DESIGN_ONLY",
@@ -5286,7 +5674,9 @@
         "sourceResourceId": "limestone",
         "sourceCountryId": "HTI",
         "note": "Planning template only; not a surveyed corridor, active vehicle, or real-world capacity."
-      }
+      },
+      "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/limestone.svg",
+      "resourceIconStatus": "EXACT_MATCH_TO_EXISTING_RESOURCE_SVG_MANIFEST"
     },
     {
       "routeId": "ROUTE_SITE_HUN_VISONTA_LIGNITE_MINE_MINE_TO_RAW_INVENTORY_V1",
@@ -5375,7 +5765,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           }
         ],
         "estimatedRouteDistanceKm": 115,
@@ -5422,7 +5815,12 @@
           "routeStatus"
         ],
         "actualFleetCountDisplay": "UNKNOWN_NOT_ZERO_AND_NOT_ASSUMED",
-        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM"
+        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM",
+        "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/coal.svg",
+        "resourceIconSource": "OMEGA_INDUSTRIAL_ICONS_V1_MANIFEST",
+        "transportIconAssetPaths": [
+          "assets/omega-industrial-icons-v1/transport/truck.svg"
+        ]
       },
       "provenance": {
         "authority": "SCENARIO_LOGISTICS_DESIGN_ONLY",
@@ -5437,7 +5835,9 @@
         "sourceResourceId": "coal",
         "sourceCountryId": "HUN",
         "note": "Planning template only; not a surveyed corridor, active vehicle, or real-world capacity."
-      }
+      },
+      "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/coal.svg",
+      "resourceIconStatus": "EXACT_MATCH_TO_EXISTING_RESOURCE_SVG_MANIFEST"
     },
     {
       "routeId": "ROUTE_SITE_JOR_AL_ABYAD_PHOSPHATE_MINE_MINE_TO_RAW_INVENTORY_V1",
@@ -5526,7 +5926,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           }
         ],
         "estimatedRouteDistanceKm": 87,
@@ -5573,7 +5976,12 @@
           "routeStatus"
         ],
         "actualFleetCountDisplay": "UNKNOWN_NOT_ZERO_AND_NOT_ASSUMED",
-        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM"
+        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM",
+        "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/phosphate.svg",
+        "resourceIconSource": "OMEGA_INDUSTRIAL_ICONS_V1_MANIFEST",
+        "transportIconAssetPaths": [
+          "assets/omega-industrial-icons-v1/transport/truck.svg"
+        ]
       },
       "provenance": {
         "authority": "SCENARIO_LOGISTICS_DESIGN_ONLY",
@@ -5588,7 +5996,9 @@
         "sourceResourceId": "phosphate",
         "sourceCountryId": "JOR",
         "note": "Planning template only; not a surveyed corridor, active vehicle, or real-world capacity."
-      }
+      },
+      "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/phosphate.svg",
+      "resourceIconStatus": "EXACT_MATCH_TO_EXISTING_RESOURCE_SVG_MANIFEST"
     },
     {
       "routeId": "ROUTE_SITE_JOR_AL_HASA_PHOSPHATE_MINE_MINE_TO_RAW_INVENTORY_V1",
@@ -5677,7 +6087,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           }
         ],
         "estimatedRouteDistanceKm": 73,
@@ -5724,7 +6137,12 @@
           "routeStatus"
         ],
         "actualFleetCountDisplay": "UNKNOWN_NOT_ZERO_AND_NOT_ASSUMED",
-        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM"
+        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM",
+        "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/phosphate.svg",
+        "resourceIconSource": "OMEGA_INDUSTRIAL_ICONS_V1_MANIFEST",
+        "transportIconAssetPaths": [
+          "assets/omega-industrial-icons-v1/transport/truck.svg"
+        ]
       },
       "provenance": {
         "authority": "SCENARIO_LOGISTICS_DESIGN_ONLY",
@@ -5739,7 +6157,9 @@
         "sourceResourceId": "phosphate",
         "sourceCountryId": "JOR",
         "note": "Planning template only; not a surveyed corridor, active vehicle, or real-world capacity."
-      }
+      },
+      "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/phosphate.svg",
+      "resourceIconStatus": "EXACT_MATCH_TO_EXISTING_RESOURCE_SVG_MANIFEST"
     },
     {
       "routeId": "ROUTE_SITE_JOR_ESHIDIYA_PHOSPHATE_MINE_MINE_TO_RAW_INVENTORY_V1",
@@ -5828,7 +6248,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           }
         ],
         "estimatedRouteDistanceKm": 48,
@@ -5875,7 +6298,12 @@
           "routeStatus"
         ],
         "actualFleetCountDisplay": "UNKNOWN_NOT_ZERO_AND_NOT_ASSUMED",
-        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM"
+        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM",
+        "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/phosphate.svg",
+        "resourceIconSource": "OMEGA_INDUSTRIAL_ICONS_V1_MANIFEST",
+        "transportIconAssetPaths": [
+          "assets/omega-industrial-icons-v1/transport/truck.svg"
+        ]
       },
       "provenance": {
         "authority": "SCENARIO_LOGISTICS_DESIGN_ONLY",
@@ -5890,7 +6318,9 @@
         "sourceResourceId": "phosphate",
         "sourceCountryId": "JOR",
         "note": "Planning template only; not a surveyed corridor, active vehicle, or real-world capacity."
-      }
+      },
+      "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/phosphate.svg",
+      "resourceIconStatus": "EXACT_MATCH_TO_EXISTING_RESOURCE_SVG_MANIFEST"
     },
     {
       "routeId": "ROUTE_SITE_JOR_RUSEIFA_PHOSPHATE_MINE_MINE_TO_RAW_INVENTORY_V1",
@@ -5979,7 +6409,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           },
           {
             "legId": "ROUTE_SITE_JOR_RUSEIFA_PHOSPHATE_MINE_MINE_TO_RAW_INVENTORY_V1_LEG_02",
@@ -6003,7 +6436,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "train",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/train.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           },
           {
             "legId": "ROUTE_SITE_JOR_RUSEIFA_PHOSPHATE_MINE_MINE_TO_RAW_INVENTORY_V1_LEG_03",
@@ -6027,7 +6463,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           }
         ],
         "estimatedRouteDistanceKm": 189,
@@ -6063,8 +6502,7 @@
         "resourceIconKey": "phosphate",
         "transportIconKeys": [
           "truck",
-          "train",
-          "truck"
+          "train"
         ],
         "displayFields": [
           "plannedTransitDays",
@@ -6076,7 +6514,13 @@
           "routeStatus"
         ],
         "actualFleetCountDisplay": "UNKNOWN_NOT_ZERO_AND_NOT_ASSUMED",
-        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM"
+        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM",
+        "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/phosphate.svg",
+        "resourceIconSource": "OMEGA_INDUSTRIAL_ICONS_V1_MANIFEST",
+        "transportIconAssetPaths": [
+          "assets/omega-industrial-icons-v1/transport/truck.svg",
+          "assets/omega-industrial-icons-v1/transport/train.svg"
+        ]
       },
       "provenance": {
         "authority": "SCENARIO_LOGISTICS_DESIGN_ONLY",
@@ -6091,7 +6535,9 @@
         "sourceResourceId": "phosphate",
         "sourceCountryId": "JOR",
         "note": "Planning template only; not a surveyed corridor, active vehicle, or real-world capacity."
-      }
+      },
+      "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/phosphate.svg",
+      "resourceIconStatus": "EXACT_MATCH_TO_EXISTING_RESOURCE_SVG_MANIFEST"
     },
     {
       "routeId": "ROUTE_SITE_NER_AZELIK_URANIUM_MINE_MINE_TO_RAW_INVENTORY_V1",
@@ -6180,7 +6626,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           },
           {
             "legId": "ROUTE_SITE_NER_AZELIK_URANIUM_MINE_MINE_TO_RAW_INVENTORY_V1_LEG_02",
@@ -6204,7 +6653,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "train",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/train.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           },
           {
             "legId": "ROUTE_SITE_NER_AZELIK_URANIUM_MINE_MINE_TO_RAW_INVENTORY_V1_LEG_03",
@@ -6228,7 +6680,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           }
         ],
         "estimatedRouteDistanceKm": 254,
@@ -6264,8 +6719,7 @@
         "resourceIconKey": "uranium",
         "transportIconKeys": [
           "truck",
-          "train",
-          "truck"
+          "train"
         ],
         "displayFields": [
           "plannedTransitDays",
@@ -6277,7 +6731,13 @@
           "routeStatus"
         ],
         "actualFleetCountDisplay": "UNKNOWN_NOT_ZERO_AND_NOT_ASSUMED",
-        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM"
+        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM",
+        "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/uranium.svg",
+        "resourceIconSource": "OMEGA_INDUSTRIAL_ICONS_V1_MANIFEST",
+        "transportIconAssetPaths": [
+          "assets/omega-industrial-icons-v1/transport/truck.svg",
+          "assets/omega-industrial-icons-v1/transport/train.svg"
+        ]
       },
       "provenance": {
         "authority": "SCENARIO_LOGISTICS_DESIGN_ONLY",
@@ -6292,7 +6752,9 @@
         "sourceResourceId": "uranium",
         "sourceCountryId": "NER",
         "note": "Planning template only; not a surveyed corridor, active vehicle, or real-world capacity."
-      }
+      },
+      "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/uranium.svg",
+      "resourceIconStatus": "EXACT_MATCH_TO_EXISTING_RESOURCE_SVG_MANIFEST"
     },
     {
       "routeId": "ROUTE_SITE_NER_COMINAK_URANIUM_MINE_MINE_TO_RAW_INVENTORY_V1",
@@ -6381,7 +6843,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           }
         ],
         "estimatedRouteDistanceKm": 23,
@@ -6428,7 +6893,12 @@
           "routeStatus"
         ],
         "actualFleetCountDisplay": "UNKNOWN_NOT_ZERO_AND_NOT_ASSUMED",
-        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM"
+        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM",
+        "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/uranium.svg",
+        "resourceIconSource": "OMEGA_INDUSTRIAL_ICONS_V1_MANIFEST",
+        "transportIconAssetPaths": [
+          "assets/omega-industrial-icons-v1/transport/truck.svg"
+        ]
       },
       "provenance": {
         "authority": "SCENARIO_LOGISTICS_DESIGN_ONLY",
@@ -6443,7 +6913,9 @@
         "sourceResourceId": "uranium",
         "sourceCountryId": "NER",
         "note": "Planning template only; not a surveyed corridor, active vehicle, or real-world capacity."
-      }
+      },
+      "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/uranium.svg",
+      "resourceIconStatus": "EXACT_MATCH_TO_EXISTING_RESOURCE_SVG_MANIFEST"
     },
     {
       "routeId": "ROUTE_SITE_NER_IMOURAREN_URANIUM_PROJECT_MINE_TO_RAW_INVENTORY_V1",
@@ -6532,7 +7004,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           },
           {
             "legId": "ROUTE_SITE_NER_IMOURAREN_URANIUM_PROJECT_MINE_TO_RAW_INVENTORY_V1_LEG_02",
@@ -6556,7 +7031,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "train",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/train.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           },
           {
             "legId": "ROUTE_SITE_NER_IMOURAREN_URANIUM_PROJECT_MINE_TO_RAW_INVENTORY_V1_LEG_03",
@@ -6580,7 +7058,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           }
         ],
         "estimatedRouteDistanceKm": 195,
@@ -6616,8 +7097,7 @@
         "resourceIconKey": "uranium",
         "transportIconKeys": [
           "truck",
-          "train",
-          "truck"
+          "train"
         ],
         "displayFields": [
           "plannedTransitDays",
@@ -6629,7 +7109,13 @@
           "routeStatus"
         ],
         "actualFleetCountDisplay": "UNKNOWN_NOT_ZERO_AND_NOT_ASSUMED",
-        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM"
+        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM",
+        "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/uranium.svg",
+        "resourceIconSource": "OMEGA_INDUSTRIAL_ICONS_V1_MANIFEST",
+        "transportIconAssetPaths": [
+          "assets/omega-industrial-icons-v1/transport/truck.svg",
+          "assets/omega-industrial-icons-v1/transport/train.svg"
+        ]
       },
       "provenance": {
         "authority": "SCENARIO_LOGISTICS_DESIGN_ONLY",
@@ -6644,7 +7130,9 @@
         "sourceResourceId": "uranium",
         "sourceCountryId": "NER",
         "note": "Planning template only; not a surveyed corridor, active vehicle, or real-world capacity."
-      }
+      },
+      "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/uranium.svg",
+      "resourceIconStatus": "EXACT_MATCH_TO_EXISTING_RESOURCE_SVG_MANIFEST"
     },
     {
       "routeId": "ROUTE_SITE_NER_SOMA_R_URANIUM_MINE_MINE_TO_RAW_INVENTORY_V1",
@@ -6733,7 +7221,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           },
           {
             "legId": "ROUTE_SITE_NER_SOMA_R_URANIUM_MINE_MINE_TO_RAW_INVENTORY_V1_LEG_02",
@@ -6757,7 +7248,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "train",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/train.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           },
           {
             "legId": "ROUTE_SITE_NER_SOMA_R_URANIUM_MINE_MINE_TO_RAW_INVENTORY_V1_LEG_03",
@@ -6781,7 +7275,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           }
         ],
         "estimatedRouteDistanceKm": 181,
@@ -6817,8 +7314,7 @@
         "resourceIconKey": "uranium",
         "transportIconKeys": [
           "truck",
-          "train",
-          "truck"
+          "train"
         ],
         "displayFields": [
           "plannedTransitDays",
@@ -6830,7 +7326,13 @@
           "routeStatus"
         ],
         "actualFleetCountDisplay": "UNKNOWN_NOT_ZERO_AND_NOT_ASSUMED",
-        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM"
+        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM",
+        "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/uranium.svg",
+        "resourceIconSource": "OMEGA_INDUSTRIAL_ICONS_V1_MANIFEST",
+        "transportIconAssetPaths": [
+          "assets/omega-industrial-icons-v1/transport/truck.svg",
+          "assets/omega-industrial-icons-v1/transport/train.svg"
+        ]
       },
       "provenance": {
         "authority": "SCENARIO_LOGISTICS_DESIGN_ONLY",
@@ -6845,7 +7347,9 @@
         "sourceResourceId": "uranium",
         "sourceCountryId": "NER",
         "note": "Planning template only; not a surveyed corridor, active vehicle, or real-world capacity."
-      }
+      },
+      "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/uranium.svg",
+      "resourceIconStatus": "EXACT_MATCH_TO_EXISTING_RESOURCE_SVG_MANIFEST"
     },
     {
       "routeId": "ROUTE_SITE_PAN_COBRE_PANAM_MINE_MINE_TO_RAW_INVENTORY_V1",
@@ -6934,7 +7438,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           }
         ],
         "estimatedRouteDistanceKm": 57,
@@ -6981,7 +7488,12 @@
           "routeStatus"
         ],
         "actualFleetCountDisplay": "UNKNOWN_NOT_ZERO_AND_NOT_ASSUMED",
-        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM"
+        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM",
+        "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/copper.svg",
+        "resourceIconSource": "OMEGA_INDUSTRIAL_ICONS_V1_MANIFEST",
+        "transportIconAssetPaths": [
+          "assets/omega-industrial-icons-v1/transport/truck.svg"
+        ]
       },
       "provenance": {
         "authority": "SCENARIO_LOGISTICS_DESIGN_ONLY",
@@ -6996,7 +7508,9 @@
         "sourceResourceId": "copper",
         "sourceCountryId": "PAN",
         "note": "Planning template only; not a surveyed corridor, active vehicle, or real-world capacity."
-      }
+      },
+      "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/copper.svg",
+      "resourceIconStatus": "EXACT_MATCH_TO_EXISTING_RESOURCE_SVG_MANIFEST"
     },
     {
       "routeId": "ROUTE_SITE_PAN_COBRE_PANAMA_COPPER_MINE_MINE_TO_RAW_INVENTORY_V1",
@@ -7085,7 +7599,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           }
         ],
         "estimatedRouteDistanceKm": 43,
@@ -7132,7 +7649,12 @@
           "routeStatus"
         ],
         "actualFleetCountDisplay": "UNKNOWN_NOT_ZERO_AND_NOT_ASSUMED",
-        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM"
+        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM",
+        "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/copper.svg",
+        "resourceIconSource": "OMEGA_INDUSTRIAL_ICONS_V1_MANIFEST",
+        "transportIconAssetPaths": [
+          "assets/omega-industrial-icons-v1/transport/truck.svg"
+        ]
       },
       "provenance": {
         "authority": "SCENARIO_LOGISTICS_DESIGN_ONLY",
@@ -7147,7 +7669,9 @@
         "sourceResourceId": "copper",
         "sourceCountryId": "PAN",
         "note": "Planning template only; not a surveyed corridor, active vehicle, or real-world capacity."
-      }
+      },
+      "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/copper.svg",
+      "resourceIconStatus": "EXACT_MATCH_TO_EXISTING_RESOURCE_SVG_MANIFEST"
     },
     {
       "routeId": "ROUTE_SITE_PAN_MOLEJON_GOLD_MINE_MINE_TO_RAW_INVENTORY_V1",
@@ -7236,7 +7760,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           }
         ],
         "estimatedRouteDistanceKm": 88,
@@ -7283,7 +7810,12 @@
           "routeStatus"
         ],
         "actualFleetCountDisplay": "UNKNOWN_NOT_ZERO_AND_NOT_ASSUMED",
-        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM"
+        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM",
+        "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/gold.svg",
+        "resourceIconSource": "OMEGA_INDUSTRIAL_ICONS_V1_MANIFEST",
+        "transportIconAssetPaths": [
+          "assets/omega-industrial-icons-v1/transport/truck.svg"
+        ]
       },
       "provenance": {
         "authority": "SCENARIO_LOGISTICS_DESIGN_ONLY",
@@ -7298,7 +7830,9 @@
         "sourceResourceId": "gold",
         "sourceCountryId": "PAN",
         "note": "Planning template only; not a surveyed corridor, active vehicle, or real-world capacity."
-      }
+      },
+      "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/gold.svg",
+      "resourceIconStatus": "EXACT_MATCH_TO_EXISTING_RESOURCE_SVG_MANIFEST"
     },
     {
       "routeId": "ROUTE_SITE_PAN_SANTA_ROSA_GOLD_MINE_MINE_TO_RAW_INVENTORY_V1",
@@ -7387,7 +7921,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           }
         ],
         "estimatedRouteDistanceKm": 84,
@@ -7434,7 +7971,12 @@
           "routeStatus"
         ],
         "actualFleetCountDisplay": "UNKNOWN_NOT_ZERO_AND_NOT_ASSUMED",
-        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM"
+        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM",
+        "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/gold.svg",
+        "resourceIconSource": "OMEGA_INDUSTRIAL_ICONS_V1_MANIFEST",
+        "transportIconAssetPaths": [
+          "assets/omega-industrial-icons-v1/transport/truck.svg"
+        ]
       },
       "provenance": {
         "authority": "SCENARIO_LOGISTICS_DESIGN_ONLY",
@@ -7449,7 +7991,9 @@
         "sourceResourceId": "gold",
         "sourceCountryId": "PAN",
         "note": "Planning template only; not a surveyed corridor, active vehicle, or real-world capacity."
-      }
+      },
+      "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/gold.svg",
+      "resourceIconStatus": "EXACT_MATCH_TO_EXISTING_RESOURCE_SVG_MANIFEST"
     },
     {
       "routeId": "ROUTE_SITE_PNG_LIHIR_GOLD_MINE_MINE_TO_RAW_INVENTORY_V1",
@@ -7538,7 +8082,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           },
           {
             "legId": "ROUTE_SITE_PNG_LIHIR_GOLD_MINE_MINE_TO_RAW_INVENTORY_V1_LEG_02",
@@ -7562,7 +8109,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "train",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/train.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           },
           {
             "legId": "ROUTE_SITE_PNG_LIHIR_GOLD_MINE_MINE_TO_RAW_INVENTORY_V1_LEG_03",
@@ -7586,7 +8136,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           }
         ],
         "estimatedRouteDistanceKm": 1210,
@@ -7622,8 +8175,7 @@
         "resourceIconKey": "gold",
         "transportIconKeys": [
           "truck",
-          "train",
-          "truck"
+          "train"
         ],
         "displayFields": [
           "plannedTransitDays",
@@ -7635,7 +8187,13 @@
           "routeStatus"
         ],
         "actualFleetCountDisplay": "UNKNOWN_NOT_ZERO_AND_NOT_ASSUMED",
-        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM"
+        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM",
+        "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/gold.svg",
+        "resourceIconSource": "OMEGA_INDUSTRIAL_ICONS_V1_MANIFEST",
+        "transportIconAssetPaths": [
+          "assets/omega-industrial-icons-v1/transport/truck.svg",
+          "assets/omega-industrial-icons-v1/transport/train.svg"
+        ]
       },
       "provenance": {
         "authority": "SCENARIO_LOGISTICS_DESIGN_ONLY",
@@ -7650,7 +8208,9 @@
         "sourceResourceId": "gold",
         "sourceCountryId": "PNG",
         "note": "Planning template only; not a surveyed corridor, active vehicle, or real-world capacity."
-      }
+      },
+      "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/gold.svg",
+      "resourceIconStatus": "EXACT_MATCH_TO_EXISTING_RESOURCE_SVG_MANIFEST"
     },
     {
       "routeId": "ROUTE_SITE_PNG_OK_TEDI_COPPER_GOLD_MINE_MINE_TO_RAW_INVENTORY_V1",
@@ -7739,7 +8299,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           },
           {
             "legId": "ROUTE_SITE_PNG_OK_TEDI_COPPER_GOLD_MINE_MINE_TO_RAW_INVENTORY_V1_LEG_02",
@@ -7763,7 +8326,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "train",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/train.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           },
           {
             "legId": "ROUTE_SITE_PNG_OK_TEDI_COPPER_GOLD_MINE_MINE_TO_RAW_INVENTORY_V1_LEG_03",
@@ -7787,7 +8353,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           }
         ],
         "estimatedRouteDistanceKm": 394,
@@ -7823,8 +8392,7 @@
         "resourceIconKey": "copper",
         "transportIconKeys": [
           "truck",
-          "train",
-          "truck"
+          "train"
         ],
         "displayFields": [
           "plannedTransitDays",
@@ -7836,7 +8404,13 @@
           "routeStatus"
         ],
         "actualFleetCountDisplay": "UNKNOWN_NOT_ZERO_AND_NOT_ASSUMED",
-        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM"
+        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM",
+        "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/copper.svg",
+        "resourceIconSource": "OMEGA_INDUSTRIAL_ICONS_V1_MANIFEST",
+        "transportIconAssetPaths": [
+          "assets/omega-industrial-icons-v1/transport/truck.svg",
+          "assets/omega-industrial-icons-v1/transport/train.svg"
+        ]
       },
       "provenance": {
         "authority": "SCENARIO_LOGISTICS_DESIGN_ONLY",
@@ -7851,7 +8425,9 @@
         "sourceResourceId": "copper",
         "sourceCountryId": "PNG",
         "note": "Planning template only; not a surveyed corridor, active vehicle, or real-world capacity."
-      }
+      },
+      "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/copper.svg",
+      "resourceIconStatus": "EXACT_MATCH_TO_EXISTING_RESOURCE_SVG_MANIFEST"
     },
     {
       "routeId": "ROUTE_SITE_PNG_OK_TEDI_COPPER_MINE_MINE_TO_RAW_INVENTORY_V1",
@@ -7940,7 +8516,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           },
           {
             "legId": "ROUTE_SITE_PNG_OK_TEDI_COPPER_MINE_MINE_TO_RAW_INVENTORY_V1_LEG_02",
@@ -7964,7 +8543,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "train",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/train.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           },
           {
             "legId": "ROUTE_SITE_PNG_OK_TEDI_COPPER_MINE_MINE_TO_RAW_INVENTORY_V1_LEG_03",
@@ -7988,7 +8570,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           }
         ],
         "estimatedRouteDistanceKm": 398,
@@ -8024,8 +8609,7 @@
         "resourceIconKey": "copper",
         "transportIconKeys": [
           "truck",
-          "train",
-          "truck"
+          "train"
         ],
         "displayFields": [
           "plannedTransitDays",
@@ -8037,7 +8621,13 @@
           "routeStatus"
         ],
         "actualFleetCountDisplay": "UNKNOWN_NOT_ZERO_AND_NOT_ASSUMED",
-        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM"
+        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM",
+        "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/copper.svg",
+        "resourceIconSource": "OMEGA_INDUSTRIAL_ICONS_V1_MANIFEST",
+        "transportIconAssetPaths": [
+          "assets/omega-industrial-icons-v1/transport/truck.svg",
+          "assets/omega-industrial-icons-v1/transport/train.svg"
+        ]
       },
       "provenance": {
         "authority": "SCENARIO_LOGISTICS_DESIGN_ONLY",
@@ -8052,7 +8642,9 @@
         "sourceResourceId": "copper",
         "sourceCountryId": "PNG",
         "note": "Planning template only; not a surveyed corridor, active vehicle, or real-world capacity."
-      }
+      },
+      "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/copper.svg",
+      "resourceIconStatus": "EXACT_MATCH_TO_EXISTING_RESOURCE_SVG_MANIFEST"
     },
     {
       "routeId": "ROUTE_SITE_PNG_PORGERA_GOLD_MINE_MINE_TO_RAW_INVENTORY_V1",
@@ -8141,7 +8733,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           },
           {
             "legId": "ROUTE_SITE_PNG_PORGERA_GOLD_MINE_MINE_TO_RAW_INVENTORY_V1_LEG_02",
@@ -8165,7 +8760,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "train",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/train.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           },
           {
             "legId": "ROUTE_SITE_PNG_PORGERA_GOLD_MINE_MINE_TO_RAW_INVENTORY_V1_LEG_03",
@@ -8189,7 +8787,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           }
         ],
         "estimatedRouteDistanceKm": 154,
@@ -8225,8 +8826,7 @@
         "resourceIconKey": "gold",
         "transportIconKeys": [
           "truck",
-          "train",
-          "truck"
+          "train"
         ],
         "displayFields": [
           "plannedTransitDays",
@@ -8238,7 +8838,13 @@
           "routeStatus"
         ],
         "actualFleetCountDisplay": "UNKNOWN_NOT_ZERO_AND_NOT_ASSUMED",
-        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM"
+        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM",
+        "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/gold.svg",
+        "resourceIconSource": "OMEGA_INDUSTRIAL_ICONS_V1_MANIFEST",
+        "transportIconAssetPaths": [
+          "assets/omega-industrial-icons-v1/transport/truck.svg",
+          "assets/omega-industrial-icons-v1/transport/train.svg"
+        ]
       },
       "provenance": {
         "authority": "SCENARIO_LOGISTICS_DESIGN_ONLY",
@@ -8253,7 +8859,9 @@
         "sourceResourceId": "gold",
         "sourceCountryId": "PNG",
         "note": "Planning template only; not a surveyed corridor, active vehicle, or real-world capacity."
-      }
+      },
+      "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/gold.svg",
+      "resourceIconStatus": "EXACT_MATCH_TO_EXISTING_RESOURCE_SVG_MANIFEST"
     },
     {
       "routeId": "ROUTE_SITE_PNG_RAMU_NICKEL_MINE_MINE_TO_RAW_INVENTORY_V1",
@@ -8342,7 +8950,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           },
           {
             "legId": "ROUTE_SITE_PNG_RAMU_NICKEL_MINE_MINE_TO_RAW_INVENTORY_V1_LEG_02",
@@ -8366,7 +8977,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "train",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/train.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           },
           {
             "legId": "ROUTE_SITE_PNG_RAMU_NICKEL_MINE_MINE_TO_RAW_INVENTORY_V1_LEG_03",
@@ -8390,7 +9004,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           }
         ],
         "estimatedRouteDistanceKm": 278,
@@ -8426,8 +9043,7 @@
         "resourceIconKey": "nickel",
         "transportIconKeys": [
           "truck",
-          "train",
-          "truck"
+          "train"
         ],
         "displayFields": [
           "plannedTransitDays",
@@ -8439,7 +9055,13 @@
           "routeStatus"
         ],
         "actualFleetCountDisplay": "UNKNOWN_NOT_ZERO_AND_NOT_ASSUMED",
-        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM"
+        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM",
+        "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/nickel.svg",
+        "resourceIconSource": "OMEGA_INDUSTRIAL_ICONS_V1_MANIFEST",
+        "transportIconAssetPaths": [
+          "assets/omega-industrial-icons-v1/transport/truck.svg",
+          "assets/omega-industrial-icons-v1/transport/train.svg"
+        ]
       },
       "provenance": {
         "authority": "SCENARIO_LOGISTICS_DESIGN_ONLY",
@@ -8454,7 +9076,9 @@
         "sourceResourceId": "nickel",
         "sourceCountryId": "PNG",
         "note": "Planning template only; not a surveyed corridor, active vehicle, or real-world capacity."
-      }
+      },
+      "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/nickel.svg",
+      "resourceIconStatus": "EXACT_MATCH_TO_EXISTING_RESOURCE_SVG_MANIFEST"
     },
     {
       "routeId": "ROUTE_SITE_POL_BE_CHAT_W_LIGNITE_MINE_MINE_TO_RAW_INVENTORY_V1",
@@ -8543,7 +9167,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           }
         ],
         "estimatedRouteDistanceKm": 88,
@@ -8590,7 +9217,12 @@
           "routeStatus"
         ],
         "actualFleetCountDisplay": "UNKNOWN_NOT_ZERO_AND_NOT_ASSUMED",
-        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM"
+        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM",
+        "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/coal.svg",
+        "resourceIconSource": "OMEGA_INDUSTRIAL_ICONS_V1_MANIFEST",
+        "transportIconAssetPaths": [
+          "assets/omega-industrial-icons-v1/transport/truck.svg"
+        ]
       },
       "provenance": {
         "authority": "SCENARIO_LOGISTICS_DESIGN_ONLY",
@@ -8605,7 +9237,9 @@
         "sourceResourceId": "coal",
         "sourceCountryId": "POL",
         "note": "Planning template only; not a surveyed corridor, active vehicle, or real-world capacity."
-      }
+      },
+      "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/coal.svg",
+      "resourceIconStatus": "EXACT_MATCH_TO_EXISTING_RESOURCE_SVG_MANIFEST"
     },
     {
       "routeId": "ROUTE_SITE_POL_LUBIN_COPPER_SILVER_MINE_MINE_TO_RAW_INVENTORY_V1",
@@ -8694,7 +9328,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           },
           {
             "legId": "ROUTE_SITE_POL_LUBIN_COPPER_SILVER_MINE_MINE_TO_RAW_INVENTORY_V1_LEG_02",
@@ -8718,7 +9355,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "train",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/train.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           },
           {
             "legId": "ROUTE_SITE_POL_LUBIN_COPPER_SILVER_MINE_MINE_TO_RAW_INVENTORY_V1_LEG_03",
@@ -8742,7 +9382,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           }
         ],
         "estimatedRouteDistanceKm": 249,
@@ -8778,8 +9421,7 @@
         "resourceIconKey": "copper",
         "transportIconKeys": [
           "truck",
-          "train",
-          "truck"
+          "train"
         ],
         "displayFields": [
           "plannedTransitDays",
@@ -8791,7 +9433,13 @@
           "routeStatus"
         ],
         "actualFleetCountDisplay": "UNKNOWN_NOT_ZERO_AND_NOT_ASSUMED",
-        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM"
+        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM",
+        "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/copper.svg",
+        "resourceIconSource": "OMEGA_INDUSTRIAL_ICONS_V1_MANIFEST",
+        "transportIconAssetPaths": [
+          "assets/omega-industrial-icons-v1/transport/truck.svg",
+          "assets/omega-industrial-icons-v1/transport/train.svg"
+        ]
       },
       "provenance": {
         "authority": "SCENARIO_LOGISTICS_DESIGN_ONLY",
@@ -8806,7 +9454,9 @@
         "sourceResourceId": "copper",
         "sourceCountryId": "POL",
         "note": "Planning template only; not a surveyed corridor, active vehicle, or real-world capacity."
-      }
+      },
+      "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/copper.svg",
+      "resourceIconStatus": "EXACT_MATCH_TO_EXISTING_RESOURCE_SVG_MANIFEST"
     },
     {
       "routeId": "ROUTE_SITE_POL_RUDNA_COPPER_MINE_MINE_TO_RAW_INVENTORY_V1",
@@ -8895,7 +9545,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           },
           {
             "legId": "ROUTE_SITE_POL_RUDNA_COPPER_MINE_MINE_TO_RAW_INVENTORY_V1_LEG_02",
@@ -8919,7 +9572,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "train",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/train.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           },
           {
             "legId": "ROUTE_SITE_POL_RUDNA_COPPER_MINE_MINE_TO_RAW_INVENTORY_V1_LEG_03",
@@ -8943,7 +9599,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           }
         ],
         "estimatedRouteDistanceKm": 257,
@@ -8979,8 +9638,7 @@
         "resourceIconKey": "copper",
         "transportIconKeys": [
           "truck",
-          "train",
-          "truck"
+          "train"
         ],
         "displayFields": [
           "plannedTransitDays",
@@ -8992,7 +9650,13 @@
           "routeStatus"
         ],
         "actualFleetCountDisplay": "UNKNOWN_NOT_ZERO_AND_NOT_ASSUMED",
-        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM"
+        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM",
+        "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/copper.svg",
+        "resourceIconSource": "OMEGA_INDUSTRIAL_ICONS_V1_MANIFEST",
+        "transportIconAssetPaths": [
+          "assets/omega-industrial-icons-v1/transport/truck.svg",
+          "assets/omega-industrial-icons-v1/transport/train.svg"
+        ]
       },
       "provenance": {
         "authority": "SCENARIO_LOGISTICS_DESIGN_ONLY",
@@ -9007,7 +9671,9 @@
         "sourceResourceId": "copper",
         "sourceCountryId": "POL",
         "note": "Planning template only; not a surveyed corridor, active vehicle, or real-world capacity."
-      }
+      },
+      "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/copper.svg",
+      "resourceIconStatus": "EXACT_MATCH_TO_EXISTING_RESOURCE_SVG_MANIFEST"
     },
     {
       "routeId": "ROUTE_SITE_SDN_HASSAI_GOLD_MINE_MINE_TO_RAW_INVENTORY_V1",
@@ -9096,7 +9762,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           },
           {
             "legId": "ROUTE_SITE_SDN_HASSAI_GOLD_MINE_MINE_TO_RAW_INVENTORY_V1_LEG_02",
@@ -9120,7 +9789,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "ship",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/ship.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           },
           {
             "legId": "ROUTE_SITE_SDN_HASSAI_GOLD_MINE_MINE_TO_RAW_INVENTORY_V1_LEG_03",
@@ -9144,7 +9816,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           }
         ],
         "estimatedRouteDistanceKm": 842,
@@ -9180,8 +9855,7 @@
         "resourceIconKey": "gold",
         "transportIconKeys": [
           "truck",
-          "ship",
-          "truck"
+          "ship"
         ],
         "displayFields": [
           "plannedTransitDays",
@@ -9193,7 +9867,13 @@
           "routeStatus"
         ],
         "actualFleetCountDisplay": "UNKNOWN_NOT_ZERO_AND_NOT_ASSUMED",
-        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM"
+        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM",
+        "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/gold.svg",
+        "resourceIconSource": "OMEGA_INDUSTRIAL_ICONS_V1_MANIFEST",
+        "transportIconAssetPaths": [
+          "assets/omega-industrial-icons-v1/transport/truck.svg",
+          "assets/omega-industrial-icons-v1/transport/ship.svg"
+        ]
       },
       "provenance": {
         "authority": "SCENARIO_LOGISTICS_DESIGN_ONLY",
@@ -9208,7 +9888,9 @@
         "sourceResourceId": "gold",
         "sourceCountryId": "SDN",
         "note": "Planning template only; not a surveyed corridor, active vehicle, or real-world capacity."
-      }
+      },
+      "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/gold.svg",
+      "resourceIconStatus": "EXACT_MATCH_TO_EXISTING_RESOURCE_SVG_MANIFEST"
     },
     {
       "routeId": "ROUTE_SITE_SDN_HASSAI_RED_SEA_GOLD_BELT_MINE_TO_RAW_INVENTORY_V1",
@@ -9297,7 +9979,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           },
           {
             "legId": "ROUTE_SITE_SDN_HASSAI_RED_SEA_GOLD_BELT_MINE_TO_RAW_INVENTORY_V1_LEG_02",
@@ -9321,7 +10006,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "ship",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/ship.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           },
           {
             "legId": "ROUTE_SITE_SDN_HASSAI_RED_SEA_GOLD_BELT_MINE_TO_RAW_INVENTORY_V1_LEG_03",
@@ -9345,7 +10033,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           }
         ],
         "estimatedRouteDistanceKm": 1072,
@@ -9381,8 +10072,7 @@
         "resourceIconKey": "gold",
         "transportIconKeys": [
           "truck",
-          "ship",
-          "truck"
+          "ship"
         ],
         "displayFields": [
           "plannedTransitDays",
@@ -9394,7 +10084,13 @@
           "routeStatus"
         ],
         "actualFleetCountDisplay": "UNKNOWN_NOT_ZERO_AND_NOT_ASSUMED",
-        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM"
+        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM",
+        "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/gold.svg",
+        "resourceIconSource": "OMEGA_INDUSTRIAL_ICONS_V1_MANIFEST",
+        "transportIconAssetPaths": [
+          "assets/omega-industrial-icons-v1/transport/truck.svg",
+          "assets/omega-industrial-icons-v1/transport/ship.svg"
+        ]
       },
       "provenance": {
         "authority": "SCENARIO_LOGISTICS_DESIGN_ONLY",
@@ -9409,7 +10105,9 @@
         "sourceResourceId": "gold",
         "sourceCountryId": "SDN",
         "note": "Planning template only; not a surveyed corridor, active vehicle, or real-world capacity."
-      }
+      },
+      "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/gold.svg",
+      "resourceIconStatus": "EXACT_MATCH_TO_EXISTING_RESOURCE_SVG_MANIFEST"
     },
     {
       "routeId": "ROUTE_SITE_SDN_MUGLAD_PETROLEUM_RIFT_BASIN_MINE_TO_RAW_INVENTORY_V1",
@@ -9417,7 +10115,7 @@
       "countryId": "SDN",
       "siteName": "Muglad Petroleum Rift Basin",
       "resourceId": "crude_oil",
-      "resourceIconKey": "crude-oil",
+      "resourceIconKey": "crude_oil",
       "commodityGroup": "ENERGY_LIQUID",
       "siteType": "OIL_FIELD",
       "sourceOperationalStatus": "SIMULATED_OPERATIONAL_SCENARIO",
@@ -9498,7 +10196,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "pipeline",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/pipeline.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           }
         ],
         "estimatedRouteDistanceKm": 413,
@@ -9531,7 +10232,7 @@
         "noDuplicateBatchReceipt": true
       },
       "uiPresentation": {
-        "resourceIconKey": "crude-oil",
+        "resourceIconKey": "crude_oil",
         "transportIconKeys": [
           "pipeline"
         ],
@@ -9545,7 +10246,12 @@
           "routeStatus"
         ],
         "actualFleetCountDisplay": "UNKNOWN_NOT_ZERO_AND_NOT_ASSUMED",
-        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM"
+        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM",
+        "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/crude-oil.svg",
+        "resourceIconSource": "OMEGA_INDUSTRIAL_ICONS_V1_MANIFEST",
+        "transportIconAssetPaths": [
+          "assets/omega-industrial-icons-v1/transport/pipeline.svg"
+        ]
       },
       "provenance": {
         "authority": "SCENARIO_LOGISTICS_DESIGN_ONLY",
@@ -9560,7 +10266,9 @@
         "sourceResourceId": "crude_oil",
         "sourceCountryId": "SDN",
         "note": "Planning template only; not a surveyed corridor, active vehicle, or real-world capacity."
-      }
+      },
+      "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/crude-oil.svg",
+      "resourceIconStatus": "EXACT_MATCH_TO_EXISTING_RESOURCE_SVG_MANIFEST"
     },
     {
       "routeId": "ROUTE_SITE_STP_JOINT_DEVELOPMENT_ZONE_OIL_BLOCK_1_MINE_TO_RAW_INVENTORY_V1",
@@ -9568,7 +10276,7 @@
       "countryId": "STP",
       "siteName": "Joint Development Zone Oil Block 1",
       "resourceId": "crude_oil",
-      "resourceIconKey": "crude-oil",
+      "resourceIconKey": "crude_oil",
       "commodityGroup": "ENERGY_LIQUID",
       "siteType": "OIL_FIELD",
       "sourceOperationalStatus": "EXPLORATION_SCENARIO_LOCKED",
@@ -9649,7 +10357,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "pipeline",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/pipeline.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           },
           {
             "legId": "ROUTE_SITE_STP_JOINT_DEVELOPMENT_ZONE_OIL_BLOCK_1_MINE_TO_RAW_INVENTORY_V1_LEG_02",
@@ -9673,7 +10384,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "ship",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/ship.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           },
           {
             "legId": "ROUTE_SITE_STP_JOINT_DEVELOPMENT_ZONE_OIL_BLOCK_1_MINE_TO_RAW_INVENTORY_V1_LEG_03",
@@ -9697,7 +10411,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           }
         ],
         "estimatedRouteDistanceKm": 21,
@@ -9730,7 +10447,7 @@
         "noDuplicateBatchReceipt": true
       },
       "uiPresentation": {
-        "resourceIconKey": "crude-oil",
+        "resourceIconKey": "crude_oil",
         "transportIconKeys": [
           "pipeline",
           "ship",
@@ -9746,7 +10463,14 @@
           "routeStatus"
         ],
         "actualFleetCountDisplay": "UNKNOWN_NOT_ZERO_AND_NOT_ASSUMED",
-        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM"
+        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM",
+        "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/crude-oil.svg",
+        "resourceIconSource": "OMEGA_INDUSTRIAL_ICONS_V1_MANIFEST",
+        "transportIconAssetPaths": [
+          "assets/omega-industrial-icons-v1/transport/pipeline.svg",
+          "assets/omega-industrial-icons-v1/transport/ship.svg",
+          "assets/omega-industrial-icons-v1/transport/truck.svg"
+        ]
       },
       "provenance": {
         "authority": "SCENARIO_LOGISTICS_DESIGN_ONLY",
@@ -9761,7 +10485,9 @@
         "sourceResourceId": "crude_oil",
         "sourceCountryId": "STP",
         "note": "Planning template only; not a surveyed corridor, active vehicle, or real-world capacity."
-      }
+      },
+      "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/crude-oil.svg",
+      "resourceIconStatus": "EXACT_MATCH_TO_EXISTING_RESOURCE_SVG_MANIFEST"
     },
     {
       "routeId": "ROUTE_SITE_STP_S_O_TOM_AGGREGATE_QUARRY_ZONE_MINE_TO_RAW_INVENTORY_V1",
@@ -9769,7 +10495,7 @@
       "countryId": "STP",
       "siteName": "São Tomé Aggregate Quarry Zone",
       "resourceId": "construction_aggregate",
-      "resourceIconKey": "industrial-mineral",
+      "resourceIconKey": "construction_aggregate",
       "commodityGroup": "INDUSTRIAL_OR_CONSTRUCTION_MINERAL",
       "siteType": "QUARRY",
       "sourceOperationalStatus": "LIMITED",
@@ -9850,7 +10576,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           }
         ],
         "estimatedRouteDistanceKm": 21,
@@ -9883,7 +10612,7 @@
         "noDuplicateBatchReceipt": true
       },
       "uiPresentation": {
-        "resourceIconKey": "industrial-mineral",
+        "resourceIconKey": "construction_aggregate",
         "transportIconKeys": [
           "truck"
         ],
@@ -9897,7 +10626,12 @@
           "routeStatus"
         ],
         "actualFleetCountDisplay": "UNKNOWN_NOT_ZERO_AND_NOT_ASSUMED",
-        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM"
+        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM",
+        "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/construction-aggregate.svg",
+        "resourceIconSource": "OMEGA_INDUSTRIAL_ICONS_V1_MANIFEST",
+        "transportIconAssetPaths": [
+          "assets/omega-industrial-icons-v1/transport/truck.svg"
+        ]
       },
       "provenance": {
         "authority": "SCENARIO_LOGISTICS_DESIGN_ONLY",
@@ -9912,7 +10646,9 @@
         "sourceResourceId": "construction_aggregate",
         "sourceCountryId": "STP",
         "note": "Planning template only; not a surveyed corridor, active vehicle, or real-world capacity."
-      }
+      },
+      "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/construction-aggregate.svg",
+      "resourceIconStatus": "EXACT_MATCH_TO_EXISTING_RESOURCE_SVG_MANIFEST"
     },
     {
       "routeId": "ROUTE_SITE_SVN_TRBOVLJE_LIMESTONE_QUARRY_ZONE_MINE_TO_RAW_INVENTORY_V1",
@@ -10001,7 +10737,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           }
         ],
         "estimatedRouteDistanceKm": 17,
@@ -10048,7 +10787,12 @@
           "routeStatus"
         ],
         "actualFleetCountDisplay": "UNKNOWN_NOT_ZERO_AND_NOT_ASSUMED",
-        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM"
+        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM",
+        "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/limestone.svg",
+        "resourceIconSource": "OMEGA_INDUSTRIAL_ICONS_V1_MANIFEST",
+        "transportIconAssetPaths": [
+          "assets/omega-industrial-icons-v1/transport/truck.svg"
+        ]
       },
       "provenance": {
         "authority": "SCENARIO_LOGISTICS_DESIGN_ONLY",
@@ -10063,7 +10807,9 @@
         "sourceResourceId": "limestone",
         "sourceCountryId": "SVN",
         "note": "Planning template only; not a surveyed corridor, active vehicle, or real-world capacity."
-      }
+      },
+      "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/limestone.svg",
+      "resourceIconStatus": "EXACT_MATCH_TO_EXISTING_RESOURCE_SVG_MANIFEST"
     },
     {
       "routeId": "ROUTE_SITE_TON_NUKU_ALOFA_AGGREGATE_QUARRY_ZONE_MINE_TO_RAW_INVENTORY_V1",
@@ -10071,7 +10817,7 @@
       "countryId": "TON",
       "siteName": "Nuku'alofa Aggregate Quarry Zone",
       "resourceId": "construction_aggregate",
-      "resourceIconKey": "industrial-mineral",
+      "resourceIconKey": "construction_aggregate",
       "commodityGroup": "INDUSTRIAL_OR_CONSTRUCTION_MINERAL",
       "siteType": "QUARRY",
       "sourceOperationalStatus": "LIMITED",
@@ -10152,7 +10898,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           }
         ],
         "estimatedRouteDistanceKm": 8,
@@ -10185,7 +10934,7 @@
         "noDuplicateBatchReceipt": true
       },
       "uiPresentation": {
-        "resourceIconKey": "industrial-mineral",
+        "resourceIconKey": "construction_aggregate",
         "transportIconKeys": [
           "truck"
         ],
@@ -10199,7 +10948,12 @@
           "routeStatus"
         ],
         "actualFleetCountDisplay": "UNKNOWN_NOT_ZERO_AND_NOT_ASSUMED",
-        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM"
+        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM",
+        "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/construction-aggregate.svg",
+        "resourceIconSource": "OMEGA_INDUSTRIAL_ICONS_V1_MANIFEST",
+        "transportIconAssetPaths": [
+          "assets/omega-industrial-icons-v1/transport/truck.svg"
+        ]
       },
       "provenance": {
         "authority": "SCENARIO_LOGISTICS_DESIGN_ONLY",
@@ -10214,7 +10968,9 @@
         "sourceResourceId": "construction_aggregate",
         "sourceCountryId": "TON",
         "note": "Planning template only; not a surveyed corridor, active vehicle, or real-world capacity."
-      }
+      },
+      "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/construction-aggregate.svg",
+      "resourceIconStatus": "EXACT_MATCH_TO_EXISTING_RESOURCE_SVG_MANIFEST"
     },
     {
       "routeId": "ROUTE_SITE_TTO_JUNIPER_OIL_FIELD_MINE_TO_RAW_INVENTORY_V1",
@@ -10222,7 +10978,7 @@
       "countryId": "TTO",
       "siteName": "Juniper Oil Field",
       "resourceId": "crude_oil",
-      "resourceIconKey": "crude-oil",
+      "resourceIconKey": "crude_oil",
       "commodityGroup": "ENERGY_LIQUID",
       "siteType": "OIL_FIELD",
       "sourceOperationalStatus": "ACTIVE_PRODUCING",
@@ -10303,7 +11059,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "pipeline",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/pipeline.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           },
           {
             "legId": "ROUTE_SITE_TTO_JUNIPER_OIL_FIELD_MINE_TO_RAW_INVENTORY_V1_LEG_02",
@@ -10327,7 +11086,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "ship",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/ship.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           },
           {
             "legId": "ROUTE_SITE_TTO_JUNIPER_OIL_FIELD_MINE_TO_RAW_INVENTORY_V1_LEG_03",
@@ -10351,7 +11113,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           }
         ],
         "estimatedRouteDistanceKm": 125,
@@ -10384,7 +11149,7 @@
         "noDuplicateBatchReceipt": true
       },
       "uiPresentation": {
-        "resourceIconKey": "crude-oil",
+        "resourceIconKey": "crude_oil",
         "transportIconKeys": [
           "pipeline",
           "ship",
@@ -10400,7 +11165,14 @@
           "routeStatus"
         ],
         "actualFleetCountDisplay": "UNKNOWN_NOT_ZERO_AND_NOT_ASSUMED",
-        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM"
+        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM",
+        "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/crude-oil.svg",
+        "resourceIconSource": "OMEGA_INDUSTRIAL_ICONS_V1_MANIFEST",
+        "transportIconAssetPaths": [
+          "assets/omega-industrial-icons-v1/transport/pipeline.svg",
+          "assets/omega-industrial-icons-v1/transport/ship.svg",
+          "assets/omega-industrial-icons-v1/transport/truck.svg"
+        ]
       },
       "provenance": {
         "authority": "SCENARIO_LOGISTICS_DESIGN_ONLY",
@@ -10415,7 +11187,9 @@
         "sourceResourceId": "crude_oil",
         "sourceCountryId": "TTO",
         "note": "Planning template only; not a surveyed corridor, active vehicle, or real-world capacity."
-      }
+      },
+      "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/crude-oil.svg",
+      "resourceIconStatus": "EXACT_MATCH_TO_EXISTING_RESOURCE_SVG_MANIFEST"
     },
     {
       "routeId": "ROUTE_SITE_TUN_MDHILLA_PHOSPHATE_MINE_MINE_TO_RAW_INVENTORY_V1",
@@ -10504,7 +11278,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           }
         ],
         "estimatedRouteDistanceKm": 100,
@@ -10551,7 +11328,12 @@
           "routeStatus"
         ],
         "actualFleetCountDisplay": "UNKNOWN_NOT_ZERO_AND_NOT_ASSUMED",
-        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM"
+        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM",
+        "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/phosphate.svg",
+        "resourceIconSource": "OMEGA_INDUSTRIAL_ICONS_V1_MANIFEST",
+        "transportIconAssetPaths": [
+          "assets/omega-industrial-icons-v1/transport/truck.svg"
+        ]
       },
       "provenance": {
         "authority": "SCENARIO_LOGISTICS_DESIGN_ONLY",
@@ -10566,7 +11348,9 @@
         "sourceResourceId": "phosphate",
         "sourceCountryId": "TUN",
         "note": "Planning template only; not a surveyed corridor, active vehicle, or real-world capacity."
-      }
+      },
+      "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/phosphate.svg",
+      "resourceIconStatus": "EXACT_MATCH_TO_EXISTING_RESOURCE_SVG_MANIFEST"
     },
     {
       "routeId": "ROUTE_SITE_TUN_PELAGIAN_SFAX_OFFSHORE_GAS_OIL_FIELD_MINE_TO_RAW_INVENTORY_V1",
@@ -10574,7 +11358,7 @@
       "countryId": "TUN",
       "siteName": "Pelagian Sfax Offshore Gas & Oil Field",
       "resourceId": "natural_gas",
-      "resourceIconKey": "natural-gas",
+      "resourceIconKey": "natural_gas",
       "commodityGroup": "ENERGY_GAS",
       "siteType": "GAS_FIELD",
       "sourceOperationalStatus": "SIMULATED_OPERATIONAL_SCENARIO",
@@ -10655,7 +11439,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "pipeline",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/pipeline.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           },
           {
             "legId": "ROUTE_SITE_TUN_PELAGIAN_SFAX_OFFSHORE_GAS_OIL_FIELD_MINE_TO_RAW_INVENTORY_V1_LEG_02",
@@ -10679,7 +11466,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "pipeline",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/pipeline.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           }
         ],
         "estimatedRouteDistanceKm": 219,
@@ -10712,9 +11502,8 @@
         "noDuplicateBatchReceipt": true
       },
       "uiPresentation": {
-        "resourceIconKey": "natural-gas",
+        "resourceIconKey": "natural_gas",
         "transportIconKeys": [
-          "pipeline",
           "pipeline"
         ],
         "displayFields": [
@@ -10727,7 +11516,12 @@
           "routeStatus"
         ],
         "actualFleetCountDisplay": "UNKNOWN_NOT_ZERO_AND_NOT_ASSUMED",
-        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM"
+        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM",
+        "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/natural-gas.svg",
+        "resourceIconSource": "OMEGA_INDUSTRIAL_ICONS_V1_MANIFEST",
+        "transportIconAssetPaths": [
+          "assets/omega-industrial-icons-v1/transport/pipeline.svg"
+        ]
       },
       "provenance": {
         "authority": "SCENARIO_LOGISTICS_DESIGN_ONLY",
@@ -10742,7 +11536,9 @@
         "sourceResourceId": "natural_gas",
         "sourceCountryId": "TUN",
         "note": "Planning template only; not a surveyed corridor, active vehicle, or real-world capacity."
-      }
+      },
+      "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/natural-gas.svg",
+      "resourceIconStatus": "EXACT_MATCH_TO_EXISTING_RESOURCE_SVG_MANIFEST"
     },
     {
       "routeId": "ROUTE_SITE_UZB_KALMAKYR_COPPER_MINE_MINE_TO_RAW_INVENTORY_V1",
@@ -10831,7 +11627,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           },
           {
             "legId": "ROUTE_SITE_UZB_KALMAKYR_COPPER_MINE_MINE_TO_RAW_INVENTORY_V1_LEG_02",
@@ -10855,7 +11654,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "train",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/train.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           },
           {
             "legId": "ROUTE_SITE_UZB_KALMAKYR_COPPER_MINE_MINE_TO_RAW_INVENTORY_V1_LEG_03",
@@ -10879,7 +11681,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           }
         ],
         "estimatedRouteDistanceKm": 564,
@@ -10915,8 +11720,7 @@
         "resourceIconKey": "copper",
         "transportIconKeys": [
           "truck",
-          "train",
-          "truck"
+          "train"
         ],
         "displayFields": [
           "plannedTransitDays",
@@ -10928,7 +11732,13 @@
           "routeStatus"
         ],
         "actualFleetCountDisplay": "UNKNOWN_NOT_ZERO_AND_NOT_ASSUMED",
-        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM"
+        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM",
+        "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/copper.svg",
+        "resourceIconSource": "OMEGA_INDUSTRIAL_ICONS_V1_MANIFEST",
+        "transportIconAssetPaths": [
+          "assets/omega-industrial-icons-v1/transport/truck.svg",
+          "assets/omega-industrial-icons-v1/transport/train.svg"
+        ]
       },
       "provenance": {
         "authority": "SCENARIO_LOGISTICS_DESIGN_ONLY",
@@ -10943,7 +11753,9 @@
         "sourceResourceId": "copper",
         "sourceCountryId": "UZB",
         "note": "Planning template only; not a surveyed corridor, active vehicle, or real-world capacity."
-      }
+      },
+      "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/copper.svg",
+      "resourceIconStatus": "EXACT_MATCH_TO_EXISTING_RESOURCE_SVG_MANIFEST"
     },
     {
       "routeId": "ROUTE_SITE_UZB_MURUNTAU_GOLD_MINE_MINE_TO_RAW_INVENTORY_V1",
@@ -11032,7 +11844,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           }
         ],
         "estimatedRouteDistanceKm": 13,
@@ -11079,7 +11894,12 @@
           "routeStatus"
         ],
         "actualFleetCountDisplay": "UNKNOWN_NOT_ZERO_AND_NOT_ASSUMED",
-        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM"
+        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM",
+        "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/gold.svg",
+        "resourceIconSource": "OMEGA_INDUSTRIAL_ICONS_V1_MANIFEST",
+        "transportIconAssetPaths": [
+          "assets/omega-industrial-icons-v1/transport/truck.svg"
+        ]
       },
       "provenance": {
         "authority": "SCENARIO_LOGISTICS_DESIGN_ONLY",
@@ -11094,7 +11914,9 @@
         "sourceResourceId": "gold",
         "sourceCountryId": "UZB",
         "note": "Planning template only; not a surveyed corridor, active vehicle, or real-world capacity."
-      }
+      },
+      "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/gold.svg",
+      "resourceIconStatus": "EXACT_MATCH_TO_EXISTING_RESOURCE_SVG_MANIFEST"
     },
     {
       "routeId": "ROUTE_SITE_VNM_NUI_PHAO_POLYMETALLIC_MINE_MINE_TO_RAW_INVENTORY_V1",
@@ -11183,7 +12005,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           },
           {
             "legId": "ROUTE_SITE_VNM_NUI_PHAO_POLYMETALLIC_MINE_MINE_TO_RAW_INVENTORY_V1_LEG_02",
@@ -11207,7 +12032,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "train",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/train.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           },
           {
             "legId": "ROUTE_SITE_VNM_NUI_PHAO_POLYMETALLIC_MINE_MINE_TO_RAW_INVENTORY_V1_LEG_03",
@@ -11231,7 +12059,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           }
         ],
         "estimatedRouteDistanceKm": 1044,
@@ -11267,8 +12098,7 @@
         "resourceIconKey": "tungsten",
         "transportIconKeys": [
           "truck",
-          "train",
-          "truck"
+          "train"
         ],
         "displayFields": [
           "plannedTransitDays",
@@ -11280,7 +12110,13 @@
           "routeStatus"
         ],
         "actualFleetCountDisplay": "UNKNOWN_NOT_ZERO_AND_NOT_ASSUMED",
-        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM"
+        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM",
+        "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/tungsten.svg",
+        "resourceIconSource": "OMEGA_INDUSTRIAL_ICONS_V1_MANIFEST",
+        "transportIconAssetPaths": [
+          "assets/omega-industrial-icons-v1/transport/truck.svg",
+          "assets/omega-industrial-icons-v1/transport/train.svg"
+        ]
       },
       "provenance": {
         "authority": "SCENARIO_LOGISTICS_DESIGN_ONLY",
@@ -11295,7 +12131,9 @@
         "sourceResourceId": "tungsten",
         "sourceCountryId": "VNM",
         "note": "Planning template only; not a surveyed corridor, active vehicle, or real-world capacity."
-      }
+      },
+      "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/tungsten.svg",
+      "resourceIconStatus": "EXACT_MATCH_TO_EXISTING_RESOURCE_SVG_MANIFEST"
     },
     {
       "routeId": "ROUTE_SITE_WSM_LEFAGA_AGGREGATE_QUARRY_ZONE_MINE_TO_RAW_INVENTORY_V1",
@@ -11303,7 +12141,7 @@
       "countryId": "WSM",
       "siteName": "Lefaga Aggregate Quarry Zone",
       "resourceId": "construction_aggregate",
-      "resourceIconKey": "industrial-mineral",
+      "resourceIconKey": "construction_aggregate",
       "commodityGroup": "INDUSTRIAL_OR_CONSTRUCTION_MINERAL",
       "siteType": "QUARRY",
       "sourceOperationalStatus": "LIMITED",
@@ -11384,7 +12222,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "truck",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/truck.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           }
         ],
         "estimatedRouteDistanceKm": 67,
@@ -11417,7 +12258,7 @@
         "noDuplicateBatchReceipt": true
       },
       "uiPresentation": {
-        "resourceIconKey": "industrial-mineral",
+        "resourceIconKey": "construction_aggregate",
         "transportIconKeys": [
           "truck"
         ],
@@ -11431,7 +12272,12 @@
           "routeStatus"
         ],
         "actualFleetCountDisplay": "UNKNOWN_NOT_ZERO_AND_NOT_ASSUMED",
-        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM"
+        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM",
+        "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/construction-aggregate.svg",
+        "resourceIconSource": "OMEGA_INDUSTRIAL_ICONS_V1_MANIFEST",
+        "transportIconAssetPaths": [
+          "assets/omega-industrial-icons-v1/transport/truck.svg"
+        ]
       },
       "provenance": {
         "authority": "SCENARIO_LOGISTICS_DESIGN_ONLY",
@@ -11446,7 +12292,9 @@
         "sourceResourceId": "construction_aggregate",
         "sourceCountryId": "WSM",
         "note": "Planning template only; not a surveyed corridor, active vehicle, or real-world capacity."
-      }
+      },
+      "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/construction-aggregate.svg",
+      "resourceIconStatus": "EXACT_MATCH_TO_EXISTING_RESOURCE_SVG_MANIFEST"
     },
     {
       "routeId": "ROUTE_SITE_YEM_MARIB_JAWF_OIL_FIELDS_MINE_TO_RAW_INVENTORY_V1",
@@ -11454,7 +12302,7 @@
       "countryId": "YEM",
       "siteName": "Marib-Jawf Oil Fields",
       "resourceId": "crude_oil",
-      "resourceIconKey": "crude-oil",
+      "resourceIconKey": "crude_oil",
       "commodityGroup": "ENERGY_LIQUID",
       "siteType": "OIL_FIELD",
       "sourceOperationalStatus": "DISRUPTED",
@@ -11535,7 +12383,10 @@
             "actualBoundFleetUnits": null,
             "assetBindingStatus": "NOT_YET_LINKED_TO_TRANSPORT_MINISTRY",
             "vehicleAssetIds": null,
-            "status": "DESIGN_ONLY_NOT_DISPATCHABLE"
+            "status": "DESIGN_ONLY_NOT_DISPATCHABLE",
+            "transportIconKey": "pipeline",
+            "transportIconAssetPath": "assets/omega-industrial-icons-v1/transport/pipeline.svg",
+            "transportIconAuthority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
           }
         ],
         "estimatedRouteDistanceKm": 384,
@@ -11568,7 +12419,7 @@
         "noDuplicateBatchReceipt": true
       },
       "uiPresentation": {
-        "resourceIconKey": "crude-oil",
+        "resourceIconKey": "crude_oil",
         "transportIconKeys": [
           "pipeline"
         ],
@@ -11582,7 +12433,12 @@
           "routeStatus"
         ],
         "actualFleetCountDisplay": "UNKNOWN_NOT_ZERO_AND_NOT_ASSUMED",
-        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM"
+        "styleContract": "RESOURCE_MINISTRY_SVG_ICON_KEYS_AND_EXISTING_CARD_SYSTEM",
+        "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/crude-oil.svg",
+        "resourceIconSource": "OMEGA_INDUSTRIAL_ICONS_V1_MANIFEST",
+        "transportIconAssetPaths": [
+          "assets/omega-industrial-icons-v1/transport/pipeline.svg"
+        ]
       },
       "provenance": {
         "authority": "SCENARIO_LOGISTICS_DESIGN_ONLY",
@@ -11597,7 +12453,9 @@
         "sourceResourceId": "crude_oil",
         "sourceCountryId": "YEM",
         "note": "Planning template only; not a surveyed corridor, active vehicle, or real-world capacity."
-      }
+      },
+      "resourceIconAssetPath": "assets/omega-industrial-icons-v1/resources/crude-oil.svg",
+      "resourceIconStatus": "EXACT_MATCH_TO_EXISTING_RESOURCE_SVG_MANIFEST"
     }
   ]
 }

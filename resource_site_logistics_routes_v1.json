@@ -25,7 +25,9 @@
     "Route records do not assert a surveyed corridor, active vehicle or real-world capacity.",
     "Destination uses WH-ISO3-RAW; physical warehouse coordinates are not recorded.",
     "Batch stock must be reserved before dispatch and inventory credited only after an idempotent arrival receipt.",
-    "Inactive, disputed, unverified or uncommissioned mines remain gated by site/runtime status."
+    "Inactive, disputed, unverified or uncommissioned mines remain gated by site/runtime status.",
+    "Every route resourceIconKey equals the canonical resourceId and resolves to an existing local resource SVG.",
+    "Truck, train, ship, barge and pipeline modes point to local SVG transport assets; no remote icons are required."
   ],
   "routeCountByMode": {
     "truck": 899,
@@ -666,5 +668,44 @@
         "ZMB"
       ]
     }
-  ]
+  ],
+  "transportIconAssets": {
+    "truck": {
+      "assetId": "truck",
+      "path": "assets/omega-industrial-icons-v1/transport/truck.svg",
+      "source": "LOCAL_SVG_ASSET",
+      "authority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
+    },
+    "rail": {
+      "assetId": "train",
+      "path": "assets/omega-industrial-icons-v1/transport/train.svg",
+      "source": "LOCAL_SVG_ASSET",
+      "authority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
+    },
+    "ship": {
+      "assetId": "ship",
+      "path": "assets/omega-industrial-icons-v1/transport/ship.svg",
+      "source": "LOCAL_SVG_ASSET",
+      "authority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
+    },
+    "barge": {
+      "assetId": "barge",
+      "path": "assets/omega-industrial-icons-v1/transport/barge.svg",
+      "source": "LOCAL_SVG_ASSET",
+      "authority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
+    },
+    "pipeline": {
+      "assetId": "pipeline",
+      "path": "assets/omega-industrial-icons-v1/transport/pipeline.svg",
+      "source": "LOCAL_SVG_ASSET",
+      "authority": "OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1"
+    }
+  },
+  "resourceIconCoverage": {
+    "authority": "assets/omega-industrial-icons-v1/manifest.json",
+    "iconCatalogCount": 42,
+    "canonicalExactMatches": 561,
+    "missingResourceAssets": 0,
+    "statement": "Every source resource ID used by the 561-site route roster maps to an exact existing offline SVG asset and canonical icon ID."
+  }
 }
