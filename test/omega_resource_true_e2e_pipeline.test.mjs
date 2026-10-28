@@ -336,8 +336,14 @@ test('real site extraction flows through raw warehouse, transport, factory, fini
   }
   const sameResourceDeliveryQuantity=advanced.shipments.filter(x=>String(x.resourceId)==='coal')
     .reduce((sum,x)=>sum+(Number(x.quantity)||0),0);
-  assert.equal(Number(resource.inventory.coal)||0,rawStockBeforeDelivery-sameResourceDeliveryQuantity,'raw inventory must debit the combined same-resource deliveries exactly once');
-  assert.equal(Number(resource.warehouse.availableByResource.coal)||0,rawWarehouseBeforeDelivery-sameResourceDeliveryQuantity,'raw warehouse must debit the combined same-resource deliveries exactly once');
+  const sameResourceMineReceiptQuantity=(advanced.mineShipments||[]).filter(x=>String(x.resourceId)==='coal')
+    .reduce((sum,x)=>sum+(Number(x.quantity)||0),0);
+  assert.equal(Number(resource.inventory.coal)||0,
+    rawStockBeforeDelivery+sameResourceMineReceiptQuantity-sameResourceDeliveryQuantity,
+    'raw inventory must reconcile mine receipts and factory consumption exactly once');
+  assert.equal(Number(resource.warehouse.availableByResource.coal)||0,
+    rawWarehouseBeforeDelivery+sameResourceMineReceiptQuantity-sameResourceDeliveryQuantity,
+    'raw warehouse on-hand stock must reconcile mine receipts and factory receipts in the same turn');
   const newlyReservedCoal=(resource.industrialNetwork?.shipments||[])
     // Mine-to-warehouse hauls debit held mine stock; only the factory leg reserves raw warehouse stock.
     .filter(x=>String(x.resourceId)==='coal'&&String(x.shipmentType||'')==='RAW_TO_FACTORY'&&
