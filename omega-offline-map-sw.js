@@ -2,7 +2,7 @@
  * Same-origin app files are cached for offline relaunch; remote map tiles are never cached here.
  */
 "use strict";
-const CACHE_NAME = "omega-offline-atlas-shell-v56";
+const CACHE_NAME = "omega-offline-atlas-shell-v57";
 const APP_BASE = new URL("./", self.location.href);
 const INDEX_URL = new URL("index.html", APP_BASE).href;
 const CORE_ASSETS = [
@@ -35,6 +35,13 @@ const CORE_ASSETS = [
   "./omega_resource_mine_management_v1.js", "./resource_site_country_mineplay_batch_20261020_v1.json", "./resource_site_country_mineplay_batch_20261024_v1.json", "./resource_site_country_mineplay_critical_batch_20261024_v1.json",
   "./resource_site_canonical_catalog_v1.json", "./resource_site_master_registry_v1.json",
   "./resource_site_country_expansion_v1.json",
+  "./resource_site_logistics_routes_v1.json",
+  "./resource_site_logistics_routes_v1_part_01.json",
+  "./resource_site_logistics_routes_v1_part_02.json",
+  "./resource_site_logistics_routes_v1_part_03.json",
+  "./resource_site_logistics_routes_v1_part_04.json",
+  "./resource_site_logistics_routes_v1_part_05.json",
+  "./resource_site_logistics_routes_v1_part_06.json",
   "./omega_minister_identity_pool_v1.js", "./minister_country_roster_manifest_v1.json", "./ministers.json",
   "./omega_ui_v2/omega-ui-v2.css",
   "./omega_ui_v2/ministry-visual-refresh.css",
