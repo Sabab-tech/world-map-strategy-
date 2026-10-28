@@ -192,6 +192,11 @@ test('every committed deposit event is routed country-by-country through factory
     {site:h.sites[1],resourceId:'copper',batchId:'BATCH-CHL-AUTO-COPPER',occurrenceKey:'SITE_OCC:CHL:SITE_CHL_collahuasi_copper_mine',quantity:1500,output:'COPPER_CONCENTRATE'}
   ];
   for(const f of fixtures){
+    state.simulation.playerCountryId=f.site.countryId;
+    state.simulation.session=state.simulation.session||{};
+    state.simulation.session.playerCountryId=f.site.countryId;
+    const routeLoad=await industry.loadSiteLogisticsRoutes(f.site.countryId);
+    assert.equal(routeLoad.status,'READY',JSON.stringify(routeLoad));
     seedTestFactory(state,f.site,f.resourceId);
     seedExtractedBatch(state,f.site,f.resourceId,f.batchId,f.occurrenceKey,f.quantity);
     g.dispatchEvent(new CustomEventMock('OMEGA_RESOURCE_EXTRACTION_COMPLETED',{detail:{eventType:'OMEGA_RESOURCE_EXTRACTION_COMPLETED',
@@ -207,27 +212,64 @@ test('every committed deposit event is routed country-by-country through factory
   assert.equal(first.dispatched,2,"one new shipment must be dispatched for each country's committed extraction batch: "+JSON.stringify({first,flowDebug}));
   for(const f of fixtures){
     const c=f.site.countryId,rs=state.resource[c],network=rs.industrialNetwork;
-    assert.equal(network.shipments.filter(x=>x.batchId===f.batchId&&x.status==='IN_TRANSIT').length,1);
+    const mineHauls=network.shipments.filter(x=>x.batchId===f.batchId&&x.shipmentType==='MINE_TO_WAREHOUSE'&&x.status==='IN_TRANSIT');
+    assert.equal(mineHauls.length,1,'extraction must create one timed mine-to-warehouse shipment');
+    assert.equal(network.shipments.filter(x=>x.batchId===f.batchId&&x.shipmentType==='RAW_TO_FACTORY'&&x.status==='IN_TRANSIT').length,0,
+      'factory transport must not begin before the mine cargo is received into the sovereign warehouse');
     assert.equal(network.siteFlowLedger.filter(x=>x.batchId===f.batchId).length,1);
     const originalReserved=Number(rs.warehouse.reservedByResource[f.resourceId])||0;
-    assert.ok(originalReserved>0,"shipment reservation must be held in the producing country's raw warehouse");
-    // A duplicate notification must not reserve or dispatch the same batch a second time.
+    const originalAvailable=Number(rs.warehouse.availableByResource[f.resourceId])||0;
+    const originalInventory=Number(rs.inventory[f.resourceId])||0;
+    // Mine-haul cargo is physically removed from warehouse availability; it is not a
+    // factory reservation. Replaying the extraction event must not move or reserve it again.
+    assert.equal(originalReserved,0,'mine transit must not be booked as a warehouse-to-factory reservation');
+    state.simulation.playerCountryId=c;
+    state.simulation.session.playerCountryId=c;
+    await industry.loadSiteLogisticsRoutes(c);
     g.dispatchEvent(new CustomEventMock('OMEGA_RESOURCE_EXTRACTION_COMPLETED',{detail:{eventType:'OMEGA_RESOURCE_EXTRACTION_COMPLETED',
       countryId:c,payload:{countryId:c,siteReferenceKey:f.site.siteId,siteName:f.site.siteName,occurrenceKey:f.occurrenceKey,
         resourceId:f.resourceId,quantity:f.quantity,batch:{batchId:f.batchId,resourceId:f.resourceId,quantity:f.quantity,
           unit:'TONNES',warehouseId:'WH-'+c+'-RAW',occurrenceKey:f.occurrenceKey,siteReferenceKey:f.site.siteId}}}}));
-    assert.equal(network.shipments.filter(x=>x.batchId===f.batchId&&x.status==='IN_TRANSIT').length,1);
+    assert.equal(network.shipments.filter(x=>x.batchId===f.batchId&&x.shipmentType==='MINE_TO_WAREHOUSE'&&x.status==='IN_TRANSIT').length,1);
     assert.equal(Number(rs.warehouse.reservedByResource[f.resourceId])||0,originalReserved);
+    assert.equal(Number(rs.warehouse.availableByResource[f.resourceId])||0,originalAvailable);
+    assert.equal(Number(rs.inventory[f.resourceId])||0,originalInventory);
   }
   for(const f of fixtures){
     const c=f.site.countryId,rs=state.resource[c];
-    const shipment=rs.industrialNetwork.shipments.find(x=>x.batchId===f.batchId&&x.status==='IN_TRANSIT');
-    advanceToGameTurn(state,shipment.etaTurn);
-    const advanced=industry.advanceShipments(c);
-    assert.equal(advanced.delivered,1,JSON.stringify(advanced));
-    const result=advanced.shipments[0];
+    state.simulation.playerCountryId=c;
+    state.simulation.session=state.simulation.session||{};
+    state.simulation.session.playerCountryId=c;
+    await industry.loadSiteLogisticsRoutes(c);
+    const mineShipment=rs.industrialNetwork.shipments.find(x=>x.batchId===f.batchId&&
+      x.shipmentType==='MINE_TO_WAREHOUSE'&&x.status==='IN_TRANSIT');
+    assert.ok(mineShipment,'the source batch needs a first-leg mine haul before factory delivery');
+    advanceToGameTurn(state,mineShipment.etaTurn);
+    const mineArrival=await industry.advanceShipments(c);
+    assert.ok(mineArrival.mineDelivered>=1,JSON.stringify(mineArrival));
+    assert.equal(mineArrival.delivered,0,'a raw warehouse receipt is not a factory delivery');
+    assert.ok(rs.warehouse.receipts.some(x=>x.receiptId==='MINE-WH-REC:'+mineShipment.shipmentId&&x.status==='RECEIVED'),
+      'the raw warehouse must record the actual first-leg receipt');
+    // Residual site-flow dispatch is turn-driven and runs before receipts are posted.
+    // Tick once more so the newly received warehouse quantity can open the second leg.
+    await industry.advanceShipments(c);
+    const factoryShipment=rs.industrialNetwork.shipments.find(x=>x.batchId===f.batchId&&
+      x.shipmentType==='RAW_TO_FACTORY'&&['IN_TRANSIT','BLOCKED_ROUTE_BLOCKADE'].includes(x.status));
+    assert.ok(factoryShipment,'a successful mine receipt must open a separate timed factory shipment');
+    advanceToGameTurn(state,factoryShipment.etaTurn);
+    let advanced=null,result=null;
+    for(let attempt=0;attempt<8;attempt++){
+      if(attempt>0)advanceOneGameTurn(state);
+      state.simulation.playerCountryId=c;
+      state.simulation.session.playerCountryId=c;
+      await industry.loadSiteLogisticsRoutes(c);
+      advanced=await industry.advanceShipments(c);
+      result=(advanced.shipments||[]).find(x=>String(x.shipmentId)===String(factoryShipment.shipmentId))||
+        rs.industrialNetwork.deliveries.find(x=>String(x.shipmentId)===String(factoryShipment.shipmentId));
+      if(result?.destinationStatus==='FACTORY_RECEIVED')break;
+    }
+    assert.ok(result?.destinationStatus==='FACTORY_RECEIVED',JSON.stringify({advanced,factoryShipment,result}));
     assert.equal(result.processingStatus,'IN_PROGRESS',JSON.stringify(result.processing));
-    assert.equal(result.destinationStatus,'FACTORY_RECEIVED');
     assert.equal(Number(rs.inventory[f.output])||0,0,'finished output must not be committed on the delivery tick');
     const factory=state.economy[c].productionAssets.find(x=>String(x.id||x.assetId||x.projectId)===String(result.factoryId));
     assert.ok(factory,'scheduled production must retain a country-local factory');
@@ -337,6 +379,10 @@ test('all expanded deposits receive explicit flow status; active sites dispatch 
       continue;
     }
     const batchId='BATCH-ALL-SITE:'+site.siteId,quantity=100+(index%17);
+    state.simulation.playerCountryId=cid;
+    state.simulation.session=state.simulation.session||{};
+    state.simulation.session.playerCountryId=cid;
+    await industry.loadSiteLogisticsRoutes(cid);
     seedTestFactory(state,site,rid);
     seedExtractedBatch(state,site,rid,batchId,occurrenceKey,quantity);
     expectedBatchIds.push(batchId);
@@ -349,7 +395,7 @@ test('all expanded deposits receive explicit flow status; active sites dispatch 
     if(flow?.status==='BLOCKED'||flow?.status==='EXTRACTED_AWAITING_ROUTE'||flow?.status==='EXTRACTED_AWAITING_FACTORY')
       failedActive.push({siteId:site.siteId,countryId:cid,resourceId:rid,status:flow.status,reason:flow.blockReason||null,
         stages:(flow.stages||[]).filter(x=>/BLOCKED/.test(x.status)).map(x=>({stage:x.stage,reason:x.reason,detail:x.detail||null}))});
-    if(flow&&flow.stages.some(x=>x.stage==='TRANSPORT'&&['IN_TRANSIT','DELIVERED'].includes(x.status)))committed++;
+    if(flow&&flow.stages.some(x=>x.stage==='TRANSPORT'&&['IN_TRANSIT','IN_TRANSIT_TO_RAW_WAREHOUSE','IN_TRANSIT_TO_WAREHOUSE','IN_TRANSIT_TO_FACTORY','DELIVERED'].includes(x.status)))committed++;
   }
   const expected=new Set(expectedBatchIds),actual=new Set(),actualBlocked=new Set();
   let totalFlows=0,untracked=[];
@@ -399,8 +445,14 @@ test('all expanded deposits receive explicit flow status; active sites dispatch 
     state.simulation.turn=simulationTurn;
     const daysPerTurn=Math.max(1,Math.round(Number(state.simulation.daysPerTurn)||1));
     state.simulation.date=new Date(Date.UTC(Number(state.simulation.startYear)||2025,0,1)+(simulationTurn-1)*daysPerTurn*86400000).toISOString().slice(0,10);
-    for(const cid of countryIds)industry.processPendingFactoryInputs(cid);
-    for(const cid of countryIds)industry.advanceShipments(cid);
+    for(const cid of countryIds){
+      state.simulation.playerCountryId=cid;
+      state.simulation.session=state.simulation.session||{};
+      state.simulation.session.playerCountryId=cid;
+      await industry.loadSiteLogisticsRoutes(cid);
+      await industry.processPendingFactoryInputs(cid);
+      await industry.advanceShipments(cid);
+    }
   }
 
   const endToEndFailures=[];

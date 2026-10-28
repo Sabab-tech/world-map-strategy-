@@ -183,43 +183,181 @@ test('real site extraction flows through raw warehouse, transport, factory, fini
   };
   state.transport.BGD.infrastructure.utilitySupply={electricityMWhPerDay:1000000,waterM3PerDay:1000000,
     authority:'TEST_FIXTURE',status:'AVAILABLE',simulationOnly:true,assets:[]};
+  state.simulation.playerCountryId='BGD';
+  const countryRouteLoad=await industry.loadSiteLogisticsRoutes('BGD');
+  assert.equal(countryRouteLoad.status,'READY',JSON.stringify(countryRouteLoad));
+  assert.equal(countryRouteLoad.routeCount,4,'only Bangladesh route shard should be loaded');
+  const siteRuntimes=state.resource.BGD.industrialNetwork.siteLogisticsBySiteId;
+  assert.equal(Object.keys(siteRuntimes).length,4,'every site in the selected-country shard gets an independent runtime ledger');
+  assert.ok(Object.values(siteRuntimes).every(row=>row.status==='IDLE'&&row.runtimeActive===false),
+    'route registration must not automatically run every mine');
+  const foreignStateBeforeTick=state.resource.KWT;
+  const foreignTick=industry.advanceShipments('KWT');
+  assert.equal(foreignTick.status,'SKIPPED','a non-selected country must not advance logistics');
+  assert.equal(state.resource.KWT,foreignStateBeforeTick,'the non-selected country must not be hydrated or mutated');
+  const rawInventoryBeforeMinePipeline=Number(state.resource.BGD?.inventory?.coal)||0;
+  const rawWarehouseBeforeMinePipeline=Number(state.resource.BGD?.warehouse?.availableByResource?.coal)||0;
   const run=await industry.executeSitePipeline({countryId:'BGD',siteId:site.siteId,resourceId:'coal',autoCommissionFactory:true,transportMode:'rail'});
   assert.equal(run.status,'IN_TRANSIT',JSON.stringify(run));
   assert.equal(run.extractionStatus,'COMMITTED');
   assert.ok(run.batchId&&run.shipmentId&&run.extractionPlanId);
+  assert.equal(run.shipment.shipmentType,'MINE_TO_WAREHOUSE','mine output must travel as a separate first-leg shipment');
   const resource=state.resource.BGD;
   assert.ok(resource,'raw resource state must be committed to Bangladesh');
   const sourceBatch=resource.batches.find(x=>String(x.batchId)===String(run.batchId));
   assert.ok(sourceBatch,'extraction must create a real central batch');
   assert.ok(resource.inventoryLots[run.batchId],'extraction must create a real inventory lot');
   assert.equal(sourceBatch.countryId,'BGD');
-  assert.equal(sourceBatch.warehouseId,'WH-BGD-RAW');
+  assert.equal(sourceBatch.destinationWarehouseId,'WH-BGD-RAW');
+  assert.equal(sourceBatch.warehouseId,null,'a mine-haul batch must not claim warehouse location before receipt');
   assert.equal(resource.warehouse.countryId,'BGD');
   const initialSourceQuantity=Number(sourceBatch.remainingQuantity);
   assert.ok(initialSourceQuantity+1e-6>=Number(run.quantity));
+  const initialFlow=resource.industrialNetwork.siteFlowLedger.find(row=>String(row.batchId)===String(run.batchId));
+  assert.ok(initialFlow,'the mine flow must have its own authoritative batch ledger row');
+  const heldAfterFirstDispatch=Number(initialFlow.mineHeldQuantity)||0;
+  assert.ok(Math.abs((Number(initialFlow.mineWarehouseDispatchedQuantity)||0)-Number(run.shipment.quantity))<1e-5,
+    'the flow ledger must account for each mine-haul dispatch exactly once');
+  assert.equal(sourceBatch.stage,heldAfterFirstDispatch>1e-6?'PARTIALLY_MINE_HAULED':'MINE_TO_WAREHOUSE_IN_TRANSIT');
+  assert.equal(resource.inventoryLots[run.batchId].stage,sourceBatch.stage);
+  assert.equal(sourceBatch.warehouseId,null,'the batch is not in the raw warehouse while its mine haul is in transit');
+  assert.equal(resource.industrialNetwork.siteLogisticsBySiteId[site.siteId].status,'IN_TRANSIT_TO_WAREHOUSE');
+  assert.ok(resource.industrialNetwork.siteLogisticsBySiteId[site.siteId].stages.some(stage=>
+    stage.stage==='WAREHOUSE_ACCOUNTING'&&stage.status==='SOURCE_STOCK_RESERVED_FOR_TRANSIT'),
+    'source stock reservation must remain in the audit stage history without overwriting the live transit status');
+  assert.equal(resource.industrialNetwork.siteLogisticsBySiteId[site.siteId].runtimeActive,true,'the selected mine runtime must be active while its haul is moving');
+  assert.ok(Math.abs((Number(initialFlow.mineHeldQuantity)||0)-(initialSourceQuantity-Number(run.shipment.quantity)))<1e-5,
+    'unshipped batch balance must remain reserved at the mine, not in warehouse availability');
+  assert.ok(Math.abs((Number(resource.inventory.coal)||0)-rawInventoryBeforeMinePipeline)<1e-5,
+    'the whole batch must leave country inventory exactly once at first-leg dispatch');
+  assert.ok(Math.abs((Number(resource.warehouse.availableByResource.coal)||0)-rawWarehouseBeforeMinePipeline)<1e-5,
+    'the whole batch must leave raw-warehouse availability until its individual arrival receipts');
+  const mineSiteRuntime=resource.industrialNetwork.siteLogisticsBySiteId[site.siteId];
+  assert.ok(mineSiteRuntime.activeShipmentIds.includes(run.shipmentId),
+    'the exact mine-haul shipment must remain in the active-shipment ledger');
+  assert.ok(mineSiteRuntime.activeShipments.some(row=>String(row.shipmentId)===String(run.shipmentId)&&row.stage==='MINE_TO_WAREHOUSE'),
+    'the exact mine-haul shipment must retain its own active lifecycle stage');
+  const mineDispatchQuantity=Number(run.shipment.quantity);
+  const rawStockBeforeMineArrival=Number(resource.inventory.coal)||0;
+  const rawWarehouseBeforeMineArrival=Number(resource.warehouse.availableByResource.coal)||0;
+  assert.ok(rawStockBeforeMineArrival+1e-6<mineDispatchQuantity,
+    'cargo must not remain available in the source inventory while the mine haul is in transit');
+  assert.ok(rawWarehouseBeforeMineArrival+1e-6<mineDispatchQuantity,
+    'cargo must not be pre-credited to raw warehouse inventory before the mine receipt');
+  state.simulation.playerCountryId=null;
+  const noPlayerTick=industry.advanceShipments('BGD');
+  assert.equal(noPlayerTick.status,'SKIPPED','mine logistics must pause when no player country is selected');
+  assert.equal(resource.industrialNetwork.shipments.find(x=>String(x.shipmentId)===String(run.shipmentId))?.status,'IN_TRANSIT',
+    'an unselected-country tick must not advance a mine shipment');
+  state.simulation.playerCountryId='BGD';
+  const priorStrategicPolicy=g.Omega.ResourceStrategicPolicyRuntime||g.OmegaResourceStrategicPolicyRuntime||null;
+  const railBlockade={isRouteBlocked(countryId,scope){
+    const blocked=countryId==='BGD'&&scope.transportMode==='rail';
+    return{blocked,reason:blocked?'TEST_RAIL_BLOCKADE':null,blockades:blocked?[{policyId:'TEST_RAIL_BLOCKADE',modes:['rail']}]:[]};
+  }};
+  g.Omega.ResourceStrategicPolicyRuntime=railBlockade;g.OmegaResourceStrategicPolicyRuntime=railBlockade;
+  advanceToGameTurn(state,run.shipment.etaTurn);
+  const blockedMineArrival=await industry.advanceShipments('BGD');
+  assert.equal(blockedMineArrival.mineDelivered,0,'a blockade on an intermediate rail leg must stop the whole mine route');
+  assert.equal(resource.industrialNetwork.shipments.find(x=>String(x.shipmentId)===String(run.shipmentId))?.status,'BLOCKED_ROUTE_BLOCKADE');
+  assert.equal(resource.industrialNetwork.siteLogisticsBySiteId[site.siteId].status,'BLOCKED_ROUTE',
+    'a mine runtime must show route blockade state instead of appearing idle or healthy');
+  assert.equal(resource.warehouse.receipts.some(x=>String(x.receiptId)==='MINE-WH-REC:'+String(run.shipmentId)),false,
+    'a blocked shipment must not post a premature warehouse receipt');
+  if(priorStrategicPolicy){g.Omega.ResourceStrategicPolicyRuntime=priorStrategicPolicy;g.OmegaResourceStrategicPolicyRuntime=priorStrategicPolicy;}
+  else{delete g.Omega.ResourceStrategicPolicyRuntime;delete g.OmegaResourceStrategicPolicyRuntime;}
+  const resumedMineRoute=await industry.advanceShipments('BGD');
+  assert.equal(resumedMineRoute.mineDelivered,0,'reopened route must wait until its rescheduled arrival tick');
+  assert.equal(resource.industrialNetwork.shipments.find(x=>String(x.shipmentId)===String(run.shipmentId))?.status,'IN_TRANSIT');
+  advanceOneGameTurn(state);
+  const mineAdvanced=await industry.advanceShipments('BGD');
+  assert.ok(mineAdvanced.mineDelivered>=1,JSON.stringify(mineAdvanced));
+  const mineReceipt=resource.warehouse.receipts.find(x=>String(x.receiptId)==='MINE-WH-REC:'+String(run.shipmentId));
+  assert.ok(mineReceipt,'mine shipment must post an idempotent raw-warehouse receipt');
+  assert.equal(mineReceipt.receivedFrom,'MINE_SITE_LOGISTICS');
+  assert.equal(mineReceipt.status,'RECEIVED');
+  const flowAfterMineReceipt=resource.industrialNetwork.siteFlowLedger.find(row=>String(row.batchId)===String(run.batchId));
+  const activeResidualMineHaul=(resource.industrialNetwork.shipments||[]).some(x=>
+    String(x.batchId)===String(run.batchId)&&x.shipmentType==='MINE_TO_WAREHOUSE'&&
+    ['IN_TRANSIT','BLOCKED_ROUTE_BLOCKADE','BLOCKED_LEDGER_MISMATCH'].includes(String(x.status||'')));
+  if((Number(flowAfterMineReceipt?.mineHeldQuantity)||0)>1e-6){
+    assert.equal(sourceBatch.warehouseId,null,'a batch split between mine-held and warehouse stock has no single warehouse location');
+    assert.equal(resource.inventoryLots[run.batchId].warehouseId,null);
+  }else if(activeResidualMineHaul){
+    assert.equal(sourceBatch.stage,'MINE_TO_WAREHOUSE_IN_TRANSIT',
+      'a residual mine shipment may remain in transit after a partial warehouse receipt');
+    assert.equal(sourceBatch.warehouseId,null,'a mine-haul remainder must not claim raw warehouse location');
+    assert.equal(resource.inventoryLots[run.batchId].stage,'MINE_TO_WAREHOUSE_IN_TRANSIT');
+    assert.equal(resource.inventoryLots[run.batchId].warehouseId,null);
+  }else{
+    assert.equal(sourceBatch.stage,'RAW_INVENTORY');
+    assert.equal(sourceBatch.warehouseId,null,'the second leg has reserved this batch for factory transit');
+    assert.equal(resource.inventoryLots[run.batchId].stage,'RAW_INVENTORY');
+    assert.equal(resource.inventoryLots[run.batchId].warehouseId,null,
+      'the in-transit factory-bound lot must not claim a single raw-warehouse location');
+  }
+  const factoryShipment=(resource.industrialNetwork.shipments||[]).find(x=>String(x.batchId)===String(run.batchId)&&
+    x.shipmentType==='RAW_TO_FACTORY'&&String(x.status)==='IN_TRANSIT');
+  assert.ok(factoryShipment,'factory shipment must only start after the mine haul receipt');
+  assert.equal(factoryShipment.siteId,site.siteId);
+  const siteRuntime=resource.industrialNetwork.siteLogisticsBySiteId[site.siteId];
+  assert.equal(siteRuntime.runtimeActive,true,'the same mine runtime must transition to its factory-bound haul');
+  const activeShipmentStages=new Set((siteRuntime.activeShipments||[]).map(row=>String(row.stage||'')));
+  assert.ok(activeShipmentStages.has('RAW_TO_FACTORY'),
+    'the active-shipment ledger must keep the factory-bound leg even when another leg is moving');
+  assert.ok(['RAW_TO_FACTORY','MINE_TO_WAREHOUSE'].includes(String(siteRuntime.currentStage||'')),
+    'the site status must identify a real active logistics stage');
+  assert.equal(siteRuntime.status,siteRuntime.currentStage==='RAW_TO_FACTORY'?'IN_TRANSIT_TO_FACTORY':'IN_TRANSIT_TO_WAREHOUSE',
+    'the audit history must not overwrite the operational status of whichever shipment is currently active');
+  assert.ok(siteRuntime.activeShipmentIds.includes(factoryShipment.shipmentId),
+    'the exact factory-bound shipment must be tracked even when this mine has other parallel shipments');
+  assert.ok(siteRuntime.activeShipments.some(row=>String(row.shipmentId)===String(factoryShipment.shipmentId)&&row.stage==='RAW_TO_FACTORY'),
+    'the factory-bound shipment must retain its own active lifecycle stage');
   const rawStockBeforeDelivery=Number(resource.inventory.coal)||0;
   const rawWarehouseBeforeDelivery=Number(resource.warehouse.availableByResource.coal)||0;
   const rawReservationBeforeDelivery=Number(resource.warehouse.reservedByResource.coal)||0;
   const inTransitBeforeDelivery=new Set((resource.industrialNetwork?.shipments||[])
     .filter(x=>String(x.resourceId)==='coal'&&String(x.status)==='IN_TRANSIT').map(x=>String(x.shipmentId)));
-  assert.ok(rawStockBeforeDelivery+1e-6>=Number(run.shipment.quantity));
-  assert.ok(rawWarehouseBeforeDelivery+1e-6>=Number(run.shipment.quantity));
-  assert.ok(rawReservationBeforeDelivery+1e-6>=Number(run.shipment.quantity));
-  advanceToGameTurn(state,run.shipment.etaTurn);
-  const advanced=industry.advanceShipments('BGD');
+  assert.ok(rawStockBeforeDelivery+1e-6>=Number(factoryShipment.quantity));
+  assert.ok(rawWarehouseBeforeDelivery+1e-6>=Number(factoryShipment.quantity));
+  assert.ok(rawReservationBeforeDelivery+1e-6>=Number(factoryShipment.quantity));
+  advanceToGameTurn(state,factoryShipment.etaTurn);
+  const advanced=await industry.advanceShipments('BGD');
   assert.ok(advanced.delivered>=1,JSON.stringify(advanced));
-  const delivery=advanced.shipments.find(item=>String(item.shipmentId)===String(run.shipmentId)||String(item.batchId)===String(run.batchId));
-  assert.ok(delivery,'the specific E2E shipment must reach its factory during the global country delivery tick');
+  const delivery=advanced.shipments.find(item=>String(item.shipmentId)===String(factoryShipment.shipmentId)||String(item.batchId)===String(run.batchId));
+  assert.ok(delivery,'the exact second-leg shipment must reach its factory after the authoritative ETA');
   assert.equal(delivery.status,'DELIVERED');
   assert.equal(delivery.processingStatus,'IN_PROGRESS',JSON.stringify(delivery.processing));
   assert.equal(delivery.batchId,run.batchId);
   assert.equal(delivery.destinationStatus,'FACTORY_RECEIVED');
-  const sameResourceDeliveryQuantity=advanced.shipments.filter(x=>String(x.resourceId)==='coal')
+  assert.equal(siteRuntime.activeShipmentIds.includes(factoryShipment.shipmentId),false,
+    'the delivered factory-bound shipment must be removed from the active ledger');
+  assert.equal(siteRuntime.runtimeActive,siteRuntime.activeShipmentIds.length>0,
+    'the site remains active only when another shipment is still moving');
+  if(siteRuntime.activeShipmentIds.length===0){
+    assert.equal(siteRuntime.activeShipmentId,null);
+    assert.equal(siteRuntime.currentStage,'FACTORY_RECEIVED');
+  }else{
+    assert.ok(siteRuntime.activeShipmentId&&siteRuntime.activeShipmentIds.includes(siteRuntime.activeShipmentId),
+      'the compatibility activeShipmentId pointer must reference a still-active shipment');
+  }
+  // Only raw-warehouse-to-factory shipments debit sovereign raw inventory.
+  // Other shipment types can share this tick but belong to different ledgers.
+  const sameResourceDeliveryQuantity=advanced.shipments
+    .filter(x=>String(x.resourceId)==='coal'&&String(x.shipmentType||'')==='RAW_TO_FACTORY')
     .reduce((sum,x)=>sum+(Number(x.quantity)||0),0);
-  assert.equal(Number(resource.inventory.coal)||0,rawStockBeforeDelivery-sameResourceDeliveryQuantity,'raw inventory must debit the combined same-resource deliveries exactly once');
-  assert.equal(Number(resource.warehouse.availableByResource.coal)||0,rawWarehouseBeforeDelivery-sameResourceDeliveryQuantity,'raw warehouse must debit the combined same-resource deliveries exactly once');
+  const sameResourceMineReceiptQuantity=(advanced.mineShipments||[]).filter(x=>String(x.resourceId)==='coal')
+    .reduce((sum,x)=>sum+(Number(x.quantity)||0),0);
+  assert.equal(Number(resource.inventory.coal)||0,
+    rawStockBeforeDelivery+sameResourceMineReceiptQuantity-sameResourceDeliveryQuantity,
+    'raw inventory must reconcile mine receipts and factory consumption exactly once');
+  assert.equal(Number(resource.warehouse.availableByResource.coal)||0,
+    rawWarehouseBeforeDelivery+sameResourceMineReceiptQuantity-sameResourceDeliveryQuantity,
+    'raw warehouse on-hand stock must reconcile mine receipts and factory receipts in the same turn');
   const newlyReservedCoal=(resource.industrialNetwork?.shipments||[])
-    .filter(x=>String(x.resourceId)==='coal'&&String(x.status)==='IN_TRANSIT'&&!inTransitBeforeDelivery.has(String(x.shipmentId)))
+    // Mine-to-warehouse hauls debit held mine stock; only the factory leg reserves raw warehouse stock.
+    .filter(x=>String(x.resourceId)==='coal'&&String(x.shipmentType||'')==='RAW_TO_FACTORY'&&
+      String(x.status)==='IN_TRANSIT'&&!inTransitBeforeDelivery.has(String(x.shipmentId)))
     .reduce((sum,x)=>sum+(Number(x.quantity)||0),0);
   assert.ok(Math.abs((Number(resource.warehouse.reservedByResource.coal)||0)-
     (rawReservationBeforeDelivery-sameResourceDeliveryQuantity+newlyReservedCoal))<1e-5,
@@ -279,8 +417,14 @@ test('real site extraction flows through raw warehouse, transport, factory, fini
   assert.ok(concentrateOffer.sourceSiteIds.includes(site.siteId),
     'market offer must expose the originating deposit site to opponent analysis');
   const originAllocation=concentrateOffer.batchAllocations.find(x=>x.originatingBatchId===run.batchId);
+  const originFlow=resource.industrialNetwork.siteFlowLedger.find(x=>String(x.batchId)===String(run.batchId));
   assert.ok(originAllocation&&originAllocation.siteReferenceKey===site.siteId&&originAllocation.occurrenceKey===run.occurrenceKey,
-    'offer lineage must preserve canonical site and occurrence identity');
+    'offer lineage must preserve canonical site and occurrence identity: '+JSON.stringify({
+      allocation:originAllocation?{originatingBatchId:originAllocation.originatingBatchId,siteId:originAllocation.siteId,
+        siteReferenceKey:originAllocation.siteReferenceKey,occurrenceKey:originAllocation.occurrenceKey}:null,
+      expected:{batchId:run.batchId,siteId:site.siteId,occurrenceKey:run.occurrenceKey},
+      sourceFlow:originFlow?{batchId:originFlow.batchId,siteId:originFlow.siteId,occurrenceKey:originFlow.occurrenceKey}:null
+    }));
   const reconciliation=g.OmegaResourceEconomy.reconcileCountry('BGD');
   assert.equal(reconciliation.status,'APPLIED',JSON.stringify(reconciliation));
   assert.equal(reconciliation.result.status,'HEALTHY',JSON.stringify(reconciliation.result));

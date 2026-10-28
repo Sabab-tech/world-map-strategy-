@@ -3,9 +3,35 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 
 const catalog=JSON.parse(fs.readFileSync('resource_industrial_catalog_v1.json','utf8'));
+const testSiteLogisticsRoutes=[
+  ['SITE_BGD_COAL_01','coal'],
+  ['SITE_BGD_IRON_01','iron_ore'],
+  ['SITE_BGD_IRON_02','iron_ore'],
+  ['SITE_BGD_COPPER_01','copper']
+].map(([siteId,resourceId])=>({
+  countryId:'BGD',siteId,resourceId,routeId:'TEST_MINE_ROUTE:'+siteId,
+  routePlan:{
+    routeStatus:'TEST_FIXTURE_SIMULATION_ONLY',
+    capacityBottleneckPerDay:120000,
+    estimatedRouteDistanceKm:100,
+    plannedTransitDays:1,
+    minimumTransitDays:1,
+    legs:[{transportMode:'rail',estimatedDistanceKm:100,estimatedTravelHours:24,
+      designCapacityPerDay:120000,designCapacityUnit:'tonnes'}]
+  },
+  quantityUnitBridge:{sourceProductionUnit:'tonnes',cargoCapacityUnit:'tonnes'},
+  provenance:{authority:'TEST_FIXTURE_SIMULATION_ONLY'}
+}));
 const context={
   console,Math,Number,String,Object,Array,Set,Map,WeakMap,JSON,Date,Promise,Intl,
   OmegaResourceIndustrialCatalogData:catalog,
+  OmegaResourceSiteLogisticsRoutesManifestData:{
+    schemaVersion:'1.0.0',datasetId:'TEST_SITE_LOGISTICS_ROUTES_BGD',
+    authority:'TEST_FIXTURE_SIMULATION_ONLY',
+    countryToPart:{BGD:1},
+    parts:[{part:1,file:'test_resource_site_logistics_routes_bgd.json',routeCount:4,countries:['BGD']}]
+  },
+  fetch:async()=>({ok:true,json:async()=>({schemaVersion:'1.0.0',routes:testSiteLogisticsRoutes})}),
   OmegaCanonicalIdentityRegistry:{
     resolveCountry(value){
       const key=String(value??'').trim().toUpperCase();
@@ -40,7 +66,7 @@ const context={
   },
   Game:{
     state:{
-      simulation:{turn:1,startYear:2015,date:'2015-01-01',daysPerTurn:30},
+      simulation:{turn:1,startYear:2015,date:'2015-01-01',daysPerTurn:30,playerCountryId:'BGD'},
       resource:{BGD:{inventory:{coal:50000,iron_ore:50000},warehouse:{availableByResource:{coal:50000,iron_ore:50000},reservedByResource:{}},technologyCapabilities:[]}},
       economy:{BGD:{unemploymentCount:600000,laborForce:6000000,unemployment_rate:10,productionAssets:[]}},
       transport:{BGD:{infrastructure:{roads:{capacityPerDay:50000,quality:.9},rail:{capacityPerDay:120000,quality:.8},ports:{capacityPerDay:200000,quality:.9},bridges:{capacityPerDay:50000,quality:.8},pipelines:{capacityPerDay:400000,quality:.8},
@@ -50,6 +76,20 @@ const context={
   }
 };
 context.globalThis=context;
+// Mirror the game runtime's extraction event bridge so the test exercises real mine-haul dispatch.
+const browserEventHandlers=new Map();
+context.addEventListener=(type,handler)=>{
+  const listeners=browserEventHandlers.get(type)||[];
+  listeners.push(handler);
+  browserEventHandlers.set(type,listeners);
+};
+context.dispatchEvent=(event)=>{
+  for(const handler of browserEventHandlers.get(event?.type)||[])handler.call(context,event);
+  return true;
+};
+context.CustomEvent=class CustomEvent{
+  constructor(type,options={}){this.type=type;this.detail=options.detail||null;}
+};
 const handlers=new Map();
 context.Omega.MinistryInteroperability={
   registerAction(){},
@@ -130,6 +170,13 @@ const sent=N.dispatchShipment({countryId:'BGD',siteId:'SITE_BGD_COAL_01',resourc
 assert.equal(sent.status,'DISPATCHED');
 assert.equal(context.Game.state.resource.BGD.warehouse.reservedByResource.coal,5000);
 
+const selectedPlayerBeforePause=context.Game.state.simulation.playerCountryId;
+delete context.Game.state.simulation.playerCountryId;
+const paused=N.advanceShipments('BGD');
+assert.equal(paused.status,'SKIPPED','logistics must not advance any country without a selected player');
+assert.equal(context.Game.state.resource.BGD.industrialNetwork.shipments.find(x=>x.shipmentId===sent.shipment.shipmentId)?.status,'IN_TRANSIT',
+  'a missing player selection must not deliver an in-transit shipment');
+context.Game.state.simulation.playerCountryId=selectedPlayerBeforePause;
 advanceToGameTurn(context.Game.state,sent.shipment.etaTurn);
 const advanced=N.advanceShipments('BGD');
 assert.equal(advanced.delivered,1);
@@ -234,22 +281,47 @@ context.Omega.ResourceEndowmentRuntime={
     rs.batches.push(trackedBatch);rs.inventoryLots[batchId]={...trackedBatch,status:'AVAILABLE'};rs.warehouse.storedBatchIds.push(batchId);
     const record={occurrenceKey:occurrenceKeys[0],countryId,resourceId,approvedQuantity:quantity,
       producedBatch:{batchId,quantity,unit:'TONNES',warehouseId:'WH-'+countryId+'-RAW'}};
+    context.dispatchEvent(new context.CustomEvent('OMEGA_RESOURCE_EXTRACTION_COMPLETED',{detail:{
+      eventType:'OMEGA_RESOURCE_EXTRACTION_COMPLETED',countryId,
+      payload:{countryId,resourceId,quantity,occurrenceKey:occurrenceKeys[0],batch:trackedBatch,
+        sourceAuthority:'SIMULATED_TEST_FIXTURE'}
+    }}));
     return{status:'APPLIED',result:{accepted:true,records:[record]}};
   }
 };
 const siteRun=await N.executeSitePipeline({countryId:'BGD',siteId:'SITE_BGD_COPPER_01',resourceId:'copper',autoCommissionFactory:true,transportMode:'rail'});
-assert.equal(siteRun.status,'IN_TRANSIT','a selected resource site must commit extraction and dispatch a real shipment record');
+assert.equal(siteRun.status,'IN_TRANSIT','a selected resource site must commit extraction and dispatch a real shipment record: '+JSON.stringify(siteRun));
 assert.equal(siteRun.extractionStatus,'COMMITTED');
 assert.equal(siteRun.batchId,'BATCH-E2E-COPPER');
 assert.ok(siteRun.extractionPlanId,'industrial extraction planner must be part of the same site action');
 assert.ok(siteRun.shipmentId,'shipment must be persisted in the country industrial network');
 assert.equal(siteRun.factoryBootstrapStatus,'CREATED_SIMULATION_ONLY','fallback processing capacity must be clearly marked simulation-only');
 assert.equal(context.Game.state.resource.BGD.industrialNetwork.siteExecutions[0].siteId,'SITE_BGD_COPPER_01');
-advanceToGameTurn(context.Game.state,siteRun.shipment.etaTurn);
-const copperDelivery=N.advanceShipments('BGD');
-assert.equal(copperDelivery.delivered,1);
-assert.equal(copperDelivery.shipments[0].processingStatus,'IN_PROGRESS',
-  'site extraction delivery must schedule production instead of bypassing cycle timing');
+const copperMineShipment=siteRun.shipment;
+assert.equal(copperMineShipment.shipmentType,'MINE_TO_WAREHOUSE');
+advanceToGameTurn(context.Game.state,copperMineShipment.etaTurn);
+const copperMineArrival=N.advanceShipments('BGD');
+assert.equal(copperMineArrival.mineDelivered,1,JSON.stringify(copperMineArrival));
+assert.equal(copperMineArrival.delivered,0,'a mine receipt is not a factory delivery');
+assert.equal(Number(context.Game.state.resource.BGD.warehouse.availableByResource.copper)||0,1200,
+  'raw copper must enter the sovereign warehouse only after the mine-haul ETA');
+const copperFactoryDispatch=N.advanceShipments('BGD');
+const copperFactoryShipment=(context.Game.state.resource.BGD.industrialNetwork.shipments||[]).find(row=>
+  String(row.batchId)===String(siteRun.batchId)&&row.shipmentType==='RAW_TO_FACTORY'&&row.status==='IN_TRANSIT');
+assert.ok(copperFactoryShipment,'warehouse receipt must start a separate timed warehouse-to-factory shipment: '+JSON.stringify(copperFactoryDispatch));
+assert.notEqual(copperFactoryShipment.shipmentId,copperMineShipment.shipmentId,
+  'the two logistics legs require distinct shipment identities');
+assert.equal(Number(context.Game.state.resource.BGD.warehouse.availableByResource.copper)||0,1200,
+  'reserved raw cargo remains in the warehouse ledger during the second leg');
+assert.equal(Number(context.Game.state.resource.BGD.warehouse.reservedByResource.copper)||0,1200,
+  'the factory leg reserves the warehouse stock exactly once');
+advanceToGameTurn(context.Game.state,copperFactoryShipment.etaTurn);
+const copperDeliveryResult=N.advanceShipments('BGD');
+const copperDelivery=(copperDeliveryResult.shipments||[]).find(row=>String(row.shipmentId)===String(copperFactoryShipment.shipmentId));
+assert.ok(copperDelivery,'the second-leg shipment must reach the factory: '+JSON.stringify(copperDeliveryResult));
+assert.equal(copperDeliveryResult.delivered,1);
+assert.equal(copperDelivery.processingStatus,'IN_PROGRESS',
+  'factory receipt must schedule production instead of bypassing cycle timing');
 assert.equal(Number(context.Game.state.resource.BGD.inventory.COPPER_CONCENTRATE)||0,0,
   'copper output must not be committed on the delivery tick');
 const copperFactory=context.Game.state.economy.BGD.productionAssets.find(x=>String(x.id||x.assetId||x.projectId)===String(siteRun.factoryId));
@@ -263,7 +335,7 @@ assert.ok(context.Game.state.resource.BGD.inventory.COPPER_CONCENTRATE>0,'comple
 assert.ok(context.Game.state.resource.BGD.inventory.TAILINGS>0,'completed processing by-product must be persisted too');
 assert.equal(context.Game.state.resource.BGD.warehouse.availableByResource.copper,0,'raw shipment quantity must be removed from warehouse exactly once');
 assert.equal(context.Game.state.resource.BGD.warehouse.reservedByResource.copper,0,'site shipment reservation must be cleared');
-const copperDeliveryRow=context.Game.state.resource.BGD.industrialNetwork.deliveries.find(x=>String(x.shipmentId)===String(siteRun.shipmentId));
+const copperDeliveryRow=context.Game.state.resource.BGD.industrialNetwork.deliveries.find(x=>String(x.shipmentId)===String(copperFactoryShipment.shipmentId));
 assert.equal(copperDeliveryRow.processingStatus,'PROCESSED','delivery record must reconcile when its cycle commits');
 assert.ok(context.Game.state.resource.BGD.industrialNetwork.events.some(x=>x.transactionId&&x.status==='COMPLETED'),
   'factory processing must be written to the runtime event ledger');
@@ -288,13 +360,27 @@ assert.equal(builtFactoryRun.factoryId,builtFactoryId,
 assert.equal(builtFactoryRun.batchId,'BATCH-E2E-IRON-02');
 assert.notEqual(builtFactoryRun.factoryBootstrapStatus,'CREATED_SIMULATION_ONLY',
   'using a constructed factory must not silently create a second simulation-only factory');
-assert.equal(Number(context.Game.state.resource.BGD.warehouse.availableByResource.iron_ore),ironRawBefore+1200,
-  'freshly extracted iron is recorded in the country warehouse before transport arrival');
-assert.equal(Number(context.Game.state.resource.BGD.warehouse.reservedByResource.iron_ore),1200,
-  'the real shipment reserves the raw batch during transit');
+assert.equal(builtFactoryRun.shipment.shipmentType,'MINE_TO_WAREHOUSE');
+assert.equal(Number(context.Game.state.resource.BGD.warehouse.availableByResource.iron_ore),ironRawBefore,
+  'newly extracted iron is debited from warehouse availability while physically at the mine');
+assert.equal(Number(context.Game.state.resource.BGD.warehouse.reservedByResource.iron_ore)||0,0,
+  'mine-to-warehouse cargo is not reserved as a factory shipment');
 advanceToGameTurn(context.Game.state,builtFactoryRun.shipment.etaTurn);
+const builtMineArrival=N.advanceShipments('BGD');
+assert.equal(builtMineArrival.mineDelivered,1,JSON.stringify(builtMineArrival));
+assert.equal(builtMineArrival.delivered,0,'the first leg must not count as a factory delivery');
+const builtFactoryShipment=(context.Game.state.resource.BGD.industrialNetwork.shipments||[]).find(row=>
+  String(row.batchId)===String(builtFactoryRun.batchId)&&row.shipmentType==='RAW_TO_FACTORY'&&row.status==='IN_TRANSIT');
+assert.ok(builtFactoryShipment,'a warehouse receipt must create a separate factory-bound shipment');
+assert.notEqual(builtFactoryShipment.shipmentId,builtFactoryRun.shipment.shipmentId);
+assert.equal(builtFactoryShipment.factoryId,builtFactoryId);
+assert.equal(Number(context.Game.state.resource.BGD.warehouse.availableByResource.iron_ore),ironRawBefore+1200,
+  'received iron is available in the warehouse while the factory shipment is in transit');
+assert.equal(Number(context.Game.state.resource.BGD.warehouse.reservedByResource.iron_ore),1200,
+  'only the factory leg reserves the warehouse batch');
+advanceToGameTurn(context.Game.state,builtFactoryShipment.etaTurn);
 const builtDeliveryResult=N.advanceShipments('BGD');
-const builtDelivery=(builtDeliveryResult.shipments||[]).find(row=>String(row.shipmentId)===String(builtFactoryRun.shipmentId));
+const builtDelivery=(builtDeliveryResult.shipments||[]).find(row=>String(row.shipmentId)===String(builtFactoryShipment.shipmentId));
 assert.ok(builtDelivery,'the constructed-factory shipment must settle by its own shipment ID');
 assert.equal(builtDelivery.factoryId,builtFactoryId,'delivered shipment must retain its selected factory ID');
 assert.equal(builtDelivery.destinationStatus,'FACTORY_RECEIVED');
@@ -326,7 +412,7 @@ const builtOutputBatch=context.Game.state.resource.BGD.batches.find(row=>
   (row.sourceBatchIds||[]).includes('BATCH-E2E-IRON-02'));
 assert.ok(builtOutputBatch,'finished product batch must retain lineage to the mine-produced source batch');
 const builtDeliveryAfterCycle=(context.Game.state.resource.BGD.industrialNetwork.deliveries||[])
-  .find(row=>String(row.shipmentId)===String(builtFactoryRun.shipmentId));
+  .find(row=>String(row.shipmentId)===String(builtFactoryShipment.shipmentId));
 assert.ok(builtDeliveryAfterCycle,'the persisted delivered-input ledger row must survive cycle completion');
 assert.equal(builtDeliveryAfterCycle.processingStatus,'PROCESSED',
   'the delivered input record must reconcile with the actual factory cycle');
@@ -336,8 +422,8 @@ context.Game.state.economy.BGD.productionAssets.forEach((asset,index)=>{
 });
 
 // A normal gameplay site action must not manufacture a free simulation factory.
-// It commits the extracted batch to the sovereign raw warehouse and reports that the
-// country needs a real commissioned compatible factory.
+// It commits extraction to a timed mine-to-warehouse leg; with all compatible factories
+// closed, the receipt remains raw inventory and no factory shipment is dispatched.
 context.Game.state.simulation.turn=Number(context.Game.state.simulation.turn||0)+1;
 const assetsBeforeWaiting=context.Game.state.economy.BGD.productionAssets.length;
 const factoriesForWaiting=context.Game.state.economy.BGD.productionAssets;
@@ -347,12 +433,24 @@ const ironWarehouseBefore=Number(context.Game.state.resource.BGD.warehouse.avail
 const waitingForFactory=await N.executeSitePipeline({
   countryId:'BGD',siteId:'SITE_BGD_IRON_01',resourceId:'iron_ore',transportMode:'rail'
 });
-assert.equal(waitingForFactory.status,'EXTRACTED_AWAITING_FACTORY',JSON.stringify(waitingForFactory));
+assert.equal(waitingForFactory.status,'IN_TRANSIT',JSON.stringify(waitingForFactory));
+assert.equal(waitingForFactory.shipment?.shipmentType,'MINE_TO_WAREHOUSE');
 assert.equal(waitingForFactory.batchId,'BATCH-E2E-IRON');
+assert.equal(Number(context.Game.state.resource.BGD.warehouse.availableByResource.iron_ore),ironWarehouseBefore,
+  'raw stock is held at the mine until the first-leg receipt');
+advanceToGameTurn(context.Game.state,waitingForFactory.shipment.etaTurn);
+const waitingMineArrival=N.advanceShipments('BGD');
+assert.equal(waitingMineArrival.mineDelivered,1,JSON.stringify(waitingMineArrival));
+assert.equal(waitingMineArrival.delivered,0);
 assert.equal(Number(context.Game.state.resource.BGD.warehouse.availableByResource.iron_ore),ironWarehouseBefore+1200,
-  'unrouted extracted raw material remains in the sovereign warehouse and is credited exactly once');
+  'unrouted extracted raw material reaches the sovereign warehouse once');
+assert.equal(Number(context.Game.state.resource.BGD.warehouse.reservedByResource.iron_ore)||0,0,
+  'no factory leg is reserved while every compatible factory is unavailable');
 assert.equal(context.Game.state.economy.BGD.productionAssets.length,assetsBeforeWaiting,
   'a missing compatible factory must not be fabricated by a normal mine action');
+assert.ok(!context.Game.state.resource.BGD.industrialNetwork.shipments.some(row=>
+  String(row.batchId)==='BATCH-E2E-IRON'&&row.shipmentType==='RAW_TO_FACTORY'&&row.status==='IN_TRANSIT'),
+  'warehouse receipt must wait for a commissioned factory rather than send cargo to a closed one');
 assert.ok(!context.Game.state.economy.BGD.productionAssets.some(x=>String(x.id||'').startsWith('FAC-SIM:BGD:SITE_BGD_IRON_01')),
   'normal mine actions must not create an unapproved simulation-only factory');
 factoriesForWaiting.forEach((asset,index)=>{
@@ -379,9 +477,17 @@ assert.equal(diag.extractionPlans,4,'diagnostics must include the additional min
 assert.equal(diag.targetArchitecture,'SITE -> EXTRACTION -> WAREHOUSE -> ROUTE -> FACTORY -> PROCESS -> OUTPUT');
 
 // Every route segment shares a per-turn transport ledger across shipments.
-context.Omega.Simulation.clock.turn=43;
+const capacityLedgerTurns=Object.keys(context.Game.state.resource.BGD.industrialNetwork.transportCapacityLedger?.turns||{})
+  .map(Number).filter(Number.isFinite);
+const capacityLedgerTurn=Math.max(
+  Number(context.Game.state.simulation.turn)||0,
+  Number(context.Omega.Simulation.clock.turn)||0,
+  ...capacityLedgerTurns,
+  42
+)+1;
+context.Omega.Simulation.clock.turn=capacityLedgerTurn;
 // Industrial ledgers use the shared Game simulation state as the canonical turn source.
-context.Game.state.simulation.turn=43;
+context.Game.state.simulation.turn=capacityLedgerTurn;
 context.Game.state.transport.BGD.infrastructure.roads.capacityPerDay=11000;
 context.Game.state.transport.BGD.infrastructure.roads.quality=1;
 const firstCapacityShipment=N.dispatchShipment({countryId:'BGD',siteId:'SITE_BGD_COAL_01',resourceId:'coal',quantity:5000,transportMode:'rail'});
@@ -394,7 +500,7 @@ assert.ok(secondCapacityShipment.shipment.route.vehiclePlan.every(leg =>
   'vehicle count must be recalculated from the actual shared-capacity-limited shipment');
 assert.ok(secondCapacityShipment.shipment.route.vehiclePlan.every(leg => leg.dispatchQuantity === 500),
   'every route leg must report the same adjusted dispatch quantity');
-const sharedTransport=context.Game.state.resource.BGD.industrialNetwork.transportCapacityLedger.turns['43'];
+const sharedTransport=context.Game.state.resource.BGD.industrialNetwork.transportCapacityLedger.turns[String(capacityLedgerTurn)];
 assert.equal(sharedTransport.usedByMode.truck,11000,'truck capacity must be counted jointly for all route legs in one turn');
 assert.equal(sharedTransport.shipments.length,2);
 

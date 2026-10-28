@@ -164,11 +164,26 @@
   function assetCompany(c,a){return String((a&&(a.companyId||a.ownerId||a.operatorId||a.company))||('STATE_INDUSTRY_'+canonical(c)));}
   function sovereignCompany(x){return /^STATE_|^GOVERNMENT_/i.test(String(x||''));}
 
-  function inventoryGaps(inv,rows){
+  // Mine-logistics batches can span mine-held cargo, in-transit cargo, and received
+  // warehouse stock. Their full remainingQuantity is not the same as warehouse inventory.
+  // Count only the portion actually receipted into the sovereign warehouse, minus portions
+  // already accepted by factories; leave mine-held and in-transit quantities out of inventory.
+  function batchInventoryQuantity(batch,flowByBatch){
+    var remaining=Math.max(0,num(batch&&(batch.remainingQuantity!=null?batch.remainingQuantity:batch.quantity))||0);
+    var flow=flowByBatch&&flowByBatch.get(String(batch&&batch.batchId||''));
+    if(flow&&flow.mineLogisticsStockDebited===true){
+      var received=Math.max(0,num(flow.mineWarehouseReceivedQuantity)||0);
+      var original=Math.max(0,num(batch&&batch.quantity)||remaining);
+      var transferredToFactory=Math.max(0,original-remaining);
+      return Math.max(0,received-transferredToFactory);
+    }
+    return remaining;
+  }
+  function inventoryGaps(inv,rows,flowByBatch){
     var allocated={},g=[];
     (rows||[]).forEach(function(b){
-      var rid=String((b&&(b.resourceId||b.materialIdentity))||'').trim(),q=num(b&&(b.remainingQuantity!=null?b.remainingQuantity:b.quantity));
-      if(rid&&q!==null&&q>0)allocated[rid]=(allocated[rid]||0)+q;
+      var rid=String((b&&(b.resourceId||b.materialIdentity))||'').trim(),q=batchInventoryQuantity(b,flowByBatch);
+      if(rid&&q>0)allocated[rid]=(allocated[rid]||0)+q;
     });
     Object.keys(inv||{}).forEach(function(rid){
       var actual=num(inv[rid]);
@@ -181,6 +196,11 @@
 
   function reconcileHandler(cmd,ctx){
     var c=canonical(ctx.countryId),inv=clone(ctx.stateTransaction.get('resource.inventory')||{}),bs=Array.isArray(ctx.stateTransaction.get('resource.batches'))?clone(ctx.stateTransaction.get('resource.batches')):[],ledger=Array.isArray(ctx.stateTransaction.get('resource.inventoryLedger'))?clone(ctx.stateTransaction.get('resource.inventoryLedger')):[],warehouse=clone(ctx.stateTransaction.get('resource.warehouse')||{warehouseId:'WH-'+c+'-RAW',countryId:c,type:'SOVEREIGN_RAW_MATERIAL_WAREHOUSE',locationNodeKey:'WAREHOUSE:'+c+':RAW',status:'OPERATIONAL',availableByResource:{},storedBatchIds:[],receipts:[]}),processedWarehouse=clone(ctx.stateTransaction.get('resource.processedWarehouse')||{warehouseId:'WH-'+c+'-PROCESSED',countryId:c,type:'SOVEREIGN_FINISHED_GOODS_WAREHOUSE',locationNodeKey:'WAREHOUSE:'+c+':PROCESSED',status:'OPERATIONAL',availableByResource:{},storedBatchIds:[],receipts:[]});
+    var network=clone(ctx.stateTransaction.get('resource.industrialNetwork')||{}),flowByBatch=new Map(
+      (Array.isArray(network.siteFlowLedger)?network.siteFlowLedger:[])
+        .filter(function(flow){return flow&&flow.batchId;})
+        .map(function(flow){return[String(flow.batchId),flow];})
+    );
     var boundaryCheck=boundary()?.validateResourceCollection?.(bs,c);
     if(boundaryCheck&&!boundaryCheck.ok){
       ctx.stateTransaction.set('resource.inventoryIntegrity',{status:'DEGRADED',checkedTurn:turn(),gaps:[],boundaryViolations:clone(boundaryCheck.violations||[]),authority:'RESOURCE_INVENTORY_AUTHORITY'});
@@ -199,8 +219,8 @@
       emit('OMEGA_RESOURCE_COUNTRY_BOUNDARY_VIOLATION',c,{violations:[clone(processedWarehouseBoundary)],turn:turn()});
       return{accepted:false,status:'DEGRADED',countryId:c,reason:'CROSS_COUNTRY_PROCESSED_WAREHOUSE_BREACH',violations:[clone(processedWarehouseBoundary)]};
     }
-    var before=inventoryGaps(inv,bs),allocated={};
-    bs.forEach(function(b){var rid=String((b&&(b.resourceId||b.materialIdentity))||'').trim(),q=num(b&&(b.remainingQuantity!=null?b.remainingQuantity:b.quantity));if(rid&&q!==null&&q>0)allocated[rid]=(allocated[rid]||0)+q;});
+    var before=inventoryGaps(inv,bs,flowByBatch),allocated={};
+    bs.forEach(function(b){var rid=String((b&&(b.resourceId||b.materialIdentity))||'').trim(),q=batchInventoryQuantity(b,flowByBatch);if(rid&&q>0)allocated[rid]=(allocated[rid]||0)+q;});
     Object.keys(inv).forEach(function(rid){
       var q=num(inv[rid]);if(q===null||q<0)return;
       var diff=q-(num(allocated[rid])||0);
@@ -219,11 +239,11 @@
     });
     while(bs.length>(num(rules().runtime.maxBatches)||8192))bs.shift();
     while(ledger.length>(num(rules().runtime.maxLedgerEntries)||2048))ledger.shift();
-    var after=inventoryGaps(inv,bs);
+    var after=inventoryGaps(inv,bs,flowByBatch);
     warehouse.availableByResource={};warehouse.storedBatchIds=[];
     processedWarehouse.availableByResource={};processedWarehouse.storedBatchIds=[];processedWarehouse.receipts=[];
     bs.forEach(function(b){
-      var q=num(b&&b.remainingQuantity!=null?b.remainingQuantity:b&&b.quantity)||0;
+      var q=batchInventoryQuantity(b,flowByBatch);
       if(q<=0)return;
       var rid=String(b&&(b.resourceId||b.materialIdentity)||'').trim();if(!rid)return;
       var stage=String(b.stage||'RAW').toUpperCase(),isProcessed=['PROCESSED','INTERMEDIATE','FINISHED','REFINED','OUTPUT'].includes(stage);
@@ -733,6 +753,20 @@
       while(queue.length&&seen.size<64){
         var id=String(queue.shift()||'');if(!id||seen.has(id))continue;seen.add(id);
         var source=batches.find(function(x){return String(x?.batchId||'')===id;});if(!source)continue;
+        // A source batch can be re-staged as partially hauled, warehouse-received,
+        // or transferred to a factory. The authoritative site-flow ledger outlives those
+        // physical stages and remains the canonical origin identity for finished goods.
+        var sourceFlow=(Array.isArray(network.siteFlowLedger)?network.siteFlowLedger:[])
+          .find(function(flow){return String(flow?.batchId||'')===id&&
+            (flow.siteId||flow.siteReferenceKey||flow.occurrenceKey);});
+        if(sourceFlow&&!originBatchId){
+          originBatchId=id;originResourceId=source.resourceId||source.materialIdentity||null;
+        }
+        if(sourceFlow&&!site){
+          site={siteId:sourceFlow.siteId||sourceFlow.siteReferenceKey||null,
+            occurrenceKey:sourceFlow.occurrenceKey||null,
+            sourceCountryId:sourceFlow.countryId||source.originCountryId||source.sourceCountryId||source.countryId||null};
+        }
         if(!originBatchId&&['RAW','RAW_EXTRACTED','EXTRACTED','LEGACY_UNTRACKED'].includes(String(source.stage||'').toUpperCase())){originBatchId=id;originResourceId=source.resourceId||source.materialIdentity||null;}
         if(!site&&(source.siteReferenceKey||source.siteId||source.sourceSiteId||source.occurrenceKey)){
           site={siteId:source.siteReferenceKey||source.siteId||source.sourceSiteId||null,occurrenceKey:source.occurrenceKey||source.sourceOccurrenceKey||null,
@@ -740,9 +774,17 @@
         }
         for(const id2 of Array.isArray(source.sourceBatchIds)?source.sourceBatchIds:[])queue.push(String(id2));
       }
-      if(!site){
-        var flow=(Array.isArray(network.siteFlowLedger)?network.siteFlowLedger:[]).find(function(x){return String(x.batchId||'')===String(originBatchId||row?.batchId||'');});
-        if(flow)site={siteId:flow.siteId||null,occurrenceKey:flow.occurrenceKey||null,sourceCountryId:flow.countryId||null};
+      // The extracted site's flow ledger is keyed by the exact origin batch. It is the
+      // canonical runtime binding for this shipment/production lineage, so use it to fill
+      // missing fields and to override stale partial identities copied by downstream lots.
+      var flow=(Array.isArray(network.siteFlowLedger)?network.siteFlowLedger:[])
+        .find(function(x){return String(x.batchId||'')===String(originBatchId||row?.batchId||'');});
+      if(flow){
+        site={
+          siteId:flow.siteId||site?.siteId||null,
+          occurrenceKey:flow.occurrenceKey||site?.occurrenceKey||null,
+          sourceCountryId:flow.countryId||site?.sourceCountryId||null
+        };
       }
       return{originBatchId,originResourceId,site};
     }
@@ -781,10 +823,10 @@
         allocations.push({batchId:String(row.batchId||''),resourceId:rid,quantity:take,unit:row.unit||null,stage:stage,
           sourceBatchIds:[...new Set((Array.isArray(row.sourceBatchIds)?row.sourceBatchIds:[]).map(String).filter(Boolean))],
           originatingBatchId:lineage.originBatchId||String(row.batchId||''),originResourceId:lineage.originResourceId||rid,
-          siteId:lineage.site?.siteId||flow?.siteId||row.siteReferenceKey||row.siteId||null,
-          siteReferenceKey:lineage.site?.siteId||flow?.siteId||row.siteReferenceKey||null,
-          occurrenceKey:lineage.site?.occurrenceKey||flow?.occurrenceKey||row.occurrenceKey||null,
-          sourceCountryId:lineage.site?.sourceCountryId||flow?.countryId||row.originCountryId||row.sourceCountryId||canonical(c),
+          siteId:flow?.siteId||lineage.site?.siteId||row.siteReferenceKey||row.siteId||null,
+          siteReferenceKey:flow?.siteId||lineage.site?.siteId||row.siteReferenceKey||null,
+          occurrenceKey:flow?.occurrenceKey||lineage.site?.occurrenceKey||row.occurrenceKey||null,
+          sourceCountryId:flow?.countryId||lineage.site?.sourceCountryId||row.originCountryId||row.sourceCountryId||canonical(c),
           destinationCountryId:canonical(c),ownerCountryCode:row.ownerCountryCode||canonical(c),
           sourceAuthority:row.provenance?.sourceAuthority||row.provenance?.authority||row.provenance?.source||'UNOBSERVED',
           quantityAuthority:row.provenance?.quantityAuthority||row.provenance?.authority||'UNOBSERVED',

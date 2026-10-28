@@ -4,7 +4,11 @@ on:
     paths:
       - 'resource_site_logistics_routes_v1.json'
       - 'resource_site_logistics_routes_v1_part_*.json'
+      - 'minister_country_roster_manifest_v1.json'
+      - 'omega_resource_industrial_network_v1.js'
       - 'test/omega_resource_site_logistics_routes_v1.test.mjs'
+      - 'test/omega_resource_exhaustive_site_pipeline.test.mjs'
+      - 'docs/OMEGA_RESOURCE_SITE_LOGISTICS_DATA_V1.md'
       - '.github/workflows/omega-resource-logistics-data.yml'
       - 'resource_site_canonical_catalog_v1.json'
       - 'resource_site_country_mineplay_batch_20261020_v1.json'
