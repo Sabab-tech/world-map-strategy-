@@ -222,6 +222,9 @@ test('real site extraction flows through raw warehouse, transport, factory, fini
   assert.equal(resource.inventoryLots[run.batchId].stage,sourceBatch.stage);
   assert.equal(sourceBatch.warehouseId,null,'the batch is not in the raw warehouse while its mine haul is in transit');
   assert.equal(resource.industrialNetwork.siteLogisticsBySiteId[site.siteId].status,'IN_TRANSIT_TO_WAREHOUSE');
+  assert.ok(resource.industrialNetwork.siteLogisticsBySiteId[site.siteId].stages.some(stage=>
+    stage.stage==='WAREHOUSE_ACCOUNTING'&&stage.status==='SOURCE_STOCK_RESERVED_FOR_TRANSIT'),
+    'source stock reservation must remain in the audit stage history without overwriting the live transit status');
   assert.equal(resource.industrialNetwork.siteLogisticsBySiteId[site.siteId].runtimeActive,true,'the selected mine runtime must be active while its haul is moving');
   assert.ok(Math.abs((Number(initialFlow.mineHeldQuantity)||0)-(initialSourceQuantity-Number(run.shipment.quantity)))<1e-5,
     'unshipped batch balance must remain reserved at the mine, not in warehouse availability');
