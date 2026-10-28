@@ -4472,7 +4472,7 @@ function gameplayPipelineDiagnostics(countryScope){
       for(const step of flowStages){
         stages[step.stage]=(stages[step.stage]||0)+1;
         const stage=String(step.stage||'').toUpperCase(),status=String(step.status||'').toUpperCase();
-        if(stage==='TRANSPORT'&&['IN_TRANSIT','DELIVERED'].includes(status))hasDispatched=true;
+        if(stage==='TRANSPORT'&&['IN_TRANSIT','IN_TRANSIT_TO_RAW_WAREHOUSE','IN_TRANSIT_TO_WAREHOUSE','IN_TRANSIT_TO_FACTORY','DELIVERED'].includes(status))hasDispatched=true;
         if(stage==='PROCESSING'&&status==='COMPLETED')hasProcessed=true;
         if(stage==='MARKET'&&status==='PUBLISHED')hasMarketPublication=true;
       }
