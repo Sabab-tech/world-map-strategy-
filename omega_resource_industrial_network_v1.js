@@ -1888,9 +1888,24 @@ function advanceShipments(c){
   for(const s of n.shipments){
     if(!['IN_TRANSIT','BLOCKED_ROUTE_BLOCKADE'].includes(String(s.status||'')))continue;
     const strategicPolicy=g.Omega?.ResourceStrategicPolicyRuntime||g.OmegaResourceStrategicPolicyRuntime;
-    const blockade=strategicPolicy?.isRouteBlocked?.(cid,{resourceId:s.resourceId,transportMode:s.route?.transportMode||s.route?.mode,routeId:s.route?.routeId,siteId:s.siteId,factoryId:s.factoryId});
-    if(blockade?.blocked){s.status='BLOCKED_ROUTE_BLOCKADE';s.blockReason=blockade.reason||'RESOURCE_ROUTE_BLOCKADE_ACTIVE';s.blockadePolicies=blockade.blockades||[];s.blockedTurn=turn();continue;}
-    if(s.status==='BLOCKED_ROUTE_BLOCKADE'){s.status='IN_TRANSIT';s.blockReason=null;s.resumedTurn=turn();s.etaTurn=Math.max(turn()+1,num(s.etaTurn)||turn()+1);}
+    const routeModes=String(s.shipmentType||'')==='MINE_TO_WAREHOUSE'&&Array.isArray(s.route?.legs)
+      ?[...new Set(s.route.legs.map(leg=>String(leg?.transportMode||leg?.mode||'').trim().toLowerCase()).filter(Boolean))]
+      :[String(s.route?.transportMode||s.route?.mode||'').trim().toLowerCase()].filter(Boolean);
+    const blockadeChecks=strategicPolicy?.isRouteBlocked
+      ?routeModes.map(mode=>({mode,decision:strategicPolicy.isRouteBlocked(cid,{resourceId:s.resourceId,transportMode:mode,
+        routeId:s.route?.routeId,siteId:s.siteId,factoryId:s.factoryId})})).filter(item=>item.decision?.blocked):[];
+    if(blockadeChecks.length){
+      s.status='BLOCKED_ROUTE_BLOCKADE';s.blockReason='RESOURCE_ROUTE_BLOCKADE_ACTIVE';
+      s.blockadePolicies=blockadeChecks.map(item=>({mode:item.mode,reason:item.decision.reason||s.blockReason,
+        blockades:Array.isArray(item.decision.blockades)?item.decision.blockades:[]}));
+      s.blockedTransportModes=blockadeChecks.map(item=>item.mode);s.blockedTurn=turn();continue;
+    }
+    if(s.status==='BLOCKED_ROUTE_BLOCKADE'){
+      s.status='IN_TRANSIT';s.blockReason=null;s.blockadePolicies=[];s.blockedTransportModes=[];
+      s.resumedTurn=turn();s.etaTurn=Math.max(turn()+1,num(s.etaTurn)||turn()+1);
+      s.etaDate=factoryAddGameDays(factoryCurrentGameDate(),Math.max(1,s.etaTurn-turn())*daysPerTurn());
+      if(s.route){s.route.etaTurn=s.etaTurn;s.route.etaDate=s.etaDate;}
+    }
     if(num(s.etaTurn)>turn())continue;
     if(['MINE_TO_WAREHOUSE','RAW_TO_FACTORY'].includes(String(s.shipmentType||''))&&s.etaDate&&
       !factoryDateReached(factoryCurrentGameDate(),s.etaDate))continue;
