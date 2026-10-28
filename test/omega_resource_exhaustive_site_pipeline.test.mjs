@@ -572,7 +572,10 @@ for(const countryId of countryIds){
       String(x.batchId)===String(pipeline.result.batchId)&&String(x.shipmentType||'')==='RAW_TO_FACTORY'&&
       String(x.status||'').toUpperCase()==='DELIVERED'&&
       String(x.destinationStatus||'').toUpperCase()==='FACTORY_RECEIVED');
-    const batchDeliveredQuantity=batchDeliveredShipments.reduce((sum,x)=>sum+(Number(x.quantity)||0),0);
+    // Source batch stock is debited in source units; shipment.quantity is the converted factory-input quantity.
+    // Compare like-for-like units so legitimate unit bridges (e.g. oil-sands volume conversion)
+    // are not misdiagnosed as duplicate delivery or stock loss.
+    const batchDeliveredQuantity=batchDeliveredShipments.reduce((sum,x)=>sum+(Number(x.sourceTransferredQuantity??x.quantity)||0),0);
     const deliveryOkay=!!delivered&&delivered.destinationStatus==='FACTORY_RECEIVED'&&
       deliveredRows.length===1&&String(delivered.countryId||countryId).toUpperCase()===countryId&&
       String(delivered.batchId||'')===String(pipeline.result.batchId)&&
