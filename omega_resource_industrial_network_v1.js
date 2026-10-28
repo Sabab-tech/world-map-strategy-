@@ -1702,13 +1702,13 @@ function quoteMineProject(input={}){
   const resourceId=actualResource,buildClass=mineConstructionProfile(site),profiles=cat()?.mineConstructionProfiles||{},rule=profiles[buildClass]||profiles.OPEN_PIT;
   if(!rule||!rule.materials||!Object.keys(rule.materials).length)return{status:'BLOCKED',reason:'MINE_CONSTRUCTION_PROFILE_UNAVAILABLE',buildClass,countryId:cid,siteId};
   const complexityRules=cat()?.mineResourceComplexity||{},complexity=num(complexityRules[resourceId])||1;
-  const unitCostUsd=Math.ceil((num(rule.costUsd)||0)*complexity/1000)*1000,costUsd=unitCostUsd*assetCount;
+  const unitCostUsd=Math.ceil((num(rule.costUsd)||0)*complexity/1000-1e-9)*1000,costUsd=unitCostUsd*assetCount;
   const resourceAdjustments=cat()?.mineResourceAdjustments||{},resourceAdjustment=resourceAdjustments[resourceId]||{};
-  const unitDurationDays=Math.ceil((num(rule.durationDays)||1)*(num(resourceAdjustment.durationMultiplier)||1)),durationDays=unitDurationDays;
-  const unitWorkersRequired=Math.ceil((num(rule.workersRequired)||0)*(num(resourceAdjustment.workforceMultiplier)||1)),workersRequired=unitWorkersRequired*assetCount;
+  const unitDurationDays=Math.ceil((num(rule.durationDays)||1)*(num(resourceAdjustment.durationMultiplier)||1)-1e-9),durationDays=unitDurationDays;
+  const unitWorkersRequired=Math.ceil((num(rule.workersRequired)||0)*(num(resourceAdjustment.workforceMultiplier)||1)-1e-9),workersRequired=unitWorkersRequired*assetCount;
   const treasury=countryFinanceBucket(cid),countryResource=state()?.resource?.[cid]||{};
   const materials=Object.entries(rule.materials).map(([materialId,quantity])=>{
-    const stock=mineConstructionStock(cid,materialId),unitRequired=Math.ceil((num(quantity)||0)*complexity),required=unitRequired*assetCount;
+    const stock=mineConstructionStock(cid,materialId),unitRequired=Math.ceil((num(quantity)||0)*complexity-1e-9),required=unitRequired*assetCount;
     return{resourceId:tok(materialId),required,unitRequired,available:stock.available,shortfall:Math.max(0,required-stock.available),unit:'SIMULATION_RESOURCE_UNIT',sufficient:stock.available+1e-9>=required,stockAuthority:stock.authority};
   });
   const assignedWorkers=num(input.assignedWorkers);
