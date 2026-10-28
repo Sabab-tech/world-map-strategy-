@@ -165,11 +165,14 @@ function siteLogisticsState(countryId,siteId,route=null){
   let row=net.siteLogisticsBySiteId[sid];
   if(!row||typeof row!=='object'||Array.isArray(row)){
     row=net.siteLogisticsBySiteId[sid]={schemaVersion:'OMEGA_MINE_SITE_LOGISTICS_V1',siteId:sid,countryId:cid,
-      routeId:route?.routeId||null,resourceId:route?.resourceId||null,status:'IDLE',runtimeActive:false,shipmentIds:[],warehouseReceiptIds:[],
-      dispatchedQuantity:0,receivedQuantity:0,factoryDispatchedQuantity:0,stages:[],createdTurn:turn(),lastUpdatedTurn:turn(),
+      routeId:route?.routeId||null,resourceId:route?.resourceId||null,status:'IDLE',currentStage:'IDLE',runtimeActive:false,activeShipmentId:null,shipmentIds:[],warehouseReceiptIds:[],
+      dispatchedQuantity:0,receivedQuantity:0,factoryDispatchedQuantity:0,factoryReceivedQuantity:0,stages:[],createdTurn:turn(),lastUpdatedTurn:turn(),
       authority:'OMEGA_RESOURCE_SITE_LOGISTICS_RUNTIME',routeAuthority:route?.provenance?.authority||'SCENARIO_LOGISTICS_DESIGN_ONLY'};
   }
   if(route){row.routeId=route.routeId||row.routeId;row.resourceId=route.resourceId||row.resourceId;row.routeProfile=clone(route);}
+  if(typeof row.runtimeActive!=='boolean')row.runtimeActive=['IN_TRANSIT_TO_WAREHOUSE','IN_TRANSIT_TO_FACTORY'].includes(String(row.status||''));
+  if(!row.currentStage)row.currentStage=String(row.status||'IDLE');
+  if(row.activeShipmentId===undefined)row.activeShipmentId=null;
   if(!Array.isArray(row.shipmentIds))row.shipmentIds=[];
   if(!Array.isArray(row.warehouseReceiptIds))row.warehouseReceiptIds=[];
   if(!Array.isArray(row.stages))row.stages=[];
@@ -301,6 +304,7 @@ function dispatchMineToWarehouse(countryId,site,flow,sourceBatch,routeProfile){
     }
   }
   siteRuntime.routeId=routeProfile.routeId;siteRuntime.resourceId=rid;siteRuntime.status='IN_TRANSIT_TO_WAREHOUSE';
+  siteRuntime.currentStage='MINE_TO_WAREHOUSE';siteRuntime.runtimeActive=true;
   siteRuntime.dispatchedQuantity=(num(siteRuntime.dispatchedQuantity)||0)+quantity;
   siteRuntime.activeShipmentId=shipmentId;siteRuntime.lastUpdatedTurn=turn();
   siteRuntime.shipmentIds=[...new Set([...siteRuntime.shipmentIds,shipmentId])];
@@ -397,6 +401,7 @@ function receiveMineWarehouseShipment(countryId,shipment){
     const siteRuntime=siteLogisticsState(cid,shipment.siteId,siteLogisticsRouteFor(cid,shipment.siteId));
     if(siteRuntime){
       siteRuntime.receivedQuantity=(num(siteRuntime.receivedQuantity)||0)+quantity;siteRuntime.activeShipmentId=null;
+      siteRuntime.runtimeActive=false;siteRuntime.currentStage='WAREHOUSE_RECEIVED';
       siteRuntime.warehouseReceiptIds=[...new Set([...siteRuntime.warehouseReceiptIds,receiptId])];
       appendSiteLogisticsStage(siteRuntime,'MINE_TO_WAREHOUSE','DELIVERED',{receiptId,shipmentId:shipment.shipmentId,batchId,quantity,warehouseId:shipment.warehouseId});
       appendSiteLogisticsStage(siteRuntime,'RAW_INVENTORY','AVAILABLE',{receiptId,batchId,quantity,unit:shipment.unit});
@@ -1458,7 +1463,18 @@ function dispatchResidualSiteBatches(c){
     if(sent.status==='DISPATCHED'){
       flow.shipmentId=sent.shipment.shipmentId;
       flow.shipmentIds=[...new Set([...(flow.shipmentIds||[]),sent.shipment.shipmentId])];
-      if(flow.mineLogisticsRouteId)flow.factoryDispatchedQuantity=(num(flow.factoryDispatchedQuantity)||0)+Math.max(0,num(sent.shipment.quantity)||0);
+      if(flow.mineLogisticsRouteId){
+        const shippedQuantity=Math.max(0,num(sent.shipment.quantity)||0);
+        flow.factoryDispatchedQuantity=(num(flow.factoryDispatchedQuantity)||0)+shippedQuantity;
+        const siteRuntime=siteLogisticsState(cid,flow.siteId,siteLogisticsRouteFor(cid,flow.siteId));
+        if(siteRuntime){
+          siteRuntime.factoryDispatchedQuantity=(num(siteRuntime.factoryDispatchedQuantity)||0)+shippedQuantity;
+          siteRuntime.activeShipmentId=sent.shipment.shipmentId;siteRuntime.runtimeActive=true;siteRuntime.currentStage='RAW_TO_FACTORY';
+          siteRuntime.shipmentIds=[...new Set([...siteRuntime.shipmentIds,sent.shipment.shipmentId])];
+          appendSiteLogisticsStage(siteRuntime,'RAW_TO_FACTORY','IN_TRANSIT_TO_FACTORY',{shipmentId:sent.shipment.shipmentId,batchId,
+            quantity:shippedQuantity,unit:sent.shipment.unit,etaTurn:sent.shipment.etaTurn,etaDate:sent.shipment.etaDate,factoryId:sent.shipment.factoryId});
+        }
+      }
       flow.quantity=Math.max(num(flow.quantity)||0,remaining);
       flow.route=clone(sent.shipment.route);
       flow.blockReason=null;flow.lastResidualBlockReason=null;flow.transportQueueReason=null;
@@ -1823,6 +1839,20 @@ function advanceShipments(c){
         processing?.status==='COMPLETED'?'PROCESSED':
         ['FACTORY_INPUT_SHORTAGE','FACTORY_INPUT_NOT_IN_RECIPE','FACTORY_INPUT_BATCH_LEDGER_MISMATCH'].includes(processing?.reason)?'AWAITING_INPUTS':'AWAITING_PROCESSING';
       s.processingTransactionId=processing?.transactionId||processing?.cycleId||null;s.processing=clone(processing);
+      if(String(s.shipmentType||'')==='RAW_TO_FACTORY'){
+        const flow=siteFlowRows(cid).find(row=>String(row.batchId||'')===String(s.batchId||''));
+        const siteRuntime=siteLogisticsState(cid,s.siteId,siteLogisticsRouteFor(cid,s.siteId));
+        if(siteRuntime){
+          siteRuntime.factoryReceivedQuantity=(num(siteRuntime.factoryReceivedQuantity)||0)+Math.max(0,num(s.quantity)||0);
+          siteRuntime.activeShipmentId=null;siteRuntime.runtimeActive=false;siteRuntime.currentStage='FACTORY_RECEIVED';
+          appendSiteLogisticsStage(siteRuntime,'RAW_TO_FACTORY','FACTORY_RECEIVED',{shipmentId:s.shipmentId,batchId:s.batchId,
+            quantity:s.quantity,unit:s.unit,turn:turn(),factoryId:s.factoryId,processingStatus:s.processingStatus});
+        }
+        if(flow){flow.mineLogisticsStatus='FACTORY_RECEIVED';flow.lastMineFactoryReceiptTurn=turn();
+          addFlowStage(flow,'FACTORY','RECEIVED',{shipmentId:s.shipmentId,factoryId:s.factoryId,quantity:s.quantity,processingStatus:s.processingStatus});
+          saveSiteFlow(cid,flow);
+        }
+      }
       n.deliveries.push(clone(s));delivered.push(clone(s));
       if(processing?.status==='COMPLETED'){
         const consumedSourceBatches=new Set((processing.sourceBatchIds||[]).map(String));
