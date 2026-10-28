@@ -131,7 +131,21 @@ async function loadSiteLogisticsRoutes(countryId){
         }
       }
       const partNumber=siteLogisticsManifest?.countryToPart?.[cid];
-      if(partNumber===undefined||partNumber===null)return{status:'NOT_FOUND',reason:'COUNTRY_NOT_IN_SITE_LOGISTICS_MANIFEST',countryId:cid};
+      if(partNumber===undefined||partNumber===null){
+        const framework=siteLogisticsManifest?.countryFramework;
+        const countryIds=Array.isArray(framework?.countryIds)?framework.countryIds:[];
+        if(countryIds.includes(cid)){
+          // A core country can have zero registered physical mine sites. It still uses
+          // this same logistics engine; an empty site map is not a missing-country failure.
+          // Do not synthesize mine routes for countries whose resource registry has none.
+          siteLogisticsRouteMap=new Map();
+          siteLogisticsActiveCountry=cid;
+          return{status:'READY',countryId:cid,routeCount:0,part:null,source:null,
+            noRegisteredSiteRoutes:true,frameworkAuthority:framework.authority||'CORE_COUNTRY_ROSTER_MANIFEST_V1',
+            authority:siteLogisticsManifest.authority||'SCENARIO_LOGISTICS_DESIGN_ONLY'};
+        }
+        return{status:'NOT_FOUND',reason:'COUNTRY_NOT_IN_SITE_LOGISTICS_MANIFEST',countryId:cid};
+      }
       const partInfo=(siteLogisticsManifest.parts||[]).find(part=>Number(part.part)===Number(partNumber)||String(part.file||'')===String(partNumber));
       if(!partInfo?.file)return{status:'FAILED',reason:'COUNTRY_ROUTE_SHARD_NOT_DECLARED',countryId:cid,partNumber};
       if(typeof fetch!=='function')return{status:'FAILED',reason:'SITE_LOGISTICS_FETCH_UNAVAILABLE',countryId:cid};
