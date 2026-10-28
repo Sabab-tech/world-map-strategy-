@@ -394,7 +394,7 @@ function dispatchMineToWarehouse(countryId,site,flow,sourceBatch,routeProfile){
     dispatchQuantity:Number(quantity.toFixed(6)),unit:sourceBatch.unit||flow?.unit||null,
     transportMode:legs[0]?.mode||'truck',legs,totalDistanceKm:num(routeProfile.routePlan.estimatedRouteDistanceKm)||legs.reduce((sum,leg)=>sum+(num(leg.distanceKm)||0),0),
     travelTimeDays:days,etaTurn,etaDate,capacityAuthority:'SIMULATED_SITE_ROUTE_DESIGN_CAPACITY',
-    distanceAuthority:routeProfile.routePlan.routeStatus||'SCENARIO_LOGISTICS_DESIGN_ONLY',
+    distanceAuthority:routeProfile.routePlan.routeStatus||'SCENARIO_LOGISTICS_DESIGN_ONLY',crossBorderRequired:false,
     quantityUnitBridge:bridge,transportAssetBindingStatus:'UNBOUND_SIMULATED_CAPACITY',simulationOnly:true};
   const capacityUse=commitTransportCapacity(cid,route,quantity,shipmentId);
   route.capacityUse=capacityUse;
