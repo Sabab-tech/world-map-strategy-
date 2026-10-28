@@ -1976,8 +1976,12 @@ function advanceShipments(c){
   if(selectedPlayer!==cid)return{status:'SKIPPED',reason:'PLAYER_COUNTRY_SCOPE_VIOLATION',countryId:cid,playerCountryId:selectedPlayer,delivered:0,mineDelivered:0,shipments:[]};
   if(siteLogisticsActiveCountry!==cid)void loadSiteLogisticsRoutes(cid);
   const n=netState(cid),delivered=[],mineDelivered=[];
-  dispatchResidualMineHauls(cid);
+  // Prioritize cargo already received into the raw warehouse before scheduling another
+  // mine haul. Both legs share the same per-turn transport ledger; dispatching mine
+  // residuals first can consume the entire capacity every turn and starve factory-bound
+  // shipments indefinitely even though warehouse receipts are ready.
   dispatchResidualSiteBatches(cid);
+  dispatchResidualMineHauls(cid);
   dispatchResidualFactoryOutputs(cid);
   for(const s of n.shipments){
     if(!['IN_TRANSIT','BLOCKED_ROUTE_BLOCKADE'].includes(String(s.status||'')))continue;
