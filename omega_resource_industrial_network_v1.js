@@ -3636,7 +3636,7 @@ function destroyMineAssets(input={}){
     asset.productionHealth={...(asset.productionHealth||{}),status:'DESTROYED',currentOutput:0,reason:'PLAYER_DESTROYED_MINE',updatedTurn:turn()};
     asset.previousStatus=previousStatus;destroyedIds.push(String(asset.mineId||asset.id||''));
   }
-  const productionLostPerDay=daily===null?null:Number((Math.max(0,daily)*selected.reduce((sum,asset)=>sum+(String(asset.previousStatus||asset.status||'').toUpperCase()==='OPERATIONAL'?Math.max(.1,num(asset.capacityMultiplier)||1:0),0)).toFixed(3));
+  const productionLostPerDay=daily===null?null:Number((Math.max(0,daily)*selected.reduce((sum,asset)=>sum+(String(asset.previousStatus||asset.status||'').toUpperCase()==='OPERATIONAL'?Math.max(.1,num(asset.capacityMultiplier)||1):0),0)).toFixed(3));
   const record={status:'DESTROYED',countryId:cid,siteId,resourceId:String(selected[0]?.resourceId||''),quantity:selected.length,mineIds:destroyedIds,turn:turn(),date:factoryCurrentGameDate(),
     jobsLost,productionLostPerDay,wasteOutputs:outputs,wasteOutputAuthority:Object.keys(outputs).length?'SIMULATED_RECOVERABLE_DEMOLITION_OUTPUT':'NO_CONSTRUCTION_LINEAGE_AVAILABLE',
     historyPreserved:true,remainingStockPreserved:true,productionStatus:'STOPPED',authority:'OMEGA_MINE_DESTRUCTION_V1'};
