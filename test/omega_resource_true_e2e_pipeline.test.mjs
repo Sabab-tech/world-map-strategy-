@@ -239,7 +239,24 @@ test('real site extraction flows through raw warehouse, transport, factory, fini
   assert.equal(resource.industrialNetwork.shipments.find(x=>String(x.shipmentId)===String(run.shipmentId))?.status,'IN_TRANSIT',
     'an unselected-country tick must not advance a mine shipment');
   state.simulation.playerCountryId='BGD';
+  const priorStrategicPolicy=g.Omega.ResourceStrategicPolicyRuntime||g.OmegaResourceStrategicPolicyRuntime||null;
+  const railBlockade={isRouteBlocked(countryId,scope){
+    const blocked=countryId==='BGD'&&scope.transportMode==='rail';
+    return{blocked,reason:blocked?'TEST_RAIL_BLOCKADE':null,blockades:blocked?[{policyId:'TEST_RAIL_BLOCKADE',modes:['rail']}]:[]};
+  }};
+  g.Omega.ResourceStrategicPolicyRuntime=railBlockade;g.OmegaResourceStrategicPolicyRuntime=railBlockade;
   advanceToGameTurn(state,run.shipment.etaTurn);
+  const blockedMineArrival=await industry.advanceShipments('BGD');
+  assert.equal(blockedMineArrival.mineDelivered,0,'a blockade on an intermediate rail leg must stop the whole mine route');
+  assert.equal(resource.industrialNetwork.shipments.find(x=>String(x.shipmentId)===String(run.shipmentId))?.status,'BLOCKED_ROUTE_BLOCKADE');
+  assert.equal(resource.warehouse.receipts.some(x=>String(x.receiptId)==='MINE-WH-REC:'+String(run.shipmentId)),false,
+    'a blocked shipment must not post a premature warehouse receipt');
+  if(priorStrategicPolicy){g.Omega.ResourceStrategicPolicyRuntime=priorStrategicPolicy;g.OmegaResourceStrategicPolicyRuntime=priorStrategicPolicy;}
+  else{delete g.Omega.ResourceStrategicPolicyRuntime;delete g.OmegaResourceStrategicPolicyRuntime;}
+  const resumedMineRoute=await industry.advanceShipments('BGD');
+  assert.equal(resumedMineRoute.mineDelivered,0,'reopened route must wait until its rescheduled arrival tick');
+  assert.equal(resource.industrialNetwork.shipments.find(x=>String(x.shipmentId)===String(run.shipmentId))?.status,'IN_TRANSIT');
+  advanceOneGameTurn(state);
   const mineAdvanced=await industry.advanceShipments('BGD');
   assert.ok(mineAdvanced.mineDelivered>=1,JSON.stringify(mineAdvanced));
   const mineReceipt=resource.warehouse.receipts.find(x=>String(x.receiptId)==='MINE-WH-REC:'+String(run.shipmentId));
