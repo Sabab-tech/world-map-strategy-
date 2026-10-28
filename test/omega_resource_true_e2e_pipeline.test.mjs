@@ -302,6 +302,10 @@ test('real site extraction flows through raw warehouse, transport, factory, fini
   assert.equal(factoryShipment.siteId,site.siteId);
   const siteRuntime=resource.industrialNetwork.siteLogisticsBySiteId[site.siteId];
   assert.equal(siteRuntime.runtimeActive,true,'the same mine runtime must transition to its factory-bound haul');
+  assert.equal(siteRuntime.currentStage,'RAW_TO_FACTORY',
+    'the operational stage must name the active factory-bound shipment rather than its last audit event');
+  assert.equal(siteRuntime.status,'IN_TRANSIT_TO_FACTORY',
+    'the raw-inventory receipt audit event must not overwrite the live factory-transit status');
   assert.ok(siteRuntime.activeShipmentIds.includes(factoryShipment.shipmentId),
     'the exact factory-bound shipment must be tracked even when this mine has other parallel shipments');
   assert.ok(siteRuntime.activeShipments.some(row=>String(row.shipmentId)===String(factoryShipment.shipmentId)&&row.stage==='RAW_TO_FACTORY'),
