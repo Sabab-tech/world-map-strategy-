@@ -11,7 +11,9 @@ The source union contains 301 eligible rows from the 315-row canonical catalog, 
 
 ## Country-grouped logistics data
 
-The manifest maps each country to exactly one of six route shards, allowing a future runtime to load the selected country's records without placing all 561 routes in the UI at once. Every route has stable site/country/resource IDs, source provenance/status, an exact resource SVG ID and path, a WH-ISO3-RAW destination, terrain/region profile, one to three connected transport legs, design distance/time/capacity and unit/eligibility gates.
+The single shared logistics runtime supports the **197 core country identities**. The route manifest contains **561 unique physical mine/site routes across 193 countries**, partitioned across six route shards so only the selected country's site records are loaded. Four core countries currently have no eligible physical mine/site routes: Liechtenstein (LIE), Monaco (MCO), San Marino (SMR), and Vatican City (VAT). They still load the shared country logistics framework with zero registered site routes. The runtime must not invent mine records merely to make route coverage appear complete.
+
+Every registered route has stable site/country/resource IDs, source provenance/status, an exact resource SVG ID and path, a WH-ISO3-RAW destination, terrain/region profile, one to three connected transport legs, design distance/time/capacity and unit/eligibility gates. Country and mine differences are route/configuration data consumed by the same engine, not separate country-specific engines.
 
 Every route resource ID maps to an exact existing icon in assets/omega-industrial-icons-v1/manifest.json. Five self-hosted, 128×128 SVG assets cover truck, freight train, bulk-carrier ship, inland barge and commodity pipeline using the metallic/navy industrial treatment. The regression test verifies every local path.
 
