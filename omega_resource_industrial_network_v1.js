@@ -143,6 +143,7 @@ async function loadSiteLogisticsRoutes(countryId){
       if(selectedAfterLoad&&selectedAfterLoad!==cid)return{status:'SKIPPED',reason:'PLAYER_COUNTRY_SCOPE_VIOLATION',countryId:cid,playerCountryId:selectedAfterLoad};
       siteLogisticsRouteMap=new Map(routes.map(route=>[String(route.siteId),route]));
       siteLogisticsActiveCountry=cid;
+      for(const route of routes){const runtime=siteLogisticsState(cid,route.siteId,route);if(runtime&&!runtime.stages.length)appendSiteLogisticsStage(runtime,'LIFECYCLE','IDLE',{selectedCountryId:cid,routeReady:true,automaticProcessing:false});}
       return{status:'READY',countryId:cid,routeCount:siteLogisticsRouteMap.size,part:partInfo.part,
         source:partInfo.file,authority:siteLogisticsManifest.authority||'SCENARIO_LOGISTICS_DESIGN_ONLY'};
     }catch(error){return{status:'FAILED',reason:String(error?.message||error),countryId:cid};}
@@ -164,7 +165,7 @@ function siteLogisticsState(countryId,siteId,route=null){
   let row=net.siteLogisticsBySiteId[sid];
   if(!row||typeof row!=='object'||Array.isArray(row)){
     row=net.siteLogisticsBySiteId[sid]={schemaVersion:'OMEGA_MINE_SITE_LOGISTICS_V1',siteId:sid,countryId:cid,
-      routeId:route?.routeId||null,resourceId:route?.resourceId||null,status:'READY',shipmentIds:[],warehouseReceiptIds:[],
+      routeId:route?.routeId||null,resourceId:route?.resourceId||null,status:'IDLE',runtimeActive:false,shipmentIds:[],warehouseReceiptIds:[],
       dispatchedQuantity:0,receivedQuantity:0,factoryDispatchedQuantity:0,stages:[],createdTurn:turn(),lastUpdatedTurn:turn(),
       authority:'OMEGA_RESOURCE_SITE_LOGISTICS_RUNTIME',routeAuthority:route?.provenance?.authority||'SCENARIO_LOGISTICS_DESIGN_ONLY'};
   }
@@ -186,7 +187,7 @@ function logisticsUnitDescriptor(value){
   raw=raw.replace(/^raw_cargo_/,'');
   if(/^(metric_)?ton(ne|nes|s)$/.test(raw)||/metric_(ton|tonne)/.test(raw))return{family:'MASS',toTonnes:1,canonicalUnit:'TONNES'};
   if(/^(kg|kilogram|kilograms)$/.test(raw))return{family:'MASS',toTonnes:0.001,canonicalUnit:'TONNES'};
-  if(/^(lb|lbs|pound|pounds)$/.test(raw)||raw.startsWith('million_pounds'))return{family:'MASS',toTonnes:raw.startsWith('million_pounds')?453592.37:0.00045359237,canonicalUnit:'TONNES'};
+  if(/^(lb|lbs|pound|pounds)$/.test(raw)||raw.startsWith('million_pounds'))return{family:'MASS',toTonnes:raw.startsWith('million_pounds')?453.59237:0.00045359237,canonicalUnit:'TONNES'};
   if(raw.includes('troy_ounce')||raw==='ozt')return{family:'MASS',toTonnes:0.0000311034768,canonicalUnit:'TONNES'};
   if(raw==='carat'||raw==='carats'||raw==='ct')return{family:'MASS',toTonnes:0.0000002,canonicalUnit:'TONNES'};
   if(raw==='mmcf'||raw==='million_cubic_feet')return{family:'GAS_VOLUME',toMMCF:1,canonicalUnit:'MMCF'};
