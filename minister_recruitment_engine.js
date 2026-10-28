@@ -60,6 +60,12 @@
     return label.toUpperCase();
   }
 
+  function validRoster(candidates) {
+    if (!Array.isArray(candidates) || candidates.length !== MAX_CANDIDATES) return false;
+    const ids = candidates.map(candidate => text(candidate && (candidate.id || candidate.ministerId)));
+    return ids.every(Boolean) && new Set(ids).size === MAX_CANDIDATES;
+  }
+
   function countryCode() {
     const ui = global.OmegaCabinetUI || {};
     const game = global.Game || {};
@@ -104,7 +110,13 @@
   async function offlineRoster(ministryId, countryId) {
     const identityPool = global.OmegaMinisterIdentityPool;
     if (identityPool && typeof identityPool.getCandidates === 'function') {
-      return identityPool.getCandidates(countryId || countryCode(), ministryId);
+      try {
+        const candidates = await identityPool.getCandidates(countryId || countryCode(), ministryId);
+        if (validRoster(candidates)) return candidates;
+      } catch (_) {
+        // Fall back to the already-loaded ministers.json templates when the generated
+        // country roster or its manifest cannot be fetched.
+      }
     }
     let source = global.OmegaMinistersDB;
     if (!source || !Object.values(source).some(Array.isArray)) {
@@ -139,32 +151,44 @@
   async function fetchRoster(ministryId, countryId) {
     const identityPool = global.OmegaMinisterIdentityPool;
     const explicitCountry = countryId || countryCode();
-    if (identityPool && typeof identityPool.getCandidates === 'function') {
-      return identityPool.getCandidates(explicitCountry, ministryId);
-    }
-    let apiError = 'API unavailable';
     const cc = normalizeCountryCode(explicitCountry);
+    let identityPoolError = '';
+    if (identityPool && typeof identityPool.getCandidates === 'function') {
+      try {
+        const candidates = await identityPool.getCandidates(cc || explicitCountry, ministryId);
+        if (validRoster(candidates)) return candidates;
+        identityPoolError = 'identity pool returned an invalid five-candidate roster';
+      } catch (error) {
+        identityPoolError = text(error && error.message || error || 'IDENTITY_POOL_UNAVAILABLE');
+      }
+    }
+
+    let apiError = identityPoolError
+      ? 'identity pool: ' + identityPoolError + '; API unavailable'
+      : 'API unavailable';
     try {
       const response = await fetch(
         'api/minister-candidates?ministryId=' + encodeURIComponent(ministryId) +
         '&countryCode=' + encodeURIComponent(cc),
         { headers: { Accept: 'application/json' } }
       );
-      if (!response.ok) apiError = 'HTTP ' + response.status;
-      else {
+      if (!response.ok) {
+        apiError = 'HTTP ' + response.status +
+          (identityPoolError ? '; identity pool: ' + identityPoolError : '');
+      } else {
         const data = await response.json();
-        if (data.ok && Array.isArray(data.candidates) && data.candidates.length === MAX_CANDIDATES) {
-          return data.candidates;
-        }
-        apiError = data.error || ('Expected five verified candidates; received ' +
-          ((data.candidates && data.candidates.length) || 0));
+        if (data.ok && validRoster(data.candidates)) return data.candidates;
+        apiError = (data.error || ('Expected five unique verified candidates; received ' +
+          ((data.candidates && data.candidates.length) || 0))) +
+          (identityPoolError ? '; identity pool: ' + identityPoolError : '');
       }
     } catch (error) {
-      apiError = text(error && error.message || error || apiError);
+      apiError = text(error && error.message || error || apiError) +
+        (identityPoolError ? '; identity pool: ' + identityPoolError : '');
     }
 
-    const roster = await offlineRoster(ministryId, cc);
-    if (roster.length === MAX_CANDIDATES) return roster;
+    const roster = await offlineRoster(ministryId, cc || explicitCountry);
+    if (validRoster(roster)) return roster;
     throw new Error('Minister roster unavailable (' + apiError + '). Only ' + roster.length +
       ' unique candidates were found in ministers.json; five are required.');
   }
@@ -622,6 +646,7 @@
 
   const api = {
     VERSION,
+    normalizeCountryCode,
     fetchRoster,
     activeId,
     render,
