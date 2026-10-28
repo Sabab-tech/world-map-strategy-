@@ -187,6 +187,7 @@ test('real site extraction flows through raw warehouse, transport, factory, fini
   assert.equal(run.status,'IN_TRANSIT',JSON.stringify(run));
   assert.equal(run.extractionStatus,'COMMITTED');
   assert.ok(run.batchId&&run.shipmentId&&run.extractionPlanId);
+  assert.equal(run.shipment.shipmentType,'MINE_TO_WAREHOUSE','mine output must travel as a separate first-leg shipment');
   const resource=state.resource.BGD;
   assert.ok(resource,'raw resource state must be committed to Bangladesh');
   const sourceBatch=resource.batches.find(x=>String(x.batchId)===String(run.batchId));
@@ -197,19 +198,42 @@ test('real site extraction flows through raw warehouse, transport, factory, fini
   assert.equal(resource.warehouse.countryId,'BGD');
   const initialSourceQuantity=Number(sourceBatch.remainingQuantity);
   assert.ok(initialSourceQuantity+1e-6>=Number(run.quantity));
+  assert.equal(sourceBatch.stage,'MINE_TO_WAREHOUSE_IN_TRANSIT');
+  assert.equal(resource.inventoryLots[run.batchId].stage,'MINE_TO_WAREHOUSE_IN_TRANSIT');
+  assert.equal(resource.industrialNetwork.siteLogisticsBySiteId[site.siteId].status,'IN_TRANSIT_TO_WAREHOUSE');
+  const mineDispatchQuantity=Number(run.shipment.quantity);
+  const rawStockBeforeMineArrival=Number(resource.inventory.coal)||0;
+  const rawWarehouseBeforeMineArrival=Number(resource.warehouse.availableByResource.coal)||0;
+  assert.ok(rawStockBeforeMineArrival+1e-6<mineDispatchQuantity,
+    'cargo must not remain available in the source inventory while the mine haul is in transit');
+  assert.ok(rawWarehouseBeforeMineArrival+1e-6<mineDispatchQuantity,
+    'cargo must not be pre-credited to raw warehouse inventory before the mine receipt');
+  advanceToGameTurn(state,run.shipment.etaTurn);
+  const mineAdvanced=await industry.advanceShipments('BGD');
+  assert.ok(mineAdvanced.mineDelivered>=1,JSON.stringify(mineAdvanced));
+  const mineReceipt=resource.warehouse.receipts.find(x=>String(x.receiptId)==='MINE-WH-REC:'+String(run.shipmentId));
+  assert.ok(mineReceipt,'mine shipment must post an idempotent raw-warehouse receipt');
+  assert.equal(mineReceipt.receivedFrom,'MINE_SITE_LOGISTICS');
+  assert.equal(mineReceipt.status,'RECEIVED');
+  assert.equal(sourceBatch.stage,'RAW_INVENTORY');
+  assert.equal(resource.inventoryLots[run.batchId].stage,'RAW_INVENTORY');
+  const factoryShipment=(resource.industrialNetwork.shipments||[]).find(x=>String(x.batchId)===String(run.batchId)&&
+    x.shipmentType==='RAW_TO_FACTORY'&&String(x.status)==='IN_TRANSIT');
+  assert.ok(factoryShipment,'factory shipment must only start after the mine haul receipt');
+  assert.equal(factoryShipment.siteId,site.siteId);
   const rawStockBeforeDelivery=Number(resource.inventory.coal)||0;
   const rawWarehouseBeforeDelivery=Number(resource.warehouse.availableByResource.coal)||0;
   const rawReservationBeforeDelivery=Number(resource.warehouse.reservedByResource.coal)||0;
   const inTransitBeforeDelivery=new Set((resource.industrialNetwork?.shipments||[])
     .filter(x=>String(x.resourceId)==='coal'&&String(x.status)==='IN_TRANSIT').map(x=>String(x.shipmentId)));
-  assert.ok(rawStockBeforeDelivery+1e-6>=Number(run.shipment.quantity));
-  assert.ok(rawWarehouseBeforeDelivery+1e-6>=Number(run.shipment.quantity));
-  assert.ok(rawReservationBeforeDelivery+1e-6>=Number(run.shipment.quantity));
-  advanceToGameTurn(state,run.shipment.etaTurn);
-  const advanced=industry.advanceShipments('BGD');
+  assert.ok(rawStockBeforeDelivery+1e-6>=Number(factoryShipment.quantity));
+  assert.ok(rawWarehouseBeforeDelivery+1e-6>=Number(factoryShipment.quantity));
+  assert.ok(rawReservationBeforeDelivery+1e-6>=Number(factoryShipment.quantity));
+  advanceToGameTurn(state,factoryShipment.etaTurn);
+  const advanced=await industry.advanceShipments('BGD');
   assert.ok(advanced.delivered>=1,JSON.stringify(advanced));
-  const delivery=advanced.shipments.find(item=>String(item.shipmentId)===String(run.shipmentId)||String(item.batchId)===String(run.batchId));
-  assert.ok(delivery,'the specific E2E shipment must reach its factory during the global country delivery tick');
+  const delivery=advanced.shipments.find(item=>String(item.shipmentId)===String(factoryShipment.shipmentId)||String(item.batchId)===String(run.batchId));
+  assert.ok(delivery,'the exact second-leg shipment must reach its factory after the authoritative ETA');
   assert.equal(delivery.status,'DELIVERED');
   assert.equal(delivery.processingStatus,'IN_PROGRESS',JSON.stringify(delivery.processing));
   assert.equal(delivery.batchId,run.batchId);
