@@ -263,6 +263,35 @@
     return activeMinister(ministryId, countryId) ? 'Fire Minister' : 'Recruit Minister';
   }
 
+  function uiV2Required() {
+    const shell = document.documentElement;
+    if (shell && typeof shell.getAttribute === 'function' &&
+        shell.getAttribute('data-omega-ui-v2-required') === 'true') return true;
+    return !!global.OmegaUIV2Integration;
+  }
+
+  function openV2Recruitment(ministryId) {
+    const id = String(ministryId || '').trim();
+    if (!id) return { ok:false, code:'MINISTRY_CONTEXT_UNRESOLVED' };
+    const integration = global.OmegaUIV2Integration;
+    const government = global.OmegaUIV2Government;
+    if (!integration || typeof integration.openRoute !== 'function' ||
+        (typeof integration.isEnabled === 'function' && !integration.isEnabled()) ||
+        !government || typeof government.openRecruitment !== 'function') {
+      return { ok:false, code:'UI_V2_MINISTER_RECRUITMENT_UNAVAILABLE' };
+    }
+    const countryId = normalizeCountryCode(global.OmegaMinistryViewCountry || countryCode());
+    if (!countryId) return { ok:false, code:'COUNTRY_CONTEXT_UNRESOLVED' };
+    if (integration.openRoute('government') !== true) {
+      return { ok:false, code:'UI_V2_GOVERNMENT_OPEN_FAILED' };
+    }
+    const cabinet = document.getElementById('cabinet-full-window');
+    const root = cabinet && cabinet.querySelector('[data-omega-v2-main]');
+    if (!root) return { ok:false, code:'UI_V2_GOVERNMENT_ROOT_UNAVAILABLE' };
+    return government.openRecruitment(root, id,
+      Object.assign({}, root.__omegaV2GovernmentOptions || {}, { countryId:countryId }));
+  }
+
   function syncDashboard(ministryId, countryId) {
     const ui = global.OmegaCabinetUI;
     if (!ui) return;
@@ -290,6 +319,10 @@
         ministry.effectiveCapability = null;
       }
     }
+
+    // UI v2 owns the visible surface. Keep authoritative data in sync, but do not
+    // redraw the legacy dashboard over the active game.
+    if (uiV2Required()) return;
 
     // Redraw the open ministry first so its header and Recruit/Fire control are fresh.
     if (String(ui.currentDashboardMinistryId || '') === String(ministryId) &&
@@ -543,8 +576,19 @@
   }
 
   function openRecruitment(ministryId) {
-    const content = document.getElementById('ministry-dashboard-content');
     const targetMinistry = ministryId || global.OmegaCabinetUI && global.OmegaCabinetUI.currentDashboardMinistryId;
+    // UI v2 is the required production owner. Never create the retired inline roster
+    // when its mount or recruitment entrypoint is unavailable.
+    if (uiV2Required()) {
+      const result = openV2Recruitment(targetMinistry);
+      if (!result || result.ok !== true) {
+        const message = 'Minister appointment is unavailable in UI v2 (' +
+          String(result && result.code || 'UNKNOWN_ERROR') + '). No assignment was changed.';
+        notify('MINISTER RECRUITMENT UNAVAILABLE', message, 'error');
+      }
+      return result;
+    }
+    const content = document.getElementById('ministry-dashboard-content');
     if (!content || !targetMinistry) return;
     let host = content.querySelector('.omega-recruitment-host');
     if (host) host.remove();
@@ -615,6 +659,7 @@
   }
 
   function patchDashboard() {
+    if (uiV2Required()) return true;
     const ui = global.OmegaCabinetUI;
     if (!ui || typeof ui.renderMinistryDashboard !== 'function') return false;
     if (ui.__ministerRecruitmentPatchedV2) return true;
@@ -662,10 +707,15 @@
   };
   global.OmegaMinisterRecruitment = api;
 
-  let tries = 0;
-  const timer = setInterval(() => {
-    tries += 1;
-    if (patchDashboard() || tries > 200) clearInterval(timer);
-  }, 100);
-  patchDashboard();
+  // Only retry at low frequency in standalone legacy shells; production UI v2
+  // exits above and does not keep a discovery timer alive.
+  if (!patchDashboard()) {
+    let tries = 0;
+    const retry = () => {
+      tries += 1;
+      if (patchDashboard() || tries >= 80) return;
+      if (typeof global.setTimeout === 'function') global.setTimeout(retry, 250);
+    };
+    if (typeof global.setTimeout === 'function') global.setTimeout(retry, 250);
+  }
 })(typeof window !== 'undefined' ? window : globalThis);
