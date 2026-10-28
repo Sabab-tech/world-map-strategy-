@@ -358,7 +358,7 @@ test("v2 Build opens an actionable plan and Start construction calls the authori
     quantitative:{reserve:{quantity:100000,unit:"TONNES",status:"SIMULATED"},production:{rate:12,unit:"TONNES_PER_DAY",status:"SIMULATED"}},
     simulation:{reserve:{quantity:100000,unit:"TONNES",status:"SIMULATED"}} };
   const countInput={value:"2"}, workerInput={value:"1200"}, previewNode={innerHTML:""};
-  const root={innerHTML:"",classList:{add(){}},addEventListener(type,fn){listeners[type]=fn;},
+  const root={innerHTML:"",classList:{add(){}},addEventListener(type,fn){(listeners[type]||(listeners[type]=[])).push(fn);},
     querySelector(s){if(s==="[data-omega-v2-build-count]")return countInput;if(s==="[data-omega-v2-build-workers]")return workerInput;if(s==="[data-omega-v2-build-preview]")return previewNode;return null;},
     querySelectorAll(){return[];},contains(){return true;}};
   globalThis.Game={state:{simulation:{turn:3,session:{playerCountryId:"BGD"}},resource:{BGD:{mineAssets:[],
@@ -378,7 +378,8 @@ test("v2 Build opens an actionable plan and Start construction calls the authori
       materialsRequired:[{resourceId:"iron_ore",quantity:17000,unit:"SIMULATION_RESOURCE_UNIT"}]};
       globalThis.Game.state.resource.BGD.industrialNetwork.projects.push(project);return project;}
   };
-  function click(selector,attrs){const button={disabled:false,getAttribute(name){return attrs[name]||null;}};listeners.click({target:{closest(v){return v===selector?button:null;}}});}
+  function fire(type,event){(listeners[type]||[]).forEach(function(fn){fn(event);});}
+  function click(selector,attrs){const button={disabled:false,getAttribute(name){return attrs[name]||null;}};fire("click",{target:{closest(v){return v===selector?button:null;}}});}
   try{
     api.render(root,{countryId:"BGD",sites:[row],tab:"mines"});
     click("[data-omega-v2-mine-action]",{"data-omega-v2-mine-action":"build","data-site-id":row.siteId});
@@ -387,7 +388,7 @@ test("v2 Build opens an actionable plan and Start construction calls the authori
     assert.match(root.innerHTML,/data-omega-v2-build-workers/);
     assert.match(root.innerHTML,/Start construction/);
     assert.equal(legacyOpens,0,"Build must not merely open the retired modal");
-    listeners.input({target:{value:"2",matches(s){return s==="[data-omega-v2-build-count]";}}});
+    fire("input",{target:{value:"2",matches(s){return s==="[data-omega-v2-build-count]";}}});
     assert.match(previewNode.innerHTML,/data-omega-v2-build-submit>(Start construction)<\/button>/,"ready quote must enable Start construction");
     click("[data-omega-v2-build-submit]",{"data-omega-v2-build-submit":"true"});
     assert.equal(starts.length,1,"authoritative startMineProject must run exactly once");
