@@ -436,7 +436,12 @@ for(const countryId of countryIds){
     // Keep unrelated fixture batches out of this focused pipeline run, but allow the
     // target source batch to retry a capacity-limited mine haul on a later turn.
     for(const flow of liveNetwork?.siteFlowLedger||[]){
-      if(!targetBatchIds.has(String(flow.batchId||'')))flow.lastResidualDispatchTurn=Number(game.state.simulation.turn)||1;
+      if(!targetBatchIds.has(String(flow.batchId||''))){
+        const frozenTurn=Number(game.state.simulation.turn)||1;
+        flow.lastResidualDispatchTurn=frozenTurn;
+        flow.lastMineResidualDispatchTurn=frozenTurn;
+        flow.lastFactoryResidualDispatchTurn=frozenTurn;
+      }
     }
     arrival=await industry.advanceShipments(countryId);
   }
@@ -503,7 +508,12 @@ for(const countryId of countryIds){
     // Freeze new residual dispatches during the delivery audit. Existing target shipments
     // still advance normally, but this phase does not silently create extra reservations.
     const liveNetwork=liveCountryState(countryId).industrialNetwork;
-    for(const flow of liveNetwork?.siteFlowLedger||[])flow.lastResidualDispatchTurn=Number(game.state.simulation.turn)||1;
+    for(const flow of liveNetwork?.siteFlowLedger||[]){
+      const frozenTurn=Number(game.state.simulation.turn)||1;
+      flow.lastResidualDispatchTurn=frozenTurn;
+      flow.lastMineResidualDispatchTurn=frozenTurn;
+      flow.lastFactoryResidualDispatchTurn=frozenTurn;
+    }
     deliveryResult=await industry.advanceShipments(countryId);
   }
   const deliveryStateAfter=runtime.countryResourceState(countryId)||{};
