@@ -565,6 +565,14 @@ for(const countryId of countryIds){
     const inputLot=(factory?.inputBatchLots||[]).find(x=>
       String(x.batchId)===String(delivered?.factoryInputBatchId)||
       (Array.isArray(x.sourceBatchIds)&&x.sourceBatchIds.map(String).includes(String(pipeline.result.batchId))));
+    // A source batch may reach the same factory in multiple capacity-limited legs over
+    // successive turns. Reconcile the source debit against every completed RAW_TO_FACTORY
+    // leg for this batch, not only the first shipment selected for the pipeline assertion.
+    const batchDeliveredShipments=(postNetwork.shipments||[]).filter(x=>
+      String(x.batchId)===String(pipeline.result.batchId)&&String(x.shipmentType||'')==='RAW_TO_FACTORY'&&
+      String(x.status||'').toUpperCase()==='DELIVERED'&&
+      String(x.destinationStatus||'').toUpperCase()==='FACTORY_RECEIVED');
+    const batchDeliveredQuantity=batchDeliveredShipments.reduce((sum,x)=>sum+(Number(x.quantity)||0),0);
     const deliveryOkay=!!delivered&&delivered.destinationStatus==='FACTORY_RECEIVED'&&
       deliveredRows.length===1&&String(delivered.countryId||countryId).toUpperCase()===countryId&&
       String(delivered.batchId||'')===String(pipeline.result.batchId)&&
@@ -573,7 +581,8 @@ for(const countryId of countryIds){
       String(sourceBatch?.countryId||'').toUpperCase()===countryId&&
       (sourceBatch?.warehouseId==null||String(sourceBatch.warehouseId)==='WH-'+countryId+'-RAW')&&
       closeEnough(delivered.quantity,shipment?.quantity)&&
-      closeEnough(Number(sourceBatch?.remainingQuantity)||0,pipeline.initialBatchRemaining-(Number(delivered.quantity)||0))&&
+      closeEnough(Number(sourceBatch?.remainingQuantity)||0,pipeline.initialBatchRemaining-batchDeliveredQuantity)&&
+      (!sourceLot||closeEnough(sourceLot.remainingQuantity,sourceBatch?.remainingQuantity))&&
       (!sourceLot||closeEnough(sourceLot.remainingQuantity,sourceBatch?.remainingQuantity))&&
       String(reservation?.status||'').toUpperCase()==='DELIVERED'&&
       Number(reservation?.quantity||delivered?.quantity)>0&&
@@ -586,6 +595,7 @@ for(const countryId of countryIds){
         duplicateDeliveryCount:deliveredRows.length,shipmentCountry:shipment?.countryId||null,
         deliveryCountry:delivered?.countryId||null,batchCountry:sourceBatch?.countryId||null,
         initialBatchRemaining:pipeline.initialBatchRemaining,deliveredQuantity:delivered?.quantity??null,
+        batchDeliveredQuantity,completedFactoryShipmentCount:batchDeliveredShipments.length,
         finalBatchRemaining:sourceBatch?.remainingQuantity??null,reservationStatus:reservation?.status||null,
         factoryCountry:factory?.countryId||null,inputLotFound:!!inputLot,
         inputLotSourceBatchIds:inputLot?.sourceBatchIds||[]});
