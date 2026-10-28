@@ -468,6 +468,8 @@ test('batch mine construction scales materials, capex and workers, then commissi
   assert.equal(mines.length, 2);
   assert.equal(new Set(mines.map(row => row.mineId)).size, 2);
   assert.ok(mines.every(row => row.workersRequired === two.workersRequired / 2));
+  const completed = state.resource.BWA.industrialNetwork.projects.find(row => row.projectId === project.projectId);
+  assert.ok(completed, 'completed construction project remains in the persistent project ledger');
   assert.equal(completed.commissionedMineIds.length, 2);
 });
 
