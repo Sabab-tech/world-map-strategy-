@@ -275,9 +275,11 @@ function dispatchMineToWarehouse(countryId,site,flow,sourceBatch,routeProfile){
     ['IN_TRANSIT','BLOCKED_ROUTE_BLOCKADE'].includes(String(item?.status||'')));
   if(active)return{status:'DISPATCHED',shipment:active,idempotent:true};
   const siteRuntime=siteLogisticsState(cid,siteId,routeProfile);
-  const remainingAtMine=Math.max(0,(num(sourceBatch.quantity)||num(sourceBatch.remainingQuantity)||0)-
-    Math.max(0,num(flow?.mineWarehouseDispatchedQuantity)||0));
   const remainingInBatch=Math.max(0,num(sourceBatch.remainingQuantity!=null?sourceBatch.remainingQuantity:sourceBatch.quantity)||0);
+  const stockAlreadyHeld=flow?.mineLogisticsStockDebited===true;
+  const remainingAtMine=stockAlreadyHeld
+    ?Math.max(0,num(flow?.mineHeldQuantity)||0)
+    :remainingInBatch;
   const remaining=Math.min(remainingAtMine,remainingInBatch);
   if(remaining<=1e-9)return{status:'EMPTY',reason:'NO_UNSHIPPED_MINE_BATCH_REMAINDER',batchId};
   const w=rs.warehouse||{},availableMap=w.availableByResource&&typeof w.availableByResource==='object'?w.availableByResource:{};
@@ -286,8 +288,30 @@ function dispatchMineToWarehouse(countryId,site,flow,sourceBatch,routeProfile){
   const inventoryKey=quantityObjectKey(inventory,rid)||rid,warehouseKey=quantityObjectKey(availableMap,rid)||rid,reservedKey=quantityObjectKey(reservedMap,rid)||rid;
   const inventoryAvailable=Math.max(0,num(inventory[inventoryKey])||0);
   const warehouseFree=Math.max(0,(num(availableMap[warehouseKey])||0)-(num(reservedMap[reservedKey])||0));
-  if(inventoryAvailable<=1e-9||warehouseFree<=1e-9)return{status:'BLOCKED',reason:'RAW_WAREHOUSE_SOURCE_STOCK_NOT_AVAILABLE_FOR_MINE_DISPATCH',
-    batchId,inventoryAvailable,warehouseFree,requestedQuantity:remaining};
+  const stockToHold=stockAlreadyHeld?0:remainingInBatch;
+  // Once a source batch uses the physical mine-haul leg, its complete unshipped balance
+  // must leave aggregate warehouse/trade availability. Debit it exactly once, then restore
+  // only each individually receipted portion. This prevents residual cargo being sold or
+  // dispatched straight to a factory while it is still physically at the mine.
+  if(stockToHold>1e-9){
+    if(inventoryAvailable+1e-6<stockToHold||warehouseFree+1e-6<stockToHold)
+      return{status:'BLOCKED',reason:'MINE_SOURCE_BATCH_STOCK_RECONCILIATION_FAILED',batchId,
+        inventoryAvailable,warehouseFree,requiredStockToHold:stockToHold};
+    inventory[inventoryKey]=Number(Math.max(0,inventoryAvailable-stockToHold).toFixed(6));
+    availableMap[warehouseKey]=Number(Math.max(0,(num(availableMap[warehouseKey])||0)-stockToHold).toFixed(6));
+    if(inventory[inventoryKey]<1e-8)inventory[inventoryKey]=0;
+    if(availableMap[warehouseKey]<1e-8)availableMap[warehouseKey]=0;
+    flow.mineLogisticsStockDebited=true;flow.mineLogisticsStockDebitedQuantity=stockToHold;
+    flow.mineHeldQuantity=stockToHold;flow.mineLogisticsStockDebitedTurn=turn();
+    // This is a physical location change, not a destruction or new receipt.
+    if(Array.isArray(w.storedBatchIds))w.storedBatchIds=w.storedBatchIds.filter(id=>String(id)!==batchId);
+    if(Array.isArray(w.receipts))for(const receipt of w.receipts){
+      if(String(receipt?.batchId||'')===batchId&&String(receipt?.receivedFrom||'')==='MINE_EXTRACTION'&&String(receipt?.status||'')==='RECEIVED'){
+        receipt.status='REVERSED_FOR_MINE_LOGISTICS';receipt.reversedTurn=turn();receipt.reversalShipmentId='MINE-HAUL-OPEN:'+batchId;
+      }
+    }
+    recomputeSiteLogisticsTradeAvailability(rs);
+  }
   const bridge=siteLogisticsUnitBridge(routeProfile,sourceBatch.unit||flow?.unit);
   const capacityPerDay=num(routeProfile?.routePlan?.capacityBottleneckPerDay);
   if(capacityPerDay===null||capacityPerDay<=0)return{status:'BLOCKED',reason:'MINE_ROUTE_CAPACITY_NOT_RECORDED',routeId:routeProfile.routeId};
@@ -296,9 +320,17 @@ function dispatchMineToWarehouse(countryId,site,flow,sourceBatch,routeProfile){
   const legs=routeRows.map(leg=>({...clone(leg),mode:tok(leg.transportMode),transportMode:tok(leg.transportMode),
     distanceKm:num(leg.estimatedDistanceKm)||0,capacityPerDay:num(leg.designCapacityPerDay)||capacityPerDay,
     travelDays:Math.max(0,(num(leg.estimatedTravelHours)||0)/24)}));
-  const preview=previewTransportCapacity(cid,{routeId:routeProfile.routeId,legs},Math.min(remaining,inventoryAvailable,warehouseFree,capInSourceUnits));
+  const policy=g.Omega?.ResourceStrategicPolicyRuntime||g.OmegaResourceStrategicPolicyRuntime;
+  if(policy?.isRouteBlocked){
+    const blockedLegs=legs.map(leg=>({mode:leg.transportMode,decision:policy.isRouteBlocked(cid,{
+      resourceId:rid,transportMode:leg.transportMode,routeId:routeProfile.routeId,siteId,factoryId:null
+    })})).filter(item=>item.decision?.blocked);
+    if(blockedLegs.length)return{status:'BLOCKED',reason:'RESOURCE_ROUTE_BLOCKADE_ACTIVE',routeId:routeProfile.routeId,
+      blockedLegs:blockedLegs.map(item=>({mode:item.mode,reason:item.decision.reason||'RESOURCE_ROUTE_BLOCKADE_ACTIVE'}))};
+  }
+  const preview=previewTransportCapacity(cid,{routeId:routeProfile.routeId,legs},Math.min(remaining,capInSourceUnits));
   if(preview.status!=='READY')return{status:'BLOCKED',reason:preview.reason||'TRANSPORT_CAPACITY_EXHAUSTED',capacity:preview,routeId:routeProfile.routeId};
-  const quantity=Math.min(remaining,inventoryAvailable,warehouseFree,capInSourceUnits,preview.allowedQuantity);
+  const quantity=Math.min(remaining,capInSourceUnits,preview.allowedQuantity);
   if(quantity<=1e-9)return{status:'BLOCKED',reason:'TRANSPORT_CAPACITY_EXHAUSTED',capacity:preview,routeId:routeProfile.routeId};
   const warehouseId='WH-'+cid+'-RAW',days=Math.max(1,num(routeProfile.routePlan.plannedTransitDays)||num(routeProfile.routePlan.minimumTransitDays)||1);
   const etaTurn=turn()+Math.max(1,Math.ceil(days/dayWindow)),etaDate=factoryAddGameDays(factoryCurrentGameDate(),days);
@@ -314,26 +346,22 @@ function dispatchMineToWarehouse(countryId,site,flow,sourceBatch,routeProfile){
   route.capacityUse=capacityUse;
   const batchInFlight=Array.isArray(rs.batches)?rs.batches.find(batch=>String(batch?.batchId||'')===batchId):null;
   if(!batchInFlight)return{status:'BLOCKED',reason:'SOURCE_BATCH_NOT_FOUND',batchId};
-  inventory[inventoryKey]=Number((inventoryAvailable-quantity).toFixed(6));
-  availableMap[warehouseKey]=Number(((num(availableMap[warehouseKey])||0)-quantity).toFixed(6));
-  if(inventory[inventoryKey]<1e-8)inventory[inventoryKey]=0;
-  if(availableMap[warehouseKey]<1e-8)availableMap[warehouseKey]=0;
-  batchInFlight.stage='MINE_TO_WAREHOUSE_IN_TRANSIT';batchInFlight.status='IN_TRANSIT_TO_RAW_WAREHOUSE';
-  batchInFlight.sourceWarehouseId=batchInFlight.warehouseId||('WH-'+cid+'-RAW');batchInFlight.destinationWarehouseId='WH-'+cid+'-RAW';
-  batchInFlight.warehouseId=null;batchInFlight.locationNodeKey='MINE_SITE:'+siteId;batchInFlight.currentLocationNodeId=siteId;
+  // The complete source quantity is already held out of inventory. Record only the
+  // actual dispatched portion as in transit; remaining held cargo stays at the mine.
+  flow.mineHeldQuantity=Math.max(0,(num(flow.mineHeldQuantity)||0)-quantity);
+  flow.mineWarehouseDispatchedQuantity=(num(flow.mineWarehouseDispatchedQuantity)||0)+quantity;
+  batchInFlight.stage=flow.mineHeldQuantity>1e-9?'PARTIALLY_MINE_HAULED':'MINE_TO_WAREHOUSE_IN_TRANSIT';
+  batchInFlight.status='IN_TRANSIT_TO_RAW_WAREHOUSE';
+  batchInFlight.sourceWarehouseId=batchInFlight.sourceWarehouseId||batchInFlight.warehouseId||('WH-'+cid+'-RAW');
+  batchInFlight.destinationWarehouseId='WH-'+cid+'-RAW';batchInFlight.warehouseId=null;
+  batchInFlight.locationNodeKey='MINE_OR_TRANSIT:'+siteId;batchInFlight.currentLocationNodeId=siteId;
   batchInFlight.lastMovementType='MINE_TO_WAREHOUSE_DISPATCH';batchInFlight.lastMovementTurn=turn();
   batchInFlight.mineLogisticsShipmentId=shipmentId;
-  if(Array.isArray(w.storedBatchIds))w.storedBatchIds=w.storedBatchIds.filter(id=>String(id)!==batchId);
   if(rs.inventoryLots?.[batchId]){
-    rs.inventoryLots[batchId].stage='MINE_TO_WAREHOUSE_IN_TRANSIT';rs.inventoryLots[batchId].status='IN_TRANSIT';
-    rs.inventoryLots[batchId].sourceWarehouseId=rs.inventoryLots[batchId].warehouseId||('WH-'+cid+'-RAW');
-    rs.inventoryLots[batchId].destinationWarehouseId='WH-'+cid+'-RAW';rs.inventoryLots[batchId].warehouseId=null;
-    rs.inventoryLots[batchId].locationNodeKey='MINE_SITE:'+siteId;rs.inventoryLots[batchId].mineLogisticsShipmentId=shipmentId;
-  }
-  if(Array.isArray(w.receipts))for(const receipt of w.receipts){
-    if(String(receipt?.batchId||'')===batchId&&String(receipt?.receivedFrom||'')==='MINE_EXTRACTION'&&String(receipt?.status||'')==='RECEIVED'){
-      receipt.status='REVERSED_FOR_MINE_LOGISTICS';receipt.reversedTurn=turn();receipt.reversalShipmentId=shipmentId;
-    }
+    const lot=rs.inventoryLots[batchId];
+    lot.stage=batchInFlight.stage;lot.status='IN_TRANSIT';lot.sourceWarehouseId=lot.sourceWarehouseId||lot.warehouseId||('WH-'+cid+'-RAW');
+    lot.destinationWarehouseId='WH-'+cid+'-RAW';lot.warehouseId=null;lot.locationNodeKey=batchInFlight.locationNodeKey;
+    lot.mineLogisticsShipmentId=shipmentId;
   }
   siteRuntime.routeId=routeProfile.routeId;siteRuntime.resourceId=rid;siteRuntime.status='IN_TRANSIT_TO_WAREHOUSE';
   siteRuntime.currentStage='MINE_TO_WAREHOUSE';
