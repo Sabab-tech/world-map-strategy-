@@ -586,7 +586,6 @@ for(const countryId of countryIds){
       closeEnough(delivered.quantity,shipment?.quantity)&&
       closeEnough(Number(sourceBatch?.remainingQuantity)||0,pipeline.initialBatchRemaining-batchDeliveredQuantity)&&
       (!sourceLot||closeEnough(sourceLot.remainingQuantity,sourceBatch?.remainingQuantity))&&
-      (!sourceLot||closeEnough(sourceLot.remainingQuantity,sourceBatch?.remainingQuantity))&&
       String(reservation?.status||'').toUpperCase()==='DELIVERED'&&
       Number(reservation?.quantity||delivered?.quantity)>0&&
       String(factory?.countryId||'').toUpperCase()===countryId&&
@@ -666,11 +665,15 @@ for(const item of targetPipelines){
     continue;
   }
   const finalState=runtime.countryResourceState(countryId)||{};
+  // The result shipment is the mine-to-warehouse leg in the two-leg runtime. Finished-goods
+  // processing is tracked on the factory-bound shipment captured in the delivery phase.
+  const factoryShipmentId=String(item.factoryShipmentId||'');
   const delivery=(finalState.industrialNetwork?.deliveries||[])
-    .find(x=>String(x.shipmentId)===String(result.shipmentId));
+    .find(x=>String(x.shipmentId)===factoryShipmentId);
   if(delivery?.processingStatus!=='PROCESSED'){
     failures.push({siteId:site.siteId,countryId,stage:'DELIVERY_RECONCILIATION',
-      status:delivery?.processingStatus||null,shipmentId:result.shipmentId,batchId:result.batchId});
+      status:delivery?.processingStatus||null,shipmentId:factoryShipmentId||null,
+      mineShipmentId:result.shipmentId,batchId:result.batchId});
     continue;
   }
   const outputs=delivery.processing?.outputs||delivery.processing?.outputQuantities||
