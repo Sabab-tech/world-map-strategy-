@@ -7,6 +7,30 @@ import fs from 'node:fs';
 // one CI job to serially process the entire world.
 await import('./omega_resource_endowment_runtime.test.mjs');
 
+// Node's native fetch rejects relative asset names, while the game browser resolves them
+// against the app origin. Provide the same local-asset behavior for the exhaustive CI harness.
+const nativeRouteFetch=globalThis.fetch;
+const logisticsAssetNames=new Set([
+  'resource_site_logistics_routes_v1.json',
+  'resource_site_logistics_routes_v1_part_01.json',
+  'resource_site_logistics_routes_v1_part_02.json',
+  'resource_site_logistics_routes_v1_part_03.json',
+  'resource_site_logistics_routes_v1_part_04.json',
+  'resource_site_logistics_routes_v1_part_05.json',
+  'resource_site_logistics_routes_v1_part_06.json'
+]);
+globalThis.fetch=async function(input,options){
+  const requested=String(input).split(/[?#]/,1)[0].replace(/\\/g,'/');
+  const name=requested.slice(requested.lastIndexOf('/')+1);
+  if(logisticsAssetNames.has(name)){
+    const target=new URL('../'+name,import.meta.url);
+    const body=fs.readFileSync(target,'utf8');
+    return{ok:true,status:200,json:async()=>JSON.parse(body),text:async()=>body};
+  }
+  if(typeof nativeRouteFetch==='function')return nativeRouteFetch(input,options);
+  return{ok:false,status:404,json:async()=>({}),text:async()=>''};
+};
+
 const game=globalThis.Game;
 const runtime=globalThis.OmegaResourceEndowmentRuntime||globalThis.Omega?.ResourceEndowmentRuntime;
 const industry=globalThis.OmegaResourceIndustrialNetwork||globalThis.Omega?.ResourceIndustrialNetwork;
@@ -370,7 +394,11 @@ for(let siteIndex=0;siteIndex<sites.length;siteIndex++){
   assert.ok(batch,site.siteId+': extracted batch missing from country state');
   assert.equal(batch.countryId,site.countryId,site.siteId+': batch country mismatch');
   assert.equal(batch.warehouseId,null,site.siteId+': raw batch must remain at the mine until its first-leg receipt');
-  assert.equal(batch.stage,'MINE_TO_WAREHOUSE_IN_TRANSIT',site.siteId+': batch stage must reflect the active mine haul');
+  const mineHeldAtSource=Math.max(0,Number(sourceFlow.mineHeldQuantity)||0);
+  const expectedMineStage=mineHeldAtSource>1e-6?'PARTIALLY_MINE_HAULED':'MINE_TO_WAREHOUSE_IN_TRANSIT';
+  assert.equal(batch.stage,expectedMineStage,site.siteId+': batch stage must reflect whether capacity left cargo at the mine');
+  assert.ok(Number(sourceFlow.mineWarehouseDispatchedQuantity)>0,
+    site.siteId+': the first mine-haul shipment must be accounted for in the authoritative flow ledger');
   assert.ok(Number(batch.quantity)>0,site.siteId+': extraction quantity must be positive');
   pipelines.push({site,result,initialBatchRemaining:Number(batch.remainingQuantity??batch.quantity)||0});
 }
@@ -653,6 +681,7 @@ assert.deepEqual(failures,[],'every-site production failures: '+JSON.stringify(f
 assert.equal(counts.started,counts.eligible,'every eligible site must dispatch: '+JSON.stringify(counts));
 assert.equal(counts.delivered,counts.eligible,'every eligible site must deliver to its factory: '+JSON.stringify(counts));
 assert.equal(counts.processed,counts.eligible,'every eligible site must commit finished goods: '+JSON.stringify(counts));
+if(typeof nativeRouteFetch==='function')globalThis.fetch=nativeRouteFetch;
 console.log('OMEGA EXHAUSTIVE EVERY-SITE PRODUCTION PIPELINE PASSED '+JSON.stringify({
   ...counts,shardIndex,shardCount,allEligibleSites:allEligibleSites.length,
   countries:countryIds.size,criticalMineralSites:criticalBatch.records.length
