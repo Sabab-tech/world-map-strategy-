@@ -1804,9 +1804,12 @@ function startMineProject(input={}){
   const txId='MINE-CAPEX:'+cid+':'+siteId+':T'+turn()+':'+h32(String(requestId||JSON.stringify(input)));
   const rs=resourceState(cid);rs.mineConstructionLedger=Array.isArray(rs.mineConstructionLedger)?rs.mineConstructionLedger:[];
   const projectId='MINE:'+cid+':'+siteId+':N'+quote.assetCount+':T'+turn()+':'+h32(String(requestId||JSON.stringify(input)));
+  const constructionStartDate=factoryCurrentGameDate();
+  const expectedCompletionDate=constructionStartDate?factoryAddGameDays(constructionStartDate,quote.durationDays):null;
   const project={projectId,requestId:requestId||projectId,projectType:'MINE_CONSTRUCTION',countryId:cid,siteId,siteName:quote.siteName,
     resourceId:quote.resourceId,buildClass:quote.buildClass,assetCount:quote.assetCount,workersRequiredPerAsset:quote.workersRequiredPerAsset,mineId:'MINE_ASSET:'+cid+':'+siteId+':'+h32(projectId),
-    status:'UNDER_CONSTRUCTION',startTurn:turn(),progressDays:0,progressPct:0,durationDays:quote.durationDays,
+    status:'UNDER_CONSTRUCTION',startTurn:turn(),startDate:constructionStartDate,expectedCompletionDate,estimatedCompletionDate:expectedCompletionDate,
+    progressDays:0,progressPct:0,remainingDays:quote.durationDays,durationDays:quote.durationDays,
     estimatedTurns:quote.estimatedTurns,cost:quote.costUsd,costUsd:quote.costUsd,currency:'USD',workersRequired:quote.workersRequired,
     workersCommitted:assignedWorkers,staffingStatus:'CONTRACTED_BY_PLAYER',staffingAuthority:'PLAYER_CONFIRMED_CONSTRUCTION_STAFFING_COMMITMENT',
     materialsRequired:clone(quote.materials.map(x=>({resourceId:x.resourceId,quantity:x.required,unit:x.unit}))),
@@ -1823,7 +1826,8 @@ function startMineProject(input={}){
     authority:'RESOURCE_MINE_CONSTRUCTION_TRANSACTION_V1'});
   rs.mineConstructionLedger=rs.mineConstructionLedger.slice(-2048);
   emit('OMEGA_RESOURCE_MINE_PROJECT_STARTED',cid,{projectId,requestId:project.requestId,siteId,resourceId:project.resourceId,
-    costUsd:project.costUsd,durationDays:project.durationDays,workersRequired:project.workersRequired,workersCommitted:project.workersCommitted,
+    costUsd:project.costUsd,durationDays:project.durationDays,daysRemaining:project.remainingDays,progressDays:project.progressDays,
+    expectedCompletionDate:project.expectedCompletionDate,workersRequired:project.workersRequired,workersCommitted:project.workersCommitted,
     materialsRequired:project.materialsRequired,treasuryTransactionId:txId,authority:'RESOURCE_MINE_CONSTRUCTION_TRANSACTION_V1'});
   return clone(project);
 }
@@ -1982,12 +1986,22 @@ function advanceProjects(c){
     if(p.status!=='UNDER_CONSTRUCTION')continue;
     const step=daysPerTurn()*(p.contractorType==='FOREIGN_EPC'?1.10:1);
     p.progressDays=Math.min(num(p.durationDays)||1,(num(p.progressDays)||0)+step);
-    p.progressPct=(p.progressDays/(num(p.durationDays)||1));
+    p.progressPct=Math.min(1,p.progressDays/(num(p.durationDays)||1));
+    p.remainingDays=Math.max(0,Math.ceil((num(p.durationDays)||1)-p.progressDays));
+    if(p.projectType==='MINE_CONSTRUCTION'&&p.progressPct<1){
+      emit('OMEGA_RESOURCE_MINE_PROJECT_PROGRESS',cid,{projectId:p.projectId,siteId:p.siteId,status:p.status,turn:turn(),
+        progressDays:p.progressDays,durationDays:p.durationDays,progressPct:p.progressPct,daysRemaining:p.remainingDays,
+        expectedCompletionDate:p.expectedCompletionDate||p.estimatedCompletionDate||null,authority:'RESOURCE_MINE_CONSTRUCTION_PROGRESS_V1'});
+    }
     if(p.progressPct<1)continue;
-    p.status='COMPLETED';p.completedTurn=turn();p.actualCompletionDate=factoryCurrentGameDate()||p.estimatedCompletionDate;completed.push(clone(p));
+    p.status='COMPLETED';p.completedTurn=turn();p.remainingDays=0;p.actualCompletionDate=factoryCurrentGameDate()||p.expectedCompletionDate||p.estimatedCompletionDate;completed.push(clone(p));
     if(p.projectType==='MINE_CONSTRUCTION'){
       const asset=commissionMineProject(cid,p);
       p.mineAssetId=asset.mineId;p.commissionedTurn=turn();p.assetStatus=asset.status;
+      emit('OMEGA_RESOURCE_MINE_PROJECT_PROGRESS',cid,{projectId:p.projectId,siteId:p.siteId,status:'COMPLETED',turn:turn(),
+        progressDays:p.progressDays,durationDays:p.durationDays,progressPct:1,daysRemaining:0,
+        expectedCompletionDate:p.expectedCompletionDate||p.estimatedCompletionDate||null,actualCompletionDate:p.actualCompletionDate,
+        commissionedMineIds:p.commissionedMineIds,authority:'RESOURCE_MINE_CONSTRUCTION_PROGRESS_V1'});
     }else if(p.projectType==='FACTORY_CONSTRUCTION'){
       const econ=econState(cid);econ.productionAssets=Array.isArray(econ.productionAssets)?econ.productionAssets:[];
       const techReady=(p.requiredTechnologyIds||[]).every(t=>resourceState(cid).technologyCapabilities?.some(x=>tok(x?.technologyId).toUpperCase()===tok(t)));
