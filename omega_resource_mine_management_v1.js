@@ -531,7 +531,7 @@ function render(){
  if(currentTargetSiteId){
   const card=Array.from(modal.querySelectorAll('[data-omm-site-card]')).find(el=>el.getAttribute('data-omm-site-card')===currentTargetSiteId);
   if(card&&typeof card.scrollIntoView==='function')card.scrollIntoView({block:'center',behavior:'auto'});
-  const targetAction=currentTargetAction==='extract'?'[data-omm-quantity="'+currentTargetSiteId+'"]':currentTargetAction==='build'?'[data-omm-workers="'+currentTargetSiteId+'"]':null;
+  const targetAction=currentTargetAction==='extract'?'[data-omm-quantity="'+currentTargetSiteId+'"]':currentTargetAction==='build'?'[data-omm-build-count][data-site-id="'+currentTargetSiteId+'"]':null;
   const target=targetAction?modal.querySelector(targetAction):null;
   if(target&&typeof target.focus==='function')target.focus({preventScroll:true});
  }
@@ -622,34 +622,80 @@ async function onClick(event){
   render();return;
  }
  if(action==='focus-site'){focusSite(siteId,country);return;}
- if(action==='build-mine'){
+ if(action==='build-mine'){flipCard(siteId,'build');return;}
+  if(action==='destroy-mine-preview'){flipCard(siteId,'destroy');return;}
+  if(action==='operate-mine'){flipCard(siteId,'operate');return;}
+  if(action==='flip-back'){
+   const card=button.closest('[data-omm-site-card]');card?.classList.remove('is-flipped');
+   card?.querySelectorAll('[data-omm-panel]').forEach(panel=>{panel.hidden=true;});return;
+  }
+  if(action==='start-mine-build'){
    if(country!==playerCountry()){lastOutcome='Rejected: mine construction is restricted to the active player country.';render();return;}
-   if(!api?.startMineProject){lastOutcome='Mine construction runtime unavailable.';render();return;}
-   const workerInput=Array.from(g.document.querySelectorAll('[data-omm-workers]')).find(el=>el.getAttribute('data-omm-workers')===siteId);
-   const assignedWorkers=num(workerInput?.value);
-   if(assignedWorkers===null||assignedWorkers<0||!Number.isInteger(assignedWorkers)){lastOutcome='Enter a non-negative whole number of committed construction workers.';render();return;}
-   button.disabled=true;button.textContent='Validating…';
+   if(!api?.startMineProject||!api?.quoteMineProject){lastOutcome='Mine construction runtime unavailable; no resources were committed.';render();return;}
+   const count=num(button.getAttribute('data-count')),site=cardSiteById(siteId,country);
+   if(!site||count===null||!Number.isInteger(count)||count<1||count>100){lastOutcome='Choose a valid mine count from 1 to 100.';render();return;}
+   button.disabled=true;button.textContent='Rechecking inventory…';
    let result;
    try{
-    const quote=api.quoteMineProject({countryId:country,siteId,resourceId:rid,assignedWorkers});
+    const quote=api.quoteMineProject({countryId:country,siteId,resourceId:rid,quantity:count,assignedWorkers:1000000000});
     if(quote.status!=='QUOTED')result=quote;
     else if(!quote.ready)result={status:'BLOCKED',reason:'CONSTRUCTION_REQUIREMENTS_NOT_MET',quote};
-    else result=api.startMineProject({countryId:country,siteId,resourceId:rid,assignedWorkers,requestId:'MINE_BUILD:'+country+':'+siteId+':T'+turn()});
+    else{
+     const existing=assetRows(country).filter(a=>String(a.siteId)===siteId).length;
+     result=api.startMineProject({countryId:country,siteId,resourceId:rid,quantity:count,assignedWorkers:quote.workersRequired,
+      requestId:'MINE_BUILD:'+country+':'+siteId+':N'+count+':A'+existing+':T'+turn()});
+    }
    }catch(error){result={status:'FAILED',reason:String(error?.message||error)};}
    lastOutcome=message('Mine construction',result);
-   if(result?.status==='UNDER_CONSTRUCTION')lastOutcome+=' · '+formatMoney(result.costUsd)+' committed; '+formatNum(result.durationDays)+' days scheduled.';
+   if(result?.status==='UNDER_CONSTRUCTION')lastOutcome+=' · '+formatNum(result.assetCount||count)+' mine unit(s); '+formatMoney(result.costUsd)+' committed; '+formatNum(result.durationDays)+' days scheduled for completion.';
    render();return;
- }
- if(action==='decommission-mine'){
-   if(country!==playerCountry()){lastOutcome='Rejected: mine changes are restricted to the active player country.';render();return;}
-   if(!api?.decommissionMine){lastOutcome='Mine shutdown is unavailable. No game state was changed.';render();return;}
-   if(typeof g.confirm==='function'&&!g.confirm('Stop this mine? Existing stock and history will be preserved.'))return;
-   button.disabled=true;
-   try{const result=api.decommissionMine({countryId:country,siteId,confirmed:true});lastOutcome=message('Mine shutdown',result);}
-   catch(error){lastOutcome='Mine could not be stopped. Existing stock was not deleted.';}
+  }
+  if(action==='request-mine-destruction'){
+   openDestructionConfirmation(siteId,Math.max(1,Math.floor(num(button.getAttribute('data-count'))||1)),null);return;
+  }
+  if(action==='request-single-mine-destruction'){
+   openDestructionConfirmation(siteId,1,String(button.getAttribute('data-mine-id')||''));return;
+  }
+  if(action==='cancel-mine-destruction'){
+   button.closest('.omm-confirm-overlay')?.remove();return;
+  }
+  if(action==='confirm-mine-destruction'){
+   if(country!==playerCountry()){lastOutcome='Rejected: mine demolition is restricted to the active player country.';button.closest('.omm-confirm-overlay')?.remove();render();return;}
+   if(!api?.destroyMineAssets){lastOutcome='Demolition runtime unavailable; no mine was changed.';button.closest('.omm-confirm-overlay')?.remove();render();return;}
+   const overlay=button.closest('.omm-confirm-overlay'),targetSite=String(overlay?.getAttribute('data-site-id')||siteId),count=Math.max(1,Math.floor(num(overlay?.getAttribute('data-count'))||1)),mineId=String(overlay?.getAttribute('data-mine-id')||'');
+   button.disabled=true;button.textContent='Destroying…';
+   try{
+    const result=api.destroyMineAssets({countryId:country,siteId:targetSite,quantity:count,mineId:mineId||undefined,confirmed:true});
+    lastOutcome=message('Mine demolition',result);
+    if(result?.status==='DESTROYED')lastOutcome+=' · '+formatNum(result.quantity)+' destroyed; '+formatNum(result.jobsLost)+' jobs lost; '+(result.productionLostPerDay===null?'production impact unavailable':formatNum(result.productionLostPerDay,2)+' units/day lost')+'. History and stock preserved.';
+   }catch(error){lastOutcome='Demolition failed: '+String(error?.message||error)+'. No successful state change was reported.';}
+   overlay?.remove();render();return;
+  }
+  if(action==='stop-mine-units'||action==='resume-mine-units'){
+   if(country!==playerCountry()){lastOutcome='Rejected: mine operations are restricted to the active player country.';render();return;}
+   if(!api?.setMineOperatingStatus){lastOutcome='Mine operating-status runtime unavailable.';render();return;}
+   const input=button.closest('[data-omm-site-card]')?.querySelector('[data-omm-operation-count]'),quantity=num(input?.value);
+   if(quantity===null||!Number.isInteger(quantity)||quantity<1){lastOutcome='Choose a positive whole number of mine units.';render();return;}
+   try{
+    const desired=action==='stop-mine-units'?'STOPPED':'OPERATIONAL';
+    const result=api.setMineOperatingStatus({countryId:country,siteId,quantity,status:desired});
+    lastOutcome=message(desired==='STOPPED'?'Pause mine units':'Resume mine units',result);
+    if(result?.status==='APPLIED')lastOutcome+=' · '+formatNum(result.quantity)+' unit(s) updated; history and warehouse stock preserved.';
+   }catch(error){lastOutcome='Mine operation change failed: '+String(error?.message||error);}
    render();return;
- }
- if(action==='run-mine'){
+  }
+  if(action==='pause-single-mine'||action==='resume-single-mine'){
+   if(country!==playerCountry()){lastOutcome='Rejected: mine operations are restricted to the active player country.';render();return;}
+   if(!api?.setMineOperatingStatus){lastOutcome='Mine operating-status runtime unavailable.';render();return;}
+   const mineId=String(button.getAttribute('data-mine-id')||'');
+   try{
+    const desired=action==='pause-single-mine'?'STOPPED':'OPERATIONAL';
+    const result=api.setMineOperatingStatus({countryId:country,siteId,mineId,quantity:1,status:desired});
+    lastOutcome=message(desired==='STOPPED'?'Pause mine':'Resume mine',result);
+   }catch(error){lastOutcome='Mine operation change failed: '+String(error?.message||error);}
+   render();return;
+  }
+  if(action==='run-mine'){
    if(country!==playerCountry()){lastOutcome='Rejected: extraction is restricted to the active player country.';render();return;}
    if(!api?.executeSitePipeline){lastOutcome='Site extraction pipeline unavailable.';render();return;}
    const quantityInput=Array.from(g.document.querySelectorAll('[data-omm-quantity]')).find(el=>el.getAttribute('data-omm-quantity')===siteId),quantity=num(quantityInput?.value)??1000;
