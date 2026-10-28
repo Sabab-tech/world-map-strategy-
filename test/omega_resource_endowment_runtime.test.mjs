@@ -869,8 +869,8 @@ assert.equal(oneTapLedgerAfter.length,oneTapLedgerBefore.length,
 assert.equal(oneTapLedgerAfter.reduce((sum,row)=>sum+Number(row.quantity||0),0),successfulQuantityBefore,
   'a repeat one-tap action must not duplicate successful production quantities');
 
-// // Part 6 integration proof: a newly added mine must complete the same extraction,
-// sovereign warehouse, transport, auto-commissioned factory and processing sequence.
+// Part 6 integration proof: the mine haul must be receipted at the sovereign
+// warehouse before the existing warehouse-to-factory shipment can be dispatched.
 const part6CopperSite=part6Data.records.find(site=>site.siteId==='SITE_CHL_collahuasi_copper_mine');
 assert(part6CopperSite,'Part 6 copper pipeline fixture must exist');
 globalThis.Game.state.transport.CHL=globalThis.Game.state.transport.CHL||{
@@ -880,6 +880,7 @@ globalThis.Game.state.transport.CHL=globalThis.Game.state.transport.CHL||{
     pipelines:{capacityPerDay:400000,quality:0.8}
   }
 };
+globalThis.Game.state.simulation.playerCountryId=part6CopperSite.countryId;
 globalThis.Game.state.simulation.turn=Number(globalThis.Game.state.simulation.turn||0)+1;
 const part6Pipeline=await industrial.executeSitePipeline({
   countryId:part6CopperSite.countryId,siteId:part6CopperSite.siteId,
@@ -892,17 +893,35 @@ assert.equal(part6Pipeline.status,'IN_TRANSIT',
     shipmentStatus:part6Pipeline.shipmentStatus,detail:part6Pipeline.detail,quantity:part6Pipeline.quantity,shipment:part6Pipeline.shipment
   }));
 assert.equal(part6Pipeline.extractionStatus,'COMMITTED');
+assert.equal(part6Pipeline.shipment?.shipmentType,'MINE_TO_WAREHOUSE');
 assert.ok(part6Pipeline.batchId&&part6Pipeline.shipmentId&&part6Pipeline.factoryId,
-  'Part 6 pipeline must persist its extraction batch, shipment and factory identities');
+  'Part 6 pipeline must persist its extraction batch, mine shipment and factory identities');
+const part6MineShipment=part6Pipeline.shipment;
+const part6SourceState=runtime.countryResourceState(part6CopperSite.countryId);
+const part6MineQuantity=Number(part6MineShipment.quantity||0);
+assert.ok(part6MineQuantity>0);
+assert.equal(part6SourceState.batches.find(item=>String(item.batchId)===String(part6Pipeline.batchId))?.warehouseId,null,
+  'the Part 6 source batch stays at the mine until its first-leg receipt');
+assert.ok(Number(part6SourceState.warehouse?.availableByResource?.[part6CopperSite.resourceId]||0)+1e-6<part6MineQuantity,
+  'mine cargo must not be credited to raw warehouse stock before arrival');
+advanceToGameTurn(globalThis.Game.state,Number(part6MineShipment.etaTurn));
+const part6MineArrival=industrial.advanceShipments(part6CopperSite.countryId);
+assert.ok(part6MineArrival.mineDelivered>=1,'Part 6 mine haul must reach the warehouse: '+JSON.stringify(part6MineArrival));
+const part6WarehouseReceipt=part6SourceState.warehouse.receipts.find(item=>String(item.receiptId)==='MINE-WH-REC:'+String(part6MineShipment.shipmentId));
+assert.equal(part6WarehouseReceipt?.status,'RECEIVED');
+const part6FactoryShipment=(part6SourceState.industrialNetwork?.shipments||[]).find(item=>
+  String(item.batchId)===String(part6Pipeline.batchId)&&item.shipmentType==='RAW_TO_FACTORY'&&item.status==='IN_TRANSIT');
+assert.ok(part6FactoryShipment,'Part 6 factory shipment must start only after warehouse receipt');
+assert.equal(part6FactoryShipment.siteId,part6CopperSite.siteId);
 const part6PreDelivery=runtime.countryResourceState(part6CopperSite.countryId);
-const part6ShipQuantity=Number(part6Pipeline.shipment?.quantity||0);
+const part6ShipQuantity=Number(part6FactoryShipment.quantity||0);
 assert.ok(part6ShipQuantity>0);
 assert.ok(Number(part6PreDelivery?.warehouse?.reservedByResource?.[part6CopperSite.resourceId]||0)>=part6ShipQuantity,
-  'Part 6 shipment must reserve material from its country raw warehouse');
-advanceToGameTurn(globalThis.Game.state,Number(part6Pipeline.shipment.etaTurn));
+  'Part 6 factory shipment must reserve material from its country raw warehouse');
+advanceToGameTurn(globalThis.Game.state,Number(part6FactoryShipment.etaTurn));
 const part6Delivery=industrial.advanceShipments(part6CopperSite.countryId);
-assert.ok(part6Delivery.delivered>=1,'global country turn must deliver due shipments across deposits; detail='+JSON.stringify({delivered:part6Delivery.delivered,targetShipmentId:part6Pipeline.shipmentId}));
-const part6Delivered=part6Delivery.shipments.find(item=>item.shipmentId===part6Pipeline.shipmentId);
+assert.ok(part6Delivery.delivered>=1,'global country turn must deliver the due Part 6 factory shipment: '+JSON.stringify({delivered:part6Delivery.delivered,targetShipmentId:part6FactoryShipment.shipmentId}));
+const part6Delivered=part6Delivery.shipments.find(item=>item.shipmentId===part6FactoryShipment.shipmentId);
 assert(part6Delivered);
 assert.equal(part6Delivered.destinationStatus,'FACTORY_RECEIVED');
 assert.ok(['IN_PROGRESS','AWAITING_PROCESSING'].includes(part6Delivered.processingStatus),JSON.stringify(part6Delivered));
@@ -913,7 +932,7 @@ if(part6Delivered.processingStatus==='AWAITING_PROCESSING'){
 completeFactoryCycle(globalThis.Game.state,industrial,part6CopperSite.countryId,part6Pipeline.factoryId,part6Pipeline.batchId);
 const part6PostDelivery=runtime.countryResourceState(part6CopperSite.countryId);
 const part6Flow=part6PostDelivery.industrialNetwork?.siteFlowLedger?.find(item=>String(item.batchId)===String(part6Pipeline.batchId));
-const part6CompletedDelivery=(part6PostDelivery.industrialNetwork?.deliveries||[]).find(item=>String(item.shipmentId)===String(part6Pipeline.shipmentId));
+const part6CompletedDelivery=(part6PostDelivery.industrialNetwork?.deliveries||[]).find(item=>String(item.shipmentId)===String(part6FactoryShipment.shipmentId));
 assert.equal(part6CompletedDelivery?.processingStatus,'PROCESSED','Part 6 output must commit after its calendar finish date');
 assert.ok(Object.keys(part6CompletedDelivery?.processing?.outputs||{}).some(key=>Number(part6PostDelivery.inventory?.[key])>0),
   'Part 6 finished products must enter the owning country inventory');
