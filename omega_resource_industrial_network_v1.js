@@ -1760,7 +1760,7 @@ async function advanceShipments(c){
     if(blockade?.blocked){s.status='BLOCKED_ROUTE_BLOCKADE';s.blockReason=blockade.reason||'RESOURCE_ROUTE_BLOCKADE_ACTIVE';s.blockadePolicies=blockade.blockades||[];s.blockedTurn=turn();continue;}
     if(s.status==='BLOCKED_ROUTE_BLOCKADE'){s.status='IN_TRANSIT';s.blockReason=null;s.resumedTurn=turn();s.etaTurn=Math.max(turn()+1,num(s.etaTurn)||turn()+1);}
     if(num(s.etaTurn)>turn())continue;
-    if(s.etaDate&&!factoryDateReached(factoryCurrentGameDate(),s.etaDate))continue;
+    if(String(s.shipmentType||'')==='MINE_TO_WAREHOUSE'&&s.etaDate&&!factoryDateReached(factoryCurrentGameDate(),s.etaDate))continue;
     if(String(s.shipmentType||'')==='MINE_TO_WAREHOUSE'){
       const receipt=receiveMineWarehouseShipment(cid,s);
       if(receipt.status!=='DELIVERED'){
@@ -1969,8 +1969,8 @@ async function advanceShipments(c){
 
     }
   }
-  dispatchResidualMineHauls(cid);
   dispatchResidualSiteBatches(cid);
+  dispatchResidualMineHauls(cid);
   n.deliveries=n.deliveries.slice(-MAX_SHIPMENTS);
   return{status:'ADVANCED',countryId:cid,turn:turn(),delivered:delivered.length,mineDelivered:mineDelivered.length,mineShipments:mineDelivered,shipments:delivered};
 }
