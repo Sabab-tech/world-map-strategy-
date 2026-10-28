@@ -34,7 +34,16 @@ function fixture(overrides = {}) {
     limestone: 50000,
     coal: 50000,
     crude_oil: 5000,
-    construction_aggregate: 50000
+    construction_aggregate: 50000,
+    cement: 50000,
+    steel: 50000,
+    alloy_steel: 50000,
+    industrial_machinery: 50000,
+    grid_equipment: 50000,
+    industrial_chemicals: 50000,
+    industrial_gases: 50000,
+    polymer_resin: 50000,
+    recycled_feedstock: 50000
   };
   const resource = {
     BWA: {
@@ -406,6 +415,107 @@ test('mine construction blocks without changing ledgers when treasury, materials
   assert.equal(state.finance.BWA.available, 500000000);
 });
 
+
+test('batch mine construction scales materials, capex and workers, then commissions unique mine assets', () => {
+  const { ctx, state, site } = fixture();
+  const api = ctx.Omega.ResourceIndustrialNetwork;
+  const one = api.quoteMineProject({ countryId:'BWA', siteId:'SITE_BWA_TEST_GOLD_MINE', resourceId:'gold', quantity:1, assignedWorkers:1000000000 });
+  const two = api.quoteMineProject({ countryId:'BWA', siteId:'SITE_BWA_TEST_GOLD_MINE', resourceId:'gold', quantity:2, assignedWorkers:1000000000 });
+  assert.equal(one.status, 'QUOTED');
+  assert.equal(two.status, 'QUOTED');
+  assert.equal(two.assetCount, 2);
+  assert.equal(two.costUsd, one.costUsd * 2);
+  assert.equal(two.workersRequired, one.workersRequired * 2);
+
+  const uraniumSite = {
+    ...site,
+    siteId: 'SITE_BWA_TEST_URANIUM_MINE',
+    siteName: 'Test Uranium Mine',
+    siteType: 'UNDERGROUND_URANIUM_MINE',
+    real: { resourceId: 'uranium' },
+    identity: { ...site.identity, resourceTypeId: 'uranium', resourceName: 'Uranium', siteType: 'UNDERGROUND_URANIUM_MINE' },
+    operation: { ...site.operation, extractionMethod: 'UNDERGROUND_LONGWALL' },
+    sourceSiteRecord: { ...site.sourceSiteRecord, id: 'SITE_BWA_TEST_URANIUM_MINE', siteId: 'SITE_BWA_TEST_URANIUM_MINE', resourceId: 'uranium', siteType: 'UNDERGROUND_URANIUM_MINE', extractionMethod: 'UNDERGROUND_LONGWALL' }
+  };
+  ctx.OmegaResourceSiteMasterResearchData.sites.push(uraniumSite);
+  ctx.OmegaResourceSiteCanonicalCatalogData.sites.push(uraniumSite);
+  const uraniumQuote = api.quoteMineProject({
+    countryId: 'BWA', siteId: uraniumSite.siteId, resourceId: 'uranium', quantity: 1, assignedWorkers: 1000000000
+  });
+  assert.equal(uraniumQuote.status, 'QUOTED');
+  assert.equal(uraniumQuote.buildClass, 'UNDERGROUND');
+  assert.equal(uraniumQuote.durationDays, 345);
+  assert.equal(uraniumQuote.workersRequired, 1008, 'precision-safe rounding must not turn exactly 900 × 1.12 into 1009 workers');
+
+  for (const material of one.materials) {
+    const batchMaterial = two.materials.find(row => row.resourceId === material.resourceId);
+    assert.ok(batchMaterial, 'batch quote retains material ' + material.resourceId);
+    assert.equal(batchMaterial.required, material.required * 2, 'quantity scales material ' + material.resourceId);
+  }
+
+  const project = api.startMineProject({
+    countryId:'BWA',siteId:'SITE_BWA_TEST_GOLD_MINE',resourceId:'gold',quantity:2,
+    assignedWorkers:two.workersRequired,requestId:'BATCH-MINE-COUNT-2'
+  });
+  assert.equal(project.status, 'UNDER_CONSTRUCTION');
+  assert.equal(project.assetCount, 2);
+  assert.equal(project.workersRequired, two.workersRequired);
+  for (let i = 1; i <= Math.ceil(project.durationDays / 30); i++) {
+    state.simulation.turn = i;
+    api.advanceProjects('BWA');
+  }
+  const mines = state.resource.BWA.mineAssets.filter(row => row.siteId === project.siteId && row.status === 'OPERATIONAL');
+  assert.equal(mines.length, 2);
+  assert.equal(new Set(mines.map(row => row.mineId)).size, 2);
+  assert.ok(mines.every(row => row.workersRequired === two.workersRequired / 2));
+  const completed = state.resource.BWA.industrialNetwork.projects.find(row => row.projectId === project.projectId);
+  assert.ok(completed, 'completed construction project remains in the persistent project ledger');
+  assert.equal(completed.commissionedMineIds.length, 2);
+});
+
+test('mine pause, resume and confirmed demolition update runtime status while preserving audit and recoverable waste', () => {
+  const { ctx, state } = fixture();
+  const api = ctx.Omega.ResourceIndustrialNetwork;
+  const project = api.startMineProject({
+    countryId:'BWA',siteId:'SITE_BWA_TEST_GOLD_MINE',resourceId:'gold',quantity:1,
+    assignedWorkers:1000,requestId:'MINE-STOP-RESUME-DEMOLISH'
+  });
+  assert.equal(project.status, 'UNDER_CONSTRUCTION');
+  for (let i = 1; i <= Math.ceil(project.durationDays / 30); i++) {
+    state.simulation.turn = i;
+    api.advanceProjects('BWA');
+  }
+  const mine = state.resource.BWA.mineAssets.find(row => row.mineId === project.mineId);
+  assert.ok(mine);
+  const stopped = api.setMineOperatingStatus({countryId:'BWA',siteId:project.siteId,mineId:mine.mineId,quantity:1,status:'STOPPED'});
+  assert.equal(stopped.status, 'APPLIED');
+  assert.equal(mine.status, 'STOPPED');
+
+  const resumed = api.setMineOperatingStatus({countryId:'BWA',siteId:project.siteId,mineId:mine.mineId,quantity:1,status:'OPERATIONAL'});
+  assert.equal(resumed.status, 'APPLIED');
+  assert.equal(mine.status, 'OPERATIONAL');
+
+  const quote = api.quoteMineDemolition({countryId:'BWA',siteId:project.siteId,mineId:mine.mineId,quantity:1});
+  assert.equal(quote.status, 'QUOTED');
+  assert.equal(quote.jobsLost, mine.workersRequired);
+  assert.equal(quote.requiresExplicitConfirmation, true);
+  const noConfirmation = api.destroyMineAssets({countryId:'BWA',siteId:project.siteId,mineId:mine.mineId,quantity:1});
+  assert.equal(noConfirmation.status, 'CONFIRMATION_REQUIRED');
+  assert.equal(mine.status, 'OPERATIONAL');
+
+  const destroyed = api.destroyMineAssets({countryId:'BWA',siteId:project.siteId,mineId:mine.mineId,quantity:1,confirmed:true});
+  assert.equal(destroyed.status, 'DESTROYED');
+  assert.equal(destroyed.quantity, 1);
+  assert.equal(destroyed.jobsLost, mine.workersRequired);
+  assert.equal(mine.status, 'DESTROYED');
+  assert.equal(mine.productionStatus, 'STOPPED');
+  assert.ok(Object.keys(destroyed.wasteOutputs).length > 0);
+  assert.ok(state.resource.BWA.batches.some(row => String(row.batchId).startsWith('MINE-DEMO-WASTE:')));
+  assert.equal(state.resource.BWA.industrialNetwork.mineDemolitionHistory.length, 1);
+  assert.equal(state.resource.BWA.mineAssets.length, 1, 'historical asset row remains for audit; it is no longer operational');
+});
+
+
 test('mine project rejects cross-country identity and player-only actions require explicit scope check in UI', () => {
   const { ctx, state } = fixture();
   const api = ctx.Omega.ResourceIndustrialNetwork;
@@ -420,6 +530,15 @@ test('mine project rejects cross-country identity and player-only actions requir
   assert.match(uiSource, /action==='run-factory'/);
   assert.match(uiSource, /executeFactoryCycle/);
   assert.match(uiSource, /<svg/);
+  assert.match(uiSource, /omm-mine-flip/);
+  assert.match(uiSource, /data-omm-build-count/);
+  assert.match(uiSource, /function updateBuildPreview/);
+  assert.match(uiSource, /quoteMineDemolition/);
+  assert.match(uiSource, /destroyMineAssets/);
+  assert.match(uiSource, /setMineOperatingStatus/);
+  assert.match(uiSource, /omm-confirm-dialog/);
+  assert.doesNotMatch(uiSource, /data-omm-workers/);
+  assert.doesNotMatch(uiSource, /data-omm-action="decommission-mine"/);
   assert.match(indexSource, /omega_resource_mine_management_v1\.js/);
   assert.match(fs.readFileSync(new URL('server.js', repoRoot), 'utf8'), /RESOURCE_MINE_MANAGEMENT_SCRIPT/);
   assert.match(serviceWorkerSource, /omega-offline-atlas-shell-v\d+/);
@@ -429,6 +548,8 @@ test('mine project rejects cross-country identity and player-only actions requir
   assert.match(uiSource, /selectedMinistryCountry\(\)/);
   assert.match(bindingSource, /MINEPLAY_BATCH_URL/);
   assert.match(endowmentSource, /OMEGA_RESOURCE_MINE_COMMISSIONED/);
+  assert.match(endowmentSource, /const operationalMineSiteIds=new Set/);
+  assert.match(endowmentSource, /A site is paused only when none of its commissioned mine units remain operational/);
   assert.match(bindingSource, /resource_site_country_mineplay_batch_20261020_v1\.json/);
 });
 

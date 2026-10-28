@@ -2025,9 +2025,15 @@ function batchFromExtraction(x,record){
       for(const key of Array.isArray(controller?.linkedOccurrenceKeys)?controller.linkedOccurrenceKeys:[])
         siteByOccurrence.set(String(key),String(controller.siteReferenceKey||siteKey));
     }
-    const decommissionedSiteIds=new Set((Array.isArray(bucket.mineAssets)?bucket.mineAssets:[])
-      .filter(asset=>/DECOMMISSIONED|DESTROYED|STOPPED/.test(String(asset?.status||'').toUpperCase()))
+    const mineAssets=Array.isArray(bucket.mineAssets)?bucket.mineAssets:[];
+    const mineSiteIds=new Set(mineAssets.map(asset=>String(asset?.siteId||'').trim()).filter(Boolean));
+    const operationalMineSiteIds=new Set(mineAssets.filter(asset=>String(asset?.status||'').toUpperCase()==='OPERATIONAL')
       .map(asset=>String(asset?.siteId||'').trim()).filter(Boolean));
+    // A site is paused only when none of its commissioned mine units remain operational.
+    // One paused/destroyed unit must not stop another operational unit at the same deposit.
+    const decommissionedSiteIds=new Set([...mineSiteIds].filter(siteId=>
+      !operationalMineSiteIds.has(siteId)&&mineAssets.some(asset=>String(asset?.siteId||'').trim()===siteId&&
+        /DECOMMISSIONED|DESTROYED|STOPPED/.test(String(asset?.status||'').toUpperCase()))));
     const candidates=Object.keys(states).filter(key=>{
       if(successfulOccurrences.has(String(key)))return false;
       if(attempted.has(String(key))&&!retryableBlocked.has(String(key)))return false;

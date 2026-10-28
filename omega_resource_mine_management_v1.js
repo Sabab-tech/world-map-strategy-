@@ -168,9 +168,9 @@ function productionSummary(site){
  return parts.length?parts.join(' · '):'Production data unavailable';
 }
 
-function quoteFor(site,country,workers){
+function quoteFor(site,country,workers,quantity){
  const api=network();if(!api?.quoteMineProject)return{status:'BLOCKED',reason:'MINE_CONSTRUCTION_API_UNAVAILABLE'};
- return api.quoteMineProject({countryId:country,siteId:siteIdOf(site),resourceId:resourceOf(site),assignedWorkers:workers});
+ return api.quoteMineProject({countryId:country,siteId:siteIdOf(site),resourceId:resourceOf(site),assignedWorkers:workers,quantity:quantity==null?1:quantity});
 }
 function shellStyle(){
  if(g.document.getElementById('omega-mine-management-style-v1'))return;
@@ -198,7 +198,8 @@ function shellStyle(){
  '#omega-mine-management-modal .omm-section{margin:15px 0}#omega-mine-management-modal .omm-empty{padding:20px;border:1px dashed #344d65;border-radius:10px;color:#9db1c9;text-align:center}'+
  '#omega-mine-management-modal .omm-table-wrap{overflow:auto}#omega-mine-management-modal table{width:100%;border-collapse:collapse;min-width:520px}#omega-mine-management-modal th,#omega-mine-management-modal td{padding:8px;border-bottom:1px solid #26384d;text-align:left;font-size:12px}'+
  '#omega-mine-management-modal svg{width:17px;height:17px;vertical-align:middle}'+
- '@media(max-width:760px){#omega-mine-management-modal{padding:4px}#omega-mine-management-modal .omm-shell{height:98vh;padding:11px;border-radius:10px}#omega-mine-management-modal .omm-grid{grid-template-columns:repeat(2,minmax(0,1fr))}#omega-mine-management-modal .omm-site-grid{grid-template-columns:1fr}#omega-mine-management-modal .omm-lines,#omega-mine-management-modal .omm-materials{grid-template-columns:1fr}#omega-mine-management-modal .omm-head{align-items:center}}';
+ '#omega-mine-management-modal .omm-mine-flip{perspective:1200px;min-width:0;height:470px} #omega-mine-management-modal .omm-flip-inner{display:grid;grid-template-columns:minmax(0,1fr);height:100%;transform-style:preserve-3d;transition:transform .55s cubic-bezier(.2,.75,.2,1)} #omega-mine-management-modal .omm-mine-flip.is-flipped .omm-flip-inner{transform:rotateY(180deg)} #omega-mine-management-modal .omm-face{grid-area:1 / 1;min-width:0;height:100%;overflow:auto;backface-visibility:hidden;-webkit-backface-visibility:hidden} #omega-mine-management-modal .omm-face-front{transform:rotateY(0deg)} #omega-mine-management-modal .omm-face-back{transform:rotateY(180deg)} #omega-mine-management-modal .omm-panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:9px} #omega-mine-management-modal .omm-panel-head h3{font-size:16px;line-height:1.25} #omega-mine-management-modal .omm-mine-art{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border:1px solid #3b8a9a;border-radius:9px;color:#73d7df;background:#0d2735;margin-bottom:6px;box-shadow:inset 0 0 0 1px #163d50,0 0 12px #27a6c133} #omega-mine-management-modal .omm-mine-art svg{width:22px;height:22px} #omega-mine-management-modal .omm-count-field{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:8px 0;padding:8px 9px;background:#091524;border:1px solid #263c51;border-radius:8px;font-size:12px} #omega-mine-management-modal .omm-count-field .omm-input{max-width:105px} #omega-mine-management-modal .omm-build-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin:8px 0} #omega-mine-management-modal .omm-build-metric{min-width:0;padding:8px;background:#091524;border:1px solid #1e3449;border-radius:8px} #omega-mine-management-modal .omm-build-metric span,#omega-mine-management-modal .omm-build-metric small{display:block;color:#9db1c9;font-size:10px;line-height:1.35} #omega-mine-management-modal .omm-build-metric strong{display:block;margin:3px 0;font-size:14px;overflow-wrap:anywhere} #omega-mine-management-modal .omm-build-ready{font-size:12px;margin:7px 0} #omega-mine-management-modal .omm-build-preview .omm-materials,#omega-mine-management-modal .omm-destroy-preview .omm-materials{grid-template-columns:repeat(2,minmax(0,1fr))} #omega-mine-management-modal .omm-material{align-items:flex-start;font-size:11px;overflow-wrap:anywhere} #omega-mine-management-modal .omm-action-panel[hidden]{display:none!important} #omega-mine-management-modal .omm-confirm-overlay{position:fixed;inset:0;z-index:1000008;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(3,7,15,.86)} #omega-mine-management-modal .omm-confirm-dialog{width:min(460px,100%);padding:18px;background:#180d13;border:2px solid #ff334f;border-radius:12px;box-shadow:0 0 10px #ff1839,0 0 28px #ff183966, inset 0 0 14px #ff183922;animation:omm-danger-pulse 1.15s steps(2,end) infinite} #omega-mine-management-modal .omm-confirm-dialog h3{font-size:18px;color:#fff0f2;margin-bottom:8px} #omega-mine-management-modal .omm-confirm-dialog p{font-size:13px;color:#f0cbd1} #omega-mine-management-modal .omm-confirm-dialog .omm-actions{justify-content:flex-end} #omega-mine-management-modal .omm-danger-confirm{background:#8c1730!important;border-color:#ff5269!important;color:#fff!important} @keyframes omm-danger-pulse{0%,100%{border-color:#ff334f;box-shadow:0 0 7px #ff1839,0 0 18px #ff183955}50%{border-color:#791427;box-shadow:0 0 1px #ff1839,0 0 5px #ff183922}}'+
+ '@media(max-width:760px){#omega-mine-management-modal{padding:4px}#omega-mine-management-modal .omm-shell{height:98vh;padding:11px;border-radius:10px}#omega-mine-management-modal .omm-grid{grid-template-columns:repeat(2,minmax(0,1fr))}#omega-mine-management-modal .omm-site-grid{grid-template-columns:1fr}#omega-mine-management-modal .omm-mine-flip{height:540px}#omega-mine-management-modal .omm-lines,#omega-mine-management-modal .omm-materials{grid-template-columns:1fr}#omega-mine-management-modal .omm-head{align-items:center}}';
  g.document.head.appendChild(style);
 }
 let currentView='my-mines',currentCountry='',lastOutcome='',isBound=false,observer=null,productionRunActive=false,currentTargetSiteId='',currentTargetAction='';
@@ -248,49 +249,140 @@ function topCards(country){
 }
 function kpi(name,value){return '<div class="omm-kpi"><span>'+esc(name)+'</span><strong>'+esc(value)+'</strong></div>';}
 function materialMarkup(quote){
- if(!Array.isArray(quote.materials)||!quote.materials.length)return '<div class="omm-muted">Construction bill of materials unavailable.</div>';
- return '<div class="omm-materials">'+quote.materials.map(m=>'<div class="omm-material"><span>'+esc(label(m.resourceId))+'<br><small class="omm-muted">Available '+formatNum(m.available,2)+' t</small></span><strong class="'+(m.sufficient?'omm-ok':'omm-short')+'">'+formatNum(m.required,2)+' t'+(m.shortfall>0?' · short '+formatNum(m.shortfall,2):'')+'</strong></div>').join('')+'</div>';
+ if(!Array.isArray(quote.materials)||!quote.materials.length)return '<div class="omm-muted">Construction materials unavailable.</div>';
+ return '<div class="omm-materials">'+quote.materials.map(m=>'<div class="omm-material"><span>'+esc(label(m.resourceId))+'<br><small class="omm-muted">Available '+formatNum(m.available,2)+'</small></span><strong class="'+(m.sufficient?'omm-ok':'omm-short')+'">'+formatNum(m.required,2)+(m.unit?' '+esc(unitLabel(m.unit)):'')+(m.shortfall>0?' · short '+formatNum(m.shortfall,2):'')+'</strong></div>').join('')+'</div>';
 }
+function previewQuote(site,country,count){return quoteFor(site,country,1000000000,count);}
+function buildPreviewMarkup(site,country,count){
+ const quote=previewQuote(site,country,count);
+ if(quote.status!=='QUOTED')return '<div class="omm-alert">Build quote unavailable: '+esc(label(quote.reason||quote.status))+'</div><button data-omm-action="flip-back">Back to mine</button>';
+ const allowed=country===playerCountry()&&quote.ready;
+ return '<div class="omm-build-summary"><div class="omm-build-metric"><span>Construction cost · total</span><strong>'+formatMoney(quote.costUsd)+'</strong><small>'+formatMoney(quote.unitCostUsd)+' / mine</small></div>'+
+  '<div class="omm-build-metric"><span>Build time</span><strong>'+formatNum(quote.durationDays)+' days</strong><small>'+formatNum(quote.estimatedTurns)+' simulation turn(s)</small></div>'+
+  '<div class="omm-build-metric"><span>Workers required</span><strong>'+formatNum(quote.workersRequired)+'</strong><small>'+formatNum(quote.workersRequiredPerAsset)+' / mine</small></div>'+
+  '<div class="omm-build-metric"><span>Treasury check</span><strong class="'+(quote.treasury.sufficient?'omm-ok':'omm-short')+'">'+(quote.treasury.sufficient?'Funds available':'Insufficient funds')+'</strong><small>'+formatMoney(quote.treasury.available)+' / '+formatMoney(quote.treasury.required)+'</small></div></div>'+
+  '<div class="omm-sub">Required materials for '+formatNum(quote.assetCount)+' mine unit(s). Quantities update from the selected count and live inventory/warehouse checks.</div>'+
+  materialMarkup(quote)+
+  (!quote.commissioningReady?'<div class="omm-alert">A construction project for this site is already in progress.</div>':'')+
+  '<div class="omm-build-ready '+(quote.ready?'omm-ok':'omm-short')+'" role="status">'+(quote.ready?'All treasury, material and workforce checks passed.':'Build is blocked until every required material, treasury and workforce check passes.')+'</div>'+
+  '<button class="omm-primary" data-omm-action="start-mine-build" data-site-id="'+esc(quote.siteId)+'" data-resource-id="'+esc(quote.resourceId)+'" data-count="'+formatNum(quote.assetCount)+'" '+(!allowed?'disabled':'')+'>Build '+formatNum(quote.assetCount)+' mine unit(s)</button>';
+}
+function demolitionPreviewMarkup(site,country,count){
+ const api=network(),quote=api?.quoteMineDemolition?.({countryId:country,siteId:siteIdOf(site),quantity:count});
+ if(!quote||quote.status!=='QUOTED')return '<div class="omm-alert">Demolition estimate unavailable: '+esc(label(quote?.reason||quote?.status||'RUNTIME_UNAVAILABLE'))+'</div>';
+ const rows=Array.isArray(quote.wasteOutputs)?quote.wasteOutputs:[];
+ return '<div class="omm-build-summary"><div class="omm-build-metric"><span>Workers affected</span><strong>'+formatNum(quote.jobsLost)+'</strong><small>Jobs removed with selected units</small></div>'+
+  '<div class="omm-build-metric"><span>Output capacity lost</span><strong>'+(quote.productionLostPerDay===null?'Not recorded':formatNum(quote.productionLostPerDay,2))+'</strong><small>Estimated units per day</small></div>'+
+  '<div class="omm-build-metric"><span>Mine units</span><strong>'+formatNum(quote.quantity)+'</strong><small>Selected for demolition</small></div></div>'+
+  '<div class="omm-sub">Estimated recoverable demolition material</div>'+
+  (rows.length?'<div class="omm-materials">'+rows.map(row=>'<div class="omm-material"><span>'+esc(label(row.resourceId))+'</span><strong>'+formatNum(row.quantity,2)+' '+esc(unitLabel(row.unit))+'</strong></div>').join('')+'</div>':'<div class="omm-alert">Material recovery cannot be calculated because this mine has no recorded construction-material lineage. The missing history will not be fabricated.</div>')+
+  '<div class="omm-alert">Demolition permanently stops these mine assets. Warehouse stock and historical records remain. Production cannot resume after destruction.</div>'+
+  '<button class="omm-danger" data-omm-action="request-mine-destruction" data-site-id="'+esc(siteIdOf(site))+'" data-count="'+formatNum(count)+'" '+(country!==playerCountry()?'disabled':'')+'>Review demolition and confirm</button>';
+}
+function operatingPreviewMarkup(site,country,count){
+ const rows=assetRows(country).filter(a=>String(a.siteId)===siteIdOf(site));
+ const active=rows.filter(a=>String(a.status||'').toUpperCase()==='OPERATIONAL').length;
+ const stopped=rows.filter(a=>String(a.status||'').toUpperCase()==='STOPPED').length;
+ return '<div class="omm-build-summary"><div class="omm-build-metric"><span>Operating</span><strong>'+formatNum(active)+'</strong><small>Units currently producing</small></div>'+
+  '<div class="omm-build-metric"><span>Paused</span><strong>'+formatNum(stopped)+'</strong><small>Units available to resume</small></div>'+
+  '<div class="omm-build-metric"><span>Simulation status</span><strong>Player controlled</strong><small>State changes are logged</small></div></div>'+
+  '<label class="omm-count-field">Mine units <input class="omm-input" data-omm-operation-count type="number" min="1" max="'+Math.max(1,Math.max(active,stopped))+'" step="1" value="'+Math.max(1,Math.min(Number(count)||1,Math.max(1,Math.max(active,stopped))))+'"></label>'+
+  '<div class="omm-actions">'+
+   '<button class="omm-primary" data-omm-action="stop-mine-units" data-site-id="'+esc(siteIdOf(site))+'" '+(country!==playerCountry()||active<1?'disabled':'')+'>Pause selected units</button>'+
+   '<button data-omm-action="resume-mine-units" data-site-id="'+esc(siteIdOf(site))+'" '+(country!==playerCountry()||stopped<1?'disabled':'')+'>Resume selected units</button></div>'+
+  '<div class="omm-sub">Paused mines keep their assets and stock. Their extraction pipeline remains disabled until they are resumed.</div>';
+}
+
+function cardSiteById(siteId,country){return sitesFor(country).find(site=>siteIdOf(site)===String(siteId||''))||null;}
+function updateBuildPreview(input){
+ const card=input.closest('[data-omm-site-card]'),siteId=input.getAttribute('data-site-id'),panel=card?.querySelector('.omm-build-preview');
+ if(!card||!panel)return;
+ const count=num(input.value),site=cardSiteById(siteId,currentCountry||playerCountry());
+ if(!site)return;
+ panel.innerHTML=count===null||!Number.isInteger(count)||count<1||count>100?'<div class="omm-alert">Choose an integer from 1 to 100.</div>':buildPreviewMarkup(site,currentCountry||playerCountry(),count);
+}
+function updateDestroyPreview(input){
+ const card=input.closest('[data-omm-site-card]'),siteId=input.getAttribute('data-site-id'),panel=card?.querySelector('.omm-destroy-preview');
+ if(!card||!panel)return;
+ const count=num(input.value),site=cardSiteById(siteId,currentCountry||playerCountry());
+ if(!site)return;
+ panel.innerHTML=count===null||!Number.isInteger(count)||count<1?'<div class="omm-alert">Choose at least one mine unit.</div>':demolitionPreviewMarkup(site,currentCountry||playerCountry(),count);
+}
+function updateOperatingButtons(input){
+ const card=input.closest('[data-omm-site-card]'),siteId=card?.getAttribute('data-omm-site-card'),count=num(input.value);
+ if(!card)return;
+ const units=assetRows(currentCountry||playerCountry()).filter(a=>String(a.siteId)===String(siteId));
+ const active=units.filter(a=>String(a.status||'').toUpperCase()==='OPERATIONAL').length,stopped=units.filter(a=>String(a.status||'').toUpperCase()==='STOPPED').length;
+ const valid=count!==null&&Number.isInteger(count)&&count>0;
+ const stop=card.querySelector('[data-omm-action="stop-mine-units"]'),resume=card.querySelector('[data-omm-action="resume-mine-units"]');
+ if(stop)stop.disabled=currentCountry!==playerCountry()||!valid||count>active;
+ if(resume)resume.disabled=currentCountry!==playerCountry()||!valid||count>stopped;
+ if(stop)stop.textContent='Pause '+(valid?formatNum(count):'selected')+' unit(s)';
+ if(resume)resume.textContent='Resume '+(valid?formatNum(count):'selected')+' unit(s)';
+}
+function flipCard(siteId,panelName){
+ const modal=g.document.getElementById('omega-mine-management-modal');
+ const card=Array.from(modal?.querySelectorAll('[data-omm-site-card]')||[]).find(el=>el.getAttribute('data-omm-site-card')===String(siteId));
+ if(!card)return;
+ const isAssetCard=!!card.querySelector('[data-omm-mine-asset-id]');
+ if(isAssetCard)return;
+ card.classList.add('is-flipped');
+ card.querySelectorAll('[data-omm-panel]').forEach(panel=>{panel.hidden=panel.getAttribute('data-omm-panel')!==panelName;});
+}
+function openDestructionConfirmation(siteId,count,mineId){
+ const modal=g.document.getElementById('omega-mine-management-modal'),api=network();
+ if(!modal||!api?.quoteMineDemolition){lastOutcome='Demolition estimate runtime unavailable; no mine was changed.';render();return;}
+ const quote=api.quoteMineDemolition({countryId:currentCountry||playerCountry(),siteId,quantity:count,mineId:mineId||undefined});
+ if(quote?.status!=='QUOTED'){lastOutcome='Demolition blocked: '+label(quote?.reason||quote?.status||'UNAVAILABLE');render();return;}
+ const previous=modal.querySelector('.omm-confirm-overlay');if(previous)previous.remove();
+ const waste=Array.isArray(quote.wasteOutputs)&&quote.wasteOutputs.length?quote.wasteOutputs.map(x=>label(x.resourceId)+' '+formatNum(x.quantity,2)).join(', '):'No verified construction-material lineage for a waste estimate.';
+ const overlay=g.document.createElement('div');overlay.className='omm-confirm-overlay';overlay.setAttribute('role','alertdialog');overlay.setAttribute('aria-modal','true');
+ overlay.setAttribute('aria-label','Confirm permanent mine demolition');overlay.setAttribute('data-site-id',siteId);overlay.setAttribute('data-count',String(count));if(mineId)overlay.setAttribute('data-mine-id',mineId);
+ overlay.innerHTML='<div class="omm-confirm-dialog"><h3>Are you sure you want to destroy '+formatNum(quote.quantity)+' mine unit(s)?</h3>'+
+  '<p>This is permanent. Production will stop, the selected units will leave the active mine roster, and their history will be retained.</p>'+
+  '<div class="omm-lines"><div class="omm-line"><span class="omm-muted">Workers affected</span><br><strong>'+formatNum(quote.jobsLost)+'</strong></div>'+
+  '<div class="omm-line"><span class="omm-muted">Daily capacity loss</span><br><strong>'+(quote.productionLostPerDay===null?'Not recorded':formatNum(quote.productionLostPerDay,2))+'</strong></div></div>'+
+  '<p><strong>Estimated recoverable material:</strong> '+esc(waste)+'</p><div class="omm-actions">'+
+  '<button data-omm-action="cancel-mine-destruction">Cancel</button><button class="omm-danger-confirm" data-omm-action="confirm-mine-destruction">Yes, destroy selected mines</button></div></div>';
+ modal.appendChild(overlay);
+ const confirm=overlay.querySelector('[data-omm-action="confirm-mine-destruction"]');if(confirm)confirm.focus();
+}
+
 function siteCard(site,country,view){
  const id=siteIdOf(site),rid=resourceOf(site),name=site.siteName||site.name||id;
- const asset=assetRows(country).slice().reverse().find(a=>String(a.siteId)===id&&
-   !/DECOMMISSIONED|DESTROYED|STOPPED|INACTIVE/.test(String(a.status||'').toUpperCase())&&
-   /OPERATIONAL|ACTIVE|COMMISSIONED|PRODUCING/.test(String(a.status||'').toUpperCase()))||null;
- const project=projectFor(site,country),status=asset?'ACTIVE':project?.status||sourceStatus(site),quote=quoteFor(site,country,0);
+ const assets=assetRows(country).filter(a=>String(a.siteId)===id&&!/DECOMMISSIONED|DESTROYED|INACTIVE/.test(String(a.status||'').toUpperCase()));
+ const active=assets.filter(a=>String(a.status||'').toUpperCase()==='OPERATIONAL'),stopped=assets.filter(a=>String(a.status||'').toUpperCase()==='STOPPED');
+ const project=projectFor(site,country),status=active.length?'ACTIVE':stopped.length?'STOPPED':project?.status||sourceStatus(site);
  const loc=site.location?.adminRegion||site.location?.locality||site.location?.countryName||'';
  const rs=playerState(country),rawStock=num(rs.warehouse?.availableByResource?.[rid]),finishedStock=num(rs.processedWarehouse?.availableByResource?.[rid]);
- let html='<article class="omm-card omm-mine-card" data-omm-site-card="'+esc(id)+'"><div class="omm-card-head"><div><h3>'+esc(name)+'</h3><div class="omm-sub">'+esc(resourceLabel(site))+(loc?' · '+esc(loc):'')+'</div></div><span class="omm-pill">'+esc(label(status))+'</span></div>';
- html+='<div class="omm-lines"><div class="omm-line"><span class="omm-muted">Mine status</span><br>'+esc(label(asset?'OPERATIONAL':project?.status||sourceStatus(site)))+'</div>'+
-   '<div class="omm-line"><span class="omm-muted">Reserve</span><br>'+esc(reserveSummary(site))+'</div>'+
-   '<div class="omm-line"><span class="omm-muted">Daily production profile</span><br>'+esc(productionSummary(site))+'</div>'+
-   '<div class="omm-line"><span class="omm-muted">Raw stock</span><br>'+esc(rawStock===null?'—':formatNum(rawStock,2))+'</div>'+
-   '<div class="omm-line"><span class="omm-muted">Processed stock</span><br>'+esc(finishedStock===null?'—':formatNum(finishedStock,2))+'</div></div>';
- if(quote.status==='QUOTED'){
-  html+='<div class="omm-section"><h4>Construction plan</h4><div class="omm-lines">'+
-   '<div class="omm-line"><span class="omm-muted">Construction cost</span><br><strong>'+formatMoney(quote.costUsd)+'</strong></div>'+
-   '<div class="omm-line"><span class="omm-muted">Construction time</span><br><strong>'+formatNum(quote.durationDays)+' days · '+formatNum(quote.estimatedTurns)+' turns</strong></div>'+
-   '<div class="omm-line"><span class="omm-muted">Required workforce</span><br><strong>'+formatNum(quote.workersRequired)+' workers</strong></div>'+
-   '<div class="omm-line"><span class="omm-muted">Treasury</span><br>'+formatMoney(quote.treasury.available)+' / '+formatMoney(quote.costUsd)+'<br><span class="'+(quote.treasury.sufficient?'omm-ok':'omm-short')+'">'+(quote.treasury.sufficient?'Funds available':'Insufficient funds')+'</span></div></div>';
-  materialMarkup(quote);
-  if(project?.status==='UNDER_CONSTRUCTION'){
-    const pct=Math.max(0,Math.min(100,Number(project.progressPct||0)*100));
-    html+='<div class="omm-progress"><span style="width:'+pct+'%"></span></div><div class="omm-sub">Construction progress '+pct.toFixed(1)+'% · '+formatNum(project.progressDays)+' / '+formatNum(project.durationDays)+' days</div>';
-  }else if(asset){
-    html+='<div class="omm-alert">This mine is commissioned. Extraction remains subject to reserve, staffing, route and factory checks.</div>';
-  }else{
-    const canBuild=country===playerCountry()&&!project;
-    html+='<div class="omm-actions"><label for="omm-workers-'+esc(id)+'">Workers</label><input class="omm-input" id="omm-workers-'+esc(id)+'" data-omm-workers="'+esc(id)+'" type="number" min="0" step="1" value="'+quote.workersRequired+'" aria-label="Construction workers for '+esc(name)+'">'+
-      '<button class="omm-primary" data-omm-action="build-mine" data-site-id="'+esc(id)+'" data-resource-id="'+esc(rid)+'" '+(!canBuild?'disabled':'')+'>Build mine</button></div>';
-  }
- }else if(!asset){
-  html+='<div class="omm-alert">A construction quote is currently unavailable. No resources have been committed.</div>';
- }
- if(asset){
-  html+='<div class="omm-actions"><label for="omm-output-'+esc(id)+'">Extraction amount</label><input class="omm-input" id="omm-output-'+esc(id)+'" data-omm-quantity="'+esc(id)+'" type="number" min="1" step="1" value="1000" aria-label="Extraction amount for '+esc(name)+'">'+
-   '<button data-omm-action="run-mine" data-site-id="'+esc(id)+'" data-resource-id="'+esc(rid)+'" '+(country!==playerCountry()?'disabled':'')+'>Extract</button>'+
-   '<button class="omm-danger" data-omm-action="decommission-mine" data-site-id="'+esc(id)+'" data-resource-id="'+esc(rid)+'" '+(country!==playerCountry()?'disabled':'')+'>Demolish</button></div>';
- }
- return html+'</article>';
+ const canBuild=country===playerCountry()&&project?.status!=='UNDER_CONSTRUCTION';
+ const destroyCount=active.length+stopped.length;
+ const buildPanel=buildPreviewMarkup(site,country,1),destroyPanel=destroyCount?demolitionPreviewMarkup(site,country,Math.min(100,destroyCount)):'<div class="omm-empty">No commissioned mine units are available for demolition.</div>',operatingPanel=operatingPreviewMarkup(site,country,1);
+ let html='<article class="omm-mine-flip" data-omm-site-card="'+esc(id)+'"><div class="omm-flip-inner">'+
+  '<section class="omm-card omm-face omm-face-front"><div class="omm-card-head"><div><div class="omm-mine-art">'+SVG_MOUNTAIN+'</div><h3>'+esc(name)+'</h3><div class="omm-sub">'+esc(resourceLabel(site))+(loc?' · '+esc(loc):'')+'</div></div><span class="omm-pill">'+esc(label(status))+'</span></div>'+
+  '<div class="omm-lines"><div class="omm-line"><span class="omm-muted">Operating units</span><br><strong>'+formatNum(active.length)+'</strong></div>'+
+  '<div class="omm-line"><span class="omm-muted">Paused units</span><br><strong>'+formatNum(stopped.length)+'</strong></div>'+
+  '<div class="omm-line"><span class="omm-muted">Reserve</span><br>'+esc(reserveSummary(site))+'</div>'+
+  '<div class="omm-line"><span class="omm-muted">Daily production profile</span><br>'+esc(productionSummary(site))+'</div>'+
+  '<div class="omm-line"><span class="omm-muted">Raw stock</span><br>'+esc(rawStock===null?'—':formatNum(rawStock,2))+'</div>'+
+  '<div class="omm-line"><span class="omm-muted">Processed stock</span><br>'+esc(finishedStock===null?'—':formatNum(finishedStock,2))+'</div></div>'+
+  '<label class="omm-count-field">Extraction quantity <input class="omm-input" data-omm-quantity="'+esc(id)+'" type="number" min="1" step="1" value="1000" aria-label="Extraction quantity for '+esc(name)+'"></label>'+
+  (project?.status==='UNDER_CONSTRUCTION'?'<div class="omm-progress"><span style="width:'+Math.max(0,Math.min(100,Number(project.progressPct||0)*100))+'%"></span></div><div class="omm-sub">Construction in progress · '+formatNum(project.progressDays)+' / '+formatNum(project.durationDays)+' days</div>':'')+
+  '<div class="omm-actions"><button class="omm-primary" data-omm-action="build-mine" data-site-id="'+esc(id)+'" '+(!canBuild?'disabled':'')+'>Build</button>'+
+  '<button data-omm-action="run-mine" data-site-id="'+esc(id)+'" data-resource-id="'+esc(rid)+'" '+(country!==playerCountry()||active.length===0?'disabled':'')+'>Extract</button>'+
+  '<button data-omm-action="operate-mine" data-site-id="'+esc(id)+'" '+(country!==playerCountry()||(!active.length&&!stopped.length)?'disabled':'')+'>Pause / Resume</button>'+
+  '<button class="omm-danger" data-omm-action="destroy-mine-preview" data-site-id="'+esc(id)+'" '+(country!==playerCountry()||destroyCount===0?'disabled':'')+'>Demolish</button>'+
+  '<button data-omm-action="focus-site" data-site-id="'+esc(id)+'">'+SVG_MOUNTAIN+' View</button></div></section>'+
+  '<section class="omm-card omm-face omm-face-back" data-omm-site-back="'+esc(id)+'">'+
+   '<div class="omm-action-panel" data-omm-panel="build"><div class="omm-panel-head"><div><h3>'+esc(name)+'</h3><div class="omm-sub">Mine construction plan</div></div><button data-omm-action="flip-back">Back</button></div>'+
+   '<label class="omm-count-field">New mine units <input class="omm-input" data-omm-build-count data-site-id="'+esc(id)+'" type="number" min="1" max="100" step="1" value="1" aria-label="How many '+esc(name)+' mine units to build"></label>'+
+   '<div class="omm-build-preview">'+buildPanel+'</div></div>'+
+   '<div class="omm-action-panel" data-omm-panel="destroy" hidden><div class="omm-panel-head"><div><h3>'+esc(name)+'</h3><div class="omm-sub">Demolition impact</div></div><button data-omm-action="flip-back">Back</button></div>'+
+   '<label class="omm-count-field">Mine units to destroy <input class="omm-input" data-omm-destroy-count data-site-id="'+esc(id)+'" type="number" min="1" max="'+Math.max(1,destroyCount)+'" step="1" value="'+Math.max(1,destroyCount)+'" '+(destroyCount===0?'disabled':'')+'></label>'+
+   '<div class="omm-destroy-preview">'+demolitionPreviewMarkup(site,country,Math.max(1,destroyCount))+'</div></div>'+
+   '<div class="omm-action-panel" data-omm-panel="operate" hidden><div class="omm-panel-head"><div><h3>'+esc(name)+'</h3><div class="omm-sub">Operational control</div></div><button data-omm-action="flip-back">Back</button></div>'+
+   operatingPanel+'</div></section></div></article>';
+ return html;
 }
 
 function stationRows(country){
@@ -341,38 +433,40 @@ function mineDirectory(country){
 function myMines(country){
  const rs=playerState(country),assets=assetRows(country),projects=playerProjects(country).filter(p=>p.projectType==='MINE_CONSTRUCTION');
  const canonical=sitesFor(country),allFlows=Array.isArray(rs.industrialNetwork?.siteFlowLedger)?rs.industrialNetwork.siteFlowLedger:[];
- const activeAssets=assets.filter(a=>/OPERATIONAL|ACTIVE|COMMISSIONED|PRODUCING/.test(String(a.status||'').toUpperCase())&&
-   !/DECOMMISSIONED|DESTROYED|STOPPED|INACTIVE/.test(String(a.status||'').toUpperCase()));
+ const visibleAssets=assets.filter(a=>!['DECOMMISSIONED','DESTROYED','INACTIVE'].includes(String(a.status||'').toUpperCase())).slice().reverse();
  let out=topCards(country);
- out+='<div class="omm-section"><h3>My mine assets</h3><p class="omm-sub">Mines commissioned in this country and their current output.</p>';
- if(!assets.length)out+='<div class="omm-empty">No commissioned mine assets yet. Open Mines to review locations and construction requirements.</div>';
- else out+='<div class="omm-site-grid">'+assets.slice().reverse().map(a=>{
+ out+='<div class="omm-section"><h3>My mine assets</h3><p class="omm-sub">Each commissioned mine unit has its own controls and live status.</p>';
+ if(!visibleAssets.length)out+='<div class="omm-empty">No active or paused mine assets are commissioned. Open Mines to review site-specific construction requirements.</div>';
+ else out+='<div class="omm-site-grid">'+visibleAssets.map(a=>{
   const site=canonical.find(x=>siteIdOf(x)===String(a.siteId))||{siteId:a.siteId,siteName:a.siteName,identity:{resourceTypeId:a.resourceId}};
-  const status=String(a.status||'').toUpperCase();
-  const active=/OPERATIONAL|ACTIVE|COMMISSIONED|PRODUCING/.test(status)&&!/DECOMMISSIONED|DESTROYED|STOPPED|INACTIVE/.test(status);
-  const rows=allFlows.filter(f=>String(f.siteId||'')===String(a.siteId)&&Number(f.extractionTurn??f.turn??f.lastUpdatedTurn)===turn());
+  const status=String(a.status||'').toUpperCase(),active=status==='OPERATIONAL',paused=status==='STOPPED';
+  const mineId=String(a.mineId||a.id||''),siteId=String(a.siteId||'');
+  const rows=allFlows.filter(f=>String(f.siteId||'')===siteId&&Number(f.extractionTurn??f.turn??f.lastUpdatedTurn)===turn());
   const output=rows.reduce((sum,f)=>sum+Math.max(0,num(f.quantity)||0),0);
   const rid=String(a.resourceId||resourceOf(site)),raw=num(rs.warehouse?.availableByResource?.[rid]),processed=num(rs.processedWarehouse?.availableByResource?.[rid]);
-  return '<article class="omm-card omm-mine-card" data-omm-site-card="'+esc(a.siteId)+'"><div class="omm-card-head"><div><h3>'+esc(a.siteName||site.siteName||resourceLabel(site))+'</h3><div class="omm-sub">'+esc(label(rid))+'</div></div><span class="omm-pill">'+esc(label(status))+'</span></div>'+
-   '<div class="omm-lines"><div class="omm-line"><span class="omm-muted">Daily output</span><br>'+formatNum(output,2)+(output?' '+esc(unitLabel(rows[0]?.unit||'')):'')+'</div>'+
+  return '<article class="omm-card omm-mine-card" data-omm-site-card="'+esc(siteId)+'" data-omm-mine-asset-id="'+esc(mineId)+'"><div class="omm-card-head"><div><div class="omm-mine-art">'+SVG_MOUNTAIN+'</div><h3>'+esc(a.siteName||site.siteName||resourceLabel(site))+'</h3><div class="omm-sub">'+esc(label(rid))+' · '+esc(mineId)+'</div></div><span class="omm-pill">'+esc(label(status))+'</span></div>'+
+   '<div class="omm-lines"><div class="omm-line"><span class="omm-muted">Current-turn output</span><br>'+formatNum(output,2)+(output?' '+esc(unitLabel(rows[0]?.unit||'')):'')+'</div>'+
    '<div class="omm-line"><span class="omm-muted">Commissioned</span><br>'+esc(a.commissionedTurn??'—')+'</div>'+
    '<div class="omm-line"><span class="omm-muted">Raw stock</span><br>'+esc(raw===null?'—':formatNum(raw,2))+'</div>'+
    '<div class="omm-line"><span class="omm-muted">Processed stock</span><br>'+esc(processed===null?'—':formatNum(processed,2))+'</div>'+
    '<div class="omm-line"><span class="omm-muted">Workforce</span><br>'+formatNum(a.workersCommitted)+' / '+formatNum(a.workersRequired)+'</div>'+
    '<div class="omm-line"><span class="omm-muted">Construction cost</span><br>'+formatMoney(a.constructionCostUsd)+'</div></div>'+
-   '<div class="omm-actions"><button data-omm-action="focus-site" data-site-id="'+esc(a.siteId)+'">'+SVG_MOUNTAIN+' View site</button>'+
-   (active?'<button data-omm-action="run-mine" data-site-id="'+esc(a.siteId)+'" data-resource-id="'+esc(rid)+'">Extract</button><button class="omm-danger" data-omm-action="decommission-mine" data-site-id="'+esc(a.siteId)+'" data-resource-id="'+esc(rid)+'">Demolish</button>':'')+
+   '<div class="omm-actions"><button data-omm-action="focus-site" data-site-id="'+esc(siteId)+'">'+SVG_MOUNTAIN+' View site</button>'+
+   (active?'<button data-omm-action="run-mine" data-site-id="'+esc(siteId)+'" data-resource-id="'+esc(rid)+'">Extract</button><button data-omm-action="pause-single-mine" data-site-id="'+esc(siteId)+'" data-mine-id="'+esc(mineId)+'">Pause</button>':'')+
+   (paused?'<button class="omm-primary" data-omm-action="resume-single-mine" data-site-id="'+esc(siteId)+'" data-mine-id="'+esc(mineId)+'">Resume</button>':'')+
+   ((active||paused)?'<button class="omm-danger" data-omm-action="request-single-mine-destruction" data-site-id="'+esc(siteId)+'" data-mine-id="'+esc(mineId)+'">Demolish</button>':'')+
    '</div></article>';
  }).join('')+'</div>';
  out+='<div class="omm-section"><h3>Mine construction</h3>';
  if(!projects.length)out+='<div class="omm-empty">No mine construction projects are in progress.</div>';
  else out+='<div class="omm-site-grid">'+projects.slice().reverse().map(p=>{
    const pct=Math.max(0,Math.min(100,Number(p.progressPct||0)*100));
-   return '<article class="omm-card"><div class="omm-card-head"><div><h3>'+esc(p.siteName||p.siteId)+'</h3><div class="omm-sub">'+esc(label(p.resourceId||''))+'</div></div><span class="omm-pill">'+esc(label(p.status))+'</span></div>'+
+   return '<article class="omm-card"><div class="omm-card-head"><div><h3>'+esc(p.siteName||p.siteId)+'</h3><div class="omm-sub">'+esc(label(p.resourceId||''))+' · '+formatNum(p.assetCount||1)+' mine unit(s)</div></div><span class="omm-pill">'+esc(label(p.status))+'</span></div>'+
    '<div class="omm-progress"><span style="width:'+pct+'%"></span></div><div class="omm-lines"><div class="omm-line"><span class="omm-muted">Progress</span><br>'+pct.toFixed(1)+'%</div>'+
    '<div class="omm-line"><span class="omm-muted">Build time</span><br>'+formatNum(p.progressDays)+' / '+formatNum(p.durationDays)+' days</div>'+
    '<div class="omm-line"><span class="omm-muted">Cost</span><br>'+formatMoney(p.costUsd)+'</div>'+
-   '<div class="omm-line"><span class="omm-muted">Materials</span><br>'+esc(label(p.constructionMaterialsStatus))+'</div></div>'+
+   '<div class="omm-line"><span class="omm-muted">Materials</span><br>'+esc(label(p.constructionMaterialsStatus))+'</div>'+
+   '<div class="omm-line"><span class="omm-muted">Committed workforce</span><br>'+formatNum(p.workersCommitted)+' / '+formatNum(p.workersRequired)+'</div></div>'+
    '<div class="omm-sub">Expected completion: '+esc(p.expectedCompletionDate||p.completionDate||'—')+'</div></article>';
  }).join('')+'</div>';
  out+='</div><div class="omm-section"><h3>Production flow</h3>';
@@ -392,6 +486,11 @@ function ensureModal(){
  shellStyle();let modal=g.document.getElementById('omega-mine-management-modal');if(modal)return modal;
  modal=g.document.createElement('div');modal.id='omega-mine-management-modal';modal.setAttribute('role','dialog');modal.setAttribute('aria-modal','true');modal.setAttribute('aria-label','Resource Ministry mine management');
  modal.addEventListener('click',onClick);
+ modal.addEventListener('input',function(e){
+  if(e.target?.matches?.('[data-omm-build-count]'))updateBuildPreview(e.target);
+  else if(e.target?.matches?.('[data-omm-destroy-count]'))updateDestroyPreview(e.target);
+  else if(e.target?.matches?.('[data-omm-operation-count]'))updateOperatingButtons(e.target);
+ });
  modal.addEventListener('change',function(e){if(e.target?.matches?.('[data-omm-country]')){currentCountry=currentView==='mines'?iso3(e.target.value):playerCountry();render();}});
  modal.addEventListener('keydown',function(e){if(e.key==='Escape')close();});
  g.document.body.appendChild(modal);return modal;
@@ -408,7 +507,7 @@ function render(){
  if(currentTargetSiteId){
   const card=Array.from(modal.querySelectorAll('[data-omm-site-card]')).find(el=>el.getAttribute('data-omm-site-card')===currentTargetSiteId);
   if(card&&typeof card.scrollIntoView==='function')card.scrollIntoView({block:'center',behavior:'auto'});
-  const targetAction=currentTargetAction==='extract'?'[data-omm-quantity="'+currentTargetSiteId+'"]':currentTargetAction==='build'?'[data-omm-workers="'+currentTargetSiteId+'"]':null;
+  const targetAction=currentTargetAction==='extract'?'[data-omm-quantity="'+currentTargetSiteId+'"]':currentTargetAction==='build'?'[data-omm-build-count][data-site-id="'+currentTargetSiteId+'"]':null;
   const target=targetAction?modal.querySelector(targetAction):null;
   if(target&&typeof target.focus==='function')target.focus({preventScroll:true});
  }
@@ -468,8 +567,8 @@ async function handleClickAction(event, actionProgress){
     blockedOccurrenceCount+=Math.max(0,Number(result?.blockedOccurrenceCount)||0);
     attemptedOccurrenceCount+=Math.max(0,Number(result?.attemptedOccurrenceCount)||0);
     processedBatchCount++;
-     if(actionProgress)actionProgress.setProgress(processedBatchCount/Math.max(1,totalBatches)*100,
-      'Production for '+country+': batch '+processedBatchCount+'/'+totalBatches+' · '+(offset+batch.length)+'/'+siteIds.length+' sites processed.');
+    if(actionProgress)actionProgress.setProgress(processedBatchCount/Math.max(1,totalBatches)*100,
+     'Production for '+country+': batch '+processedBatchCount+'/'+totalBatches+' · '+(offset+batch.length)+'/'+siteIds.length+' sites processed.');
     if(!['STARTED','PARTIALLY_STARTED','ALREADY_ACTIVE'].includes(status)){failedBatchCount++;failures.push({batch:processedBatchCount,reason:result?.reason||status});}
     if(offset+BATCH_SIZE<siteIds.length)await yieldToMobileUi();
    }
@@ -501,35 +600,78 @@ async function handleClickAction(event, actionProgress){
   render();return;
  }
  if(action==='focus-site'){focusSite(siteId,country);return;}
- if(action==='build-mine'){
+ if(action==='build-mine'){flipCard(siteId,'build');return;}
+  if(action==='destroy-mine-preview'){flipCard(siteId,'destroy');return;}
+  if(action==='operate-mine'){flipCard(siteId,'operate');return;}
+  if(action==='flip-back'){
+   const card=button.closest('[data-omm-site-card]');card?.classList.remove('is-flipped');
+   card?.querySelectorAll('[data-omm-panel]').forEach(panel=>{panel.hidden=true;});return;
+  }
+  if(action==='start-mine-build'){
    if(country!==playerCountry()){lastOutcome='Rejected: mine construction is restricted to the active player country.';render();return;}
-   if(!api?.startMineProject){lastOutcome='Mine construction runtime unavailable.';render();return;}
-   const workerInput=Array.from(g.document.querySelectorAll('[data-omm-workers]')).find(el=>el.getAttribute('data-omm-workers')===siteId);
-   const assignedWorkers=num(workerInput?.value);
-   if(assignedWorkers===null||assignedWorkers<0||!Number.isInteger(assignedWorkers)){lastOutcome='Enter a non-negative whole number of committed construction workers.';render();return;}
-   button.disabled=true;button.textContent='Validating…';
+   if(!api?.startMineProject||!api?.quoteMineProject){lastOutcome='Mine construction runtime unavailable; no resources were committed.';render();return;}
+   const count=num(button.getAttribute('data-count')),site=cardSiteById(siteId,country);
+   if(!site||count===null||!Number.isInteger(count)||count<1||count>100){lastOutcome='Choose a valid mine count from 1 to 100.';render();return;}
+   button.disabled=true;button.textContent='Rechecking inventory…';
    let result;
    try{
-    const quote=api.quoteMineProject({countryId:country,siteId,resourceId:rid,assignedWorkers});
+    const quote=api.quoteMineProject({countryId:country,siteId,resourceId:rid,quantity:count,assignedWorkers:1000000000});
     if(quote.status!=='QUOTED')result=quote;
     else if(!quote.ready)result={status:'BLOCKED',reason:'CONSTRUCTION_REQUIREMENTS_NOT_MET',quote};
-    else result=api.startMineProject({countryId:country,siteId,resourceId:rid,assignedWorkers,requestId:'MINE_BUILD:'+country+':'+siteId+':T'+turn()});
+    else{
+     const existing=assetRows(country).filter(a=>String(a.siteId)===siteId).length;
+     result=api.startMineProject({countryId:country,siteId,resourceId:rid,quantity:count,assignedWorkers:quote.workersRequired,
+      requestId:'MINE_BUILD:'+country+':'+siteId+':N'+count+':A'+existing+':T'+turn()});
+    }
    }catch(error){result={status:'FAILED',reason:String(error?.message||error)};}
    lastOutcome=message('Mine construction',result);
-   if(result?.status==='UNDER_CONSTRUCTION')lastOutcome+=' · '+formatMoney(result.costUsd)+' committed; '+formatNum(result.durationDays)+' days scheduled.';
+   if(result?.status==='UNDER_CONSTRUCTION')lastOutcome+=' · '+formatNum(result.assetCount||count)+' mine unit(s); '+formatMoney(result.costUsd)+' committed; '+formatNum(result.durationDays)+' days scheduled for completion.';
    render();return;
- }
- if(action==='decommission-mine'){
-   if(country!==playerCountry()){lastOutcome='Rejected: mine changes are restricted to the active player country.';render();return;}
-   if(!api?.decommissionMine){lastOutcome='Mine shutdown is unavailable. No game state was changed.';render();return;}
-   if(!button.__omegaMineActionConfirmed&&typeof g.confirm==='function'&&!g.confirm('Stop this mine? Existing stock and history will be preserved.'))return;
-    button.__omegaMineActionConfirmed=false;
-   button.disabled=true;
-   try{const result=api.decommissionMine({countryId:country,siteId,confirmed:true});lastOutcome=message('Mine shutdown',result);}
-   catch(error){lastOutcome='Mine could not be stopped. Existing stock was not deleted.';}
+  }
+  if(action==='request-mine-destruction'){
+   openDestructionConfirmation(siteId,Math.max(1,Math.floor(num(button.getAttribute('data-count'))||1)),null);return;
+  }
+  if(action==='request-single-mine-destruction'){
+   openDestructionConfirmation(siteId,1,String(button.getAttribute('data-mine-id')||''));return;
+  }
+  if(action==='cancel-mine-destruction'){button.closest('.omm-confirm-overlay')?.remove();return;}
+  if(action==='confirm-mine-destruction'){
+   if(country!==playerCountry()){lastOutcome='Rejected: mine demolition is restricted to the active player country.';button.closest('.omm-confirm-overlay')?.remove();render();return;}
+   if(!api?.destroyMineAssets){lastOutcome='Demolition runtime unavailable; no mine was changed.';button.closest('.omm-confirm-overlay')?.remove();render();return;}
+   const overlay=button.closest('.omm-confirm-overlay'),targetSite=String(overlay?.getAttribute('data-site-id')||siteId),count=Math.max(1,Math.floor(num(overlay?.getAttribute('data-count'))||1)),mineId=String(overlay?.getAttribute('data-mine-id')||'');
+   button.disabled=true;button.textContent='Destroying…';
+   try{
+    const result=api.destroyMineAssets({countryId:country,siteId:targetSite,quantity:count,mineId:mineId||undefined,confirmed:true});
+    lastOutcome=message('Mine demolition',result);
+    if(result?.status==='DESTROYED')lastOutcome+=' · '+formatNum(result.quantity)+' destroyed; '+formatNum(result.jobsLost)+' jobs lost; '+(result.productionLostPerDay===null?'production impact unavailable':formatNum(result.productionLostPerDay,2)+' units/day lost')+'. History and stock preserved.';
+   }catch(error){lastOutcome='Demolition failed: '+String(error?.message||error)+'. No successful state change was reported.';}
+   overlay?.remove();render();return;
+  }
+  if(action==='stop-mine-units'||action==='resume-mine-units'){
+   if(country!==playerCountry()){lastOutcome='Rejected: mine operations are restricted to the active player country.';render();return;}
+   if(!api?.setMineOperatingStatus){lastOutcome='Mine operating-status runtime unavailable.';render();return;}
+   const input=button.closest('[data-omm-site-card]')?.querySelector('[data-omm-operation-count]'),quantity=num(input?.value);
+   if(quantity===null||!Number.isInteger(quantity)||quantity<1){lastOutcome='Choose a positive whole number of mine units.';render();return;}
+   try{
+    const desired=action==='stop-mine-units'?'STOPPED':'OPERATIONAL';
+    const result=api.setMineOperatingStatus({countryId:country,siteId,quantity,status:desired});
+    lastOutcome=message(desired==='STOPPED'?'Pause mine units':'Resume mine units',result);
+    if(result?.status==='APPLIED')lastOutcome+=' · '+formatNum(result.quantity)+' unit(s) updated; history and warehouse stock preserved.';
+   }catch(error){lastOutcome='Mine operation change failed: '+String(error?.message||error);}
    render();return;
- }
- if(action==='run-mine'){
+  }
+  if(action==='pause-single-mine'||action==='resume-single-mine'){
+   if(country!==playerCountry()){lastOutcome='Rejected: mine operations are restricted to the active player country.';render();return;}
+   if(!api?.setMineOperatingStatus){lastOutcome='Mine operating-status runtime unavailable.';render();return;}
+   const mineId=String(button.getAttribute('data-mine-id')||'');
+   try{
+    const desired=action==='pause-single-mine'?'STOPPED':'OPERATIONAL';
+    const result=api.setMineOperatingStatus({countryId:country,siteId,mineId,quantity:1,status:desired});
+    lastOutcome=message(desired==='STOPPED'?'Pause mine':'Resume mine',result);
+   }catch(error){lastOutcome='Mine operation change failed: '+String(error?.message||error);}
+   render();return;
+  }
+  if(action==='run-mine'){
    if(country!==playerCountry()){lastOutcome='Rejected: extraction is restricted to the active player country.';render();return;}
    if(!api?.executeSitePipeline){lastOutcome='Site extraction pipeline unavailable.';render();return;}
    const quantityInput=Array.from(g.document.querySelectorAll('[data-omm-quantity]')).find(el=>el.getAttribute('data-omm-quantity')===siteId),quantity=num(quantityInput?.value)??1000;
@@ -543,25 +685,22 @@ async function handleClickAction(event, actionProgress){
 async function onClick(event){
  const button=event.target?.closest?.('[data-omm-action]');if(!button)return;
  const action=button.getAttribute('data-omm-action');
- if(['close','tab-my-mines','tab-mines','focus-site'].includes(action))return handleClickAction(event);
- if(button.__omegaProgressPending)return;
  const titles={
   'start-country-production':'Starting mine production',
-  'build-mine':'Building selected mine',
+  'start-mine-build':'Building selected mine units',
   'run-mine':'Running mine extraction',
   'run-factory':'Running factory processing',
-  'decommission-mine':'Stopping mine',
+  'confirm-mine-destruction':'Destroying selected mine assets',
+  'stop-mine-units':'Pausing selected mine units',
+  'resume-mine-units':'Resuming selected mine units',
+  'pause-single-mine':'Pausing mine operations',
+  'resume-single-mine':'Resuming mine operations',
   'refresh':'Refreshing mining data'
  };
  const title=titles[action];
  if(!title)return handleClickAction(event);
- // Keep confirmation on the original user gesture, before waiting for the loader to paint.
- if(action==='decommission-mine'&&typeof g.confirm==='function'){
-  if(!g.confirm('Stop this mine? Existing stock and history will be preserved.'))return;
-  button.__omegaMineActionConfirmed=true;
- }
- button.__omegaProgressPending=true;
- button.setAttribute('aria-busy','true');
+ if(button.__omegaProgressPending)return;
+ button.__omegaProgressPending=true;button.setAttribute('aria-busy','true');
  const progress=g.OmegaActionProgress;
  if(!progress||typeof progress.run!=='function'){
   try{return await handleClickAction(event);}
@@ -569,11 +708,14 @@ async function onClick(event){
  }
  try{
   await progress.run(title,async function(handle){
-   handle.setPhase(action==='build-mine'?'Checking construction prerequisites…':
+   handle.setPhase(action==='start-mine-build'?'Checking construction prerequisites and inventory…':
     action==='start-country-production'?'Preparing selected-country mine network…':
-    action==='run-mine'?'Checking the selected site and raw-stock ledger…':
+    action==='run-mine'?'Checking the selected site, reserves and raw-stock ledger…':
     action==='run-factory'?'Checking factory inputs and processing capacity…':
-    action==='decommission-mine'?'Validating mine shutdown request…':'Loading current resource records…');
+    action==='confirm-mine-destruction'?'Recording demolition and recoverable materials…':
+    action==='stop-mine-units'||action==='pause-single-mine'?'Pausing selected mine operations…':
+    action==='resume-mine-units'||action==='resume-single-mine'?'Resuming selected mine operations…':
+    'Loading current resource records…');
    return await handleClickAction(event,handle);
   },{
    detail:'Starting the selected operation…',
@@ -615,7 +757,7 @@ function boot(){
   observer=new MutationObserver(injectButtons);
   observer.observe(g.document.body,{childList:true,subtree:true});
  }
- for(const name of ['OMEGA_RESOURCE_MINE_PROJECT_STARTED','OMEGA_RESOURCE_MINE_COMMISSIONED','OMEGA_SIMULATION_TURN_COMMITTED','OMEGA_RESOURCE_EXTRACTION_COMPLETED','OMEGA_RESOURCE_INVENTORY_CHANGED','OMEGA_RESOURCE_PROCESSING_COMPLETED','OMEGA_TRADE_SETTLEMENT_COMPLETED','OMEGA_RESOURCE_FISCAL_RECEIPT_POSTED','OMEGA_RESOURCE_TRADE_RECONCILED','OMEGA_RESOURCE_SITE_BINDING_SYNCED','OMEGA_RESOURCE_BOOTSTRAP_STATUS']){
+ for(const name of ['OMEGA_RESOURCE_MINE_PROJECT_STARTED','OMEGA_RESOURCE_MINE_COMMISSIONED','OMEGA_SIMULATION_TURN_COMMITTED','OMEGA_RESOURCE_EXTRACTION_COMPLETED','OMEGA_RESOURCE_INVENTORY_CHANGED','OMEGA_RESOURCE_PROCESSING_COMPLETED','OMEGA_TRADE_SETTLEMENT_COMPLETED','OMEGA_RESOURCE_FISCAL_RECEIPT_POSTED','OMEGA_RESOURCE_TRADE_RECONCILED','OMEGA_RESOURCE_SITE_BINDING_SYNCED','OMEGA_RESOURCE_BOOTSTRAP_STATUS','OMEGA_RESOURCE_MINE_STOPPED','OMEGA_RESOURCE_MINE_RESUMED','OMEGA_RESOURCE_MINE_DESTROYED']){
   g.addEventListener?.(name,function(){const modal=g.document.getElementById('omega-mine-management-modal');if(modal?.style.display==='flex')render();});
  }
  for(const name of ['MINISTRY_SELECTED','OMEGA_MINISTRY_VIEW_COUNTRY_CHANGED','OMEGA_COUNTRY_SELECTED','COUNTRY_SELECTED','OMEGA_COUNTRY_CONTEXT_CHANGED','OMEGA_SELECTED_COUNTRY_CHANGED']){
