@@ -184,6 +184,17 @@ test('real site extraction flows through raw warehouse, transport, factory, fini
   state.transport.BGD.infrastructure.utilitySupply={electricityMWhPerDay:1000000,waterM3PerDay:1000000,
     authority:'TEST_FIXTURE',status:'AVAILABLE',simulationOnly:true,assets:[]};
   state.simulation.playerCountryId='BGD';
+  const countryRouteLoad=await industry.loadSiteLogisticsRoutes('BGD');
+  assert.equal(countryRouteLoad.status,'READY',JSON.stringify(countryRouteLoad));
+  assert.equal(countryRouteLoad.routeCount,4,'only Bangladesh route shard should be loaded');
+  const siteRuntimes=state.resource.BGD.industrialNetwork.siteLogisticsBySiteId;
+  assert.equal(Object.keys(siteRuntimes).length,4,'every site in the selected-country shard gets an independent runtime ledger');
+  assert.ok(Object.values(siteRuntimes).every(row=>row.status==='IDLE'&&row.runtimeActive===false),
+    'route registration must not automatically run every mine');
+  const foreignStateBeforeTick=state.resource.KWT;
+  const foreignTick=industry.advanceShipments('KWT');
+  assert.equal(foreignTick.status,'SKIPPED','a non-selected country must not advance logistics');
+  assert.equal(state.resource.KWT,foreignStateBeforeTick,'the non-selected country must not be hydrated or mutated');
   const run=await industry.executeSitePipeline({countryId:'BGD',siteId:site.siteId,resourceId:'coal',autoCommissionFactory:true,transportMode:'rail'});
   assert.equal(run.status,'IN_TRANSIT',JSON.stringify(run));
   assert.equal(run.extractionStatus,'COMMITTED');
