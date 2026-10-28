@@ -392,6 +392,7 @@ function dispatchMineToWarehouse(countryId,site,flow,sourceBatch,routeProfile){
       simulationOnly:true,sourceBatchId:batchId,siteId,actualTransportAssetBound:false,unitBridgeAuthority:bridge.authority}};
   network.shipments.push(shipment);network.shipments=network.shipments.slice(-MAX_SHIPMENTS);
   flow.mineLogisticsRouteId=routeProfile.routeId;flow.mineLogisticsStatus='IN_TRANSIT_TO_WAREHOUSE';
+  // Count this persisted haul exactly once; partial-haul retries rely on the remaining balance.
   flow.mineWarehouseDispatchedQuantity=(num(flow.mineWarehouseDispatchedQuantity)||0)+quantity;
   flow.mineHaulShipmentId=shipmentId;flow.mineHaulShipmentIds=[...new Set([...(flow.mineHaulShipmentIds||[]),shipmentId])];
   flow.lastMineHaulDispatchTurn=turn();flow.transportQueueReason=null;flow.blockReason=null;
