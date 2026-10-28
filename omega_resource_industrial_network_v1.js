@@ -1696,47 +1696,33 @@ function quoteMineProject(input={}){
   if(!actualResource)return{status:'BLOCKED',reason:'SITE_RESOURCE_ID_UNAVAILABLE',countryId:cid,siteId};
   if(rid&&rid!==actualResource)return{status:'BLOCKED',reason:'SITE_RESOURCE_ID_MISMATCH',countryId:cid,siteId,requestedResourceId:rid,siteResourceId:actualResource};
   if(site.map?.markerEligible===false||site.runtime?.aliasOfSiteId)return{status:'BLOCKED',reason:'SITE_NOT_ELIGIBLE_FOR_PLAYER_CONSTRUCTION',countryId:cid,siteId};
-  if(String(site.operation?.status||source.status||'').toUpperCase()==='NOT_APPLICABLE')
-    return{status:'BLOCKED',reason:'SITE_NOT_APPLICABLE',countryId:cid,siteId};
-  const resourceId=actualResource,buildClass=mineConstructionProfile(site);
-  const profiles=cat()?.mineConstructionProfiles||{},rule=profiles[buildClass]||profiles.OPEN_PIT;
-  if(!rule||!rule.materials||!Object.keys(rule.materials).length)
-    return{status:'BLOCKED',reason:'MINE_CONSTRUCTION_PROFILE_UNAVAILABLE',buildClass,countryId:cid,siteId};
+  if(String(site.operation?.status||source.status||'').toUpperCase()==='NOT_APPLICABLE')return{status:'BLOCKED',reason:'SITE_NOT_APPLICABLE',countryId:cid,siteId};
+  const resourceId=actualResource,buildClass=mineConstructionProfile(site),profiles=cat()?.mineConstructionProfiles||{},rule=profiles[buildClass]||profiles.OPEN_PIT;
+  if(!rule||!rule.materials||!Object.keys(rule.materials).length)return{status:'BLOCKED',reason:'MINE_CONSTRUCTION_PROFILE_UNAVAILABLE',buildClass,countryId:cid,siteId};
   const complexityRules=cat()?.mineResourceComplexity||{},complexity=num(complexityRules[resourceId])||1;
-  const unitCostUsd=Math.ceil((num(rule.costUsd)||0)*complexity/1000)*1000;
-  const costUsd=unitCostUsd*assetCount;
-  const unitDurationDays=Math.ceil((num(rule.durationDays)||1)*(resourceId==='uranium'||resourceId==='rare_earth'?1.15:1));
-  const durationDays=unitDurationDays;
-  const unitWorkersRequired=Math.ceil((num(rule.workersRequired)||0)*(resourceId==='uranium'||resourceId==='rare_earth'||resourceId==='niobium'?1.12:1));
-  const workersRequired=unitWorkersRequired*assetCount;
+  const unitCostUsd=Math.ceil((num(rule.costUsd)||0)*complexity/1000)*1000,costUsd=unitCostUsd*assetCount;
+  const unitDurationDays=Math.ceil((num(rule.durationDays)||1)*(resourceId==='uranium'||resourceId==='rare_earth'?1.15:1)),durationDays=unitDurationDays;
+  const unitWorkersRequired=Math.ceil((num(rule.workersRequired)||0)*(resourceId==='uranium'||resourceId==='rare_earth'||resourceId==='niobium'?1.12:1)),workersRequired=unitWorkersRequired*assetCount;
   const treasury=countryFinanceBucket(cid),countryResource=state()?.resource?.[cid]||{};
   const materials=Object.entries(rule.materials).map(([materialId,quantity])=>{
-    const stock=mineConstructionStock(cid,materialId),unitRequired=Math.ceil((num(quantity)||0)*complexity);
-    const required=unitRequired*assetCount;
+    const stock=mineConstructionStock(cid,materialId),unitRequired=Math.ceil((num(quantity)||0)*complexity),required=unitRequired*assetCount;
     return{resourceId:tok(materialId),required,unitRequired,available:stock.available,shortfall:Math.max(0,required-stock.available),unit:'SIMULATION_RESOURCE_UNIT',sufficient:stock.available+1e-9>=required,stockAuthority:stock.authority};
   });
   const assignedWorkers=num(input.assignedWorkers);
   const completedAssets=(Array.isArray(countryResource.mineAssets)?countryResource.mineAssets:[]).filter(x=>String(x?.siteId||'')===siteId&&String(x?.status||'').toUpperCase()==='OPERATIONAL').length;
-  const activeProject=(Array.isArray(countryResource.industrialNetwork?.projects)?countryResource.industrialNetwork.projects:[])
-    .find(p=>p.projectType==='MINE_CONSTRUCTION'&&String(p.siteId||'')===siteId&&p.status==='UNDER_CONSTRUCTION');
-  return{
-    status:'QUOTED',contract:'OMEGA_MINE_CONSTRUCTION_QUOTE_V1',countryId:cid,siteId,siteName:site.siteName||siteId,
-    siteCountry,resourceId,resourceName:site.identity?.resourceName||resourceId.replace(/[_-]+/g,' '),
-    sourceStatus:site.operation?.realWorldStatus||site.operation?.status||source.status||'UNOBSERVED',
+  const activeProject=(Array.isArray(countryResource.industrialNetwork?.projects)?countryResource.industrialNetwork.projects:[]).find(p=>p.projectType==='MINE_CONSTRUCTION'&&String(p.siteId||'')===siteId&&p.status==='UNDER_CONSTRUCTION');
+  return{status:'QUOTED',contract:'OMEGA_MINE_CONSTRUCTION_QUOTE_V1',countryId:cid,siteId,siteName:site.siteName||siteId,siteCountry,resourceId,
+    resourceName:site.identity?.resourceName||resourceId.replace(/[_-]+/g,' '),sourceStatus:site.operation?.realWorldStatus||site.operation?.status||source.status||'UNOBSERVED',
     buildClass,projectType:'MINE_CONSTRUCTION',assetCount,unitCostUsd,costUsd,unitDurationDays,durationDays,estimatedTurns:Math.ceil(durationDays/daysPerTurn()),
     unitWorkersRequired,workersRequiredPerAsset:unitWorkersRequired,workersRequired,assignedWorkers,staffingReady:assignedWorkers!==null&&assignedWorkers>=workersRequired,
-    materials,materialsReady:materials.every(x=>x.sufficient),treasury:{available:treasury.value,required:costUsd,
-      sufficient:treasury.value!==null&&treasury.value+1e-9>=costUsd,
-      source:treasury.field==='available'?'state.finance.'+treasury.key+'.available':
-        treasury.field==='omegaFinance.treasuryBalanceUsd'?'state.finance.'+treasury.key+'.omegaFinance.treasuryBalanceUsd':
-        treasury.field==='treasury'?'state.economy.'+treasury.key+'.treasury':'UNAVAILABLE'},
+    materials,materialsReady:materials.every(x=>x.sufficient),treasury:{available:treasury.value,required:costUsd,sufficient:treasury.value!==null&&treasury.value+1e-9>=costUsd,
+      source:treasury.field==='available'?'state.finance.'+treasury.key+'.available':treasury.field==='omegaFinance.treasuryBalanceUsd'?'state.finance.'+treasury.key+'.omegaFinance.treasuryBalanceUsd':treasury.field==='treasury'?'state.economy.'+treasury.key+'.treasury':'UNAVAILABLE'},
     commissioningReady:!activeProject,activeProjectId:activeProject?.projectId||null,commissionedAssetCount:completedAssets,
     forecastCapacityMultiplier:Math.min(1.60,1.0+0.12*(completedAssets+assetCount)),
-    assumptions:{capexAuthority:'SIMULATED_GAMEPLAY_RULES_NOT_A_REAL_VENDOR_QUOTE',materialRequirementsAuthority:rule.authority||'SIMULATED_MINE_CONSTRUCTION_PROFILE_V1',quantityAuthority:'PLAYER_SELECTED_MINE_ASSET_COUNT',workforceAuthority:'SIMULATED_PLAYER_STAFFING_COMMITMENT',reserveAuthority:site.quantitative?.reserve?.status||site.reserve?.status||'UNOBSERVED',
-      coordinateAuthority:site.location?.coordinatePrecision||site.location?.coordinateStatus||'UNOBSERVED',
-      realWorldStatusIsNotChangedByPlayerCommissioning:true},
-    ready:treasury.value!==null&&treasury.value+1e-9>=costUsd&&materials.every(x=>x.sufficient)&&assignedWorkers!==null&&assignedWorkers>=workersRequired&&!activeProject
-  };
+    assumptions:{capexAuthority:'SIMULATED_GAMEPLAY_RULES_NOT_A_REAL_VENDOR_QUOTE',materialRequirementsAuthority:rule.authority||'SIMULATED_MINE_CONSTRUCTION_PROFILE_V1',
+      quantityAuthority:'PLAYER_SELECTED_MINE_ASSET_COUNT',workforceAuthority:'SIMULATED_PLAYER_STAFFING_COMMITMENT',
+      reserveAuthority:site.quantitative?.reserve?.status||site.reserve?.status||'UNOBSERVED',coordinateAuthority:site.location?.coordinatePrecision||site.location?.coordinateStatus||'UNOBSERVED',realWorldStatusIsNotChangedByPlayerCommissioning:true},
+    ready:treasury.value!==null&&treasury.value+1e-9>=costUsd&&materials.every(x=>x.sufficient)&&assignedWorkers!==null&&assignedWorkers>=workersRequired&&!activeProject};
 }
 function consumeMineConstructionMaterial(c,material,quantity,projectId,movementType='MINE_CONSTRUCTION_MATERIAL_CONSUMPTION',unitOverride=null){
   const cid=canonicalCountry(c),rs=resourceState(cid),stock=mineConstructionStock(cid,material),inv=rs.inventory||(rs.inventory={});
@@ -1839,8 +1825,7 @@ function startMineProject(input={}){
   return clone(project);
 }
 function commissionMineProject(cid,p){
-  const rs=resourceState(cid);
-  rs.mineAssets=Array.isArray(rs.mineAssets)?rs.mineAssets:[];
+  const rs=resourceState(cid);rs.mineAssets=Array.isArray(rs.mineAssets)?rs.mineAssets:[];
   const count=Math.max(1,Math.min(100,Math.floor(num(p.assetCount)||1))),assets=[];
   const baseMineId=String(p.mineId||('MINE_ASSET:'+cid+':'+p.siteId+':'+h32(p.projectId)));
   for(let index=1;index<=count;index++){
@@ -1850,11 +1835,10 @@ function commissionMineProject(cid,p){
       const sameSiteCount=rs.mineAssets.filter(x=>String(x?.siteId||'')===String(p.siteId)&&String(x?.status||'').toUpperCase()==='OPERATIONAL').length;
       const perAssetWorkers=Math.max(0,Math.floor(num(p.workersRequiredPerAsset)||((num(p.workersRequired)||0)/count)));
       const perAssetCommitted=Math.max(0,Math.floor((num(p.workersCommitted)||0)/count));
-      asset={mineId,id:mineId,siteId:p.siteId,siteName:p.siteName,resourceId:p.resourceId,buildClass:p.buildClass,countryId:cid,ownerCountryId:cid,
-        status:'OPERATIONAL',buildProjectId:p.projectId,commissionedTurn:turn(),capacityMultiplier:Math.min(1.60,1+0.12*(sameSiteCount+1)),
-        workersRequired:perAssetWorkers,workersCommitted:perAssetCommitted,constructionCostUsd:(num(p.costUsd)||0)/count,commissioningLevel:sameSiteCount+1,
-        assetCountAtConstruction:count,sourceSiteStatus:p.sourceSiteStatus||'UNOBSERVED',siteIdentityAuthority:p.siteIdentityAuthority||'CANONICAL_SITE_REGISTRY',
-        authority:'SIMULATED_PLAYER_MINE_ASSET',productionStatus:'READY_FOR_EXTRACTION',lastProductionTurn:null};
+      asset={mineId,id:mineId,siteId:p.siteId,siteName:p.siteName,resourceId:p.resourceId,buildClass:p.buildClass,countryId:cid,ownerCountryId:cid,status:'OPERATIONAL',
+        buildProjectId:p.projectId,commissionedTurn:turn(),capacityMultiplier:Math.min(1.60,1+0.12*(sameSiteCount+1)),workersRequired:perAssetWorkers,workersCommitted:perAssetCommitted,
+        constructionCostUsd:(num(p.costUsd)||0)/count,commissioningLevel:sameSiteCount+1,assetCountAtConstruction:count,sourceSiteStatus:p.sourceSiteStatus||'UNOBSERVED',
+        siteIdentityAuthority:p.siteIdentityAuthority||'CANONICAL_SITE_REGISTRY',authority:'SIMULATED_PLAYER_MINE_ASSET',productionStatus:'READY_FOR_EXTRACTION',lastProductionTurn:null};
       rs.mineAssets.push(asset);rs.mineAssets=rs.mineAssets.slice(-1024);
     }
     assets.push(asset);
@@ -1862,11 +1846,10 @@ function commissionMineProject(cid,p){
   rs.mineConstructionLedger=Array.isArray(rs.mineConstructionLedger)?rs.mineConstructionLedger:[];
   const ledger=rs.mineConstructionLedger.find(x=>String(x.projectId||'')===String(p.projectId));
   if(ledger){ledger.status='MINE_COMMISSIONED';ledger.commissionedTurn=turn();ledger.mineId=assets[0]?.mineId||p.mineId;ledger.commissionedMineIds=assets.map(x=>x.mineId);}
-  emit('OMEGA_RESOURCE_MINE_COMMISSIONED',cid,{projectId:p.projectId,siteId:p.siteId,mineId:assets[0]?.mineId||p.mineId,mineIds:assets.map(x=>x.mineId),commissionedAssetCount:assets.length,assetCountAtConstruction:count,resourceId:p.resourceId,
-    siteName:p.siteName,status:'OPERATIONAL',commissionedTurn:turn(),capacityMultiplier:assets[assets.length-1]?.capacityMultiplier||1,
-    sourceSiteStatus:p.sourceSiteStatus,authority:'SIMULATED_PLAYER_MINE_ASSET'});
-  emit('OMEGA_RESOURCE_MINE_CAPACITY_CHANGED',cid,{siteId:p.siteId,mineIds:assets.map(x=>x.mineId),assetCount:assets.length,
-    commissioningLevel:assets[assets.length-1]?.commissioningLevel||1,status:'OPERATIONAL'});
+  emit('OMEGA_RESOURCE_MINE_COMMISSIONED',cid,{projectId:p.projectId,siteId:p.siteId,mineId:assets[0]?.mineId||p.mineId,mineIds:assets.map(x=>x.mineId),
+    commissionedAssetCount:assets.length,assetCountAtConstruction:count,resourceId:p.resourceId,siteName:p.siteName,status:'OPERATIONAL',commissionedTurn:turn(),
+    capacityMultiplier:assets[assets.length-1]?.capacityMultiplier||1,sourceSiteStatus:p.sourceSiteStatus,authority:'SIMULATED_PLAYER_MINE_ASSET'});
+  emit('OMEGA_RESOURCE_MINE_CAPACITY_CHANGED',cid,{siteId:p.siteId,mineIds:assets.map(x=>x.mineId),assetCount:assets.length,commissioningLevel:assets[assets.length-1]?.commissioningLevel||1,status:'OPERATIONAL'});
   return assets[0]||null;
 }
 function startFactoryProject(input={}){
