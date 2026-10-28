@@ -534,7 +534,7 @@ function focusSite(siteId,country){
  }
  lastOutcome='Selected site: '+(site?.siteName||siteId)+' · '+(lat===null||lng===null?'coordinates unavailable':'regional coordinates only');render();
 }
-async function onClick(event){
+async function handleClickAction(event, actionProgress){
  const button=event.target?.closest?.('[data-omm-action]');if(!button)return;
  const action=button.getAttribute('data-omm-action'),country=currentCountry||playerCountry(),api=network();
  if(action==='close'){close();return;}
@@ -567,6 +567,8 @@ async function onClick(event){
     blockedOccurrenceCount+=Math.max(0,Number(result?.blockedOccurrenceCount)||0);
     attemptedOccurrenceCount+=Math.max(0,Number(result?.attemptedOccurrenceCount)||0);
     processedBatchCount++;
+    if(actionProgress)actionProgress.setProgress(processedBatchCount/Math.max(1,totalBatches)*100,
+     'Production for '+country+': batch '+processedBatchCount+'/'+totalBatches+' · '+(offset+batch.length)+'/'+siteIds.length+' sites processed.');
     if(!['STARTED','PARTIALLY_STARTED','ALREADY_ACTIVE'].includes(status)){failedBatchCount++;failures.push({batch:processedBatchCount,reason:result?.reason||status});}
     if(offset+BATCH_SIZE<siteIds.length)await yieldToMobileUi();
    }
@@ -680,6 +682,56 @@ async function onClick(event){
    render();return;
  }
 }
+async function onClick(event){
+ const button=event.target?.closest?.('[data-omm-action]');if(!button)return;
+ const action=button.getAttribute('data-omm-action');
+ const titles={
+  'start-country-production':'Starting mine production',
+  'start-mine-build':'Building selected mine units',
+  'run-mine':'Running mine extraction',
+  'run-factory':'Running factory processing',
+  'confirm-mine-destruction':'Destroying selected mine assets',
+  'stop-mine-units':'Pausing selected mine units',
+  'resume-mine-units':'Resuming selected mine units',
+  'pause-single-mine':'Pausing mine operations',
+  'resume-single-mine':'Resuming mine operations',
+  'refresh':'Refreshing mining data'
+ };
+ const title=titles[action];
+ if(!title)return handleClickAction(event);
+ if(button.__omegaProgressPending)return;
+ button.__omegaProgressPending=true;button.setAttribute('aria-busy','true');
+ const progress=g.OmegaActionProgress;
+ if(!progress||typeof progress.run!=='function'){
+  try{return await handleClickAction(event);}
+  finally{button.__omegaProgressPending=false;button.removeAttribute('aria-busy');}
+ }
+ try{
+  await progress.run(title,async function(handle){
+   handle.setPhase(action==='start-mine-build'?'Checking construction prerequisites and inventory…':
+    action==='start-country-production'?'Preparing selected-country mine network…':
+    action==='run-mine'?'Checking the selected site, reserves and raw-stock ledger…':
+    action==='run-factory'?'Checking factory inputs and processing capacity…':
+    action==='confirm-mine-destruction'?'Recording demolition and recoverable materials…':
+    action==='stop-mine-units'||action==='pause-single-mine'?'Pausing selected mine operations…':
+    action==='resume-mine-units'||action==='resume-single-mine'?'Resuming selected mine operations…':
+    'Loading current resource records…');
+   return await handleClickAction(event,handle);
+  },{
+   detail:'Starting the selected operation…',
+   timeoutMs:60000,
+   successMessage:'Action handler finished. Review the recorded result in this mining panel.',
+   failureMessage:'Action failed. Review the mining panel result before retrying.'
+  });
+ }catch(error){
+  lastOutcome='Action error: '+String(error?.message||error);
+  render();
+ }finally{
+  button.__omegaProgressPending=false;
+  button.removeAttribute('aria-busy');
+ }
+}
+
 function injectButtons(){
  if(!g.document?.body)return;
  const modal=g.document.getElementById('gsrsk-intelligence-modal');
@@ -705,7 +757,7 @@ function boot(){
   observer=new MutationObserver(injectButtons);
   observer.observe(g.document.body,{childList:true,subtree:true});
  }
- for(const name of ['OMEGA_RESOURCE_MINE_PROJECT_STARTED','OMEGA_RESOURCE_MINE_COMMISSIONED','OMEGA_SIMULATION_TURN_COMMITTED','OMEGA_RESOURCE_EXTRACTION_COMPLETED','OMEGA_RESOURCE_INVENTORY_CHANGED','OMEGA_RESOURCE_PROCESSING_COMPLETED','OMEGA_TRADE_SETTLEMENT_COMPLETED','OMEGA_RESOURCE_FISCAL_RECEIPT_POSTED','OMEGA_RESOURCE_TRADE_RECONCILED','OMEGA_RESOURCE_SITE_BINDING_SYNCED','OMEGA_RESOURCE_BOOTSTRAP_STATUS']){
+ for(const name of ['OMEGA_RESOURCE_MINE_PROJECT_STARTED','OMEGA_RESOURCE_MINE_COMMISSIONED','OMEGA_SIMULATION_TURN_COMMITTED','OMEGA_RESOURCE_EXTRACTION_COMPLETED','OMEGA_RESOURCE_INVENTORY_CHANGED','OMEGA_RESOURCE_PROCESSING_COMPLETED','OMEGA_TRADE_SETTLEMENT_COMPLETED','OMEGA_RESOURCE_FISCAL_RECEIPT_POSTED','OMEGA_RESOURCE_TRADE_RECONCILED','OMEGA_RESOURCE_SITE_BINDING_SYNCED','OMEGA_RESOURCE_BOOTSTRAP_STATUS','OMEGA_RESOURCE_MINE_STOPPED','OMEGA_RESOURCE_MINE_RESUMED','OMEGA_RESOURCE_MINE_DESTROYED']){
   g.addEventListener?.(name,function(){const modal=g.document.getElementById('omega-mine-management-modal');if(modal?.style.display==='flex')render();});
  }
  for(const name of ['MINISTRY_SELECTED','OMEGA_MINISTRY_VIEW_COUNTRY_CHANGED','OMEGA_COUNTRY_SELECTED','COUNTRY_SELECTED','OMEGA_COUNTRY_CONTEXT_CHANGED','OMEGA_SELECTED_COUNTRY_CHANGED']){
