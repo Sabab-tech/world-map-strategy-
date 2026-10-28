@@ -298,7 +298,7 @@ function dispatchMineToWarehouse(countryId,site,flow,sourceBatch,routeProfile){
   siteRuntime.dispatchedQuantity=(num(siteRuntime.dispatchedQuantity)||0)+quantity;
   siteRuntime.activeShipmentId=shipmentId;siteRuntime.lastUpdatedTurn=turn();
   siteRuntime.shipmentIds=[...new Set([...siteRuntime.shipmentIds,shipmentId])];
-  appendSiteLogisticsStage(siteRuntime,'MINE_TO_WAREHOUSE','IN_TRANSIT',{shipmentId,batchId,quantity,unit:route.unit,
+  appendSiteLogisticsStage(siteRuntime,'MINE_TO_WAREHOUSE','IN_TRANSIT_TO_WAREHOUSE',{shipmentId,batchId,quantity,unit:route.unit,
     etaTurn,etaDate,plannedTransitDays:days,quantityUnitBridge:bridge,transportAssetBindingStatus:'UNBOUND_SIMULATED_CAPACITY'});
   const shipment={shipmentId,shipmentType:'MINE_TO_WAREHOUSE',countryId:cid,siteId,resourceId:rid,batchId,
     quantity:Number(quantity.toFixed(6)),unit:route.unit,warehouseId,sourceWarehouseId:null,
@@ -1746,13 +1746,15 @@ function settleFactoryInputShipment(countryId,shipment){
   return{status:'DELIVERED',factory,resourceId:rid,sourceQuantity,targetQuantity,inputBatchId,unitBridge:bridge,sourceBatchIds:lineage};
 }
 
-async function advanceShipments(c){
+function advanceShipments(c){
   const cid=canonicalCountry(c);
-  if(!cid)return{status:'SKIPPED',reason:'LOGISTICS_COUNTRY_NOT_SELECTED'};
+  if(!cid)return{status:'SKIPPED',reason:'LOGISTICS_COUNTRY_NOT_SELECTED',delivered:0,mineDelivered:0,shipments:[]};
   const selectedPlayer=playerSimulationCountryId();
-  if(selectedPlayer&&selectedPlayer!==cid)return{status:'SKIPPED',reason:'PLAYER_COUNTRY_SCOPE_VIOLATION',countryId:cid,playerCountryId:selectedPlayer};
-  const routes=await loadSiteLogisticsRoutes(cid);
-  if(routes.status!=='READY'&&selectedPlayer)return{status:'SKIPPED',reason:routes.reason||'PLAYER_COUNTRY_LOGISTICS_NOT_READY',countryId:cid};
+  if(selectedPlayer&&selectedPlayer!==cid)return{status:'SKIPPED',reason:'PLAYER_COUNTRY_SCOPE_VIOLATION',countryId:cid,playerCountryId:selectedPlayer,delivered:0,mineDelivered:0,shipments:[]};
+  if(selectedPlayer&&siteLogisticsActiveCountry!==cid){
+    void loadSiteLogisticsRoutes(cid);
+    return{status:'WAITING_FOR_COUNTRY_ROUTE_SHARD',countryId:cid,delivered:0,mineDelivered:0,shipments:[]};
+  }
   const n=netState(cid),delivered=[],mineDelivered=[];
   dispatchResidualMineHauls(cid);
   dispatchResidualSiteBatches(cid);
