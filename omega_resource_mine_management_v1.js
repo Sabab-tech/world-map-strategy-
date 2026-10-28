@@ -631,9 +631,7 @@ async function onClick(event){
   if(action==='request-single-mine-destruction'){
    openDestructionConfirmation(siteId,1,String(button.getAttribute('data-mine-id')||''));return;
   }
-  if(action==='cancel-mine-destruction'){
-   button.closest('.omm-confirm-overlay')?.remove();return;
-  }
+  if(action==='cancel-mine-destruction'){button.closest('.omm-confirm-overlay')?.remove();return;}
   if(action==='confirm-mine-destruction'){
    if(country!==playerCountry()){lastOutcome='Rejected: mine demolition is restricted to the active player country.';button.closest('.omm-confirm-overlay')?.remove();render();return;}
    if(!api?.destroyMineAssets){lastOutcome='Demolition runtime unavailable; no mine was changed.';button.closest('.omm-confirm-overlay')?.remove();render();return;}
