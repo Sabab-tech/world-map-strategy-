@@ -194,7 +194,8 @@ test('real site extraction flows through raw warehouse, transport, factory, fini
   assert.ok(sourceBatch,'extraction must create a real central batch');
   assert.ok(resource.inventoryLots[run.batchId],'extraction must create a real inventory lot');
   assert.equal(sourceBatch.countryId,'BGD');
-  assert.equal(sourceBatch.warehouseId,'WH-BGD-RAW');
+  assert.equal(sourceBatch.destinationWarehouseId,'WH-BGD-RAW');
+  assert.equal(sourceBatch.warehouseId,null,'a mine-haul batch must not claim warehouse location before receipt');
   assert.equal(resource.warehouse.countryId,'BGD');
   const initialSourceQuantity=Number(sourceBatch.remainingQuantity);
   assert.ok(initialSourceQuantity+1e-6>=Number(run.quantity));
