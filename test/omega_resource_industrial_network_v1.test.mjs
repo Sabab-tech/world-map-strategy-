@@ -477,9 +477,17 @@ assert.equal(diag.extractionPlans,4,'diagnostics must include the additional min
 assert.equal(diag.targetArchitecture,'SITE -> EXTRACTION -> WAREHOUSE -> ROUTE -> FACTORY -> PROCESS -> OUTPUT');
 
 // Every route segment shares a per-turn transport ledger across shipments.
-context.Omega.Simulation.clock.turn=43;
+const capacityLedgerTurns=Object.keys(context.Game.state.resource.BGD.industrialNetwork.transportCapacityLedger?.turns||{})
+  .map(Number).filter(Number.isFinite);
+const capacityLedgerTurn=Math.max(
+  Number(context.Game.state.simulation.turn)||0,
+  Number(context.Omega.Simulation.clock.turn)||0,
+  ...capacityLedgerTurns,
+  42
+)+1;
+context.Omega.Simulation.clock.turn=capacityLedgerTurn;
 // Industrial ledgers use the shared Game simulation state as the canonical turn source.
-context.Game.state.simulation.turn=43;
+context.Game.state.simulation.turn=capacityLedgerTurn;
 context.Game.state.transport.BGD.infrastructure.roads.capacityPerDay=11000;
 context.Game.state.transport.BGD.infrastructure.roads.quality=1;
 const firstCapacityShipment=N.dispatchShipment({countryId:'BGD',siteId:'SITE_BGD_COAL_01',resourceId:'coal',quantity:5000,transportMode:'rail'});
@@ -492,7 +500,7 @@ assert.ok(secondCapacityShipment.shipment.route.vehiclePlan.every(leg =>
   'vehicle count must be recalculated from the actual shared-capacity-limited shipment');
 assert.ok(secondCapacityShipment.shipment.route.vehiclePlan.every(leg => leg.dispatchQuantity === 500),
   'every route leg must report the same adjusted dispatch quantity');
-const sharedTransport=context.Game.state.resource.BGD.industrialNetwork.transportCapacityLedger.turns['43'];
+const sharedTransport=context.Game.state.resource.BGD.industrialNetwork.transportCapacityLedger.turns[String(capacityLedgerTurn)];
 assert.equal(sharedTransport.usedByMode.truck,11000,'truck capacity must be counted jointly for all route legs in one turn');
 assert.equal(sharedTransport.shipments.length,2);
 
