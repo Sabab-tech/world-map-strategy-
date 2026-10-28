@@ -313,7 +313,9 @@ test('real site extraction flows through raw warehouse, transport, factory, fini
   assert.equal(Number(resource.inventory.coal)||0,rawStockBeforeDelivery-sameResourceDeliveryQuantity,'raw inventory must debit the combined same-resource deliveries exactly once');
   assert.equal(Number(resource.warehouse.availableByResource.coal)||0,rawWarehouseBeforeDelivery-sameResourceDeliveryQuantity,'raw warehouse must debit the combined same-resource deliveries exactly once');
   const newlyReservedCoal=(resource.industrialNetwork?.shipments||[])
-    .filter(x=>String(x.resourceId)==='coal'&&String(x.status)==='IN_TRANSIT'&&!inTransitBeforeDelivery.has(String(x.shipmentId)))
+    // Mine-to-warehouse hauls debit held mine stock; only the factory leg reserves raw warehouse stock.
+    .filter(x=>String(x.resourceId)==='coal'&&String(x.shipmentType||'')==='RAW_TO_FACTORY'&&
+      String(x.status)==='IN_TRANSIT'&&!inTransitBeforeDelivery.has(String(x.shipmentId)))
     .reduce((sum,x)=>sum+(Number(x.quantity)||0),0);
   assert.ok(Math.abs((Number(resource.warehouse.reservedByResource.coal)||0)-
     (rawReservationBeforeDelivery-sameResourceDeliveryQuantity+newlyReservedCoal))<1e-5,
