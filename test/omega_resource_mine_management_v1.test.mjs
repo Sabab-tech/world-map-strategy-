@@ -417,7 +417,7 @@ test('mine construction blocks without changing ledgers when treasury, materials
 
 
 test('batch mine construction scales materials, capex and workers, then commissions unique mine assets', () => {
-  const { ctx, state } = fixture();
+  const { ctx, state, site } = fixture();
   const api = ctx.Omega.ResourceIndustrialNetwork;
   const one = api.quoteMineProject({ countryId:'BWA', siteId:'SITE_BWA_TEST_GOLD_MINE', resourceId:'gold', quantity:1, assignedWorkers:1000000000 });
   const two = api.quoteMineProject({ countryId:'BWA', siteId:'SITE_BWA_TEST_GOLD_MINE', resourceId:'gold', quantity:2, assignedWorkers:1000000000 });
