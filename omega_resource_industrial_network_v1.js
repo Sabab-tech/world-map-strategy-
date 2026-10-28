@@ -2218,6 +2218,28 @@ function advanceShipments(c){
       ['FACTORY_INPUT_SHORTAGE','FACTORY_INPUT_OR_BATCH_SHORTAGE','FACTORY_INPUT_BATCH_LEDGER_MISMATCH'].includes(processing?.reason)
         ?'AWAITING_INPUTS':'AWAITING_PROCESSING';
     s.processingTransactionId=processing?.transactionId||processing?.cycleId||null;s.processing=clone(processing);
+    // A mine-to-factory shipment must leave the site's active ledger on this exact receipt.
+    // Do not clear unrelated cargo: one mine may have several batches in transit concurrently.
+    if(String(s.shipmentType||'')==='RAW_TO_FACTORY'){
+      const flow=siteFlowRows(cid).find(row=>String(row.batchId||'')===sourceBatchId);
+      if(flow?.mineLogisticsRouteId){
+        const siteRuntime=siteLogisticsState(cid,s.siteId,siteLogisticsRouteFor(cid,s.siteId));
+        if(siteRuntime){
+          siteRuntime.factoryReceivedQuantity=(num(siteRuntime.factoryReceivedQuantity)||0)+quantity;
+          closeActiveSiteShipment(siteRuntime,s.shipmentId);
+          siteRuntime.currentStage=siteRuntime.runtimeActive?siteRuntime.currentStage:'FACTORY_RECEIVED';
+          appendSiteLogisticsStage(siteRuntime,'RAW_TO_FACTORY','FACTORY_RECEIVED',{shipmentId:s.shipmentId,batchId:sourceBatchId,
+            quantity,unit:s.unit,turn:turn(),factoryId:s.factoryId,processingStatus:s.processingStatus});
+          if(siteRuntime.runtimeActive){
+            siteRuntime.currentStage=String(siteRuntime.currentStage||'IN_TRANSIT');
+            siteRuntime.status=siteRuntime.currentStage==='RAW_TO_FACTORY'?'IN_TRANSIT_TO_FACTORY':'IN_TRANSIT_TO_WAREHOUSE';
+          }
+        }
+        flow.mineLogisticsStatus='FACTORY_RECEIVED';flow.lastMineFactoryReceiptTurn=turn();
+        addFlowStage(flow,'FACTORY','RECEIVED',{shipmentId:s.shipmentId,factoryId:s.factoryId,quantity,processingStatus:s.processingStatus});
+        saveSiteFlow(cid,flow);
+      }
+    }
     n.deliveries.push(clone(s));delivered.push(clone(s));const res=n.reservations?.[s.reservationId];if(res)res.status='DELIVERED';
     emit('OMEGA_RESOURCE_DELIVERY_COMPLETED',cid,{shipmentId:s.shipmentId,siteId:s.siteId,factoryId:s.factoryId,resourceId:rid,quantity,unit:s.unit,
       travelTimeDays:s.route.travelTimeDays,transport:s.route.transportMode,status:'DELIVERED_TO_FACTORY',processingStatus:s.processingStatus,
