@@ -231,7 +231,8 @@ function dispatchMineToWarehouse(countryId,site,flow,sourceBatch,routeProfile){
   if(!cid||!/^[A-Z]{3}$/.test(cid)||!siteId||canonicalCountry(routeProfile?.countryId)!==cid||String(routeProfile?.siteId||'')!==siteId)
     return{status:'BLOCKED',reason:'MINE_ROUTE_IDENTITY_MISMATCH',countryId:cid,siteId};
   const player=playerSimulationCountryId();
-  if(player&&player!==cid)return{status:'BLOCKED',reason:'PLAYER_COUNTRY_SCOPE_VIOLATION',countryId:cid,playerCountryId:player};
+  if(!player)return{status:'BLOCKED',reason:'PLAYER_COUNTRY_NOT_SELECTED',countryId:cid};
+  if(player!==cid)return{status:'BLOCKED',reason:'PLAYER_COUNTRY_SCOPE_VIOLATION',countryId:cid,playerCountryId:player};
   const rs=resourceState(cid),network=netState(cid),batchId=String(sourceBatch?.batchId||flow?.batchId||'');
   if(!batchId||!Array.isArray(rs.batches)||!rs.batches.some(batch=>String(batch?.batchId||'')===batchId))
     return{status:'BLOCKED',reason:'SOURCE_BATCH_NOT_FOUND',batchId};
@@ -754,7 +755,10 @@ function onExtractionCommitted(evt){
   const rid=tok(p.resourceId||batch?.resourceId||batch?.materialIdentity||''),batchId=String(batch?.batchId||p.batchId||'').trim();
   if(!cid||!rid||!batchId)return;
   const selectedPlayer=playerSimulationCountryId();
-  if(selectedPlayer&&selectedPlayer!==cid)return;
+  // The mine logistics tick belongs exclusively to the active player country.
+  // Test harnesses and saved games without a chosen country keep legacy extraction
+  // behavior instead of quietly moving cargo for arbitrary countries.
+  if(!selectedPlayer||selectedPlayer!==cid)return;
   if(siteLogisticsActiveCountry!==cid){
     if(!pendingSiteLogisticsBatches.has(batchId)){
       pendingSiteLogisticsBatches.add(batchId);
