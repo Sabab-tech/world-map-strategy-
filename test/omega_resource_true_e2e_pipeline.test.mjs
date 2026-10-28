@@ -234,7 +234,7 @@ test('real site extraction flows through raw warehouse, transport, factory, fini
     'the whole batch must leave raw-warehouse availability until its individual arrival receipts');
   const mineSiteRuntime=resource.industrialNetwork.siteLogisticsBySiteId[site.siteId];
   assert.ok(mineSiteRuntime.activeShipmentIds.includes(run.shipmentId),
-    'the exact mine-haul shipment must remain in the site's active-shipment ledger');
+    'the exact mine-haul shipment must remain in the active-shipment ledger');
   assert.ok(mineSiteRuntime.activeShipments.some(row=>String(row.shipmentId)===String(run.shipmentId)&&row.stage==='MINE_TO_WAREHOUSE'),
     'the exact mine-haul shipment must retain its own active lifecycle stage');
   const mineDispatchQuantity=Number(run.shipment.quantity);
