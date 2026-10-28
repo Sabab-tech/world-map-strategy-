@@ -437,6 +437,8 @@ function dispatchMineToWarehouse(countryId,site,flow,sourceBatch,routeProfile){
   flow.mineHaulShipmentId=shipmentId;flow.mineHaulShipmentIds=[...new Set([...(flow.mineHaulShipmentIds||[]),shipmentId])];
   flow.lastMineHaulDispatchTurn=turn();flow.transportQueueReason=null;flow.blockReason=null;
   appendSiteLogisticsStage(siteRuntime,'WAREHOUSE_ACCOUNTING','SOURCE_STOCK_RESERVED_FOR_TRANSIT',{batchId,quantity,shipmentId});
+  // This is an audit-stage entry, not the operational shipment status.
+  siteRuntime.status='IN_TRANSIT_TO_WAREHOUSE';
   recomputeSiteLogisticsTradeAvailability(rs);
   emit('OMEGA_RESOURCE_MINE_TO_WAREHOUSE_DISPATCHED',cid,{shipmentId,siteId,batchId,resourceId:rid,quantity,unit:route.unit,etaTurn,etaDate,
     routeId:routeProfile.routeId,transportAssetBindingStatus:'UNBOUND_SIMULATED_CAPACITY',simulationOnly:true});
