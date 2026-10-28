@@ -836,6 +836,9 @@ assert.ok(delivered,'the exact warehouse-to-factory shipment must arrive through
 }));
 const sameResourceDeliveredQuantity=realDelivery.shipments.filter(x=>String(x.resourceId)===String(realPipelineResourceId))
   .reduce((sum,x)=>sum+(Number(x.quantity)||0),0);
+const sameResourceMineReceiptQuantity=(realDelivery.mineShipments||[])
+  .filter(x=>String(x.resourceId)===String(realPipelineResourceId))
+  .reduce((sum,x)=>sum+(Number(x.quantity)||0),0);
 assert.equal(delivered.destinationStatus,'FACTORY_RECEIVED');
 assert.ok(['IN_PROGRESS','AWAITING_PROCESSING'].includes(delivered.processingStatus),
   'delivery either starts its own cycle or waits for a different active cycle: '+JSON.stringify(delivered));
@@ -848,8 +851,8 @@ const postDeliveryState=runtime.countryResourceState('KWT');
 const completedRealDelivery=(postDeliveryState.industrialNetwork?.deliveries||[]).find(x=>String(x.shipmentId)===String(factoryShipment.shipmentId));
 assert.equal(completedRealDelivery?.processingStatus,'PROCESSED','Kuwait delivery ledger must reconcile after cycle completion');
 assert.ok(Math.abs(Number(postDeliveryState.warehouse.availableByResource[realPipelineResourceId])-
-  (beforeWarehouse-sameResourceDeliveredQuantity))<1e-5,
-  'raw warehouse stock must fall by exactly the combined quantity of same-resource shipments delivered this turn');
+  (beforeWarehouse+sameResourceMineReceiptQuantity-sameResourceDeliveredQuantity))<1e-5,
+  'raw warehouse on-hand stock must reconcile mine receipts minus factory receipts in this turn');
 const newlyReservedOtherShipments=(postDeliveryState.industrialNetwork?.shipments||[])
   // Only RAW_TO_FACTORY shipments reserve the raw warehouse. Mine-haul shipments
   // debit warehouse stock and hold cargo at the mine/in transit until receipt.
@@ -862,8 +865,8 @@ assert.ok(Math.abs(Number(postDeliveryState.warehouse.reservedByResource[realPip
 assert.equal(postDeliveryState.industrialNetwork?.reservations?.[delivered.reservationId]?.status,'DELIVERED',
   'the delivered shipment reservation record must close');
 assert.ok(Math.abs(Number(postDeliveryState.inventory[realPipelineResourceId])-
-  (beforeCountryRaw-sameResourceDeliveredQuantity))<1e-5,
-  'country raw inventory must debit the combined same-resource deliveries exactly once');
+  (beforeCountryRaw+sameResourceMineReceiptQuantity-sameResourceDeliveredQuantity))<1e-5,
+  'country raw inventory must reconcile mine receipts and factory consumption exactly once');
 const realProcessedOutputs=Object.keys(completedRealDelivery?.processing?.outputs||completedRealDelivery?.processing?.outputQuantities||{});
 assert.ok(realProcessedOutputs.length>0,'real factory cycle must produce at least one output');
 assert.ok(realProcessedOutputs.every(k=>Number(postDeliveryState.inventory[k])>0),
