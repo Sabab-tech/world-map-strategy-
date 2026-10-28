@@ -198,7 +198,33 @@ function shellStyle(){
  '#omega-mine-management-modal .omm-section{margin:15px 0}#omega-mine-management-modal .omm-empty{padding:20px;border:1px dashed #344d65;border-radius:10px;color:#9db1c9;text-align:center}'+
  '#omega-mine-management-modal .omm-table-wrap{overflow:auto}#omega-mine-management-modal table{width:100%;border-collapse:collapse;min-width:520px}#omega-mine-management-modal th,#omega-mine-management-modal td{padding:8px;border-bottom:1px solid #26384d;text-align:left;font-size:12px}'+
  '#omega-mine-management-modal svg{width:17px;height:17px;vertical-align:middle}'+
- '@media(max-width:760px){#omega-mine-management-modal{padding:4px}#omega-mine-management-modal .omm-shell{height:98vh;padding:11px;border-radius:10px}#omega-mine-management-modal .omm-grid{grid-template-columns:repeat(2,minmax(0,1fr))}#omega-mine-management-modal .omm-site-grid{grid-template-columns:1fr}#omega-mine-management-modal .omm-lines,#omega-mine-management-modal .omm-materials{grid-template-columns:1fr}#omega-mine-management-modal .omm-head{align-items:center}}';
+ '#omega-mine-management-modal .omm-mine-flip{perspective:1200px;min-width:0;height:470px}
+#omega-mine-management-modal .omm-flip-inner{display:grid;grid-template-columns:minmax(0,1fr);height:100%;transform-style:preserve-3d;transition:transform .55s cubic-bezier(.2,.75,.2,1)}
+#omega-mine-management-modal .omm-mine-flip.is-flipped .omm-flip-inner{transform:rotateY(180deg)}
+#omega-mine-management-modal .omm-face{grid-area:1 / 1;min-width:0;height:100%;overflow:auto;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+#omega-mine-management-modal .omm-face-front{transform:rotateY(0deg)}
+#omega-mine-management-modal .omm-face-back{transform:rotateY(180deg)}
+#omega-mine-management-modal .omm-panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:9px}
+#omega-mine-management-modal .omm-panel-head h3{font-size:16px;line-height:1.25}
+#omega-mine-management-modal .omm-mine-art{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border:1px solid #3b8a9a;border-radius:9px;color:#73d7df;background:#0d2735;margin-bottom:6px;box-shadow:inset 0 0 0 1px #163d50,0 0 12px #27a6c133}
+#omega-mine-management-modal .omm-mine-art svg{width:22px;height:22px}
+#omega-mine-management-modal .omm-count-field{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:8px 0;padding:8px 9px;background:#091524;border:1px solid #263c51;border-radius:8px;font-size:12px}
+#omega-mine-management-modal .omm-count-field .omm-input{max-width:105px}
+#omega-mine-management-modal .omm-build-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin:8px 0}
+#omega-mine-management-modal .omm-build-metric{min-width:0;padding:8px;background:#091524;border:1px solid #1e3449;border-radius:8px}
+#omega-mine-management-modal .omm-build-metric span,#omega-mine-management-modal .omm-build-metric small{display:block;color:#9db1c9;font-size:10px;line-height:1.35}
+#omega-mine-management-modal .omm-build-metric strong{display:block;margin:3px 0;font-size:14px;overflow-wrap:anywhere}
+#omega-mine-management-modal .omm-build-ready{font-size:12px;margin:7px 0}
+#omega-mine-management-modal .omm-build-preview .omm-materials,#omega-mine-management-modal .omm-destroy-preview .omm-materials{grid-template-columns:repeat(2,minmax(0,1fr))}
+#omega-mine-management-modal .omm-material{align-items:flex-start;font-size:11px;overflow-wrap:anywhere}
+#omega-mine-management-modal .omm-action-panel[hidden]{display:none!important}
+#omega-mine-management-modal .omm-confirm-overlay{position:fixed;inset:0;z-index:1000008;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(3,7,15,.86)}
+#omega-mine-management-modal .omm-confirm-dialog{width:min(460px,100%);padding:18px;background:#180d13;border:2px solid #ff334f;border-radius:12px;box-shadow:0 0 10px #ff1839,0 0 28px #ff183966, inset 0 0 14px #ff183922;animation:omm-danger-pulse 1.15s steps(2,end) infinite}
+#omega-mine-management-modal .omm-confirm-dialog h3{font-size:18px;color:#fff0f2;margin-bottom:8px}
+#omega-mine-management-modal .omm-confirm-dialog p{font-size:13px;color:#f0cbd1}
+#omega-mine-management-modal .omm-confirm-dialog .omm-actions{justify-content:flex-end}
+#omega-mine-management-modal .omm-danger-confirm{background:#8c1730!important;border-color:#ff5269!important;color:#fff!important}
+@keyframes omm-danger-pulse{0%,100%{border-color:#ff334f;box-shadow:0 0 7px #ff1839,0 0 18px #ff183955}50%{border-color:#791427;box-shadow:0 0 1px #ff1839,0 0 5px #ff183922}}@media(max-width:760px){#omega-mine-management-modal{padding:4px}#omega-mine-management-modal .omm-shell{height:98vh;padding:11px;border-radius:10px}#omega-mine-management-modal .omm-grid{grid-template-columns:repeat(2,minmax(0,1fr))}#omega-mine-management-modal .omm-site-grid{grid-template-columns:1fr}#omega-mine-management-modal .omm-lines,#omega-mine-management-modal .omm-materials{grid-template-columns:1fr}#omega-mine-management-modal .omm-head{align-items:center}}';
  g.document.head.appendChild(style);
 }
 let currentView='my-mines',currentCountry='',lastOutcome='',isBound=false,observer=null,productionRunActive=false,currentTargetSiteId='',currentTargetAction='';
@@ -291,6 +317,62 @@ function operatingPreviewMarkup(site,country,count){
    '<button data-omm-action="resume-mine-units" data-site-id="'+esc(siteIdOf(site))+'" '+(country!==playerCountry()||stopped<1?'disabled':'')+'>Resume selected units</button></div>'+
   '<div class="omm-sub">Paused mines keep their assets and stock. Their extraction pipeline remains disabled until they are resumed.</div>';
 }
+
+function cardSiteById(siteId,country){return sitesFor(country).find(site=>siteIdOf(site)===String(siteId||''))||null;}
+function updateBuildPreview(input){
+ const card=input.closest('[data-omm-site-card]'),siteId=input.getAttribute('data-site-id'),panel=card?.querySelector('.omm-build-preview');
+ if(!card||!panel)return;
+ const count=num(input.value),site=cardSiteById(siteId,currentCountry||playerCountry());
+ if(!site)return;
+ panel.innerHTML=count===null||!Number.isInteger(count)||count<1||count>100?'<div class="omm-alert">Choose an integer from 1 to 100.</div>':buildPreviewMarkup(site,currentCountry||playerCountry(),count);
+}
+function updateDestroyPreview(input){
+ const card=input.closest('[data-omm-site-card]'),siteId=input.getAttribute('data-site-id'),panel=card?.querySelector('.omm-destroy-preview');
+ if(!card||!panel)return;
+ const count=num(input.value),site=cardSiteById(siteId,currentCountry||playerCountry());
+ if(!site)return;
+ panel.innerHTML=count===null||!Number.isInteger(count)||count<1?'<div class="omm-alert">Choose at least one mine unit.</div>':demolitionPreviewMarkup(site,currentCountry||playerCountry(),count);
+}
+function updateOperatingButtons(input){
+ const card=input.closest('[data-omm-site-card]'),siteId=card?.getAttribute('data-omm-site-card'),count=num(input.value);
+ if(!card)return;
+ const units=assetRows(currentCountry||playerCountry()).filter(a=>String(a.siteId)===String(siteId));
+ const active=units.filter(a=>String(a.status||'').toUpperCase()==='OPERATIONAL').length,stopped=units.filter(a=>String(a.status||'').toUpperCase()==='STOPPED').length;
+ const valid=count!==null&&Number.isInteger(count)&&count>0;
+ const stop=card.querySelector('[data-omm-action="stop-mine-units"]'),resume=card.querySelector('[data-omm-action="resume-mine-units"]');
+ if(stop)stop.disabled=currentCountry!==playerCountry()||!valid||count>active;
+ if(resume)resume.disabled=currentCountry!==playerCountry()||!valid||count>stopped;
+ if(stop)stop.textContent='Pause '+(valid?formatNum(count):'selected')+' unit(s)';
+ if(resume)resume.textContent='Resume '+(valid?formatNum(count):'selected')+' unit(s)';
+}
+function flipCard(siteId,panelName){
+ const modal=g.document.getElementById('omega-mine-management-modal');
+ const card=Array.from(modal?.querySelectorAll('[data-omm-site-card]')||[]).find(el=>el.getAttribute('data-omm-site-card')===String(siteId));
+ if(!card)return;
+ const isAssetCard=!!card.querySelector('[data-omm-mine-asset-id]');
+ if(isAssetCard)return;
+ card.classList.add('is-flipped');
+ card.querySelectorAll('[data-omm-panel]').forEach(panel=>{panel.hidden=panel.getAttribute('data-omm-panel')!==panelName;});
+}
+function openDestructionConfirmation(siteId,count,mineId){
+ const modal=g.document.getElementById('omega-mine-management-modal'),api=network();
+ if(!modal||!api?.quoteMineDemolition){lastOutcome='Demolition estimate runtime unavailable; no mine was changed.';render();return;}
+ const quote=api.quoteMineDemolition({countryId:currentCountry||playerCountry(),siteId,quantity:count,mineId:mineId||undefined});
+ if(quote?.status!=='QUOTED'){lastOutcome='Demolition blocked: '+label(quote?.reason||quote?.status||'UNAVAILABLE');render();return;}
+ const previous=modal.querySelector('.omm-confirm-overlay');if(previous)previous.remove();
+ const waste=Array.isArray(quote.wasteOutputs)&&quote.wasteOutputs.length?quote.wasteOutputs.map(x=>label(x.resourceId)+' '+formatNum(x.quantity,2)).join(', '):'No verified construction-material lineage for a waste estimate.';
+ const overlay=g.document.createElement('div');overlay.className='omm-confirm-overlay';overlay.setAttribute('role','alertdialog');overlay.setAttribute('aria-modal','true');
+ overlay.setAttribute('aria-label','Confirm permanent mine demolition');overlay.setAttribute('data-site-id',siteId);overlay.setAttribute('data-count',String(count));if(mineId)overlay.setAttribute('data-mine-id',mineId);
+ overlay.innerHTML='<div class="omm-confirm-dialog"><h3>Are you sure you want to destroy '+formatNum(quote.quantity)+' mine unit(s)?</h3>'+
+  '<p>This is permanent. Production will stop, the selected units will leave the active mine roster, and their history will be retained.</p>'+
+  '<div class="omm-lines"><div class="omm-line"><span class="omm-muted">Workers affected</span><br><strong>'+formatNum(quote.jobsLost)+'</strong></div>'+
+  '<div class="omm-line"><span class="omm-muted">Daily capacity loss</span><br><strong>'+(quote.productionLostPerDay===null?'Not recorded':formatNum(quote.productionLostPerDay,2))+'</strong></div></div>'+
+  '<p><strong>Estimated recoverable material:</strong> '+esc(waste)+'</p><div class="omm-actions">'+
+  '<button data-omm-action="cancel-mine-destruction">Cancel</button><button class="omm-danger-confirm" data-omm-action="confirm-mine-destruction">Yes, destroy selected mines</button></div></div>';
+ modal.appendChild(overlay);
+ const confirm=overlay.querySelector('[data-omm-action="confirm-mine-destruction"]');if(confirm)confirm.focus();
+}
+
 function siteCard(site,country,view){
  const id=siteIdOf(site),rid=resourceOf(site),name=site.siteName||site.name||id;
  const assets=assetRows(country).filter(a=>String(a.siteId)===id&&!/DECOMMISSIONED|DESTROYED|INACTIVE/.test(String(a.status||'').toUpperCase()));
@@ -426,6 +508,11 @@ function ensureModal(){
  shellStyle();let modal=g.document.getElementById('omega-mine-management-modal');if(modal)return modal;
  modal=g.document.createElement('div');modal.id='omega-mine-management-modal';modal.setAttribute('role','dialog');modal.setAttribute('aria-modal','true');modal.setAttribute('aria-label','Resource Ministry mine management');
  modal.addEventListener('click',onClick);
+ modal.addEventListener('input',function(e){
+  if(e.target?.matches?.('[data-omm-build-count]'))updateBuildPreview(e.target);
+  else if(e.target?.matches?.('[data-omm-destroy-count]'))updateDestroyPreview(e.target);
+  else if(e.target?.matches?.('[data-omm-operation-count]'))updateOperatingButtons(e.target);
+ });
  modal.addEventListener('change',function(e){if(e.target?.matches?.('[data-omm-country]')){currentCountry=currentView==='mines'?iso3(e.target.value):playerCountry();render();}});
  modal.addEventListener('keydown',function(e){if(e.key==='Escape')close();});
  g.document.body.appendChild(modal);return modal;
