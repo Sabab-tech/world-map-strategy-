@@ -327,6 +327,7 @@ function siteById(siteId){
   const latest=commissioned[commissioned.length-1];
   const sourceOperation=site.operation||site.sourceSiteRecord?.operation||{};
   const sourceStatus=String(sourceOperation.realWorldStatus||sourceOperation.status||site.sourceSiteRecord?.status||'UNOBSERVED');
+  const playerMineAssetCapacityMultiplier=commissioned.reduce((sum,a)=>sum+Math.max(.1,num(a?.capacityMultiplier)||1),0);
   return{
     ...clone(site),
     operation:{...clone(sourceOperation),realWorldStatus:sourceStatus,status:'SIMULATED_PLAYER_MINE_OPERATIONAL',
@@ -335,7 +336,7 @@ function siteById(siteId){
     sourceSiteRecord:{...clone(site.sourceSiteRecord||{}),realWorldStatus:sourceStatus,status:'SIMULATED_PLAYER_MINE_OPERATIONAL',commercialExtraction:true},
     real:{...clone(site.real||{}),operationStatus:'SIMULATED_PLAYER_MINE_OPERATIONAL'},
     runtime:{...clone(site.runtime||{}),playerMineAssetId:latest.mineId||latest.id||null,
-      playerMineAssetCount:commissioned.length,commissioningAuthority:'GAME_STATE_RESOURCE_MINE_ASSETS'}
+      playerMineAssetCount:commissioned.length,playerMineAssetCapacityMultiplier,commissioningAuthority:'GAME_STATE_RESOURCE_MINE_ASSETS'}
   };
 }
 
@@ -737,7 +738,8 @@ function planExtraction(input={}){
   if(!stream)return{status:'BLOCKED',reason:'NO_COMMODITY_STREAM'};
   const meth=resourceMethod(site,resourceId),m=methodRules()[meth.method];if(!m)return{status:'BLOCKED',reason:'EXTRACTION_METHOD_UNDEFINED'};
   const tech=getTechnologyEffect(cid,site.siteId,resourceId,site.siteType);
-  const daily=Math.max(.000001,num(stream.production?.activeRate)||num(stream.production?.nominalCapacity)||registryRate||0)*Math.max(.1,num(tech.capacityMultiplier)||1);
+  const mineOutputMultiplier=Math.max(1,num(site?.runtime?.playerMineAssetCapacityMultiplier)||num(site?.runtime?.playerMineAssetCount)||1);
+  const daily=Math.max(.000001,num(stream.production?.activeRate)||num(stream.production?.nominalCapacity)||registryRate||0)*Math.max(.1,num(tech.capacityMultiplier)||1)*mineOutputMultiplier;
   if(daily<=0)return{status:'BLOCKED',reason:'ZERO_EXTRACTION_CAPACITY'};
   const requested=Math.max(0,num(input.quantity)||daily*Number(rules()[resourceId]?.batchDays||1));
   const currentReserve=Math.max(0,num(input.remainingReserve)??(registryReserve!==null&&registryReserve>0?registryReserve:null)??num(stream.reserve?.quantity)??0);
@@ -1609,7 +1611,7 @@ function mineConstructionProfile(site){
   if(/OFFSHORE|SUBSEA|FLOATING PLATFORM|MARINE FIELD/.test(context))return'OFFSHORE_PLATFORM';
   if(/TAILINGS|REPROCESSING/.test(context))return'TAILINGS';
   if(/BRINE|SALT|SODA_ASH/.test(context))return'BRINE';
-  if(/OIL|GAS|PETROLEUM|WELLHEAD|WELL_DRILL/.test(context))return'OIL_GAS_FIELD';
+  if(/OIL_FIELD|GAS_FIELD|PETROLEUM|WELLHEAD|WELL_DRILL|CRUDE_OIL|NATURAL_GAS/.test(context))return'OIL_GAS_FIELD';
   if(/QUARRY|AGGREGATE PIT|STONE PIT/.test(context)||/QUARRY_CRUSH_SCREEN/.test(method))return'QUARRY';
   if(/PROCESSING|MILL|PLANT|CONCENTRATOR/.test(context))return'PROCESSING';
   if(/UNDERGROUND|LONGWALL|BLOCK_CAVING|ROOM_PILLAR|SHAFT|TUNNEL/.test(context))return'UNDERGROUND';
@@ -1701,8 +1703,9 @@ function quoteMineProject(input={}){
   if(!rule||!rule.materials||!Object.keys(rule.materials).length)return{status:'BLOCKED',reason:'MINE_CONSTRUCTION_PROFILE_UNAVAILABLE',buildClass,countryId:cid,siteId};
   const complexityRules=cat()?.mineResourceComplexity||{},complexity=num(complexityRules[resourceId])||1;
   const unitCostUsd=Math.ceil((num(rule.costUsd)||0)*complexity/1000)*1000,costUsd=unitCostUsd*assetCount;
-  const unitDurationDays=Math.ceil((num(rule.durationDays)||1)*(resourceId==='uranium'||resourceId==='rare_earth'?1.15:1)),durationDays=unitDurationDays;
-  const unitWorkersRequired=Math.ceil((num(rule.workersRequired)||0)*(resourceId==='uranium'||resourceId==='rare_earth'||resourceId==='niobium'?1.12:1)),workersRequired=unitWorkersRequired*assetCount;
+  const resourceAdjustments=cat()?.mineResourceAdjustments||{},resourceAdjustment=resourceAdjustments[resourceId]||{};
+  const unitDurationDays=Math.ceil((num(rule.durationDays)||1)*(num(resourceAdjustment.durationMultiplier)||1)),durationDays=unitDurationDays;
+  const unitWorkersRequired=Math.ceil((num(rule.workersRequired)||0)*(num(resourceAdjustment.workforceMultiplier)||1)),workersRequired=unitWorkersRequired*assetCount;
   const treasury=countryFinanceBucket(cid),countryResource=state()?.resource?.[cid]||{};
   const materials=Object.entries(rule.materials).map(([materialId,quantity])=>{
     const stock=mineConstructionStock(cid,materialId),unitRequired=Math.ceil((num(quantity)||0)*complexity),required=unitRequired*assetCount;
@@ -3083,9 +3086,14 @@ async function executeSitePipeline(input={}){
   if(!site?.siteId)return{status:'BLOCKED',reason:'SITE_NOT_FOUND'};
   if(canonicalCountry(site.countryId)!==cid)return{status:'BLOCKED',reason:'SITE_COUNTRY_MISMATCH',siteCountryId:site.countryId,requestedCountryId:cid};
   const registeredAssets=Array.isArray(state()?.resource?.[cid]?.mineAssets)?state().resource[cid].mineAssets:[];
-  const latestMineAsset=registeredAssets.slice().reverse().find(row=>String(row?.siteId||'')===String(site.siteId));
-  if(latestMineAsset&&/DECOMMISSIONED|DESTROYED|STOPPED/.test(String(latestMineAsset.status||'').toUpperCase()))
-    return{status:'BLOCKED',reason:'MINE_DECOMMISSIONED',siteId:site.siteId,countryId:cid};
+  const siteAssets=registeredAssets.filter(row=>String(row?.siteId||'')===String(site.siteId));
+  const operationalMineAssets=siteAssets.filter(row=>String(row?.status||'').toUpperCase()==='OPERATIONAL');
+  if(siteAssets.length&&!operationalMineAssets.length){
+    if(siteAssets.some(row=>String(row?.status||'').toUpperCase()==='STOPPED'))
+      return{status:'BLOCKED',reason:'MINE_STOPPED_BY_PLAYER',siteId:site.siteId,countryId:cid};
+    if(siteAssets.some(row=>/DECOMMISSIONED|DESTROYED/.test(String(row?.status||'').toUpperCase())))
+      return{status:'BLOCKED',reason:'MINE_DECOMMISSIONED',siteId:site.siteId,countryId:cid};
+  }
   const strategicPolicy=g.Omega?.ResourceStrategicPolicyRuntime||g.OmegaResourceStrategicPolicyRuntime;
   const siteGate=strategicPolicy?.siteAvailableForExtraction?.(cid,site.siteId,site);
   if(siteGate&&!siteGate.allowed)return{status:'BLOCKED',reason:siteGate.reason||'SITE_EXPLORATION_GATE_BLOCKED',siteId:site.siteId,countryId:cid};
