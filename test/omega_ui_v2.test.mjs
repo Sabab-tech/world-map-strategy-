@@ -674,6 +674,19 @@ test('Government exposes emblems, minister recruitment and a stable future portr
   assert.match(government, /g\.OmegaMinisterRecruitment/);
   assert.match(government, /engine\.fetchRoster/);
   assert.match(government, /OmegaLiveMinisterSelectorV9/);
+  assert.match(government, /function ministerCandidateCard\(candidate, selectedId\)/);
+  assert.match(government, /data-omega-v2-minister-candidate-card/);
+  assert.match(government, /data-omega-v2-minister-current-officeholder/);
+  assert.match(government, /__omegaV2RecruitmentRequestId/);
+  assert.match(government, /button\.disabled = true;\s*button\.textContent = root\.__omegaV2RecruitmentHasCurrentMinister/);
+  assert.match(government, /selector\.appoint\(recruitingId, candidate, country\)/);
+  assert.match(government, /appointmentScreenStillCurrent/);
+  assert.match(government, /activeOptions\.isScreenWorkCurrent\(\)/);
+  assert.doesNotMatch(government, /id="omega-v2-minister-candidate" data-omega-v2-minister-candidate/);
+  const ministerStyles = readFileSync(new URL('../omega_ui_v2/omega-ui-v2.css', import.meta.url), 'utf8');
+  assert.match(ministerStyles, /\.omega-v2-minister-candidate-card\.is-selected/);
+  assert.match(ministerStyles, /\.omega-v2-minister-avatar/);
+
   assert.match(detail, /omega-v2-ministry-appointed-minister/);
   const portrait = globalThis.OmegaUIV2Government.renderMinisterPortrait({ id:'treasury_finance', ministerName:'Test Minister', ministerPortraitUrl:'assets/ministers/test-minister.webp' });
   assert.match(portrait, /data-omega-v2-minister-portrait-slot/);

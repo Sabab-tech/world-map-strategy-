@@ -123,6 +123,7 @@ const CANONICAL_AI_SCRIPTS = Object.freeze([
   'minister_behavior_engine.js',
   'omega_minister_integration.js',
   'minister_communication_engine.js',
+  'omega_minister_identity_pool_v1.js',
   'minister_recruitment_engine.js',
   'omega_minister_bootstrap.js',
   'omega_ai_integrity_layer.js',
