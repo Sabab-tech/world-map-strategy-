@@ -3516,7 +3516,9 @@ function setMineOperatingStatus(input={}){
   if(!siteId)return{status:'BLOCKED',reason:'MINE_SITE_ID_REQUIRED'};
   if(!['OPERATIONAL','STOPPED'].includes(desired))return{status:'BLOCKED',reason:'MINE_OPERATION_STATUS_INVALID',requestedStatus:desired};
   const rs=resourceState(cid),assets=Array.isArray(rs.mineAssets)?rs.mineAssets:[],sourceStatus=desired==='STOPPED'?'OPERATIONAL':'STOPPED';
-  const candidates=assets.filter(a=>String(a?.siteId||'')===siteId&&String(a?.status||'').toUpperCase()===sourceStatus);
+  let candidates=assets.filter(a=>String(a?.siteId||'')===siteId&&String(a?.status||'').toUpperCase()===sourceStatus);
+  const requestedMineIds=Array.isArray(input.mineIds)?new Set(input.mineIds.map(String)):input.mineId?new Set([String(input.mineId)]):null;
+  if(requestedMineIds)candidates=candidates.filter(a=>requestedMineIds.has(String(a.mineId||a.id||'')));
   const quantity=input.quantity==null?1:num(input.quantity);
   if(quantity===null||!Number.isInteger(quantity)||quantity<1||quantity>100)return{status:'BLOCKED',reason:'MINE_ACTION_COUNT_OUT_OF_RANGE',minimum:1,maximum:100};
   if(candidates.length<quantity)return{status:'BLOCKED',reason:desired==='STOPPED'?'NOT_ENOUGH_OPERATIONAL_MINES':'NOT_ENOUGH_STOPPED_MINES',requested:quantity,available:candidates.length,siteId};
@@ -3584,7 +3586,9 @@ function destroyMineAssets(input={}){
   const quantity=input.quantity==null?1:num(input.quantity);
   if(quantity===null||!Number.isInteger(quantity)||quantity<1||quantity>100)return{status:'BLOCKED',reason:'MINE_ACTION_COUNT_OUT_OF_RANGE',minimum:1,maximum:100};
   const rs=resourceState(cid),assets=Array.isArray(rs.mineAssets)?rs.mineAssets:[];
-  const active=assets.filter(a=>String(a?.siteId||'')===siteId&&!['DECOMMISSIONED','DESTROYED'].includes(String(a?.status||'').toUpperCase()));
+  let active=assets.filter(a=>String(a?.siteId||'')===siteId&&!['DECOMMISSIONED','DESTROYED'].includes(String(a?.status||'').toUpperCase()));
+  const requestedMineIds=Array.isArray(input.mineIds)?new Set(input.mineIds.map(String)):input.mineId?new Set([String(input.mineId)]):null;
+  if(requestedMineIds)active=active.filter(a=>requestedMineIds.has(String(a.mineId||a.id||'')));
   if(active.length<quantity)return{status:'BLOCKED',reason:'NOT_ENOUGH_MINES_TO_DESTROY',requested:quantity,available:active.length,siteId};
   const selected=active.slice(-quantity),site=siteById(siteId),profiles=cat()?.mineDecommissionRules||{};
   const net=netState(cid),history=(net.mineDemolitionHistory=Array.isArray(net.mineDemolitionHistory)?net.mineDemolitionHistory:[]);
