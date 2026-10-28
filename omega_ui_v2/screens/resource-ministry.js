@@ -735,9 +735,10 @@
     var countryLabel = String(heroCountry && (heroCountry.officialName || heroCountry.name || heroCountry.countryName) ||
       rosterCountry && rosterCountry.name || countryKey || 'Selected country');
     var dashMarkup = photoMarkup + '<div class="omega-v2-kpis omega-v2-resource-command-kpis">' +
-      renderKpi('Registered mines', String(model.sites.filter(eligible).length), model.sites.length + ' sites', 'neutral') +
-      renderKpi('Producing now', String(producingSites.length), 'Recorded this turn', portfolioBalanceState) +
-      renderKpi('Pending projects', String(mineProjects.length), 'Mine construction', mineProjects.length ? 'shortage' : 'neutral') +
+      renderKpi('Registered sites', String(model.sites.filter(eligible).length), model.sites.length + ' catalog sites', 'neutral') +
+      renderKpi('Built mine units', String(builtMineUnits), 'Commissioned or retained assets', builtMineUnits ? 'adequate' : 'neutral') +
+      renderKpi('Mine units building', String(mineUnitsBuilding), mineProjects.length + ' active construction projects', mineUnitsBuilding ? 'shortage' : 'neutral') +
+      renderKpi('Producing sites', String(producingSites.length), 'Sites with output this turn', portfolioBalanceState) +
       renderKpi('Blocked supply', String(blockedFlows.length), 'Recorded unresolved flows', blockedFlows.length ? 'shortage' : 'adequate') +
       renderKpi('Resource types', String(distinctResources.length), 'Available in country', 'neutral') +
       renderKpi('Today output', outputHeadline, 'Kept separate by unit', portfolioBalanceState) +
