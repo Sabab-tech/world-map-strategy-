@@ -887,7 +887,12 @@ globalThis.Game.state.transport.CHL=globalThis.Game.state.transport.CHL||{
     pipelines:{capacityPerDay:400000,quality:0.8}
   }
 };
-globalThis.Game.state.simulation.playerCountryId=part6CopperSite.countryId;
+// The logistics runtime treats the active session as the authoritative selected player country.
+const part6SimulationState=globalThis.Game.state.simulation;
+part6SimulationState.session=part6SimulationState.session&&typeof part6SimulationState.session==='object'
+  ?part6SimulationState.session:{};
+part6SimulationState.session.playerCountryId=part6CopperSite.countryId;
+part6SimulationState.playerCountryId=part6CopperSite.countryId;
 globalThis.Game.state.simulation.turn=Number(globalThis.Game.state.simulation.turn||0)+1;
 const part6Pipeline=await industrial.executeSitePipeline({
   countryId:part6CopperSite.countryId,siteId:part6CopperSite.siteId,
