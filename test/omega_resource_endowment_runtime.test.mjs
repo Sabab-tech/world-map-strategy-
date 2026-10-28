@@ -898,6 +898,9 @@ assert.ok(futureOccurrence,'canonical-only site must receive an executable reser
 assert.ok(Number(futureOccurrence[1].residualQuantity)>0);
 assert.equal(futureOccurrence[1].provenance.quantityAuthority,'SIMULATED');
 assert.ok(Number(futureOccurrence[1].geologicalQuantity)>0,'new canonical site must carry simulated geological quantity');
+globalThis.Game.state.simulation.playerCountryId='BGD';
+globalThis.Game.state.simulation.session=globalThis.Game.state.simulation.session||{};
+globalThis.Game.state.simulation.session.playerCountryId='BGD';
 const futurePipeline=await industrial.executeSitePipeline({countryId:'BGD',siteId:futureCanonicalSite.siteId,resourceId:'silver',quantity:25,autoCommissionFactory:true,transportMode:'rail'});
 assert.equal(futurePipeline.status,'IN_TRANSIT',JSON.stringify(futurePipeline));
 assert.equal(futurePipeline.extractionStatus,'COMMITTED');
