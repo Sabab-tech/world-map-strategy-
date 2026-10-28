@@ -397,8 +397,17 @@ test("v2 Build opens an actionable plan and Start construction calls the authori
     assert.match(previewNode.innerHTML,/Available: <span[^>]*>100K<\/span>/,"available inventory uses compact thousands notation");
     assert.doesNotMatch(previewNode.innerHTML,/SIMULATION(?:_RESOURCE)?_UNIT/i,"internal simulation unit labels stay out of the player UI");
     const buildCss=read("omega_ui_v2/omega-ui-v2.css");
-    assert.match(buildCss,/\.omega-v2-mine-build-plan/,"premium styling is scoped to the mine build section");
-    assert.match(buildCss,/text-decoration:\s*none\s*!important/i,"underlines are removed inside the mine build section");
+    const premiumCss=read("omega_ui_v2/resource-ministry-premium.css");
+    assert.match(buildCss,/\.omega-v2-mine-build-plan/,"fallback styling is scoped to the mine build section");
+    assert.match(buildCss,/text-decoration:\s*none\s*!important/i,"underlines are removed in the shared stylesheet");
+    const previousPremiumRule=premiumCss.indexOf(".omega-v2-resource-premium .omega-v2-build-material {");
+    const finalCascadeRule=premiumCss.lastIndexOf(".omega-v2-resource-premium .omega-v2-mine-build-plan .omega-v2-build-material {");
+    assert.ok(previousPremiumRule >= 0 && finalCascadeRule > previousPremiumRule,
+      "final mine-build styles must override older premium resource rules loaded in the same stylesheet");
+    assert.match(premiumCss, /\.omega-v2-resource-premium \.omega-v2-mine-build-plan \.omega-v2-build-material \{[^}]*display:\s*grid/s,
+      "the live material row remains a compact icon-and-quantity grid after premium styles load");
+    assert.match(premiumCss, /\.omega-v2-resource-premium \.omega-v2-mine-build-plan \* \{[^}]*text-decoration:\s*none\s*!important/s,
+      "the active premium cascade removes underlines from the build panel");
     click("[data-omega-v2-build-submit]",{"data-omega-v2-build-submit":"true"});
     assert.equal(starts.length,1,"authoritative startMineProject must run exactly once");
     assert.equal(starts[0].countryId,"BGD");assert.equal(starts[0].siteId,row.siteId);assert.equal(starts[0].resourceId,"coal");
