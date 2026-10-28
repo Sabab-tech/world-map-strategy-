@@ -345,7 +345,10 @@ function dispatchMineToWarehouse(countryId,site,flow,sourceBatch,routeProfile){
   const quantity=Math.min(remaining,capInSourceUnits,preview.allowedQuantity);
   if(quantity<=1e-9)return{status:'BLOCKED',reason:'TRANSPORT_CAPACITY_EXHAUSTED',capacity:preview,routeId:routeProfile.routeId};
   const warehouseId='WH-'+cid+'-RAW',days=Math.max(1,num(routeProfile.routePlan.plannedTransitDays)||num(routeProfile.routePlan.minimumTransitDays)||1);
-  const etaTurn=turn()+Math.max(1,Math.ceil(days/dayWindow)),etaDate=factoryAddGameDays(factoryCurrentGameDate(),days);
+  const etaTurns=Math.max(1,Math.ceil(days/dayWindow)),etaTurn=turn()+etaTurns;
+  // Arrival dates align to the game's discrete turn cadence, not a sub-turn date that
+  // the simulation cannot actually process while its clock jumps multiple days per turn.
+  const etaDate=factoryAddGameDays(factoryCurrentGameDate(),etaTurns*dayWindow);
   const shipmentId='MINEHAUL:'+h32(JSON.stringify({cid,siteId,batchId,turn:turn(),sequence:network.shipments.length+1,quantity}));
   const route={status:'PLANNED',routeId:routeProfile.routeId,countryId:cid,siteId,sourceSiteId:siteId,sourceNode:siteId,
     destinationNode:warehouseId,destinationWarehouseId:warehouseId,resourceId:rid,requestedQuantity:remaining,
@@ -1509,7 +1512,8 @@ function dispatchShipment(input={}){
   route.capacityUse=capacityUse;
   if(quantity<plannedQuantity)route.quantityAdjustment={reason:quantityAdjustmentReason||'SOURCE_BATCH_OR_LOT_ROUNDING_CAP',plannedQuantity,actualQuantity:quantity};
   const shipmentTravelDays=Math.max(0,num(route.travelTimeDays)||0);
-  const shipmentEtaDate=factoryAddGameDays(factoryCurrentGameDate(),shipmentTravelDays);
+  const shipmentEtaTurns=Math.max(1,num(route.etaTurn)-turn());
+  const shipmentEtaDate=factoryAddGameDays(factoryCurrentGameDate(),shipmentEtaTurns*daysPerTurn());
   const s={shipmentId,shipmentType:'RAW_TO_FACTORY',countryId:cid,siteId:plan.siteId,resourceId:plan.resourceId,factoryId:plan.factoryId,quantity,unit:input.unit||'TONNES',
     batchId:sourceBatchId||null,occurrenceKey:input.occurrenceKey||sourceBatch?.occurrenceKey||null,
     warehouseId:input.warehouseId||sourceBatch?.warehouseId||('WH-'+cid+'-RAW'),
@@ -1888,7 +1892,8 @@ function advanceShipments(c){
     if(blockade?.blocked){s.status='BLOCKED_ROUTE_BLOCKADE';s.blockReason=blockade.reason||'RESOURCE_ROUTE_BLOCKADE_ACTIVE';s.blockadePolicies=blockade.blockades||[];s.blockedTurn=turn();continue;}
     if(s.status==='BLOCKED_ROUTE_BLOCKADE'){s.status='IN_TRANSIT';s.blockReason=null;s.resumedTurn=turn();s.etaTurn=Math.max(turn()+1,num(s.etaTurn)||turn()+1);}
     if(num(s.etaTurn)>turn())continue;
-    if(String(s.shipmentType||'')==='MINE_TO_WAREHOUSE'&&s.etaDate&&!factoryDateReached(factoryCurrentGameDate(),s.etaDate))continue;
+    if(['MINE_TO_WAREHOUSE','RAW_TO_FACTORY'].includes(String(s.shipmentType||''))&&s.etaDate&&
+      !factoryDateReached(factoryCurrentGameDate(),s.etaDate))continue;
     if(String(s.shipmentType||'')==='MINE_TO_WAREHOUSE'){
       const receipt=receiveMineWarehouseShipment(cid,s);
       if(receipt.status!=='DELIVERED'){
