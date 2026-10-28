@@ -887,7 +887,7 @@
         if (actionButton && root.contains(actionButton) && !actionButton.disabled) {
           var action = actionButton.getAttribute('data-omega-v2-mine-action');
           var id = actionButton.getAttribute('data-site-id') || '';
-          if (!canOperate) {
+          if (!livePlayerCountryKey() || countryKey !== livePlayerCountryKey()) {
             root.__omegaV2ResourceNotice = 'Operations are available only for the active player country.';
             scheduleRender(root, Object.assign({}, root.__omegaV2ResourceOptions || {}, { tab:'mines' }));
             return;
