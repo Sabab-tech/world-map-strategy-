@@ -529,3 +529,41 @@
   }
   .omega-v2-resource-premium .omega-v2-resource-country-select select { max-width: 100%; flex: 1 1 auto; }
 }
+
+
+/* Direct mine-construction planning and visible game-day progress. */
+.omega-v2-resource-premium .omega-v2-mine-build-plan,
+.omega-v2-resource-premium .omega-v2-mine-construction-progress {
+  background: linear-gradient(145deg, rgba(20,39,56,.99), rgba(7,19,31,.99));
+  border: 1px solid rgba(217,189,123,.38); border-radius: 14px;
+  box-shadow: inset 0 1px rgba(255,255,255,.04), 0 8px 24px rgba(0,0,0,.16);
+  margin-top: 12px; padding: 14px;
+}
+.omega-v2-resource-premium .omega-v2-mine-build-plan .omega-v2-card-header,
+.omega-v2-resource-premium .omega-v2-mine-construction-progress .omega-v2-card-header { align-items: flex-start; gap: 10px; }
+.omega-v2-resource-premium .omega-v2-mine-build-plan h3,
+.omega-v2-resource-premium .omega-v2-mine-construction-progress h3 { color: #f1dfb1; font-size: 16px; margin: 2px 0 5px; }
+.omega-v2-resource-premium .omega-v2-build-plan-fields { display:grid; gap:9px; grid-template-columns:repeat(2,minmax(0,1fr)); margin:12px 0; }
+.omega-v2-resource-premium .omega-v2-build-plan-fields label { background:rgba(4,14,23,.52); border:1px solid rgba(125,158,181,.25); border-radius:10px; display:grid; gap:7px; min-width:0; padding:10px; }
+.omega-v2-resource-premium .omega-v2-build-plan-fields label span,
+.omega-v2-resource-premium .omega-v2-build-summary-grid span,
+.omega-v2-resource-premium .omega-v2-build-material small { color:#9db2c2; font-size:10px; line-height:1.4; }
+.omega-v2-resource-premium .omega-v2-build-plan-fields input { background:#081725; border:1px solid rgba(131,190,216,.4); border-radius:7px; color:#f5f7f6; font:inherit; min-height:42px; min-width:0; padding:8px; width:100%; }
+.omega-v2-resource-premium .omega-v2-build-summary-grid,
+.omega-v2-resource-premium .omega-v2-build-project-metrics { display:grid; gap:7px; grid-template-columns:repeat(2,minmax(0,1fr)); margin:10px 0; }
+.omega-v2-resource-premium .omega-v2-build-summary-grid > div,
+.omega-v2-resource-premium .omega-v2-build-project-metrics > div { background:rgba(4,14,23,.5); border:1px solid rgba(115,150,174,.2); border-radius:9px; min-width:0; padding:9px; }
+.omega-v2-resource-premium .omega-v2-build-summary-grid strong,
+.omega-v2-resource-premium .omega-v2-build-project-metrics strong { color:#f0e6cc; display:block; font-size:13px; margin:4px 0 2px; overflow-wrap:anywhere; }
+.omega-v2-resource-premium .omega-v2-build-summary-grid small { color:#9db2c2; display:block; font-size:10px; line-height:1.4; }
+.omega-v2-resource-premium .omega-v2-build-material-list { display:grid; gap:6px; margin:8px 0 12px; }
+.omega-v2-resource-premium .omega-v2-build-material { align-items:center; background:rgba(4,14,23,.35); border:1px solid rgba(115,150,174,.16); border-radius:8px; display:flex; gap:12px; justify-content:space-between; padding:8px; }
+.omega-v2-resource-premium .omega-v2-build-material > span { display:grid; gap:3px; min-width:0; }
+.omega-v2-resource-premium .omega-v2-build-material > span:last-child { text-align:right; }
+.omega-v2-resource-premium .omega-v2-build-material strong { color:#e4edf2; font-size:11px; overflow-wrap:anywhere; }
+.omega-v2-resource-premium .omega-v2-build-notice { background:rgba(131,190,216,.07); border:1px solid rgba(131,190,216,.28); border-radius:9px; color:#c2d5df; font-size:12px; line-height:1.5; margin:10px 0; padding:10px; }
+.omega-v2-resource-premium .omega-v2-build-progress-meta { align-items:center; color:#aabfce; display:flex; flex-wrap:wrap; font-size:11px; gap:8px; justify-content:space-between; margin:8px 0; }
+.omega-v2-resource-premium .omega-v2-build-progress-meta strong { color:#f1dfb1; }
+.omega-v2-resource-premium .omega-v2-progress-track { background:rgba(3,11,18,.9); border:1px solid rgba(131,190,216,.22); border-radius:99px; height:9px; overflow:hidden; }
+.omega-v2-resource-premium .omega-v2-progress-track span { background:linear-gradient(90deg,#6ba6c1,#d9bd7b); border-radius:inherit; display:block; height:100%; transition:width .25s ease; }
+@media (max-width:420px) { .omega-v2-resource-premium .omega-v2-build-plan-fields { grid-template-columns:1fr; } }

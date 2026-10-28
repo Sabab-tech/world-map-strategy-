@@ -332,6 +332,8 @@ test('mine construction commits treasury/materials once, deduplicates request an
   const input = { countryId: 'BWA', siteId: 'SITE_BWA_TEST_GOLD_MINE', resourceId: 'gold', assignedWorkers: 1000, requestId: 'TEST-MINE-REQUEST-001' };
   const project = api.startMineProject(input);
   assert.equal(project.status, 'UNDER_CONSTRUCTION');
+  assert.equal(project.remainingDays, project.durationDays, 'new mine projects begin with their full day countdown');
+  assert.ok(project.expectedCompletionDate, 'construction records a game-calendar completion date');
   assert.equal(project.treasuryStatus, 'DEBITED');
   assert.equal(project.constructionMaterialsStatus, 'CONSUMED');
   assert.equal(state.finance.BWA.available, originalCash - project.costUsd);
@@ -347,9 +349,13 @@ test('mine construction commits treasury/materials once, deduplicates request an
   for (let i = 1; i <= Math.ceil(project.durationDays / 30); i++) {
     state.simulation.turn = i;
     api.advanceProjects('BWA');
+    const persisted = state.resource.BWA.industrialNetwork.projects.find(x => x.projectId === project.projectId);
+    assert.equal(persisted.remainingDays, Math.max(0, project.durationDays - persisted.progressDays), 'countdown tracks authoritative progress');
   }
   const completed = state.resource.BWA.industrialNetwork.projects.find(x => x.projectId === project.projectId);
   assert.equal(completed.status, 'COMPLETED');
+  assert.equal(completed.remainingDays, 0, 'completed construction has no remaining days');
+  assert.equal(completed.progressPct, 1, 'completed construction reaches full progress');
   assert.equal(completed.assetStatus, 'OPERATIONAL');
   const mine = state.resource.BWA.mineAssets.find(x => x.mineId === project.mineId);
   assert.ok(mine);
@@ -531,7 +537,13 @@ test('mine project rejects cross-country identity and player-only actions requir
   assert.match(uiSource, /executeFactoryCycle/);
   assert.match(uiSource, /<svg/);
   assert.match(uiSource, /omm-mine-flip/);
+  assert.ok(uiSource.includes('.omm-mine-flip.is-flipped .omm-flip-inner{transform:rotateY(180deg)}'), 'flipped card must rotate the 3D card stack');
+  assert.ok(uiSource.includes('overflow:visible;backface-visibility:hidden;'), '3D faces must not flatten the card with a scrolling overflow context');
+  assert.ok(uiSource.includes('.omm-action-panel{max-height:calc(100% - 4px);overflow:auto;'), 'long build data must scroll inside the panel without breaking 3D flipping');
   assert.match(uiSource, /data-omm-build-count/);
+  assert.match(uiSource, /data-omm-build-workers/);
+  assert.match(uiSource, /OMEGA_RESOURCE_MINE_PROJECT_PROGRESS/);
+  assert.match(uiSource, /days remaining/);
   assert.match(uiSource, /function updateBuildPreview/);
   assert.match(uiSource, /quoteMineDemolition/);
   assert.match(uiSource, /destroyMineAssets/);

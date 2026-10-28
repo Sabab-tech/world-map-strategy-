@@ -345,3 +345,61 @@ test("Resource & Mining never falls back to the retired UI when UI v2 is unavail
     if (previous.notification === undefined) delete globalThis.showOmegaNotification; else globalThis.showOmegaNotification = previous.notification;
   }
 });
+
+
+test("v2 Build opens an actionable plan and Start construction calls the authoritative mine runtime", () => {
+  const api = globalThis.OmegaUIV2ResourceMinistry;
+  const priorGame = globalThis.Game, priorCatalog = globalThis.OmegaResourceSiteCanonicalCatalogData;
+  const priorNetwork = globalThis.OmegaResourceIndustrialNetwork, priorMineUi = globalThis.OmegaResourceMineManagementUI;
+  const listeners = Object.create(null), starts = [];
+  let legacyOpens = 0;
+  const row = { siteId:"SITE_BGD_BUILD_FLOW", countryId:"BGD", resourceId:"coal", siteName:"Build Flow Coal Mine",
+    operation:{commercialExtraction:true}, location:{region:"Sylhet"},
+    quantitative:{reserve:{quantity:100000,unit:"TONNES",status:"SIMULATED"},production:{rate:12,unit:"TONNES_PER_DAY",status:"SIMULATED"}},
+    simulation:{reserve:{quantity:100000,unit:"TONNES",status:"SIMULATED"}} };
+  const countInput={value:"2"}, workerInput={value:"1200"}, previewNode={innerHTML:""};
+  const root={innerHTML:"",classList:{add(){}},addEventListener(type,fn){(listeners[type]||(listeners[type]=[])).push(fn);},
+    querySelector(s){if(s==="[data-omega-v2-build-count]")return countInput;if(s==="[data-omega-v2-build-workers]")return workerInput;if(s==="[data-omega-v2-build-preview]")return previewNode;return null;},
+    querySelectorAll(){return[];},contains(){return true;}};
+  globalThis.Game={state:{simulation:{turn:3,session:{playerCountryId:"BGD"}},resource:{BGD:{mineAssets:[],
+    industrialNetwork:{projects:[],shipments:[],siteFlowLedger:[]},
+    warehouse:{availableByResource:{coal:100000,iron_ore:100000,copper:100000,limestone:100000,construction_aggregate:100000}}}},finance:{BGD:{available:1000000000}}}};
+  globalThis.OmegaResourceSiteCanonicalCatalogData={sites:[row]};
+  globalThis.OmegaResourceMineManagementUI={open(){legacyOpens+=1;}};
+  globalThis.OmegaResourceIndustrialNetwork={
+    quoteMineProject(input){return{status:"QUOTED",countryId:input.countryId,siteId:input.siteId,resourceId:input.resourceId,assetCount:input.quantity,
+      costUsd:96000000,unitCostUsd:48000000,durationDays:180,estimatedTurns:6,workersRequired:1200,workersRequiredPerAsset:600,assignedWorkers:input.assignedWorkers,
+      staffingReady:input.assignedWorkers>=1200,materialsReady:true,commissioningReady:true,ready:input.quantity===2&&input.assignedWorkers>=1200,
+      treasury:{available:1000000000,required:96000000,sufficient:true},
+      materials:[{resourceId:"iron_ore",required:17000,available:100000,shortfall:0,unit:"SIMULATION_RESOURCE_UNIT",sufficient:true}]}},
+    startMineProject(input){starts.push(input);const project={projectId:"MINE-TEST-STARTED",projectType:"MINE_CONSTRUCTION",siteId:input.siteId,resourceId:input.resourceId,
+      status:"UNDER_CONSTRUCTION",assetCount:input.quantity,costUsd:96000000,durationDays:180,progressDays:0,progressPct:0,remainingDays:180,
+      expectedCompletionDate:"2027-01-01",workersCommitted:input.assignedWorkers,workersRequired:1200,
+      materialsRequired:[{resourceId:"iron_ore",quantity:17000,unit:"SIMULATION_RESOURCE_UNIT"}]};
+      globalThis.Game.state.resource.BGD.industrialNetwork.projects.push(project);return project;}
+  };
+  function fire(type,event){(listeners[type]||[]).forEach(function(fn){fn(event);});}
+  function click(selector,attrs){const button={disabled:false,getAttribute(name){return attrs[name]||null;}};fire("click",{target:{closest(v){return v===selector?button:null;}}});}
+  try{
+    api.render(root,{countryId:"BGD",sites:[row],tab:"mines"});
+    click("[data-omega-v2-mine-action]",{"data-omega-v2-mine-action":"build","data-site-id":row.siteId});
+    assert.match(root.innerHTML,/data-omega-v2-build-plan/);
+    assert.match(root.innerHTML,/data-omega-v2-build-count/);
+    assert.match(root.innerHTML,/data-omega-v2-build-workers/);
+    assert.match(root.innerHTML,/Start construction/);
+    assert.equal(legacyOpens,0,"Build must not merely open the retired modal");
+    fire("input",{target:{value:"2",matches(s){return s==="[data-omega-v2-build-count]";}}});
+    assert.match(previewNode.innerHTML,/data-omega-v2-build-submit>(Start construction)<\/button>/,"ready quote must enable Start construction");
+    click("[data-omega-v2-build-submit]",{"data-omega-v2-build-submit":"true"});
+    assert.equal(starts.length,1,"authoritative startMineProject must run exactly once");
+    assert.equal(starts[0].countryId,"BGD");assert.equal(starts[0].siteId,row.siteId);assert.equal(starts[0].resourceId,"coal");
+    assert.equal(starts[0].quantity,2);assert.equal(starts[0].assignedWorkers,1200);
+    assert.match(starts[0].requestId,/^MINE_UI_V2:BGD:SITE_BGD_BUILD_FLOW:N2:W1200:/);
+    assert.match(root.innerHTML,/Construction in progress/);assert.match(root.innerHTML,/180 days remaining/);assert.match(root.innerHTML,/2027-01-01/);
+  }finally{
+    if(priorGame===undefined)delete globalThis.Game;else globalThis.Game=priorGame;
+    if(priorCatalog===undefined)delete globalThis.OmegaResourceSiteCanonicalCatalogData;else globalThis.OmegaResourceSiteCanonicalCatalogData=priorCatalog;
+    if(priorNetwork===undefined)delete globalThis.OmegaResourceIndustrialNetwork;else globalThis.OmegaResourceIndustrialNetwork=priorNetwork;
+    if(priorMineUi===undefined)delete globalThis.OmegaResourceMineManagementUI;else globalThis.OmegaResourceMineManagementUI=priorMineUi;
+  }
+});
