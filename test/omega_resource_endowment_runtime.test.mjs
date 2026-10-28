@@ -507,6 +507,16 @@ assert.equal(voiseyAlias?.runtime?.aliasOfSiteId,'SITE_CAN_voisey_s_bay_nickel_m
 assert.equal(boulbyAlias?.runtime?.aliasOfSiteId,'SITE_GBR_boulby_potash_mine');
 assert.equal(kirunaAlias?.runtime?.aliasOfSiteId,'SITE_SWE_kiruna_iron_mine');
 assert.equal(part6AliasRows.every(site=>site.operation?.commercialExtraction===false&&site.map?.markerEligible===false),true);
+function expectedRawWarehouseForBatch(countryRow,countryId,batchId){
+  const network=countryRow?.industrialNetwork||{};
+  const flow=(network.siteFlowLedger||[]).find(row=>String(row.batchId||'')===String(batchId||''))||{};
+  const activeLeg=(network.shipments||[]).some(shipment=>
+    String(shipment.batchId||'')===String(batchId||'')&&
+    ['MINE_TO_WAREHOUSE','RAW_TO_FACTORY'].includes(String(shipment.shipmentType||''))&&
+    ['IN_TRANSIT','BLOCKED_ROUTE_BLOCKADE','BLOCKED_LEDGER_MISMATCH'].includes(String(shipment.status||'')));
+  const cargoHeldAtMine=flow.mineLogisticsStockDebited===true&&Number(flow.mineHeldQuantity||0)>1e-6;
+  return activeLeg||cargoHeldAtMine?null:'WH-'+countryId+'-RAW';
+}
 const part6PhysicalSites=part6Data.records.filter(site=>!site?.runtime?.aliasOfSiteId&&site?.map?.markerEligible!==false);
 assert.equal(part6PhysicalSites.length,47,'only 47 unique physical sites should be executable after alias exclusions');
 const part6SiteIds=new Set(part6PhysicalSites.map(site=>site.siteId));
@@ -546,11 +556,13 @@ for(const site of part6PhysicalSites){
   const batch=(countryRow.batches||[]).find(item=>item.batchId===output.batchId);
   assert(batch,site.siteId+': extraction batch missing');
   assert.equal(batch.countryId,site.countryId,site.siteId+': batch crossed country boundary');
-  assert.equal(batch.warehouseId,'WH-'+site.countryId+'-RAW',site.siteId+': batch was not stored in the owning country warehouse');
+  assert.equal(batch.warehouseId,expectedRawWarehouseForBatch(countryRow,site.countryId,batch.batchId),
+    site.siteId+': batch location must match the authoritative mine/warehouse/factory shipment stage');
   const lot=countryRow.inventoryLots?.[output.batchId];
   assert(lot,site.siteId+': warehouse inventory lot missing');
   assert.equal(lot.countryId,site.countryId,site.siteId+': inventory lot country mismatch');
-  assert.equal(lot.warehouseId,'WH-'+site.countryId+'-RAW',site.siteId+': inventory lot warehouse mismatch');
+  assert.equal(lot.warehouseId,expectedRawWarehouseForBatch(countryRow,site.countryId,output.batchId),
+    site.siteId+': inventory lot location must match its authoritative batch location');
   assert((countryRow.mineProductionLedger||[]).some(item=>item.batchId===batch.batchId&&item.mineId===output.occurrenceKey),
     site.siteId+': site-specific production ledger missing');
 }
@@ -678,7 +690,7 @@ for(const [countryId,row] of Object.entries(worldState)){
       const lot=row.inventoryLots?.[output.batchId];
       assert(lot,countryId+' missing site inventory lot '+siteKey);
       assert.equal(lot.countryId,countryId);
-      assert.equal(lot.warehouseId,'WH-'+countryId+'-RAW');
+      assert.equal(lot.warehouseId,expectedRawWarehouseForBatch(row,countryId,output.batchId));
       assert(row.mineProductionLedger.some(x=>x.batchId===output.batchId&&x.mineId===occurrenceKey),countryId+' missing site production ledger '+siteKey);
       controllerCountrySets.add(countryId);
     }else{
@@ -704,7 +716,7 @@ for(const [countryId,row] of Object.entries(worldState)){
       assert.equal(mineBatch.sourceCountryId,countryId);
       assert.equal(mineBatch.ownerCountryCode,countryId);
       assert.equal(mineBatch.destinationCountryId,countryId);
-      assert.equal(mineBatch.warehouseId,'WH-'+countryId+'-RAW');
+      assert.equal(mineBatch.warehouseId,expectedRawWarehouseForBatch(row,countryId,mineBatch.batchId));
     }
   }
 }
