@@ -453,7 +453,8 @@ function dispatchResidualMineHauls(countryId){
   const network=netState(cid),rows=siteFlowRows(cid).slice();
   for(const flow of rows){
     if(!flow?.mineLogisticsRouteId)continue;
-    const batchId=String(flow.batchId||'');if(!batchId||Number(flow.lastResidualDispatchTurn)===turn())continue;
+    // Mine-haul and factory-haul legs have independent per-turn dispatch limits.
+    const batchId=String(flow.batchId||'');if(!batchId||Number(flow.lastMineResidualDispatchTurn)===turn())continue;
     const route=siteLogisticsRouteFor(cid,flow.siteId);
     if(!route)continue;
     const source=(Array.isArray(resourceState(cid).batches)?resourceState(cid).batches:[]).find(batch=>String(batch?.batchId||'')===batchId);
@@ -468,7 +469,7 @@ function dispatchResidualMineHauls(countryId){
     const site=siteById(flow.siteId)||flow.siteSnapshot;
     if(!site)continue;
     const sent=dispatchMineToWarehouse(cid,site,flow,source,route);
-    flow.lastResidualDispatchTurn=turn();
+    flow.lastMineResidualDispatchTurn=turn();
     if(sent.status==='DISPATCHED'){
       flow.mineLogisticsStatus='IN_TRANSIT_TO_WAREHOUSE';flow.transportQueueReason=null;flow.blockReason=null;
       addFlowStage(flow,'TRANSPORT','IN_TRANSIT_TO_RAW_WAREHOUSE',{shipmentId:sent.shipment.shipmentId,
@@ -1608,7 +1609,10 @@ function dispatchResidualSiteBatches(c){
   const selectedPlayer=playerSimulationCountryId();
   for(const flow of siteFlowRows(cid).slice()){
     if(flow?.mineLogisticsRouteId&&selectedPlayer!==cid)continue;
-    const batchId=String(flow.batchId||'').trim();if(!batchId||Number(flow.lastResidualDispatchTurn)===turn())continue;
+    const batchId=String(flow.batchId||'').trim();
+    const lastDispatchTurn=flow.mineLogisticsRouteId
+      ?Number(flow.lastFactoryResidualDispatchTurn):Number(flow.lastResidualDispatchTurn);
+    if(!batchId||lastDispatchTurn===turn())continue;
     // A mine haul in transit does not make the already-received warehouse portion unavailable.
     // The received-minus-factory-dispatched balance below decides if a factory leg can start.
     if(['PENDING_ROUTE_PROFILE','MINE_LOGISTICS_BLOCKED'].includes(String(flow.mineLogisticsStatus||'')))continue;
@@ -1637,10 +1641,11 @@ function dispatchResidualSiteBatches(c){
       identity:{resourceTypeId:flow.resourceId},operation:{commercialExtraction:true},simulation:{transportRoute:[]},
       runtime:{identityAuthority:'ENDOWMENT_OCCURRENCE_FALLBACK',quantityAuthority:'SIMULATION_RUNTIME'}
     };
-    const sent=dispatchShipment({countryId:cid,siteId:site.siteId,site,resourceId:flow.resourceId,quantity:remaining,
+    const sent=dispatchShipment({countryId:cid,siteId:site.siteId,resourceId:flow.resourceId,quantity:remaining,
       unit:flow.unit||source.unit||'TONNES',transportMode:flow.route?.transportMode||site.simulation?.transportRoute?.[0]?.mode||undefined,
       factoryId:flow.factoryId,batchId,occurrenceKey:flow.occurrenceKey,warehouseId:flow.warehouseId||source.warehouseId||('WH-'+cid+'-RAW')});
-    flow.lastResidualDispatchTurn=turn();
+    if(flow.mineLogisticsRouteId)flow.lastFactoryResidualDispatchTurn=turn();
+    else flow.lastResidualDispatchTurn=turn();
     if(sent.status==='DISPATCHED'){
       flow.shipmentId=sent.shipment.shipmentId;
       flow.shipmentIds=[...new Set([...(flow.shipmentIds||[]),sent.shipment.shipmentId])];
