@@ -819,9 +819,10 @@
           }).join('') + '</div></section>';
       }).join('');
     var reportsMarkup = '<div class="omega-v2-kpis">' +
-      renderKpi('Mine sites', String(model.sites.filter(eligible).length), 'Mine sites available to manage', 'neutral') +
+      renderKpi('Mine sites', String(model.sites.filter(eligible).length), 'Registered sites available to manage', 'neutral') +
+      renderKpi('Built mine units', String(builtMineUnits), 'Commissioned or retained assets', builtMineUnits ? 'adequate' : 'neutral') +
+      renderKpi('Mine units building', String(mineUnitsBuilding), mineProjects.length + ' active construction projects', mineUnitsBuilding ? 'shortage' : 'neutral') +
       renderKpi('Producing this turn', String(producingSites.length), 'Mine sites with output', portfolioBalanceState) +
-      renderKpi('Projects pending', String(mineProjects.length), 'Under construction', mineProjects.length ? 'shortage' : 'neutral') +
       renderKpi('Blocked supply flows', String(blockedFlows.length), 'Current flow ledger', blockedFlows.length ? 'shortage' : 'adequate') + '</div>' +
       '<section class="omega-v2-card omega-v2-report-overview"><h2>National resource economy</h2><p>Production and stock remain grouped by their own units.</p><div class="omega-v2-report-unit-totals">' +
       currentOutputGroups.map(function (row) { return '<div><span>' + esc(resourceLabel(row.resourceId)) + '</span><strong>' + amount(row.quantity,row.unit) +
