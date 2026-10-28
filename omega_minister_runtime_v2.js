@@ -190,11 +190,39 @@
 `; document.head.appendChild(s); }
 
   function openPanel(ministryId){
-    if(!engine.profilesLoaded) return;
-    const countryId=currentCountryId(); if(!countryId){ alert('Select a country before managing ministers.'); return; }
-    const ministry=ministryId||ministryFromContext(); if(!ministry){ alert('Open a ministry before managing ministers.'); return; }
-    css(); let root=document.getElementById('omega-minister-command'); if(!root){ root=document.createElement('div'); root.id='omega-minister-command'; root.innerHTML='<div class="om-backdrop"></div><section class="om-panel" role="dialog" aria-modal="true"><header class="om-head"><div><div class="om-title">MINISTER RECRUITMENT & COMMAND</div><div class="om-sub"></div></div><button class="om-close">CLOSE</button></header><main class="om-body"></main></section>'; document.body.appendChild(root); root.querySelector('.om-backdrop').addEventListener('click',()=>root.classList.remove('open')); root.querySelector('.om-close').addEventListener('click',()=>root.classList.remove('open')); }
-    root.classList.add('open'); root.querySelector('.om-sub').textContent=`Country: ${countryId} • Ministry: ${ministry} • Five candidates`; renderPanel(root,countryId,ministry);
+    const ministry=String(ministryId||ministryFromContext()||'').trim();
+    const recruitment=window.OmegaMinisterRecruitment;
+    const countryValue=window.OmegaMinistryViewCountry||currentCountryId();
+    const countryId=recruitment&&typeof recruitment.normalizeCountryCode==='function'
+      ?recruitment.normalizeCountryCode(countryValue)
+      :String(countryValue||'').trim().toUpperCase();
+    const unavailable=function(message,code){
+      const text=String(message||'The UI v2 minister appointment screen is unavailable.');
+      if(typeof window.showOmegaNotification==='function')window.showOmegaNotification('MINISTER RECRUITMENT UNAVAILABLE',text,'warning');
+      else console.warn('[OMEGA Minister UI]',text);
+      return {ok:false,code:code||'UI_V2_MINISTER_RECRUITMENT_UNAVAILABLE'};
+    };
+    if(!countryId)return unavailable('Select a country before appointing a minister.','COUNTRY_CONTEXT_UNRESOLVED');
+    if(!ministry)return unavailable('Open a ministry before appointing a minister.','MINISTRY_CONTEXT_UNRESOLVED');
+    const integration=window.OmegaUIV2Integration;
+    const government=window.OmegaUIV2Government;
+    if(!integration||typeof integration.openRoute!=='function'||
+       (typeof integration.isEnabled==='function'&&!integration.isEnabled())||
+       !government||typeof government.openRecruitment!=='function'){
+      return unavailable('The current UI v2 minister appointment screen could not be opened. No assignment was changed.');
+    }
+    if(integration.openRoute('government')!==true){
+      return unavailable('Government could not be opened in UI v2. No assignment was changed.','UI_V2_GOVERNMENT_OPEN_FAILED');
+    }
+    const cabinet=document.getElementById('cabinet-full-window');
+    const root=cabinet&&cabinet.querySelector('[data-omega-v2-main]');
+    if(!root)return unavailable('The UI v2 government surface is missing. No assignment was changed.','UI_V2_GOVERNMENT_ROOT_UNAVAILABLE');
+    const options=Object.assign({},root.__omegaV2GovernmentOptions||{},{countryId:countryId});
+    const result=government.openRecruitment(root,ministry,options);
+    if(!result||result.ok!==true)return unavailable('This ministry could not open its UI v2 appointment flow. No assignment was changed.',result&&result.code);
+    const staleLegacy=document.getElementById('omega-minister-command');
+    if(staleLegacy&&staleLegacy.classList)staleLegacy.classList.remove('open');
+    return result;
   }
   function renderPanel(root,countryId,ministry){
     const body=root.querySelector('.om-body'), candidates=candidateList(ministry).slice(0,5), active=registry.getActiveMinister(countryId,ministry);

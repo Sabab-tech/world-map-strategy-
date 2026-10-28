@@ -567,6 +567,31 @@
     return render(root, options);
   }
 
+  function openRecruitment(root, ministryId, options) {
+    options = options || (root && root.__omegaV2GovernmentOptions) || {};
+    if (!root) return { ok:false, code:'GOVERNMENT_ROOT_REQUIRED' };
+    var id = String(ministryId || '').trim();
+    if (!id) return { ok:false, code:'MINISTRY_CONTEXT_UNRESOLVED' };
+    if (id === 'cabinet_council') return { ok:false, code:'EXECUTIVE_DESTINATION_NOT_RECRUITABLE' };
+    var countryId = normalizeCountryId(options.countryId || activeCountry());
+    if (!countryId) return { ok:false, code:'COUNTRY_CONTEXT_UNRESOLVED' };
+    var rows = ministryRows(countryId);
+    if (!rows.some(function (row) { return row.id === id; })) {
+      return { ok:false, code:'MINISTRY_NOT_REGISTERED', ministryId:id, countryId:countryId };
+    }
+    var activeOptions = Object.assign({}, root.__omegaV2GovernmentOptions || {}, options, { countryId:countryId });
+    root.__omegaV2RecruitingMinistry = id;
+    root.__omegaV2RecruitingCountry = countryId;
+    root.__omegaV2SelectedMinisterCandidate = '';
+    root.__omegaV2MinisterCandidates = [];
+    root.__omegaV2RecruitmentHasCurrentMinister = !!activeMinisterRecord(countryId, id);
+    root.__omegaV2RecruitmentRequestId = (Number(root.__omegaV2RecruitmentRequestId) || 0) + 1;
+    root.__omegaV2GovernmentView = 'all-ministries';
+    if (typeof activeOptions.onViewChange === 'function') activeOptions.onViewChange('all-ministries');
+    scheduleRender(root, Object.assign({}, activeOptions, { view:'all-ministries' }), 'Opening minister appointment');
+    return { ok:true, ministryId:id, countryId:countryId, view:'all-ministries' };
+  }
+
   function render(root, options) {
     options = options || {};
     if (!root) return { ok: false, code: 'GOVERNMENT_ROOT_REQUIRED' };
@@ -723,6 +748,7 @@
   g.OmegaUIV2Government = Object.freeze({
     version: '1.0.0',
     render: render,
+    openRecruitment: openRecruitment,
     renderExecutiveOverview: overviewHtml,
     getMinistryRows: ministryRows,
     ministryEmblem: ministryEmblem,
