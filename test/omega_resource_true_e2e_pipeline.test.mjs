@@ -195,6 +195,8 @@ test('real site extraction flows through raw warehouse, transport, factory, fini
   const foreignTick=industry.advanceShipments('KWT');
   assert.equal(foreignTick.status,'SKIPPED','a non-selected country must not advance logistics');
   assert.equal(state.resource.KWT,foreignStateBeforeTick,'the non-selected country must not be hydrated or mutated');
+  const rawInventoryBeforeMinePipeline=Number(state.resource.BGD?.inventory?.coal)||0;
+  const rawWarehouseBeforeMinePipeline=Number(state.resource.BGD?.warehouse?.availableByResource?.coal)||0;
   const run=await industry.executeSitePipeline({countryId:'BGD',siteId:site.siteId,resourceId:'coal',autoCommissionFactory:true,transportMode:'rail'});
   assert.equal(run.status,'IN_TRANSIT',JSON.stringify(run));
   assert.equal(run.extractionStatus,'COMMITTED');
@@ -215,6 +217,14 @@ test('real site extraction flows through raw warehouse, transport, factory, fini
   assert.equal(resource.inventoryLots[run.batchId].stage,'MINE_TO_WAREHOUSE_IN_TRANSIT');
   assert.equal(resource.industrialNetwork.siteLogisticsBySiteId[site.siteId].status,'IN_TRANSIT_TO_WAREHOUSE');
   assert.equal(resource.industrialNetwork.siteLogisticsBySiteId[site.siteId].runtimeActive,true,'the selected mine runtime must be active while its haul is moving');
+  const initialFlow=resource.industrialNetwork.siteFlowLedger.find(row=>String(row.batchId)===String(run.batchId));
+  assert.ok(initialFlow,'the mine flow must have its own authoritative batch ledger row');
+  assert.ok(Math.abs((Number(initialFlow.mineHeldQuantity)||0)-(initialSourceQuantity-Number(run.shipment.quantity)))<1e-5,
+    'unshipped batch balance must remain reserved at the mine, not in warehouse availability');
+  assert.ok(Math.abs((Number(resource.inventory.coal)||0)-rawInventoryBeforeMinePipeline)<1e-5,
+    'the whole batch must leave country inventory exactly once at first-leg dispatch');
+  assert.ok(Math.abs((Number(resource.warehouse.availableByResource.coal)||0)-rawWarehouseBeforeMinePipeline)<1e-5,
+    'the whole batch must leave raw-warehouse availability until its individual arrival receipts');
   assert.equal(resource.industrialNetwork.siteLogisticsBySiteId[site.siteId].activeShipmentId,run.shipmentId);
   const mineDispatchQuantity=Number(run.shipment.quantity);
   const rawStockBeforeMineArrival=Number(resource.inventory.coal)||0;
@@ -230,8 +240,16 @@ test('real site extraction flows through raw warehouse, transport, factory, fini
   assert.ok(mineReceipt,'mine shipment must post an idempotent raw-warehouse receipt');
   assert.equal(mineReceipt.receivedFrom,'MINE_SITE_LOGISTICS');
   assert.equal(mineReceipt.status,'RECEIVED');
-  assert.equal(sourceBatch.stage,'RAW_INVENTORY');
-  assert.equal(resource.inventoryLots[run.batchId].stage,'RAW_INVENTORY');
+  const flowAfterMineReceipt=resource.industrialNetwork.siteFlowLedger.find(row=>String(row.batchId)===String(run.batchId));
+  if((Number(flowAfterMineReceipt?.mineHeldQuantity)||0)>1e-6){
+    assert.equal(sourceBatch.stage,'PARTIALLY_IN_RAW_INVENTORY');
+    assert.equal(sourceBatch.warehouseId,null,'a batch split between mine-held and warehouse stock has no single warehouse location');
+    assert.equal(resource.inventoryLots[run.batchId].stage,'PARTIALLY_IN_RAW_INVENTORY');
+  }else{
+    assert.equal(sourceBatch.stage,'RAW_INVENTORY');
+    assert.equal(sourceBatch.warehouseId,'WH-BGD-RAW');
+    assert.equal(resource.inventoryLots[run.batchId].stage,'RAW_INVENTORY');
+  }
   const factoryShipment=(resource.industrialNetwork.shipments||[]).find(x=>String(x.batchId)===String(run.batchId)&&
     x.shipmentType==='RAW_TO_FACTORY'&&String(x.status)==='IN_TRANSIT');
   assert.ok(factoryShipment,'factory shipment must only start after the mine haul receipt');
