@@ -911,6 +911,8 @@ assert.match(endowmentRuntimeSource,/const canonicalDepositKeys=new Set/);
 assert.match(endowmentRuntimeSource,/const controllerKeyBySiteId=new Map/);
 assert.match(endowmentRuntimeSource,/PLAYER_COUNTRY_SCOPE_VIOLATION/);
 globalThis.Game.state.simulation.playerCountryId='BGD';
+globalThis.Game.state.simulation.session=globalThis.Game.state.simulation.session||{};
+globalThis.Game.state.simulation.session.playerCountryId='BGD';
 const foreignCountryStart=await runtime.startCountryProduction('AUS');
 assert.equal(foreignCountryStart.status,'BLOCKED',JSON.stringify(foreignCountryStart));
 assert.equal(foreignCountryStart.reason,'PLAYER_COUNTRY_SCOPE_VIOLATION',JSON.stringify(foreignCountryStart));
