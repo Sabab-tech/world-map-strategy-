@@ -1846,6 +1846,9 @@ function commissionMineProject(cid,p){
     }
     assets.push(asset);
   }
+  p.commissionedMineIds=assets.map(asset=>String(asset.mineId||asset.id||''));
+  p.commissionedAssetCount=assets.length;
+  p.mineAssetId=assets[0]?.mineId||p.mineId||null;
   rs.mineConstructionLedger=Array.isArray(rs.mineConstructionLedger)?rs.mineConstructionLedger:[];
   const ledger=rs.mineConstructionLedger.find(x=>String(x.projectId||'')===String(p.projectId));
   if(ledger){ledger.status='MINE_COMMISSIONED';ledger.commissionedTurn=turn();ledger.mineId=assets[0]?.mineId||p.mineId;ledger.commissionedMineIds=assets.map(x=>x.mineId);}
