@@ -447,7 +447,7 @@ test('batch mine construction scales materials, capex and workers, then commissi
   assert.equal(mines.length, 2);
   assert.equal(new Set(mines.map(row => row.mineId)).size, 2);
   assert.ok(mines.every(row => row.workersRequired === two.workersRequired / 2));
-  assert.equal(project.commissionedMineIds.length, 2);
+  assert.equal(completed.commissionedMineIds.length, 2);
 });
 
 test('mine pause, resume and confirmed demolition update runtime status while preserving audit and recoverable waste', () => {
