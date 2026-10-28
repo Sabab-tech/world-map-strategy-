@@ -1917,13 +1917,9 @@ function advanceShipments(c){
   const cid=canonicalCountry(c);
   if(!cid)return{status:'SKIPPED',reason:'LOGISTICS_COUNTRY_NOT_SELECTED',delivered:0,mineDelivered:0,shipments:[]};
   const selectedPlayer=playerSimulationCountryId();
-  if(selectedPlayer&&selectedPlayer!==cid)return{status:'SKIPPED',reason:'PLAYER_COUNTRY_SCOPE_VIOLATION',countryId:cid,playerCountryId:selectedPlayer,delivered:0,mineDelivered:0,shipments:[]};
-  const existingNetwork=state()?.resource?.[cid]?.industrialNetwork;
-  const hasMineHaulInTransit=(existingNetwork?.shipments||[]).some(item=>item?.shipmentType==='MINE_TO_WAREHOUSE'&&
-    ['IN_TRANSIT','BLOCKED_ROUTE_BLOCKADE'].includes(String(item.status||'')));
-  if(!selectedPlayer&&hasMineHaulInTransit)
-    return{status:'SKIPPED',reason:'PLAYER_COUNTRY_NOT_SELECTED',countryId:cid,delivered:0,mineDelivered:0,shipments:[]};
-  if(selectedPlayer&&siteLogisticsActiveCountry!==cid)void loadSiteLogisticsRoutes(cid);
+  if(!selectedPlayer)return{status:'SKIPPED',reason:'PLAYER_COUNTRY_NOT_SELECTED',countryId:cid,delivered:0,mineDelivered:0,shipments:[]};
+  if(selectedPlayer!==cid)return{status:'SKIPPED',reason:'PLAYER_COUNTRY_SCOPE_VIOLATION',countryId:cid,playerCountryId:selectedPlayer,delivered:0,mineDelivered:0,shipments:[]};
+  if(siteLogisticsActiveCountry!==cid)void loadSiteLogisticsRoutes(cid);
   const n=netState(cid),delivered=[],mineDelivered=[];
   dispatchResidualMineHauls(cid);
   dispatchResidualSiteBatches(cid);
