@@ -740,9 +740,17 @@
         }
         for(const id2 of Array.isArray(source.sourceBatchIds)?source.sourceBatchIds:[])queue.push(String(id2));
       }
-      if(!site){
-        var flow=(Array.isArray(network.siteFlowLedger)?network.siteFlowLedger:[]).find(function(x){return String(x.batchId||'')===String(originBatchId||row?.batchId||'');});
-        if(flow)site={siteId:flow.siteId||null,occurrenceKey:flow.occurrenceKey||null,sourceCountryId:flow.countryId||null};
+      // The extracted site's flow ledger is keyed by the exact origin batch. It is the
+      // canonical runtime binding for this shipment/production lineage, so use it to fill
+      // missing fields and to override stale partial identities copied by downstream lots.
+      var flow=(Array.isArray(network.siteFlowLedger)?network.siteFlowLedger:[])
+        .find(function(x){return String(x.batchId||'')===String(originBatchId||row?.batchId||'');});
+      if(flow){
+        site={
+          siteId:flow.siteId||site?.siteId||null,
+          occurrenceKey:flow.occurrenceKey||site?.occurrenceKey||null,
+          sourceCountryId:flow.countryId||site?.sourceCountryId||null
+        };
       }
       return{originBatchId,originResourceId,site};
     }
@@ -781,10 +789,10 @@
         allocations.push({batchId:String(row.batchId||''),resourceId:rid,quantity:take,unit:row.unit||null,stage:stage,
           sourceBatchIds:[...new Set((Array.isArray(row.sourceBatchIds)?row.sourceBatchIds:[]).map(String).filter(Boolean))],
           originatingBatchId:lineage.originBatchId||String(row.batchId||''),originResourceId:lineage.originResourceId||rid,
-          siteId:lineage.site?.siteId||flow?.siteId||row.siteReferenceKey||row.siteId||null,
-          siteReferenceKey:lineage.site?.siteId||flow?.siteId||row.siteReferenceKey||null,
-          occurrenceKey:lineage.site?.occurrenceKey||flow?.occurrenceKey||row.occurrenceKey||null,
-          sourceCountryId:lineage.site?.sourceCountryId||flow?.countryId||row.originCountryId||row.sourceCountryId||canonical(c),
+          siteId:flow?.siteId||lineage.site?.siteId||row.siteReferenceKey||row.siteId||null,
+          siteReferenceKey:flow?.siteId||lineage.site?.siteId||row.siteReferenceKey||null,
+          occurrenceKey:flow?.occurrenceKey||lineage.site?.occurrenceKey||row.occurrenceKey||null,
+          sourceCountryId:flow?.countryId||lineage.site?.sourceCountryId||row.originCountryId||row.sourceCountryId||canonical(c),
           destinationCountryId:canonical(c),ownerCountryCode:row.ownerCountryCode||canonical(c),
           sourceAuthority:row.provenance?.sourceAuthority||row.provenance?.authority||row.provenance?.source||'UNOBSERVED',
           quantityAuthority:row.provenance?.quantityAuthority||row.provenance?.authority||'UNOBSERVED',
