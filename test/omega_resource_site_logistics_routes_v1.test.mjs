@@ -11,6 +11,21 @@ const expanded=read('resource_site_country_mineplay_batch_20261024_v1.json');
 const critical=read('resource_site_country_mineplay_critical_batch_20261024_v1.json');
 const legacy=read('resource_site_legacy_gameplay_expansion_part_6_v1.json');
 const iconManifest=read('assets/omega-industrial-icons-v1/manifest.json');
+const countryRoster=read('minister_country_roster_manifest_v1.json');
+const coreCountryIds=Object.keys(countryRoster.countries||{}).sort();
+const routedCountryIds=Object.keys(ds.countryToPart||{}).sort();
+const noRouteCountryIds=coreCountryIds.filter(countryId=>ds.countryToPart[countryId]===undefined);
+assert.equal(countryRoster.counts.countryEntities,197);
+assert.equal(coreCountryIds.length,197,'the core country roster must contain all 197 country identities');
+assert.equal(ds.countryFramework?.countryCount,197,'shared logistics framework must cover all 197 core countries');
+assert.deepEqual(ds.countryFramework?.countryIds,coreCountryIds,'logistics framework IDs must match the authoritative core-country roster');
+assert.equal(ds.countryFramework?.authority,'CORE_COUNTRY_ROSTER_MANIFEST_V1');
+assert.deepEqual(routedCountryIds.filter(countryId=>!coreCountryIds.includes(countryId)),[],
+  'mine route data must not claim countries outside the core-country roster');
+assert.equal(routedCountryIds.length,193,'193 core countries currently have registered eligible mine/site routes');
+assert.deepEqual(noRouteCountryIds,['LIE','MCO','SMR','VAT'],
+  'countries without eligible sites must remain supported without fake mine routes');
+assert.deepEqual(ds.countryFramework?.countriesWithoutMineSiteRoutes,noRouteCountryIds);
 const eligible=canonical.sites.filter(s=>!s.runtime?.aliasOfSiteId&&s.map?.markerEligible!==false&&Boolean(String(s.real?.resourceId||s.identity?.resourceTypeId||s.resourceId||s.sourceSiteRecord?.resourceId||s.sourceSiteRecord?.resourceTypeId||'').trim()));
 const source=[...eligible,...base.records,...expanded.records,...critical.records,...legacy.records];
 const sid=s=>String(s.siteId||s.id||s.sourceSiteRecord?.id||'').trim();
