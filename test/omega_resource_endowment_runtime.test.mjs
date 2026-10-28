@@ -907,9 +907,10 @@ assert.ok(Number(part6SourceState.warehouse?.availableByResource?.[part6CopperSi
 advanceToGameTurn(globalThis.Game.state,Number(part6MineShipment.etaTurn));
 const part6MineArrival=industrial.advanceShipments(part6CopperSite.countryId);
 assert.ok(part6MineArrival.mineDelivered>=1,'Part 6 mine haul must reach the warehouse: '+JSON.stringify(part6MineArrival));
-const part6WarehouseReceipt=part6SourceState.warehouse.receipts.find(item=>String(item.receiptId)==='MINE-WH-REC:'+String(part6MineShipment.shipmentId));
+const part6AfterMineArrival=runtime.countryResourceState(part6CopperSite.countryId);
+const part6WarehouseReceipt=part6AfterMineArrival.warehouse.receipts.find(item=>String(item.receiptId)==='MINE-WH-REC:'+String(part6MineShipment.shipmentId));
 assert.equal(part6WarehouseReceipt?.status,'RECEIVED');
-const part6FactoryShipment=(part6SourceState.industrialNetwork?.shipments||[]).find(item=>
+const part6FactoryShipment=(part6AfterMineArrival.industrialNetwork?.shipments||[]).find(item=>
   String(item.batchId)===String(part6Pipeline.batchId)&&item.shipmentType==='RAW_TO_FACTORY'&&item.status==='IN_TRANSIT');
 assert.ok(part6FactoryShipment,'Part 6 factory shipment must start only after warehouse receipt');
 assert.equal(part6FactoryShipment.siteId,part6CopperSite.siteId);
