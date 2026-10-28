@@ -1566,6 +1566,31 @@ function dispatchShipment(input={}){
       sourceBatchQuantity:sourceBatch?Math.max(0,num(sourceBatch.remainingQuantity!=null?sourceBatch.remainingQuantity:sourceBatch.quantity)||0):null,
       plannedDispatchQuantity:plannedQuantity,actualDispatchQuantity:quantity}};
   const n=netState(cid);n.shipments.push(s);n.shipments=n.shipments.slice(-MAX_SHIPMENTS);
+  // A RAW_TO_FACTORY dispatch moves this batch out of the raw warehouse's single-location
+  // model. Keep the country/batch identity and quantities, but don't label in-transit cargo
+  // as physically stored at the warehouse. The reserved balance remains authoritative.
+  if(sourceBatch){
+    const mixedLocation='MIXED:RAW_WAREHOUSE_OR_TRANSIT';
+    sourceBatch.warehouseId=null;sourceBatch.locationNodeKey=mixedLocation;sourceBatch.currentLocationNodeId=null;
+    sourceBatch.lastMovementType='RAW_TO_FACTORY_DISPATCH';sourceBatch.lastMovementTurn=turn();
+    const dispatchLot=sourceBatchId?resourceState(cid).inventoryLots?.[sourceBatchId]:null;
+    if(dispatchLot){
+      dispatchLot.warehouseId=null;dispatchLot.locationNodeKey=mixedLocation;
+      dispatchLot.lastMovementType='RAW_TO_FACTORY_DISPATCH';dispatchLot.lastMovementTurn=turn();
+    }
+    const dispatchWarehouse=resourceState(cid).warehouse||{};
+    if(Array.isArray(dispatchWarehouse.storedBatchIds)){
+      const batchStillHasWarehouseQuantity=Math.max(0,
+        (num(sourceBatch.remainingQuantity!=null?sourceBatch.remainingQuantity:sourceBatch.quantity)||0)-
+        (num(siteFlowRows(cid).find(row=>String(row.batchId||'')===sourceBatchId)?.mineHeldQuantity)||0)-
+        n.shipments.filter(item=>String(item.batchId||'')===sourceBatchId&&
+          ['MINE_TO_WAREHOUSE','RAW_TO_FACTORY'].includes(String(item.shipmentType||''))&&
+          ['IN_TRANSIT','BLOCKED_ROUTE_BLOCKADE','BLOCKED_LEDGER_MISMATCH'].includes(String(item.status||'')))
+          .reduce((sum,item)=>sum+Math.max(0,num(item.quantity)||0),0));
+      if(batchStillHasWarehouseQuantity<=1e-6)
+        dispatchWarehouse.storedBatchIds=dispatchWarehouse.storedBatchIds.filter(value=>String(value)!==sourceBatchId);
+    }
+  }
   if(sourceBatchId)updateSiteFlow(cid,sourceBatchId,row=>{
     row.shipmentId=s.shipmentId;row.shipmentIds=[...new Set([...(row.shipmentIds||[]),s.shipmentId])];
   });
@@ -2081,6 +2106,31 @@ function advanceShipments(c){
         sourceLot.lastMovementType='TRANSFER_TO_FACTORY';sourceLot.lastMovementTurn=turn();lots[sourceBatchId]=sourceLot;
       }
       if(sourceBatch.remainingQuantity<=1e-9&&Array.isArray(warehouse.storedBatchIds))warehouse.storedBatchIds=warehouse.storedBatchIds.filter(x=>String(x)!==sourceBatchId);
+      // Resolve the source batch's location after this receipt. A batch may have residual
+      // stock in the raw warehouse, mine-held remainder, or another active logistics leg.
+      const flow=siteFlowRows(cid).find(row=>String(row.batchId||'')===sourceBatchId);
+      const mineHeld=Math.max(0,num(flow?.mineHeldQuantity)||0);
+      const otherActiveLeg=n.shipments.some(item=>String(item.batchId||'')===sourceBatchId&&
+        String(item.shipmentId||'')!==String(s.shipmentId||'')&&
+        ['MINE_TO_WAREHOUSE','RAW_TO_FACTORY'].includes(String(item.shipmentType||''))&&
+        ['IN_TRANSIT','BLOCKED_ROUTE_BLOCKADE','BLOCKED_LEDGER_MISMATCH'].includes(String(item.status||'')));
+      if(sourceBatch.remainingQuantity<=1e-9){
+        const factoryLocation='FACTORY:'+cid+':'+String(s.factoryId);
+        sourceBatch.warehouseId=null;sourceBatch.locationNodeKey=factoryLocation;sourceBatch.currentLocationNodeId=String(s.factoryId);
+        sourceLot.warehouseId=null;sourceLot.locationNodeKey=factoryLocation;sourceLot.lastMovementType='TRANSFER_TO_FACTORY';sourceLot.lastMovementTurn=turn();
+        sourceBatch.lastMovementType='TRANSFER_TO_FACTORY';sourceBatch.lastMovementTurn=turn();
+      }else if(mineHeld>1e-6||otherActiveLeg){
+        const mixedLocation='MIXED:MINE_RAW_WAREHOUSE_OR_TRANSIT';
+        sourceBatch.warehouseId=null;sourceBatch.locationNodeKey=mixedLocation;sourceBatch.currentLocationNodeId=null;
+        sourceLot.warehouseId=null;sourceLot.locationNodeKey=mixedLocation;
+      }else{
+        const rawWarehouseId=String(warehouse.warehouseId||('WH-'+cid+'-RAW'));
+        sourceBatch.warehouseId=rawWarehouseId;sourceBatch.locationNodeKey='WAREHOUSE:'+cid+':RAW';
+        sourceBatch.currentLocationNodeId=rawWarehouseId;
+        sourceLot.warehouseId=rawWarehouseId;sourceLot.locationNodeKey=sourceBatch.locationNodeKey;
+        warehouse.storedBatchIds=Array.isArray(warehouse.storedBatchIds)?warehouse.storedBatchIds:[];
+        if(!warehouse.storedBatchIds.some(value=>String(value)===sourceBatchId))warehouse.storedBatchIds.push(sourceBatchId);
+      }
     }
     r.warehouse=warehouse;r.inventoryLots=lots;r.batches=batches;r.inventory[invKey]=Math.max(0,countryRawStock-quantity);
     factory.inputInventory=factory.inputInventory&&typeof factory.inputInventory==='object'?factory.inputInventory:{};
