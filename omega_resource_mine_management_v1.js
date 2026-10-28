@@ -356,8 +356,8 @@ function siteCard(site,country,view){
  const loc=site.location?.adminRegion||site.location?.locality||site.location?.countryName||'';
  const rs=playerState(country),rawStock=num(rs.warehouse?.availableByResource?.[rid]),finishedStock=num(rs.processedWarehouse?.availableByResource?.[rid]);
  const canBuild=country===playerCountry()&&project?.status!=='UNDER_CONSTRUCTION';
- const buildQuote=previewQuote(site,country,1),destroyCount=active.length+stopped.length;
- const buildPanel=buildPreviewMarkup(site,country,1),destroyPanel=demolitionPreviewMarkup(site,country,Math.max(1,destroyCount)),operatingPanel=operatingPreviewMarkup(site,country,1);
+ const destroyCount=active.length+stopped.length;
+ const buildPanel=buildPreviewMarkup(site,country,1),destroyPanel=destroyCount?demolitionPreviewMarkup(site,country,Math.min(100,destroyCount)):'<div class="omm-empty">No commissioned mine units are available for demolition.</div>',operatingPanel=operatingPreviewMarkup(site,country,1);
  let html='<article class="omm-mine-flip" data-omm-site-card="'+esc(id)+'"><div class="omm-flip-inner">'+
   '<section class="omm-card omm-face omm-face-front"><div class="omm-card-head"><div><div class="omm-mine-art">'+SVG_MOUNTAIN+'</div><h3>'+esc(name)+'</h3><div class="omm-sub">'+esc(resourceLabel(site))+(loc?' · '+esc(loc):'')+'</div></div><span class="omm-pill">'+esc(label(status))+'</span></div>'+
   '<div class="omm-lines"><div class="omm-line"><span class="omm-muted">Operating units</span><br><strong>'+formatNum(active.length)+'</strong></div>'+
