@@ -449,6 +449,47 @@ Game.DataLoader = {
         return this.__countryConfigPromise;
     },
 
+    waitForMapRenderer(controller) {
+        const startedAt = Date.now();
+        return new Promise(function(resolve, reject) {
+            let settled = false;
+            function check() {
+                if (settled) return;
+                if (Game.Map && Game.Map.__omegaMapUiActive === false) {
+                    settled = true;
+                    resolve(null);
+                    return;
+                }
+                const signal = controller && controller.signal;
+                if (signal && signal.aborted) {
+                    const aborted = new Error('Map renderer wait was cancelled.');
+                    aborted.name = 'AbortError';
+                    settled = true;
+                    reject(aborted);
+                    return;
+                }
+                const map = Game.Map && (Game.Map.map || window.map);
+                const leaflet = window.L;
+                if (map && typeof map.addLayer === 'function' &&
+                    leaflet && typeof leaflet.geoJSON === 'function') {
+                    if (Game.Map && !Game.Map.map) Game.Map.map = map;
+                    settled = true;
+                    resolve(map);
+                    return;
+                }
+                if (Date.now() - startedAt >= 15000) {
+                    const error = new Error('MAP_RENDERER_NOT_READY: Leaflet or the map surface did not become ready within 15 seconds.');
+                    error.code = 'MAP_RENDERER_NOT_READY';
+                    settled = true;
+                    reject(error);
+                    return;
+                }
+                window.setTimeout(check, 120);
+            }
+            check();
+        });
+    },
+
     loadWorldMap(fetcher) {
         if (Game.__omegaGeoJSONRenderComplete === true && Game.Map.countryGeoJSON && Game.geojsonLayer) {
             Game.Map.updateMapLoadingProgress(100, 'World map ready', 'complete');
@@ -459,6 +500,33 @@ Game.DataLoader = {
             return Promise.resolve(Game.Map.countryGeoJSON || Game.__omegaGeoJSONPendingData || null);
         }
         if (this.__worldLoadPromise) return this.__worldLoadPromise;
+
+        const cachedGeometry = Game.Map.countryGeoJSON || Game.__omegaGeoJSONPendingData;
+        if (cachedGeometry && Game.Map.__omegaMapUiActive !== false) {
+            const loader = this;
+            let cachedPromise;
+            Game.Map.ensureMapLoadingOverlay();
+            Game.Map.updateMapLoadingProgress(18, 'Reusing downloaded world geography…', 'loading');
+            cachedPromise = Promise.resolve().then(function () {
+                return loader.waitForMapRenderer(null);
+            }).then(function () {
+                if (Game.Map.__omegaMapUiActive === false) return cachedGeometry;
+                if (typeof Game.Map.resetIncompleteWorldRender === 'function') Game.Map.resetIncompleteWorldRender();
+                Game.Map.updateMapLoadingProgress(18, 'Drawing country boundaries from cached data…', 'loading');
+                Game.Map.renderGeoJSON(cachedGeometry);
+                return cachedGeometry;
+            }).catch(function (error) {
+                if (Game.Map.__omegaMapUiActive !== false &&
+                    typeof Game.Map.handleWorldMapRenderFailure === 'function') {
+                    Game.Map.handleWorldMapRenderFailure(error);
+                }
+                return null;
+            }).finally(function () {
+                if (loader.__worldLoadPromise === cachedPromise) loader.__worldLoadPromise = null;
+            });
+            this.__worldLoadPromise = cachedPromise;
+            return cachedPromise;
+        }
 
         fetcher = fetcher || this.getFetcher();
         const loader = this;
@@ -490,7 +558,7 @@ Game.DataLoader = {
                     Game.Map.updateMapLoadingProgress(next, detail, 'loading');
                 }
             });
-        }).then(function (geoData) {
+        }).then(async function (geoData) {
             if (!geoData || typeof geoData.type !== 'string') {
                 if (Game.Map.__omegaMapUiActive !== false) {
                     Game.Map.updateMapLoadingProgress(
@@ -508,6 +576,8 @@ Game.DataLoader = {
             });
             if (Game.Map.__omegaMapUiActive === false) return geoData;
 
+            await loader.waitForMapRenderer(controller);
+            if (Game.Map.__omegaMapUiActive === false) return geoData;
             Game.Map.updateMapLoadingProgress(18, 'Preparing country boundaries…', 'loading');
             Game.Map.renderGeoJSON(geoData);
             return geoData;
@@ -517,11 +587,16 @@ Game.DataLoader = {
             if (!aborted) {
                 console.error('[OMEGA Map] World geometry load failed.', error);
                 if (Game.Map.__omegaMapUiActive !== false) {
-                    Game.Map.updateMapLoadingProgress(
-                        Game.Map.__omegaMapLoadingProgress || 5,
-                        'World map could not load. Retry when the map is visible.',
-                        'error'
-                    );
+                    if (Game.Map.countryGeoJSON && typeof Game.Map.handleWorldMapRenderFailure === 'function') {
+                        Game.Map.handleWorldMapRenderFailure(error);
+                    } else {
+                        const reason = String(error && error.message || error || 'Unknown loading error').slice(0, 150);
+                        Game.Map.updateMapLoadingProgress(
+                            Game.Map.__omegaMapLoadingProgress || 5,
+                            'World map load failed: ' + reason + '. Retry when the map is visible.',
+                            'error'
+                        );
+                    }
                 }
             }
             return null;
@@ -1214,6 +1289,44 @@ Game.Map.updateMapLoadingProgress = function(percent, message, status) {
         }, 260);
     }
 };
+Game.Map.resetIncompleteWorldRender = function() {
+    if (Game.__omegaGeoJSONRenderComplete === true) return false;
+    const map = this.map || window.map;
+    const frame = Game.__omegaGeoJSONRenderFrame;
+    if (frame !== null && frame !== undefined && typeof window.cancelAnimationFrame === 'function') {
+        try { window.cancelAnimationFrame(frame); } catch (_) {}
+    }
+    Game.__omegaGeoJSONRenderFrame = null;
+    Game.__omegaGeoJSONRenderToken = (Number(Game.__omegaGeoJSONRenderToken) || 0) + 1;
+    Game.__omegaGeoJSONRenderPaused = false;
+    Game.__omegaGeoJSONResumeRender = null;
+    const layer = Game.geojsonLayer;
+    if (layer && map && typeof map.removeLayer === 'function') {
+        try { if (!map.hasLayer || map.hasLayer(layer)) map.removeLayer(layer); } catch (_) {}
+    }
+    if (Array.isArray(Game.countryLabels)) {
+        Game.countryLabels.forEach(function(row) {
+            const marker = row && row.marker;
+            if (!marker || !map || typeof map.removeLayer !== 'function') return;
+            try { if (!map.hasLayer || map.hasLayer(marker)) map.removeLayer(marker); } catch (_) {}
+        });
+        Game.countryLabels.length = 0;
+    }
+    Game.geojsonLayer = null;
+    Game.__omegaGeoJSONSource = null;
+    Game.__omegaGeoJSONRenderComplete = false;
+    return true;
+};
+Game.Map.handleWorldMapRenderFailure = function(error) {
+    const reason = String(error && (error.message || error.code) || error || 'Unknown renderer error')
+        .replace(/\s+/g, ' ').slice(0, 150);
+    this.resetIncompleteWorldRender();
+    this.updateMapLoadingProgress(
+        Math.max(18, Number(this.__omegaMapLoadingProgress) || 18),
+        'Map drawing failed: ' + reason + '. Downloaded geography is retained; retry will reuse it.',
+        'error'
+    );
+};
 Game.Map.ensureMapLoadingOverlay = function() {
     const retryButton = document.getElementById('omega-map-load-retry');
     if (retryButton && !retryButton.__omegaBound) {
@@ -1309,8 +1422,24 @@ Game.Map.setUiActive = function(active) {
         this.updateMapLoadingProgress(this.__omegaMapLoadingProgress || 2, 'Preparing world map…', 'loading');
         if (typeof Game.__omegaGeoJSONResumeRender === 'function') {
             Game.__omegaGeoJSONResumeRender();
-        } else if (this.countryGeoJSON && !Game.geojsonLayer) {
-            this.renderGeoJSON(this.countryGeoJSON);
+        } else if (this.countryGeoJSON && !Game.geojsonLayer &&
+            Game.DataLoader && typeof Game.DataLoader.loadWorldMap === 'function') {
+            const loader = Game.DataLoader;
+            const resumeCachedMap = function() {
+                window.setTimeout(function () {
+                    if (Game.Map.__omegaMapUiActive !== false &&
+                        Game.__omegaGeoJSONRenderComplete !== true &&
+                        Game.Map.countryGeoJSON && !Game.geojsonLayer &&
+                        !loader.__worldLoadPromise) {
+                        loader.loadWorldMap();
+                    }
+                }, 0);
+            };
+            if (loader.__worldLoadPromise && typeof loader.__worldLoadPromise.then === 'function') {
+                loader.__worldLoadPromise.then(resumeCachedMap, resumeCachedMap);
+            } else {
+                resumeCachedMap();
+            }
         } else if (Game.DataLoader && typeof Game.DataLoader.loadWorldMap === 'function') {
             window.setTimeout(function () {
                 if (Game.Map.__omegaMapUiActive !== false &&
@@ -1467,10 +1596,33 @@ Game.Map.renderGeoJSON = function(geoData) {
     Game.__omegaGeoJSONSource = geoData;
     Game.__omegaGeoJSONRenderComplete = false;
     Game.__omegaGeoJSONRenderPaused = false;
+    Game.__omegaGeoJSONRenderErrors = [];
     layer.addTo(this.map);
 
     const featureCollection = geoData && geoData.type === "FeatureCollection" &&
         Array.isArray(geoData.features) ? geoData.features : null;
+    const featureCount = featureCollection ? featureCollection.length : 0;
+    const recoverableFeatureErrorLimit = Math.max(3, Math.floor(featureCount * 0.05));
+    const addFeatureSafely = function(feature, index) {
+        try {
+            layer.addData(feature);
+            return true;
+        } catch (error) {
+            const props = feature && feature.properties || {};
+            const name = props.ADMIN || props.name || props.NAME || ('feature ' + (index + 1));
+            const message = String(error && error.message || error || 'Unknown feature error').slice(0, 140);
+            const errors = Game.__omegaGeoJSONRenderErrors || (Game.__omegaGeoJSONRenderErrors = []);
+            errors.push({ index:index, country:String(name), message:message });
+            if (errors.length <= 3) console.warn('[OMEGA Map] Skipping malformed country geometry.', name, error);
+            if (errors.length > recoverableFeatureErrorLimit) {
+                const fatal = new Error('WORLD_FEATURE_RENDER_FAILURE_RATE: ' + errors.length +
+                    ' country geometries failed; first error at ' + name + ': ' + message);
+                fatal.code = 'WORLD_FEATURE_RENDER_FAILURE_RATE';
+                throw fatal;
+            }
+            return false;
+        }
+    };
     const finishRender = function() {
         if (renderToken !== Game.__omegaGeoJSONRenderToken || Game.geojsonLayer !== layer ||
             self.__omegaMapUiActive === false) return;
@@ -1478,24 +1630,40 @@ Game.Map.renderGeoJSON = function(geoData) {
         Game.__omegaGeoJSONRenderPaused = false;
         Game.__omegaGeoJSONRenderComplete = true;
         Game.__omegaGeoJSONResumeRender = null;
-        self.updateMapLoadingProgress(100, 'World map ready', 'complete');
-        if (Game.Map.__omegaCountryStyleRefreshPending === true) Game.Map.refreshCountryPolygonStyles();
-        Game.LabelSystem.updateCountryLabels();
-        self.renderOceanLabels();
+        const skippedGeometryCount = Array.isArray(Game.__omegaGeoJSONRenderErrors)
+            ? Game.__omegaGeoJSONRenderErrors.length : 0;
+        self.updateMapLoadingProgress(100,
+            skippedGeometryCount
+                ? 'World map ready; skipped ' + skippedGeometryCount + ' invalid country feature(s).'
+                : 'World map ready',
+            'complete');
+        try {
+            if (Game.Map.__omegaCountryStyleRefreshPending === true) Game.Map.refreshCountryPolygonStyles();
+        } catch (styleError) { console.warn('[OMEGA Map] Late country styling refresh failed.', styleError); }
+        try { Game.LabelSystem.updateCountryLabels(); }
+        catch (labelError) { console.warn('[OMEGA Map] Country labels could not be finalized.', labelError); }
+        try { self.renderOceanLabels(); }
+        catch (oceanLabelError) { console.warn('[OMEGA Map] Ocean labels could not be finalized.', oceanLabelError); }
         // A geographic-region selection may have been applied while the
         // country features were still streaming in. Reapply it to the
         // now-complete layer so newly added polygons receive the same style.
         const regions = window.OMEGAGeographicRegionSystem;
-        if (regions && typeof regions.getState === "function" && typeof regions.select === "function") {
-            const selection = regions.getState()?.selection;
-            if (selection?.kind && selection?.key) {
-                regions.select(selection.kind + ":" + selection.key);
+        try {
+            if (regions && typeof regions.getState === "function" && typeof regions.select === "function") {
+                const selection = regions.getState()?.selection;
+                if (selection?.kind && selection?.key) {
+                    regions.select(selection.kind + ":" + selection.key);
+                }
             }
-        }
+        } catch (regionError) { console.warn('[OMEGA Map] Existing region selection could not be restored.', regionError); }
         window.setTimeout(() => {
             if (renderToken !== Game.__omegaGeoJSONRenderToken || Game.geojsonLayer !== layer ||
                 self.__omegaMapUiActive === false) return;
-            if (typeof self.renderResourceDeposits === "function") self.renderResourceDeposits("NONE");
+            try {
+                if (typeof self.renderResourceDeposits === "function") self.renderResourceDeposits("NONE");
+            } catch (resourceError) {
+                console.warn('[OMEGA Map] Resource overlays could not be initialized after map render.', resourceError);
+            }
         }, 200);
     };
 
@@ -1505,9 +1673,15 @@ Game.Map.renderGeoJSON = function(geoData) {
     const CHUNK_THRESHOLD = 24;
     const MAX_FEATURES_PER_FRAME = 8;
     const FRAME_BUDGET_MS = 7;
-    if (!featureCollection || featureCollection.features.length <= CHUNK_THRESHOLD ||
+    if (!featureCollection || featureCollection.length <= CHUNK_THRESHOLD ||
         typeof window.requestAnimationFrame !== "function") {
-        layer.addData(geoData);
+        if (featureCollection) {
+            for (let index = 0; index < featureCollection.length; index++) {
+                addFeatureSafely(featureCollection[index], index);
+            }
+        } else {
+            layer.addData(geoData);
+        }
         self.updateMapLoadingProgress(96, 'Finishing country boundaries', 'loading');
         finishRender();
         return layer;
@@ -1531,17 +1705,27 @@ Game.Map.renderGeoJSON = function(geoData) {
         }
         const startedAt = now();
         let added = 0;
-        do {
-            layer.addData(featureCollection.features[nextFeature]);
-            nextFeature += 1;
-            added += 1;
-        } while (nextFeature < featureCollection.features.length &&
-            added < MAX_FEATURES_PER_FRAME && now() - startedAt < FRAME_BUDGET_MS);
+        try {
+            do {
+                addFeatureSafely(featureCollection[nextFeature], nextFeature);
+                nextFeature += 1;
+                added += 1;
+            } while (nextFeature < featureCollection.length &&
+                added < MAX_FEATURES_PER_FRAME && now() - startedAt < FRAME_BUDGET_MS);
+        } catch (error) {
+            console.error('[OMEGA Map] Country boundary chunk failed.', error);
+            self.handleWorldMapRenderFailure(error);
+            return;
+        }
 
-        const fraction = nextFeature / Math.max(1, featureCollection.features.length);
+        const fraction = nextFeature / Math.max(1, featureCollection.length);
+        const skippedSoFar = Array.isArray(Game.__omegaGeoJSONRenderErrors)
+            ? Game.__omegaGeoJSONRenderErrors.length : 0;
         self.updateMapLoadingProgress(18 + fraction * 78,
-            'Drawing country borders ' + Math.floor(fraction * 100) + '%', 'loading');
-        if (nextFeature < featureCollection.features.length) scheduleFeatureChunk();
+            'Drawing country borders ' + Math.floor(fraction * 100) + '%' +
+                (skippedSoFar ? ' · skipped ' + skippedSoFar + ' invalid feature(s)' : ''),
+            'loading');
+        if (nextFeature < featureCollection.length) scheduleFeatureChunk();
         else finishRender();
     };
     Game.__omegaGeoJSONResumeRender = scheduleFeatureChunk;

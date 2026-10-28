@@ -435,7 +435,7 @@ function focusSite(siteId,country){
  }
  lastOutcome='Selected site: '+(site?.siteName||siteId)+' · '+(lat===null||lng===null?'coordinates unavailable':'regional coordinates only');render();
 }
-async function onClick(event){
+async function handleClickAction(event, actionProgress){
  const button=event.target?.closest?.('[data-omm-action]');if(!button)return;
  const action=button.getAttribute('data-omm-action'),country=currentCountry||playerCountry(),api=network();
  if(action==='close'){close();return;}
@@ -468,6 +468,8 @@ async function onClick(event){
     blockedOccurrenceCount+=Math.max(0,Number(result?.blockedOccurrenceCount)||0);
     attemptedOccurrenceCount+=Math.max(0,Number(result?.attemptedOccurrenceCount)||0);
     processedBatchCount++;
+     if(actionProgress)actionProgress.setProgress(processedBatchCount/Math.max(1,totalBatches)*100,
+      'Production for '+country+': batch '+processedBatchCount+'/'+totalBatches+' · '+(offset+batch.length)+'/'+siteIds.length+' sites processed.');
     if(!['STARTED','PARTIALLY_STARTED','ALREADY_ACTIVE'].includes(status)){failedBatchCount++;failures.push({batch:processedBatchCount,reason:result?.reason||status});}
     if(offset+BATCH_SIZE<siteIds.length)await yieldToMobileUi();
    }
@@ -520,7 +522,8 @@ async function onClick(event){
  if(action==='decommission-mine'){
    if(country!==playerCountry()){lastOutcome='Rejected: mine changes are restricted to the active player country.';render();return;}
    if(!api?.decommissionMine){lastOutcome='Mine shutdown is unavailable. No game state was changed.';render();return;}
-   if(typeof g.confirm==='function'&&!g.confirm('Stop this mine? Existing stock and history will be preserved.'))return;
+   if(!button.__omegaMineActionConfirmed&&typeof g.confirm==='function'&&!g.confirm('Stop this mine? Existing stock and history will be preserved.'))return;
+    button.__omegaMineActionConfirmed=false;
    button.disabled=true;
    try{const result=api.decommissionMine({countryId:country,siteId,confirmed:true});lastOutcome=message('Mine shutdown',result);}
    catch(error){lastOutcome='Mine could not be stopped. Existing stock was not deleted.';}
@@ -537,6 +540,56 @@ async function onClick(event){
    render();return;
  }
 }
+async function onClick(event){
+ const button=event.target?.closest?.('[data-omm-action]');if(!button)return;
+ const action=button.getAttribute('data-omm-action');
+ if(['close','tab-my-mines','tab-mines','focus-site'].includes(action))return handleClickAction(event);
+ if(button.__omegaProgressPending)return;
+ const titles={
+  'start-country-production':'Starting mine production',
+  'build-mine':'Building selected mine',
+  'run-mine':'Running mine extraction',
+  'run-factory':'Running factory processing',
+  'decommission-mine':'Stopping mine',
+  'refresh':'Refreshing mining data'
+ };
+ const title=titles[action];
+ if(!title)return handleClickAction(event);
+ // Keep confirmation on the original user gesture, before waiting for the loader to paint.
+ if(action==='decommission-mine'&&typeof g.confirm==='function'){
+  if(!g.confirm('Stop this mine? Existing stock and history will be preserved.'))return;
+  button.__omegaMineActionConfirmed=true;
+ }
+ button.__omegaProgressPending=true;
+ button.setAttribute('aria-busy','true');
+ const progress=g.OmegaActionProgress;
+ if(!progress||typeof progress.run!=='function'){
+  try{return await handleClickAction(event);}
+  finally{button.__omegaProgressPending=false;button.removeAttribute('aria-busy');}
+ }
+ try{
+  await progress.run(title,async function(handle){
+   handle.setPhase(action==='build-mine'?'Checking construction prerequisites…':
+    action==='start-country-production'?'Preparing selected-country mine network…':
+    action==='run-mine'?'Checking the selected site and raw-stock ledger…':
+    action==='run-factory'?'Checking factory inputs and processing capacity…':
+    action==='decommission-mine'?'Validating mine shutdown request…':'Loading current resource records…');
+   return await handleClickAction(event,handle);
+  },{
+   detail:'Starting the selected operation…',
+   timeoutMs:60000,
+   successMessage:'Action handler finished. Review the recorded result in this mining panel.',
+   failureMessage:'Action failed. Review the mining panel result before retrying.'
+  });
+ }catch(error){
+  lastOutcome='Action error: '+String(error?.message||error);
+  render();
+ }finally{
+  button.__omegaProgressPending=false;
+  button.removeAttribute('aria-busy');
+ }
+}
+
 function injectButtons(){
  if(!g.document?.body)return;
  const modal=g.document.getElementById('gsrsk-intelligence-modal');
