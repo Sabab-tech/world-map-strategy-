@@ -83,9 +83,9 @@ const configured = pool.configure({ manifest, templates });
   assert.equal(requested.length, requestCountBeforeRoster,
     'the canonical identity pool must be resolved before any generic legacy API candidate can replace it');
   const offlineWorker = fs.readFileSync(path.join(root, 'omega-offline-map-sw.js'), 'utf8');
-  assert.match(offlineWorker, /omega-offline-atlas-shell-v55/);
-  assert.match(offlineWorker, /"\.\\/minister_country_roster_manifest_v1\\.json"/);
-  assert.match(offlineWorker, /"\.\\/ministers\\.json"/);
+  assert.match(offlineWorker, /omega-offline-atlas-shell-v56/);
+  assert.ok(offlineWorker.includes('"./minister_country_roster_manifest_v1.json"'));
+  assert.ok(offlineWorker.includes('"./ministers.json"'));
 
   const bangladesh = await pool.getCandidates('BGD', 'interior_security');
   const sameAgain = await pool.getCandidates('Bangladesh', 'interior_security');
