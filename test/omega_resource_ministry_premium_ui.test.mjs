@@ -363,7 +363,7 @@ test("v2 Build opens an actionable plan and Start construction calls the authori
     querySelectorAll(){return[];},contains(){return true;}};
   globalThis.Game={state:{simulation:{turn:3,session:{playerCountryId:"BGD"}},resource:{BGD:{mineAssets:[],
     industrialNetwork:{projects:[],shipments:[],siteFlowLedger:[]},
-    warehouse:{availableByResource:{coal:100000,iron_ore:100000,copper:100000,limestone:100000,construction_aggregate:100000}}}},finance:{BGD:{available:1000000000}}}};
+    warehouse:{availableByResource:{coal:100000,iron_ore:100000,copper:100000,limestone:100000,construction_aggregate:100000,empty_stock:0}}}},finance:{BGD:{available:1000000000}}}};
   globalThis.OmegaResourceSiteCanonicalCatalogData={sites:[row]};
   globalThis.OmegaResourceMineManagementUI={open(){legacyOpens+=1;}};
   globalThis.OmegaResourceIndustrialNetwork={
@@ -380,7 +380,19 @@ test("v2 Build opens an actionable plan and Start construction calls the authori
   };
   function fire(type,event){(listeners[type]||[]).forEach(function(fn){fn(event);});}
   function click(selector,attrs){const button={disabled:false,getAttribute(name){return attrs[name]||null;}};fire("click",{target:{closest(v){return v===selector?button:null;}}});}
+  function kpiValue(label){
+    const marker='<span>'+label+'</span>',start=root.innerHTML.indexOf(marker);
+    assert.notEqual(start,-1,"KPI must be visible: "+label);
+    const match=root.innerHTML.slice(start).match(/^<span>[^<]*<\/span><strong>([^<]*)<\/strong>/);
+    assert.ok(match,"KPI value must be rendered for "+label);
+    return match[1];
+  }
   try{
+    api.render(root,{countryId:"BGD",sites:[row],tab:"dashboard"});
+    assert.match(root.innerHTML,/1 eligible sites · 0 built/,"header must distinguish registered sites from built assets");
+    assert.equal(kpiValue("Built mine units"),"0");
+    assert.equal(kpiValue("Operating mines"),"0");
+    assert.equal(kpiValue("Projects pending"),"0");
     api.render(root,{countryId:"BGD",sites:[row],tab:"mines"});
     click("[data-omega-v2-mine-action]",{"data-omega-v2-mine-action":"build","data-site-id":row.siteId});
     assert.match(root.innerHTML,/data-omega-v2-build-plan/);
@@ -396,6 +408,24 @@ test("v2 Build opens an actionable plan and Start construction calls the authori
     assert.equal(starts[0].quantity,2);assert.equal(starts[0].assignedWorkers,1200);
     assert.match(starts[0].requestId,/^MINE_UI_V2:BGD:SITE_BGD_BUILD_FLOW:N2:W1200:/);
     assert.match(root.innerHTML,/Construction in progress/);assert.match(root.innerHTML,/180 days remaining/);assert.match(root.innerHTML,/2027-01-01/);
+    api.render(root,{countryId:"BGD",sites:[row],tab:"dashboard"});
+    assert.equal(kpiValue("Built mine units"),"0","a mine under construction must not be counted as commissioned");
+    assert.equal(kpiValue("Operating mines"),"0");
+    assert.equal(kpiValue("Projects pending"),"1","starting a project increments the pending counter");
+    const project=globalThis.Game.state.resource.BGD.industrialNetwork.projects[0];
+    project.status="COMPLETED";
+    globalThis.Game.state.resource.BGD.mineAssets.push({mineId:"MINE-TEST-COMMISSIONED",siteId:row.siteId,status:"OPERATIONAL"});
+    api.render(root,{countryId:"BGD",sites:[row],tab:"dashboard"});
+    assert.match(root.innerHTML,/1 eligible sites · 1 built/);
+    assert.equal(kpiValue("Built mine units"),"1","commissioning increments built mine units");
+    assert.equal(kpiValue("Operating mines"),"1","commissioning increments operating mines");
+    assert.equal(kpiValue("Projects pending"),"0","completed projects leave the pending counter");
+    globalThis.Game.state.resource.BGD.mineAssets[0].status="DESTROYED";
+    api.render(root,{countryId:"BGD",sites:[row],tab:"dashboard"});
+    assert.equal(kpiValue("Built mine units"),"0","destroying the only mine decrements built mine units");
+    assert.equal(kpiValue("Operating mines"),"0","destroying the only mine decrements operating mines");
+    api.render(root,{countryId:"BGD",sites:[row],tab:"inventory"});
+    assert.equal(kpiValue("Raw stock types"),"5","zero-balance resource keys must not be counted as stock");
   }finally{
     if(priorGame===undefined)delete globalThis.Game;else globalThis.Game=priorGame;
     if(priorCatalog===undefined)delete globalThis.OmegaResourceSiteCanonicalCatalogData;else globalThis.OmegaResourceSiteCanonicalCatalogData=priorCatalog;
