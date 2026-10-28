@@ -366,6 +366,7 @@ function siteCard(site,country,view){
   '<div class="omm-line"><span class="omm-muted">Daily production profile</span><br>'+esc(productionSummary(site))+'</div>'+
   '<div class="omm-line"><span class="omm-muted">Raw stock</span><br>'+esc(rawStock===null?'—':formatNum(rawStock,2))+'</div>'+
   '<div class="omm-line"><span class="omm-muted">Processed stock</span><br>'+esc(finishedStock===null?'—':formatNum(finishedStock,2))+'</div></div>'+
+  '<label class="omm-count-field">Extraction quantity <input class="omm-input" data-omm-quantity="'+esc(id)+'" type="number" min="1" step="1" value="1000" aria-label="Extraction quantity for '+esc(name)+'"></label>'+
   (project?.status==='UNDER_CONSTRUCTION'?'<div class="omm-progress"><span style="width:'+Math.max(0,Math.min(100,Number(project.progressPct||0)*100))+'%"></span></div><div class="omm-sub">Construction in progress · '+formatNum(project.progressDays)+' / '+formatNum(project.durationDays)+' days</div>':'')+
   '<div class="omm-actions"><button class="omm-primary" data-omm-action="build-mine" data-site-id="'+esc(id)+'" '+(!canBuild?'disabled':'')+'>Build</button>'+
   '<button data-omm-action="run-mine" data-site-id="'+esc(id)+'" data-resource-id="'+esc(rid)+'" '+(country!==playerCountry()||active.length===0?'disabled':'')+'>Extract</button>'+
