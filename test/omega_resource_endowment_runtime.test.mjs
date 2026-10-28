@@ -893,6 +893,8 @@ part6SimulationState.session=part6SimulationState.session&&typeof part6Simulatio
   ?part6SimulationState.session:{};
 part6SimulationState.session.playerCountryId=part6CopperSite.countryId;
 part6SimulationState.playerCountryId=part6CopperSite.countryId;
+const part6InventoryBeforeMine=Number(globalThis.Game.state.resource?.[part6CopperSite.countryId]?.inventory?.[part6CopperSite.resourceId])||0;
+const part6WarehouseBeforeMine=Number(globalThis.Game.state.resource?.[part6CopperSite.countryId]?.warehouse?.availableByResource?.[part6CopperSite.resourceId])||0;
 globalThis.Game.state.simulation.turn=Number(globalThis.Game.state.simulation.turn||0)+1;
 const part6Pipeline=await industrial.executeSitePipeline({
   countryId:part6CopperSite.countryId,siteId:part6CopperSite.siteId,
@@ -914,8 +916,10 @@ const part6MineQuantity=Number(part6MineShipment.quantity||0);
 assert.ok(part6MineQuantity>0);
 assert.equal(part6SourceState.batches.find(item=>String(item.batchId)===String(part6Pipeline.batchId))?.warehouseId,null,
   'the Part 6 source batch stays at the mine until its first-leg receipt');
-assert.ok(Number(part6SourceState.warehouse?.availableByResource?.[part6CopperSite.resourceId]||0)+1e-6<part6MineQuantity,
-  'mine cargo must not be credited to raw warehouse stock before arrival');
+assert.ok(Math.abs((Number(part6SourceState.warehouse?.availableByResource?.[part6CopperSite.resourceId])||0)-part6WarehouseBeforeMine)<1e-5,
+  'mine cargo must not be credited to raw warehouse stock before arrival; pre-existing country stock must remain unchanged');
+assert.ok(Math.abs((Number(part6SourceState.inventory?.[part6CopperSite.resourceId])||0)-part6InventoryBeforeMine)<1e-5,
+  'the dispatched source batch must leave aggregate inventory exactly once while it is physically at the mine/transit');
 advanceToGameTurn(globalThis.Game.state,Number(part6MineShipment.etaTurn));
 const part6MineArrival=industrial.advanceShipments(part6CopperSite.countryId);
 assert.ok(part6MineArrival.mineDelivered>=1,'Part 6 mine haul must reach the warehouse: '+JSON.stringify(part6MineArrival));
