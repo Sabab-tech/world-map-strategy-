@@ -887,7 +887,8 @@
         if (actionButton && root.contains(actionButton) && !actionButton.disabled) {
           var action = actionButton.getAttribute('data-omega-v2-mine-action');
           var id = actionButton.getAttribute('data-site-id') || '';
-          if (!livePlayerCountryKey() || countryKey !== livePlayerCountryKey()) {
+          var actionCountry = selectedCountryKey((root.__omegaV2ResourceOptions || {}).countryId || root.__omegaV2CurrentCountryKey || countryKey);
+          if (!livePlayerCountryKey() || actionCountry !== livePlayerCountryKey()) {
             root.__omegaV2ResourceNotice = 'Operations are available only for the active player country.';
             scheduleRender(root, Object.assign({}, root.__omegaV2ResourceOptions || {}, { tab:'mines' }));
             return;
