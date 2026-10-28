@@ -1617,7 +1617,10 @@ function dispatchResidualSiteBatches(c){
       const received=Math.max(0,num(flow.mineWarehouseReceivedQuantity)||0),factoryDispatched=Math.max(0,num(flow.factoryDispatchedQuantity)||0);
       remaining=Math.min(remaining,Math.max(0,received-factoryDispatched));
     }
-    const original=Math.max(1,num(source.quantity)||1),epsilon=Math.max(1e-3,original*1e-6);
+    // Compare the dispatchable receipt balance, not a ppm of the geological batch.
+    // A very large reserve may legitimately deliver a small first shipment; scaling
+    // this epsilon to the whole reserve silently stranded that received warehouse cargo.
+    const epsilon=1e-6;
     if(remaining<=epsilon)continue;
     if(network.shipments.some(x=>String(x?.batchId||'')===batchId&&String(x?.status||'')==='IN_TRANSIT'))continue;
     const site=siteById(flow.siteId)||flow.siteSnapshot||{
