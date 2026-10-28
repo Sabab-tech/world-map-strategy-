@@ -70,6 +70,7 @@ const configured = pool.configure({ manifest, templates });
   });
   const recruitment = sandbox.OmegaMinisterRecruitment;
   assert.ok(recruitment && typeof recruitment.fetchRoster === 'function');
+  const requestCountBeforeRoster = requested.length;
   const runtimeRoster = await recruitment.fetchRoster('interior_security', 'BGD');
   assert.equal(runtimeRoster.length, 5);
   assert.ok(runtimeRoster.every(p => p.countryCode === 'BGD' && p.ministryId === 'interior_security'));
@@ -77,6 +78,12 @@ const configured = pool.configure({ manifest, templates });
   const runtimeOtherCountry = await recruitment.fetchRoster('interior_security', 'USA');
   assert.ok(runtimeOtherCountry.every(p => p.countryCode === 'USA'));
   assert.notEqual(runtimeRoster[0].id, runtimeOtherCountry[0].id);
+  assert.equal(requested.length, requestCountBeforeRoster,
+    'the canonical identity pool must be resolved before any generic legacy API candidate can replace it');
+  const offlineWorker = fs.readFileSync(path.join(root, 'omega-offline-map-sw.js'), 'utf8');
+  assert.match(offlineWorker, /omega-offline-atlas-shell-v55/);
+  assert.match(offlineWorker, /"\.\\/minister_country_roster_manifest_v1\\.json"/);
+  assert.match(offlineWorker, /"\.\\/ministers\\.json"/);
 
   const bangladesh = await pool.getCandidates('BGD', 'interior_security');
   const sameAgain = await pool.getCandidates('Bangladesh', 'interior_security');

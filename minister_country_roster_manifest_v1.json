@@ -34,6 +34,10 @@
         "Public administration scholar",
         "Institutional reform adviser",
         "National planning director"
+      ],
+      "templateCategories": [
+        "Information_Media",
+        "Culture_Religion"
       ]
     },
     {
@@ -51,6 +55,9 @@
         "Trade compliance director",
         "Commercial negotiation adviser",
         "Supply-chain policy strategist"
+      ],
+      "templateCategories": [
+        "Economy_Commerce"
       ]
     },
     {
@@ -68,6 +75,9 @@
         "Industrial productivity analyst",
         "Factory network planner",
         "Quality and standards manager"
+      ],
+      "templateCategories": [
+        "Energy_Infrastructure"
       ]
     },
     {
@@ -85,6 +95,9 @@
         "Fiscal compliance auditor",
         "Tax-law specialist",
         "Digital revenue operations lead"
+      ],
+      "templateCategories": [
+        "Finance"
       ]
     },
     {
@@ -102,6 +115,9 @@
         "Central banking operations director",
         "Payment infrastructure specialist",
         "Currency and reserve strategist"
+      ],
+      "templateCategories": [
+        "Finance"
       ]
     },
     {
@@ -119,6 +135,9 @@
         "Public integrity prosecutor",
         "Civil rights policy jurist",
         "Legal reform commissioner"
+      ],
+      "templateCategories": [
+        "Justice"
       ]
     },
     {
@@ -136,6 +155,9 @@
         "Curriculum development specialist",
         "Workforce learning economist",
         "Public education administrator"
+      ],
+      "templateCategories": [
+        "Public_Welfare"
       ]
     },
     {
@@ -153,6 +175,9 @@
         "Logistics network planner",
         "Urban development engineer",
         "Capital projects auditor"
+      ],
+      "templateCategories": [
+        "Energy_Infrastructure"
       ]
     },
     {
@@ -170,6 +195,9 @@
         "Technology transfer specialist",
         "Data science policy adviser",
         "Innovation ecosystem planner"
+      ],
+      "templateCategories": [
+        "Science_Technology"
       ]
     },
     {
@@ -187,6 +215,9 @@
         "Logistics and force support director",
         "National resilience strategist",
         "Defense capability assessor"
+      ],
+      "templateCategories": [
+        "Defense"
       ]
     },
     {
@@ -204,6 +235,9 @@
         "Multilateral diplomacy adviser",
         "Regional cooperation director",
         "Foreign policy economist"
+      ],
+      "templateCategories": [
+        "Foreign_Affairs"
       ]
     },
     {
@@ -221,6 +255,10 @@
         "Power grid operations strategist",
         "Extractive industry auditor",
         "Clean-energy transition planner"
+      ],
+      "templateCategories": [
+        "Energy_Infrastructure",
+        "Environment_Climate"
       ]
     },
     {
@@ -238,6 +276,10 @@
         "Signals systems specialist",
         "Counterintelligence planner",
         "Digital security policy strategist"
+      ],
+      "templateCategories": [
+        "Intelligence",
+        "Science_Technology"
       ]
     },
     {
@@ -255,6 +297,9 @@
         "Agricultural supply-chain economist",
         "Irrigation modernization engineer",
         "Food safety policy lead"
+      ],
+      "templateCategories": [
+        "Agriculture_Food"
       ]
     },
     {
@@ -272,6 +317,9 @@
         "Police oversight specialist",
         "Border and civil protection planner",
         "Community resilience adviser"
+      ],
+      "templateCategories": [
+        "Home_Affairs"
       ]
     },
     {
@@ -289,6 +337,9 @@
         "Welfare program economist",
         "Disease surveillance specialist",
         "Social protection policy adviser"
+      ],
+      "templateCategories": [
+        "Public_Welfare"
       ]
     },
     {
@@ -306,6 +357,9 @@
         "Public spending auditor",
         "Budget strategy economist",
         "Financial controls specialist"
+      ],
+      "templateCategories": [
+        "Finance"
       ]
     },
     {
@@ -323,6 +377,10 @@
         "Infrastructure delivery auditor",
         "Strategic procurement specialist",
         "Project risk engineer"
+      ],
+      "templateCategories": [
+        "Energy_Infrastructure",
+        "Environment_Climate"
       ]
     }
   ],
@@ -3519,5 +3577,574 @@
     "zimbabwe": "ZWE",
     "zwe": "ZWE",
     "zw": "ZWE"
+  },
+  "profileGeneration": {
+    "namePools": {
+      "Asia": {
+        "firstNames": [
+          "Aarav",
+          "Mira",
+          "Rafiq",
+          "Nadia",
+          "Imran",
+          "Sana",
+          "Arjun",
+          "Mei",
+          "Hana",
+          "Kenji",
+          "Aisha",
+          "Dara",
+          "Lina",
+          "Farid",
+          "Yuna",
+          "Tenzin",
+          "Siti",
+          "Bao",
+          "Anika",
+          "Omar",
+          "Jin",
+          "Soraya",
+          "Kiran",
+          "Mali",
+          "Yasmin",
+          "Hiro",
+          "Noor",
+          "Kavya",
+          "Reza"
+        ],
+        "lastNames": [
+          "Rahman",
+          "Iyer",
+          "Tanaka",
+          "Chowdhury",
+          "Sato",
+          "Malik",
+          "Wijaya",
+          "Chen",
+          "Sharma",
+          "Khan",
+          "Das",
+          "Nguyen",
+          "Kim",
+          "Hossain",
+          "Patel",
+          "Fernando",
+          "Yamamoto",
+          "Kaur",
+          "Prasetyo",
+          "Wang",
+          "Haq",
+          "Nakamura",
+          "Lestari",
+          "Sen",
+          "Bose",
+          "Park",
+          "Hidayat",
+          "Singh",
+          "Le",
+          "Qureshi"
+        ]
+      },
+      "Africa": {
+        "firstNames": [
+          "Amara",
+          "Zola",
+          "Kwame",
+          "Nia",
+          "Kofi",
+          "Amina",
+          "Tendai",
+          "Sade",
+          "Bako",
+          "Thandi",
+          "Idris",
+          "Lindiwe",
+          "Jabari",
+          "Zuri",
+          "Chidi",
+          "Malaika",
+          "Olu",
+          "Eshe",
+          "Tariro",
+          "Kelechi",
+          "Nuru",
+          "Ayo",
+          "Abena",
+          "Sipho",
+          "Adisa",
+          "Mirembe",
+          "Femi",
+          "Imani",
+          "Kato",
+          "Deka"
+        ],
+        "lastNames": [
+          "Okafor",
+          "Mensah",
+          "Ndlovu",
+          "Diallo",
+          "Abebe",
+          "Bello",
+          "Dlamini",
+          "Kamara",
+          "Mbeki",
+          "Adebayo",
+          "Moussa",
+          "Boateng",
+          "Kone",
+          "Toure",
+          "Moyo",
+          "Achebe",
+          "Sow",
+          "Molefe",
+          "Tesfaye",
+          "Mahlangu",
+          "Osei",
+          "Traore",
+          "Mutombo",
+          "Kagiso",
+          "Munyaneza",
+          "Chukwu",
+          "Biko",
+          "Senghor",
+          "Mabena"
+        ]
+      },
+      "Europe": {
+        "firstNames": [
+          "Elena",
+          "Marek",
+          "Luka",
+          "Sofia",
+          "Nikolai",
+          "Ines",
+          "Tomas",
+          "Anja",
+          "Milan",
+          "Freya",
+          "Daria",
+          "Anton",
+          "Marta",
+          "Emil",
+          "Leonie",
+          "Rafael",
+          "Katarina",
+          "Jonas",
+          "Petra",
+          "Mikhail",
+          "Eva",
+          "Stefan",
+          "Clara",
+          "Oskar",
+          "Nina",
+          "Victor",
+          "Alina",
+          "Boris",
+          "Isabel",
+          "Mateo"
+        ],
+        "lastNames": [
+          "Novak",
+          "Petrov",
+          "Kovac",
+          "Ivanov",
+          "Horvat",
+          "Jensen",
+          "Weber",
+          "Dubois",
+          "Silva",
+          "Rossi",
+          "Popescu",
+          "Kowalski",
+          "Keller",
+          "Berg",
+          "Moreau",
+          "Costa",
+          "Muller",
+          "Svensson",
+          "Kuznetsov",
+          "Nowak",
+          "Dvorak",
+          "Varga",
+          "Marin",
+          "Schmidt",
+          "Lind",
+          "Vukovic",
+          "Fischer",
+          "Kral",
+          "Santos",
+          "Laurent"
+        ]
+      },
+      "North America": {
+        "firstNames": [
+          "Jordan",
+          "Taylor",
+          "Morgan",
+          "Avery",
+          "Casey",
+          "Riley",
+          "Cameron",
+          "Skyler",
+          "Drew",
+          "Quinn",
+          "Parker",
+          "Rowan",
+          "Alex",
+          "Jamie",
+          "Reese",
+          "Logan",
+          "Devon",
+          "Emerson",
+          "Ari",
+          "Sage",
+          "Noah",
+          "Maya",
+          "Elijah",
+          "Grace",
+          "Ethan",
+          "Leah",
+          "Miles",
+          "Naomi",
+          "Owen",
+          "Zoe"
+        ],
+        "lastNames": [
+          "Carter",
+          "Bennett",
+          "Reed",
+          "Hayes",
+          "Morgan",
+          "Brooks",
+          "Sullivan",
+          "Mitchell",
+          "Foster",
+          "Turner",
+          "Parker",
+          "Collins",
+          "Bailey",
+          "Ward",
+          "Price",
+          "Murphy",
+          "Cooper",
+          "Rogers",
+          "Cook",
+          "Powell",
+          "Rivera",
+          "Graham",
+          "Hughes",
+          "Kelly",
+          "Sanders",
+          "Coleman",
+          "Ross",
+          "Bryant",
+          "Morris",
+          "Ellis"
+        ]
+      },
+      "South America": {
+        "firstNames": [
+          "Camila",
+          "Mateo",
+          "Sofia",
+          "Thiago",
+          "Valeria",
+          "Lucas",
+          "Mariana",
+          "Diego",
+          "Isabela",
+          "Rafael",
+          "Lucia",
+          "Nicolas",
+          "Gabriela",
+          "Tomas",
+          "Elena",
+          "Andres",
+          "Daniela",
+          "Bruno",
+          "Paula",
+          "Joaquin",
+          "Renata",
+          "Felipe",
+          "Alma",
+          "Martin",
+          "Cecilia",
+          "Emilio",
+          "Natalia",
+          "Gael",
+          "Bianca",
+          "Pablo"
+        ],
+        "lastNames": [
+          "Silva",
+          "Alvarez",
+          "Rojas",
+          "Ferreira",
+          "Morales",
+          "Castro",
+          "Mendez",
+          "Vargas",
+          "Navarro",
+          "Santos",
+          "Pereira",
+          "Ramirez",
+          "Costa",
+          "Gomez",
+          "Herrera",
+          "Torres",
+          "Acosta",
+          "Romero",
+          "Flores",
+          "Cabrera",
+          "Medina",
+          "Rivera",
+          "Ortiz",
+          "Vega",
+          "Cardenas",
+          "Paz",
+          "Quintero",
+          "Benitez",
+          "Lagos",
+          "Arias"
+        ]
+      },
+      "Oceania": {
+        "firstNames": [
+          "Tane",
+          "Moana",
+          "Aroha",
+          "Koa",
+          "Leilani",
+          "Talia",
+          "Noa",
+          "Mika",
+          "Sione",
+          "Anahera",
+          "Manaia",
+          "Lani",
+          "Eren",
+          "Isla",
+          "Kai",
+          "Rangi",
+          "Ayla",
+          "Tama",
+          "Niko",
+          "Mele",
+          "Pita",
+          "Alani",
+          "Luka",
+          "Kiri",
+          "Hemi",
+          "Sela",
+          "Jone",
+          "Malia",
+          "Tui",
+          "Afa"
+        ],
+        "lastNames": [
+          "Tupou",
+          "Waqa",
+          "Katoa",
+          "Faumuina",
+          "Taito",
+          "Ngata",
+          "Fale",
+          "Ravulo",
+          "Morrison",
+          "Kereama",
+          "Vaai",
+          "Taufua",
+          "Manu",
+          "Whaitiri",
+          "Talakai",
+          "Rika",
+          "Niumata",
+          "Sopoaga",
+          "Tuilagi",
+          "Mikaere",
+          "Faleafaga",
+          "Paea",
+          "Wendt",
+          "Ropata",
+          "Tawake",
+          "Tofa",
+          "Tukaki",
+          "Kivalu",
+          "TeRangi"
+        ]
+      }
+    },
+    "middleNames": [
+      "Dev",
+      "Linh",
+      "Samira",
+      "Iqbal",
+      "Nari",
+      "Pran",
+      "Amin",
+      "Talia",
+      "Rohan",
+      "Suri",
+      "Minh",
+      "Ayan",
+      "Jaya",
+      "Faris",
+      "Kimi",
+      "Dilan",
+      "Yori",
+      "Mina",
+      "Anwar",
+      "Veda",
+      "Hye",
+      "Rumi",
+      "Tari",
+      "Nima",
+      "Adil",
+      "Sora",
+      "Jamil",
+      "Kanya",
+      "Eshan",
+      "Rina"
+    ],
+    "profileText": {
+      "leadershipStyles": [
+        "Long-horizon planner who compares scenarios and prefers measured execution.",
+        "Fast-moving executor who favours clear priorities and short decision cycles.",
+        "Consultative coordinator who weighs stakeholder effects before committing.",
+        "Process-led operator who emphasizes compliance and predictable delivery.",
+        "Balanced administrator who combines execution with periodic review."
+      ],
+      "decisionStyles": [
+        "Compares feasibility, risk and portfolio objectives.",
+        "Uses staged implementation and corrective checkpoints.",
+        "Checks evidence and documents assumptions before major commitments.",
+        "Balances speed with escalation rules for uncertainty.",
+        "Uses risk registers, measurable milestones and post-decision review."
+      ],
+      "ideologyTypes": [
+        "technocrat",
+        "liberal",
+        "secular",
+        "nationalist",
+        "socialist"
+      ],
+      "genderBySlot": [
+        "male",
+        "female"
+      ],
+      "ratingLabels": {
+        "discipline": "discipline",
+        "aggression": "initiative and risk tolerance",
+        "empathy": "stakeholder awareness",
+        "corruption": "integrity",
+        "strategic": "strategic planning"
+      },
+      "strengthTemplate": "{label} ({value}/100 simulated rating)",
+      "summaryTemplates": [
+        "{name} is a fictional OMEGA candidate for {country}'s {ministry} portfolio, emphasizing {priority0} and {priority1}.",
+        "This simulated {ministryLower} profile for {country} prioritizes {priority1} while overseeing {priority2}.",
+        "{name}'s simulated record focuses on {priority2} and accountable delivery in {country}.",
+        "Designed for OMEGA, this fictional candidate approaches {ministryLower} through {priority0} and evidence-led review.",
+        "A fictional candidate dossier for {country}: {ministryLower} work centers on {priority1}, tracking and risk control."
+      ],
+      "educationTemplate": "Simulated training track in {priority0} and public-sector governance.",
+      "careerBackgroundTemplate": "Fictional {backgroundLower} background for the {ministry} portfolio.",
+      "professionalBackgroundTemplate": "{background} is a fictional career archetype focused on {priority0} and {priority1}; no real-world employment history is implied.",
+      "provenanceNotice": "Fictional simulation character; not a claim about a real official.",
+      "fallbackWatchout": "No standout risk flag in this simulated profile; monitor workload and decision quality.",
+      "watchoutRules": [
+        {
+          "source": "stats",
+          "metric": "corruption",
+          "operator": "gte",
+          "threshold": 25,
+          "text": "Elevated simulated integrity-risk score; strengthen audit controls."
+        },
+        {
+          "source": "stats",
+          "metric": "aggression",
+          "operator": "gte",
+          "threshold": 78,
+          "text": "High simulated risk appetite; review irreversible decisions."
+        },
+        {
+          "source": "stats",
+          "metric": "empathy",
+          "operator": "lt",
+          "threshold": 40,
+          "text": "Use stakeholder-impact review for welfare-facing decisions."
+        },
+        {
+          "source": "efficiency",
+          "metric": "accuracy",
+          "operator": "lt",
+          "threshold": 68,
+          "text": "Accuracy score calls for independent validation before high-impact decisions."
+        },
+        {
+          "source": "efficiency",
+          "metric": "crisis_handling",
+          "operator": "lt",
+          "threshold": 68,
+          "text": "Crisis-response score suggests contingency planning and escalation monitoring."
+        }
+      ],
+      "leadershipRules": [
+        {
+          "conditions": [
+            {
+              "source": "stats",
+              "metric": "strategic",
+              "operator": "gte",
+              "threshold": 82
+            },
+            {
+              "source": "stats",
+              "metric": "discipline",
+              "operator": "gte",
+              "threshold": 70
+            }
+          ],
+          "styleIndex": 0
+        },
+        {
+          "conditions": [
+            {
+              "source": "efficiency",
+              "metric": "decision_speed",
+              "operator": "gte",
+              "threshold": 84
+            }
+          ],
+          "styleIndex": 1
+        },
+        {
+          "conditions": [
+            {
+              "source": "stats",
+              "metric": "empathy",
+              "operator": "gte",
+              "threshold": 70
+            }
+          ],
+          "styleIndex": 2
+        },
+        {
+          "conditions": [
+            {
+              "source": "stats",
+              "metric": "discipline",
+              "operator": "gte",
+              "threshold": 82
+            }
+          ],
+          "styleIndex": 3
+        },
+        {
+          "fallback": true,
+          "styleIndex": 4
+        }
+      ]
+    }
   }
 }

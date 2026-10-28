@@ -137,8 +137,13 @@
   }
 
   async function fetchRoster(ministryId, countryId) {
+    const identityPool = global.OmegaMinisterIdentityPool;
+    const explicitCountry = countryId || countryCode();
+    if (identityPool && typeof identityPool.getCandidates === 'function') {
+      return identityPool.getCandidates(explicitCountry, ministryId);
+    }
     let apiError = 'API unavailable';
-    const cc = normalizeCountryCode(countryId || countryCode());
+    const cc = normalizeCountryCode(explicitCountry);
     try {
       const response = await fetch(
         'api/minister-candidates?ministryId=' + encodeURIComponent(ministryId) +
