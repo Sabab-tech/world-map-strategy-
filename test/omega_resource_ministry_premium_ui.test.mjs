@@ -47,7 +47,7 @@ test("resource visual layer is wired into the offline-first app without remote d
   assert.ok(html.includes(stylesheetTag), "premium resource stylesheet must be loaded by the app");
   assert.ok(sw.includes('"' + "./" + cssPath + '"'), "premium resource stylesheet must be precached offline");
   assert.ok(uiManifest.additionalStyles.includes(cssPath), "UI v2 manifest must document the resource style");
-  assert.match(sw, /omega-offline-atlas-shell-v57/, "offline cache must be invalidated for new visual assets");
+  assert.match(sw, /omega-offline-atlas-shell-v58/, "offline cache must be invalidated for new visual assets");
   const coreAssets = sw.slice(sw.indexOf("const CORE_ASSETS"), sw.indexOf("];", sw.indexOf("const CORE_ASSETS")));
   assert.ok(coreAssets.includes('"./' + cssPath + '"'), "premium stylesheet belongs in the precache list");
   assert.ok(sw.includes("const resourceIcons = Array.isArray(factoryIconManifest.resources)"),
@@ -161,7 +161,7 @@ test("all resource SVGs use a light metallic backplate for readable dark mineral
     assert.match(svg, /data-omega-icon-kind="resource"/);
   }
   assert.match(manifest.rendering.background, /light silver-metal.*factory SVGs retain their shared dark-navy/i);
-  assert.match(read("omega-offline-map-sw.js"), /omega-offline-atlas-shell-v57/);
+  assert.match(read("omega-offline-map-sw.js"), /omega-offline-atlas-shell-v58/);
 });
 
 
@@ -410,5 +410,64 @@ test("v2 Build opens an actionable plan and Start construction calls the authori
     if(priorCatalog===undefined)delete globalThis.OmegaResourceSiteCanonicalCatalogData;else globalThis.OmegaResourceSiteCanonicalCatalogData=priorCatalog;
     if(priorNetwork===undefined)delete globalThis.OmegaResourceIndustrialNetwork;else globalThis.OmegaResourceIndustrialNetwork=priorNetwork;
     if(priorMineUi===undefined)delete globalThis.OmegaResourceMineManagementUI;else globalThis.OmegaResourceMineManagementUI=priorMineUi;
+  }
+});
+
+
+test("logistics cards expose an accessible route diagram with existing SVG cargo art", () => {
+  const api = globalThis.OmegaUIV2ResourceMinistry;
+  const priorGame = globalThis.Game;
+  const shipment = {
+    shipmentId: "SHIPMENT_VISUAL_TEST_01",
+    resourceId: "coal",
+    quantity: 8200,
+    unit: "TONNES",
+    status: "IN_TRANSIT",
+    sourceSiteName: "Sylhet Coal Mine",
+    destinationFactoryName: "Dhaka Steel Factory",
+    transportMode: "ROAD",
+    etaTurn: 12
+  };
+  const listeners = Object.create(null);
+  const root = {
+    innerHTML: "",
+    classList: { add() {} },
+    addEventListener(type, fn) { listeners[type] = fn; },
+    querySelector() { return null; },
+    querySelectorAll() { return []; },
+    contains() { return true; }
+  };
+  globalThis.Game = {
+    state: {
+      simulation: { turn: 10, session: { playerCountryId: "BGD" } },
+      resource: {
+        BGD: {
+          mineAssets: [],
+          industrialNetwork: { projects: [], shipments: [shipment], siteFlowLedger: [] },
+          warehouse: { availableByResource: { coal: 8200 } }
+        }
+      }
+    }
+  };
+  try {
+    const result = api.render(root, { countryId: "BGD", sites: [], tab: "logistics" });
+    assert.equal(result.ok, true);
+    assert.match(root.innerHTML, /omega-v2-logistics-card/);
+    assert.match(root.innerHTML, /data-omega-v2-logistics-icon="origin"/);
+    assert.match(root.innerHTML, /data-omega-v2-logistics-icon="transport"/);
+    assert.match(root.innerHTML, /data-omega-v2-logistics-icon="factory"/);
+    assert.match(root.innerHTML, /data-omega-v2-resource-icon="coal"/);
+    assert.match(root.innerHTML, /Sylhet Coal Mine/);
+    assert.match(root.innerHTML, /Dhaka Steel Factory/);
+    assert.match(root.innerHTML, /Road/);
+    assert.match(root.innerHTML, /8,200 TONNES/);
+    assert.match(root.innerHTML, /Turn 12/);
+    const css = cssText();
+    assert.match(css, /omega-v2-logistics-card::before/);
+    assert.match(css, /omega-v2-logistics-path/);
+    assert.match(css, /input:focus-visible/);
+    assert.match(css, /omega-v2-build-plan-fields/);
+  } finally {
+    if (priorGame === undefined) delete globalThis.Game; else globalThis.Game = priorGame;
   }
 });

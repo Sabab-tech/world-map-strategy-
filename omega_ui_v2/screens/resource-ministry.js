@@ -805,16 +805,42 @@
       if (/AWAITING|PENDING|QUEUED/.test(s)) return {label:'Pending',state:'attention'};
       return {label:human(s),state:'unknown'};
     }
+    function logisticsIconMarkup(kind) {
+      var paths = {
+        origin: '<path d="M5 23 20 6l7 5M16 10l5 16M8 24h7M12 15l5 2" /><path d="m18 5 4 1 2 4" />',
+        transport: '<path d="M3 10h16v12H3zM19 14h5l5 5v3H19z" /><circle cx="8" cy="24" r="2.5" /><circle cx="24" cy="24" r="2.5" />',
+        factory: '<path d="M3 27V13l8 5v-5l8 5V8h10v19z" /><path d="M23 12h2m-2 4h2M7 22h3m4 0h3" />',
+        warehouse: '<path d="M3 14 16 5l13 9M5 13v14h22V13M11 27v-8h10v8" />',
+        destination: '<rect x="5" y="6" width="22" height="20" rx="4" /><path d="M11 13h10M11 18h10M11 23h5" />'
+      };
+      return '<svg class="omega-v2-logistics-svg" data-omega-v2-logistics-icon="' + esc(kind) +
+        '" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' +
+        (paths[kind] || paths.destination) + '</svg>';
+    }
     var logisticsMarkup = shipments.length ? '<div class="omega-v2-grid omega-v2-logistics-grid">' + shipments.slice(-80).reverse().map(function (shipment) {
       var status = logisticsStatus(shipment.status), q = numberOrNull(shipment.quantity);
       var from = shipment.sourceSiteName || shipment.siteName || shipment.sourceSiteId || shipment.origin || shipment.from || '—';
       var to = shipment.destinationFactoryName || shipment.destinationFactoryId || shipment.destinationWarehouseId || shipment.destination || shipment.to || '—';
       var mode = shipment.route && (shipment.route.transportMode || shipment.route.mode) || shipment.transportMode || shipment.mode || '';
-      return '<article class="omega-v2-card omega-v2-logistics-card"><div class="omega-v2-card-header"><h3 class="omega-v2-card-title">' +
-        esc(resourceLabel(shipment.resourceId || 'Supply')) + '</h3><span class="omega-v2-status" data-state="' + status.state + '">' + status.label +
-        '</span></div><div class="omega-v2-vehicle-stats"><div><span>From</span><strong>' + esc(from) + '</strong></div><div><span>To</span><strong>' + esc(to) +
-        '</strong></div><div><span>Quantity</span><strong>' + amount(q, shipment.unit || '') + '</strong></div><div><span>ETA</span><strong>' +
-        (numberOrNull(shipment.etaTurn) !== null ? 'Turn ' + fmt(shipment.etaTurn) : '—') + '</strong></div></div></article>';
+      var destinationKind = shipment.destinationFactoryId || shipment.destinationFactoryName ? 'factory' :
+        shipment.destinationWarehouseId ? 'warehouse' : 'destination';
+      var modeLabel = mode ? human(mode) : 'Route not recorded';
+      var etaLabel = numberOrNull(shipment.etaTurn) !== null ? 'Turn ' + fmt(shipment.etaTurn) : 'Not recorded';
+      return '<article class="omega-v2-card omega-v2-logistics-card" data-logistics-state="' + status.state + '">' +
+        '<div class="omega-v2-logistics-header"><div class="omega-v2-logistics-cargo">' +
+        '<span class="omega-v2-resource-icon omega-v2-logistics-resource-art">' + resourceIconMarkup(shipment.resourceId || 'supply', resourceLabel(shipment.resourceId || 'Supply')) + '</span>' +
+        '<div class="omega-v2-logistics-cargo-copy"><span class="omega-v2-eyebrow">RESOURCE CARGO</span><h3 class="omega-v2-card-title">' +
+        esc(resourceLabel(shipment.resourceId || 'Supply')) + '</h3></div></div><span class="omega-v2-status" data-state="' + status.state + '">' +
+        esc(status.label) + '</span></div>' +
+        '<div class="omega-v2-logistics-path" aria-label="Shipment route from ' + esc(from) + ' to ' + esc(to) + '">' +
+        '<div class="omega-v2-logistics-node omega-v2-logistics-node--origin"><span class="omega-v2-logistics-node-art">' + logisticsIconMarkup('origin') +
+        '</span><span class="omega-v2-logistics-node-copy"><small>ORIGIN</small><strong>' + esc(from) + '</strong></span></div>' +
+        '<div class="omega-v2-logistics-link"><span class="omega-v2-logistics-route-vehicle">' + logisticsIconMarkup('transport') + '</span><span class="omega-v2-logistics-link-line"></span><span class="omega-v2-logistics-mode">' + esc(modeLabel) + '</span></div>' +
+        '<div class="omega-v2-logistics-node omega-v2-logistics-node--destination"><span class="omega-v2-logistics-node-art">' + logisticsIconMarkup(destinationKind) +
+        '</span><span class="omega-v2-logistics-node-copy"><small>DESTINATION</small><strong>' + esc(to) + '</strong></span></div></div>' +
+        '<div class="omega-v2-logistics-metrics"><div class="omega-v2-logistics-metric"><span>Shipment quantity</span><strong>' +
+        amount(q, shipment.unit || '') + '</strong></div><div class="omega-v2-logistics-metric"><span>Estimated arrival</span><strong>' +
+        esc(etaLabel) + '</strong></div></div></article>';
     }).join('') + '</div>' : '<div class="omega-v2-empty">No active shipments or delivery records are available for this country.</div>';
     var reportGroups = Object.create(null);
     flows.forEach(function (row) {
