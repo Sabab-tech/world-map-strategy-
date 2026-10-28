@@ -742,42 +742,71 @@ globalThis.Game.state.transport.KWT=globalThis.Game.state.transport.KWT||{
     pipelines:{capacityPerDay:400000,quality:0.8}
   }
 };
+globalThis.Game.state.simulation.playerCountryId='KWT';
+globalThis.Game.state.simulation.session=globalThis.Game.state.simulation.session||{};
+globalThis.Game.state.simulation.session.playerCountryId='KWT';
 globalThis.Game.state.simulation.turn=2;
+const kwtWarehouseBeforeMine=Number(runtime.countryResourceState('KWT')?.warehouse?.availableByResource?.[realPipelineResourceId]||0);
+const kwtInventoryBeforeMine=Number(runtime.countryResourceState('KWT')?.inventory?.[realPipelineResourceId]||0);
 const realPipeline=await industrial.executeSitePipeline({
   countryId:'KWT',siteId:realPipelineSiteId,resourceId:realPipelineResourceId,
   autoCommissionFactory:true,transportMode:'rail'
 });
 assert.equal(realPipeline.status,'IN_TRANSIT',
-  'real Endowment extraction must commit and dispatch a site-specific shipment: '+JSON.stringify({
+  'real Endowment extraction must commit and dispatch a site-specific mine haul: '+JSON.stringify({
     status:realPipeline.status,reason:realPipeline.reason,countryId:realPipeline.countryId,siteId:realPipeline.siteId,
-    resourceId:realPipeline.resourceId,controllerStatus:realPipeline.controllerStatus,linkedOccurrenceCount:realPipeline.linkedOccurrenceCount,
-    referenceResource:realPipeline.referenceResource,extractionStatus:realPipeline.extractionStatus,
+    resourceId:realPipeline.resourceId,extractionStatus:realPipeline.extractionStatus,
     shipmentStatus:realPipeline.shipmentStatus,detail:realPipeline.detail
   }));
 assert.equal(realPipeline.extractionStatus,'COMMITTED');
+assert.equal(realPipeline.shipment?.shipmentType,'MINE_TO_WAREHOUSE');
 assert.ok(realPipeline.batchId,'real extraction must return its own batch ID');
 assert.ok(realPipeline.occurrenceKey,'pipeline must retain the controller-linked occurrence key');
-assert.ok(realPipeline.shipmentId,'pipeline must persist a shipment ID');
+assert.ok(realPipeline.shipmentId,'pipeline must persist a mine shipment ID');
 assert.ok(realPipeline.factoryId,'shipment must target a concrete country-scoped factory asset');
 assert.ok((globalThis.Game.state.economy?.KWT?.productionAssets||[]).some(x=>String(x?.id||x?.assetId||x?.projectId)===realPipeline.factoryId),
   'auto-commissioned processing factory must persist in the Kuwait economy state');
-
+const realSourceAfterMineDispatch=runtime.countryResourceState('KWT')||{};
+const realSourceBatch=(realSourceAfterMineDispatch.batches||[]).find(x=>String(x.batchId)===String(realPipeline.batchId));
+assert.ok(realSourceBatch,'mine haul must retain the authoritative extraction batch');
+assert.equal(realSourceBatch.warehouseId,null,'source batch must stay at the mine while the first leg is in transit');
+assert.ok(Math.abs((Number(realSourceAfterMineDispatch.warehouse?.availableByResource?.[realPipelineResourceId])||0)-kwtWarehouseBeforeMine)<1e-5,
+  'first-leg dispatch must not pre-credit raw warehouse stock');
+assert.ok(Math.abs((Number(realSourceAfterMineDispatch.inventory?.[realPipelineResourceId])||0)-kwtInventoryBeforeMine)<1e-5,
+  'first-leg dispatch must remove the complete batch from available country inventory exactly once');
+const playerBeforePause=globalThis.Game.state.simulation.playerCountryId;
+globalThis.Game.state.simulation.playerCountryId=null;
+globalThis.Game.state.simulation.session.playerCountryId=null;
+const pausedKWT=industrial.advanceShipments('KWT');
+assert.equal(pausedKWT.status,'SKIPPED','logistics must pause while no player country is selected');
+assert.equal(realSourceAfterMineDispatch.industrialNetwork.shipments.find(x=>x.shipmentId===realPipeline.shipmentId)?.status,'IN_TRANSIT');
+globalThis.Game.state.simulation.playerCountryId=playerBeforePause;
+globalThis.Game.state.simulation.session.playerCountryId='KWT';
+advanceToGameTurn(globalThis.Game.state,Number(realPipeline.shipment.etaTurn));
+const mineArrival=industrial.advanceShipments('KWT');
+assert.ok(mineArrival.mineDelivered>=1,'the exact mine haul must arrive at the sovereign raw warehouse: '+JSON.stringify(mineArrival));
+const afterMineArrival=runtime.countryResourceState('KWT')||{};
+const mineReceipt=afterMineArrival.warehouse.receipts.find(x=>String(x.receiptId)==='MINE-WH-REC:'+String(realPipeline.shipmentId));
+assert.equal(mineReceipt?.status,'RECEIVED');
+const factoryShipment=(afterMineArrival.industrialNetwork?.shipments||[]).find(x=>
+  String(x.batchId)===String(realPipeline.batchId)&&x.shipmentType==='RAW_TO_FACTORY'&&x.status==='IN_TRANSIT');
+assert.ok(factoryShipment,'the factory-bound leg must be dispatched only after the mine warehouse receipt');
+assert.equal(factoryShipment.siteId,realPipelineSiteId,'factory haul must keep exact mine lineage');
 const preDeliveryState=runtime.countryResourceState('KWT');
 const beforeWarehouse=Number(preDeliveryState?.warehouse?.availableByResource?.[realPipelineResourceId]||0);
 const beforeReserved=Number(preDeliveryState?.warehouse?.reservedByResource?.[realPipelineResourceId]||0);
 const beforeCountryRaw=Number(preDeliveryState?.inventory?.[realPipelineResourceId]||0);
 const inTransitBeforeDelivery=new Set((preDeliveryState?.industrialNetwork?.shipments||[])
   .filter(x=>String(x.resourceId)===String(realPipelineResourceId)&&String(x.status)==='IN_TRANSIT').map(x=>String(x.shipmentId)));
-const deliveredQuantity=Number(realPipeline.shipment?.quantity||0);
-assert.ok(deliveredQuantity>0,'route must dispatch a positive quantity');
-assert.ok(beforeWarehouse>=deliveredQuantity,'real extraction batch must be in the sovereign raw warehouse before shipment arrival');
-assert.ok(beforeReserved>=deliveredQuantity,'shipment quantity must be reserved in the raw warehouse before arrival');
-
-advanceToGameTurn(globalThis.Game.state,Number(realPipeline.shipment.etaTurn));
+const deliveredQuantity=Number(factoryShipment.quantity||0);
+assert.ok(deliveredQuantity>0,'factory-bound route must dispatch a positive quantity');
+assert.ok(beforeWarehouse>=deliveredQuantity,'factory-bound cargo must be available in the sovereign warehouse before arrival');
+assert.ok(beforeReserved>=deliveredQuantity,'factory-bound shipment quantity must be reserved in the raw warehouse before arrival');
+advanceToGameTurn(globalThis.Game.state,Number(factoryShipment.etaTurn));
 const realDelivery=industrial.advanceShipments('KWT');
-const delivered=realDelivery.shipments.find(x=>x.shipmentId===realPipeline.shipmentId);
-assert.ok(delivered,'the exact real site shipment must arrive through the turn-advance runtime; other country deposits may also deliver on the same turn: '+JSON.stringify({
-  targetShipmentId:realPipeline.shipmentId,deliveredShipmentIds:realDelivery.shipments.map(x=>x.shipmentId),deliveredCount:realDelivery.delivered
+const delivered=realDelivery.shipments.find(x=>x.shipmentId===factoryShipment.shipmentId);
+assert.ok(delivered,'the exact warehouse-to-factory shipment must arrive through the selected-country turn tick: '+JSON.stringify({
+  targetShipmentId:factoryShipment.shipmentId,deliveredShipmentIds:realDelivery.shipments.map(x=>x.shipmentId),deliveredCount:realDelivery.delivered
 }));
 const sameResourceDeliveredQuantity=realDelivery.shipments.filter(x=>String(x.resourceId)===String(realPipelineResourceId))
   .reduce((sum,x)=>sum+(Number(x.quantity)||0),0);
@@ -790,7 +819,7 @@ if(delivered.processingStatus==='AWAITING_PROCESSING'){
 }
 completeFactoryCycle(globalThis.Game.state,industrial,'KWT',realPipeline.factoryId,realPipeline.batchId);
 const postDeliveryState=runtime.countryResourceState('KWT');
-const completedRealDelivery=(postDeliveryState.industrialNetwork?.deliveries||[]).find(x=>String(x.shipmentId)===String(realPipeline.shipmentId));
+const completedRealDelivery=(postDeliveryState.industrialNetwork?.deliveries||[]).find(x=>String(x.shipmentId)===String(factoryShipment.shipmentId));
 assert.equal(completedRealDelivery?.processingStatus,'PROCESSED','Kuwait delivery ledger must reconcile after cycle completion');
 assert.ok(Math.abs(Number(postDeliveryState.warehouse.availableByResource[realPipelineResourceId])-
   (beforeWarehouse-sameResourceDeliveredQuantity))<1e-5,
