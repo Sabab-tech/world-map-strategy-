@@ -402,8 +402,11 @@ function dispatchMineToWarehouse(countryId,site,flow,sourceBatch,routeProfile){
   if(!batchInFlight)return{status:'BLOCKED',reason:'SOURCE_BATCH_NOT_FOUND',batchId};
   // The complete source quantity is already held out of inventory. Record only the
   // actual dispatched portion as in transit; remaining held cargo stays at the mine.
-  flow.mineHeldQuantity=Math.max(0,(num(flow.mineHeldQuantity)||0)-quantity);
-  batchInFlight.stage=flow.mineHeldQuantity>1e-9?'PARTIALLY_MINE_HAULED':'MINE_TO_WAREHOUSE_IN_TRANSIT';
+  const heldAfterDispatch=Math.max(0,(num(flow.mineHeldQuantity)||0)-quantity);
+  // Align state thresholds: negligible floating-point residue must not make a fully
+  // dispatched batch appear partly held at the mine.
+  flow.mineHeldQuantity=heldAfterDispatch<=1e-6?0:heldAfterDispatch;
+  batchInFlight.stage=flow.mineHeldQuantity>1e-6?'PARTIALLY_MINE_HAULED':'MINE_TO_WAREHOUSE_IN_TRANSIT';
   batchInFlight.status='IN_TRANSIT_TO_RAW_WAREHOUSE';
   batchInFlight.sourceWarehouseId=batchInFlight.sourceWarehouseId||batchInFlight.warehouseId||('WH-'+cid+'-RAW');
   batchInFlight.destinationWarehouseId='WH-'+cid+'-RAW';batchInFlight.warehouseId=null;
