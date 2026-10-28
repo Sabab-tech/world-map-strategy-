@@ -446,12 +446,23 @@ function receiveMineWarehouseShipment(countryId,shipment){
     simulationTurn:turn(),gameDate:factoryCurrentGameDate(),status:'RECEIVED',
     provenance:{source:'OMEGA_RESOURCE_SITE_LOGISTICS_RUNTIME',simulationOnly:true,idempotentReceipt:true}};
   receipts.push(receipt);w.receipts=receipts.slice(-MAX_EVENTS);w.lastReceiptTurn=turn();rs.warehouse=w;
-  batch.stage='RAW_INVENTORY';batch.status='AVAILABLE_TO_FACTORY';batch.warehouseId=shipment.warehouseId;
-  batch.locationNodeKey='WAREHOUSE:'+cid+':RAW';batch.currentLocationNodeId=shipment.warehouseId;
-  batch.lastMovementType='MINE_TO_RAW_WAREHOUSE_RECEIPT';batch.lastMovementTurn=turn();batch.warehouseReceiptId=receiptId;delete batch.mineLogisticsShipmentId;
-  lot.stage='RAW_INVENTORY';lot.status='AVAILABLE';lot.warehouseId=shipment.warehouseId;lot.locationNodeKey='WAREHOUSE:'+cid+':RAW';
-  lot.warehouseReceiptId=receiptId;delete lot.mineLogisticsShipmentId;
   const flow=siteFlowRows(cid).find(item=>String(item.batchId||'')===batchId);
+  const mineHeld=Math.max(0,num(flow?.mineHeldQuantity)||0);
+  const anotherMineHaulInTransit=network.shipments.some(item=>String(item.batchId||'')===batchId&&
+    item.shipmentType==='MINE_TO_WAREHOUSE'&&String(item.shipmentId||'')!==String(shipment.shipmentId||'')&&
+    ['IN_TRANSIT','BLOCKED_ROUTE_BLOCKADE'].includes(String(item.status||'')));
+  const factoryHaulInTransit=network.shipments.some(item=>String(item.batchId||'')===batchId&&
+    item.shipmentType==='RAW_TO_FACTORY'&&['IN_TRANSIT','BLOCKED_ROUTE_BLOCKADE'].includes(String(item.status||'')));
+  const splitLocation=mineHeld>1e-6||anotherMineHaulInTransit||factoryHaulInTransit;
+  batch.stage=splitLocation?'PARTIALLY_IN_RAW_INVENTORY':'RAW_INVENTORY';
+  batch.status=splitLocation?'PARTIAL_STOCK_ACROSS_MINE_WAREHOUSE_OR_TRANSIT':'AVAILABLE_TO_FACTORY';
+  batch.warehouseId=splitLocation?null:shipment.warehouseId;
+  batch.locationNodeKey=splitLocation?'MIXED:MINE_RAW_WAREHOUSE_OR_TRANSIT':'WAREHOUSE:'+cid+':RAW';
+  batch.currentLocationNodeId=splitLocation?null:shipment.warehouseId;
+  batch.lastMovementType='MINE_TO_RAW_WAREHOUSE_RECEIPT';batch.lastMovementTurn=turn();batch.warehouseReceiptId=receiptId;delete batch.mineLogisticsShipmentId;
+  lot.stage=batch.stage;lot.status=splitLocation?'PARTIAL_STOCK_ACROSS_MINE_WAREHOUSE_OR_TRANSIT':'AVAILABLE';
+  lot.warehouseId=splitLocation?null:shipment.warehouseId;lot.locationNodeKey=batch.locationNodeKey;
+  lot.warehouseReceiptId=receiptId;delete lot.mineLogisticsShipmentId;
   if(flow){
     flow.mineWarehouseReceivedQuantity=(num(flow.mineWarehouseReceivedQuantity)||0)+quantity;
     flow.mineWarehouseReceiptIds=[...new Set([...(flow.mineWarehouseReceiptIds||[]),receiptId])];
