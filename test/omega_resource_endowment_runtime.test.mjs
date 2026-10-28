@@ -510,13 +510,13 @@ assert.equal(part6AliasRows.every(site=>site.operation?.commercialExtraction===f
 function expectedRawWarehouseForBatch(countryRow,countryId,batchId){
   const network=countryRow?.industrialNetwork||{};
   const flow=(network.siteFlowLedger||[]).find(row=>String(row.batchId||'')===String(batchId||''))||{};
-  const activeMineHaul=(network.shipments||[]).some(shipment=>
-    String(shipment.batchId||'')===String(batchId||'')&&
-    String(shipment.shipmentType||'')==='MINE_TO_WAREHOUSE'&&
-    ['IN_TRANSIT','BLOCKED_ROUTE_BLOCKADE','BLOCKED_LEDGER_MISMATCH'].includes(String(shipment.status||'')));
   // Only the timed mine-logistics path uses batch-level mixed-location semantics.
   // Legacy raw-to-factory transfers retain their established warehouse location until receipt.
   const mineFlowUsesLogistics=!!(flow.mineLogisticsRouteId||flow.mineLogisticsStockDebited===true);
+  const activeMineHaul=mineFlowUsesLogistics&&(network.shipments||[]).some(shipment=>
+    String(shipment.batchId||'')===String(batchId||'')&&
+    String(shipment.shipmentType||'')==='MINE_TO_WAREHOUSE'&&
+    ['IN_TRANSIT','BLOCKED_ROUTE_BLOCKADE','BLOCKED_LEDGER_MISMATCH'].includes(String(shipment.status||'')));
   const activeDownstreamHaul=mineFlowUsesLogistics&&(network.shipments||[]).some(shipment=>
     String(shipment.batchId||'')===String(batchId||'')&&
     String(shipment.shipmentType||'')==='RAW_TO_FACTORY'&&
