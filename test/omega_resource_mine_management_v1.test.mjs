@@ -426,6 +426,27 @@ test('batch mine construction scales materials, capex and workers, then commissi
   assert.equal(two.assetCount, 2);
   assert.equal(two.costUsd, one.costUsd * 2);
   assert.equal(two.workersRequired, one.workersRequired * 2);
+
+  const uraniumSite = {
+    ...site,
+    siteId: 'SITE_BWA_TEST_URANIUM_MINE',
+    siteName: 'Test Uranium Mine',
+    siteType: 'UNDERGROUND_URANIUM_MINE',
+    real: { resourceId: 'uranium' },
+    identity: { ...site.identity, resourceTypeId: 'uranium', resourceName: 'Uranium', siteType: 'UNDERGROUND_URANIUM_MINE' },
+    operation: { ...site.operation, extractionMethod: 'UNDERGROUND_LONGWALL' },
+    sourceSiteRecord: { ...site.sourceSiteRecord, id: 'SITE_BWA_TEST_URANIUM_MINE', siteId: 'SITE_BWA_TEST_URANIUM_MINE', resourceId: 'uranium', siteType: 'UNDERGROUND_URANIUM_MINE', extractionMethod: 'UNDERGROUND_LONGWALL' }
+  };
+  ctx.OmegaResourceSiteMasterResearchData.sites.push(uraniumSite);
+  ctx.OmegaResourceSiteCanonicalCatalogData.sites.push(uraniumSite);
+  const uraniumQuote = api.quoteMineProject({
+    countryId: 'BWA', siteId: uraniumSite.siteId, resourceId: 'uranium', quantity: 1, assignedWorkers: 1000000000
+  });
+  assert.equal(uraniumQuote.status, 'QUOTED');
+  assert.equal(uraniumQuote.buildClass, 'UNDERGROUND');
+  assert.equal(uraniumQuote.durationDays, 345);
+  assert.equal(uraniumQuote.workersRequired, 1008, 'precision-safe rounding must not turn exactly 900 × 1.12 into 1009 workers');
+
   for (const material of one.materials) {
     const batchMaterial = two.materials.find(row => row.resourceId === material.resourceId);
     assert.ok(batchMaterial, 'batch quote retains material ' + material.resourceId);
