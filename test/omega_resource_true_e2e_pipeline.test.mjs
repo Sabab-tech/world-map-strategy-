@@ -276,8 +276,10 @@ test('real site extraction flows through raw warehouse, transport, factory, fini
     assert.equal(resource.inventoryLots[run.batchId].stage,'PARTIALLY_IN_RAW_INVENTORY');
   }else{
     assert.equal(sourceBatch.stage,'RAW_INVENTORY');
-    assert.equal(sourceBatch.warehouseId,'WH-BGD-RAW');
+    assert.equal(sourceBatch.warehouseId,null,'the second leg has reserved this batch for factory transit');
     assert.equal(resource.inventoryLots[run.batchId].stage,'RAW_INVENTORY');
+    assert.equal(resource.inventoryLots[run.batchId].warehouseId,null,
+      'the in-transit factory-bound lot must not claim a single raw-warehouse location');
   }
   const factoryShipment=(resource.industrialNetwork.shipments||[]).find(x=>String(x.batchId)===String(run.batchId)&&
     x.shipmentType==='RAW_TO_FACTORY'&&String(x.status)==='IN_TRANSIT');
