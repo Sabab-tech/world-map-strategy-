@@ -334,7 +334,10 @@ test('real site extraction flows through raw warehouse, transport, factory, fini
     assert.ok(siteRuntime.activeShipmentId&&siteRuntime.activeShipmentIds.includes(siteRuntime.activeShipmentId),
       'the compatibility activeShipmentId pointer must reference a still-active shipment');
   }
-  const sameResourceDeliveryQuantity=advanced.shipments.filter(x=>String(x.resourceId)==='coal')
+  // Only raw-warehouse-to-factory shipments debit sovereign raw inventory.
+  // Other shipment types can share this tick but belong to different ledgers.
+  const sameResourceDeliveryQuantity=advanced.shipments
+    .filter(x=>String(x.resourceId)==='coal'&&String(x.shipmentType||'')==='RAW_TO_FACTORY')
     .reduce((sum,x)=>sum+(Number(x.quantity)||0),0);
   const sameResourceMineReceiptQuantity=(advanced.mineShipments||[]).filter(x=>String(x.resourceId)==='coal')
     .reduce((sum,x)=>sum+(Number(x.quantity)||0),0);
