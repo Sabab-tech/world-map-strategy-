@@ -427,6 +427,14 @@
       Array.isArray(gameResource.siteFlowLedger) ? gameResource.siteFlowLedger :
       Array.isArray(gameResource.extractionLedger) ? gameResource.extractionLedger : [];
     var assets = safeArray(gameResource.mineAssets);
+    var builtMineUnits = assets.filter(function (asset) {
+      var status = String(asset && asset.status || '').toUpperCase();
+      return !!asset && !/DECOMMISSIONED|DESTROYED|DEMOLISHED|REMOVED/.test(status);
+    }).length;
+    var mineUnitsBuilding = mineProjects.reduce(function (total, project) {
+      var quantity = numberOrNull(project && project.assetCount);
+      return total + (quantity !== null && quantity > 0 ? Math.floor(quantity) : 1);
+    }, 0);
     var photoLib = g.OmegaUIPhotoAssets;
     var minePhoto = photoLib && typeof photoLib.get === 'function' ? photoLib.get('open-pit-mine') : null;
     var photoMarkup = minePhoto && /^assets\/ui-photos\/[a-z0-9-]+\.webp$/.test(String(minePhoto.path || ''))
