@@ -717,6 +717,13 @@ for(const [countryId,row] of Object.entries(worldState)){
 globalThis.OmegaResourceIndustrialCatalogData=JSON.parse(
   fs.readFileSync(new URL('../resource_industrial_catalog_v1.json',import.meta.url),'utf8')
 );
+// Make the manifest deterministic in this offline integration fixture. Route shards are still
+// fetched through the same local-file fetch adapter used by the runtime.
+globalThis.OmegaResourceSiteLogisticsRoutesManifestData=JSON.parse(
+  fs.readFileSync(new URL('../resource_site_logistics_routes_v1.json',import.meta.url),'utf8')
+);
+globalThis.Omega=globalThis.Omega||{};
+globalThis.Omega.ResourceSiteLogisticsRoutesManifestData=globalThis.OmegaResourceSiteLogisticsRoutesManifestData;
 await import('../omega_resource_industrial_network_v1.js');
 const industrial=globalThis.Omega?.ResourceIndustrialNetwork||globalThis.OmegaResourceIndustrialNetwork;
 assert.ok(industrial?.executeSitePipeline,'industrial runtime must export the individual site pipeline');
