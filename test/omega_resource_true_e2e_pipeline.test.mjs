@@ -183,6 +183,7 @@ test('real site extraction flows through raw warehouse, transport, factory, fini
   };
   state.transport.BGD.infrastructure.utilitySupply={electricityMWhPerDay:1000000,waterM3PerDay:1000000,
     authority:'TEST_FIXTURE',status:'AVAILABLE',simulationOnly:true,assets:[]};
+  state.simulation.playerCountryId='BGD';
   const run=await industry.executeSitePipeline({countryId:'BGD',siteId:site.siteId,resourceId:'coal',autoCommissionFactory:true,transportMode:'rail'});
   assert.equal(run.status,'IN_TRANSIT',JSON.stringify(run));
   assert.equal(run.extractionStatus,'COMMITTED');
