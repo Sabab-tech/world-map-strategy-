@@ -221,6 +221,33 @@ function resetCountryOperationalLedgersForExhaustiveAudit(countryId){
 for(const countryId of new Set(sites.map(site=>site.countryId))){
   resetCountryOperationalLedgersForExhaustiveAudit(countryId);
 }
+// Validate core-country profiles with no registered physical mine sites. They still need
+// to enter the shared logistics runtime; zero registered routes must not mean missing country.
+const routeCoverageManifest=JSON.parse(fs.readFileSync(
+  new URL('../resource_site_logistics_routes_v1.json',import.meta.url),'utf8'));
+const noMineRouteCountries=routeCoverageManifest.countryFramework.countriesWithoutMineSiteRoutes;
+const hadSimulationPlayer=Object.prototype.hasOwnProperty.call(game.state.simulation,'playerCountryId');
+const previousSelectedCountry=game.state.simulation.playerCountryId;
+const previousSession=game.state.simulation.session;
+const hadSession=Object.prototype.hasOwnProperty.call(game.state.simulation,'session');
+const hadSessionPlayer=!!previousSession&&Object.prototype.hasOwnProperty.call(previousSession,'playerCountryId');
+const previousSessionCountry=previousSession?.playerCountryId;
+for(const countryId of noMineRouteCountries){
+  game.state.simulation.playerCountryId=countryId;
+  game.state.simulation.session=game.state.simulation.session||{};
+  game.state.simulation.session.playerCountryId=countryId;
+  const result=await industry.loadSiteLogisticsRoutes(countryId);
+  assert.equal(result.status,'READY',countryId+': core country without mines must load the shared logistics framework');
+  assert.equal(result.routeCount,0,countryId+': no mine routes must remain empty rather than be invented');
+  assert.equal(result.noRegisteredSiteRoutes,true,countryId+': empty route support must be explicit');
+}
+if(hadSimulationPlayer)game.state.simulation.playerCountryId=previousSelectedCountry;
+else delete game.state.simulation.playerCountryId;
+if(hadSession){
+  game.state.simulation.session=previousSession;
+  if(hadSessionPlayer)previousSession.playerCountryId=previousSessionCountry;
+  else delete previousSession.playerCountryId;
+}else delete game.state.simulation.session;
 console.log('EXHAUSTIVE_SITE_SHARD_START '+JSON.stringify({shardIndex,shardCount,siteCount:sites.length,totalEligibleSites:allEligibleSites.length,countries:shardBuckets[shardIndex].countries.length,fixture:'CLEAN_COUNTRY_OPERATIONAL_LEDGERS'}));
 function commissionGameplayMine(entry){
   const {siteId,countryId,resourceId,ref}=entry;
