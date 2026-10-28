@@ -376,6 +376,10 @@ test('all expanded deposits receive explicit flow status; active sites dispatch 
       continue;
     }
     const batchId='BATCH-ALL-SITE:'+site.siteId,quantity=100+(index%17);
+    state.simulation.playerCountryId=cid;
+    state.simulation.session=state.simulation.session||{};
+    state.simulation.session.playerCountryId=cid;
+    await industry.loadSiteLogisticsRoutes(cid);
     seedTestFactory(state,site,rid);
     seedExtractedBatch(state,site,rid,batchId,occurrenceKey,quantity);
     expectedBatchIds.push(batchId);
@@ -438,8 +442,14 @@ test('all expanded deposits receive explicit flow status; active sites dispatch 
     state.simulation.turn=simulationTurn;
     const daysPerTurn=Math.max(1,Math.round(Number(state.simulation.daysPerTurn)||1));
     state.simulation.date=new Date(Date.UTC(Number(state.simulation.startYear)||2025,0,1)+(simulationTurn-1)*daysPerTurn*86400000).toISOString().slice(0,10);
-    for(const cid of countryIds)industry.processPendingFactoryInputs(cid);
-    for(const cid of countryIds)industry.advanceShipments(cid);
+    for(const cid of countryIds){
+      state.simulation.playerCountryId=cid;
+      state.simulation.session=state.simulation.session||{};
+      state.simulation.session.playerCountryId=cid;
+      await industry.loadSiteLogisticsRoutes(cid);
+      await industry.processPendingFactoryInputs(cid);
+      await industry.advanceShipments(cid);
+    }
   }
 
   const endToEndFailures=[];
