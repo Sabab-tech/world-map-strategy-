@@ -4378,4 +4378,62 @@
     "compatibilityPolicy": "All 39 retired dedicated processing IDs resolve through aliases to this single active profile; retired profiles are not active catalog entries.",
     "recipePolicy": "All 42 resource-specific processing rules retain their distinct inputs, outputs, cycle times, and coefficients while routing through the universal materials and elements plant."
   }
+,
+  "mineResourceComplexity": {
+    "diamond": 1.28, "lithium": 1.24, "uranium": 1.32, "rare_earth": 1.32,
+    "niobium": 1.30, "platinum": 1.25, "ruby": 1.20, "gold": 1.12,
+    "tungsten": 1.12, "copper": 1.10, "tin": 1.08
+  },
+  "mineConstructionProfiles": {
+    "OPEN_PIT": {
+      "costUsd": 48000000, "durationDays": 180, "workersRequired": 520,
+      "materials": {"iron_ore": 8500, "copper": 700, "limestone": 14000, "coal": 3200, "crude_oil": 1100, "construction_aggregate": 21000, "cement": 1400, "steel": 850, "industrial_machinery": 12},
+      "authority": "SIMULATED_MINE_CONSTRUCTION_PROFILE_V1"
+    },
+    "UNDERGROUND": {
+      "costUsd": 92000000, "durationDays": 300, "workersRequired": 900,
+      "materials": {"iron_ore": 14000, "copper": 1150, "limestone": 22000, "coal": 6100, "crude_oil": 1900, "construction_aggregate": 26000, "cement": 2400, "steel": 2100, "alloy_steel": 650, "industrial_machinery": 24, "grid_equipment": 180},
+      "authority": "SIMULATED_MINE_CONSTRUCTION_PROFILE_V1"
+    },
+    "TAILINGS": {
+      "costUsd": 18500000, "durationDays": 100, "workersRequired": 190,
+      "materials": {"iron_ore": 2400, "copper": 180, "limestone": 5200, "coal": 1150, "crude_oil": 420, "construction_aggregate": 7200, "cement": 420, "steel": 190, "recycling_feedstock": 120},
+      "authority": "SIMULATED_MINE_CONSTRUCTION_PROFILE_V1"
+    },
+    "BRINE": {
+      "costUsd": 33500000, "durationDays": 190, "workersRequired": 370,
+      "materials": {"iron_ore": 4200, "copper": 950, "limestone": 7800, "coal": 2400, "crude_oil": 1500, "construction_aggregate": 12500, "cement": 1150, "steel": 720, "industrial_machinery": 16, "industrial_chemicals": 210},
+      "authority": "SIMULATED_MINE_CONSTRUCTION_PROFILE_V1"
+    },
+    "PROCESSING": {
+      "costUsd": 39000000, "durationDays": 210, "workersRequired": 410,
+      "materials": {"iron_ore": 6400, "copper": 1450, "limestone": 11500, "coal": 3500, "crude_oil": 1650, "construction_aggregate": 16500, "cement": 1650, "steel": 1200, "industrial_machinery": 20, "grid_equipment": 140},
+      "authority": "SIMULATED_MINE_CONSTRUCTION_PROFILE_V1"
+    },
+    "QUARRY": {
+      "costUsd": 26000000, "durationDays": 135, "workersRequired": 280,
+      "materials": {"construction_aggregate": 18000, "limestone": 6800, "iron_ore": 2600, "copper": 340, "cement": 850, "steel": 500, "industrial_machinery": 10},
+      "authority": "SIMULATED_MINE_CONSTRUCTION_PROFILE_V1"
+    },
+    "OIL_GAS_FIELD": {
+      "costUsd": 76000000, "durationDays": 240, "workersRequired": 610,
+      "materials": {"iron_ore": 6500, "copper": 1400, "limestone": 9800, "crude_oil": 2200, "natural_gas": 1800, "construction_aggregate": 14500, "cement": 1750, "steel": 1550, "industrial_machinery": 18, "industrial_gases": 240, "polymer_resin": 180},
+      "authority": "SIMULATED_MINE_CONSTRUCTION_PROFILE_V1"
+    },
+    "OFFSHORE_PLATFORM": {
+      "costUsd": 185000000, "durationDays": 420, "workersRequired": 1450,
+      "materials": {"iron_ore": 18000, "copper": 4200, "limestone": 20000, "crude_oil": 3500, "natural_gas": 3000, "construction_aggregate": 34000, "cement": 4800, "steel": 8500, "alloy_steel": 2400, "industrial_machinery": 42, "grid_equipment": 650, "industrial_gases": 850, "polymer_resin": 500},
+      "authority": "SIMULATED_MINE_CONSTRUCTION_PROFILE_V1"
+    }
+  },
+  "mineDecommissionRules": {
+    "OPEN_PIT": {"wasteOutputs": {"metal_scrap": 0.035, "glass_cullet": 0.012, "disposal_residue": 0.018}},
+    "UNDERGROUND": {"wasteOutputs": {"metal_scrap": 0.045, "glass_cullet": 0.012, "disposal_residue": 0.024}},
+    "TAILINGS": {"wasteOutputs": {"metal_scrap": 0.018, "chemical_process_residue": 0.035, "disposal_residue": 0.045}},
+    "BRINE": {"wasteOutputs": {"metal_scrap": 0.025, "chemical_process_residue": 0.032, "disposal_residue": 0.028}},
+    "PROCESSING": {"wasteOutputs": {"metal_scrap": 0.04, "glass_cullet": 0.022, "chemical_process_residue": 0.026}},
+    "QUARRY": {"wasteOutputs": {"metal_scrap": 0.018, "glass_cullet": 0.01, "disposal_residue": 0.02}},
+    "OIL_GAS_FIELD": {"wasteOutputs": {"metal_scrap": 0.05, "chemical_process_residue": 0.035, "disposal_residue": 0.04}},
+    "OFFSHORE_PLATFORM": {"wasteOutputs": {"metal_scrap": 0.08, "glass_cullet": 0.018, "chemical_process_residue": 0.04, "disposal_residue": 0.05}}
+  }
 }
