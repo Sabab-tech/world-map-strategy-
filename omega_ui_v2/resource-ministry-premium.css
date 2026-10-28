@@ -898,3 +898,328 @@
   height: 20px;
   width: 20px;
 }
+
+
+/* Mine-build visual cascade guard.
+ * index.html loads this premium stylesheet after omega-ui-v2.css, so keep the
+ * polished construction panel authoritative in the final cascade. These
+ * selectors are intentionally limited to the mine-build panel.
+ */
+.omega-v2-resource-premium .omega-v2-mine-build-plan {
+  background: linear-gradient(145deg, #0d2032 0%, #091726 62%, #111b31 100%);
+  border: 1px solid rgba(105, 228, 238, .34);
+  border-radius: 13px;
+  box-shadow: inset 3px 0 0 rgba(105, 228, 238, .13), inset -3px 0 0 rgba(182, 160, 255, .12),
+    0 8px 22px rgba(0, 0, 0, .24), 0 0 17px rgba(54, 194, 222, .08);
+  margin-top: 10px;
+  min-width: 0;
+  overflow: hidden;
+  padding: clamp(10px, 2.6vw, 15px);
+}
+.omega-v2-resource-premium .omega-v2-mine-build-plan,
+.omega-v2-resource-premium .omega-v2-mine-build-plan * {
+  box-sizing: border-box;
+  text-decoration: none !important;
+}
+.omega-v2-resource-premium .omega-v2-mine-build-plan .omega-v2-card-header {
+  align-items: center;
+  border-bottom: 1px solid rgba(105, 228, 238, .18);
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  margin: 0 0 10px;
+  min-width: 0;
+  padding: 0 0 10px;
+}
+.omega-v2-resource-premium .omega-v2-mine-build-plan .omega-v2-card-header > div { min-width: 0; }
+.omega-v2-resource-premium .omega-v2-mine-build-plan .omega-v2-eyebrow {
+  color: #69e4ee;
+  font-size: 9px;
+  font-style: italic;
+  font-weight: 850;
+  letter-spacing: .12em;
+  line-height: 1.3;
+}
+.omega-v2-resource-premium .omega-v2-mine-build-plan .omega-v2-card-header h3 {
+  color: #f0f7ff;
+  font-size: clamp(14px, 3.5vw, 17px);
+  font-weight: 800;
+  line-height: 1.24;
+  margin: 3px 0 0;
+  overflow-wrap: anywhere;
+}
+.omega-v2-resource-premium .omega-v2-mine-build-plan .omega-v2-card-header p {
+  color: #9fb8cb;
+  font-size: 10px;
+  line-height: 1.4;
+  margin: 4px 0 0;
+}
+.omega-v2-resource-premium .omega-v2-mine-build-plan .omega-v2-build-plan-fields {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+  min-width: 0;
+}
+.omega-v2-resource-premium .omega-v2-mine-build-plan .omega-v2-build-plan-fields label {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  color: #b9cad9;
+  display: grid;
+  font-size: 10px;
+  font-weight: 750;
+  gap: 5px;
+  min-width: 0;
+  padding: 0;
+}
+.omega-v2-resource-premium .omega-v2-mine-build-plan .omega-v2-build-plan-fields label > span {
+  color: #9fcbd7;
+  font-size: 10px;
+  font-style: italic;
+  line-height: 1.25;
+}
+.omega-v2-resource-premium .omega-v2-mine-build-plan .omega-v2-build-plan-fields input {
+  appearance: none;
+  background: #071321;
+  border: 1px solid rgba(105, 228, 238, .3);
+  border-radius: 8px;
+  color: #f0f7ff;
+  font: inherit;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  min-height: 36px;
+  min-width: 0;
+  padding: 7px 9px;
+  width: 100%;
+}
+.omega-v2-resource-premium .omega-v2-mine-build-plan .omega-v2-build-plan-fields input:focus-visible {
+  border-color: #69e4ee;
+  box-shadow: 0 0 0 2px rgba(105, 228, 238, .14);
+  outline: 2px solid transparent;
+}
+.omega-v2-resource-premium .omega-v2-mine-build-plan .omega-v2-build-preview {
+  display: grid;
+  gap: 9px;
+  margin-top: 10px;
+  min-width: 0;
+}
+.omega-v2-resource-premium .omega-v2-mine-build-plan .omega-v2-build-summary-grid {
+  display: grid;
+  gap: 7px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+  min-width: 0;
+}
+.omega-v2-resource-premium .omega-v2-mine-build-plan .omega-v2-build-summary-grid > div {
+  background: linear-gradient(145deg, rgba(19, 43, 62, .88), rgba(10, 25, 41, .94));
+  border: 1px solid rgba(119, 155, 184, .2);
+  border-radius: 9px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .035);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  padding: 8px 9px;
+}
+.omega-v2-resource-premium .omega-v2-mine-build-plan .omega-v2-build-summary-grid > div:nth-child(1) { border-top-color: rgba(105, 228, 238, .64); }
+.omega-v2-resource-premium .omega-v2-mine-build-plan .omega-v2-build-summary-grid > div:nth-child(2) { border-top-color: rgba(182, 160, 255, .64); }
+.omega-v2-resource-premium .omega-v2-mine-build-plan .omega-v2-build-summary-grid > div:nth-child(3) { border-top-color: rgba(255, 202, 115, .62); }
+.omega-v2-resource-premium .omega-v2-mine-build-plan .omega-v2-build-summary-grid > div:nth-child(4) { border-top-color: rgba(109, 226, 177, .62); }
+.omega-v2-resource-premium .omega-v2-mine-build-plan .omega-v2-build-summary-grid > div > span {
+  color: #a5bacb;
+  font-size: 9px;
+  font-style: italic;
+  font-weight: 700;
+  line-height: 1.3;
+}
+.omega-v2-resource-premium .omega-v2-mine-build-plan .omega-v2-build-summary-grid strong {
+  color: #f1f7fc;
+  font-size: clamp(12px, 3vw, 14px);
+  font-variant-numeric: tabular-nums;
+  font-weight: 850;
+  line-height: 1.3;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.omega-v2-resource-premium .omega-v2-mine-build-plan .omega-v2-build-summary-grid small {
+  color: #91aabd;
+  font-size: 9px;
+  line-height: 1.35;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.omega-v2-resource-premium .omega-v2-mine-build-plan .omega-v2-build-material-heading {
+  border-bottom: 1px solid rgba(105, 228, 238, .18);
+  color: #72e3ec;
+  font-size: 12px;
+  font-style: italic;
+  font-weight: 850;
+  line-height: 1.35;
+  margin: 2px 0 0;
+  padding: 0 0 7px;
+}
+.omega-v2-resource-premium .omega-v2-mine-build-plan .omega-v2-build-material-heading > span {
+  color: #95afc3;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 650;
+}
+.omega-v2-resource-premium .omega-v2-mine-build-plan .omega-v2-build-material-list {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  min-width: 0;
+}
+.omega-v2-resource-premium .omega-v2-mine-build-plan .omega-v2-build-material {
+  align-items: center;
+  background: linear-gradient(110deg, rgba(14, 34, 51, .96), rgba(12, 24, 43, .96));
+  border: 1px solid rgba(105, 228, 238, .18);
+  border-radius: 9px;
+  box-shadow: inset 2px 0 0 rgba(105, 228, 238, .11), 0 3px 9px rgba(0, 0, 0, .12);
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(0, 1fr) minmax(76px, auto);
+  min-width: 0;
+  padding: 8px;
+}
+.omega-v2-resource-premium .omega-v2-mine-build-plan .omega-v2-build-material-resource {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+}
+.omega-v2-resource-premium .omega-v2-mine-build-plan .omega-v2-build-material .omega-v2-resource-icon-image,
+.omega-v2-resource-premium .omega-v2-mine-build-plan .omega-v2-build-material .omega-v2-resource-icon--fallback {
+  align-items: center;
+  background: rgba(105, 228, 238, .07);
+  border: 1px solid rgba(105, 228, 238, .2);
+  border-radius: 8px;
+  box-shadow: 0 0 11px rgba(105, 228, 238, .08);
+  color: #83e8f0;
+  display: inline-flex;
+  flex: 0 0 28px;
+  height: 28px;
+  justify-content: center;
+  object-fit: contain;
+  padding: 4px;
+  width: 28px;
+}
+.omega-v2-resource-premium .omega-v2-mine-build-plan .omega-v2-build-material .omega-v2-resource-icon-image {
+  filter: drop-shadow(0 0 4px rgba(105, 228, 238, .16));
+}
+.omega-v2-resource-premium .omega-v2-mine-build-plan .omega-v2-build-material-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.omega-v2-resource-premium .omega-v2-mine-build-plan .omega-v2-build-material-copy > strong {
+  color: #eaf5ff;
+  font-size: 11px;
+  font-weight: 820;
+  line-height: 1.3;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.omega-v2-resource-premium .omega-v2-mine-build-plan .omega-v2-build-material-copy > small {
+  color: #9eb5c7;
+  font-size: 9px;
+  line-height: 1.3;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.omega-v2-resource-premium .omega-v2-mine-build-plan .omega-v2-build-material-need {
+  align-items: flex-end;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  text-align: right;
+}
+.omega-v2-resource-premium .omega-v2-mine-build-plan .omega-v2-build-material-need > strong {
+  color: #78e9ef;
+  font-size: clamp(12px, 3.1vw, 15px);
+  font-variant-numeric: tabular-nums;
+  font-weight: 900;
+  line-height: 1.2;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.omega-v2-resource-premium .omega-v2-mine-build-plan .omega-v2-build-material-need > strong em {
+  color: #78e9ef;
+  font-style: italic;
+  font-weight: 900;
+}
+.omega-v2-resource-premium .omega-v2-mine-build-plan .omega-v2-build-amount { white-space: normal; }
+.omega-v2-resource-premium .omega-v2-mine-build-plan .omega-v2-build-material-need > small {
+  font-size: 9px;
+  line-height: 1.3;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.omega-v2-resource-premium .omega-v2-mine-build-plan .omega-v2-build-material-need > small.is-stocked { color: #7de1b3; }
+.omega-v2-resource-premium .omega-v2-mine-build-plan .omega-v2-build-material-need > small.is-short { color: #ffbe8a; }
+.omega-v2-resource-premium .omega-v2-mine-build-plan .omega-v2-build-notice {
+  background: rgba(11, 28, 44, .9);
+  border: 1px solid rgba(128, 157, 181, .22);
+  border-radius: 8px;
+  color: #b0c6d7;
+  font-size: 10px;
+  line-height: 1.4;
+  margin: 0;
+  padding: 8px 9px;
+  overflow-wrap: anywhere;
+}
+.omega-v2-resource-premium .omega-v2-mine-build-plan .omega-v2-button--primary[data-omega-v2-build-submit] {
+  background: linear-gradient(105deg, #117e91, #5e57ad);
+  border: 1px solid rgba(116, 230, 242, .55);
+  border-radius: 9px;
+  box-shadow: 0 0 13px rgba(44, 192, 215, .15), inset 0 1px 0 rgba(255, 255, 255, .12);
+  color: #f5fcff;
+  font-size: 11px;
+  font-weight: 850;
+  letter-spacing: .015em;
+  min-height: 38px;
+  padding: 9px 12px;
+  transition: box-shadow .16s ease, filter .16s ease, transform .16s ease;
+  width: 100%;
+}
+.omega-v2-resource-premium .omega-v2-mine-build-plan .omega-v2-button--primary[data-omega-v2-build-submit]:not(:disabled):hover {
+  box-shadow: 0 0 17px rgba(44, 192, 215, .25), inset 0 1px 0 rgba(255, 255, 255, .15);
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+.omega-v2-resource-premium .omega-v2-mine-build-plan .omega-v2-button--primary[data-omega-v2-build-submit]:disabled {
+  cursor: not-allowed;
+  filter: saturate(.45);
+  opacity: .62;
+}
+.omega-v2-resource-premium .omega-v2-mine-build-plan .omega-v2-button--quiet {
+  border: 1px solid rgba(151, 173, 195, .28);
+  border-radius: 8px;
+  color: #c8d8e5;
+  flex: 0 0 auto;
+  font-size: 10px;
+  min-height: 32px;
+  padding: 6px 9px;
+}
+.omega-v2-resource-premium .omega-v2-mine-build-plan .omega-v2-build-plan-fields label,
+.omega-v2-resource-premium .omega-v2-mine-build-plan .omega-v2-build-summary-grid > div,
+.omega-v2-resource-premium .omega-v2-mine-build-plan .omega-v2-build-material {
+  overflow-wrap: anywhere;
+}
+@media (max-width: 420px) {
+  .omega-v2-resource-premium .omega-v2-mine-build-plan { border-radius: 11px; padding: 10px; }
+  .omega-v2-resource-premium .omega-v2-mine-build-plan .omega-v2-build-summary-grid { gap: 6px; }
+  .omega-v2-resource-premium .omega-v2-mine-build-plan .omega-v2-build-summary-grid > div { padding: 7px; }
+  .omega-v2-resource-premium .omega-v2-mine-build-plan .omega-v2-build-material { gap: 6px; padding: 7px; }
+  .omega-v2-resource-premium .omega-v2-mine-build-plan .omega-v2-build-material-resource { gap: 6px; }
+  .omega-v2-resource-premium .omega-v2-mine-build-plan .omega-v2-build-material .omega-v2-resource-icon-image,
+  .omega-v2-resource-premium .omega-v2-mine-build-plan .omega-v2-build-material .omega-v2-resource-icon--fallback {
+    flex-basis: 25px; height: 25px; width: 25px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .omega-v2-resource-premium .omega-v2-mine-build-plan .omega-v2-button--primary[data-omega-v2-build-submit] { transition: none; }
+}
