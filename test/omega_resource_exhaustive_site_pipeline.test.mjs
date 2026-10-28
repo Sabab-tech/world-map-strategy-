@@ -376,25 +376,69 @@ for(let siteIndex=0;siteIndex<sites.length;siteIndex++){
 }
 assert.deepEqual(failures,[],'site extraction/dispatch failures: '+JSON.stringify(failures.slice(0,20)));
 
-const maxEta=Math.max(Number(game.state.simulation.turn)||1,
+// Phase 1: advance only the currently selected country and receipt each mine haul.
+// The receipt is authoritative; it is the only event that restores cargo to raw inventory.
+const maxMineEta=Math.max(Number(game.state.simulation.turn)||1,
   ...pipelines.map(x=>Number(x.result.shipment?.etaTurn)||Number(game.state.simulation.turn)||1));
-advanceTo(maxEta);
+advanceTo(maxMineEta);
 for(const countryId of countryIds){
-  // The base fixture preloads raw batches for all mines. Prevent those unrelated
-  // residual batches from being auto-routed to a different site's factory during
-  // this targeted batch run; each pipeline shipment is already explicitly dispatched.
-  const network=liveCountryState(countryId).industrialNetwork;
-  for(const flow of network?.siteFlowLedger||[])flow.lastResidualDispatchTurn=Number(game.state.simulation.turn)||1;
   const countryPipelines=pipelines.filter(x=>x.site.countryId===countryId);
+  const targetBatchIds=new Set(countryPipelines.map(x=>String(x.result.batchId)));
+  const liveNetwork=liveCountryState(countryId).industrialNetwork;
+  for(const flow of liveNetwork?.siteFlowLedger||[]){
+    if(!targetBatchIds.has(String(flow.batchId||'')))flow.lastResidualDispatchTurn=Number(game.state.simulation.turn)||1;
+  }
+  game.state.simulation.playerCountryId=countryId;
+  game.state.simulation.session=game.state.simulation.session||{};
+  game.state.simulation.session.playerCountryId=countryId;
+  const arrival=industry.advanceShipments(countryId);
+  const after=runtime.countryResourceState(countryId)||{};
+  const network=after.industrialNetwork||{};
+  for(const pipeline of countryPipelines){
+    const mineShipmentId=String(pipeline.result.shipmentId);
+    const mineShipment=(network.shipments||[]).find(x=>String(x.shipmentId)===mineShipmentId);
+    const receipt=(after.warehouse?.receipts||[]).find(x=>String(x.receiptId)==='MINE-WH-REC:'+mineShipmentId);
+    const factoryShipment=(network.shipments||[]).find(x=>String(x.batchId)===String(pipeline.result.batchId)&&
+      x.shipmentType==='RAW_TO_FACTORY'&&['IN_TRANSIT','BLOCKED_ROUTE_BLOCKADE'].includes(String(x.status||'')));
+    if(mineShipment?.status!=='DELIVERED'||receipt?.status!=='RECEIVED'||!factoryShipment){
+      failures.push({siteId:pipeline.site.siteId,countryId,resourceId:pipeline.site.resourceId,
+        stage:'MINE_HAUL_RECEIPT',mineShipmentStatus:mineShipment?.status||null,receiptStatus:receipt?.status||null,
+        factoryShipmentId:factoryShipment?.shipmentId||null,arrival});
+      continue;
+    }
+    pipeline.factoryShipmentId=String(factoryShipment.shipmentId);
+  }
+}
+assert.deepEqual(failures,[],'mine-to-warehouse receipt failures: '+JSON.stringify(failures.slice(0,20)));
+
+// Phase 2: all mine receipts now exist. Advance the simulation clock to the factory-leg
+// ETAs, then process each country independently under an explicit player-country selection.
+const maxFactoryEta=Math.max(Number(game.state.simulation.turn)||1,
+  ...pipelines.map(x=>{
+    const state=runtime.countryResourceState(x.site.countryId)||{};
+    const shipment=(state.industrialNetwork?.shipments||[]).find(y=>String(y.shipmentId)===String(x.factoryShipmentId));
+    return Number(shipment?.etaTurn)||Number(game.state.simulation.turn)||1;
+  }));
+advanceTo(maxFactoryEta);
+for(const countryId of countryIds){
+  const countryPipelines=pipelines.filter(x=>x.site.countryId===countryId);
+  const targetBatchIds=new Set(countryPipelines.map(x=>String(x.result.batchId)));
+  const liveNetwork=liveCountryState(countryId).industrialNetwork;
+  for(const flow of liveNetwork?.siteFlowLedger||[]){
+    if(!targetBatchIds.has(String(flow.batchId||'')))flow.lastResidualDispatchTurn=Number(game.state.simulation.turn)||1;
+  }
   const deliveryStateBefore=runtime.countryResourceState(countryId)||{};
   const preNetwork=deliveryStateBefore.industrialNetwork||{};
-  const preDeliveryStatus=new Map((preNetwork.deliveries||[]).map(x=>[String(x.shipmentId||''),String(x.status||'')+'|'+String(x.destinationStatus||'')]));
+  const preDeliveryStatus=new Map((preNetwork.deliveries||[]).map(x=>
+    [String(x.shipmentId||''),String(x.status||'')+'|'+String(x.destinationStatus||'')]));
   const preShipmentStatus=new Map((preNetwork.shipments||[]).map(x=>[String(x.shipmentId||''),String(x.status||'')]));
   const balanceBefore=new Map([...new Set(countryPipelines.map(x=>x.site.resourceId))].map(resourceId=>[resourceId,{
     inventory:resourceBalance(deliveryStateBefore.inventory,resourceId),
     warehouse:resourceBalance(deliveryStateBefore.warehouse?.availableByResource,resourceId),
     reserved:resourceBalance(deliveryStateBefore.warehouse?.reservedByResource,resourceId)
   }]));
+  game.state.simulation.playerCountryId=countryId;
+  game.state.simulation.session.playerCountryId=countryId;
   const deliveryResult=industry.advanceShipments(countryId);
   const deliveryStateAfter=runtime.countryResourceState(countryId)||{};
   for(const [resourceId,before] of balanceBefore){
@@ -422,7 +466,7 @@ for(const countryId of countryIds){
     }
   }
   for(const pipeline of countryPipelines){
-    const shipmentId=String(pipeline.result.shipmentId);
+    const shipmentId=String(pipeline.factoryShipmentId||'');
     const post=runtime.countryResourceState(countryId)||{};
     const network=post.industrialNetwork||{};
     const deliveredRows=(network.deliveries||[]).filter(x=>String(x.shipmentId)===shipmentId&&
@@ -444,7 +488,7 @@ for(const countryId of countryIds){
       String(shipment?.countryId||countryId).toUpperCase()===countryId&&
       String(shipment?.factoryId||'')===String(pipeline.result.factoryId)&&
       String(sourceBatch?.countryId||'').toUpperCase()===countryId&&
-      String(sourceBatch?.warehouseId||'')==='WH-'+countryId+'-RAW'&&
+      (sourceBatch?.warehouseId==null||String(sourceBatch.warehouseId)==='WH-'+countryId+'-RAW')&&
       closeEnough(delivered.quantity,shipment?.quantity)&&
       closeEnough(Number(sourceBatch?.remainingQuantity)||0,pipeline.initialBatchRemaining-(Number(delivered.quantity)||0))&&
       (!sourceLot||closeEnough(sourceLot.remainingQuantity,sourceBatch?.remainingQuantity))&&
@@ -462,9 +506,7 @@ for(const countryId of countryIds){
         finalBatchRemaining:sourceBatch?.remainingQuantity??null,reservationStatus:reservation?.status||null,
         factoryCountry:factory?.countryId||null,inputLotFound:!!inputLot,
         inputLotSourceBatchIds:inputLot?.sourceBatchIds||[]});
-    } else {
-      counts.delivered++;
-    }
+    }else counts.delivered++;
   }
 }
 assert.deepEqual(failures,[],'site dispatch/delivery failures: '+JSON.stringify(failures.slice(0,20)));
