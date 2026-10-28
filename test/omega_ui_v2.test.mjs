@@ -725,6 +725,68 @@ test('religion and ideology navigation stays inside UI v2', () => {
   assert.equal(source.includes("domainPhoto('mosque-architecture'"), false);
 });
 
+test('Programmatic minister recruitment opens UI v2 for the explicitly selected country', () => {
+  const previous = {
+    OmegaCabinetUI: globalThis.OmegaCabinetUI,
+    OmegaMinisterRecruitment: globalThis.OmegaMinisterRecruitment,
+    OmegaMinisterStateRegistry: globalThis.OmegaMinisterStateRegistry,
+    OmegaLiveMinisterSelectorV9: globalThis.OmegaLiveMinisterSelectorV9
+  };
+  globalThis.OmegaCabinetUI = {
+    activeCountry: 'USA',
+    ministriesDatabase: {
+      cabinet_council: { id:'cabinet_council', title:'Executive Cabinet', category:'governance' },
+      interior_security: { id:'interior_security', title:'Interior & Security', category:'governance' },
+      trade: { id:'trade', title:'Trade', category:'economy' }
+    }
+  };
+  globalThis.OmegaMinisterRecruitment = {
+    normalizeCountryCode(value) { return String(value == null ? '' : value).trim().toUpperCase(); },
+    fetchRoster: async () => []
+  };
+  globalThis.OmegaMinisterStateRegistry = {
+    getActiveMinisterSummary() { return null; },
+    getActiveMinister() { return null; }
+  };
+  globalThis.OmegaLiveMinisterSelectorV9 = { active() { return null; } };
+  const viewChanges = [];
+  const root = {
+    classList: { add() {} },
+    addEventListener() {},
+    querySelector() { return null; },
+    querySelectorAll() { return []; },
+    contains() { return true; },
+    innerHTML: ''
+  };
+  try {
+    const result = globalThis.OmegaUIV2Government.openRecruitment(root, 'interior_security', {
+      countryId: 'BGD',
+      view: 'executive-ministry',
+      onViewChange(view) { viewChanges.push(view); }
+    });
+    assert.deepEqual(result, {
+      ok: true,
+      ministryId: 'interior_security',
+      countryId: 'BGD',
+      view: 'all-ministries'
+    });
+    assert.equal(root.__omegaV2RecruitingMinistry, 'interior_security');
+    assert.equal(root.__omegaV2RecruitingCountry, 'BGD');
+    assert.equal(root.__omegaV2GovernmentView, 'all-ministries');
+    assert.deepEqual(viewChanges, ['all-ministries']);
+    assert.match(root.innerHTML, /data-omega-v2-minister-recruitment-panel/);
+    assert.match(root.innerHTML, /data-country-id="BGD"/);
+    assert.match(root.innerHTML, /data-ministry-id="interior_security"/);
+    assert.equal(root.innerHTML.includes('omega-minister-command'), false);
+  } finally {
+    globalThis.OmegaUIV2Government.stopAutoRotation(root);
+    for (const [key, value] of Object.entries(previous)) {
+      if (value === undefined) delete globalThis[key];
+      else globalThis[key] = value;
+    }
+  }
+});
+
 test('Government exposes emblems, minister recruitment and a stable future portrait slot', () => {
   const government = readFileSync(new URL('../omega_ui_v2/screens/government.js', import.meta.url), 'utf8');
   const detail = readFileSync(new URL('../omega_ui_v2/screens/ministry-detail.js', import.meta.url), 'utf8');
