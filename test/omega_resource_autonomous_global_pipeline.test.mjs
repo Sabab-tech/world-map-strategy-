@@ -250,6 +250,9 @@ test('every committed deposit event is routed country-by-country through factory
     assert.equal(mineArrival.delivered,0,'a raw warehouse receipt is not a factory delivery');
     assert.ok(rs.warehouse.receipts.some(x=>x.receiptId==='MINE-WH-REC:'+mineShipment.shipmentId&&x.status==='RECEIVED'),
       'the raw warehouse must record the actual first-leg receipt');
+    // Residual site-flow dispatch is turn-driven and runs before receipts are posted.
+    // Tick once more so the newly received warehouse quantity can open the second leg.
+    await industry.advanceShipments(c);
     const factoryShipment=rs.industrialNetwork.shipments.find(x=>x.batchId===f.batchId&&
       x.shipmentType==='RAW_TO_FACTORY'&&['IN_TRANSIT','BLOCKED_ROUTE_BLOCKADE'].includes(x.status));
     assert.ok(factoryShipment,'a successful mine receipt must open a separate timed factory shipment');
