@@ -2116,18 +2116,23 @@ function advanceShipments(c){
         ['IN_TRANSIT','BLOCKED_ROUTE_BLOCKADE','BLOCKED_LEDGER_MISMATCH'].includes(String(item.status||'')));
       if(sourceBatch.remainingQuantity<=1e-9){
         const factoryLocation='FACTORY:'+cid+':'+String(s.factoryId);
-        sourceBatch.warehouseId=null;sourceBatch.locationNodeKey=factoryLocation;sourceBatch.currentLocationNodeId=String(s.factoryId);
-        sourceLot.warehouseId=null;sourceLot.locationNodeKey=factoryLocation;sourceLot.lastMovementType='TRANSFER_TO_FACTORY';sourceLot.lastMovementTurn=turn();
+        sourceBatch.stage='TRANSFERRED_TO_FACTORY';sourceBatch.warehouseId=null;
+        sourceBatch.locationNodeKey=factoryLocation;sourceBatch.currentLocationNodeId=String(s.factoryId);
         sourceBatch.lastMovementType='TRANSFER_TO_FACTORY';sourceBatch.lastMovementTurn=turn();
+        if(sourceLot){
+          sourceLot.stage='TRANSFERRED_TO_FACTORY';sourceLot.warehouseId=null;sourceLot.locationNodeKey=factoryLocation;
+          sourceLot.lastMovementType='TRANSFER_TO_FACTORY';sourceLot.lastMovementTurn=turn();
+        }
       }else if(mineHeld>1e-6||otherActiveLeg){
         const mixedLocation='MIXED:MINE_RAW_WAREHOUSE_OR_TRANSIT';
-        sourceBatch.warehouseId=null;sourceBatch.locationNodeKey=mixedLocation;sourceBatch.currentLocationNodeId=null;
-        sourceLot.warehouseId=null;sourceLot.locationNodeKey=mixedLocation;
+        sourceBatch.stage='PARTIALLY_IN_RAW_INVENTORY';sourceBatch.warehouseId=null;
+        sourceBatch.locationNodeKey=mixedLocation;sourceBatch.currentLocationNodeId=null;
+        if(sourceLot){sourceLot.stage='PARTIALLY_IN_RAW_INVENTORY';sourceLot.warehouseId=null;sourceLot.locationNodeKey=mixedLocation;}
       }else{
         const rawWarehouseId=String(warehouse.warehouseId||('WH-'+cid+'-RAW'));
-        sourceBatch.warehouseId=rawWarehouseId;sourceBatch.locationNodeKey='WAREHOUSE:'+cid+':RAW';
-        sourceBatch.currentLocationNodeId=rawWarehouseId;
-        sourceLot.warehouseId=rawWarehouseId;sourceLot.locationNodeKey=sourceBatch.locationNodeKey;
+        sourceBatch.stage='RAW_INVENTORY';sourceBatch.warehouseId=rawWarehouseId;
+        sourceBatch.locationNodeKey='WAREHOUSE:'+cid+':RAW';sourceBatch.currentLocationNodeId=rawWarehouseId;
+        if(sourceLot){sourceLot.stage='RAW_INVENTORY';sourceLot.warehouseId=rawWarehouseId;sourceLot.locationNodeKey=sourceBatch.locationNodeKey;}
         warehouse.storedBatchIds=Array.isArray(warehouse.storedBatchIds)?warehouse.storedBatchIds:[];
         if(!warehouse.storedBatchIds.some(value=>String(value)===sourceBatchId))warehouse.storedBatchIds.push(sourceBatchId);
       }
