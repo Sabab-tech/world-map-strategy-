@@ -233,6 +233,12 @@ test('real site extraction flows through raw warehouse, transport, factory, fini
     'cargo must not remain available in the source inventory while the mine haul is in transit');
   assert.ok(rawWarehouseBeforeMineArrival+1e-6<mineDispatchQuantity,
     'cargo must not be pre-credited to raw warehouse inventory before the mine receipt');
+  state.simulation.playerCountryId=null;
+  const noPlayerTick=industry.advanceShipments('BGD');
+  assert.equal(noPlayerTick.status,'SKIPPED','mine logistics must pause when no player country is selected');
+  assert.equal(resource.industrialNetwork.shipments.find(x=>String(x.shipmentId)===String(run.shipmentId))?.status,'IN_TRANSIT',
+    'an unselected-country tick must not advance a mine shipment');
+  state.simulation.playerCountryId='BGD';
   advanceToGameTurn(state,run.shipment.etaTurn);
   const mineAdvanced=await industry.advanceShipments('BGD');
   assert.ok(mineAdvanced.mineDelivered>=1,JSON.stringify(mineAdvanced));
