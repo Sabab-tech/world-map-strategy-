@@ -330,12 +330,20 @@ function provisionIndustrialTestResources(countryId){
   }
 }
 for(const cid of ['AUS','KWT','BGD','CHL'])provisionIndustrialTestResources(cid);
-const pilbaraPipeline=await industrialPipelineRuntime.executeSitePipeline({countryId:'AUS',siteId:'SITE_AUS_pilbara_iron_ore_range',resourceId:'iron_ore',quantity:100,autoCommissionFactory:true});
+// Selected-country mine -> warehouse -> factory proof. Selecting a different
+// country must pause this country's movements until it is selected again.
+globalThis.Game.state.simulation.playerCountryId='AUS';
+globalThis.Game.state.simulation.session=globalThis.Game.state.simulation.session||{};
+globalThis.Game.state.simulation.session.playerCountryId='AUS';
+const pilbaraPipeline=await industrialPipelineRuntime.executeSitePipeline({
+  countryId:'AUS',siteId:'SITE_AUS_pilbara_iron_ore_range',resourceId:'iron_ore',quantity:100,autoCommissionFactory:true
+});
 assert.equal(pilbaraPipeline.status,'IN_TRANSIT',JSON.stringify(pilbaraPipeline));
 assert.equal(pilbaraPipeline.countryId,'AUS');
 assert.equal(pilbaraPipeline.extractionStatus,'COMMITTED');
 assert.equal(pilbaraPipeline.shipmentStatus,'DISPATCHED');
-assert.ok(Number.isFinite(pilbaraPipeline.route?.totalDistanceKm) && pilbaraPipeline.route.totalDistanceKm>0);
+assert.equal(pilbaraPipeline.shipment?.shipmentType,'MINE_TO_WAREHOUSE');
+assert.ok(Number.isFinite(pilbaraPipeline.route?.totalDistanceKm)&&pilbaraPipeline.route.totalDistanceKm>0);
 assert.equal(pilbaraPipeline.route?.crossBorderRequired,false);
 const ausAfterExtraction=runtime.countryResourceState('AUS')||{};
 const pipelineOccurrence=pilbaraPipeline.occurrenceKey;
@@ -346,18 +354,35 @@ assert.equal(pilbaraBatch.countryId,'AUS');
 assert.equal(pilbaraBatch.sourceCountryId,'AUS');
 assert.equal(pilbaraBatch.originCountryId,'AUS');
 assert.equal(pilbaraBatch.ownerCountryCode,'AUS');
-assert.equal(pilbaraBatch.warehouseId,'WH-AUS-RAW');
+assert.equal(pilbaraBatch.warehouseId,null,'batch remains at the mine until first-leg receipt');
 assert.ok(Number(pilbaraBatch.quantity)>0);
 assert.equal(pilbaraBatch.stateAuthority,'SIMULATED');
 assert.equal(ausAfterExtraction.warehouse.countryId,'AUS');
-assert.ok((ausAfterExtraction.warehouse.availableByResource?.iron_ore||0)>=0);
-const etaTurn=Number(pilbaraPipeline.route.etaTurn);
-assert.ok(etaTurn>=Number(globalThis.Game.state.simulation.turn));
-advanceToGameTurn(globalThis.Game.state,etaTurn);
+const pilbaraMineShipment=pilbaraPipeline.shipment;
+const pausedPlayer=globalThis.Game.state.simulation.playerCountryId;
+globalThis.Game.state.simulation.playerCountryId=null;
+globalThis.Game.state.simulation.session.playerCountryId=null;
+const pausedAUS=industrialPipelineRuntime.advanceShipments('AUS');
+assert.equal(pausedAUS.status,'SKIPPED','a country must not move cargo while it is not selected');
+assert.equal(ausAfterExtraction.industrialNetwork.shipments.find(x=>x.shipmentId===pilbaraMineShipment.shipmentId)?.status,'IN_TRANSIT');
+globalThis.Game.state.simulation.playerCountryId=pausedPlayer;
+globalThis.Game.state.simulation.session.playerCountryId='AUS';
+advanceToGameTurn(globalThis.Game.state,Number(pilbaraMineShipment.etaTurn));
+const pilbaraMineArrival=industrialPipelineRuntime.advanceShipments('AUS');
+assert.ok(pilbaraMineArrival.mineDelivered>=1,JSON.stringify(pilbaraMineArrival));
+const ausAfterMineArrival=runtime.countryResourceState('AUS')||{};
+const pilbaraWarehouseReceipt=ausAfterMineArrival.warehouse.receipts.find(x=>String(x.receiptId)==='MINE-WH-REC:'+String(pilbaraMineShipment.shipmentId));
+assert.equal(pilbaraWarehouseReceipt?.status,'RECEIVED');
+const pilbaraFactoryShipment=(ausAfterMineArrival.industrialNetwork?.shipments||[]).find(x=>
+  String(x.batchId)===String(pilbaraPipeline.batchId)&&x.shipmentType==='RAW_TO_FACTORY'&&x.status==='IN_TRANSIT');
+assert.ok(pilbaraFactoryShipment,'the warehouse receipt must trigger the separate warehouse-to-factory leg');
+const factoryEta=Number(pilbaraFactoryShipment.etaTurn);
+advanceToGameTurn(globalThis.Game.state,factoryEta);
 const delivery=industrialPipelineRuntime.advanceShipments('AUS');
 assert.equal(delivery.status,'ADVANCED',JSON.stringify(delivery));
-assert.equal(delivery.delivered,1,JSON.stringify(delivery));
-const pilbaraDelivered=delivery.shipments[0];
+assert.ok(delivery.delivered>=1,JSON.stringify(delivery));
+const pilbaraDelivered=delivery.shipments.find(x=>x.shipmentId===pilbaraFactoryShipment.shipmentId);
+assert.ok(pilbaraDelivered,'the selected country's second-leg shipment must reach the factory');
 assert.equal(pilbaraDelivered.status,'DELIVERED');
 assert.equal(pilbaraDelivered.processingStatus,'IN_PROGRESS',JSON.stringify(pilbaraDelivered.processing));
 const ausAfterDelivery=runtime.countryResourceState('AUS')||{};
@@ -375,7 +400,7 @@ const pilbaraCompletion=industrialPipelineRuntime.processPendingFactoryInputs('A
 assert.equal(pilbaraCompletion.completedCount,1,JSON.stringify(pilbaraCompletion));
 const ausAfterProcessing=runtime.countryResourceState('AUS')||{};
 const completedPilbaraDelivery=(ausAfterProcessing.industrialNetwork?.deliveries||[])
-  .find(x=>String(x.shipmentId)===String(pilbaraPipeline.shipmentId));
+  .find(x=>String(x.shipmentId)===String(pilbaraFactoryShipment.shipmentId));
 assert.equal(completedPilbaraDelivery?.processingStatus,'PROCESSED',
   'delivery ledger must be reconciled only after the scheduled cycle commits');
 const gevraRef=(indState.mineSiteReferences||[]).find(x=>x.siteReferenceKey==='SITE_IND_gevra_oc_mine');
