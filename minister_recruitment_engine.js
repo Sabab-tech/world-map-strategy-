@@ -264,7 +264,7 @@
   }
 
   function uiV2Required() {
-    const shell = document.documentElement;
+    const shell = typeof document !== 'undefined' ? document.documentElement : null;
     if (shell && typeof shell.getAttribute === 'function' &&
         shell.getAttribute('data-omega-ui-v2-required') === 'true') return true;
     return !!global.OmegaUIV2Integration;
