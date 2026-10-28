@@ -1609,7 +1609,9 @@ function dispatchResidualSiteBatches(c){
   for(const flow of siteFlowRows(cid).slice()){
     if(flow?.mineLogisticsRouteId&&selectedPlayer!==cid)continue;
     const batchId=String(flow.batchId||'').trim();if(!batchId||Number(flow.lastResidualDispatchTurn)===turn())continue;
-    if(['IN_TRANSIT_TO_WAREHOUSE','PENDING_ROUTE_PROFILE','MINE_LOGISTICS_BLOCKED'].includes(String(flow.mineLogisticsStatus||'')))continue;
+    // A mine haul in transit does not make the already-received warehouse portion unavailable.
+    // The received-minus-factory-dispatched balance below decides if a factory leg can start.
+    if(['PENDING_ROUTE_PROFILE','MINE_LOGISTICS_BLOCKED'].includes(String(flow.mineLogisticsStatus||'')))continue;
     const source=Array.isArray(rs.batches)?rs.batches.find(x=>String(x?.batchId||'')===batchId):null;
     if(!source)continue;
     let remaining=Math.max(0,num(source.remainingQuantity!=null?source.remainingQuantity:source.quantity)||0);
