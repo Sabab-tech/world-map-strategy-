@@ -277,10 +277,18 @@ test('real site extraction flows through raw warehouse, transport, factory, fini
   assert.equal(mineReceipt.receivedFrom,'MINE_SITE_LOGISTICS');
   assert.equal(mineReceipt.status,'RECEIVED');
   const flowAfterMineReceipt=resource.industrialNetwork.siteFlowLedger.find(row=>String(row.batchId)===String(run.batchId));
+  const activeResidualMineHaul=(resource.industrialNetwork.shipments||[]).some(x=>
+    String(x.batchId)===String(run.batchId)&&x.shipmentType==='MINE_TO_WAREHOUSE'&&
+    ['IN_TRANSIT','BLOCKED_ROUTE_BLOCKADE','BLOCKED_LEDGER_MISMATCH'].includes(String(x.status||'')));
   if((Number(flowAfterMineReceipt?.mineHeldQuantity)||0)>1e-6){
-    assert.equal(sourceBatch.stage,'PARTIALLY_IN_RAW_INVENTORY');
     assert.equal(sourceBatch.warehouseId,null,'a batch split between mine-held and warehouse stock has no single warehouse location');
-    assert.equal(resource.inventoryLots[run.batchId].stage,'PARTIALLY_IN_RAW_INVENTORY');
+    assert.equal(resource.inventoryLots[run.batchId].warehouseId,null);
+  }else if(activeResidualMineHaul){
+    assert.equal(sourceBatch.stage,'MINE_TO_WAREHOUSE_IN_TRANSIT',
+      'a residual mine shipment may remain in transit after a partial warehouse receipt');
+    assert.equal(sourceBatch.warehouseId,null,'a mine-haul remainder must not claim raw warehouse location');
+    assert.equal(resource.inventoryLots[run.batchId].stage,'MINE_TO_WAREHOUSE_IN_TRANSIT');
+    assert.equal(resource.inventoryLots[run.batchId].warehouseId,null);
   }else{
     assert.equal(sourceBatch.stage,'RAW_INVENTORY');
     assert.equal(sourceBatch.warehouseId,null,'the second leg has reserved this batch for factory transit');
