@@ -232,7 +232,11 @@ test('real site extraction flows through raw warehouse, transport, factory, fini
     'the whole batch must leave country inventory exactly once at first-leg dispatch');
   assert.ok(Math.abs((Number(resource.warehouse.availableByResource.coal)||0)-rawWarehouseBeforeMinePipeline)<1e-5,
     'the whole batch must leave raw-warehouse availability until its individual arrival receipts');
-  assert.equal(resource.industrialNetwork.siteLogisticsBySiteId[site.siteId].activeShipmentId,run.shipmentId);
+  const mineSiteRuntime=resource.industrialNetwork.siteLogisticsBySiteId[site.siteId];
+  assert.ok(mineSiteRuntime.activeShipmentIds.includes(run.shipmentId),
+    'the exact mine-haul shipment must remain in the site's active-shipment ledger');
+  assert.ok(mineSiteRuntime.activeShipments.some(row=>String(row.shipmentId)===String(run.shipmentId)&&row.stage==='MINE_TO_WAREHOUSE'),
+    'the exact mine-haul shipment must retain its own active lifecycle stage');
   const mineDispatchQuantity=Number(run.shipment.quantity);
   const rawStockBeforeMineArrival=Number(resource.inventory.coal)||0;
   const rawWarehouseBeforeMineArrival=Number(resource.warehouse.availableByResource.coal)||0;
@@ -290,7 +294,10 @@ test('real site extraction flows through raw warehouse, transport, factory, fini
   assert.equal(factoryShipment.siteId,site.siteId);
   const siteRuntime=resource.industrialNetwork.siteLogisticsBySiteId[site.siteId];
   assert.equal(siteRuntime.runtimeActive,true,'the same mine runtime must transition to its factory-bound haul');
-  assert.equal(siteRuntime.activeShipmentId,factoryShipment.shipmentId);
+  assert.ok(siteRuntime.activeShipmentIds.includes(factoryShipment.shipmentId),
+    'the exact factory-bound shipment must be tracked even when this mine has other parallel shipments');
+  assert.ok(siteRuntime.activeShipments.some(row=>String(row.shipmentId)===String(factoryShipment.shipmentId)&&row.stage==='RAW_TO_FACTORY'),
+    'the factory-bound shipment must retain its own active lifecycle stage');
   const rawStockBeforeDelivery=Number(resource.inventory.coal)||0;
   const rawWarehouseBeforeDelivery=Number(resource.warehouse.availableByResource.coal)||0;
   const rawReservationBeforeDelivery=Number(resource.warehouse.reservedByResource.coal)||0;
@@ -308,9 +315,17 @@ test('real site extraction flows through raw warehouse, transport, factory, fini
   assert.equal(delivery.processingStatus,'IN_PROGRESS',JSON.stringify(delivery.processing));
   assert.equal(delivery.batchId,run.batchId);
   assert.equal(delivery.destinationStatus,'FACTORY_RECEIVED');
-  assert.equal(siteRuntime.runtimeActive,false,'the mine logistics runtime must become idle after factory receipt');
-  assert.equal(siteRuntime.activeShipmentId,null);
-  assert.equal(siteRuntime.currentStage,'FACTORY_RECEIVED');
+  assert.equal(siteRuntime.activeShipmentIds.includes(factoryShipment.shipmentId),false,
+    'the delivered factory-bound shipment must be removed from the active ledger');
+  assert.equal(siteRuntime.runtimeActive,siteRuntime.activeShipmentIds.length>0,
+    'the site remains active only when another shipment is still moving');
+  if(siteRuntime.activeShipmentIds.length===0){
+    assert.equal(siteRuntime.activeShipmentId,null);
+    assert.equal(siteRuntime.currentStage,'FACTORY_RECEIVED');
+  }else{
+    assert.ok(siteRuntime.activeShipmentId&&siteRuntime.activeShipmentIds.includes(siteRuntime.activeShipmentId),
+      'the compatibility activeShipmentId pointer must reference a still-active shipment');
+  }
   const sameResourceDeliveryQuantity=advanced.shipments.filter(x=>String(x.resourceId)==='coal')
     .reduce((sum,x)=>sum+(Number(x.quantity)||0),0);
   assert.equal(Number(resource.inventory.coal)||0,rawStockBeforeDelivery-sameResourceDeliveryQuantity,'raw inventory must debit the combined same-resource deliveries exactly once');
