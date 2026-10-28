@@ -393,8 +393,14 @@ test('real site extraction flows through raw warehouse, transport, factory, fini
   assert.ok(concentrateOffer.sourceSiteIds.includes(site.siteId),
     'market offer must expose the originating deposit site to opponent analysis');
   const originAllocation=concentrateOffer.batchAllocations.find(x=>x.originatingBatchId===run.batchId);
+  const originFlow=resource.industrialNetwork.siteFlowLedger.find(x=>String(x.batchId)===String(run.batchId));
   assert.ok(originAllocation&&originAllocation.siteReferenceKey===site.siteId&&originAllocation.occurrenceKey===run.occurrenceKey,
-    'offer lineage must preserve canonical site and occurrence identity');
+    'offer lineage must preserve canonical site and occurrence identity: '+JSON.stringify({
+      allocation:originAllocation?{originatingBatchId:originAllocation.originatingBatchId,siteId:originAllocation.siteId,
+        siteReferenceKey:originAllocation.siteReferenceKey,occurrenceKey:originAllocation.occurrenceKey}:null,
+      expected:{batchId:run.batchId,siteId:site.siteId,occurrenceKey:run.occurrenceKey},
+      sourceFlow:originFlow?{batchId:originFlow.batchId,siteId:originFlow.siteId,occurrenceKey:originFlow.occurrenceKey}:null
+    }));
   const reconciliation=g.OmegaResourceEconomy.reconcileCountry('BGD');
   assert.equal(reconciliation.status,'APPLIED',JSON.stringify(reconciliation));
   assert.equal(reconciliation.result.status,'HEALTHY',JSON.stringify(reconciliation.result));
