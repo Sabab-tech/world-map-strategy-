@@ -168,9 +168,9 @@ function productionSummary(site){
  return parts.length?parts.join(' · '):'Production data unavailable';
 }
 
-function quoteFor(site,country,workers){
+function quoteFor(site,country,workers,quantity){
  const api=network();if(!api?.quoteMineProject)return{status:'BLOCKED',reason:'MINE_CONSTRUCTION_API_UNAVAILABLE'};
- return api.quoteMineProject({countryId:country,siteId:siteIdOf(site),resourceId:resourceOf(site),assignedWorkers:workers});
+ return api.quoteMineProject({countryId:country,siteId:siteIdOf(site),resourceId:resourceOf(site),assignedWorkers:workers,quantity:quantity==null?1:quantity});
 }
 function shellStyle(){
  if(g.document.getElementById('omega-mine-management-style-v1'))return;
@@ -248,49 +248,83 @@ function topCards(country){
 }
 function kpi(name,value){return '<div class="omm-kpi"><span>'+esc(name)+'</span><strong>'+esc(value)+'</strong></div>';}
 function materialMarkup(quote){
- if(!Array.isArray(quote.materials)||!quote.materials.length)return '<div class="omm-muted">Construction bill of materials unavailable.</div>';
- return '<div class="omm-materials">'+quote.materials.map(m=>'<div class="omm-material"><span>'+esc(label(m.resourceId))+'<br><small class="omm-muted">Available '+formatNum(m.available,2)+' t</small></span><strong class="'+(m.sufficient?'omm-ok':'omm-short')+'">'+formatNum(m.required,2)+' t'+(m.shortfall>0?' · short '+formatNum(m.shortfall,2):'')+'</strong></div>').join('')+'</div>';
+ if(!Array.isArray(quote.materials)||!quote.materials.length)return '<div class="omm-muted">Construction materials unavailable.</div>';
+ return '<div class="omm-materials">'+quote.materials.map(m=>'<div class="omm-material"><span>'+esc(label(m.resourceId))+'<br><small class="omm-muted">Available '+formatNum(m.available,2)+'</small></span><strong class="'+(m.sufficient?'omm-ok':'omm-short')+'">'+formatNum(m.required,2)+(m.unit?' '+esc(unitLabel(m.unit)):'')+(m.shortfall>0?' · short '+formatNum(m.shortfall,2):'')+'</strong></div>').join('')+'</div>';
+}
+function previewQuote(site,country,count){return quoteFor(site,country,1000000000,count);}
+function buildPreviewMarkup(site,country,count){
+ const quote=previewQuote(site,country,count);
+ if(quote.status!=='QUOTED')return '<div class="omm-alert">Build quote unavailable: '+esc(label(quote.reason||quote.status))+'</div><button data-omm-action="flip-back">Back to mine</button>';
+ const allowed=country===playerCountry()&&quote.ready;
+ return '<div class="omm-build-summary"><div class="omm-build-metric"><span>Construction cost · total</span><strong>'+formatMoney(quote.costUsd)+'</strong><small>'+formatMoney(quote.unitCostUsd)+' / mine</small></div>'+
+  '<div class="omm-build-metric"><span>Build time</span><strong>'+formatNum(quote.durationDays)+' days</strong><small>'+formatNum(quote.estimatedTurns)+' simulation turn(s)</small></div>'+
+  '<div class="omm-build-metric"><span>Workers required</span><strong>'+formatNum(quote.workersRequired)+'</strong><small>'+formatNum(quote.workersRequiredPerAsset)+' / mine</small></div>'+
+  '<div class="omm-build-metric"><span>Treasury check</span><strong class="'+(quote.treasury.sufficient?'omm-ok':'omm-short')+'">'+(quote.treasury.sufficient?'Funds available':'Insufficient funds')+'</strong><small>'+formatMoney(quote.treasury.available)+' / '+formatMoney(quote.treasury.required)+'</small></div></div>'+
+  '<div class="omm-sub">Required materials for '+formatNum(quote.assetCount)+' mine unit(s). Quantities update from the selected count and live inventory/warehouse checks.</div>'+
+  materialMarkup(quote)+
+  (!quote.commissioningReady?'<div class="omm-alert">A construction project for this site is already in progress.</div>':'')+
+  '<div class="omm-build-ready '+(quote.ready?'omm-ok':'omm-short')+'" role="status">'+(quote.ready?'All treasury, material and workforce checks passed.':'Build is blocked until every required material, treasury and workforce check passes.')+'</div>'+
+  '<button class="omm-primary" data-omm-action="start-mine-build" data-site-id="'+esc(quote.siteId)+'" data-resource-id="'+esc(quote.resourceId)+'" data-count="'+formatNum(quote.assetCount)+'" '+(!allowed?'disabled':'')+'>Build '+formatNum(quote.assetCount)+' mine unit(s)</button>';
+}
+function demolitionPreviewMarkup(site,country,count){
+ const api=network(),quote=api?.quoteMineDemolition?.({countryId:country,siteId:siteIdOf(site),quantity:count});
+ if(!quote||quote.status!=='QUOTED')return '<div class="omm-alert">Demolition estimate unavailable: '+esc(label(quote?.reason||quote?.status||'RUNTIME_UNAVAILABLE'))+'</div>';
+ const rows=Array.isArray(quote.wasteOutputs)?quote.wasteOutputs:[];
+ return '<div class="omm-build-summary"><div class="omm-build-metric"><span>Workers affected</span><strong>'+formatNum(quote.jobsLost)+'</strong><small>Jobs removed with selected units</small></div>'+
+  '<div class="omm-build-metric"><span>Output capacity lost</span><strong>'+(quote.productionLostPerDay===null?'Not recorded':formatNum(quote.productionLostPerDay,2))+'</strong><small>Estimated units per day</small></div>'+
+  '<div class="omm-build-metric"><span>Mine units</span><strong>'+formatNum(quote.quantity)+'</strong><small>Selected for demolition</small></div></div>'+
+  '<div class="omm-sub">Estimated recoverable demolition material</div>'+
+  (rows.length?'<div class="omm-materials">'+rows.map(row=>'<div class="omm-material"><span>'+esc(label(row.resourceId))+'</span><strong>'+formatNum(row.quantity,2)+' '+esc(unitLabel(row.unit))+'</strong></div>').join('')+'</div>':'<div class="omm-alert">Material recovery cannot be calculated because this mine has no recorded construction-material lineage. The missing history will not be fabricated.</div>')+
+  '<div class="omm-alert">Demolition permanently stops these mine assets. Warehouse stock and historical records remain. Production cannot resume after destruction.</div>'+
+  '<button class="omm-danger" data-omm-action="request-mine-destruction" data-site-id="'+esc(siteIdOf(site))+'" data-count="'+formatNum(count)+'" '+(country!==playerCountry()?'disabled':'')+'>Review demolition and confirm</button>';
+}
+function operatingPreviewMarkup(site,country,count){
+ const rows=assetRows(country).filter(a=>String(a.siteId)===siteIdOf(site));
+ const active=rows.filter(a=>String(a.status||'').toUpperCase()==='OPERATIONAL').length;
+ const stopped=rows.filter(a=>String(a.status||'').toUpperCase()==='STOPPED').length;
+ return '<div class="omm-build-summary"><div class="omm-build-metric"><span>Operating</span><strong>'+formatNum(active)+'</strong><small>Units currently producing</small></div>'+
+  '<div class="omm-build-metric"><span>Paused</span><strong>'+formatNum(stopped)+'</strong><small>Units available to resume</small></div>'+
+  '<div class="omm-build-metric"><span>Simulation status</span><strong>Player controlled</strong><small>State changes are logged</small></div></div>'+
+  '<label class="omm-count-field">Mine units <input class="omm-input" data-omm-operation-count type="number" min="1" max="'+Math.max(1,Math.max(active,stopped))+'" step="1" value="'+Math.max(1,Math.min(Number(count)||1,Math.max(1,Math.max(active,stopped))))+'"></label>'+
+  '<div class="omm-actions">'+
+   '<button class="omm-primary" data-omm-action="stop-mine-units" data-site-id="'+esc(siteIdOf(site))+'" '+(country!==playerCountry()||active<1?'disabled':'')+'>Pause selected units</button>'+
+   '<button data-omm-action="resume-mine-units" data-site-id="'+esc(siteIdOf(site))+'" '+(country!==playerCountry()||stopped<1?'disabled':'')+'>Resume selected units</button></div>'+
+  '<div class="omm-sub">Paused mines keep their assets and stock. Their extraction pipeline remains disabled until they are resumed.</div>';
 }
 function siteCard(site,country,view){
  const id=siteIdOf(site),rid=resourceOf(site),name=site.siteName||site.name||id;
- const asset=assetRows(country).slice().reverse().find(a=>String(a.siteId)===id&&
-   !/DECOMMISSIONED|DESTROYED|STOPPED|INACTIVE/.test(String(a.status||'').toUpperCase())&&
-   /OPERATIONAL|ACTIVE|COMMISSIONED|PRODUCING/.test(String(a.status||'').toUpperCase()))||null;
- const project=projectFor(site,country),status=asset?'ACTIVE':project?.status||sourceStatus(site),quote=quoteFor(site,country,0);
+ const assets=assetRows(country).filter(a=>String(a.siteId)===id&&!/DECOMMISSIONED|DESTROYED|INACTIVE/.test(String(a.status||'').toUpperCase()));
+ const active=assets.filter(a=>String(a.status||'').toUpperCase()==='OPERATIONAL'),stopped=assets.filter(a=>String(a.status||'').toUpperCase()==='STOPPED');
+ const project=projectFor(site,country),status=active.length?'ACTIVE':stopped.length?'STOPPED':project?.status||sourceStatus(site);
  const loc=site.location?.adminRegion||site.location?.locality||site.location?.countryName||'';
  const rs=playerState(country),rawStock=num(rs.warehouse?.availableByResource?.[rid]),finishedStock=num(rs.processedWarehouse?.availableByResource?.[rid]);
- let html='<article class="omm-card omm-mine-card" data-omm-site-card="'+esc(id)+'"><div class="omm-card-head"><div><h3>'+esc(name)+'</h3><div class="omm-sub">'+esc(resourceLabel(site))+(loc?' · '+esc(loc):'')+'</div></div><span class="omm-pill">'+esc(label(status))+'</span></div>';
- html+='<div class="omm-lines"><div class="omm-line"><span class="omm-muted">Mine status</span><br>'+esc(label(asset?'OPERATIONAL':project?.status||sourceStatus(site)))+'</div>'+
-   '<div class="omm-line"><span class="omm-muted">Reserve</span><br>'+esc(reserveSummary(site))+'</div>'+
-   '<div class="omm-line"><span class="omm-muted">Daily production profile</span><br>'+esc(productionSummary(site))+'</div>'+
-   '<div class="omm-line"><span class="omm-muted">Raw stock</span><br>'+esc(rawStock===null?'—':formatNum(rawStock,2))+'</div>'+
-   '<div class="omm-line"><span class="omm-muted">Processed stock</span><br>'+esc(finishedStock===null?'—':formatNum(finishedStock,2))+'</div></div>';
- if(quote.status==='QUOTED'){
-  html+='<div class="omm-section"><h4>Construction plan</h4><div class="omm-lines">'+
-   '<div class="omm-line"><span class="omm-muted">Construction cost</span><br><strong>'+formatMoney(quote.costUsd)+'</strong></div>'+
-   '<div class="omm-line"><span class="omm-muted">Construction time</span><br><strong>'+formatNum(quote.durationDays)+' days · '+formatNum(quote.estimatedTurns)+' turns</strong></div>'+
-   '<div class="omm-line"><span class="omm-muted">Required workforce</span><br><strong>'+formatNum(quote.workersRequired)+' workers</strong></div>'+
-   '<div class="omm-line"><span class="omm-muted">Treasury</span><br>'+formatMoney(quote.treasury.available)+' / '+formatMoney(quote.costUsd)+'<br><span class="'+(quote.treasury.sufficient?'omm-ok':'omm-short')+'">'+(quote.treasury.sufficient?'Funds available':'Insufficient funds')+'</span></div></div>';
-  materialMarkup(quote);
-  if(project?.status==='UNDER_CONSTRUCTION'){
-    const pct=Math.max(0,Math.min(100,Number(project.progressPct||0)*100));
-    html+='<div class="omm-progress"><span style="width:'+pct+'%"></span></div><div class="omm-sub">Construction progress '+pct.toFixed(1)+'% · '+formatNum(project.progressDays)+' / '+formatNum(project.durationDays)+' days</div>';
-  }else if(asset){
-    html+='<div class="omm-alert">This mine is commissioned. Extraction remains subject to reserve, staffing, route and factory checks.</div>';
-  }else{
-    const canBuild=country===playerCountry()&&!project;
-    html+='<div class="omm-actions"><label for="omm-workers-'+esc(id)+'">Workers</label><input class="omm-input" id="omm-workers-'+esc(id)+'" data-omm-workers="'+esc(id)+'" type="number" min="0" step="1" value="'+quote.workersRequired+'" aria-label="Construction workers for '+esc(name)+'">'+
-      '<button class="omm-primary" data-omm-action="build-mine" data-site-id="'+esc(id)+'" data-resource-id="'+esc(rid)+'" '+(!canBuild?'disabled':'')+'>Build mine</button></div>';
-  }
- }else if(!asset){
-  html+='<div class="omm-alert">A construction quote is currently unavailable. No resources have been committed.</div>';
- }
- if(asset){
-  html+='<div class="omm-actions"><label for="omm-output-'+esc(id)+'">Extraction amount</label><input class="omm-input" id="omm-output-'+esc(id)+'" data-omm-quantity="'+esc(id)+'" type="number" min="1" step="1" value="1000" aria-label="Extraction amount for '+esc(name)+'">'+
-   '<button data-omm-action="run-mine" data-site-id="'+esc(id)+'" data-resource-id="'+esc(rid)+'" '+(country!==playerCountry()?'disabled':'')+'>Extract</button>'+
-   '<button class="omm-danger" data-omm-action="decommission-mine" data-site-id="'+esc(id)+'" data-resource-id="'+esc(rid)+'" '+(country!==playerCountry()?'disabled':'')+'>Demolish</button></div>';
- }
- return html+'</article>';
+ const canBuild=country===playerCountry()&&project?.status!=='UNDER_CONSTRUCTION';
+ const buildQuote=previewQuote(site,country,1),destroyCount=active.length+stopped.length;
+ const buildPanel=buildPreviewMarkup(site,country,1),destroyPanel=demolitionPreviewMarkup(site,country,Math.max(1,destroyCount)),operatingPanel=operatingPreviewMarkup(site,country,1);
+ let html='<article class="omm-mine-flip" data-omm-site-card="'+esc(id)+'"><div class="omm-flip-inner">'+
+  '<section class="omm-card omm-face omm-face-front"><div class="omm-card-head"><div><div class="omm-mine-art">'+SVG_MOUNTAIN+'</div><h3>'+esc(name)+'</h3><div class="omm-sub">'+esc(resourceLabel(site))+(loc?' · '+esc(loc):'')+'</div></div><span class="omm-pill">'+esc(label(status))+'</span></div>'+
+  '<div class="omm-lines"><div class="omm-line"><span class="omm-muted">Operating units</span><br><strong>'+formatNum(active.length)+'</strong></div>'+
+  '<div class="omm-line"><span class="omm-muted">Paused units</span><br><strong>'+formatNum(stopped.length)+'</strong></div>'+
+  '<div class="omm-line"><span class="omm-muted">Reserve</span><br>'+esc(reserveSummary(site))+'</div>'+
+  '<div class="omm-line"><span class="omm-muted">Daily production profile</span><br>'+esc(productionSummary(site))+'</div>'+
+  '<div class="omm-line"><span class="omm-muted">Raw stock</span><br>'+esc(rawStock===null?'—':formatNum(rawStock,2))+'</div>'+
+  '<div class="omm-line"><span class="omm-muted">Processed stock</span><br>'+esc(finishedStock===null?'—':formatNum(finishedStock,2))+'</div></div>'+
+  (project?.status==='UNDER_CONSTRUCTION'?'<div class="omm-progress"><span style="width:'+Math.max(0,Math.min(100,Number(project.progressPct||0)*100))+'%"></span></div><div class="omm-sub">Construction in progress · '+formatNum(project.progressDays)+' / '+formatNum(project.durationDays)+' days</div>':'')+
+  '<div class="omm-actions"><button class="omm-primary" data-omm-action="build-mine" data-site-id="'+esc(id)+'" '+(!canBuild?'disabled':'')+'>Build</button>'+
+  '<button data-omm-action="run-mine" data-site-id="'+esc(id)+'" data-resource-id="'+esc(rid)+'" '+(country!==playerCountry()||active.length===0?'disabled':'')+'>Extract</button>'+
+  '<button data-omm-action="operate-mine" data-site-id="'+esc(id)+'" '+(country!==playerCountry()||(!active.length&&!stopped.length)?'disabled':'')+'>Pause / Resume</button>'+
+  '<button class="omm-danger" data-omm-action="destroy-mine-preview" data-site-id="'+esc(id)+'" '+(country!==playerCountry()||destroyCount===0?'disabled':'')+'>Demolish</button>'+
+  '<button data-omm-action="focus-site" data-site-id="'+esc(id)+'">'+SVG_MOUNTAIN+' View</button></div></section>'+
+  '<section class="omm-card omm-face omm-face-back" data-omm-site-back="'+esc(id)+'">'+
+   '<div class="omm-action-panel" data-omm-panel="build"><div class="omm-panel-head"><div><h3>'+esc(name)+'</h3><div class="omm-sub">Mine construction plan</div></div><button data-omm-action="flip-back">Back</button></div>'+
+   '<label class="omm-count-field">New mine units <input class="omm-input" data-omm-build-count data-site-id="'+esc(id)+'" type="number" min="1" max="100" step="1" value="1" aria-label="How many '+esc(name)+' mine units to build"></label>'+
+   '<div class="omm-build-preview">'+buildPanel+'</div></div>'+
+   '<div class="omm-action-panel" data-omm-panel="destroy" hidden><div class="omm-panel-head"><div><h3>'+esc(name)+'</h3><div class="omm-sub">Demolition impact</div></div><button data-omm-action="flip-back">Back</button></div>'+
+   '<label class="omm-count-field">Mine units to destroy <input class="omm-input" data-omm-destroy-count data-site-id="'+esc(id)+'" type="number" min="1" max="'+Math.max(1,destroyCount)+'" step="1" value="'+Math.max(1,destroyCount)+'" '+(destroyCount===0?'disabled':'')+'></label>'+
+   '<div class="omm-destroy-preview">'+demolitionPreviewMarkup(site,country,Math.max(1,destroyCount))+'</div></div>'+
+   '<div class="omm-action-panel" data-omm-panel="operate" hidden><div class="omm-panel-head"><div><h3>'+esc(name)+'</h3><div class="omm-sub">Operational control</div></div><button data-omm-action="flip-back">Back</button></div>'+
+   operatingPanel+'</div></section></div></article>';
+ return html;
 }
 
 function stationRows(country){
