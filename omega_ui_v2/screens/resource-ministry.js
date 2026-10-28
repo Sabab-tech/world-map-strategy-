@@ -836,7 +836,7 @@
       Array.from(new Set(model.sites.map(function (item) { return item.resourceId; })).values()).map(function (id) {
         return '<option value="' + esc(id) + '">' + esc(resourceLabel(id)) + '</option>';
       }).join('') + '</select></div>' +
-      '<div class="omega-v2-card-meta">Showing <strong data-omega-v2-site-visible-count>' + fmt(model.sites.filter(eligible).length) + '</strong> mines</div>' +
+      '<div class="omega-v2-card-meta">Showing <strong data-omega-v2-site-visible-count>' + fmt(model.sites.filter(eligible).length) + '</strong> sites</div>' +
       (model.siteCount ? '<div class="omega-v2-mine-workspace"><div class="omega-v2-grid" data-omega-v2-site-grid>' + cards + '</div><aside class="omega-v2-mine-side-panel">' + selectedDetail + '</aside></div>' :
         '<div class="omega-v2-empty">No mine sites are available for this country.</div>');
     var tabRows = [
@@ -857,7 +857,7 @@
       '<div class="omega-v2-eyebrow">RESOURCE COMMAND</div><h1 class="omega-v2-title">Mine Production Ministry</h1><p class="omega-v2-subtitle">' + esc(countryLabel) +
       ' · Resource Extraction · National Wealth</p></div></div><div class="omega-v2-resource-heading-actions">' + countrySelectMarkup(countryKey) +
       '<span class="omega-v2-status" data-state="' + (model.ready ? 'operational' : 'attention') + '">' +
-      fmt(model.sites.filter(eligible).length) + ' mines</span></div></header>' + notice + tabMarkup + '<div data-omega-v2-resource-content>' + contentMarkup + '</div></section>';
+      fmt(model.sites.filter(eligible).length) + ' sites</span></div></header>' + notice + tabMarkup + '<div data-omega-v2-resource-content>' + contentMarkup + '</div></section>';
     if (!root.__omegaV2ResourceBound && typeof root.addEventListener === 'function') {
       root.addEventListener('input', function (event) {
         if (!event || !event.target) return;
