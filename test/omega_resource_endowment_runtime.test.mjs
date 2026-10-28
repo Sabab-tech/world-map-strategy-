@@ -510,12 +510,20 @@ assert.equal(part6AliasRows.every(site=>site.operation?.commercialExtraction===f
 function expectedRawWarehouseForBatch(countryRow,countryId,batchId){
   const network=countryRow?.industrialNetwork||{};
   const flow=(network.siteFlowLedger||[]).find(row=>String(row.batchId||'')===String(batchId||''))||{};
-  const activeLeg=(network.shipments||[]).some(shipment=>
+  const activeMineHaul=(network.shipments||[]).some(shipment=>
     String(shipment.batchId||'')===String(batchId||'')&&
-    ['MINE_TO_WAREHOUSE','RAW_TO_FACTORY'].includes(String(shipment.shipmentType||''))&&
+    String(shipment.shipmentType||'')==='MINE_TO_WAREHOUSE'&&
     ['IN_TRANSIT','BLOCKED_ROUTE_BLOCKADE','BLOCKED_LEDGER_MISMATCH'].includes(String(shipment.status||'')));
+  // A legacy/raw-factory transfer may leave the remainder of its batch in the raw
+  // warehouse. Only a mine-logistics batch whose warehouse receipt triggered a
+  // downstream haul has mixed physical locations and should keep batch-level location null.
+  const activeDownstreamHaul=flow.mineLogisticsStockDebited===true&&
+    (network.shipments||[]).some(shipment=>
+      String(shipment.batchId||'')===String(batchId||'')&&
+      String(shipment.shipmentType||'')==='RAW_TO_FACTORY'&&
+      ['IN_TRANSIT','BLOCKED_ROUTE_BLOCKADE','BLOCKED_LEDGER_MISMATCH'].includes(String(shipment.status||'')));
   const cargoHeldAtMine=flow.mineLogisticsStockDebited===true&&Number(flow.mineHeldQuantity||0)>1e-6;
-  return activeLeg||cargoHeldAtMine?null:'WH-'+countryId+'-RAW';
+  return activeMineHaul||activeDownstreamHaul||cargoHeldAtMine?null:'WH-'+countryId+'-RAW';
 }
 const part6PhysicalSites=part6Data.records.filter(site=>!site?.runtime?.aliasOfSiteId&&site?.map?.markerEligible!==false);
 assert.equal(part6PhysicalSites.length,47,'only 47 unique physical sites should be executable after alias exclusions');
