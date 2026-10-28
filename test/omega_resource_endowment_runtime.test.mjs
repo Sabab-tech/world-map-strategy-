@@ -508,6 +508,10 @@ assert.equal(boulbyAlias?.runtime?.aliasOfSiteId,'SITE_GBR_boulby_potash_mine');
 assert.equal(kirunaAlias?.runtime?.aliasOfSiteId,'SITE_SWE_kiruna_iron_mine');
 assert.equal(part6AliasRows.every(site=>site.operation?.commercialExtraction===false&&site.map?.markerEligible===false),true);
 function expectedRawWarehouseForBatch(countryRow,countryId,batchId){
+  const batches=Array.isArray(countryRow?.batches)?countryRow.batches:[];
+  const batch=batches.find(row=>String(row.batchId||'')===String(batchId||''))||null;
+  if(batch&&Math.max(0,Number(batch.remainingQuantity!=null?batch.remainingQuantity:batch.quantity)||0)<=1e-6)
+    return null; // A fully transferred batch no longer occupies raw-warehouse stock.
   const network=countryRow?.industrialNetwork||{};
   const flow=(network.siteFlowLedger||[]).find(row=>String(row.batchId||'')===String(batchId||''))||{};
   const activeMineHaul=(network.shipments||[]).some(shipment=>
