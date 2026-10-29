@@ -1586,7 +1586,7 @@ function siteRouteLegMetrics(countryId,routeProfile,quantity,unitBridge){
       (fleetCount!==null&&lineCapacityPerDay!==null?Number((fleetCount*lineCapacityPerDay).toFixed(6)):null):
       (fleetCount===null?null:Number((fleetCount*payload/cycleDays).toFixed(6)));
     const dailyCapacity=fleetCount===0?0:(fleetCapacityPerDay===null?routeCapacityPerDay:
-      Math.min(routeCapacityPerDay>0?routeCapacityPerDay:fleetCapacityPerDay,fleetCapacityPerDay));
+      Math.min(routeCapacityPerDay,fleetCapacityPerDay));
     const requiredLineCount=isPipeline&&requiredDesignFleetSlots!==null?requiredDesignFleetSlots:null;
     const cargoText=tok(source?.cargoClass||routeProfile?.commodityGroup||routeProfile?.resourceId||'');
     const cargoIconClass=/coal|lignite|coke|dry_bulk/.test(cargoText)?'coal-dry-bulk':
@@ -1786,7 +1786,7 @@ function buildRoute(site,asset,resourceId,requestedQuantity,input={}){
       (fleetCount===null?null:Number((fleetCount*payload*24/cycleHours).toFixed(6)));
     const capacityPerDay=fleetCount===0?0:(fleetCapacityPerDay===null?
       Math.min(infrastructureCapacityPerDay,designCapacityPerDay):
-      Math.min(infrastructureCapacityPerDay,fleetCapacityPerDay));
+      Math.min(infrastructureCapacityPerDay,designCapacityPerDay,fleetCapacityPerDay));
     const capacityPerTurn=capacityPerDay*daysPerTurn();
     const tripWaves=isPipeline?null:(fleetCount===null?requiredTrips:(fleetCount>0?Math.ceil(requiredTrips/fleetCount):0));
     const legTotalDays=isPipeline?(fleetCount===0?null:days):
