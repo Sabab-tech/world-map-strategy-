@@ -1492,10 +1492,11 @@ function siteRouteLegMetrics(countryId,routeProfile,quantity,unitBridge){
     const distance=num(row?.estimatedDistanceKm??row?.distanceKm??row?.distance);
     return distance!==null&&distance>=0?distance:null;
   });
-  const explicitTotal=explicitDistances.reduce((sum,value)=>sum+(value===null?0:value),0);
   const missingCount=explicitDistances.filter(value=>value===null).length;
-  const missingShare=missingCount&&declaredTotal!==null?Math.max(0,declaredTotal-explicitTotal)/missingCount:0;
-  const distances=explicitDistances.map(value=>value===null?missingShare:value);
+  if(missingCount)return{status:'BLOCKED',reason:'MINE_ROUTE_LEG_DISTANCE_NOT_RECORDED',
+    siteId:String(routeProfile?.siteId||routeProfile?.sourceSiteId||'').trim(),missingLegCount:missingCount,
+    declaredRouteDistanceKm:declaredTotal};
+  const distances=explicitDistances;
   const totalDistanceKm=distances.reduce((sum,value)=>sum+value,0);
   const factor=Math.max(1e-12,num(unitBridge?.sourceToCapacityFactor)||1);
   const quantityInCapacityUnits=Math.max(0,num(quantity)||0)*factor;
