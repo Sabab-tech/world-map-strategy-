@@ -632,7 +632,7 @@ function netState(c){
   for(const key of ['shipments','projects','extractions','deliveries','siteFlowLedger','events','technologyContracts']){
     if(!Array.isArray(n[key]))n[key]=[];
   }
-  for(const key of ['reservations','factoryRuntime','siteLogisticsBySiteId']){
+  for(const key of ['reservations','factoryRuntime','siteLogisticsBySiteId','transportFleetBySiteId']){
     if(!n[key]||typeof n[key]!=='object'||Array.isArray(n[key]))n[key]={};
   }
   if(!n.infrastructure||typeof n.infrastructure!=='object'||Array.isArray(n.infrastructure))n.infrastructure={};
@@ -640,6 +640,83 @@ function netState(c){
     if(!n.infrastructure[key]||typeof n.infrastructure[key]!=='object'||Array.isArray(n.infrastructure[key]))n.infrastructure[key]={};
   }
   return n;
+}
+function normalizeTransportMode(value){
+  const mode=tok(value);
+  return mode==='train'?'rail':mode==='road'?'truck':mode;
+}
+const TRANSPORT_PROFILE_OVERRIDE_RULES=Object.freeze({
+  payloadTonnes:{minExclusive:0},speedKmh:{minExclusive:0},loadHours:{min:0},unloadHours:{min:0},
+  costPerTonneKm:{min:0},maintenanceMultiplier:{minExclusive:0}
+});
+function storedTransportFleetRecord(countryId,siteId,mode){
+  const cid=canonicalCountry(countryId),sid=String(siteId||'').trim(),transportMode=normalizeTransportMode(mode);
+  if(!cid||!sid||!transportMode)return null;
+  const network=netState(cid),siteRow=network.transportFleetBySiteId?.[sid];
+  const record=siteRow?.transportTypes?.[transportMode];
+  return record&&typeof record==='object'&&!Array.isArray(record)?record:null;
+}
+function getTransportFleet(input={},siteIdValue){
+  const args=input&&typeof input==='object'?input:{countryId:input,siteId:siteIdValue};
+  const cid=canonicalCountry(args.countryId),sid=String(args.siteId||'').trim();
+  if(!cid||!sid)return{status:'BLOCKED',reason:'TRANSPORT_FLEET_COUNTRY_AND_SITE_REQUIRED'};
+  const selected=playerSimulationCountryId();
+  if(selected&&selected!==cid)return{status:'BLOCKED',reason:'PLAYER_COUNTRY_SCOPE_VIOLATION',countryId:cid,playerCountryId:selected};
+  const site=siteById(sid);
+  if(!site?.siteId)return{status:'BLOCKED',reason:'SITE_NOT_FOUND',siteId:sid,countryId:cid};
+  if(canonicalCountry(site.countryId)!==cid)return{status:'BLOCKED',reason:'SITE_COUNTRY_MISMATCH',siteId:sid,countryId:cid,siteCountryId:canonicalCountry(site.countryId)};
+  const fleet=netState(cid).transportFleetBySiteId[sid]||{},profiles=modeRules();
+  const supportedModes=Object.keys(profiles).length?Object.keys(profiles):['truck','rail','barge','ship','pipeline'];
+  const transportTypes=supportedModes.map(mode=>{
+    const record=fleet.transportTypes?.[mode]||null,profile=profiles[mode]||{};
+    const count=record?finiteCount(record.count):null,overrides=clone(record?.profileOverrides||{});
+    return{transportType:mode,count,configured:count!==null,profileOverrides:overrides,
+      payloadTonnes:num(overrides.payloadTonnes)??num(profile.payloadTonnes),
+      speedKmh:num(overrides.speedKmh)??num(profile.speedKmh),
+      loadHours:num(overrides.loadHours)??num(profile.loadHours),
+      unloadHours:num(overrides.unloadHours)??num(profile.unloadHours),
+      lastUpdatedTurn:record?.lastUpdatedTurn??null,authority:record?.authority||'NOT_CONFIGURED'};
+  });
+  return{status:'READY',countryId:cid,siteId:sid,transportTypes,individualVehicleIdsRequired:false,
+    authority:'OMEGA_PLAYER_CONFIGURED_COUNTRY_SITE_TRANSPORT_COUNT',lastUpdatedTurn:fleet.lastUpdatedTurn??null};
+}
+function setTransportFleet(input={}){
+  const cid=canonicalCountry(input.countryId),sid=String(input.siteId||'').trim(),mode=normalizeTransportMode(input.transportType||input.mode);
+  if(!cid||!sid||!mode)return{status:'BLOCKED',reason:'TRANSPORT_FLEET_COUNTRY_SITE_AND_TYPE_REQUIRED'};
+  const selected=playerSimulationCountryId();
+  if(selected&&selected!==cid)return{status:'BLOCKED',reason:'PLAYER_COUNTRY_SCOPE_VIOLATION',countryId:cid,playerCountryId:selected};
+  const site=siteById(sid);
+  if(!site?.siteId)return{status:'BLOCKED',reason:'SITE_NOT_FOUND',siteId:sid,countryId:cid};
+  if(canonicalCountry(site.countryId)!==cid)return{status:'BLOCKED',reason:'SITE_COUNTRY_MISMATCH',siteId:sid,countryId:cid,siteCountryId:canonicalCountry(site.countryId)};
+  const knownModes=new Set([...Object.keys(modeRules()),'truck','rail','barge','ship','pipeline']);
+  if(!knownModes.has(mode))return{status:'BLOCKED',reason:'UNKNOWN_TRANSPORT_TYPE',transportType:mode,allowedTransportTypes:[...knownModes]};
+  const count=num(input.count);
+  if(count===null||count<0||!Number.isInteger(count))return{status:'BLOCKED',reason:'INVALID_TRANSPORT_FLEET_COUNT',count:input.count};
+  const suppliedProfile=input.profileOverrides||input.profile||{},profileOverrides={};
+  for(const [key,raw] of Object.entries(suppliedProfile)){
+    if(!Object.prototype.hasOwnProperty.call(TRANSPORT_PROFILE_OVERRIDE_RULES,key))continue;
+    if(raw===null||raw===undefined||String(raw).trim()==='')continue;
+    const value=num(raw),rule=TRANSPORT_PROFILE_OVERRIDE_RULES[key];
+    if(value===null||(rule.minExclusive!==undefined&&value<=rule.minExclusive)||(rule.min!==undefined&&value<rule.min))
+      return{status:'BLOCKED',reason:'INVALID_TRANSPORT_PROFILE_OVERRIDE',field:key,value:raw};
+    profileOverrides[key]=value;
+  }
+  const network=netState(cid),bySite=network.transportFleetBySiteId;
+  let siteFleet=bySite[sid];
+  if(!siteFleet||typeof siteFleet!=='object'||Array.isArray(siteFleet)){
+    siteFleet=bySite[sid]={schemaVersion:'OMEGA_LOGISTICS_FLEET_COUNT_V1',countryId:cid,siteId:sid,transportTypes:{},
+      individualVehicleIdsRequired:false,createdTurn:turn(),lastUpdatedTurn:turn()};
+  }
+  if(!siteFleet.transportTypes||typeof siteFleet.transportTypes!=='object'||Array.isArray(siteFleet.transportTypes))siteFleet.transportTypes={};
+  const prior=siteFleet.transportTypes[mode]||{};
+  const mergedProfile={...(prior.profileOverrides&&typeof prior.profileOverrides==='object'?prior.profileOverrides:{}),...profileOverrides};
+  const record={transportType:mode,count:Math.floor(count),profileOverrides:mergedProfile,individualVehicleIdsRequired:false,
+    authority:'PLAYER_CONFIGURED_COUNTRY_SITE_TRANSPORT_COUNT',lastUpdatedTurn:turn()};
+  siteFleet.transportTypes[mode]=record;siteFleet.lastUpdatedTurn=turn();
+  emit('OMEGA_RESOURCE_TRANSPORT_FLEET_UPDATED',cid,{siteId:sid,transportType:mode,count:record.count,
+    profileOverrides:clone(mergedProfile),individualVehicleIdsRequired:false,lastUpdatedTurn:turn()});
+  return{status:'APPLIED',countryId:cid,siteId:sid,transportType:mode,count:record.count,
+    profileOverrides:clone(mergedProfile),individualVehicleIdsRequired:false,authority:record.authority,lastUpdatedTurn:turn()};
 }
 function emit(type,c,payload,source='resource-industrial-network'){
   const m=interop(),cid=canonicalCountry(c),body={countryId:cid,payload:clone(payload||{}),source,simulationTurn:turn()};
@@ -1424,8 +1501,12 @@ function siteRouteLegMetrics(countryId,routeProfile,quantity,unitBridge){
   const factor=Math.max(1e-12,num(unitBridge?.sourceToCapacityFactor)||1);
   const quantityInCapacityUnits=Math.max(0,num(quantity)||0)*factor;
   let totalDays=0;
+  const siteId=String(routeProfile?.siteId||routeProfile?.sourceSiteId||'').trim();
   const legs=sourceRows.map((source,index)=>{
-    const mode=tok(source?.transportMode||source?.mode),profile=modeRules()[mode]||modeRules().truck;
+    const mode=normalizeTransportMode(source?.transportMode||source?.mode),baseProfile=modeRules()[mode]||modeRules().truck||{};
+    const configuredFleet=siteId?storedTransportFleetRecord(cid,siteId,mode):null;
+    const overrides=configuredFleet?.profileOverrides||{};
+    const profile={...baseProfile,...overrides};
     const infrastructure=infraQuality(cid,mode),distanceKm=Math.max(0,distances[index]||0);
     const speedKmh=Math.max(1,num(profile?.speedKmh)||1);
     const loadHours=Math.max(0,num(profile?.loadHours)??0),unloadHours=Math.max(0,num(profile?.unloadHours)??0);
@@ -1436,9 +1517,10 @@ function siteRouteLegMetrics(countryId,routeProfile,quantity,unitBridge){
     const totalHours=adjustedTravelHours+loadHours+unloadHours+transferHours;
     const travelDays=totalHours/24;
     totalDays+=travelDays;
-    const payload=Math.max(0.001,num(source?.designCapacityPerTrip)||num(profile?.payloadTonnes)||1);
+    const payload=Math.max(0.001,num(overrides.payloadTonnes)??num(source?.designCapacityPerTrip)??num(profile?.payloadTonnes)??1);
     const units=Math.ceil(quantityInCapacityUnits/payload);
-    const declaredFleetCount=num(source?.fleetCount??routeProfile?.transportFleet?.[mode]?.count);
+    const configuredCount=configuredFleet?num(configuredFleet.count):null;
+    const declaredFleetCount=configuredCount!==null?configuredCount:num(source?.fleetCount??routeProfile?.transportFleet?.[mode]?.count);
     const fleetCount=declaredFleetCount!==null&&declaredFleetCount>=0?Math.floor(declaredFleetCount):null;
     const requiredVehicleCount=units;
     // A known fleet count limits daily throughput; unknown counts stay unknown, never fabricated.
@@ -1467,7 +1549,7 @@ function siteRouteLegMetrics(countryId,routeProfile,quantity,unitBridge){
         source?.designCapacityPerTrip!=null?'ROUTE_LEG_PER_TRIP_CAPACITY':'VERSIONED_TRANSPORT_CATALOG'};
   });
   const declaredCapacity=num(plan.capacityBottleneckPerDay);
-  const capacities=legs.map(leg=>num(leg.capacityPerDay)).filter(value=>value!==null&&value>0);
+  const capacities=legs.map(leg=>num(leg.capacityPerDay)).filter(value=>value!==null&&value>=0);
   const capacityPerDay=Math.max(0,Math.min(declaredCapacity!==null&&declaredCapacity>0?declaredCapacity:Infinity,
     capacities.length?Math.min(...capacities):Infinity));
   return{status:'READY',legs,totalDistanceKm:Number(totalDistanceKm.toFixed(6)),
@@ -1476,6 +1558,27 @@ function siteRouteLegMetrics(countryId,routeProfile,quantity,unitBridge){
     vehiclesByMode:legs.reduce((out,leg)=>{out[leg.mode]=(out[leg.mode]||0)+(num(leg.vehicleCount)||0);return out;},{}),
     vehicleCount:legs.reduce((sum,leg)=>sum+(num(leg.vehicleCount)||0),0),
     authority:'VERSIONED_TRANSPORT_CATALOG_AND_SITE_ROUTE_LEG_DATA'};
+}
+async function previewSiteTransport(input={}){
+  const cid=canonicalCountry(input.countryId),sid=String(input.siteId||'').trim();
+  if(!cid||!sid)return{status:'BLOCKED',reason:'SITE_TRANSPORT_PREVIEW_COUNTRY_AND_SITE_REQUIRED'};
+  const selected=playerSimulationCountryId();
+  if(selected&&selected!==cid)return{status:'BLOCKED',reason:'PLAYER_COUNTRY_SCOPE_VIOLATION',countryId:cid,playerCountryId:selected};
+  const loaded=await loadSiteLogisticsRoutes(cid);
+  if(loaded.status!=='READY')return{status:'BLOCKED',reason:loaded.reason||'SITE_LOGISTICS_ROUTES_NOT_READY',detail:loaded,countryId:cid,siteId:sid};
+  const routeProfile=siteLogisticsRouteFor(cid,sid);
+  if(!routeProfile)return{status:'BLOCKED',reason:'SITE_LOGISTICS_ROUTE_NOT_RECORDED',countryId:cid,siteId:sid};
+  const quantity=Math.max(0,num(input.quantity)??0),unit=input.unit||routeProfile?.quantityUnitBridge?.sourceProductionUnit||null;
+  const unitBridge=siteLogisticsUnitBridge(routeProfile,unit);
+  if(!['READY','SIMULATION_ONLY'].includes(String(unitBridge?.status||'')))return{status:'BLOCKED',reason:unitBridge?.reason||'SITE_TRANSPORT_UNIT_BRIDGE_UNAVAILABLE',
+    countryId:cid,siteId:sid,unitBridge:clone(unitBridge)};
+  const metrics=siteRouteLegMetrics(cid,routeProfile,quantity,unitBridge);
+  return{...metrics,countryId:cid,siteId:sid,routeId:routeProfile.routeId||null,requestedQuantity:quantity,unit,
+    individualVehicleIdsRequired:false,transportTypes:(metrics.legs||[]).map(leg=>({
+      transportType:leg.transportMode,count:leg.fleetCount,requiredVehicleCount:leg.requiredVehicleCount,
+      fleetCapacityPerDay:leg.fleetCapacityPerDay,capacityPerDay:leg.capacityPerDay,
+      travelDays:leg.travelDays,fleetSufficiency:leg.fleetSufficiency,cargoIconClass:leg.cargoIconClass,cargoIconPath:leg.cargoIconPath
+    }))};
 }
 function routeSegments(site,asset,resourceId,mode,countryId){
   const cid=canonicalCountry(countryId),f=asset||{},access=Array.isArray(f.transportAccess)?f.transportAccess.map(tok):[];
@@ -4676,7 +4779,7 @@ function gameplayPipelineDiagnostics(countryScope){
     awaitingTransportCapacity:perCountry.reduce((n,x)=>n+x.awaitingTransportCapacity,0),perCountry};
 }
 function api(){
-  return Object.freeze({VERSION,loadCatalog,loadSiteLogisticsRoutes,planExtraction,planShipment,dispatchShipment,dispatchFactoryInputShipment,advanceShipments,quoteMineProject,startMineProject,startFactoryProject,startInfrastructureProject,startPadmaCorridorProject,advanceProjects,startTechnologyProject,executeFactoryCycle,executeSitePipeline,diagnostics,gameplayPipelineDiagnostics,factoryCatalogDiagnostics,factoryProductionRequirements,factoryProductionStatus,decommissionFactory,decommissionMine,setMineOperatingStatus,quoteMineDemolition,destroyMineAssets,startFactoryProductionCycle,transferFactoryInputsFromWarehouse,processPendingFactoryInputs,factoryUtilityDiagnostics,factoryConstructionMaterialQuote,reconcileFactoryEmployment,normalizeInfrastructure,candidateFactories,recipeFor,processPendingFactoryInputs,resourceMethod,buildRoute});
+  return Object.freeze({VERSION,loadCatalog,loadSiteLogisticsRoutes,getTransportFleet,setTransportFleet,previewSiteTransport,planExtraction,planShipment,dispatchShipment,dispatchFactoryInputShipment,advanceShipments,quoteMineProject,startMineProject,startFactoryProject,startInfrastructureProject,startPadmaCorridorProject,advanceProjects,startTechnologyProject,executeFactoryCycle,executeSitePipeline,diagnostics,gameplayPipelineDiagnostics,factoryCatalogDiagnostics,factoryProductionRequirements,factoryProductionStatus,decommissionFactory,decommissionMine,setMineOperatingStatus,quoteMineDemolition,destroyMineAssets,startFactoryProductionCycle,transferFactoryInputsFromWarehouse,processPendingFactoryInputs,factoryUtilityDiagnostics,factoryConstructionMaterialQuote,reconcileFactoryEmployment,normalizeInfrastructure,candidateFactories,recipeFor,processPendingFactoryInputs,resourceMethod,buildRoute});
 }
 g.Omega=g.Omega||{};g.Omega.ResourceIndustrialNetwork=api();g.OmegaResourceIndustrialNetwork=g.Omega.ResourceIndustrialNetwork;
 
