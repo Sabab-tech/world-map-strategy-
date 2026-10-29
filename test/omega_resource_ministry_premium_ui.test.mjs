@@ -148,6 +148,7 @@ test("Resource Logistics shows configured per-site route cards and keeps Current
     siteName: "Test Coal Mine",
     resourceId: "coal",
     resourceIconKey: "coal",
+    planningProduction: { rate: 20, unit: "TONNES_PER_DAY", authority: "SCENARIO_SIMULATION_DATA", sourceDatasetId: "TEST", simulationOnly: true },
     destination: { warehouseId: "WH-TST-RAW" },
     routePlan: {
       routeStatus: "SIMULATED_PLAN_COMPLETE_ENGINE_BINDING_PENDING",
@@ -169,6 +170,7 @@ test("Resource Logistics shows configured per-site route cards and keeps Current
     siteName: "Test Gold Mine",
     resourceId: "gold",
     resourceIconKey: "gold",
+    planningProduction: { rate: 12, unit: "TONNES_PER_DAY", authority: "SCENARIO_SIMULATION_DATA", sourceDatasetId: "TEST", simulationOnly: true },
     destination: { warehouseId: "WH-TST-RAW" },
     routePlan: {
       strategyCode: "MINE_HAULAGE_RAIL_LAST_MILE",
@@ -192,6 +194,7 @@ test("Resource Logistics shows configured per-site route cards and keeps Current
     siteName: "Test Crude Oil Field",
     resourceId: "crude_oil",
     resourceIconKey: "crude_oil",
+    planningProduction: { rate: 250, unit: "BARRELS_PER_DAY", authority: "SCENARIO_SIMULATION_DATA", sourceDatasetId: "TEST", simulationOnly: true },
     destination: { warehouseId: "WH-TST-RAW" },
     routePlan: {
       strategyCode: "MINE_HAULAGE_RAIL_LAST_MILE",
@@ -215,6 +218,7 @@ test("Resource Logistics shows configured per-site route cards and keeps Current
     siteName: "Test Gas Pipeline",
     resourceId: "natural_gas",
     resourceIconKey: "natural_gas",
+    planningProduction: { rate: 400, unit: "MMCF_PER_DAY", authority: "SCENARIO_SIMULATION_DATA", sourceDatasetId: "TEST", simulationOnly: true },
     destination: { warehouseId: "WH-TST-RAW" },
     routePlan: {
       routeType: "PIPELINE",
