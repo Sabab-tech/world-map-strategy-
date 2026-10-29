@@ -1703,7 +1703,7 @@ function buildRoute(site,asset,resourceId,requestedQuantity,input={}){
       estimatedLegTravelDays:legTotalDays===null?null:Number(legTotalDays.toFixed(6)),
       payloadTonnes:payload,distanceKm:Number(distance.toFixed(6)),speedKmh,loadHours,unloadHours,transferHours,
       travelHours:Number(travelHours.toFixed(6)),adjustedTravelHours:Number(adjustedTravelHours.toFixed(6)),
-      travelDays:Number(days.toFixed(6)),fleetCapacityPerDay,capacityPerDay,capacityPerTurn,
+      singleTripTravelDays:Number(days.toFixed(6)),travelDays:legTotalDays===null?null:Number(legTotalDays.toFixed(6)),fleetCapacityPerDay,capacityPerDay,capacityPerTurn,
       dispatchQuantity:Number(quantity.toFixed(6)),edgeClass:seg.edgeClass,sourceAuthority:seg.sourceAuthority,
       routeLegId:seg.routeLegId||null,
       capacityAuthority:fleetCount===null?'UNCONFIGURED_SIMULATION_CAPACITY_FALLBACK':'COUNTRY_SITE_TRANSPORT_TYPE_COUNT',
