@@ -1716,26 +1716,36 @@ function routeSegments(site,asset,resourceId,mode,countryId,input={}){
   const preferred=(rules()[resourceId]?.preferredModes||[]).map(normalizeAccess).filter(Boolean);
   let chosen=normalizeAccess(mode)||'truck';
   const explicitMode=input.transportMode!==undefined&&input.transportMode!==null&&String(input.transportMode).trim()!=='';
-  // Route rows attached to the current source/destination corridor outrank generic
-  // factory route plans. The factory's access profile is not the mine's journey.
-  const directRows=[
-    s.routePlan?.legs,s.logisticsRoutePlan?.legs,s.transportRoute?.legs,s.simulation?.transportRoute?.legs,
-    f.routePlan?.legs,f.logisticsRoutePlan?.legs,f.transportRoute?.legs,f.simulation?.transportRoute?.legs
-  ].find(rows=>Array.isArray(rows)&&rows.length&&rows.every(row=>row&&normalizeAccess(row.transportMode||row.mode)));
-  if(directRows){
-    return directRows.map((row,index)=>({
-      mode:normalizeAccess(row.transportMode||row.mode),
-      distanceKm:num(row.estimatedDistanceKm??row.distanceKm??row.distance),
-      designCapacityPerTrip:num(row.designCapacityPerTrip??row.payloadTonnes),
-      designCapacityPerDay:num(row.designCapacityPerDay),
-      designCapacityPerLinePerDay:num(row.designCapacityPerLinePerDay),
-      capacityPerLinePerDay:num(row.capacityPerLinePerDay),
-      lineCapacityPerDay:num(row.lineCapacityPerDay),
-      transferHours:num(row.transferHours??row.transferTimeHours)??0,
-      edgeClass:String(row.edgeClass||row.legType||row.routeLegType||('EXPLICIT_ROUTE_LEG_'+(index+1))),
-      sourceAuthority:String(row.distanceAuthority||row.sourceAuthority||row.authority||'EXPLICIT_ROUTE_PROFILE'),
-      routeLegId:row.legId||row.id||null
-    }));
+  // Explicit leg arrays for this exact source/destination pair are authoritative.
+  const normalizeRows=rows=>Array.isArray(rows)&&rows.length&&
+    rows.every(row=>row&&normalizeAccess(row.transportMode||row.mode));
+  const sourceLegRows=[
+    s.routePlan?.legs,s.logisticsRoutePlan?.legs,s.transportRoute?.legs,s.simulation?.transportRoute?.legs
+  ].find(normalizeRows);
+  const mapRows=rows=>rows.map((row,index)=>({
+    mode:normalizeAccess(row.transportMode||row.mode),
+    distanceKm:num(row.estimatedDistanceKm??row.distanceKm??row.distance??row.km),
+    designCapacityPerTrip:num(row.designCapacityPerTrip??row.payloadTonnes),
+    designCapacityPerDay:num(row.designCapacityPerDay),
+    designCapacityPerLinePerDay:num(row.designCapacityPerLinePerDay),
+    capacityPerLinePerDay:num(row.capacityPerLinePerDay),
+    lineCapacityPerDay:num(row.lineCapacityPerDay),
+    transferHours:num(row.transferHours??row.transferTimeHours)??0,
+    edgeClass:String(row.edgeClass||row.legType||row.routeLegType||('EXPLICIT_ROUTE_LEG_'+(index+1))),
+    sourceAuthority:String(row.distanceAuthority||row.sourceAuthority||row.authority||'EXPLICIT_ROUTE_PROFILE'),
+    routeLegId:row.legId||row.id||null
+  }));
+  if(sourceLegRows)return mapRows(sourceLegRows);
+  const sourceHasRouteArray=[s.transportRoute,s.simulation?.transportRoute]
+    .some(rows=>Array.isArray(rows)&&rows.length);
+  // Only consult factory-level leg templates if the source has no route definition.
+  // A source route array may contain a composite tag such as ROAD_RAIL, which must
+  // be resolved against the selected mode rather than replaced with generic factory legs.
+  if(!sourceHasRouteArray){
+    const factoryLegRows=[
+      f.routePlan?.legs,f.logisticsRoutePlan?.legs,f.transportRoute?.legs,f.simulation?.transportRoute?.legs
+    ].find(normalizeRows);
+    if(factoryLegRows)return mapRows(factoryLegRows);
   }
   // Prefer the source site's explicit warehouse/factory corridor. Factory-level
   // transportAccess or legacy routes may list several available modes but do not prove
