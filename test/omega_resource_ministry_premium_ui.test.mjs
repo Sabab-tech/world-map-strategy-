@@ -329,7 +329,7 @@ test("Resource Logistics shows configured per-site route cards and keeps Current
   assert.match(root.innerHTML, /80 km/);
   assert.match(root.innerHTML, /data-design-estimate-available="true"/);
   assert.match(root.innerHTML, /data-design-estimated-units="1"/);
-  assert.match(root.innerHTML, /data-design-formula="ceil-production per day/);
+  assert.match(root.innerHTML, /data-design-formula="ceil\\(production per day/);
   assert.match(root.innerHTML, /data-design-capacity-per-unit-day="75"/,
     "the route card must expose distance/cycle-derived daily capacity per design vehicle");
   assert.match(root.innerHTML, /Known configured vehicle subtotal/);
