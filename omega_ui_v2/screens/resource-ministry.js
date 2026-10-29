@@ -1282,6 +1282,20 @@
         (paths[value] || paths.destination) + '</svg>';
     }
 
+    function hasCurrentShipmentMatch(route) {
+      var routeSiteId = String(route && route.siteId || '').trim();
+      var routeId = String(route && route.routeId || '').trim();
+      return shipments.some(function (shipment) {
+        var status = String(shipment && (shipment.status || shipment.deliveryStatus) || '').toUpperCase();
+        if (!/IN_TRANSIT|DISPATCHED|RESERVED|PENDING|QUEUED|AWAITING/.test(status)) return false;
+        var sourceSite = String(shipment && (shipment.siteId || shipment.sourceSiteId ||
+          shipment.mineSiteId || shipment.originSiteId) || '').trim();
+        var linkedRoute = String(shipment && (shipment.routeId ||
+          shipment.route && (shipment.route.routeId || shipment.route.id)) || '').trim();
+        return (!!routeSiteId && sourceSite === routeSiteId) || (!!routeId && linkedRoute === routeId);
+      });
+    }
+
     function logisticsRouteCard(route) {
       var plan = route && route.routePlan || {};
       var destination = route.destination && (route.destination.warehouseName || route.destination.name) || 'Raw-material warehouse';
@@ -1397,6 +1411,7 @@
           esc(etaLabel) + '</strong></div></div></article>';
       }).join('') + '</div></section>' : '';
     var logisticsMarkup = liveShipmentsMarkup + logisticsRoutePlansMarkup(routePlanState);
+    var selectedDetail = selectedSiteDetail(selectedMine);
     var mineMarkup = '<div class="omega-v2-filterbar omega-v2-mine-filterbar"><input type="search" aria-label="Search mine sites" placeholder="Search mines..." data-omega-v2-site-search>' +
       '<select aria-label="Filter by resource" data-omega-v2-resource-filter>' + '<option value="all">All resources</option>' +
       Array.from(new Set(model.sites.map(function (item) { return item.resourceId; })).values()).map(function (id) {
