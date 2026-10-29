@@ -701,7 +701,8 @@ function changeTransportFleet(input={},direction=1){
   const rawCount=num(input.count??input.quantity??input.units);
   if(rawCount===null||!Number.isInteger(rawCount)||rawCount<1||rawCount>1000000)
     return{status:'BLOCKED',reason:'FLEET_COUNT_OUT_OF_RANGE',minimum:1,maximum:1000000,count:input.count??input.quantity??input.units};
-  const row=siteTransportFleetMode(cid,sid,mode,true),network=netState(cid),count=Math.floor(rawCount);
+  const row=siteTransportFleetMode(cid,sid,mode,direction>0),network=netState(cid),count=Math.floor(rawCount);
+  if(!row)return{status:'BLOCKED',reason:'FLEET_NOT_CONFIGURED',countryId:cid,siteId:sid,transportMode:mode};
   if(direction>0){
     row.totalUnits=Math.max(0,Math.floor(num(row.totalUnits)||0))+count;
     row.operationalUnits=Math.max(0,Math.floor(num(row.operationalUnits)||0))+count;
