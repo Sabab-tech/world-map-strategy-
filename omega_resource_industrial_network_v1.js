@@ -1787,7 +1787,11 @@ function routeSegments(site,asset,resourceId,mode,countryId,input={}){
         num(reference.designCapacityPerLinePerDay??reference.capacityPerLinePerDay??reference.lineCapacityPerDay):null;
       return[{...mapped,mode:chosen,distanceKm:Number(totalDistance.toFixed(6)),
         designCapacityPerTrip:chosen==='pipeline'?null:(num(reference.designCapacityPerTrip??reference.payloadTonnes)??num(profile.payloadTonnes)),
-        designCapacityPerDay:null, // The old multi-mode bottleneck is not a capacity for this single-mode design estimate.
+        // Keep the legacy template's declared end-to-end bottleneck only as a
+        // corridor dispatch limit. The UI independently calculates per-vehicle
+        // throughput from the selected mode's payload and distance-aware cycle.
+        designCapacityPerDay:num(sourcePlan.capacityBottleneckPerDay),
+        designCapacityUnit:sourcePlan.capacityUnit||null,
         designCapacityPerLinePerDay:explicitLineCapacity!==null&&explicitLineCapacity>0?explicitLineCapacity:null,
         capacityPerLinePerDay:explicitLineCapacity!==null&&explicitLineCapacity>0?explicitLineCapacity:null,
         lineCapacityPerDay:explicitLineCapacity!==null&&explicitLineCapacity>0?explicitLineCapacity:null,
