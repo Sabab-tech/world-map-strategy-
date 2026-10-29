@@ -31,6 +31,8 @@
   let selectedReserveResourceId = '';
   let selectedReserveCountryId = '';
   let selectedFleetSiteId = '';
+  let fleetPreviewCache = Object.create(null);
+  let fleetPreviewPending = Object.create(null);
 
   function state() { return (g.Game && g.Game.state) || g.gameState || {}; }
   function engine() { return g.ResourceMinistryEngine || null; }
@@ -814,6 +816,23 @@
     const siteId=chosenSite?String(chosenSite.siteId):'';
     const siteFleet=siteId&&fleetBySite[siteId]&&typeof fleetBySite[siteId]==='object'?fleetBySite[siteId]:{};
     const fleetRows=siteFleet.transportTypes&&typeof siteFleet.transportTypes==='object'?siteFleet.transportTypes:{};
+    const fleetPreviewKey=activeCountry(country)+'|'+siteId;
+    const fleetPreview=fleetPreviewCache[fleetPreviewKey]||null;
+    const fleetPreviewRuntime=g.Omega&&g.Omega.ResourceIndustrialNetwork;
+    if(chosenSite&&fleetPreviewRuntime&&typeof fleetPreviewRuntime.previewSiteTransport==='function'&&
+       !Object.prototype.hasOwnProperty.call(fleetPreviewCache,fleetPreviewKey)&&!fleetPreviewPending[fleetPreviewKey]){
+      fleetPreviewPending[fleetPreviewKey]=true;
+      Promise.resolve(fleetPreviewRuntime.previewSiteTransport({countryId:activeCountry(country),siteId:siteId,quantity:10000,unit:'TONNES'}))
+        .then(function(result){
+          fleetPreviewCache[fleetPreviewKey]=result||{status:'UNAVAILABLE',reason:'EMPTY_ROUTE_PREVIEW'};
+          delete fleetPreviewPending[fleetPreviewKey];
+          if(activePanel==='logistics'&&activeCountry(countryId)===activeCountry(country))scheduleVisiblePanelRefresh();
+        },function(error){
+          fleetPreviewCache[fleetPreviewKey]={status:'FAILED',reason:String(error&&error.message||error)};
+          delete fleetPreviewPending[fleetPreviewKey];
+          if(activePanel==='logistics'&&activeCountry(countryId)===activeCountry(country))scheduleVisiblePanelRefresh();
+        });
+    }
     const siteSource=chosenSite&&(chosenSite.sourceSiteRecord||chosenSite.real||{})||{};
     const cargoText=String(chosenSite&&(chosenSite.real&&chosenSite.real.resourceId||chosenSite.resourceId||chosenSite.sourceSiteRecord&&chosenSite.sourceSiteRecord.resourceId||chosenSite.identity&&chosenSite.identity.resourceTypeId)||'').toLowerCase();
     const cargoClass=/coal|lignite|coke|dry[_ -]?bulk/.test(cargoText)?'coal-dry-bulk':
@@ -830,6 +849,8 @@
     const siteOptions=sites.map(site=>'<option value="'+esc(site.siteId)+'"'+(chosenSite&&String(site.siteId)===String(chosenSite.siteId)?' selected':'')+'>'+esc(site.siteName||site.name||site.depositName||site.siteId)+' · '+esc(site.siteId)+'</option>').join('');
     const fleetCards=chosenSite?supportedFleetModes.map(mode=>{
       const stored=fleetRows[mode.id]&&typeof fleetRows[mode.id]==='object'?fleetRows[mode.id]:null;
+      const calculated=(fleetPreview&&Array.isArray(fleetPreview.transportTypes)?fleetPreview.transportTypes:[])
+        .find(row=>String(row.transportType)===String(mode.id))||null;
       const override=stored&&stored.profileOverrides&&typeof stored.profileOverrides==='object'?stored.profileOverrides:{};
       const modeCatalog=((g.OmegaResourceIndustrialCatalogData||(g.Omega&&g.Omega.ResourceIndustrialCatalogData)||{}).transportModes||{});
       const base=modeCatalog[mode.id]||{};
@@ -847,15 +868,20 @@
         '<label class="omega-rescc-field"><span>Speed (km/h)</span><input class="omega-rescc-input" type="number" name="speedKmh" min="0.001" step="any" value="'+esc(override.speedKmh??'')+'" placeholder="'+esc(base.speedKmh??'Use profile')+'"></label>'+
         '<label class="omega-rescc-field"><span>Loading (hours)</span><input class="omega-rescc-input" type="number" name="loadHours" min="0" step="any" value="'+esc(override.loadHours??'')+'" placeholder="'+esc(base.loadHours??'Use profile')+'"></label>'+
         '<label class="omega-rescc-field"><span>Unloading (hours)</span><input class="omega-rescc-input" type="number" name="unloadHours" min="0" step="any" value="'+esc(override.unloadHours??'')+'" placeholder="'+esc(base.unloadHours??'Use profile')+'"></label>'+
-        '<div style="grid-column:1/-1">'+actionButton('save-fleet-record','Save fleet profile',{},false)+'</div></form>',
-        '<div class="omega-rescc-grid2">'+kv('Fleet count',count===''?'Unknown':count)+kv('Payload per unit',payload)+kv('Speed',speed,' km/h')+kv('Load / unload',String(loadHours)+' / '+String(unloadHours)+' h')+'</div>');
+        '<div style="grid-column:1/-1">'+'<button type="submit" class="omega-rescc-button">Save fleet profile</button>'+'</div></form>',
+        '<div class="omega-rescc-grid2">'+kv('Fleet count',count===''?'Unknown':count)+kv('Payload per unit',payload)+kv('Speed',speed,' km/h')+kv('Load / unload',String(loadHours)+' / '+String(unloadHours)+' h')+
+        kv('Calculated capacity / day',calculated&&calculated.capacityPerDay!=null?calculated.capacityPerDay:'Unavailable')+
+        kv('Units needed for 10,000 tonnes',calculated&&calculated.requiredVehicleCount!=null?calculated.requiredVehicleCount:'Unavailable')+
+        kv('Trip time',calculated&&calculated.travelDays!=null?calculated.travelDays+' days':'Unavailable')+
+        kv('Fleet sufficiency',calculated&&calculated.fleetSufficiency!==null?(calculated.fleetSufficiency?'Sufficient':'Insufficient'):'Unknown')+'</div>');
     }).join(''):empty('No registered mine/site is available for this country.');
     const fleetSection='<h3 class="omega-rescc-section-title">Country and mine transport fleet</h3>'+
       '<p class="omega-rescc-note">Set the available count for each transport type at this mine. The game recalculates route capacity, required loads and timing from the saved count and profile. Individual vehicle IDs and registration numbers are not used.</p>'+
       '<form data-form="logistics-fleet-site" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0 14px">'+
       '<label style="flex:1;min-width:220px"><span style="display:block;margin-bottom:5px">Mine / site</span><select name="siteId" class="omega-rescc-input" required '+(!sites.length?'disabled':'')+'>'+siteOptions+'</select></label>'+
       '<button type="submit" class="omega-rescc-button" '+(!sites.length?'disabled':'')+'>Open site</button></form>'+
-      (chosenSite?'<div class="omega-rescc-metrics"><div><span>Selected site</span><strong>'+esc(chosenSite.siteName||chosenSite.name||chosenSite.siteId)+'</strong></div><div><span>Transport types</span><strong>5</strong></div><div><span>Configured profiles</span><strong>'+number(Object.values(fleetRows).filter(row=>row&&row.count!==undefined&&row.count!==null).length)+'</strong></div></div>':'')+
+      (chosenSite?'<div class="omega-rescc-metrics"><div><span>Selected site</span><strong>'+esc(chosenSite.siteName||chosenSite.name||chosenSite.siteId)+'</strong></div><div><span>Transport types</span><strong>5</strong></div><div><span>Configured profiles</span><strong>'+number(Object.values(fleetRows).filter(row=>row&&row.count!==undefined&&row.count!==null).length)+'</strong></div></div>'+
+        '<p class="omega-rescc-note">Route calculation: '+esc(fleetPreview&&fleetPreview.status||'CALCULATING')+(fleetPreview&&fleetPreview.reason?' · '+esc(fleetPreview.reason):'')+' · reference load 10,000 tonnes</p>':'')+
       (fleetCards||empty('No fleet modes can be configured yet.'));
     const batchCards=batches.map(batch=>{
       const id=batch.batchId,rid=batch.resourceId||batch.materialIdentity||'',qty=batch.remainingQuantity??batch.quantity,warehouse=batch.warehouseId||r.warehouse&&r.warehouse.warehouseId||'';
@@ -1780,11 +1806,14 @@
           const raw = data.get(key);
           if (raw !== null && String(raw).trim() !== '') profile[key] = Number(raw);
         });
+        const fleetSiteId = String(data.get('siteId') || '');
         if (!runtime || typeof runtime.setTransportFleet !== 'function') result = { status: 'UNAVAILABLE', reason: 'TRANSPORT_FLEET_API_UNAVAILABLE' };
         else result = runtime.setTransportFleet({
-          countryId: c, siteId: String(data.get('siteId') || ''), transportType: String(data.get('transportType') || ''),
+          countryId: c, siteId: fleetSiteId, transportType: String(data.get('transportType') || ''),
           count: Number(data.get('count')), profile
         });
+        delete fleetPreviewCache[c + '|' + fleetSiteId];
+        delete fleetPreviewPending[c + '|' + fleetSiteId];
         setOutcome('Transport fleet ' + String(data.get('transportType') || ''), result);
         return;
       }
