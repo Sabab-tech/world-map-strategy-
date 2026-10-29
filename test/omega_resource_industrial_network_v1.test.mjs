@@ -162,11 +162,14 @@ assert.ok(plan.route.totalDistanceKm>0);
 assert.ok(plan.route.travelTimeDays>0);
 assert.equal(Number(plan.route.legs.reduce((sum,leg)=>sum+(Number(leg.distanceKm)||0),0).toFixed(6)),
   Number(plan.route.totalDistanceKm.toFixed(6)),
-  'the sum of every truck/train leg must equal the complete route distance');
+  'the sum of every recorded leg must equal the complete route distance');
 assert.ok(Math.abs(plan.route.legs.reduce((sum,leg)=>sum+(Number(leg.travelDays)||0),0)-plan.route.travelTimeDays)<0.00001,
-  'route time must reconcile with calculated per-leg travel, loading and unloading time within rounding tolerance');
-assert.ok(plan.route.vehiclesByMode.truck>0&&plan.route.vehiclesByMode.rail>0,
-  'multi-modal route must report the per-mode vehicle count from payload capacity');
+  'route time must reconcile with each leg\'s complete trip-wave ETA within rounding tolerance');
+assert.deepEqual(Object.keys(plan.route.vehiclesByMode),['rail'],
+  'an explicitly selected rail mode must not fabricate truck legs');
+assert.ok(plan.route.vehiclesByMode.rail>0,
+  'the route must report the rail trip count derived from payload capacity');
+assert.equal(plan.route.routeLegCount,1,'single-mode route must contain one rail leg');
 assert.ok(plan.route.vehiclePlan.every(x=>x.units===Math.ceil(plan.route.requestedQuantity/Math.max(.001,Number(x.payloadTonnes)||1))),
   'planned vehicles must be derived from each mode load capacity');
 assert.equal(plan.route.crossBorderRequired,false);
