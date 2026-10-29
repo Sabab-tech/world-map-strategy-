@@ -406,6 +406,8 @@ function dispatchMineToWarehouse(countryId,site,flow,sourceBatch,routeProfile){
   // the simulation cannot actually process while its clock jumps multiple days per turn.
   const etaDate=factoryAddGameDays(factoryCurrentGameDate(),etaTurns*dayWindow);
   const shipmentId='MINEHAUL:'+h32(JSON.stringify({cid,siteId,batchId,turn:turn(),sequence:network.shipments.length+1,quantity}));
+  const batchInFlight=Array.isArray(rs.batches)?rs.batches.find(batch=>String(batch?.batchId||'')===batchId):null;
+  if(!batchInFlight)return{status:'BLOCKED',reason:'SOURCE_BATCH_NOT_FOUND',batchId};
   const fleetReservation=reserveTransportFleetForShipment(cid,siteId,shipmentId,finalizedMetrics.fleetAllocationByMode);
   if(fleetReservation.status==='BLOCKED')return{status:'BLOCKED',reason:fleetReservation.reason||'FLEET_UNITS_CHANGED_BEFORE_DISPATCH',details:fleetReservation,routeId:routeProfile.routeId};
   const route={status:'PLANNED',routeId:routeProfile.routeId,countryId:cid,siteId,sourceSiteId:siteId,sourceNode:siteId,
@@ -421,8 +423,6 @@ function dispatchMineToWarehouse(countryId,site,flow,sourceBatch,routeProfile){
     quantityUnitBridge:bridge,transportAssetBindingStatus:'UNBOUND_SIMULATED_CAPACITY',simulationOnly:true};
   const capacityUse=commitTransportCapacity(cid,route,quantity,shipmentId,bridge.sourceToCapacityFactor);
   route.capacityUse=capacityUse;
-  const batchInFlight=Array.isArray(rs.batches)?rs.batches.find(batch=>String(batch?.batchId||'')===batchId):null;
-  if(!batchInFlight)return{status:'BLOCKED',reason:'SOURCE_BATCH_NOT_FOUND',batchId};
   // The complete source quantity is already held out of inventory. Record only the
   // actual dispatched portion as in transit; remaining held cargo stays at the mine.
   const heldAfterDispatch=Math.max(0,(num(flow.mineHeldQuantity)||0)-quantity);
@@ -1568,7 +1568,7 @@ function siteRouteLegMetrics(countryId,routeProfile,quantity,unitBridge){
       fleetAllocationByMode[mode]=Math.max(fleetAllocationByMode[mode]||0,fleetAllocationUnits);
       if(fleet.availableUnits<=0)hasUnavailableFleet=true;
     }
-    const legTravelDays=Number((oneWayTravelDays*tripsRequired).toFixed(6));
+    const legTravelDays=Number((oneWayTravelDays+Math.max(0,tripsRequired-1)*fleetCycleDays).toFixed(6));
     totalDays+=legTravelDays;
     return{...clone(source),mode,transportMode:mode,distanceKm:Number(distanceKm.toFixed(6)),speedKmh,
       loadHours,unloadHours,transferHours,travelHours:Number(travelHours.toFixed(6)),
@@ -1651,7 +1651,7 @@ function buildRoute(site,asset,resourceId,requestedQuantity,input={}){
     const loadsRequired=Math.ceil(cargoQuantity/payload);
     const tripsRequired=fleet.configured?Math.max(1,Math.ceil(loadsRequired/Math.max(1,fleet.availableUnits))):1;
     const allocatedFleetUnits=fleet.configured?Math.min(loadsRequired,fleet.availableUnits):0;
-    const legTravelDays=Number((oneWayTravelDays*tripsRequired).toFixed(6));
+    const legTravelDays=Number((oneWayTravelDays+Math.max(0,tripsRequired-1)*fleetCycleDays).toFixed(6));
     totalDays+=legTravelDays;
     if(fleet.configured){
       hasConfiguredFleet=true;
@@ -1774,10 +1774,11 @@ function resizeRouteForDispatch(route,actualQuantity,plannedQuantity){
       const available=Math.max(0,Math.floor(num(leg?.fleetAvailableUnits)||0));
       const tripsRequired=configured?Math.max(1,Math.ceil(loadsRequired/Math.max(1,available))):1;
       const oneWayTravelDays=Math.max(0,num(leg?.oneWayTravelDays)??num(leg?.travelDays)??0);
+      const fleetCycleDays=Math.max(oneWayTravelDays,num(leg?.fleetCycleDays)||oneWayTravelDays);
       return{...leg,units:loadsRequired,vehicleCount:loadsRequired,loadsRequired,tripsRequired,
         allocatedFleetUnits:configured?Math.min(loadsRequired,available):0,
         fleetAllocationUnits:configured?Math.min(loadsRequired,available):0,
-        travelDays:Number((oneWayTravelDays*tripsRequired).toFixed(6)),dispatchQuantity:Number(actual.toFixed(6))};
+        travelDays:Number((oneWayTravelDays+Math.max(0,tripsRequired-1)*fleetCycleDays).toFixed(6)),dispatchQuantity:Number(actual.toFixed(6))};
     });
   }
   const legRows=Array.isArray(out.vehiclePlan)?out.vehiclePlan:(Array.isArray(out.legs)?out.legs:[]);
