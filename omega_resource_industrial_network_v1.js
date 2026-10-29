@@ -1850,6 +1850,13 @@ function dispatchShipment(input={}){
     quantity=reserved.quantity;quantityAdjustmentReason='WAREHOUSE_AVAILABLE_AFTER_RESERVATIONS';
   }
   const route=resizeRouteForDispatch(plan.route,quantity,plannedQuantity);
+  const fleetReservation=reserveTransportFleetForShipment(cid,plan.siteId,shipmentId,route.fleetAllocationByMode);
+  if(fleetReservation.status==='BLOCKED'){
+    const warehouse=resourceState(cid).warehouse||{},reservedMap=warehouse.reservedByResource||{};
+    reservedMap[plan.resourceId]=Math.max(0,(num(reservedMap[plan.resourceId])||0)-quantity);
+    if(netState(cid).reservations?.[shipmentId])delete netState(cid).reservations[shipmentId];
+    return{status:'BLOCKED',reason:fleetReservation.reason||'FLEET_UNITS_CHANGED_BEFORE_DISPATCH',details:fleetReservation,plan};
+  }
   const capacityUse=commitTransportCapacity(cid,route,quantity,shipmentId,capacityFactor);
   route.capacityUse=capacityUse;
   if(quantity<plannedQuantity)route.quantityAdjustment={reason:quantityAdjustmentReason||'SOURCE_BATCH_OR_LOT_ROUNDING_CAP',plannedQuantity,actualQuantity:quantity};
@@ -1859,7 +1866,7 @@ function dispatchShipment(input={}){
   const s={shipmentId,shipmentType:'RAW_TO_FACTORY',countryId:cid,siteId:plan.siteId,resourceId:plan.resourceId,factoryId:plan.factoryId,quantity,unit:input.unit||'TONNES',
     batchId:sourceBatchId||null,occurrenceKey:input.occurrenceKey||sourceBatch?.occurrenceKey||null,
     warehouseId:input.warehouseId||sourceBatch?.warehouseId||('WH-'+cid+'-RAW'),
-    status:'IN_TRANSIT',createdTurn:turn(),createdDate:factoryCurrentGameDate(),etaTurn:route.etaTurn,etaDate:shipmentEtaDate,route,reservationId:shipmentId,transportCapacityReservation:capacityUse,
+    status:'IN_TRANSIT',createdTurn:turn(),createdDate:factoryCurrentGameDate(),etaTurn:route.etaTurn,etaDate:shipmentEtaDate,route,reservationId:shipmentId,transportCapacityReservation:capacityUse,transportFleetReservation:clone(fleetReservation),
     provenance:{source:'OMEGA_RESOURCE_INDUSTRIAL_NETWORK_V1',authority:route.distanceAuthority,sourceBatchId:sourceBatchId||null,
       sourceAuthority:sourceBatch?.provenance?.sourceAuthority||sourceBatch?.provenance?.authority||'UNOBSERVED',
       sourceBatchQuantity:sourceBatch?Math.max(0,num(sourceBatch.remainingQuantity!=null?sourceBatch.remainingQuantity:sourceBatch.quantity)||0):null,
