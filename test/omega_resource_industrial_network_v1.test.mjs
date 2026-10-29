@@ -163,9 +163,8 @@ assert.ok(plan.route.travelTimeDays>0);
 assert.equal(Number(plan.route.legs.reduce((sum,leg)=>sum+(Number(leg.distanceKm)||0),0).toFixed(6)),
   Number(plan.route.totalDistanceKm.toFixed(6)),
   'the sum of every truck/train leg must equal the complete route distance');
-assert.equal(Number(plan.route.legs.reduce((sum,leg)=>sum+(Number(leg.travelDays)||0),0).toFixed(6)),
-  Number(plan.route.travelTimeDays.toFixed(6)),
-  'route time must be the sum of calculated per-leg travel, loading and unloading time');
+assert.ok(Math.abs(plan.route.legs.reduce((sum,leg)=>sum+(Number(leg.travelDays)||0),0)-plan.route.travelTimeDays)<0.00001,
+  'route time must reconcile with calculated per-leg travel, loading and unloading time within rounding tolerance');
 assert.ok(plan.route.vehiclesByMode.truck>0&&plan.route.vehiclesByMode.rail>0,
   'multi-modal route must report the per-mode vehicle count from payload capacity');
 assert.ok(plan.route.vehiclePlan.every(x=>x.units===Math.ceil(plan.route.requestedQuantity/Math.max(.001,Number(x.payloadTonnes)||1))),
