@@ -557,6 +557,11 @@ assert.equal(sharedTransport.shipments.length,2);
       'selected mode must remain independent: '+item.mode);
     assert.equal(route.routeLegCount,1,'no unrequested transfer legs should be invented: '+item.mode);
     assert.ok(route.totalDistanceKm>0,'route estimate must be positive and derived by the route-distance source: '+item.mode);
+    if(item.mode==='pipeline'){
+      assert.equal(route.vehicleCount,0,'pipeline lines are not individual vehicles or trips');
+      assert.equal(route.vehiclePlan[0].requiredTrips,null,'continuous pipeline flow must not fabricate vehicle trips');
+      assert.equal(route.configuredPipelineLineCount,null,'unknown actual pipeline line count stays unknown');
+    }
   }
   const explicitIntermodalAsset={
     ...routeAsset,
@@ -573,6 +578,18 @@ assert.equal(sharedTransport.shipments.length,2);
   assert.equal(Array.from(explicitRoute.vehiclePlan,leg=>leg.distanceKm).join(','),'12,210,19',
     'explicit leg distances must be preserved instead of dividing total distance evenly');
   assert.equal(explicitRoute.totalDistanceKm,241);
+  const pipelineDesignRoute=N.buildRoute(routeSite,{
+    ...routeAsset,
+    routePlan:{legs:[{transportMode:'pipeline',distanceKm:50,designCapacityPerDay:1200,
+      designCapacityPerLinePerDay:400,edgeClass:'PIPELINE_CORRIDOR'}]}
+  },'natural_gas',1000,{countryId:'BGD',transportMode:'pipeline',unit:'TONNES'});
+  assert.equal(pipelineDesignRoute.status,'PLANNED',JSON.stringify(pipelineDesignRoute));
+  assert.equal(pipelineDesignRoute.vehicleCount,0,'continuous flow has no vehicle count');
+  assert.equal(pipelineDesignRoute.vehiclePlan[0].requiredTrips,null);
+  assert.equal(pipelineDesignRoute.vehiclePlan[0].requiredLineCount,3,
+    'required pipeline lines must derive from daily route flow divided by explicit per-line capacity');
+  assert.equal(pipelineDesignRoute.configuredPipelineLineCount,null,
+    'design line count must not be confused with the actual in-game pipeline count');
 }
 
 // Selected-country UI diagnostics must not walk every country's industrial ledger.
