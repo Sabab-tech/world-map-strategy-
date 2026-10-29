@@ -1668,6 +1668,8 @@ async function previewSiteTransport(input={}){
   return{...metrics,countryId:cid,siteId:sid,routeId:routeProfile.routeId||null,requestedQuantity:quantity,unit,
     individualVehicleIdsRequired:false,transportTypes:(metrics.legs||[]).map(leg=>({
       transportType:leg.transportMode,count:leg.fleetCount,requiredVehicleCount:leg.requiredVehicleCount,
+      requiredLineCount:leg.requiredLineCount,lineCapacityPerDay:leg.lineCapacityPerDay,
+      countUnit:leg.transportMode==='pipeline'?'PIPELINE_LINES':'TRANSPORT_VEHICLES',
       fleetCapacityPerDay:leg.fleetCapacityPerDay,capacityPerDay:leg.capacityPerDay,
       travelDays:leg.travelDays,fleetSufficiency:leg.fleetSufficiency,cargoIconClass:leg.cargoIconClass,cargoIconPath:leg.cargoIconPath
     }))};
