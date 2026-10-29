@@ -8,14 +8,15 @@ const testSiteLogisticsRoutes=[
   ['SITE_BGD_IRON_01','iron_ore'],
   ['SITE_BGD_IRON_02','iron_ore'],
   ['SITE_BGD_COPPER_01','copper'],
-  ['SITE_BGD_GAS_01','natural_gas']
+  ['SITE_BGD_GAS_01','natural_gas'],
+  ['SITE_BGD_OIL_01','crude_oil']
 ].map(([siteId,resourceId])=>({
   countryId:'BGD',siteId,resourceId,routeId:'TEST_MINE_ROUTE:'+siteId,
   routePlan:{
-    routeType:resourceId==='natural_gas'?'PIPELINE':(resourceId==='coal'?undefined:'RAIL'),
-    strategyCode:resourceId==='coal'?'MINE_HAULAGE_RAIL_LAST_MILE':undefined,
+    routeType:resourceId==='natural_gas'?'PIPELINE':(resourceId==='coal'||resourceId==='crude_oil'?undefined:'RAIL'),
+    strategyCode:(resourceId==='coal'||resourceId==='crude_oil')?'MINE_HAULAGE_RAIL_LAST_MILE':undefined,
     routeStatus:'TEST_FIXTURE_SIMULATION_ONLY',
-    capacityBottleneckPerDay:resourceId==='natural_gas'?1200:120000,
+    capacityBottleneckPerDay:(resourceId==='natural_gas'||resourceId==='crude_oil')?1200:120000,
     estimatedRouteDistanceKm:100,
     plannedTransitDays:1,
     minimumTransitDays:1,
@@ -25,8 +26,12 @@ const testSiteLogisticsRoutes=[
       {sequence:3,transportMode:'truck',estimatedDistanceKm:20,designCapacityPerTrip:25,designCapacityPerDay:100,designCapacityUnit:'tonnes'}
     ] : (resourceId==='natural_gas' ? [
       {transportMode:'pipeline',estimatedDistanceKm:100,designCapacityPerDay:1200,designCapacityPerLinePerDay:400,designCapacityUnit:'tonnes'}
+    ] : (resourceId==='crude_oil' ? [
+      {sequence:1,transportMode:'truck',estimatedDistanceKm:20,designCapacityPerTrip:25,designCapacityPerDay:100,designCapacityUnit:'tonnes'},
+      {sequence:2,transportMode:'rail',estimatedDistanceKm:60,designCapacityPerTrip:5000,designCapacityPerDay:120000,designCapacityUnit:'tonnes'},
+      {sequence:3,transportMode:'truck',estimatedDistanceKm:20,designCapacityPerTrip:25,designCapacityPerDay:100,designCapacityUnit:'tonnes'}
     ] : [{transportMode:'rail',estimatedDistanceKm:100,estimatedTravelHours:24,
-      designCapacityPerDay:120000,designCapacityUnit:'tonnes'}])
+      designCapacityPerDay:120000,designCapacityUnit:'tonnes'}]))
   },
   quantityUnitBridge:{sourceProductionUnit:'tonnes',cargoCapacityUnit:'tonnes'},
   provenance:{authority:'TEST_FIXTURE_SIMULATION_ONLY'}
@@ -38,7 +43,7 @@ const context={
     schemaVersion:'1.0.0',datasetId:'TEST_SITE_LOGISTICS_ROUTES_BGD',
     authority:'TEST_FIXTURE_SIMULATION_ONLY',
     countryToPart:{BGD:1},
-    parts:[{part:1,file:'test_resource_site_logistics_routes_bgd.json',routeCount:5,countries:['BGD']}]
+    parts:[{part:1,file:'test_resource_site_logistics_routes_bgd.json',routeCount:6,countries:['BGD']}]
   },
   fetch:async()=>({ok:true,json:async()=>({schemaVersion:'1.0.0',routes:testSiteLogisticsRoutes})}),
   OmegaCanonicalIdentityRegistry:{
@@ -49,13 +54,14 @@ const context={
     }
   },
   OmegaResourceSiteMasterResearchData:{
-    siteCount:5,
+    siteCount:6,
     sites:[
       {siteId:'SITE_BGD_COAL_01',countryId:'BGD',siteName:'Test Coal Mine',real:{resourceId:'coal'},sourceSiteRecord:{id:'SITE_BGD_COAL_01',resourceId:'coal',commercialExtraction:true},simulation:{transportRoute:[]},siteType:'COAL_MINE'},
       {siteId:'SITE_BGD_IRON_01',countryId:'BGD',siteName:'Test Iron Mine',real:{resourceId:'iron_ore'},sourceSiteRecord:{id:'SITE_BGD_IRON_01',resourceId:'iron_ore',commercialExtraction:true},simulation:{transportRoute:[]},siteType:'OPEN_PIT_MINE'},
       {siteId:'SITE_BGD_IRON_02',countryId:'BGD',siteName:'Test Iron Mine 02',real:{resourceId:'iron_ore'},sourceSiteRecord:{id:'SITE_BGD_IRON_02',resourceId:'iron_ore',commercialExtraction:true},simulation:{transportRoute:[]},siteType:'OPEN_PIT_MINE'},
       {siteId:'SITE_BGD_COPPER_01',countryId:'BGD',siteName:'Test Copper Mine',real:{resourceId:'copper'},sourceSiteRecord:{id:'SITE_BGD_COPPER_01',resourceId:'copper',commercialExtraction:true},simulation:{transportRoute:[]},siteType:'OPEN_PIT_MINE'},
-      {siteId:'SITE_BGD_GAS_01',countryId:'BGD',siteName:'Test Natural Gas Field',real:{resourceId:'natural_gas'},sourceSiteRecord:{id:'SITE_BGD_GAS_01',resourceId:'natural_gas',commercialExtraction:true},simulation:{transportRoute:[]},siteType:'GAS_FIELD'}
+      {siteId:'SITE_BGD_GAS_01',countryId:'BGD',siteName:'Test Natural Gas Field',real:{resourceId:'natural_gas'},sourceSiteRecord:{id:'SITE_BGD_GAS_01',resourceId:'natural_gas',commercialExtraction:true},simulation:{transportRoute:[]},siteType:'GAS_FIELD'},
+      {siteId:'SITE_BGD_OIL_01',countryId:'BGD',siteName:'Test Crude Oil Field',real:{resourceId:'crude_oil'},sourceSiteRecord:{id:'SITE_BGD_OIL_01',resourceId:'crude_oil',commercialExtraction:true},simulation:{transportRoute:[]},siteType:'OIL_FIELD'}
     ]
   },
   OmegaResourceScenarioEngineeringData:{
@@ -64,7 +70,8 @@ const context={
       {siteId:'SITE_BGD_IRON_01',countryId:'BGD',resourceId:'iron_ore',unit:'TONNES',nominalCapacity:2000,minimumCapacity:1000,maximumCapacity:2600,utilization:.8,recovery:.9,decline:.01,maintenance:.03,scenarioLifeYears:375},
       {siteId:'SITE_BGD_IRON_02',countryId:'BGD',resourceId:'iron_ore',unit:'TONNES',nominalCapacity:2000,minimumCapacity:1000,maximumCapacity:2600,utilization:.8,recovery:.9,decline:.01,maintenance:.03,scenarioLifeYears:375},
       {siteId:'SITE_BGD_COPPER_01',countryId:'BGD',resourceId:'copper',unit:'TONNES',nominalCapacity:1500,minimumCapacity:800,maximumCapacity:2000,utilization:.8,recovery:.85,decline:.01,maintenance:.03,scenarioLifeYears:375},
-      {siteId:'SITE_BGD_GAS_01',countryId:'BGD',resourceId:'natural_gas',unit:'TONNES',nominalCapacity:1200,minimumCapacity:900,maximumCapacity:1500,utilization:.8,recovery:.85,decline:.01,maintenance:.03,scenarioLifeYears:375}
+      {siteId:'SITE_BGD_GAS_01',countryId:'BGD',resourceId:'natural_gas',unit:'TONNES',nominalCapacity:1200,minimumCapacity:900,maximumCapacity:1500,utilization:.8,recovery:.85,decline:.01,maintenance:.03,scenarioLifeYears:375},
+      {siteId:'SITE_BGD_OIL_01',countryId:'BGD',resourceId:'crude_oil',unit:'TONNES',nominalCapacity:1200,minimumCapacity:900,maximumCapacity:1500,utilization:.8,recovery:.85,decline:.01,maintenance:.03,scenarioLifeYears:375}
     ]
   },
   Omega:{
@@ -127,6 +134,14 @@ assert.equal(pipelineMinePreview.legs[0].requiredLineCount,3,'mine pipeline line
 assert.equal(pipelineMinePreview.vehicleCount,0,'pipeline lines do not enter total vehicle count');
 assert.equal(pipelineMinePreview.configuredPipelineLineCount,null,'design line count stays separate from actual configured line count');
 assert.equal(pipelineMinePreview.transportTypes[0].countUnit,'PIPELINE_LINES');
+const genericOilPreview=await N.previewSiteTransport({countryId:'BGD',siteId:'SITE_BGD_OIL_01',quantity:1000});
+assert.equal(genericOilPreview.status,'READY',JSON.stringify(genericOilPreview));
+assert.equal(genericOilPreview.routeLegCount,1);
+assert.equal(genericOilPreview.legs[0].transportMode,'pipeline',
+  'preferred pipeline mode must override a generic truck/rail template');
+assert.equal(genericOilPreview.legs[0].distanceKm,100);
+assert.equal(genericOilPreview.legs[0].requiredLineCount,null,
+  'line need stays unknown without explicit per-line capacity');
 function advanceOneGameTurn(state){
   const sim=state.simulation||(state.simulation={});
   const step=Math.max(1,Math.round(Number(sim.daysPerTurn)||1));
