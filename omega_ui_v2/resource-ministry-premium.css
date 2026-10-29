@@ -1269,3 +1269,55 @@
     align-items: flex-start;
   }
 }
+
+
+/* Mode-specific route legs, aggregate fleet totals, and responsive count controls. */
+.omega-v2-resource-premium .omega-v2-logistics-fleet-summary,
+.omega-v2-resource-premium .omega-v2-logistics-leg-list,
+.omega-v2-resource-premium .omega-v2-logistics-mode-list {
+  border:1px solid rgba(64,197,235,.22);border-radius:12px;
+  background:linear-gradient(150deg,rgba(10,27,42,.92),rgba(4,13,23,.96));
+  box-shadow:inset 0 1px 0 rgba(231,249,255,.06),0 5px 0 rgba(2,8,14,.3),0 0 18px rgba(27,171,223,.06);
+  margin-top:10px;min-width:0;padding:10px;
+}
+.omega-v2-resource-premium .omega-v2-logistics-summary-heading { align-items:center;display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;margin-bottom:9px; }
+.omega-v2-resource-premium .omega-v2-logistics-summary-heading h3 { color:#e7f7fc;font-size:12px;line-height:1.3;margin:0; }
+.omega-v2-resource-premium .omega-v2-logistics-summary-heading span { color:#8bdcf2;font-size:10px;font-weight:800; }
+.omega-v2-resource-premium .omega-v2-logistics-fleet-summary-grid { display:grid;gap:8px;grid-template-columns:repeat(2,minmax(0,1fr));min-width:0; }
+.omega-v2-resource-premium .omega-v2-logistics-fleet-summary-card { align-items:start;background:linear-gradient(145deg,rgba(14,39,56,.98),rgba(5,18,30,.98));border:1px solid rgba(69,192,226,.24);border-radius:9px;box-shadow:inset 0 1px rgba(255,255,255,.06),0 0 10px rgba(24,170,216,.06);display:grid;gap:8px;grid-template-columns:34px minmax(0,1fr);min-width:0;padding:9px; }
+.omega-v2-resource-premium .omega-v2-logistics-summary-art { align-items:center;background:linear-gradient(145deg,#183b50,#071724);border:1px solid rgba(78,209,255,.44);border-radius:8px;display:flex;height:34px;justify-content:center;width:34px; }
+.omega-v2-resource-premium .omega-v2-logistics-summary-art img { display:block;height:27px;object-fit:contain;width:27px; }
+.omega-v2-resource-premium .omega-v2-logistics-fleet-summary-card > div { display:flex;flex-direction:column;gap:4px;min-width:0; }
+.omega-v2-resource-premium .omega-v2-logistics-fleet-summary-card strong { color:#e8f7fc;font-size:10px;line-height:1.3; }
+.omega-v2-resource-premium .omega-v2-logistics-fleet-summary-card span,.omega-v2-resource-premium .omega-v2-logistics-fleet-summary-card small { color:#9fc5d4;font-size:9px;line-height:1.35;overflow-wrap:anywhere; }
+.omega-v2-resource-premium .omega-v2-logistics-leg-list { display:grid;gap:7px; }
+.omega-v2-resource-premium .omega-v2-logistics-leg-row { align-items:center;background:rgba(9,24,37,.86);border:1px solid rgba(69,175,213,.18);border-radius:9px;display:grid;gap:9px;grid-template-columns:48px minmax(0,1fr);min-width:0;padding:8px; }
+.omega-v2-resource-premium .omega-v2-logistics-leg-art { align-items:center;background:linear-gradient(145deg,#16364a,#071724);border:1px solid rgba(72,213,249,.3);border-radius:9px;box-shadow:0 0 11px rgba(33,190,235,.12);display:flex;height:44px;justify-content:center;width:48px; }
+.omega-v2-resource-premium .omega-v2-logistics-leg-art img { display:block;height:40px;object-fit:contain;width:44px; }
+.omega-v2-resource-premium .omega-v2-logistics-leg-copy { display:flex;flex-direction:column;gap:3px;min-width:0; }
+.omega-v2-resource-premium .omega-v2-logistics-leg-copy strong { color:#eaf8fd;font-size:10px;line-height:1.3; }
+.omega-v2-resource-premium .omega-v2-logistics-leg-copy span { color:#a5c9d7;font-size:9px;line-height:1.35;overflow-wrap:anywhere; }
+.omega-v2-resource-premium .omega-v2-logistics-leg-copy small { color:#62dfff;font-size:9px;font-weight:800;line-height:1.35;overflow-wrap:anywhere; }
+.omega-v2-resource-premium .omega-v2-logistics-mode-list { display:grid;gap:8px; }
+.omega-v2-resource-premium .omega-v2-logistics-mode-row { align-items:start;border-bottom:1px solid rgba(123,183,205,.13);display:grid;gap:9px;grid-template-columns:36px minmax(0,1fr);min-width:0;padding:7px 0; }
+.omega-v2-resource-premium .omega-v2-logistics-mode-row:last-child { border-bottom:0;padding-bottom:0; }
+.omega-v2-resource-premium .omega-v2-logistics-mode-art { align-items:center;background:linear-gradient(145deg,#173a4f,#061724);border:1px solid rgba(68,211,247,.32);border-radius:8px;display:flex;height:34px;justify-content:center;width:36px; }
+.omega-v2-resource-premium .omega-v2-logistics-mode-art img { display:block;height:31px;object-fit:contain;width:32px; }
+.omega-v2-resource-premium .omega-v2-logistics-mode-copy { display:flex;flex-direction:column;gap:3px;min-width:0; }
+.omega-v2-resource-premium .omega-v2-logistics-mode-copy strong { color:#e8f7fb;font-size:10px;line-height:1.3; }
+.omega-v2-resource-premium .omega-v2-logistics-mode-copy span { color:#9ebdce;font-size:9px;line-height:1.35;overflow-wrap:anywhere; }
+.omega-v2-resource-premium .omega-v2-logistics-mode-copy small { color:#66dfff;font-size:9px;line-height:1.35;overflow-wrap:anywhere; }
+.omega-v2-resource-premium .omega-v2-logistics-fleet-controls { align-items:end;display:flex;flex-wrap:wrap;gap:5px;grid-column:1/-1;justify-content:flex-end;min-width:0; }
+.omega-v2-resource-premium .omega-v2-logistics-fleet-controls label { align-items:center;color:#9ebdce;display:flex;flex-wrap:wrap;gap:5px;font-size:9px; }
+.omega-v2-resource-premium .omega-v2-logistics-fleet-controls input { background:#061421;border:1px solid rgba(93,198,232,.32);border-radius:6px;color:#effaff;min-height:31px;padding:5px;width:64px; }
+.omega-v2-resource-premium .omega-v2-logistics-fleet-controls .omega-v2-button { min-height:31px;padding:5px 9px; }
+.omega-v2-resource-premium .omega-v2-logistics-calculation-note { border-left:2px solid rgba(81,202,235,.5);color:#9bb9c8;font-size:9px;line-height:1.5;margin:9px 0 0;padding-left:8px; }
+.omega-v2-resource-premium .omega-v2-logistics-route-vehicle img { display:block;height:26px;object-fit:contain;width:30px; }
+.omega-v2-resource-premium .omega-v2-logistics-svg--node { height:34px;width:34px;object-fit:contain; }
+.omega-v2-resource-premium .omega-v2-flow-icon img { display:block;height:32px;object-fit:contain;width:34px; }
+@media (max-width:440px) {
+ .omega-v2-resource-premium .omega-v2-logistics-fleet-summary-grid { grid-template-columns:minmax(0,1fr); }
+ .omega-v2-resource-premium .omega-v2-logistics-leg-row { grid-template-columns:40px minmax(0,1fr);padding:7px; }
+ .omega-v2-resource-premium .omega-v2-logistics-leg-art { height:39px;width:40px; }
+ .omega-v2-resource-premium .omega-v2-logistics-leg-art img { height:35px;width:36px; }
+}
