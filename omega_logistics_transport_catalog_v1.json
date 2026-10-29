@@ -1,0 +1,169 @@
+{
+  "schemaVersion": "1.0.0",
+  "datasetId": "OMEGA_LOGISTICS_TRANSPORT_CATALOG_V1",
+  "identityModel": "COUNTRY_SITE_TRANSPORT_TYPE_COUNT",
+  "identityFields": [
+    "countryId",
+    "siteId",
+    "transportType",
+    "count"
+  ],
+  "individualVehicleIdsRequired": false,
+  "countSemantics": "count is the number of interchangeable vehicles or capacity units available for this country/site/transport type; no registration number or per-vehicle record is required",
+  "recalculation": "For each leg, vehicle count, payload, speed, loading/unloading and transfer time feed required trips, route duration and available daily capacity. Changing count or a transport type profile changes derived metrics on the next calculation.",
+  "cargoClasses": [
+    {
+      "id": "coal-dry-bulk",
+      "name": "Coal and dry bulk",
+      "tokens": [
+        "coal",
+        "lignite",
+        "coke",
+        "bulk",
+        "dry"
+      ],
+      "accent": "#f59e0b"
+    },
+    {
+      "id": "oil-liquid",
+      "name": "Oil and liquid fuel",
+      "tokens": [
+        "oil",
+        "petroleum",
+        "diesel",
+        "fuel",
+        "crude",
+        "liquid"
+      ],
+      "accent": "#fb7185"
+    },
+    {
+      "id": "gas-lng",
+      "name": "Gas and LNG",
+      "tokens": [
+        "gas",
+        "lng",
+        "natural_gas",
+        "methane"
+      ],
+      "accent": "#38bdf8"
+    },
+    {
+      "id": "ore-aggregate",
+      "name": "Ore and aggregate",
+      "tokens": [
+        "ore",
+        "iron",
+        "copper",
+        "bauxite",
+        "aggregate",
+        "limestone",
+        "gravel",
+        "stone",
+        "mineral"
+      ],
+      "accent": "#a3e635"
+    },
+    {
+      "id": "general-cargo",
+      "name": "General cargo",
+      "tokens": [],
+      "accent": "#c4b5fd"
+    }
+  ],
+  "transportTypes": [
+    {
+      "id": "truck",
+      "label": "Truck",
+      "routeModes": [
+        "truck"
+      ],
+      "baseCatalogMode": "truck",
+      "genericIcon": "assets/omega-industrial-icons-v1/transport/truck.svg",
+      "cargoIcons": {
+        "coal-dry-bulk": "assets/omega-industrial-icons-v1/transport/cargo/coal-dry-bulk/truck.svg",
+        "oil-liquid": "assets/omega-industrial-icons-v1/transport/cargo/oil-liquid/truck.svg",
+        "gas-lng": "assets/omega-industrial-icons-v1/transport/cargo/gas-lng/truck.svg",
+        "ore-aggregate": "assets/omega-industrial-icons-v1/transport/cargo/ore-aggregate/truck.svg",
+        "general-cargo": "assets/omega-industrial-icons-v1/transport/cargo/general-cargo/truck.svg"
+      }
+    },
+    {
+      "id": "train",
+      "label": "Rail freight",
+      "routeModes": [
+        "rail"
+      ],
+      "baseCatalogMode": "rail",
+      "genericIcon": "assets/omega-industrial-icons-v1/transport/train.svg",
+      "cargoIcons": {
+        "coal-dry-bulk": "assets/omega-industrial-icons-v1/transport/cargo/coal-dry-bulk/train.svg",
+        "oil-liquid": "assets/omega-industrial-icons-v1/transport/cargo/oil-liquid/train.svg",
+        "gas-lng": "assets/omega-industrial-icons-v1/transport/cargo/gas-lng/train.svg",
+        "ore-aggregate": "assets/omega-industrial-icons-v1/transport/cargo/ore-aggregate/train.svg",
+        "general-cargo": "assets/omega-industrial-icons-v1/transport/cargo/general-cargo/train.svg"
+      }
+    },
+    {
+      "id": "ship",
+      "label": "Sea freight",
+      "routeModes": [
+        "ship"
+      ],
+      "baseCatalogMode": "ship",
+      "genericIcon": "assets/omega-industrial-icons-v1/transport/ship.svg",
+      "cargoIcons": {
+        "coal-dry-bulk": "assets/omega-industrial-icons-v1/transport/cargo/coal-dry-bulk/ship.svg",
+        "oil-liquid": "assets/omega-industrial-icons-v1/transport/cargo/oil-liquid/ship.svg",
+        "gas-lng": "assets/omega-industrial-icons-v1/transport/cargo/gas-lng/ship.svg",
+        "ore-aggregate": "assets/omega-industrial-icons-v1/transport/cargo/ore-aggregate/ship.svg",
+        "general-cargo": "assets/omega-industrial-icons-v1/transport/cargo/general-cargo/ship.svg"
+      }
+    },
+    {
+      "id": "barge",
+      "label": "Inland barge",
+      "routeModes": [
+        "barge"
+      ],
+      "baseCatalogMode": "barge",
+      "genericIcon": "assets/omega-industrial-icons-v1/transport/barge.svg",
+      "cargoIcons": {
+        "coal-dry-bulk": "assets/omega-industrial-icons-v1/transport/cargo/coal-dry-bulk/barge.svg",
+        "oil-liquid": "assets/omega-industrial-icons-v1/transport/cargo/oil-liquid/barge.svg",
+        "gas-lng": "assets/omega-industrial-icons-v1/transport/cargo/gas-lng/barge.svg",
+        "ore-aggregate": "assets/omega-industrial-icons-v1/transport/cargo/ore-aggregate/barge.svg",
+        "general-cargo": "assets/omega-industrial-icons-v1/transport/cargo/general-cargo/barge.svg"
+      }
+    },
+    {
+      "id": "pipeline",
+      "label": "Pipeline",
+      "routeModes": [
+        "pipeline"
+      ],
+      "baseCatalogMode": "pipeline",
+      "genericIcon": "assets/omega-industrial-icons-v1/transport/pipeline.svg",
+      "cargoIcons": {
+        "coal-dry-bulk": "assets/omega-industrial-icons-v1/transport/cargo/coal-dry-bulk/pipeline.svg",
+        "oil-liquid": "assets/omega-industrial-icons-v1/transport/cargo/oil-liquid/pipeline.svg",
+        "gas-lng": "assets/omega-industrial-icons-v1/transport/cargo/gas-lng/pipeline.svg",
+        "ore-aggregate": "assets/omega-industrial-icons-v1/transport/cargo/ore-aggregate/pipeline.svg",
+        "general-cargo": "assets/omega-industrial-icons-v1/transport/cargo/general-cargo/pipeline.svg"
+      }
+    }
+  ],
+  "fleetRecordExample": {
+    "countryId": "BGD",
+    "siteId": "SITE_BGD_EXAMPLE_MINE",
+    "transportType": "truck",
+    "count": 8,
+    "authority": "PLAYER_OR_GAME_STATE"
+  },
+  "constraints": [
+    "Do not fabricate country fleet counts.",
+    "Do not create individual vehicle registration IDs.",
+    "Missing fleet count is UNKNOWN, not zero and not infinite.",
+    "The same shared logistics engine reads country/site/mode-specific counts."
+  ]
+}
