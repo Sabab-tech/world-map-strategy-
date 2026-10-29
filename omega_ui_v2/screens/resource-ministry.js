@@ -977,13 +977,13 @@
       if(files[kind])return '<img src="'+files[kind]+'" alt="" aria-hidden="true" loading="lazy" decoding="async">';
       return ({factory:'▥',chart:'↗'})[kind]||'';
     }
-    function logisticsRouteCard(route) {
+    function logisticsRouteCard(route, fleetSnapshot) {
       var plan=route&&route.routePlan||{},destination=route&&route.destination&&route.destination.warehouseId||'National raw inventory';
       var legs=safeArray(plan.legs),distance=numberOrNull(plan.estimatedRouteDistanceKm),transit=numberOrNull(plan.plannedTransitDays);
       var capacity=numberOrNull(plan.capacityBottleneckPerDay),capacityUnit=/RAW_CARGO_TONNES_PER_DAY/i.test(String(plan.capacityUnit||''))?'tonnes/day':buildDisplayUnit(plan.capacityUnit||'');
       var matched=hasCurrentShipmentMatch(route),resource=route&&(route.resourceId||route.resourceIconKey)||'supply';
       var siteName=route&&(route.siteName||route.siteId)||'Registered mine site',siteId=String(route&&route.siteId||'');
-      var snapshot=readSiteTransportFleet(siteId),canManage=countryKey===livePlayerCountryKey()&&snapshot&&snapshot.status==='READY';
+      var snapshot=fleetSnapshot||readSiteTransportFleet(siteId),canManage=countryKey===livePlayerCountryKey()&&snapshot&&snapshot.status==='READY';
       var modes=Object.create(null);
       legs.forEach(function(leg){
         var mode=logisticsModeKey(leg&&leg.transportMode);if(!mode)return;
@@ -1020,10 +1020,10 @@
       if(!routeState||routeState.status==='idle'||routeState.status==='loading')return '<section class="omega-v2-card omega-v2-logistics-route-status" data-logistics-route-state="loading" role="status"><h2 class="omega-v2-card-title">Mine Site Route Plans</h2><p>Loading registered site routes…</p></section>';
       if(routeState.status!=='ready')return '<div class="omega-v2-empty" data-logistics-route-state="unavailable">Site route plans unavailable. Current Match: Unavailable.</div>';
       var routes=safeArray(routeState.routes),modeConfig=[{mode:'truck',label:'Road trucks'},{mode:'rail',label:'Freight trains'},{mode:'ship',label:'Cargo ships'},{mode:'barge',label:'River barges'},{mode:'pipeline',label:'Pipeline lines'}];
-      var aggregate=Object.create(null);
+      var aggregate=Object.create(null),siteFleetSnapshots=Object.create(null);
       modeConfig.forEach(function(row){aggregate[row.mode]={mode:row.mode,configuredUnits:0,configuredSites:0,legCount:0,designUnits:0,unknownLegs:0};});
       routes.forEach(function(route){
-        var snapshot=readSiteTransportFleet(String(route&&route.siteId||''));
+        var siteId=String(route&&route.siteId||''),snapshot=siteFleetSnapshots[siteId]||(siteFleetSnapshots[siteId]=readSiteTransportFleet(siteId));
         modeConfig.forEach(function(row){
           var fleet=transportFleetRow(snapshot,row.mode);
           if(snapshot&&snapshot.status==='READY'&&fleet&&fleet.configured===true&&numberOrNull(fleet.count)!==null){
@@ -1047,7 +1047,7 @@
       }).join('');
       return '<section class="omega-v2-logistics-route-section" data-logistics-route-state="ready"><div class="omega-v2-logistics-route-heading"><div><h2>Mine Site Route Plans</h2><p>Per-mine fleet counts and capacity-based route requirements</p></div><span class="omega-v2-status" data-state="attention">'+fmt(routes.length)+' routes</span></div>' +
         '<div class="omega-v2-logistics-fleet-summary"><div class="omega-v2-logistics-summary-heading"><h3>Transport inventory by mode</h3><span>'+esc(countryKey)+'</span></div><div class="omega-v2-logistics-fleet-summary-grid">'+summary+'</div></div>' +
-        '<p class="omega-v2-logistics-calculation-note">Route distances, capacities and baseline fleet requirements are simulation-only. Recorded counts come from saved transport settings.</p><p class="omega-v2-logistics-calculation-note" data-cross-border-import-status="needs-geocoded-infrastructure">Cross-border imports are not marked as routed until source ports and the receiving warehouse have physical coordinates. No ship leg is invented for an unverified corridor.</p><div class="omega-v2-grid omega-v2-logistics-grid">'+routes.map(logisticsRouteCard).join('')+'</div></section>';
+        '<p class="omega-v2-logistics-calculation-note">Route distances, capacities and baseline fleet requirements are simulation-only. Recorded counts come from saved transport settings.</p><p class="omega-v2-logistics-calculation-note" data-cross-border-import-status="needs-geocoded-infrastructure">Cross-border imports are not marked as routed until source ports and the receiving warehouse have physical coordinates. No ship leg is invented for an unverified corridor.</p><div class="omega-v2-grid omega-v2-logistics-grid">'+routes.map(function(route){return logisticsRouteCard(route,siteFleetSnapshots[String(route&&route.siteId||'')]);}).join('')+'</div></section>';
     }
     var routePlanState = getLogisticsRoutePlanState(countryKey);
     var liveShipmentsMarkup = shipments.length ? '<section class="omega-v2-logistics-live-section">' +
