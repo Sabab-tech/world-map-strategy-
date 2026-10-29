@@ -1595,8 +1595,10 @@ function siteRouteLegMetrics(countryId,routeProfile,quantity,unitBridge){
     const fleetCapacityPerDay=isPipeline?
       (fleetCount!==null&&lineCapacityPerDay!==null?Number((fleetCount*lineCapacityPerDay).toFixed(6)):null):
       (fleetCount===null?null:Number((fleetCount*payload/cycleDays).toFixed(6)));
-    const dailyCapacity=fleetCount===0?0:(fleetCapacityPerDay===null?routeCapacityPerDay:
-      Math.min(routeCapacityPerDay,fleetCapacityPerDay));
+    const pipelineCapacityUnavailable=isPipeline&&fleetCount!==null&&fleetCount>0&&lineCapacityPerDay===null;
+    const dailyCapacity=pipelineCapacityUnavailable?null:
+      (fleetCount===0?0:(fleetCapacityPerDay===null?routeCapacityPerDay:
+        Math.min(routeCapacityPerDay,fleetCapacityPerDay)));
     const requiredLineCount=isPipeline&&requiredDesignFleetSlots!==null?requiredDesignFleetSlots:null;
     const cargoText=tok(source?.cargoClass||routeProfile?.commodityGroup||routeProfile?.resourceId||'');
     const cargoIconClass=/coal|lignite|coke|dry_bulk/.test(cargoText)?'coal-dry-bulk':
@@ -1665,10 +1667,15 @@ function siteRouteLegMetrics(countryId,routeProfile,quantity,unitBridge){
   const unconfiguredTransportModeCount=Object.values(fleetCountsByMode).filter(row=>!row.configured).length;
   const zeroFleetModes=legs.filter(leg=>leg.fleetCount===0).map(leg=>leg.mode);
   const blockedByZeroFleet=zeroFleetModes.length>0;
-  return{status:blockedByZeroFleet?'BLOCKED':'READY',reason:blockedByZeroFleet?'TRANSPORT_FLEET_UNAVAILABLE':null,
+  const blockedPipelineModes=legs.filter(leg=>leg.mode==='pipeline'&&leg.fleetCount!==null&&
+    leg.fleetCount>0&&leg.lineCapacityPerDay===null).map(leg=>leg.mode);
+  const blockedByPipelineCapacity=blockedPipelineModes.length>0;
+  return{status:blockedByZeroFleet||blockedByPipelineCapacity?'BLOCKED':'READY',
+    reason:blockedByZeroFleet?'TRANSPORT_FLEET_UNAVAILABLE':
+      (blockedByPipelineCapacity?'PIPELINE_PER_LINE_CAPACITY_UNAVAILABLE':null),
     legs,totalDistanceKm:Number(totalDistanceKm.toFixed(6)),distanceReconciliation,
-    travelTimeDays:blockedByZeroFleet?null:Number(totalDays.toFixed(6)),
-    capacityPerDay:Number.isFinite(capacityPerDay)?capacityPerDay:null,
+    travelTimeDays:blockedByZeroFleet||blockedByPipelineCapacity?null:Number(totalDays.toFixed(6)),
+    capacityPerDay:blockedByPipelineCapacity?null:(Number.isFinite(capacityPerDay)?capacityPerDay:null),
     quantityInCapacityUnits,quantityCapacityFactor:factor,
     requiredTripsByMode,requiredPipelineLinesByMode,fleetCountsByMode,transportModeSummary,totalDesignFleetSlots,configuredFleetUnitCount,configuredPipelineLineCount,unconfiguredTransportModeCount,
     routeType:String(plan.routeType||'').toUpperCase()==='TRUCK_TO_RAIL_TO_TRUCK'&&legs.length===1?String(legs[0].mode||'').toUpperCase()+'_ONLY':plan.routeType,
@@ -1812,9 +1819,10 @@ function buildRoute(site,asset,resourceId,requestedQuantity,input={}){
     const fleetCapacityPerDay=isPipeline?
       (fleetCount!==null&&lineCapacityPerDay!==null?Number((fleetCount*lineCapacityPerDay).toFixed(6)):null):
       (fleetCount===null?null:Number((fleetCount*payload*24/cycleHours).toFixed(6)));
-    const capacityPerDay=fleetCount===0?0:(fleetCapacityPerDay===null?
+    const pipelineCapacityUnavailable=isPipeline&&fleetCount!==null&&fleetCount>0&&lineCapacityPerDay===null;
+    const capacityPerDay=pipelineCapacityUnavailable?null:(fleetCount===0?0:(fleetCapacityPerDay===null?
       Math.min(infrastructureCapacityPerDay,designCapacityPerDay):
-      Math.min(infrastructureCapacityPerDay,designCapacityPerDay,fleetCapacityPerDay));
+      Math.min(infrastructureCapacityPerDay,designCapacityPerDay,fleetCapacityPerDay)));
     const capacityPerTurn=capacityPerDay*daysPerTurn();
     const tripWaves=isPipeline?null:(fleetCount===null?requiredTrips:(fleetCount>0?Math.ceil(requiredTrips/fleetCount):0));
     const legTotalDays=isPipeline?(fleetCount===0?null:days):
@@ -1839,9 +1847,11 @@ function buildRoute(site,asset,resourceId,requestedQuantity,input={}){
       timeAuthority:isPipeline?'CONTINUOUS_PIPELINE_FLOW_TRANSIT_ESTIMATE':
         (fleetCount===null?'ROUTE_DESIGN_CAPACITY_ETA_ESTIMATE_NOT_ACTUAL_FLEET_COUNT':'VERSIONED_PROFILE_AND_CONFIGURED_FLEET_COUNT')});
   }
-  const dispatchQuantity=Math.min(quantity,Math.max(0,limitingCapacity/capacityFactor));
+  const blockedByPipelineCapacity=vehiclePlan.some(leg=>leg.mode==='pipeline'&&
+    leg.fleetCountConfigured&&leg.fleetCount>0&&leg.lineCapacityPerDay===null);
+  const dispatchQuantity=blockedByPipelineCapacity?0:Math.min(quantity,Math.max(0,limitingCapacity/capacityFactor));
   const hasZeroFleet=vehiclePlan.some(leg=>leg.fleetCountConfigured&&leg.fleetCount===0);
-  const estimatedTotalDays=hasZeroFleet?null:totalDays;
+  const estimatedTotalDays=hasZeroFleet||blockedByPipelineCapacity?null:totalDays;
   const path=vehiclePlan.map(x=>x.edgeClass),etaTurn=estimatedTotalDays===null?null:turn()+Math.max(1,Math.ceil(estimatedTotalDays/daysPerTurn()));
   const routeSourceSiteId=input.sourceSiteId||site?.siteId||null;
   const routeSourceNode=input.sourceNode||nodeToken(input.sourceNodeType||'MINE',cid,site?.siteId);
@@ -1880,7 +1890,9 @@ function buildRoute(site,asset,resourceId,requestedQuantity,input={}){
       (vehiclePlan.some(leg=>leg.mode==='pipeline')?'PIPELINE_CORRIDOR_CAPACITY_WITHOUT_PER_LINE_THROUGHPUT':'INFRASTRUCTURE_MODEL'),
     distanceAuthority:vehiclePlan.every(x=>x.sourceAuthority==='SITE_SIMULATION_ROUTE')?'SITE_SIMULATION_ROUTE':'SIMULATED_CORRIDOR_MODEL',
     crossBorderRequired:canonicalCountry(asset?.countryId||cid)!==cid,crossBorderAllowed:false,
-    statusReason:dispatchQuantity>0?'ROUTE_CAPACITY_AVAILABLE':'ROUTE_CAPACITY_ZERO'};
+    reason:blockedByPipelineCapacity?'PIPELINE_PER_LINE_CAPACITY_UNAVAILABLE':null,
+    statusReason:blockedByPipelineCapacity?'PIPELINE_PER_LINE_CAPACITY_UNAVAILABLE':
+      (dispatchQuantity>0?'ROUTE_CAPACITY_AVAILABLE':'ROUTE_CAPACITY_ZERO')};
   return route;
 }
 function planShipment(input={}){
