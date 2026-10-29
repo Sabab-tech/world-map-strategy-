@@ -583,7 +583,7 @@ assert.equal(sharedTransport.shipments.length,2);
   for(const item of cases){
     const route=N.buildRoute(routeSite,routeAsset,item.resource,100,{countryId:'BGD',transportMode:item.mode,unit:'TONNES'});
     assert.equal(route.status,'PLANNED',JSON.stringify({mode:item.mode,route}));
-    assert.deepEqual(Array.from(new Set(route.vehiclePlan.map(leg=>leg.mode))),[item.mode],
+    assert.equal(Array.from(new Set(route.vehiclePlan.map(leg=>leg.mode))).join(','),item.mode,
       'selected mode must remain independent: '+item.mode);
     assert.equal(route.routeLegCount,1,'no unrequested transfer legs should be invented: '+item.mode);
     assert.ok(route.totalDistanceKm>0,'route estimate must be positive and derived by the route-distance source: '+item.mode);
