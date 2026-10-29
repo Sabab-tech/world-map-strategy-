@@ -940,6 +940,7 @@
       var resourceRules = catalog && catalog.resourceRules || {};
       var preferred = safeArray(resourceRules[route.resourceId] && resourceRules[route.resourceId].preferredModes)
         .map(function (mode) { return String(mode || '').toLowerCase(); });
+      var modeProfiles = catalog && catalog.transportModes || {};
       var chosen = preferred.filter(function (mode) { return Object.prototype.hasOwnProperty.call(modeProfiles, mode); })[0];
       if (!chosen) chosen = preferred.filter(function (mode) { return modes.indexOf(mode) >= 0; })[0];
       if (!chosen) return rows;
@@ -947,7 +948,6 @@
       if (distance === null) distance = rows.reduce(function (sum, leg) {
         return sum + (numberOrNull(leg && (leg.estimatedDistanceKm !== undefined ? leg.estimatedDistanceKm : leg.distanceKm)) || 0);
       }, 0);
-      var modeProfiles = catalog && catalog.transportModes || {};
       var profile = modeProfiles[chosen] || {};
       var reference = rows.filter(function (leg) { return String(leg && (leg.transportMode || leg.mode) || '').toLowerCase() === chosen; })[0] || rows[0];
       var speed = Math.max(1, numberOrNull(profile.speedKmh) || 1);
@@ -1047,8 +1047,8 @@
     function logisticsIconMarkup(kind) {
       if (kind === 'origin' || kind === 'warehouse') {
         var placePath = kind === 'origin'
-          ? 'assets/omega-industrial-icons-v1/transport/mine-origin.svg'
-          : 'assets/omega-industrial-icons-v1/transport/warehouse-destination.svg';
+          ? 'assets/omega-industrial-icons-v1/logistics/mine-site.svg'
+          : 'assets/omega-industrial-icons-v1/logistics/warehouse-node.svg';
         var placeLabel = kind === 'origin' ? 'Mine origin' : 'Raw-material warehouse';
         return '<img class="omega-v2-logistics-svg omega-v2-logistics-svg--place" data-omega-v2-logistics-icon="' +
           esc(kind) + '" src="' + placePath + '" alt="' + placeLabel + '" loading="lazy" decoding="async">';
@@ -1072,12 +1072,145 @@
           (!!linkedRoute && linkedRoute === String(route.routeId || ''));
       });
     }
+    function logisticsTransportIconPath(mode, resourceId) {
+      var value = String(mode || '').trim().toLowerCase();
+      var iconMode = value === 'rail' || value === 'train' ? 'train' :
+        (value === 'ship' || value === 'truck' || value === 'barge' || value === 'pipeline' ? value : 'truck');
+      var rid = String(resourceId || '').trim().toLowerCase();
+      var cargo = /coal|lignite|coke|dry[_ -]?bulk/.test(rid) ? 'coal-dry-bulk' :
+        /oil|petroleum|diesel|fuel|crude|liquid/.test(rid) ? 'oil-liquid' :
+        /gas|lng|methane/.test(rid) ? 'gas-lng' :
+        /ore|iron|copper|bauxite|aggregate|limestone|gravel|stone|mineral|gold|nickel|rare[_ -]?earth/.test(rid)
+          ? 'ore-aggregate' : 'general-cargo';
+      return 'assets/omega-industrial-icons-v1/transport/cargo/' + cargo + '/' + iconMode + '.svg';
+    }
+    function logisticsModeGenericIconPath(mode) {
+      var icons = { truck:'truck.svg', rail:'train.svg', ship:'ship.svg', barge:'barge.svg', pipeline:'pipeline.svg' };
+      return 'assets/omega-industrial-icons-v1/transport/' + (icons[String(mode || '').toLowerCase()] || 'truck.svg');
+    }
+    function logisticsSiteFleetMarkup(route, legs) {
+      var fleet = readSiteTransportFleet(route);
+      var ready = !!(fleet && fleet.status === 'READY' && Array.isArray(fleet.transportTypes));
+      var byMode = Object.create(null);
+      (ready ? fleet.transportTypes : []).forEach(function (row) {
+        if (row && row.transportType) byMode[String(row.transportType).toLowerCase()] = row;
+      });
+      var designByMode = logisticsDesignFleetEstimate(route, legs, byMode);
+      var routeModes = [];
+      safeArray(legs).forEach(function (leg) {
+        var mode = String(leg && (leg.transportMode || leg.mode) || '').toLowerCase();
+        if (mode && routeModes.indexOf(mode) === -1) routeModes.push(mode);
+      });
+      var configuredModeCount = 0, designTotal = 0, designAvailableModes = 0, unknownRouteModes = 0;
+      var cards = Object.keys(logisticsTransportModeMeta).map(function (mode) {
+        var meta = logisticsTransportModeMeta[mode], row = byMode[mode];
+        var count = row ? numberOrNull(row.count) : null;
+        var configured = !!(ready && row && row.configured === true && count !== null && count >= 0);
+        if (configured) configuredModeCount += 1;
+        var estimate = designByMode[mode] || null;
+        var used = routeModes.indexOf(mode) >= 0;
+        var estimateLabel = !used ? 'Not used by this route' :
+          (estimate && estimate.available ? 'Design need: ' + fmt(estimate.estimatedUnits) + ' ' +
+            (estimate.estimatedUnits === 1 ? meta.single : meta.unit) : 'Design need unavailable');
+        var tripRate = estimate && estimate.estimatedTripsPerDay !== null
+          ? ' · ' + fmt(Number(estimate.estimatedTripsPerDay.toFixed(4))) + ' trips/day' : '';
+        if (used && estimate && estimate.available) { designTotal += estimate.estimatedUnits; designAvailableModes += 1; }
+        if (used && (!estimate || !estimate.available)) unknownRouteModes += 1;
+        var iconPath = logisticsTransportIconPath(mode, route && route.resourceId);
+        return '<div class="omega-v2-logistics-fleet-mode" data-transport-mode="' + esc(mode) +
+          '" data-fleet-configured="' + (configured ? 'true' : 'false') +
+          '" data-design-estimate-available="' + (estimate && estimate.available ? 'true' : 'false') + '">' +
+          '<img class="omega-v2-logistics-fleet-mode-icon" src="' + esc(iconPath) + '" alt="' +
+          esc(meta.label) + '" width="46" height="30" loading="lazy" decoding="async">' +
+          '<div class="omega-v2-logistics-fleet-mode-copy"><span>' + esc(meta.label) + '</span><strong>' +
+          esc(configured ? fmt(count) + ' ' + meta.unit : (ready ? 'Not configured' : 'Unknown')) +
+          '</strong><small>' + esc(estimateLabel + tripRate) + '</small></div></div>';
+      }).join('');
+      return '<section class="omega-v2-logistics-fleet-summary" data-omega-v2-logistics-fleet-summary data-site-id="' +
+        esc(route && route.siteId || '') + '"><div class="omega-v2-logistics-fleet-heading">' +
+        '<span class="omega-v2-eyebrow">TRANSPORT AT THIS MINE</span><strong>' +
+        (ready ? fmt(configuredModeCount) + ' of 5 counts configured' : 'Actual fleet counts unknown') +
+        '</strong></div><div class="omega-v2-logistics-fleet-grid">' + cards + '</div>' +
+        '<div class="omega-v2-logistics-fleet-foot"><span>Route legs: <strong>' + fmt(safeArray(legs).length) +
+        '</strong></span><span>Transport modes: <strong>' + fmt(routeModes.length) + '</strong></span>' +
+        '<span>Calculated design units: <strong>' + (routeModes.length && designAvailableModes ? fmt(designTotal) : 'Unavailable') +
+        '</strong></span><span>Design estimates available: <strong>' + fmt(designAvailableModes) + ' of ' +
+        fmt(routeModes.length) + '</strong></span></div>' +
+        ((ready && configuredModeCount < 5) || !ready || unknownRouteModes
+          ? '<p class="omega-v2-logistics-fleet-note">Configured fleet counts are actual in-game settings. Design needs are calculated separately from route flow, payload and round-trip cycle time. Missing pipeline per-line capacity remains unknown.</p>'
+          : '<p class="omega-v2-logistics-fleet-note">Actual fleet counts and calculated design requirements are separate values; route legs are not vehicle IDs.</p>') +
+        '</section>';
+    }
+    function logisticsFleetOverviewMarkup(routes) {
+      var seen = Object.create(null), sites = [];
+      safeArray(routes).forEach(function (route) {
+        var id = String(route && route.siteId || '').trim();
+        if (id && !Object.prototype.hasOwnProperty.call(seen, id)) { seen[id] = true; sites.push(route); }
+      });
+      var totals = Object.create(null);
+      Object.keys(logisticsTransportModeMeta).forEach(function (mode) {
+        totals[mode] = { total:0, configuredSites:0, designUnits:0, designSites:0, unknownDesignSites:0 };
+      });
+      var readableSites = 0, configuredProfiles = 0, unknownProfiles = 0;
+      sites.forEach(function (route) {
+        var fleet = readSiteTransportFleet(route);
+        var ready = !!(fleet && fleet.status === 'READY' && Array.isArray(fleet.transportTypes));
+        var byMode = Object.create(null);
+        if (ready) {
+          readableSites += 1;
+          fleet.transportTypes.forEach(function (row) {
+            if (row && row.transportType) byMode[String(row.transportType).toLowerCase()] = row;
+          });
+        }
+        Object.keys(logisticsTransportModeMeta).forEach(function (mode) {
+          var row = byMode[mode], count = row ? numberOrNull(row.count) : null, stat = totals[mode];
+          if (ready && row && row.configured === true && count !== null && count >= 0) {
+            stat.total += count; stat.configuredSites += 1; configuredProfiles += 1;
+          } else { unknownProfiles += 1; }
+        });
+        var design = logisticsDesignFleetEstimate(route, logisticsNormalizedRouteLegs(route), byMode);
+        Object.keys(design).forEach(function (mode) {
+          var estimate = design[mode], stat = totals[mode];
+          if (!stat) return;
+          if (estimate.available) { stat.designUnits += estimate.estimatedUnits; stat.designSites += 1; }
+          else stat.unknownDesignSites += 1;
+        });
+      });
+      var modeCards = Object.keys(logisticsTransportModeMeta).map(function (mode) {
+        var meta = logisticsTransportModeMeta[mode], stat = totals[mode];
+        var actual = stat.configuredSites ? fmt(stat.total) + ' ' + meta.unit : 'Not configured';
+        var design = stat.designSites ? 'Design need: ' + fmt(stat.designUnits) + ' ' +
+          (stat.designUnits === 1 ? meta.single : meta.unit) : 'Design need unavailable';
+        return '<div class="omega-v2-logistics-overview-mode" data-transport-mode="' + esc(mode) + '">' +
+          '<img class="omega-v2-logistics-overview-mode-icon" src="' + esc(logisticsModeGenericIconPath(mode)) +
+          '" alt="' + esc(meta.label) + '" width="48" height="34" loading="lazy" decoding="async">' +
+          '<div><span>' + esc(meta.label) + '</span><strong>' + esc(actual) + '</strong>' +
+          '<small>' + esc(fmt(stat.configuredSites) + ' of ' + fmt(sites.length) + ' mine sites have counts') + '</small>' +
+          '<small>' + esc(design) + '</small><small>' + esc(fmt(stat.designSites) + ' site estimates available') +
+          '</small></div></div>';
+      }).join('');
+      return '<section class="omega-v2-card omega-v2-logistics-fleet-overview" data-omega-v2-logistics-fleet-overview>' +
+        '<div class="omega-v2-logistics-fleet-heading"><div><h2>Transport Fleet Summary</h2>' +
+        '<p>Configured fleets and design needs across the selected country’s registered mine routes.</p></div>' +
+        '<strong>' + fmt(sites.length) + ' mine sites · ' + fmt(readableSites) + ' readable fleet records</strong></div>' +
+        '<div class="omega-v2-logistics-overview-grid">' + modeCards + '</div>' +
+        '<div class="omega-v2-logistics-fleet-foot"><span>Mode profiles configured: <strong>' +
+        fmt(configuredProfiles) + '</strong></span><span>Unknown count profiles: <strong>' + fmt(unknownProfiles) +
+        '</strong></span><span>Per-vehicle IDs required: <strong>No</strong></span></div>' +
+        '<p class="omega-v2-logistics-fleet-note">Actual configured fleet totals are not the same as design-needed trips or route legs. Unconfigured counts stay unknown, not zero.</p></section>';
+    }
     function logisticsRouteCard(route) {
-      var plan = route.routePlan || {};
+      var plan = route && route.routePlan || {};
       var destination = route.destination && route.destination.warehouseId || 'National raw inventory';
       var legs = logisticsNormalizedRouteLegs(route);
-      var modes = legs.map(function (leg) { return leg && (leg.transportMode || leg.mode) ? human(leg.transportMode || leg.mode) : ''; })
-        .filter(Boolean).join(' → ') || 'Route not recorded';
+      var modes = legs.map(function (leg) {
+        return leg && (leg.transportMode || leg.mode) ? human(leg.transportMode || leg.mode) : '';
+      }).filter(Boolean).join(' → ') || 'Route not recorded';
+      var routeModes = [];
+      legs.forEach(function (leg) {
+        var mode = String(leg && (leg.transportMode || leg.mode) || '').toLowerCase();
+        if (mode && routeModes.indexOf(mode) < 0) routeModes.push(mode);
+      });
       var distance = numberOrNull(plan.estimatedRouteDistanceKm);
       var transit = numberOrNull(plan.plannedTransitDays);
       var capacity = numberOrNull(plan.capacityBottleneckPerDay);
@@ -1086,33 +1219,43 @@
       var matched = hasCurrentShipmentMatch(route);
       var resource = route.resourceId || route.resourceIconKey || 'supply';
       var siteName = route.siteName || route.siteId || 'Registered mine site';
-      var from = siteName;
-      var to = destination;
+      var from = siteName, to = destination;
+      var routeIcons = legs.map(function (leg, index) {
+        var mode = String(leg && (leg.transportMode || leg.mode) || 'truck').toLowerCase();
+        var meta = logisticsTransportModeMeta[mode] || {label:human(mode)};
+        return '<span class="omega-v2-logistics-route-leg-icon" data-route-leg="' + (index + 1) +
+          '" data-route-leg-mode="' + esc(mode) + '"><img src="' +
+          esc(logisticsTransportIconPath(mode, resource)) + '" alt="' + esc(meta.label) +
+          '" width="40" height="28" loading="lazy" decoding="async"><small>' + esc(meta.label) + '</small></span>';
+      }).join('');
       return '<article class="omega-v2-card omega-v2-logistics-card omega-v2-logistics-route-card" data-logistics-state="attention" data-logistics-plan-site-id="' +
-        esc(route.siteId || '') + '" data-current-match="' + (matched ? 'matched' : 'unavailable') + '" data-logistics-mode-chain="' + esc(legs.map(function (leg) { return String(leg.transportMode || leg.mode || '').toLowerCase(); }).join(',')) + '">' +
-        '<div class="omega-v2-logistics-header"><div class="omega-v2-logistics-cargo">' +
-        '<span class="omega-v2-resource-icon omega-v2-logistics-resource-art">' + resourceIconMarkup(resource, resourceLabel(resource)) + '</span>' +
-        '<div class="omega-v2-logistics-cargo-copy"><span class="omega-v2-eyebrow">SITE ROUTE PLAN</span><h3 class="omega-v2-card-title">' +
-        esc(siteName) + '</h3><span class="omega-v2-card-meta">' + esc(resourceLabel(resource)) + '</span></div></div>' +
+        esc(route.siteId || '') + '" data-current-match="' + (matched ? 'matched' : 'unavailable') +
+        '" data-logistics-mode-chain="' + esc(legs.map(function (leg) { return String(leg.transportMode || leg.mode || '').toLowerCase(); }).join(',')) + '">' +
+        '<div class="omega-v2-logistics-header"><div class="omega-v2-logistics-cargo"><span class="omega-v2-resource-icon omega-v2-logistics-resource-art">' +
+        resourceIconMarkup(resource, resourceLabel(resource)) + '</span><div class="omega-v2-logistics-cargo-copy">' +
+        '<span class="omega-v2-eyebrow">SITE ROUTE PLAN</span><h3 class="omega-v2-card-title">' + esc(siteName) +
+        '</h3><span class="omega-v2-card-meta">' + esc(resourceLabel(resource)) + '</span></div></div>' +
         '<span class="omega-v2-status" data-state="attention">Route plan</span></div>' +
         '<div class="omega-v2-logistics-path" aria-label="Planned route from ' + esc(from) + ' to ' + esc(to) + '">' +
-        '<div class="omega-v2-logistics-node omega-v2-logistics-node--origin"><span class="omega-v2-logistics-node-art">' + logisticsIconMarkup('origin') +
-        '</span><span class="omega-v2-logistics-node-copy"><small>MINE</small><strong>' + esc(from) + '</strong></span></div>' +
-        '<div class="omega-v2-logistics-link"><span class="omega-v2-logistics-route-vehicle">' + logisticsIconMarkup('transport') +
-        '</span><span class="omega-v2-logistics-link-line"></span><span class="omega-v2-logistics-mode">' + esc(modes) + '</span></div>' +
-        '<div class="omega-v2-logistics-node omega-v2-logistics-node--destination"><span class="omega-v2-logistics-node-art">' + logisticsIconMarkup('warehouse') +
-        '</span><span class="omega-v2-logistics-node-copy"><small>WAREHOUSE</small><strong>' + esc(to) + '</strong></span></div></div>' +
-        logisticsSiteFleetMarkup(route, legs) +
-        '<div class="omega-v2-logistics-metrics">' +
+        '<div class="omega-v2-logistics-node omega-v2-logistics-node--origin"><span class="omega-v2-logistics-node-art">' +
+        logisticsIconMarkup('origin') + '</span><span class="omega-v2-logistics-node-copy"><small>ORIGIN</small><strong>' +
+        esc(from) + '</strong></span></div><div class="omega-v2-logistics-link"><span class="omega-v2-logistics-route-icons">' +
+        routeIcons + '</span><span class="omega-v2-logistics-link-line"></span><span class="omega-v2-logistics-mode">' +
+        esc(modes) + '</span></div><div class="omega-v2-logistics-node omega-v2-logistics-node--destination"><span class="omega-v2-logistics-node-art">' +
+        logisticsIconMarkup('warehouse') + '</span><span class="omega-v2-logistics-node-copy"><small>DESTINATION</small><strong>' +
+        esc(to) + '</strong></span></div></div><div class="omega-v2-logistics-metrics">' +
         '<div class="omega-v2-logistics-metric"><span>Distance · estimate</span><strong>' +
         (distance !== null ? esc(fmt(distance) + ' km') : 'Unavailable') + '</strong></div>' +
         '<div class="omega-v2-logistics-metric"><span>Transit · planned</span><strong>' +
         (transit !== null ? esc(fmt(transit) + ' days') : 'Unavailable') + '</strong></div>' +
         '<div class="omega-v2-logistics-metric"><span>Design capacity</span><strong>' +
         (capacity !== null ? esc(fmt(capacity) + (capacityUnit ? ' ' + capacityUnit : '')) : 'Unavailable') + '</strong></div>' +
-        '<div class="omega-v2-logistics-metric"><span>Current Match</span><strong>' +
-        (matched ? 'Matched' : 'Unavailable') + '</strong></div></div></article>';
+        '<div class="omega-v2-logistics-metric"><span>Route legs</span><strong>' + fmt(legs.length) + '</strong></div>' +
+        '<div class="omega-v2-logistics-metric"><span>Transport types</span><strong>' + fmt(routeModes.length) + '</strong></div>' +
+        '<div class="omega-v2-logistics-metric"><span>Current Match</span><strong>' + (matched ? 'Matched' : 'Unavailable') +
+        '</strong></div></div>' + logisticsSiteFleetMarkup(route, legs) + '</article>';
     }
+
     function logisticsRoutePlansMarkup(routeState) {
       if (!routeState || routeState.status === 'idle' || routeState.status === 'loading') {
         return '<section class="omega-v2-card omega-v2-logistics-route-status" data-logistics-route-state="loading" role="status">' +
