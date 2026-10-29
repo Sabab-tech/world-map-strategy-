@@ -1970,8 +1970,9 @@ function planShipment(input={}){
   const preferredMode=tok(input.transportMode||rules()[rid]?.preferredModes?.[0]||'truck');
   const routeMode=routeType.includes('pipeline')?'pipeline':routeType.includes('sea')?'ship':routeType.includes('rail')?'rail':preferredMode;
   const routeDistance=Math.max(0,num(siteRoute.distanceKm??siteRoute.distance??siteRoute.km)||0);
+  const declaredSiteRoute=siteLogisticsRouteFor(cid,site.siteId);
   const routeDesignCapacityPerDay=num(siteRoute.designCapacityPerDay??siteRoute.routeCapacityPerDay??
-    routeSite.logistics?.transport?.routeCapacityPerDay);
+    routeSite.logistics?.transport?.routeCapacityPerDay??declaredSiteRoute?.routePlan?.capacityBottleneckPerDay);
   const routeOrigin={siteId:warehouseId,countryId:cid,siteName:cid+' sovereign raw warehouse',siteType:'RAW_MATERIAL_WAREHOUSE',
     simulation:{transportRoute:routeDistance>0?[{...clone(siteRoute),mode:routeMode,transportMode:routeMode,distanceKm:routeDistance,
       ...(routeDesignCapacityPerDay!==null&&routeDesignCapacityPerDay>0?{designCapacityPerDay:routeDesignCapacityPerDay}:{}),
