@@ -789,7 +789,7 @@ console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');
   assert.notEqual(recalculated.capacityPerDay,baseline.capacityPerDay,
     'changing the configured count/profile must recalculate route capacity');
   assert.equal(recalculated.transportTypes[0].cargoIconPath,
-    'assets/omega-industrial-icons-v1/transport/cargo/coal-dry-bulk/train.svg');
+    'assets/omega-industrial-icons-v1/transport/variants/train-bulk-hopper.svg');
 
   const zero = N.setTransportFleet({
     countryId:'BGD',siteId:'SITE_BGD_COAL_01',transportType:'rail',count:0

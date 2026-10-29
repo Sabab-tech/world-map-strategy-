@@ -1535,7 +1535,16 @@ function siteRouteLegMetrics(countryId,routeProfile,quantity,unitBridge){
       /gas|lng|methane/.test(cargoText)?'gas-lng':
       /ore|iron|copper|bauxite|aggregate|limestone|gravel|stone|mineral/.test(cargoText)?'ore-aggregate':'general-cargo';
     const iconMode=mode==='rail'?'train':mode;
-    const cargoIconPath='assets/omega-industrial-icons-v1/transport/cargo/'+cargoIconClass+'/'+iconMode+'.svg';
+    const variantNames={
+      truck:{'coal-dry-bulk':'truck-dry-bulk-tipper.svg','oil-liquid':'truck-liquid-tanker.svg','gas-lng':'truck-gas-tanker.svg','ore-aggregate':'truck-ore-hauler.svg','general-cargo':'truck-container-hauler.svg'},
+      train:{'coal-dry-bulk':'train-bulk-hopper.svg','oil-liquid':'train-liquid-tank-cars.svg','gas-lng':'train-gas-tank-cars.svg','ore-aggregate':'train-ore-hopper.svg','general-cargo':'train-container-freight.svg'},
+      ship:{'coal-dry-bulk':'ship-bulk-carrier.svg','oil-liquid':'ship-oil-tanker.svg','gas-lng':'ship-lng-carrier.svg','ore-aggregate':'ship-ore-carrier.svg','general-cargo':'ship-container-carrier.svg'},
+      barge:{'coal-dry-bulk':'barge-inland-bulk.svg','oil-liquid':'barge-liquid-tanker.svg','gas-lng':'barge-gas-tanker.svg','ore-aggregate':'barge-ore-carrier.svg','general-cargo':'barge-container-cargo.svg'}
+    };
+    const variantFile=variantNames[iconMode]&&variantNames[iconMode][cargoIconClass];
+    const cargoIconPath=variantFile
+      ?'assets/omega-industrial-icons-v1/transport/variants/'+variantFile
+      :'assets/omega-industrial-icons-v1/transport/cargo/'+cargoIconClass+'/'+iconMode+'.svg';
     return{...clone(source),mode,transportMode:mode,distanceKm:Number(distanceKm.toFixed(6)),speedKmh,
       loadHours,unloadHours,transferHours,travelHours:Number(travelHours.toFixed(6)),
       adjustedTravelHours:Number(adjustedTravelHours.toFixed(6)),travelDays:Number(travelDays.toFixed(6)),
