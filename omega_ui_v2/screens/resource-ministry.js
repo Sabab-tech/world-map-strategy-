@@ -924,6 +924,62 @@
       logisticsFleetViewCache[cacheKey] = result;
       return result;
     }
+    function logisticsNormalizedRouteLegs(route) {
+      var plan = route && route.routePlan || {};
+      var rows = safeArray(plan.legs);
+      if (String(plan.routeType || '').toUpperCase() !== 'TRUCK_TO_RAIL_TO_TRUCK' || rows.length < 2) return rows;
+      var modes = rows.map(function (leg) { return String(leg && (leg.transportMode || leg.mode) || '').toLowerCase(); });
+      if (modes.indexOf('truck') < 0 || modes.indexOf('rail') < 0 ||
+          modes.some(function (mode) { return mode !== 'truck' && mode !== 'rail'; })) return rows;
+      var catalog = g.OmegaResourceIndustrialCatalogData || (g.Omega && g.Omega.ResourceIndustrialCatalogData);
+      var resourceRules = catalog && catalog.resourceRules || {};
+      var preferred = safeArray(resourceRules[route.resourceId] && resourceRules[route.resourceId].preferredModes)
+        .map(function (mode) { return String(mode || '').toLowerCase(); });
+      var chosen = preferred.filter(function (mode) { return modes.indexOf(mode) >= 0; })[0];
+      if (!chosen) return rows;
+      var distance = numberOrNull(plan.estimatedRouteDistanceKm);
+      if (distance === null) distance = rows.reduce(function (sum, leg) {
+        return sum + (numberOrNull(leg && (leg.estimatedDistanceKm !== undefined ? leg.estimatedDistanceKm : leg.distanceKm)) || 0);
+      }, 0);
+      var modeProfiles = catalog && catalog.transportModes || {};
+      var profile = modeProfiles[chosen] || {};
+      var reference = rows.filter(function (leg) { return String(leg && (leg.transportMode || leg.mode) || '').toLowerCase() === chosen; })[0] || rows[0];
+      var speed = Math.max(1, numberOrNull(profile.speedKmh) || 1);
+      var loadHours = Math.max(0, numberOrNull(profile.loadHours) || 0);
+      var unloadHours = Math.max(0, numberOrNull(profile.unloadHours) || 0);
+      var cycleHours = (2 * Math.max(0, distance) / speed) + loadHours + unloadHours;
+      var flow = numberOrNull(plan.capacityBottleneckPerDay);
+      var payload = numberOrNull(reference && reference.designCapacityPerTrip);
+      if (payload === null) payload = numberOrNull(profile.payloadTonnes);
+      var slots = flow !== null && flow > 0 && payload !== null && payload > 0 && cycleHours > 0 ?
+        Math.max(1, Math.ceil((flow / payload) * cycleHours / 24)) : 0;
+      var leg = {};
+      Object.keys(reference || {}).forEach(function (key) { leg[key] = reference[key]; });
+      leg.legId = 'ROUTE_' + String(route.siteId || route.routeId || 'MINE') + '_COMMODITY_MODE_ONLY';
+      leg.sequence = 1;
+      leg.fromNodeId = rows[0] && rows[0].fromNodeId || route.siteId || null;
+      leg.fromNodeType = 'MINE_SITE';
+      leg.toNodeId = rows[rows.length - 1] && rows[rows.length - 1].toNodeId || plan.destinationWarehouseId || null;
+      leg.toNodeType = 'COUNTRY_RAW_INVENTORY_WAREHOUSE';
+      leg.transportMode = chosen;
+      leg.vehicleClass = profile.vehicle || reference && reference.vehicleClass || chosen;
+      leg.estimatedDistanceKm = Math.max(0, distance);
+      leg.distanceAuthority = 'SIMULATED_TOTAL_ROUTE_DISTANCE_NOT_A_SURVEYED_MODE_PATH';
+      leg.estimatedTravelHours = Math.max(0, distance) / speed;
+      leg.designCapacityPerTrip = payload;
+      leg.designCapacityPerDay = flow;
+      leg.designCapacityUnit = plan.capacityUnit || reference && reference.designCapacityUnit || 'ROUTE_CAPACITY_PER_DAY';
+      leg.cycleHoursForOneDesignVehicle = cycleHours;
+      leg.tripsPerVehiclePerDay = 24 / cycleHours;
+      leg.requiredDesignFleetSlots = slots;
+      leg.actualBoundFleetUnits = null;
+      leg.vehicleAssetIds = null;
+      leg.status = 'DESIGN_ONLY_NOT_DISPATCHABLE';
+      leg.transportIconKey = chosen === 'rail' ? 'train' : chosen;
+      leg.transportIconAssetPath = 'assets/omega-industrial-icons-v1/transport/' + (chosen === 'rail' ? 'train' : chosen) + '.svg';
+      leg.routeSelectionAuthority = 'RESOURCE_RULE_PREFERRED_MODE_FROM_UNVERIFIED_INTERMODAL_TEMPLATE';
+      return [leg];
+    }
     function logisticsDesignFleetEstimate(route, legs, byMode) {
       var plan = route && route.routePlan || {};
       var routeFlow = numberOrNull(plan.capacityBottleneckPerDay);
@@ -1075,7 +1131,7 @@
             unknownProfiles += 1;
           }
         });
-        var routeLegs = safeArray(route && route.routePlan && route.routePlan.legs);
+        var routeLegs = logisticsNormalizedRouteLegs(route);
         var designByMode = logisticsDesignFleetEstimate(route, routeLegs, byMode);
         Object.keys(designByMode).forEach(function (mode) {
           var estimate = designByMode[mode], stat = totals[mode];
@@ -1122,7 +1178,7 @@
     function logisticsRouteCard(route) {
       var plan = route.routePlan || {};
       var destination = route.destination && route.destination.warehouseId || 'National raw inventory';
-      var legs = safeArray(plan.legs);
+      var legs = logisticsNormalizedRouteLegs(route);
       var modes = legs.map(function (leg) { return leg && (leg.transportMode || leg.mode) ? human(leg.transportMode || leg.mode) : ''; })
         .filter(Boolean).join(' → ') || 'Route not recorded';
       var distance = numberOrNull(plan.estimatedRouteDistanceKm);
@@ -1136,7 +1192,7 @@
       var from = siteName;
       var to = destination;
       return '<article class="omega-v2-card omega-v2-logistics-card omega-v2-logistics-route-card" data-logistics-state="attention" data-logistics-plan-site-id="' +
-        esc(route.siteId || '') + '" data-current-match="' + (matched ? 'matched' : 'unavailable') + '">' +
+        esc(route.siteId || '') + '" data-current-match="' + (matched ? 'matched' : 'unavailable') + '" data-logistics-mode-chain="' + esc(legs.map(function (leg) { return String(leg.transportMode || leg.mode || '').toLowerCase(); }).join(',')) + '">' +
         '<div class="omega-v2-logistics-header"><div class="omega-v2-logistics-cargo">' +
         '<span class="omega-v2-resource-icon omega-v2-logistics-resource-art">' + resourceIconMarkup(resource, resourceLabel(resource)) + '</span>' +
         '<div class="omega-v2-logistics-cargo-copy"><span class="omega-v2-eyebrow">SITE ROUTE PLAN</span><h3 class="omega-v2-card-title">' +
