@@ -31,7 +31,7 @@ A mode with no aggregate fleet record retains the existing explicitly marked sim
 
 ## SVG catalog
 
-The industrial icon manifest adds 17 local SVG variants: five road vehicle silhouettes, five rail cargo variants, five ship cargo variants, and two inland barge variants. Cargo silhouettes cover dry bulk, liquids, pressurized gas/LNG, ore and general containers. Pipeline shipments continue using the existing pipeline asset because a pipeline is route infrastructure rather than a registered vehicle. All SVGs are local, dependency-free and precached for offline launch. Existing resource/factory SVGs and generic transport SVGs are preserved.
+The industrial icon manifest adds 20 local SVG variants: five road vehicle silhouettes, five rail cargo variants, five ship cargo variants, and five inland barge variants. Cargo silhouettes cover dry bulk, liquids, pressurized gas/LNG, ore and general containers. Pipeline shipments continue using the existing pipeline asset because a pipeline is route infrastructure rather than a registered vehicle. All SVGs are local, dependency-free and precached for offline launch. Existing resource/factory SVGs and generic transport SVGs are preserved.
 
 ## Verification expectations
 
