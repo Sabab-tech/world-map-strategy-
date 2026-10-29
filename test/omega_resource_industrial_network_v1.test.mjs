@@ -557,8 +557,8 @@ assert.equal(sharedTransport.shipments.length,2);
   const explicitRoute=N.buildRoute(routeSite,explicitIntermodalAsset,'coal',1000,
     {countryId:'BGD',transportMode:'rail',unit:'TONNES'});
   assert.equal(explicitRoute.status,'PLANNED',JSON.stringify(explicitRoute));
-  assert.deepEqual(explicitRoute.vehiclePlan.map(leg=>leg.mode),['truck','rail','truck']);
-  assert.deepEqual(explicitRoute.vehiclePlan.map(leg=>leg.distanceKm),[12,210,19],
+  assert.equal(Array.from(explicitRoute.vehiclePlan,leg=>leg.mode).join(','),'truck,rail,truck');
+  assert.equal(Array.from(explicitRoute.vehiclePlan,leg=>leg.distanceKm).join(','),'12,210,19',
     'explicit leg distances must be preserved instead of dividing total distance evenly');
   assert.equal(explicitRoute.totalDistanceKm,241);
 }
