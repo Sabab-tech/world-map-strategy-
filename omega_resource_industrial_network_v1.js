@@ -1762,12 +1762,18 @@ function resizeRouteForDispatch(route,actualQuantity,plannedQuantity){
   const costBasis=Math.max(0,num(out.requestedQuantity)??planned);
   out.plannedDispatchQuantity=planned;
   out.dispatchQuantity=Number(actual.toFixed(6));
-  if(costBasis>1e-9&&num(out.totalCost)!==null)
-    out.totalCost=Number((num(out.totalCost)*actual/costBasis).toFixed(4));
+  if(costBasis>1e-9&&num(out.totalCost)!==null)out.totalCost=Number((num(out.totalCost)*actual/costBasis).toFixed(4));
   for(const key of ['vehiclePlan','legs']){
     if(Array.isArray(out[key]))out[key]=out[key].map(leg=>{
       const payload=Math.max(.001,num(leg?.payloadTonnes)||1),factor=Math.max(1e-12,num(out.capacityQuantityFactor)||1);
-      return{...leg,units:Math.ceil(actual*factor/payload),vehicleCount:Math.ceil(actual*factor/payload),dispatchQuantity:Number(actual.toFixed(6))};
+      const loadsRequired=Math.ceil(actual*factor/payload),configured=leg?.fleetCountConfigured===true;
+      const available=Math.max(0,Math.floor(num(leg?.fleetAvailableUnits)||0));
+      const tripsRequired=configured?Math.max(1,Math.ceil(loadsRequired/Math.max(1,available))):1;
+      const oneWayTravelDays=Math.max(0,num(leg?.oneWayTravelDays)??num(leg?.travelDays)??0);
+      return{...leg,units:loadsRequired,vehicleCount:loadsRequired,loadsRequired,tripsRequired,
+        allocatedFleetUnits:configured?Math.min(loadsRequired,available):0,
+        fleetAllocationUnits:configured?Math.min(loadsRequired,available):0,
+        travelDays:Number((oneWayTravelDays*tripsRequired).toFixed(6)),dispatchQuantity:Number(actual.toFixed(6))};
     });
   }
   const legRows=Array.isArray(out.vehiclePlan)?out.vehiclePlan:(Array.isArray(out.legs)?out.legs:[]);
@@ -1777,6 +1783,13 @@ function resizeRouteForDispatch(route,actualQuantity,plannedQuantity){
     if(mode)totals[mode]=(totals[mode]||0)+(num(leg?.vehicleCount??leg?.units)||0);
     return totals;
   },{});
+  out.fleetAllocationByMode=legRows.reduce((totals,leg)=>{
+    const mode=tok(leg?.mode||leg?.transportMode),count=Math.max(0,num(leg?.allocatedFleetUnits??leg?.fleetAllocationUnits)||0);
+    if(mode&&leg?.fleetCountConfigured===true)totals[mode]=Math.max(totals[mode]||0,count);
+    return totals;
+  },{});
+  out.travelTimeDays=Number(legRows.reduce((sum,leg)=>sum+(num(leg?.travelDays)||0),0).toFixed(6));
+  out.etaTurn=turn()+Math.max(1,Math.ceil(out.travelTimeDays/daysPerTurn()));
   out.status=actual>1e-9?'PLANNED':'BLOCKED';
   return out;
 }
