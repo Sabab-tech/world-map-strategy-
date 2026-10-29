@@ -648,6 +648,8 @@ test("logistics cards expose mine/warehouse SVGs and per-mode fleet counts using
     const css = read("omega_ui_v2/resource-ministry-premium.css");
     assert.match(css, /omega-v2-logistics-card::before/);
     assert.match(css, /omega-v2-logistics-fleet-summary-grid/);
+    assert.match(css, /omega-v2-resource-premium \.omega-v2-logistics-route-card \.omega-v2-logistics-header\s*\{[^}]*flex-wrap:\s*wrap/s);
+    assert.match(css, /omega-v2-logistics-total-card/);
     assert.match(css, /omega-v2-logistics-leg-row/);
     assert.match(css, /omega-v2-logistics-path/);
     assert.match(css, /input:focus-visible/);

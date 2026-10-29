@@ -1342,3 +1342,16 @@
 @media (max-width:440px) {
   .omega-v2-resource-premium .omega-v2-logistics-fleet-totals { grid-template-columns:minmax(0,1fr); }
 }
+
+
+/* Keep the two separate route-status pills from overlapping on narrow phones. */
+.omega-v2-resource-premium .omega-v2-logistics-route-card .omega-v2-logistics-header {
+  flex-wrap: wrap;
+}
+.omega-v2-resource-premium .omega-v2-logistics-route-card .omega-v2-logistics-header > .omega-v2-status {
+  flex: 0 0 auto;
+}
+.omega-v2-resource-premium .omega-v2-logistics-route-card .omega-v2-logistics-cargo {
+  flex: 1 1 180px;
+  min-width: 0;
+}
