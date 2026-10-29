@@ -1223,3 +1223,28 @@
 @media (prefers-reduced-motion: reduce) {
   .omega-v2-resource-premium .omega-v2-mine-build-plan .omega-v2-button--primary[data-omega-v2-build-submit] { transition: none; }
 }
+
+
+/* Cargo-class-specific local SVG vehicles for aggregate logistics planning. */
+.omega-v2-resource-premium .omega-v2-logistics-route-vehicle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-width: 46px;
+}
+.omega-v2-resource-premium .omega-v2-logistics-vehicle-art {
+  display: block;
+  width: 39px;
+  height: 33px;
+  flex: 0 0 auto;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 3px rgba(2, 10, 18, .48));
+}
+@media (max-width: 420px) {
+  .omega-v2-resource-premium .omega-v2-logistics-vehicle-art {
+    width: 31px;
+    height: 28px;
+  }
+}
