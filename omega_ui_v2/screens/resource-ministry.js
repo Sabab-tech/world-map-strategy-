@@ -950,7 +950,7 @@
         '<div class="omega-v2-logistics-metrics"><div class="omega-v2-logistics-metric"><span>Route estimate</span><strong>'+(distance===null?'Not recorded':esc(fmt(distance)+' km'))+'</strong></div>' +
         '<div class="omega-v2-logistics-metric"><span>ETA estimate</span><strong>'+(eta===null?'Not recorded':esc(fmt(eta)+' game days'))+'</strong></div>' +
         '<div class="omega-v2-logistics-metric"><span>Design capacity</span><strong>'+(capacity===null?'Not recorded':esc(fmt(capacity)+(capacityUnit?' '+human(capacityUnit):'')))+'</strong></div></div>' +
-        '</div></article>';
+        '</article>';
     }
     var routeProfilesLoaded=Object.prototype.hasOwnProperty.call(logisticsRouteCache,countryKey);
     var routeProfiles=routeProfilesLoaded?logisticsRouteCache[countryKey]:null;
