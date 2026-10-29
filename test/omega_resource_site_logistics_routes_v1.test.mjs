@@ -71,7 +71,7 @@ for(const partInfo of ds.parts){
    const l=r.routePlan.legs[i];assert.ok(modes.has(l.transportMode));assert.equal(l.sequence,i+1);
    assert.ok(l.estimatedDistanceKm>0&&l.estimatedTravelHours>0&&l.designCapacityPerDay>0&&l.designCapacityUnit);
    assert.ok(r.routePlan.capacityBottleneckPerDay<=l.designCapacityPerDay);
-   const planningRate=r.planningProduction&&Number.isFinite(Number(r.planningProduction.rate))?Number(r.planningProduction.rate):null;
+   const planningRate=r.planningProduction&&r.planningProduction.rate!==null&&r.planningProduction.rate!==undefined&&String(r.planningProduction.rate).trim()!==''&&Number.isFinite(Number(r.planningProduction.rate))?Number(r.planningProduction.rate):null;
    const planningUnit=normalizePlanningUnit(r.planningProduction&&r.planningProduction.unit);
    const legMode=String(l.transportMode||'').toLowerCase();
    const explicitLineCapacity=Number(l.designCapacityPerLinePerDay??l.capacityPerLinePerDay??l.lineCapacityPerDay);
@@ -80,7 +80,7 @@ for(const partInfo of ds.parts){
      : Number(l.designCapacityPerDay);
    const perDesignUnit=normalizePlanningUnit(legMode==='pipeline'
      ? (l.designCapacityPerLineUnit||l.capacityPerLineUnit||l.lineCapacityUnit||l.designCapacityUnit||l.capacityUnit)
-     : l.designCapacityUnit);
+     : (l.designCapacityUnit||l.capacityUnit||r.routePlan?.capacityUnit));
    const expectedRequired=planningRate!==null&&planningRate>=0&&planningUnit&&Number.isFinite(perDesignCapacity)&&
      perDesignCapacity>0&&perDesignUnit&&planningUnit===perDesignUnit
      ? Math.max(0,Math.ceil(planningRate/perDesignCapacity)):null;
