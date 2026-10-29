@@ -915,3 +915,23 @@ console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');
   console.log('OMEGA COUNT-BASED TRANSPORT FLEET REGRESSION PASSED');
 }
 
+
+
+// Regression: selecting one transport mode must not silently append truck/rail/ship legs.
+// Explicit route-leg profiles remain intermodal; mode-only choices remain mode-only.
+{
+  await N.loadCatalog();
+  const site={siteId:'SITE_ROUTE_MODE_DIRECT_TEST',countryId:'BGD',simulation:{transportRoute:[]}};
+  const asset={id:'FAC_ROUTE_MODE_DIRECT_TEST',countryId:'BGD',
+    transportAccess:['truck','rail','ship','barge','pipeline']};
+  for(const mode of ['truck','rail','ship','barge','pipeline']){
+    const route=N.buildRoute(site,asset,'iron_ore',10000,{
+      countryId:'BGD',sourceSiteId:site.siteId,transportMode:mode,unit:'TONNES'
+    });
+    assert.equal(route.status,'PLANNED',mode+': '+JSON.stringify(route));
+    assert.deepEqual(route.vehiclePlan.map(leg=>leg.mode),[mode],
+      mode+' must not silently gain other transport modes');
+    assert.equal(route.vehiclePlan.length,1);
+  }
+  console.log('OMEGA DIRECT TRANSPORT MODE ROUTING REGRESSION PASSED');
+}
