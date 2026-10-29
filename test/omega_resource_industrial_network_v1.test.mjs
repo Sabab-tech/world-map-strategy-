@@ -509,15 +509,56 @@ const firstCapacityShipment=N.dispatchShipment({countryId:'BGD',siteId:'SITE_BGD
 assert.equal(firstCapacityShipment.status,'DISPATCHED',JSON.stringify(firstCapacityShipment));
 const secondCapacityShipment=N.dispatchShipment({countryId:'BGD',siteId:'SITE_BGD_COAL_01',resourceId:'coal',quantity:1000,transportMode:'rail'});
 assert.equal(secondCapacityShipment.status,'DISPATCHED',JSON.stringify(secondCapacityShipment));
-assert.equal(secondCapacityShipment.shipment.quantity,500,'shared capacity across both truck legs must cap the second shipment');
+const secondRailQuantity=Number(secondCapacityShipment.shipment.quantity);
+assert.ok(secondRailQuantity>0&&secondRailQuantity<=1000,'remaining rail capacity must cap the second shipment without inventing road transfers');
+assert.ok(secondCapacityShipment.shipment.route.vehiclePlan.every(leg=>leg.mode==='rail'),
+  'selecting rail must create rail-only routing unless an explicit intermodal route plan is recorded');
 assert.ok(secondCapacityShipment.shipment.route.vehiclePlan.every(leg =>
-  leg.units === Math.ceil(500 / Math.max(.001, Number(leg.payloadTonnes) || 1))),
-  'vehicle count must be recalculated from the actual shared-capacity-limited shipment');
-assert.ok(secondCapacityShipment.shipment.route.vehiclePlan.every(leg => leg.dispatchQuantity === 500),
-  'every route leg must report the same adjusted dispatch quantity');
+  leg.units === Math.ceil(secondRailQuantity / Math.max(.001, Number(leg.payloadTonnes) || 1))),
+  'vehicle trips must be recalculated from the capacity-limited shipment quantity');
+assert.ok(secondCapacityShipment.shipment.route.vehiclePlan.every(leg => leg.dispatchQuantity === secondRailQuantity),
+  'every recorded route leg must report the same adjusted dispatch quantity');
 const sharedTransport=context.Game.state.resource.BGD.industrialNetwork.transportCapacityLedger.turns[String(capacityLedgerTurn)];
-assert.equal(sharedTransport.usedByMode.truck,11000,'truck capacity must be counted jointly for all route legs in one turn');
+assert.equal(sharedTransport.usedByMode.truck||0,0,'a rail-only route must not consume road capacity');
+assert.equal(sharedTransport.usedByMode.rail,5000+secondRailQuantity,'rail capacity must be tracked against the actual cargo moved');
 assert.equal(sharedTransport.shipments.length,2);
+
+// Explicit transport selection is single-mode by default. Mixed transport is legal
+// only when the route profile spells out each leg and its distance.
+{
+  const routeSite={siteId:'SITE_ROUTE_MODE_REGRESSION',countryId:'BGD'};
+  const routeAsset={id:'FAC_ROUTE_MODE_REGRESSION',countryId:'BGD',transportAccess:[]};
+  const cases=[
+    {mode:'truck',resource:'coal'},
+    {mode:'rail',resource:'coal'},
+    {mode:'ship',resource:'iron_ore'},
+    {mode:'barge',resource:'iron_ore'},
+    {mode:'pipeline',resource:'crude_oil'}
+  ];
+  for(const item of cases){
+    const route=N.buildRoute(routeSite,routeAsset,item.resource,100,{countryId:'BGD',transportMode:item.mode,unit:'TONNES'});
+    assert.equal(route.status,'PLANNED',JSON.stringify({mode:item.mode,route}));
+    assert.deepEqual(Array.from(new Set(route.vehiclePlan.map(leg=>leg.mode))),[item.mode],
+      'selected mode must remain independent: '+item.mode);
+    assert.equal(route.routeLegCount,1,'no unrequested transfer legs should be invented: '+item.mode);
+    assert.ok(route.totalDistanceKm>0,'route estimate must be positive and derived by the route-distance source: '+item.mode);
+  }
+  const explicitIntermodalAsset={
+    ...routeAsset,
+    routePlan:{legs:[
+      {transportMode:'truck',distanceKm:12,edgeClass:'MINE_ACCESS_ROAD'},
+      {transportMode:'rail',distanceKm:210,edgeClass:'HEAVY_RAIL_CORRIDOR'},
+      {transportMode:'truck',distanceKm:19,edgeClass:'WAREHOUSE_LAST_MILE'}
+    ]}
+  };
+  const explicitRoute=N.buildRoute(routeSite,explicitIntermodalAsset,'coal',1000,
+    {countryId:'BGD',transportMode:'rail',unit:'TONNES'});
+  assert.equal(explicitRoute.status,'PLANNED',JSON.stringify(explicitRoute));
+  assert.deepEqual(explicitRoute.vehiclePlan.map(leg=>leg.mode),['truck','rail','truck']);
+  assert.deepEqual(explicitRoute.vehiclePlan.map(leg=>leg.distanceKm),[12,210,19],
+    'explicit leg distances must be preserved instead of dividing total distance evenly');
+  assert.equal(explicitRoute.totalDistanceKm,241);
+}
 
 // Selected-country UI diagnostics must not walk every country's industrial ledger.
 context.Game.state.resource.SAU={
@@ -800,6 +841,8 @@ console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');
   });
   assert.equal(zeroPreview.capacityPerDay,0,'zero available fleet must stop dispatch capacity');
   assert.equal(zeroPreview.transportTypes[0].fleetSufficiency,false);
+  assert.equal(zeroPreview.status,'BLOCKED','a configured zero-unit mode must block movement');
+  assert.equal(zeroPreview.travelTimeDays,null,'a zero-unit transport mode cannot claim an ETA');
 
   assert.equal(N.setTransportFleet({
     countryId:'BGD',siteId:'SITE_BGD_COAL_01',transportType:'rail',count:1.5
