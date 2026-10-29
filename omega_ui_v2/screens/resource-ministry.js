@@ -1311,7 +1311,7 @@
         var legCapacityUnit = /RAW_CARGO_TONNES_PER_DAY/i.test(String(leg && (leg.designCapacityUnit || plan.capacityUnit) || ''))
           ? 'tonnes/day' : buildDisplayUnit(leg && (leg.designCapacityUnit || plan.capacityUnit) || '');
         return '<span class="omega-v2-logistics-route-leg-icon" data-route-leg="' + (index + 1) +
-          '" data-route-leg-mode="' + esc(mode) + '"><img src="' +
+          '" data-route-leg-mode="' + esc(mode) + '"><img data-omega-v2-logistics-icon="transport" data-omega-v2-transport-mode="' + esc(mode) + '" src="' +
           esc(logisticsTransportIconPath(mode, resource)) + '" alt="' + esc(meta.label) +
           '" width="40" height="28" loading="lazy" decoding="async"><small>' + esc(meta.label) + '</small>' +
           '<small>' + (legDistance !== null ? esc(fmt(legDistance) + ' km') : 'Distance unavailable') + '</small>' +
@@ -1387,7 +1387,7 @@
           '<div class="omega-v2-logistics-path" aria-label="Shipment route from ' + esc(from) + ' to ' + esc(to) + '">' +
           '<div class="omega-v2-logistics-node omega-v2-logistics-node--origin"><span class="omega-v2-logistics-node-art">' + logisticsIconMarkup('origin') +
           '</span><span class="omega-v2-logistics-node-copy"><small>ORIGIN</small><strong>' + esc(from) + '</strong></span></div>' +
-          '<div class="omega-v2-logistics-link"><span class="omega-v2-logistics-route-vehicle"><img class="omega-v2-logistics-svg omega-v2-logistics-svg--mode" src="' + esc(modeIcon) +
+          '<div class="omega-v2-logistics-link"><span class="omega-v2-logistics-route-vehicle"><img class="omega-v2-logistics-svg omega-v2-logistics-svg--mode" data-omega-v2-logistics-icon="transport" data-omega-v2-transport-mode="' + esc(mode || 'unknown') + '" src="' + esc(modeIcon) +
           '" alt="' + esc(modeLabel) + '" loading="lazy" decoding="async"></span><span class="omega-v2-logistics-link-line"></span><span class="omega-v2-logistics-mode">' +
           esc(modeLabel) + '</span></div>' +
           '<div class="omega-v2-logistics-node omega-v2-logistics-node--destination"><span class="omega-v2-logistics-node-art">' + logisticsIconMarkup(destinationKind) +
