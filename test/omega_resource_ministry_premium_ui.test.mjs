@@ -152,7 +152,10 @@ test("Resource Logistics shows configured per-site route cards and keeps Current
     routePlan: {
       routeStatus: "SIMULATED_PLAN_COMPLETE_ENGINE_BINDING_PENDING",
       dispatchStatus: "NOT_DISPATCHABLE_DATA_ONLY_PHASE",
-      legs: [{ transportMode: "truck" }, { transportMode: "rail" }],
+      legs: [
+        { transportMode: "truck", estimatedDistanceKm: 40, designCapacityPerTrip: 25, designCapacityPerDay: 45, cycleHoursForOneDesignVehicle: 8 },
+        { transportMode: "rail", estimatedDistanceKm: 80, designCapacityPerTrip: 5000, designCapacityPerDay: 5000, cycleHoursForOneDesignVehicle: 10 }
+      ],
       estimatedRouteDistanceKm: 120,
       plannedTransitDays: 3,
       capacityBottleneckPerDay: 45,
@@ -227,15 +230,19 @@ test("Resource Logistics shows configured per-site route cards and keeps Current
   assert.match(root.innerHTML, /45 tonnes\/day/);
   assert.match(root.innerHTML, /Transport Fleet Summary/);
   assert.match(root.innerHTML, /Road trucks/);
-  assert.match(root.innerHTML, /3 vehicles/);
+  assert.match(root.innerHTML, /3 trucks/);
   assert.match(root.innerHTML, /Freight train sets/);
-  assert.match(root.innerHTML, /2 sets/);
+  assert.match(root.innerHTML, /2 train sets/);
   assert.match(root.innerHTML, /Cargo ships/);
   assert.match(root.innerHTML, /0 ships/);
   assert.match(root.innerHTML, /River barges/);
   assert.match(root.innerHTML, /Not configured/);
   assert.match(root.innerHTML, /Pipeline lines/);
   assert.match(root.innerHTML, /4 lines/);
+  assert.match(root.innerHTML, /Design need: 1 truck/);
+  assert.match(root.innerHTML, /Design need: 1 train set/);
+  assert.match(root.innerHTML, /trips\/day/);
+  assert.match(root.innerHTML, /Calculated design units/);
   assert.match(root.innerHTML, /data-omega-v2-logistics-fleet-overview/);
   assert.match(root.innerHTML, /route-mine-origin\\.svg/);
   assert.match(root.innerHTML, /route-warehouse-destination\\.svg/);
