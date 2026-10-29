@@ -1389,12 +1389,14 @@ function corridorDistance(site,asset,mode,resourceId){
 function evenlySplitRouteDistance(totalDistance,segments){
   const total=Math.max(0,num(totalDistance)||0),count=Array.isArray(segments)?segments.length:0;
   if(!count)return[];
-  const perLeg=total/count;
+  const storedTotal=Number(total.toFixed(6)),perLeg=storedTotal/count;
   let assigned=0;
   return segments.map((segment,index)=>{
-    const distance=index===count-1?Math.max(0,total-assigned):perLeg;
-    assigned+=distance;
-    return{...segment,distanceKm:Number(distance.toFixed(6))};
+    // Sum the same rounded distances that are persisted on the legs. Using the
+    // pre-rounded accumulator can make a route gain/lose 0.000001 km on readback.
+    const distance=index===count-1?Math.max(0,Number((storedTotal-assigned).toFixed(6))):Number(perLeg.toFixed(6));
+    assigned=Number((assigned+distance).toFixed(6));
+    return{...segment,distanceKm:distance};
   });
 }
 function routeCapacityFactor(unit,explicitFactor){
