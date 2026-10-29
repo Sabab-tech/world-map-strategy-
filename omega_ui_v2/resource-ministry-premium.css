@@ -1542,6 +1542,65 @@
 }
 
 
+/* Mode-specific route distances, aggregated from the actual route legs displayed above. */
+.omega-v2-resource-premium .omega-v2-logistics-distance-summary {
+  background: linear-gradient(145deg, rgba(12, 30, 45, .94), rgba(5, 16, 28, .96));
+  border: 1px solid rgba(78, 179, 209, .28);
+  border-radius: 8px;
+  box-shadow: inset 0 1px rgba(240, 251, 255, .035);
+  margin: 9px 0;
+  min-width: 0;
+  padding: 8px;
+}
+.omega-v2-resource-premium .omega-v2-logistics-distance-heading {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 9px;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.omega-v2-resource-premium .omega-v2-logistics-distance-heading > span {
+  color: #bcefff;
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.omega-v2-resource-premium .omega-v2-logistics-distance-heading > small {
+  color: #7596aa;
+  font-size: 8px;
+}
+.omega-v2-resource-premium .omega-v2-logistics-distance-grid {
+  display: grid;
+  gap: 6px;
+  grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
+}
+.omega-v2-resource-premium .omega-v2-logistics-distance-mode {
+  background: linear-gradient(150deg, rgba(23, 51, 70, .85), rgba(8, 22, 35, .95));
+  border: 1px solid rgba(86, 164, 193, .24);
+  border-radius: 6px;
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding: 6px 7px;
+}
+.omega-v2-resource-premium .omega-v2-logistics-distance-mode > span {
+  color: #91b4c7;
+  font-size: 8px;
+  font-weight: 760;
+}
+.omega-v2-resource-premium .omega-v2-logistics-distance-mode > strong {
+  color: #e6faff;
+  font-size: 11px;
+  font-weight: 850;
+  overflow-wrap: anywhere;
+}
+.omega-v2-resource-premium .omega-v2-logistics-distance-mode > small {
+  color: #6f93a9;
+  font-size: 8px;
+}
+
 /* Collapsible per-mine count editor. Zero means none; blank keeps a count unknown/unchanged. */
 .omega-v2-resource-premium .omega-v2-logistics-fleet-editor {
   border-top: 1px solid rgba(71, 168, 202, .22);
