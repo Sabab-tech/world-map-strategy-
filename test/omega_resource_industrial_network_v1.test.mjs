@@ -957,7 +957,7 @@ console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');
       countryId:'BGD',sourceSiteId:site.siteId,transportMode:mode,unit:'TONNES'
     });
     assert.equal(route.status,'PLANNED',mode+': '+JSON.stringify(route));
-    assert.deepEqual(route.vehiclePlan.map(leg=>leg.mode),[mode],
+    assert.equal(route.vehiclePlan.map(leg=>leg.mode).join(','),mode,
       mode+' must not silently gain other transport modes');
     assert.equal(route.vehiclePlan.length,1);
   }
