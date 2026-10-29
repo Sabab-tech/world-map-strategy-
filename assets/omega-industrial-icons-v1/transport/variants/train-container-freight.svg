@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-labelledby="title-train-container-freight desc-train-container-freight" data-omega-icon-kind="transport" data-omega-icon-id="train-container-freight">
+<title id="title-train-container-freight">Container freight train</title>
+<desc id="desc-train-container-freight">Aggregate rail transport for general cargo cargo. No individual vehicle registration identifier is stored.</desc>
+<defs>
+ <linearGradient id="plate-train-container-freight" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f3f8fb"/><stop offset=".5" stop-color="#bdcbd5"/><stop offset="1" stop-color="#71899b"/></linearGradient>
+ <linearGradient id="metal-train-container-freight" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#f5fafc"/><stop offset=".35" stop-color="#becbd4"/><stop offset=".72" stop-color="#71889a"/><stop offset="1" stop-color="#344c60"/></linearGradient>
+ <linearGradient id="blue-train-container-freight" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#9be7f4"/><stop offset=".4" stop-color="#287fa9"/><stop offset="1" stop-color="#153e5e"/></linearGradient>
+ <filter id="shadow-train-container-freight" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="3" stdDeviation="2" flood-color="#091725" flood-opacity=".48"/></filter>
+</defs>
+<rect x="4.5" y="4.5" width="119" height="119" rx="21" fill="url(#plate-train-container-freight)" stroke="#627b8f" stroke-opacity=".8"/>
+<rect x="8" y="8" width="112" height="112" rx="17" fill="none" stroke="#ffffff" stroke-opacity=".6"/>
+<path d="M14 24H114M15 112H113" stroke="#ffffff" stroke-opacity=".58" stroke-width="2"/>
+<g filter="url(#shadow-train-container-freight)"><rect x="28" y="45" width="22" height="31" fill="url(#blue-train-container-freight)" stroke="#40576b" stroke-width="2"/><rect x="52" y="39" width="24" height="37" fill="url(#metal-train-container-freight)" stroke="#40576b" stroke-width="2"/><rect x="78" y="47" width="22" height="29" fill="url(#blue-train-container-freight)" stroke="#40576b" stroke-width="2"/><path d="M34 47V74M42 47V74M58 41V74M67 41V74M84 49V74M93 49V74" stroke="#6c8597" stroke-width="2"/><path d="M12 78H116" stroke="#536b7f" stroke-width="5"/><path d="M12 88H116M16 88V97M30 88V97M44 88V97M58 88V97M72 88V97M86 88V97M100 88V97M114 88V97" stroke="#7d8e9b" stroke-width="3"/><g fill="#14283b"><circle cx="37" cy="80" r="5"/><circle cx="68" cy="80" r="5"/><circle cx="97" cy="80" r="5"/></g></g>
+</svg>
