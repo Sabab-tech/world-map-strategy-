@@ -10,7 +10,7 @@ const slug=s=>String(s).toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+
 const esc=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&apos;");
 function readSvg(rel,id,label){
  const file=path.join(assetRoot,rel);assert.ok(fs.existsSync(file),id+" SVG file must exist");
- const src=fs.readFileSync(file,"utf8");assert.match(src,/^(?:\uFEFF?\s*<\?xml[^>]*>\s*)?<svg\b/,id+" needs SVG root");assert.match(src,/<\/svg>\s*$/,id+" needs closing SVG tag");
+ const src=fs.readFileSync(file,"utf8");assert.match(src,/^\uFEFF?\s*(?:<\?xml[^>]*>\s*)?<svg\b/,id+" needs SVG root");assert.match(src,/<\/svg>\s*$/,id+" needs closing SVG tag");
  assert.match(src,/viewBox="0 0 128 128"/,id+" needs consistent viewBox");assert.match(src,/aria-labelledby=/,id+" needs accessible title/description");
  assert.ok(src.includes(">"+esc(label)+"</title>"),id+" title must match canonical label");
  assert.doesNotMatch(src,/(?:href|src)=["']https?:\/\//i,id+" must not load remote content");
