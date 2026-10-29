@@ -1437,6 +1437,7 @@ function siteRouteLegMetrics(countryId,routeProfile,quantity,unitBridge){
     const travelDays=totalHours/24;
     totalDays+=travelDays;
     const payload=Math.max(0.001,num(source?.designCapacityPerTrip)||num(profile?.payloadTonnes)||1);
+    const units=Math.ceil(quantityInCapacityUnits/payload);
     const declaredFleetCount=num(source?.fleetCount??routeProfile?.transportFleet?.[mode]?.count);
     const fleetCount=declaredFleetCount!==null&&declaredFleetCount>=0?Math.floor(declaredFleetCount):null;
     const requiredVehicleCount=units;
