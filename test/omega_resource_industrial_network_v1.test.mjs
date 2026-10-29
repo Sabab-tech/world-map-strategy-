@@ -935,3 +935,17 @@ console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');
   }
   console.log('OMEGA DIRECT TRANSPORT MODE ROUTING REGRESSION PASSED');
 }
+
+
+{
+  const site={siteId:'SITE_ROUTE_DISTANCE_MISSING_TEST',countryId:'BGD',routePlan:{legs:[
+    {transportMode:'truck',estimatedDistanceKm:25},
+    {transportMode:'rail'}
+  ]}};
+  const asset={id:'FAC_ROUTE_DISTANCE_MISSING_TEST',countryId:'BGD'};
+  const blocked=N.buildRoute(site,asset,'coal',500,{countryId:'BGD',sourceSiteId:site.siteId,transportMode:'rail',unit:'TONNES'});
+  assert.equal(blocked.status,'BLOCKED',JSON.stringify(blocked));
+  assert.equal(blocked.reason,'ROUTE_LEG_DISTANCE_UNAVAILABLE',
+    'a missing distance on an explicitly multi-leg route must not silently become zero kilometres');
+  console.log('OMEGA EXPLICIT ROUTE DISTANCE COMPLETENESS REGRESSION PASSED');
+}
