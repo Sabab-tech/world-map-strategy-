@@ -137,9 +137,7 @@ test("mine command screen has the requested tabs, per-site actions and clean pla
 });
 
 test("Resource Logistics shows configured per-site route cards and keeps Current Match separate from live shipments", async () => {
-  const api = globalThis.OmegaUIV2ResourceMinistry;
-  const previousFetch = globalThis.fetch;
-  const previousGame = globalThis.Game;
+  const vm = await import("node:vm");
   const fetched = [];
   const route = {
     routeId: "ROUTE_TST_COAL_MINE",
@@ -159,23 +157,31 @@ test("Resource Logistics shows configured per-site route cards and keeps Current
       capacityUnit: "RAW_CARGO_TONNES_PER_DAY"
     }
   };
-  globalThis.fetch = async (url) => {
-    const name = String(url).replace(/^\.\//, "");
-    fetched.push(name);
-    if (name === "resource_site_logistics_routes_v1.json") {
-      return { ok: true, json: async () => ({
-        datasetId: "OMEGA_RESOURCE_SITE_LOGISTICS_ROUTES_V1",
-        simulationOnly: true,
-        countryToPart: { TST: 2 },
-        parts: [{ part: 2, file: "resource_site_logistics_routes_v1_part_02.json" }]
-      }) };
+  const sandbox = {
+    fetch: async (url) => {
+      const name = String(url).replace(/^\.\//, "");
+      fetched.push(name);
+      if (name === "resource_site_logistics_routes_v1.json") {
+        return { ok: true, json: async () => ({
+          datasetId: "OMEGA_RESOURCE_SITE_LOGISTICS_ROUTES_V1",
+          simulationOnly: true,
+          countryToPart: { TST: 2 },
+          parts: [{ part: 2, file: "resource_site_logistics_routes_v1_part_02.json" }]
+        }) };
+      }
+      if (name === "resource_site_logistics_routes_v1_part_02.json") {
+        return { ok: true, json: async () => ({ routes: [route] }) };
+      }
+      throw new Error("Unexpected logistics asset request: " + name);
     }
-    if (name === "resource_site_logistics_routes_v1_part_02.json") {
-      return { ok: true, json: async () => ({ routes: [route] }) };
-    }
-    throw new Error("Unexpected logistics asset request: " + name);
   };
-  globalThis.Game = { state: {
+  sandbox.window = sandbox;
+  vm.default.createContext(sandbox);
+  vm.default.runInContext(read("omega_ui_v2/screens/resource-ministry.js"), sandbox, {
+    filename: "omega_ui_v2/screens/resource-ministry.js"
+  });
+  const api = sandbox.OmegaUIV2ResourceMinistry;
+  sandbox.Game = { state: {
     simulation: { turn: 1, session: { playerCountryId: "TST" } },
     resource: { TST: {
       mineAssets: [],
@@ -195,43 +201,38 @@ test("Resource Logistics shows configured per-site route cards and keeps Current
     querySelectorAll() { return []; },
     contains() { return true; }
   };
-  try {
-    const initial = api.render(root, { countryId: "TST", sites: [], tab: "logistics" });
-    assert.equal(initial.ok, true);
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    assert.match(root.innerHTML, /Mine Site Route Plans/);
-    assert.match(root.innerHTML, /Test Coal Mine/);
-    assert.match(root.innerHTML, /Current Match/);
-    assert.match(root.innerHTML, /Unavailable/);
-    assert.match(root.innerHTML, /120 km/);
-    assert.match(root.innerHTML, /3 days/);
-    assert.match(root.innerHTML, /45 tonnes\/day/);
-    assert.match(root.innerHTML, /data-current-match="unavailable"/);
-    assert.doesNotMatch(root.innerHTML, /No active shipments or delivery records/);
-    assert.deepEqual(fetched, [
-      "resource_site_logistics_routes_v1.json",
-      "resource_site_logistics_routes_v1_part_02.json"
-    ], "only the selected country's route shard should be loaded");
+  const initial = api.render(root, { countryId: "TST", sites: [], tab: "logistics" });
+  assert.equal(initial.ok, true);
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert.match(root.innerHTML, /Mine Site Route Plans/);
+  assert.match(root.innerHTML, /Test Coal Mine/);
+  assert.match(root.innerHTML, /Current Match/);
+  assert.match(root.innerHTML, /Unavailable/);
+  assert.match(root.innerHTML, /120 km/);
+  assert.match(root.innerHTML, /3 days/);
+  assert.match(root.innerHTML, /45 tonnes\/day/);
+  assert.match(root.innerHTML, /data-current-match="unavailable"/);
+  assert.doesNotMatch(root.innerHTML, /No active shipments or delivery records/);
+  assert.deepEqual(fetched, [
+    "resource_site_logistics_routes_v1.json",
+    "resource_site_logistics_routes_v1_part_02.json"
+  ], "only the selected country's route shard should be loaded");
 
-    globalThis.Game.state.resource.TST.industrialNetwork.shipments = [{
-      siteId: "TST-MINE-ROUTE-01",
-      routeId: "ROUTE_TST_COAL_MINE",
-      resourceId: "coal",
-      quantity: 10,
-      unit: "tonnes",
-      status: "IN_TRANSIT",
-      transportMode: "truck",
-      destinationWarehouseId: "WH-TST-RAW",
-      etaTurn: 2
-    }];
-    api.render(root, { countryId: "TST", sites: [], tab: "logistics" });
-    assert.match(root.innerHTML, /Current Shipments/);
-    assert.match(root.innerHTML, /data-current-match="matched"/);
-    assert.match(root.innerHTML, />Matched</);
-  } finally {
-    if (previousFetch === undefined) delete globalThis.fetch; else globalThis.fetch = previousFetch;
-    if (previousGame === undefined) delete globalThis.Game; else globalThis.Game = previousGame;
-  }
+  sandbox.Game.state.resource.TST.industrialNetwork.shipments = [{
+    siteId: "TST-MINE-ROUTE-01",
+    routeId: "ROUTE_TST_COAL_MINE",
+    resourceId: "coal",
+    quantity: 10,
+    unit: "tonnes",
+    status: "IN_TRANSIT",
+    transportMode: "truck",
+    destinationWarehouseId: "WH-TST-RAW",
+    etaTurn: 2
+  }];
+  api.render(root, { countryId: "TST", sites: [], tab: "logistics" });
+  assert.match(root.innerHTML, /Current Shipments/);
+  assert.match(root.innerHTML, /data-current-match="matched"/);
+  assert.match(root.innerHTML, />Matched</);
 });
 
 test("resource status plating and charts stay local and unit-aware", () => {
