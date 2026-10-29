@@ -1411,6 +1411,40 @@
           esc(etaLabel) + '</strong></div></div></article>';
       }).join('') + '</div></section>' : '';
     var logisticsMarkup = liveShipmentsMarkup + logisticsRoutePlansMarkup(routePlanState);
+    var reportGroups = Object.create(null);
+    flows.forEach(function (row) {
+      var rid = String(row.resourceId || '').toLowerCase(), q = numberOrNull(row.quantity);
+      var tick = numberOrNull(row.extractionTurn !== undefined ? row.extractionTurn : row.turn !== undefined ? row.turn : row.lastUpdatedTurn);
+      if (!rid || q === null || q <= 0 || tick === null) return;
+      var unit = String(row.unit || '');
+      var k = rid + '|' + unit;
+      if (!reportGroups[k]) reportGroups[k] = {resourceId:rid,unit:unit,turns:Object.create(null),total:0};
+      reportGroups[k].turns[tick] = (reportGroups[k].turns[tick] || 0) + q;
+      reportGroups[k].total += q;
+    });
+    var reportCharts = Object.keys(reportGroups).map(function (key) { return reportGroups[key]; })
+      .sort(function (a,b) { return b.total - a.total; }).slice(0,6).map(function (group) {
+        var ticks = Object.keys(group.turns).map(Number).sort(function (a,b) { return a-b; }).slice(-7);
+        var max = ticks.reduce(function (m, tick) { return Math.max(m, group.turns[tick] || 0); }, 0) || 1;
+        return '<section class="omega-v2-card omega-v2-report-chart"><div class="omega-v2-card-header"><h3 class="omega-v2-card-title">' +
+          esc(resourceLabel(group.resourceId)) + '</h3><span class="omega-v2-card-meta">' + esc(group.unit || 'Recorded units') + '</span></div><div class="omega-v2-chart-bars" role="img" aria-label="' +
+          esc(resourceLabel(group.resourceId) + ' production over recent turns') + '">' + ticks.map(function (tick) {
+            var q = group.turns[tick] || 0, height = Math.max(3, Math.round(q / max * 100));
+            return '<div class="omega-v2-chart-column"><span class="omega-v2-chart-value">' + esc(fmt(q)) + '</span><span class="omega-v2-chart-bar" style="height:' +
+              height + '%"></span><span class="omega-v2-chart-label">T' + tick + '</span></div>';
+          }).join('') + '</div></section>';
+      }).join('');
+    var reportsMarkup = '<div class="omega-v2-kpis">' +
+      renderKpi('Mine sites', String(model.sites.filter(eligible).length), 'Mine sites available to manage', 'neutral') +
+      renderKpi('Producing this turn', String(producingSites.length), 'Mine sites with output', portfolioBalanceState) +
+      renderKpi('Projects pending', String(mineProjects.length), 'Under construction', mineProjects.length ? 'shortage' : 'neutral') +
+      renderKpi('Blocked supply flows', String(blockedFlows.length), 'Current flow ledger', blockedFlows.length ? 'shortage' : 'adequate') + '</div>' +
+      '<section class="omega-v2-card omega-v2-report-overview"><h2>National resource economy</h2><p>Production and stock remain grouped by their own units.</p><div class="omega-v2-report-unit-totals">' +
+      currentOutputGroups.map(function (row) { return '<div><span>' + esc(resourceLabel(row.resourceId)) + '</span><strong>' + amount(row.quantity,row.unit) +
+        '</strong><small>' + fmt(Object.keys(row.sites).length) + ' sites</small></div>'; }).join('') +
+      (currentOutputGroups.length ? '' : '<div class="omega-v2-empty">No extraction output has been recorded this turn.</div>') +
+      '</div></section>' + (reportCharts ? '<div class="omega-v2-grid omega-v2-report-grid">' + reportCharts + '</div>' :
+        '<div class="omega-v2-empty">Charts appear when production records have been created by the game.</div>');
     var selectedDetail = selectedSiteDetail(selectedMine);
     var mineMarkup = '<div class="omega-v2-filterbar omega-v2-mine-filterbar"><input type="search" aria-label="Search mine sites" placeholder="Search mines..." data-omega-v2-site-search>' +
       '<select aria-label="Filter by resource" data-omega-v2-resource-filter>' + '<option value="all">All resources</option>' +
