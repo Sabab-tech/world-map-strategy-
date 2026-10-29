@@ -72,4 +72,13 @@ for(const partInfo of ds.parts){
 assert.equal(all.length,561);assert.deepEqual([...seen].sort(),[...sourceById.keys()].sort());assert.equal(Object.keys(ds.countryToPart).length,ds.countryCount);
 assert.ok(ds.routeCountByMode.truck>=561);for(const m of ['rail','ship','barge','pipeline'])assert.ok(ds.routeCountByMode[m]>0,m+' routes should exist');
 assert.equal(Object.keys(ds.transportIconAssets).length,5);
+assert.equal(iconManifest.transportVariants.length,17,'cargo-specific transport SVG variants must be registered additively');
+for(const variant of iconManifest.transportVariants){
+ const assetPath='assets/omega-industrial-icons-v1/'+variant.file;
+ assert.ok(fs.existsSync(path.join(root,assetPath)),'specialized transport SVG must be local: '+assetPath);
+ const svg=fs.readFileSync(path.join(root,assetPath),'utf8');
+ assert.match(svg,/^<\?xml|^<svg/);
+ assert.match(svg,/data-omega-icon-kind="transport"/);
+ assert.ok(variant.assetId&&variant.transportMode&&variant.cargoClass);
+}
 console.log('OMEGA RESOURCE SITE LOGISTICS ROUTES PASS: 561 unique routes, exact resource SVGs and five local transport SVGs verified.');
