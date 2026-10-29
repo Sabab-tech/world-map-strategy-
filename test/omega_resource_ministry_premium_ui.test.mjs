@@ -322,6 +322,62 @@ test("Resource Logistics shows configured per-site route cards and keeps Current
   assert.match(root.innerHTML, /data-route-leg="1"/);
   assert.match(root.innerHTML, /40 km/);
   assert.match(root.innerHTML, /Cap 45 tonnes\/day/);
+  assert.match(root.innerHTML, /Distance by transport type/);
+  assert.match(root.innerHTML, /data-route-mode-distance="truck"/);
+  assert.match(root.innerHTML, /data-route-mode-distance="rail"/);
+  assert.match(root.innerHTML, /40 km/);
+  assert.match(root.innerHTML, /80 km/);
+  const estimated = api.calculateLogisticsFleetEstimate({
+    planningProduction: { rate: 100, unit: "TONNES_PER_DAY" },
+    routePlan: { capacityUnit: "TONNES_PER_DAY" }
+  }, [{
+    transportMode: "truck",
+    estimatedDistanceKm: 55,
+    designCapacityPerTrip: 25,
+    designCapacityPerTripUnit: "TONNES_PER_TRIP",
+    designCapacityPerDay: 150,
+    designCapacityUnit: "TONNES_PER_DAY"
+  }], {
+    truck: { count: 2, configured: true, payloadTonnes: 25, speedKmh: 55, loadHours: 2, unloadHours: 1 }
+  });
+  assert.equal(estimated.truck.legs[0].cycleHours, 5,
+    "cycle hours must include the distance-based round trip plus loading and unloading");
+  assert.equal(estimated.truck.legs[0].perVehicleCapacityPerDay, 120,
+    "a truck's daily capacity must be payload multiplied by 24 hours divided by its full cycle time");
+  assert.equal(estimated.truck.estimatedUnits, 1,
+    "required vehicles must be ceiling(production rate / distance-aware per-vehicle daily capacity)");
+  assert.equal(estimated.truck.formula,
+    "ceil(production per day / (payload per trip x 24 / round-trip cycle hours))");
+  const bottleneck = api.calculateLogisticsFleetEstimate({
+    planningProduction: { rate: 100, unit: "TONNES_PER_DAY" },
+    routePlan: { capacityUnit: "TONNES_PER_DAY" }
+  }, [{
+    transportMode: "truck", estimatedDistanceKm: 55, designCapacityPerTrip: 25,
+    designCapacityPerTripUnit: "TONNES_PER_TRIP", designCapacityPerDay: 80,
+    designCapacityUnit: "TONNES_PER_DAY"
+  }], { truck: { payloadTonnes: 25, speedKmh: 55, loadHours: 2, unloadHours: 1 } });
+  assert.equal(bottleneck.truck.routeBottleneckLegs, 1,
+    "route corridor throughput is reported separately from per-vehicle capacity");
+  const pipelineEstimate = api.calculateLogisticsFleetEstimate({
+    planningProduction: { rate: 400, unit: "MMCF_PER_DAY" },
+    routePlan: { capacityUnit: "MMCF_PER_DAY" }
+  }, [{
+    transportMode: "pipeline", estimatedDistanceKm: 150, designCapacityPerDay: 500,
+    designCapacityUnit: "MMCF_PER_DAY", designCapacityPerLinePerDay: 100,
+    designCapacityPerLineUnit: "MMCF_PER_DAY"
+  }], { pipeline: { count: 4, configured: true } });
+  assert.equal(pipelineEstimate.pipeline.estimatedUnits, 4,
+    "pipeline design line counts must divide flow by explicitly recorded per-line capacity");
+  const pipelineUnknown = api.calculateLogisticsFleetEstimate({
+    planningProduction: { rate: 400, unit: "MMCF_PER_DAY" },
+    routePlan: { capacityUnit: "MMCF_PER_DAY" }
+  }, [{
+    transportMode: "pipeline", estimatedDistanceKm: 150, designCapacityPerDay: 500,
+    designCapacityUnit: "MMCF_PER_DAY"
+  }], { pipeline: { count: 4, configured: true } });
+  assert.equal(pipelineUnknown.pipeline.available, false,
+    "a corridor capacity must never be used as if it were per-line pipeline capacity");
+  assert.equal(pipelineUnknown.pipeline.estimatedUnits, null);
   assert.match(root.innerHTML, /Known configured vehicle subtotal/);
   assert.match(root.innerHTML, /Pipeline lines recorded/);
   assert.match(root.innerHTML, /Known combined transport units subtotal \(vehicles \+ lines\)/);
