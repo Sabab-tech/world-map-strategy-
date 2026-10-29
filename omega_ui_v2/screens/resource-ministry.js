@@ -972,7 +972,7 @@
       leg.estimatedDistanceKm = Math.max(0, distance);
       leg.distanceAuthority = 'SIMULATED_TOTAL_ROUTE_DISTANCE_NOT_A_SURVEYED_MODE_PATH';
       leg.estimatedTravelHours = Math.max(0, distance) / speed;
-      leg.designCapacityPerTrip = payload;
+      leg.designCapacityPerTrip = chosen === 'pipeline' ? null : payload;
       leg.designCapacityPerDay = flow;
       leg.designCapacityUnit = plan.capacityUnit || reference && reference.designCapacityUnit || 'ROUTE_CAPACITY_PER_DAY';
       leg.cycleHoursForOneDesignVehicle = cycleHours;
