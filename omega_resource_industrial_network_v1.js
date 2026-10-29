@@ -1834,6 +1834,10 @@ function buildRoute(site,asset,resourceId,requestedQuantity,input={}){
   },{});
   const configuredFleetUnitCount=Object.entries(fleetCountsByMode).reduce((sum,[type,row])=>
     sum+(type!=='pipeline'&&row.configured?Math.max(0,num(row.count)||0):0),0);
+  const requiredPipelineLinesByMode=Object.fromEntries(vehiclePlan.filter(leg=>leg.mode==='pipeline')
+    .map(leg=>['pipeline',leg.requiredLineCount]));
+  const capacityUsesConfiguredFleet=vehiclePlan.some(leg=>leg.fleetCountConfigured&&
+    (leg.mode!=='pipeline'||leg.lineCapacityPerDay!==null));
   const route={status:dispatchQuantity>0?'PLANNED':'BLOCKED',routeId:'IR:'+h32(JSON.stringify({cid,site:routeSourceSiteId,sourceNode:routeSourceNode,factory:asset?.id||asset?.assetId||asset?.projectId,resourceId,mode:effectiveMode,path})).toString(16),
     countryId:cid,sourceSiteId:routeSourceSiteId,sourceWarehouseId:input.sourceWarehouseId||null,sourceNode:routeSourceNode,
     destinationFactoryId:String(asset?.id||asset?.assetId||asset?.projectId||''),destinationNode:nodeToken('FACTORY',cid,asset?.id||asset?.assetId||asset?.projectId),
@@ -1841,10 +1845,11 @@ function buildRoute(site,asset,resourceId,requestedQuantity,input={}){
     routePath:path,legs:vehiclePlan,totalDistanceKm:Number(vehiclePlan.reduce((sum,leg)=>sum+leg.distanceKm,0).toFixed(6)),
     travelTimeDays:estimatedTotalDays===null?null:(Number.isFinite(estimatedTotalDays)?Number(estimatedTotalDays.toFixed(6)):null),etaTurn,etaYear:estimatedTotalDays===null?null:year()+Math.floor(estimatedTotalDays/365),vehiclePlan,
     totalCost:Number(totalCost.toFixed(4)),capacityQuantityFactor:capacityFactor,capacityQuantityUnit:'CARGO_CAPACITY_UNITS',
-    vehicleCount,vehiclesByMode,requiredTripsByMode,fleetCountByMode:fleetCountsByMode,
+    vehicleCount,vehiclesByMode,requiredTripsByMode,requiredPipelineLinesByMode,fleetCountByMode:fleetCountsByMode,
     configuredFleetUnitCount,configuredPipelineLineCount,
     routeLegCount:vehiclePlan.length,distinctTransportModeCount:routeModes.length,
-    capacityAuthority:vehiclePlan.some(x=>x.fleetCountConfigured)?'CONFIGURED_FLEET_AND_INFRASTRUCTURE':'INFRASTRUCTURE_MODEL',
+    capacityAuthority:capacityUsesConfiguredFleet?'CONFIGURED_FLEET_AND_INFRASTRUCTURE':
+      (vehiclePlan.some(leg=>leg.mode==='pipeline')?'PIPELINE_CORRIDOR_CAPACITY_WITHOUT_PER_LINE_THROUGHPUT':'INFRASTRUCTURE_MODEL'),
     distanceAuthority:vehiclePlan.every(x=>x.sourceAuthority==='SITE_SIMULATION_ROUTE')?'SITE_SIMULATION_ROUTE':'SIMULATED_CORRIDOR_MODEL',
     crossBorderRequired:canonicalCountry(asset?.countryId||cid)!==cid,crossBorderAllowed:false,
     statusReason:dispatchQuantity>0?'ROUTE_CAPACITY_AVAILABLE':'ROUTE_CAPACITY_ZERO'};
