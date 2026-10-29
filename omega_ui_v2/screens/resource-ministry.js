@@ -1164,6 +1164,7 @@
       var canManage = !!(ready && String(route && route.countryId || '').trim().toUpperCase() === countryKey &&
         countryKey === livePlayerCountryKey());
       var calculatedTotal = routeModes.length > 0 && designAvailableModes === routeModes.length ? fmt(designTotal) : 'Unavailable';
+      var knownTransportUnitTotal = knownVehicleCount + (pipelineConfigured ? pipelineLines : 0);
       var vehicleSubtotalLabel = unknownVehicleModes ? 'Known vehicle subtotal (some counts unknown)' : 'Configured vehicle total';
       return '<section class="omega-v2-logistics-fleet-summary" data-omega-v2-logistics-fleet-summary data-site-id="' +
         esc(route && route.siteId || '') + '"><div class="omega-v2-logistics-fleet-heading">' +
@@ -1173,6 +1174,8 @@
         '<div class="omega-v2-logistics-fleet-foot"><span>' + esc(vehicleSubtotalLabel) + ': <strong>' +
         (ready ? fmt(knownVehicleCount) : 'Unknown') + '</strong></span><span>Pipeline lines: <strong>' +
         (pipelineConfigured ? fmt(pipelineLines) : 'Unknown') + '</strong></span>' +
+        '<span>Known combined transport units subtotal (vehicles + lines): <strong>' +
+        (ready ? fmt(knownTransportUnitTotal) : 'Unknown') + '</strong></span>' +
         '<span>Route legs: <strong>' + fmt(safeArray(legs).length) + '</strong></span>' +
         '<span>Transport modes: <strong>' + fmt(routeModes.length) + '</strong></span>' +
         '<span>Calculated design units: <strong>' + calculatedTotal + '</strong></span>' +
@@ -1254,7 +1257,8 @@
         '<div class="omega-v2-logistics-overview-grid">' + modeCards + '</div>' +
         '<div class="omega-v2-logistics-fleet-foot"><span>Known configured vehicle subtotal: <strong>' + fmt(knownVehicleTotal) +
         '</strong></span><span>Pipeline lines recorded: <strong>' + (totals.pipeline.configuredSites ? fmt(totals.pipeline.total) : 'Unknown') +
-        '</strong></span><span>Vehicle mode counts unknown: <strong>' + fmt(unknownVehicleProfiles) +
+        '</strong></span><span>Known combined transport units subtotal (vehicles + lines): <strong>' +
+        fmt(knownVehicleTotal + totals.pipeline.total) + '</strong></span><span>Vehicle mode counts unknown: <strong>' + fmt(unknownVehicleProfiles) +
         '</strong></span><span>Mode profiles configured: <strong>' + fmt(configuredProfiles) +
         '</strong></span><span>Unknown count profiles: <strong>' + fmt(unknownProfiles) +
         '</strong></span><span>Per-vehicle IDs required: <strong>No</strong></span></div>' +
