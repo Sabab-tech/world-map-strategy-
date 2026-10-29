@@ -171,7 +171,6 @@ test("Resource Logistics shows configured per-site route cards and keeps Current
     resourceIconKey: "gold",
     destination: { warehouseId: "WH-TST-RAW" },
     routePlan: {
-      routeType: "TRUCK_TO_RAIL_TO_TRUCK",
       strategyCode: "MINE_HAULAGE_RAIL_LAST_MILE",
       routeStatus: "SIMULATED_PLAN_COMPLETE_ENGINE_BINDING_PENDING",
       dispatchStatus: "NOT_DISPATCHABLE_DATA_ONLY_PHASE",
