@@ -132,6 +132,7 @@ test('runtime validates sources and seeds all country counts without changing li
   const state = makeState();
   const originalAssets = JSON.stringify(state.economy.BGD.productionAssets);
   const originalResource = JSON.stringify(state.resource.BGD);
+  const originalEconomy = JSON.stringify(state.economy);
   const { context, api, emitted, emitSimulationEvent } = makeHarness(state);
   const ready = await api.ready;
   assert.equal(ready.status, 'READY');
@@ -151,20 +152,22 @@ test('runtime validates sources and seeds all country counts without changing li
   assert.equal(state.simulation.countryFactoryStartingBaselineV1.factoryTypeCount, 21);
   assert.equal(state.simulation.countryFactoryStartingBaselineV1.initializedCountryCount, 197);
   assert.equal(state.simulation.countryFactoryStartingBaselineV1.productionAssetsCreated, 0);
+  assert.equal(state.simulation.countryFactoryStartingBaselineV1.economyStateModified, false);
+  assert.equal(Object.keys(state.simulation.countryFactoryStartingBaselineV1.countries).length, 197);
+  assert.equal(state.simulation.countryFactoryStartingBaselineV1.countries.BGD.totalStartingFactoryUnits, baseline.countries.BGD.totalStartingFactoryUnits);
+  assert.equal(Object.keys(state.simulation.countryFactoryStartingBaselineV1.countries.BGD.factoryCounts).length, 21);
   assert.equal(state.simulation.countryFactoryStartingBaselineV1.existingSaveDataOverwritten, false);
-  assert.equal(Object.keys(state.economy).filter(code => state.economy[code] && state.economy[code].factoryStartingBaselineV1).length, 197);
-  assert.deepEqual(Object.keys(state.economy.BGD.factoryStartingBaselineV1.factoryCounts).sort(), factoryTypes);
-  assert.equal(state.economy.BGD.factoryStartingBaselineV1.totalStartingFactoryUnits, baseline.countries.BGD.totalStartingFactoryUnits);
-  assert.equal(state.economy.BGD.factoryStartingBaselineV1.liveProductionAssetsCreated, false);
+  assert.equal(Object.keys(state.economy).length, 1, 'baseline initialization must not create empty economy buckets for other countries');
   assert.equal(JSON.stringify(state.economy.BGD.productionAssets), originalAssets);
+  assert.equal(JSON.stringify(state.economy), originalEconomy, 'baseline initialization must leave the economy state untouched');
   assert.deepEqual(state.economy.BGD.existingEconomyMarker, { preserved: true });
   assert.equal(JSON.stringify(state.resource.BGD), originalResource);
   assert.ok(emitted.some(event => event.type === 'OMEGA_COUNTRY_FACTORY_STARTING_BASELINE_READY'));
   assert.ok(emitted.some(event => event.type === 'OMEGA_COUNTRY_FACTORY_STARTING_BASELINE_INITIALIZED'));
-  const stableSnapshot = JSON.stringify(state.economy.BGD.factoryStartingBaselineV1);
+  const stableSnapshot = JSON.stringify(state.simulation.countryFactoryStartingBaselineV1);
   emitSimulationEvent('OMEGA_GAME_SESSION_CREATED', { session: structuredCloneSafe(state.simulation.session) });
   await api.waitForPendingInitialization();
-  assert.equal(JSON.stringify(state.economy.BGD.factoryStartingBaselineV1), stableSnapshot,
+  assert.equal(JSON.stringify(state.simulation.countryFactoryStartingBaselineV1), stableSnapshot,
     'repeated initialization must not overwrite existing baseline or increment any count');
   assert.equal(JSON.stringify(state.economy.BGD.productionAssets), originalAssets);
 });
@@ -177,6 +180,7 @@ test('runtime does not initialize a game that has already advanced past the open
   const result = await api.initializeForSession(state.simulation.session);
   assert.equal(result.status, 'SKIPPED_NOT_NEW_GAME');
   assert.equal(Object.keys(state.economy).filter(code => state.economy[code] && code !== 'BGD').length, 0);
+  assert.equal(Object.keys(state.economy).length, 1);
   assert.equal(Object.prototype.hasOwnProperty.call(state.economy.BGD, 'factoryStartingBaselineV1'), false);
 });
 
