@@ -1743,7 +1743,7 @@ function routeSegments(site,asset,resourceId,mode,countryId,input={}){
     (genericType||(genericStrategy&&genericModes.includes('truck')&&genericModes.includes('rail')))&&
     genericModes.includes('truck')&&genericModes.includes('rail')&&
     genericModes.every(value=>value==='truck'||value==='rail');
-  const sourceCountry=canonicalCountry(s.countryId||s.countryCode||s.identity?.countryIso3||s.sourceSiteRecord?.countryCode||cid);
+  const sourceCountry=canonicalCountry(cid); // route ownership/scope is authoritative; a stale site row must not change the selected corridor country
   const destinationCountry=canonicalCountry(input.destinationCountryId||input.destinationCountryCode||
     f.countryId||f.countryCode||f.destinationCountryId||cid);
   const crossBorder=!!(sourceCountry&&destinationCountry&&sourceCountry!==destinationCountry&&
@@ -1875,7 +1875,7 @@ function buildRoute(site,asset,resourceId,requestedQuantity,input={}){
   const mode=normalizeTransportMode(input.transportMode||rules()[resourceId]?.preferredModes?.[0]||'truck')||'truck';
   const segments=routeSegments(site,asset,resourceId,mode,cid,input),quantity=Math.max(0,num(requestedQuantity)||0);
   if(!segments.length){
-    const sourceCountry=canonicalCountry(site?.countryId||site?.countryCode||site?.identity?.countryIso3||cid);
+    const sourceCountry=canonicalCountry(cid);
     const destinationCountry=canonicalCountry(input.destinationCountryId||input.destinationCountryCode||
       asset?.countryId||asset?.countryCode||asset?.destinationCountryId||cid);
     const crossBorder=!!(sourceCountry&&destinationCountry&&sourceCountry!==destinationCountry&&
