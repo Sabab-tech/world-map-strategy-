@@ -1563,11 +1563,20 @@ function siteRouteLegMetrics(countryId,routeProfile,quantity,unitBridge){
     const declaredFleetCount=countValue!==null?countValue:num(source?.fleetCount??routeProfile?.transportFleet?.[mode]?.count);
     const fleetCount=declaredFleetCount!==null&&declaredFleetCount>=0?Math.floor(declaredFleetCount):null;
     const cycleDays=Math.max(1/24,singleTripDays*2);
-    const tripWaves=fleetCount===null?requiredTrips:(fleetCount>0?Math.ceil(requiredTrips/fleetCount):0);
-    const estimatedLegDays=fleetCount===0?null:(tripWaves>0?singleTripDays+Math.max(0,tripWaves-1)*cycleDays:0);
+    const declaredRouteCapacity=num(source?.designCapacityPerDay);
+    const routeCapacityPerDay=Math.max(0,declaredRouteCapacity===null?
+      infrastructure.capacityPerDay*infrastructure.quality:declaredRouteCapacity);
+    const requiredDesignFleetSlots=routeCapacityPerDay>0?
+      Math.max(1,Math.ceil((routeCapacityPerDay/payload)/Math.max(1e-9,24/cycleDays))):0;
+    // Unknown actual counts stay unknown. For ETA only, the recorded route design
+    // throughput supplies a capacity-derived formation estimate instead of assuming
+    // one real vehicle and serializing every load.
+    const etaFleetUnits=fleetCount===null?requiredDesignFleetSlots:fleetCount;
+    const tripWaves=etaFleetUnits>0?Math.ceil(requiredTrips/etaFleetUnits):0;
+    const estimatedLegDays=fleetCount===0?null:(etaFleetUnits>0&&tripWaves>0?
+      singleTripDays+Math.max(0,tripWaves-1)*cycleDays:0);
     if(estimatedLegDays!==null)totalDays+=estimatedLegDays;
     const fleetCapacityPerDay=fleetCount===null?null:Number((fleetCount*payload/cycleDays).toFixed(6));
-    const routeCapacityPerDay=Math.max(0,num(source?.designCapacityPerDay)||infrastructure.capacityPerDay*infrastructure.quality);
     const dailyCapacity=fleetCapacityPerDay===null?routeCapacityPerDay:
       Math.min(routeCapacityPerDay>0?routeCapacityPerDay:fleetCapacityPerDay,fleetCapacityPerDay);
     const cargoText=tok(source?.cargoClass||routeProfile?.commodityGroup||routeProfile?.resourceId||'');
@@ -1592,7 +1601,7 @@ function siteRouteLegMetrics(countryId,routeProfile,quantity,unitBridge){
   });
   const declaredCapacity=num(plan.capacityBottleneckPerDay);
   const capacities=legs.map(leg=>num(leg.capacityPerDay)).filter(value=>value!==null&&value>=0);
-  const capacityPerDay=Math.max(0,Math.min(declaredCapacity!==null&&declaredCapacity>0?declaredCapacity:Infinity,
+  const capacityPerDay=Math.max(0,Math.min(declaredCapacity!==null?declaredCapacity:Infinity,
     capacities.length?Math.min(...capacities):Infinity));
   const fleetCountsByMode=Object.create(null),requiredTripsByMode=Object.create(null);
   legs.forEach(leg=>{
@@ -1616,7 +1625,7 @@ function siteRouteLegMetrics(countryId,routeProfile,quantity,unitBridge){
     routeLegCount:legs.length,distinctTransportModeCount:Object.keys(fleetCountsByMode).length,
     vehiclesByMode:legs.reduce((out,leg)=>{out[leg.mode]=(out[leg.mode]||0)+(num(leg.vehicleCount)||0);return out;},{}),
     vehicleCount:legs.reduce((sum,leg)=>sum+(num(leg.vehicleCount)||0),0),
-    etaAuthority:unconfiguredTransportModeCount?'SERIAL_TRIP_ESTIMATE_FLEET_COUNT_UNKNOWN':'CONFIGURED_COUNTRY_SITE_TRANSPORT_TYPE_COUNTS',
+    etaAuthority:unconfiguredTransportModeCount?'ROUTE_DESIGN_CAPACITY_ETA_ESTIMATE_NOT_ACTUAL_FLEET_COUNT':'CONFIGURED_COUNTRY_SITE_TRANSPORT_TYPE_COUNTS',
     authority:'VERSIONED_TRANSPORT_CATALOG_AND_SITE_ROUTE_LEG_DATA'};
 }
 async function previewSiteTransport(input={}){
