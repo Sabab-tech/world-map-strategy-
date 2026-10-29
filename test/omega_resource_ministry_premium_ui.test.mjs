@@ -492,3 +492,70 @@ test("logistics cards expose an accessible route diagram with existing SVG cargo
     if (priorGame === undefined) delete globalThis.Game; else globalThis.Game = priorGame;
   }
 });
+
+
+test("logistics tab shows mine/mode cards without shipments and edits aggregate fleet counts", async () => {
+  const api=globalThis.OmegaUIV2ResourceMinistry;
+  const priorGame=globalThis.Game, priorFetch=globalThis.fetch, priorNetwork=globalThis.OmegaResourceIndustrialNetwork;
+  const fetchCalls=[], fleetCalls=[];
+  const profile={
+    routeId:"ROUTE_SITE_BGD_TEST_MINE_V1",siteId:"SITE_BGD_test_mine",countryId:"BGD",
+    siteName:"Test Coal Mine",resourceId:"coal",destination:{warehouseId:"WH-BGD-RAW"},
+    routePlan:{estimatedRouteDistanceKm:296,plannedTransitDays:3,capacityBottleneckPerDay:51,capacityUnit:"RAW_CARGO_TONNES_PER_DAY",
+      legs:[
+        {sequence:1,transportMode:"truck",requiredDesignFleetSlots:1,transportIconAssetPath:"assets/omega-industrial-icons-v1/transport/truck.svg"},
+        {sequence:2,transportMode:"rail",requiredDesignFleetSlots:1,transportIconAssetPath:"assets/omega-industrial-icons-v1/transport/train.svg"},
+        {sequence:3,transportMode:"truck",requiredDesignFleetSlots:1,transportIconAssetPath:"assets/omega-industrial-icons-v1/transport/truck.svg"}
+      ]},
+    provenance:{authority:"SCENARIO_LOGISTICS_DESIGN_ONLY",simulationOnly:true,actualVehicleAvailabilityAssumed:false}
+  };
+  globalThis.fetch=async url=>{
+    fetchCalls.push(String(url));
+    const data=String(url).endsWith("resource_site_logistics_routes_v1.json")
+      ?{authority:"SCENARIO_LOGISTICS_DESIGN_ONLY",simulationOnly:true,countryToPart:{BGD:2},parts:[{part:2,file:"resource_site_logistics_routes_v1_part_02.json"}]}
+      :{routes:[profile]};
+    return {ok:true,json:async()=>data};
+  };
+  const fleetStatus=()=>({status:"READY",countryId:"BGD",siteId:"SITE_BGD_test_mine",modes:{
+    truck:{configured:true,totalUnits:4,operationalUnits:4,reservedUnits:1,availableUnits:3},
+    rail:{configured:false,totalUnits:null,operationalUnits:null,reservedUnits:0,availableUnits:null}
+  },vehicleIdentifiersStored:false});
+  globalThis.OmegaResourceIndustrialNetwork={
+    transportFleetStatus:()=>fleetStatus(),
+    addTransportFleet(input){fleetCalls.push({action:"add",...input});return{status:"UPDATED",fleet:fleetStatus()};},
+    removeTransportFleet(input){fleetCalls.push({action:"remove",...input});return{status:"UPDATED",fleet:fleetStatus()};}
+  };
+  globalThis.Game={state:{simulation:{turn:1,session:{playerCountryId:"BGD"}},resource:{BGD:{mineAssets:[],industrialNetwork:{projects:[],shipments:[],siteFlowLedger:[]},warehouse:{}}}}};
+  const listeners=Object.create(null);
+  const root={innerHTML:"",classList:{add(){}},addEventListener(type,fn){(listeners[type]||(listeners[type]=[])).push(fn);},
+    querySelector(){return null;},querySelectorAll(){return[];},contains(){return true;}};
+  try{
+    const first=api.render(root,{countryId:"BGD",sites:[],tab:"logistics"});
+    assert.equal(first.ok,true);
+    await new Promise(resolve=>setImmediate(resolve));
+    assert.match(root.innerHTML,/Transport allocation/);
+    assert.match(root.innerHTML,/Test Coal Mine/);
+    assert.match(root.innerHTML,/Road truck/);
+    assert.match(root.innerHTML,/Freight train/);
+    assert.match(root.innerHTML,/Plan: 2 design slots/);
+    assert.match(root.innerHTML,/Fleet: 4 total · 3 available/);
+    assert.match(root.innerHTML,/No active shipments/);
+    assert.match(root.innerHTML,/data-omega-v2-fleet-action="add"/);
+    assert.match(root.innerHTML,/data-omega-v2-fleet-action="remove"/);
+    assert.equal(fetchCalls.length,2,"only the shared manifest and selected country's route shard load");
+    assert.ok(fetchCalls[1].endsWith("resource_site_logistics_routes_v1_part_02.json"));
+    const modeRow={getAttribute(name){return name==="data-site-id"?"SITE_BGD_test_mine":name==="data-transport-mode"?"truck":null;},
+      querySelector(selector){return selector==="[data-omega-v2-fleet-count]"?{value:"2"}:null;}};
+    const button={getAttribute(name){return name==="data-omega-v2-fleet-action"?"add":null;},
+      closest(selector){return selector==="[data-omega-v2-logistics-profile-mode]"?modeRow:null;}};
+    const target={closest(selector){if(selector==="[data-omega-v2-fleet-action]")return button;return null;}};
+    for(const listener of listeners.click||[])listener({target});
+    assert.equal(fleetCalls.length,1);
+    assert.deepEqual(fleetCalls[0],{action:"add",countryId:"BGD",siteId:"SITE_BGD_test_mine",transportMode:"truck",count:2});
+    assert.doesNotMatch(root.innerHTML,/VEHICLE-[A-Z0-9_-]+|TRANSPORT-ASSET-[A-Z0-9_-]+/);
+  }finally{
+    if(priorGame===undefined)delete globalThis.Game;else globalThis.Game=priorGame;
+    if(priorFetch===undefined)delete globalThis.fetch;else globalThis.fetch=priorFetch;
+    if(priorNetwork===undefined)delete globalThis.OmegaResourceIndustrialNetwork;else globalThis.OmegaResourceIndustrialNetwork=priorNetwork;
+  }
+});
