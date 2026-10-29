@@ -126,6 +126,16 @@ test("mine command screen has the requested tabs, per-site actions and clean pla
     assert.match(root.innerHTML, /data-balance-state="shortage"/);
     const visibleText = root.innerHTML.replace(/<[^>]*>/g, " ").replace(/&amp;/g, "&");
     assert.doesNotMatch(visibleText, /\b(simulated|modelled|modeled|catalog reference|source:|site id)\b/i);
+    api.render(root, { countryId: "BGD", sites: [row], tab: "dashboard" });
+    assert.match(root.innerHTML, /<span>Registered sites<\/span><strong>1<\/strong>/);
+    assert.match(root.innerHTML, /<span>Built mine units<\/span><strong>1<\/strong>/);
+    assert.match(root.innerHTML, /<span>Mine units building<\/span><strong>0<\/strong>/);
+    globalThis.Game.state.resource.BGD.industrialNetwork.projects.push({
+      projectId: "MINE-UI-KPI-TEST", projectType: "MINE_CONSTRUCTION", status: "UNDER_CONSTRUCTION", assetCount: 3
+    });
+    api.render(root, { countryId: "BGD", sites: [row], tab: "dashboard" });
+    assert.match(root.innerHTML, /<span>Mine units building<\/span><strong>3<\/strong>/,
+      "the KPI must show units under construction, not just the number of project records");
     api.render(root, { countryId: "BGD", sites: [row], tab: "reports" });
     assert.match(root.innerHTML, /omega-v2-report-chart/);
     assert.match(root.innerHTML, /omega-v2-chart-bar/);
