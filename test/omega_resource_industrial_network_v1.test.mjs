@@ -917,6 +917,34 @@ console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');
 
 
 
+
+{
+  // Pipeline count is a number of lines, not a truck-like vehicle count.
+  // A corridor-wide capacity without capacity-per-line must not authorize dispatch.
+  const configured=N.setTransportFleet({
+    countryId:'BGD',siteId:'SITE_BGD_COAL_01',transportType:'pipeline',count:2
+  });
+  assert.equal(configured.status,'APPLIED',JSON.stringify(configured));
+  const pipelineSite={
+    siteId:'SITE_BGD_COAL_01',countryId:'BGD',
+    simulation:{transportRoute:[{
+      transportMode:'pipeline',estimatedDistanceKm:120,
+      designCapacityPerDay:500,designCapacityUnit:'MMCF_PER_DAY'
+    }]}
+  };
+  const pipelineRoute=N.buildRoute(pipelineSite,{id:'FAC_PIPELINE_CAPACITY_GATE',countryId:'BGD'},
+    'natural_gas',1000,{
+      countryId:'BGD',sourceSiteId:'SITE_BGD_COAL_01',
+      transportMode:'pipeline',unit:'MMCF_PER_DAY'
+    });
+  assert.equal(pipelineRoute.status,'BLOCKED',JSON.stringify(pipelineRoute));
+  assert.equal(pipelineRoute.reason,'PIPELINE_PER_LINE_CAPACITY_UNAVAILABLE');
+  assert.equal(pipelineRoute.dispatchQuantity,0);
+  assert.equal(pipelineRoute.travelTimeDays,null);
+  assert.equal(pipelineRoute.requiredPipelineLinesByMode.pipeline,null);
+  console.log('OMEGA PIPELINE PER-LINE CAPACITY GATE PASSED');
+}
+
 // Regression: selecting one transport mode must not silently append truck/rail/ship legs.
 // Explicit route-leg profiles remain intermodal; mode-only choices remain mode-only.
 {
