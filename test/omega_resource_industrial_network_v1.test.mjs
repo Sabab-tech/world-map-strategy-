@@ -620,6 +620,65 @@ assert.equal(sharedTransport.shipments.length,2);
     'required pipeline lines must derive from daily route flow divided by explicit per-line capacity');
   assert.equal(pipelineDesignRoute.configuredPipelineLineCount,null,
     'design line count must not be confused with the actual in-game pipeline count');
+
+  const genericIntermodalSite={
+    ...routeSite,
+    routePlan:{routeType:'TRUCK_TO_RAIL_TO_TRUCK',destinationWarehouseId:'WH-BGD-RAW',
+      estimatedRouteDistanceKm:241,capacityBottleneckPerDay:1000,capacityUnit:'TONNES_PER_DAY',
+      legs:[
+        {transportMode:'truck',estimatedDistanceKm:12,designCapacityPerTrip:25,designCapacityPerDay:1000},
+        {transportMode:'rail',estimatedDistanceKm:210,designCapacityPerTrip:5000,designCapacityPerDay:120000},
+        {transportMode:'truck',estimatedDistanceKm:19,designCapacityPerTrip:25,designCapacityPerDay:1000}
+      ]}
+  };
+  const genericRailRoute=N.buildRoute(genericIntermodalSite,routeAsset,'coal',1000,
+    {countryId:'BGD',transportMode:'rail',unit:'TONNES'});
+  assert.equal(genericRailRoute.status,'PLANNED',JSON.stringify(genericRailRoute));
+  assert.equal(genericRailRoute.routeLegCount,1,
+    'an unverified truck/rail template must not be treated as three connected physical legs');
+  assert.equal(genericRailRoute.vehiclePlan[0].mode,'rail');
+  assert.equal(genericRailRoute.totalDistanceKm,241,
+    'normalizing a legacy template must preserve the full corridor distance');
+  assert.equal(genericRailRoute.vehiclePlan[0].sourceAuthority,'SIMULATED_TOTAL_ROUTE_DISTANCE_NOT_A_SURVEYED_MODE_PATH');
+  const genericTruckRoute=N.buildRoute(genericIntermodalSite,routeAsset,'coal',1000,
+    {countryId:'BGD',transportMode:'truck',unit:'TONNES'});
+  assert.equal(genericTruckRoute.routeLegCount,1);
+  assert.equal(genericTruckRoute.vehiclePlan[0].mode,'truck',
+    'a selected truck-only route must not silently turn into truck/rail/truck');
+
+  const crossBorderGenericRoute=N.buildRoute(genericIntermodalSite,
+    {...routeAsset,countryId:'USA'},'coal',1000,
+    {countryId:'BGD',destinationCountryId:'USA',transportMode:'rail',unit:'TONNES'});
+  assert.equal(crossBorderGenericRoute.status,'BLOCKED');
+  assert.equal(crossBorderGenericRoute.reason,'CROSS_BORDER_ROUTE_LEGS_REQUIRED',
+    'a generic domestic template must not invent a foreign route or ship lane');
+
+  const crossBorderRoadSeaRoadSite={
+    ...routeSite,
+    routePlan:{destinationCountryId:'USA',destinationWarehouseId:'WH-USA-RAW',requiresSeaLane:true,
+      estimatedRouteDistanceKm:200,capacityBottleneckPerDay:500,capacityUnit:'TONNES_PER_DAY',
+      legs:[
+        {transportMode:'truck',estimatedDistanceKm:20,designCapacityPerTrip:25,designCapacityPerDay:1000,edgeClass:'MINE_TO_PORT',toNodeId:'PORT:BGD:EXPORT'},
+        {transportMode:'ship',estimatedDistanceKm:160,designCapacityPerTrip:50000,designCapacityPerDay:50000,edgeClass:'SEA_LANE',fromNodeId:'PORT:BGD:EXPORT',toNodeId:'PORT:USA:IMPORT'},
+        {transportMode:'truck',estimatedDistanceKm:20,designCapacityPerTrip:25,designCapacityPerDay:1000,edgeClass:'PORT_TO_DESTINATION',toCountryId:'USA',toNodeId:'WH-USA-RAW'}
+      ]}
+  };
+  const crossBorderShipRoute=N.buildRoute(crossBorderRoadSeaRoadSite,
+    {...routeAsset,countryId:'USA'},'coal',1000,
+    {countryId:'BGD',destinationCountryId:'USA',transportMode:'ship',requiresSeaLane:true,unit:'TONNES'});
+  assert.equal(crossBorderShipRoute.status,'PLANNED',JSON.stringify(crossBorderShipRoute));
+  assert.equal(crossBorderShipRoute.crossBorderRequired,true);
+  assert.equal(Array.from(crossBorderShipRoute.vehiclePlan,leg=>leg.mode).join(','),'truck,ship,truck',
+    'connected cross-border route data must retain port access, ship lane and destination access legs');
+  assert.equal(crossBorderShipRoute.totalDistanceKm,200);
+  const crossBorderWithoutSea=N.buildRoute({
+    ...crossBorderRoadSeaRoadSite,
+    routePlan:{...crossBorderRoadSeaRoadSite.routePlan,legs:crossBorderRoadSeaRoadSite.routePlan.legs.filter(leg=>leg.transportMode!=='ship')}
+  },{...routeAsset,countryId:'USA'},'coal',1000,
+    {countryId:'BGD',destinationCountryId:'USA',requiresSeaLane:true,unit:'TONNES'});
+  assert.equal(crossBorderWithoutSea.status,'BLOCKED');
+  assert.equal(crossBorderWithoutSea.reason,'SEA_LANE_REQUIRED_BUT_NOT_CONFIGURED',
+    'routes marked sea-dependent must fail closed until a connected ship leg is recorded');
 }
 
 // Selected-country UI diagnostics must not walk every country's industrial ledger.
