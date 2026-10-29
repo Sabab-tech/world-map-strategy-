@@ -596,9 +596,9 @@ assert.equal(sharedTransport.shipments.length,2);
   const explicitIntermodalAsset={
     ...routeAsset,
     routePlan:{legs:[
-      {transportMode:'truck',distanceKm:12,edgeClass:'MINE_ACCESS_ROAD'},
-      {transportMode:'rail',distanceKm:210,edgeClass:'HEAVY_RAIL_CORRIDOR'},
-      {transportMode:'truck',distanceKm:19,edgeClass:'WAREHOUSE_LAST_MILE'}
+      {transportMode:'truck',distanceKm:12,designCapacityPerTrip:25,designCapacityPerDay:1000,edgeClass:'MINE_ACCESS_ROAD'},
+      {transportMode:'rail',distanceKm:210,designCapacityPerTrip:5000,designCapacityPerDay:120000,edgeClass:'HEAVY_RAIL_CORRIDOR'},
+      {transportMode:'truck',distanceKm:19,designCapacityPerTrip:25,designCapacityPerDay:1000,edgeClass:'WAREHOUSE_LAST_MILE'}
     ]}
   };
   const explicitRoute=N.buildRoute(routeSite,explicitIntermodalAsset,'coal',1000,
