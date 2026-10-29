@@ -469,6 +469,16 @@
       return !!asset && !/DECOMMISSIONED|DESTROYED|STOPPED|CLOSED|INACTIVE/.test(status) &&
         /OPERATIONAL|ACTIVE|COMMISSIONED|PRODUCING/.test(status);
     }
+    var builtMineCount = assets.filter(function (asset) {
+      var status = String(asset && asset.status || '').toUpperCase();
+      return !/DECOMMISSIONED|DESTROYED|INACTIVE|CLOSED/.test(status) &&
+        /OPERATIONAL|ACTIVE|COMMISSIONED|PRODUCING|STOPPED|PAUSED/.test(status);
+    }).length;
+    var operatingMineCount = assets.filter(isOperationalAsset).length;
+    var underConstructionCount = projects.filter(function (row) {
+      return /MINE_CONSTRUCTION/.test(String(row.projectType || row.kind || row.type || '').toUpperCase()) &&
+        String(row.status || '').toUpperCase() === 'UNDER_CONSTRUCTION';
+    }).length;
     function projectFor(id) {
       for (var i = mineProjects.length - 1; i >= 0; i -= 1) if (String(mineProjects[i].siteId || '') === String(id || '')) return mineProjects[i];
       return null;
@@ -757,9 +767,11 @@
     var countryLabel = String(heroCountry && (heroCountry.officialName || heroCountry.name || heroCountry.countryName) ||
       rosterCountry && rosterCountry.name || countryKey || 'Selected country');
     var dashMarkup = photoMarkup + '<div class="omega-v2-kpis omega-v2-resource-command-kpis">' +
-      renderKpi('Registered mines', String(model.sites.filter(eligible).length), model.sites.length + ' sites', 'neutral') +
-      renderKpi('Producing now', String(producingSites.length), 'Recorded this turn', portfolioBalanceState) +
-      renderKpi('Pending projects', String(mineProjects.length), 'Mine construction', mineProjects.length ? 'shortage' : 'neutral') +
+      renderKpi('Eligible mine sites', String(model.sites.filter(eligible).length), 'Registered sites available to manage', 'neutral') +
+      renderKpi('Built mine units', String(builtMineCount), 'Commissioned assets, excluding destroyed units', builtMineCount ? 'operational' : 'neutral') +
+      renderKpi('Operating mines', String(operatingMineCount), 'Built units not paused or closed', operatingMineCount ? 'operational' : 'neutral') +
+      renderKpi('Producing this turn', String(producingSites.length), 'Recorded extraction output', portfolioBalanceState) +
+      renderKpi('Projects pending', String(underConstructionCount), 'Mine construction underway', underConstructionCount ? 'shortage' : 'neutral') +
       renderKpi('Blocked supply', String(blockedFlows.length), 'Recorded unresolved flows', blockedFlows.length ? 'shortage' : 'adequate') +
       renderKpi('Resource types', String(distinctResources.length), 'Available in country', 'neutral') +
       renderKpi('Today output', outputHeadline, 'Kept separate by unit', portfolioBalanceState) +
@@ -788,8 +800,8 @@
     var stockTable = inventoryKeys.length ? '<div class="omega-v2-table-wrap"><table><thead><tr><th>Resource</th><th>Raw stock</th><th>Processed</th><th>In</th><th>Out</th><th>Shortage</th></tr></thead><tbody>' +
       inventoryKeys.map(stockRow).join('') + '</tbody></table></div>' : '<div class="omega-v2-empty">No warehouse balances have been recorded.</div>';
     var inventoryMarkup = '<div class="omega-v2-kpis">' +
-      renderKpi('Raw stock types', String(Object.keys(rawStock).length), 'Country warehouse', 'neutral') +
-      renderKpi('Processed types', String(Object.keys(finishedStock).length), 'Finished stock', 'neutral') +
+      renderKpi('Raw stock types', String(Object.keys(rawStock).filter(function (rid) { var q=val(rawStock[rid]); return q!==null && q>0; }).length), 'Resources with remaining warehouse stock', 'neutral') +
+      renderKpi('Processed types', String(Object.keys(finishedStock).filter(function (rid) { var q=val(finishedStock[rid]); return q!==null && q>0; }).length), 'Resources with remaining finished stock', 'neutral') +
       renderKpi('Tracked batches', String(inventoryRows.length), 'Recorded inventory entries', 'neutral') +
       renderKpi('Stock shortages', String(inventoryKeys.filter(function (rid) { return shortageFor(rid) > 0; }).length), 'Where demand is recorded', inventoryKeys.some(function (rid) { return shortageFor(rid) > 0; }) ? 'shortage' : 'neutral') +
       '</div><section class="omega-v2-card omega-v2-movement-card"><h2>Inventory movement</h2><p>Stored quantity, confirmed receipts and recorded dispatches for the selected country.</p>' + stockTable + '</section>' +
@@ -866,9 +878,11 @@
           }).join('') + '</div></section>';
       }).join('');
     var reportsMarkup = '<div class="omega-v2-kpis">' +
-      renderKpi('Mine sites', String(model.sites.filter(eligible).length), 'Mine sites available to manage', 'neutral') +
-      renderKpi('Producing this turn', String(producingSites.length), 'Mine sites with output', portfolioBalanceState) +
-      renderKpi('Projects pending', String(mineProjects.length), 'Under construction', mineProjects.length ? 'shortage' : 'neutral') +
+      renderKpi('Eligible mine sites', String(model.sites.filter(eligible).length), 'Registered sites available to manage', 'neutral') +
+      renderKpi('Built mine units', String(builtMineCount), 'Commissioned assets, excluding destroyed units', builtMineCount ? 'operational' : 'neutral') +
+      renderKpi('Operating mines', String(operatingMineCount), 'Built units not paused or closed', operatingMineCount ? 'operational' : 'neutral') +
+      renderKpi('Producing this turn', String(producingSites.length), 'Sites with recorded output', portfolioBalanceState) +
+      renderKpi('Projects pending', String(underConstructionCount), 'Under construction', underConstructionCount ? 'shortage' : 'neutral') +
       renderKpi('Blocked supply flows', String(blockedFlows.length), 'Current flow ledger', blockedFlows.length ? 'shortage' : 'adequate') + '</div>' +
       '<section class="omega-v2-card omega-v2-report-overview"><h2>National resource economy</h2><p>Production and stock remain grouped by their own units.</p><div class="omega-v2-report-unit-totals">' +
       currentOutputGroups.map(function (row) { return '<div><span>' + esc(resourceLabel(row.resourceId)) + '</span><strong>' + amount(row.quantity,row.unit) +
@@ -903,7 +917,7 @@
       '<div class="omega-v2-eyebrow">RESOURCE COMMAND</div><h1 class="omega-v2-title">Mine Production Ministry</h1><p class="omega-v2-subtitle">' + esc(countryLabel) +
       ' · Resource Extraction · National Wealth</p></div></div><div class="omega-v2-resource-heading-actions">' + countrySelectMarkup(countryKey) +
       '<span class="omega-v2-status" data-state="' + (model.ready ? 'operational' : 'attention') + '">' +
-      fmt(model.sites.filter(eligible).length) + ' mines</span></div></header>' + notice + tabMarkup + '<div data-omega-v2-resource-content>' + contentMarkup + '</div></section>';
+      fmt(model.sites.filter(eligible).length) + ' eligible sites · ' + fmt(builtMineCount) + ' built</span></div></header>' + notice + tabMarkup + '<div data-omega-v2-resource-content>' + contentMarkup + '</div></section>';
     if (!root.__omegaV2ResourceBound && typeof root.addEventListener === 'function') {
       root.addEventListener('input', function (event) {
         if (!event || !event.target) return;

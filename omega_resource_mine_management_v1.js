@@ -225,6 +225,7 @@ function topCards(country){
  const networkState=rs.industrialNetwork||{},receipts=flows.reduce((n,f)=>n+(Array.isArray(f.treasurySettlements)?f.treasurySettlements.filter(x=>/SETTLED|POSTED/.test(String(x.status||''))).length:0),0);
  const blocked=flows.filter(f=>/BLOCKED|AWAITING_ROUTE|AWAITING_CAPACITY|AWAITING_INPUTS|EXTRACTED_AWAITING_FACTORY|FACTORY_INPUT_SHORTAGE/.test(String(f.status||''))).length;
  const raw=rs.warehouse?.availableByResource||{},processed=rs.processedWarehouse?.availableByResource||{};
+ function stockTypeCount(source){return Object.keys(source).filter(id=>num(source[id])!==null&&num(source[id])>0).length;}
  function unitFor(id){
   const catalog=g.OmegaResourceIndustrialCatalogData||g.Omega?.ResourceIndustrialCatalogData||{};
   const rule=catalog.resourceRules&&catalog.resourceRules[id];
@@ -238,8 +239,8 @@ function topCards(country){
  return '<div class="omm-grid">'+
   kpi('Operating mines',assets.filter(a=>/OPERATIONAL|ACTIVE|COMMISSIONED|PRODUCING/.test(String(a.status||'').toUpperCase())&&!/DECOMMISSIONED|DESTROYED|STOPPED|INACTIVE/.test(String(a.status||'').toUpperCase())).length)+
   kpi('Projects in progress',projects.filter(p=>p.projectType==='MINE_CONSTRUCTION'&&p.status==='UNDER_CONSTRUCTION').length)+
-  kpi('Raw stock types',Object.keys(raw).length)+
-  kpi('Processed stock types',Object.keys(processed).length)+
+  kpi('Raw stock types',stockTypeCount(raw))+
+  kpi('Processed stock types',stockTypeCount(processed))+
   '</div><div class="omm-lines"><div class="omm-line"><h4>Raw warehouse</h4>'+stockPreview(raw)+'</div>'+
   '<div class="omm-line"><h4>Processed inventory</h4>'+stockPreview(processed)+'</div></div>'+
   '<div class="omm-lines"><div class="omm-line"><span class="omm-muted">Production flows</span><br><strong>'+flows.length+'</strong></div>'+
