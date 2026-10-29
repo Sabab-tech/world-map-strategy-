@@ -622,7 +622,7 @@ function netState(c){
   const r=resourceState(c);
   if(!r.industrialNetwork||typeof r.industrialNetwork!=='object'||Array.isArray(r.industrialNetwork)){
     r.industrialNetwork={
-      schemaVersion:VERSION,shipments:[],projects:[],extractions:[],reservations:{},deliveries:[],siteFlowLedger:[],siteLogisticsBySiteId:{},
+      schemaVersion:VERSION,shipments:[],projects:[],extractions:[],reservations:{},deliveries:[],siteFlowLedger:[],siteLogisticsBySiteId:{},transportFleetBySiteId:{},transportFleetReservations:{},
       infrastructure:{nodes:{},edges:{},corridors:{}},events:[],factoryRuntime:{},technologyContracts:[]
     };
   }
@@ -632,7 +632,7 @@ function netState(c){
   for(const key of ['shipments','projects','extractions','deliveries','siteFlowLedger','events','technologyContracts']){
     if(!Array.isArray(n[key]))n[key]=[];
   }
-  for(const key of ['reservations','factoryRuntime','siteLogisticsBySiteId']){
+  for(const key of ['reservations','factoryRuntime','siteLogisticsBySiteId','transportFleetBySiteId','transportFleetReservations']){
     if(!n[key]||typeof n[key]!=='object'||Array.isArray(n[key]))n[key]={};
   }
   if(!n.infrastructure||typeof n.infrastructure!=='object'||Array.isArray(n.infrastructure))n.infrastructure={};
@@ -640,6 +640,119 @@ function netState(c){
     if(!n.infrastructure[key]||typeof n.infrastructure[key]!=='object'||Array.isArray(n.infrastructure[key]))n.infrastructure[key]={};
   }
   return n;
+}
+
+function canonicalTransportMode(mode){
+  const raw=tok(mode),aliases={road:'truck',highway:'truck',lorry:'truck',road_haulage:'truck',
+    railway:'rail',heavy_rail:'rail',sea_lane:'ship',seaway:'ship',maritime:'ship',
+    inland_waterway:'barge',waterway:'barge'};
+  const key=aliases[raw]||raw;return modeRules()[key]?key:null;
+}
+function siteTransportFleetMode(countryId,siteId,mode,create=false){
+  const cid=canonicalCountry(countryId),sid=String(siteId||'').trim(),mid=canonicalTransportMode(mode);
+  if(!cid||!/^[A-Z]{3}$/.test(cid)||!sid||!mid)return null;
+  const network=netState(cid);let site=network.transportFleetBySiteId[sid];
+  if(!site&&create)site=network.transportFleetBySiteId[sid]={schemaVersion:'OMEGA_AGGREGATE_TRANSPORT_FLEET_V1',
+    countryId:cid,siteId:sid,modes:{},authority:'PLAYER_RECORDED_AGGREGATE_FLEET_COUNTS',simulationOnly:true,createdTurn:turn(),updatedTurn:turn()};
+  if(!site)return null;
+  if(!site.modes||typeof site.modes!=='object'||Array.isArray(site.modes))site.modes={};
+  let row=site.modes[mid];
+  if(!row&&create)row=site.modes[mid]={transportMode:mid,configured:true,totalUnits:0,operationalUnits:0,
+    damagedUnits:0,reservedUnits:0,addedUnits:0,removedUnits:0,updatedTurn:turn(),
+    authority:'PLAYER_RECORDED_AGGREGATE_FLEET_COUNTS',simulationOnly:true};
+  return row||null;
+}
+function transportFleetSnapshot(countryId,siteId,mode){
+  const row=siteTransportFleetMode(countryId,siteId,mode,false);
+  if(!row||row.configured!==true)return{configured:false,transportMode:canonicalTransportMode(mode),
+    totalUnits:null,operationalUnits:null,damagedUnits:null,reservedUnits:0,availableUnits:null,
+    authority:'UNCONFIGURED_AGGREGATE_FLEET'};
+  const total=Math.max(0,Math.floor(num(row.totalUnits)||0));
+  const operational=Math.max(0,Math.min(total,Math.floor(num(row.operationalUnits)||0)));
+  const damaged=Math.max(0,Math.min(total-operational,Math.floor(num(row.damagedUnits)||0)));
+  const reserved=Math.max(0,Math.min(operational,Math.floor(num(row.reservedUnits)||0)));
+  return{configured:true,transportMode:canonicalTransportMode(mode),totalUnits:total,
+    operationalUnits:operational,damagedUnits:damaged,reservedUnits:reserved,
+    availableUnits:Math.max(0,operational-reserved),authority:row.authority||'PLAYER_RECORDED_AGGREGATE_FLEET_COUNTS'};
+}
+function transportFleetStatus(countryId,siteId){
+  const cid=canonicalCountry(countryId),sid=String(siteId||'').trim();
+  if(!cid||!/^[A-Z]{3}$/.test(cid))return{status:'BLOCKED',reason:'FLEET_COUNTRY_INVALID'};
+  if(!sid)return{status:'BLOCKED',reason:'FLEET_SITE_ID_REQUIRED',countryId:cid};
+  const site=netState(cid).transportFleetBySiteId[sid];
+  if(!site)return{status:'UNCONFIGURED',countryId:cid,siteId:sid,modes:{},
+    keyPolicy:'COUNTRY_SITE_TRANSPORT_MODE_COUNTS_ONLY',vehicleIdentifiersStored:false};
+  const modes={};for(const mode of Object.keys(site.modes||{}).sort())modes[mode]=transportFleetSnapshot(cid,sid,mode);
+  return{status:'READY',countryId:cid,siteId:sid,modes,authority:site.authority||'PLAYER_RECORDED_AGGREGATE_FLEET_COUNTS',
+    simulationOnly:true,keyPolicy:'COUNTRY_SITE_TRANSPORT_MODE_COUNTS_ONLY',vehicleIdentifiersStored:false};
+}
+function changeTransportFleet(input={},direction=1){
+  const cid=canonicalCountry(input.countryId),sid=String(input.siteId||'').trim(),mode=canonicalTransportMode(input.transportMode||input.mode);
+  if(!cid||!/^[A-Z]{3}$/.test(cid))return{status:'BLOCKED',reason:'FLEET_COUNTRY_INVALID'};
+  if(!sid)return{status:'BLOCKED',reason:'FLEET_SITE_ID_REQUIRED',countryId:cid};
+  if(!mode)return{status:'BLOCKED',reason:'FLEET_TRANSPORT_MODE_INVALID',countryId:cid,siteId:sid,transportMode:input.transportMode||input.mode||null};
+  const player=playerSimulationCountryId();
+  if(!player)return{status:'SKIPPED',reason:'PLAYER_COUNTRY_NOT_SELECTED',countryId:cid,siteId:sid};
+  if(player!==cid)return{status:'BLOCKED',reason:'PLAYER_COUNTRY_SCOPE_VIOLATION',countryId:cid,playerCountryId:player,siteId:sid};
+  const rawCount=num(input.count??input.quantity??input.units);
+  if(rawCount===null||!Number.isInteger(rawCount)||rawCount<1||rawCount>1000000)
+    return{status:'BLOCKED',reason:'FLEET_COUNT_OUT_OF_RANGE',minimum:1,maximum:1000000,count:input.count??input.quantity??input.units};
+  const row=siteTransportFleetMode(cid,sid,mode,true),network=netState(cid),count=Math.floor(rawCount);
+  if(direction>0){
+    row.totalUnits=Math.max(0,Math.floor(num(row.totalUnits)||0))+count;
+    row.operationalUnits=Math.max(0,Math.floor(num(row.operationalUnits)||0))+count;
+    row.addedUnits=Math.max(0,Math.floor(num(row.addedUnits)||0))+count;
+  }else{
+    const available=Math.max(0,Math.floor(num(row.operationalUnits)||0)-Math.floor(num(row.reservedUnits)||0));
+    if(count>available)return{status:'BLOCKED',reason:'FLEET_UNITS_RESERVED_OR_UNAVAILABLE',
+      countryId:cid,siteId:sid,transportMode:mode,requestedCount:count,availableUnits:available};
+    row.totalUnits=Math.max(0,Math.floor(num(row.totalUnits)||0)-count);
+    row.operationalUnits=Math.max(0,Math.floor(num(row.operationalUnits)||0)-count);
+    row.removedUnits=Math.max(0,Math.floor(num(row.removedUnits)||0))+count;
+  }
+  row.updatedTurn=turn();network.transportFleetBySiteId[sid].updatedTurn=turn();
+  const event={eventType:direction>0?'OMEGA_AGGREGATE_TRANSPORT_FLEET_ADDED':'OMEGA_AGGREGATE_TRANSPORT_FLEET_REMOVED',
+    countryId:cid,siteId:sid,transportMode:mode,count,totalUnits:row.totalUnits,operationalUnits:row.operationalUnits,
+    reservedUnits:row.reservedUnits,availableUnits:Math.max(0,row.operationalUnits-row.reservedUnits),
+    fleetKey:cid+':'+sid+':'+mode,turn:turn(),authority:'PLAYER_RECORDED_AGGREGATE_FLEET_COUNTS',
+    simulationOnly:true,vehicleIdentifiersStored:false};
+  network.events.push(clone(event));network.events=network.events.slice(-MAX_EVENTS);emit(event.eventType,cid,event);
+  return{status:'UPDATED',countryId:cid,siteId:sid,transportMode:mode,count,fleet:transportFleetStatus(cid,sid),event:clone(event)};
+}
+function addTransportFleet(input={}){return changeTransportFleet(input,1)}
+function removeTransportFleet(input={}){return changeTransportFleet(input,-1)}
+function reserveTransportFleetForShipment(countryId,siteId,shipmentId,allocations={}){
+  const cid=canonicalCountry(countryId),sid=String(siteId||'').trim(),shipment=String(shipmentId||'').trim(),network=netState(cid);
+  if(!sid||!shipment)return{status:'BLOCKED',reason:'FLEET_RESERVATION_IDENTITY_REQUIRED'};
+  const prior=network.transportFleetReservations[shipment];
+  if(prior&&prior.status==='RESERVED')return{status:'RESERVED',idempotent:true,reservation:clone(prior)};
+  const requested=Object.entries(allocations||{}).map(([mode,count])=>[canonicalTransportMode(mode),Math.max(0,Math.floor(num(count)||0))])
+    .filter(([mode,count])=>mode&&count>0),plan={};
+  for(const [mode,count] of requested){
+    const snapshot=transportFleetSnapshot(cid,sid,mode);if(!snapshot.configured)continue;
+    if(snapshot.availableUnits<count)return{status:'BLOCKED',reason:'FLEET_UNITS_CHANGED_BEFORE_DISPATCH',
+      countryId:cid,siteId:sid,transportMode:mode,requestedUnits:count,availableUnits:snapshot.availableUnits};
+    plan[mode]=count;
+  }
+  if(!Object.keys(plan).length)return{status:'NOT_REQUIRED',countryId:cid,siteId:sid,modeUnits:{},vehicleIdentifiersStored:false};
+  for(const [mode,count] of Object.entries(plan)){
+    const row=siteTransportFleetMode(cid,sid,mode,false);row.reservedUnits=Math.max(0,Math.floor(num(row.reservedUnits)||0))+count;row.updatedTurn=turn();
+  }
+  const reservation={countryId:cid,siteId:sid,shipmentId:shipment,modeUnits:plan,status:'RESERVED',
+    createdTurn:turn(),authority:'AGGREGATE_SITE_MODE_FLEET_RESERVATION',simulationOnly:true,vehicleIdentifiersStored:false};
+  network.transportFleetReservations[shipment]=reservation;
+  return{status:'RESERVED',reservation:clone(reservation)};
+}
+function releaseTransportFleetReservation(countryId,shipmentId){
+  const cid=canonicalCountry(countryId),sid=String(shipmentId||'').trim(),network=netState(cid),reservation=network.transportFleetReservations[sid];
+  if(!reservation||reservation.status!=='RESERVED')return{status:'NOT_RESERVED',countryId:cid,shipmentId:sid,idempotent:true};
+  for(const [mode,countRaw] of Object.entries(reservation.modeUnits||{})){
+    const row=siteTransportFleetMode(cid,reservation.siteId,mode,false);
+    if(row){row.reservedUnits=Math.max(0,(num(row.reservedUnits)||0)-Math.max(0,num(countRaw)||0));row.updatedTurn=turn();}
+  }
+  reservation.status='RELEASED';reservation.releasedTurn=turn();
+  return{status:'RELEASED',countryId:cid,siteId:reservation.siteId,shipmentId:sid,modeUnits:clone(reservation.modeUnits||{}),
+    releasedTurn:turn(),vehicleIdentifiersStored:false};
 }
 function emit(type,c,payload,source='resource-industrial-network'){
   const m=interop(),cid=canonicalCountry(c),body={countryId:cid,payload:clone(payload||{}),source,simulationTurn:turn()};
