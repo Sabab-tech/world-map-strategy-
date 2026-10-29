@@ -162,7 +162,32 @@ test("Resource Logistics shows configured per-site route cards and keeps Current
       capacityUnit: "RAW_CARGO_TONNES_PER_DAY"
     }
   };
+  const legacyGoldRoute = {
+    routeId: "ROUTE_TST_GOLD_MINE",
+    siteId: "TST-MINE-GOLD-02",
+    countryId: "TST",
+    siteName: "Test Gold Mine",
+    resourceId: "gold",
+    resourceIconKey: "gold",
+    destination: { warehouseId: "WH-TST-RAW" },
+    routePlan: {
+      routeType: "TRUCK_TO_RAIL_TO_TRUCK",
+      strategyCode: "MINE_HAULAGE_RAIL_LAST_MILE",
+      routeStatus: "SIMULATED_PLAN_COMPLETE_ENGINE_BINDING_PENDING",
+      dispatchStatus: "NOT_DISPATCHABLE_DATA_ONLY_PHASE",
+      legs: [
+        { transportMode: "truck", estimatedDistanceKm: 20, designCapacityPerTrip: 25, designCapacityPerDay: 30 },
+        { transportMode: "rail", estimatedDistanceKm: 80, designCapacityPerTrip: 5000, designCapacityPerDay: 5000 },
+        { transportMode: "truck", estimatedDistanceKm: 20, designCapacityPerTrip: 25, designCapacityPerDay: 30 }
+      ],
+      estimatedRouteDistanceKm: 120,
+      plannedTransitDays: 3,
+      capacityBottleneckPerDay: 30,
+      capacityUnit: "RAW_CARGO_TONNES_PER_DAY"
+    }
+  };
   const sandbox = {
+    OmegaResourceIndustrialCatalogData: json("resource_industrial_catalog_v1.json"),
     fetch: async (url) => {
       const name = String(url).replace(/^\.\//, "");
       fetched.push(name);
@@ -175,7 +200,7 @@ test("Resource Logistics shows configured per-site route cards and keeps Current
         }) };
       }
       if (name === "resource_site_logistics_routes_v1_part_02.json") {
-        return { ok: true, json: async () => ({ routes: [route] }) };
+        return { ok: true, json: async () => ({ routes: [route, legacyGoldRoute] }) };
       }
       throw new Error("Unexpected logistics asset request: " + name);
     }
@@ -223,6 +248,11 @@ test("Resource Logistics shows configured per-site route cards and keeps Current
   await new Promise((resolve) => setTimeout(resolve, 0));
   assert.match(root.innerHTML, /Mine Site Route Plans/);
   assert.match(root.innerHTML, /Test Coal Mine/);
+  assert.match(root.innerHTML, /Test Gold Mine/);
+  assert.match(root.innerHTML, /data-logistics-mode-chain="truck"/,
+    "a generic gold truck-rail-truck template must display gold's preferred available truck mode");
+  assert.doesNotMatch(root.innerHTML, /data-logistics-mode-chain="truck,rail,truck"/,
+    "the generic intermodal template must not invent three physical route legs");
   assert.match(root.innerHTML, /Current Match/);
   assert.match(root.innerHTML, /Unavailable/);
   assert.match(root.innerHTML, /120 km/);
