@@ -902,11 +902,11 @@
     }
     var logisticsFleetViewCache = Object.create(null);
     var logisticsTransportModeMeta = {
-      truck: { label: 'Road trucks', unit: 'trucks' },
-      rail: { label: 'Freight train sets', unit: 'train sets' },
-      ship: { label: 'Cargo ships', unit: 'ships' },
-      barge: { label: 'River barges', unit: 'barges' },
-      pipeline: { label: 'Pipeline lines', unit: 'lines' }
+      truck: { label: 'Road trucks', unit: 'trucks', single: 'truck' },
+      rail: { label: 'Freight train sets', unit: 'train sets', single: 'train set' },
+      ship: { label: 'Cargo ships', unit: 'ships', single: 'ship' },
+      barge: { label: 'River barges', unit: 'barges', single: 'barge' },
+      pipeline: { label: 'Pipeline lines', unit: 'lines', single: 'line' }
     };
     function readSiteTransportFleet(route) {
       var siteId = String(route && route.siteId || '').trim();
@@ -1021,7 +1021,7 @@
         var countLabel = configured ? fmt(count) + ' ' + meta.unit : (fleetReady ? 'Not configured' : 'Unknown');
         var estimate = designByMode[mode] || null;
         var estimateLabel = !routeModes.includes(mode) ? 'Not used by this route' :
-          (estimate && estimate.available ? 'Design need: ' + fmt(estimate.estimatedUnits) + ' ' + meta.unit : 'Design need unavailable');
+          (estimate && estimate.available ? 'Design need: ' + fmt(estimate.estimatedUnits) + ' ' + (estimate.estimatedUnits === 1 ? meta.single : meta.unit) : 'Design need unavailable');
         if (estimate && estimate.available) {
           designUnitsTotal += estimate.estimatedUnits;
           designAvailableModes += 1;
@@ -1091,7 +1091,7 @@
       var modeCards = Object.keys(logisticsTransportModeMeta).map(function (mode) {
         var meta = logisticsTransportModeMeta[mode], stat = totals[mode];
         var actual = stat.configuredSites ? fmt(stat.total) + ' ' + meta.unit : 'Not configured';
-        var design = stat.designSites ? 'Design need: ' + fmt(stat.designUnits) + ' ' + meta.unit : 'Design need unavailable';
+        var design = stat.designSites ? 'Design need: ' + fmt(stat.designUnits) + ' ' + (stat.designUnits === 1 ? meta.single : meta.unit) : 'Design need unavailable';
         return '<div class="omega-v2-logistics-fleet-mode" data-transport-mode="' + esc(mode) + '">' +
           '<span>' + esc(meta.label) + '</span><strong>' + esc(actual) + '</strong>' +
           '<small>' + esc(fmt(stat.configuredSites) + ' of ' + fmt(sites.length) + ' sites have actual counts') + '</small>' +
