@@ -97,7 +97,7 @@ test("More command cards use the uploaded local imagery and every action has a d
     "factory and Resource Ministry overrides must load after the existing UI styles");
   const sw = read("omega-offline-map-sw.js");
   const iconManifest = json("assets/omega-industrial-icons-v1/manifest.json");
-  assert.match(sw, /omega-offline-atlas-shell-v61/);
+  assert.match(sw, /omega-offline-atlas-shell-v62/);
   assert.match(sw, /resource-ministry-premium\.css/);
   assert.ok(html.includes("omega_ui_v2/resource-ministry-legacy-bridge.js"), "Resource Ministry handoff must be loaded by the application shell");
   assert.ok(sw.includes("omega_ui_v2/resource-ministry-legacy-bridge.js"), "Resource Ministry handoff must be cached offline");
@@ -108,6 +108,9 @@ test("More command cards use the uploaded local imagery and every action has a d
   assert.match(sw, /omega-industrial-icons-v1\/"\s*\+\s*file/);
   assert.equal(iconManifest.factories.length, 21, "the canonical factory SVG manifest must contain exactly 21 active factories");
   assert.equal(iconManifest.legacyFactories.length, 39, "retired factory icons must remain only in the legacy compatibility catalog");
+  assert.equal(iconManifest.transportVariants.length, 20, "all transport variants must be registered in the canonical SVG manifest");
+  assert.deepEqual(iconManifest.summary.transportVariantsByMode, { truck:5, rail:5, ship:5, barge:5 });
+  assert.ok(sw.includes("factoryIconManifest.transportVariants"), "transport variant SVGs must be dynamically precached for offline use");
   for (const icon of iconManifest.factories) {
     const iconPath = "assets/omega-industrial-icons-v1/" + icon.file;
     const absolute = path.join(root, iconPath);
