@@ -806,7 +806,7 @@ console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');
   }).reason,'INVALID_TRANSPORT_FLEET_COUNT','fractional vehicle counts are rejected');
   assert.equal(N.setTransportFleet({
     countryId:'USA',siteId:'SITE_BGD_COAL_01',transportType:'rail',count:2
-  }).reason,'SITE_COUNTRY_MISMATCH','fleet configuration cannot be written into another country');
+  }).reason,'PLAYER_COUNTRY_SCOPE_VIOLATION','fleet configuration cannot be written outside the selected player country');
   console.log('OMEGA COUNT-BASED TRANSPORT FLEET REGRESSION PASSED');
 }
 
