@@ -933,32 +933,52 @@
       var genericIntermodal = routeType === 'TRUCK_TO_RAIL_TO_TRUCK' ||
         (strategyCode === 'MINE_HAULAGE_RAIL_LAST_MILE' && rowModes.indexOf('truck') >= 0 && rowModes.indexOf('rail') >= 0);
       if (!genericIntermodal || rows.length < 2) return rows;
-      var modes = rows.map(function (leg) { return String(leg && (leg.transportMode || leg.mode) || '').toLowerCase(); });
-      if (modes.indexOf('truck') < 0 || modes.indexOf('rail') < 0 ||
-          modes.some(function (mode) { return mode !== 'truck' && mode !== 'rail'; })) return rows;
+      if (rowModes.indexOf('truck') < 0 || rowModes.indexOf('rail') < 0 ||
+          rowModes.some(function (mode) { return mode !== 'truck' && mode !== 'rail'; })) return rows;
       var catalog = g.OmegaResourceIndustrialCatalogData || (g.Omega && g.Omega.ResourceIndustrialCatalogData);
       var resourceRules = catalog && catalog.resourceRules || {};
       var preferred = safeArray(resourceRules[route.resourceId] && resourceRules[route.resourceId].preferredModes)
         .map(function (mode) { return String(mode || '').toLowerCase(); });
       var modeProfiles = catalog && catalog.transportModes || {};
       var chosen = preferred.filter(function (mode) { return Object.prototype.hasOwnProperty.call(modeProfiles, mode); })[0];
-      if (!chosen) chosen = preferred.filter(function (mode) { return modes.indexOf(mode) >= 0; })[0];
+      if (!chosen) chosen = preferred.filter(function (mode) { return rowModes.indexOf(mode) >= 0; })[0];
       if (!chosen) return rows;
       var distance = numberOrNull(plan.estimatedRouteDistanceKm);
       if (distance === null) distance = rows.reduce(function (sum, leg) {
         return sum + (numberOrNull(leg && (leg.estimatedDistanceKm !== undefined ? leg.estimatedDistanceKm : leg.distanceKm)) || 0);
       }, 0);
       var profile = modeProfiles[chosen] || {};
-      var reference = rows.filter(function (leg) { return String(leg && (leg.transportMode || leg.mode) || '').toLowerCase() === chosen; })[0] || rows[0];
+      var reference = rows.filter(function (leg) {
+        return String(leg && (leg.transportMode || leg.mode) || '').toLowerCase() === chosen;
+      })[0] || null;
       var speed = Math.max(1, numberOrNull(profile.speedKmh) || 1);
       var loadHours = Math.max(0, numberOrNull(profile.loadHours) || 0);
       var unloadHours = Math.max(0, numberOrNull(profile.unloadHours) || 0);
-      var cycleHours = (2 * Math.max(0, distance) / speed) + loadHours + unloadHours;
-      var flow = numberOrNull(plan.capacityBottleneckPerDay);
+      var transferHours = Math.max(0, numberOrNull(reference && (reference.transferHours !== undefined ?
+        reference.transferHours : reference.transferTimeHours)) || 0);
+      var cycleHours = (2 * Math.max(0, distance) / speed) + loadHours + unloadHours + transferHours;
       var payload = numberOrNull(reference && reference.designCapacityPerTrip);
       if (payload === null) payload = numberOrNull(profile.payloadTonnes);
-      var slots = flow !== null && flow > 0 && payload !== null && payload > 0 && cycleHours > 0 ?
-        Math.max(1, Math.ceil((flow / payload) * cycleHours / 24)) : 0;
+      var production = route && route.planningProduction || null;
+      var rate = numberOrNull(production && production.rate);
+      var productionUnit = logisticsPlanningUnit(production && production.unit);
+      var capacityPerDay = null, capacityUnit = null;
+      if (chosen === 'pipeline') {
+        // A pipeline's count unit is lines, not trucks. Do not derive line count
+        // from the generic pipeline speed/payload catalog: it needs a line capacity.
+        capacityPerDay = numberOrNull(reference && (reference.designCapacityPerLinePerDay !== undefined ?
+          reference.designCapacityPerLinePerDay : (reference.capacityPerLinePerDay !== undefined ?
+          reference.capacityPerLinePerDay : (reference.lineCapacityPerDay !== undefined ?
+          reference.lineCapacityPerDay : reference.designCapacityPerDay))));
+        capacityUnit = logisticsPlanningUnit(reference && (reference.designCapacityUnit || reference.capacityUnit));
+      } else if (payload !== null && payload > 0 && cycleHours > 0) {
+        // Cycle time is distance-aware: one design vehicle's throughput falls as
+        // round-trip distance and load/unload time increase.
+        capacityPerDay = payload * 24 / cycleHours;
+        capacityUnit = 'TONNES_PER_DAY';
+      }
+      var slots = rate !== null && rate >= 0 && capacityPerDay !== null && capacityPerDay > 0 &&
+        productionUnit && capacityUnit && productionUnit === capacityUnit ? Math.max(0, Math.ceil(rate / capacityPerDay)) : null;
       var leg = {};
       Object.keys(reference || {}).forEach(function (key) { leg[key] = reference[key]; });
       leg.legId = 'ROUTE_' + String(route.siteId || route.routeId || 'MINE') + '_COMMODITY_MODE_ONLY';
@@ -973,11 +993,20 @@
       leg.distanceAuthority = 'SIMULATED_TOTAL_ROUTE_DISTANCE_NOT_A_SURVEYED_MODE_PATH';
       leg.estimatedTravelHours = Math.max(0, distance) / speed;
       leg.designCapacityPerTrip = chosen === 'pipeline' ? null : payload;
-      leg.designCapacityPerDay = flow;
-      leg.designCapacityUnit = plan.capacityUnit || reference && reference.designCapacityUnit || 'ROUTE_CAPACITY_PER_DAY';
+      leg.designCapacityPerDay = capacityPerDay;
+      leg.designCapacityUnit = capacityUnit;
+      leg.designCapacityPerLinePerDay = chosen === 'pipeline' ? capacityPerDay : null;
       leg.cycleHoursForOneDesignVehicle = cycleHours;
-      leg.tripsPerVehiclePerDay = 24 / cycleHours;
+      leg.tripsPerVehiclePerDay = chosen === 'pipeline' ? null : (cycleHours > 0 ? 24 / cycleHours : null);
       leg.requiredDesignFleetSlots = slots;
+      leg.designFleetCalculation = {
+        status: slots === null ? 'UNAVAILABLE' : 'CALCULATED', requiredUnits: slots,
+        countUnit: chosen === 'pipeline' ? 'PIPELINE_LINES' : 'TRANSPORT_VEHICLES',
+        productionRate: rate, productionUnit: productionUnit || null,
+        capacityPerDesignUnitPerDay: capacityPerDay, capacityUnit: capacityUnit || null,
+        reason: slots === null ? 'PRODUCTION_RATE_OR_COMPATIBLE_MODE_CAPACITY_UNAVAILABLE' : null,
+        authority: 'SCENARIO_SIMULATION_DATA_AND_DISTANCE_AWARE_TRANSPORT_CATALOG', simulationOnly: true
+      };
       leg.actualBoundFleetUnits = null;
       leg.vehicleAssetIds = null;
       leg.status = 'DESIGN_ONLY_NOT_DISPATCHABLE';
@@ -986,52 +1015,59 @@
       leg.routeSelectionAuthority = 'RESOURCE_RULE_PREFERRED_MODE_FROM_UNVERIFIED_INTERMODAL_TEMPLATE';
       return [leg];
     }
+    function logisticsPlanningUnit(value) {
+      var unit = String(value || '').trim().toUpperCase().replace(/[\\s-]+/g, '_');
+      var aliases = {
+        RAW_CARGO_TONNES_PER_DAY:'TONNES_PER_DAY', RAW_CARGO_TONS_PER_DAY:'TONNES_PER_DAY',
+        METRIC_TONS_PER_DAY:'TONNES_PER_DAY', METRIC_TONNES_PER_DAY:'TONNES_PER_DAY',
+        TONS_PER_DAY:'TONNES_PER_DAY', TONNE_PER_DAY:'TONNES_PER_DAY', TONNES_ORE_PER_DAY:'TONNES_PER_DAY',
+        BARREL_PER_DAY:'BARRELS_PER_DAY', BBL_PER_DAY:'BARRELS_PER_DAY'
+      };
+      return aliases[unit] || unit;
+    }
+
     function logisticsDesignFleetEstimate(route, legs, byMode) {
-      var plan = route && route.routePlan || {};
-      var routeFlow = numberOrNull(plan.capacityBottleneckPerDay);
+      var production = route && route.planningProduction || null;
+      var rate = numberOrNull(production && production.rate);
+      var productionUnit = logisticsPlanningUnit(production && production.unit);
       var totals = Object.create(null);
       safeArray(legs).forEach(function (leg) {
         var mode = String(leg && (leg.transportMode || leg.mode) || '').toLowerCase();
         if (!Object.prototype.hasOwnProperty.call(logisticsTransportModeMeta, mode)) return;
         var profile = byMode && byMode[mode] || {};
-        var flow = routeFlow !== null ? routeFlow : numberOrNull(leg && leg.designCapacityPerDay);
-        var legCapacity = numberOrNull(leg && leg.designCapacityPerDay);
-        var lineCapacity = numberOrNull(leg && (leg.designCapacityPerLinePerDay !== undefined ?
-          leg.designCapacityPerLinePerDay : (leg.capacityPerLinePerDay !== undefined ? leg.capacityPerLinePerDay : leg.lineCapacityPerDay)));
         var payload = numberOrNull(leg && leg.designCapacityPerTrip);
         if (payload === null) payload = numberOrNull(profile.payloadTonnes);
-        var distance = numberOrNull(leg && (leg.estimatedDistanceKm !== undefined ? leg.estimatedDistanceKm : leg.distanceKm));
-        var speed = numberOrNull(profile.speedKmh);
-        var loadHours = numberOrNull(profile.loadHours);
-        var unloadHours = numberOrNull(profile.unloadHours);
-        var transferHours = numberOrNull(leg && (leg.transferHours !== undefined ? leg.transferHours : leg.transferTimeHours));
-        var cycleHours = numberOrNull(leg && leg.cycleHoursForOneDesignVehicle);
-        var tripsPerDay = null, units = null, basis = '';
-        if (flow !== null && flow >= 0) {
-          if (mode === 'pipeline') {
-            if (flow === 0) { units = 0; basis = 'continuous-flow-zero'; }
-            else if (lineCapacity !== null && lineCapacity > 0) {
-              units = Math.max(1, Math.ceil(flow / lineCapacity));
-              basis = 'route-flow-divided-by-explicit-per-line-capacity';
-            }
-          } else {
-            if (cycleHours === null && distance !== null && distance >= 0 && speed !== null && speed > 0) {
-              cycleHours = (2 * distance / speed) + Math.max(0, loadHours || 0) +
-                Math.max(0, unloadHours || 0) + Math.max(0, transferHours || 0);
-            }
-            if (flow === 0) { units = 0; tripsPerDay = 0; basis = 'zero-planned-flow'; }
-            else if (payload !== null && payload > 0 && cycleHours !== null && cycleHours > 0) {
-              tripsPerDay = flow / payload;
-              units = Math.max(1, Math.ceil((tripsPerDay * cycleHours) / 24));
-              basis = 'daily-flow-over-payload-times-round-trip-cycle';
-            }
+        var payloadUnit = logisticsPlanningUnit(leg && leg.designCapacityPerTripUnit);
+        if (!payloadUnit && payload !== null) payloadUnit = 'TONNES_PER_TRIP';
+        var capacity = numberOrNull(leg && leg.designCapacityPerDay);
+        var capacityUnit = logisticsPlanningUnit(leg && leg.designCapacityUnit);
+        var lineCapacity = numberOrNull(leg && (leg.designCapacityPerLinePerDay !== undefined ?
+          leg.designCapacityPerLinePerDay : (leg.capacityPerLinePerDay !== undefined ?
+          leg.capacityPerLinePerDay : leg.lineCapacityPerDay)));
+        if (mode === 'pipeline' && lineCapacity === null) lineCapacity = capacity;
+        var units = null, tripsPerDay = null, basis = '', rateAvailable = rate !== null && rate >= 0 && !!productionUnit;
+        if (rateAvailable && rate === 0) {
+          units = 0;
+          tripsPerDay = mode === 'pipeline' ? null : 0;
+          basis = 'zero-simulated-production';
+        } else if (rateAvailable && mode === 'pipeline') {
+          var pipelineUnit = lineCapacity !== null && lineCapacity > 0 ? capacityUnit : null;
+          if (lineCapacity !== null && lineCapacity > 0 && pipelineUnit && productionUnit === pipelineUnit) {
+            units = Math.max(0, Math.ceil(rate / lineCapacity));
+            basis = 'compatible-production-rate-divided-by-modeled-pipeline-line-capacity';
           }
+        } else if (rateAvailable && capacity !== null && capacity > 0 && capacityUnit && productionUnit === capacityUnit) {
+          units = Math.max(0, Math.ceil(rate / capacity));
+          basis = 'compatible-production-rate-divided-by-distance-aware-per-vehicle-capacity';
+          var tripBase = payloadUnit.replace(/_PER_TRIP$/, '');
+          var rateBase = productionUnit.replace(/_PER_DAY$/, '');
+          if (payload !== null && payload > 0 && tripBase && rateBase && tripBase === rateBase) tripsPerDay = rate / payload;
         }
         if (!totals[mode]) totals[mode] = { estimatedUnits: 0, estimatedTripsPerDay: 0, hasTripRate: true,
           available: true, legCount: 0, basis: [] };
         var stat = totals[mode];
         stat.legCount += 1;
-        stat.basis.push(basis || 'insufficient-route-or-catalog-data');
+        stat.basis.push(basis || 'production-rate-or-unit-compatible-capacity-unavailable');
         if (units === null || !Number.isFinite(units)) stat.available = false;
         else stat.estimatedUnits += units;
         if (tripsPerDay === null || !Number.isFinite(tripsPerDay)) stat.hasTripRate = false;
@@ -1043,34 +1079,6 @@
         if (!stat.hasTripRate) stat.estimatedTripsPerDay = null;
       });
       return totals;
-    }
-    function logisticsIconMarkup(kind) {
-      if (kind === 'origin' || kind === 'warehouse') {
-        var placePath = kind === 'origin'
-          ? 'assets/omega-industrial-icons-v1/logistics/mine-site.svg'
-          : 'assets/omega-industrial-icons-v1/logistics/warehouse-node.svg';
-        var placeLabel = kind === 'origin' ? 'Mine origin' : 'Raw-material warehouse';
-        return '<img class="omega-v2-logistics-svg omega-v2-logistics-svg--place" data-omega-v2-logistics-icon="' +
-          esc(kind) + '" src="' + placePath + '" alt="' + placeLabel + '" loading="lazy" decoding="async">';
-      }
-      var paths = {
-        transport: '<path d="M3 10h16v12H3zM19 14h5l5 5v3H19z" /><circle cx="8" cy="24" r="2.5" /><circle cx="24" cy="24" r="2.5" />',
-        factory: '<path d="M3 27V13l8 5v-5l8 5V8h10v19z" /><path d="M23 12h2m-2 4h2M7 22h3m4 0h3" />',
-        destination: '<rect x="5" y="6" width="22" height="20" rx="4" /><path d="M11 13h10M11 18h10M11 23h5" />'
-      };
-      return '<svg class="omega-v2-logistics-svg" data-omega-v2-logistics-icon="' + esc(kind) +
-        '" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' +
-        (paths[kind] || paths.destination) + '</svg>';
-    }
-    function hasCurrentShipmentMatch(route) {
-      return shipments.some(function (shipment) {
-        var status = String(shipment && shipment.status || '').toUpperCase();
-        if (!/IN_TRANSIT|DISPATCHED|RESERVED|PENDING|QUEUED|AWAITING/.test(status)) return false;
-        var sourceSite = String(shipment.siteId || shipment.sourceSiteId || shipment.mineSiteId || shipment.originSiteId || '').trim();
-        var linkedRoute = String(shipment.routeId || shipment.route && (shipment.route.routeId || shipment.route.id) || '').trim();
-        return (!!sourceSite && sourceSite === String(route.siteId || '')) ||
-          (!!linkedRoute && linkedRoute === String(route.routeId || ''));
-      });
     }
     function logisticsTransportIconPath(mode, resourceId) {
       var value = String(mode || '').trim().toLowerCase();
