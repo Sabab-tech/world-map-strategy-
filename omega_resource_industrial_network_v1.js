@@ -1834,6 +1834,13 @@ function buildRoute(site,asset,resourceId,requestedQuantity,input={}){
     const infrastructureCapacityPerDay=Math.max(0,iq.capacityPerDay*iq.quality);
     const routeDesignCapacityValue=num(seg.designCapacityPerDay);
     const designCapacityPerDay=Math.max(0,routeDesignCapacityValue===null?infrastructureCapacityPerDay:routeDesignCapacityValue);
+    // A site route can carry an explicit capacity estimate even if a legacy save
+    // has no usable country-wide infrastructure profile. When both are positive,
+    // the physical infrastructure remains a bottleneck; when infrastructure is
+    // absent/zero, do not discard the positive capacity recorded on the corridor.
+    const corridorCapacityPerDay=routeDesignCapacityValue!==null&&routeDesignCapacityValue>0
+      ?(infrastructureCapacityPerDay>0?Math.min(infrastructureCapacityPerDay,routeDesignCapacityValue):routeDesignCapacityValue)
+      :infrastructureCapacityPerDay;
     const requiredTrips=isPipeline?null:Math.ceil(cargoQuantity/payload);
     const tripCycleDays=cycleHours/24;
     const requiredLineCount=isPipeline&&lineCapacityPerDay!==null?
@@ -1843,8 +1850,8 @@ function buildRoute(site,asset,resourceId,requestedQuantity,input={}){
       (fleetCount===null?null:Number((fleetCount*payload*24/cycleHours).toFixed(6)));
     const pipelineCapacityUnavailable=isPipeline&&fleetCount!==null&&fleetCount>0&&lineCapacityPerDay===null;
     const capacityPerDay=pipelineCapacityUnavailable?null:(fleetCount===0?0:(fleetCapacityPerDay===null?
-      Math.min(infrastructureCapacityPerDay,designCapacityPerDay):
-      Math.min(infrastructureCapacityPerDay,designCapacityPerDay,fleetCapacityPerDay)));
+      Math.min(corridorCapacityPerDay,designCapacityPerDay):
+      Math.min(corridorCapacityPerDay,designCapacityPerDay,fleetCapacityPerDay)));
     const capacityPerTurn=capacityPerDay*daysPerTurn();
     const tripWaves=isPipeline?null:(fleetCount===null?requiredTrips:(fleetCount>0?Math.ceil(requiredTrips/fleetCount):0));
     const legTotalDays=isPipeline?(fleetCount===0?null:days):
@@ -1963,8 +1970,12 @@ function planShipment(input={}){
   const preferredMode=tok(input.transportMode||rules()[rid]?.preferredModes?.[0]||'truck');
   const routeMode=routeType.includes('pipeline')?'pipeline':routeType.includes('sea')?'ship':routeType.includes('rail')?'rail':preferredMode;
   const routeDistance=Math.max(0,num(siteRoute.distanceKm??siteRoute.distance??siteRoute.km)||0);
+  const routeDesignCapacityPerDay=num(siteRoute.designCapacityPerDay??siteRoute.routeCapacityPerDay??
+    routeSite.logistics?.transport?.routeCapacityPerDay);
   const routeOrigin={siteId:warehouseId,countryId:cid,siteName:cid+' sovereign raw warehouse',siteType:'RAW_MATERIAL_WAREHOUSE',
-    simulation:{transportRoute:routeDistance>0?[{...clone(siteRoute),mode:routeMode,transportMode:routeMode,distanceKm:routeDistance,authority:'SITE_SIMULATION_ROUTE',countryIsolationKey:cid}]:[]}};
+    simulation:{transportRoute:routeDistance>0?[{...clone(siteRoute),mode:routeMode,transportMode:routeMode,distanceKm:routeDistance,
+      ...(routeDesignCapacityPerDay!==null&&routeDesignCapacityPerDay>0?{designCapacityPerDay:routeDesignCapacityPerDay}:{}),
+      authority:'SITE_SIMULATION_ROUTE',countryIsolationKey:cid}]:[]}};
   for(const c of ordered.slice(0,16)){
     const route=buildRoute(routeOrigin,c.asset,rid,input.quantity,{countryId:cid,sourceSiteId:site.siteId,sourceWarehouseId:warehouseId,sourceNode:'WAREHOUSE:'+cid+':RAW',sourceNodeType:'WAREHOUSE',transportMode:input.transportMode,unit:input.unit});
     const routeAttempt={factoryId:String(c.asset?.id||c.asset?.assetId||c.asset?.projectId||''),
