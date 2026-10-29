@@ -1193,10 +1193,19 @@
           ? ' · ' + fmt(Number(estimate.estimatedTripsPerDay.toFixed(4))) + ' trips/day' : '';
         if (used && estimate && estimate.available) { designTotal += estimate.estimatedUnits; designAvailableModes += 1; }
         if (used && (!estimate || !estimate.available)) unknownRouteModes += 1;
+        var estimateLeg = estimate && estimate.legs && estimate.legs.length === 1 ? estimate.legs[0] : null;
+        var perUnitCapacity = estimateLeg && (mode === 'pipeline' ? estimateLeg.lineCapacityPerDay :
+          estimateLeg.perVehicleCapacityPerDay);
+        var perUnitCapacityData = perUnitCapacity !== null && perUnitCapacity !== undefined && Number.isFinite(Number(perUnitCapacity))
+          ? String(Number(Number(perUnitCapacity).toFixed(6))) : '';
+        var estimateFormula = estimate && estimate.formula || '';
         var iconPath = logisticsTransportIconPath(mode, route && route.resourceId);
         return '<div class="omega-v2-logistics-fleet-mode" data-transport-mode="' + esc(mode) +
           '" data-fleet-configured="' + (configured ? 'true' : 'false') +
-          '" data-design-estimate-available="' + (estimate && estimate.available ? 'true' : 'false') + '">' +
+          '" data-design-estimate-available="' + (estimate && estimate.available ? 'true' : 'false') +
+          '" data-design-estimated-units="' + (estimate && estimate.available ? esc(String(estimate.estimatedUnits)) : '') +
+          '" data-design-formula="' + esc(estimateFormula) +
+          '" data-design-capacity-per-unit-day="' + esc(perUnitCapacityData) + '">' +
           '<img class="omega-v2-logistics-fleet-mode-icon" src="' + esc(iconPath) + '" alt="' +
           esc(meta.label) + '" width="46" height="30" loading="lazy" decoding="async">' +
           '<div class="omega-v2-logistics-fleet-mode-copy"><span>' + esc(meta.label) + '</span><strong>' +
@@ -1811,8 +1820,6 @@
     resourceIconPath: resourceIconPath,
     mineArchetype: mineArchetype,
     buildViewModel: buildViewModel,
-    calculateLogisticsFleetEstimate: logisticsDesignFleetEstimate,
-    normalizeLogisticsRouteLegs: logisticsNormalizedRouteLegs,
     render: render
   });
 })(typeof window !== 'undefined' ? window : globalThis);
