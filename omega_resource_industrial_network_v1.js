@@ -1494,8 +1494,9 @@ function resolveSiteRouteLegs(routeProfile){
   if(!genericIntermodal||rows.length<2)return rows;
   const modes=rows.map(row=>normalizeTransportMode(row?.transportMode||row?.mode)).filter(Boolean);
   if(!modes.includes('truck')||!modes.includes('rail')||modes.some(mode=>!['truck','rail'].includes(mode)))return rows;
-  const allowed=new Set(modes),preferences=rules()[routeProfile?.resourceId]?.preferredModes||[];
-  const chosen=preferences.map(normalizeTransportMode).find(mode=>allowed.has(mode))||(allowed.has('rail')?'rail':'truck');
+  const allowed=new Set(modes),preferences=rules()[routeProfile?.resourceId]?.preferredModes||[],supportedModes=modeRules();
+  const chosen=preferences.map(normalizeTransportMode).find(mode=>!!supportedModes[mode])||
+    preferences.map(normalizeTransportMode).find(mode=>allowed.has(mode))||(allowed.has('rail')?'rail':'truck');
   const totalDistance=num(plan.estimatedRouteDistanceKm)??rows.reduce((sum,row)=>sum+(num(row?.estimatedDistanceKm??row?.distanceKm??row?.distance)||0),0);
   if(totalDistance===null||!Number.isFinite(totalDistance)||totalDistance<0)return rows;
   const profile=modeRules()[chosen]||{},reference=rows.find(row=>normalizeTransportMode(row?.transportMode||row?.mode)===chosen)||rows[0];
