@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="warehouse-title warehouse-desc" data-omega-icon-kind="logistics-node" data-omega-icon-id="warehouse-node">
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-labelledby="warehouse-title warehouse-desc" data-omega-icon-kind="logistics-node" data-omega-icon-id="warehouse-node">
 <title id="warehouse-title">Raw resource warehouse</title>
 <desc id="warehouse-desc">A heavy industrial warehouse with a reinforced roof, corrugated steel siding, a glowing receiving bay, palletized cargo and a clean loading apron on a layered navy-and-silver badge.</desc>
 <defs>
