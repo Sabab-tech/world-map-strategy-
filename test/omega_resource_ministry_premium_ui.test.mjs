@@ -235,6 +235,34 @@ test("Resource Logistics shows configured per-site route cards and keeps Current
       capacityUnit: "MMCF_PER_DAY"
     }
   };
+  const liveProductionSite = {
+    siteId: "TST-MINE-LIVE-05",
+    countryId: "TST",
+    resourceId: "coal",
+    siteName: "Live Production Rate Mine",
+    quantitative: { production: { rate: 300, unit: "TONNES_PER_DAY", status: "SIMULATED" } }
+  };
+  const liveProductionRoute = {
+    routeId: "ROUTE_TST_LIVE_PRODUCTION",
+    siteId: "TST-MINE-LIVE-05",
+    countryId: "TST",
+    siteName: "Live Production Rate Mine",
+    resourceId: "coal",
+    resourceIconKey: "coal",
+    destination: { warehouseId: "WH-TST-RAW" },
+    routePlan: {
+      routeType: "TRUCK",
+      routeStatus: "SIMULATED_PLAN_COMPLETE_ENGINE_BINDING_PENDING",
+      dispatchStatus: "NOT_DISPATCHABLE_DATA_ONLY_PHASE",
+      legs: [{ transportMode: "truck", estimatedDistanceKm: 30, designCapacityPerTrip: 25,
+        designCapacityPerTripUnit: "TONNES_PER_TRIP", designCapacityPerDay: 300,
+        designCapacityUnit: "TONNES_PER_DAY", cycleHoursForOneDesignVehicle: 4 }],
+      estimatedRouteDistanceKm: 30,
+      plannedTransitDays: 1,
+      capacityBottleneckPerDay: 300,
+      capacityUnit: "TONNES_PER_DAY"
+    }
+  };
   const sandbox = {
     OmegaResourceIndustrialCatalogData: json("resource_industrial_catalog_v1.json"),
     fetch: async (url) => {
@@ -249,7 +277,7 @@ test("Resource Logistics shows configured per-site route cards and keeps Current
         }) };
       }
       if (name === "resource_site_logistics_routes_v1_part_02.json") {
-        return { ok: true, json: async () => ({ routes: [route, legacyGoldRoute, genericCrudeOilRoute, pipelineRoute] }) };
+        return { ok: true, json: async () => ({ routes: [route, legacyGoldRoute, genericCrudeOilRoute, pipelineRoute, liveProductionRoute] }) };
       }
       throw new Error("Unexpected logistics asset request: " + name);
     }
@@ -296,7 +324,7 @@ test("Resource Logistics shows configured per-site route cards and keeps Current
     querySelectorAll() { return []; },
     contains() { return true; }
   };
-  const initial = api.render(root, { countryId: "TST", sites: [], tab: "logistics" });
+  const initial = api.render(root, { countryId: "TST", sites: [liveProductionSite], tab: "logistics" });
   assert.equal(initial.ok, true);
   await new Promise((resolve) => setTimeout(resolve, 0));
   assert.match(root.innerHTML, /Mine Site Route Plans/);
@@ -333,6 +361,11 @@ test("Resource Logistics shows configured per-site route cards and keeps Current
   assert.match(root.innerHTML, /data-design-formula="ceil\(production per day/);
   assert.match(root.innerHTML, /data-design-capacity-per-unit-day="75"/,
     "the displayed per-vehicle daily capacity must derive from payload and round-trip cycle");
+  const liveCardStart = root.innerHTML.indexOf('data-site-id="TST-MINE-LIVE-05"');
+  const liveCardEnd = root.innerHTML.indexOf('</article>', liveCardStart);
+  assert.ok(liveCardStart >= 0 && liveCardEnd > liveCardStart, "live-production mine route card must render");
+  assert.match(root.innerHTML.slice(liveCardStart, liveCardEnd), /data-design-estimated-units="2"/,
+    "when route planningProduction is absent, use the selected mine's declared simulated daily production");
   assert.match(root.innerHTML, /Known configured vehicle subtotal/);
   assert.match(root.innerHTML, /(?:Pipeline lines recorded|Known pipeline-line subtotal|Configured pipeline-line total)/);
   assert.match(root.innerHTML, /(?:Known combined transport units subtotal|Known combined transport-unit subtotal) \(vehicles \+ lines\)/);
@@ -407,7 +440,7 @@ test("Resource Logistics shows configured per-site route cards and keeps Current
     destinationWarehouseId: "WH-TST-RAW",
     etaTurn: 2
   }];
-  api.render(root, { countryId: "TST", sites: [], tab: "logistics" });
+  api.render(root, { countryId: "TST", sites: [liveProductionSite], tab: "logistics" });
   assert.match(root.innerHTML, /Current Shipments/);
   assert.match(root.innerHTML, /data-current-match="matched"/);
   assert.match(root.innerHTML, />Matched</);
