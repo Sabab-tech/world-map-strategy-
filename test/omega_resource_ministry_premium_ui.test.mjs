@@ -475,7 +475,7 @@ test("logistics cards expose an accessible route diagram with existing SVG cargo
     assert.match(root.innerHTML, /data-omega-v2-logistics-icon="origin"/);
     assert.match(root.innerHTML, /data-omega-v2-logistics-icon="transport"/);
     assert.match(root.innerHTML, /data-omega-v2-transport-asset="truck-dry-bulk-tipper"/);
-    assert.match(root.innerHTML, /assets\\/omega-industrial-icons-v1\\/transport\\/variants\\/truck-dry-bulk-tipper\\.svg/);
+    assert.ok(root.innerHTML.includes('assets/omega-industrial-icons-v1/transport/variants/truck-dry-bulk-tipper.svg'));
     assert.match(root.innerHTML, /data-omega-v2-logistics-icon="factory"/);
     assert.match(root.innerHTML, /data-omega-v2-resource-icon="coal"/);
     assert.match(root.innerHTML, /Sylhet Coal Mine/);
