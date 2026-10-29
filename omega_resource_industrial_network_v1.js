@@ -1570,7 +1570,7 @@ async function previewSiteTransport(input={}){
   if(!routeProfile)return{status:'BLOCKED',reason:'SITE_LOGISTICS_ROUTE_NOT_RECORDED',countryId:cid,siteId:sid};
   const quantity=Math.max(0,num(input.quantity)??0),unit=input.unit||routeProfile?.quantityUnitBridge?.sourceProductionUnit||null;
   const unitBridge=siteLogisticsUnitBridge(routeProfile,unit);
-  if(unitBridge?.status!=='READY')return{status:'BLOCKED',reason:unitBridge?.reason||'SITE_TRANSPORT_UNIT_BRIDGE_UNAVAILABLE',
+  if(!['READY','SIMULATION_ONLY'].includes(String(unitBridge?.status||'')))return{status:'BLOCKED',reason:unitBridge?.reason||'SITE_TRANSPORT_UNIT_BRIDGE_UNAVAILABLE',
     countryId:cid,siteId:sid,unitBridge:clone(unitBridge)};
   const metrics=siteRouteLegMetrics(cid,routeProfile,quantity,unitBridge);
   return{...metrics,countryId:cid,siteId:sid,routeId:routeProfile.routeId||null,requestedQuantity:quantity,unit,
