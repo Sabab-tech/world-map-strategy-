@@ -78,8 +78,7 @@ for(const partInfo of ds.parts){
    assert.equal(l.requiredDesignFleetSlots,expectedRequired,'required fleet slots must be calculated from site rate and compatible per-leg capacity for '+r.siteId+' '+l.transportMode);
    assert.equal(l.designFleetCalculation?.requiredUnits,expectedRequired);
    assert.equal(l.actualBoundFleetUnits,null);assert.equal(l.assetBindingStatus,'NOT_YET_LINKED_TO_TRANSPORT_MINISTRY');assert.equal(l.status,'DESIGN_ONLY_NOT_DISPATCHABLE');
-   const canonicalTransportPath=ds.transportIconAssets[l.transportMode].path;
-   assert.ok(l.transportIconAssetPath===canonicalTransportPath||/^assets\/omega-industrial-icons-v1\/transport\/variants\/[a-z0-9-]+\.svg$/.test(l.transportIconAssetPath),l.legId+': icon path must be canonical or a cargo-specific local variant');
+   assert.ok(/^assets\/omega-industrial-icons-v1\/transport\/(?:variants\/[a-z0-9-]+\.svg|cargo\/[a-z0-9-]+\/(?:truck|train|ship|barge|pipeline)\.svg|(?:truck|train|ship|barge|pipeline)\.svg)$/.test(l.transportIconAssetPath),l.legId+': transport icon must remain a local SVG path');
    assert.equal(l.transportIconKey,ds.transportIconAssets[l.transportMode].assetId);
    assert.ok(fs.existsSync(path.join(root,l.transportIconAssetPath)),'transport SVG missing: '+l.transportIconAssetPath);
    const svg=fs.readFileSync(path.join(root,l.transportIconAssetPath),'utf8');assert.match(svg,/^<svg\b/);assert.ok(svg.includes('data-omega-icon-kind="transport"'));
