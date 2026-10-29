@@ -800,3 +800,14 @@ console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');
   assert.equal(N.transportFleetStatus(fleetCountry,fleetSiteId).modes.truck.totalUnits,0);
   console.log('OMEGA AGGREGATE TRANSPORT FLEET DYNAMIC CAPACITY PASSED');
 }
+
+
+{
+  const siteId='SITE_FLEET_NOT_CONFIGURED_REMOVE_TEST';
+  assert.equal(N.transportFleetStatus('BGD',siteId).status,'UNCONFIGURED');
+  const removal=N.removeTransportFleet({countryId:'BGD',siteId,transportMode:'truck',count:1});
+  assert.equal(removal.status,'BLOCKED');
+  assert.equal(removal.reason,'FLEET_NOT_CONFIGURED');
+  assert.equal(N.transportFleetStatus('BGD',siteId).status,'UNCONFIGURED',
+    'a rejected removal must not turn unknown simulated capacity into a configured zero-unit fleet');
+}
