@@ -1291,7 +1291,7 @@
     root.__omegaV2CurrentCountryKey = countryKey;
     root.__omegaV2ResourceTab = active;
     if (active === 'mines') applySiteFilter(root);
-    if (active === 'logistics') {
+    if (active === 'logistics' && (root.ownerDocument || g.document)) {
       applyLogisticsProfileFilter(root);
       if (!Object.prototype.hasOwnProperty.call(logisticsRouteCache,countryKey) && !logisticsRoutePending[countryKey]) {
         var loadingCountry=countryKey;
