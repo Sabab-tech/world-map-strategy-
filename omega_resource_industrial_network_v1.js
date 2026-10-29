@@ -1521,7 +1521,8 @@ function routeCapacityFactor(unit,explicitFactor){
   return descriptor?.family==='MASS'&&num(descriptor.toTonnes)>0?num(descriptor.toTonnes):1;
 }
 function siteRouteLegMetrics(countryId,routeProfile,quantity,unitBridge){
-  const cid=canonicalCountry(countryId),plan=routeProfile?.routePlan||{},sourceRows=Array.isArray(plan.legs)?plan.legs:[];
+  const cid=canonicalCountry(countryId),plan=routeProfile?.routePlan||{},siteId=String(routeProfile?.siteId||''),
+    sourceRows=Array.isArray(plan.legs)?plan.legs:[];
   if(!sourceRows.length)return{status:'BLOCKED',reason:'MINE_ROUTE_LEGS_NOT_RECORDED'};
   const declaredTotal=num(plan.estimatedRouteDistanceKm);
   const explicitDistances=sourceRows.map(row=>{
@@ -1532,14 +1533,15 @@ function siteRouteLegMetrics(countryId,routeProfile,quantity,unitBridge){
   const missingCount=explicitDistances.filter(value=>value===null).length;
   const missingShare=missingCount&&declaredTotal!==null?Math.max(0,declaredTotal-explicitTotal)/missingCount:0;
   const distances=explicitDistances.map(value=>value===null?missingShare:value);
-  // Declared per-leg distances are authoritative; missing distances share the unallocated remainder.
-  const totalDistanceKm=distances.reduce((sum,value)=>sum+value,0);
+  const totalDistanceKm=Number(distances.reduce((sum,value)=>sum+value,0).toFixed(6));
   const factor=Math.max(1e-12,num(unitBridge?.sourceToCapacityFactor)||1);
   const quantityInCapacityUnits=Math.max(0,num(quantity)||0)*factor;
-  let totalDays=0;
+  let totalDays=0,hasConfiguredFleet=false,hasUnavailableFleet=false;
+  const fleetAllocationByMode={};
   const legs=sourceRows.map((source,index)=>{
-    const mode=tok(source?.transportMode||source?.mode),profile=modeRules()[mode]||modeRules().truck;
-    const infrastructure=infraQuality(cid,mode),distanceKm=Math.max(0,distances[index]||0);
+    const mode=canonicalTransportMode(source?.transportMode||source?.mode)||'truck',
+      profile=modeRules()[mode]||modeRules().truck,infrastructure=infraQuality(cid,mode),
+      distanceKm=Math.max(0,distances[index]||0);
     const speedKmh=Math.max(1,num(profile?.speedKmh)||1);
     const loadHours=Math.max(0,num(profile?.loadHours)??0),unloadHours=Math.max(0,num(profile?.unloadHours)??0);
     const transferHours=Math.max(0,num(source?.transferHours??source?.transferTimeHours)??0);
@@ -1547,28 +1549,50 @@ function siteRouteLegMetrics(countryId,routeProfile,quantity,unitBridge){
     const qualityFactor=1+(1-Math.max(0,Math.min(1,infrastructure.quality)))*0.5;
     const adjustedTravelHours=travelHours*qualityFactor;
     const totalHours=adjustedTravelHours+loadHours+unloadHours+transferHours;
-    const travelDays=totalHours/24;
-    totalDays+=travelDays;
+    const oneWayTravelDays=totalHours/24;
     const payload=Math.max(0.001,num(source?.designCapacityPerTrip)||num(profile?.payloadTonnes)||1);
-    const dailyCapacity=Math.max(0,num(source?.designCapacityPerDay)||infrastructure.capacityPerDay*infrastructure.quality);
-    const units=Math.ceil(quantityInCapacityUnits/payload);
+    const designCapacityPerDay=Math.max(0,num(source?.designCapacityPerDay)||infrastructure.capacityPerDay*infrastructure.quality);
+    const fleet=transportFleetSnapshot(cid,siteId,mode);
+    const fleetCycleDays=Math.max(1/24,(totalHours+adjustedTravelHours)/24);
+    const fleetCapacityPerDay=fleet.configured?Number((fleet.availableUnits*payload/fleetCycleDays).toFixed(6)):null;
+    const capacityPerDay=fleet.configured?Math.max(0,Math.min(designCapacityPerDay,fleetCapacityPerDay)):designCapacityPerDay;
+    const loadsRequired=Math.ceil(quantityInCapacityUnits/payload);
+    const tripsRequired=fleet.configured?Math.max(1,Math.ceil(loadsRequired/Math.max(1,fleet.availableUnits))):1;
+    const fleetAllocationUnits=fleet.configured?Math.min(loadsRequired,fleet.availableUnits):0;
+    if(fleet.configured){
+      hasConfiguredFleet=true;
+      fleetAllocationByMode[mode]=Math.max(fleetAllocationByMode[mode]||0,fleetAllocationUnits);
+      if(fleet.availableUnits<=0)hasUnavailableFleet=true;
+    }
+    const legTravelDays=Number((oneWayTravelDays*tripsRequired).toFixed(6));
+    totalDays+=legTravelDays;
     return{...clone(source),mode,transportMode:mode,distanceKm:Number(distanceKm.toFixed(6)),speedKmh,
       loadHours,unloadHours,transferHours,travelHours:Number(travelHours.toFixed(6)),
-      adjustedTravelHours:Number(adjustedTravelHours.toFixed(6)),travelDays:Number(travelDays.toFixed(6)),
-      payloadTonnes:payload,units,vehicleCount:units,capacityPerDay:dailyCapacity,
+      adjustedTravelHours:Number(adjustedTravelHours.toFixed(6)),oneWayTravelDays:Number(oneWayTravelDays.toFixed(6)),
+      travelDays:legTravelDays,payloadTonnes:payload,units:loadsRequired,loadsRequired,vehicleCount:loadsRequired,
+      tripsRequired,designCapacityPerDay,fleetCapacityPerDay,capacityPerDay,
+      fleetCountConfigured:fleet.configured,fleetTotalUnits:fleet.totalUnits,fleetOperationalUnits:fleet.operationalUnits,
+      fleetAvailableUnits:fleet.availableUnits,fleetReservedUnits:fleet.reservedUnits,
+      fleetAllocationUnits,fleetCycleDays:Number(fleetCycleDays.toFixed(6)),
+      fleetAvailabilityAuthority:fleet.configured?'AGGREGATE_COUNTRY_SITE_MODE_COUNTS':'UNCONFIGURED_SIMULATION_CAPACITY_FALLBACK',
       distanceAuthority:source?.distanceAuthority||routeProfile?.provenance?.authority||'SCENARIO_LOGISTICS_DESIGN_ONLY',
       timeAuthority:'VERSIONED_VEHICLE_SPEED_LOADING_UNLOADING_AND_INFRASTRUCTURE_QUALITY',
-      capacityAuthority:source?.designCapacityPerTrip!=null?'ROUTE_LEG_PER_TRIP_CAPACITY':'VERSIONED_TRANSPORT_CATALOG'};
+      capacityAuthority:fleet.configured?'AGGREGATE_SITE_FLEET_AND_ROUTE_CAPACITY':
+        source?.designCapacityPerTrip!=null?'ROUTE_LEG_PER_TRIP_CAPACITY':'VERSIONED_TRANSPORT_CATALOG'};
   });
+  if(hasUnavailableFleet)return{status:'BLOCKED',reason:'TRANSPORT_FLEET_UNAVAILABLE',legs,totalDistanceKm,
+    travelTimeDays:Number(totalDays.toFixed(6)),fleetAllocationByMode,authority:'AGGREGATE_SITE_MODE_FLEET_COUNTS'};
   const declaredCapacity=num(plan.capacityBottleneckPerDay);
-  const capacities=legs.map(leg=>num(leg.capacityPerDay)).filter(value=>value!==null&&value>0);
+  const capacities=legs.map(leg=>num(leg.capacityPerDay)).filter(value=>value!==null&&value>=0);
   const capacityPerDay=Math.max(0,Math.min(declaredCapacity!==null&&declaredCapacity>0?declaredCapacity:Infinity,
     capacities.length?Math.min(...capacities):Infinity));
-  return{status:'READY',legs,totalDistanceKm:Number(totalDistanceKm.toFixed(6)),
-    travelTimeDays:Number(totalDays.toFixed(6)),capacityPerDay:Number.isFinite(capacityPerDay)?capacityPerDay:null,
-    quantityInCapacityUnits,quantityCapacityFactor:factor,
-    vehiclesByMode:legs.reduce((out,leg)=>{out[leg.mode]=(out[leg.mode]||0)+(num(leg.vehicleCount)||0);return out;},{}),
-    vehicleCount:legs.reduce((sum,leg)=>sum+(num(leg.vehicleCount)||0),0),
+  return{status:'READY',legs,totalDistanceKm,travelTimeDays:Number(totalDays.toFixed(6)),
+    capacityPerDay:Number.isFinite(capacityPerDay)?capacityPerDay:null,
+    quantityInCapacityUnits,quantityCapacityFactor:factor,hasConfiguredFleet,
+    fleetAvailabilityStatus:hasConfiguredFleet?'AGGREGATE_SITE_FLEET_COUNTS_BOUND':'SIMULATED_CAPACITY_FALLBACK',
+    fleetAllocationByMode,
+    vehiclesByMode:legs.reduce((out,leg)=>{out[leg.mode]=(out[leg.mode]||0)+(num(leg.loadsRequired)||0);return out;},{}),
+    vehicleCount:legs.reduce((sum,leg)=>sum+(num(leg.loadsRequired)||0),0),
     authority:'VERSIONED_TRANSPORT_CATALOG_AND_SITE_ROUTE_LEG_DATA'};
 }
 function routeSegments(site,asset,resourceId,mode,countryId){
