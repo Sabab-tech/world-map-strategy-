@@ -1559,6 +1559,27 @@ function siteRouteLegMetrics(countryId,routeProfile,quantity,unitBridge){
     vehicleCount:legs.reduce((sum,leg)=>sum+(num(leg.vehicleCount)||0),0),
     authority:'VERSIONED_TRANSPORT_CATALOG_AND_SITE_ROUTE_LEG_DATA'};
 }
+async function previewSiteTransport(input={}){
+  const cid=canonicalCountry(input.countryId),sid=String(input.siteId||'').trim();
+  if(!cid||!sid)return{status:'BLOCKED',reason:'SITE_TRANSPORT_PREVIEW_COUNTRY_AND_SITE_REQUIRED'};
+  const selected=playerSimulationCountryId();
+  if(selected&&selected!==cid)return{status:'BLOCKED',reason:'PLAYER_COUNTRY_SCOPE_VIOLATION',countryId:cid,playerCountryId:selected};
+  const loaded=await loadSiteLogisticsRoutes(cid);
+  if(loaded.status!=='READY')return{status:'BLOCKED',reason:loaded.reason||'SITE_LOGISTICS_ROUTES_NOT_READY',detail:loaded,countryId:cid,siteId:sid};
+  const routeProfile=siteLogisticsRouteFor(cid,sid);
+  if(!routeProfile)return{status:'BLOCKED',reason:'SITE_LOGISTICS_ROUTE_NOT_RECORDED',countryId:cid,siteId:sid};
+  const quantity=Math.max(0,num(input.quantity)??0),unit=input.unit||routeProfile?.quantityUnitBridge?.sourceProductionUnit||null;
+  const unitBridge=siteLogisticsUnitBridge(routeProfile,unit);
+  if(unitBridge?.status!=='READY')return{status:'BLOCKED',reason:unitBridge?.reason||'SITE_TRANSPORT_UNIT_BRIDGE_UNAVAILABLE',
+    countryId:cid,siteId:sid,unitBridge:clone(unitBridge)};
+  const metrics=siteRouteLegMetrics(cid,routeProfile,quantity,unitBridge);
+  return{...metrics,countryId:cid,siteId:sid,routeId:routeProfile.routeId||null,requestedQuantity:quantity,unit,
+    individualVehicleIdsRequired:false,transportTypes:(metrics.legs||[]).map(leg=>({
+      transportType:leg.transportMode,count:leg.fleetCount,requiredVehicleCount:leg.requiredVehicleCount,
+      fleetCapacityPerDay:leg.fleetCapacityPerDay,capacityPerDay:leg.capacityPerDay,
+      travelDays:leg.travelDays,fleetSufficiency:leg.fleetSufficiency,cargoIconClass:leg.cargoIconClass,cargoIconPath:leg.cargoIconPath
+    }))};
+}
 function routeSegments(site,asset,resourceId,mode,countryId){
   const cid=canonicalCountry(countryId),f=asset||{},access=Array.isArray(f.transportAccess)?f.transportAccess.map(tok):[];
   const pref=(rules()[resourceId]?.preferredModes||[]).map(tok);
@@ -4758,7 +4779,7 @@ function gameplayPipelineDiagnostics(countryScope){
     awaitingTransportCapacity:perCountry.reduce((n,x)=>n+x.awaitingTransportCapacity,0),perCountry};
 }
 function api(){
-  return Object.freeze({VERSION,loadCatalog,loadSiteLogisticsRoutes,getTransportFleet,setTransportFleet,planExtraction,planShipment,dispatchShipment,dispatchFactoryInputShipment,advanceShipments,quoteMineProject,startMineProject,startFactoryProject,startInfrastructureProject,startPadmaCorridorProject,advanceProjects,startTechnologyProject,executeFactoryCycle,executeSitePipeline,diagnostics,gameplayPipelineDiagnostics,factoryCatalogDiagnostics,factoryProductionRequirements,factoryProductionStatus,decommissionFactory,decommissionMine,setMineOperatingStatus,quoteMineDemolition,destroyMineAssets,startFactoryProductionCycle,transferFactoryInputsFromWarehouse,processPendingFactoryInputs,factoryUtilityDiagnostics,factoryConstructionMaterialQuote,reconcileFactoryEmployment,normalizeInfrastructure,candidateFactories,recipeFor,processPendingFactoryInputs,resourceMethod,buildRoute});
+  return Object.freeze({VERSION,loadCatalog,loadSiteLogisticsRoutes,getTransportFleet,setTransportFleet,previewSiteTransport,planExtraction,planShipment,dispatchShipment,dispatchFactoryInputShipment,advanceShipments,quoteMineProject,startMineProject,startFactoryProject,startInfrastructureProject,startPadmaCorridorProject,advanceProjects,startTechnologyProject,executeFactoryCycle,executeSitePipeline,diagnostics,gameplayPipelineDiagnostics,factoryCatalogDiagnostics,factoryProductionRequirements,factoryProductionStatus,decommissionFactory,decommissionMine,setMineOperatingStatus,quoteMineDemolition,destroyMineAssets,startFactoryProductionCycle,transferFactoryInputsFromWarehouse,processPendingFactoryInputs,factoryUtilityDiagnostics,factoryConstructionMaterialQuote,reconcileFactoryEmployment,normalizeInfrastructure,candidateFactories,recipeFor,processPendingFactoryInputs,resourceMethod,buildRoute});
 }
 g.Omega=g.Omega||{};g.Omega.ResourceIndustrialNetwork=api();g.OmegaResourceIndustrialNetwork=g.Omega.ResourceIndustrialNetwork;
 
