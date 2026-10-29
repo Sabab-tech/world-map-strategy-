@@ -1773,8 +1773,9 @@ function routeSegments(site,asset,resourceId,mode,countryId,input={}){
       if(crossBorder)return[];
       const preferences=(rules()[resourceId]?.preferredModes||[]).map(normalizeAccess).filter(Boolean);
       const profiles=modeRules();
-      const chosen=preferences.find(value=>!!profiles[value])||
-        preferences.find(value=>genericModes.includes(value))||(profiles.rail?'rail':'truck');
+      const requestedMode=normalizeAccess(mode);
+      const chosen=explicitMode&&requestedMode&&profiles[requestedMode]?requestedMode:
+        (preferences.find(value=>!!profiles[value])||preferences.find(value=>genericModes.includes(value))||(profiles.rail?'rail':'truck'));
       const declaredDistance=num(sourcePlan.estimatedRouteDistanceKm);
       const summedDistance=sourceLegRows.reduce((sum,row)=>sum+(num(row.estimatedDistanceKm??row.distanceKm??row.distance)||0),0);
       const totalDistance=declaredDistance!==null&&declaredDistance>=0?declaredDistance:
