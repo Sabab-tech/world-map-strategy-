@@ -322,10 +322,10 @@ test("Resource Logistics shows configured per-site route cards and keeps Current
   assert.match(root.innerHTML, /trips\/day/);
   assert.match(root.innerHTML, /Calculated design units/);
   assert.match(root.innerHTML, /data-omega-v2-logistics-fleet-overview/);
-  assert.match(root.innerHTML, /route-mine-origin\\.svg/);
-  assert.match(root.innerHTML, /route-warehouse-destination\\.svg/);
-  assert.match(read("assets/omega-industrial-icons-v1/transport/route-mine-origin.svg"), /<title[^>]*>Mine route origin<\\/title>/);
-  assert.match(read("assets/omega-industrial-icons-v1/transport/route-warehouse-destination.svg"), /<title[^>]*>Warehouse route destination<\\/title>/);
+  assert.match(root.innerHTML, /logistics\/mine-site\.svg/);
+  assert.match(root.innerHTML, /logistics\/warehouse-node\.svg/);
+  assert.match(read("assets/omega-industrial-icons-v1/logistics/mine-site.svg"), /<title id="mine-title">Resource mine site<\/title>/);
+  assert.match(read("assets/omega-industrial-icons-v1/logistics/warehouse-node.svg"), /<title id="warehouse-title">Raw resource warehouse<\/title>/);
   assert.match(root.innerHTML, /data-current-match="unavailable"/);
   assert.doesNotMatch(root.innerHTML, /No active shipments or delivery records/);
   assert.deepEqual(fetched, [
