@@ -323,9 +323,19 @@ test("Resource Logistics shows configured per-site route cards and keeps Current
   assert.match(root.innerHTML, /data-route-leg="1"/);
   assert.match(root.innerHTML, /40 km/);
   assert.match(root.innerHTML, /Cap 45 tonnes\/day/);
+  assert.match(root.innerHTML, /Distance by transport type/);
+  assert.match(root.innerHTML, /data-route-mode-distance="truck"/);
+  assert.match(root.innerHTML, /data-route-mode-distance="rail"/);
+  assert.match(root.innerHTML, /40 km/);
+  assert.match(root.innerHTML, /80 km/);
+  assert.match(root.innerHTML, /data-design-estimate-available="true"/);
+  assert.match(root.innerHTML, /data-design-estimated-units="1"/);
+  assert.match(root.innerHTML, /data-design-formula="ceil\(production per day/);
+  assert.match(root.innerHTML, /data-design-capacity-per-unit-day="75"/,
+    "the displayed per-vehicle daily capacity must derive from payload and round-trip cycle");
   assert.match(root.innerHTML, /Known configured vehicle subtotal/);
-  assert.match(root.innerHTML, /Pipeline lines recorded/);
-  assert.match(root.innerHTML, /Known combined transport units subtotal \(vehicles \+ lines\)/);
+  assert.match(root.innerHTML, /(?:Pipeline lines recorded|Known pipeline-line subtotal|Configured pipeline-line total)/);
+  assert.match(root.innerHTML, /(?:Known combined transport units subtotal|Known combined transport-unit subtotal) \(vehicles \+ lines\)/);
   assert.match(root.innerHTML, /Configure transport counts/);
   assert.match(root.innerHTML, /data-omega-v2-logistics-fleet-form/);
   assert.match(root.innerHTML, /data-omega-v2-fleet-count-input/);
