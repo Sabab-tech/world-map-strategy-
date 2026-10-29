@@ -1545,6 +1545,7 @@ function siteRouteLegMetrics(countryId,routeProfile,quantity,unitBridge){
   const siteId=String(routeProfile?.siteId||routeProfile?.sourceSiteId||'').trim();
   const legs=sourceRows.map((source,index)=>{
     const mode=normalizeTransportMode(source?.transportMode||source?.mode),baseProfile=modeRules()[mode]||modeRules().truck||{};
+    const isPipeline=mode==='pipeline';
     const configuredFleet=siteId?storedTransportFleetRecord(cid,siteId,mode):null;
     const overrides=configuredFleet?.profileOverrides||{};
     const profile={...baseProfile,...overrides};
@@ -1558,7 +1559,9 @@ function siteRouteLegMetrics(countryId,routeProfile,quantity,unitBridge){
     const totalHours=adjustedTravelHours+loadHours+unloadHours+transferHours;
     const singleTripDays=totalHours/24;
     const payload=Math.max(0.001,num(overrides.payloadTonnes)??num(source?.designCapacityPerTrip)??num(profile?.payloadTonnes)??1);
-    const requiredTrips=Math.ceil(quantityInCapacityUnits/payload);
+    const lineCapacityRaw=num(source?.designCapacityPerLinePerDay??source?.capacityPerLinePerDay??source?.lineCapacityPerDay);
+    const lineCapacityPerDay=lineCapacityRaw!==null&&lineCapacityRaw>0?lineCapacityRaw:null;
+    const requiredTrips=isPipeline?null:Math.ceil(quantityInCapacityUnits/payload);
     const countValue=configuredFleet?num(configuredFleet.count):null;
     const declaredFleetCount=countValue!==null?countValue:num(source?.fleetCount??routeProfile?.transportFleet?.[mode]?.count);
     const fleetCount=declaredFleetCount!==null&&declaredFleetCount>=0?Math.floor(declaredFleetCount):null;
@@ -1566,19 +1569,25 @@ function siteRouteLegMetrics(countryId,routeProfile,quantity,unitBridge){
     const declaredRouteCapacity=num(source?.designCapacityPerDay);
     const routeCapacityPerDay=Math.max(0,declaredRouteCapacity===null?
       infrastructure.capacityPerDay*infrastructure.quality:declaredRouteCapacity);
-    const requiredDesignFleetSlots=routeCapacityPerDay>0?
-      Math.max(1,Math.ceil((routeCapacityPerDay/payload)/Math.max(1e-9,24/cycleDays))):0;
-    // Unknown actual counts stay unknown. For ETA only, the recorded route design
-    // throughput supplies a capacity-derived formation estimate instead of assuming
-    // one real vehicle and serializing every load.
+    const requiredDesignFleetSlots=isPipeline?
+      (lineCapacityPerDay!==null?Math.max(1,Math.ceil(routeCapacityPerDay/lineCapacityPerDay)):null):
+      (routeCapacityPerDay>0?Math.max(1,Math.ceil((routeCapacityPerDay/payload)/Math.max(1e-9,24/cycleDays))):0);
+    // Unknown actual vehicle counts remain unknown. For movable cargo, ETA uses a
+    // capacity-derived design formation. A pipeline is continuous flow, not a truck:
+    // its line count is estimable only with an explicit per-line daily capacity.
     const etaFleetUnits=fleetCount===null?requiredDesignFleetSlots:fleetCount;
-    const tripWaves=etaFleetUnits>0?Math.ceil(requiredTrips/etaFleetUnits):0;
-    const estimatedLegDays=fleetCount===0?null:(etaFleetUnits>0&&tripWaves>0?
-      singleTripDays+Math.max(0,tripWaves-1)*cycleDays:0);
+    const tripWaves=isPipeline?null:(etaFleetUnits>0?Math.ceil(requiredTrips/etaFleetUnits):0);
+    const estimatedLegDays=isPipeline?
+      (fleetCount===0?null:singleTripDays):
+      (fleetCount===0?null:(etaFleetUnits>0&&tripWaves>0?
+        singleTripDays+Math.max(0,tripWaves-1)*cycleDays:0));
     if(estimatedLegDays!==null)totalDays+=estimatedLegDays;
-    const fleetCapacityPerDay=fleetCount===null?null:Number((fleetCount*payload/cycleDays).toFixed(6));
-    const dailyCapacity=fleetCapacityPerDay===null?routeCapacityPerDay:
-      Math.min(routeCapacityPerDay>0?routeCapacityPerDay:fleetCapacityPerDay,fleetCapacityPerDay);
+    const fleetCapacityPerDay=isPipeline?
+      (fleetCount!==null&&lineCapacityPerDay!==null?Number((fleetCount*lineCapacityPerDay).toFixed(6)):null):
+      (fleetCount===null?null:Number((fleetCount*payload/cycleDays).toFixed(6)));
+    const dailyCapacity=fleetCount===0?0:(fleetCapacityPerDay===null?routeCapacityPerDay:
+      Math.min(routeCapacityPerDay>0?routeCapacityPerDay:fleetCapacityPerDay,fleetCapacityPerDay));
+    const requiredLineCount=isPipeline&&requiredDesignFleetSlots!==null?requiredDesignFleetSlots:null;
     const cargoText=tok(source?.cargoClass||routeProfile?.commodityGroup||routeProfile?.resourceId||'');
     const cargoIconClass=/coal|lignite|coke|dry_bulk/.test(cargoText)?'coal-dry-bulk':
       /oil|petroleum|diesel|fuel|crude|liquid/.test(cargoText)?'oil-liquid':
@@ -1590,27 +1599,41 @@ function siteRouteLegMetrics(countryId,routeProfile,quantity,unitBridge){
       loadHours,unloadHours,transferHours,travelHours:Number(travelHours.toFixed(6)),
       adjustedTravelHours:Number(adjustedTravelHours.toFixed(6)),singleTripTravelDays:Number(singleTripDays.toFixed(6)),
       travelDays:estimatedLegDays===null?null:Number(estimatedLegDays.toFixed(6)),tripWaves,cycleDays:Number(cycleDays.toFixed(6)),
-      payloadTonnes:payload,units:requiredTrips,vehicleCount:requiredTrips,requiredTrips,requiredVehicleCount:requiredTrips,fleetCount,
-      fleetCountConfigured:fleetCount!==null,fleetCapacityPerDay,dailyFleetCycleDays:Number(cycleDays.toFixed(6)),
-      fleetSufficiency:fleetCount===null?null:fleetCount>=requiredTrips,
+      payloadTonnes:payload,units:isPipeline?null:requiredTrips,vehicleCount:isPipeline?null:requiredTrips,
+      requiredTrips,requiredVehicleCount:isPipeline?null:requiredTrips,requiredLineCount,lineCapacityPerDay,
+      requiredDesignFleetSlots,fleetCount,fleetCountConfigured:fleetCount!==null,
+      fleetCapacityPerDay,dailyFleetCycleDays:Number(cycleDays.toFixed(6)),
+      fleetSufficiency:isPipeline?(fleetCount===null||requiredLineCount===null?null:fleetCount>=requiredLineCount):
+        (fleetCount===null?null:fleetCount>=requiredTrips),
       capacityPerDay:dailyCapacity,cargoIconClass,cargoIconPath,
       distanceAuthority:source?.distanceAuthority||routeProfile?.provenance?.authority||'SCENARIO_LOGISTICS_DESIGN_ONLY',
-      timeAuthority:fleetCount===null?'SERIAL_TRIP_ESTIMATE_FLEET_COUNT_UNKNOWN':'VERSIONED_PROFILE_AND_CONFIGURED_FLEET_COUNT',
-      capacityAuthority:fleetCount!==null?'COUNTRY_SITE_TRANSPORT_TYPE_COUNT_AND_VERSIONED_TRANSPORT_CATALOG':
-        source?.designCapacityPerTrip!=null?'ROUTE_LEG_PER_TRIP_CAPACITY':'VERSIONED_TRANSPORT_CATALOG'};
+      timeAuthority:isPipeline?'CONTINUOUS_PIPELINE_FLOW_TRANSIT_ESTIMATE':
+        (fleetCount===null?'ROUTE_DESIGN_CAPACITY_ETA_ESTIMATE_NOT_ACTUAL_FLEET_COUNT':'VERSIONED_PROFILE_AND_CONFIGURED_FLEET_COUNT'),
+      capacityAuthority:isPipeline?
+        (lineCapacityPerDay!==null&&fleetCount!==null?'CONFIGURED_PIPELINE_LINES_AND_PER_LINE_CAPACITY':
+          'PIPELINE_CORRIDOR_CAPACITY_LINE_COUNT_NOT_ESTIMATED'):
+        (fleetCount!==null?'COUNTRY_SITE_TRANSPORT_TYPE_COUNT_AND_VERSIONED_TRANSPORT_CATALOG':
+          source?.designCapacityPerTrip!=null?'ROUTE_LEG_PER_TRIP_CAPACITY':'VERSIONED_TRANSPORT_CATALOG')};
   });
   const declaredCapacity=num(plan.capacityBottleneckPerDay);
   const capacities=legs.map(leg=>num(leg.capacityPerDay)).filter(value=>value!==null&&value>=0);
   const capacityPerDay=Math.max(0,Math.min(declaredCapacity!==null?declaredCapacity:Infinity,
     capacities.length?Math.min(...capacities):Infinity));
-  const fleetCountsByMode=Object.create(null),requiredTripsByMode=Object.create(null);
+  const fleetCountsByMode=Object.create(null),requiredTripsByMode=Object.create(null),requiredPipelineLinesByMode=Object.create(null);
   legs.forEach(leg=>{
-    requiredTripsByMode[leg.mode]=(requiredTripsByMode[leg.mode]||0)+(num(leg.requiredTrips)||0);
+    if(leg.mode==='pipeline'){
+      requiredPipelineLinesByMode.pipeline=leg.requiredLineCount;
+    }else{
+      requiredTripsByMode[leg.mode]=(requiredTripsByMode[leg.mode]||0)+(num(leg.requiredTrips)||0);
+    }
     if(!Object.prototype.hasOwnProperty.call(fleetCountsByMode,leg.mode)){
       fleetCountsByMode[leg.mode]={count:leg.fleetCount,configured:leg.fleetCountConfigured===true};
     }
   });
-  const configuredFleetUnitCount=Object.values(fleetCountsByMode).reduce((sum,row)=>sum+(row.configured?Math.max(0,num(row.count)||0):0),0);
+  const configuredFleetUnitCount=Object.entries(fleetCountsByMode).reduce((sum,[mode,row])=>
+    sum+(mode!=='pipeline'&&row.configured?Math.max(0,num(row.count)||0):0),0);
+  const configuredPipelineLineCount=fleetCountsByMode.pipeline?.configured?
+    Math.max(0,num(fleetCountsByMode.pipeline.count)||0):null;
   const unconfiguredTransportModeCount=Object.values(fleetCountsByMode).filter(row=>!row.configured).length;
   const zeroFleetModes=legs.filter(leg=>leg.fleetCount===0).map(leg=>leg.mode);
   const blockedByZeroFleet=zeroFleetModes.length>0;
@@ -1619,12 +1642,12 @@ function siteRouteLegMetrics(countryId,routeProfile,quantity,unitBridge){
     travelTimeDays:blockedByZeroFleet?null:Number(totalDays.toFixed(6)),
     capacityPerDay:Number.isFinite(capacityPerDay)?capacityPerDay:null,
     quantityInCapacityUnits,quantityCapacityFactor:factor,
-    requiredTripsByMode, fleetCountsByMode,configuredFleetUnitCount,unconfiguredTransportModeCount,
+    requiredTripsByMode,requiredPipelineLinesByMode,fleetCountsByMode,configuredFleetUnitCount,configuredPipelineLineCount,unconfiguredTransportModeCount,
     routeType:String(plan.routeType||'').toUpperCase()==='TRUCK_TO_RAIL_TO_TRUCK'&&legs.length===1?String(legs[0].mode||'').toUpperCase()+'_ONLY':plan.routeType,
     routeSelectionAuthority:String(plan.routeType||'').toUpperCase()==='TRUCK_TO_RAIL_TO_TRUCK'&&legs.length===1?'RESOURCE_RULE_PREFERRED_MODE_FROM_UNVERIFIED_INTERMODAL_TEMPLATE':'EXPLICIT_SITE_ROUTE_PROFILE',
     routeLegCount:legs.length,distinctTransportModeCount:Object.keys(fleetCountsByMode).length,
-    vehiclesByMode:legs.reduce((out,leg)=>{out[leg.mode]=(out[leg.mode]||0)+(num(leg.vehicleCount)||0);return out;},{}),
-    vehicleCount:legs.reduce((sum,leg)=>sum+(num(leg.vehicleCount)||0),0),
+    vehiclesByMode:legs.filter(leg=>leg.mode!=='pipeline').reduce((out,leg)=>{out[leg.mode]=(out[leg.mode]||0)+(num(leg.vehicleCount)||0);return out;},{}),
+    vehicleCount:legs.filter(leg=>leg.mode!=='pipeline').reduce((sum,leg)=>sum+(num(leg.vehicleCount)||0),0),
     etaAuthority:unconfiguredTransportModeCount?'ROUTE_DESIGN_CAPACITY_ETA_ESTIMATE_NOT_ACTUAL_FLEET_COUNT':'CONFIGURED_COUNTRY_SITE_TRANSPORT_TYPE_COUNTS',
     authority:'VERSIONED_TRANSPORT_CATALOG_AND_SITE_ROUTE_LEG_DATA'};
 }
