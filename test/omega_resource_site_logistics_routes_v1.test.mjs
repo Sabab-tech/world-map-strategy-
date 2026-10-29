@@ -4,6 +4,14 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const read=name=>JSON.parse(fs.readFileSync(path.join(root,name),'utf8'));
+const normalizePlanningUnit=value=>{
+ const unit=String(value||'').trim().toUpperCase().replace(/[\\s-]+/g,'_');
+ const aliases={RAW_CARGO_TONNES_PER_DAY:'TONNES_PER_DAY',RAW_CARGO_TONS_PER_DAY:'TONNES_PER_DAY',
+  METRIC_TONS_PER_DAY:'TONNES_PER_DAY',METRIC_TONNES_PER_DAY:'TONNES_PER_DAY',TONS_PER_DAY:'TONNES_PER_DAY',
+  TONNE_PER_DAY:'TONNES_PER_DAY',TONNES_ORE_PER_DAY:'TONNES_PER_DAY',BARREL_PER_DAY:'BARRELS_PER_DAY',BBL_PER_DAY:'BARRELS_PER_DAY'};
+ return aliases[unit]||unit;
+};
+
 const ds=read('resource_site_logistics_routes_v1.json');
 const canonical=read('resource_site_canonical_catalog_v1.json');
 const base=read('resource_site_country_mineplay_batch_20261020_v1.json');
@@ -62,13 +70,42 @@ for(const partInfo of ds.parts){
   for(let i=0;i<r.routePlan.legs.length;i++){
    const l=r.routePlan.legs[i];assert.ok(modes.has(l.transportMode));assert.equal(l.sequence,i+1);
    assert.ok(l.estimatedDistanceKm>0&&l.estimatedTravelHours>0&&l.designCapacityPerDay>0&&l.designCapacityUnit);
-   assert.ok(r.routePlan.capacityBottleneckPerDay<=l.designCapacityPerDay);assert.equal(l.requiredDesignFleetSlots,1);assert.equal(l.actualBoundFleetUnits,null);assert.equal(l.assetBindingStatus,'NOT_YET_LINKED_TO_TRANSPORT_MINISTRY');assert.equal(l.status,'DESIGN_ONLY_NOT_DISPATCHABLE');
+   assert.ok(r.routePlan.capacityBottleneckPerDay<=l.designCapacityPerDay);
+   const planningRate=r.planningProduction&&Number.isFinite(Number(r.planningProduction.rate))?Number(r.planningProduction.rate):null;
+   const planningUnit=normalizePlanningUnit(r.planningProduction&&r.planningProduction.unit);
+   const legMode=String(l.transportMode||'').toLowerCase();
+   const explicitLineCapacity=Number(l.designCapacityPerLinePerDay??l.capacityPerLinePerDay??l.lineCapacityPerDay);
+   const perDesignCapacity=legMode==='pipeline'
+     ? (Number.isFinite(explicitLineCapacity)&&explicitLineCapacity>0?explicitLineCapacity:null)
+     : Number(l.designCapacityPerDay);
+   const perDesignUnit=normalizePlanningUnit(legMode==='pipeline'
+     ? (l.designCapacityPerLineUnit||l.capacityPerLineUnit||l.lineCapacityUnit||l.designCapacityUnit||l.capacityUnit)
+     : l.designCapacityUnit);
+   const expectedRequired=planningRate!==null&&planningRate>=0&&planningUnit&&Number.isFinite(perDesignCapacity)&&
+     perDesignCapacity>0&&perDesignUnit&&planningUnit===perDesignUnit
+     ? Math.max(0,Math.ceil(planningRate/perDesignCapacity)):null;
+   assert.equal(l.requiredDesignFleetSlots,expectedRequired,'required fleet need must be calculated from compatible site output and mode capacity, with pipeline lines requiring explicit per-line capacity');
+   assert.equal(l.designFleetCalculation?.requiredUnits,expectedRequired);
+   assert.equal(l.designFleetCalculation?.status,expectedRequired===null?'UNAVAILABLE':'CALCULATED');
+   assert.equal(l.actualBoundFleetUnits,null);assert.equal(l.assetBindingStatus,'NOT_YET_LINKED_TO_TRANSPORT_MINISTRY');assert.equal(l.status,'DESIGN_ONLY_NOT_DISPATCHABLE');
    assert.equal(l.transportIconAssetPath,ds.transportIconAssets[l.transportMode].path);assert.equal(l.transportIconKey,ds.transportIconAssets[l.transportMode].assetId);
    const svg=fs.readFileSync(path.join(root,l.transportIconAssetPath),'utf8');assert.match(svg,/^<svg\b/);assert.ok(svg.includes('data-omega-icon-kind="transport"'));
    if(i>0)assert.equal(l.fromNodeId,r.routePlan.legs[i-1].toNodeId);
   }
+  const expectedRouteRequired=r.routePlan.legs.every(l=>l.requiredDesignFleetSlots!==null&&Number.isFinite(l.requiredDesignFleetSlots))
+    ?r.routePlan.legs.reduce((sum,l)=>sum+l.requiredDesignFleetSlots,0):null;
+  assert.equal(r.routePlan.designFleetSlots,expectedRouteRequired,'route total must remain unknown if any leg demand is unknown');
+  assert.equal(r.routePlan.designFleetCalculation?.totalRequiredUnits,expectedRouteRequired);
+  assert.equal(r.routePlan.designFleetCalculation?.status,expectedRouteRequired===null?'PARTIAL_OR_UNAVAILABLE':'CALCULATED');
  }
 }
+assert.equal(all.filter(r=>r.planningProduction&&Number.isFinite(Number(r.planningProduction.rate))).length,305,
+ 'simulation-only mine output baselines must be preserved across all registered site routes');
+const everyLeg=all.flatMap(r=>r.routePlan.legs);
+assert.equal(everyLeg.filter(l=>Number.isFinite(l.requiredDesignFleetSlots)).length,540,
+ 'only compatible production units and transport capacity may produce a numeric design need');
+assert.equal(everyLeg.filter(l=>l.requiredDesignFleetSlots===null).length,820,
+ 'unit gaps and unknown pipeline line capacity must remain explicitly uncalculated');
 assert.equal(all.length,561);assert.deepEqual([...seen].sort(),[...sourceById.keys()].sort());assert.equal(Object.keys(ds.countryToPart).length,ds.countryCount);
 assert.ok(ds.routeCountByMode.truck>=561);for(const m of ['rail','ship','barge','pipeline'])assert.ok(ds.routeCountByMode[m]>0,m+' routes should exist');
 assert.equal(Object.keys(ds.transportIconAssets).length,5);
