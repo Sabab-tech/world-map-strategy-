@@ -542,7 +542,7 @@ test("logistics cards expose mine/warehouse SVGs and per-mode fleet counts using
   const root = {
     innerHTML: "",
     classList: { add() {} },
-    addEventListener(type, fn) { listeners[type] = fn; },
+    addEventListener(type, fn) { (listeners[type] ||= []).push(fn); },
     querySelector() { return null; },
     querySelectorAll() { return []; },
     contains() { return true; }
@@ -658,7 +658,7 @@ test("logistics cards expose mine/warehouse SVGs and per-mode fleet counts using
       },
       querySelector() { return { value: "3" }; }
     };
-    listeners.click({ target: { closest(selector) { return selector === "[data-omega-v2-fleet-action]" ? button : null; } } });
+    (listeners.click || []).forEach((listener) => listener({ target: { closest(selector) { return selector === "[data-omega-v2-fleet-action]" ? button : null; } } }));
     assert.equal(writes.length, 1, "the Add control must save through the existing fleet API");
     assert.deepEqual(writes[0], { countryId: "BGD", siteId: "SITE_BGD_TEST_MINE", transportType: "truck", count: 5 });
   } finally {
