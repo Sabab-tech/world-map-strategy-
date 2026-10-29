@@ -1318,14 +1318,20 @@
       var unknownVehicleProfiles = ['truck','rail','ship','barge'].reduce(function (sum, mode) {
         return sum + Math.max(0, sites.length - totals[mode].configuredSites);
       }, 0);
+      var unknownPipelineProfiles = Math.max(0, sites.length - totals.pipeline.configuredSites);
+      var vehicleTotalLabel = unknownVehicleProfiles ? 'Known configured vehicle subtotal' : 'Configured vehicle total';
+      var pipelineTotalLabel = unknownPipelineProfiles ? 'Known pipeline-line subtotal' : 'Configured pipeline-line total';
+      var combinedTotalLabel = unknownVehicleProfiles || unknownPipelineProfiles
+        ? 'Known combined transport-unit subtotal (vehicles + lines)' : 'Configured combined transport-unit total';
       return '<section class="omega-v2-card omega-v2-logistics-fleet-overview" data-omega-v2-logistics-fleet-overview>' +
         '<div class="omega-v2-logistics-fleet-heading"><div><h2>Transport Fleet Summary</h2>' +
         '<p>Configured fleets and design needs across the selected country’s registered mine routes.</p></div>' +
         '<strong>' + fmt(sites.length) + ' mine sites · ' + fmt(readableSites) + ' readable fleet records</strong></div>' +
         '<div class="omega-v2-logistics-overview-grid">' + modeCards + '</div>' +
-        '<div class="omega-v2-logistics-fleet-foot"><span>Known configured vehicle subtotal: <strong>' + fmt(knownVehicleTotal) +
-        '</strong></span><span>Pipeline lines recorded: <strong>' + (totals.pipeline.configuredSites ? fmt(totals.pipeline.total) : 'Unknown') +
-        '</strong></span><span>Known combined transport units subtotal (vehicles + lines): <strong>' +
+        '<div class="omega-v2-logistics-fleet-foot"><span>' + esc(vehicleTotalLabel) + ': <strong>' + fmt(knownVehicleTotal) +
+        '</strong></span><span>' + esc(pipelineTotalLabel) + ': <strong>' +
+        (totals.pipeline.configuredSites ? fmt(totals.pipeline.total) : 'Unknown') +
+        '</strong></span><span>' + esc(combinedTotalLabel) + ': <strong>' +
         fmt(knownVehicleTotal + totals.pipeline.total) + '</strong></span><span>Vehicle mode counts unknown: <strong>' + fmt(unknownVehicleProfiles) +
         '</strong></span><span>Mode profiles configured: <strong>' + fmt(configuredProfiles) +
         '</strong></span><span>Unknown count profiles: <strong>' + fmt(unknownProfiles) +
