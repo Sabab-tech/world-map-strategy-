@@ -1089,17 +1089,36 @@
       });
       return totals;
     }
-    function logisticsTransportIconPath(mode, resourceId) {
-      var value = String(mode || '').trim().toLowerCase();
-      var iconMode = value === 'rail' || value === 'train' ? 'train' :
-        (value === 'ship' || value === 'truck' || value === 'barge' || value === 'pipeline' ? value : 'truck');
-      var rid = String(resourceId || '').trim().toLowerCase();
-      var cargo = /coal|lignite|coke|dry[_ -]?bulk/.test(rid) ? 'coal-dry-bulk' :
-        /oil|petroleum|diesel|fuel|crude|liquid/.test(rid) ? 'oil-liquid' :
-        /gas|lng|methane/.test(rid) ? 'gas-lng' :
-        /ore|iron|copper|bauxite|aggregate|limestone|gravel|stone|mineral|gold|nickel|rare[_ -]?earth/.test(rid)
-          ? 'ore-aggregate' : 'general-cargo';
-      return 'assets/omega-industrial-icons-v1/transport/cargo/' + cargo + '/' + iconMode + '.svg';
+    function logisticsTransportIconPath(modeValue, resourceIdValue) {
+      var mode = String(modeValue || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '_');
+      var aliases = {road:'truck',highway:'truck',lorry:'truck',railway:'rail',heavy_rail:'rail',
+        train:'rail',sea:'ship',sea_lane:'ship',seaway:'ship',maritime:'ship',inland_waterway:'barge',
+        waterway:'barge',pipeline_line:'pipeline'};
+      mode = aliases[mode] || mode;
+      var resource = String(resourceIdValue || '').trim().toLowerCase();
+      var gas = new Set(['natural_gas']);
+      var liquid = new Set(['crude_oil','oil_shale']);
+      var ore = new Set(['iron_ore','bauxite','chromite','cobalt','copper','nickel','manganese','niobium',
+        'tungsten','zinc','rutile','ilmenite','uranium','rare_earth','lithium','tin','platinum','silver',
+        'gold','graphite','boron','magnesite']);
+      var dryBulk = new Set(['coal','phosphate','potash','salt','silica_sand','construction_aggregate',
+        'coral_aggregate','limestone','gypsum','aragonite','basalt','granite','marble','dolomite','diatomite']);
+      var cargo = gas.has(resource) ? 'gas' : liquid.has(resource) ? 'liquid' :
+        ore.has(resource) ? 'ore' : dryBulk.has(resource) ? 'dry_bulk' : 'general_cargo';
+      var byMode = {
+        truck:{dry_bulk:'truck-dry-bulk-tipper.svg',liquid:'truck-liquid-tanker.svg',gas:'truck-gas-tanker.svg',
+          ore:'truck-ore-hauler.svg',general_cargo:'truck-container-hauler.svg'},
+        rail:{dry_bulk:'train-bulk-hopper.svg',liquid:'train-liquid-tank-cars.svg',gas:'train-gas-tank-cars.svg',
+          ore:'train-ore-hopper.svg',general_cargo:'train-container-freight.svg'},
+        ship:{dry_bulk:'ship-bulk-carrier.svg',liquid:'ship-oil-tanker.svg',gas:'ship-lng-carrier.svg',
+          ore:'ship-ore-carrier.svg',general_cargo:'ship-container-carrier.svg'},
+        barge:{dry_bulk:'barge-inland-bulk.svg',liquid:'barge-liquid-tanker.svg',gas:'barge-gas-tanker.svg',
+          ore:'barge-ore-carrier.svg',general_cargo:'barge-container-cargo.svg'}
+      };
+      if (mode === 'pipeline') return 'assets/omega-industrial-icons-v1/transport/pipeline.svg';
+      var file = byMode[mode] && byMode[mode][cargo];
+      if (!file) file = ({truck:'truck.svg',rail:'train.svg',ship:'ship.svg',barge:'barge.svg'})[mode] || 'truck.svg';
+      return 'assets/omega-industrial-icons-v1/transport/variants/' + file;
     }
     function logisticsModeGenericIconPath(mode) {
       var icons = { truck:'truck.svg', rail:'train.svg', ship:'ship.svg', barge:'barge.svg', pipeline:'pipeline.svg' };
