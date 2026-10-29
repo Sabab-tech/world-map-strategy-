@@ -1125,6 +1125,15 @@
           '<div class="omega-v2-logistics-fleet-mode-copy"><span>' + esc(meta.label) + '</span><strong>' +
           esc(configured ? fmt(count) + ' ' + meta.unit : (ready ? 'Not configured' : 'Unknown')) +
           '</strong><small>' + esc(estimateLabel + tripRate) + '</small></div></div>';
+      var countFields = Object.keys(logisticsTransportModeMeta).map(function (mode) {
+        var meta = logisticsTransportModeMeta[mode], row = byMode[mode];
+        var count = row ? numberOrNull(row.count) : null;
+        var configured = !!(ready && row && row.configured === true && count !== null && count >= 0);
+        return '<label class="omega-v2-logistics-count-field"><span>' + esc(meta.label) + '</span>' +
+          '<input type="number" inputmode="numeric" min="0" step="1" data-omega-v2-fleet-count-input data-transport-mode="' +
+          esc(mode) + '" aria-label="' + esc(meta.label + ' count') + '" value="' +
+          esc(configured ? String(Math.floor(count)) : '') + '" placeholder="Not configured"></label>';
+      }).join('');
       }).join('');
       return '<section class="omega-v2-logistics-fleet-summary" data-omega-v2-logistics-fleet-summary data-site-id="' +
         esc(route && route.siteId || '') + '"><div class="omega-v2-logistics-fleet-heading">' +
@@ -1139,6 +1148,12 @@
         ((ready && configuredModeCount < 5) || !ready || unknownRouteModes
           ? '<p class="omega-v2-logistics-fleet-note">Configured fleet counts are actual in-game settings. Design needs are calculated separately from route flow, payload and round-trip cycle time. Missing pipeline per-line capacity remains unknown.</p>'
           : '<p class="omega-v2-logistics-fleet-note">Actual fleet counts and calculated design requirements are separate values; route legs are not vehicle IDs.</p>') +
+        '<details class="omega-v2-logistics-fleet-editor"><summary>Configure transport counts</summary>' +
+        '<p class="omega-v2-logistics-fleet-note">Enter a whole-number count for any transport type. Leave a field blank to keep its current value; enter 0 to record that none are available.</p>' +
+        '<form data-omega-v2-logistics-fleet-form data-site-id="' + esc(route && route.siteId || '') +
+        '" data-country-id="' + esc(route && route.countryId || countryKey || '') + '">' +
+        '<div class="omega-v2-logistics-count-grid">' + countFields + '</div>' +
+        '<button type="submit" class="omega-v2-button omega-v2-button--accent">Save transport counts</button></form></details>' +
         '</section>';
     }
     function logisticsFleetOverviewMarkup(routes) {
@@ -1487,6 +1502,61 @@
           root.__omegaV2ResourceSelectedCountryId = viewedCountry;
           scheduleRender(root, Object.assign({}, prior, { countryId:viewedCountry, tab:root.__omegaV2ResourceTab || 'dashboard' }));
         }
+      });
+      root.addEventListener('submit', function (event) {
+        var form = event && event.target;
+        if (!form || typeof form.matches !== 'function' ||
+            !form.matches('[data-omega-v2-logistics-fleet-form]') || !root.contains(form)) return;
+        if (typeof event.preventDefault === 'function') event.preventDefault();
+        var options = root.__omegaV2ResourceOptions || {};
+        var country = selectedCountryKey(form.getAttribute('data-country-id') || options.countryId || root.__omegaV2CurrentCountryKey || '');
+        var siteId = String(form.getAttribute('data-site-id') || '').trim();
+        var playerCountry = livePlayerCountryKey();
+        if (!playerCountry || country !== playerCountry) {
+          root.__omegaV2ResourceNotice = 'Transport counts can only be changed for the active player country.';
+          scheduleRender(root, Object.assign({}, options, { tab:'logistics' }));
+          return;
+        }
+        var network = g.OmegaResourceIndustrialNetwork || (g.Omega && g.Omega.ResourceIndustrialNetwork);
+        if (!siteId || !network || typeof network.setTransportFleet !== 'function') {
+          root.__omegaV2ResourceNotice = 'Transport count saving is unavailable; no changes were made.';
+          scheduleRender(root, Object.assign({}, options, { tab:'logistics' }));
+          return;
+        }
+        var inputs = typeof form.querySelectorAll === 'function'
+          ? form.querySelectorAll('[data-omega-v2-fleet-count-input]') : [];
+        var updates = [], invalid = null;
+        Array.prototype.forEach.call(inputs, function (input) {
+          var raw = String(input && input.value !== undefined ? input.value : '').trim();
+          if (!raw) return;
+          var count = Number(raw);
+          var mode = String(input && input.getAttribute && input.getAttribute('data-transport-mode') || '').trim().toLowerCase();
+          if (!mode || !Number.isInteger(count) || count < 0) {
+            invalid = 'Enter a whole number of 0 or more for each count you want to save.';
+            return;
+          }
+          updates.push({ transportType:mode, count:count });
+        });
+        if (invalid || !updates.length) {
+          root.__omegaV2ResourceNotice = invalid || 'Enter at least one transport count. Blank fields keep existing settings.';
+          scheduleRender(root, Object.assign({}, options, { tab:'logistics' }));
+          return;
+        }
+        var saved = 0, failed = [];
+        updates.forEach(function (update) {
+          try {
+            var result = network.setTransportFleet({
+              countryId:country, siteId:siteId, transportType:update.transportType, count:update.count
+            });
+            if (result && result.status === 'APPLIED') saved += 1;
+            else failed.push(update.transportType + ': ' + human(result && (result.reason || result.status) || 'rejected'));
+          } catch (_) { failed.push(update.transportType + ': save failed'); }
+        });
+        delete logisticsFleetViewCache[country + '|' + siteId];
+        root.__omegaV2ResourceNotice = failed.length
+          ? saved + ' transport count(s) saved. Not saved: ' + failed.join('; ') + '.'
+          : 'Saved ' + saved + ' transport count(s). Route estimates now use the saved counts.';
+        scheduleRender(root, Object.assign({}, options, { tab:'logistics' }));
       });
       root.addEventListener('click', function (event) {
         var target = event && event.target;
