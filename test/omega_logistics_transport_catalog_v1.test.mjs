@@ -43,7 +43,7 @@ test('new catalog and all cargo icons are included in offline cache',()=>{
  const catalog=readJson('omega_logistics_transport_catalog_v1.json');
  const offline=readFileSync(new URL('../omega-offline-map-sw.js',import.meta.url),'utf8');
  assert.match(offline,/omega_logistics_transport_catalog_v1\.json/);
- assert.match(offline,/omega-offline-atlas-shell-v59/);
+ assert.match(offline,/omega-offline-atlas-shell-v60/);
  for(const mode of catalog.transportTypes){
   for(const path of Object.values(mode.cargoIcons)){
    assert.ok(offline.includes('"./'+path+'"'),'offline cache missing '+path);
