@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const read=name=>JSON.parse(fs.readFileSync(path.join(root,name),'utf8'));
 const normalizePlanningUnit=value=>{
- const unit=String(value||'').trim().toUpperCase().replace(/[\\s-]+/g,'_');
+ const unit=String(value||'').trim().toUpperCase().replace(/[\s-]+/g,'_');
  const aliases={RAW_CARGO_TONNES_PER_DAY:'TONNES_PER_DAY',RAW_CARGO_TONS_PER_DAY:'TONNES_PER_DAY',
   METRIC_TONS_PER_DAY:'TONNES_PER_DAY',METRIC_TONNES_PER_DAY:'TONNES_PER_DAY',TONS_PER_DAY:'TONNES_PER_DAY',
   TONNE_PER_DAY:'TONNES_PER_DAY',TONNES_ORE_PER_DAY:'TONNES_PER_DAY',BARREL_PER_DAY:'BARRELS_PER_DAY',BBL_PER_DAY:'BARRELS_PER_DAY'};
@@ -102,9 +102,9 @@ for(const partInfo of ds.parts){
 assert.equal(all.filter(r=>r.planningProduction&&Number.isFinite(Number(r.planningProduction.rate))).length,305,
  'simulation-only mine output baselines must be preserved across all registered site routes');
 const everyLeg=all.flatMap(r=>r.routePlan.legs);
-assert.equal(everyLeg.filter(l=>Number.isFinite(l.requiredDesignFleetSlots)).length,540,
- 'only compatible production units and transport capacity may produce a numeric design need');
-assert.equal(everyLeg.filter(l=>l.requiredDesignFleetSlots===null).length,820,
+assert.equal(everyLeg.filter(l=>Number.isFinite(l.requiredDesignFleetSlots)).length,519,
+ 'only compatible production units and explicit per-line pipeline capacity may produce a numeric design need');
+assert.equal(everyLeg.filter(l=>l.requiredDesignFleetSlots===null).length,841,
  'unit gaps and unknown pipeline line capacity must remain explicitly uncalculated');
 assert.equal(all.length,561);assert.deepEqual([...seen].sort(),[...sourceById.keys()].sort());assert.equal(Object.keys(ds.countryToPart).length,ds.countryCount);
 assert.ok(ds.routeCountByMode.truck>=561);for(const m of ['rail','ship','barge','pipeline'])assert.ok(ds.routeCountByMode[m]>0,m+' routes should exist');
