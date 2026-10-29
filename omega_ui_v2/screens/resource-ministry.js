@@ -950,7 +950,7 @@
         '<div class="omega-v2-logistics-metrics"><div class="omega-v2-logistics-metric"><span>Route estimate</span><strong>'+(distance===null?'Not recorded':esc(fmt(distance)+' km'))+'</strong></div>' +
         '<div class="omega-v2-logistics-metric"><span>ETA estimate</span><strong>'+(eta===null?'Not recorded':esc(fmt(eta)+' game days'))+'</strong></div>' +
         '<div class="omega-v2-logistics-metric"><span>Design capacity</span><strong>'+(capacity===null?'Not recorded':esc(fmt(capacity)+(capacityUnit?' '+human(capacityUnit):'')))+'</strong></div></div>' +
-        '<div class="omega-v2-logistics-profile-foot">Aggregate mode counts only · No individual vehicle IDs</div></article>';
+        '</div></article>';
     }
     var routeProfilesLoaded=Object.prototype.hasOwnProperty.call(logisticsRouteCache,countryKey);
     var routeProfiles=routeProfilesLoaded?logisticsRouteCache[countryKey]:null;
@@ -968,7 +968,7 @@
         (routeProfiles.length>routeProfileLimit?'<div class="omega-v2-logistics-profile-actions"><button type="button" class="omega-v2-button omega-v2-button--quiet" data-omega-v2-logistics-profile-more>Load next 12 routes</button></div>':'') :
         routeProfilesLoaded?'<div class="omega-v2-empty">'+(logisticsRouteLoadErrors[countryKey]?'Route profiles could not be loaded. Shipment history remains available below.':'No eligible mine route profiles are registered for this country.')+'</div>':
         '<div class="omega-v2-empty" role="status" aria-live="polite">Loading this country’s route profiles…</div>') +
-      '<p class="omega-v2-logistics-profile-note">Route distances, design capacity, and ETA are simulation estimates. Count controls update the selected mine’s aggregate fleet ledger; the runtime validates dispatch availability.</p></section>';
+      '</section>';
     var shipmentCards=shipments.length?'<div class="omega-v2-grid omega-v2-logistics-grid">'+shipments.slice(-24).reverse().map(function(shipment){
       var status=logisticsStatus(shipment.status),q=numberOrNull(shipment.quantity);
       var from=shipment.sourceSiteName||shipment.siteName||shipment.sourceSiteId||shipment.origin||shipment.from||'—';
