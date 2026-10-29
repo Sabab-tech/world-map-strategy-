@@ -10,7 +10,7 @@ const slug=s=>String(s).toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+
 const esc=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&apos;");
 function readSvg(rel,id,label){
  const file=path.join(assetRoot,rel);assert.ok(fs.existsSync(file),id+" SVG file must exist");
- const src=fs.readFileSync(file,"utf8");assert.match(src,/^\s*<svg\b/,id+" needs SVG root");assert.match(src,/<\/svg>\s*$/,id+" needs closing SVG tag");
+ const src=fs.readFileSync(file,"utf8");assert.match(src,/^(?:\uFEFF?\s*<\?xml[^>]*>\s*)?<svg\b/,id+" needs SVG root");assert.match(src,/<\/svg>\s*$/,id+" needs closing SVG tag");
  assert.match(src,/viewBox="0 0 128 128"/,id+" needs consistent viewBox");assert.match(src,/aria-labelledby=/,id+" needs accessible title/description");
  assert.ok(src.includes(">"+esc(label)+"</title>"),id+" title must match canonical label");
  assert.doesNotMatch(src,/(?:href|src)=["']https?:\/\//i,id+" must not load remote content");
@@ -94,4 +94,33 @@ test("mine and warehouse logistics nodes are registered as separate offline SVG 
  assert.equal(manifest.summary.resourceIconCount,42);
  assert.equal(manifest.summary.factoryIconCount,21);
  assert.equal(manifest.summary.totalIconCount,63,"logistics nodes do not change the canonical resource/factory totals");
+});
+
+
+test("cargo-specific transport variants cover truck, rail, ship and barge models offline",()=>{
+ const variants=manifest.transportVariants;
+ assert.ok(Array.isArray(variants),"the canonical icon manifest must register transport variants");
+ assert.equal(variants.length,20);
+ assert.equal(manifest.summary.transportVariantIconCount,20);
+ assert.equal(manifest.summary.totalTransportVariantIconCount,20);
+ assert.deepEqual(manifest.summary.transportVariantsByMode,{truck:5,rail:5,ship:5,barge:5});
+ const ids=new Set(),files=new Set(),modeCounts={};
+ for(const row of variants){
+  assert.ok(row.id&&row.label&&row.assetId&&row.transportMode&&row.cargoClass&&row.file);
+  assert.match(row.file,/^transport\/variants\/[a-z0-9-]+\.svg$/);
+  assert.ok(["truck","rail","ship","barge"].includes(row.transportMode));
+  assert.ok(["dry_bulk","liquid","gas","ore","general_cargo"].includes(row.cargoClass));
+  assert.equal(ids.has(row.id),false,"transport variant IDs must be unique");
+  assert.equal(files.has(row.file),false,"transport variant paths must be unique");
+  ids.add(row.id);files.add(row.file);
+  modeCounts[row.transportMode]=(modeCounts[row.transportMode]||0)+1;
+  const src=readSvg(row.file,row.id,row.label);
+  assert.match(src,/data-omega-icon-kind="transport"/,row.id+" must identify itself as a transport asset");
+ }
+ assert.equal(ids.size,20);
+ assert.equal(files.size,20);
+ assert.deepEqual(modeCounts,{barge:5,ship:5,rail:5,truck:5});
+ const offline=fs.readFileSync(path.join(root,"omega-offline-map-sw.js"),"utf8");
+ assert.match(offline,/omega-offline-atlas-shell-v62/);
+ assert.ok(offline.includes("factoryIconManifest.transportVariants"),"variant SVGs must be precached from the manifest");
 });
