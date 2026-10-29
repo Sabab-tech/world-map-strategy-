@@ -1267,10 +1267,10 @@
     function logisticsIconMarkup(kind) {
       var value = String(kind || 'destination').toLowerCase();
       if (value === 'origin') {
-        return '<img class="omega-v2-logistics-svg omega-v2-logistics-svg--place" data-omega-v2-logistics-icon="origin" src="assets/omega-industrial-icons-v1/logistics/mine-site.svg" alt="" aria-hidden="true" loading="lazy" decoding="async">';
+        return '<img class="omega-v2-logistics-svg omega-v2-logistics-svg--place" data-omega-v2-logistics-icon="origin" src="assets/omega-industrial-icons-v1/transport/route-mine-origin.svg" alt="" aria-hidden="true" loading="lazy" decoding="async">';
       }
       if (value === 'warehouse') {
-        return '<img class="omega-v2-logistics-svg omega-v2-logistics-svg--place" data-omega-v2-logistics-icon="warehouse" src="assets/omega-industrial-icons-v1/logistics/warehouse-node.svg" alt="" aria-hidden="true" loading="lazy" decoding="async">';
+        return '<img class="omega-v2-logistics-svg omega-v2-logistics-svg--place" data-omega-v2-logistics-icon="warehouse" src="assets/omega-industrial-icons-v1/transport/route-warehouse-destination.svg" alt="" aria-hidden="true" loading="lazy" decoding="async">';
       }
       var paths = {
         transport: '<path d="M3 10h16v12H3zM19 14h5l5 5v3H19z" /><circle cx="8" cy="24" r="2.5" /><circle cx="24" cy="24" r="2.5" />',
