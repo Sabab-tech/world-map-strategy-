@@ -645,7 +645,7 @@
         }).join('')
       : '';
     var startingBaselineMarkup = startingBaseline && startingBaseline.factoryCounts
-      ? '<section class="omega-v2-industry-starting-baseline" aria-label="Game starting factory allocation">' +
+      ? '<section class="omega-v2-metal-plate omega-v2-metal-plate--silver omega-v2-industry-starting-baseline" aria-label="Game starting factory allocation">' +
           '<div class="omega-v2-metal-label">GAME START · NATIONAL INDUSTRY PROFILE</div>' +
           '<h3>Starting Factory Allocation</h3>' +
           '<p class="omega-v2-industry-muted"><strong>' + fmt(startingBaseline.totalStartingFactoryUnits) + '</strong> modeled starting units · ' +
@@ -655,7 +655,7 @@
             '<tbody>' + startingFactoryRows + '</tbody></table></div>' +
           '<p class="omega-v2-industry-muted">Game-scaled starting allocation, not a real-world factory census. Zero means this type starts absent; the player may expand industry later. This baseline is separate from currently commissioned factory assets.</p>' +
         '</section>'
-      : '<section class="omega-v2-industry-starting-baseline" aria-label="Game starting factory allocation">' +
+      : '<section class="omega-v2-metal-plate omega-v2-metal-plate--silver omega-v2-industry-starting-baseline" aria-label="Game starting factory allocation">' +
           '<div class="omega-v2-metal-label">GAME START · NATIONAL INDUSTRY PROFILE</div>' +
           '<h3>Starting Factory Allocation</h3>' +
           '<p class="omega-v2-industry-muted">Starting allocation data is loading or unavailable. Unknown values are not treated as zero.</p></section>';
