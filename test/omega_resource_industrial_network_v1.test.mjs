@@ -12,7 +12,8 @@ const testSiteLogisticsRoutes=[
 ].map(([siteId,resourceId])=>({
   countryId:'BGD',siteId,resourceId,routeId:'TEST_MINE_ROUTE:'+siteId,
   routePlan:{
-    routeType:resourceId==='coal'?'TRUCK_TO_RAIL_TO_TRUCK':(resourceId==='natural_gas'?'PIPELINE':'RAIL'),
+    routeType:resourceId==='natural_gas'?'PIPELINE':(resourceId==='coal'?undefined:'RAIL'),
+    strategyCode:resourceId==='coal'?'MINE_HAULAGE_RAIL_LAST_MILE':undefined,
     routeStatus:'TEST_FIXTURE_SIMULATION_ONLY',
     capacityBottleneckPerDay:resourceId==='natural_gas'?1200:120000,
     estimatedRouteDistanceKm:100,
