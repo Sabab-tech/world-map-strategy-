@@ -406,13 +406,17 @@ function dispatchMineToWarehouse(countryId,site,flow,sourceBatch,routeProfile){
   // the simulation cannot actually process while its clock jumps multiple days per turn.
   const etaDate=factoryAddGameDays(factoryCurrentGameDate(),etaTurns*dayWindow);
   const shipmentId='MINEHAUL:'+h32(JSON.stringify({cid,siteId,batchId,turn:turn(),sequence:network.shipments.length+1,quantity}));
+  const fleetReservation=reserveTransportFleetForShipment(cid,siteId,shipmentId,finalizedMetrics.fleetAllocationByMode);
+  if(fleetReservation.status==='BLOCKED')return{status:'BLOCKED',reason:fleetReservation.reason||'FLEET_UNITS_CHANGED_BEFORE_DISPATCH',details:fleetReservation,routeId:routeProfile.routeId};
   const route={status:'PLANNED',routeId:routeProfile.routeId,countryId:cid,siteId,sourceSiteId:siteId,sourceNode:siteId,
     destinationNode:warehouseId,destinationWarehouseId:warehouseId,resourceId:rid,requestedQuantity:remaining,
     dispatchQuantity:Number(quantity.toFixed(6)),unit:sourceBatch.unit||flow?.unit||null,
     transportMode:legs[0]?.mode||'truck',legs,totalDistanceKm:Number((finalizedMetrics.totalDistanceKm||legs.reduce((sum,leg)=>sum+(num(leg.distanceKm)||0),0)).toFixed(6)),
     travelTimeDays:days,etaTurn,etaDate,vehiclesByMode:finalizedMetrics.vehiclesByMode||{},vehicleCount:finalizedMetrics.vehicleCount||0,
     capacityQuantityFactor:bridge.sourceToCapacityFactor,capacityQuantityUnit:bridge.targetUnit||'SIMULATION_RESOURCE_UNIT',
-    etaCalculationAuthority:finalizedMetrics.authority||'VERSIONED_TRANSPORT_CATALOG',capacityAuthority:'SIMULATED_SITE_ROUTE_DESIGN_CAPACITY',
+    etaCalculationAuthority:finalizedMetrics.authority||'VERSIONED_TRANSPORT_CATALOG',fleetAllocationByMode:clone(finalizedMetrics.fleetAllocationByMode||{}),
+    fleetAvailabilityStatus:finalizedMetrics.fleetAvailabilityStatus||'SIMULATED_CAPACITY_FALLBACK',
+    capacityAuthority:finalizedMetrics.hasConfiguredFleet?'AGGREGATE_SITE_FLEET_AND_ROUTE_CAPACITY':'SIMULATED_SITE_ROUTE_DESIGN_CAPACITY',
     distanceAuthority:routeProfile.routePlan.routeStatus||'SCENARIO_LOGISTICS_DESIGN_ONLY',crossBorderRequired:false,
     quantityUnitBridge:bridge,transportAssetBindingStatus:'UNBOUND_SIMULATED_CAPACITY',simulationOnly:true};
   const capacityUse=commitTransportCapacity(cid,route,quantity,shipmentId,bridge.sourceToCapacityFactor);
@@ -449,7 +453,7 @@ function dispatchMineToWarehouse(countryId,site,flow,sourceBatch,routeProfile){
   const shipment={shipmentId,shipmentType:'MINE_TO_WAREHOUSE',countryId:cid,siteId,resourceId:rid,batchId,
     quantity:Number(quantity.toFixed(6)),unit:route.unit,warehouseId,sourceWarehouseId:null,
     status:'IN_TRANSIT',deliveryStatus:'IN_TRANSIT_TO_RAW_WAREHOUSE',createdTurn:turn(),createdDate:factoryCurrentGameDate(),
-    etaTurn,etaDate,route,transportCapacityReservation:capacityUse,
+    etaTurn,etaDate,route,transportCapacityReservation:capacityUse,transportFleetReservation:clone(fleetReservation),
     provenance:{source:'OMEGA_RESOURCE_SITE_LOGISTICS_RUNTIME',authority:routeProfile.provenance?.authority||'SCENARIO_LOGISTICS_DESIGN_ONLY',
       simulationOnly:true,sourceBatchId:batchId,siteId,actualTransportAssetBound:false,unitBridgeAuthority:bridge.authority}};
   network.shipments.push(shipment);network.shipments=network.shipments.slice(-MAX_SHIPMENTS);
@@ -2321,6 +2325,7 @@ function advanceShipments(c){
           siteId:s.siteId,reason:s.blockReason,details:receipt},'resource-industrial-network');continue;
       }
       s.status='DELIVERED';s.deliveryStatus='DELIVERED_TO_RAW_WAREHOUSE';s.destinationStatus='RAW_WAREHOUSE_RECEIVED';
+      releaseTransportFleetReservation(cid,s.shipmentId);
       s.deliveredTurn=turn();s.deliveredDate=factoryCurrentGameDate();s.deliveryEventId='MINE-WH-DELIVERY:'+s.shipmentId;
       mineDelivered.push(clone(s));
       emit('OMEGA_RESOURCE_MINE_HAUL_DELIVERED',cid,{shipmentId:s.shipmentId,batchId:s.batchId,siteId:s.siteId,
@@ -2519,6 +2524,7 @@ function advanceShipments(c){
         authority:'TRACKED_LOTS_PLUS_UNOBSERVED_LEGACY_BALANCE'},'resource-industrial-network');
     }
     s.status='DELIVERED';s.deliveredTurn=turn();s.destinationStatus='FACTORY_RECEIVED';s.factoryInputBatchId=inputBatchId;
+    releaseTransportFleetReservation(cid,s.shipmentId);
     // Delivery updates warehouse/factory input ledgers only. Production is scheduled and
     // output cannot be committed until the authoritative in-game calendar reaches finishDate.
     const receivedRecipe=recipeFor(rid,factory),productionMetrics=factoryProductionMetrics(factory,receivedRecipe);
@@ -2565,7 +2571,7 @@ function advanceShipments(c){
         saveSiteFlow(cid,flow);
       }
     }
-    n.deliveries.push(clone(s));delivered.push(clone(s));const res=n.reservations?.[s.reservationId];if(res)res.status='DELIVERED';
+    n.deliveries.push(clone(s));delivered.push(clone(s));releaseTransportFleetReservation(cid,s.shipmentId);const res=n.reservations?.[s.reservationId];if(res)res.status='DELIVERED';
     emit('OMEGA_RESOURCE_DELIVERY_COMPLETED',cid,{shipmentId:s.shipmentId,siteId:s.siteId,factoryId:s.factoryId,resourceId:rid,quantity,unit:s.unit,
       travelTimeDays:s.route.travelTimeDays,transport:s.route.transportMode,status:'DELIVERED_TO_FACTORY',processingStatus:s.processingStatus,
       processingTransactionId:s.processingTransactionId,batchId:sourceBatchId||null});
@@ -4838,7 +4844,8 @@ function gameplayPipelineDiagnostics(countryScope){
     awaitingTransportCapacity:perCountry.reduce((n,x)=>n+x.awaitingTransportCapacity,0),perCountry};
 }
 function api(){
-  return Object.freeze({VERSION,loadCatalog,loadSiteLogisticsRoutes,planExtraction,planShipment,dispatchShipment,dispatchFactoryInputShipment,advanceShipments,quoteMineProject,startMineProject,startFactoryProject,startInfrastructureProject,startPadmaCorridorProject,advanceProjects,startTechnologyProject,executeFactoryCycle,executeSitePipeline,diagnostics,gameplayPipelineDiagnostics,factoryCatalogDiagnostics,factoryProductionRequirements,factoryProductionStatus,decommissionFactory,decommissionMine,setMineOperatingStatus,quoteMineDemolition,destroyMineAssets,startFactoryProductionCycle,transferFactoryInputsFromWarehouse,processPendingFactoryInputs,factoryUtilityDiagnostics,factoryConstructionMaterialQuote,reconcileFactoryEmployment,normalizeInfrastructure,candidateFactories,recipeFor,processPendingFactoryInputs,resourceMethod,buildRoute});
+  return Object.freeze({VERSION,loadCatalog,loadSiteLogisticsRoutes,planExtraction,planShipment,dispatchShipment,dispatchFactoryInputShipment,advanceShipments,
+    addTransportFleet,removeTransportFleet,transportFleetStatus,quoteMineProject,startMineProject,startFactoryProject,startInfrastructureProject,startPadmaCorridorProject,advanceProjects,startTechnologyProject,executeFactoryCycle,executeSitePipeline,diagnostics,gameplayPipelineDiagnostics,factoryCatalogDiagnostics,factoryProductionRequirements,factoryProductionStatus,decommissionFactory,decommissionMine,setMineOperatingStatus,quoteMineDemolition,destroyMineAssets,startFactoryProductionCycle,transferFactoryInputsFromWarehouse,processPendingFactoryInputs,factoryUtilityDiagnostics,factoryConstructionMaterialQuote,reconcileFactoryEmployment,normalizeInfrastructure,candidateFactories,recipeFor,processPendingFactoryInputs,resourceMethod,buildRoute});
 }
 g.Omega=g.Omega||{};g.Omega.ResourceIndustrialNetwork=api();g.OmegaResourceIndustrialNetwork=g.Omega.ResourceIndustrialNetwork;
 
