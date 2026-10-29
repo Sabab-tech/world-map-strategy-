@@ -754,3 +754,49 @@ console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');
   assert.equal(unrelated.remainingQuantity,5);
   console.log('OMEGA MINE-BOUND FACTORY INPUT ISOLATION PASSED');
 }
+
+
+{
+  // Fleet identity is aggregate country + mine/site + transport mode + count.
+  // No registration/plate/individual vehicle IDs are ever persisted.
+  const fleetCountry='BGD',fleetSiteId='SITE_FLEET_DYNAMIC_TEST';
+  const fleetSite={siteId:fleetSiteId,countryId:fleetCountry,real:{resourceId:'coal'},simulation:{transportRoute:[]}};
+  const fleetFactory={id:'FAC-FLEET-DYNAMIC-TEST',countryId:fleetCountry,transportAccess:['truck'],
+    inputCoefficients:{coal:1},outputProfile:{COAL_CONCENTRATE:0.85,COAL_REJECT:0.15}};
+  const input={countryId:fleetCountry,sourceSiteId:fleetSiteId,transportMode:'truck',unit:'TONNES'};
+  const baseline=N.buildRoute(fleetSite,fleetFactory,'coal',50000,input);
+  assert.equal(baseline.status,'PLANNED');
+  assert.equal(baseline.vehiclePlan[0].fleetCountConfigured,false,
+    'missing aggregate fleet must preserve the explicit simulated-capacity fallback');
+  const first=N.addTransportFleet({countryId:fleetCountry,siteId:fleetSiteId,transportMode:'truck',count:1});
+  assert.equal(first.status,'UPDATED');
+  const oneTruck=N.buildRoute(fleetSite,fleetFactory,'coal',50000,input);
+  assert.equal(oneTruck.vehiclePlan[0].fleetCountConfigured,true);
+  assert.equal(oneTruck.vehiclePlan[0].fleetTotalUnits,1);
+  assert.ok(oneTruck.dispatchQuantity<baseline.dispatchQuantity,
+    'one recorded truck must constrain dispatch capacity versus the unconfigured simulated fallback');
+  assert.ok(oneTruck.travelTimeDays>baseline.travelTimeDays,
+    'finite truck count must increase trip waves and calculated travel time');
+  const added=N.addTransportFleet({countryId:fleetCountry,siteId:fleetSiteId,transportMode:'truck',count:3});
+  assert.equal(added.status,'UPDATED');
+  const fourTrucks=N.buildRoute(fleetSite,fleetFactory,'coal',50000,input);
+  assert.equal(fourTrucks.vehiclePlan[0].fleetTotalUnits,4);
+  assert.equal(fourTrucks.vehiclePlan[0].loadsRequired,
+    Math.ceil(50000/Math.max(0.001,Number(fourTrucks.vehiclePlan[0].payloadTonnes)||1)));
+  assert.ok(fourTrucks.dispatchQuantity>oneTruck.dispatchQuantity,
+    'adding aggregate vehicles must raise recalculated per-turn dispatch capacity');
+  assert.ok(fourTrucks.travelTimeDays<oneTruck.travelTimeDays,
+    'adding aggregate vehicles must reduce trip waves and transit duration for future route plans');
+  const status=N.transportFleetStatus(fleetCountry,fleetSiteId);
+  assert.equal(status.modes.truck.totalUnits,4);
+  assert.equal(status.vehicleIdentifiersStored,false);
+  assert.doesNotMatch(JSON.stringify(status),/registrationNumber|registrationId|vehicleId|licensePlate/i,
+    'aggregate fleet records must not contain individual vehicle registration fields');
+  const removed=N.removeTransportFleet({countryId:fleetCountry,siteId:fleetSiteId,transportMode:'truck',count:4});
+  assert.equal(removed.status,'UPDATED');
+  const zeroFleet=N.buildRoute(fleetSite,fleetFactory,'coal',50000,input);
+  assert.equal(zeroFleet.status,'BLOCKED','an explicitly configured empty fleet must block dispatch');
+  assert.equal(zeroFleet.dispatchQuantity,0);
+  assert.equal(N.transportFleetStatus(fleetCountry,fleetSiteId).modes.truck.totalUnits,0);
+  console.log('OMEGA AGGREGATE TRANSPORT FLEET DYNAMIC CAPACITY PASSED');
+}
