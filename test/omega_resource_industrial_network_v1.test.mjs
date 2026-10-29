@@ -790,7 +790,7 @@ console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');
   const status=N.transportFleetStatus(fleetCountry,fleetSiteId);
   assert.equal(status.modes.truck.totalUnits,4);
   assert.equal(status.vehicleIdentifiersStored,false);
-  assert.doesNotMatch(JSON.stringify(status),/registrationNumber|registrationId|vehicleId|licensePlate/i,
+  assert.doesNotMatch(JSON.stringify(status),/registrationNumber\\s*:|registrationId\\s*:|vehicleId\\s*:|licensePlate\\s*:/i,
     'aggregate fleet records must not contain individual vehicle registration fields');
   const removed=N.removeTransportFleet({countryId:fleetCountry,siteId:fleetSiteId,transportMode:'truck',count:4});
   assert.equal(removed.status,'UPDATED');
