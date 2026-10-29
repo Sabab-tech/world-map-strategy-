@@ -215,31 +215,6 @@
     }
     return null;
   }
-  function countryAliases(row) {
-    var profile = loaded && loaded.economyProfiles[row.countryId] || {};
-    return [row.countryId, row.countryCode, row.countryName, profile.name,
-      profile.economyKey, profile.populationKey, profile.iso2]
-      .filter(Boolean).map(token);
-  }
-  function getCountryBucket(table, profileRow, create) {
-    if (!isObject(table)) {
-      return { key: null, value: null, invalid: true };
-    }
-    var aliases = countryAliases(profileRow);
-    var keys = Object.keys(table);
-    for (var i = 0; i < keys.length; i++) {
-      if (aliases.indexOf(token(keys[i])) >= 0) {
-        if (!isObject(table[keys[i]])) return { key: keys[i], value: null, invalid: true };
-        return { key: keys[i], value: table[keys[i]] };
-      }
-    }
-    if (!create) return { key: null, value: null };
-    if (own(table, profileRow.countryId) && !isObject(table[profileRow.countryId])) {
-      return { key: profileRow.countryId, value: null, invalid: true };
-    }
-    table[profileRow.countryId] = {};
-    return { key: profileRow.countryId, value: table[profileRow.countryId], created: true };
-  }
   function eligibleSession(state, session) {
     if (!session) return false;
     var turn = currentTurn(state);
@@ -286,11 +261,30 @@
           }
           state.simulation = {};
         }
-        if (!own(state, 'economy')) {
-          state.economy = {};
-        } else if (!isObject(state.economy)) {
-          return { version: VERSION, status: 'BLOCKED', reason: 'ECONOMY_STATE_INVALID' };
+        var currentGlobalMarker = state.simulation.countryFactoryStartingBaselineV1;
+        if (isObject(currentGlobalMarker) && currentGlobalMarker.sessionId &&
+            currentGlobalMarker.sessionId !== sessionId &&
+            isObject(currentGlobalMarker.countries) &&
+            Object.keys(currentGlobalMarker.countries).length >= loaded.countryIds.length) {
+          lastReport = clone(currentGlobalMarker);
+          return { version: VERSION, status: 'EXISTING_BASELINE_PRESERVED', reason: 'PRIOR_SESSION_BASELINE_NOT_OVERWRITTEN' };
         }
+        var countryAllocations = Object.create(null);
+        loaded.countryIds.forEach(function (countryId) {
+          var row = loaded.baseline.countries[countryId];
+          countryAllocations[countryId] = {
+            countryId: countryId,
+            countryName: row.countryName,
+            industryArchetype: row.industryArchetype,
+            totalStartingFactoryUnits: row.totalStartingFactoryUnits,
+            factoryCounts: clone(row.factoryCounts),
+            specializations: clone(row.specializations || []),
+            authority: 'SIMULATED_COUNTRY_STARTING_INDUSTRY_PROFILE_V1',
+            simulationOnly: true,
+            realWorldFacilityCounts: false,
+            liveProductionAssetsCreated: false
+          };
+        });
         var summary = {
           version: VERSION,
           datasetVersion: loaded.baseline.version,
@@ -300,49 +294,19 @@
           countryCount: loaded.countryIds.length,
           factoryTypeCount: loaded.factoryIds.length,
           totalStartingFactoryUnits: loaded.totalFactoryUnits,
-          countriesCreated: 0,
+          countriesCreated: loaded.countryIds.length,
           countriesPreserved: 0,
           countriesBlocked: 0,
           countryFailures: [],
+          initializedCountryCount: loaded.countryIds.length,
+          countries: countryAllocations,
           authority: 'SIMULATED_COUNTRY_STARTING_INDUSTRY_PROFILE_V1',
           simulationOnly: true,
           realWorldFacilityCounts: false,
           productionAssetsCreated: 0,
-          existingSaveDataOverwritten: false
+          existingSaveDataOverwritten: false,
+          economyStateModified: false
         };
-        loaded.countryIds.forEach(function (countryId) {
-          var row = loaded.baseline.countries[countryId];
-          var hit = getCountryBucket(state.economy, row, true);
-          if (hit.invalid || !hit.value) {
-            summary.countriesBlocked++;
-            summary.countryFailures.push({ countryId: countryId, reason: 'COUNTRY_ECONOMY_BUCKET_INVALID' });
-            return;
-          }
-          var existing = hit.value.factoryStartingBaselineV1;
-          if (isObject(existing)) {
-            summary.countriesPreserved++;
-            return;
-          }
-          hit.value.factoryStartingBaselineV1 = {
-            version: VERSION,
-            datasetVersion: loaded.baseline.version,
-            countryId: countryId,
-            countryName: row.countryName,
-            industryArchetype: row.industryArchetype,
-            sessionId: sessionId || null,
-            initializedAtTurn: currentTurn(state),
-            totalStartingFactoryUnits: row.totalStartingFactoryUnits,
-            factoryCounts: clone(row.factoryCounts),
-            specializations: clone(row.specializations || []),
-            authority: 'SIMULATED_COUNTRY_STARTING_INDUSTRY_PROFILE_V1',
-            simulationOnly: true,
-            realWorldFacilityCounts: false,
-            liveProductionAssetsCreated: false
-          };
-          summary.countriesCreated++;
-        });
-        summary.initializedCountryCount = summary.countriesCreated + summary.countriesPreserved;
-        summary.status = summary.countriesBlocked ? 'COMPLETED_WITH_REPORTED_GAPS' : 'COMPLETED';
         state.simulation.countryFactoryStartingBaselineV1 = clone(summary);
         lastReport = clone(summary);
         dispatchEvent('OMEGA_COUNTRY_FACTORY_STARTING_BASELINE_INITIALIZED', summary);
