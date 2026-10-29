@@ -11,12 +11,17 @@ const testSiteLogisticsRoutes=[
 ].map(([siteId,resourceId])=>({
   countryId:'BGD',siteId,resourceId,routeId:'TEST_MINE_ROUTE:'+siteId,
   routePlan:{
+    routeType:resourceId==='coal'?'TRUCK_TO_RAIL_TO_TRUCK':'RAIL',
     routeStatus:'TEST_FIXTURE_SIMULATION_ONLY',
     capacityBottleneckPerDay:120000,
     estimatedRouteDistanceKm:100,
     plannedTransitDays:1,
     minimumTransitDays:1,
-    legs:[{transportMode:'rail',estimatedDistanceKm:100,estimatedTravelHours:24,
+    legs:resourceId==='coal' ? [
+      {sequence:1,transportMode:'truck',estimatedDistanceKm:20,designCapacityPerTrip:25,designCapacityPerDay:100,designCapacityUnit:'tonnes'},
+      {sequence:2,transportMode:'rail',estimatedDistanceKm:60,designCapacityPerTrip:5000,designCapacityPerDay:120000,designCapacityUnit:'tonnes'},
+      {sequence:3,transportMode:'truck',estimatedDistanceKm:20,designCapacityPerTrip:25,designCapacityPerDay:100,designCapacityUnit:'tonnes'}
+    ] : [{transportMode:'rail',estimatedDistanceKm:100,estimatedTravelHours:24,
       designCapacityPerDay:120000,designCapacityUnit:'tonnes'}]
   },
   quantityUnitBridge:{sourceProductionUnit:'tonnes',cargoCapacityUnit:'tonnes'},
@@ -100,6 +105,13 @@ context.Omega.MinistryInteroperability={
 vm.createContext(context);
 vm.runInContext(fs.readFileSync('omega_resource_industrial_network_v1.js','utf8'),context,{filename:'omega_resource_industrial_network_v1.js'});
 const N=context.Omega.ResourceIndustrialNetwork;
+const genericCoalPreview=await N.previewSiteTransport({countryId:'BGD',siteId:'SITE_BGD_COAL_01',quantity:1000});
+assert.equal(genericCoalPreview.status,'READY',JSON.stringify(genericCoalPreview));
+assert.equal(genericCoalPreview.routeLegCount,1,'generic unverified intermodal template must resolve to one commodity-preferred mode');
+assert.equal(genericCoalPreview.legs[0].transportMode,'rail','coal route should use its first preferred available mode');
+assert.equal(genericCoalPreview.legs[0].distanceKm,100,'single-mode conversion must preserve total estimated distance');
+assert.equal(genericCoalPreview.distinctTransportModeCount,1);
+assert.equal(genericCoalPreview.individualVehicleIdsRequired,false);
 function advanceOneGameTurn(state){
   const sim=state.simulation||(state.simulation={});
   const step=Math.max(1,Math.round(Number(sim.daysPerTurn)||1));
