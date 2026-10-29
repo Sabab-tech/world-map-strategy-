@@ -1437,15 +1437,33 @@ function siteRouteLegMetrics(countryId,routeProfile,quantity,unitBridge){
     const travelDays=totalHours/24;
     totalDays+=travelDays;
     const payload=Math.max(0.001,num(source?.designCapacityPerTrip)||num(profile?.payloadTonnes)||1);
-    const dailyCapacity=Math.max(0,num(source?.designCapacityPerDay)||infrastructure.capacityPerDay*infrastructure.quality);
-    const units=Math.ceil(quantityInCapacityUnits/payload);
+    const declaredFleetCount=num(source?.fleetCount??routeProfile?.transportFleet?.[mode]?.count);
+    const fleetCount=declaredFleetCount!==null&&declaredFleetCount>=0?Math.floor(declaredFleetCount):null;
+    const requiredVehicleCount=units;
+    // A known fleet count limits daily throughput; unknown counts stay unknown, never fabricated.
+    const cycleDays=Math.max(1/24,travelDays*2);
+    const fleetCapacityPerDay=fleetCount===null?null:Number((fleetCount*payload/cycleDays).toFixed(6));
+    const routeCapacityPerDay=Math.max(0,num(source?.designCapacityPerDay)||infrastructure.capacityPerDay*infrastructure.quality);
+    const dailyCapacity=fleetCapacityPerDay===null?routeCapacityPerDay:
+      Math.min(routeCapacityPerDay>0?routeCapacityPerDay:fleetCapacityPerDay,fleetCapacityPerDay);
+    const cargoText=tok(source?.cargoClass||routeProfile?.commodityGroup||routeProfile?.resourceId||'');
+    const cargoIconClass=/coal|lignite|coke|dry_bulk/.test(cargoText)?'coal-dry-bulk':
+      /oil|petroleum|diesel|fuel|crude|liquid/.test(cargoText)?'oil-liquid':
+      /gas|lng|methane/.test(cargoText)?'gas-lng':
+      /ore|iron|copper|bauxite|aggregate|limestone|gravel|stone|mineral/.test(cargoText)?'ore-aggregate':'general-cargo';
+    const iconMode=mode==='rail'?'train':mode;
+    const cargoIconPath='assets/omega-industrial-icons-v1/transport/cargo/'+cargoIconClass+'/'+iconMode+'.svg';
     return{...clone(source),mode,transportMode:mode,distanceKm:Number(distanceKm.toFixed(6)),speedKmh,
       loadHours,unloadHours,transferHours,travelHours:Number(travelHours.toFixed(6)),
       adjustedTravelHours:Number(adjustedTravelHours.toFixed(6)),travelDays:Number(travelDays.toFixed(6)),
-      payloadTonnes:payload,units,vehicleCount:units,capacityPerDay:dailyCapacity,
+      payloadTonnes:payload,units,vehicleCount:units,requiredVehicleCount,fleetCount,
+      fleetCapacityPerDay,dailyFleetCycleDays:Number(cycleDays.toFixed(6)),
+      fleetSufficiency:fleetCount===null?null:fleetCount>=requiredVehicleCount,
+      capacityPerDay:dailyCapacity,cargoIconClass,cargoIconPath,
       distanceAuthority:source?.distanceAuthority||routeProfile?.provenance?.authority||'SCENARIO_LOGISTICS_DESIGN_ONLY',
       timeAuthority:'VERSIONED_VEHICLE_SPEED_LOADING_UNLOADING_AND_INFRASTRUCTURE_QUALITY',
-      capacityAuthority:source?.designCapacityPerTrip!=null?'ROUTE_LEG_PER_TRIP_CAPACITY':'VERSIONED_TRANSPORT_CATALOG'};
+      capacityAuthority:fleetCount!==null?'COUNTRY_SITE_TRANSPORT_TYPE_COUNT_AND_VERSIONED_TRANSPORT_CATALOG':
+        source?.designCapacityPerTrip!=null?'ROUTE_LEG_PER_TRIP_CAPACITY':'VERSIONED_TRANSPORT_CATALOG'};
   });
   const declaredCapacity=num(plan.capacityBottleneckPerDay);
   const capacities=legs.map(leg=>num(leg.capacityPerDay)).filter(value=>value!==null&&value>0);
