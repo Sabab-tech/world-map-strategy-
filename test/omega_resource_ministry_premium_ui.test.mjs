@@ -317,6 +317,9 @@ test("Resource Logistics shows configured per-site route cards and keeps Current
   assert.match(root.innerHTML, /3 days/);
   assert.match(root.innerHTML, /45 tonnes\/day/);
   assert.match(root.innerHTML, /Transport Fleet Summary/);
+  assert.match(root.innerHTML, /Known configured vehicle subtotal/);
+  assert.match(root.innerHTML, /Pipeline lines recorded/);
+  assert.match(root.innerHTML, /Known combined transport units subtotal \(vehicles \+ lines\)/);
   assert.match(root.innerHTML, /Configure transport counts/);
   assert.match(root.innerHTML, /data-omega-v2-logistics-fleet-form/);
   assert.match(root.innerHTML, /data-omega-v2-fleet-count-input/);
