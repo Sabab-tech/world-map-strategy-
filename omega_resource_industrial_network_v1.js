@@ -1743,9 +1743,9 @@ function routeSegments(site,asset,resourceId,mode,countryId,input={}){
     f.transportRoute,f.simulation?.transportRoute
   ].filter(rows=>Array.isArray(rows)&&rows.length&&
     rows.every(row=>row&&normalizeAccess(row.transportMode||row.mode)));
-  const matchingArray=directArrays.find(rows=>
-    normalizeAccess(rows[0]?.transportMode||rows[0]?.mode)===chosen)||
-    directArrays.find(rows=>rows.length>1&&rows.every(row=>normalizeAccess(row.transportMode||row.mode)));
+  const matchingArray=!explicitMode?directArrays[0]:
+    directArrays.find(rows=>rows.length>1&&rows.some(row=>normalizeAccess(row.transportMode||row.mode)===chosen))||
+    directArrays.find(rows=>normalizeAccess(rows[0]?.transportMode||rows[0]?.mode)===chosen);
   if(matchingArray){
     return matchingArray.map((row,index)=>({
       mode:normalizeAccess(row.transportMode||row.mode),
@@ -1792,7 +1792,7 @@ function buildRoute(site,asset,resourceId,requestedQuantity,input={}){
   if(!segments.length)return{status:'BLOCKED',reason:'TRANSPORT_MODE_UNAVAILABLE_FOR_ROUTE',countryId:cid,
     requestedTransportMode:mode,sourceSiteId:input.sourceSiteId||site?.siteId||null,routePath:[],vehiclePlan:[],
     capacityAuthority:'NO_SUPPORTED_ROUTE_MODE',distanceAuthority:'NOT_AVAILABLE'};
-  if(segments.some(segment=>num(segment.distanceKm)===null||num(segment.distanceKm)<0)){
+  if(segments.some(segment=>segment.distanceKm===null||segment.distanceKm===undefined||num(segment.distanceKm)===null||num(segment.distanceKm)<0)){
     return{status:'BLOCKED',reason:'ROUTE_LEG_DISTANCE_UNAVAILABLE',countryId:cid,requestedTransportMode:mode,
       sourceSiteId:input.sourceSiteId||site?.siteId||null,routePath:segments.map(x=>x.edgeClass),legs:clone(segments),vehiclePlan:[],
       distanceAuthority:'EXPLICIT_ROUTE_DISTANCE_REQUIRED'};
