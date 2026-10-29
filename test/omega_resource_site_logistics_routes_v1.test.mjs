@@ -92,3 +92,36 @@ assert.equal(all.length,561);assert.deepEqual([...seen].sort(),[...sourceById.ke
 assert.ok(ds.routeCountByMode.truck>=561);for(const m of ['rail','ship','barge','pipeline'])assert.ok(ds.routeCountByMode[m]>0,m+' routes should exist');
 assert.equal(Object.keys(ds.transportIconAssets).length,5);
 console.log('OMEGA RESOURCE SITE LOGISTICS ROUTES PASS: 561 unique routes, exact resource SVGs and five local transport SVGs verified.');
+
+
+test("mine route modes vary by modeled distance and do not default every bulk route to truck-rail-truck", () => {
+  const routeManifest = read("resource_site_logistics_routes_v1.json");
+  const routeTypes = Object.create(null);
+  const modes = Object.create(null);
+  const chains = Object.create(null);
+  for (const route of all) {
+    const plan = route.routePlan || {};
+    const legs = plan.legs || [];
+    routeTypes[plan.routeType] = (routeTypes[plan.routeType] || 0) + 1;
+    const chain = legs.map(leg => leg.transportMode).join(">");
+    chains[chain] = (chains[chain] || 0) + 1;
+    for (const leg of legs) modes[leg.transportMode] = (modes[leg.transportMode] || 0) + 1;
+    if (plan.modeSelectionPolicyVersion === "OMEGA_MODE_SELECTION_DISTANCE_HEURISTIC_V1") {
+      const distance = Number(plan.estimatedRouteDistanceKm);
+      const expected = distance < 200 ? "TRUCK" :
+        distance < 400 ? "TRUCK_TO_RAIL_TO_TRUCK" :
+        distance < 1000 ? "RAIL_TO_TRUCK" : "RAIL";
+      assert.equal(plan.routeType, expected, route.siteId + " must follow the documented distance-mode policy");
+      const totalLegDistance = legs.reduce((sum, leg) => sum + Number(leg.estimatedDistanceKm || 0), 0);
+      assert.ok(Math.abs(totalLegDistance - distance) < 0.01, route.siteId + " legs must preserve the route distance");
+    }
+  }
+  assert.equal(all.length, 561);
+  assert.deepEqual(routeManifest.routeTypeCounts, routeTypes);
+  assert.deepEqual(routeManifest.routeCountByMode, modes);
+  assert.ok(routeTypes.TRUCK > 0, "short haul should allow truck-only plans");
+  assert.ok(routeTypes.RAIL > 0, "extended haul should allow rail-only plans");
+  assert.ok(routeTypes.RAIL_TO_TRUCK > 0, "long haul should allow rail followed by road");
+  assert.ok(routeTypes.TRUCK_TO_RAIL_TO_TRUCK > 0, "mid-range routes may still use intermodal road-rail-road");
+  assert.ok((chains.truck || 0) > 0 && (chains.rail || 0) > 0 && (chains["rail>truck"] || 0) > 0);
+});
