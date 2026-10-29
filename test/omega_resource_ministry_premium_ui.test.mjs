@@ -480,3 +480,52 @@ test("logistics cards expose an accessible route diagram with existing SVG cargo
     if (priorGame === undefined) delete globalThis.Game; else globalThis.Game = priorGame;
   }
 });
+
+
+test("logistics tab shows country/mine transport allocation cards before any shipment exists", async () => {
+  const api = globalThis.OmegaUIV2ResourceMinistry;
+  const priorGame = globalThis.Game, priorFetch = globalThis.fetch;
+  const fetchCalls = [];
+  const profile = {
+    routeId:"ROUTE_SITE_BGD_TEST_MINE_V1", siteId:"SITE_BGD_test_mine", countryId:"BGD",
+    siteName:"Test Coal Mine", resourceId:"coal", destination:{warehouseId:"WH-BGD-RAW"},
+    routePlan:{
+      estimatedRouteDistanceKm:296, plannedTransitDays:3, designFleetSlots:3, actualBoundFleetUnits:null,
+      capacityBottleneckPerDay:51, capacityUnit:"RAW_CARGO_TONNES_PER_DAY",
+      legs:[
+        {sequence:1,transportMode:"truck",requiredDesignFleetSlots:1,transportIconAssetPath:"assets/omega-industrial-icons-v1/transport/truck.svg"},
+        {sequence:2,transportMode:"rail",requiredDesignFleetSlots:1,transportIconAssetPath:"assets/omega-industrial-icons-v1/transport/train.svg"},
+        {sequence:3,transportMode:"truck",requiredDesignFleetSlots:1,transportIconAssetPath:"assets/omega-industrial-icons-v1/transport/truck.svg"}
+      ]
+    },
+    provenance:{authority:"SCENARIO_LOGISTICS_DESIGN_ONLY",simulationOnly:true,actualVehicleAvailabilityAssumed:false}
+  };
+  globalThis.fetch = async url => {
+    fetchCalls.push(String(url));
+    const data = String(url).endsWith("resource_site_logistics_routes_v1.json")
+      ? {authority:"SCENARIO_LOGISTICS_DESIGN_ONLY",simulationOnly:true,countryToPart:{BGD:2},parts:[{part:2,file:"resource_site_logistics_routes_v1_part_02.json"}]}
+      : {routes:[profile]};
+    return {ok:true,json:async()=>data};
+  };
+  globalThis.Game = {state:{simulation:{turn:1,session:{playerCountryId:"BGD"}},resource:{BGD:{mineAssets:[],industrialNetwork:{projects:[],shipments:[],siteFlowLedger:[]},warehouse:{}}}}};
+  const root = {innerHTML:"",classList:{add(){}},addEventListener(){},querySelector(){return null;},querySelectorAll(){return[];},contains(){return true;}};
+  try {
+    const first = api.render(root,{countryId:"BGD",sites:[],tab:"logistics"});
+    assert.equal(first.ok,true);
+    await new Promise(resolve=>setImmediate(resolve));
+    assert.match(root.innerHTML,/Transport allocation/);
+    assert.match(root.innerHTML,/Test Coal Mine/);
+    assert.match(root.innerHTML,/Road truck/);
+    assert.match(root.innerHTML,/Freight train/);
+    assert.match(root.innerHTML,/2 design slots/);
+    assert.match(root.innerHTML,/Vehicles assigned<\/span><strong>Not linked/);
+    assert.match(root.innerHTML,/Recorded shipments/);
+    assert.match(root.innerHTML,/No active shipments/);
+    assert.equal(fetchCalls.length,2,"only the shared manifest and selected country's route shard load");
+    assert.ok(fetchCalls[1].endsWith("resource_site_logistics_routes_v1_part_02.json"));
+    assert.doesNotMatch(root.innerHTML,/VEHICLE-[A-Z0-9_-]+|TRANSPORT-ASSET-[A-Z0-9_-]+/);
+  } finally {
+    if(priorGame===undefined)delete globalThis.Game;else globalThis.Game=priorGame;
+    if(priorFetch===undefined)delete globalThis.fetch;else globalThis.fetch=priorFetch;
+  }
+});
