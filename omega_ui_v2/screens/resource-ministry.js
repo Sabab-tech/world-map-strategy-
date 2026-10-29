@@ -927,7 +927,12 @@
     function logisticsNormalizedRouteLegs(route) {
       var plan = route && route.routePlan || {};
       var rows = safeArray(plan.legs);
-      if (String(plan.routeType || '').toUpperCase() !== 'TRUCK_TO_RAIL_TO_TRUCK' || rows.length < 2) return rows;
+      var routeType = String(plan.routeType || '').toUpperCase();
+      var strategyCode = String(plan.strategyCode || '').toUpperCase();
+      var rowModes = rows.map(function (leg) { return String(leg && (leg.transportMode || leg.mode) || '').toLowerCase(); });
+      var genericIntermodal = routeType === 'TRUCK_TO_RAIL_TO_TRUCK' ||
+        (strategyCode === 'MINE_HAULAGE_RAIL_LAST_MILE' && rowModes.indexOf('truck') >= 0 && rowModes.indexOf('rail') >= 0);
+      if (!genericIntermodal || rows.length < 2) return rows;
       var modes = rows.map(function (leg) { return String(leg && (leg.transportMode || leg.mode) || '').toLowerCase(); });
       if (modes.indexOf('truck') < 0 || modes.indexOf('rail') < 0 ||
           modes.some(function (mode) { return mode !== 'truck' && mode !== 'rail'; })) return rows;
