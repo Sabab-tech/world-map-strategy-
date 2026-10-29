@@ -13,6 +13,15 @@ test("resource icon manifest is complete, local, unique and integrated with Reso
   const manifest = json("assets/omega-industrial-icons-v1/manifest.json");
   assert.equal(manifest.resources.length, 42, "preserve all 42 existing resource SVG records");
   assert.equal(manifest.factories.length, 21, "preserve the canonical 21 factory icon records");
+  assert.equal(manifest.transportVariants.length, 17, "register cargo-specific aggregate transport SVGs");
+  assert.equal(new Set(manifest.transportVariants.map((item) => item.file)).size, manifest.transportVariants.length);
+  for (const icon of manifest.transportVariants) {
+    const expected = "assets/omega-industrial-icons-v1/" + icon.file;
+    assert.ok(fs.existsSync(path.join(root, expected)), "transport SVG must exist: " + expected);
+    assert.match(read(expected), /data-omega-icon-kind="transport"/, "transport SVG metadata must be canonical");
+    assert.ok(["truck", "rail", "ship", "barge"].includes(icon.transportMode));
+    assert.ok(["dry_bulk", "liquid", "gas", "ore", "general_cargo"].includes(icon.cargoClass));
+  }
   assert.equal(new Set(manifest.resources.map((item) => item.id)).size, manifest.resources.length);
   const api = globalThis.OmegaUIV2ResourceMinistry;
   assert.ok(api, "Resource Ministry screen must be registered");
@@ -47,7 +56,8 @@ test("resource visual layer is wired into the offline-first app without remote d
   assert.ok(html.includes(stylesheetTag), "premium resource stylesheet must be loaded by the app");
   assert.ok(sw.includes('"' + "./" + cssPath + '"'), "premium resource stylesheet must be precached offline");
   assert.ok(uiManifest.additionalStyles.includes(cssPath), "UI v2 manifest must document the resource style");
-  assert.match(sw, /omega-offline-atlas-shell-v58/, "offline cache must be invalidated for new visual assets");
+  assert.match(sw, /omega-offline-atlas-shell-v59/, "offline cache must be invalidated for new visual assets");
+  assert.match(sw, /transportVariants/, "offline install must precache all new transport SVGs");
   const coreAssets = sw.slice(sw.indexOf("const CORE_ASSETS"), sw.indexOf("];", sw.indexOf("const CORE_ASSETS")));
   assert.ok(coreAssets.includes('"./' + cssPath + '"'), "premium stylesheet belongs in the precache list");
   assert.ok(sw.includes("const resourceIcons = Array.isArray(factoryIconManifest.resources)"),
@@ -161,7 +171,7 @@ test("all resource SVGs use a light metallic backplate for readable dark mineral
     assert.match(svg, /data-omega-icon-kind="resource"/);
   }
   assert.match(manifest.rendering.background, /light silver-metal.*factory SVGs retain their shared dark-navy/i);
-  assert.match(read("omega-offline-map-sw.js"), /omega-offline-atlas-shell-v58/);
+  assert.match(read("omega-offline-map-sw.js"), /omega-offline-atlas-shell-v59/);
 });
 
 
@@ -464,6 +474,8 @@ test("logistics cards expose an accessible route diagram with existing SVG cargo
     assert.match(root.innerHTML, /omega-v2-logistics-card/);
     assert.match(root.innerHTML, /data-omega-v2-logistics-icon="origin"/);
     assert.match(root.innerHTML, /data-omega-v2-logistics-icon="transport"/);
+    assert.match(root.innerHTML, /data-omega-v2-transport-asset="truck-dry-bulk-tipper"/);
+    assert.match(root.innerHTML, /assets\\/omega-industrial-icons-v1\\/transport\\/variants\\/truck-dry-bulk-tipper\\.svg/);
     assert.match(root.innerHTML, /data-omega-v2-logistics-icon="factory"/);
     assert.match(root.innerHTML, /data-omega-v2-resource-icon="coal"/);
     assert.match(root.innerHTML, /Sylhet Coal Mine/);
