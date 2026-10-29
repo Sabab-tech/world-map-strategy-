@@ -47,8 +47,10 @@ test("resource visual layer is wired into the offline-first app without remote d
   assert.ok(html.includes(stylesheetTag), "premium resource stylesheet must be loaded by the app");
   assert.ok(sw.includes('"' + "./" + cssPath + '"'), "premium resource stylesheet must be precached offline");
   assert.ok(uiManifest.additionalStyles.includes(cssPath), "UI v2 manifest must document the resource style");
-  assert.match(sw, /omega-offline-atlas-shell-v59/, "offline cache must be invalidated for new visual assets");
+  assert.match(sw, /omega-offline-atlas-shell-v60/, "offline cache must be invalidated for new visual assets");
   const coreAssets = sw.slice(sw.indexOf("const CORE_ASSETS"), sw.indexOf("];", sw.indexOf("const CORE_ASSETS")));
+  assert.ok(coreAssets.includes('"./assets/omega-industrial-icons-v1/transport/route-mine-origin.svg"'));
+  assert.ok(coreAssets.includes('"./assets/omega-industrial-icons-v1/transport/route-warehouse-destination.svg"'));
   assert.ok(coreAssets.includes('"./' + cssPath + '"'), "premium stylesheet belongs in the precache list");
   assert.ok(sw.includes("const resourceIcons = Array.isArray(factoryIconManifest.resources)"),
     "offline install must enumerate the canonical resource icon manifest");
@@ -175,6 +177,18 @@ test("Resource Logistics shows configured per-site route cards and keeps Current
       throw new Error("Unexpected logistics asset request: " + name);
     }
   };
+  sandbox.OmegaResourceIndustrialNetwork = {
+    getTransportFleet: ({ countryId, siteId }) => ({
+      status: "READY", countryId, siteId, individualVehicleIdsRequired: false,
+      transportTypes: [
+        { transportType: "truck", count: 3, configured: true },
+        { transportType: "rail", count: 2, configured: true },
+        { transportType: "ship", count: 0, configured: true },
+        { transportType: "barge", count: null, configured: false },
+        { transportType: "pipeline", count: 4, configured: true }
+      ]
+    })
+  };
   sandbox.window = sandbox;
   vm.default.createContext(sandbox);
   vm.default.runInContext(read("omega_ui_v2/screens/resource-ministry.js"), sandbox, {
@@ -211,6 +225,22 @@ test("Resource Logistics shows configured per-site route cards and keeps Current
   assert.match(root.innerHTML, /120 km/);
   assert.match(root.innerHTML, /3 days/);
   assert.match(root.innerHTML, /45 tonnes\/day/);
+  assert.match(root.innerHTML, /Transport Fleet Summary/);
+  assert.match(root.innerHTML, /Road trucks/);
+  assert.match(root.innerHTML, /3 vehicles/);
+  assert.match(root.innerHTML, /Freight train sets/);
+  assert.match(root.innerHTML, /2 sets/);
+  assert.match(root.innerHTML, /Cargo ships/);
+  assert.match(root.innerHTML, /0 ships/);
+  assert.match(root.innerHTML, /River barges/);
+  assert.match(root.innerHTML, /Not configured/);
+  assert.match(root.innerHTML, /Pipeline lines/);
+  assert.match(root.innerHTML, /4 lines/);
+  assert.match(root.innerHTML, /data-omega-v2-logistics-fleet-overview/);
+  assert.match(root.innerHTML, /route-mine-origin\\.svg/);
+  assert.match(root.innerHTML, /route-warehouse-destination\\.svg/);
+  assert.match(read("assets/omega-industrial-icons-v1/transport/route-mine-origin.svg"), /<title[^>]*>Mine route origin<\\/title>/);
+  assert.match(read("assets/omega-industrial-icons-v1/transport/route-warehouse-destination.svg"), /<title[^>]*>Warehouse route destination<\\/title>/);
   assert.match(root.innerHTML, /data-current-match="unavailable"/);
   assert.doesNotMatch(root.innerHTML, /No active shipments or delivery records/);
   assert.deepEqual(fetched, [
@@ -260,7 +290,7 @@ test("all resource SVGs use a light metallic backplate for readable dark mineral
     assert.match(svg, /data-omega-icon-kind="resource"/);
   }
   assert.match(manifest.rendering.background, /light silver-metal.*factory SVGs retain their shared dark-navy/i);
-  assert.match(read("omega-offline-map-sw.js"), /omega-offline-atlas-shell-v59/);
+  assert.match(read("omega-offline-map-sw.js"), /omega-offline-atlas-shell-v60/);
 });
 
 
