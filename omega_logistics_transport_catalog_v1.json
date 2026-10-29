@@ -165,5 +165,19 @@
     "Do not create individual vehicle registration IDs.",
     "Missing fleet count is UNKNOWN, not zero and not infinite.",
     "The same shared logistics engine reads country/site/mode-specific counts."
+  ],
+  "routeEndpointIcons": [
+    {
+      "id": "mine-origin",
+      "label": "Mine route origin",
+      "path": "assets/omega-industrial-icons-v1/transport/route-mine-origin.svg",
+      "role": "origin"
+    },
+    {
+      "id": "warehouse-destination",
+      "label": "Warehouse route destination",
+      "path": "assets/omega-industrial-icons-v1/transport/route-warehouse-destination.svg",
+      "role": "destination"
+    }
   ]
 }
