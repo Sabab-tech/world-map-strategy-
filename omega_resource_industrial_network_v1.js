@@ -1787,7 +1787,7 @@ function routeSegments(site,asset,resourceId,mode,countryId,input={}){
         num(reference.designCapacityPerLinePerDay??reference.capacityPerLinePerDay??reference.lineCapacityPerDay):null;
       return[{...mapped,mode:chosen,distanceKm:Number(totalDistance.toFixed(6)),
         designCapacityPerTrip:chosen==='pipeline'?null:(num(reference.designCapacityPerTrip??reference.payloadTonnes)??num(profile.payloadTonnes)),
-        designCapacityPerDay:num(sourcePlan.capacityBottleneckPerDay??reference.designCapacityPerDay),
+        designCapacityPerDay:null, // The old multi-mode bottleneck is not a capacity for this single-mode design estimate.
         designCapacityPerLinePerDay:explicitLineCapacity!==null&&explicitLineCapacity>0?explicitLineCapacity:null,
         capacityPerLinePerDay:explicitLineCapacity!==null&&explicitLineCapacity>0?explicitLineCapacity:null,
         lineCapacityPerDay:explicitLineCapacity!==null&&explicitLineCapacity>0?explicitLineCapacity:null,
