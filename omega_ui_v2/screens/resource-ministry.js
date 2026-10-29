@@ -92,6 +92,101 @@
     return '<span class="omega-v2-resource-icon--fallback" role="img" aria-label="' + esc(safeLabel) + ' resource icon">' + esc(initials) + '</span>';
   }
 
+  // Route plans are configuration, not shipment events. Load only the selected country's shard.
+  var logisticsRoutePlanCache = Object.create(null);
+  var logisticsRoutePlanRequests = Object.create(null);
+  var logisticsRouteShardRequests = Object.create(null);
+  var logisticsRoutePlanWaiters = Object.create(null);
+  var logisticsRouteManifestRequest = null;
+
+  function fetchLogisticsJson(path) {
+    if (typeof g.fetch !== 'function') return Promise.reject(new Error('FETCH_UNAVAILABLE'));
+    return g.fetch('./' + path, { cache: 'force-cache' }).then(function (response) {
+      if (!response || response.ok === false) throw new Error('LOGISTICS_DATA_REQUEST_FAILED');
+      return response.json();
+    });
+  }
+
+  function getLogisticsRoutePlanState(countryValue) {
+    var country = key(countryValue);
+    if (!/^[A-Z]{3}$/.test(country)) return { status:'unavailable', routes:[] };
+    if (Object.prototype.hasOwnProperty.call(logisticsRoutePlanCache, country)) return logisticsRoutePlanCache[country];
+    return { status:typeof g.fetch === 'function' ? 'idle' : 'unavailable', routes:[] };
+  }
+
+  function notifyLogisticsRoutePlanWaiters(country) {
+    var waiters = logisticsRoutePlanWaiters[country] || [];
+    delete logisticsRoutePlanWaiters[country];
+    waiters.forEach(function (root) {
+      if (!root || root.__omegaV2ResourceTab !== 'logistics' ||
+          key(root.__omegaV2CurrentCountryKey) !== country || !root.__omegaV2ResourceOptions) return;
+      scheduleRender(root, Object.assign({}, root.__omegaV2ResourceOptions, {
+        countryId:country, tab:'logistics'
+      }), 'Loading mine site route plans');
+    });
+  }
+
+  function ensureLogisticsRoutePlans(countryValue, root) {
+    var country = key(countryValue);
+    if (!/^[A-Z]{3}$/.test(country)) return Promise.resolve({ status:'unavailable', routes:[] });
+    if (Object.prototype.hasOwnProperty.call(logisticsRoutePlanCache, country)) {
+      return Promise.resolve(logisticsRoutePlanCache[country]);
+    }
+    if (root) {
+      if (!logisticsRoutePlanWaiters[country]) logisticsRoutePlanWaiters[country] = [];
+      if (logisticsRoutePlanWaiters[country].indexOf(root) < 0) logisticsRoutePlanWaiters[country].push(root);
+    }
+    if (logisticsRoutePlanRequests[country]) return logisticsRoutePlanRequests[country];
+    if (typeof g.fetch !== 'function') {
+      logisticsRoutePlanCache[country] = { status:'unavailable', routes:[] };
+      notifyLogisticsRoutePlanWaiters(country);
+      return Promise.resolve(logisticsRoutePlanCache[country]);
+    }
+    if (!logisticsRouteManifestRequest) {
+      logisticsRouteManifestRequest = fetchLogisticsJson('resource_site_logistics_routes_v1.json');
+    }
+    var request = logisticsRouteManifestRequest.then(function (manifest) {
+      if (!manifest || manifest.datasetId !== 'OMEGA_RESOURCE_SITE_LOGISTICS_ROUTES_V1' ||
+          manifest.simulationOnly !== true || !manifest.countryToPart || !Array.isArray(manifest.parts)) {
+        throw new Error('LOGISTICS_ROUTE_MANIFEST_INVALID');
+      }
+      var partNumber = manifest.countryToPart[country];
+      if (partNumber === undefined || partNumber === null) return { status:'ready', routes:[] };
+      var partInfo = manifest.parts.find(function (part) {
+        return String(part.part) === String(partNumber) || String(part.file) === String(partNumber);
+      });
+      var file = String(partInfo && partInfo.file || '');
+      if (!/^resource_site_logistics_routes_v1_part_0[1-6]\.json$/.test(file)) {
+        throw new Error('LOGISTICS_ROUTE_SHARD_INVALID');
+      }
+      if (!logisticsRouteShardRequests[file]) {
+        logisticsRouteShardRequests[file] = fetchLogisticsJson(file).then(function (shard) {
+          if (!shard || !Array.isArray(shard.routes)) throw new Error('LOGISTICS_ROUTE_SHARD_INVALID');
+          return shard.routes;
+        });
+      }
+      return logisticsRouteShardRequests[file].then(function (rows) {
+        var routes = rows.filter(function (route) {
+          return key(route && route.countryId) === country &&
+            String(route.siteId || '').trim() && String(route.resourceId || '').trim() &&
+            route.routePlan && typeof route.routePlan === 'object';
+        }).slice().sort(function (a, b) {
+          return String(a.siteName || a.siteId).localeCompare(String(b.siteName || b.siteId));
+        });
+        return { status:'ready', routes:routes };
+      });
+    }).catch(function () {
+      return { status:'unavailable', routes:[] };
+    }).then(function (result) {
+      logisticsRoutePlanCache[country] = result;
+      delete logisticsRoutePlanRequests[country];
+      notifyLogisticsRoutePlanWaiters(country);
+      return result;
+    });
+    logisticsRoutePlanRequests[country] = request;
+    return request;
+  }
+
   function mineArchetype(site) {
     site = site && typeof site === 'object' ? site : {};
     var identity = site.identity && typeof site.identity === 'object' ? site.identity : {};
@@ -817,31 +912,103 @@
         '" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' +
         (paths[kind] || paths.destination) + '</svg>';
     }
-    var logisticsMarkup = shipments.length ? '<div class="omega-v2-grid omega-v2-logistics-grid">' + shipments.slice(-80).reverse().map(function (shipment) {
-      var status = logisticsStatus(shipment.status), q = numberOrNull(shipment.quantity);
-      var from = shipment.sourceSiteName || shipment.siteName || shipment.sourceSiteId || shipment.origin || shipment.from || '—';
-      var to = shipment.destinationFactoryName || shipment.destinationFactoryId || shipment.destinationWarehouseId || shipment.destination || shipment.to || '—';
-      var mode = shipment.route && (shipment.route.transportMode || shipment.route.mode) || shipment.transportMode || shipment.mode || '';
-      var destinationKind = shipment.destinationFactoryId || shipment.destinationFactoryName ? 'factory' :
-        shipment.destinationWarehouseId ? 'warehouse' : 'destination';
-      var modeLabel = mode ? human(mode) : 'Route not recorded';
-      var etaLabel = numberOrNull(shipment.etaTurn) !== null ? 'Turn ' + fmt(shipment.etaTurn) : 'Not recorded';
-      return '<article class="omega-v2-card omega-v2-logistics-card" data-logistics-state="' + status.state + '">' +
+    function hasCurrentShipmentMatch(route) {
+      return shipments.some(function (shipment) {
+        var status = String(shipment && shipment.status || '').toUpperCase();
+        if (!/IN_TRANSIT|DISPATCHED|RESERVED|PENDING|QUEUED|AWAITING/.test(status)) return false;
+        var sourceSite = String(shipment.siteId || shipment.sourceSiteId || shipment.mineSiteId || shipment.originSiteId || '').trim();
+        var linkedRoute = String(shipment.routeId || shipment.route && (shipment.route.routeId || shipment.route.id) || '').trim();
+        return (!!sourceSite && sourceSite === String(route.siteId || '')) ||
+          (!!linkedRoute && linkedRoute === String(route.routeId || ''));
+      });
+    }
+    function logisticsRouteCard(route) {
+      var plan = route.routePlan || {};
+      var destination = route.destination && route.destination.warehouseId || 'National raw inventory';
+      var legs = safeArray(plan.legs);
+      var modes = legs.map(function (leg) { return leg && leg.transportMode ? human(leg.transportMode) : ''; })
+        .filter(Boolean).join(' → ') || 'Route not recorded';
+      var distance = numberOrNull(plan.estimatedRouteDistanceKm);
+      var transit = numberOrNull(plan.plannedTransitDays);
+      var capacity = numberOrNull(plan.capacityBottleneckPerDay);
+      var capacityUnit = /RAW_CARGO_TONNES_PER_DAY/i.test(String(plan.capacityUnit || ''))
+        ? 'tonnes/day' : buildDisplayUnit(plan.capacityUnit || '');
+      var matched = hasCurrentShipmentMatch(route);
+      var resource = route.resourceId || route.resourceIconKey || 'supply';
+      var siteName = route.siteName || route.siteId || 'Registered mine site';
+      var from = siteName;
+      var to = destination;
+      return '<article class="omega-v2-card omega-v2-logistics-card omega-v2-logistics-route-card" data-logistics-state="attention" data-logistics-plan-site-id="' +
+        esc(route.siteId || '') + '" data-current-match="' + (matched ? 'matched' : 'unavailable') + '">' +
         '<div class="omega-v2-logistics-header"><div class="omega-v2-logistics-cargo">' +
-        '<span class="omega-v2-resource-icon omega-v2-logistics-resource-art">' + resourceIconMarkup(shipment.resourceId || 'supply', resourceLabel(shipment.resourceId || 'Supply')) + '</span>' +
-        '<div class="omega-v2-logistics-cargo-copy"><span class="omega-v2-eyebrow">RESOURCE CARGO</span><h3 class="omega-v2-card-title">' +
-        esc(resourceLabel(shipment.resourceId || 'Supply')) + '</h3></div></div><span class="omega-v2-status" data-state="' + status.state + '">' +
-        esc(status.label) + '</span></div>' +
-        '<div class="omega-v2-logistics-path" aria-label="Shipment route from ' + esc(from) + ' to ' + esc(to) + '">' +
+        '<span class="omega-v2-resource-icon omega-v2-logistics-resource-art">' + resourceIconMarkup(resource, resourceLabel(resource)) + '</span>' +
+        '<div class="omega-v2-logistics-cargo-copy"><span class="omega-v2-eyebrow">SITE ROUTE PLAN</span><h3 class="omega-v2-card-title">' +
+        esc(siteName) + '</h3><span class="omega-v2-card-meta">' + esc(resourceLabel(resource)) + '</span></div></div>' +
+        '<span class="omega-v2-status" data-state="attention">Route plan</span></div>' +
+        '<div class="omega-v2-logistics-path" aria-label="Planned route from ' + esc(from) + ' to ' + esc(to) + '">' +
         '<div class="omega-v2-logistics-node omega-v2-logistics-node--origin"><span class="omega-v2-logistics-node-art">' + logisticsIconMarkup('origin') +
         '</span><span class="omega-v2-logistics-node-copy"><small>ORIGIN</small><strong>' + esc(from) + '</strong></span></div>' +
-        '<div class="omega-v2-logistics-link"><span class="omega-v2-logistics-route-vehicle">' + logisticsIconMarkup('transport') + '</span><span class="omega-v2-logistics-link-line"></span><span class="omega-v2-logistics-mode">' + esc(modeLabel) + '</span></div>' +
-        '<div class="omega-v2-logistics-node omega-v2-logistics-node--destination"><span class="omega-v2-logistics-node-art">' + logisticsIconMarkup(destinationKind) +
+        '<div class="omega-v2-logistics-link"><span class="omega-v2-logistics-route-vehicle">' + logisticsIconMarkup('transport') +
+        '</span><span class="omega-v2-logistics-link-line"></span><span class="omega-v2-logistics-mode">' + esc(modes) + '</span></div>' +
+        '<div class="omega-v2-logistics-node omega-v2-logistics-node--destination"><span class="omega-v2-logistics-node-art">' + logisticsIconMarkup('warehouse') +
         '</span><span class="omega-v2-logistics-node-copy"><small>DESTINATION</small><strong>' + esc(to) + '</strong></span></div></div>' +
-        '<div class="omega-v2-logistics-metrics"><div class="omega-v2-logistics-metric"><span>Shipment quantity</span><strong>' +
-        amount(q, shipment.unit || '') + '</strong></div><div class="omega-v2-logistics-metric"><span>Estimated arrival</span><strong>' +
-        esc(etaLabel) + '</strong></div></div></article>';
-    }).join('') + '</div>' : '<div class="omega-v2-empty">No active shipments or delivery records are available for this country.</div>';
+        '<div class="omega-v2-logistics-metrics">' +
+        '<div class="omega-v2-logistics-metric"><span>Distance · estimate</span><strong>' +
+        (distance !== null ? esc(fmt(distance) + ' km') : 'Unavailable') + '</strong></div>' +
+        '<div class="omega-v2-logistics-metric"><span>Transit · planned</span><strong>' +
+        (transit !== null ? esc(fmt(transit) + ' days') : 'Unavailable') + '</strong></div>' +
+        '<div class="omega-v2-logistics-metric"><span>Design capacity</span><strong>' +
+        (capacity !== null ? esc(fmt(capacity) + (capacityUnit ? ' ' + capacityUnit : '')) : 'Unavailable') + '</strong></div>' +
+        '<div class="omega-v2-logistics-metric"><span>Current Match</span><strong>' +
+        (matched ? 'Matched' : 'Unavailable') + '</strong></div></div></article>';
+    }
+    function logisticsRoutePlansMarkup(routeState) {
+      if (!routeState || routeState.status === 'idle' || routeState.status === 'loading') {
+        return '<section class="omega-v2-card omega-v2-logistics-route-status" data-logistics-route-state="loading" role="status">' +
+          '<h2 class="omega-v2-card-title">Mine Site Route Plans</h2><p>Loading registered site routes…</p></section>';
+      }
+      if (routeState.status !== 'ready') {
+        return '<div class="omega-v2-empty" data-logistics-route-state="unavailable">Site route plans unavailable. Current Match: Unavailable.</div>';
+      }
+      var routes = safeArray(routeState.routes);
+      if (!routes.length) {
+        return '<div class="omega-v2-empty" data-logistics-route-state="empty">No registered mine/site route plans for this country. Current Match: Unavailable.</div>';
+      }
+      return '<section class="omega-v2-logistics-route-section" data-logistics-route-state="ready">' +
+        '<div class="omega-v2-logistics-route-heading"><div><h2>Mine Site Route Plans</h2><p>Configured mine-to-warehouse routes</p></div>' +
+        '<span class="omega-v2-status" data-state="attention">' + fmt(routes.length) + ' route plans</span></div>' +
+        '<div class="omega-v2-grid omega-v2-logistics-grid">' + routes.map(logisticsRouteCard).join('') + '</div></section>';
+    }
+    var routePlanState = getLogisticsRoutePlanState(countryKey);
+    var liveShipmentsMarkup = shipments.length ? '<section class="omega-v2-logistics-live-section">' +
+      '<div class="omega-v2-logistics-route-heading"><div><h2>Current Shipments</h2></div><span class="omega-v2-status" data-state="unknown">' +
+      fmt(shipments.length) + ' records</span></div>' +
+      '<div class="omega-v2-grid omega-v2-logistics-grid">' + shipments.slice(-80).reverse().map(function (shipment) {
+        var status = logisticsStatus(shipment.status), q = numberOrNull(shipment.quantity);
+        var from = shipment.sourceSiteName || shipment.siteName || shipment.sourceSiteId || shipment.origin || shipment.from || '—';
+        var to = shipment.destinationFactoryName || shipment.destinationFactoryId || shipment.destinationWarehouseId || shipment.destination || shipment.to || '—';
+        var mode = shipment.route && (shipment.route.transportMode || shipment.route.mode) || shipment.transportMode || shipment.mode || '';
+        var destinationKind = shipment.destinationFactoryId || shipment.destinationFactoryName ? 'factory' :
+          shipment.destinationWarehouseId ? 'warehouse' : 'destination';
+        var modeLabel = mode ? human(mode) : 'Route not recorded';
+        var etaLabel = numberOrNull(shipment.etaTurn) !== null ? 'Turn ' + fmt(shipment.etaTurn) : 'Not recorded';
+        return '<article class="omega-v2-card omega-v2-logistics-card" data-logistics-state="' + status.state + '">' +
+          '<div class="omega-v2-logistics-header"><div class="omega-v2-logistics-cargo">' +
+          '<span class="omega-v2-resource-icon omega-v2-logistics-resource-art">' + resourceIconMarkup(shipment.resourceId || 'supply', resourceLabel(shipment.resourceId || 'Supply')) + '</span>' +
+          '<div class="omega-v2-logistics-cargo-copy"><span class="omega-v2-eyebrow">RESOURCE CARGO</span><h3 class="omega-v2-card-title">' +
+          esc(resourceLabel(shipment.resourceId || 'Supply')) + '</h3></div></div><span class="omega-v2-status" data-state="' + status.state + '">' +
+          esc(status.label) + '</span></div>' +
+          '<div class="omega-v2-logistics-path" aria-label="Shipment route from ' + esc(from) + ' to ' + esc(to) + '">' +
+          '<div class="omega-v2-logistics-node omega-v2-logistics-node--origin"><span class="omega-v2-logistics-node-art">' + logisticsIconMarkup('origin') +
+          '</span><span class="omega-v2-logistics-node-copy"><small>ORIGIN</small><strong>' + esc(from) + '</strong></span></div>' +
+          '<div class="omega-v2-logistics-link"><span class="omega-v2-logistics-route-vehicle">' + logisticsIconMarkup('transport') + '</span><span class="omega-v2-logistics-link-line"></span><span class="omega-v2-logistics-mode">' + esc(modeLabel) + '</span></div>' +
+          '<div class="omega-v2-logistics-node omega-v2-logistics-node--destination"><span class="omega-v2-logistics-node-art">' + logisticsIconMarkup(destinationKind) +
+          '</span><span class="omega-v2-logistics-node-copy"><small>DESTINATION</small><strong>' + esc(to) + '</strong></span></div></div>' +
+          '<div class="omega-v2-logistics-metrics"><div class="omega-v2-logistics-metric"><span>Shipment quantity</span><strong>' +
+          amount(q, shipment.unit || '') + '</strong></div><div class="omega-v2-logistics-metric"><span>Estimated arrival</span><strong>' +
+          esc(etaLabel) + '</strong></div></div></article>';
+      }).join('') + '</div></section>' : '';
+    var logisticsMarkup = liveShipmentsMarkup + logisticsRoutePlansMarkup(routePlanState);
     var reportGroups = Object.create(null);
     flows.forEach(function (row) {
       var rid = String(row.resourceId || '').toLowerCase(), q = numberOrNull(row.quantity);
@@ -1092,6 +1259,7 @@
     root.__omegaV2CurrentCountryKey = countryKey;
     root.__omegaV2ResourceTab = active;
     if (active === 'mines') applySiteFilter(root);
+    if (active === 'logistics') ensureLogisticsRoutePlans(countryKey, root);
     return { ok:true, tab:active, siteCount:model.siteCount, model:model, inventoryRowCount:inventoryRows.length,
       shipmentRowCount:shipments.length, producingSiteCount:producingSites.length, blockedFlowCount:blockedFlows.length };
   }

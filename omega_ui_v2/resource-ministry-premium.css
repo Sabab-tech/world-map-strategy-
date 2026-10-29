@@ -1223,3 +1223,49 @@
 @media (prefers-reduced-motion: reduce) {
   .omega-v2-resource-premium .omega-v2-mine-build-plan .omega-v2-button--primary[data-omega-v2-build-submit] { transition: none; }
 }
+
+/* The route-plan deck shares the shipment card treatment without claiming a dispatch occurred. */
+.omega-v2-resource-premium .omega-v2-logistics-route-section,
+.omega-v2-resource-premium .omega-v2-logistics-live-section {
+  min-width: 0;
+  margin-top: 12px;
+}
+.omega-v2-resource-premium .omega-v2-logistics-route-heading {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  justify-content: space-between;
+  margin: 0 0 10px;
+  min-width: 0;
+}
+.omega-v2-resource-premium .omega-v2-logistics-route-heading h2 {
+  color: #f1f8fb;
+  font-size: clamp(14px, 3.2vw, 18px);
+  line-height: 1.25;
+  margin: 0;
+}
+.omega-v2-resource-premium .omega-v2-logistics-route-heading p,
+.omega-v2-resource-premium .omega-v2-logistics-route-status p {
+  color: #9eb5c7;
+  font-size: 10px;
+  line-height: 1.4;
+  margin: 4px 0 0;
+}
+.omega-v2-resource-premium .omega-v2-logistics-route-card {
+  --logistics-accent: #b17aff;
+}
+.omega-v2-resource-premium .omega-v2-logistics-route-card .omega-v2-logistics-header {
+  border-bottom-color: rgba(177, 122, 255, .24);
+}
+.omega-v2-resource-premium .omega-v2-logistics-route-card .omega-v2-logistics-mode {
+  overflow-wrap: anywhere;
+}
+.omega-v2-resource-premium .omega-v2-logistics-route-status {
+  margin-top: 12px;
+}
+@media (max-width: 420px) {
+  .omega-v2-resource-premium .omega-v2-logistics-route-heading {
+    align-items: flex-start;
+  }
+}
