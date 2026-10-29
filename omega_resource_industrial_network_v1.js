@@ -1947,7 +1947,13 @@ function planShipment(input={}){
   const ordered=candidates.sort((a,b)=>String(a.asset?.priority??999)-String(b.asset?.priority??999));
   let best=null,policyBlockedRoute=null;
   const warehouseId='WH-'+cid+'-RAW';
-  const siteRoute=(site.simulation?.transportRoute||[])[0]||{};
+  // Use the extraction flow's immutable site snapshot for the downstream corridor.
+  // The live canonical site row may not carry the route-to-factory fields saved when
+  // the mine batch was created; losing them falls back to a fabricated corridor.
+  const snapshot=input.routeSiteSnapshot;
+  const routeSite=snapshot&&String(snapshot.siteId||'')===String(site.siteId||'')&&
+    canonicalCountry(snapshot.countryId||cid)===cid?snapshot:site;
+  const siteRoute=(routeSite.simulation?.transportRoute||[])[0]||{};
   const routeType=tok(siteRoute.mode||siteRoute.routeType||'');
   const preferredMode=tok(input.transportMode||rules()[rid]?.preferredModes?.[0]||'truck');
   const routeMode=routeType.includes('pipeline')?'pipeline':routeType.includes('sea')?'ship':routeType.includes('rail')?'rail':preferredMode;
@@ -2149,6 +2155,7 @@ function dispatchResidualSiteBatches(c){
     };
     const sent=dispatchShipment({countryId:cid,siteId:site.siteId,resourceId:flow.resourceId,quantity:remaining,
       unit:flow.unit||source.unit||'TONNES',transportMode:flow.route?.transportMode||site.simulation?.transportRoute?.[0]?.mode||undefined,
+      routeSiteSnapshot:flow.mineLogisticsRouteId?flow.siteSnapshot:undefined,
       factoryId:flow.factoryId,batchId,occurrenceKey:flow.occurrenceKey,warehouseId:flow.warehouseId||source.warehouseId||('WH-'+cid+'-RAW')});
     if(flow.mineLogisticsRouteId)flow.lastFactoryResidualDispatchTurn=turn();
     else flow.lastResidualDispatchTurn=turn();
