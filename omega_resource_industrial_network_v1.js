@@ -1750,14 +1750,18 @@ function routeSegments(site,asset,resourceId,mode,countryId,input={}){
   // Prefer the source site's explicit warehouse/factory corridor. Factory-level
   // transportAccess or legacy routes may list several available modes but do not prove
   // those modes are legs on this specific journey.
-  const directArrays=[
-    s.transportRoute,s.simulation?.transportRoute,
-    f.transportRoute,f.simulation?.transportRoute
-  ].filter(rows=>Array.isArray(rows)&&rows.length&&
+  const validRouteArrays=values=>values.filter(rows=>Array.isArray(rows)&&rows.length&&
     rows.every(row=>row&&normalizeAccess(row.transportMode||row.mode)));
-  const matchingArray=!explicitMode?directArrays[0]:
-    directArrays.find(rows=>rows.length>1&&rows.some(row=>normalizeAccess(row.transportMode||row.mode)===chosen))||
-    directArrays.find(rows=>normalizeAccess(rows[0]?.transportMode||rows[0]?.mode)===chosen);
+  const sourceRouteArrays=validRouteArrays([s.transportRoute,s.simulation?.transportRoute]);
+  const factoryRouteArrays=validRouteArrays([f.transportRoute,f.simulation?.transportRoute]);
+  const routeContainsMode=rows=>rows.some(row=>normalizeAccess(row.transportMode||row.mode)===chosen);
+  const pickRouteArray=rows=>rows.find(rows=>rows.length>1&&routeContainsMode(rows))||
+    rows.find(rows=>normalizeAccess(rows[0]?.transportMode||rows[0]?.mode)===chosen)||
+    (!explicitMode?rows[0]:null);
+  // Once the source has a route record, do not replace it with a factory's generic
+  // transport-access list even if that list has more modes or legs.
+  const matchingArray=pickRouteArray(sourceRouteArrays)||
+    (sourceRouteArrays.length?null:pickRouteArray(factoryRouteArrays));
   if(matchingArray){
     return matchingArray.map((row,index)=>({
       mode:normalizeAccess(row.transportMode||row.mode),
