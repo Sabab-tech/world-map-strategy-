@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-labelledby="title-train-gas-tank-cars desc-train-gas-tank-cars" data-omega-icon-kind="transport" data-omega-icon-id="train-gas-tank-cars">
+<title id="title-train-gas-tank-cars">Pressurized gas railcars</title>
+<desc id="desc-train-gas-tank-cars">Aggregate rail transport for gas cargo. No individual vehicle registration identifier is stored.</desc>
+<defs>
+ <linearGradient id="plate-train-gas-tank-cars" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f3f8fb"/><stop offset=".5" stop-color="#bdcbd5"/><stop offset="1" stop-color="#71899b"/></linearGradient>
+ <linearGradient id="metal-train-gas-tank-cars" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#f5fafc"/><stop offset=".35" stop-color="#becbd4"/><stop offset=".72" stop-color="#71889a"/><stop offset="1" stop-color="#344c60"/></linearGradient>
+ <linearGradient id="blue-train-gas-tank-cars" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#9be7f4"/><stop offset=".4" stop-color="#287fa9"/><stop offset="1" stop-color="#153e5e"/></linearGradient>
+ <filter id="shadow-train-gas-tank-cars" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="3" stdDeviation="2" flood-color="#091725" flood-opacity=".48"/></filter>
+</defs>
+<rect x="4.5" y="4.5" width="119" height="119" rx="21" fill="url(#plate-train-gas-tank-cars)" stroke="#627b8f" stroke-opacity=".8"/>
+<rect x="8" y="8" width="112" height="112" rx="17" fill="none" stroke="#ffffff" stroke-opacity=".6"/>
+<path d="M14 24H114M15 112H113" stroke="#ffffff" stroke-opacity=".58" stroke-width="2"/>
+<g filter="url(#shadow-train-gas-tank-cars)"><rect x="24" y="45" width="78" height="31" rx="15" fill="url(#metal-train-gas-tank-cars)" stroke="#40576b" stroke-width="2"/><ellipse cx="25" cy="60.5" rx="5" ry="15" fill="#cbd6dd" stroke="#40576b" stroke-width="2"/><path d="M43 46V75M82 46V75M59 45V38H67V45" stroke="#536b7d" stroke-width="2"/><path d="M12 78H116" stroke="#536b7f" stroke-width="5"/><path d="M12 88H116M16 88V97M30 88V97M44 88V97M58 88V97M72 88V97M86 88V97M100 88V97M114 88V97" stroke="#7d8e9b" stroke-width="3"/><g fill="#14283b"><circle cx="37" cy="80" r="5"/><circle cx="68" cy="80" r="5"/><circle cx="97" cy="80" r="5"/></g></g>
+</svg>
