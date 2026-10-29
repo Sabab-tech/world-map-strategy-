@@ -317,8 +317,8 @@ test("Resource Logistics shows configured per-site route cards and keeps Current
   assert.match(root.innerHTML, /3 days/);
   assert.match(root.innerHTML, /45 tonnes\/day/);
   assert.match(root.innerHTML, /Transport Fleet Summary/);
-  assert.match(root.innerHTML, /assets\\/omega-industrial-icons-v1\\/logistics\\/mine-site\\.svg/);
-  assert.match(root.innerHTML, /assets\\/omega-industrial-icons-v1\\/logistics\\/warehouse-node\\.svg/);
+  assert.ok(root.innerHTML.includes("assets/omega-industrial-icons-v1/logistics/mine-site.svg"));
+  assert.ok(root.innerHTML.includes("assets/omega-industrial-icons-v1/logistics/warehouse-node.svg"));
   assert.match(root.innerHTML, /data-route-leg="1"/);
   assert.match(root.innerHTML, /40 km/);
   assert.match(root.innerHTML, /Cap 45 tonnes\/day/);
