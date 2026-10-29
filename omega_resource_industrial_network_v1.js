@@ -1607,6 +1607,13 @@ function resizeRouteForDispatch(route,actualQuantity,plannedQuantity){
       return{...leg,units:Math.ceil(actual*factor/payload),vehicleCount:Math.ceil(actual*factor/payload),dispatchQuantity:Number(actual.toFixed(6))};
     });
   }
+  const legRows=Array.isArray(out.vehiclePlan)?out.vehiclePlan:(Array.isArray(out.legs)?out.legs:[]);
+  out.vehicleCount=legRows.reduce((sum,leg)=>sum+(num(leg?.vehicleCount??leg?.units)||0),0);
+  out.vehiclesByMode=legRows.reduce((totals,leg)=>{
+    const mode=tok(leg?.mode||leg?.transportMode);
+    if(mode)totals[mode]=(totals[mode]||0)+(num(leg?.vehicleCount??leg?.units)||0);
+    return totals;
+  },{});
   out.status=actual>1e-9?'PLANNED':'BLOCKED';
   return out;
 }
