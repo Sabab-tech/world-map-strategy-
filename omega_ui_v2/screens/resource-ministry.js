@@ -1186,16 +1186,22 @@
         }
         var estimate = designByMode[mode] || null;
         var used = routeModes.indexOf(mode) >= 0;
+        var estimateLeg = estimate && estimate.legs && estimate.legs.length === 1 ? estimate.legs[0] : null;
+        var perUnitCapacity = estimateLeg && (mode === 'pipeline' ? estimateLeg.lineCapacityPerDay :
+          estimateLeg.perVehicleCapacityPerDay);
+        var perUnitCapacityUnit = estimateLeg && (mode === 'pipeline' ? estimateLeg.lineCapacityUnit :
+          estimateLeg.perVehicleCapacityUnit);
+        var capacityDetail = perUnitCapacity !== null && perUnitCapacity !== undefined &&
+          Number.isFinite(Number(perUnitCapacity)) && perUnitCapacityUnit
+          ? ' · ' + fmt(Number(Number(perUnitCapacity).toFixed(4))) + ' ' +
+            buildDisplayUnit(perUnitCapacityUnit) + (mode === 'pipeline' ? ' per line' : ' per vehicle') : '';
         var estimateLabel = !used ? 'Not used by this route' :
           (estimate && estimate.available ? 'Design need: ' + fmt(estimate.estimatedUnits) + ' ' +
-            (estimate.estimatedUnits === 1 ? meta.single : meta.unit) : 'Design need unavailable');
+            (estimate.estimatedUnits === 1 ? meta.single : meta.unit) + capacityDetail : 'Design need unavailable');
         var tripRate = estimate && estimate.estimatedTripsPerDay !== null
           ? ' · ' + fmt(Number(estimate.estimatedTripsPerDay.toFixed(4))) + ' trips/day' : '';
         if (used && estimate && estimate.available) { designTotal += estimate.estimatedUnits; designAvailableModes += 1; }
         if (used && (!estimate || !estimate.available)) unknownRouteModes += 1;
-        var estimateLeg = estimate && estimate.legs && estimate.legs.length === 1 ? estimate.legs[0] : null;
-        var perUnitCapacity = estimateLeg && (mode === 'pipeline' ? estimateLeg.lineCapacityPerDay :
-          estimateLeg.perVehicleCapacityPerDay);
         var perUnitCapacityData = perUnitCapacity !== null && perUnitCapacity !== undefined && Number.isFinite(Number(perUnitCapacity))
           ? String(Number(Number(perUnitCapacity).toFixed(6))) : '';
         var estimateFormula = estimate && estimate.formula || '';
@@ -1243,7 +1249,7 @@
         fmt(routeModes.length) + '</strong></span></div>' +
         ((ready && configuredModeCount < 5) || !ready || unknownRouteModes
           ? '<p class="omega-v2-logistics-fleet-note">Saved counts are actual player settings; unknown is not zero. Vehicles = ceil(production/day ÷ (payload/trip × 24 ÷ round-trip cycle hours)); cycle = 2 × distance/speed + loading + unloading + transfer. Pipeline line needs use only explicit per-line daily capacity.</p>'
-          : '<p class="omega-v2-logistics-fleet-note">Vehicle counts and pipeline-line counts stay separate. Distance-aware design needs are estimates; missing fleet counts or per-line capacity remain unknown.</p>') +
+          : '<p class="omega-v2-logistics-fleet-note">Vehicle counts and pipeline-line counts stay separate. Vehicle need = ceil(production/day ÷ (payload/trip × 24 ÷ round-trip cycle hours)); pipeline lines = ceil(production/day ÷ explicit per-line capacity). Unknown counts or missing per-line capacity stay unknown.</p>') +
         (canManage
           ? '<details class="omega-v2-logistics-fleet-editor"><summary>Configure transport counts</summary>' +
             '<p class="omega-v2-logistics-fleet-note">Edit counts for the active player country only. Blank fields keep their current settings; enter 0 to record none available. Vehicle IDs and registration numbers are not used.</p>' +
@@ -1293,7 +1299,9 @@
       });
       var modeCards = Object.keys(logisticsTransportModeMeta).map(function (mode) {
         var meta = logisticsTransportModeMeta[mode], stat = totals[mode];
-        var actual = stat.configuredSites ? fmt(stat.total) + ' ' + meta.unit : 'Not configured';
+        var actual = stat.configuredSites
+          ? ((stat.configuredSites < sites.length ? 'Known subtotal: ' : '') + fmt(stat.total) + ' ' + meta.unit)
+          : 'Not configured';
         var design = stat.designSites
           ? (stat.unknownDesignSites ? 'Known design need subtotal: ' : 'Design need: ') +
             fmt(stat.designUnits) + ' ' + (stat.designUnits === 1 ? meta.single : meta.unit)
