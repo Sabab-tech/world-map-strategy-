@@ -406,19 +406,23 @@ function dispatchMineToWarehouse(countryId,site,flow,sourceBatch,routeProfile){
   // the simulation cannot actually process while its clock jumps multiple days per turn.
   const etaDate=factoryAddGameDays(factoryCurrentGameDate(),etaTurns*dayWindow);
   const shipmentId='MINEHAUL:'+h32(JSON.stringify({cid,siteId,batchId,turn:turn(),sequence:network.shipments.length+1,quantity}));
+  const batchInFlight=Array.isArray(rs.batches)?rs.batches.find(batch=>String(batch?.batchId||'')===batchId):null;
+  if(!batchInFlight)return{status:'BLOCKED',reason:'SOURCE_BATCH_NOT_FOUND',batchId};
+  const fleetReservation=reserveTransportFleetForShipment(cid,siteId,shipmentId,finalizedMetrics.fleetAllocationByMode);
+  if(fleetReservation.status==='BLOCKED')return{status:'BLOCKED',reason:fleetReservation.reason||'FLEET_UNITS_CHANGED_BEFORE_DISPATCH',details:fleetReservation,routeId:routeProfile.routeId};
   const route={status:'PLANNED',routeId:routeProfile.routeId,countryId:cid,siteId,sourceSiteId:siteId,sourceNode:siteId,
     destinationNode:warehouseId,destinationWarehouseId:warehouseId,resourceId:rid,requestedQuantity:remaining,
     dispatchQuantity:Number(quantity.toFixed(6)),unit:sourceBatch.unit||flow?.unit||null,
     transportMode:legs[0]?.mode||'truck',legs,totalDistanceKm:Number((finalizedMetrics.totalDistanceKm||legs.reduce((sum,leg)=>sum+(num(leg.distanceKm)||0),0)).toFixed(6)),
     travelTimeDays:days,etaTurn,etaDate,vehiclesByMode:finalizedMetrics.vehiclesByMode||{},vehicleCount:finalizedMetrics.vehicleCount||0,
     capacityQuantityFactor:bridge.sourceToCapacityFactor,capacityQuantityUnit:bridge.targetUnit||'SIMULATION_RESOURCE_UNIT',
-    etaCalculationAuthority:finalizedMetrics.authority||'VERSIONED_TRANSPORT_CATALOG',capacityAuthority:'SIMULATED_SITE_ROUTE_DESIGN_CAPACITY',
+    etaCalculationAuthority:finalizedMetrics.authority||'VERSIONED_TRANSPORT_CATALOG',fleetAllocationByMode:clone(finalizedMetrics.fleetAllocationByMode||{}),
+    fleetAvailabilityStatus:finalizedMetrics.fleetAvailabilityStatus||'SIMULATED_CAPACITY_FALLBACK',
+    capacityAuthority:finalizedMetrics.hasConfiguredFleet?'AGGREGATE_SITE_FLEET_AND_ROUTE_CAPACITY':'SIMULATED_SITE_ROUTE_DESIGN_CAPACITY',
     distanceAuthority:routeProfile.routePlan.routeStatus||'SCENARIO_LOGISTICS_DESIGN_ONLY',crossBorderRequired:false,
     quantityUnitBridge:bridge,transportAssetBindingStatus:'UNBOUND_SIMULATED_CAPACITY',simulationOnly:true};
   const capacityUse=commitTransportCapacity(cid,route,quantity,shipmentId,bridge.sourceToCapacityFactor);
   route.capacityUse=capacityUse;
-  const batchInFlight=Array.isArray(rs.batches)?rs.batches.find(batch=>String(batch?.batchId||'')===batchId):null;
-  if(!batchInFlight)return{status:'BLOCKED',reason:'SOURCE_BATCH_NOT_FOUND',batchId};
   // The complete source quantity is already held out of inventory. Record only the
   // actual dispatched portion as in transit; remaining held cargo stays at the mine.
   const heldAfterDispatch=Math.max(0,(num(flow.mineHeldQuantity)||0)-quantity);
@@ -449,7 +453,7 @@ function dispatchMineToWarehouse(countryId,site,flow,sourceBatch,routeProfile){
   const shipment={shipmentId,shipmentType:'MINE_TO_WAREHOUSE',countryId:cid,siteId,resourceId:rid,batchId,
     quantity:Number(quantity.toFixed(6)),unit:route.unit,warehouseId,sourceWarehouseId:null,
     status:'IN_TRANSIT',deliveryStatus:'IN_TRANSIT_TO_RAW_WAREHOUSE',createdTurn:turn(),createdDate:factoryCurrentGameDate(),
-    etaTurn,etaDate,route,transportCapacityReservation:capacityUse,
+    etaTurn,etaDate,route,transportCapacityReservation:capacityUse,transportFleetReservation:clone(fleetReservation),
     provenance:{source:'OMEGA_RESOURCE_SITE_LOGISTICS_RUNTIME',authority:routeProfile.provenance?.authority||'SCENARIO_LOGISTICS_DESIGN_ONLY',
       simulationOnly:true,sourceBatchId:batchId,siteId,actualTransportAssetBound:false,unitBridgeAuthority:bridge.authority}};
   network.shipments.push(shipment);network.shipments=network.shipments.slice(-MAX_SHIPMENTS);
@@ -622,7 +626,7 @@ function netState(c){
   const r=resourceState(c);
   if(!r.industrialNetwork||typeof r.industrialNetwork!=='object'||Array.isArray(r.industrialNetwork)){
     r.industrialNetwork={
-      schemaVersion:VERSION,shipments:[],projects:[],extractions:[],reservations:{},deliveries:[],siteFlowLedger:[],siteLogisticsBySiteId:{},
+      schemaVersion:VERSION,shipments:[],projects:[],extractions:[],reservations:{},deliveries:[],siteFlowLedger:[],siteLogisticsBySiteId:{},transportFleetBySiteId:{},transportFleetReservations:{},
       infrastructure:{nodes:{},edges:{},corridors:{}},events:[],factoryRuntime:{},technologyContracts:[]
     };
   }
@@ -632,7 +636,7 @@ function netState(c){
   for(const key of ['shipments','projects','extractions','deliveries','siteFlowLedger','events','technologyContracts']){
     if(!Array.isArray(n[key]))n[key]=[];
   }
-  for(const key of ['reservations','factoryRuntime','siteLogisticsBySiteId']){
+  for(const key of ['reservations','factoryRuntime','siteLogisticsBySiteId','transportFleetBySiteId','transportFleetReservations']){
     if(!n[key]||typeof n[key]!=='object'||Array.isArray(n[key]))n[key]={};
   }
   if(!n.infrastructure||typeof n.infrastructure!=='object'||Array.isArray(n.infrastructure))n.infrastructure={};
@@ -640,6 +644,120 @@ function netState(c){
     if(!n.infrastructure[key]||typeof n.infrastructure[key]!=='object'||Array.isArray(n.infrastructure[key]))n.infrastructure[key]={};
   }
   return n;
+}
+
+function canonicalTransportMode(mode){
+  const raw=tok(mode),aliases={road:'truck',highway:'truck',lorry:'truck',road_haulage:'truck',
+    railway:'rail',heavy_rail:'rail',sea_lane:'ship',seaway:'ship',maritime:'ship',
+    inland_waterway:'barge',waterway:'barge'};
+  const key=aliases[raw]||raw;return modeRules()[key]?key:null;
+}
+function siteTransportFleetMode(countryId,siteId,mode,create=false){
+  const cid=canonicalCountry(countryId),sid=String(siteId||'').trim(),mid=canonicalTransportMode(mode);
+  if(!cid||!/^[A-Z]{3}$/.test(cid)||!sid||!mid)return null;
+  const network=netState(cid);let site=network.transportFleetBySiteId[sid];
+  if(!site&&create)site=network.transportFleetBySiteId[sid]={schemaVersion:'OMEGA_AGGREGATE_TRANSPORT_FLEET_V1',
+    countryId:cid,siteId:sid,modes:{},authority:'PLAYER_RECORDED_AGGREGATE_FLEET_COUNTS',simulationOnly:true,createdTurn:turn(),updatedTurn:turn()};
+  if(!site)return null;
+  if(!site.modes||typeof site.modes!=='object'||Array.isArray(site.modes))site.modes={};
+  let row=site.modes[mid];
+  if(!row&&create)row=site.modes[mid]={transportMode:mid,configured:true,totalUnits:0,operationalUnits:0,
+    damagedUnits:0,reservedUnits:0,addedUnits:0,removedUnits:0,updatedTurn:turn(),
+    authority:'PLAYER_RECORDED_AGGREGATE_FLEET_COUNTS',simulationOnly:true};
+  return row||null;
+}
+function transportFleetSnapshot(countryId,siteId,mode){
+  const row=siteTransportFleetMode(countryId,siteId,mode,false);
+  if(!row||row.configured!==true)return{configured:false,transportMode:canonicalTransportMode(mode),
+    totalUnits:null,operationalUnits:null,damagedUnits:null,reservedUnits:0,availableUnits:null,
+    authority:'UNCONFIGURED_AGGREGATE_FLEET'};
+  const total=Math.max(0,Math.floor(num(row.totalUnits)||0));
+  const operational=Math.max(0,Math.min(total,Math.floor(num(row.operationalUnits)||0)));
+  const damaged=Math.max(0,Math.min(total-operational,Math.floor(num(row.damagedUnits)||0)));
+  const reserved=Math.max(0,Math.min(operational,Math.floor(num(row.reservedUnits)||0)));
+  return{configured:true,transportMode:canonicalTransportMode(mode),totalUnits:total,
+    operationalUnits:operational,damagedUnits:damaged,reservedUnits:reserved,
+    availableUnits:Math.max(0,operational-reserved),authority:row.authority||'PLAYER_RECORDED_AGGREGATE_FLEET_COUNTS'};
+}
+function transportFleetStatus(countryId,siteId){
+  const cid=canonicalCountry(countryId),sid=String(siteId||'').trim();
+  if(!cid||!/^[A-Z]{3}$/.test(cid))return{status:'BLOCKED',reason:'FLEET_COUNTRY_INVALID'};
+  if(!sid)return{status:'BLOCKED',reason:'FLEET_SITE_ID_REQUIRED',countryId:cid};
+  const site=netState(cid).transportFleetBySiteId[sid];
+  if(!site)return{status:'UNCONFIGURED',countryId:cid,siteId:sid,modes:{},
+    keyPolicy:'COUNTRY_SITE_TRANSPORT_MODE_COUNTS_ONLY',vehicleIdentifiersStored:false};
+  const modes={};for(const mode of Object.keys(site.modes||{}).sort())modes[mode]=transportFleetSnapshot(cid,sid,mode);
+  return{status:'READY',countryId:cid,siteId:sid,modes,authority:site.authority||'PLAYER_RECORDED_AGGREGATE_FLEET_COUNTS',
+    simulationOnly:true,keyPolicy:'COUNTRY_SITE_TRANSPORT_MODE_COUNTS_ONLY',vehicleIdentifiersStored:false};
+}
+function changeTransportFleet(input={},direction=1){
+  const cid=canonicalCountry(input.countryId),sid=String(input.siteId||'').trim(),mode=canonicalTransportMode(input.transportMode||input.mode);
+  if(!cid||!/^[A-Z]{3}$/.test(cid))return{status:'BLOCKED',reason:'FLEET_COUNTRY_INVALID'};
+  if(!sid)return{status:'BLOCKED',reason:'FLEET_SITE_ID_REQUIRED',countryId:cid};
+  if(!mode)return{status:'BLOCKED',reason:'FLEET_TRANSPORT_MODE_INVALID',countryId:cid,siteId:sid,transportMode:input.transportMode||input.mode||null};
+  const player=playerSimulationCountryId();
+  if(!player)return{status:'SKIPPED',reason:'PLAYER_COUNTRY_NOT_SELECTED',countryId:cid,siteId:sid};
+  if(player!==cid)return{status:'BLOCKED',reason:'PLAYER_COUNTRY_SCOPE_VIOLATION',countryId:cid,playerCountryId:player,siteId:sid};
+  const rawCount=num(input.count??input.quantity??input.units);
+  if(rawCount===null||!Number.isInteger(rawCount)||rawCount<1||rawCount>1000000)
+    return{status:'BLOCKED',reason:'FLEET_COUNT_OUT_OF_RANGE',minimum:1,maximum:1000000,count:input.count??input.quantity??input.units};
+  const row=siteTransportFleetMode(cid,sid,mode,direction>0),network=netState(cid),count=Math.floor(rawCount);
+  if(!row)return{status:'BLOCKED',reason:'FLEET_NOT_CONFIGURED',countryId:cid,siteId:sid,transportMode:mode};
+  if(direction>0){
+    row.totalUnits=Math.max(0,Math.floor(num(row.totalUnits)||0))+count;
+    row.operationalUnits=Math.max(0,Math.floor(num(row.operationalUnits)||0))+count;
+    row.addedUnits=Math.max(0,Math.floor(num(row.addedUnits)||0))+count;
+  }else{
+    const available=Math.max(0,Math.floor(num(row.operationalUnits)||0)-Math.floor(num(row.reservedUnits)||0));
+    if(count>available)return{status:'BLOCKED',reason:'FLEET_UNITS_RESERVED_OR_UNAVAILABLE',
+      countryId:cid,siteId:sid,transportMode:mode,requestedCount:count,availableUnits:available};
+    row.totalUnits=Math.max(0,Math.floor(num(row.totalUnits)||0)-count);
+    row.operationalUnits=Math.max(0,Math.floor(num(row.operationalUnits)||0)-count);
+    row.removedUnits=Math.max(0,Math.floor(num(row.removedUnits)||0))+count;
+  }
+  row.updatedTurn=turn();network.transportFleetBySiteId[sid].updatedTurn=turn();
+  const event={eventType:direction>0?'OMEGA_AGGREGATE_TRANSPORT_FLEET_ADDED':'OMEGA_AGGREGATE_TRANSPORT_FLEET_REMOVED',
+    countryId:cid,siteId:sid,transportMode:mode,count,totalUnits:row.totalUnits,operationalUnits:row.operationalUnits,
+    reservedUnits:row.reservedUnits,availableUnits:Math.max(0,row.operationalUnits-row.reservedUnits),
+    fleetKey:cid+':'+sid+':'+mode,turn:turn(),authority:'PLAYER_RECORDED_AGGREGATE_FLEET_COUNTS',
+    simulationOnly:true,vehicleIdentifiersStored:false};
+  network.events.push(clone(event));network.events=network.events.slice(-MAX_EVENTS);emit(event.eventType,cid,event);
+  return{status:'UPDATED',countryId:cid,siteId:sid,transportMode:mode,count,fleet:transportFleetStatus(cid,sid),event:clone(event)};
+}
+function addTransportFleet(input={}){return changeTransportFleet(input,1)}
+function removeTransportFleet(input={}){return changeTransportFleet(input,-1)}
+function reserveTransportFleetForShipment(countryId,siteId,shipmentId,allocations={}){
+  const cid=canonicalCountry(countryId),sid=String(siteId||'').trim(),shipment=String(shipmentId||'').trim(),network=netState(cid);
+  if(!sid||!shipment)return{status:'BLOCKED',reason:'FLEET_RESERVATION_IDENTITY_REQUIRED'};
+  const prior=network.transportFleetReservations[shipment];
+  if(prior&&prior.status==='RESERVED')return{status:'RESERVED',idempotent:true,reservation:clone(prior)};
+  const requested=Object.entries(allocations||{}).map(([mode,count])=>[canonicalTransportMode(mode),Math.max(0,Math.floor(num(count)||0))])
+    .filter(([mode,count])=>mode&&count>0),plan={};
+  for(const [mode,count] of requested){
+    const snapshot=transportFleetSnapshot(cid,sid,mode);if(!snapshot.configured)continue;
+    if(snapshot.availableUnits<count)return{status:'BLOCKED',reason:'FLEET_UNITS_CHANGED_BEFORE_DISPATCH',
+      countryId:cid,siteId:sid,transportMode:mode,requestedUnits:count,availableUnits:snapshot.availableUnits};
+    plan[mode]=count;
+  }
+  if(!Object.keys(plan).length)return{status:'NOT_REQUIRED',countryId:cid,siteId:sid,modeUnits:{},vehicleIdentifiersStored:false};
+  for(const [mode,count] of Object.entries(plan)){
+    const row=siteTransportFleetMode(cid,sid,mode,false);row.reservedUnits=Math.max(0,Math.floor(num(row.reservedUnits)||0))+count;row.updatedTurn=turn();
+  }
+  const reservation={countryId:cid,siteId:sid,shipmentId:shipment,modeUnits:plan,status:'RESERVED',
+    createdTurn:turn(),authority:'AGGREGATE_SITE_MODE_FLEET_RESERVATION',simulationOnly:true,vehicleIdentifiersStored:false};
+  network.transportFleetReservations[shipment]=reservation;
+  return{status:'RESERVED',reservation:clone(reservation)};
+}
+function releaseTransportFleetReservation(countryId,shipmentId){
+  const cid=canonicalCountry(countryId),sid=String(shipmentId||'').trim(),network=netState(cid),reservation=network.transportFleetReservations[sid];
+  if(!reservation||reservation.status!=='RESERVED')return{status:'NOT_RESERVED',countryId:cid,shipmentId:sid,idempotent:true};
+  for(const [mode,countRaw] of Object.entries(reservation.modeUnits||{})){
+    const row=siteTransportFleetMode(cid,reservation.siteId,mode,false);
+    if(row){row.reservedUnits=Math.max(0,(num(row.reservedUnits)||0)-Math.max(0,num(countRaw)||0));row.updatedTurn=turn();}
+  }
+  reservation.status='RELEASED';reservation.releasedTurn=turn();
+  return{status:'RELEASED',countryId:cid,siteId:reservation.siteId,shipmentId:sid,modeUnits:clone(reservation.modeUnits||{}),
+    releasedTurn:turn(),vehicleIdentifiersStored:false};
 }
 function emit(type,c,payload,source='resource-industrial-network'){
   const m=interop(),cid=canonicalCountry(c),body={countryId:cid,payload:clone(payload||{}),source,simulationTurn:turn()};
@@ -1408,7 +1526,8 @@ function routeCapacityFactor(unit,explicitFactor){
   return descriptor?.family==='MASS'&&num(descriptor.toTonnes)>0?num(descriptor.toTonnes):1;
 }
 function siteRouteLegMetrics(countryId,routeProfile,quantity,unitBridge){
-  const cid=canonicalCountry(countryId),plan=routeProfile?.routePlan||{},sourceRows=Array.isArray(plan.legs)?plan.legs:[];
+  const cid=canonicalCountry(countryId),plan=routeProfile?.routePlan||{},siteId=String(routeProfile?.siteId||''),
+    sourceRows=Array.isArray(plan.legs)?plan.legs:[];
   if(!sourceRows.length)return{status:'BLOCKED',reason:'MINE_ROUTE_LEGS_NOT_RECORDED'};
   const declaredTotal=num(plan.estimatedRouteDistanceKm);
   const explicitDistances=sourceRows.map(row=>{
@@ -1419,14 +1538,15 @@ function siteRouteLegMetrics(countryId,routeProfile,quantity,unitBridge){
   const missingCount=explicitDistances.filter(value=>value===null).length;
   const missingShare=missingCount&&declaredTotal!==null?Math.max(0,declaredTotal-explicitTotal)/missingCount:0;
   const distances=explicitDistances.map(value=>value===null?missingShare:value);
-  // Declared per-leg distances are authoritative; missing distances share the unallocated remainder.
-  const totalDistanceKm=distances.reduce((sum,value)=>sum+value,0);
+  const totalDistanceKm=Number(distances.reduce((sum,value)=>sum+value,0).toFixed(6));
   const factor=Math.max(1e-12,num(unitBridge?.sourceToCapacityFactor)||1);
   const quantityInCapacityUnits=Math.max(0,num(quantity)||0)*factor;
-  let totalDays=0;
+  let totalDays=0,hasConfiguredFleet=false,hasUnavailableFleet=false;
+  const fleetAllocationByMode={};
   const legs=sourceRows.map((source,index)=>{
-    const mode=tok(source?.transportMode||source?.mode),profile=modeRules()[mode]||modeRules().truck;
-    const infrastructure=infraQuality(cid,mode),distanceKm=Math.max(0,distances[index]||0);
+    const mode=canonicalTransportMode(source?.transportMode||source?.mode)||'truck',
+      profile=modeRules()[mode]||modeRules().truck,infrastructure=infraQuality(cid,mode),
+      distanceKm=Math.max(0,distances[index]||0);
     const speedKmh=Math.max(1,num(profile?.speedKmh)||1);
     const loadHours=Math.max(0,num(profile?.loadHours)??0),unloadHours=Math.max(0,num(profile?.unloadHours)??0);
     const transferHours=Math.max(0,num(source?.transferHours??source?.transferTimeHours)??0);
@@ -1434,28 +1554,50 @@ function siteRouteLegMetrics(countryId,routeProfile,quantity,unitBridge){
     const qualityFactor=1+(1-Math.max(0,Math.min(1,infrastructure.quality)))*0.5;
     const adjustedTravelHours=travelHours*qualityFactor;
     const totalHours=adjustedTravelHours+loadHours+unloadHours+transferHours;
-    const travelDays=totalHours/24;
-    totalDays+=travelDays;
+    const oneWayTravelDays=totalHours/24;
     const payload=Math.max(0.001,num(source?.designCapacityPerTrip)||num(profile?.payloadTonnes)||1);
-    const dailyCapacity=Math.max(0,num(source?.designCapacityPerDay)||infrastructure.capacityPerDay*infrastructure.quality);
-    const units=Math.ceil(quantityInCapacityUnits/payload);
+    const designCapacityPerDay=Math.max(0,num(source?.designCapacityPerDay)||infrastructure.capacityPerDay*infrastructure.quality);
+    const fleet=transportFleetSnapshot(cid,siteId,mode);
+    const fleetCycleDays=Math.max(1/24,(totalHours+adjustedTravelHours)/24);
+    const fleetCapacityPerDay=fleet.configured?Number((fleet.availableUnits*payload/fleetCycleDays).toFixed(6)):null;
+    const capacityPerDay=fleet.configured?Math.max(0,Math.min(designCapacityPerDay,fleetCapacityPerDay)):designCapacityPerDay;
+    const loadsRequired=Math.ceil(quantityInCapacityUnits/payload);
+    const tripsRequired=fleet.configured?Math.max(1,Math.ceil(loadsRequired/Math.max(1,fleet.availableUnits))):1;
+    const fleetAllocationUnits=fleet.configured?Math.min(loadsRequired,fleet.availableUnits):0;
+    if(fleet.configured){
+      hasConfiguredFleet=true;
+      fleetAllocationByMode[mode]=Math.max(fleetAllocationByMode[mode]||0,fleetAllocationUnits);
+      if(fleet.availableUnits<=0)hasUnavailableFleet=true;
+    }
+    const legTravelDays=Number((oneWayTravelDays+Math.max(0,tripsRequired-1)*fleetCycleDays).toFixed(6));
+    totalDays+=legTravelDays;
     return{...clone(source),mode,transportMode:mode,distanceKm:Number(distanceKm.toFixed(6)),speedKmh,
       loadHours,unloadHours,transferHours,travelHours:Number(travelHours.toFixed(6)),
-      adjustedTravelHours:Number(adjustedTravelHours.toFixed(6)),travelDays:Number(travelDays.toFixed(6)),
-      payloadTonnes:payload,units,vehicleCount:units,capacityPerDay:dailyCapacity,
+      adjustedTravelHours:Number(adjustedTravelHours.toFixed(6)),oneWayTravelDays:Number(oneWayTravelDays.toFixed(6)),
+      travelDays:legTravelDays,payloadTonnes:payload,units:loadsRequired,loadsRequired,vehicleCount:loadsRequired,
+      tripsRequired,designCapacityPerDay,fleetCapacityPerDay,capacityPerDay,
+      fleetCountConfigured:fleet.configured,fleetTotalUnits:fleet.totalUnits,fleetOperationalUnits:fleet.operationalUnits,
+      fleetAvailableUnits:fleet.availableUnits,fleetReservedUnits:fleet.reservedUnits,
+      fleetAllocationUnits,fleetCycleDays:Number(fleetCycleDays.toFixed(6)),
+      fleetAvailabilityAuthority:fleet.configured?'AGGREGATE_COUNTRY_SITE_MODE_COUNTS':'UNCONFIGURED_SIMULATION_CAPACITY_FALLBACK',
       distanceAuthority:source?.distanceAuthority||routeProfile?.provenance?.authority||'SCENARIO_LOGISTICS_DESIGN_ONLY',
       timeAuthority:'VERSIONED_VEHICLE_SPEED_LOADING_UNLOADING_AND_INFRASTRUCTURE_QUALITY',
-      capacityAuthority:source?.designCapacityPerTrip!=null?'ROUTE_LEG_PER_TRIP_CAPACITY':'VERSIONED_TRANSPORT_CATALOG'};
+      capacityAuthority:fleet.configured?'AGGREGATE_SITE_FLEET_AND_ROUTE_CAPACITY':
+        source?.designCapacityPerTrip!=null?'ROUTE_LEG_PER_TRIP_CAPACITY':'VERSIONED_TRANSPORT_CATALOG'};
   });
+  if(hasUnavailableFleet)return{status:'BLOCKED',reason:'TRANSPORT_FLEET_UNAVAILABLE',legs,totalDistanceKm,
+    travelTimeDays:Number(totalDays.toFixed(6)),fleetAllocationByMode,authority:'AGGREGATE_SITE_MODE_FLEET_COUNTS'};
   const declaredCapacity=num(plan.capacityBottleneckPerDay);
-  const capacities=legs.map(leg=>num(leg.capacityPerDay)).filter(value=>value!==null&&value>0);
+  const capacities=legs.map(leg=>num(leg.capacityPerDay)).filter(value=>value!==null&&value>=0);
   const capacityPerDay=Math.max(0,Math.min(declaredCapacity!==null&&declaredCapacity>0?declaredCapacity:Infinity,
     capacities.length?Math.min(...capacities):Infinity));
-  return{status:'READY',legs,totalDistanceKm:Number(totalDistanceKm.toFixed(6)),
-    travelTimeDays:Number(totalDays.toFixed(6)),capacityPerDay:Number.isFinite(capacityPerDay)?capacityPerDay:null,
-    quantityInCapacityUnits,quantityCapacityFactor:factor,
-    vehiclesByMode:legs.reduce((out,leg)=>{out[leg.mode]=(out[leg.mode]||0)+(num(leg.vehicleCount)||0);return out;},{}),
-    vehicleCount:legs.reduce((sum,leg)=>sum+(num(leg.vehicleCount)||0),0),
+  return{status:'READY',legs,totalDistanceKm,travelTimeDays:Number(totalDays.toFixed(6)),
+    capacityPerDay:Number.isFinite(capacityPerDay)?capacityPerDay:null,
+    quantityInCapacityUnits,quantityCapacityFactor:factor,hasConfiguredFleet,
+    fleetAvailabilityStatus:hasConfiguredFleet?'AGGREGATE_SITE_FLEET_COUNTS_BOUND':'SIMULATED_CAPACITY_FALLBACK',
+    fleetAllocationByMode,
+    vehiclesByMode:legs.reduce((out,leg)=>{out[leg.mode]=(out[leg.mode]||0)+(num(leg.loadsRequired)||0);return out;},{}),
+    vehicleCount:legs.reduce((sum,leg)=>sum+(num(leg.loadsRequired)||0),0),
     authority:'VERSIONED_TRANSPORT_CATALOG_AND_SITE_ROUTE_LEG_DATA'};
 }
 function routeSegments(site,asset,resourceId,mode,countryId){
@@ -1487,29 +1629,50 @@ function buildRoute(site,asset,resourceId,requestedQuantity,input={}){
   const cid=canonicalCountry(input.countryId||site?.countryId),mode=tok(input.transportMode||rules()[resourceId]?.preferredModes?.[0]||'truck');
   const segments=routeSegments(site,asset,resourceId,mode,cid),quantity=Math.max(0,num(requestedQuantity)||0);
   const unit=input.unit||'TONNES',capacityFactor=routeCapacityFactor(unit,input.quantityToCapacityFactor),cargoQuantity=quantity*capacityFactor;
-  let totalDays=0,totalCost=0,limitingCapacity=Infinity,vehiclePlan=[];
+  const routeSourceSiteId=input.sourceSiteId||site?.siteId||null;
+  let totalDays=0,totalCost=0,limitingCapacity=Infinity,vehiclePlan=[],hasConfiguredFleet=false,hasUnavailableFleet=false;
+  const fleetAllocationByMode={};
   for(const seg of segments){
-    const m=modeRules()[seg.mode]||modeRules().truck,iq=infraQuality(cid,seg.mode);
+    const segmentMode=canonicalTransportMode(seg.mode)||'truck',m=modeRules()[segmentMode]||modeRules().truck,iq=infraQuality(cid,segmentMode);
     const distance=Math.max(0,num(seg.distanceKm)||0),speedKmh=Math.max(1,num(m.speedKmh)||1);
     const loadHours=Math.max(0,num(m.loadHours)??0),unloadHours=Math.max(0,num(m.unloadHours)??0);
     const transferHours=Math.max(0,num(seg.transferHours??seg.transferTimeHours)??0);
     const travelHours=distance/speedKmh,qualityFactor=1+(1-Math.max(0,Math.min(1,iq.quality)))*.5;
     const adjustedTravelHours=travelHours*qualityFactor,totalHours=adjustedTravelHours+loadHours+unloadHours+transferHours;
-    const days=totalHours/24,capacityPerDay=Math.max(0,iq.capacityPerDay*iq.quality),capacityPerTurn=capacityPerDay*daysPerTurn();
+    const oneWayTravelDays=totalHours/24;
     const payload=Math.max(.001,num(seg.designCapacityPerTrip)||num(m.payloadTonnes)||1);
+    const designCapacityPerDay=Math.max(0,iq.capacityPerDay*iq.quality);
+    const fleet=transportFleetSnapshot(cid,routeSourceSiteId,segmentMode);
+    const fleetCycleDays=Math.max(1/24,(totalHours+adjustedTravelHours)/24);
+    const fleetCapacityPerDay=fleet.configured?Number((fleet.availableUnits*payload/fleetCycleDays).toFixed(6)):null;
+    const capacityPerDay=fleet.configured?Math.max(0,Math.min(designCapacityPerDay,fleetCapacityPerDay)):designCapacityPerDay;
+    const capacityPerTurn=capacityPerDay*daysPerTurn();
     limitingCapacity=Math.min(limitingCapacity,capacityPerTurn);
-    totalDays+=days;totalCost+=cargoQuantity*distance*(num(m.costPerTonneKm)||.05);
-    const units=Math.ceil(cargoQuantity/payload);
-    vehiclePlan.push({mode:seg.mode,vehicle:m.vehicle,units,vehicleCount:units,payloadTonnes:payload,
-      distanceKm:Number(distance.toFixed(6)),speedKmh,loadHours,unloadHours,transferHours,
-      travelHours:Number(travelHours.toFixed(6)),adjustedTravelHours:Number(adjustedTravelHours.toFixed(6)),
-      travelDays:Number(days.toFixed(6)),capacityPerDay,capacityPerTurn,dispatchQuantity:Number(quantity.toFixed(6)),
-      edgeClass:seg.edgeClass,sourceAuthority:seg.sourceAuthority,
+    totalCost+=cargoQuantity*distance*(num(m.costPerTonneKm)||.05);
+    const loadsRequired=Math.ceil(cargoQuantity/payload);
+    const tripsRequired=fleet.configured?Math.max(1,Math.ceil(loadsRequired/Math.max(1,fleet.availableUnits))):1;
+    const allocatedFleetUnits=fleet.configured?Math.min(loadsRequired,fleet.availableUnits):0;
+    const legTravelDays=Number((oneWayTravelDays+Math.max(0,tripsRequired-1)*fleetCycleDays).toFixed(6));
+    totalDays+=legTravelDays;
+    if(fleet.configured){
+      hasConfiguredFleet=true;
+      fleetAllocationByMode[segmentMode]=Math.max(fleetAllocationByMode[segmentMode]||0,allocatedFleetUnits);
+      if(fleet.availableUnits<=0)hasUnavailableFleet=true;
+    }
+    vehiclePlan.push({mode:segmentMode,transportMode:segmentMode,vehicle:m.vehicle,units:loadsRequired,
+      vehicleCount:loadsRequired,loadsRequired,tripsRequired,payloadTonnes:payload,distanceKm:Number(distance.toFixed(6)),
+      speedKmh,loadHours,unloadHours,transferHours,travelHours:Number(travelHours.toFixed(6)),
+      adjustedTravelHours:Number(adjustedTravelHours.toFixed(6)),oneWayTravelDays:Number(oneWayTravelDays.toFixed(6)),
+      travelDays:legTravelDays,capacityPerDay,capacityPerTurn,designCapacityPerDay,fleetCapacityPerDay,
+      fleetCountConfigured:fleet.configured,fleetTotalUnits:fleet.totalUnits,fleetOperationalUnits:fleet.operationalUnits,
+      fleetAvailableUnits:fleet.availableUnits,fleetReservedUnits:fleet.reservedUnits,allocatedFleetUnits,
+      fleetCycleDays:Number(fleetCycleDays.toFixed(6)),
+      fleetAvailabilityAuthority:fleet.configured?'AGGREGATE_COUNTRY_SITE_MODE_COUNTS':'UNCONFIGURED_SIMULATION_CAPACITY_FALLBACK',
+      dispatchQuantity:Number(quantity.toFixed(6)),edgeClass:seg.edgeClass,sourceAuthority:seg.sourceAuthority,
       timeAuthority:'VERSIONED_VEHICLE_SPEED_LOADING_UNLOADING_AND_INFRASTRUCTURE_QUALITY'});
   }
-  const dispatchQuantity=Math.min(quantity,Math.max(0,limitingCapacity/capacityFactor));
+  const dispatchQuantity=hasUnavailableFleet?0:Math.min(quantity,Math.max(0,limitingCapacity/capacityFactor));
   const path=vehiclePlan.map(x=>x.edgeClass),etaTurn=turn()+Math.max(1,Math.ceil(totalDays/daysPerTurn()));
-  const routeSourceSiteId=input.sourceSiteId||site?.siteId||null;
   const routeSourceNode=input.sourceNode||nodeToken(input.sourceNodeType||'MINE',cid,site?.siteId);
   const route={status:dispatchQuantity>0?'PLANNED':'BLOCKED',routeId:'IR:'+h32(JSON.stringify({cid,site:routeSourceSiteId,sourceNode:routeSourceNode,factory:asset?.id||asset?.assetId||asset?.projectId,resourceId,mode})).toString(16),
     countryId:cid,sourceSiteId:routeSourceSiteId,sourceWarehouseId:input.sourceWarehouseId||null,sourceNode:routeSourceNode,
@@ -1520,9 +1683,12 @@ function buildRoute(site,asset,resourceId,requestedQuantity,input={}){
     totalCost:Number(totalCost.toFixed(4)),capacityQuantityFactor:capacityFactor,capacityQuantityUnit:'CARGO_CAPACITY_UNITS',
     vehicleCount:vehiclePlan.reduce((sum,leg)=>sum+leg.vehicleCount,0),
     vehiclesByMode:vehiclePlan.reduce((out,leg)=>{out[leg.mode]=(out[leg.mode]||0)+leg.vehicleCount;return out;},{}),
-    capacityAuthority:'INFRASTRUCTURE_MODEL',distanceAuthority:vehiclePlan.every(x=>x.sourceAuthority==='SITE_SIMULATION_ROUTE')?'SITE_SIMULATION_ROUTE':'SIMULATED_CORRIDOR_MODEL',
+    fleetAllocationByMode,fleetAvailabilityStatus:hasUnavailableFleet?'FLEET_UNAVAILABLE':
+      hasConfiguredFleet?'AGGREGATE_SITE_FLEET_COUNTS_BOUND':'SIMULATED_CAPACITY_FALLBACK',
+    capacityAuthority:hasConfiguredFleet?'AGGREGATE_SITE_FLEET_AND_INFRASTRUCTURE':'INFRASTRUCTURE_MODEL_SIMULATED_FALLBACK',
+    distanceAuthority:vehiclePlan.every(x=>x.sourceAuthority==='SITE_SIMULATION_ROUTE')?'SITE_SIMULATION_ROUTE':'SIMULATED_CORRIDOR_MODEL',
     crossBorderRequired:canonicalCountry(asset?.countryId||cid)!==cid,crossBorderAllowed:false,
-    statusReason:dispatchQuantity>0?'ROUTE_CAPACITY_AVAILABLE':'ROUTE_CAPACITY_ZERO'};
+    statusReason:hasUnavailableFleet?'TRANSPORT_FLEET_UNAVAILABLE':dispatchQuantity>0?'ROUTE_CAPACITY_AVAILABLE':'ROUTE_CAPACITY_ZERO'};
   return route;
 }
 
@@ -1601,12 +1767,19 @@ function resizeRouteForDispatch(route,actualQuantity,plannedQuantity){
   const costBasis=Math.max(0,num(out.requestedQuantity)??planned);
   out.plannedDispatchQuantity=planned;
   out.dispatchQuantity=Number(actual.toFixed(6));
-  if(costBasis>1e-9&&num(out.totalCost)!==null)
-    out.totalCost=Number((num(out.totalCost)*actual/costBasis).toFixed(4));
+  if(costBasis>1e-9&&num(out.totalCost)!==null)out.totalCost=Number((num(out.totalCost)*actual/costBasis).toFixed(4));
   for(const key of ['vehiclePlan','legs']){
     if(Array.isArray(out[key]))out[key]=out[key].map(leg=>{
       const payload=Math.max(.001,num(leg?.payloadTonnes)||1),factor=Math.max(1e-12,num(out.capacityQuantityFactor)||1);
-      return{...leg,units:Math.ceil(actual*factor/payload),vehicleCount:Math.ceil(actual*factor/payload),dispatchQuantity:Number(actual.toFixed(6))};
+      const loadsRequired=Math.ceil(actual*factor/payload),configured=leg?.fleetCountConfigured===true;
+      const available=Math.max(0,Math.floor(num(leg?.fleetAvailableUnits)||0));
+      const tripsRequired=configured?Math.max(1,Math.ceil(loadsRequired/Math.max(1,available))):1;
+      const oneWayTravelDays=Math.max(0,num(leg?.oneWayTravelDays)??num(leg?.travelDays)??0);
+      const fleetCycleDays=Math.max(oneWayTravelDays,num(leg?.fleetCycleDays)||oneWayTravelDays);
+      return{...leg,units:loadsRequired,vehicleCount:loadsRequired,loadsRequired,tripsRequired,
+        allocatedFleetUnits:configured?Math.min(loadsRequired,available):0,
+        fleetAllocationUnits:configured?Math.min(loadsRequired,available):0,
+        travelDays:Number((oneWayTravelDays+Math.max(0,tripsRequired-1)*fleetCycleDays).toFixed(6)),dispatchQuantity:Number(actual.toFixed(6))};
     });
   }
   const legRows=Array.isArray(out.vehiclePlan)?out.vehiclePlan:(Array.isArray(out.legs)?out.legs:[]);
@@ -1616,6 +1789,13 @@ function resizeRouteForDispatch(route,actualQuantity,plannedQuantity){
     if(mode)totals[mode]=(totals[mode]||0)+(num(leg?.vehicleCount??leg?.units)||0);
     return totals;
   },{});
+  out.fleetAllocationByMode=legRows.reduce((totals,leg)=>{
+    const mode=tok(leg?.mode||leg?.transportMode),count=Math.max(0,num(leg?.allocatedFleetUnits??leg?.fleetAllocationUnits)||0);
+    if(mode&&leg?.fleetCountConfigured===true)totals[mode]=Math.max(totals[mode]||0,count);
+    return totals;
+  },{});
+  out.travelTimeDays=Number(legRows.reduce((sum,leg)=>sum+(num(leg?.travelDays)||0),0).toFixed(6));
+  out.etaTurn=turn()+Math.max(1,Math.ceil(out.travelTimeDays/daysPerTurn()));
   out.status=actual>1e-9?'PLANNED':'BLOCKED';
   return out;
 }
@@ -1676,6 +1856,13 @@ function dispatchShipment(input={}){
     quantity=reserved.quantity;quantityAdjustmentReason='WAREHOUSE_AVAILABLE_AFTER_RESERVATIONS';
   }
   const route=resizeRouteForDispatch(plan.route,quantity,plannedQuantity);
+  const fleetReservation=reserveTransportFleetForShipment(cid,plan.siteId,shipmentId,route.fleetAllocationByMode);
+  if(fleetReservation.status==='BLOCKED'){
+    const warehouse=resourceState(cid).warehouse||{},reservedMap=warehouse.reservedByResource||{};
+    reservedMap[plan.resourceId]=Math.max(0,(num(reservedMap[plan.resourceId])||0)-quantity);
+    if(netState(cid).reservations?.[shipmentId])delete netState(cid).reservations[shipmentId];
+    return{status:'BLOCKED',reason:fleetReservation.reason||'FLEET_UNITS_CHANGED_BEFORE_DISPATCH',details:fleetReservation,plan};
+  }
   const capacityUse=commitTransportCapacity(cid,route,quantity,shipmentId,capacityFactor);
   route.capacityUse=capacityUse;
   if(quantity<plannedQuantity)route.quantityAdjustment={reason:quantityAdjustmentReason||'SOURCE_BATCH_OR_LOT_ROUNDING_CAP',plannedQuantity,actualQuantity:quantity};
@@ -1685,7 +1872,7 @@ function dispatchShipment(input={}){
   const s={shipmentId,shipmentType:'RAW_TO_FACTORY',countryId:cid,siteId:plan.siteId,resourceId:plan.resourceId,factoryId:plan.factoryId,quantity,unit:input.unit||'TONNES',
     batchId:sourceBatchId||null,occurrenceKey:input.occurrenceKey||sourceBatch?.occurrenceKey||null,
     warehouseId:input.warehouseId||sourceBatch?.warehouseId||('WH-'+cid+'-RAW'),
-    status:'IN_TRANSIT',createdTurn:turn(),createdDate:factoryCurrentGameDate(),etaTurn:route.etaTurn,etaDate:shipmentEtaDate,route,reservationId:shipmentId,transportCapacityReservation:capacityUse,
+    status:'IN_TRANSIT',createdTurn:turn(),createdDate:factoryCurrentGameDate(),etaTurn:route.etaTurn,etaDate:shipmentEtaDate,route,reservationId:shipmentId,transportCapacityReservation:capacityUse,transportFleetReservation:clone(fleetReservation),
     provenance:{source:'OMEGA_RESOURCE_INDUSTRIAL_NETWORK_V1',authority:route.distanceAuthority,sourceBatchId:sourceBatchId||null,
       sourceAuthority:sourceBatch?.provenance?.sourceAuthority||sourceBatch?.provenance?.authority||'UNOBSERVED',
       sourceBatchQuantity:sourceBatch?Math.max(0,num(sourceBatch.remainingQuantity!=null?sourceBatch.remainingQuantity:sourceBatch.quantity)||0):null,
@@ -2140,6 +2327,7 @@ function advanceShipments(c){
           siteId:s.siteId,reason:s.blockReason,details:receipt},'resource-industrial-network');continue;
       }
       s.status='DELIVERED';s.deliveryStatus='DELIVERED_TO_RAW_WAREHOUSE';s.destinationStatus='RAW_WAREHOUSE_RECEIVED';
+      releaseTransportFleetReservation(cid,s.shipmentId);
       s.deliveredTurn=turn();s.deliveredDate=factoryCurrentGameDate();s.deliveryEventId='MINE-WH-DELIVERY:'+s.shipmentId;
       mineDelivered.push(clone(s));
       emit('OMEGA_RESOURCE_MINE_HAUL_DELIVERED',cid,{shipmentId:s.shipmentId,batchId:s.batchId,siteId:s.siteId,
@@ -2338,6 +2526,7 @@ function advanceShipments(c){
         authority:'TRACKED_LOTS_PLUS_UNOBSERVED_LEGACY_BALANCE'},'resource-industrial-network');
     }
     s.status='DELIVERED';s.deliveredTurn=turn();s.destinationStatus='FACTORY_RECEIVED';s.factoryInputBatchId=inputBatchId;
+    releaseTransportFleetReservation(cid,s.shipmentId);
     // Delivery updates warehouse/factory input ledgers only. Production is scheduled and
     // output cannot be committed until the authoritative in-game calendar reaches finishDate.
     const receivedRecipe=recipeFor(rid,factory),productionMetrics=factoryProductionMetrics(factory,receivedRecipe);
@@ -2384,7 +2573,7 @@ function advanceShipments(c){
         saveSiteFlow(cid,flow);
       }
     }
-    n.deliveries.push(clone(s));delivered.push(clone(s));const res=n.reservations?.[s.reservationId];if(res)res.status='DELIVERED';
+    n.deliveries.push(clone(s));delivered.push(clone(s));releaseTransportFleetReservation(cid,s.shipmentId);const res=n.reservations?.[s.reservationId];if(res)res.status='DELIVERED';
     emit('OMEGA_RESOURCE_DELIVERY_COMPLETED',cid,{shipmentId:s.shipmentId,siteId:s.siteId,factoryId:s.factoryId,resourceId:rid,quantity,unit:s.unit,
       travelTimeDays:s.route.travelTimeDays,transport:s.route.transportMode,status:'DELIVERED_TO_FACTORY',processingStatus:s.processingStatus,
       processingTransactionId:s.processingTransactionId,batchId:sourceBatchId||null});
@@ -4657,7 +4846,8 @@ function gameplayPipelineDiagnostics(countryScope){
     awaitingTransportCapacity:perCountry.reduce((n,x)=>n+x.awaitingTransportCapacity,0),perCountry};
 }
 function api(){
-  return Object.freeze({VERSION,loadCatalog,loadSiteLogisticsRoutes,planExtraction,planShipment,dispatchShipment,dispatchFactoryInputShipment,advanceShipments,quoteMineProject,startMineProject,startFactoryProject,startInfrastructureProject,startPadmaCorridorProject,advanceProjects,startTechnologyProject,executeFactoryCycle,executeSitePipeline,diagnostics,gameplayPipelineDiagnostics,factoryCatalogDiagnostics,factoryProductionRequirements,factoryProductionStatus,decommissionFactory,decommissionMine,setMineOperatingStatus,quoteMineDemolition,destroyMineAssets,startFactoryProductionCycle,transferFactoryInputsFromWarehouse,processPendingFactoryInputs,factoryUtilityDiagnostics,factoryConstructionMaterialQuote,reconcileFactoryEmployment,normalizeInfrastructure,candidateFactories,recipeFor,processPendingFactoryInputs,resourceMethod,buildRoute});
+  return Object.freeze({VERSION,loadCatalog,loadSiteLogisticsRoutes,planExtraction,planShipment,dispatchShipment,dispatchFactoryInputShipment,advanceShipments,
+    addTransportFleet,removeTransportFleet,transportFleetStatus,quoteMineProject,startMineProject,startFactoryProject,startInfrastructureProject,startPadmaCorridorProject,advanceProjects,startTechnologyProject,executeFactoryCycle,executeSitePipeline,diagnostics,gameplayPipelineDiagnostics,factoryCatalogDiagnostics,factoryProductionRequirements,factoryProductionStatus,decommissionFactory,decommissionMine,setMineOperatingStatus,quoteMineDemolition,destroyMineAssets,startFactoryProductionCycle,transferFactoryInputsFromWarehouse,processPendingFactoryInputs,factoryUtilityDiagnostics,factoryConstructionMaterialQuote,reconcileFactoryEmployment,normalizeInfrastructure,candidateFactories,recipeFor,processPendingFactoryInputs,resourceMethod,buildRoute});
 }
 g.Omega=g.Omega||{};g.Omega.ResourceIndustrialNetwork=api();g.OmegaResourceIndustrialNetwork=g.Omega.ResourceIndustrialNetwork;
 

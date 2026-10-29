@@ -17,7 +17,15 @@
     "canonicalFactoryTypeCount": 21,
     "canonicalResourceRuleCount": 42,
     "integratedIntoRuntime": true,
-    "legacyFactoryIconCount": 39
+    "legacyFactoryIconCount": 39,
+    "transportVariantIconCount": 20,
+    "transportVariantsByMode": {
+      "truck": 5,
+      "rail": 5,
+      "ship": 5,
+      "barge": 5
+    },
+    "totalTransportVariantIconCount": 20
   },
   "resources": [
     {
@@ -794,6 +802,228 @@
       "color": "#b98c5b",
       "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
       "legacy": true
+    }
+  ],
+  "transportVariants": [
+    {
+      "id": "barge-container-cargo",
+      "label": "Inland container barge",
+      "assetId": "barge-container-cargo",
+      "transportMode": "barge",
+      "cargoClass": "general_cargo",
+      "file": "transport/variants/barge-container-cargo.svg",
+      "viewBox": "0 0 128 128",
+      "source": "LOCAL_SVG_ASSET",
+      "authority": "OMEGA_RESOURCE_TRANSPORT_VARIANT_ICON_V1"
+    },
+    {
+      "id": "barge-gas-tanker",
+      "label": "Inland gas tanker barge",
+      "assetId": "barge-gas-tanker",
+      "transportMode": "barge",
+      "cargoClass": "gas",
+      "file": "transport/variants/barge-gas-tanker.svg",
+      "viewBox": "0 0 128 128",
+      "source": "LOCAL_SVG_ASSET",
+      "authority": "OMEGA_RESOURCE_TRANSPORT_VARIANT_ICON_V1"
+    },
+    {
+      "id": "barge-inland-bulk",
+      "label": "Inland bulk barge",
+      "assetId": "barge-inland-bulk",
+      "transportMode": "barge",
+      "cargoClass": "dry_bulk",
+      "file": "transport/variants/barge-inland-bulk.svg",
+      "viewBox": "0 0 128 128",
+      "source": "LOCAL_SVG_ASSET",
+      "authority": "OMEGA_RESOURCE_TRANSPORT_VARIANT_ICON_V1"
+    },
+    {
+      "id": "barge-liquid-tanker",
+      "label": "Inland liquid tanker barge",
+      "assetId": "barge-liquid-tanker",
+      "transportMode": "barge",
+      "cargoClass": "liquid",
+      "file": "transport/variants/barge-liquid-tanker.svg",
+      "viewBox": "0 0 128 128",
+      "source": "LOCAL_SVG_ASSET",
+      "authority": "OMEGA_RESOURCE_TRANSPORT_VARIANT_ICON_V1"
+    },
+    {
+      "id": "barge-ore-carrier",
+      "label": "Inland ore barge",
+      "assetId": "barge-ore-carrier",
+      "transportMode": "barge",
+      "cargoClass": "ore",
+      "file": "transport/variants/barge-ore-carrier.svg",
+      "viewBox": "0 0 128 128",
+      "source": "LOCAL_SVG_ASSET",
+      "authority": "OMEGA_RESOURCE_TRANSPORT_VARIANT_ICON_V1"
+    },
+    {
+      "id": "ship-bulk-carrier",
+      "label": "Dry-bulk carrier ship",
+      "assetId": "ship-bulk-carrier",
+      "transportMode": "ship",
+      "cargoClass": "dry_bulk",
+      "file": "transport/variants/ship-bulk-carrier.svg",
+      "viewBox": "0 0 128 128",
+      "source": "LOCAL_SVG_ASSET",
+      "authority": "OMEGA_RESOURCE_TRANSPORT_VARIANT_ICON_V1"
+    },
+    {
+      "id": "ship-container-carrier",
+      "label": "Container cargo ship",
+      "assetId": "ship-container-carrier",
+      "transportMode": "ship",
+      "cargoClass": "general_cargo",
+      "file": "transport/variants/ship-container-carrier.svg",
+      "viewBox": "0 0 128 128",
+      "source": "LOCAL_SVG_ASSET",
+      "authority": "OMEGA_RESOURCE_TRANSPORT_VARIANT_ICON_V1"
+    },
+    {
+      "id": "ship-lng-carrier",
+      "label": "LNG and gas carrier ship",
+      "assetId": "ship-lng-carrier",
+      "transportMode": "ship",
+      "cargoClass": "gas",
+      "file": "transport/variants/ship-lng-carrier.svg",
+      "viewBox": "0 0 128 128",
+      "source": "LOCAL_SVG_ASSET",
+      "authority": "OMEGA_RESOURCE_TRANSPORT_VARIANT_ICON_V1"
+    },
+    {
+      "id": "ship-oil-tanker",
+      "label": "Oil and liquid tanker ship",
+      "assetId": "ship-oil-tanker",
+      "transportMode": "ship",
+      "cargoClass": "liquid",
+      "file": "transport/variants/ship-oil-tanker.svg",
+      "viewBox": "0 0 128 128",
+      "source": "LOCAL_SVG_ASSET",
+      "authority": "OMEGA_RESOURCE_TRANSPORT_VARIANT_ICON_V1"
+    },
+    {
+      "id": "ship-ore-carrier",
+      "label": "Heavy ore carrier ship",
+      "assetId": "ship-ore-carrier",
+      "transportMode": "ship",
+      "cargoClass": "ore",
+      "file": "transport/variants/ship-ore-carrier.svg",
+      "viewBox": "0 0 128 128",
+      "source": "LOCAL_SVG_ASSET",
+      "authority": "OMEGA_RESOURCE_TRANSPORT_VARIANT_ICON_V1"
+    },
+    {
+      "id": "train-bulk-hopper",
+      "label": "Open bulk-hopper freight train",
+      "assetId": "train-bulk-hopper",
+      "transportMode": "rail",
+      "cargoClass": "dry_bulk",
+      "file": "transport/variants/train-bulk-hopper.svg",
+      "viewBox": "0 0 128 128",
+      "source": "LOCAL_SVG_ASSET",
+      "authority": "OMEGA_RESOURCE_TRANSPORT_VARIANT_ICON_V1"
+    },
+    {
+      "id": "train-container-freight",
+      "label": "Container freight train",
+      "assetId": "train-container-freight",
+      "transportMode": "rail",
+      "cargoClass": "general_cargo",
+      "file": "transport/variants/train-container-freight.svg",
+      "viewBox": "0 0 128 128",
+      "source": "LOCAL_SVG_ASSET",
+      "authority": "OMEGA_RESOURCE_TRANSPORT_VARIANT_ICON_V1"
+    },
+    {
+      "id": "train-gas-tank-cars",
+      "label": "Pressurized gas railcars",
+      "assetId": "train-gas-tank-cars",
+      "transportMode": "rail",
+      "cargoClass": "gas",
+      "file": "transport/variants/train-gas-tank-cars.svg",
+      "viewBox": "0 0 128 128",
+      "source": "LOCAL_SVG_ASSET",
+      "authority": "OMEGA_RESOURCE_TRANSPORT_VARIANT_ICON_V1"
+    },
+    {
+      "id": "train-liquid-tank-cars",
+      "label": "Liquid-tanker railcars",
+      "assetId": "train-liquid-tank-cars",
+      "transportMode": "rail",
+      "cargoClass": "liquid",
+      "file": "transport/variants/train-liquid-tank-cars.svg",
+      "viewBox": "0 0 128 128",
+      "source": "LOCAL_SVG_ASSET",
+      "authority": "OMEGA_RESOURCE_TRANSPORT_VARIANT_ICON_V1"
+    },
+    {
+      "id": "train-ore-hopper",
+      "label": "Ore-hopper freight train",
+      "assetId": "train-ore-hopper",
+      "transportMode": "rail",
+      "cargoClass": "ore",
+      "file": "transport/variants/train-ore-hopper.svg",
+      "viewBox": "0 0 128 128",
+      "source": "LOCAL_SVG_ASSET",
+      "authority": "OMEGA_RESOURCE_TRANSPORT_VARIANT_ICON_V1"
+    },
+    {
+      "id": "truck-container-hauler",
+      "label": "General-cargo container truck",
+      "assetId": "truck-container-hauler",
+      "transportMode": "truck",
+      "cargoClass": "general_cargo",
+      "file": "transport/variants/truck-container-hauler.svg",
+      "viewBox": "0 0 128 128",
+      "source": "LOCAL_SVG_ASSET",
+      "authority": "OMEGA_RESOURCE_TRANSPORT_VARIANT_ICON_V1"
+    },
+    {
+      "id": "truck-dry-bulk-tipper",
+      "label": "Dry-bulk tipper truck",
+      "assetId": "truck-dry-bulk-tipper",
+      "transportMode": "truck",
+      "cargoClass": "dry_bulk",
+      "file": "transport/variants/truck-dry-bulk-tipper.svg",
+      "viewBox": "0 0 128 128",
+      "source": "LOCAL_SVG_ASSET",
+      "authority": "OMEGA_RESOURCE_TRANSPORT_VARIANT_ICON_V1"
+    },
+    {
+      "id": "truck-gas-tanker",
+      "label": "Pressurized gas tanker truck",
+      "assetId": "truck-gas-tanker",
+      "transportMode": "truck",
+      "cargoClass": "gas",
+      "file": "transport/variants/truck-gas-tanker.svg",
+      "viewBox": "0 0 128 128",
+      "source": "LOCAL_SVG_ASSET",
+      "authority": "OMEGA_RESOURCE_TRANSPORT_VARIANT_ICON_V1"
+    },
+    {
+      "id": "truck-liquid-tanker",
+      "label": "Liquid tanker truck",
+      "assetId": "truck-liquid-tanker",
+      "transportMode": "truck",
+      "cargoClass": "liquid",
+      "file": "transport/variants/truck-liquid-tanker.svg",
+      "viewBox": "0 0 128 128",
+      "source": "LOCAL_SVG_ASSET",
+      "authority": "OMEGA_RESOURCE_TRANSPORT_VARIANT_ICON_V1"
+    },
+    {
+      "id": "truck-ore-hauler",
+      "label": "Heavy ore-haul dump truck",
+      "assetId": "truck-ore-hauler",
+      "transportMode": "truck",
+      "cargoClass": "ore",
+      "file": "transport/variants/truck-ore-hauler.svg",
+      "viewBox": "0 0 128 128",
+      "source": "LOCAL_SVG_ASSET",
+      "authority": "OMEGA_RESOURCE_TRANSPORT_VARIANT_ICON_V1"
     }
   ]
 }

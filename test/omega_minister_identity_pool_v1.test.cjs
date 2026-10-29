@@ -84,7 +84,7 @@ const configured = pool.configure({ manifest, templates });
   assert.equal(requested.length, requestCountBeforeRoster,
     'the canonical identity pool must be resolved before any generic legacy API candidate can replace it');
   const offlineWorker = fs.readFileSync(path.join(root, 'omega-offline-map-sw.js'), 'utf8');
-  assert.match(offlineWorker, /omega-offline-atlas-shell-v58/);
+  assert.match(offlineWorker, /omega-offline-atlas-shell-v59/);
   assert.ok(offlineWorker.includes('"./minister_country_roster_manifest_v1.json"'));
   assert.ok(offlineWorker.includes('"./ministers.json"'));
 
