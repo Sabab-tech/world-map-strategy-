@@ -50,3 +50,17 @@ test('new catalog and all cargo icons are included in offline cache',()=>{
   }
  }
 });
+
+
+test('every cargo-specific train SVG contains visible locomotive and wheel geometry',()=>{
+ const catalog=readJson('omega_logistics_transport_catalog_v1.json');
+ const train=catalog.transportTypes.find(mode=>mode.baseCatalogMode==='rail');
+ assert.ok(train,'rail transport catalog mode is required');
+ for(const cargo of Object.keys(train.cargoIcons)){
+  const path=train.cargoIcons[cargo];
+  const svg=readFileSync(new URL('../'+path,import.meta.url),'utf8');
+  assert.match(svg,/<circle\\b/,'train SVG must contain wheels: '+cargo);
+  assert.match(svg,/<path\\b/,'train SVG must contain visible rail/vehicle geometry: '+cargo);
+  assert.match(svg,/<title\\b/,'train SVG must have an accessible title: '+cargo);
+ }
+});
