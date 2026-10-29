@@ -964,13 +964,21 @@
       var productionUnit = logisticsPlanningUnit(production && production.unit);
       var capacityPerDay = null, capacityUnit = null;
       if (chosen === 'pipeline') {
-        // A pipeline's count unit is lines, not trucks. Do not derive line count
-        // from the generic pipeline speed/payload catalog: it needs a line capacity.
-        capacityPerDay = numberOrNull(reference && (reference.designCapacityPerLinePerDay !== undefined ?
+        // A pipeline's count unit is lines, not trucks. Only explicit per-line
+        // throughput can convert cargo flow into a line count; corridor capacity
+        // alone does not prove how many parallel lines are installed.
+        var lineCapacity = numberOrNull(reference && (reference.designCapacityPerLinePerDay !== undefined ?
           reference.designCapacityPerLinePerDay : (reference.capacityPerLinePerDay !== undefined ?
-          reference.capacityPerLinePerDay : (reference.lineCapacityPerDay !== undefined ?
-          reference.lineCapacityPerDay : reference.designCapacityPerDay))));
-        capacityUnit = logisticsPlanningUnit(reference && (reference.designCapacityUnit || reference.capacityUnit));
+          reference.capacityPerLinePerDay : reference.lineCapacityPerDay)));
+        if (lineCapacity !== null && lineCapacity > 0) {
+          capacityPerDay = lineCapacity;
+          capacityUnit = logisticsPlanningUnit(reference && (reference.designCapacityPerLineUnit ||
+            reference.capacityPerLineUnit || reference.lineCapacityUnit || reference.designCapacityUnit ||
+            reference.capacityUnit));
+        } else {
+          capacityPerDay = null;
+          capacityUnit = null;
+        }
       } else if (payload !== null && payload > 0 && cycleHours > 0) {
         // Cycle time is distance-aware: one design vehicle's throughput falls as
         // round-trip distance and load/unload time increase.
@@ -995,7 +1003,7 @@
       leg.designCapacityPerTrip = chosen === 'pipeline' ? null : payload;
       leg.designCapacityPerDay = capacityPerDay;
       leg.designCapacityUnit = capacityUnit;
-      leg.designCapacityPerLinePerDay = chosen === 'pipeline' ? capacityPerDay : null;
+      leg.designCapacityPerLinePerDay = chosen === 'pipeline' && capacityPerDay !== null ? capacityPerDay : null;
       leg.cycleHoursForOneDesignVehicle = cycleHours;
       leg.tripsPerVehiclePerDay = chosen === 'pipeline' ? null : (cycleHours > 0 ? 24 / cycleHours : null);
       leg.requiredDesignFleetSlots = slots;
@@ -1016,7 +1024,7 @@
       return [leg];
     }
     function logisticsPlanningUnit(value) {
-      var unit = String(value || '').trim().toUpperCase().replace(/[\\s-]+/g, '_');
+      var unit = String(value || '').trim().toUpperCase().replace(/[\s-]+/g, '_');
       var aliases = {
         RAW_CARGO_TONNES_PER_DAY:'TONNES_PER_DAY', RAW_CARGO_TONS_PER_DAY:'TONNES_PER_DAY',
         METRIC_TONS_PER_DAY:'TONNES_PER_DAY', METRIC_TONNES_PER_DAY:'TONNES_PER_DAY',
@@ -1044,7 +1052,7 @@
         var lineCapacity = numberOrNull(leg && (leg.designCapacityPerLinePerDay !== undefined ?
           leg.designCapacityPerLinePerDay : (leg.capacityPerLinePerDay !== undefined ?
           leg.capacityPerLinePerDay : leg.lineCapacityPerDay)));
-        if (mode === 'pipeline' && lineCapacity === null) lineCapacity = capacity;
+        // Do not substitute corridor capacity for per-line capacity.
         var units = null, tripsPerDay = null, basis = '', rateAvailable = rate !== null && rate >= 0 && !!productionUnit;
         if (rateAvailable && rate === 0) {
           units = 0;
