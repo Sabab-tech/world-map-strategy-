@@ -754,3 +754,59 @@ console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');
   assert.equal(unrelated.remainingQuantity,5);
   console.log('OMEGA MINE-BOUND FACTORY INPUT ISOLATION PASSED');
 }
+
+// Regression: fleet identity is count-based, persisted per country/site/type, and
+// re-planning uses the latest count and profile without creating vehicle identifiers.
+{
+  await N.loadCatalog();
+  await N.loadSiteLogisticsRoutes('BGD');
+  const baseline = await N.previewSiteTransport({
+    countryId:'BGD', siteId:'SITE_BGD_COAL_01', quantity:10000, unit:'TONNES'
+  });
+  assert.equal(baseline.status,'READY',JSON.stringify(baseline));
+  assert.equal(baseline.transportTypes[0].count,null,'an unknown fleet remains unknown, not invented');
+
+  const configured = N.setTransportFleet({
+    countryId:'BGD',siteId:'SITE_BGD_COAL_01',transportType:'train',count:2,
+    profile:{payloadTonnes:1000,speedKmh:90,loadHours:0,unloadHours:0}
+  });
+  assert.equal(configured.status,'APPLIED',JSON.stringify(configured));
+  assert.equal(configured.transportType,'rail','train is normalized to the route engine mode');
+  assert.equal(configured.count,2);
+  assert.equal(configured.individualVehicleIdsRequired,false);
+
+  const readback = N.getTransportFleet({countryId:'BGD',siteId:'SITE_BGD_COAL_01'});
+  const railRecord = readback.transportTypes.find(row=>row.transportType==='rail');
+  assert.equal(railRecord.count,2,'count settings persist in the country/site fleet record');
+  assert.equal(railRecord.payloadTonnes,1000,'profile overrides are returned as live values');
+  assert.equal(railRecord.speedKmh,90);
+
+  const recalculated = await N.previewSiteTransport({
+    countryId:'BGD',siteId:'SITE_BGD_COAL_01',quantity:10000,unit:'TONNES'
+  });
+  assert.equal(recalculated.status,'READY',JSON.stringify(recalculated));
+  assert.equal(recalculated.transportTypes[0].count,2);
+  assert.notEqual(recalculated.capacityPerDay,baseline.capacityPerDay,
+    'changing the configured count/profile must recalculate route capacity');
+  assert.equal(recalculated.transportTypes[0].cargoIconPath,
+    'assets/omega-industrial-icons-v1/transport/cargo/coal-dry-bulk/train.svg');
+
+  const zero = N.setTransportFleet({
+    countryId:'BGD',siteId:'SITE_BGD_COAL_01',transportType:'rail',count:0
+  });
+  assert.equal(zero.status,'APPLIED');
+  const zeroPreview = await N.previewSiteTransport({
+    countryId:'BGD',siteId:'SITE_BGD_COAL_01',quantity:10000,unit:'TONNES'
+  });
+  assert.equal(zeroPreview.capacityPerDay,0,'zero available fleet must stop dispatch capacity');
+  assert.equal(zeroPreview.transportTypes[0].fleetSufficiency,false);
+
+  assert.equal(N.setTransportFleet({
+    countryId:'BGD',siteId:'SITE_BGD_COAL_01',transportType:'rail',count:1.5
+  }).reason,'INVALID_TRANSPORT_FLEET_COUNT','fractional vehicle counts are rejected');
+  assert.equal(N.setTransportFleet({
+    countryId:'USA',siteId:'SITE_BGD_COAL_01',transportType:'rail',count:2
+  }).reason,'SITE_COUNTRY_MISMATCH','fleet configuration cannot be written into another country');
+  console.log('OMEGA COUNT-BASED TRANSPORT FLEET REGRESSION PASSED');
+}
+
