@@ -1157,7 +1157,6 @@
     version: '1.1.0',
     resourceIconIds: RESOURCE_ICON_IDS.slice(),
     resourceIconPath: resourceIconPath,
-    logisticsTransportAsset: logisticsTransportAsset,
     mineArchetype: mineArchetype,
     buildViewModel: buildViewModel,
     render: render
