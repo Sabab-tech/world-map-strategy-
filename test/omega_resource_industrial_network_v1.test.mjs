@@ -532,8 +532,8 @@ context.Omega.Simulation={clock:{turn:42,stepDurationMs:86400000}};
 assert.equal(N.diagnostics().daysPerTurn,1,'industrial route ETAs and construction progress must follow one day per clock turn');
 
 const diag=N.diagnostics();
-assert.equal(diag.siteCount,4,'diagnostics must include the added constructed-factory source site');
-assert.equal(diag.extractionPlans,4,'diagnostics must include the additional mine extraction planned for the commissioned-factory path');
+assert.equal(diag.siteCount,6,'diagnostics must cover every registered source-site row in the six-site logistics fixture');
+assert.equal(diag.extractionPlans,diag.siteCount,'diagnostics must build one extraction plan per registered source site, including the commissioned-factory path');
 assert.equal(diag.targetArchitecture,'SITE -> EXTRACTION -> WAREHOUSE -> ROUTE -> FACTORY -> PROCESS -> OUTPUT');
 
 // Every route segment shares a per-turn transport ledger across shipments.
