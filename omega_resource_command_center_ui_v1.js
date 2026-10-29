@@ -822,7 +822,7 @@
     if(chosenSite&&fleetPreviewRuntime&&typeof fleetPreviewRuntime.previewSiteTransport==='function'&&
        !Object.prototype.hasOwnProperty.call(fleetPreviewCache,fleetPreviewKey)&&!fleetPreviewPending[fleetPreviewKey]){
       fleetPreviewPending[fleetPreviewKey]=true;
-      Promise.resolve(fleetPreviewRuntime.previewSiteTransport({countryId:activeCountry(country),siteId:siteId,quantity:10000,unit:'TONNES'}))
+      Promise.resolve(fleetPreviewRuntime.previewSiteTransport({countryId:activeCountry(country),siteId:siteId,quantity:10000}))
         .then(function(result){
           fleetPreviewCache[fleetPreviewKey]=result||{status:'UNAVAILABLE',reason:'EMPTY_ROUTE_PREVIEW'};
           delete fleetPreviewPending[fleetPreviewKey];
