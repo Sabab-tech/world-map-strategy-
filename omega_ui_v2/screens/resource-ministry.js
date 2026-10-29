@@ -1360,7 +1360,7 @@
       }
       return '<section class="omega-v2-logistics-route-section" data-logistics-route-state="ready">' +
         logisticsFleetOverviewMarkup(routes) +
-        '<div class="omega-v2-logistics-route-heading"><div><h2>Mine Site Route Plans</h2><p>Configured mine-to-warehouse routes</p></div>' +
+        '<div class="omega-v2-logistics-route-heading"><div><h2>Mine Site Route Plans</h2><p>Domestic mine-to-country-warehouse templates. International shipping requires explicit port, sea-leg and receiving-destination records.</p></div>' +
         '<span class="omega-v2-status" data-state="attention">' + fmt(routes.length) + ' route plans</span></div>' +
         '<div class="omega-v2-grid omega-v2-logistics-grid">' + routes.map(logisticsRouteCard).join('') + '</div></section>';
     }
