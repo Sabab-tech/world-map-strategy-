@@ -1745,7 +1745,10 @@ function routeSegments(site,asset,resourceId,mode,countryId,input={}){
     genericModes.every(value=>value==='truck'||value==='rail');
   const sourceCountry=canonicalCountry(cid);
   const destinationCountry=canonicalCountry(input.destinationCountryId||input.destinationCountryCode||
-    f.countryId||f.countryCode||f.destinationCountryId||cid);
+    sourcePlan.destinationCountryId||sourcePlan.destinationCountryCode||sourcePlan.toCountryId||sourcePlan.toCountryCode||
+    sourceLegRows?.[sourceLegRows.length-1]?.toCountryId||sourceLegRows?.[sourceLegRows.length-1]?.toCountryCode||
+    sourceLegRows?.[sourceLegRows.length-1]?.destinationCountryId||
+    f.destinationCountryId||f.countryId||f.countryCode||cid);
   const crossBorder=!!(sourceCountry&&destinationCountry&&sourceCountry!==destinationCountry&&
     /^[A-Z]{3}$/.test(sourceCountry)&&/^[A-Z]{3}$/.test(destinationCountry));
   const destinationRecorded=()=>{
@@ -1875,7 +1878,10 @@ function buildRoute(site,asset,resourceId,requestedQuantity,input={}){
   if(!segments.length){
     const sourceCountry=canonicalCountry(cid);
     const destinationCountry=canonicalCountry(input.destinationCountryId||input.destinationCountryCode||
-      asset?.countryId||asset?.countryCode||asset?.destinationCountryId||cid);
+      site?.routePlan?.destinationCountryId||site?.routePlan?.destinationCountryCode||
+      site?.logisticsRoutePlan?.destinationCountryId||asset?.routePlan?.destinationCountryId||
+      asset?.logisticsRoutePlan?.destinationCountryId||asset?.destinationCountryId||
+      asset?.countryId||asset?.countryCode||cid);
     const crossBorder=!!(sourceCountry&&destinationCountry&&sourceCountry!==destinationCountry&&
       /^[A-Z]{3}$/.test(sourceCountry)&&/^[A-Z]{3}$/.test(destinationCountry));
     const requiresSeaLane=input.requiresSeaLane===true||input.seaLaneRequired===true||
