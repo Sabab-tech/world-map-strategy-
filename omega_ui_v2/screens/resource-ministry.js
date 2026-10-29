@@ -990,6 +990,8 @@
         var profile = byMode && byMode[mode] || {};
         var flow = routeFlow !== null ? routeFlow : numberOrNull(leg && leg.designCapacityPerDay);
         var legCapacity = numberOrNull(leg && leg.designCapacityPerDay);
+        var lineCapacity = numberOrNull(leg && (leg.designCapacityPerLinePerDay !== undefined ?
+          leg.designCapacityPerLinePerDay : (leg.capacityPerLinePerDay !== undefined ? leg.capacityPerLinePerDay : leg.lineCapacityPerDay)));
         var payload = numberOrNull(leg && leg.designCapacityPerTrip);
         if (payload === null) payload = numberOrNull(profile.payloadTonnes);
         var distance = numberOrNull(leg && (leg.estimatedDistanceKm !== undefined ? leg.estimatedDistanceKm : leg.distanceKm));
@@ -1002,9 +1004,9 @@
         if (flow !== null && flow >= 0) {
           if (mode === 'pipeline') {
             if (flow === 0) { units = 0; basis = 'continuous-flow-zero'; }
-            else if (legCapacity !== null && legCapacity > 0) {
-              units = Math.max(1, Math.ceil(flow / legCapacity));
-              basis = 'route-flow-divided-by-line-capacity';
+            else if (lineCapacity !== null && lineCapacity > 0) {
+              units = Math.max(1, Math.ceil(flow / lineCapacity));
+              basis = 'route-flow-divided-by-explicit-per-line-capacity';
             }
           } else {
             if (cycleHours === null && distance !== null && distance >= 0 && speed !== null && speed > 0) {
