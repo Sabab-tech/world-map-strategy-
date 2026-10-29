@@ -307,6 +307,7 @@
           existingSaveDataOverwritten: false,
           economyStateModified: false
         };
+        summary.status = summary.countriesBlocked ? 'COMPLETED_WITH_REPORTED_GAPS' : 'COMPLETED';
         state.simulation.countryFactoryStartingBaselineV1 = clone(summary);
         lastReport = clone(summary);
         dispatchEvent('OMEGA_COUNTRY_FACTORY_STARTING_BASELINE_INITIALIZED', summary);
