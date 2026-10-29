@@ -1053,7 +1053,7 @@
         if (payload === null && mode !== 'pipeline') payload = numberOrNull(profile.payloadTonnes);
         var payloadUnit = logisticsPlanningUnit(leg && (leg.designCapacityPerTripUnit || leg.payloadUnit) ||
           saved.payloadUnit || profile.payloadUnit || profile.payloadCapacityUnit || '');
-        if (payloadUnit && !/_PER_TRIP$/.test(payloadUnit) && !/_PER_DAY$/.test(payloadUnit)) payloadUnit += '_PER_TRIP';
+        if (payloadUnit) payloadUnit = payloadUnit.replace(/_PER_DAY$/, '').replace(/_PER_TRIP$/, '') + '_PER_TRIP';
         if (!payloadUnit && payload !== null && productionUnit === 'TONNES_PER_DAY') payloadUnit = 'TONNES_PER_TRIP';
         var distance = numberOrNull(leg && (leg.estimatedDistanceKm !== undefined ? leg.estimatedDistanceKm : leg.distanceKm));
         var speed = numberOrNull(leg && leg.speedKmh);
@@ -1084,6 +1084,7 @@
         var lineUnit = logisticsPlanningUnit(leg && (
           leg.designCapacityPerLineUnit || leg.capacityPerLineUnit || leg.lineCapacityUnit ||
           (lineCapacity !== null ? (leg.designCapacityUnit || leg.capacityUnit || routePlan.capacityUnit) : '')));
+        if (lineUnit && !/_PER_DAY$/.test(lineUnit)) lineUnit = lineUnit.replace(/_PER_TRIP$/, '') + '_PER_DAY';
         var routeCapacity = numberOrNull(leg && leg.designCapacityPerDay);
         var routeCapacityUnit = logisticsPlanningUnit(leg && (leg.designCapacityUnit || leg.capacityUnit || routePlan.capacityUnit || ''));
         var rateAvailable = rate !== null && rate >= 0 && !!productionUnit;
