@@ -797,6 +797,48 @@
         inventoryRows.slice(-40).reverse().map(function (row) { return '<tr><td>' + esc(resourceLabel(row.resourceId)) + '</td><td>' + amount(row.quantity, row.unit) +
           '</td><td>' + esc(row.location || '—') + '</td><td>' + esc(human(row.status)) + '</td></tr>'; }).join('') +
         '</tbody></table></div></section>' : '');
+    function logisticsTransportAsset(modeValue, resourceIdValue) {
+      var mode = String(modeValue || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '_');
+      var aliases = {road:'truck',highway:'truck',lorry:'truck',railway:'rail',heavy_rail:'rail',
+        sea_lane:'ship',seaway:'ship',maritime:'ship',inland_waterway:'barge',waterway:'barge'};
+      mode = aliases[mode] || mode;
+      var resource = String(resourceIdValue || '').trim().toLowerCase();
+      var gas = new Set(['natural_gas']);
+      var liquid = new Set(['crude_oil','oil_shale']);
+      var ore = new Set(['iron_ore','bauxite','chromite','cobalt','copper','nickel','manganese','niobium',
+        'tungsten','zinc','rutile','ilmenite','uranium','rare_earth','lithium','tin','platinum','silver',
+        'gold','graphite','boron','magnesite']);
+      var dryBulk = new Set(['coal','phosphate','potash','salt','silica_sand','construction_aggregate',
+        'coral_aggregate','limestone','gypsum','aragonite','basalt','granite','marble','dolomite','diatomite']);
+      var cargo = gas.has(resource) ? 'gas' : liquid.has(resource) ? 'liquid' :
+        ore.has(resource) ? 'ore' : dryBulk.has(resource) ? 'dry_bulk' : 'general_cargo';
+      var byMode = {
+        truck:{dry_bulk:'truck-dry-bulk-tipper.svg',liquid:'truck-liquid-tanker.svg',gas:'truck-gas-tanker.svg',
+          ore:'truck-ore-hauler.svg',general_cargo:'truck-container-hauler.svg'},
+        rail:{dry_bulk:'train-bulk-hopper.svg',liquid:'train-liquid-tank-cars.svg',gas:'train-gas-tank-cars.svg',
+          ore:'train-ore-hopper.svg',general_cargo:'train-container-freight.svg'},
+        ship:{dry_bulk:'ship-bulk-carrier.svg',liquid:'ship-oil-tanker.svg',gas:'ship-lng-carrier.svg',
+          ore:'ship-ore-carrier.svg',general_cargo:'ship-container-carrier.svg'},
+        barge:{dry_bulk:'barge-inland-bulk.svg',liquid:'barge-liquid-tanker.svg'}
+      };
+      if (mode === 'pipeline') return 'assets/omega-industrial-icons-v1/transport/pipeline.svg';
+      var file = byMode[mode] && byMode[mode][cargo];
+      if (!file) file = ({truck:'truck.svg',rail:'train.svg',ship:'ship.svg',barge:'barge.svg'})[mode] || 'truck.svg';
+      return 'assets/omega-industrial-icons-v1/transport/variants/' + file;
+    }
+    function logisticsTransportMarkup(shipment) {
+      var route = shipment && shipment.route || {};
+      var rows = Array.isArray(route.legs) ? route.legs : Array.isArray(route.vehiclePlan) ? route.vehiclePlan : [];
+      if (!rows.length) rows = [{transportMode:route.transportMode || route.mode || shipment.transportMode || shipment.mode || 'truck'}];
+      return rows.slice(0,3).map(function (leg) {
+        var mode = leg && (leg.transportMode || leg.mode) || route.transportMode || shipment.transportMode || shipment.mode || 'truck';
+        var asset = logisticsTransportAsset(mode, shipment.resourceId);
+        var label = human(mode) + ' · ' + resourceLabel(shipment.resourceId || 'Supply');
+        return '<img class="omega-v2-logistics-vehicle-art" data-omega-v2-transport-asset="' +
+          esc(asset.split('/').pop().replace(/\.svg$/,'')) + '" src="' + esc(asset) + '" alt="' + esc(label) +
+          '" loading="lazy" decoding="async">';
+      }).join('');
+    }
     function logisticsStatus(value) {
       var s = String(value || '').toUpperCase();
       if (/DELIVERED|RECEIVED|COMPLETED/.test(s)) return {label:'Delivered',state:'operational'};
@@ -835,7 +877,7 @@
         '<div class="omega-v2-logistics-path" aria-label="Shipment route from ' + esc(from) + ' to ' + esc(to) + '">' +
         '<div class="omega-v2-logistics-node omega-v2-logistics-node--origin"><span class="omega-v2-logistics-node-art">' + logisticsIconMarkup('origin') +
         '</span><span class="omega-v2-logistics-node-copy"><small>ORIGIN</small><strong>' + esc(from) + '</strong></span></div>' +
-        '<div class="omega-v2-logistics-link"><span class="omega-v2-logistics-route-vehicle">' + logisticsIconMarkup('transport') + '</span><span class="omega-v2-logistics-link-line"></span><span class="omega-v2-logistics-mode">' + esc(modeLabel) + '</span></div>' +
+        '<div class="omega-v2-logistics-link"><span class="omega-v2-logistics-route-vehicle" data-omega-v2-logistics-icon="transport">' + logisticsTransportMarkup(shipment) + '</span><span class="omega-v2-logistics-link-line"></span><span class="omega-v2-logistics-mode">' + esc(modeLabel) + '</span></div>' +
         '<div class="omega-v2-logistics-node omega-v2-logistics-node--destination"><span class="omega-v2-logistics-node-art">' + logisticsIconMarkup(destinationKind) +
         '</span><span class="omega-v2-logistics-node-copy"><small>DESTINATION</small><strong>' + esc(to) + '</strong></span></div></div>' +
         '<div class="omega-v2-logistics-metrics"><div class="omega-v2-logistics-metric"><span>Shipment quantity</span><strong>' +
@@ -1115,6 +1157,7 @@
     version: '1.1.0',
     resourceIconIds: RESOURCE_ICON_IDS.slice(),
     resourceIconPath: resourceIconPath,
+    logisticsTransportAsset: logisticsTransportAsset,
     mineArchetype: mineArchetype,
     buildViewModel: buildViewModel,
     render: render
