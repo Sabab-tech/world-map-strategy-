@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 48" role="img" aria-labelledby="title desc">
+  <title id="title">General cargo barge transport</title>
+  <desc id="desc">Metallic inland cargo barge with cyan cargo lighting and a layered navy hull.</desc>
+  <defs>
+    <linearGradient id="hull" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#e2e8f0"/>
+      <stop offset=".48" stop-color="#64748b"/>
+      <stop offset="1" stop-color="#1e293b"/>
+    </linearGradient>
+    <filter id="glow" x="-35%" y="-40%" width="170%" height="180%">
+      <feGaussianBlur stdDeviation="2.1" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <rect x="2" y="2" width="68" height="44" rx="8" fill="#071525" stroke="#22d3ee" stroke-opacity=".78"/>
+  <g filter="url(#glow)">
+    <path d="M7 26H66L55 39H18Z" fill="url(#hull)" stroke="#22d3ee" stroke-width="1.5"/>
+    <path d="M14 14H57V25H14Z" fill="#334155" stroke="#22d3ee" stroke-width="1.3"/>
+    <path d="M19 17H28V22H19Z M31 17H40V22H31Z M43 17H52V22H43Z" fill="#67e8f9"/>
+    <path d="M10 42Q16 38 22 42T34 42T46 42T58 42" fill="none" stroke="#22d3ee" stroke-width="1.8"/>
+  </g>
+</svg>

@@ -18,10 +18,35 @@ test('cargo-specific SVG catalog paths exist for every supported mode and cargo 
   }
  }
 });
-test('route runtime recalculates from fleet count and exposes cargo SVG mapping',()=>{
+test('route runtime persists fleet counts, recalculates capacity and exposes cargo SVG mapping',()=>{
  const runtime=readFileSync(new URL('../omega_resource_industrial_network_v1.js',import.meta.url),'utf8');
  assert.match(runtime,/source\?\.fleetCount\?\?routeProfile\?\.transportFleet\?\./);
+ assert.match(runtime,/function getTransportFleet\(/);
+ assert.match(runtime,/function setTransportFleet\(/);
+ assert.match(runtime,/function previewSiteTransport\(/);
+ assert.match(runtime,/transportFleetBySiteId/);
  assert.match(runtime,/fleetCapacityPerDay/);
  assert.match(runtime,/fleetSufficiency/);
  assert.match(runtime,/cargoIconPath/);
+});
+test('Logistics UI exposes five count-based fleet forms and route calculations',()=>{
+ const ui=readFileSync(new URL('../omega_resource_command_center_ui_v1.js',import.meta.url),'utf8');
+ assert.match(ui,/data-form="logistics-fleet-site"/);
+ assert.match(ui,/data-form="logistics-fleet-count"/);
+ assert.match(ui,/setTransportFleet/);
+ assert.match(ui,/previewSiteTransport/);
+ assert.match(ui,/Calculated capacity \/ day/);
+ assert.match(ui,/Save fleet profile/);
+ assert.doesNotMatch(ui,/registration number input|vehicle registration field/i);
+});
+test('new catalog and all cargo icons are included in offline cache',()=>{
+ const catalog=readJson('omega_logistics_transport_catalog_v1.json');
+ const offline=readFileSync(new URL('../omega-offline-map-sw.js',import.meta.url),'utf8');
+ assert.match(offline,/omega_logistics_transport_catalog_v1\.json/);
+ assert.match(offline,/omega-offline-atlas-shell-v59/);
+ for(const mode of catalog.transportTypes){
+  for(const path of Object.values(mode.cargoIcons)){
+   assert.ok(offline.includes('"./'+path+'"'),'offline cache missing '+path);
+  }
+ }
 });

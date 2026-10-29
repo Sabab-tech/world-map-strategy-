@@ -2,7 +2,7 @@
  * Same-origin app files are cached for offline relaunch; remote map tiles are never cached here.
  */
 "use strict";
-const CACHE_NAME = "omega-offline-atlas-shell-v58";
+const CACHE_NAME = "omega-offline-atlas-shell-v59";
 const APP_BASE = new URL("./", self.location.href);
 const INDEX_URL = new URL("index.html", APP_BASE).href;
 const CORE_ASSETS = [
@@ -29,7 +29,33 @@ const CORE_ASSETS = [
   "./omega_battlefield_command_runtime_v1.js", "./military_command_catalog_v1.json", "./resource_industrial_catalog_v1.json",
   "./omega_factory_visual_catalog_v1.js",  "./omega_factory_visual_catalog_v1.json",
   "./assets/factories/omega_factory_atlas_01.webp", "./assets/factories/omega_factory_atlas_02.webp", "./assets/factories/omega_factory_atlas_03.webp",
-  "./omega_resource_industrial_network_v1.js", "./omega_country_inventory_runtime_v1.js", "./omega_resource_command_center_ui_v1.js", "./omega_icon_system_v1.js", 
+  "./omega_resource_industrial_network_v1.js", "./omega_country_inventory_runtime_v1.js", "./omega_resource_command_center_ui_v1.js", "./omega_icon_system_v1.js",
+  "./omega_logistics_transport_catalog_v1.json",
+  "./assets/omega-industrial-icons-v1/transport/cargo/coal-dry-bulk/truck.svg",
+  "./assets/omega-industrial-icons-v1/transport/cargo/coal-dry-bulk/train.svg",
+  "./assets/omega-industrial-icons-v1/transport/cargo/coal-dry-bulk/ship.svg",
+  "./assets/omega-industrial-icons-v1/transport/cargo/coal-dry-bulk/barge.svg",
+  "./assets/omega-industrial-icons-v1/transport/cargo/coal-dry-bulk/pipeline.svg",
+  "./assets/omega-industrial-icons-v1/transport/cargo/oil-liquid/truck.svg",
+  "./assets/omega-industrial-icons-v1/transport/cargo/oil-liquid/train.svg",
+  "./assets/omega-industrial-icons-v1/transport/cargo/oil-liquid/ship.svg",
+  "./assets/omega-industrial-icons-v1/transport/cargo/oil-liquid/barge.svg",
+  "./assets/omega-industrial-icons-v1/transport/cargo/oil-liquid/pipeline.svg",
+  "./assets/omega-industrial-icons-v1/transport/cargo/gas-lng/truck.svg",
+  "./assets/omega-industrial-icons-v1/transport/cargo/gas-lng/train.svg",
+  "./assets/omega-industrial-icons-v1/transport/cargo/gas-lng/ship.svg",
+  "./assets/omega-industrial-icons-v1/transport/cargo/gas-lng/barge.svg",
+  "./assets/omega-industrial-icons-v1/transport/cargo/gas-lng/pipeline.svg",
+  "./assets/omega-industrial-icons-v1/transport/cargo/ore-aggregate/truck.svg",
+  "./assets/omega-industrial-icons-v1/transport/cargo/ore-aggregate/train.svg",
+  "./assets/omega-industrial-icons-v1/transport/cargo/ore-aggregate/ship.svg",
+  "./assets/omega-industrial-icons-v1/transport/cargo/ore-aggregate/barge.svg",
+  "./assets/omega-industrial-icons-v1/transport/cargo/ore-aggregate/pipeline.svg",
+  "./assets/omega-industrial-icons-v1/transport/cargo/general-cargo/truck.svg",
+  "./assets/omega-industrial-icons-v1/transport/cargo/general-cargo/train.svg",
+  "./assets/omega-industrial-icons-v1/transport/cargo/general-cargo/ship.svg",
+  "./assets/omega-industrial-icons-v1/transport/cargo/general-cargo/barge.svg",
+  "./assets/omega-industrial-icons-v1/transport/cargo/general-cargo/pipeline.svg", 
   "./omega_resource_quantity_normalization_v1.js", "./resource_site_quantity_completion_v1.json", "./resource_type_extensions_v1.json",
   "./omega_resource_endowment_runtime.js", "./omega_resource_gameplay_binding_v1.js",
   "./omega_resource_mine_management_v1.js", "./resource_site_country_mineplay_batch_20261020_v1.json", "./resource_site_country_mineplay_batch_20261024_v1.json", "./resource_site_country_mineplay_critical_batch_20261024_v1.json",
