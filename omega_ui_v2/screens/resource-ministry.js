@@ -1023,16 +1023,20 @@
       var aggregate=Object.create(null);
       modeConfig.forEach(function(row){aggregate[row.mode]={mode:row.mode,configuredUnits:0,configuredSites:0,legCount:0,designUnits:0,unknownLegs:0};});
       routes.forEach(function(route){
-        var snapshot=readSiteTransportFleet(String(route&&route.siteId||'')),seen=Object.create(null);
+        var snapshot=readSiteTransportFleet(String(route&&route.siteId||''));
+        modeConfig.forEach(function(row){
+          var fleet=transportFleetRow(snapshot,row.mode);
+          if(snapshot&&snapshot.status==='READY'&&fleet&&fleet.configured===true&&numberOrNull(fleet.count)!==null){
+            aggregate[row.mode].configuredUnits+=Math.max(0,Number(fleet.count)||0);
+            aggregate[row.mode].configuredSites++;
+          }
+        });
         safeArray(route&&route.routePlan&&route.routePlan.legs).forEach(function(leg){
           var mode=logisticsModeKey(leg&&leg.transportMode);
           if(!aggregate[mode])aggregate[mode]={mode:mode,configuredUnits:0,configuredSites:0,legCount:0,designUnits:0,unknownLegs:0};
           aggregate[mode].legCount++;
           var required=logisticsRequiredDesignUnits(route,leg);
           if(required===null)aggregate[mode].unknownLegs++;else aggregate[mode].designUnits+=required;
-          if(seen[mode])return;seen[mode]=true;
-          var fleet=transportFleetRow(snapshot,mode);
-          if(snapshot&&snapshot.status==='READY'&&fleet&&fleet.configured===true&&numberOrNull(fleet.count)!==null){aggregate[mode].configuredUnits+=Math.max(0,Number(fleet.count)||0);aggregate[mode].configuredSites++;}
         });
       });
       var summary=modeConfig.map(function(row){
@@ -1043,7 +1047,7 @@
       }).join('');
       return '<section class="omega-v2-logistics-route-section" data-logistics-route-state="ready"><div class="omega-v2-logistics-route-heading"><div><h2>Mine Site Route Plans</h2><p>Per-mine fleet counts and capacity-based route requirements</p></div><span class="omega-v2-status" data-state="attention">'+fmt(routes.length)+' routes</span></div>' +
         '<div class="omega-v2-logistics-fleet-summary"><div class="omega-v2-logistics-summary-heading"><h3>Transport inventory by mode</h3><span>'+esc(countryKey)+'</span></div><div class="omega-v2-logistics-fleet-summary-grid">'+summary+'</div></div>' +
-        '<p class="omega-v2-logistics-calculation-note">Route distances, capacities and baseline fleet requirements are simulation-only. Recorded counts come from saved transport settings.</p><div class="omega-v2-grid omega-v2-logistics-grid">'+routes.map(logisticsRouteCard).join('')+'</div></section>';
+        '<p class="omega-v2-logistics-calculation-note">Route distances, capacities and baseline fleet requirements are simulation-only. Recorded counts come from saved transport settings.</p><p class="omega-v2-logistics-calculation-note" data-cross-border-import-status="needs-geocoded-infrastructure">Cross-border imports are not marked as routed until source ports and the receiving warehouse have physical coordinates. No ship leg is invented for an unverified corridor.</p><div class="omega-v2-grid omega-v2-logistics-grid">'+routes.map(logisticsRouteCard).join('')+'</div></section>';
     }
     var routePlanState = getLogisticsRoutePlanState(countryKey);
     var liveShipmentsMarkup = shipments.length ? '<section class="omega-v2-logistics-live-section">' +
