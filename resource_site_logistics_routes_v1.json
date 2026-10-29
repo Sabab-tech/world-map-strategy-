@@ -31,9 +31,9 @@
     "Required design units are ceil(simulated site production per day / compatible per-leg design capacity per day); missing rates or incompatible units remain uncalculated instead of defaulting to one."
   ],
   "routeCountByMode": {
-    "truck": 560,
+    "truck": 427,
     "rail": 324,
-    "pipeline": 64,
+    "pipeline": 58,
     "ship": 21,
     "barge": 1
   },
@@ -1031,5 +1031,12 @@
     ],
     "authority": "SIMULATION_ONLY_NOT_VERIFIED_PHYSICAL_INFRASTRUCTURE",
     "limitation": "Ship/port legs remain those already supported by explicit route profiles. Cross-border imports are not auto-created when physical source ports and receiving warehouse coordinates are missing."
+  },
+  "routeLegCountByMode": {
+    "truck": 560,
+    "rail": 324,
+    "pipeline": 64,
+    "ship": 21,
+    "barge": 1
   }
 }

@@ -89,7 +89,7 @@ for(const partInfo of ds.parts){
  }
 }
 assert.equal(all.length,561);assert.deepEqual([...seen].sort(),[...sourceById.keys()].sort());assert.equal(Object.keys(ds.countryToPart).length,ds.countryCount);
-assert.ok(ds.routeCountByMode.truck>=561);for(const m of ['rail','ship','barge','pipeline'])assert.ok(ds.routeCountByMode[m]>0,m+' routes should exist');
+assert.ok(ds.routeCountByMode.truck>0);for(const m of ['rail','ship','barge','pipeline'])assert.ok(ds.routeCountByMode[m]>0,m+' routes should exist');
 assert.equal(Object.keys(ds.transportIconAssets).length,5);
 console.log('OMEGA RESOURCE SITE LOGISTICS ROUTES PASS: 561 unique routes, exact resource SVGs and five local transport SVGs verified.');
 
@@ -97,7 +97,8 @@ console.log('OMEGA RESOURCE SITE LOGISTICS ROUTES PASS: 561 unique routes, exact
 test("mine route modes vary by modeled distance and do not default every bulk route to truck-rail-truck", () => {
   const routeManifest = read("resource_site_logistics_routes_v1.json");
   const routeTypes = Object.create(null);
-  const modes = Object.create(null);
+  const routeModes = Object.create(null);
+  const legCounts = Object.create(null);
   const chains = Object.create(null);
   for (const route of all) {
     const plan = route.routePlan || {};
@@ -105,7 +106,12 @@ test("mine route modes vary by modeled distance and do not default every bulk ro
     routeTypes[plan.routeType] = (routeTypes[plan.routeType] || 0) + 1;
     const chain = legs.map(leg => leg.transportMode).join(">");
     chains[chain] = (chains[chain] || 0) + 1;
-    for (const leg of legs) modes[leg.transportMode] = (modes[leg.transportMode] || 0) + 1;
+    const routeUniqueModes = new Set();
+    for (const leg of legs) {
+      legCounts[leg.transportMode] = (legCounts[leg.transportMode] || 0) + 1;
+      routeUniqueModes.add(leg.transportMode);
+    }
+    for (const mode of routeUniqueModes) routeModes[mode] = (routeModes[mode] || 0) + 1;
     if (plan.modeSelectionPolicyVersion === "OMEGA_MODE_SELECTION_DISTANCE_HEURISTIC_V1") {
       const distance = Number(plan.estimatedRouteDistanceKm);
       const expected = distance < 200 ? "TRUCK" :
@@ -118,7 +124,8 @@ test("mine route modes vary by modeled distance and do not default every bulk ro
   }
   assert.equal(all.length, 561);
   assert.deepEqual(routeManifest.routeTypeCounts, routeTypes);
-  assert.deepEqual(routeManifest.routeCountByMode, modes);
+  assert.deepEqual(routeManifest.routeCountByMode, routeModes);
+  assert.deepEqual(routeManifest.routeLegCountByMode, legCounts);
   assert.ok(routeTypes.TRUCK > 0, "short haul should allow truck-only plans");
   assert.ok(routeTypes.RAIL > 0, "extended haul should allow rail-only plans");
   assert.ok(routeTypes.RAIL_TO_TRUCK > 0, "long haul should allow rail followed by road");
