@@ -1487,7 +1487,11 @@ function routeCapacityFactor(unit,explicitFactor){
 function resolveSiteRouteLegs(routeProfile){
   const plan=routeProfile?.routePlan||{},rows=Array.isArray(plan.legs)?plan.legs:[];
   const type=String(plan.routeType||'').toUpperCase();
-  if(type!=='TRUCK_TO_RAIL_TO_TRUCK'||rows.length<2)return rows;
+  const strategyCode=String(plan.strategyCode||'').toUpperCase();
+  const rowModes=rows.map(row=>normalizeTransportMode(row?.transportMode||row?.mode)).filter(Boolean);
+  const genericIntermodal=type==='TRUCK_TO_RAIL_TO_TRUCK'||
+    (strategyCode==='MINE_HAULAGE_RAIL_LAST_MILE'&&rowModes.includes('truck')&&rowModes.includes('rail'));
+  if(!genericIntermodal||rows.length<2)return rows;
   const modes=rows.map(row=>normalizeTransportMode(row?.transportMode||row?.mode)).filter(Boolean);
   if(!modes.includes('truck')||!modes.includes('rail')||modes.some(mode=>!['truck','rail'].includes(mode)))return rows;
   const allowed=new Set(modes),preferences=rules()[routeProfile?.resourceId]?.preferredModes||[];
