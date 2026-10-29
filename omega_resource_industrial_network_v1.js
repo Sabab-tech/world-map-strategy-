@@ -1735,11 +1735,17 @@ function routeSegments(site,asset,resourceId,mode,countryId,input={}){
       routeLegId:row.legId||row.id||null
     }));
   }
+  // Prefer the source site's explicit warehouse/factory corridor. Factory-level
+  // transportAccess or legacy routes may list several available modes but do not prove
+  // those modes are legs on this specific journey.
   const directArrays=[
-    f.transportRoute,f.simulation?.transportRoute,s.transportRoute,s.simulation?.transportRoute
-  ].filter(rows=>Array.isArray(rows)&&rows.length);
-  const matchingArray=directArrays.find(rows=>rows.length>1||
-    normalizeAccess(rows[0]?.transportMode||rows[0]?.mode)===chosen);
+    s.transportRoute,s.simulation?.transportRoute,
+    f.transportRoute,f.simulation?.transportRoute
+  ].filter(rows=>Array.isArray(rows)&&rows.length&&
+    rows.every(row=>row&&normalizeAccess(row.transportMode||row.mode)));
+  const matchingArray=directArrays.find(rows=>
+    normalizeAccess(rows[0]?.transportMode||rows[0]?.mode)===chosen)||
+    directArrays.find(rows=>rows.length>1&&rows.every(row=>normalizeAccess(row.transportMode||row.mode)));
   if(matchingArray){
     return matchingArray.map((row,index)=>({
       mode:normalizeAccess(row.transportMode||row.mode),
