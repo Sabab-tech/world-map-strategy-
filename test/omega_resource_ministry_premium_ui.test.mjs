@@ -240,6 +240,13 @@ test("Resource Logistics shows configured per-site route cards and keeps Current
     countryId: "TST",
     resourceId: "coal",
     siteName: "Live Production Rate Mine",
+    productionModel: {
+      productionRate: 300,
+      dailyRate: 300,
+      rateUnit: "TONNES_PER_DAY",
+      annualProduction: { value: 109500, unit: "TONNES_PER_YEAR" },
+      productionAuthority: "SIMULATED"
+    },
     quantitative: { production: { rate: 300, unit: "TONNES_PER_DAY", status: "SIMULATED" } }
   };
   const liveProductionRoute = {
