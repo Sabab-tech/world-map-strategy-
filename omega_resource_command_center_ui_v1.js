@@ -30,6 +30,7 @@
   let lastCascade = null;
   let selectedReserveResourceId = '';
   let selectedReserveCountryId = '';
+  let selectedFleetSiteId = '';
 
   function state() { return (g.Game && g.Game.state) || g.gameState || {}; }
   function engine() { return g.ResourceMinistryEngine || null; }
@@ -806,6 +807,56 @@
   }
   function panelLogistics(country){
     const r=resourceBucket(country),log=r.logistics||{},shipments=Array.isArray(log.shipments)?log.shipments:[],batches=Array.isArray(r.batches)?r.batches:[],factories=allFactories(country);
+    const sites=siteRows(country),network=r.industrialNetwork&&typeof r.industrialNetwork==='object'?r.industrialNetwork:{};
+    const fleetBySite=network.transportFleetBySiteId&&typeof network.transportFleetBySiteId==='object'?network.transportFleetBySiteId:{};
+    const chosenSite=sites.find(site=>String(site.siteId)===String(selectedFleetSiteId))||sites[0]||null;
+    if(chosenSite&&String(selectedFleetSiteId)!==String(chosenSite.siteId))selectedFleetSiteId=String(chosenSite.siteId);
+    const siteId=chosenSite?String(chosenSite.siteId):'';
+    const siteFleet=siteId&&fleetBySite[siteId]&&typeof fleetBySite[siteId]==='object'?fleetBySite[siteId]:{};
+    const fleetRows=siteFleet.transportTypes&&typeof siteFleet.transportTypes==='object'?siteFleet.transportTypes:{};
+    const siteSource=chosenSite&&(chosenSite.sourceSiteRecord||chosenSite.real||{})||{};
+    const cargoText=String(chosenSite&&(chosenSite.real&&chosenSite.real.resourceId||chosenSite.resourceId||chosenSite.sourceSiteRecord&&chosenSite.sourceSiteRecord.resourceId||chosenSite.identity&&chosenSite.identity.resourceTypeId)||'').toLowerCase();
+    const cargoClass=/coal|lignite|coke|dry[_ -]?bulk/.test(cargoText)?'coal-dry-bulk':
+      /oil|petroleum|diesel|fuel|crude|liquid/.test(cargoText)?'oil-liquid':
+      /gas|lng|methane/.test(cargoText)?'gas-lng':
+      /ore|iron|copper|bauxite|aggregate|limestone|gravel|stone|mineral/.test(cargoText)?'ore-aggregate':'general-cargo';
+    const supportedFleetModes=[
+      {id:'truck',label:'Road freight',iconMode:'truck'},
+      {id:'rail',label:'Rail freight',iconMode:'train'},
+      {id:'ship',label:'Sea freight',iconMode:'ship'},
+      {id:'barge',label:'Inland barge',iconMode:'barge'},
+      {id:'pipeline',label:'Pipeline flow',iconMode:'pipeline'}
+    ];
+    const siteOptions=sites.map(site=>'<option value="'+esc(site.siteId)+'"'+(chosenSite&&String(site.siteId)===String(chosenSite.siteId)?' selected':'')+'>'+esc(site.siteName||site.name||site.depositName||site.siteId)+' · '+esc(site.siteId)+'</option>').join('');
+    const fleetCards=chosenSite?supportedFleetModes.map(mode=>{
+      const stored=fleetRows[mode.id]&&typeof fleetRows[mode.id]==='object'?fleetRows[mode.id]:null;
+      const override=stored&&stored.profileOverrides&&typeof stored.profileOverrides==='object'?stored.profileOverrides:{};
+      const modeCatalog=((g.OmegaResourceIndustrialCatalogData||(g.Omega&&g.Omega.ResourceIndustrialCatalogData)||{}).transportModes||{});
+      const base=modeCatalog[mode.id]||{};
+      const count=stored&&stored.count!==undefined&&stored.count!==null?stored.count:'';
+      const profileValue=(key)=>override[key]!==undefined&&override[key]!==null?override[key]:(base[key]!==undefined&&base[key]!==null?base[key]:'');
+      const payload=profileValue('payloadTonnes'),speed=profileValue('speedKmh'),loadHours=profileValue('loadHours'),unloadHours=profileValue('unloadHours');
+      const icon='assets/omega-industrial-icons-v1/transport/cargo/'+cargoClass+'/'+mode.iconMode+'.svg';
+      const capacity=count===''?'Fleet count not configured':(Number(count)===0?'No vehicles available':String(count)+' available');
+      return card(mode.label+' · '+mode.id.toUpperCase(),capacity,
+        '<div style="display:flex;align-items:center;gap:12px;margin-bottom:10px"><img src="'+esc(icon)+'" alt="'+esc(cargoClass+' '+mode.label)+'" loading="lazy" style="width:78px;height:52px;object-fit:contain;filter:drop-shadow(0 0 7px #36d6ff);background:#071525;border:1px solid #1e7890;border-radius:8px;padding:5px;box-sizing:border-box"><div><strong>'+esc(cargoClass.replace(/-/g,' ').toUpperCase())+'</strong><div class="omega-rescc-muted">'+esc(mode.label)+' · no vehicle registration IDs</div></div></div>'+
+        '<form data-form="logistics-fleet-count" class="omega-rescc-grid2" style="gap:8px">'+
+        '<input type="hidden" name="siteId" value="'+esc(siteId)+'"><input type="hidden" name="transportType" value="'+esc(mode.id)+'">'+
+        '<label class="omega-rescc-field"><span>Available count</span><input class="omega-rescc-input" type="number" name="count" min="0" step="1" required value="'+esc(count)+'" placeholder="Enter count"></label>'+
+        '<label class="omega-rescc-field"><span>Payload / capacity per unit</span><input class="omega-rescc-input" type="number" name="payloadTonnes" min="0.001" step="any" value="'+esc(override.payloadTonnes??'')+'" placeholder="'+esc(base.payloadTonnes??'Use profile')+'"></label>'+
+        '<label class="omega-rescc-field"><span>Speed (km/h)</span><input class="omega-rescc-input" type="number" name="speedKmh" min="0.001" step="any" value="'+esc(override.speedKmh??'')+'" placeholder="'+esc(base.speedKmh??'Use profile')+'"></label>'+
+        '<label class="omega-rescc-field"><span>Loading (hours)</span><input class="omega-rescc-input" type="number" name="loadHours" min="0" step="any" value="'+esc(override.loadHours??'')+'" placeholder="'+esc(base.loadHours??'Use profile')+'"></label>'+
+        '<label class="omega-rescc-field"><span>Unloading (hours)</span><input class="omega-rescc-input" type="number" name="unloadHours" min="0" step="any" value="'+esc(override.unloadHours??'')+'" placeholder="'+esc(base.unloadHours??'Use profile')+'"></label>'+
+        '<div style="grid-column:1/-1">'+actionButton('save-fleet-record','Save fleet profile',{},false)+'</div></form>',
+        '<div class="omega-rescc-grid2">'+kv('Fleet count',count===''?'Unknown':count)+kv('Payload per unit',payload)+kv('Speed',speed,' km/h')+kv('Load / unload',String(loadHours)+' / '+String(unloadHours)+' h')+'</div>');
+    }).join(''):empty('No registered mine/site is available for this country.');
+    const fleetSection='<h3 class="omega-rescc-section-title">Country and mine transport fleet</h3>'+
+      '<p class="omega-rescc-note">Set the available count for each transport type at this mine. The game recalculates route capacity, required loads and timing from the saved count and profile. Individual vehicle IDs and registration numbers are not used.</p>'+
+      '<form data-form="logistics-fleet-site" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0 14px">'+
+      '<label style="flex:1;min-width:220px"><span style="display:block;margin-bottom:5px">Mine / site</span><select name="siteId" class="omega-rescc-input" required '+(!sites.length?'disabled':'')+'>'+siteOptions+'</select></label>'+
+      '<button type="submit" class="omega-rescc-button" '+(!sites.length?'disabled':'')+'>Open site</button></form>'+
+      (chosenSite?'<div class="omega-rescc-metrics"><div><span>Selected site</span><strong>'+esc(chosenSite.siteName||chosenSite.name||chosenSite.siteId)+'</strong></div><div><span>Transport types</span><strong>5</strong></div><div><span>Configured profiles</span><strong>'+number(Object.values(fleetRows).filter(row=>row&&row.count!==undefined&&row.count!==null).length)+'</strong></div></div>':'')+
+      (fleetCards||empty('No fleet modes can be configured yet.'));
     const batchCards=batches.map(batch=>{
       const id=batch.batchId,rid=batch.resourceId||batch.materialIdentity||'',qty=batch.remainingQuantity??batch.quantity,warehouse=batch.warehouseId||r.warehouse&&r.warehouse.warehouseId||'';
       const compatible=matchingAssets(country,rid).filter(a=>a&&(a.id||a.assetId||a.factoryId||a.projectId)),ids=compatible.map(a=>a.id||a.assetId||a.factoryId||a.projectId);
@@ -818,6 +869,7 @@
     const shipmentCards=shipments.slice(-100).reverse().map(s=>card(s.shipmentId||s.routeId||'Shipment',s.status||s.deliveryStatus||'STATUS NOT RECORDED',
       '<div class="omega-rescc-grid2">'+kv('Resource',s.resourceId)+kv('Quantity',s.quantity)+kv('Factory',s.factoryId)+kv('Transport mode',s.transportMode)+kv('ETA turn',s.timing&&s.timing.etaTurn)+kv('Constraint source',s.sourceAuthority||'NOT_RECORDED')+'</div>'+(s.reason?'<div class="omega-rescc-warning">'+esc(s.reason)+'</div>':''),'')).join('');
     return '<div class="omega-rescc-metrics"><div><span>Available raw batches</span><strong>'+number(batches.length)+'</strong></div><div><span>Factories in state</span><strong>'+number(factories.length)+'</strong></div><div><span>Saved site routes</span><strong>'+number(routes.length)+'</strong></div></div>'+
+      fleetSection+
       '<p class="omega-rescc-note">Saved route definitions and active shipment transactions are separate records.</p>'+
       '<h3 class="omega-rescc-section-title">Available warehouse batches</h3>'+(batchCards||empty('No physical batch is recorded for shipment planning.'))+
       '<h3 class="omega-rescc-section-title">Saved route profiles from existing data files</h3>'+(routeCards||empty('No saved route definition is recorded for this country.'))+
@@ -1710,6 +1762,32 @@
     const c = activeCountry();
     let result;
     try {
+      if (kind === 'logistics-fleet-site') {
+        const targetSiteId = String(data.get('siteId') || '').trim();
+        if (!siteRows(c).some(site => String(site.siteId) === targetSiteId)) {
+          setOutcome('Transport fleet site selection', { status: 'BLOCKED', reason: 'SITE_NOT_FOUND_IN_SELECTED_COUNTRY' });
+          return;
+        }
+        selectedFleetSiteId = targetSiteId;
+        lastOutcome = '';
+        render(c, 'logistics');
+        return;
+      }
+      if (kind === 'logistics-fleet-count') {
+        const runtime = g.Omega && g.Omega.ResourceIndustrialNetwork;
+        const profile = {};
+        ['payloadTonnes','speedKmh','loadHours','unloadHours'].forEach(key => {
+          const raw = data.get(key);
+          if (raw !== null && String(raw).trim() !== '') profile[key] = Number(raw);
+        });
+        if (!runtime || typeof runtime.setTransportFleet !== 'function') result = { status: 'UNAVAILABLE', reason: 'TRANSPORT_FLEET_API_UNAVAILABLE' };
+        else result = runtime.setTransportFleet({
+          countryId: c, siteId: String(data.get('siteId') || ''), transportType: String(data.get('transportType') || ''),
+          count: Number(data.get('count')), profile
+        });
+        setOutcome('Transport fleet ' + String(data.get('transportType') || ''), result);
+        return;
+      }
       if (kind === 'metrology') {
         const converted = convertUnits(data.get('value'), data.get('fromUnit'), data.get('toUnit'));
         if (converted.status !== 'APPLIED') {
