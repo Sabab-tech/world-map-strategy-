@@ -1716,9 +1716,17 @@ function routeSegments(site,asset,resourceId,mode,countryId,input={}){
   const preferred=(rules()[resourceId]?.preferredModes||[]).map(normalizeAccess).filter(Boolean);
   let chosen=normalizeAccess(mode)||'truck';
   const explicitMode=input.transportMode!==undefined&&input.transportMode!==null&&String(input.transportMode).trim()!=='';
+  // Route rows attached to the current source/destination corridor outrank generic
+  // factory route plans. The factory's access profile is not the mine's journey.
   const directRows=[
-    f.routePlan?.legs,f.logisticsRoutePlan?.legs,f.transportRoute?.legs,f.simulation?.transportRoute?.legs,
-    s.routePlan?.legs,s.logisticsRoutePlan?.legs,s.transportRoute?.legs,s.simulation?.transportRoute?.legs
+    s.routePlan?.legs,s.logisticsRoutePlan?.legs,
+    Array.isArray(s.transportRoute)?s.transportRoute:null,
+    Array.isArray(s.simulation?.transportRoute)?s.simulation.transportRoute:null,
+    s.transportRoute?.legs,s.simulation?.transportRoute?.legs,
+    f.routePlan?.legs,f.logisticsRoutePlan?.legs,
+    Array.isArray(f.transportRoute)?f.transportRoute:null,
+    Array.isArray(f.simulation?.transportRoute)?f.simulation.transportRoute:null,
+    f.transportRoute?.legs,f.simulation?.transportRoute?.legs
   ].find(rows=>Array.isArray(rows)&&rows.length&&rows.every(row=>row&&normalizeAccess(row.transportMode||row.mode)));
   if(directRows){
     return directRows.map((row,index)=>({
