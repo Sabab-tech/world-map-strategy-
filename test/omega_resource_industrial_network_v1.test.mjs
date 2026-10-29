@@ -48,12 +48,13 @@ const context={
     }
   },
   OmegaResourceSiteMasterResearchData:{
-    siteCount:4,
+    siteCount:5,
     sites:[
       {siteId:'SITE_BGD_COAL_01',countryId:'BGD',siteName:'Test Coal Mine',real:{resourceId:'coal'},sourceSiteRecord:{id:'SITE_BGD_COAL_01',resourceId:'coal',commercialExtraction:true},simulation:{transportRoute:[]},siteType:'COAL_MINE'},
       {siteId:'SITE_BGD_IRON_01',countryId:'BGD',siteName:'Test Iron Mine',real:{resourceId:'iron_ore'},sourceSiteRecord:{id:'SITE_BGD_IRON_01',resourceId:'iron_ore',commercialExtraction:true},simulation:{transportRoute:[]},siteType:'OPEN_PIT_MINE'},
       {siteId:'SITE_BGD_IRON_02',countryId:'BGD',siteName:'Test Iron Mine 02',real:{resourceId:'iron_ore'},sourceSiteRecord:{id:'SITE_BGD_IRON_02',resourceId:'iron_ore',commercialExtraction:true},simulation:{transportRoute:[]},siteType:'OPEN_PIT_MINE'},
-      {siteId:'SITE_BGD_COPPER_01',countryId:'BGD',siteName:'Test Copper Mine',real:{resourceId:'copper'},sourceSiteRecord:{id:'SITE_BGD_COPPER_01',resourceId:'copper',commercialExtraction:true},simulation:{transportRoute:[]},siteType:'OPEN_PIT_MINE'}
+      {siteId:'SITE_BGD_COPPER_01',countryId:'BGD',siteName:'Test Copper Mine',real:{resourceId:'copper'},sourceSiteRecord:{id:'SITE_BGD_COPPER_01',resourceId:'copper',commercialExtraction:true},simulation:{transportRoute:[]},siteType:'OPEN_PIT_MINE'},
+      {siteId:'SITE_BGD_GAS_01',countryId:'BGD',siteName:'Test Natural Gas Field',real:{resourceId:'natural_gas'},sourceSiteRecord:{id:'SITE_BGD_GAS_01',resourceId:'natural_gas',commercialExtraction:true},simulation:{transportRoute:[]},siteType:'GAS_FIELD'}
     ]
   },
   OmegaResourceScenarioEngineeringData:{
@@ -61,7 +62,8 @@ const context={
       {siteId:'SITE_BGD_COAL_01',countryId:'BGD',resourceId:'coal',unit:'TONNES',nominalCapacity:1000,minimumCapacity:500,maximumCapacity:1300,utilization:.8,recovery:.85,decline:.01,maintenance:.03,scenarioLifeYears:375},
       {siteId:'SITE_BGD_IRON_01',countryId:'BGD',resourceId:'iron_ore',unit:'TONNES',nominalCapacity:2000,minimumCapacity:1000,maximumCapacity:2600,utilization:.8,recovery:.9,decline:.01,maintenance:.03,scenarioLifeYears:375},
       {siteId:'SITE_BGD_IRON_02',countryId:'BGD',resourceId:'iron_ore',unit:'TONNES',nominalCapacity:2000,minimumCapacity:1000,maximumCapacity:2600,utilization:.8,recovery:.9,decline:.01,maintenance:.03,scenarioLifeYears:375},
-      {siteId:'SITE_BGD_COPPER_01',countryId:'BGD',resourceId:'copper',unit:'TONNES',nominalCapacity:1500,minimumCapacity:800,maximumCapacity:2000,utilization:.8,recovery:.85,decline:.01,maintenance:.03,scenarioLifeYears:375}
+      {siteId:'SITE_BGD_COPPER_01',countryId:'BGD',resourceId:'copper',unit:'TONNES',nominalCapacity:1500,minimumCapacity:800,maximumCapacity:2000,utilization:.8,recovery:.85,decline:.01,maintenance:.03,scenarioLifeYears:375},
+      {siteId:'SITE_BGD_GAS_01',countryId:'BGD',resourceId:'natural_gas',unit:'TONNES',nominalCapacity:1200,minimumCapacity:900,maximumCapacity:1500,utilization:.8,recovery:.85,decline:.01,maintenance:.03,scenarioLifeYears:375}
     ]
   },
   Omega:{
