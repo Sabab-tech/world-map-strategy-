@@ -1,0 +1,40 @@
+name: OMEGA Country Factory Starting Baseline
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'country_factory_starting_baseline_v1.json'
+      - 'omega_country_factory_starting_baseline_v1.js'
+      - 'resource_industrial_catalog_v1.json'
+      - 'resource_country_resource_context_index.json'
+      - 'economy_global_profiles_v1.json'
+      - 'test/omega_country_factory_starting_baseline_v1.test.mjs'
+      - '.github/workflows/country-factory-starting-baseline.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'country_factory_starting_baseline_v1.json'
+      - 'omega_country_factory_starting_baseline_v1.js'
+      - 'resource_industrial_catalog_v1.json'
+      - 'resource_country_resource_context_index.json'
+      - 'economy_global_profiles_v1.json'
+      - 'test/omega_country_factory_starting_baseline_v1.test.mjs'
+      - '.github/workflows/country-factory-starting-baseline.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  baseline-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Validate 197-country, 21-factory starting matrix
+        run: node --test test/omega_country_factory_starting_baseline_v1.test.mjs
