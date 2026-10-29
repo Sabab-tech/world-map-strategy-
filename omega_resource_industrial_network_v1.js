@@ -1484,8 +1484,49 @@ function routeCapacityFactor(unit,explicitFactor){
   // a commodity-specific density/composition before it can be called tonnes.
   return descriptor?.family==='MASS'&&num(descriptor.toTonnes)>0?num(descriptor.toTonnes):1;
 }
+function resolveSiteRouteLegs(routeProfile){
+  const plan=routeProfile?.routePlan||{},rows=Array.isArray(plan.legs)?plan.legs:[];
+  const type=String(plan.routeType||'').toUpperCase();
+  if(type!=='TRUCK_TO_RAIL_TO_TRUCK'||rows.length<2)return rows;
+  const modes=rows.map(row=>normalizeTransportMode(row?.transportMode||row?.mode)).filter(Boolean);
+  if(!modes.includes('truck')||!modes.includes('rail')||modes.some(mode=>!['truck','rail'].includes(mode)))return rows;
+  const allowed=new Set(modes),preferences=rules()[routeProfile?.resourceId]?.preferredModes||[];
+  const chosen=preferences.map(normalizeTransportMode).find(mode=>allowed.has(mode))||(allowed.has('rail')?'rail':'truck');
+  const totalDistance=num(plan.estimatedRouteDistanceKm)??rows.reduce((sum,row)=>sum+(num(row?.estimatedDistanceKm??row?.distanceKm??row?.distance)||0),0);
+  if(totalDistance===null||!Number.isFinite(totalDistance)||totalDistance<0)return rows;
+  const profile=modeRules()[chosen]||{},reference=rows.find(row=>normalizeTransportMode(row?.transportMode||row?.mode)===chosen)||rows[0];
+  const speed=Math.max(1,num(profile.speedKmh)||1),loadHours=Math.max(0,num(profile.loadHours)||0),unloadHours=Math.max(0,num(profile.unloadHours)||0);
+  const cycleHours=(2*totalDistance/speed)+loadHours+unloadHours;
+  const flow=num(plan.capacityBottleneckPerDay)??num(reference?.designCapacityPerDay);
+  const payload=num(reference?.designCapacityPerTrip)??num(profile.payloadTonnes);
+  const requiredDesignFleetSlots=flow!==null&&flow>0&&payload!==null&&payload>0&&cycleHours>0?
+    Math.max(1,Math.ceil((flow/payload)*cycleHours/24)):0;
+  return[{
+    ...clone(reference),
+    legId:'ROUTE_'+String(routeProfile?.siteId||routeProfile?.routeId||'MINE')+'_COMMODITY_MODE_ONLY',
+    sequence:1,fromNodeId:rows[0]?.fromNodeId||routeProfile?.siteId||null,fromNodeType:'MINE_SITE',
+    toNodeId:rows[rows.length-1]?.toNodeId||plan.destinationWarehouseId||null,
+    toNodeType:'COUNTRY_RAW_INVENTORY_WAREHOUSE',transportMode:chosen,vehicleClass:profile.vehicle||reference?.vehicleClass||chosen,
+    estimatedDistanceKm:Number(totalDistance.toFixed(6)),
+    distanceAuthority:'SIMULATED_TOTAL_ROUTE_DISTANCE_NOT_A_SURVEYED_MODE_PATH',
+    estimatedTravelHours:Number((totalDistance/speed).toFixed(6)),
+    designCapacityPerTrip:payload,
+    designCapacityPerTripUnit:reference?.designCapacityPerTripUnit||'CATALOG_PAYLOAD_PER_TRIP',
+    designCapacityPerDay:flow,
+    designCapacityUnit:plan.capacityUnit||reference?.designCapacityUnit||'ROUTE_CAPACITY_PER_DAY',
+    cycleHoursForOneDesignVehicle:Number(cycleHours.toFixed(6)),
+    tripsPerVehiclePerDay:Number((24/cycleHours).toFixed(6)),
+    requiredDesignFleetSlots,
+    actualBoundFleetUnits:null,vehicleAssetIds:null,
+    status:'DESIGN_ONLY_NOT_DISPATCHABLE',
+    transportIconKey:chosen==='rail'?'train':chosen,
+    transportIconAssetPath:'assets/omega-industrial-icons-v1/transport/'+(chosen==='rail'?'train':chosen)+'.svg',
+    transportIconAuthority:'OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1',
+    routeSelectionAuthority:'RESOURCE_RULE_PREFERRED_MODE_FROM_UNVERIFIED_INTERMODAL_TEMPLATE'
+  }];
+}
 function siteRouteLegMetrics(countryId,routeProfile,quantity,unitBridge){
-  const cid=canonicalCountry(countryId),plan=routeProfile?.routePlan||{},sourceRows=Array.isArray(plan.legs)?plan.legs:[];
+  const cid=canonicalCountry(countryId),plan=routeProfile?.routePlan||{},sourceRows=resolveSiteRouteLegs(routeProfile);
   if(!sourceRows.length)return{status:'BLOCKED',reason:'MINE_ROUTE_LEGS_NOT_RECORDED'};
   const declaredTotal=num(plan.estimatedRouteDistanceKm);
   const explicitDistances=sourceRows.map(row=>{
@@ -1570,6 +1611,8 @@ function siteRouteLegMetrics(countryId,routeProfile,quantity,unitBridge){
     capacityPerDay:Number.isFinite(capacityPerDay)?capacityPerDay:null,
     quantityInCapacityUnits,quantityCapacityFactor:factor,
     requiredTripsByMode, fleetCountsByMode,configuredFleetUnitCount,unconfiguredTransportModeCount,
+    routeType:String(plan.routeType||'').toUpperCase()==='TRUCK_TO_RAIL_TO_TRUCK'&&legs.length===1?String(legs[0].mode||'').toUpperCase()+'_ONLY':plan.routeType,
+    routeSelectionAuthority:String(plan.routeType||'').toUpperCase()==='TRUCK_TO_RAIL_TO_TRUCK'&&legs.length===1?'RESOURCE_RULE_PREFERRED_MODE_FROM_UNVERIFIED_INTERMODAL_TEMPLATE':'EXPLICIT_SITE_ROUTE_PROFILE',
     routeLegCount:legs.length,distinctTransportModeCount:Object.keys(fleetCountsByMode).length,
     vehiclesByMode:legs.reduce((out,leg)=>{out[leg.mode]=(out[leg.mode]||0)+(num(leg.vehicleCount)||0);return out;},{}),
     vehicleCount:legs.reduce((sum,leg)=>sum+(num(leg.vehicleCount)||0),0),
