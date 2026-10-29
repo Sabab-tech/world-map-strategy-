@@ -47,11 +47,12 @@ test("resource visual layer is wired into the offline-first app without remote d
   assert.ok(html.includes(stylesheetTag), "premium resource stylesheet must be loaded by the app");
   assert.ok(sw.includes('"' + "./" + cssPath + '"'), "premium resource stylesheet must be precached offline");
   assert.ok(uiManifest.additionalStyles.includes(cssPath), "UI v2 manifest must document the resource style");
-  assert.match(sw, /omega-offline-atlas-shell-v61/, "offline cache must be invalidated for new visual assets");
+  assert.match(sw, /omega-offline-atlas-shell-v62/, "offline cache must be invalidated for new visual assets");
   const coreAssets = sw.slice(sw.indexOf("const CORE_ASSETS"), sw.indexOf("];", sw.indexOf("const CORE_ASSETS")));
   assert.ok(coreAssets.includes('"./assets/omega-industrial-icons-v1/transport/route-mine-origin.svg"'));
   assert.ok(coreAssets.includes('"./assets/omega-industrial-icons-v1/transport/route-warehouse-destination.svg"'));
   assert.ok(coreAssets.includes('"./' + cssPath + '"'), "premium stylesheet belongs in the precache list");
+  assert.ok(sw.includes("factoryIconManifest.transportVariants"), "cargo-specific truck/train/ship/barge icons must be precached offline");
   assert.ok(sw.includes("const resourceIcons = Array.isArray(factoryIconManifest.resources)"),
     "offline install must enumerate the canonical resource icon manifest");
   assert.ok(sw.includes('new URL("./assets/omega-industrial-icons-v1/" + file, APP_BASE).href'),
@@ -361,6 +362,14 @@ test("Resource Logistics shows configured per-site route cards and keeps Current
   assert.match(root.innerHTML, /Not configured/);
   assert.match(root.innerHTML, /Pipeline lines/);
   assert.match(root.innerHTML, /4 lines/);
+  assert.ok(root.innerHTML.includes("assets/omega-industrial-icons-v1/transport/variants/truck-dry-bulk-tipper.svg"), "coal routes should use the dry-bulk truck SVG");
+  assert.ok(root.innerHTML.includes("assets/omega-industrial-icons-v1/transport/variants/train-bulk-hopper.svg"), "coal routes should use the bulk-hopper train SVG");
+  assert.ok(root.innerHTML.includes("assets/omega-industrial-icons-v1/transport/variants/ship-bulk-carrier.svg"), "coal routes should use the bulk-carrier ship SVG");
+  assert.ok(root.innerHTML.includes("assets/omega-industrial-icons-v1/transport/variants/barge-inland-bulk.svg"), "coal routes should use the inland bulk-barge SVG");
+  assert.ok(root.innerHTML.includes("assets/omega-industrial-icons-v1/transport/variants/truck-liquid-tanker.svg"), "oil routes should use the liquid-tanker truck SVG");
+  assert.ok(root.innerHTML.includes("assets/omega-industrial-icons-v1/transport/variants/train-liquid-tank-cars.svg"), "oil routes should use liquid-tanker railcars");
+  assert.ok(root.innerHTML.includes("assets/omega-industrial-icons-v1/transport/variants/ship-oil-tanker.svg"), "oil routes should use the tanker ship SVG");
+  assert.ok(root.innerHTML.includes("assets/omega-industrial-icons-v1/transport/variants/barge-liquid-tanker.svg"), "oil routes should use the liquid-tanker barge SVG");
   assert.match(root.innerHTML, /Design need: 1 truck/);
   assert.match(root.innerHTML, /Design need: 1 train set/);
   assert.match(root.innerHTML, /trips\/day/);
@@ -419,7 +428,7 @@ test("all resource SVGs use a light metallic backplate for readable dark mineral
     assert.match(svg, /data-omega-icon-kind="resource"/);
   }
   assert.match(manifest.rendering.background, /light silver-metal.*factory SVGs retain their shared dark-navy/i);
-  assert.match(read("omega-offline-map-sw.js"), /omega-offline-atlas-shell-v61/);
+  assert.match(read("omega-offline-map-sw.js"), /omega-offline-atlas-shell-v62/);
 });
 
 
