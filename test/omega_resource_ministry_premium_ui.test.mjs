@@ -185,6 +185,29 @@ test("Resource Logistics shows configured per-site route cards and keeps Current
       capacityUnit: "RAW_CARGO_TONNES_PER_DAY"
     }
   };
+  const genericCrudeOilRoute = {
+    routeId: "ROUTE_TST_CRUDE_OIL",
+    siteId: "TST-OIL-FIELD-04",
+    countryId: "TST",
+    siteName: "Test Crude Oil Field",
+    resourceId: "crude_oil",
+    resourceIconKey: "crude_oil",
+    destination: { warehouseId: "WH-TST-RAW" },
+    routePlan: {
+      strategyCode: "MINE_HAULAGE_RAIL_LAST_MILE",
+      routeStatus: "SIMULATED_PLAN_COMPLETE_ENGINE_BINDING_PENDING",
+      dispatchStatus: "NOT_DISPATCHABLE_DATA_ONLY_PHASE",
+      legs: [
+        { transportMode: "truck", estimatedDistanceKm: 20, designCapacityPerTrip: 25, designCapacityPerDay: 30 },
+        { transportMode: "rail", estimatedDistanceKm: 80, designCapacityPerTrip: 5000, designCapacityPerDay: 5000 },
+        { transportMode: "truck", estimatedDistanceKm: 20, designCapacityPerTrip: 25, designCapacityPerDay: 30 }
+      ],
+      estimatedRouteDistanceKm: 120,
+      plannedTransitDays: 3,
+      capacityBottleneckPerDay: 30,
+      capacityUnit: "RAW_CARGO_TONNES_PER_DAY"
+    }
+  };
   const pipelineRoute = {
     routeId: "ROUTE_TST_GAS_PIPELINE",
     siteId: "TST-GAS-PIPELINE-03",
@@ -219,7 +242,7 @@ test("Resource Logistics shows configured per-site route cards and keeps Current
         }) };
       }
       if (name === "resource_site_logistics_routes_v1_part_02.json") {
-        return { ok: true, json: async () => ({ routes: [route, legacyGoldRoute, pipelineRoute] }) };
+        return { ok: true, json: async () => ({ routes: [route, legacyGoldRoute, genericCrudeOilRoute, pipelineRoute] }) };
       }
       throw new Error("Unexpected logistics asset request: " + name);
     }
@@ -268,6 +291,9 @@ test("Resource Logistics shows configured per-site route cards and keeps Current
   assert.match(root.innerHTML, /Mine Site Route Plans/);
   assert.match(root.innerHTML, /Test Coal Mine/);
   assert.match(root.innerHTML, /Test Gold Mine/);
+  assert.match(root.innerHTML, /Test Crude Oil Field/);
+  assert.match(root.innerHTML, /data-logistics-mode-chain="pipeline"/,
+    "crude oil preferred pipeline should replace the old generic truck-rail template");
   assert.match(root.innerHTML, /Test Gas Pipeline/);
   assert.match(root.innerHTML, /Design need unavailable/,
     "pipeline line needs must remain unknown without per-line capacity data");
