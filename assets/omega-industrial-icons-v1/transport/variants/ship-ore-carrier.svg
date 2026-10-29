@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-labelledby="title-ship-ore-carrier desc-ship-ore-carrier" data-omega-icon-kind="transport" data-omega-icon-id="ship-ore-carrier">
+<title id="title-ship-ore-carrier">Heavy ore carrier ship</title><desc id="desc-ship-ore-carrier">Cargo-class-specific ship transport for ore. No individual registration identity is recorded.</desc>
+<defs>
+<linearGradient id="plate-ship-ore-carrier" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f3f8fb"/><stop offset=".5" stop-color="#bdcbd5"/><stop offset="1" stop-color="#71899b"/></linearGradient>
+<linearGradient id="metal-ship-ore-carrier" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#f5fafc"/><stop offset=".35" stop-color="#becbd4"/><stop offset=".72" stop-color="#71889a"/><stop offset="1" stop-color="#344c60"/></linearGradient>
+<linearGradient id="blue-ship-ore-carrier" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#9be7f4"/><stop offset=".4" stop-color="#287fa9"/><stop offset="1" stop-color="#153e5e"/></linearGradient>
+<filter id="shadow-ship-ore-carrier" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="3" stdDeviation="2" flood-color="#091725" flood-opacity=".48"/></filter>
+</defs>
+<rect x="4.5" y="4.5" width="119" height="119" rx="21" fill="url(#plate-ship-ore-carrier)" stroke="#627b8f" stroke-opacity=".8"/><rect x="8" y="8" width="112" height="112" rx="17" fill="none" stroke="#fff" stroke-opacity=".6"/>
+<path d="M14 24H114M15 112H113" stroke="#fff" stroke-opacity=".58" stroke-width="2"/><g filter="url(#shadow-ship-ore-carrier)"><path d="M10 79H118L101 99H26Z" fill="url(#metal-ship-ore-carrier)" stroke="#40576b" stroke-width="2"/><path d="M20 70 31 51 43 61 54 45 66 59 78 48 89 60 101 51 107 77H20Z" fill="#a77a55" stroke="#725038" stroke-width="2"/><path d="M32 57 43 61M54 52 66 59M78 54 89 60" stroke="#e3b887" stroke-width="2"/><path d="M14 105Q30 98 46 105T78 105T114 105" fill="none" stroke="#35b8df" stroke-width="3"/></g>
+</svg>
