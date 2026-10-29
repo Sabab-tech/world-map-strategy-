@@ -25,3 +25,13 @@ test('route runtime recalculates from fleet count and exposes cargo SVG mapping'
  assert.match(runtime,/fleetSufficiency/);
  assert.match(runtime,/cargoIconPath/);
 });
+
+test('every cargo-specific train SVG contains visible locomotive and wheel geometry',()=>{
+ const catalog=readJson('omega_logistics_transport_catalog_v1.json');
+ for(const cargo of Object.keys(catalog.transportTypes[0].cargoIcons)){
+  const path=catalog.transportTypes[0].cargoIcons[cargo].replace(/\/[^/]+\.svg$/,'/train.svg');
+  const svg=readFileSync(new URL('../'+path,import.meta.url),'utf8');
+  assert.match(svg,/<circle\b/,'train SVG must contain wheels: '+cargo);
+  assert.match(svg,/<path\b/,'train SVG must contain visible rail/vehicle geometry: '+cargo);
+ }
+});
