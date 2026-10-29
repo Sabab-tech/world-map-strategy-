@@ -1688,6 +1688,10 @@ function routeSegments(site,asset,resourceId,mode,countryId,input={}){
       mode:normalizeAccess(row.transportMode||row.mode),
       distanceKm:num(row.estimatedDistanceKm??row.distanceKm??row.distance),
       designCapacityPerTrip:num(row.designCapacityPerTrip??row.payloadTonnes),
+      designCapacityPerDay:num(row.designCapacityPerDay),
+      designCapacityPerLinePerDay:num(row.designCapacityPerLinePerDay),
+      capacityPerLinePerDay:num(row.capacityPerLinePerDay),
+      lineCapacityPerDay:num(row.lineCapacityPerDay),
       transferHours:num(row.transferHours??row.transferTimeHours)??0,
       edgeClass:String(row.edgeClass||row.legType||row.routeLegType||('EXPLICIT_ROUTE_LEG_'+(index+1))),
       sourceAuthority:String(row.distanceAuthority||row.sourceAuthority||row.authority||'EXPLICIT_ROUTE_PROFILE'),
@@ -1704,6 +1708,10 @@ function routeSegments(site,asset,resourceId,mode,countryId,input={}){
       mode:normalizeAccess(row.transportMode||row.mode),
       distanceKm:num(row.estimatedDistanceKm??row.distanceKm??row.distance??row.km),
       designCapacityPerTrip:num(row.designCapacityPerTrip??row.payloadTonnes),
+      designCapacityPerDay:num(row.designCapacityPerDay),
+      designCapacityPerLinePerDay:num(row.designCapacityPerLinePerDay),
+      capacityPerLinePerDay:num(row.capacityPerLinePerDay),
+      lineCapacityPerDay:num(row.lineCapacityPerDay),
       transferHours:num(row.transferHours??row.transferTimeHours)??0,
       edgeClass:String(row.edgeClass||row.legType||row.routeLegType||('EXPLICIT_ROUTE_LEG_'+(index+1))),
       sourceAuthority:String(row.distanceAuthority||row.sourceAuthority||row.authority||'EXPLICIT_ROUTE_PROFILE'),
@@ -1750,6 +1758,7 @@ function buildRoute(site,asset,resourceId,requestedQuantity,input={}){
   const fleetSiteId=String(input.sourceSiteId||site?.siteId||'').trim();
   let totalDays=0,totalCost=0,limitingCapacity=Infinity,vehiclePlan=[];
   for(const seg of segments){
+    const isPipeline=seg.mode==='pipeline';
     const m=modeRules()[seg.mode]||modeRules().truck,iq=infraQuality(cid,seg.mode);
     const distance=Math.max(0,num(seg.distanceKm)||0),speedKmh=Math.max(1,num(m.speedKmh)||1);
     const loadHours=Math.max(0,num(m.loadHours)??0),unloadHours=Math.max(0,num(m.unloadHours)??0);
@@ -1757,32 +1766,48 @@ function buildRoute(site,asset,resourceId,requestedQuantity,input={}){
     const travelHours=distance/speedKmh,qualityFactor=1+(1-Math.max(0,Math.min(1,iq.quality)))*.5;
     const adjustedTravelHours=travelHours*qualityFactor;
     const totalHours=adjustedTravelHours+loadHours+unloadHours+transferHours,days=totalHours/24;
-    const payload=Math.max(.001,num(seg.designCapacityPerTrip)||num(m.payloadTonnes)||1);
+    const payload=isPipeline?null:Math.max(.001,num(seg.designCapacityPerTrip)||num(m.payloadTonnes)||1);
     const storedFleet=fleetSiteId?storedTransportFleetRecord(cid,fleetSiteId,seg.mode):null;
     const fleetCount=storedFleet?finiteCount(storedFleet.count):null;
     const cycleHours=Math.max(1,(travelHours*2*qualityFactor)+loadHours+unloadHours+transferHours);
-    const fleetCapacityPerDay=fleetCount===null?null:Number((fleetCount*payload*24/cycleHours).toFixed(6));
+    const lineCapacityValue=num(seg.designCapacityPerLinePerDay??seg.capacityPerLinePerDay??seg.lineCapacityPerDay);
+    const lineCapacityPerDay=isPipeline&&lineCapacityValue!==null&&lineCapacityValue>0?lineCapacityValue:null;
     const infrastructureCapacityPerDay=Math.max(0,iq.capacityPerDay*iq.quality);
-    const capacityPerDay=fleetCapacityPerDay===null?infrastructureCapacityPerDay:
-      Math.min(infrastructureCapacityPerDay,fleetCapacityPerDay);
-    const capacityPerTurn=capacityPerDay*daysPerTurn();
-    const units=Math.ceil(cargoQuantity/payload);
-    const tripWaves=fleetCount===null?units:(fleetCount>0?Math.ceil(units/fleetCount):0);
+    const routeDesignCapacityValue=num(seg.designCapacityPerDay);
+    const designCapacityPerDay=Math.max(0,routeDesignCapacityValue===null?infrastructureCapacityPerDay:routeDesignCapacityValue);
+    const requiredTrips=isPipeline?null:Math.ceil(cargoQuantity/payload);
     const tripCycleDays=cycleHours/24;
-    const legTotalDays=fleetCount===0?null:(tripWaves>0?days+Math.max(0,tripWaves-1)*tripCycleDays:0);
+    const requiredLineCount=isPipeline&&lineCapacityPerDay!==null?
+      Math.max(1,Math.ceil(designCapacityPerDay/lineCapacityPerDay)):null;
+    const fleetCapacityPerDay=isPipeline?
+      (fleetCount!==null&&lineCapacityPerDay!==null?Number((fleetCount*lineCapacityPerDay).toFixed(6)):null):
+      (fleetCount===null?null:Number((fleetCount*payload*24/cycleHours).toFixed(6)));
+    const capacityPerDay=fleetCount===0?0:(fleetCapacityPerDay===null?
+      Math.min(infrastructureCapacityPerDay,designCapacityPerDay):
+      Math.min(infrastructureCapacityPerDay,fleetCapacityPerDay));
+    const capacityPerTurn=capacityPerDay*daysPerTurn();
+    const tripWaves=isPipeline?null:(fleetCount===null?requiredTrips:(fleetCount>0?Math.ceil(requiredTrips/fleetCount):0));
+    const legTotalDays=isPipeline?(fleetCount===0?null:days):
+      (fleetCount===0?null:(tripWaves>0?days+Math.max(0,tripWaves-1)*tripCycleDays:0));
     if(legTotalDays!==null)totalDays+=legTotalDays;
+    const units=isPipeline?null:requiredTrips;
     limitingCapacity=Math.min(limitingCapacity,capacityPerTurn);
     totalCost+=cargoQuantity*distance*(num(m.costPerTonneKm)||.05);
-    vehiclePlan.push({mode:seg.mode,vehicle:m.vehicle,units,vehicleCount:units,requiredTrips:units,
-      fleetCount,fleetCountConfigured:fleetCount!==null,tripWaves,tripCycleDays:Number(tripCycleDays.toFixed(6)),
+    vehiclePlan.push({mode:seg.mode,vehicle:isPipeline?null:m.vehicle,units,vehicleCount:units,requiredTrips:units,
+      requiredVehicleCount:units,requiredLineCount,lineCapacityPerDay,fleetCount,
+      fleetCountConfigured:fleetCount!==null,tripWaves,tripCycleDays:isPipeline?null:Number(tripCycleDays.toFixed(6)),
       estimatedLegTravelDays:legTotalDays===null?null:Number(legTotalDays.toFixed(6)),
       payloadTonnes:payload,distanceKm:Number(distance.toFixed(6)),speedKmh,loadHours,unloadHours,transferHours,
       travelHours:Number(travelHours.toFixed(6)),adjustedTravelHours:Number(adjustedTravelHours.toFixed(6)),
-      singleTripTravelDays:Number(days.toFixed(6)),travelDays:legTotalDays===null?null:Number(legTotalDays.toFixed(6)),fleetCapacityPerDay,capacityPerDay,capacityPerTurn,
+      singleTripTravelDays:Number(days.toFixed(6)),travelDays:legTotalDays===null?null:Number(legTotalDays.toFixed(6)),
+      fleetCapacityPerDay,capacityPerDay,capacityPerTurn,designCapacityPerDay,
       dispatchQuantity:Number(quantity.toFixed(6)),edgeClass:seg.edgeClass,sourceAuthority:seg.sourceAuthority,
       routeLegId:seg.routeLegId||null,
-      capacityAuthority:fleetCount===null?'UNCONFIGURED_SIMULATION_CAPACITY_FALLBACK':'COUNTRY_SITE_TRANSPORT_TYPE_COUNT',
-      timeAuthority:fleetCount===null?'SERIAL_TRIP_ESTIMATE_FLEET_COUNT_UNKNOWN':'VERSIONED_PROFILE_AND_CONFIGURED_FLEET_COUNT'});
+      capacityAuthority:isPipeline?
+        (lineCapacityPerDay!==null&&fleetCount!==null?'CONFIGURED_PIPELINE_LINES_AND_PER_LINE_CAPACITY':'PIPELINE_CORRIDOR_CAPACITY_LINE_COUNT_NOT_ESTIMATED'):
+        (fleetCount===null?'UNCONFIGURED_SIMULATION_CAPACITY_FALLBACK':'COUNTRY_SITE_TRANSPORT_TYPE_COUNT'),
+      timeAuthority:isPipeline?'CONTINUOUS_PIPELINE_FLOW_TRANSIT_ESTIMATE':
+        (fleetCount===null?'ROUTE_DESIGN_CAPACITY_ETA_ESTIMATE_NOT_ACTUAL_FLEET_COUNT':'VERSIONED_PROFILE_AND_CONFIGURED_FLEET_COUNT')});
   }
   const dispatchQuantity=Math.min(quantity,Math.max(0,limitingCapacity/capacityFactor));
   const hasZeroFleet=vehiclePlan.some(leg=>leg.fleetCountConfigured&&leg.fleetCount===0);
@@ -1792,6 +1817,21 @@ function buildRoute(site,asset,resourceId,requestedQuantity,input={}){
   const routeSourceNode=input.sourceNode||nodeToken(input.sourceNodeType||'MINE',cid,site?.siteId);
   const routeModes=[...new Set(vehiclePlan.map(x=>x.mode))];
   const effectiveMode=routeModes.length===1?routeModes[0]:(routeModes.includes('ship')?'ship':routeModes.includes('rail')?'rail':routeModes[0]||mode);
+  const fleetCountsByMode=vehiclePlan.reduce((out,leg)=>{
+    if(!Object.prototype.hasOwnProperty.call(out,leg.mode))out[leg.mode]={count:leg.fleetCount,configured:leg.fleetCountConfigured};
+    return out;
+  },{});
+  const requiredTripsByMode=vehiclePlan.filter(leg=>leg.mode!=='pipeline').reduce((out,leg)=>{
+    out[leg.mode]=(out[leg.mode]||0)+(num(leg.requiredTrips)||0);return out;
+  },{});
+  const configuredPipelineLineCount=fleetCountsByMode.pipeline?.configured?
+    Math.max(0,num(fleetCountsByMode.pipeline.count)||0):null;
+  const vehicleCount=vehiclePlan.filter(leg=>leg.mode!=='pipeline').reduce((sum,leg)=>sum+(num(leg.vehicleCount)||0),0);
+  const vehiclesByMode=vehiclePlan.filter(leg=>leg.mode!=='pipeline').reduce((out,leg)=>{
+    out[leg.mode]=(out[leg.mode]||0)+(num(leg.vehicleCount)||0);return out;
+  },{});
+  const configuredFleetUnitCount=Object.entries(fleetCountsByMode).reduce((sum,[type,row])=>
+    sum+(type!=='pipeline'&&row.configured?Math.max(0,num(row.count)||0):0),0);
   const route={status:dispatchQuantity>0?'PLANNED':'BLOCKED',routeId:'IR:'+h32(JSON.stringify({cid,site:routeSourceSiteId,sourceNode:routeSourceNode,factory:asset?.id||asset?.assetId||asset?.projectId,resourceId,mode:effectiveMode,path})).toString(16),
     countryId:cid,sourceSiteId:routeSourceSiteId,sourceWarehouseId:input.sourceWarehouseId||null,sourceNode:routeSourceNode,
     destinationFactoryId:String(asset?.id||asset?.assetId||asset?.projectId||''),destinationNode:nodeToken('FACTORY',cid,asset?.id||asset?.assetId||asset?.projectId),
@@ -1799,10 +1839,8 @@ function buildRoute(site,asset,resourceId,requestedQuantity,input={}){
     routePath:path,legs:vehiclePlan,totalDistanceKm:Number(vehiclePlan.reduce((sum,leg)=>sum+leg.distanceKm,0).toFixed(6)),
     travelTimeDays:estimatedTotalDays===null?null:(Number.isFinite(estimatedTotalDays)?Number(estimatedTotalDays.toFixed(6)):null),etaTurn,etaYear:estimatedTotalDays===null?null:year()+Math.floor(estimatedTotalDays/365),vehiclePlan,
     totalCost:Number(totalCost.toFixed(4)),capacityQuantityFactor:capacityFactor,capacityQuantityUnit:'CARGO_CAPACITY_UNITS',
-    vehicleCount:vehiclePlan.reduce((sum,leg)=>sum+leg.vehicleCount,0),
-    vehiclesByMode:vehiclePlan.reduce((out,leg)=>{out[leg.mode]=(out[leg.mode]||0)+leg.vehicleCount;return out;},{}),
-    fleetCountByMode:vehiclePlan.reduce((out,leg)=>{if(!Object.prototype.hasOwnProperty.call(out,leg.mode))out[leg.mode]={count:leg.fleetCount,configured:leg.fleetCountConfigured};return out;},{}),
-    totalFleetUnitsConfigured:vehiclePlan.reduce((out,leg)=>Object.prototype.hasOwnProperty.call(out.seen,leg.mode)?out:(out.seen[leg.mode]=true,out.total+=(leg.fleetCount||0),out),{total:0,seen:{}}).total,
+    vehicleCount,vehiclesByMode,requiredTripsByMode,fleetCountByMode:fleetCountsByMode,
+    configuredFleetUnitCount,configuredPipelineLineCount,
     routeLegCount:vehiclePlan.length,distinctTransportModeCount:routeModes.length,
     capacityAuthority:vehiclePlan.some(x=>x.fleetCountConfigured)?'CONFIGURED_FLEET_AND_INFRASTRUCTURE':'INFRASTRUCTURE_MODEL',
     distanceAuthority:vehiclePlan.every(x=>x.sourceAuthority==='SITE_SIMULATION_ROUTE')?'SITE_SIMULATION_ROUTE':'SIMULATED_CORRIDOR_MODEL',
