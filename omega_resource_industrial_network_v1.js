@@ -1570,7 +1570,7 @@ function siteRouteLegMetrics(countryId,routeProfile,quantity,unitBridge){
     const routeCapacityPerDay=Math.max(0,declaredRouteCapacity===null?
       infrastructure.capacityPerDay*infrastructure.quality:declaredRouteCapacity);
     const requiredDesignFleetSlots=isPipeline?
-      (lineCapacityPerDay!==null?Math.max(1,Math.ceil(routeCapacityPerDay/lineCapacityPerDay)):null):
+      (lineCapacityPerDay!==null?(routeCapacityPerDay>0?Math.max(1,Math.ceil(routeCapacityPerDay/lineCapacityPerDay)):0):null):
       (routeCapacityPerDay>0?Math.max(1,Math.ceil((routeCapacityPerDay/payload)/Math.max(1e-9,24/cycleDays))):0);
     // Unknown actual vehicle counts remain unknown. For movable cargo, ETA uses a
     // capacity-derived design formation. A pipeline is continuous flow, not a truck:
@@ -1846,7 +1846,7 @@ function buildRoute(site,asset,resourceId,requestedQuantity,input={}){
     travelTimeDays:estimatedTotalDays===null?null:(Number.isFinite(estimatedTotalDays)?Number(estimatedTotalDays.toFixed(6)):null),etaTurn,etaYear:estimatedTotalDays===null?null:year()+Math.floor(estimatedTotalDays/365),vehiclePlan,
     totalCost:Number(totalCost.toFixed(4)),capacityQuantityFactor:capacityFactor,capacityQuantityUnit:'CARGO_CAPACITY_UNITS',
     vehicleCount,vehiclesByMode,requiredTripsByMode,requiredPipelineLinesByMode,fleetCountByMode:fleetCountsByMode,
-    configuredFleetUnitCount,configuredPipelineLineCount,
+    configuredFleetUnitCount,totalFleetUnitsConfigured:configuredFleetUnitCount,configuredPipelineLineCount,
     routeLegCount:vehiclePlan.length,distinctTransportModeCount:routeModes.length,
     capacityAuthority:capacityUsesConfiguredFleet?'CONFIGURED_FLEET_AND_INFRASTRUCTURE':
       (vehiclePlan.some(leg=>leg.mode==='pipeline')?'PIPELINE_CORRIDOR_CAPACITY_WITHOUT_PER_LINE_THROUGHPUT':'INFRASTRUCTURE_MODEL'),
