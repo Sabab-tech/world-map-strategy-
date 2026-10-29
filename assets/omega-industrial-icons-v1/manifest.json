@@ -19,6 +19,22 @@
     "integratedIntoRuntime": true,
     "legacyFactoryIconCount": 39
   },
+  "logisticsNodeAssets": [
+    {
+      "id": "mine-site",
+      "label": "Resource mine site",
+      "file": "logistics/mine-site.svg",
+      "kind": "LOGISTICS_NODE",
+      "offline": true
+    },
+    {
+      "id": "warehouse-node",
+      "label": "Raw resource warehouse",
+      "file": "logistics/warehouse-node.svg",
+      "kind": "LOGISTICS_NODE",
+      "offline": true
+    }
+  ],
   "resources": [
     {
       "id": "aragonite",
