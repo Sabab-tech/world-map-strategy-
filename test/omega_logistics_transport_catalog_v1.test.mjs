@@ -43,10 +43,28 @@ test('new catalog and all cargo icons are included in offline cache',()=>{
  const catalog=readJson('omega_logistics_transport_catalog_v1.json');
  const offline=readFileSync(new URL('../omega-offline-map-sw.js',import.meta.url),'utf8');
  assert.match(offline,/omega_logistics_transport_catalog_v1\.json/);
- assert.match(offline,/omega-offline-atlas-shell-v59/);
+ assert.match(offline,/assets\/omega-industrial-icons-v1\/logistics\/mine-site\.svg/);
+ assert.match(offline,/assets\/omega-industrial-icons-v1\/logistics\/warehouse-node\.svg/);
+ assert.ok(existsSync(new URL('../assets/omega-industrial-icons-v1/logistics/mine-site.svg',import.meta.url)));
+ assert.ok(existsSync(new URL('../assets/omega-industrial-icons-v1/logistics/warehouse-node.svg',import.meta.url)));
+ assert.match(offline,/omega-offline-atlas-shell-v61/);
  for(const mode of catalog.transportTypes){
   for(const path of Object.values(mode.cargoIcons)){
    assert.ok(offline.includes('"./'+path+'"'),'offline cache missing '+path);
   }
+ }
+});
+
+
+test('every cargo-specific train SVG contains visible locomotive and wheel geometry',()=>{
+ const catalog=readJson('omega_logistics_transport_catalog_v1.json');
+ const train=catalog.transportTypes.find(mode=>mode.baseCatalogMode==='rail');
+ assert.ok(train,'rail transport catalog mode is required');
+ for(const cargo of Object.keys(train.cargoIcons)){
+  const path=train.cargoIcons[cargo];
+  const svg=readFileSync(new URL('../'+path,import.meta.url),'utf8');
+  assert.match(svg,/<circle\b/,'train SVG must contain wheels: '+cargo);
+  assert.match(svg,/<path\b/,'train SVG must contain visible rail/vehicle geometry: '+cargo);
+  assert.match(svg,/<title\b/,'train SVG must have an accessible title: '+cargo);
  }
 });

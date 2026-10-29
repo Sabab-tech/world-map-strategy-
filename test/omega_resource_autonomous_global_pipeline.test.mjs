@@ -255,7 +255,14 @@ test('every committed deposit event is routed country-by-country through factory
     await industry.advanceShipments(c);
     const factoryShipment=rs.industrialNetwork.shipments.find(x=>x.batchId===f.batchId&&
       x.shipmentType==='RAW_TO_FACTORY'&&['IN_TRANSIT','BLOCKED_ROUTE_BLOCKADE'].includes(x.status));
-    assert.ok(factoryShipment,'a successful mine receipt must open a separate timed factory shipment');
+    const sourceFlow=rs.industrialNetwork.siteFlowLedger.find(x=>String(x.batchId||'')===String(f.batchId));
+    assert.ok(factoryShipment,'a successful mine receipt must open a separate timed factory shipment; context='+
+      JSON.stringify({countryId:c,siteId:f.site.siteId,resourceId:f.resourceId,batchId:f.batchId,
+        flowStatus:sourceFlow?.status,mineLogisticsStatus:sourceFlow?.mineLogisticsStatus,
+        received:sourceFlow?.mineWarehouseReceivedQuantity,factoryDispatched:sourceFlow?.factoryDispatchedQuantity,
+        lastFactoryDiagnostic:sourceFlow?.lastFactoryResidualDispatchDiagnostic,
+        routeProfile:(await industry.loadSiteLogisticsRoutes(c)).status,
+        rawWarehouse:rs.warehouse.availableByResource?.[f.resourceId]}));
     advanceToGameTurn(state,factoryShipment.etaTurn);
     let advanced=null,result=null;
     for(let attempt=0;attempt<8;attempt++){

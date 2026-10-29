@@ -1484,26 +1484,78 @@ function routeCapacityFactor(unit,explicitFactor){
   // a commodity-specific density/composition before it can be called tonnes.
   return descriptor?.family==='MASS'&&num(descriptor.toTonnes)>0?num(descriptor.toTonnes):1;
 }
+function resolveSiteRouteLegs(routeProfile){
+  const plan=routeProfile?.routePlan||{},rows=Array.isArray(plan.legs)?plan.legs:[];
+  const type=String(plan.routeType||'').toUpperCase();
+  const strategyCode=String(plan.strategyCode||'').toUpperCase();
+  const rowModes=rows.map(row=>normalizeTransportMode(row?.transportMode||row?.mode)).filter(Boolean);
+  const genericIntermodal=type==='TRUCK_TO_RAIL_TO_TRUCK'||
+    (strategyCode==='MINE_HAULAGE_RAIL_LAST_MILE'&&rowModes.includes('truck')&&rowModes.includes('rail'));
+  if(!genericIntermodal||rows.length<2)return rows;
+  const modes=rows.map(row=>normalizeTransportMode(row?.transportMode||row?.mode)).filter(Boolean);
+  if(!modes.includes('truck')||!modes.includes('rail')||modes.some(mode=>!['truck','rail'].includes(mode)))return rows;
+  const allowed=new Set(modes),preferences=rules()[routeProfile?.resourceId]?.preferredModes||[],supportedModes=modeRules();
+  const chosen=preferences.map(normalizeTransportMode).find(mode=>!!supportedModes[mode])||
+    preferences.map(normalizeTransportMode).find(mode=>allowed.has(mode))||(allowed.has('rail')?'rail':'truck');
+  const totalDistance=num(plan.estimatedRouteDistanceKm)??rows.reduce((sum,row)=>sum+(num(row?.estimatedDistanceKm??row?.distanceKm??row?.distance)||0),0);
+  if(totalDistance===null||!Number.isFinite(totalDistance)||totalDistance<0)return rows;
+  const profile=modeRules()[chosen]||{},reference=rows.find(row=>normalizeTransportMode(row?.transportMode||row?.mode)===chosen)||rows[0];
+  const speed=Math.max(1,num(profile.speedKmh)||1),loadHours=Math.max(0,num(profile.loadHours)||0),unloadHours=Math.max(0,num(profile.unloadHours)||0);
+  const cycleHours=(2*totalDistance/speed)+loadHours+unloadHours;
+  const flow=num(plan.capacityBottleneckPerDay)??num(reference?.designCapacityPerDay);
+  const payload=chosen==='pipeline'?null:(num(reference?.designCapacityPerTrip)??num(profile.payloadTonnes));
+  const requiredDesignFleetSlots=chosen==='pipeline'?null:(flow!==null&&flow>0&&payload!==null&&payload>0&&cycleHours>0?
+    Math.max(1,Math.ceil((flow/payload)*cycleHours/24)):0);
+  return[{
+    ...clone(reference),
+    legId:'ROUTE_'+String(routeProfile?.siteId||routeProfile?.routeId||'MINE')+'_COMMODITY_MODE_ONLY',
+    sequence:1,fromNodeId:rows[0]?.fromNodeId||routeProfile?.siteId||null,fromNodeType:'MINE_SITE',
+    toNodeId:rows[rows.length-1]?.toNodeId||plan.destinationWarehouseId||null,
+    toNodeType:'COUNTRY_RAW_INVENTORY_WAREHOUSE',transportMode:chosen,vehicleClass:profile.vehicle||reference?.vehicleClass||chosen,
+    estimatedDistanceKm:Number(totalDistance.toFixed(6)),
+    distanceAuthority:'SIMULATED_TOTAL_ROUTE_DISTANCE_NOT_A_SURVEYED_MODE_PATH',
+    estimatedTravelHours:Number((totalDistance/speed).toFixed(6)),
+    designCapacityPerTrip:payload,
+    designCapacityPerTripUnit:reference?.designCapacityPerTripUnit||'CATALOG_PAYLOAD_PER_TRIP',
+    designCapacityPerDay:flow,
+    designCapacityUnit:plan.capacityUnit||reference?.designCapacityUnit||'ROUTE_CAPACITY_PER_DAY',
+    cycleHoursForOneDesignVehicle:Number(cycleHours.toFixed(6)),
+    tripsPerVehiclePerDay:Number((24/cycleHours).toFixed(6)),
+    requiredDesignFleetSlots,
+    actualBoundFleetUnits:null,vehicleAssetIds:null,
+    status:'DESIGN_ONLY_NOT_DISPATCHABLE',
+    transportIconKey:chosen==='rail'?'train':chosen,
+    transportIconAssetPath:'assets/omega-industrial-icons-v1/transport/'+(chosen==='rail'?'train':chosen)+'.svg',
+    transportIconAuthority:'OMEGA_RESOURCE_SITE_LOGISTICS_TRANSPORT_SVG_V1',
+    routeSelectionAuthority:'RESOURCE_RULE_PREFERRED_MODE_FROM_UNVERIFIED_INTERMODAL_TEMPLATE'
+  }];
+}
 function siteRouteLegMetrics(countryId,routeProfile,quantity,unitBridge){
-  const cid=canonicalCountry(countryId),plan=routeProfile?.routePlan||{},sourceRows=Array.isArray(plan.legs)?plan.legs:[];
+  const cid=canonicalCountry(countryId),plan=routeProfile?.routePlan||{},sourceRows=resolveSiteRouteLegs(routeProfile);
   if(!sourceRows.length)return{status:'BLOCKED',reason:'MINE_ROUTE_LEGS_NOT_RECORDED'};
   const declaredTotal=num(plan.estimatedRouteDistanceKm);
   const explicitDistances=sourceRows.map(row=>{
     const distance=num(row?.estimatedDistanceKm??row?.distanceKm??row?.distance);
     return distance!==null&&distance>=0?distance:null;
   });
-  const explicitTotal=explicitDistances.reduce((sum,value)=>sum+(value===null?0:value),0);
   const missingCount=explicitDistances.filter(value=>value===null).length;
-  const missingShare=missingCount&&declaredTotal!==null?Math.max(0,declaredTotal-explicitTotal)/missingCount:0;
-  const distances=explicitDistances.map(value=>value===null?missingShare:value);
-  // Declared per-leg distances are authoritative; missing distances share the unallocated remainder.
-  const totalDistanceKm=distances.reduce((sum,value)=>sum+value,0);
+  if(missingCount)return{status:'BLOCKED',reason:'MINE_ROUTE_LEG_DISTANCE_NOT_RECORDED',
+    siteId:String(routeProfile?.siteId||routeProfile?.sourceSiteId||'').trim(),missingLegCount:missingCount,
+    declaredRouteDistanceKm:declaredTotal};
+  const distances=explicitDistances;
+  const declaredDistanceTotal=num(plan.estimatedRouteDistanceKm);
+  const summedLegDistance=distances.reduce((sum,value)=>sum+value,0);
+  const totalDistanceKm=Number(summedLegDistance.toFixed(6));
+  const distanceReconciliation={declaredDistanceKm:declaredDistanceTotal,legDistanceSumKm:totalDistanceKm,
+    deltaKm:declaredDistanceTotal===null?null:Number((totalDistanceKm-declaredDistanceTotal).toFixed(6)),
+    matched:declaredDistanceTotal===null?null:Math.abs(totalDistanceKm-declaredDistanceTotal)<=Math.max(0.1,Math.abs(declaredDistanceTotal)*0.001)};
   const factor=Math.max(1e-12,num(unitBridge?.sourceToCapacityFactor)||1);
   const quantityInCapacityUnits=Math.max(0,num(quantity)||0)*factor;
   let totalDays=0;
   const siteId=String(routeProfile?.siteId||routeProfile?.sourceSiteId||'').trim();
   const legs=sourceRows.map((source,index)=>{
     const mode=normalizeTransportMode(source?.transportMode||source?.mode),baseProfile=modeRules()[mode]||modeRules().truck||{};
+    const isPipeline=mode==='pipeline';
     const configuredFleet=siteId?storedTransportFleetRecord(cid,siteId,mode):null;
     const overrides=configuredFleet?.profileOverrides||{};
     const profile={...baseProfile,...overrides};
@@ -1515,20 +1567,39 @@ function siteRouteLegMetrics(countryId,routeProfile,quantity,unitBridge){
     const qualityFactor=1+(1-Math.max(0,Math.min(1,infrastructure.quality)))*0.5;
     const adjustedTravelHours=travelHours*qualityFactor;
     const totalHours=adjustedTravelHours+loadHours+unloadHours+transferHours;
-    const travelDays=totalHours/24;
-    totalDays+=travelDays;
+    const singleTripDays=totalHours/24;
     const payload=Math.max(0.001,num(overrides.payloadTonnes)??num(source?.designCapacityPerTrip)??num(profile?.payloadTonnes)??1);
-    const units=Math.ceil(quantityInCapacityUnits/payload);
-    const configuredCount=configuredFleet?num(configuredFleet.count):null;
-    const declaredFleetCount=configuredCount!==null?configuredCount:num(source?.fleetCount??routeProfile?.transportFleet?.[mode]?.count);
+    const lineCapacityRaw=num(source?.designCapacityPerLinePerDay??source?.capacityPerLinePerDay??source?.lineCapacityPerDay);
+    const lineCapacityPerDay=lineCapacityRaw!==null&&lineCapacityRaw>0?lineCapacityRaw:null;
+    const requiredTrips=isPipeline?null:Math.ceil(quantityInCapacityUnits/payload);
+    const countValue=configuredFleet?num(configuredFleet.count):null;
+    const declaredFleetCount=countValue!==null?countValue:num(source?.fleetCount??routeProfile?.transportFleet?.[mode]?.count);
     const fleetCount=declaredFleetCount!==null&&declaredFleetCount>=0?Math.floor(declaredFleetCount):null;
-    const requiredVehicleCount=units;
-    // A known fleet count limits daily throughput; unknown counts stay unknown, never fabricated.
-    const cycleDays=Math.max(1/24,travelDays*2);
-    const fleetCapacityPerDay=fleetCount===null?null:Number((fleetCount*payload/cycleDays).toFixed(6));
-    const routeCapacityPerDay=Math.max(0,num(source?.designCapacityPerDay)||infrastructure.capacityPerDay*infrastructure.quality);
-    const dailyCapacity=fleetCapacityPerDay===null?routeCapacityPerDay:
-      Math.min(routeCapacityPerDay>0?routeCapacityPerDay:fleetCapacityPerDay,fleetCapacityPerDay);
+    const cycleDays=Math.max(1/24,singleTripDays*2);
+    const declaredRouteCapacity=num(source?.designCapacityPerDay);
+    const routeCapacityPerDay=Math.max(0,declaredRouteCapacity===null?
+      infrastructure.capacityPerDay*infrastructure.quality:declaredRouteCapacity);
+    const requiredDesignFleetSlots=isPipeline?
+      (lineCapacityPerDay!==null?(routeCapacityPerDay>0?Math.max(1,Math.ceil(routeCapacityPerDay/lineCapacityPerDay)):0):null):
+      (routeCapacityPerDay>0?Math.max(1,Math.ceil((routeCapacityPerDay/payload)/Math.max(1e-9,24/cycleDays))):0);
+    // Unknown actual vehicle counts remain unknown. For movable cargo, ETA uses a
+    // capacity-derived design formation. A pipeline is continuous flow, not a truck:
+    // its line count is estimable only with an explicit per-line daily capacity.
+    const etaFleetUnits=fleetCount===null?requiredDesignFleetSlots:fleetCount;
+    const tripWaves=isPipeline?null:(etaFleetUnits>0?Math.ceil(requiredTrips/etaFleetUnits):0);
+    const estimatedLegDays=isPipeline?
+      (fleetCount===0?null:singleTripDays):
+      (fleetCount===0?null:(etaFleetUnits>0&&tripWaves>0?
+        singleTripDays+Math.max(0,tripWaves-1)*cycleDays:0));
+    if(estimatedLegDays!==null)totalDays+=estimatedLegDays;
+    const fleetCapacityPerDay=isPipeline?
+      (fleetCount!==null&&lineCapacityPerDay!==null?Number((fleetCount*lineCapacityPerDay).toFixed(6)):null):
+      (fleetCount===null?null:Number((fleetCount*payload/cycleDays).toFixed(6)));
+    const pipelineCapacityUnavailable=isPipeline&&fleetCount!==null&&fleetCount>0&&lineCapacityPerDay===null;
+    const dailyCapacity=pipelineCapacityUnavailable?null:
+      (fleetCount===0?0:(fleetCapacityPerDay===null?routeCapacityPerDay:
+        Math.min(routeCapacityPerDay,fleetCapacityPerDay)));
+    const requiredLineCount=isPipeline&&requiredDesignFleetSlots!==null?requiredDesignFleetSlots:null;
     const cargoText=tok(source?.cargoClass||routeProfile?.commodityGroup||routeProfile?.resourceId||'');
     const cargoIconClass=/coal|lignite|coke|dry_bulk/.test(cargoText)?'coal-dry-bulk':
       /oil|petroleum|diesel|fuel|crude|liquid/.test(cargoText)?'oil-liquid':
@@ -1538,25 +1609,81 @@ function siteRouteLegMetrics(countryId,routeProfile,quantity,unitBridge){
     const cargoIconPath='assets/omega-industrial-icons-v1/transport/cargo/'+cargoIconClass+'/'+iconMode+'.svg';
     return{...clone(source),mode,transportMode:mode,distanceKm:Number(distanceKm.toFixed(6)),speedKmh,
       loadHours,unloadHours,transferHours,travelHours:Number(travelHours.toFixed(6)),
-      adjustedTravelHours:Number(adjustedTravelHours.toFixed(6)),travelDays:Number(travelDays.toFixed(6)),
-      payloadTonnes:payload,units,vehicleCount:units,requiredVehicleCount,fleetCount,
+      adjustedTravelHours:Number(adjustedTravelHours.toFixed(6)),singleTripTravelDays:Number(singleTripDays.toFixed(6)),
+      travelDays:estimatedLegDays===null?null:Number(estimatedLegDays.toFixed(6)),tripWaves,cycleDays:Number(cycleDays.toFixed(6)),
+      payloadTonnes:payload,units:isPipeline?null:requiredTrips,vehicleCount:isPipeline?null:requiredTrips,
+      requiredTrips,requiredVehicleCount:isPipeline?null:requiredDesignFleetSlots,requiredFleetCount:isPipeline?null:requiredDesignFleetSlots,
+      requiredLineCount,lineCapacityPerDay,
+      requiredDesignFleetSlots,fleetCount,fleetCountConfigured:fleetCount!==null,
       fleetCapacityPerDay,dailyFleetCycleDays:Number(cycleDays.toFixed(6)),
-      fleetSufficiency:fleetCount===null?null:fleetCount>=requiredVehicleCount,
+      fleetSufficiency:isPipeline?(fleetCount===null||requiredLineCount===null?null:fleetCount>=requiredLineCount):
+        (fleetCount===null||requiredDesignFleetSlots===null?null:fleetCount>=requiredDesignFleetSlots),
       capacityPerDay:dailyCapacity,cargoIconClass,cargoIconPath,
       distanceAuthority:source?.distanceAuthority||routeProfile?.provenance?.authority||'SCENARIO_LOGISTICS_DESIGN_ONLY',
-      timeAuthority:'VERSIONED_VEHICLE_SPEED_LOADING_UNLOADING_AND_INFRASTRUCTURE_QUALITY',
-      capacityAuthority:fleetCount!==null?'COUNTRY_SITE_TRANSPORT_TYPE_COUNT_AND_VERSIONED_TRANSPORT_CATALOG':
-        source?.designCapacityPerTrip!=null?'ROUTE_LEG_PER_TRIP_CAPACITY':'VERSIONED_TRANSPORT_CATALOG'};
+      timeAuthority:isPipeline?'CONTINUOUS_PIPELINE_FLOW_TRANSIT_ESTIMATE':
+        (fleetCount===null?'ROUTE_DESIGN_CAPACITY_ETA_ESTIMATE_NOT_ACTUAL_FLEET_COUNT':'VERSIONED_PROFILE_AND_CONFIGURED_FLEET_COUNT'),
+      capacityAuthority:isPipeline?
+        (lineCapacityPerDay!==null&&fleetCount!==null?'CONFIGURED_PIPELINE_LINES_AND_PER_LINE_CAPACITY':
+          'PIPELINE_CORRIDOR_CAPACITY_LINE_COUNT_NOT_ESTIMATED'):
+        (fleetCount!==null?'COUNTRY_SITE_TRANSPORT_TYPE_COUNT_AND_VERSIONED_TRANSPORT_CATALOG':
+          source?.designCapacityPerTrip!=null?'ROUTE_LEG_PER_TRIP_CAPACITY':'VERSIONED_TRANSPORT_CATALOG')};
   });
   const declaredCapacity=num(plan.capacityBottleneckPerDay);
   const capacities=legs.map(leg=>num(leg.capacityPerDay)).filter(value=>value!==null&&value>=0);
-  const capacityPerDay=Math.max(0,Math.min(declaredCapacity!==null&&declaredCapacity>0?declaredCapacity:Infinity,
+  const capacityPerDay=Math.max(0,Math.min(declaredCapacity!==null?declaredCapacity:Infinity,
     capacities.length?Math.min(...capacities):Infinity));
-  return{status:'READY',legs,totalDistanceKm:Number(totalDistanceKm.toFixed(6)),
-    travelTimeDays:Number(totalDays.toFixed(6)),capacityPerDay:Number.isFinite(capacityPerDay)?capacityPerDay:null,
+  const fleetCountsByMode=Object.create(null),requiredTripsByMode=Object.create(null),requiredPipelineLinesByMode=Object.create(null);
+  legs.forEach(leg=>{
+    if(leg.mode==='pipeline'){
+      requiredPipelineLinesByMode.pipeline=leg.requiredLineCount;
+    }else{
+      requiredTripsByMode[leg.mode]=(requiredTripsByMode[leg.mode]||0)+(num(leg.requiredTrips)||0);
+    }
+    if(!Object.prototype.hasOwnProperty.call(fleetCountsByMode,leg.mode)){
+      fleetCountsByMode[leg.mode]={count:leg.fleetCount,configured:leg.fleetCountConfigured===true};
+    }
+  });
+  const modeSummaryMap=Object.create(null);
+  for(const leg of legs){
+    const mode=leg.mode;
+    if(!modeSummaryMap[mode])modeSummaryMap[mode]={transportMode:mode,legCount:0,distanceKm:0,
+      designFleetSlots:0,requiredTrips:0,requiredDesignFleetSlots:0,capacityPerDay:null,
+      fleetCount:leg.fleetCount,configured:leg.fleetCountConfigured===true,requiredLineCount:null};
+    const row=modeSummaryMap[mode];
+    row.legCount+=1;
+    row.distanceKm=Number((row.distanceKm+(num(leg.distanceKm)||0)).toFixed(6));
+    if(num(leg.requiredDesignFleetSlots)!==null)row.designFleetSlots+=num(leg.requiredDesignFleetSlots);
+    if(num(leg.requiredTrips)!==null)row.requiredTrips+=num(leg.requiredTrips);
+    if(num(leg.requiredDesignFleetSlots)!==null)row.requiredDesignFleetSlots=Math.max(row.requiredDesignFleetSlots,num(leg.requiredDesignFleetSlots));
+    row.capacityPerDay=row.capacityPerDay===null?leg.capacityPerDay:Math.min(row.capacityPerDay,leg.capacityPerDay);
+    if(mode==='pipeline')row.requiredLineCount=leg.requiredLineCount;
+  }
+  const transportModeSummary=Object.values(modeSummaryMap);
+  const totalDesignFleetSlots=legs.reduce((sum,leg)=>sum+(num(leg.requiredDesignFleetSlots)||0),0);
+  const configuredFleetUnitCount=Object.entries(fleetCountsByMode).reduce((sum,[mode,row])=>
+    sum+(mode!=='pipeline'&&row.configured?Math.max(0,num(row.count)||0):0),0);
+  const configuredPipelineLineCount=fleetCountsByMode.pipeline?.configured?
+    Math.max(0,num(fleetCountsByMode.pipeline.count)||0):null;
+  const unconfiguredTransportModeCount=Object.values(fleetCountsByMode).filter(row=>!row.configured).length;
+  const zeroFleetModes=legs.filter(leg=>leg.fleetCount===0).map(leg=>leg.mode);
+  const blockedByZeroFleet=zeroFleetModes.length>0;
+  const blockedPipelineModes=legs.filter(leg=>leg.mode==='pipeline'&&leg.fleetCount!==null&&
+    leg.fleetCount>0&&leg.lineCapacityPerDay===null).map(leg=>leg.mode);
+  const blockedByPipelineCapacity=blockedPipelineModes.length>0;
+  return{status:blockedByZeroFleet||blockedByPipelineCapacity?'BLOCKED':'READY',
+    reason:blockedByZeroFleet?'TRANSPORT_FLEET_UNAVAILABLE':
+      (blockedByPipelineCapacity?'PIPELINE_PER_LINE_CAPACITY_UNAVAILABLE':null),
+    legs,totalDistanceKm:Number(totalDistanceKm.toFixed(6)),distanceReconciliation,
+    travelTimeDays:blockedByZeroFleet||blockedByPipelineCapacity?null:Number(totalDays.toFixed(6)),
+    capacityPerDay:blockedByPipelineCapacity?null:(Number.isFinite(capacityPerDay)?capacityPerDay:null),
     quantityInCapacityUnits,quantityCapacityFactor:factor,
-    vehiclesByMode:legs.reduce((out,leg)=>{out[leg.mode]=(out[leg.mode]||0)+(num(leg.vehicleCount)||0);return out;},{}),
-    vehicleCount:legs.reduce((sum,leg)=>sum+(num(leg.vehicleCount)||0),0),
+    requiredTripsByMode,requiredPipelineLinesByMode,fleetCountsByMode,transportModeSummary,totalDesignFleetSlots,configuredFleetUnitCount,configuredPipelineLineCount,unconfiguredTransportModeCount,
+    routeType:String(plan.routeType||'').toUpperCase()==='TRUCK_TO_RAIL_TO_TRUCK'&&legs.length===1?String(legs[0].mode||'').toUpperCase()+'_ONLY':plan.routeType,
+    routeSelectionAuthority:String(plan.routeType||'').toUpperCase()==='TRUCK_TO_RAIL_TO_TRUCK'&&legs.length===1?'RESOURCE_RULE_PREFERRED_MODE_FROM_UNVERIFIED_INTERMODAL_TEMPLATE':'EXPLICIT_SITE_ROUTE_PROFILE',
+    routeLegCount:legs.length,distinctTransportModeCount:Object.keys(fleetCountsByMode).length,
+    vehiclesByMode:legs.filter(leg=>leg.mode!=='pipeline').reduce((out,leg)=>{out[leg.mode]=(out[leg.mode]||0)+(num(leg.vehicleCount)||0);return out;},{}),
+    vehicleCount:legs.filter(leg=>leg.mode!=='pipeline').reduce((sum,leg)=>sum+(num(leg.vehicleCount)||0),0),
+    etaAuthority:unconfiguredTransportModeCount?'ROUTE_DESIGN_CAPACITY_ETA_ESTIMATE_NOT_ACTUAL_FLEET_COUNT':'CONFIGURED_COUNTRY_SITE_TRANSPORT_TYPE_COUNTS',
     authority:'VERSIONED_TRANSPORT_CATALOG_AND_SITE_ROUTE_LEG_DATA'};
 }
 async function previewSiteTransport(input={}){
@@ -1576,78 +1703,227 @@ async function previewSiteTransport(input={}){
   return{...metrics,countryId:cid,siteId:sid,routeId:routeProfile.routeId||null,requestedQuantity:quantity,unit,
     individualVehicleIdsRequired:false,transportTypes:(metrics.legs||[]).map(leg=>({
       transportType:leg.transportMode,count:leg.fleetCount,requiredVehicleCount:leg.requiredVehicleCount,
+      requiredLineCount:leg.requiredLineCount,lineCapacityPerDay:leg.lineCapacityPerDay,
+      countUnit:leg.transportMode==='pipeline'?'PIPELINE_LINES':'TRANSPORT_VEHICLES',
       fleetCapacityPerDay:leg.fleetCapacityPerDay,capacityPerDay:leg.capacityPerDay,
       travelDays:leg.travelDays,fleetSufficiency:leg.fleetSufficiency,cargoIconClass:leg.cargoIconClass,cargoIconPath:leg.cargoIconPath
     }))};
 }
-function routeSegments(site,asset,resourceId,mode,countryId){
-  const cid=canonicalCountry(countryId),f=asset||{},access=Array.isArray(f.transportAccess)?f.transportAccess.map(tok):[];
-  const pref=(rules()[resourceId]?.preferredModes||[]).map(tok);
-  const chosen=tok(mode);
-  const distance=corridorDistance(site,f,chosen,resourceId);
-  const sameNode=String(f.siteId||f.locationNodeKey||'').toUpperCase()===String(site?.siteId||'').toUpperCase();
-  if(sameNode)return[{mode:'truck',distanceKm:5,edgeClass:'MINE_TO_SAME_SITE_FACTORY',sourceAuthority:'SIMULATED_NETWORK'}];
-  if(chosen==='pipeline')return[{mode:'pipeline',distanceKm:distance.distanceKm,edgeClass:'PIPELINE_CORRIDOR',sourceAuthority:distance.authority}];
-  if(chosen==='ship')return evenlySplitRouteDistance(distance.distanceKm,[
-    {mode:'truck',edgeClass:'MINE_TO_PORT',sourceAuthority:distance.authority},
-    {mode:'ship',edgeClass:'SEA_LANE',sourceAuthority:distance.authority},
-    {mode:'truck',edgeClass:'PORT_TO_FACTORY',sourceAuthority:distance.authority}
-  ]);
-  const baseRail=(chosen==='rail' && (access.includes('rail')||access.length===0))?[
-    {mode:'truck',edgeClass:'MINE_ACCESS_ROAD',sourceAuthority:distance.authority},
-    {mode:'rail',edgeClass:'HEAVY_RAIL_CORRIDOR',sourceAuthority:distance.authority},
-    {mode:'truck',edgeClass:'FACTORY_LAST_MILE',sourceAuthority:distance.authority}
-  ]:null;
-  if(baseRail){
-    const n=netState(cid),pad=n.infrastructure?.corridors?.PADMA_EAST_WEST;
-    if(cid==='BGD'&&baseRail.length>=3)baseRail.splice(1,0,{mode:'rail',edgeClass:pad?.status==='OPERATIONAL'?'PADMA_EAST_WEST_CROSSING_OPERATIONAL':'PADMA_EAST_WEST_CROSSING_BASELINE',sourceAuthority:pad?.status==='OPERATIONAL'?'INFRASTRUCTURE_PROJECT':'BASELINE_INFRASTRUCTURE'});
-    return evenlySplitRouteDistance(distance.distanceKm,baseRail);
+function routeSegments(site,asset,resourceId,mode,countryId,input={}){
+  const cid=canonicalCountry(countryId),f=asset||{},s=site||{};
+  const normalizeAccess=value=>normalizeTransportMode(value);
+  const access=Array.isArray(f.transportAccess)?f.transportAccess.map(normalizeAccess).filter(Boolean):[];
+  const preferred=(rules()[resourceId]?.preferredModes||[]).map(normalizeAccess).filter(Boolean);
+  let chosen=normalizeAccess(mode)||'truck';
+  const explicitMode=input.transportMode!==undefined&&input.transportMode!==null&&String(input.transportMode).trim()!=='';
+  // Explicit leg arrays for this exact source/destination pair are authoritative.
+  const normalizeRows=rows=>Array.isArray(rows)&&rows.length&&
+    rows.every(row=>row&&normalizeAccess(row.transportMode||row.mode));
+  const sourceLegRows=[
+    s.routePlan?.legs,s.logisticsRoutePlan?.legs,s.transportRoute?.legs,s.simulation?.transportRoute?.legs
+  ].find(normalizeRows);
+  const mapRows=rows=>rows.map((row,index)=>({
+    mode:normalizeAccess(row.transportMode||row.mode),
+    distanceKm:num(row.estimatedDistanceKm??row.distanceKm??row.distance??row.km),
+    designCapacityPerTrip:num(row.designCapacityPerTrip??row.payloadTonnes),
+    designCapacityPerDay:num(row.designCapacityPerDay),
+    designCapacityPerLinePerDay:num(row.designCapacityPerLinePerDay),
+    capacityPerLinePerDay:num(row.capacityPerLinePerDay),
+    lineCapacityPerDay:num(row.lineCapacityPerDay),
+    transferHours:num(row.transferHours??row.transferTimeHours)??0,
+    edgeClass:String(row.edgeClass||row.legType||row.routeLegType||('EXPLICIT_ROUTE_LEG_'+(index+1))),
+    sourceAuthority:String(row.distanceAuthority||row.sourceAuthority||row.authority||'EXPLICIT_ROUTE_PROFILE'),
+    routeLegId:row.legId||row.id||null
+  }));
+  if(sourceLegRows)return mapRows(sourceLegRows);
+  const sourceHasRouteArray=[s.transportRoute,s.simulation?.transportRoute]
+    .some(rows=>Array.isArray(rows)&&rows.length);
+  // Only consult factory-level leg templates if the source has no route definition.
+  // A source route array may contain a composite tag such as ROAD_RAIL, which must
+  // be resolved against the selected mode rather than replaced with generic factory legs.
+  if(!sourceHasRouteArray){
+    const factoryLegRows=[
+      f.routePlan?.legs,f.logisticsRoutePlan?.legs,f.transportRoute?.legs,f.simulation?.transportRoute?.legs
+    ].find(normalizeRows);
+    if(factoryLegRows)return mapRows(factoryLegRows);
   }
-  return[{mode:'truck',distanceKm:distance.distanceKm,edgeClass:'ROAD_CORRIDOR',sourceAuthority:distance.authority}];
+  // Prefer the source site's explicit warehouse/factory corridor. Factory-level
+  // transportAccess or legacy routes may list several available modes but do not prove
+  // those modes are legs on this specific journey.
+  const validRouteArrays=values=>values.filter(rows=>Array.isArray(rows)&&rows.length&&
+    rows.every(row=>row&&normalizeAccess(row.transportMode||row.mode)));
+  const sourceRouteArrays=validRouteArrays([s.transportRoute,s.simulation?.transportRoute]);
+  const factoryRouteArrays=validRouteArrays([f.transportRoute,f.simulation?.transportRoute]);
+  const routeContainsMode=rows=>rows.some(row=>normalizeAccess(row.transportMode||row.mode)===chosen);
+  const pickRouteArray=rows=>rows.find(rows=>rows.length>1&&routeContainsMode(rows))||
+    rows.find(rows=>normalizeAccess(rows[0]?.transportMode||rows[0]?.mode)===chosen)||
+    (!explicitMode?rows[0]:null);
+  // Once the source has a route record, do not replace it with a factory's generic
+  // transport-access list even if that list has more modes or legs.
+  const matchingArray=pickRouteArray(sourceRouteArrays)||
+    (sourceRouteArrays.length?null:pickRouteArray(factoryRouteArrays));
+  if(matchingArray){
+    return matchingArray.map((row,index)=>({
+      mode:normalizeAccess(row.transportMode||row.mode),
+      distanceKm:num(row.estimatedDistanceKm??row.distanceKm??row.distance??row.km),
+      designCapacityPerTrip:num(row.designCapacityPerTrip??row.payloadTonnes),
+      designCapacityPerDay:num(row.designCapacityPerDay),
+      designCapacityPerLinePerDay:num(row.designCapacityPerLinePerDay),
+      capacityPerLinePerDay:num(row.capacityPerLinePerDay),
+      lineCapacityPerDay:num(row.lineCapacityPerDay),
+      transferHours:num(row.transferHours??row.transferTimeHours)??0,
+      edgeClass:String(row.edgeClass||row.legType||row.routeLegType||('EXPLICIT_ROUTE_LEG_'+(index+1))),
+      sourceAuthority:String(row.distanceAuthority||row.sourceAuthority||row.authority||'EXPLICIT_ROUTE_PROFILE'),
+      routeLegId:row.legId||row.id||null
+    }));
+  }
+  if(access.length&&!access.includes(chosen)){
+    if(explicitMode)return[];
+    const fallback=preferred.find(candidate=>access.includes(candidate))||access[0];
+    if(!fallback)return[];
+    chosen=fallback;
+  }
+  const distance=corridorDistance(s,f,chosen,resourceId);
+  const sameNode=String(f.siteId||f.locationNodeKey||'').toUpperCase()===String(s.siteId||s.locationNodeKey||'').toUpperCase();
+  if(sameNode){
+    const localDistance=num(f.localTransferDistanceKm??s.localTransferDistanceKm);
+    return[{mode:chosen,distanceKm:localDistance===null?0:Math.max(0,localDistance),
+      edgeClass:'SAME_SITE_LOCAL_TRANSFER',sourceAuthority:localDistance===null?'SAME_SITE_ZERO_DISTANCE_ESTIMATE':'SITE_LOCAL_TRANSFER_DISTANCE'}];
+  }
+  const modeEdges={
+    truck:'ROAD_CORRIDOR',
+    rail:'HEAVY_RAIL_CORRIDOR',
+    ship:'SEA_LANE',
+    barge:'INLAND_WATERWAY_CORRIDOR',
+    pipeline:'PIPELINE_CORRIDOR'
+  };
+  if(!modeEdges[chosen])return[];
+  return[{mode:chosen,distanceKm:num(distance.distanceKm),
+    edgeClass:modeEdges[chosen],sourceAuthority:distance.authority||'SIMULATED_CORRIDOR_MODEL'}];
 }
 function buildRoute(site,asset,resourceId,requestedQuantity,input={}){
-  const cid=canonicalCountry(input.countryId||site?.countryId),mode=tok(input.transportMode||rules()[resourceId]?.preferredModes?.[0]||'truck');
-  const segments=routeSegments(site,asset,resourceId,mode,cid),quantity=Math.max(0,num(requestedQuantity)||0);
+  const cid=canonicalCountry(input.countryId||site?.countryId);
+  const mode=normalizeTransportMode(input.transportMode||rules()[resourceId]?.preferredModes?.[0]||'truck')||'truck';
+  const segments=routeSegments(site,asset,resourceId,mode,cid,input),quantity=Math.max(0,num(requestedQuantity)||0);
+  if(!segments.length)return{status:'BLOCKED',reason:'TRANSPORT_MODE_UNAVAILABLE_FOR_ROUTE',countryId:cid,
+    requestedTransportMode:mode,sourceSiteId:input.sourceSiteId||site?.siteId||null,routePath:[],vehiclePlan:[],
+    capacityAuthority:'NO_SUPPORTED_ROUTE_MODE',distanceAuthority:'NOT_AVAILABLE'};
+  if(segments.some(segment=>segment.distanceKm===null||segment.distanceKm===undefined||num(segment.distanceKm)===null||num(segment.distanceKm)<0)){
+    return{status:'BLOCKED',reason:'ROUTE_LEG_DISTANCE_UNAVAILABLE',countryId:cid,requestedTransportMode:mode,
+      sourceSiteId:input.sourceSiteId||site?.siteId||null,routePath:segments.map(x=>x.edgeClass),legs:clone(segments),vehiclePlan:[],
+      distanceAuthority:'EXPLICIT_ROUTE_DISTANCE_REQUIRED'};
+  }
   const unit=input.unit||'TONNES',capacityFactor=routeCapacityFactor(unit,input.quantityToCapacityFactor),cargoQuantity=quantity*capacityFactor;
+  const fleetSiteId=String(input.sourceSiteId||site?.siteId||'').trim();
   let totalDays=0,totalCost=0,limitingCapacity=Infinity,vehiclePlan=[];
   for(const seg of segments){
+    const isPipeline=seg.mode==='pipeline';
     const m=modeRules()[seg.mode]||modeRules().truck,iq=infraQuality(cid,seg.mode);
     const distance=Math.max(0,num(seg.distanceKm)||0),speedKmh=Math.max(1,num(m.speedKmh)||1);
     const loadHours=Math.max(0,num(m.loadHours)??0),unloadHours=Math.max(0,num(m.unloadHours)??0);
     const transferHours=Math.max(0,num(seg.transferHours??seg.transferTimeHours)??0);
     const travelHours=distance/speedKmh,qualityFactor=1+(1-Math.max(0,Math.min(1,iq.quality)))*.5;
-    const adjustedTravelHours=travelHours*qualityFactor,totalHours=adjustedTravelHours+loadHours+unloadHours+transferHours;
-    const days=totalHours/24,capacityPerDay=Math.max(0,iq.capacityPerDay*iq.quality),capacityPerTurn=capacityPerDay*daysPerTurn();
-    const payload=Math.max(.001,num(seg.designCapacityPerTrip)||num(m.payloadTonnes)||1);
+    const adjustedTravelHours=travelHours*qualityFactor;
+    const totalHours=adjustedTravelHours+loadHours+unloadHours+transferHours,days=totalHours/24;
+    const payload=isPipeline?null:Math.max(.001,num(seg.designCapacityPerTrip)||num(m.payloadTonnes)||1);
+    const storedFleet=fleetSiteId?storedTransportFleetRecord(cid,fleetSiteId,seg.mode):null;
+    const fleetCount=storedFleet?finiteCount(storedFleet.count):null;
+    const cycleHours=Math.max(1,(travelHours*2*qualityFactor)+loadHours+unloadHours+transferHours);
+    const lineCapacityValue=num(seg.designCapacityPerLinePerDay??seg.capacityPerLinePerDay??seg.lineCapacityPerDay);
+    const lineCapacityPerDay=isPipeline&&lineCapacityValue!==null&&lineCapacityValue>0?lineCapacityValue:null;
+    const infrastructureCapacityPerDay=Math.max(0,iq.capacityPerDay*iq.quality);
+    const routeDesignCapacityValue=num(seg.designCapacityPerDay);
+    const designCapacityPerDay=Math.max(0,routeDesignCapacityValue===null?infrastructureCapacityPerDay:routeDesignCapacityValue);
+    // A site route can carry an explicit capacity estimate even if a legacy save
+    // has no usable country-wide infrastructure profile. When both are positive,
+    // the physical infrastructure remains a bottleneck; when infrastructure is
+    // absent/zero, do not discard the positive capacity recorded on the corridor.
+    const corridorCapacityPerDay=routeDesignCapacityValue!==null&&routeDesignCapacityValue>0
+      ?(infrastructureCapacityPerDay>0?Math.min(infrastructureCapacityPerDay,routeDesignCapacityValue):routeDesignCapacityValue)
+      :infrastructureCapacityPerDay;
+    const requiredTrips=isPipeline?null:Math.ceil(cargoQuantity/payload);
+    const tripCycleDays=cycleHours/24;
+    const requiredLineCount=isPipeline&&lineCapacityPerDay!==null?
+      Math.max(1,Math.ceil(designCapacityPerDay/lineCapacityPerDay)):null;
+    const fleetCapacityPerDay=isPipeline?
+      (fleetCount!==null&&lineCapacityPerDay!==null?Number((fleetCount*lineCapacityPerDay).toFixed(6)):null):
+      (fleetCount===null?null:Number((fleetCount*payload*24/cycleHours).toFixed(6)));
+    const pipelineCapacityUnavailable=isPipeline&&fleetCount!==null&&fleetCount>0&&lineCapacityPerDay===null;
+    const capacityPerDay=pipelineCapacityUnavailable?null:(fleetCount===0?0:(fleetCapacityPerDay===null?
+      Math.min(corridorCapacityPerDay,designCapacityPerDay):
+      Math.min(corridorCapacityPerDay,designCapacityPerDay,fleetCapacityPerDay)));
+    const capacityPerTurn=capacityPerDay*daysPerTurn();
+    const tripWaves=isPipeline?null:(fleetCount===null?requiredTrips:(fleetCount>0?Math.ceil(requiredTrips/fleetCount):0));
+    const legTotalDays=isPipeline?(fleetCount===0?null:days):
+      (fleetCount===0?null:(tripWaves>0?days+Math.max(0,tripWaves-1)*tripCycleDays:0));
+    if(legTotalDays!==null)totalDays+=legTotalDays;
+    const units=isPipeline?null:requiredTrips;
     limitingCapacity=Math.min(limitingCapacity,capacityPerTurn);
-    totalDays+=days;totalCost+=cargoQuantity*distance*(num(m.costPerTonneKm)||.05);
-    const units=Math.ceil(cargoQuantity/payload);
-    vehiclePlan.push({mode:seg.mode,vehicle:m.vehicle,units,vehicleCount:units,payloadTonnes:payload,
-      distanceKm:Number(distance.toFixed(6)),speedKmh,loadHours,unloadHours,transferHours,
+    totalCost+=cargoQuantity*distance*(num(m.costPerTonneKm)||.05);
+    vehiclePlan.push({mode:seg.mode,vehicle:isPipeline?null:m.vehicle,units,vehicleCount:units,requiredTrips:units,
+      requiredVehicleCount:units,requiredLineCount,lineCapacityPerDay,fleetCount,
+      fleetCountConfigured:fleetCount!==null,tripWaves,tripCycleDays:isPipeline?null:Number(tripCycleDays.toFixed(6)),
+      estimatedLegTravelDays:legTotalDays===null?null:Number(legTotalDays.toFixed(6)),
+      payloadTonnes:payload,distanceKm:Number(distance.toFixed(6)),speedKmh,loadHours,unloadHours,transferHours,
       travelHours:Number(travelHours.toFixed(6)),adjustedTravelHours:Number(adjustedTravelHours.toFixed(6)),
-      travelDays:Number(days.toFixed(6)),capacityPerDay,capacityPerTurn,dispatchQuantity:Number(quantity.toFixed(6)),
-      edgeClass:seg.edgeClass,sourceAuthority:seg.sourceAuthority,
-      timeAuthority:'VERSIONED_VEHICLE_SPEED_LOADING_UNLOADING_AND_INFRASTRUCTURE_QUALITY'});
+      singleTripTravelDays:Number(days.toFixed(6)),travelDays:legTotalDays===null?null:Number(legTotalDays.toFixed(6)),
+      fleetCapacityPerDay,capacityPerDay,capacityPerTurn,designCapacityPerDay,
+      dispatchQuantity:Number(quantity.toFixed(6)),edgeClass:seg.edgeClass,sourceAuthority:seg.sourceAuthority,
+      routeLegId:seg.routeLegId||null,
+      capacityAuthority:isPipeline?
+        (lineCapacityPerDay!==null&&fleetCount!==null?'CONFIGURED_PIPELINE_LINES_AND_PER_LINE_CAPACITY':'PIPELINE_CORRIDOR_CAPACITY_LINE_COUNT_NOT_ESTIMATED'):
+        (fleetCount===null?'UNCONFIGURED_SIMULATION_CAPACITY_FALLBACK':'COUNTRY_SITE_TRANSPORT_TYPE_COUNT'),
+      timeAuthority:isPipeline?'CONTINUOUS_PIPELINE_FLOW_TRANSIT_ESTIMATE':
+        (fleetCount===null?'ROUTE_DESIGN_CAPACITY_ETA_ESTIMATE_NOT_ACTUAL_FLEET_COUNT':'VERSIONED_PROFILE_AND_CONFIGURED_FLEET_COUNT')});
   }
-  const dispatchQuantity=Math.min(quantity,Math.max(0,limitingCapacity/capacityFactor));
-  const path=vehiclePlan.map(x=>x.edgeClass),etaTurn=turn()+Math.max(1,Math.ceil(totalDays/daysPerTurn()));
+  const blockedByPipelineCapacity=vehiclePlan.some(leg=>leg.mode==='pipeline'&&
+    leg.fleetCountConfigured&&leg.fleetCount>0&&leg.lineCapacityPerDay===null);
+  const dispatchQuantity=blockedByPipelineCapacity?0:Math.min(quantity,Math.max(0,limitingCapacity/capacityFactor));
+  const hasZeroFleet=vehiclePlan.some(leg=>leg.fleetCountConfigured&&leg.fleetCount===0);
+  const estimatedTotalDays=hasZeroFleet||blockedByPipelineCapacity?null:totalDays;
+  const path=vehiclePlan.map(x=>x.edgeClass),etaTurn=estimatedTotalDays===null?null:turn()+Math.max(1,Math.ceil(estimatedTotalDays/daysPerTurn()));
   const routeSourceSiteId=input.sourceSiteId||site?.siteId||null;
   const routeSourceNode=input.sourceNode||nodeToken(input.sourceNodeType||'MINE',cid,site?.siteId);
-  const route={status:dispatchQuantity>0?'PLANNED':'BLOCKED',routeId:'IR:'+h32(JSON.stringify({cid,site:routeSourceSiteId,sourceNode:routeSourceNode,factory:asset?.id||asset?.assetId||asset?.projectId,resourceId,mode})).toString(16),
+  const routeModes=[...new Set(vehiclePlan.map(x=>x.mode))];
+  const effectiveMode=routeModes.length===1?routeModes[0]:(routeModes.includes('ship')?'ship':routeModes.includes('rail')?'rail':routeModes[0]||mode);
+  const fleetCountsByMode=vehiclePlan.reduce((out,leg)=>{
+    if(!Object.prototype.hasOwnProperty.call(out,leg.mode))out[leg.mode]={count:leg.fleetCount,configured:leg.fleetCountConfigured};
+    return out;
+  },{});
+  const requiredTripsByMode=vehiclePlan.filter(leg=>leg.mode!=='pipeline').reduce((out,leg)=>{
+    out[leg.mode]=(out[leg.mode]||0)+(num(leg.requiredTrips)||0);return out;
+  },{});
+  const configuredPipelineLineCount=fleetCountsByMode.pipeline?.configured?
+    Math.max(0,num(fleetCountsByMode.pipeline.count)||0):null;
+  const vehicleCount=vehiclePlan.filter(leg=>leg.mode!=='pipeline').reduce((sum,leg)=>sum+(num(leg.vehicleCount)||0),0);
+  const vehiclesByMode=vehiclePlan.filter(leg=>leg.mode!=='pipeline').reduce((out,leg)=>{
+    out[leg.mode]=(out[leg.mode]||0)+(num(leg.vehicleCount)||0);return out;
+  },{});
+  const configuredFleetUnitCount=Object.entries(fleetCountsByMode).reduce((sum,[type,row])=>
+    sum+(type!=='pipeline'&&row.configured?Math.max(0,num(row.count)||0):0),0);
+  const requiredPipelineLinesByMode=Object.fromEntries(vehiclePlan.filter(leg=>leg.mode==='pipeline')
+    .map(leg=>['pipeline',leg.requiredLineCount]));
+  const capacityUsesConfiguredFleet=vehiclePlan.some(leg=>leg.fleetCountConfigured&&
+    (leg.mode!=='pipeline'||leg.lineCapacityPerDay!==null));
+  const route={status:dispatchQuantity>0?'PLANNED':'BLOCKED',routeId:'IR:'+h32(JSON.stringify({cid,site:routeSourceSiteId,sourceNode:routeSourceNode,factory:asset?.id||asset?.assetId||asset?.projectId,resourceId,mode:effectiveMode,path})).toString(16),
     countryId:cid,sourceSiteId:routeSourceSiteId,sourceWarehouseId:input.sourceWarehouseId||null,sourceNode:routeSourceNode,
     destinationFactoryId:String(asset?.id||asset?.assetId||asset?.projectId||''),destinationNode:nodeToken('FACTORY',cid,asset?.id||asset?.assetId||asset?.projectId),
-    resourceId,requestedQuantity:quantity,dispatchQuantity:Number(dispatchQuantity.toFixed(6)),unit,transportMode:mode,
+    resourceId,requestedQuantity:quantity,dispatchQuantity:Number(dispatchQuantity.toFixed(6)),unit,transportMode:effectiveMode,
     routePath:path,legs:vehiclePlan,totalDistanceKm:Number(vehiclePlan.reduce((sum,leg)=>sum+leg.distanceKm,0).toFixed(6)),
-    travelTimeDays:Number(totalDays.toFixed(6)),etaTurn,etaYear:year()+Math.floor(totalDays/365),vehiclePlan,
+    travelTimeDays:estimatedTotalDays===null?null:(Number.isFinite(estimatedTotalDays)?Number(estimatedTotalDays.toFixed(6)):null),etaTurn,etaYear:estimatedTotalDays===null?null:year()+Math.floor(estimatedTotalDays/365),vehiclePlan,
     totalCost:Number(totalCost.toFixed(4)),capacityQuantityFactor:capacityFactor,capacityQuantityUnit:'CARGO_CAPACITY_UNITS',
-    vehicleCount:vehiclePlan.reduce((sum,leg)=>sum+leg.vehicleCount,0),
-    vehiclesByMode:vehiclePlan.reduce((out,leg)=>{out[leg.mode]=(out[leg.mode]||0)+leg.vehicleCount;return out;},{}),
-    capacityAuthority:'INFRASTRUCTURE_MODEL',distanceAuthority:vehiclePlan.every(x=>x.sourceAuthority==='SITE_SIMULATION_ROUTE')?'SITE_SIMULATION_ROUTE':'SIMULATED_CORRIDOR_MODEL',
+    vehicleCount,vehiclesByMode,requiredTripsByMode,requiredPipelineLinesByMode,fleetCountByMode:fleetCountsByMode,
+    configuredFleetUnitCount,totalFleetUnitsConfigured:configuredFleetUnitCount,configuredPipelineLineCount,
+    routeLegCount:vehiclePlan.length,distinctTransportModeCount:routeModes.length,
+    capacityAuthority:capacityUsesConfiguredFleet?'CONFIGURED_FLEET_AND_INFRASTRUCTURE':
+      (vehiclePlan.some(leg=>leg.mode==='pipeline')?'PIPELINE_CORRIDOR_CAPACITY_WITHOUT_PER_LINE_THROUGHPUT':'INFRASTRUCTURE_MODEL'),
+    distanceAuthority:vehiclePlan.every(x=>x.sourceAuthority==='SITE_SIMULATION_ROUTE')?'SITE_SIMULATION_ROUTE':'SIMULATED_CORRIDOR_MODEL',
     crossBorderRequired:canonicalCountry(asset?.countryId||cid)!==cid,crossBorderAllowed:false,
-    statusReason:dispatchQuantity>0?'ROUTE_CAPACITY_AVAILABLE':'ROUTE_CAPACITY_ZERO'};
+    reason:blockedByPipelineCapacity?'PIPELINE_PER_LINE_CAPACITY_UNAVAILABLE':null,
+    statusReason:blockedByPipelineCapacity?'PIPELINE_PER_LINE_CAPACITY_UNAVAILABLE':
+      (dispatchQuantity>0?'ROUTE_CAPACITY_AVAILABLE':'ROUTE_CAPACITY_ZERO')};
   return route;
 }
-
 function planShipment(input={}){
   const cid=canonicalCountry(input.countryId),site=siteById(input.siteId)||input.site;
   if(!site?.siteId)return{status:'BLOCKED',reason:'SITE_NOT_FOUND'};
@@ -1681,21 +1957,40 @@ function planShipment(input={}){
   if(!candidates.length)return{status:'BLOCKED',reason:'NO_MATCHING_FACTORY',countryId:cid,siteId:site.siteId,resourceId:rid};
   const ordered=candidates.sort((a,b)=>String(a.asset?.priority??999)-String(b.asset?.priority??999));
   let best=null,policyBlockedRoute=null;
+  const routeAttempts=[];
   const warehouseId='WH-'+cid+'-RAW';
-  const siteRoute=(site.simulation?.transportRoute||[])[0]||{};
+  // Use the extraction flow's immutable site snapshot for the downstream corridor.
+  // The live canonical site row may not carry the route-to-factory fields saved when
+  // the mine batch was created; losing them falls back to a fabricated corridor.
+  const snapshot=input.routeSiteSnapshot;
+  const routeSite=snapshot&&String(snapshot.siteId||'')===String(site.siteId||'')&&
+    canonicalCountry(snapshot.countryId||cid)===cid?snapshot:site;
+  const siteRoute=(routeSite.simulation?.transportRoute||[])[0]||{};
   const routeType=tok(siteRoute.mode||siteRoute.routeType||'');
   const preferredMode=tok(input.transportMode||rules()[rid]?.preferredModes?.[0]||'truck');
   const routeMode=routeType.includes('pipeline')?'pipeline':routeType.includes('sea')?'ship':routeType.includes('rail')?'rail':preferredMode;
   const routeDistance=Math.max(0,num(siteRoute.distanceKm??siteRoute.distance??siteRoute.km)||0);
+  const declaredSiteRoute=siteLogisticsRouteFor(cid,site.siteId);
+  const routeDesignCapacityPerDay=num(siteRoute.designCapacityPerDay??siteRoute.routeCapacityPerDay??
+    routeSite.logistics?.transport?.routeCapacityPerDay??declaredSiteRoute?.routePlan?.capacityBottleneckPerDay);
   const routeOrigin={siteId:warehouseId,countryId:cid,siteName:cid+' sovereign raw warehouse',siteType:'RAW_MATERIAL_WAREHOUSE',
-    simulation:{transportRoute:routeDistance>0?[{...clone(siteRoute),mode:routeMode,transportMode:routeMode,distanceKm:routeDistance,authority:'SITE_SIMULATION_ROUTE',countryIsolationKey:cid}]:[]}};
+    simulation:{transportRoute:routeDistance>0?[{...clone(siteRoute),mode:routeMode,transportMode:routeMode,distanceKm:routeDistance,
+      ...(routeDesignCapacityPerDay!==null&&routeDesignCapacityPerDay>0?{designCapacityPerDay:routeDesignCapacityPerDay}:{}),
+      authority:'SITE_SIMULATION_ROUTE',countryIsolationKey:cid}]:[]}};
   for(const c of ordered.slice(0,16)){
     const route=buildRoute(routeOrigin,c.asset,rid,input.quantity,{countryId:cid,sourceSiteId:site.siteId,sourceWarehouseId:warehouseId,sourceNode:'WAREHOUSE:'+cid+':RAW',sourceNodeType:'WAREHOUSE',transportMode:input.transportMode,unit:input.unit});
+    const routeAttempt={factoryId:String(c.asset?.id||c.asset?.assetId||c.asset?.projectId||''),
+      status:route.status,reason:route.reason||route.statusReason||null,transportMode:route.transportMode||route.mode||null,
+      totalDistanceKm:route.totalDistanceKm??null,dispatchQuantity:route.dispatchQuantity??null,
+      routePath:Array.isArray(route.routePath)?route.routePath.slice():[],distanceAuthority:route.distanceAuthority||null,
+      capacityAuthority:route.capacityAuthority||null};
     const blockade=strategicPolicy?.isRouteBlocked?.(cid,{resourceId:rid,transportMode:route.transportMode||route.mode,routeId:route.routeId,siteId:site.siteId,factoryId:String(c.asset?.id||c.asset?.assetId||c.asset?.projectId||'')});
-    if(blockade?.blocked){policyBlockedRoute=blockade;continue;}
+    if(blockade?.blocked){policyBlockedRoute=blockade;routeAttempts.push({...routeAttempt,policyReason:blockade.reason||'ROUTE_BLOCKED'});continue;}
+    routeAttempts.push(routeAttempt);
     if(route.status==='PLANNED' && (!best||route.travelTimeDays<best.route.travelTimeDays))best={candidate:c,route};
   }
-  if(!best)return{status:'BLOCKED',reason:policyBlockedRoute?.reason||'NO_USABLE_TRANSPORT_ROUTE',policy:policyBlockedRoute||null,candidates:ordered.length};
+  if(!best)return{status:'BLOCKED',reason:policyBlockedRoute?.reason||'NO_USABLE_TRANSPORT_ROUTE',
+    policy:policyBlockedRoute||null,candidates:ordered.length,routeAttempts};
   if(best.route.crossBorderRequired&&!input.tradeContractId)return{status:'BLOCKED',reason:'CROSS_BORDER_CONTRACT_REQUIRED',route:best.route};
   const result={status:'PLANNED',countryId:cid,siteId:site.siteId,resourceId:rid,factoryId:String(best.candidate.asset?.id||best.candidate.asset?.assetId||best.candidate.asset?.projectId),recipe:best.candidate.recipe,route:best.route};
   emit('OMEGA_RESOURCE_FACTORY_ROUTE_PLANNED',cid,result);
@@ -1884,6 +2179,7 @@ function dispatchResidualSiteBatches(c){
     };
     const sent=dispatchShipment({countryId:cid,siteId:site.siteId,resourceId:flow.resourceId,quantity:remaining,
       unit:flow.unit||source.unit||'TONNES',transportMode:flow.route?.transportMode||site.simulation?.transportRoute?.[0]?.mode||undefined,
+      routeSiteSnapshot:flow.mineLogisticsRouteId?flow.siteSnapshot:undefined,
       factoryId:flow.factoryId,batchId,occurrenceKey:flow.occurrenceKey,warehouseId:flow.warehouseId||source.warehouseId||('WH-'+cid+'-RAW')});
     if(flow.mineLogisticsRouteId)flow.lastFactoryResidualDispatchTurn=turn();
     else flow.lastResidualDispatchTurn=turn();
@@ -1910,6 +2206,9 @@ function dispatchResidualSiteBatches(c){
         etaTurn:sent.shipment.etaTurn,residualOf:(flow.shipmentIds||[]).length>1?flow.shipmentIds[flow.shipmentIds.length-2]:null});
     }else{
       const reason=sent.reason||'RESIDUAL_SHIPMENT_BLOCKED';
+      flow.lastFactoryResidualDispatchDiagnostic={turn:turn(),status:sent.status||null,reason,
+        candidates:sent.candidates??sent.plan?.candidates??null,
+        routeAttempts:Array.isArray(sent.routeAttempts)?sent.routeAttempts.slice(0,8):Array.isArray(sent.plan?.routeAttempts)?sent.plan.routeAttempts.slice(0,8):[]};
       const waitForCapacity=String(reason).toUpperCase()==='TRANSPORT_CAPACITY_EXHAUSTED';
       addFlowStage(flow,'TRANSPORT',waitForCapacity?'AWAITING_CAPACITY':'RESIDUAL_BLOCKED',{reason,remainingQuantity:remaining});
       flow.lastResidualBlockReason=waitForCapacity?null:reason;

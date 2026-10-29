@@ -1269,3 +1269,328 @@
     align-items: flex-start;
   }
 }
+
+
+/* Resource logistics route nodes and count-based fleet ledger. */
+.omega-v2-resource-premium .omega-v2-logistics-svg--asset {
+  display: block;
+  width: 36px;
+  height: 36px;
+  max-width: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 0 4px rgba(44, 209, 255, .46));
+}
+.omega-v2-resource-premium .omega-v2-logistics-node-art {
+  align-items: center;
+  display: flex;
+  flex: 0 0 44px;
+  height: 44px;
+  justify-content: center;
+  width: 44px;
+}
+.omega-v2-resource-premium .omega-v2-logistics-fleet-overview,
+.omega-v2-resource-premium .omega-v2-logistics-fleet-summary {
+  background: linear-gradient(145deg, rgba(13, 29, 48, .98), rgba(6, 16, 30, .98));
+  border: 1px solid rgba(58, 190, 231, .32);
+  box-shadow: inset 0 1px 0 rgba(222, 247, 255, .06), 0 0 13px rgba(23, 158, 205, .1);
+  min-width: 0;
+}
+.omega-v2-resource-premium .omega-v2-logistics-fleet-overview {
+  margin: 0 0 16px;
+  padding: 14px;
+}
+.omega-v2-resource-premium .omega-v2-logistics-fleet-summary {
+  border-radius: 12px;
+  margin-top: 12px;
+  padding: 11px;
+}
+.omega-v2-resource-premium .omega-v2-logistics-fleet-heading {
+  align-items: flex-start;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.omega-v2-resource-premium .omega-v2-logistics-fleet-heading h2 {
+  color: #e6f6ff;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: .025em;
+  line-height: 1.35;
+  margin: 4px 0;
+}
+.omega-v2-resource-premium .omega-v2-logistics-fleet-heading p,
+.omega-v2-resource-premium .omega-v2-logistics-fleet-note {
+  color: #91aabd;
+  font-size: 10px;
+  line-height: 1.45;
+  margin: 4px 0 0;
+}
+.omega-v2-resource-premium .omega-v2-logistics-fleet-heading > strong {
+  color: #91efff;
+  font-size: 10px;
+  text-align: right;
+}
+.omega-v2-resource-premium .omega-v2-logistics-fleet-grid {
+  display: grid;
+  gap: 7px;
+  grid-template-columns: repeat(auto-fit, minmax(106px, 1fr));
+  min-width: 0;
+}
+.omega-v2-resource-premium .omega-v2-logistics-fleet-mode {
+  background: linear-gradient(150deg, rgba(19, 46, 67, .9), rgba(9, 23, 39, .95));
+  border: 1px solid rgba(72, 148, 180, .35);
+  border-radius: 8px;
+  box-shadow: inset 0 1px 0 rgba(230, 249, 255, .035);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+  padding: 8px;
+}
+.omega-v2-resource-premium .omega-v2-logistics-fleet-mode > span {
+  color: #9eb8cb;
+  font-size: 9px;
+  font-weight: 750;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+.omega-v2-resource-premium .omega-v2-logistics-fleet-mode > strong {
+  color: #e7f8ff;
+  font-size: 12px;
+  font-weight: 850;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+.omega-v2-resource-premium .omega-v2-logistics-fleet-mode > small {
+  color: #7fa1b7;
+  font-size: 8px;
+  line-height: 1.35;
+}
+.omega-v2-resource-premium .omega-v2-logistics-fleet-foot {
+  border-top: 1px solid rgba(83, 152, 183, .2);
+  color: #9cb5c7;
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 9px;
+  gap: 7px 16px;
+  line-height: 1.4;
+  margin-top: 9px;
+  padding-top: 8px;
+}
+.omega-v2-resource-premium .omega-v2-logistics-fleet-foot strong {
+  color: #dff8ff;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+
+/* Per-mine transport totals: vehicles, trains, ships and pipelines are separate counters. */
+.omega-v2-resource-premium .omega-v2-logistics-svg--place {
+  height: 34px;
+  width: 34px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 5px rgba(52, 215, 255, .36));
+}
+.omega-v2-resource-premium .omega-v2-logistics-mode-grid,
+.omega-v2-resource-premium .omega-v2-logistics-leg-list {
+  display: grid;
+  gap: 7px;
+  margin-top: 10px;
+  min-width: 0;
+}
+.omega-v2-resource-premium .omega-v2-logistics-mode-row,
+.omega-v2-resource-premium .omega-v2-logistics-leg-row {
+  align-items: center;
+  background: linear-gradient(145deg, rgba(14, 32, 48, .96), rgba(5, 16, 28, .98));
+  border: 1px solid rgba(63, 185, 221, .25);
+  border-radius: 9px;
+  box-shadow: inset 0 1px rgba(255, 255, 255, .045), 0 0 9px rgba(23, 162, 203, .08);
+  display: flex;
+  gap: 10px;
+  min-width: 0;
+  padding: 8px 9px;
+}
+.omega-v2-resource-premium .omega-v2-logistics-mode-icon,
+.omega-v2-resource-premium .omega-v2-logistics-leg-row > img {
+  background: linear-gradient(145deg, #eff8fb, #b9cbd5);
+  border: 1px solid rgba(112, 226, 247, .65);
+  border-radius: 7px;
+  box-shadow: 0 0 10px rgba(39, 201, 242, .16), inset 0 1px rgba(255, 255, 255, .7);
+  flex: 0 0 44px;
+  height: 34px;
+  object-fit: contain;
+  padding: 3px;
+  width: 44px;
+}
+.omega-v2-resource-premium .omega-v2-logistics-mode-copy,
+.omega-v2-resource-premium .omega-v2-logistics-leg-row > div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+.omega-v2-resource-premium .omega-v2-logistics-mode-copy strong,
+.omega-v2-resource-premium .omega-v2-logistics-leg-row strong {
+  color: #e9f8ff;
+  font-size: 10px;
+  font-weight: 850;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+.omega-v2-resource-premium .omega-v2-logistics-mode-copy span,
+.omega-v2-resource-premium .omega-v2-logistics-leg-row span {
+  color: #9fb9c9;
+  font-size: 9px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 420px) {
+  .omega-v2-resource-premium .omega-v2-logistics-mode-row,
+  .omega-v2-resource-premium .omega-v2-logistics-leg-row { gap: 7px; padding: 7px; }
+  .omega-v2-resource-premium .omega-v2-logistics-mode-icon,
+  .omega-v2-resource-premium .omega-v2-logistics-leg-row > img { flex-basis: 36px; height: 30px; width: 36px; }
+}
+
+
+/* Logistics route counts and icons: actual fleet settings stay separate from design estimates. */
+.omega-v2-resource-premium .omega-v2-logistics-svg--mode {
+  display: block; width: 46px; height: 34px; max-width: 100%; object-fit: contain;
+  border: 1px solid rgba(121, 231, 255, .62); border-radius: 6px;
+  background: linear-gradient(145deg, #f0f7fb, #a7bdca);
+  box-shadow: 0 0 10px rgba(38, 203, 245, .2); padding: 2px;
+}
+.omega-v2-resource-premium .omega-v2-logistics-route-icons {
+  align-items: center; display: flex; flex-wrap: wrap; gap: 4px;
+  justify-content: center; max-width: 100%; min-width: 0;
+}
+.omega-v2-resource-premium .omega-v2-logistics-route-leg-icon {
+  align-items: center; display: flex; flex: 0 1 48px; flex-direction: column;
+  gap: 2px; min-width: 0;
+}
+.omega-v2-resource-premium .omega-v2-logistics-route-leg-icon img {
+  background: linear-gradient(145deg, #f1f7fa, #a7bdca);
+  border: 1px solid rgba(108, 218, 247, .55); border-radius: 5px;
+  box-shadow: 0 0 7px rgba(43, 192, 235, .16);
+  height: 28px; max-width: 100%; object-fit: contain; padding: 2px; width: 40px;
+}
+.omega-v2-resource-premium .omega-v2-logistics-route-leg-icon small {
+  color: #8faec2; font-size: 7px; line-height: 1.2;
+  overflow-wrap: anywhere; text-align: center;
+}
+.omega-v2-resource-premium .omega-v2-logistics-fleet-heading {
+  align-items: flex-start; display: flex; flex-wrap: wrap; gap: 8px 14px;
+  justify-content: space-between; margin-bottom: 10px;
+}
+.omega-v2-resource-premium .omega-v2-logistics-fleet-heading h2 {
+  color: #e8f8ff; font-size: 13px; font-weight: 820; line-height: 1.35; margin: 4px 0;
+}
+.omega-v2-resource-premium .omega-v2-logistics-fleet-heading p,
+.omega-v2-resource-premium .omega-v2-logistics-fleet-note {
+  color: #8eacbf; font-size: 9px; line-height: 1.45; margin: 4px 0 0;
+}
+.omega-v2-resource-premium .omega-v2-logistics-fleet-heading > strong {
+  color: #96efff; font-size: 9px; line-height: 1.4; text-align: right;
+}
+.omega-v2-resource-premium .omega-v2-logistics-overview-grid,
+.omega-v2-resource-premium .omega-v2-logistics-fleet-grid {
+  display: grid; gap: 7px; grid-template-columns: repeat(auto-fit, minmax(122px, 1fr)); min-width: 0;
+}
+.omega-v2-resource-premium .omega-v2-logistics-overview-grid {
+  grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+}
+.omega-v2-resource-premium .omega-v2-logistics-fleet-mode,
+.omega-v2-resource-premium .omega-v2-logistics-overview-mode {
+  align-items: flex-start;
+  background: linear-gradient(150deg, rgba(20, 47, 67, .92), rgba(7, 21, 36, .97));
+  border: 1px solid rgba(76, 160, 191, .33); border-radius: 8px;
+  box-shadow: inset 0 1px rgba(236, 251, 255, .045), 0 0 7px rgba(22, 160, 202, .05);
+  display: flex; gap: 8px; min-width: 0; padding: 8px;
+}
+.omega-v2-resource-premium .omega-v2-logistics-fleet-mode-icon,
+.omega-v2-resource-premium .omega-v2-logistics-overview-mode-icon {
+  background: linear-gradient(145deg, #eef7fb, #a9bfcc);
+  border: 1px solid rgba(108, 222, 247, .58); border-radius: 6px;
+  box-shadow: inset 0 1px rgba(255,255,255,.72), 0 0 8px rgba(37, 199, 237, .16);
+  flex: 0 0 42px; height: 30px; object-fit: contain; padding: 2px; width: 42px;
+}
+.omega-v2-resource-premium .omega-v2-logistics-fleet-mode-copy,
+.omega-v2-resource-premium .omega-v2-logistics-overview-mode > div {
+  display: grid; gap: 3px; min-width: 0;
+}
+.omega-v2-resource-premium .omega-v2-logistics-fleet-mode-copy > span,
+.omega-v2-resource-premium .omega-v2-logistics-overview-mode > div > span {
+  color: #a4bece; font-size: 9px; font-weight: 760; line-height: 1.3; overflow-wrap: anywhere;
+}
+.omega-v2-resource-premium .omega-v2-logistics-fleet-mode-copy > strong,
+.omega-v2-resource-premium .omega-v2-logistics-overview-mode > div > strong {
+  color: #e8f9ff; font-size: 11px; font-weight: 850; line-height: 1.25; overflow-wrap: anywhere;
+}
+.omega-v2-resource-premium .omega-v2-logistics-fleet-mode-copy > small,
+.omega-v2-resource-premium .omega-v2-logistics-overview-mode > div > small {
+  color: #7fa2b7; font-size: 8px; line-height: 1.35; overflow-wrap: anywhere;
+}
+@media (max-width: 540px) {
+  .omega-v2-resource-premium .omega-v2-logistics-route-card .omega-v2-logistics-path {
+    gap: 5px; grid-template-columns: minmax(0, 1fr) minmax(65px, .9fr) minmax(0, 1fr);
+  }
+  .omega-v2-resource-premium .omega-v2-logistics-route-leg-icon { flex-basis: 38px; }
+  .omega-v2-resource-premium .omega-v2-logistics-route-leg-icon img { height: 25px; width: 34px; }
+  .omega-v2-resource-premium .omega-v2-logistics-node-copy strong { font-size: 9px; }
+  .omega-v2-resource-premium .omega-v2-logistics-overview-grid,
+  .omega-v2-resource-premium .omega-v2-logistics-fleet-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+
+/* Collapsible per-mine count editor. Zero means none; blank keeps a count unknown/unchanged. */
+.omega-v2-resource-premium .omega-v2-logistics-fleet-editor {
+  border-top: 1px solid rgba(71, 168, 202, .22);
+  margin-top: 10px;
+  padding-top: 8px;
+}
+.omega-v2-resource-premium .omega-v2-logistics-fleet-editor > summary {
+  color: #9feeff;
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 800;
+  list-style-position: inside;
+  padding: 5px 0;
+}
+.omega-v2-resource-premium .omega-v2-logistics-count-grid {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
+  margin: 8px 0 10px;
+}
+.omega-v2-resource-premium .omega-v2-logistics-count-field {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.omega-v2-resource-premium .omega-v2-logistics-count-field > span {
+  color: #a9c3d2;
+  font-size: 9px;
+  font-weight: 760;
+  line-height: 1.3;
+}
+.omega-v2-resource-premium .omega-v2-logistics-count-field > input {
+  background: linear-gradient(180deg, rgba(4, 18, 31, .98), rgba(8, 28, 44, .98));
+  border: 1px solid rgba(77, 175, 209, .4);
+  border-radius: 7px;
+  box-shadow: inset 0 1px rgba(255,255,255,.035);
+  color: #eafaff;
+  font-size: 12px;
+  min-height: 34px;
+  min-width: 0;
+  padding: 7px 9px;
+  width: 100%;
+}
+.omega-v2-resource-premium .omega-v2-logistics-count-field > input:focus-visible {
+  border-color: #68e7ff;
+  box-shadow: 0 0 0 2px rgba(47, 205, 243, .16), 0 0 10px rgba(47, 205, 243, .18);
+  outline: none;
+}
+.omega-v2-resource-premium .omega-v2-logistics-fleet-editor form > button {
+  min-height: 34px;
+  width: 100%;
+}

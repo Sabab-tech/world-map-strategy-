@@ -80,3 +80,18 @@ test("canonical gallery groups only the 21 active factory icons with thin catego
  assert.match(html,/class="factory-category-divider"/);
  assert.doesNotMatch(html,/35 canonical factory types/);
 });
+
+
+test("mine and warehouse logistics nodes are registered as separate offline SVG assets",()=>{
+ const files=manifest.logisticsNodeAssets;
+ assert.deepEqual(files.map(x=>x.id),["mine-site","warehouse-node"]);
+ assert.equal(files[0].file,"logistics/mine-site.svg");
+ assert.equal(files[1].file,"logistics/warehouse-node.svg");
+ readSvg(files[0].file,files[0].id,files[0].label);
+ readSvg(files[1].file,files[1].id,files[1].label);
+ const offline=fs.readFileSync(path.join(root,"omega-offline-map-sw.js"),"utf8");
+ for(const row of files)assert.ok(offline.includes('"./assets/omega-industrial-icons-v1/'+row.file+'"'),row.id+" must be precached for offline launch");
+ assert.equal(manifest.summary.resourceIconCount,42);
+ assert.equal(manifest.summary.factoryIconCount,21);
+ assert.equal(manifest.summary.totalIconCount,63,"logistics nodes do not change the canonical resource/factory totals");
+});
