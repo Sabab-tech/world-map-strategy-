@@ -13,7 +13,7 @@ test("resource icon manifest is complete, local, unique and integrated with Reso
   const manifest = json("assets/omega-industrial-icons-v1/manifest.json");
   assert.equal(manifest.resources.length, 42, "preserve all 42 existing resource SVG records");
   assert.equal(manifest.factories.length, 21, "preserve the canonical 21 factory icon records");
-  assert.equal(manifest.transportVariants.length, 17, "register cargo-specific aggregate transport SVGs");
+  assert.equal(manifest.transportVariants.length, 20, "register cargo-specific aggregate transport SVGs");
   assert.equal(new Set(manifest.transportVariants.map((item) => item.file)).size, manifest.transportVariants.length);
   for (const icon of manifest.transportVariants) {
     const expected = "assets/omega-industrial-icons-v1/" + icon.file;
