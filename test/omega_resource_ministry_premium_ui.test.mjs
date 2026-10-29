@@ -186,6 +186,26 @@ test("Resource Logistics shows configured per-site route cards and keeps Current
       capacityUnit: "RAW_CARGO_TONNES_PER_DAY"
     }
   };
+  const pipelineRoute = {
+    routeId: "ROUTE_TST_GAS_PIPELINE",
+    siteId: "TST-GAS-PIPELINE-03",
+    countryId: "TST",
+    siteName: "Test Gas Pipeline",
+    resourceId: "natural_gas",
+    resourceIconKey: "natural_gas",
+    destination: { warehouseId: "WH-TST-RAW" },
+    routePlan: {
+      routeType: "PIPELINE",
+      routeStatus: "SIMULATED_PLAN_COMPLETE_ENGINE_BINDING_PENDING",
+      dispatchStatus: "NOT_DISPATCHABLE_DATA_ONLY_PHASE",
+      legs: [{ transportMode: "pipeline", estimatedDistanceKm: 150, designCapacityPerDay: 500,
+        designCapacityUnit: "MMCF_PER_DAY" }],
+      estimatedRouteDistanceKm: 150,
+      plannedTransitDays: 1,
+      capacityBottleneckPerDay: 500,
+      capacityUnit: "MMCF_PER_DAY"
+    }
+  };
   const sandbox = {
     OmegaResourceIndustrialCatalogData: json("resource_industrial_catalog_v1.json"),
     fetch: async (url) => {
@@ -200,7 +220,7 @@ test("Resource Logistics shows configured per-site route cards and keeps Current
         }) };
       }
       if (name === "resource_site_logistics_routes_v1_part_02.json") {
-        return { ok: true, json: async () => ({ routes: [route, legacyGoldRoute] }) };
+        return { ok: true, json: async () => ({ routes: [route, legacyGoldRoute, pipelineRoute] }) };
       }
       throw new Error("Unexpected logistics asset request: " + name);
     }
@@ -249,6 +269,9 @@ test("Resource Logistics shows configured per-site route cards and keeps Current
   assert.match(root.innerHTML, /Mine Site Route Plans/);
   assert.match(root.innerHTML, /Test Coal Mine/);
   assert.match(root.innerHTML, /Test Gold Mine/);
+  assert.match(root.innerHTML, /Test Gas Pipeline/);
+  assert.match(root.innerHTML, /Design need unavailable/,
+    "pipeline line needs must remain unknown without per-line capacity data");
   assert.match(root.innerHTML, /data-logistics-mode-chain="truck"/,
     "a generic gold truck-rail-truck template must display gold's preferred available truck mode");
   assert.doesNotMatch(root.innerHTML, /data-logistics-mode-chain="truck,rail,truck"/,
