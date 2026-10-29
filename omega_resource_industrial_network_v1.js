@@ -1503,9 +1503,9 @@ function resolveSiteRouteLegs(routeProfile){
   const speed=Math.max(1,num(profile.speedKmh)||1),loadHours=Math.max(0,num(profile.loadHours)||0),unloadHours=Math.max(0,num(profile.unloadHours)||0);
   const cycleHours=(2*totalDistance/speed)+loadHours+unloadHours;
   const flow=num(plan.capacityBottleneckPerDay)??num(reference?.designCapacityPerDay);
-  const payload=num(reference?.designCapacityPerTrip)??num(profile.payloadTonnes);
-  const requiredDesignFleetSlots=flow!==null&&flow>0&&payload!==null&&payload>0&&cycleHours>0?
-    Math.max(1,Math.ceil((flow/payload)*cycleHours/24)):0;
+  const payload=chosen==='pipeline'?null:(num(reference?.designCapacityPerTrip)??num(profile.payloadTonnes));
+  const requiredDesignFleetSlots=chosen==='pipeline'?null:(flow!==null&&flow>0&&payload!==null&&payload>0&&cycleHours>0?
+    Math.max(1,Math.ceil((flow/payload)*cycleHours/24)):0);
   return[{
     ...clone(reference),
     legId:'ROUTE_'+String(routeProfile?.siteId||routeProfile?.routeId||'MINE')+'_COMMODITY_MODE_ONLY',
