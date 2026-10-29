@@ -633,7 +633,10 @@ test("logistics cards expose mine/warehouse SVGs and per-mode fleet counts using
     assert.match(root.innerHTML, /data-omega-v2-logistics-leg-icon="ship"/);
     assert.match(root.innerHTML, /data-transport-mode-summary="truck"/);
     assert.match(root.innerHTML, /data-transport-mode-summary="ship"/);
-    assert.doesNotMatch(root.innerHTML, /data-transport-mode-summary="rail"/);
+    assert.match(root.innerHTML, /data-transport-mode-summary="rail"/);
+    assert.match(root.innerHTML, /data-transport-mode-summary="barge"/);
+    assert.match(root.innerHTML, /data-transport-mode-summary="pipeline"/);
+    assert.match(root.innerHTML, /No route leg/);
     assert.match(root.innerHTML, /Design need: 4 units/);
     assert.match(root.innerHTML, /Design need: 1 units/);
     assert.match(root.innerHTML, /Registered: 2 units/);

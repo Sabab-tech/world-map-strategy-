@@ -999,10 +999,13 @@
           '<div class="omega-v2-logistics-leg-copy"><strong>Leg '+fmt(index+1)+' · '+esc(logisticsModeLabel(mode))+'</strong><span>'+(legDistance===null?'Distance not recorded':esc(fmt(legDistance)+' km'))+' · '+(legCapacity===null?'Capacity not recorded':esc(fmt(legCapacity)+(legCapacityUnit?' '+legCapacityUnit:'')))+'</span>' +
           '<small>Design need: '+(required===null?'Not calculable':esc(fmt(required)+' '+logisticsModeUnitLabel(mode)))+'</small></div></div>';
       }).join('');
-      var modeMarkup=Object.keys(modes).map(function(mode){
-        var item=modes[mode],fleet=transportFleetRow(snapshot,mode),configured=!!(fleet&&fleet.configured===true&&numberOrNull(fleet.count)!==null);
+      var modeOrder=['truck','rail','ship','barge','pipeline'];
+      Object.keys(modes).forEach(function(mode){if(modeOrder.indexOf(mode)<0)modeOrder.push(mode);});
+      var modeMarkup=modeOrder.map(function(mode){
+        var item=modes[mode]||{mode:mode,knownNeed:0,unknownNeed:0,legCount:0};
+        var fleet=transportFleetRow(snapshot,mode),configured=!!(fleet&&fleet.configured===true&&numberOrNull(fleet.count)!==null);
         var recorded=configured?esc(fmt(fleet.count)+' '+logisticsModeUnitLabel(mode)):snapshot&&snapshot.status==='READY'?'Not configured':'Unavailable';
-        var need=item.unknownNeed===0?esc(fmt(item.knownNeed)+' '+logisticsModeUnitLabel(mode)):(item.knownNeed>0?esc('Known need: '+fmt(item.knownNeed)+' '+logisticsModeUnitLabel(mode)+' · '+fmt(item.unknownNeed)+' leg(s) uncalculated'):'Not calculable');
+        var need=item.legCount===0?'No route leg':item.unknownNeed===0?esc(fmt(item.knownNeed)+' '+logisticsModeUnitLabel(mode)):(item.knownNeed>0?esc('Known need: '+fmt(item.knownNeed)+' '+logisticsModeUnitLabel(mode)+' · '+fmt(item.unknownNeed)+' leg(s) uncalculated'):'Not calculable');
         var controls=canManage?'<div class="omega-v2-logistics-fleet-controls" data-omega-v2-fleet-control data-site-id="'+esc(siteId)+'" data-transport-mode="'+esc(mode)+'"><label><span>Change count</span><input type="number" min="1" max="1000000" step="1" value="1" data-omega-v2-fleet-count aria-label="Number of '+esc(logisticsModeUnitLabel(mode))+' to add or remove"></label><button type="button" class="omega-v2-button omega-v2-button--quiet" data-omega-v2-fleet-action="add">Add</button><button type="button" class="omega-v2-button omega-v2-button--quiet" data-omega-v2-fleet-action="remove">Remove</button></div>':'';
         return '<div class="omega-v2-logistics-mode-row" data-transport-mode-summary="'+esc(mode)+'"><span class="omega-v2-logistics-mode-art"><img src="'+esc(logisticsTransportAsset(mode,resource))+'" alt="" aria-hidden="true" loading="lazy" decoding="async"></span><div class="omega-v2-logistics-mode-copy"><strong>'+esc(logisticsModeLabel(mode))+'</strong><span>Registered: '+recorded+'</span><small>Calculated design need: '+need+'</small></div>'+controls+'</div>';
       }).join('');
