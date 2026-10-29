@@ -503,7 +503,7 @@ const capacityLedgerTurn=Math.max(
 context.Omega.Simulation.clock.turn=capacityLedgerTurn;
 // Industrial ledgers use the shared Game simulation state as the canonical turn source.
 context.Game.state.simulation.turn=capacityLedgerTurn;
-context.Game.state.transport.BGD.infrastructure.roads.capacityPerDay=11000/30;
+context.Game.state.transport.BGD.infrastructure.roads.capacityPerDay=11000;
 context.Game.state.transport.BGD.infrastructure.roads.quality=1;
 const firstCapacityShipment=N.dispatchShipment({countryId:'BGD',siteId:'SITE_BGD_COAL_01',resourceId:'coal',quantity:5000,transportMode:'rail'});
 assert.equal(firstCapacityShipment.status,'DISPATCHED',JSON.stringify(firstCapacityShipment));
