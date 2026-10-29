@@ -375,7 +375,10 @@ const pilbaraWarehouseReceipt=ausAfterMineArrival.warehouse.receipts.find(x=>Str
 assert.equal(pilbaraWarehouseReceipt?.status,'RECEIVED');
 const pilbaraFactoryShipment=(ausAfterMineArrival.industrialNetwork?.shipments||[]).find(x=>
   String(x.batchId)===String(pilbaraPipeline.batchId)&&x.shipmentType==='RAW_TO_FACTORY'&&x.status==='IN_TRANSIT');
-assert.ok(pilbaraFactoryShipment,'the warehouse receipt must trigger the separate warehouse-to-factory leg');
+assert.ok(pilbaraFactoryShipment,'the warehouse receipt must trigger the separate warehouse-to-factory leg; shipments='+
+  JSON.stringify((ausAfterMineArrival.industrialNetwork?.shipments||[]).filter(x=>String(x.batchId)===String(pilbaraPipeline.batchId)))+
+  '; flow='+JSON.stringify((ausAfterMineArrival.industrialNetwork?.siteFlowLedger||[]).find(x=>String(x.batchId)===String(pilbaraPipeline.batchId)))+
+  '; routeProfile='+JSON.stringify(industrialPipelineRuntime.loadSiteLogisticsRoutes ? await industrialPipelineRuntime.loadSiteLogisticsRoutes('AUS') : null));
 const factoryEta=Number(pilbaraFactoryShipment.etaTurn);
 advanceToGameTurn(globalThis.Game.state,factoryEta);
 const delivery=industrialPipelineRuntime.advanceShipments('AUS');
