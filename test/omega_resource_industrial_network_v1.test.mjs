@@ -160,7 +160,15 @@ assert.equal(plan.route.transportMode,'rail');
 assert.ok(plan.route.vehiclePlan.some(x=>x.mode==='rail'));
 assert.ok(plan.route.totalDistanceKm>0);
 assert.ok(plan.route.travelTimeDays>0);
-assert.ok(plan.route.vehiclePlan.every(x=>x.units>=1));
+assert.equal(Number(plan.route.legs.reduce((sum,leg)=>sum+(Number(leg.distanceKm)||0),0).toFixed(6)),
+  Number(plan.route.totalDistanceKm.toFixed(6)),
+  'the sum of every truck/train leg must equal the complete route distance');
+assert.ok(Math.abs(plan.route.legs.reduce((sum,leg)=>sum+(Number(leg.travelDays)||0),0)-plan.route.travelTimeDays)<0.00001,
+  'route time must reconcile with calculated per-leg travel, loading and unloading time within rounding tolerance');
+assert.ok(plan.route.vehiclesByMode.truck>0&&plan.route.vehiclesByMode.rail>0,
+  'multi-modal route must report the per-mode vehicle count from payload capacity');
+assert.ok(plan.route.vehiclePlan.every(x=>x.units===Math.ceil(plan.route.requestedQuantity/Math.max(.001,Number(x.payloadTonnes)||1))),
+  'planned vehicles must be derived from each mode load capacity');
 assert.equal(plan.route.crossBorderRequired,false);
 assert.equal(plan.route.sourceSiteId,'SITE_BGD_COAL_01','shipment retains the originating mine identity');
 assert.equal(plan.route.sourceWarehouseId,'WH-BGD-RAW','factory transport must start from the sovereign raw warehouse');
@@ -293,6 +301,13 @@ const siteRun=await N.executeSitePipeline({countryId:'BGD',siteId:'SITE_BGD_COPP
 assert.equal(siteRun.status,'IN_TRANSIT','a selected resource site must commit extraction and dispatch a real shipment record: '+JSON.stringify(siteRun));
 assert.equal(siteRun.extractionStatus,'COMMITTED');
 assert.equal(siteRun.batchId,'BATCH-E2E-COPPER');
+assert.ok(siteRun.shipment.route.travelTimeDays>0&&siteRun.shipment.route.travelTimeDays<1,
+  'mine-haul transit time must be calculated from distance/speed plus loading/unloading, not the manifest 1-day estimate');
+assert.equal(Number(siteRun.shipment.route.legs.reduce((sum,leg)=>sum+(Number(leg.distanceKm)||0),0).toFixed(6)),
+  Number(siteRun.shipment.route.totalDistanceKm.toFixed(6)),
+  'mine-haul distance must reconcile exactly to the stored route legs');
+assert.equal(siteRun.shipment.route.vehicleCount,Math.ceil(1200/5000),
+  'the test rail formation uses one train load for 1200 tonnes');
 assert.ok(siteRun.extractionPlanId,'industrial extraction planner must be part of the same site action');
 assert.ok(siteRun.shipmentId,'shipment must be persisted in the country industrial network');
 assert.equal(siteRun.factoryBootstrapStatus,'CREATED_SIMULATION_ONLY','fallback processing capacity must be clearly marked simulation-only');
