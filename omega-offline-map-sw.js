@@ -181,7 +181,7 @@ self.addEventListener("install", event => {
         const transportVariants = Array.isArray(factoryIconManifest.transportVariants) ? factoryIconManifest.transportVariants : [];
         for (const icon of transportVariants) {
           const file = String(icon && icon.file || "");
-          if (/^transport\\/variants\\/[a-z0-9-]+\\.svg$/.test(file)) {
+          if (/^transport\/variants\/[a-z0-9-]+\.svg$/.test(file)) {
             assets.add(new URL("./assets/omega-industrial-icons-v1/" + file, APP_BASE).href);
           }
         }
