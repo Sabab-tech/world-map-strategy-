@@ -635,8 +635,9 @@
     });
     return [...unique.values()].sort((a,b)=>String(a.siteName||a.name||a.depositName||a.siteId).localeCompare(String(b.siteName||b.name||b.depositName||b.siteId)));
   }
-  function siteRouteRows(country){
-    return siteRows(country).flatMap(site=>{
+  function siteRouteRows(country,siteRowsOverride){
+    const sourceSites=Array.isArray(siteRowsOverride)?siteRowsOverride:siteRows(country);
+    return sourceSites.flatMap(site=>{
       const src=site.sourceSiteRecord&&typeof site.sourceSiteRecord==='object'?site.sourceSiteRecord:{};
       const sim=site.simulation||src.simulation||{},log=site.logistics||src.logistics||{};
       const value=sim.transportRoute||sim.transportRoutes||site.transportRoute||log.routes||site.routes||src.transportRoute||src.routes||[];
@@ -889,7 +890,7 @@
       return card(id||'Unidentified batch',rid||'Resource not recorded','<div class="omega-rescc-grid2">'+kv('Quantity',qty)+kv('Unit',batch.unit)+kv('Warehouse',warehouse)+kv('Compatible factories',ids.length)+'</div>',
         actionButton('plan-shipment','Plan warehouse-to-factory route',{'batch-id':id,'resource-id':rid,quantity:qty,unit:batch.unit||'','warehouse-id':warehouse,'factory-ids':ids.join(',')},!(id&&rid&&warehouse&&ids.length&&g.Omega&&g.Omega.ResourceLogisticsRuntime&&g.Omega.ResourceLogisticsRuntime.planFromFactoryInput)));
     }).join('');
-    const routes=siteRouteRows(country),routeCards=routes.slice(0,200).map(x=>card(x.routeName||x.routeId||'Saved route profile','PROFILE ONLY · NOT DISPATCHED',
+    const routes=siteRouteRows(country,sites),routeCards=routes.slice(0,200).map(x=>card(x.routeName||x.routeId||'Saved route profile','PROFILE ONLY · NOT DISPATCHED',
       '<div class="omega-rescc-grid2">'+kv('Route ID',x.routeId)+kv('Site',x.siteName)+kv('Site ID',x.siteId)+kv('Transport mode',x.mode)+kv('From',x.from)+kv('To',x.to)+kv('Distance (km)',x.distanceKm)+kv('Route authority',x.authority)+'</div>'+
       '<p class="omega-rescc-note">A saved route definition is not a shipment or proof that material moved.</p>','')).join('');
     const shipmentCards=shipments.slice(-100).reverse().map(s=>card(s.shipmentId||s.routeId||'Shipment',s.status||s.deliveryStatus||'STATUS NOT RECORDED',
