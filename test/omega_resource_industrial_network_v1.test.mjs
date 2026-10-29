@@ -7,13 +7,14 @@ const testSiteLogisticsRoutes=[
   ['SITE_BGD_COAL_01','coal'],
   ['SITE_BGD_IRON_01','iron_ore'],
   ['SITE_BGD_IRON_02','iron_ore'],
-  ['SITE_BGD_COPPER_01','copper']
+  ['SITE_BGD_COPPER_01','copper'],
+  ['SITE_BGD_GAS_01','natural_gas']
 ].map(([siteId,resourceId])=>({
   countryId:'BGD',siteId,resourceId,routeId:'TEST_MINE_ROUTE:'+siteId,
   routePlan:{
-    routeType:resourceId==='coal'?'TRUCK_TO_RAIL_TO_TRUCK':'RAIL',
+    routeType:resourceId==='coal'?'TRUCK_TO_RAIL_TO_TRUCK':(resourceId==='natural_gas'?'PIPELINE':'RAIL'),
     routeStatus:'TEST_FIXTURE_SIMULATION_ONLY',
-    capacityBottleneckPerDay:120000,
+    capacityBottleneckPerDay:resourceId==='natural_gas'?1200:120000,
     estimatedRouteDistanceKm:100,
     plannedTransitDays:1,
     minimumTransitDays:1,
@@ -21,8 +22,10 @@ const testSiteLogisticsRoutes=[
       {sequence:1,transportMode:'truck',estimatedDistanceKm:20,designCapacityPerTrip:25,designCapacityPerDay:100,designCapacityUnit:'tonnes'},
       {sequence:2,transportMode:'rail',estimatedDistanceKm:60,designCapacityPerTrip:5000,designCapacityPerDay:120000,designCapacityUnit:'tonnes'},
       {sequence:3,transportMode:'truck',estimatedDistanceKm:20,designCapacityPerTrip:25,designCapacityPerDay:100,designCapacityUnit:'tonnes'}
+    ] : (resourceId==='natural_gas' ? [
+      {transportMode:'pipeline',estimatedDistanceKm:100,designCapacityPerDay:1200,designCapacityPerLinePerDay:400,designCapacityUnit:'tonnes'}
     ] : [{transportMode:'rail',estimatedDistanceKm:100,estimatedTravelHours:24,
-      designCapacityPerDay:120000,designCapacityUnit:'tonnes'}]
+      designCapacityPerDay:120000,designCapacityUnit:'tonnes'}])
   },
   quantityUnitBridge:{sourceProductionUnit:'tonnes',cargoCapacityUnit:'tonnes'},
   provenance:{authority:'TEST_FIXTURE_SIMULATION_ONLY'}
@@ -34,7 +37,7 @@ const context={
     schemaVersion:'1.0.0',datasetId:'TEST_SITE_LOGISTICS_ROUTES_BGD',
     authority:'TEST_FIXTURE_SIMULATION_ONLY',
     countryToPart:{BGD:1},
-    parts:[{part:1,file:'test_resource_site_logistics_routes_bgd.json',routeCount:4,countries:['BGD']}]
+    parts:[{part:1,file:'test_resource_site_logistics_routes_bgd.json',routeCount:5,countries:['BGD']}]
   },
   fetch:async()=>({ok:true,json:async()=>({schemaVersion:'1.0.0',routes:testSiteLogisticsRoutes})}),
   OmegaCanonicalIdentityRegistry:{
@@ -112,6 +115,15 @@ assert.equal(genericCoalPreview.legs[0].transportMode,'rail','coal route should 
 assert.equal(genericCoalPreview.legs[0].distanceKm,100,'single-mode conversion must preserve total estimated distance');
 assert.equal(genericCoalPreview.distinctTransportModeCount,1);
 assert.equal(genericCoalPreview.individualVehicleIdsRequired,false);
+const pipelineMinePreview=await N.previewSiteTransport({countryId:'BGD',siteId:'SITE_BGD_GAS_01',quantity:1000});
+assert.equal(pipelineMinePreview.status,'READY',JSON.stringify(pipelineMinePreview));
+assert.equal(pipelineMinePreview.routeLegCount,1);
+assert.equal(pipelineMinePreview.legs[0].transportMode,'pipeline');
+assert.equal(pipelineMinePreview.legs[0].requiredTrips,null,'mine pipeline routing must not create per-vehicle trips');
+assert.equal(pipelineMinePreview.legs[0].requiredLineCount,3,'mine pipeline lines derive from corridor flow and explicit per-line capacity');
+assert.equal(pipelineMinePreview.vehicleCount,0,'pipeline lines do not enter total vehicle count');
+assert.equal(pipelineMinePreview.configuredPipelineLineCount,null,'design line count stays separate from actual configured line count');
+assert.equal(pipelineMinePreview.transportTypes[0].countUnit,'PIPELINE_LINES');
 function advanceOneGameTurn(state){
   const sim=state.simulation||(state.simulation={});
   const step=Math.max(1,Math.round(Number(sim.daysPerTurn)||1));
