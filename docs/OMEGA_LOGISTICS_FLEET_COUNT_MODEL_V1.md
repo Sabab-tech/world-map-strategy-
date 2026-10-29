@@ -15,7 +15,7 @@ The existing `resource_industrial_catalog_v1.json` `transportModes` defines payl
 Whenever a country/site/mode count or transport profile changes, recalculate required loads, travel time, loading/unloading/transfer time, daily capacity and fleet sufficiency. Unknown fleet count is distinct from zero and from unlimited capacity.
 
 ## SVG coverage
-Fifteen local SVG assets cover truck, train, ship, barge and pipeline across coal/dry bulk, oil/liquid fuel, gas/LNG, ore/aggregate and general cargo. Metallic surfaces and cargo-specific accent lighting keep the icons visually consistent.
+Twenty-five cargo-specific SVG assets cover truck, train, ship, barge and pipeline across coal/dry bulk, oil/liquid fuel, gas/LNG, ore/aggregate and general cargo. Metallic surfaces and cargo-specific accent lighting keep the icons visually consistent.
 
 ## Authority
 - Performance profiles: `resource_industrial_catalog_v1.json` → `transportModes`
