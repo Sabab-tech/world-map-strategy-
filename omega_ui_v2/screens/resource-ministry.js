@@ -1073,8 +1073,8 @@
           source.productionRate !== undefined ? source.productionRate :
           source.outputRate !== undefined ? source.outputRate :
           source.quantity !== undefined ? source.quantity : source.value);
-        var rawUnit = String(source.rateUnit || source.productionRateUnit || source.dailyRateUnit ||
-          (annualObject && annualObject.unit) || source.productionUnit || source.unit || '').trim().toUpperCase();
+        var rawUnit = String(source.dailyRateUnit || source.rateUnit || source.productionRateUnit ||
+          source.productionUnit || source.unit || (annualObject && annualObject.unit) || '').trim().toUpperCase();
         var period = String(source.productionPeriod || source.ratePeriod || source.period ||
           source.timeBasis || source.measurementPeriod || '').trim().toUpperCase().replace(/[\s-]+/g, '_');
         var unit = rawUnit.replace(/\s*\/\s*/g, '_PER_').replace(/[\s-]+/g, '_');
@@ -1084,10 +1084,10 @@
         var unitMonth = /(?:_PER_MONTH|_MONTHLY|_MONTH)$/.test(unit) ||
           /^(?:PER_MONTH|MONTHLY|MONTH)$/.test(period);
         var explicitDaily = dailyValue !== null || /^(?:PER_DAY|DAILY|DAY)$/.test(period);
-        if (annualValue !== null) rate = annualValue;
+        if (annualValue !== null && dailyValue === null) rate = annualValue;
         if (rate === null || rate < 0 || !unit) return null;
         if (unitDay || explicitDaily) {
-          unit = unit.replace(/(?:_PER_DAY|_DAILY|_DAY)$/, '');
+          unit = unit.replace(/(?:_PER_DAY|_DAILY|_DAY|_PER_YEAR|_YEARLY|_ANNUAL|_YEAR|_PER_MONTH|_MONTHLY|_MONTH)$/, '');
           return { rate:rate, unit:logisticsPlanningUnit(unit + '_PER_DAY'),
             source:dailyValue !== null ? 'EXPLICIT_DAILY_PRODUCTION_RATE' : 'DECLARED_PER_DAY_UNIT' };
         }
