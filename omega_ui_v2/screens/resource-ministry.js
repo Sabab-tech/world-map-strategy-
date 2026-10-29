@@ -819,7 +819,7 @@
           ore:'train-ore-hopper.svg',general_cargo:'train-container-freight.svg'},
         ship:{dry_bulk:'ship-bulk-carrier.svg',liquid:'ship-oil-tanker.svg',gas:'ship-lng-carrier.svg',
           ore:'ship-ore-carrier.svg',general_cargo:'ship-container-carrier.svg'},
-        barge:{dry_bulk:'barge-inland-bulk.svg',liquid:'barge-liquid-tanker.svg'}
+        barge:{dry_bulk:'barge-inland-bulk.svg',liquid:'barge-liquid-tanker.svg',gas:'barge-gas-tanker.svg',ore:'barge-ore-carrier.svg',general_cargo:'barge-container-cargo.svg'}
       };
       if (mode === 'pipeline') return 'assets/omega-industrial-icons-v1/transport/pipeline.svg';
       var file = byMode[mode] && byMode[mode][cargo];
