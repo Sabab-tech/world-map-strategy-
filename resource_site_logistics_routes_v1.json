@@ -1,14 +1,14 @@
 {
   "schemaVersion": "1.0.0",
   "datasetId": "OMEGA_RESOURCE_SITE_LOGISTICS_ROUTES_V1",
-  "generatedAt": "2026-10-28",
+  "generatedAt": "2026-10-30",
   "authority": "SCENARIO_LOGISTICS_DESIGN_ONLY",
   "recordCount": 561,
   "uniqueSiteCount": 561,
   "countryCount": 193,
   "simulationOnly": true,
   "partitionStrategy": "DETERMINISTIC_COUNTRY_HASH; EACH COUNTRY IS KEPT IN ONE PART FOR SELECTED-COUNTRY LOADS",
-  "purpose": "Mine-to-country-raw-inventory route data foundation; transport runtime and assets are a separate phase.",
+  "purpose": "Mine-to-country raw-inventory routes with per-leg mode-specific design fleet math. Distances, rates and capacities remain scenario-only and are not verified real-world routes.",
   "sourceCoverage": {
     "canonicalRegistryRows": 315,
     "canonicalEligibleSiteRows": 301,
@@ -27,7 +27,8 @@
     "Batch stock must be reserved before dispatch and inventory credited only after an idempotent arrival receipt.",
     "Inactive, disputed, unverified or uncommissioned mines remain gated by site/runtime status.",
     "Every route resourceIconKey equals the canonical resourceId and resolves to an existing local resource SVG.",
-    "Truck, train, ship, barge and pipeline modes point to local SVG transport assets; no remote icons are required."
+    "Truck, train, ship, barge and pipeline modes point to local SVG transport assets; no remote icons are required.",
+    "Required design units are ceil(simulated site production per day / compatible per-leg design capacity per day); missing rates or incompatible units remain uncalculated instead of defaulting to one."
   ],
   "routeCountByMode": {
     "truck": 899,
@@ -918,5 +919,63 @@
       "VAT"
     ],
     "noMineRoutePolicy": "LOAD_SHARED_LOGISTICS_ENGINE_WITH_ZERO_REGISTERED_SITE_ROUTES; DO_NOT_INVENT_MINE_SITES"
+  },
+  "designFleetCalculation": {
+    "formula": "ceil(site simulation production / compatible leg capacity per unit per day)",
+    "sourceDatasetId": "OMEGA_RESOURCE_SITE_QUANTITY_COMPLETION_V1",
+    "authority": "SIMULATED_BASELINE_ONLY",
+    "simulationOnly": true,
+    "totalRoutes": 561,
+    "routesWithProductionRate": 305,
+    "routesWithoutProductionRate": 256,
+    "calculatedLegs": 540,
+    "uncalculableLegs": 820,
+    "calculatedDesignUnits": 578,
+    "calculatedDesignUnitsByMode": {
+      "pipeline": 21,
+      "ship": 10,
+      "truck": 393,
+      "rail": 154
+    },
+    "unknownLegsByMode": {
+      "truck": 544,
+      "rail": 221,
+      "ship": 11,
+      "pipeline": 43,
+      "barge": 1
+    },
+    "modeSummary": {
+      "truck": {
+        "legCount": 899,
+        "calculatedLegs": 355,
+        "unknownLegs": 544,
+        "designUnits": 393
+      },
+      "rail": {
+        "legCount": 375,
+        "calculatedLegs": 154,
+        "unknownLegs": 221,
+        "designUnits": 154
+      },
+      "pipeline": {
+        "legCount": 64,
+        "calculatedLegs": 21,
+        "unknownLegs": 43,
+        "designUnits": 21
+      },
+      "ship": {
+        "legCount": 21,
+        "calculatedLegs": 10,
+        "unknownLegs": 11,
+        "designUnits": 10
+      },
+      "barge": {
+        "legCount": 1,
+        "calculatedLegs": 0,
+        "unknownLegs": 1,
+        "designUnits": 0
+      }
+    },
+    "unknownPolicy": "Never substitute one vehicle or line when production/unit conversion is unavailable."
   }
 }
