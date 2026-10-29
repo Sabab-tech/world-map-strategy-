@@ -522,9 +522,11 @@ test("v2 Build opens an actionable plan and Start construction calls the authori
 });
 
 
-test("logistics cards expose an accessible route diagram with existing SVG cargo art", () => {
+test("logistics cards expose mine/warehouse SVGs and per-mode fleet counts using the capacity formula", async () => {
   const api = globalThis.OmegaUIV2ResourceMinistry;
   const priorGame = globalThis.Game;
+  const priorFetch = globalThis.fetch;
+  const priorNetwork = globalThis.OmegaResourceIndustrialNetwork;
   const shipment = {
     shipmentId: "SHIPMENT_VISUAL_TEST_01",
     resourceId: "coal",
@@ -545,6 +547,59 @@ test("logistics cards expose an accessible route diagram with existing SVG cargo
     querySelectorAll() { return []; },
     contains() { return true; }
   };
+  const route = {
+    siteId: "SITE_BGD_TEST_MINE",
+    countryId: "BGD",
+    siteName: "Test Mine",
+    resourceId: "coal",
+    destination: { warehouseId: "WH-BGD-RAW" },
+    planningProduction: { rate: 100, unit: "TONNES_PER_DAY", simulationOnly: true },
+    routePlan: {
+      estimatedRouteDistanceKm: 220,
+      plannedTransitDays: 1.5,
+      capacityBottleneckPerDay: 25,
+      capacityUnit: "RAW_CARGO_TONNES_PER_DAY",
+      legs: [
+        { sequence: 1, transportMode: "truck", estimatedDistanceKm: 20, designCapacityPerDay: 25, designCapacityUnit: "RAW_CARGO_TONNES_PER_DAY", requiredDesignFleetSlots: 4 },
+        { sequence: 2, transportMode: "ship", estimatedDistanceKm: 200, designCapacityPerDay: 250, designCapacityUnit: "RAW_CARGO_TONNES_PER_DAY", requiredDesignFleetSlots: 1 }
+      ]
+    }
+  };
+  const routeManifest = {
+    datasetId: "OMEGA_RESOURCE_SITE_LOGISTICS_ROUTES_V1",
+    simulationOnly: true,
+    countryToPart: { BGD: 1 },
+    parts: [{ part: 1, file: "resource_site_logistics_routes_v1_part_01.json" }]
+  };
+  const routeShard = { routes: [route] };
+  const fleetCounts = { truck: 2, rail: null, ship: 1, barge: null, pipeline: null };
+  const writes = [];
+  globalThis.fetch = async (url) => {
+    const value = String(url);
+    if (value.includes("resource_site_logistics_routes_v1.json") && !value.includes("_part_")) {
+      return { ok: true, json: async () => routeManifest };
+    }
+    if (value.includes("resource_site_logistics_routes_v1_part_01.json")) {
+      return { ok: true, json: async () => routeShard };
+    }
+    throw new Error("Unexpected route data request: " + value);
+  };
+  globalThis.OmegaResourceIndustrialNetwork = {
+    getTransportFleet({ countryId, siteId }) {
+      return {
+        status: "READY", countryId, siteId,
+        transportTypes: Object.entries(fleetCounts).map(([transportType, count]) => ({
+          transportType, count, configured: count !== null
+        })),
+        individualVehicleIdsRequired: false
+      };
+    },
+    setTransportFleet(input) {
+      writes.push(input);
+      fleetCounts[input.transportType] = input.count;
+      return { status: "APPLIED" };
+    }
+  };
   globalThis.Game = {
     state: {
       simulation: { turn: 10, session: { playerCountryId: "BGD" } },
@@ -560,22 +615,55 @@ test("logistics cards expose an accessible route diagram with existing SVG cargo
   try {
     const result = api.render(root, { countryId: "BGD", sites: [], tab: "logistics" });
     assert.equal(result.ok, true);
+    await new Promise((resolve) => setImmediate(resolve));
+    await new Promise((resolve) => setImmediate(resolve));
     assert.match(root.innerHTML, /omega-v2-logistics-card/);
     assert.match(root.innerHTML, /data-omega-v2-logistics-icon="origin"/);
+    assert.match(root.innerHTML, /data-omega-v2-logistics-icon="warehouse"/);
     assert.match(root.innerHTML, /data-omega-v2-logistics-icon="transport"/);
     assert.match(root.innerHTML, /data-omega-v2-logistics-icon="factory"/);
     assert.match(root.innerHTML, /data-omega-v2-resource-icon="coal"/);
     assert.match(root.innerHTML, /Sylhet Coal Mine/);
     assert.match(root.innerHTML, /Dhaka Steel Factory/);
-    assert.match(root.innerHTML, /Road/);
     assert.match(root.innerHTML, /8,200 TONNES/);
+    assert.match(root.innerHTML, /Transport inventory by mode/);
+    assert.match(root.innerHTML, /data-logistics-summary-mode="ship"/);
+    assert.match(root.innerHTML, /data-omega-v2-logistics-leg-icon="truck"/);
+    assert.match(root.innerHTML, /data-omega-v2-logistics-leg-icon="ship"/);
+    assert.match(root.innerHTML, /data-transport-mode-summary="truck"/);
+    assert.match(root.innerHTML, /data-transport-mode-summary="ship"/);
+    assert.doesNotMatch(root.innerHTML, /data-transport-mode-summary="rail"/);
+    assert.match(root.innerHTML, /Design need: 4 units/);
+    assert.match(root.innerHTML, /Design need: 1 units/);
+    assert.match(root.innerHTML, /Registered: 2 units/);
+    assert.match(root.innerHTML, /Registered total: 2 across 1 mine/);
     assert.match(root.innerHTML, /Turn 12/);
-    const css = cssText();
+    const css = read("omega_ui_v2/resource-ministry-premium.css");
     assert.match(css, /omega-v2-logistics-card::before/);
+    assert.match(css, /omega-v2-logistics-fleet-summary-grid/);
+    assert.match(css, /omega-v2-logistics-leg-row/);
     assert.match(css, /omega-v2-logistics-path/);
     assert.match(css, /input:focus-visible/);
     assert.match(css, /omega-v2-build-plan-fields/);
+
+    const button = {
+      getAttribute(name) { return name === "data-omega-v2-fleet-action" ? "add" : null; },
+      closest(selector) { return selector === "[data-omega-v2-fleet-control]" ? control : null; }
+    };
+    const control = {
+      getAttribute(name) {
+        return name === "data-site-id" ? "SITE_BGD_TEST_MINE" :
+          name === "data-transport-mode" ? "truck" : null;
+      },
+      querySelector() { return { value: "3" }; }
+    };
+    listeners.click({ target: { closest(selector) { return selector === "[data-omega-v2-fleet-action]" ? button : null; } } });
+    assert.equal(writes.length, 1, "the Add control must save through the existing fleet API");
+    assert.deepEqual(writes[0], { countryId: "BGD", siteId: "SITE_BGD_TEST_MINE", transportType: "truck", count: 5 });
   } finally {
     if (priorGame === undefined) delete globalThis.Game; else globalThis.Game = priorGame;
+    if (priorFetch === undefined) delete globalThis.fetch; else globalThis.fetch = priorFetch;
+    if (priorNetwork === undefined) delete globalThis.OmegaResourceIndustrialNetwork; else globalThis.OmegaResourceIndustrialNetwork = priorNetwork;
   }
 });
+
