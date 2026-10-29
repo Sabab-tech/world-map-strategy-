@@ -11,6 +11,12 @@ const expanded=read('resource_site_country_mineplay_batch_20261024_v1.json');
 const critical=read('resource_site_country_mineplay_critical_batch_20261024_v1.json');
 const legacy=read('resource_site_legacy_gameplay_expansion_part_6_v1.json');
 const iconManifest=read('assets/omega-industrial-icons-v1/manifest.json');
+const quantityCompletion=read('resource_site_quantity_completion_v1.json');
+const productionBySite=new Map(quantityCompletion.records.map(row=>[row.siteId,row.simulation?.production||null]));
+const planningUnit=value=>{
+ const u=String(value||'').trim().toUpperCase().replace(/\s+/g,'_');
+ return ({RAW_CARGO_TONNES_PER_DAY:'TONNES_PER_DAY',TONNE_PER_DAY:'TONNES_PER_DAY',TONNES_ORE_PER_DAY:'TONNES_PER_DAY',BBL_PER_DAY:'BARRELS_PER_DAY',BARREL_PER_DAY:'BARRELS_PER_DAY'})[u]||u;
+};
 const countryRoster=read('minister_country_roster_manifest_v1.json');
 const coreCountryIds=Object.keys(countryRoster.countries||{}).sort();
 const routedCountryIds=Object.keys(ds.countryToPart||{}).sort();
@@ -62,11 +68,24 @@ for(const partInfo of ds.parts){
   for(let i=0;i<r.routePlan.legs.length;i++){
    const l=r.routePlan.legs[i];assert.ok(modes.has(l.transportMode));assert.equal(l.sequence,i+1);
    assert.ok(l.estimatedDistanceKm>0&&l.estimatedTravelHours>0&&l.designCapacityPerDay>0&&l.designCapacityUnit);
-   assert.ok(r.routePlan.capacityBottleneckPerDay<=l.designCapacityPerDay);assert.equal(l.requiredDesignFleetSlots,1);assert.equal(l.actualBoundFleetUnits,null);assert.equal(l.assetBindingStatus,'NOT_YET_LINKED_TO_TRANSPORT_MINISTRY');assert.equal(l.status,'DESIGN_ONLY_NOT_DISPATCHABLE');
+   assert.ok(r.routePlan.capacityBottleneckPerDay<=l.designCapacityPerDay);
+   const rateRecord=productionBySite.get(r.siteId)||null,rate=Number(rateRecord?.rate),rateUnit=planningUnit(rateRecord?.unit||rateRecord?.rateUnit);
+   const rateIsValid=!!rateRecord&&Number.isFinite(rate)&&rate>=0&&!!rateUnit;
+   const capacity=Number(l.designCapacityPerDay),capacityUnit=planningUnit(l.designCapacityUnit);
+   const calculable=rateIsValid&&Number.isFinite(capacity)&&capacity>0&&!!capacityUnit&&capacityUnit===rateUnit;
+   const expectedRequired=calculable?Math.max(0,Math.ceil(rate/capacity)):null;
+   assert.equal(r.planningProduction&&Number.isFinite(Number(r.planningProduction.rate))?Number(r.planningProduction.rate):null,rateIsValid?rate:null,'planning baseline must only use the site simulation production record');
+   assert.equal(l.requiredDesignFleetSlots,expectedRequired,'required fleet slots must be calculated from site rate and compatible per-leg capacity for '+r.siteId+' '+l.transportMode);
+   assert.equal(l.designFleetCalculation?.requiredUnits,expectedRequired);
+   assert.equal(l.actualBoundFleetUnits,null);assert.equal(l.assetBindingStatus,'NOT_YET_LINKED_TO_TRANSPORT_MINISTRY');assert.equal(l.status,'DESIGN_ONLY_NOT_DISPATCHABLE');
    assert.equal(l.transportIconAssetPath,ds.transportIconAssets[l.transportMode].path);assert.equal(l.transportIconKey,ds.transportIconAssets[l.transportMode].assetId);
    const svg=fs.readFileSync(path.join(root,l.transportIconAssetPath),'utf8');assert.match(svg,/^<svg\b/);assert.ok(svg.includes('data-omega-icon-kind="transport"'));
    if(i>0)assert.equal(l.fromNodeId,r.routePlan.legs[i-1].toNodeId);
   }
+  const expectedRouteSlots=r.routePlan.legs.every(l=>l.requiredDesignFleetSlots!==null&&Number.isFinite(l.requiredDesignFleetSlots))
+   ?r.routePlan.legs.reduce((sum,l)=>sum+l.requiredDesignFleetSlots,0):null;
+  assert.equal(r.routePlan.designFleetSlots,expectedRouteSlots,'route-wide design count must preserve unknowns instead of inventing a number');
+  assert.equal(r.routePlan.designFleetCalculation?.status,expectedRouteSlots===null?'PARTIAL_OR_UNAVAILABLE':'CALCULATED');
  }
 }
 assert.equal(all.length,561);assert.deepEqual([...seen].sort(),[...sourceById.keys()].sort());assert.equal(Object.keys(ds.countryToPart).length,ds.countryCount);

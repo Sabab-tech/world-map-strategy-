@@ -80,3 +80,29 @@ test("canonical gallery groups only the 21 active factory icons with thin catego
  assert.match(html,/class="factory-category-divider"/);
  assert.doesNotMatch(html,/35 canonical factory types/);
 });
+
+
+test("logistics transport variants and mine/warehouse node icons are local, accessible SVGs",()=>{
+ assert.equal(manifest.transportVariants.length,20,"four vehicle modes need five cargo-specific SVGs each");
+ assert.deepEqual(Object.entries(manifest.summary.transportVariantsByMode).sort(),[["barge",5],["rail",5],["ship",5],["truck",5]].sort());
+ assert.equal(manifest.summary.logisticsNodeIconCount,2);
+ assert.equal(manifest.logisticsNodeIcons.length,2);
+ const ids=new Set();
+ for(const row of manifest.transportVariants){
+  assert.ok(row.id&&row.label&&row.file&&row.transportMode&&row.cargoClass);
+  assert.ok(!ids.has(row.id),"variant IDs must be unique");ids.add(row.id);
+  const file=path.join(assetRoot,row.file);assert.ok(fs.existsSync(file),row.file+" must exist");
+  const src=fs.readFileSync(file,"utf8");
+  assert.match(src,/^(?:<\?xml[^>]*>\s*)?<svg\b/,row.id+" needs an SVG root");
+  assert.match(src,/<\/svg>\s*$/,row.id+" needs a closing SVG root");
+  assert.match(src,/viewBox="0 0 128 128"/,row.id+" needs the shared icon viewBox");
+  assert.match(src,/aria-labelledby=/,row.id+" needs accessible SVG title and description");
+  assert.ok(src.includes('data-omega-icon-kind="transport"'),row.id+" needs the transport icon contract");
+  assert.doesNotMatch(src,/(?:href|src)=["']https?:\/\//i,row.id+" must not load remote content");
+ }
+ for(const row of manifest.logisticsNodeIcons){
+  assert.ok(row.id&&row.label&&row.file);
+  const src=readSvg(row.file,row.id,row.label);
+  assert.ok(src.includes('data-omega-icon-kind="logistics-node"'),row.id+" needs the logistics node icon contract");
+ }
+});
