@@ -902,8 +902,8 @@
     }
     var logisticsFleetViewCache = Object.create(null);
     var logisticsTransportModeMeta = {
-      truck: { label: 'Road trucks', unit: 'vehicles' },
-      rail: { label: 'Freight train sets', unit: 'sets' },
+      truck: { label: 'Road trucks', unit: 'trucks' },
+      rail: { label: 'Freight train sets', unit: 'train sets' },
       ship: { label: 'Cargo ships', unit: 'ships' },
       barge: { label: 'River barges', unit: 'barges' },
       pipeline: { label: 'Pipeline lines', unit: 'lines' }
@@ -923,6 +923,62 @@
       } catch (_) { result = null; }
       logisticsFleetViewCache[cacheKey] = result;
       return result;
+    }
+    function logisticsDesignFleetEstimate(route, legs, byMode) {
+      var plan = route && route.routePlan || {};
+      var routeFlow = numberOrNull(plan.capacityBottleneckPerDay);
+      var totals = Object.create(null);
+      safeArray(legs).forEach(function (leg) {
+        var mode = String(leg && (leg.transportMode || leg.mode) || '').toLowerCase();
+        if (!Object.prototype.hasOwnProperty.call(logisticsTransportModeMeta, mode)) return;
+        var profile = byMode && byMode[mode] || {};
+        var flow = routeFlow !== null ? routeFlow : numberOrNull(leg && leg.designCapacityPerDay);
+        var legCapacity = numberOrNull(leg && leg.designCapacityPerDay);
+        var payload = numberOrNull(leg && leg.designCapacityPerTrip);
+        if (payload === null) payload = numberOrNull(profile.payloadTonnes);
+        var distance = numberOrNull(leg && (leg.estimatedDistanceKm !== undefined ? leg.estimatedDistanceKm : leg.distanceKm));
+        var speed = numberOrNull(profile.speedKmh);
+        var loadHours = numberOrNull(profile.loadHours);
+        var unloadHours = numberOrNull(profile.unloadHours);
+        var transferHours = numberOrNull(leg && (leg.transferHours !== undefined ? leg.transferHours : leg.transferTimeHours));
+        var cycleHours = numberOrNull(leg && leg.cycleHoursForOneDesignVehicle);
+        var tripsPerDay = null, units = null, basis = '';
+        if (flow !== null && flow >= 0) {
+          if (mode === 'pipeline') {
+            if (flow === 0) { units = 0; basis = 'continuous-flow-zero'; }
+            else if (legCapacity !== null && legCapacity > 0) {
+              units = Math.max(1, Math.ceil(flow / legCapacity));
+              basis = 'route-flow-divided-by-line-capacity';
+            }
+          } else {
+            if (cycleHours === null && distance !== null && distance >= 0 && speed !== null && speed > 0) {
+              cycleHours = (2 * distance / speed) + Math.max(0, loadHours || 0) +
+                Math.max(0, unloadHours || 0) + Math.max(0, transferHours || 0);
+            }
+            if (flow === 0) { units = 0; tripsPerDay = 0; basis = 'zero-planned-flow'; }
+            else if (payload !== null && payload > 0 && cycleHours !== null && cycleHours > 0) {
+              tripsPerDay = flow / payload;
+              units = Math.max(1, Math.ceil((tripsPerDay * cycleHours) / 24));
+              basis = 'daily-flow-over-payload-times-round-trip-cycle';
+            }
+          }
+        }
+        if (!totals[mode]) totals[mode] = { estimatedUnits: 0, estimatedTripsPerDay: 0, hasTripRate: true,
+          available: true, legCount: 0, basis: [] };
+        var stat = totals[mode];
+        stat.legCount += 1;
+        stat.basis.push(basis || 'insufficient-route-or-catalog-data');
+        if (units === null || !Number.isFinite(units)) stat.available = false;
+        else stat.estimatedUnits += units;
+        if (tripsPerDay === null || !Number.isFinite(tripsPerDay)) stat.hasTripRate = false;
+        else stat.estimatedTripsPerDay += tripsPerDay;
+      });
+      Object.keys(totals).forEach(function (mode) {
+        var stat = totals[mode];
+        if (!stat.available) stat.estimatedUnits = null;
+        if (!stat.hasTripRate) stat.estimatedTripsPerDay = null;
+      });
+      return totals;
     }
     function logisticsIconMarkup(kind) {
       var assetPaths = {
@@ -949,35 +1005,44 @@
       var types = fleetReady ? fleet.transportTypes : [];
       var byMode = Object.create(null);
       types.forEach(function (row) { if (row && row.transportType) byMode[String(row.transportType).toLowerCase()] = row; });
-      var configuredModes = 0, configuredUnits = 0, unknownModes = 0;
+      var designByMode = logisticsDesignFleetEstimate(route, legs, byMode);
+      var configuredModes = 0, unknownModes = 0, designUnitsTotal = 0, designAvailableModes = 0;
+      var routeModes = [];
+      safeArray(legs).forEach(function (leg) {
+        var mode = String(leg && (leg.transportMode || leg.mode) || '').toLowerCase();
+        if (mode && routeModes.indexOf(mode) === -1) routeModes.push(mode);
+      });
       var modeCards = Object.keys(logisticsTransportModeMeta).map(function (mode) {
         var meta = logisticsTransportModeMeta[mode], row = byMode[mode];
         var count = row ? numberOrNull(row.count) : null;
         var configured = fleetReady && row && row.configured === true && count !== null && count >= 0;
-        if (configured) { configuredModes += 1; configuredUnits += count; }
-        else { unknownModes += 1; }
+        if (configured) configuredModes += 1;
+        else unknownModes += 1;
         var countLabel = configured ? fmt(count) + ' ' + meta.unit : (fleetReady ? 'Not configured' : 'Unknown');
+        var estimate = designByMode[mode] || null;
+        var estimateLabel = !routeModes.includes(mode) ? 'Not used by this route' :
+          (estimate && estimate.available ? 'Design need: ' + fmt(estimate.estimatedUnits) + ' ' + meta.unit : 'Design need unavailable');
+        if (estimate && estimate.available) {
+          designUnitsTotal += estimate.estimatedUnits;
+          designAvailableModes += 1;
+        }
+        var tripRate = estimate && estimate.estimatedTripsPerDay !== null ? ' · ' + fmt(Number(estimate.estimatedTripsPerDay.toFixed(4))) + ' trips/day' : '';
         return '<div class="omega-v2-logistics-fleet-mode" data-transport-mode="' + esc(mode) + '" data-fleet-configured="' +
-          (configured ? 'true' : 'false') + '"><span>' + esc(meta.label) + '</span><strong>' + esc(countLabel) + '</strong></div>';
+          (configured ? 'true' : 'false') + '" data-design-estimate-available="' + (estimate && estimate.available ? 'true' : 'false') +
+          '"><span>' + esc(meta.label) + '</span><strong>' + esc(countLabel) + '</strong><small>' +
+          esc(estimateLabel + tripRate) + '</small></div>';
       }).join('');
-      var routeModes = [];
-      var designSlots = 0;
-      safeArray(legs).forEach(function (leg) {
-        var mode = String(leg && (leg.transportMode || leg.mode) || '').toLowerCase();
-        if (mode && routeModes.indexOf(mode) === -1) routeModes.push(mode);
-        var slots = numberOrNull(leg && leg.requiredDesignFleetSlots);
-        if (slots !== null && slots > 0) designSlots += slots;
-      });
       return '<section class="omega-v2-logistics-fleet-summary" data-omega-v2-logistics-fleet-summary data-site-id="' + esc(route && route.siteId || '') + '">' +
         '<div class="omega-v2-logistics-fleet-heading"><span class="omega-v2-eyebrow">TRANSPORT AT THIS MINE</span><strong>' +
-        (fleetReady ? fmt(configuredModes) + ' of 5 profiles configured' : 'Fleet counts unknown') + '</strong></div>' +
+        (fleetReady ? fmt(configuredModes) + ' of 5 actual counts configured' : 'Actual fleet counts unknown') + '</strong></div>' +
         '<div class="omega-v2-logistics-fleet-grid">' + modeCards + '</div>' +
         '<div class="omega-v2-logistics-fleet-foot"><span>Route legs: <strong>' + fmt(safeArray(legs).length) + '</strong></span>' +
         '<span>Transport modes: <strong>' + fmt(routeModes.length) + '</strong></span>' +
-        '<span>Design slots on route: <strong>' + fmt(designSlots) + '</strong></span>' +
-        '<span>Configured units + lines: <strong>' + (fleetReady && configuredModes ? fmt(configuredUnits) : 'Not configured') + '</strong></span></div>' +
-        (fleetReady && unknownModes ? '<p class="omega-v2-logistics-fleet-note">' + fmt(unknownModes) + ' mode profiles are not configured. No vehicle count is inferred from the route plan.</p>' :
-          (!fleetReady ? '<p class="omega-v2-logistics-fleet-note">Live fleet state is not available; planned route slots are not active vehicle counts.</p>' : '')) +
+        '<span>Calculated design units: <strong>' + (routeModes.length && designAvailableModes ? fmt(designUnitsTotal) : 'Unavailable') + '</strong></span>' +
+        '<span>Design estimates available: <strong>' + fmt(designAvailableModes) + ' of ' + fmt(routeModes.length) + ' route modes</strong></span></div>' +
+        (fleetReady && unknownModes ? '<p class="omega-v2-logistics-fleet-note">' + fmt(unknownModes) + ' actual mode counts are not configured. Design needs are calculated separately from route flow, payload, distance and cycle time.</p>' :
+          (!fleetReady ? '<p class="omega-v2-logistics-fleet-note">Live fleet state is not available. Design requirements are estimates, not active vehicle counts.</p>' :
+            '<p class="omega-v2-logistics-fleet-note">Actual fleet totals and calculated design requirements are separate values; route legs are not vehicle IDs.</p>')) +
         '</section>';
     }
     function logisticsFleetOverviewMarkup(routes) {
@@ -988,9 +1053,9 @@
           unique[siteId] = route; sites.push(route);
         }
       });
-      var totals = Object.create(null), readableSites = 0, configuredUnitTotal = 0, unknownProfiles = 0;
+      var totals = Object.create(null), readableSites = 0, configuredProfiles = 0, unknownProfiles = 0;
       Object.keys(logisticsTransportModeMeta).forEach(function (mode) {
-        totals[mode] = { total: 0, configuredSites: 0, unknownSites: 0 };
+        totals[mode] = { total: 0, configuredSites: 0, unknownSites: 0, designUnits: 0, designSites: 0, designUnknownSites: 0 };
       });
       sites.forEach(function (route) {
         var fleet = readSiteTransportFleet(route), ready = !!(fleet && fleet.status === 'READY' && Array.isArray(fleet.transportTypes));
@@ -1002,27 +1067,46 @@
         Object.keys(logisticsTransportModeMeta).forEach(function (mode) {
           var stat = totals[mode], row = byMode[mode], count = row ? numberOrNull(row.count) : null;
           if (ready && row && row.configured === true && count !== null && count >= 0) {
-            stat.total += count; stat.configuredSites += 1; configuredUnitTotal += count;
-          } else { stat.unknownSites += 1; unknownProfiles += 1; }
+            stat.total += count;
+            stat.configuredSites += 1;
+            configuredProfiles += 1;
+          } else {
+            stat.unknownSites += 1;
+            unknownProfiles += 1;
+          }
+        });
+        var routeLegs = safeArray(route && route.routePlan && route.routePlan.legs);
+        var designByMode = logisticsDesignFleetEstimate(route, routeLegs, byMode);
+        Object.keys(designByMode).forEach(function (mode) {
+          var estimate = designByMode[mode], stat = totals[mode];
+          if (!stat) return;
+          if (estimate.available) {
+            stat.designUnits += estimate.estimatedUnits;
+            stat.designSites += 1;
+          } else {
+            stat.designUnknownSites += 1;
+          }
         });
       });
       var modeCards = Object.keys(logisticsTransportModeMeta).map(function (mode) {
         var meta = logisticsTransportModeMeta[mode], stat = totals[mode];
-        var value = stat.configuredSites ? fmt(stat.total) + ' ' + meta.unit : 'Not configured';
-        return '<div class="omega-v2-logistics-fleet-mode" data-transport-mode="' + esc(mode) + '"><span>' + esc(meta.label) +
-          '</span><strong>' + esc(value) + '</strong><small>' + fmt(stat.configuredSites) + ' of ' + fmt(sites.length) +
-          ' mine sites configured</small></div>';
+        var actual = stat.configuredSites ? fmt(stat.total) + ' ' + meta.unit : 'Not configured';
+        var design = stat.designSites ? 'Design need: ' + fmt(stat.designUnits) + ' ' + meta.unit : 'Design need unavailable';
+        return '<div class="omega-v2-logistics-fleet-mode" data-transport-mode="' + esc(mode) + '">' +
+          '<span>' + esc(meta.label) + '</span><strong>' + esc(actual) + '</strong>' +
+          '<small>' + esc(fmt(stat.configuredSites) + ' of ' + fmt(sites.length) + ' sites have actual counts') + '</small>' +
+          '<small>' + esc(design) + '</small>' +
+          '<small>' + esc(fmt(stat.designSites) + ' route sites calculated') + '</small></div>';
       }).join('');
       return '<section class="omega-v2-card omega-v2-logistics-fleet-overview" data-omega-v2-logistics-fleet-overview>' +
         '<div class="omega-v2-logistics-fleet-heading"><div><span class="omega-v2-eyebrow">COUNTRY TRANSPORT LEDGER</span><h2>Transport Fleet Summary</h2>' +
-        '<p>Counts for the ' + fmt(sites.length) + ' registered mine-route sites shown for this country</p></div>' +
+        '<p>Actual counts and calculated design needs for ' + fmt(sites.length) + ' registered mine-route sites in this country</p></div>' +
         '<span class="omega-v2-status" data-state="' + (readableSites ? 'operational' : 'attention') + '">' +
-        (readableSites ? fmt(readableSites) + ' sites readable' : 'Fleet counts unknown') + '</span></div>' +
+        (readableSites ? fmt(readableSites) + ' sites readable' : 'Actual fleet counts unknown') + '</span></div>' +
         '<div class="omega-v2-logistics-fleet-grid">' + modeCards + '</div>' +
-        '<div class="omega-v2-logistics-fleet-foot"><span>Configured units + pipeline lines: <strong>' +
-        (configuredUnitTotal || Object.keys(totals).some(function (mode) { return totals[mode].configuredSites > 0; }) ? fmt(configuredUnitTotal) : 'Not configured') +
-        '</strong></span><span>Unconfigured mode/site profiles: <strong>' + fmt(unknownProfiles) + '</strong></span></div>' +
-        '<p class="omega-v2-logistics-fleet-note">Train sets, ships, road vehicles and pipeline lines are counted separately. Route legs and design slots are not live fleet counts.</p>' +
+        '<div class="omega-v2-logistics-fleet-foot"><span>Actual count profiles configured: <strong>' + fmt(configuredProfiles) + ' of ' + fmt(sites.length * 5) + '</strong></span>' +
+        '<span>Unconfigured actual profiles: <strong>' + fmt(unknownProfiles) + '</strong></span></div>' +
+        '<p class="omega-v2-logistics-fleet-note">Design requirements are calculated per mode from route flow, payload capacity and transport cycle time. They are not live vehicle counts; pipeline lines are calculated separately from road/rail/ship units.</p>' +
         '</section>';
     }
     function hasCurrentShipmentMatch(route) {
