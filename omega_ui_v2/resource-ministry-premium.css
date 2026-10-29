@@ -1540,3 +1540,57 @@
   .omega-v2-resource-premium .omega-v2-logistics-overview-grid,
   .omega-v2-resource-premium .omega-v2-logistics-fleet-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+
+
+/* Collapsible per-mine count editor. Zero means none; blank keeps a count unknown/unchanged. */
+.omega-v2-resource-premium .omega-v2-logistics-fleet-editor {
+  border-top: 1px solid rgba(71, 168, 202, .22);
+  margin-top: 10px;
+  padding-top: 8px;
+}
+.omega-v2-resource-premium .omega-v2-logistics-fleet-editor > summary {
+  color: #9feeff;
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 800;
+  list-style-position: inside;
+  padding: 5px 0;
+}
+.omega-v2-resource-premium .omega-v2-logistics-count-grid {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
+  margin: 8px 0 10px;
+}
+.omega-v2-resource-premium .omega-v2-logistics-count-field {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.omega-v2-resource-premium .omega-v2-logistics-count-field > span {
+  color: #a9c3d2;
+  font-size: 9px;
+  font-weight: 760;
+  line-height: 1.3;
+}
+.omega-v2-resource-premium .omega-v2-logistics-count-field > input {
+  background: linear-gradient(180deg, rgba(4, 18, 31, .98), rgba(8, 28, 44, .98));
+  border: 1px solid rgba(77, 175, 209, .4);
+  border-radius: 7px;
+  box-shadow: inset 0 1px rgba(255,255,255,.035);
+  color: #eafaff;
+  font-size: 12px;
+  min-height: 34px;
+  min-width: 0;
+  padding: 7px 9px;
+  width: 100%;
+}
+.omega-v2-resource-premium .omega-v2-logistics-count-field > input:focus-visible {
+  border-color: #68e7ff;
+  box-shadow: 0 0 0 2px rgba(47, 205, 243, .16), 0 0 10px rgba(47, 205, 243, .18);
+  outline: none;
+}
+.omega-v2-resource-premium .omega-v2-logistics-fleet-editor form > button {
+  min-height: 34px;
+  width: 100%;
+}
