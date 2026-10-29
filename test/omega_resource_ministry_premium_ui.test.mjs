@@ -141,6 +141,8 @@ test("mine command screen has the requested tabs, per-site actions and clean pla
 test("Resource Logistics shows configured per-site route cards and keeps Current Match separate from live shipments", async () => {
   const vm = await import("node:vm");
   const fetched = [];
+  const savedFleetChanges = [];
+  const rootListeners = Object.create(null);
   const route = {
     routeId: "ROUTE_TST_COAL_MINE",
     siteId: "TST-MINE-ROUTE-01",
@@ -252,6 +254,10 @@ test("Resource Logistics shows configured per-site route cards and keeps Current
     }
   };
   sandbox.OmegaResourceIndustrialNetwork = {
+    setTransportFleet: (input) => {
+      savedFleetChanges.push({countryId:input.countryId,siteId:input.siteId,transportType:input.transportType,count:input.count});
+      return { status: "APPLIED" };
+    },
     getTransportFleet: ({ countryId, siteId }) => ({
       status: "READY", countryId, siteId, individualVehicleIdsRequired: false,
       transportTypes: [
@@ -284,7 +290,7 @@ test("Resource Logistics shows configured per-site route cards and keeps Current
   const root = {
     innerHTML: "",
     classList: { add() {} },
-    addEventListener() {},
+    addEventListener(type, listener) { rootListeners[type] = listener; },
     querySelector() { return null; },
     querySelectorAll() { return []; },
     contains() { return true; }
@@ -314,6 +320,29 @@ test("Resource Logistics shows configured per-site route cards and keeps Current
   assert.match(root.innerHTML, /Configure transport counts/);
   assert.match(root.innerHTML, /data-omega-v2-logistics-fleet-form/);
   assert.match(root.innerHTML, /data-omega-v2-fleet-count-input/);
+
+  // Saving a per-mine count calls the aggregate fleet API, not a vehicle-ID registry.
+  const countInput = { value: "4", getAttribute: (name) => name === "data-transport-mode" ? "truck" : null };
+  const fleetForm = {
+    matches: (selector) => selector === "[data-omega-v2-logistics-fleet-form]",
+    getAttribute: (name) => name === "data-site-id" ? "TST-MINE-ROUTE-01" :
+      name === "data-country-id" ? "TST" : null,
+    querySelectorAll: (selector) => selector === "[data-omega-v2-fleet-count-input]" ? [countInput] : []
+  };
+  assert.equal(typeof rootListeners.submit, "function");
+  rootListeners.submit({ target:fleetForm, preventDefault() {} });
+  assert.deepEqual(savedFleetChanges, [{
+    countryId:"TST",siteId:"TST-MINE-ROUTE-01",transportType:"truck",count:4
+  }], "count editor must persist aggregate mode counts through the gameplay runtime");
+
+  const foreignFleetForm = {
+    matches: fleetForm.matches,
+    getAttribute: (name) => name === "data-site-id" ? "USA-MINE-01" :
+      name === "data-country-id" ? "USA" : null,
+    querySelectorAll: fleetForm.querySelectorAll
+  };
+  rootListeners.submit({ target:foreignFleetForm, preventDefault() {} });
+  assert.equal(savedFleetChanges.length,1,"fleet count changes outside the active player country must be rejected");
   assert.match(root.innerHTML, /Road trucks/);
   assert.match(root.innerHTML, /3 trucks/);
   assert.match(root.innerHTML, /Freight train sets/);
