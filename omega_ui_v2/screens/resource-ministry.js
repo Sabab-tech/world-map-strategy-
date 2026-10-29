@@ -940,7 +940,8 @@
       var resourceRules = catalog && catalog.resourceRules || {};
       var preferred = safeArray(resourceRules[route.resourceId] && resourceRules[route.resourceId].preferredModes)
         .map(function (mode) { return String(mode || '').toLowerCase(); });
-      var chosen = preferred.filter(function (mode) { return modes.indexOf(mode) >= 0; })[0];
+      var chosen = preferred.filter(function (mode) { return Object.prototype.hasOwnProperty.call(modeProfiles, mode); })[0];
+      if (!chosen) chosen = preferred.filter(function (mode) { return modes.indexOf(mode) >= 0; })[0];
       if (!chosen) return rows;
       var distance = numberOrNull(plan.estimatedRouteDistanceKm);
       if (distance === null) distance = rows.reduce(function (sum, leg) {
