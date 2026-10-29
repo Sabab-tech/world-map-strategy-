@@ -1735,7 +1735,71 @@ function routeSegments(site,asset,resourceId,mode,countryId,input={}){
     sourceAuthority:String(row.distanceAuthority||row.sourceAuthority||row.authority||'EXPLICIT_ROUTE_PROFILE'),
     routeLegId:row.legId||row.id||null
   }));
-  if(sourceLegRows)return mapRows(sourceLegRows);
+  const sourcePlan=s.routePlan||s.logisticsRoutePlan||{};
+  const genericType=String(sourcePlan.routeType||'').toUpperCase()==='TRUCK_TO_RAIL_TO_TRUCK';
+  const genericStrategy=String(sourcePlan.strategyCode||'').toUpperCase()==='MINE_HAULAGE_RAIL_LAST_MILE';
+  const genericModes=sourceLegRows?sourceLegRows.map(row=>normalizeAccess(row.transportMode||row.mode)).filter(Boolean):[];
+  const genericIntermodal=!!sourceLegRows&&sourceLegRows.length>=2&&
+    (genericType||(genericStrategy&&genericModes.includes('truck')&&genericModes.includes('rail')))&&
+    genericModes.includes('truck')&&genericModes.includes('rail')&&
+    genericModes.every(value=>value==='truck'||value==='rail');
+  const sourceCountry=canonicalCountry(s.countryId||s.countryCode||s.identity?.countryIso3||s.sourceSiteRecord?.countryCode||cid);
+  const destinationCountry=canonicalCountry(input.destinationCountryId||input.destinationCountryCode||
+    f.countryId||f.countryCode||f.destinationCountryId||cid);
+  const crossBorder=!!(sourceCountry&&destinationCountry&&sourceCountry!==destinationCountry&&
+    /^[A-Z]{3}$/.test(sourceCountry)&&/^[A-Z]{3}$/.test(destinationCountry));
+  const destinationRecorded=()=>{
+    const target=destinationCountry;
+    const values=[
+      sourcePlan.destinationCountryId,sourcePlan.destinationCountryCode,sourcePlan.destinationWarehouseId,
+      sourcePlan.destinationNode,sourcePlan.toCountryId,sourcePlan.toCountryCode,
+      sourceLegRows?.[sourceLegRows.length-1]?.toCountryId,
+      sourceLegRows?.[sourceLegRows.length-1]?.toCountryCode,
+      sourceLegRows?.[sourceLegRows.length-1]?.destinationCountryId,
+      sourceLegRows?.[sourceLegRows.length-1]?.toNodeId,
+      sourceLegRows?.[sourceLegRows.length-1]?.destinationNode
+    ].map(value=>String(value||'').trim().toUpperCase());
+    return values.some(value=>value===target||value.includes('WH-'+target+'-')||
+      value.includes('WAREHOUSE:'+target+':')||value.includes('FACTORY:'+target+':')||
+      value.includes('COUNTRY:'+target+':')||value.includes(':'+target+':'));
+  };
+  const seaLaneRequired=input.requiresSeaLane===true||input.seaLaneRequired===true||
+    s.requiresSeaLane===true||sourcePlan.requiresSeaLane===true||sourcePlan.seaLaneRequired===true;
+  if(sourceLegRows){
+    if(genericIntermodal){
+      // A generic three-step template is not proof of three connected physical legs.
+      // Select one commodity-preferred mode and use the complete declared route distance.
+      // Never turn this domestic design template into an invented international route.
+      if(crossBorder)return[];
+      const preferences=(rules()[resourceId]?.preferredModes||[]).map(normalizeAccess).filter(Boolean);
+      const profiles=modeRules();
+      const chosen=preferences.find(value=>!!profiles[value])||
+        preferences.find(value=>genericModes.includes(value))||(profiles.rail?'rail':'truck');
+      const declaredDistance=num(sourcePlan.estimatedRouteDistanceKm);
+      const summedDistance=sourceLegRows.reduce((sum,row)=>sum+(num(row.estimatedDistanceKm??row.distanceKm??row.distance)||0),0);
+      const totalDistance=declaredDistance!==null&&declaredDistance>=0?declaredDistance:
+        (summedDistance>0?summedDistance:null);
+      if(totalDistance===null)return[];
+      const reference=sourceLegRows.find(row=>normalizeAccess(row.transportMode||row.mode)===chosen)||sourceLegRows[0];
+      const mapped=mapRows([reference])[0],profile=profiles[chosen]||{};
+      const explicitLineCapacity=chosen==='pipeline'?
+        num(reference.designCapacityPerLinePerDay??reference.capacityPerLinePerDay??reference.lineCapacityPerDay):null;
+      return[{...mapped,mode:chosen,distanceKm:Number(totalDistance.toFixed(6)),
+        designCapacityPerTrip:chosen==='pipeline'?null:(num(reference.designCapacityPerTrip??reference.payloadTonnes)??num(profile.payloadTonnes)),
+        designCapacityPerDay:num(sourcePlan.capacityBottleneckPerDay??reference.designCapacityPerDay),
+        designCapacityPerLinePerDay:explicitLineCapacity!==null&&explicitLineCapacity>0?explicitLineCapacity:null,
+        capacityPerLinePerDay:explicitLineCapacity!==null&&explicitLineCapacity>0?explicitLineCapacity:null,
+        lineCapacityPerDay:explicitLineCapacity!==null&&explicitLineCapacity>0?explicitLineCapacity:null,
+        edgeClass:'COMMODITY_MODE_ROUTE_ESTIMATE',
+        sourceAuthority:'SIMULATED_TOTAL_ROUTE_DISTANCE_NOT_A_SURVEYED_MODE_PATH',
+        routeLegId:null,routeSelectionAuthority:'RESOURCE_RULE_PREFERRED_MODE_FROM_UNVERIFIED_INTERMODAL_TEMPLATE'}];
+    }
+    const mapped=mapRows(sourceLegRows);
+    if(crossBorder&&(!destinationRecorded()||(seaLaneRequired&&!mapped.some(row=>row.mode==='ship'))))return[];
+    return mapped;
+  }
+  if(crossBorder)return[];
+
   const sourceHasRouteArray=[s.transportRoute,s.simulation?.transportRoute]
     .some(rows=>Array.isArray(rows)&&rows.length);
   // Only consult factory-level leg templates if the source has no route definition.
@@ -1745,7 +1809,11 @@ function routeSegments(site,asset,resourceId,mode,countryId,input={}){
     const factoryLegRows=[
       f.routePlan?.legs,f.logisticsRoutePlan?.legs,f.transportRoute?.legs,f.simulation?.transportRoute?.legs
     ].find(normalizeRows);
-    if(factoryLegRows)return mapRows(factoryLegRows);
+    if(factoryLegRows){
+      const factoryRows=mapRows(factoryLegRows);
+      if(crossBorder|| (seaLaneRequired&&!factoryRows.some(row=>row.mode==='ship')))return[];
+      return factoryRows;
+    }
   }
   // Prefer the source site's explicit warehouse/factory corridor. Factory-level
   // transportAccess or legacy routes may list several available modes but do not prove
@@ -1805,9 +1873,20 @@ function buildRoute(site,asset,resourceId,requestedQuantity,input={}){
   const cid=canonicalCountry(input.countryId||site?.countryId);
   const mode=normalizeTransportMode(input.transportMode||rules()[resourceId]?.preferredModes?.[0]||'truck')||'truck';
   const segments=routeSegments(site,asset,resourceId,mode,cid,input),quantity=Math.max(0,num(requestedQuantity)||0);
-  if(!segments.length)return{status:'BLOCKED',reason:'TRANSPORT_MODE_UNAVAILABLE_FOR_ROUTE',countryId:cid,
-    requestedTransportMode:mode,sourceSiteId:input.sourceSiteId||site?.siteId||null,routePath:[],vehiclePlan:[],
-    capacityAuthority:'NO_SUPPORTED_ROUTE_MODE',distanceAuthority:'NOT_AVAILABLE'};
+  if(!segments.length){
+    const sourceCountry=canonicalCountry(site?.countryId||site?.countryCode||site?.identity?.countryIso3||cid);
+    const destinationCountry=canonicalCountry(input.destinationCountryId||input.destinationCountryCode||
+      asset?.countryId||asset?.countryCode||asset?.destinationCountryId||cid);
+    const crossBorder=!!(sourceCountry&&destinationCountry&&sourceCountry!==destinationCountry&&
+      /^[A-Z]{3}$/.test(sourceCountry)&&/^[A-Z]{3}$/.test(destinationCountry));
+    const requiresSeaLane=input.requiresSeaLane===true||input.seaLaneRequired===true||
+      site?.requiresSeaLane===true||site?.routePlan?.requiresSeaLane===true;
+    return{status:'BLOCKED',reason:requiresSeaLane?'SEA_LANE_REQUIRED_BUT_NOT_CONFIGURED':
+      (crossBorder?'CROSS_BORDER_ROUTE_LEGS_REQUIRED':'TRANSPORT_MODE_UNAVAILABLE_FOR_ROUTE'),countryId:cid,
+      sourceCountryId:sourceCountry,destinationCountryId:destinationCountry,
+      requestedTransportMode:mode,sourceSiteId:input.sourceSiteId||site?.siteId||null,
+      routePath:[],vehiclePlan:[],capacityAuthority:'NO_SUPPORTED_ROUTE_MODE',distanceAuthority:'NOT_AVAILABLE'};
+  }
   if(segments.some(segment=>segment.distanceKm===null||segment.distanceKm===undefined||num(segment.distanceKm)===null||num(segment.distanceKm)<0)){
     return{status:'BLOCKED',reason:'ROUTE_LEG_DISTANCE_UNAVAILABLE',countryId:cid,requestedTransportMode:mode,
       sourceSiteId:input.sourceSiteId||site?.siteId||null,routePath:segments.map(x=>x.edgeClass),legs:clone(segments),vehiclePlan:[],
