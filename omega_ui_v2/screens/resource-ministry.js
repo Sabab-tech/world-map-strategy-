@@ -1436,7 +1436,7 @@
         '<div class="omega-v2-logistics-metric"><span>Design bottleneck</span><strong>' +
         (capacity !== null ? esc(fmt(capacity) + (capacityUnit ? ' ' + capacityUnit : '')) : 'Unavailable') + '</strong></div>' +
         '<div class="omega-v2-logistics-metric"><span>Current Match</span><strong>' + (matched ? 'Matched' : 'Unavailable') + '</strong></div></div>' +
-        (modeSummaryMarkup ? '<div class="omega-v2-logistics-mode-grid">' + modeSummaryMarkup + '</div>' : '') +
+        (modeSummaryMarkup ? '<section class="omega-v2-logistics-fleet-overview" data-omega-v2-logistics-fleet-overview><div class="omega-v2-logistics-fleet-overview-heading"><h4>Transport Fleet Summary</h4><span>' + esc(configuredVehicleLabel) + '</span></div><div class="omega-v2-logistics-fleet-overview-stats"><div><span>Calculated design units</span><strong>' + (designSlots !== null ? esc(fmt(designSlots)) : 'Unavailable') + '</strong></div><div><span>Configured vehicles</span><strong>' + esc(configuredVehicleLabel) + '</strong></div><div><span>Pipeline lines</span><strong>' + esc(pipelineLabel) + '</strong></div></div><div class="omega-v2-logistics-mode-grid">' + modeSummaryMarkup + '</div></section>' : '') +
         (legMarkup ? '<div class="omega-v2-logistics-leg-list">' + legMarkup + '</div>' : '') +
         '</article>';
     }
