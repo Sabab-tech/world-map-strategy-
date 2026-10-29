@@ -527,7 +527,7 @@ test("logistics tab shows mine/mode cards without shipments and edits aggregate 
   };
   globalThis.Game={state:{simulation:{turn:1,session:{playerCountryId:"BGD"}},resource:{BGD:{mineAssets:[],industrialNetwork:{projects:[],shipments:[],siteFlowLedger:[]},warehouse:{}}}}};
   const listeners=Object.create(null);
-  const root={innerHTML:"",classList:{add(){}},addEventListener(type,fn){(listeners[type]||(listeners[type]=[])).push(fn);},
+  const root={ownerDocument:{},innerHTML:"",classList:{add(){}},addEventListener(type,fn){(listeners[type]||(listeners[type]=[])).push(fn);},
     querySelector(){return null;},querySelectorAll(){return[];},contains(){return true;}};
   try{
     const first=api.render(root,{countryId:"BGD",sites:[],tab:"logistics"});
