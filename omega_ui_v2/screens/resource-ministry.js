@@ -974,7 +974,7 @@
           capacityPerDay = lineCapacity;
           capacityUnit = logisticsPlanningUnit(reference && (reference.designCapacityPerLineUnit ||
             reference.capacityPerLineUnit || reference.lineCapacityUnit || reference.designCapacityUnit ||
-            reference.capacityUnit));
+            reference.capacityUnit || plan.capacityUnit));
         } else {
           capacityPerDay = null;
           capacityUnit = null;
@@ -1048,7 +1048,8 @@
         var payloadUnit = logisticsPlanningUnit(leg && leg.designCapacityPerTripUnit);
         if (!payloadUnit && payload !== null) payloadUnit = 'TONNES_PER_TRIP';
         var capacity = numberOrNull(leg && leg.designCapacityPerDay);
-        var capacityUnit = logisticsPlanningUnit(leg && leg.designCapacityUnit);
+        var routePlan = route && route.routePlan || {};
+        var capacityUnit = logisticsPlanningUnit(leg && (leg.designCapacityPerLineUnit || leg.capacityPerLineUnit || leg.lineCapacityUnit || leg.designCapacityUnit || leg.capacityUnit || routePlan.capacityUnit));
         var lineCapacity = numberOrNull(leg && (leg.designCapacityPerLinePerDay !== undefined ?
           leg.designCapacityPerLinePerDay : (leg.capacityPerLinePerDay !== undefined ?
           leg.capacityPerLinePerDay : leg.lineCapacityPerDay)));
