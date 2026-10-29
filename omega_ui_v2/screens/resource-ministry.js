@@ -1034,8 +1034,83 @@
       return aliases[unit] || unit;
     }
 
+    function logisticsProductionRatePerDay(route) {
+      route = route && typeof route === 'object' ? route : {};
+      var routePlan = route.routePlan && typeof route.routePlan === 'object' ? route.routePlan : {};
+      var matchedSite = safeArray(model && model.sites).find(function (site) {
+        return String(site && site.siteId || '') === String(route.siteId || '');
+      }) || null;
+      var rawSite = matchedSite && matchedSite.raw && typeof matchedSite.raw === 'object' ? matchedSite.raw : {};
+      var productionMetric = matchedSite && matchedSite.production || null;
+      var runtimeCandidates = [
+        route.planningProduction, route.productionInput, routePlan.productionInput,
+        route.productionModel, rawSite.productionModel, rawSite.simulation,
+        rawSite.quantitative && rawSite.quantitative.production, rawSite.production,
+        rawSite.sourceSiteRecord && rawSite.sourceSiteRecord.production,
+        rawSite.sourceSiteRecord && rawSite.sourceSiteRecord.quantitative &&
+          rawSite.sourceSiteRecord.quantitative.production
+      ];
+      if (productionMetric) {
+        runtimeCandidates.push({
+          rate: productionMetric.value !== null && productionMetric.value !== undefined
+            ? productionMetric.value : productionMetric.modeledValue,
+          unit: productionMetric.unit,
+          status: productionMetric.status,
+          basis: productionMetric.basis
+        });
+      }
+      function readRate(source) {
+        if (!source || typeof source !== 'object') return null;
+        var annualObject = source.annualProduction && typeof source.annualProduction === 'object'
+          ? source.annualProduction : null;
+        var dailyValue = numberOrNull(source.dailyRate !== undefined ? source.dailyRate :
+          source.dailyProductionRate !== undefined ? source.dailyProductionRate :
+          source.productionRatePerDay !== undefined ? source.productionRatePerDay : null);
+        var annualValue = numberOrNull(annualObject && annualObject.value !== undefined
+          ? annualObject.value : source.annualProduction !== undefined && !annualObject
+            ? source.annualProduction : source.annual !== undefined ? source.annual : null);
+        var rate = dailyValue !== null ? dailyValue : numberOrNull(source.rate !== undefined ? source.rate :
+          source.productionRate !== undefined ? source.productionRate :
+          source.outputRate !== undefined ? source.outputRate :
+          source.quantity !== undefined ? source.quantity : source.value);
+        var rawUnit = String(source.rateUnit || source.productionRateUnit || source.dailyRateUnit ||
+          (annualObject && annualObject.unit) || source.productionUnit || source.unit || '').trim().toUpperCase();
+        var period = String(source.productionPeriod || source.ratePeriod || source.period ||
+          source.timeBasis || source.measurementPeriod || '').trim().toUpperCase().replace(/[\s-]+/g, '_');
+        var unit = rawUnit.replace(/\s*\/\s*/g, '_PER_').replace(/[\s-]+/g, '_');
+        var unitDay = /(?:_PER_DAY|_DAILY|_DAY)$/.test(unit) || /^(?:PER_DAY|DAILY)$/.test(period);
+        var unitYear = /(?:_PER_YEAR|_YEARLY|_ANNUAL|_YEAR)$/.test(unit) ||
+          /^(?:PER_YEAR|ANNUAL|YEARLY|YEAR)$/.test(period) || annualValue !== null;
+        var unitMonth = /(?:_PER_MONTH|_MONTHLY|_MONTH)$/.test(unit) ||
+          /^(?:PER_MONTH|MONTHLY|MONTH)$/.test(period);
+        var explicitDaily = dailyValue !== null || /^(?:PER_DAY|DAILY|DAY)$/.test(period);
+        if (annualValue !== null) rate = annualValue;
+        if (rate === null || rate < 0 || !unit) return null;
+        if (unitDay || explicitDaily) {
+          unit = unit.replace(/(?:_PER_DAY|_DAILY|_DAY)$/, '');
+          return { rate:rate, unit:logisticsPlanningUnit(unit + '_PER_DAY'),
+            source:dailyValue !== null ? 'EXPLICIT_DAILY_PRODUCTION_RATE' : 'DECLARED_PER_DAY_UNIT' };
+        }
+        if (unitMonth) {
+          unit = unit.replace(/(?:_PER_MONTH|_MONTHLY|_MONTH)$/, '');
+          return { rate:rate / 30, unit:logisticsPlanningUnit(unit + '_PER_DAY'), source:'MONTHLY_RATE_CONVERTED_TO_DAILY_30_DAY_MONTH' };
+        }
+        if (unitYear) {
+          unit = unit.replace(/(?:_PER_YEAR|_YEARLY|_ANNUAL|_YEAR)$/, '');
+          return { rate:rate / 365, unit:logisticsPlanningUnit(unit + '_PER_DAY'), source:'ANNUAL_PRODUCTION_CONVERTED_TO_DAILY_365_DAY_YEAR' };
+        }
+        // A raw quantity with no declared time basis is not a daily production rate.
+        return null;
+      }
+      for (var i = 0; i < runtimeCandidates.length; i += 1) {
+        var value = readRate(runtimeCandidates[i]);
+        if (value) return value;
+      }
+      return null;
+    }
+
     function logisticsDesignFleetEstimate(route, legs, byMode) {
-      var production = route && route.planningProduction || null;
+      var production = logisticsProductionRatePerDay(route);
       var rate = numberOrNull(production && production.rate);
       var productionUnit = logisticsPlanningUnit(production && production.unit);
       var routePlan = route && route.routePlan || {};
