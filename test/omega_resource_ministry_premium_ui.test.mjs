@@ -627,6 +627,9 @@ test("logistics cards expose mine/warehouse SVGs and per-mode fleet counts using
     assert.match(root.innerHTML, /Dhaka Steel Factory/);
     assert.match(root.innerHTML, /8,200 TONNES/);
     assert.match(root.innerHTML, /Transport inventory by mode/);
+    assert.match(root.innerHTML, /data-logistics-total="vehicles"/);
+    assert.match(root.innerHTML, /data-logistics-total="pipeline"/);
+    assert.match(root.innerHTML, /Registered pipeline lines/);
     assert.match(root.innerHTML, /data-cross-border-import-status="needs-geocoded-infrastructure"/);
     assert.match(root.innerHTML, /data-logistics-summary-mode="ship"/);
     assert.match(root.innerHTML, /data-omega-v2-logistics-leg-icon="truck"/);

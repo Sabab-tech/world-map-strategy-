@@ -1321,3 +1321,24 @@
  .omega-v2-resource-premium .omega-v2-logistics-leg-art { height:39px;width:40px; }
  .omega-v2-resource-premium .omega-v2-logistics-leg-art img { height:35px;width:36px; }
 }
+
+
+/* Grand totals stay separate: a pipeline line is not a vehicle. */
+.omega-v2-resource-premium .omega-v2-logistics-fleet-totals {
+  display:grid;gap:8px;grid-template-columns:repeat(2,minmax(0,1fr));margin:0 0 10px;min-width:0;
+}
+.omega-v2-resource-premium .omega-v2-logistics-total-card {
+  background:linear-gradient(145deg,rgba(21,48,65,.98),rgba(5,18,29,.98));
+  border:1px solid rgba(87,208,242,.3);border-radius:9px;
+  box-shadow:inset 0 1px rgba(255,255,255,.07),0 4px 0 rgba(2,8,14,.25),0 0 12px rgba(29,178,225,.08);
+  display:flex;flex-direction:column;gap:5px;min-width:0;padding:10px;
+}
+.omega-v2-resource-premium .omega-v2-logistics-total-card span {
+  color:#9dc3d2;font-size:9px;line-height:1.4;overflow-wrap:anywhere;
+}
+.omega-v2-resource-premium .omega-v2-logistics-total-card strong {
+  color:#72e3ff;font-size:12px;line-height:1.4;overflow-wrap:anywhere;
+}
+@media (max-width:440px) {
+  .omega-v2-resource-premium .omega-v2-logistics-fleet-totals { grid-template-columns:minmax(0,1fr); }
+}

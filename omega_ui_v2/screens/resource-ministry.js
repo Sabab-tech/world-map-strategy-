@@ -1042,6 +1042,18 @@
           if(required===null)aggregate[mode].unknownLegs++;else aggregate[mode].designUnits+=required;
         });
       });
+      var vehicleModes=['truck','rail','ship','barge'];
+      var vehicleGrandTotal=vehicleModes.reduce(function(sum,mode){return sum+Math.max(0,Number(aggregate[mode]&&aggregate[mode].configuredUnits)||0);},0);
+      var configuredVehicleRecords=vehicleModes.reduce(function(sum,mode){return sum+Math.max(0,Number(aggregate[mode]&&aggregate[mode].configuredSites)||0);},0);
+      var expectedVehicleRecords=routes.length*vehicleModes.length;
+      var vehicleLabel=configuredVehicleRecords
+        ?'Known: '+fmt(vehicleGrandTotal)+(configuredVehicleRecords<expectedVehicleRecords?' · '+fmt(expectedVehicleRecords-configuredVehicleRecords)+' mine/mode entries not configured':'')
+        :'Not configured';
+      var pipelineGrandTotal=Math.max(0,Number(aggregate.pipeline&&aggregate.pipeline.configuredUnits)||0);
+      var configuredPipelineRecords=Math.max(0,Number(aggregate.pipeline&&aggregate.pipeline.configuredSites)||0);
+      var pipelineLabel=configuredPipelineRecords
+        ?'Known: '+fmt(pipelineGrandTotal)+(configuredPipelineRecords<routes.length?' · '+fmt(routes.length-configuredPipelineRecords)+' mine entries not configured':'')
+        :'Not configured';
       var summary=modeConfig.map(function(row){
         var item=aggregate[row.mode],icon=logisticsTransportAsset(row.mode,'coal');
         var registered=item.configuredSites?fmt(item.configuredUnits)+' across '+fmt(item.configuredSites)+' mine(s)':'Not configured';
@@ -1049,7 +1061,7 @@
         return '<div class="omega-v2-logistics-fleet-summary-card" data-logistics-summary-mode="'+row.mode+'"><span class="omega-v2-logistics-summary-art"><img src="'+esc(icon)+'" alt="" aria-hidden="true" loading="lazy" decoding="async"></span><div><strong>'+esc(row.label)+'</strong><span>Registered total: '+esc(registered)+'</span><small>Design need: '+esc(design)+'</small></div></div>';
       }).join('');
       return '<section class="omega-v2-logistics-route-section" data-logistics-route-state="ready"><div class="omega-v2-logistics-route-heading"><div><h2>Mine Site Route Plans</h2><p>Per-mine fleet counts and capacity-based route requirements</p></div><span class="omega-v2-status" data-state="attention">'+fmt(routes.length)+' routes</span></div>' +
-        '<div class="omega-v2-logistics-fleet-summary"><div class="omega-v2-logistics-summary-heading"><h3>Transport inventory by mode</h3><span>'+esc(countryKey)+'</span></div><div class="omega-v2-logistics-fleet-summary-grid">'+summary+'</div></div>' +
+        '<div class="omega-v2-logistics-fleet-summary"><div class="omega-v2-logistics-summary-heading"><h3>Transport inventory by mode</h3><span>'+esc(countryKey)+'</span></div><div class="omega-v2-logistics-fleet-totals"><div class="omega-v2-logistics-total-card" data-logistics-total="vehicles"><span>Registered vehicles · trucks, trains, ships, barges</span><strong>'+esc(vehicleLabel)+'</strong></div><div class="omega-v2-logistics-total-card" data-logistics-total="pipeline"><span>Registered pipeline lines</span><strong>'+esc(pipelineLabel)+'</strong></div></div><div class="omega-v2-logistics-fleet-summary-grid">'+summary+'</div></div>' +
         '<p class="omega-v2-logistics-calculation-note">Route distances, capacities and baseline fleet requirements are simulation-only. Recorded counts come from saved transport settings.</p><p class="omega-v2-logistics-calculation-note" data-cross-border-import-status="needs-geocoded-infrastructure">Cross-border imports are not marked as routed until source ports and the receiving warehouse have physical coordinates. No ship leg is invented for an unverified corridor.</p><div class="omega-v2-grid omega-v2-logistics-grid">'+routes.map(function(route){return logisticsRouteCard(route,siteFleetSnapshots[String(route&&route.siteId||'')]);}).join('')+'</div></section>';
     }
     var routePlanState = getLogisticsRoutePlanState(countryKey);
