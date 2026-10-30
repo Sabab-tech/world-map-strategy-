@@ -263,6 +263,12 @@ test('Home Affairs restores the Finance-backed budget and expenditure panel and 
     }
   };
   try {
+    const dashboardRoot={innerHTML:'',classList:{add(){}},addEventListener(){},contains(){return true;}};
+    const dashboardResult=globalThis.OmegaUIV2HomeAffairs.render(dashboardRoot,{countryId:'AAA',tab:'dashboard'});
+    assert.equal(dashboardResult.ok,true);
+    assert.match(dashboardRoot.innerHTML,/Annual Home Affairs allocation/);
+    assert.match(dashboardRoot.innerHTML,/\$1,000,000/);
+    assert.match(dashboardRoot.innerHTML,/OPEN HOME AFFAIRS BUDGET/);
     const result=globalThis.OmegaUIV2HomeAffairs.render(root,{countryId:'AAA',tab:'budget'});
     assert.equal(result.ok,true);
     assert.equal(result.tab,'budget');
