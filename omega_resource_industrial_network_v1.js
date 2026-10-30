@@ -280,7 +280,9 @@ function logisticsUnitDescriptor(value){
   if(raw==='carat'||raw==='carats'||raw==='ct')return{family:'MASS',toTonnes:0.0000002,canonicalUnit:'TONNES'};
   if(raw==='mmcf'||raw==='million_cubic_feet')return{family:'GAS_VOLUME',toMMCF:1,canonicalUnit:'MMCF'};
   if(raw==='mcf'||raw==='thousand_cubic_feet')return{family:'GAS_VOLUME',toMMCF:0.001,canonicalUnit:'MMCF'};
-  if(raw==='million_cubic_metres'||raw==='mcm')return{family:'GAS_VOLUME',toMMCF:35.3146667,canonicalUnit:'MMCF'};
+  if(raw==='bcf'||raw==='billion_cubic_feet')return{family:'GAS_VOLUME',toMMCF:1000,canonicalUnit:'MMCF'};
+  if(raw==='million_cubic_metres'||raw==='million_cubic_meters'||raw==='mcm')return{family:'GAS_VOLUME',toMMCF:35.3146667,canonicalUnit:'MMCF'};
+  if(raw==='bcm'||raw==='billion_cubic_metres'||raw==='billion_cubic_meters')return{family:'GAS_VOLUME',toMMCF:35314.6667,canonicalUnit:'MMCF'};
   if(raw==='bbl'||raw==='barrel'||raw==='barrels')return{family:'OIL_VOLUME',toBarrels:1,canonicalUnit:'BARRELS'};
   if(raw==='litre'||raw==='litres'||raw==='liter'||raw==='liters'||raw==='m3'||raw==='cubic_metre'||raw==='cubic_metres')return{family:'LIQUID_VOLUME',toCubicMetres:raw==='m3'||raw.startsWith('cubic_')?1:0.001,canonicalUnit:'M3'};
   if(raw)return{family:'SIMULATION_RESOURCE_UNIT:'+raw,toSimulationUnit:1,canonicalUnit:raw.toUpperCase()};
