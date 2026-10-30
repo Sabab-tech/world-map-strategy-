@@ -122,4 +122,25 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -m "Update canonical country data artifacts"
-          git push origin "HEAD:${GITHUB_REF_NAME}"
+          # Other data workflows may update main while this registry is building.
+          # Rebase this generated-artifact commit onto the newest main and retry
+          # fast-forward pushes instead of losing either workflow's output.
+          pushed=false
+          for attempt in 1 2 3 4 5; do
+            git fetch origin "${GITHUB_REF_NAME}"
+            if ! git rebase "origin/${GITHUB_REF_NAME}"; then
+              git rebase --abort || true
+              echo "Rebase conflict while refreshing canonical country data."
+              exit 1
+            fi
+            if git push origin "HEAD:${GITHUB_REF_NAME}"; then
+              pushed=true
+              break
+            fi
+            echo "main moved during push attempt ${attempt}; retrying after fetch/rebase."
+            sleep 2
+          done
+          if [[ "$pushed" != "true" ]]; then
+            echo "Could not push canonical country data after five safe retries."
+            exit 1
+          fi
