@@ -139,7 +139,7 @@ test("mine command screen has the requested tabs, per-site actions and clean pla
   }
 });
 
-test("Resource Logistics shows configured per-site route cards and keeps Current Match separate from live shipments", async () => {
+test("Resource Logistics shows configured per-site route cards separately from live shipments", async () => {
   const vm = await import("node:vm");
   const fetched = [];
   const savedFleetChanges = [];
@@ -347,7 +347,6 @@ test("Resource Logistics shows configured per-site route cards and keeps Current
     "a generic gold truck-rail-truck template must display gold's preferred available truck mode");
   assert.doesNotMatch(root.innerHTML, /data-logistics-mode-chain="truck,rail,truck"/,
     "the generic intermodal template must not invent three physical route legs");
-  assert.match(root.innerHTML, /Current Match/);
   assert.match(root.innerHTML, /Unavailable/);
   assert.match(root.innerHTML, /120 km/);
   assert.match(root.innerHTML, /3 days/);
@@ -430,7 +429,7 @@ test("Resource Logistics shows configured per-site route cards and keeps Current
   assert.match(read("assets/omega-industrial-icons-v1/logistics/mine-site.svg"), /<title id="mine-title">Resource mine site<\/title>/);
   assert.match(read("assets/omega-industrial-icons-v1/logistics/warehouse-node.svg"), /<title id="warehouse-title">Raw resource warehouse<\/title>/);
   assert.doesNotMatch(root.innerHTML, /data-current-match=|Current Match/,
-    "a missing live shipment must not mark an available route plan as unavailable");
+    "route plan cards must stay separate from the live shipment ledger");
   assert.doesNotMatch(root.innerHTML, /No active shipments or delivery records/);
   assert.deepEqual(fetched, [
     "resource_site_logistics_routes_v1.json",
@@ -450,8 +449,6 @@ test("Resource Logistics shows configured per-site route cards and keeps Current
   }];
   api.render(root, { countryId: "TST", sites: [liveProductionSite], tab: "logistics" });
   assert.match(root.innerHTML, /Current Shipments/);
-  assert.match(root.innerHTML, /data-current-match="matched"/);
-  assert.match(root.innerHTML, />Matched</);
 });
 
 test("resource status plating and charts stay local and unit-aware", () => {
