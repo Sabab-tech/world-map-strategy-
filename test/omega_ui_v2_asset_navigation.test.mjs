@@ -97,7 +97,7 @@ test("More command cards use the uploaded local imagery and every action has a d
     "factory and Resource Ministry overrides must load after the existing UI styles");
   const sw = read("omega-offline-map-sw.js");
   const iconManifest = json("assets/omega-industrial-icons-v1/manifest.json");
-  assert.match(sw, /omega-offline-atlas-shell-v65/);
+  assert.match(sw, /omega-offline-atlas-shell-v66/);
   assert.match(sw, /resource-ministry-premium\.css/);
   assert.ok(html.includes("omega_ui_v2/resource-ministry-legacy-bridge.js"), "Resource Ministry handoff must be loaded by the application shell");
   assert.ok(sw.includes("omega_ui_v2/resource-ministry-legacy-bridge.js"), "Resource Ministry handoff must be cached offline");
