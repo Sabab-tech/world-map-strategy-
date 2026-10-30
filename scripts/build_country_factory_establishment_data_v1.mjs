@@ -243,6 +243,9 @@ async function buildDatasetFromSubsetJson(sourcePath) {
       }
     });
   });
+  if (!observedCountryCount) {
+    throw new Error('SUBSETS_ROWS_DID_NOT_MATCH_ANY_CORE_COUNTRY_CODE_OR_NAME');
+  }
   var allRecords = Object.values(dataset.countries).reduce(function (all, country) {
     return all.concat(Object.values(country.factoryEstablishments));
   }, []);
