@@ -19,7 +19,7 @@
     "sourceDatasetId": 148,
     "sourceProductionYear": "2026",
     "sourceUpdatedAt": "07 May 2026",
-    "retrievedAt": "2026-10-30T18:19:34.595Z",
+    "retrievedAt": "2026-10-30T19:17:56.407Z",
     "availableCountryCount": 132,
     "coveredCoreCountryCount": 127,
     "fetchedCoreCountryCount": 0,
@@ -30,10 +30,10 @@
       "SOURCE_UNAVAILABLE": 127,
       "COUNTRY_NOT_COVERED": 70
     },
-    "note": "All 4,137 country/type slots exist. The direct source retrieval failed for every source-covered core country in the 2026-10-30 run; no real-world counts were imported. Unknown values remain null and must not be treated as zero.",
+    "note": "The 197-country × 21-type input matrix is complete, but the direct UNIDO source retrieval returned zero usable observations in the latest attempt. All 4,136 mapped factory-type slots remain SOURCE_UNAVAILABLE and one umbrella type is NOT_COMPARABLE. No real-world count has been inferred or set to zero.",
     "sourceDatasetName": "INDSTAT 2026, ISIC Revision 4",
     "sourceAccessStatus": "NO_PARSEABLE_COUNTRY_RESPONSES",
-    "sourceError": "The 2026-10-30 UNIDO INDSTAT direct API refresh found 127 core-country entries in source metadata but returned zero usable country-level establishment observations. The earlier importer did not retain the underlying HTTP response text, so this field records the observed failure without guessing its exact cause."
+    "sourceError": "The 2026-10-30 UNIDO INDSTAT direct API refresh found 127 OMEGA core countries in the source metadata but returned zero usable country-level establishment observations. This records the observed result; the exact HTTP cause was not captured."
   },
   "countries": {
     "AFG": {
