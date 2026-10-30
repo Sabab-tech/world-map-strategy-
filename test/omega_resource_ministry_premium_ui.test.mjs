@@ -47,7 +47,7 @@ test("resource visual layer is wired into the offline-first app without remote d
   assert.ok(html.includes(stylesheetTag), "premium resource stylesheet must be loaded by the app");
   assert.ok(sw.includes('"' + "./" + cssPath + '"'), "premium resource stylesheet must be precached offline");
   assert.ok(uiManifest.additionalStyles.includes(cssPath), "UI v2 manifest must document the resource style");
-  assert.match(sw, /omega-offline-atlas-shell-v62/, "offline cache must be invalidated for new visual assets");
+  assert.match(sw, /omega-offline-atlas-shell-v63/, "offline cache must be invalidated for new visual assets");
   const coreAssets = sw.slice(sw.indexOf("const CORE_ASSETS"), sw.indexOf("];", sw.indexOf("const CORE_ASSETS")));
   assert.ok(coreAssets.includes('"./assets/omega-industrial-icons-v1/transport/route-mine-origin.svg"'));
   assert.ok(coreAssets.includes('"./assets/omega-industrial-icons-v1/transport/route-warehouse-destination.svg"'));
@@ -139,7 +139,7 @@ test("mine command screen has the requested tabs, per-site actions and clean pla
   }
 });
 
-test("Resource Logistics shows configured per-site route cards and keeps Current Match separate from live shipments", async () => {
+test("Resource Logistics shows configured per-site route cards separately from live shipments", async () => {
   const vm = await import("node:vm");
   const fetched = [];
   const savedFleetChanges = [];
@@ -235,6 +235,41 @@ test("Resource Logistics shows configured per-site route cards and keeps Current
       capacityUnit: "MMCF_PER_DAY"
     }
   };
+  const liveProductionSite = {
+    siteId: "TST-MINE-LIVE-05",
+    countryId: "TST",
+    resourceId: "coal",
+    siteName: "Live Production Rate Mine",
+    productionModel: {
+      productionRate: 300,
+      dailyRate: 300,
+      rateUnit: "TONNES_PER_DAY",
+      annualProduction: { value: 109500, unit: "TONNES_PER_YEAR" },
+      productionAuthority: "SIMULATED"
+    },
+    quantitative: { production: { rate: 300, unit: "TONNES_PER_DAY", status: "SIMULATED" } }
+  };
+  const liveProductionRoute = {
+    routeId: "ROUTE_TST_LIVE_PRODUCTION",
+    siteId: "TST-MINE-LIVE-05",
+    countryId: "TST",
+    siteName: "Live Production Rate Mine",
+    resourceId: "coal",
+    resourceIconKey: "coal",
+    destination: { warehouseId: "WH-TST-RAW" },
+    routePlan: {
+      routeType: "TRUCK",
+      routeStatus: "SIMULATED_PLAN_COMPLETE_ENGINE_BINDING_PENDING",
+      dispatchStatus: "NOT_DISPATCHABLE_DATA_ONLY_PHASE",
+      legs: [{ transportMode: "truck", estimatedDistanceKm: 30, designCapacityPerTrip: 25,
+        designCapacityPerTripUnit: "TONNES_PER_TRIP", designCapacityPerDay: 300,
+        designCapacityUnit: "TONNES_PER_DAY", cycleHoursForOneDesignVehicle: 4 }],
+      estimatedRouteDistanceKm: 30,
+      plannedTransitDays: 1,
+      capacityBottleneckPerDay: 300,
+      capacityUnit: "TONNES_PER_DAY"
+    }
+  };
   const sandbox = {
     OmegaResourceIndustrialCatalogData: json("resource_industrial_catalog_v1.json"),
     fetch: async (url) => {
@@ -249,7 +284,7 @@ test("Resource Logistics shows configured per-site route cards and keeps Current
         }) };
       }
       if (name === "resource_site_logistics_routes_v1_part_02.json") {
-        return { ok: true, json: async () => ({ routes: [route, legacyGoldRoute, genericCrudeOilRoute, pipelineRoute] }) };
+        return { ok: true, json: async () => ({ routes: [route, legacyGoldRoute, genericCrudeOilRoute, pipelineRoute, liveProductionRoute] }) };
       }
       throw new Error("Unexpected logistics asset request: " + name);
     }
@@ -296,7 +331,7 @@ test("Resource Logistics shows configured per-site route cards and keeps Current
     querySelectorAll() { return []; },
     contains() { return true; }
   };
-  const initial = api.render(root, { countryId: "TST", sites: [], tab: "logistics" });
+  const initial = api.render(root, { countryId: "TST", sites: [liveProductionSite], tab: "logistics" });
   assert.equal(initial.ok, true);
   await new Promise((resolve) => setTimeout(resolve, 0));
   assert.match(root.innerHTML, /Mine Site Route Plans/);
@@ -312,8 +347,6 @@ test("Resource Logistics shows configured per-site route cards and keeps Current
     "a generic gold truck-rail-truck template must display gold's preferred available truck mode");
   assert.doesNotMatch(root.innerHTML, /data-logistics-mode-chain="truck,rail,truck"/,
     "the generic intermodal template must not invent three physical route legs");
-  assert.match(root.innerHTML, /Current Match/);
-  assert.match(root.innerHTML, /Unavailable/);
   assert.match(root.innerHTML, /120 km/);
   assert.match(root.innerHTML, /3 days/);
   assert.match(root.innerHTML, /45 tonnes\/day/);
@@ -323,9 +356,24 @@ test("Resource Logistics shows configured per-site route cards and keeps Current
   assert.match(root.innerHTML, /data-route-leg="1"/);
   assert.match(root.innerHTML, /40 km/);
   assert.match(root.innerHTML, /Cap 45 tonnes\/day/);
+  assert.match(root.innerHTML, /Distance by transport type/);
+  assert.match(root.innerHTML, /data-route-mode-distance="truck"/);
+  assert.match(root.innerHTML, /data-route-mode-distance="rail"/);
+  assert.match(root.innerHTML, /40 km/);
+  assert.match(root.innerHTML, /80 km/);
+  assert.match(root.innerHTML, /data-design-estimate-available="true"/);
+  assert.match(root.innerHTML, /data-design-estimated-units="1"/);
+  assert.match(root.innerHTML, /data-design-formula="ceil\(production per day/);
+  assert.match(root.innerHTML, /data-design-capacity-per-unit-day="75"/,
+    "the displayed per-vehicle daily capacity must derive from payload and round-trip cycle");
+  const liveCardStart = root.innerHTML.indexOf('data-site-id="TST-MINE-LIVE-05"');
+  const liveCardEnd = root.innerHTML.indexOf('</article>', liveCardStart);
+  assert.ok(liveCardStart >= 0 && liveCardEnd > liveCardStart, "live-production mine route card must render");
+  assert.match(root.innerHTML.slice(liveCardStart, liveCardEnd), /data-design-estimated-units="2"/,
+    "when route planningProduction is absent, use the selected mine's declared simulated daily production");
   assert.match(root.innerHTML, /Known configured vehicle subtotal/);
-  assert.match(root.innerHTML, /Pipeline lines recorded/);
-  assert.match(root.innerHTML, /Known combined transport units subtotal \(vehicles \+ lines\)/);
+  assert.match(root.innerHTML, /(?:Pipeline lines recorded|Known pipeline-line subtotal|Configured pipeline-line total)/);
+  assert.match(root.innerHTML, /(?:Known combined transport units subtotal|Known combined transport-unit subtotal) \(vehicles \+ lines\)/);
   assert.match(root.innerHTML, /Configure transport counts/);
   assert.match(root.innerHTML, /data-omega-v2-logistics-fleet-form/);
   assert.match(root.innerHTML, /data-omega-v2-fleet-count-input/);
@@ -379,7 +427,8 @@ test("Resource Logistics shows configured per-site route cards and keeps Current
   assert.match(root.innerHTML, /logistics\/warehouse-node\.svg/);
   assert.match(read("assets/omega-industrial-icons-v1/logistics/mine-site.svg"), /<title id="mine-title">Resource mine site<\/title>/);
   assert.match(read("assets/omega-industrial-icons-v1/logistics/warehouse-node.svg"), /<title id="warehouse-title">Raw resource warehouse<\/title>/);
-  assert.match(root.innerHTML, /data-current-match="unavailable"/);
+  assert.doesNotMatch(root.innerHTML, /data-current-match=|Current Match/,
+    "route plan cards must stay separate from the live shipment ledger");
   assert.doesNotMatch(root.innerHTML, /No active shipments or delivery records/);
   assert.deepEqual(fetched, [
     "resource_site_logistics_routes_v1.json",
@@ -397,10 +446,8 @@ test("Resource Logistics shows configured per-site route cards and keeps Current
     destinationWarehouseId: "WH-TST-RAW",
     etaTurn: 2
   }];
-  api.render(root, { countryId: "TST", sites: [], tab: "logistics" });
+  api.render(root, { countryId: "TST", sites: [liveProductionSite], tab: "logistics" });
   assert.match(root.innerHTML, /Current Shipments/);
-  assert.match(root.innerHTML, /data-current-match="matched"/);
-  assert.match(root.innerHTML, />Matched</);
 });
 
 test("resource status plating and charts stay local and unit-aware", () => {
@@ -428,7 +475,7 @@ test("all resource SVGs use a light metallic backplate for readable dark mineral
     assert.match(svg, /data-omega-icon-kind="resource"/);
   }
   assert.match(manifest.rendering.background, /light silver-metal.*factory SVGs retain their shared dark-navy/i);
-  assert.match(read("omega-offline-map-sw.js"), /omega-offline-atlas-shell-v62/);
+  assert.match(read("omega-offline-map-sw.js"), /omega-offline-atlas-shell-v63/);
 });
 
 
