@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import test from 'node:test';
-import {extractEstablishmentObservations,extractSubsetEstablishmentObservations} from '../scripts/build_country_factory_establishment_data_v1.mjs';
+import {extractEstablishmentObservations,extractSubsetEstablishmentObservations,normalizeSubsetCountryName} from '../scripts/build_country_factory_establishment_data_v1.mjs';
 const read=n=>JSON.parse(fs.readFileSync(new URL('../'+n,import.meta.url),'utf8'));
 const baseline=read('country_factory_starting_baseline_v1.json');
 const catalog=read('resource_industrial_catalog_v1.json');
@@ -23,6 +23,10 @@ test('UNIDO observation parser reads activity/year/value rows',()=>{
  const nestedFound=new Map(nested.map(r=>[r.activityCode+'|'+r.year,r.value]));
  assert.equal(found.get('2410|2020'),10);assert.equal(found.get('2420|2020'),4);assert.equal(found.get('2410|2021'),12);
  assert.equal(nestedFound.get('2410|2020'),10);assert.equal(nestedFound.get('2420|2020'),4);assert.equal(nestedFound.get('2410|2021'),12);
+});
+test('country name matching normalizes whitespace and punctuation without regex escapes',()=>{
+ assert.equal(normalizeSubsetCountryName('  United   States, of America  '),'united states of america');
+ assert.equal(normalizeSubsetCountryName('Congo (Democratic Republic)'),'congo democratic republic');
 });
 test('Subsets mirror rows map country, ISIC activity, year and establishment value',()=>{
  const allowed=new Set(['2410','2420']);
