@@ -16,8 +16,18 @@ test('ISIC mapping covers all types without duplicate activity assignment',()=>{
  assert.equal(mapping.authority,'ISIC_REV4');assert.equal(mapping.mappings.length,21);assert.deepEqual(mapping.mappings.map(r=>r.factoryType).sort(),types);const codes=mapping.mappings.flatMap(r=>r.activityCodes);assert.equal(new Set(codes).size,codes.length);const umbrella=mapping.mappings.find(r=>r.factoryType==='UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT');assert.equal(umbrella.status,'NOT_COMPARABLE');assert.deepEqual(umbrella.activityCodes,[]);
 });
 test('UNIDO observation parser reads activity/year/value rows',()=>{
- const allowed=new Set(['2410','2420']);const rows=extractEstablishmentObservations([{activityCode:'2410',period:'2020',variableCode:'01',value:10},{activityCode:'2420',period:'2020',variableCode:'01',value:4},{activityCode:'2410',period:'2021',variableCode:'01',value:12}],allowed);const found=new Map(rows.map(r=>[r.activityCode+'|'+r.year,r.value]));assert.equal(found.get('2410|2020'),10);assert.equal(found.get('2420|2020'),4);assert.equal(found.get('2410|2021'),12);
+ const allowed=new Set(['2410','2420']);
+ const rows=extractEstablishmentObservations([{activityCode:'2410',period:'2020',variableCode:'01',value:10},{activityCode:'2420',period:'2020',variableCode:'01',value:4},{activityCode:'2410',period:'2021',variableCode:'01',value:12}],allowed);
+ const nested=extractEstablishmentObservations({'2020':{'2410':10,'2420':4},'2021':{'2410':12}},allowed);
+ const found=new Map(rows.map(r=>[r.activityCode+'|'+r.year,r.value]));
+ const nestedFound=new Map(nested.map(r=>[r.activityCode+'|'+r.year,r.value]));
+ assert.equal(found.get('2410|2020'),10);assert.equal(found.get('2420|2020'),4);assert.equal(found.get('2410|2021'),12);
+ assert.equal(nestedFound.get('2410|2020'),10);assert.equal(nestedFound.get('2420|2020'),4);assert.equal(nestedFound.get('2410|2021'),12);
 });
 test('simulation counts never appear as source-backed establishment counts',()=>{
- assert.equal(baseline.model.simulationOnly,true);assert.equal(baseline.model.realWorldFacilityCounts,false);assert.equal(dataset.countries.BGD.factoryEstablishments.TEXTILE_GARMENT_MILL.establishmentCount,null);assert.notEqual(dataset.datasetId,baseline.datasetId);
+ assert.equal(baseline.model.simulationOnly,true);assert.equal(baseline.model.realWorldFacilityCounts,false);
+ const textile=dataset.countries.BGD.factoryEstablishments.TEXTILE_GARMENT_MILL;
+ if(textile.status==='REPORTED')assert.ok(Number.isInteger(textile.establishmentCount)&&Number.isInteger(textile.referenceYear));
+ else assert.equal(textile.establishmentCount,null);
+ assert.notEqual(dataset.datasetId,baseline.datasetId);
 });

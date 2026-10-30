@@ -48,13 +48,15 @@ export function extractEstablishmentObservations(payload,allowedCodes){
   const periodKeys=['period','year','timePeriod','time_period','referencePeriod','reference_period','time','periodCode','t'];
   const variableKeys=['variableCode','variable_code','variable','variableId','variable_id','indicatorCode'];
   const valueKeys=['value','v','val','dataValue','data_value','obsValue','obs_value','observationValue','observation_value','establishments','numberOfEstablishments'];
+  const structuralKeys=new Set([...activityKeys,...periodKeys,...variableKeys,...valueKeys]);
   const put=(activity,period,raw,variable)=>{
     const code=String(activity||''),year=String(period||''),value=numberValue(raw);
-    if(allowedCodes.has(code)&&/^\d{4}$/.test(year)&&value!==null&&String(variable||'01')==='01')out.set(code+'|'+year,{activityCode:code,year:Number(year),value});
+    if(allowedCodes.has(code)&&/^\\d{4}$/.test(year)&&value!==null&&String(variable||'01')==='01')
+      out.set(code+'|'+year,{activityCode:code,year:Number(year),value});
   };
   function walk(node,ctx={}){
     if(Array.isArray(node)){node.forEach(v=>walk(v,ctx));return;}
-    if(!isObject(node)){if(ctx.activity&&ctx.period)put(ctx.activity,ctx.period,node,ctx.variable);return;}
+    if(!isObject(node))return;
     if(seen.has(node))return;
     seen.add(node);
     const activity=scalar(first(node,activityKeys))||ctx.activity||null;
@@ -64,9 +66,18 @@ export function extractEstablishmentObservations(payload,allowedCodes){
     if(raw!==undefined&&activity&&period)put(activity,period,raw,variable);
     for(const [key,child] of Object.entries(node)){
       const next={activity,period,variable};
-      if(allowedCodes.has(key))next.activity=key;
-      if(/^\d{4}$/.test(key))next.period=key;
-      walk(child,next);
+      const isActivity=allowedCodes.has(key);
+      const isPeriod=/^\\d{4}$/.test(key);
+      if(isActivity)next.activity=key;
+      if(isPeriod)next.period=key;
+      if(isObject(child)||Array.isArray(child)){
+        walk(child,next);
+      }else if(next.activity&&next.period&&!structuralKeys.has(key)){
+        put(next.activity,next.period,child,next.variable);
+      }else if(child!==null&&child!==undefined&&
+          ((isActivity&&next.period)||(isPeriod&&next.activity))){
+        put(next.activity,next.period,child,next.variable);
+      }
     }
   }
   walk(payload);
