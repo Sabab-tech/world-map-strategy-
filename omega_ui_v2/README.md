@@ -26,7 +26,7 @@ This directory contains the integrated OMEGA Atlas Command UI. The production en
 - `screens/economy.js`: sourced Economy/Treasury summary, separate from published macro indicators.
 - `screens/resource-ministry.js` and `screens/mine-detail.js`: six Energy & Mining sections and individual `siteId` pages; reserve, modeled reserve, inventory stock, rate and capacity remain distinct.
 - `screens/industry.js`: existing commissioned factories, production cycles, input inventory and projects.
-- `screens/home-affairs.js` and `screens/police-fleet.js`: seven Home Affairs sections including a source-backed Laws & Sections register, all 15 canonical vehicle profiles, existing local vehicle SVGs and the existing police recruitment handler.
+- `screens/home-affairs.js` and `screens/police-fleet.js`: eight Home Affairs sections including a Finance-linked Budget & Expenditure view and the source-backed Laws & Sections register, all 15 canonical vehicle profiles, existing local vehicle SVGs and the existing police recruitment handler.
 - Government’s All Ministries view includes original canonical SVG emblems, a minister recruitment/replace table, and a fixed portrait slot. Candidate lists and appointments use the existing minister roster/lifecycle APIs.
 - `screens/economy.js` exposes six responsive Finance tabs (Overview, Treasury & Ledger, Budget, Debt & Fiscal, Monetary & FX, Trade & Revenue) over existing game finance and country-indicator sources.
 - `screens/reports.js`: source-linked report index.
