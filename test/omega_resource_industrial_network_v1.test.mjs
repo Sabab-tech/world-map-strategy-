@@ -134,6 +134,19 @@ assert.equal(pipelineMinePreview.legs[0].requiredLineCount,3,'mine pipeline line
 assert.equal(pipelineMinePreview.vehicleCount,0,'pipeline lines do not enter total vehicle count');
 assert.equal(pipelineMinePreview.configuredPipelineLineCount,null,'design line count stays separate from actual configured line count');
 assert.equal(pipelineMinePreview.transportTypes[0].countUnit,'PIPELINE_LINES');
+
+// BCM/BCF are volume units and must be normalized to the MMCF route-capacity unit.
+const gasVolumeRoute=testSiteLogisticsRoutes.find(route=>route.siteId==='SITE_BGD_GAS_01');
+gasVolumeRoute.quantityUnitBridge={sourceProductionUnit:'BCM_PER_DAY',cargoCapacityUnit:'MMCF_PER_DAY'};
+gasVolumeRoute.routePlan.legs[0].designCapacityUnit='MMCF_PER_DAY';
+const bcmPreview=await N.previewSiteTransport({countryId:'BGD',siteId:'SITE_BGD_GAS_01',quantity:1,unit:'BCM'});
+assert.equal(bcmPreview.status,'READY',JSON.stringify(bcmPreview));
+assert.ok(Math.abs(bcmPreview.quantityCapacityFactor-35314.6667)<0.01);
+assert.ok(Math.abs(bcmPreview.quantityInCapacityUnits-35314.6667)<0.01);
+assert.equal(bcmPreview.legs[0].requiredLineCount,3,'pipeline lines require explicit per-line capacity');
+const bcfPreview=await N.previewSiteTransport({countryId:'BGD',siteId:'SITE_BGD_GAS_01',quantity:1,unit:'BCF'});
+assert.equal(bcfPreview.status,'READY',JSON.stringify(bcfPreview));
+assert.equal(bcfPreview.quantityCapacityFactor,1000);
 const genericOilPreview=await N.previewSiteTransport({countryId:'BGD',siteId:'SITE_BGD_OIL_01',quantity:1000});
 assert.equal(genericOilPreview.status,'READY',JSON.stringify(genericOilPreview));
 assert.equal(genericOilPreview.routeLegCount,1);

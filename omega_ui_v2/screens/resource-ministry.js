@@ -1123,6 +1123,18 @@
       var production = logisticsProductionRatePerDay(route);
       var rate = numberOrNull(production && production.rate);
       var productionUnit = logisticsPlanningUnit(production && production.unit);
+      var gasVolumeBaseUnit = String(productionUnit || '').replace(/_PER_DAY$/, '');
+      var gasVolumeFactorsToMmcF = {
+        BCM:35314.6667, BCF:1000, MCM:35.3146667, MCF:0.001,
+        BILLION_CUBIC_METRES:35314.6667, BILLION_CUBIC_METERS:35314.6667,
+        BILLION_CUBIC_FEET:1000, MILLION_CUBIC_METRES:35.3146667,
+        MILLION_CUBIC_METERS:35.3146667, THOUSAND_CUBIC_FEET:0.001
+      };
+      var gasVolumeFactorToMmcF = gasVolumeFactorsToMmcF[gasVolumeBaseUnit] || 1;
+      if (rate !== null && gasVolumeFactorToMmcF !== 1) {
+        rate *= gasVolumeFactorToMmcF;
+        productionUnit = 'MMCF_PER_DAY';
+      }
       var routePlan = route && route.routePlan || {};
       var catalog = g.OmegaResourceIndustrialCatalogData || (g.Omega && g.Omega.ResourceIndustrialCatalogData);
       var transportProfiles = catalog && catalog.transportModes || {};
@@ -1323,7 +1335,9 @@
         var estimateLabel = !used ? 'Not used by this route' :
           (estimate && estimate.available ? (capacityBasedEstimate ? 'Route capacity need: ' : 'Design need: ') +
             fmt(estimate.estimatedUnits) + ' ' + (estimate.estimatedUnits === 1 ? meta.single : meta.unit) + capacityDetail +
-            (estimate.routeBottleneckLegs ? ' · route capacity bottleneck' : '') : 'Design need unavailable');
+            (estimate.routeBottleneckLegs ? ' · route capacity bottleneck' : '') :
+            (estimate && estimate.routeBottleneckLegs && mode === 'pipeline'
+              ? 'Corridor bottleneck · line count unavailable' : 'Design need unavailable'));
         var tripRate = estimate && estimate.estimatedTripsPerDay !== null
           ? ' · ' + fmt(Number(estimate.estimatedTripsPerDay.toFixed(4))) + ' trips/day' : '';
         if (used && estimate && estimate.available) { designTotal += estimate.estimatedUnits; designAvailableModes += 1; }
