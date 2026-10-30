@@ -29,7 +29,7 @@ SELECT
   value
 FROM "unido-indstat-r4"
 WHERE indicator_code = '01'
-  AND TRY_CAST(year AS INTEGER) BETWEEN 2005 AND 2024
+  AND TRY_CAST(year AS INTEGER) BETWEEN 1981 AND 2024
 """
 
 def main() -> int:
