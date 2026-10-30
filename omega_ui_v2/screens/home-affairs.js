@@ -6,6 +6,7 @@
 
   var TABS = [
     { id:'dashboard', label:'Dashboard' },
+    { id:'budget', label:'Budget & Expenditure' },
     { id:'personnel', label:'Personnel' },
     { id:'fleet', label:'Fleet' },
     { id:'patrols', label:'Patrols & Deployment' },
@@ -127,6 +128,89 @@
       (rows ? '<div class="omega-v2-kpis">' + rows + '</div>' : '<div class="omega-v2-empty">Facility-level data is unavailable for this country. No default facility count is displayed.</div>') +
       '<div class="omega-v2-kpis"><div class="omega-v2-kpi"><span>Training quality level</span><strong>' + fmt(state && state.trainingQualityLevel) + '</strong></div><div class="omega-v2-kpi"><span>Recruitment level</span><strong>' + fmt(state && state.policeRecruitmentLevel) + '</strong></div></div>';
   }
+  function homeBudgetSnapshot(country) {
+    var e = engine();
+    if (!e || typeof e.getHomeBudgetSnapshot !== 'function') return { available:false, reason:'HOME_BUDGET_API_UNAVAILABLE', countryId:country || null };
+    try { return e.getHomeBudgetSnapshot(country); }
+    catch (error) { return { available:false, reason:String(error && error.message || error), countryId:country || null }; }
+  }
+  var HOME_BUDGET_ROWS = [
+    { id:'personnel', label:'Personnel & salaries' },
+    { id:'vehicles', label:'Vehicle procurement' },
+    { id:'maintenance', label:'Repair & maintenance' },
+    { id:'facilities', label:'Police facilities' },
+    { id:'training', label:'Training & research' },
+    { id:'operations', label:'Operations & other costs' }
+  ];
+  function budgetHtml(country, snap, outcome) {
+    var message = outcome ? '<div class="omega-v2-note" role="status">' + esc(outcome) + '</div>' : '';
+    if (!snap || !snap.available) {
+      var reason = snap && snap.reason || 'HOME_BUDGET_UNAVAILABLE';
+      var detail = reason === 'FINANCE_RUNTIME_NOT_READY'
+        ? 'Finance is still loading. The budget will appear when the Finance runtime is ready.'
+        : reason === 'HOME_BUDGET_ALLOCATION_UNAVAILABLE'
+          ? 'Finance has not assigned a positive annual Interior allocation to this country. Review the Internal Security & Civil Administration sector in Finance.'
+          : 'The authoritative Home Affairs budget source is unavailable for this country (' + reason + '). No amounts have been estimated or inserted.';
+      return '<section class="omega-v2-home-budget"><h2 class="omega-v2-section-title">Home Affairs · Budget &amp; Expenditure</h2>' + message +
+        '<div class="omega-v2-empty" role="status">' + esc(detail) + '</div></section>';
+    }
+    var canEdit = snap.canEdit !== false;
+    var plan = snap.plan || {};
+    var rows = HOME_BUDGET_ROWS.map(function (item) {
+      var spec = plan[item.id] || {};
+      var mode = spec.mode === 'amount' ? 'amount' : 'percent';
+      var value = num(spec.value);
+      var stat = snap.categories && snap.categories[item.id] || null;
+      var planned = stat ? money(stat.budgetUsd) : 'Unavailable';
+      return '<tr data-omega-v2-budget-row="' + item.id + '">' +
+        '<td><strong>' + esc(item.label) + '</strong></td>' +
+        '<td><select class="omega-v2-number-input" data-omega-v2-budget-mode="' + item.id + '"' + (canEdit ? '' : ' disabled') + ' aria-label="' + esc(item.label) + ' allocation type">' +
+          '<option value="percent"' + (mode === 'percent' ? ' selected' : '') + '>Percentage</option>' +
+          '<option value="amount"' + (mode === 'amount' ? ' selected' : '') + '>Fixed USD</option></select></td>' +
+        '<td><input class="omega-v2-number-input" type="number" min="0" step="' + (mode === 'percent' ? '0.01' : '1') + '" data-omega-v2-budget-value="' + item.id + '" value="' + esc(value === null ? '' : value) + '"' + (mode === 'percent' ? ' max="100"' : '') + (canEdit ? '' : ' disabled') + ' aria-label="' + esc(item.label) + ' allocation value"></td>' +
+        '<td data-omega-v2-budget-estimate="' + item.id + '">' + esc(planned) + '</td>' +
+        '<td>' + esc(stat ? money(stat.spentUsd) : 'Unavailable') + '</td>' +
+        '<td>' + esc(stat ? money(stat.remainingUsd) : 'Unavailable') + '</td></tr>';
+    }).join('');
+    var editNotice = canEdit
+      ? '<div class="omega-v2-note">Edit the six category shares or fixed USD amounts. Saving changes the Home Affairs plan only; spending still requires a separate approved action and sufficient Treasury funds.</div>'
+      : '<div class="omega-v2-note" role="status">READ-ONLY COUNTRY VIEW. This country’s Finance allocation, expenditure and Treasury are visible, but budget changes and purchases are restricted to the active player country.</div>';
+    var invalidNotice = snap.valid === false
+      ? '<div class="omega-v2-note" data-state="attention">The saved category plan currently exceeds the Finance ceiling. Adjust the values below before saving.</div>'
+      : '';
+    return '<section class="omega-v2-home-budget"><h2 class="omega-v2-section-title">Home Affairs · Budget &amp; Expenditure</h2>' + message +
+      '<div class="omega-v2-kpis">' +
+        '<div class="omega-v2-kpi"><span>Annual Interior allocation</span><strong>' + esc(money(snap.parentBudgetUsd)) + '</strong></div>' +
+        '<div class="omega-v2-kpi"><span>Parent allocation remaining</span><strong>' + esc(money(snap.parentRemainingUsd)) + '</strong></div>' +
+        '<div class="omega-v2-kpi"><span>National Treasury balance</span><strong>' + esc(money(snap.treasuryBalanceUsd)) + '</strong></div>' +
+        '<div class="omega-v2-kpi"><span>Recorded Home Affairs spending</span><strong>' + esc(money(snap.spentThisYearUsd)) + '</strong></div>' +
+      '</div>' + editNotice + invalidNotice +
+      '<div class="omega-v2-table-wrap omega-v2-home-budget-table-wrap"><table><thead><tr><th scope="col">Category</th><th scope="col">Allocation type</th><th scope="col">Plan value</th><th scope="col">Annual category budget</th><th scope="col">Spent this year</th><th scope="col">Category remaining</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
+      '<div class="omega-v2-vehicle-stats"><div><span>Planned category total</span><strong data-omega-v2-budget-total>' + esc(money(snap.planTotalUsd)) + '</strong></div>' +
+        '<div><span>Unassigned Interior allocation</span><strong>' + esc(money(snap.unplannedBudgetUsd)) + '</strong></div>' +
+      '</div><div class="omega-v2-status" data-state="' + (snap.valid === false ? 'attention' : 'operational') + '" data-omega-v2-budget-plan-status>' +
+        (snap.valid === false ? 'Current category plan needs correction.' : 'All six categories are linked to the Finance Ministry ceiling.') +
+      '</div>' +
+      '<div class="omega-v2-actions"><button type="button" class="omega-v2-button omega-v2-button--primary" data-omega-v2-action="save-home-budget"' + (canEdit ? '' : ' disabled') + '>SAVE HOME AFFAIRS BUDGET</button></div>' +
+      '<p class="omega-v2-source">Source: OmegaHomeMinistryEngine → Finance Ministry Interior allocation and fiscal-year expense ledger. Values are country-specific simulation records, not hard-coded UI figures.</p></section>';
+  }
+  function requestFinanceRefresh(root, options, snap) {
+    if (!snap || snap.reason !== 'FINANCE_RUNTIME_NOT_READY' || root.__omegaV2HomeFinanceInitPending) return;
+    var finance = g.OmegaFinanceMinistry || (g.Omega && g.Omega.FinanceMinistry);
+    if (!finance || typeof finance.init !== 'function') return;
+    root.__omegaV2HomeFinanceInitPending = true;
+    var pending;
+    try { pending = finance.init(); }
+    catch (_) { root.__omegaV2HomeFinanceInitPending = false; return; }
+    Promise.resolve(pending).then(function () {
+      root.__omegaV2HomeFinanceInitPending = false;
+      var appState = root.__omegaUIV2State;
+      var stillHome = !appState || appState.route === 'home-affairs';
+      if (stillHome && root.__omegaV2HomeTab === 'budget') {
+        scheduleRender(root, Object.assign({}, root.__omegaV2HomeOptions || options || {}, { tab:'budget' }), 'Loading Home Affairs budget');
+      }
+    }).catch(function () { root.__omegaV2HomeFinanceInitPending = false; });
+  }
   function incidentsHtml(state) {
     if (!countryBaselineReady(state)) return '<h2 class="omega-v2-section-title">Recorded incidents</h2><div class="omega-v2-empty" role="status">Country incident state is not ready; no generic values are shown.</div>';
     var rows = state && Array.isArray(state.incidentLedger) ? state.incidentLedger.slice().reverse().slice(0, 30) : [];
@@ -209,10 +293,13 @@
     var active = options.tab || root.__omegaV2HomeTab || 'dashboard';
     var quoteQuantity = 1;
     var baselineReady=countryBaselineReady(state);
+    var budget = active === 'budget' ? homeBudgetSnapshot(country) : null;
+    if (active === 'budget') requestFinanceRefresh(root, options, budget);
     var quote = baselineReady ? estimateRecruitment(quoteQuantity, country) : { ok:false, code:'COUNTRY_BASELINE_NOT_READY' };
     var canRecruit = !!(e && typeof e.recruitPolice === 'function' && country && baselineReady);
     var content;
-    if (active === 'personnel') content = personnelHtml(state, country, quote, root.__omegaV2RecruitOutcome || '', canRecruit);
+    if (active === 'budget') content = budgetHtml(country, budget, root.__omegaV2BudgetOutcome || '');
+    else if (active === 'personnel') content = personnelHtml(state, country, quote, root.__omegaV2RecruitOutcome || '', canRecruit);
     else if (active === 'fleet') content = baselineReady ? '<div data-omega-v2-home-fleet-root></div>' : '<div class="omega-v2-empty" role="status">Country-specific fleet baseline is loading or unavailable. No shared fleet data is displayed.</div>';
     else if (active === 'patrols') content = patrolsHtml(state, options);
     else if (active === 'facilities') content = facilitiesHtml(state);
@@ -240,6 +327,41 @@
         if (!action || !root.contains(action) || action.disabled) return;
         var actionId = action.getAttribute('data-omega-v2-action');
         var currentOptions = root.__omegaV2HomeOptions || {};
+        if (actionId === 'save-home-budget') {
+          var budgetEngine = engine();
+          var budgetCountry = countryId(currentOptions);
+          var currentBudget = homeBudgetSnapshot(budgetCountry);
+          if (!currentBudget.available || currentBudget.canEdit === false || !budgetEngine || typeof budgetEngine.setHomeBudgetPlan !== 'function') {
+            root.__omegaV2BudgetOutcome = 'Budget was not saved: ' + String(currentBudget.reason || (currentBudget.canEdit === false ? 'PLAYER_COUNTRY_SCOPE_VIOLATION' : 'HOME_BUDGET_API_UNAVAILABLE')) + '.';
+            scheduleRender(root, Object.assign({}, currentOptions, { tab:'budget' }));
+            return;
+          }
+          var nextPlan = {};
+          var inputError = null;
+          HOME_BUDGET_ROWS.forEach(function (item) {
+            var valueNode = root.querySelector('[data-omega-v2-budget-value="' + item.id + '"]');
+            var modeNode = root.querySelector('[data-omega-v2-budget-mode="' + item.id + '"]');
+            var value = num(valueNode && valueNode.value);
+            var mode = modeNode && modeNode.value === 'amount' ? 'amount' : 'percent';
+            if (value === null || value < 0 || (mode === 'percent' && value > 100)) {
+              inputError = item.label + ' has an invalid allocation value.';
+              return;
+            }
+            nextPlan[item.id] = { mode:mode, value:value };
+          });
+          if (inputError) {
+            root.__omegaV2BudgetOutcome = 'Budget was not saved: ' + inputError;
+          } else {
+            var saved;
+            try { saved = budgetEngine.setHomeBudgetPlan(nextPlan, budgetCountry); }
+            catch (error) { saved = { ok:false, code:'HOME_BUDGET_SAVE_FAILED', message:String(error && error.message || error) }; }
+            root.__omegaV2BudgetOutcome = saved && saved.ok
+              ? 'Home Affairs budget plan saved. Treasury and category spending remain unchanged.'
+              : 'Budget was not saved: ' + String(saved && (saved.message || saved.code || saved.reason) || 'HOME_BUDGET_SAVE_FAILED') + '.';
+          }
+          scheduleRender(root, Object.assign({}, currentOptions, { tab:'budget' }));
+          return;
+        }
         if (actionId === 'recruit-police') {
           var input = root.querySelector('[data-omega-v2-recruit-quantity]');
           var amount = Math.floor(num(input && input.value) || 0);
@@ -258,9 +380,41 @@
           scheduleRender(root, Object.assign({}, currentOptions, { tab:'personnel' }));
         }
       });
-      root.addEventListener('input', function (event) {
+      function handleHomeInput(event) {
         var target = event && event.target;
-        if (!target || !target.matches || !target.matches('[data-omega-v2-recruit-quantity]')) return;
+        if (!target || !target.matches) return;
+        if (target.matches('[data-omega-v2-budget-value], [data-omega-v2-budget-mode]')) {
+          var activeOptions = root.__omegaV2HomeOptions || {};
+          var snap = homeBudgetSnapshot(countryId(activeOptions));
+          if (!snap.available) return;
+          var envelope = Math.max(0, num(snap.parentBudgetUsd) || 0);
+          var total = 0, complete = true;
+          HOME_BUDGET_ROWS.forEach(function (item) {
+            var valueNode = root.querySelector('[data-omega-v2-budget-value="' + item.id + '"]');
+            var modeNode = root.querySelector('[data-omega-v2-budget-mode="' + item.id + '"]');
+            var value = num(valueNode && valueNode.value);
+            var mode = modeNode && modeNode.value === 'amount' ? 'amount' : 'percent';
+            if (value === null || value < 0 || (mode === 'percent' && value > 100)) { complete = false; return; }
+            var amount = mode === 'amount' ? value : envelope * value / 100;
+            total += amount;
+            var cell = root.querySelector('[data-omega-v2-budget-estimate="' + item.id + '"]');
+            if (cell) cell.textContent = money(amount);
+          });
+          var totalNode = root.querySelector('[data-omega-v2-budget-total]');
+          var status = root.querySelector('[data-omega-v2-budget-plan-status]');
+          var save = root.querySelector('[data-omega-v2-action="save-home-budget"]');
+          var over = total > envelope + 0.01;
+          if (totalNode) totalNode.textContent = complete ? money(total) : 'Incomplete plan';
+          if (status) {
+            status.setAttribute('data-state', !complete || over ? 'attention' : 'operational');
+            status.textContent = !complete ? 'Complete all six valid category values.' : over
+              ? 'Planned categories total ' + money(total) + ', above the Finance ceiling of ' + money(envelope) + '. Save is blocked.'
+              : 'Planned categories: ' + money(total) + ' of ' + money(envelope) + '.';
+          }
+          if (save) save.disabled = !complete || over || snap.canEdit === false;
+          return;
+        }
+        if (!target.matches('[data-omega-v2-recruit-quantity]')) return;
         var amount = Math.floor(num(target.value) || 0);
         var quote = estimateRecruitment(amount, countryId(root.__omegaV2HomeOptions || {}));
         var cost = root.querySelector('[data-omega-v2-recruit-cost]');
@@ -269,7 +423,9 @@
         if (cost) cost.textContent = quote.ok ? money(quote.upfrontCostUsd) : 'Unavailable';
         if (payroll) payroll.textContent = quote.ok ? money(quote.addedDailyPayrollUsd) : 'Unavailable';
         if (forecast) forecast.textContent = quote.ok && quote.additionalIncidentsAvoidedPerYear !== null ? fmt(quote.additionalIncidentsAvoidedPerYear) : 'Not recorded';
-      });
+      }
+      root.addEventListener('input', handleHomeInput);
+      root.addEventListener('change', handleHomeInput);
       root.__omegaV2HomeBound = true;
     }
     root.__omegaV2HomeOptions = options;
