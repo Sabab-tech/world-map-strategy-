@@ -30,14 +30,36 @@ const numberValue=v=>{
   return Number.isInteger(n)&&n>=0?n:null;
 };
 async function fetchJson(url,options={}){
-  const controller=new AbortController();
-  const timer=setTimeout(()=>controller.abort(),30000);
-  try{
-    const response=await fetch(url,{...options,signal:controller.signal,headers:{accept:'application/json',...(options.headers||{})}});
-    const body=await response.text();
-    if(!response.ok)throw new Error('HTTP_'+response.status+':'+body.slice(0,160).replace(/\s+/g,' '));
-    try{return JSON.parse(body);}catch{throw new Error('NON_JSON_RESPONSE:'+body.slice(0,160));}
-  }finally{clearTimeout(timer);}
+  const maxAttempts=3;
+  for(let attempt=1;attempt<=maxAttempts;attempt++){
+    const controller=new AbortController();
+    const timer=setTimeout(()=>controller.abort(),30000);
+    try{
+      const headers={
+        accept:'application/json',
+        'user-agent':'Mozilla/5.0 (compatible; OMEGA-DataRefresh/1.0; +https://github.com/Sabab-tech/world-map-strategy-)',
+        referer:'https://stat.unido.org/data/table?dataset=indstat',
+        ...(options.headers||{})
+      };
+      const response=await fetch(url,{...options,signal:controller.signal,headers});
+      const body=await response.text();
+      if(!response.ok){
+        const retryable=response.status===429||response.status>=500;
+        if(retryable&&attempt<maxAttempts){
+          const retryAfter=Number(response.headers?.get?.('retry-after'));
+          const delay=Number.isFinite(retryAfter)&&retryAfter>0?Math.min(10000,retryAfter*1000):attempt*1500;
+          await new Promise(resolve=>setTimeout(resolve,delay));
+          continue;
+        }
+        throw new Error('HTTP_'+response.status+':'+body.slice(0,160).replace(/\s+/g,' '));
+      }
+      try{return JSON.parse(body);}catch{throw new Error('NON_JSON_RESPONSE:'+body.slice(0,160));}
+    }catch(error){
+      if(attempt>=maxAttempts||String(error?.message||'').startsWith('HTTP_403'))throw error;
+      if(attempt<maxAttempts)await new Promise(resolve=>setTimeout(resolve,attempt*1500));
+    }finally{clearTimeout(timer);}
+  }
+  throw new Error('UNIDO_REQUEST_RETRY_EXHAUSTED');
 }
 const first=(o,keys)=>{for(const k of keys)if(o[k]!==undefined&&o[k]!==null)return o[k];return undefined;};
 
@@ -125,10 +147,12 @@ export async function buildDataset(){
   }
   let meta;
   try{meta=await fetchJson(META_URL);}catch(error){
-    dataset.metadata.collectionStatus='SOURCE_UNAVAILABLE';dataset.metadata.retrievedAt=new Date().toISOString();dataset.metadata.sourceError=error.message;
-    for(const c of Object.values(dataset.countries)){c.countryStatus='SOURCE_UNAVAILABLE';for(const r of Object.values(c.factoryEstablishments))if(r.status==='NOT_QUERIED')r.status='SOURCE_UNAVAILABLE';}
-    writeFileSync(OUTPUT,JSON.stringify(dataset,null,2)+'\n');
-    console.log(JSON.stringify({updated:true,recordCount:4137,sourceError:error.message}));return {updated:true,dataset};
+    // A blocked or unavailable official endpoint is not a new data observation.
+    // Preserve the existing file and its prior status cells instead of committing
+    // 4,137 newly-labelled empty rows as though a source refresh had completed.
+    console.log(JSON.stringify({updated:false,sourceUnavailable:true,retainedExistingDataset:existsSync(OUTPUT),
+      reason:'UNIDO_METADATA_UNAVAILABLE',sourceError:error.message}));
+    return {updated:false,dataset:old&&old.datasetId=== 'OMEGA_COUNTRY_FACTORY_ESTABLISHMENTS_V1'?old:null,sourceError:error.message};
   }
   const datasetId=meta.id||meta.datasetId,countries=Array.isArray(meta.countries)?meta.countries:[],activities=Array.isArray(meta.activities)?meta.activities:[],variables=Array.isArray(meta.variables)?meta.variables:[];
   const variable=variables.find(v=>text(v.c)==='01'||/establishments/i.test(text(v.lang?.en||v.name))),variableCode=variable&&text(variable.c);
@@ -162,8 +186,26 @@ export async function buildDataset(){
       return {status:'SOURCE_UNAVAILABLE',observations:0,error:error.message};
     }
   });
-  const all=Object.values(dataset.countries).flatMap(c=>Object.values(c.factoryEstablishments)),reported=all.filter(r=>r.status==='REPORTED'),partial=all.filter(r=>r.status==='PARTIAL'),years=Object.values(dataset.countries).map(c=>c.latestReferenceYear).filter(Number.isInteger);
-  dataset.metadata={...dataset.metadata,collectionStatus:'COMPLETED',sourceDatasetId:datasetId,sourceDatasetName:text(meta.name||'INDSTAT Revision 4'),sourceProductionYear:text(meta.production_year||''),sourceUpdatedAt:text(meta.dat_ins||''),availableCountryCount:countries.length,coveredCoreCountryCount:rows.filter(c=>countryByIso3.has(c.countryId)).length,fetchedCoreCountryCount:countryResults.filter(c=>c.observations>0).length,reportedRecordCount:reported.length,partialRecordCount:partial.length,latestReferenceYear:years.length?Math.max(...years):null,retrievedAt:new Date().toISOString(),responseSummary:countryResults.reduce((a,r)=>(a[r.status]=(a[r.status]||0)+1,a),{})};
+  const all=Object.values(dataset.countries).flatMap(c=>Object.values(c.factoryEstablishments)),
+    reported=all.filter(r=>r.status==='REPORTED'),partial=all.filter(r=>r.status==='PARTIAL'),
+    years=Object.values(dataset.countries).map(c=>c.latestReferenceYear).filter(Number.isInteger),
+    coveredCoreCountryCount=rows.filter(c=>countryByIso3.has(c.countryId)).length,
+    fetchedCoreCountryCount=countryResults.filter(c=>c.observations>0).length;
+  if(fetchedCoreCountryCount===0){
+    console.log(JSON.stringify({updated:false,reason:'NO_SOURCE_OBSERVATIONS_RETRIEVED',
+      coveredCoreCountryCount,sourceCountryCount:countries.length,
+      responseSummary:countryResults.reduce((a,r)=>(a[r.status]=(a[r.status]||0)+1,a),{})}));
+    return {updated:false,dataset:old&&old.datasetId===dataset.datasetId?old:null};
+  }
+  const collectionStatus=fetchedCoreCountryCount===coveredCoreCountryCount?'COMPLETED':'PARTIAL';
+  dataset.metadata={...dataset.metadata,collectionStatus,sourceDatasetId:datasetId,
+    sourceDatasetName:text(meta.name||'INDSTAT Revision 4'),sourceProductionYear:text(meta.production_year||''),
+    sourceUpdatedAt:text(meta.dat_ins||''),availableCountryCount:countries.length,
+    coveredCoreCountryCount,fetchedCoreCountryCount,
+    sourceUnavailableCountryCount:countryResults.filter(c=>['SOURCE_UNAVAILABLE','NO_PARSEABLE_OBSERVATIONS'].includes(c.status)).length,
+    reportedRecordCount:reported.length,partialRecordCount:partial.length,
+    latestReferenceYear:years.length?Math.max(...years):null,retrievedAt:new Date().toISOString(),
+    responseSummary:countryResults.reduce((a,r)=>(a[r.status]=(a[r.status]||0)+1,a),{})};
   writeFileSync(OUTPUT,JSON.stringify(dataset,null,2)+'\n');
   console.log(JSON.stringify({updated:true,countryCount:197,factoryTypeCount:21,recordCount:4137,sourceCountryCount:dataset.metadata.availableCountryCount,coveredCoreCountryCount:dataset.metadata.coveredCoreCountryCount,fetchedCoreCountryCount:dataset.metadata.fetchedCoreCountryCount,reportedRecordCount:reported.length,partialRecordCount:partial.length,responseSummary:dataset.metadata.responseSummary},null,2));
   return {updated:true,dataset};
