@@ -429,7 +429,8 @@ test("Resource Logistics shows configured per-site route cards and keeps Current
   assert.match(root.innerHTML, /logistics\/warehouse-node\.svg/);
   assert.match(read("assets/omega-industrial-icons-v1/logistics/mine-site.svg"), /<title id="mine-title">Resource mine site<\/title>/);
   assert.match(read("assets/omega-industrial-icons-v1/logistics/warehouse-node.svg"), /<title id="warehouse-title">Raw resource warehouse<\/title>/);
-  assert.match(root.innerHTML, /data-current-match="unavailable"/);
+  assert.doesNotMatch(root.innerHTML, /data-current-match=|Current Match/,
+    "a missing live shipment must not mark an available route plan as unavailable");
   assert.doesNotMatch(root.innerHTML, /No active shipments or delivery records/);
   assert.deepEqual(fetched, [
     "resource_site_logistics_routes_v1.json",
