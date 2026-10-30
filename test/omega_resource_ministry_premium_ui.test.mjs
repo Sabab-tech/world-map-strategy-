@@ -270,6 +270,50 @@ test("Resource Logistics shows configured per-site route cards separately from l
       capacityUnit: "TONNES_PER_DAY"
     }
   };
+  const capacityTargetRoute = {
+    routeId: "ROUTE_TST_CAPACITY_TARGET",
+    siteId: "TST-MINE-CAPACITY-06",
+    countryId: "TST",
+    siteName: "Route Capacity Target Mine",
+    resourceId: "phosphate",
+    resourceIconKey: "phosphate",
+    destination: { warehouseId: "WH-TST-RAW" },
+    routePlan: {
+      routeType: "TRUCK",
+      routeStatus: "SIMULATED_PLAN_COMPLETE_ENGINE_BINDING_PENDING",
+      dispatchStatus: "NOT_DISPATCHABLE_DATA_ONLY_PHASE",
+      legs: [{ transportMode: "truck", estimatedDistanceKm: 40, designCapacityPerTrip: 25,
+        designCapacityPerTripUnit: "TONNES_PER_TRIP", designCapacityPerDay: 200,
+        designCapacityUnit: "RAW_CARGO_TONNES_PER_DAY", cycleHoursForOneDesignVehicle: 8 }],
+      estimatedRouteDistanceKm: 40,
+      plannedTransitDays: 1,
+      capacityBottleneckPerDay: 200,
+      capacityUnit: "RAW_CARGO_TONNES_PER_DAY"
+    }
+  };
+  const dailyRateWithAnnualSummaryRoute = {
+    routeId: "ROUTE_TST_DAILY_RATE_WITH_ANNUAL_SUMMARY",
+    siteId: "TST-MINE-GAS-DAILY-07",
+    countryId: "TST",
+    siteName: "Daily Gas Rate Mine",
+    resourceId: "natural_gas",
+    resourceIconKey: "natural_gas",
+    productionInput: { rate: 2185, annual: 797.52, unit: "MMCF_PER_DAY",
+      authority: "SCENARIO_SIMULATION_DATA", simulationOnly: true },
+    destination: { warehouseId: "WH-TST-RAW" },
+    routePlan: {
+      routeType: "TRUCK",
+      routeStatus: "SIMULATED_PLAN_COMPLETE_ENGINE_BINDING_PENDING",
+      dispatchStatus: "NOT_DISPATCHABLE_DATA_ONLY_PHASE",
+      legs: [{ transportMode: "truck", estimatedDistanceKm: 48, designCapacityPerTrip: 50,
+        designCapacityPerTripUnit: "MMCF_PER_TRIP", designCapacityPerDay: 5000,
+        designCapacityUnit: "MMCF_PER_DAY", cycleHoursForOneDesignVehicle: 2.4 }],
+      estimatedRouteDistanceKm: 48,
+      plannedTransitDays: 1,
+      capacityBottleneckPerDay: 5000,
+      capacityUnit: "MMCF_PER_DAY"
+    }
+  };
   const sandbox = {
     OmegaResourceIndustrialCatalogData: json("resource_industrial_catalog_v1.json"),
     fetch: async (url) => {
@@ -284,7 +328,7 @@ test("Resource Logistics shows configured per-site route cards separately from l
         }) };
       }
       if (name === "resource_site_logistics_routes_v1_part_02.json") {
-        return { ok: true, json: async () => ({ routes: [route, legacyGoldRoute, genericCrudeOilRoute, pipelineRoute, liveProductionRoute] }) };
+        return { ok: true, json: async () => ({ routes: [route, legacyGoldRoute, genericCrudeOilRoute, pipelineRoute, liveProductionRoute, capacityTargetRoute, dailyRateWithAnnualSummaryRoute] }) };
       }
       throw new Error("Unexpected logistics asset request: " + name);
     }
@@ -366,6 +410,25 @@ test("Resource Logistics shows configured per-site route cards separately from l
   assert.match(root.innerHTML, /data-design-formula="ceil\(production per day/);
   assert.match(root.innerHTML, /data-design-capacity-per-unit-day="75"/,
     "the displayed per-vehicle daily capacity must derive from payload and round-trip cycle");
+  const capacityTargetStart = root.innerHTML.indexOf('data-site-id="TST-MINE-CAPACITY-06"');
+  const capacityTargetEnd = root.innerHTML.indexOf('</article>', capacityTargetStart);
+  assert.ok(capacityTargetStart >= 0 && capacityTargetEnd > capacityTargetStart,
+    "route-capacity target mine card must render");
+  const capacityTargetHtml = root.innerHTML.slice(capacityTargetStart, capacityTargetEnd);
+  assert.match(capacityTargetHtml, /data-design-estimate-available="true"/,
+    "a known route capacity should size vehicles when production is missing");
+  assert.match(capacityTargetHtml, /data-design-estimated-units="3"/,
+    "200 tonnes/day divided by 75 tonnes/day per truck requires three trucks");
+  assert.match(capacityTargetHtml, /Route capacity need: 3 trucks/);
+  assert.match(capacityTargetHtml, /data-design-formula="ceil\(route capacity per day/);
+
+  const annualSummaryStart = root.innerHTML.indexOf('data-site-id="TST-MINE-GAS-DAILY-07"');
+  const annualSummaryEnd = root.innerHTML.indexOf('</article>', annualSummaryStart);
+  assert.ok(annualSummaryStart >= 0 && annualSummaryEnd > annualSummaryStart,
+    "daily production route with annual summary must render");
+  assert.match(root.innerHTML.slice(annualSummaryStart, annualSummaryEnd), /data-design-estimated-units="5"/,
+    "the declared 2,185 MMCF/day rate must not be overwritten by its 797.52 BCF/year summary");
+
   const liveCardStart = root.innerHTML.indexOf('data-site-id="TST-MINE-LIVE-05"');
   const liveCardEnd = root.innerHTML.indexOf('</article>', liveCardStart);
   assert.ok(liveCardStart >= 0 && liveCardEnd > liveCardStart, "live-production mine route card must render");
