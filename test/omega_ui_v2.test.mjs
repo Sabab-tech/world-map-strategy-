@@ -311,8 +311,15 @@ test('industry command panel renders country starting allocations separately fro
     assert.match(root.innerHTML, /Starting factory allocation/);
     assert.match(root.innerHTML, /7<\/strong><small>game units/);
     assert.match(root.innerHTML, /STEEL_MILL/);
-    assert.match(root.innerHTML, /Starting allocation/);
     assert.match(root.innerHTML, /data-runtime-status="REGISTERED"/);
+    const typeRoot = { classList:{ add(){} }, addEventListener(){}, contains(){ return true; } };
+    const typeResult = globalThis.OmegaUIV2Industry.render(typeRoot, {
+      countryId:'BGD', tab:'factories', factoryView:'types'
+    });
+    assert.equal(typeResult.ok, true);
+    assert.match(typeRoot.innerHTML, /Starting allocation/);
+    assert.match(typeRoot.innerHTML, /fp-type-card-count--starting/);
+    assert.match(typeRoot.innerHTML, /Commissioned assets/);
     assert.match(root.innerHTML, /STARTING UNITS/);
     assert.doesNotMatch(root.innerHTML, /Foreign Cement Plant/);
     assert.doesNotMatch(root.innerHTML, /Bangladesh Iron Mine|Daily mine production|FACTORY SVG SLOT/);
