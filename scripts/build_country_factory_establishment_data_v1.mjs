@@ -161,7 +161,7 @@ export async function buildDataset(){
   const requestedActivities=[...new Set(mapping.mappings.flatMap(x=>x.activityCodes||[]))].filter(c=>sourceCodes.has(c));
   const countryResults=await parallel(rows,4,async country=>{
     const output=dataset.countries[country.countryId],source=countryByIso3.get(country.countryId);
-    if(!source){output.countryStatus='COUNTRY_NOT_COVERED';for(const t of types){const codes=mapByType[t].activityCodes;output.factoryEstablishments[t]=blank(codes.length?'COUNTRY_NOT_COVERED':'NOT_COMPARABLE',codes);}return {countryId:country.countryId,status:'COUNTRY_NOT_COVERED',observations:0};}
+    if(!source){output.countryStatus='COUNTRY_NOT_COVERED';for(const t of types){const prior=output.factoryEstablishments[t];if(prior&&['REPORTED','PARTIAL','MAPPING_UNAVAILABLE','NOT_REPORTED'].includes(prior.status))continue;const codes=mapByType[t].activityCodes;output.factoryEstablishments[t]=blank(codes.length?'COUNTRY_NOT_COVERED':'NOT_COMPARABLE',codes);}return {countryId:country.countryId,status:'COUNTRY_NOT_COVERED',observations:0};}
     output.countryStatus='UNIDO_COUNTRY_COVERED';output.sourceCountryCode=text(source.c);output.sourceCountryName=text(source.lang?.en||country.countryName);
     try{
       let response;
