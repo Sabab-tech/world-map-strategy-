@@ -192,7 +192,7 @@
       '</div>' + editNotice + invalidNotice +
       '<div class="omega-v2-table-wrap omega-v2-home-budget-table-wrap"><table><thead><tr><th scope="col">Category</th><th scope="col">Allocation type</th><th scope="col">Plan value</th><th scope="col">Annual category budget</th><th scope="col">Spent this year</th><th scope="col">Category remaining</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
       '<div class="omega-v2-vehicle-stats"><div><span>Planned category total</span><strong data-omega-v2-budget-total>' + esc(money(snap.planTotalUsd)) + '</strong></div>' +
-        '<div><span>Unassigned Interior allocation</span><strong>' + esc(money(snap.unplannedBudgetUsd)) + '</strong></div>' +
+        '<div><span>Unassigned Interior allocation</span><strong data-omega-v2-budget-unassigned>' + esc(money(snap.unplannedBudgetUsd)) + '</strong></div>' +
       '</div><div class="omega-v2-status" data-state="' + (snap.valid === false ? 'attention' : 'operational') + '" data-omega-v2-budget-plan-status>' +
         (snap.valid === false ? 'Current category plan needs correction.' : 'All six categories are linked to the Finance Ministry ceiling.') +
       '</div>' +
@@ -411,6 +411,8 @@
           var save = root.querySelector('[data-omega-v2-action="save-home-budget"]');
           var over = total > envelope + 0.01;
           if (totalNode) totalNode.textContent = complete ? money(total) : 'Incomplete plan';
+          var unassignedNode = root.querySelector('[data-omega-v2-budget-unassigned]');
+          if (unassignedNode) unassignedNode.textContent = complete ? money(Math.max(0, envelope - total)) : 'Unavailable';
           if (status) {
             status.setAttribute('data-state', !complete || over ? 'attention' : 'operational');
             status.textContent = !complete ? 'Complete all six valid category values.' : over
