@@ -244,9 +244,10 @@ test('industry view reads current country assets, cycles and projects without sy
   assert.equal(globalThis.OmegaUIV2Industry.buildViewModel({countryId:'USA'}).factoryCount,0);
 });
 
-test('industry command panel aggregates factory type totals using only selected-country assets', () => {
+test('industry command panel renders country starting allocations separately from live commissioned factories', () => {
   const previousGame = globalThis.Game;
   const previousCatalog = globalThis.OmegaResourceIndustrialCatalogData;
+  const previousFactoryBaseline = globalThis.OmegaCountryFactoryStartingBaselineV1;
   globalThis.Game = { state: {
     simulation: { session: { playerCountryId: 'BGD' }, turn: 12, daysPerTurn: 1 },
     resource: {
@@ -269,9 +270,33 @@ test('industry command panel aggregates factory type totals using only selected-
       CEMENT_PLANT: { name:'Cement Plant', defaultRecipeId:'CEMENT-RECIPE' }
     }
   };
+  globalThis.OmegaCountryFactoryStartingBaselineV1 = {
+    getCountryBaseline(countryId) {
+      return countryId === 'BGD' ? {
+        countryId:'BGD', countryName:'Bangladesh', totalStartingFactoryUnits:7,
+        factoryCounts:{ STEEL_MILL:3, CEMENT_PLANT:0 }
+      } : null;
+    },
+    getCountryFactoryRegistry(countryId) {
+      return countryId === 'BGD' ? {
+        status:'READY', countryId:'BGD', factoryTypeCount:2, totalStartingFactoryUnits:7,
+        runtimeStatus:'REGISTERED', runtimeRegistered:true,
+        registry:[
+          {factoryType:'STEEL_MILL',name:'Steel Mill',startingCount:3,registryStatus:'REGISTERED'},
+          {factoryType:'CEMENT_PLANT',name:'Cement Plant',startingCount:0,registryStatus:'REGISTERED'}
+        ]
+      } : null;
+    }
+  };
   try {
     const model = globalThis.OmegaUIV2Industry.buildViewModel({ countryId:'BGD' });
     assert.equal(model.factoryCount, 2);
+    assert.equal(model.startingFactoryUnits, 7);
+    assert.equal(model.factoryRegistryRuntimeStatus, 'REGISTERED');
+    assert.deepEqual(model.factoryTypeCatalog.map((row) => ({ name:row.name, startingCount:row.startingCount })), [
+      { name:'Steel Mill', startingCount:3 },
+      { name:'Cement Plant', startingCount:0 }
+    ]);
     assert.deepEqual(model.factoryTypeCounts.map((row) => ({ name:row.name, count:row.count })), [
       { name:'Steel Mill', count:2 }
     ]);
@@ -283,12 +308,20 @@ test('industry command panel aggregates factory type totals using only selected-
     assert.match(root.innerHTML, /Steel Mill/);
     assert.match(root.innerHTML, /data-state="unknown"/);
     assert.match(root.innerHTML, /Total:<\/span><strong>2<\/strong>/);
-    assert.doesNotMatch(root.innerHTML, /Foreign Cement Plant|CEMENT_PLANT/);
+    assert.match(root.innerHTML, /Starting factory allocation/);
+    assert.match(root.innerHTML, /7<\/strong><small>game units/);
+    assert.match(root.innerHTML, /STEEL_MILL/);
+    assert.match(root.innerHTML, /Starting allocation/);
+    assert.match(root.innerHTML, /data-runtime-status="REGISTERED"/);
+    assert.match(root.innerHTML, /STARTING UNITS/);
+    assert.doesNotMatch(root.innerHTML, /Foreign Cement Plant/);
     assert.doesNotMatch(root.innerHTML, /Bangladesh Iron Mine|Daily mine production|FACTORY SVG SLOT/);
   } finally {
     if (previousGame === undefined) delete globalThis.Game; else globalThis.Game = previousGame;
     if (previousCatalog === undefined) delete globalThis.OmegaResourceIndustrialCatalogData;
     else globalThis.OmegaResourceIndustrialCatalogData = previousCatalog;
+    if (previousFactoryBaseline === undefined) delete globalThis.OmegaCountryFactoryStartingBaselineV1;
+    else globalThis.OmegaCountryFactoryStartingBaselineV1 = previousFactoryBaseline;
   }
 });
 
