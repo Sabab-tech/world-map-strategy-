@@ -43,7 +43,7 @@ const first=(o,keys)=>{for(const k of keys)if(o[k]!==undefined&&o[k]!==null)retu
 
 /** Normalise nested UNIDO rows or period/activity dictionaries. */
 export function extractEstablishmentObservations(payload,allowedCodes){
-  const out=new Map(),seen=new WeakSet();
+  const out=new Map();
   const activityKeys=['activityCode','activity_code','activity','activityId','activity_id','isicCode','isic_code','isic','actCode','act_code','act'];
   const periodKeys=['period','year','timePeriod','time_period','referencePeriod','reference_period','time','periodCode','t'];
   const variableKeys=['variableCode','variable_code','variable','variableId','variable_id','indicatorCode'];
@@ -54,29 +54,30 @@ export function extractEstablishmentObservations(payload,allowedCodes){
     if(allowedCodes.has(code)&&/^\d{4}$/.test(year)&&value!==null&&String(variable||'01')==='01')
       out.set(code+'|'+year,{activityCode:code,year:Number(year),value});
   };
-  function walk(node,ctx={}){
-    if(Array.isArray(node)){node.forEach(v=>walk(v,ctx));return;}
+  function walk(node,context={}){
+    if(Array.isArray(node)){node.forEach(child=>walk(child,context));return;}
     if(!isObject(node))return;
-    if(seen.has(node))return;
-    seen.add(node);
-    const activity=scalar(first(node,activityKeys))||ctx.activity||null;
-    const period=scalar(first(node,periodKeys))||ctx.period||null;
-    const variable=scalar(first(node,variableKeys))||ctx.variable||'01';
+    const activity=scalar(first(node,activityKeys))||context.activity||null;
+    const period=scalar(first(node,periodKeys))||context.period||null;
+    const variable=scalar(first(node,variableKeys))||context.variable||'01';
     const raw=first(node,valueKeys);
     if(raw!==undefined&&activity&&period)put(activity,period,raw,variable);
     for(const [key,child] of Object.entries(node)){
-      const next={activity,period,variable};
-      const isActivity=allowedCodes.has(key);
-      const isPeriod=/^\d{4}$/.test(key);
-      if(isActivity)next.activity=key;
-      if(isPeriod)next.period=key;
-      if(isObject(child)||Array.isArray(child)){
-        walk(child,next);
-      }else if(next.activity&&next.period&&!structuralKeys.has(key)){
-        put(next.activity,next.period,child,next.variable);
-      }else if(child!==null&&child!==undefined&&
-          ((isActivity&&next.period)||(isPeriod&&next.activity))){
-        put(next.activity,next.period,child,next.variable);
+      if(structuralKeys.has(key))continue;
+      if(/^\d{4}$/.test(key)){
+        if(!isObject(child)&&!Array.isArray(child)){
+          if(activity)put(activity,key,child,variable);
+        }else{
+          walk(child,{activity:activity,period:key,variable:variable});
+        }
+      }else if(allowedCodes.has(key)){
+        if(!isObject(child)&&!Array.isArray(child)){
+          if(period)put(key,period,child,variable);
+        }else{
+          walk(child,{activity:key,period:period,variable:variable});
+        }
+      }else if(isObject(child)||Array.isArray(child)){
+        walk(child,{activity:activity,period:period,variable:variable});
       }
     }
   }
