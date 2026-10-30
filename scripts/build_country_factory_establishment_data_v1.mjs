@@ -64,17 +64,17 @@ export function extractEstablishmentObservations(payload,allowedCodes){
     if(raw!==undefined&&activity&&period)put(activity,period,raw,variable);
     for(const [key,child] of Object.entries(node)){
       if(structuralKeys.has(key))continue;
-      if(/^\d{4}$/.test(key)){
-        if(!isObject(child)&&!Array.isArray(child)){
-          if(activity)put(activity,key,child,variable);
-        }else{
-          walk(child,{activity:activity,period:key,variable:variable});
-        }
-      }else if(allowedCodes.has(key)){
+      if(allowedCodes.has(key)){
         if(!isObject(child)&&!Array.isArray(child)){
           if(period)put(key,period,child,variable);
         }else{
           walk(child,{activity:key,period:period,variable:variable});
+        }
+      }else if(/^\d{4}$/.test(key)){
+        if(!isObject(child)&&!Array.isArray(child)){
+          if(activity)put(activity,key,child,variable);
+        }else{
+          walk(child,{activity:activity,period:key,variable:variable});
         }
       }else if(isObject(child)||Array.isArray(child)){
         walk(child,{activity:activity,period:period,variable:variable});
