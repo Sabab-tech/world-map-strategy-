@@ -139,6 +139,15 @@ test('runtime validates sources and seeds all country counts without changing li
   assert.equal(ready.countryCount, 197);
   assert.equal(ready.factoryTypeCount, 21);
   assert.equal(typeof api.getCountryBaseline, 'function');
+  assert.equal(typeof api.getCountryFactoryRegistry, 'function');
+  const registryBeforeInitialization = api.getCountryFactoryRegistry('BGD');
+  assert.equal(registryBeforeInitialization.status, 'READY');
+  assert.equal(registryBeforeInitialization.runtimeStatus, 'DATA_READY_NOT_SESSION_REGISTERED');
+  assert.equal(registryBeforeInitialization.factoryTypeCount, 21);
+  assert.equal(registryBeforeInitialization.registry.length, 21);
+  assert.equal(registryBeforeInitialization.totalStartingFactoryUnits, baseline.countries.BGD.totalStartingFactoryUnits);
+  assert.equal(registryBeforeInitialization.registry.find(row => row.factoryType === 'TEXTILE_GARMENT_MILL').startingCount,
+    baseline.countries.BGD.factoryCounts.TEXTILE_GARMENT_MILL);
   const bangladesh = api.getCountryBaseline('BGD');
   assert.equal(bangladesh.totalStartingFactoryUnits, baseline.countries.BGD.totalStartingFactoryUnits);
   assert.equal(bangladesh.factoryCounts.TEXTILE_GARMENT_MILL, baseline.countries.BGD.factoryCounts.TEXTILE_GARMENT_MILL);
@@ -150,12 +159,27 @@ test('runtime validates sources and seeds all country counts without changing li
   assert.equal(result.status, 'COMPLETED');
   assert.equal(state.simulation.countryFactoryStartingBaselineV1.countryCount, 197);
   assert.equal(state.simulation.countryFactoryStartingBaselineV1.factoryTypeCount, 21);
+  assert.equal(state.simulation.countryFactoryStartingBaselineV1.factoryRegistryContract, 'OMEGA_COUNTRY_FACTORY_STARTING_REGISTRY_V1');
+  assert.equal(state.simulation.countryFactoryStartingBaselineV1.factoryRegistryStatus, 'REGISTERED');
+  assert.equal(state.simulation.countryFactoryStartingBaselineV1.registeredFactoryTypeCount, 21);
+  assert.equal(state.simulation.countryFactoryStartingBaselineV1.registeredFactoryUnitCount, baseline.factoryTypes.reduce((sum, row) => {
+    return sum + Object.values(baseline.countries).reduce((countrySum, country) => countrySum + country.factoryCounts[row.id], 0);
+  }, 0));
   assert.equal(state.simulation.countryFactoryStartingBaselineV1.initializedCountryCount, 197);
   assert.equal(state.simulation.countryFactoryStartingBaselineV1.productionAssetsCreated, 0);
   assert.equal(state.simulation.countryFactoryStartingBaselineV1.economyStateModified, false);
   assert.equal(Object.keys(state.simulation.countryFactoryStartingBaselineV1.countries).length, 197);
   assert.equal(state.simulation.countryFactoryStartingBaselineV1.countries.BGD.totalStartingFactoryUnits, baseline.countries.BGD.totalStartingFactoryUnits);
   assert.equal(Object.keys(state.simulation.countryFactoryStartingBaselineV1.countries.BGD.factoryCounts).length, 21);
+  assert.equal(state.simulation.countryFactoryStartingBaselineV1.countries.BGD.registryStatus, 'REGISTERED');
+  assert.equal(state.simulation.countryFactoryStartingBaselineV1.countries.BGD.factoryTypeCount, 21);
+  assert.equal(state.simulation.countryFactoryStartingBaselineV1.countries.BGD.factoryUnitCount,
+    baseline.countries.BGD.totalStartingFactoryUnits);
+  const registeredRuntime = api.getCountryFactoryRegistry('BGD');
+  assert.equal(registeredRuntime.runtimeStatus, 'REGISTERED');
+  assert.equal(registeredRuntime.runtimeRegistered, true);
+  assert.equal(registeredRuntime.registry.length, 21);
+  assert.equal(registeredRuntime.liveProductionAssetsCreated, 0);
   assert.equal(state.simulation.countryFactoryStartingBaselineV1.existingSaveDataOverwritten, false);
   assert.equal(Object.keys(state.economy).length, 1, 'baseline initialization must not create empty economy buckets for other countries');
   assert.equal(JSON.stringify(state.economy.BGD.productionAssets), originalAssets);
