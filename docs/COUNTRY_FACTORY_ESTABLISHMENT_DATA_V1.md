@@ -12,9 +12,11 @@ This layer contains 4,137 explicit inputs: 197 OMEGA core countries × 21 canoni
 - Metadata API: https://stat.unido.org/portal/dataset/getDataset/INDSTAT/4
 - Data API: https://stat.unido.org/portal/dataset/getData
 - API instructions: https://stat.unido.org/unido-statistics-portal-api
+- Published data mirror: https://subsets.io/datasets/unido-indstat-r4
+- Mirror package: https://pypi.org/project/subsetsio/0.1.0rc1/
 - Classification: https://unstats.un.org/unsd/classifications/Econ/isic
 
-UNIDO metadata supplies a dynamic dataset ID, country list, variables, activities and periods. Data calls are made per source country. Source coverage does not necessarily include all 197 OMEGA countries.
+UNIDO's original INDSTAT API documents per-country data requests, but notes that plain HTTP clients can receive Cloudflare 403 responses. OMEGA therefore retrieves the same official UNIDO INDSTAT R4 establishment observations through the public Subsets.io mirror when available. The mirror lists UNIDO as the source and publishes the data under CC BY 4.0. The mirrored table has country, indicator, ISIC activity, year and value fields; coverage does not necessarily include all 197 OMEGA countries. The mirror is a transport/cache layer, not the original statistical authority.
 
 ## Definition and limitations
 
@@ -37,4 +39,4 @@ Missing values are null, never zero. GDP, resource reserves, game allocations an
 
 ## Refresh
 
-Run `node scripts/build_country_factory_establishment_data_v1.mjs`. The GitHub Actions workflow validates the matrix and refreshes source data quarterly, manually, and after merges affecting the importer/mapping/runtime/UI. Previously verified values are preserved when later source requests fail.
+GitHub Actions installs the pinned `subsetsio` client, syncs the public `medium` bundle, exports the UNIDO INDSTAT R4 establishment rows, and runs `node scripts/build_country_factory_establishment_data_v1.mjs --subsets-json <export>`. The workflow validates the matrix and refreshes source data quarterly, manually, and after relevant merges. A failed or empty source query fails closed and never overwrites verified counts.
