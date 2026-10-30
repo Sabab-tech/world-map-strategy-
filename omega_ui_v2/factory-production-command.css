@@ -2180,3 +2180,145 @@
   .omega-v2-industry--factory-home .fp-project-fields { grid-template-columns:minmax(0,1fr); }
   .omega-v2-industry--factory-home .fp-project-actions button { flex:1 1 100%; }
 }
+
+
+/* Country opening-industry allocation: separate from commissioned production assets. */
+.omega-v2-industry--factory-home .fp-starting-allocation {
+  position: relative;
+  margin: 0 0 10px;
+  padding: 9px;
+  overflow: hidden;
+  border: 1px solid rgba(139, 171, 194, .72);
+  border-radius: 9px;
+  color: #eaf4fc;
+  background:
+    linear-gradient(135deg, rgba(255,255,255,.065), transparent 22% 78%, rgba(255,255,255,.035)),
+    linear-gradient(155deg, #142b3e, #071827 58%, #10273a);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.19),
+    inset 0 0 0 2px rgba(1,9,17,.72),
+    0 0 12px rgba(69,157,207,.10);
+}
+.omega-v2-industry--factory-home .fp-starting-allocation-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 2px 3px 8px;
+  border-bottom: 1px solid rgba(128,165,192,.28);
+}
+.omega-v2-industry--factory-home .fp-starting-allocation-heading > div:first-child {
+  display: grid;
+  gap: 2px;
+}
+.omega-v2-industry--factory-home .fp-starting-allocation-heading > div:first-child > span {
+  color: #81c8ef;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: .12em;
+}
+.omega-v2-industry--factory-home .fp-starting-allocation-heading > div:first-child > strong {
+  color: #f2f8fc;
+  font-size: 13px;
+  letter-spacing: .015em;
+}
+.omega-v2-industry--factory-home .fp-starting-allocation-total {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  white-space: nowrap;
+}
+.omega-v2-industry--factory-home .fp-starting-allocation-total > strong {
+  color: #f4d68b;
+  font-size: 19px;
+  font-variant-numeric: tabular-nums;
+}
+.omega-v2-industry--factory-home .fp-starting-allocation-total > small,
+.omega-v2-industry--factory-home .fp-starting-allocation-meta {
+  color: #9bb4c8;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: .055em;
+  text-transform: uppercase;
+}
+.omega-v2-industry--factory-home .fp-starting-allocation-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  padding: 7px 3px 6px;
+}
+.omega-v2-industry--factory-home .fp-starting-allocation-table-wrap {
+  max-height: 230px;
+  overflow: auto;
+  border: 1px solid rgba(116,151,177,.22);
+  border-radius: 5px;
+  background: rgba(2,11,20,.45);
+  scrollbar-color: #315a75 #071522;
+  scrollbar-width: thin;
+}
+.omega-v2-industry--factory-home .fp-starting-allocation table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 9px;
+}
+.omega-v2-industry--factory-home .fp-starting-allocation th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 6px 8px;
+  color: #a9c9df;
+  background: #10283b;
+  font-size: 8px;
+  font-weight: 900;
+  text-align: left;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.omega-v2-industry--factory-home .fp-starting-allocation td {
+  padding: 5px 8px;
+  color: #cfdeea;
+  border-top: 1px solid rgba(105,145,173,.16);
+}
+.omega-v2-industry--factory-home .fp-starting-allocation td strong {
+  display: block;
+  color: #edf6fc;
+  font-size: 9px;
+}
+.omega-v2-industry--factory-home .fp-starting-allocation td small {
+  display: block;
+  margin-top: 1px;
+  color: #7e9bb1;
+  font-size: 7px;
+}
+.omega-v2-industry--factory-home .fp-starting-allocation td.fp-starting-allocation-count {
+  color: #f4d68b;
+  font-size: 11px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+.omega-v2-industry--factory-home .fp-starting-allocation-foot {
+  margin: 6px 2px 0;
+  color: #8fa8bb;
+  font-size: 8px;
+  line-height: 1.35;
+}
+.omega-v2-industry--factory-home .fp-type-card-count--starting {
+  border-top: 1px solid rgba(126,164,190,.18);
+}
+.omega-v2-industry--factory-home .fp-type-card-count--starting strong {
+  color: #f4d68b;
+}
+@media (max-width: 520px) {
+  .omega-v2-industry--factory-home .fp-starting-allocation {
+    padding: 7px;
+  }
+  .omega-v2-industry--factory-home .fp-starting-allocation-table-wrap {
+    max-height: 190px;
+  }
+  .omega-v2-industry--factory-home .fp-starting-allocation th,
+  .omega-v2-industry--factory-home .fp-starting-allocation td {
+    padding: 5px 6px;
+  }
+}
