@@ -261,6 +261,8 @@ async function buildDatasetFromSubsetJson(sourcePath) {
   var collectionStatus = observations.length
     ? (reportedCount || partialCount ? 'COMPLETED_WITH_GAPS' : 'OBSERVATIONS_IMPORTED_NO_COMPLETE_FACTORY_TOTALS')
     : 'SOURCE_UNAVAILABLE';
+  var combinedRowsExcluded = Number(mirrorMetadata.excluded_combined_activity_rows) || combinedClassificationRows;
+  var sourceAvailableCountryCount = Number(previous && previous.metadata && previous.metadata.availableCountryCount) || mirrorCountryCodes.size;
   if (!observations.length) throw new Error('SUBSETS_DATA_IMPORT_EMPTY_AFTER_VALIDATION');
   dataset.metadata = Object.assign({}, dataset.metadata, {
     collectionStatus: collectionStatus,
@@ -269,7 +271,9 @@ async function buildDatasetFromSubsetJson(sourcePath) {
     sourceProductionYear: '2026',
     sourceUpdatedAt: sourceUpdatedAt || 'See Subsets.io dataset metadata',
     retrievedAt: new Date().toISOString(),
-    availableCountryCount: mirrorCountryCodes.size,
+    availableCountryCount: sourceAvailableCountryCount,
+    mirrorObservedCountryCount: mirrorCountryCodes.size,
+    combinedClassificationRowsExcluded: combinedRowsExcluded,
     coveredCoreCountryCount: coveredCoreCountryCount,
     fetchedCoreCountryCount: observedCountryCount,
     reportedRecordCount: reportedCount,
