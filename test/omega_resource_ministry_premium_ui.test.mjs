@@ -221,7 +221,7 @@ test("Resource Logistics shows configured per-site route cards separately from l
     siteName: "Test Gas Pipeline",
     resourceId: "natural_gas",
     resourceIconKey: "natural_gas",
-    planningProduction: { rate: 400, unit: "MMCF_PER_DAY", authority: "SCENARIO_SIMULATION_DATA", sourceDatasetId: "TEST", simulationOnly: true },
+    planningProduction: { rate: 1, unit: "BCM_PER_DAY", authority: "SCENARIO_SIMULATION_DATA", sourceDatasetId: "TEST", simulationOnly: true },
     destination: { warehouseId: "WH-TST-RAW" },
     routePlan: {
       routeType: "PIPELINE",
@@ -366,6 +366,8 @@ test("Resource Logistics shows configured per-site route cards separately from l
   assert.match(root.innerHTML, /data-design-formula="ceil\(production per day/);
   assert.match(root.innerHTML, /data-design-capacity-per-unit-day="75"/,
     "the displayed per-vehicle daily capacity must derive from payload and round-trip cycle");
+  assert.match(root.innerHTML, /Corridor bottleneck · line count unavailable/,
+    "BCM/day production must compare against MMCF/day corridor capacity without inventing a pipeline line count");
   const liveCardStart = root.innerHTML.indexOf('data-site-id="TST-MINE-LIVE-05"');
   const liveCardEnd = root.innerHTML.indexOf('</article>', liveCardStart);
   assert.ok(liveCardStart >= 0 && liveCardEnd > liveCardStart, "live-production mine route card must render");
