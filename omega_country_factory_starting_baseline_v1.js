@@ -439,12 +439,16 @@
       var state = rootState();
       var report = state && state.simulation && isObject(state.simulation.countryFactoryStartingBaselineV1)
         ? state.simulation.countryFactoryStartingBaselineV1 : null;
-      var runtimeRow = report && report.version === VERSION &&
-        report.factoryRegistryContract === 'OMEGA_COUNTRY_FACTORY_STARTING_REGISTRY_V1' &&
-        report.countries && report.countries[row.countryId] || null;
-      var runtimeRegistered = !!(runtimeRow && runtimeRow.registryStatus === 'REGISTERED' &&
-        runtimeRow.factoryTypeCount === loaded.factoryIds.length &&
-        runtimeRow.factoryUnitCount === row.totalStartingFactoryUnits);
+      var runtimeRow = report && report.countries && report.countries[row.countryId] || null;
+      var savedCounts = runtimeRow && isObject(runtimeRow.factoryCounts) ? runtimeRow.factoryCounts : null;
+      var savedTypeIds = savedCounts ? Object.keys(savedCounts).sort() : [];
+      var runtimeRegistered = !!(runtimeRow && savedCounts &&
+        savedTypeIds.length === loaded.factoryIds.length &&
+        savedTypeIds.join('|') === loaded.factoryIds.slice().sort().join('|') &&
+        loaded.factoryIds.every(function (factoryType) {
+          return Number(savedCounts[factoryType]) === Number(row.factoryCounts[factoryType]);
+        }) &&
+        Number(runtimeRow.totalStartingFactoryUnits) === Number(row.totalStartingFactoryUnits));
       var registry = loaded.factoryIds.map(function (factoryType) {
         var profile = loaded.catalog.factoryProfiles[factoryType] || {};
         return {
@@ -468,6 +472,8 @@
         runtimeStatus: runtimeRegistered ? 'REGISTERED' : 'DATA_READY_NOT_SESSION_REGISTERED',
         runtimeRegistered: runtimeRegistered,
         runtimeSessionId: runtimeRegistered ? report.sessionId || null : null,
+        runtimeRegistryVersion: runtimeRegistered ? report.version || null : null,
+        factoryRegistryContract: 'OMEGA_COUNTRY_FACTORY_STARTING_REGISTRY_V1',
         authority: 'SIMULATED_COUNTRY_STARTING_INDUSTRY_PROFILE_V1',
         simulationOnly: true,
         realWorldFacilityCounts: false,
