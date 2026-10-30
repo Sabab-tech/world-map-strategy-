@@ -6,11 +6,12 @@
 (function (g) {
   'use strict';
 
-  var VERSION = '1.0.0';
+  var VERSION = '1.1.0';
   var DATA_PATH = './country_factory_starting_baseline_v1.json';
   var CATALOG_PATH = './resource_industrial_catalog_v1.json';
   var COUNTRY_CONTEXT_PATH = './resource_country_resource_context_index.json';
   var ECONOMY_PROFILE_PATH = './economy_global_profiles_v1.json';
+  var REAL_WORLD_DATA_PATH = './country_factory_establishment_data_v1.json';
   var loaded = null;
   var loadPromise = null;
   var loadError = null;
@@ -168,34 +169,87 @@
       totalFactoryUnits: totalFactoryUnits
     };
   }
+  function validateRealWorldData(data) {
+    if (!isObject(data) || data.datasetId !== 'OMEGA_COUNTRY_FACTORY_ESTABLISHMENTS_V1' ||
+        !isObject(data.metadata) || data.metadata.countryCount !== 197 ||
+        data.metadata.factoryTypeCount !== 21 || data.metadata.recordCount !== 4137 ||
+        !isObject(data.countries) || Object.keys(data.countries).length !== 197) {
+      throw new Error('COUNTRY_FACTORY_ESTABLISHMENT_DATASET_SCHEMA_INVALID');
+    }
+    var allowed = ['NOT_QUERIED','REPORTED','PARTIAL','NOT_REPORTED','NOT_COMPARABLE',
+      'MAPPING_UNAVAILABLE','COUNTRY_NOT_COVERED','SOURCE_UNAVAILABLE'];
+    var ids = Object.keys(data.countries).sort(), reported = 0, partial = 0;
+    if (ids.join('|') !== loaded.countryIds.join('|')) throw new Error('COUNTRY_FACTORY_ESTABLISHMENT_COUNTRY_ROSTER_MISMATCH');
+    ids.forEach(function (countryId) {
+      var country = data.countries[countryId];
+      if (!isObject(country) || id(country.countryId) !== countryId ||
+          text(country.countryName) !== text(loaded.baseline.countries[countryId].countryName) ||
+          !isObject(country.factoryEstablishments)) throw new Error('COUNTRY_FACTORY_ESTABLISHMENT_COUNTRY_RECORD_INVALID:' + countryId);
+      var types = Object.keys(country.factoryEstablishments).sort();
+      if (types.join('|') !== loaded.factoryIds.join('|')) throw new Error('COUNTRY_FACTORY_ESTABLISHMENT_TYPE_MATRIX_INVALID:' + countryId);
+      loaded.factoryIds.forEach(function (type) {
+        var row = country.factoryEstablishments[type];
+        if (!isObject(row) || allowed.indexOf(row.status) < 0) throw new Error('COUNTRY_FACTORY_ESTABLISHMENT_STATUS_INVALID:' + countryId + ':' + type);
+        var count = finite(row.establishmentCount);
+        if (row.status === 'REPORTED') {
+          var year = finite(row.referenceYear);
+          if (count === null || count < 0 || Math.floor(count) !== count || year === null || Math.floor(year) !== year)
+            throw new Error('COUNTRY_FACTORY_ESTABLISHMENT_REPORTED_VALUE_INVALID:' + countryId + ':' + type);
+          reported += 1;
+        } else if (row.establishmentCount !== null && row.establishmentCount !== undefined) {
+          throw new Error('COUNTRY_FACTORY_ESTABLISHMENT_UNVERIFIED_COUNT_NOT_NULL:' + countryId + ':' + type);
+        }
+        if (row.status === 'PARTIAL') {
+          var part = finite(row.partialEstablishmentCount);
+          if (part === null || part < 0 || Math.floor(part) !== part) throw new Error('COUNTRY_FACTORY_ESTABLISHMENT_PARTIAL_VALUE_INVALID:' + countryId + ':' + type);
+          partial += 1;
+        }
+      });
+    });
+    return {data:data,reported:reported,partial:partial};
+  }
   function loadSources() {
     if (loadPromise) return loadPromise;
     loadPromise = Promise.all([
-      fetchJson(DATA_PATH),
-      fetchJson(CATALOG_PATH),
-      fetchJson(COUNTRY_CONTEXT_PATH),
-      fetchJson(ECONOMY_PROFILE_PATH)
+      fetchJson(DATA_PATH), fetchJson(CATALOG_PATH),
+      fetchJson(COUNTRY_CONTEXT_PATH), fetchJson(ECONOMY_PROFILE_PATH)
     ]).then(function (values) {
       loaded = validateSources(values);
       loadError = null;
       var report = {
-        version: VERSION,
-        status: 'READY',
+        version: VERSION, status: 'READY',
         countryCount: loaded.countryIds.length,
         factoryTypeCount: loaded.factoryIds.length,
         totalStartingFactoryUnits: loaded.totalFactoryUnits,
         modelAuthority: 'SIMULATED_COUNTRY_STARTING_INDUSTRY_PROFILE_V1'
       };
       dispatchEvent('OMEGA_COUNTRY_FACTORY_STARTING_BASELINE_READY', report);
-      return report;
+      return fetchJson(REAL_WORLD_DATA_PATH).then(function (data) {
+        var valid = validateRealWorldData(data);
+        loaded.realWorldData = valid.data;
+        report.realWorldDataStatus = 'READY';
+        report.realWorldEstablishmentRecordCount = 4137;
+        report.realWorldReportedEstablishmentCells = valid.reported;
+        report.realWorldPartialEstablishmentCells = valid.partial;
+        dispatchEvent('OMEGA_COUNTRY_FACTORY_ESTABLISHMENT_DATA_READY', {
+          countryCount: 197, factoryTypeCount: 21, recordCount: 4137,
+          reportedRecordCount: valid.reported, partialRecordCount: valid.partial,
+          collectionStatus: data.metadata.collectionStatus || 'UNKNOWN'
+        });
+        return report;
+      }).catch(function (error) {
+        loaded.realWorldData = null;
+        report.realWorldDataStatus = 'UNAVAILABLE';
+        report.realWorldDataReason = text(error && error.message) || 'COUNTRY_FACTORY_ESTABLISHMENT_LOAD_FAILED';
+        dispatchEvent('OMEGA_COUNTRY_FACTORY_ESTABLISHMENT_DATA_UNAVAILABLE', {reason: report.realWorldDataReason});
+        return report;
+      });
     }).catch(function (error) {
       loaded = null;
       loadError = text(error && error.message) || 'COUNTRY_FACTORY_STARTING_BASELINE_LOAD_FAILED';
       loadPromise = null;
-      dispatchEvent('OMEGA_COUNTRY_FACTORY_STARTING_BASELINE_FAILED', {
-        version: VERSION, status: 'BLOCKED', reason: loadError
-      });
-      return { version: VERSION, status: 'BLOCKED', reason: loadError };
+      dispatchEvent('OMEGA_COUNTRY_FACTORY_STARTING_BASELINE_FAILED', {version: VERSION,status:'BLOCKED',reason:loadError});
+      return {version:VERSION,status:'BLOCKED',reason:loadError};
     });
     return loadPromise;
   }
@@ -278,6 +332,10 @@
             industryArchetype: row.industryArchetype,
             totalStartingFactoryUnits: row.totalStartingFactoryUnits,
             factoryCounts: clone(row.factoryCounts),
+            registryStatus: 'REGISTERED',
+            registryVersion: VERSION,
+            factoryTypeCount: loaded.factoryIds.length,
+            factoryUnitCount: row.totalStartingFactoryUnits,
             specializations: clone(row.specializations || []),
             authority: 'SIMULATED_COUNTRY_STARTING_INDUSTRY_PROFILE_V1',
             simulationOnly: true,
@@ -294,6 +352,12 @@
           countryCount: loaded.countryIds.length,
           factoryTypeCount: loaded.factoryIds.length,
           totalStartingFactoryUnits: loaded.totalFactoryUnits,
+          factoryRegistryContract: 'OMEGA_COUNTRY_FACTORY_STARTING_REGISTRY_V1',
+          factoryRegistryStatus: 'REGISTERED',
+          registeredFactoryTypeCount: loaded.factoryIds.length,
+          registeredFactoryUnitCount: loaded.totalFactoryUnits,
+          productionAssetsCreated: 0,
+          productionAssetsAreCommissioned: false,
           countriesCreated: loaded.countryIds.length,
           countriesPreserved: 0,
           countriesBlocked: 0,
@@ -303,7 +367,6 @@
           authority: 'SIMULATED_COUNTRY_STARTING_INDUSTRY_PROFILE_V1',
           simulationOnly: true,
           realWorldFacilityCounts: false,
-          productionAssetsCreated: 0,
           existingSaveDataOverwritten: false,
           economyStateModified: false
         };
@@ -393,6 +456,13 @@
       countryCount: loaded ? loaded.countryIds.length : 0,
       factoryTypeCount: loaded ? loaded.factoryIds.length : 0,
       totalStartingFactoryUnits: loaded ? loaded.totalFactoryUnits : 0,
+      factoryRegistryContract: report && report.factoryRegistryContract || null,
+      factoryRegistryStatus: report && report.factoryRegistryStatus || (loaded ? 'DATA_READY' : 'NOT_READY'),
+      registeredFactoryTypeCount: report && report.registeredFactoryTypeCount || (loaded ? loaded.factoryIds.length : 0),
+      registeredFactoryUnitCount: report && report.registeredFactoryUnitCount || 0,
+      realWorldEstablishmentRecordCount: loaded && loaded.realWorldData ? 4137 : 0,
+      realWorldReportedEstablishmentCells: loaded && loaded.realWorldData ? Object.values(loaded.realWorldData.countries).reduce(function (n, row) { return n + Object.values(row.factoryEstablishments || {}).filter(function (v) { return v.status === 'REPORTED'; }).length; }, 0) : 0,
+      realWorldPartialEstablishmentCells: loaded && loaded.realWorldData ? Object.values(loaded.realWorldData.countries).reduce(function (n, row) { return n + Object.values(row.factoryEstablishments || {}).filter(function (v) { return v.status === 'PARTIAL'; }).length; }, 0) : 0,
       initializedCountryCount: report && report.initializedCountryCount || 0,
       countriesCreated: report && report.countriesCreated || 0,
       countriesPreserved: report && report.countriesPreserved || 0,
@@ -401,7 +471,8 @@
         baseline: DATA_PATH,
         catalog: CATALOG_PATH,
         countryContext: COUNTRY_CONTEXT_PATH,
-        economyProfiles: ECONOMY_PROFILE_PATH
+        economyProfiles: ECONOMY_PROFILE_PATH,
+        realWorldEstablishments: REAL_WORLD_DATA_PATH
       },
       simulationOnly: true,
       realWorldFacilityCounts: false,
@@ -418,6 +489,54 @@
       var row = findCountryRow(countryId);
       return row ? clone(row) : null;
     },
+    getCountryFactoryRegistry: function (countryId) {
+      if (!loaded) return { status: loadError ? 'BLOCKED' : 'LOADING', reason: loadError || null, countryId: id(countryId) || null };
+      var row = findCountryRow(countryId);
+      if (!row) return null;
+      var state = rootState();
+      var report = state && state.simulation && isObject(state.simulation.countryFactoryStartingBaselineV1)
+        ? state.simulation.countryFactoryStartingBaselineV1 : null;
+      var runtimeRow = report && report.countries && report.countries[row.countryId] || null;
+      var savedCounts = runtimeRow && isObject(runtimeRow.factoryCounts) ? runtimeRow.factoryCounts : null;
+      var savedTypeIds = savedCounts ? Object.keys(savedCounts).sort() : [];
+      var runtimeRegistered = !!(runtimeRow && savedCounts &&
+        savedTypeIds.length === loaded.factoryIds.length &&
+        savedTypeIds.join('|') === loaded.factoryIds.slice().sort().join('|') &&
+        loaded.factoryIds.every(function (factoryType) {
+          return Number(savedCounts[factoryType]) === Number(row.factoryCounts[factoryType]);
+        }) &&
+        Number(runtimeRow.totalStartingFactoryUnits) === Number(row.totalStartingFactoryUnits));
+      var registry = loaded.factoryIds.map(function (factoryType) {
+        var profile = loaded.catalog.factoryProfiles[factoryType] || {};
+        return {
+          factoryType: factoryType,
+          name: text(profile.name) || factoryType,
+          category: text(profile.category || profile.subCategory) || 'Industry',
+          startingCount: row.factoryCounts[factoryType],
+          registryStatus: 'REGISTERED',
+          authority: 'SIMULATED_COUNTRY_STARTING_INDUSTRY_PROFILE_V1',
+          simulationOnly: true,
+          realWorldFacilityCounts: false
+        };
+      });
+      return {
+        status: 'READY', countryId: row.countryId, countryName: row.countryName,
+        totalStartingFactoryUnits: row.totalStartingFactoryUnits,
+        factoryTypeCount: registry.length, registry: registry,
+        runtimeStatus: runtimeRegistered ? 'REGISTERED' : 'DATA_READY_NOT_SESSION_REGISTERED',
+        runtimeRegistered: runtimeRegistered,
+        runtimeSessionId: runtimeRegistered ? report.sessionId || null : null,
+        runtimeRegistryVersion: runtimeRegistered ? report.version || null : null,
+        factoryRegistryContract: 'OMEGA_COUNTRY_FACTORY_STARTING_REGISTRY_V1',
+        authority: 'SIMULATED_COUNTRY_STARTING_INDUSTRY_PROFILE_V1',
+        simulationOnly: true, realWorldFacilityCounts: false, liveProductionAssetsCreated: 0
+      };
+    },
+    getCountryRealWorldData: function (countryId) {
+      if (!loaded || !loaded.realWorldData) return null;
+      var row = findCountryRow(countryId);
+      return row ? clone(loaded.realWorldData.countries[row.countryId] || null) : null;
+    },
     initializeForSession: initializeForSession,
     waitForPendingInitialization: function () { return pendingInitialization; },
     diagnostics: diagnostics,
@@ -430,7 +549,8 @@
           baseline: DATA_PATH,
           catalog: CATALOG_PATH,
           countryContext: COUNTRY_CONTEXT_PATH,
-          economyProfiles: ECONOMY_PROFILE_PATH
+          economyProfiles: ECONOMY_PROFILE_PATH,
+          realWorldEstablishments: REAL_WORLD_DATA_PATH
         }
       };
     }

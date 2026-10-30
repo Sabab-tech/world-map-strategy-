@@ -1,0 +1,75 @@
+name: OMEGA Country Factory Establishment Data
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'factory_isic_mapping_v1.json'
+      - 'country_factory_establishment_data_v1.json'
+      - 'scripts/build_country_factory_establishment_data_v1.mjs'
+      - 'omega_country_factory_starting_baseline_v1.js'
+      - 'omega_ui_v2/screens/industry.js'
+      - 'omega-offline-map-sw.js'
+      - 'test/omega_country_factory_starting_baseline_v1.test.mjs'
+      - 'test/omega_country_factory_establishment_data_v1.test.mjs'
+      - '.github/workflows/country-factory-establishment-data-v1.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'factory_isic_mapping_v1.json'
+      - 'scripts/build_country_factory_establishment_data_v1.mjs'
+      - 'omega_country_factory_starting_baseline_v1.js'
+      - 'omega_ui_v2/screens/industry.js'
+      - 'omega-offline-map-sw.js'
+      - 'test/omega_country_factory_starting_baseline_v1.test.mjs'
+      - 'test/omega_country_factory_establishment_data_v1.test.mjs'
+      - '.github/workflows/country-factory-establishment-data-v1.yml'
+  schedule:
+    - cron: '25 4 1 */3 *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Validate all 4,137 country/type inputs
+        run: node --test test/omega_country_factory_starting_baseline_v1.test.mjs test/omega_country_factory_establishment_data_v1.test.mjs
+      - name: Check importer, runtime and UI syntax
+        run: |
+          node --check scripts/build_country_factory_establishment_data_v1.mjs
+          node --check omega_country_factory_starting_baseline_v1.js
+          node --check omega_ui_v2/screens/industry.js
+  refresh:
+    if: github.event_name != 'pull_request'
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Retrieve UNIDO INDSTAT establishment observations
+        run: node scripts/build_country_factory_establishment_data_v1.mjs
+      - name: Commit only source-backed data changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add country_factory_establishment_data_v1.json
+          if git diff --cached --quiet; then
+            echo "No new verified source data."
+          else
+            git commit -m "Refresh official country factory establishment data"
+            git push origin main
+          fi
