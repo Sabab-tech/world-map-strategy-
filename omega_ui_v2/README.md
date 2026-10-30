@@ -37,7 +37,7 @@ The modules are loaded as local scripts and the existing Government entry mounts
 
 ## Global Atlas Command
 
-The global map dock provides World, Overview, Government, Economy and More. Domain pages reuse canonical game runtimes; local WebP photos use representative-image notes. The offline shell cache v29 explicitly includes UI-v2 modules and bundled photography. Android and visual acceptance remain release gates.
+The global map dock provides World, Overview, Government, Economy and More. Domain pages reuse canonical game runtimes; local WebP photos use representative-image notes. The offline shell cache v66 explicitly includes UI-v2 modules and bundled photography. Android and visual acceptance remain release gates.
 
 
 ## Atlas Command visual rollout
