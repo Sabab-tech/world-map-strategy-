@@ -44,4 +44,6 @@ test('simulation counts never appear as source-backed establishment counts',()=>
  if(textile.status==='REPORTED')assert.ok(Number.isInteger(textile.establishmentCount)&&Number.isInteger(textile.referenceYear));
  else assert.equal(textile.establishmentCount,null);
  assert.notEqual(dataset.datasetId,baseline.datasetId);
+ assert.notEqual(dataset.metadata.collectionStatus,'COMPLETED',
+   'a source retrieval with no successful observations cannot be marked completed');
 });

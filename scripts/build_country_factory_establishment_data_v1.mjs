@@ -151,14 +151,27 @@ async function buildDatasetFromSubsetJson(sourcePath) {
   var mappingByType = Object.fromEntries(mapping.mappings.map(function (row) { return [row.factoryType, row]; }));
   var previousCountries = previous && previous.countries || {};
   var countryBySourceCode = Object.create(null);
+  var countryByIso3 = Object.create(null);
+  var countryByName = Object.create(null);
+  function normalizeCountryName(value) {
+    return text(value).toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim().replace(/\\s+/g, ' ');
+  }
   countryRows.forEach(function (country) {
     var old = previousCountries[country.countryId] || {};
     var sourceCode = normalizeSubsetCountryCode(old.sourceCountryCode);
+    var sourceName = old.sourceCountryName || country.countryName;
     if (sourceCode) countryBySourceCode[sourceCode] = country.countryId;
+    countryByIso3[country.countryId] = country.countryId;
+    var normalizedSourceName = normalizeCountryName(sourceName);
+    var normalizedCountryName = normalizeCountryName(country.countryName);
+    if (normalizedSourceName) countryByName[normalizedSourceName] = country.countryId;
+    if (normalizedCountryName) countryByName[normalizedCountryName] = country.countryId;
     dataset.countries[country.countryId].sourceCountryCode = sourceCode || null;
     dataset.countries[country.countryId].sourceCountryName = old.sourceCountryName || null;
   });
-  if (!Object.keys(countryBySourceCode).length) throw new Error('UNIDO_COUNTRY_CODE_MAP_MISSING');
+  if (!Object.keys(countryBySourceCode).length && !Object.keys(countryByIso3).length) {
+    throw new Error('UNIDO_COUNTRY_CODE_MAP_MISSING');
+  }
   var allCodes = new Set(mapping.mappings.reduce(function (all, row) { return all.concat(row.activityCodes || []); }, []));
   var observations = extractSubsetEstablishmentObservations(rawRows, allCodes);
   if (!observations.length) {
@@ -177,15 +190,20 @@ async function buildDatasetFromSubsetJson(sourcePath) {
     throw new Error('SUBSETS_SOURCE_HAS_NO_MATCHING_ISIC4_ROWS:' + JSON.stringify(preview));
   }
   var observationsByCountry = Object.create(null);
-  var seenCodes = new Set();
   var sourceCountryNames = Object.create(null);
+  var mirrorCountryCodes = new Set();
   observations.forEach(function (row) {
-    var countryId = countryBySourceCode[row.countryCode];
+    mirrorCountryCodes.add(row.countryCode);
+    var countryId = countryBySourceCode[row.countryCode] ||
+      countryByIso3[row.countryCode] ||
+      countryByName[normalizeCountryName(row.countryName)];
     if (!countryId) return;
     var bucket = observationsByCountry[countryId] || (observationsByCountry[countryId] = []);
     bucket.push({ activityCode: row.activityCode, year: row.year, value: row.value });
-    seenCodes.add(row.activityCode);
     if (row.countryName) sourceCountryNames[countryId] = row.countryName;
+    if (!dataset.countries[countryId].sourceCountryCode) {
+      dataset.countries[countryId].sourceCountryCode = row.countryCode;
+    }
   });
   var observedCountryCount = 0;
   var reportedCount = 0;
@@ -249,7 +267,7 @@ async function buildDatasetFromSubsetJson(sourcePath) {
     sourceProductionYear: '2026',
     sourceUpdatedAt: sourceUpdatedAt || 'See Subsets.io dataset metadata',
     retrievedAt: new Date().toISOString(),
-    availableCountryCount: 132,
+    availableCountryCount: mirrorCountryCodes.size,
     coveredCoreCountryCount: coveredCoreCountryCount,
     fetchedCoreCountryCount: observedCountryCount,
     reportedRecordCount: reportedCount,
@@ -369,7 +387,26 @@ export async function buildDataset(){
     }
   });
   const all=Object.values(dataset.countries).flatMap(c=>Object.values(c.factoryEstablishments)),reported=all.filter(r=>r.status==='REPORTED'),partial=all.filter(r=>r.status==='PARTIAL'),years=Object.values(dataset.countries).map(c=>c.latestReferenceYear).filter(Number.isInteger);
-  dataset.metadata={...dataset.metadata,collectionStatus:'COMPLETED',sourceDatasetId:datasetId,sourceDatasetName:text(meta.name||'INDSTAT Revision 4'),sourceProductionYear:text(meta.production_year||''),sourceUpdatedAt:text(meta.dat_ins||''),availableCountryCount:countries.length,coveredCoreCountryCount:rows.filter(c=>countryByIso3.has(c.countryId)).length,fetchedCoreCountryCount:countryResults.filter(c=>c.observations>0).length,reportedRecordCount:reported.length,partialRecordCount:partial.length,latestReferenceYear:years.length?Math.max(...years):null,retrievedAt:new Date().toISOString(),responseSummary:countryResults.reduce((a,r)=>(a[r.status]=(a[r.status]||0)+1,a),{})};
+  var fetchedCoreCountryCount = countryResults.filter(function (row) { return row.observations > 0; }).length;
+  var collectionStatus = fetchedCoreCountryCount === 0
+    ? 'SOURCE_UNAVAILABLE'
+    : (reported.length || partial.length ? 'COMPLETED_WITH_GAPS' : 'OBSERVATIONS_IMPORTED_NO_COMPLETE_FACTORY_TOTALS');
+  dataset.metadata=Object.assign({},dataset.metadata,{
+    collectionStatus:collectionStatus,
+    sourceDatasetId:datasetId,
+    sourceDatasetName:text(meta.name||'INDSTAT Revision 4'),
+    sourceProductionYear:text(meta.production_year||''),
+    sourceUpdatedAt:text(meta.dat_ins||''),
+    availableCountryCount:countries.length,
+    coveredCoreCountryCount:rows.filter(function (country) { return countryByIso3.has(country.countryId); }).length,
+    fetchedCoreCountryCount:fetchedCoreCountryCount,
+    reportedRecordCount:reported.length,
+    partialRecordCount:partial.length,
+    latestReferenceYear:years.length?Math.max.apply(null,years):null,
+    retrievedAt:new Date().toISOString(),
+    responseSummary:countryResults.reduce(function (a,r) { a[r.status]=(a[r.status]||0)+1; return a; },{}),
+    sourceError:fetchedCoreCountryCount===0?'NO_PARSEABLE_COUNTRY_ESTABLISHMENT_OBSERVATIONS':null
+  });
   writeFileSync(OUTPUT,JSON.stringify(dataset,null,2)+'\n');
   console.log(JSON.stringify({updated:true,countryCount:197,factoryTypeCount:21,recordCount:4137,sourceCountryCount:dataset.metadata.availableCountryCount,coveredCoreCountryCount:dataset.metadata.coveredCoreCountryCount,fetchedCoreCountryCount:dataset.metadata.fetchedCoreCountryCount,reportedRecordCount:reported.length,partialRecordCount:partial.length,responseSummary:dataset.metadata.responseSummary},null,2));
   return {updated:true,dataset};

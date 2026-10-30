@@ -50,6 +50,29 @@ jobs:
           node --check omega_country_factory_starting_baseline_v1.js
           node --check omega_ui_v2/screens/industry.js
           python -m py_compile scripts/export_unido_indstat_establishments.py
+  mirror-preflight:
+    if: github.event_name == 'pull_request'
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install public data mirror client
+        run: python -m pip install subsetsio==0.1.0rc1
+      - name: Sync the UNIDO INDSTAT R4 public mirror
+        run: python -m subsetsio sync --bundle medium
+      - name: Export source-backed establishment observations
+        run: python scripts/export_unido_indstat_establishments.py --output /tmp/unido-indstat-r4-establishments.json
+      - name: Import observations into all country/type slots
+        run: node scripts/build_country_factory_establishment_data_v1.mjs --subsets-json /tmp/unido-indstat-r4-establishments.json
+      - name: Re-validate populated source data
+        run: node --test test/omega_country_factory_establishment_data_v1.test.mjs test/omega_country_factory_starting_baseline_v1.test.mjs
   refresh:
     if: github.event_name != 'pull_request'
     needs: validate
