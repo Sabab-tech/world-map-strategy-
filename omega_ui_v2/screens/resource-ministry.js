@@ -1507,7 +1507,7 @@
       }).join('');
       return '<article class="omega-v2-card omega-v2-logistics-card omega-v2-logistics-route-card" data-logistics-state="attention" data-logistics-plan-site-id="' +
         esc(route.siteId || '') +
-        '" data-logistics-mode-chain="' esc(legs.map(function (leg) { return String(leg.transportMode || leg.mode || '').toLowerCase(); }).join(',')) + '">' +
+        '" data-logistics-mode-chain="' + esc(legs.map(function (leg) { return String(leg.transportMode || leg.mode || '').toLowerCase(); }).join(',')) + '">' +
         '<div class="omega-v2-logistics-header"><div class="omega-v2-logistics-cargo"><span class="omega-v2-resource-icon omega-v2-logistics-resource-art">' +
         resourceIconMarkup(resource, resourceLabel(resource)) + '</span><div class="omega-v2-logistics-cargo-copy">' +
         '<span class="omega-v2-eyebrow">SITE ROUTE PLAN</span><h3 class="omega-v2-card-title">' + esc(siteName) +
