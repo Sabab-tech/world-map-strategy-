@@ -79,11 +79,16 @@
       return '<button type="button" class="omega-v2-button ' + (tab.id === active ? 'omega-v2-button--accent' : 'omega-v2-button--quiet') + '" data-omega-v2-home-tab="' + tab.id + '" aria-pressed="' + (tab.id === active ? 'true' : 'false') + '">' + esc(tab.label) + '</button>';
     }).join('') + '</div>';
   }
-  function dashboardHtml(state, fleet, country) {
+  function dashboardHtml(state, fleet, country, budget) {
     var summary = stateSummary(state, fleet);
+    var financeSummary = budget && budget.available
+      ? '<div class="omega-v2-kpis"><div class="omega-v2-kpi"><span>Annual Home Affairs allocation</span><strong>' + esc(money(budget.parentBudgetUsd)) + '</strong></div><div class="omega-v2-kpi"><span>Recorded spending this year</span><strong>' + esc(money(budget.spentThisYearUsd)) + '</strong></div><div class="omega-v2-kpi"><span>Interior allocation remaining</span><strong>' + esc(money(budget.parentRemainingUsd)) + '</strong></div></div>'
+      : '<div class="omega-v2-note" role="status">Home Affairs budget figures are unavailable (' + esc(budget && budget.reason || 'FINANCE_DATA_NOT_RECORDED') + '). No amount is substituted. Open Budget &amp; Expenditure for the source status.</div>';
     var baselineNotice=countryBaselineReady(state)?'':'<div class="omega-v2-note" role="status">Country-specific Home Ministry baseline is still loading or unavailable. Default placeholder numbers are withheld.</div>';
     return '<div class="omega-v2-home-dashboard">' + baselineNotice +
       (countryIso3(country)==='BGD' ? getPhoto('bangladesh-police-headquarters', 'Bangladesh police headquarters reference photo') : '') +
+      '<h2 class="omega-v2-section-title">Budget &amp; Expenditure</h2>' + financeSummary +
+      '<div class="omega-v2-actions"><button type="button" class="omega-v2-button omega-v2-button--quiet" data-omega-v2-home-tab="budget">OPEN HOME AFFAIRS BUDGET</button></div>' +
       '<div class="omega-v2-kpis">' + summary.map(function (item) { return '<div class="omega-v2-kpi"><span>' + esc(item.label) + '</span><strong>' + esc(item.value) + '</strong><small>' + esc(item.source) + '</small></div>'; }).join('') + '</div>' +
       '<h2 class="omega-v2-section-title">Operational sections</h2><div class="omega-v2-grid">' +
       [
@@ -206,8 +211,9 @@
       root.__omegaV2HomeFinanceInitPending = false;
       var appState = root.__omegaUIV2State;
       var stillHome = !appState || appState.route === 'home-affairs';
-      if (stillHome && root.__omegaV2HomeTab === 'budget') {
-        scheduleRender(root, Object.assign({}, root.__omegaV2HomeOptions || options || {}, { tab:'budget' }), 'Loading Home Affairs budget');
+      if (stillHome && (root.__omegaV2HomeTab === 'budget' || root.__omegaV2HomeTab === 'dashboard')) {
+        var activeTab = root.__omegaV2HomeTab || 'dashboard';
+        scheduleRender(root, Object.assign({}, root.__omegaV2HomeOptions || options || {}, { tab:activeTab }), 'Loading Home Affairs budget');
       }
     }).catch(function () { root.__omegaV2HomeFinanceInitPending = false; });
   }
@@ -293,8 +299,8 @@
     var active = options.tab || root.__omegaV2HomeTab || 'dashboard';
     var quoteQuantity = 1;
     var baselineReady=countryBaselineReady(state);
-    var budget = active === 'budget' ? homeBudgetSnapshot(country) : null;
-    if (active === 'budget') requestFinanceRefresh(root, options, budget);
+    var budget = active === 'budget' || active === 'dashboard' ? homeBudgetSnapshot(country) : null;
+    if (budget) requestFinanceRefresh(root, options, budget);
     var quote = baselineReady ? estimateRecruitment(quoteQuantity, country) : { ok:false, code:'COUNTRY_BASELINE_NOT_READY' };
     var canRecruit = !!(e && typeof e.recruitPolice === 'function' && country && baselineReady);
     var content;
@@ -305,7 +311,7 @@
     else if (active === 'facilities') content = facilitiesHtml(state);
     else if (active === 'incidents') content = incidentsHtml(state);
     else if (active === 'laws') content = lawsHtml(state, country);
-    else content = dashboardHtml(state, fleet, country);
+    else content = dashboardHtml(state, fleet, country, budget);
 
     root.classList.add('omega-v2-screen');
     root.innerHTML = '<section class="omega-v2-shell omega-v2-home-affairs">' +
