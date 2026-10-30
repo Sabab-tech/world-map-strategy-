@@ -42,6 +42,17 @@ def read_json(path: Path) -> dict[str, Any]:
     return value
 
 
+def english_name(row: dict[str, Any], fallback: str = "") -> str:
+    language = row.get("lang")
+    if isinstance(language, dict):
+        value = language.get("en") or row.get("name") or fallback
+    elif isinstance(language, str):
+        value = language or row.get("name") or fallback
+    else:
+        value = row.get("name") or fallback
+    return str(value).strip()
+
+
 def body_json(driver: uc.Chrome, timeout_seconds: int = 90) -> dict[str, Any]:
     deadline = time.monotonic() + timeout_seconds
     last_text = ""
@@ -170,7 +181,7 @@ def main() -> int:
             (
                 row for row in variables
                 if scalar(row.get("c")) == "01"
-                or "establishments" in str((row.get("lang") or {}).get("en") or row.get("name") or "").lower()
+                or "establishments" in english_name(row).lower()
             ),
             None,
         )
@@ -213,7 +224,7 @@ def main() -> int:
             country_rows.append({
                 "iso3": country_id,
                 "countryCode": country_code,
-                "countryName": str((source.get("lang") or {}).get("en") or country_id),
+                "countryName": english_name(source, country_id),
             })
 
         cache: dict[str, Any] = {
