@@ -749,7 +749,7 @@
     return '<article class="omega-v2-factory-type-card" data-omega-v2-factory-type-card data-factory-type="' + esc(type) + '">' +
       '<header class="fp-type-card-head"><span class="fp-type-card-art">' + factorySvgMarkup({ type:type, name:item.name || type }) + '</span>' +
       '<span class="fp-type-card-name"><strong>' + esc(item.name || type) + '</strong><small>' + esc(item.category || 'Uncategorised') + '</small></span></header>' +
-      '<div class="fp-type-card-count"><span>Commissioned assets</span><strong>' + fmt(ownedCount) + '</strong></div>' +
+      '<div class="fp-type-card-count"><span>Registered game assets · commissioned</span><strong>' + fmt(ownedCount) + '</strong></div>' +
       '<div class="fp-type-card-count fp-type-card-count--starting"><span>Starting allocation</span><strong>' + fmt(item.startingCount) + '</strong></div>' +
       '<dl class="fp-type-card-metrics"><div><dt>Modeled build time</dt><dd>' + esc(duration) + '</dd></div>' +
       '<div><dt>Modeled capacity</dt><dd>' + esc(capacity) + '</dd></div>' +
