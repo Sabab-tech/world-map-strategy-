@@ -215,7 +215,7 @@ test('Government ministry rows show the canonical active minister for the explic
   }
 });
 
-test('Home Affairs provides all six planned sections and does not create a separate recruitment destination', () => {
+test('Home Affairs exposes its planned sections including Budget & Expenditure without creating a separate recruitment destination', () => {
   const tabs = globalThis.OmegaUIV2HomeAffairs.tabs;
   assert.deepEqual(tabs.map((item) => item.id), ['dashboard', 'budget', 'personnel', 'fleet', 'patrols', 'facilities', 'incidents', 'laws']);
   assert.equal(tabs.some((item) => /recruit/i.test(item.id)), false);
