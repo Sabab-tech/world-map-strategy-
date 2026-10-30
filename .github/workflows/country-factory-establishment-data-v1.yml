@@ -7,6 +7,8 @@ on:
       - 'factory_isic_mapping_v1.json'
       - 'country_factory_establishment_data_v1.json'
       - 'scripts/build_country_factory_establishment_data_v1.mjs'
+      - 'scripts/fetch_unido_indstat_establishments_v1.py'
+      - 'scripts/fetch_unido_indstat_establishments_v1.py'
       - 'omega_country_factory_starting_baseline_v1.js'
       - 'omega_ui_v2/screens/industry.js'
       - 'omega-offline-map-sw.js'
@@ -42,16 +44,17 @@ jobs:
           node-version: 24
       - name: Validate all 4,137 country/type inputs
         run: node --test test/omega_country_factory_starting_baseline_v1.test.mjs test/omega_country_factory_establishment_data_v1.test.mjs
-      - name: Check importer, runtime and UI syntax
+      - name: Check importer, browser collector, runtime and UI syntax
         run: |
           node --check scripts/build_country_factory_establishment_data_v1.mjs
+          python3 -m py_compile scripts/fetch_unido_indstat_establishments_v1.py
           node --check omega_country_factory_starting_baseline_v1.js
           node --check omega_ui_v2/screens/industry.js
   refresh:
     if: github.event_name != 'pull_request'
     needs: validate
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
         with:
@@ -60,7 +63,24 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-      - name: Retrieve UNIDO INDSTAT establishment observations
+      - uses: browser-actions/setup-chrome@v1
+      - name: Prepare browser collector
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb
+          python3 -m venv /tmp/omega-unido-venv
+          /tmp/omega-unido-venv/bin/python -m pip install --disable-pip-version-check --upgrade pip
+          /tmp/omega-unido-venv/bin/python -m pip install --disable-pip-version-check undetected-chromedriver selenium
+      - name: Retrieve UNIDO INDSTAT observations in a real Chrome session
+        run: |
+          xvfb-run -a /tmp/omega-unido-venv/bin/python scripts/fetch_unido_indstat_establishments_v1.py \
+            --baseline country_factory_starting_baseline_v1.json \
+            --mapping factory_isic_mapping_v1.json \
+            --output /tmp/omega-unido-indstat-cache-v1.json
+      - name: Build the verified 4,137-cell factory establishment registry
+        env:
+          OMEGA_UNIDO_CACHE_PATH: /tmp/omega-unido-indstat-cache-v1.json
+          OMEGA_UNIDO_REQUIRE_BROWSER_CACHE: '1'
         run: node scripts/build_country_factory_establishment_data_v1.mjs
       - name: Commit only source-backed data changes
         run: |
