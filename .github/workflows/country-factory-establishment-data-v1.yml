@@ -8,7 +8,6 @@ on:
       - 'country_factory_establishment_data_v1.json'
       - 'scripts/build_country_factory_establishment_data_v1.mjs'
       - 'scripts/fetch_unido_indstat_establishments_v1.py'
-      - 'scripts/fetch_unido_indstat_establishments_v1.py'
       - 'omega_country_factory_starting_baseline_v1.js'
       - 'omega_ui_v2/screens/industry.js'
       - 'omega-offline-map-sw.js'
@@ -20,6 +19,7 @@ on:
     paths:
       - 'factory_isic_mapping_v1.json'
       - 'scripts/build_country_factory_establishment_data_v1.mjs'
+      - 'scripts/fetch_unido_indstat_establishments_v1.py'
       - 'omega_country_factory_starting_baseline_v1.js'
       - 'omega_ui_v2/screens/industry.js'
       - 'omega-offline-map-sw.js'
