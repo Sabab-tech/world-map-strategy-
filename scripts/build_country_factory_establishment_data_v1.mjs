@@ -88,7 +88,7 @@ export function extractEstablishmentObservations(payload,allowedCodes){
 function normalizeSubsetCountryCode(value) {
   var code = text(value).toUpperCase();
   if (!code) return '';
-  return /^\\d+$/.test(code) ? code.padStart(3, '0') : code;
+  return /^\d+$/.test(code) ? code.padStart(3, '0') : code;
 }
 export function extractSubsetActivityCode(row, allowedCodes) {
   var candidates = [
@@ -100,7 +100,7 @@ export function extractSubsetActivityCode(row, allowedCodes) {
   for (var i = 0; i < candidates.length; i++) {
     var candidate = text(candidates[i]);
     if (allowedCodes.has(candidate)) return candidate;
-    var matches = candidate.match(/\\d{4}/g) || [];
+    var matches = candidate.match(/\d{4}/g) || [];
     for (var j = 0; j < matches.length; j++) {
       if (allowedCodes.has(matches[j])) return matches[j];
     }
@@ -116,6 +116,7 @@ export function extractSubsetEstablishmentObservations(rows, allowedCodes) {
     if (indicator && indicator !== '01') return;
     var activityCode = extractSubsetActivityCode(row, allowedCodes);
     var year = Number(row.year || row.time_period || row.timePeriod);
+    if (row.value === null || row.value === undefined || text(row.value) === '') return;
     var value = Number(row.value);
     var countryCode = normalizeSubsetCountryCode(row.country_code || row.countryCode);
     if (!activityCode || !countryCode || !Number.isInteger(year) ||

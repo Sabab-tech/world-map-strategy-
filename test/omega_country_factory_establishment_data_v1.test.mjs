@@ -29,7 +29,8 @@ test('Subsets mirror rows map country, ISIC activity, year and establishment val
  const rows=extractSubsetEstablishmentObservations([
   {country_code:'004',country_name:'Afghanistan',indicator_code:'01',classification_combo_code:'ISIC4-2410',classification_combo_name:'Basic iron and steel',year:2020,value:12},
   {country_code:'004',country_name:'Afghanistan',indicator_code:'01',classification_combo_code:'2420',classification_combo_name:'Non-ferrous metals',year:2020,value:4},
-  {country_code:'004',indicator_code:'04',classification_combo_code:'2410',year:2020,value:999}
+  {country_code:'004',indicator_code:'04',classification_combo_code:'2410',year:2020,value:999},
+  {country_code:'004',indicator_code:'01',classification_combo_code:'2410',year:2020,value:null}
  ],allowed);
  assert.equal(rows.length,2);
  assert.deepEqual(rows.map(row=>({countryCode:row.countryCode,activityCode:row.activityCode,year:row.year,value:row.value})),[
