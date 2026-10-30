@@ -148,7 +148,7 @@ async function buildDatasetFromSubsetJson(sourcePath) {
   var countryByIso3 = Object.create(null);
   var countryByName = Object.create(null);
   function normalizeCountryName(value) {
-    return text(value).toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim().replace(/\\s+/g, ' ');
+    return text(value).toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
   }
   countryRows.forEach(function (country) {
     var old = previousCountries[country.countryId] || {};
