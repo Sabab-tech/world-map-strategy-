@@ -47,7 +47,7 @@ test("resource visual layer is wired into the offline-first app without remote d
   assert.ok(html.includes(stylesheetTag), "premium resource stylesheet must be loaded by the app");
   assert.ok(sw.includes('"' + "./" + cssPath + '"'), "premium resource stylesheet must be precached offline");
   assert.ok(uiManifest.additionalStyles.includes(cssPath), "UI v2 manifest must document the resource style");
-  assert.match(sw, /omega-offline-atlas-shell-v63/, "offline cache must be invalidated for new visual assets");
+  assert.match(sw, /omega-offline-atlas-shell-v64/, "offline cache must be invalidated for new visual assets");
   const coreAssets = sw.slice(sw.indexOf("const CORE_ASSETS"), sw.indexOf("];", sw.indexOf("const CORE_ASSETS")));
   assert.ok(coreAssets.includes('"./assets/omega-industrial-icons-v1/transport/route-mine-origin.svg"'));
   assert.ok(coreAssets.includes('"./assets/omega-industrial-icons-v1/transport/route-warehouse-destination.svg"'));
@@ -221,7 +221,7 @@ test("Resource Logistics shows configured per-site route cards separately from l
     siteName: "Test Gas Pipeline",
     resourceId: "natural_gas",
     resourceIconKey: "natural_gas",
-    planningProduction: { rate: 400, unit: "MMCF_PER_DAY", authority: "SCENARIO_SIMULATION_DATA", sourceDatasetId: "TEST", simulationOnly: true },
+    planningProduction: { rate: 1, unit: "BCM_PER_DAY", authority: "SCENARIO_SIMULATION_DATA", sourceDatasetId: "TEST", simulationOnly: true },
     destination: { warehouseId: "WH-TST-RAW" },
     routePlan: {
       routeType: "PIPELINE",
@@ -429,6 +429,8 @@ test("Resource Logistics shows configured per-site route cards separately from l
   assert.match(root.innerHTML.slice(annualSummaryStart, annualSummaryEnd), /data-design-estimated-units="5"/,
     "the declared 2,185 MMCF/day rate must not be overwritten by its 797.52 BCF/year summary");
 
+  assert.match(root.innerHTML, /Corridor bottleneck · line count unavailable/,
+    "BCM/day production must compare against MMCF/day corridor capacity without inventing a pipeline line count");
   const liveCardStart = root.innerHTML.indexOf('data-site-id="TST-MINE-LIVE-05"');
   const liveCardEnd = root.innerHTML.indexOf('</article>', liveCardStart);
   assert.ok(liveCardStart >= 0 && liveCardEnd > liveCardStart, "live-production mine route card must render");
@@ -538,7 +540,7 @@ test("all resource SVGs use a light metallic backplate for readable dark mineral
     assert.match(svg, /data-omega-icon-kind="resource"/);
   }
   assert.match(manifest.rendering.background, /light silver-metal.*factory SVGs retain their shared dark-navy/i);
-  assert.match(read("omega-offline-map-sw.js"), /omega-offline-atlas-shell-v63/);
+  assert.match(read("omega-offline-map-sw.js"), /omega-offline-atlas-shell-v64/);
 });
 
 
