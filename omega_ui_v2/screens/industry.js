@@ -965,7 +965,7 @@
       : '<div class="omega-v2-factory-empty">No commissioned factories are recorded for ' + esc(model.countryId || 'the selected country') + '.</div>';
     var summaryMarkup = '<div class="fp-summary" aria-label="Selected country production summary">' +
       '<div class="fp-summary-item"><span>COUNTRY</span><strong>' + esc(model.countryId || 'Not recorded') + '</strong></div>' +
-      '<div class="fp-summary-item"><span>COMMISSIONED</span><strong>' + fmt(model.factoryCount) + '</strong></div>' +
+      '<div class="fp-summary-item"><span>FACTORIES · COMMISSIONED</span><strong>' + fmt(model.factoryCount) + '</strong></div>' +
       '<div class="fp-summary-item"><span>STARTING UNITS</span><strong>' + fmt(model.startingFactoryUnits) + '</strong></div>' +
       '<div class="fp-summary-item"><span>PRODUCTION CYCLES</span><strong>' + fmt(model.cycles.length) + '</strong></div>' +
       '</div>';
