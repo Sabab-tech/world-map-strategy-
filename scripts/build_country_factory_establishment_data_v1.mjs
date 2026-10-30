@@ -292,7 +292,6 @@ async function buildDatasetFromSubsetJson(sourcePath) {
     originalSourceProvider: 'United Nations Industrial Development Organization',
     originalSourceUrl: sourceUrl,
     activityCodeRowsImported: observations.length,
-    combinedClassificationRowsExcluded: combinedClassificationRows,
     classificationCodeField: 'classification_code, accepted only when classification_combo_code is identical',
     sourceError: null,
     note: 'Establishment counts are official UNIDO statistical establishment observations mirrored via Subsets.io. An establishment is not guaranteed to equal one physical factory site. Complete OMEGA type totals require every mapped ISIC activity in one year; partial sums stay separate and missing values are never zero.'
