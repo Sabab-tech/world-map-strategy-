@@ -1538,7 +1538,7 @@
           '<h2 class="omega-v2-card-title">Mine Site Route Plans</h2><p>Loading registered site routes…</p></section>';
       }
       if (routeState.status !== 'ready') {
-        return '<div class="omega-v2-empty" data-logistics-route-state="unavailable">Site route plans unavailable. Current Match: Unavailable.</div>';
+        return '<div class="omega-v2-empty" data-logistics-route-state="unavailable">Site route plans unavailable.</div>';
       }
       var routes = safeArray(routeState.routes);
       if (!routes.length) {
