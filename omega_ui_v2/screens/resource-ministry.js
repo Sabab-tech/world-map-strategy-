@@ -1324,7 +1324,10 @@
       }).join('');
       var canManage = !!(ready && String(route && route.countryId || '').trim().toUpperCase() === countryKey &&
         countryKey === livePlayerCountryKey());
-      var calculatedTotal = routeModes.length > 0 && designAvailableModes === routeModes.length ? fmt(designTotal) : 'Unavailable';
+      var calculatedTotal = designAvailableModes > 0
+         ? fmt(designTotal) + (unknownRouteModes ? ' · partial' : '')
+         : '—';
+       var calculatedTotalLabel = unknownRouteModes ? 'Known design-unit subtotal' : 'Calculated design units';
       var knownTransportUnitTotal = knownVehicleCount + (pipelineConfigured ? pipelineLines : 0);
       var vehicleSubtotalLabel = unknownVehicleModes ? 'Known vehicle subtotal (some counts unknown)' : 'Configured vehicle total';
       var unknownPipelineLabel = !pipelineConfigured ? 'Pipeline lines unknown' : 'Pipeline lines recorded';
@@ -1342,20 +1345,18 @@
         (ready ? fmt(knownTransportUnitTotal) : 'Unknown') + '</strong></span>' +
         '<span>Route legs: <strong>' + fmt(safeArray(legs).length) + '</strong></span>' +
         '<span>Transport modes: <strong>' + fmt(routeModes.length) + '</strong></span>' +
-        '<span>Calculated design units: <strong>' + calculatedTotal + '</strong></span>' +
+        '<span>' + esc(calculatedTotalLabel) + ': <strong>' + calculatedTotal + '</strong></span>' +
         '<span>Design estimates available: <strong>' + fmt(designAvailableModes) + ' of ' +
         fmt(routeModes.length) + '</strong></span></div>' +
-        ((ready && configuredModeCount < 5) || !ready || unknownRouteModes
-          ? '<p class="omega-v2-logistics-fleet-note">Saved counts are actual player settings; unknown is not zero. Vehicles = ceil(production/day ÷ (payload/trip × 24 ÷ round-trip cycle hours)); cycle = 2 × distance/speed + loading + unloading + transfer. Pipeline line needs use only explicit per-line daily capacity.</p>'
-          : '<p class="omega-v2-logistics-fleet-note">Configured vehicle totals and pipeline lines are separate. Design needs are estimates, not proof of physical fleet availability.</p>') +
+        
         (canManage
           ? '<details class="omega-v2-logistics-fleet-editor"><summary>Configure transport counts</summary>' +
-            '<p class="omega-v2-logistics-fleet-note">Edit counts for the active player country only. Blank fields keep their current settings; enter 0 to record none available. Vehicle IDs and registration numbers are not used.</p>' +
+            
             '<form data-omega-v2-logistics-fleet-form data-site-id="' + esc(route && route.siteId || '') +
             '" data-country-id="' + esc(route && route.countryId || countryKey || '') + '">' +
             '<div class="omega-v2-logistics-count-grid">' + countFields + '</div>' +
             '<button type="submit" class="omega-v2-button omega-v2-button--accent">Save transport counts</button></form></details>'
-          : '<p class="omega-v2-logistics-fleet-note">Count editing is limited to registered sites in the active player country.</p>') +
+          : '') +
         '</section>';
     }
     function logisticsFleetOverviewMarkup(routes) {
@@ -1421,7 +1422,7 @@
         ? 'Known combined transport-unit subtotal (vehicles + lines)' : 'Configured combined transport-unit total';
       return '<section class="omega-v2-card omega-v2-logistics-fleet-overview" data-omega-v2-logistics-fleet-overview>' +
         '<div class="omega-v2-logistics-fleet-heading"><div><h2>Transport Fleet Summary</h2>' +
-        '<p>Configured fleets and design needs across the selected country’s registered mine routes.</p></div>' +
+        '</div>' +
         '<strong>' + fmt(sites.length) + ' mine sites · ' + fmt(readableSites) + ' readable fleet records</strong></div>' +
         '<div class="omega-v2-logistics-overview-grid">' + modeCards + '</div>' +
         '<div class="omega-v2-logistics-fleet-foot"><span>' + esc(vehicleTotalLabel) + ': <strong>' + fmt(knownVehicleTotal) +
@@ -1431,7 +1432,7 @@
         '</strong></span><span>Mode profiles configured: <strong>' + fmt(configuredProfiles) +
         '</strong></span><span>Unknown count profiles: <strong>' + fmt(unknownProfiles) +
         '</strong></span><span>Per-vehicle IDs required: <strong>No</strong></span></div>' +
-        '<p class="omega-v2-logistics-fleet-note">Vehicle and pipeline-line counts remain separate. Design need uses distance-aware round-trip cycle and explicit per-line pipeline capacity; missing counts stay unknown rather than zero.</p></section>';
+        '</section>';
     }
     function logisticsIconMarkup(kind) {
       var value = String(kind || 'destination').toLowerCase();
@@ -1451,20 +1452,6 @@
         (paths[value] || paths.destination) + '</svg>';
     }
 
-    function hasCurrentShipmentMatch(route) {
-      var routeSiteId = String(route && route.siteId || '').trim();
-      var routeId = String(route && route.routeId || '').trim();
-      return shipments.some(function (shipment) {
-        var status = String(shipment && (shipment.status || shipment.deliveryStatus) || '').toUpperCase();
-        if (!/IN_TRANSIT|DISPATCHED|RESERVED|PENDING|QUEUED|AWAITING/.test(status)) return false;
-        var sourceSite = String(shipment && (shipment.siteId || shipment.sourceSiteId ||
-          shipment.mineSiteId || shipment.originSiteId) || '').trim();
-        var linkedRoute = String(shipment && (shipment.routeId ||
-          shipment.route && (shipment.route.routeId || shipment.route.id)) || '').trim();
-        return (!!routeSiteId && sourceSite === routeSiteId) || (!!routeId && linkedRoute === routeId);
-      });
-    }
-
     function logisticsRouteCard(route) {
       var plan = route && route.routePlan || {};
       var destination = route.destination && (route.destination.warehouseName || route.destination.name) || 'Raw-material warehouse';
@@ -1482,7 +1469,6 @@
       var capacity = numberOrNull(plan.capacityBottleneckPerDay);
       var capacityUnit = /RAW_CARGO_TONNES_PER_DAY/i.test(String(plan.capacityUnit || ''))
         ? 'tonnes/day' : buildDisplayUnit(plan.capacityUnit || '');
-      var matched = hasCurrentShipmentMatch(route);
       var resource = route.resourceId || route.resourceIconKey || 'supply';
       var siteName = route.siteName || route.siteId || 'Registered mine site';
       var from = siteName, to = destination;
@@ -1502,7 +1488,7 @@
           '</strong><small>' + esc(fmt(modeLegs.length) + (modeLegs.length === 1 ? ' leg' : ' legs')) + '</small></div>';
       }).join('');
       var routeModeDistanceMarkup = '<section class="omega-v2-logistics-distance-summary" aria-label="Distance by transport type">' +
-        '<div class="omega-v2-logistics-distance-heading"><span>Distance by transport type</span><small>Summed from the route legs shown above</small></div>' +
+        '<div class="omega-v2-logistics-distance-heading"><span>Distance by transport type</span></div>' +
         '<div class="omega-v2-logistics-distance-grid">' + modeDistanceMarkup + '</div></section>';
       var routeIcons = legs.map(function (leg, index) {
         var mode = String(leg && (leg.transportMode || leg.mode) || 'truck').toLowerCase();
@@ -1520,8 +1506,8 @@
           '</small></span>';
       }).join('');
       return '<article class="omega-v2-card omega-v2-logistics-card omega-v2-logistics-route-card" data-logistics-state="attention" data-logistics-plan-site-id="' +
-        esc(route.siteId || '') + '" data-current-match="' + (matched ? 'matched' : 'unavailable') +
-        '" data-logistics-mode-chain="' + esc(legs.map(function (leg) { return String(leg.transportMode || leg.mode || '').toLowerCase(); }).join(',')) + '">' +
+        esc(route.siteId || '') +
+        '" data-logistics-mode-chain="' esc(legs.map(function (leg) { return String(leg.transportMode || leg.mode || '').toLowerCase(); }).join(',')) + '">' +
         '<div class="omega-v2-logistics-header"><div class="omega-v2-logistics-cargo"><span class="omega-v2-resource-icon omega-v2-logistics-resource-art">' +
         resourceIconMarkup(resource, resourceLabel(resource)) + '</span><div class="omega-v2-logistics-cargo-copy">' +
         '<span class="omega-v2-eyebrow">SITE ROUTE PLAN</span><h3 class="omega-v2-card-title">' + esc(siteName) +
@@ -1543,8 +1529,7 @@
         (capacity !== null ? esc(fmt(capacity) + (capacityUnit ? ' ' + capacityUnit : '')) : 'Unavailable') + '</strong></div>' +
         '<div class="omega-v2-logistics-metric"><span>Route legs</span><strong>' + fmt(legs.length) + '</strong></div>' +
         '<div class="omega-v2-logistics-metric"><span>Transport types</span><strong>' + fmt(routeModes.length) + '</strong></div>' +
-        '<div class="omega-v2-logistics-metric"><span>Current Match</span><strong>' + (matched ? 'Matched' : 'Unavailable') +
-        '</strong></div></div>' + routeModeDistanceMarkup + logisticsSiteFleetMarkup(route, legs) + '</article>';
+        '</div>' + routeModeDistanceMarkup + logisticsSiteFleetMarkup(route, legs) + '</article>';
     }
 
     function logisticsRoutePlansMarkup(routeState) {
@@ -1557,11 +1542,11 @@
       }
       var routes = safeArray(routeState.routes);
       if (!routes.length) {
-        return '<div class="omega-v2-empty" data-logistics-route-state="empty">No registered mine/site route plans for this country. Current Match: Unavailable.</div>';
+        return '<div class="omega-v2-empty" data-logistics-route-state="empty">No registered mine/site route plans for this country.</div>';
       }
       return '<section class="omega-v2-logistics-route-section" data-logistics-route-state="ready">' +
         logisticsFleetOverviewMarkup(routes) +
-        '<div class="omega-v2-logistics-route-heading"><div><h2>Mine Site Route Plans</h2><p>Domestic mine-to-country-warehouse templates. International shipping requires explicit port, sea-leg and receiving-destination records.</p></div>' +
+        '<div class="omega-v2-logistics-route-heading"><div><h2>Mine Site Route Plans</h2></div>' +
         '<span class="omega-v2-status" data-state="attention">' + fmt(routes.length) + ' route plans</span></div>' +
         '<div class="omega-v2-grid omega-v2-logistics-grid">' + routes.map(logisticsRouteCard).join('') + '</div></section>';
     }
