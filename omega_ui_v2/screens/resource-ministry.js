@@ -1073,8 +1073,10 @@
           source.productionRate !== undefined ? source.productionRate :
           source.outputRate !== undefined ? source.outputRate :
           source.quantity !== undefined ? source.quantity : source.value);
+        var hasDirectRate = rate !== null;
         var rawUnit = String(source.dailyRateUnit || source.rateUnit || source.productionRateUnit ||
-          source.productionUnit || source.unit || (annualObject && annualObject.unit) || '').trim().toUpperCase();
+          source.productionUnit || (hasDirectRate ? source.unit : null) ||
+          source.annualUnit || (annualObject && annualObject.unit) || source.unit || '').trim().toUpperCase();
         var period = String(source.productionPeriod || source.ratePeriod || source.period ||
           source.timeBasis || source.measurementPeriod || '').trim().toUpperCase().replace(/[\s-]+/g, '_');
         var unit = rawUnit.replace(/\s*\/\s*/g, '_PER_').replace(/[\s-]+/g, '_');
@@ -1084,7 +1086,15 @@
         var unitMonth = /(?:_PER_MONTH|_MONTHLY|_MONTH)$/.test(unit) ||
           /^(?:PER_MONTH|MONTHLY|MONTH)$/.test(period);
         var explicitDaily = dailyValue !== null || /^(?:PER_DAY|DAILY|DAY)$/.test(period);
-        if (annualValue !== null && dailyValue === null) rate = annualValue;
+        // A declared daily rate wins over a separate annual summary. Some source
+        // records carry both values, and the annual value may use a different unit.
+        if (annualValue !== null && dailyValue === null && !unitDay && !explicitDaily) {
+          rate = annualValue;
+          if (source.annualUnit || (annualObject && annualObject.unit)) {
+            unit = String(source.annualUnit || annualObject.unit).trim().toUpperCase()
+              .replace(/\s*\/\s*/g, '_PER_').replace(/[\s-]+/g, '_');
+          }
+        }
         if (rate === null || rate < 0 || !unit) return null;
         if (unitDay || explicitDaily) {
           unit = unit.replace(/(?:_PER_DAY|_DAILY|_DAY|_PER_YEAR|_YEARLY|_ANNUAL|_YEAR|_PER_MONTH|_MONTHLY|_MONTH)$/, '');
@@ -1163,6 +1173,16 @@
         var routeCapacity = numberOrNull(leg && leg.designCapacityPerDay);
         var routeCapacityUnit = logisticsPlanningUnit(leg && (leg.designCapacityUnit || leg.capacityUnit || routePlan.capacityUnit || ''));
         var rateAvailable = rate !== null && rate >= 0 && !!productionUnit;
+        var vehicleDemandRate = rate, vehicleDemandUnit = productionUnit, routeCapacityBased = false;
+        // When mine output is missing or uses another unit, the route's own
+        // corridor capacity is a valid design target for sizing non-pipeline modes.
+        // This is not displayed as mine production or as an actual fleet count.
+        if (mode !== 'pipeline' && (vehicleDemandRate === null || vehicleDemandUnit !== perVehicleUnit) &&
+            routeCapacity !== null && routeCapacity >= 0 && routeCapacityUnit && routeCapacityUnit === perVehicleUnit) {
+          vehicleDemandRate = routeCapacity;
+          vehicleDemandUnit = routeCapacityUnit;
+          routeCapacityBased = true;
+        }
         var units = null, tripsPerDay = null, basis = '';
         var routeCapacityComparable = routeCapacity !== null && routeCapacityUnit === productionUnit;
         var routeBottleneck = rateAvailable && routeCapacityComparable && routeCapacity + 1e-9 < rate;
@@ -1173,11 +1193,14 @@
             units = Math.ceil(rate / lineCapacity);
             basis = 'ceil-production-per-day-divided-by-explicit-pipeline-line-capacity';
           }
-        } else if (rateAvailable && mode !== 'pipeline' && perVehicleCapacityPerDay !== null &&
-            perVehicleCapacityPerDay > 0 && perVehicleUnit && perVehicleUnit === productionUnit) {
-          units = Math.max(0, Math.ceil(rate / perVehicleCapacityPerDay));
-          tripsPerDay = payload !== null && payload > 0 ? rate / payload : null;
-          basis = 'ceil-production-per-day-divided-by-distance-aware-per-vehicle-daily-capacity';
+        } else if (mode !== 'pipeline' && vehicleDemandRate !== null && vehicleDemandRate >= 0 &&
+            perVehicleCapacityPerDay !== null && perVehicleCapacityPerDay > 0 &&
+            perVehicleUnit && vehicleDemandUnit === perVehicleUnit) {
+          units = Math.max(0, Math.ceil(vehicleDemandRate / perVehicleCapacityPerDay));
+          tripsPerDay = payload !== null && payload > 0 ? vehicleDemandRate / payload : null;
+          basis = routeCapacityBased
+            ? 'route-capacity-envelope-divided-by-distance-aware-per-vehicle-daily-capacity'
+            : 'ceil-production-per-day-divided-by-distance-aware-per-vehicle-daily-capacity';
         }
         if (!totals[mode]) totals[mode] = {
           estimatedUnits: 0, estimatedTripsPerDay: 0, hasTripRate: true, available: true,
@@ -1197,9 +1220,12 @@
           perVehicleCapacityUnit:perVehicleUnit, lineCapacityPerDay:lineCapacity, lineCapacityUnit:lineUnit || null,
           requiredUnits:units, routeCapacityPerDay:routeCapacity, routeCapacityUnit:routeCapacityUnit || null,
           routeCapacityStatus:!routeCapacityComparable ? 'UNKNOWN' : (routeBottleneck ? 'BOTTLENECK' : 'SUFFICIENT'),
+          demandBasis:routeCapacityBased ? 'ROUTE_CAPACITY_ENVELOPE' : (rateAvailable ? 'MINE_PRODUCTION_RATE' : 'UNKNOWN'),
           formula:mode === 'pipeline'
             ? 'ceil(production per day / explicit pipeline-line capacity per day)'
-            : 'ceil(production per day / (payload per trip x 24 / round-trip cycle hours))'
+            : (routeCapacityBased
+              ? 'ceil(route capacity per day / (payload per trip x 24 / round-trip cycle hours))'
+              : 'ceil(production per day / (payload per trip x 24 / round-trip cycle hours))')
         });
       });
       Object.keys(totals).forEach(function (mode) {
@@ -1208,7 +1234,10 @@
         if (!stat.hasTripRate) stat.estimatedTripsPerDay = null;
         stat.formula = mode === 'pipeline'
           ? 'ceil(production per day / explicit pipeline-line capacity per day)'
-          : 'ceil(production per day / (payload per trip x 24 / round-trip cycle hours))';
+          : (stat.basis.length && stat.basis.every(function (entry) {
+            return entry === 'route-capacity-envelope-divided-by-distance-aware-per-vehicle-daily-capacity';
+          }) ? 'ceil(route capacity per day / (payload per trip x 24 / round-trip cycle hours))'
+            : 'ceil(production per day / (payload per trip x 24 / round-trip cycle hours))');
         stat.distanceAware = mode !== 'pipeline' && stat.available && stat.legs.every(function (leg) {
           return leg.cycleHours !== null && leg.perVehicleCapacityPerDay !== null;
         });
@@ -1289,9 +1318,11 @@
           Number.isFinite(Number(perUnitCapacity)) && perUnitCapacityUnit
           ? ' · ' + fmt(Number(Number(perUnitCapacity).toFixed(4))) + ' ' + buildDisplayUnit(perUnitCapacityUnit) +
             (mode === 'pipeline' ? ' per line' : ' per vehicle') : '';
+        var capacityBasedEstimate = !!(estimate && estimate.basis &&
+          estimate.basis.indexOf('route-capacity-envelope-divided-by-distance-aware-per-vehicle-daily-capacity') >= 0);
         var estimateLabel = !used ? 'Not used by this route' :
-          (estimate && estimate.available ? 'Design need: ' + fmt(estimate.estimatedUnits) + ' ' +
-            (estimate.estimatedUnits === 1 ? meta.single : meta.unit) + capacityDetail +
+          (estimate && estimate.available ? (capacityBasedEstimate ? 'Route capacity need: ' : 'Design need: ') +
+            fmt(estimate.estimatedUnits) + ' ' + (estimate.estimatedUnits === 1 ? meta.single : meta.unit) + capacityDetail +
             (estimate.routeBottleneckLegs ? ' · route capacity bottleneck' : '') : 'Design need unavailable');
         var tripRate = estimate && estimate.estimatedTripsPerDay !== null
           ? ' · ' + fmt(Number(estimate.estimatedTripsPerDay.toFixed(4))) + ' trips/day' : '';
