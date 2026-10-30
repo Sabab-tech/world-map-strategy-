@@ -131,7 +131,16 @@ export async function buildDataset(){
     try{
       const response=await fetchJson(DATA_URL,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({datasetId,countryCode:output.sourceCountryCode,fullPrecision:true,variableCodes:[variableCode],activities:requestedActivities,periods})});
       const observations=extractEstablishmentObservations(response,sourceCodes),years=observations.map(r=>r.year);
-      if(!observations.length)output.countryStatus='NO_PARSEABLE_OBSERVATIONS';
+      if(!observations.length) {
+        output.countryStatus='NO_PARSEABLE_OBSERVATIONS';
+        for(const type of types) {
+          const prior=output.factoryEstablishments[type];
+          if(prior&&['REPORTED','PARTIAL','MAPPING_UNAVAILABLE','NOT_REPORTED'].includes(prior.status))continue;
+          const codes=mapByType[type].activityCodes;
+          output.factoryEstablishments[type]=blank(codes.length?'SOURCE_UNAVAILABLE':'NOT_COMPARABLE',codes);
+        }
+        return {status:'NO_PARSEABLE_OBSERVATIONS',observations:0};
+      }
       output.latestReferenceYear=years.length?Math.max(...years):null;
       for(const t of types){const next=aggregate(mapByType[t],observations,sourceCodes,true),prior=output.factoryEstablishments[t];if(next.status==='NOT_REPORTED'&&prior&&['REPORTED','PARTIAL','MAPPING_UNAVAILABLE','NOT_REPORTED'].includes(prior.status))continue;output.factoryEstablishments[t]=next;}
       return {status:output.countryStatus,observations:observations.length};
