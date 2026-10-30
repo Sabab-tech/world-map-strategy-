@@ -84,17 +84,26 @@ const done = arguments[arguments.length - 1];
     let lastError = "UNIDO_REQUEST_FAILED";
     for (let attempt = 0; attempt < 3; attempt += 1) {
       try {
-        const response = await fetch(endpoint, {
-          method: "POST",
-          credentials: "same-origin",
-          cache: "no-store",
-          headers: {
-            "accept": "application/json",
-            "content-type": "application/json"
-          },
-          body: JSON.stringify(payload)
-        });
-        const body = await response.text();
+        const controller = new AbortController();
+        const requestTimeout = setTimeout(() => controller.abort(), 35000);
+        let response;
+        let body;
+        try {
+          response = await fetch(endpoint, {
+            method: "POST",
+            credentials: "same-origin",
+            cache: "no-store",
+            headers: {
+              "accept": "application/json",
+              "content-type": "application/json"
+            },
+            body: JSON.stringify(payload),
+            signal: controller.signal
+          });
+          body = await response.text();
+        } finally {
+          clearTimeout(requestTimeout);
+        }
         if (!response.ok) {
           lastError = "HTTP_" + response.status + ":" + body.replace(/\s+/g, " ").slice(0, 180);
           if (response.status !== 429 && response.status < 500) break;
