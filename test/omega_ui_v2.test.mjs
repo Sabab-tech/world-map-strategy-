@@ -294,8 +294,8 @@ test('industry command panel renders country starting allocations separately fro
     assert.equal(model.startingFactoryUnits, 7);
     assert.equal(model.factoryRegistryRuntimeStatus, 'REGISTERED');
     assert.deepEqual(model.factoryTypeCatalog.map((row) => ({ name:row.name, startingCount:row.startingCount })), [
-      { name:'Steel Mill', startingCount:3 },
-      { name:'Cement Plant', startingCount:0 }
+      { name:'Cement Plant', startingCount:0 },
+      { name:'Steel Mill', startingCount:3 }
     ]);
     assert.deepEqual(model.factoryTypeCounts.map((row) => ({ name:row.name, count:row.count })), [
       { name:'Steel Mill', count:2 }
