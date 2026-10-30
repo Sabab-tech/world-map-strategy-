@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import test from 'node:test';
-import {extractEstablishmentObservations} from '../scripts/build_country_factory_establishment_data_v1.mjs';
+import {classifyCollectionStatus,extractEstablishmentObservations} from '../scripts/build_country_factory_establishment_data_v1.mjs';
 const read=n=>JSON.parse(fs.readFileSync(new URL('../'+n,import.meta.url),'utf8'));
 const baseline=read('country_factory_starting_baseline_v1.json');
 const catalog=read('resource_industrial_catalog_v1.json');
@@ -11,6 +11,17 @@ const countries=Object.keys(baseline.countries).sort(),types=Object.keys(catalog
 test('all 197 countries have all 21 source-backed establishment input slots',()=>{
  assert.equal(dataset.metadata.countryCount,197);assert.equal(dataset.metadata.factoryTypeCount,21);assert.equal(dataset.metadata.recordCount,4137);assert.deepEqual(Object.keys(dataset.countries).sort(),countries);
  for(const id of countries){const row=dataset.countries[id];assert.equal(Object.keys(row.factoryEstablishments).length,21);assert.deepEqual(Object.keys(row.factoryEstablishments).sort(),types);for(const type of types){const r=row.factoryEstablishments[type];assert.equal(typeof r.status,'string');assert.ok(Object.hasOwn(r,'establishmentCount'));if(r.status!=='REPORTED')assert.equal(r.establishmentCount,null);else{assert.ok(Number.isInteger(r.establishmentCount)&&r.establishmentCount>=0);assert.ok(Number.isInteger(r.referenceYear));}}}
+});
+test('an empty source refresh cannot report successful completion',()=>{
+ assert.equal(classifyCollectionStatus({fetchedCoreCountryCount:0,reportedRecordCount:0,partialRecordCount:0}),'FAILED_NO_VERIFIED_OBSERVATIONS');
+ assert.equal(classifyCollectionStatus({fetchedCoreCountryCount:2,reportedRecordCount:0,partialRecordCount:0}),'FAILED_NO_VERIFIED_OBSERVATIONS');
+ assert.equal(classifyCollectionStatus({fetchedCoreCountryCount:2,reportedRecordCount:10,partialRecordCount:1,sourceUnavailableCountryCount:4,countryNotCoveredCount:70}),'COMPLETED_WITH_GAPS');
+ assert.equal(classifyCollectionStatus({fetchedCoreCountryCount:197,reportedRecordCount:4137,partialRecordCount:0}),'COMPLETED');
+});
+test('checked-in source metadata does not claim completion when no observation was fetched',()=>{
+ const m=dataset.metadata;
+ if(Number(m.fetchedCoreCountryCount)===0&&Number(m.reportedRecordCount)===0&&Number(m.partialRecordCount)===0)
+  assert.notEqual(m.collectionStatus,'COMPLETED');
 });
 test('ISIC mapping covers all types without duplicate activity assignment',()=>{
  assert.equal(mapping.authority,'ISIC_REV4');assert.equal(mapping.mappings.length,21);assert.deepEqual(mapping.mappings.map(r=>r.factoryType).sort(),types);const codes=mapping.mappings.flatMap(r=>r.activityCodes);assert.equal(new Set(codes).size,codes.length);const umbrella=mapping.mappings.find(r=>r.factoryType==='UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT');assert.equal(umbrella.status,'NOT_COMPARABLE');assert.deepEqual(umbrella.activityCodes,[]);
