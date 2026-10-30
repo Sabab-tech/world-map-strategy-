@@ -319,7 +319,7 @@ test('industry command panel renders country starting allocations separately fro
     assert.equal(typeResult.ok, true);
     assert.match(typeRoot.innerHTML, /Starting allocation/);
     assert.match(typeRoot.innerHTML, /fp-type-card-count--starting/);
-    assert.match(typeRoot.innerHTML, /Commissioned assets/);
+    assert.match(typeRoot.innerHTML, /Registered game assets/);
     assert.match(root.innerHTML, /STARTING UNITS/);
     assert.doesNotMatch(root.innerHTML, /Foreign Cement Plant/);
     assert.doesNotMatch(root.innerHTML, /Bangladesh Iron Mine|Daily mine production|FACTORY SVG SLOT/);
