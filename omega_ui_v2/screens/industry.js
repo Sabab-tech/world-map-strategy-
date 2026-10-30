@@ -256,8 +256,12 @@
     var factoryBaselineRuntime = g.OmegaCountryFactoryStartingBaselineV1 ||
       (g.Omega && g.Omega.CountryFactoryStartingBaselineV1) || null;
     var countryFactoryStartingBaseline = null;
+    var countryFactoryRuntimeRegistry = null;
     if (context.countryId && factoryBaselineRuntime && typeof factoryBaselineRuntime.getCountryBaseline === 'function') {
       try { countryFactoryStartingBaseline = factoryBaselineRuntime.getCountryBaseline(context.countryId); } catch (_) { countryFactoryStartingBaseline = null; }
+    }
+    if (context.countryId && factoryBaselineRuntime && typeof factoryBaselineRuntime.getCountryFactoryRegistry === 'function') {
+      try { countryFactoryRuntimeRegistry = factoryBaselineRuntime.getCountryFactoryRegistry(context.countryId); } catch (_) { countryFactoryRuntimeRegistry = null; }
     }
     var inventoryRuntime = g.OmegaCountryInventoryRuntime || (g.Omega && g.Omega.CountryInventoryRuntime) || null;
     var nationalInventory = null;
@@ -343,6 +347,8 @@
     var factoryTypeCounts = Object.keys(factoryTypeCountsIndex).map(function (key) {
       return factoryTypeCountsIndex[key];
     }).sort(function (a, b) { return a.name.localeCompare(b.name); });
+    var startingFactoryCounts = countryFactoryStartingBaseline && countryFactoryStartingBaseline.factoryCounts
+      ? countryFactoryStartingBaseline.factoryCounts : {};
     var seenCatalogTypes = Object.create(null);
     var factoryTypeCatalog = Object.keys(profiles).map(function (rawType) {
       var profile = profiles[rawType] || {};
@@ -352,6 +358,7 @@
       return {
         type: type, name: String(profile.name || type),
         category: String(profile.category || profile.subCategory || 'Uncategorised'),
+        startingCount: num(startingFactoryCounts[type] !== undefined ? startingFactoryCounts[type] : startingFactoryCounts[rawType]),
         constructionCost: num(profile.constructionCost), constructionDays: num(profile.constructionDays),
         defaultCapacityPerDay: num(profile.defaultCapacityPerDay),
         defaultRecipeId: String(profile.defaultRecipeId || ''), simulationOnly: profile.simulationOnly === true
@@ -367,6 +374,11 @@
       factoryTypeCounts: factoryTypeCounts,
       factoryTypeCatalog: factoryTypeCatalog,
       countryFactoryStartingBaseline: countryFactoryStartingBaseline,
+      countryFactoryRuntimeRegistry: countryFactoryRuntimeRegistry,
+      factoryRegistryRuntimeStatus: countryFactoryRuntimeRegistry && countryFactoryRuntimeRegistry.runtimeStatus || 'DATA_READY_NOT_SESSION_REGISTERED',
+      startingFactoryUnits: countryFactoryStartingBaseline ? num(countryFactoryStartingBaseline.totalStartingFactoryUnits) : null,
+      startingFactoryTypeCount: countryFactoryRuntimeRegistry && num(countryFactoryRuntimeRegistry.factoryTypeCount) !== null
+        ? num(countryFactoryRuntimeRegistry.factoryTypeCount) : factoryTypeCatalog.length,
       factories: mappedAssets,
       factoryNames: mappedAssets.map(function (row) { return row.name; }),
       playerCountryId: playerCountryId() || null,
@@ -737,13 +749,42 @@
     return '<article class="omega-v2-factory-type-card" data-omega-v2-factory-type-card data-factory-type="' + esc(type) + '">' +
       '<header class="fp-type-card-head"><span class="fp-type-card-art">' + factorySvgMarkup({ type:type, name:item.name || type }) + '</span>' +
       '<span class="fp-type-card-name"><strong>' + esc(item.name || type) + '</strong><small>' + esc(item.category || 'Uncategorised') + '</small></span></header>' +
-      '<div class="fp-type-card-count"><span>Registered game assets</span><strong>' + fmt(ownedCount) + '</strong></div>' +
+      '<div class="fp-type-card-count"><span>Commissioned assets</span><strong>' + fmt(ownedCount) + '</strong></div>' +
+      '<div class="fp-type-card-count fp-type-card-count--starting"><span>Starting allocation</span><strong>' + fmt(item.startingCount) + '</strong></div>' +
       '<dl class="fp-type-card-metrics"><div><dt>Modeled build time</dt><dd>' + esc(duration) + '</dd></div>' +
       '<div><dt>Modeled capacity</dt><dd>' + esc(capacity) + '</dd></div>' +
       '<div><dt>Modeled construction cost</dt><dd>' + esc(cost) + '</dd></div></dl>' +
       '<div class="fp-type-card-actions"><button type="button" class="omega-v2-factory-button omega-v2-factory-button--build" data-omega-v2-factory-build="CATALOG" data-factory-type="' + esc(type) + '"' +
       (canBuild ? '' : ' disabled title="' + esc(disabledReason) + '"') +
       '><span aria-hidden="true" class="omega-v2-action-icon omega-v2-action-icon--build"></span>Build project</button></div></article>';
+  }
+
+  function factoryStartingAllocationMarkup(model) {
+    model = model || {};
+    var baseline = model.countryFactoryStartingBaseline;
+    var rows = Array.isArray(model.factoryTypeCatalog) ? model.factoryTypeCatalog.slice() : [];
+    if (!baseline || !baseline.factoryCounts) {
+      return '<section class="fp-starting-allocation" aria-label="Starting factory allocation"><header><span>COUNTRY STARTING INDUSTRY</span><strong>Factory allocation</strong></header><p>Starting factory data is loading or unavailable for this country.</p></section>';
+    }
+    rows.sort(function (a, b) {
+      var categoryOrder = String(a && a.category || '').localeCompare(String(b && b.category || ''));
+      return categoryOrder || String(a && a.name || a && a.type || '').localeCompare(String(b && b.name || b && b.type || ''));
+    });
+    var allocationRows = rows.map(function (row) {
+      return '<tr><td><strong>' + esc(row.name || row.type) + '</strong><small>' + esc(row.type) + '</small></td>' +
+        '<td class="fp-starting-allocation-count">' + fmt(row.startingCount) + '</td><td>' + esc(row.category || 'Industry') + '</td></tr>';
+    }).join('');
+    var status = String(model.factoryRegistryRuntimeStatus || 'DATA_READY_NOT_SESSION_REGISTERED');
+    var runtimeLabel = status === 'REGISTERED' ? 'RUNTIME REGISTRY · REGISTERED' :
+      status === 'DATA_READY_NOT_SESSION_REGISTERED' ? 'SOURCE READY · SESSION REGISTRY PENDING' : status.replace(/_/g, ' ');
+    return '<section class="fp-starting-allocation" aria-label="Starting factory allocation" data-runtime-status="' + esc(status) + '">' +
+      '<header class="fp-starting-allocation-heading"><div><span>OMEGA / NATIONAL INDUSTRY BASELINE</span><strong>Starting factory allocation</strong></div>' +
+      '<div class="fp-starting-allocation-total"><strong>' + fmt(model.startingFactoryUnits) + '</strong><small>game units</small></div></header>' +
+      '<div class="fp-starting-allocation-meta"><span>' + fmt(model.startingFactoryTypeCount) + ' canonical factory types</span><span>' + esc(runtimeLabel) + '</span></div>' +
+      '<div class="fp-starting-allocation-table-wrap"><table><thead><tr><th>Factory type</th><th>Starting units</th><th>Industry group</th></tr></thead>' +
+      '<tbody>' + (allocationRows || '<tr><td colspan="3">Factory type catalogue unavailable</td></tr>') + '</tbody></table></div>' +
+      '<p class="fp-starting-allocation-foot">Game-scaled simulation allocation. It is separate from currently commissioned factory assets and does not create production output by itself.</p>' +
+      '</section>';
   }
 
   function factoryTypeCatalogMarkup(model) {
@@ -767,7 +808,7 @@
     return '<section class="fp-type-catalog" aria-label="Factory types and selected-country totals">' +
       '<header class="fp-type-catalog-heading"><div><span>OMEGA / COUNTRY INDUSTRY REGISTER</span><strong>Factory types &amp; country totals</strong></div>' +
       '<span class="fp-type-catalog-total">' + fmt(rows.length) + ' types</span></header>' +
-      '<p class="fp-type-catalog-note">These are canonical factory-type definitions. Country totals count only registered OMEGA game-state assets; catalogue profiles are not owned factories. Missing country state is shown as “Not recorded”.</p>' +
+      '<p class="fp-type-catalog-note">Each card separates the country’s starting allocation from factories currently commissioned in the live game state.</p>' +
       '<div class="fp-type-catalog-grid">' + (cards || empty) + '</div></section>';
   }
 
@@ -924,12 +965,13 @@
       : '<div class="omega-v2-factory-empty">No commissioned factories are recorded for ' + esc(model.countryId || 'the selected country') + '.</div>';
     var summaryMarkup = '<div class="fp-summary" aria-label="Selected country production summary">' +
       '<div class="fp-summary-item"><span>COUNTRY</span><strong>' + esc(model.countryId || 'Not recorded') + '</strong></div>' +
-      '<div class="fp-summary-item"><span>FACTORIES</span><strong>' + fmt(model.factoryCount) + '</strong></div>' +
+      '<div class="fp-summary-item"><span>COMMISSIONED</span><strong>' + fmt(model.factoryCount) + '</strong></div>' +
+      '<div class="fp-summary-item"><span>STARTING UNITS</span><strong>' + fmt(model.startingFactoryUnits) + '</strong></div>' +
       '<div class="fp-summary-item"><span>PRODUCTION CYCLES</span><strong>' + fmt(model.cycles.length) + '</strong></div>' +
-      '<div class="fp-summary-item"><span>RECORDED INPUT ROWS</span><strong>' + fmt(model.inputInventoryCount) + '</strong></div>' +
       '</div>';
+    var startingAllocationMarkup = active === 'factories' ? factoryStartingAllocationMarkup(model) : '';
     var panelBody = active === 'factories'
-      ? (factoryView === 'types' ? factoryTypeCatalogMarkup(model) : '<div class="omega-v2-factory-deck">' + factoryCards + '</div>')
+      ? startingAllocationMarkup + (factoryView === 'types' ? factoryTypeCatalogMarkup(model) : '<div class="omega-v2-factory-deck">' + factoryCards + '</div>')
       : '<div class="fp-content" data-omega-v2-industry-content data-active-tab="' + esc(active) + '">' +
           '<header class="fp-content-heading"><div><span>OMEGA / COUNTRY DATA</span><strong>' + esc(activeLabel) + '</strong></div>' +
           '<span class="fp-content-country">' + esc(model.countryId || 'Country not selected') + '</span></header>' +
