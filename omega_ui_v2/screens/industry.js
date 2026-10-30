@@ -256,8 +256,12 @@
     var factoryBaselineRuntime = g.OmegaCountryFactoryStartingBaselineV1 ||
       (g.Omega && g.Omega.CountryFactoryStartingBaselineV1) || null;
     var countryFactoryStartingBaseline = null;
+    var countryFactoryEstablishmentData = null;
     if (context.countryId && factoryBaselineRuntime && typeof factoryBaselineRuntime.getCountryBaseline === 'function') {
       try { countryFactoryStartingBaseline = factoryBaselineRuntime.getCountryBaseline(context.countryId); } catch (_) { countryFactoryStartingBaseline = null; }
+    }
+    if (context.countryId && factoryBaselineRuntime && typeof factoryBaselineRuntime.getCountryRealWorldData === 'function') {
+      try { countryFactoryEstablishmentData = factoryBaselineRuntime.getCountryRealWorldData(context.countryId); } catch (_) { countryFactoryEstablishmentData = null; }
     }
     var inventoryRuntime = g.OmegaCountryInventoryRuntime || (g.Omega && g.Omega.CountryInventoryRuntime) || null;
     var nationalInventory = null;
@@ -367,6 +371,7 @@
       factoryTypeCounts: factoryTypeCounts,
       factoryTypeCatalog: factoryTypeCatalog,
       countryFactoryStartingBaseline: countryFactoryStartingBaseline,
+      countryFactoryEstablishmentData: countryFactoryEstablishmentData,
       factories: mappedAssets,
       factoryNames: mappedAssets.map(function (row) { return row.name; }),
       playerCountryId: playerCountryId() || null,
@@ -644,6 +649,40 @@
             '<td class="omega-v2-metal-number">' + countText + '</td><td>' + esc(row.category || 'Industry') + '</td></tr>';
         }).join('')
       : '';
+    var establishmentData = model.countryFactoryEstablishmentData;
+    var establishmentRecords = establishmentData && establishmentData.factoryEstablishments || {};
+    var establishmentRows = (model.factoryTypeCatalog || []).map(function (row) {
+      var record = establishmentRecords[row.type] || {};
+      var count = Number(record.establishmentCount);
+      var status = String(record.status || 'NOT_QUERIED');
+      var countText = status === 'REPORTED' && Number.isInteger(count) && count >= 0 ? fmt(count)
+        : status === 'PARTIAL' ? 'Partial · not total'
+        : status === 'NOT_COMPARABLE' ? 'Not comparable'
+        : status === 'NOT_REPORTED' ? 'Not reported'
+        : status === 'COUNTRY_NOT_COVERED' ? 'Country not covered'
+        : status === 'MAPPING_UNAVAILABLE' ? 'Mapping unavailable'
+        : status === 'SOURCE_UNAVAILABLE' ? 'Source unavailable' : 'Pending source';
+      var year = record.referenceYear !== null && record.referenceYear !== undefined && Number.isFinite(Number(record.referenceYear))
+        ? fmt(record.referenceYear) : '—';
+      return '<tr><td><strong>' + esc(row.name) + '</strong><small>' + esc(row.type) + '</small></td>' +
+        '<td class="omega-v2-metal-number">' + esc(countText) + '</td><td>' + esc(year) + '</td><td>' +
+        esc(status.replace(/_/g, ' ').toLowerCase()) + '</td></tr>';
+    }).join('');
+    var reportedEstablishmentCount = Object.keys(establishmentRecords).filter(function (type) {
+      return establishmentRecords[type] && establishmentRecords[type].status === 'REPORTED';
+    }).length;
+    var partialEstablishmentCount = Object.keys(establishmentRecords).filter(function (type) {
+      return establishmentRecords[type] && establishmentRecords[type].status === 'PARTIAL';
+    }).length;
+    var establishmentMarkup = establishmentData
+      ? '<section class="omega-v2-metal-plate omega-v2-metal-plate--silver omega-v2-industry-starting-baseline" aria-label="Official industrial establishment records">' +
+          '<div class="omega-v2-metal-label">REAL-WORLD SOURCE DATA · UNIDO INDSTAT</div>' +
+          '<h3>Industrial Establishment Records</h3>' +
+          '<p class="omega-v2-industry-muted"><strong>' + fmt(reportedEstablishmentCount) + '</strong> complete type records · <strong>' + fmt(partialEstablishmentCount) + '</strong> partial records · country ' + esc(establishmentData.countryId || model.countryId || '') + '</p>' +
+          '<div class="omega-v2-industry-table-wrap omega-v2-industry-type-table"><table><thead><tr><th>Factory type / ISIC category</th><th>Establishments</th><th>Year</th><th>Source status</th></tr></thead>' +
+          '<tbody>' + establishmentRows + '</tbody></table></div>' +
+          '<p class="omega-v2-industry-muted">UNIDO establishments are statistical business units, not necessarily individual physical factory sites. Missing values are not zero.</p></section>'
+      : '<section class="omega-v2-metal-plate omega-v2-metal-plate--silver omega-v2-industry-starting-baseline" aria-label="Official industrial establishment records"><div class="omega-v2-metal-label">REAL-WORLD SOURCE DATA · UNIDO INDSTAT</div><h3>Industrial Establishment Records</h3><p class="omega-v2-industry-muted">Official source data is loading or unavailable. Unknown values remain unreported.</p></section>';
     var startingBaselineMarkup = startingBaseline && startingBaseline.factoryCounts
       ? '<section class="omega-v2-metal-plate omega-v2-metal-plate--silver omega-v2-industry-starting-baseline" aria-label="Game starting factory allocation">' +
           '<div class="omega-v2-metal-label">GAME START · NATIONAL INDUSTRY PROFILE</div>' +
@@ -685,6 +724,7 @@
           '<details class="omega-v2-industry-factory-names"><summary>Individual registered factory names (' + fmt(model.factoryNames.length) + ')</summary><ul>' + factoryNames + '</ul></details></div>' +
       '</div>' +
       startingBaselineMarkup +
+      establishmentMarkup +
       '<div class="omega-v2-industry-resource-stats">' +
         '<div class="omega-v2-metal-plate omega-v2-metal-plate--blue"><span class="omega-v2-metal-label">REGISTERED RESOURCE SITES</span><strong class="omega-v2-metal-number">' + fmt(model.registeredMineSiteCount) + '</strong><small>Country-specific canonical sites</small></div>' +
         '<div class="omega-v2-metal-plate omega-v2-metal-plate--copper"><span class="omega-v2-metal-label">OPERATING MINE ASSETS</span><strong class="omega-v2-metal-number">' + fmt(model.operatingMineCount) + '</strong><small>Operational player/game assets</small></div>' +

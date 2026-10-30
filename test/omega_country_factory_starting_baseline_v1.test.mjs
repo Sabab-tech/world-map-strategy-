@@ -9,11 +9,13 @@ const baseline = readJson('country_factory_starting_baseline_v1.json');
 const catalog = readJson('resource_industrial_catalog_v1.json');
 const countryContext = readJson('resource_country_resource_context_index.json');
 const economyProfiles = readJson('economy_global_profiles_v1.json');
+const realWorldEstablishments = readJson('country_factory_establishment_data_v1.json');
 const sourceDocuments = {
   'country_factory_starting_baseline_v1.json': baseline,
   'resource_industrial_catalog_v1.json': catalog,
   'resource_country_resource_context_index.json': countryContext,
-  'economy_global_profiles_v1.json': economyProfiles
+  'economy_global_profiles_v1.json': economyProfiles,
+  'country_factory_establishment_data_v1.json': realWorldEstablishments
 };
 const factoryTypes = Object.keys(catalog.factoryProfiles).sort();
 const coreCountryIds = Object.keys(countryContext.countries).sort();
@@ -144,6 +146,12 @@ test('runtime validates sources and seeds all country counts without changing li
   assert.equal(bangladesh.factoryCounts.TEXTILE_GARMENT_MILL, baseline.countries.BGD.factoryCounts.TEXTILE_GARMENT_MILL);
   assert.equal(api.getCountryBaseline('Bangladesh').countryId, 'BGD');
   assert.equal(api.getCountryBaseline('UNKNOWN-COUNTRY'), null);
+  const realWorld = api.getCountryRealWorldData('BGD');
+  assert.equal(realWorld.countryId, 'BGD');
+  assert.equal(Object.keys(realWorld.factoryEstablishments).length, 21);
+  assert.equal(realWorld.factoryEstablishments.TEXTILE_GARMENT_MILL.status, 'NOT_QUERIED');
+  assert.equal(realWorld.factoryEstablishments.TEXTILE_GARMENT_MILL.establishmentCount, null);
+  assert.equal(realWorld.factoryEstablishments.UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT.status, 'NOT_COMPARABLE');
 
   emitSimulationEvent('OMEGA_GAME_SESSION_CREATED', { session: structuredCloneSafe(state.simulation.session) });
   const result = await api.waitForPendingInitialization();
