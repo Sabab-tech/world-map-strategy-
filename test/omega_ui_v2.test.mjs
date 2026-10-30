@@ -217,8 +217,93 @@ test('Government ministry rows show the canonical active minister for the explic
 
 test('Home Affairs provides all six planned sections and does not create a separate recruitment destination', () => {
   const tabs = globalThis.OmegaUIV2HomeAffairs.tabs;
-  assert.deepEqual(tabs.map((item) => item.id), ['dashboard', 'personnel', 'fleet', 'patrols', 'facilities', 'incidents', 'laws']);
+  assert.deepEqual(tabs.map((item) => item.id), ['dashboard', 'budget', 'personnel', 'fleet', 'patrols', 'facilities', 'incidents', 'laws']);
   assert.equal(tabs.some((item) => /recruit/i.test(item.id)), false);
+});
+
+
+test('Home Affairs restores the Finance-backed budget and expenditure panel and saves category allocations through the canonical engine', () => {
+  const previous = globalThis.OmegaHomeMinistryEngine;
+  const saved = { plan:null, country:null };
+  const snapshot = {
+    available:true, valid:true, canEdit:true, countryId:'AAA',
+    parentBudgetUsd:1000000, parentRemainingUsd:900000, treasuryBalanceUsd:2500000,
+    planTotalUsd:1000000, unplannedBudgetUsd:0, spentThisYearUsd:100000,
+    plan:{
+      personnel:{mode:'percent',value:45}, vehicles:{mode:'percent',value:20},
+      maintenance:{mode:'percent',value:15}, facilities:{mode:'percent',value:8},
+      training:{mode:'percent',value:5}, operations:{mode:'percent',value:7}
+    },
+    categories:{
+      personnel:{budgetUsd:450000,spentUsd:60000,remainingUsd:390000},
+      vehicles:{budgetUsd:200000,spentUsd:20000,remainingUsd:180000},
+      maintenance:{budgetUsd:150000,spentUsd:10000,remainingUsd:140000},
+      facilities:{budgetUsd:80000,spentUsd:5000,remainingUsd:75000},
+      training:{budgetUsd:50000,spentUsd:5000,remainingUsd:45000},
+      operations:{budgetUsd:70000,spentUsd:0,remainingUsd:70000}
+    }
+  };
+  globalThis.OmegaHomeMinistryEngine = {
+    getHomeBudgetSnapshot(country) { assert.equal(country,'AAA'); return snapshot; },
+    setHomeBudgetPlan(plan,country) { saved.plan=plan; saved.country=country; return {ok:true,snapshot}; }
+  };
+  const values = {personnel:'45',vehicles:'20',maintenance:'15',facilities:'8',training:'5',operations:'7'};
+  const root = {
+    innerHTML:'',
+    classList:{add(){}},
+    handlers:{},
+    addEventListener(type,handler){this.handlers[type]=handler;},
+    contains(){return true;},
+    querySelector(selector){
+      const valueMatch=selector.match(/data-omega-v2-budget-value="([^"]+)"/);
+      if(valueMatch)return {value:values[valueMatch[1]]};
+      const modeMatch=selector.match(/data-omega-v2-budget-mode="([^"]+)"/);
+      if(modeMatch)return {value:'percent'};
+      return null;
+    }
+  };
+  try {
+    const result=globalThis.OmegaUIV2HomeAffairs.render(root,{countryId:'AAA',tab:'budget'});
+    assert.equal(result.ok,true);
+    assert.equal(result.tab,'budget');
+    assert.match(root.innerHTML,/Budget &amp; Expenditure/);
+    assert.match(root.innerHTML,/\$1,000,000/);
+    assert.match(root.innerHTML,/\$2,500,000/);
+    assert.match(root.innerHTML,/\$60,000/);
+    assert.match(root.innerHTML,/SAVE HOME AFFAIRS BUDGET/);
+    const action={disabled:false,getAttribute(name){return name==='data-omega-v2-action'?'save-home-budget':null;}};
+    const target={closest(selector){return selector==='[data-omega-v2-home-tab]'?null:selector==='[data-omega-v2-action]'?action:null;}};
+    root.handlers.click({target});
+    assert.equal(saved.country,'AAA');
+    assert.deepEqual(saved.plan,{
+      personnel:{mode:'percent',value:45},vehicles:{mode:'percent',value:20},
+      maintenance:{mode:'percent',value:15},facilities:{mode:'percent',value:8},
+      training:{mode:'percent',value:5},operations:{mode:'percent',value:7}
+    });
+    assert.match(root.innerHTML,/budget plan saved/i);
+  } finally {
+    if(previous===undefined)delete globalThis.OmegaHomeMinistryEngine;
+    else globalThis.OmegaHomeMinistryEngine=previous;
+  }
+});
+
+test('Home Affairs budget remains read-only for a non-player country and does not offer made-up values', () => {
+  const previous=globalThis.OmegaHomeMinistryEngine;
+  globalThis.OmegaHomeMinistryEngine={
+    getHomeBudgetSnapshot(){return {available:true,valid:true,canEdit:false,countryId:'BBB',parentBudgetUsd:20000000,parentRemainingUsd:20000000,treasuryBalanceUsd:30000000,planTotalUsd:20000000,unplannedBudgetUsd:0,spentThisYearUsd:0,plan:{personnel:{mode:'percent',value:45},vehicles:{mode:'percent',value:20},maintenance:{mode:'percent',value:15},facilities:{mode:'percent',value:8},training:{mode:'percent',value:5},operations:{mode:'percent',value:7}},categories:{personnel:{budgetUsd:9000000,spentUsd:0,remainingUsd:9000000},vehicles:{budgetUsd:4000000,spentUsd:0,remainingUsd:4000000},maintenance:{budgetUsd:3000000,spentUsd:0,remainingUsd:3000000},facilities:{budgetUsd:1600000,spentUsd:0,remainingUsd:1600000},training:{budgetUsd:1000000,spentUsd:0,remainingUsd:1000000},operations:{budgetUsd:1400000,spentUsd:0,remainingUsd:1400000}}};}
+  };
+  try {
+    const root={innerHTML:'',classList:{add(){}},addEventListener(){},contains(){return true;}};
+    const result=globalThis.OmegaUIV2HomeAffairs.render(root,{countryId:'BBB',tab:'budget'});
+    assert.equal(result.ok,true);
+    assert.match(root.innerHTML,/READ-ONLY COUNTRY VIEW/);
+    assert.match(root.innerHTML,/disabled/);
+    assert.match(root.innerHTML,/\$20,000,000/);
+    assert.doesNotMatch(root.innerHTML,/Not allocated/);
+  } finally {
+    if(previous===undefined)delete globalThis.OmegaHomeMinistryEngine;
+    else globalThis.OmegaHomeMinistryEngine=previous;
+  }
 });
 
 test('industry view reads current country assets, cycles and projects without synthesizing factories', () => {
