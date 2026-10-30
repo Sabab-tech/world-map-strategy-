@@ -27,7 +27,7 @@ The Universal Materials umbrella profile cannot be isolated without overlapping 
 ## Status rules
 
 - `REPORTED`: every mapped activity has a numeric observation for the same country and year. Only this status populates `establishmentCount`.
-- `PARTIAL`: some mapped activities are observed; the partial sum is not a complete type total.
+- `PARTIAL`: some mapped activities are observed; the partial sum is not a complete type total. Custom ISIC combination rows are excluded from this sum unless their combination code is identical to the standard activity code.
 - `NOT_REPORTED`: source country covered, but no mapped value was reported.
 - `COUNTRY_NOT_COVERED`: current UNIDO metadata does not include the country.
 - `MAPPING_UNAVAILABLE`: one or more mapped activities are absent from the selected dataset.

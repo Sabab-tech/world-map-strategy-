@@ -91,21 +91,15 @@ function normalizeSubsetCountryCode(value) {
   return /^\d+$/.test(code) ? code.padStart(3, '0') : code;
 }
 export function extractSubsetActivityCode(row, allowedCodes) {
-  var candidates = [
-    row && row.classification_combo_code,
-    row && row.classification_code,
-    row && row.classification_combo_name,
-    row && row.classification_name
-  ];
-  for (var i = 0; i < candidates.length; i++) {
-    var candidate = text(candidates[i]);
-    if (allowedCodes.has(candidate)) return candidate;
-    var matches = candidate.match(/\d{4}/g) || [];
-    for (var j = 0; j < matches.length; j++) {
-      if (allowedCodes.has(matches[j])) return matches[j];
-    }
-  }
-  return null;
+  var standardCode = text(row && row.classification_code);
+  var combinationCode = text(row && row.classification_combo_code);
+  // UNIDO may store one aggregate observation against a custom ISIC combination
+  // (e.g. 1010C) while listing several underlying standard activity codes.
+  // It cannot be allocated to one underlying activity without the official
+  // concordance, so accept only identity mappings with identical codes.
+  if (standardCode && combinationCode && standardCode !== combinationCode) return null;
+  var candidate = standardCode || combinationCode;
+  return allowedCodes.has(candidate) ? candidate : null;
 }
 export function extractSubsetEstablishmentObservations(rows, allowedCodes) {
   if (!Array.isArray(rows)) throw new Error('SUBSETS_SOURCE_ROWS_INVALID');
@@ -173,6 +167,11 @@ async function buildDatasetFromSubsetJson(sourcePath) {
     throw new Error('UNIDO_COUNTRY_CODE_MAP_MISSING');
   }
   var allCodes = new Set(mapping.mappings.reduce(function (all, row) { return all.concat(row.activityCodes || []); }, []));
+  var combinedClassificationRows = rawRows.filter(function (row) {
+    var standardCode = text(row && row.classification_code);
+    var combinationCode = text(row && row.classification_combo_code);
+    return !!(standardCode && combinationCode && standardCode !== combinationCode);
+  }).length;
   var observations = extractSubsetEstablishmentObservations(rawRows, allCodes);
   if (!observations.length) {
     var preview = rawRows.slice(0, 8).map(function (row) {
@@ -285,7 +284,8 @@ async function buildDatasetFromSubsetJson(sourcePath) {
     originalSourceProvider: 'United Nations Industrial Development Organization',
     originalSourceUrl: sourceUrl,
     activityCodeRowsImported: observations.length,
-    classificationCodeField: 'classification_combo_code / classification_combo_name',
+    combinedClassificationRowsExcluded: combinedClassificationRows,
+    classificationCodeField: 'classification_code, accepted only when classification_combo_code is identical',
     sourceError: null,
     note: 'Establishment counts are official UNIDO statistical establishment observations mirrored via Subsets.io. An establishment is not guaranteed to equal one physical factory site. Complete OMEGA type totals require every mapped ISIC activity in one year; partial sums stay separate and missing values are never zero.'
   });
@@ -405,7 +405,8 @@ export async function buildDataset(){
     latestReferenceYear:years.length?Math.max.apply(null,years):null,
     retrievedAt:new Date().toISOString(),
     responseSummary:countryResults.reduce(function (a,r) { a[r.status]=(a[r.status]||0)+1; return a; },{}),
-    sourceError:fetchedCoreCountryCount===0?'NO_PARSEABLE_COUNTRY_ESTABLISHMENT_OBSERVATIONS':null
+    sourceError:fetchedCoreCountryCount===0?'NO_PARSEABLE_COUNTRY_ESTABLISHMENT_OBSERVATIONS':null,
+    combinedClassificationRowsExcluded:combinedClassificationRows
   });
   writeFileSync(OUTPUT,JSON.stringify(dataset,null,2)+'\n');
   console.log(JSON.stringify({updated:true,countryCount:197,factoryTypeCount:21,recordCount:4137,sourceCountryCount:dataset.metadata.availableCountryCount,coveredCoreCountryCount:dataset.metadata.coveredCoreCountryCount,fetchedCoreCountryCount:dataset.metadata.fetchedCoreCountryCount,reportedRecordCount:reported.length,partialRecordCount:partial.length,responseSummary:dataset.metadata.responseSummary},null,2));
