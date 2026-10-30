@@ -90,6 +90,10 @@ function normalizeSubsetCountryCode(value) {
   if (!code) return '';
   return /^\d+$/.test(code) ? code.padStart(3, '0') : code;
 }
+export function normalizeSubsetCountryName(value) {
+  return text(value).toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+}
+
 export function extractSubsetActivityCode(row, allowedCodes) {
   var standardCode = text(row && row.classification_code);
   var combinationCode = text(row && row.classification_combo_code);
@@ -147,17 +151,14 @@ async function buildDatasetFromSubsetJson(sourcePath) {
   var countryBySourceCode = Object.create(null);
   var countryByIso3 = Object.create(null);
   var countryByName = Object.create(null);
-  function normalizeCountryName(value) {
-    return text(value).toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
-  }
   countryRows.forEach(function (country) {
     var old = previousCountries[country.countryId] || {};
     var sourceCode = normalizeSubsetCountryCode(old.sourceCountryCode);
     var sourceName = old.sourceCountryName || country.countryName;
     if (sourceCode) countryBySourceCode[sourceCode] = country.countryId;
     countryByIso3[country.countryId] = country.countryId;
-    var normalizedSourceName = normalizeCountryName(sourceName);
-    var normalizedCountryName = normalizeCountryName(country.countryName);
+    var normalizedSourceName = normalizeSubsetCountryName(sourceName);
+    var normalizedCountryName = normalizeSubsetCountryName(country.countryName);
     if (normalizedSourceName) countryByName[normalizedSourceName] = country.countryId;
     if (normalizedCountryName) countryByName[normalizedCountryName] = country.countryId;
     dataset.countries[country.countryId].sourceCountryCode = sourceCode || null;
@@ -195,7 +196,7 @@ async function buildDatasetFromSubsetJson(sourcePath) {
     mirrorCountryCodes.add(row.countryCode);
     var countryId = countryBySourceCode[row.countryCode] ||
       countryByIso3[row.countryCode] ||
-      countryByName[normalizeCountryName(row.countryName)];
+      countryByName[normalizeSubsetCountryName(row.countryName)];
     if (!countryId) return;
     var bucket = observationsByCountry[countryId] || (observationsByCountry[countryId] = []);
     bucket.push({ activityCode: row.activityCode, year: row.year, value: row.value });
