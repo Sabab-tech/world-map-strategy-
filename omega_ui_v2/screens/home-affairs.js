@@ -181,7 +181,7 @@
       ? '<div class="omega-v2-note">Edit the six category shares or fixed USD amounts. Saving changes the Home Affairs plan only; spending still requires a separate approved action and sufficient Treasury funds.</div>'
       : '<div class="omega-v2-note" role="status">READ-ONLY COUNTRY VIEW. This country’s Finance allocation, expenditure and Treasury are visible, but budget changes and purchases are restricted to the active player country.</div>';
     var invalidNotice = snap.valid === false
-      ? '<div class="omega-v2-note" data-state="attention">The saved category plan currently exceeds the Finance ceiling. Adjust the values below before saving.</div>'
+      ? '<div class="omega-v2-note" data-state="attention" data-omega-v2-budget-invalid-notice>The saved category plan currently exceeds the Finance ceiling. Adjust the values below before saving.</div>'
       : '';
     return '<section class="omega-v2-home-budget"><h2 class="omega-v2-section-title">Home Affairs · Budget &amp; Expenditure</h2>' + message +
       '<div class="omega-v2-kpis">' +
@@ -394,6 +394,14 @@
         var target = event && event.target;
         if (!target || !target.matches) return;
         if (target.matches('[data-omega-v2-budget-value], [data-omega-v2-budget-mode]')) {
+          if (target.matches('[data-omega-v2-budget-mode]')) {
+            var changedCategory = target.getAttribute('data-omega-v2-budget-mode');
+            var changedValue = root.querySelector('[data-omega-v2-budget-value="' + changedCategory + '"]');
+            if (changedValue) {
+              if (target.value === 'amount') { if (changedValue.removeAttribute) changedValue.removeAttribute('max'); if (changedValue.setAttribute) changedValue.setAttribute('step', '1'); }
+              else { if (changedValue.setAttribute) { changedValue.setAttribute('max', '100'); changedValue.setAttribute('step', '0.01'); } }
+            }
+          }
           var activeOptions = root.__omegaV2HomeOptions || {};
           var snap = homeBudgetSnapshot(countryId(activeOptions));
           if (!snap.available) return;
@@ -413,7 +421,9 @@
           var totalNode = root.querySelector('[data-omega-v2-budget-total]');
           var status = root.querySelector('[data-omega-v2-budget-plan-status]');
           var save = root.querySelector('[data-omega-v2-action="save-home-budget"]');
+          var invalidNoticeNode = root.querySelector('[data-omega-v2-budget-invalid-notice]');
           var over = total > envelope + 0.01;
+          if (invalidNoticeNode) invalidNoticeNode.hidden = complete && !over;
           if (totalNode) totalNode.textContent = complete ? money(total) : 'Incomplete plan';
           var unassignedNode = root.querySelector('[data-omega-v2-budget-unassigned]');
           if (unassignedNode) unassignedNode.textContent = complete ? money(Math.max(0, envelope - total)) : 'Unavailable';
