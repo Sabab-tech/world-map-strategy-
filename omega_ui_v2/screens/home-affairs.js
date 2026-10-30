@@ -196,7 +196,7 @@
       '</div><div class="omega-v2-status" data-state="' + (snap.valid === false ? 'attention' : 'operational') + '" data-omega-v2-budget-plan-status>' +
         (snap.valid === false ? 'Current category plan needs correction.' : 'All six categories are linked to the Finance Ministry ceiling.') +
       '</div>' +
-      '<div class="omega-v2-actions"><button type="button" class="omega-v2-button omega-v2-button--primary" data-omega-v2-action="save-home-budget"' + (canEdit ? '' : ' disabled') + '>SAVE HOME AFFAIRS BUDGET</button></div>' +
+      '<div class="omega-v2-actions"><button type="button" class="omega-v2-button omega-v2-button--primary" data-omega-v2-action="save-home-budget"' + (canEdit && snap.valid !== false ? '' : ' disabled') + '>SAVE HOME AFFAIRS BUDGET</button></div>' +
       '<p class="omega-v2-source">Source: OmegaHomeMinistryEngine → Finance Ministry Interior allocation and fiscal-year expense ledger. Values are country-specific simulation records, not hard-coded UI figures.</p></section>';
   }
   function requestFinanceRefresh(root, options, snap) {
@@ -314,8 +314,12 @@
     else content = dashboardHtml(state, fleet, country, budget);
 
     root.classList.add('omega-v2-screen');
+    var headerReady = active === 'budget' ? !!(budget && budget.available) : baselineReady;
+    var headerStatus = active === 'budget'
+      ? (headerReady ? 'BUDGET DATA READY' : 'BUDGET DATA UNAVAILABLE')
+      : (!e ? 'POLICE RUNTIME UNAVAILABLE' : baselineReady ? 'COUNTRY BASELINE READY' : 'COUNTRY BASELINE LOADING');
     root.innerHTML = '<section class="omega-v2-shell omega-v2-home-affairs">' +
-      '<header class="omega-v2-heading"><div><div class="omega-v2-eyebrow">CIVIL ADMINISTRATION · HOME AFFAIRS</div><h1 class="omega-v2-title">Public Safety & Police</h1><p class="omega-v2-subtitle">Country ' + esc(country || 'Not recorded') + ' · canonical personnel, fleet and incident state</p></div><span class="omega-v2-status" data-state="' + (baselineReady ? 'operational' : 'unknown') + '">' + (!e ? 'POLICE RUNTIME UNAVAILABLE' : baselineReady ? 'COUNTRY BASELINE READY' : 'COUNTRY BASELINE LOADING') + '</span></header>' +
+      '<header class="omega-v2-heading"><div><div class="omega-v2-eyebrow">CIVIL ADMINISTRATION · HOME AFFAIRS</div><h1 class="omega-v2-title">Public Safety & Police</h1><p class="omega-v2-subtitle">Country ' + esc(country || 'Not recorded') + ' · canonical personnel, fleet and incident state</p></div><span class="omega-v2-status" data-state="' + (headerReady ? 'operational' : 'unknown') + '">' + headerStatus + '</span></header>' +
       tabBar(active) + '<div data-omega-v2-home-content>' + content + '</div>' +
       '<p class="omega-v2-source">Police personnel, fleet and patrol records are managed within this UI v2 screen. The retired console is disconnected.</p></section>';
 
