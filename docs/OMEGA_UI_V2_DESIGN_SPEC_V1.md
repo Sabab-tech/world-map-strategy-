@@ -116,7 +116,7 @@ Different unit families (tonnes, barrels, cubic metres, energy) must not be summ
 ### Ministry emblem and layout
 Use an original understated civic-security emblem: deep navy shield, fine brass rim and a simple civic gate/protective mark. It must not copy an actual country seal, police badge or third-party trademark. Use a clean local SVG for the small control/icon representation and locally stored imagery for larger entity cards.
 
-### Seven internal destinations
+### Eight internal destinations
 1. **Dashboard:** sourced staffing, fleet readiness, deployments, incident alerts, facilities, allocated budget and recent reports.
 2. **Personnel:** staffing by rank/role, trained/active/reserve states, vacancies, recruitment and recruitment history. Keep one primary Recruit Police action here.
 3. **Fleet:** all 15 vehicle tiers, owned/ready/deployed/in-repair/ordered states and filters.
