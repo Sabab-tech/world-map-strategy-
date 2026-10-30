@@ -49,7 +49,7 @@ FROM "{DATASET_ID}"
 WHERE indicator_code = '01'
   AND TRY_CAST(year AS INTEGER) BETWEEN 1981 AND 2024
   AND classification_code IN ({literals})
-  AND classification_combo_code = classification_code
+  AND (classification_combo_code IS NULL OR classification_combo_code = classification_code)
 """
 
 
