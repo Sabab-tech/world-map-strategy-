@@ -29,7 +29,7 @@ The Universal Materials umbrella profile cannot be isolated without overlapping 
 - `NOT_REPORTED`: source country covered, but no mapped value was reported.
 - `COUNTRY_NOT_COVERED`: current UNIDO metadata does not include the country.
 - `MAPPING_UNAVAILABLE`: one or more mapped activities are absent from the selected dataset.
-- `SOURCE_UNAVAILABLE`: the source API request failed.
+- `SOURCE_UNAVAILABLE`: the source API request failed or did not return usable mapped observations.
 - `NOT_QUERIED`: input slot exists but has not been queried.
 - `NOT_COMPARABLE`: no non-overlapping source category is available.
 
@@ -37,4 +37,4 @@ Missing values are null, never zero. GDP, resource reserves, game allocations an
 
 ## Refresh
 
-Run `node scripts/build_country_factory_establishment_data_v1.mjs`. The GitHub Actions workflow validates the matrix and refreshes source data quarterly, manually, and after merges affecting the importer/mapping/runtime/UI. Previously verified values are preserved when later source requests fail.
+Run `python scripts/fetch_unido_indstat_establishments_v1.py --baseline country_factory_starting_baseline_v1.json --mapping factory_isic_mapping_v1.json --output /tmp/unido-cache.json`, then set `OMEGA_UNIDO_CACHE_PATH=/tmp/unido-cache.json` and `OMEGA_UNIDO_REQUIRE_BROWSER_CACHE=1` when running `node scripts/build_country_factory_establishment_data_v1.mjs`. The browser collector follows UNIDO's published guidance for its Cloudflare-protected API; it does not solve CAPTCHAs or claim success when the endpoint does not return JSON. GitHub Actions uses this flow quarterly, manually, and after relevant merges. A refresh with zero mapped observations fails and is not committed. Previously verified values are preserved when later source requests fail.
