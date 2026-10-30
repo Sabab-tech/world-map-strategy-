@@ -51,7 +51,7 @@ export function extractEstablishmentObservations(payload,allowedCodes){
   const structuralKeys=new Set([...activityKeys,...periodKeys,...variableKeys,...valueKeys]);
   const put=(activity,period,raw,variable)=>{
     const code=String(activity||''),year=String(period||''),value=numberValue(raw);
-    if(allowedCodes.has(code)&&/^\\d{4}$/.test(year)&&value!==null&&String(variable||'01')==='01')
+    if(allowedCodes.has(code)&&/^\d{4}$/.test(year)&&value!==null&&String(variable||'01')==='01')
       out.set(code+'|'+year,{activityCode:code,year:Number(year),value});
   };
   function walk(node,ctx={}){
@@ -67,7 +67,7 @@ export function extractEstablishmentObservations(payload,allowedCodes){
     for(const [key,child] of Object.entries(node)){
       const next={activity,period,variable};
       const isActivity=allowedCodes.has(key);
-      const isPeriod=/^\\d{4}$/.test(key);
+      const isPeriod=/^\d{4}$/.test(key);
       if(isActivity)next.activity=key;
       if(isPeriod)next.period=key;
       if(isObject(child)||Array.isArray(child)){
