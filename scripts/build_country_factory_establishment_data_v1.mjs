@@ -161,7 +161,7 @@ export async function buildDataset(){
   const requestedActivities=[...new Set(mapping.mappings.flatMap(x=>x.activityCodes||[]))].filter(c=>sourceCodes.has(c));
   const countryResults=await parallel(rows,4,async country=>{
     const output=dataset.countries[country.countryId],source=countryByIso3.get(country.countryId);
-    if(!source){output.countryStatus='COUNTRY_NOT_COVERED';for(const t of types){const codes=mapByType[t].activityCodes;output.factoryEstablishments[t]=blank(codes.length?'COUNTRY_NOT_COVERED':'NOT_COMPARABLE',codes);}return {status:'COUNTRY_NOT_COVERED',observations:0};}
+    if(!source){output.countryStatus='COUNTRY_NOT_COVERED';for(const t of types){const codes=mapByType[t].activityCodes;output.factoryEstablishments[t]=blank(codes.length?'COUNTRY_NOT_COVERED':'NOT_COMPARABLE',codes);}return {countryId:country.countryId,status:'COUNTRY_NOT_COVERED',observations:0};}
     output.countryStatus='UNIDO_COUNTRY_COVERED';output.sourceCountryCode=text(source.c);output.sourceCountryName=text(source.lang?.en||country.countryName);
     try{
       let response;
@@ -184,17 +184,17 @@ export async function buildDataset(){
           const codes=mapByType[type].activityCodes;
           output.factoryEstablishments[type]=blank(codes.length?'SOURCE_UNAVAILABLE':'NOT_COMPARABLE',codes);
         }
-        return {status:'NO_PARSEABLE_OBSERVATIONS',observations:0};
+        return {countryId:country.countryId,status:'NO_PARSEABLE_OBSERVATIONS',observations:0,error:output.sourceError};
       }
       output.latestReferenceYear=years.length?Math.max(...years):null;
       delete output.sourceError;
       for(const t of types){const next=aggregate(mapByType[t],mappedObservations,sourceCodes,true),prior=output.factoryEstablishments[t];if(next.status==='NOT_REPORTED'&&prior&&['REPORTED','PARTIAL','MAPPING_UNAVAILABLE','NOT_REPORTED'].includes(prior.status))continue;output.factoryEstablishments[t]=next;}
-      return {status:output.countryStatus,observations:mappedObservations.length};
+      return {countryId:country.countryId,status:output.countryStatus,observations:mappedObservations.length};
     }catch(error){
       output.countryStatus='SOURCE_UNAVAILABLE';
       output.sourceError=text(error&&error.message||error).slice(0,500);
       for(const t of types){const prior=output.factoryEstablishments[t];if(prior&&['REPORTED','PARTIAL','MAPPING_UNAVAILABLE','NOT_REPORTED'].includes(prior.status))continue;const codes=mapByType[t].activityCodes;output.factoryEstablishments[t]=blank(codes.length?'SOURCE_UNAVAILABLE':'NOT_COMPARABLE',codes);}
-      return {status:'SOURCE_UNAVAILABLE',observations:0,error:error.message};
+      return {countryId:country.countryId,status:'SOURCE_UNAVAILABLE',observations:0,error:output.sourceError};
     }
   });
   const all=Object.values(dataset.countries).flatMap(c=>Object.values(c.factoryEstablishments));
