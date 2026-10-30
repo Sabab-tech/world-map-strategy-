@@ -7,7 +7,7 @@
     "countryCount": 197,
     "factoryTypeCount": 21,
     "recordCount": 4137,
-    "collectionStatus": "COMPLETED",
+    "collectionStatus": "FAILED_NO_VERIFIED_OBSERVATIONS",
     "provider": "UNIDO",
     "database": "INDSTAT Revision 4",
     "indicator": "Establishments",
@@ -31,7 +31,8 @@
       "COUNTRY_NOT_COVERED": 70
     },
     "note": "REPORTED means every mapped ISIC activity was reported for one year. PARTIAL is not a full total. Missing values are not zero.",
-    "sourceDatasetName": "INDSTAT 2026, ISIC Revision 4"
+    "sourceDatasetName": "INDSTAT 2026, ISIC Revision 4",
+    "collectionStatusReason": "The last UNIDO refresh produced no mapped establishment observations for any covered core country. No real-world counts were inferred."
   },
   "countries": {
     "AFG": {
