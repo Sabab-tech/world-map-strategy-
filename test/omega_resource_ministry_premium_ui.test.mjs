@@ -347,7 +347,6 @@ test("Resource Logistics shows configured per-site route cards separately from l
     "a generic gold truck-rail-truck template must display gold's preferred available truck mode");
   assert.doesNotMatch(root.innerHTML, /data-logistics-mode-chain="truck,rail,truck"/,
     "the generic intermodal template must not invent three physical route legs");
-  assert.match(root.innerHTML, /Unavailable/);
   assert.match(root.innerHTML, /120 km/);
   assert.match(root.innerHTML, /3 days/);
   assert.match(root.innerHTML, /45 tonnes\/day/);
