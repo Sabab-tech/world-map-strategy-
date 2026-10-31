@@ -4836,7 +4836,7 @@ function registerStartingFactoryAssets(input={}){
   const assets=factoryAssets(cid);
   const activeFactoryAssets=()=>assets.filter(asset=>{
     const type=normalizeFactoryType(asset?.factoryType||asset?.type||asset?.facilityType||'');
-    return types.includes(type)&&!['DECOMMISSIONED','DESTROYED'].includes(String(asset?.status||'').toUpperCase());
+    return types.includes(type)&&!['DECOMMISSIONED','DESTROYED','UNDER_CONSTRUCTION'].includes(String(asset?.status||'').toUpperCase());
   });
   if(prior&&prior.status==='COMPLETED'){
     const live=activeFactoryAssets();
@@ -4853,14 +4853,47 @@ function registerStartingFactoryAssets(input={}){
       blockedTypes.push({factoryType:type,requested:desired,reason:requirements?.reason||requirements?.status||'FACTORY_REQUIREMENTS_UNAVAILABLE'});
       continue;
     }
-    const activeCount=assets.filter(asset=>normalizeFactoryType(asset?.factoryType||asset?.type||asset?.facilityType||'')===type&&
-      !['DECOMMISSIONED','DESTROYED'].includes(String(asset?.status||'').toUpperCase())).length;
+    const dynamicProcessing=type==='UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT'&&requirements.recipeKind==='PROCESSING';
+    const matchingExisting=assets.filter(asset=>normalizeFactoryType(asset?.factoryType||asset?.type||asset?.facilityType||'')===type&&
+      !['DECOMMISSIONED','DESTROYED','UNDER_CONSTRUCTION'].includes(String(asset?.status||'').toUpperCase()));
+    for(const existing of matchingExisting){
+      const existingStatus=String(existing.status||'').toUpperCase();
+      if(!existing.status)existing.status='OPERATIONAL';
+      if(!existing.stage)existing.stage='PROCESSING';
+      if(existing.capacityPerDay==null&&existing.capacity==null&&existing.productionCapacity==null){
+        existing.capacityPerDay=requirements.ratedCapacityPerDay;
+        existing.capacity=requirements.ratedCapacityPerDay;
+      }
+      if(!dynamicProcessing&&!existing.recipeId&&!existing.recipe?.recipeId)existing.recipeId=requirements.recipeId;
+      if(!dynamicProcessing&&!existing.inputCoefficients&&!existing.inputs&&!existing.inputProfile&&!existing.recipe?.inputs)
+        existing.inputCoefficients=clone(requirements.inputsPerProductionUnit||{});
+      if(!dynamicProcessing&&!existing.outputProfile&&!existing.outputCoefficients&&!existing.recipe?.outputs)
+        existing.outputProfile=clone(requirements.outputsPerProductionUnit||{});
+      if(!existing.recipeMode)existing.recipeMode=dynamicProcessing?'DYNAMIC_PROCESSING':
+        (Object.keys(existing.inputCoefficients||existing.inputs||{}).length>1?'MULTI_INPUT':'SINGLE_INPUT');
+      if(!existing.recipeAuthority)existing.recipeAuthority=dynamicProcessing?'INDUSTRIAL_CATALOG_DYNAMIC_PROCESSING':
+        requirements.authority||'SIMULATED_GAMEPLAY_RULE';
+      if(existing.cycleDays==null)existing.cycleDays=Math.max(1,Number(requirements.processing?.cycleDays)||1);
+      if(!existing.inputUnit)existing.inputUnit=requirements.inputUnit||'SIMULATION_RESOURCE_UNIT';
+      if(!existing.outputUnit)existing.outputUnit=requirements.outputUnit||'SIMULATION_RESOURCE_UNIT';
+      if(!Array.isArray(existing.requiredTechnologyIds))existing.requiredTechnologyIds=[];
+      if(!existing.baselineTechnologyContext)existing.baselineTechnologyContext=clone(requirements.construction?.requiredTechnologyIds||[]);
+      if(!existing.inputInventory||typeof existing.inputInventory!=='object'||Array.isArray(existing.inputInventory))existing.inputInventory={};
+      if(!Array.isArray(existing.inputBatchLots))existing.inputBatchLots=[];
+      if(!existing.workforce)existing.workforce=clone(profile.workforce||{});
+      if(!existing.utilityRequirements)existing.utilityRequirements=clone(profile.utilities||{});
+      if(!existing.productionHealth||typeof existing.productionHealth!=='object')
+        existing.productionHealth={status:'STOPPED',productivityPct:0,productionUnitsPerCycle:0,
+          capacityPerDay:Number(existing.capacityPerDay??existing.capacity)||Number(requirements.ratedCapacityPerDay)||0,
+          missingInputs:[],reason:'NO_FACTORY_INPUTS',updatedTurn:turn(),authority:'OMEGA_FACTORY_PRODUCTION_SCHEDULER_V1'};
+      if(existingStatus==='NOT_RECORDED')existing.status='OPERATIONAL';
+    }
+    const activeCount=matchingExisting.length;
     const historicalCount=assets.filter(asset=>normalizeFactoryType(asset?.factoryType||asset?.type||asset?.facilityType||'')===type).length;
     const missing=Math.max(0,desired-activeCount);
     skippedByType[type]=Math.max(0,activeCount-desired);
     createdByType[type]=0;
     if(!missing)continue;
-    const dynamicProcessing=type==='UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT'&&requirements.recipeKind==='PROCESSING';
     for(let index=0;index<missing;index++){
       const ordinal=historicalCount+index+1;
       const factoryId='FAC-START:'+cid+':'+type+':'+ordinal;
