@@ -67,7 +67,40 @@ function makeHarness(state) {
     console,
     Game: { state },
     gameState: state,
-    Omega: { SimulationRuntime: { events: simulationEvents, world: { state } } },
+    Omega: {
+      SimulationRuntime: { events: simulationEvents, world: { state } },
+      ResourceIndustrialNetwork: {
+        async loadCatalog() { return { status: 'READY' }; },
+        registerStartingFactoryAssets({ countryId, factoryCounts, sessionId, datasetVersion }) {
+          const economy = state.economy[countryId] || (state.economy[countryId] = {});
+          if (!Array.isArray(economy.productionAssets)) economy.productionAssets = [];
+          const assets = economy.productionAssets;
+          const createdAssetIds = [];
+          const createdByType = {};
+          let requestedFactoryUnits = 0;
+          for (const [factoryType, requested] of Object.entries(factoryCounts)) {
+            requestedFactoryUnits += requested;
+            const active = assets.filter(asset => asset.factoryType === factoryType &&
+              !['DECOMMISSIONED', 'DESTROYED'].includes(String(asset.status || '').toUpperCase())).length;
+            const missing = Math.max(0, requested - active);
+            createdByType[factoryType] = missing;
+            for (let index = 0; index < missing; index++) {
+              const id = 'TEST-START:' + countryId + ':' + factoryType + ':' + (active + index + 1);
+              assets.push({ id, countryId, factoryType, status: 'OPERATIONAL',
+                sourceType: 'COUNTRY_STARTING_FACTORY_BASELINE', simulationOnly: true });
+              createdAssetIds.push(id);
+            }
+          }
+          const activeAssets = assets.filter(asset =>
+            !['DECOMMISSIONED', 'DESTROYED'].includes(String(asset.status || '').toUpperCase()));
+          return {
+            status: 'COMPLETED', countryId, sessionId, datasetVersion, requestedFactoryUnits,
+            createdCount: createdAssetIds.length, createdAssetIds, createdByType,
+            activeAssetCount: activeAssets.length, blockedTypes: []
+          };
+        }
+      }
+    },
     fetch: async url => {
       const name = String(url).split('/').pop();
       if (!Object.prototype.hasOwnProperty.call(sourceDocuments, name)) {
@@ -89,6 +122,7 @@ function makeHarness(state) {
       constructor(type, options = {}) { this.type = type; this.detail = options.detail; }
     }
   };
+  context.OmegaResourceIndustrialNetwork = context.Omega.ResourceIndustrialNetwork;
   context.globalThis = context;
   vm.runInNewContext(runtimeSource, context, { filename: 'omega_country_factory_starting_baseline_v1.js' });
   return { context, api: context.OmegaCountryFactoryStartingBaselineV1, state, emitted, emitSimulationEvent: (type, payload) => simulationEvents.emit(type, payload) };
@@ -132,11 +166,10 @@ test('dataset has one explicit 21-type starting-count row for every core country
   assert.equal(baseline.countries.SGP.factoryCounts.SHIP_RAIL_EQUIPMENT_YARD, 20);
 });
 
-test('runtime validates sources and seeds all country counts without changing live assets or inventory', async () => {
+test('runtime registers the active player country as live factory assets and preserves the rest of the world baseline', async () => {
   const state = makeState();
   const originalAssets = JSON.stringify(state.economy.BGD.productionAssets);
   const originalResource = JSON.stringify(state.resource.BGD);
-  const originalEconomy = JSON.stringify(state.economy);
   const { context, api, emitted, emitSimulationEvent } = makeHarness(state);
   const ready = await api.ready;
   assert.equal(ready.status, 'READY');
@@ -180,8 +213,12 @@ test('runtime validates sources and seeds all country counts without changing li
     return sum + Object.values(baseline.countries).reduce((countrySum, country) => countrySum + country.factoryCounts[row.id], 0);
   }, 0));
   assert.equal(state.simulation.countryFactoryStartingBaselineV1.initializedCountryCount, 197);
-  assert.equal(state.simulation.countryFactoryStartingBaselineV1.productionAssetsCreated, 0);
-  assert.equal(state.simulation.countryFactoryStartingBaselineV1.economyStateModified, false);
+  assert.equal(state.simulation.countryFactoryStartingBaselineV1.productionAssetsCreated, 99);
+  assert.equal(state.simulation.countryFactoryStartingBaselineV1.productionAssetsAreCommissioned, true);
+  assert.equal(state.simulation.countryFactoryStartingBaselineV1.economyStateModified, true);
+  assert.equal(state.simulation.countryFactoryStartingBaselineV1.factoryRegistrationScope, 'ACTIVE_PLAYER_COUNTRY_ONLY');
+  assert.equal(state.simulation.countryFactoryStartingBaselineV1.playerCountryAssetRegistryStatus, 'REGISTERED');
+  assert.equal(state.simulation.countryFactoryStartingBaselineV1.playerCountryLiveAssetCount, 100);
   assert.equal(Object.keys(state.simulation.countryFactoryStartingBaselineV1.countries).length, 197);
   assert.equal(state.simulation.countryFactoryStartingBaselineV1.countries.BGD.totalStartingFactoryUnits, baseline.countries.BGD.totalStartingFactoryUnits);
   assert.equal(Object.keys(state.simulation.countryFactoryStartingBaselineV1.countries.BGD.factoryCounts).length, 21);
@@ -189,15 +226,32 @@ test('runtime validates sources and seeds all country counts without changing li
   assert.equal(state.simulation.countryFactoryStartingBaselineV1.countries.BGD.factoryTypeCount, 21);
   assert.equal(state.simulation.countryFactoryStartingBaselineV1.countries.BGD.factoryUnitCount,
     baseline.countries.BGD.totalStartingFactoryUnits);
+  assert.equal(state.simulation.countryFactoryStartingBaselineV1.countries.BGD.liveProductionAssetsCreated, 99);
+  assert.equal(state.simulation.countryFactoryStartingBaselineV1.countries.BGD.liveProductionAssetCountAtInitialization, 100);
+  assert.equal(state.simulation.countryFactoryStartingBaselineV1.countries.BGD.liveProductionAssetRegistryStatus, 'REGISTERED');
+  assert.equal(state.simulation.countryFactoryStartingBaselineV1.countries.USA.runtimeActivationScope, 'STATIC_COUNTRY_BASELINE');
+  assert.equal(state.simulation.countryFactoryStartingBaselineV1.countries.USA.liveProductionAssetsCreated, 0);
   const registeredRuntime = api.getCountryFactoryRegistry('BGD');
   assert.equal(registeredRuntime.runtimeStatus, 'REGISTERED');
   assert.equal(registeredRuntime.runtimeRegistered, true);
   assert.equal(registeredRuntime.registry.length, 21);
-  assert.equal(registeredRuntime.liveProductionAssetsCreated, 0);
+  assert.equal(registeredRuntime.liveProductionAssetsCreated, 100);
+  assert.equal(registeredRuntime.liveFactoryTypeCounts.TEXTILE_GARMENT_MILL,
+    baseline.countries.BGD.factoryCounts.TEXTILE_GARMENT_MILL);
+  assert.equal(registeredRuntime.runtimeActivationScope, 'ACTIVE_PLAYER_COUNTRY');
+  for (const [factoryType, expectedCount] of Object.entries(baseline.countries.BGD.factoryCounts)) {
+    const actualCount = state.economy.BGD.productionAssets.filter(asset =>
+      asset.factoryType === factoryType &&
+      !['DECOMMISSIONED', 'DESTROYED'].includes(String(asset.status || '').toUpperCase())).length;
+    assert.equal(actualCount, expectedCount, factoryType + ' live assets must match the selected-country starting count');
+  }
   assert.equal(state.simulation.countryFactoryStartingBaselineV1.existingSaveDataOverwritten, false);
   assert.equal(Object.keys(state.economy).length, 1, 'baseline initialization must not create empty economy buckets for other countries');
-  assert.equal(JSON.stringify(state.economy.BGD.productionAssets), originalAssets);
-  assert.equal(JSON.stringify(state.economy), originalEconomy, 'baseline initialization must leave the economy state untouched');
+  assert.equal(state.economy.BGD.productionAssets.length, 100);
+  assert.ok(state.economy.BGD.productionAssets.some(asset => asset.id === 'EXISTING-FACTORY-BGD-1'),
+    'pre-existing factory assets must be retained');
+  assert.equal(state.economy.BGD.productionAssets.filter(asset =>
+    asset.sourceType === 'COUNTRY_STARTING_FACTORY_BASELINE').length, 99);
   assert.deepEqual(state.economy.BGD.existingEconomyMarker, { preserved: true });
   assert.equal(JSON.stringify(state.resource.BGD), originalResource);
   assert.ok(emitted.some(event => event.type === 'OMEGA_COUNTRY_FACTORY_STARTING_BASELINE_READY'));
@@ -207,7 +261,8 @@ test('runtime validates sources and seeds all country counts without changing li
   await api.waitForPendingInitialization();
   assert.equal(JSON.stringify(state.simulation.countryFactoryStartingBaselineV1), stableSnapshot,
     'repeated initialization must not overwrite existing baseline or increment any count');
-  assert.equal(JSON.stringify(state.economy.BGD.productionAssets), originalAssets);
+  assert.equal(state.economy.BGD.productionAssets.length, 100,
+    'repeated initialization must not duplicate starting production assets');
 });
 
 test('runtime does not initialize a game that has already advanced past the opening turns', async () => {
