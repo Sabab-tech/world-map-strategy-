@@ -98,6 +98,10 @@ function deriveSpecializedArchetype(specializations) {
   const types = new Set(Array.isArray(specializations) ? specializations : []);
   const has = (...ids) => ids.some(id => types.has(id));
   if (has('AEROSPACE_EQUIPMENT_PLANT') && has('DEFENSE_EQUIPMENT_FACTORY')) return 'Aerospace and defence manufacturing';
+  if (has('ELECTRONICS_SEMICONDUCTOR_FAB') && has('SHIP_RAIL_EQUIPMENT_YARD') &&
+      has('INDUSTRIAL_MACHINERY_MACHINE_TOOLS') && has('PHARMA_MEDICAL_SUPPLIES_PLANT')) {
+    return 'Advanced manufacturing and industrial logistics';
+  }
   if (has('ELECTRONICS_SEMICONDUCTOR_FAB') && has('DEFENSE_EQUIPMENT_FACTORY')) return 'Advanced technology and defence';
   if (has('ELECTRONICS_SEMICONDUCTOR_FAB') && has('PETROCHEMICAL_POLYMER_PLANT')) return 'Electronics and petrochemicals';
   if (has('ELECTRONICS_SEMICONDUCTOR_FAB') && has('PHARMA_MEDICAL_SUPPLIES_PLANT')) return 'Pharmaceuticals and electronics';
