@@ -62,7 +62,7 @@ test('country archetypes respond to observed economic structure without inventin
   assert.equal(enriched.countries.CIV.industryArchetype, 'Food processing');
   assert.equal(enriched.countries.ZMB.industryArchetype, 'Non-ferrous metals');
   assert.equal(enriched.countries.TWN.industryArchetype, 'Electronics and semiconductor manufacturing');
-  assert.equal(enriched.countries.SGP.industryArchetype, 'Advanced industrial manufacturing');
+  assert.equal(enriched.countries.SGP.industryArchetype, 'Advanced manufacturing and industrial logistics');
   assert.deepEqual(enriched.countries.GUY.specializations, baseline.countries.GUY.specializations,
     'macro evidence must never invent a specific factory type');
 });
