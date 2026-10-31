@@ -1141,3 +1141,66 @@ console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');
     else context.Game.state.resource[countryId]=priorCountryState;
   }
 }
+
+
+// Starting country factory allocations are commissioned into the exact same live asset
+// collection used by factory construction, input routing, production and decommissioning.
+{
+  const previousState=context.Game.state;
+  try {
+    context.Game.state={
+      simulation:{turn:1,playerCountryId:'BGD',session:{sessionId:'STARTING-FACTORY-ASSET-TEST',playerCountryId:'BGD',status:'READY',createdTurn:1}},
+      economy:{BGD:{unemploymentCount:100000,laborForce:1000000,productionAssets:[]}},
+      resource:{BGD:{inventory:{},warehouse:{availableByResource:{},reservedByResource:{}},technologyCapabilities:[]}},
+      transport:{BGD:{infrastructure:{utilitySupply:{electricityMWhPerDay:1000000,waterM3PerDay:1000000,status:'AVAILABLE',simulationOnly:true}}}}
+    };
+    await N.loadCatalog();
+    const counts=Object.fromEntries(Object.keys(catalog.factoryProfiles).sort().map(type=>[type,0]));
+    counts.TEXTILE_GARMENT_MILL=2;
+    counts.UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT=1;
+    const registered=N.registerStartingFactoryAssets({
+      countryId:'BGD',factoryCounts:counts,sessionId:'STARTING-FACTORY-ASSET-TEST',datasetVersion:'TEST_BASELINE_V1'
+    });
+    assert.equal(registered.status,'COMPLETED',JSON.stringify(registered));
+    assert.equal(registered.requestedFactoryUnits,3);
+    assert.equal(registered.createdCount,3);
+    assert.equal(registered.activeAssetCount,3);
+    const assets=context.Game.state.economy.BGD.productionAssets;
+    assert.equal(assets.length,3);
+    const textiles=assets.filter(asset=>asset.factoryType==='TEXTILE_GARMENT_MILL');
+    const universal=assets.find(asset=>asset.factoryType==='UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT');
+    assert.equal(textiles.length,2);
+    assert.equal(textiles.every(asset=>asset.status==='OPERATIONAL'&&asset.capacityPerDay>0&&asset.recipeId==='TEXTILE_GARMENT_ROUTE_V1'),true);
+    assert.ok(universal,'the universal materials factory is registered as a live processing asset');
+    assert.equal(universal.status,'OPERATIONAL');
+    assert.equal(universal.recipeId,null,'universal processing does not get pinned to one commodity recipe');
+    assert.equal(universal.inputCoefficients,undefined);
+    assert.equal(universal.outputProfile,undefined);
+    assert.equal(universal.recipeMode,'DYNAMIC_PROCESSING');
+    assert.ok(N.candidateFactories('BGD','iron_ore').some(row=>row.asset.id===universal.id),
+      'the universal plant must accept an eligible mineral processing rule');
+    assert.ok(N.candidateFactories('BGD','cotton_fibre').filter(row=>row.asset.factoryType==='TEXTILE_GARMENT_MILL').length===2,
+      'the commissioned textile assets must be eligible for their canonical input recipe');
+
+    const repeated=N.registerStartingFactoryAssets({
+      countryId:'BGD',factoryCounts:counts,sessionId:'STARTING-FACTORY-ASSET-TEST',datasetVersion:'TEST_BASELINE_V1'
+    });
+    assert.equal(repeated.status,'ALREADY_REGISTERED');
+    assert.equal(repeated.idempotent,true);
+    assert.equal(context.Game.state.economy.BGD.productionAssets.length,3,
+      'repeated session initialization cannot duplicate starting factories');
+
+    const destroyed=N.decommissionFactory({countryId:'BGD',factoryId:textiles[0].id,confirmed:true});
+    assert.equal(destroyed.status,'DECOMMISSIONED');
+    assert.equal(textiles[0].status,'DECOMMISSIONED');
+    assert.equal(textiles[0].productionHealth.status,'STOPPED');
+    assert.equal(N.candidateFactories('BGD','cotton_fibre').filter(row=>row.asset.factoryType==='TEXTILE_GARMENT_MILL').length,1,
+      'decommissioned factories are removed from the live input-routing candidates');
+    const activeTypes=assets.filter(asset=>!['DECOMMISSIONED','DESTROYED'].includes(String(asset.status||'').toUpperCase()));
+    assert.equal(activeTypes.length,2,'destroying one factory reduces the live asset count by one');
+    assert.equal(assets.length,3,'decommissioning preserves the historical asset record');
+    console.log('OMEGA STARTING FACTORY LIVE REGISTRY / ADD / DESTROY REGRESSION PASSED');
+  } finally {
+    context.Game.state=previousState;
+  }
+}
