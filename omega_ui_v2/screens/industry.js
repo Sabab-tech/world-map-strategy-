@@ -862,7 +862,7 @@
       else if (status === 'SOURCE_UNAVAILABLE') countText = 'Source unavailable';
       else if (status === 'NOT_QUERIED') countText = 'Pending source';
       var year = record.referenceYear !== null && record.referenceYear !== undefined &&
-        Number.isInteger(Number(record.referenceYear)) ? fmt(Number(record.referenceYear)) : '—';
+        Number.isInteger(Number(record.referenceYear)) ? String(Number(record.referenceYear)) : '—';
       return '<tr><td><strong>' + esc(row.name || row.type) + '</strong><small>' + esc(row.type) + '</small></td>' +
         '<td class="fp-starting-allocation-count">' + esc(countText) + '</td><td>' + esc(year) + '</td>' +
         '<td>' + esc(status.replace(/_/g, ' ').toLowerCase()) + '</td></tr>';
