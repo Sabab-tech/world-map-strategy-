@@ -65,7 +65,7 @@ Existing specializations multiply the corresponding category weight by 2.5 for g
 
 ## Expected coverage on the current baseline
 
-- 143 previously uniform profiles are evaluated by the allocation model; 140 have a changed numeric distribution.
+- 143 previously uniform profiles are evaluated by the allocation model; 139 have a changed uniform-count distribution, with four additional evidence refreshes applied to profiles that were already numerically differentiated.
 - 49 already differentiated country distributions are preserved.
 - 5 profiles with neither comparable macro data nor an existing specialization retain their former distribution.
 - 5 profiles with neither comparable macro data nor an existing specialization retain their previous distribution; these are the only remaining all-one profiles.

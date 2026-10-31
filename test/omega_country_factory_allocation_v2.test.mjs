@@ -35,7 +35,7 @@ test('allocation V2 covers all 197 countries and the one canonical 21-type catal
   }
 });
 
-test('uniform profiles are redistributed without inflating country starting-unit totals', () => {
+test('uniform profiles are redistributed with only the three documented budget exceptions', () => {
   const summary = baseline.allocationModel.summary;
   assert.equal(summary.evaluatedUniformProfileCount, 143);
   assert.equal(summary.changedUniformDistributionCount, 139);

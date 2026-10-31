@@ -19548,7 +19548,7 @@
       },
       "specializationEvidenceStatus": "GAME_MODELLED_SPECIALIZATION_SET",
       "industryArchetypeBasis": "EXISTING_GAME_SPECIALIZATION_PROFILE_V1",
-      "industryArchetypeObservationYear": 2023,
+      "industryArchetypeObservationYear": 2024,
       "allocationDiagnostics": {
         "schemaVersion": "1.0.0",
         "modelVersion": "OMEGA_COUNTRY_FACTORY_ALLOCATION_V2",
