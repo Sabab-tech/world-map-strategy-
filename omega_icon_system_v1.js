@@ -278,6 +278,9 @@
         const svg = document.createElementNS(SVG_NS, 'svg');
         svg.setAttribute('class', 'omega-ui-icon omega-ui-icon--' + name);
         svg.setAttribute('viewBox', '0 0 24 24');
+        // Explicit intrinsic dimensions prevent the browser's 300x150 SVG default from distorting layouts.
+        svg.setAttribute('width', '1em');
+        svg.setAttribute('height', '1em');
         svg.setAttribute('aria-hidden', 'true');
         svg.setAttribute('focusable', 'false');
         const use = document.createElementNS(SVG_NS, 'use');
@@ -545,6 +548,9 @@
         if (!document.body || document.getElementById('omega-icon-sprite-v1')) return;
         const sprite = document.createElementNS(SVG_NS, 'svg');
         sprite.setAttribute('id', 'omega-icon-sprite-v1');
+        // A zero-sized intrinsic box keeps the symbol sheet hidden even before CSS is applied.
+        sprite.setAttribute('width', '0');
+        sprite.setAttribute('height', '0');
         sprite.setAttribute('class', 'omega-icon-sprite');
         sprite.setAttribute('aria-hidden', 'true');
         sprite.setAttribute('focusable', 'false');

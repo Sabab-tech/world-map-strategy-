@@ -14,12 +14,14 @@ const icons = iconContext.window.OMEGA_ICON_SYSTEM_V1;
 
 test('custom icon system is wired locally before active runtime and has no remote runtime dependency', () => {
   const html = read('index.html');
-  assert.doesNotMatch(html, /<link[^>]+href="omega_icon_system_v1\.css"/i, 'legacy icon stylesheet remains inactive');
+  assert.match(html, /<link[^>]+href="omega_icon_system_v1\.css"/i, 'local SVG styling must be active before the UI renders');
   assert.ok(fs.existsSync(path.join(root, 'omega_icon_system_v1.css')), 'legacy icon CSS file remains on disk');
   assert.match(html, /omega_ui_v2\/omega-ui-v2\.css/);
   assert.match(html, /src="omega_icon_system_v1\.js"/);
   assert.ok(html.indexOf('omega_icon_system_v1.css') < html.indexOf('</head>'));
   assert.ok(html.indexOf('omega_icon_system_v1.js') < html.indexOf('map-engine-1.js'));
+  const offlineWorker = read('omega-offline-map-sw.js');
+  assert.ok(offlineWorker.includes('"./omega_icon_system_v1.css"'), 'the SVG stylesheet must be available after offline relaunch');
   assert.equal(html.includes('presentation-engine.js'), false, 'retired presentation engine must not be boot-loaded');
   assert.equal(html.includes('ui_engine_core.js'), false, 'retired adapter renderer must not be boot-loaded');
   assert.equal(html.includes('fonts.googleapis.com'), false, 'startup must not wait on remote font CSS');
@@ -71,6 +73,9 @@ test('icon runtime observes new UI nodes and excludes editable/script content', 
 test('icon CSS uses mobile-safe geometry, semantic color palettes and honors reduced motion', () => {
   const css = read('omega_icon_system_v1.css');
   assert.match(css, /stroke: currentColor/);
+  assert.ok(css.includes('.omega-icon-sprite'), 'the hidden SVG symbol sheet must have an active zero-size style');
+  assert.ok(iconSource.includes("svg.setAttribute('width', '1em')"), 'generated icons must have safe intrinsic dimensions without CSS');
+  assert.ok(iconSource.includes("sprite.setAttribute('width', '0')"), 'the SVG symbol sheet must remain invisible without CSS');
   assert.match(css, /--omega-icon-color/);
   assert.match(css, /\.omega-ui-icon--industrial-production/);
   assert.match(css, /\.omega-ui-icon--mine-extraction/);
