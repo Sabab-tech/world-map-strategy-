@@ -6,6 +6,7 @@ on:
     paths:
       - 'country_factory_starting_baseline_v1.json'
       - 'test/country_factory_starting_baseline_alignment_v1.test.mjs'
+      - 'test/omega_factory_country_simulation_integrity_v1.test.mjs'
       - 'scripts/enrich_country_factory_starting_baseline_v1.mjs'
       - 'country_general_data_registry_v1.json'
       - 'omega_country_factory_starting_baseline_v1.js'
@@ -50,7 +51,7 @@ jobs:
           node-version: 24
       - name: Validate 197-country, 21-factory starting matrix and sector alignment
         run: |
-          node --test test/omega_country_factory_starting_baseline_v1.test.mjs test/omega_country_factory_establishment_data_v1.test.mjs test/country_factory_starting_baseline_alignment_v1.test.mjs
+          node --test test/omega_country_factory_starting_baseline_v1.test.mjs test/omega_country_factory_establishment_data_v1.test.mjs test/country_factory_starting_baseline_alignment_v1.test.mjs test/omega_factory_country_simulation_integrity_v1.test.mjs
           node scripts/enrich_country_factory_starting_baseline_v1.mjs --check
       - name: Check establishment data importer and industry runtime
         run: |
