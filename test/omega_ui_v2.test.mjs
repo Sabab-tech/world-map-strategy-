@@ -491,6 +491,28 @@ test('industry command panel renders country starting allocations separately fro
     assert.match(root.innerHTML, /STARTING UNITS/);
     assert.doesNotMatch(root.innerHTML, /Foreign Cement Plant/);
     assert.doesNotMatch(root.innerHTML, /Bangladesh Iron Mine|Daily mine production|FACTORY SVG SLOT/);
+    const economyAssets = globalThis.Game.state.economy.BGD.productionAssets;
+    economyAssets.push({
+      id:'BGD-STEEL-3', factoryType:'STEEL_MILL', name:'Newly Commissioned Steel Works',
+      capacityPerDay:75, status:'OPERATIONAL'
+    });
+    const afterBuild = globalThis.OmegaUIV2Industry.buildViewModel({ countryId:'BGD' });
+    assert.equal(afterBuild.factoryCount, 3,
+      'live factory count must increase when a newly commissioned runtime asset is added');
+    assert.equal(afterBuild.factoryTypeCounts.find(row => row.type === 'STEEL_MILL').count, 3);
+    assert.equal(afterBuild.startingFactoryUnits, 7,
+      'the immutable new-game starting allocation must not be rewritten by construction');
+
+    economyAssets[2].status = 'DECOMMISSIONED';
+    const afterDecommission = globalThis.OmegaUIV2Industry.buildViewModel({ countryId:'BGD' });
+    assert.equal(afterDecommission.factoryCount, 2,
+      'decommissioned assets must stop contributing to the live factory count');
+    assert.equal(afterDecommission.startingFactoryUnits, 7,
+      'decommissioning must not rewrite the historical starting allocation');
+    assert.equal(economyAssets.length, 3,
+      'the decommissioned asset record must remain in the economy for history and audit');
+    assert.equal(economyAssets[2].status, 'DECOMMISSIONED');
+
   } finally {
     if (previousGame === undefined) delete globalThis.Game; else globalThis.Game = previousGame;
     if (previousCatalog === undefined) delete globalThis.OmegaResourceIndustrialCatalogData;
