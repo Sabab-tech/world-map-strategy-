@@ -1201,6 +1201,13 @@ console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');
     assert.equal(textiles[0].productionHealth.status,'STOPPED');
     assert.equal(N.candidateFactories('BGD','cotton_fibre').filter(row=>row.asset.factoryType==='TEXTILE_GARMENT_MILL').length,1,
       'decommissioned factories are removed from the live input-routing candidates');
+    universal.status='DESTROYED';
+    assert.equal(N.candidateFactories('BGD','iron_ore').some(row=>row.asset.id===universal.id),false,
+      'destroyed factories must be removed from live input routing');
+    const destroyedProduction=N.startFactoryProductionCycle({countryId:'BGD',factoryId:universal.id,resourceId:'iron_ore'});
+    assert.equal(destroyedProduction.status,'BLOCKED');
+    assert.equal(destroyedProduction.reason,'FACTORY_NOT_OPERATIONAL',
+      'destroyed factories cannot start another production cycle');
     const activeTypes=assets.filter(asset=>!['DECOMMISSIONED','DESTROYED'].includes(String(asset.status||'').toUpperCase()));
     assert.equal(activeTypes.length,2,'destroying one factory reduces the live asset count by one');
     assert.equal(assets.length,3,'decommissioning preserves the historical asset record');
