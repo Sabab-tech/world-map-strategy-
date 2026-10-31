@@ -165,22 +165,35 @@ function allocateUniformProfile(row, ids) {
   const oldCounts = row.factoryCounts;
   const activeOldCounts = Object.values(oldCounts).filter((value) => value > 0);
   const isUniform = activeOldCounts.length > 0 && activeOldCounts.every((value) => value === 1);
+  const previousDiagnostics = row.allocationDiagnostics || {};
+  const sourceBacked = row.specializationEvidence &&
+    row.specializationEvidence.status === 'SOURCE_BACKED_SIMULATION_MAPPING';
+  const specializations = [...new Set(Array.isArray(row.specializations) ? row.specializations : [])];
+  const specializationRefresh = previousDiagnostics.modelVersion === MODEL_VERSION &&
+    previousDiagnostics.basis === 'SAME_YEAR_MACRO_SECTOR_ONLY' &&
+    sourceBacked && specializations.length > 0 &&
+    previousDiagnostics.specializationRefreshApplied !== true;
+  const budgetIncrease = previousDiagnostics.modelVersion === MODEL_VERSION &&
+    previousDiagnostics.status === 'CONSTRAINED_UNCHANGED' &&
+    sourceBacked && specializations.length > 0 &&
+    row.totalStartingFactoryUnits <= specializations.length &&
+    previousDiagnostics.budgetIncreaseApplied !== true;
 
-  if (row.allocationDiagnostics && row.allocationDiagnostics.modelVersion === MODEL_VERSION) {
+  if (previousDiagnostics.modelVersion === MODEL_VERSION &&
+      !specializationRefresh && !budgetIncrease) {
     return row;
   }
 
-  if (!isUniform) {
+  if (!isUniform && !specializationRefresh && !budgetIncrease) {
     const activeIds = ids.filter((id) => oldCounts[id] > 0);
     row.allocationDiagnostics = makeDiagnostics(
       row, activeIds, 'PRESERVED_EXISTING_DISTRIBUTION', 'PRESERVED', false,
-      'Existing non-uniform category counts are preserved without modification.'
+      'Existing differentiated category counts are preserved unless a newly source-backed specialization requires a controlled refresh.'
     );
     return row;
   }
 
   const macro = getMacroInputs(row);
-  const specializations = [...new Set(Array.isArray(row.specializations) ? row.specializations : [])];
   const unknownSpecializations = specializations.filter((id) => !ids.includes(id));
   if (unknownSpecializations.length) {
     throw new Error('FACTORY_SPECIALIZATION_UNKNOWN_TYPE:' + row.countryId + ':' + unknownSpecializations.join(','));
@@ -198,11 +211,10 @@ function allocateUniformProfile(row, ids) {
   const scores = Object.fromEntries(ids.map((id) => [
     id, Math.max(0.001, WEIGHT_RULES[id](macro.values)) + (oldCounts[id] > 0 ? 0.04 : 0)
   ]));
-  const sourceBacked = row.specializationEvidence &&
-    row.specializationEvidence.status === 'SOURCE_BACKED_SIMULATION_MAPPING';
   for (const id of specializations) scores[id] *= sourceBacked ? 2.8 : 2.5;
 
-  const total = row.totalStartingFactoryUnits;
+  const originalTotal = row.totalStartingFactoryUnits;
+  const total = originalTotal + (budgetIncrease ? 1 : 0);
   const activeLimit = Math.min(
     total,
     Math.max(specializations.length, Math.max(2, Math.round(total * 0.64)))
@@ -259,21 +271,37 @@ function allocateUniformProfile(row, ids) {
     }
   }
 
-  const allocationChanged = ids.some((id) => nextCounts[id] !== oldCounts[id]);
+  const allocationChanged = ids.some((id) => nextCounts[id] !== oldCounts[id]) || budgetIncrease;
   row.factoryCounts = nextCounts;
+  row.totalStartingFactoryUnits = total;
   const basis = specializations.length
     ? (sourceBacked ? 'SOURCE_BACKED_SPECIALIZATION_PLUS_MACRO' : 'GAME_MODELLED_SPECIALIZATION_PLUS_MACRO')
     : 'SAME_YEAR_MACRO_SECTOR_ONLY';
   const allocationStatus = allocationChanged ? 'REBALANCED' : 'CONSTRAINED_UNCHANGED';
-  const allocationNote = allocationChanged
-    ? 'Reallocated the existing game-unit budget by comparable macro-sector weights and the existing specialization map; no units were added.'
-    : 'The existing specialization set consumes every available starting unit. Counts are intentionally left at one per required specialization rather than dropping a required category.';
-  row.allocationDiagnostics = makeDiagnostics(
-    row, selectedIds, basis, allocationStatus, allocationChanged, allocationNote
+  let allocationNote = allocationChanged
+    ? 'Reallocated country-specific game units using the new specialization set and the comparable macro-sector weights.'
+    : 'The existing specialization set consumes every available starting unit. The categories are retained without dropping any documented specialization.';
+  if (budgetIncrease) {
+    allocationNote += ' One additional simulated starting unit was granted because the complete source-backed specialization set consumed the prior budget.';
+  }
+  if (specializationRefresh) {
+    allocationNote += ' A new source-backed country specialization replaced the previous macro-only allocation.';
+  }
+  const diagnostics = makeDiagnostics(
+    row, selectedIds, basis, allocationStatus, isUniform && allocationChanged, allocationNote
   );
+  if (specializationRefresh) {
+    diagnostics.specializationRefreshApplied = true;
+    diagnostics.previousAllocationBasis = 'SAME_YEAR_MACRO_SECTOR_ONLY';
+  }
+  if (budgetIncrease) {
+    diagnostics.budgetIncreaseApplied = true;
+    diagnostics.budgetIncreaseUnits = 1;
+    diagnostics.previousStartingFactoryUnits = originalTotal;
+  }
+  row.allocationDiagnostics = diagnostics;
   return row;
 }
-
 function summarize(baseline) {
   const rows = Object.values(baseline.countries);
   const basisCounts = {};
@@ -304,11 +332,23 @@ function summarize(baseline) {
     macroOnlyCount: basisCounts.SAME_YEAR_MACRO_SECTOR_ONLY || 0,
     gameModelledSpecializationCount: basisCounts.GAME_MODELLED_SPECIALIZATION_PLUS_MACRO || 0,
     sourceBackedSpecializationCount: basisCounts.SOURCE_BACKED_SPECIALIZATION_PLUS_MACRO || 0,
+    sourceBackedSpecializationCountryCount: rows.filter((row) =>
+      row.specializationEvidence && row.specializationEvidence.status === 'SOURCE_BACKED_SIMULATION_MAPPING'
+    ).length,
+    specializationRefreshCount: rows.filter((row) =>
+      row.allocationDiagnostics && row.allocationDiagnostics.specializationRefreshApplied === true
+    ).length,
+    budgetIncreasedCountryCount: rows.filter((row) =>
+      row.allocationDiagnostics && row.allocationDiagnostics.budgetIncreaseApplied === true
+    ).length,
+    budgetIncreaseUnits: rows.reduce((sum, row) =>
+      sum + Number(row.allocationDiagnostics && row.allocationDiagnostics.budgetIncreaseUnits || 0), 0),
+    worldTotalStartingFactoryUnits: rows.reduce((sum, row) =>
+      sum + row.totalStartingFactoryUnits, 0),
     remainingUniformProfileCount,
     basisCounts
   };
 }
-
 export function rebalanceCountryFactoryStartingBaseline(input) {
   validateInput(input);
   const baseline = structuredClone(input);
@@ -326,8 +366,8 @@ export function rebalanceCountryFactoryStartingBaseline(input) {
       'The canonical 21-type resource_industrial_catalog_v1.json roster.'
     ],
     comparabilityPolicy: 'Agriculture, industry and services are used only when at least two observations share the exact same year. Manufacturing value added and agriculture employment are used only when their observation year is within three years of that comparison year. Missing or non-comparable values contribute no fabricated zero observation.',
-    allocationPolicy: 'Only country profiles whose positive category counts were all exactly one are candidates for rebalancing. Existing differentiated distributions are preserved. Explicit specializations are selected first; remaining slots are ranked by modelled weights. Each selected category receives at least one unit, then the remaining fixed budget is distributed using the largest-remainder method.',
-    fixedBudgetPolicy: 'Each country keeps its original totalStartingFactoryUnits. This process changes only the allocation among the existing 21 category keys; it does not create new starting units or change the country overall starting-factory total.',
+    allocationPolicy: 'Existing uniform profiles are rebalanced. Newly source-backed specialization evidence refreshes an earlier macro-only allocation, while previously differentiated profiles remain preserved unless the specialization evidence is explicitly upgraded. Selected categories receive positive allocations, then remaining units are distributed using the largest-remainder method.',
+    fixedBudgetPolicy: 'Per-country starting-unit budgets remain unchanged except for JOR, SMR and SWZ: each receives one additional simulated unit because its source-backed specialization list originally consumed every starting unit and made differentiated quantities impossible. Existing Universal Materials umbrella quantities stay fixed.',
     specializationPolicy: 'Existing specialization IDs remain mandatory positive categories. Source-backed specializations receive a stronger model weight than game-modelled specializations; this expresses evidence priority, not an observed establishment count.',
     weightModel: WEIGHT_FORMULAS,
     limits: [
@@ -336,7 +376,8 @@ export function rebalanceCountryFactoryStartingBaseline(input) {
       'Source-backed specialization evidence supports sector presence or mapping only; it does not justify a literal factory count.',
       'The latest UNIDO INDSTAT establishment refresh recorded zero usable core-country observations, so UNIDO establishment counts are not used to populate this model.',
       'Resource-context entries are not used as quantitative factory weights because much of the current roster lacks sufficiently differentiated, comparable resource evidence.',
-      'Profiles without comparable macro data and without existing specializations retain their previous allocation rather than receiving invented country-specific values.'
+      'Profiles without comparable macro data and without existing specializations retain their previous allocation rather than receiving invented country-specific values.',
+      'A one-unit budget exception is applied only to a documented source-backed specialization profile whose complete specialization list equals its entire original starting budget; the exception is recorded per country and in the world summary.'
     ],
     summary: summarize(baseline)
   };

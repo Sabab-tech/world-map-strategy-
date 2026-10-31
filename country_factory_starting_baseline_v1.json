@@ -3790,21 +3790,26 @@
       "countryName": "Botswana",
       "countryCode": "BW",
       "continent": "Africa",
-      "industryArchetype": "Services-led mixed economy",
-      "specializations": [],
+      "industryArchetype": "Beef processing, textiles and polymer/ferrous manufacturing",
+      "specializations": [
+        "FOOD_PROCESSING_COLD_CHAIN",
+        "TEXTILE_GARMENT_MILL",
+        "PETROCHEMICAL_POLYMER_PLANT",
+        "STEEL_AND_ALLOY_WORKS"
+      ],
       "totalStartingFactoryUnits": 5,
       "factoryCounts": {
         "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT": 0,
-        "STEEL_AND_ALLOY_WORKS": 2,
+        "STEEL_AND_ALLOY_WORKS": 1,
         "NON_FERROUS_METAL_SMELTER": 0,
-        "PETROCHEMICAL_POLYMER_PLANT": 0,
+        "PETROCHEMICAL_POLYMER_PLANT": 1,
         "FERTILIZER_CHEMICAL_PLANT": 0,
         "INDUSTRIAL_CHEMICALS_GAS_PLANT": 0,
-        "CEMENT_CONCRETE_PLANT": 1,
+        "CEMENT_CONCRETE_PLANT": 0,
         "GLASS_CERAMICS_PLANT": 0,
         "PAPER_PACKAGING_MILL": 0,
         "FOOD_PROCESSING_COLD_CHAIN": 2,
-        "TEXTILE_GARMENT_MILL": 0,
+        "TEXTILE_GARMENT_MILL": 1,
         "INDUSTRIAL_MACHINERY_MACHINE_TOOLS": 0,
         "GRID_EQUIPMENT_FACTORY": 0,
         "ELECTRONICS_SEMICONDUCTOR_FAB": 0,
@@ -3890,29 +3895,63 @@
         "interpretation": "Manufacturing value added is a component of industry value added; do not add it to industry. Broad value-added shares do not identify individual factory types.",
         "missingPolicy": "Null means unavailable or not comparable, never zero."
       },
-      "specializationEvidenceStatus": "NO_SUBSECTOR_SPECIALIZATION_EVIDENCE",
-      "industryArchetypeBasis": "WORLD_BANK_VALUE_ADDED_MIX_V1",
+      "specializationEvidenceStatus": "GAME_MODELLED_SPECIALIZATION_SET",
+      "industryArchetypeBasis": "EXPLICIT_GAME_SPECIALIZATION_SET_V1",
       "industryArchetypeObservationYear": 2025,
       "allocationDiagnostics": {
         "schemaVersion": "1.0.0",
         "modelVersion": "OMEGA_COUNTRY_FACTORY_ALLOCATION_V2",
         "status": "REBALANCED",
-        "basis": "SAME_YEAR_MACRO_SECTOR_ONLY",
-        "rebalancedFromUniformCounts": true,
+        "basis": "SOURCE_BACKED_SPECIALIZATION_PLUS_MACRO",
+        "rebalancedFromUniformCounts": false,
         "comparisonStatus": "SAME_YEAR_COMPARABLE",
         "comparisonYear": 2025,
         "dominantSector": "SERVICES",
         "manufacturingBand": "LOW",
         "availableSectorCount": 3,
-        "sourceBackedSpecializationCount": 0,
+        "sourceBackedSpecializationCount": 4,
         "gameModelledSpecializationCount": 0,
-        "activeFactoryTypeCount": 3,
+        "activeFactoryTypeCount": 4,
         "selectedFactoryTypeIds": [
-          "STEEL_AND_ALLOY_WORKS",
-          "CEMENT_CONCRETE_PLANT",
-          "FOOD_PROCESSING_COLD_CHAIN"
+          "FOOD_PROCESSING_COLD_CHAIN",
+          "TEXTILE_GARMENT_MILL",
+          "PETROCHEMICAL_POLYMER_PLANT",
+          "STEEL_AND_ALLOY_WORKS"
         ],
-        "note": "Reallocated the existing game-unit budget by comparable macro-sector weights and the existing specialization map; no units were added."
+        "note": "Reallocated the game-unit budget by country specialization and macro-sector weights. New source-backed evidence refreshed a prior macro-only allocation.",
+        "specializationRefreshApplied": true,
+        "previousAllocationBasis": "SAME_YEAR_MACRO_SECTOR_ONLY"
+      },
+      "specializationEvidence": {
+        "schemaVersion": "OMEGA_COUNTRY_FACTORY_SPECIALIZATION_EVIDENCE_V1",
+        "status": "SOURCE_BACKED_SIMULATION_MAPPING",
+        "accessDate": "2026-10-31",
+        "mappingPolicy": "Country sector evidence selects compatible canonical game factory types. Counts remain abstract game-scaled units and are not observed real-world facility totals.",
+        "referenceYears": [
+          2025
+        ],
+        "sources": [
+          {
+            "authority": "United Nations Development Programme, Botswana",
+            "title": "Fourth Botswana National Human Development Report 2025",
+            "url": "https://www.undp.org/sites/g/files/zskgke326/files/2025-08/undp-botswana-4th_botswana_national_human_development_report_full_report.pdf",
+            "publicationYear": 2025,
+            "supportedClaims": [
+              "The report identifies food processing, particularly beef processing, among Botswana's non-mining industrial activities.",
+              "The report identifies textiles, plastic and plastic products, and iron and iron products among manufacturing activities."
+            ]
+          },
+          {
+            "authority": "United States Geological Survey",
+            "title": "Botswana Mineral Industry",
+            "url": "https://www.usgs.gov/centers/national-minerals-information-center/botswana",
+            "supportedClaims": [
+              "The USGS reports 2024 production of copper, gold, silver and natural industrial diamonds; extraction is kept distinct from evidence of domestic smelting."
+            ]
+          }
+        ],
+        "confidence": "HIGH",
+        "caveat": "The profile is based on documented beef, textile, plastic and iron-product manufacturing. Diamond cutting is not mislabelled as non-ferrous smelting, and mined copper/gold is not assumed to be locally smelted."
       }
     },
     "CAF": {
@@ -8905,15 +8944,19 @@
       "countryName": "Ghana",
       "countryCode": "GH",
       "continent": "Africa",
-      "industryArchetype": "Services-led mixed economy",
-      "specializations": [],
+      "industryArchetype": "Agro-processing, mineral processing and textiles",
+      "specializations": [
+        "FOOD_PROCESSING_COLD_CHAIN",
+        "NON_FERROUS_METAL_SMELTER",
+        "TEXTILE_GARMENT_MILL"
+      ],
       "totalStartingFactoryUnits": 7,
       "factoryCounts": {
         "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT": 0,
-        "STEEL_AND_ALLOY_WORKS": 1,
-        "NON_FERROUS_METAL_SMELTER": 0,
+        "STEEL_AND_ALLOY_WORKS": 0,
+        "NON_FERROUS_METAL_SMELTER": 2,
         "PETROCHEMICAL_POLYMER_PLANT": 0,
-        "FERTILIZER_CHEMICAL_PLANT": 2,
+        "FERTILIZER_CHEMICAL_PLANT": 1,
         "INDUSTRIAL_CHEMICALS_GAS_PLANT": 0,
         "CEMENT_CONCRETE_PLANT": 0,
         "GLASS_CERAMICS_PLANT": 0,
@@ -9005,30 +9048,63 @@
         "interpretation": "Manufacturing value added is a component of industry value added; do not add it to industry. Broad value-added shares do not identify individual factory types.",
         "missingPolicy": "Null means unavailable or not comparable, never zero."
       },
-      "specializationEvidenceStatus": "NO_SUBSECTOR_SPECIALIZATION_EVIDENCE",
-      "industryArchetypeBasis": "WORLD_BANK_VALUE_ADDED_MIX_V1",
+      "specializationEvidenceStatus": "GAME_MODELLED_SPECIALIZATION_SET",
+      "industryArchetypeBasis": "EXPLICIT_GAME_SPECIALIZATION_SET_V1",
       "industryArchetypeObservationYear": 2025,
       "allocationDiagnostics": {
         "schemaVersion": "1.0.0",
         "modelVersion": "OMEGA_COUNTRY_FACTORY_ALLOCATION_V2",
         "status": "REBALANCED",
-        "basis": "SAME_YEAR_MACRO_SECTOR_ONLY",
-        "rebalancedFromUniformCounts": true,
+        "basis": "SOURCE_BACKED_SPECIALIZATION_PLUS_MACRO",
+        "rebalancedFromUniformCounts": false,
         "comparisonStatus": "SAME_YEAR_COMPARABLE",
         "comparisonYear": 2025,
         "dominantSector": "SERVICES",
         "manufacturingBand": "MODERATE",
         "availableSectorCount": 3,
-        "sourceBackedSpecializationCount": 0,
+        "sourceBackedSpecializationCount": 3,
         "gameModelledSpecializationCount": 0,
         "activeFactoryTypeCount": 4,
         "selectedFactoryTypeIds": [
-          "STEEL_AND_ALLOY_WORKS",
-          "FERTILIZER_CHEMICAL_PLANT",
           "FOOD_PROCESSING_COLD_CHAIN",
-          "TEXTILE_GARMENT_MILL"
+          "NON_FERROUS_METAL_SMELTER",
+          "TEXTILE_GARMENT_MILL",
+          "FERTILIZER_CHEMICAL_PLANT"
         ],
-        "note": "Reallocated the existing game-unit budget by comparable macro-sector weights and the existing specialization map; no units were added."
+        "note": "Reallocated the game-unit budget by country specialization and macro-sector weights. New source-backed evidence refreshed a prior macro-only allocation.",
+        "specializationRefreshApplied": true,
+        "previousAllocationBasis": "SAME_YEAR_MACRO_SECTOR_ONLY"
+      },
+      "specializationEvidence": {
+        "schemaVersion": "OMEGA_COUNTRY_FACTORY_SPECIALIZATION_EVIDENCE_V1",
+        "status": "SOURCE_BACKED_SIMULATION_MAPPING",
+        "accessDate": "2026-10-31",
+        "mappingPolicy": "Country sector evidence selects compatible canonical game factory types. Counts remain abstract game-scaled units and are not observed real-world facility totals.",
+        "referenceYears": [
+          2024,
+          2025
+        ],
+        "sources": [
+          {
+            "authority": "Ministry of Business Development, Ghana",
+            "title": "Economic Sectors",
+            "url": "https://mobd.gov.gh/economic-sectors/",
+            "supportedClaims": [
+              "The government identifies food processing as an important economic activity.",
+              "The official sector overview separately identifies mineral processing as an industrial area; this supports a broad game mapping, not a facility census."
+            ]
+          },
+          {
+            "authority": "Ghana High Commission, London",
+            "title": "Ghana Country Profile",
+            "url": "https://london.mfa.gov.gh/ghana/country-profile?lang=en",
+            "supportedClaims": [
+              "The country profile lists manufacturing activities including agro-processing, textiles and light industry."
+            ]
+          }
+        ],
+        "confidence": "MODERATE",
+        "caveat": "The sources establish relevant industry groups, not the number of currently operating plants. The non-ferrous processing category is a broad canonical game mapping and does not mean that all extracted minerals are smelted domestically."
       }
     },
     "GIN": {
@@ -11946,7 +12022,7 @@
         "PHARMA_MEDICAL_SUPPLIES_PLANT",
         "TEXTILE_GARMENT_MILL"
       ],
-      "totalStartingFactoryUnits": 7,
+      "totalStartingFactoryUnits": 8,
       "factoryCounts": {
         "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT": 0,
         "STEEL_AND_ALLOY_WORKS": 0,
@@ -11957,7 +12033,7 @@
         "CEMENT_CONCRETE_PLANT": 0,
         "GLASS_CERAMICS_PLANT": 0,
         "PAPER_PACKAGING_MILL": 0,
-        "FOOD_PROCESSING_COLD_CHAIN": 1,
+        "FOOD_PROCESSING_COLD_CHAIN": 2,
         "TEXTILE_GARMENT_MILL": 1,
         "INDUSTRIAL_MACHINERY_MACHINE_TOOLS": 1,
         "GRID_EQUIPMENT_FACTORY": 1,
@@ -12101,9 +12177,9 @@
       "allocationDiagnostics": {
         "schemaVersion": "1.0.0",
         "modelVersion": "OMEGA_COUNTRY_FACTORY_ALLOCATION_V2",
-        "status": "CONSTRAINED_UNCHANGED",
+        "status": "REBALANCED",
         "basis": "SOURCE_BACKED_SPECIALIZATION_PLUS_MACRO",
-        "rebalancedFromUniformCounts": false,
+        "rebalancedFromUniformCounts": true,
         "comparisonStatus": "SAME_YEAR_COMPARABLE",
         "comparisonYear": 2025,
         "dominantSector": "SERVICES",
@@ -12113,15 +12189,18 @@
         "gameModelledSpecializationCount": 0,
         "activeFactoryTypeCount": 7,
         "selectedFactoryTypeIds": [
-          "PETROCHEMICAL_POLYMER_PLANT",
           "FERTILIZER_CHEMICAL_PLANT",
           "FOOD_PROCESSING_COLD_CHAIN",
-          "TEXTILE_GARMENT_MILL",
-          "INDUSTRIAL_MACHINERY_MACHINE_TOOLS",
           "GRID_EQUIPMENT_FACTORY",
-          "PHARMA_MEDICAL_SUPPLIES_PLANT"
+          "INDUSTRIAL_MACHINERY_MACHINE_TOOLS",
+          "PETROCHEMICAL_POLYMER_PLANT",
+          "PHARMA_MEDICAL_SUPPLIES_PLANT",
+          "TEXTILE_GARMENT_MILL"
         ],
-        "note": "The existing specialization set consumes every available starting unit. Counts are intentionally left at one per required specialization rather than dropping a required category."
+        "note": "Reallocated the game-unit budget by country specialization and macro-sector weights. One additional simulated unit was granted because the source-backed specialization set consumed the previous budget.",
+        "budgetIncreaseApplied": true,
+        "budgetIncreaseUnits": 1,
+        "previousStartingFactoryUnits": 7
       }
     },
     "JPN": {
@@ -16480,21 +16559,26 @@
       "countryName": "Mongolia",
       "countryCode": "MN",
       "continent": "Asia",
-      "industryArchetype": "Services-led mixed economy",
-      "specializations": [],
+      "industryArchetype": "Copper, cement, cashmere and food processing",
+      "specializations": [
+        "NON_FERROUS_METAL_SMELTER",
+        "CEMENT_CONCRETE_PLANT",
+        "TEXTILE_GARMENT_MILL",
+        "FOOD_PROCESSING_COLD_CHAIN"
+      ],
       "totalStartingFactoryUnits": 5,
       "factoryCounts": {
         "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT": 0,
-        "STEEL_AND_ALLOY_WORKS": 2,
-        "NON_FERROUS_METAL_SMELTER": 0,
-        "PETROCHEMICAL_POLYMER_PLANT": 1,
+        "STEEL_AND_ALLOY_WORKS": 0,
+        "NON_FERROUS_METAL_SMELTER": 1,
+        "PETROCHEMICAL_POLYMER_PLANT": 0,
         "FERTILIZER_CHEMICAL_PLANT": 0,
         "INDUSTRIAL_CHEMICALS_GAS_PLANT": 0,
-        "CEMENT_CONCRETE_PLANT": 0,
+        "CEMENT_CONCRETE_PLANT": 1,
         "GLASS_CERAMICS_PLANT": 0,
         "PAPER_PACKAGING_MILL": 0,
         "FOOD_PROCESSING_COLD_CHAIN": 2,
-        "TEXTILE_GARMENT_MILL": 0,
+        "TEXTILE_GARMENT_MILL": 1,
         "INDUSTRIAL_MACHINERY_MACHINE_TOOLS": 0,
         "GRID_EQUIPMENT_FACTORY": 0,
         "ELECTRONICS_SEMICONDUCTOR_FAB": 0,
@@ -16580,29 +16664,63 @@
         "interpretation": "Manufacturing value added is a component of industry value added; do not add it to industry. Broad value-added shares do not identify individual factory types.",
         "missingPolicy": "Null means unavailable or not comparable, never zero."
       },
-      "specializationEvidenceStatus": "NO_SUBSECTOR_SPECIALIZATION_EVIDENCE",
-      "industryArchetypeBasis": "WORLD_BANK_VALUE_ADDED_MIX_V1",
+      "specializationEvidenceStatus": "GAME_MODELLED_SPECIALIZATION_SET",
+      "industryArchetypeBasis": "EXPLICIT_GAME_SPECIALIZATION_SET_V1",
       "industryArchetypeObservationYear": 2025,
       "allocationDiagnostics": {
         "schemaVersion": "1.0.0",
         "modelVersion": "OMEGA_COUNTRY_FACTORY_ALLOCATION_V2",
         "status": "REBALANCED",
-        "basis": "SAME_YEAR_MACRO_SECTOR_ONLY",
-        "rebalancedFromUniformCounts": true,
+        "basis": "SOURCE_BACKED_SPECIALIZATION_PLUS_MACRO",
+        "rebalancedFromUniformCounts": false,
         "comparisonStatus": "SAME_YEAR_COMPARABLE",
         "comparisonYear": 2025,
         "dominantSector": "SERVICES",
         "manufacturingBand": "LOW",
         "availableSectorCount": 3,
-        "sourceBackedSpecializationCount": 0,
+        "sourceBackedSpecializationCount": 4,
         "gameModelledSpecializationCount": 0,
-        "activeFactoryTypeCount": 3,
+        "activeFactoryTypeCount": 4,
         "selectedFactoryTypeIds": [
-          "STEEL_AND_ALLOY_WORKS",
-          "PETROCHEMICAL_POLYMER_PLANT",
+          "NON_FERROUS_METAL_SMELTER",
+          "CEMENT_CONCRETE_PLANT",
+          "TEXTILE_GARMENT_MILL",
           "FOOD_PROCESSING_COLD_CHAIN"
         ],
-        "note": "Reallocated the existing game-unit budget by comparable macro-sector weights and the existing specialization map; no units were added."
+        "note": "Reallocated the game-unit budget by country specialization and macro-sector weights. New source-backed evidence refreshed a prior macro-only allocation.",
+        "specializationRefreshApplied": true,
+        "previousAllocationBasis": "SAME_YEAR_MACRO_SECTOR_ONLY"
+      },
+      "specializationEvidence": {
+        "schemaVersion": "OMEGA_COUNTRY_FACTORY_SPECIALIZATION_EVIDENCE_V1",
+        "status": "SOURCE_BACKED_SIMULATION_MAPPING",
+        "accessDate": "2026-10-31",
+        "mappingPolicy": "Country sector evidence selects compatible canonical game factory types. Counts remain abstract game-scaled units and are not observed real-world facility totals.",
+        "referenceYears": [
+          2024,
+          2025
+        ],
+        "sources": [
+          {
+            "authority": "Invest Mongolia, Investment and Trade Agency",
+            "title": "Sectors and Opportunities",
+            "url": "https://www.investmongolia.gov.mn/en/?page_id=8672",
+            "supportedClaims": [
+              "The official investment agency describes meat, dairy and other food processing, cold-chain infrastructure, and domestic preparation of cashmere and wool.",
+              "The government describes financing and support for existing livestock-product processing factories."
+            ]
+          },
+          {
+            "authority": "United States Geological Survey",
+            "title": "Mongolia Mineral Industry",
+            "url": "https://www.usgs.gov/centers/national-minerals-information-center/mongolia",
+            "supportedClaims": [
+              "The USGS mineral-industry summary records copper refinery production and cement production in 2024."
+            ]
+          }
+        ],
+        "confidence": "HIGH",
+        "caveat": "Only documented current downstream activities are mapped. Proposed large copper-smelter projects are not counted as operating plants. All quantities remain abstract game units, not physical factory totals."
       }
     },
     "MOZ": {
@@ -19323,21 +19441,26 @@
       "countryName": "Papua New Guinea",
       "countryCode": "PG",
       "continent": "Oceania",
-      "industryArchetype": "Services-led mixed economy",
-      "specializations": [],
+      "industryArchetype": "Agro-processing, petroleum refining and precious-metal downstream processing",
+      "specializations": [
+        "FOOD_PROCESSING_COLD_CHAIN",
+        "PETROCHEMICAL_POLYMER_PLANT",
+        "NON_FERROUS_METAL_SMELTER",
+        "TEXTILE_GARMENT_MILL"
+      ],
       "totalStartingFactoryUnits": 5,
       "factoryCounts": {
         "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT": 0,
-        "STEEL_AND_ALLOY_WORKS": 2,
-        "NON_FERROUS_METAL_SMELTER": 0,
-        "PETROCHEMICAL_POLYMER_PLANT": 0,
-        "FERTILIZER_CHEMICAL_PLANT": 1,
+        "STEEL_AND_ALLOY_WORKS": 0,
+        "NON_FERROUS_METAL_SMELTER": 1,
+        "PETROCHEMICAL_POLYMER_PLANT": 1,
+        "FERTILIZER_CHEMICAL_PLANT": 0,
         "INDUSTRIAL_CHEMICALS_GAS_PLANT": 0,
         "CEMENT_CONCRETE_PLANT": 0,
         "GLASS_CERAMICS_PLANT": 0,
         "PAPER_PACKAGING_MILL": 0,
         "FOOD_PROCESSING_COLD_CHAIN": 2,
-        "TEXTILE_GARMENT_MILL": 0,
+        "TEXTILE_GARMENT_MILL": 1,
         "INDUSTRIAL_MACHINERY_MACHINE_TOOLS": 0,
         "GRID_EQUIPMENT_FACTORY": 0,
         "ELECTRONICS_SEMICONDUCTOR_FAB": 0,
@@ -19423,29 +19546,64 @@
         "interpretation": "Manufacturing value added is a component of industry value added; do not add it to industry. Broad value-added shares do not identify individual factory types.",
         "missingPolicy": "Null means unavailable or not comparable, never zero."
       },
-      "specializationEvidenceStatus": "NO_SUBSECTOR_SPECIALIZATION_EVIDENCE",
-      "industryArchetypeBasis": "WORLD_BANK_VALUE_ADDED_MIX_V1",
-      "industryArchetypeObservationYear": 2024,
+      "specializationEvidenceStatus": "GAME_MODELLED_SPECIALIZATION_SET",
+      "industryArchetypeBasis": "EXPLICIT_GAME_SPECIALIZATION_SET_V1",
+      "industryArchetypeObservationYear": 2023,
       "allocationDiagnostics": {
         "schemaVersion": "1.0.0",
         "modelVersion": "OMEGA_COUNTRY_FACTORY_ALLOCATION_V2",
         "status": "REBALANCED",
-        "basis": "SAME_YEAR_MACRO_SECTOR_ONLY",
-        "rebalancedFromUniformCounts": true,
+        "basis": "SOURCE_BACKED_SPECIALIZATION_PLUS_MACRO",
+        "rebalancedFromUniformCounts": false,
         "comparisonStatus": "SAME_YEAR_COMPARABLE",
         "comparisonYear": 2024,
         "dominantSector": "SERVICES",
         "manufacturingBand": "LOW",
         "availableSectorCount": 3,
-        "sourceBackedSpecializationCount": 0,
+        "sourceBackedSpecializationCount": 4,
         "gameModelledSpecializationCount": 0,
-        "activeFactoryTypeCount": 3,
+        "activeFactoryTypeCount": 4,
         "selectedFactoryTypeIds": [
-          "STEEL_AND_ALLOY_WORKS",
-          "FERTILIZER_CHEMICAL_PLANT",
-          "FOOD_PROCESSING_COLD_CHAIN"
+          "FOOD_PROCESSING_COLD_CHAIN",
+          "PETROCHEMICAL_POLYMER_PLANT",
+          "NON_FERROUS_METAL_SMELTER",
+          "TEXTILE_GARMENT_MILL"
         ],
-        "note": "Reallocated the existing game-unit budget by comparable macro-sector weights and the existing specialization map; no units were added."
+        "note": "Reallocated the game-unit budget by country specialization and macro-sector weights. New source-backed evidence refreshed a prior macro-only allocation.",
+        "specializationRefreshApplied": true,
+        "previousAllocationBasis": "SAME_YEAR_MACRO_SECTOR_ONLY"
+      },
+      "specializationEvidence": {
+        "schemaVersion": "OMEGA_COUNTRY_FACTORY_SPECIALIZATION_EVIDENCE_V1",
+        "status": "SOURCE_BACKED_SIMULATION_MAPPING",
+        "accessDate": "2026-10-31",
+        "mappingPolicy": "Country sector evidence selects compatible canonical game factory types. Counts remain abstract game-scaled units and are not observed real-world facility totals.",
+        "referenceYears": [
+          2023,
+          2024
+        ],
+        "sources": [
+          {
+            "authority": "Papua New Guinea Department of National Planning and Monitoring",
+            "title": "Medium Term Development Plan IV 2023–2027",
+            "url": "https://www.treasury.gov.pg/wp-content/uploads/2023/08/MTDP-IV-2023-2027.pdf",
+            "publicationYear": 2023,
+            "supportedClaims": [
+              "The national plan identifies brewery, tobacco, food and beverage, fish-canning, agricultural and forest-product manufacturing.",
+              "The plan documents an operating crude-petroleum refinery, palm-oil refinery and downstream metals processing including gold and precious metals."
+            ]
+          },
+          {
+            "authority": "Papua New Guinea Department of Foreign Affairs",
+            "title": "Manufacturing",
+            "url": "https://www.dfa.gov.pg/manufacturing/",
+            "supportedClaims": [
+              "The government describes processed food, beverages, tobacco, wood products, textiles and metal goods among manufacturing activities."
+            ]
+          }
+        ],
+        "confidence": "HIGH",
+        "caveat": "The profile maps documented processing activity only. Future LNG-processing proposals are not counted as operating petrochemical plants; the polymer category is a broad petroleum-processing gameplay proxy. Timber alone is not mapped to a paper mill."
       }
     },
     "POL": {
@@ -21649,7 +21807,7 @@
         "FOOD_PROCESSING_COLD_CHAIN",
         "INDUSTRIAL_MACHINERY_MACHINE_TOOLS"
       ],
-      "totalStartingFactoryUnits": 3,
+      "totalStartingFactoryUnits": 4,
       "factoryCounts": {
         "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT": 0,
         "STEEL_AND_ALLOY_WORKS": 0,
@@ -21662,7 +21820,7 @@
         "PAPER_PACKAGING_MILL": 0,
         "FOOD_PROCESSING_COLD_CHAIN": 1,
         "TEXTILE_GARMENT_MILL": 0,
-        "INDUSTRIAL_MACHINERY_MACHINE_TOOLS": 1,
+        "INDUSTRIAL_MACHINERY_MACHINE_TOOLS": 2,
         "GRID_EQUIPMENT_FACTORY": 0,
         "ELECTRONICS_SEMICONDUCTOR_FAB": 1,
         "BATTERY_ENERGY_STORAGE_PLANT": 0,
@@ -21778,9 +21936,9 @@
       "allocationDiagnostics": {
         "schemaVersion": "1.0.0",
         "modelVersion": "OMEGA_COUNTRY_FACTORY_ALLOCATION_V2",
-        "status": "CONSTRAINED_UNCHANGED",
+        "status": "REBALANCED",
         "basis": "SOURCE_BACKED_SPECIALIZATION_PLUS_MACRO",
-        "rebalancedFromUniformCounts": false,
+        "rebalancedFromUniformCounts": true,
         "comparisonStatus": "SAME_YEAR_COMPARABLE",
         "comparisonYear": 2023,
         "dominantSector": "SERVICES",
@@ -21790,11 +21948,14 @@
         "gameModelledSpecializationCount": 0,
         "activeFactoryTypeCount": 3,
         "selectedFactoryTypeIds": [
+          "ELECTRONICS_SEMICONDUCTOR_FAB",
           "FOOD_PROCESSING_COLD_CHAIN",
-          "INDUSTRIAL_MACHINERY_MACHINE_TOOLS",
-          "ELECTRONICS_SEMICONDUCTOR_FAB"
+          "INDUSTRIAL_MACHINERY_MACHINE_TOOLS"
         ],
-        "note": "The existing specialization set consumes every available starting unit. Counts are intentionally left at one per required specialization rather than dropping a required category."
+        "note": "Reallocated the game-unit budget by country specialization and macro-sector weights. One additional simulated unit was granted because the source-backed specialization set consumed the previous budget.",
+        "budgetIncreaseApplied": true,
+        "budgetIncreaseUnits": 1,
+        "previousStartingFactoryUnits": 3
       }
     },
     "SOM": {
@@ -22960,7 +23121,7 @@
         "PETROCHEMICAL_POLYMER_PLANT",
         "TEXTILE_GARMENT_MILL"
       ],
-      "totalStartingFactoryUnits": 4,
+      "totalStartingFactoryUnits": 5,
       "factoryCounts": {
         "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT": 0,
         "STEEL_AND_ALLOY_WORKS": 0,
@@ -22972,7 +23133,7 @@
         "GLASS_CERAMICS_PLANT": 0,
         "PAPER_PACKAGING_MILL": 1,
         "FOOD_PROCESSING_COLD_CHAIN": 1,
-        "TEXTILE_GARMENT_MILL": 1,
+        "TEXTILE_GARMENT_MILL": 2,
         "INDUSTRIAL_MACHINERY_MACHINE_TOOLS": 0,
         "GRID_EQUIPMENT_FACTORY": 0,
         "ELECTRONICS_SEMICONDUCTOR_FAB": 0,
@@ -23092,9 +23253,9 @@
       "allocationDiagnostics": {
         "schemaVersion": "1.0.0",
         "modelVersion": "OMEGA_COUNTRY_FACTORY_ALLOCATION_V2",
-        "status": "CONSTRAINED_UNCHANGED",
+        "status": "REBALANCED",
         "basis": "SOURCE_BACKED_SPECIALIZATION_PLUS_MACRO",
-        "rebalancedFromUniformCounts": false,
+        "rebalancedFromUniformCounts": true,
         "comparisonStatus": "SAME_YEAR_COMPARABLE",
         "comparisonYear": 2025,
         "dominantSector": "SERVICES",
@@ -23104,12 +23265,15 @@
         "gameModelledSpecializationCount": 0,
         "activeFactoryTypeCount": 4,
         "selectedFactoryTypeIds": [
-          "PETROCHEMICAL_POLYMER_PLANT",
-          "PAPER_PACKAGING_MILL",
           "FOOD_PROCESSING_COLD_CHAIN",
+          "PAPER_PACKAGING_MILL",
+          "PETROCHEMICAL_POLYMER_PLANT",
           "TEXTILE_GARMENT_MILL"
         ],
-        "note": "The existing specialization set consumes every available starting unit. Counts are intentionally left at one per required specialization rather than dropping a required category."
+        "note": "Reallocated the game-unit budget by country specialization and macro-sector weights. One additional simulated unit was granted because the source-backed specialization set consumed the previous budget.",
+        "budgetIncreaseApplied": true,
+        "budgetIncreaseUnits": 1,
+        "previousStartingFactoryUnits": 4
       }
     },
     "SYC": {
@@ -27249,8 +27413,8 @@
       "The canonical 21-type resource_industrial_catalog_v1.json roster."
     ],
     "comparabilityPolicy": "Agriculture, industry and services are used only when at least two observations share the exact same year. Manufacturing value added and agriculture employment are used only when their observation year is within three years of that comparison year. Missing or non-comparable values contribute no fabricated zero observation.",
-    "allocationPolicy": "Only country profiles whose positive category counts were all exactly one are candidates for rebalancing. Existing differentiated distributions are preserved. Explicit specializations are selected first; remaining slots are ranked by modelled weights. Each selected category receives at least one unit, then the remaining fixed budget is distributed using the largest-remainder method.",
-    "fixedBudgetPolicy": "Each country keeps its original totalStartingFactoryUnits. This process changes only the allocation among the existing 21 category keys; it does not create new starting units or change the country overall starting-factory total.",
+    "allocationPolicy": "Existing uniform profiles are rebalanced. Newly source-backed specialization evidence refreshes earlier macro-only allocations, while previously differentiated profiles are preserved unless new source-backed evidence explicitly upgrades the profile. Selected categories receive positive allocations, then remaining units are distributed by largest remainder.",
+    "fixedBudgetPolicy": "Each country's starting-unit budget remains unchanged except JOR, SMR and SWZ, which each receive one additional simulated unit because their source-backed specialization lists previously consumed the entire starting budget. Existing per-country Universal Materials quantities remain fixed.",
     "specializationPolicy": "Existing specialization IDs remain mandatory positive categories. Source-backed specializations receive a stronger model weight than game-modelled specializations; this expresses evidence priority, not an observed establishment count.",
     "weightModel": {
       "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT": "0.45 + 0.012 * industry",
@@ -27281,25 +27445,31 @@
       "Source-backed specialization evidence supports sector presence or mapping only; it does not justify a literal factory count.",
       "The latest UNIDO INDSTAT establishment refresh recorded zero usable core-country observations, so UNIDO establishment counts are not used to populate this model.",
       "Resource-context entries are not used as quantitative factory weights because much of the current roster lacks sufficiently differentiated, comparable resource evidence.",
-      "Profiles without comparable macro data and without existing specializations retain their previous allocation rather than receiving invented country-specific values."
+      "Profiles without comparable macro data and without existing specializations retain their previous allocation rather than receiving invented country-specific values.",
+      "A one-unit budget exception is applied only to source-backed specialization profiles whose full specialization list equalled the original starting budget; the exception is recorded per country and in the world summary."
     ],
     "summary": {
       "coreCountryCount": 197,
       "factoryTypeCount": 21,
       "evaluatedUniformProfileCount": 143,
-      "changedUniformDistributionCount": 140,
-      "constrainedUnitBudgetCount": 3,
+      "changedUniformDistributionCount": 139,
+      "constrainedUnitBudgetCount": 0,
       "preservedExistingDistributionCount": 49,
       "conservativeDataGapCount": 5,
-      "macroOnlyCount": 96,
+      "macroOnlyCount": 92,
       "gameModelledSpecializationCount": 35,
-      "sourceBackedSpecializationCount": 12,
-      "remainingUniformProfileCount": 8,
+      "sourceBackedSpecializationCount": 16,
+      "sourceBackedSpecializationCountryCount": 21,
+      "specializationRefreshCount": 4,
+      "budgetIncreasedCountryCount": 3,
+      "budgetIncreaseUnits": 3,
+      "worldTotalStartingFactoryUnits": 1592,
+      "remainingUniformProfileCount": 5,
       "basisCounts": {
-        "SAME_YEAR_MACRO_SECTOR_ONLY": 96,
+        "SAME_YEAR_MACRO_SECTOR_ONLY": 92,
         "GAME_MODELLED_SPECIALIZATION_PLUS_MACRO": 35,
         "PRESERVED_EXISTING_DISTRIBUTION": 49,
-        "SOURCE_BACKED_SPECIALIZATION_PLUS_MACRO": 12,
+        "SOURCE_BACKED_SPECIALIZATION_PLUS_MACRO": 16,
         "CONSERVATIVE_EXISTING_PROFILE": 5
       }
     }

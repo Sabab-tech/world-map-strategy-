@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This update fixes the uniform one-unit pattern in country starting factory profiles. The game still uses one shared canonical catalog of 21 factory types and exactly 197 core countries. The starting-unit total for each country is conserved; only the distribution of that country's existing units across the 21 types changes.
+This update fixes the uniform one-unit pattern in country starting factory profiles. The game still uses one shared canonical catalog of 21 factory types and exactly 197 core countries. The existing per-country starting-unit total is conserved except for three documented small-budget exceptions (JOR, SMR and SWZ), which each receive one additional simulated unit so every source-backed specialization can have a differentiated quantity. The 21-category catalog and Universal Materials umbrella quantity remain unchanged.
 
 This is a simulation allocation model. It is not a physical factory census and must never be displayed as the number of real facilities in a country.
 
@@ -14,13 +14,13 @@ This is a simulation allocation model. It is not a physical factory census and m
 - Keep the existing specialization IDs and require every listed specialization to retain a positive allocation.
 - Use comparable broad economic-sector observations to rank factory categories for countries without a specific specialization.
 - Use the existing specialization map as a stronger priority signal for countries that already have one.
-- Keep country totalStartingFactoryUnits unchanged. No factory units are invented, added to the national total, or removed from the 21-category matrix.
+- Keep country totalStartingFactoryUnits unchanged for 194 countries. Jordan, San Marino and Eswatini each receive one additional game-only unit because their source-backed specialization count equalled the entire original starting budget.
 
 ## Inputs and evidence policy
 
 The rebalancer reads the embedded economicSectorContext already attached to each country from the country general-data registry. Agriculture, industry and services shares are used only when at least two observations share the same comparison year. Manufacturing value added and agriculture employment are included only when their observation years are within three years of that comparison year. Missing and non-comparable values contribute no fabricated observation.
 
-Existing specializations remain the only country-specific sub-sector selections in this pass. Seventeen country specialization profiles have source-backed mapping evidence; the other existing specialization profiles are explicitly game-modelled. A source can support the presence or mapping of a sector, but it does not justify translating the source's enterprises, export share or production output into a literal game factory count.
+Existing specializations plus four new source-backed country profiles (Ghana, Mongolia, Papua New Guinea and Botswana) are the country-specific sub-sector selections in this pass. New evidence refreshes the four earlier macro-only allocations instead of leaving them locked to their old mix. Twenty-one country specialization profiles have source-backed mapping evidence (17 HIGH-confidence and 4 MODERATE-confidence); the other 79 existing specialization profiles remain explicitly game-modelled. A source can support the presence or mapping of a sector, but it does not justify translating the source's enterprises, export share or production output into a literal game factory count.
 
 The current UNIDO INDSTAT establishment registry reports zero usable country-level observations in its latest refresh recorded on 2026-10-30. Its missing values are deliberately not used as zero and are not filled from GDP, reserves or other proxies. The resource-context registry is also excluded as a quantitative weight because many current entries are not sufficiently differentiated across countries.
 
@@ -68,8 +68,9 @@ Existing specializations multiply the corresponding category weight by 2.5 for g
 - 143 previously uniform profiles are evaluated by the allocation model; 140 have a changed numeric distribution.
 - 49 already differentiated country distributions are preserved.
 - 5 profiles with neither comparable macro data nor an existing specialization retain their former distribution.
-- 3 further profiles are evaluated but remain all-one because their existing specialization set uses every available starting unit. Their categories are not discarded just to force a count above one.
-- 5 profiles with data gaps remain untouched; the remaining 8 uniform profiles are therefore documented constraints, not silently fabricated data.
+- 5 profiles with neither comparable macro data nor an existing specialization retain their previous distribution; these are the only remaining all-one profiles.
+- 4 newly source-backed profiles replace their previous macro-only category selection while preserving their existing country budgets.
+- 3 small countries with source-backed specialization lists that consumed all original units receive one additional simulated unit each; the exception is stored in each country's diagnostics.
 
 ## Validation
 
@@ -92,4 +93,4 @@ node --test test/omega_country_factory_allocation_v2.test.mjs
 node scripts/rebalance_country_factory_starting_baseline_v1.mjs --check
 \`\`\`
 
-This update improves the simulation profile distribution, but it does not claim that all 197 countries now have source-backed sub-sector facility counts. Obtaining reliable country-by-country establishment data remains a separate data-ingestion task.
+Final coverage contains 21 source-backed specialization countries, 79 existing game-modelled specialization countries, 92 broad macro-only countries and 5 deliberately preserved incomparable profiles. The world game allocation is 1,592 units, up from 1,589 solely because of the three recorded one-unit exceptions. This is still not a real-world factory census. Obtaining reliable country-by-country establishment data remains a separate data-ingestion task.

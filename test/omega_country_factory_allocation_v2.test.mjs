@@ -38,16 +38,21 @@ test('allocation V2 covers all 197 countries and the one canonical 21-type catal
 test('uniform profiles are redistributed without inflating country starting-unit totals', () => {
   const summary = baseline.allocationModel.summary;
   assert.equal(summary.evaluatedUniformProfileCount, 143);
-  assert.equal(summary.changedUniformDistributionCount, 140);
-  assert.equal(summary.constrainedUnitBudgetCount, 3);
+  assert.equal(summary.changedUniformDistributionCount, 139);
+  assert.equal(summary.constrainedUnitBudgetCount, 0);
   assert.equal(summary.preservedExistingDistributionCount, 49);
   assert.equal(summary.conservativeDataGapCount, 5);
-  assert.equal(summary.macroOnlyCount, 96);
+  assert.equal(summary.macroOnlyCount, 92);
   assert.equal(summary.gameModelledSpecializationCount, 35);
-  assert.equal(summary.sourceBackedSpecializationCount, 12);
-  assert.equal(summary.remainingUniformProfileCount, 8);
+  assert.equal(summary.sourceBackedSpecializationCount, 16);
+  assert.equal(summary.remainingUniformProfileCount, 5);
   assert.equal(summary.coreCountryCount, 197);
   assert.equal(summary.factoryTypeCount, 21);
+  assert.equal(summary.sourceBackedSpecializationCountryCount, 21);
+  assert.equal(summary.specializationRefreshCount, 4);
+  assert.equal(summary.budgetIncreasedCountryCount, 3);
+  assert.equal(summary.budgetIncreaseUnits, 3);
+  assert.equal(summary.worldTotalStartingFactoryUnits, 1592);
 });
 
 test('existing differentiated country profiles are preserved exactly', () => {
@@ -72,13 +77,49 @@ test('macro-only and specialization-backed profiles express different modelled m
   const ghana = baseline.countries.GHA;
   const mongolia = baseline.countries.MNG;
   const myanmar = baseline.countries.MMR;
-  assert.equal(ghana.allocationDiagnostics.basis, 'SAME_YEAR_MACRO_SECTOR_ONLY');
-  assert.equal(mongolia.allocationDiagnostics.basis, 'SAME_YEAR_MACRO_SECTOR_ONLY');
+  assert.equal(ghana.allocationDiagnostics.basis, 'SOURCE_BACKED_SPECIALIZATION_PLUS_MACRO');
+  assert.equal(mongolia.allocationDiagnostics.basis, 'SOURCE_BACKED_SPECIALIZATION_PLUS_MACRO');
   assert.equal(myanmar.allocationDiagnostics.basis, 'SOURCE_BACKED_SPECIALIZATION_PLUS_MACRO');
-  assert.ok(ghana.factoryCounts.FOOD_PROCESSING_COLD_CHAIN > 1);
-  assert.ok(mongolia.factoryCounts.STEEL_AND_ALLOY_WORKS > 1);
+  assert.ok(ghana.factoryCounts.FOOD_PROCESSING_COLD_CHAIN > 0);
+  assert.ok(mongolia.factoryCounts.NON_FERROUS_METAL_SMELTER > 0);
   assert.ok(myanmar.factoryCounts.FOOD_PROCESSING_COLD_CHAIN > 1);
   assert.ok(myanmar.factoryCounts.TEXTILE_GARMENT_MILL > 1);
+});
+
+test('new source evidence refines Ghana, Mongolia, Papua New Guinea and Botswana', () => {
+  const expectations = {
+    GHA: ['FOOD_PROCESSING_COLD_CHAIN','NON_FERROUS_METAL_SMELTER','TEXTILE_GARMENT_MILL'],
+    MNG: ['NON_FERROUS_METAL_SMELTER','CEMENT_CONCRETE_PLANT','TEXTILE_GARMENT_MILL','FOOD_PROCESSING_COLD_CHAIN'],
+    PNG: ['FOOD_PROCESSING_COLD_CHAIN','PETROCHEMICAL_POLYMER_PLANT','NON_FERROUS_METAL_SMELTER','TEXTILE_GARMENT_MILL'],
+    BWA: ['FOOD_PROCESSING_COLD_CHAIN','TEXTILE_GARMENT_MILL','PETROCHEMICAL_POLYMER_PLANT','STEEL_AND_ALLOY_WORKS']
+  };
+  for (const [countryId, typeIds] of Object.entries(expectations)) {
+    const row = baseline.countries[countryId];
+    assert.deepEqual([...row.specializations].sort(), [...typeIds].sort(), countryId);
+    assert.equal(row.specializationEvidence.status, 'SOURCE_BACKED_SIMULATION_MAPPING', countryId);
+    assert.ok(row.specializationEvidence.sources.length >= 2, countryId);
+    assert.ok(row.specializationEvidence.sources.every(source => /^https:\/\//.test(source.url)), countryId);
+    assert.ok(row.specializations.every(type => row.factoryCounts[type] > 0), countryId);
+    assert.ok(new Set(Object.values(row.factoryCounts).filter(value => value > 0)).size > 1,
+      countryId + ' active category quantities should be differentiated');
+    assert.equal(row.allocationDiagnostics.specializationRefreshApplied, true, countryId);
+  }
+});
+
+test('three source-backed profiles receive only the recorded one-unit constraint exception', () => {
+  const expected = { JOR: 8, SMR: 4, SWZ: 5 };
+  for (const [countryId, total] of Object.entries(expected)) {
+    const row = baseline.countries[countryId];
+    assert.equal(row.totalStartingFactoryUnits, total, countryId);
+    assert.equal(row.allocationDiagnostics.budgetIncreaseApplied, true, countryId);
+    assert.equal(row.allocationDiagnostics.budgetIncreaseUnits, 1, countryId);
+    assert.ok(new Set(Object.values(row.factoryCounts).filter(value => value > 0)).size > 1, countryId);
+  }
+  for (const countryId of ['ESH','NRU','PRK','SOM','VAT']) {
+    const row = baseline.countries[countryId];
+    assert.equal(row.allocationDiagnostics.basis, 'CONSERVATIVE_EXISTING_PROFILE', countryId);
+    assert.ok(Object.values(row.factoryCounts).filter(value => value > 0).every(value => value === 1), countryId);
+  }
 });
 
 test('the allocation generator is idempotent and deterministic on a synthetic uniform profile', () => {
