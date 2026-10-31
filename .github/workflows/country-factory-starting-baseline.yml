@@ -24,6 +24,9 @@ on:
     branches: [main]
     paths:
       - 'country_factory_starting_baseline_v1.json'
+      - 'country_general_data_registry_v1.json'
+      - 'scripts/enrich_country_factory_starting_baseline_v1.mjs'
+      - 'test/country_factory_starting_baseline_alignment_v1.test.mjs'
       - 'omega_country_factory_starting_baseline_v1.js'
       - 'resource_industrial_catalog_v1.json'
       - 'resource_country_resource_context_index.json'
