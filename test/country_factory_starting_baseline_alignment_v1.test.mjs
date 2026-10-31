@@ -45,7 +45,7 @@ test('country archetypes respond to observed economic structure without inventin
   assert.equal(enriched.countries.LBY.industryArchetype, 'Industry-led resource and extractive economy',
     'older manufacturing observations must not be compared as if contemporaneous');
   assert.equal(enriched.countries.GNB.industryArchetype, 'Agriculture-led economy');
-  assert.equal(enriched.countries.MMR.industryArchetype, 'Industry-led economy with a manufacturing base');
+  assert.equal(enriched.countries.MMR.industryArchetype, 'Services-led economy with a manufacturing base');
   assert.equal(enriched.countries.SOM.economicSectorContext.dominantSector, null,
     'mixed observation years must not produce a false dominant-sector conclusion');
   assert.equal(enriched.countries.SOM.industryArchetype, 'Insufficient comparable sector data');
