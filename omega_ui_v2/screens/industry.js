@@ -701,6 +701,7 @@
           '<h3>Starting Factory Allocation</h3>' +
           '<p class="omega-v2-industry-muted"><strong>' + fmt(startingBaseline.totalStartingFactoryUnits) + '</strong> modeled starting units · ' +
             esc(startingBaseline.industryArchetype || 'Diversified starter industry') + '</p>' +
+          economicSectorContextMarkup(startingBaseline, 'omega-v2-industry-muted') +
           '<div class="omega-v2-industry-table-wrap omega-v2-industry-type-table"><table>' +
             '<thead><tr><th>Factory type</th><th>Starting count</th><th>Industry group</th></tr></thead>' +
             '<tbody>' + startingFactoryRows + '</tbody></table></div>' +
@@ -799,6 +800,31 @@
       '><span aria-hidden="true" class="omega-v2-action-icon omega-v2-action-icon--build"></span>Build project</button></div></article>';
   }
 
+  function economicSectorContextMarkup(baseline, className) {
+    baseline = baseline || {};
+    var context = baseline.economicSectorContext;
+    var shares = context && context.valueAddedShares || {};
+    if (!context || !shares || typeof shares !== 'object') return '';
+    function metricLabel(label, key) {
+      var metric = shares[key];
+      if (!metric || metric.value === null || metric.value === undefined || !Number.isFinite(Number(metric.value))) {
+        return label + ' unavailable';
+      }
+      var year = Number.isInteger(Number(metric.year)) ? ' (' + esc(metric.year) + ')' : '';
+      return label + ' ' + fmt(metric.value) + '%' + year;
+    }
+    var summary = [
+      metricLabel('Agriculture', 'agricultureValueAddedPctGdp'),
+      metricLabel('Industry', 'industryValueAddedPctGdp'),
+      metricLabel('Manufacturing', 'manufacturingValueAddedPctGdp'),
+      metricLabel('Services', 'servicesValueAddedPctGdp')
+    ].join(' · ');
+    return '<p class="' + esc(className || 'fp-starting-allocation-foot') +
+      ' fp-starting-allocation-sector-context" data-sector-profile-status="' + esc(context.comparisonStatus || 'NOT_REPORTED') + '">' +
+      'Economic structure · World Bank value added: ' + summary +
+      '. Manufacturing is included within industry; these percentages are not factory counts.</p>';
+  }
+
   function factoryStartingAllocationMarkup(model) {
     model = model || {};
     var baseline = model.countryFactoryStartingBaseline;
@@ -823,6 +849,7 @@
       '<div class="fp-starting-allocation-meta"><span>' + fmt(model.startingFactoryTypeCount) + ' canonical factory types</span><span>' + esc(runtimeLabel) + '</span></div>' +
       '<div class="fp-starting-allocation-table-wrap"><table><thead><tr><th>Factory type</th><th>Starting units</th><th>Industry group</th></tr></thead>' +
       '<tbody>' + (allocationRows || '<tr><td colspan="3">Factory type catalogue unavailable</td></tr>') + '</tbody></table></div>' +
+      economicSectorContextMarkup(baseline, 'fp-starting-allocation-foot') +
       '<p class="fp-starting-allocation-foot">Game-scaled simulation allocation. It is separate from currently commissioned factory assets and does not create production output by itself.</p>' +
       '</section>';
   }
