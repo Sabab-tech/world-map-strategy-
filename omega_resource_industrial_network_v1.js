@@ -1397,17 +1397,18 @@ function recipeFor(resourceId,asset={}){
   const genericRule={factoryType:'UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT',inputs:{[rid||'unknown_resource']:1},
     outputs:{[genericProduct]:0.85,PROCESSING_RESIDUE:0.15},cycleDays:2,authority:'SIMULATED_GENERIC_FALLBACK'};
   const base=downstreamRule||r||genericRule;
-  const inputSource=asset?.inputCoefficients||asset?.inputs||base.inputs||{};
+  const dynamicProcessing=String(asset?.recipeMode||'').trim().toUpperCase()==='DYNAMIC_PROCESSING';
+  const inputSource=dynamicProcessing?base.inputs:(asset?.inputCoefficients||asset?.inputs||base.inputs||{});
   const normalizedInputs={};
   for(const [key,value] of Object.entries(inputSource)){
     const id=tok(key),coefficient=num(value);
     if(id&&coefficient!==null)normalizedInputs[id]=coefficient;
   }
-  const outputs=asset?.outputProfile||asset?.outputs||base.outputs||{};
+  const outputs=dynamicProcessing?base.outputs:(asset?.outputProfile||asset?.outputs||base.outputs||{});
   const recipeAuthority=downstreamRule?(downstreamRule.recipeAuthority||'SIMULATED_GAMEPLAY_RULE'):
     r?'INDUSTRIAL_CATALOG_RULE':(asset?.outputProfile||asset?.inputs||asset?.inputCoefficients?'ASSET_PROFILE':'SIMULATED_GENERIC_FALLBACK');
   return{
-    recipeId:downstreamRule?.recipeId||asset?.recipeId||null,
+    recipeId:downstreamRule?.recipeId||(dynamicProcessing?null:asset?.recipeId||null),
     factoryType:normalizeFactoryType(asset?.factoryType||asset?.type||base.factoryType||'RESOURCE_PROCESSING_PLANT'),
     inputs:normalizedInputs,outputs:clone(outputs),cycleDays:num(asset?.cycleDays)||num(base.cycleDays)||1,
     recipeAuthority,recipeMode:asset?.recipeMode||(Object.keys(normalizedInputs).length>1?'MULTI_INPUT':'SINGLE_INPUT'),
@@ -4865,7 +4866,8 @@ function registerStartingFactoryAssets(input={}){
         existing.capacityPerDay=requirements.ratedCapacityPerDay;
         existing.capacity=requirements.ratedCapacityPerDay;
       }
-      if(!dynamicProcessing&&!existing.recipeId&&!existing.recipe?.recipeId)existing.recipeId=requirements.recipeId;
+      if(dynamicProcessing)existing.recipeMode='DYNAMIC_PROCESSING';
+      else if(!existing.recipeId&&!existing.recipe?.recipeId)existing.recipeId=requirements.recipeId;
       if(!dynamicProcessing&&!existing.inputCoefficients&&!existing.inputs&&!existing.inputProfile&&!existing.recipe?.inputs)
         existing.inputCoefficients=clone(requirements.inputsPerProductionUnit||{});
       if(!dynamicProcessing&&!existing.outputProfile&&!existing.outputCoefficients&&!existing.recipe?.outputs)
