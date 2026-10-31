@@ -357,3 +357,28 @@ test('four conservative data-gap countries receive narrowly scoped source-backed
     assert.equal(row.provenance.realWorldFacilityCounts, false, countryId);
   }
 });
+
+
+test('source-backed specialization mappings cover Costa Rica, Serbia, Lithuania and Uganda', () => {
+  const enriched=enrichCountryFactoryStartingBaseline(structuredClone(baseline),registry);
+  const expected={
+    CRI:{archetype:'Medical-device and advanced life-sciences manufacturing',types:['PHARMA_MEDICAL_SUPPLIES_PLANT']},
+    SRB:{archetype:'Automotive, metalworking, machinery and food processing',types:['STEEL_AND_ALLOY_WORKS','INDUSTRIAL_MACHINERY_MACHINE_TOOLS','VEHICLE_TRUCK_BUS_ASSEMBLY','FOOD_PROCESSING_COLD_CHAIN']},
+    LTU:{archetype:'Machinery and computer/electronics manufacturing',types:['INDUSTRIAL_MACHINERY_MACHINE_TOOLS','ELECTRONICS_SEMICONDUCTOR_FAB']},
+    UGA:{archetype:'Agro-processing, light manufacturing, pharmaceuticals and vehicle assembly',types:['FOOD_PROCESSING_COLD_CHAIN','TEXTILE_GARMENT_MILL','UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT','PETROCHEMICAL_POLYMER_PLANT','PHARMA_MEDICAL_SUPPLIES_PLANT','VEHICLE_TRUCK_BUS_ASSEMBLY']}
+  };
+  for(const [countryId,expectation] of Object.entries(expected)){
+    const row=enriched.countries[countryId];
+    assert.equal(row.industryArchetype,expectation.archetype,countryId);
+    assert.deepEqual([...row.specializations].sort(),[...expectation.types].sort(),countryId);
+    assert.equal(row.specializationEvidence.status,'SOURCE_BACKED_SIMULATION_MAPPING',countryId);
+    assert.ok(row.specializationEvidence.sources.length>=2,countryId);
+    assert.ok(row.specializationEvidence.sources.every(source=>/^https:\/\//.test(source.url)),countryId);
+    assert.ok(row.specializations.every(type=>row.factoryCounts[type]>0),countryId);
+    assert.equal(row.provenance.simulationOnly,true,countryId);
+    assert.equal(row.provenance.realWorldFacilityCounts,false,countryId);
+  }
+  assert.ok(enriched.countries.CRI.specializationEvidence.caveat.includes('medical-device'));
+  assert.ok(enriched.countries.LTU.specializationEvidence.caveat.includes('wafer fab'));
+  assert.ok(enriched.countries.UGA.specializationEvidence.caveat.includes('facility census'));
+});
