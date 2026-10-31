@@ -380,5 +380,5 @@ test('source-backed specialization mappings cover Costa Rica, Serbia, Lithuania 
   }
   assert.ok(enriched.countries.CRI.specializationEvidence.caveat.includes('medical-device'));
   assert.ok(enriched.countries.LTU.specializationEvidence.caveat.includes('wafer fab'));
-  assert.ok(enriched.countries.UGA.specializationEvidence.caveat.includes('facility census'));
+  assert.ok(enriched.countries.UGA.specializationEvidence.caveat.includes('physical facility census'));
 });

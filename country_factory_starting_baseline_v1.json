@@ -5719,7 +5719,7 @@
         "modelVersion": "OMEGA_COUNTRY_FACTORY_ALLOCATION_V2",
         "status": "REBALANCED",
         "basis": "SOURCE_BACKED_SPECIALIZATION_PLUS_MACRO",
-        "rebalancedFromUniformCounts": false,
+        "rebalancedFromUniformCounts": true,
         "comparisonStatus": "SAME_YEAR_COMPARABLE",
         "comparisonYear": 2025,
         "dominantSector": "SERVICES",
@@ -14728,7 +14728,7 @@
         "modelVersion": "OMEGA_COUNTRY_FACTORY_ALLOCATION_V2",
         "status": "REBALANCED",
         "basis": "SOURCE_BACKED_SPECIALIZATION_PLUS_MACRO",
-        "rebalancedFromUniformCounts": false,
+        "rebalancedFromUniformCounts": true,
         "comparisonStatus": "SAME_YEAR_COMPARABLE",
         "comparisonYear": 2025,
         "dominantSector": "SERVICES",
@@ -22421,7 +22421,7 @@
         "modelVersion": "OMEGA_COUNTRY_FACTORY_ALLOCATION_V2",
         "status": "REBALANCED",
         "basis": "SOURCE_BACKED_SPECIALIZATION_PLUS_MACRO",
-        "rebalancedFromUniformCounts": false,
+        "rebalancedFromUniformCounts": true,
         "comparisonStatus": "SAME_YEAR_COMPARABLE",
         "comparisonYear": 2025,
         "dominantSector": "SERVICES",
@@ -25743,7 +25743,7 @@
         "modelVersion": "OMEGA_COUNTRY_FACTORY_ALLOCATION_V2",
         "status": "REBALANCED",
         "basis": "SOURCE_BACKED_SPECIALIZATION_PLUS_MACRO",
-        "rebalancedFromUniformCounts": false,
+        "rebalancedFromUniformCounts": true,
         "comparisonStatus": "SAME_YEAR_COMPARABLE",
         "comparisonYear": 2025,
         "dominantSector": "SERVICES",
@@ -25812,7 +25812,7 @@
           }
         ],
         "confidence": "MODERATE",
-        "caveat": "The mappings represent broad light-manufacturing clusters plus evidenced pharmaceutical and vehicle production. Universal Materials is a broad mineral-processing umbrella and does not assert domestic smelting of every mineral. Policy-level manufacturing breadth is not a plant census; quantities remain game-scaled units."
+        "caveat": "The mappings represent broad light-manufacturing clusters plus evidenced pharmaceutical and vehicle production. Universal Materials is a broad mineral-processing umbrella and does not assert domestic smelting of every mineral. Policy-level manufacturing breadth is not a physical facility census; quantities remain game-scaled units."
       }
     },
     "UKR": {

@@ -169,7 +169,7 @@ test('source-backed profiles without comparable macro data use only evidenced fa
       Object.values(row.factoryCounts).reduce((sum, value) => sum + value, 0), countryId);
   }
   assert.equal(baseline.allocationModel.summary.remainingUniformProfileCount, 1);
-  assert.equal(baseline.allocationModel.summary.sourceBackedSpecializationCountryCount, 25);
+  assert.equal(baseline.allocationModel.summary.sourceBackedSpecializationCountryCount, 29);
 });
 
 
