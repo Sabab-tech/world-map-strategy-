@@ -130,7 +130,7 @@ test('canonical factory catalog, type profiles, offline icons and recipe coeffic
   for (const asset of ['./resource_industrial_catalog_v1.json', './omega_resource_industrial_network_v1.js', './omega_icon_system_v1.js']) {
     assert.ok(serviceWorker.includes(asset), 'offline shell must precache ' + asset);
   }
-  assert.ok(!serviceWorker.includes('"./omega_icon_system_v1.css"'), 'legacy icon stylesheet must not be eager-cached');
+  assert.ok(serviceWorker.includes('"./omega_icon_system_v1.css"'), 'the active SVG icon stylesheet must be cached for offline rendering');
   assert.ok(serviceWorker.includes('"./omega_ui_v2/omega-ui-v2.css"'), 'new UI stylesheet must be cached');
 
   const iconSource = readText('omega_icon_system_v1.js');
