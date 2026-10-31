@@ -523,6 +523,13 @@ function receiveMineWarehouseShipment(countryId,shipment){
   const rid=tok(shipment.resourceId),quantity=Math.max(0,num(shipment.quantity)||0);
   if(tok(batch.resourceId||batch.materialIdentity)!==rid||tok(lot.resourceId)!==rid)
     return{status:'BLOCKED',reason:'MINE_WAREHOUSE_RESOURCE_LEDGER_MISMATCH',batchId,resourceId:rid};
+  if(!(quantity>1e-9))
+    return{status:'BLOCKED',reason:'MINE_WAREHOUSE_SHIPMENT_QUANTITY_INVALID',batchId,quantity};
+  const sourceRemaining=Math.max(0,num(batch.remainingQuantity!=null?batch.remainingQuantity:batch.quantity)||0);
+  const lotRemaining=Math.max(0,num(lot.remainingQuantity!=null?lot.remainingQuantity:lot.quantity)||0);
+  if(sourceRemaining+1e-6<quantity||lotRemaining+1e-6<quantity)
+    return{status:'BLOCKED',reason:'MINE_WAREHOUSE_SOURCE_BATCH_OR_LOT_QUANTITY_MISMATCH',
+      batchId,quantity,sourceRemaining,lotRemaining};
   if(!rs.inventory||typeof rs.inventory!=='object')rs.inventory={};
   if(!w.availableByResource||typeof w.availableByResource!=='object')w.availableByResource={};
   const inventoryKey=quantityObjectKey(rs.inventory,rid)||rid,warehouseKey=quantityObjectKey(w.availableByResource,rid)||rid;
