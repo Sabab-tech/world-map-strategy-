@@ -1233,7 +1233,8 @@ console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');
       'the starting universal factory must finish its dated production cycle');
     assert.ok(Number(resourceState.inventory.IRON_CONCENTRATE)>0,
       'finished processing output must be credited to the country resource inventory');
-    assert.equal(universal.productionHealth.status,'READY');
+    assert.equal(universal.productionHealth.status,'REDUCED',
+      'a cycle below rated daily capacity must retain its reduced-output status');
     assert.ok(N.candidateFactories('BGD','cotton_fibre').filter(row=>row.asset.factoryType==='TEXTILE_GARMENT_MILL').length===2,
       'the commissioned textile assets must be eligible for their canonical input recipe');
 
