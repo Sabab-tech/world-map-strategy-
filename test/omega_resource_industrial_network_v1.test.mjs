@@ -1049,3 +1049,92 @@ console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');
     'a missing distance on an explicitly multi-leg route must not silently become zero kilometres');
   console.log('OMEGA EXPLICIT ROUTE DISTANCE COMPLETENESS REGRESSION PASSED');
 }
+
+
+// A temporary warehouse-ledger mismatch must not strand a mine haul forever.
+// The failed receipt is retried at most once per game turn and remains idempotent.
+{
+  const countryId='TST';
+  const batchId='BATCH-TST-LEDGER-RECOVERY';
+  const priorSimulation=context.Game.state.simulation;
+  const priorOmegaSimulation=context.Omega.Simulation;
+  const priorCountryState=context.Game.state.resource[countryId];
+  try {
+    context.Game.state.simulation={
+      turn:100,startYear:2025,date:'2025-01-01',daysPerTurn:1,
+      playerCountryId:countryId,session:{playerCountryId:countryId}
+    };
+    context.Omega.Simulation={clock:{turn:100,stepDurationMs:86400000}};
+    const sourceBatch={
+      batchId,resourceId:'iron_ore',materialIdentity:'iron_ore',
+      quantity:100,remainingQuantity:100,unit:'TONNES',stage:'RAW_EXTRACTED',
+      countryId,sourceCountryId:countryId,originCountryId:countryId,
+      ownerCountryCode:countryId,destinationCountryId:countryId,
+      siteReferenceKey:'SITE_TST_LEDGER_RECOVERY',
+      warehouseId:'WH-'+countryId+'-RAW',
+      provenance:{sourceAuthority:'TEST_FIXTURE'}
+    };
+    const shipment={
+      shipmentId:'MINEHAUL:'+countryId+':LEDGER-RECOVERY',
+      shipmentType:'MINE_TO_WAREHOUSE',countryId,
+      siteId:'SITE_TST_LEDGER_RECOVERY',resourceId:'iron_ore',
+      batchId,quantity:100,unit:'TONNES',
+      warehouseId:'WH-'+countryId+'-RAW',status:'IN_TRANSIT',
+      etaTurn:100,route:{legs:[]}
+    };
+    const countryState={
+      inventory:{iron_ore:0},batches:[sourceBatch],inventoryLots:{},
+      warehouse:{
+        warehouseId:'WH-'+countryId+'-RAW',countryId,
+        availableByResource:{iron_ore:0},reservedByResource:{iron_ore:0},
+        storedBatchIds:[],receipts:[]
+      },
+      industrialNetwork:{shipments:[shipment],deliveries:[],siteFlowLedger:[]}
+    };
+    context.Game.state.resource[countryId]=countryState;
+
+    N.advanceShipments(countryId);
+    assert.equal(shipment.status,'BLOCKED_LEDGER_MISMATCH',
+      'a receipt without its matching inventory lot must be blocked, not credited');
+    assert.equal(shipment.lastDeliveryAttemptTurn,100);
+    assert.equal(shipment.deliveryAttemptCount,1);
+    assert.equal(countryState.warehouse.receipts.length,0);
+    const blockedDiagnostics=N.gameplayPipelineDiagnostics(countryId);
+    assert.equal(blockedDiagnostics.blocked,1,
+      'shipment-level ledger failures must be included in pipeline diagnostics');
+    assert.equal(blockedDiagnostics.perCountry[0].blockedShipments.length,1);
+    assert.equal(blockedDiagnostics.perCountry[0].blockedShipments[0].shipmentId,shipment.shipmentId);
+
+    // Repair the authoritative lot during the same turn. Repeated callbacks must
+    // not re-run the failed receipt until the next game turn.
+    countryState.inventoryLots[batchId]={...sourceBatch,status:'AVAILABLE'};
+    N.advanceShipments(countryId);
+    assert.equal(shipment.status,'BLOCKED_LEDGER_MISMATCH',
+      'a blocked shipment is attempted only once in a simulation turn');
+    assert.equal(countryState.warehouse.receipts.length,0);
+
+    context.Game.state.simulation.turn=101;
+    context.Omega.Simulation.clock.turn=101;
+    const recovery=N.advanceShipments(countryId);
+    assert.equal(shipment.status,'DELIVERED',JSON.stringify(recovery));
+    assert.equal(shipment.deliveryRetryCount,1);
+    assert.equal(shipment.deliveryAttemptCount,2);
+    assert.equal(recovery.mineDelivered,1);
+    assert.equal(countryState.warehouse.receipts.length,1);
+    assert.equal(countryState.warehouse.availableByResource.iron_ore,100);
+    assert.equal(countryState.inventory.iron_ore,100);
+
+    // A repeated turn callback cannot duplicate the receipt or the raw-stock credit.
+    N.advanceShipments(countryId);
+    assert.equal(countryState.warehouse.receipts.length,1);
+    assert.equal(countryState.warehouse.availableByResource.iron_ore,100);
+    assert.equal(countryState.inventory.iron_ore,100);
+    assert.equal(N.gameplayPipelineDiagnostics(countryId).blocked,0);
+    console.log('OMEGA MINE-TO-WAREHOUSE LEDGER RECOVERY REGRESSION PASSED');
+  } finally {
+    context.Game.state.simulation=priorSimulation;
+    context.Omega.Simulation=priorOmegaSimulation;
+    if(priorCountryState===undefined)delete context.Game.state.resource[countryId];
+    else context.Game.state.resource[countryId]=priorCountryState;
+  }
+}
