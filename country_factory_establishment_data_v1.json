@@ -7,7 +7,7 @@
     "countryCount": 197,
     "factoryTypeCount": 21,
     "recordCount": 4137,
-    "collectionStatus": "COMPLETED",
+    "collectionStatus": "SOURCE_UNAVAILABLE",
     "provider": "UNIDO",
     "database": "INDSTAT Revision 4",
     "indicator": "Establishments",
@@ -30,8 +30,10 @@
       "SOURCE_UNAVAILABLE": 127,
       "COUNTRY_NOT_COVERED": 70
     },
-    "note": "REPORTED means every mapped ISIC activity was reported for one year. PARTIAL is not a full total. Missing values are not zero.",
-    "sourceDatasetName": "INDSTAT 2026, ISIC Revision 4"
+    "note": "The 197-country × 21-type input matrix is complete, but the direct UNIDO source retrieval returned zero usable observations in the latest attempt. All 4,136 mapped factory-type slots remain SOURCE_UNAVAILABLE and one umbrella type is NOT_COMPARABLE. No real-world count has been inferred or set to zero.",
+    "sourceDatasetName": "INDSTAT 2026, ISIC Revision 4",
+    "sourceAccessStatus": "NO_PARSEABLE_COUNTRY_RESPONSES",
+    "sourceError": "The 2026-10-30 UNIDO INDSTAT direct API refresh found 127 OMEGA core countries in the source metadata but returned zero usable country-level establishment observations. This records the observed result; the exact HTTP cause was not captured."
   },
   "countries": {
     "AFG": {

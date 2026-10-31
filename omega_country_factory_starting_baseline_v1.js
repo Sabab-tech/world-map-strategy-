@@ -178,6 +178,13 @@
     }
     var allowed = ['NOT_QUERIED','REPORTED','PARTIAL','NOT_REPORTED','NOT_COMPARABLE',
       'MAPPING_UNAVAILABLE','COUNTRY_NOT_COVERED','SOURCE_UNAVAILABLE'];
+    var collectionStatus = text(data.metadata.collectionStatus);
+    var allowedCollectionStatuses = ['NOT_QUERIED','COMPLETED','COMPLETED_WITH_GAPS','SOURCE_UNAVAILABLE','OBSERVATIONS_IMPORTED_NO_COMPLETE_FACTORY_TOTALS'];
+    if (allowedCollectionStatuses.indexOf(collectionStatus) < 0) throw new Error('COUNTRY_FACTORY_ESTABLISHMENT_COLLECTION_STATUS_INVALID');
+    if (collectionStatus === 'COMPLETED' && (!(Number(data.metadata.fetchedCoreCountryCount) > 0) ||
+        Number(data.metadata.reportedRecordCount || 0) + Number(data.metadata.partialRecordCount || 0) < 1)) {
+      throw new Error('COUNTRY_FACTORY_ESTABLISHMENT_FALSE_COMPLETION_STATUS');
+    }
     var ids = Object.keys(data.countries).sort(), reported = 0, partial = 0;
     if (ids.join('|') !== loaded.countryIds.join('|')) throw new Error('COUNTRY_FACTORY_ESTABLISHMENT_COUNTRY_ROSTER_MISMATCH');
     ids.forEach(function (countryId) {

@@ -10,6 +10,9 @@ on:
       - main
     paths:
       - ".github/workflows/omega-country-general-data-registry.yml"
+      - "country_factory_starting_baseline_v1.json"
+      - "scripts/enrich_country_factory_starting_baseline_v1.mjs"
+      - "test/country_factory_starting_baseline_alignment_v1.test.mjs"
       - "country-ios.js"
       - "ministry_engine.js"
       - "test/omega_ministry_country_details_runtime.test.mjs"
@@ -91,6 +94,9 @@ jobs:
       - name: Build canonical country sector profiles
         run: node scripts/build_country_sector_profiles_v1.mjs
 
+      - name: Regenerate source-aligned factory profiles for every country
+        run: node scripts/enrich_country_factory_starting_baseline_v1.mjs
+
       - name: Validate shared schema, source preservation and coverage accounting
         run: |
           node --check omega_country_data_gateway_v1.js
@@ -108,13 +114,16 @@ jobs:
           node test/omega_opponent_e2e_runtime.test.mjs
           node --check scripts/build_country_sector_profiles_v1.mjs
           node --test test/country_sector_profiles_v1.test.mjs test/omega_country_sector_profile_ui_v1.test.mjs
+          node --check scripts/enrich_country_factory_starting_baseline_v1.mjs
+          node --test test/country_factory_starting_baseline_alignment_v1.test.mjs
+          node scripts/enrich_country_factory_starting_baseline_v1.mjs --check
 
       - name: Commit canonical country data artifacts only if changed
         if: ${{ github.ref == 'refs/heads/main' && github.event_name != 'pull_request' }}
         shell: bash
         run: |
           set -euo pipefail
-          git add -f country_general_data_registry_v1.json country_sector_profiles_v1.json
+          git add -f country_general_data_registry_v1.json country_sector_profiles_v1.json country_factory_starting_baseline_v1.json
           if git diff --cached --quiet; then
             echo "Country data artifacts unchanged; no generated data commit required."
             exit 0

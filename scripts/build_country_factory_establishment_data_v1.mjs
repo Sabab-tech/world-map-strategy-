@@ -84,6 +84,237 @@ export function extractEstablishmentObservations(payload,allowedCodes){
   walk(payload);
   return [...out.values()];
 }
+
+function normalizeSubsetCountryCode(value) {
+  var code = text(value).toUpperCase();
+  if (!code) return '';
+  return /^\d+$/.test(code) ? code.padStart(3, '0') : code;
+}
+export function normalizeSubsetCountryName(value) {
+  return text(value).toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+}
+
+export function extractSubsetActivityCode(row, allowedCodes) {
+  var standardCode = text(row && row.classification_code);
+  var combinationCode = text(row && row.classification_combo_code);
+  // UNIDO may store one aggregate observation against a custom ISIC combination
+  // (e.g. 1010C) while listing several underlying standard activity codes.
+  // It cannot be allocated to one underlying activity without the official
+  // concordance, so accept only identity mappings with identical codes.
+  if (standardCode && combinationCode && standardCode !== combinationCode) return null;
+  var candidate = standardCode || combinationCode;
+  return allowedCodes.has(candidate) ? candidate : null;
+}
+export function extractSubsetEstablishmentObservations(rows, allowedCodes) {
+  if (!Array.isArray(rows)) throw new Error('SUBSETS_SOURCE_ROWS_INVALID');
+  var output = [];
+  rows.forEach(function (row) {
+    if (!isObject(row)) return;
+    var indicator = text(row.indicator_code || row.indicatorCode || '');
+    if (indicator && indicator !== '01') return;
+    var activityCode = extractSubsetActivityCode(row, allowedCodes);
+    var year = Number(row.year || row.time_period || row.timePeriod);
+    if (row.value === null || row.value === undefined || text(row.value) === '') return;
+    var value = Number(row.value);
+    var countryCode = normalizeSubsetCountryCode(row.country_code || row.countryCode);
+    if (!activityCode || !countryCode || !Number.isInteger(year) ||
+        !Number.isInteger(value) || value < 0) return;
+    output.push({
+      countryCode: countryCode,
+      activityCode: activityCode,
+      year: year,
+      value: value,
+      countryName: text(row.country_name || row.countryName || ''),
+      activityName: text(row.classification_combo_name || row.classification_name || '')
+    });
+  });
+  return output;
+}
+async function buildDatasetFromSubsetJson(sourcePath) {
+  if (!sourcePath) throw new Error('SUBSETS_JSON_PATH_REQUIRED');
+  var baseline = readJson(BASE);
+  var catalog = readJson(CATALOG);
+  var mapping = readJson(MAPPING);
+  var previous = existsSync(OUTPUT) ? readJson(OUTPUT) : null;
+  if (baseline.countryCount !== 197 || Object.keys(baseline.countries).length !== 197 ||
+      Object.keys(catalog.factoryProfiles).length !== 21 || mapping.mappings.length !== 21) {
+    throw new Error('EXPECTED_197_COUNTRY_21_FACTORY_MATRIX');
+  }
+  var payload = readJson(resolve(sourcePath));
+  var rawRows = Array.isArray(payload) ? payload : (Array.isArray(payload.rows) ? payload.rows : null);
+  if (!rawRows) throw new Error('SUBSETS_EXPORT_ROWS_MISSING');
+  var dataset = initialDataset(baseline, catalog, mapping);
+  var factoryIds = Object.keys(catalog.factoryProfiles).sort();
+  var countryRows = Object.values(baseline.countries).sort(function (a, b) { return a.countryId.localeCompare(b.countryId); });
+  var mappingByType = Object.fromEntries(mapping.mappings.map(function (row) { return [row.factoryType, row]; }));
+  var previousCountries = previous && previous.countries || {};
+  var countryBySourceCode = Object.create(null);
+  var countryByIso3 = Object.create(null);
+  var countryByName = Object.create(null);
+  countryRows.forEach(function (country) {
+    var old = previousCountries[country.countryId] || {};
+    var sourceCode = normalizeSubsetCountryCode(old.sourceCountryCode);
+    var sourceName = old.sourceCountryName || country.countryName;
+    if (sourceCode) countryBySourceCode[sourceCode] = country.countryId;
+    countryByIso3[country.countryId] = country.countryId;
+    var normalizedSourceName = normalizeSubsetCountryName(sourceName);
+    var normalizedCountryName = normalizeSubsetCountryName(country.countryName);
+    if (normalizedSourceName) countryByName[normalizedSourceName] = country.countryId;
+    if (normalizedCountryName) countryByName[normalizedCountryName] = country.countryId;
+    dataset.countries[country.countryId].sourceCountryCode = sourceCode || null;
+    dataset.countries[country.countryId].sourceCountryName = old.sourceCountryName || null;
+  });
+  if (!Object.keys(countryBySourceCode).length && !Object.keys(countryByIso3).length) {
+    throw new Error('UNIDO_COUNTRY_CODE_MAP_MISSING');
+  }
+  var allCodes = new Set(mapping.mappings.reduce(function (all, row) { return all.concat(row.activityCodes || []); }, []));
+  var combinedClassificationRows = rawRows.filter(function (row) {
+    var standardCode = text(row && row.classification_code);
+    var combinationCode = text(row && row.classification_combo_code);
+    return !!(standardCode && combinationCode && standardCode !== combinationCode);
+  }).length;
+  var observations = extractSubsetEstablishmentObservations(rawRows, allCodes);
+  if (!observations.length) {
+    var preview = rawRows.slice(0, 8).map(function (row) {
+      return {
+        country_code: row.country_code,
+        indicator_code: row.indicator_code,
+        classification_code: row.classification_code,
+        classification_combo_code: row.classification_combo_code,
+        classification_name: row.classification_name,
+        classification_combo_name: row.classification_combo_name,
+        year: row.year,
+        value: row.value
+      };
+    });
+    throw new Error('SUBSETS_SOURCE_HAS_NO_MATCHING_ISIC4_ROWS:' + JSON.stringify(preview));
+  }
+  var observationsByCountry = Object.create(null);
+  var sourceCountryNames = Object.create(null);
+  var mirrorCountryCodes = new Set();
+  observations.forEach(function (row) {
+    mirrorCountryCodes.add(row.countryCode);
+    var countryId = countryBySourceCode[row.countryCode] ||
+      countryByIso3[row.countryCode] ||
+      countryByName[normalizeSubsetCountryName(row.countryName)];
+    if (!countryId) return;
+    var bucket = observationsByCountry[countryId] || (observationsByCountry[countryId] = []);
+    bucket.push({ activityCode: row.activityCode, year: row.year, value: row.value });
+    if (row.countryName) sourceCountryNames[countryId] = row.countryName;
+    if (!dataset.countries[countryId].sourceCountryCode) {
+      dataset.countries[countryId].sourceCountryCode = row.countryCode;
+    }
+  });
+  var observedCountryCount = 0;
+  var reportedCount = 0;
+  var partialCount = 0;
+  var latestYears = [];
+  var resultSummary = {};
+  countryRows.forEach(function (country) {
+    var target = dataset.countries[country.countryId];
+    var sourceCode = target.sourceCountryCode;
+    var countryObservations = observationsByCountry[country.countryId] || [];
+    if (!sourceCode) {
+      target.countryStatus = 'COUNTRY_NOT_COVERED';
+      factoryIds.forEach(function (type) {
+        var codes = mappingByType[type].activityCodes || [];
+        target.factoryEstablishments[type] = blank(codes.length ? 'COUNTRY_NOT_COVERED' : 'NOT_COMPARABLE', codes);
+      });
+      return;
+    }
+    if (sourceCountryNames[country.countryId]) target.sourceCountryName = sourceCountryNames[country.countryId];
+    if (countryObservations.length) {
+      observedCountryCount += 1;
+      target.countryStatus = 'OBSERVATIONS_AVAILABLE';
+      target.latestReferenceYear = Math.max.apply(null, countryObservations.map(function (row) { return row.year; }));
+      latestYears.push(target.latestReferenceYear);
+    } else {
+      target.countryStatus = 'NO_ESTABLISHMENT_OBSERVATIONS';
+    }
+    factoryIds.forEach(function (type) {
+      var oldRecord = previousCountries[country.countryId] &&
+        previousCountries[country.countryId].factoryEstablishments &&
+        previousCountries[country.countryId].factoryEstablishments[type];
+      var next = aggregate(mappingByType[type], countryObservations, allCodes, true);
+      if (next.status === 'NOT_REPORTED' && oldRecord &&
+          ['REPORTED','PARTIAL','MAPPING_UNAVAILABLE','NOT_REPORTED'].includes(oldRecord.status)) {
+        target.factoryEstablishments[type] = oldRecord;
+      } else {
+        target.factoryEstablishments[type] = next;
+      }
+    });
+  });
+  if (!observedCountryCount) {
+    throw new Error('SUBSETS_ROWS_DID_NOT_MATCH_ANY_CORE_COUNTRY_CODE_OR_NAME');
+  }
+  var allRecords = Object.values(dataset.countries).reduce(function (all, country) {
+    return all.concat(Object.values(country.factoryEstablishments));
+  }, []);
+  reportedCount = allRecords.filter(function (row) { return row.status === 'REPORTED'; }).length;
+  partialCount = allRecords.filter(function (row) { return row.status === 'PARTIAL'; }).length;
+  var coveredCoreCountryCount = countryRows.filter(function (country) {
+    return !!dataset.countries[country.countryId].sourceCountryCode;
+  }).length;
+  var mirrorMetadata = isObject(payload.metadata) ? payload.metadata : {};
+  var sourceUpdatedAt = text(mirrorMetadata.updated_at || mirrorMetadata.updatedAt || mirrorMetadata.last_updated || '');
+  var sourceLicense = text(mirrorMetadata.license || 'CC BY 4.0');
+  var sourceUrl = text(mirrorMetadata.source_url || 'https://stat.unido.org/data/table?dataset=indstat&revision=4');
+  var collectionStatus = observations.length
+    ? (reportedCount || partialCount ? 'COMPLETED_WITH_GAPS' : 'OBSERVATIONS_IMPORTED_NO_COMPLETE_FACTORY_TOTALS')
+    : 'SOURCE_UNAVAILABLE';
+  var combinedRowsExcluded = Number(mirrorMetadata.excluded_combined_activity_rows) || combinedClassificationRows;
+  var sourceAvailableCountryCount = Number(previous && previous.metadata && previous.metadata.availableCountryCount) || mirrorCountryCodes.size;
+  if (!observations.length) throw new Error('SUBSETS_DATA_IMPORT_EMPTY_AFTER_VALIDATION');
+  dataset.metadata = Object.assign({}, dataset.metadata, {
+    collectionStatus: collectionStatus,
+    sourceDatasetId: 'unido-indstat-r4',
+    sourceDatasetName: 'UNIDO INDSTAT Revision 4 · mirrored by Subsets.io',
+    sourceProductionYear: '2026',
+    sourceUpdatedAt: sourceUpdatedAt || 'See Subsets.io dataset metadata',
+    retrievedAt: new Date().toISOString(),
+    availableCountryCount: sourceAvailableCountryCount,
+    mirrorObservedCountryCount: mirrorCountryCodes.size,
+    combinedClassificationRowsExcluded: combinedRowsExcluded,
+    coveredCoreCountryCount: coveredCoreCountryCount,
+    fetchedCoreCountryCount: observedCountryCount,
+    reportedRecordCount: reportedCount,
+    partialRecordCount: partialCount,
+    latestReferenceYear: latestYears.length ? Math.max.apply(null, latestYears) : null,
+    responseSummary: {
+      OBSERVATIONS_AVAILABLE: observedCountryCount,
+      NO_ESTABLISHMENT_OBSERVATIONS: coveredCoreCountryCount - observedCountryCount,
+      COUNTRY_NOT_COVERED: 197 - coveredCoreCountryCount
+    },
+    mirrorProvider: 'Subsets.io',
+    mirrorDatasetId: 'unido-indstat-r4',
+    mirrorLicense: sourceLicense,
+    mirrorSourceUrl: 'https://subsets.io/datasets/unido-indstat-r4',
+    originalSourceProvider: 'United Nations Industrial Development Organization',
+    originalSourceUrl: sourceUrl,
+    activityCodeRowsImported: observations.length,
+    classificationCodeField: 'classification_code, accepted only when classification_combo_code is identical',
+    sourceError: null,
+    note: 'Establishment counts are official UNIDO statistical establishment observations mirrored via Subsets.io. An establishment is not guaranteed to equal one physical factory site. Complete OMEGA type totals require every mapped ISIC activity in one year; partial sums stay separate and missing values are never zero.'
+  });
+  writeFileSync(OUTPUT, JSON.stringify(dataset, null, 2) + '\n');
+  var result = {
+    updated: true,
+    countryCount: 197,
+    factoryTypeCount: 21,
+    recordCount: 4137,
+    rawSourceRows: rawRows.length,
+    parsedEstablishmentRows: observations.length,
+    coveredCoreCountryCount: coveredCoreCountryCount,
+    observedCountryCount: observedCountryCount,
+    reportedRecordCount: reportedCount,
+    partialRecordCount: partialCount,
+    latestReferenceYear: dataset.metadata.latestReferenceYear,
+    collectionStatus: collectionStatus
+  };
+  console.log(JSON.stringify(result, null, 2));
+  return { updated: true, dataset: dataset, summary: result };
+}
+
 function blank(status,codes){return {status,establishmentCount:null,referenceYear:null,partialEstablishmentCount:null,sourceActivityCodes:codes,reportedActivityCodes:[],missingActivityCodes:codes.slice()};}
 function initialDataset(baseline,catalog,mapping){
   const types=Object.keys(catalog.factoryProfiles).sort(),rows=Object.values(baseline.countries).sort((a,b)=>a.countryId.localeCompare(b.countryId));
@@ -163,9 +394,38 @@ export async function buildDataset(){
     }
   });
   const all=Object.values(dataset.countries).flatMap(c=>Object.values(c.factoryEstablishments)),reported=all.filter(r=>r.status==='REPORTED'),partial=all.filter(r=>r.status==='PARTIAL'),years=Object.values(dataset.countries).map(c=>c.latestReferenceYear).filter(Number.isInteger);
-  dataset.metadata={...dataset.metadata,collectionStatus:'COMPLETED',sourceDatasetId:datasetId,sourceDatasetName:text(meta.name||'INDSTAT Revision 4'),sourceProductionYear:text(meta.production_year||''),sourceUpdatedAt:text(meta.dat_ins||''),availableCountryCount:countries.length,coveredCoreCountryCount:rows.filter(c=>countryByIso3.has(c.countryId)).length,fetchedCoreCountryCount:countryResults.filter(c=>c.observations>0).length,reportedRecordCount:reported.length,partialRecordCount:partial.length,latestReferenceYear:years.length?Math.max(...years):null,retrievedAt:new Date().toISOString(),responseSummary:countryResults.reduce((a,r)=>(a[r.status]=(a[r.status]||0)+1,a),{})};
+  var fetchedCoreCountryCount = countryResults.filter(function (row) { return row.observations > 0; }).length;
+  var collectionStatus = fetchedCoreCountryCount === 0
+    ? 'SOURCE_UNAVAILABLE'
+    : (reported.length || partial.length ? 'COMPLETED_WITH_GAPS' : 'OBSERVATIONS_IMPORTED_NO_COMPLETE_FACTORY_TOTALS');
+  dataset.metadata=Object.assign({},dataset.metadata,{
+    collectionStatus:collectionStatus,
+    sourceDatasetId:datasetId,
+    sourceDatasetName:text(meta.name||'INDSTAT Revision 4'),
+    sourceProductionYear:text(meta.production_year||''),
+    sourceUpdatedAt:text(meta.dat_ins||''),
+    availableCountryCount:countries.length,
+    coveredCoreCountryCount:rows.filter(function (country) { return countryByIso3.has(country.countryId); }).length,
+    fetchedCoreCountryCount:fetchedCoreCountryCount,
+    reportedRecordCount:reported.length,
+    partialRecordCount:partial.length,
+    latestReferenceYear:years.length?Math.max.apply(null,years):null,
+    retrievedAt:new Date().toISOString(),
+    responseSummary:countryResults.reduce(function (a,r) { a[r.status]=(a[r.status]||0)+1; return a; },{}),
+    sourceError:fetchedCoreCountryCount===0?'NO_PARSEABLE_COUNTRY_ESTABLISHMENT_OBSERVATIONS':null,
+    combinedClassificationRowsExcluded:combinedClassificationRows
+  });
   writeFileSync(OUTPUT,JSON.stringify(dataset,null,2)+'\n');
   console.log(JSON.stringify({updated:true,countryCount:197,factoryTypeCount:21,recordCount:4137,sourceCountryCount:dataset.metadata.availableCountryCount,coveredCoreCountryCount:dataset.metadata.coveredCoreCountryCount,fetchedCoreCountryCount:dataset.metadata.fetchedCoreCountryCount,reportedRecordCount:reported.length,partialRecordCount:partial.length,responseSummary:dataset.metadata.responseSummary},null,2));
   return {updated:true,dataset};
 }
-if(process.argv[1]&&pathToFileURL(resolve(process.argv[1])).href===import.meta.url)buildDataset().catch(e=>{console.error(e.stack||e);process.exitCode=1;});
+if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url) {
+  var subsetArg = process.argv.indexOf('--subsets-json');
+  var run = subsetArg >= 0
+    ? buildDatasetFromSubsetJson(process.argv[subsetArg + 1])
+    : buildDataset();
+  run.catch(function (error) {
+    console.error(error.stack || error);
+    process.exitCode = 1;
+  });
+}
