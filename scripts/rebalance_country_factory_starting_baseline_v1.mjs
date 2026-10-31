@@ -259,13 +259,17 @@ function allocateUniformProfile(row, ids) {
     }
   }
 
+  const allocationChanged = ids.some((id) => nextCounts[id] !== oldCounts[id]);
   row.factoryCounts = nextCounts;
   const basis = specializations.length
     ? (sourceBacked ? 'SOURCE_BACKED_SPECIALIZATION_PLUS_MACRO' : 'GAME_MODELLED_SPECIALIZATION_PLUS_MACRO')
     : 'SAME_YEAR_MACRO_SECTOR_ONLY';
+  const allocationStatus = allocationChanged ? 'REBALANCED' : 'CONSTRAINED_UNCHANGED';
+  const allocationNote = allocationChanged
+    ? 'Reallocated the existing game-unit budget by comparable macro-sector weights and the existing specialization map; no units were added.'
+    : 'The existing specialization set consumes every available starting unit. Counts are intentionally left at one per required specialization rather than dropping a required category.';
   row.allocationDiagnostics = makeDiagnostics(
-    row, selectedIds, basis, 'REBALANCED', true,
-    'Reallocated the existing game-unit budget by comparable macro-sector weights and the existing specialization map; no units were added.'
+    row, selectedIds, basis, allocationStatus, allocationChanged, allocationNote
   );
   return row;
 }
@@ -286,9 +290,15 @@ function summarize(baseline) {
   return {
     coreCountryCount: rows.length,
     factoryTypeCount: baseline.factoryTypes.length,
-    rebalancedUniformProfileCount: (basisCounts.SAME_YEAR_MACRO_SECTOR_ONLY || 0) +
+    evaluatedUniformProfileCount: (basisCounts.SAME_YEAR_MACRO_SECTOR_ONLY || 0) +
       (basisCounts.GAME_MODELLED_SPECIALIZATION_PLUS_MACRO || 0) +
       (basisCounts.SOURCE_BACKED_SPECIALIZATION_PLUS_MACRO || 0),
+    changedUniformDistributionCount: rows.filter((row) =>
+      row.allocationDiagnostics && row.allocationDiagnostics.rebalancedFromUniformCounts === true
+    ).length,
+    constrainedUnitBudgetCount: rows.filter((row) =>
+      row.allocationDiagnostics && row.allocationDiagnostics.status === 'CONSTRAINED_UNCHANGED'
+    ).length,
     preservedExistingDistributionCount: basisCounts.PRESERVED_EXISTING_DISTRIBUTION || 0,
     conservativeDataGapCount: basisCounts.CONSERVATIVE_EXISTING_PROFILE || 0,
     macroOnlyCount: basisCounts.SAME_YEAR_MACRO_SECTOR_ONLY || 0,
@@ -383,7 +393,8 @@ function run() {
       throw new Error('FACTORY_ALLOCATION_NOT_IDEMPOTENT');
     }
     process.stdout.write('Factory allocation V2 verified: ' +
-      summary.rebalancedUniformProfileCount + ' uniform profiles rebalanced; ' +
+      summary.changedUniformDistributionCount + ' allocations changed across ' +
+      summary.evaluatedUniformProfileCount + ' eligible profiles; ' +
       summary.preservedExistingDistributionCount + ' existing distributions preserved; ' +
       summary.conservativeDataGapCount + ' data-gap profiles retained; ' +
       summary.remainingUniformProfileCount + ' profiles remain uniform under constraints.\n');
@@ -393,8 +404,9 @@ function run() {
   validateOutput(updated);
   fs.writeFileSync(BASELINE_PATH, JSON.stringify(updated, null, 2) + '\n', 'utf8');
   process.stdout.write('Factory allocation V2 written: ' +
-    updated.allocationModel.summary.rebalancedUniformProfileCount +
-    ' uniform profiles rebalanced with fixed per-country totals.\n');
+    updated.allocationModel.summary.changedUniformDistributionCount +
+    ' distributions changed; ' + updated.allocationModel.summary.constrainedUnitBudgetCount +
+    ' profiles are unchanged due to their full specialization budget.\n');
 }
 
 const isMain = process.argv[1] &&

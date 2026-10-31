@@ -12101,9 +12101,9 @@
       "allocationDiagnostics": {
         "schemaVersion": "1.0.0",
         "modelVersion": "OMEGA_COUNTRY_FACTORY_ALLOCATION_V2",
-        "status": "REBALANCED",
+        "status": "CONSTRAINED_UNCHANGED",
         "basis": "SOURCE_BACKED_SPECIALIZATION_PLUS_MACRO",
-        "rebalancedFromUniformCounts": true,
+        "rebalancedFromUniformCounts": false,
         "comparisonStatus": "SAME_YEAR_COMPARABLE",
         "comparisonYear": 2025,
         "dominantSector": "SERVICES",
@@ -12121,7 +12121,7 @@
           "GRID_EQUIPMENT_FACTORY",
           "PHARMA_MEDICAL_SUPPLIES_PLANT"
         ],
-        "note": "Reallocated the existing game-unit budget by comparable macro-sector weights and the existing specialization map; no units were added."
+        "note": "The existing specialization set consumes every available starting unit. Counts are intentionally left at one per required specialization rather than dropping a required category."
       }
     },
     "JPN": {
@@ -21778,9 +21778,9 @@
       "allocationDiagnostics": {
         "schemaVersion": "1.0.0",
         "modelVersion": "OMEGA_COUNTRY_FACTORY_ALLOCATION_V2",
-        "status": "REBALANCED",
+        "status": "CONSTRAINED_UNCHANGED",
         "basis": "SOURCE_BACKED_SPECIALIZATION_PLUS_MACRO",
-        "rebalancedFromUniformCounts": true,
+        "rebalancedFromUniformCounts": false,
         "comparisonStatus": "SAME_YEAR_COMPARABLE",
         "comparisonYear": 2023,
         "dominantSector": "SERVICES",
@@ -21794,7 +21794,7 @@
           "INDUSTRIAL_MACHINERY_MACHINE_TOOLS",
           "ELECTRONICS_SEMICONDUCTOR_FAB"
         ],
-        "note": "Reallocated the existing game-unit budget by comparable macro-sector weights and the existing specialization map; no units were added."
+        "note": "The existing specialization set consumes every available starting unit. Counts are intentionally left at one per required specialization rather than dropping a required category."
       }
     },
     "SOM": {
@@ -23092,9 +23092,9 @@
       "allocationDiagnostics": {
         "schemaVersion": "1.0.0",
         "modelVersion": "OMEGA_COUNTRY_FACTORY_ALLOCATION_V2",
-        "status": "REBALANCED",
+        "status": "CONSTRAINED_UNCHANGED",
         "basis": "SOURCE_BACKED_SPECIALIZATION_PLUS_MACRO",
-        "rebalancedFromUniformCounts": true,
+        "rebalancedFromUniformCounts": false,
         "comparisonStatus": "SAME_YEAR_COMPARABLE",
         "comparisonYear": 2025,
         "dominantSector": "SERVICES",
@@ -23109,7 +23109,7 @@
           "FOOD_PROCESSING_COLD_CHAIN",
           "TEXTILE_GARMENT_MILL"
         ],
-        "note": "Reallocated the existing game-unit budget by comparable macro-sector weights and the existing specialization map; no units were added."
+        "note": "The existing specialization set consumes every available starting unit. Counts are intentionally left at one per required specialization rather than dropping a required category."
       }
     },
     "SYC": {
@@ -27286,7 +27286,9 @@
     "summary": {
       "coreCountryCount": 197,
       "factoryTypeCount": 21,
-      "rebalancedUniformProfileCount": 143,
+      "evaluatedUniformProfileCount": 143,
+      "changedUniformDistributionCount": 140,
+      "constrainedUnitBudgetCount": 3,
       "preservedExistingDistributionCount": 49,
       "conservativeDataGapCount": 5,
       "macroOnlyCount": 96,

@@ -65,11 +65,11 @@ Existing specializations multiply the corresponding category weight by 2.5 for g
 
 ## Expected coverage on the current baseline
 
-- 143 previously uniform profiles are rebalanced.
+- 143 previously uniform profiles are evaluated by the allocation model; 140 have a changed numeric distribution.
 - 49 already differentiated country distributions are preserved.
 - 5 profiles with neither comparable macro data nor an existing specialization retain their former distribution.
-- 3 further profiles remain all-one because the existing specialization set uses every available unit in a very small national budget. Their categories are not discarded just to force a count above one.
-- The remaining uniform profiles are therefore documented constraints, not silently fabricated data.
+- 3 further profiles are evaluated but remain all-one because their existing specialization set uses every available starting unit. Their categories are not discarded just to force a count above one.
+- 5 profiles with data gaps remain untouched; the remaining 8 uniform profiles are therefore documented constraints, not silently fabricated data.
 
 ## Validation
 

@@ -37,7 +37,9 @@ test('allocation V2 covers all 197 countries and the one canonical 21-type catal
 
 test('uniform profiles are redistributed without inflating country starting-unit totals', () => {
   const summary = baseline.allocationModel.summary;
-  assert.ok(summary.rebalancedUniformProfileCount >= 140);
+  assert.equal(summary.evaluatedUniformProfileCount, 143);
+  assert.equal(summary.changedUniformDistributionCount, 140);
+  assert.equal(summary.constrainedUnitBudgetCount, 3);
   assert.equal(summary.preservedExistingDistributionCount, 49);
   assert.equal(summary.conservativeDataGapCount, 5);
   assert.equal(summary.macroOnlyCount, 96);
