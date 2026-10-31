@@ -14,7 +14,7 @@ const icons = iconContext.window.OMEGA_ICON_SYSTEM_V1;
 
 test('custom icon system is wired locally before active runtime and has no remote runtime dependency', () => {
   const html = read('index.html');
-  assert.match(html, /<link[^>]+href="omega_icon_system_v1\\.css"/i, 'local SVG styling must be active before the UI renders');
+  assert.match(html, /<link[^>]+href="omega_icon_system_v1\.css"/i, 'local SVG styling must be active before the UI renders');
   assert.ok(fs.existsSync(path.join(root, 'omega_icon_system_v1.css')), 'legacy icon CSS file remains on disk');
   assert.match(html, /omega_ui_v2\/omega-ui-v2\.css/);
   assert.match(html, /src="omega_icon_system_v1\.js"/);
