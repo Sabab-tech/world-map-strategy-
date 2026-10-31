@@ -55,8 +55,10 @@ test('country archetypes respond to observed economic structure without inventin
     'source-backed textile and food manufacturing specializations refine the broad macro profile');
   assert.equal(enriched.countries.SOM.economicSectorContext.dominantSector, null,
     'mixed observation years must not produce a false dominant-sector conclusion');
-  assert.equal(enriched.countries.SOM.industryArchetype, 'Insufficient comparable sector data');
-  assert.equal(enriched.countries.ESH.industryArchetype, 'Insufficient comparable sector data');
+  assert.equal(enriched.countries.SOM.industryArchetype, 'Agro-processing and food manufacturing');
+  assert.equal(enriched.countries.ESH.industryArchetype, 'Phosphate extraction and beneficiation in disputed territory');
+  assert.equal(enriched.countries.NRU.industryArchetype, 'Phosphate mining and crushing');
+  assert.equal(enriched.countries.PRK.industryArchetype, 'Steel, cement and chemical fertilizer production');
   assert.equal(enriched.countries.AGO.industryArchetype, 'Energy and petrochemicals');
   assert.equal(enriched.countries.AUT.industryArchetype, 'Industrial machinery and capital goods');
   assert.equal(enriched.countries.BEL.industryArchetype, 'Pharmaceuticals and medical supplies');
@@ -318,5 +320,40 @@ test('industry evidence corrections retain the 197 x 21 canonical matrix and pre
     assert.equal(Object.keys(row.factoryCounts).length, 21, countryId);
     assert.equal(row.totalStartingFactoryUnits, Object.values(row.factoryCounts).reduce((sum, count) => sum + count, 0), countryId);
     assert.ok(Object.values(row.factoryCounts).every(count => Number.isInteger(count) && count >= 0), countryId);
+  }
+});
+
+
+test('four conservative data-gap countries receive narrowly scoped source-backed factory specializations', () => {
+  const enriched = enrichCountryFactoryStartingBaseline(structuredClone(baseline), registry);
+  const expected = {
+    ESH: {
+      archetype: 'Phosphate extraction and beneficiation in disputed territory',
+      types: ['UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT']
+    },
+    NRU: {
+      archetype: 'Phosphate mining and crushing',
+      types: ['UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT']
+    },
+    PRK: {
+      archetype: 'Steel, cement and chemical fertilizer production',
+      types: ['STEEL_AND_ALLOY_WORKS','CEMENT_CONCRETE_PLANT','FERTILIZER_CHEMICAL_PLANT']
+    },
+    SOM: {
+      archetype: 'Agro-processing and food manufacturing',
+      types: ['FOOD_PROCESSING_COLD_CHAIN']
+    }
+  };
+  for (const [countryId, expectation] of Object.entries(expected)) {
+    const row = enriched.countries[countryId];
+    assert.equal(row.industryArchetype, expectation.archetype, countryId);
+    assert.deepEqual([...row.specializations].sort(), [...expectation.types].sort(), countryId);
+    assert.equal(row.specializationEvidence.status, 'SOURCE_BACKED_SIMULATION_MAPPING', countryId);
+    assert.equal(row.specializationEvidenceStatus, 'GAME_MODELLED_SPECIALIZATION_SET', countryId);
+    assert.ok(row.specializationEvidence.sources.length >= 2, countryId);
+    assert.ok(row.specializationEvidence.sources.every(source => /^https:\/\//.test(source.url)), countryId);
+    assert.ok(row.specializations.every(type => Number.isInteger(row.factoryCounts[type]) && row.factoryCounts[type] > 0), countryId);
+    assert.equal(row.provenance.simulationOnly, true, countryId);
+    assert.equal(row.provenance.realWorldFacilityCounts, false, countryId);
   }
 });

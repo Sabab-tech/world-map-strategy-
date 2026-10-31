@@ -2,7 +2,7 @@
 
 ## Purpose and scope
 
-This document records source-backed refinements of twenty-one country starting-industry profiles. It is a game-model mapping layer, not a census of operating factories. The canonical factory roster remains the existing 21 types; no factory type, country identity, real-world establishment count, or physical site is created by this change.
+This document records source-backed refinements of twenty-five country starting-industry profiles. It is a game-model mapping layer, not a census of operating factories. The canonical factory roster remains the existing 21 types; no factory type, country identity, real-world establishment count, or physical site is created by this change.
 
 Each affected country row in `country_factory_starting_baseline_v1.json` contains a `specializationEvidence` object with source URLs, supporting claims, reference years, confidence, caveats, and the explicit simulation-only mapping policy. The `factoryCounts` values remain abstract game units and must not be described as observed factory totals.
 
@@ -24,6 +24,10 @@ Each affected country row in `country_factory_starting_baseline_v1.json` contain
 | Mongolia (MNG) | Copper, cement, cashmere and food processing | Non-ferrous metals, cement/concrete, textiles/garments, food processing | Invest Mongolia documents livestock-product processing and domestic cashmere preparation; USGS records copper-refinery and cement production in 2024. Proposed large smelters are not treated as operating plants. |
 | Papua New Guinea (PNG) | Agro-processing, petroleum refining and precious-metal downstream processing | Food processing, petrochemical/polymer, non-ferrous processing, textiles/garments | The 2023–2027 national plan records food/beverage and fish processing, crude-petroleum and palm-oil refineries, and downstream precious-metal processing. Future LNG processing is not counted as operating capacity. |
 | Botswana (BWA) | Beef processing, textiles and polymer/ferrous manufacturing | Food processing, textiles/garments, petrochemical/polymer, steel/ferrous works | UNDP's 2025 Botswana report identifies beef/food processing, textiles, plastic products, and iron/iron products. USGS confirms mining output separately; extracted minerals are not assumed to be locally smelted. |
+| Western Sahara (ESH) | Phosphate extraction and beneficiation in disputed territory | Universal materials/elements processing | The German Environment Agency documents the Bou Craa mine and phosphate beneficiation/treatment at El Aaiun; OCP identifies the Boucraa-to-Laayoune beneficiation and wharf operation. Phosboucraa is an OCP subsidiary belonging to the Moroccan state. This mapping records activity in the territory, not an independent Sahrawi industrial authority or a sovereignty determination. |
+| Nauru (NRU) | Phosphate mining and crushing | Universal materials/elements processing | USGS estimates 130,000 metric tons of phosphate-rock production in 2024; the Government of Nauru records the 2024 inauguration of a RONPHOS mobile crusher. This supports mineral preparation, not a broad fertilizer industry. |
+| North Korea (PRK) | Steel, cement and chemical fertilizer production | Steel/alloy works, cement/concrete, fertilizer/chemical plant | Statistics Korea's 2025 release estimates 2024 crude steel, cement and chemical fertilizer output. KDI's June 2026 review warns of severe quantitative-data limitations; mappings are sector presence only, not verified plant capacity. |
+| Somalia (SOM) | Agro-processing and food manufacturing | Food processing/cold chain | Somalia's Investment Promotion Office describes current manufacturing as modest and based on agricultural processing. The Ministry of Commerce and Industry names agro-processing as a priority; textile, construction-material and pharmaceutical policy priorities are not treated as proof of existing capacity. |
 
 ## Mapping rules
 
