@@ -2620,7 +2620,7 @@ function advanceShipments(c){
   for(const s of n.shipments){
     const shipmentStatus=String(s.status||'');
     const retryableDeliveryBlock=['BLOCKED_LEDGER_MISMATCH','BLOCKED_BATCH_LEDGER_MISMATCH','BLOCKED_FACTORY_MISSING'].includes(shipmentStatus);
-    if(retryableDeliveryBlock&&Number(s.lastDeliveryAttemptTurn)===turn())continue;
+    if(retryableDeliveryBlock&&Number(s.lastDeliveryAttemptTurn??s.blockedTurn)===turn())continue;
     if(!['IN_TRANSIT','BLOCKED_ROUTE_BLOCKADE'].includes(shipmentStatus)&&!retryableDeliveryBlock)continue;
     if(retryableDeliveryBlock)markShipmentDeliveryAttempt(s,true);
     const strategicPolicy=g.Omega?.ResourceStrategicPolicyRuntime||g.OmegaResourceStrategicPolicyRuntime;
