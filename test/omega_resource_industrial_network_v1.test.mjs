@@ -1099,6 +1099,9 @@ console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');
     assert.equal(shipment.lastDeliveryAttemptTurn,100);
     assert.equal(shipment.deliveryAttemptCount,1);
     assert.equal(countryState.warehouse.receipts.length,0);
+    // A save made before retry metadata existed still uses blockedTurn to avoid
+    // attempting the same failed delivery twice during one simulation turn.
+    delete shipment.lastDeliveryAttemptTurn;
     const blockedDiagnostics=N.gameplayPipelineDiagnostics(countryId);
     assert.equal(blockedDiagnostics.blocked,1,
       'shipment-level ledger failures must be included in pipeline diagnostics');
