@@ -1417,7 +1417,8 @@ function recipeFor(resourceId,asset={}){
 }
 
 function assetCanAccept(asset,resourceId){
-  if(!asset||asset.status==='CLOSED'||asset.status==='DECOMMISSIONED')return false;
+  const status=String(asset?.status||'OPERATIONAL').toUpperCase();
+  if(!asset||['CLOSED','DECOMMISSIONED','DESTROYED','UNDER_CONSTRUCTION','BLOCKED','TECHNOLOGY_LOCKED','MAINTENANCE'].includes(status))return false;
   const recipe=recipeFor(resourceId,asset),ks=Object.keys(recipe.inputs);
   return ks.some(k=>tok(k)===tok(resourceId));
 }
@@ -3606,7 +3607,7 @@ function factoryOperationGate(countryId,asset){
   if(!asset)return{status:'BLOCKED',reason:'FACTORY_NOT_FOUND'};
   const cid=canonicalCountry(countryId),factoryId=String(asset.id||asset.assetId||asset.factoryId||asset.projectId||'');
   const status=String(asset.status||'OPERATIONAL').toUpperCase();
-  if(['CLOSED','DECOMMISSIONED','TECHNOLOGY_LOCKED','BLOCKED','UNDER_CONSTRUCTION','MAINTENANCE'].includes(status))
+  if(['CLOSED','DECOMMISSIONED','DESTROYED','TECHNOLOGY_LOCKED','BLOCKED','UNDER_CONSTRUCTION','MAINTENANCE'].includes(status))
     return{status:'BLOCKED',reason:'FACTORY_NOT_OPERATIONAL',factoryId,factoryStatus:status};
   const required=Array.isArray(asset.requiredTechnologyIds)?asset.requiredTechnologyIds.map(x=>String(x).toUpperCase()):[];
   const capabilities=Array.isArray(resourceState(cid).technologyCapabilities)?resourceState(cid).technologyCapabilities:[];
