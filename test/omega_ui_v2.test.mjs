@@ -488,6 +488,7 @@ test('industry command panel renders country starting allocations separately fro
     assert.match(root.innerHTML, /Total:<\/span><strong>2<\/strong>/);
     assert.match(root.innerHTML, /Starting factory allocation/);
     assert.match(root.innerHTML, /7<\/strong><small>game units/);
+    assert.match(root.innerHTML, /Industry-led economy with a manufacturing base/);
     assert.match(root.innerHTML, /Economic structure/);
     assert.match(root.innerHTML, /Agriculture 23% \(2025\)/);
     assert.match(root.innerHTML, /Manufacturing 13% \(2025\)/);
