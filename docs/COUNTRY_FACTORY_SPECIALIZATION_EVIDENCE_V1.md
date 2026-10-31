@@ -2,7 +2,7 @@
 
 ## Purpose and scope
 
-This document records a source-backed refinement of seven country starting-industry profiles. It is a game-model mapping layer, not a census of operating factories. The canonical factory roster remains the existing 21 types; no factory type, country identity, real-world establishment count, or physical site is created by this change.
+This document records source-backed refinements of twenty-one country starting-industry profiles. It is a game-model mapping layer, not a census of operating factories. The canonical factory roster remains the existing 21 types; no factory type, country identity, real-world establishment count, or physical site is created by this change.
 
 Each affected country row in `country_factory_starting_baseline_v1.json` contains a `specializationEvidence` object with source URLs, supporting claims, reference years, confidence, caveats, and the explicit simulation-only mapping policy. The `factoryCounts` values remain abstract game units and must not be described as observed factory totals.
 
@@ -20,6 +20,10 @@ Each affected country row in `country_factory_starting_baseline_v1.json` contain
 | Jordan (JOR) | Pharmaceuticals, chemicals and export manufacturing | Fertilizers/chemicals, plastics/rubber, food, textiles, pharmaceuticals, machinery, electrical equipment | Jordan Chamber of Industry's 2024 index and Ministry of Investment's 2025 high-value manufacturing profile document these active sectors. The electronics/electrical mapping does not imply a semiconductor wafer fab. |
 | San Marino (SMR) | Electronics, precision machinery and food manufacturing | Computer/electronic/optical products, machinery, food | The Chamber of Commerce's 2025 guide reports 67 computer/electronic/optical enterprises, 41 machinery enterprises and 60 food manufacturers in September 2024. Three game units aggregate the strongest clusters; they are not enterprise counts. |
 | Suriname (SUR) | Petroleum refining, food processing and industrial chemicals | Petroleum/petrochemical processing, food, industrial chemicals | Staatsolie documents active refining and first commercial sulfuric-acid output in 2025; the WTO's 2019 review identifies food processing and refining. Wood processing is evidenced but is not falsely mapped to paper because the current factory catalogue has no dedicated sawmill/timber-products type. |
+| Ghana (GHA) | Agro-processing, mineral processing and textiles | Food processing, non-ferrous processing, textiles/garments | Ghana's Ministry of Business Development identifies food processing and mineral processing; the Ghana High Commission lists agro-processing, textiles and light manufacturing. The non-ferrous game category is a broad mapping, not a claim that every mineral is smelted domestically. |
+| Mongolia (MNG) | Copper, cement, cashmere and food processing | Non-ferrous metals, cement/concrete, textiles/garments, food processing | Invest Mongolia documents livestock-product processing and domestic cashmere preparation; USGS records copper-refinery and cement production in 2024. Proposed large smelters are not treated as operating plants. |
+| Papua New Guinea (PNG) | Agro-processing, petroleum refining and precious-metal downstream processing | Food processing, petrochemical/polymer, non-ferrous processing, textiles/garments | The 2023–2027 national plan records food/beverage and fish processing, crude-petroleum and palm-oil refineries, and downstream precious-metal processing. Future LNG processing is not counted as operating capacity. |
+| Botswana (BWA) | Beef processing, textiles and polymer/ferrous manufacturing | Food processing, textiles/garments, petrochemical/polymer, steel/ferrous works | UNDP's 2025 Botswana report identifies beef/food processing, textiles, plastic products, and iron/iron products. USGS confirms mining output separately; extracted minerals are not assumed to be locally smelted. |
 
 ## Mapping rules
 
@@ -39,7 +43,7 @@ The country factory baseline workflow validates:
 - non-negative integer game allocations and total reconciliation;
 - unique specialization IDs, catalog membership, and positive allocation;
 - explicit simulation-only provenance and separation from real-world facility counts;
-- source-backed evidence fields and the ten country-specific mappings;
+- source-backed evidence fields and the twenty-one country-specific mappings;
 - idempotent macro-sector enrichment without changing factory allocations or specialization IDs.
 
 The UNIDO establishment dataset and the game starting-allocation dataset remain separate authorities.
