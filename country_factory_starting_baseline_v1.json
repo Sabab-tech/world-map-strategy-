@@ -21077,10 +21077,10 @@
       "economicSectorContext": {
         "schemaVersion": "OMEGA_COUNTRY_ECONOMIC_SECTOR_CONTEXT_V1",
         "sourceDataset": "country_general_data_registry_v1.json",
-        "comparisonStatus": "SAME_YEAR_COMPARABLE",
-        "comparisonYear": 2011,
-        "dominantSector": "MIXED",
-        "availableSectorCount": 3,
+        "comparisonStatus": "INSUFFICIENT_COMPARABLE_DATA",
+        "comparisonYear": null,
+        "dominantSector": null,
+        "availableSectorCount": 0,
         "valueAddedShares": {
           "agricultureValueAddedPctGdp": {
             "value": 0,
@@ -21133,14 +21133,14 @@
             "unit": "% of employment"
           }
         },
-        "manufacturingBand": "LOW",
+        "manufacturingBand": "NOT_COMPARABLE",
         "manufacturingBandModel": "OMEGA_MACRO_MANUFACTURING_BAND_V1",
         "interpretation": "Manufacturing value added is a component of industry value added; do not add it to industry. Broad value-added shares do not identify individual factory types.",
         "missingPolicy": "Null means unavailable or not comparable, never zero."
       },
       "specializationEvidenceStatus": "GAME_MODELLED_SPECIALIZATION_SET",
       "industryArchetypeBasis": "EXISTING_GAME_SPECIALIZATION_PROFILE_V1",
-      "industryArchetypeObservationYear": 2011
+      "industryArchetypeObservationYear": null
     },
     "VNM": {
       "countryId": "VNM",
@@ -21929,7 +21929,7 @@
       "manufacturingValueAddedPctGdp",
       "agricultureEmploymentPct"
     ],
-    "comparisonRule": "Compare agriculture, industry and services value-added shares only when at least two numeric observations share the exact same observation year.",
+    "comparisonRule": "Compare agriculture, industry and services value-added shares only when at least two numeric observations share the exact same observation year; an all-zero sector set is non-comparable and its raw observations remain preserved.",
     "manufacturingRule": "Manufacturing value added is a component of industry; its band is compared only when the observation year is within three years of the broad-sector comparison year.",
     "archetypeRule": "Specific factory-type specializations are preserved. Generic resource-processing labels are refined only from existing explicit game specialization IDs. Countries without a mapped sub-sector specialization receive a cautious broad macro-sector archetype, not an invented factory-type claim.",
     "simulationRule": "This context informs the game-scaled starting profile; it is not a real-world factory census or an official industry classification.",

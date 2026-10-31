@@ -63,6 +63,22 @@ test('country archetypes respond to observed economic structure without inventin
   assert.equal(enriched.countries.ZMB.industryArchetype, 'Non-ferrous metals');
   assert.equal(enriched.countries.TWN.industryArchetype, 'Electronics and semiconductor manufacturing');
   assert.equal(enriched.countries.SGP.industryArchetype, 'Advanced manufacturing and industrial logistics');
+
+  const venezuela = enriched.countries.VEN;
+  assert.equal(venezuela.economicSectorContext.comparisonStatus, 'INSUFFICIENT_COMPARABLE_DATA',
+    'an all-zero agriculture/industry/services source set must not be labelled as a mixed economy');
+  assert.equal(venezuela.economicSectorContext.comparisonYear, null);
+  assert.equal(venezuela.economicSectorContext.dominantSector, null);
+  assert.equal(venezuela.economicSectorContext.availableSectorCount, 0);
+  assert.equal(venezuela.economicSectorContext.manufacturingBand, 'NOT_COMPARABLE');
+  assert.equal(venezuela.economicSectorContext.valueAddedShares.industryValueAddedPctGdp.value, 0,
+    'the raw World Bank observation must remain available for traceability');
+  assert.equal(venezuela.economicSectorContext.valueAddedShares.industryValueAddedPctGdp.year, 2011,
+    'the original observation year must not be rewritten');
+  assert.equal(venezuela.industryArchetype, 'Energy and petrochemicals',
+    'an existing explicit game specialization must survive a non-comparable macro profile');
+  assert.equal(venezuela.industryArchetypeObservationYear, null);
+
   assert.deepEqual(enriched.countries.GUY.specializations, baseline.countries.GUY.specializations,
     'macro evidence must never invent a specific factory type');
 });
