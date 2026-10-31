@@ -2596,6 +2596,14 @@ function advanceShipments(c){
   if(selectedPlayer!==cid)return{status:'SKIPPED',reason:'PLAYER_COUNTRY_SCOPE_VIOLATION',countryId:cid,playerCountryId:selectedPlayer,delivered:0,mineDelivered:0,shipments:[]};
   if(siteLogisticsActiveCountry!==cid)void loadSiteLogisticsRoutes(cid);
   const n=netState(cid),delivered=[],mineDelivered=[];
+  const markLedgerDeliveryAttempt=(shipment,isRetry=false)=>{
+    shipment.lastDeliveryAttemptTurn=turn();
+    shipment.deliveryAttemptCount=Math.max(0,Math.floor(num(shipment.deliveryAttemptCount)||0))+1;
+    if(isRetry){
+      shipment.deliveryRetryCount=Math.max(0,Math.floor(num(shipment.deliveryRetryCount)||0))+1;
+      shipment.lastDeliveryRetryReason=shipment.blockReason||'LEDGER_MISMATCH';
+    }
+  };
   // Prioritize cargo already received into the raw warehouse before scheduling another
   // mine haul. Both legs share the same per-turn transport ledger; dispatching mine
   // residuals first can consume the entire capacity every turn and starve factory-bound
@@ -2604,7 +2612,11 @@ function advanceShipments(c){
   dispatchResidualMineHauls(cid);
   dispatchResidualFactoryOutputs(cid);
   for(const s of n.shipments){
-    if(!['IN_TRANSIT','BLOCKED_ROUTE_BLOCKADE'].includes(String(s.status||'')))continue;
+    const shipmentStatus=String(s.status||'');
+    const retryableLedgerMismatch=shipmentStatus==='BLOCKED_LEDGER_MISMATCH';
+    if(retryableLedgerMismatch&&Number(s.lastDeliveryAttemptTurn)===turn())continue;
+    if(!['IN_TRANSIT','BLOCKED_ROUTE_BLOCKADE'].includes(shipmentStatus)&&!retryableLedgerMismatch)continue;
+    if(retryableLedgerMismatch)markLedgerDeliveryAttempt(s,true);
     const strategicPolicy=g.Omega?.ResourceStrategicPolicyRuntime||g.OmegaResourceStrategicPolicyRuntime;
     const routeModes=String(s.shipmentType||'')==='MINE_TO_WAREHOUSE'&&Array.isArray(s.route?.legs)
       ?[...new Set(s.route.legs.map(leg=>String(leg?.transportMode||leg?.mode||'').trim().toLowerCase()).filter(Boolean))]
@@ -2643,7 +2655,7 @@ function advanceShipments(c){
       const receipt=receiveMineWarehouseShipment(cid,s);
       if(receipt.status!=='DELIVERED'){
         s.status='BLOCKED_LEDGER_MISMATCH';s.deliveryStatus='BLOCKED';s.blockReason=receipt.reason||'MINE_WAREHOUSE_RECEIPT_BLOCKED';
-        s.blockedTurn=turn();emit('OMEGA_RESOURCE_MINE_WAREHOUSE_SHIPMENT_BLOCKED',cid,{shipmentId:s.shipmentId,batchId:s.batchId,
+        s.blockedTurn=turn();markLedgerDeliveryAttempt(s);emit('OMEGA_RESOURCE_MINE_WAREHOUSE_SHIPMENT_BLOCKED',cid,{shipmentId:s.shipmentId,batchId:s.batchId,
           siteId:s.siteId,reason:s.blockReason,details:receipt},'resource-industrial-network');continue;
       }
       s.status='DELIVERED';s.deliveryStatus='DELIVERED_TO_RAW_WAREHOUSE';s.destinationStatus='RAW_WAREHOUSE_RECEIVED';
@@ -2657,7 +2669,7 @@ function advanceShipments(c){
     if(String(s.shipmentType||'')==='FACTORY_INPUT'){
       const received=settleFactoryInputShipment(cid,s);
       if(received.status!=='DELIVERED'){
-        s.status='BLOCKED_LEDGER_MISMATCH';s.blockReason=received.reason||'FACTORY_INPUT_DELIVERY_BLOCKED';s.blockedTurn=turn();
+        s.status='BLOCKED_LEDGER_MISMATCH';s.blockReason=received.reason||'FACTORY_INPUT_DELIVERY_BLOCKED';s.blockedTurn=turn();markLedgerDeliveryAttempt(s);
         emit('OMEGA_FACTORY_INPUT_SHIPMENT_BLOCKED',cid,{shipmentId:s.shipmentId,factoryId:s.factoryId,batchId:s.batchId,
           resourceId:s.resourceId,reason:s.blockReason,details:received,turn:turn()});continue;
       }
@@ -2721,7 +2733,7 @@ function advanceShipments(c){
     const warehouse=r.warehouse||{},available=Math.max(0,num(warehouse.availableByResource?.[rid])||0);
     const reserved=Math.max(0,num(warehouse.reservedByResource?.[rid])||0);
     if(quantity<=0||available+1e-9<quantity||reserved+1e-9<quantity){
-      s.status='BLOCKED_LEDGER_MISMATCH';s.blockReason='WAREHOUSE_AVAILABLE_OR_RESERVATION_MISMATCH';s.blockedTurn=turn();
+      s.status='BLOCKED_LEDGER_MISMATCH';s.blockReason='WAREHOUSE_AVAILABLE_OR_RESERVATION_MISMATCH';s.blockedTurn=turn();markLedgerDeliveryAttempt(s);
       emit('OMEGA_RESOURCE_DELIVERY_BLOCKED',cid,{shipmentId:s.shipmentId,siteId:s.siteId,resourceId:rid,quantity,available,reserved,reason:s.blockReason});
       continue;
     }
@@ -2731,7 +2743,7 @@ function advanceShipments(c){
     const invKey=Object.prototype.hasOwnProperty.call(r.inventory,rid)?rid:Object.keys(r.inventory).find(k=>tok(k)===rid);
     const countryRawStock=Math.max(0,num(invKey==null?0:r.inventory[invKey])||0);
     if(countryRawStock+1e-9<quantity){
-      s.status='BLOCKED_LEDGER_MISMATCH';s.blockReason='COUNTRY_INVENTORY_BELOW_SHIPMENT_QUANTITY';s.blockedTurn=turn();continue;
+      s.status='BLOCKED_LEDGER_MISMATCH';s.blockReason='COUNTRY_INVENTORY_BELOW_SHIPMENT_QUANTITY';s.blockedTurn=turn();markLedgerDeliveryAttempt(s);continue;
     }
     const sourceBatchId=String(s.batchId||'').trim(),batches=Array.isArray(r.batches)?r.batches:[];
     const sourceBatch=sourceBatchId?batches.find(x=>String(x?.batchId||'')===sourceBatchId):null;
@@ -5153,8 +5165,23 @@ function gameplayPipelineDiagnostics(countryScope){
       }
     }
     const shipments=Array.isArray(network.shipments)?network.shipments:[];
+    const blockedShipments=shipments.filter(shipment=>String(shipment?.status||'').toUpperCase().includes('BLOCKED'))
+      .map(shipment=>({siteId:shipment.siteId||null,resourceId:shipment.resourceId||null,batchId:shipment.batchId||null,
+        shipmentId:shipment.shipmentId||null,shipmentType:shipment.shipmentType||null,status:shipment.status,
+        blockReason:shipment.blockReason||null,lastDeliveryAttemptTurn:num(shipment.lastDeliveryAttemptTurn)??null,
+        deliveryAttemptCount:Math.max(0,Math.floor(num(shipment.deliveryAttemptCount)||0)),
+        deliveryRetryCount:Math.max(0,Math.floor(num(shipment.deliveryRetryCount)||0))}));
+    const blockedKeys=new Set(blockedFlows.map(row=>row.batchId?('B:'+String(row.batchId)):('S:'+String(row.shipmentId||row.siteId||''))));
+    for(const shipment of blockedShipments){
+      const key=shipment.batchId?('B:'+String(shipment.batchId)):('S:'+String(shipment.shipmentId||shipment.siteId||''));
+      if(blockedKeys.has(key))continue;
+      blockedKeys.add(key);blocked++;
+      blockedFlows.push({siteId:shipment.siteId,resourceId:shipment.resourceId,batchId:shipment.batchId,
+        shipmentId:shipment.shipmentId,shipmentType:shipment.shipmentType,status:shipment.status,
+        blockReason:shipment.blockReason,deliveryRetryCount:shipment.deliveryRetryCount});
+    }
     return{countryId:c,registrySiteCount:siteCounts[c]||0,extractionFlows:flows.length,dispatched,processed,marketPublished,
-      treasuryReceipts,blocked,blockedFlows,awaitingTransportCapacity,awaitingCapacityFlows,shipmentCount:shipments.length,stages};
+      treasuryReceipts,blocked,blockedFlows,blockedShipments,awaitingTransportCapacity,awaitingCapacityFlows,shipmentCount:shipments.length,stages};
   });
   return{contract:'OMEGA_SITE_FLOW_PIPELINE_V1',version:VERSION,turn:turn(),registrySiteCount:sites.length,
     diagnosticScope:scopedCountry||(hasScope?'UNRESOLVED':'GLOBAL'),countryCount:countries.length,
