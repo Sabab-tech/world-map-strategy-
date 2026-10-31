@@ -556,7 +556,7 @@
       var liveFactoryAssets = liveAssets.filter(function (asset) {
         var factoryType = id(asset && (asset.factoryType || asset.type || asset.facilityType));
         return loaded.factoryIds.indexOf(factoryType) >= 0 &&
-          ['DECOMMISSIONED', 'DESTROYED'].indexOf(id(asset && asset.status)) < 0;
+          ['DECOMMISSIONED', 'DESTROYED', 'UNDER_CONSTRUCTION'].indexOf(id(asset && asset.status)) < 0;
       });
       var liveFactoryTypeCounts = Object.create(null);
       loaded.factoryIds.forEach(function (factoryType) { liveFactoryTypeCounts[factoryType] = 0; });
