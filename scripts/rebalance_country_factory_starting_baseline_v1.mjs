@@ -375,9 +375,9 @@ export function rebalanceCountryFactoryStartingBaseline(input) {
       'The canonical 21-type resource_industrial_catalog_v1.json roster.'
     ],
     comparabilityPolicy: 'Agriculture, industry and services are used only when at least two observations share the exact same year. Manufacturing value added and agriculture employment are used only when their observation year is within three years of that comparison year. Missing or non-comparable values contribute no fabricated zero observation.',
-    allocationPolicy: 'Existing uniform profiles are rebalanced. Newly source-backed specialization evidence refreshes an earlier macro-only allocation, while previously differentiated profiles remain preserved unless the specialization evidence is explicitly upgraded. Selected categories receive positive allocations, then remaining units are distributed using the largest-remainder method.',
+    allocationPolicy: 'Existing uniform profiles are rebalanced. Newly source-backed specialization evidence refreshes earlier macro-only or conservative profiles, while previously differentiated profiles remain preserved unless the specialization evidence is explicitly upgraded. Where broad macro observations are not comparable, only source-backed specialization categories are active and remaining game units are distributed equally among those categories using canonical-order tie breaks.',
     fixedBudgetPolicy: 'Per-country starting-unit budgets remain unchanged except for JOR, SMR and SWZ: each receives one additional simulated unit because its source-backed specialization list originally consumed every starting unit and made differentiated quantities impossible. Existing Universal Materials umbrella quantities stay fixed.',
-    specializationPolicy: 'Existing specialization IDs remain mandatory positive categories. Source-backed specializations receive a stronger model weight than game-modelled specializations; this expresses evidence priority, not an observed establishment count.',
+    specializationPolicy: 'Existing specialization IDs remain mandatory positive categories. Source-backed specializations receive a stronger weight when comparable macro data are available; without comparable macro observations, only the evidenced categories participate at equal relative priority. These are game-design priorities, not observed establishment counts.',
     weightModel: WEIGHT_FORMULAS,
     limits: [
       'The weights are game-simulation ranking assumptions, not estimated facility counts, market shares, capacity measurements or official country classifications.',
@@ -386,7 +386,8 @@ export function rebalanceCountryFactoryStartingBaseline(input) {
       'The latest UNIDO INDSTAT establishment refresh recorded zero usable core-country observations, so UNIDO establishment counts are not used to populate this model.',
       'Resource-context entries are not used as quantitative factory weights because much of the current roster lacks sufficiently differentiated, comparable resource evidence.',
       'Profiles without comparable macro data and without existing specializations retain their previous allocation rather than receiving invented country-specific values.',
-      'A one-unit budget exception is applied only to a documented source-backed specialization profile whose complete specialization list equals its entire original starting budget; the exception is recorded per country and in the world summary.'
+      'A one-unit budget exception is applied only to a documented source-backed specialization profile whose complete specialization list equals its entire original starting budget; the exception is recorded per country and in the world summary.',
+      'When a source-backed specialization is available but broad macro observations are non-comparable, only the explicitly evidenced factory categories are activated. No additional category is inferred from missing or stale macro data.'
     ],
     summary: summarize(baseline)
   };
