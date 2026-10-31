@@ -799,6 +799,75 @@ test('factory construction calendar honours exact game-calendar month dates', ()
     recipeId: 'STEEL_PRIMARY_ROUTE_V1', requestId: 'CALENDAR-6-MONTHS', buildMonths: 6 }).idempotent, true);
 });
 
+test('fifty factories receive proportional input when the country warehouse is short', () => {
+  const { context, api } = makeRuntime();
+  const assets = Array.from({ length: 50 }, (_, index) => ({
+    id: 'FAC-PROP-' + String(index + 1).padStart(2, '0'),
+    countryId: 'BGD', factoryType: 'UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT',
+    capacityPerDay: 1, capacity: 1, status: 'OPERATIONAL', recipeMode: 'SINGLE_INPUT',
+    inputCoefficients: { iron_ore: 0.2 },
+    outputProfile: { IRON_CONCENTRATE: 0.8, ORE_TAILINGS: 0.2 },
+    inputUnit: 'SIMULATION_RESOURCE_UNIT', outputUnit: 'SIMULATION_RESOURCE_UNIT'
+  }));
+  context.Game.state.simulation.date = '2015-01-01';
+  context.Game.state.economy.BGD = {
+    unemploymentCount: 600000, laborForce: 6000000, unemployment_rate: 10, productionAssets: assets
+  };
+  context.Game.state.transport.BGD = { infrastructure: { utilitySupply: {
+    electricityMWhPerDay: 1000000, waterM3PerDay: 1000000,
+    authority: 'TEST_FIXTURE', status: 'AVAILABLE', simulationOnly: true, assets: []
+  } } };
+  const resource = context.Game.state.resource.BGD = {
+    inventory: { iron_ore: 8 },
+    batches: [{
+      batchId: 'BATCH-PROP-IRON-8', resourceId: 'iron_ore', materialIdentity: 'iron_ore',
+      quantity: 8, remainingQuantity: 8, unit: 'SIMULATION_RESOURCE_UNIT', stage: 'RAW',
+      status: 'AVAILABLE', countryId: 'BGD', warehouseId: 'WH-BGD-RAW', createdTurn: 1
+    }],
+    inventoryLots: {
+      'BATCH-PROP-IRON-8': {
+        batchId: 'BATCH-PROP-IRON-8', resourceId: 'iron_ore', quantity: 8,
+        remainingQuantity: 8, unit: 'SIMULATION_RESOURCE_UNIT', status: 'AVAILABLE'
+      }
+    },
+    warehouse: {
+      warehouseId: 'WH-BGD-RAW', countryId: 'BGD', availableByResource: { iron_ore: 8 },
+      reservedByResource: {}, storedBatchIds: ['BATCH-PROP-IRON-8'], receipts: []
+    }
+  };
+  const result = api.processPendingFactoryInputs('BGD');
+  assert.equal(result.startedCount, 50, JSON.stringify(result.blocked));
+  assert.equal(result.inputRequestCount, 50);
+  assert.equal(result.warehouseTransferCount, 50);
+  assert.equal(result.blocked.length, 0);
+  for (const asset of assets) {
+    assert.equal(asset.inputInventory.iron_ore, 0.16, asset.id + ': should receive 80% of its 0.2 daily input');
+    assert.equal(asset.productionHealth.productivityPct, 80, asset.id + ': shortage must scale output, not stop the factory');
+    const request = resource.industrialNetwork.factoryInputRequests.find(row => row.factoryId === asset.id);
+    assert.equal(request.status, 'PARTIALLY_FULFILLED');
+    assert.equal(request.deliveryStatus, 'DELIVERED');
+    assert.equal(request.requestedQuantity, 0.2);
+    assert.equal(request.allocatedQuantity, 0.16);
+    assert.equal(request.fulfilledQuantity, 0.16);
+    assert.equal(request.allocationPct, 80);
+    assert.equal(request.inputBatchIds.length, 1);
+  }
+  assert.equal(resource.warehouse.availableByResource.iron_ore, 0);
+  assert.equal(resource.inventory.iron_ore, 0);
+  assert.equal(resource.batches[0].remainingQuantity, 0);
+  assert.equal(assets.reduce((sum,asset)=>sum+asset.inputInventory.iron_ore,0), 8);
+  context.Game.state.simulation.turn = 2;
+  context.Game.state.simulation.date = '2015-01-02';
+  const completed = api.processPendingFactoryInputs('BGD');
+  assert.equal(completed.completedCount, 50);
+  assert.equal(completed.startedCount, 0);
+  assert.equal(resource.processedWarehouse.availableByResource.IRON_CONCENTRATE, 32);
+  assert.equal(resource.processedWarehouse.availableByResource.ORE_TAILINGS, 8);
+  assert.equal(resource.inventory.IRON_CONCENTRATE, 32);
+  assert.equal(resource.inventory.ORE_TAILINGS, 8);
+  assert.equal(resource.batches.filter(row => row.stage === 'FINISHED' && row.resourceId === 'IRON_CONCENTRATE').length, 50);
+});
+
 test('factory production scheduler waits for cycle time and posts output only on the game-calendar finish date', () => {
   const { context, api } = makeRuntime();
   const asset = makeSteelAsset();

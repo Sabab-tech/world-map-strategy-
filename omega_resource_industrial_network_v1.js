@@ -523,6 +523,13 @@ function receiveMineWarehouseShipment(countryId,shipment){
   const rid=tok(shipment.resourceId),quantity=Math.max(0,num(shipment.quantity)||0);
   if(tok(batch.resourceId||batch.materialIdentity)!==rid||tok(lot.resourceId)!==rid)
     return{status:'BLOCKED',reason:'MINE_WAREHOUSE_RESOURCE_LEDGER_MISMATCH',batchId,resourceId:rid};
+  if(!(quantity>1e-9))
+    return{status:'BLOCKED',reason:'MINE_WAREHOUSE_SHIPMENT_QUANTITY_INVALID',batchId,quantity};
+  const sourceRemaining=Math.max(0,num(batch.remainingQuantity!=null?batch.remainingQuantity:batch.quantity)||0);
+  const lotRemaining=Math.max(0,num(lot.remainingQuantity!=null?lot.remainingQuantity:lot.quantity)||0);
+  if(sourceRemaining+1e-6<quantity||lotRemaining+1e-6<quantity)
+    return{status:'BLOCKED',reason:'MINE_WAREHOUSE_SOURCE_BATCH_OR_LOT_QUANTITY_MISMATCH',
+      batchId,quantity,sourceRemaining,lotRemaining};
   if(!rs.inventory||typeof rs.inventory!=='object')rs.inventory={};
   if(!w.availableByResource||typeof w.availableByResource!=='object')w.availableByResource={};
   const inventoryKey=quantityObjectKey(rs.inventory,rid)||rid,warehouseKey=quantityObjectKey(w.availableByResource,rid)||rid;
@@ -632,7 +639,7 @@ function netState(c){
   const n=r.industrialNetwork;
   // Older saves can persist a partial network object. Normalize collections before
   // any extraction, dispatch, delivery or production action mutates them.
-  for(const key of ['shipments','projects','extractions','deliveries','siteFlowLedger','events','technologyContracts']){
+  for(const key of ['shipments','projects','extractions','deliveries','siteFlowLedger','events','technologyContracts','factoryInputTransfers','factoryInputRequests']){
     if(!Array.isArray(n[key]))n[key]=[];
   }
   for(const key of ['reservations','factoryRuntime','siteLogisticsBySiteId','transportFleetBySiteId']){
@@ -4087,7 +4094,182 @@ function batchBelongsToBoundFactorySite(rs,batch,sourceSiteId,flowSiteByBatchId)
   if(occurrence===wanted||occurrence.includes(':'+wanted+':'))return true;
   return false;
 }
-function transferFactoryInputsFromWarehouse(countryId,asset,recipe){
+function allocateFactoryInputProportionally(rows,availableQuantity){
+  const allocations={};
+  const normalized=(Array.isArray(rows)?rows:[]).map(row=>{
+    const factoryId=String(row?.factoryId||'').trim();
+    const demand=Math.max(0,num(row?.requestedQuantity??row?.demand)||0);
+    const accessible=Math.max(0,num(row?.accessibleQuantity??row?.accessible??demand)||0);
+    return{factoryId,demand,cap:Math.min(demand,accessible)};
+  }).filter(row=>row.factoryId&&row.demand>1e-9&&row.cap>1e-9);
+  normalized.forEach(row=>{allocations[row.factoryId]=0;});
+  let remaining=Math.min(Math.max(0,num(availableQuantity)||0),normalized.reduce((sum,row)=>sum+row.cap,0));
+  let active=normalized.slice(),guard=0;
+  while(remaining>1e-9&&active.length&&guard++<normalized.length+2){
+    const weight=active.reduce((sum,row)=>sum+row.demand,0);
+    if(!(weight>1e-9))break;
+    const shares=active.map(row=>({row,share:remaining*row.demand/weight,
+      room:Math.max(0,row.cap-allocations[row.factoryId])}));
+    const saturated=shares.filter(item=>item.share>=item.room-1e-9);
+    if(!saturated.length){
+      for(const item of shares)allocations[item.row.factoryId]=Number(
+        (allocations[item.row.factoryId]+Math.min(item.share,item.room)).toFixed(6));
+      remaining=0;break;
+    }
+    const saturatedIds=new Set();
+    for(const item of saturated){
+      const take=Math.min(item.room,remaining);
+      allocations[item.row.factoryId]=Number((allocations[item.row.factoryId]+take).toFixed(6));
+      remaining=Math.max(0,remaining-take);saturatedIds.add(item.row.factoryId);
+    }
+    active=active.filter(row=>!saturatedIds.has(row.factoryId));
+  }
+  return allocations;
+}
+
+function factoryInputWarehouseAvailability(countryId,resourceId,recipe,asset=null){
+  const cid=canonicalCountry(countryId),rid=tok(resourceId),rs=resourceState(cid);
+  if(!rid)return 0;
+  const inventoryKey=quantityObjectKey(rs.inventory||{},rid);
+  let countryRemaining=inventoryKey===null?0:Math.max(0,num(rs.inventory[inventoryKey])||0);
+  if(countryRemaining<=1e-9)return 0;
+  const targetUnit=recipe?.inputUnit||asset?.inputUnit||
+    cat()?.factoryCatalogPolicy?.unitNormalization?.targetUnit||'';
+  const batches=(Array.isArray(rs.batches)?rs.batches:[])
+    .filter(batch=>tok(batch?.resourceId||batch?.materialIdentity)===rid)
+    .slice().sort((a,b)=>(num(a?.createdTurn)||0)-(num(b?.createdTurn)||0));
+  const boundSiteId=String(asset?.sourceSiteId||asset?.siteId||'').trim();
+  const siteRows=Array.isArray(rs.industrialNetwork?.siteFlowLedger)?rs.industrialNetwork.siteFlowLedger:[];
+  const flowSiteByBatchId=new Map(siteRows.filter(row=>row?.batchId&&row?.siteId)
+    .map(row=>[String(row.batchId),String(row.siteId)]));
+  const nonTransferable=new Set(['CONSUMED','SOLD','TRANSFERRED_OUT','EXHAUSTED','IN_TRANSIT','RESERVED','DECOMMISSIONED']);
+  const warehouseRemaining=new Map();
+  let total=0;
+  for(const batch of batches){
+    if(countryRemaining<=1e-9)break;
+    if(!String(batch?.batchId||'').trim()||nonTransferable.has(String(batch?.status||'').toUpperCase()))continue;
+    if(boundSiteId&&!batchBelongsToBoundFactorySite(rs,batch,boundSiteId,flowSiteByBatchId))continue;
+    const source=factorySourceWarehouse(rs,batch),warehouse=source.warehouse;
+    warehouse.availableByResource=warehouse.availableByResource||{};
+    warehouse.reservedByResource=warehouse.reservedByResource||{};
+    const availableKey=quantityObjectKey(warehouse.availableByResource,rid);
+    if(availableKey===null)continue;
+    const reservedKey=quantityObjectKey(warehouse.reservedByResource,rid);
+    const warehouseId=String(warehouse.warehouseId||('WH-'+cid+'-'+source.kind));
+    if(!warehouseRemaining.has(warehouseId)){
+      const available=Math.max(0,num(warehouse.availableByResource[availableKey])||0);
+      const reserved=reservedKey===null?0:Math.max(0,num(warehouse.reservedByResource[reservedKey])||0);
+      warehouseRemaining.set(warehouseId,Math.max(0,available-reserved));
+    }
+    const batchRemaining=Math.max(0,num(batch.remainingQuantity!=null?batch.remainingQuantity:batch.quantity)||0);
+    const lot=rs.inventoryLots&&rs.inventoryLots[batch.batchId]||null;
+    const lotRemaining=lot?Math.max(0,num(lot.remainingQuantity!=null?lot.remainingQuantity:lot.quantity)||0):batchRemaining;
+    const bridge=factoryUnitBridge(String(batch.unit||lot?.unit||'').trim(),targetUnit);
+    if(!bridge)continue;
+    const warehouseAvailable=warehouseRemaining.get(warehouseId)||0;
+    const sourceQuantity=Math.min(batchRemaining,lotRemaining,warehouseAvailable,countryRemaining);
+    if(sourceQuantity<=1e-9)continue;
+    total+=sourceQuantity*bridge.factor;
+    warehouseRemaining.set(warehouseId,Math.max(0,warehouseAvailable-sourceQuantity));
+    countryRemaining=Math.max(0,countryRemaining-sourceQuantity);
+  }
+  return Number(total.toFixed(6));
+}
+
+function planFactoryInputRequests(countryId,plans){
+  const cid=canonicalCountry(countryId),network=netState(cid),groups=new Map();
+  network.factoryInputRequests=Array.isArray(network.factoryInputRequests)?network.factoryInputRequests:[];
+  for(const plan of plans||[]){
+    plan.allocations={};plan.requestIds=[];
+    const asset=plan.asset,factoryId=String(plan.factoryId||'');
+    const capacity=Math.max(0,num(asset?.capacityPerDay??asset?.capacity??asset?.productionCapacity??asset?.throughput)||0);
+    const stock=asset?.inputInventory&&typeof asset.inputInventory==='object'?asset.inputInventory:{};
+    for(const [rawId,rawCoefficient] of Object.entries(plan.recipe?.inputs||{})){
+      const rid=tok(rawId),coefficient=num(rawCoefficient);
+      if(!rid||coefficient===null||coefficient<=0)continue;
+      const stockKey=quantityObjectKey(stock,rid);
+      const factoryStock=stockKey===null?0:Math.max(0,num(stock[stockKey])||0);
+      const inbound=network.shipments.filter(row=>String(row?.shipmentType||'')==='FACTORY_INPUT'&&
+        String(row?.factoryId||'')===factoryId&&tok(row?.resourceId)===rid&&
+        ['IN_TRANSIT','BLOCKED_ROUTE_BLOCKADE'].includes(String(row?.status||'')))
+        .reduce((sum,row)=>sum+Math.max(0,num(row?.targetQuantity)||0),0);
+      const requested=Math.max(0,capacity*coefficient-factoryStock-inbound);
+      if(requested<=1e-9)continue;
+      const accessible=factoryInputWarehouseAvailability(cid,rid,plan.recipe,asset);
+      const row={plan,factoryId,resourceId:rid,coefficient,requestedQuantity:Number(requested.toFixed(6)),
+        accessibleQuantity:accessible,inTransitQuantity:Number(inbound.toFixed(6)),factoryStock};
+      if(!groups.has(rid))groups.set(rid,[]);
+      groups.get(rid).push(row);
+    }
+  }
+  const created=[];
+  for(const [rid,rows] of groups){
+    const sample=rows[0],available=factoryInputWarehouseAvailability(cid,rid,sample.plan.recipe,null);
+    const allocations=allocateFactoryInputProportionally(rows.map(row=>({
+      factoryId:row.factoryId,requestedQuantity:row.requestedQuantity,
+      accessibleQuantity:row.accessibleQuantity
+    })),available);
+    for(const row of rows){
+      const allocated=Math.max(0,num(allocations[row.factoryId])||0);
+      row.plan.allocations[rid]=allocated;
+      const requestId='FACTORY-INPUT-REQ:'+cid+':'+row.factoryId+':T'+turn()+':'+rid;
+      const request={
+        requestId,countryId:cid,factoryId:row.factoryId,recipeId:row.plan.recipe?.recipeId||row.plan.asset?.recipeId||null,
+        resourceId:rid,coefficient:row.coefficient,
+        unit:row.plan.recipe?.inputUnit||row.plan.asset?.inputUnit||'SIMULATION_RESOURCE_UNIT',
+        requestedQuantity:row.requestedQuantity,factoryStockBeforeRequest:row.factoryStock,
+        inTransitQuantity:row.inTransitQuantity,availableWarehouseQuantity:Number(available.toFixed(6)),
+        factoryAccessibleQuantity:Number(row.accessibleQuantity.toFixed(6)),allocatedQuantity:Number(allocated.toFixed(6)),
+        fulfilledQuantity:0,unfulfilledQuantity:row.requestedQuantity,
+        allocationPct:row.requestedQuantity>0?Number((allocated/row.requestedQuantity*100).toFixed(2)):0,
+        status:'REQUESTED',deliveryStatus:'AWAITING_FULFILLMENT',
+        reason:allocated+1e-9<row.requestedQuantity?'PROPORTIONAL_STOCK_RATIONING':null,
+        sourceAuthority:'TRACKED_COUNTRY_WAREHOUSE_BATCHES',requestAuthority:'OMEGA_FACTORY_INPUT_REQUISITION_V1',
+        stages:[{status:'REQUESTED',turn:turn(),quantity:row.requestedQuantity},
+          {status:allocated>1e-9?'ALLOCATED':'AWAITING_STOCK',turn:turn(),quantity:allocated}],
+        transferIds:[],inputBatchIds:[],createdTurn:turn(),updatedTurn:turn(),simulationOnly:true
+      };
+      const existingIndex=network.factoryInputRequests.findIndex(item=>String(item?.requestId||'')===requestId);
+      if(existingIndex>=0)network.factoryInputRequests[existingIndex]=request;
+      else network.factoryInputRequests.push(request);
+      row.plan.requestIds.push(requestId);created.push(request);
+    }
+  }
+  network.factoryInputRequests=network.factoryInputRequests.slice(-MAX_EVENTS);
+  return{countryId:cid,turn:turn(),requestCount:created.length,requests:created};
+}
+
+function reconcileFactoryInputRequestDeliveries(countryId,plan,transferResult){
+  const network=netState(countryId),transferRows=Array.isArray(transferResult?.transfers)?transferResult.transfers:[];
+  for(const requestId of plan?.requestIds||[]){
+    const request=network.factoryInputRequests.find(row=>String(row?.requestId||'')===String(requestId));
+    if(!request)continue;
+    const matched=transferRows.filter(row=>tok(row?.resourceId)===tok(request.resourceId)&&
+      String(row?.factoryId||'')===String(request.factoryId)&&String(row?.status||'')==='DELIVERED');
+    const fulfilled=Number(matched.reduce((sum,row)=>sum+Math.max(0,num(row?.targetQuantity)||0),0).toFixed(6));
+    request.fulfilledQuantity=fulfilled;
+    request.unfulfilledQuantity=Number(Math.max(0,request.requestedQuantity-fulfilled).toFixed(6));
+    request.transferIds=matched.map(row=>String(row.transferId||'')).filter(Boolean);
+    request.inputBatchIds=matched.map(row=>String(row.inputBatchId||'')).filter(Boolean);
+    request.deliveryStatus=fulfilled+1e-6>=request.allocatedQuantity&&request.allocatedQuantity>1e-9?
+      'DELIVERED':(fulfilled>1e-9?'PARTIALLY_DELIVERED':'NOT_DELIVERED');
+    request.status=fulfilled+1e-6>=request.requestedQuantity?'FULFILLED':
+      (fulfilled>1e-9?'PARTIALLY_FULFILLED':'UNFULFILLED');
+    if(request.status==='FULFILLED')request.reason=null;
+    else if(fulfilled+1e-6<request.allocatedQuantity)
+      request.reason=(transferResult?.blocked||[]).find(row=>tok(row?.resourceId)===tok(request.resourceId))?.reason||'WAREHOUSE_FULFILLMENT_SHORTFALL';
+    else request.reason=request.reason||'PROPORTIONAL_STOCK_RATIONING';
+    request.stages=Array.isArray(request.stages)?request.stages:[];
+    const stageStatus=request.deliveryStatus==='DELIVERED'?'DELIVERED':
+      (request.deliveryStatus==='PARTIALLY_DELIVERED'?'PARTIALLY_DELIVERED':'AWAITING_STOCK');
+    if(!request.stages.some(row=>row.status===stageStatus&&row.turn===turn()))
+      request.stages.push({status:stageStatus,turn:turn(),quantity:fulfilled,transferIds:request.transferIds.slice()});
+    request.updatedTurn=turn();
+  }
+  return{updatedRequestCount:(plan?.requestIds||[]).length};
+}
+
+function transferFactoryInputsFromWarehouse(countryId,asset,recipe,allocationTargets=null){
   const cid=canonicalCountry(countryId),rs=resourceState(cid),n=netState(cid);
   const stock=asset.inputInventory&&typeof asset.inputInventory==='object'?asset.inputInventory:(asset.inputInventory={});
   const lots=Array.isArray(asset.inputBatchLots)?asset.inputBatchLots:(asset.inputBatchLots=[]);
@@ -4107,12 +4289,13 @@ function transferFactoryInputsFromWarehouse(countryId,asset,recipe){
     const rid=tok(rawId),coefficient=num(rawCoefficient);
     if(!rid||coefficient===null||coefficient<=0){blocked.push({resourceId:rid||rawId,reason:'FACTORY_RECIPE_COEFFICIENT_INVALID'});continue;}
     const currentKey=quantityObjectKey(stock,rid),current=currentKey===null?0:Math.max(0,num(stock[currentKey])||0);
-    const target=Math.max(0,capacity*coefficient-current);
-    if(target<=1e-9)continue;
     const inTransit=n.shipments.filter(row=>String(row?.shipmentType||'')==='FACTORY_INPUT'&&
       String(row?.factoryId||'')===String(asset.id||asset.assetId||asset.projectId)&&tok(row?.resourceId)===rid&&
       ['IN_TRANSIT','BLOCKED_ROUTE_BLOCKADE'].includes(String(row?.status||'')))
       .reduce((sum,row)=>sum+Math.max(0,num(row?.targetQuantity)||0),0);
+    const hasAllocation=allocationTargets&&Object.prototype.hasOwnProperty.call(allocationTargets,rid);
+    const target=hasAllocation?
+      Math.max(0,num(allocationTargets[rid])||0)+inTransit:Math.max(0,capacity*coefficient-current);
     let remaining=Math.max(0,target-inTransit);
     if(remaining<=1e-9)continue;
     const candidates=batches.filter(batch=>tok(batch?.resourceId||batch?.materialIdentity)===rid&&
@@ -4340,9 +4523,10 @@ function completeFactoryProductionCycle(countryId,asset,cycle,result){
   return{status:'COMPLETED',cycleId:cycle.cycleId,transactionId:result.transactionId,outputQuantities:cycle.outputQuantities};
 }
 function processPendingFactoryInputs(countryId){
-  const cid=canonicalCountry(countryId),n=factoryCycleStore(cid),assets=factoryAssets(cid),completed=[],started=[],blocked=[],transfers=[];
+  const cid=canonicalCountry(countryId),n=factoryCycleStore(cid),assets=factoryAssets(cid),
+    completed=[],started=[],blocked=[],transfers=[];
   const completedThisTurn=new Set();
-  // First finish any cycle whose date has arrived. Output is not posted before this point.
+  // Finish due cycles first. Finished goods are committed only when game-calendar time is reached.
   for(const asset of assets){
     const fid=String(asset?.id||asset?.assetId||asset?.projectId||''),cycle=n.factoryProductionCycles[fid];
     if(!fid||!asset||!factoryCycleActive(cycle)||cycle.status==='PAUSED'||!factoryCycleDue(cycle))continue;
@@ -4352,18 +4536,41 @@ function processPendingFactoryInputs(countryId){
     if(outcome.status==='COMPLETED'){completed.push(outcome);completedThisTurn.add(fid);}
     else if(outcome.status!=='PAUSED')blocked.push({factoryId:fid,reason:outcome.reason||'FACTORY_PRODUCTION_CYCLE_PAUSED',detail:outcome});
   }
+
+  // Requisition planning is country-wide and happens before any factory transfers stock.
+  // This removes productionAssets ordering as an input-allocation advantage.
+  const pendingPlans=[],planByFactory=new Map();
   for(const asset of assets){
     const fid=String(asset?.id||asset?.assetId||asset?.projectId||'');
     if(!fid||!asset||completedThisTurn.has(fid))continue;
     const prior=n.factoryProductionCycles[fid];
+    if(factoryCycleActive(prior)&&prior.status!=='PAUSED')continue;
+    const gate=prior?.status==='PAUSED'?null:factoryOperationGate(cid,asset);
+    if(gate&&gate.status!=='READY')continue;
+    const first=tok(prior?.primaryInputResourceId||
+      Object.keys(asset.inputCoefficients||asset.inputs||{})[0]||asset.resourceId||'');
+    if(!first)continue;
+    const recipe=recipeFor(first,asset);
+    if(!Object.keys(recipe.inputs||{}).length)continue;
+    const plan={asset,factoryId:fid,first,recipe,gate,allocations:{},requestIds:[]};
+    pendingPlans.push(plan);planByFactory.set(fid,plan);
+  }
+  const requisitions=planFactoryInputRequests(cid,pendingPlans);
+
+  for(const asset of assets){
+    const fid=String(asset?.id||asset?.assetId||asset?.projectId||'');
+    if(!fid||!asset||completedThisTurn.has(fid))continue;
+    const plan=planByFactory.get(fid)||null,prior=n.factoryProductionCycles[fid];
+    let feeder=null,first=plan?.first||tok(prior?.primaryInputResourceId||
+      Object.keys(asset.inputCoefficients||asset.inputs||{})[0]||asset.resourceId||'');
+    let recipe=plan?.recipe||null;
     if(factoryCycleActive(prior)){
       if(prior.status==='PAUSED'&&factoryCycleDue(prior)){
-        // Pause is not a dead end: fetch any newly delivered/available required feedstock before
-        // deciding whether this facility remains red/stopped or can resume at reduced productivity.
-        const pausedRecipe=recipeFor(prior.primaryInputResourceId,asset);
-        const feeder=transferFactoryInputsFromWarehouse(cid,asset,pausedRecipe);
-        transfers.push(...(feeder.transfers||[]));
-        const resumedMetrics=factoryProductionMetrics(asset,pausedRecipe,prior.cycleId);
+        recipe=recipe||recipeFor(first,asset);
+        const result=transferFactoryInputsFromWarehouse(cid,asset,recipe,plan?.allocations||null);
+        feeder=result;transfers.push(...(result.transfers||[]));
+        reconcileFactoryInputRequestDeliveries(cid,plan,result);
+        const resumedMetrics=factoryProductionMetrics(asset,recipe,prior.cycleId);
         const resumeMissing=resumedMetrics.inputs.filter(row=>row.available<=1e-9||row.tracked<=1e-9)
           .map(row=>({resourceId:row.resourceId,available:row.available,tracked:row.tracked,
             reason:row.available<=1e-9?'WAREHOUSE_AND_FACTORY_INPUT_STOCK_EMPTY':'FACTORY_INPUT_BATCH_LEDGER_MISMATCH'}));
@@ -4371,46 +4578,55 @@ function processPendingFactoryInputs(countryId){
           factorySetProductionHealth(asset,'STOPPED',0,resumedMetrics.capacity,{reason:'FACTORY_INPUT_SHORTAGE',
             missingInputs:resumeMissing.length?resumeMissing:resumedMetrics.missingInputs,cycleId:prior.cycleId});
           blocked.push({factoryId:fid,reason:'FACTORY_INPUT_SHORTAGE',
-            missingInputs:resumeMissing.length?resumeMissing:resumedMetrics.missingInputs,warehouseTransferStatus:feeder.status});
+            missingInputs:resumeMissing.length?resumeMissing:resumedMetrics.missingInputs,warehouseTransferStatus:result.status});
           continue;
         }
         releaseFactoryCycleReservations(asset,prior.cycleId);
-        prior.status='RESCHEDULED_AFTER_INPUT_SHORTAGE';prior.resumedTurn=turn();prior.resumedByCycleSequence=(Number(n.factoryProductionCycleSequence)||0)+1;
-        n.factoryProductionCycleHistory.push(clone(prior));n.factoryProductionCycleHistory=n.factoryProductionCycleHistory.slice(-MAX_EVENTS);
+        prior.status='RESCHEDULED_AFTER_INPUT_SHORTAGE';prior.resumedTurn=turn();
+        prior.resumedByCycleSequence=(Number(n.factoryProductionCycleSequence)||0)+1;
+        n.factoryProductionCycleHistory.push(clone(prior));
+        n.factoryProductionCycleHistory=n.factoryProductionCycleHistory.slice(-MAX_EVENTS);
         delete n.factoryProductionCycles[fid];asset.activeProductionCycleId=null;
-        // Continue through the normal operation, utility and workforce gates below. The replacement
-        // cycle uses currently recorded batches and a newly calculated productivity percentage.
       }else{
         factorySetProductionHealth(asset,prior.productivityPct<99.999?'REDUCED':'RUNNING',
           prior.productionQuantity,prior.capacityPerDay,{cycleId:prior.cycleId});
         continue;
       }
     }
-    const gate=factoryOperationGate(cid,asset);
+    const gate=plan?.gate||factoryOperationGate(cid,asset);
     if(gate.status!=='READY'){
       factorySetProductionHealth(asset,'STOPPED',0,num(asset.capacityPerDay??asset.capacity),{reason:gate.reason,gate});
       blocked.push({factoryId:fid,reason:gate.reason,detail:gate});continue;
     }
-    const first=tok(Object.keys(asset.inputCoefficients||asset.inputs||{})[0]||asset.resourceId||'');
-    const recipe=recipeFor(first,asset);
-    const transfer=transferFactoryInputsFromWarehouse(cid,asset,recipe);
-    transfers.push(...(transfer.transfers||[]));
+    first=first||tok(Object.keys(asset.inputCoefficients||asset.inputs||{})[0]||asset.resourceId||'');
+    recipe=recipe||recipeFor(first,asset);
+    if(!feeder){
+      const result=transferFactoryInputsFromWarehouse(cid,asset,recipe,plan?.allocations||null);
+      feeder=result;transfers.push(...(result.transfers||[]));
+      reconcileFactoryInputRequestDeliveries(cid,plan,result);
+    }
     const metrics=factoryProductionMetrics(asset,recipe);
     const missing=metrics.inputs.filter(row=>row.available<=1e-9||row.tracked<=1e-9)
-      .map(row=>({resourceId:row.resourceId,available:row.available,tracked:row.tracked,reason:row.available<=1e-9?'WAREHOUSE_AND_FACTORY_INPUT_STOCK_EMPTY':'FACTORY_INPUT_BATCH_LEDGER_MISMATCH'}));
+      .map(row=>({resourceId:row.resourceId,available:row.available,tracked:row.tracked,
+        reason:row.available<=1e-9?'WAREHOUSE_AND_FACTORY_INPUT_STOCK_EMPTY':'FACTORY_INPUT_BATCH_LEDGER_MISMATCH'}));
     if(metrics.possibleProduction<=1e-9||missing.length){
-      factorySetProductionHealth(asset,'STOPPED',0,metrics.capacity,{reason:'FACTORY_INPUT_SHORTAGE',missingInputs:missing.length?missing:metrics.missingInputs});
-      blocked.push({factoryId:fid,reason:'FACTORY_INPUT_SHORTAGE',missingInputs:missing.length?missing:metrics.missingInputs,
-        warehouseTransferStatus:transfer.status});continue;
+      factorySetProductionHealth(asset,'STOPPED',0,metrics.capacity,{reason:'FACTORY_INPUT_SHORTAGE',
+        missingInputs:missing.length?missing:metrics.missingInputs});
+      blocked.push({factoryId:fid,reason:'FACTORY_INPUT_SHORTAGE',
+        missingInputs:missing.length?missing:metrics.missingInputs,warehouseTransferStatus:feeder.status});
+      continue;
     }
     const result=startFactoryProductionCycle({countryId:cid,factoryId:fid,resourceId:first,quantity:metrics.possibleProduction});
-    if(result.status==='IN_PROGRESS')started.push({factoryId:fid,cycleId:result.cycleId,productionQuantity:result.productionQuantity,
-      productivityPct:result.productivityPct,finishDate:result.finishDate});
+    if(result.status==='IN_PROGRESS')started.push({factoryId:fid,cycleId:result.cycleId,
+      productionQuantity:result.productionQuantity,productivityPct:result.productivityPct,finishDate:result.finishDate});
     else blocked.push({factoryId:fid,reason:result.reason||result.status,detail:result});
   }
-  return{status:blocked.length?'DEGRADED':'COMPLETED',countryId:cid,turn:turn(),completedCount:completed.length,processedCount:completed.length,completed,processed:completed,
-    startedCount:started.length,started,warehouseTransferCount:transfers.length,transfers,blocked};
+  return{status:blocked.length?'DEGRADED':'COMPLETED',countryId:cid,turn:turn(),
+    completedCount:completed.length,processedCount:completed.length,completed,processed:completed,
+    startedCount:started.length,started,warehouseTransferCount:transfers.length,transfers,blocked,
+    inputRequestCount:requisitions.requestCount,inputRequests:requisitions.requests};
 }
+
 
 function ensureSimulationFactory(cid,site,resourceId,quantity,options={}){
   const economy=econState(cid);if(!Array.isArray(economy.productionAssets))economy.productionAssets=[];
@@ -5198,7 +5414,7 @@ function gameplayPipelineDiagnostics(countryScope){
     awaitingTransportCapacity:perCountry.reduce((n,x)=>n+x.awaitingTransportCapacity,0),perCountry};
 }
 function api(){
-  return Object.freeze({VERSION,loadCatalog,loadSiteLogisticsRoutes,getTransportFleet,setTransportFleet,previewSiteTransport,planExtraction,planShipment,dispatchShipment,dispatchFactoryInputShipment,advanceShipments,quoteMineProject,startMineProject,startFactoryProject,startInfrastructureProject,startPadmaCorridorProject,advanceProjects,startTechnologyProject,executeFactoryCycle,executeSitePipeline,diagnostics,gameplayPipelineDiagnostics,factoryCatalogDiagnostics,factoryProductionRequirements,factoryProductionStatus,decommissionFactory,decommissionMine,setMineOperatingStatus,quoteMineDemolition,destroyMineAssets,startFactoryProductionCycle,transferFactoryInputsFromWarehouse,processPendingFactoryInputs,factoryUtilityDiagnostics,factoryConstructionMaterialQuote,reconcileFactoryEmployment,normalizeInfrastructure,candidateFactories,recipeFor,processPendingFactoryInputs,resourceMethod,buildRoute});
+  return Object.freeze({VERSION,loadCatalog,loadSiteLogisticsRoutes,getTransportFleet,setTransportFleet,previewSiteTransport,planExtraction,planShipment,dispatchShipment,dispatchFactoryInputShipment,advanceShipments,quoteMineProject,startMineProject,startFactoryProject,startInfrastructureProject,startPadmaCorridorProject,advanceProjects,startTechnologyProject,executeFactoryCycle,executeSitePipeline,diagnostics,gameplayPipelineDiagnostics,factoryCatalogDiagnostics,factoryProductionRequirements,factoryProductionStatus,decommissionFactory,decommissionMine,setMineOperatingStatus,quoteMineDemolition,destroyMineAssets,startFactoryProductionCycle,transferFactoryInputsFromWarehouse,processPendingFactoryInputs,allocateFactoryInputProportionally,factoryUtilityDiagnostics,factoryConstructionMaterialQuote,reconcileFactoryEmployment,normalizeInfrastructure,candidateFactories,recipeFor,resourceMethod,buildRoute});
 }
 g.Omega=g.Omega||{};g.Omega.ResourceIndustrialNetwork=api();g.OmegaResourceIndustrialNetwork=g.Omega.ResourceIndustrialNetwork;
 
