@@ -115,19 +115,21 @@ test('dataset has one explicit 21-type starting-count row for every core country
     assert.deepEqual(Object.keys(row.factoryCounts).sort(), factoryTypes, countryId + ' type keys must match the live catalog');
     const total = Object.values(row.factoryCounts).reduce((sum, count) => {
       assert.ok(Number.isInteger(count) && count >= 0, countryId + ' has an invalid count');
+      if (count > 0) assert.ok(count >= baseline.factoryCountScaling.minimumPositiveFactoryCount, countryId + ' active factory categories must have multiple game units');
       return sum + count;
     }, 0);
     assert.equal(total, row.totalStartingFactoryUnits, countryId + ' total must reconcile');
     assert.equal(row.provenance.realWorldFacilityCounts, false);
     assert.equal(row.provenance.simulationOnly, true);
   }
-  assert.ok(baseline.countries.BGD.factoryCounts.TEXTILE_GARMENT_MILL >= 3,
-    'Bangladesh begins with a strong, but game-scaled, textile allocation');
-  assert.ok(baseline.countries.BGD.totalStartingFactoryUnits < 25,
-    'Bangladesh counts must remain within the game scale rather than raw factory census totals');
-  assert.ok(baseline.countries.CHN.factoryCounts.ELECTRONICS_SEMICONDUCTOR_FAB >= 2);
-  assert.ok(baseline.countries.DEU.factoryCounts.INDUSTRIAL_MACHINERY_MACHINE_TOOLS >= 2);
-  assert.ok(baseline.countries.SGP.factoryCounts.SHIP_RAIL_EQUIPMENT_YARD >= 1);
+  assert.equal(baseline.factoryCountScaling.scaleFactor, 10);
+  assert.equal(baseline.factoryCountScaling.worldTotalStartingFactoryUnits, 15920);
+  assert.equal(baseline.countries.BGD.factoryCounts.TEXTILE_GARMENT_MILL, 40,
+    'Bangladesh receives a strong, multi-unit textile allocation');
+  assert.equal(baseline.countries.BGD.totalStartingFactoryUnits, 100);
+  assert.equal(baseline.countries.CHN.factoryCounts.ELECTRONICS_SEMICONDUCTOR_FAB, 30);
+  assert.equal(baseline.countries.DEU.factoryCounts.INDUSTRIAL_MACHINERY_MACHINE_TOOLS, 30);
+  assert.equal(baseline.countries.SGP.factoryCounts.SHIP_RAIL_EQUIPMENT_YARD, 20);
 });
 
 test('runtime validates sources and seeds all country counts without changing live assets or inventory', async () => {
