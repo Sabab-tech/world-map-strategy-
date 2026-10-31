@@ -1201,6 +1201,39 @@ console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');
       'the universal plant must accept an eligible mineral processing rule');
     assert.ok(N.candidateFactories('BGD','bauxite').some(row=>row.asset.id===universal.id),
       'the same universal plant must route a second commodity through its own catalog rule');
+
+    // The turn scheduler must select an available commodity for a recipe-less universal
+    // plant, transfer a tracked warehouse batch, and complete a real production cycle.
+    const resourceState=context.Game.state.resource.BGD;
+    const ironRecipe=N.recipeFor('iron_ore',universal);
+    const inputBatchId='STARTING-FACTORY-IRON-ORE-INPUT';
+    resourceState.inventory.iron_ore=100;
+    resourceState.warehouse={
+      warehouseId:'WH-BGD-RAW',availableByResource:{iron_ore:100},reservedByResource:{iron_ore:0},
+      storedBatchIds:[inputBatchId],receipts:[]
+    };
+    const inputBatch={
+      batchId:inputBatchId,countryId:'BGD',resourceId:'iron_ore',quantity:100,remainingQuantity:100,
+      unit:ironRecipe.inputUnit,stage:'RAW',status:'AVAILABLE',warehouseId:'WH-BGD-RAW',createdTurn:1
+    };
+    resourceState.batches=[inputBatch];
+    resourceState.inventoryLots={[inputBatchId]:{...inputBatch,status:'AVAILABLE'}};
+    const schedulerStart=N.processPendingFactoryInputs('BGD');
+    const startedCycle=resourceState.industrialNetwork.factoryProductionCycles[universal.id];
+    assert.equal(schedulerStart.started.some(row=>row.factoryId===universal.id),true,
+      'the automatic turn scheduler must select the stocked iron ore rule for a dynamic universal plant');
+    assert.equal(startedCycle.status,'IN_PROGRESS');
+    assert.equal(startedCycle.primaryInputResourceId,'iron_ore');
+    assert.equal(universal.inputInventory.iron_ore,100,
+      'tracked raw input must move from the national warehouse into the starting factory');
+    context.Game.state.simulation.turn=Number(startedCycle.finishTurn);
+    context.Game.state.simulation.date=startedCycle.finishDate;
+    const schedulerFinish=N.processPendingFactoryInputs('BGD');
+    assert.equal(schedulerFinish.completed.some(row=>row.factoryId===universal.id),true,
+      'the starting universal factory must finish its dated production cycle');
+    assert.ok(Number(resourceState.inventory.IRON_CONCENTRATE)>0,
+      'finished processing output must be credited to the country resource inventory');
+    assert.equal(universal.productionHealth.status,'READY');
     assert.ok(N.candidateFactories('BGD','cotton_fibre').filter(row=>row.asset.factoryType==='TEXTILE_GARMENT_MILL').length===2,
       'the commissioned textile assets must be eligible for their canonical input recipe');
 
