@@ -827,6 +827,55 @@
       '</section>';
   }
 
+  function factoryEstablishmentMarkup(model) {
+    model = model || {};
+    var data = model.countryFactoryEstablishmentData;
+    var records = data && data.factoryEstablishments || {};
+    var rows = Array.isArray(model.factoryTypeCatalog) ? model.factoryTypeCatalog.slice() : [];
+    if (!data || !data.factoryEstablishments) {
+      return '<section class="fp-starting-allocation fp-establishment-data" aria-label="Official factory establishment data">' +
+        '<header class="fp-starting-allocation-heading"><div><span>UNIDO / INDSTAT · ISIC REV.4</span><strong>Official establishment data</strong></div></header>' +
+        '<p class="fp-starting-allocation-foot">Source observations are loading or unavailable. Missing values are not treated as zero.</p></section>';
+    }
+    rows.sort(function (a, b) {
+      return String(a && a.name || a && a.type || '').localeCompare(String(b && b.name || b && b.type || ''));
+    });
+    var reportedCount = 0;
+    var partialCount = 0;
+    var tableRows = rows.map(function (row) {
+      var record = records[row.type] || {};
+      var status = String(record.status || 'NOT_QUERIED');
+      var value = Number(record.establishmentCount);
+      var partial = Number(record.partialEstablishmentCount);
+      var countText = 'Not reported';
+      if (status === 'REPORTED' && Number.isInteger(value) && value >= 0) {
+        reportedCount += 1;
+        countText = fmt(value);
+      } else if (status === 'PARTIAL') {
+        partialCount += 1;
+        countText = Number.isInteger(partial) && partial >= 0
+          ? fmt(partial) + ' · partial, not total'
+          : 'Partial, not total';
+      } else if (status === 'NOT_COMPARABLE') countText = 'Not comparable';
+      else if (status === 'COUNTRY_NOT_COVERED') countText = 'Country not covered';
+      else if (status === 'MAPPING_UNAVAILABLE') countText = 'Mapping unavailable';
+      else if (status === 'SOURCE_UNAVAILABLE') countText = 'Source unavailable';
+      else if (status === 'NOT_QUERIED') countText = 'Pending source';
+      var year = record.referenceYear !== null && record.referenceYear !== undefined &&
+        Number.isInteger(Number(record.referenceYear)) ? fmt(Number(record.referenceYear)) : '—';
+      return '<tr><td><strong>' + esc(row.name || row.type) + '</strong><small>' + esc(row.type) + '</small></td>' +
+        '<td class="fp-starting-allocation-count">' + esc(countText) + '</td><td>' + esc(year) + '</td>' +
+        '<td>' + esc(status.replace(/_/g, ' ').toLowerCase()) + '</td></tr>';
+    }).join('');
+    return '<section class="fp-starting-allocation fp-establishment-data" aria-label="Official factory establishment data">' +
+      '<header class="fp-starting-allocation-heading"><div><span>UNIDO / INDSTAT · ISIC REV.4</span><strong>Official establishment data</strong></div>' +
+      '<div class="fp-starting-allocation-meta"><span>' + fmt(reportedCount) + ' complete</span><span>' + fmt(partialCount) + ' partial</span></div></header>' +
+      '<div class="fp-starting-allocation-table-wrap"><table><thead><tr><th>Factory type</th><th>Establishments</th><th>Year</th><th>Source status</th></tr></thead>' +
+      '<tbody>' + (tableRows || '<tr><td colspan="4">Factory type catalogue unavailable</td></tr>') + '</tbody></table></div>' +
+      '<p class="fp-starting-allocation-foot">UNIDO counts statistical establishments, not necessarily individual physical factory sites. Partial values are not complete totals; missing values are not zero.</p>' +
+      '</section>';
+  }
+
   function factoryTypeCatalogMarkup(model) {
     model = model || {};
     var rows = Array.isArray(model.factoryTypeCatalog) ? model.factoryTypeCatalog.slice() : [];
@@ -1011,7 +1060,7 @@
       '</div>';
     var startingAllocationMarkup = active === 'factories' ? factoryStartingAllocationMarkup(model) : '';
     var panelBody = active === 'factories'
-      ? startingAllocationMarkup + (factoryView === 'types' ? factoryTypeCatalogMarkup(model) : '<div class="omega-v2-factory-deck">' + factoryCards + '</div>')
+      ? startingAllocationMarkup + factoryEstablishmentMarkup(model) + (factoryView === 'types' ? factoryTypeCatalogMarkup(model) : '<div class="omega-v2-factory-deck">' + factoryCards + '</div>')
       : '<div class="fp-content" data-omega-v2-industry-content data-active-tab="' + esc(active) + '">' +
           '<header class="fp-content-heading"><div><span>OMEGA / COUNTRY DATA</span><strong>' + esc(activeLabel) + '</strong></div>' +
           '<span class="fp-content-country">' + esc(model.countryId || 'Country not selected') + '</span></header>' +
@@ -1225,7 +1274,8 @@
        'OMEGA_RESOURCE_FINISHED_GOODS_AVAILABLE','OMEGA_RESOURCE_PROCESSING_COMPLETED','OMEGA_RESOURCE_TECHNOLOGY_PROJECT_STARTED',
        'OMEGA_INFRASTRUCTURE_PROJECT_STARTED','OMEGA_RESOURCE_MINE_PROJECT_STARTED','OMEGA_RESOURCE_MINE_COMMISSIONED',
        'OMEGA_RESOURCE_MINE_CAPACITY_CHANGED','OMEGA_SIMULATION_TURN_COMMITTED',
-       'OMEGA_FACTORY_CAPACITY_CHANGED','OMEGA_COUNTRY_FACTORY_STARTING_BASELINE_READY','OMEGA_COUNTRY_FACTORY_STARTING_BASELINE_INITIALIZED'].forEach(function (eventName) {
+       'OMEGA_FACTORY_CAPACITY_CHANGED','OMEGA_COUNTRY_FACTORY_STARTING_BASELINE_READY','OMEGA_COUNTRY_FACTORY_STARTING_BASELINE_INITIALIZED',
+       'OMEGA_COUNTRY_FACTORY_ESTABLISHMENT_DATA_READY'].forEach(function (eventName) {
         g.addEventListener(eventName, function () {
           if (!root.querySelector || !root.querySelector('.omega-v2-industry-command, .omega-v2-factory-command')) return;
           scheduleRender(root, Object.assign({}, root.__omegaV2IndustryOptions || {}, { tab: root.__omegaV2IndustryTab || 'factories' }));
