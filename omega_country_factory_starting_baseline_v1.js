@@ -590,7 +590,9 @@
         status: 'READY', countryId: row.countryId, countryName: row.countryName,
         totalStartingFactoryUnits: row.totalStartingFactoryUnits,
         factoryTypeCount: registry.length, registry: registry,
-        runtimeStatus: runtimeRegistered ? 'REGISTERED' : 'DATA_READY_NOT_SESSION_REGISTERED',
+        runtimeStatus: runtimeRegistered ? 'REGISTERED' :
+          (runtimeRow && runtimeRow.runtimeActivationScope === 'STATIC_COUNTRY_BASELINE'
+            ? 'STATIC_BASELINE_NOT_ACTIVE_PLAYER_COUNTRY' : 'DATA_READY_NOT_SESSION_REGISTERED'),
         runtimeRegistered: runtimeRegistered,
         runtimeSessionId: runtimeRegistered ? report.sessionId || null : null,
         runtimeRegistryVersion: runtimeRegistered ? report.version || null : null,
