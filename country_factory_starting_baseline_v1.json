@@ -3896,7 +3896,7 @@
         "missingPolicy": "Null means unavailable or not comparable, never zero."
       },
       "specializationEvidenceStatus": "GAME_MODELLED_SPECIALIZATION_SET",
-      "industryArchetypeBasis": "EXPLICIT_GAME_SPECIALIZATION_SET_V1",
+      "industryArchetypeBasis": "SOURCE_BACKED_SPECIALIZATION_EVIDENCE_V1",
       "industryArchetypeObservationYear": 2025,
       "allocationDiagnostics": {
         "schemaVersion": "1.0.0",
@@ -9049,7 +9049,7 @@
         "missingPolicy": "Null means unavailable or not comparable, never zero."
       },
       "specializationEvidenceStatus": "GAME_MODELLED_SPECIALIZATION_SET",
-      "industryArchetypeBasis": "EXPLICIT_GAME_SPECIALIZATION_SET_V1",
+      "industryArchetypeBasis": "SOURCE_BACKED_SPECIALIZATION_EVIDENCE_V1",
       "industryArchetypeObservationYear": 2025,
       "allocationDiagnostics": {
         "schemaVersion": "1.0.0",
@@ -16665,7 +16665,7 @@
         "missingPolicy": "Null means unavailable or not comparable, never zero."
       },
       "specializationEvidenceStatus": "GAME_MODELLED_SPECIALIZATION_SET",
-      "industryArchetypeBasis": "EXPLICIT_GAME_SPECIALIZATION_SET_V1",
+      "industryArchetypeBasis": "SOURCE_BACKED_SPECIALIZATION_EVIDENCE_V1",
       "industryArchetypeObservationYear": 2025,
       "allocationDiagnostics": {
         "schemaVersion": "1.0.0",
@@ -19547,7 +19547,7 @@
         "missingPolicy": "Null means unavailable or not comparable, never zero."
       },
       "specializationEvidenceStatus": "GAME_MODELLED_SPECIALIZATION_SET",
-      "industryArchetypeBasis": "EXPLICIT_GAME_SPECIALIZATION_SET_V1",
+      "industryArchetypeBasis": "SOURCE_BACKED_SPECIALIZATION_EVIDENCE_V1",
       "industryArchetypeObservationYear": 2023,
       "allocationDiagnostics": {
         "schemaVersion": "1.0.0",
@@ -27413,8 +27413,8 @@
       "The canonical 21-type resource_industrial_catalog_v1.json roster."
     ],
     "comparabilityPolicy": "Agriculture, industry and services are used only when at least two observations share the exact same year. Manufacturing value added and agriculture employment are used only when their observation year is within three years of that comparison year. Missing or non-comparable values contribute no fabricated zero observation.",
-    "allocationPolicy": "Existing uniform profiles are rebalanced. Newly source-backed specialization evidence refreshes earlier macro-only allocations, while previously differentiated profiles are preserved unless new source-backed evidence explicitly upgrades the profile. Selected categories receive positive allocations, then remaining units are distributed by largest remainder.",
-    "fixedBudgetPolicy": "Each country's starting-unit budget remains unchanged except JOR, SMR and SWZ, which each receive one additional simulated unit because their source-backed specialization lists previously consumed the entire starting budget. Existing per-country Universal Materials quantities remain fixed.",
+    "allocationPolicy": "Existing uniform profiles are rebalanced. Newly source-backed specialization evidence refreshes an earlier macro-only allocation, while previously differentiated profiles remain preserved unless the specialization evidence is explicitly upgraded. Selected categories receive positive allocations, then remaining units are distributed using the largest-remainder method.",
+    "fixedBudgetPolicy": "Per-country starting-unit budgets remain unchanged except for JOR, SMR and SWZ: each receives one additional simulated unit because its source-backed specialization list originally consumed every starting unit and made differentiated quantities impossible. Existing Universal Materials umbrella quantities stay fixed.",
     "specializationPolicy": "Existing specialization IDs remain mandatory positive categories. Source-backed specializations receive a stronger model weight than game-modelled specializations; this expresses evidence priority, not an observed establishment count.",
     "weightModel": {
       "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT": "0.45 + 0.012 * industry",
@@ -27446,7 +27446,7 @@
       "The latest UNIDO INDSTAT establishment refresh recorded zero usable core-country observations, so UNIDO establishment counts are not used to populate this model.",
       "Resource-context entries are not used as quantitative factory weights because much of the current roster lacks sufficiently differentiated, comparable resource evidence.",
       "Profiles without comparable macro data and without existing specializations retain their previous allocation rather than receiving invented country-specific values.",
-      "A one-unit budget exception is applied only to source-backed specialization profiles whose full specialization list equalled the original starting budget; the exception is recorded per country and in the world summary."
+      "A one-unit budget exception is applied only to a documented source-backed specialization profile whose complete specialization list equals its entire original starting budget; the exception is recorded per country and in the world summary."
     ],
     "summary": {
       "coreCountryCount": 197,
