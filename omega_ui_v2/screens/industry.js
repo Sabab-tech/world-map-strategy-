@@ -319,7 +319,7 @@
         authority: String(profile.authority || asset.authority || 'NOT_RECORDED'),
         raw: asset
       };
-    }).filter(function (factory) { return !/^(DECOMMISSIONED|DESTROYED)$/.test(String(factory.status || '').trim().toUpperCase()); });
+    }).filter(function (factory) { return !/^(DECOMMISSIONED|DESTROYED|UNDER_CONSTRUCTION)$/.test(String(factory.status || '').trim().toUpperCase()); });
     var mineSites = rawMineSites.map(function (site) {
       var quantitative = site.quantitative || site.real && site.real.quantitative || {};
       var production = mineDailyProduction(site);
