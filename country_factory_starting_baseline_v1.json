@@ -3896,7 +3896,7 @@
         "missingPolicy": "Null means unavailable or not comparable, never zero."
       },
       "specializationEvidenceStatus": "GAME_MODELLED_SPECIALIZATION_SET",
-      "industryArchetypeBasis": "SOURCE_BACKED_SPECIALIZATION_EVIDENCE_V1",
+      "industryArchetypeBasis": "EXISTING_GAME_SPECIALIZATION_PROFILE_V1",
       "industryArchetypeObservationYear": 2025,
       "allocationDiagnostics": {
         "schemaVersion": "1.0.0",
@@ -9049,7 +9049,7 @@
         "missingPolicy": "Null means unavailable or not comparable, never zero."
       },
       "specializationEvidenceStatus": "GAME_MODELLED_SPECIALIZATION_SET",
-      "industryArchetypeBasis": "SOURCE_BACKED_SPECIALIZATION_EVIDENCE_V1",
+      "industryArchetypeBasis": "EXISTING_GAME_SPECIALIZATION_PROFILE_V1",
       "industryArchetypeObservationYear": 2025,
       "allocationDiagnostics": {
         "schemaVersion": "1.0.0",
@@ -16665,7 +16665,7 @@
         "missingPolicy": "Null means unavailable or not comparable, never zero."
       },
       "specializationEvidenceStatus": "GAME_MODELLED_SPECIALIZATION_SET",
-      "industryArchetypeBasis": "SOURCE_BACKED_SPECIALIZATION_EVIDENCE_V1",
+      "industryArchetypeBasis": "EXISTING_GAME_SPECIALIZATION_PROFILE_V1",
       "industryArchetypeObservationYear": 2025,
       "allocationDiagnostics": {
         "schemaVersion": "1.0.0",
@@ -19547,7 +19547,7 @@
         "missingPolicy": "Null means unavailable or not comparable, never zero."
       },
       "specializationEvidenceStatus": "GAME_MODELLED_SPECIALIZATION_SET",
-      "industryArchetypeBasis": "SOURCE_BACKED_SPECIALIZATION_EVIDENCE_V1",
+      "industryArchetypeBasis": "EXISTING_GAME_SPECIALIZATION_PROFILE_V1",
       "industryArchetypeObservationYear": 2023,
       "allocationDiagnostics": {
         "schemaVersion": "1.0.0",
