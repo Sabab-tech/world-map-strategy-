@@ -1150,7 +1150,7 @@ console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');
   try {
     context.Game.state={
       simulation:{turn:1,playerCountryId:'BGD',session:{sessionId:'STARTING-FACTORY-ASSET-TEST',playerCountryId:'BGD',status:'READY',createdTurn:1}},
-      economy:{BGD:{unemploymentCount:100000,laborForce:1000000,productionAssets:[]}},
+      economy:{BGD:{unemploymentCount:100000,laborForce:1000000,productionAssets:[{id:'EXISTING-TEXTILE-BGD-1',factoryType:'TEXTILE_GARMENT_MILL',status:'OPERATIONAL',customData:{keep:true}}]}},
       resource:{BGD:{inventory:{},warehouse:{availableByResource:{},reservedByResource:{}},technologyCapabilities:[]}},
       transport:{BGD:{infrastructure:{utilitySupply:{electricityMWhPerDay:1000000,waterM3PerDay:1000000,status:'AVAILABLE',simulationOnly:true}}}}
     };
@@ -1163,13 +1163,18 @@ console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');
     });
     assert.equal(registered.status,'COMPLETED',JSON.stringify(registered));
     assert.equal(registered.requestedFactoryUnits,3);
-    assert.equal(registered.createdCount,3);
+    assert.equal(registered.createdCount,2,'an existing factory must be hydrated, not duplicated');
     assert.equal(registered.activeAssetCount,3);
     const assets=context.Game.state.economy.BGD.productionAssets;
     assert.equal(assets.length,3);
     const textiles=assets.filter(asset=>asset.factoryType==='TEXTILE_GARMENT_MILL');
     const universal=assets.find(asset=>asset.factoryType==='UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT');
     assert.equal(textiles.length,2);
+    const hydratedExisting=textiles.find(asset=>asset.id==='EXISTING-TEXTILE-BGD-1');
+    assert.ok(hydratedExisting,'the pre-existing asset id must survive baseline hydration');
+    assert.equal(hydratedExisting.customData.keep,true,'custom save fields must be preserved');
+    assert.ok(hydratedExisting.capacityPerDay>0,'missing legacy capacity must be filled from the canonical profile');
+    assert.equal(hydratedExisting.recipeId,'TEXTILE_GARMENT_ROUTE_V1','missing legacy recipe must be filled from the canonical catalog');
     assert.equal(textiles.every(asset=>asset.status==='OPERATIONAL'&&asset.capacityPerDay>0&&asset.recipeId==='TEXTILE_GARMENT_ROUTE_V1'),true);
     assert.ok(universal,'the universal materials factory is registered as a live processing asset');
     assert.equal(universal.status,'OPERATIONAL');
