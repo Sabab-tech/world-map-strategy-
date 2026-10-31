@@ -1387,7 +1387,8 @@ function factoryAssets(c){
 function recipeFor(resourceId,asset={}){
   const rid=tok(resourceId),type=String(asset?.factoryType||asset?.type||'').trim().toUpperCase();
   const downstream=cat()?.downstreamFactoryRecipes||{};
-  let downstreamRule=asset?.recipeId?downstream[String(asset.recipeId)]||null:null;
+  const dynamicProcessing=String(asset?.recipeMode||'').trim().toUpperCase()==='DYNAMIC_PROCESSING';
+  let downstreamRule=(!dynamicProcessing&&asset?.recipeId)?downstream[String(asset.recipeId)]||null:null;
   if(!downstreamRule&&type){
     downstreamRule=Object.values(downstream).find(row=>String(row?.factoryType||'').toUpperCase()===type&&
       Object.keys(row?.inputs||{}).some(key=>tok(key)===rid))||null;
@@ -1397,7 +1398,6 @@ function recipeFor(resourceId,asset={}){
   const genericRule={factoryType:'UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT',inputs:{[rid||'unknown_resource']:1},
     outputs:{[genericProduct]:0.85,PROCESSING_RESIDUE:0.15},cycleDays:2,authority:'SIMULATED_GENERIC_FALLBACK'};
   const base=downstreamRule||r||genericRule;
-  const dynamicProcessing=String(asset?.recipeMode||'').trim().toUpperCase()==='DYNAMIC_PROCESSING';
   const inputSource=dynamicProcessing?base.inputs:(asset?.inputCoefficients||asset?.inputs||base.inputs||{});
   const normalizedInputs={};
   for(const [key,value] of Object.entries(inputSource)){
