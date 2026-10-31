@@ -2337,29 +2337,39 @@
       "countryName": "Belarus",
       "countryCode": "BY",
       "continent": "Europe",
-      "industryArchetype": "Services-led economy with a manufacturing base",
-      "specializations": [],
-      "totalStartingFactoryUnits": 7,
+      "industryArchetype": "Machinery, electronics and chemical manufacturing",
+      "specializations": [
+        "ELECTRONICS_SEMICONDUCTOR_FAB",
+        "FERTILIZER_CHEMICAL_PLANT",
+        "FOOD_PROCESSING_COLD_CHAIN",
+        "INDUSTRIAL_MACHINERY_MACHINE_TOOLS",
+        "PETROCHEMICAL_POLYMER_PLANT",
+        "PHARMA_MEDICAL_SUPPLIES_PLANT",
+        "STEEL_AND_ALLOY_WORKS",
+        "TEXTILE_GARMENT_MILL",
+        "VEHICLE_TRUCK_BUS_ASSEMBLY"
+      ],
+      "totalStartingFactoryUnits": 10,
       "factoryCounts": {
-        "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT": 1,
+        "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT": 0,
         "STEEL_AND_ALLOY_WORKS": 1,
         "NON_FERROUS_METAL_SMELTER": 0,
         "PETROCHEMICAL_POLYMER_PLANT": 1,
         "FERTILIZER_CHEMICAL_PLANT": 1,
         "INDUSTRIAL_CHEMICALS_GAS_PLANT": 0,
-        "CEMENT_CONCRETE_PLANT": 1,
+        "CEMENT_CONCRETE_PLANT": 0,
         "GLASS_CERAMICS_PLANT": 0,
         "PAPER_PACKAGING_MILL": 0,
         "FOOD_PROCESSING_COLD_CHAIN": 1,
-        "TEXTILE_GARMENT_MILL": 0,
-        "INDUSTRIAL_MACHINERY_MACHINE_TOOLS": 1,
+        "TEXTILE_GARMENT_MILL": 1,
+        "INDUSTRIAL_MACHINERY_MACHINE_TOOLS": 2,
         "GRID_EQUIPMENT_FACTORY": 0,
-        "ELECTRONICS_SEMICONDUCTOR_FAB": 0,
+        "ELECTRONICS_SEMICONDUCTOR_FAB": 1,
         "BATTERY_ENERGY_STORAGE_PLANT": 0,
-        "VEHICLE_TRUCK_BUS_ASSEMBLY": 0,
+        "VEHICLE_TRUCK_BUS_ASSEMBLY": 1,
         "SHIP_RAIL_EQUIPMENT_YARD": 0,
         "AEROSPACE_EQUIPMENT_PLANT": 0,
-        "PHARMA_MEDICAL_SUPPLIES_PLANT": 0,
+        "PHARMA_MEDICAL_SUPPLIES_PLANT": 1,
         "DEFENSE_EQUIPMENT_FACTORY": 0,
         "RECYCLING_WASTE_PROCESSING_PLANT": 0
       },
@@ -2371,7 +2381,7 @@
         "sourceEconomicProfile": "economy.json",
         "sourceIndustryCatalog": "resource_industrial_catalog_v1.json",
         "sourceCountryResourceContext": "resource_country_resource_context_index.json",
-        "note": "Game-scaled starting allocation informed by the country's broad industrial strengths and resource context. Counts are abstract game units, not observed factory censuses or real-world facility counts."
+        "note": "Game-scaled allocation mapped to source-backed machine-building, microelectronics, vehicle, metallurgy, fertilizer, petrochemical, food, light-industry and pharmaceutical sectors; counts are not real-world factory totals."
       },
       "economicSectorContext": {
         "schemaVersion": "OMEGA_COUNTRY_ECONOMIC_SECTOR_CONTEXT_V1",
@@ -2437,9 +2447,43 @@
         "interpretation": "Manufacturing value added is a component of industry value added; do not add it to industry. Broad value-added shares do not identify individual factory types.",
         "missingPolicy": "Null means unavailable or not comparable, never zero."
       },
-      "specializationEvidenceStatus": "NO_SUBSECTOR_SPECIALIZATION_EVIDENCE",
-      "industryArchetypeBasis": "WORLD_BANK_VALUE_ADDED_MIX_V1",
-      "industryArchetypeObservationYear": 2025
+      "specializationEvidenceStatus": "GAME_MODELLED_SPECIALIZATION_SET",
+      "industryArchetypeBasis": "EXISTING_GAME_SPECIALIZATION_PROFILE_V1",
+      "industryArchetypeObservationYear": 2025,
+      "specializationEvidence": {
+        "schemaVersion": "OMEGA_COUNTRY_FACTORY_SPECIALIZATION_EVIDENCE_V1",
+        "status": "SOURCE_BACKED_SIMULATION_MAPPING",
+        "accessDate": "2026-10-31",
+        "mappingPolicy": "Country sector evidence selects compatible canonical game factory types. Counts remain abstract game-scaled units and are not observed real-world facility totals.",
+        "referenceYears": [
+          2025
+        ],
+        "sources": [
+          {
+            "authority": "United Nations High-level Political Forum / Republic of Belarus",
+            "title": "Belarus Voluntary National Review 2025",
+            "url": "https://hlpf.un.org/sites/default/files/vnrs/2025/VNR%202025%20Belarus%20Report_1.pdf",
+            "publicationYear": 2025,
+            "supportedClaims": [
+              "machine-building and agricultural/construction/forestry machinery",
+              "microelectronics and instrumentation",
+              "metallurgy and electric transport/automotive",
+              "food and light industries",
+              "petroleum products, chemicals, rubber and plastics",
+              "pharmaceutical industry"
+            ]
+          },
+          {
+            "authority": "World Bank",
+            "title": "Belarus Country Overview",
+            "url": "https://www.worldbank.org/ext/en/country/belarus",
+            "supportedClaims": [
+              "major exports include fertilizers, petrochemicals, agricultural and timber products, and heavy machinery"
+            ]
+          }
+        ],
+        "confidence": "HIGH"
+      }
     },
     "BLZ": {
       "countryId": "BLZ",
@@ -6893,17 +6937,22 @@
       "countryName": "Gabon",
       "countryCode": "GA",
       "continent": "Africa",
-      "industryArchetype": "Industry-led economy with a manufacturing base",
-      "specializations": [],
+      "industryArchetype": "Manganese, agro-processing and building materials",
+      "specializations": [
+        "CEMENT_CONCRETE_PLANT",
+        "FOOD_PROCESSING_COLD_CHAIN",
+        "INDUSTRIAL_CHEMICALS_GAS_PLANT",
+        "NON_FERROUS_METAL_SMELTER"
+      ],
       "totalStartingFactoryUnits": 5,
       "factoryCounts": {
         "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT": 1,
-        "STEEL_AND_ALLOY_WORKS": 1,
-        "NON_FERROUS_METAL_SMELTER": 0,
-        "PETROCHEMICAL_POLYMER_PLANT": 1,
-        "FERTILIZER_CHEMICAL_PLANT": 1,
-        "INDUSTRIAL_CHEMICALS_GAS_PLANT": 0,
-        "CEMENT_CONCRETE_PLANT": 0,
+        "STEEL_AND_ALLOY_WORKS": 0,
+        "NON_FERROUS_METAL_SMELTER": 1,
+        "PETROCHEMICAL_POLYMER_PLANT": 0,
+        "FERTILIZER_CHEMICAL_PLANT": 0,
+        "INDUSTRIAL_CHEMICALS_GAS_PLANT": 1,
+        "CEMENT_CONCRETE_PLANT": 1,
         "GLASS_CERAMICS_PLANT": 0,
         "PAPER_PACKAGING_MILL": 0,
         "FOOD_PROCESSING_COLD_CHAIN": 1,
@@ -6927,7 +6976,7 @@
         "sourceEconomicProfile": "economy.json",
         "sourceIndustryCatalog": "resource_industrial_catalog_v1.json",
         "sourceCountryResourceContext": "resource_country_resource_context_index.json",
-        "note": "Game-scaled starting allocation informed by the country's broad industrial strengths and resource context. Counts are abstract game units, not observed factory censuses or real-world facility counts."
+        "note": "Game-scaled profile reflects existing manganese processing, palm-oil/agro-industry, cement and industrial-gas activity. A planned steel project is not treated as an operating factory."
       },
       "economicSectorContext": {
         "schemaVersion": "OMEGA_COUNTRY_ECONOMIC_SECTOR_CONTEXT_V1",
@@ -6993,9 +7042,33 @@
         "interpretation": "Manufacturing value added is a component of industry value added; do not add it to industry. Broad value-added shares do not identify individual factory types.",
         "missingPolicy": "Null means unavailable or not comparable, never zero."
       },
-      "specializationEvidenceStatus": "NO_SUBSECTOR_SPECIALIZATION_EVIDENCE",
-      "industryArchetypeBasis": "WORLD_BANK_VALUE_ADDED_MIX_V1",
-      "industryArchetypeObservationYear": 2025
+      "specializationEvidenceStatus": "GAME_MODELLED_SPECIALIZATION_SET",
+      "industryArchetypeBasis": "EXISTING_GAME_SPECIALIZATION_PROFILE_V1",
+      "industryArchetypeObservationYear": 2025,
+      "specializationEvidence": {
+        "schemaVersion": "OMEGA_COUNTRY_FACTORY_SPECIALIZATION_EVIDENCE_V1",
+        "status": "SOURCE_BACKED_SIMULATION_MAPPING",
+        "accessDate": "2026-10-31",
+        "mappingPolicy": "Country sector evidence selects compatible canonical game factory types. Counts remain abstract game-scaled units and are not observed real-world facility totals.",
+        "referenceYears": [
+          2025
+        ],
+        "sources": [
+          {
+            "authority": "Gabon Eco, citing DGEPF, FAOSTAT and industry operators",
+            "title": "Industry and processing: figures, players and regulatory framework",
+            "url": "https://gaboneco.ga/en/secteurs/industrie-transformation",
+            "supportedClaims": [
+              "manganese mining and processing at the Moanda Metallurgical Complex",
+              "palm-oil milling and refining and agro-industry",
+              "cement production and domestic building materials",
+              "industrial gas production and metal roofing/paints"
+            ]
+          }
+        ],
+        "confidence": "HIGH",
+        "caveat": "The steel plant mentioned in the source is a planned project, so steelworks were not added as an existing specialization."
+      }
     },
     "GBR": {
       "countryId": "GBR",
@@ -8428,12 +8501,14 @@
       "countryName": "Haiti",
       "countryCode": "HT",
       "continent": "North America",
-      "industryArchetype": "Services-led economy with a manufacturing base",
-      "specializations": [],
+      "industryArchetype": "Textile and garment manufacturing under disruption",
+      "specializations": [
+        "TEXTILE_GARMENT_MILL"
+      ],
       "totalStartingFactoryUnits": 5,
       "factoryCounts": {
         "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT": 1,
-        "STEEL_AND_ALLOY_WORKS": 1,
+        "STEEL_AND_ALLOY_WORKS": 0,
         "NON_FERROUS_METAL_SMELTER": 0,
         "PETROCHEMICAL_POLYMER_PLANT": 1,
         "FERTILIZER_CHEMICAL_PLANT": 1,
@@ -8442,7 +8517,7 @@
         "GLASS_CERAMICS_PLANT": 0,
         "PAPER_PACKAGING_MILL": 0,
         "FOOD_PROCESSING_COLD_CHAIN": 1,
-        "TEXTILE_GARMENT_MILL": 0,
+        "TEXTILE_GARMENT_MILL": 1,
         "INDUSTRIAL_MACHINERY_MACHINE_TOOLS": 0,
         "GRID_EQUIPMENT_FACTORY": 0,
         "ELECTRONICS_SEMICONDUCTOR_FAB": 0,
@@ -8462,7 +8537,7 @@
         "sourceEconomicProfile": "economy.json",
         "sourceIndustryCatalog": "resource_industrial_catalog_v1.json",
         "sourceCountryResourceContext": "resource_country_resource_context_index.json",
-        "note": "Game-scaled starting allocation informed by the country's broad industrial strengths and resource context. Counts are abstract game units, not observed factory censuses or real-world facility counts."
+        "note": "Only the textile/garment specialization is explicitly source-backed. The other generic game-scale allocations are not presented as verified national industry strengths."
       },
       "economicSectorContext": {
         "schemaVersion": "OMEGA_COUNTRY_ECONOMIC_SECTOR_CONTEXT_V1",
@@ -8528,9 +8603,31 @@
         "interpretation": "Manufacturing value added is a component of industry value added; do not add it to industry. Broad value-added shares do not identify individual factory types.",
         "missingPolicy": "Null means unavailable or not comparable, never zero."
       },
-      "specializationEvidenceStatus": "NO_SUBSECTOR_SPECIALIZATION_EVIDENCE",
-      "industryArchetypeBasis": "WORLD_BANK_VALUE_ADDED_MIX_V1",
-      "industryArchetypeObservationYear": 2025
+      "specializationEvidenceStatus": "GAME_MODELLED_SPECIALIZATION_SET",
+      "industryArchetypeBasis": "EXISTING_GAME_SPECIALIZATION_PROFILE_V1",
+      "industryArchetypeObservationYear": 2025,
+      "specializationEvidence": {
+        "schemaVersion": "OMEGA_COUNTRY_FACTORY_SPECIALIZATION_EVIDENCE_V1",
+        "status": "SOURCE_BACKED_SIMULATION_MAPPING",
+        "accessDate": "2026-10-31",
+        "mappingPolicy": "Country sector evidence selects compatible canonical game factory types. Counts remain abstract game-scaled units and are not observed real-world facility totals.",
+        "referenceYears": [
+          2025
+        ],
+        "sources": [
+          {
+            "authority": "Institut Haïtien de Statistique et d'Informatique (IHSI)",
+            "title": "The Economic Accounts in 2025",
+            "url": "https://www.haitidocs.org/doc/ihsi-comptes-economiques-2025",
+            "publicationYear": 2025,
+            "supportedClaims": [
+              "textile, clothing and leather manufacturing is separately reported and remained active in FY2025, although it contracted 8 percent"
+            ]
+          }
+        ],
+        "confidence": "MODERATE",
+        "caveat": "The 2025 national accounts document a contraction in textiles and clothing; this specialization records sector presence, not growth or high capacity."
+      }
     },
     "HUN": {
       "countryId": "HUN",
@@ -9109,13 +9206,23 @@
       "countryName": "Iraq",
       "countryCode": "IQ",
       "continent": "Asia",
-      "industryArchetype": "Services-led mixed economy",
-      "specializations": [],
+      "industryArchetype": "Engineering, petrochemicals and consumer manufacturing",
+      "specializations": [
+        "CEMENT_CONCRETE_PLANT",
+        "FERTILIZER_CHEMICAL_PLANT",
+        "FOOD_PROCESSING_COLD_CHAIN",
+        "INDUSTRIAL_CHEMICALS_GAS_PLANT",
+        "INDUSTRIAL_MACHINERY_MACHINE_TOOLS",
+        "PETROCHEMICAL_POLYMER_PLANT",
+        "PHARMA_MEDICAL_SUPPLIES_PLANT",
+        "TEXTILE_GARMENT_MILL",
+        "VEHICLE_TRUCK_BUS_ASSEMBLY"
+      ],
       "totalStartingFactoryUnits": 10,
       "factoryCounts": {
-        "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT": 1,
-        "STEEL_AND_ALLOY_WORKS": 1,
-        "NON_FERROUS_METAL_SMELTER": 1,
+        "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT": 0,
+        "STEEL_AND_ALLOY_WORKS": 0,
+        "NON_FERROUS_METAL_SMELTER": 0,
         "PETROCHEMICAL_POLYMER_PLANT": 1,
         "FERTILIZER_CHEMICAL_PLANT": 1,
         "INDUSTRIAL_CHEMICALS_GAS_PLANT": 1,
@@ -9124,14 +9231,14 @@
         "PAPER_PACKAGING_MILL": 0,
         "FOOD_PROCESSING_COLD_CHAIN": 1,
         "TEXTILE_GARMENT_MILL": 1,
-        "INDUSTRIAL_MACHINERY_MACHINE_TOOLS": 0,
+        "INDUSTRIAL_MACHINERY_MACHINE_TOOLS": 2,
         "GRID_EQUIPMENT_FACTORY": 0,
         "ELECTRONICS_SEMICONDUCTOR_FAB": 0,
         "BATTERY_ENERGY_STORAGE_PLANT": 0,
         "VEHICLE_TRUCK_BUS_ASSEMBLY": 1,
         "SHIP_RAIL_EQUIPMENT_YARD": 0,
         "AEROSPACE_EQUIPMENT_PLANT": 0,
-        "PHARMA_MEDICAL_SUPPLIES_PLANT": 0,
+        "PHARMA_MEDICAL_SUPPLIES_PLANT": 1,
         "DEFENSE_EQUIPMENT_FACTORY": 0,
         "RECYCLING_WASTE_PROCESSING_PLANT": 0
       },
@@ -9143,7 +9250,7 @@
         "sourceEconomicProfile": "economy.json",
         "sourceIndustryCatalog": "resource_industrial_catalog_v1.json",
         "sourceCountryResourceContext": "resource_country_resource_context_index.json",
-        "note": "Game-scaled starting allocation informed by the country's broad industrial strengths and resource context. Counts are abstract game units, not observed factory censuses or real-world facility counts."
+        "note": "Game-scaled diversified industrial profile mapped from the National Investment Commission's sector inventory. Its 2015 age and reported low operating capacity are preserved as caveats; units are not current factory counts."
       },
       "economicSectorContext": {
         "schemaVersion": "OMEGA_COUNTRY_ECONOMIC_SECTOR_CONTEXT_V1",
@@ -9209,9 +9316,42 @@
         "interpretation": "Manufacturing value added is a component of industry value added; do not add it to industry. Broad value-added shares do not identify individual factory types.",
         "missingPolicy": "Null means unavailable or not comparable, never zero."
       },
-      "specializationEvidenceStatus": "NO_SUBSECTOR_SPECIALIZATION_EVIDENCE",
-      "industryArchetypeBasis": "WORLD_BANK_VALUE_ADDED_MIX_V1",
-      "industryArchetypeObservationYear": 2025
+      "specializationEvidenceStatus": "GAME_MODELLED_SPECIALIZATION_SET",
+      "industryArchetypeBasis": "EXISTING_GAME_SPECIALIZATION_PROFILE_V1",
+      "industryArchetypeObservationYear": 2025,
+      "specializationEvidence": {
+        "schemaVersion": "OMEGA_COUNTRY_FACTORY_SPECIALIZATION_EVIDENCE_V1",
+        "status": "SOURCE_BACKED_SIMULATION_MAPPING",
+        "accessDate": "2026-10-31",
+        "mappingPolicy": "Country sector evidence selects compatible canonical game factory types. Counts remain abstract game-scaled units and are not observed real-world facility totals.",
+        "referenceYears": [
+          2015
+        ],
+        "sources": [
+          {
+            "authority": "Iraq National Investment Commission",
+            "title": "Industry and Manufacturing Sector Overview",
+            "url": "https://investpromo.gov.iq/sectors/industry-and-manufacturing-sector/industry-and-manufacturing-sector/",
+            "publicationYear": 2015,
+            "supportedClaims": [
+              "textile, automobile assembly, pharmaceutical, petrochemical and fertilizer industries",
+              "engineering, food and chemical, construction and textile state-owned sectors"
+            ]
+          },
+          {
+            "authority": "Iraq National Investment Commission",
+            "title": "The Role of Government in Industry and Manufacturing",
+            "url": "https://investpromo.gov.iq/sectors/industry-and-manufacturing-sector/the-role-of-government-in-industry-and-manufacturing/",
+            "publicationYear": 2015,
+            "supportedClaims": [
+              "220+ factories under 67 state-owned enterprises",
+              "engineering, petrochemical/chemical, construction/cement, textile, food and pharmaceutical industry groups"
+            ]
+          }
+        ],
+        "confidence": "MODERATE",
+        "caveat": "The official factory-group inventory is dated 2015 and reports low capacity at many state-owned plants. It is used only to classify the simulation profile, not to assert current operating counts or output."
+      }
     },
     "ISL": {
       "countryId": "ISL",
@@ -11327,14 +11467,18 @@
       "countryName": "Liechtenstein",
       "countryCode": "LI",
       "continent": "Europe",
-      "industryArchetype": "Services-led economy with a manufacturing base",
-      "specializations": [],
+      "industryArchetype": "Precision machinery and dental manufacturing",
+      "specializations": [
+        "FOOD_PROCESSING_COLD_CHAIN",
+        "INDUSTRIAL_MACHINERY_MACHINE_TOOLS",
+        "PHARMA_MEDICAL_SUPPLIES_PLANT"
+      ],
       "totalStartingFactoryUnits": 4,
       "factoryCounts": {
-        "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT": 1,
-        "STEEL_AND_ALLOY_WORKS": 1,
+        "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT": 0,
+        "STEEL_AND_ALLOY_WORKS": 0,
         "NON_FERROUS_METAL_SMELTER": 0,
-        "PETROCHEMICAL_POLYMER_PLANT": 1,
+        "PETROCHEMICAL_POLYMER_PLANT": 0,
         "FERTILIZER_CHEMICAL_PLANT": 0,
         "INDUSTRIAL_CHEMICALS_GAS_PLANT": 0,
         "CEMENT_CONCRETE_PLANT": 0,
@@ -11342,14 +11486,14 @@
         "PAPER_PACKAGING_MILL": 0,
         "FOOD_PROCESSING_COLD_CHAIN": 1,
         "TEXTILE_GARMENT_MILL": 0,
-        "INDUSTRIAL_MACHINERY_MACHINE_TOOLS": 0,
+        "INDUSTRIAL_MACHINERY_MACHINE_TOOLS": 2,
         "GRID_EQUIPMENT_FACTORY": 0,
         "ELECTRONICS_SEMICONDUCTOR_FAB": 0,
         "BATTERY_ENERGY_STORAGE_PLANT": 0,
         "VEHICLE_TRUCK_BUS_ASSEMBLY": 0,
         "SHIP_RAIL_EQUIPMENT_YARD": 0,
         "AEROSPACE_EQUIPMENT_PLANT": 0,
-        "PHARMA_MEDICAL_SUPPLIES_PLANT": 0,
+        "PHARMA_MEDICAL_SUPPLIES_PLANT": 1,
         "DEFENSE_EQUIPMENT_FACTORY": 0,
         "RECYCLING_WASTE_PROCESSING_PLANT": 0
       },
@@ -11361,7 +11505,7 @@
         "sourceEconomicProfile": "economy.json",
         "sourceIndustryCatalog": "resource_industrial_catalog_v1.json",
         "sourceCountryResourceContext": "resource_country_resource_context_index.json",
-        "note": "Game-scaled starting allocation informed by the country's broad industrial strengths and resource context. Counts are abstract game units, not observed factory censuses or real-world facility counts."
+        "note": "Game-scaled allocation focuses on documented precision machine/tool engineering, dental equipment and food manufacturing; counts are not physical-factory census values."
       },
       "economicSectorContext": {
         "schemaVersion": "OMEGA_COUNTRY_ECONOMIC_SECTOR_CONTEXT_V1",
@@ -11427,9 +11571,44 @@
         "interpretation": "Manufacturing value added is a component of industry value added; do not add it to industry. Broad value-added shares do not identify individual factory types.",
         "missingPolicy": "Null means unavailable or not comparable, never zero."
       },
-      "specializationEvidenceStatus": "NO_SUBSECTOR_SPECIALIZATION_EVIDENCE",
-      "industryArchetypeBasis": "WORLD_BANK_VALUE_ADDED_MIX_V1",
-      "industryArchetypeObservationYear": 2023
+      "specializationEvidenceStatus": "GAME_MODELLED_SPECIALIZATION_SET",
+      "industryArchetypeBasis": "EXISTING_GAME_SPECIALIZATION_PROFILE_V1",
+      "industryArchetypeObservationYear": 2023,
+      "specializationEvidence": {
+        "schemaVersion": "OMEGA_COUNTRY_FACTORY_SPECIALIZATION_EVIDENCE_V1",
+        "status": "SOURCE_BACKED_SIMULATION_MAPPING",
+        "accessDate": "2026-10-31",
+        "mappingPolicy": "Country sector evidence selects compatible canonical game factory types. Counts remain abstract game-scaled units and are not observed real-world facility totals.",
+        "referenceYears": [
+          2021,
+          2025
+        ],
+        "sources": [
+          {
+            "authority": "International Monetary Fund",
+            "title": "Principality of Liechtenstein: 2025 Article IV Consultation, Annex I",
+            "url": "https://www.elibrary.imf.org/abstract/journals/002/2025/076/article-A001-en.xml",
+            "publicationYear": 2025,
+            "supportedClaims": [
+              "manufacturing is a major economic driver",
+              "machine and tool engineering",
+              "plant construction and precision instruments",
+              "dental equipment"
+            ]
+          },
+          {
+            "authority": "Embassy of Liechtenstein in Washington",
+            "title": "Economy of Liechtenstein",
+            "url": "https://www.liechtensteinusa.org/economy",
+            "supportedClaims": [
+              "machine and tool engineering",
+              "precision instruments",
+              "dental and food sectors"
+            ]
+          }
+        ],
+        "confidence": "HIGH"
+      }
     },
     "LKA": {
       "countryId": "LKA",
@@ -18264,29 +18443,35 @@
       "countryName": "Slovenia",
       "countryCode": "SI",
       "continent": "Europe",
-      "industryArchetype": "Services-led economy with a manufacturing base",
-      "specializations": [],
+      "industryArchetype": "Pharmaceuticals, vehicles and precision engineering",
+      "specializations": [
+        "GRID_EQUIPMENT_FACTORY",
+        "INDUSTRIAL_MACHINERY_MACHINE_TOOLS",
+        "PHARMA_MEDICAL_SUPPLIES_PLANT",
+        "STEEL_AND_ALLOY_WORKS",
+        "VEHICLE_TRUCK_BUS_ASSEMBLY"
+      ],
       "totalStartingFactoryUnits": 7,
       "factoryCounts": {
         "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT": 1,
         "STEEL_AND_ALLOY_WORKS": 1,
         "NON_FERROUS_METAL_SMELTER": 0,
-        "PETROCHEMICAL_POLYMER_PLANT": 1,
-        "FERTILIZER_CHEMICAL_PLANT": 1,
+        "PETROCHEMICAL_POLYMER_PLANT": 0,
+        "FERTILIZER_CHEMICAL_PLANT": 0,
         "INDUSTRIAL_CHEMICALS_GAS_PLANT": 0,
-        "CEMENT_CONCRETE_PLANT": 1,
+        "CEMENT_CONCRETE_PLANT": 0,
         "GLASS_CERAMICS_PLANT": 0,
         "PAPER_PACKAGING_MILL": 0,
-        "FOOD_PROCESSING_COLD_CHAIN": 1,
+        "FOOD_PROCESSING_COLD_CHAIN": 0,
         "TEXTILE_GARMENT_MILL": 0,
         "INDUSTRIAL_MACHINERY_MACHINE_TOOLS": 1,
-        "GRID_EQUIPMENT_FACTORY": 0,
+        "GRID_EQUIPMENT_FACTORY": 1,
         "ELECTRONICS_SEMICONDUCTOR_FAB": 0,
         "BATTERY_ENERGY_STORAGE_PLANT": 0,
-        "VEHICLE_TRUCK_BUS_ASSEMBLY": 0,
+        "VEHICLE_TRUCK_BUS_ASSEMBLY": 1,
         "SHIP_RAIL_EQUIPMENT_YARD": 0,
         "AEROSPACE_EQUIPMENT_PLANT": 0,
-        "PHARMA_MEDICAL_SUPPLIES_PLANT": 0,
+        "PHARMA_MEDICAL_SUPPLIES_PLANT": 2,
         "DEFENSE_EQUIPMENT_FACTORY": 0,
         "RECYCLING_WASTE_PROCESSING_PLANT": 0
       },
@@ -18298,7 +18483,7 @@
         "sourceEconomicProfile": "economy.json",
         "sourceIndustryCatalog": "resource_industrial_catalog_v1.json",
         "sourceCountryResourceContext": "resource_country_resource_context_index.json",
-        "note": "Game-scaled starting allocation informed by the country's broad industrial strengths and resource context. Counts are abstract game units, not observed factory censuses or real-world facility counts."
+        "note": "Game-scaled allocation reflects Slovenia's 2025 export mix in pharmaceuticals, vehicles, electrical machinery, mechanical equipment and metals; no real establishment totals are inferred."
       },
       "economicSectorContext": {
         "schemaVersion": "OMEGA_COUNTRY_ECONOMIC_SECTOR_CONTEXT_V1",
@@ -18364,9 +18549,43 @@
         "interpretation": "Manufacturing value added is a component of industry value added; do not add it to industry. Broad value-added shares do not identify individual factory types.",
         "missingPolicy": "Null means unavailable or not comparable, never zero."
       },
-      "specializationEvidenceStatus": "NO_SUBSECTOR_SPECIALIZATION_EVIDENCE",
-      "industryArchetypeBasis": "WORLD_BANK_VALUE_ADDED_MIX_V1",
-      "industryArchetypeObservationYear": 2025
+      "specializationEvidenceStatus": "GAME_MODELLED_SPECIALIZATION_SET",
+      "industryArchetypeBasis": "EXISTING_GAME_SPECIALIZATION_PROFILE_V1",
+      "industryArchetypeObservationYear": 2025,
+      "specializationEvidence": {
+        "schemaVersion": "OMEGA_COUNTRY_FACTORY_SPECIALIZATION_EVIDENCE_V1",
+        "status": "SOURCE_BACKED_SIMULATION_MAPPING",
+        "accessDate": "2026-10-31",
+        "mappingPolicy": "Country sector evidence selects compatible canonical game factory types. Counts remain abstract game-scaled units and are not observed real-world facility totals.",
+        "referenceYears": [
+          2025
+        ],
+        "sources": [
+          {
+            "authority": "Slovenia Business / Statistical Office of the Republic of Slovenia",
+            "title": "Slovenia's robust economy: top export products, 2025",
+            "url": "https://www.sloveniabusiness.eu/business-environment/slovenias-robust-economy",
+            "supportedClaims": [
+              "pharmaceuticals are a leading goods-export category",
+              "vehicles and parts",
+              "electrical machinery and equipment",
+              "machinery and mechanical appliances",
+              "metal products and iron/steel",
+              "optical, measuring and medical instruments"
+            ]
+          },
+          {
+            "authority": "Statistical Office of the Republic of Slovenia",
+            "title": "Gross domestic product and value added by activity, 2025",
+            "url": "https://www.stat.si/StatWeb/en/News/Index/14553",
+            "publicationYear": 2026,
+            "supportedClaims": [
+              "manufacturing represented 18.7 percent of GDP in 2025"
+            ]
+          }
+        ],
+        "confidence": "HIGH"
+      }
     },
     "SWE": {
       "countryId": "SWE",
@@ -18487,21 +18706,26 @@
       "countryName": "Eswatini",
       "countryCode": "SZ",
       "continent": "Africa",
-      "industryArchetype": "Services-led economy with a manufacturing base",
-      "specializations": [],
+      "industryArchetype": "Textiles, agro-processing and wood-pulp manufacturing",
+      "specializations": [
+        "FOOD_PROCESSING_COLD_CHAIN",
+        "PAPER_PACKAGING_MILL",
+        "PETROCHEMICAL_POLYMER_PLANT",
+        "TEXTILE_GARMENT_MILL"
+      ],
       "totalStartingFactoryUnits": 4,
       "factoryCounts": {
-        "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT": 1,
-        "STEEL_AND_ALLOY_WORKS": 1,
+        "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT": 0,
+        "STEEL_AND_ALLOY_WORKS": 0,
         "NON_FERROUS_METAL_SMELTER": 0,
         "PETROCHEMICAL_POLYMER_PLANT": 1,
         "FERTILIZER_CHEMICAL_PLANT": 0,
         "INDUSTRIAL_CHEMICALS_GAS_PLANT": 0,
         "CEMENT_CONCRETE_PLANT": 0,
         "GLASS_CERAMICS_PLANT": 0,
-        "PAPER_PACKAGING_MILL": 0,
+        "PAPER_PACKAGING_MILL": 1,
         "FOOD_PROCESSING_COLD_CHAIN": 1,
-        "TEXTILE_GARMENT_MILL": 0,
+        "TEXTILE_GARMENT_MILL": 1,
         "INDUSTRIAL_MACHINERY_MACHINE_TOOLS": 0,
         "GRID_EQUIPMENT_FACTORY": 0,
         "ELECTRONICS_SEMICONDUCTOR_FAB": 0,
@@ -18521,7 +18745,7 @@
         "sourceEconomicProfile": "economy.json",
         "sourceIndustryCatalog": "resource_industrial_catalog_v1.json",
         "sourceCountryResourceContext": "resource_country_resource_context_index.json",
-        "note": "Game-scaled starting allocation informed by the country's broad industrial strengths and resource context. Counts are abstract game units, not observed factory censuses or real-world facility counts."
+        "note": "Game-scaled profile maps documented textile/apparel, food and beverage, wood-pulp and plastics manufacturing into the existing 21-type catalogue."
       },
       "economicSectorContext": {
         "schemaVersion": "OMEGA_COUNTRY_ECONOMIC_SECTOR_CONTEXT_V1",
@@ -18587,9 +18811,37 @@
         "interpretation": "Manufacturing value added is a component of industry value added; do not add it to industry. Broad value-added shares do not identify individual factory types.",
         "missingPolicy": "Null means unavailable or not comparable, never zero."
       },
-      "specializationEvidenceStatus": "NO_SUBSECTOR_SPECIALIZATION_EVIDENCE",
-      "industryArchetypeBasis": "WORLD_BANK_VALUE_ADDED_MIX_V1",
-      "industryArchetypeObservationYear": 2025
+      "specializationEvidenceStatus": "GAME_MODELLED_SPECIALIZATION_SET",
+      "industryArchetypeBasis": "EXISTING_GAME_SPECIALIZATION_PROFILE_V1",
+      "industryArchetypeObservationYear": 2025,
+      "specializationEvidence": {
+        "schemaVersion": "OMEGA_COUNTRY_FACTORY_SPECIALIZATION_EVIDENCE_V1",
+        "status": "SOURCE_BACKED_SIMULATION_MAPPING",
+        "accessDate": "2026-10-31",
+        "mappingPolicy": "Country sector evidence selects compatible canonical game factory types. Counts remain abstract game-scaled units and are not observed real-world facility totals.",
+        "referenceYears": [
+          2025
+        ],
+        "sources": [
+          {
+            "authority": "Eswatini Investment Promotion Authority",
+            "title": "Priority sectors for investment",
+            "url": "https://investeswatini.org.sz/priority-sectors-for-investment/",
+            "supportedClaims": [
+              "manufacturing products include food and beverages, textiles and apparel, timber, plastics and chemicals"
+            ]
+          },
+          {
+            "authority": "SADC Investment Portal",
+            "title": "How to invest in Eswatini",
+            "url": "https://invest.sadc.int/how-invest/eswatini",
+            "supportedClaims": [
+              "main industries include sugar, textiles and apparel, soft drinks and wood-pulp production"
+            ]
+          }
+        ],
+        "confidence": "HIGH"
+      }
     },
     "SYC": {
       "countryId": "SYC",
