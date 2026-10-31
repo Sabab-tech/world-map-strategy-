@@ -242,7 +242,7 @@
       "countryName": "Angola",
       "countryCode": "AO",
       "continent": "Africa",
-      "industryArchetype": "Resource processing base",
+      "industryArchetype": "Energy and petrochemicals",
       "specializations": [
         "PETROCHEMICAL_POLYMER_PLANT"
       ],
@@ -345,7 +345,7 @@
         "missingPolicy": "Null means unavailable or not comparable, never zero."
       },
       "specializationEvidenceStatus": "GAME_MODELLED_SPECIALIZATION_SET",
-      "industryArchetypeBasis": "EXISTING_GAME_SPECIALIZATION_PROFILE_V1",
+      "industryArchetypeBasis": "EXPLICIT_GAME_SPECIALIZATION_SET_V1",
       "industryArchetypeObservationYear": 2025
     },
     "ALB": {
@@ -1126,7 +1126,7 @@
       "countryName": "Austria",
       "countryCode": "AT",
       "continent": "Europe",
-      "industryArchetype": "Resource processing base",
+      "industryArchetype": "Industrial machinery and capital goods",
       "specializations": [
         "INDUSTRIAL_MACHINERY_MACHINE_TOOLS"
       ],
@@ -1229,7 +1229,7 @@
         "missingPolicy": "Null means unavailable or not comparable, never zero."
       },
       "specializationEvidenceStatus": "GAME_MODELLED_SPECIALIZATION_SET",
-      "industryArchetypeBasis": "EXISTING_GAME_SPECIALIZATION_PROFILE_V1",
+      "industryArchetypeBasis": "EXPLICIT_GAME_SPECIALIZATION_SET_V1",
       "industryArchetypeObservationYear": 2025
     },
     "AZE": {
@@ -1457,7 +1457,7 @@
       "countryName": "Belgium",
       "countryCode": "BE",
       "continent": "Europe",
-      "industryArchetype": "Resource processing base",
+      "industryArchetype": "Pharmaceuticals and medical supplies",
       "specializations": [
         "PHARMA_MEDICAL_SUPPLIES_PLANT"
       ],
@@ -1560,7 +1560,7 @@
         "missingPolicy": "Null means unavailable or not comparable, never zero."
       },
       "specializationEvidenceStatus": "GAME_MODELLED_SPECIALIZATION_SET",
-      "industryArchetypeBasis": "EXISTING_GAME_SPECIALIZATION_PROFILE_V1",
+      "industryArchetypeBasis": "EXPLICIT_GAME_SPECIALIZATION_SET_V1",
       "industryArchetypeObservationYear": 2025
     },
     "BEN": {
@@ -2008,7 +2008,7 @@
       "countryName": "Bahrain",
       "countryCode": "BH",
       "continent": "Asia",
-      "industryArchetype": "Resource processing base",
+      "industryArchetype": "Energy and petrochemicals",
       "specializations": [
         "PETROCHEMICAL_POLYMER_PLANT"
       ],
@@ -2111,7 +2111,7 @@
         "missingPolicy": "Null means unavailable or not comparable, never zero."
       },
       "specializationEvidenceStatus": "GAME_MODELLED_SPECIALIZATION_SET",
-      "industryArchetypeBasis": "EXISTING_GAME_SPECIALIZATION_PROFILE_V1",
+      "industryArchetypeBasis": "EXPLICIT_GAME_SPECIALIZATION_SET_V1",
       "industryArchetypeObservationYear": 2025
     },
     "BHS": {
@@ -2555,7 +2555,7 @@
       "countryName": "Bolivia, Plurinational State of",
       "countryCode": "BO",
       "continent": "South America",
-      "industryArchetype": "Resource processing base",
+      "industryArchetype": "Non-ferrous metals",
       "specializations": [
         "NON_FERROUS_METAL_SMELTER"
       ],
@@ -2658,7 +2658,7 @@
         "missingPolicy": "Null means unavailable or not comparable, never zero."
       },
       "specializationEvidenceStatus": "GAME_MODELLED_SPECIALIZATION_SET",
-      "industryArchetypeBasis": "EXISTING_GAME_SPECIALIZATION_PROFILE_V1",
+      "industryArchetypeBasis": "EXPLICIT_GAME_SPECIALIZATION_SET_V1",
       "industryArchetypeObservationYear": 2024
     },
     "BRA": {
@@ -2890,7 +2890,7 @@
       "countryName": "Brunei Darussalam",
       "countryCode": "BN",
       "continent": "Asia",
-      "industryArchetype": "Resource processing base",
+      "industryArchetype": "Energy and petrochemicals",
       "specializations": [
         "PETROCHEMICAL_POLYMER_PLANT"
       ],
@@ -2993,7 +2993,7 @@
         "missingPolicy": "Null means unavailable or not comparable, never zero."
       },
       "specializationEvidenceStatus": "GAME_MODELLED_SPECIALIZATION_SET",
-      "industryArchetypeBasis": "EXISTING_GAME_SPECIALIZATION_PROFILE_V1",
+      "industryArchetypeBasis": "EXPLICIT_GAME_SPECIALIZATION_SET_V1",
       "industryArchetypeObservationYear": 2025
     },
     "BTN": {
@@ -3445,7 +3445,7 @@
       "countryName": "Switzerland",
       "countryCode": "CH",
       "continent": "Europe",
-      "industryArchetype": "Resource processing base",
+      "industryArchetype": "Pharmaceuticals and precision manufacturing",
       "specializations": [
         "PHARMA_MEDICAL_SUPPLIES_PLANT",
         "INDUSTRIAL_CHEMICALS_GAS_PLANT",
@@ -3550,7 +3550,7 @@
         "missingPolicy": "Null means unavailable or not comparable, never zero."
       },
       "specializationEvidenceStatus": "GAME_MODELLED_SPECIALIZATION_SET",
-      "industryArchetypeBasis": "EXISTING_GAME_SPECIALIZATION_PROFILE_V1",
+      "industryArchetypeBasis": "EXPLICIT_GAME_SPECIALIZATION_SET_V1",
       "industryArchetypeObservationYear": 2025
     },
     "CHL": {
@@ -3794,7 +3794,7 @@
       "countryName": "Ivory Coast",
       "countryCode": "CI",
       "continent": "Africa",
-      "industryArchetype": "Resource processing base",
+      "industryArchetype": "Food processing",
       "specializations": [
         "FOOD_PROCESSING_COLD_CHAIN"
       ],
@@ -3897,7 +3897,7 @@
         "missingPolicy": "Null means unavailable or not comparable, never zero."
       },
       "specializationEvidenceStatus": "GAME_MODELLED_SPECIALIZATION_SET",
-      "industryArchetypeBasis": "EXISTING_GAME_SPECIALIZATION_PROFILE_V1",
+      "industryArchetypeBasis": "EXPLICIT_GAME_SPECIALIZATION_SET_V1",
       "industryArchetypeObservationYear": 2025
     },
     "CMR": {
@@ -4014,7 +4014,7 @@
       "countryName": "DR Congo",
       "countryCode": "CD",
       "continent": "Africa",
-      "industryArchetype": "Resource processing base",
+      "industryArchetype": "Non-ferrous metals",
       "specializations": [
         "NON_FERROUS_METAL_SMELTER"
       ],
@@ -4117,7 +4117,7 @@
         "missingPolicy": "Null means unavailable or not comparable, never zero."
       },
       "specializationEvidenceStatus": "GAME_MODELLED_SPECIALIZATION_SET",
-      "industryArchetypeBasis": "EXISTING_GAME_SPECIALIZATION_PROFILE_V1",
+      "industryArchetypeBasis": "EXPLICIT_GAME_SPECIALIZATION_SET_V1",
       "industryArchetypeObservationYear": 2025
     },
     "COG": {
@@ -4234,7 +4234,7 @@
       "countryName": "Colombia",
       "countryCode": "CO",
       "continent": "South America",
-      "industryArchetype": "Resource processing base",
+      "industryArchetype": "Food processing",
       "specializations": [
         "FOOD_PROCESSING_COLD_CHAIN"
       ],
@@ -4337,7 +4337,7 @@
         "missingPolicy": "Null means unavailable or not comparable, never zero."
       },
       "specializationEvidenceStatus": "GAME_MODELLED_SPECIALIZATION_SET",
-      "industryArchetypeBasis": "EXISTING_GAME_SPECIALIZATION_PROFILE_V1",
+      "industryArchetypeBasis": "EXPLICIT_GAME_SPECIALIZATION_SET_V1",
       "industryArchetypeObservationYear": 2025
     },
     "COM": {
@@ -4890,7 +4890,7 @@
       "countryName": "Czechia",
       "countryCode": "CZ",
       "continent": "Europe",
-      "industryArchetype": "Resource processing base",
+      "industryArchetype": "Automotive and industrial machinery",
       "specializations": [
         "INDUSTRIAL_MACHINERY_MACHINE_TOOLS",
         "VEHICLE_TRUCK_BUS_ASSEMBLY"
@@ -4994,7 +4994,7 @@
         "missingPolicy": "Null means unavailable or not comparable, never zero."
       },
       "specializationEvidenceStatus": "GAME_MODELLED_SPECIALIZATION_SET",
-      "industryArchetypeBasis": "EXISTING_GAME_SPECIALIZATION_PROFILE_V1",
+      "industryArchetypeBasis": "EXPLICIT_GAME_SPECIALIZATION_SET_V1",
       "industryArchetypeObservationYear": 2025
     },
     "DEU": {
@@ -5671,7 +5671,7 @@
       "countryName": "Ecuador",
       "countryCode": "EC",
       "continent": "South America",
-      "industryArchetype": "Resource processing base",
+      "industryArchetype": "Energy and food processing",
       "specializations": [
         "PETROCHEMICAL_POLYMER_PLANT",
         "FOOD_PROCESSING_COLD_CHAIN"
@@ -5775,7 +5775,7 @@
         "missingPolicy": "Null means unavailable or not comparable, never zero."
       },
       "specializationEvidenceStatus": "GAME_MODELLED_SPECIALIZATION_SET",
-      "industryArchetypeBasis": "EXISTING_GAME_SPECIALIZATION_PROFILE_V1",
+      "industryArchetypeBasis": "EXPLICIT_GAME_SPECIALIZATION_SET_V1",
       "industryArchetypeObservationYear": 2025
     },
     "EGY": {
@@ -5783,7 +5783,7 @@
       "countryName": "Egypt",
       "countryCode": "EG",
       "continent": "Africa",
-      "industryArchetype": "Resource processing base",
+      "industryArchetype": "Textiles and food processing",
       "specializations": [
         "CEMENT_CONCRETE_PLANT",
         "FOOD_PROCESSING_COLD_CHAIN",
@@ -5888,7 +5888,7 @@
         "missingPolicy": "Null means unavailable or not comparable, never zero."
       },
       "specializationEvidenceStatus": "GAME_MODELLED_SPECIALIZATION_SET",
-      "industryArchetypeBasis": "EXISTING_GAME_SPECIALIZATION_PROFILE_V1",
+      "industryArchetypeBasis": "EXPLICIT_GAME_SPECIALIZATION_SET_V1",
       "industryArchetypeObservationYear": 2025
     },
     "ERI": {
@@ -6336,7 +6336,7 @@
       "countryName": "Ethiopia",
       "countryCode": "ET",
       "continent": "Africa",
-      "industryArchetype": "Resource processing base",
+      "industryArchetype": "Textiles and garments",
       "specializations": [
         "TEXTILE_GARMENT_MILL"
       ],
@@ -6439,7 +6439,7 @@
         "missingPolicy": "Null means unavailable or not comparable, never zero."
       },
       "specializationEvidenceStatus": "GAME_MODELLED_SPECIALIZATION_SET",
-      "industryArchetypeBasis": "EXISTING_GAME_SPECIALIZATION_PROFILE_V1",
+      "industryArchetypeBasis": "EXPLICIT_GAME_SPECIALIZATION_SET_V1",
       "industryArchetypeObservationYear": 2025
     },
     "FIN": {
@@ -6447,7 +6447,7 @@
       "countryName": "Finland",
       "countryCode": "FI",
       "continent": "Europe",
-      "industryArchetype": "Resource processing base",
+      "industryArchetype": "Paper and packaging",
       "specializations": [
         "PAPER_PACKAGING_MILL"
       ],
@@ -6550,7 +6550,7 @@
         "missingPolicy": "Null means unavailable or not comparable, never zero."
       },
       "specializationEvidenceStatus": "GAME_MODELLED_SPECIALIZATION_SET",
-      "industryArchetypeBasis": "EXISTING_GAME_SPECIALIZATION_PROFILE_V1",
+      "industryArchetypeBasis": "EXPLICIT_GAME_SPECIALIZATION_SET_V1",
       "industryArchetypeObservationYear": 2025
     },
     "FJI": {
@@ -7002,7 +7002,7 @@
       "countryName": "United Kingdom",
       "countryCode": "GB",
       "continent": "Europe",
-      "industryArchetype": "Resource processing base",
+      "industryArchetype": "Aerospace and defence manufacturing",
       "specializations": [
         "PETROCHEMICAL_POLYMER_PLANT",
         "INDUSTRIAL_MACHINERY_MACHINE_TOOLS",
@@ -7110,7 +7110,7 @@
         "missingPolicy": "Null means unavailable or not comparable, never zero."
       },
       "specializationEvidenceStatus": "GAME_MODELLED_SPECIALIZATION_SET",
-      "industryArchetypeBasis": "EXISTING_GAME_SPECIALIZATION_PROFILE_V1",
+      "industryArchetypeBasis": "EXPLICIT_GAME_SPECIALIZATION_SET_V1",
       "industryArchetypeObservationYear": 2025
     },
     "GEO": {
@@ -7772,7 +7772,7 @@
       "countryName": "Greece",
       "countryCode": "GR",
       "continent": "Europe",
-      "industryArchetype": "Resource processing base",
+      "industryArchetype": "Food processing",
       "specializations": [
         "FOOD_PROCESSING_COLD_CHAIN"
       ],
@@ -7875,7 +7875,7 @@
         "missingPolicy": "Null means unavailable or not comparable, never zero."
       },
       "specializationEvidenceStatus": "GAME_MODELLED_SPECIALIZATION_SET",
-      "industryArchetypeBasis": "EXISTING_GAME_SPECIALIZATION_PROFILE_V1",
+      "industryArchetypeBasis": "EXPLICIT_GAME_SPECIALIZATION_SET_V1",
       "industryArchetypeObservationYear": 2025
     },
     "GRD": {
@@ -8537,7 +8537,7 @@
       "countryName": "Hungary",
       "countryCode": "HU",
       "continent": "Europe",
-      "industryArchetype": "Resource processing base",
+      "industryArchetype": "Automotive manufacturing",
       "specializations": [
         "VEHICLE_TRUCK_BUS_ASSEMBLY"
       ],
@@ -8640,7 +8640,7 @@
         "missingPolicy": "Null means unavailable or not comparable, never zero."
       },
       "specializationEvidenceStatus": "GAME_MODELLED_SPECIALIZATION_SET",
-      "industryArchetypeBasis": "EXISTING_GAME_SPECIALIZATION_PROFILE_V1",
+      "industryArchetypeBasis": "EXPLICIT_GAME_SPECIALIZATION_SET_V1",
       "industryArchetypeObservationYear": 2025
     },
     "IDN": {
@@ -8883,7 +8883,7 @@
       "countryName": "Ireland",
       "countryCode": "IE",
       "continent": "Europe",
-      "industryArchetype": "Resource processing base",
+      "industryArchetype": "Pharmaceuticals and electronics",
       "specializations": [
         "PHARMA_MEDICAL_SUPPLIES_PLANT",
         "ELECTRONICS_SEMICONDUCTOR_FAB"
@@ -8987,7 +8987,7 @@
         "missingPolicy": "Null means unavailable or not comparable, never zero."
       },
       "specializationEvidenceStatus": "GAME_MODELLED_SPECIALIZATION_SET",
-      "industryArchetypeBasis": "EXISTING_GAME_SPECIALIZATION_PROFILE_V1",
+      "industryArchetypeBasis": "EXPLICIT_GAME_SPECIALIZATION_SET_V1",
       "industryArchetypeObservationYear": 2025
     },
     "IRN": {
@@ -9327,7 +9327,7 @@
       "countryName": "Israel",
       "countryCode": "IL",
       "continent": "Asia",
-      "industryArchetype": "Resource processing base",
+      "industryArchetype": "Advanced technology and defence",
       "specializations": [
         "ELECTRONICS_SEMICONDUCTOR_FAB",
         "PHARMA_MEDICAL_SUPPLIES_PLANT",
@@ -9432,7 +9432,7 @@
         "missingPolicy": "Null means unavailable or not comparable, never zero."
       },
       "specializationEvidenceStatus": "GAME_MODELLED_SPECIALIZATION_SET",
-      "industryArchetypeBasis": "EXISTING_GAME_SPECIALIZATION_PROFILE_V1",
+      "industryArchetypeBasis": "EXPLICIT_GAME_SPECIALIZATION_SET_V1",
       "industryArchetypeObservationYear": 2024
     },
     "ITA": {
@@ -10004,7 +10004,7 @@
       "countryName": "Kenya",
       "countryCode": "KE",
       "continent": "Africa",
-      "industryArchetype": "Resource processing base",
+      "industryArchetype": "Food processing",
       "specializations": [
         "FOOD_PROCESSING_COLD_CHAIN"
       ],
@@ -10107,7 +10107,7 @@
         "missingPolicy": "Null means unavailable or not comparable, never zero."
       },
       "specializationEvidenceStatus": "GAME_MODELLED_SPECIALIZATION_SET",
-      "industryArchetypeBasis": "EXISTING_GAME_SPECIALIZATION_PROFILE_V1",
+      "industryArchetypeBasis": "EXPLICIT_GAME_SPECIALIZATION_SET_V1",
       "industryArchetypeObservationYear": 2025
     },
     "KGZ": {
@@ -11436,7 +11436,7 @@
       "countryName": "Sri Lanka",
       "countryCode": "LK",
       "continent": "Asia",
-      "industryArchetype": "Resource processing base",
+      "industryArchetype": "Textiles and garments",
       "specializations": [
         "TEXTILE_GARMENT_MILL"
       ],
@@ -11539,7 +11539,7 @@
         "missingPolicy": "Null means unavailable or not comparable, never zero."
       },
       "specializationEvidenceStatus": "GAME_MODELLED_SPECIALIZATION_SET",
-      "industryArchetypeBasis": "EXISTING_GAME_SPECIALIZATION_PROFILE_V1",
+      "industryArchetypeBasis": "EXPLICIT_GAME_SPECIALIZATION_SET_V1",
       "industryArchetypeObservationYear": 2025
     },
     "LSO": {
@@ -11983,7 +11983,7 @@
       "countryName": "Morocco",
       "countryCode": "MA",
       "continent": "Africa",
-      "industryArchetype": "Resource processing base",
+      "industryArchetype": "Fertilizer and food processing",
       "specializations": [
         "FERTILIZER_CHEMICAL_PLANT",
         "FOOD_PROCESSING_COLD_CHAIN"
@@ -12087,7 +12087,7 @@
         "missingPolicy": "Null means unavailable or not comparable, never zero."
       },
       "specializationEvidenceStatus": "GAME_MODELLED_SPECIALIZATION_SET",
-      "industryArchetypeBasis": "EXISTING_GAME_SPECIALIZATION_PROFILE_V1",
+      "industryArchetypeBasis": "EXPLICIT_GAME_SPECIALIZATION_SET_V1",
       "industryArchetypeObservationYear": 2025
     },
     "MCO": {
@@ -13846,7 +13846,7 @@
       "countryName": "Malaysia",
       "countryCode": "MY",
       "continent": "Asia",
-      "industryArchetype": "Resource processing base",
+      "industryArchetype": "Electronics and petrochemicals",
       "specializations": [
         "PETROCHEMICAL_POLYMER_PLANT",
         "INDUSTRIAL_CHEMICALS_GAS_PLANT",
@@ -13951,7 +13951,7 @@
         "missingPolicy": "Null means unavailable or not comparable, never zero."
       },
       "specializationEvidenceStatus": "GAME_MODELLED_SPECIALIZATION_SET",
-      "industryArchetypeBasis": "EXISTING_GAME_SPECIALIZATION_PROFILE_V1",
+      "industryArchetypeBasis": "EXPLICIT_GAME_SPECIALIZATION_SET_V1",
       "industryArchetypeObservationYear": 2025
     },
     "NAM": {
@@ -14177,7 +14177,7 @@
       "countryName": "Nigeria",
       "countryCode": "NG",
       "continent": "Africa",
-      "industryArchetype": "Resource processing base",
+      "industryArchetype": "Energy and food processing",
       "specializations": [
         "PETROCHEMICAL_POLYMER_PLANT",
         "FOOD_PROCESSING_COLD_CHAIN"
@@ -14281,7 +14281,7 @@
         "missingPolicy": "Null means unavailable or not comparable, never zero."
       },
       "specializationEvidenceStatus": "GAME_MODELLED_SPECIALIZATION_SET",
-      "industryArchetypeBasis": "EXISTING_GAME_SPECIALIZATION_PROFILE_V1",
+      "industryArchetypeBasis": "EXPLICIT_GAME_SPECIALIZATION_SET_V1",
       "industryArchetypeObservationYear": 2025
     },
     "NIC": {
@@ -14951,7 +14951,7 @@
       "countryName": "Oman",
       "countryCode": "OM",
       "continent": "Asia",
-      "industryArchetype": "Resource processing base",
+      "industryArchetype": "Energy and petrochemicals",
       "specializations": [
         "PETROCHEMICAL_POLYMER_PLANT"
       ],
@@ -15054,7 +15054,7 @@
         "missingPolicy": "Null means unavailable or not comparable, never zero."
       },
       "specializationEvidenceStatus": "GAME_MODELLED_SPECIALIZATION_SET",
-      "industryArchetypeBasis": "EXISTING_GAME_SPECIALIZATION_PROFILE_V1",
+      "industryArchetypeBasis": "EXPLICIT_GAME_SPECIALIZATION_SET_V1",
       "industryArchetypeObservationYear": 2025
     },
     "PAK": {
@@ -15723,7 +15723,7 @@
       "countryName": "Poland",
       "countryCode": "PL",
       "continent": "Europe",
-      "industryArchetype": "Resource processing base",
+      "industryArchetype": "Automotive and industrial machinery",
       "specializations": [
         "INDUSTRIAL_MACHINERY_MACHINE_TOOLS",
         "VEHICLE_TRUCK_BUS_ASSEMBLY"
@@ -15827,7 +15827,7 @@
         "missingPolicy": "Null means unavailable or not comparable, never zero."
       },
       "specializationEvidenceStatus": "GAME_MODELLED_SPECIALIZATION_SET",
-      "industryArchetypeBasis": "EXISTING_GAME_SPECIALIZATION_PROFILE_V1",
+      "industryArchetypeBasis": "EXPLICIT_GAME_SPECIALIZATION_SET_V1",
       "industryArchetypeObservationYear": 2025
     },
     "PRK": {
@@ -15944,7 +15944,7 @@
       "countryName": "Portugal",
       "countryCode": "PT",
       "continent": "Europe",
-      "industryArchetype": "Resource processing base",
+      "industryArchetype": "Textiles and food processing",
       "specializations": [
         "FOOD_PROCESSING_COLD_CHAIN",
         "TEXTILE_GARMENT_MILL"
@@ -16048,7 +16048,7 @@
         "missingPolicy": "Null means unavailable or not comparable, never zero."
       },
       "specializationEvidenceStatus": "GAME_MODELLED_SPECIALIZATION_SET",
-      "industryArchetypeBasis": "EXISTING_GAME_SPECIALIZATION_PROFILE_V1",
+      "industryArchetypeBasis": "EXPLICIT_GAME_SPECIALIZATION_SET_V1",
       "industryArchetypeObservationYear": 2025
     },
     "PRY": {
@@ -16056,7 +16056,7 @@
       "countryName": "Paraguay",
       "countryCode": "PY",
       "continent": "South America",
-      "industryArchetype": "Resource processing base",
+      "industryArchetype": "Food processing",
       "specializations": [
         "FOOD_PROCESSING_COLD_CHAIN"
       ],
@@ -16159,7 +16159,7 @@
         "missingPolicy": "Null means unavailable or not comparable, never zero."
       },
       "specializationEvidenceStatus": "GAME_MODELLED_SPECIALIZATION_SET",
-      "industryArchetypeBasis": "EXISTING_GAME_SPECIALIZATION_PROFILE_V1",
+      "industryArchetypeBasis": "EXPLICIT_GAME_SPECIALIZATION_SET_V1",
       "industryArchetypeObservationYear": 2025
     },
     "PSE": {
@@ -17054,7 +17054,7 @@
       "countryName": "Singapore",
       "countryCode": "SG",
       "continent": "Asia",
-      "industryArchetype": "Resource processing base",
+      "industryArchetype": "Advanced manufacturing and industrial logistics",
       "specializations": [
         "PETROCHEMICAL_POLYMER_PLANT",
         "INDUSTRIAL_CHEMICALS_GAS_PLANT",
@@ -17164,7 +17164,7 @@
         "missingPolicy": "Null means unavailable or not comparable, never zero."
       },
       "specializationEvidenceStatus": "GAME_MODELLED_SPECIALIZATION_SET",
-      "industryArchetypeBasis": "EXISTING_GAME_SPECIALIZATION_PROFILE_V1",
+      "industryArchetypeBasis": "EXPLICIT_GAME_SPECIALIZATION_SET_V1",
       "industryArchetypeObservationYear": 2025
     },
     "SLB": {
@@ -18153,7 +18153,7 @@
       "countryName": "Slovakia",
       "countryCode": "SK",
       "continent": "Europe",
-      "industryArchetype": "Resource processing base",
+      "industryArchetype": "Automotive manufacturing",
       "specializations": [
         "VEHICLE_TRUCK_BUS_ASSEMBLY"
       ],
@@ -18256,7 +18256,7 @@
         "missingPolicy": "Null means unavailable or not comparable, never zero."
       },
       "specializationEvidenceStatus": "GAME_MODELLED_SPECIALIZATION_SET",
-      "industryArchetypeBasis": "EXISTING_GAME_SPECIALIZATION_PROFILE_V1",
+      "industryArchetypeBasis": "EXPLICIT_GAME_SPECIALIZATION_SET_V1",
       "industryArchetypeObservationYear": 2025
     },
     "SVN": {
@@ -18373,7 +18373,7 @@
       "countryName": "Sweden",
       "countryCode": "SE",
       "continent": "Europe",
-      "industryArchetype": "Resource processing base",
+      "industryArchetype": "Automotive and industrial machinery",
       "specializations": [
         "PAPER_PACKAGING_MILL",
         "INDUSTRIAL_MACHINERY_MACHINE_TOOLS",
@@ -18479,7 +18479,7 @@
         "missingPolicy": "Null means unavailable or not comparable, never zero."
       },
       "specializationEvidenceStatus": "GAME_MODELLED_SPECIALIZATION_SET",
-      "industryArchetypeBasis": "EXISTING_GAME_SPECIALIZATION_PROFILE_V1",
+      "industryArchetypeBasis": "EXPLICIT_GAME_SPECIALIZATION_SET_V1",
       "industryArchetypeObservationYear": 2025
     },
     "SWZ": {
@@ -19693,7 +19693,7 @@
       "countryName": "Tunisia",
       "countryCode": "TN",
       "continent": "Africa",
-      "industryArchetype": "Resource processing base",
+      "industryArchetype": "Textiles and garments",
       "specializations": [
         "TEXTILE_GARMENT_MILL"
       ],
@@ -19796,7 +19796,7 @@
         "missingPolicy": "Null means unavailable or not comparable, never zero."
       },
       "specializationEvidenceStatus": "GAME_MODELLED_SPECIALIZATION_SET",
-      "industryArchetypeBasis": "EXISTING_GAME_SPECIALIZATION_PROFILE_V1",
+      "industryArchetypeBasis": "EXPLICIT_GAME_SPECIALIZATION_SET_V1",
       "industryArchetypeObservationYear": 2025
     },
     "TUR": {
@@ -20029,7 +20029,7 @@
       "countryName": "Taiwan, Province of China",
       "countryCode": "TW",
       "continent": "Asia",
-      "industryArchetype": "Resource processing base",
+      "industryArchetype": "Electronics and semiconductor manufacturing",
       "specializations": [
         "INDUSTRIAL_MACHINERY_MACHINE_TOOLS",
         "GRID_EQUIPMENT_FACTORY",
@@ -20135,7 +20135,7 @@
         "missingPolicy": "Null means unavailable or not comparable, never zero."
       },
       "specializationEvidenceStatus": "GAME_MODELLED_SPECIALIZATION_SET",
-      "industryArchetypeBasis": "EXISTING_GAME_SPECIALIZATION_PROFILE_V1",
+      "industryArchetypeBasis": "EXPLICIT_GAME_SPECIALIZATION_SET_V1",
       "industryArchetypeObservationYear": null
     },
     "TZA": {
@@ -20474,7 +20474,7 @@
       "countryName": "Uruguay",
       "countryCode": "UY",
       "continent": "South America",
-      "industryArchetype": "Resource processing base",
+      "industryArchetype": "Food processing",
       "specializations": [
         "FOOD_PROCESSING_COLD_CHAIN"
       ],
@@ -20577,7 +20577,7 @@
         "missingPolicy": "Null means unavailable or not comparable, never zero."
       },
       "specializationEvidenceStatus": "GAME_MODELLED_SPECIALIZATION_SET",
-      "industryArchetypeBasis": "EXISTING_GAME_SPECIALIZATION_PROFILE_V1",
+      "industryArchetypeBasis": "EXPLICIT_GAME_SPECIALIZATION_SET_V1",
       "industryArchetypeObservationYear": 2025
     },
     "USA": {
@@ -20706,7 +20706,7 @@
       "countryName": "Uzbekistan",
       "countryCode": "UZ",
       "continent": "Asia",
-      "industryArchetype": "Resource processing base",
+      "industryArchetype": "Textiles and garments",
       "specializations": [
         "TEXTILE_GARMENT_MILL"
       ],
@@ -20809,7 +20809,7 @@
         "missingPolicy": "Null means unavailable or not comparable, never zero."
       },
       "specializationEvidenceStatus": "GAME_MODELLED_SPECIALIZATION_SET",
-      "industryArchetypeBasis": "EXISTING_GAME_SPECIALIZATION_PROFILE_V1",
+      "industryArchetypeBasis": "EXPLICIT_GAME_SPECIALIZATION_SET_V1",
       "industryArchetypeObservationYear": 2025
     },
     "VAT": {
@@ -21699,7 +21699,7 @@
       "countryName": "Zambia",
       "countryCode": "ZM",
       "continent": "Africa",
-      "industryArchetype": "Resource processing base",
+      "industryArchetype": "Non-ferrous metals",
       "specializations": [
         "NON_FERROUS_METAL_SMELTER"
       ],
@@ -21802,7 +21802,7 @@
         "missingPolicy": "Null means unavailable or not comparable, never zero."
       },
       "specializationEvidenceStatus": "GAME_MODELLED_SPECIALIZATION_SET",
-      "industryArchetypeBasis": "EXISTING_GAME_SPECIALIZATION_PROFILE_V1",
+      "industryArchetypeBasis": "EXPLICIT_GAME_SPECIALIZATION_SET_V1",
       "industryArchetypeObservationYear": 2025
     },
     "ZWE": {
@@ -21810,7 +21810,7 @@
       "countryName": "Zimbabwe",
       "countryCode": "ZW",
       "continent": "Africa",
-      "industryArchetype": "Resource processing base",
+      "industryArchetype": "Non-ferrous metals",
       "specializations": [
         "NON_FERROUS_METAL_SMELTER"
       ],
@@ -21913,7 +21913,7 @@
         "missingPolicy": "Null means unavailable or not comparable, never zero."
       },
       "specializationEvidenceStatus": "GAME_MODELLED_SPECIALIZATION_SET",
-      "industryArchetypeBasis": "EXISTING_GAME_SPECIALIZATION_PROFILE_V1",
+      "industryArchetypeBasis": "EXPLICIT_GAME_SPECIALIZATION_SET_V1",
       "industryArchetypeObservationYear": 2025
     }
   },
@@ -21931,7 +21931,7 @@
     ],
     "comparisonRule": "Compare agriculture, industry and services value-added shares only when at least two numeric observations share the exact same observation year.",
     "manufacturingRule": "Manufacturing value added is a component of industry; its band is compared only when the observation year is within three years of the broad-sector comparison year.",
-    "archetypeRule": "Existing explicit game specializations are preserved. Countries without a mapped sub-sector specialization receive a cautious broad macro-sector archetype, not an invented factory-type claim.",
+    "archetypeRule": "Specific factory-type specializations are preserved. Generic resource-processing labels are refined only from existing explicit game specialization IDs. Countries without a mapped sub-sector specialization receive a cautious broad macro-sector archetype, not an invented factory-type claim.",
     "simulationRule": "This context informs the game-scaled starting profile; it is not a real-world factory census or an official industry classification.",
     "missingRule": "Unavailable or non-comparable observations remain null; they are never converted to zero.",
     "bands": {
