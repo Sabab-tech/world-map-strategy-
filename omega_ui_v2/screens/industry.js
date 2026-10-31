@@ -846,7 +846,7 @@
     return '<section class="fp-starting-allocation" aria-label="Starting factory allocation" data-runtime-status="' + esc(status) + '">' +
       '<header class="fp-starting-allocation-heading"><div><span>OMEGA / NATIONAL INDUSTRY BASELINE</span><strong>Starting allocation</strong></div>' +
       '<div class="fp-starting-allocation-total"><strong>' + fmt(model.startingFactoryUnits) + '</strong><small>game units</small></div></header>' +
-      '<div class="fp-starting-allocation-meta"><span>' + fmt(model.startingFactoryTypeCount) + ' canonical factory types</span><span>' + esc(runtimeLabel) + '</span></div>' +
+      '<div class="fp-starting-allocation-meta"><span>' + esc(baseline.industryArchetype || 'Mixed industrial profile') + '</span><span>' + fmt(model.startingFactoryTypeCount) + ' canonical factory types</span><span>' + esc(runtimeLabel) + '</span></div>' +
       '<div class="fp-starting-allocation-table-wrap"><table><thead><tr><th>Factory type</th><th>Starting units</th><th>Industry group</th></tr></thead>' +
       '<tbody>' + (allocationRows || '<tr><td colspan="3">Factory type catalogue unavailable</td></tr>') + '</tbody></table></div>' +
       economicSectorContextMarkup(baseline, 'fp-starting-allocation-foot') +
