@@ -121,10 +121,10 @@ function deriveSpecializedArchetype(specializations) {
   if (has('INDUSTRIAL_MACHINERY_MACHINE_TOOLS') && has('VEHICLE_TRUCK_BUS_ASSEMBLY')) return 'Automotive and industrial machinery';
   if (has('INDUSTRIAL_MACHINERY_MACHINE_TOOLS') && has('GRID_EQUIPMENT_FACTORY')) return 'Advanced industrial manufacturing';
   if (has('PHARMA_MEDICAL_SUPPLIES_PLANT')) return 'Pharmaceuticals and medical supplies';
-  if (has('NON_FERROUS_METAL_SMELTER')) return 'Non-ferrous metals';
   if (has('NON_FERROUS_METAL_SMELTER') && has('TEXTILE_GARMENT_MILL') && has('FOOD_PROCESSING_COLD_CHAIN')) return 'Aluminium, textiles and food processing';
   if (has('NON_FERROUS_METAL_SMELTER') && has('FOOD_PROCESSING_COLD_CHAIN')) return 'Mineral beneficiation and food processing';
   if (has('PETROCHEMICAL_POLYMER_PLANT') && has('FERTILIZER_CHEMICAL_PLANT')) return 'Petrochemicals and fertilizer manufacturing';
+  if (has('NON_FERROUS_METAL_SMELTER')) return 'Non-ferrous metals';
   if (has('PETROCHEMICAL_POLYMER_PLANT') && has('FOOD_PROCESSING_COLD_CHAIN')) return 'Energy and food processing';
   if (has('PETROCHEMICAL_POLYMER_PLANT')) return 'Energy and petrochemicals';
   if (has('TEXTILE_GARMENT_MILL') && has('FOOD_PROCESSING_COLD_CHAIN')) return 'Textiles and food processing';

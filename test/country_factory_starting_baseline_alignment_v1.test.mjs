@@ -48,8 +48,8 @@ test('country archetypes respond to observed economic structure without inventin
   const enriched = enrichCountryFactoryStartingBaseline(structuredClone(baseline), registry);
   assert.equal(enriched.countries.GUY.industryArchetype, 'Industry-led resource and extractive economy');
   assert.equal(enriched.countries.GUY.economicSectorContext.dominantSector, 'INDUSTRY');
-  assert.equal(enriched.countries.LBY.industryArchetype, 'Industry-led resource and extractive economy',
-    'older manufacturing observations must not be compared as if contemporaneous');
+  assert.equal(enriched.countries.LBY.industryArchetype, 'Petrochemicals and fertilizer manufacturing',
+    'source-backed petrochemical and fertilizer specializations refine the broad industry-led profile');
   assert.equal(enriched.countries.GNB.industryArchetype, 'Agriculture-led economy');
   assert.equal(enriched.countries.MMR.industryArchetype, 'Services-led economy with a manufacturing base');
   assert.equal(enriched.countries.SOM.economicSectorContext.dominantSector, null,
