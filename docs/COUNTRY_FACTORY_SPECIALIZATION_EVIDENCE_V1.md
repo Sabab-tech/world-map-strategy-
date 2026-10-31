@@ -17,6 +17,9 @@ Each affected country row in `country_factory_starting_baseline_v1.json` contain
 | Iraq (IRQ) | Engineering, petrochemicals and consumer manufacturing | Industrial machinery, petrochemicals, fertilizer, industrial chemicals, textiles, vehicles, pharmaceuticals, food, cement | Iraq's National Investment Commission lists these industrial groups, including engineering, chemical/petrochemical, construction/cement, textiles, food, pharmaceuticals and vehicle assembly. The available factory-group inventory is dated 2015 and notes low capacity at many state-owned plants; confidence is consequently moderate and the mapping is not a claim of current operational capacity. |
 | Slovenia (SVN) | Pharmaceuticals, vehicles and precision engineering | Pharmaceuticals, vehicles, grid/electrical equipment, industrial machinery, steel | Slovenia Business's 2025 export profile identifies pharmaceuticals, vehicles/parts, electrical machinery, mechanical equipment, metal products and medical/optical instruments. The Statistical Office reports manufacturing at 18.7% of GDP in 2025. |
 | Haiti (HTI) | Textile and garment manufacturing under disruption | Textiles/garments only | The 2025 national accounts published by Haiti's statistical institute record textile/clothing/leather activity, while reporting an 8% contraction. The specialization therefore indicates sector presence, not growth or high capacity. |
+| Jordan (JOR) | Pharmaceuticals, chemicals and export manufacturing | Fertilizers/chemicals, plastics/rubber, food, textiles, pharmaceuticals, machinery, electrical equipment | Jordan Chamber of Industry's 2024 index and Ministry of Investment's 2025 high-value manufacturing profile document these active sectors. The electronics/electrical mapping does not imply a semiconductor wafer fab. |
+| San Marino (SMR) | Electronics, precision machinery and food manufacturing | Computer/electronic/optical products, machinery, food | The Chamber of Commerce's 2025 guide reports 67 computer/electronic/optical enterprises, 41 machinery enterprises and 60 food manufacturers in September 2024. Three game units aggregate the strongest clusters; they are not enterprise counts. |
+| Suriname (SUR) | Petroleum refining, food processing and industrial chemicals | Petroleum/petrochemical processing, food, industrial chemicals | Staatsolie documents active refining and first commercial sulfuric-acid output in 2025; the WTO's 2019 review identifies food processing and refining. Wood processing is evidenced but is not falsely mapped to paper because the current factory catalogue has no dedicated sawmill/timber-products type. |
 
 ## Mapping rules
 
@@ -36,7 +39,7 @@ The country factory baseline workflow validates:
 - non-negative integer game allocations and total reconciliation;
 - unique specialization IDs, catalog membership, and positive allocation;
 - explicit simulation-only provenance and separation from real-world facility counts;
-- source-backed evidence fields and the seven country-specific mappings;
+- source-backed evidence fields and the ten country-specific mappings;
 - idempotent macro-sector enrichment without changing factory allocations or specialization IDs.
 
 The UNIDO establishment dataset and the game starting-allocation dataset remain separate authorities.

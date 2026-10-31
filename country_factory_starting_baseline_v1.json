@@ -9804,29 +9804,37 @@
       "countryName": "Jordan",
       "countryCode": "JO",
       "continent": "Asia",
-      "industryArchetype": "Services-led economy with a manufacturing base",
-      "specializations": [],
+      "industryArchetype": "Pharmaceuticals, chemicals and export manufacturing",
+      "specializations": [
+        "FERTILIZER_CHEMICAL_PLANT",
+        "FOOD_PROCESSING_COLD_CHAIN",
+        "GRID_EQUIPMENT_FACTORY",
+        "INDUSTRIAL_MACHINERY_MACHINE_TOOLS",
+        "PETROCHEMICAL_POLYMER_PLANT",
+        "PHARMA_MEDICAL_SUPPLIES_PLANT",
+        "TEXTILE_GARMENT_MILL"
+      ],
       "totalStartingFactoryUnits": 7,
       "factoryCounts": {
-        "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT": 1,
-        "STEEL_AND_ALLOY_WORKS": 1,
+        "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT": 0,
+        "STEEL_AND_ALLOY_WORKS": 0,
         "NON_FERROUS_METAL_SMELTER": 0,
         "PETROCHEMICAL_POLYMER_PLANT": 1,
         "FERTILIZER_CHEMICAL_PLANT": 1,
         "INDUSTRIAL_CHEMICALS_GAS_PLANT": 0,
-        "CEMENT_CONCRETE_PLANT": 1,
+        "CEMENT_CONCRETE_PLANT": 0,
         "GLASS_CERAMICS_PLANT": 0,
         "PAPER_PACKAGING_MILL": 0,
         "FOOD_PROCESSING_COLD_CHAIN": 1,
         "TEXTILE_GARMENT_MILL": 1,
-        "INDUSTRIAL_MACHINERY_MACHINE_TOOLS": 0,
-        "GRID_EQUIPMENT_FACTORY": 0,
+        "INDUSTRIAL_MACHINERY_MACHINE_TOOLS": 1,
+        "GRID_EQUIPMENT_FACTORY": 1,
         "ELECTRONICS_SEMICONDUCTOR_FAB": 0,
         "BATTERY_ENERGY_STORAGE_PLANT": 0,
         "VEHICLE_TRUCK_BUS_ASSEMBLY": 0,
         "SHIP_RAIL_EQUIPMENT_YARD": 0,
         "AEROSPACE_EQUIPMENT_PLANT": 0,
-        "PHARMA_MEDICAL_SUPPLIES_PLANT": 0,
+        "PHARMA_MEDICAL_SUPPLIES_PLANT": 1,
         "DEFENSE_EQUIPMENT_FACTORY": 0,
         "RECYCLING_WASTE_PROCESSING_PLANT": 0
       },
@@ -9838,7 +9846,7 @@
         "sourceEconomicProfile": "economy.json",
         "sourceIndustryCatalog": "resource_industrial_catalog_v1.json",
         "sourceCountryResourceContext": "resource_country_resource_context_index.json",
-        "note": "Game-scaled starting allocation informed by the country's broad industrial strengths and resource context. Counts are abstract game units, not observed factory censuses or real-world facility counts."
+        "note": "Seven game-scaled starting units are aligned with documented Jordanian food, chemicals/fertilizer, pharmaceuticals, textiles, plastics/rubber and engineering/electrical production. Counts are not establishment totals."
       },
       "economicSectorContext": {
         "schemaVersion": "OMEGA_COUNTRY_ECONOMIC_SECTOR_CONTEXT_V1",
@@ -9904,9 +9912,60 @@
         "interpretation": "Manufacturing value added is a component of industry value added; do not add it to industry. Broad value-added shares do not identify individual factory types.",
         "missingPolicy": "Null means unavailable or not comparable, never zero."
       },
-      "specializationEvidenceStatus": "NO_SUBSECTOR_SPECIALIZATION_EVIDENCE",
-      "industryArchetypeBasis": "WORLD_BANK_VALUE_ADDED_MIX_V1",
-      "industryArchetypeObservationYear": 2025
+      "specializationEvidenceStatus": "GAME_MODELLED_SPECIALIZATION_SET",
+      "industryArchetypeBasis": "EXISTING_GAME_SPECIALIZATION_PROFILE_V1",
+      "industryArchetypeObservationYear": 2025,
+      "specializationEvidence": {
+        "schemaVersion": "OMEGA_COUNTRY_FACTORY_SPECIALIZATION_EVIDENCE_V1",
+        "status": "SOURCE_BACKED_SIMULATION_MAPPING",
+        "accessDate": "2026-10-31",
+        "mappingPolicy": "Country sector evidence selects compatible canonical game factory types. Counts remain abstract game-scaled units and are not observed real-world facility totals.",
+        "referenceYears": [
+          2024,
+          2025
+        ],
+        "sources": [
+          {
+            "authority": "Jordan Chamber of Industry",
+            "title": "Jordan Industry Index",
+            "url": "https://jci.org.jo/en/jordan-industry-index/",
+            "publicationYear": 2024,
+            "supportedClaims": [
+              "food and agricultural processing",
+              "leather and apparel",
+              "pharmaceuticals and medical supplies",
+              "plastics and rubber",
+              "engineering, electrical and IT manufacturing",
+              "chemical and cosmetics industries"
+            ]
+          },
+          {
+            "authority": "Jordan Ministry of Investment",
+            "title": "High-Value Manufacturing",
+            "url": "https://invest.jo/investment-sectors/high-value-manufacturing",
+            "publicationYear": 2025,
+            "supportedClaims": [
+              "food processing production and export activity",
+              "chemicals and fertilizers production and exports",
+              "pharmaceutical exports",
+              "engineering industries production and exports",
+              "textiles export activity"
+            ]
+          },
+          {
+            "authority": "Jordan Chamber of Industry",
+            "title": "Chemical and Cosmetics Industries Sector",
+            "url": "https://jci.org.jo/en/sector-services-department/chemical-and-cosmetics-industries-sector/",
+            "publicationYear": 2025,
+            "supportedClaims": [
+              "fertilizer and chemical value chains from phosphate and potash",
+              "operating chemical-sector establishments and industrial output"
+            ]
+          }
+        ],
+        "confidence": "HIGH",
+        "caveat": "The electronics/electrical allocation is represented through the existing grid and electrical-equipment category. The simulation mapping does not assert a dedicated semiconductor wafer fab."
+      }
     },
     "JPN": {
       "countryId": "JPN",
@@ -17678,24 +17737,28 @@
       "countryName": "San Marino",
       "countryCode": "SM",
       "continent": "Europe",
-      "industryArchetype": "Services-led economy with a manufacturing base",
-      "specializations": [],
+      "industryArchetype": "Electronics, precision machinery and food manufacturing",
+      "specializations": [
+        "ELECTRONICS_SEMICONDUCTOR_FAB",
+        "FOOD_PROCESSING_COLD_CHAIN",
+        "INDUSTRIAL_MACHINERY_MACHINE_TOOLS"
+      ],
       "totalStartingFactoryUnits": 3,
       "factoryCounts": {
-        "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT": 1,
-        "STEEL_AND_ALLOY_WORKS": 1,
+        "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT": 0,
+        "STEEL_AND_ALLOY_WORKS": 0,
         "NON_FERROUS_METAL_SMELTER": 0,
-        "PETROCHEMICAL_POLYMER_PLANT": 1,
+        "PETROCHEMICAL_POLYMER_PLANT": 0,
         "FERTILIZER_CHEMICAL_PLANT": 0,
         "INDUSTRIAL_CHEMICALS_GAS_PLANT": 0,
         "CEMENT_CONCRETE_PLANT": 0,
         "GLASS_CERAMICS_PLANT": 0,
         "PAPER_PACKAGING_MILL": 0,
-        "FOOD_PROCESSING_COLD_CHAIN": 0,
+        "FOOD_PROCESSING_COLD_CHAIN": 1,
         "TEXTILE_GARMENT_MILL": 0,
-        "INDUSTRIAL_MACHINERY_MACHINE_TOOLS": 0,
+        "INDUSTRIAL_MACHINERY_MACHINE_TOOLS": 1,
         "GRID_EQUIPMENT_FACTORY": 0,
-        "ELECTRONICS_SEMICONDUCTOR_FAB": 0,
+        "ELECTRONICS_SEMICONDUCTOR_FAB": 1,
         "BATTERY_ENERGY_STORAGE_PLANT": 0,
         "VEHICLE_TRUCK_BUS_ASSEMBLY": 0,
         "SHIP_RAIL_EQUIPMENT_YARD": 0,
@@ -17712,7 +17775,7 @@
         "sourceEconomicProfile": "economy.json",
         "sourceIndustryCatalog": "resource_industrial_catalog_v1.json",
         "sourceCountryResourceContext": "resource_country_resource_context_index.json",
-        "note": "Game-scaled starting allocation informed by the country's broad industrial strengths and resource context. Counts are abstract game units, not observed factory censuses or real-world facility counts."
+        "note": "Three game-scaled units represent the largest documented manufacturing clusters in the 2024 Chamber of Commerce breakdown: computer/electronic/optical products, machinery and food products. They are not 3 or 478 real factory counts."
       },
       "economicSectorContext": {
         "schemaVersion": "OMEGA_COUNTRY_ECONOMIC_SECTOR_CONTEXT_V1",
@@ -17778,9 +17841,34 @@
         "interpretation": "Manufacturing value added is a component of industry value added; do not add it to industry. Broad value-added shares do not identify individual factory types.",
         "missingPolicy": "Null means unavailable or not comparable, never zero."
       },
-      "specializationEvidenceStatus": "NO_SUBSECTOR_SPECIALIZATION_EVIDENCE",
-      "industryArchetypeBasis": "WORLD_BANK_VALUE_ADDED_MIX_V1",
-      "industryArchetypeObservationYear": 2023
+      "specializationEvidenceStatus": "GAME_MODELLED_SPECIALIZATION_SET",
+      "industryArchetypeBasis": "EXISTING_GAME_SPECIALIZATION_PROFILE_V1",
+      "industryArchetypeObservationYear": 2023,
+      "specializationEvidence": {
+        "schemaVersion": "OMEGA_COUNTRY_FACTORY_SPECIALIZATION_EVIDENCE_V1",
+        "status": "SOURCE_BACKED_SIMULATION_MAPPING",
+        "accessDate": "2026-10-31",
+        "mappingPolicy": "Country sector evidence selects compatible canonical game factory types. Counts remain abstract game-scaled units and are not observed real-world facility totals.",
+        "referenceYears": [
+          2024
+        ],
+        "sources": [
+          {
+            "authority": "Economic Development Agency / Chamber of Commerce of San Marino",
+            "title": "Doing business, working and living in San Marino: short guide",
+            "url": "https://www.camcom.sm/wp-content/uploads/2025/02/Country-profile-EN_2025.pdf",
+            "publicationYear": 2025,
+            "supportedClaims": [
+              "September 2024 manufacturing breakdown lists 67 computer/electronic/optical enterprises",
+              "41 machinery and equipment enterprises",
+              "60 food-product manufacturing enterprises",
+              "478 total manufacturing activities"
+            ]
+          }
+        ],
+        "confidence": "HIGH",
+        "caveat": "The source reports enterprises, not game starting units. The electronics category is a broad game mapping for computer/electronic/optical manufacture and does not imply that San Marino hosts a semiconductor wafer fab."
+      }
     },
     "SOM": {
       "countryId": "SOM",
@@ -18223,16 +18311,20 @@
       "countryName": "Suriname",
       "countryCode": "SR",
       "continent": "South America",
-      "industryArchetype": "Services-led economy with a manufacturing base",
-      "specializations": [],
+      "industryArchetype": "Petroleum refining, food processing and industrial chemicals",
+      "specializations": [
+        "FOOD_PROCESSING_COLD_CHAIN",
+        "INDUSTRIAL_CHEMICALS_GAS_PLANT",
+        "PETROCHEMICAL_POLYMER_PLANT"
+      ],
       "totalStartingFactoryUnits": 4,
       "factoryCounts": {
-        "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT": 1,
-        "STEEL_AND_ALLOY_WORKS": 1,
+        "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT": 0,
+        "STEEL_AND_ALLOY_WORKS": 0,
         "NON_FERROUS_METAL_SMELTER": 0,
-        "PETROCHEMICAL_POLYMER_PLANT": 1,
+        "PETROCHEMICAL_POLYMER_PLANT": 2,
         "FERTILIZER_CHEMICAL_PLANT": 0,
-        "INDUSTRIAL_CHEMICALS_GAS_PLANT": 0,
+        "INDUSTRIAL_CHEMICALS_GAS_PLANT": 1,
         "CEMENT_CONCRETE_PLANT": 0,
         "GLASS_CERAMICS_PLANT": 0,
         "PAPER_PACKAGING_MILL": 0,
@@ -18257,7 +18349,7 @@
         "sourceEconomicProfile": "economy.json",
         "sourceIndustryCatalog": "resource_industrial_catalog_v1.json",
         "sourceCountryResourceContext": "resource_country_resource_context_index.json",
-        "note": "Game-scaled starting allocation informed by the country's broad industrial strengths and resource context. Counts are abstract game units, not observed factory censuses or real-world facility counts."
+        "note": "Four game-scaled units represent the established refinery, documented food-processing base and 2025 first commercial sulfuric-acid production. Timber processing is acknowledged as a catalog coverage gap rather than misclassified. Counts are not physical plant totals."
       },
       "economicSectorContext": {
         "schemaVersion": "OMEGA_COUNTRY_ECONOMIC_SECTOR_CONTEXT_V1",
@@ -18323,9 +18415,53 @@
         "interpretation": "Manufacturing value added is a component of industry value added; do not add it to industry. Broad value-added shares do not identify individual factory types.",
         "missingPolicy": "Null means unavailable or not comparable, never zero."
       },
-      "specializationEvidenceStatus": "NO_SUBSECTOR_SPECIALIZATION_EVIDENCE",
-      "industryArchetypeBasis": "WORLD_BANK_VALUE_ADDED_MIX_V1",
-      "industryArchetypeObservationYear": 2024
+      "specializationEvidenceStatus": "GAME_MODELLED_SPECIALIZATION_SET",
+      "industryArchetypeBasis": "EXISTING_GAME_SPECIALIZATION_PROFILE_V1",
+      "industryArchetypeObservationYear": 2024,
+      "specializationEvidence": {
+        "schemaVersion": "OMEGA_COUNTRY_FACTORY_SPECIALIZATION_EVIDENCE_V1",
+        "status": "SOURCE_BACKED_SIMULATION_MAPPING",
+        "accessDate": "2026-10-31",
+        "mappingPolicy": "Country sector evidence selects compatible canonical game factory types. Counts remain abstract game-scaled units and are not observed real-world facility totals.",
+        "referenceYears": [
+          2019,
+          2023,
+          2025
+        ],
+        "sources": [
+          {
+            "authority": "Staatsolie, Suriname's national energy company",
+            "title": "Staatsolie ends 2025 strong with a focus on sustainable growth",
+            "url": "https://www.staatsolie.com/en/news/staatsolie-ends-2025-strong-with-a-focus-on-sustainable-growth/",
+            "publicationYear": 2025,
+            "supportedClaims": [
+              "the refinery produced approximately 3.1 million barrels of diesel and gasoline in 2025",
+              "first commercial sulfuric acid production and delivery in 2025"
+            ]
+          },
+          {
+            "authority": "Staatsolie, Suriname's national energy company",
+            "title": "Our business",
+            "url": "https://www.staatsolie.com/en/our-business/",
+            "supportedClaims": [
+              "the Tout Lui Faut refinery has 15,000 barrels per day processing capacity",
+              "the refinery produces fuel oil, diesel, gasoline and bitumen"
+            ]
+          },
+          {
+            "authority": "World Trade Organization",
+            "title": "Trade Policy Review: Suriname",
+            "url": "https://www.wto.org/english/tratop_e/tpr_e/s391_e.pdf",
+            "publicationYear": 2019,
+            "supportedClaims": [
+              "manufacturing was dominated by food and wood processing and refining activities",
+              "the food, drink and chemical industry was identified among industrial development clusters"
+            ]
+          }
+        ],
+        "confidence": "MODERATE",
+        "caveat": "Food-processing evidence is from the WTO's 2019 review. Suriname's wood-processing sector is documented, but the current 21-type factory catalog has no dedicated sawmill/timber-products type; it is not falsely re-labelled as a paper mill. The 2025 sulfuric-acid plant is a new commercial activity."
+      }
     },
     "SVK": {
       "countryId": "SVK",

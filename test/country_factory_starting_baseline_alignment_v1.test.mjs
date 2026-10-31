@@ -198,3 +198,62 @@ test('source-backed country industry corrections map documented sectors to canon
     'Haiti’s textile specialization must preserve the reported downturn caveat');
 });
 
+test('source-backed sector alignment covers Jordan, San Marino and Suriname', () => {
+  const enriched = enrichCountryFactoryStartingBaseline(structuredClone(baseline), registry);
+  const expected = {
+    JOR: {
+      archetype: 'Pharmaceuticals, chemicals and export manufacturing',
+      types: [
+        'FERTILIZER_CHEMICAL_PLANT',
+        'PETROCHEMICAL_POLYMER_PLANT',
+        'FOOD_PROCESSING_COLD_CHAIN',
+        'TEXTILE_GARMENT_MILL',
+        'PHARMA_MEDICAL_SUPPLIES_PLANT',
+        'INDUSTRIAL_MACHINERY_MACHINE_TOOLS',
+        'GRID_EQUIPMENT_FACTORY'
+      ]
+    },
+    SMR: {
+      archetype: 'Electronics, precision machinery and food manufacturing',
+      types: [
+        'ELECTRONICS_SEMICONDUCTOR_FAB',
+        'INDUSTRIAL_MACHINERY_MACHINE_TOOLS',
+        'FOOD_PROCESSING_COLD_CHAIN'
+      ]
+    },
+    SUR: {
+      archetype: 'Petroleum refining, food processing and industrial chemicals',
+      types: [
+        'PETROCHEMICAL_POLYMER_PLANT',
+        'FOOD_PROCESSING_COLD_CHAIN',
+        'INDUSTRIAL_CHEMICALS_GAS_PLANT'
+      ]
+    }
+  };
+
+  for (const [countryId, expectation] of Object.entries(expected)) {
+    const row = enriched.countries[countryId];
+    assert.ok(row, countryId + ' country profile must exist');
+    assert.equal(row.industryArchetype, expectation.archetype);
+    assert.deepEqual([...row.specializations].sort(), [...expectation.types].sort());
+    assert.equal(row.specializationEvidenceStatus, 'GAME_MODELLED_SPECIALIZATION_SET');
+    assert.equal(row.specializationEvidence.schemaVersion, 'OMEGA_COUNTRY_FACTORY_SPECIALIZATION_EVIDENCE_V1');
+    assert.equal(row.specializationEvidence.status, 'SOURCE_BACKED_SIMULATION_MAPPING');
+    assert.equal(row.specializationEvidence.accessDate, '2026-10-31');
+    assert.ok(row.specializationEvidence.sources.length > 0);
+    assert.ok(row.specializationEvidence.sources.every(source => /^https:\/\//.test(source.url)));
+    for (const type of expectation.types) {
+      assert.ok(row.factoryCounts[type] >= 1, countryId + ' must allocate a positive game unit to ' + type);
+    }
+    assert.equal(row.totalStartingFactoryUnits,
+      Object.values(row.factoryCounts).reduce((sum, count) => sum + count, 0));
+    assert.equal(row.provenance.simulationOnly, true);
+    assert.equal(row.provenance.realWorldFacilityCounts, false);
+  }
+
+  assert.ok(enriched.countries.JOR.specializationEvidence.caveat.includes('semiconductor'));
+  assert.ok(enriched.countries.SMR.specializationEvidence.caveat.includes('wafer fab'));
+  assert.ok(enriched.countries.SUR.specializationEvidence.caveat.includes('sawmill/timber-products'));
+  assert.ok(enriched.countries.SUR.specializationEvidence.caveat.includes('2019'));
+});
+
