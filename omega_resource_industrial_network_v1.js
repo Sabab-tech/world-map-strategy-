@@ -4805,6 +4805,111 @@ function factoryProductionRequirements(factoryType, recipeId){
   };
 }
 
+function registerStartingFactoryAssets(input={}){
+  const cid=canonicalCountry(input.countryId);
+  if(!cid)return{status:'BLOCKED',reason:'STARTING_FACTORY_COUNTRY_INVALID'};
+  const selected=playerSimulationCountryId();
+  if(!selected||selected!==cid)return{status:'BLOCKED',reason:'PLAYER_COUNTRY_SCOPE_VIOLATION',countryId:cid,playerCountryId:selected||null};
+  const catalog=cat(),profiles=catalog?.factoryProfiles||{};
+  if(!catalog||Object.keys(profiles).length!==21)
+    return{status:'BLOCKED',reason:'STARTING_FACTORY_CATALOG_NOT_READY',factoryTypeCount:Object.keys(profiles).length};
+  const counts=input.factoryCounts;
+  if(!counts||typeof counts!=='object'||Array.isArray(counts))
+    return{status:'BLOCKED',reason:'STARTING_FACTORY_COUNTS_INVALID'};
+  const types=Object.keys(profiles).sort(),countKeys=Object.keys(counts).sort();
+  if(countKeys.length!==types.length||countKeys.join('|')!==types.join('|'))
+    return{status:'BLOCKED',reason:'STARTING_FACTORY_TYPE_MATRIX_MISMATCH',expectedFactoryTypeCount:types.length,actualFactoryTypeCount:countKeys.length};
+  let requestedUnits=0;
+  for(const type of types){
+    const quantity=Number(counts[type]);
+    if(!Number.isSafeInteger(quantity)||quantity<0)
+      return{status:'BLOCKED',reason:'STARTING_FACTORY_COUNT_INVALID',factoryType:type,quantity:counts[type]};
+    requestedUnits+=quantity;
+  }
+  const network=netState(cid);
+  if(!network.startingFactoryAssetRegistrations||typeof network.startingFactoryAssetRegistrations!=='object'||Array.isArray(network.startingFactoryAssetRegistrations))
+    network.startingFactoryAssetRegistrations={};
+  const datasetVersion=String(input.datasetVersion||'OMEGA_COUNTRY_FACTORY_STARTING_BASELINE_V1');
+  const sessionId=String(input.sessionId||'').trim();
+  const registryKey=datasetVersion+':'+(sessionId||cid);
+  const prior=network.startingFactoryAssetRegistrations[registryKey];
+  const assets=factoryAssets(cid);
+  const activeFactoryAssets=()=>assets.filter(asset=>{
+    const type=normalizeFactoryType(asset?.factoryType||asset?.type||asset?.facilityType||'');
+    return types.includes(type)&&!['DECOMMISSIONED','DESTROYED'].includes(String(asset?.status||'').toUpperCase());
+  });
+  if(prior&&prior.status==='COMPLETED'){
+    const live=activeFactoryAssets();
+    return{...clone(prior),status:'ALREADY_REGISTERED',idempotent:true,activeAssetCount:live.length,
+      activeByType:Object.fromEntries(types.map(type=>[type,live.filter(asset=>normalizeFactoryType(asset?.factoryType||asset?.type||asset?.facilityType||'')===type).length]))};
+  }
+  const createdAssetIds=[],createdByType={},blockedTypes=[],skippedByType={};
+  for(const type of types){
+    const desired=Number(counts[type]);
+    if(desired===0){createdByType[type]=0;continue;}
+    const profile=profiles[type];
+    const requirements=factoryProductionRequirements(type);
+    if(!requirements||requirements.status!=='READY'){
+      blockedTypes.push({factoryType:type,requested:desired,reason:requirements?.reason||requirements?.status||'FACTORY_REQUIREMENTS_UNAVAILABLE'});
+      continue;
+    }
+    const activeCount=assets.filter(asset=>normalizeFactoryType(asset?.factoryType||asset?.type||asset?.facilityType||'')===type&&
+      !['DECOMMISSIONED','DESTROYED'].includes(String(asset?.status||'').toUpperCase())).length;
+    const historicalCount=assets.filter(asset=>normalizeFactoryType(asset?.factoryType||asset?.type||asset?.facilityType||'')===type).length;
+    const missing=Math.max(0,desired-activeCount);
+    skippedByType[type]=Math.max(0,activeCount-desired);
+    createdByType[type]=0;
+    if(!missing)continue;
+    const dynamicProcessing=type==='UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT'&&requirements.recipeKind==='PROCESSING';
+    for(let index=0;index<missing;index++){
+      const ordinal=historicalCount+index+1;
+      const factoryId='FAC-START:'+cid+':'+type+':'+ordinal;
+      if(assets.some(asset=>String(asset?.id||asset?.assetId||asset?.projectId||'')===factoryId))continue;
+      const inputCoefficients=dynamicProcessing?null:clone(requirements.inputsPerProductionUnit||{});
+      const outputProfile=dynamicProcessing?null:clone(requirements.outputsPerProductionUnit||{});
+      const capacity=Math.max(1,Number(requirements.ratedCapacityPerDay)||0);
+      const asset={
+        id:factoryId,countryId:cid,stage:'PROCESSING',factoryType:type,
+        name:String(profile.name||type)+' #'+ordinal,
+        recipeId:dynamicProcessing?null:requirements.recipeId,
+        recipeMode:dynamicProcessing?'DYNAMIC_PROCESSING':(Object.keys(inputCoefficients||{}).length>1?'MULTI_INPUT':'SINGLE_INPUT'),
+        recipeAuthority:dynamicProcessing?'INDUSTRIAL_CATALOG_DYNAMIC_PROCESSING':requirements.authority||'SIMULATED_GAMEPLAY_RULE',
+        capacity,capacityPerDay:capacity,locationNodeKey:'INDUSTRIAL_ZONE:'+cid,
+        status:'OPERATIONAL',requiredTechnologyIds:[],
+        baselineTechnologyContext:clone(requirements.construction?.requiredTechnologyIds||[]),
+        inputUnit:requirements.inputUnit||'SIMULATION_RESOURCE_UNIT',outputUnit:requirements.outputUnit||'SIMULATION_RESOURCE_UNIT',
+        cycleDays:Math.max(1,Number(requirements.processing?.cycleDays)||1),
+        inputInventory:{},inputBatchLots:[],transportAccess:['truck','rail','ship','barge','pipeline'],
+        utilityRequirements:clone(profile.utilities||{}),workforce:clone(profile.workforce||{}),
+        productionHealth:{status:'STOPPED',productivityPct:0,productionUnitsPerCycle:0,capacityPerDay:capacity,
+          missingInputs:[],reason:'NO_FACTORY_INPUTS',updatedTurn:turn(),authority:'OMEGA_FACTORY_PRODUCTION_SCHEDULER_V1'},
+        ...(dynamicProcessing?{}:{inputCoefficients,outputProfile}),
+        sourceType:'COUNTRY_STARTING_FACTORY_BASELINE',sourceAuthority:'SIMULATED_COUNTRY_STARTING_INDUSTRY_PROFILE_V1',
+        baselineSessionId:sessionId||null,baselineOrdinal:ordinal,simulationOnly:true,realWorldFacilityCounts:false
+      };
+      assets.push(asset);
+      createdAssetIds.push(factoryId);
+      createdByType[type]++;
+    }
+  }
+  const live=activeFactoryAssets();
+  const activeByType=Object.fromEntries(types.map(type=>[type,live.filter(asset=>normalizeFactoryType(asset?.factoryType||asset?.type||asset?.facilityType||'')===type).length]));
+  const registeredUnits=Object.values(activeByType).reduce((sum,value)=>sum+value,0);
+  const result={
+    status:blockedTypes.length?'COMPLETED_WITH_GAPS':'COMPLETED',countryId:cid,sessionId:sessionId||null,datasetVersion,
+    requestedFactoryUnits:requestedUnits,activeAssetCount:live.length,registeredFactoryUnits:registeredUnits,
+    createdCount:createdAssetIds.length,createdAssetIds,createdByType,activeByType,skippedByType,blockedTypes,
+    factoryTypeCount:types.length,registryKey,playerCountryOnly:true,simulationOnly:true,
+    authority:'OMEGA_COUNTRY_STARTING_FACTORY_ASSET_REGISTRY_V1',updatedTurn:turn()
+  };
+  network.startingFactoryAssetRegistrations[registryKey]=clone(result);
+  network.events=Array.isArray(network.events)?network.events:[];
+  network.events.push({...clone(result),eventType:'COUNTRY_STARTING_FACTORY_ASSETS_REGISTERED'});
+  network.events=network.events.slice(-MAX_EVENTS);
+  emit('OMEGA_COUNTRY_STARTING_FACTORY_ASSETS_REGISTERED',cid,result);
+  return result;
+}
+
 function factoryProductionStatus(countryId,factoryId){
   const cid=canonicalCountry(countryId),assets=factoryAssets(cid),asset=assets.find(row=>String(row?.id||row?.assetId||row?.projectId)===String(factoryId||''));
   if(!asset)return{status:'NOT_FOUND',reason:'FACTORY_NOT_FOUND',countryId:cid,factoryId:String(factoryId||'')};
@@ -5198,7 +5303,7 @@ function gameplayPipelineDiagnostics(countryScope){
     awaitingTransportCapacity:perCountry.reduce((n,x)=>n+x.awaitingTransportCapacity,0),perCountry};
 }
 function api(){
-  return Object.freeze({VERSION,loadCatalog,loadSiteLogisticsRoutes,getTransportFleet,setTransportFleet,previewSiteTransport,planExtraction,planShipment,dispatchShipment,dispatchFactoryInputShipment,advanceShipments,quoteMineProject,startMineProject,startFactoryProject,startInfrastructureProject,startPadmaCorridorProject,advanceProjects,startTechnologyProject,executeFactoryCycle,executeSitePipeline,diagnostics,gameplayPipelineDiagnostics,factoryCatalogDiagnostics,factoryProductionRequirements,factoryProductionStatus,decommissionFactory,decommissionMine,setMineOperatingStatus,quoteMineDemolition,destroyMineAssets,startFactoryProductionCycle,transferFactoryInputsFromWarehouse,processPendingFactoryInputs,factoryUtilityDiagnostics,factoryConstructionMaterialQuote,reconcileFactoryEmployment,normalizeInfrastructure,candidateFactories,recipeFor,processPendingFactoryInputs,resourceMethod,buildRoute});
+  return Object.freeze({VERSION,loadCatalog,loadSiteLogisticsRoutes,getTransportFleet,setTransportFleet,previewSiteTransport,planExtraction,planShipment,dispatchShipment,dispatchFactoryInputShipment,advanceShipments,quoteMineProject,startMineProject,startFactoryProject,startInfrastructureProject,startPadmaCorridorProject,advanceProjects,startTechnologyProject,executeFactoryCycle,executeSitePipeline,diagnostics,gameplayPipelineDiagnostics,factoryCatalogDiagnostics,factoryProductionRequirements,registerStartingFactoryAssets,factoryProductionStatus,decommissionFactory,decommissionMine,setMineOperatingStatus,quoteMineDemolition,destroyMineAssets,startFactoryProductionCycle,transferFactoryInputsFromWarehouse,processPendingFactoryInputs,factoryUtilityDiagnostics,factoryConstructionMaterialQuote,reconcileFactoryEmployment,normalizeInfrastructure,candidateFactories,recipeFor,processPendingFactoryInputs,resourceMethod,buildRoute});
 }
 g.Omega=g.Omega||{};g.Omega.ResourceIndustrialNetwork=api();g.OmegaResourceIndustrialNetwork=g.Omega.ResourceIndustrialNetwork;
 
