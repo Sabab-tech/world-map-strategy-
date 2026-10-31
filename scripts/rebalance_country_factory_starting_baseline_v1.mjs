@@ -170,7 +170,7 @@ function allocateUniformProfile(row, ids) {
     row.specializationEvidence.status === 'SOURCE_BACKED_SIMULATION_MAPPING';
   const specializations = [...new Set(Array.isArray(row.specializations) ? row.specializations : [])];
   const specializationRefresh = previousDiagnostics.modelVersion === MODEL_VERSION &&
-    previousDiagnostics.basis === 'SAME_YEAR_MACRO_SECTOR_ONLY' &&
+    ['SAME_YEAR_MACRO_SECTOR_ONLY', 'CONSERVATIVE_EXISTING_PROFILE'].includes(previousDiagnostics.basis) &&
     sourceBacked && specializations.length > 0 &&
     previousDiagnostics.specializationRefreshApplied !== true;
   const budgetIncrease = previousDiagnostics.modelVersion === MODEL_VERSION &&
@@ -208,17 +208,17 @@ function allocateUniformProfile(row, ids) {
     return row;
   }
 
+  const evidenceOnly = sourceBacked && !macro.comparable;
   const scores = Object.fromEntries(ids.map((id) => [
-    id, Math.max(0.001, WEIGHT_RULES[id](macro.values)) + (oldCounts[id] > 0 ? 0.04 : 0)
+    id, evidenceOnly ? 1 : Math.max(0.001, WEIGHT_RULES[id](macro.values)) + (oldCounts[id] > 0 ? 0.04 : 0)
   ]));
   for (const id of specializations) scores[id] *= sourceBacked ? 2.8 : 2.5;
 
   const originalTotal = row.totalStartingFactoryUnits;
   const total = originalTotal + (budgetIncrease ? 1 : 0);
-  const activeLimit = Math.min(
-    total,
-    Math.max(specializations.length, Math.max(2, Math.round(total * 0.64)))
-  );
+  const activeLimit = evidenceOnly
+    ? specializations.length
+    : Math.min(total, Math.max(specializations.length, Math.max(2, Math.round(total * 0.64))));
   const rankedIds = ids.slice().sort((a, b) =>
     scores[b] - scores[a] || ids.indexOf(a) - ids.indexOf(b)
   );
@@ -274,26 +274,33 @@ function allocateUniformProfile(row, ids) {
   const allocationChanged = ids.some((id) => nextCounts[id] !== oldCounts[id]) || budgetIncrease;
   row.factoryCounts = nextCounts;
   row.totalStartingFactoryUnits = total;
-  const basis = specializations.length
-    ? (sourceBacked ? 'SOURCE_BACKED_SPECIALIZATION_PLUS_MACRO' : 'GAME_MODELLED_SPECIALIZATION_PLUS_MACRO')
-    : 'SAME_YEAR_MACRO_SECTOR_ONLY';
+  const basis = evidenceOnly
+    ? 'SOURCE_BACKED_SPECIALIZATION_ONLY'
+    : specializations.length
+      ? (sourceBacked ? 'SOURCE_BACKED_SPECIALIZATION_PLUS_MACRO' : 'GAME_MODELLED_SPECIALIZATION_PLUS_MACRO')
+      : 'SAME_YEAR_MACRO_SECTOR_ONLY';
   const allocationStatus = allocationChanged ? 'REBALANCED' : 'CONSTRAINED_UNCHANGED';
-  let allocationNote = allocationChanged
-    ? 'Reallocated country-specific game units using the new specialization set and the comparable macro-sector weights.'
-    : 'The existing specialization set consumes every available starting unit. The categories are retained without dropping any documented specialization.';
+  let allocationNote = evidenceOnly
+    ? 'Allocated only to source-backed specialization categories because comparable macro-sector observations are unavailable; no additional category was invented.'
+    : allocationChanged
+      ? 'Reallocated country-specific game units using the new specialization set and the comparable macro-sector weights.'
+      : 'The existing specialization set consumes every available starting unit. The categories are retained without dropping any documented specialization.';
   if (budgetIncrease) {
     allocationNote += ' One additional simulated starting unit was granted because the complete source-backed specialization set consumed the prior budget.';
   }
   if (specializationRefresh) {
-    allocationNote += ' A new source-backed country specialization replaced the previous macro-only allocation.';
+    allocationNote += evidenceOnly
+      ? ' This evidence-only profile replaced a conservative data-gap allocation.'
+      : ' A new source-backed country specialization replaced the previous macro-only allocation.';
   }
   const diagnostics = makeDiagnostics(
     row, selectedIds, basis, allocationStatus, isUniform && allocationChanged, allocationNote
   );
   if (specializationRefresh) {
     diagnostics.specializationRefreshApplied = true;
-    diagnostics.previousAllocationBasis = 'SAME_YEAR_MACRO_SECTOR_ONLY';
+    diagnostics.previousAllocationBasis = previousDiagnostics.basis;
   }
+  if (evidenceOnly) diagnostics.macroWeightsApplied = false;
   if (budgetIncrease) {
     diagnostics.budgetIncreaseApplied = true;
     diagnostics.budgetIncreaseUnits = 1;
@@ -320,7 +327,8 @@ function summarize(baseline) {
     factoryTypeCount: baseline.factoryTypes.length,
     evaluatedUniformProfileCount: (basisCounts.SAME_YEAR_MACRO_SECTOR_ONLY || 0) +
       (basisCounts.GAME_MODELLED_SPECIALIZATION_PLUS_MACRO || 0) +
-      (basisCounts.SOURCE_BACKED_SPECIALIZATION_PLUS_MACRO || 0),
+      (basisCounts.SOURCE_BACKED_SPECIALIZATION_PLUS_MACRO || 0) +
+      (basisCounts.SOURCE_BACKED_SPECIALIZATION_ONLY || 0),
     changedUniformDistributionCount: rows.filter((row) =>
       row.allocationDiagnostics && row.allocationDiagnostics.rebalancedFromUniformCounts === true
     ).length,
@@ -332,6 +340,7 @@ function summarize(baseline) {
     macroOnlyCount: basisCounts.SAME_YEAR_MACRO_SECTOR_ONLY || 0,
     gameModelledSpecializationCount: basisCounts.GAME_MODELLED_SPECIALIZATION_PLUS_MACRO || 0,
     sourceBackedSpecializationCount: basisCounts.SOURCE_BACKED_SPECIALIZATION_PLUS_MACRO || 0,
+    sourceBackedSpecializationOnlyCount: basisCounts.SOURCE_BACKED_SPECIALIZATION_ONLY || 0,
     sourceBackedSpecializationCountryCount: rows.filter((row) =>
       row.specializationEvidence && row.specializationEvidence.status === 'SOURCE_BACKED_SIMULATION_MAPPING'
     ).length,
@@ -397,7 +406,7 @@ function validateOutput(baseline) {
     if (!diagnostics || diagnostics.modelVersion !== MODEL_VERSION ||
         !['PRESERVED_EXISTING_DISTRIBUTION', 'CONSERVATIVE_EXISTING_PROFILE',
           'SAME_YEAR_MACRO_SECTOR_ONLY', 'GAME_MODELLED_SPECIALIZATION_PLUS_MACRO',
-          'SOURCE_BACKED_SPECIALIZATION_PLUS_MACRO'].includes(diagnostics.basis)) {
+          'SOURCE_BACKED_SPECIALIZATION_PLUS_MACRO', 'SOURCE_BACKED_SPECIALIZATION_ONLY'].includes(diagnostics.basis)) {
       throw new Error('FACTORY_ALLOCATION_DIAGNOSTICS_INVALID:' + countryId);
     }
     if (diagnostics.activeFactoryTypeCount !==

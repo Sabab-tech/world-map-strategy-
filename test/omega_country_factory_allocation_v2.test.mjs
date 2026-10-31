@@ -37,19 +37,20 @@ test('allocation V2 covers all 197 countries and the one canonical 21-type catal
 
 test('uniform profiles are redistributed with only the three documented budget exceptions', () => {
   const summary = baseline.allocationModel.summary;
-  assert.equal(summary.evaluatedUniformProfileCount, 143);
-  assert.equal(summary.changedUniformDistributionCount, 139);
+  assert.equal(summary.evaluatedUniformProfileCount, 147);
+  assert.equal(summary.changedUniformDistributionCount, 143);
   assert.equal(summary.constrainedUnitBudgetCount, 0);
   assert.equal(summary.preservedExistingDistributionCount, 49);
-  assert.equal(summary.conservativeDataGapCount, 5);
+  assert.equal(summary.conservativeDataGapCount, 1);
   assert.equal(summary.macroOnlyCount, 92);
   assert.equal(summary.gameModelledSpecializationCount, 35);
   assert.equal(summary.sourceBackedSpecializationCount, 16);
   assert.equal(summary.remainingUniformProfileCount, 5);
   assert.equal(summary.coreCountryCount, 197);
   assert.equal(summary.factoryTypeCount, 21);
-  assert.equal(summary.sourceBackedSpecializationCountryCount, 21);
-  assert.equal(summary.specializationRefreshCount, 4);
+  assert.equal(summary.sourceBackedSpecializationCountryCount, 25);
+  assert.equal(summary.sourceBackedSpecializationOnlyCount, 4);
+  assert.equal(summary.specializationRefreshCount, 8);
   assert.equal(summary.budgetIncreasedCountryCount, 3);
   assert.equal(summary.budgetIncreaseUnits, 3);
   assert.equal(summary.worldTotalStartingFactoryUnits, 1592);
@@ -115,10 +116,12 @@ test('three source-backed profiles receive only the recorded one-unit constraint
     assert.equal(row.allocationDiagnostics.budgetIncreaseUnits, 1, countryId);
     assert.ok(new Set(Object.values(row.factoryCounts).filter(value => value > 0)).size > 1, countryId);
   }
-  for (const countryId of ['ESH','NRU','PRK','SOM','VAT']) {
-    const row = baseline.countries[countryId];
-    assert.equal(row.allocationDiagnostics.basis, 'CONSERVATIVE_EXISTING_PROFILE', countryId);
-    assert.ok(Object.values(row.factoryCounts).filter(value => value > 0).every(value => value === 1), countryId);
+  const vatican = baseline.countries.VAT;
+  assert.equal(vatican.allocationDiagnostics.basis, 'CONSERVATIVE_EXISTING_PROFILE');
+  assert.ok(Object.values(vatican.factoryCounts).filter(value => value > 0).every(value => value === 1));
+  for (const countryId of ['ESH','NRU','PRK','SOM']) {
+    assert.equal(baseline.countries[countryId].allocationDiagnostics.basis,
+      'SOURCE_BACKED_SPECIALIZATION_ONLY', countryId);
   }
 });
 
@@ -141,4 +144,30 @@ test('the allocation generator is idempotent and deterministic on a synthetic un
     Object.values(updated.factoryCounts).reduce((sum, value) => sum + value, 0));
   assert.ok(Object.values(updated.factoryCounts).some((value) => value > 1));
   assert.equal(updated.allocationDiagnostics.rebalancedFromUniformCounts, true);
+});
+
+
+test('source-backed profiles without comparable macro data use only evidenced factory categories', () => {
+  const expectations = {
+    ESH: { types: ['UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT'], total: 3 },
+    NRU: { types: ['UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT'], total: 3 },
+    PRK: { types: ['STEEL_AND_ALLOY_WORKS','CEMENT_CONCRETE_PLANT','FERTILIZER_CHEMICAL_PLANT'], total: 5 },
+    SOM: { types: ['FOOD_PROCESSING_COLD_CHAIN'], total: 3 }
+  };
+  for (const [countryId, expected] of Object.entries(expectations)) {
+    const row = baseline.countries[countryId];
+    assert.deepEqual([...row.specializations].sort(), [...expected.types].sort(), countryId);
+    assert.equal(row.totalStartingFactoryUnits, expected.total, countryId);
+    assert.equal(row.allocationDiagnostics.basis, 'SOURCE_BACKED_SPECIALIZATION_ONLY', countryId);
+    assert.equal(row.allocationDiagnostics.specializationRefreshApplied, true, countryId);
+    assert.equal(row.allocationDiagnostics.previousAllocationBasis, 'CONSERVATIVE_EXISTING_PROFILE', countryId);
+    assert.equal(row.allocationDiagnostics.macroWeightsApplied, false, countryId);
+    assert.equal(row.specializationEvidence.status, 'SOURCE_BACKED_SIMULATION_MAPPING', countryId);
+    const active = Object.entries(row.factoryCounts).filter(([, value]) => value > 0).map(([typeId]) => typeId);
+    assert.deepEqual(active.sort(), [...expected.types].sort(), countryId + ' must not receive unsupported active categories');
+    assert.equal(row.totalStartingFactoryUnits,
+      Object.values(row.factoryCounts).reduce((sum, value) => sum + value, 0), countryId);
+  }
+  assert.equal(baseline.allocationModel.summary.remainingUniformProfileCount, 1);
+  assert.equal(baseline.allocationModel.summary.sourceBackedSpecializationCountryCount, 25);
 });
