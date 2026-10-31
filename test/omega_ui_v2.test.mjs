@@ -335,6 +335,83 @@ test('industry view reads current country assets, cycles and projects without sy
   assert.equal(globalThis.OmegaUIV2Industry.buildViewModel({countryId:'USA'}).factoryCount,0);
 });
 
+test('industry factory screen renders country-scoped official establishment counts and partials', () => {
+  const previousGame = globalThis.Game;
+  const previousCatalog = globalThis.OmegaResourceIndustrialCatalogData;
+  const previousFactoryBaseline = globalThis.OmegaCountryFactoryStartingBaselineV1;
+  const previousAddEventListener = globalThis.addEventListener;
+  const observedEvents = [];
+  globalThis.addEventListener = (name, handler) => { observedEvents.push({ name, handler }); };
+  globalThis.Game = { state: {
+    simulation: { session: { playerCountryId: 'BGD' }, turn: 12, daysPerTurn: 1 },
+    resource: {
+      BGD: { industrialNetwork: { projects: [], factoryProductionCycles: {}, factoryRuntime: {}, siteFlowLedger: [] } },
+      USA: { industrialNetwork: { projects: [], factoryProductionCycles: {}, factoryRuntime: {}, siteFlowLedger: [] } }
+    },
+    economy: { BGD: { productionAssets: [] }, USA: { productionAssets: [] } }
+  } };
+  globalThis.OmegaResourceIndustrialCatalogData = {
+    factoryProfiles: {
+      STEEL_MILL: { name:'Steel Mill', defaultRecipeId:'STEEL-RECIPE' },
+      CEMENT_PLANT: { name:'Cement Plant', defaultRecipeId:'CEMENT-RECIPE' }
+    }
+  };
+  globalThis.OmegaCountryFactoryStartingBaselineV1 = {
+    getCountryBaseline(countryId) {
+      return countryId === 'BGD' ? {
+        countryId:'BGD', countryName:'Bangladesh', totalStartingFactoryUnits:7,
+        factoryCounts:{ STEEL_MILL:3, CEMENT_PLANT:0 }
+      } : null;
+    },
+    getCountryFactoryRegistry(countryId) {
+      return countryId === 'BGD' ? {
+        status:'READY', countryId:'BGD', factoryTypeCount:2, totalStartingFactoryUnits:7,
+        runtimeStatus:'REGISTERED', runtimeRegistered:true,
+        registry:[
+          {factoryType:'STEEL_MILL',name:'Steel Mill',startingCount:3,registryStatus:'REGISTERED'},
+          {factoryType:'CEMENT_PLANT',name:'Cement Plant',startingCount:0,registryStatus:'REGISTERED'}
+        ]
+      } : null;
+    },
+    getCountryRealWorldData(countryId) {
+      return countryId === 'BGD' ? {
+        countryId:'BGD', countryName:'Bangladesh', sourceCountryCode:'050',
+        factoryEstablishments:{
+          STEEL_MILL:{status:'REPORTED',establishmentCount:12,referenceYear:2022,partialEstablishmentCount:null},
+          CEMENT_PLANT:{status:'PARTIAL',establishmentCount:null,partialEstablishmentCount:5,referenceYear:2021}
+        }
+      } : null;
+    }
+  };
+  try {
+    const model = globalThis.OmegaUIV2Industry.buildViewModel({ countryId:'BGD' });
+    assert.equal(model.countryFactoryEstablishmentData.countryId, 'BGD');
+    const root = { classList:{ add(){} }, addEventListener(){}, contains(){ return true; } };
+    const result = globalThis.OmegaUIV2Industry.render(root, { countryId:'BGD', tab:'factories' });
+    assert.equal(result.ok, true);
+    assert.match(root.innerHTML, /Official establishment data/);
+    assert.match(root.innerHTML, /12/);
+    assert.match(root.innerHTML, /2022/);
+    assert.match(root.innerHTML, /5 · partial, not total/);
+    assert.match(root.innerHTML, /2021/);
+    assert.match(root.innerHTML, /REPORTED|reported/);
+    assert.ok(observedEvents.some(row => row.name === 'OMEGA_COUNTRY_FACTORY_ESTABLISHMENT_DATA_READY'),
+      'the Factory screen must subscribe to the late-arriving source-data event');
+    const foreign = globalThis.OmegaUIV2Industry.buildViewModel({ countryId:'USA' });
+    assert.equal(foreign.countryFactoryEstablishmentData, null,
+      'a selected country must never inherit another country\'s establishment records');
+    assert.doesNotMatch(root.innerHTML, /Foreign factory|USA/);
+  } finally {
+    if (previousGame === undefined) delete globalThis.Game; else globalThis.Game = previousGame;
+    if (previousCatalog === undefined) delete globalThis.OmegaResourceIndustrialCatalogData;
+    else globalThis.OmegaResourceIndustrialCatalogData = previousCatalog;
+    if (previousFactoryBaseline === undefined) delete globalThis.OmegaCountryFactoryStartingBaselineV1;
+    else globalThis.OmegaCountryFactoryStartingBaselineV1 = previousFactoryBaseline;
+    if (previousAddEventListener === undefined) delete globalThis.addEventListener;
+    else globalThis.addEventListener = previousAddEventListener;
+  }
+});
+
 test('industry command panel renders country starting allocations separately from live commissioned factories', () => {
   const previousGame = globalThis.Game;
   const previousCatalog = globalThis.OmegaResourceIndustrialCatalogData;
