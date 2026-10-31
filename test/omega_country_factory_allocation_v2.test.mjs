@@ -42,15 +42,15 @@ test('uniform profiles are redistributed with only the three documented budget e
   assert.equal(summary.constrainedUnitBudgetCount, 0);
   assert.equal(summary.preservedExistingDistributionCount, 49);
   assert.equal(summary.conservativeDataGapCount, 1);
-  assert.equal(summary.macroOnlyCount, 92);
+  assert.equal(summary.macroOnlyCount, 88);
   assert.equal(summary.gameModelledSpecializationCount, 35);
-  assert.equal(summary.sourceBackedSpecializationCount, 16);
+  assert.equal(summary.sourceBackedSpecializationCount, 20);
   assert.equal(summary.remainingUniformProfileCount, 1);
   assert.equal(summary.coreCountryCount, 197);
   assert.equal(summary.factoryTypeCount, 21);
-  assert.equal(summary.sourceBackedSpecializationCountryCount, 25);
+  assert.equal(summary.sourceBackedSpecializationCountryCount, 29);
   assert.equal(summary.sourceBackedSpecializationOnlyCount, 4);
-  assert.equal(summary.specializationRefreshCount, 8);
+  assert.equal(summary.specializationRefreshCount, 12);
   assert.equal(summary.budgetIncreasedCountryCount, 3);
   assert.equal(summary.budgetIncreaseUnits, 3);
   assert.equal(summary.worldTotalStartingFactoryUnits, 1592);
@@ -169,5 +169,36 @@ test('source-backed profiles without comparable macro data use only evidenced fa
       Object.values(row.factoryCounts).reduce((sum, value) => sum + value, 0), countryId);
   }
   assert.equal(baseline.allocationModel.summary.remainingUniformProfileCount, 1);
-  assert.equal(baseline.allocationModel.summary.sourceBackedSpecializationCountryCount, 25);
+  assert.equal(baseline.allocationModel.summary.sourceBackedSpecializationCountryCount, 29);
+});
+
+
+test('second evidence pass specializes Costa Rica, Serbia, Lithuania and Uganda without changing country budgets', () => {
+  const expected = {
+    CRI: {types:['PHARMA_MEDICAL_SUPPLIES_PLANT'], total:7},
+    SRB: {types:['STEEL_AND_ALLOY_WORKS','INDUSTRIAL_MACHINERY_MACHINE_TOOLS','VEHICLE_TRUCK_BUS_ASSEMBLY','FOOD_PROCESSING_COLD_CHAIN'], total:7},
+    LTU: {types:['INDUSTRIAL_MACHINERY_MACHINE_TOOLS','ELECTRONICS_SEMICONDUCTOR_FAB'], total:7},
+    UGA: {types:['FOOD_PROCESSING_COLD_CHAIN','TEXTILE_GARMENT_MILL','UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT','PETROCHEMICAL_POLYMER_PLANT','PHARMA_MEDICAL_SUPPLIES_PLANT','VEHICLE_TRUCK_BUS_ASSEMBLY'], total:7}
+  };
+  for (const [countryId, expectedRow] of Object.entries(expected)) {
+    const row=baseline.countries[countryId];
+    assert.deepEqual([...row.specializations].sort(),[...expectedRow.types].sort(),countryId);
+    assert.equal(row.totalStartingFactoryUnits,expectedRow.total,countryId);
+    assert.equal(row.allocationDiagnostics.basis,'SOURCE_BACKED_SPECIALIZATION_PLUS_MACRO',countryId);
+    assert.equal(row.allocationDiagnostics.specializationRefreshApplied,true,countryId);
+    assert.equal(row.allocationDiagnostics.previousAllocationBasis,'SAME_YEAR_MACRO_SECTOR_ONLY',countryId);
+    assert.equal(row.specializationEvidence.status,'SOURCE_BACKED_SIMULATION_MAPPING',countryId);
+    assert.ok(row.specializationEvidence.sources.length>=2,countryId);
+    assert.ok(row.specializationEvidence.sources.every(source=>/^https:\/\//.test(source.url)),countryId);
+    assert.ok(row.specializations.every(type=>Number.isInteger(row.factoryCounts[type])&&row.factoryCounts[type]>0),countryId);
+    assert.equal(row.totalStartingFactoryUnits,Object.values(row.factoryCounts).reduce((a,b)=>a+b,0),countryId);
+    assert.equal(row.provenance.simulationOnly,true,countryId);
+    assert.equal(row.provenance.realWorldFacilityCounts,false,countryId);
+  }
+  assert.equal(baseline.allocationModel.summary.macroOnlyCount,88);
+  assert.equal(baseline.allocationModel.summary.sourceBackedSpecializationCount,20);
+  assert.equal(baseline.allocationModel.summary.sourceBackedSpecializationCountryCount,29);
+  assert.equal(baseline.allocationModel.summary.specializationRefreshCount,12);
+  assert.equal(baseline.allocationModel.summary.worldTotalStartingFactoryUnits,1592);
+  assert.equal(baseline.allocationModel.summary.remainingUniformProfileCount,1);
 });
