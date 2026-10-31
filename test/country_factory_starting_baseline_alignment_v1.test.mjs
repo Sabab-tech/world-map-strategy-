@@ -93,3 +93,108 @@ test('alignment enrichment is idempotent and does not change simulation factory 
     assert.equal(first.countries[countryId].totalStartingFactoryUnits, baseline.countries[countryId].totalStartingFactoryUnits);
   }
 });
+
+test('source-backed country industry corrections map documented sectors to canonical factory specializations', () => {
+  const enriched = enrichCountryFactoryStartingBaseline(structuredClone(baseline), registry);
+  const expected = {
+    BLR: {
+      archetype: 'Machinery, electronics and chemical manufacturing',
+      types: [
+        'INDUSTRIAL_MACHINERY_MACHINE_TOOLS',
+        'ELECTRONICS_SEMICONDUCTOR_FAB',
+        'VEHICLE_TRUCK_BUS_ASSEMBLY',
+        'STEEL_AND_ALLOY_WORKS',
+        'PETROCHEMICAL_POLYMER_PLANT',
+        'FERTILIZER_CHEMICAL_PLANT',
+        'FOOD_PROCESSING_COLD_CHAIN',
+        'TEXTILE_GARMENT_MILL',
+        'PHARMA_MEDICAL_SUPPLIES_PLANT'
+      ]
+    },
+    LIE: {
+      archetype: 'Precision machinery and dental manufacturing',
+      types: [
+        'INDUSTRIAL_MACHINERY_MACHINE_TOOLS',
+        'PHARMA_MEDICAL_SUPPLIES_PLANT',
+        'FOOD_PROCESSING_COLD_CHAIN'
+      ]
+    },
+    GAB: {
+      archetype: 'Manganese, agro-processing and building materials',
+      types: [
+        'NON_FERROUS_METAL_SMELTER',
+        'INDUSTRIAL_CHEMICALS_GAS_PLANT',
+        'CEMENT_CONCRETE_PLANT',
+        'FOOD_PROCESSING_COLD_CHAIN'
+      ]
+    },
+    SWZ: {
+      archetype: 'Textiles, agro-processing and wood-pulp manufacturing',
+      types: [
+        'TEXTILE_GARMENT_MILL',
+        'FOOD_PROCESSING_COLD_CHAIN',
+        'PAPER_PACKAGING_MILL',
+        'PETROCHEMICAL_POLYMER_PLANT'
+      ]
+    },
+    IRQ: {
+      archetype: 'Engineering, petrochemicals and consumer manufacturing',
+      types: [
+        'INDUSTRIAL_MACHINERY_MACHINE_TOOLS',
+        'PETROCHEMICAL_POLYMER_PLANT',
+        'FERTILIZER_CHEMICAL_PLANT',
+        'INDUSTRIAL_CHEMICALS_GAS_PLANT',
+        'TEXTILE_GARMENT_MILL',
+        'VEHICLE_TRUCK_BUS_ASSEMBLY',
+        'PHARMA_MEDICAL_SUPPLIES_PLANT',
+        'FOOD_PROCESSING_COLD_CHAIN',
+        'CEMENT_CONCRETE_PLANT'
+      ]
+    },
+    SVN: {
+      archetype: 'Pharmaceuticals, vehicles and precision engineering',
+      types: [
+        'PHARMA_MEDICAL_SUPPLIES_PLANT',
+        'VEHICLE_TRUCK_BUS_ASSEMBLY',
+        'GRID_EQUIPMENT_FACTORY',
+        'INDUSTRIAL_MACHINERY_MACHINE_TOOLS',
+        'STEEL_AND_ALLOY_WORKS'
+      ]
+    },
+    HTI: {
+      archetype: 'Textile and garment manufacturing under disruption',
+      types: ['TEXTILE_GARMENT_MILL']
+    }
+  };
+
+  for (const [countryId, expectation] of Object.entries(expected)) {
+    const row = enriched.countries[countryId];
+    assert.ok(row, countryId + ' country profile must exist');
+    assert.equal(row.industryArchetype, expectation.archetype, countryId + ' archetype must reflect documented industry');
+    assert.deepEqual([...row.specializations].sort(), [...expectation.types].sort(),
+      countryId + ' specializations must match the evidence-backed type set');
+    assert.equal(row.specializationEvidenceStatus, 'GAME_MODELLED_SPECIALIZATION_SET');
+    assert.equal(row.specializationEvidence.schemaVersion, 'OMEGA_COUNTRY_FACTORY_SPECIALIZATION_EVIDENCE_V1');
+    assert.equal(row.specializationEvidence.status, 'SOURCE_BACKED_SIMULATION_MAPPING');
+    assert.equal(row.specializationEvidence.accessDate, '2026-10-31');
+    assert.ok(Array.isArray(row.specializationEvidence.sources) && row.specializationEvidence.sources.length > 0);
+    assert.ok(row.specializationEvidence.sources.every(source => /^https:\/\//.test(source.url)),
+      countryId + ' source evidence must use traceable HTTPS URLs');
+    for (const type of expectation.types) {
+      assert.ok(row.factoryCounts[type] >= 1, countryId + ' must allocate a positive game unit to ' + type);
+    }
+    assert.equal(row.totalStartingFactoryUnits,
+      Object.values(row.factoryCounts).reduce((sum, count) => sum + count, 0),
+      countryId + ' allocation total must reconcile');
+    assert.equal(row.provenance.simulationOnly, true);
+    assert.equal(row.provenance.realWorldFacilityCounts, false);
+  }
+
+  assert.ok(enriched.countries.GAB.specializationEvidence.caveat.includes('planned project'),
+    'planned steel capacity must not be represented as an existing Gabonese specialization');
+  assert.ok(enriched.countries.IRQ.specializationEvidence.caveat.includes('2015'),
+    'the older Iraqi sector inventory must retain its source-age caveat');
+  assert.ok(enriched.countries.HTI.specializationEvidence.caveat.includes('contraction'),
+    'Haiti’s textile specialization must preserve the reported downturn caveat');
+});
+
