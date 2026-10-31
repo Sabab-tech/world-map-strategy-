@@ -45,7 +45,7 @@ test('uniform profiles are redistributed with only the three documented budget e
   assert.equal(summary.macroOnlyCount, 92);
   assert.equal(summary.gameModelledSpecializationCount, 35);
   assert.equal(summary.sourceBackedSpecializationCount, 16);
-  assert.equal(summary.remainingUniformProfileCount, 5);
+  assert.equal(summary.remainingUniformProfileCount, 1);
   assert.equal(summary.coreCountryCount, 197);
   assert.equal(summary.factoryTypeCount, 21);
   assert.equal(summary.sourceBackedSpecializationCountryCount, 25);
