@@ -94,6 +94,30 @@ function deriveBroadArchetype(context) {
   }
   return 'Insufficient comparable sector data';
 }
+function deriveSpecializedArchetype(specializations) {
+  const types = new Set(Array.isArray(specializations) ? specializations : []);
+  const has = (...ids) => ids.some(id => types.has(id));
+  if (has('AEROSPACE_EQUIPMENT_PLANT') && has('DEFENSE_EQUIPMENT_FACTORY')) return 'Aerospace and defence manufacturing';
+  if (has('ELECTRONICS_SEMICONDUCTOR_FAB') && has('DEFENSE_EQUIPMENT_FACTORY')) return 'Advanced technology and defence';
+  if (has('ELECTRONICS_SEMICONDUCTOR_FAB') && has('PETROCHEMICAL_POLYMER_PLANT')) return 'Electronics and petrochemicals';
+  if (has('ELECTRONICS_SEMICONDUCTOR_FAB') && has('PHARMA_MEDICAL_SUPPLIES_PLANT')) return 'Pharmaceuticals and electronics';
+  if (has('ELECTRONICS_SEMICONDUCTOR_FAB')) return 'Electronics and semiconductor manufacturing';
+  if (has('INDUSTRIAL_MACHINERY_MACHINE_TOOLS') && has('PHARMA_MEDICAL_SUPPLIES_PLANT')) return 'Pharmaceuticals and precision manufacturing';
+  if (has('INDUSTRIAL_MACHINERY_MACHINE_TOOLS') && has('VEHICLE_TRUCK_BUS_ASSEMBLY')) return 'Automotive and industrial machinery';
+  if (has('INDUSTRIAL_MACHINERY_MACHINE_TOOLS') && has('GRID_EQUIPMENT_FACTORY')) return 'Advanced industrial manufacturing';
+  if (has('PHARMA_MEDICAL_SUPPLIES_PLANT')) return 'Pharmaceuticals and medical supplies';
+  if (has('NON_FERROUS_METAL_SMELTER')) return 'Non-ferrous metals';
+  if (has('PETROCHEMICAL_POLYMER_PLANT') && has('FOOD_PROCESSING_COLD_CHAIN')) return 'Energy and food processing';
+  if (has('PETROCHEMICAL_POLYMER_PLANT')) return 'Energy and petrochemicals';
+  if (has('TEXTILE_GARMENT_MILL') && has('FOOD_PROCESSING_COLD_CHAIN')) return 'Textiles and food processing';
+  if (has('TEXTILE_GARMENT_MILL')) return 'Textiles and garments';
+  if (has('FERTILIZER_CHEMICAL_PLANT') && has('FOOD_PROCESSING_COLD_CHAIN')) return 'Fertilizer and food processing';
+  if (has('FOOD_PROCESSING_COLD_CHAIN')) return 'Food processing';
+  if (has('INDUSTRIAL_MACHINERY_MACHINE_TOOLS')) return 'Industrial machinery and capital goods';
+  if (has('PAPER_PACKAGING_MILL')) return 'Paper and packaging';
+  if (has('VEHICLE_TRUCK_BUS_ASSEMBLY')) return 'Automotive manufacturing';
+  return null;
+}
 
 export function enrichCountryFactoryStartingBaseline(baseline, registry) {
   if (!baseline || !registry || !Array.isArray(registry.countries)) {
@@ -156,7 +180,15 @@ export function enrichCountryFactoryStartingBaseline(baseline, registry) {
       ? 'GAME_MODELLED_SPECIALIZATION_SET'
       : 'NO_SUBSECTOR_SPECIALIZATION_EVIDENCE';
     if (hasSpecificSpecialization) {
-      row.industryArchetypeBasis = 'EXISTING_GAME_SPECIALIZATION_PROFILE_V1';
+      const canRefineGenericLabel = row.industryArchetype === 'Resource processing base' ||
+        row.industryArchetypeBasis === 'EXPLICIT_GAME_SPECIALIZATION_SET_V1';
+      const refinedArchetype = canRefineGenericLabel ? deriveSpecializedArchetype(row.specializations) : null;
+      if (refinedArchetype) {
+        row.industryArchetype = refinedArchetype;
+        row.industryArchetypeBasis = 'EXPLICIT_GAME_SPECIALIZATION_SET_V1';
+      } else {
+        row.industryArchetypeBasis = 'EXISTING_GAME_SPECIALIZATION_PROFILE_V1';
+      }
       row.industryArchetypeObservationYear = comparison.comparisonYear;
     } else {
       row.industryArchetype = deriveBroadArchetype(context);
@@ -172,7 +204,7 @@ export function enrichCountryFactoryStartingBaseline(baseline, registry) {
     metricKeys: METRIC_KEYS,
     comparisonRule: 'Compare agriculture, industry and services value-added shares only when at least two numeric observations share the exact same observation year.',
     manufacturingRule: 'Manufacturing value added is a component of industry; its band is compared only when the observation year is within three years of the broad-sector comparison year.',
-    archetypeRule: 'Existing explicit game specializations are preserved. Countries without a mapped sub-sector specialization receive a cautious broad macro-sector archetype, not an invented factory-type claim.',
+    archetypeRule: 'Specific factory-type specializations are preserved. Generic resource-processing labels are refined only from existing explicit game specialization IDs. Countries without a mapped sub-sector specialization receive a cautious broad macro-sector archetype, not an invented factory-type claim.',
     simulationRule: 'This context informs the game-scaled starting profile; it is not a real-world factory census or an official industry classification.',
     missingRule: 'Unavailable or non-comparable observations remain null; they are never converted to zero.',
     bands: { manufacturingHighPctGdp: 15, manufacturingModeratePctGdp: 8, sameYearToleranceYears: 0, manufacturingComparisonWindowYears: 3 }
