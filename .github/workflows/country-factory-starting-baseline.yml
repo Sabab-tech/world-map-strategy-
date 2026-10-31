@@ -14,6 +14,9 @@ on:
       - 'resource_country_resource_context_index.json'
       - 'economy_global_profiles_v1.json'
       - 'test/omega_country_factory_starting_baseline_v1.test.mjs'
+      - 'scripts/rebalance_country_factory_starting_baseline_v1.mjs'
+      - 'test/omega_country_factory_allocation_v2.test.mjs'
+      - 'docs/OMEGA_COUNTRY_FACTORY_ALLOCATION_V2.md'
       - 'factory_isic_mapping_v1.json'
       - 'scripts/build_country_factory_establishment_data_v1.mjs'
       - 'test/omega_country_factory_establishment_data_v1.test.mjs'
@@ -34,6 +37,9 @@ on:
       - 'resource_country_resource_context_index.json'
       - 'economy_global_profiles_v1.json'
       - 'test/omega_country_factory_starting_baseline_v1.test.mjs'
+      - 'scripts/rebalance_country_factory_starting_baseline_v1.mjs'
+      - 'test/omega_country_factory_allocation_v2.test.mjs'
+      - 'docs/OMEGA_COUNTRY_FACTORY_ALLOCATION_V2.md'
       - '.github/workflows/country-factory-starting-baseline.yml'
 
 permissions:
@@ -52,10 +58,12 @@ jobs:
           node-version: 24
       - name: Validate 197-country, 21-factory starting matrix and sector alignment
         run: |
-          node --test test/omega_country_factory_starting_baseline_v1.test.mjs test/omega_country_factory_establishment_data_v1.test.mjs test/country_factory_starting_baseline_alignment_v1.test.mjs test/omega_factory_country_simulation_integrity_v1.test.mjs
+          node --test test/omega_country_factory_starting_baseline_v1.test.mjs test/omega_country_factory_establishment_data_v1.test.mjs test/country_factory_starting_baseline_alignment_v1.test.mjs test/omega_factory_country_simulation_integrity_v1.test.mjs test/omega_country_factory_allocation_v2.test.mjs
           node scripts/enrich_country_factory_starting_baseline_v1.mjs --check
+          node scripts/rebalance_country_factory_starting_baseline_v1.mjs --check
       - name: Check establishment data importer and industry runtime
         run: |
           node --check scripts/build_country_factory_establishment_data_v1.mjs
+          node --check scripts/rebalance_country_factory_starting_baseline_v1.mjs
           node --check omega_country_factory_starting_baseline_v1.js
           node --check omega_ui_v2/screens/industry.js
