@@ -48,10 +48,11 @@ test('country archetypes respond to observed economic structure without inventin
   const enriched = enrichCountryFactoryStartingBaseline(structuredClone(baseline), registry);
   assert.equal(enriched.countries.GUY.industryArchetype, 'Industry-led resource and extractive economy');
   assert.equal(enriched.countries.GUY.economicSectorContext.dominantSector, 'INDUSTRY');
-  assert.equal(enriched.countries.LBY.industryArchetype, 'Industry-led resource and extractive economy',
-    'older manufacturing observations must not be compared as if contemporaneous');
+  assert.equal(enriched.countries.LBY.industryArchetype, 'Petrochemicals and fertilizer manufacturing',
+    'source-backed petrochemical and fertilizer specializations refine the broad industry-led profile');
   assert.equal(enriched.countries.GNB.industryArchetype, 'Agriculture-led economy');
-  assert.equal(enriched.countries.MMR.industryArchetype, 'Services-led economy with a manufacturing base');
+  assert.equal(enriched.countries.MMR.industryArchetype, 'Textiles and food processing',
+    'source-backed textile and food manufacturing specializations refine the broad macro profile');
   assert.equal(enriched.countries.SOM.economicSectorContext.dominantSector, null,
     'mixed observation years must not produce a false dominant-sector conclusion');
   assert.equal(enriched.countries.SOM.industryArchetype, 'Insufficient comparable sector data');
@@ -257,3 +258,65 @@ test('source-backed sector alignment covers Jordan, San Marino and Suriname', ()
   assert.ok(enriched.countries.SUR.specializationEvidence.caveat.includes('2019'));
 });
 
+
+
+test('source-backed factory specializations cover additional verified country industries', () => {
+  const enriched = enrichCountryFactoryStartingBaseline(structuredClone(baseline), registry);
+  const expected = {
+    MMR: {
+      archetype: 'Textiles and food processing',
+      types: ['FOOD_PROCESSING_COLD_CHAIN','TEXTILE_GARMENT_MILL']
+    },
+    TTO: {
+      archetype: 'Petrochemicals and fertilizer manufacturing',
+      types: ['FERTILIZER_CHEMICAL_PLANT','PETROCHEMICAL_POLYMER_PLANT']
+    },
+    NAM: {
+      archetype: 'Mineral beneficiation and food processing',
+      types: ['FOOD_PROCESSING_COLD_CHAIN','NON_FERROUS_METAL_SMELTER']
+    },
+    TJK: {
+      archetype: 'Aluminium, textiles and food processing',
+      types: ['FOOD_PROCESSING_COLD_CHAIN','NON_FERROUS_METAL_SMELTER','TEXTILE_GARMENT_MILL']
+    },
+    DOM: {
+      archetype: 'Pharmaceuticals and electronics',
+      types: ['ELECTRONICS_SEMICONDUCTOR_FAB','FOOD_PROCESSING_COLD_CHAIN','PHARMA_MEDICAL_SUPPLIES_PLANT','TEXTILE_GARMENT_MILL']
+    },
+    ROU: {
+      archetype: 'Automotive and industrial machinery',
+      types: ['INDUSTRIAL_MACHINERY_MACHINE_TOOLS','VEHICLE_TRUCK_BUS_ASSEMBLY']
+    },
+    LBY: {
+      archetype: 'Petrochemicals and fertilizer manufacturing',
+      types: ['FERTILIZER_CHEMICAL_PLANT','PETROCHEMICAL_POLYMER_PLANT']
+    }
+  };
+  for (const [countryId, expectation] of Object.entries(expected)) {
+    const row = enriched.countries[countryId];
+    assert.ok(row, countryId + ' must remain in the 197-country baseline');
+    assert.equal(row.industryArchetype, expectation.archetype, countryId + ' archetype must follow its documented industry evidence');
+    assert.deepEqual([...row.specializations].sort(), [...expectation.types].sort(), countryId + ' specialization roster must match supported factory categories');
+    assert.equal(row.specializationEvidence.status, 'SOURCE_BACKED_SIMULATION_MAPPING');
+    assert.equal(row.specializationEvidence.accessDate, '2026-10-31');
+    assert.ok(row.specializationEvidence.sources.length > 0);
+    assert.ok(row.specializationEvidence.sources.every(source => /^https:\/\//.test(source.url)));
+    for (const type of expectation.types) {
+      assert.ok(Number.isInteger(row.factoryCounts[type]) && row.factoryCounts[type] > 0, countryId + ' must allocate at least one simulated unit to ' + type);
+    }
+    assert.equal(row.totalStartingFactoryUnits, Object.values(row.factoryCounts).reduce((sum, count) => sum + count, 0), countryId + ' total must reconcile');
+    assert.equal(row.provenance.simulationOnly, true);
+    assert.equal(row.provenance.realWorldFacilityCounts, false);
+  }
+});
+
+test('industry evidence corrections retain the 197 x 21 canonical matrix and preserve the global game scale', () => {
+  const enriched = enrichCountryFactoryStartingBaseline(structuredClone(baseline), registry);
+  assert.equal(Object.keys(enriched.countries).length, 197);
+  assert.equal(enriched.factoryTypeCount, 21);
+  for (const [countryId, row] of Object.entries(enriched.countries)) {
+    assert.equal(Object.keys(row.factoryCounts).length, 21, countryId);
+    assert.equal(row.totalStartingFactoryUnits, Object.values(row.factoryCounts).reduce((sum, count) => sum + count, 0), countryId);
+    assert.ok(Object.values(row.factoryCounts).every(count => Number.isInteger(count) && count >= 0), countryId);
+  }
+});

@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.0.0",
   "datasetId": "OMEGA_COUNTRY_FACTORY_STARTING_BASELINE_V1",
-  "version": 1,
+  "version": "1.2.0",
   "purpose": "Explicit game-scaled starting factory counts for all 197 core OMEGA countries and each of the 21 canonical factory types.",
   "model": {
     "authority": "SIMULATED_COUNTRY_STARTING_INDUSTRY_PROFILE_V1",
@@ -5494,15 +5494,20 @@
       "countryName": "Dominican Republic",
       "countryCode": "DO",
       "continent": "North America",
-      "industryArchetype": "Services-led mixed economy",
-      "specializations": [],
+      "industryArchetype": "Pharmaceuticals and electronics",
+      "specializations": [
+        "ELECTRONICS_SEMICONDUCTOR_FAB",
+        "FOOD_PROCESSING_COLD_CHAIN",
+        "PHARMA_MEDICAL_SUPPLIES_PLANT",
+        "TEXTILE_GARMENT_MILL"
+      ],
       "totalStartingFactoryUnits": 7,
       "factoryCounts": {
         "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT": 1,
         "STEEL_AND_ALLOY_WORKS": 1,
         "NON_FERROUS_METAL_SMELTER": 0,
-        "PETROCHEMICAL_POLYMER_PLANT": 1,
-        "FERTILIZER_CHEMICAL_PLANT": 1,
+        "PETROCHEMICAL_POLYMER_PLANT": 0,
+        "FERTILIZER_CHEMICAL_PLANT": 0,
         "INDUSTRIAL_CHEMICALS_GAS_PLANT": 0,
         "CEMENT_CONCRETE_PLANT": 1,
         "GLASS_CERAMICS_PLANT": 0,
@@ -5511,12 +5516,12 @@
         "TEXTILE_GARMENT_MILL": 1,
         "INDUSTRIAL_MACHINERY_MACHINE_TOOLS": 0,
         "GRID_EQUIPMENT_FACTORY": 0,
-        "ELECTRONICS_SEMICONDUCTOR_FAB": 0,
+        "ELECTRONICS_SEMICONDUCTOR_FAB": 1,
         "BATTERY_ENERGY_STORAGE_PLANT": 0,
         "VEHICLE_TRUCK_BUS_ASSEMBLY": 0,
         "SHIP_RAIL_EQUIPMENT_YARD": 0,
         "AEROSPACE_EQUIPMENT_PLANT": 0,
-        "PHARMA_MEDICAL_SUPPLIES_PLANT": 0,
+        "PHARMA_MEDICAL_SUPPLIES_PLANT": 1,
         "DEFENSE_EQUIPMENT_FACTORY": 0,
         "RECYCLING_WASTE_PROCESSING_PLANT": 0
       },
@@ -5594,9 +5599,48 @@
         "interpretation": "Manufacturing value added is a component of industry value added; do not add it to industry. Broad value-added shares do not identify individual factory types.",
         "missingPolicy": "Null means unavailable or not comparable, never zero."
       },
-      "specializationEvidenceStatus": "NO_SUBSECTOR_SPECIALIZATION_EVIDENCE",
-      "industryArchetypeBasis": "WORLD_BANK_VALUE_ADDED_MIX_V1",
-      "industryArchetypeObservationYear": 2025
+      "specializationEvidenceStatus": "GAME_MODELLED_SPECIALIZATION_SET",
+      "industryArchetypeBasis": "EXPLICIT_GAME_SPECIALIZATION_SET_V1",
+      "industryArchetypeObservationYear": 2025,
+      "specializationEvidence": {
+        "schemaVersion": "OMEGA_COUNTRY_FACTORY_SPECIALIZATION_EVIDENCE_V1",
+        "status": "SOURCE_BACKED_SIMULATION_MAPPING",
+        "accessDate": "2026-10-31",
+        "mappingPolicy": "Country sector evidence selects compatible canonical game factory types. Counts remain abstract game-scaled units and are not observed real-world facility totals.",
+        "referenceYears": [
+          2025,
+          2026
+        ],
+        "sources": [
+          {
+            "authority": "National Council of Free Export Zones, Dominican Republic (CNZFE)",
+            "title": "Free Zones FAQs",
+            "url": "https://cnzfe.gob.do/faqs/",
+            "supportedClaims": [
+              "The council reports that 25% of free-zone companies manufacture medical/pharmaceutical products and devices, 17.8% manufacture textiles and apparel, and 18.5% manufacture electrical and electronic products/components."
+            ]
+          },
+          {
+            "authority": "National Council of Free Export Zones, Dominican Republic (CNZFE)",
+            "title": "Free-zone exports through August 2026",
+            "url": "https://cnzfe.gob.do/noticias/zonas-francas-superan-los-us6000-millones-en-exportaciones-y-proyectan-cerrar-2026-con-un-nuevo-record-historico/",
+            "publicationYear": 2026,
+            "supportedClaims": [
+              "The council reports that medical devices/pharmaceutical products and electrical/electronic products are among the leading free-zone export sectors in 2026."
+            ]
+          },
+          {
+            "authority": "ProDominicana",
+            "title": "Manufacturing",
+            "url": "https://www.prodominicana.gob.do/en/invest/sectors/manufacturing",
+            "supportedClaims": [
+              "The national investment-promotion agency identifies textiles, pharmaceuticals, medical devices, precision electronic components and agro-industry within Dominican manufacturing."
+            ]
+          }
+        ],
+        "confidence": "HIGH",
+        "caveat": "The electronics category is a broad mapping for precision electronic components and electrical/electronic manufacturing. It does not claim the Dominican Republic has a semiconductor wafer-fabrication plant. Free-zone company shares are not counts of individual game facilities."
+      }
     },
     "DZA": {
       "countryId": "DZA",
@@ -11308,8 +11352,11 @@
       "countryName": "Libya",
       "countryCode": "LY",
       "continent": "Africa",
-      "industryArchetype": "Industry-led resource and extractive economy",
-      "specializations": [],
+      "industryArchetype": "Petrochemicals and fertilizer manufacturing",
+      "specializations": [
+        "FERTILIZER_CHEMICAL_PLANT",
+        "PETROCHEMICAL_POLYMER_PLANT"
+      ],
       "totalStartingFactoryUnits": 7,
       "factoryCounts": {
         "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT": 1,
@@ -11408,9 +11455,32 @@
         "interpretation": "Manufacturing value added is a component of industry value added; do not add it to industry. Broad value-added shares do not identify individual factory types.",
         "missingPolicy": "Null means unavailable or not comparable, never zero."
       },
-      "specializationEvidenceStatus": "NO_SUBSECTOR_SPECIALIZATION_EVIDENCE",
-      "industryArchetypeBasis": "WORLD_BANK_VALUE_ADDED_MIX_V1",
-      "industryArchetypeObservationYear": 2025
+      "specializationEvidenceStatus": "GAME_MODELLED_SPECIALIZATION_SET",
+      "industryArchetypeBasis": "EXPLICIT_GAME_SPECIALIZATION_SET_V1",
+      "industryArchetypeObservationYear": 2025,
+      "specializationEvidence": {
+        "schemaVersion": "OMEGA_COUNTRY_FACTORY_SPECIALIZATION_EVIDENCE_V1",
+        "status": "SOURCE_BACKED_SIMULATION_MAPPING",
+        "accessDate": "2026-10-31",
+        "mappingPolicy": "Country sector evidence selects compatible canonical game factory types. Counts remain abstract game-scaled units and are not observed real-world facility totals.",
+        "referenceYears": [
+          2025
+        ],
+        "sources": [
+          {
+            "authority": "National Oil Corporation, Libya",
+            "title": "Annual Report Technical and Statistical 2025",
+            "url": "https://noc.ly/moselef/2026/04/NOCR2025EN.pdf",
+            "publicationYear": 2026,
+            "supportedClaims": [
+              "The 2025 report records production from the Libyan Fertilizer Company's ammonia and urea plants.",
+              "The report records methanol and ethylene-plant products, including propylene and ethylene, and output from the polyethylene plant."
+            ]
+          }
+        ],
+        "confidence": "HIGH",
+        "caveat": "The 2025 report shows actual output below target at several petrochemical plants. This records sector presence, not full capacity, reliable uptime or real-world establishment counts."
+      }
     },
     "LCA": {
       "countryId": "LCA",
@@ -13321,8 +13391,11 @@
       "countryName": "Myanmar",
       "countryCode": "MM",
       "continent": "Asia",
-      "industryArchetype": "Services-led economy with a manufacturing base",
-      "specializations": [],
+      "industryArchetype": "Textiles and food processing",
+      "specializations": [
+        "FOOD_PROCESSING_COLD_CHAIN",
+        "TEXTILE_GARMENT_MILL"
+      ],
       "totalStartingFactoryUnits": 7,
       "factoryCounts": {
         "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT": 1,
@@ -13421,9 +13494,41 @@
         "interpretation": "Manufacturing value added is a component of industry value added; do not add it to industry. Broad value-added shares do not identify individual factory types.",
         "missingPolicy": "Null means unavailable or not comparable, never zero."
       },
-      "specializationEvidenceStatus": "NO_SUBSECTOR_SPECIALIZATION_EVIDENCE",
-      "industryArchetypeBasis": "WORLD_BANK_VALUE_ADDED_MIX_V1",
-      "industryArchetypeObservationYear": 2025
+      "specializationEvidenceStatus": "GAME_MODELLED_SPECIALIZATION_SET",
+      "industryArchetypeBasis": "EXPLICIT_GAME_SPECIALIZATION_SET_V1",
+      "industryArchetypeObservationYear": 2025,
+      "specializationEvidence": {
+        "schemaVersion": "OMEGA_COUNTRY_FACTORY_SPECIALIZATION_EVIDENCE_V1",
+        "status": "SOURCE_BACKED_SIMULATION_MAPPING",
+        "accessDate": "2026-10-31",
+        "mappingPolicy": "Country sector evidence selects compatible canonical game factory types. Counts remain abstract game-scaled units and are not observed real-world facility totals.",
+        "referenceYears": [
+          2023,
+          2024
+        ],
+        "sources": [
+          {
+            "authority": "Central Statistical Organization, Myanmar",
+            "title": "Myanmar Statistical Yearbook 2024, Table 11.02",
+            "url": "https://monp.gov.mm/sites/default/files/upload_pdf/2025/12/MSYB%202024.pdf",
+            "publicationYear": 2025,
+            "supportedClaims": [
+              "The official manufacturing table records 23,886 registered food-product manufacturing establishments in 2023/24.",
+              "The same table separately reports textile manufacturing and wearing-apparel manufacturing as manufacturing subsectors."
+            ]
+          },
+          {
+            "authority": "Ministry of Small and Medium Enterprise, Myanmar",
+            "title": "Registered Private Industrial Enterprises",
+            "url": "https://www.msmewebportal.gov.mm/registered-enterprise",
+            "supportedClaims": [
+              "The government registry records substantial food-product, wearing-apparel and textile-related private industrial enterprise groups."
+            ]
+          }
+        ],
+        "confidence": "HIGH",
+        "caveat": "The statistical yearbook reports registered establishments, not a verified live operating-facility census. Factory counts remain abstract game units and should not be read as the number of plants."
+      }
     },
     "MNE": {
       "countryId": "MNE",
@@ -14197,13 +14302,16 @@
       "countryName": "Namibia",
       "countryCode": "NA",
       "continent": "Africa",
-      "industryArchetype": "Services-led mixed economy",
-      "specializations": [],
+      "industryArchetype": "Mineral beneficiation and food processing",
+      "specializations": [
+        "FOOD_PROCESSING_COLD_CHAIN",
+        "NON_FERROUS_METAL_SMELTER"
+      ],
       "totalStartingFactoryUnits": 5,
       "factoryCounts": {
         "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT": 1,
-        "STEEL_AND_ALLOY_WORKS": 1,
-        "NON_FERROUS_METAL_SMELTER": 0,
+        "STEEL_AND_ALLOY_WORKS": 0,
+        "NON_FERROUS_METAL_SMELTER": 1,
         "PETROCHEMICAL_POLYMER_PLANT": 1,
         "FERTILIZER_CHEMICAL_PLANT": 1,
         "INDUSTRIAL_CHEMICALS_GAS_PLANT": 0,
@@ -14297,9 +14405,31 @@
         "interpretation": "Manufacturing value added is a component of industry value added; do not add it to industry. Broad value-added shares do not identify individual factory types.",
         "missingPolicy": "Null means unavailable or not comparable, never zero."
       },
-      "specializationEvidenceStatus": "NO_SUBSECTOR_SPECIALIZATION_EVIDENCE",
-      "industryArchetypeBasis": "WORLD_BANK_VALUE_ADDED_MIX_V1",
-      "industryArchetypeObservationYear": 2025
+      "specializationEvidenceStatus": "GAME_MODELLED_SPECIALIZATION_SET",
+      "industryArchetypeBasis": "EXPLICIT_GAME_SPECIALIZATION_SET_V1",
+      "industryArchetypeObservationYear": 2025,
+      "specializationEvidence": {
+        "schemaVersion": "OMEGA_COUNTRY_FACTORY_SPECIALIZATION_EVIDENCE_V1",
+        "status": "SOURCE_BACKED_SIMULATION_MAPPING",
+        "accessDate": "2026-10-31",
+        "mappingPolicy": "Country sector evidence selects compatible canonical game factory types. Counts remain abstract game-scaled units and are not observed real-world facility totals.",
+        "referenceYears": [
+          2024
+        ],
+        "sources": [
+          {
+            "authority": "Ministry of Industrialisation and Trade, Namibia",
+            "title": "Manufacturing Sector",
+            "url": "https://mit.gov.na/manufacturing-sector",
+            "supportedClaims": [
+              "The ministry identifies meat processing, fish processing, other food and beverages as concentrated manufacturing subsectors.",
+              "The ministry identifies mineral beneficiation, including copper and zinc smelting, as a manufacturing activity."
+            ]
+          }
+        ],
+        "confidence": "HIGH",
+        "caveat": "The canonical non-ferrous smelter category is used for the documented copper/zinc beneficiation chain. The mapping does not imply that every mine or mineral occurrence has a local smelter."
+      }
     },
     "NER": {
       "countryId": "NER",
@@ -16627,8 +16757,11 @@
       "countryName": "Romania",
       "countryCode": "RO",
       "continent": "Europe",
-      "industryArchetype": "Services-led mixed economy",
-      "specializations": [],
+      "industryArchetype": "Automotive and industrial machinery",
+      "specializations": [
+        "INDUSTRIAL_MACHINERY_MACHINE_TOOLS",
+        "VEHICLE_TRUCK_BUS_ASSEMBLY"
+      ],
       "totalStartingFactoryUnits": 10,
       "factoryCounts": {
         "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT": 1,
@@ -16727,9 +16860,33 @@
         "interpretation": "Manufacturing value added is a component of industry value added; do not add it to industry. Broad value-added shares do not identify individual factory types.",
         "missingPolicy": "Null means unavailable or not comparable, never zero."
       },
-      "specializationEvidenceStatus": "NO_SUBSECTOR_SPECIALIZATION_EVIDENCE",
-      "industryArchetypeBasis": "WORLD_BANK_VALUE_ADDED_MIX_V1",
-      "industryArchetypeObservationYear": 2025
+      "specializationEvidenceStatus": "GAME_MODELLED_SPECIALIZATION_SET",
+      "industryArchetypeBasis": "EXPLICIT_GAME_SPECIALIZATION_SET_V1",
+      "industryArchetypeObservationYear": 2025,
+      "specializationEvidence": {
+        "schemaVersion": "OMEGA_COUNTRY_FACTORY_SPECIALIZATION_EVIDENCE_V1",
+        "status": "SOURCE_BACKED_SIMULATION_MAPPING",
+        "accessDate": "2026-10-31",
+        "mappingPolicy": "Country sector evidence selects compatible canonical game factory types. Counts remain abstract game-scaled units and are not observed real-world facility totals.",
+        "referenceYears": [
+          2024,
+          2026
+        ],
+        "sources": [
+          {
+            "authority": "Organisation for Economic Co-operation and Development (OECD)",
+            "title": "OECD Economic Surveys: Romania 2026, Strengthening Romania's Competitiveness",
+            "url": "https://www.oecd.org/en/publications/oecd-economic-surveys-romania-2026_4844067e-en/full-report/strengthening-romania-s-competitiveness_a0bfff0f.html",
+            "publicationYear": 2026,
+            "supportedClaims": [
+              "Manufactured goods represented three-quarters of Romania's goods exports in 2024.",
+              "Automotive products accounted for 17% of goods exports in 2024, with electrical components and equipment also important export sectors."
+            ]
+          }
+        ],
+        "confidence": "HIGH",
+        "caveat": "Export composition is evidence of industrial specialization, not a count of factories. The existing canonical machine-tools and vehicle categories are used as broad simulation mappings."
+      }
     },
     "RUS": {
       "countryId": "RUS",
@@ -19534,13 +19691,17 @@
       "countryName": "Tajikistan",
       "countryCode": "TJ",
       "continent": "Asia",
-      "industryArchetype": "Services-led mixed economy",
-      "specializations": [],
+      "industryArchetype": "Aluminium, textiles and food processing",
+      "specializations": [
+        "FOOD_PROCESSING_COLD_CHAIN",
+        "NON_FERROUS_METAL_SMELTER",
+        "TEXTILE_GARMENT_MILL"
+      ],
       "totalStartingFactoryUnits": 4,
       "factoryCounts": {
         "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT": 1,
-        "STEEL_AND_ALLOY_WORKS": 1,
-        "NON_FERROUS_METAL_SMELTER": 0,
+        "STEEL_AND_ALLOY_WORKS": 0,
+        "NON_FERROUS_METAL_SMELTER": 1,
         "PETROCHEMICAL_POLYMER_PLANT": 0,
         "FERTILIZER_CHEMICAL_PLANT": 0,
         "INDUSTRIAL_CHEMICALS_GAS_PLANT": 0,
@@ -19634,9 +19795,48 @@
         "interpretation": "Manufacturing value added is a component of industry value added; do not add it to industry. Broad value-added shares do not identify individual factory types.",
         "missingPolicy": "Null means unavailable or not comparable, never zero."
       },
-      "specializationEvidenceStatus": "NO_SUBSECTOR_SPECIALIZATION_EVIDENCE",
-      "industryArchetypeBasis": "WORLD_BANK_VALUE_ADDED_MIX_V1",
-      "industryArchetypeObservationYear": 2024
+      "specializationEvidenceStatus": "GAME_MODELLED_SPECIALIZATION_SET",
+      "industryArchetypeBasis": "EXPLICIT_GAME_SPECIALIZATION_SET_V1",
+      "industryArchetypeObservationYear": 2024,
+      "specializationEvidence": {
+        "schemaVersion": "OMEGA_COUNTRY_FACTORY_SPECIALIZATION_EVIDENCE_V1",
+        "status": "SOURCE_BACKED_SIMULATION_MAPPING",
+        "accessDate": "2026-10-31",
+        "mappingPolicy": "Country sector evidence selects compatible canonical game factory types. Counts remain abstract game-scaled units and are not observed real-world facility totals.",
+        "referenceYears": [
+          2024,
+          2025
+        ],
+        "sources": [
+          {
+            "authority": "Agency on Statistics under the President of the Republic of Tajikistan",
+            "title": "In 2025, Growth Rates in the Mining and Manufacturing Industries Reached 136.2 and 110.5 Percent Respectively",
+            "url": "https://www.stat.tj/en/in-2025-growth-rates-in-the-mining-and-manufacturing-industries-reached-136-2-and-110-5-percent-respectively/?lang=tj",
+            "publicationYear": 2026,
+            "supportedClaims": [
+              "Official 2025 manufacturing output includes food products and beverages, textile and garment production, and metallurgy and fabricated metal products."
+            ]
+          },
+          {
+            "authority": "Tajik Aluminium Company (TALCO)",
+            "title": "Primary Aluminium Production and Company Profile",
+            "url": "https://www.talco.com.tj/en/about",
+            "supportedClaims": [
+              "TALCO operates the country's major aluminum smelter and identifies primary aluminum as a principal national export product."
+            ]
+          },
+          {
+            "authority": "Tajik Aluminium Company (TALCO)",
+            "title": "TALCO production update",
+            "url": "https://www.talco.com.tj/en/node/68",
+            "supportedClaims": [
+              "TALCO reports 82,225 tonnes of primary aluminum production in 2024 and 74,287 tonnes in the first ten months of 2025."
+            ]
+          }
+        ],
+        "confidence": "HIGH",
+        "caveat": "Aluminium smelting is mapped to the existing non-ferrous category. The national manufacturing data supports food and textiles; all game counts remain simulated and are not factory census totals."
+      }
     },
     "TKM": {
       "countryId": "TKM",
@@ -19972,8 +20172,11 @@
       "countryName": "Trinidad and Tobago",
       "countryCode": "TT",
       "continent": "North America",
-      "industryArchetype": "Services-led mixed economy",
-      "specializations": [],
+      "industryArchetype": "Petrochemicals and fertilizer manufacturing",
+      "specializations": [
+        "FERTILIZER_CHEMICAL_PLANT",
+        "PETROCHEMICAL_POLYMER_PLANT"
+      ],
       "totalStartingFactoryUnits": 5,
       "factoryCounts": {
         "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT": 1,
@@ -20072,9 +20275,39 @@
         "interpretation": "Manufacturing value added is a component of industry value added; do not add it to industry. Broad value-added shares do not identify individual factory types.",
         "missingPolicy": "Null means unavailable or not comparable, never zero."
       },
-      "specializationEvidenceStatus": "NO_SUBSECTOR_SPECIALIZATION_EVIDENCE",
-      "industryArchetypeBasis": "WORLD_BANK_VALUE_ADDED_MIX_V1",
-      "industryArchetypeObservationYear": 2024
+      "specializationEvidenceStatus": "GAME_MODELLED_SPECIALIZATION_SET",
+      "industryArchetypeBasis": "EXPLICIT_GAME_SPECIALIZATION_SET_V1",
+      "industryArchetypeObservationYear": 2024,
+      "specializationEvidence": {
+        "schemaVersion": "OMEGA_COUNTRY_FACTORY_SPECIALIZATION_EVIDENCE_V1",
+        "status": "SOURCE_BACKED_SIMULATION_MAPPING",
+        "accessDate": "2026-10-31",
+        "mappingPolicy": "Country sector evidence selects compatible canonical game factory types. Counts remain abstract game-scaled units and are not observed real-world facility totals.",
+        "referenceYears": [
+          2014
+        ],
+        "sources": [
+          {
+            "authority": "Ministry of Energy and Energy Industries, Trinidad and Tobago",
+            "title": "Trinidad's Ammonia Industry",
+            "url": "https://www.energy.gov.tt/our-business/lng-petrochemicals/petrochemicals/ammonia/",
+            "supportedClaims": [
+              "The ministry identifies eleven ammonia plants and a combined annual capacity of 5.2 million metric tonnes.",
+              "The country has a large ammonia and urea fertilizer manufacturing complex."
+            ]
+          },
+          {
+            "authority": "Ministry of Energy and Energy Industries, Trinidad and Tobago",
+            "title": "Trinidad's Methanol Industry",
+            "url": "https://www.energy.gov.tt/our-business/lng-petrochemicals/petrochemicals/methanol/",
+            "supportedClaims": [
+              "The ministry documents large-scale methanol production at Point Lisas across multiple plants, with annual capacity exceeding six million metric tonnes."
+            ]
+          }
+        ],
+        "confidence": "HIGH",
+        "caveat": "The ministry's plant inventory includes historical start-up and capacity information. The country's industrial specialization is clear, but one game unit per type is a scaled gameplay allocation, not the observed number of plants or a current utilization estimate."
+      }
     },
     "TUN": {
       "countryId": "TUN",
@@ -22328,5 +22561,6 @@
       "sameYearToleranceYears": 0,
       "manufacturingComparisonWindowYears": 3
     }
-  }
+  },
+  "generatedAt": "2026-10-31"
 }
