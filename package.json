@@ -85,7 +85,7 @@
     "test:browser-performance": "node --check omega_action_progress_v1.js && node --check omega_ui_interaction_guard.js && node --check map-engine-2.js && node --check test/omega_browser_performance_regression.test.mjs && node --test test/omega_browser_performance_regression.test.mjs",
     "test:factory-baseline": "node --test test/omega_factory_production_baseline.test.mjs",
     "test:minister-identity-pool": "node --check omega_minister_identity_pool_v1.js && node test/omega_minister_identity_pool_v1.test.cjs",
-    "test:country-factory-starting-baseline": "node --test test/omega_country_factory_starting_baseline_v1.test.mjs"
+    "test:country-factory-starting-baseline": "node --test test/omega_country_factory_starting_baseline_v1.test.mjs test/omega_country_factory_count_scaling_v1.test.mjs && node test/omega_resource_industrial_network_v1.test.mjs"
   },
   "dependencies": {
     "@google/genai": "^2.21.0",

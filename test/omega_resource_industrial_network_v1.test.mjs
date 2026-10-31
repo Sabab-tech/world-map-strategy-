@@ -1141,3 +1141,129 @@ console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');
     else context.Game.state.resource[countryId]=priorCountryState;
   }
 }
+
+
+// Starting country factory allocations are commissioned into the exact same live asset
+// collection used by factory construction, input routing, production and decommissioning.
+{
+  const previousState=context.Game.state;
+  try {
+    context.Game.state={
+      simulation:{turn:1,playerCountryId:'BGD',session:{sessionId:'STARTING-FACTORY-ASSET-TEST',playerCountryId:'BGD',status:'READY',createdTurn:1}},
+      economy:{BGD:{unemploymentCount:100000,laborForce:1000000,productionAssets:[
+        {id:'EXISTING-TEXTILE-BGD-1',factoryType:'TEXTILE_GARMENT_MILL',status:'OPERATIONAL',customData:{keep:true}},
+        {id:'EXISTING-UNIVERSAL-BGD-1',factoryType:'UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT',
+          status:'OPERATIONAL',recipeId:'LEGACY_SINGLE_INPUT_RECIPE',recipeMode:'SINGLE_INPUT',
+          inputCoefficients:{iron_ore:1000},outputProfile:{LEGACY_STEEL:1000},customData:{preserve:true}}
+      ]}},
+      resource:{BGD:{inventory:{},warehouse:{availableByResource:{},reservedByResource:{}},technologyCapabilities:[]}},
+      transport:{BGD:{infrastructure:{utilitySupply:{electricityMWhPerDay:1000000,waterM3PerDay:1000000,status:'AVAILABLE',simulationOnly:true}}}}
+    };
+    await N.loadCatalog();
+    const counts=Object.fromEntries(Object.keys(catalog.factoryProfiles).sort().map(type=>[type,0]));
+    counts.TEXTILE_GARMENT_MILL=2;
+    counts.UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT=1;
+    const registered=N.registerStartingFactoryAssets({
+      countryId:'BGD',factoryCounts:counts,sessionId:'STARTING-FACTORY-ASSET-TEST',datasetVersion:'TEST_BASELINE_V1'
+    });
+    assert.equal(registered.status,'COMPLETED',JSON.stringify(registered));
+    assert.equal(registered.requestedFactoryUnits,3);
+    assert.equal(registered.createdCount,1,'existing factories must be hydrated, not duplicated');
+    assert.equal(registered.activeAssetCount,3);
+    const assets=context.Game.state.economy.BGD.productionAssets;
+    assert.equal(assets.length,3);
+    const textiles=assets.filter(asset=>asset.factoryType==='TEXTILE_GARMENT_MILL');
+    const universal=assets.find(asset=>asset.factoryType==='UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT');
+    assert.equal(textiles.length,2);
+    const hydratedExisting=textiles.find(asset=>asset.id==='EXISTING-TEXTILE-BGD-1');
+    assert.ok(hydratedExisting,'the pre-existing asset id must survive baseline hydration');
+    assert.equal(hydratedExisting.customData.keep,true,'custom save fields must be preserved');
+    assert.ok(hydratedExisting.capacityPerDay>0,'missing legacy capacity must be filled from the canonical profile');
+    assert.equal(hydratedExisting.recipeId,'TEXTILE_GARMENT_ROUTE_V1','missing legacy recipe must be filled from the canonical catalog');
+    assert.equal(textiles.every(asset=>asset.status==='OPERATIONAL'&&asset.capacityPerDay>0&&asset.recipeId==='TEXTILE_GARMENT_ROUTE_V1'),true);
+    assert.ok(universal,'the universal materials factory is registered as a live processing asset');
+    assert.equal(universal.status,'OPERATIONAL');
+    assert.equal(universal.id,'EXISTING-UNIVERSAL-BGD-1','legacy universal assets are retained in place');
+    assert.equal(universal.customData.preserve,true,'legacy universal custom save data is retained');
+    assert.equal(universal.recipeId,'LEGACY_SINGLE_INPUT_RECIPE','legacy recipe fields are preserved in the save');
+    assert.deepEqual(universal.inputCoefficients,{iron_ore:1000});
+    assert.deepEqual(universal.outputProfile,{LEGACY_STEEL:1000});
+    assert.equal(universal.recipeMode,'DYNAMIC_PROCESSING',
+      'the universal factory switches to catalog-driven commodity recipes without deleting legacy fields');
+    const ironRecipe=N.recipeFor('iron_ore',universal);
+    const bauxiteRecipe=N.recipeFor('bauxite',universal);
+    assert.ok(ironRecipe.inputs.iron_ore>0);
+    assert.equal(ironRecipe.inputs.bauxite,undefined);
+    assert.ok(bauxiteRecipe.inputs.bauxite>0);
+    assert.equal(bauxiteRecipe.inputs.iron_ore,undefined,
+      'the same universal factory resolves different processing recipes by the supplied commodity');
+    assert.ok(N.candidateFactories('BGD','iron_ore').some(row=>row.asset.id===universal.id),
+      'the universal plant must accept an eligible mineral processing rule');
+    assert.ok(N.candidateFactories('BGD','bauxite').some(row=>row.asset.id===universal.id),
+      'the same universal plant must route a second commodity through its own catalog rule');
+
+    // The turn scheduler must select an available commodity for a recipe-less universal
+    // plant, transfer a tracked warehouse batch, and complete a real production cycle.
+    const resourceState=context.Game.state.resource.BGD;
+    const ironRecipe=N.recipeFor('iron_ore',universal);
+    const inputBatchId='STARTING-FACTORY-IRON-ORE-INPUT';
+    resourceState.inventory.iron_ore=100;
+    resourceState.warehouse={
+      warehouseId:'WH-BGD-RAW',availableByResource:{iron_ore:100},reservedByResource:{iron_ore:0},
+      storedBatchIds:[inputBatchId],receipts:[]
+    };
+    const inputBatch={
+      batchId:inputBatchId,countryId:'BGD',resourceId:'iron_ore',quantity:100,remainingQuantity:100,
+      unit:ironRecipe.inputUnit,stage:'RAW',status:'AVAILABLE',warehouseId:'WH-BGD-RAW',createdTurn:1
+    };
+    resourceState.batches=[inputBatch];
+    resourceState.inventoryLots={[inputBatchId]:{...inputBatch,status:'AVAILABLE'}};
+    const schedulerStart=N.processPendingFactoryInputs('BGD');
+    const startedCycle=resourceState.industrialNetwork.factoryProductionCycles[universal.id];
+    assert.equal(schedulerStart.started.some(row=>row.factoryId===universal.id),true,
+      'the automatic turn scheduler must select the stocked iron ore rule for a dynamic universal plant');
+    assert.equal(startedCycle.status,'IN_PROGRESS');
+    assert.equal(startedCycle.primaryInputResourceId,'iron_ore');
+    assert.equal(universal.inputInventory.iron_ore,100,
+      'tracked raw input must move from the national warehouse into the starting factory');
+    context.Game.state.simulation.turn=Number(startedCycle.finishTurn);
+    context.Game.state.simulation.date=startedCycle.finishDate;
+    const schedulerFinish=N.processPendingFactoryInputs('BGD');
+    assert.equal(schedulerFinish.completed.some(row=>row.factoryId===universal.id),true,
+      'the starting universal factory must finish its dated production cycle');
+    assert.ok(Number(resourceState.inventory.IRON_CONCENTRATE)>0,
+      'finished processing output must be credited to the country resource inventory');
+    assert.equal(universal.productionHealth.status,'REDUCED',
+      'a cycle below rated daily capacity must retain its reduced-output status');
+    assert.ok(N.candidateFactories('BGD','cotton_fibre').filter(row=>row.asset.factoryType==='TEXTILE_GARMENT_MILL').length===2,
+      'the commissioned textile assets must be eligible for their canonical input recipe');
+
+    const repeated=N.registerStartingFactoryAssets({
+      countryId:'BGD',factoryCounts:counts,sessionId:'STARTING-FACTORY-ASSET-TEST',datasetVersion:'TEST_BASELINE_V1'
+    });
+    assert.equal(repeated.status,'ALREADY_REGISTERED');
+    assert.equal(repeated.idempotent,true);
+    assert.equal(context.Game.state.economy.BGD.productionAssets.length,3,
+      'repeated session initialization cannot duplicate starting factories');
+
+    const destroyed=N.decommissionFactory({countryId:'BGD',factoryId:textiles[0].id,confirmed:true});
+    assert.equal(destroyed.status,'DECOMMISSIONED');
+    assert.equal(textiles[0].status,'DECOMMISSIONED');
+    assert.equal(textiles[0].productionHealth.status,'STOPPED');
+    assert.equal(N.candidateFactories('BGD','cotton_fibre').filter(row=>row.asset.factoryType==='TEXTILE_GARMENT_MILL').length,1,
+      'decommissioned factories are removed from the live input-routing candidates');
+    universal.status='DESTROYED';
+    assert.equal(N.candidateFactories('BGD','iron_ore').some(row=>row.asset.id===universal.id),false,
+      'destroyed factories must be removed from live input routing');
+    const destroyedProduction=N.startFactoryProductionCycle({countryId:'BGD',factoryId:universal.id,resourceId:'iron_ore'});
+    assert.equal(destroyedProduction.status,'BLOCKED');
+    assert.equal(destroyedProduction.reason,'FACTORY_NOT_OPERATIONAL',
+      'destroyed factories cannot start another production cycle');
+    const activeTypes=assets.filter(asset=>!['DECOMMISSIONED','DESTROYED'].includes(String(asset.status||'').toUpperCase()));
+    assert.equal(activeTypes.length,2,'destroying one factory reduces the live asset count by one');
+    assert.equal(assets.length,3,'decommissioning preserves the historical asset record');
+    console.log('OMEGA STARTING FACTORY LIVE REGISTRY / ADD / DESTROY REGRESSION PASSED');
+  } finally {
+    context.Game.state=previousState;
+  }
+}
