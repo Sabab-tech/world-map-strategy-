@@ -65,6 +65,17 @@ function sameYearSectorProfile(values) {
       availableSectorCount: available.length
     };
   }
+  // A complete same-year set of zero sector shares is not a usable economic structure.
+  // Preserve the raw observations in valueAddedShares, but do not turn stale/all-zero
+  // source data into a fictitious "MIXED" economy or a dominant-sector classification.
+  if (available.every(row => Number(row.metric.value) === 0)) {
+    return {
+      status: 'INSUFFICIENT_COMPARABLE_DATA',
+      comparisonYear: null,
+      dominantSector: null,
+      availableSectorCount: 0
+    };
+  }
   available.sort((a, b) => b.metric.value - a.metric.value);
   const tied = available.length > 1 && Math.abs(available[0].metric.value - available[1].metric.value) < 0.05;
   return {
@@ -206,7 +217,7 @@ export function enrichCountryFactoryStartingBaseline(baseline, registry) {
     sourceAuthority: 'WORLD_BANK_WDI',
     coreCountryCount: countryIds.length,
     metricKeys: METRIC_KEYS,
-    comparisonRule: 'Compare agriculture, industry and services value-added shares only when at least two numeric observations share the exact same observation year.',
+    comparisonRule: 'Compare agriculture, industry and services value-added shares only when at least two numeric observations share the exact same observation year; an all-zero sector set is non-comparable and its raw observations remain preserved.',
     manufacturingRule: 'Manufacturing value added is a component of industry; its band is compared only when the observation year is within three years of the broad-sector comparison year.',
     archetypeRule: 'Specific factory-type specializations are preserved. Generic resource-processing labels are refined only from existing explicit game specialization IDs. Countries without a mapped sub-sector specialization receive a cautious broad macro-sector archetype, not an invented factory-type claim.',
     simulationRule: 'This context informs the game-scaled starting profile; it is not a real-world factory census or an official industry classification.',
