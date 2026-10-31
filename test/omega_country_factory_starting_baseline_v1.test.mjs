@@ -168,7 +168,6 @@ test('dataset has one explicit 21-type starting-count row for every core country
 
 test('runtime registers the active player country as live factory assets and preserves the rest of the world baseline', async () => {
   const state = makeState();
-  const originalAssets = JSON.stringify(state.economy.BGD.productionAssets);
   const originalResource = JSON.stringify(state.resource.BGD);
   const { context, api, emitted, emitSimulationEvent } = makeHarness(state);
   const ready = await api.ready;
@@ -231,6 +230,7 @@ test('runtime registers the active player country as live factory assets and pre
   assert.equal(state.simulation.countryFactoryStartingBaselineV1.countries.BGD.liveProductionAssetRegistryStatus, 'REGISTERED');
   assert.equal(state.simulation.countryFactoryStartingBaselineV1.countries.USA.runtimeActivationScope, 'STATIC_COUNTRY_BASELINE');
   assert.equal(state.simulation.countryFactoryStartingBaselineV1.countries.USA.liveProductionAssetsCreated, 0);
+  assert.equal(api.getCountryFactoryRegistry('USA').runtimeStatus, 'STATIC_BASELINE_NOT_ACTIVE_PLAYER_COUNTRY');
   const registeredRuntime = api.getCountryFactoryRegistry('BGD');
   assert.equal(registeredRuntime.runtimeStatus, 'REGISTERED');
   assert.equal(registeredRuntime.runtimeRegistered, true);
