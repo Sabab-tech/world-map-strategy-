@@ -21929,7 +21929,7 @@
       "manufacturingValueAddedPctGdp",
       "agricultureEmploymentPct"
     ],
-    "comparisonRule": "Compare agriculture, industry and services value-added shares only when at least two numeric observations share the exact same observation year.",
+    "comparisonRule": "Compare agriculture, industry and services value-added shares only when at least two numeric observations share the exact same observation year; an all-zero sector set is non-comparable and its raw observations remain preserved.",
     "manufacturingRule": "Manufacturing value added is a component of industry; its band is compared only when the observation year is within three years of the broad-sector comparison year.",
     "archetypeRule": "Specific factory-type specializations are preserved. Generic resource-processing labels are refined only from existing explicit game specialization IDs. Countries without a mapped sub-sector specialization receive a cautious broad macro-sector archetype, not an invented factory-type claim.",
     "simulationRule": "This context informs the game-scaled starting profile; it is not a real-world factory census or an official industry classification.",
