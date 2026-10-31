@@ -2597,9 +2597,12 @@ function advanceShipments(c){
   if(siteLogisticsActiveCountry!==cid)void loadSiteLogisticsRoutes(cid);
   const n=netState(cid),delivered=[],mineDelivered=[];
   const markLedgerDeliveryAttempt=(shipment,isRetry=false)=>{
-    shipment.lastDeliveryAttemptTurn=turn();
-    shipment.deliveryAttemptCount=Math.max(0,Math.floor(num(shipment.deliveryAttemptCount)||0))+1;
-    if(isRetry){
+    const alreadyMarkedThisTurn=Number(shipment.lastDeliveryAttemptTurn)===turn();
+    if(!alreadyMarkedThisTurn){
+      shipment.lastDeliveryAttemptTurn=turn();
+      shipment.deliveryAttemptCount=Math.max(0,Math.floor(num(shipment.deliveryAttemptCount)||0))+1;
+    }
+    if(isRetry&&!alreadyMarkedThisTurn){
       shipment.deliveryRetryCount=Math.max(0,Math.floor(num(shipment.deliveryRetryCount)||0))+1;
       shipment.lastDeliveryRetryReason=shipment.blockReason||'LEDGER_MISMATCH';
     }
