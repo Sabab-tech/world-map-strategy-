@@ -7,6 +7,7 @@ on:
       - 'index.html'
       - 'omega_ui_v2/**'
       - 'test/omega_ui_v2.test.mjs'
+      - 'test/omega_resource_ministry_premium_ui.test.mjs'
       - 'test/omega_ui_photo_assets.test.mjs'
       - 'map-engine-2.js'
       - 'map-engine-1.js'
@@ -37,6 +38,7 @@ on:
       - 'index.html'
       - 'omega_ui_v2/**'
       - 'test/omega_ui_v2.test.mjs'
+      - 'test/omega_resource_ministry_premium_ui.test.mjs'
       - 'test/omega_ui_photo_assets.test.mjs'
       - 'map-engine-1.js'
       - 'map-engine-2.js'
@@ -81,6 +83,7 @@ jobs:
       - name: Syntax-check map UI
         run: |
           node --check map-engine-1.js
+          node --check omega_ui_v2/screens/resource-ministry.js
           node --check omega_ui_v2/app.js
           node --check omega_ui_v2/integration.js
           node --check omega_ui_v2/world-command-dock.js
@@ -92,3 +95,5 @@ jobs:
           node --check offline-hybrid-map.js
       - name: Run UI visual and map-layer regression tests
         run: npm run test:ui-visual
+      - name: Run Resource Ministry logistics transport UI regression tests
+        run: npm run test:resource-ui-premium

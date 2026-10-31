@@ -314,6 +314,66 @@ test("Resource Logistics shows configured per-site route cards separately from l
       capacityUnit: "MMCF_PER_DAY"
     }
   };
+  const trainUnitRoute = {
+    routeId: "ROUTE_TST_TRAIN_PAYLOAD_UNIT",
+    siteId: "TST-MINE-TRAIN-UNIT-08",
+    countryId: "TST",
+    siteName: "Train Payload Unit Mine",
+    resourceId: "coal",
+    resourceIconKey: "coal",
+    productionInput: { rate: 100, unit: "TONNES_PER_DAY", authority: "SCENARIO_SIMULATION_DATA", simulationOnly: true },
+    destination: { warehouseId: "WH-TST-RAW" },
+    routePlan: {
+      routeType: "RAIL",
+      legs: [{ transportMode: "rail", estimatedDistanceKm: 120, designCapacityPerTrip: 5000,
+        designCapacityPerTripUnit: "TONNES_PER_TRAIN", designCapacityPerDay: 5000,
+        designCapacityUnit: "TONNES_PER_DAY", cycleHoursForOneDesignVehicle: 24 }],
+      estimatedRouteDistanceKm: 120,
+      plannedTransitDays: 1,
+      capacityBottleneckPerDay: 5000,
+      capacityUnit: "TONNES_PER_DAY"
+    }
+  };
+  const shipVesselUnitRoute = {
+    routeId: "ROUTE_TST_SHIP_VESSEL_TONNES",
+    siteId: "TST-MINE-SHIP-UNIT-09",
+    countryId: "TST",
+    siteName: "Vessel Payload Unit Mine",
+    resourceId: "gold",
+    resourceIconKey: "gold",
+    productionInput: { rate: 100, unit: "TONNES_PER_DAY", authority: "SCENARIO_SIMULATION_DATA", simulationOnly: true },
+    destination: { warehouseId: "WH-TST-RAW" },
+    routePlan: {
+      routeType: "SHIP",
+      legs: [{ transportMode: "ship", estimatedDistanceKm: 240, designCapacityPerTrip: 1000,
+        designCapacityPerTripUnit: "TONNES_PER_VESSEL", designCapacityPerDay: 1000,
+        designCapacityUnit: "TONNES_PER_DAY", cycleHoursForOneDesignVehicle: 24 }],
+      estimatedRouteDistanceKm: 240,
+      plannedTransitDays: 1,
+      capacityBottleneckPerDay: 1000,
+      capacityUnit: "TONNES_PER_DAY"
+    }
+  };
+  const shipBarrelVesselRoute = {
+    routeId: "ROUTE_TST_SHIP_VESSEL_BARRELS",
+    siteId: "TST-OIL-SHIP-UNIT-10",
+    countryId: "TST",
+    siteName: "Oil Vessel Payload Unit Field",
+    resourceId: "crude_oil",
+    resourceIconKey: "crude_oil",
+    productionInput: { rate: 100, unit: "BARRELS_PER_DAY", authority: "SCENARIO_SIMULATION_DATA", simulationOnly: true },
+    destination: { warehouseId: "WH-TST-RAW" },
+    routePlan: {
+      routeType: "SHIP",
+      legs: [{ transportMode: "ship", estimatedDistanceKm: 240, designCapacityPerTrip: 1000,
+        designCapacityPerTripUnit: "BARRELS_PER_VESSEL", designCapacityPerDay: 1000,
+        designCapacityUnit: "BARRELS_PER_DAY", cycleHoursForOneDesignVehicle: 24 }],
+      estimatedRouteDistanceKm: 240,
+      plannedTransitDays: 1,
+      capacityBottleneckPerDay: 1000,
+      capacityUnit: "BARRELS_PER_DAY"
+    }
+  };
   const sandbox = {
     OmegaResourceIndustrialCatalogData: json("resource_industrial_catalog_v1.json"),
     fetch: async (url) => {
@@ -328,7 +388,7 @@ test("Resource Logistics shows configured per-site route cards separately from l
         }) };
       }
       if (name === "resource_site_logistics_routes_v1_part_02.json") {
-        return { ok: true, json: async () => ({ routes: [route, legacyGoldRoute, genericCrudeOilRoute, pipelineRoute, liveProductionRoute, capacityTargetRoute, dailyRateWithAnnualSummaryRoute] }) };
+        return { ok: true, json: async () => ({ routes: [route, legacyGoldRoute, genericCrudeOilRoute, pipelineRoute, liveProductionRoute, capacityTargetRoute, dailyRateWithAnnualSummaryRoute, trainUnitRoute, shipVesselUnitRoute, shipBarrelVesselRoute] }) };
       }
       throw new Error("Unexpected logistics asset request: " + name);
     }
@@ -428,6 +488,27 @@ test("Resource Logistics shows configured per-site route cards separately from l
     "daily production route with annual summary must render");
   assert.match(root.innerHTML.slice(annualSummaryStart, annualSummaryEnd), /data-design-estimated-units="5"/,
     "the declared 2,185 MMCF/day rate must not be overwritten by its 797.52 BCF/year summary");
+
+  const assertRouteDesignNeed = (siteId, mode, expectedLabel, description) => {
+    const start = root.innerHTML.indexOf('data-site-id="' + siteId + '"');
+    const end = root.innerHTML.indexOf('</article>', start);
+    assert.ok(start >= 0 && end > start, "route card must render for " + siteId);
+    const html = root.innerHTML.slice(start, end);
+    assert.match(html, new RegExp('data-transport-mode="' + mode + '"[^>]*data-fleet-configured='),
+      "transport mode card must be present for " + siteId);
+    assert.match(html, /data-design-estimate-available="true"/,
+      "design fleet estimate must be available for " + siteId + ": " + description);
+    assert.match(html, /data-design-estimated-units="1"/,
+      "one design transport unit must be calculated for " + siteId + ": " + description);
+    assert.match(html, new RegExp(expectedLabel),
+      "the player-facing design count must be visible for " + siteId);
+  };
+  assertRouteDesignNeed("TST-MINE-TRAIN-UNIT-08", "rail", "Design need: 1 train set",
+    "TONNES_PER_TRAIN must normalize to TONNES_PER_TRIP");
+  assertRouteDesignNeed("TST-MINE-SHIP-UNIT-09", "ship", "Design need: 1 ship",
+    "TONNES_PER_VESSEL must normalize to TONNES_PER_TRIP");
+  assertRouteDesignNeed("TST-OIL-SHIP-UNIT-10", "ship", "Design need: 1 ship",
+    "BARRELS_PER_VESSEL must normalize to BARRELS_PER_TRIP");
 
   assert.match(root.innerHTML, /Corridor bottleneck · line count unavailable/,
     "BCM/day production must compare against MMCF/day corridor capacity without inventing a pipeline line count");

@@ -1150,7 +1150,12 @@
         if (payload === null && mode !== 'pipeline') payload = numberOrNull(profile.payloadTonnes);
         var payloadUnit = logisticsPlanningUnit(leg && (leg.designCapacityPerTripUnit || leg.payloadUnit) ||
           saved.payloadUnit || profile.payloadUnit || profile.payloadCapacityUnit || '');
-        if (payloadUnit) payloadUnit = payloadUnit.replace(/_PER_DAY$/, '').replace(/_PER_TRIP$/, '') + '_PER_TRIP';
+        if (payloadUnit && mode !== 'pipeline') {
+          // Route data may name payload by carrier class (train/vessel) instead of trip.
+          // Treat these as per-trip cargo units so they can match daily mine-production units.
+          payloadUnit = payloadUnit.replace(/_PER_(?:TRAIN|TRAIN_SET|TRAINSET|VESSEL|SHIP|BARGE|TRUCK|RAIL_CAR|RAILCAR|TANKER|CARRIER|VEHICLE)$/, '_PER_TRIP');
+          payloadUnit = payloadUnit.replace(/_PER_DAY$/, '').replace(/_PER_TRIP$/, '') + '_PER_TRIP';
+        }
         else if (payload !== null) payloadUnit = 'TONNES_PER_TRIP';
         var distance = numberOrNull(leg && (leg.estimatedDistanceKm !== undefined ? leg.estimatedDistanceKm : leg.distanceKm));
         var speed = numberOrNull(leg && leg.speedKmh);
