@@ -452,6 +452,16 @@ test('industry command panel renders country starting allocations separately fro
     getCountryBaseline(countryId) {
       return countryId === 'BGD' ? {
         countryId:'BGD', countryName:'Bangladesh', totalStartingFactoryUnits:7,
+        industryArchetype:'Industry-led economy with a manufacturing base',
+        economicSectorContext:{
+          comparisonStatus:'SAME_YEAR_COMPARABLE', comparisonYear:2025, dominantSector:'INDUSTRY',
+          valueAddedShares:{
+            agricultureValueAddedPctGdp:{value:23,year:2025},
+            industryValueAddedPctGdp:{value:32,year:2025},
+            manufacturingValueAddedPctGdp:{value:13,year:2025},
+            servicesValueAddedPctGdp:{value:36,year:2025}
+          }
+        },
         factoryCounts:{ STEEL_MILL:3, CEMENT_PLANT:0 }
       } : null;
     },
