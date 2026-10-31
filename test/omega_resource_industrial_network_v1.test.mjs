@@ -1150,7 +1150,12 @@ console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');
   try {
     context.Game.state={
       simulation:{turn:1,playerCountryId:'BGD',session:{sessionId:'STARTING-FACTORY-ASSET-TEST',playerCountryId:'BGD',status:'READY',createdTurn:1}},
-      economy:{BGD:{unemploymentCount:100000,laborForce:1000000,productionAssets:[{id:'EXISTING-TEXTILE-BGD-1',factoryType:'TEXTILE_GARMENT_MILL',status:'OPERATIONAL',customData:{keep:true}}]}},
+      economy:{BGD:{unemploymentCount:100000,laborForce:1000000,productionAssets:[
+        {id:'EXISTING-TEXTILE-BGD-1',factoryType:'TEXTILE_GARMENT_MILL',status:'OPERATIONAL',customData:{keep:true}},
+        {id:'EXISTING-UNIVERSAL-BGD-1',factoryType:'UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT',
+          status:'OPERATIONAL',recipeId:'LEGACY_SINGLE_INPUT_RECIPE',recipeMode:'SINGLE_INPUT',
+          inputCoefficients:{iron_ore:1000},outputProfile:{LEGACY_STEEL:1000},customData:{preserve:true}}
+      ]}},
       resource:{BGD:{inventory:{},warehouse:{availableByResource:{},reservedByResource:{}},technologyCapabilities:[]}},
       transport:{BGD:{infrastructure:{utilitySupply:{electricityMWhPerDay:1000000,waterM3PerDay:1000000,status:'AVAILABLE',simulationOnly:true}}}}
     };
@@ -1163,7 +1168,7 @@ console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');
     });
     assert.equal(registered.status,'COMPLETED',JSON.stringify(registered));
     assert.equal(registered.requestedFactoryUnits,3);
-    assert.equal(registered.createdCount,2,'an existing factory must be hydrated, not duplicated');
+    assert.equal(registered.createdCount,1,'existing factories must be hydrated, not duplicated');
     assert.equal(registered.activeAssetCount,3);
     const assets=context.Game.state.economy.BGD.productionAssets;
     assert.equal(assets.length,3);
@@ -1178,12 +1183,24 @@ console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');
     assert.equal(textiles.every(asset=>asset.status==='OPERATIONAL'&&asset.capacityPerDay>0&&asset.recipeId==='TEXTILE_GARMENT_ROUTE_V1'),true);
     assert.ok(universal,'the universal materials factory is registered as a live processing asset');
     assert.equal(universal.status,'OPERATIONAL');
-    assert.equal(universal.recipeId,null,'universal processing does not get pinned to one commodity recipe');
-    assert.equal(universal.inputCoefficients,undefined);
-    assert.equal(universal.outputProfile,undefined);
-    assert.equal(universal.recipeMode,'DYNAMIC_PROCESSING');
+    assert.equal(universal.id,'EXISTING-UNIVERSAL-BGD-1','legacy universal assets are retained in place');
+    assert.equal(universal.customData.preserve,true,'legacy universal custom save data is retained');
+    assert.equal(universal.recipeId,'LEGACY_SINGLE_INPUT_RECIPE','legacy recipe fields are preserved in the save');
+    assert.deepEqual(universal.inputCoefficients,{iron_ore:1000});
+    assert.deepEqual(universal.outputProfile,{LEGACY_STEEL:1000});
+    assert.equal(universal.recipeMode,'DYNAMIC_PROCESSING',
+      'the universal factory switches to catalog-driven commodity recipes without deleting legacy fields');
+    const ironRecipe=N.recipeFor('iron_ore',universal);
+    const bauxiteRecipe=N.recipeFor('bauxite',universal);
+    assert.ok(ironRecipe.inputs.iron_ore>0);
+    assert.equal(ironRecipe.inputs.bauxite,undefined);
+    assert.ok(bauxiteRecipe.inputs.bauxite>0);
+    assert.equal(bauxiteRecipe.inputs.iron_ore,undefined,
+      'the same universal factory resolves different processing recipes by the supplied commodity');
     assert.ok(N.candidateFactories('BGD','iron_ore').some(row=>row.asset.id===universal.id),
       'the universal plant must accept an eligible mineral processing rule');
+    assert.ok(N.candidateFactories('BGD','bauxite').some(row=>row.asset.id===universal.id),
+      'the same universal plant must route a second commodity through its own catalog rule');
     assert.ok(N.candidateFactories('BGD','cotton_fibre').filter(row=>row.asset.factoryType==='TEXTILE_GARMENT_MILL').length===2,
       'the commissioned textile assets must be eligible for their canonical input recipe');
 
