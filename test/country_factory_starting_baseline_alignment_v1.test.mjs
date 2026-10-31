@@ -29,8 +29,14 @@ test('all 197 core countries receive source-aware comparable macro industry cont
       Object.values(row.factoryCounts).reduce((sum, count) => sum + count, 0), countryId);
     if (row.specializations.length) {
       assert.equal(row.specializationEvidenceStatus, 'GAME_MODELLED_SPECIALIZATION_SET');
-      assert.equal(row.industryArchetype, baseline.countries[countryId].industryArchetype,
-        countryId + ' existing specialized archetype must be preserved');
+      if (baseline.countries[countryId].industryArchetype === 'Resource processing base') {
+        assert.notEqual(row.industryArchetype, 'Resource processing base',
+          countryId + ' explicit factory specialization must not keep a generic archetype');
+        assert.equal(row.industryArchetypeBasis, 'EXPLICIT_GAME_SPECIALIZATION_SET_V1');
+      } else {
+        assert.equal(row.industryArchetype, baseline.countries[countryId].industryArchetype,
+          countryId + ' existing specific archetype must be preserved');
+      }
     } else {
       assert.equal(row.specializationEvidenceStatus, 'NO_SUBSECTOR_SPECIALIZATION_EVIDENCE');
       assert.equal(row.industryArchetypeBasis, 'WORLD_BANK_VALUE_ADDED_MIX_V1');
@@ -50,6 +56,13 @@ test('country archetypes respond to observed economic structure without inventin
     'mixed observation years must not produce a false dominant-sector conclusion');
   assert.equal(enriched.countries.SOM.industryArchetype, 'Insufficient comparable sector data');
   assert.equal(enriched.countries.ESH.industryArchetype, 'Insufficient comparable sector data');
+  assert.equal(enriched.countries.AGO.industryArchetype, 'Energy and petrochemicals');
+  assert.equal(enriched.countries.AUT.industryArchetype, 'Industrial machinery and capital goods');
+  assert.equal(enriched.countries.BEL.industryArchetype, 'Pharmaceuticals and medical supplies');
+  assert.equal(enriched.countries.CIV.industryArchetype, 'Food processing');
+  assert.equal(enriched.countries.ZMB.industryArchetype, 'Non-ferrous metals');
+  assert.equal(enriched.countries.TWN.industryArchetype, 'Electronics and semiconductor manufacturing');
+  assert.equal(enriched.countries.SGP.industryArchetype, 'Advanced industrial manufacturing');
   assert.deepEqual(enriched.countries.GUY.specializations, baseline.countries.GUY.specializations,
     'macro evidence must never invent a specific factory type');
 });
