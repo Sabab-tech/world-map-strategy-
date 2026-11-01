@@ -4279,7 +4279,7 @@ function completeFactoryProductionCycle(countryId,asset,cycle,result){
     factorySetProductionHealth(asset,'STOPPED',0,cycle.capacityPerDay,{reason:cycle.lastBlockedReason,cycleId:cycle.cycleId,detail:result});
     emit('OMEGA_FACTORY_PRODUCTION_CYCLE_PAUSED',cid,{cycleId:cycle.cycleId,factoryId:cycle.factoryId,
       reason:cycle.lastBlockedReason,detail:result,turn:turn()});
-    return{status:'PAUSED',cycleId:cycle.cycleId,reason:cycle.lastBlockedReason,detail:result};
+    return{status:'PAUSED',countryId:cid,factoryId:String(cycle.factoryId||asset?.id||asset?.assetId||asset?.projectId||''),cycleId:cycle.cycleId,reason:cycle.lastBlockedReason,detail:result};
   }
   cycle.status='COMPLETED';cycle.completedTurn=turn();cycle.actualCompletionDate=factoryCurrentGameDate()||cycle.finishDate;
   const actualProduction=Math.max(0,num(result.requestedProduction)||cycle.productionQuantity);
@@ -4339,7 +4339,7 @@ function completeFactoryProductionCycle(countryId,asset,cycle,result){
   }
   emit('OMEGA_FACTORY_PRODUCTION_CYCLE_COMPLETED',cid,{cycleId:cycle.cycleId,transactionId:result.transactionId,
     factoryId:cycle.factoryId,outputQuantities:cycle.outputQuantities,finishDate:cycle.finishDate,actualCompletionDate:cycle.actualCompletionDate});
-  return{status:'COMPLETED',cycleId:cycle.cycleId,transactionId:result.transactionId,outputQuantities:cycle.outputQuantities};
+  return{status:'COMPLETED',countryId:cid,factoryId:String(cycle.factoryId||asset?.id||asset?.assetId||asset?.projectId||''),cycleId:cycle.cycleId,transactionId:result.transactionId,outputQuantities:cycle.outputQuantities};
 }
 function selectFactoryProductionRecipeForTurn(countryId,asset){
   const cid=canonicalCountry(countryId),type=normalizeFactoryType(asset?.factoryType||asset?.type||asset?.facilityType||'');
