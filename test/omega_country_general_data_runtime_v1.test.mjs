@@ -39,7 +39,7 @@ const fixture={metadata:{schemaVersion:'1.0.0',datasetId:'OMEGA_COUNTRY_GENERAL_
  fieldCatalogue:metricFields.map(key=>({key,name:key,unit:key.includes('Pct')?'%':'source units'})),countries:[countryRow('AA','AAA','Alpha',alpha),countryRow('BB','BBB','Beta',beta)]};
 globalThis.window=globalThis;
 globalThis.fetch=async input=>{
- const name=String(input).split('?')[0].replace(/^\\.\\//,'');
+ const name=String(input).split('?')[0].replace(/^\.\//,'');
  if(name==='economy_global_profiles_v1.json')return{ok:true,json:async()=>({countries:[
   {countryCode:'AA',iso3:'AAA',name:'Alpha'},
   {countryCode:'BB',iso3:'BBB',name:'Beta'}
