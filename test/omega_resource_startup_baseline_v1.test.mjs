@@ -121,6 +121,7 @@ function makeHarness(state) {
 const positive = value => typeof value === 'number' && Number.isFinite(value) && value > 0;
 const profileFor = code => countryDocument.countries.find(row => row.iso3 === code || row.countryCode === code);
 const token = value => String(value ?? '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+const plain = value => JSON.parse(JSON.stringify(value));
 
 test('source catalog contract remains exactly 41 resource identities and 21 factory profiles', () => {
   assert.equal(resourceIds.length, 41);
@@ -253,8 +254,8 @@ test('fresh session seeds bounded opening stock and source-context-driven factor
     'India has both coal and iron-ore production sources, so a steel starter is eligible even though external input goods are not yet delivered');
   assert.equal(indiaSteelWorks.startupBaselineV1.notObservedFacility, true);
   assert.equal(indiaSteelWorks.startupBaselineV1.locallySupportedInputShare, 0.5);
-  assert.deepEqual(indiaSteelWorks.startupBaselineV1.locallySupportedInputIds, ['iron_concentrate', 'coal_concentrate']);
-  assert.deepEqual(indiaSteelWorks.startupBaselineV1.externalInputResourceIds, ['cement_feed', 'copper_concentrate']);
+  assert.deepEqual(plain(indiaSteelWorks.startupBaselineV1.locallySupportedInputIds), ['iron_concentrate', 'coal_concentrate']);
+  assert.deepEqual(plain(indiaSteelWorks.startupBaselineV1.externalInputResourceIds), ['cement_feed', 'copper_concentrate']);
   assert.equal(indiaSteelWorks.startupBaselineV1.externalInputsRequireConfirmedSupply, true);
   assert.equal(Object.keys(indiaSteelWorks.inputInventory).length, 0,
     'catalog inputs and local output capability are not warehouse stock');
@@ -285,7 +286,7 @@ test('fresh session seeds bounded opening stock and source-context-driven factor
   assert.equal(indiaResource.inventoryUnits.coal, 'TONNES');
   assert.equal(indiaResource.startupBaselineV1.openingStockCoverageDays, 14,
     'the legacy fallback remains 14 days while priority-specific target days are recorded per stock row');
-  assert.deepEqual(indiaResource.startupBaselineV1.openingStockCoverageDaysByPriority, policy.openingStock.coverageDaysByPriority);
+  assert.deepEqual(plain(indiaResource.startupBaselineV1.openingStockCoverageDaysByPriority), policy.openingStock.coverageDaysByPriority);
   assert.equal(indiaResource.startupBaselineV1.geologicalReserveQuantityUsedAsStock, false);
   assert.ok(indiaResource.startupBaselineV1.stockRowsEncoding === 'COMPACT_PER_RESOURCE_PROVENANCE_V1');
   assert.ok(coalStockRow.demandSource === 'RULE_PROFILE_POPULATION_BASELINE');
@@ -367,7 +368,7 @@ test('repeated startup calls and depletion after initialization never replenish 
   assert.equal(repeated.status, 'ALREADY_INITIALIZED');
   assert.equal(Object.prototype.hasOwnProperty.call(state.resource.IND.inventory, 'coal'), false,
     'opening stock is a one-time seed and must not behave like automatic replenishment');
-  assert.deepEqual(state.economy.IND.productionAssets.map(asset => asset.id).sort(), beforeAssets);
+  assert.deepEqual(plain(state.economy.IND.productionAssets.map(asset => asset.id).sort()), plain(beforeAssets));
   assert.equal(Object.keys(state.resource.IND.inventory).length, beforeInventoryCount - 1,
     'deleting a stock key after initialization must remain deleted without adding another inventory key');
 
@@ -377,7 +378,7 @@ test('repeated startup calls and depletion after initialization never replenish 
   const loadedResult = await reload.api.initializeForSession(loadedState.simulation.session);
   assert.equal(loadedResult.status, 'ALREADY_INITIALIZED');
   assert.equal(Object.prototype.hasOwnProperty.call(loadedState.resource.IND.inventory, 'coal'), false);
-  assert.deepEqual(loadedState.economy.IND.productionAssets.map(asset => asset.id).sort(), beforeAssets);
+  assert.deepEqual(plain(loadedState.economy.IND.productionAssets.map(asset => asset.id).sort()), plain(beforeAssets));
 });
 
 test('mid-game and late-save sessions are skipped rather than given a fresh startup economy', async () => {
