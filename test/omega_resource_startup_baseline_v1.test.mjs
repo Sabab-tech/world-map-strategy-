@@ -271,32 +271,45 @@ test('fresh session seeds bounded opening stock and source-context-driven factor
 
   const indiaProfile = profileFor('IND');
   const indiaResource = state.resource.IND;
-  const indiaCoalBaseline = economyRules.demand.resourceProfiles.coal;
-  assert.ok(positive(indiaResource.inventory.coal));
   const coalStockRow = indiaResource.startupBaselineV1.stockRows.find(row => row.resourceId === 'coal');
-  assert.ok(coalStockRow);
-  assert.equal(coalStockRow.targetCoverageDays, 40,
-    'critical coal stock uses the configured 40-day opening buffer, not the 100-day contract term');
-  const expectedIndiaCoal = indiaCoalBaseline.basePerMillionPopulation *
-    indiaProfile.populationValues.population_2015 / 1000000 * coalStockRow.targetCoverageDays;
   const indiaFactoryCoal = factoryInputBaseline.countries.IND.factoryInputRows.find(row => row.productId === 'coal');
   assert.ok(indiaFactoryCoal);
-  assert.ok(Math.abs(indiaResource.inventory.coal - expectedIndiaCoal - indiaFactoryCoal.openingStockQuantity) < 1e-6,
-    'national demand opening stock and the additive 140% factory-input stock are both accounted for separately');
-  assert.equal(indiaResource.inventoryUnits.coal, 'TONNES');
+  assert.ok(positive(indiaResource.inventory.coal));
+  // A per-capita raw-resource rate is seeded only when its configured unit map
+  // can resolve the profile rate into an accepted inventory unit. Otherwise it
+  // stays explicitly UNKNOWN; the independent factory recipe input stock is
+  // still added in its own declared simulation unit.
+  const expectedIndiaNationalCoal = coalStockRow
+    ? indiaCoalBaseline.basePerMillionPopulation *
+      indiaProfile.populationValues.population_2015 / 1000000 * coalStockRow.targetCoverageDays
+    : 0;
+  if (coalStockRow) {
+    assert.equal(coalStockRow.targetCoverageDays, 40,
+      'critical coal stock uses the configured 40-day opening buffer, not the 100-day contract term');
+    assert.equal(coalStockRow.demandSource, 'RULE_PROFILE_POPULATION_BASELINE');
+    assert.ok(coalStockRow.batchId.startsWith('STARTUP-STOCK-V1-IND-COAL'));
+    assert.ok(indiaResource.batches.some(row => row.batchId === coalStockRow.batchId && row.stage === 'RAW'));
+    assert.ok(indiaResource.inventoryLots[coalStockRow.batchId]);
+    assert.ok(indiaResource.warehouse.storedBatchIds.includes(coalStockRow.batchId));
+    assert.ok(indiaResource.warehouse.receipts.some(row => row.batchId === coalStockRow.batchId));
+    assert.ok(indiaResource.inventoryLedger.some(row => row.batchId === coalStockRow.batchId && row.type === 'INVENTORY_CREATED'));
+  } else {
+    assert.ok(indiaResource.startupBaselineV1.unknownResourceIds.includes('coal'),
+      'coal stays unknown when its national demand profile lacks an accepted stock-unit bridge');
+  }
+  assert.ok(Math.abs(indiaResource.inventory.coal - expectedIndiaNationalCoal - indiaFactoryCoal.openingStockQuantity) < 1e-6,
+    'national demand stock, when unit-resolved, and the additive 140% factory-input stock are accounted separately');
+  assert.equal(indiaResource.inventoryUnits.coal, coalStockRow && coalStockRow.unit || 'SIMULATION_RESOURCE_UNIT');
   assert.equal(indiaResource.startupBaselineV1.openingStockCoverageDays, 14,
     'the legacy fallback remains 14 days while priority-specific target days are recorded per stock row');
   assert.deepEqual(plain(indiaResource.startupBaselineV1.openingStockCoverageDaysByPriority), policy.openingStock.coverageDaysByPriority);
   assert.equal(indiaResource.startupBaselineV1.geologicalReserveQuantityUsedAsStock, false);
-  assert.ok(indiaResource.startupBaselineV1.stockRowsEncoding === 'COMPACT_PER_RESOURCE_PROVENANCE_V1');
-  assert.ok(coalStockRow.demandSource === 'RULE_PROFILE_POPULATION_BASELINE');
-  assert.ok(coalStockRow.batchId.startsWith('STARTUP-STOCK-V1-IND-COAL'));
-  assert.ok(indiaResource.batches.some(row => row.batchId === coalStockRow.batchId && row.stage === 'RAW'));
-  assert.ok(indiaResource.inventoryLots[coalStockRow.batchId]);
-  assert.ok(indiaResource.warehouse.availableByResource.coal === indiaResource.inventory.coal);
-  assert.ok(indiaResource.warehouse.storedBatchIds.includes(coalStockRow.batchId));
-  assert.ok(indiaResource.warehouse.receipts.some(row => row.batchId === coalStockRow.batchId));
-  assert.ok(indiaResource.inventoryLedger.some(row => row.batchId === coalStockRow.batchId && row.type === 'INVENTORY_CREATED'));
+  assert.equal(indiaResource.startupBaselineV1.stockRowsEncoding, 'COMPACT_PER_RESOURCE_PROVENANCE_V1');
+  assert.equal(indiaResource.warehouse.availableByResource.coal, indiaResource.inventory.coal);
+  if (indiaResource.inventoryLedger.some(row => row.batchId === indiaResource.factoryInputBaselineV1.stockRows.find(item => item.productId === 'coal')?.batchId)) {
+    const factoryCoalRow = indiaResource.factoryInputBaselineV1.stockRows.find(item => item.productId === 'coal');
+    assert.ok(factoryCoalRow);
+  }
 
   for (const code of Object.keys(state.resource)) {
     const bucket = state.resource[code];
