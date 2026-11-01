@@ -92,6 +92,7 @@ test('resource endowment prioritizes playable mine data and moves research enric
   assert.doesNotMatch(init, /loadLosslessResourceReferenceData|loadMasterResourceResearchData|loadResearchEvidenceData/);
   assert.match(source, /async function loadSupplementalResourceData\(\)[\s\S]*?loadLosslessResourceReferenceData\(\)[\s\S]*?loadMasterResourceResearchData\(\)[\s\S]*?loadResearchEvidenceData\(\)/);
   assert.match(source, /scheduleResourceSupplementalData\(\)/);
+  assert.match(source, /supplementalResourceDataReport=report\.status==='READY'\?report:null/);
   assert.match(source, /requestIdleCallback\(start,\{timeout:5000\}\)/);
   assert.match(source, /requestIdleCallback\(start,\{timeout:1800\}\)/);
   assert.match(source, /mapWithConcurrency\(LEGACY_GAMEPLAY_EXPANSION_FILES,2/);
