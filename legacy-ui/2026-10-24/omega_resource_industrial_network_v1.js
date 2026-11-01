@@ -2370,13 +2370,14 @@ function commitMultiInputFactoryCycleImmediately(input={}){
     const lotQuantity=eligibleLots.reduce((sum,l)=>sum+Math.max(0,num(l?.remainingQuantity!=null?l.remainingQuantity:l?.quantity)||0),0);
     availability.push({resourceId,coefficient,stockKey,eligibleLots,available:quantity,tracked:lotQuantity,possibleProduction:quantity/coefficient});
   }
-  let productionQuantity=Math.min(limit,...availability.map(x=>x.possibleProduction));
+  const rawMaterialPossibleProduction=Math.min(capacity,...availability.map(x=>x.possibleProduction));
+  let productionQuantity=Math.min(limit,rawMaterialPossibleProduction);
   if(!(productionQuantity>1e-9)){
     const missing=availability.filter(x=>x.available+1e-9<x.coefficient*Math.min(limit,1));
     return{status:'BLOCKED',reason:'FACTORY_INPUT_SHORTAGE',factoryId:fid,recipeId:recipe.recipeId||null,
       requiredForOneUnit:availability.map(x=>({resourceId:x.resourceId,required:x.coefficient,available:x.available})),missingInputs:missing.map(x=>x.resourceId)};
   }
-  const materialRatio=capacity>0?Math.min(1,productionQuantity/capacity):0;
+  const materialRatio=capacity>0?Math.min(1,rawMaterialPossibleProduction/capacity):0;
   const utilityLimit=input.prepaidUtilityConsumption
     ?{status:'READY',allowedProduction:productionQuantity,preview:{status:'READY',required:{electricityMWh:0,waterM3:0},prepaid:true},
       constraints:{electricityRatio:1,waterRatio:1,utilityRatio:1}}
