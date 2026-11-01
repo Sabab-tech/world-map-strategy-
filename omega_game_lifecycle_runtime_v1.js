@@ -297,11 +297,48 @@
     // Rendering is best-effort and must never be allowed to block a save on exit.
     try { updateHud(); } catch (_) {}
     var snapshot;
-    try { snapshot = sim.saveState(); }
-    catch (error) {
+    try {
+      snapshot = sim.saveState({
+        includeDiagnostics: options.committedTurn !== true && options.includeDiagnostics !== false
+      });
+    } catch (error) {
       setSaveStatus('SAVE FAILED');
       return false;
     }
+
+    // A committed game turn is saved asynchronously to IndexedDB. This avoids
+    // serializing the full world to JSON and synchronously writing localStorage
+    // on the UI thread every time the in-game clock advances.
+    if (options.committedTurn && g.indexedDB) {
+      saveNow.lastLocalSaved = false;
+      var backupPromise = persistBackup(snapshot).then(function () {
+        lastSavedTurn = turn;
+        lastSavedAt = Date.now();
+        lastSavedSerialized = '';
+        setSaveStatus('AUTO-SAVED · DAY ' + (turn + 1));
+        return true;
+      }).catch(function () {
+        // Preserve a durable fallback for WebViews whose IndexedDB transaction fails.
+        try {
+          var fallbackSerialized = JSON.stringify(snapshot);
+          if (!g.localStorage) throw new Error('LOCAL_STORAGE_UNAVAILABLE');
+          g.localStorage.setItem(SAVE_KEY, fallbackSerialized);
+          saveNow.lastLocalSaved = true;
+          lastSavedTurn = turn;
+          lastSavedAt = Date.now();
+          lastSavedSerialized = fallbackSerialized;
+          setSaveStatus('AUTO-SAVED · DAY ' + (turn + 1));
+          return true;
+        } catch (_) {
+          setSaveStatus('SAVE FAILED · LAST COMPLETE SAVE PRESERVED');
+          return false;
+        }
+      });
+      saveNow.lastBackupPromise = backupPromise;
+      setSaveStatus('SAVING DEVICE BACKUP…');
+      return true;
+    }
+
     var serialized;
     try { serialized = JSON.stringify(snapshot); }
     catch (_) {

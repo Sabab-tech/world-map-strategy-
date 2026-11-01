@@ -233,3 +233,60 @@ test('legacy save snapshots remain loadable but are explicitly marked unverified
   assert.equal(state.simulation.turn,17);
   assert.equal(runtime.diagnostics().lastLoadIntegrity,'LEGACY_UNVERIFIED');
 });
+
+
+test('authoritative world-engine saves do not duplicate root-owned market and country state',()=>{
+  const {sandbox,state}=makeSandbox();
+  state.worldEcosystem={
+    countryProfiles:{BGD:{countryId:'BGD',population:170000000}},
+    market:{coal:{price:100}},
+    causalEventLog:[{eventId:'EVT-1'}],
+    causalLogCounter:2
+  };
+  loadScript('world_ecosystem_engine.js',sandbox);
+  const engine=sandbox.WorldEcosystemEngine;
+  engine.setAuthoritativeState(state);
+
+  const legacy=engine.exportSaveState();
+  assert.equal(legacy.stateRegistry.BGD.countryId,'BGD');
+  assert.equal(legacy.globalMarket.coal.price,100);
+  assert.equal(legacy.causalEventLog.length,1);
+
+  const authoritative=engine.exportSaveState({authoritativeState:true});
+  assert.equal(Object.hasOwn(authoritative,'stateRegistry'),false);
+  assert.equal(Object.hasOwn(authoritative,'globalMarket'),false);
+  assert.equal(Object.hasOwn(authoritative,'causalEventLog'),false);
+  assert.equal(authoritative.currentSimulationTick,0);
+});
+
+test('compact autosave snapshots retain gameplay state and deterministic integrity checks',()=>{
+  const {sandbox,state}=makeSandbox();
+  loadScript('omega_simulation_runtime.js',sandbox);
+  const runtime=sandbox.Omega.Simulation;
+  state.resource={BGD:{inventory:{coal:50},batches:[{
+    batchId:'SAVE-BATCH-COMPACT',countryId:'BGD',ownerCountryCode:'BGD',
+    resourceId:'coal',quantity:50,remainingQuantity:50,stage:'RAW_EXTRACTED'
+  }]}};
+
+  const full=runtime.saveState();
+  const compact=runtime.saveState({includeDiagnostics:false});
+  assert.equal(Object.hasOwn(full,'diagnostics'),true);
+  assert.equal(Object.hasOwn(compact,'diagnostics'),false);
+  assert.equal(compact.worldState.resource.BGD.inventory.coal,50);
+  assert.match(compact.checksum,/^[0-9a-f]{8}$/);
+  assert.equal(runtime.loadState(compact).lastLoadIntegrity,'VERIFIED');
+  assert.equal(runtime.world.state.resource.BGD.inventory.coal,50);
+});
+
+test('turn autosave uses IndexedDB first and keeps localStorage as a recovery fallback',()=>{
+  const lifecycle=fs.readFileSync(new URL('../omega_game_lifecycle_runtime_v1.js',import.meta.url),'utf8');
+  assert.match(lifecycle,/includeDiagnostics:\s*options\.committedTurn !== true && options\.includeDiagnostics !== false/);
+  const indexedStart=lifecycle.indexOf('if (options.committedTurn && g.indexedDB)');
+  const serializedStart=lifecycle.indexOf('var serialized;',indexedStart);
+  assert.ok(indexedStart>=0&&serializedStart>indexedStart,'committed-turn IndexedDB branch must precede synchronous JSON serialization');
+  const indexedBranch=lifecycle.slice(indexedStart,serializedStart);
+  assert.ok(indexedBranch.includes('persistBackup(snapshot)'),'committed turns must wait for the IndexedDB snapshot');
+  assert.ok(indexedBranch.indexOf('persistBackup(snapshot)')<indexedBranch.indexOf('g.localStorage.setItem(SAVE_KEY, fallbackSerialized)'),
+    'localStorage may only be written from the IndexedDB-failure fallback');
+  assert.ok(indexedBranch.includes('JSON.stringify(snapshot)'),'the fallback must retain a durable save path');
+});
