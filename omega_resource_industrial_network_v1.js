@@ -4556,6 +4556,7 @@ function completeFactoryProductionCycle(countryId,asset,cycle,result){
   if(result?.status!=='COMPLETED'){
     cycle.status='PAUSED';cycle.lastBlockedReason=result?.reason||'FACTORY_PRODUCTION_COMPLETION_BLOCKED';
     cycle.lastBlockedDetail=clone(result);cycle.pausedTurn=turn();
+    releaseFactoryCycleUtilityReservation(cid,cycle.cycleId);
     factorySetProductionHealth(asset,'STOPPED',0,cycle.capacityPerDay,{reason:cycle.lastBlockedReason,cycleId:cycle.cycleId,detail:result});
     emit('OMEGA_FACTORY_PRODUCTION_CYCLE_PAUSED',cid,{cycleId:cycle.cycleId,factoryId:cycle.factoryId,
       reason:cycle.lastBlockedReason,detail:result,turn:turn()});
@@ -4568,6 +4569,7 @@ function completeFactoryProductionCycle(countryId,asset,cycle,result){
   cycle.transactionId=result.transactionId;cycle.outputQuantities=clone(result.outputQuantities||result.outputs||{});
   cycle.createdBatchIds=clone(result.createdBatchIds||[]);cycle.lastBlockedReason=null;
   releaseFactoryCycleReservations(asset,cycle.cycleId);
+  releaseFactoryCycleUtilityReservation(cid,cycle.cycleId);
   asset.activeProductionCycleId=null;asset.lastProductionCycleId=cycle.cycleId;asset.lastProductionCycleCompletedDate=cycle.actualCompletionDate;
   cycle.productionConstraints=clone(result.productionConstraints||cycle.productionConstraints||{});
   factorySetProductionHealth(asset,cycle.productivityPct<99.999?'REDUCED':'READY',actualProduction,cycle.capacityPerDay,
@@ -4631,6 +4633,7 @@ function processPendingFactoryInputs(countryId){
   for(const asset of assets){
     const fid=String(asset?.id||asset?.assetId||asset?.projectId||''),cycle=n.factoryProductionCycles[fid];
     if(!fid||!asset||!factoryCycleActive(cycle)||cycle.status==='PAUSED'||!factoryCycleDue(cycle))continue;
+    releaseFactoryCycleUtilityReservation(cid,cycle.cycleId);
     const result=executeFactoryCycle({countryId:cid,factoryId:fid,factoryCycleId:cycle.cycleId,
       resourceId:cycle.primaryInputResourceId,quantity:cycle.productionQuantity,unit:asset.inputUnit||null});
     const outcome=completeFactoryProductionCycle(cid,asset,cycle,result);
