@@ -41,7 +41,7 @@ jobs:
         run: |
           git fetch --no-tags --depth=1 origin "$BASE_SHA"
           changed_files="$(git diff --name-only "$BASE_SHA" HEAD)"
-          if printf '%s\\n' "$changed_files" | grep -Fq -e 'factory_isic_mapping_v1.json' -e 'country_factory_establishment_data_v1.json' -e 'scripts/build_country_factory_establishment_data_v1.mjs' -e 'scripts/export_unido_indstat_establishments.py'; then
+          if printf '%s\n' "$changed_files" | grep -Fq -e 'factory_isic_mapping_v1.json' -e 'country_factory_establishment_data_v1.json' -e 'scripts/build_country_factory_establishment_data_v1.mjs' -e 'scripts/export_unido_indstat_establishments.py'; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
           else
             echo "changed=false" >> "$GITHUB_OUTPUT"
