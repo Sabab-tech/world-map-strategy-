@@ -2028,6 +2028,46 @@ function previewFactoryUtilityUse(countryId,asset,productionQuantity){
     utilizationFraction:fraction,required,used,supply:{electricityMWhPerDay:supply.power,waterM3PerDay:supply.water},
     supplyAuthority:supply.authority||'COMPLETED_UTILITY_PROJECTS_OR_EXPLICIT_GAME_STATE'};
 }
+function factoryUtilityProductionLimit(countryId,asset,requestedProduction){
+  const cid=canonicalCountry(countryId),factoryId=String(asset?.id||asset?.assetId||asset?.factoryId||asset?.projectId||'');
+  const type=String(asset?.factoryType||asset?.type||asset?.facilityType||'').toUpperCase();
+  const profile=(cat()?.factoryProfiles||{})[type]||{};
+  const utilities=asset?.utilityRequirements&&typeof asset.utilityRequirements==='object'&&
+    (asset.utilityRequirements.electricityMWhPerDay!=null||asset.utilityRequirements.waterM3PerDay!=null)
+      ?asset.utilityRequirements:profile.utilities;
+  const powerDaily=utilities?.electricityMWhPerDay==null?null:num(utilities.electricityMWhPerDay);
+  const waterDaily=utilities?.waterM3PerDay==null?null:num(utilities.waterM3PerDay);
+  const capacity=num(asset?.capacityPerDay??asset?.capacity??asset?.productionCapacity??asset?.throughput);
+  const requested=num(requestedProduction);
+  if(capacity===null||capacity<=0||requested===null||requested<=0)
+    return{status:'BLOCKED',reason:'FACTORY_UTILITY_CAPACITY_INVALID',countryId:cid,factoryId,capacity,requestedProduction};
+  if(powerDaily===null||waterDaily===null||powerDaily<0||waterDaily<0)
+    return{status:'BLOCKED',reason:'FACTORY_UTILITY_PROFILE_NOT_RECORDED',countryId:cid,factoryId,factoryType:type};
+  const supply=utilitySupplyValues(cid),bucket=utilityTurnBucket(cid);
+  const used={electricityMWh:bucket.used.electricityMWh,waterM3:bucket.used.waterM3};
+  const available={
+    electricityMWh:supply.power===null?null:Math.max(0,supply.power-used.electricityMWh),
+    waterM3:supply.water===null?null:Math.max(0,supply.water-used.waterM3)
+  };
+  const missing=[];
+  if(powerDaily>1e-9&&available.electricityMWh===null)missing.push('ELECTRICITY');
+  if(waterDaily>1e-9&&available.waterM3===null)missing.push('INDUSTRIAL_WATER');
+  if(missing.length)return{status:'BLOCKED',reason:'FACTORY_UTILITY_SUPPLY_NOT_RECORDED',countryId:cid,factoryId,
+    missingUtilities:missing,supply:{electricityMWhPerDay:supply.power,waterM3PerDay:supply.water},used};
+  const electricityRatio=powerDaily>1e-9?Math.min(1,available.electricityMWh/powerDaily):1;
+  const waterRatio=waterDaily>1e-9?Math.min(1,available.waterM3/waterDaily):1;
+  const utilityRatio=Math.min(electricityRatio,waterRatio);
+  const allowedProduction=Number(Math.max(0,Math.min(requested,capacity*utilityRatio)).toFixed(6));
+  const constraints={electricityRatio:Number(electricityRatio.toFixed(6)),waterRatio:Number(waterRatio.toFixed(6)),
+    utilityRatio:Number(utilityRatio.toFixed(6)),available,supply:{electricityMWhPerDay:supply.power,waterM3PerDay:supply.water},used,
+    requiredAtFullCapacity:{electricityMWh:powerDaily,waterM3:waterDaily}};
+  if(allowedProduction<=1e-9)return{status:'BLOCKED',reason:'FACTORY_UTILITY_SHORTAGE',countryId:cid,factoryId,
+    requestedProduction:requested,allowedProduction:0,constraints};
+  const preview=previewFactoryUtilityUse(cid,asset,allowedProduction);
+  if(preview.status!=='READY')return{...preview,requestedProduction:requested,allowedProduction,constraints};
+  return{status:'READY',countryId:cid,factoryId,requestedProduction:requested,allowedProduction,
+    adjusted:allowedProduction+1e-6<requested,preview,constraints};
+}
 function commitFactoryUtilityUse(countryId,asset,preview,transactionId){
   const cid=canonicalCountry(countryId),bucket=utilityTurnBucket(cid);
   bucket.used.electricityMWh=Number((bucket.used.electricityMWh+preview.required.electricityMWh).toFixed(6));
@@ -2121,11 +2161,19 @@ function factoryOperationGate(countryId,asset){
   const requiredCrew=Math.max(1,num(profile.employment?.coreOperatingCrew)||
     ((num(profile.workforce?.operators)||0)+(num(profile.workforce?.engineers)||0))||
     (num(asset.workforce?.operators)||0)+(num(asset.workforce?.engineers)||0));
+  const recordedJobs=num(employment.jobsSupported);
+  const profileJobs=num(profile.employment?.jobsPerFactory);
+  const requiredWorkers=Math.max(1,recordedJobs!==null&&recordedJobs>0?recordedJobs:
+    (profileJobs!==null&&profileJobs>0?profileJobs:requiredCrew));
   const workersFilled=num(employment.jobsFilled);
-  if(workersFilled===null)return{status:'BLOCKED',reason:'FACTORY_WORKFORCE_NOT_RECORDED',factoryId,requiredWorkers:requiredCrew};
-  if(workersFilled<requiredCrew)return{status:'BLOCKED',reason:'FACTORY_WORKFORCE_SHORTAGE',factoryId,
-    requiredWorkers:requiredCrew,workersAvailable:workersFilled,vacancies:num(employment.vacancies)??Math.max(0,requiredCrew-workersFilled)};
-  return{status:'READY',factoryId,factoryStatus:status,requiredWorkers:requiredCrew,workersAvailable:workersFilled,
+  if(workersFilled===null)return{status:'BLOCKED',reason:'FACTORY_WORKFORCE_NOT_RECORDED',factoryId,requiredWorkers};
+  const workersAvailable=Math.max(0,workersFilled);
+  const workforceRatio=Number(Math.min(1,workersAvailable/requiredWorkers).toFixed(6));
+  if(workersAvailable<=1e-9)return{status:'BLOCKED',reason:'FACTORY_WORKFORCE_SHORTAGE',factoryId,
+    requiredWorkers,workersAvailable,vacancies:num(employment.vacancies)??requiredWorkers,workforceRatio:0};
+  return{status:'READY',factoryId,factoryStatus:status,requiredWorkers,workersAvailable,workforceRatio,
+    workforceStatus:workforceRatio<1?'PARTIALLY_STAFFED':'FULLY_STAFFED',
+    coreOperatingCrew:requiredCrew,
     workforceAuthority:employment.authority||employmentModel.authority||'SIMULATED_FACTORY_EMPLOYMENT_RECONCILIATION'};
 }
 function commitFactoryCycleImmediately(input={}){
@@ -2683,7 +2731,8 @@ function startFactoryProductionCycle(input={}){
   const first=tok(input.resourceId||Object.keys(asset.inputCoefficients||asset.inputs||{})[0]||asset.resourceId||'');
   const recipe=recipeFor(first,asset),metrics=factoryProductionMetrics(asset,recipe);
   const requested=Math.max(0,num(input.quantity)||metrics.capacity);
-  let quantity=Math.min(metrics.capacity,requested,metrics.possibleProduction);
+  let quantity=Math.min(metrics.capacity,requested,metrics.possibleProduction,
+    metrics.capacity*Math.min(1,Math.max(0,num(gate.workforceRatio)??1)));
   if(metrics.missingInputs.length){
     factorySetProductionHealth(asset,'STOPPED',0,metrics.capacity,{reason:'FACTORY_INPUT_OR_BATCH_SHORTAGE',missingInputs:metrics.missingInputs});
     return{status:'BLOCKED',reason:'FACTORY_INPUT_OR_BATCH_SHORTAGE',factoryId:fid,missingInputs:clone(metrics.missingInputs),capacity:metrics.capacity};
@@ -2692,20 +2741,19 @@ function startFactoryProductionCycle(input={}){
     factorySetProductionHealth(asset,'STOPPED',0,metrics.capacity,{reason:'FACTORY_INPUT_SHORTAGE',missingInputs:metrics.inputs.filter(row=>row.available<=1e-9).map(row=>({resourceId:row.resourceId,reason:'WAREHOUSE_AND_FACTORY_INPUT_STOCK_EMPTY'}))});
     return{status:'BLOCKED',reason:'FACTORY_INPUT_SHORTAGE',factoryId:fid};
   }
-  const utilityProfile=(cat()?.factoryProfiles||{})[String(asset.factoryType||asset.type||'').toUpperCase()]?.utilities||asset.utilityRequirements||{};
-  let utilityPreview=previewFactoryUtilityUse(cid,asset,quantity);
-  if(utilityPreview.status==='BLOCKED'&&utilityPreview.reason==='FACTORY_UTILITY_SHORTAGE'){
-    for(const shortage of utilityPreview.shortages||[]){
-      const daily=shortage.utility==='ELECTRICITY'?num(utilityProfile.electricityMWhPerDay):num(utilityProfile.waterM3PerDay);
-      const rate=daily!==null&&metrics.capacity>0?daily/metrics.capacity:0;
-      if(rate>1e-9)quantity=Math.min(quantity,Math.max(0,num(shortage.available)||0)/rate);
-    }
-    if(quantity>1e-9)utilityPreview=previewFactoryUtilityUse(cid,asset,quantity);
+  const materialRatio=metrics.capacity>0?Math.min(1,metrics.possibleProduction/metrics.capacity):0;
+  const utilityLimit=factoryUtilityProductionLimit(cid,asset,quantity);
+  if(utilityLimit.status!=='READY'||!(utilityLimit.allowedProduction>1e-9)){
+    factorySetProductionHealth(asset,'STOPPED',0,metrics.capacity,{reason:utilityLimit.reason||'FACTORY_UTILITY_SHORTAGE',utility:utilityLimit});
+    return{status:'BLOCKED',reason:utilityLimit.reason||'FACTORY_UTILITY_SHORTAGE',factoryId:fid,utility:utilityLimit};
   }
-  if(utilityPreview.status!=='READY'||!(quantity>1e-9)){
-    factorySetProductionHealth(asset,'STOPPED',0,metrics.capacity,{reason:utilityPreview.reason||'FACTORY_UTILITY_SHORTAGE',utility:utilityPreview});
-    return{status:'BLOCKED',reason:utilityPreview.reason||'FACTORY_UTILITY_SHORTAGE',factoryId:fid,utility:utilityPreview};
-  }
+  quantity=utilityLimit.allowedProduction;
+  const productionConstraints={rawMaterialRatio:Number(materialRatio.toFixed(6)),
+    workforceRatio:Number((num(gate.workforceRatio)??1).toFixed(6)),
+    electricityRatio:utilityLimit.constraints.electricityRatio,waterRatio:utilityLimit.constraints.waterRatio,
+    utilityRatio:utilityLimit.constraints.utilityRatio,
+    effectiveRatio:metrics.capacity>0?Number((quantity/metrics.capacity).toFixed(6)):0,
+    requiredWorkers:gate.requiredWorkers,workersAvailable:gate.workersAvailable};
   // Recheck batch attribution for the final utility-constrained quantity before scheduling.
   const inputQuantities={};
   for(const row of metrics.inputs){
@@ -2725,6 +2773,7 @@ function startFactoryProductionCycle(input={}){
     factoryType:String(asset.factoryType||asset.type||'').toUpperCase(),recipeId:recipe.recipeId||asset.recipeId||null,
     recipeMode:recipe.recipeMode||'SINGLE_INPUT',primaryInputResourceId:first,productionQuantity:Number(quantity.toFixed(6)),
     capacityPerDay:metrics.capacity,productivityPct:Number((quantity/metrics.capacity*100).toFixed(2)),
+    productionConstraints:clone(productionConstraints),
     inputQuantities,expectedOutputs:Object.fromEntries(Object.entries(recipe.outputs||{}).map(([id,value])=>[id,Number((quantity*(num(value)||0)).toFixed(6))])),
     sourceBatchIds:[],
     inputBatchReservations:[],
@@ -2739,7 +2788,8 @@ function startFactoryProductionCycle(input={}){
   cycle.sourceBatchIds=[...new Set(reserved.reservations.map(row=>String(row.batchId||'')).filter(Boolean))];
   n.factoryProductionCycles[fid]=cycle;
   n.factoryProductionCycleHistory.push(clone(cycle));n.factoryProductionCycleHistory=n.factoryProductionCycleHistory.slice(-MAX_EVENTS);
-  factorySetProductionHealth(asset,quantity+1e-6<metrics.capacity?'REDUCED':'RUNNING',quantity,metrics.capacity,{cycleId:cycle.cycleId});
+  factorySetProductionHealth(asset,quantity+1e-6<metrics.capacity?'REDUCED':'RUNNING',quantity,metrics.capacity,
+    {cycleId:cycle.cycleId,constraints:clone(productionConstraints)});
   asset.activeProductionCycleId=cycle.cycleId;
   emit('OMEGA_FACTORY_PRODUCTION_CYCLE_STARTED',cid,cycle);
   return{status:'IN_PROGRESS',...clone(cycle)};
