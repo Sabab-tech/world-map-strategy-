@@ -854,8 +854,15 @@
       if (!object(resource.inventoryUnits)) resource.inventoryUnits = {};
       resource.inventoryUnits[key.key] = String(input.unit || resource.inventoryUnits[key.key] || 'SIMULATION_RESOURCE_UNIT');
       if (action !== 'ADJUSTMENT_IN') {
+        var inventoryCatalog = g.OmegaResourceIndustrialCatalogData ||
+          (g.Omega && g.Omega.ResourceIndustrialCatalogData) || g.OmegaCountryInventoryCatalogData || {};
+        var sourceContract = inventoryCatalog.externalInputSources &&
+          inventoryCatalog.externalInputSources[pid];
+        var defaultStage = action === 'IMPORT' && sourceContract &&
+          String(sourceContract.sourceSector || '').toUpperCase() === 'INTERNATIONAL_TRADE'
+          ? String(sourceContract.inventoryStage || 'RAW_EXTRACTED') : 'FINISHED';
         var warehouseResult = addToWarehouse(cid, productId, quantity, {
-          stage: input.stage || (action === 'IMPORT' ? 'FINISHED' : 'FINISHED'),
+          stage: input.stage || defaultStage,
           unit: input.unit, sourceCountryId: input.sourceCountryId || cid, action: action
         });
         if (warehouseResult.status !== 'RECORDED') return warehouseResult;
