@@ -602,7 +602,7 @@
         runtimeActivationScope: runtimeRow && runtimeRow.runtimeActivationScope || 'STATIC_COUNTRY_BASELINE',
         factoryRegistryContract: 'OMEGA_COUNTRY_FACTORY_STARTING_REGISTRY_V1',
         authority: 'SIMULATED_COUNTRY_STARTING_INDUSTRY_PROFILE_V1',
-        simulationOnly: true, realWorldFacilityCounts: false, liveProductionAssetsCreated: 0
+        simulationOnly: true, realWorldFacilityCounts: false
       };
     },
     getCountryRealWorldData: function (countryId) {
