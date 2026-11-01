@@ -64,7 +64,7 @@ function build({ baseline, catalog, sites, economyRules }) {
           });
           const remaining = count - allocations.reduce((sum, row) => sum + row.factoryUnits, 0);
           const priority = allocations.slice().sort((a, b) =>
-            b.remainder - a.remainder || a.resourceId.localeCompare(b.resourceId));
+            b.remainder - a.remainder || (a.resourceId < b.resourceId ? -1 : a.resourceId > b.resourceId ? 1 : 0));
           for (let index = 0; index < remaining; index++) {
             allocations.find(row => row.resourceId === priority[index].resourceId).factoryUnits++;
           }
