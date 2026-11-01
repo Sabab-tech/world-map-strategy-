@@ -145,6 +145,10 @@ test('source catalog contract remains exactly 41 resource identities and 21 fact
   assert.equal(policy.startupFactories.reserveQuantityUsedAsWarehouseStock, false);
   assert.equal(policy.startupFactories.maxOneDownstreamAssetPerFactoryTypePerCountry, true);
   assert.equal(policy.bootstrap.neverReplenishAfterInitialization, true);
+  assert.equal(policy.factoryInputStockBaseline.enabled, true);
+  assert.equal(policy.factoryInputStockBaseline.bufferPercent, 40);
+  assert.equal(policy.factoryInputStockBaseline.oneTimeOnly, true);
+  assert.equal(policy.factoryInputStockBaseline.neverUseGeologicalReservesAsStock, true);
 });
 
 test('fresh session seeds bounded opening stock and source-context-driven factories without overwriting saved values', async () => {
@@ -156,7 +160,7 @@ test('fresh session seeds bounded opening stock and source-context-driven factor
   assert.equal(ready.resourceProfileCount, 41);
   assert.equal(ready.factoryProfileCount, 21);
   assert.equal(ready.factoryInputCountryCount, 197);
-  assert.equal(ready.factoryInputProductCount, 66);
+  assert.equal(ready.factoryInputProductCount, 69);
 
   state.resource.BGD.inventoryUnits.natural_gas = 'UNREGISTERED_STOCK_UNIT';
   const committedStockEvents = [];
