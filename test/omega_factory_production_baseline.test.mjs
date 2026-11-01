@@ -1337,3 +1337,35 @@ test('factory workforce shortage scales scheduled production by the actual fille
   assert.equal(result.inputQuantities.iron_concentrate, 12);
   assert.equal(result.inputQuantities.coal_concentrate, 4);
 });
+
+
+test('country utility capacity is reserved and split proportionally across factories in the same turn', () => {
+  const { context, catalog, api } = makeRuntime();
+  const first = makeSteelAsset({ id: 'FAC-STEEL-UTILITY-A' });
+  const second = makeSteelAsset({ id: 'FAC-STEEL-UTILITY-B' });
+  context.Game.state.economy.BGD = {
+    unemploymentCount: 600000, laborForce: 6000000, unemployment_rate: 10,
+    productionAssets: [first, second]
+  };
+  context.Game.state.transport.BGD = { infrastructure: { utilitySupply: {
+    electricityMWhPerDay: catalog.factoryProfiles.STEEL_AND_ALLOY_WORKS.utilities.electricityMWhPerDay,
+    waterM3PerDay: catalog.factoryProfiles.STEEL_AND_ALLOY_WORKS.utilities.waterM3PerDay,
+    authority: 'TEST_FIXTURE', status: 'AVAILABLE', simulationOnly: true, assets: []
+  } } };
+  const a = api.startFactoryProductionCycle({
+    countryId: 'BGD', factoryId: first.id, resourceId: 'iron_concentrate', quantity: 100
+  });
+  const b = api.startFactoryProductionCycle({
+    countryId: 'BGD', factoryId: second.id, resourceId: 'iron_concentrate', quantity: 100
+  });
+  assert.equal(a.status, 'IN_PROGRESS', JSON.stringify(a));
+  assert.equal(b.status, 'IN_PROGRESS', JSON.stringify(b));
+  assert.equal(a.productionQuantity, 50);
+  assert.equal(b.productionQuantity, 50);
+  const reservations = context.Game.state.resource.BGD.industrialNetwork.utilityLedger.turns['1'].reservations;
+  assert.equal(reservations.length, 2);
+  assert.equal(Number(reservations.reduce((sum, row) => sum + row.electricityMWh, 0).toFixed(6)),
+    catalog.factoryProfiles.STEEL_AND_ALLOY_WORKS.utilities.electricityMWhPerDay);
+  assert.equal(Number(reservations.reduce((sum, row) => sum + row.waterM3, 0).toFixed(6)),
+    catalog.factoryProfiles.STEEL_AND_ALLOY_WORKS.utilities.waterM3PerDay);
+});
