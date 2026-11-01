@@ -4545,6 +4545,9 @@ function processPendingFactoryInputs(countryId){
     if(!fid||!asset||completedThisTurn.has(fid))continue;
     const prior=n.factoryProductionCycles[fid];
     if(factoryCycleActive(prior)&&prior.status!=='PAUSED')continue;
+    // A paused cycle may only requisition replacement inputs once its saved finish date is due.
+    // Until then it must not reserve a share of this turn's country-wide warehouse allocation.
+    if(prior?.status==='PAUSED'&&!factoryCycleDue(prior))continue;
     const gate=prior?.status==='PAUSED'?null:factoryOperationGate(cid,asset);
     if(gate&&gate.status!=='READY')continue;
     const first=tok(prior?.primaryInputResourceId||
