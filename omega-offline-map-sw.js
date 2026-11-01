@@ -166,7 +166,7 @@ self.addEventListener("install", event => {
       const refs = /(?:src|href)\s*=\s*["']([^"']+)["']/gi;
       let match;
       while ((match = refs.exec(html)) !== null) {
-        if (isLocalAppUrl(match[1]) && !/\\.json(?:[?#]|$)/i.test(match[1])) assets.add(new URL(match[1], INDEX_URL).href);
+        if (isLocalAppUrl(match[1]) && !String(match[1]).split(/[?#]/, 1)[0].toLowerCase().endsWith(".json")) assets.add(new URL(match[1], INDEX_URL).href);
       }
     }
     // Precache the canonical factory SVG library from its manifest so factory cards
