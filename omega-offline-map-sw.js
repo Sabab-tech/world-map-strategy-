@@ -163,14 +163,14 @@ self.addEventListener("install", event => {
     if (htmlResponse && htmlResponse.ok) {
       await cache.put(APP_BASE.href, htmlResponse.clone());
       const html = await htmlResponse.text();
-      const refs = /(?:src|href)\\s*=\\s*["']([^"']+)["']/gi;
+      const refs = /(?:src|href)\s*=\s*["']([^"']+)["']/gi;
       let match;
       while ((match = refs.exec(html)) !== null) {
         if (isLocalAppUrl(match[1])) assets.add(new URL(match[1], INDEX_URL).href);
       }
     }
-    // Keep every existing offline asset and factory/resource icon contract, but never
-    // launch one request per asset at once. The worker pool caps simultaneous fetches.
+    // Precache the canonical factory SVG library from its manifest so factory cards
+    // remain fully illustrated after an offline relaunch. Never synthesize new icons.
     const factoryIconManifestUrl = new URL("./assets/omega-industrial-icons-v1/manifest.json", APP_BASE).href;
     assets.add(factoryIconManifestUrl);
     const factoryIconManifestResponse = await fetchAndCache(cache, factoryIconManifestUrl);
@@ -180,17 +180,23 @@ self.addEventListener("install", event => {
         const factoryIcons = Array.isArray(factoryIconManifest.factories) ? factoryIconManifest.factories : [];
         for (const icon of factoryIcons) {
           const file = String(icon && icon.file || "");
-          if (/^factories\\/[a-z0-9-]+\\.svg$/.test(file)) assets.add(new URL("./assets/omega-industrial-icons-v1/" + file, APP_BASE).href);
+          if (/^factories\/[a-z0-9-]+\.svg$/.test(file)) {
+            assets.add(new URL("./assets/omega-industrial-icons-v1/" + file, APP_BASE).href);
+          }
         }
         const resourceIcons = Array.isArray(factoryIconManifest.resources) ? factoryIconManifest.resources : [];
         for (const icon of resourceIcons) {
           const file = String(icon && icon.file || "");
-          if (/^resources\\/[a-z0-9-]+\\.svg$/.test(file)) assets.add(new URL("./assets/omega-industrial-icons-v1/" + file, APP_BASE).href);
+          if (/^resources\/[a-z0-9-]+\.svg$/.test(file)) {
+            assets.add(new URL("./assets/omega-industrial-icons-v1/" + file, APP_BASE).href);
+          }
         }
         const transportVariants = Array.isArray(factoryIconManifest.transportVariants) ? factoryIconManifest.transportVariants : [];
         for (const icon of transportVariants) {
           const file = String(icon && icon.file || "");
-          if (/^transport\\/variants\\/[a-z0-9-]+\\.svg$/.test(file)) assets.add(new URL("./assets/omega-industrial-icons-v1/" + file, APP_BASE).href);
+          if (/^transport\/variants\/[a-z0-9-]+\.svg$/.test(file)) {
+            assets.add(new URL("./assets/omega-industrial-icons-v1/" + file, APP_BASE).href);
+          }
         }
       } catch (_) {
         // A malformed optional icon manifest must not prevent the shell from installing.
