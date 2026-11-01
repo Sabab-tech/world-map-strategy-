@@ -6,6 +6,7 @@ on:
     paths:
       - 'country_factory_starting_baseline_v1.json'
       - 'country_factory_input_inventory_baseline_v1.json'
+      - 'resource_startup_baseline_rules_v1.json'
       - 'scripts/build_country_factory_input_inventory_baseline_v1.mjs'
       - 'omega_resource_startup_baseline_v1.js'
       - 'test/omega_resource_startup_baseline_v1.test.mjs'
