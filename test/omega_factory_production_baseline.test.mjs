@@ -7,7 +7,7 @@ const readJson = name => JSON.parse(fs.readFileSync(new URL('../' + name, import
 const readText = name => fs.readFileSync(new URL('../' + name, import.meta.url), 'utf8');
 const token = value => String(value ?? '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
 
-function makeRuntime() {
+function makeRuntime(runtimeFile = 'omega_resource_industrial_network_v1.js') {
   const catalog = readJson('resource_industrial_catalog_v1.json');
   const bus = { listeners: new Map(),
     addEventListener(type, fn) { const rows = this.listeners.get(type) || []; rows.push(fn); this.listeners.set(type, rows); },
@@ -24,7 +24,7 @@ function makeRuntime() {
   };
   context.globalThis = context;
   vm.createContext(context);
-  vm.runInContext(readText('omega_resource_industrial_network_v1.js'), context,
+  vm.runInContext(readText(runtimeFile), context,
     { filename: 'omega_resource_industrial_network_v1.js' });
   return { context, catalog, api: context.Omega.ResourceIndustrialNetwork };
 }
@@ -1387,4 +1387,51 @@ test('scarce country workforce is shared proportionally across unequal factory o
   api.reconcileFactoryEmployment('BGD');
   assert.equal(first.employment.jobsFilled + second.employment.jobsFilled, 1000);
   assert.equal(context.Game.state.economy.BGD.unemploymentCount, 0);
+});
+
+
+test('legacy and primary factory runtimes reserve shared utilities before another factory can claim them', () => {
+  for (const runtimeFile of [
+    'omega_resource_industrial_network_v1.js',
+    'legacy-ui/2026-10-24/omega_resource_industrial_network_v1.js'
+  ]) {
+    const { context, catalog, api } = makeRuntime(runtimeFile);
+    const profile = catalog.factoryProfiles.STEEL_AND_ALLOY_WORKS;
+    const first = makeSteelAsset({ id: 'FAC-STEEL-UTILITY-A' });
+    const second = makeSteelAsset({
+      id: 'FAC-STEEL-UTILITY-B',
+      inputBatchLots: makeSteelAsset().inputBatchLots.map((lot, index) => ({
+        ...lot, batchId: lot.batchId + '-B', sourceBatchIds: ['MINE-B-' + index]
+      }))
+    });
+    context.Game.state.economy.BGD = {
+      unemploymentCount: profile.employment.jobsPerFactory * 2,
+      laborForce: 6000000, unemployment_rate: 10,
+      productionAssets: [first, second]
+    };
+    context.Game.state.transport.BGD = { infrastructure: { utilitySupply: {
+      electricityMWhPerDay: Number((profile.utilities.electricityMWhPerDay * 0.5).toFixed(6)),
+      waterM3PerDay: profile.utilities.waterM3PerDay,
+      authority: 'TEST_FIXTURE', status: 'AVAILABLE', simulationOnly: true, assets: []
+    } } };
+    api.reconcileFactoryEmployment('BGD');
+    const a = api.startFactoryProductionCycle({
+      countryId: 'BGD', factoryId: first.id, resourceId: 'iron_concentrate', quantity: 100
+    });
+    const b = api.startFactoryProductionCycle({
+      countryId: 'BGD', factoryId: second.id, resourceId: 'iron_concentrate', quantity: 100
+    });
+    assert.equal(a.status, 'IN_PROGRESS', runtimeFile + ': first factory should start');
+    assert.ok(a.productionQuantity <= 50.000001, runtimeFile + ': first factory must respect its proportional power limit');
+    assert.equal(b.status, 'BLOCKED', runtimeFile + ': second factory must not reuse the first factory reserved electricity');
+    assert.equal(b.reason, 'FACTORY_UTILITY_SHORTAGE',
+      runtimeFile + ': second factory should report the exhausted utility pool');
+    const ledger = context.Game.state.resource.BGD.industrialNetwork?.utilityLedger;
+    const bucket = ledger?.turns?.['1'];
+    assert.ok(bucket, runtimeFile + ': utility ledger bucket must be recorded');
+    assert.equal(bucket.reservations.length, 1, runtimeFile + ': exactly one cycle utility reservation must exist');
+    const reservedPower = bucket.reservations.reduce((sum, row) => sum + row.electricityMWh, 0);
+    assert.ok(reservedPower <= profile.utilities.electricityMWhPerDay * 0.5 + 1e-6,
+      runtimeFile + ': total reserved electricity must never exceed country supply');
+  }
 });
