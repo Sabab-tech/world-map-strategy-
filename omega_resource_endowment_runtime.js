@@ -2158,7 +2158,7 @@ function batchFromExtraction(x,record){
       supplementalResourceDataReport=report;
       // Rebuild only transient reference caches so already-hydrated player-country
       // sites can pick up enrichment without changing any save-owned quantities.
-      try{mineSiteReferenceCache.clear();siteExecutionRowsCache.clear();siteExecutionRowsCacheTurn=-1;}catch(_){}
+      try{profileCache.clear();mineSiteReferenceCache.clear();siteExecutionRowsCache.clear();siteExecutionRowsCacheTurn=-1;}catch(_){}
       g.OmegaResourceSupplementalDataReport=clone(report);
       g.Omega=g.Omega||{};
       g.Omega.ResourceSupplementalDataReport=g.OmegaResourceSupplementalDataReport;
