@@ -87,15 +87,15 @@ test('country gateway startup does not initialize the large General Data registr
   const initStart = source.indexOf('async function init()');
   const initEnd = source.indexOf('root.OmegaCountryDataGateway=', initStart);
   const startup = source.slice(initStart, initEnd);
-  assert.doesNotMatch(startup, /general\\(\\)\\?\\.init|loadGeneralData\\(/);
-  assert.match(source, /async function loadGeneralData\\(\\)/);
-  assert.match(source, /getSourceDataset\\?\\.\\('country_general_data_registry_v1\\.json'\\)/);
+  assert.doesNotMatch(startup, /general\(\)\?\.init|loadGeneralData\(/);
+  assert.match(source, /async function loadGeneralData\(\)/);
+  assert.ok(source.includes("getSourceDataset?.('country_general_data_registry_v1.json')"));
 });
 test('ministry overview UI requests General Data only when the overview is rendered', async () => {
   const source = await read('omega_country_general_data_loader_v1.js');
   assert.match(source, /installMinistryOverview/);
-  assert.match(source, /ui\\.renderCountryOverview=function\\(\\)/);
-  assert.match(source, /if\\(ready\\)ui\\.renderCountryOverview\\(\\)/);
+  assert.ok(source.includes('ui.renderCountryOverview=function(){'));
+  assert.ok(source.includes('if(ready)ui.renderCountryOverview();'));
 });
  
 test('strategic profile chapter requests its shared dataset and refreshes only while still selected', async () => {
@@ -130,7 +130,7 @@ test('service worker precache preserves offline datasets and bounds concurrent d
   assert.match(source, /omega_ui_photo_asset_catalog_v1\.json/);
   assert.match(source, /resource_site_country_mineplay_batch_20261020_v1\.json/);
   assert.match(source, /omega_ui_v2\/omega-ui-v2\.css/);
-  assert.doesNotMatch(source, /country_general_data_registry_v1\.json/);
+  assert.match(source, /country_general_data_registry_v1\.json/);
   assert.ok(source.includes('endsWith(".json")'), "HTML-discovered JSON datasets must remain demand-cached");
 
 });
