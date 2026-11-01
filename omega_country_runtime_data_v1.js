@@ -4,7 +4,7 @@
  */
 (function (root) {
   'use strict';
-  const state = { ready:false, settled:false, error:null, promise:null, profiles:[], extras:new Map(), byCode:new Map(), byIso3:new Map(), byNumeric:new Map(), aliases:new Map(), cities:new Map(), legacyEconomy:{}, legacyPopulation:{}, datasets:new Map(), datasetPromises:new Map(), strategicProfiles:new Map(), strategicProfileDiagnostics:{available:false,profileCount:0,error:'NOT_LOADED_UNTIL_REQUESTED'} };
+  const state = { ready:false, settled:false, error:null, promise:null, profiles:[], extras:new Map(), byCode:new Map(), byIso3:new Map(), byNumeric:new Map(), aliases:new Map(), cities:new Map(), legacyEconomy:{}, legacyPopulation:{}, datasets:new Map(), datasetPromises:new Map(), generalRowsByAlias:new Map(), strategicProfiles:new Map(), strategicProfileDiagnostics:{available:false,profileCount:0,error:'NOT_LOADED_UNTIL_REQUESTED'} };
   const s = v => String(v == null ? '' : v).trim();
   const norm = v => s(v).normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/&/g, ' AND ').replace(/[_’'`-]+/g, ' ').replace(/[^A-Z0-9]+/gi, ' ').trim().toUpperCase().replace(/\s+/g, ' ');
   const fixedAliases = {
@@ -161,16 +161,18 @@
   }
   function buildStrategicProfiles(registry) {
     const profiles = new Map();
+    const generalRows = new Map();
     const schema = registry && registry.metadata && registry.metadata.recordSchema;
     const identityFields = schema && Array.isArray(schema.identityFields) ? schema.identityFields : [];
     const strategicFields = schema && Array.isArray(schema.strategicProfileFields) ? schema.strategicProfileFields : [];
-    if (!registry || !Array.isArray(registry.countries) || !identityFields.length || !strategicFields.length) {
+    if (!registry || !Array.isArray(registry.countries) || !identityFields.length) {
       return {
         profiles,
+        generalRows,
         diagnostics: {
           available:false,
           profileCount:0,
-          error:'STRATEGIC_PROFILE_REGISTRY_MISSING_OR_SCHEMA_UNAVAILABLE',
+          error:'COUNTRY_GENERAL_DATA_IDENTITY_SCHEMA_UNAVAILABLE',
           expectedSource:'country_general_data_registry_v1.json'
         }
       };
@@ -186,11 +188,18 @@
     let validProfileCount = 0;
     for (const row of registry.countries) {
       const identityRow = row && row.identity;
+      // Build one canonical country alias index for both the country runtime and
+      // General Data screens. Keep all records, including rows without strategic data.
+      for (const field of identityFields) {
+        const alias = fieldValue(identityFields, identityRow, field);
+        const key = norm(alias);
+        if (key && !generalRows.has(key)) generalRows.set(key, row);
+      }
       const iso2 = String(fieldValue(identityFields, identityRow, 'iso2') || fieldValue(identityFields, identityRow, 'code') || '').trim().toUpperCase();
       const iso3 = String(fieldValue(identityFields, identityRow, 'iso3') || '').trim().toUpperCase();
       const profileRow = row && row.strategicProfile;
       let profile = null;
-      if (Array.isArray(profileRow)) {
+      if (Array.isArray(profileRow) && strategicFields.length) {
         profile = Object.fromEntries(strategicFields.map((key, index) => [key, profileRow[index] === undefined ? null : profileRow[index]]));
       } else if (profileRow && typeof profileRow === 'object' && !Array.isArray(profileRow)) {
         profile = Object.assign({}, profileRow);
@@ -207,10 +216,12 @@
     }
     return {
       profiles,
+      generalRows,
       diagnostics: {
         available:profiles.size > 0,
         profileCount:validProfileCount,
         indexEntryCount:profiles.size,
+        generalCountryAliasCount:generalRows.size,
         invalidRows,
         sourceId:'country_general_data_registry_v1.json',
         schemaVersion:registry.metadata.schemaVersion || null,
@@ -225,6 +236,25 @@
     if (!identity) return null;
     return state.strategicProfiles.get(String(identity.countryCode || '').toUpperCase()) ||
       (identity.iso3 ? state.strategicProfiles.get(String(identity.iso3).toUpperCase()) : null) || null;
+  }
+
+  function getCountryGeneralDataRow(value) {
+    const identity = resolveCountry(value);
+    const inputs = value && typeof value === 'object'
+      ? [value.countryCode,value.iso2,value.iso3,value.countryId,value.country_id,value.code,value.name]
+      : [value];
+    if(identity)inputs.push(identity.countryCode,identity.iso3,identity.name,identity.officialName,identity.economyKey);
+    for(const input of inputs){
+      const key=norm(input);
+      if(key){
+        const row=state.generalRowsByAlias.get(key);
+        if(row)return row;
+      }
+    }
+    return null;
+  }
+  function getCountryGeneralDataIndexSize() {
+    return state.generalRowsByAlias.size;
   }
 
   function getProfile(value) {
@@ -301,6 +331,7 @@
       if(key==='country_general_data_registry_v1.json'){
         const strategicIndex=buildStrategicProfiles(data);
         state.strategicProfiles=strategicIndex.profiles;
+        state.generalRowsByAlias=strategicIndex.generalRows;
         state.strategicProfileDiagnostics=strategicIndex.diagnostics;
       }
       return data;
@@ -313,5 +344,5 @@
     return getStrategicProfile(value);
   }
   function getSourceDataset(id){return state.datasets.get(String(id||'').trim())||null;}
-  root.OmegaCountryRuntimeData=Object.freeze({version:'1.4.0',init,ready:init(),isReady:()=>state.ready,isSettled:()=>state.settled,resolveCountry,flagFor,getProfile,getStrategicProfile,getStrategicProfileAsync,getRecord,getLiveRecord,loadSourceDataset,getSourceDataset,getCapital,getCities,diagnostics,listProfiles});
+  root.OmegaCountryRuntimeData=Object.freeze({version:'1.4.0',init,ready:init(),isReady:()=>state.ready,isSettled:()=>state.settled,resolveCountry,flagFor,getProfile,getStrategicProfile,getStrategicProfileAsync,getCountryGeneralDataRow,getCountryGeneralDataIndexSize,getRecord,getLiveRecord,loadSourceDataset,getSourceDataset,getCapital,getCities,diagnostics,listProfiles});
 })(window);
