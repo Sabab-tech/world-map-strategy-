@@ -153,7 +153,7 @@ test('source catalog contract remains exactly 41 resource identities and 21 fact
 
 test('fresh session seeds bounded opening stock and source-context-driven factories without overwriting saved values', async () => {
   const state = makeState();
-  const { context, api, emittedEvents } = makeHarness(state);
+  const { context, api, emittedEvents, emitSimulationEvent } = makeHarness(state);
   const ready = await api.ready;
   assert.equal(ready.status, 'READY');
   assert.equal(ready.countryCount, 249);
@@ -326,7 +326,7 @@ test('fresh session seeds bounded opening stock and source-context-driven factor
 
 test('metadata-only resources stay unknown unless an existing factory input supplies a modeled rate', async () => {
   const state = makeState();
-  const { context, api } = makeHarness(state);
+  const { context, api, emitSimulationEvent } = makeHarness(state);
   await api.ready;
   emitSimulationEvent('OMEGA_GAME_SESSION_CREATED', {
     session: JSON.parse(JSON.stringify(state.simulation.session))
@@ -351,7 +351,7 @@ test('metadata-only resources stay unknown unless an existing factory input supp
 
 test('repeated startup calls and depletion after initialization never replenish or duplicate opening assets', async () => {
   const state = makeState();
-  const { context, api } = makeHarness(state);
+  const { context, api, emitSimulationEvent } = makeHarness(state);
   await api.ready;
   const session = JSON.parse(JSON.stringify(state.simulation.session));
   emitSimulationEvent('OMEGA_GAME_SESSION_CREATED', { session });
@@ -390,7 +390,7 @@ test('mid-game and late-save sessions are skipped rather than given a fresh star
       }
     }
   });
-  const { context, api } = makeHarness(state);
+  const { context, api, emitSimulationEvent } = makeHarness(state);
   await api.ready;
   emitSimulationEvent('OMEGA_GAME_SESSION_CREATED', {
     session: JSON.parse(JSON.stringify(state.simulation.session))
