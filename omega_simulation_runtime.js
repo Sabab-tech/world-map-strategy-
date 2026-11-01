@@ -57,20 +57,20 @@
     return out;
   }
 
-  function stableStringify(value){
+  function stableStringify(value,omitRootChecksum=false){
     if(value===null)return 'null';
     if(value===undefined)return 'null';
     if(value instanceof Date)return JSON.stringify(value.toISOString());
     if(typeof value!=='object')return JSON.stringify(value);
-    if(Array.isArray(value))return '['+value.map(stableStringify).join(',')+']';
-    return '{'+Object.keys(value).filter(key=>key!=='__proto__'&&key!=='constructor'&&typeof value[key]!=='function'&&value[key]!==undefined).sort()
+    if(Array.isArray(value))return '['+value.map(item=>stableStringify(item)).join(',')+']';
+    return '{'+Object.keys(value).filter(key=>key!=='__proto__'&&key!=='constructor'&&
+      !(omitRootChecksum&&key==='checksum')&&typeof value[key]!=='function'&&value[key]!==undefined).sort()
       .map(key=>JSON.stringify(key)+':'+stableStringify(value[key])).join(',')+'}';
   }
 
   function checksumSnapshot(value){
-    const payload=clone(value||{});
-    if(payload&&typeof payload==='object')delete payload.checksum;
-    const text=stableStringify(payload);
+    // Exclude only the top-level checksum without cloning the full snapshot.
+    const text=stableStringify(value||{},true);
     let hash=2166136261;
     for(let i=0;i<text.length;i++){hash^=text.charCodeAt(i);hash=Math.imul(hash,16777619);}
     return (hash>>>0).toString(16).padStart(8,'0');
@@ -921,7 +921,7 @@
       return this.commandQueue.enqueue(row);
     }
 
-    saveState(){
+    saveState(options={}){
       const snapshot={
         schemaVersion:SESSION_VERSION,
         runtimeVersion:VERSION,
@@ -932,9 +932,11 @@
         events:this.events.snapshot(),
         ministryRuntime:this.ministryRuntime?.saveState?.()||null,
         interoperability:this.interoperability?.saveState?.()||null,
-        worldEngine:this.worldEngine?.exportSaveState?.({authoritativeState:true})||null,
-        diagnostics:this.diagnostics()
+        worldEngine:this.worldEngine?.exportSaveState?.({authoritativeState:true})||null
       };
+      // Volatile diagnostics duplicate large participant results already held in
+      // runtime memory. Callers can omit them from routine durable autosaves.
+      if(options.includeDiagnostics!==false)snapshot.diagnostics=this.diagnostics();
       snapshot.checksum=checksumSnapshot(snapshot);
       return snapshot;
     }

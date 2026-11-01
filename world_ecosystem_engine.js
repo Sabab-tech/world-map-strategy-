@@ -397,17 +397,23 @@ const GLOBAL_MARKET = {};
     // 7. DETERMINISTIC SAVE / LOAD STATE CONTRACT
     // -------------------------------------------------------------------------
     function exportSaveState(saveMetadata = {}) {
-        return {
+        const snapshot = {
             engineVersion: "1.0.0",
             savedAt: new Date().toISOString(),
             currentSimulationTick,
             causalLogCounter,
-            globalMarket: JSON.parse(JSON.stringify(GLOBAL_MARKET)),
             registeredCountries: Object.keys(stateRegistry),
-            stateRegistry: JSON.parse(JSON.stringify(stateRegistry)),
-            causalEventLog: JSON.parse(JSON.stringify(causalEventLog)),
             metadata: saveMetadata
         };
+        // The simulation snapshot already contains worldEcosystem.market,
+        // countryProfiles and causalEventLog. Do not clone those large objects
+        // a second time when the caller is saving the authoritative world root.
+        if (saveMetadata.authoritativeState !== true) {
+            snapshot.globalMarket = JSON.parse(JSON.stringify(GLOBAL_MARKET));
+            snapshot.stateRegistry = JSON.parse(JSON.stringify(stateRegistry));
+            snapshot.causalEventLog = JSON.parse(JSON.stringify(causalEventLog));
+        }
+        return snapshot;
     }
 
     function importSaveState(saveObj) {
