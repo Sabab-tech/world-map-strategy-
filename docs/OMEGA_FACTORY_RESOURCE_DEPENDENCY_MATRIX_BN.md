@@ -100,7 +100,7 @@ Processing yield-এ residue, tailings, dust ও loss-ও আলাদা output
 | wool_fibre | Livestock & Agriculture | recorded sector batch required; stock auto-generate নয় |
 | silica_sand | International Trade | import-only until a domestic site is registered; recorded import batch required; stock auto-generate নয় |
 
-Import entry-র জন্য existing country-inventory `importProduct()` transaction path ব্যবহার হবে। Import contract নিজে কোনো পরিমাণ তৈরি করে না; actual settled/recorded import transaction-ই warehouse batch যোগ করবে।
+Import entry-র জন্য existing country-inventory `importProduct()` transaction path ব্যবহার হবে। silica sand contract-এ `inventoryStage: RAW_EXTRACTED` নির্ধারিত; তাই stage না-দিলে runtime batch-টিকে Raw Warehouse-এ রাখে। আন্তর্জাতিক trade settlement-এও source batch-এর raw/processed stage অনুসারে destination warehouse বেছে নেওয়া হয়। Import contract নিজে কোনো পরিমাণ তৈরি করে না; actual settled/recorded import transaction-ই warehouse batch যোগ করবে।
 
 ## ৪. Runtime connection এবং safety
 
