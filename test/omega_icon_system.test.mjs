@@ -14,8 +14,12 @@ const icons = iconContext.window.OMEGA_ICON_SYSTEM_V1;
 
 test('custom icon system is wired locally before active runtime and has no remote runtime dependency', () => {
   const html = read('index.html');
-  assert.doesNotMatch(html, /<link[^>]+href="omega_icon_system_v1\.css"/i, 'legacy icon stylesheet remains inactive');
+  assert.match(html, /<link\b(?=[^>]*rel=["']stylesheet["'])[^>]*href=["']omega_icon_system_v1\.css["'][^>]*>/i, 'SVG icon stylesheet must be loaded by the production shell');
   assert.ok(fs.existsSync(path.join(root, 'omega_icon_system_v1.css')), 'legacy icon CSS file remains on disk');
+  const serviceWorker = read('omega-offline-map-sw.js');
+  assert.match(serviceWorker, /omega-offline-atlas-shell-v67/);
+  const coreAssets = serviceWorker.slice(serviceWorker.indexOf('const CORE_ASSETS'), serviceWorker.indexOf('];', serviceWorker.indexOf('const CORE_ASSETS')));
+  assert.ok(coreAssets.includes('"./omega_icon_system_v1.css"'), 'SVG icon stylesheet must be precached for offline relaunch');
   assert.match(html, /omega_ui_v2\/omega-ui-v2\.css/);
   assert.match(html, /src="omega_icon_system_v1\.js"/);
   assert.ok(html.indexOf('omega_icon_system_v1.css') < html.indexOf('</head>'));

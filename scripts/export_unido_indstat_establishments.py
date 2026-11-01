@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Export exact ISIC Rev.4 establishment rows from the public UNIDO INDSTAT mirror.
+"""Export recent, exact ISIC Rev.4 establishment rows from the UNIDO INDSTAT mirror.
 
-Custom ISIC combination rows are counted for audit but excluded from activity
-totals, because an aggregate across multiple classes cannot safely be assigned
-to one OMEGA factory type.
+Only the latest 10-year reporting window is retained. Custom ISIC combination
+rows are counted for audit but excluded because an aggregate cannot safely be
+assigned to one OMEGA factory type.
 """
 from __future__ import annotations
 
@@ -15,6 +15,8 @@ import subsetsio
 
 DATASET_ID = "unido-indstat-r4"
 MAPPING_PATH = Path(__file__).resolve().parent.parent / "factory_isic_mapping_v1.json"
+MIN_YEAR = 2015
+MAX_YEAR = 2024
 
 
 def mapped_activity_codes() -> list[str]:
@@ -47,7 +49,7 @@ SELECT
   value
 FROM "{DATASET_ID}"
 WHERE indicator_code = '01'
-  AND TRY_CAST(year AS INTEGER) BETWEEN 1981 AND 2024
+  AND TRY_CAST(year AS INTEGER) BETWEEN {MIN_YEAR} AND {MAX_YEAR}
   AND classification_code IN ({literals})
   AND (classification_combo_code IS NULL OR classification_combo_code = classification_code)
 """
@@ -59,7 +61,7 @@ def count_excluded_combinations(codes: list[str]) -> int:
 SELECT COUNT(*) AS row_count
 FROM "{DATASET_ID}"
 WHERE indicator_code = '01'
-  AND TRY_CAST(year AS INTEGER) BETWEEN 1981 AND 2024
+  AND TRY_CAST(year AS INTEGER) BETWEEN {MIN_YEAR} AND {MAX_YEAR}
   AND classification_code IN ({literals})
   AND classification_combo_code <> classification_code
 """
@@ -112,7 +114,7 @@ def main() -> int:
         "title": info.get("title", "Industrial Statistics - ISIC Revision 4 Manufacturing Indicators"),
         "excluded_combined_activity_rows": excluded_combinations,
         "query_activity_codes": codes,
-        "query_year_range": [1981, 2024],
+        "query_year_range": [MIN_YEAR, MAX_YEAR],
         "query_classification_policy": "classification_code = classification_combo_code"
     }
     payload = {"metadata": metadata, "rows": records}
