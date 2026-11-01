@@ -88,6 +88,7 @@ test('every catalog resource and every registered deposit resource has an execut
   assert.ok(silicaSandImport,'silica sand must have an explicit supply route while no domestic site is recorded');
   assert.equal(silicaSandImport.sourceSector,'INTERNATIONAL_TRADE');
   assert.equal(silicaSandImport.sourceAuthority,'IMPORTED_MINERAL_BATCH_REQUIRED');
+  assert.equal(silicaSandImport.inventoryStage,'RAW_EXTRACTED');
   assert.equal(silicaSandImport.requiresRecordedBatch,true);
   assert.equal(silicaSandImport.autoGenerateStock,false);
   const unusable=[];
