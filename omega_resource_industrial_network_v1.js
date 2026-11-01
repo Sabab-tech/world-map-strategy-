@@ -5021,14 +5021,39 @@ function reconcileFactoryEmployment(countryId){
     (asset?.commissionedTurn!==undefined||asset?.factoryType||asset?.type));
   operational.sort((a,b)=>(num(a.commissionedTurn)??num(a.createdTurn)??0)-(num(b.commissionedTurn)??num(b.createdTurn)??0)||
     String(a.id||a.assetId||a.factoryId||a.projectId||'').localeCompare(String(b.id||b.assetId||b.factoryId||b.projectId||'')));
-  let totalSupported=0,totalFilled=0,remaining=baseline;
+  const staffingRows=operational.map(asset=>{
+    const id=String(asset.id||asset.assetId||asset.factoryId||asset.projectId||'').trim();
+    const type=String(asset.factoryType||asset.type||asset.facilityType||'').toUpperCase(),profile=profiles[type]||{};
+    const jobsRaw=num(profile.employment?.jobsPerFactory??asset.employmentProfile?.jobsPerFactory??asset.employment?.jobsSupported);
+    return{id,supported:jobsRaw!==null&&jobsRaw>0?Math.floor(jobsRaw):0};
+  }).filter(row=>row.id);
+  const totalStaffingDemand=staffingRows.reduce((sum,row)=>sum+row.supported,0);
+  const staffingBudget=baseline===null?0:Math.min(Math.max(0,baseline),totalStaffingDemand);
+  const filledByFactory=new Map();let allocatedWorkers=0;
+  for(const row of staffingRows){
+    const exact=totalStaffingDemand>0?staffingBudget*row.supported/totalStaffingDemand:0;
+    const filled=Math.min(row.supported,Math.floor(exact));
+    filledByFactory.set(row.id,filled);allocatedWorkers+=filled;
+  }
+  let staffingRemainder=Math.max(0,staffingBudget-allocatedWorkers);
+  const remainderOrder=staffingRows.slice().sort((a,b)=>{
+    const shareA=totalStaffingDemand>0?staffingBudget*a.supported/totalStaffingDemand:0;
+    const shareB=totalStaffingDemand>0?staffingBudget*b.supported/totalStaffingDemand:0;
+    return (shareB-Math.floor(shareB))-(shareA-Math.floor(shareA))||a.id.localeCompare(b.id);
+  });
+  for(const row of remainderOrder){
+    if(staffingRemainder<=0)break;
+    const filled=filledByFactory.get(row.id)||0;
+    if(filled<row.supported){filledByFactory.set(row.id,filled+1);staffingRemainder--;}
+  }
+  let totalSupported=0,totalFilled=0;
   for(const asset of operational){
     const id=String(asset.id||asset.assetId||asset.factoryId||asset.projectId||'').trim();if(!id)continue;
     const type=String(asset.factoryType||asset.type||asset.facilityType||'').toUpperCase(),profile=profiles[type]||{};
     const jobsRaw=num(profile.employment?.jobsPerFactory??asset.employmentProfile?.jobsPerFactory??asset.employment?.jobsSupported);
     const supported=jobsRaw!==null&&jobsRaw>0?Math.floor(jobsRaw):0;
-    const filled=remaining===null?0:Math.min(supported,Math.max(0,Math.floor(remaining))),open=supported-filled;
-    remaining=remaining===null?null:Math.max(0,remaining-filled);totalSupported+=supported;totalFilled+=filled;
+    const filled=filledByFactory.get(id)||0,open=supported-filled;
+    totalSupported+=supported;totalFilled+=filled;
     const record={factoryId:id,factoryType:type,jobsSupported:supported,jobsFilled:filled,vacancies:open,
       status:supported===0?'EMPLOYMENT_PROFILE_MISSING':open===0?'FULLY_STAFFED':'PARTIALLY_STAFFED',
       authority:profile.employmentAuthority||profile.employment?.authority||'UNDECLARED',simulationOnly:true,lastReconciledTurn:turn()};
