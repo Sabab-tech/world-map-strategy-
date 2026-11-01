@@ -2363,6 +2363,8 @@
     "STEEL_AND_ALLOY_WORKS": {
       "factoryType": "STEEL_AND_ALLOY_WORKS",
       "name": "Steel and Alloy Works",
+      "recipeIds": ["STEEL_PRIMARY_ROUTE_V1"],
+      "defaultRecipeId": "STEEL_PRIMARY_ROUTE_V1",
       "category": "METALS_AND_ALLOYS",
       "iconId": "steelworks",
       "constructionCost": 18000,
@@ -2428,6 +2430,8 @@
     "NON_FERROUS_METAL_SMELTER": {
       "factoryType": "NON_FERROUS_METAL_SMELTER",
       "name": "Non-Ferrous Metal Smelter",
+      "recipeIds": ["NONFERROUS_COPPER_ROUTE_V1","NONFERROUS_ALUMINUM_ROUTE_V1"],
+      "defaultRecipeId": "NONFERROUS_COPPER_ROUTE_V1",
       "category": "METALS_AND_ALLOYS",
       "iconId": "smelter",
       "constructionCost": 16000,
@@ -2496,6 +2500,8 @@
     "PETROCHEMICAL_POLYMER_PLANT": {
       "factoryType": "PETROCHEMICAL_POLYMER_PLANT",
       "name": "Petrochemical, Plastics and Polymers",
+      "recipeIds": ["PETROCHEMICAL_POLYMER_ROUTE_V1"],
+      "defaultRecipeId": "PETROCHEMICAL_POLYMER_ROUTE_V1",
       "category": "CHEMICALS_AND_POLYMERS",
       "iconId": "petrochemical-plant",
       "constructionCost": 24000,
@@ -2561,6 +2567,8 @@
     "FERTILIZER_CHEMICAL_PLANT": {
       "factoryType": "FERTILIZER_CHEMICAL_PLANT",
       "name": "Fertilizer and Agrochemicals",
+      "recipeIds": ["FERTILIZER_ROUTE_V1"],
+      "defaultRecipeId": "FERTILIZER_ROUTE_V1",
       "category": "AGRICULTURE_AND_FOOD",
       "iconId": "fertilizer-plant",
       "constructionCost": 14000,
@@ -2627,6 +2635,8 @@
     "INDUSTRIAL_CHEMICALS_GAS_PLANT": {
       "factoryType": "INDUSTRIAL_CHEMICALS_GAS_PLANT",
       "name": "Industrial Chemicals and Gases",
+      "recipeIds": ["INDUSTRIAL_CHEMICALS_ROUTE_V1"],
+      "defaultRecipeId": "INDUSTRIAL_CHEMICALS_ROUTE_V1",
       "category": "CHEMICALS_AND_POLYMERS",
       "iconId": "chemical-plant",
       "constructionCost": 19000,
@@ -2693,6 +2703,8 @@
     "CEMENT_CONCRETE_PLANT": {
       "factoryType": "CEMENT_CONCRETE_PLANT",
       "name": "Cement and Concrete Works",
+      "recipeIds": ["CEMENT_CONCRETE_ROUTE_V1"],
+      "defaultRecipeId": "CEMENT_CONCRETE_ROUTE_V1",
       "category": "CONSTRUCTION_AND_GLASS",
       "iconId": "cement-plant",
       "constructionCost": 10000,
@@ -2756,6 +2768,8 @@
     "GLASS_CERAMICS_PLANT": {
       "factoryType": "GLASS_CERAMICS_PLANT",
       "name": "Glass and Ceramics Works",
+      "recipeIds": ["GLASS_CERAMICS_ROUTE_V1"],
+      "defaultRecipeId": "GLASS_CERAMICS_ROUTE_V1",
       "category": "CONSTRUCTION_AND_GLASS",
       "iconId": "glass-ceramic-plant",
       "constructionCost": 12500,
@@ -2820,6 +2834,8 @@
     "PAPER_PACKAGING_MILL": {
       "factoryType": "PAPER_PACKAGING_MILL",
       "name": "Paper and Packaging Mill",
+      "recipeIds": ["PAPER_PACKAGING_ROUTE_V1"],
+      "defaultRecipeId": "PAPER_PACKAGING_ROUTE_V1",
       "category": "PAPER_AND_PACKAGING",
       "iconId": "paper-mill",
       "constructionCost": 9000,
@@ -2884,6 +2900,8 @@
     "FOOD_PROCESSING_COLD_CHAIN": {
       "factoryType": "FOOD_PROCESSING_COLD_CHAIN",
       "name": "Food Processing and Cold Chain",
+      "recipeIds": ["FOOD_PROCESSING_ROUTE_V1"],
+      "defaultRecipeId": "FOOD_PROCESSING_ROUTE_V1",
       "category": "AGRICULTURE_AND_FOOD",
       "iconId": "food-processing",
       "constructionCost": 7000,
@@ -2948,6 +2966,8 @@
     "TEXTILE_GARMENT_MILL": {
       "factoryType": "TEXTILE_GARMENT_MILL",
       "name": "Textile and Garment Mill",
+      "recipeIds": ["TEXTILE_GARMENT_ROUTE_V1"],
+      "defaultRecipeId": "TEXTILE_GARMENT_ROUTE_V1",
       "category": "TEXTILES_AND_APPAREL",
       "iconId": "textile-mill",
       "constructionCost": 6000,
@@ -3012,6 +3032,8 @@
     "INDUSTRIAL_MACHINERY_MACHINE_TOOLS": {
       "factoryType": "INDUSTRIAL_MACHINERY_MACHINE_TOOLS",
       "name": "Industrial Machinery and Machine Tools",
+      "recipeIds": ["INDUSTRIAL_MACHINERY_ROUTE_V1"],
+      "defaultRecipeId": "INDUSTRIAL_MACHINERY_ROUTE_V1",
       "category": "MACHINERY_AND_CAPITAL_GOODS",
       "iconId": "machine-tool",
       "constructionCost": 22000,
@@ -3076,6 +3098,8 @@
     "GRID_EQUIPMENT_FACTORY": {
       "factoryType": "GRID_EQUIPMENT_FACTORY",
       "name": "Grid and Electrical Equipment",
+      "recipeIds": ["GRID_EQUIPMENT_ROUTE_V1"],
+      "defaultRecipeId": "GRID_EQUIPMENT_ROUTE_V1",
       "category": "MACHINERY_AND_CAPITAL_GOODS",
       "iconId": "grid-equipment",
       "constructionCost": 15000,
@@ -3212,6 +3236,8 @@
     "BATTERY_ENERGY_STORAGE_PLANT": {
       "factoryType": "BATTERY_ENERGY_STORAGE_PLANT",
       "name": "Battery and Energy Storage Plant",
+      "recipeIds": ["BATTERY_STORAGE_ROUTE_V1"],
+      "defaultRecipeId": "BATTERY_STORAGE_ROUTE_V1",
       "category": "ELECTRONICS_AND_ENERGY_STORAGE",
       "iconId": "battery-plant",
       "constructionCost": 28000,
@@ -3278,6 +3304,8 @@
     "VEHICLE_TRUCK_BUS_ASSEMBLY": {
       "factoryType": "VEHICLE_TRUCK_BUS_ASSEMBLY",
       "name": "Vehicle, Truck and Bus Assembly",
+      "recipeIds": ["VEHICLE_ASSEMBLY_ROUTE_V1"],
+      "defaultRecipeId": "VEHICLE_ASSEMBLY_ROUTE_V1",
       "category": "TRANSPORT_AND_AEROSPACE",
       "iconId": "vehicle-assembly",
       "constructionCost": 32000,
@@ -3344,6 +3372,8 @@
     "SHIP_RAIL_EQUIPMENT_YARD": {
       "factoryType": "SHIP_RAIL_EQUIPMENT_YARD",
       "name": "Shipbuilding and Rail Equipment Yard",
+      "recipeIds": ["SHIP_RAIL_EQUIPMENT_ROUTE_V1"],
+      "defaultRecipeId": "SHIP_RAIL_EQUIPMENT_ROUTE_V1",
       "category": "TRANSPORT_AND_AEROSPACE",
       "iconId": "shipyard",
       "constructionCost": 42000,
@@ -3410,6 +3440,8 @@
     "AEROSPACE_EQUIPMENT_PLANT": {
       "factoryType": "AEROSPACE_EQUIPMENT_PLANT",
       "name": "Aerospace and Aircraft Equipment",
+      "recipeIds": ["AEROSPACE_EQUIPMENT_ROUTE_V1"],
+      "defaultRecipeId": "AEROSPACE_EQUIPMENT_ROUTE_V1",
       "category": "TRANSPORT_AND_AEROSPACE",
       "iconId": "aerospace-plant",
       "constructionCost": 80000,
@@ -3477,6 +3509,8 @@
     "PHARMA_MEDICAL_SUPPLIES_PLANT": {
       "factoryType": "PHARMA_MEDICAL_SUPPLIES_PLANT",
       "name": "Pharmaceuticals and Medical Supplies",
+      "recipeIds": ["PHARMA_MEDICAL_ROUTE_V1"],
+      "defaultRecipeId": "PHARMA_MEDICAL_ROUTE_V1",
       "category": "HEALTHCARE_AND_DEFENCE",
       "iconId": "pharma-plant",
       "constructionCost": 26000,
@@ -3543,6 +3577,8 @@
     "DEFENSE_EQUIPMENT_FACTORY": {
       "factoryType": "DEFENSE_EQUIPMENT_FACTORY",
       "name": "Defence Equipment Factory",
+      "recipeIds": ["DEFENSE_EQUIPMENT_ROUTE_V1"],
+      "defaultRecipeId": "DEFENSE_EQUIPMENT_ROUTE_V1",
       "category": "HEALTHCARE_AND_DEFENCE",
       "iconId": "defense-industry",
       "constructionCost": 40000,
@@ -3611,6 +3647,8 @@
     "RECYCLING_WASTE_PROCESSING_PLANT": {
       "factoryType": "RECYCLING_WASTE_PROCESSING_PLANT",
       "name": "Recycling and Waste Processing Plant",
+      "recipeIds": ["RECYCLING_CIRCULAR_ROUTE_V1"],
+      "defaultRecipeId": "RECYCLING_CIRCULAR_ROUTE_V1",
       "category": "CIRCULAR_INDUSTRY",
       "iconId": "recycling-plant",
       "constructionCost": 8500,
