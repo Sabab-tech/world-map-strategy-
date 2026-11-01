@@ -68,6 +68,11 @@ function createEnvironment() {
   const observers = [];
   const document = {
     body: new MockElement('body'),
+    head: new MockElement('head'),
+    getElementById(id) {
+      return this.head.childNodes.find(node => node.id === id) ||
+        this.body.childNodes.find(node => node.id === id) || null;
+    },
     createElement(tagName) {
       return new MockElement(tagName);
     }
@@ -90,21 +95,31 @@ function createEnvironment() {
   return { window, document, observers };
 }
 
-test('underscore labels become readable bold-italic presentation text', () => {
+test('underscore labels look readable, bold and italic while original textContent stays unchanged', () => {
   const env = createEnvironment();
   const label = new MockElement('span');
-  label.appendChild(new MockText('natural_gas__reserve'));
+  const originalText = new MockText('natural_gas__reserve');
+  label.appendChild(originalText);
   env.document.body.appendChild(label);
 
   // Simulate the observer seeing a label inserted by a later UI render.
   env.observers[0].trigger([{ type: 'childList', addedNodes: [label] }]);
 
-  assert.equal(label.textContent, 'natural gas reserve');
-  assert.equal(label.childNodes[0].tagName, 'STRONG');
-  assert.equal(label.childNodes[0].getAttribute('data-omega-ui-display-label'), 'true');
-  assert.equal(label.childNodes[0].style.fontWeight, '700');
-  assert.equal(label.childNodes[0].childNodes[0].tagName, 'EM');
-  assert.equal(label.childNodes[0].childNodes[0].style.fontStyle, 'italic');
+  const display = label.childNodes[0];
+  assert.equal(label.textContent, 'natural_gas__reserve');
+  assert.equal(display.tagName, 'STRONG');
+  assert.equal(display.getAttribute('data-omega-ui-display-label'), 'true');
+  assert.equal(display.getAttribute('data-omega-ui-display-text'), 'natural gas reserve');
+  assert.equal(display.getAttribute('aria-label'), 'natural gas reserve');
+  assert.equal(display.childNodes[0].tagName, 'SPAN');
+  assert.equal(display.childNodes[0].getAttribute('class'), 'omega-ui-raw-label');
+  assert.equal(display.childNodes[0].childNodes[0], originalText);
+  assert.equal(originalText.nodeValue, 'natural_gas__reserve');
+
+  const style = env.document.getElementById('omega-ui-text-presentation-style');
+  assert.ok(style, 'presentation stylesheet must be installed');
+  assert.match(style.textContent, /font-weight:700;font-style:italic/);
+  assert.match(style.textContent, /content:attr\(data-omega-ui-display-text\)/);
 });
 
 test('canonical values, data attributes, code, editable text and form controls remain untouched', () => {
@@ -138,24 +153,28 @@ test('canonical values, data attributes, code, editable text and form controls r
   assert.equal(option.textContent, 'crude_oil');
 });
 
-test('new and updated interface labels are formatted without duplicate wrappers', () => {
+test('new and updated interface labels change only their display presentation', () => {
   const env = createEnvironment();
   const observer = env.observers[0];
   assert.ok(observer, 'a DOM observer must handle future UI renders');
 
   const card = new MockElement('div');
-  card.appendChild(new MockText('iron_ore'));
+  const originalText = new MockText('iron_ore');
+  card.appendChild(originalText);
   env.document.body.appendChild(card);
   observer.trigger([{ type: 'childList', addedNodes: [card] }]);
-  assert.equal(card.textContent, 'iron ore');
 
   const strong = card.childNodes[0];
-  const italic = strong.childNodes[0];
-  italic.childNodes[0].nodeValue = 'coal_ore';
-  observer.trigger([{ type: 'characterData', target: italic.childNodes[0] }]);
-  assert.equal(card.textContent, 'coal ore');
-  assert.equal(card.childNodes[0], strong, 'updates must reuse the existing emphasis wrapper');
-  assert.equal(strong.childNodes[0], italic, 'updates must not nest duplicate emphasis tags');
+  assert.equal(card.textContent, 'iron_ore');
+  assert.equal(strong.getAttribute('data-omega-ui-display-text'), 'iron ore');
+  assert.equal(strong.childNodes[0].childNodes[0], originalText);
+
+  originalText.nodeValue = 'coal_ore';
+  observer.trigger([{ type: 'characterData', target: originalText }]);
+  assert.equal(card.textContent, 'coal_ore');
+  assert.equal(strong.getAttribute('data-omega-ui-display-text'), 'coal ore');
+  assert.equal(card.childNodes[0], strong, 'updates must reuse the existing display wrapper');
+  assert.equal(strong.childNodes[0].childNodes[0], originalText, 'updates must keep the original text node');
 
   assert.equal(env.window.OmegaUIPresentation.formatLabel('country___name'), 'country name');
   assert.equal(env.window.OmegaUIPresentation.install(), true);
@@ -180,4 +199,5 @@ test('map geometry and map-owned text stay outside the presentation observer', (
   textNode.nodeValue = 'another_map_label';
   observer.trigger([{ type: 'characterData', target: textNode }]);
   assert.equal(mapText.textContent, 'another_map_label');
+  assert.equal(mapText.childNodes[0].tagName, undefined, 'map text nodes must not gain presentation wrappers');
 });
