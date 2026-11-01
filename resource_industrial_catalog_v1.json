@@ -4337,6 +4337,7 @@
       "sourceSector": "INTERNATIONAL_TRADE",
       "sourceAuthority": "IMPORTED_MINERAL_BATCH_REQUIRED",
       "supplyMode": "IMPORT_ONLY_WHEN_NO_DOMESTIC_BATCH",
+      "inventoryStage": "RAW_EXTRACTED",
       "requiresRecordedBatch": true,
       "autoGenerateStock": false,
       "simulationOnly": true,
