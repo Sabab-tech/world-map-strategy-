@@ -271,6 +271,7 @@ test('fresh session seeds bounded opening stock and source-context-driven factor
 
   const indiaProfile = profileFor('IND');
   const indiaResource = state.resource.IND;
+  const indiaCoalBaseline = economyRules.demand.resourceProfiles.coal;
   const coalStockRow = indiaResource.startupBaselineV1.stockRows.find(row => row.resourceId === 'coal');
   const indiaFactoryCoal = factoryInputBaseline.countries.IND.factoryInputRows.find(row => row.productId === 'coal');
   assert.ok(indiaFactoryCoal);
@@ -306,10 +307,12 @@ test('fresh session seeds bounded opening stock and source-context-driven factor
   assert.equal(indiaResource.startupBaselineV1.geologicalReserveQuantityUsedAsStock, false);
   assert.equal(indiaResource.startupBaselineV1.stockRowsEncoding, 'COMPACT_PER_RESOURCE_PROVENANCE_V1');
   assert.equal(indiaResource.warehouse.availableByResource.coal, indiaResource.inventory.coal);
-  if (indiaResource.inventoryLedger.some(row => row.batchId === indiaResource.factoryInputBaselineV1.stockRows.find(item => item.productId === 'coal')?.batchId)) {
-    const factoryCoalRow = indiaResource.factoryInputBaselineV1.stockRows.find(item => item.productId === 'coal');
-    assert.ok(factoryCoalRow);
-  }
+  const factoryCoalRow = indiaResource.factoryInputBaselineV1.stockRows.find(item => item.productId === 'coal');
+  assert.ok(factoryCoalRow);
+  assert.ok(indiaResource.batches.some(row => row.batchId === factoryCoalRow.batchId && row.stage === 'RAW'));
+  assert.ok(indiaResource.inventoryLots[factoryCoalRow.batchId]);
+  assert.ok(indiaResource.warehouse.storedBatchIds.includes(factoryCoalRow.batchId));
+  assert.ok(indiaResource.warehouse.receipts.some(row => row.batchId === factoryCoalRow.batchId));
 
   for (const code of Object.keys(state.resource)) {
     const bucket = state.resource[code];
