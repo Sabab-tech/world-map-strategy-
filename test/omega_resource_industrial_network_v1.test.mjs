@@ -1108,20 +1108,35 @@ console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');
     assert.equal(blockedDiagnostics.perCountry[0].blockedShipments.length,1);
     assert.equal(blockedDiagnostics.perCountry[0].blockedShipments[0].shipmentId,shipment.shipmentId);
 
-    // Repair the authoritative lot during the same turn. Repeated callbacks must
-    // not re-run the failed receipt until the next game turn.
-    countryState.inventoryLots[batchId]={...sourceBatch,status:'AVAILABLE'};
+    // An underfilled source lot must not generate a full warehouse/inventory receipt.
+    countryState.inventoryLots[batchId]={...sourceBatch,quantity:25,remainingQuantity:25,status:'AVAILABLE'};
     N.advanceShipments(countryId);
-    assert.equal(shipment.status,'BLOCKED_LEDGER_MISMATCH',
-      'a blocked shipment is attempted only once in a simulation turn');
+    assert.equal(shipment.status,'BLOCKED_LEDGER_MISMATCH');
     assert.equal(countryState.warehouse.receipts.length,0);
 
     context.Game.state.simulation.turn=101;
     context.Omega.Simulation.clock.turn=101;
-    const recovery=N.advanceShipments(countryId);
-    assert.equal(shipment.status,'DELIVERED',JSON.stringify(recovery));
+    const underfilled=N.advanceShipments(countryId);
+    assert.equal(shipment.status,'BLOCKED_LEDGER_MISMATCH',JSON.stringify(underfilled));
+    assert.equal(shipment.blockReason,'MINE_WAREHOUSE_SOURCE_BATCH_OR_LOT_QUANTITY_MISMATCH');
     assert.equal(shipment.deliveryRetryCount,1);
     assert.equal(shipment.deliveryAttemptCount,2);
+    assert.equal(countryState.warehouse.receipts.length,0);
+    assert.equal(countryState.warehouse.availableByResource.iron_ore,0);
+    assert.equal(countryState.inventory.iron_ore,0);
+
+    countryState.inventoryLots[batchId]={...sourceBatch,quantity:100,remainingQuantity:100,status:'AVAILABLE'};
+    N.advanceShipments(countryId);
+    assert.equal(shipment.status,'BLOCKED_LEDGER_MISMATCH');
+    assert.equal(shipment.deliveryAttemptCount,2);
+    assert.equal(countryState.warehouse.receipts.length,0);
+
+    context.Game.state.simulation.turn=102;
+    context.Omega.Simulation.clock.turn=102;
+    const recovery=N.advanceShipments(countryId);
+    assert.equal(shipment.status,'DELIVERED',JSON.stringify(recovery));
+    assert.equal(shipment.deliveryRetryCount,2);
+    assert.equal(shipment.deliveryAttemptCount,3);
     assert.equal(recovery.mineDelivered,1);
     assert.equal(countryState.warehouse.receipts.length,1);
     assert.equal(countryState.warehouse.availableByResource.iron_ore,100);
@@ -1133,7 +1148,6 @@ console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');
     assert.equal(countryState.warehouse.availableByResource.iron_ore,100);
     assert.equal(countryState.inventory.iron_ore,100);
     assert.equal(N.gameplayPipelineDiagnostics(countryId).blocked,0);
-    console.log('OMEGA MINE-TO-WAREHOUSE LEDGER RECOVERY REGRESSION PASSED');
   } finally {
     context.Game.state.simulation=priorSimulation;
     context.Omega.Simulation=priorOmegaSimulation;
