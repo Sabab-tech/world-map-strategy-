@@ -2118,14 +2118,15 @@ function factoryOperationGate(countryId,asset){
       requiredWorkers:num((cat()?.factoryProfiles||{})[String(asset.factoryType||asset.type||'').toUpperCase()]?.employment?.coreOperatingCrew)||null,
       authority:employmentModel.unemploymentSource||'NOT_RECORDED'};
   const profile=(cat()?.factoryProfiles||{})[String(asset.factoryType||asset.type||asset.facilityType||'').toUpperCase()]||{};
-  const requiredCrew=Math.max(1,num(profile.employment?.coreOperatingCrew)||
-    ((num(profile.workforce?.operators)||0)+(num(profile.workforce?.engineers)||0))||
-    (num(asset.workforce?.operators)||0)+(num(asset.workforce?.engineers)||0));
+  const requiredWorkers=Math.max(1,num(employment.jobsSupported)||num(profile.employment?.jobsPerFactory)||0);
   const workersFilled=num(employment.jobsFilled);
-  if(workersFilled===null)return{status:'BLOCKED',reason:'FACTORY_WORKFORCE_NOT_RECORDED',factoryId,requiredWorkers:requiredCrew};
-  if(workersFilled<requiredCrew)return{status:'BLOCKED',reason:'FACTORY_WORKFORCE_SHORTAGE',factoryId,
-    requiredWorkers:requiredCrew,workersAvailable:workersFilled,vacancies:num(employment.vacancies)??Math.max(0,requiredCrew-workersFilled)};
-  return{status:'READY',factoryId,factoryStatus:status,requiredWorkers:requiredCrew,workersAvailable:workersFilled,
+  if(workersFilled===null||requiredWorkers<=0)return{status:'BLOCKED',reason:'FACTORY_WORKFORCE_NOT_RECORDED',factoryId,requiredWorkers};
+  // Staffing is a continuous production constraint, not an all-or-nothing operating gate.
+  // The ratio is derived from the factory's full direct-job requirement and actual filled posts.
+  const workforceRatio=Math.max(0,Math.min(1,workersFilled/requiredWorkers));
+  if(workforceRatio<=1e-9)return{status:'BLOCKED',reason:'FACTORY_WORKFORCE_SHORTAGE',factoryId,
+    requiredWorkers,workersAvailable:workersFilled,vacancies:num(employment.vacancies)??requiredWorkers};
+  return{status:'READY',factoryId,factoryStatus:status,requiredWorkers,workersAvailable:workersFilled,workforceRatio,
     workforceAuthority:employment.authority||employmentModel.authority||'SIMULATED_FACTORY_EMPLOYMENT_RECONCILIATION'};
 }
 function commitFactoryCycleImmediately(input={}){
@@ -2134,8 +2135,11 @@ function commitFactoryCycleImmediately(input={}){
   const gate=factoryOperationGate(cid,asset);
   if(gate.status!=='READY')return gate;
   const requestedRecipe=recipeFor(input.resourceId||Object.keys(asset.inputCoefficients||asset.inputs||{})[0]||asset.resourceId,asset);
-  if(asset.recipeMode==='MULTI_INPUT'||requestedRecipe.recipeMode==='MULTI_INPUT'||Object.keys(requestedRecipe.inputs||{}).length>1)
-    return commitMultiInputFactoryCycleImmediately(input);
+  if(asset.recipeMode==='MULTI_INPUT'||requestedRecipe.recipeMode==='MULTI_INPUT'||Object.keys(requestedRecipe.inputs||{}).length>1){
+    const ratedCapacity=Math.max(0,num(asset.capacityPerDay??asset.capacity??asset.productionCapacity??asset.throughput)||0);
+    const workforceLimit=ratedCapacity*(num(gate.workforceRatio)??1);
+    return commitMultiInputFactoryCycleImmediately({...input,quantity:Math.min(num(input.quantity)??ratedCapacity,workforceLimit)});
+  }
   const n=netState(cid),processedTurns=n.factoryProcessingTurns&&typeof n.factoryProcessingTurns==='object'?n.factoryProcessingTurns:(n.factoryProcessingTurns={});
   if(Number(processedTurns[fid])===turn())return{status:'BLOCKED',reason:'FACTORY_TURN_CAPACITY_ALREADY_USED',factoryId:fid,turn:turn()};
   const rid=tok(input.resourceId),recipe=recipeFor(rid,asset),r=resourceState(cid);r.inventory=r.inventory||{};
@@ -2143,7 +2147,8 @@ function commitFactoryCycleImmediately(input={}){
   const factoryAvailable=Math.max(0,num(factoryStock[rid])||0),countryAvailable=Math.max(0,num(r.inventory[rid])||0);
   const inputCoefficient=Math.max(1e-9,num(recipe.inputs[rid])||1);
   const cycleCapacity=Math.max(0,num(input.maxCycleQuantity)||num(asset.capacityPerDay??asset.capacity??asset.productionCapacity??asset.throughput)||0);
-  const requestedLimit=Math.min(Math.max(0,num(input.quantity)||cycleCapacity),cycleCapacity||Number.MAX_SAFE_INTEGER);
+  const requestedLimit=Math.min(Math.max(0,num(input.quantity)||cycleCapacity),cycleCapacity||Number.MAX_SAFE_INTEGER,
+    cycleCapacity*(num(gate.workforceRatio)??1));
   const availableInputStock=factoryAvailable>1e-9?factoryAvailable:countryAvailable;
   const requested=Math.min(requestedLimit,availableInputStock/inputCoefficient);
   const need=requested*inputCoefficient;
@@ -2683,7 +2688,7 @@ function startFactoryProductionCycle(input={}){
   const first=tok(input.resourceId||Object.keys(asset.inputCoefficients||asset.inputs||{})[0]||asset.resourceId||'');
   const recipe=recipeFor(first,asset),metrics=factoryProductionMetrics(asset,recipe);
   const requested=Math.max(0,num(input.quantity)||metrics.capacity);
-  let quantity=Math.min(metrics.capacity,requested,metrics.possibleProduction);
+  let quantity=Math.min(metrics.capacity,requested,metrics.possibleProduction,metrics.capacity*(num(gate.workforceRatio)??1));
   if(metrics.missingInputs.length){
     factorySetProductionHealth(asset,'STOPPED',0,metrics.capacity,{reason:'FACTORY_INPUT_OR_BATCH_SHORTAGE',missingInputs:metrics.missingInputs});
     return{status:'BLOCKED',reason:'FACTORY_INPUT_OR_BATCH_SHORTAGE',factoryId:fid,missingInputs:clone(metrics.missingInputs),capacity:metrics.capacity};
