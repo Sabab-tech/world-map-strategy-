@@ -49,14 +49,38 @@
     return false;
   }
 
-  function isInsideFormattedLabel(element) {
+  function findFormattedLabel(element) {
     var current = element;
     while (current) {
       if (typeof current.getAttribute === 'function' &&
-          current.getAttribute(FORMAT_FLAG) === 'true') return true;
+          current.getAttribute(FORMAT_FLAG) === 'true') return current;
       current = current.parentElement;
     }
-    return false;
+    return null;
+  }
+
+  function ensurePresentationStyles() {
+    if (!doc || !doc.createElement) return false;
+    if (doc.getElementById && doc.getElementById('omega-ui-text-presentation-style')) return true;
+
+    var style = doc.createElement('style');
+    style.id = 'omega-ui-text-presentation-style';
+    style.textContent =
+      '[data-omega-ui-display-label="true"]::after{' +
+        'content:attr(data-omega-ui-display-text);font-weight:700;font-style:italic' +
+      '}' +
+      '[data-omega-ui-display-label="true"]>.omega-ui-raw-label{' +
+        'font-size:0!important;line-height:0!important;color:transparent!important' +
+      '}';
+    var host = doc.head || doc.documentElement || doc.body;
+    if (!host || typeof host.appendChild !== 'function') return false;
+    host.appendChild(style);
+    return true;
+  }
+
+  function setDisplayLabel(wrapper, display) {
+    wrapper.setAttribute('data-omega-ui-display-text', display);
+    wrapper.setAttribute('aria-label', display);
   }
 
   function formatTextNode(node) {
@@ -68,8 +92,10 @@
     var display = formatLabel(raw);
     if (display === raw) return false;
 
-    if (isInsideFormattedLabel(node.parentElement)) {
-      node.nodeValue = display;
+    var existing = findFormattedLabel(node.parentElement);
+    if (existing) {
+      // Keep the canonical text node exactly as supplied by the game/UI renderer.
+      setDisplayLabel(existing, display);
       return true;
     }
 
@@ -77,12 +103,14 @@
     if (!parent || typeof parent.replaceChild !== 'function') return false;
 
     var strong = doc.createElement('strong');
-    var italic = doc.createElement('em');
+    var rawLabel = doc.createElement('span');
     strong.setAttribute(FORMAT_FLAG, 'true');
-    strong.style.fontWeight = '700';
-    italic.style.fontStyle = 'italic';
-    italic.textContent = display;
-    strong.appendChild(italic);
+    strong.setAttribute('role', 'text');
+    strong.setAttribute('aria-label', display);
+    rawLabel.setAttribute('class', 'omega-ui-raw-label');
+    setDisplayLabel(strong, display);
+    rawLabel.appendChild(node);
+    strong.appendChild(rawLabel);
     parent.replaceChild(strong, node);
     return true;
   }
@@ -113,6 +141,7 @@
     if (global[INSTALL_FLAG]) return true;
 
     global[INSTALL_FLAG] = true;
+    ensurePresentationStyles();
     visit(doc.body);
 
     if (typeof global.MutationObserver === 'function') {
