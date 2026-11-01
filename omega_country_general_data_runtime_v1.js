@@ -5,7 +5,7 @@
 (function(root){
 'use strict';
 const VERSION='1.0.0',DATA_URL='./country_general_data_registry_v1.json';
-const s={promise:null,ready:false,settled:false,error:null,data:null,schema:null,byAlias:new Map(),fields:new Map()};
+const s={promise:null,ready:false,settled:false,error:null,data:null,schema:null,fields:new Map()};
 const str=v=>String(v==null?'':v).trim();
 const n=v=>typeof v==='number'&&Number.isFinite(v)?v:(typeof v==='string'&&v.trim()!==''&&Number.isFinite(Number(v))?Number(v):null);
 const clamp=(v,a=0,b=1)=>n(v)===null?null:Math.max(a,Math.min(b,n(v)));
@@ -58,21 +58,14 @@ function init(){
   const data=await shared.loadSourceDataset(DATA_URL.replace(/^\.\//,''),{optional:false});
   const schema=data?.metadata?.recordSchema;
   if(!Array.isArray(data?.countries)||!Array.isArray(schema?.identityFields)||!Array.isArray(schema?.generalFactFields)||!Array.isArray(schema?.metricFields))throw Error('COUNTRY_GENERAL_DATA_SCHEMA_INVALID');
-  s.data=data;s.schema=schema;s.byAlias.clear();s.fields.clear();
+  s.data=data;s.schema=schema;s.fields.clear();
   (data.fieldCatalogue||[]).forEach(f=>{if(f?.key)s.fields.set(f.key,f)});
-  data.countries.forEach(row=>(row.identity||[]).forEach((v,i)=>{const k=norm(v);if(k&&!s.byAlias.has(k))s.byAlias.set(k,row);if(['iso2','iso3','countryCode','numericCode'].includes(schema.identityFields[i])&&k)s.byAlias.set(k,row)}));
-  if(!s.byAlias.size)throw Error('COUNTRY_GENERAL_DATA_IDENTITY_INDEX_EMPTY');
+  if(typeof shared.getCountryGeneralDataRow!=='function'||shared.getCountryGeneralDataIndexSize()===0)throw Error('SHARED_COUNTRY_GENERAL_DATA_INDEX_EMPTY');
   s.ready=true;s.settled=true;s.error=null;return true;
  }catch(e){s.ready=false;s.settled=true;s.error=String(e?.message||e);return false}})();
  return s.promise
 }
-function candidates(v){
- if(obj(v))return [v.countryCode,v.iso2,v.iso3,v.countryId,v.country_id,v.code,v.name].filter(x=>x!=null);
- const out=[v];try{const p=root.OmegaCountryRuntimeData?.resolveCountry?.(v);if(p)out.push(p.countryCode,p.iso2,p.iso3,p.name,p.officialName,p.economyKey)}catch(_){}
- try{const b=root.OmegaCanonicalIdentityRegistry||root.OmegaCountrySemanticBridge||root.Omega?.CanonicalIdentity,p=b?.resolveCountry?.(v);if(p)out.push(p.id,p.iso2,p.iso3,p.name,p.raw?.name)}catch(_){}
- return out.filter(x=>x!=null)
-}
-function find(v){if(!s.ready)return null;for(const x of candidates(v)){const r=s.byAlias.get(norm(x));if(r)return r}return null}
+function find(v){if(!s.ready)return null;return root.OmegaCountryRuntimeData?.getCountryGeneralDataRow?.(v)||null}
 function map(fields,values){const out={};if(Array.isArray(fields)&&Array.isArray(values))fields.forEach((k,i)=>out[k]=values[i]===undefined?null:values[i]);return out}
 function code(list,v){const i=n(v);return i===null||i<0||!Array.isArray(list)?null:(list[i]===undefined?null:list[i])}
 function decode(row){
@@ -122,7 +115,7 @@ function getBehaviorProfile(v){
  };
  const count=Object.values(dimensions).filter(x=>x.value!==null).length;return{countryId:r.identity.iso3||r.identity.iso2||str(v).toUpperCase(),availability:count?'DERIVED':'UNOBSERVED',source:count?'OMEGA_COUNTRY_GENERAL_DATA_REGISTRY_V1':null,modelVersion:VERSION,dimensions}
 }
-function diagnostics(){return{version:VERSION,ready:s.ready,settled:s.settled,error:s.error,recordCount:s.data?.countries?.length||0,aliasCount:s.byAlias.size,datasetId:s.data?.metadata?.datasetId||null,dataUrl:DATA_URL}}
+function diagnostics(){return{version:VERSION,ready:s.ready,settled:s.settled,error:s.error,recordCount:s.data?.countries?.length||0,aliasCount:root.OmegaCountryRuntimeData?.getCountryGeneralDataIndexSize?.()||0,datasetId:s.data?.metadata?.datasetId||null,dataUrl:DATA_URL}}
 const API=Object.freeze({VERSION,DATA_URL,init,diagnostics,resolveCountry:v=>getCountryRecord(v)?.identity||null,getCountryRecord,getBehaviorProfile,getMetricDefinition:key=>s.ready?(s.fields.get(str(key))||null):null});
 root.Omega=root.Omega||{};root.Omega.CountryGeneralData=API;root.OmegaCountryGeneralDataRuntime=API;
 const esc=v=>String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
