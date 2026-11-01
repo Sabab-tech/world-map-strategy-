@@ -48,17 +48,24 @@ function inferredDataGap(value,status,sourceId,sourceName,year,persisted){
  if(/MODELED|MODELLED|SIMULATION|GAMEPLAY|LOCAL_/.test(st))return 'UNVERIFIED_OR_MODELLED_SOURCE';
  return null;
 }
-function init(){if(s.promise)return s.promise;s.promise=(async()=>{try{
- if(typeof root.fetch!=='function')throw Error('FETCH_UNAVAILABLE');
- const res=await root.fetch(DATA_URL,{cache:'default'});if(!res||res.ok===false)throw Error('COUNTRY_GENERAL_DATA_FETCH_FAILED');
- const data=await res.json(),schema=data?.metadata?.recordSchema;
- if(!Array.isArray(data?.countries)||!Array.isArray(schema?.identityFields)||!Array.isArray(schema?.generalFactFields)||!Array.isArray(schema?.metricFields))throw Error('COUNTRY_GENERAL_DATA_SCHEMA_INVALID');
- s.data=data;s.schema=schema;s.byAlias.clear();s.fields.clear();
- (data.fieldCatalogue||[]).forEach(f=>{if(f?.key)s.fields.set(f.key,f)});
- data.countries.forEach(row=>(row.identity||[]).forEach((v,i)=>{const k=norm(v);if(k&&!s.byAlias.has(k))s.byAlias.set(k,row);if(['iso2','iso3','countryCode','numericCode'].includes(schema.identityFields[i])&&k)s.byAlias.set(k,row)}));
- if(!s.byAlias.size)throw Error('COUNTRY_GENERAL_DATA_IDENTITY_INDEX_EMPTY');
- s.ready=true;s.settled=true;s.error=null;return true;
-}catch(e){s.ready=false;s.settled=true;s.error=String(e?.message||e);return false}})();return s.promise}
+function init(){
+ if(s.promise)return s.promise;
+ s.promise=(async()=>{try{
+  const shared=root.OmegaCountryRuntimeData;
+  if(!shared||typeof shared.init!=='function'||typeof shared.loadSourceDataset!=='function')throw Error('SHARED_COUNTRY_RUNTIME_UNAVAILABLE');
+  const ready=await shared.init();
+  if(!ready)throw Error('COUNTRY_RUNTIME_NOT_READY');
+  const data=await shared.loadSourceDataset(DATA_URL.replace(/^\.\//,''),{optional:false});
+  const schema=data?.metadata?.recordSchema;
+  if(!Array.isArray(data?.countries)||!Array.isArray(schema?.identityFields)||!Array.isArray(schema?.generalFactFields)||!Array.isArray(schema?.metricFields))throw Error('COUNTRY_GENERAL_DATA_SCHEMA_INVALID');
+  s.data=data;s.schema=schema;s.byAlias.clear();s.fields.clear();
+  (data.fieldCatalogue||[]).forEach(f=>{if(f?.key)s.fields.set(f.key,f)});
+  data.countries.forEach(row=>(row.identity||[]).forEach((v,i)=>{const k=norm(v);if(k&&!s.byAlias.has(k))s.byAlias.set(k,row);if(['iso2','iso3','countryCode','numericCode'].includes(schema.identityFields[i])&&k)s.byAlias.set(k,row)}));
+  if(!s.byAlias.size)throw Error('COUNTRY_GENERAL_DATA_IDENTITY_INDEX_EMPTY');
+  s.ready=true;s.settled=true;s.error=null;return true;
+ }catch(e){s.ready=false;s.settled=true;s.error=String(e?.message||e);return false}})();
+ return s.promise
+}
 function candidates(v){
  if(obj(v))return [v.countryCode,v.iso2,v.iso3,v.countryId,v.country_id,v.code,v.name].filter(x=>x!=null);
  const out=[v];try{const p=root.OmegaCountryRuntimeData?.resolveCountry?.(v);if(p)out.push(p.countryCode,p.iso2,p.iso3,p.name,p.officialName,p.economyKey)}catch(_){}
