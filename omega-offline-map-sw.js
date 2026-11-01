@@ -29,7 +29,7 @@ const CORE_ASSETS = [
   "./omega_battlefield_command_runtime_v1.js", "./military_command_catalog_v1.json", "./resource_industrial_catalog_v1.json",
   "./omega_factory_visual_catalog_v1.js", "./omega_country_factory_starting_baseline_v1.js", "./omega_factory_visual_catalog_v1.json",
   "./assets/factories/omega_factory_atlas_01.webp", "./assets/factories/omega_factory_atlas_02.webp", "./assets/factories/omega_factory_atlas_03.webp",
-  "./omega_resource_industrial_network_v1.js", "./omega_resource_startup_baseline_v1.js", "./omega_country_inventory_runtime_v1.js", "./omega_resource_command_center_ui_v1.js", "./omega_icon_system_v1.js",
+  "./omega_resource_industrial_network_v1.js", "./omega_resource_startup_baseline_v1.js", "./resource_startup_baseline_rules_v1.json", "./omega_country_inventory_runtime_v1.js", "./omega_resource_command_center_ui_v1.js", "./omega_icon_system_v1.js",
   "./omega_icon_system_v1.css",
   "./omega_logistics_transport_catalog_v1.json",
   "./assets/omega-industrial-icons-v1/transport/cargo/coal-dry-bulk/truck.svg",
