@@ -94,11 +94,11 @@ test('country gateway startup does not initialize the large General Data registr
 test('Ministry HQ startup never triggers the large General Data registry load', async () => {
   const source = await read('omega_country_general_data_loader_v1.js');
   assert.doesNotMatch(source, /installMinistryOverview/);
-  assert.doesNotMatch(source, /ui\\.renderCountryOverview=function/);
-  assert.match(source, /function scheduleRuntimeLoad\\(\\)/);
-  assert.match(source, /requestIdleCallback\\(begin,\\{timeout:5000\\}\\)/);
+  assert.ok(!source.includes('ui.renderCountryOverview=function'));
+  assert.ok(source.includes('function scheduleRuntimeLoad()'));
+  assert.ok(source.includes('requestIdleCallback(begin,{timeout:5000})'));
   assert.match(source, /renderChapter1_Overview/);
-  assert.match(source, /scheduleRuntimeLoad\\(\\)/);
+  assert.ok(source.includes('scheduleRuntimeLoad()'));
 });
 
 test('strategic profile chapter requests its shared dataset and refreshes only while still selected', async () => {
