@@ -109,9 +109,9 @@
     strong.setAttribute('aria-label', display);
     rawLabel.setAttribute('class', 'omega-ui-raw-label');
     setDisplayLabel(strong, display);
+    parent.replaceChild(strong, node);
     rawLabel.appendChild(node);
     strong.appendChild(rawLabel);
-    parent.replaceChild(strong, node);
     return true;
   }
 
