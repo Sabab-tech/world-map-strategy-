@@ -96,8 +96,8 @@ test('underscore labels become readable bold-italic presentation text', () => {
   label.appendChild(new MockText('natural_gas__reserve'));
   env.document.body.appendChild(label);
 
-  // Install the formatter after the fixture is in place.
-  env.window.OmegaUIPresentation.install();
+  // Simulate the observer seeing a label inserted by a later UI render.
+  env.observers[0].trigger([{ type: 'childList', addedNodes: [label] }]);
 
   assert.equal(label.textContent, 'natural gas reserve');
   assert.equal(label.childNodes[0].tagName, 'STRONG');
