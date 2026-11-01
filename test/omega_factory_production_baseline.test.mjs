@@ -1436,3 +1436,85 @@ test('legacy and primary factory runtimes reserve shared utilities before anothe
       runtimeFile + ': aggregate reserved electricity must equal, but never exceed, country supply');
   }
 });
+
+
+test('all canonical factory types have executable catalog recipes and multi-route cycles preserve the selected recipe through warehouse completion', () => {
+  const { context, catalog, api } = makeRuntime();
+  const profileTypes = Object.keys(catalog.factoryProfiles || {});
+  assert.equal(profileTypes.length, 21, 'the existing canonical factory catalogue must remain at 21 types');
+  for (const factoryType of profileTypes) {
+    const requirements = api.factoryProductionRequirements(factoryType);
+    assert.equal(requirements.status, 'READY', factoryType + ': every canonical factory needs a runtime recipe');
+    assert.ok(Object.keys(requirements.inputsPerProductionUnit || {}).length > 0,
+      factoryType + ': recipe inputs must be present');
+    assert.ok(Object.keys(requirements.outputsPerProductionUnit || {}).length > 0,
+      factoryType + ': finished outputs must be present');
+    if (factoryType !== 'UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT') {
+      const recipeIds = catalog.factoryProfiles[factoryType].recipeIds || [];
+      assert.ok(recipeIds.length > 0, factoryType + ': the factory profile must explicitly name its route');
+      for (const recipeId of recipeIds) {
+        assert.equal(catalog.downstreamFactoryRecipes[recipeId]?.factoryType, factoryType,
+          factoryType + ': route ownership must match the factory type');
+      }
+    }
+  }
+
+  const factoryType = 'NON_FERROUS_METAL_SMELTER';
+  const recipeId = 'NONFERROUS_ALUMINUM_ROUTE_V1';
+  const recipe = catalog.downstreamFactoryRecipes[recipeId];
+  assert.deepEqual(
+    [...catalog.factoryProfiles[factoryType].recipeIds].sort(),
+    ['NONFERROUS_ALUMINUM_ROUTE_V1', 'NONFERROUS_COPPER_ROUTE_V1'].sort()
+  );
+  const productionQuantity = 100;
+  const inputInventory = Object.fromEntries(Object.entries(recipe.inputs).map(([id, coefficient]) =>
+    [id, Number((coefficient * productionQuantity).toFixed(6))]));
+  const inputBatchLots = Object.entries(inputInventory).map(([resourceId, quantity], index) => ({
+    batchId: 'NF-INPUT-' + (index + 1), resourceId, quantity, remainingQuantity: quantity,
+    unit: 'SIMULATION_RESOURCE_UNIT', stage: 'FACTORY_INPUT', status: 'AVAILABLE',
+    sourceBatchIds: ['NF-SOURCE-' + (index + 1)], createdTurn: 1
+  }));
+  const asset = {
+    id: 'FAC-NONFERROUS-DYNAMIC-ROUTE', countryId: 'BGD', factoryType,
+    status: 'OPERATIONAL', recipeMode: 'DYNAMIC_RECIPE_SET',
+    recipeId: 'NONFERROUS_COPPER_ROUTE_V1',
+    capacity: 650, capacityPerDay: 650,
+    inputUnit: 'SIMULATION_RESOURCE_UNIT', outputUnit: 'SIMULATION_RESOURCE_UNIT',
+    inputInventory, inputBatchLots,
+    workforce: catalog.factoryProfiles[factoryType].workforce,
+    utilityRequirements: catalog.factoryProfiles[factoryType].utilities,
+    requiredTechnologyIds: []
+  };
+  context.Game.state.simulation.date = '2015-01-01';
+  context.Game.state.economy.BGD = {
+    unemploymentCount: 600000, laborForce: 6000000, unemployment_rate: 10,
+    productionAssets: [asset]
+  };
+  context.Game.state.transport.BGD = { infrastructure: { utilitySupply: {
+    electricityMWhPerDay: 1200, waterM3PerDay: 260,
+    authority: 'TEST_FIXTURE', status: 'AVAILABLE', simulationOnly: true, assets: []
+  } } };
+  api.reconcileFactoryEmployment('BGD');
+
+  const started = api.processPendingFactoryInputs('BGD');
+  assert.equal(started.startedCount, 1, JSON.stringify(started));
+  const cycle = context.Game.state.resource.BGD.industrialNetwork.factoryProductionCycles[asset.id];
+  assert.equal(cycle.recipeId, recipeId,
+    'the available aluminium route must be selected instead of the unavailable default copper route');
+  assert.deepEqual(Object.keys(cycle.inputQuantities).sort(), Object.keys(recipe.inputs).sort());
+  assert.equal(cycle.expectedOutputs.ALUMINUM_INGOT, 50);
+  assert.equal(cycle.expectedOutputs.REFINED_COPPER, undefined,
+    'cycle output must not be calculated from the asset default recipe');
+
+  context.Game.state.simulation.turn = cycle.finishTurn;
+  context.Game.state.simulation.date = cycle.finishDate;
+  const completed = api.processPendingFactoryInputs('BGD');
+  assert.equal(completed.completedCount, 1, JSON.stringify(completed));
+  const warehouse = context.Game.state.resource.BGD.processedWarehouse;
+  assert.equal(warehouse.availableByResource.ALUMINUM_INGOT, 50);
+  assert.equal(warehouse.availableByResource.REFINED_COPPER || 0, 0,
+    'warehouse receipt must retain the selected route outputs');
+  const ledger = context.Game.state.resource.BGD.finishedGoodsLedger || [];
+  assert.ok(ledger.some(row => row.recipeId === recipeId),
+    'finished-goods accounting must keep the recipe identity');
+});
