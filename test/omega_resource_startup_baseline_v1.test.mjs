@@ -166,7 +166,10 @@ test('fresh session seeds bounded opening stock and source-context-driven factor
   const committedStockEvents = [];
   context.addEventListener('OMEGA_RESOURCE_INVENTORY_CHANGED', event => {
     const detail = event && event.detail || {};
-    if (!detail.provenance || detail.provenance.source !== 'SIMULATED_STARTUP_BASELINE_V1') return;
+    const stockSource = detail.provenance && detail.provenance.source;
+    const isExistingDemandOpeningStock = stockSource === 'SIMULATED_STARTUP_BASELINE_V1';
+    const isFactoryInputRawStock = stockSource === 'SIMULATED_FACTORY_INPUT_STARTUP_BASELINE_V1' && detail.stage === 'RAW';
+    if (!isExistingDemandOpeningStock && !isFactoryInputRawStock) return;
     const bucket = state.resource[detail.countryId];
     const batch = (bucket.batches || []).find(row => row.batchId === detail.transactionId);
     const lot = bucket.inventoryLots && bucket.inventoryLots[detail.transactionId];
@@ -365,8 +368,8 @@ test('repeated startup calls and depletion after initialization never replenish 
   assert.equal(Object.prototype.hasOwnProperty.call(state.resource.IND.inventory, 'coal'), false,
     'opening stock is a one-time seed and must not behave like automatic replenishment');
   assert.deepEqual(state.economy.IND.productionAssets.map(asset => asset.id).sort(), beforeAssets);
-  assert.equal(beforeInventoryCount, Object.keys(state.resource.IND.inventory).length,
-    'deleting a stock key after initialization must not silently recreate it');
+  assert.equal(Object.keys(state.resource.IND.inventory).length, beforeInventoryCount - 1,
+    'deleting a stock key after initialization must remain deleted without adding another inventory key');
 
   const loadedState = JSON.parse(JSON.stringify(state));
   const reload = makeHarness(loadedState);
