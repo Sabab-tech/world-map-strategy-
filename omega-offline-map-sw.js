@@ -2,7 +2,7 @@
  * Same-origin app files are cached for offline relaunch; remote map tiles are never cached here.
  */
 "use strict";
-const CACHE_NAME = "omega-offline-atlas-shell-v67";
+const CACHE_NAME = "omega-offline-atlas-shell-v68";
 const APP_BASE = new URL("./", self.location.href);
 const INDEX_URL = new URL("index.html", APP_BASE).href;
 const CORE_ASSETS = [
@@ -97,6 +97,7 @@ const CORE_ASSETS = [
   "./omega_ui_v2/integration.js",
   "./omega_ui_v2/world-command-dock.js",
   "./omega_ui_v2/resource-ministry-legacy-bridge.js",
+  "./omega_ui_v2/text-presentation.js",
   "./assets/ministry-logos/cabinet_council.svg",
   "./assets/ministry-logos/trade.svg",
   "./assets/ministry-logos/production.svg",
