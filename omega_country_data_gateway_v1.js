@@ -327,8 +327,36 @@
   function auditAllCountries(){const profiles=runtime()?.listProfiles?.()||[],reports=profiles.map(p=>({countryCode:p.countryCode,name:p.name,...auditCountry(p.countryCode)})),errors=reports.flatMap(r=>r.errors.map(e=>({countryCode:r.countryCode,name:r.name,...e}))),warnings=reports.flatMap(r=>r.warnings.map(e=>({countryCode:r.countryCode,name:r.name,...e})));return{schemaVersion:VERSION,countryCount:reports.length,ok:errors.length===0,errorCount:errors.length,warningCount:warnings.length,missingFieldCount:reports.reduce((n,r)=>n+r.missingFields.length,0),errors,warnings,reports};}
   function getField(country,key){return getSnapshot(country).fields[key]||missing(key);}
   function diagnostics(){return{version:VERSION,sourceCount:sources.size,sourceIds:[...sources.keys()],runtimeAvailable:!!runtime(),runtimeReady:!!runtime()?.isReady?.(),generalRuntimeAvailable:!!general(),generalRuntimeReady:!!general()?.diagnostics?.().ready,countryCount:runtime()?.diagnostics?.().profileCount||0};}
-  function init(){const tasks=[];if(runtime()?.ready)tasks.push(Promise.resolve(runtime().ready));if(general()?.init)tasks.push(Promise.resolve(general().init()));return Promise.all(tasks).then(()=>{for(const id of ['economy_global_profiles_v1.json','cities.json','economy.json','population.json','society.json','country_general_data_registry_v1.json']){const data=runtime()?.getSourceDataset?.(id);if(data&&!sources.has(id))registerSource(id,data,{authority:'EXISTING_RUNTIME_SOURCE'});}const geo=root.Game?.Map?.countryGeoJSON||root.Game?.Map?.geoData||root.worldGeoJSON||root.worldData;if(geo&&!sources.has('world.json'))registerSource('world.json',geo,{authority:'GEOGRAPHIC_REFERENCE'});const roster=root.OmegaGeographicRegionSystem?.countries||root.countryRoster||root.countriesData;if(roster&&!sources.has('countries.json'))registerSource('countries.json',roster,{authority:'CANONICAL_MAP_ROSTER'});return diagnostics();});}
-  root.OmegaCountryDataGateway=Object.freeze({VERSION,init,resolveCountry,getSnapshot,getField,getValue,getDomainRecord,auditCountry,auditAllCountries,registerSource,diagnostics});
+  async function loadGeneralData(){
+    const api=general();
+    if(!api||typeof api.init!=='function'){
+      const loader=root.OmegaCountryGeneralDataLoader;
+      if(loader?.load)await loader.load();
+    }
+    const readyApi=general();
+    if(!readyApi||typeof readyApi.init!=='function')return false;
+    const ready=await readyApi.init();
+    if(!ready)return false;
+    const data=runtime()?.getSourceDataset?.('country_general_data_registry_v1.json');
+    if(data&&!sources.has('country_general_data_registry_v1.json'))
+      registerSource('country_general_data_registry_v1.json',data,{authority:'EXISTING_RUNTIME_SOURCE'});
+    return true;
+  }
+  async function init(){
+    if(runtime()?.ready)await runtime().ready;
+    // General facts and the 18 MB registry are intentionally excluded from the
+    // gateway's startup path. Consumers request them through loadGeneralData().
+    for(const id of ['economy_global_profiles_v1.json','cities.json','economy.json','population.json','society.json']){
+      const data=runtime()?.getSourceDataset?.(id);
+      if(data&&!sources.has(id))registerSource(id,data,{authority:'EXISTING_RUNTIME_SOURCE'});
+    }
+    const geo=root.Game?.Map?.countryGeoJSON||root.Game?.Map?.geoData||root.worldGeoJSON||root.worldData;
+    if(geo&&!sources.has('world.json'))registerSource('world.json',geo,{authority:'GEOGRAPHIC_REFERENCE'});
+    const roster=root.OmegaGeographicRegionSystem?.countries||root.countryRoster||root.countriesData;
+    if(roster&&!sources.has('countries.json'))registerSource('countries.json',roster,{authority:'CANONICAL_MAP_ROSTER'});
+    return diagnostics();
+  }
+  root.OmegaCountryDataGateway=Object.freeze({VERSION,init,loadGeneralData,resolveCountry,getSnapshot,getField,getValue,getDomainRecord,auditCountry,auditAllCountries,registerSource,diagnostics});
   root.Omega=root.Omega||{};root.Omega.CountryDataGateway=root.OmegaCountryDataGateway;
   function emit(type,detail){try{if(typeof root.CustomEvent==='function')root.dispatchEvent?.(new root.CustomEvent(type,{detail}));}catch(_){}}
   root.addEventListener?.('OMEGA_COUNTRY_CONTEXT_CHANGED',event=>{const country=event?.detail?.countryId||event?.detail?.country;if(country)emit('OMEGA_COUNTRY_DATA_CONTEXT_READY',{countryId:country,snapshot:getSnapshot(country)});});
