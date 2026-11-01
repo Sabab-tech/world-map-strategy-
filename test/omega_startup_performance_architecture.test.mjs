@@ -76,13 +76,18 @@ test('country general data module is lazy-loaded from the country overview scree
   assert.match(loader, /omega_country_general_data_runtime_v1\.js/);
 });
 
-test('resource endowment loads heavy data sequentially and yields between stages', async () => {
+test('resource endowment prioritizes playable mine data and moves research enrichment to idle time', async () => {
   const source = await read('omega_resource_endowment_runtime.js');
-  assert.match(source, /const reserveData=await loadSimulationReserveData\(\);[\s\S]*?await yieldResourceInitializationToUi\(\);[\s\S]*?const canonicalCatalogData=await loadCanonicalSiteCatalogData\(\);/);
-  assert.match(source, /const masterResearchData=await loadMasterResourceResearchData\(\);[\s\S]*?const researchData=await loadResearchEvidenceData\(\);/);
-  assert.doesNotMatch(source, /Promise\.all\(\[loadSimulationReserveData\(\),loadResearchEvidenceData\(\)/);
-  assert.match(source, /requestIdleCallback\(start,\{timeout:1800\}\)/);
-  assert.match(source, /mapWithConcurrency\(LEGACY_GAMEPLAY_EXPANSION_FILES,2/);
+  const initStart = source.indexOf('async function initialize(options={})');
+  const initEnd = source.indexOf("// A country's resource extraction pass", initStart);
+  const init = source.slice(initStart, initEnd);
+  assert.match(init, /const reserveData=await loadSimulationReserveData\\(\\);[\\s\\S]*?const canonicalCatalogData=await loadCanonicalSiteCatalogData\\(\\);/);
+  assert.doesNotMatch(init, /loadLosslessResourceReferenceData|loadMasterResourceResearchData|loadResearchEvidenceData/);
+  assert.match(source, /async function loadSupplementalResourceData\\(\\)[\\s\\S]*?loadLosslessResourceReferenceData\\(\\)[\\s\\S]*?loadMasterResourceResearchData\\(\\)[\\s\\S]*?loadResearchEvidenceData\\(\\)/);
+  assert.match(source, /scheduleResourceSupplementalData\\(\\)/);
+  assert.match(source, /requestIdleCallback\\(start,\\{timeout:5000\\}\\)/);
+  assert.match(source, /requestIdleCallback\\(start,\\{timeout:1800\\}\\)/);
+  assert.match(source, /mapWithConcurrency\\(LEGACY_GAMEPLAY_EXPANSION_FILES,2/);
 });
 
 test('service worker precache is bounded and excludes eager JSON datasets', async () => {
