@@ -130,7 +130,8 @@ test('service worker precache preserves offline datasets and bounds concurrent d
   assert.match(source, /omega_ui_photo_asset_catalog_v1\.json/);
   assert.match(source, /resource_site_country_mineplay_batch_20261020_v1\.json/);
   assert.match(source, /omega_ui_v2\/omega-ui-v2\.css/);
-  assert.match(source, /country_general_data_registry_v1\.json/);
+  assert.doesNotMatch(source, /country_general_data_registry_v1\\.json/);
+  assert.doesNotMatch(source, /omega_country_general_data_runtime_v1\\.js/);
   assert.ok(source.includes('endsWith(".json")'), "HTML-discovered JSON datasets must remain demand-cached");
 
 });
