@@ -1205,7 +1205,7 @@ console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');
     // The turn scheduler must select an available commodity for a recipe-less universal
     // plant, transfer a tracked warehouse batch, and complete a real production cycle.
     const resourceState=context.Game.state.resource.BGD;
-    const ironRecipe=N.recipeFor('iron_ore',universal);
+    const selectedIronRecipe=N.recipeFor('iron_ore',universal);
     const inputBatchId='STARTING-FACTORY-IRON-ORE-INPUT';
     resourceState.inventory.iron_ore=100;
     resourceState.warehouse={
@@ -1214,7 +1214,7 @@ console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');
     };
     const inputBatch={
       batchId:inputBatchId,countryId:'BGD',resourceId:'iron_ore',quantity:100,remainingQuantity:100,
-      unit:ironRecipe.inputUnit,stage:'RAW',status:'AVAILABLE',warehouseId:'WH-BGD-RAW',createdTurn:1
+      unit:selectedIronRecipe.inputUnit,stage:'RAW',status:'AVAILABLE',warehouseId:'WH-BGD-RAW',createdTurn:1
     };
     resourceState.batches=[inputBatch];
     resourceState.inventoryLots={[inputBatchId]:{...inputBatch,status:'AVAILABLE'}};
