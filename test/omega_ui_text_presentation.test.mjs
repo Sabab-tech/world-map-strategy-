@@ -161,3 +161,23 @@ test('new and updated interface labels are formatted without duplicate wrappers'
   assert.equal(env.window.OmegaUIPresentation.install(), true);
   assert.equal(env.observers.length, 1, 'installation must be idempotent');
 });
+
+test('map geometry and map-owned text stay outside the presentation observer', () => {
+  const env = createEnvironment();
+  const observer = env.observers[0];
+
+  const mapRoot = new MockElement('div');
+  mapRoot.id = 'render-engine-root';
+  const mapText = new MockElement('span');
+  mapText.appendChild(new MockText('map_feature_internal_name'));
+  mapRoot.appendChild(mapText);
+  env.document.body.appendChild(mapRoot);
+
+  observer.trigger([{ type: 'childList', addedNodes: [mapRoot] }]);
+  assert.equal(mapText.textContent, 'map_feature_internal_name');
+
+  const textNode = mapText.childNodes[0];
+  textNode.nodeValue = 'another_map_label';
+  observer.trigger([{ type: 'characterData', target: textNode }]);
+  assert.equal(mapText.textContent, 'another_map_label');
+});
