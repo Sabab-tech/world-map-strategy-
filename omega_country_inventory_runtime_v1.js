@@ -859,8 +859,9 @@
         var sourceContract = inventoryCatalog.externalInputSources &&
           inventoryCatalog.externalInputSources[pid];
         var defaultStage = action === 'IMPORT' && sourceContract &&
-          String(sourceContract.sourceSector || '').toUpperCase() === 'INTERNATIONAL_TRADE'
-          ? String(sourceContract.inventoryStage || 'RAW_EXTRACTED') : 'FINISHED';
+          String(sourceContract.sourceSector || '').toUpperCase() === 'INTERNATIONAL_TRADE' &&
+          sourceContract.inventoryStage
+          ? String(sourceContract.inventoryStage) : 'FINISHED';
         var warehouseResult = addToWarehouse(cid, productId, quantity, {
           stage: input.stage || defaultStage,
           unit: input.unit, sourceCountryId: input.sourceCountryId || cid, action: action
