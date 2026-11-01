@@ -4556,7 +4556,9 @@ function completeFactoryProductionCycle(countryId,asset,cycle,result){
   cycle.createdBatchIds=clone(result.createdBatchIds||[]);cycle.lastBlockedReason=null;
   releaseFactoryCycleReservations(asset,cycle.cycleId);
   asset.activeProductionCycleId=null;asset.lastProductionCycleId=cycle.cycleId;asset.lastProductionCycleCompletedDate=cycle.actualCompletionDate;
-  factorySetProductionHealth(asset,cycle.productivityPct<99.999?'REDUCED':'READY',actualProduction,cycle.capacityPerDay,{cycleId:cycle.cycleId});
+  cycle.productionConstraints=clone(result.productionConstraints||cycle.productionConstraints||{});
+  factorySetProductionHealth(asset,cycle.productivityPct<99.999?'REDUCED':'READY',actualProduction,cycle.capacityPerDay,
+    {cycleId:cycle.cycleId,constraints:clone(cycle.productionConstraints)});
   n.factoryProductionCycleHistory.push(clone(cycle));n.factoryProductionCycleHistory=n.factoryProductionCycleHistory.slice(-MAX_EVENTS);
   // Batch lineage from the committed transaction is the only source of truth for
   // which sites and shipments were consumed by this cycle. Input-lot IDs (for example,
