@@ -4,7 +4,7 @@
  */
 (function (root) {
   'use strict';
-  const state = { ready:false, settled:false, error:null, promise:null, profiles:[], extras:new Map(), byCode:new Map(), byIso3:new Map(), byNumeric:new Map(), aliases:new Map(), cities:new Map(), legacyEconomy:{}, legacyPopulation:{}, datasets:new Map(), strategicProfiles:new Map(), strategicProfileDiagnostics:{available:false,profileCount:0,error:null} };
+  const state = { ready:false, settled:false, error:null, promise:null, profiles:[], extras:new Map(), byCode:new Map(), byIso3:new Map(), byNumeric:new Map(), aliases:new Map(), cities:new Map(), legacyEconomy:{}, legacyPopulation:{}, datasets:new Map(), datasetPromises:new Map(), strategicProfiles:new Map(), strategicProfileDiagnostics:{available:false,profileCount:0,error:'NOT_LOADED_UNTIL_REQUESTED'} };
   const s = v => String(v == null ? '' : v).trim();
   const norm = v => s(v).normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/&/g, ' AND ').replace(/[_’'`-]+/g, ' ').replace(/[^A-Z0-9]+/gi, ' ').trim().toUpperCase().replace(/\s+/g, ' ');
   const fixedAliases = {
@@ -261,31 +261,26 @@
   }
   function init() {
     if(state.promise)return state.promise;
+    // Keep startup identity/economy data small. The 18 MB general registry is loaded
+    // only when its screen is requested through the shared single-flight loader below.
     state.promise=Promise.all([
       load('./economy_global_profiles_v1.json',false),
       load('./cities.json',true).catch(()=>null),
       load('./economy.json',true).catch(()=>null),
       load('./population.json',true).catch(()=>null),
-      load('./society.json',true).catch(()=>null),
-      load('./country_general_data_registry_v1.json',true).catch(()=>null)
+      load('./society.json',true).catch(()=>null)
     ])
-      .then(([data,cityData,economyData,populationData,societyData,strategicRegistry])=>{
+      .then(([data,cityData,economyData,populationData,societyData])=>{
         if(!data||!Array.isArray(data.countries))throw new Error('COUNTRY_PROFILE_REGISTRY_INVALID');
         buildProfiles(data.countries);
         addSupplementalIdentities();
         state.legacyEconomy=economyData&&typeof economyData==='object'?economyData:{};
         state.legacyPopulation=populationData&&typeof populationData==='object'?populationData:{};
-        // Keep references to already-loaded source objects so connected UIs can inspect provenance
-        // without copying these datasets into a second country database.
         state.datasets.set('economy_global_profiles_v1.json',data);
         if(cityData)state.datasets.set('cities.json',cityData);
         if(economyData)state.datasets.set('economy.json',economyData);
         if(populationData)state.datasets.set('population.json',populationData);
         if(societyData)state.datasets.set('society.json',societyData);
-        if(strategicRegistry)state.datasets.set('country_general_data_registry_v1.json',strategicRegistry);
-        const strategicIndex=buildStrategicProfiles(strategicRegistry);
-        state.strategicProfiles=strategicIndex.profiles;
-        state.strategicProfileDiagnostics=strategicIndex.diagnostics;
         state.cities.clear();
         (Array.isArray(cityData?.countries)?cityData.countries:[]).forEach(row=>{
           const p=row&&resolveCountry(row.name); if(p)state.cities.set(p.countryCode,row);
@@ -294,6 +289,29 @@
       }).catch(error=>{state.ready=false;state.settled=true;state.error=String(error?.message||error);return false;});
     return state.promise;
   }
+  function loadSourceDataset(id,options) {
+    const key=s(id).replace(/^\.\//,'');
+    if(!key||key.includes('/')||key.includes('..'))return Promise.reject(new Error('INVALID_SOURCE_DATASET_ID'));
+    if(state.datasets.has(key))return Promise.resolve(state.datasets.get(key));
+    if(state.datasetPromises.has(key))return state.datasetPromises.get(key);
+    const optional=options?.optional!==false;
+    const pending=load('./'+key,optional).then(data=>{
+      if(!data)return null;
+      state.datasets.set(key,data);
+      if(key==='country_general_data_registry_v1.json'){
+        const strategicIndex=buildStrategicProfiles(data);
+        state.strategicProfiles=strategicIndex.profiles;
+        state.strategicProfileDiagnostics=strategicIndex.diagnostics;
+      }
+      return data;
+    }).catch(error=>{if(optional)return null;throw error;}).finally(()=>state.datasetPromises.delete(key));
+    state.datasetPromises.set(key,pending);
+    return pending;
+  }
+  async function getStrategicProfileAsync(value) {
+    if(!state.strategicProfiles.size)await loadSourceDataset('country_general_data_registry_v1.json',{optional:true});
+    return getStrategicProfile(value);
+  }
   function getSourceDataset(id){return state.datasets.get(String(id||'').trim())||null;}
-  root.OmegaCountryRuntimeData=Object.freeze({version:'1.3.0',init,ready:init(),isReady:()=>state.ready,isSettled:()=>state.settled,resolveCountry,flagFor,getProfile,getStrategicProfile,getRecord,getLiveRecord,getSourceDataset,getCapital,getCities,diagnostics,listProfiles});
+  root.OmegaCountryRuntimeData=Object.freeze({version:'1.4.0',init,ready:init(),isReady:()=>state.ready,isSettled:()=>state.settled,resolveCountry,flagFor,getProfile,getStrategicProfile,getStrategicProfileAsync,getRecord,getLiveRecord,loadSourceDataset,getSourceDataset,getCapital,getCities,diagnostics,listProfiles});
 })(window);
