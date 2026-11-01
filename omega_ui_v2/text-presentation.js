@@ -20,7 +20,22 @@
       .replace(/[ \t]{2,}/g, ' ');
   }
 
+  function isInsideMapSurface(node) {
+    var current = node && (node.nodeType === 1 ? node :
+      (node.parentElement ||
+        (node.parentNode && node.parentNode.nodeType === 1 ? node.parentNode : null)));
+
+    while (current) {
+      var id = String(current.id || '');
+      if (id === 'render-engine-root' || id === 'map') return true;
+      current = current.parentElement;
+    }
+    return false;
+  }
+
   function hasRawTextAncestor(node) {
+    if (isInsideMapSurface(node)) return true;
+
     var current = node && (node.parentElement ||
       (node.parentNode && node.parentNode.nodeType === 1 ? node.parentNode : null));
 
