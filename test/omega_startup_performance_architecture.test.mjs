@@ -67,11 +67,17 @@ test('general data runtime reads registry only through the shared owner', async 
   assert.doesNotMatch(source, /root\.fetch\(DATA_URL/);
 });
 
-test('country general data module is lazy-loaded from the country overview screen', async () => {
+test('country general data module is lazy-loaded from the country overview screen in every shell', async () => {
   const index = await read('index.html');
+  const server = await read('server.js');
+  const bootstrap = await read('server_bootstrap.js');
   const loader = await read('omega_country_general_data_loader_v1.js');
   assert.match(index, /omega_country_general_data_loader_v1\.js/);
   assert.doesNotMatch(index, /omega_country_general_data_runtime_v1\.js/);
+  assert.match(server, /COUNTRY_GENERAL_DATA_SCRIPT = '<script src="\\/omega_country_general_data_loader_v1\.js"/);
+  assert.doesNotMatch(server, /COUNTRY_GENERAL_DATA_SCRIPT = '<script src="\\/omega_country_general_data_runtime_v1\.js"/);
+  assert.match(bootstrap, /omega_country_general_data_loader_v1\.js/);
+  assert.doesNotMatch(bootstrap, /omega_country_general_data_runtime_v1\.js/);
   assert.match(loader, /renderChapter1_Overview/);
   assert.match(loader, /omega_country_general_data_runtime_v1\.js/);
 });
