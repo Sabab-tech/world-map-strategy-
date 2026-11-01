@@ -1369,3 +1369,22 @@ test('country utility capacity is reserved and split proportionally across facto
   assert.equal(Number(reservations.reduce((sum, row) => sum + row.waterM3, 0).toFixed(6)),
     catalog.factoryProfiles.STEEL_AND_ALLOY_WORKS.utilities.waterM3PerDay);
 });
+
+
+test('scarce country workforce is shared proportionally across unequal factory orderings', () => {
+  const { context, api } = makeRuntime();
+  const first = makeSteelAsset({ id: 'FAC-STAFF-A' });
+  const second = makeSteelAsset({ id: 'FAC-STAFF-B' });
+  context.Game.state.economy.BGD = {
+    unemploymentCount: 1000, laborForce: 6000000, unemployment_rate: 0.0167,
+    productionAssets: [second, first]
+  };
+  const result = api.reconcileFactoryEmployment('BGD');
+  assert.equal(result.jobsSupported, 10000);
+  assert.equal(result.jobsFilled, 1000);
+  assert.equal(first.employment.jobsFilled, 500);
+  assert.equal(second.employment.jobsFilled, 500);
+  api.reconcileFactoryEmployment('BGD');
+  assert.equal(first.employment.jobsFilled + second.employment.jobsFilled, 1000);
+  assert.equal(context.Game.state.economy.BGD.unemploymentCount, 0);
+});
