@@ -1973,6 +1973,7 @@ function utilityTurnBucket(countryId){
   bucket.used=bucket.used&&typeof bucket.used==='object'?bucket.used:{};
   bucket.used.electricityMWh=Math.max(0,num(bucket.used.electricityMWh)||0);
   bucket.used.waterM3=Math.max(0,num(bucket.used.waterM3)||0);
+  bucket.reservations=Array.isArray(bucket.reservations)?bucket.reservations:[];
   bucket.transactions=Array.isArray(bucket.transactions)?bucket.transactions:[];
   return bucket;
 }
@@ -2012,10 +2013,14 @@ function previewFactoryUtilityUse(countryId,asset,productionQuantity){
   const fraction=Math.min(1,quantity/capacity);
   const required={electricityMWh:Number((powerDaily*fraction).toFixed(6)),waterM3:Number((waterDaily*fraction).toFixed(6))};
   const supply=utilitySupplyValues(cid),bucket=utilityTurnBucket(cid);
+  const reserved=bucket.reservations.reduce((sum,row)=>({
+    electricityMWh:sum.electricityMWh+Math.max(0,num(row.electricityMWh)||0),
+    waterM3:sum.waterM3+Math.max(0,num(row.waterM3)||0)
+  }),{electricityMWh:0,waterM3:0});
   const used={electricityMWh:bucket.used.electricityMWh,waterM3:bucket.used.waterM3};
   const checks=[
-    {key:'electricityMWh',label:'ELECTRICITY',supply:supply.power,unit:'MWh',required:required.electricityMWh,used:used.electricityMWh},
-    {key:'waterM3',label:'INDUSTRIAL_WATER',supply:supply.water,unit:'M3',required:required.waterM3,used:used.waterM3}
+    {key:'electricityMWh',label:'ELECTRICITY',supply:supply.power,unit:'MWh',required:required.electricityMWh,used:used.electricityMWh+reserved.electricityMWh},
+    {key:'waterM3',label:'INDUSTRIAL_WATER',supply:supply.water,unit:'M3',required:required.waterM3,used:used.waterM3+reserved.waterM3}
   ];
   const missing=checks.filter(x=>x.required>1e-9&&x.supply===null);
   if(missing.length)return{status:'BLOCKED',reason:'FACTORY_UTILITY_SUPPLY_NOT_RECORDED',countryId:cid,factoryId,
@@ -2027,6 +2032,20 @@ function previewFactoryUtilityUse(countryId,asset,productionQuantity){
   return{status:'READY',countryId:cid,factoryId,factoryType:type,turn:turn(),capacity,productionQuantity,
     utilizationFraction:fraction,required,used,supply:{electricityMWhPerDay:supply.power,waterM3PerDay:supply.water},
     supplyAuthority:supply.authority||'COMPLETED_UTILITY_PROJECTS_OR_EXPLICIT_GAME_STATE'};
+}
+function reserveFactoryCycleUtilities(countryId,asset,cycleId,preview){
+  const bucket=utilityTurnBucket(countryId),id=String(cycleId||'');
+  if(!id||!preview?.required)return{status:'BLOCKED',reason:'FACTORY_UTILITY_RESERVATION_INVALID'};
+  if(bucket.reservations.some(row=>String(row.cycleId)===id))return{status:'RESERVED',idempotent:true};
+  const row={cycleId:id,factoryId:String(asset?.id||asset?.assetId||asset?.factoryId||asset?.projectId||''),
+    electricityMWh:Math.max(0,num(preview.required.electricityMWh)||0),
+    waterM3:Math.max(0,num(preview.required.waterM3)||0),turn:turn()};
+  bucket.reservations.push(row);return{status:'RESERVED',reservation:clone(row)};
+}
+function releaseFactoryCycleUtilityReservation(countryId,cycleId){
+  const bucket=utilityTurnBucket(countryId),id=String(cycleId||''),before=bucket.reservations.length;
+  bucket.reservations=bucket.reservations.filter(row=>String(row?.cycleId||'')!==id);
+  return before-bucket.reservations.length;
 }
 function commitFactoryUtilityUse(countryId,asset,preview,transactionId){
   const cid=canonicalCountry(countryId),bucket=utilityTurnBucket(cid);
@@ -2739,6 +2758,12 @@ function startFactoryProductionCycle(input={}){
     factorySetProductionHealth(asset,'STOPPED',0,metrics.capacity,{reason:reserved.reason,detail:reserved});
     return{status:'BLOCKED',reason:reserved.reason,factoryId:fid,detail:reserved};
   }
+  const utilityReservation=reserveFactoryCycleUtilities(cid,asset,cycle.cycleId,utilityPreview);
+  if(utilityReservation.status!=='RESERVED'){
+    releaseFactoryCycleReservations(asset,cycle.cycleId);
+    return{status:'BLOCKED',reason:utilityReservation.reason||'FACTORY_UTILITY_RESERVATION_FAILED',factoryId:fid};
+  }
+  cycle.utilityReservation=clone(utilityReservation.reservation||null);
   cycle.inputBatchReservations=reserved.reservations;
   cycle.sourceBatchIds=[...new Set(reserved.reservations.map(row=>String(row.batchId||'')).filter(Boolean))];
   n.factoryProductionCycles[fid]=cycle;
@@ -2751,6 +2776,7 @@ function startFactoryProductionCycle(input={}){
 function completeFactoryProductionCycle(countryId,asset,cycle,result){
   const cid=canonicalCountry(countryId),n=netState(cid);
   if(result?.status!=='COMPLETED'){
+    releaseFactoryCycleUtilityReservation(cid,cycle.cycleId);
     cycle.status='PAUSED';cycle.lastBlockedReason=result?.reason||'FACTORY_PRODUCTION_COMPLETION_BLOCKED';
     cycle.lastBlockedDetail=clone(result);cycle.pausedTurn=turn();
     factorySetProductionHealth(asset,'STOPPED',0,cycle.capacityPerDay,{reason:cycle.lastBlockedReason,cycleId:cycle.cycleId,detail:result});
@@ -2765,6 +2791,7 @@ function completeFactoryProductionCycle(countryId,asset,cycle,result){
   cycle.transactionId=result.transactionId;cycle.outputQuantities=clone(result.outputQuantities||result.outputs||{});
   cycle.createdBatchIds=clone(result.createdBatchIds||[]);cycle.lastBlockedReason=null;
   releaseFactoryCycleReservations(asset,cycle.cycleId);
+  releaseFactoryCycleUtilityReservation(cid,cycle.cycleId);
   asset.activeProductionCycleId=null;asset.lastProductionCycleId=cycle.cycleId;asset.lastProductionCycleCompletedDate=cycle.actualCompletionDate;
   factorySetProductionHealth(asset,cycle.productivityPct<99.999?'REDUCED':'READY',actualProduction,cycle.capacityPerDay,{cycleId:cycle.cycleId});
   n.factoryProductionCycleHistory.push(clone(cycle));n.factoryProductionCycleHistory=n.factoryProductionCycleHistory.slice(-MAX_EVENTS);
