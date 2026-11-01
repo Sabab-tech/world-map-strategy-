@@ -52,7 +52,7 @@ function build({ baseline, catalog, sites, economyRules }) {
       }
 
       if (factoryType === 'UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT') {
-        const mineResources = Object.entries(siteMix[countryId] || {}).sort((a, b) => a[0].localeCompare(b[0]));
+        const mineResources = Object.entries(siteMix[countryId] || {}).sort((a, b) => a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0);
         let allocations = [], allocationSource = 'DOMESTIC_COMMERCIAL_SITE_MIX';
         if (mineResources.length) {
           domesticProcessorCountries++;
