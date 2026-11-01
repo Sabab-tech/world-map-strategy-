@@ -94,7 +94,7 @@
   let losslessReferenceMap=null,losslessReferencePromise=null,masterResearchMap=null,masterResearchPromise=null;
   const LEGACY_GAMEPLAY_EXPANSION_FILES=['resource_site_legacy_gameplay_expansion_part_1_v1.json','resource_site_legacy_gameplay_expansion_part_2_v1.json','resource_site_legacy_gameplay_expansion_part_3_v1.json','resource_site_legacy_gameplay_expansion_part_4_v1.json','resource_site_legacy_gameplay_expansion_part_5_v1.json','resource_site_legacy_gameplay_expansion_part_6_v1.json'];
   const LEGACY_CANONICAL_ALIAS_IDS={SITE_AUS_olympic_dam_uranium_copper:'SITE_AUS_olympic_dam_mine',SITE_BRA_carajas_iron_ore_mine_legacy2:'SITE_BRA_carajas_iron_ore_mine',SITE_CHL_escondida_copper_mine_legacy2:'SITE_CHL_escondida_copper_mine',SITE_IDN_grasberg_copper_gold_mine:'SITE_IDN_grasberg_mine',SITE_COD_tenke_fungurume_copper_cobalt_complex:'SITE_COD_tenke_fungurume_mine',SITE_COD_kibali_gold_mine_complex:'SITE_COD_kibali_gold_mine',SITE_CAN_voiseys_bay_nickel_mine:'SITE_CAN_voisey_s_bay_nickel_mine',SITE_GBR_boulby_mine:'SITE_GBR_boulby_potash_mine',SITE_SWE_kiruna_iron_ore_mine:'SITE_SWE_kiruna_iron_mine',SITE_PRK_musan_iron_ore_mine:'SITE_PRK_musan_iron_mine'};
-  let legacyGameplayExpansionRows=null,legacyGameplayExpansionPromise=null;
+  let legacyGameplayExpansionRows=null,legacyGameplayExpansionPromise=null,legacyGameplayExpansionLoadedParts=0;
   async function mapWithConcurrency(items,limit,worker){
     const results=new Array(items.length);
     let cursor=0;
@@ -109,7 +109,7 @@
     return results;
   }
   async function loadLegacyGameplayExpansionRows(){
-    if(Array.isArray(legacyGameplayExpansionRows))return{status:'READY',count:legacyGameplayExpansionRows.length,reused:true,rows:legacyGameplayExpansionRows};
+    if(Array.isArray(legacyGameplayExpansionRows))return{status:legacyGameplayExpansionLoadedParts===6?'READY':'PARTIAL',count:legacyGameplayExpansionRows.length,reused:true,rows:legacyGameplayExpansionRows,loadedParts:legacyGameplayExpansionLoadedParts};
     if(legacyGameplayExpansionPromise)return legacyGameplayExpansionPromise;
     legacyGameplayExpansionPromise=(async()=>{
       const packs=await mapWithConcurrency(LEGACY_GAMEPLAY_EXPANSION_FILES,2,async file=>{
@@ -118,7 +118,8 @@
       });
       const unique=new Map();for(const pack of packs.filter(Boolean).sort((a,b)=>Number(a.part)-Number(b.part)))for(const row of pack.records)if(row?.siteId&&!unique.has(String(row.siteId)))unique.set(String(row.siteId),row);
       legacyGameplayExpansionRows=[...unique.values()];
-      return{status:legacyGameplayExpansionRows.length===115?'READY':'PARTIAL',count:legacyGameplayExpansionRows.length,rows:legacyGameplayExpansionRows,loadedParts:packs.filter(Boolean).length};
+      legacyGameplayExpansionLoadedParts=packs.filter(Boolean).length;
+      return{status:legacyGameplayExpansionRows.length===115?'READY':'PARTIAL',count:legacyGameplayExpansionRows.length,rows:legacyGameplayExpansionRows,loadedParts:legacyGameplayExpansionLoadedParts};
     })().finally(()=>{legacyGameplayExpansionPromise=null;});
     return legacyGameplayExpansionPromise;
   }
