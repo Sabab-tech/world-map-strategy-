@@ -2918,6 +2918,7 @@ function batchFromExtraction(x,record){
         publishBootstrapStatus(snapshot);
         return snapshot;
       }
+      void scheduleResourceSupplementalData();
       const bindingSync=await syncBoundSiteRegistry(binding.sites);
       if(bindingSync.status!=='READY'){
         const snapshot=failureSnapshot({status:'FAILED',reason:bindingSync.reason||'SITE_BINDING_REGISTRY_SYNC_FAILED'});
