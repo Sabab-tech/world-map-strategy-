@@ -52,7 +52,12 @@ jobs:
         run: |
           git fetch --no-tags --depth=1 origin "$BASE_SHA"
           changed_files="$(git diff --name-only "$BASE_SHA" HEAD)"
-          source_paths_regex='^(factory_isic_mapping_v1\\.json|country_factory_establishment_data_v1\\.json|scripts/build_country_factory_establishment_data_v1\\.mjs|scripts/export_unido_indstat_establishments\\.py)
+          source_paths_regex='^(factory_isic_mapping_v1\.json|country_factory_establishment_data_v1\.json|scripts/build_country_factory_establishment_data_v1\.mjs|scripts/export_unido_indstat_establishments\.py)$'
+          if printf '%s\n' "$changed_files" | grep -Eq "$source_paths_regex"; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
       - name: Check importer, exporter, runtime and UI syntax
         run: |
           node --check scripts/build_country_factory_establishment_data_v1.mjs
