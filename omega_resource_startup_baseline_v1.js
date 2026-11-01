@@ -7,7 +7,7 @@
 (function (g) {
   'use strict';
 
-  var VERSION = '1.0.0';
+  var VERSION = '1.1.0';
   if (g.OmegaResourceStartupBaseline && g.OmegaResourceStartupBaseline.VERSION === VERSION) return;
 
   var PATHS = {
@@ -15,7 +15,8 @@
     economyRules: './resource_economy_rules.json',
     industrialCatalog: './resource_industrial_catalog_v1.json',
     sites: './resource_site_reserve_simulation_v1.json',
-    countryProfiles: './economy_global_profiles_v1.json'
+    countryProfiles: './economy_global_profiles_v1.json',
+    factoryInputBaseline: './country_factory_input_inventory_baseline_v1.json'
   };
   var data = null;
   var loadPromise = null;
@@ -177,7 +178,8 @@
         !object(rules.demand.resourceProfiles) || !object(catalog) ||
         !object(catalog.factoryProfiles) || !object(catalog.processingRules) ||
         !object(catalog.downstreamFactoryRecipes) || !object(catalog.technologyProjects) ||
-        !Array.isArray(loaded.siteDocument.records) || !Array.isArray(loaded.countryDocument.countries)) {
+        !Array.isArray(loaded.siteDocument.records) || !Array.isArray(loaded.countryDocument.countries) ||
+        !object(loaded.factoryInputBaseline) || !object(loaded.factoryInputBaseline.countries)) {
       throw new Error('STARTUP_BASELINE_SOURCE_SCHEMA_INVALID');
     }
     var expectedResources = finite(policy.canonicalIdentityPolicy && policy.canonicalIdentityPolicy.resourceProfileCount);
@@ -187,12 +189,41 @@
       throw new Error('STARTUP_BASELINE_CANONICAL_CATALOG_COUNT_MISMATCH');
     }
     if (!rules.demand.resourceProfiles || !catalog.factoryProfiles) throw new Error('STARTUP_BASELINE_CATALOG_UNAVAILABLE');
+    var inputBaseline = loaded.factoryInputBaseline;
+    if (Number(inputBaseline.countryCount) !== 197 ||
+        Number(inputBaseline.factoryTypeCount) !== expectedFactories ||
+        Object.keys(inputBaseline.countries).length !== 197 ||
+        Number(inputBaseline.buffer && inputBaseline.buffer.percent) !== 40 ||
+        Math.abs(Number(inputBaseline.buffer && inputBaseline.buffer.multiplier) - 1.4) > 1e-9) {
+      throw new Error('FACTORY_INPUT_BASELINE_COUNTRY_BUFFER_OR_TYPE_CONTRACT_INVALID');
+    }
+    Object.keys(inputBaseline.countries).forEach(function (countryId) {
+      var country = inputBaseline.countries[countryId];
+      if (!object(country) || id(country.countryId) !== countryId ||
+          !Array.isArray(country.factoryInputRows)) {
+        throw new Error('FACTORY_INPUT_BASELINE_COUNTRY_ROW_INVALID:' + countryId);
+      }
+      country.factoryInputRows.forEach(function (row) {
+        var demand = finite(row && row.demandPerFullCycle);
+        var buffer = finite(row && row.bufferQuantity);
+        var opening = finite(row && row.openingStockQuantity);
+        if (!object(row) || !token(row.productId) ||
+            ['RAW', 'INTERMEDIATE'].indexOf(id(row.stage)) < 0 ||
+            demand === null || demand <= 0 || buffer === null || opening === null ||
+            Math.abs(buffer - demand * 0.4) > 1e-5 ||
+            Math.abs(opening - demand * 1.4) > 1e-5 ||
+            !Array.isArray(row.sources) || !row.sources.length) {
+          throw new Error('FACTORY_INPUT_BASELINE_PRODUCT_ROW_INVALID:' + countryId + ':' + (row && row.productId));
+        }
+      });
+    });
     loaded.countryProfiles = loaded.countryDocument.countries;
     loaded.siteRows = loaded.siteDocument.records;
     loaded.resourceProfiles = rules.demand.resourceProfiles;
     loaded.factoryProfiles = catalog.factoryProfiles;
     loaded.processingRules = catalog.processingRules;
     loaded.downstreamRecipes = catalog.downstreamFactoryRecipes;
+    loaded.factoryInputBaseline = inputBaseline;
     return loaded;
   }
   async function fetchJson(url) {
@@ -208,15 +239,18 @@
       fetchJson(PATHS.economyRules),
       fetchJson(PATHS.industrialCatalog),
       fetchJson(PATHS.sites),
-      fetchJson(PATHS.countryProfiles)
+      fetchJson(PATHS.countryProfiles),
+      fetchJson(PATHS.factoryInputBaseline)
     ]).then(function (values) {
       data = checkData({
         policy: values[0], economyRules: values[1], industrialCatalog: values[2],
-        siteDocument: values[3], countryDocument: values[4]
+        siteDocument: values[3], countryDocument: values[4], factoryInputBaseline: values[5]
       });
       return { status: 'READY', version: VERSION, countryCount: data.countryProfiles.length,
         resourceProfileCount: Object.keys(data.resourceProfiles).length,
-        factoryProfileCount: Object.keys(data.factoryProfiles).length };
+        factoryProfileCount: Object.keys(data.factoryProfiles).length,
+        factoryInputCountryCount: Object.keys(data.factoryInputBaseline.countries).length,
+        factoryInputProductCount: Object.keys(data.factoryInputBaseline.worldOpeningStockByProduct || {}).length };
     }).catch(function (error) {
       data = null;
       loadPromise = null;
@@ -1148,15 +1182,318 @@
       seeded: seeded, preserved: preserved, unknownResourceIds: unresolved, stateMismatchResourceIds: stateMismatch,
       sourceCounts: sourceCounts, batchIds: batchIds };
   }
+  function seedCountryFactoryInputStock(resource, profile, turn) {
+    var countryId = id(profile && profile.iso3);
+    var baseline = data.factoryInputBaseline && data.factoryInputBaseline.countries[countryId] || null;
+    if (!baseline) return { status: 'NOT_IN_CORE_FACTORY_ROSTER', countryId: countryId, seeded: 0, openingStockQuantity: 0 };
+    var marker = object(resource.factoryInputBaselineV1);
+    if (marker && marker.version === data.factoryInputBaseline.version && marker.openingStockInitialized === true) {
+      return { status: 'ALREADY_INITIALIZED', countryId: countryId, seeded: 0,
+        openingStockQuantity: finite(marker.openingStockQuantity) || 0,
+        unknownProductIds: clone(marker.unknownProductIds || []) };
+    }
+    var rows = Array.isArray(baseline.factoryInputRows) ? baseline.factoryInputRows : null;
+    if (!rows) return { status: 'BLOCKED', reason: 'FACTORY_INPUT_BASELINE_PRODUCT_ROWS_INVALID',
+      countryId: countryId, seeded: 0, openingStockQuantity: 0, unknownProductIds: [] };
+
+    var inventoryPresent = own(resource, 'inventory');
+    var inventory = object(resource.inventory);
+    if (!inventory && inventoryPresent) return { status: 'BLOCKED',
+      reason: 'EXISTING_RESOURCE_INVENTORY_STATE_INVALID', countryId: countryId, seeded: 0,
+      openingStockQuantity: 0, unknownProductIds: rows.map(function (row) { return row.productId; }) };
+    inventory = inventory ? clone(inventory) : {};
+    var unitsPresent = own(resource, 'inventoryUnits');
+    var inventoryUnits = object(resource.inventoryUnits);
+    if (!inventoryUnits && unitsPresent) return { status: 'BLOCKED',
+      reason: 'EXISTING_RESOURCE_INVENTORY_UNITS_STATE_INVALID', countryId: countryId, seeded: 0,
+      openingStockQuantity: 0, unknownProductIds: rows.map(function (row) { return row.productId; }) };
+    inventoryUnits = inventoryUnits ? clone(inventoryUnits) : {};
+
+    var batchesPresent = own(resource, 'batches');
+    var batches = Array.isArray(resource.batches) ? clone(resource.batches) : [];
+    if (batchesPresent && !Array.isArray(resource.batches)) return { status: 'BLOCKED',
+      reason: 'EXISTING_RESOURCE_BATCH_STATE_INVALID', countryId: countryId, seeded: 0,
+      openingStockQuantity: 0, unknownProductIds: rows.map(function (row) { return row.productId; }) };
+    var lotsPresent = own(resource, 'inventoryLots');
+    var lots = object(resource.inventoryLots);
+    if (lotsPresent && !lots) return { status: 'BLOCKED',
+      reason: 'EXISTING_RESOURCE_INVENTORY_LOTS_STATE_INVALID', countryId: countryId, seeded: 0,
+      openingStockQuantity: 0, unknownProductIds: rows.map(function (row) { return row.productId; }) };
+    lots = lots ? clone(lots) : {};
+    var ledgerPresent = own(resource, 'inventoryLedger');
+    var ledger = Array.isArray(resource.inventoryLedger) ? clone(resource.inventoryLedger) : [];
+    if (ledgerPresent && !Array.isArray(resource.inventoryLedger)) return { status: 'BLOCKED',
+      reason: 'EXISTING_RESOURCE_INVENTORY_LEDGER_STATE_INVALID', countryId: countryId, seeded: 0,
+      openingStockQuantity: 0, unknownProductIds: rows.map(function (row) { return row.productId; }) };
+
+    function prepareWarehouse(property, kind) {
+      if (own(resource, property) && resource[property] !== null && !object(resource[property])) return null;
+      var warehouse = object(resource[property]) ? clone(resource[property]) : {
+        warehouseId: 'WH-' + countryId + '-' + kind,
+        countryId: countryId,
+        type: kind === 'RAW' ? 'SOVEREIGN_RAW_MATERIAL_WAREHOUSE' : 'SOVEREIGN_FINISHED_GOODS_WAREHOUSE',
+        locationNodeKey: 'WAREHOUSE:' + countryId + ':' + kind,
+        status: 'OPERATIONAL',
+        availableByResource: {},
+        storedBatchIds: [],
+        receipts: []
+      };
+      if (own(warehouse, 'availableByResource') && !object(warehouse.availableByResource)) return null;
+      if (own(warehouse, 'storedBatchIds') && !Array.isArray(warehouse.storedBatchIds)) return null;
+      if (own(warehouse, 'receipts') && !Array.isArray(warehouse.receipts)) return null;
+      warehouse.availableByResource = object(warehouse.availableByResource) || {};
+      warehouse.storedBatchIds = Array.isArray(warehouse.storedBatchIds) ? warehouse.storedBatchIds : [];
+      warehouse.receipts = Array.isArray(warehouse.receipts) ? warehouse.receipts : [];
+      if (!warehouse.warehouseId) warehouse.warehouseId = 'WH-' + countryId + '-' + kind;
+      if (!warehouse.countryId) warehouse.countryId = countryId;
+      if (!warehouse.locationNodeKey) warehouse.locationNodeKey = 'WAREHOUSE:' + countryId + ':' + kind;
+      if (!warehouse.type) warehouse.type = kind === 'RAW'
+        ? 'SOVEREIGN_RAW_MATERIAL_WAREHOUSE' : 'SOVEREIGN_FINISHED_GOODS_WAREHOUSE';
+      if (!warehouse.status) warehouse.status = 'OPERATIONAL';
+      return warehouse;
+    }
+    var needsRaw = rows.some(function (row) { return id(row.stage) === 'RAW'; });
+    var needsProcessed = rows.some(function (row) { return id(row.stage) === 'INTERMEDIATE'; });
+    var rawWarehouse = needsRaw ? prepareWarehouse('warehouse', 'RAW') : null;
+    var processedWarehouse = needsProcessed ? prepareWarehouse('processedWarehouse', 'PROCESSED') : null;
+    if ((needsRaw && !rawWarehouse) || (needsProcessed && !processedWarehouse)) return {
+      status: 'BLOCKED', reason: 'EXISTING_FACTORY_INPUT_WAREHOUSE_STATE_INVALID',
+      countryId: countryId, seeded: 0, openingStockQuantity: 0,
+      unknownProductIds: rows.map(function (row) { return row.productId; })
+    };
+    var boundary = g.OmegaResourceCountryBoundaryGuard || g.Omega && g.Omega.ResourceCountryBoundaryGuard;
+    if (boundary && typeof boundary.validateWarehouse === 'function') {
+      var rawCheck = rawWarehouse ? boundary.validateWarehouse(rawWarehouse, countryId) : null;
+      var processedCheck = processedWarehouse ? boundary.validateWarehouse(processedWarehouse, countryId) : null;
+      if ((rawCheck && rawCheck.ok === false) || (processedCheck && processedCheck.ok === false)) return {
+        status: 'BLOCKED', reason: (rawCheck && rawCheck.reason) ||
+          (processedCheck && processedCheck.reason) || 'FACTORY_INPUT_WAREHOUSE_COUNTRY_SCOPE_INVALID',
+        countryId: countryId, seeded: 0, openingStockQuantity: 0,
+        unknownProductIds: rows.map(function (row) { return row.productId; })
+      };
+    }
+
+    var maxBatches = Math.max(1, Math.floor(finite(data.economyRules.runtime && data.economyRules.runtime.maxBatches) || 8192));
+    var maxLedgerEntries = Math.max(1, Math.floor(finite(data.economyRules.runtime && data.economyRules.runtime.maxLedgerEntries) || 2048));
+    var seeded = 0, openingStockQuantity = 0, storedOpeningStockQuantity = 0, unknown = [], stateMismatch = [];
+    var batchIds = [], stockRows = [], inventoryEvents = [];
+    var unit = String(data.factoryInputBaseline.quantityBasis && data.factoryInputBaseline.quantityBasis.unit || 'SIMULATION_RESOURCE_UNIT');
+
+    function matchingKeys(map, wanted) {
+      var wantedToken = token(wanted);
+      return Object.keys(map || {}).filter(function (key) { return token(key) === wantedToken; });
+    }
+    rows.forEach(function (row) {
+      var productId = token(row && row.productId);
+      var quantity = positive(row && row.openingStockQuantity);
+      var demand = positive(row && row.demandPerFullCycle);
+      var buffer = finite(row && row.bufferQuantity);
+      var stage = id(row && row.stage);
+      if (!productId || !quantity || !demand || buffer === null ||
+          Math.abs(buffer - demand * 0.4) > 1e-5 || Math.abs(quantity - demand * 1.4) > 1e-5 ||
+          ['RAW', 'INTERMEDIATE'].indexOf(stage) < 0 || !Array.isArray(row.sources) || !row.sources.length) {
+        unknown.push(productId || String(row && row.productId || 'UNKNOWN_PRODUCT'));
+        return;
+      }
+      var inventoryKeys = matchingKeys(inventory, productId);
+      var warehouse = stage === 'RAW' ? rawWarehouse : processedWarehouse;
+      var warehouseKeys = matchingKeys(warehouse.availableByResource, productId);
+      if (inventoryKeys.length > 1 || warehouseKeys.length > 1) {
+        unknown.push(productId); stateMismatch.push(productId); return;
+      }
+      var inventoryKey = inventoryKeys.length ? inventoryKeys[0] : productId;
+      var unitKeys = matchingKeys(inventoryUnits, productId);
+      var currentInventory = inventoryKeys.length ? finite(inventory[inventoryKey]) : 0;
+      var warehouseKey = warehouseKeys.length ? warehouseKeys[0] : productId;
+      var currentWarehouse = warehouseKeys.length ? finite(warehouse.availableByResource[warehouseKey]) : 0;
+      if (unitKeys.length > 1) {
+        unknown.push(productId); stateMismatch.push(productId); return;
+      }
+      if (currentInventory === null || currentWarehouse === null) {
+        unknown.push(productId); stateMismatch.push(productId); return;
+      }
+      var storedUnit = unitKeys.length ? String(inventoryUnits[unitKeys[0]] || '').trim() : '';
+      if (!storedUnit) {
+        if ((inventoryKeys.length && currentInventory > 1e-9) ||
+            (warehouseKeys.length && currentWarehouse > 1e-9)) {
+          unknown.push(productId); stateMismatch.push(productId); return;
+        }
+        storedUnit = unit;
+      }
+      var unitBridge = declaredUnitBridge(storedUnit, unit);
+      var unitFactor = finite(unitBridge && unitBridge.factor);
+      if (!unitBridge || unitFactor === null || unitFactor <= 0) {
+        unknown.push(productId); stateMismatch.push(productId); return;
+      }
+      var storedQuantity = Number((quantity / unitFactor).toPrecision(12));
+      if (!(storedQuantity > 0) || !Number.isFinite(storedQuantity)) {
+        unknown.push(productId); stateMismatch.push(productId); return;
+      }
+      var batchId = 'STARTUP-FACTORY-INPUT-V1-' + countryId + '-' + productId.toUpperCase();
+      if (batches.some(function (batch) { return batch && String(batch.batchId || '') === batchId; }) ||
+          own(lots, batchId)) {
+        unknown.push(productId); stateMismatch.push(productId); return;
+      }
+      if (batches.length + seeded >= maxBatches) {
+        unknown.push(productId); stateMismatch.push(productId); return;
+      }
+      var sourceTypes = Array.from(new Set(row.sources.map(function (source) {
+        return id(source && source.factoryType);
+      }).filter(Boolean)));
+      var recipeIds = Array.from(new Set(row.sources.map(function (source) {
+        return String(source && source.recipeId || '').trim();
+      }).filter(Boolean)));
+      var provenance = {
+        source: 'SIMULATED_FACTORY_INPUT_STARTUP_BASELINE_V1',
+        authority: 'SIMULATED_FACTORY_INPUT_STARTUP_BASELINE_V1',
+        datasetId: data.factoryInputBaseline.datasetId,
+        countryId: countryId,
+        productId: productId,
+        demandPerFullCycle: demand,
+        bufferPercent: 40,
+        bufferQuantity: buffer,
+        sourceFactoryTypes: sourceTypes,
+        sourceRecipeIds: recipeIds,
+        productNamespace: row.productNamespace || null,
+        supplySource: row.supplySource || null,
+        sourceAuthority: row.sourceAuthority || null,
+        supplyMode: row.supplyMode || 'STARTUP_BASELINE_STOCK',
+        requiresRecordedUpstreamBatch: row.requiresRecordedUpstreamBatch === true,
+        storageUnit: storedUnit,
+        inputSimulationUnit: unit,
+        unitBridgeFactor: unitFactor,
+        simulationOnly: true,
+        geologicalReserveQuantityUsedAsStock: false,
+        statement: 'One-time gameplay opening stock equal to full-cycle recipe input demand plus a 40 percent buffer; not observed inventory or a recorded shipment.'
+      };
+      var warehouseId = warehouse.warehouseId;
+      var batch = {
+        batchId: batchId,
+        resourceId: productId,
+        materialIdentity: productId,
+        quantity: storedQuantity,
+        remainingQuantity: storedQuantity,
+        unit: storedUnit,
+        stage: stage,
+        status: 'AVAILABLE',
+        ownerCountryCode: countryId,
+        ownerCompanyId: 'STATE_INDUSTRY_' + countryId,
+        sourceBatchIds: [],
+        countryId: countryId,
+        sourceCountryId: countryId,
+        originCountryId: countryId,
+        destinationCountryId: countryId,
+        custodianKey: countryId,
+        warehouseId: warehouseId,
+        locationNodeKey: warehouse.locationNodeKey,
+        timestampTurn: turn,
+        transferType: 'LOCAL_RUNTIME',
+        provenance: clone(provenance)
+      };
+      var batchCheck = boundary && typeof boundary.validateLocalBatch === 'function'
+        ? boundary.validateLocalBatch(batch, countryId) : null;
+      if (batchCheck && batchCheck.ok === false) {
+        unknown.push(productId); stateMismatch.push(productId); return;
+      }
+      var nextInventory = Number((currentInventory + storedQuantity).toPrecision(12));
+      var nextWarehouse = Number((currentWarehouse + storedQuantity).toPrecision(12));
+      inventory[inventoryKey] = nextInventory;
+      if (!unitKeys.length) inventoryUnits[inventoryKey] = storedUnit;
+      batches.push(batch);
+      lots[batchId] = {
+        batchId: batchId, resourceId: productId, materialIdentity: productId,
+        quantity: storedQuantity, remainingQuantity: storedQuantity, unit: storedUnit, stage: stage,
+        status: 'AVAILABLE', countryId: countryId, warehouseId: warehouseId,
+        locationNodeKey: warehouse.locationNodeKey, ownerCompanyId: batch.ownerCompanyId,
+        sourceBatchIds: [], provenance: clone(provenance), createdTurn: turn
+      };
+      warehouse.availableByResource[warehouseKey] = nextWarehouse;
+      if (warehouse.storedBatchIds.indexOf(batchId) < 0) warehouse.storedBatchIds.push(batchId);
+      warehouse.receipts.push({
+        receiptId: 'WH-REC-' + batchId, warehouseId: warehouseId, countryId: countryId,
+        batchId: batchId, resourceId: productId, quantity: storedQuantity, unit: storedUnit,
+        simulationTurn: turn, status: 'RECEIVED',
+        source: 'SIMULATED_FACTORY_INPUT_STARTUP_BASELINE_V1',
+        provenance: clone(provenance)
+      });
+      ledger.push({
+        type: 'FACTORY_INPUT_STARTUP_STOCK_CREATED',
+        resourceId: productId, quantity: storedQuantity, unit: storedUnit, stage: stage,
+        turn: turn, batchId: batchId, source: 'SIMULATED_FACTORY_INPUT_STARTUP_BASELINE_V1',
+        demandPerFullCycle: demand, bufferPercent: 40, provenance: clone(provenance)
+      });
+      seeded++;
+      openingStockQuantity += quantity;
+      storedOpeningStockQuantity += storedQuantity;
+      batchIds.push(batchId);
+      stockRows.push({ productId: productId, stage: stage, demandPerFullCycle: demand,
+        bufferQuantity: buffer, quantity: storedQuantity, targetQuantity: quantity,
+        unit: storedUnit, inputSimulationUnit: unit, unitBridgeFactor: unitFactor, batchId: batchId,
+        sourceFactoryTypes: sourceTypes, sourceRecipeIds: recipeIds });
+      inventoryEvents.push({
+        countryId: countryId, resourceId: productId, delta: storedQuantity,
+        newQuantity: nextInventory, warehouseQuantity: nextWarehouse, stage: stage,
+        transactionId: batchId, provenance: clone(provenance)
+      });
+    });
+    if (seeded > 0) {
+      while (batches.length > maxBatches) batches.shift();
+      while (ledger.length > maxLedgerEntries) ledger.shift();
+      while (rawWarehouse && rawWarehouse.receipts.length > maxLedgerEntries) rawWarehouse.receipts.shift();
+      while (processedWarehouse && processedWarehouse.receipts.length > maxLedgerEntries) processedWarehouse.receipts.shift();
+      resource.inventory = inventory;
+      resource.inventoryUnits = inventoryUnits;
+      resource.batches = batches;
+      resource.inventoryLots = lots;
+      resource.inventoryLedger = ledger;
+      if (rawWarehouse) resource.warehouse = rawWarehouse;
+      if (processedWarehouse) resource.processedWarehouse = processedWarehouse;
+      inventoryEvents.forEach(function (detail) {
+        dispatchEvent('OMEGA_RESOURCE_INVENTORY_CHANGED', detail);
+      });
+    } else {
+      if (!inventoryPresent) resource.inventory = inventory;
+      if (!unitsPresent) resource.inventoryUnits = inventoryUnits;
+    }
+    resource.factoryInputBaselineV1 = {
+      version: data.factoryInputBaseline.version,
+      datasetId: data.factoryInputBaseline.datasetId,
+      status: unknown.length ? 'INITIALIZED_WITH_GAPS' : 'INITIALIZED',
+      openingStockInitialized: true,
+      countryId: countryId,
+      initializedTurn: turn,
+      factoryUnitCount: baseline.totalStartingFactoryUnits,
+      factoryTypeCount: data.factoryInputBaseline.factoryTypeCount,
+      bufferPercent: 40,
+      inputProductCount: rows.length,
+      seededProductCount: seeded,
+      openingStockQuantity: Number(openingStockQuantity.toPrecision(12)),
+      storedOpeningStockQuantity: Number(storedOpeningStockQuantity.toPrecision(12)),
+      unknownProductIds: unknown,
+      stateMismatchProductIds: stateMismatch,
+      stockBatchIds: batchIds,
+      stockRows: stockRows,
+      sourceFile: PATHS.factoryInputBaseline,
+      authority: 'SIMULATED_FACTORY_INPUT_STARTUP_BASELINE_V1',
+      geologicalReserveQuantityUsedAsStock: false,
+      existingSaveDataOverwritten: false
+    };
+    return { status: unknown.length ? 'INITIALIZED_WITH_GAPS' : 'INITIALIZED',
+      countryId: countryId, seeded: seeded,
+      openingStockQuantity: Number(openingStockQuantity.toPrecision(12)),
+      storedOpeningStockQuantity: Number(storedOpeningStockQuantity.toPrecision(12)),
+      unknownProductIds: unknown, stateMismatchProductIds: stateMismatch, batchIds: batchIds };
+  }
   function seedCountryContext(state, profile) {
     var econHit = bucketFor(state, 'economy', profile, true);
     if (econHit.invalid || !econHit.value) return { status: 'BLOCKED', reason: 'ECONOMY_STATE_BUCKET_INVALID' };
     return populateMissingCountryContext(state, profile, econHit.value);
   }
-  function reportCountry(state, profile, groupList, factoryResult, stockResult, contextResult) {
+  function reportCountry(state, profile, groupList, factoryResult, stockResult, factoryInputResult, contextResult) {
     var resourceHit = bucketFor(state, 'resource', profile, false);
     var economyHit = bucketFor(state, 'economy', profile, false);
     var resourceMarker = resourceHit.value && object(resourceHit.value.startupBaselineV1) || {};
+    var factoryInputMarker = resourceHit.value && object(resourceHit.value.factoryInputBaselineV1) || {};
     var economyMarker = economyHit.value && object(economyHit.value.startupBaselineV1) || {};
     return {
       countryId: id(profile.iso3),
@@ -1171,6 +1508,12 @@
       openingStockPreserved: stockResult && stockResult.preserved || 0,
       unknownResourceIds: clone(stockResult && stockResult.unknownResourceIds || []),
       stockSourceCounts: clone(stockResult && stockResult.sourceCounts || {}),
+      factoryInputStockStatus: factoryInputResult && factoryInputResult.status || 'NOT_RUN',
+      factoryInputProductsSeeded: factoryInputResult && factoryInputResult.seeded || 0,
+      factoryInputOpeningStockQuantity: factoryInputResult && factoryInputResult.openingStockQuantity || 0,
+      unknownFactoryInputProductIds: clone(factoryInputResult && factoryInputResult.unknownProductIds || []),
+      factoryInputStateMismatchProductIds: clone(factoryInputResult && factoryInputResult.stateMismatchProductIds || []),
+      factoryInputBufferPercent: factoryInputMarker.bufferPercent || null,
       factoryStatus: factoryResult && factoryResult.status || 'NOT_RUN',
       factoryAssetsCreated: factoryResult && factoryResult.status === 'ALREADY_INITIALIZED'
         ? (economyMarker.factoryAssetsCreated || 0) : (factoryResult && factoryResult.created || 0),
@@ -1178,7 +1521,8 @@
       factoryTypesUsed: clone(factoryResult && factoryResult.factoryTypesUsed && factoryResult.factoryTypesUsed.length ? factoryResult.factoryTypesUsed : economyMarker.factoryProfileTypesUsed || []),
       factoryAssetIdsCreated: clone(economyMarker.factoryAssetIdsCreated || []),
       factoryContextAuthority: 'SIMULATED_STARTUP_BASELINE_V1',
-      stockAuthority: resourceMarker.authority || 'SIMULATED_STARTUP_BASELINE_V1'
+      stockAuthority: resourceMarker.authority || 'SIMULATED_STARTUP_BASELINE_V1',
+      factoryInputStockAuthority: factoryInputMarker.authority || 'SIMULATED_FACTORY_INPUT_STARTUP_BASELINE_V1'
     };
   }
   function dispatchEvent(type, detail) {
@@ -1253,6 +1597,10 @@
       unknownStockRows: 0,
       factoryAssetsCreated: 0,
       factoryAssetCountries: 0,
+      factoryInputStockCountries: 0,
+      factoryInputProductsSeeded: 0,
+      factoryInputOpeningStockQuantity: 0,
+      factoryInputUnknownRows: 0,
       countriesWithEligibleSiteGroups: Object.keys(groups).length,
       simulatedSiteResourceGroups: 0,
       factoryTypesCreated: Object.create(null),
@@ -1292,16 +1640,17 @@
       var preExistingAssets = Array.isArray(economy.productionAssets) ? economy.productionAssets.slice() : [];
       var stockResult = seedCountryStock(state, profile, economy, resource, preExistingAssets, turn);
       var factoryResult = startupFactoryCountry(state, profile, turn, groupList);
-      // Refresh the views after factory seeding because the authoritative country
-      // objects may now contain new starter assets, utility capacity and markers.
+      var factoryInputResult = seedCountryFactoryInputStock(resource, profile, turn);
+      // Refresh the views after all additive startup records have been committed.
       economyHit = bucketFor(state, 'economy', profile, false);
       resourceHit = bucketFor(state, 'resource', profile, false);
       economy = economyHit.value || economy;
       resource = resourceHit.value || resource;
       var assets = Array.isArray(economy.productionAssets) ? economy.productionAssets : [];
-      var country = reportCountry(state, profile, groupList, factoryResult, stockResult, context);
+      var country = reportCountry(state, profile, groupList, factoryResult, stockResult, factoryInputResult, context);
       results.push(country);
-      if (context.status === 'BLOCKED' || factoryResult.status === 'BLOCKED' || stockResult.status === 'BLOCKED') {
+      if (context.status === 'BLOCKED' || factoryResult.status === 'BLOCKED' ||
+          stockResult.status === 'BLOCKED' || factoryInputResult.status === 'BLOCKED') {
         totals.countriesBlocked++;
       } else {
         totals.countriesCompleted++;
@@ -1309,6 +1658,10 @@
       totals.openingStocksSeeded += finite(stockResult.seeded) || 0;
       totals.existingStocksPreserved += finite(stockResult.preserved) || 0;
       totals.unknownStockRows += (stockResult.unknownResourceIds || []).length;
+      totals.factoryInputProductsSeeded += finite(factoryInputResult.seeded) || 0;
+      totals.factoryInputOpeningStockQuantity += finite(factoryInputResult.openingStockQuantity) || 0;
+      totals.factoryInputUnknownRows += (factoryInputResult.unknownProductIds || []).length;
+      if ((finite(factoryInputResult.seeded) || 0) > 0) totals.factoryInputStockCountries++;
       totals.simulatedSiteResourceGroups += groupList.length;
       totals.factoryAssetsCreated += finite(factoryResult.created) || 0;
       if ((finite(factoryResult.created) || 0) > 0) totals.factoryAssetCountries++;
@@ -1318,7 +1671,7 @@
     });
     var report = {
       version: VERSION,
-      status: (totals.countriesBlocked || totals.unknownStockRows) ? 'COMPLETED_WITH_REPORTED_GAPS' : 'COMPLETED',
+      status: (totals.countriesBlocked || totals.unknownStockRows || totals.factoryInputUnknownRows) ? 'COMPLETED_WITH_REPORTED_GAPS' : 'COMPLETED',
       sessionId: String(session.sessionId || runKey),
       playerCountryId: playerCountryId,
       initializedTurn: turn,
@@ -1329,7 +1682,8 @@
         demandProfiles: PATHS.economyRules,
         factoryProfilesAndRecipes: PATHS.industrialCatalog,
         mineSiteIdentityGroups: PATHS.sites,
-        countryPopulationAndEconomicContext: PATHS.countryProfiles
+        countryPopulationAndEconomicContext: PATHS.countryProfiles,
+        factoryInputDemandBaseline: PATHS.factoryInputBaseline
       },
       counts: {
         countryCount: data.countryProfiles.length,
@@ -1346,7 +1700,14 @@
         existingStocksPreserved: totals.existingStocksPreserved,
         unknownStockRows: totals.unknownStockRows,
         factoryAssetsCreated: totals.factoryAssetsCreated,
-        factoryAssetCountries: totals.factoryAssetCountries
+        factoryAssetCountries: totals.factoryAssetCountries,
+        factoryInputBaselineCountryCount: Object.keys(data.factoryInputBaseline.countries).length,
+        factoryInputProductCount: Object.keys(data.factoryInputBaseline.worldOpeningStockByProduct || {}).length,
+        factoryInputBufferPercent: 40,
+        factoryInputStockCountries: totals.factoryInputStockCountries,
+        factoryInputProductsSeeded: totals.factoryInputProductsSeeded,
+        factoryInputOpeningStockQuantity: Number(totals.factoryInputOpeningStockQuantity.toPrecision(12)),
+        factoryInputUnknownRows: totals.factoryInputUnknownRows
       },
       factoryTypeCountCreated: Object.keys(totals.factoryTypesCreated).length,
       factoryTypesCreated: totals.factoryTypesCreated,
@@ -1356,6 +1717,9 @@
         data.economyRules.demand.playerSupplyLifeline.termDays) || 100,
       automaticSupplyRenewal: false,
       geologicalReserveQuantityUsedAsStock: false,
+      factoryInputGeologicalReserveQuantityUsedAsStock: false,
+      factoryInputBufferPercent: 40,
+      factoryInputStockIsOneTime: true,
       existingSaveDataOverwritten: false,
       countrySummaries: results
     };
@@ -1381,6 +1745,8 @@
       playerCountryId: report.playerCountryId || null,
       counts: clone(report.counts || {}),
       factoryTypesCreated: clone(report.factoryTypesCreated || {}),
+      factoryInputBufferPercent: report.factoryInputBufferPercent || null,
+      factoryInputStockIsOneTime: report.factoryInputStockIsOneTime === true,
       openingStockCoverageDays: report.openingStockCoverageDays,
       automaticSupplyWindowDays: report.automaticSupplyWindowDays,
       automaticSupplyRenewal: report.automaticSupplyRenewal,
@@ -1397,6 +1763,11 @@
     var row = report.countrySummaries.find(function (item) {
       return id(item.countryId) === wanted || id(item.countryCode) === wanted;
     });
+    return row ? clone(row) : null;
+  }
+  function getCountryFactoryInputBaseline(countryId) {
+    var wanted = id(countryId);
+    var row = data && data.factoryInputBaseline && data.factoryInputBaseline.countries[wanted];
     return row ? clone(row) : null;
   }
   function onSessionCreated(event) {
@@ -1470,6 +1841,7 @@
     initializeForSession: initializeForSession,
     diagnostics: diagnostics,
     getCountryReport: getCountryReport,
+    getCountryFactoryInputBaseline: getCountryFactoryInputBaseline,
     waitForPendingInitialization: function () { return pendingInitialization; },
     getSourceStatus: function () {
       return { status: data ? 'READY' : (loadPromise ? 'LOADING' : 'BLOCKED'), version: VERSION,
