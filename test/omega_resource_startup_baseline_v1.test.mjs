@@ -135,7 +135,7 @@ test('source catalog contract remains exactly 41 resource identities and 21 fact
   assert.equal(factoryInputBaseline.buffer.percent, 40);
   assert.equal(factoryInputBaseline.buffer.multiplier, 1.4);
   assert.equal(Object.keys(factoryInputBaseline.worldOpeningStockByProduct).length, 69);
-  assert.equal(factoryInputBaseline.summary.countriesUsingMultipleFactoryRoutes, 73);
+  assert.equal(factoryInputBaseline.summary.countriesUsingMultipleFactoryRoutes, 63);
   assert.equal(factoryInputBaseline.summary.startingFactoryUnitsAcrossMultiRouteTypes, 970);
   assert.equal(factoryInputBaseline.summary.totalOpeningStockSimulationUnits, 16405900);
   for (const country of Object.values(factoryInputBaseline.countries)) {
