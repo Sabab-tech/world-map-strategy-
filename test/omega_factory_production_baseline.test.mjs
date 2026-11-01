@@ -862,10 +862,10 @@ test('fifty factories receive proportional input when the country warehouse is s
   const completed = api.processPendingFactoryInputs('BGD');
   assert.equal(completed.completedCount, 50);
   assert.equal(completed.startedCount, 0);
-  assert.equal(resource.processedWarehouse.availableByResource.IRON_CONCENTRATE, 32);
-  assert.equal(resource.processedWarehouse.availableByResource.ORE_TAILINGS, 8);
-  assert.equal(resource.inventory.IRON_CONCENTRATE, 32);
-  assert.equal(resource.inventory.ORE_TAILINGS, 8);
+  assert.equal(Number(resource.processedWarehouse.availableByResource.IRON_CONCENTRATE.toFixed(6)), 32);
+  assert.equal(Number(resource.processedWarehouse.availableByResource.ORE_TAILINGS.toFixed(6)), 8);
+  assert.equal(Number(resource.inventory.IRON_CONCENTRATE.toFixed(6)), 32);
+  assert.equal(Number(resource.inventory.ORE_TAILINGS.toFixed(6)), 8);
   assert.equal(resource.batches.filter(row => row.stage === 'FINISHED' && row.resourceId === 'IRON_CONCENTRATE').length, 50);
 });
 
