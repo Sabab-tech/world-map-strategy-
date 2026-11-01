@@ -319,7 +319,7 @@
         authority: String(profile.authority || asset.authority || 'NOT_RECORDED'),
         raw: asset
       };
-    }).filter(function (factory) { return !/^(DECOMMISSIONED|DESTROYED)$/.test(String(factory.status || '').trim().toUpperCase()); });
+    }).filter(function (factory) { return !/^(DECOMMISSIONED|DESTROYED|UNDER_CONSTRUCTION)$/.test(String(factory.status || '').trim().toUpperCase()); });
     var mineSites = rawMineSites.map(function (site) {
       var quantitative = site.quantitative || site.real && site.real.quantitative || {};
       var production = mineDailyProduction(site);
@@ -1301,7 +1301,8 @@
        'OMEGA_RESOURCE_FINISHED_GOODS_AVAILABLE','OMEGA_RESOURCE_PROCESSING_COMPLETED','OMEGA_RESOURCE_TECHNOLOGY_PROJECT_STARTED',
        'OMEGA_INFRASTRUCTURE_PROJECT_STARTED','OMEGA_RESOURCE_MINE_PROJECT_STARTED','OMEGA_RESOURCE_MINE_COMMISSIONED',
        'OMEGA_RESOURCE_MINE_CAPACITY_CHANGED','OMEGA_SIMULATION_TURN_COMMITTED',
-       'OMEGA_FACTORY_CAPACITY_CHANGED','OMEGA_COUNTRY_FACTORY_STARTING_BASELINE_READY','OMEGA_COUNTRY_FACTORY_STARTING_BASELINE_INITIALIZED',
+       'OMEGA_FACTORY_CAPACITY_CHANGED','OMEGA_FACTORY_DECOMMISSIONED',
+       'OMEGA_COUNTRY_STARTING_FACTORY_ASSETS_REGISTERED','OMEGA_COUNTRY_FACTORY_STARTING_BASELINE_READY','OMEGA_COUNTRY_FACTORY_STARTING_BASELINE_INITIALIZED',
        'OMEGA_COUNTRY_FACTORY_ESTABLISHMENT_DATA_READY'].forEach(function (eventName) {
         g.addEventListener(eventName, function () {
           if (!root.querySelector || !root.querySelector('.omega-v2-industry-command, .omega-v2-factory-command')) return;

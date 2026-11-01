@@ -4,7 +4,24 @@ import test from 'node:test';
 import { rebalanceCountryFactoryStartingBaseline } from '../scripts/rebalance_country_factory_starting_baseline_v1.mjs';
 
 const read = (name) => JSON.parse(fs.readFileSync(new URL('../' + name, import.meta.url), 'utf8'));
-const baseline = read('country_factory_starting_baseline_v1.json');
+const scaledBaseline = read('country_factory_starting_baseline_v1.json');
+const scaleFactor = scaledBaseline.factoryCountScaling.scaleFactor;
+const baseline = JSON.parse(JSON.stringify(scaledBaseline));
+for (const row of Object.values(baseline.countries)) {
+  for (const typeId of Object.keys(row.factoryCounts)) row.factoryCounts[typeId] /= scaleFactor;
+  row.totalStartingFactoryUnits = row.unscaledTotalStartingFactoryUnits;
+  delete row.unscaledTotalStartingFactoryUnits;
+  delete row.factoryCountScaleFactor;
+}
+delete baseline.factoryCountScaling;
+baseline.version = '1.2.0';
+baseline.allocationModel.summary.worldTotalStartingFactoryUnits =
+  scaledBaseline.factoryCountScaling.sourceWorldTotalStartingFactoryUnits;
+baseline.allocationModel.summary.remainingUniformProfileCount =
+  Object.values(baseline.countries).filter((row) => {
+    const positive = Object.values(row.factoryCounts).filter((value) => value > 0);
+    return positive.length > 0 && positive.every((value) => value === 1);
+  }).length;
 const catalog = read('resource_industrial_catalog_v1.json');
 const ids = Object.keys(catalog.factoryProfiles).sort();
 const countries = Object.entries(baseline.countries);
