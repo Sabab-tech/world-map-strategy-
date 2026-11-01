@@ -81,21 +81,24 @@ test('resource endowment prioritizes playable mine data and moves research enric
   const initStart = source.indexOf('async function initialize(options={})');
   const initEnd = source.indexOf("// A country's resource extraction pass", initStart);
   const init = source.slice(initStart, initEnd);
-  assert.match(init, /const reserveData=await loadSimulationReserveData\\(\\);[\\s\\S]*?const canonicalCatalogData=await loadCanonicalSiteCatalogData\\(\\);/);
+  assert.match(init, /const reserveData=await loadSimulationReserveData\(\);[\s\S]*?const canonicalCatalogData=await loadCanonicalSiteCatalogData\(\);/);
   assert.doesNotMatch(init, /loadLosslessResourceReferenceData|loadMasterResourceResearchData|loadResearchEvidenceData/);
-  assert.match(source, /async function loadSupplementalResourceData\\(\\)[\\s\\S]*?loadLosslessResourceReferenceData\\(\\)[\\s\\S]*?loadMasterResourceResearchData\\(\\)[\\s\\S]*?loadResearchEvidenceData\\(\\)/);
-  assert.match(source, /scheduleResourceSupplementalData\\(\\)/);
-  assert.match(source, /requestIdleCallback\\(start,\\{timeout:5000\\}\\)/);
-  assert.match(source, /requestIdleCallback\\(start,\\{timeout:1800\\}\\)/);
-  assert.match(source, /mapWithConcurrency\\(LEGACY_GAMEPLAY_EXPANSION_FILES,2/);
+  assert.match(source, /async function loadSupplementalResourceData\(\)[\s\S]*?loadLosslessResourceReferenceData\(\)[\s\S]*?loadMasterResourceResearchData\(\)[\s\S]*?loadResearchEvidenceData\(\)/);
+  assert.match(source, /scheduleResourceSupplementalData\(\)/);
+  assert.match(source, /requestIdleCallback\(start,\{timeout:5000\}\)/);
+  assert.match(source, /requestIdleCallback\(start,\{timeout:1800\}\)/);
+  assert.match(source, /mapWithConcurrency\(LEGACY_GAMEPLAY_EXPANSION_FILES,2/);
 });
 
-test('service worker precache is bounded and excludes eager JSON datasets', async () => {
+test('service worker precache preserves offline datasets and bounds concurrent downloads', async () => {
   const source = await read('omega-offline-map-sw.js');
   assert.match(source, /const PRECACHE_CONCURRENCY = 3/);
   assert.match(source, /await precacheInBatches\(cache, Array\.from\(assets\)\)/);
   assert.match(source, /Promise\.allSettled\(batch\.map/);
   assert.doesNotMatch(source, /Promise\.allSettled\(Array\.from\(assets\)/);
-  assert.doesNotMatch(source, /factoryIconManifestUrl/);
-  assert.match(source, /Large JSON datasets[\s\S]*?cached by the fetch handler/);
+  assert.match(source, /factoryIconManifestUrl/);
+  assert.match(source, /omega_ui_photo_asset_catalog_v1\\.json/);
+  assert.match(source, /resource_site_country_mineplay_batch_20261020_v1\\.json/);
+  assert.match(source, /omega_ui_v2\\/omega-ui-v2\\.css/);
+
 });
