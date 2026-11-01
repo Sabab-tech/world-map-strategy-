@@ -95,11 +95,27 @@
   const LEGACY_GAMEPLAY_EXPANSION_FILES=['resource_site_legacy_gameplay_expansion_part_1_v1.json','resource_site_legacy_gameplay_expansion_part_2_v1.json','resource_site_legacy_gameplay_expansion_part_3_v1.json','resource_site_legacy_gameplay_expansion_part_4_v1.json','resource_site_legacy_gameplay_expansion_part_5_v1.json','resource_site_legacy_gameplay_expansion_part_6_v1.json'];
   const LEGACY_CANONICAL_ALIAS_IDS={SITE_AUS_olympic_dam_uranium_copper:'SITE_AUS_olympic_dam_mine',SITE_BRA_carajas_iron_ore_mine_legacy2:'SITE_BRA_carajas_iron_ore_mine',SITE_CHL_escondida_copper_mine_legacy2:'SITE_CHL_escondida_copper_mine',SITE_IDN_grasberg_copper_gold_mine:'SITE_IDN_grasberg_mine',SITE_COD_tenke_fungurume_copper_cobalt_complex:'SITE_COD_tenke_fungurume_mine',SITE_COD_kibali_gold_mine_complex:'SITE_COD_kibali_gold_mine',SITE_CAN_voiseys_bay_nickel_mine:'SITE_CAN_voisey_s_bay_nickel_mine',SITE_GBR_boulby_mine:'SITE_GBR_boulby_potash_mine',SITE_SWE_kiruna_iron_ore_mine:'SITE_SWE_kiruna_iron_mine',SITE_PRK_musan_iron_ore_mine:'SITE_PRK_musan_iron_mine'};
   let legacyGameplayExpansionRows=null,legacyGameplayExpansionPromise=null;
+  async function mapWithConcurrency(items,limit,worker){
+    const results=new Array(items.length);
+    let cursor=0;
+    const count=Math.max(1,Math.min(items.length,Math.floor(Number(limit)||1)));
+    const runners=Array.from({length:count},async()=>{
+      while(cursor<items.length){
+        const index=cursor++;
+        results[index]=await worker(items[index],index);
+      }
+    });
+    await Promise.all(runners);
+    return results;
+  }
   async function loadLegacyGameplayExpansionRows(){
     if(Array.isArray(legacyGameplayExpansionRows))return{status:'READY',count:legacyGameplayExpansionRows.length,reused:true,rows:legacyGameplayExpansionRows};
     if(legacyGameplayExpansionPromise)return legacyGameplayExpansionPromise;
     legacyGameplayExpansionPromise=(async()=>{
-      const packs=await Promise.all(LEGACY_GAMEPLAY_EXPANSION_FILES.map(async file=>{try{const response=await fetch(file,{cache:'no-store'});if(!response?.ok)return null;const data=await response.json();return data?.datasetId?.startsWith('OMEGA_RESOURCE_SITE_LEGACY_GAMEPLAY_EXPANSION_PART_')&&Array.isArray(data.records)?data:null;}catch(_){return null;}}));
+      const packs=await mapWithConcurrency(LEGACY_GAMEPLAY_EXPANSION_FILES,2,async file=>{
+        try{const response=await fetch(file,{cache:'no-store'});if(!response?.ok)return null;const data=await response.json();return data?.datasetId?.startsWith('OMEGA_RESOURCE_SITE_LEGACY_GAMEPLAY_EXPANSION_PART_')&&Array.isArray(data.records)?data:null;}
+        catch(_){return null;}
+      });
       const unique=new Map();for(const pack of packs.filter(Boolean).sort((a,b)=>Number(a.part)-Number(b.part)))for(const row of pack.records)if(row?.siteId&&!unique.has(String(row.siteId)))unique.set(String(row.siteId),row);
       legacyGameplayExpansionRows=[...unique.values()];
       return{status:legacyGameplayExpansionRows.length===115?'READY':'PARTIAL',count:legacyGameplayExpansionRows.length,rows:legacyGameplayExpansionRows,loadedParts:packs.filter(Boolean).length};
@@ -2093,6 +2109,29 @@ function batchFromExtraction(x,record){
     try{m.registerAction?.('OMEGA_RESOURCE_EXTRACT_TICK',{actionId:'OMEGA_RESOURCE_EXTRACT_TICK',stateOwnerMinistry:'resource',authority:'OMEGA_RESOURCE_ENDOWMENT_RUNTIME'});}catch(_){}
     return handlersRegistered;
   }
+  function yieldResourceInitializationToUi(){
+    return new Promise(resolve=>{
+      if(typeof g.requestAnimationFrame==='function'){
+        g.requestAnimationFrame(()=>g.setTimeout(resolve,0));
+      }else if(typeof g.setTimeout==='function'){
+        g.setTimeout(resolve,16);
+      }else{
+        Promise.resolve().then(resolve);
+      }
+    });
+  }
+  let resourceInitializationSchedulePromise=null;
+  function scheduleResourceInitialization(){
+    if(g.__omegaResourceEndowmentReady)return Promise.resolve({status:'READY',countries:countries().length,reused:true});
+    if(g.__omegaResourceEndowmentPromise)return g.__omegaResourceEndowmentPromise;
+    if(resourceInitializationSchedulePromise)return resourceInitializationSchedulePromise;
+    resourceInitializationSchedulePromise=new Promise(resolve=>{
+      const start=()=>g.setTimeout(()=>resolve(initialize()),0);
+      if(typeof g.requestIdleCallback==='function')g.requestIdleCallback(start,{timeout:1800});
+      else g.setTimeout(start,650);
+    }).finally(()=>{resourceInitializationSchedulePromise=null;});
+    return resourceInitializationSchedulePromise;
+  }
   async function initialize(){
     if(g.__omegaResourceEndowmentReady)return{status:'READY',countries:countries().length,reused:true};
     if(g.__omegaResourceEndowmentPromise)return g.__omegaResourceEndowmentPromise;
@@ -2100,7 +2139,18 @@ function batchFromExtraction(x,record){
     g.__omegaResourceEndowmentPromise=(async function(){
       try{
         for(let i=0;i<400&&!engine()?.isReady;i++)await new Promise(r=>setTimeout(r,0));
-        const [reserveData,researchData,canonicalCatalogData,losslessReferenceData,masterResearchData]=await Promise.all([loadSimulationReserveData(),loadResearchEvidenceData(),loadCanonicalSiteCatalogData(),loadLosslessResourceReferenceData(),loadMasterResourceResearchData()]);
+        // Do not fetch/parse five large resource datasets at once on the renderer thread.
+        // Preserve every dataset and validation gate, but serialize the stages and yield
+        // between them so Android WebView can paint and process input.
+        const reserveData=await loadSimulationReserveData();
+        await yieldResourceInitializationToUi();
+        const canonicalCatalogData=await loadCanonicalSiteCatalogData();
+        await yieldResourceInitializationToUi();
+        const losslessReferenceData=await loadLosslessResourceReferenceData();
+        await yieldResourceInitializationToUi();
+        const masterResearchData=await loadMasterResourceResearchData();
+        await yieldResourceInitializationToUi();
+        const researchData=await loadResearchEvidenceData();
         const dependencyLightContext=typeof g.fetch!=='function'&&typeof g.OmegaResourceSiteReserveSimulationData==='undefined'&&typeof g.Omega?.ResourceSiteReserveSimulationData==='undefined';
         if((reserveData.status!=='READY'||Number(reserveData.baseSiteCount??reserveData.count)!==250)&&!dependencyLightContext)return{status:'FAILED',reason:'PER_SITE_RESERVE_DATASET_INCOMPLETE',detail:reserveData};
         if(canonicalCatalogData.status!=='READY'&&!dependencyLightContext)return{status:'FAILED',reason:'CANONICAL_SITE_CATALOG_LOAD_FAILED',detail:canonicalCatalogData};
@@ -2275,7 +2325,7 @@ function batchFromExtraction(x,record){
     return shared;
   }
   function onReady(){
-    void initialize().then(function(initialized){
+    void scheduleResourceInitialization().then(function(initialized){
       const binding=g.Omega?.IndividualResourceSiteBinding||g.OmegaIndividualResourceSiteBinding;
       const last=g.__omegaResourceEndowmentLastBootstrap;
       const waitingCountrySelected=last?.status==='WAITING_FOR_PLAYER_COUNTRY'&&!!playerSimulationCountryId();
@@ -2982,7 +3032,7 @@ function batchFromExtraction(x,record){
   }
   function init(){
     install();
-    if(engine()?.isReady)void initialize();
+    if(engine()?.isReady)void scheduleResourceInitialization();
     g.addEventListener?.('OMEGA_READY',onReady);
     g.addEventListener?.('RESOURCE_STATE_UPDATED',onReady);
     g.addEventListener?.('OMEGA_GAME_SESSION_STARTED',onReady);
