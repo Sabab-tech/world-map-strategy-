@@ -76,6 +76,13 @@ test('country general data module is lazy-loaded from the country overview scree
   assert.match(loader, /omega_country_general_data_runtime_v1\.js/);
 });
 
+test('strategic profile chapter requests its shared dataset and refreshes only while still selected', async () => {
+  const source = await read('country-ios.js');
+  assert.match(source, /getStrategicProfileAsync\\(requestedCountry\\)/);
+  assert.match(source, /this\\.activeChapter === 13 && this\\.activeCountry === requestedCountry/);
+  assert.match(source, /this\\.switchChapter\\(13\\)/);
+});
+ 
 test('resource endowment prioritizes playable mine data and moves research enrichment to idle time', async () => {
   const source = await read('omega_resource_endowment_runtime.js');
   const initStart = source.indexOf('async function initialize(options={})');
