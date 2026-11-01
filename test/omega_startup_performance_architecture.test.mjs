@@ -97,8 +97,8 @@ test('service worker precache preserves offline datasets and bounds concurrent d
   assert.match(source, /Promise\.allSettled\(batch\.map/);
   assert.doesNotMatch(source, /Promise\.allSettled\(Array\.from\(assets\)/);
   assert.match(source, /factoryIconManifestUrl/);
-  assert.match(source, /omega_ui_photo_asset_catalog_v1\\.json/);
-  assert.match(source, /resource_site_country_mineplay_batch_20261020_v1\\.json/);
-  assert.match(source, /omega_ui_v2\\/omega-ui-v2\\.css/);
+  assert.match(source, /omega_ui_photo_asset_catalog_v1\.json/);
+  assert.match(source, /resource_site_country_mineplay_batch_20261020_v1\.json/);
+  assert.match(source, /omega_ui_v2\/omega-ui-v2\.css/);
 
 });
