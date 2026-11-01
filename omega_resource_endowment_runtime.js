@@ -2110,14 +2110,16 @@ function batchFromExtraction(x,record){
     try{m.registerAction?.('OMEGA_RESOURCE_EXTRACT_TICK',{actionId:'OMEGA_RESOURCE_EXTRACT_TICK',stateOwnerMinistry:'resource',authority:'OMEGA_RESOURCE_ENDOWMENT_RUNTIME'});}catch(_){}
     return handlersRegistered;
   }
+  function scheduleResourceTask(callback,delay=0){
+    if(typeof g.setTimeout==='function')return g.setTimeout(callback,delay);
+    return Promise.resolve().then(callback);
+  }
   function yieldResourceInitializationToUi(){
     return new Promise(resolve=>{
       if(typeof g.requestAnimationFrame==='function'){
-        g.requestAnimationFrame(()=>g.setTimeout(resolve,0));
-      }else if(typeof g.setTimeout==='function'){
-        g.setTimeout(resolve,16);
+        g.requestAnimationFrame(()=>scheduleResourceTask(resolve,0));
       }else{
-        Promise.resolve().then(resolve);
+        scheduleResourceTask(resolve,16);
       }
     });
   }
@@ -2127,9 +2129,9 @@ function batchFromExtraction(x,record){
     if(g.__omegaResourceEndowmentPromise)return g.__omegaResourceEndowmentPromise;
     if(resourceInitializationSchedulePromise)return resourceInitializationSchedulePromise;
     resourceInitializationSchedulePromise=new Promise(resolve=>{
-      const start=()=>g.setTimeout(()=>resolve(initialize({coreOnly:true})),0);
+      const start=()=>scheduleResourceTask(()=>resolve(initialize({coreOnly:true})),0);
       if(typeof g.requestIdleCallback==='function')g.requestIdleCallback(start,{timeout:1800});
-      else g.setTimeout(start,650);
+      else scheduleResourceTask(start,650);
     }).finally(()=>{resourceInitializationSchedulePromise=null;});
     return resourceInitializationSchedulePromise;
   }
@@ -2178,9 +2180,9 @@ function batchFromExtraction(x,record){
     if(supplementalResourceDataPromise)return supplementalResourceDataPromise;
     if(supplementalResourceSchedulePromise)return supplementalResourceSchedulePromise;
     supplementalResourceSchedulePromise=new Promise(resolve=>{
-      const start=()=>g.setTimeout(()=>resolve(loadSupplementalResourceData()),0);
+      const start=()=>scheduleResourceTask(()=>resolve(loadSupplementalResourceData()),0);
       if(typeof g.requestIdleCallback==='function')g.requestIdleCallback(start,{timeout:5000});
-      else g.setTimeout(start,2500);
+      else scheduleResourceTask(start,2500);
     }).then(value=>value).finally(()=>{supplementalResourceSchedulePromise=null;});
     return supplementalResourceSchedulePromise;
   }
