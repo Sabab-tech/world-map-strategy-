@@ -1673,7 +1673,7 @@
       version: VERSION,
       status: (totals.countriesBlocked || totals.unknownStockRows || totals.factoryInputUnknownRows) ? 'COMPLETED_WITH_REPORTED_GAPS' : 'COMPLETED',
       sessionId: String(session.sessionId || runKey),
-      playerCountryId: playerCountryId,
+      playerCountryId: id(session && session.playerCountryId),
       initializedTurn: turn,
       authority: 'SIMULATED_STARTUP_BASELINE_V1',
       scope: 'ADDITIVE_COUNTRY_STARTUP_STATE',
