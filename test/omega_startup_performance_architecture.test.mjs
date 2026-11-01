@@ -26,7 +26,7 @@ test('country general registry is a single-flight shared dataset', async () => {
     fetch: async url => {
       const key = String(url).replace(/^\.\//, '');
       fetchCounts.set(key, (fetchCounts.get(key) || 0) + 1);
-      if (key === 'economy_global_profiles_v1.json') return { ok: true, json: async () => ({ countries: [] }) };
+      if (key === 'economy_global_profiles_v1.json') return { ok: true, json: async () => ({ countries: [{ countryCode: 'US', iso3: 'USA', name: 'United States' }] }) };
       if (key === 'country_general_data_registry_v1.json') return { ok: true, json: async () => registry };
       return { ok: false };
     }
