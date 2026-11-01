@@ -5,20 +5,32 @@ import vm from 'node:vm';
 
 const read = path => fs.readFile(new URL('../' + path, import.meta.url), 'utf8');
 
-test('country general registry is a single-flight shared dataset', async () => {
-  const source = await read('omega_country_runtime_data_v1.js');
+test('country and general runtimes share one registry fetch and one country alias index', async () => {
+  const countrySource = await read('omega_country_runtime_data_v1.js');
+  const generalSource = await read('omega_country_general_data_runtime_v1.js');
   const fetchCounts = new Map();
   const registry = {
     metadata: {
+      datasetId: 'TEST_COUNTRY_GENERAL_REGISTRY',
       schemaVersion: 'test-v1',
       profileVersion: 'test-v1',
       recordSchema: {
         identityFields: ['iso2', 'iso3', 'name'],
+        generalFactFields: [],
+        metricFields: [],
+        naturalResourceFields: [],
+        mineralResourceFields: [],
+        hydrocarbonResourceFields: [],
+        energyResourceFields: [],
+        publicSafetyFields: [],
         strategicProfileFields: ['profileVersion']
-      }
+      },
+      provenanceEncoding: {}
     },
     countries: [{
       identity: ['US', 'USA', 'United States'],
+      generalFacts: [],
+      metrics: [],
       strategicProfile: ['test-v1']
     }]
   };
@@ -29,19 +41,24 @@ test('country general registry is a single-flight shared dataset', async () => {
       if (key === 'economy_global_profiles_v1.json') return { ok: true, json: async () => ({ countries: [{ countryCode: 'US', iso3: 'USA', name: 'United States' }] }) };
       if (key === 'country_general_data_registry_v1.json') return { ok: true, json: async () => registry };
       return { ok: false };
-    }
+    },
+    OmegaCanonicalIdentityRegistry: null,
+    document: null
   };
-  vm.runInNewContext(source, { window });
+  vm.runInNewContext(countrySource, { window });
   assert.equal(await window.OmegaCountryRuntimeData.ready, true);
-  const runtime = window.OmegaCountryRuntimeData;
-  const first = runtime.loadSourceDataset('country_general_data_registry_v1.json', { optional: false });
-  const second = runtime.loadSourceDataset('country_general_data_registry_v1.json', { optional: false });
-  assert.equal(first, second, 'concurrent consumers must receive the same in-flight promise');
-  const loaded = await first;
+  vm.runInNewContext(generalSource, { window });
+  const [generalReady, loaded] = await Promise.all([
+    window.OmegaCountryGeneralDataRuntime.init(),
+    window.OmegaCountryRuntimeData.loadSourceDataset('country_general_data_registry_v1.json', { optional: false })
+  ]);
+  assert.equal(generalReady, true);
   assert.equal(loaded, registry);
   assert.equal(fetchCounts.get('country_general_data_registry_v1.json'), 1);
-  assert.equal(runtime.getSourceDataset('country_general_data_registry_v1.json'), registry);
-  assert.equal(runtime.getStrategicProfile('USA').profileVersion, 'test-v1');
+  assert.equal(window.OmegaCountryRuntimeData.getCountryGeneralDataIndexSize(), 3);
+  assert.equal(window.OmegaCountryRuntimeData.getCountryGeneralDataRow('United States'), registry.countries[0]);
+  assert.equal(window.OmegaCountryGeneralDataRuntime.getCountryRecord('USA').identity.iso3, 'USA');
+  assert.equal(window.OmegaCountryRuntimeData.getStrategicProfile('USA').profileVersion, 'test-v1');
 });
 
 test('general data runtime reads registry only through the shared owner', async () => {
