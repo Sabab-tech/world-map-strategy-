@@ -3585,9 +3585,11 @@ function factoryUtilityProductionLimit(countryId,asset,requestedProduction){
   }
   const countryElectricityRatio=aggregatePower>1e-9?Math.min(1,available.electricityMWh/aggregatePower):1;
   const countryWaterRatio=aggregateWater>1e-9?Math.min(1,available.waterM3/aggregateWater):1;
-  const utilityRatio=Math.min(countryElectricityRatio,countryWaterRatio);
-  const electricityRatio=powerDaily>1e-9?utilityRatio:1;
-  const waterRatio=waterDaily>1e-9?utilityRatio:1;
+  // Keep each utility's observed availability independent in the diagnostics.
+  // Only the production ceiling uses the strictest (minimum) live utility ratio.
+  const electricityRatio=powerDaily>1e-9?countryElectricityRatio:1;
+  const waterRatio=waterDaily>1e-9?countryWaterRatio:1;
+  const utilityRatio=Math.min(electricityRatio,waterRatio);
   const allowedProduction=Math.max(0,Math.floor(Math.min(requested,capacity*utilityRatio)*1e6+1e-9)/1e6);
   const constraints={electricityRatio:Number(electricityRatio.toFixed(6)),waterRatio:Number(waterRatio.toFixed(6)),
     utilityRatio:Number(utilityRatio.toFixed(6)),available,supply:{electricityMWhPerDay:supply.power,waterM3PerDay:supply.water},used,reserved,
