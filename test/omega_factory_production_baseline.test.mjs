@@ -1325,17 +1325,15 @@ test('factory workforce shortage scales scheduled production by the actual fille
     authority: 'TEST_FIXTURE', status: 'AVAILABLE', simulationOnly: true, assets: []
   } } };
   api.reconcileFactoryEmployment('BGD');
-  const gate = api.factoryOperationGate('BGD', asset);
-  assert.equal(gate.status, 'READY');
-  assert.equal(gate.requiredWorkers, catalog.factoryProfiles.STEEL_AND_ALLOY_WORKS.employment.jobsPerFactory);
-  assert.equal(gate.workersAvailable, 1000);
-  assert.equal(gate.workforceRatio, 0.2);
   const result = api.startFactoryProductionCycle({
     countryId: 'BGD', factoryId: asset.id, resourceId: 'iron_concentrate', quantity: 100
   });
   assert.equal(result.status, 'IN_PROGRESS', JSON.stringify(result));
   assert.equal(result.productionQuantity, 20);
   assert.equal(result.productivityPct, 20);
+  assert.equal(result.productionConstraints.requiredWorkers, catalog.factoryProfiles.STEEL_AND_ALLOY_WORKS.employment.jobsPerFactory);
+  assert.equal(result.productionConstraints.workersAvailable, 1000);
+  assert.equal(result.productionConstraints.workforceRatio, 0.2);
   assert.equal(result.inputQuantities.iron_concentrate, 12);
   assert.equal(result.inputQuantities.coal_concentrate, 4);
 });
