@@ -1230,10 +1230,7 @@ console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');
     context.Game.state.simulation.date=startedCycle.finishDate;
     const schedulerFinish=N.processPendingFactoryInputs('BGD');
     assert.equal(schedulerFinish.completed.some(row=>row.factoryId===universal.id),true,
-      'the starting universal factory must finish its dated production cycle: '+JSON.stringify({
-        schedulerFinish,cycle:resourceState.industrialNetwork.factoryProductionCycles[universal.id],
-        turn:context.Game.state.simulation.turn,date:context.Game.state.simulation.date
-      }));
+      'the starting universal factory must finish its dated production cycle');
     assert.ok(Number(resourceState.inventory.IRON_CONCENTRATE)>0,
       'finished processing output must be credited to the country resource inventory');
     assert.equal(universal.productionHealth.status,'REDUCED',
