@@ -942,6 +942,100 @@ test('factory productivity is calculated from live supply ratios and each factor
   }
 });
 
+
+test('factory output follows the minimum live bottleneck across materials, workforce, electricity and water', () => {
+  const scenarios = [
+    { name: 'workforce-limited', materialRatio: 1, workforceRatio: 0.8, electricityRatio: 1, waterRatio: 1, expectedRatio: 0.8 },
+    { name: 'electricity-limited', materialRatio: 1, workforceRatio: 1, electricityRatio: 0.7, waterRatio: 0.9, expectedRatio: 0.7 },
+    { name: 'materials-remain-the-tightest-constraint', materialRatio: 0.6, workforceRatio: 0.8, electricityRatio: 0.7, waterRatio: 0.9, expectedRatio: 0.6 },
+    { name: 'water-limited', materialRatio: 1, workforceRatio: 0.9, electricityRatio: 1, waterRatio: 0.75, expectedRatio: 0.75 }
+  ];
+
+  for (const scenario of scenarios) {
+    const { context, catalog, api } = makeRuntime();
+    const capacity = 100;
+    const coefficient = 0.2;
+    const profile = catalog.factoryProfiles.UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT;
+    const inputQuantity = Number((capacity * coefficient * scenario.materialRatio).toFixed(6));
+    const batchId = 'BATCH-COMBINED-' + scenario.name.toUpperCase().replace(/[^A-Z0-9]+/g, '-');
+    const asset = {
+      id: 'FAC-COMBINED-' + scenario.name.toUpperCase().replace(/[^A-Z0-9]+/g, '-'),
+      countryId: 'BGD',
+      factoryType: 'UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT',
+      capacityPerDay: capacity,
+      capacity,
+      status: 'OPERATIONAL',
+      recipeMode: 'SINGLE_INPUT',
+      inputCoefficients: { iron_ore: coefficient },
+      outputProfile: { IRON_CONCENTRATE: 0.8, ORE_TAILINGS: 0.2 },
+      inputInventory: { iron_ore: inputQuantity },
+      inputBatchLots: [{
+        batchId, resourceId: 'iron_ore', materialIdentity: 'iron_ore',
+        quantity: inputQuantity, remainingQuantity: inputQuantity,
+        unit: 'SIMULATION_RESOURCE_UNIT', status: 'AVAILABLE_TO_FACTORY',
+        createdTurn: 1, sourceBatchIds: ['MINE-COMBINED-001']
+      }],
+      inputUnit: 'SIMULATION_RESOURCE_UNIT',
+      outputUnit: 'SIMULATION_RESOURCE_UNIT'
+    };
+
+    const jobsPerFactory = Number(profile.employment.jobsPerFactory);
+    context.Game.state.economy.BGD = {
+      unemploymentCount: Math.round(jobsPerFactory * scenario.workforceRatio),
+      laborForce: 6000000,
+      unemployment_rate: 10,
+      productionAssets: [asset]
+    };
+    context.Game.state.transport.BGD = { infrastructure: { utilitySupply: {
+      electricityMWhPerDay: Number((profile.utilities.electricityMWhPerDay * scenario.electricityRatio).toFixed(6)),
+      waterM3PerDay: Number((profile.utilities.waterM3PerDay * scenario.waterRatio).toFixed(6)),
+      authority: 'TEST_FIXTURE', status: 'AVAILABLE', simulationOnly: true, assets: []
+    } } };
+
+    const result = api.processPendingFactoryInputs('BGD');
+    assert.equal(result.startedCount, 1, scenario.name + ': a partially supplied factory must still start');
+    assert.equal(result.blocked.length, 0, scenario.name + ': partial constraints must reduce output, not block operation');
+    const expectedPct = Number((scenario.expectedRatio * 100).toFixed(2));
+    assert.equal(asset.productionHealth.productivityPct, expectedPct, scenario.name + ': output must follow the strictest live constraint');
+    const constraints = asset.productionHealth.detail.constraints;
+    assert.equal(constraints.rawMaterialRatio, scenario.materialRatio, scenario.name + ': raw-material ratio must be independent');
+    assert.equal(constraints.workforceRatio, scenario.workforceRatio, scenario.name + ': workforce ratio must use filled jobs / supported jobs');
+    assert.equal(constraints.electricityRatio, scenario.electricityRatio, scenario.name + ': electricity ratio must use remaining supply');
+    assert.equal(constraints.waterRatio, scenario.waterRatio, scenario.name + ': water ratio must use remaining supply');
+    assert.equal(constraints.effectiveRatio, scenario.expectedRatio, scenario.name + ': constraints must use the minimum, not multiply percentages');
+    const cycle = context.Game.state.resource.BGD.industrialNetwork.factoryProductionCycles[asset.id];
+    assert.ok(cycle, scenario.name + ': production cycle must be recorded');
+    assert.equal(cycle.productionQuantity, Number((capacity * scenario.expectedRatio).toFixed(6)));
+    assert.equal(cycle.productivityPct, expectedPct);
+  }
+});
+
+test('multi-input factory reduces the live production quantity for workforce and utility shortages', () => {
+  const { context, catalog, api } = makeRuntime();
+  const asset = makeSteelAsset();
+  const profile = catalog.factoryProfiles[asset.factoryType];
+  context.Game.state.economy.BGD = {
+    unemploymentCount: Math.round(profile.employment.jobsPerFactory * 0.8),
+    laborForce: 6000000,
+    unemployment_rate: 10,
+    productionAssets: [asset]
+  };
+  context.Game.state.transport.BGD = { infrastructure: { utilitySupply: {
+    electricityMWhPerDay: Number((profile.utilities.electricityMWhPerDay * 0.5).toFixed(6)),
+    waterM3PerDay: profile.utilities.waterM3PerDay,
+    authority: 'TEST_FIXTURE', status: 'AVAILABLE', simulationOnly: true, assets: []
+  } } };
+
+  const result = api.executeFactoryCycle({ countryId: 'BGD', factoryId: asset.id, resourceId: 'iron_concentrate', quantity: 100 });
+  assert.equal(result.status, 'COMPLETED', JSON.stringify(result));
+  assert.equal(result.requestedProduction, 50, 'electricity is the strictest live limit after workforce availability');
+  assert.equal(result.productionConstraints.rawMaterialRatio, 1);
+  assert.equal(result.productionConstraints.workforceRatio, 0.8);
+  assert.equal(result.productionConstraints.electricityRatio, 0.5);
+  assert.equal(result.productionConstraints.waterRatio, 1);
+  assert.equal(result.productionConstraints.effectiveRatio, 0.5);
+  assert.equal(asset.productionHealth.productivityPct, 50);
+});
 test('future-dated paused factory does not take stock allocation from ready factories', () => {
   const { context, api } = makeRuntime();
   const paused = {
