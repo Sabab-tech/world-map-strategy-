@@ -1422,16 +1422,17 @@ test('legacy and primary factory runtimes reserve shared utilities before anothe
       countryId: 'BGD', factoryId: second.id, resourceId: 'iron_concentrate', quantity: 100
     });
     assert.equal(a.status, 'IN_PROGRESS', runtimeFile + ': first factory should start');
-    assert.ok(a.productionQuantity <= 50.000001, runtimeFile + ': first factory must respect its proportional power limit');
-    assert.equal(b.status, 'BLOCKED', runtimeFile + ': second factory must not reuse the first factory reserved electricity');
-    assert.equal(b.reason, 'FACTORY_UTILITY_SHORTAGE',
-      runtimeFile + ': second factory should report the exhausted utility pool');
+    assert.equal(b.status, 'IN_PROGRESS', runtimeFile + ': second factory should receive its fair utility share');
+    assert.ok(Math.abs(a.productionQuantity - 25) < 1e-6,
+      runtimeFile + ': first factory must receive the same proportional power share');
+    assert.ok(Math.abs(b.productionQuantity - 25) < 1e-6,
+      runtimeFile + ': second factory must receive the same proportional power share');
     const ledger = context.Game.state.resource.BGD.industrialNetwork?.utilityLedger;
     const bucket = ledger?.turns?.['1'];
     assert.ok(bucket, runtimeFile + ': utility ledger bucket must be recorded');
-    assert.equal(bucket.reservations.length, 1, runtimeFile + ': exactly one cycle utility reservation must exist');
+    assert.equal(bucket.reservations.length, 2, runtimeFile + ': both cycle utility reservations must exist');
     const reservedPower = bucket.reservations.reduce((sum, row) => sum + row.electricityMWh, 0);
-    assert.ok(reservedPower <= profile.utilities.electricityMWhPerDay * 0.5 + 1e-6,
-      runtimeFile + ': total reserved electricity must never exceed country supply');
+    assert.ok(Math.abs(reservedPower - profile.utilities.electricityMWhPerDay * 0.5) < 1e-6,
+      runtimeFile + ': aggregate reserved electricity must equal, but never exceed, country supply');
   }
 });
