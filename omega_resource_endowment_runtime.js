@@ -2155,7 +2155,9 @@ function batchFromExtraction(x,record){
         failures,loadedAtTurn:turn(),
         mode:'IDLE_SUPPLEMENTAL_ENRICHMENT'
       };
-      supplementalResourceDataReport=report;
+      // Only retain a completed report when every required source pack is ready.
+      // A temporary network failure must remain retryable on the next gameplay request.
+      supplementalResourceDataReport=report.status==='READY'?report:null;
       // Rebuild only transient reference caches so already-hydrated player-country
       // sites can pick up enrichment without changing any save-owned quantities.
       try{profileCache.clear();mineSiteReferenceCache.clear();siteExecutionRowsCache.clear();siteExecutionRowsCacheTurn=-1;}catch(_){}
