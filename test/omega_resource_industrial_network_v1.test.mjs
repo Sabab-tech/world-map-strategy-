@@ -1274,7 +1274,7 @@ console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');
     assert.equal(destroyedProduction.reason,'FACTORY_NOT_OPERATIONAL',
       'destroyed factories cannot start another production cycle');
     const activeTypes=assets.filter(asset=>!['DECOMMISSIONED','DESTROYED'].includes(String(asset.status||'').toUpperCase()));
-    assert.equal(activeTypes.length,2,'destroying one factory reduces the live asset count by one');
+    assert.equal(activeTypes.length,1,'one textile factory remains active after the other textile and universal plant are retired');
     assert.equal(assets.length,3,'decommissioning preserves the historical asset record');
     console.log('OMEGA STARTING FACTORY LIVE REGISTRY / ADD / DESTROY REGRESSION PASSED');
   } finally {
