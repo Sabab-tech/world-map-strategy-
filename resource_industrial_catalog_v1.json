@@ -4287,7 +4287,9 @@
     "recipeCycleTimeUnit": "IN_GAME_DAYS",
     "cycleTimingRuntimeBehavior": "GAME_CALENDAR_DELAYED_COMPLETION",
     "productionSchedulerVersion": "OMEGA_FACTORY_PRODUCTION_SCHEDULER_V1",
-    "warehouseFeedAuthority": "SIMULATED_WAREHOUSE_TO_FACTORY_TRANSFER_WITH_BATCH_LINEAGE"
+    "warehouseFeedAuthority": "SIMULATED_WAREHOUSE_TO_FACTORY_TRANSFER_WITH_BATCH_LINEAGE",
+    "externalInputSourceCount": 6,
+    "importOnlyRawResourceCount": 1
   },
   "externalInputSources": {
     "grain": {
@@ -4329,6 +4331,17 @@
       "requiresRecordedBatch": true,
       "autoGenerateStock": false,
       "simulationOnly": true
+    },
+    "silica_sand": {
+      "resourceId": "silica_sand",
+      "sourceSector": "INTERNATIONAL_TRADE",
+      "sourceAuthority": "IMPORTED_MINERAL_BATCH_REQUIRED",
+      "supplyMode": "IMPORT_ONLY_WHEN_NO_DOMESTIC_BATCH",
+      "inventoryStage": "RAW_EXTRACTED",
+      "requiresRecordedBatch": true,
+      "autoGenerateStock": false,
+      "simulationOnly": true,
+      "note": "No canonical domestic silica-sand mine/site is currently present in the active source roster. Glass-silica feed must originate from a settled import batch until a verified domestic site is added."
     }
   },
   "factoryTypeAliases": {

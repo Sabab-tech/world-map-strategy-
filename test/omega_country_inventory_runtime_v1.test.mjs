@@ -14,7 +14,15 @@ const roster = [
 
 const catalog = {
   schemaVersion: '1.0.0',
-  resourceRules: { iron_concentrate: {}, copper: {} },
+  resourceRules: { iron_concentrate: {}, copper: {}, silica_sand: {} },
+  externalInputSources: {
+    silica_sand: {
+      sourceSector: 'INTERNATIONAL_TRADE',
+      inventoryStage: 'RAW_EXTRACTED',
+      requiresRecordedBatch: true,
+      autoGenerateStock: false
+    }
+  },
   processingRules: {
     iron_concentrate: {
       factoryType: 'STEEL_WORKS',
@@ -161,6 +169,26 @@ test('all countries have saved inventory shells and shared product rows, while o
   api.refreshActiveCountry();
   assert.equal(api.getInventory('USA', { includeZero: true }).readOnly, true);
   assert.equal(item(api.getInventory('USA', { includeZero: true }), 'steel').quantity, 999);
+});
+
+test('import-only mineral source contracts place imported raw material in the raw warehouse', async () => {
+  const { state, api } = makeRuntime();
+  await api.init();
+
+  const imported = api.importProduct({
+    countryId: 'BGD', productId: 'silica_sand', quantity: 25,
+    unit: 'SIMULATION_RESOURCE_UNIT', eventId: 'TEST-SILICA-SAND-RAW-IMPORT'
+  });
+  assert.equal(imported.status, 'COMPLETED');
+  assert.equal(imported.balance, 25);
+  assert.equal(state.resource.BGD.warehouse.availableByResource.silica_sand, 25);
+  assert.equal(state.resource.BGD.processedWarehouse.availableByResource.silica_sand, undefined);
+
+  const batch = state.resource.BGD.batches.find(row => row.resourceId === 'silica_sand');
+  assert.ok(batch, 'an import must create a tracked raw-material batch');
+  assert.equal(batch.stage, 'RAW_EXTRACTED');
+  assert.equal(batch.warehouseId, 'WH-BGD-RAW');
+  assert.equal(state.resource.BGD.inventoryLots[batch.batchId].stage, 'RAW_EXTRACTED');
 });
 
 test('imports add inventory, consumption and exports subtract, and inactive-country writes are rejected', async () => {

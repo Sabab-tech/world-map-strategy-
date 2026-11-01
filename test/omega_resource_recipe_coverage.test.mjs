@@ -58,6 +58,7 @@ test('every catalog resource and every registered deposit resource has an execut
     'resource_site_canonical_catalog_v1.json',
     'resource_site_master_registry_v1.json',
     'resource_site_country_mineplay_batch_20261020_v1.json',
+    'resource_site_country_mineplay_batch_20261024_v1.json',
     ...(manifest.parts||[]).map(x=>x.file)
   ];
   const allSites=[];
@@ -74,6 +75,22 @@ test('every catalog resource and every registered deposit resource has an execut
   const siteResourceIds=[...new Set(allSites.map(resourceOf).filter(Boolean).map(tok))];
   assert.ok(allSites.length>0,'canonical/master/legacy registry must supply deposit records');
   assert.ok(siteResourceIds.length>0,'deposit resource identifiers must be available');
+
+  const catalogResourceIds=catalogResources.map(tok);
+  const resourcesWithoutDomesticSite=catalogResourceIds.filter(rid=>!siteResourceIds.includes(rid));
+  const missingExternalSupplyContracts=resourcesWithoutDomesticSite.filter(rid=>{
+    const contract=catalog.externalInputSources?.[rid];
+    return !contract||contract.requiresRecordedBatch!==true||contract.autoGenerateStock!==false;
+  });
+  assert.deepEqual(missingExternalSupplyContracts,[],
+    'every resource without a recorded mine/site must have a no-auto-generation external supply contract');
+  const silicaSandImport=catalog.externalInputSources?.silica_sand;
+  assert.ok(silicaSandImport,'silica sand must have an explicit supply route while no domestic site is recorded');
+  assert.equal(silicaSandImport.sourceSector,'INTERNATIONAL_TRADE');
+  assert.equal(silicaSandImport.sourceAuthority,'IMPORTED_MINERAL_BATCH_REQUIRED');
+  assert.equal(silicaSandImport.inventoryStage,'RAW_EXTRACTED');
+  assert.equal(silicaSandImport.requiresRecordedBatch,true);
+  assert.equal(silicaSandImport.autoGenerateStock,false);
   const unusable=[];
   for(const rid of siteResourceIds){
     const recipe=api.recipeFor(rid,{});
