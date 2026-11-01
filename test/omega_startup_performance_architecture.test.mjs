@@ -74,10 +74,10 @@ test('country general data module is lazy-loaded from the country overview scree
   const loader = await read('omega_country_general_data_loader_v1.js');
   assert.match(index, /omega_country_general_data_loader_v1\.js/);
   assert.doesNotMatch(index, /omega_country_general_data_runtime_v1\.js/);
-  assert.match(server, /COUNTRY_GENERAL_DATA_SCRIPT = '<script src="\\/omega_country_general_data_loader_v1\.js"/);
-  assert.doesNotMatch(server, /COUNTRY_GENERAL_DATA_SCRIPT = '<script src="\\/omega_country_general_data_runtime_v1\.js"/);
-  assert.match(bootstrap, /omega_country_general_data_loader_v1\.js/);
-  assert.doesNotMatch(bootstrap, /omega_country_general_data_runtime_v1\.js/);
+  assert.match(server, /COUNTRY_GENERAL_DATA_SCRIPT = .*omega_country_general_data_loader_v1\.js/);
+  assert.doesNotMatch(server, /COUNTRY_GENERAL_DATA_SCRIPT = .*omega_country_general_data_runtime_v1\.js/);
+  assert.ok(bootstrap.includes("'omega_country_general_data_loader_v1.js'"));
+  assert.ok(!bootstrap.includes("'omega_country_general_data_runtime_v1.js'"));
   assert.match(loader, /renderChapter1_Overview/);
   assert.match(loader, /omega_country_general_data_runtime_v1\.js/);
 });
