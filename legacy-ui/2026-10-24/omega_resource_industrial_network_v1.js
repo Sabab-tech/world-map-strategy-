@@ -2716,6 +2716,33 @@ function startFactoryProductionCycle(input={}){
     return{status:'BLOCKED',reason:'FACTORY_INPUT_SHORTAGE',factoryId:fid};
   }
   const utilityProfile=(cat()?.factoryProfiles||{})[String(asset.factoryType||asset.type||'').toUpperCase()]?.utilities||asset.utilityRequirements||{};
+  const utilityBucket=utilityTurnBucket(cid),utilitySupply=utilitySupplyValues(cid);
+  const utilityReserved=utilityBucket.reservations.reduce((sum,row)=>({
+    electricityMWh:sum.electricityMWh+Math.max(0,num(row.electricityMWh)||0),
+    waterM3:sum.waterM3+Math.max(0,num(row.waterM3)||0)
+  }),{electricityMWh:0,waterM3:0});
+  const reservedFactoryIds=new Set(utilityBucket.reservations.map(row=>String(row.factoryId||'')));
+  const activeCycles=factoryCycleStore(cid).factoryProductionCycles||{};
+  let aggregatePower=0,aggregateWater=0;
+  for(const candidate of factoryAssets(cid)){
+    const candidateId=String(candidate?.id||candidate?.assetId||candidate?.factoryId||candidate?.projectId||'');
+    if(!candidateId||String(candidate?.status||'OPERATIONAL').toUpperCase()!=='OPERATIONAL'||
+      reservedFactoryIds.has(candidateId)||(candidateId!==fid&&factoryCycleActive(activeCycles[candidateId])))continue;
+    const candidateProfile=(cat()?.factoryProfiles||{})[String(candidate.factoryType||candidate.type||candidate.facilityType||'').toUpperCase()]||{};
+    const candidateUtilities=candidate.utilityRequirements&&typeof candidate.utilityRequirements==='object'&&
+      (candidate.utilityRequirements.electricityMWhPerDay!=null||candidate.utilityRequirements.waterM3PerDay!=null)
+        ?candidate.utilityRequirements:candidateProfile.utilities;
+    const power=num(candidateUtilities?.electricityMWhPerDay),water=num(candidateUtilities?.waterM3PerDay);
+    if(power!==null&&power>0)aggregatePower+=power;
+    if(water!==null&&water>0)aggregateWater+=water;
+  }
+  const availablePower=utilitySupply.power===null?null:Math.max(0,utilitySupply.power-utilityBucket.used.electricityMWh-utilityReserved.electricityMWh);
+  const availableWater=utilitySupply.water===null?null:Math.max(0,utilitySupply.water-utilityBucket.used.waterM3-utilityReserved.waterM3);
+  const powerRatio=num(utilityProfile.electricityMWhPerDay)>0&&aggregatePower>0
+    ?Math.min(1,(availablePower??0)/aggregatePower):1;
+  const waterRatio=num(utilityProfile.waterM3PerDay)>0&&aggregateWater>0
+    ?Math.min(1,(availableWater??0)/aggregateWater):1;
+  quantity=Math.min(quantity,metrics.capacity*Math.min(powerRatio,waterRatio));
   let utilityPreview=previewFactoryUtilityUse(cid,asset,quantity);
   if(utilityPreview.status==='BLOCKED'&&utilityPreview.reason==='FACTORY_UTILITY_SHORTAGE'){
     for(const shortage of utilityPreview.shortages||[]){
