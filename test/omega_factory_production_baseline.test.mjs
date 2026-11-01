@@ -1217,3 +1217,32 @@ test('all material and element processing resolves to one universal factory type
   for (const resource of ['nickel','potash','niobium','lithium']) assert.equal(catalog.processingRules[resource].factoryType, canonicalType);
   assert.equal(api.factoryCatalogDiagnostics().status, 'HEALTHY');
 });
+
+
+test('factory workforce shortage scales production continuously from filled direct jobs', () => {
+  const { context, catalog, api } = makeRuntime();
+  const asset = makeSteelAsset();
+  context.Game.state.economy.BGD = {
+    unemploymentCount: 1000, laborForce: 6000000, unemployment_rate: 0.0167,
+    productionAssets: [asset]
+  };
+  context.Game.state.transport.BGD = { infrastructure: { utilitySupply: {
+    electricityMWhPerDay: 1000000, waterM3PerDay: 1000000,
+    authority: 'TEST_FIXTURE', status: 'AVAILABLE', simulationOnly: true, assets: []
+  } } };
+  const employment = api.reconcileFactoryEmployment('BGD').status;
+  assert.equal(employment, 'ACTIVE');
+  const gate = api.factoryOperationGate('BGD', asset);
+  assert.equal(gate.status, 'READY');
+  assert.equal(gate.requiredWorkers, catalog.factoryProfiles.STEEL_AND_ALLOY_WORKS.employment.jobsPerFactory);
+  assert.equal(gate.workersAvailable, 1000);
+  assert.equal(gate.workforceRatio, 0.2);
+  const result = api.startFactoryProductionCycle({
+    countryId: 'BGD', factoryId: asset.id, resourceId: 'iron_concentrate', quantity: 100
+  });
+  assert.equal(result.status, 'IN_PROGRESS', JSON.stringify(result));
+  assert.equal(result.productionQuantity, 20);
+  assert.equal(result.productivityPct, 20);
+  assert.equal(result.inputQuantities.iron_concentrate, 12);
+  assert.equal(result.inputQuantities.coal_concentrate, 4);
+});
