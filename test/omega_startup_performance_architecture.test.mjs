@@ -78,9 +78,9 @@ test('country general data module is lazy-loaded from the country overview scree
 
 test('strategic profile chapter requests its shared dataset and refreshes only while still selected', async () => {
   const source = await read('country-ios.js');
-  assert.match(source, /getStrategicProfileAsync\\(requestedCountry\\)/);
-  assert.match(source, /this\\.activeChapter === 13 && this\\.activeCountry === requestedCountry/);
-  assert.match(source, /this\\.switchChapter\\(13\\)/);
+  assert.match(source, /getStrategicProfileAsync\(requestedCountry\)/);
+  assert.match(source, /this\.activeChapter === 13 && this\.activeCountry === requestedCountry/);
+  assert.match(source, /this\.switchChapter\(13\)/);
 });
  
 test('resource endowment prioritizes playable mine data and moves research enrichment to idle time', async () => {
