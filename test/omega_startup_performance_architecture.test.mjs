@@ -7,7 +7,7 @@ const read = path => fs.readFile(new URL('../' + path, import.meta.url), 'utf8')
 
 test('country and general runtimes share one registry fetch and one country alias index', async () => {
   const countrySource = await read('omega_country_runtime_data_v1.js');
-  assert.doesNotMatch(source, /omega_country_general_data_runtime_v1\\.js/);
+  assert.doesNotMatch(source, /omega_country_general_data_runtime_v1\.js/);
   const fetchCounts = new Map();
   const registry = {
     metadata: {
@@ -39,7 +39,7 @@ test('country and general runtimes share one registry fetch and one country alia
       const key = String(url).replace(/^\.\//, '');
       fetchCounts.set(key, (fetchCounts.get(key) || 0) + 1);
       if (key === 'economy_global_profiles_v1.json') return { ok: true, json: async () => ({ countries: [{ countryCode: 'US', iso3: 'USA', name: 'United States' }] }) };
-      if (key === 'country_general_data_registry_v1.json') return { ok: true, json: async () => registry };
+  assert.match(source, /country_general_data_registry_v1\.json/);
       return { ok: false };
     },
     OmegaCanonicalIdentityRegistry: null,
