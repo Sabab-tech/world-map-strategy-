@@ -37,7 +37,18 @@ function countryRow(iso2,iso3,name,metrics){
 const fixture={metadata:{schemaVersion:'1.0.0',datasetId:'OMEGA_COUNTRY_GENERAL_DATA_REGISTRY_V1',countryAndTerritoryCount:2,recordSchema:schema,
  provenanceEncoding:{statuses:['WORLD_BANK_API_OBSERVATION'],sourceIds:['WORLD_BANK_WDI'],sourceNames:['Fixture source'],methods:['SOURCE_OBSERVATION'],missingCode:-1}},
  fieldCatalogue:metricFields.map(key=>({key,name:key,unit:key.includes('Pct')?'%':'source units'})),countries:[countryRow('AA','AAA','Alpha',alpha),countryRow('BB','BBB','Beta',beta)]};
-globalThis.fetch=async()=>({ok:true,json:async()=>fixture});
+globalThis.window=globalThis;
+globalThis.fetch=async input=>{
+ const name=String(input).split('?')[0].replace(/^\\.\\//,'');
+ if(name==='economy_global_profiles_v1.json')return{ok:true,json:async()=>({countries:[
+  {countryCode:'AA',iso3:'AAA',name:'Alpha'},
+  {countryCode:'BB',iso3:'BBB',name:'Beta'}
+ ]})};
+ if(name==='country_general_data_registry_v1.json')return{ok:true,json:async()=>fixture};
+ return{ok:false,json:async()=>({})};
+};
+await import('../omega_country_runtime_data_v1.js');
+assert.equal(await globalThis.OmegaCountryRuntimeData.ready,true);
 await import('../omega_country_general_data_runtime_v1.js');
 const runtime=globalThis.OmegaCountryGeneralDataRuntime;
 
