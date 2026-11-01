@@ -2057,7 +2057,7 @@ function factoryUtilityProductionLimit(countryId,asset,requestedProduction){
   const electricityRatio=powerDaily>1e-9?Math.min(1,available.electricityMWh/powerDaily):1;
   const waterRatio=waterDaily>1e-9?Math.min(1,available.waterM3/waterDaily):1;
   const utilityRatio=Math.min(electricityRatio,waterRatio);
-  const allowedProduction=Number(Math.max(0,Math.min(requested,capacity*utilityRatio)).toFixed(6));
+  const allowedProduction=Math.max(0,Math.floor(Math.min(requested,capacity*utilityRatio)*1e6+1e-9)/1e6);
   const constraints={electricityRatio:Number(electricityRatio.toFixed(6)),waterRatio:Number(waterRatio.toFixed(6)),
     utilityRatio:Number(utilityRatio.toFixed(6)),available,supply:{electricityMWhPerDay:supply.power,waterM3PerDay:supply.water},used,
     requiredAtFullCapacity:{electricityMWh:powerDaily,waterM3:waterDaily}};
@@ -2168,7 +2168,7 @@ function factoryOperationGate(countryId,asset){
   const workersFilled=num(employment.jobsFilled);
   if(workersFilled===null)return{status:'BLOCKED',reason:'FACTORY_WORKFORCE_NOT_RECORDED',factoryId,requiredWorkers};
   const workersAvailable=Math.max(0,workersFilled);
-  const workforceRatio=Number(Math.min(1,workersAvailable/requiredWorkers).toFixed(6));
+  const workforceRatio=Math.min(1,workersAvailable/requiredWorkers);
   if(workersAvailable<=1e-9)return{status:'BLOCKED',reason:'FACTORY_WORKFORCE_SHORTAGE',factoryId,
     requiredWorkers,workersAvailable,vacancies:num(employment.vacancies)??requiredWorkers,workforceRatio:0};
   return{status:'READY',factoryId,factoryStatus:status,requiredWorkers,workersAvailable,workforceRatio,
