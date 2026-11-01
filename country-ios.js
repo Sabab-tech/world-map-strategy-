@@ -354,6 +354,18 @@ window.CountryIOS = {
                 break;
             case 13:
                 stage.innerHTML = this.renderChapter13_StrategicProfile(countryKey);
+                // Strategic profiles are backed by the large shared registry. Load them
+                // only when this chapter is opened, then refresh only if the same country
+                // and chapter are still active when the shared request completes.
+                if (!countryRuntime?.getStrategicProfile?.(countryKey) &&
+                    typeof countryRuntime?.getStrategicProfileAsync === 'function') {
+                    const requestedCountry = countryKey;
+                    void countryRuntime.getStrategicProfileAsync(requestedCountry).then(profile => {
+                        if (profile && this.activeChapter === 13 && this.activeCountry === requestedCountry) {
+                            this.switchChapter(13);
+                        }
+                    }).catch(() => {});
+                }
                 break;
         }
 
