@@ -29,6 +29,17 @@
     });
     return state.promise;
   }
+  function scheduleRuntimeLoad(){
+    if(state.loaded)return Promise.resolve(true);
+    if(state.promise)return state.promise;
+    if(state.scheduled)return state.scheduled;
+    state.scheduled=new Promise(resolve=>{
+      const begin=()=>{state.scheduled=null;loadRuntime().then(resolve);};
+      if(typeof root.requestIdleCallback==='function')root.requestIdleCallback(begin,{timeout:5000});
+      else root.setTimeout(begin,1200);
+    });
+    return state.scheduled;
+  }
   function installCountryIOS(){
     const ios=root.CountryIOS;
     if(!ios||typeof ios.renderChapter1_Overview!=='function'||ios.__omegaGeneralDataLoaderInstalled)return false;
@@ -37,34 +48,19 @@
       const args=Array.from(arguments);
       const country=args[0]||this.activeCountry||root.OmegaMinistryViewCountry||'USA';
       const shouldAddPlaceholder=!state.loaded;
-      if(shouldAddPlaceholder)void loadRuntime();
       const html=original.apply(this,args);
+      if(shouldAddPlaceholder)void scheduleRuntimeLoad();
       if(!shouldAddPlaceholder)return html;
       return String(html||'')+'<section data-omega-country-general-panel data-country-id="'+esc(country)+'" style="margin-top:12px;padding:12px;border-radius:12px;background:#0f172a;color:#cbd5e1;border:1px solid #334155"><strong>COUNTRY GENERAL DATA</strong><p>Loading shared country profile…</p></section>';
     };
     Object.defineProperty(ios,'__omegaGeneralDataLoaderInstalled',{value:true});
     return true;
   }
-  function installMinistryOverview(){
-    const ui=root.OmegaCountryOverviewMinistryUI||root.Omega?.CountryOverviewMinistryUI;
-    if(!ui||typeof ui.renderCountryOverview!=='function'||ui.__omegaGeneralDataLoaderInstalled)return false;
-    const original=ui.renderCountryOverview;
-    ui.renderCountryOverview=function(){
-      const result=original.apply(this,arguments);
-      if(!state.loaded){
-        void loadRuntime().then(ready=>{
-          if(ready)ui.renderCountryOverview();
-        });
-      }
-      return result;
-    };
-    Object.defineProperty(ui,'__omegaGeneralDataLoaderInstalled',{value:true});
-    return true;
-  }
   function install(){
-    const countryInstalled=installCountryIOS();
-    const ministryInstalled=installMinistryOverview();
-    return countryInstalled||ministryInstalled;
+    // Government HQ / Ministry UI is on the gameplay startup path. It must render
+    // without loading the large country registry. Only the dedicated Country IOS
+    // overview chapter requests supplemental country facts, after its first paint.
+    return installCountryIOS();
   }
   install();
   root.addEventListener?.('DOMContentLoaded',install,{once:true});
