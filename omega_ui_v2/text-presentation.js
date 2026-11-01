@@ -88,7 +88,7 @@
   }
 
   function visit(node) {
-    if (!node) return;
+    if (!node || isInsideMapSurface(node)) return;
 
     if (node.nodeType === 3) {
       formatTextNode(node);
