@@ -869,6 +869,79 @@ test('fifty factories receive proportional input when the country warehouse is s
   assert.equal(resource.batches.filter(row => row.stage === 'FINISHED' && row.resourceId === 'IRON_CONCENTRATE').length, 50);
 });
 
+test('factory productivity is calculated from live supply ratios and each factory capacity', () => {
+  const scenarios = [
+    { name: '40 percent supply', capacities: [1, 1, 1, 1, 1], supply: 0.4 },
+    { name: '65 percent supply', capacities: [1, 1, 1, 1, 1], supply: 0.65 },
+    { name: 'full supply', capacities: [1, 1, 1, 1, 1], supply: 1 },
+    { name: 'unequal factory capacities', capacities: [1, 2, 3], supply: 0.6 }
+  ];
+
+  for (const scenario of scenarios) {
+    const { context, api } = makeRuntime();
+    const coefficient = 0.2;
+    const assets = scenario.capacities.map((capacity, index) => ({
+      id: 'FAC-DYNAMIC-' + scenario.name.replace(/[^a-z0-9]+/gi, '-').toUpperCase() + '-' + (index + 1),
+      countryId: 'BGD', factoryType: 'UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT',
+      capacityPerDay: capacity, capacity, status: 'OPERATIONAL', recipeMode: 'SINGLE_INPUT',
+      inputCoefficients: { iron_ore: coefficient },
+      outputProfile: { IRON_CONCENTRATE: 0.8, ORE_TAILINGS: 0.2 },
+      inputUnit: 'SIMULATION_RESOURCE_UNIT', outputUnit: 'SIMULATION_RESOURCE_UNIT'
+    }));
+    const totalDemand = scenario.capacities.reduce((sum, capacity) => sum + capacity * coefficient, 0);
+    const expectedRatio = Math.min(1, scenario.supply / totalDemand);
+    const expectedPct = Number((expectedRatio * 100).toFixed(2));
+
+    context.Game.state.simulation.date = '2015-01-01';
+    context.Game.state.economy.BGD = {
+      unemploymentCount: 600000, laborForce: 6000000, unemployment_rate: 10,
+      productionAssets: assets
+    };
+    context.Game.state.transport.BGD = { infrastructure: { utilitySupply: {
+      electricityMWhPerDay: 1000000, waterM3PerDay: 1000000,
+      authority: 'TEST_FIXTURE', status: 'AVAILABLE', simulationOnly: true, assets: []
+    } } };
+    const batchId = 'BATCH-DYNAMIC-' + scenario.name.replace(/[^a-z0-9]+/gi, '-').toUpperCase();
+    const resource = context.Game.state.resource.BGD = {
+      inventory: { iron_ore: scenario.supply },
+      batches: [{
+        batchId, resourceId: 'iron_ore', materialIdentity: 'iron_ore',
+        quantity: scenario.supply, remainingQuantity: scenario.supply,
+        unit: 'SIMULATION_RESOURCE_UNIT', stage: 'RAW', status: 'AVAILABLE',
+        countryId: 'BGD', warehouseId: 'WH-BGD-RAW', createdTurn: 1
+      }],
+      inventoryLots: {
+        [batchId]: {
+          batchId, resourceId: 'iron_ore', quantity: scenario.supply,
+          remainingQuantity: scenario.supply, unit: 'SIMULATION_RESOURCE_UNIT', status: 'AVAILABLE'
+        }
+      },
+      warehouse: {
+        warehouseId: 'WH-BGD-RAW', countryId: 'BGD',
+        availableByResource: { iron_ore: scenario.supply },
+        reservedByResource: {}, storedBatchIds: [batchId], receipts: []
+      }
+    };
+
+    const result = api.processPendingFactoryInputs('BGD');
+    assert.equal(result.startedCount, assets.length, scenario.name + ': every eligible factory should start');
+    assert.equal(result.blocked.length, 0, scenario.name + ': no factory should be starved by iteration order');
+
+    for (const asset of assets) {
+      const expectedInput = Number((asset.capacityPerDay * coefficient * expectedRatio).toFixed(6));
+      const request = resource.industrialNetwork.factoryInputRequests.find(row => row.factoryId === asset.id);
+      assert.ok(request, scenario.name + ': input request must be recorded for ' + asset.id);
+      assert.equal(Number(request.allocatedQuantity.toFixed(6)), expectedInput,
+        scenario.name + ': allocation must follow live demand and available supply for ' + asset.id);
+      assert.equal(asset.productionHealth.productivityPct, expectedPct,
+        scenario.name + ': productivity must be derived from input/capacity arithmetic for ' + asset.id);
+    }
+    assert.equal(Number(assets.reduce((sum, asset) => sum + asset.inputInventory.iron_ore, 0).toFixed(6)),
+      Number(Math.min(scenario.supply, totalDemand).toFixed(6)),
+      scenario.name + ': total allocations must conserve the available warehouse stock');
+  }
+});
+
 test('future-dated paused factory does not take stock allocation from ready factories', () => {
   const { context, api } = makeRuntime();
   const paused = {
