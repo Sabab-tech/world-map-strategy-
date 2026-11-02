@@ -1351,7 +1351,7 @@ test('factory command cards use canonical SVGs, daily production state, type cou
     assert.equal(typeView.ok,true);
     assert.match(root.innerHTML,/Factory types &amp; country totals/);
     assert.equal((root.innerHTML.match(/data-omega-v2-factory-type-card/g)||[]).length,3);
-    assert.match(root.innerHTML,/Registered game assets/);
+    assert.match(root.innerHTML,/Factory assets in runtime/);
     assert.match(root.innerHTML,/data-factory-view="types"/);
 
     // Build stays within UI v2 rather than opening the retired command centre.
