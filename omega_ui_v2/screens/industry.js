@@ -635,15 +635,6 @@
     var factoryTypeRows = (model.factoryTypeCounts || []).map(function (row) {
       return '<tr><td><strong>' + esc(row.name) + '</strong><small>' + esc(row.type) + '</small></td><td class="omega-v2-metal-number">' + fmt(row.count) + '</td></tr>';
     }).join('');
-    var startingBaseline = model.countryFactoryStartingBaseline;
-    var startingFactoryRows = startingBaseline && startingBaseline.factoryCounts
-      ? (model.factoryTypeCatalog || []).map(function (row) {
-          var count = Number(startingBaseline.factoryCounts[row.type]);
-          var countText = Number.isInteger(count) && count >= 0 ? fmt(count) : 'Unavailable';
-          return '<tr><td><strong>' + esc(row.name) + '</strong><small>' + esc(row.type) + '</small></td>' +
-            '<td class="omega-v2-metal-number">' + countText + '</td><td>' + esc(row.category || 'Industry') + '</td></tr>';
-        }).join('')
-      : '';
     var establishmentData = model.countryFactoryEstablishmentData;
     var establishmentRecords = establishmentData && establishmentData.factoryEstablishments || {};
     var establishmentRows = (model.factoryTypeCatalog || []).map(function (row) {
@@ -678,22 +669,6 @@
           '<tbody>' + establishmentRows + '</tbody></table></div>' +
           '<p class="omega-v2-industry-muted">UNIDO establishments are statistical business units, not necessarily individual physical factory sites. Missing values are not zero.</p></section>'
       : '<section class="omega-v2-metal-plate omega-v2-metal-plate--silver omega-v2-industry-starting-baseline" aria-label="Official industrial establishment records"><div class="omega-v2-metal-label">REAL-WORLD SOURCE DATA · UNIDO INDSTAT</div><h3>Industrial Establishment Records</h3><p class="omega-v2-industry-muted">Official source data is loading or unavailable. Unknown values remain unreported.</p></section>';
-    var startingBaselineMarkup = startingBaseline && startingBaseline.factoryCounts
-      ? '<section class="omega-v2-metal-plate omega-v2-metal-plate--silver omega-v2-industry-starting-baseline" aria-label="Game starting factory allocation">' +
-          '<div class="omega-v2-metal-label">GAME START · NATIONAL INDUSTRY PROFILE</div>' +
-          '<h3>Starting Factory Allocation</h3>' +
-          '<p class="omega-v2-industry-muted"><strong>' + fmt(startingBaseline.totalStartingFactoryUnits) + '</strong> modeled starting units · ' +
-            esc(startingBaseline.industryArchetype || 'Diversified starter industry') + '</p>' +
-          economicSectorContextMarkup(startingBaseline, 'omega-v2-industry-muted') +
-          '<div class="omega-v2-industry-table-wrap omega-v2-industry-type-table"><table>' +
-            '<thead><tr><th>Factory type</th><th>Starting count</th><th>Industry group</th></tr></thead>' +
-            '<tbody>' + startingFactoryRows + '</tbody></table></div>' +
-          '<p class="omega-v2-industry-muted">Game-scaled starting allocation, not a real-world factory census. Zero means this type starts absent; the player may expand industry later. This baseline is separate from currently commissioned factory assets.</p>' +
-        '</section>'
-      : '<section class="omega-v2-metal-plate omega-v2-metal-plate--silver omega-v2-industry-starting-baseline" aria-label="Game starting factory allocation">' +
-          '<div class="omega-v2-metal-label">GAME START · NATIONAL INDUSTRY PROFILE</div>' +
-          '<h3>Starting Factory Allocation</h3>' +
-          '<p class="omega-v2-industry-muted">Starting allocation data is loading or unavailable. Unknown values are not treated as zero.</p></section>';
     var rates = model.mineSites.map(function (site) {
       var daily = site.dailyProduction || {};
       return '<tr><td><strong>' + esc(site.name) + '</strong><small>' + esc(site.siteId) + '</small></td>' +
@@ -719,7 +694,6 @@
           (factoryTypeRows || '<tr><td colspan="2">No factory assets</td></tr>') + '</tbody></table></div>' +
           '<details class="omega-v2-industry-factory-names"><summary>Individual registered factory names (' + fmt(model.factoryNames.length) + ')</summary><ul>' + factoryNames + '</ul></details></div>' +
       '</div>' +
-      startingBaselineMarkup +
       establishmentMarkup +
       '<div class="omega-v2-industry-resource-stats">' +
         '<div class="omega-v2-metal-plate omega-v2-metal-plate--blue"><span class="omega-v2-metal-label">REGISTERED RESOURCE SITES</span><strong class="omega-v2-metal-number">' + fmt(model.registeredMineSiteCount) + '</strong><small>Country-specific canonical sites</small></div>' +
