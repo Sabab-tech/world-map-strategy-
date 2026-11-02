@@ -292,3 +292,56 @@ test('resource state readers merge name-keyed country data into canonical countr
   modal = elements.get('gsrsk-intelligence-modal');
   assert.match(modal.innerHTML, /Alias-keyed mine/);
 });
+
+test('Production Ministry shows each country factory count on the matching factory card', () => {
+  const previousCatalog = globalThis.OmegaResourceIndustrialCatalogData;
+  const previousBaseline = globalThis.OmegaCountryFactoryStartingBaselineV1;
+  const previousAssets = Game.state.economy.BGD.productionAssets;
+  globalThis.OmegaResourceIndustrialCatalogData = {
+    factoryProfiles: {
+      STEEL_MILL: { name:'Steel Mill', category:'Heavy Industry', defaultRecipeId:'STEEL-RECIPE' },
+      TEXTILE_GARMENT_MILL: { name:'Textile Mill', category:'Light Industry', defaultRecipeId:'TEXTILE-RECIPE' }
+    },
+    factoryCatalogPolicy: { categoryOrder:['Heavy Industry','Light Industry'] },
+    downstreamFactoryRecipes: {},
+    processingRules: {}
+  };
+  globalThis.OmegaCountryFactoryStartingBaselineV1 = {
+    getCountryFactoryRegistry(countryId) {
+      assert.equal(countryId, 'BGD');
+      return {
+        status:'READY', runtimeRegistered:false,
+        registry:[
+          { factoryType:'STEEL_MILL', name:'Steel Mill', startingCount:3 },
+          { factoryType:'TEXTILE_GARMENT_MILL', name:'Textile Mill', startingCount:2 }
+        ],
+        liveFactoryTypeCounts:{ STEEL_MILL:0, TEXTILE_GARMENT_MILL:0 }
+      };
+    }
+  };
+  Game.state.economy.BGD.productionAssets = [
+    { id:'BGD-STEEL-BUILD-1', factoryType:'STEEL_MILL', status:'OPERATIONAL',
+      sourceType:'PLAYER_FACTORY_CONSTRUCTION', capacityPerDay:50 }
+  ];
+  try {
+    ui.open('BGD', 'industrial');
+    const html = elements.get('gsrsk-intelligence-modal').innerHTML;
+    assert.equal((html.match(/omega-rescc-factory-catalog-row/g) || []).length, 2);
+    assert.match(html, /Steel Mill/);
+    assert.match(html, /Textile Mill/);
+    assert.match(html, /Factories[\\s\\S]*?<strong>4<\\/strong>/,
+      'the steel card shows three country factories plus the one completed player build');
+    assert.match(html, /Factories[\\s\\S]*?<strong>2<\\/strong>/,
+      'the textile card shows the country factory total');
+    assert.match(html, /BGD-STEEL-BUILD-1/,
+      'the actual factory record remains inside the matching factory type card');
+    assert.match(html, /<span>Factories<\\/span>/);
+    assert.doesNotMatch(html, /Factory catalog|My factories|commissioned factory|SOURCE_UNAVAILABLE|Source status/i);
+  } finally {
+    if (previousCatalog === undefined) delete globalThis.OmegaResourceIndustrialCatalogData;
+    else globalThis.OmegaResourceIndustrialCatalogData = previousCatalog;
+    if (previousBaseline === undefined) delete globalThis.OmegaCountryFactoryStartingBaselineV1;
+    else globalThis.OmegaCountryFactoryStartingBaselineV1 = previousBaseline;
+    Game.state.economy.BGD.productionAssets = previousAssets;
+  }
+});
