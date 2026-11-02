@@ -497,6 +497,7 @@
       endowment: ledgerField(row && row.endowment, runtime.endowment, id),
       reserve: ledgerField(row && row.reserve, runtime.reserves, id),
       inventory: ledgerField(row && row.inventory, runtime.inventory, id),
+      warehouseAvailable: ledgerQuantity(resourceMapValue(runtime.warehouse && runtime.warehouse.availableByResource, id)),
       dailyProduction: ledgerField(row && row.dailyProduction, runtime.production, id),
       dailyConsumption: ledgerField(row && row.dailyConsumption, runtime.consumption, id),
       netBalance: ledgerQuantity(row && row.netBalance),
@@ -559,6 +560,7 @@
       ledgerMetric('🏭', 'Consumption / day', data.dailyConsumption, unit) +
       ledgerMetric('⚖️', 'Net balance', data.netBalance, unit) +
       ledgerMetric('📦', 'Current Stock', data.inventory, unit) +
+      ledgerMetric('🏬', 'Raw Warehouse', data.warehouseAvailable, unit) +
       ledgerMetric('💎', 'Proven reserves', data.reserve, unit) +
       ledgerMetric('🌍', 'In-situ endowment', data.endowment, unit) +
       '</div>';
