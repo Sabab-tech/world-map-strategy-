@@ -122,5 +122,5 @@ test("cargo-specific transport variants cover truck, rail, ship and barge models
  assert.deepEqual(modeCounts,{barge:5,ship:5,rail:5,truck:5});
  const offline=fs.readFileSync(path.join(root,"omega-offline-map-sw.js"),"utf8");
  assert.match(offline,/omega-offline-atlas-shell-v73/);
- assert.ok(offline.includes("factoryIconManifest.transportVariants"),"variant SVGs must be precached from the manifest");
+ assert.match(offline,/\[\s*"factories"\s*,\s*"resources"\s*,\s*"transportVariants"\s*\]/,"all canonical manifest groups, including transport variants, must be precached");
 });
