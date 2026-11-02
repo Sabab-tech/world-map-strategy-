@@ -106,4 +106,16 @@ assert.equal(writes,0);
 assert.equal(events.length,0,'the adapter must not publish delivery without a core-network receipt');
 assert.deepEqual(state.resource.logistics.shipments,[legacyShipment]);
 
+const industrialSource=fs.readFileSync('omega_resource_industrial_network_v1.js','utf8');
+const transferStart=industrialSource.indexOf('function transferFactoryInputsFromWarehouse(');
+const transferEnd=industrialSource.indexOf('\nfunction factoryCycleDue',transferStart+30);
+assert.ok(transferStart>=0&&transferEnd>transferStart,'core factory input transfer function is present');
+const transferFunction=industrialSource.slice(transferStart,transferEnd);
+assert.match(transferFunction,/siteFlowBatchIds/,
+  'site-backed extraction batches are classified separately from generic warehouse stock');
+assert.match(transferFunction,/!siteFlowBatchIds\.has\(String\(batch\?\.batchId\|\|''\)\)/,
+  'the immediate internal transfer must exclude mine batches with physical site-flow records');
+assert.match(transferFunction,/SITE_BATCH_REQUIRES_RAW_TO_FACTORY_LOGISTICS/,
+  'mine batches awaiting route delivery expose an explicit logistics gate');
+
 console.log('OMEGA RESOURCE LOGISTICS ADAPTER AUTHORITY TEST PASSED');
