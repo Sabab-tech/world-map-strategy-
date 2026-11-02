@@ -129,7 +129,7 @@ test("resource visual layer is wired into the offline-first app without remote d
   const coreAssets = sw.slice(sw.indexOf("const CORE_ASSETS"), sw.indexOf("];", sw.indexOf("const CORE_ASSETS")));
   assert.ok(coreAssets.includes('"./resource_economy_rules.json"'), "canonical resource identities remain in the shell precache list");
   const shellAssetPolicy = sw.slice(sw.indexOf("function isShellAsset"), sw.indexOf("function isLocalAppUrl"));
-  assert.match(shellAssetPolicy, /resource_economy_rules\\.json/,
+  assert.match(shellAssetPolicy, /resource_economy_rules\.json/,
     "the Service Worker must cache the canonical resource rules as an offline shell asset");
   assert.ok(coreAssets.includes('"./assets/omega-industrial-icons-v1/transport/route-mine-origin.svg"'));
   assert.ok(coreAssets.includes('"./assets/omega-industrial-icons-v1/transport/route-warehouse-destination.svg"'));
