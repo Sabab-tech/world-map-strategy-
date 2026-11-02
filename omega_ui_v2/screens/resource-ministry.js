@@ -677,13 +677,14 @@
     function resourceUnit(resourceId) {
       var wanted = String(resourceId || '').trim().toLowerCase();
       var unitKey = Object.keys(inventoryUnits).find(function (key) { return key.toLowerCase() === wanted; });
-      if (unitKey && inventoryUnits[unitKey]) return String(inventoryUnits[unitKey]);
+      var recordedUnit = unitKey && inventoryUnits[unitKey] ? String(inventoryUnits[unitKey]) : '';
+      if (recordedUnit && !/SIMULATION.*UNIT/i.test(recordedUnit)) return recordedUnit;
       var meta = resourceCatalogById[wanted];
       if (meta && meta.unit) return String(meta.unit);
       var rules = g.OmegaResourceIndustrialCatalogData || g.Omega && g.Omega.ResourceIndustrialCatalogData || {};
       var rule = rules.resourceRules && (rules.resourceRules[resourceId] || rules.resourceRules[wanted]);
-      if (!rule) return '';
-      return String(rule.unit || rule.baseUnit || rule.outputUnit || '');
+      if (rule) return String(rule.unit || rule.baseUnit || rule.outputUnit || '');
+      return '';
     }
     function balanceState(site, asset, currentOutput, blocked) {
       if (!isOperationalAsset(asset)) return asset && /DECOMMISSIONED|DESTROYED|STOPPED|INACTIVE|CLOSED/.test(String(asset.status || '').toUpperCase())
@@ -933,7 +934,7 @@
       renderKpi('Stock shortages', String(inventoryKeys.filter(function (rid) { return shortageFor(rid) > 0; }).length), 'Where demand is recorded', inventoryKeys.some(function (rid) { return shortageFor(rid) > 0; }) ? 'shortage' : 'neutral') +
       '</div><section class="omega-v2-card omega-v2-movement-card"><h2>Inventory movement</h2><p>Stored quantity, confirmed receipts and recorded dispatches for the selected country.</p>' + stockTable + '</section>' +
       (inventoryRows.length ? '<section class="omega-v2-card omega-v2-movement-card"><h2>Recent batches</h2><div class="omega-v2-table-wrap"><table><thead><tr><th>Resource</th><th>Quantity</th><th>Warehouse</th><th>Status</th></tr></thead><tbody>' +
-        inventoryRows.slice(-40).reverse().map(function (row) { return '<tr><td>' + esc(resourceLabel(row.resourceId)) + '</td><td>' + amount(row.quantity, row.unit) +
+        inventoryRows.slice(-40).reverse().map(function (row) { return '<tr><td>' + esc(resourceLabel(row.resourceId)) + '</td><td>' + amount(row.quantity, resourceUnit(row.resourceId) || (/SIMULATION.*UNIT/i.test(String(row.unit || '')) ? '' : row.unit)) +
           '</td><td>' + esc(row.location || '—') + '</td><td>' + esc(human(row.status)) + '</td></tr>'; }).join('') +
         '</tbody></table></div></section>' : '');
     function logisticsStatus(value) {
