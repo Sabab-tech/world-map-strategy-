@@ -121,7 +121,7 @@ test('offline app shell caches runtime code but defers optional data files', () 
   for (const file of ['cities.json','economy.json','population.json','society.json','country_general_data_registry_v1.json','country_sector_profiles_v1.json','country_factory_starting_baseline_v1.json','country_factory_input_inventory_baseline_v1.json']) {
     assert.equal(sw.includes('./' + file), false, file + ' must be lazy');
   }
-  assert.match(sw,/omega-offline-atlas-shell-v73/);
+  assert.match(sw,/omega-offline-atlas-shell-v75/);
   const bridge=read('omega_country_runtime_data_v1.js');
   assert.match(bridge,/loadCountryData/);assert.match(bridge,/releaseCountryData/);
 });
