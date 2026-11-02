@@ -151,7 +151,7 @@ test('only the selected player country receives a saved inventory runtime; inact
   assert.equal(api.getCountryRecord('USA'), null,
     'inactive countries must not receive persistent inventory runtime shells');
   assert.equal(api.getCountryRecord('DEU'), null);
-  assert.deepEqual(Object.keys(state.omegaCountryInventoryRuntime.countries), ['BGD']);
+  assert.deepEqual(Object.keys(state.countryInventories.countries), ['BGD']);
 
   const usaInactive = api.getInventory('USA', { includeZero: true });
   assert.equal(usaInactive.readOnly, true);
@@ -181,7 +181,7 @@ test('only the selected player country receives a saved inventory runtime; inact
   assert.equal(api.getInventory('USA', { includeZero: true }).readOnly, true);
   assert.equal(item(api.getInventory('USA', { includeZero: true }), 'steel').quantity, 999,
     'previously active country inventory is preserved when the player switches away');
-  assert.deepEqual(Object.keys(state.omegaCountryInventoryRuntime.countries).sort(), ['BGD', 'USA']);
+  assert.deepEqual(Object.keys(state.countryInventories.countries).sort(), ['BGD', 'USA']);
 });
 
 test('inventory registers all 41 canonical raw-resource identities and displays explicit unknown rows', async () => {
