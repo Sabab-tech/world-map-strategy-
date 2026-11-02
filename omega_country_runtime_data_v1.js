@@ -355,7 +355,7 @@
     loadCountryData,releaseCountryData,diagnostics,listProfiles});
   if(root.navigator?.serviceWorker?.addEventListener){
     root.navigator.serviceWorker.addEventListener('message',event=>{
-      const message=event?.data;if(message?.type!=='OMEGA_CACHE_DATA_UPDATED')return;
+      const message=event?.data;if(!['OMEGA_CACHE_DATA_UPDATED','OMEGA_CACHE_DATA_REMOVED'].includes(message?.type))return;
       const marker='/api/omega/country-domain/',url=String(message.url||''),at=url.indexOf(marker);
       if(at<0)return;
       const parts=url.slice(at+marker.length).split('/');
