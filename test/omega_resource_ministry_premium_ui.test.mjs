@@ -1352,3 +1352,99 @@ test("logistics cards expose an accessible route diagram with existing SVG cargo
     if (priorGame === undefined) delete globalThis.Game; else globalThis.Game = priorGame;
   }
 });
+
+
+test("raw-resource inventory cards show icon, stock, demand, status and named supplier without mixing product warehouse balances", () => {
+  const api = globalThis.OmegaUIV2ResourceMinistry;
+  const rules = json("resource_economy_rules.json");
+  const resources = Object.keys(rules.demand.resourceProfiles).map((resourceId) => {
+    const profile = rules.demand.resourceProfiles[resourceId] || {};
+    return {
+      resourceId,
+      name: resourceId.replace(/[_-]+/g, " ").replace(/\\b\\w/g, (ch) => ch.toUpperCase()),
+      unit: String(profile.unit || "").replace(/_PER_DAY$/i, "") || "TONNES",
+      demandUnit: profile.unit || "TONNES_PER_DAY"
+    };
+  });
+  const prior = {
+    Game:globalThis.Game,
+    inventory:globalThis.OmegaCountryInventoryRuntime,
+    catalog:globalThis.OmegaResourceIndustrialCatalogData,
+    country:globalThis.OmegaCountryRuntimeData,
+    startup:globalThis.OmegaResourceStartupBaseline
+  };
+  const root = {
+    innerHTML:"",
+    classList:{add(){}},
+    addEventListener(){},
+    querySelector(){return null;},
+    querySelectorAll(){return [];},
+    contains(){return true;}
+  };
+  globalThis.Game = { state:{
+    simulation:{turn:8,session:{playerCountryId:"BGD",status:"RUNNING"}},
+    resource:{BGD:{
+      inventory:{coal:125,iron_ore:50},
+      inventoryUnits:{coal:"TONNES",iron_ore:"TONNES"},
+      batches:[
+        {batchId:"RAW-MINE-COAL-01",resourceId:"coal",stage:"RAW",quantity:125,remainingQuantity:125,unit:"TONNES",status:"AVAILABLE",warehouseId:"WH-BGD-RAW",sourceCountryId:"BGD",transferType:"LOCAL_EXTRACTION",sourceSiteIds:["SITE-BGD-COAL"]},
+        {batchId:"RAW-IMPORT-ORE-01",resourceId:"iron_ore",stage:"RAW",quantity:50,remainingQuantity:50,unit:"TONNES",status:"AVAILABLE",warehouseId:"WH-BGD-RAW",sourceCountryId:"AUS",transferType:"INTERNATIONAL_TRADE_IMPORT"},
+        {batchId:"PROCESSED-STEEL-01",resourceId:"steel",stage:"FINISHED",quantity:900,remainingQuantity:900,unit:"TONNES",status:"AVAILABLE",warehouseId:"WH-BGD-PROCESSED"}
+      ],
+      demandRuntime:{byResource:{
+        coal:{demandPerDay:25,status:"BALANCED",stockCoverageDays:5,stockCoverageTargetDays:4},
+        iron_ore:{demandPerDay:10,status:"SHORTAGE",unmetDemand:2,stockCoverageDays:5,stockCoverageTargetDays:10}
+      }},
+      warehouse:{warehouseId:"WH-BGD-RAW",availableByResource:{coal:125,iron_ore:50},receipts:[]},
+      processedWarehouse:{warehouseId:"WH-BGD-PROCESSED",availableByResource:{steel:900},unitsByProduct:{steel:"TONNES"},receipts:[]},
+      mineAssets:[],industrialNetwork:{projects:[],shipments:[],siteFlowLedger:[]},inventoryLedger:[]
+    }},
+    economy:{BGD:{productionAssets:[{
+      id:"FAC-BGD-STEEL",name:"Bangladesh Steel Works",factoryType:"STEEL_MILL",status:"OPERATIONAL",
+      inputInventory:{iron_ore:12},inputUnits:{iron_ore:"TONNES"}
+    }]}},
+    trade:{BGD:{importRequests:[{resourceId:"iron_ore",quantity:20,remainingQuantity:20,status:"IN_TRANSIT",supplierCountryId:"AUS"}]}}
+  }};
+  globalThis.OmegaCountryInventoryRuntime = {getResourceCatalog(){return resources;}};
+  globalThis.OmegaResourceIndustrialCatalogData = {resourceRules:{}};
+  globalThis.OmegaCountryRuntimeData = {resolveCountry(code){
+    return code==="AUS" ? {countryCode:"AU",iso3:"AUS",name:"Australia",officialName:"Commonwealth of Australia"} : null;
+  }};
+  globalThis.OmegaResourceStartupBaseline = null;
+  try {
+    const result = api.render(root,{countryId:"BGD",sites:[],tab:"inventory"});
+    assert.equal(result.ok,true);
+    assert.match(root.innerHTML,/data-omega-v2-raw-resource-inventory/);
+    assert.match(root.innerHTML,/data-resource-id="coal"/);
+    assert.match(root.innerHTML,/Current stock/);
+    assert.match(root.innerHTML,/Daily demand/);
+    assert.match(root.innerHTML,/125(?:\\.00)? TONNES/);
+    assert.match(root.innerHTML,/25(?:\\.00)? TONNES_PER_DAY|25(?:\\.00)? TONNES per day/i);
+    assert.match(root.innerHTML,/Domestic mine/);
+    assert.match(root.innerHTML,/Foreign import/);
+    assert.match(root.innerHTML,/Australia \\(AUS\\)/);
+    assert.match(root.innerHTML,/Shortage/);
+    assert.match(root.innerHTML,/data-omega-v2-processed-goods-inventory/);
+    assert.match(root.innerHTML,/Finished Goods Warehouse/);
+    assert.match(root.innerHTML,/Steel/);
+    assert.match(root.innerHTML,/900(?:\\.00)? TONNES/);
+    const rawSection = root.innerHTML.slice(root.innerHTML.indexOf('data-omega-v2-raw-resource-inventory'),root.innerHTML.indexOf('data-omega-v2-processed-goods-inventory'));
+    assert.doesNotMatch(rawSection,/data-product-id="steel"|900(?:\\.00)? TONNES/,
+      "finished-goods stock must never appear in the natural-resource inventory");
+    assert.match(root.innerHTML,/Factory-held input/);
+    assert.match(root.innerHTML,/Bangladesh Steel Works/);
+    assert.match(root.innerHTML,/12(?:\\.00)? TONNES/,
+      "factory-held raw input must remain in its separate factory-owned section");
+    const dashboard = api.render(root,{countryId:"BGD",sites:[],tab:"dashboard"});
+    assert.equal(dashboard.ok,true);
+    assert.match(root.innerHTML,/Raw Resource Inventory/);
+    assert.match(root.innerHTML,/Finished Goods Warehouse/);
+  } finally {
+    api.unload(root);
+    if(prior.Game===undefined)delete globalThis.Game;else globalThis.Game=prior.Game;
+    if(prior.inventory===undefined)delete globalThis.OmegaCountryInventoryRuntime;else globalThis.OmegaCountryInventoryRuntime=prior.inventory;
+    if(prior.catalog===undefined)delete globalThis.OmegaResourceIndustrialCatalogData;else globalThis.OmegaResourceIndustrialCatalogData=prior.catalog;
+    if(prior.country===undefined)delete globalThis.OmegaCountryRuntimeData;else globalThis.OmegaCountryRuntimeData=prior.country;
+    if(prior.startup===undefined)delete globalThis.OmegaResourceStartupBaseline;else globalThis.OmegaResourceStartupBaseline=prior.startup;
+  }
+});
