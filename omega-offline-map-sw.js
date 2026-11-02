@@ -7,10 +7,10 @@ const DATA_CACHE_NAME = "omega-country-data-v1";
 const DATA_CACHE_MAX_ENTRIES = 32;
 const DATA_CACHE_MAX_BYTES = 24 * 1024 * 1024;
 const DATA_CACHE_MAX_ENTRY_BYTES = 4 * 1024 * 1024;
-const DATA_CACHE_META_URL = new URL("__omega-data-cache-index__", APP_BASE).href;
 let dataCacheMutation = Promise.resolve();
 const APP_BASE = new URL("./", self.location.href);
 const INDEX_URL = new URL("index.html", APP_BASE).href;
+const DATA_CACHE_META_URL = new URL("__omega-data-cache-index__", APP_BASE).href;
 const CORE_ASSETS = [
   "./", "./index.html", "./world.json", "./leaflet.js", "./leaflet.css",
   "./style.css", "./design-tokens.js", "./omega_action_progress_v1.js", "./map-engine-1.js", "./map-engine-2.js",
@@ -131,8 +131,8 @@ function isShellAsset(value) {
   try {
     const url = new URL(value, INDEX_URL);
     if (url.origin !== self.location.origin || !url.pathname.startsWith(APP_BASE.pathname)) return false;
-    if (/\\.(?:m?js|css|svg|woff2?|png|jpe?g|webp|avif)$/i.test(url.pathname)) return true;
-    return /\\/(?:index\\.html?|world\\.json|economy_global_profiles_v1\\.json)$/i.test(url.pathname);
+    if (/\.(?:m?js|css|svg|woff2?|png|jpe?g|webp|avif)$/i.test(url.pathname)) return true;
+    return /\/(?:index\.html?|world\.json|economy_global_profiles_v1\.json)$/i.test(url.pathname);
   } catch (_) {
     return false;
   }
@@ -143,8 +143,8 @@ function isLocalAppUrl(value) {
 }
 
 function isDataRequest(url) {
-  return /\\/api\\/omega\\/country-(?:domain|general-data|sector-profile)\\//i.test(url.pathname) ||
-    /\\.(?:json|geojson)$/i.test(url.pathname);
+  return /\/api\/omega\/country-(?:domain|general-data|sector-profile)\//i.test(url.pathname) ||
+    /\.(?:json|geojson)$/i.test(url.pathname);
 }
 
 function withDataCacheLock(work) {
@@ -261,7 +261,7 @@ self.addEventListener("install", event => {
     if (htmlResponse && htmlResponse.ok) {
       await cache.put(APP_BASE.href, htmlResponse.clone());
       const html = await htmlResponse.text();
-      const refs = /(?:src|href)\\s*=\\s*["']([^"']+)["']/gi;
+      const refs = /(?:src|href)\s*=\s*["']([^"']+)["']/gi;
       let match;
       while ((match = refs.exec(html)) !== null) {
         if (isLocalAppUrl(match[1])) assets.add(new URL(match[1], INDEX_URL).href);
@@ -279,8 +279,8 @@ self.addEventListener("install", event => {
         const rows = Array.isArray(factoryIconManifest[group]) ? factoryIconManifest[group] : [];
         for (const icon of rows) {
           const file = String(icon && icon.file || "");
-          if (/^(?:factories|resources)\\/[a-z0-9-]+\\.svg$/.test(file) ||
-              /^transport\\/variants\\/[a-z0-9-]+\\.svg$/.test(file)) {
+          if (/^(?:factories|resources)\/[a-z0-9-]+\.svg$/.test(file) ||
+              /^transport\/variants\/[a-z0-9-]+\.svg$/.test(file)) {
             assets.add(new URL("./assets/omega-industrial-icons-v1/" + file, APP_BASE).href);
           }
         }
