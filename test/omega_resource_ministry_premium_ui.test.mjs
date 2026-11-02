@@ -25,6 +25,97 @@ test("resource icon manifest is complete, local, unique and integrated with Reso
   assert.equal(api.resourceIconPath("unregistered_future_type"), "", "unknown types must use the safe text fallback");
 });
 
+test("Resource Ministry loads the active player's baseline and displays its live current stock", async () => {
+  const api = globalThis.OmegaUIV2ResourceMinistry;
+  const rules = json("resource_economy_rules.json");
+  const resources = Object.keys(rules.demand.resourceProfiles).map((resourceId) => {
+    const profile = rules.demand.resourceProfiles[resourceId] || {};
+    return {
+      resourceId,
+      name: resourceId.replace(/[_-]+/g, " ").replace(/\b\w/g, (ch) => ch.toUpperCase()),
+      unit: String(profile.unit || "").replace(/_PER_DAY$/i, "") || "TONNES",
+      demandUnit: profile.unit || "TONNES_PER_DAY",
+      profileKnown: true
+    };
+  });
+  const previous = {
+    Game:globalThis.Game,
+    inventory:globalThis.OmegaCountryInventoryRuntime,
+    startup:globalThis.OmegaResourceStartupBaseline,
+    industrial:globalThis.OmegaResourceIndustrialCatalogData,
+    omega:globalThis.Omega
+  };
+  const calls = [];
+  const listeners = Object.create(null);
+  const screenRoot = {
+    innerHTML:"",
+    classList:{add(){}},
+    addEventListener(type, handler) { (listeners[type] || (listeners[type] = [])).push(handler); },
+    querySelector() { return null; },
+    querySelectorAll() { return []; },
+    contains() { return true; }
+  };
+  globalThis.Game = { state:{
+    simulation:{turn:1,session:{sessionId:"RESOURCE-UI-BGD",playerCountryId:"BGD",status:"READY"}},
+    resource:{
+      BGD:{
+        inventory:{},
+        inventoryUnits:{},
+        batches:[],
+        inventoryLots:{},
+        warehouse:{warehouseId:"WH-BGD-RAW",availableByResource:{},receipts:[],storedBatchIds:[]},
+        processedWarehouse:{warehouseId:"WH-BGD-PROCESSED",availableByResource:{},receipts:[],storedBatchIds:[]},
+        mineAssets:[],
+        industrialNetwork:{projects:[],shipments:[],siteFlowLedger:[]},
+        inventoryLedger:[]
+      }
+    }
+  }};
+  globalThis.Omega = {};
+  globalThis.OmegaCountryInventoryRuntime = { getResourceCatalog(){ return resources; } };
+  globalThis.OmegaResourceIndustrialCatalogData = { factoryProfiles:{} };
+  globalThis.OmegaResourceStartupBaseline = {
+    getResourceCatalog(){ return resources; },
+    getFactoryInputCoverageDays(){ return 100; },
+    ensurePlayerCountryBaseline(countryId) {
+      calls.push(countryId);
+      const bucket = globalThis.Game.state.resource.BGD;
+      bucket.inventory = { coal:320, iron_ore:82 };
+      bucket.inventoryUnits = { coal:"TONNES", iron_ore:"TONNES" };
+      bucket.factoryInputBaselineV1 = { targetCoverageDays:100, stockRows:[] };
+      return Promise.resolve({ status:"COMPLETED", scope:"PLAYER_COUNTRY_ONLY", countryId:"BGD" });
+    }
+  };
+
+  try {
+    const first = api.render(screenRoot, { countryId:"USA", sites:[], tab:"dashboard" });
+    assert.equal(first.code, "PLAYER_COUNTRY_BASELINE_LOADING");
+    assert.match(screenRoot.innerHTML, /Loading BGD inventory/);
+    await screenRoot.__omegaV2ResourceLoadPromise;
+
+    assert.deepEqual(calls, ["BGD"], "the startup baseline must only receive the selected player country");
+    assert.equal(screenRoot.__omegaV2ResourceLoadedCountry, "BGD");
+    assert.match(screenRoot.innerHTML, /Current Stock/);
+    assert.match(screenRoot.innerHTML, /Coal/);
+    assert.match(screenRoot.innerHTML, /320(?:\.00)? TONNES/);
+    assert.match(screenRoot.innerHTML, /Iron Ore/);
+    assert.match(screenRoot.innerHTML, /82(?:\.00)? TONNES/);
+    assert.doesNotMatch(screenRoot.innerHTML, /USA|Browse resource country/);
+    assert.deepEqual(Object.keys(globalThis.Game.state.resource), ["BGD"],
+      "rendering the ministry must not create inventory state for another country");
+  } finally {
+    api.unload(screenRoot);
+    if (previous.Game === undefined) delete globalThis.Game; else globalThis.Game = previous.Game;
+    if (previous.inventory === undefined) delete globalThis.OmegaCountryInventoryRuntime;
+    else globalThis.OmegaCountryInventoryRuntime = previous.inventory;
+    if (previous.startup === undefined) delete globalThis.OmegaResourceStartupBaseline;
+    else globalThis.OmegaResourceStartupBaseline = previous.startup;
+    if (previous.industrial === undefined) delete globalThis.OmegaResourceIndustrialCatalogData;
+    else globalThis.OmegaResourceIndustrialCatalogData = previous.industrial;
+    if (previous.omega === undefined) delete globalThis.Omega; else globalThis.Omega = previous.omega;
+  }
+});
+
 test("inventory displays the canonical 41 resources and aggregate balances when warehouse projections are missing", () => {
   const api = globalThis.OmegaUIV2ResourceMinistry;
   const rules = json("resource_economy_rules.json");
