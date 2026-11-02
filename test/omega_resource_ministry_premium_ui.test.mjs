@@ -161,6 +161,18 @@ test("inventory displays the canonical 41 resources and aggregate balances when 
           industrialNetwork: { projects: [], shipments: [], siteFlowLedger: [] },
           inventoryLedger: []
         }
+      },
+      economy: {
+        BGD: {
+          productionAssets: [{
+            id: "STARTER-FAC-BGD-TEXTILE",
+            name: "Bangladesh Textile Factory",
+            factoryType: "TEXTILE_MILL",
+            status: "OPERATIONAL",
+            inputInventory: { cotton: 321, coal: 10 },
+            inputUnits: { cotton: "TONNES", coal: "TONNES" }
+          }]
+        }
       }
     }
   };
@@ -183,6 +195,17 @@ test("inventory displays the canonical 41 resources and aggregate balances when 
       "tracked raw batches are included in the inventory view");
     assert.match(root.innerHTML, /Natural Gas/,
       "resource labels are resolved from canonical resource profiles");
+    assert.match(root.innerHTML, /Factory-held input/,
+      "factory input stock must be visible separately from country warehouse stock");
+    assert.match(root.innerHTML, /Bangladesh Textile Factory/,
+      "factory-held balances must identify the factory that owns them");
+    assert.match(root.innerHTML, /321(?:\.00)? TONNES/,
+      "factory-held input quantity must remain visible after it leaves the country warehouse");
+    const dashboardResult = api.render(root, { countryId: "BGD", sites: [], tab: "dashboard" });
+    assert.equal(dashboardResult.ok, true);
+    assert.match(root.innerHTML, /Factory-held input/,
+      "the overview dashboard must also show factory-held input balances");
+    assert.match(root.innerHTML, /Bangladesh Textile Factory/);
     assert.doesNotMatch(root.innerHTML, /SIMULATION(?:_RESOURCE)?_UNIT/i,
       "internal simulation unit labels are not exposed in the inventory table or batch list");
   } finally {
@@ -346,7 +369,7 @@ test("resource visual layer is wired into the offline-first app without remote d
   assert.ok(html.includes(stylesheetTag), "premium resource stylesheet must be loaded by the app");
   assert.ok(sw.includes('"' + "./" + cssPath + '"'), "premium resource stylesheet must be precached offline");
   assert.ok(uiManifest.additionalStyles.includes(cssPath), "UI v2 manifest must document the resource style");
-  assert.match(sw, /omega-offline-atlas-shell-v77/, "offline cache must be invalidated for new visual assets");
+  assert.match(sw, /omega-offline-atlas-shell-v78/, "offline cache must be invalidated for new visual assets");
   const coreAssets = sw.slice(sw.indexOf("const CORE_ASSETS"), sw.indexOf("];", sw.indexOf("const CORE_ASSETS")));
   assert.ok(coreAssets.includes('"./resource_economy_rules.json"'), "canonical resource identities remain in the shell precache list");
   const shellAssetPolicy = sw.slice(sw.indexOf("function isShellAsset"), sw.indexOf("function isLocalAppUrl"));
@@ -923,7 +946,7 @@ test("all resource SVGs use a light metallic backplate for readable dark mineral
     assert.match(svg, /data-omega-icon-kind="resource"/);
   }
   assert.match(manifest.rendering.background, /light silver-metal.*factory SVGs retain their shared dark-navy/i);
-  assert.match(read("omega-offline-map-sw.js"), /omega-offline-atlas-shell-v77/);
+  assert.match(read("omega-offline-map-sw.js"), /omega-offline-atlas-shell-v78/);
 });
 
 

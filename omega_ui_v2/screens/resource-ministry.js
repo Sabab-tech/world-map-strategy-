@@ -616,6 +616,8 @@
     }
     var canOperate = !!countryKey && countryKey === playerCountryKey();
     var gameResource = countryBucket(stateRoot.resource) || countryBucket(stateRoot.resources) || {};
+    var gameEconomy = countryBucket(stateRoot.economy) || {};
+    var countryFactoryAssets = safeArray(gameEconomy.productionAssets);
     var gameTrade = countryBucket(stateRoot.trade) || {};
     var industrial = gameResource.industrialNetwork && typeof gameResource.industrialNetwork === 'object' ? gameResource.industrialNetwork : {};
     var rawWarehouse = gameResource.warehouse && typeof gameResource.warehouse === 'object' ? gameResource.warehouse : {};
@@ -859,6 +861,48 @@
       if (rule) return String(rule.unit || rule.baseUnit || rule.outputUnit || '');
       return '';
     }
+    // Factory input is a separate physical stock location. It has already left
+    // the country warehouse, but it is not consumed until a production cycle commits.
+    // Read the factory aggregate only; inputBatchLots is a lineage projection of the
+    // same quantity and must never be added a second time.
+    var factoryHeldInputRows = [];
+    countryFactoryAssets.forEach(function (asset) {
+      var inputs = asset && asset.inputInventory && typeof asset.inputInventory === 'object'
+        ? asset.inputInventory : {};
+      Object.keys(inputs).forEach(function (resourceId) {
+        var quantity = val(inputs[resourceId]);
+        if (quantity === null) return;
+        var inputUnits = asset.inputUnits && typeof asset.inputUnits === 'object' ? asset.inputUnits : {};
+        var unitKey = Object.keys(inputUnits).find(function (key) {
+          return key.toLowerCase() === String(resourceId).toLowerCase();
+        });
+        factoryHeldInputRows.push({
+          factoryId: String(asset.id || asset.assetId || asset.projectId || ''),
+          factoryName: String(asset.name || asset.factoryName || asset.factoryType || asset.type ||
+            asset.id || asset.assetId || 'Registered factory'),
+          factoryType: String(asset.factoryType || asset.type || asset.facilityType || ''),
+          resourceId: String(resourceId),
+          quantity: quantity,
+          unit: String(unitKey ? inputUnits[unitKey] : asset.inputUnit || resourceUnit(resourceId) || '')
+        });
+      });
+    });
+    var factoryHeldInputMarkup = '<section class="omega-v2-card omega-v2-movement-card omega-v2-factory-held-input">' +
+      '<div class="omega-v2-card-header"><div><h2>Factory-held input</h2><p>Materials already delivered inside each factory. Kept separate from national warehouse stock; consumption is posted only when a production cycle completes.</p></div>' +
+      '<span class="omega-v2-status" data-state="' + (factoryHeldInputRows.length ? 'operational' : 'attention') + '">' +
+      fmt(factoryHeldInputRows.length) + ' recorded input balances</span></div>' +
+      (factoryHeldInputRows.length
+        ? '<div class="omega-v2-table-wrap"><table><thead><tr><th>Factory</th><th>Input resource</th><th>Stock at factory</th></tr></thead><tbody>' +
+          factoryHeldInputRows.map(function (row) {
+            return '<tr data-factory-id="' + esc(row.factoryId) + '" data-resource-id="' + esc(row.resourceId) + '">' +
+              '<td><strong>' + esc(row.factoryName) + '</strong>' +
+              (row.factoryType ? '<small>' + esc(row.factoryType) + '</small>' : '') + '</td><td>' +
+              resourceIconMarkup(row.resourceId, resourceLabel(row.resourceId)) + esc(resourceLabel(row.resourceId)) +
+              '</td><td class="omega-v2-current-stock-cell">' + amount(row.quantity, row.unit) + '</td></tr>';
+          }).join('') + '</tbody></table></div>'
+        : '<div class="omega-v2-empty">No factory-held input balances have been recorded for this country.</div>') +
+      '</section>';
+
     function balanceState(site, asset, currentOutput, blocked) {
       if (!isOperationalAsset(asset)) return asset && /DECOMMISSIONED|DESTROYED|STOPPED|INACTIVE|CLOSED/.test(String(asset.status || '').toUpperCase())
         ? 'stopped' : projectFor(site.siteId) ? 'building' : 'unbuilt';
@@ -1247,7 +1291,7 @@
           dashboardStockRows.join('') + '</tbody></table></div>'
         : '<div class="omega-v2-empty">No recorded current stock is available for this player country.</div>') +
       '</section>';
-    dashMarkup += dashboardStockMarkup;
+    dashMarkup += dashboardStockMarkup + factoryHeldInputMarkup;
     var startupBaselineRuntime = g.OmegaResourceStartupBaseline || g.Omega && g.Omega.ResourceStartupBaseline || null;
     var stockTargetDays = null;
     try {
@@ -1277,6 +1321,7 @@
       renderKpi('Tracked batches', String(inventoryRows.length), 'Recorded inventory entries', 'neutral') +
       renderKpi('Below stock target', String(inventoryKeys.filter(function (rid) { return targetGapFor(rid) !== null && targetGapFor(rid) > 0; }).length), 'Compared with daily demand target', inventoryKeys.some(function (rid) { return targetGapFor(rid) !== null && targetGapFor(rid) > 0; }) ? 'shortage' : 'neutral') +
       '</div><section class="omega-v2-card omega-v2-movement-card"><h2>Inventory movement</h2><p>Stored quantity, confirmed receipts and recorded dispatches for the selected country.</p>' + stockTable + '</section>' +
+      factoryHeldInputMarkup +
       (inventoryRows.length ? '<section class="omega-v2-card omega-v2-movement-card"><h2>Recent batches</h2><div class="omega-v2-table-wrap"><table><thead><tr><th>Resource</th><th>Quantity</th><th>Warehouse</th><th>Status</th></tr></thead><tbody>' +
         inventoryRows.slice(-40).reverse().map(function (row) { return '<tr><td>' + esc(resourceLabel(row.resourceId)) + '</td><td>' + amount(row.quantity, resourceUnit(row.resourceId) || (/SIMULATION.*UNIT/i.test(String(row.unit || '')) ? '' : row.unit)) +
           '</td><td>' + esc(row.location || '—') + '</td><td>' + esc(human(row.status)) + '</td></tr>'; }).join('') +
@@ -2362,8 +2407,10 @@
         ['OMEGA_RESOURCE_MINE_PROJECT_STARTED','OMEGA_RESOURCE_MINE_PROJECT_PROGRESS','OMEGA_RESOURCE_MINE_COMMISSIONED',
           'OMEGA_RESOURCE_FACTORY_INPUT_STOCK_TARGET_UPDATED','OMEGA_RESOURCE_NATIONAL_DEMAND_UPDATED',
           'OMEGA_RESOURCE_ECONOMY_UPDATED','OMEGA_RESOURCE_MINE_HAUL_DELIVERED',
-          'OMEGA_RESOURCE_MINE_WAREHOUSE_RECEIPT_POSTED','OMEGA_FACTORY_INPUT_SHIPMENT_DELIVERED',
-          'OMEGA_SIMULATION_TURN_COMMITTED','OMEGA_RESOURCE_STARTUP_BASELINE_COMPLETED',
+          'OMEGA_RESOURCE_MINE_WAREHOUSE_RECEIPT_POSTED','OMEGA_RESOURCE_INVENTORY_CHANGED',
+          'OMEGA_RESOURCE_FACTORY_INPUT_AVAILABLE','OMEGA_FACTORY_INPUT_SHIPMENT_DELIVERED',
+          'OMEGA_FACTORY_PRODUCTION_CYCLE_STARTED','OMEGA_FACTORY_PRODUCTION_CYCLE_PAUSED',
+          'OMEGA_FACTORY_PRODUCTION_CYCLE_COMPLETED','OMEGA_SIMULATION_TURN_COMMITTED','OMEGA_RESOURCE_STARTUP_BASELINE_COMPLETED',
           'OMEGA_RESOURCE_PLAYER_COUNTRY_READY'].forEach(function (name) {
           var handler = function () {
             if (root.__omegaV2ResourceActive && root.__omegaV2ResourceOptions) {
