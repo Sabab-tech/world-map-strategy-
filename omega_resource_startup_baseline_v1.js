@@ -27,6 +27,7 @@
   var pendingInitialization = Promise.resolve(null);
   var simulationUnsubscribe = null;
   var running = Object.create(null);
+  var playerCountryRequests = Object.create(null);
   var installed = false;
 
   function own(value, key) {
@@ -70,10 +71,13 @@
     return value && typeof value === 'object' && !Array.isArray(value) ? value : null;
   }
   function rootState() {
-    return (g.Game && g.Game.state) || g.gameState ||
-      (g.Omega && g.Omega.SimulationRuntime && g.Omega.SimulationRuntime.world &&
-      g.Omega.SimulationRuntime.world.state) || (g.Omega && g.Omega.Simulation && g.Omega.Simulation.world &&
-      g.Omega.Simulation.world.state) || null;
+    // The simulation world is authoritative. Game.state/gameState can be a
+    // compatibility snapshot and may lag behind the committed player state.
+    return (g.Omega && g.Omega.SimulationRuntime && g.Omega.SimulationRuntime.world &&
+      object(g.Omega.SimulationRuntime.world.state)) ||
+      (g.Omega && g.Omega.Simulation && g.Omega.Simulation.world &&
+      object(g.Omega.Simulation.world.state)) ||
+      (g.Game && object(g.Game.state)) || object(g.gameState) || null;
   }
   function currentTurn(state) {
     state = state || rootState() || {};
@@ -1801,6 +1805,69 @@
     return running[key];
   }
 
+  // Materialize a country's opening inventory only when its player Resource
+  // Ministry is opened. This API never accepts a non-player country and never
+  // invokes the world-wide startup loop.
+  function ensurePlayerCountryBaseline(countryInput) {
+    return loadSources().then(function (loaded) {
+      if (!loaded || loaded.status !== 'READY') {
+        return loaded || { status:'BLOCKED', reason:'STARTUP_BASELINE_SOURCES_NOT_READY' };
+      }
+      var state = rootState();
+      if (!state || typeof state !== 'object') return { status:'BLOCKED', reason:'AUTHORITATIVE_GAME_STATE_UNAVAILABLE' };
+      var session = sessionFromState(state);
+      if (!session || !session.playerCountryId) return { status:'BLOCKED', reason:'PLAYER_COUNTRY_NOT_SELECTED' };
+      var playerCountryId = id(session.playerCountryId);
+      var requestedCountryId = id(countryInput || playerCountryId);
+      if (!playerCountryId || playerCountryId === 'GLOBAL' || playerCountryId === 'WORLD') {
+        return { status:'BLOCKED', reason:'PLAYER_COUNTRY_NOT_SELECTED' };
+      }
+      if (requestedCountryId !== playerCountryId) {
+        return { status:'BLOCKED', reason:'PLAYER_COUNTRY_SCOPE_MISMATCH',
+          requestedCountryId:requestedCountryId, playerCountryId:playerCountryId };
+      }
+      var sessionId = String(session.sessionId || playerCountryId);
+      var requestKey = sessionId + ':VISIBLE_PLAYER_COUNTRY:' + playerCountryId;
+      if (playerCountryRequests[requestKey]) return playerCountryRequests[requestKey];
+      // If the game's own startup pass is already writing this session, join it
+      // rather than racing two writers against the same country inventory.
+      var inFlightWorldBaseline = running[sessionId];
+      var promise = Promise.resolve(inFlightWorldBaseline || null).then(function () {
+        var liveState = rootState();
+        var liveSession = sessionFromState(liveState);
+        if (!liveState || !liveSession || id(liveSession.playerCountryId) !== playerCountryId ||
+            (session.sessionId && liveSession.sessionId && String(session.sessionId) !== String(liveSession.sessionId))) {
+          return { status:'STALE_SESSION_IGNORED', countryId:playerCountryId };
+        }
+        return ensureCountryFactoryStartingBaseline(liveSession).then(function (factoryResult) {
+          var currentState = rootState();
+          var currentSession = sessionFromState(currentState);
+          if (!currentState || !currentSession || id(currentSession.playerCountryId) !== playerCountryId ||
+              (session.sessionId && currentSession.sessionId && String(session.sessionId) !== String(currentSession.sessionId))) {
+            return { status:'STALE_SESSION_IGNORED', countryId:playerCountryId };
+          }
+          return initializeCurrentCountryBaseline(currentState, currentSession, requestKey).then(function (result) {
+            result.factoryBaseline = factoryResult && factoryResult.status || 'NOT_REPORTED';
+            result.scope = 'PLAYER_COUNTRY_ONLY';
+            dispatchEvent('OMEGA_RESOURCE_PLAYER_COUNTRY_READY', {
+              countryId:playerCountryId, sessionId:sessionId, status:result.status,
+              resourceProductCount:currentState.resource && currentState.resource[playerCountryId] &&
+                Object.keys(currentState.resource[playerCountryId].inventory || {}).length || 0
+            });
+            return result;
+          });
+        });
+      }).catch(function (error) {
+        return { status:'BLOCKED', reason:'PLAYER_COUNTRY_BASELINE_FAILED',
+          countryId:playerCountryId, message:String(error && error.message || error || 'Unknown error') };
+      }).finally(function () {
+        delete playerCountryRequests[requestKey];
+      });
+      playerCountryRequests[requestKey] = promise;
+      return promise;
+    });
+  }
+
   async function initializeForSession(sessionInput) {
     var loaded = await loadSources();
     if (!loaded || loaded.status !== 'READY') return loaded || { status: 'BLOCKED', reason: 'STARTUP_BASELINE_SOURCES_NOT_READY' };
@@ -2173,6 +2240,7 @@
       });
     },
     ensureCurrentSession: ensureCurrentSession,
+    ensurePlayerCountryBaseline: ensurePlayerCountryBaseline,
     waitForPendingInitialization: function () { return pendingInitialization; },
     getSourceStatus: function () {
       return { status: data ? 'READY' : (loadPromise ? 'LOADING' : 'BLOCKED'), version: VERSION,
