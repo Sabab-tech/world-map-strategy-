@@ -476,10 +476,9 @@ test('industry factory screen renders country-scoped official establishment coun
   }
 });
 
-test('industry command panel renders country starting allocations separately from live commissioned factories', () => {
+test('industry treats starting and newly built factories as one live asset registry', () => {
   const previousGame = globalThis.Game;
   const previousCatalog = globalThis.OmegaResourceIndustrialCatalogData;
-  const previousFactoryBaseline = globalThis.OmegaCountryFactoryStartingBaselineV1;
   globalThis.Game = { state: {
     simulation: { session: { playerCountryId: 'BGD' }, turn: 12, daysPerTurn: 1 },
     resource: {
@@ -488,8 +487,9 @@ test('industry command panel renders country starting allocations separately fro
     },
     economy: {
       BGD: { productionAssets: [
-        { id:'BGD-STEEL-1', factoryType:'STEEL_MILL', name:'East Steel Works', capacityPerDay:120 },
-        { id:'BGD-STEEL-2', factoryType:'STEEL_MILL', name:'West Steel Works', capacityPerDay:90 }
+        { id:'FAC-START:BGD:STEEL_MILL:1', factoryType:'STEEL_MILL', name:'East Steel Works', capacityPerDay:120, status:'OPERATIONAL', sourceType:'COUNTRY_STARTING_FACTORY_BASELINE' },
+        { id:'FAC-START:BGD:STEEL_MILL:2', factoryType:'STEEL_MILL', name:'West Steel Works', capacityPerDay:90, status:'OPERATIONAL', sourceType:'COUNTRY_STARTING_FACTORY_BASELINE' },
+        { id:'FAC-START:BGD:STEEL_MILL:3', factoryType:'STEEL_MILL', name:'Central Steel Works', capacityPerDay:85, status:'OPERATIONAL', sourceType:'COUNTRY_STARTING_FACTORY_BASELINE' }
       ] },
       USA: { productionAssets: [
         { id:'USA-CEMENT-1', factoryType:'CEMENT_PLANT', name:'Foreign Cement Plant', capacityPerDay:400 }
@@ -502,102 +502,68 @@ test('industry command panel renders country starting allocations separately fro
       CEMENT_PLANT: { name:'Cement Plant', defaultRecipeId:'CEMENT-RECIPE' }
     }
   };
-  globalThis.OmegaCountryFactoryStartingBaselineV1 = {
-    getCountryBaseline(countryId) {
-      return countryId === 'BGD' ? {
-        countryId:'BGD', countryName:'Bangladesh', totalStartingFactoryUnits:7,
-        industryArchetype:'Industry-led economy with a manufacturing base',
-        economicSectorContext:{
-          comparisonStatus:'SAME_YEAR_COMPARABLE', comparisonYear:2025, dominantSector:'INDUSTRY',
-          valueAddedShares:{
-            agricultureValueAddedPctGdp:{value:23,year:2025},
-            industryValueAddedPctGdp:{value:32,year:2025},
-            manufacturingValueAddedPctGdp:{value:13,year:2025},
-            servicesValueAddedPctGdp:{value:36,year:2025}
-          }
-        },
-        factoryCounts:{ STEEL_MILL:3, CEMENT_PLANT:0 }
-      } : null;
-    },
-    getCountryFactoryRegistry(countryId) {
-      return countryId === 'BGD' ? {
-        status:'READY', countryId:'BGD', factoryTypeCount:2, totalStartingFactoryUnits:7,
-        runtimeStatus:'REGISTERED', runtimeRegistered:true,
-        registry:[
-          {factoryType:'STEEL_MILL',name:'Steel Mill',startingCount:3,registryStatus:'REGISTERED'},
-          {factoryType:'CEMENT_PLANT',name:'Cement Plant',startingCount:0,registryStatus:'REGISTERED'}
-        ]
-      } : null;
-    }
-  };
   try {
     const model = globalThis.OmegaUIV2Industry.buildViewModel({ countryId:'BGD' });
-    assert.equal(model.factoryCount, 2);
-    assert.equal(model.startingFactoryUnits, 7);
-    assert.equal(model.factoryRegistryRuntimeStatus, 'REGISTERED');
-    assert.deepEqual(model.factoryTypeCatalog.map((row) => ({ name:row.name, startingCount:row.startingCount })), [
-      { name:'Cement Plant', startingCount:0 },
-      { name:'Steel Mill', startingCount:3 }
-    ]);
+    assert.equal(model.factoryCount, 3,
+      'every starting factory must be a normal asset in the live factory collection');
     assert.deepEqual(model.factoryTypeCounts.map((row) => ({ name:row.name, count:row.count })), [
-      { name:'Steel Mill', count:2 }
+      { name:'Steel Mill', count:3 }
     ]);
+    assert.equal(Object.prototype.hasOwnProperty.call(model, 'startingFactoryUnits'), false,
+      'the Industry view model must not expose a second starting-factory counter');
+    assert.equal(Object.prototype.hasOwnProperty.call(model.factoryTypeCatalog[0], 'startingCount'), false,
+      'factory types must not expose a parallel starting allocation count');
     const root = { classList:{ add(){} }, addEventListener(){}, contains(){ return true; } };
     const result = globalThis.OmegaUIV2Industry.render(root, { countryId:'BGD', tab:'factories' });
     assert.equal(result.ok, true);
     assert.match(root.innerHTML, /omega-v2-factory-command/);
     assert.match(root.innerHTML, /data-omega-v2-factory-card/);
-    assert.match(root.innerHTML, /Steel Mill/);
-    assert.match(root.innerHTML, /data-state="unknown"/);
-    assert.match(root.innerHTML, /Total:<\/span><strong>2<\/strong>/);
-    assert.match(root.innerHTML, /Starting factory allocation/);
-    assert.match(root.innerHTML, /7<\/strong><small>game units/);
-    assert.match(root.innerHTML, /Industry-led economy with a manufacturing base/);
-    assert.match(root.innerHTML, /Economic structure/);
-    assert.match(root.innerHTML, /Agriculture 23% \(2025\)/);
-    assert.match(root.innerHTML, /Manufacturing 13% \(2025\)/);
-    assert.match(root.innerHTML, /Manufacturing is included within industry/);
-    assert.match(root.innerHTML, /STEEL_MILL/);
-    assert.match(root.innerHTML, /data-runtime-status="REGISTERED"/);
+    assert.match(root.innerHTML, /East Steel Works/);
+    assert.match(root.innerHTML, /FACTORY ASSETS/);
+    assert.doesNotMatch(root.innerHTML, /Starting factory allocation|Starting allocation|STARTING UNITS|Starting Factory Allocation/);
+    assert.doesNotMatch(root.innerHTML, /Foreign Cement Plant/);
+    assert.doesNotMatch(root.innerHTML, /Bangladesh Iron Mine|Daily mine production|FACTORY SVG SLOT/);
+
     const typeRoot = { classList:{ add(){} }, addEventListener(){}, contains(){ return true; } };
     const typeResult = globalThis.OmegaUIV2Industry.render(typeRoot, {
       countryId:'BGD', tab:'factories', factoryView:'types'
     });
     assert.equal(typeResult.ok, true);
-    assert.match(typeRoot.innerHTML, /Starting allocation/);
-    assert.match(typeRoot.innerHTML, /fp-type-card-count--starting/);
-    assert.match(typeRoot.innerHTML, /Registered game assets/);
-    assert.match(root.innerHTML, /STARTING UNITS/);
-    assert.doesNotMatch(root.innerHTML, /Foreign Cement Plant/);
-    assert.doesNotMatch(root.innerHTML, /Bangladesh Iron Mine|Daily mine production|FACTORY SVG SLOT/);
+    assert.match(typeRoot.innerHTML, /Factory assets in runtime/);
+    assert.match(typeRoot.innerHTML, /<strong>3<\/strong>/);
+    assert.doesNotMatch(typeRoot.innerHTML, /Starting allocation|fp-type-card-count--starting|Starting units/);
+
     const economyAssets = globalThis.Game.state.economy.BGD.productionAssets;
-    economyAssets.push({
-      id:'BGD-STEEL-3', factoryType:'STEEL_MILL', name:'Newly Commissioned Steel Works',
-      capacityPerDay:75, status:'OPERATIONAL'
-    });
+    const newlyBuiltFactory = {
+      id:'BGD-STEEL-4', factoryType:'STEEL_MILL', name:'Newly Built Steel Works',
+      capacityPerDay:75, status:'OPERATIONAL', sourceType:'PLAYER_FACTORY_CONSTRUCTION'
+    };
+    economyAssets.push(newlyBuiltFactory);
     const afterBuild = globalThis.OmegaUIV2Industry.buildViewModel({ countryId:'BGD' });
-    assert.equal(afterBuild.factoryCount, 3,
-      'live factory count must increase when a newly commissioned runtime asset is added');
-    assert.equal(afterBuild.factoryTypeCounts.find(row => row.type === 'STEEL_MILL').count, 3);
-    assert.equal(afterBuild.startingFactoryUnits, 7,
-      'the immutable new-game starting allocation must not be rewritten by construction');
+    assert.equal(afterBuild.factoryCount, 4,
+      'a completed construction asset must join, not sit beside, the same starting asset collection');
+    assert.equal(afterBuild.factoryTypeCounts.find(row => row.type === 'STEEL_MILL').count, 4);
+    assert.equal(economyAssets.filter(asset => asset.factoryType === 'STEEL_MILL').length, 4,
+      'starting and constructed factories must share one productionAssets collection');
 
-    economyAssets[2].status = 'DECOMMISSIONED';
+    const afterBuildTypeRoot = { classList:{ add(){} }, addEventListener(){}, contains(){ return true; } };
+    globalThis.OmegaUIV2Industry.render(afterBuildTypeRoot, {
+      countryId:'BGD', tab:'factories', factoryView:'types'
+    });
+    assert.match(afterBuildTypeRoot.innerHTML, /<strong>4<\/strong>/,
+      'the type total must update from the same live asset collection');
+
+    newlyBuiltFactory.status = 'DECOMMISSIONED';
     const afterDecommission = globalThis.OmegaUIV2Industry.buildViewModel({ countryId:'BGD' });
-    assert.equal(afterDecommission.factoryCount, 2,
-      'decommissioned assets must stop contributing to the live factory count');
-    assert.equal(afterDecommission.startingFactoryUnits, 7,
-      'decommissioning must not rewrite the historical starting allocation');
-    assert.equal(economyAssets.length, 3,
-      'the decommissioned asset record must remain in the economy for history and audit');
-    assert.equal(economyAssets[2].status, 'DECOMMISSIONED');
-
+    assert.equal(afterDecommission.factoryCount, 3,
+      'decommissioning must remove the asset from active totals without deleting its record');
+    assert.equal(economyAssets.length, 4,
+      'the decommissioned factory asset must remain in the single collection for history');
+    assert.equal(economyAssets[3].status, 'DECOMMISSIONED');
   } finally {
     if (previousGame === undefined) delete globalThis.Game; else globalThis.Game = previousGame;
     if (previousCatalog === undefined) delete globalThis.OmegaResourceIndustrialCatalogData;
     else globalThis.OmegaResourceIndustrialCatalogData = previousCatalog;
-    if (previousFactoryBaseline === undefined) delete globalThis.OmegaCountryFactoryStartingBaselineV1;
-    else globalThis.OmegaCountryFactoryStartingBaselineV1 = previousFactoryBaseline;
   }
 });
 
@@ -1350,7 +1316,7 @@ test('factory command cards use canonical SVGs, daily production state, type cou
     assert.match(root.innerHTML,/data-omega-v2-factory-build="FAC-STEEL"/);
     assert.match(root.innerHTML,/data-omega-v2-factory-destroy="FAC-STEEL"/);
     assert.match(root.innerHTML,/class="fp-summary"/);
-    assert.match(root.innerHTML,/FACTORIES/);
+    assert.match(root.innerHTML,/FACTORY ASSETS/);
     assert.match(root.innerHTML,/PRODUCTION CYCLES/);
 
     // Every industrial tab must remain inside the reference command stage.
@@ -1385,7 +1351,7 @@ test('factory command cards use canonical SVGs, daily production state, type cou
     assert.equal(typeView.ok,true);
     assert.match(root.innerHTML,/Factory types &amp; country totals/);
     assert.equal((root.innerHTML.match(/data-omega-v2-factory-type-card/g)||[]).length,3);
-    assert.match(root.innerHTML,/Registered game assets/);
+    assert.match(root.innerHTML,/Factory assets in runtime/);
     assert.match(root.innerHTML,/data-factory-view="types"/);
 
     // Build stays within UI v2 rather than opening the retired command centre.

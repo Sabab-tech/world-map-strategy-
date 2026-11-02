@@ -300,6 +300,30 @@ assert(context.Game.state.resource.BGD.technologyCapabilities.some(x=>x.technolo
 const fx=context.Game.state.economy.BGD.productionAssets.find(x=>x.id===factoryProject.factoryId);
 assert.equal(fx.status,'OPERATIONAL');
 
+// Starting allocations and player construction must coexist in the exact same live
+// country registry and be visible to the same industrial runtime after commissioning.
+const sharedFactoryRegistry=context.Game.state.economy.BGD.productionAssets;
+const builtFactoryBeforeOpeningRegistration=sharedFactoryRegistry.find(asset=>asset.id===factoryProject.factoryId);
+assert.strictEqual(builtFactoryBeforeOpeningRegistration,fx);
+const openingFactoryCounts=Object.fromEntries(Object.keys(catalog.factoryProfiles).sort().map(type=>[type,0]));
+openingFactoryCounts.TEXTILE_GARMENT_MILL=1;
+const openingRegistration=N.registerStartingFactoryAssets({
+  countryId:'BGD',factoryCounts:openingFactoryCounts,sessionId:'SAME-RUNTIME-STARTING-FACTORY-TEST',
+  datasetVersion:'SAME_RUNTIME_BASELINE_V1'
+});
+assert.equal(openingRegistration.status,'COMPLETED',JSON.stringify(openingRegistration));
+const openingTextileFactory=sharedFactoryRegistry.find(asset=>
+  asset.sourceType==='COUNTRY_STARTING_FACTORY_BASELINE'&&asset.factoryType==='TEXTILE_GARMENT_MILL');
+assert.ok(openingTextileFactory,'starting allocation must become a normal live factory asset');
+assert.ok(sharedFactoryRegistry.includes(fx),'the previously constructed factory must remain in the same registry');
+assert.ok(sharedFactoryRegistry.includes(openingTextileFactory),'the starting factory must join that registry');
+assert.strictEqual(context.Game.state.economy.BGD.productionAssets,sharedFactoryRegistry,
+  'both origins must share the single persisted country productionAssets array');
+assert.ok(N.candidateFactories('BGD','cotton_fibre').some(row=>row.asset.id===openingTextileFactory.id),
+  'the starting factory must be eligible in the same runtime input-routing and production path');
+assert.ok(N.candidateFactories('BGD','iron_ore').some(row=>row.asset.id===fx.id),
+  'the player-built factory must remain eligible in that same runtime path');
+
 const importCapability={technologyId:'AUTONOMOUS_MINE_HAULAGE',targetSiteId:'*',targetResourceId:'coal',targetSiteType:'*',status:'COMPLETE',effects:catalog.technologyProjects.AUTONOMOUS_MINE_HAULAGE.effects};
 context.Game.state.resource.USA={technologyCapabilities:[importCapability]};
 const imported=N.startTechnologyProject({countryId:'BGD',technologyId:'AUTONOMOUS_MINE_HAULAGE',mode:'IMPORT',donorCountryId:'USA',targetSiteId:'SITE_BGD_COAL_01',resourceId:'coal'});
