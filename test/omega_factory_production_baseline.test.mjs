@@ -7,6 +7,35 @@ const readJson = name => JSON.parse(fs.readFileSync(new URL('../' + name, import
 const readText = name => fs.readFileSync(new URL('../' + name, import.meta.url), 'utf8');
 const token = value => String(value ?? '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
 
+function moveSimulationClock(context,targetTurn){
+  const simulation=context.Game.state.simulation;
+  const currentTurn=Math.max(0,Math.floor(Number(simulation.turn)||0));
+  const target=Math.max(currentTurn,Math.floor(Number(targetTurn)||currentTurn));
+  const daysPerTurn=Math.max(1,Number(simulation.daysPerTurn)||1);
+  const currentEpoch=Date.parse(String(simulation.date||'2015-01-01')+'T00:00:00Z');
+  simulation.turn=target;
+  if(Number.isFinite(currentEpoch)){
+    simulation.date=new Date(currentEpoch+(target-currentTurn)*daysPerTurn*86400000).toISOString().slice(0,10);
+  }
+}
+async function deliverPendingWarehouseFactoryShipments(context,api,countryId='BGD'){
+  const network=context.Game.state.resource?.[countryId]?.industrialNetwork||{};
+  const pending=(network.shipments||[]).filter(row=>
+    row.shipmentType==='WAREHOUSE_TO_FACTORY'&&row.status==='IN_TRANSIT');
+  if(!pending.length)return{status:'NO_PENDING_WAREHOUSE_SHIPMENTS',delivered:0,shipments:[]};
+  const targetTurn=Math.max(...pending.map(row=>Math.max(0,Number(row.etaTurn)||0)));
+  moveSimulationClock(context,targetTurn);
+  return api.advanceShipments(countryId);
+}
+async function finishFactoryCycles(context,api,countryId='BGD'){
+  const cycles=Object.values(context.Game.state.resource?.[countryId]?.industrialNetwork?.factoryProductionCycles||{})
+    .filter(row=>row&&['IN_PROGRESS','PAUSED'].includes(String(row.status||'')));
+  if(!cycles.length)return{status:'NO_ACTIVE_FACTORY_CYCLES',completedCount:0};
+  const targetTurn=Math.max(...cycles.map(row=>Math.max(0,Number(row.finishTurn)||0)));
+  moveSimulationClock(context,targetTurn);
+  return api.processPendingFactoryInputs(countryId);
+}
+
 function makeRuntime(runtimeFile = 'omega_resource_industrial_network_v1.js') {
   const catalog = readJson('resource_industrial_catalog_v1.json');
   const bus = { listeners: new Map(),
