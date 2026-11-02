@@ -109,3 +109,25 @@ test('releaseAll clears every selected country record and registry schema',async
  assert.equal(await runtime.init('AAA'),true,'the runtime should be able to rebuild from source after invalidation');
  assert.equal(runtime.getCountryRecord('AAA').identity.name,'Alpha');
 });
+
+test('a response released in flight cannot restore a cleared country registry',async()=>{
+ runtime.releaseAll();
+ const originalFetch=globalThis.fetch;
+ let resolveFetch,markStarted;
+ const started=new Promise(resolve=>{markStarted=resolve;});
+ globalThis.fetch=()=>new Promise(resolve=>{resolveFetch=resolve;markStarted();});
+ try{
+  const pending=runtime.init('AAA');
+  await started;
+  assert.ok(runtime.releaseAll()>=1,'releaseAll must cancel the pending country request');
+  resolveFetch({ok:true,json:async()=>({...fixture,countries:[fixture.countries[0]]})});
+  assert.equal(await pending,false,'an invalidated request must not publish its returned country');
+  assert.equal(runtime.diagnostics().recordCount,0);
+  assert.equal(runtime.diagnostics().inFlightCount,0);
+  assert.equal(runtime.diagnostics().ready,false);
+ }finally{
+  globalThis.fetch=originalFetch;
+ }
+ assert.equal(await runtime.init('AAA'),true,'a fresh request should rebuild the registry after invalidation');
+ assert.equal(runtime.getCountryRecord('AAA').identity.name,'Alpha');
+});
