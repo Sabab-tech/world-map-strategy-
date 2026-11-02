@@ -66,6 +66,15 @@ assert.equal(fetchCount-fetchesBeforeOptional,1,'same dataset concurrent load is
 assert.equal(api.releaseDataset('population'),true);
 assert.equal(api.getDataset('population'),undefined);
 const originalFetch=api.instance.gw.fetch;
+let resolveSharedFetch;
+api.instance.gw.fetch=()=>new Promise(resolve=>{resolveSharedFetch=resolve;});
+const internalSharedLoad=api.instance.gw.load('industry',{copy:false});
+const publicSharedLoad=api.instance.gw.load('industry',{copy:true});
+resolveSharedFetch({ok:true,json:async()=>({records:[{id:'SHARED'}]})});
+const [internalSharedValue,publicSharedValue]=await Promise.all([internalSharedLoad,publicSharedLoad]);
+publicSharedValue.records.push({id:'PUBLIC_MUTATION'});
+assert.equal(internalSharedValue.records.length,1,'public callers must receive a defensive copy even when sharing an internal load');
+api.releaseDataset('industry');
 let releaseDelayedFetch;
 api.instance.gw.fetch=()=>new Promise(resolve=>{releaseDelayedFetch=resolve;});
 const releasedInFlight=api.loadDataset('industry');
@@ -180,7 +189,6 @@ assert.ok(diagnostics.approvedPolicyLayer.scenarioRules>=20);
 assert.equal(diagnostics.approvedPolicyLayer.numericStateTransitions,0);
 assert.equal(diagnostics.dataTruth.syntheticFallbackTraceEntries,0);
 
-const originalShould=api.instance.scheduler.should.bind(api.instance.scheduler);
 const originalRuntimeAnalyze=api.instance.runtimeFlow.analyze.bind(api.instance.runtimeFlow);
 let skippedRuntimeAnalysisCalls=0;
 api.instance.scheduler.nextDue.set('BD',20);
