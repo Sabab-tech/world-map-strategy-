@@ -413,7 +413,7 @@ test('invalid output recipe is rejected before any input batch is consumed', () 
   assert.equal((context.Game.state.resource.BGD.batches || []).length, 0);
 });
 
-test('processed mine-derived batches route to a downstream factory and reconcile a full multi-input cycle', () => {
+test('processed mine-derived batches route to a downstream factory and reconcile a full multi-input cycle', async () => {
   const { context, api } = makeRuntime();
   const assets = [makeSteelAsset({ inputInventory: {}, inputBatchLots: [] })];
   context.Game.state.economy.BGD = { unemploymentCount: 600000, laborForce: 6000000, unemployment_rate: 10, productionAssets: assets };
