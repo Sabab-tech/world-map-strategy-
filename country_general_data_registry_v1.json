@@ -4,7 +4,7 @@
     "datasetId": "OMEGA_COUNTRY_GENERAL_DATA_REGISTRY_V1",
     "title": "OMEGA Unified Country General Data Registry",
     "description": "Canonical common-schema registry aggregating identity, basic facts, economy, demographics, general indexes, resource context, public-safety summary and a source-aware strategic country profile for every identity in countries.json.",
-    "generatedAt": "2026-11-02T08:31:23.413Z",
+    "generatedAt": "2026-11-02T12:46:11.852Z",
     "countryAndTerritoryCount": 249,
     "uniqueIso3Count": 249,
     "baselineYear": 2015,
@@ -148,12 +148,7 @@
       "requested": true,
       "worldBankIndicatorsLoaded": true,
       "worldBankMetadataLoaded": true,
-      "worldBankIndicatorErrors": [
-        {
-          "indicator": "NE.EXP.GNFS.CD",
-          "error": "Error: HTTP_400 from https://api.worldbank.org/v2/country/all/indicator/NE.EXP.GNFS.CD?format=json&mrnev=1&per_page=20000"
-        }
-      ],
+      "worldBankIndicatorErrors": [],
       "worldBankMetadataError": null,
       "undpHdi": {
         "loaded": true,
@@ -1431,7 +1426,6 @@
         "UNDP_HDR_OBSERVATION",
         "TRANSPARENCY_INTERNATIONAL_CPI_2025",
         "NOT_DEFINED_OR_SOURCED",
-        "SOURCE_REFRESH_FAILED",
         "LOCAL_POPULATION_BASELINE"
       ],
       "sourceIds": [
@@ -4585,7 +4579,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -4873,7 +4867,7 @@
           5,
           4,
           4,
-          11,
+          5,
           5,
           5,
           5,
@@ -4972,7 +4966,7 @@
           -1,
           -1,
           -1,
-          0,
+          -1,
           -1,
           -1,
           -1,
@@ -5071,7 +5065,7 @@
           -1,
           -1,
           -1,
-          0,
+          -1,
           -1,
           -1,
           -1,
@@ -5467,7 +5461,7 @@
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
           null,
-          "No source value was stored because the indicator request failed: NE.EXP.GNFS.CD. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
+          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
@@ -5665,7 +5659,7 @@
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
           "MISSING_OBSERVATION",
-          "SOURCE_REFRESH_FAILED",
+          "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
@@ -6536,7 +6530,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -8739,7 +8733,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -11032,7 +11026,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -13049,7 +13043,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -13338,7 +13332,7 @@
           0,
           1,
           2,
-          11,
+          5,
           5,
           0,
           1,
@@ -13437,7 +13431,7 @@
           0,
           2,
           3,
-          0,
+          -1,
           -1,
           0,
           2,
@@ -13536,7 +13530,7 @@
           0,
           2,
           3,
-          0,
+          -1,
           -1,
           0,
           2,
@@ -13932,7 +13926,7 @@
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
           "Not independently revalidated against the named external series in this build.",
           "Not independently revalidated against the named external series in this build.",
-          "No source value was stored because the indicator request failed: NE.EXP.GNFS.CD. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
+          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
           "Not independently revalidated against the named external series in this build.",
@@ -14130,7 +14124,7 @@
           null,
           "LEGACY_SOURCE_NOT_REVALIDATED",
           "LEGACY_SOURCE_NOT_REVALIDATED",
-          "SOURCE_REFRESH_FAILED",
+          "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           null,
           "LEGACY_SOURCE_NOT_REVALIDATED",
@@ -15265,7 +15259,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -17532,7 +17526,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -17820,7 +17814,7 @@
           2,
           1,
           3,
-          11,
+          5,
           5,
           5,
           1,
@@ -17919,7 +17913,7 @@
           3,
           2,
           4,
-          0,
+          -1,
           -1,
           -1,
           2,
@@ -18018,7 +18012,7 @@
           3,
           2,
           4,
-          0,
+          -1,
           -1,
           -1,
           2,
@@ -18414,7 +18408,7 @@
           "Not independently revalidated against the named external series in this build.",
           "Not independently revalidated against the named external series in this build.",
           "Derived only when all source years match; source fields remain independently available.",
-          "No source value was stored because the indicator request failed: NE.EXP.GNFS.CD. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
+          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Not independently revalidated against the named external series in this build.",
@@ -18612,7 +18606,7 @@
           "LEGACY_SOURCE_NOT_REVALIDATED",
           "LEGACY_SOURCE_NOT_REVALIDATED",
           null,
-          "SOURCE_REFRESH_FAILED",
+          "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "LEGACY_SOURCE_NOT_REVALIDATED",
@@ -19534,7 +19528,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -19814,7 +19808,7 @@
           5,
           4,
           4,
-          11,
+          5,
           5,
           5,
           5,
@@ -19913,7 +19907,7 @@
           -1,
           -1,
           -1,
-          0,
+          -1,
           -1,
           -1,
           -1,
@@ -20012,7 +20006,7 @@
           -1,
           -1,
           -1,
-          0,
+          -1,
           -1,
           -1,
           -1,
@@ -20408,7 +20402,7 @@
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
           null,
-          "No source value was stored because the indicator request failed: NE.EXP.GNFS.CD. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
+          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
@@ -20606,7 +20600,7 @@
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
           "MISSING_OBSERVATION",
-          "SOURCE_REFRESH_FAILED",
+          "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
@@ -21477,7 +21471,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -23737,7 +23731,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -25926,7 +25920,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -28194,7 +28188,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -30179,7 +30173,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -32366,7 +32360,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -34544,7 +34538,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -36695,7 +36689,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -38873,7 +38867,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -41063,7 +41057,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -43335,7 +43329,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -43623,7 +43617,7 @@
           0,
           1,
           2,
-          11,
+          5,
           5,
           0,
           0,
@@ -43722,7 +43716,7 @@
           0,
           2,
           3,
-          0,
+          -1,
           -1,
           0,
           0,
@@ -43821,7 +43815,7 @@
           0,
           2,
           3,
-          0,
+          -1,
           -1,
           0,
           0,
@@ -44217,7 +44211,7 @@
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
           "Not independently revalidated against the named external series in this build.",
           "Not independently revalidated against the named external series in this build.",
-          "No source value was stored because the indicator request failed: NE.EXP.GNFS.CD. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
+          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
@@ -44415,7 +44409,7 @@
           null,
           "LEGACY_SOURCE_NOT_REVALIDATED",
           "LEGACY_SOURCE_NOT_REVALIDATED",
-          "SOURCE_REFRESH_FAILED",
+          "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           null,
           null,
@@ -45539,7 +45533,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -47763,7 +47757,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -49952,7 +49946,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -52163,7 +52157,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -54324,7 +54318,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -56306,7 +56300,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -58497,7 +58491,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -60660,7 +60654,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -60950,7 +60944,7 @@
           5,
           4,
           4,
-          11,
+          5,
           5,
           5,
           5,
@@ -61049,7 +61043,7 @@
           -1,
           -1,
           -1,
-          0,
+          -1,
           -1,
           -1,
           -1,
@@ -61148,7 +61142,7 @@
           -1,
           -1,
           -1,
-          0,
+          -1,
           -1,
           -1,
           -1,
@@ -61544,7 +61538,7 @@
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
           null,
-          "No source value was stored because the indicator request failed: NE.EXP.GNFS.CD. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
+          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
@@ -61742,7 +61736,7 @@
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
           "MISSING_OBSERVATION",
-          "SOURCE_REFRESH_FAILED",
+          "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
@@ -62613,7 +62607,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -64840,7 +64834,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -67057,7 +67051,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -67341,7 +67335,7 @@
           5,
           4,
           4,
-          11,
+          5,
           5,
           5,
           5,
@@ -67440,7 +67434,7 @@
           -1,
           -1,
           -1,
-          0,
+          -1,
           -1,
           -1,
           -1,
@@ -67539,7 +67533,7 @@
           -1,
           -1,
           -1,
-          0,
+          -1,
           -1,
           -1,
           -1,
@@ -67935,7 +67929,7 @@
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
           null,
-          "No source value was stored because the indicator request failed: NE.EXP.GNFS.CD. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
+          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
@@ -68133,7 +68127,7 @@
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
           "MISSING_OBSERVATION",
-          "SOURCE_REFRESH_FAILED",
+          "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
@@ -69004,7 +68998,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -71203,7 +71197,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -71491,7 +71485,7 @@
           5,
           4,
           4,
-          11,
+          5,
           5,
           5,
           5,
@@ -71590,7 +71584,7 @@
           -1,
           -1,
           -1,
-          0,
+          -1,
           -1,
           -1,
           -1,
@@ -71689,7 +71683,7 @@
           -1,
           -1,
           -1,
-          0,
+          -1,
           -1,
           -1,
           -1,
@@ -72085,7 +72079,7 @@
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
           null,
-          "No source value was stored because the indicator request failed: NE.EXP.GNFS.CD. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
+          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
@@ -72283,7 +72277,7 @@
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
           "MISSING_OBSERVATION",
-          "SOURCE_REFRESH_FAILED",
+          "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
@@ -73154,7 +73148,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -75307,7 +75301,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -77448,7 +77442,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -79639,7 +79633,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -79930,7 +79924,7 @@
           0,
           1,
           2,
-          11,
+          5,
           5,
           0,
           0,
@@ -80029,7 +80023,7 @@
           0,
           2,
           3,
-          0,
+          -1,
           -1,
           0,
           0,
@@ -80128,7 +80122,7 @@
           0,
           2,
           3,
-          0,
+          -1,
           -1,
           0,
           0,
@@ -80524,7 +80518,7 @@
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
           "Not independently revalidated against the named external series in this build.",
           "Not independently revalidated against the named external series in this build.",
-          "No source value was stored because the indicator request failed: NE.EXP.GNFS.CD. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
+          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
@@ -80722,7 +80716,7 @@
           null,
           "LEGACY_SOURCE_NOT_REVALIDATED",
           "LEGACY_SOURCE_NOT_REVALIDATED",
-          "SOURCE_REFRESH_FAILED",
+          "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           null,
           null,
@@ -81906,7 +81900,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -84028,7 +84022,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -86130,7 +86124,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -88288,7 +88282,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -90384,7 +90378,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -92368,7 +92362,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -94521,7 +94515,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -96642,7 +96636,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -98725,7 +98719,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -100833,7 +100827,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -101096,32 +101090,32 @@
           null
         ],
         "statusCodes": [
-          12,
-          1,
-          1,
-          1,
-          1,
-          1,
-          1,
-          1,
-          1,
-          5,
-          5,
-          5,
-          1,
-          2,
-          1,
-          1,
-          1,
-          3,
-          2,
-          5,
-          5,
-          3,
-          2,
-          1,
-          3,
           11,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          5,
+          5,
+          5,
+          1,
+          2,
+          1,
+          1,
+          1,
+          3,
+          2,
+          5,
+          5,
+          3,
+          2,
+          1,
+          3,
+          5,
           5,
           5,
           1,
@@ -101220,7 +101214,7 @@
           3,
           2,
           4,
-          0,
+          -1,
           -1,
           -1,
           2,
@@ -101319,7 +101313,7 @@
           3,
           2,
           4,
-          0,
+          -1,
           -1,
           -1,
           2,
@@ -101715,7 +101709,7 @@
           "Not independently revalidated against the named external series in this build.",
           "Not independently revalidated against the named external series in this build.",
           "Derived only when all source years match; source fields remain independently available.",
-          "No source value was stored because the indicator request failed: NE.EXP.GNFS.CD. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
+          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Not independently revalidated against the named external series in this build.",
@@ -101913,7 +101907,7 @@
           "LEGACY_SOURCE_NOT_REVALIDATED",
           "LEGACY_SOURCE_NOT_REVALIDATED",
           null,
-          "SOURCE_REFRESH_FAILED",
+          "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "LEGACY_SOURCE_NOT_REVALIDATED",
@@ -102797,7 +102791,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -103060,32 +103054,32 @@
           null
         ],
         "statusCodes": [
-          12,
-          1,
-          1,
-          1,
-          1,
-          1,
-          1,
-          1,
-          1,
-          5,
-          5,
-          5,
-          1,
-          2,
-          1,
-          1,
-          1,
-          3,
-          2,
-          5,
-          5,
-          3,
-          2,
-          1,
-          3,
           11,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          5,
+          5,
+          5,
+          1,
+          2,
+          1,
+          1,
+          1,
+          3,
+          2,
+          5,
+          5,
+          3,
+          2,
+          1,
+          3,
+          5,
           5,
           5,
           1,
@@ -103184,7 +103178,7 @@
           3,
           2,
           4,
-          0,
+          -1,
           -1,
           -1,
           2,
@@ -103283,7 +103277,7 @@
           3,
           2,
           4,
-          0,
+          -1,
           -1,
           -1,
           2,
@@ -103679,7 +103673,7 @@
           "Not independently revalidated against the named external series in this build.",
           "Not independently revalidated against the named external series in this build.",
           "Derived only when all source years match; source fields remain independently available.",
-          "No source value was stored because the indicator request failed: NE.EXP.GNFS.CD. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
+          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Not independently revalidated against the named external series in this build.",
@@ -103877,7 +103871,7 @@
           "LEGACY_SOURCE_NOT_REVALIDATED",
           "LEGACY_SOURCE_NOT_REVALIDATED",
           null,
-          "SOURCE_REFRESH_FAILED",
+          "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "LEGACY_SOURCE_NOT_REVALIDATED",
@@ -104761,7 +104755,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -106902,7 +106896,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -109046,7 +109040,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -111169,7 +111163,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -113295,7 +113289,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -113561,32 +113555,32 @@
           null
         ],
         "statusCodes": [
-          12,
-          1,
-          1,
-          1,
-          1,
-          1,
-          1,
-          1,
-          1,
-          5,
-          5,
-          5,
-          1,
-          2,
-          1,
-          1,
-          1,
-          3,
-          2,
-          5,
-          5,
-          3,
-          2,
-          1,
-          3,
           11,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          5,
+          5,
+          5,
+          1,
+          2,
+          1,
+          1,
+          1,
+          3,
+          2,
+          5,
+          5,
+          3,
+          2,
+          1,
+          3,
+          5,
           5,
           5,
           1,
@@ -113685,7 +113679,7 @@
           3,
           2,
           4,
-          0,
+          -1,
           -1,
           -1,
           2,
@@ -113784,7 +113778,7 @@
           3,
           2,
           4,
-          0,
+          -1,
           -1,
           -1,
           2,
@@ -114180,7 +114174,7 @@
           "Not independently revalidated against the named external series in this build.",
           "Not independently revalidated against the named external series in this build.",
           "Derived only when all source years match; source fields remain independently available.",
-          "No source value was stored because the indicator request failed: NE.EXP.GNFS.CD. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
+          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Not independently revalidated against the named external series in this build.",
@@ -114378,7 +114372,7 @@
           "LEGACY_SOURCE_NOT_REVALIDATED",
           "LEGACY_SOURCE_NOT_REVALIDATED",
           null,
-          "SOURCE_REFRESH_FAILED",
+          "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "LEGACY_SOURCE_NOT_REVALIDATED",
@@ -115303,7 +115297,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -117374,7 +117368,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -119485,7 +119479,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -121600,7 +121594,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -123722,7 +123716,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -125753,7 +125747,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -127823,7 +127817,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -129907,7 +129901,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -131990,7 +131984,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -134126,7 +134120,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -134414,7 +134408,7 @@
           2,
           1,
           2,
-          11,
+          5,
           5,
           0,
           0,
@@ -134513,7 +134507,7 @@
           3,
           2,
           3,
-          0,
+          -1,
           -1,
           0,
           0,
@@ -134612,7 +134606,7 @@
           3,
           2,
           3,
-          0,
+          -1,
           -1,
           0,
           0,
@@ -135008,7 +135002,7 @@
           "Not independently revalidated against the named external series in this build.",
           "Not independently revalidated against the named external series in this build.",
           "Not independently revalidated against the named external series in this build.",
-          "No source value was stored because the indicator request failed: NE.EXP.GNFS.CD. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
+          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
@@ -135206,7 +135200,7 @@
           "LEGACY_SOURCE_NOT_REVALIDATED",
           "LEGACY_SOURCE_NOT_REVALIDATED",
           "LEGACY_SOURCE_NOT_REVALIDATED",
-          "SOURCE_REFRESH_FAILED",
+          "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           null,
           null,
@@ -136232,7 +136226,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -138282,7 +138276,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -140375,7 +140369,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -142564,7 +142558,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -144698,7 +144692,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -146799,7 +146793,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -148959,7 +148953,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -151031,7 +151025,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -153190,7 +153184,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -155349,7 +155343,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -155637,7 +155631,7 @@
           2,
           1,
           3,
-          11,
+          5,
           5,
           5,
           1,
@@ -155736,7 +155730,7 @@
           3,
           2,
           4,
-          0,
+          -1,
           -1,
           -1,
           2,
@@ -155835,7 +155829,7 @@
           3,
           2,
           4,
-          0,
+          -1,
           -1,
           -1,
           2,
@@ -156231,7 +156225,7 @@
           "Not independently revalidated against the named external series in this build.",
           "Not independently revalidated against the named external series in this build.",
           "Derived only when all source years match; source fields remain independently available.",
-          "No source value was stored because the indicator request failed: NE.EXP.GNFS.CD. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
+          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Not independently revalidated against the named external series in this build.",
@@ -156429,7 +156423,7 @@
           "LEGACY_SOURCE_NOT_REVALIDATED",
           "LEGACY_SOURCE_NOT_REVALIDATED",
           null,
-          "SOURCE_REFRESH_FAILED",
+          "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "LEGACY_SOURCE_NOT_REVALIDATED",
@@ -157313,7 +157307,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -159292,7 +159286,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -161399,7 +161393,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -163482,7 +163476,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -165591,7 +165585,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -165882,7 +165876,7 @@
           2,
           1,
           3,
-          11,
+          5,
           5,
           5,
           1,
@@ -165981,7 +165975,7 @@
           3,
           2,
           4,
-          0,
+          -1,
           -1,
           -1,
           2,
@@ -166080,7 +166074,7 @@
           3,
           2,
           4,
-          0,
+          -1,
           -1,
           -1,
           2,
@@ -166476,7 +166470,7 @@
           "Not independently revalidated against the named external series in this build.",
           "Not independently revalidated against the named external series in this build.",
           "Derived only when all source years match; source fields remain independently available.",
-          "No source value was stored because the indicator request failed: NE.EXP.GNFS.CD. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
+          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Not independently revalidated against the named external series in this build.",
@@ -166674,7 +166668,7 @@
           "LEGACY_SOURCE_NOT_REVALIDATED",
           "LEGACY_SOURCE_NOT_REVALIDATED",
           null,
-          "SOURCE_REFRESH_FAILED",
+          "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "LEGACY_SOURCE_NOT_REVALIDATED",
@@ -167621,7 +167615,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -169645,7 +169639,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -169934,7 +169928,7 @@
           5,
           4,
           4,
-          11,
+          5,
           5,
           5,
           5,
@@ -170033,7 +170027,7 @@
           -1,
           -1,
           -1,
-          0,
+          -1,
           -1,
           -1,
           -1,
@@ -170132,7 +170126,7 @@
           -1,
           -1,
           -1,
-          0,
+          -1,
           -1,
           -1,
           -1,
@@ -170528,7 +170522,7 @@
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
           null,
-          "No source value was stored because the indicator request failed: NE.EXP.GNFS.CD. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
+          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
@@ -170726,7 +170720,7 @@
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
           "MISSING_OBSERVATION",
-          "SOURCE_REFRESH_FAILED",
+          "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
@@ -171597,7 +171591,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -173721,7 +173715,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -175854,7 +175848,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -177967,7 +177961,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -180065,7 +180059,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -182187,7 +182181,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -182477,7 +182471,7 @@
           2,
           1,
           3,
-          11,
+          5,
           5,
           5,
           1,
@@ -182576,7 +182570,7 @@
           3,
           2,
           4,
-          0,
+          -1,
           -1,
           -1,
           2,
@@ -182675,7 +182669,7 @@
           3,
           2,
           4,
-          0,
+          -1,
           -1,
           -1,
           2,
@@ -183071,7 +183065,7 @@
           "Not independently revalidated against the named external series in this build.",
           "Not independently revalidated against the named external series in this build.",
           "Derived only when all source years match; source fields remain independently available.",
-          "No source value was stored because the indicator request failed: NE.EXP.GNFS.CD. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
+          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Not independently revalidated against the named external series in this build.",
@@ -183269,7 +183263,7 @@
           "LEGACY_SOURCE_NOT_REVALIDATED",
           "LEGACY_SOURCE_NOT_REVALIDATED",
           null,
-          "SOURCE_REFRESH_FAILED",
+          "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "LEGACY_SOURCE_NOT_REVALIDATED",
@@ -184194,7 +184188,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -186273,7 +186267,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -188294,7 +188288,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -188582,7 +188576,7 @@
           2,
           1,
           2,
-          11,
+          5,
           5,
           0,
           0,
@@ -188681,7 +188675,7 @@
           3,
           2,
           3,
-          0,
+          -1,
           -1,
           0,
           0,
@@ -188780,7 +188774,7 @@
           3,
           2,
           3,
-          0,
+          -1,
           -1,
           0,
           0,
@@ -189176,7 +189170,7 @@
           "Not independently revalidated against the named external series in this build.",
           "Not independently revalidated against the named external series in this build.",
           "Not independently revalidated against the named external series in this build.",
-          "No source value was stored because the indicator request failed: NE.EXP.GNFS.CD. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
+          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
@@ -189374,7 +189368,7 @@
           "LEGACY_SOURCE_NOT_REVALIDATED",
           "LEGACY_SOURCE_NOT_REVALIDATED",
           "LEGACY_SOURCE_NOT_REVALIDATED",
-          "SOURCE_REFRESH_FAILED",
+          "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           null,
           null,
@@ -190415,7 +190409,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -190703,7 +190697,7 @@
           2,
           1,
           3,
-          11,
+          5,
           5,
           5,
           1,
@@ -190802,7 +190796,7 @@
           3,
           2,
           4,
-          0,
+          -1,
           -1,
           -1,
           2,
@@ -190901,7 +190895,7 @@
           3,
           2,
           4,
-          0,
+          -1,
           -1,
           -1,
           2,
@@ -191297,7 +191291,7 @@
           "Not independently revalidated against the named external series in this build.",
           "Not independently revalidated against the named external series in this build.",
           "Derived only when all source years match; source fields remain independently available.",
-          "No source value was stored because the indicator request failed: NE.EXP.GNFS.CD. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
+          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Not independently revalidated against the named external series in this build.",
@@ -191495,7 +191489,7 @@
           "LEGACY_SOURCE_NOT_REVALIDATED",
           "LEGACY_SOURCE_NOT_REVALIDATED",
           null,
-          "SOURCE_REFRESH_FAILED",
+          "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "LEGACY_SOURCE_NOT_REVALIDATED",
@@ -192442,7 +192436,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -194465,7 +194459,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -196589,7 +196583,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -196881,7 +196875,7 @@
           5,
           4,
           4,
-          11,
+          5,
           5,
           5,
           5,
@@ -196980,7 +196974,7 @@
           -1,
           -1,
           -1,
-          0,
+          -1,
           -1,
           -1,
           -1,
@@ -197079,7 +197073,7 @@
           -1,
           -1,
           -1,
-          0,
+          -1,
           -1,
           -1,
           -1,
@@ -197475,7 +197469,7 @@
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
           null,
-          "No source value was stored because the indicator request failed: NE.EXP.GNFS.CD. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
+          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
@@ -197673,7 +197667,7 @@
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
           "MISSING_OBSERVATION",
-          "SOURCE_REFRESH_FAILED",
+          "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
@@ -198544,7 +198538,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -200700,7 +200694,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -202861,7 +202855,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -204978,7 +204972,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -207134,7 +207128,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -207416,7 +207410,7 @@
           5,
           4,
           4,
-          11,
+          5,
           5,
           5,
           5,
@@ -207515,7 +207509,7 @@
           -1,
           -1,
           -1,
-          0,
+          -1,
           -1,
           -1,
           -1,
@@ -207614,7 +207608,7 @@
           -1,
           -1,
           -1,
-          0,
+          -1,
           -1,
           -1,
           -1,
@@ -208010,7 +208004,7 @@
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
           null,
-          "No source value was stored because the indicator request failed: NE.EXP.GNFS.CD. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
+          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
@@ -208208,7 +208202,7 @@
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
           "MISSING_OBSERVATION",
-          "SOURCE_REFRESH_FAILED",
+          "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
@@ -209079,7 +209073,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -209343,32 +209337,32 @@
           null
         ],
         "statusCodes": [
-          12,
-          1,
-          1,
-          1,
-          1,
-          1,
-          1,
-          1,
-          1,
-          5,
-          5,
-          5,
-          1,
-          2,
-          1,
-          1,
-          1,
-          3,
-          2,
-          5,
-          5,
-          3,
-          2,
-          1,
-          3,
           11,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          5,
+          5,
+          5,
+          1,
+          2,
+          1,
+          1,
+          1,
+          3,
+          2,
+          5,
+          5,
+          3,
+          2,
+          1,
+          3,
+          5,
           5,
           5,
           1,
@@ -209467,7 +209461,7 @@
           3,
           2,
           4,
-          0,
+          -1,
           -1,
           -1,
           2,
@@ -209566,7 +209560,7 @@
           3,
           2,
           4,
-          0,
+          -1,
           -1,
           -1,
           2,
@@ -209962,7 +209956,7 @@
           "Not independently revalidated against the named external series in this build.",
           "Not independently revalidated against the named external series in this build.",
           "Derived only when all source years match; source fields remain independently available.",
-          "No source value was stored because the indicator request failed: NE.EXP.GNFS.CD. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
+          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Not independently revalidated against the named external series in this build.",
@@ -210160,7 +210154,7 @@
           "LEGACY_SOURCE_NOT_REVALIDATED",
           "LEGACY_SOURCE_NOT_REVALIDATED",
           null,
-          "SOURCE_REFRESH_FAILED",
+          "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "LEGACY_SOURCE_NOT_REVALIDATED",
@@ -211109,7 +211103,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -213255,7 +213249,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -215260,7 +215254,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -217343,7 +217337,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -219426,7 +219420,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -221535,7 +221529,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -223638,7 +223632,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -225824,7 +225818,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -227970,7 +227964,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -230052,7 +230046,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -230343,7 +230337,7 @@
           5,
           4,
           4,
-          11,
+          5,
           5,
           5,
           5,
@@ -230442,7 +230436,7 @@
           -1,
           -1,
           -1,
-          0,
+          -1,
           -1,
           -1,
           -1,
@@ -230541,7 +230535,7 @@
           -1,
           -1,
           -1,
-          0,
+          -1,
           -1,
           -1,
           -1,
@@ -230937,7 +230931,7 @@
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
           null,
-          "No source value was stored because the indicator request failed: NE.EXP.GNFS.CD. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
+          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
@@ -231135,7 +231129,7 @@
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
           "MISSING_OBSERVATION",
-          "SOURCE_REFRESH_FAILED",
+          "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
@@ -232027,7 +232021,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -234149,7 +234143,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -236240,7 +236234,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -236529,7 +236523,7 @@
           0,
           1,
           2,
-          11,
+          5,
           5,
           0,
           0,
@@ -236628,7 +236622,7 @@
           0,
           2,
           3,
-          0,
+          -1,
           -1,
           0,
           0,
@@ -236727,7 +236721,7 @@
           0,
           2,
           3,
-          0,
+          -1,
           -1,
           0,
           0,
@@ -237123,7 +237117,7 @@
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
           "Not independently revalidated against the named external series in this build.",
           "Not independently revalidated against the named external series in this build.",
-          "No source value was stored because the indicator request failed: NE.EXP.GNFS.CD. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
+          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
@@ -237321,7 +237315,7 @@
           null,
           "LEGACY_SOURCE_NOT_REVALIDATED",
           "LEGACY_SOURCE_NOT_REVALIDATED",
-          "SOURCE_REFRESH_FAILED",
+          "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           null,
           null,
@@ -238339,7 +238333,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -240437,7 +240431,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -240729,7 +240723,7 @@
           5,
           4,
           4,
-          11,
+          5,
           5,
           5,
           5,
@@ -240828,7 +240822,7 @@
           -1,
           -1,
           -1,
-          0,
+          -1,
           -1,
           -1,
           -1,
@@ -240927,7 +240921,7 @@
           -1,
           -1,
           -1,
-          0,
+          -1,
           -1,
           -1,
           -1,
@@ -241323,7 +241317,7 @@
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
           null,
-          "No source value was stored because the indicator request failed: NE.EXP.GNFS.CD. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
+          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
@@ -241521,7 +241515,7 @@
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
           "MISSING_OBSERVATION",
-          "SOURCE_REFRESH_FAILED",
+          "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
@@ -242392,7 +242386,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -244531,7 +244525,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -246626,7 +246620,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -248746,7 +248740,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -250858,7 +250852,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -251150,7 +251144,7 @@
           2,
           1,
           3,
-          11,
+          5,
           5,
           5,
           1,
@@ -251249,7 +251243,7 @@
           3,
           2,
           4,
-          0,
+          -1,
           -1,
           -1,
           2,
@@ -251348,7 +251342,7 @@
           3,
           2,
           4,
-          0,
+          -1,
           -1,
           -1,
           2,
@@ -251744,7 +251738,7 @@
           "Not independently revalidated against the named external series in this build.",
           "Not independently revalidated against the named external series in this build.",
           "Derived only when all source years match; source fields remain independently available.",
-          "No source value was stored because the indicator request failed: NE.EXP.GNFS.CD. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
+          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Not independently revalidated against the named external series in this build.",
@@ -251942,7 +251936,7 @@
           "LEGACY_SOURCE_NOT_REVALIDATED",
           "LEGACY_SOURCE_NOT_REVALIDATED",
           null,
-          "SOURCE_REFRESH_FAILED",
+          "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "LEGACY_SOURCE_NOT_REVALIDATED",
@@ -253000,7 +252994,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -255086,7 +255080,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -257160,7 +257154,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -259301,7 +259295,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -261444,7 +261438,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -263516,7 +263510,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -265713,7 +265707,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -267827,7 +267821,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -268119,7 +268113,7 @@
           2,
           1,
           2,
-          11,
+          5,
           5,
           0,
           0,
@@ -268218,7 +268212,7 @@
           3,
           2,
           3,
-          0,
+          -1,
           -1,
           0,
           0,
@@ -268317,7 +268311,7 @@
           3,
           2,
           3,
-          0,
+          -1,
           -1,
           0,
           0,
@@ -268713,7 +268707,7 @@
           "Not independently revalidated against the named external series in this build.",
           "Not independently revalidated against the named external series in this build.",
           "Not independently revalidated against the named external series in this build.",
-          "No source value was stored because the indicator request failed: NE.EXP.GNFS.CD. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
+          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
@@ -268911,7 +268905,7 @@
           "LEGACY_SOURCE_NOT_REVALIDATED",
           "LEGACY_SOURCE_NOT_REVALIDATED",
           "LEGACY_SOURCE_NOT_REVALIDATED",
-          "SOURCE_REFRESH_FAILED",
+          "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           null,
           null,
@@ -269965,7 +269959,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -272109,7 +272103,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -272398,7 +272392,7 @@
           2,
           1,
           2,
-          11,
+          5,
           5,
           5,
           1,
@@ -272497,7 +272491,7 @@
           3,
           2,
           3,
-          0,
+          -1,
           -1,
           -1,
           2,
@@ -272596,7 +272590,7 @@
           3,
           2,
           3,
-          0,
+          -1,
           -1,
           -1,
           2,
@@ -272992,7 +272986,7 @@
           "Not independently revalidated against the named external series in this build.",
           "Not independently revalidated against the named external series in this build.",
           "Not independently revalidated against the named external series in this build.",
-          "No source value was stored because the indicator request failed: NE.EXP.GNFS.CD. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
+          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Not independently revalidated against the named external series in this build.",
@@ -273190,7 +273184,7 @@
           "LEGACY_SOURCE_NOT_REVALIDATED",
           "LEGACY_SOURCE_NOT_REVALIDATED",
           "LEGACY_SOURCE_NOT_REVALIDATED",
-          "SOURCE_REFRESH_FAILED",
+          "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "LEGACY_SOURCE_NOT_REVALIDATED",
@@ -274163,7 +274157,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -276237,7 +276231,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -278308,7 +278302,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -280294,7 +280288,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -282442,7 +282436,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -284569,7 +284563,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -286655,7 +286649,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -288759,7 +288753,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -290881,7 +290875,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -292949,7 +292943,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -295066,7 +295060,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -295354,7 +295348,7 @@
           2,
           1,
           3,
-          11,
+          5,
           5,
           5,
           1,
@@ -295453,7 +295447,7 @@
           3,
           2,
           4,
-          0,
+          -1,
           -1,
           -1,
           2,
@@ -295552,7 +295546,7 @@
           3,
           2,
           4,
-          0,
+          -1,
           -1,
           -1,
           2,
@@ -295948,7 +295942,7 @@
           "Not independently revalidated against the named external series in this build.",
           "Not independently revalidated against the named external series in this build.",
           "Derived only when all source years match; source fields remain independently available.",
-          "No source value was stored because the indicator request failed: NE.EXP.GNFS.CD. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
+          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Not independently revalidated against the named external series in this build.",
@@ -296146,7 +296140,7 @@
           "LEGACY_SOURCE_NOT_REVALIDATED",
           "LEGACY_SOURCE_NOT_REVALIDATED",
           null,
-          "SOURCE_REFRESH_FAILED",
+          "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "LEGACY_SOURCE_NOT_REVALIDATED",
@@ -297093,7 +297087,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -299265,7 +299259,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -301369,7 +301363,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -301657,7 +301651,7 @@
           5,
           4,
           4,
-          11,
+          5,
           5,
           5,
           5,
@@ -301756,7 +301750,7 @@
           -1,
           -1,
           -1,
-          0,
+          -1,
           -1,
           -1,
           -1,
@@ -301855,7 +301849,7 @@
           -1,
           -1,
           -1,
-          0,
+          -1,
           -1,
           -1,
           -1,
@@ -302251,7 +302245,7 @@
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
           null,
-          "No source value was stored because the indicator request failed: NE.EXP.GNFS.CD. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
+          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
@@ -302449,7 +302443,7 @@
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
           "MISSING_OBSERVATION",
-          "SOURCE_REFRESH_FAILED",
+          "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
@@ -303320,7 +303314,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -305427,7 +305421,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -307536,7 +307530,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -309631,7 +309625,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -309921,7 +309915,7 @@
           2,
           1,
           2,
-          11,
+          5,
           5,
           5,
           1,
@@ -310020,7 +310014,7 @@
           3,
           2,
           3,
-          0,
+          -1,
           -1,
           -1,
           2,
@@ -310119,7 +310113,7 @@
           3,
           2,
           3,
-          0,
+          -1,
           -1,
           -1,
           2,
@@ -310515,7 +310509,7 @@
           "Not independently revalidated against the named external series in this build.",
           "Not independently revalidated against the named external series in this build.",
           "Not independently revalidated against the named external series in this build.",
-          "No source value was stored because the indicator request failed: NE.EXP.GNFS.CD. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
+          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Not independently revalidated against the named external series in this build.",
@@ -310713,7 +310707,7 @@
           "LEGACY_SOURCE_NOT_REVALIDATED",
           "LEGACY_SOURCE_NOT_REVALIDATED",
           "LEGACY_SOURCE_NOT_REVALIDATED",
-          "SOURCE_REFRESH_FAILED",
+          "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "LEGACY_SOURCE_NOT_REVALIDATED",
@@ -311687,7 +311681,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -313745,7 +313739,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -315862,7 +315856,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -316150,7 +316144,7 @@
           2,
           1,
           3,
-          11,
+          5,
           5,
           5,
           1,
@@ -316249,7 +316243,7 @@
           3,
           2,
           4,
-          0,
+          -1,
           -1,
           -1,
           2,
@@ -316348,7 +316342,7 @@
           3,
           2,
           4,
-          0,
+          -1,
           -1,
           -1,
           2,
@@ -316744,7 +316738,7 @@
           "Not independently revalidated against the named external series in this build.",
           "Not independently revalidated against the named external series in this build.",
           "Derived only when all source years match; source fields remain independently available.",
-          "No source value was stored because the indicator request failed: NE.EXP.GNFS.CD. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
+          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Not independently revalidated against the named external series in this build.",
@@ -316942,7 +316936,7 @@
           "LEGACY_SOURCE_NOT_REVALIDATED",
           "LEGACY_SOURCE_NOT_REVALIDATED",
           null,
-          "SOURCE_REFRESH_FAILED",
+          "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "LEGACY_SOURCE_NOT_REVALIDATED",
@@ -317864,7 +317858,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -320006,7 +320000,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -322153,7 +322147,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -322447,7 +322441,7 @@
           0,
           1,
           2,
-          11,
+          5,
           5,
           0,
           0,
@@ -322546,7 +322540,7 @@
           0,
           2,
           3,
-          0,
+          -1,
           -1,
           0,
           0,
@@ -322645,7 +322639,7 @@
           0,
           2,
           3,
-          0,
+          -1,
           -1,
           0,
           0,
@@ -323041,7 +323035,7 @@
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
           "Not independently revalidated against the named external series in this build.",
           "Not independently revalidated against the named external series in this build.",
-          "No source value was stored because the indicator request failed: NE.EXP.GNFS.CD. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
+          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
@@ -323239,7 +323233,7 @@
           null,
           "LEGACY_SOURCE_NOT_REVALIDATED",
           "LEGACY_SOURCE_NOT_REVALIDATED",
-          "SOURCE_REFRESH_FAILED",
+          "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           null,
           null,
@@ -324304,7 +324298,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -326429,7 +326423,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -328532,7 +328526,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -330670,7 +330664,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -332752,7 +332746,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -334777,7 +334771,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -336838,7 +336832,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -338983,7 +338977,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -341104,7 +341098,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -343248,7 +343242,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -343512,32 +343506,32 @@
           null
         ],
         "statusCodes": [
-          12,
-          1,
-          1,
-          1,
-          1,
-          1,
-          1,
-          1,
-          1,
-          5,
-          5,
-          5,
-          1,
-          2,
-          1,
-          1,
-          1,
-          3,
-          2,
-          5,
-          5,
-          3,
-          2,
-          1,
-          3,
           11,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          5,
+          5,
+          5,
+          1,
+          2,
+          1,
+          1,
+          1,
+          3,
+          2,
+          5,
+          5,
+          3,
+          2,
+          1,
+          3,
+          5,
           5,
           5,
           1,
@@ -343636,7 +343630,7 @@
           3,
           2,
           4,
-          0,
+          -1,
           -1,
           -1,
           2,
@@ -343735,7 +343729,7 @@
           3,
           2,
           4,
-          0,
+          -1,
           -1,
           -1,
           2,
@@ -344131,7 +344125,7 @@
           "Not independently revalidated against the named external series in this build.",
           "Not independently revalidated against the named external series in this build.",
           "Derived only when all source years match; source fields remain independently available.",
-          "No source value was stored because the indicator request failed: NE.EXP.GNFS.CD. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
+          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Not independently revalidated against the named external series in this build.",
@@ -344329,7 +344323,7 @@
           "LEGACY_SOURCE_NOT_REVALIDATED",
           "LEGACY_SOURCE_NOT_REVALIDATED",
           null,
-          "SOURCE_REFRESH_FAILED",
+          "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "LEGACY_SOURCE_NOT_REVALIDATED",
@@ -345251,7 +345245,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -345515,32 +345509,32 @@
           null
         ],
         "statusCodes": [
-          12,
-          1,
-          1,
-          1,
-          1,
-          1,
-          1,
-          1,
-          1,
-          5,
-          5,
-          5,
-          1,
-          2,
-          1,
-          1,
-          1,
-          3,
-          2,
-          5,
-          5,
-          3,
-          2,
-          1,
-          3,
           11,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          5,
+          5,
+          5,
+          1,
+          2,
+          1,
+          1,
+          1,
+          3,
+          2,
+          5,
+          5,
+          3,
+          2,
+          1,
+          3,
+          5,
           5,
           5,
           1,
@@ -345639,7 +345633,7 @@
           3,
           2,
           4,
-          0,
+          -1,
           -1,
           -1,
           2,
@@ -345738,7 +345732,7 @@
           3,
           2,
           4,
-          0,
+          -1,
           -1,
           -1,
           2,
@@ -346134,7 +346128,7 @@
           "Not independently revalidated against the named external series in this build.",
           "Not independently revalidated against the named external series in this build.",
           "Derived only when all source years match; source fields remain independently available.",
-          "No source value was stored because the indicator request failed: NE.EXP.GNFS.CD. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
+          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Not independently revalidated against the named external series in this build.",
@@ -346332,7 +346326,7 @@
           "LEGACY_SOURCE_NOT_REVALIDATED",
           "LEGACY_SOURCE_NOT_REVALIDATED",
           null,
-          "SOURCE_REFRESH_FAILED",
+          "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "LEGACY_SOURCE_NOT_REVALIDATED",
@@ -347254,7 +347248,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -349369,7 +349363,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -351388,7 +351382,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -353475,7 +353469,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -355560,7 +355554,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -357740,7 +357734,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -359820,7 +359814,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -361988,7 +361982,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -364099,7 +364093,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -366216,7 +366210,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -368291,7 +368285,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -370391,7 +370385,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -372525,7 +372519,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -372813,7 +372807,7 @@
           2,
           1,
           3,
-          11,
+          5,
           5,
           5,
           1,
@@ -372912,7 +372906,7 @@
           3,
           2,
           4,
-          0,
+          -1,
           -1,
           -1,
           2,
@@ -373011,7 +373005,7 @@
           3,
           2,
           4,
-          0,
+          -1,
           -1,
           -1,
           2,
@@ -373407,7 +373401,7 @@
           "Not independently revalidated against the named external series in this build.",
           "Not independently revalidated against the named external series in this build.",
           "Derived only when all source years match; source fields remain independently available.",
-          "No source value was stored because the indicator request failed: NE.EXP.GNFS.CD. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
+          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Not independently revalidated against the named external series in this build.",
@@ -373605,7 +373599,7 @@
           "LEGACY_SOURCE_NOT_REVALIDATED",
           "LEGACY_SOURCE_NOT_REVALIDATED",
           null,
-          "SOURCE_REFRESH_FAILED",
+          "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "LEGACY_SOURCE_NOT_REVALIDATED",
@@ -374486,7 +374480,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -376579,7 +376573,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -378659,7 +378653,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -380639,7 +380633,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -382719,7 +382713,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -383007,7 +383001,7 @@
           5,
           4,
           4,
-          11,
+          5,
           5,
           5,
           5,
@@ -383106,7 +383100,7 @@
           -1,
           -1,
           -1,
-          0,
+          -1,
           -1,
           -1,
           -1,
@@ -383205,7 +383199,7 @@
           -1,
           -1,
           -1,
-          0,
+          -1,
           -1,
           -1,
           -1,
@@ -383601,7 +383595,7 @@
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
           null,
-          "No source value was stored because the indicator request failed: NE.EXP.GNFS.CD. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
+          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
@@ -383799,7 +383793,7 @@
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
           "MISSING_OBSERVATION",
-          "SOURCE_REFRESH_FAILED",
+          "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
@@ -384670,7 +384664,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -386794,7 +386788,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -388946,7 +388940,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -391068,7 +391062,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -391356,7 +391350,7 @@
           5,
           4,
           4,
-          11,
+          5,
           5,
           5,
           5,
@@ -391455,7 +391449,7 @@
           -1,
           -1,
           -1,
-          0,
+          -1,
           -1,
           -1,
           -1,
@@ -391554,7 +391548,7 @@
           -1,
           -1,
           -1,
-          0,
+          -1,
           -1,
           -1,
           -1,
@@ -391950,7 +391944,7 @@
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
           null,
-          "No source value was stored because the indicator request failed: NE.EXP.GNFS.CD. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
+          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
@@ -392148,7 +392142,7 @@
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
           "MISSING_OBSERVATION",
-          "SOURCE_REFRESH_FAILED",
+          "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
@@ -393019,7 +393013,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -393309,7 +393303,7 @@
           5,
           4,
           4,
-          11,
+          5,
           5,
           5,
           5,
@@ -393408,7 +393402,7 @@
           -1,
           -1,
           -1,
-          0,
+          -1,
           -1,
           -1,
           -1,
@@ -393507,7 +393501,7 @@
           -1,
           -1,
           -1,
-          0,
+          -1,
           -1,
           -1,
           -1,
@@ -393903,7 +393897,7 @@
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
           null,
-          "No source value was stored because the indicator request failed: NE.EXP.GNFS.CD. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
+          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
@@ -394101,7 +394095,7 @@
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
           "MISSING_OBSERVATION",
-          "SOURCE_REFRESH_FAILED",
+          "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
@@ -394972,7 +394966,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -395260,7 +395254,7 @@
           0,
           1,
           2,
-          11,
+          5,
           5,
           0,
           0,
@@ -395359,7 +395353,7 @@
           0,
           2,
           3,
-          0,
+          -1,
           -1,
           0,
           0,
@@ -395458,7 +395452,7 @@
           0,
           2,
           3,
-          0,
+          -1,
           -1,
           0,
           0,
@@ -395854,7 +395848,7 @@
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
           "Not independently revalidated against the named external series in this build.",
           "Not independently revalidated against the named external series in this build.",
-          "No source value was stored because the indicator request failed: NE.EXP.GNFS.CD. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
+          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
@@ -396052,7 +396046,7 @@
           null,
           "LEGACY_SOURCE_NOT_REVALIDATED",
           "LEGACY_SOURCE_NOT_REVALIDATED",
-          "SOURCE_REFRESH_FAILED",
+          "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           null,
           null,
@@ -397034,7 +397028,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -397322,7 +397316,7 @@
           0,
           1,
           2,
-          11,
+          5,
           5,
           0,
           0,
@@ -397421,7 +397415,7 @@
           0,
           2,
           3,
-          0,
+          -1,
           -1,
           0,
           0,
@@ -397520,7 +397514,7 @@
           0,
           2,
           3,
-          0,
+          -1,
           -1,
           0,
           0,
@@ -397916,7 +397910,7 @@
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
           "Not independently revalidated against the named external series in this build.",
           "Not independently revalidated against the named external series in this build.",
-          "No source value was stored because the indicator request failed: NE.EXP.GNFS.CD. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
+          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
@@ -398114,7 +398108,7 @@
           null,
           "LEGACY_SOURCE_NOT_REVALIDATED",
           "LEGACY_SOURCE_NOT_REVALIDATED",
-          "SOURCE_REFRESH_FAILED",
+          "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           null,
           null,
@@ -399124,7 +399118,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -399414,7 +399408,7 @@
           5,
           4,
           4,
-          11,
+          5,
           5,
           5,
           5,
@@ -399513,7 +399507,7 @@
           -1,
           -1,
           -1,
-          0,
+          -1,
           -1,
           -1,
           -1,
@@ -399612,7 +399606,7 @@
           -1,
           -1,
           -1,
-          0,
+          -1,
           -1,
           -1,
           -1,
@@ -400008,7 +400002,7 @@
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
           null,
-          "No source value was stored because the indicator request failed: NE.EXP.GNFS.CD. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
+          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
@@ -400206,7 +400200,7 @@
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
           "MISSING_OBSERVATION",
-          "SOURCE_REFRESH_FAILED",
+          "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
@@ -401087,7 +401081,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -401375,7 +401369,7 @@
           5,
           4,
           4,
-          11,
+          5,
           5,
           5,
           5,
@@ -401474,7 +401468,7 @@
           -1,
           -1,
           -1,
-          0,
+          -1,
           -1,
           -1,
           -1,
@@ -401573,7 +401567,7 @@
           -1,
           -1,
           -1,
-          0,
+          -1,
           -1,
           -1,
           -1,
@@ -401969,7 +401963,7 @@
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
           null,
-          "No source value was stored because the indicator request failed: NE.EXP.GNFS.CD. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
+          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
@@ -402167,7 +402161,7 @@
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
           "MISSING_OBSERVATION",
-          "SOURCE_REFRESH_FAILED",
+          "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
@@ -403038,7 +403032,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -403326,7 +403320,7 @@
           0,
           1,
           2,
-          11,
+          5,
           5,
           0,
           0,
@@ -403425,7 +403419,7 @@
           0,
           2,
           3,
-          0,
+          -1,
           -1,
           0,
           0,
@@ -403524,7 +403518,7 @@
           0,
           2,
           3,
-          0,
+          -1,
           -1,
           0,
           0,
@@ -403920,7 +403914,7 @@
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
           "Not independently revalidated against the named external series in this build.",
           "Not independently revalidated against the named external series in this build.",
-          "No source value was stored because the indicator request failed: NE.EXP.GNFS.CD. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
+          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
@@ -404118,7 +404112,7 @@
           null,
           "LEGACY_SOURCE_NOT_REVALIDATED",
           "LEGACY_SOURCE_NOT_REVALIDATED",
-          "SOURCE_REFRESH_FAILED",
+          "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           null,
           null,
@@ -405149,7 +405143,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -407251,7 +407245,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -409319,7 +409313,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -411452,7 +411446,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -413553,7 +413547,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -415663,7 +415657,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -417732,7 +417726,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -419850,7 +419844,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -421984,7 +421978,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -424084,7 +424078,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -424376,7 +424370,7 @@
           2,
           1,
           2,
-          11,
+          5,
           5,
           0,
           1,
@@ -424475,7 +424469,7 @@
           3,
           2,
           3,
-          0,
+          -1,
           -1,
           0,
           2,
@@ -424574,7 +424568,7 @@
           3,
           2,
           3,
-          0,
+          -1,
           -1,
           0,
           2,
@@ -424970,7 +424964,7 @@
           "Not independently revalidated against the named external series in this build.",
           "Not independently revalidated against the named external series in this build.",
           "Not independently revalidated against the named external series in this build.",
-          "No source value was stored because the indicator request failed: NE.EXP.GNFS.CD. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
+          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
           "Not independently revalidated against the named external series in this build.",
@@ -425168,7 +425162,7 @@
           "LEGACY_SOURCE_NOT_REVALIDATED",
           "LEGACY_SOURCE_NOT_REVALIDATED",
           "LEGACY_SOURCE_NOT_REVALIDATED",
-          "SOURCE_REFRESH_FAILED",
+          "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           null,
           "LEGACY_SOURCE_NOT_REVALIDATED",
@@ -426099,7 +426093,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -428161,7 +428155,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -430233,7 +430227,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -432360,7 +432354,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -434517,7 +434511,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -436645,7 +436639,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -436933,7 +436927,7 @@
           5,
           4,
           4,
-          11,
+          5,
           5,
           5,
           5,
@@ -437032,7 +437026,7 @@
           -1,
           -1,
           -1,
-          0,
+          -1,
           -1,
           -1,
           -1,
@@ -437131,7 +437125,7 @@
           -1,
           -1,
           -1,
-          0,
+          -1,
           -1,
           -1,
           -1,
@@ -437527,7 +437521,7 @@
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
           null,
-          "No source value was stored because the indicator request failed: NE.EXP.GNFS.CD. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
+          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
@@ -437725,7 +437719,7 @@
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
           "MISSING_OBSERVATION",
-          "SOURCE_REFRESH_FAILED",
+          "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
@@ -438596,7 +438590,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -440745,7 +440739,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -442859,7 +442853,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -444930,7 +444924,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -447080,7 +447074,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -449189,7 +449183,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -449478,7 +449472,7 @@
           5,
           4,
           4,
-          11,
+          5,
           5,
           5,
           5,
@@ -449577,7 +449571,7 @@
           -1,
           -1,
           -1,
-          0,
+          -1,
           -1,
           -1,
           -1,
@@ -449676,7 +449670,7 @@
           -1,
           -1,
           -1,
-          0,
+          -1,
           -1,
           -1,
           -1,
@@ -450072,7 +450066,7 @@
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
           null,
-          "No source value was stored because the indicator request failed: NE.EXP.GNFS.CD. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
+          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
@@ -450270,7 +450264,7 @@
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
           "MISSING_OBSERVATION",
-          "SOURCE_REFRESH_FAILED",
+          "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
@@ -451141,7 +451135,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -453225,7 +453219,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -455316,7 +455310,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -457533,7 +457527,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -457796,32 +457790,32 @@
           null
         ],
         "statusCodes": [
-          12,
-          1,
-          1,
-          1,
-          1,
-          1,
-          1,
-          1,
-          1,
-          5,
-          5,
-          5,
-          1,
-          2,
-          1,
-          1,
-          1,
-          3,
-          2,
-          5,
-          5,
-          3,
-          2,
-          1,
-          3,
           11,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          5,
+          5,
+          5,
+          1,
+          2,
+          1,
+          1,
+          1,
+          3,
+          2,
+          5,
+          5,
+          3,
+          2,
+          1,
+          3,
+          5,
           5,
           5,
           1,
@@ -457920,7 +457914,7 @@
           3,
           2,
           4,
-          0,
+          -1,
           -1,
           -1,
           2,
@@ -458019,7 +458013,7 @@
           3,
           2,
           4,
-          0,
+          -1,
           -1,
           -1,
           2,
@@ -458415,7 +458409,7 @@
           "Not independently revalidated against the named external series in this build.",
           "Not independently revalidated against the named external series in this build.",
           "Derived only when all source years match; source fields remain independently available.",
-          "No source value was stored because the indicator request failed: NE.EXP.GNFS.CD. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
+          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Not independently revalidated against the named external series in this build.",
@@ -458613,7 +458607,7 @@
           "LEGACY_SOURCE_NOT_REVALIDATED",
           "LEGACY_SOURCE_NOT_REVALIDATED",
           null,
-          "SOURCE_REFRESH_FAILED",
+          "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "LEGACY_SOURCE_NOT_REVALIDATED",
@@ -459599,7 +459593,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -461744,7 +461738,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -463827,7 +463821,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -465925,7 +465919,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -468050,7 +468044,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -470195,7 +470189,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -470460,32 +470454,32 @@
           null
         ],
         "statusCodes": [
-          12,
-          1,
-          1,
-          1,
-          1,
-          1,
-          1,
-          1,
-          1,
-          5,
-          5,
-          5,
-          1,
-          2,
-          1,
-          1,
-          1,
-          3,
-          2,
-          5,
-          5,
-          3,
-          2,
-          1,
-          3,
           11,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          5,
+          5,
+          5,
+          1,
+          2,
+          1,
+          1,
+          1,
+          3,
+          2,
+          5,
+          5,
+          3,
+          2,
+          1,
+          3,
+          5,
           5,
           5,
           1,
@@ -470584,7 +470578,7 @@
           3,
           2,
           4,
-          0,
+          -1,
           -1,
           -1,
           2,
@@ -470683,7 +470677,7 @@
           3,
           2,
           4,
-          0,
+          -1,
           -1,
           -1,
           2,
@@ -471079,7 +471073,7 @@
           "Not independently revalidated against the named external series in this build.",
           "Not independently revalidated against the named external series in this build.",
           "Derived only when all source years match; source fields remain independently available.",
-          "No source value was stored because the indicator request failed: NE.EXP.GNFS.CD. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
+          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Not independently revalidated against the named external series in this build.",
@@ -471277,7 +471271,7 @@
           "LEGACY_SOURCE_NOT_REVALIDATED",
           "LEGACY_SOURCE_NOT_REVALIDATED",
           null,
-          "SOURCE_REFRESH_FAILED",
+          "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "LEGACY_SOURCE_NOT_REVALIDATED",
@@ -472199,7 +472193,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -474294,7 +474288,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -474582,7 +474576,7 @@
           0,
           1,
           2,
-          11,
+          5,
           5,
           0,
           0,
@@ -474681,7 +474675,7 @@
           0,
           2,
           3,
-          0,
+          -1,
           -1,
           0,
           0,
@@ -474780,7 +474774,7 @@
           0,
           2,
           3,
-          0,
+          -1,
           -1,
           0,
           0,
@@ -475176,7 +475170,7 @@
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
           "Not independently revalidated against the named external series in this build.",
           "Not independently revalidated against the named external series in this build.",
-          "No source value was stored because the indicator request failed: NE.EXP.GNFS.CD. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
+          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
@@ -475374,7 +475368,7 @@
           null,
           "LEGACY_SOURCE_NOT_REVALIDATED",
           "LEGACY_SOURCE_NOT_REVALIDATED",
-          "SOURCE_REFRESH_FAILED",
+          "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           null,
           null,
@@ -476338,7 +476332,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -478481,7 +478475,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -480627,7 +480621,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -482735,7 +482729,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -483023,7 +483017,7 @@
           2,
           1,
           2,
-          11,
+          5,
           5,
           0,
           1,
@@ -483122,7 +483116,7 @@
           3,
           2,
           3,
-          0,
+          -1,
           -1,
           0,
           2,
@@ -483221,7 +483215,7 @@
           3,
           2,
           3,
-          0,
+          -1,
           -1,
           0,
           2,
@@ -483617,7 +483611,7 @@
           "Not independently revalidated against the named external series in this build.",
           "Not independently revalidated against the named external series in this build.",
           "Not independently revalidated against the named external series in this build.",
-          "No source value was stored because the indicator request failed: NE.EXP.GNFS.CD. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
+          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
           "Not independently revalidated against the named external series in this build.",
@@ -483815,7 +483809,7 @@
           "LEGACY_SOURCE_NOT_REVALIDATED",
           "LEGACY_SOURCE_NOT_REVALIDATED",
           "LEGACY_SOURCE_NOT_REVALIDATED",
-          "SOURCE_REFRESH_FAILED",
+          "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           null,
           "LEGACY_SOURCE_NOT_REVALIDATED",
@@ -484714,7 +484708,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -485005,7 +484999,7 @@
           2,
           1,
           2,
-          11,
+          5,
           5,
           0,
           1,
@@ -485104,7 +485098,7 @@
           3,
           2,
           3,
-          0,
+          -1,
           -1,
           0,
           2,
@@ -485203,7 +485197,7 @@
           3,
           2,
           3,
-          0,
+          -1,
           -1,
           0,
           2,
@@ -485599,7 +485593,7 @@
           "Not independently revalidated against the named external series in this build.",
           "Not independently revalidated against the named external series in this build.",
           "Not independently revalidated against the named external series in this build.",
-          "No source value was stored because the indicator request failed: NE.EXP.GNFS.CD. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
+          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
           "Not independently revalidated against the named external series in this build.",
@@ -485797,7 +485791,7 @@
           "LEGACY_SOURCE_NOT_REVALIDATED",
           "LEGACY_SOURCE_NOT_REVALIDATED",
           "LEGACY_SOURCE_NOT_REVALIDATED",
-          "SOURCE_REFRESH_FAILED",
+          "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           null,
           "LEGACY_SOURCE_NOT_REVALIDATED",
@@ -486801,7 +486795,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -488950,7 +488944,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -491091,7 +491085,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -493191,7 +493185,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -495292,7 +495286,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -497391,7 +497385,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -497679,7 +497673,7 @@
           5,
           4,
           4,
-          11,
+          5,
           5,
           5,
           5,
@@ -497778,7 +497772,7 @@
           -1,
           -1,
           -1,
-          0,
+          -1,
           -1,
           -1,
           -1,
@@ -497877,7 +497871,7 @@
           -1,
           -1,
           -1,
-          0,
+          -1,
           -1,
           -1,
           -1,
@@ -498273,7 +498267,7 @@
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
           null,
-          "No source value was stored because the indicator request failed: NE.EXP.GNFS.CD. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
+          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
@@ -498471,7 +498465,7 @@
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
           "MISSING_OBSERVATION",
-          "SOURCE_REFRESH_FAILED",
+          "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
@@ -499342,7 +499336,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -501411,7 +501405,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -503548,7 +503542,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -505654,7 +505648,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -507788,7 +507782,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -509876,7 +509870,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -510164,7 +510158,7 @@
           2,
           1,
           3,
-          11,
+          5,
           5,
           5,
           1,
@@ -510263,7 +510257,7 @@
           3,
           2,
           4,
-          0,
+          -1,
           -1,
           -1,
           2,
@@ -510362,7 +510356,7 @@
           3,
           2,
           4,
-          0,
+          -1,
           -1,
           -1,
           2,
@@ -510758,7 +510752,7 @@
           "Not independently revalidated against the named external series in this build.",
           "Not independently revalidated against the named external series in this build.",
           "Derived only when all source years match; source fields remain independently available.",
-          "No source value was stored because the indicator request failed: NE.EXP.GNFS.CD. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
+          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Not independently revalidated against the named external series in this build.",
@@ -510956,7 +510950,7 @@
           "LEGACY_SOURCE_NOT_REVALIDATED",
           "LEGACY_SOURCE_NOT_REVALIDATED",
           null,
-          "SOURCE_REFRESH_FAILED",
+          "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "LEGACY_SOURCE_NOT_REVALIDATED",
@@ -511840,7 +511834,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -513850,7 +513844,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -514113,32 +514107,32 @@
           null
         ],
         "statusCodes": [
-          12,
-          1,
-          1,
-          1,
-          1,
-          1,
-          1,
-          1,
-          1,
-          5,
-          5,
-          5,
-          1,
-          2,
-          1,
-          1,
-          1,
-          3,
-          2,
-          5,
-          5,
-          3,
-          2,
-          1,
-          3,
           11,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          5,
+          5,
+          5,
+          1,
+          2,
+          1,
+          1,
+          1,
+          3,
+          2,
+          5,
+          5,
+          3,
+          2,
+          1,
+          3,
+          5,
           5,
           5,
           1,
@@ -514237,7 +514231,7 @@
           3,
           2,
           4,
-          0,
+          -1,
           -1,
           -1,
           2,
@@ -514336,7 +514330,7 @@
           3,
           2,
           4,
-          0,
+          -1,
           -1,
           -1,
           2,
@@ -514732,7 +514726,7 @@
           "Not independently revalidated against the named external series in this build.",
           "Not independently revalidated against the named external series in this build.",
           "Derived only when all source years match; source fields remain independently available.",
-          "No source value was stored because the indicator request failed: NE.EXP.GNFS.CD. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
+          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Not independently revalidated against the named external series in this build.",
@@ -514930,7 +514924,7 @@
           "LEGACY_SOURCE_NOT_REVALIDATED",
           "LEGACY_SOURCE_NOT_REVALIDATED",
           null,
-          "SOURCE_REFRESH_FAILED",
+          "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "LEGACY_SOURCE_NOT_REVALIDATED",
@@ -515855,7 +515849,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -516153,7 +516147,7 @@
           2,
           1,
           3,
-          11,
+          5,
           5,
           5,
           1,
@@ -516252,7 +516246,7 @@
           3,
           2,
           4,
-          0,
+          -1,
           -1,
           -1,
           2,
@@ -516351,7 +516345,7 @@
           3,
           2,
           4,
-          0,
+          -1,
           -1,
           -1,
           2,
@@ -516747,7 +516741,7 @@
           "Not independently revalidated against the named external series in this build.",
           "Not independently revalidated against the named external series in this build.",
           "Derived only when all source years match; source fields remain independently available.",
-          "No source value was stored because the indicator request failed: NE.EXP.GNFS.CD. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
+          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Not independently revalidated against the named external series in this build.",
@@ -516945,7 +516939,7 @@
           "LEGACY_SOURCE_NOT_REVALIDATED",
           "LEGACY_SOURCE_NOT_REVALIDATED",
           null,
-          "SOURCE_REFRESH_FAILED",
+          "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "LEGACY_SOURCE_NOT_REVALIDATED",
@@ -517973,7 +517967,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -520168,7 +520162,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -522258,7 +522252,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
@@ -524448,7 +524442,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "PARTIAL_OR_FAILED",
+          "LOADED",
           "LOADED",
           "LOADED"
         ]
