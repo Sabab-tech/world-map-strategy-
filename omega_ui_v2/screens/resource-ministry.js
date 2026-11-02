@@ -805,12 +805,14 @@
       var baselineRow = factoryInputBaselineRowFor(resourceId);
       var marker = gameResource.factoryInputBaselineV1 && typeof gameResource.factoryInputBaselineV1 === 'object'
         ? gameResource.factoryInputBaselineV1 : {};
+      var targetMap = gameResource.resourceStockCoverageTargetDays ||
+        gameResource.stockCoverageTargetDaysByResource || {};
+      var targetKey = Object.keys(targetMap).find(function (key) {
+        return key.toLowerCase() === String(resourceId || '').trim().toLowerCase();
+      });
       var candidates = [
         runtimeRow && runtimeRow.stockCoverageTargetDays,
-        runtimeRow && runtimeRow.stockCoverageTargetDays,
-        baselineRow && baselineRow.targetCoverageDays,
-        marker.targetCoverageDays,
-        gameResource.factoryInputCoverageDays
+        targetKey ? targetMap[targetKey] : null
       ];
       for (var i = 0; i < candidates.length; i += 1) {
         var days = numberOrNull(candidates[i]);
@@ -1012,7 +1014,7 @@
         var profile = runtime && typeof runtime.resolveCountry === 'function' ? runtime.resolveCountry(code) : null;
         if (profile) {
           var name = String(profile.name || profile.shortName || profile.officialName || '').trim();
-          if (name && name.toUpperCase() !== code) return name + ' (' + code + ')';
+          if (name && name.toUpperCase() !== code) return name;
         }
       } catch (_) {}
       var engineProfiles = g.ResourceMinistryEngine && g.ResourceMinistryEngine.countryProfiles;
@@ -1020,7 +1022,7 @@
       var identity = profile && (profile.identity || profile.country || profile) || {};
       var name = String(identity.name || identity.countryName || identity.officialName ||
         profile && (profile.name || profile.countryName) || '').trim();
-      return name && name.toUpperCase() !== code ? name + ' (' + code + ')' : code;
+      return name && name.toUpperCase() !== code ? name : code;
     }
     function sourceSummaryFor(resourceId, unit, currentStock) {
       var domesticMine = 0, openingAllocation = 0, unknown = 0, tracked = 0;
@@ -1304,15 +1306,16 @@
         '<div class="omega-v2-inventory-resource-head"><span class="omega-v2-inventory-resource-icon">' +
         resourceIconMarkup(rid, resourceLabel(rid)) + '</span><div class="omega-v2-inventory-resource-name"><h3>' +
         esc(resourceLabel(rid)) + '</h3><small>Natural resource · Raw warehouse</small></div>' +
-        '<span class="omega-v2-inventory-status-badge omega-v2-stock-status" data-state="' + esc(state.state) + '">' +
-        esc(state.label) + '</span></div>' +
+        '</div>' +
         '<div class="omega-v2-inventory-resource-metrics">' +
         '<div><span>Current stock</span><strong class="omega-v2-current-stock-cell">' +
         (currentStock === null ? 'Not recorded' : amount(currentStock, unit)) + '</strong></div>' +
         '<div><span>Daily demand</span><strong>' +
         (demand === null ? 'Not recorded' : amount(demand, resourceDemandUnit(rid, unit))) + '</strong></div>' +
         '<div><span>Coverage</span><strong>' + esc(state.coverageLabel) + '</strong></div>' +
-        '</div>' +
+        '</div><div class="omega-v2-inventory-status-line">' +
+        '<span class="omega-v2-inventory-status-badge omega-v2-stock-status" data-state="' + esc(state.state) + '">' +
+        '<strong>Status</strong>' + esc(state.label) + '</span></div>' +
         (state.targetNote ? '<div class="omega-v2-inventory-target-note">' + esc(state.targetNote) + '</div>' : '') +
         '<div class="omega-v2-inventory-resource-origin"><span class="omega-v2-inventory-origin-heading">Supply source</span>' +
         '<div class="omega-v2-inventory-origin-list">' + state.origin + '</div></div></article>';
@@ -1350,7 +1353,7 @@
       '<span class="omega-v2-status" data-state="operational">' + fmt(rawInventoryKeys.length) + ' resource identities</span></div>' +
       rawInventoryCardsMarkup + '</section>';
     var processedInventorySectionMarkup = '<section class="omega-v2-card omega-v2-processed-inventory-section">' +
-      '<div class="omega-v2-card-header"><div><h2>Processed Goods Warehouse</h2><p>Processed industrial goods only. These balances are never added to raw-resource stock.</p></div>' +
+      '<div class="omega-v2-card-header"><div><h2>Processed Goods Warehouse</h2><p>Factory-produced intermediate and finished goods only. These balances are never added to raw-resource stock.</p></div>' +
       '<span class="omega-v2-status" data-state="neutral">' + fmt(processedInventoryKeys.length) + ' product balances</span></div>' +
       processedGoodsCardsMarkup + '</section>';
     var rawInventoryRows = inventoryRows.filter(function (row) {
