@@ -253,14 +253,14 @@ test('large world GeoJSON is rendered incrementally rather than monopolizing the
   assert.match(renderer, /renderOptions\.renderer = L\.canvas\(\{ padding: 0\.5 \}\)/,
     'the shared Canvas renderer should be attached to the canonical GeoJSON layer options');
   assert.match(renderer, /CHUNK_THRESHOLD\s*=\s*24/);
-  assert.match(map, /isConstrainedDevice\(\)/,
+  assert.match(source, /isConstrainedDevice\(\)/,
     'low-memory and mobile devices should be detected without hardcoding a device model');
   assert.match(renderer, /smoothFactor:\s*constrainedMapDevice\s*\?\s*1\.5\s*:\s*1\.2/);
   assert.match(renderer, /MAX_FEATURES_PER_FRAME\s*=\s*constrainedMapDevice\s*\?\s*1\s*:\s*8/);
   assert.match(renderer, /FRAME_BUDGET_MS\s*=\s*constrainedMapDevice\s*\?\s*4\s*:\s*7/);
   assert.match(renderer, /progressTime\s*-\s*lastProgressAt\s*>=\s*100/,
     'mobile progress updates should be coalesced rather than writing to the DOM every frame');
-  assert.match(map, /RELATION_COUNTRIES_PER_FRAME\s*=\s*this\.isConstrainedDevice\(\)\s*\?\s*1\s*:\s*2/);
+  assert.match(source, /RELATION_COUNTRIES_PER_FRAME\s*=\s*this\.isConstrainedDevice\(\)\s*\?\s*1\s*:\s*2/);
   assert.match(renderer, /requestAnimationFrame\(addFeatureChunk\)/);
   assert.match(renderer, /addFeatureSafely\(featureCollection\[nextFeature\],\s*nextFeature\)/,
     'isolated bad country geometry must be caught without abandoning the remaining world features');
@@ -410,7 +410,7 @@ test('map and ministry rendering stay responsive and scoped to the selected coun
     'country-name keyed economy buckets must resolve from the selected ISO3 country');
   assert.ok(map.includes('generateAllBilateralRelations(countrySubset)'),
     'relation generation must support a small source-country slice');
-  assert.ok(map.includes('RELATION_COUNTRIES_PER_FRAME = 2'));
+  assert.ok(map.includes('RELATION_COUNTRIES_PER_FRAME = this.isConstrainedDevice() ? 1 : 2'));
   assert.ok(map.includes('generateAllBilateralRelations(chunk)'));
   assert.ok(map.includes('allCountries.forEach(c2 => {'),
     'each selected source country still calculates relations to the complete country roster');
