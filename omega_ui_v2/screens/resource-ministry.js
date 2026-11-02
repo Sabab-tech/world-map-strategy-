@@ -431,9 +431,7 @@
     });
   }
 
-  function countrySelectMarkup(currentCountry) {
-    // Resolve only the selected player's identity. Do not enumerate other
-    // countries' economy/resource buckets just to paint this label.
+  function playerCountryDisplayName(currentCountry) {
     var profile = null, runtime = g.OmegaCountryRuntimeData || (g.Omega && g.Omega.CountryRuntimeData);
     try {
       if (runtime && typeof runtime.resolveCountry === 'function') profile = runtime.resolveCountry(currentCountry);
@@ -444,8 +442,13 @@
       profile = profiles && (profiles[currentCountry] || profiles[String(currentCountry).toLowerCase()]) || null;
     }
     var identity = profile && (profile.identity || profile.country || profile) || {};
-    var name = String(identity.officialName || identity.countryName || identity.name ||
+    return String(identity.officialName || identity.countryName || identity.name ||
       profile && (profile.officialName || profile.countryName || profile.name) || currentCountry || 'Not selected');
+  }
+
+  function countrySelectMarkup(currentCountry) {
+    // Resolve only the selected player's identity; never enumerate the country roster.
+    var name = playerCountryDisplayName(currentCountry);
     return '<div class="omega-v2-resource-country-select" aria-label="Active player country">' +
       '<span>Player country</span><strong>' + esc(name + (currentCountry ? ' (' + currentCountry + ')' : '')) + '</strong></div>';
   }
@@ -1187,11 +1190,7 @@
         esc(value) + '</strong><small>' + esc(meta || '') + '</small></div>';
     }
     var outputHeadline = sumUnitGroups(currentOutputGroups);
-    var heroCountry = g.OmegaCountryRuntimeData && typeof g.OmegaCountryRuntimeData.resolveCountry === 'function'
-      ? g.OmegaCountryRuntimeData.resolveCountry(countryKey) : null;
-    var rosterCountry = countryRoster(countryKey).find(function (row) { return row.id === countryKey; });
-    var countryLabel = String(heroCountry && (heroCountry.officialName || heroCountry.name || heroCountry.countryName) ||
-      rosterCountry && rosterCountry.name || countryKey || 'Selected country');
+    var countryLabel = playerCountryDisplayName(countryKey);
     var dashMarkup = photoMarkup + '<div class="omega-v2-kpis omega-v2-resource-command-kpis">' +
       renderKpi('Registered mines', String(model.sites.filter(eligible).length), model.sites.length + ' sites', 'neutral') +
       renderKpi('Producing now', String(producingSites.length), 'Recorded this turn', portfolioBalanceState) +
@@ -1230,6 +1229,25 @@
     }
     var stockTable = inventoryKeys.length ? '<div class="omega-v2-table-wrap"><table><thead><tr><th>Resource</th><th>Current Stock</th><th>Raw warehouse</th><th>Processed warehouse</th><th>In</th><th>Out</th><th>Target gap</th></tr></thead><tbody>' +
       inventoryKeys.map(stockRow).join('') + '</tbody></table></div>' : '<div class="omega-v2-empty">No warehouse balances have been recorded.</div>';
+    // Overview must show actual recorded player stock immediately. Do not
+    // substitute planned targets or inferred reserve quantities for balances.
+    var dashboardStockRows = inventoryKeys.map(function (rid) {
+      var currentStock = currentStockFor(rid, stockFor(rid, rawStock), stockFor(rid, finishedStock));
+      if (currentStock === null) return '';
+      return '<tr data-resource-id="' + esc(rid) + '"><td>' +
+        resourceIconMarkup(rid, resourceLabel(rid)) + esc(resourceLabel(rid)) +
+        '</td><td class="omega-v2-current-stock-cell">' + amount(currentStock, resourceUnit(rid)) + '</td></tr>';
+    }).filter(Boolean);
+    var dashboardStockMarkup = '<section class="omega-v2-card omega-v2-movement-card omega-v2-dashboard-stock">' +
+      '<div class="omega-v2-card-header"><div><h2>Current Stock</h2><p>Recorded opening stock and live balances for ' +
+      esc(countryKey) + '</p></div><span class="omega-v2-status" data-state="' +
+      (dashboardStockRows.length ? 'operational' : 'attention') + '">' + fmt(dashboardStockRows.length) + ' stocked products</span></div>' +
+      (dashboardStockRows.length
+        ? '<div class="omega-v2-table-wrap"><table><thead><tr><th>Resource / Product</th><th>Current Stock</th></tr></thead><tbody>' +
+          dashboardStockRows.join('') + '</tbody></table></div>'
+        : '<div class="omega-v2-empty">No recorded current stock is available for this player country.</div>') +
+      '</section>';
+    dashMarkup += dashboardStockMarkup;
     var startupBaselineRuntime = g.OmegaResourceStartupBaseline || g.Omega && g.Omega.ResourceStartupBaseline || null;
     var stockTargetDays = null;
     try {
