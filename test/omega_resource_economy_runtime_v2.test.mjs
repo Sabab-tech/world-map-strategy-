@@ -158,6 +158,7 @@ function createContext(){
     addEventListener:events.addEventListener.bind(events),
     removeEventListener:events.removeEventListener.bind(events),
     dispatchEvent:events.dispatchEvent.bind(events),
+    requestAnimationFrame(){return 1;},
     Game:{state:worldState,playerCountryId:'BGD'},
     gameState:worldState,
     OmegaCanonicalIdentityRegistry:countryRegistry,
