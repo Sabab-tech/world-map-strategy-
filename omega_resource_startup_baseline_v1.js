@@ -1885,17 +1885,10 @@
     if (!playerCountryId || playerCountryId === 'GLOBAL' || playerCountryId === 'WORLD') {
       return { status: 'BLOCKED', reason: 'PLAYER_COUNTRY_NOT_SELECTED' };
     }
-    // Starting factories must register first, so the resource pipeline joins the same live asset registry.
-    await ensureCountryFactoryStartingBaseline(currentSession || session);
-    if (!isSessionEligible(state, currentSession || session)) {
-      return initializeCurrentCountryBaseline(state, currentSession || session, expectedSessionId || playerCountryId);
-    }
-    var key = expectedSessionId || playerCountryId + ':T' + currentTurn(state);
-    if (running[key]) return running[key];
-    running[key] = runNewGameBaseline(state, currentSession || session, key).finally(function () {
-      delete running[key];
-    });
-    return running[key];
+    // The game session owns one live country runtime. The 197-country factory
+    // and resource baselines remain static source data and are materialized only
+    // for this player's country, never by a world-wide startup loop.
+    return ensurePlayerCountryBaseline(playerCountryId);
   }
   async function runNewGameBaseline(state, session, runKey) {
     var turn = currentTurn(state);
