@@ -47,11 +47,11 @@ test('startup schedules one core initialization during idle time and supplementa
   assert.match(scheduler, /initialize\(\{coreOnly:true\}\)/);
 });
 
-test('player extraction and site binding use core data without waiting for optional research packs', () => {
+test('site binding uses core data while production and turn extraction retain full readiness checks', () => {
   const startProduction = section('async function startCountryProduction', 'function extractAll()');
-  assert.match(startProduction, /initialize\(\{coreOnly:true\}\)/);
+  assert.match(startProduction, /const initialized=await initialize\(\)/);
   const turnExtraction = section('function extractAll()', 'function onReady()');
-  assert.match(turnExtraction, /initialize\(\{coreOnly:true\}\)/);
+  assert.match(turnExtraction, /const initialized=await initialize\(\)/);
   const bindingBootstrap = section('function onSiteBindingReady()', 'function diagnostics()');
   assert.match(bindingBootstrap, /initialize\(\{coreOnly:true\}\)/);
 });
