@@ -198,7 +198,7 @@ test("inventory displays the canonical 41 resources and aggregate balances when 
   }
 });
 
-test("inventory rows show current stock coverage and shortage/surplus without extra source panels", async () => {
+test("inventory cards show current stock coverage, provenance and shortage/surplus without counting mine-side stock", async () => {
   const api = globalThis.OmegaUIV2ResourceMinistry;
   const rules = json("resource_economy_rules.json");
   const resources = Object.keys(rules.demand.resourceProfiles).map((resourceId) => {
@@ -296,8 +296,14 @@ test("inventory rows show current stock coverage and shortage/surplus without ex
     assert.match(root.innerHTML, /5 days/, "125 tonnes at 25 tonnes/day must cover five days");
     assert.match(root.innerHTML, /Surplus/, "stock above its runtime target must be shown as surplus");
     assert.match(root.innerHTML, /Shortage/, "runtime shortage status must be retained");
-    assert.doesNotMatch(root.innerHTML, /Domestic mine|Foreign import|Supply source|AUS/,
-      "additional source/provenance panels are not displayed in the simplified stock screen");
+    assert.match(root.innerHTML, /Domestic mine/,
+      "on-hand raw inventory shows domestic mine provenance");
+    assert.match(root.innerHTML, /Foreign import/,
+      "on-hand imported raw inventory is identified by source type");
+    assert.match(root.innerHTML, /Supply source/,
+      "raw-resource cards expose their supply-source section");
+    assert.match(root.innerHTML, /AUS/,
+      "import supplier identity is retained in the supply-source details");
     assert.doesNotMatch(root.innerHTML, /Batch ledger exceeds current stock by: 70/,
       "mine-side extraction must not be counted as current stock before warehouse receipt");
     assert.equal(globalThis.Game.state.resource.BGD.batches[0].transferType, "LOCAL_EXTRACTION",
@@ -1074,8 +1080,16 @@ test("Resource Ministry shows only canonical raw stock and preserves factory inp
     assert.match(root.innerHTML,/Current Stock/,
       "the default ministry overview must expose current stock without opening another tab");
     assert.match(root.innerHTML,/1,234(?:\.00)? TONNES/);
-    assert.doesNotMatch(root.innerHTML,/steel|5,678/i,
+    const rawSectionStart = root.innerHTML.indexOf("data-omega-v2-raw-resource-inventory");
+    const processedSectionStart = root.innerHTML.indexOf("data-omega-v2-processed-goods-inventory");
+    assert.ok(rawSectionStart >= 0 && processedSectionStart > rawSectionStart,
+      "the overview must render separate raw and processed warehouse sections");
+    const rawSection = root.innerHTML.slice(rawSectionStart, processedSectionStart);
+    const processedSection = root.innerHTML.slice(processedSectionStart);
+    assert.doesNotMatch(rawSection,/steel|5,678/i,
       "factory input products are not added to the national raw-resource stock display");
+    assert.doesNotMatch(processedSection,/steel|5,678/i,
+      "a factory-input baseline or aggregate legacy balance is not promoted into processed warehouse stock");
     assert.equal(globalThis.Omega.SimulationRuntime.world.state.resource.BGD.factoryInputBaselineV1.stockRows[0].quantity, 5678,
       "the existing factory input baseline stays intact in authoritative game state");
     assert.match(root.innerHTML,/Raw resource types|Current Stock/);
