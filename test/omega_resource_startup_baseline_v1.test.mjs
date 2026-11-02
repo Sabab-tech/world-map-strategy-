@@ -506,3 +506,23 @@ test('configured factory input coverage changes top up only the shortfall and st
   assert.equal(JSON.stringify(resource.inventory), afterUpgrade,
     're-entering the same configured coverage window cannot credit the top-up twice');
 });
+
+test('startup baseline data requests fail with a bounded timeout instead of leaving the ministry pending forever', async () => {
+  const context = {
+    console,
+    module: { exports: {} },
+    AbortController,
+    fetch: () => new Promise(() => {}),
+    setTimeout(callback) {
+      callback();
+      return 1;
+    },
+    clearTimeout() {}
+  };
+  context.globalThis = context;
+  vm.runInNewContext(runtimeSource, context, { filename: 'omega_resource_startup_baseline_v1.js' });
+  const result = await context.module.exports.init();
+  assert.equal(result.status, 'BLOCKED');
+  assert.match(result.reason, /STARTUP_BASELINE_FETCH_TIMEOUT:/,
+    'a stalled source request must return a concrete timeout reason');
+});
