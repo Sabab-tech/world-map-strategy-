@@ -869,7 +869,7 @@ test('fifty factories receive proportional input when the country warehouse is s
   assert.equal(resource.batches.filter(row => row.stage === 'FINISHED' && row.resourceId === 'IRON_CONCENTRATE').length, 50);
 });
 
-test('factory productivity is calculated from live supply ratios and each factory capacity', () => {
+test('factory productivity is calculated from live supply ratios and each factory capacity', async () => {
   const scenarios = [
     { name: '40 percent supply', capacities: [1, 1, 1, 1, 1], supply: 0.4 },
     { name: '65 percent supply', capacities: [1, 1, 1, 1, 1], supply: 0.65 },
@@ -943,7 +943,7 @@ test('factory productivity is calculated from live supply ratios and each factor
 });
 
 
-test('factory output follows the minimum live bottleneck across materials, workforce, electricity and water', () => {
+test('factory output follows the minimum live bottleneck across materials, workforce, electricity and water', async () => {
   const scenarios = [
     { name: 'workforce-limited', materialRatio: 1, workforceRatio: 0.8, electricityRatio: 1, waterRatio: 1, expectedRatio: 0.8 },
     { name: 'electricity-limited', materialRatio: 1, workforceRatio: 1, electricityRatio: 0.7, waterRatio: 0.9, expectedRatio: 0.7 },
@@ -1036,7 +1036,7 @@ test('multi-input factory reduces the live production quantity for workforce and
   assert.equal(result.productionConstraints.effectiveRatio, 0.5);
   assert.equal(asset.productionHealth.productivityPct, 50);
 });
-test('future-dated paused factory does not take stock allocation from ready factories', () => {
+test('future-dated paused factory does not take stock allocation from ready factories', async () => {
   const { context, api } = makeRuntime();
   const paused = {
     id: 'FAC-PAUSED-FUTURE', countryId: 'BGD',
@@ -1107,7 +1107,7 @@ test('future-dated paused factory does not take stock allocation from ready fact
   assert.equal(resource.warehouse.availableByResource.iron_ore, 0);
 });
 
-test('factory production scheduler waits for cycle time and posts output only on the game-calendar finish date', () => {
+test('factory production scheduler waits for cycle time and posts output only on the game-calendar finish date', async () => {
   const { context, api } = makeRuntime();
   const asset = makeSteelAsset();
   context.Game.state.simulation.date = '2015-01-01';
@@ -1158,7 +1158,7 @@ test('factory production scheduler waits for cycle time and posts output only on
   assert.equal(asset.productionHealth.productivityPct, 50);
 });
 
-test('warehouse feeder transfers real tracked stock and schedules proportional partial factory production', () => {
+test('warehouse feeder transfers real tracked stock and schedules proportional partial factory production', async () => {
   const { context, api } = makeRuntime();
   const asset = makeSteelAsset({ inputInventory: {}, inputBatchLots: [] });
   context.Game.state.simulation.date = '2015-01-01';
@@ -1201,7 +1201,7 @@ test('warehouse feeder transfers real tracked stock and schedules proportional p
   assert.equal(r.inventory.STEEL, 28.8);
 });
 
-test('factory production health stops at zero required input and retains unconverted factory stock', () => {
+test('factory production health stops at zero required input and retains unconverted factory stock', async () => {
   const { context, api } = makeRuntime();
   const asset = makeSteelAsset({ inputInventory: { iron_concentrate: 60, coal_concentrate: 0, cement_feed: 10, copper_concentrate: 10 } });
   asset.inputBatchLots = asset.inputBatchLots.filter(row => row.resourceId !== 'coal_concentrate');
@@ -1230,7 +1230,7 @@ test('factory UI keeps warning lamps compact and exposes month/date and producti
 });
 
 
-test('paused factory cycle resumes from new warehouse batches at the reduced attainable productivity', () => {
+test('paused factory cycle resumes from new warehouse batches at the reduced attainable productivity', async () => {
   const { context, catalog, api } = makeRuntime();
   const asset = makeSteelAsset();
   context.Game.state.simulation.date = '2015-01-01';
@@ -1438,7 +1438,7 @@ test('legacy and primary factory runtimes reserve shared utilities before anothe
 });
 
 
-test('all canonical factory types have executable catalog recipes and multi-route cycles preserve the selected recipe through warehouse completion', () => {
+test('all canonical factory types have executable catalog recipes and multi-route cycles preserve the selected recipe through warehouse completion', async () => {
   const { context, catalog, api } = makeRuntime();
   const profileTypes = Object.keys(catalog.factoryProfiles || {});
   assert.equal(profileTypes.length, 21, 'the existing canonical factory catalogue must remain at 21 types');
