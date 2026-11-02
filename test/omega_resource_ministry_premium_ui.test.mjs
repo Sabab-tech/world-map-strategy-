@@ -110,7 +110,7 @@ test("inventory rows show current stock coverage, shortage/surplus and verified 
     const profile = rules.demand.resourceProfiles[resourceId] || {};
     return {
       resourceId,
-      name: resourceId.replace(/[_-]+/g, " ").replace(/\\b\\w/g, (ch) => ch.toUpperCase()),
+      name: resourceId.replace(/[_-]+/g, " ").replace(/\b\w/g, (ch) => ch.toUpperCase()),
       unit: String(profile.unit || "").replace(/_PER_DAY$/i, "") || "TONNES",
       demandUnit: profile.unit || "TONNES_PER_DAY",
       profileKnown: true
@@ -883,7 +883,7 @@ test("Resource Ministry is locked to the selected player country", () => {
     assert.equal(first.ok, true);
     assert.doesNotMatch(root.innerHTML, /data-omega-v2-resource-country/,
       "resource country is a fixed player-country label, not a browse selector");
-    assert.match(root.innerHTML, /Bangladesh \\(BGD\\)/);
+    assert.match(root.innerHTML, /Bangladesh \(BGD\)/);
     assert.doesNotMatch(root.innerHTML, /United States \\(USA\\)/);
     assert.match(root.innerHTML, /Bangladesh Coal Mine/);
     assert.doesNotMatch(root.innerHTML, /United States Coal Mine/);
@@ -894,12 +894,12 @@ test("Resource Ministry is locked to the selected player country", () => {
         matches(selector) { return selector === "[data-omega-v2-resource-country]"; }
       }
     });
-    assert.match(root.innerHTML, /Bangladesh \\(BGD\\)/,
+    assert.match(root.innerHTML, /Bangladesh \(BGD\)/,
       "a stale selector event cannot switch the ministry to another country");
     assert.doesNotMatch(root.innerHTML, /United States Coal Mine/);
     assert.equal(JSON.stringify(globalThis.Game.state.resource.USA), foreignStateBefore,
       "foreign-country state remains untouched");
-    assert.doesNotMatch(root.innerHTML.replace(/<[^>]*>/g, " "), /\\bSIMULATED\\b/i);
+    assert.doesNotMatch(root.innerHTML.replace(/<[^>]*>/g, " "), /\bSIMULATED\b/i);
   } finally {
     if (priorGame === undefined) delete globalThis.Game; else globalThis.Game = priorGame;
     if (priorResourceEngine === undefined) delete globalThis.ResourceMinistryEngine;
@@ -922,7 +922,7 @@ test("Resource Ministry loads only the selected player's current inventory and u
   const calls = [];
   const rules = json("resource_economy_rules.json");
   const catalog = Object.keys(rules.demand.resourceProfiles).map((resourceId) => ({
-    resourceId, name:resourceId.replace(/[_-]+/g," ").replace(/\\b\\w/g,ch => ch.toUpperCase()),
+    resourceId, name:resourceId.replace(/[_-]+/g," ").replace(/\b\w/g,ch => ch.toUpperCase()),
     unit:"TONNES", profileKnown:true
   }));
   const root = {
@@ -973,8 +973,8 @@ test("Resource Ministry loads only the selected player's current inventory and u
     await new Promise(resolve => setTimeout(resolve,0));
     assert.deepEqual(calls,["BGD"]);
     assert.match(root.innerHTML,/Current Stock/);
-    assert.match(root.innerHTML,/1,234(?:\\.00)? TONNES/);
-    assert.match(root.innerHTML,/Bangladesh \\(BGD\\)/);
+    assert.match(root.innerHTML,/1,234(?:\.00)? TONNES/);
+    assert.match(root.innerHTML,/Bangladesh \(BGD\)/);
     assert.doesNotMatch(root.innerHTML,/United States Mine|999,999/);
     const unloaded = api.unload(root);
     assert.equal(unloaded.ok,true);
