@@ -979,8 +979,25 @@
       : Array.from(new Set(distinctResources.concat(Object.keys(rawStock)).map(function (rid) {
           return String(rid || '').trim().toLowerCase();
         }).filter(Boolean))).sort();
-    var processedInventoryKeys = Object.keys(finishedStock).filter(function (rid) {
-      return val(finishedStock[rid]) > 0;
+    // Legacy saves may keep an industrial-input quantity in aggregate inventory
+    // while its processed-warehouse projection is absent. Only restore products
+    // explicitly named by the factory-input baseline and never canonical raw IDs.
+    var processedStockDisplay = Object.assign({}, finishedStock);
+    var processedStockFallbackIds = Object.create(null);
+    var factoryInputStockRows = safeArray(gameResource.factoryInputBaselineV1 && gameResource.factoryInputBaselineV1.stockRows);
+    factoryInputStockRows.forEach(function (row) {
+      var productId = String(row && (row.productId || row.resourceId) || '').trim().toLowerCase();
+      var stage = String(row && row.stage || '').trim().toUpperCase();
+      if (!productId || canonicalRawResourceIds.indexOf(productId) >= 0 || stage === 'RAW') return;
+      var alreadyProjected = Object.keys(finishedStock).some(function (key) { return key.toLowerCase() === productId; });
+      if (alreadyProjected) return;
+      var inventoryKey = Object.keys(inventory).find(function (key) { return key.toLowerCase() === productId; });
+      if (!inventoryKey || val(inventory[inventoryKey]) === null) return;
+      processedStockDisplay[productId] = inventory[inventoryKey];
+      processedStockFallbackIds[productId] = true;
+    });
+    var processedInventoryKeys = Object.keys(processedStockDisplay).filter(function (rid) {
+      return val(processedStockDisplay[rid]) > 0;
     }).sort();
     var inventoryKeys = rawInventoryKeys.slice();
     var movementIn = Object.create(null), movementOut = Object.create(null);
@@ -1352,14 +1369,17 @@
         'Industrial product');
     }
     function processedProductCard(productId) {
-      var quantity = stockFor(productId, finishedStock);
+      var quantity = stockFor(productId, processedStockDisplay);
       var productUnit = '';
-      var unitMap = processedWarehouse.unitsByProduct || processedWarehouse.inventoryUnits || {};
+      var unitMap = processedWarehouse.unitsByProduct || processedWarehouse.inventoryUnits || inventoryUnits;
       var unitKey = Object.keys(unitMap).find(function (key) { return key.toLowerCase() === String(productId).toLowerCase(); });
       if (unitKey) productUnit = String(unitMap[unitKey] || '');
+      var stockOriginLabel = processedStockFallbackIds[String(productId || '').toLowerCase()]
+        ? 'Recorded factory-input product stock'
+        : 'Finished goods · Processed warehouse';
       return '<article class="omega-v2-inventory-product-card" data-product-id="' + esc(productId) + '">' +
         '<div class="omega-v2-inventory-product-art">' + resourceIconMarkup(productId, processedProductLabel(productId)) + '</div>' +
-        '<div class="omega-v2-inventory-product-copy"><span>Finished goods · Processed warehouse</span><h3>' +
+        '<div class="omega-v2-inventory-product-copy"><span>' + esc(stockOriginLabel) + '</span><h3>' +
         esc(processedProductLabel(productId)) + '</h3><strong>' +
         (quantity === null ? 'Not recorded' : amount(quantity, productUnit)) + '</strong></div></article>';
     }
@@ -1376,7 +1396,7 @@
       '<span class="omega-v2-status" data-state="operational">' + fmt(rawInventoryKeys.length) + ' resource identities</span></div>' +
       rawInventoryCardsMarkup + '</section>';
     var processedInventorySectionMarkup = '<section class="omega-v2-card omega-v2-processed-inventory-section">' +
-      '<div class="omega-v2-card-header"><div><h2>Processed Goods Warehouse</h2><p>Factory-produced intermediate and finished goods only. These balances are never added to raw-resource stock.</p></div>' +
+      '<div class="omega-v2-card-header"><div><h2>Processed Goods Warehouse</h2><p>Processed goods and explicitly recorded factory-input product balances. Kept separate from the canonical raw-resource inventory.</p></div>' +
       '<span class="omega-v2-status" data-state="neutral">' + fmt(processedInventoryKeys.length) + ' product balances</span></div>' +
       processedGoodsCardsMarkup + '</section>';
     var rawInventoryRows = inventoryRows.filter(function (row) {
@@ -1389,7 +1409,7 @@
       return stage === 'INTERMEDIATE' || stage === 'FINISHED' || stage === 'PROCESSED';
     });
     var rawBatchHistoryMarkup = rawInventoryRows.length
-      ? '<section class="omega-v2-card omega-v2-movement-card"><h2>Recent raw-resource batches</h2><div class="omega-v2-table-wrap"><table><thead><tr><th>Resource</th><th>Quantity</th><th>Raw warehouse</th><th>Status</th></tr></thead><tbody>' +
+      ? '<section class="omega-v2-card omega-v2-movement-card"><h2>Recent batches · raw resources</h2><div class="omega-v2-table-wrap"><table><thead><tr><th>Resource</th><th>Quantity</th><th>Raw warehouse</th><th>Status</th></tr></thead><tbody>' +
         rawInventoryRows.slice(-40).reverse().map(function (row) {
           return '<tr><td>' + resourceIconMarkup(row.resourceId, resourceLabel(row.resourceId)) + esc(resourceLabel(row.resourceId)) +
             '</td><td>' + amount(row.quantity, resourceUnit(row.resourceId) || (/SIMULATION.*UNIT/i.test(String(row.unit || '')) ? '' : row.unit)) +
