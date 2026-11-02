@@ -432,11 +432,22 @@
   }
 
   function countrySelectMarkup(currentCountry) {
-    var rows = countryRoster(currentCountry);
-    var selected = rows.find(function (row) { return row.id === currentCountry; });
-    var label = selected ? selected.name + ' (' + selected.id + ')' : currentCountry;
+    // Resolve only the selected player's identity. Do not enumerate other
+    // countries' economy/resource buckets just to paint this label.
+    var profile = null, runtime = g.OmegaCountryRuntimeData || (g.Omega && g.Omega.CountryRuntimeData);
+    try {
+      if (runtime && typeof runtime.resolveCountry === 'function') profile = runtime.resolveCountry(currentCountry);
+    } catch (_) {}
+    if (!profile) {
+      var engine = g.ResourceMinistryEngine;
+      var profiles = engine && engine.countryProfiles;
+      profile = profiles && (profiles[currentCountry] || profiles[String(currentCountry).toLowerCase()]) || null;
+    }
+    var identity = profile && (profile.identity || profile.country || profile) || {};
+    var name = String(identity.officialName || identity.countryName || identity.name ||
+      profile && (profile.officialName || profile.countryName || profile.name) || currentCountry || 'Not selected');
     return '<div class="omega-v2-resource-country-select" aria-label="Active player country">' +
-      '<span>Player country</span><strong>' + esc(label || 'Not selected') + '</strong></div>';
+      '<span>Player country</span><strong>' + esc(name + (currentCountry ? ' (' + currentCountry + ')' : '')) + '</strong></div>';
   }
 
   function scheduleRender(root, options, label) {
@@ -2304,7 +2315,7 @@
             root.__omegaV2BuildWorkers = workers;
             root.__omegaV2ResourceNotice = 'Construction blocked: ' + human(quote && (quote.reason || (!quote.staffingReady ? 'INSUFFICIENT_WORKER_COMMITMENT' : 'CONSTRUCTION_REQUIREMENTS_NOT_MET')) || 'requirements not verified') + '. No resources were committed.';
           } else {
-            var state = g.Game && g.Game.state || g.gameState || {};
+            var state = authoritativeGameState();
             var activeTurn = numberOrNull(state.simulation && (state.simulation.turn || state.simulation.currentTurn)) || numberOrNull(state.turn) || 0;
             root.__omegaV2BuildAttempt = (numberOrNull(root.__omegaV2BuildAttempt) || 0) + 1;
             var result = network.startMineProject({countryId:country,siteId:site.siteId,resourceId:site.resourceId,quantity:count,assignedWorkers:workers,
