@@ -1313,44 +1313,91 @@
           ({mine:'⛏',warehouse:'▤',truck:'⇢',factory:'▥',chart:'↗'}[step[1]]) + '</span><span>' + step[0] + '</span>' +
           (i < 4 ? '<span class="omega-v2-flow-arrow">›</span>' : '') + '</span>';
       }).join('') + '</div></section></div>';
-    function stockRow(rid) {
-      var raw = stockFor(rid, rawStock), processed = stockFor(rid, finishedStock);
-      var demand = dailyDemand(rid), currentStock = currentStockFor(rid, raw, processed);
-      var targetGap = targetGapFor(rid);
+    function rawResourceCard(rid) {
+      var rawWarehouseStock = stockFor(rid, rawStock);
+      var currentStock = currentStockFor(rid, rawWarehouseStock, null);
+      var demand = dailyDemand(rid);
       var unit = resourceUnit(rid);
-      var currentLabel = currentStock === null
-        ? (raw !== null && processed !== null ? 'Reconciliation needed' : 'Not recorded')
-        : amount(currentStock, unit);
-      return '<tr data-resource-id="' + esc(rid) + '"><td><span class="omega-v2-resource-table-icon">' + resourceIconMarkup(rid, resourceLabel(rid)) + '</span>' +
-        esc(resourceLabel(rid)) + '</td><td class="omega-v2-current-stock-cell">' + currentLabel + '</td><td>' +
-        (raw === null ? 'Not recorded' : amount(raw, unit)) + '</td><td>' +
-        (processed === null ? 'Not recorded' : amount(processed, unit)) + '</td><td>' +
-        (movementIn[rid] !== undefined ? amount(movementIn[rid], unit) : '—') + '</td><td>' +
-        (movementOut[rid] !== undefined ? amount(movementOut[rid], unit) : '—') + '</td><td>' +
-        (targetGap !== null ? amount(targetGap, unit) : '—') + '</td></tr>' +
-        stockStatusRow(rid, currentStock, demand, unit);
+      var state = stockStatusInfo(rid, currentStock, demand, unit);
+      return '<article class="omega-v2-inventory-resource-card" data-resource-id="' + esc(rid) +
+        '" data-stock-state="' + esc(state.state) + '">' +
+        '<div class="omega-v2-inventory-resource-head"><span class="omega-v2-inventory-resource-icon">' +
+        resourceIconMarkup(rid, resourceLabel(rid)) + '</span><div class="omega-v2-inventory-resource-name"><h3>' +
+        esc(resourceLabel(rid)) + '</h3></div></div>' +
+        '<div class="omega-v2-inventory-resource-metrics">' +
+        '<div><span>Current stock</span><strong class="omega-v2-current-stock-cell">' +
+        (currentStock === null ? 'Not recorded' : amount(currentStock, unit)) + '</strong></div>' +
+        '<div><span>Daily demand</span><strong>' +
+        (demand === null ? 'Not recorded' : amount(demand, resourceDemandUnit(rid, unit))) + '</strong></div>' +
+        '</div><div class="omega-v2-inventory-status-line">' +
+        '<span class="omega-v2-inventory-status-badge omega-v2-stock-status" data-state="' + esc(state.state) + '">' +
+        '<strong>Status</strong>' + esc(state.label) + '</span></div>' +
+        '<div class="omega-v2-inventory-coverage"><span>Stock coverage</span><strong>' + esc(state.coverageLabel) + '</strong></div>' +
+        (state.targetNote ? '<div class="omega-v2-inventory-target-note">' + esc(state.targetNote) + '</div>' : '') +
+        '<div class="omega-v2-inventory-resource-origin"><span class="omega-v2-inventory-origin-heading">Supply source</span>' +
+        '<div class="omega-v2-inventory-origin-list">' + state.origin + '</div></div></article>';
     }
-    var stockTable = inventoryKeys.length ? '<div class="omega-v2-table-wrap"><table><thead><tr><th>Resource</th><th>Current Stock</th><th>Raw warehouse</th><th>Processed warehouse</th><th>In</th><th>Out</th><th>Target gap</th></tr></thead><tbody>' +
-      inventoryKeys.map(stockRow).join('') + '</tbody></table></div>' : '<div class="omega-v2-empty">No warehouse balances have been recorded.</div>';
-    // Overview must show actual recorded player stock immediately. Do not
-    // substitute planned targets or inferred reserve quantities for balances.
-    var dashboardStockRows = inventoryKeys.map(function (rid) {
-      var currentStock = currentStockFor(rid, stockFor(rid, rawStock), stockFor(rid, finishedStock));
-      if (currentStock === null) return '';
-      return '<tr data-resource-id="' + esc(rid) + '"><td>' +
-        resourceIconMarkup(rid, resourceLabel(rid)) + esc(resourceLabel(rid)) +
-        '</td><td class="omega-v2-current-stock-cell">' + amount(currentStock, resourceUnit(rid)) + '</td></tr>';
-    }).filter(Boolean);
-    var dashboardStockMarkup = '<section class="omega-v2-card omega-v2-movement-card omega-v2-dashboard-stock">' +
-      '<div class="omega-v2-card-header"><div><h2>Current Stock</h2><p>Recorded opening stock and live balances for ' +
-      esc(countryKey) + '</p></div><span class="omega-v2-status" data-state="' +
-      (dashboardStockRows.length ? 'operational' : 'attention') + '">' + fmt(dashboardStockRows.length) + ' stocked products</span></div>' +
-      (dashboardStockRows.length
-        ? '<div class="omega-v2-table-wrap"><table><thead><tr><th>Resource / Product</th><th>Current Stock</th></tr></thead><tbody>' +
-          dashboardStockRows.join('') + '</tbody></table></div>'
-        : '<div class="omega-v2-empty">No recorded current stock is available for this player country.</div>') +
-      '</section>';
+    function processedProductLabel(productId) {
+      var catalog = g.OmegaResourceIndustrialCatalogData || g.Omega && g.Omega.ResourceIndustrialCatalogData || {};
+      var products = catalog.productProfiles || catalog.products || {};
+      var row = products[productId] || products[String(productId || '').toLowerCase()] || null;
+      return String(row && (row.name || row.displayName || row.label) ||
+        String(productId || '').trim().replace(/[_-]+/g, ' ').replace(/\b\w/g, function (ch) { return ch.toUpperCase(); }) ||
+        'Industrial product');
+    }
+    function processedProductCard(productId) {
+      var quantity = stockFor(productId, finishedStock);
+      var productUnit = '';
+      var unitMap = processedWarehouse.unitsByProduct || processedWarehouse.inventoryUnits || {};
+      var unitKey = Object.keys(unitMap).find(function (key) { return key.toLowerCase() === String(productId).toLowerCase(); });
+      if (unitKey) productUnit = String(unitMap[unitKey] || '');
+      return '<article class="omega-v2-inventory-product-card" data-product-id="' + esc(productId) + '">' +
+        '<div class="omega-v2-inventory-product-art">' + resourceIconMarkup(productId, processedProductLabel(productId)) + '</div>' +
+        '<div class="omega-v2-inventory-product-copy"><span>Finished goods · Processed warehouse</span><h3>' +
+        esc(processedProductLabel(productId)) + '</h3><strong>' +
+        (quantity === null ? 'Not recorded' : amount(quantity, productUnit)) + '</strong></div></article>';
+    }
+    var rawInventoryCardsMarkup = rawInventoryKeys.length
+      ? '<div class="omega-v2-grid omega-v2-raw-resource-grid" data-omega-v2-raw-resource-inventory>' +
+        rawInventoryKeys.map(rawResourceCard).join('') + '</div>'
+      : '<div class="omega-v2-empty">No canonical raw-resource identities are available.</div>';
+    var processedGoodsCardsMarkup = processedInventoryKeys.length
+      ? '<div class="omega-v2-grid omega-v2-processed-goods-grid" data-omega-v2-processed-goods-inventory>' +
+        processedInventoryKeys.map(processedProductCard).join('') + '</div>'
+      : '<div class="omega-v2-empty">No finished-goods stock is currently recorded in the processed warehouse.</div>';
+    var rawInventorySectionMarkup = '<section class="omega-v2-card omega-v2-raw-inventory-section">' +
+      '<div class="omega-v2-card-header"><div><h2>Current Stock · Raw Resource Inventory</h2><p>Mine output and raw-resource receipts held by the national warehouse.</p></div>' +
+      '<span class="omega-v2-status" data-state="operational">' + fmt(rawInventoryKeys.length) + ' resource identities</span></div>' +
+      rawInventoryCardsMarkup + '</section>';
+    var processedInventorySectionMarkup = '<section class="omega-v2-card omega-v2-processed-inventory-section">' +
+      '<div class="omega-v2-card-header"><div><h2>Processed Goods Warehouse</h2><p>Factory-produced intermediate and finished goods only. These balances are never added to raw-resource stock.</p></div>' +
+      '<span class="omega-v2-status" data-state="neutral">' + fmt(processedInventoryKeys.length) + ' product balances</span></div>' +
+      processedGoodsCardsMarkup + '</section>';
+    var rawInventoryRows = inventoryRows.filter(function (row) {
+      var stage = String(row.stage || '').toUpperCase();
+      var isRawResource = canonicalRawResourceIds.indexOf(String(row.resourceId || '').toLowerCase()) >= 0;
+      return stage === 'RAW' || (!stage && isRawResource);
+    });
+    var processedInventoryRows = inventoryRows.filter(function (row) {
+      var stage = String(row.stage || '').toUpperCase();
+      return stage === 'INTERMEDIATE' || stage === 'FINISHED' || stage === 'PROCESSED';
+    });
+    var rawBatchHistoryMarkup = rawInventoryRows.length
+      ? '<section class="omega-v2-card omega-v2-movement-card"><h2>Recent raw-resource batches</h2><div class="omega-v2-table-wrap"><table><thead><tr><th>Resource</th><th>Quantity</th><th>Raw warehouse</th><th>Status</th></tr></thead><tbody>' +
+        rawInventoryRows.slice(-40).reverse().map(function (row) {
+          return '<tr><td>' + resourceIconMarkup(row.resourceId, resourceLabel(row.resourceId)) + esc(resourceLabel(row.resourceId)) +
+            '</td><td>' + amount(row.quantity, resourceUnit(row.resourceId) || (/SIMULATION.*UNIT/i.test(String(row.unit || '')) ? '' : row.unit)) +
+            '</td><td>' + esc(row.location || '—') + '</td><td>' + esc(human(row.status)) + '</td></tr>';
+        }).join('') + '</tbody></table></div></section>' : '';
+    var processedBatchHistoryMarkup = processedInventoryRows.length
+      ? '<section class="omega-v2-card omega-v2-movement-card"><h2>Recent processed-product batches</h2><div class="omega-v2-table-wrap"><table><thead><tr><th>Product</th><th>Quantity</th><th>Processed warehouse</th><th>Status</th></tr></thead><tbody>' +
+        processedInventoryRows.slice(-40).reverse().map(function (row) {
+          return '<tr><td>' + esc(processedProductLabel(row.resourceId)) + '</td><td>' + amount(row.quantity, row.unit) +
+            '</td><td>' + esc(row.location || '—') + '</td><td>' + esc(human(row.status)) + '</td></tr>';
+        }).join('') + '</tbody></table></div></section>' : '';
+    var dashboardStockMarkup = rawInventorySectionMarkup + processedInventorySectionMarkup;
     dashMarkup += dashboardStockMarkup + factoryHeldInputMarkup;
+
     var startupBaselineRuntime = g.OmegaResourceStartupBaseline || g.Omega && g.Omega.ResourceStartupBaseline || null;
     var stockTargetDays = null;
     try {
@@ -1374,17 +1421,13 @@
           (stockTargetDays === null ? 'Not recorded' : esc(fmt(stockTargetDays) + ' days')) + '</span>') +
       '</section>';
     var inventoryMarkup = stockTargetControl + '<div class="omega-v2-kpis">' +
-      renderKpi('Raw resource types', String(distinctResources.length), 'Canonical resources available', 'neutral') +
-      renderKpi('Stocked raw types', String(Object.keys(rawStock).filter(function (key) { return val(rawStock[key]) > 0; }).length), 'Positive on-hand balance', 'neutral') +
-      renderKpi('Processed types', String(Object.keys(finishedStock).filter(function (key) { return val(finishedStock[key]) > 0; }).length), 'Finished stock', 'neutral') +
-      renderKpi('Tracked batches', String(inventoryRows.length), 'Recorded inventory entries', 'neutral') +
-      renderKpi('Below stock target', String(inventoryKeys.filter(function (rid) { return targetGapFor(rid) !== null && targetGapFor(rid) > 0; }).length), 'Compared with daily demand target', inventoryKeys.some(function (rid) { return targetGapFor(rid) !== null && targetGapFor(rid) > 0; }) ? 'shortage' : 'neutral') +
-      '</div><section class="omega-v2-card omega-v2-movement-card"><h2>Inventory movement</h2><p>Stored quantity, confirmed receipts and recorded dispatches for the selected country.</p>' + stockTable + '</section>' +
-      factoryHeldInputMarkup +
-      (inventoryRows.length ? '<section class="omega-v2-card omega-v2-movement-card"><h2>Recent batches</h2><div class="omega-v2-table-wrap"><table><thead><tr><th>Resource</th><th>Quantity</th><th>Warehouse</th><th>Status</th></tr></thead><tbody>' +
-        inventoryRows.slice(-40).reverse().map(function (row) { return '<tr><td>' + esc(resourceLabel(row.resourceId)) + '</td><td>' + amount(row.quantity, resourceUnit(row.resourceId) || (/SIMULATION.*UNIT/i.test(String(row.unit || '')) ? '' : row.unit)) +
-          '</td><td>' + esc(row.location || '—') + '</td><td>' + esc(human(row.status)) + '</td></tr>'; }).join('') +
-        '</tbody></table></div></section>' : '');
+      renderKpi('Raw resource types', String(rawInventoryKeys.length), 'Canonical natural-resource identities', 'neutral') +
+      renderKpi('Stocked raw types', String(rawInventoryKeys.filter(function (key) { return val(rawStock[key]) > 0; }).length), 'Positive on-hand raw balances', 'neutral') +
+      renderKpi('Finished goods types', String(processedInventoryKeys.length), 'Processed warehouse only', 'neutral') +
+      renderKpi('Raw batches', String(rawInventoryRows.length), 'Raw warehouse batch records', 'neutral') +
+      renderKpi('Processed batches', String(processedInventoryRows.length), 'Finished-goods batch records', 'neutral') +
+      '</div>' + rawInventorySectionMarkup + processedInventorySectionMarkup +
+      factoryHeldInputMarkup + rawBatchHistoryMarkup + processedBatchHistoryMarkup;
     function logisticsStatus(value) {
       var s = String(value || '').toUpperCase();
       if (/DELIVERED|RECEIVED|COMPLETED/.test(s)) return {label:'Delivered',state:'operational'};
