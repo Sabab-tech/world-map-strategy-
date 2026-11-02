@@ -1265,7 +1265,7 @@ test('factory command cards use canonical SVGs, daily production state, type cou
     innerHTML:''
   };
   try {
-    const result = globalThis.OmegaUIV2Industry.render(root,{countryId:'BGD',tab:'factories'});
+    const result = globalThis.OmegaUIV2Industry.render(root,{countryId:'BGD',tab:'factories',factoryView:'assets'});
     assert.equal(result.ok,true);
     assert.equal(result.model.factoryCount,3);
     assert.match(root.innerHTML,/class="omega-v2-factory-command fp-stage"/);
@@ -1302,7 +1302,7 @@ test('factory command cards use canonical SVGs, daily production state, type cou
       assert.match(root.innerHTML,new RegExp('data-active-tab="' + tab + '"'),tab + ' must mark the active tab');
       assert.doesNotMatch(root.innerHTML,/class="omega-v2-heading"/,tab + ' must not fall back to the legacy screen');
     }
-    const returnToFactories = globalThis.OmegaUIV2Industry.render(root,{countryId:'BGD',tab:'factories'});
+    const returnToFactories = globalThis.OmegaUIV2Industry.render(root,{countryId:'BGD',tab:'factories',factoryView:'assets'});
     assert.equal(returnToFactories.ok,true);
     assert.match(root.innerHTML,/data-omega-v2-factory-card/);
     assert.match(root.innerHTML,/commons\.wikimedia\.org\/wiki\/File:Industrial_production_line_operating_in_a_large_modern_factory\.jpg/);
@@ -1776,7 +1776,7 @@ test('industrial command panel scopes factory, mine, daily-rate and current-turn
     assert.equal(unitedStates.canOperateSelectedCountry, false);
 
     const root = { classList:{ add(){} }, addEventListener(){}, contains(){ return true; } };
-    const rendered = globalThis.OmegaUIV2Industry.render(root, { countryId:'BGD' });
+    const rendered = globalThis.OmegaUIV2Industry.render(root, { countryId:'BGD', factoryView:'assets' });
     assert.equal(rendered.ok, true);
     assert.match(root.innerHTML, /omega-v2-industry--factory-home/);
     assert.match(root.innerHTML, /omega-v2-factory-command/);
