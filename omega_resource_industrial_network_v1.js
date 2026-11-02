@@ -3686,7 +3686,7 @@ function factoryUtilityDiagnostics(countryId){
     simulationOnly:true};
 }
 
-function factoryOperationGate(countryId,asset){
+function factoryOperationGate(countryId,asset,employmentSnapshot){
   if(!asset)return{status:'BLOCKED',reason:'FACTORY_NOT_FOUND'};
   const cid=canonicalCountry(countryId),factoryId=String(asset.id||asset.assetId||asset.factoryId||asset.projectId||'');
   const status=String(asset.status||'OPERATIONAL').toUpperCase();
@@ -3696,7 +3696,7 @@ function factoryOperationGate(countryId,asset){
   const capabilities=Array.isArray(resourceState(cid).technologyCapabilities)?resourceState(cid).technologyCapabilities:[];
   const missing=required.filter(id=>!capabilities.some(row=>String(row?.technologyId||'').trim().toUpperCase()===id&&technologyCapabilityAvailable(row)));
   if(missing.length)return{status:'BLOCKED',reason:'FACTORY_TECHNOLOGY_REQUIREMENT_NOT_MET',factoryId,missingTechnologyIds:missing};
-  const employmentSummary=reconcileFactoryEmployment(cid);
+  const employmentSummary=employmentSnapshot||reconcileFactoryEmployment(cid);
   const employmentModel=econState(cid).factoryEmployment||{};
   const employment=employmentModel.factories?.[factoryId]||asset.employment||{};
   if(employmentSummary?.baselineUnemployedCount==null||employmentModel.status==='UNEMPLOYMENT_HEADCOUNT_UNAVAILABLE')
@@ -3723,14 +3723,14 @@ function factoryOperationGate(countryId,asset){
     workforceAuthority:employment.authority||employmentModel.authority||'SIMULATED_FACTORY_EMPLOYMENT_RECONCILIATION'};
 }
 function commitFactoryCycleImmediately(input={}){
-  const cid=canonicalCountry(input.countryId),fid=String(input.factoryId||''),assets=factoryAssets(cid),asset=assets.find(a=>String(a?.id||a?.assetId||a?.projectId)===fid);
+  const cid=canonicalCountry(input.countryId),fid=String(input.factoryId||''),asset=(input._asset&&String(input._asset?.id||input._asset?.assetId||input._asset?.projectId)===fid)?input._asset:factoryAssets(cid).find(a=>String(a?.id||a?.assetId||a?.projectId)===fid);
   if(!asset)return{status:'BLOCKED',reason:'FACTORY_NOT_FOUND'};
-  const gate=factoryOperationGate(cid,asset);
+  const gate=factoryOperationGate(cid,asset,input._employmentSummary);
   if(gate.status!=='READY')return gate;
   const recipeAsset=input.recipeId?{...asset,recipeId:String(input.recipeId)}:asset;
   const requestedRecipe=recipeFor(input.resourceId||Object.keys(asset.inputCoefficients||asset.inputs||{})[0]||asset.resourceId,recipeAsset);
   if(asset.recipeMode==='MULTI_INPUT'||requestedRecipe.recipeMode==='MULTI_INPUT'||Object.keys(requestedRecipe.inputs||{}).length>1)
-    return commitMultiInputFactoryCycleImmediately({...input,recipeId:input.recipeId||requestedRecipe.recipeId||null});
+    return commitMultiInputFactoryCycleImmediately({...input,_asset:asset,recipeId:input.recipeId||requestedRecipe.recipeId||null});
   const n=netState(cid),processedTurns=n.factoryProcessingTurns&&typeof n.factoryProcessingTurns==='object'?n.factoryProcessingTurns:(n.factoryProcessingTurns={});
   if(Number(processedTurns[fid])===turn())return{status:'BLOCKED',reason:'FACTORY_TURN_CAPACITY_ALREADY_USED',factoryId:fid,turn:turn()};
   const rid=tok(input.resourceId),recipe=recipeFor(rid,recipeAsset),r=resourceState(cid);r.inventory=r.inventory||{};
@@ -3867,9 +3867,9 @@ function commitFactoryCycleImmediately(input={}){
 }
 function commitMultiInputFactoryCycleImmediately(input={}){
   const cid=canonicalCountry(input.countryId),fid=String(input.factoryId||'');
-  const asset=factoryAssets(cid).find(a=>String(a?.id||a?.assetId||a?.projectId)===fid);
+  const asset=(input._asset&&String(input._asset?.id||input._asset?.assetId||input._asset?.projectId)===fid)?input._asset:factoryAssets(cid).find(a=>String(a?.id||a?.assetId||a?.projectId)===fid);
   if(!asset)return{status:'BLOCKED',reason:'FACTORY_NOT_FOUND'};
-  const operationGate=factoryOperationGate(cid,asset);
+  const operationGate=factoryOperationGate(cid,asset,input._employmentSummary);
   if(operationGate.status!=='READY')return operationGate;
   const fallbackResource=Object.keys(asset.inputCoefficients||asset.inputs||{})[0]||asset.resourceId||'';
   const requestedResource=tok(input.resourceId||fallbackResource);
@@ -4501,12 +4501,12 @@ function factoryCycleDue(cycle){
 }
 function startFactoryProductionCycle(input={}){
   const cid=canonicalCountry(input.countryId),fid=String(input.factoryId||'');
-  const asset=factoryAssets(cid).find(row=>String(row?.id||row?.assetId||row?.projectId)===fid);
+  const asset=(input._asset&&String(input._asset?.id||input._asset?.assetId||input._asset?.projectId)===fid)?input._asset:factoryAssets(cid).find(row=>String(row?.id||row?.assetId||row?.projectId)===fid);
   if(!asset)return{status:'BLOCKED',reason:'FACTORY_NOT_FOUND',factoryId:fid};
   const n=factoryCycleStore(cid),existing=n.factoryProductionCycles[fid];
   if(factoryCycleActive(existing))return{status:existing.status==='PAUSED'?'PAUSED':'IN_PROGRESS',cycleId:existing.cycleId,
     factoryId:fid,finishDate:existing.finishDate,productionQuantity:existing.productionQuantity,productivityPct:existing.productivityPct,idempotent:true};
-  const gate=factoryOperationGate(cid,asset);
+  const gate=factoryOperationGate(cid,asset,input._employmentSummary);
   if(gate.status!=='READY'){
     factorySetProductionHealth(asset,'STOPPED',0,num(asset.capacityPerDay??asset.capacity),{reason:gate.reason,gate});
     return gate;
@@ -4732,18 +4732,35 @@ function selectFactoryProductionRecipeForTurn(countryId,asset){
       selectionAuthority:'AVAILABLE_TRACKED_WAREHOUSE_BATCHES',candidateResourceCount:sources.length};
 }
 
-function processPendingFactoryInputs(countryId){
+async function processPendingFactoryInputs(countryId){
   const cid=canonicalCountry(countryId),n=factoryCycleStore(cid),assets=factoryAssets(cid),
     completed=[],started=[],blocked=[],transfers=[];
+  const employmentSummary=reconcileFactoryEmployment(cid);
+  const nav=g.navigator||{},ua=String(nav.userAgent||'');
+  const constrained=/Android|Mobile|iPhone|iPad/i.test(ua)||Number(nav.deviceMemory||8)<=4||Number(nav.hardwareConcurrency||8)<=4;
+  const yieldEvery=constrained?3:8;
+  let workSinceYield=0,sliceStartedAt=Date.now();
+  async function yieldFactoryWork(){
+    workSinceYield++;
+    if(workSinceYield>=yieldEvery||Date.now()-sliceStartedAt>=8){
+      workSinceYield=0;
+      await new Promise(resolve=>{
+        if(typeof g.setTimeout==='function')g.setTimeout(resolve,0);
+        else Promise.resolve().then(resolve);
+      });
+      sliceStartedAt=Date.now();
+    }
+  }
   const completedThisTurn=new Set();
   // Finish due cycles first. Finished goods are committed only when game-calendar time is reached.
   for(const asset of assets){
+    await yieldFactoryWork();
     const fid=String(asset?.id||asset?.assetId||asset?.projectId||''),cycle=n.factoryProductionCycles[fid];
     if(!fid||!asset||!factoryCycleActive(cycle)||cycle.status==='PAUSED'||!factoryCycleDue(cycle))continue;
     releaseFactoryCycleUtilityReservation(cid,cycle.cycleId);
     const result=executeFactoryCycle({countryId:cid,factoryId:fid,factoryCycleId:cycle.cycleId,
       resourceId:cycle.primaryInputResourceId,recipeId:cycle.recipeId||null,
-      quantity:cycle.productionQuantity,unit:asset.inputUnit||null});
+      quantity:cycle.productionQuantity,unit:asset.inputUnit||null,_asset:asset,_employmentSummary:employmentSummary});
     const outcome=completeFactoryProductionCycle(cid,asset,cycle,result);
     if(outcome.status==='COMPLETED'){completed.push(outcome);completedThisTurn.add(fid);}
     else if(outcome.status!=='PAUSED')blocked.push({factoryId:fid,reason:outcome.reason||'FACTORY_PRODUCTION_CYCLE_PAUSED',detail:outcome});
@@ -4753,6 +4770,7 @@ function processPendingFactoryInputs(countryId){
   // This removes productionAssets ordering as an input-allocation advantage.
   const pendingPlans=[],planByFactory=new Map();
   for(const asset of assets){
+    await yieldFactoryWork();
     const fid=String(asset?.id||asset?.assetId||asset?.projectId||'');
     if(!fid||!asset||completedThisTurn.has(fid))continue;
     const prior=n.factoryProductionCycles[fid];
@@ -4760,7 +4778,7 @@ function processPendingFactoryInputs(countryId){
     // A paused cycle may only requisition replacement inputs once its saved finish date is due.
     // Until then it must not reserve a share of this turn's country-wide warehouse allocation.
     if(prior?.status==='PAUSED'&&!factoryCycleDue(prior))continue;
-    const gate=prior?.status==='PAUSED'?null:factoryOperationGate(cid,asset);
+    const gate=prior?.status==='PAUSED'?null:factoryOperationGate(cid,asset,employmentSummary);
     if(gate&&gate.status!=='READY')continue;
     // Universal dynamic processors choose an eligible commodity from tracked stock,
     // while all other facilities keep their canonical catalog recipe selection.
@@ -4784,6 +4802,7 @@ function processPendingFactoryInputs(countryId){
   const requisitions=planFactoryInputRequests(cid,pendingPlans);
 
   for(const asset of assets){
+    await yieldFactoryWork();
     const fid=String(asset?.id||asset?.assetId||asset?.projectId||'');
     if(!fid||!asset||completedThisTurn.has(fid))continue;
     const plan=planByFactory.get(fid)||null,prior=n.factoryProductionCycles[fid];
@@ -4819,7 +4838,7 @@ function processPendingFactoryInputs(countryId){
         continue;
       }
     }
-    const gate=plan?.gate||factoryOperationGate(cid,asset);
+    const gate=plan?.gate||factoryOperationGate(cid,asset,employmentSummary);
     if(gate.status!=='READY'){
       factorySetProductionHealth(asset,'STOPPED',0,num(asset.capacityPerDay??asset.capacity),{reason:gate.reason,gate});
       blocked.push({factoryId:fid,reason:gate.reason,detail:gate});continue;
@@ -4843,7 +4862,7 @@ function processPendingFactoryInputs(countryId){
       continue;
     }
     const result=startFactoryProductionCycle({countryId:cid,factoryId:fid,resourceId:first,
-      recipeId:recipe.recipeId||null,quantity:metrics.possibleProduction});
+      recipeId:recipe.recipeId||null,quantity:metrics.possibleProduction,_asset:asset,_employmentSummary:employmentSummary});
     if(result.status==='IN_PROGRESS'){
       if(String(asset.recipeMode||'').toUpperCase()==='DYNAMIC_RECIPE_SET'&&result.recipeId)
         asset.lastSelectedRecipeId=result.recipeId;
@@ -4854,7 +4873,7 @@ function processPendingFactoryInputs(countryId){
   return{status:blocked.length?'DEGRADED':'COMPLETED',countryId:cid,turn:turn(),
     completedCount:completed.length,processedCount:completed.length,completed,processed:completed,
     startedCount:started.length,started,warehouseTransferCount:transfers.length,transfers,blocked,
-    inputRequestCount:requisitions.requestCount,inputRequests:requisitions.requests};
+    inputRequestCount:requisitions.requestCount,inputRequests:requisitions.requests,employmentSummary};
 }
 
 
@@ -5813,27 +5832,42 @@ function gameplayPipelineDiagnostics(countryScope){
     treasuryReceipts:perCountry.reduce((n,x)=>n+x.treasuryReceipts,0),blocked:perCountry.reduce((n,x)=>n+x.blocked,0),
     awaitingTransportCapacity:perCountry.reduce((n,x)=>n+x.awaitingTransportCapacity,0),perCountry};
 }
+const countryTurnRuns=new Map();
+let countryTurnTail=Promise.resolve();
+function runCountryTurn(countryValue){
+  const cid=canonicalCountry(countryValue);
+  if(!cid)return Promise.resolve({status:'SKIPPED',reason:'PLAYER_COUNTRY_NOT_SELECTED',turn:turn()});
+  const key=String(turn())+':'+cid;
+  if(countryTurnRuns.has(key))return countryTurnRuns.get(key);
+  const task=countryTurnTail.catch(()=>undefined).then(async()=>{
+    await loadCatalog();
+    const shipments=await advanceShipments(cid);
+    const projects=await advanceProjects(cid);
+    const factory=await processPendingFactoryInputs(cid);
+    return{status:'COMPLETED',countryId:cid,turn:turn(),shipments,projects,factory,
+      employment:factory.employmentSummary||null};
+  });
+  countryTurnTail=task.then(()=>undefined,()=>undefined);
+  countryTurnRuns.set(key,task);
+  while(countryTurnRuns.size>8)countryTurnRuns.delete(countryTurnRuns.keys().next().value);
+  return task;
+}
 function api(){
-  return Object.freeze({VERSION,loadCatalog,loadSiteLogisticsRoutes,getTransportFleet,setTransportFleet,previewSiteTransport,planExtraction,planShipment,dispatchShipment,dispatchFactoryInputShipment,advanceShipments,quoteMineProject,startMineProject,startFactoryProject,startInfrastructureProject,startPadmaCorridorProject,advanceProjects,startTechnologyProject,executeFactoryCycle,executeSitePipeline,diagnostics,gameplayPipelineDiagnostics,factoryCatalogDiagnostics,factoryProductionRequirements,registerStartingFactoryAssets,factoryProductionStatus,decommissionFactory,decommissionMine,setMineOperatingStatus,quoteMineDemolition,destroyMineAssets,startFactoryProductionCycle,transferFactoryInputsFromWarehouse,processPendingFactoryInputs,allocateFactoryInputProportionally,factoryUtilityDiagnostics,factoryConstructionMaterialQuote,reconcileFactoryEmployment,normalizeInfrastructure,candidateFactories,recipeFor,resourceMethod,buildRoute});
+  return Object.freeze({VERSION,loadCatalog,runCountryTurn,loadSiteLogisticsRoutes,getTransportFleet,setTransportFleet,previewSiteTransport,planExtraction,planShipment,dispatchShipment,dispatchFactoryInputShipment,advanceShipments,quoteMineProject,startMineProject,startFactoryProject,startInfrastructureProject,startPadmaCorridorProject,advanceProjects,startTechnologyProject,executeFactoryCycle,executeSitePipeline,diagnostics,gameplayPipelineDiagnostics,factoryCatalogDiagnostics,factoryProductionRequirements,registerStartingFactoryAssets,factoryProductionStatus,decommissionFactory,decommissionMine,setMineOperatingStatus,quoteMineDemolition,destroyMineAssets,startFactoryProductionCycle,transferFactoryInputsFromWarehouse,processPendingFactoryInputs,allocateFactoryInputProportionally,factoryUtilityDiagnostics,factoryConstructionMaterialQuote,reconcileFactoryEmployment,normalizeInfrastructure,candidateFactories,recipeFor,resourceMethod,buildRoute});
 }
 g.Omega=g.Omega||{};g.Omega.ResourceIndustrialNetwork=api();g.OmegaResourceIndustrialNetwork=g.Omega.ResourceIndustrialNetwork;
 
 function boot(){
   loadCatalog().then(()=>{emit('OMEGA_RESOURCE_INDUSTRIAL_NETWORK_READY','GLOBAL',{version:VERSION,catalogResourceRules:Object.keys(rules()).length,factoryRules:Object.keys(processRules()).length})}).catch(()=>{});
   if(typeof g.addEventListener==='function'){
-    g.addEventListener('OMEGA_SIMULATION_TURN_COMMITTED',async()=>{
+    g.addEventListener('OMEGA_SIMULATION_TURN_COMMITTED',()=>{
+      // Resource Economy owns the global turn order. This engine is its logistics/factory stage.
+      if(g.Omega?.ResourceEconomy?.runTurn)return;
       const countryId=playerSimulationCountryId();
-      if(!countryId)return {status:'SKIPPED',reason:'PLAYER_COUNTRY_NOT_SELECTED'};
-      await loadCatalog();
-      try{
-        await advanceShipments(countryId);
-        await advanceProjects(countryId);
-        await processPendingFactoryInputs(countryId);
-        reconcileFactoryEmployment(countryId);
-        return {status:'COMPLETED',countryId,turn:turn()};
-      }catch(error){
+      if(!countryId)return;
+      return runCountryTurn(countryId).catch(error=>{
         throw new Error('INDUSTRIAL_TURN_FAILED:'+countryId+':'+String(error?.message||error));
-      }
+      });
     });
     g.addEventListener('OMEGA_RESOURCE_EXTRACTION_COMPLETED',onExtractionCommitted);
     g.addEventListener('OMEGA_RESOURCE_EXTRACTION_BLOCKED',onExtractionBlocked);
