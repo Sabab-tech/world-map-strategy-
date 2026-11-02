@@ -1163,7 +1163,7 @@
             extractionResult={status:'FAILED',reason:initialized.reason||'RESOURCE_ENDOWMENT_NOT_READY',detail:initialized};
           }else{
             if(typeof endowment.startCountryProduction==='function'){
-              extractionResult=await endowment.startCountryProduction(cid);
+              extractionResult=await endowment.startCountryProduction(cid,null,{skipHydrationIfReady:true});
               if(extractionResult?.status==='BLOCKED'&&extractionResult?.reason==='NO_UNATTEMPTED_SITE_OCCURRENCES')
                 extractionResult=Object.assign({},extractionResult,{status:'SKIPPED'});
             }else{
