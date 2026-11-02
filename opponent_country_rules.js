@@ -534,7 +534,7 @@ class Scheduler{
     this.last.set(c,Number(t));this.nextDue.set(c,Number(t)+interval);this.lastMode.set(c,mode);this.dirty.delete(c);
     this.tr.add({layer:'L24_MULTI_RATE_SCHEDULER',countryId:c,turn:t,mode,nextDueTurn:Number(t)+interval,action:'COMMIT_SCHEDULE',scheduledNext:true});
   }
-  invalidateAll(){this.nextDue.clear();this.dirty.clear();}
+  invalidateAll(){this.last.clear();this.nextDue.clear();this.lastMode.clear();this.dirty.clear();}
   save(){return{last:Object.fromEntries(this.last),nextDue:Object.fromEntries(this.nextDue),lastMode:Object.fromEntries(this.lastMode),dirty:Object.fromEntries([...this.dirty].map(([k,v])=>[k,[...v]]))};}
   restore(v){
     this.last=new Map(Object.entries(v?.last||{}));
@@ -1061,5 +1061,21 @@ save(){
 function ASSESS(r){return{countryId:r.countryId,simulationTurn:r.turn,problemSignals:Object.entries(r.signals).filter(([k,o])=>EVAL_DIR(k,o.raw,DIR[k]?.problemWhen).state==='TRUE').map(([k])=>k),opportunitySignals:Object.entries(r.signals).filter(([k,o])=>DIR[k]?.opportunityWhen&&DIRECTION(o.raw)===DIR[k].opportunityWhen).map(([k])=>k),unknownSignals:Object.entries(r.signals).filter(([,o])=>o.status!=='AVAILABLE').map(([k])=>k),gaps:CLONE(r.gapPressure.gaps),scenarios:r.scenarios.map(x=>x.id),goals:r.goals.map(x=>x.goalId),decisions:r.decisions.map(x=>x.decisionId),forecasts:CLONE(r.forecasts),reconciliation:CLONE(r.reconciliation),development:CLONE(r.development)};}
 const RT=new Runtime();
 const API={VERSION:V,SCHEMA_VERSION:SV,LAYERS:CLONE(LAYERS),DATASETS:CLONE(DATASETS),SIGNAL_SOURCE_REGISTRY:CLONE(SIGNAL_SOURCE_RULES),STATE_DIRECTION_REGISTRY:CLONE(DIR),CAPABILITY_PATTERNS:CLONE(SIGNALS),GAP_RELATION_REGISTRY:CLONE(REL),ACTION_TYPES:CLONE(ACTIONS),SCENARIO_REGISTRY:CLONE(SCENARIOS),RUNTIME_LAYER_REGISTRY:CLONE(LAYERS),instance:RT,initialize:o=>RT.init(o||{}),attachToSimulation:()=>RT.attach(),onTurnCommitted:t=>RT.turnCommitted(t??TURN()),evaluateAllCountries:(t,o)=>RT.evaluateAllCountries(t??TURN(),o||{}),evaluateCountry:(c,t)=>RT.evaluate(c,t),queueDecision:(d,t)=>RT.queue(d,t??TURN()),assessCountryState:(c,t)=>RT.assess(c,t),scenarioAudit:(c,t)=>RT.scenarioAudit(c,t),listCountryIds:()=>RT.countries(),listActors:(type)=>RT.actors.list(type),evaluateActor:(actorId,t)=>RT.evaluate(actorId,t),evaluateDirection:(s,o,e)=>EVAL_DIR(s,o,e),resolveSignalSource:k=>CLONE(SIGNAL_SOURCE_RULES[String(k||'').toUpperCase()]||[]),loadDataset:async(k,o)=>{const wasLoaded=RT.gw.has(k),v=await RT.gw.load(k,o||{});if(!wasLoaded&&RT.gw.has(k)){RT.idr.rebuild();RT.cap.rebuild();RT.actors.rebuild();RT.invalidateAllDerived('DATASET_LOADED:'+k);}return v;},releaseDataset:k=>{const released=RT.gw.release(k);RT.idr.rebuild();RT.cap.rebuild();RT.actors.rebuild();if(released)RT.invalidateAllDerived('DATASET_RELEASED:'+k);return released;},releaseOptionalDatasets:()=>RT.gw.releaseOptional(),setDataset:(k,v)=>{RT.gw.set(k,v);RT.idr.rebuild();RT.cap.rebuild();RT.actors.rebuild();RT.invalidateAllDerived('DATASET_REPLACED:'+k);return true;},getDataset:k=>RT.gw.get(k),getDatasetProfile:k=>RT.gw.profile(k),getHydratedState:c=>RT.kernel.getHydrated(c),handleOutcome:e=>RT.outcome(e),markDirty:(c,n,r)=>RT.markDirty(c,n,r),invalidateCountry:(c,n,r)=>RT.markDirty(c,n,r),invalidateAllDerived:()=>RT.invalidateAllDerived(),setReasoningAdapter:f=>RT.setReasoningAdapter(f),reason:(c,t)=>RT.reason(c,t),diagnostics:()=>RT.diag(),saveState:()=>RT.save(),loadState:s=>RT.load(s),getTrace:()=>RT.tr.save(),buildDependencyGraph:c=>{RT.graph.build();const s=RT.kernel.snap(c,TURN());return RT.graph.down(Object.keys(s.signals).filter(k=>s.signals[k].status==='AVAILABLE'));}};
+if(g.navigator?.serviceWorker?.addEventListener){
+  g.navigator.serviceWorker.addEventListener('message',event=>{
+    const message=event?.data;
+    if(!['OMEGA_CACHE_DATA_UPDATED','OMEGA_CACHE_DATA_REMOVED'].includes(message?.type))return;
+    let changedUrl;
+    try{changedUrl=new URL(String(message.url||''),g.location?.href||'http://omega.invalid/');}catch(_){return;}
+    const entry=Object.entries(DATASETS).find(([,dataset])=>{
+      try{return new URL(dataset[0],g.location?.href||'http://omega.invalid/').pathname===changedUrl.pathname;}catch(_){return false;}
+    });
+    if(!entry)return;
+    const key=entry[0],released=RT.gw.release(key);
+    if(!released)return;
+    RT.idr.rebuild();RT.cap.rebuild();RT.actors.rebuild();
+    RT.invalidateAllDerived('SERVICE_WORKER_DATA_'+message.type+':'+key);
+  });
+}
 g.Omega=g.Omega||{};g.Omega.OpponentCountryRules=Object.freeze(API);g.Omega.OpponentCountryRuntime=Object.freeze(API);g.OmegaAutonomousWorldSimulation=Object.freeze(API);g.OmegaOpponentCountryRules=Object.freeze(API);try{RT.attach();}catch(e){RT.lastError=String(e?.message||e);}if(typeof g.addEventListener==='function')g.addEventListener('OMEGA_GAME_SESSION_STARTED',()=>{void RT.init({turn:TURN()});});else void RT.init({fetchCountries:false,turn:TURN()});
 })(typeof window!=='undefined'?window:globalThis);
