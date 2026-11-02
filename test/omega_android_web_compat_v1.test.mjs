@@ -71,6 +71,7 @@ test('Android asset sync packages every local OMEGA UI v2 module referenced by t
   const gradle = read('android/app/build.gradle');
   const serviceWorker = read('omega-offline-map-sw.js');
   assert.ok(serviceWorker.includes('"./omega_android_compat_v1.js"'), 'offline shell must retain the Android compatibility shim');
+  assert.ok(!serviceWorker.includes('Promise.allSettled'), 'service worker install must not rely on Promise.allSettled in legacy WebView engines');
   const requiredAssets = [
     'omega_ui_v2/omega-ui-v2.css',
     'omega_ui_v2/navigation-registry.js',
