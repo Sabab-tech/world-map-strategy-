@@ -120,8 +120,9 @@ class Gateway{
     const value=this.p.get(k);this.p.delete(k);this.p.set(k,value);
     return CLONE(value);
   }
-  async load(k){
-    if(this.c.has(k))return this.get(k);
+  async load(k,options={}){
+    const copyResult=options.copy!==false;
+    if(this.c.has(k))return copyResult?this.get(k):this.peek(k);
     if(this.inflight.has(k))return this.inflight.get(k);
     const d=DATASETS[k];if(!d)throw Error('DATASET_NOT_REGISTERED:'+k);
     if(!this.fetch)throw Error('DATASET_FETCH_UNAVAILABLE:'+k);
@@ -133,7 +134,7 @@ class Gateway{
       const value=await r.json();
       if(this.inflight.get(k)!==task||(this.epochs.get(k)||0)!==epoch)return undefined;
       this._store(k,value);
-      return this.get(k);
+      return copyResult?this.get(k):this.peek(k);
     })().finally(()=>{if(this.inflight.get(k)===task)this.inflight.delete(k)});
     this.inflight.set(k,task);return task;
   }
@@ -696,7 +697,7 @@ class Runtime{
       try{if(g.OmegaCountryRuntimeData?.ready)await g.OmegaCountryRuntimeData.ready;}catch(_){}
       this.idr.rebuild();
       if(o.fetchCountries!==false&&!this.idr.list().length&&!this.gw.has('countries')){
-        await this.gw.load('countries');this.idr.rebuild();
+        await this.gw.load('countries',{copy:false});this.idr.rebuild();
       }
       this.actors.rebuild();this.cap.rebuild();this.actors.rebuild();this.graph.build();this.bind();
       return this.diag();
@@ -704,7 +705,7 @@ class Runtime{
   }
   async countries(){
     if(!this.idr.list().length)this.idr.rebuild();
-    if(!this.idr.list().length&&!this.gw.has('countries'))await this.gw.load('countries');
+    if(!this.idr.list().length&&!this.gw.has('countries'))await this.gw.load('countries',{copy:false});
     this.idr.rebuild();this.actors.rebuild();return this.idr.list();
   }
   async evaluate(c,t=TURN(),options={}){
@@ -1055,6 +1056,6 @@ save(){
 }
 function ASSESS(r){return{countryId:r.countryId,simulationTurn:r.turn,problemSignals:Object.entries(r.signals).filter(([k,o])=>EVAL_DIR(k,o.raw,DIR[k]?.problemWhen).state==='TRUE').map(([k])=>k),opportunitySignals:Object.entries(r.signals).filter(([k,o])=>DIR[k]?.opportunityWhen&&DIRECTION(o.raw)===DIR[k].opportunityWhen).map(([k])=>k),unknownSignals:Object.entries(r.signals).filter(([,o])=>o.status!=='AVAILABLE').map(([k])=>k),gaps:CLONE(r.gapPressure.gaps),scenarios:r.scenarios.map(x=>x.id),goals:r.goals.map(x=>x.goalId),decisions:r.decisions.map(x=>x.decisionId),forecasts:CLONE(r.forecasts),reconciliation:CLONE(r.reconciliation),development:CLONE(r.development)};}
 const RT=new Runtime();
-const API={VERSION:V,SCHEMA_VERSION:SV,LAYERS:CLONE(LAYERS),DATASETS:CLONE(DATASETS),SIGNAL_SOURCE_REGISTRY:CLONE(SIGNAL_SOURCE_RULES),STATE_DIRECTION_REGISTRY:CLONE(DIR),CAPABILITY_PATTERNS:CLONE(SIGNALS),GAP_RELATION_REGISTRY:CLONE(REL),ACTION_TYPES:CLONE(ACTIONS),SCENARIO_REGISTRY:CLONE(SCENARIOS),RUNTIME_LAYER_REGISTRY:CLONE(LAYERS),instance:RT,initialize:o=>RT.init(o||{}),attachToSimulation:()=>RT.attach(),onTurnCommitted:t=>RT.turnCommitted(t??TURN()),evaluateAllCountries:(t,o)=>RT.evaluateAllCountries(t??TURN(),o||{}),evaluateCountry:(c,t)=>RT.evaluate(c,t),queueDecision:(d,t)=>RT.queue(d,t??TURN()),assessCountryState:(c,t)=>RT.assess(c,t),scenarioAudit:(c,t)=>RT.scenarioAudit(c,t),listCountryIds:()=>RT.countries(),listActors:(type)=>RT.actors.list(type),evaluateActor:(actorId,t)=>RT.evaluate(actorId,t),evaluateDirection:(s,o,e)=>EVAL_DIR(s,o,e),resolveSignalSource:k=>CLONE(SIGNAL_SOURCE_RULES[String(k||'').toUpperCase()]||[]),loadDataset:async(k,o)=>{const v=await RT.gw.load(k,o||{});RT.idr.rebuild();RT.cap.rebuild();RT.actors.rebuild();RT.invalidateAllDerived('DATASET_LOADED:'+k);return v;},releaseDataset:k=>{const released=RT.gw.release(k);RT.idr.rebuild();RT.cap.rebuild();RT.actors.rebuild();if(released)RT.invalidateAllDerived('DATASET_RELEASED:'+k);return released;},releaseOptionalDatasets:()=>RT.gw.releaseOptional(),setDataset:(k,v)=>{RT.gw.set(k,v);RT.idr.rebuild();RT.cap.rebuild();RT.actors.rebuild();RT.invalidateAllDerived('DATASET_REPLACED:'+k);return true;},getDataset:k=>RT.gw.get(k),getDatasetProfile:k=>RT.gw.profile(k),getHydratedState:c=>RT.kernel.getHydrated(c),handleOutcome:e=>RT.outcome(e),markDirty:(c,n,r)=>RT.markDirty(c,n,r),invalidateCountry:(c,n,r)=>RT.markDirty(c,n,r),invalidateAllDerived:()=>RT.invalidateAllDerived(),setReasoningAdapter:f=>RT.setReasoningAdapter(f),reason:(c,t)=>RT.reason(c,t),diagnostics:()=>RT.diag(),saveState:()=>RT.save(),loadState:s=>RT.load(s),getTrace:()=>RT.tr.save(),buildDependencyGraph:c=>{RT.graph.build();const s=RT.kernel.snap(c,TURN());return RT.graph.down(Object.keys(s.signals).filter(k=>s.signals[k].status==='AVAILABLE'));}};
+const API={VERSION:V,SCHEMA_VERSION:SV,LAYERS:CLONE(LAYERS),DATASETS:CLONE(DATASETS),SIGNAL_SOURCE_REGISTRY:CLONE(SIGNAL_SOURCE_RULES),STATE_DIRECTION_REGISTRY:CLONE(DIR),CAPABILITY_PATTERNS:CLONE(SIGNALS),GAP_RELATION_REGISTRY:CLONE(REL),ACTION_TYPES:CLONE(ACTIONS),SCENARIO_REGISTRY:CLONE(SCENARIOS),RUNTIME_LAYER_REGISTRY:CLONE(LAYERS),instance:RT,initialize:o=>RT.init(o||{}),attachToSimulation:()=>RT.attach(),onTurnCommitted:t=>RT.turnCommitted(t??TURN()),evaluateAllCountries:(t,o)=>RT.evaluateAllCountries(t??TURN(),o||{}),evaluateCountry:(c,t)=>RT.evaluate(c,t),queueDecision:(d,t)=>RT.queue(d,t??TURN()),assessCountryState:(c,t)=>RT.assess(c,t),scenarioAudit:(c,t)=>RT.scenarioAudit(c,t),listCountryIds:()=>RT.countries(),listActors:(type)=>RT.actors.list(type),evaluateActor:(actorId,t)=>RT.evaluate(actorId,t),evaluateDirection:(s,o,e)=>EVAL_DIR(s,o,e),resolveSignalSource:k=>CLONE(SIGNAL_SOURCE_RULES[String(k||'').toUpperCase()]||[]),loadDataset:async(k,o)=>{const wasLoaded=RT.gw.has(k),v=await RT.gw.load(k,o||{});if(!wasLoaded&&RT.gw.has(k)){RT.idr.rebuild();RT.cap.rebuild();RT.actors.rebuild();RT.invalidateAllDerived('DATASET_LOADED:'+k);}return v;},releaseDataset:k=>{const released=RT.gw.release(k);RT.idr.rebuild();RT.cap.rebuild();RT.actors.rebuild();if(released)RT.invalidateAllDerived('DATASET_RELEASED:'+k);return released;},releaseOptionalDatasets:()=>RT.gw.releaseOptional(),setDataset:(k,v)=>{RT.gw.set(k,v);RT.idr.rebuild();RT.cap.rebuild();RT.actors.rebuild();RT.invalidateAllDerived('DATASET_REPLACED:'+k);return true;},getDataset:k=>RT.gw.get(k),getDatasetProfile:k=>RT.gw.profile(k),getHydratedState:c=>RT.kernel.getHydrated(c),handleOutcome:e=>RT.outcome(e),markDirty:(c,n,r)=>RT.markDirty(c,n,r),invalidateCountry:(c,n,r)=>RT.markDirty(c,n,r),invalidateAllDerived:()=>RT.invalidateAllDerived(),setReasoningAdapter:f=>RT.setReasoningAdapter(f),reason:(c,t)=>RT.reason(c,t),diagnostics:()=>RT.diag(),saveState:()=>RT.save(),loadState:s=>RT.load(s),getTrace:()=>RT.tr.save(),buildDependencyGraph:c=>{RT.graph.build();const s=RT.kernel.snap(c,TURN());return RT.graph.down(Object.keys(s.signals).filter(k=>s.signals[k].status==='AVAILABLE'));}};
 g.Omega=g.Omega||{};g.Omega.OpponentCountryRules=Object.freeze(API);g.Omega.OpponentCountryRuntime=Object.freeze(API);g.OmegaAutonomousWorldSimulation=Object.freeze(API);g.OmegaOpponentCountryRules=Object.freeze(API);try{RT.attach();}catch(e){RT.lastError=String(e?.message||e);}if(typeof g.addEventListener==='function')g.addEventListener('OMEGA_GAME_SESSION_STARTED',()=>{void RT.init({turn:TURN()});});else void RT.init({fetchCountries:false,turn:TURN()});
 })(typeof window!=='undefined'?window:globalThis);
