@@ -855,7 +855,7 @@ test("all resource SVGs use a light metallic backplate for readable dark mineral
     assert.match(svg, /data-omega-icon-kind="resource"/);
   }
   assert.match(manifest.rendering.background, /light silver-metal.*factory SVGs retain their shared dark-navy/i);
-  assert.match(read("omega-offline-map-sw.js"), /omega-offline-atlas-shell-v77/);
+  assert.match(read("omega-offline-map-sw.js"), /omega-offline-atlas-shell-v78/);
 });
 
 
