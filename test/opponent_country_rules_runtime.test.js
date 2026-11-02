@@ -158,9 +158,16 @@ assert.ok(diagnostics.approvedPolicyLayer.scenarioRules>=20);
 assert.equal(diagnostics.approvedPolicyLayer.numericStateTransitions,0);
 assert.equal(diagnostics.dataTruth.syntheticFallbackTraceEntries,0);
 
+const stressCountryIds=[...new Set(countries.slice(0,90).map(row=>row.code).filter(Boolean))];
+let stressTurn=10;
+for(const countryId of stressCountryIds)await api.evaluateCountry(countryId,stressTurn++);
+assert.equal(api.instance.runs.size,64,'derived country analyses must stay within the LRU cache bound');
+assert.equal(api.diagnostics().countryRunCacheLimit,64);
 const saved=api.saveState();
 assert.equal(saved.schemaVersion,6);
+assert.ok(Object.keys(saved.runs).length<=64,'autosave must not serialize an unbounded per-country analysis cache');
 api.loadState(saved);
+assert.ok(api.instance.runs.size<=64,'legacy or imported saves must be trimmed to the current cache bound');
 
 console.log('OMEGA AUTONOMOUS WORLD CORE TEST PASSED');
 console.log(JSON.stringify({

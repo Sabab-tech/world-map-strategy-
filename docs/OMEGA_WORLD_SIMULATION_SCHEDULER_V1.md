@@ -28,9 +28,10 @@ Country identity resolution uses the canonical country runtime/identity bridge. 
 | Active country set | Maximum 48 |
 | Pending event queue | Maximum 256 |
 | Remembered event identifiers | Maximum 512 |
+| Derived country-analysis cache | Maximum 64 entries |
 | Country evaluations between browser yields | 2 |
 
-Active countries expire after 30 game days unless renewed by ongoing work or a new relevant event. The macro cursor, active-country metadata and last-processed turns are stored under the existing simulation state. Country economic, resource, factory and inventory data remain with their current authoritative owners.
+Active countries expire after 30 game days unless renewed by ongoing work or a new relevant event. The macro cursor, active-country metadata and last-processed turns are stored under the existing simulation state. The opponent rules engine's derived country-analysis cache is limited to 64 least-recently-used entries; evicted analysis is recomputed on demand and only the bounded cache is written into the engine save snapshot. Country economic, resource, factory and inventory data remain with their current authoritative owners.
 
 ## Event and lifecycle behavior
 

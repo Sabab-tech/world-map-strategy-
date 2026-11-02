@@ -1,6 +1,6 @@
 /* OMEGA AUTONOMOUS WORLD SIMULATION CORE v4.2.0 */
 (function(g){'use strict';
-const V='4.2.0',SV=6,MAX=4000;
+const V='4.2.0',SV=6,MAX=4000,MAX_CACHED_COUNTRY_RUNS=64;
 const LAYERS=['DATA_INTAKE','CANONICAL_IDENTITY','CAPABILITY_REGISTRY','WORLD_STATE_KERNEL','DEPENDENCY_GRAPH','DEMAND_ENGINE','SUPPLY_CAPACITY_ENGINE','NEED_GAP_PRESSURE_ENGINE','SCENARIO_ENGINE','GOAL_PRIORITY_ENGINE','DECISION_ENGINE','FEASIBILITY_ENGINE','PROJECT_ENGINE','TRANSACTION_ENGINE','TRADE_MARKET_ENGINE','FINANCE_ENGINE','INFRA_LOGISTICS_ENGINE','POPULATION_LABOR_ENGINE','TECH_PRODUCTIVITY_ENGINE','POLICY_INSTITUTION_ENGINE','EVENT_SHOCK_ENGINE','CONSEQUENCE_ENGINE','FORECAST_ENGINE','ACTOR_MEMORY_ADAPTATION','MULTI_RATE_SCHEDULER','STATE_RECONCILIATION','EVIDENCE_TRACE','RUNTIME_DEBUG'].map((x,i)=>({id:'L'+String(i).padStart(2,'0')+'_'+x,index:i}));
 const DATASETS={countries:['countries.json',1],economy:['economy.json',0],population:['population.json',0],resources:['resources.json',0],cities:['cities.json',0],world:['world.json',0],industry:['industry.json',0],infrastructure:['infrastructure.json',0],finance:['finance.json',0],projects:['projects.json',0],relations:['relations.json',0],events:['events.json',0],organizations:['organizations.json',0],companies:['companies.json',0],institutions:['institutions.json',0]};
 const SIGNALS={POPULATION:[],POPULATION_GROWTH:[],FOOD_DEMAND:[],FOOD_SUPPLY:[],HOUSING_DEMAND:[],HOUSING_SUPPLY:[],ENERGY_DEMAND:[],ENERGY_SUPPLY:[],RESOURCE_DEMAND:[],RESOURCE_STOCK:[],RESOURCE_RESERVE:[],RESOURCE_PRODUCTION:[],PRODUCTION_CAPACITY:[],EFFECTIVE_CAPACITY:[],CAPACITY_UTILIZATION:[],INPUT_AVAILABILITY:[],OUTPUT:[],PRODUCTIVITY:[],LABOR_AVAILABILITY:[],SKILLED_LABOR:[],UNEMPLOYMENT:[],WAGE_PRESSURE:[],HOUSEHOLD_INCOME:[],CONSUMER_DEMAND:[],INFLATION:[],GDP_GROWTH:[],REVENUE:[],EXPENDITURE:[],LIQUIDITY:[],CAPITAL_AVAILABILITY:[],DEBT_SERVICE_PRESSURE:[],FOREIGN_CURRENCY:[],TRADE_DEFICIT_PRESSURE:[],IMPORT_DEPENDENCE:[],EXPORT_DEMAND:[],INVESTMENT_DEMAND:[],MARKET_PRICE:[],TRADE_ROUTE_CAPACITY:[],TRANSPORT_CAPACITY:[],INFRASTRUCTURE_CAPACITY:[],LOGISTICS_CONGESTION:[],NETWORK_FAILURE_RISK:[],MAINTENANCE_BACKLOG:[],PROJECT_DELAY:[],ASSET_AGE:[],STABILITY:[],CORRUPTION:[],SECURITY_THREAT:[],FOREIGN_TENSION:[],MILITARY_READINESS:[],TECHNOLOGY_CAPABILITY:[],R_AND_D_CAPABILITY:[],HEALTH_CAPACITY:[],HEALTH_PRESSURE:[],EDUCATION_CAPACITY:[],PUBLIC_SERVICE_CAPACITY:[],MIGRATION_PRESSURE:[],WELFARE_PRESSURE:[],DISASTER_DAMAGE:[],FORECAST_SHORTFALL:[],SAVINGS:[],INTEREST_PRESSURE:[],SUPPLIER_CONCENTRATION:[]};
@@ -546,6 +546,9 @@ class Runtime{
     this.lastError=null;
     this.attached=false;
   }
+  trimRunCache(){
+    while(this.runs.size>MAX_CACHED_COUNTRY_RUNS)this.runs.delete(this.runs.keys().next().value);
+  }
   async init(o={}){
     try{
       if(o.fetchCountries!==false&&this.gw.get('countries')===undefined)await this.gw.load('countries');for(const k of ['population','economy','cities','relations'])if(this.gw.get(k)===undefined)try{await this.gw.load(k);}catch(e){this.tr.add({layer:'L27_RUNTIME_DEBUG',type:'DATASET_OPTIONAL_LOAD_FAILED',datasetId:k,error:String(e?.message||e)});}
@@ -585,7 +588,7 @@ class Runtime{
     decisions.forEach(d=>this.mem.decision(s.countryId,d));
     const out={status:'COMPLETE',countryId:s.countryId,turn:t,mode,identity:s.identity,signals:s.signals,datasetObservations:s.datasetObservations,demand,supply,gapPressure:gap,scenarios,goals,
       decisions,runtimeAnalysis,forecasts:ctx.forecasts,reconciliation,development,events,subsystems:ctx.subsystems};
-    this.runs.set(s.countryId,out);this.scheduler.commit(s.countryId,t);
+    this.runs.delete(s.countryId);this.runs.set(s.countryId,out);this.trimRunCache();this.scheduler.commit(s.countryId,t);
     this.history.push({countryId:s.countryId,turn:t,scenarios:scenarios.map(x=>x.id),decisions:decisions.map(x=>x.decisionId)});if(this.history.length>MAX)this.history.shift();
     this.emitCoverage(s.countryId,t);return out;
   }
@@ -853,7 +856,7 @@ async evaluateAllCountries(t=TURN(),options={}){
   diag(){
     const executed=new Set(this.tr.a.map(x=>x.layer).filter(Boolean)),known=new Set(LAYERS.map(x=>x.id)),real=[...executed].filter(x=>known.has(x)),runtime=this.tr.a.filter(x=>x.runtimeComparisons!==undefined);
     return{version:V,schemaVersion:SV,layers:LAYERS.length,executedLayers:real.length,unexecutedLayers:LAYERS.length-real.length,
-      scenarioCount:SCENARIOS.length,directionalSignals:Object.keys(DIR).length,actionTypes:Object.keys(ACTIONS).length,registeredCommands:this.bound.size,trackedCountries:this.runs.size,
+      scenarioCount:SCENARIOS.length,directionalSignals:Object.keys(DIR).length,actionTypes:Object.keys(ACTIONS).length,registeredCommands:this.bound.size,trackedCountries:this.runs.size,cachedCountryRuns:this.runs.size,countryRunCacheLimit:MAX_CACHED_COUNTRY_RUNS,
       lastTurn:this.lastTurn,lastError:this.lastError,traceEntries:this.tr.a.length,traceLayers:[...executed],datasets:this.gw.status(),capabilities:this.cap.snapshot(),
       runtimeCalculation:{enginePresent:!!this.runtimeFlow,comparisonPasses:runtime.reduce((n,x)=>n+Number(x.runtimeComparisons||0),0),
         automaticDecisions:runtime.reduce((n,x)=>n+Number(x.automaticDecisions||0),0),numericValuesSource:'OBSERVED_STATE_ONLY'},
@@ -879,6 +882,7 @@ save(){
     if(Number(s?.schemaVersion)!==SV)throw Error('AUTONOMOUS_RUNTIME_SCHEMA_MISMATCH');
     this.history=CLONE(s.history||[]);
     this.runs=new Map(Object.entries(s.runs||{}));
+    this.trimRunCache();
     this.mem.restore(s.memory);
     this.forecast.restore(s.forecast);
     this.scheduler.restore(s.scheduler);
