@@ -1311,7 +1311,7 @@
         '" data-stock-state="' + esc(state.state) + '">' +
         '<div class="omega-v2-inventory-resource-head"><span class="omega-v2-inventory-resource-icon">' +
         resourceIconMarkup(rid, resourceLabel(rid)) + '</span><div class="omega-v2-inventory-resource-name"><h3>' +
-        esc(resourceLabel(rid)) + '</h3><small>Natural resource · Raw warehouse</small></div>' +
+        esc(resourceLabel(rid)) + '</h3></div>' +
         '</div>' +
         '<div class="omega-v2-inventory-resource-metrics">' +
         '<div><span>Current stock</span><strong class="omega-v2-current-stock-cell">' +
