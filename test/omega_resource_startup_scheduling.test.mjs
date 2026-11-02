@@ -48,7 +48,7 @@ test('startup schedules one core initialization during idle time and supplementa
 });
 
 test('player extraction and site binding use core data without waiting for optional research packs', () => {
-  const startProduction = section('async function startCountryProduction', 'function registerCommandHandlers');
+  const startProduction = section('async function startCountryProduction', 'function extractAll()');
   assert.match(startProduction, /initialize\(\{coreOnly:true\}\)/);
   const turnExtraction = section('function extractAll()', 'function onReady()');
   assert.match(turnExtraction, /initialize\(\{coreOnly:true\}\)/);
