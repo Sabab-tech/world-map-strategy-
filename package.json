@@ -26,7 +26,7 @@
     "start": "node server_bootstrap.js",
     "test:deep-core-self": "node scripts/test_deep_core_self_query.cjs",
     "test:interoperability": "node test/omega_ministry_interoperability.test.js",
-    "test:simulation": "node test/omega_simulation_runtime.test.js && npm run test:opponent-rules",
+    "test:simulation": "node test/omega_simulation_runtime.test.js && npm run test:opponent-rules && npm run test:world-simulation",
     "test:ministries": "node test/omega_17_ministry_runtime.test.js && node test/omega_ministry_interoperability.test.js && npm run test:minister-intelligence && npm run test:home-ministry",
     "test:opponent-rules": "node test/opponent_country_rules_runtime.test.js",
     "test:opponent-autonomy": "node test/omega_opponent_autonomy_system.test.mjs",
@@ -85,7 +85,8 @@
     "test:browser-performance": "node --check omega_action_progress_v1.js && node --check omega_ui_interaction_guard.js && node --check map-engine-2.js && node --check test/omega_browser_performance_regression.test.mjs && node --test test/omega_browser_performance_regression.test.mjs",
     "test:factory-baseline": "node --test test/omega_factory_production_baseline.test.mjs",
     "test:minister-identity-pool": "node --check omega_minister_identity_pool_v1.js && node test/omega_minister_identity_pool_v1.test.cjs",
-    "test:country-factory-starting-baseline": "node --test test/omega_country_factory_starting_baseline_v1.test.mjs test/omega_country_factory_count_scaling_v1.test.mjs test/omega_resource_startup_baseline_v1.test.mjs && node test/omega_resource_industrial_network_v1.test.mjs && node scripts/build_country_factory_input_inventory_baseline_v1.mjs --check"
+    "test:country-factory-starting-baseline": "node --test test/omega_country_factory_starting_baseline_v1.test.mjs test/omega_country_factory_count_scaling_v1.test.mjs test/omega_resource_startup_baseline_v1.test.mjs && node test/omega_resource_industrial_network_v1.test.mjs && node scripts/build_country_factory_input_inventory_baseline_v1.mjs --check",
+    "test:world-simulation": "node --test test/omega_world_simulation_scheduler_v1.test.mjs"
   },
   "dependencies": {
     "@google/genai": "^2.21.0",

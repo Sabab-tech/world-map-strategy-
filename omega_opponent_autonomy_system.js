@@ -1861,27 +1861,28 @@
     return true;
   }
 
-  function tickProjects(){
-    const sim=getSimulation();
-    const state=g.Game?.state||g.gameState||{};
-    const projects=state?.projects||{};
-    for(const country of Object.keys(projects)){
-      const list=Array.isArray(projects[country]?.registry)?projects[country].registry:[];
+  function tickProjects(countryIds=null){
+    const sim=getSimulation(),state=g.Game?.state||g.gameState||{},projects=state?.projects||{};
+    const selected=Array.isArray(countryIds)?countryIds:(countryIds?[countryIds]:Object.keys(projects)),checked=[];
+    for(const rawCountry of selected){
+      const country=canonicalId(rawCountry);if(!country)continue;
+      const projectKey=Object.keys(projects).find(key=>canonicalId(key)===country)||country;
+      const militaryRoot=state?.military||{},militaryKey=Object.keys(militaryRoot).find(key=>canonicalId(key)===country)||country;
+      checked.push(country);
+      const list=Array.isArray(projects[projectKey]?.registry)?projects[projectKey].registry:[];
       if(list.some(p=>p?.autonomy&&['UNDER_CONSTRUCTION','COMMISSIONING'].includes(String(p.status||'').toUpperCase()))){
-        try{sim?.enqueueCommand?.({
-          commandId:'OAS-TICK-'+turn()+'-'+id(country),
-          commandType:'OMEGA_AUTO_PROJECT_TICK',actionId:'OMEGA_AUTO_PROJECT_TICK',
-          sourceMinistryId:'projects',countryId:canonicalId(country),payload:{countryId:canonicalId(country)},options:{origin:'OMEGA_AUTONOMY_PROJECT_CLOCK'}
-        });}catch(_){}
+        try{sim?.enqueueCommand?.({commandId:'OAS-TICK-'+turn()+'-'+id(country),commandType:'OMEGA_AUTO_PROJECT_TICK',actionId:'OMEGA_AUTO_PROJECT_TICK',sourceMinistryId:'projects',countryId:country,payload:{countryId:country},options:{origin:'OMEGA_AUTONOMY_PROJECT_CLOCK'}});}catch(_){}
       }
-      if(Array.isArray(state?.military?.[id(country)]?.trainingQueue)&&state.military[id(country)].trainingQueue.some(x=>x.status==='IN_TRAINING')){
-        try{sim?.enqueueCommand?.({
-          commandId:'OAS-MIL-TICK-'+turn()+'-'+id(country),
-          commandType:'OMEGA_AUTO_MILITARY_TICK',actionId:'OMEGA_AUTO_MILITARY_TICK',
-          sourceMinistryId:'military',countryId:canonicalId(country),payload:{countryId:canonicalId(country)},options:{origin:'OMEGA_AUTONOMY_MILITARY_CLOCK'}
-        });}catch(_){}
+      const training=Array.isArray(militaryRoot[militaryKey]?.trainingQueue)?militaryRoot[militaryKey].trainingQueue:[];
+      if(training.some(x=>String(x.status||'').toUpperCase()==='IN_TRAINING')){
+        try{sim?.enqueueCommand?.({commandId:'OAS-MIL-TICK-'+turn()+'-'+id(country),commandType:'OMEGA_AUTO_MILITARY_TICK',actionId:'OMEGA_AUTO_MILITARY_TICK',sourceMinistryId:'military',countryId:country,payload:{countryId:country},options:{origin:'OMEGA_AUTONOMY_MILITARY_CLOCK'}});}catch(_){}
       }
     }
+    return{status:'COMPLETED',countriesChecked:checked.length,countryIds:checked};
+  }
+  function tickProjectsForCountry(countryId){
+    const country=canonicalId(countryId);if(!country)return{status:'SKIPPED',reason:'COUNTRY_ID_REQUIRED'};
+    return tickProjects([country]);
   }
 
   function diagnostics(){
@@ -1953,7 +1954,14 @@
     installHandlers();
     installQueueBridge();
     if(typeof g.addEventListener==='function'){
-      g.addEventListener('OMEGA_SIMULATION_TURN_COMMITTED',()=>tickProjects());
+      const scheduler=g.Omega?.WorldSimulationScheduler;
+      if(scheduler?.registerCountryHandler){
+        scheduler.registerCountryHandler('omega.opponent-autonomy.lifecycle',
+          countryId=>tickProjectsForCountry(countryId),
+          {tiers:['PLAYER','ACTIVE'],priority:100});
+      }else{
+        g.addEventListener('OMEGA_SIMULATION_TURN_COMMITTED',()=>tickProjects());
+      }
       g.addEventListener('OMEGA_READY',()=>{installHandlers();installQueueBridge();});
       g.addEventListener('OMEGA_GAME_SESSION_STARTED',()=>{installHandlers();installQueueBridge();});
     }
@@ -1968,6 +1976,7 @@
     EVENT_ROUTES:clone(EVENT_ROUTES),
     DECISION_WEIGHTS:clone(DECISION_WEIGHTS),
     diagnostics,
+    tickProjectsForCountry,
     canonicalCountry,
     routeSubject:apiRouteSubject,
     resolveEventRoute,
