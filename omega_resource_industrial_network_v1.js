@@ -2884,15 +2884,20 @@ function advanceShipments(c){
         sourceBatch.locationNodeKey=mixedLocation;sourceBatch.currentLocationNodeId=null;
         if(sourceLot){sourceLot.stage='PARTIALLY_IN_RAW_INVENTORY';sourceLot.warehouseId=null;sourceLot.locationNodeKey=mixedLocation;}
       }else{
-        const rawWarehouseId=String(warehouse.warehouseId||('WH-'+cid+'-RAW'));
-        sourceBatch.stage='RAW_INVENTORY';sourceBatch.warehouseId=rawWarehouseId;
-        sourceBatch.locationNodeKey='WAREHOUSE:'+cid+':RAW';sourceBatch.currentLocationNodeId=rawWarehouseId;
-        if(sourceLot){sourceLot.stage='RAW_INVENTORY';sourceLot.warehouseId=rawWarehouseId;sourceLot.locationNodeKey=sourceBatch.locationNodeKey;}
+        const remainingWarehouseId=String(warehouse.warehouseId||warehouseId);
+        const remainingWarehouseStage=sourceWarehouse.kind==='PROCESSED'?'PROCESSED':'RAW_INVENTORY';
+        const remainingWarehouseLabel=sourceWarehouse.kind==='PROCESSED'?'PROCESSED':'RAW';
+        sourceBatch.stage=remainingWarehouseStage;sourceBatch.warehouseId=remainingWarehouseId;
+        sourceBatch.locationNodeKey='WAREHOUSE:'+cid+':'+remainingWarehouseLabel;
+        sourceBatch.currentLocationNodeId=remainingWarehouseId;
+        if(sourceLot){sourceLot.stage=remainingWarehouseStage;sourceLot.warehouseId=remainingWarehouseId;sourceLot.locationNodeKey=sourceBatch.locationNodeKey;}
         warehouse.storedBatchIds=Array.isArray(warehouse.storedBatchIds)?warehouse.storedBatchIds:[];
         if(!warehouse.storedBatchIds.some(value=>String(value)===sourceBatchId))warehouse.storedBatchIds.push(sourceBatchId);
       }
     }
-    r.warehouse=warehouse;r.inventoryLots=lots;r.batches=batches;r.inventory[invKey]=Math.max(0,countryRawStock-quantity);
+    if(sourceWarehouse.kind==='PROCESSED')r.processedWarehouse=warehouse;
+    else r.warehouse=warehouse;
+    r.inventoryLots=lots;r.batches=batches;r.inventory[invKey]=Math.max(0,countryRawStock-quantity);
     const factoryInputQuantity=Math.max(0,num(s.targetQuantity)??quantity);
     const factoryInputUnit=s.targetUnit||s.unit||sourceBatch?.unit||factory.inputUnit||'TONNES';
     factory.inputInventory=factory.inputInventory&&typeof factory.inputInventory==='object'?factory.inputInventory:{};
@@ -2966,7 +2971,7 @@ function advanceShipments(c){
         ?{status:'BLOCKED',reason:'FACTORY_INPUT_SHORTAGE',factoryId:String(s.factoryId),
           missingInputs:clone(productionMetrics.missingInputs),capacity:productionMetrics.capacity}
         :startFactoryProductionCycle({countryId:cid,factoryId:s.factoryId,resourceId:rid,
-          quantity:productionMetrics.possibleProduction,unit:s.unit||sourceBatch?.unit||factory.inputUnit||null});
+          quantity:productionMetrics.possibleProduction,unit:s.targetUnit||s.unit||sourceBatch?.unit||factory.inputUnit||null});
     s.processingStatus=processing?.status==='COMPLETED'?'PROCESSED':
       processing?.status==='IN_PROGRESS'?'IN_PROGRESS':
       processing?.status==='PAUSED'?'PAUSED':
