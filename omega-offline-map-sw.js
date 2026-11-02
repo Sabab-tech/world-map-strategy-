@@ -2,7 +2,13 @@
  * Same-origin app files are cached for offline relaunch; remote map tiles are never cached here.
  */
 "use strict";
-const CACHE_NAME = "omega-offline-atlas-shell-v71";
+const CACHE_NAME = "omega-offline-atlas-shell-v72";
+const DATA_CACHE_NAME = "omega-country-data-v1";
+const DATA_CACHE_MAX_ENTRIES = 32;
+const DATA_CACHE_MAX_BYTES = 24 * 1024 * 1024;
+const DATA_CACHE_MAX_ENTRY_BYTES = 4 * 1024 * 1024;
+const DATA_CACHE_META_URL = new URL("__omega-data-cache-index__", APP_BASE).href;
+let dataCacheMutation = Promise.resolve();
 const APP_BASE = new URL("./", self.location.href);
 const INDEX_URL = new URL("index.html", APP_BASE).href;
 const CORE_ASSETS = [
@@ -121,15 +127,118 @@ const CORE_ASSETS = [
   "./assets/omega-industrial-icons-v1/transport/route-warehouse-destination.svg",
 ];
 
-function isLocalAppUrl(value) {
+function isShellAsset(value) {
   try {
     const url = new URL(value, INDEX_URL);
-    return url.origin === self.location.origin &&
-      url.pathname.startsWith(APP_BASE.pathname) &&
-      /\.(?:html?|js|mjs|css|json|png|jpe?g|webp|svg|woff2?)$/i.test(url.pathname);
+    if (url.origin !== self.location.origin || !url.pathname.startsWith(APP_BASE.pathname)) return false;
+    if (/\\.(?:m?js|css|svg|woff2?|png|jpe?g|webp|avif)$/i.test(url.pathname)) return true;
+    return /\\/(?:index\\.html?|world\\.json|economy_global_profiles_v1\\.json)$/i.test(url.pathname);
   } catch (_) {
     return false;
   }
+}
+
+function isLocalAppUrl(value) {
+  return isShellAsset(value);
+}
+
+function isDataRequest(url) {
+  return /\\/api\\/omega\\/country-(?:domain|general-data|sector-profile)\\//i.test(url.pathname) ||
+    /\\.(?:json|geojson)$/i.test(url.pathname);
+}
+
+function withDataCacheLock(work) {
+  const next = dataCacheMutation.then(work, work);
+  dataCacheMutation = next.catch(() => undefined);
+  return next;
+}
+
+async function readDataCacheIndex(cache) {
+  try {
+    const response = await cache.match(DATA_CACHE_META_URL);
+    if (!response) return [];
+    const value = await response.json();
+    return Array.isArray(value) ? value.filter(row => row && typeof row.url === "string") : [];
+  } catch (_) {
+    return [];
+  }
+}
+
+async function writeDataCacheIndex(cache, rows) {
+  await cache.put(DATA_CACHE_META_URL, new Response(JSON.stringify(rows), {
+    headers: { "Content-Type": "application/json; charset=utf-8" }
+  }));
+}
+
+async function rememberDataResponse(cache, request, response) {
+  return withDataCacheLock(async () => {
+    const declared = Number(response.headers.get("content-length"));
+    let size = Number.isFinite(declared) && declared >= 0 ? declared : null;
+    if (size === null) {
+      try { size = (await response.clone().arrayBuffer()).byteLength; }
+      catch (_) { return false; }
+    }
+    if (size > DATA_CACHE_MAX_ENTRY_BYTES) {
+      await cache.delete(request);
+      const existing = await readDataCacheIndex(cache);
+      const rows = existing.filter(row => row.url !== request.url);
+      await writeDataCacheIndex(cache, rows);
+      return false;
+    }
+    await cache.put(request, response.clone());
+    const rows = (await readDataCacheIndex(cache)).filter(row => row.url !== request.url);
+    rows.push({ url: request.url, size, usedAt: Date.now() });
+    rows.sort((left, right) => Number(left.usedAt) - Number(right.usedAt));
+    let total = rows.reduce((sum, row) => sum + Math.max(0, Number(row.size) || 0), 0);
+    while (rows.length > DATA_CACHE_MAX_ENTRIES || total > DATA_CACHE_MAX_BYTES) {
+      const oldest = rows.shift();
+      if (!oldest) break;
+      total -= Math.max(0, Number(oldest.size) || 0);
+      await cache.delete(oldest.url);
+    }
+    await writeDataCacheIndex(cache, rows);
+    return true;
+  });
+}
+
+async function touchDataResponse(cache, request) {
+  return withDataCacheLock(async () => {
+    const rows = await readDataCacheIndex(cache);
+    const row = rows.find(item => item.url === request.url);
+    if (!row) return;
+    row.usedAt = Date.now();
+    rows.sort((left, right) => Number(left.usedAt) - Number(right.usedAt));
+    await writeDataCacheIndex(cache, rows);
+  });
+}
+
+async function networkFirstData(request) {
+  const cache = await caches.open(DATA_CACHE_NAME);
+  try {
+    const response = await fetch(request, { cache: "no-store" });
+    if (response && response.ok && response.type !== "opaque") {
+      await rememberDataResponse(cache, request, response);
+      return response;
+    }
+  } catch (_) {
+    // Fall through to the last successfully downloaded copy for offline play.
+  }
+  const cached = await cache.match(request);
+  if (cached) {
+    await touchDataResponse(cache, request);
+    const headers = new Headers(cached.headers);
+    headers.set("X-OMEGA-OFFLINE-STALE", "1");
+    return new Response(cached.body, {
+      status: cached.status,
+      statusText: cached.statusText,
+      headers
+    });
+  }
+  return new Response("OMEGA offline data has not been downloaded on this device yet.", {
+    status: 504,
+    statusText: "Offline data unavailable",
+    headers: { "Content-Type": "text/plain; charset=utf-8" }
+  });
 }
 
 async function fetchAndCache(cache, url) {
@@ -147,55 +256,48 @@ async function fetchAndCache(cache, url) {
 self.addEventListener("install", event => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_NAME);
-    const assets = new Set(CORE_ASSETS.map(asset => new URL(asset, APP_BASE).href));
+    const assets = new Set(CORE_ASSETS.filter(isShellAsset).map(asset => new URL(asset, APP_BASE).href));
     const htmlResponse = await fetchAndCache(cache, INDEX_URL);
     if (htmlResponse && htmlResponse.ok) {
       await cache.put(APP_BASE.href, htmlResponse.clone());
       const html = await htmlResponse.text();
-      const refs = /(?:src|href)\s*=\s*["']([^"']+)["']/gi;
+      const refs = /(?:src|href)\\s*=\\s*["']([^"']+)["']/gi;
       let match;
       while ((match = refs.exec(html)) !== null) {
         if (isLocalAppUrl(match[1])) assets.add(new URL(match[1], INDEX_URL).href);
       }
     }
-    // Precache the canonical factory SVG library from its manifest so factory cards
-    // remain fully illustrated after an offline relaunch. Never synthesize new icons.
+    // Icons are small static assets. Large country/resource datasets remain on-demand.
     const factoryIconManifestUrl = new URL("./assets/omega-industrial-icons-v1/manifest.json", APP_BASE).href;
-    assets.add(factoryIconManifestUrl);
-    const factoryIconManifestResponse = await fetchAndCache(cache, factoryIconManifestUrl);
-    if (factoryIconManifestResponse && factoryIconManifestResponse.ok) {
-      try {
-        const factoryIconManifest = await factoryIconManifestResponse.clone().json();
-        const factoryIcons = Array.isArray(factoryIconManifest.factories) ? factoryIconManifest.factories : [];
-        for (const icon of factoryIcons) {
+    let factoryIconManifest = null;
+    try {
+      const response = await fetch(factoryIconManifestUrl, { cache: "no-store" });
+      if (response && response.ok) factoryIconManifest = await response.json();
+    } catch (_) {}
+    if (factoryIconManifest) {
+      for (const group of ["factories", "resources", "transportVariants"]) {
+        const rows = Array.isArray(factoryIconManifest[group]) ? factoryIconManifest[group] : [];
+        for (const icon of rows) {
           const file = String(icon && icon.file || "");
-          if (/^factories\/[a-z0-9-]+\.svg$/.test(file)) {
+          if (/^(?:factories|resources)\\/[a-z0-9-]+\\.svg$/.test(file) ||
+              /^transport\\/variants\\/[a-z0-9-]+\\.svg$/.test(file)) {
             assets.add(new URL("./assets/omega-industrial-icons-v1/" + file, APP_BASE).href);
           }
         }
-        const resourceIcons = Array.isArray(factoryIconManifest.resources) ? factoryIconManifest.resources : [];
-        for (const icon of resourceIcons) {
-          const file = String(icon && icon.file || "");
-          if (/^resources\/[a-z0-9-]+\.svg$/.test(file)) {
-            assets.add(new URL("./assets/omega-industrial-icons-v1/" + file, APP_BASE).href);
-          }
-        }
-        const transportVariants = Array.isArray(factoryIconManifest.transportVariants) ? factoryIconManifest.transportVariants : [];
-        for (const icon of transportVariants) {
-          const file = String(icon && icon.file || "");
-          if (/^transport\/variants\/[a-z0-9-]+\.svg$/.test(file)) {
-            assets.add(new URL("./assets/omega-industrial-icons-v1/" + file, APP_BASE).href);
-          }
-        }
-      } catch (_) {
-        // A malformed optional icon manifest must not prevent the shell from installing.
       }
     }
-    await Promise.allSettled(Array.from(assets).map(url => fetchAndCache(cache, url)));
+    const urls = [...assets];
+    let cursor = 0;
+    const workers = Array.from({ length: 3 }, async () => {
+      while (cursor < urls.length) {
+        const url = urls[cursor++];
+        await fetchAndCache(cache, url);
+      }
+    });
+    await Promise.allSettled(workers);
     await self.skipWaiting();
   })());
 });
-
 self.addEventListener("activate", event => {
   event.waitUntil((async () => {
     const keys = await caches.keys();
@@ -213,25 +315,25 @@ self.addEventListener("fetch", event => {
   if (url.origin !== self.location.origin || !url.pathname.startsWith(APP_BASE.pathname)) return;
 
   event.respondWith((async () => {
+    if (isDataRequest(url)) return networkFirstData(request);
+
     const cache = await caches.open(CACHE_NAME);
-    const cached = await cache.match(request, { ignoreSearch: true }) ||
+    const cached = await cache.match(request) ||
       (request.mode === "navigate"
         ? await cache.match(APP_BASE.href) || await cache.match(INDEX_URL)
         : null);
-
     if (cached) {
       event.waitUntil(fetchAndCache(cache, url.href).then(() => undefined));
       return cached;
     }
-
     const response = await fetchAndCache(cache, url.href);
     if (response && response.ok) return response;
     if (request.mode === "navigate") {
       const shell = await cache.match(APP_BASE.href) || await cache.match(INDEX_URL);
       if (shell) return shell;
     }
-    return new Response("OMEGA offline resource is not cached yet.", {
-      status: 504, statusText: "Offline resource unavailable",
+    return new Response("OMEGA offline app asset is not cached yet.", {
+      status: 504, statusText: "Offline asset unavailable",
       headers: { "Content-Type": "text/plain; charset=utf-8" }
     });
   })());
