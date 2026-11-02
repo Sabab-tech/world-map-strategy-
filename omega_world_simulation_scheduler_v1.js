@@ -133,10 +133,11 @@
     return true;
   }
   function enqueueEvent(raw){
+    const root=state(),meta=root?ensureMeta(root):null;
     const event=compactEvent(raw);
     if(!event.eventType||!EVENT_PATTERN.test(event.eventType)||event.eventType==='OMEGA_SIMULATION_TURN_COMMITTED')
       return{status:'IGNORED',reason:'EVENT_NOT_WORLD_ACTIVATING'};
-    const root=state(),meta=root?ensureMeta(root):null,key=event.eventType+'::'+event.eventId;
+    const key=event.eventType+'::'+event.eventId;
     if(seenEventIds.has(key))return{status:'DUPLICATE',eventId:event.eventId};
     const turn=Math.max(event.simulationTurn,num(root?.simulation?.turn)),ids=new Set();
     for(const field of ['countryId','sourceCountryId','destinationCountryId','targetCountryId','buyerCountryId','sellerCountryId','actorCountryId','counterpartyCountryId','fromCountryId','toCountryId','recipientCountryId','ownerCountryId']){

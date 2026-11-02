@@ -4,7 +4,7 @@
  */
 (function (root) {
   'use strict';
-  const state = { ready:false, settled:false, error:null, promise:null, profiles:[], extras:new Map(), byCode:new Map(), byIso3:new Map(), byNumeric:new Map(), aliases:new Map(), cities:new Map(), legacyEconomy:{}, legacyPopulation:{}, countryRecords:new Map(), countryLoads:new Map(), datasets:new Map(), strategicProfiles:new Map(), strategicProfileDiagnostics:{available:false,profileCount:0,error:'COUNTRY_SCOPED_PROFILE_NOT_REQUESTED'} };
+  const state = { ready:false, settled:false, error:null, promise:null, profiles:[], extras:new Map(), byCode:new Map(), byIso3:new Map(), byNumeric:new Map(), aliases:new Map(), cities:new Map(), legacyEconomy:{}, legacyPopulation:{}, countryRecords:new Map(), countryLoads:new Map(), countryEpochs:new Map(), datasets:new Map(), strategicProfiles:new Map(), strategicProfileDiagnostics:{available:false,profileCount:0,error:'COUNTRY_SCOPED_PROFILE_NOT_REQUESTED'} };
   const s = v => String(v == null ? '' : v).trim();
   const norm = v => s(v).normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/&/g, ' AND ').replace(/[_’'`-]+/g, ' ').replace(/[^A-Z0-9]+/gi, ' ').trim().toUpperCase().replace(/\s+/g, ' ');
   const fixedAliases = {
@@ -121,7 +121,10 @@
     const requested=(Array.isArray(domains)?domains:[domains]).map(x=>String(x||'').toLowerCase())
       .filter((x,i,a)=>COUNTRY_DATA_FILES[x]&&a.indexOf(x)===i);
     const records={};
+    const countryEpoch=state.countryEpochs.get(profile.countryCode)||0;
     for(const domain of requested){
+      if((state.countryEpochs.get(profile.countryCode)||0)!==countryEpoch)
+        return{status:'RELEASED',countryCode:profile.countryCode,records};
       const key=domain+':'+profile.countryCode;
       if(state.countryRecords.has(key)){records[domain]=legacyRecord(domain,profile,value);continue;}
       if(state.countryLoads.has(key)){records[domain]=await state.countryLoads.get(key);continue;}
@@ -146,6 +149,7 @@
   function releaseCountryData(value,domains=Object.keys(COUNTRY_DATA_FILES)){
     const profile=resolveCountry(value);if(!profile)return false;
     const selected=(Array.isArray(domains)?domains:[domains]).map(x=>String(x||'').toLowerCase());
+    state.countryEpochs.set(profile.countryCode,(state.countryEpochs.get(profile.countryCode)||0)+1);
     let released=0;
     for(const domain of selected){
       const key=domain+':'+profile.countryCode;
