@@ -48,8 +48,8 @@ await import('../omega_country_general_data_runtime_v1.js');
 const runtime=globalThis.OmegaCountryGeneralDataRuntime;
 
 test('shared registry decoding keeps identity, provenance, metrics and geography',async()=>{
- assert.equal(await runtime.init(),false,'boot does not fetch the global registry');
- assert.equal(fetchCount,0);assert.equal(runtime.diagnostics().recordCount,0);
+ assert.equal(await runtime.init(),true,'runtime initialization is a no-op when no country is selected');
+ assert.equal(fetchCount,0);assert.equal(runtime.diagnostics().recordCount,0);assert.equal(runtime.diagnostics().ready,false);
  assert.equal(await runtime.init('AAA'),true);assert.equal(runtime.diagnostics().recordCount,1);
  assert.equal(await runtime.init('BBB'),true);assert.equal(runtime.diagnostics().recordCount,2);
  const a=runtime.getCountryRecord('AAA');assert.equal(a.identity.name,'Alpha');assert.equal(a.generalFacts.capital,'Alpha Capital');

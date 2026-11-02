@@ -34,7 +34,7 @@
   let selectedCountry = null;
   let activeTab = 'overview';
   let lastRenderedCountry = null;
-  let countryDataInitPromise = null;
+  const countryDataInitPromises = new Map();
   let overviewRenderTimer = null;
 
   const runtime = () => g.OmegaCountryRuntimeData || null;
@@ -159,15 +159,21 @@
     return g.OmegaCountryGeneralDataRuntime || g.Omega?.CountryGeneralData || null;
   }
 
-  function ensureCountryDataReady() {
+  function ensureCountryDataReady(countryValue) {
     const api = countryDataApi();
-    if (!api || typeof api.getCountryRecord !== 'function') return Promise.resolve(false);
-    if (api.diagnostics?.().ready) return Promise.resolve(true);
-    if (countryDataInitPromise) return countryDataInitPromise;
-    countryDataInitPromise = Promise.resolve(typeof api.init === 'function' ? api.init() : false)
-      .then(() => !!api.diagnostics?.().ready)
-      .catch(() => false);
-    return countryDataInitPromise;
+    if (!api || typeof api.getCountryRecord !== 'function' || typeof api.init !== 'function') return Promise.resolve(false);
+    const requested = countryValue || selectedCountry || defaultCountry();
+    const key = s(requested).trim().toUpperCase();
+    if (!key) return Promise.resolve(false);
+    try { if (api.getCountryRecord(requested)) return Promise.resolve(true); } catch (_) {}
+    if (countryDataInitPromises.has(key)) return countryDataInitPromises.get(key);
+    let task;
+    task = Promise.resolve(api.init(requested))
+      .then(() => !!api.getCountryRecord(requested))
+      .catch(() => false)
+      .finally(() => { if (countryDataInitPromises.get(key) === task) countryDataInitPromises.delete(key); });
+    countryDataInitPromises.set(key, task);
+    return task;
   }
 
   function humanizeCountryDataKey(key) {
@@ -364,7 +370,7 @@
       return;
     }
     output.textContent = 'Reviewing country indicator coverage…';
-    ensureCountryDataReady().then(ready => {
+    ensureCountryDataReady(firstCode).then(async ready => {
       if (!ready) {
         output.textContent = 'Country indicator records could not be loaded.';
         return;
@@ -393,8 +399,9 @@
       let missingFactCells = 0;
       let missingContextCells = 0;
       let unavailableRecords = 0;
-      countries.forEach(countryRow => {
+      for (const countryRow of countries) {
         const code = countryRow.iso3 || countryRow.countryCode || countryRow.code || countryRow.name;
+        await ensureCountryDataReady(code);
         const record = api.getCountryRecord(code);
         if (!record) {
           unavailableRecords += 1;
@@ -406,8 +413,10 @@
             name: countryRow.name || countryRow.officialName || String(code),
             code, metrics: metricKeys.slice(), facts: factKeys.slice(), identity: identityKeys.slice(),
             context: contextKeys.slice()
-          });
-          return;
+            api.releaseCountry?.(code);
+      }
+          api.releaseCountry?.(code);
+          continue;
         }
         const missingMetrics = metricKeys.filter(key => !hasCountryDataValue(record.metrics?.[key]) || countryMetricIsInternal(key, record));
         const missingFacts = factKeys.filter(key => !hasCountryDataValue(record.generalFacts?.[key]));
@@ -683,7 +692,7 @@
     try { generalRecord = generalApi?.getCountryRecord?.(value) || null; } catch (_) {}
     if (!generalRecord && generalApi?.init && panelEl.dataset.countryDataInitAttempted !== String(value)) {
       panelEl.dataset.countryDataInitAttempted = String(value);
-      Promise.resolve(generalApi.init()).then(() => {
+      Promise.resolve(generalApi.init(value)).then(() => {
         if (isExecutiveMinistryView() && lastRenderedCountry === value) renderCountryOverview();
       }).catch(() => {});
     }

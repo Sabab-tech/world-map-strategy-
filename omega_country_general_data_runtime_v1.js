@@ -65,7 +65,7 @@ function evictRecord(key){
  return true;
 }
 async function init(countryValue){
- if(countryValue==null||str(countryValue)===''){s.settled=true;return false}
+ if(countryValue==null||str(countryValue)===''){s.settled=true;return true}
  try{const runtime=root.OmegaCountryRuntimeData;if(runtime?.ready)await runtime.ready}catch(_){}
  const identity=canonicalIdentity(countryValue);
  const requestKey=identity?.iso2||identity?.countryCode||identity?.iso3||identity?.numericCode||identity?.name||str(countryValue);
