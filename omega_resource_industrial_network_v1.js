@@ -2095,7 +2095,7 @@ function planShipment(input={}){
       authority:warehouseSource?'WAREHOUSE_CORRIDOR_SCENARIO_ESTIMATE':'SITE_SIMULATION_ROUTE',
       countryIsolationKey:cid}]:[]}};
   for(const c of ordered.slice(0,16)){
-    const route=buildRoute(routeOrigin,c.asset,rid,input.quantity,{countryId:cid,sourceSiteId:site.siteId,
+    const route=buildRoute(routeOrigin,c.asset,rid,input.quantity,{countryId:cid,sourceSiteId:warehouseId,
       sourceWarehouseId:warehouseId,sourceNode:'WAREHOUSE:'+cid+':RAW',sourceNodeType:'WAREHOUSE',
       transportMode:input.transportMode,unit:input.unit});
     const routeAttempt={factoryId:String(c.asset?.id||c.asset?.assetId||c.asset?.projectId||''),
