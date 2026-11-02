@@ -1240,7 +1240,9 @@
     if (marker && marker.version === data.factoryInputBaseline.version &&
         marker.coverageModelVersion === FACTORY_INPUT_COVERAGE_VERSION &&
         Number(marker.targetCoverageDays) === coverageDays &&
-        marker.openingStockInitialized === true) {
+        marker.openingStockInitialized === true &&
+        !(Array.isArray(marker.unknownProductIds) && marker.unknownProductIds.length) &&
+        !(Array.isArray(marker.stateMismatchProductIds) && marker.stateMismatchProductIds.length)) {
       return { status: 'ALREADY_INITIALIZED', countryId: countryId, seeded: 0,
         openingStockQuantity: finite(marker.openingStockQuantity) || 0,
         storedOpeningStockQuantity: finite(marker.storedOpeningStockQuantity) || 0,
@@ -1677,7 +1679,9 @@
     var factoryInputReady = factoryInputMarker && factoryInputMarker.version === data.factoryInputBaseline.version &&
       factoryInputMarker.coverageModelVersion === FACTORY_INPUT_COVERAGE_VERSION &&
       Number(factoryInputMarker.targetCoverageDays) === requiredInputCoverageDays &&
-      factoryInputMarker.openingStockInitialized === true;
+      factoryInputMarker.openingStockInitialized === true &&
+      !(Array.isArray(factoryInputMarker.unknownProductIds) && factoryInputMarker.unknownProductIds.length) &&
+      !(Array.isArray(factoryInputMarker.stateMismatchProductIds) && factoryInputMarker.stateMismatchProductIds.length);
     var factoriesReady = economyMarker && (economyMarker.version === VERSION ||
       economyMarker.version === LEGACY_STARTUP_BASELINE_VERSION) && economyMarker.factoryAssetsInitialized === true;
     if (stockReady && factoryInputReady && factoriesReady) {
@@ -1791,7 +1795,8 @@
       // retry the country pass; per-country stock/factory markers prevent duplication.
       if ((finite(previousCounts.countriesBlocked) || 0) === 0 &&
           previousGlobalBaseline.factoryInputCoverageModelVersion === FACTORY_INPUT_COVERAGE_VERSION &&
-          Number(previousGlobalBaseline.playerCountryFactoryInputCoverageDays) === currentPlayerCoverageDays) {
+          Number(previousGlobalBaseline.playerCountryFactoryInputCoverageDays) === currentPlayerCoverageDays &&
+          Number(previousCounts.factoryInputUnknownRows) === 0) {
         lastReport = clone(previousGlobalBaseline);
         return { status: 'ALREADY_INITIALIZED', report: diagnostics() };
       }
