@@ -4,7 +4,7 @@
  */
 (function (root) {
   'use strict';
-  const state = { ready:false, settled:false, error:null, promise:null, profiles:[], extras:new Map(), byCode:new Map(), byIso3:new Map(), byNumeric:new Map(), aliases:new Map(), cities:new Map(), legacyEconomy:{}, legacyPopulation:{}, countryRecords:new Map(), countryLoads:new Map(), datasets:new Map(), strategicProfiles:new Map(), strategicProfileDiagnostics:{available:false,profileCount:0,error:'COUNTRY_SCOPED_PROFILE_NOT_REQUESTED'} };
+  const state = { ready:false, settled:false, error:null, promise:null, profiles:[], extras:new Map(), byCode:new Map(), byIso3:new Map(), byNumeric:new Map(), aliases:new Map(), cities:new Map(), legacyEconomy:{}, legacyPopulation:{}, countryRecords:new Map(), countryLoads:new Map(), fileLoads:new Map(), datasets:new Map(), strategicProfiles:new Map(), strategicProfileDiagnostics:{available:false,profileCount:0,error:'COUNTRY_SCOPED_PROFILE_NOT_REQUESTED'} };
   const s = v => String(v == null ? '' : v).trim();
   const norm = v => s(v).normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/&/g, ' AND ').replace(/[_’'`-]+/g, ' ').replace(/[^A-Z0-9]+/gi, ' ').trim().toUpperCase().replace(/\s+/g, ' ');
   const fixedAliases = {
@@ -106,6 +106,14 @@
     state.countryRecords.delete(key);state.countryRecords.set(key,row);
     return row;
   }
+  async function loadCountrySource(domain){
+    if(state.fileLoads.has(domain))return state.fileLoads.get(domain);
+    let task;
+    task=load('./'+COUNTRY_DATA_FILES[domain],false).finally(()=>{
+      if(state.fileLoads.get(domain)===task)state.fileLoads.delete(domain);
+    });
+    state.fileLoads.set(domain,task);return task;
+  }
   function countryRow(data,profile,input){
     const keys=candidateKeys(profile,input),aliases=[...keys];
     const matches=row=>{
@@ -137,8 +145,10 @@
       const key=domain+':'+profile.countryCode;
       if(state.countryRecords.has(key)){records[domain]=legacyRecord(domain,profile,value);continue;}
       if(state.countryLoads.has(key)){records[domain]=await state.countryLoads.get(key);continue;}
-      const task=(async()=>{
-        const data=await load('./'+COUNTRY_DATA_FILES[domain],false);
+      let task;
+      task=(async()=>{
+        const data=await loadCountrySource(domain);
+        if(state.countryLoads.get(key)!==task)return null;
         const row=countryRow(data,profile,value);
         if(!row)return null;
         state.countryRecords.set(key,row);
@@ -149,7 +159,7 @@
           if(oldest.startsWith('cities:'))state.cities.delete(oldest.slice(7));
         }
         return row;
-      })().finally(()=>state.countryLoads.delete(key));
+      })().finally(()=>{if(state.countryLoads.get(key)===task)state.countryLoads.delete(key)});
       state.countryLoads.set(key,task);records[domain]=await task;
     }
     return{status:'READY',countryCode:profile.countryCode,records};
@@ -160,7 +170,9 @@
     let released=0;
     for(const domain of selected){
       const key=domain+':'+profile.countryCode;
-      if(state.countryRecords.delete(key)){released++;if(domain==='cities')state.cities.delete(profile.countryCode);}
+      if(state.countryLoads.has(key)){state.countryLoads.delete(key);released++;}
+      if(state.countryRecords.delete(key))released++;
+      if(domain==='cities')state.cities.delete(profile.countryCode);
     }
     return released>0;
   }
@@ -324,7 +336,7 @@
         if(!data||!Array.isArray(data.countries))throw new Error('COUNTRY_PROFILE_REGISTRY_INVALID');
         buildProfiles(data.countries);addSupplementalIdentities();
         state.datasets.clear();state.datasets.set('economy_global_profiles_v1.json',data);
-        state.cities.clear();state.countryRecords.clear();state.countryLoads.clear();
+        state.cities.clear();state.countryRecords.clear();state.countryLoads.clear();state.fileLoads.clear();
         state.legacyEconomy={};state.legacyPopulation={};state.strategicProfiles.clear();
         state.strategicProfileDiagnostics={available:false,profileCount:0,error:'COUNTRY_SCOPED_PROFILE_NOT_REQUESTED'};
         state.ready=true;state.settled=true;state.error=null;return true;

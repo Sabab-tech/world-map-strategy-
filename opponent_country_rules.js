@@ -88,15 +88,15 @@ function FLAT(v,p='',out=[],d=0){if(d>5||v==null||typeof v!=='object')return out
 function PROFILE(id,raw){const rs=ROWS(raw),fields=[...new Set(rs.slice(0,32).flatMap(r=>FLAT(r)))],norm=x=>String(x).toLowerCase().replace(/[^a-z0-9]+/g,'_'),identity=['id','code','iso2','iso3','country_id','countryId','country_code','name'].filter(k=>rs.some(r=>READ(r,k)!==undefined)),relationships=fields.filter(x=>/(country|resource|facility|project|supplier|operator|owner|target|parent|actor|organization)(_?id|s)?$/i.test(x)),units=Object.fromEntries(fields.map(x=>[x,UNIT(x)]).filter(([,u])=>u)),fieldMeaning={},caps=[];for(const k of Object.keys(SIGNALS)){const aliases=[k,...(FIELD_ALIASES[k]||[])].map(norm),matches=[...new Set(fields.filter(f=>aliases.includes(norm(f))))].slice(0,32);if(matches.length){fieldMeaning[k]={fields:matches,semanticSource:'FIELD_ALIASES',confidence:'OBSERVED_NAME_MATCH'};caps.push({capability:k,fields:matches});}}return{datasetId:id,schema:{recordCountEstimate:rs.length,sampleRowCount:Math.min(rs.length,32),fieldCount:fields.length,fields:fields.slice(0,1000)},identityFields:identity,fieldMeaning,units,relationships,capabilities:caps};}
 class Gateway{
   constructor(o={}){this.base=String(o.basePath||'').replace(/\/$/,'');this.fetch=o.fetchImpl||g.fetch?.bind(g)||null;this.c=new Map;this.p=new Map;this.inflight=new Map;this.tr=o.trace||null;}
-  set(k,v){this.c.set(k,v);this.p.set(k,PROFILE(k,v));this.tr?.add({layer:'L00_DATA_INTAKE',datasetId:k,recordCount:this.p.get(k).schema.recordCountEstimate,profile:this.p.get(k)});return true;}
-  get(k){return this.c.has(k)?this.c.get(k):undefined;}
-  profile(k){return this.p.has(k)?this.p.get(k):null;}
+  set(k,v){this.c.set(k,CLONE(v));this.p.set(k,PROFILE(k,v));this.tr?.add({layer:'L00_DATA_INTAKE',datasetId:k,recordCount:this.p.get(k).schema.recordCountEstimate,profile:this.p.get(k)});return true;}
+  get(k){return this.c.has(k)?CLONE(this.c.get(k)):undefined;}
+  profile(k){return this.p.has(k)?CLONE(this.p.get(k)):null;}
   async load(k){
     if(this.c.has(k))return this.get(k);
     if(this.inflight.has(k))return this.inflight.get(k);
     const d=DATASETS[k];if(!d)throw Error('DATASET_NOT_REGISTERED:'+k);
     if(!this.fetch)throw Error('DATASET_FETCH_UNAVAILABLE:'+k);
-    const task=(async()=>{const r=await this.fetch((this.base?this.base+'/':'')+d[0],{cache:'default'});if(!r.ok)throw Error('DATASET_FETCH_FAILED:'+k);const value=await r.json();this.set(k,value);return value;})()
+    const task=(async()=>{const r=await this.fetch((this.base?this.base+'/':'')+d[0],{cache:'default'});if(!r.ok)throw Error('DATASET_FETCH_FAILED:'+k);const value=await r.json();this.set(k,value);return this.get(k);})()
       .finally(()=>this.inflight.delete(k));
     this.inflight.set(k,task);return task;
   }
@@ -209,7 +209,13 @@ class Kernel{
       gdp:['economy','gdp'],gdp_growth:['economy','gdp_growth'],inflation:['economy','inflation'],unemployment_rate:['economy','unemployment_rate'],
       budget_balance:['economy','budget_balance'],debt:['economy','debt'],trade_balance:['economy','trade_balance'],exchange_rate_usd:['economy','exchange_rate_usd'],reserves:['economy','reserves']
     },out={};
-    for(const [field,[dataset,key]] of Object.entries(map)){const row=REC(this.gw.get(dataset),c),value=row?READ(row,key):undefined;out[field]={dataset,field:key,value:value===undefined?null:CLONE(value),status:value===undefined?'UNAVAILABLE':'AVAILABLE',source:value===undefined?null:'DATASET:'+dataset+'.'+key};}
+    for(const [field,[dataset,key]] of Object.entries(map)){
+      const raw=this.gw.get(dataset);let row=REC(raw,c);
+      if(!row&&['economy','population'].includes(dataset)){try{row=g.OmegaCountryRuntimeData?.getRecord?.(dataset,c)||null}catch(_){}}
+      const value=row?READ(row,key):undefined;
+      out[field]={dataset,field:key,value:value===undefined?null:CLONE(value),status:value===undefined?'UNAVAILABLE':'AVAILABLE',
+        source:value===undefined?null:(raw!==undefined?'DATASET:'+dataset+'.'+key:'COUNTRY_PROFILE:'+dataset+'.'+key)};
+    }
     return out;
   }
   snap(c,t){

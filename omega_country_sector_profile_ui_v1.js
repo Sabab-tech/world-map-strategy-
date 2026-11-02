@@ -65,6 +65,7 @@ async function loadData(countryId){
   readJson(PROFILE_URL+encodeURIComponent(countryId)),
   state.schema?Promise.resolve(state.schema):readJson(SCHEMA_URL)
  ]).then(rows=>{
+  if(state.promiseKey!==key)return false;
   const profile=rows[0]?.profile,schema=rows[1];
   if(!obj(profile?.identity)||!Array.isArray(schema?.sectors))throw Error('SECTOR_PROFILE_SCHEMA_INVALID');
   state.profiles={countries:[profile]};state.profileByIso3=new Map();
@@ -78,7 +79,9 @@ async function loadData(countryId){
 }
 function releaseData(countryId){
  if(countryId&&norm(countryId)!==state.profileKey)return false;
- state.profiles=null;state.profileByIso3.clear();state.profileKey=null;return true;
+ state.profiles=null;state.profileByIso3.clear();state.profileKey=null;
+ if(state.promiseKey===norm(countryId||''))state.promiseKey=null;
+ return true;
 }
 function generalApi(){return root.OmegaCountryGeneralDataRuntime||(root.Omega&&root.Omega.CountryGeneralData)||null}
 async function resolveCanonicalRecord(countryId,profile){

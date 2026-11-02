@@ -74,7 +74,8 @@ async function init(countryValue){
  if(oldKey&&touchRecord(oldKey)){s.ready=true;s.settled=true;return true}
  if(s.records.has(cacheKey)){touchRecord(cacheKey);s.ready=true;s.settled=true;return true}
  if(s.inflight.has(cacheKey))return s.inflight.get(cacheKey);
- const task=(async()=>{
+ let task;
+ task=(async()=>{
   if(typeof root.fetch!=='function')throw Error('FETCH_UNAVAILABLE');
   const response=await root.fetch(DATA_URL+encodeURIComponent(requestKey),{cache:'default'});
   if(!response||response.ok===false)throw Error('COUNTRY_GENERAL_DATA_FETCH_FAILED');
@@ -85,6 +86,7 @@ async function init(countryValue){
    s.metadata=data.metadata;s.schema=schema;
    (data.fieldCatalogue||[]).forEach(field=>{if(field?.key)s.fields.set(field.key,field)});
   }
+  if(s.inflight.get(cacheKey)!==task)return false;
   const row=data.countries[0],identityMap=map(schema.identityFields,row.identity);
   const primary=norm(identityMap.iso2||identityMap.countryCode||identityMap.iso3||requestKey);
   const aliases=new Set([requestKey,...Object.values(identityMap)].map(norm).filter(Boolean));
@@ -95,7 +97,7 @@ async function init(countryValue){
   while(s.records.size>CACHE_LIMIT)evictRecord(s.records.keys().next().value);
   s.ready=true;s.settled=true;s.error=null;return true;
  })().catch(error=>{s.settled=true;s.error=String(error?.message||error);return false})
- .finally(()=>s.inflight.delete(cacheKey));
+ .finally(()=>{if(s.inflight.get(cacheKey)===task)s.inflight.delete(cacheKey)});
  s.inflight.set(cacheKey,task);return task;
 }
 function candidates(v){
@@ -105,7 +107,12 @@ function candidates(v){
  return out.filter(x=>x!=null)
 }
 function find(v){for(const x of candidates(v)){const key=s.byAlias.get(norm(x));if(key){const row=touchRecord(key);if(row)return row}}return null}
-function releaseCountry(v){const row=find(v);if(!row)return false;const identity=map(s.schema?.identityFields,row.identity);const key=norm(identity.iso2||identity.countryCode||identity.iso3);return key?evictRecord(key):false}
+function releaseCountry(v){
+ const row=find(v),identity=row?map(s.schema?.identityFields,row.identity):canonicalIdentity(v)||{};
+ const key=norm(identity.iso2||identity.countryCode||identity.iso3||v);
+ let released=false;if(key&&s.inflight.has(key)){s.inflight.delete(key);released=true}
+ if(row&&key)released=evictRecord(key)||released;return released;
+}
 function map(fields,values){const out={};if(Array.isArray(fields)&&Array.isArray(values))fields.forEach((k,i)=>out[k]=values[i]===undefined?null:values[i]);return out}
 function code(list,v){const i=n(v);return i===null||i<0||!Array.isArray(list)?null:(list[i]===undefined?null:list[i])}
 function decode(row){
