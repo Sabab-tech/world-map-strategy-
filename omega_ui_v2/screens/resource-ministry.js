@@ -184,7 +184,7 @@
         return String(part.part) === String(partNumber) || String(part.file) === String(partNumber);
       });
       var file = String(partInfo && partInfo.file || '');
-      if (!/^resource_site_logistics_routes_v1_part_0[1-6]\\.json$/.test(file)) {
+      if (!/^resource_site_logistics_routes_v1_part_0[1-6]\.json$/.test(file)) {
         throw new Error('LOGISTICS_ROUTE_SHARD_INVALID');
       }
       // Parse the shared shard temporarily, but retain only the selected country's
