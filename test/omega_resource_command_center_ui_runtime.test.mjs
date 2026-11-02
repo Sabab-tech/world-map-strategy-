@@ -336,9 +336,9 @@ test('Production Ministry shows each country factory count on the matching facto
     const steelCard = html.slice(firstCard, secondCard);
     const textileCard = html.slice(secondCard, html.indexOf('</section>', secondCard) > 0
       ? html.indexOf('</section>', secondCard) : html.length);
-    assert.match(steelCard, /<span>Factories<\\/span><strong>4<\\/strong>/,
+    assert.ok(steelCard.includes('<span>Factories</span><strong>4</strong>'),
       'the steel card shows three country factories plus the one completed player build');
-    assert.match(textileCard, /<span>Factories<\\/span><strong>2<\\/strong>/,
+    assert.ok(textileCard.includes('<span>Factories</span><strong>2</strong>'),
       'the textile card shows the country factory total');
     assert.match(html, /BGD-STEEL-BUILD-1/,
       'the actual factory record remains inside the matching factory type card');
