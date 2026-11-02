@@ -7,7 +7,7 @@ const source=readFileSync(new URL('../omega-offline-map-sw.js',import.meta.url),
 
 function createCacheHarness(){
   const listeners=new Map(),cacheStores=new Map(),networkRequests=[];
-  let offline=false,deleted=false,payload={revision:1};
+  let offline=false,deleted=false,serverError=false,payload={revision:1};
   const appUrl='https://omega.test/game/omega-offline-map-sw.js';
   const origin='https://omega.test';
   class MemoryCache{
@@ -38,6 +38,7 @@ function createCacheHarness(){
     if(url.pathname.endsWith('/api/omega/country-general-data/BD')){
       if(offline)throw new Error('NETWORK_OFFLINE');
       if(deleted)return new Response('missing',{status:404});
+      if(serverError)return new Response('temporarily unavailable',{status:503});
       return new Response(JSON.stringify(payload),{status:200,headers:{'Content-Type':'application/json'}});
     }
     if(offline)throw new Error('NETWORK_OFFLINE');
@@ -64,6 +65,7 @@ function createCacheHarness(){
     install,request,networkRequests,cacheStores,
     setOffline(value){offline=value;},
     setDeleted(value){deleted=value;},
+    setServerError(value){serverError=value;},
     setPayload(value){payload=value;}
   };
 }
@@ -90,6 +92,20 @@ test('country data is refreshed online and only uses its last downloaded copy af
   response=await h.request(url);
   assert.deepEqual(await response.json(),{revision:2});
   assert.equal(response.headers.get('X-OMEGA-OFFLINE-STALE'),'1');
+});
+
+test('server errors do not silently serve stale data while the server is reachable',async()=>{
+  const h=createCacheHarness();await h.install();
+  const url='https://omega.test/game/api/omega/country-general-data/BD';
+  await h.request(url);
+  h.setServerError(true);
+  const response=await h.request(url);
+  assert.equal(response.status,503,'server errors must be visible instead of being masked by cached JSON');
+  h.setServerError(false);
+  h.setOffline(true);
+  const offlineResponse=await h.request(url);
+  assert.equal(offlineResponse.status,200,'a later genuine network failure may still use the saved offline copy');
+  assert.equal(offlineResponse.headers.get('X-OMEGA-OFFLINE-STALE'),'1');
 });
 
 test('deleted country data is removed rather than resurrected from an old offline cache',async()=>{
