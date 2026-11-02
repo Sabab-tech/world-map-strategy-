@@ -31,6 +31,10 @@ function createCacheHarness(){
   async function fetchImpl(input,options={}){
     const href=typeof input==='string'?input:input.url;
     const url=new URL(href,appUrl);networkRequests.push({url:url.href,cache:options.cache||null});
+    if(url.pathname.endsWith('/resource-large.json')){
+      if(offline)throw new Error('NETWORK_OFFLINE');
+      return new Response('asset',{status:200,headers:{'Content-Type':'application/json','Content-Length':String(4*1024*1024+1)}});
+    }
     if(url.pathname.endsWith('/api/omega/country-general-data/BD')){
       if(offline)throw new Error('NETWORK_OFFLINE');
       if(deleted)return new Response('missing',{status:404});
@@ -103,14 +107,10 @@ test('deleted country data is removed rather than resurrected from an old offlin
 test('oversized dynamic data is not retained in the offline working set',async()=>{
   const h=createCacheHarness();await h.install();
   const url='https://omega.test/game/resource-large.json';
-  const eventRequest=new Request(url);
-  let pending;
-  const waits=[];
-  h.setPayload({revision:99});
   h.setOffline(false);
-  // The fake network returns ordinary JSON for country data; this test checks the
-  // worker's hard per-entry bound through a separate response route.
   const response=await h.request(url);
   assert.equal(response.status,200);
-  assert.ok(h.networkRequests.some(row=>row.url===url));
+  h.setOffline(true);
+  const offlineResponse=await h.request(url);
+  assert.equal(offlineResponse.status,504,'oversized JSON must not be retained for offline use');
 });
