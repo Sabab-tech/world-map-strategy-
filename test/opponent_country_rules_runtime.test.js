@@ -191,6 +191,7 @@ assert.equal(diagnostics.dataTruth.syntheticFallbackTraceEntries,0);
 
 const originalRuntimeAnalyze=api.instance.runtimeFlow.analyze.bind(api.instance.runtimeFlow);
 let skippedRuntimeAnalysisCalls=0;
+api.instance.scheduler.dirty.delete('BD');
 api.instance.scheduler.nextDue.set('BD',20);
 const originalSnap=api.instance.kernel.snap.bind(api.instance.kernel);
 const originalGraphBuild=api.instance.graph.build.bind(api.instance.graph);
