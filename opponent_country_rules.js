@@ -91,7 +91,7 @@ class Gateway{
     this.base=String(o.basePath||'').replace(/\/$/,'');
     this.fetch=o.fetchImpl||g.fetch?.bind(g)||null;
     this.c=new Map;this.p=new Map;this.inflight=new Map;this.epochs=new Map;
-    this.tr=o.trace||null;this.maxOptionalDatasets=2;
+    this.tr=o.trace||null;this.maxOptionalDatasets=4;
   }
   _store(k,v){
     this.c.delete(k);this.p.delete(k);
