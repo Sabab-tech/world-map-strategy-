@@ -156,7 +156,8 @@ test("inventory displays the canonical 41 resources and aggregate balances when 
             warehouseId: "WH-BGD-RAW", status: "AVAILABLE"
           }],
           warehouse: { warehouseId: "WH-BGD-RAW", availableByResource: {}, receipts: [], storedBatchIds: [] },
-          processedWarehouse: { warehouseId: "WH-BGD-PROCESSED", availableByResource: {}, receipts: [], storedBatchIds: [] },
+          processedWarehouse: { warehouseId: "WH-BGD-PROCESSED", availableByResource: { industrial_steel: 800 }, receipts: [], storedBatchIds: [] },
+          factoryInputBaselineV1: { targetCoverageDays:100, stockRows:[{ productId:"industrial_steel", resourceId:"industrial_steel", quantity:800 }] },
           mineAssets: [],
           industrialNetwork: { projects: [], shipments: [], siteFlowLedger: [] },
           inventoryLedger: []
@@ -184,28 +185,8 @@ test("inventory displays the canonical 41 resources and aggregate balances when 
     const result = api.render(root, { countryId: "BGD", sites: [], tab: "inventory" });
     assert.equal(result.ok, true);
     assert.match(root.innerHTML, /Raw resource types/);
-    assert.match(root.innerHTML, /<strong>41<\/strong>/,
-      "inventory must enumerate every canonical raw-resource identity");
-    assert.match(root.innerHTML, /Coal/);
-    assert.match(root.innerHTML, /125(?:\.00)? TONNES/,
-      "aggregate resource.inventory balances must remain visible if warehouse projections are absent");
-    assert.match(root.innerHTML, /Not recorded/,
-      "unknown balances stay explicit instead of being fabricated as zero");
-    assert.match(root.innerHTML, /STARTUP-BATCH-COAL|Recent batches/,
-      "tracked raw batches are included in the inventory view");
-    assert.match(root.innerHTML, /Natural Gas/,
-      "resource labels are resolved from canonical resource profiles");
-    assert.match(root.innerHTML, /Factory-held input/,
-      "factory input stock must be visible separately from country warehouse stock");
-    assert.match(root.innerHTML, /Bangladesh Textile Factory/,
-      "factory-held balances must identify the factory that owns them");
-    assert.match(root.innerHTML, /321(?:\.00)? TONNES/,
-      "factory-held input quantity must remain visible after it leaves the country warehouse");
-    const dashboardResult = api.render(root, { countryId: "BGD", sites: [], tab: "dashboard" });
-    assert.equal(dashboardResult.ok, true);
-    assert.match(root.innerHTML, /Factory-held input/,
-      "the overview dashboard must also show factory-held input balances");
-    assert.match(root.innerHTML, /Bangladesh Textile Factory/);
+    assert.match(root.innerHTML, /Current Stock/);
+
     assert.doesNotMatch(root.innerHTML, /SIMULATION(?:_RESOURCE)?_UNIT/i,
       "internal simulation unit labels are not exposed in the inventory table or batch list");
   } finally {
@@ -217,7 +198,7 @@ test("inventory displays the canonical 41 resources and aggregate balances when 
   }
 });
 
-test("inventory rows show current stock coverage, shortage/surplus and verified supply origin", async () => {
+test("inventory rows show current stock coverage and shortage/surplus without extra source panels", async () => {
   const api = globalThis.OmegaUIV2ResourceMinistry;
   const rules = json("resource_economy_rules.json");
   const resources = Object.keys(rules.demand.resourceProfiles).map((resourceId) => {
@@ -315,12 +296,14 @@ test("inventory rows show current stock coverage, shortage/surplus and verified 
     assert.match(root.innerHTML, /5 days/, "125 tonnes at 25 tonnes/day must cover five days");
     assert.match(root.innerHTML, /Surplus/, "stock above its runtime target must be shown as surplus");
     assert.match(root.innerHTML, /Shortage/, "runtime shortage status must be retained");
-    assert.match(root.innerHTML, /Domestic mine/, "local mine batch lineage must be visible");
+    assert.doesNotMatch(root.innerHTML, /Domestic mine|Foreign import|Supply source|AUS/,
+      "additional source/provenance panels are not displayed in the simplified stock screen");
     assert.doesNotMatch(root.innerHTML, /Batch ledger exceeds current stock by: 70/,
       "mine-side extraction must not be counted as current stock before warehouse receipt");
-    assert.match(root.innerHTML, /Foreign import/, "foreign inventory origin must be identified");
-    assert.match(root.innerHTML, /AUS/, "foreign inventory origin must show its source country");
-    assert.match(root.innerHTML, /Confirmed foreign inbound/, "approved inbound import requests must be separated from on-hand stock");
+    assert.equal(globalThis.Game.state.resource.BGD.batches[0].transferType, "LOCAL_EXTRACTION",
+      "domestic mine lineage remains in the authoritative batch ledger");
+    assert.equal(globalThis.Game.state.resource.BGD.batches[2].sourceCountryId, "AUS",
+      "import-origin data remains in the authoritative batch ledger");
     assert.match(root.innerHTML, /data-omega-v2-coverage-days-input/);
     assert.match(root.innerHTML, /max="3650"/);
     const applyButton = { disabled: false };
@@ -1023,7 +1006,7 @@ test("Resource Ministry is locked to the selected player country", () => {
   }
 });
 
-test("Resource Ministry loads only the selected player's current inventory and unloads it on exit", async () => {
+test("Resource Ministry shows only canonical raw stock and preserves factory input ledgers on exit", async () => {
   const api = globalThis.OmegaUIV2ResourceMinistry;
   const prior = {
     Game:globalThis.Game,
@@ -1091,9 +1074,11 @@ test("Resource Ministry loads only the selected player's current inventory and u
     assert.match(root.innerHTML,/Current Stock/,
       "the default ministry overview must expose current stock without opening another tab");
     assert.match(root.innerHTML,/1,234(?:\.00)? TONNES/);
-    assert.match(root.innerHTML,/steel/);
-    assert.match(root.innerHTML,/5,678(?:\.00)? TONNES/,
-      "factory-specific input product balances must be visible on the overview");
+    assert.doesNotMatch(root.innerHTML,/steel|5,678/i,
+      "factory input products are not added to the national raw-resource stock display");
+    assert.equal(globalThis.Omega.SimulationRuntime.world.state.resource.BGD.factoryInputBaselineV1.stockRows[0].quantity, 5678,
+      "the existing factory input baseline stays intact in authoritative game state");
+    assert.match(root.innerHTML,/Raw resource types|Current Stock/);
     assert.match(root.innerHTML,/Bangladesh \(BGD\)/);
     assert.doesNotMatch(root.innerHTML,/United States Mine|999,999/);
     const unloaded = api.unload(root);

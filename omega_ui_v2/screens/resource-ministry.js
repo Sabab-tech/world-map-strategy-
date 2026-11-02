@@ -674,6 +674,8 @@
           quantity:val(row.availableQuantity !== undefined ? row.availableQuantity : row.quantity !== undefined ? row.quantity : row.amount),
           unit:row.unit || row.quantityUnit || '', location:row.warehouseId || row.warehouse || row.location || '',
           status:row.status || '' };
+      }).filter(function (row) {
+        return !!resourceCatalogById[String(row.resourceId || '').toLowerCase()];
       });
     }
     var inventoryLotsForOrigin = gameResource.inventoryLots && typeof gameResource.inventoryLots === 'object' ? gameResource.inventoryLots : {};
@@ -880,48 +882,6 @@
       if (rule) return String(rule.unit || rule.baseUnit || rule.outputUnit || '');
       return '';
     }
-    // Factory input is a separate physical stock location. It has already left
-    // the country warehouse, but it is not consumed until a production cycle commits.
-    // Read the factory aggregate only; inputBatchLots is a lineage projection of the
-    // same quantity and must never be added a second time.
-    var factoryHeldInputRows = [];
-    countryFactoryAssets.forEach(function (asset) {
-      var inputs = asset && asset.inputInventory && typeof asset.inputInventory === 'object'
-        ? asset.inputInventory : {};
-      Object.keys(inputs).forEach(function (resourceId) {
-        var quantity = val(inputs[resourceId]);
-        if (quantity === null) return;
-        var inputUnits = asset.inputUnits && typeof asset.inputUnits === 'object' ? asset.inputUnits : {};
-        var unitKey = Object.keys(inputUnits).find(function (key) {
-          return key.toLowerCase() === String(resourceId).toLowerCase();
-        });
-        factoryHeldInputRows.push({
-          factoryId: String(asset.id || asset.assetId || asset.projectId || ''),
-          factoryName: String(asset.name || asset.factoryName || asset.factoryType || asset.type ||
-            asset.id || asset.assetId || 'Registered factory'),
-          factoryType: String(asset.factoryType || asset.type || asset.facilityType || ''),
-          resourceId: String(resourceId),
-          quantity: quantity,
-          unit: String(unitKey ? inputUnits[unitKey] : asset.inputUnit || resourceUnit(resourceId) || '')
-        });
-      });
-    });
-    var factoryHeldInputMarkup = '<section class="omega-v2-card omega-v2-movement-card omega-v2-factory-held-input">' +
-      '<div class="omega-v2-card-header"><div><h2>Factory-held input</h2><p>Materials already delivered inside each factory. Kept separate from national warehouse stock; consumption is posted only when a production cycle completes.</p></div>' +
-      '<span class="omega-v2-status" data-state="' + (factoryHeldInputRows.length ? 'operational' : 'attention') + '">' +
-      fmt(factoryHeldInputRows.length) + ' recorded input balances</span></div>' +
-      (factoryHeldInputRows.length
-        ? '<div class="omega-v2-table-wrap"><table><thead><tr><th>Factory</th><th>Input resource</th><th>Stock at factory</th></tr></thead><tbody>' +
-          factoryHeldInputRows.map(function (row) {
-            return '<tr data-factory-id="' + esc(row.factoryId) + '" data-resource-id="' + esc(row.resourceId) + '">' +
-              '<td><strong>' + esc(row.factoryName) + '</strong>' +
-              (row.factoryType ? '<small>' + esc(row.factoryType) + '</small>' : '') + '</td><td>' +
-              resourceIconMarkup(row.resourceId, resourceLabel(row.resourceId)) + esc(resourceLabel(row.resourceId)) +
-              '</td><td class="omega-v2-current-stock-cell">' + amount(row.quantity, row.unit) + '</td></tr>';
-          }).join('') + '</tbody></table></div>'
-        : '<div class="omega-v2-empty">No factory-held input balances have been recorded for this country.</div>') +
-      '</section>';
-
     function balanceState(site, asset, currentOutput, blocked) {
       if (!isOperationalAsset(asset)) return asset && /DECOMMISSIONED|DESTROYED|STOPPED|INACTIVE|CLOSED/.test(String(asset.status || '').toUpperCase())
         ? 'stopped' : projectFor(site.siteId) ? 'building' : 'unbuilt';
@@ -958,13 +918,12 @@
       var inventoryKey = Object.keys(inventory).find(function (key) { return key.toLowerCase() === rid.toLowerCase(); });
       if (inventoryKey) rawStock[rid] = inventory[inventoryKey];
     });
-    var factoryInputStockRows = safeArray(gameResource.factoryInputBaselineV1 && gameResource.factoryInputBaselineV1.stockRows);
-    var factoryInputProductIds = factoryInputStockRows.map(function (row) {
-      return String(row && (row.productId || row.resourceId) || '').trim();
-    }).filter(Boolean);
-    var inventoryKeys = Array.from(new Set(distinctResources.concat(
-      Object.keys(rawStock), Object.keys(finishedStock), factoryInputProductIds
-    ))).sort();
+    // Current Stock is the canonical raw-resource list only.
+    // Factory inputs and finished products remain in their existing runtime ledgers.
+    Object.keys(rawStock).forEach(function (key) {
+      if (!resourceCatalogById[String(key).toLowerCase()]) delete rawStock[key];
+    });
+    var inventoryKeys = Object.keys(resourceCatalogById).sort();
     var movementIn = Object.create(null), movementOut = Object.create(null);
     safeArray(rawWarehouse.receipts).concat(safeArray(processedWarehouse.receipts)).concat(safeArray(gameResource.inventoryLedger))
       .forEach(function (row) {
@@ -1010,79 +969,6 @@
       if (stock === null || demand === null || demand <= 0 || targetDays === null) return null;
       return Math.max(0, demand * targetDays - stock);
     }
-    function sourceSummaryFor(resourceId, unit, currentStock) {
-      var domesticMine = 0, unknown = 0, foreignByCountry = Object.create(null), tracked = 0;
-      sourceBatchRows.forEach(function (row) {
-        var rid = String(row && (row.resourceId || row.materialId || row.productId || '')).trim().toLowerCase();
-        if (rid !== String(resourceId || '').trim().toLowerCase()) return;
-        var status = String(row.status || row.lifecycleStatus || '').toUpperCase();
-        if (/CONSUMED|DEPLETED|TRANSFERRED_OUT|DISPATCHED|EXPORTED|SOLD|CANCELLED/.test(status)) return;
-        var warehouseId = String(row.warehouseId || '').trim();
-        var locationNodeKey = String(row.locationNodeKey || '').trim().toUpperCase();
-        if (!warehouseId && locationNodeKey.indexOf('WAREHOUSE:') !== 0) return;
-        var quantity = numberOrNull(row.remainingQuantity !== undefined ? row.remainingQuantity :
-          row.availableQuantity !== undefined ? row.availableQuantity :
-          row.quantity !== undefined ? row.quantity : row.amount);
-        if (quantity === null || quantity <= 0) return;
-        tracked += quantity;
-        var provenance = row.provenance && typeof row.provenance === 'object' ? row.provenance : {};
-        var sourceCountry = String(row.sourceCountryId || row.originCountryId ||
-          provenance.sourceCountryId || provenance.originCountryId || '').trim().toUpperCase();
-        var transferType = String(row.transferType || row.sourceType || provenance.transferType || '').toUpperCase();
-        var sourceSystem = String(provenance.sourceSubsystem || provenance.source || '').toUpperCase();
-        var hasMineLineage = !!(row.occurrenceKey || row.siteReferenceKey || row.siteId ||
-          (Array.isArray(row.sourceSiteIds) && row.sourceSiteIds.length) ||
-          /LOCAL_EXTRACTION|MINE/.test(transferType) || /ENDOWMENT/.test(sourceSystem));
-        if (sourceCountry && sourceCountry !== countryKey) {
-          foreignByCountry[sourceCountry] = (foreignByCountry[sourceCountry] || 0) + quantity;
-        } else if (hasMineLineage && (!sourceCountry || sourceCountry === countryKey)) {
-          domesticMine += quantity;
-        } else {
-          unknown += quantity;
-        }
-      });
-      var parts = [];
-      if (domesticMine > 0) parts.push('Domestic mine: ' + amount(domesticMine, unit));
-      Object.keys(foreignByCountry).sort().forEach(function (country) {
-        parts.push('Foreign import (' + esc(country) + '): ' + amount(foreignByCountry[country], unit));
-      });
-      if (unknown > 0) parts.push('Unverified batch source: ' + amount(unknown, unit));
-      if (currentStock !== null && currentStock > tracked + 1e-9) {
-        parts.push('Additional stock source unverified: ' + amount(currentStock - tracked, unit));
-      } else if (currentStock === null && !tracked) {
-        parts.push('Batch origin not recorded');
-      } else if (currentStock !== null && tracked > currentStock + 1e-9) {
-        parts.push('Batch ledger exceeds current stock by: ' + amount(tracked - currentStock, unit));
-      }
-      var requests = safeArray(gameTrade.importRequests), inbound = 0, unknownInbound = 0, suppliers = Object.create(null);
-      requests.forEach(function (request) {
-        if (!request || String(request.resourceId || '').trim().toLowerCase() !== String(resourceId || '').trim().toLowerCase()) return;
-        var status = String(request.status || '').toUpperCase();
-        var stage = String(request.stage || '').toUpperCase();
-        var terminal = ['SETTLED','DELIVERED','COMPLETED','FULFILLED','REJECTED','CANCELLED','CANCELED','FAILED','EXPIRED'];
-        var confirmed = ['ACCEPTED','SETTLEMENT_PREPARING','IN_TRANSIT','SHIPPED','DISPATCHED','AWAITING_DELIVERY','CONFIRMED','CONTRACTED','LOADED'];
-        if (terminal.indexOf(status) >= 0 || terminal.indexOf(stage) >= 0 ||
-            (confirmed.indexOf(status) < 0 && confirmed.indexOf(stage) < 0)) return;
-        var quantity = numberOrNull(request.remainingQuantity !== undefined ? request.remainingQuantity : request.quantity);
-        if (quantity === null || quantity <= 0) return;
-        var supplier = String(request.supplierCountryId || request.sellerCountryId ||
-          request.sourceCountryId || request.counterpartyCountryId || '').trim().toUpperCase();
-        if (supplier && supplier !== countryKey) {
-          suppliers[supplier] = (suppliers[supplier] || 0) + quantity;
-          inbound += quantity;
-        } else if (!supplier) {
-          unknownInbound += quantity;
-        }
-      });
-      if (inbound > 0) {
-        var supplierLabel = Object.keys(suppliers).sort().map(function (country) {
-          return country + ' ' + amount(suppliers[country], unit);
-        }).join(', ');
-        parts.push('Confirmed foreign inbound: ' + amount(inbound, unit) + (supplierLabel ? ' (' + esc(supplierLabel) + ')' : ''));
-      }
-      if (unknownInbound > 0) parts.push('Confirmed inbound, supplier unverified: ' + amount(unknownInbound, unit));
-      return parts.join(' · ');
-    }
     function stockStatusRow(resourceId, currentStock, demand, unit) {
       var runtimeRow = demandRuntimeFor(resourceId) || {};
       var coverage = coverageDaysFor(resourceId);
@@ -1113,12 +999,10 @@
       }
       var coverageLabel = coverage !== null ? fmt(coverage) + ' days' :
         (demand === 0 ? 'No daily use recorded' : 'Not available');
-      var origin = sourceSummaryFor(resourceId, unit, currentStock);
       return '<tr class="omega-v2-inventory-status-row"><td colspan="7"><div class="omega-v2-inventory-status-line">' +
         '<span><strong>Coverage</strong>' + esc(coverageLabel) + '</span>' +
         '<span class="omega-v2-stock-status" data-state="' + state + '"><strong>Status</strong>' + esc(label) + '</span>' +
         (targetNote ? '<span><strong>Stock target</strong>' + esc(targetNote) + '</span>' : '') +
-        '<span class="omega-v2-stock-origin"><strong>Supply source</strong>' + (origin || 'Source not recorded') + '</span>' +
         '</div></td></tr>';
     }
     function siteCard(site) {
@@ -1304,13 +1188,13 @@
     var dashboardStockMarkup = '<section class="omega-v2-card omega-v2-movement-card omega-v2-dashboard-stock">' +
       '<div class="omega-v2-card-header"><div><h2>Current Stock</h2><p>Recorded opening stock and live balances for ' +
       esc(countryKey) + '</p></div><span class="omega-v2-status" data-state="' +
-      (dashboardStockRows.length ? 'operational' : 'attention') + '">' + fmt(dashboardStockRows.length) + ' stocked products</span></div>' +
+      (dashboardStockRows.length ? 'operational' : 'attention') + '">' + fmt(dashboardStockRows.length) + ' stocked resources</span></div>' +
       (dashboardStockRows.length
-        ? '<div class="omega-v2-table-wrap"><table><thead><tr><th>Resource / Product</th><th>Current Stock</th></tr></thead><tbody>' +
+        ? '<div class="omega-v2-table-wrap"><table><thead><tr><th>Resource</th><th>Current Stock</th></tr></thead><tbody>' +
           dashboardStockRows.join('') + '</tbody></table></div>'
         : '<div class="omega-v2-empty">No recorded current stock is available for this player country.</div>') +
       '</section>';
-    dashMarkup += dashboardStockMarkup + factoryHeldInputMarkup;
+    dashMarkup += dashboardStockMarkup;
     var startupBaselineRuntime = g.OmegaResourceStartupBaseline || g.Omega && g.Omega.ResourceStartupBaseline || null;
     var stockTargetDays = null;
     try {
@@ -1336,11 +1220,9 @@
     var inventoryMarkup = stockTargetControl + '<div class="omega-v2-kpis">' +
       renderKpi('Raw resource types', String(distinctResources.length), 'Canonical resources available', 'neutral') +
       renderKpi('Stocked raw types', String(Object.keys(rawStock).filter(function (key) { return val(rawStock[key]) > 0; }).length), 'Positive on-hand balance', 'neutral') +
-      renderKpi('Processed types', String(Object.keys(finishedStock).filter(function (key) { return val(finishedStock[key]) > 0; }).length), 'Finished stock', 'neutral') +
       renderKpi('Tracked batches', String(inventoryRows.length), 'Recorded inventory entries', 'neutral') +
       renderKpi('Below stock target', String(inventoryKeys.filter(function (rid) { return targetGapFor(rid) !== null && targetGapFor(rid) > 0; }).length), 'Compared with daily demand target', inventoryKeys.some(function (rid) { return targetGapFor(rid) !== null && targetGapFor(rid) > 0; }) ? 'shortage' : 'neutral') +
       '</div><section class="omega-v2-card omega-v2-movement-card"><h2>Inventory movement</h2><p>Stored quantity, confirmed receipts and recorded dispatches for the selected country.</p>' + stockTable + '</section>' +
-      factoryHeldInputMarkup +
       (inventoryRows.length ? '<section class="omega-v2-card omega-v2-movement-card"><h2>Recent batches</h2><div class="omega-v2-table-wrap"><table><thead><tr><th>Resource</th><th>Quantity</th><th>Warehouse</th><th>Status</th></tr></thead><tbody>' +
         inventoryRows.slice(-40).reverse().map(function (row) { return '<tr><td>' + esc(resourceLabel(row.resourceId)) + '</td><td>' + amount(row.quantity, resourceUnit(row.resourceId) || (/SIMULATION.*UNIT/i.test(String(row.unit || '')) ? '' : row.unit)) +
           '</td><td>' + esc(row.location || '—') + '</td><td>' + esc(human(row.status)) + '</td></tr>'; }).join('') +
