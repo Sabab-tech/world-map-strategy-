@@ -33,7 +33,7 @@ test("inventory displays the canonical 41 resources and aggregate balances when 
     const unit = String(profile.unit || "").replace(/_PER_DAY$/i, "");
     return {
       resourceId,
-      name: resourceId.replace(/[_-]+/g, " ").replace(/\\b\\w/g, (ch) => ch.toUpperCase()),
+      name: resourceId.replace(/[_-]+/g, " ").replace(/\b\w/g, (ch) => ch.toUpperCase()),
       unit: unit || null,
       demandUnit: profile.unit || null,
       priority: profile.priority ?? null,
@@ -81,10 +81,10 @@ test("inventory displays the canonical 41 resources and aggregate balances when 
     const result = api.render(root, { countryId: "BGD", sites: [], tab: "inventory" });
     assert.equal(result.ok, true);
     assert.match(root.innerHTML, /Raw resource types/);
-    assert.match(root.innerHTML, /<strong>41<\\/strong>/,
+    assert.match(root.innerHTML, /<strong>41<\/strong>/,
       "inventory must enumerate every canonical raw-resource identity");
     assert.match(root.innerHTML, /Coal/);
-    assert.match(root.innerHTML, /125(?:\\.00)? TONNES/,
+    assert.match(root.innerHTML, /125(?:\.00)? TONNES/,
       "aggregate resource.inventory balances must remain visible if warehouse projections are absent");
     assert.match(root.innerHTML, /Not recorded/,
       "unknown balances stay explicit instead of being fabricated as zero");
