@@ -17,7 +17,7 @@ let resourceRuntime={
   inventory:{crude_oil:20}
 };
 
-const queued=[],actions=new Map(),handlers=new Map(),listeners=new Map();
+const queued=[],actions=new Map(),handlers=new Map(),listeners=new Map();let fetchCount=0;
 const state={
   simulation:{turn:1,session:{playerCountryId:'AAA'}},
   population:{BD:{labor:{available:100,skilled:50}}},
@@ -42,7 +42,7 @@ const fake={
   console:{log(){},error(){}},Map,Set,WeakMap,Object,Array,Number,String,JSON,Promise,Math,Date,
   CustomEvent:class{constructor(type,init={}){this.type=type;this.detail=init.detail;}},
   addEventListener(type,fn){const a=listeners.get(type)||[];a.push(fn);listeners.set(type,a);},
-  fetch:async()=>({ok:true,json:async()=>countries}),
+  fetch:async()=>{fetchCount++;return{ok:true,json:async()=>countries};},
   Game:{state},
   ResourceMinistryEngine:{getIntegratedResourceState(){return resourceRuntime;}},
   Omega:{
@@ -58,9 +58,13 @@ vm.createContext(fake);
 vm.runInContext(source,fake,{filename:'opponent_country_rules.js'});
 const api=fake.Omega.OpponentCountryRules;
 
-assert.equal(api.VERSION,'4.2.0');
+assert.equal(api.VERSION,'4.3.0');
 await api.initialize({fetchCountries:true});
-
+const fetchesBeforeOptional=fetchCount;
+await Promise.all([api.loadDataset('projects'),api.loadDataset('projects')]);
+assert.equal(fetchCount-fetchesBeforeOptional,1,'same dataset concurrent load is shared');
+assert.equal(api.releaseDataset('projects'),true);
+assert.equal(api.getDataset('projects'),undefined);
 api.setDataset('countries',countries);
 api.setDataset('population',populationData);
 api.setDataset('economy',economyData);
@@ -149,6 +153,9 @@ const trace=api.getTrace();
 assert.ok(trace.some(x=>x.layer==='L26_EVIDENCE_TRACE'));
 assert.ok(!trace.some(x=>x.type==='RUNTIME_COVERAGE'));
 
+const saved=api.saveState();
+assert.ok(saved.datasets.datasets.countries);
+for(const key of ['population','economy','cities','relations'])assert.equal(saved.datasets.datasets[key],undefined);
 const diagnostics=api.diagnostics();
 assert.equal(diagnostics.layers,28);
 assert.ok(diagnostics.executedLayers>0 && diagnostics.executedLayers<=diagnostics.layers);

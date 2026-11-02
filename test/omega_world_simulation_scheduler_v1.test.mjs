@@ -3,14 +3,14 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 const source=readFileSync(new URL('../omega_world_simulation_scheduler_v1.js',import.meta.url),'utf8');
-function harness(count=197){
+function harness(count=197,existingState=null,userAgent=''){
  const ids=[],profiles=[],byId=new Map();
  for(let i=0;i<count;i++){const id=String.fromCharCode(65+Math.floor(i/26))+String.fromCharCode(65+i%26),row={countryCode:id,iso3:'X'+String(i).padStart(2,'0')};ids.push(id);profiles.push(row);byId.set(id,row);}
  const participants=new Map(),listeners=new Set(),evaluations=[],queued=[],handled=[];let yields=0;
- const state={simulation:{turn:0,session:{playerCountryId:'AA',status:'RUNNING'}},projects:{BB:{registry:[{projectId:'P1',autonomy:true,status:'UNDER_CONSTRUCTION'}]}},military:{CC:{trainingQueue:[{trainingId:'T1',status:'IN_TRAINING'}]}},trade:{}};
+ const state=existingState||{simulation:{turn:0,session:{playerCountryId:'AA',status:'RUNNING'}},projects:{BB:{registry:[{projectId:'P1',autonomy:true,status:'UNDER_CONSTRUCTION'}]}},military:{CC:{trainingQueue:[{trainingId:'T1',status:'IN_TRAINING'}]}},trade:{}};
  const simulation={world:{state},clock:{turn:0,stepDurationMs:10000},getPlayerCountryId:()=>state.simulation.session?.playerCountryId||null,registerTurnParticipant(id,handler,options){participants.set(id,{handler,options});return()=>participants.delete(id);},events:{subscribe(type,handler){if(type==='*')listeners.add(handler);return()=>listeners.delete(handler);}}};
  const rules={async listCountryIds(){return ids;},async evaluateCountry(countryId,turn){evaluations.push({countryId,turn});return{status:'COMPLETE',decisions:[{decisionId:'D-'+countryId+'-'+turn,scenarioId:'RESOURCE_DEFICIT',priorityScore:1,selected:{action:'IMPORT'}}]};},queueDecision(decision,turn){queued.push({decisionId:decision.decisionId,turn});return{commandId:decision.decisionId};}};
- const sandbox={console,Promise,Map,Set,WeakMap,Object,Array,Number,String,Math,Date,JSON,Omega:{Simulation:simulation,OpponentCountryRules:rules},OmegaCountryRuntimeData:{resolveCountry(v){return byId.get(String(v).toUpperCase())||null;},listProfiles(){return profiles;}},Game:{state},addEventListener(){},removeEventListener(){},setTimeout(callback){yields++;queueMicrotask(callback);return 0;}};
+ const sandbox={console,Promise,Map,Set,WeakMap,Object,Array,Number,String,Math,Date,JSON,...(userAgent?{navigator:{userAgent,deviceMemory:2,hardwareConcurrency:4}}:{}),Omega:{Simulation:simulation,OpponentCountryRules:rules},OmegaCountryRuntimeData:{resolveCountry(v){return byId.get(String(v).toUpperCase())||null;},listProfiles(){return profiles;}},Game:{state},addEventListener(){},removeEventListener(){},setTimeout(callback){yields++;queueMicrotask(callback);return 0;}};
  vm.runInNewContext(source,sandbox,{filename:'omega_world_simulation_scheduler_v1.js'});
  const scheduler=sandbox.Omega.WorldSimulationScheduler,participant=participants.get('omega.world-simulation.scheduler.v1');
  assert.ok(participant,'scheduler must register one canonical turn participant');
@@ -39,6 +39,25 @@ test('active countries and event intake are capped and unknown IDs are ignored a
  const result=await h.participant.handler({}, {turn:1,countryId:'AA',playerCountryId:'AA',state:h.state,simulation:h.simulation});
  assert.equal(result.active.results.some(row=>row.countryId==='ZZ'),false);
  assert.equal(h.state.simulation.worldSimulationScheduler.activeCountries.ZZ,undefined);
+});
+test('event queue and deduplication survive scheduler recreation',()=>{
+ const first=harness(10);
+ first.scheduler.enqueueEvent({eventId:'LOW-1',eventType:'OMEGA_TRADE_REQUEST_CREATED',simulationTurn:1,payload:{countryId:'BB'}});
+ const second=harness(10,first.state);
+ assert.equal(second.scheduler.diagnostics().pendingEvents,1);
+ assert.equal(second.scheduler.enqueueEvent({eventId:'LOW-1',eventType:'OMEGA_TRADE_REQUEST_CREATED',simulationTurn:1,payload:{countryId:'BB'}}).status,'DUPLICATE');
+ for(let i=0;i<300;i++)second.scheduler.enqueueEvent({eventId:'TRADE-'+i,eventType:'OMEGA_TRADE_REQUEST_CREATED',simulationTurn:1,payload:{countryId:'BB'}});
+ const before=second.scheduler.diagnostics().pendingEvents;assert.equal(before,256);
+ assert.equal(second.scheduler.enqueueEvent({eventId:'WAR-1',eventType:'OMEGA_WAR_DECLARED',simulationTurn:1,payload:{countryId:'CC'}}).status,'QUEUED');
+ assert.equal(second.scheduler.diagnostics().pendingEvents,before);
+ assert.ok(second.state.simulation.worldSimulationScheduler.pendingEvents.some(row=>row.eventId==='WAR-1'));
+});
+test('constrained Android devices use a smaller bounded scheduler budget',async()=>{
+ const h=harness(197,null,'Android 9');h.state.simulation.turn=1;h.simulation.clock.turn=1;
+ const result=await h.participant.handler({}, {turn:1,countryId:'AA',playerCountryId:'AA',state:h.state,simulation:h.simulation});
+ assert.equal(result.status,'COMPLETED');assert.equal(result.budget.profile,'CONSTRAINED');
+ assert.ok(result.active.selected<=2);assert.ok(result.macro.selected<=4);
+ assert.ok(h.yields()>=result.active.selected+result.macro.selected);
 });
 test('same turn commits are idempotent',async()=>{
  const h=harness(20);h.state.simulation.turn=1;const ctx={turn:1,countryId:'AA',playerCountryId:'AA',state:h.state,simulation:h.simulation};
