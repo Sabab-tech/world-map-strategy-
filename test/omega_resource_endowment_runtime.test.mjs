@@ -33,7 +33,7 @@ function advanceToCycleFinish(state,cycle){
     if(++guard>10000)throw new Error('TEST_FACTORY_CYCLE_CLOCK_GUARD');
   }
 }
-function completeFactoryCycle(state,industry,countryId,factoryId,sourceBatchId,maxTurns=32){
+async function completeFactoryCycle(state,industry,countryId,factoryId,sourceBatchId,maxTurns=32){
   const resourceState=()=>state.resource?.[countryId]||{};
   const flow=()=> (resourceState().industrialNetwork?.siteFlowLedger||[])
     .find(row=>String(row.batchId||'')===String(sourceBatchId||''));
@@ -55,7 +55,7 @@ function completeFactoryCycle(state,industry,countryId,factoryId,sourceBatchId,m
       // until this exact source batch appears in a committed lineage, not merely any cycle.
       advanceOneGameTurn(state);
     }
-    const result=industry.processPendingFactoryInputs(countryId);
+    const result=await industry.processPendingFactoryInputs(countryId);
     history.push({turn:state.simulation?.turn,date:state.simulation?.date,cycleId:cycle?.cycleId||null,
       cycleStatus:cycle?.status||null,completedCount:result?.completedCount||0,startedCount:result?.startedCount||0,
       blocked:(result?.blocked||[]).slice(0,5).map(x=>({factoryId:x.factoryId,reason:x.reason,
@@ -399,7 +399,7 @@ assert.equal((ausAfterDelivery.batches||[]).some(x=>x.stage==='FINISHED'&&x.sour
   'finished-goods batches must not appear on the delivery tick');
 globalThis.Game.state.simulation.turn=Math.max(Number(globalThis.Game.state.simulation.turn)||0,Number(pilbaraCycle.finishTurn)||0);
 globalThis.Game.state.simulation.date=pilbaraCycle.finishDate;
-const pilbaraCompletion=industrialPipelineRuntime.processPendingFactoryInputs('AUS');
+const pilbaraCompletion=await industrialPipelineRuntime.processPendingFactoryInputs('AUS');
 assert.equal(pilbaraCompletion.completedCount,1,JSON.stringify(pilbaraCompletion));
 const ausAfterProcessing=runtime.countryResourceState('AUS')||{};
 const completedPilbaraDelivery=(ausAfterProcessing.industrialNetwork?.deliveries||[])
@@ -849,7 +849,7 @@ if(delivered.processingStatus==='AWAITING_PROCESSING'){
   assert.equal(delivered.processing?.reason,'FACTORY_CYCLE_ALREADY_RUNNING');
   assert.equal(delivered.processingTransactionId,null,'unrelated active cycles must never own this delivery');
 }
-completeFactoryCycle(globalThis.Game.state,industrial,'KWT',realPipeline.factoryId,realPipeline.batchId);
+await completeFactoryCycle(globalThis.Game.state,industrial,'KWT',realPipeline.factoryId,realPipeline.batchId);
 const postDeliveryState=runtime.countryResourceState('KWT');
 const completedRealDelivery=(postDeliveryState.industrialNetwork?.deliveries||[]).find(x=>String(x.shipmentId)===String(factoryShipment.shipmentId));
 assert.equal(completedRealDelivery?.processingStatus,'PROCESSED','Kuwait delivery ledger must reconcile after cycle completion');
@@ -1040,7 +1040,7 @@ if(part6Delivered.processingStatus==='AWAITING_PROCESSING'){
   assert.equal(part6Delivered.processing?.reason,'FACTORY_CYCLE_ALREADY_RUNNING');
   assert.equal(part6Delivered.processingTransactionId,null,'Part 6 shipment must not attach to an unrelated cycle');
 }
-completeFactoryCycle(globalThis.Game.state,industrial,part6CopperSite.countryId,part6Pipeline.factoryId,part6Pipeline.batchId);
+await completeFactoryCycle(globalThis.Game.state,industrial,part6CopperSite.countryId,part6Pipeline.factoryId,part6Pipeline.batchId);
 const part6PostDelivery=runtime.countryResourceState(part6CopperSite.countryId);
 const part6Flow=part6PostDelivery.industrialNetwork?.siteFlowLedger?.find(item=>String(item.batchId)===String(part6Pipeline.batchId));
 const part6CompletedDelivery=(part6PostDelivery.industrialNetwork?.deliveries||[]).find(item=>String(item.shipmentId)===String(part6FactoryShipment.shipmentId));
