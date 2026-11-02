@@ -382,7 +382,7 @@ test('real site extraction flows through raw warehouse, transport, factory, fini
   let followupTurns=0,lastCompletedCycle=null;
   while(inputBalance()>1e-6&&followupTurns<10){
     advanceOneGameTurn(state);
-    const followup=industry.processPendingFactoryInputs('BGD');
+    const followup=await industry.processPendingFactoryInputs('BGD');
     assert.ok((Number(followup.completedCount)||0)+(Number(followup.startedCount)||0)>=1,
       JSON.stringify({followup,inputBalance:inputBalance(),factoryId:factory.id}));
     if((followup.completed||[]).length)lastCompletedCycle=followup.completed[followup.completed.length-1];
