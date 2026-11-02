@@ -297,6 +297,30 @@ test('factory input failure does not consume a resource that lacks the other req
   assert.equal(worldState.resource.BGD.inventory.copper,undefined);
 });
 
+test('factory production yields between bounded batches without skipping eligible facilities',async()=>{
+  const {context,worldState}=createContext();
+  let yieldCount=0;
+  context.navigator={userAgent:'Android',deviceMemory:2,hardwareConcurrency:2};
+  context.setTimeout=callback=>{yieldCount++;return setImmediate(callback);};
+  for(let index=1;index<=8;index++){
+    worldState.economy.BGD.productionAssets.push({
+      id:'PROC_EXTRA_'+index,stage:'PROCESSING',capacity:1,
+      inputCoefficients:{iron_ore:1},outputProfile:{iron_intermediate:0.8},
+      companyId:'PROCESS_CO_'+index
+    });
+  }
+  const code=readFileSync('omega_resource_economy_runtime_v2.js','utf8');
+  vm.runInNewContext(code,context,{filename:'omega_resource_economy_runtime_v2.js'});
+  await context.OmegaResourceEconomy.runTurn();
+  const runtime=worldState.economy.BGD.industrialRuntime;
+  assert.equal(runtime.productionLedger.length,9,'all nine eligible facilities must complete their production transaction');
+  assert.equal(runtime.blockedFacilities.length,0,'bounded yielding must not turn eligible facilities into blocked work');
+  assert.ok(yieldCount>=5,'mobile production must yield repeatedly during planning and transaction commits');
+  assert.equal(worldState.resource.BGD.inventory.iron_ore,42);
+  assert.equal(worldState.resource.BGD.inventory.iron_intermediate,46.4);
+  assert.equal(worldState.resource.BGD.warehouse.availableByResource.iron_ore,42);
+});
+
 test('all modeled mine rows are not capped by the removed legacy 512-row limiter',()=>{
   const code=readFileSync('omega_resource_endowment_runtime.js','utf8');
   assert.doesNotMatch(code,/MAX_MINES/);
