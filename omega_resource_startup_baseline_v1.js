@@ -8,6 +8,7 @@
   'use strict';
 
   var VERSION = '1.2.0';
+  var LEGACY_STARTUP_BASELINE_VERSION = '1.1.0';
   var FACTORY_INPUT_COVERAGE_VERSION = '2.0.0';
   if (g.OmegaResourceStartupBaseline && g.OmegaResourceStartupBaseline.VERSION === VERSION) return;
 
@@ -449,7 +450,7 @@
     var countryId = id(profile.iso3);
     var policy = data.policy.startupFactories || {};
     var created = [], existingCount = assets.length;
-    if (marker && marker.version === VERSION && marker.factoryAssetsInitialized === true) {
+    if (marker && (marker.version === VERSION || marker.version === LEGACY_STARTUP_BASELINE_VERSION) && marker.factoryAssetsInitialized === true) {
       return { status: 'ALREADY_INITIALIZED', countryId: countryId, created: 0,
         assetCount: assets.length, existingCount: assets.length, siteResourceGroupCount: (groups || []).length };
     }
@@ -809,7 +810,7 @@
   }
   function seedCountryStock(state, profile, economy, resource, assets, turn) {
     var marker = object(resource.startupBaselineV1);
-    if (marker && marker.version === VERSION && marker.openingStockInitialized === true) {
+    if (marker && (marker.version === VERSION || marker.version === LEGACY_STARTUP_BASELINE_VERSION) && marker.openingStockInitialized === true) {
       return {
         status: 'ALREADY_INITIALIZED',
         seeded: 0,
@@ -1668,13 +1669,15 @@
     var resourceMarker = object(resource.startupBaselineV1);
     var factoryInputMarker = object(resource.factoryInputBaselineV1);
     var economyMarker = object(economy.startupBaselineV1);
-    var stockReady = resourceMarker && resourceMarker.version === VERSION && resourceMarker.openingStockInitialized === true;
+    var stockReady = resourceMarker && (resourceMarker.version === VERSION ||
+      resourceMarker.version === LEGACY_STARTUP_BASELINE_VERSION) && resourceMarker.openingStockInitialized === true;
     var requiredInputCoverageDays = getFactoryInputCoverageDays(state, resource, countryId);
     var factoryInputReady = factoryInputMarker && factoryInputMarker.version === data.factoryInputBaseline.version &&
       factoryInputMarker.coverageModelVersion === FACTORY_INPUT_COVERAGE_VERSION &&
       Number(factoryInputMarker.targetCoverageDays) === requiredInputCoverageDays &&
       factoryInputMarker.openingStockInitialized === true;
-    var factoriesReady = economyMarker && economyMarker.version === VERSION && economyMarker.factoryAssetsInitialized === true;
+    var factoriesReady = economyMarker && (economyMarker.version === VERSION ||
+      economyMarker.version === LEGACY_STARTUP_BASELINE_VERSION) && economyMarker.factoryAssetsInitialized === true;
     if (stockReady && factoryInputReady && factoriesReady) {
       return { status: 'ALREADY_INITIALIZED', countryId: countryId, sessionId: String(session.sessionId || ''),
         reason: 'PLAYER_COUNTRY_STARTUP_BASELINE_ALREADY_PRESENT' };
