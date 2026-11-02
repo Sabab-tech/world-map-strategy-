@@ -4,9 +4,10 @@
 "use strict";
 const CACHE_NAME = "omega-offline-atlas-shell-v72";
 const DATA_CACHE_NAME = "omega-country-data-v1";
-const DATA_CACHE_MAX_ENTRIES = 32;
-const DATA_CACHE_MAX_BYTES = 24 * 1024 * 1024;
-const DATA_CACHE_MAX_ENTRY_BYTES = 4 * 1024 * 1024;
+const DATA_CACHE_MAX_ENTRIES = 48;
+const DATA_CACHE_MAX_BYTES = 48 * 1024 * 1024;
+const DATA_CACHE_MAX_ENTRY_BYTES = 12 * 1024 * 1024;
+const DATA_NETWORK_TIMEOUT_MS = 2200;
 let dataCacheMutation = Promise.resolve();
 const APP_BASE = new URL("./", self.location.href);
 const INDEX_URL = new URL("index.html", APP_BASE).href;
@@ -131,7 +132,7 @@ function isShellAsset(value) {
   try {
     const url = new URL(value, INDEX_URL);
     if (url.origin !== self.location.origin || !url.pathname.startsWith(APP_BASE.pathname)) return false;
-    if (/\.(?:m?js|css|svg|woff2?|png|jpe?g|webp|avif)$/i.test(url.pathname)) return true;
+    if (/\.(?:m?js|css|woff2?)$/i.test(url.pathname)) return true;
     return /\/(?:index\.html?|world\.json|economy_global_profiles_v1\.json)$/i.test(url.pathname);
   } catch (_) {
     return false;
@@ -221,48 +222,80 @@ async function touchDataResponse(cache, request) {
   });
 }
 
+async function fetchDataWithTimeout(request) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), DATA_NETWORK_TIMEOUT_MS);
+  try {
+    return await fetch(request, { cache: "no-store", signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+async function serveCachedData(cache, request, cached) {
+  if (!cached) return null;
+  await touchDataResponse(cache, request);
+  const headers = new Headers(cached.headers);
+  headers.set("X-OMEGA-OFFLINE-STALE", "1");
+  return new Response(cached.body, { status: cached.status, statusText: cached.statusText, headers });
+}
+async function notifyCachedDataChanged(request, previous, response) {
+  if (!previous || !response) return;
+  const oldVersion = previous.headers.get("etag") || previous.headers.get("last-modified") || "";
+  const newVersion = response.headers.get("etag") || response.headers.get("last-modified") || "";
+  if (!oldVersion || !newVersion || oldVersion === newVersion) return;
+  try {
+    const clients = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+    for (const client of clients) client.postMessage({
+      type: "OMEGA_CACHE_DATA_UPDATED", url: request.url,
+      previousVersion: oldVersion, currentVersion: newVersion
+    });
+  } catch (_) {}
+}
 async function networkFirstData(request) {
   const cache = await caches.open(DATA_CACHE_NAME);
+  const cached = await cache.match(request);
+  if (cached && self.navigator && self.navigator.onLine === false)
+    return serveCachedData(cache, request, cached);
   try {
-    const response = await fetch(request, { cache: "no-store" });
+    const response = await fetchDataWithTimeout(request);
     if (response) {
       if (response.ok && response.type !== "opaque") {
         await rememberDataResponse(cache, request, response);
-      } else if (response.status === 404 || response.status === 410) {
-        await forgetDataResponse(cache, request);
+        await notifyCachedDataChanged(request, cached, response);
+        return response;
       }
+      if (response.status === 404 || response.status === 410) {
+        await forgetDataResponse(cache, request);
+        return response;
+      }
+      if (response.status >= 500 && cached)
+        return serveCachedData(cache, request, cached);
       return response;
     }
   } catch (_) {
-    // Fall through only on a network failure; server errors must not revive stale data.
+    // Network failures are bounded. The last valid offline response is still usable.
   }
-  const cached = await cache.match(request);
-  if (cached) {
-    await touchDataResponse(cache, request);
-    const headers = new Headers(cached.headers);
-    headers.set("X-OMEGA-OFFLINE-STALE", "1");
-    return new Response(cached.body, {
-      status: cached.status,
-      statusText: cached.statusText,
-      headers
+  const refreshed = await cache.match(request);
+  return await serveCachedData(cache, request, refreshed) ||
+    new Response("OMEGA offline data has not been downloaded on this device yet.", {
+      status: 504,
+      statusText: "Offline data unavailable",
+      headers: { "Content-Type": "text/plain; charset=utf-8" }
     });
-  }
-  return new Response("OMEGA offline data has not been downloaded on this device yet.", {
-    status: 504,
-    statusText: "Offline data unavailable",
-    headers: { "Content-Type": "text/plain; charset=utf-8" }
-  });
 }
 
 async function fetchAndCache(cache, url) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 4500);
   try {
-    const response = await fetch(url, { cache: "reload" });
-    if (response && response.ok && response.type !== "opaque") {
+    const response = await fetch(url, { cache: "reload", signal: controller.signal });
+    if (response && response.ok && response.type !== "opaque")
       await cache.put(url, response.clone());
-    }
     return response;
   } catch (_) {
     return null;
+  } finally {
+    clearTimeout(timer);
   }
 }
 
