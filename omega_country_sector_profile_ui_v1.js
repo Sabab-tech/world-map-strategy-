@@ -6,8 +6,8 @@
 'use strict';
 const VERSION='1.1.0';
 if(root.OmegaCountrySectorProfileUI&&root.OmegaCountrySectorProfileUI.VERSION===VERSION)return;
-const PROFILE_URL='./country_sector_profiles_v1.json',SCHEMA_URL='./country_sector_profile_schema_v1.json';
-const state={promise:null,profiles:null,profileByIso3:null,schema:null,lastError:null,mountCount:0,panelObserver:null};
+const PROFILE_URL='./api/omega/country-sector-profile/',SCHEMA_URL='./country_sector_profile_schema_v1.json';
+const state={promise:null,promiseKey:null,profileKey:null,profiles:null,profileByIso3:new Map(),schema:null,lastError:null,mountCount:0,panelObserver:null};
 const str=v=>String(v==null?'':v),norm=v=>str(v).normalize('NFKD').replace(/[\u0300-\u036f]/g,'').trim().toUpperCase();
 const obj=v=>!!v&&typeof v==='object'&&!Array.isArray(v);
 const esc=v=>str(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
@@ -52,27 +52,38 @@ async function readJson(url){
  if(!response||!response.ok)throw Error('DATA_FETCH_FAILED: '+url);
  return response.json();
 }
-async function loadData(){
- if(state.profiles&&state.schema)return true;
- if(state.promise)return state.promise;
- state.lastError=null;
- state.promise=Promise.all([readJson(PROFILE_URL),readJson(SCHEMA_URL)]).then(rows=>{
-  const profiles=rows[0],schema=rows[1];
-  if(!Array.isArray(profiles&&profiles.countries)||!Array.isArray(schema&&schema.sectors))throw Error('SECTOR_PROFILE_SCHEMA_INVALID');
-  const byIso3=new Map();
-  profiles.countries.forEach(profile=>{const code=norm(profile&&profile.identity&&profile.identity.iso3);if(code&&!byIso3.has(code))byIso3.set(code,profile)});
-  if(!byIso3.size)throw Error('SECTOR_PROFILE_IDENTITY_INDEX_EMPTY');
-  state.profiles=profiles;state.profileByIso3=byIso3;state.schema=schema;return true;
- }).catch(error=>{state.lastError=str(error&&(error.message||error));state.promise=null;throw error});
+async function loadData(countryId){
+ const key=norm(countryId);if(!key)throw Error('COUNTRY_ID_REQUIRED');
+ if(state.profileKey===key&&state.profileByIso3.size)return true;
+ if(state.promise){
+  if(state.promiseKey===key)return state.promise;
+  await state.promise.catch(()=>{});
+  return loadData(countryId);
+ }
+ state.lastError=null;state.promiseKey=key;
+ state.promise=Promise.all([
+  readJson(PROFILE_URL+encodeURIComponent(countryId)),
+  state.schema?Promise.resolve(state.schema):readJson(SCHEMA_URL)
+ ]).then(rows=>{
+  const profile=rows[0]?.profile,schema=rows[1];
+  if(!obj(profile?.identity)||!Array.isArray(schema?.sectors))throw Error('SECTOR_PROFILE_SCHEMA_INVALID');
+  state.profiles={countries:[profile]};state.profileByIso3=new Map();
+  for(const alias of [profile.identity.iso3,profile.identity.iso2,profile.identity.name,profile.identity.officialName]){
+   const value=norm(alias);if(value)state.profileByIso3.set(value,profile);
+  }
+  state.profileKey=key;state.schema=schema;return true;
+ }).catch(error=>{state.lastError=str(error&&(error.message||error));throw error})
+ .finally(()=>{state.promise=null;state.promiseKey=null});
  return state.promise;
+}
+function releaseData(countryId){
+ if(countryId&&norm(countryId)!==state.profileKey)return false;
+ state.profiles=null;state.profileByIso3.clear();state.profileKey=null;return true;
 }
 function generalApi(){return root.OmegaCountryGeneralDataRuntime||(root.Omega&&root.Omega.CountryGeneralData)||null}
 async function resolveCanonicalRecord(countryId,profile){
  const api=generalApi();if(!api)return null;
- if(typeof api.init==='function'){
-  const diagnostic=typeof api.diagnostics==='function'?api.diagnostics():null;
-  if(!diagnostic||!diagnostic.ready)await api.init();
- }
+ if(typeof api.init==='function')await api.init(countryId);
  if(typeof api.getCountryRecord!=='function')return null;
  const identity=profile&&profile.identity||{};
  return api.getCountryRecord(countryId)||api.getCountryRecord(identity.iso3)||api.getCountryRecord(identity.iso2)||null;
@@ -207,7 +218,7 @@ function mount(panel){
  if(!countryValue)return;
  const current=panel.querySelector('[data-ocsp-root]');
  if(current&&current.getAttribute('data-country-value')===countryValue)return;
- if(current)current.remove();
+ if(current){releaseData(current.getAttribute('data-country-value')||'');current.remove();}
  panel.insertAdjacentHTML('beforeend',shellHtml(countryValue));state.mountCount++;
  const toggle=panel.querySelector('[data-ocsp-root] [data-ocsp-toggle]');
  if(toggle)Promise.resolve().then(()=>toggleDossier(toggle));
@@ -228,13 +239,13 @@ function filterContent(content,query){
 async function toggleDossier(button){
  const shell=button.closest('[data-ocsp-root]');if(!shell)return;
  const content=shell.querySelector('[data-ocsp-content]'),status=shell.querySelector('[data-ocsp-status]');if(!content)return;
- if(!content.hidden){content.hidden=true;button.textContent='Show details';button.setAttribute('aria-expanded','false');return}
+ if(!content.hidden){content.hidden=true;content.innerHTML='';button.textContent='Show details';button.setAttribute('aria-expanded','false');releaseData(shell.getAttribute('data-country-value')||'');return}
  if(shell.dataset.loaded==='true'){content.hidden=false;button.textContent='Hide details';button.setAttribute('aria-expanded','true');return}
  button.disabled=true;button.textContent='Loading…';shell.setAttribute('aria-busy','true');content.hidden=false;content.innerHTML='<p class="ocsp-empty">Loading country information…</p>';
  if(status)status.textContent='Loading country information…';
  try{
-  await loadData();
   const countryId=shell.getAttribute('data-country-value')||'';
+  await loadData(countryId);
   const record=await resolveCanonicalRecord(countryId,null);
   const iso3=norm(record&&record.identity&&record.identity.iso3)||norm(countryId);
   let profile=state.profileByIso3.get(iso3)||null;
@@ -274,9 +285,9 @@ function attach(){
  waitObserver.observe(root.document.documentElement||root.document.body,{childList:true,subtree:true});return true;
 }
 function diagnostics(){return {version:VERSION,initialized:!!state.panelObserver,profilesLoaded:!!state.profiles,
- profileCount:state.profiles&&Array.isArray(state.profiles.countries)?state.profiles.countries.length:0,
- sectorCount:state.schema&&Array.isArray(state.schema.sectors)?state.schema.sectors.length:0,lastError:state.lastError,mountCount:state.mountCount,profileUrl:PROFILE_URL}}
-const API=Object.freeze({VERSION,init:attach,loadData,diagnostics,formatValue});
+ profileCount:state.profiles&&Array.isArray(state.profiles.countries)?state.profiles.countries.length:0,cachedCountry:state.profileKey,
+ sectorCount:state.schema&&Array.isArray(state.schema.sectors)?state.schema.sectors.length:0,lastError:state.lastError,mountCount:state.mountCount,profileUrl:PROFILE_URL,profileCacheLimit:1}}
+const API=Object.freeze({VERSION,init:attach,loadData,releaseData,diagnostics,formatValue});
 root.Omega=root.Omega||{};root.Omega.CountrySectorProfileUI=API;root.OmegaCountrySectorProfileUI=API;
 if(root.document&&root.document.readyState==='loading')root.document.addEventListener('DOMContentLoaded',attach,{once:true});else attach();
 if(root.document){root.document.addEventListener('click',onClick);root.document.addEventListener('input',onInput)}

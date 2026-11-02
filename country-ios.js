@@ -68,11 +68,6 @@ window.CountryIOS = {
                 detail: { countryId: this.activeCountry, source: 'country-ios' }
             }));
         } catch (_) {}
-        try {
-            window.dispatchEvent(new CustomEvent('OMEGA_COUNTRY_CONTEXT_CHANGED', {
-                detail: { countryId: this.activeCountry, source: 'CountryIOS.open' }
-            }));
-        } catch (_) {}
         this.activeChapter = initialChapter;
 
         // Hide legacy cabinet window if open to prevent screen overlaps
@@ -1717,8 +1712,10 @@ window.CountryIOS = {
         const runtime = window.OmegaCountryRuntimeData;
         const identity = runtime && typeof runtime.resolveCountry === 'function'
             ? runtime.resolveCountry(countryKey) : null;
-        const profile = runtime && typeof runtime.getStrategicProfile === 'function'
-            ? runtime.getStrategicProfile(countryKey) : null;
+        const profile = (runtime && typeof runtime.getStrategicProfile === 'function'
+            ? runtime.getStrategicProfile(countryKey) : null) ||
+            (window.OmegaCountryGeneralDataRuntime && typeof window.OmegaCountryGeneralDataRuntime.getStrategicProfile === 'function'
+                ? window.OmegaCountryGeneralDataRuntime.getStrategicProfile(countryKey) : null);
         const behaviorEngine = window.OmegaCountryBehaviorEngine || window.Omega?.CountryBehaviorEngine;
         let behaviorProfile = null;
         try { behaviorProfile = behaviorEngine && typeof behaviorEngine.getBehaviorProfile === 'function'
