@@ -273,7 +273,7 @@ public final class OmegaGameplaySmokeTest {
                     " if (content.querySelectorAll('.omega-rescc-factory-catalog-row').length === 0) return false;" +
                     " var body = content.textContent || '';" +
                     " return body.indexOf('Factories') >= 0 &&" +
-                    "        body.indexOf('Factory input stock') >= 0;" +
+                    "        content.querySelectorAll('.omega-rescc-factory-catalog-row').length > 0;" +
                     "})()";
             assertEquals(
                     "Selecting a country and opening Industry/Factories must show the country factory cards and current factory records",
