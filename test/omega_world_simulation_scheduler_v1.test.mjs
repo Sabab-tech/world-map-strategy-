@@ -26,14 +26,18 @@ test('100-game-day schedule is bounded and all 196 non-player test countries are
  assert.ok(h.evaluations.length<=1200);assert.ok(h.queued.length<=h.evaluations.length);assert.equal(h.scheduler.diagnostics().lastTurn,100);
 });
 test('trade events promote both counterparties and duplicate event IDs are ignored',async()=>{
- const h=harness(12),event={eventId:'SETTLEMENT-1',eventType:'OMEGA_TRADE_SETTLEMENT_COMPLETED',simulationTurn:1,payload:{sourceCountryId:'BB',destinationCountryId:'CC'}};
+ const h=harness(197),event={eventId:'SETTLEMENT-1',eventType:'OMEGA_TRADE_SETTLEMENT_COMPLETED',simulationTurn:1,payload:{sourceCountryId:'BB',destinationCountryId:'CC'}};
  assert.equal(h.scheduler.enqueueEvent(event).status,'QUEUED');assert.equal(h.scheduler.enqueueEvent(event).status,'DUPLICATE');h.state.simulation.turn=1;
  const r=await h.participant.handler({}, {turn:1,countryId:'AA',playerCountryId:'AA',state:h.state,simulation:h.simulation});assert.ok(r.active.results.some(x=>x.countryId==='BB'));assert.ok(r.active.results.some(x=>x.countryId==='CC'));
 });
-test('active countries and event intake are capped',()=>{
+test('active countries and event intake are capped and unknown IDs are ignored at dispatch',async()=>{
  const h=harness(197);for(let i=1;i<80;i++)h.scheduler.activateCountry(h.ids[i],{turn:1,reason:'WAR',priority:100});assert.ok(h.scheduler.diagnostics().activeCountryCount<=48);
  for(let i=0;i<300;i++)h.scheduler.enqueueEvent({eventId:'EVENT-'+i,eventType:'OMEGA_TRADE_REQUEST_CREATED',simulationTurn:1,payload:{countryId:'BB'}});
  assert.ok(h.scheduler.diagnostics().pendingEvents<=256);assert.ok(h.scheduler.diagnostics().eventOverflowCount>0);
+ h.scheduler.activateCountry('ZZ',{turn:1,reason:'TRADE',priority:65});h.state.simulation.turn=1;
+ const result=await h.participant.handler({}, {turn:1,countryId:'AA',playerCountryId:'AA',state:h.state,simulation:h.simulation});
+ assert.equal(result.active.results.some(row=>row.countryId==='ZZ'),false);
+ assert.equal(h.state.simulation.worldSimulationScheduler.activeCountries.ZZ,undefined);
 });
 test('same turn commits are idempotent',async()=>{
  const h=harness(20);h.state.simulation.turn=1;const ctx={turn:1,countryId:'AA',playerCountryId:'AA',state:h.state,simulation:h.simulation};

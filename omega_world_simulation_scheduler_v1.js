@@ -134,6 +134,8 @@
     const known=new Set(ids),candidates=[root.simulation?.session?.playerCountryId,ctx.playerCountryId,ctx.countryId,root.playerCountryId,sim()?.getPlayerCountryId?.()];let player=null;
     for(const raw of candidates){const cid=countryId(raw);if(cid&&known.has(cid)){player=cid;break;}}
     lastPlayerCountryId=player;if(!player)return{status:'WAITING',reason:'PLAYER_COUNTRY_REQUIRED',turn,rosterCount:ids.length,evaluated:0};
+    // Drop event-derived IDs that are not in the current canonical roster; do not evaluate invented identities.
+    for(const activeId of Object.keys(meta.activeCountries))if(!known.has(activeId))delete meta.activeCountries[activeId];
     bootstrap(root,turn,ids);const base={turn,day:turn+1,playerCountryId:player,simulationDate:ctx.simulationDate||null,stepDurationMs:ctx.stepDurationMs||sim()?.clock?.stepDurationMs||null};
     const events=await processEvents(base,meta),playerHandlers=await runHandlers(player,'PLAYER',base);
     meta.lastProcessedTurn[player]=turn;meta.lastSuccessfulTurn[player]=turn;meta.counters.player=num(meta.counters.player)+1;
