@@ -871,8 +871,21 @@
       '<h3 class="omega-rescc-section-title">SPR request history</h3>' + statusRows(requests);
   }
   function panelLogistics(country){
-    const r=resourceBucket(country),log=r.logistics||{},shipments=Array.isArray(log.shipments)?log.shipments:[],batches=Array.isArray(r.batches)?r.batches:[],factories=allFactories(country);
+    const r=resourceBucket(country),log=r.logistics||{},legacyPlans=Array.isArray(log.shipments)?log.shipments:[],allBatches=Array.isArray(r.batches)?r.batches:[],factories=allFactories(country);
     const sites=siteRows(country),network=r.industrialNetwork&&typeof r.industrialNetwork==='object'?r.industrialNetwork:{};
+    const shipments=Array.isArray(network.shipments)?network.shipments:[];
+    const rawWarehouse=r.warehouse&&typeof r.warehouse==='object'?r.warehouse:{};
+    const rawWarehouseId=String(rawWarehouse.warehouseId||('WH-'+activeCountry(country)+'-RAW'));
+    // A batch is eligible for this route preview only after the authoritative core
+    // ledger places it in the raw warehouse. A target warehouse ID is not proof of arrival.
+    const batches=allBatches.filter(batch=>{
+      const status=String(batch?.status||'').toUpperCase(),stage=String(batch?.stage||'').toUpperCase();
+      const location=String(batch?.locationNodeKey||'');
+      const atRawWarehouse=String(batch?.warehouseId||'')===rawWarehouseId&&
+        (!location||location==='WAREHOUSE:'+activeCountry(country)+':RAW');
+      const moving=/IN_TRANSIT|MINE_AWAITING_HAUL|AWAITING_HAUL|TRANSFERRED_TO_FACTORY|FACTORY_INPUT/.test(status+' '+stage);
+      return atRawWarehouse&&!moving;
+    });
     const fleetBySite=network.transportFleetBySiteId&&typeof network.transportFleetBySiteId==='object'?network.transportFleetBySiteId:{};
     const chosenSite=sites.find(site=>String(site.siteId)===String(selectedFleetSiteId))||sites[0]||null;
     if(chosenSite&&String(selectedFleetSiteId)!==String(chosenSite.siteId))selectedFleetSiteId=String(chosenSite.siteId);
@@ -947,22 +960,25 @@
         '<p class="omega-rescc-note">Route calculation: '+esc(fleetPreview&&fleetPreview.status||'CALCULATING')+(fleetPreview&&fleetPreview.reason?' · '+esc(fleetPreview.reason):'')+' · reference load 10,000 tonnes</p>':'')+
       (fleetCards||empty('No fleet modes can be configured yet.'));
     const batchCards=batches.map(batch=>{
-      const id=batch.batchId,rid=batch.resourceId||batch.materialIdentity||'',qty=batch.remainingQuantity??batch.quantity,warehouse=batch.warehouseId||r.warehouse&&r.warehouse.warehouseId||'';
+      const id=batch.batchId,rid=batch.resourceId||batch.materialIdentity||'',qty=batch.remainingQuantity??batch.quantity,warehouse=batch.warehouseId||'';
       const compatible=matchingAssets(country,rid).filter(a=>a&&(a.id||a.assetId||a.factoryId||a.projectId)),ids=compatible.map(a=>a.id||a.assetId||a.factoryId||a.projectId);
       return card(id||'Unidentified batch',rid||'Resource not recorded','<div class="omega-rescc-grid2">'+kv('Quantity',qty)+kv('Unit',batch.unit)+kv('Warehouse',warehouse)+kv('Compatible factories',ids.length)+'</div>',
-        actionButton('plan-shipment','Plan warehouse-to-factory route',{'batch-id':id,'resource-id':rid,quantity:qty,unit:batch.unit||'','warehouse-id':warehouse,'factory-ids':ids.join(',')},!(id&&rid&&warehouse&&ids.length&&g.Omega&&g.Omega.ResourceLogisticsRuntime&&g.Omega.ResourceLogisticsRuntime.planFromFactoryInput)));
+        actionButton('plan-shipment','Preview warehouse-to-factory route',{'batch-id':id,'resource-id':rid,quantity:qty,unit:batch.unit||'','warehouse-id':warehouse,'factory-ids':ids.join(',')},!(id&&rid&&warehouse&&ids.length&&g.Omega&&g.Omega.ResourceLogisticsRuntime&&g.Omega.ResourceLogisticsRuntime.planFromFactoryInput)));
     }).join('');
     const routes=siteRouteRows(country,sites),routeCards=routes.slice(0,200).map(x=>card(x.routeName||x.routeId||'Saved route profile','PROFILE ONLY · NOT DISPATCHED',
       '<div class="omega-rescc-grid2">'+kv('Route ID',x.routeId)+kv('Site',x.siteName)+kv('Site ID',x.siteId)+kv('Transport mode',x.mode)+kv('From',x.from)+kv('To',x.to)+kv('Distance (km)',x.distanceKm)+kv('Route authority',x.authority)+'</div>'+
       '<p class="omega-rescc-note">A saved route definition is not a shipment or proof that material moved.</p>','')).join('');
     const shipmentCards=shipments.slice(-100).reverse().map(s=>card(s.shipmentId||s.routeId||'Shipment',s.status||s.deliveryStatus||'STATUS NOT RECORDED',
-      '<div class="omega-rescc-grid2">'+kv('Resource',s.resourceId)+kv('Quantity',s.quantity)+kv('Factory',s.factoryId)+kv('Transport mode',s.transportMode)+kv('ETA turn',s.timing&&s.timing.etaTurn)+kv('Constraint source',s.sourceAuthority||'NOT_RECORDED')+'</div>'+(s.reason?'<div class="omega-rescc-warning">'+esc(s.reason)+'</div>':''),'')).join('');
+      '<div class="omega-rescc-grid2">'+kv('Shipment type',s.shipmentType||'NOT_RECORDED')+kv('Resource',s.resourceId)+kv('Quantity',s.quantity)+kv('Factory',s.factoryId)+kv('Transport mode',s.route&&s.route.transportMode||s.transportMode)+kv('ETA turn',s.etaTurn??(s.timing&&s.timing.etaTurn))+kv('Authority',s.sourceAuthority||'OMEGA_RESOURCE_INDUSTRIAL_NETWORK_V1')+'</div>'+(s.blockReason||s.reason?'<div class="omega-rescc-warning">'+esc(s.blockReason||s.reason)+'</div>':''),'')).join('');
+    const legacyPlanCards=legacyPlans.slice(-100).reverse().map(s=>card(s.batchId||s.routeId||s.shipmentId||'Legacy route plan','LEGACY PLAN · NOT A SHIPMENT',
+      '<div class="omega-rescc-grid2">'+kv('Resource',s.resourceId)+kv('Quantity',s.quantity)+kv('Factory',s.factoryId)+kv('Recorded status',s.status||s.deliveryStatus||'UNKNOWN')+kv('Route ID',s.routeId||'NOT_RECORDED')+'</div><p class="omega-rescc-note">Historical preview record only. It is not delivery proof and is excluded from live shipment state.</p>','')).join('');
     return '<div class="omega-rescc-metrics"><div><span>Available raw batches</span><strong>'+number(batches.length)+'</strong></div><div><span>Factories in state</span><strong>'+number(factories.length)+'</strong></div><div><span>Saved site routes</span><strong>'+number(routes.length)+'</strong></div></div>'+
       fleetSection+
-      '<p class="omega-rescc-note">Saved route definitions and active shipment transactions are separate records.</p>'+
+      '<p class="omega-rescc-note">Route previews do not reserve or move stock. Live shipment status comes only from the Industrial Network transaction ledger.</p>'+
       '<h3 class="omega-rescc-section-title">Available warehouse batches</h3>'+(batchCards||empty('No physical batch is recorded for shipment planning.'))+
       '<h3 class="omega-rescc-section-title">Saved route profiles from existing data files</h3>'+(routeCards||empty('No saved route definition is recorded for this country.'))+
-      '<h3 class="omega-rescc-section-title">Actual shipment state</h3>'+(shipmentCards||empty('No shipments have been recorded.'));
+      '<h3 class="omega-rescc-section-title">Actual shipment state</h3>'+(shipmentCards||empty('No shipments have been dispatched by the Industrial Network.'))+
+      (legacyPlanCards?'<h3 class="omega-rescc-section-title">Legacy route plan history</h3>'+legacyPlanCards:'');
   }
   function factoryVisual(type, label) {
     const visualCatalog = g.OmegaFactoryVisualCatalog;
