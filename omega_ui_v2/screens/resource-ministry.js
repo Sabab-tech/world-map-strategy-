@@ -952,10 +952,16 @@
     var factoryInputProductIds = factoryInputStockRows.map(function (row) {
       return String(row && (row.productId || row.resourceId) || '').trim();
     }).filter(Boolean);
-    var rawInventoryKeys = Array.from(new Set(distinctResources.concat(
-      canonicalResourceCatalog.map(function (row) { return String(row && (row.resourceId || row.id) || '').trim(); }),
-      Object.keys(rawStock)
-    ).filter(Boolean))).sort();
+    var canonicalRawResourceIds = canonicalResourceCatalog.map(function (row) {
+      return String(row && (row.resourceId || row.id) || '').trim().toLowerCase();
+    }).filter(Boolean);
+    var canonicalRawResourceSet = Object.create(null);
+    canonicalRawResourceIds.forEach(function (rid) { canonicalRawResourceSet[rid] = true; });
+    var rawInventoryKeys = canonicalRawResourceIds.length
+      ? Array.from(new Set(canonicalRawResourceIds)).sort()
+      : Array.from(new Set(distinctResources.concat(Object.keys(rawStock)).map(function (rid) {
+          return String(rid || '').trim().toLowerCase();
+        }).filter(Boolean))).sort();
     var processedInventoryKeys = Object.keys(finishedStock).filter(function (rid) {
       return val(finishedStock[rid]) !== null;
     }).sort();
@@ -1312,10 +1318,10 @@
         (currentStock === null ? 'Not recorded' : amount(currentStock, unit)) + '</strong></div>' +
         '<div><span>Daily demand</span><strong>' +
         (demand === null ? 'Not recorded' : amount(demand, resourceDemandUnit(rid, unit))) + '</strong></div>' +
-        '<div><span>Coverage</span><strong>' + esc(state.coverageLabel) + '</strong></div>' +
         '</div><div class="omega-v2-inventory-status-line">' +
         '<span class="omega-v2-inventory-status-badge omega-v2-stock-status" data-state="' + esc(state.state) + '">' +
         '<strong>Status</strong>' + esc(state.label) + '</span></div>' +
+        '<div class="omega-v2-inventory-coverage"><span>Stock coverage</span><strong>' + esc(state.coverageLabel) + '</strong></div>' +
         (state.targetNote ? '<div class="omega-v2-inventory-target-note">' + esc(state.targetNote) + '</div>' : '') +
         '<div class="omega-v2-inventory-resource-origin"><span class="omega-v2-inventory-origin-heading">Supply source</span>' +
         '<div class="omega-v2-inventory-origin-list">' + state.origin + '</div></div></article>';
