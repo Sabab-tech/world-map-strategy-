@@ -19,7 +19,7 @@ UI-তে এই coverage target বা “১০০ দিনের রিজ�
 - `demandQuantity` বিদ্যমান ২১ factory profile, ২২ downstream recipe ও processing rule থেকে আসে।
 - বিকল্প recipe-র কারখানা ইউনিট আগে থেকেই route-এ ভাগ করা; প্রতিটি বিকল্পকে একসঙ্গে চালু ধরে দ্বিগুণ চাহিদা তৈরি করা হয় না।
 - ৪১টি raw resource identity অপরিবর্তিত। Industrial intermediate পণ্য আলাদা namespace-এ থাকবে।
-- target days-এর resolution: per-resource override → country resource policy → simulation resource supply policy → player-supply policy default → factory baseline default (১০০ দিন)। অনুমোদিত পরিসর ১–৩৬৫০ দিন।
+- target days-এর resolution: country resource override → country-level simulation resource supply policy → global simulation supply policy → player-supply policy default → factory baseline default (১০০ দিন)। অনুমোদিত পরিসর ১–৩৬৫০ দিন।
 
 Static `country_factory_input_inventory_baseline_v1.json` এখনও legacy per-cycle source rows বহন করে। Runtime source-কে cycle days দিয়ে ভাগ করে daily rate তৈরি করে। পুরোনো ৪০% source snapshot compatibility/provenance হিসেবে রাখা হয়েছে; এটি live target-এর buffer নয়।
 
