@@ -54,7 +54,7 @@ test('country aliases resolve to the same canonical profile and source records',
   assert.equal(api.resolveCountry('Kosovo')?.countryCode, 'XK');
   assert.equal(api.flagFor('Kosovo'), '🇽🇰');
   assert.equal(api.getCapital('Kosovo'), null, 'city records are lazy before country selection');
-  await api.loadCountryData('Kosovo', ['cities']);
+  await api.loadCountryData('Kosovo', ['cities','economy','population']);
   assert.equal(api.getCapital('Kosovo'), 'Pristina');
   assert.ok(api.getRecord('economy', 'Kosovo')?.gdp != null);
   assert.ok(api.getRecord('population', 'Kosovo')?.population_2015 != null);
@@ -62,7 +62,7 @@ test('country aliases resolve to the same canonical profile and source records',
   assert.equal(bangladesh?.countryCode, 'BD');
   assert.equal(api.getRecord('economy', 'Bangladesh')?.gdp, bangladesh.sourceValues.gdp);
   assert.equal(api.getRecord('population', 'BGD')?.population_2015, bangladesh.populationValues.population_2015);
-  await api.loadCountryData('Bangladesh', ['cities']);
+  await api.loadCountryData('Bangladesh', ['cities','economy','population']);
   assert.equal(api.getCapital('Bangladesh'), 'Dhaka');
   assert.ok(api.diagnostics().retainedCountryRecords <= api.diagnostics().countryRecordCacheLimit);
   api.releaseCountryData('Bangladesh');
