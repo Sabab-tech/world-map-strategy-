@@ -348,7 +348,8 @@ test('index, finance, bank and offline shell use the daily lifecycle assets', ()
     'the country-scoped economy owns production ticks to prevent world-wide duplicate extraction');
   assert.match(resourceEconomy, /endowment\.extractCountry\(cid\)/,
     'the economy must invoke extraction through the selected player-country ID');
-  assert.match(resourceEconomy, /return runTurn\(\);/);
+  assert.match(resourceEconomy, /function runTurn\(\)[\s\S]*?return task;/, 'the selected-country turn wrapper must return its serialized async task');
+  assert.match(resourceEconomy, /then\(function\(\)\{return runTurnCore\(cid\);\}\)/, 'the turn wrapper must serialize the country core without duplicating the simulation clock');
   assert.match(macro, /return init\(\)\.then\(\(\)=>advanceTurn\(turn,duration\)\)/);
 });
 
