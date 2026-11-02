@@ -558,8 +558,13 @@
     })).forEach(function (row, index) {
       if (!row || typeof row !== 'object') return;
       var batchKey = String(row.batchId || row.id || 'UNKEYED:' + index);
-      if (sourceBatchIds[batchKey]) return;
-      sourceBatchIds[batchKey] = true;
+      if (sourceBatchIds[batchKey] !== undefined) {
+        // inventoryLots is the latest warehouse/remaining-quantity projection;
+        // merge it over the original batch so extraction lineage is retained.
+        sourceBatchRows[sourceBatchIds[batchKey]] = Object.assign({}, sourceBatchRows[sourceBatchIds[batchKey]], row);
+        return;
+      }
+      sourceBatchIds[batchKey] = sourceBatchRows.length;
       sourceBatchRows.push(row);
     });
     var shipments = Array.isArray(industrial.shipments) ? industrial.shipments :
@@ -838,6 +843,9 @@
         if (rid !== String(resourceId || '').trim().toLowerCase()) return;
         var status = String(row.status || row.lifecycleStatus || '').toUpperCase();
         if (/CONSUMED|DEPLETED|TRANSFERRED_OUT|DISPATCHED|EXPORTED|SOLD|CANCELLED/.test(status)) return;
+        var warehouseId = String(row.warehouseId || '').trim();
+        var locationNodeKey = String(row.locationNodeKey || '').trim().toUpperCase();
+        if (!warehouseId && locationNodeKey.indexOf('WAREHOUSE:') !== 0) return;
         var quantity = numberOrNull(row.remainingQuantity !== undefined ? row.remainingQuantity :
           row.availableQuantity !== undefined ? row.availableQuantity :
           row.quantity !== undefined ? row.quantity : row.amount);
