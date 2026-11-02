@@ -80,6 +80,15 @@ test('offline install precaches the shell but not the large resource registry sh
   assert.ok(!requested.some(path=>path.endsWith('/resource_site_country_expansion_v1.json')));
 });
 
+test('boot-critical world and country economy JSON remain available from the shell cache offline',async()=>{
+  const h=createCacheHarness();await h.install();
+  h.setOffline(true);
+  for(const file of ['world.json','economy_global_profiles_v1.json']){
+    const response=await h.request('https://omega.test/game/'+file);
+    assert.equal(response.status,200,file+' must be served from the app shell cache');
+  }
+});
+
 test('country data is refreshed online and only uses its last downloaded copy after network failure',async()=>{
   const h=createCacheHarness();await h.install();
   const url='https://omega.test/game/api/omega/country-general-data/BD';
