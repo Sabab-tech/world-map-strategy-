@@ -82,7 +82,7 @@ public final class OmegaGameplaySmokeTest {
                     " document.getElementById('omega-gov-entry-v3') &&" +
                     " typeof window.openMainMinistryView === 'function' && window.OmegaUIV2App && window.OmegaUIV2Integration && typeof window.OmegaUIV2Integration.installLegacyLayerBridge === 'function' &&" +
                     " window.OMEGA_ANDROID_OFFLINE === true &&" +
-                    " typeof Array.prototype.flatMap === 'function' &&" +
+                    " typeof Array.prototype.flatMap === 'function' && typeof Promise.allSettled === 'function' &&" +
                     " window.OMEGA_ICON_SYSTEM_V1 && typeof window.OMEGA_ICON_SYSTEM_V1.nameForEmoji === 'function' &&" +
                     " window.Game && window.Omega" +
                     " );" +
