@@ -2011,9 +2011,8 @@ function batchFromExtraction(x,record){
     const selectedCountryId=playerSimulationCountryId();
     if(!selectedCountryId)return{status:'BLOCKED',reason:'PLAYER_COUNTRY_NOT_SELECTED',countryId:c};
     if(c!==selectedCountryId)return{status:'BLOCKED',reason:'PLAYER_COUNTRY_SCOPE_VIOLATION',countryId:c,playerCountryId:selectedCountryId};
-    const initialized=await initialize({coreOnly:true});
+    const initialized=await initialize();
     if(initialized?.status!=='READY')return{status:'BLOCKED',reason:'RESOURCE_ENDOWMENT_NOT_READY',detail:initialized,countryId:c};
-    void scheduleResourceSupplementalData();
     let bucket=state()?.resource?.[c]||{};
     const canReuseHydration=options.skipHydrationIfReady===true&&Array.isArray(bucket.mineSiteReferences)&&!!bucket.mineSiteControllers;
     if(!canReuseHydration){
@@ -2349,8 +2348,7 @@ function batchFromExtraction(x,record){
     if(g.__omegaResourceExtractionTurn===t)return Promise.resolve({status:'ALREADY_EXTRACTED',turn:t});
     let shared=null;
     const workPromise=(async()=>{
-      const initialized=await initialize({coreOnly:true});
-      if(initialized?.status==='READY')void scheduleResourceSupplementalData();
+      const initialized=await initialize();
       if(!g.__OmegaResourceReserveRegistry||initialized?.status==='FAILED'||initialized?.status==='WAITING_DEPENDENCIES')
         return initialized||{status:'WAITING_DEPENDENCIES'};
       const strategicPolicy=g.Omega?.ResourceStrategicPolicyRuntime||g.OmegaResourceStrategicPolicyRuntime;
