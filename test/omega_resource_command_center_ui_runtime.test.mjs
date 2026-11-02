@@ -42,11 +42,11 @@ globalThis.Game = {
           siteFlowLedger: [{ siteId: 'SITE-BGD-IRON', status: 'IN_TRANSIT', resourceId: 'iron_ore' }],
           projects: [{ projectId: 'FACTORY-P1', status: 'UNDER_CONSTRUCTION' }],
           technologyContracts: [{ projectId: 'TECH-P1', status: 'IN_PROGRESS' }],
-          shipments: []
+          shipments: [{ shipmentId: 'CORE-SHIPMENT-1', shipmentType: 'RAW_TO_FACTORY', status: 'IN_TRANSIT', resourceId: 'iron_ore', quantity: 80, factoryId: 'FAC-BGD-IRON', etaTurn: 4 }]
         },
         mineSiteReferences: [{ siteId: 'SITE-BGD-IRON', countryId: 'BGD', resourceId: 'iron_ore', name: 'Test Mine' }],
         surveyRequests: [], surveyResults: [], reserveBufferRequests: [],
-        mineProductionLedger: [], logistics: { shipments: [] }, environment: { waterRecycling: { status: 'RESEARCH' } }, byproducts: []
+        mineProductionLedger: [], logistics: { shipments: [{ shipmentId: 'LEGACY-PREVIEW-1', batchId: 'B-OLD', status: 'IN_TRANSIT', resourceId: 'iron_ore', quantity: 80 }] }, environment: { waterRecycling: { status: 'RESEARCH' } }, byproducts: []
       }
     },
     economy: {
@@ -212,6 +212,9 @@ test('canonical site profiles appear in relevant tabs without becoming live prod
   assert.match(modal.innerHTML, /ROUTE-BGD-IRON-1/);
   assert.match(modal.innerHTML, /PROFILE ONLY/);
   assert.match(modal.innerHTML, /Actual shipment state/);
+  assert.match(modal.innerHTML, /CORE-SHIPMENT-1/, 'live shipment cards must read the Industrial Network ledger');
+  assert.match(modal.innerHTML, /LEGACY PLAN · NOT A SHIPMENT/, 'legacy route plans must never be presented as actual deliveries');
+  assert.doesNotMatch(modal.innerHTML, /LEGACY-PREVIEW-1.*?IN_TRANSIT/s, 'legacy preview status must not appear as live cargo movement');
 
   ui.open('BGD', 'processing');
   modal = elements.get('gsrsk-intelligence-modal');
