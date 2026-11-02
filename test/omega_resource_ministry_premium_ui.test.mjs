@@ -914,6 +914,7 @@ test("Resource Ministry loads only the selected player's current inventory and u
   const prior = {
     Game:globalThis.Game,
     Omega:globalThis.Omega,
+    ResourceMinistryEngine:globalThis.ResourceMinistryEngine,
     OmegaCountryInventoryRuntime:globalThis.OmegaCountryInventoryRuntime,
     OmegaResourceStartupBaseline:globalThis.OmegaResourceStartupBaseline,
     OmegaResourceSiteCanonicalCatalogData:globalThis.OmegaResourceSiteCanonicalCatalogData
@@ -948,6 +949,10 @@ test("Resource Ministry loads only the selected player's current inventory and u
         processedWarehouse:{ availableByResource:{} }, batches:[], mineAssets:[], industrialNetwork:{projects:[],shipments:[],siteFlowLedger:[]} }
     }
   } } } };
+  globalThis.ResourceMinistryEngine = { countryProfiles:{
+    BGD:{ identity:{ iso3:"BGD", officialName:"Bangladesh" } },
+    USA:{ identity:{ iso3:"USA", officialName:"United States" } }
+  } };
   globalThis.OmegaCountryInventoryRuntime = { getResourceCatalog(){ return catalog; } };
   globalThis.OmegaResourceSiteCanonicalCatalogData = { sites:[
     {siteId:"BGD-COAL-LAZY",countryId:"BGD",siteName:"Bangladesh Mine",resourceId:"coal"},
