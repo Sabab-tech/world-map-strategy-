@@ -172,7 +172,8 @@ async function writeDataCacheIndex(cache, rows) {
 
 async function rememberDataResponse(cache, request, response) {
   return withDataCacheLock(async () => {
-    const declared = Number(response.headers.get("content-length"));
+    const rawLength = response.headers.get("content-length");
+    const declared = rawLength == null || rawLength === "" ? NaN : Number(rawLength);
     let size = Number.isFinite(declared) && declared >= 0 ? declared : null;
     if (size === null) {
       try { size = (await response.clone().arrayBuffer()).byteLength; }
@@ -201,6 +202,14 @@ async function rememberDataResponse(cache, request, response) {
   });
 }
 
+async function forgetDataResponse(cache, request) {
+  return withDataCacheLock(async () => {
+    await cache.delete(request);
+    const rows = (await readDataCacheIndex(cache)).filter(row => row.url !== request.url);
+    await writeDataCacheIndex(cache, rows);
+  });
+}
+
 async function touchDataResponse(cache, request) {
   return withDataCacheLock(async () => {
     const rows = await readDataCacheIndex(cache);
@@ -216,12 +225,16 @@ async function networkFirstData(request) {
   const cache = await caches.open(DATA_CACHE_NAME);
   try {
     const response = await fetch(request, { cache: "no-store" });
-    if (response && response.ok && response.type !== "opaque") {
-      await rememberDataResponse(cache, request, response);
+    if (response) {
+      if (response.ok && response.type !== "opaque") {
+        await rememberDataResponse(cache, request, response);
+      } else if (response.status === 404 || response.status === 410) {
+        await forgetDataResponse(cache, request);
+      }
       return response;
     }
   } catch (_) {
-    // Fall through to the last successfully downloaded copy for offline play.
+    // Fall through only on a network failure; server errors must not revive stale data.
   }
   const cached = await cache.match(request);
   if (cached) {
