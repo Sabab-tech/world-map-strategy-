@@ -42,4 +42,9 @@ No browser application can guarantee a new write after the operating system has 
 
 ## World simulation scheduler
 
-The tier-aware world scheduler budgets opponent-country evaluation at four active and eight macro countries per committed game day. The player keeps the existing detailed runtime. See `docs/OMEGA_WORLD_SIMULATION_SCHEDULER_V1.md` for the runtime contract, memory limits and 100-day regression boundaries.
+The tier-aware world scheduler budgets up to four active and eight macro countries per committed game day on standard devices. Constrained mobile uses up to two active and four macro evaluations, yields after each country and uses a smaller turn budget. Pending events and duplicate IDs persist in existing world state, with priority protection for war, conflict and sanctions. The player keeps the existing detailed runtime. See `docs/OMEGA_WORLD_SIMULATION_SCHEDULER_V1.md` for the runtime contract, memory limits and 100-day regression boundaries.
+
+
+## Country data loading and release
+
+The compact country identity/economy baseline remains available. Large supporting records load only for the selected country and requested domain. The country runtime coalesces concurrent source-file requests, retains at most eight country/domain records and exposes explicit release methods. General and sector profile APIs return one country record, not the full global registry. The server shares concurrent source reads and evicts its parsed copy after a short idle interval. Optional datasets are excluded from the offline app-shell precache. The opponent gateway coalesces duplicate in-flight loads and omits optional raw datasets from save snapshots.
