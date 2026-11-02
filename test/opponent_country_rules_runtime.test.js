@@ -84,6 +84,7 @@ api.setDataset('industry',{rows:[{countryCode:'BD',output:1}]});
 assert.ok(api.instance.gw.c.size<=5,'new datasets must evict the least-recent optional dataset instead of accumulating');
 assert.equal(api.getDataset('population'),undefined,'the oldest optional dataset should be evicted from the bounded working set');
 api.setDataset('population',populationData);
+api.setDataset('economy',economyData);
 
 const bd=await api.evaluateCountry('BD',1);
 assert.equal(bd.status,'COMPLETE');
