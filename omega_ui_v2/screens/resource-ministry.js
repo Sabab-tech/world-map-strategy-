@@ -1098,7 +1098,7 @@
       });
       Object.keys(suppliers).sort().forEach(function (country) {
         var entry = suppliers[country];
-        parts.push('<span class="omega-v2-origin-pill" data-origin="in-transit"><span class="omega-v2-origin-kind">Import in transit · ' +
+        parts.push('<span class="omega-v2-origin-pill" data-origin="in-transit"><span class="omega-v2-origin-kind">Confirmed foreign inbound · ' +
           esc(human(entry.status)) + '</span><strong>' + amount(entry.quantity, unit) + '</strong><small>(' +
           esc(countryNameForSupply(country)) + ') · not yet added to current stock</small></span>');
       });
@@ -1346,11 +1346,11 @@
         processedInventoryKeys.map(processedProductCard).join('') + '</div>'
       : '<div class="omega-v2-empty">No finished-goods stock is currently recorded in the processed warehouse.</div>';
     var rawInventorySectionMarkup = '<section class="omega-v2-card omega-v2-raw-inventory-section">' +
-      '<div class="omega-v2-card-header"><div><h2>Raw Resource Inventory</h2><p>Mine output and raw-resource receipts held by the national warehouse.</p></div>' +
+      '<div class="omega-v2-card-header"><div><h2>Current Stock · Raw Resource Inventory</h2><p>Mine output and raw-resource receipts held by the national warehouse.</p></div>' +
       '<span class="omega-v2-status" data-state="operational">' + fmt(rawInventoryKeys.length) + ' resource identities</span></div>' +
       rawInventoryCardsMarkup + '</section>';
     var processedInventorySectionMarkup = '<section class="omega-v2-card omega-v2-processed-inventory-section">' +
-      '<div class="omega-v2-card-header"><div><h2>Finished Goods Warehouse</h2><p>Processed industrial goods only. These balances are never added to raw-resource stock.</p></div>' +
+      '<div class="omega-v2-card-header"><div><h2>Processed Goods Warehouse</h2><p>Processed industrial goods only. These balances are never added to raw-resource stock.</p></div>' +
       '<span class="omega-v2-status" data-state="neutral">' + fmt(processedInventoryKeys.length) + ' product balances</span></div>' +
       processedGoodsCardsMarkup + '</section>';
     var rawInventoryRows = inventoryRows.filter(function (row) {
