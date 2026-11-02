@@ -918,7 +918,7 @@
       var unit = resourceUnit(rid);
       return '<tr><td><span class="omega-v2-resource-table-icon">' + resourceIconMarkup(rid, resourceLabel(rid)) + '</span>' +
         esc(resourceLabel(rid)) + '</td><td>' + (raw === null ? 'Not recorded' : amount(raw, unit)) + '</td><td>' +
-        (processed === null ? 'Not recorded' : amount(processed, unit)) + '</td><td>'
+        (processed === null ? 'Not recorded' : amount(processed, unit)) + '</td><td>' +
         (movementIn[rid] !== undefined ? amount(movementIn[rid], unit) : '—') + '</td><td>' +
         (movementOut[rid] !== undefined ? amount(movementOut[rid], unit) : '—') + '</td><td>' +
         (demand !== null ? amount(shortage, unit) : '—') + '</td></tr>';
