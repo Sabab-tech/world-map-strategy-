@@ -1291,6 +1291,27 @@ console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');
     assert.equal(context.Game.state.economy.BGD.productionAssets.length,3,
       'repeated session initialization cannot duplicate starting factories');
 
+    // A completed registration record must not hide a missing country factory row.
+    const missingStartingTextile=textiles.find(asset=>asset.sourceType==='COUNTRY_STARTING_FACTORY_BASELINE');
+    assert.ok(missingStartingTextile,'the baseline-created textile factory must be identified');
+    const missingIndex=assets.indexOf(missingStartingTextile);
+    assert.ok(missingIndex>=0);
+    assets.splice(missingIndex,1);
+    assert.equal(assets.filter(asset=>asset.factoryType==='TEXTILE_GARMENT_MILL').length,1);
+    const repaired=N.registerStartingFactoryAssets({
+      countryId:'BGD',factoryCounts:counts,sessionId:'STARTING-FACTORY-ASSET-TEST',datasetVersion:'TEST_BASELINE_V1'
+    });
+    assert.equal(repaired.status,'COMPLETED',
+      'the prior success marker is ignored when a factory type record has disappeared');
+    assert.equal(assets.filter(asset=>asset.factoryType==='TEXTILE_GARMENT_MILL'&&
+      !['DECOMMISSIONED','DESTROYED','UNDER_CONSTRUCTION'].includes(String(asset.status||'').toUpperCase())).length,2);
+    const repairedRepeat=N.registerStartingFactoryAssets({
+      countryId:'BGD',factoryCounts:counts,sessionId:'STARTING-FACTORY-ASSET-TEST',datasetVersion:'TEST_BASELINE_V1'
+    });
+    assert.equal(repairedRepeat.status,'ALREADY_REGISTERED',
+      'the repair remains idempotent after the missing factory is restored');
+    assert.equal(assets.length,3);
+
     const destroyed=N.decommissionFactory({countryId:'BGD',factoryId:textiles[0].id,confirmed:true});
     assert.equal(destroyed.status,'DECOMMISSIONED');
     assert.equal(textiles[0].status,'DECOMMISSIONED');
