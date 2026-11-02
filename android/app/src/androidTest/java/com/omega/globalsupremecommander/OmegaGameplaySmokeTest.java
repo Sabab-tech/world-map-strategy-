@@ -272,15 +272,11 @@ public final class OmegaGameplaySmokeTest {
                     "     title.textContent.trim() !== 'Industrial value chain') return false;" +
                     " if (content.querySelectorAll('.omega-rescc-factory-catalog-row').length === 0) return false;" +
                     " var body = content.textContent || '';" +
-                    " var ownedStart = body.indexOf('My factories');" +
-                    " var catalogStart = body.indexOf('Factory catalog ·', ownedStart);" +
-                    " if (ownedStart < 0 || catalogStart <= ownedStart) return false;" +
-                    " var ownedText = body.substring(ownedStart, catalogStart);" +
-                    " return ownedText.indexOf('No commissioned factory assets are recorded for this country.') >= 0 ||" +
-                    "        ownedText.indexOf('Factory input stock') >= 0;" +
+                    " return body.indexOf('Factories') >= 0 &&" +
+                    "        body.indexOf('Factory input stock') >= 0;" +
                     "})()";
             assertEquals(
-                    "Selecting a country and opening Industry/Factories must show the real asset state plus canonical factory catalog",
+                    "Selecting a country and opening Industry/Factories must show the country factory cards and current factory records",
                     "true", evaluate(instrumentation, webViewRef.get(), factoryPanelScript)
             );
             android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=FACTORY_PANEL_READY");
