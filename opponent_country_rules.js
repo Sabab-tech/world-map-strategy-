@@ -123,20 +123,24 @@ class Gateway{
   async load(k,options={}){
     const copyResult=options.copy!==false;
     if(this.c.has(k))return copyResult?this.get(k):this.peek(k);
-    if(this.inflight.has(k))return this.inflight.get(k);
-    const d=DATASETS[k];if(!d)throw Error('DATASET_NOT_REGISTERED:'+k);
-    if(!this.fetch)throw Error('DATASET_FETCH_UNAVAILABLE:'+k);
-    const epoch=this.epochs.get(k)||0;
-    let task;
-    task=(async()=>{
-      const r=await this.fetch((this.base?this.base+'/':'')+d[0],{cache:'no-store'});
-      if(!r||!r.ok)throw Error('DATASET_FETCH_FAILED:'+k);
-      const value=await r.json();
-      if(this.inflight.get(k)!==task||(this.epochs.get(k)||0)!==epoch)return undefined;
-      this._store(k,value);
-      return copyResult?this.get(k):this.peek(k);
-    })().finally(()=>{if(this.inflight.get(k)===task)this.inflight.delete(k)});
-    this.inflight.set(k,task);return task;
+    let task=this.inflight.get(k);
+    if(!task){
+      const d=DATASETS[k];if(!d)throw Error('DATASET_NOT_REGISTERED:'+k);
+      if(!this.fetch)throw Error('DATASET_FETCH_UNAVAILABLE:'+k);
+      const epoch=this.epochs.get(k)||0;
+      task=(async()=>{
+        const r=await this.fetch((this.base?this.base+'/':'')+d[0],{cache:'no-store'});
+        if(!r||!r.ok)throw Error('DATASET_FETCH_FAILED:'+k);
+        const value=await r.json();
+        if(this.inflight.get(k)!==task||(this.epochs.get(k)||0)!==epoch)return false;
+        this._store(k,value);
+        return true;
+      })().finally(()=>{if(this.inflight.get(k)===task)this.inflight.delete(k)});
+      this.inflight.set(k,task);
+    }
+    await task;
+    if(!this.c.has(k))return undefined;
+    return copyResult?this.get(k):this.peek(k);
   }
   release(k){
     const pending=this.inflight.has(k),existed=this.c.delete(k);
