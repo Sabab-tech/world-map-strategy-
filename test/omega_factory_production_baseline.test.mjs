@@ -864,11 +864,30 @@ test('fifty factories receive proportional input when the country warehouse is s
       reservedByResource: {}, storedBatchIds: ['BATCH-PROP-IRON-8'], receipts: []
     }
   };
-  const result = await api.processPendingFactoryInputs('BGD');
-  assert.equal(result.startedCount, 50, JSON.stringify(result.blocked));
-  assert.equal(result.inputRequestCount, 50);
-  assert.equal(result.warehouseTransferCount, 50);
-  assert.equal(result.blocked.length, 0);
+  const queued = await api.processPendingFactoryInputs('BGD');
+  assert.equal(queued.startedCount, 0, 'factory cycles cannot start before warehouse freight arrives');
+  assert.equal(queued.awaitingCount, 50);
+  assert.equal(queued.inputRequestCount, 50);
+  assert.equal(queued.warehouseTransferCount, 50);
+  assert.equal(queued.blocked.length, 0);
+  assert.equal(resource.warehouse.availableByResource.iron_ore, 8,
+    'raw warehouse stock remains physically present while the cargo is in transit');
+  assert.equal(resource.warehouse.reservedByResource.iron_ore, 8,
+    'all 50 factory consignments reserve, but do not debit, the warehouse stock');
+  assert.equal(resource.inventory.iron_ore, 8);
+  assert.equal(resource.batches[0].remainingQuantity, 8);
+  assert.equal(Number(assets.reduce((sum,asset)=>sum+(asset.inputInventory?.iron_ore||0),0)), 0);
+
+  const arrival = await deliverPendingWarehouseFactoryShipments(context,api,'BGD');
+  assert.equal(arrival.delivered, 50, JSON.stringify(arrival));
+  assert.equal(resource.warehouse.availableByResource.iron_ore, 0);
+  assert.equal(resource.warehouse.reservedByResource.iron_ore, 0);
+  assert.equal(resource.inventory.iron_ore, 0);
+  assert.equal(resource.batches[0].remainingQuantity, 0);
+  assert.equal(Number(assets.reduce((sum,asset)=>sum+asset.inputInventory.iron_ore,0).toFixed(6)), 8,
+    'factory input is credited only after all transport receipts');
+  const cycles=Object.values(resource.industrialNetwork.factoryProductionCycles||{});
+  assert.equal(cycles.length,50,'each eligible factory starts after its own final input receipt');
   for (const asset of assets) {
     assert.equal(asset.inputInventory.iron_ore, 0.16, asset.id + ': should receive 80% of its 0.2 daily input');
     assert.equal(asset.productionHealth.productivityPct, 80, asset.id + ': shortage must scale output, not stop the factory');
@@ -881,14 +900,7 @@ test('fifty factories receive proportional input when the country warehouse is s
     assert.equal(request.allocationPct, 80);
     assert.equal(request.inputBatchIds.length, 1);
   }
-  assert.equal(resource.warehouse.availableByResource.iron_ore, 0);
-  assert.equal(resource.inventory.iron_ore, 0);
-  assert.equal(resource.batches[0].remainingQuantity, 0);
-  assert.equal(Number(assets.reduce((sum,asset)=>sum+asset.inputInventory.iron_ore,0).toFixed(6)), 8,
-    'aggregate transferred stock must reconcile at the resource ledger precision');
-  context.Game.state.simulation.turn = 2;
-  context.Game.state.simulation.date = '2015-01-02';
-  const completed = await api.processPendingFactoryInputs('BGD');
+  const completed = await finishFactoryCycles(context,api,'BGD');
   assert.equal(completed.completedCount, 50);
   assert.equal(completed.startedCount, 0);
   assert.equal(Number(resource.processedWarehouse.availableByResource.IRON_CONCENTRATE.toFixed(6)), 32);
@@ -952,9 +964,12 @@ test('factory productivity is calculated from live supply ratios and each factor
       }
     };
 
-    const result = await api.processPendingFactoryInputs('BGD');
-    assert.equal(result.startedCount, assets.length, scenario.name + ': every eligible factory should start');
-    assert.equal(result.blocked.length, 0, scenario.name + ': no factory should be starved by iteration order');
+    const queued = await api.processPendingFactoryInputs('BGD');
+    assert.equal(queued.startedCount, 0, scenario.name + ': factories wait for physical receipt');
+    assert.equal(queued.awaitingCount, assets.length, scenario.name + ': every allocated factory has freight in transit');
+    assert.equal(queued.blocked.length, 0, scenario.name + ': pending freight is not a stock-shortage failure');
+    const arrival = await deliverPendingWarehouseFactoryShipments(context,api,'BGD');
+    assert.equal(arrival.delivered, assets.length, scenario.name + ': every consignment must be received');
 
     for (const asset of assets) {
       const expectedInput = Number((asset.capacityPerDay * coefficient * expectedRatio).toFixed(6));
@@ -1122,18 +1137,28 @@ test('future-dated paused factory does not take stock allocation from ready fact
     }
   };
 
-  const result = await api.processPendingFactoryInputs('BGD');
-  assert.equal(result.startedCount, 1, JSON.stringify(result.blocked));
-  assert.equal(result.inputRequestCount, 1,
+  const queued = await api.processPendingFactoryInputs('BGD');
+  assert.equal(queued.startedCount, 0);
+  assert.equal(queued.awaitingCount, 1);
+  assert.equal(queued.inputRequestCount, 1,
     'only the factory eligible to start this turn should receive a requisition');
-  assert.equal(result.warehouseTransferCount, 1);
-  assert.equal(result.inputRequests[0].factoryId, ready.id);
+  assert.equal(queued.warehouseTransferCount, 1);
+  assert.equal(queued.inputRequests[0].factoryId, ready.id);
+  assert.equal(ready.inputInventory?.iron_ore || 0, 0,
+    'factory input must not be credited before receipt');
+  assert.equal(resource.warehouse.availableByResource.iron_ore, 0.2);
+  assert.equal(resource.warehouse.reservedByResource.iron_ore, 0.2);
+  const arrival = await deliverPendingWarehouseFactoryShipments(context,api,'BGD');
+  assert.equal(arrival.delivered, 1, JSON.stringify(arrival));
+  assert.equal(Object.values(resource.industrialNetwork.factoryProductionCycles||{})
+    .some(row=>row.factoryId===ready.id&&row.status==='IN_PROGRESS'),true);
   assert.equal(ready.inputInventory.iron_ore, 0.2);
   assert.equal(ready.productionHealth.productivityPct, 100,
     'the ready factory must receive the full available 0.2 input');
   assert.equal(paused.inputInventory?.iron_ore || 0, 0,
     'a future-dated paused cycle must not receive replacement input early');
   assert.equal(resource.warehouse.availableByResource.iron_ore, 0);
+  assert.equal(resource.warehouse.reservedByResource.iron_ore, 0);
 });
 
 test('factory production scheduler waits for cycle time and posts output only on the game-calendar finish date', async () => {
@@ -1208,23 +1233,25 @@ test('warehouse feeder transfers real tracked stock and schedules proportional p
       stage: 'RAW', status: 'AVAILABLE', countryId: 'BGD', warehouseId: 'WH-BGD-RAW', createdTurn: 1 });
     r.inventoryLots[batchId] = { batchId, resourceId, quantity, remainingQuantity: quantity, unit: 'SIMULATION_RESOURCE_UNIT', status: 'AVAILABLE' };
   }
-  const result = await api.processPendingFactoryInputs('BGD');
-  assert.equal(result.startedCount, 1);
-  assert.equal(result.warehouseTransferCount, 4);
-  assert.equal(result.started[0].productivityPct, 40);
-  assert.deepEqual(JSON.parse(JSON.stringify(result.transfers.map(x => x.resourceId).sort())),
+  const queued = await api.processPendingFactoryInputs('BGD');
+  assert.equal(queued.startedCount, 0);
+  assert.equal(queued.awaitingCount, 1);
+  assert.equal(queued.warehouseTransferCount, 4);
+  assert.deepEqual(JSON.parse(JSON.stringify(queued.transfers.map(x => x.resourceId).sort())),
     ['cement_feed','coal_concentrate','copper_concentrate','iron_concentrate']);
-  assert.equal(r.warehouse.availableByResource.iron_concentrate, 0);
+  assert.equal(r.warehouse.availableByResource.iron_concentrate, 24);
+  assert.equal(asset.inputInventory.iron_concentrate||0, 0);
+  assert.equal(r.batches.find(x => x.batchId === 'WH-BATCH-1').remainingQuantity, 24);
+  assert.equal(r.processedWarehouse, undefined);
+  const arrival = await deliverPendingWarehouseFactoryShipments(context,api,'BGD');
+  assert.equal(arrival.delivered, 4, JSON.stringify(arrival));
   assert.equal(asset.inputInventory.iron_concentrate, 24);
   assert.equal(r.batches.find(x => x.batchId === 'WH-BATCH-1').remainingQuantity, 0);
-  assert.equal(r.processedWarehouse, undefined);
   assert.equal(asset.inputBatchLots.filter(x => x.stage === 'FACTORY_INPUT').length, 4);
   assert.equal(asset.productionHealth.status, 'REDUCED');
   assert.equal(asset.productionHealth.productivityPct, 40);
   assert.equal(r.batches.some(x => Object.keys(x).includes('STEEL')), false);
-  context.Game.state.simulation.turn = 3;
-  context.Game.state.simulation.date = '2015-01-03';
-  const completed = await api.processPendingFactoryInputs('BGD');
+  const completed = await finishFactoryCycles(context,api,'BGD');
   assert.equal(completed.completedCount, 1);
   assert.equal(r.processedWarehouse.availableByResource.STEEL, 28.8);
   assert.equal(r.inventory.STEEL, 28.8);
@@ -1308,6 +1335,13 @@ test('paused factory cycle resumes from new warehouse batches at the reduced att
   resource.batches.push(batch);
   resource.inventoryLots[batch.batchId] = { ...batch, status: 'AVAILABLE' };
 
+  const queued = await api.processPendingFactoryInputs('BGD');
+  assert.equal(queued.startedCount, 0);
+  assert.equal(queued.awaitingCount, 1, JSON.stringify(queued));
+  assert.equal(resource.processedWarehouse.availableByResource.coal_concentrate, 4,
+    'processed warehouse stock remains until the freight receipt is committed');
+  const arrival = await deliverPendingWarehouseFactoryShipments(context,api,'BGD');
+  assert.equal(arrival.delivered, 1, JSON.stringify(arrival));
   const resumed = await api.processPendingFactoryInputs('BGD');
   assert.equal(resumed.startedCount, 1, JSON.stringify(resumed));
   assert.equal(resumed.blocked.length, 0, JSON.stringify(resumed.blocked));
