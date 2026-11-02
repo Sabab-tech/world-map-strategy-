@@ -261,7 +261,7 @@ test('factory input availability event is persisted as an economy runtime event 
   assert.equal(runtime.factoryInputEvents.at(-1).dispatchStatus,'PENDING_RAW_WAREHOUSE_RECEIPT');
   assert.equal(runtime.factoryInputEvents.at(-1).movementStatus,'AWAITING_CORE_NETWORK_DISPATCH');
   assert.equal(runtime.factoryInputEvents.at(-1).movementAuthority,'OMEGA_RESOURCE_INDUSTRIAL_NETWORK_V1');
-  assert.deepEqual(runtime.factoryInputEvents.at(-1).logisticsPlans,[],
+  assert.equal(runtime.factoryInputEvents.at(-1).logisticsPlans.length,0,
     'extraction availability must not create a second pre-warehouse shipment plan');
   assert.ok(events.listeners.has('OMEGA_RESOURCE_FACTORY_INPUT_AVAILABLE'));
 });
