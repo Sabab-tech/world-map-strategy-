@@ -124,11 +124,14 @@
   var logisticsRouteShardRequests = Object.create(null);
   var logisticsRoutePlanWaiters = Object.create(null);
   var logisticsRoutePlanGenerations = Object.create(null);
+  var logisticsRoutePlanControllers = Object.create(null);
   var logisticsRouteManifestRequest = null;
 
-  function fetchLogisticsJson(path) {
+  function fetchLogisticsJson(path, signal) {
     if (typeof g.fetch !== 'function') return Promise.reject(new Error('FETCH_UNAVAILABLE'));
-    return g.fetch('./' + path, { cache: 'force-cache' }).then(function (response) {
+    var requestOptions = { cache: 'force-cache' };
+    if (signal) requestOptions.signal = signal;
+    return g.fetch('./' + path, requestOptions).then(function (response) {
       if (!response || response.ok === false) throw new Error('LOGISTICS_DATA_REQUEST_FAILED');
       return response.json();
     });
@@ -173,7 +176,20 @@
       logisticsRouteManifestRequest = fetchLogisticsJson('resource_site_logistics_routes_v1.json');
     }
     var generation = Number(logisticsRoutePlanGenerations[country]) || 0;
+    var controller = typeof g.AbortController === 'function' ? new g.AbortController() : null;
+    if (controller) logisticsRoutePlanControllers[country] = controller;
+    function hasActiveWaiter() {
+      return (logisticsRoutePlanWaiters[country] || []).some(function (waiter) {
+        return waiter && waiter.__omegaV2ResourceActive !== false &&
+          key(waiter.__omegaV2CurrentCountryKey) === country;
+      });
+    }
     var request = logisticsRouteManifestRequest.then(function (manifest) {
+      // The manifest is shared and cheap. Do not fetch a large country shard
+      // after every screen that requested it has already been unloaded.
+      if ((Number(logisticsRoutePlanGenerations[country]) || 0) !== generation || !hasActiveWaiter()) {
+        return { status:'unloaded', routes:[] };
+      }
       if (!manifest || manifest.datasetId !== 'OMEGA_RESOURCE_SITE_LOGISTICS_ROUTES_V1' ||
           manifest.simulationOnly !== true || !manifest.countryToPart || !Array.isArray(manifest.parts)) {
         throw new Error('LOGISTICS_ROUTE_MANIFEST_INVALID');
@@ -189,7 +205,7 @@
       }
       // Parse the shared shard temporarily, but retain only the selected country's
       // routes in memory. This prevents inactive countries' route rows from lingering.
-      return fetchLogisticsJson(file).then(function (shard) {
+      return fetchLogisticsJson(file, controller && controller.signal).then(function (shard) {
         if (!shard || !Array.isArray(shard.routes)) throw new Error('LOGISTICS_ROUTE_SHARD_INVALID');
         var routes = shard.routes.filter(function (route) {
           return key(route && route.countryId) === country &&
@@ -200,7 +216,8 @@
         });
         return { status:'ready', routes:routes };
       });
-    }).catch(function () {
+    }).catch(function (error) {
+      if (error && error.name === 'AbortError') return { status:'unloaded', routes:[] };
       return { status:'unavailable', routes:[] };
     }).then(function (result) {
       var waiters = logisticsRoutePlanWaiters[country] || [];
@@ -210,10 +227,12 @@
       });
       if ((Number(logisticsRoutePlanGenerations[country]) || 0) !== generation || !activeWaiter) {
         if (logisticsRoutePlanRequests[country] === request) delete logisticsRoutePlanRequests[country];
+        if (logisticsRoutePlanControllers[country] === controller) delete logisticsRoutePlanControllers[country];
         return { status:'unloaded', routes:[] };
       }
       logisticsRoutePlanCache[country] = result;
       if (logisticsRoutePlanRequests[country] === request) delete logisticsRoutePlanRequests[country];
+      if (logisticsRoutePlanControllers[country] === controller) delete logisticsRoutePlanControllers[country];
       notifyLogisticsRoutePlanWaiters(country);
       return result;
     });
@@ -2473,9 +2492,23 @@
       if (!logisticsRoutePlanWaiters[countryId].length) delete logisticsRoutePlanWaiters[countryId];
     });
     if (country) {
-      logisticsRoutePlanGenerations[country] = (Number(logisticsRoutePlanGenerations[country]) || 0) + 1;
-      delete logisticsRoutePlanCache[country];
-      delete logisticsRoutePlanRequests[country];
+      var remainingRouteWaiters = logisticsRoutePlanWaiters[country] || [];
+      var hasRemainingRouteWaiter = remainingRouteWaiters.some(function (waiter) {
+        return waiter && waiter.__omegaV2ResourceActive !== false &&
+          key(waiter.__omegaV2CurrentCountryKey) === country;
+      });
+      // A route request can be shared by more than one mounted screen. Keep it
+      // alive until the last active screen for this country leaves.
+      if (!hasRemainingRouteWaiter) {
+        logisticsRoutePlanGenerations[country] = (Number(logisticsRoutePlanGenerations[country]) || 0) + 1;
+        var routeController = logisticsRoutePlanControllers[country];
+        if (routeController && typeof routeController.abort === 'function') {
+          try { routeController.abort(); } catch (_) {}
+        }
+        delete logisticsRoutePlanControllers[country];
+        delete logisticsRoutePlanCache[country];
+        delete logisticsRoutePlanRequests[country];
+      }
     }
     delete root.__omegaV2ResourceOptions;
     delete root.__omegaV2ResourceModel;
