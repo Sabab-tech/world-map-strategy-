@@ -455,6 +455,7 @@ test('real site extraction flows through raw warehouse, transport, factory, fini
   assert.ok(Number(state.finance.BGD.available)>treasuryBefore-100000,'fiscal receipts must change treasury cash');
   assert.equal(industry.diagnostics('BGD').targetArchitecture,'SITE -> EXTRACTION -> WAREHOUSE -> ROUTE -> FACTORY -> PROCESS -> OUTPUT');
   console.log('OMEGA TRUE RESOURCE GAMEPLAY PIPELINE PASSED');
+});
 
 test('committed game turns run the selected country mine and industrial pipeline once without wall-clock timers', async () => {
   const h = buildContext(), g = h.context, state = h.state;
@@ -495,6 +496,7 @@ test('committed game turns run the selected country mine and industrial pipeline
     }
   };
   state.simulation.playerCountryId = 'BGD';
+  const firstCommittedTurn = Number(state.simulation.turn) || 1;
   const routeLoad = await industry.loadSiteLogisticsRoutes('BGD');
   assert.equal(routeLoad.status, 'READY', JSON.stringify(routeLoad));
   const foreignBefore = JSON.stringify(state.resource.KWT || null);
@@ -516,19 +518,17 @@ test('committed game turns run the selected country mine and industrial pipeline
   assert.strictEqual(repeatedSameTurn, firstTurnPromise,
     'a second resource run in the same committed turn reuses the same in-flight/completed task');
   await repeatedSameTurn;
-  assert.deepEqual(extractionCalls, [{ countryId: 'BGD', turn: 1 }]);
-  assert.deepEqual(industrialCalls, [{ countryId: 'BGD', turn: 1 }]);
+  assert.deepEqual(extractionCalls, [{ countryId: 'BGD', turn: firstCommittedTurn }]);
+  assert.deepEqual(industrialCalls, [{ countryId: 'BGD', turn: firstCommittedTurn }]);
 
   advanceOneGameTurn(state);
   await economy.runTurn();
-  assert.deepEqual(extractionCalls.map(row => row.turn), [1, 2],
+  assert.deepEqual(extractionCalls.map(row => row.turn), [firstCommittedTurn, firstCommittedTurn + 1],
     'mine extraction advances once on each committed game turn, not from a wall-clock timer');
-  assert.deepEqual(industrialCalls.map(row => row.turn), [1, 2],
+  assert.deepEqual(industrialCalls.map(row => row.turn), [firstCommittedTurn, firstCommittedTurn + 1],
     'mine-haul arrivals and factory input transfers advance once on each committed game turn');
   assert.ok(extractionCalls.every(row => row.countryId === 'BGD'));
   assert.ok(industrialCalls.every(row => row.countryId === 'BGD'));
   assert.equal(JSON.stringify(state.resource.KWT || null), foreignBefore,
     'other countries are not hydrated or mutated by the selected-country turn runner');
-});
-
 });
