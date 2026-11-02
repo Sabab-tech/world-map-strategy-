@@ -174,13 +174,13 @@ test("all 18 ministries have distinct local logos, and Education uses education-
 test("leaving Resource Ministry unloads its active country screen scope", () => {
   const app = read("omega_ui_v2/app.js");
   const screen = read("omega_ui_v2/screens/resource-ministry.js");
-  assert.match(app, /function resourceRouteActive\\(state\\)/);
-  assert.match(app, /function releaseResourceScopeIfLeaving\\(root, state\\)/);
-  assert.match(app, /releaseResourceScopeIfLeaving\\(root, state\\)/);
-  assert.match(app, /resource\\.unload\\(main\\)/);
-  assert.match(screen, /function unload\\(root\\)/);
-  assert.match(screen, /root\\.__omegaV2ResourceLoadGeneration/);
-  assert.match(screen, /delete root\\.__omegaV2ResourceOptions/);
+  assert.ok(app.includes("function resourceRouteActive(state)"));
+  assert.ok(app.includes("function releaseResourceScopeIfLeaving(root, state)"));
+  assert.ok(app.includes("releaseResourceScopeIfLeaving(root, state)"));
+  assert.ok(app.includes("resource.unload(main)"));
+  assert.ok(screen.includes("function unload(root)"));
+  assert.ok(screen.includes("root.__omegaV2ResourceLoadGeneration"));
+  assert.ok(screen.includes("delete root.__omegaV2ResourceOptions"));
 });
 
 test("UI v2 navigation and deferred section refresh use the shared action progress surface", () => {
