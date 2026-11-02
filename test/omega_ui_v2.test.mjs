@@ -529,7 +529,7 @@ test('industry treats starting and newly built factories as one live asset regis
       countryId:'BGD', tab:'factories', factoryView:'types'
     });
     assert.equal(typeResult.ok, true);
-    assert.match(typeRoot.innerHTML, /Factory assets in runtime/);
+    assert.match(typeRoot.innerHTML, /Owned factories/);
     assert.match(typeRoot.innerHTML, /<strong>3<\/strong>/);
     assert.doesNotMatch(typeRoot.innerHTML, /Starting allocation|fp-type-card-count--starting|Starting units/);
 
@@ -1351,7 +1351,7 @@ test('factory command cards use canonical SVGs, daily production state, type cou
     assert.equal(typeView.ok,true);
     assert.match(root.innerHTML,/Factory types &amp; country totals/);
     assert.equal((root.innerHTML.match(/data-omega-v2-factory-type-card/g)||[]).length,3);
-    assert.match(root.innerHTML,/Factory assets in runtime/);
+    assert.match(root.innerHTML,/Owned factories/);
     assert.match(root.innerHTML,/data-factory-view="types"/);
 
     // Build stays within UI v2 rather than opening the retired command centre.
@@ -2233,3 +2233,78 @@ test('each newer destination aborts the previous screen work signal before sched
   }
 });
 
+
+test('factory type cards restore counts from the existing country registry without extra source tables', () => {
+  const previousGame = globalThis.Game;
+  const previousCatalog = globalThis.OmegaResourceIndustrialCatalogData;
+  const previousBaseline = globalThis.OmegaCountryFactoryStartingBaselineV1;
+  globalThis.Game = { state: {
+    simulation: { session: { playerCountryId: 'BGD' }, turn: 1 },
+    resource: { BGD: {
+      productionAssets: [{ id:'IGNORED-RESOURCE-MIRROR', factoryType:'STEEL_MILL', status:'OPERATIONAL' }],
+      industrialNetwork: {
+        productionAssets: [{ id:'IGNORED-INDUSTRIAL-MIRROR', factoryType:'CEMENT_PLANT', status:'OPERATIONAL' }],
+        factoryAssets: [{ id:'IGNORED-FACTORY-MIRROR', factoryType:'CEMENT_PLANT', status:'OPERATIONAL' }],
+        projects: [], factoryProductionCycles: {}, factoryRuntime: {}, siteFlowLedger: []
+      }
+    } },
+    economy: { BGD: { productionAssets: [] } }
+  } };
+  globalThis.OmegaResourceIndustrialCatalogData = {
+    factoryProfiles: {
+      STEEL_MILL: { name:'Steel Mill', category:'Heavy Industry' },
+      CEMENT_PLANT: { name:'Cement Plant', category:'Construction' }
+    }
+  };
+  let runtimeRegistered = false;
+  let liveCounts = { STEEL_MILL:0, CEMENT_PLANT:0 };
+  globalThis.OmegaCountryFactoryStartingBaselineV1 = {
+    getCountryFactoryRegistry(countryId) {
+      assert.equal(countryId, 'BGD');
+      return {
+        status:'READY', runtimeRegistered,
+        registry:[
+          { factoryType:'STEEL_MILL', name:'Steel Mill', startingCount:3 },
+          { factoryType:'CEMENT_PLANT', name:'Cement Plant', startingCount:4 }
+        ],
+        liveFactoryTypeCounts: liveCounts
+      };
+    }
+  };
+  try {
+    const model = globalThis.OmegaUIV2Industry.buildViewModel({ countryId:'BGD' });
+    assert.equal(model.factories.length, 0);
+    assert.equal(model.factoryCount, 7);
+    assert.deepEqual(model.factoryTypeCounts.map(row => [row.type,row.count]).sort(), [
+      ['CEMENT_PLANT',4], ['STEEL_MILL',3]
+    ]);
+    const root = { classList:{ add(){} }, addEventListener(){}, contains(){ return true; } };
+    const result = globalThis.OmegaUIV2Industry.render(root, {
+      countryId:'BGD', tab:'factories', factoryView:'types'
+    });
+    assert.equal(result.ok, true);
+    assert.match(root.innerHTML, /Owned factories/);
+    assert.match(root.innerHTML, /<strong>3<\/strong>/);
+    assert.match(root.innerHTML, /<strong>4<\/strong>/);
+    assert.doesNotMatch(root.innerHTML, /UNIDO|Official establishment data|Source status/);
+
+    runtimeRegistered = true;
+    liveCounts = { STEEL_MILL:1, CEMENT_PLANT:2 };
+    globalThis.Game.state.economy.BGD.productionAssets = [
+      { id:'LIVE-STEEL-1', factoryType:'STEEL_MILL', status:'OPERATIONAL' },
+      { id:'LIVE-CEMENT-1', factoryType:'CEMENT_PLANT', status:'OPERATIONAL' },
+      { id:'LIVE-CEMENT-2', factoryType:'CEMENT_PLANT', status:'OPERATIONAL' }
+    ];
+    const liveModel = globalThis.OmegaUIV2Industry.buildViewModel({ countryId:'BGD' });
+    assert.equal(liveModel.factoryCount, 3);
+    assert.deepEqual(liveModel.factoryTypeCounts.map(row => [row.type,row.count]).sort(), [
+      ['CEMENT_PLANT',2], ['STEEL_MILL',1]
+    ]);
+  } finally {
+    if (previousGame === undefined) delete globalThis.Game; else globalThis.Game = previousGame;
+    if (previousCatalog === undefined) delete globalThis.OmegaResourceIndustrialCatalogData;
+    else globalThis.OmegaResourceIndustrialCatalogData = previousCatalog;
+    if (previousBaseline === undefined) delete globalThis.OmegaCountryFactoryStartingBaselineV1;
+    else globalThis.OmegaCountryFactoryStartingBaselineV1 = previousBaseline;
+  }
+});
