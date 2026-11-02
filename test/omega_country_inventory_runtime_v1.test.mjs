@@ -137,32 +137,34 @@ test('inventory runtime loads after the factory runtime and before resource adap
   assert.ok(adapter > inventory, 'inventory hooks must be available before resource action adapters');
 });
 
-test('all countries have saved inventory shells and shared product rows, while only the selected country reads live stock', async () => {
+test('only the selected player country receives a saved inventory runtime; inactive countries remain virtual and read-only', async () => {
   const { state, api } = makeRuntime();
   const initialized = await api.init();
   assert.equal(initialized.status, 'READY');
-  assert.equal(initialized.countryCount, 3);
+  assert.equal(initialized.countryCount, 1, 'only the active player country is materialized');
   assert.equal(initialized.activeCountryId, 'BGD');
 
   const savedBangladesh = api.getCountryRecord('BGD');
-  const savedUnitedStates = api.getCountryRecord('USA');
-  const savedGermany = api.getCountryRecord('DEU');
-  assert.ok(Object.keys(savedBangladesh.products).length >= 4, 'the active country gets a materialized product balance map');
-  assert.equal(item(api.getInventory('BGD', { includeZero: true }), 'steel').name, 'Steel');
-  assert.equal(Object.keys(savedUnitedStates.products).length, 0, 'inactive product maps stay lazy to avoid bloating autosaves');
-  assert.equal(Object.keys(savedGermany.products).length, 0, 'every other country still has a saved inventory shell');
-  assert.ok(api.getInventory('USA', { includeZero: true }).items.length >= 4, 'the shared catalog renders inactive-country products');
-  assert.ok(api.getInventory('DEU', { includeZero: true }).items.length >= 4, 'the catalog is available for every registered country');
+  assert.ok(savedBangladesh);
+  assert.ok(Object.keys(savedBangladesh.products).length >= 4,
+    'the active country gets a materialized product balance map');
+  assert.equal(api.getCountryRecord('USA'), null,
+    'inactive countries must not receive persistent inventory runtime shells');
+  assert.equal(api.getCountryRecord('DEU'), null);
+  assert.deepEqual(Object.keys(state.omegaCountryInventoryRuntime.countries), ['BGD']);
 
   const usaInactive = api.getInventory('USA', { includeZero: true });
   assert.equal(usaInactive.readOnly, true);
   assert.equal(usaInactive.active, false);
   assert.equal(item(usaInactive, 'steel').base, 0);
   assert.equal(item(usaInactive, 'steel').quantity, 0);
+  assert.equal(api.getCountryRecord('USA'), null,
+    'reading an inactive country may use the shared product catalog but must not persist runtime state');
 
-  // Inactive country mutations in another subsystem are not polled into the saved inventory.
+  // Inactive country mutations in another subsystem are not polled into the player inventory.
   state.resource.USA.inventory.STEEL = 999;
   assert.equal(item(api.getInventory('USA', { includeZero: true }), 'steel').quantity, 0);
+  assert.equal(api.getCountryRecord('USA'), null);
 
   state.simulation.session.playerCountryId = 'USA';
   api.refreshActiveCountry();
@@ -171,11 +173,15 @@ test('all countries have saved inventory shells and shared product rows, while o
   assert.equal(usaActive.readOnly, false);
   assert.equal(item(usaActive, 'steel').quantity, 999);
   assert.equal(item(usaActive, 'steel').base, 999);
+  assert.ok(api.getCountryRecord('USA'), 'a country is materialized when it becomes the active player country');
+  assert.equal(api.getCountryRecord('DEU'), null);
 
   state.simulation.session.playerCountryId = 'BGD';
   api.refreshActiveCountry();
   assert.equal(api.getInventory('USA', { includeZero: true }).readOnly, true);
-  assert.equal(item(api.getInventory('USA', { includeZero: true }), 'steel').quantity, 999);
+  assert.equal(item(api.getInventory('USA', { includeZero: true }), 'steel').quantity, 999,
+    'previously active country inventory is preserved when the player switches away');
+  assert.deepEqual(Object.keys(state.omegaCountryInventoryRuntime.countries).sort(), ['BGD', 'USA']);
 });
 
 test('inventory registers all 41 canonical raw-resource identities and displays explicit unknown rows', async () => {
