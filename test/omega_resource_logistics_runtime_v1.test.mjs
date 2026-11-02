@@ -19,6 +19,19 @@ vm.runInContext(fs.readFileSync('omega_resource_realism_runtime_v1.js','utf8'),c
 vm.runInContext(fs.readFileSync('omega_resource_logistics_runtime_v1.js','utf8'),context,{filename:'omega_resource_logistics_runtime_v1.js'});
 
 const L=context.Omega.ResourceLogisticsRuntime;
+
+const economySource=fs.readFileSync('omega_resource_economy_runtime_v2.js','utf8');
+const eventHandlerStart=economySource.indexOf('function factoryInputEventHandler(cmd,ctx){');
+const eventHandlerEnd=economySource.indexOf('\n  function ',eventHandlerStart+20);
+assert.ok(eventHandlerStart>=0&&eventHandlerEnd>eventHandlerStart,'factory input event handler is present');
+const factoryInputEventHandler=economySource.slice(eventHandlerStart,eventHandlerEnd);
+assert.doesNotMatch(factoryInputEventHandler,/ResourceLogisticsRuntime|planFromFactoryInput|\.plan\(/,
+  'an extraction event must not schedule a second pre-warehouse logistics plan');
+assert.match(factoryInputEventHandler,/PENDING_RAW_WAREHOUSE_RECEIPT/,
+  'factory readiness is pending until the raw warehouse has a committed receipt');
+assert.match(factoryInputEventHandler,/OMEGA_RESOURCE_INDUSTRIAL_NETWORK_V1/,
+  'material movement is owned by the Industrial Network');
+
 assert.equal(L.routeMode('crude_oil'),'pipeline');
 assert.equal(L.routeMode('iron_ore'),'rail');
 assert.equal(L.routeMode('gold'),'truck');
