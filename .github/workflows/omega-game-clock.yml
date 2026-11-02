@@ -46,6 +46,7 @@ on:
       - 'omega_country_runtime_data_v1.js'
       - 'omega_country_general_data_runtime_v1.js'
       - 'test/omega_offline_data_cache.test.mjs'
+      - 'test/omega_country_general_data_runtime_v1.test.mjs'
       - 'index.html'
       - 'test/omega_simulation_daily_clock.test.mjs'
       - '.github/workflows/omega-game-clock.yml'
@@ -91,5 +92,6 @@ jobs:
           node --check omega_country_runtime_data_v1.js
           node --check omega_country_general_data_runtime_v1.js
           node --check test/omega_offline_data_cache.test.mjs
+          node --check test/omega_country_general_data_runtime_v1.test.mjs
       - name: Test shared daily clock, saves and lifecycle wiring
-        run: node --test test/omega_simulation_daily_clock.test.mjs test/omega_simulation_runtime.test.js test/omega_resource_industrial_network_v1.test.mjs test/omega_world_simulation_scheduler_v1.test.mjs test/opponent_country_rules_runtime.test.js test/omega_offline_data_cache.test.mjs
+        run: node --test test/omega_simulation_daily_clock.test.mjs test/omega_simulation_runtime.test.js test/omega_resource_industrial_network_v1.test.mjs test/omega_world_simulation_scheduler_v1.test.mjs test/opponent_country_rules_runtime.test.js test/omega_offline_data_cache.test.mjs test/omega_country_general_data_runtime_v1.test.mjs
