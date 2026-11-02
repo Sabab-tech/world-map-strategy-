@@ -13,7 +13,7 @@
   const PRIORITY = Object.freeze({WAR:100,CONFLICT:95,SANCTION:90,TREATY:75,SETTLEMENT:75,DIPLOMAC:70,TRADE:65,IMPORT:65,EXPORT:60,MILITARY:55,PROJECT:45,FOREIGN:40});
   const eventQueue=[],seenEventIds=new Set(),seenOrder=[],eventHandlers=new Map(),countryHandlers=new Map();
   let eventStateOwner=null;
-  let eventSequence=0,countryHandlerSequence=0,eventHandlerSequence=0,turnUnregister=null,ledgerUnsubscribe=null,installed=false,lastBatch=null,totalEvaluated=0,totalQueued=0,totalEvaluationErrors=0,totalYieldCount=0,eventOverflowCount=0,lastPlayerCountryId=null;
+  let eventSequence=0,countryHandlerSequence=0,eventHandlerSequence=0,turnUnregister=null,ledgerUnsubscribe=null,installed=false,lastBatch=null,totalEvaluated=0,totalQueued=0,totalEvaluationErrors=0,totalYieldCount=0,eventOverflowCount=0,lastPlayerCountryId=null,cachedRoster=null,cachedRosterTurn=-1,rosterTask=null;
   const isObject=v=>!!v&&typeof v==='object'&&!Array.isArray(v);
   const num=(v,fallback=0)=>{const n=Number(v);return Number.isFinite(n)?n:fallback;};
   const clone=(v,seen=new WeakMap())=>{if(v===null||typeof v!=='object')return v;if(seen.has(v))return seen.get(v);if(Array.isArray(v)){const a=[];seen.set(v,a);for(const x of v)a.push(clone(x,seen));return a;}const o={};seen.set(v,o);for(const k of Object.keys(v))if(k!=='__proto__'&&k!=='constructor'&&typeof v[k]!=='function')o[k]=clone(v[k],seen);return o;};
@@ -40,11 +40,22 @@
     try{const p=bridge?.resolveCountry?.(source);if(p?.countryCode)return String(p.countryCode).toUpperCase();if(p?.raw?.countryCode)return String(p.raw.countryCode).toUpperCase();if(p?.id&&/^[A-Z]{2}$/.test(String(p.id).toUpperCase()))return String(p.id).toUpperCase();}catch(_){}
     const key=source.toUpperCase();return/^[A-Z]{2,3}$/.test(key)?key:null;
   }
-  async function roster(){
-    const rules=g.Omega?.OpponentCountryRules||g.OmegaOpponentCountryRules;let values=[];
-    if(typeof rules?.listCountryIds==='function')try{const rows=await rules.listCountryIds();if(Array.isArray(rows))values=rows;}catch(_){}
-    if(!values.length)try{values=(g.OmegaCountryRuntimeData?.listProfiles?.()||[]).map(x=>x?.countryCode||x?.iso2||x?.iso3);}catch(_){}
-    return[...new Set(values.map(countryId).filter(Boolean))].sort();
+  async function roster(options={}){
+    const turn=Math.max(0,Math.floor(num(options.turn??state()?.simulation?.turn)));
+    const refresh=options.force===true||!cachedRoster||turn-cachedRosterTurn>=LIMITS.ROSTER_REFRESH_TURNS;
+    if(!refresh)return cachedRoster.slice();
+    if(rosterTask)return rosterTask;
+    let task;
+    task=(async()=>{
+      const rules=g.Omega?.OpponentCountryRules||g.OmegaOpponentCountryRules;let values=[];
+      if(typeof rules?.listCountryIds==='function')try{const rows=await rules.listCountryIds();if(Array.isArray(rows))values=rows;}catch(_){}
+      if(!values.length)try{values=(g.OmegaCountryRuntimeData?.listProfiles?.()||[]).map(x=>x?.countryCode||x?.iso2||x?.iso3);}catch(_){}
+      const ids=[...new Set(values.map(countryId).filter(Boolean))].sort();
+      if(ids.length){cachedRoster=ids;cachedRosterTurn=turn;}
+      return ids;
+    })().finally(()=>{if(rosterTask===task)rosterTask=null});
+    rosterTask=task;
+    return task;
   }
   function restoreEventState(meta){
     if(eventStateOwner===meta)return;
@@ -154,7 +165,10 @@
     const insertAt=eventQueue.findIndex(row=>num(row?.priority,eventPriority(row?.eventType))<event.priority);
     if(insertAt<0)eventQueue.push(event);else eventQueue.splice(insertAt,0,event);
     rememberEvent(key);
-    for(const cid of ids)activateCountry(cid,{turn,reason:event.eventType,priority:event.priority});
+    for(const cid of ids){
+      activateCountry(cid,{turn,reason:event.eventType,priority:event.priority});
+      try{(g.Omega?.OpponentCountryRules||g.OmegaOpponentCountryRules)?.markDirty?.(cid,['WORLD_EVENT',event.eventType],event.eventType);}catch(_){}
+    }
     if(meta)persistEventState(meta);
     return{status:'QUEUED',eventId:event.eventId,priority:event.priority,activatedCountryIds:[...ids]};
   }
@@ -186,7 +200,13 @@
   }
   async function runHandlers(cid,tier,ctx){
     const rows=[...countryHandlers.values()].filter(x=>x.tiers.has(tier)).sort((a,b)=>a.priority-b.priority||a.sequence-b.sequence),out=[];
-    for(const h of rows){if(countryHandlers.get(h.id)!==h)continue;try{out.push({id:h.id,status:'COMPLETED',result:await h.handler(cid,{...ctx,countryId:cid,tier,state:state(),simulation:sim()})});}catch(e){totalEvaluationErrors++;out.push({id:h.id,status:'FAILED',error:String(e?.message||e)});}}
+    let sliceStartedAt=clockNow();
+    for(const h of rows){
+      if(countryHandlers.get(h.id)!==h)continue;
+      try{out.push({id:h.id,status:'COMPLETED',result:await h.handler(cid,{...ctx,countryId:cid,tier,state:state(),simulation:sim()})});}
+      catch(e){totalEvaluationErrors++;out.push({id:h.id,status:'FAILED',error:String(e?.message||e)});}
+      if(clockNow()-sliceStartedAt>=LIMITS.COUNTRY_BATCH_BUDGET_MS){await yieldToBrowser();sliceStartedAt=clockNow();}
+    }
     return out;
   }
   async function evaluateOpponent(cid,turn,tier){
@@ -217,7 +237,7 @@
     const turn=turnOf(ctx),meta=ensureMeta(root),turnStartedAt=clockNow(),constrained=constrainedDevice();
     const turnBudgetMs=constrained?LIMITS.MOBILE_TURN_BUDGET_MS:LIMITS.DESKTOP_TURN_BUDGET_MS;
     if(num(meta.lastProcessedTurn.__SCHEDULER__,-1)===turn)return{status:'ALREADY_PROCESSED',turn,evaluated:0};
-    let ids=await roster();if(!ids.length)return{status:'WAITING',reason:'COUNTRY_ROSTER_UNAVAILABLE',turn,evaluated:0};
+    let ids=await roster({turn});if(!ids.length)return{status:'WAITING',reason:'COUNTRY_ROSTER_UNAVAILABLE',turn,evaluated:0};
     const signature=ids.join('|');
     if(meta.rosterSignature!==signature){
       meta.rosterSignature=signature;meta.rosterCount=ids.length;
@@ -237,7 +257,7 @@
     const events=await processEvents(base,meta),playerHandlers=await runHandlers(player,'PLAYER',base);
     meta.lastProcessedTurn[player]=turn;meta.lastSuccessfulTurn[player]=turn;meta.counters.player=num(meta.counters.player)+1;
     const activeLimit=constrained?Math.min(2,LIMITS.ACTIVE_COUNTRIES_PER_TURN):LIMITS.ACTIVE_COUNTRIES_PER_TURN;
-    const active=selectActive(meta,turn,player).slice(0,activeLimit),activeResults=[];
+    const active=selectActive(meta,turn,player).slice(0,activeLimit),activeResults=[];let budgetExhausted=false;
     let evaluationsSinceYield=0,sliceStartedAt=clockNow();
     const yieldWithinBudget=async()=>{
       evaluationsSinceYield++;
@@ -247,6 +267,7 @@
       }
     };
     for(const item of active){
+      if(clockNow()-turnStartedAt>=turnBudgetMs){budgetExhausted=true;break;}
       const handlers=await runHandlers(item.id,'ACTIVE',base),result=await evaluateOpponent(item.id,turn,'ACTIVE');
       activeResults.push({countryId:item.id,handlers,result});
       item.row.lastProcessedTurn=turn;item.row.lastEvaluationStatus=result.status;meta.lastProcessedTurn[item.id]=turn;
@@ -258,7 +279,6 @@
     const macroLimit=constrained?Math.min(4,LIMITS.MACRO_COUNTRIES_PER_TURN):LIMITS.MACRO_COUNTRIES_PER_TURN;
     const macro=selectMacro(ids,meta,turn,player,macroLimit),macroResults=[];
     if(!macro.selected.length)meta.macroCursor=macro.nextCursor;
-    let budgetExhausted=false;
     for(let index=0;index<macro.selected.length;index++){
       if(clockNow()-turnStartedAt>=turnBudgetMs){budgetExhausted=true;break;}
       const id=macro.selected[index],handlers=await runHandlers(id,'MACRO',base),result=await evaluateOpponent(id,turn,'MACRO');
