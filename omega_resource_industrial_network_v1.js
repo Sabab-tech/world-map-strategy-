@@ -2893,12 +2893,15 @@ function advanceShipments(c){
       }
     }
     r.warehouse=warehouse;r.inventoryLots=lots;r.batches=batches;r.inventory[invKey]=Math.max(0,countryRawStock-quantity);
+    const factoryInputQuantity=Math.max(0,num(s.targetQuantity)??quantity);
+    const factoryInputUnit=s.targetUnit||s.unit||sourceBatch?.unit||factory.inputUnit||'TONNES';
     factory.inputInventory=factory.inputInventory&&typeof factory.inputInventory==='object'?factory.inputInventory:{};
-    factory.inputInventory[rid]=(num(factory.inputInventory[rid])||0)+quantity;
+    factory.inputInventory[rid]=(num(factory.inputInventory[rid])||0)+factoryInputQuantity;
     factory.inputBatchLots=Array.isArray(factory.inputBatchLots)?factory.inputBatchLots:[];
     const inputBatchId='INPUT:'+s.shipmentId;
+    s.factoryInputBatchId=inputBatchId;
     if(!factory.inputBatchLots.some(x=>String(x?.batchId||'')===inputBatchId)){
-      factory.inputBatchLots.push({batchId:inputBatchId,resourceId:rid,materialIdentity:rid,quantity,remainingQuantity:quantity,unit:s.unit||sourceBatch?.unit||'TONNES',
+      factory.inputBatchLots.push({batchId:inputBatchId,resourceId:rid,materialIdentity:rid,quantity:factoryInputQuantity,remainingQuantity:factoryInputQuantity,unit:factoryInputUnit,
         stage:'FACTORY_INPUT',countryId:cid,sourceCountryId:cid,originCountryId:cid,ownerCountryCode:cid,destinationCountryId:cid,
         ownerCompanyId:String(factory.companyId||factory.ownerCompanyId||('SIM-COMPANY:'+cid)),sourceBatchIds:sourceBatch?[sourceBatchId]:[],
         sourceOccurrenceKey:s.occurrenceKey||sourceBatch?.occurrenceKey||null,sourceWarehouseId:s.warehouseId||sourceBatch?.warehouseId||('WH-'+cid+'-RAW'),
@@ -2945,6 +2948,7 @@ function advanceShipments(c){
         authority:'TRACKED_LOTS_PLUS_UNOBSERVED_LEGACY_BALANCE'},'resource-industrial-network');
     }
     s.status='DELIVERED';s.deliveredTurn=turn();s.destinationStatus='FACTORY_RECEIVED';s.factoryInputBatchId=inputBatchId;
+    reconcileWarehouseFactoryInputShipmentReceipt(cid,s);
     // Delivery updates warehouse/factory input ledgers only. Production is scheduled and
     // output cannot be committed until the authoritative in-game calendar reaches finishDate.
     const receivedRecipe=recipeFor(rid,factory),productionMetrics=factoryProductionMetrics(factory,receivedRecipe);
@@ -4430,31 +4434,70 @@ function planFactoryInputRequests(countryId,plans){
   return{countryId:cid,turn:turn(),requestCount:created.length,requests:created};
 }
 
+function reconcileWarehouseFactoryInputShipmentReceipt(countryId,shipment){
+  const network=netState(countryId),dispatches=Array.isArray(network.warehouseFactoryDispatches)?network.warehouseFactoryDispatches:[];
+  const dispatch=dispatches.find(row=>String(row.shipmentId||row.dispatchId||'')===String(shipment?.shipmentId||''));
+  if(dispatch){
+    dispatch.status='DELIVERED';dispatch.deliveredTurn=turn();dispatch.inputBatchId=shipment.factoryInputBatchId||('INPUT:'+shipment.shipmentId);
+  }
+  for(const request of (Array.isArray(network.factoryInputRequests)?network.factoryInputRequests:[])){
+    if(String(request.factoryId||'')!==String(shipment.factoryId||'')||
+      tok(request.resourceId)!==tok(shipment.resourceId)||
+      !(Array.isArray(request.transferIds)&&request.transferIds.some(id=>String(id)===String(shipment.shipmentId))))continue;
+    const related=(request.transferIds||[]).map(id=>network.shipments.find(row=>String(row.shipmentId||'')===String(id))).filter(Boolean);
+    const delivered=related.filter(row=>String(row.status||'')==='DELIVERED');
+    const pending=related.filter(row=>['IN_TRANSIT','BLOCKED_ROUTE_BLOCKADE','BLOCKED_LEDGER_MISMATCH','BLOCKED_BATCH_LEDGER_MISMATCH'].includes(String(row.status||'')));
+    const fulfilled=Number(delivered.reduce((sum,row)=>sum+Math.max(0,num(row.targetQuantity??row.quantity)||0),0).toFixed(6));
+    const inTransit=Number(pending.reduce((sum,row)=>sum+Math.max(0,num(row.targetQuantity??row.quantity)||0),0).toFixed(6));
+    request.fulfilledQuantity=fulfilled;request.inTransitQuantity=inTransit;
+    request.unfulfilledQuantity=Number(Math.max(0,num(request.requestedQuantity)-fulfilled-inTransit).toFixed(6));
+    request.inputBatchIds=delivered.map(row=>String(row.factoryInputBatchId||'INPUT:'+row.shipmentId));
+    request.deliveryStatus=fulfilled+1e-6>=num(request.allocatedQuantity)&&num(request.allocatedQuantity)>1e-9
+      ?'DELIVERED':(fulfilled>1e-9?'PARTIALLY_DELIVERED':(inTransit>1e-9?'IN_TRANSIT':'NOT_DELIVERED'));
+    request.status=fulfilled+1e-6>=num(request.requestedQuantity)?'FULFILLED':
+      (fulfilled>1e-9?'PARTIALLY_FULFILLED':(inTransit>1e-9?'IN_TRANSIT':'UNFULFILLED'));
+    if(request.status==='FULFILLED')request.reason=null;
+    else if(inTransit>1e-9)request.reason='WAREHOUSE_SHIPMENT_IN_TRANSIT';
+    request.stages=Array.isArray(request.stages)?request.stages:[];
+    const stageStatus=request.deliveryStatus;
+    if(!request.stages.some(row=>row.status===stageStatus&&row.turn===turn()))
+      request.stages.push({status:stageStatus,turn:turn(),quantity:fulfilled,inTransitQuantity:inTransit,
+        transferIds:(request.transferIds||[]).slice()});
+    request.updatedTurn=turn();
+  }
+  return{updatedRequestCount:dispatch?1:0,shipmentId:shipment?.shipmentId||null};
+}
+
 function reconcileFactoryInputRequestDeliveries(countryId,plan,transferResult){
   const network=netState(countryId),transferRows=Array.isArray(transferResult?.transfers)?transferResult.transfers:[];
   for(const requestId of plan?.requestIds||[]){
     const request=network.factoryInputRequests.find(row=>String(row?.requestId||'')===String(requestId));
     if(!request)continue;
     const matched=transferRows.filter(row=>tok(row?.resourceId)===tok(request.resourceId)&&
-      String(row?.factoryId||'')===String(request.factoryId)&&String(row?.status||'')==='DELIVERED');
-    const fulfilled=Number(matched.reduce((sum,row)=>sum+Math.max(0,num(row?.targetQuantity)||0),0).toFixed(6));
-    request.fulfilledQuantity=fulfilled;
-    request.unfulfilledQuantity=Number(Math.max(0,request.requestedQuantity-fulfilled).toFixed(6));
+      String(row?.factoryId||'')===String(request.factoryId)&&
+      ['DELIVERED','IN_TRANSIT','BLOCKED_ROUTE_BLOCKADE','BLOCKED_LEDGER_MISMATCH'].includes(String(row?.status||'')));
+    const deliveredRows=matched.filter(row=>String(row?.status||'')==='DELIVERED');
+    const pendingRows=matched.filter(row=>String(row?.status||'')!=='DELIVERED');
+    const fulfilled=Number(deliveredRows.reduce((sum,row)=>sum+Math.max(0,num(row?.targetQuantity)||0),0).toFixed(6));
+    const inTransit=Number(pendingRows.reduce((sum,row)=>sum+Math.max(0,num(row?.targetQuantity)||0),0).toFixed(6));
+    request.fulfilledQuantity=fulfilled;request.inTransitQuantity=inTransit;
+    request.unfulfilledQuantity=Number(Math.max(0,request.requestedQuantity-fulfilled-inTransit).toFixed(6));
     request.transferIds=matched.map(row=>String(row.transferId||'')).filter(Boolean);
-    request.inputBatchIds=matched.map(row=>String(row.inputBatchId||'')).filter(Boolean);
+    request.inputBatchIds=deliveredRows.map(row=>String(row.inputBatchId||'')).filter(Boolean);
     request.deliveryStatus=fulfilled+1e-6>=request.allocatedQuantity&&request.allocatedQuantity>1e-9?
-      'DELIVERED':(fulfilled>1e-9?'PARTIALLY_DELIVERED':'NOT_DELIVERED');
+      'DELIVERED':(fulfilled>1e-9?'PARTIALLY_DELIVERED':(inTransit>1e-9?'IN_TRANSIT':'NOT_DELIVERED'));
     request.status=fulfilled+1e-6>=request.requestedQuantity?'FULFILLED':
-      (fulfilled>1e-9?'PARTIALLY_FULFILLED':'UNFULFILLED');
+      (fulfilled>1e-9?'PARTIALLY_FULFILLED':(inTransit>1e-9?'IN_TRANSIT':'UNFULFILLED'));
     if(request.status==='FULFILLED')request.reason=null;
+    else if(inTransit>1e-9)request.reason='WAREHOUSE_SHIPMENT_IN_TRANSIT';
     else if(fulfilled+1e-6<request.allocatedQuantity)
       request.reason=(transferResult?.blocked||[]).find(row=>tok(row?.resourceId)===tok(request.resourceId))?.reason||'WAREHOUSE_FULFILLMENT_SHORTFALL';
     else request.reason=request.reason||'PROPORTIONAL_STOCK_RATIONING';
     request.stages=Array.isArray(request.stages)?request.stages:[];
     const stageStatus=request.deliveryStatus==='DELIVERED'?'DELIVERED':
-      (request.deliveryStatus==='PARTIALLY_DELIVERED'?'PARTIALLY_DELIVERED':'AWAITING_STOCK');
+      (request.deliveryStatus==='PARTIALLY_DELIVERED'?'PARTIALLY_DELIVERED':(inTransit>1e-9?'IN_TRANSIT':'AWAITING_STOCK'));
     if(!request.stages.some(row=>row.status===stageStatus&&row.turn===turn()))
-      request.stages.push({status:stageStatus,turn:turn(),quantity:fulfilled,transferIds:request.transferIds.slice()});
+      request.stages.push({status:stageStatus,turn:turn(),quantity:fulfilled,inTransitQuantity:inTransit,transferIds:request.transferIds.slice()});
     request.updatedTurn=turn();
   }
   return{updatedRequestCount:(plan?.requestIds||[]).length};
@@ -4542,6 +4585,8 @@ function transferFactoryInputsFromWarehouse(countryId,asset,recipe,allocationTar
       const shipment=dispatched.shipment;
       const moved=Math.min(amount,Math.max(0,num(shipment.quantity)||0));
       const targetAmount=Number((moved*bridge.factor).toFixed(6));
+      shipment.targetQuantity=targetAmount;shipment.targetUnit=bridge.targetUnit;
+      shipment.factoryInputBatchId='INPUT:'+shipment.shipmentId;
       if(!(moved>1e-9)||!(targetAmount>1e-9)){
         blocked.push({batchId,resourceId:rid,reason:'WAREHOUSE_TRANSPORT_DISPATCH_QUANTITY_ZERO',
           shipmentId:shipment.shipmentId});
@@ -4550,7 +4595,8 @@ function transferFactoryInputsFromWarehouse(countryId,asset,recipe,allocationTar
       n.warehouseFactoryDispatches=Array.isArray(n.warehouseFactoryDispatches)?n.warehouseFactoryDispatches:[];
       n.warehouseFactoryDispatches.push({dispatchId:shipment.shipmentId,shipmentId:shipment.shipmentId,
         countryId:cid,sourceWarehouseId:warehouseId,destinationFactoryId:String(asset.id||asset.assetId||asset.projectId),
-        resourceId:rid,batchId,quantity:moved,unit:sourceUnit,route:clone(shipment.route),
+        resourceId:rid,batchId,quantity:moved,targetQuantity:targetAmount,unit:sourceUnit,targetUnit:bridge.targetUnit,
+        inputBatchId:shipment.factoryInputBatchId,route:clone(shipment.route),
         etaTurn:shipment.etaTurn,status:'IN_TRANSIT',createdTurn:turn(),
         authority:'CORE_WAREHOUSE_TRANSPORT_SHIPMENT'});
       n.warehouseFactoryDispatches=n.warehouseFactoryDispatches.slice(-MAX_EVENTS);
@@ -4558,6 +4604,7 @@ function transferFactoryInputsFromWarehouse(countryId,asset,recipe,allocationTar
         factoryId:String(asset.id||asset.assetId||asset.projectId),resourceId:rid,sourceBatchId:batchId,
         quantity:moved,targetQuantity:targetAmount,sourceUnit,targetUnit:bridge.targetUnit,
         sourceWarehouseId:warehouseId,destinationNode:'FACTORY:'+cid+':'+String(asset.id||asset.assetId||asset.projectId),
+        inputBatchId:shipment.factoryInputBatchId,
         routeType:'WAREHOUSE_TO_FACTORY',status:'IN_TRANSIT',etaTurn:shipment.etaTurn,
         route:clone(shipment.route),authority:'CORE_WAREHOUSE_TRANSPORT_SHIPMENT',simulationOnly:true});
       remaining=Math.max(0,remaining-targetAmount);
