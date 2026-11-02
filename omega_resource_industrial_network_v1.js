@@ -4560,7 +4560,9 @@ function transferFactoryInputsFromWarehouse(countryId,asset,recipe,allocationTar
       if(remaining<=1e-9)break;
       const batchId=String(batch?.batchId||'').trim();if(!batchId)continue;
       const source=factorySourceWarehouse(rs,batch),wh=source.warehouse;
-      if(source.kind!=='RAW'){blocked.push({batchId,resourceId:rid,reason:'WAREHOUSE_KIND_NOT_SUPPORTED_FOR_RAW_FACTORY_DISPATCH'});continue;}
+      if(!['RAW','PROCESSED'].includes(source.kind)){
+        blocked.push({batchId,resourceId:rid,reason:'WAREHOUSE_KIND_NOT_SUPPORTED_FOR_FACTORY_DISPATCH'});continue;
+      }
       wh.availableByResource=wh.availableByResource||{};wh.reservedByResource=wh.reservedByResource||{};
       const availableKey=quantityObjectKey(wh.availableByResource,rid),reservedKey=quantityObjectKey(wh.reservedByResource,rid);
       if(availableKey===null)continue;
