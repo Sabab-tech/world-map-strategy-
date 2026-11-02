@@ -12,7 +12,7 @@ This layer coordinates the existing OMEGA simulation engine. It does not add ano
 
 ## Runtime contract
 
-The existing simulation runtime remains the only authoritative clock and turn coordinator. The scheduler registers one ordered participant and uses the existing opponent rules APIs: country roster, evaluate one country, and queue one actionable decision per evaluated country. The normal turn path no longer calls the unbounded all-country batch.
+The existing simulation runtime remains the only authoritative clock and turn coordinator. The opponent engine checks its multi-rate due gate before running the heavier resource-flow analysis, so an off-cadence country heartbeat does not run that derived pass. The scheduler registers one ordered participant and uses the existing opponent rules APIs: country roster, evaluate one country, and queue one actionable decision per evaluated country. The normal turn path no longer calls the unbounded all-country batch.
 
 Country identity resolution uses the canonical country runtime/identity bridge. The current repository country datasets contain 249 country/territory identities, not exactly 197 sovereign states. The scheduler follows the registered roster rather than silently dropping identity-only records or hardcoding a number. A sovereign-only roster still requires an authoritative sovereignty field in the canonical data.
 

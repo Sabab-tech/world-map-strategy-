@@ -158,6 +158,17 @@ assert.ok(diagnostics.approvedPolicyLayer.scenarioRules>=20);
 assert.equal(diagnostics.approvedPolicyLayer.numericStateTransitions,0);
 assert.equal(diagnostics.dataTruth.syntheticFallbackTraceEntries,0);
 
+const originalShould=api.instance.scheduler.should.bind(api.instance.scheduler);
+const originalRuntimeAnalyze=api.instance.runtimeFlow.analyze.bind(api.instance.runtimeFlow);
+let skippedRuntimeAnalysisCalls=0;
+api.instance.scheduler.should=()=>false;
+api.instance.runtimeFlow.analyze=(...args)=>{skippedRuntimeAnalysisCalls++;return originalRuntimeAnalyze(...args);};
+const skippedRun=await api.evaluateCountry('BD',9);
+assert.equal(skippedRun.status,'SKIPPED');
+assert.equal(skippedRuntimeAnalysisCalls,0,'unscheduled countries must skip expensive resource-flow analysis');
+api.instance.scheduler.should=originalShould;
+api.instance.runtimeFlow.analyze=originalRuntimeAnalyze;
+
 const stressCountryIds=[...new Set(countries.slice(0,90).map(row=>row.code).filter(Boolean))];
 let stressTurn=10;
 for(const countryId of stressCountryIds)await api.evaluateCountry(countryId,stressTurn++);

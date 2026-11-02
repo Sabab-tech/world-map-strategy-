@@ -574,9 +574,11 @@ class Runtime{
   }
   async evaluate(c,t=TURN(),options={}){
     const s=this.kernel.snap(c,t);s.rawState=WORLD();this.graph.build();
-    const demand=this.demand.run(s),supply=this.supply.run(s),gap=this.gap.run(s),events=this.events.run(s.countryId),scenarios=this.scenario.run(s,gap,events),runtimeAnalysis=this.runtimeFlow.analyze(s.countryId,s);
+    const demand=this.demand.run(s),supply=this.supply.run(s),gap=this.gap.run(s),events=this.events.run(s.countryId),scenarios=this.scenario.run(s,gap,events);
     const mode=this.scheduler.mode(gap,scenarios);
     if(!this.scheduler.should(s.countryId,t,mode)&&options.forceFull!==true){const heartbeat={countryId:s.countryId,turn:t,observed:true,scheduled:false,mode};this.tr.add({layer:'L24_MULTI_RATE_SCHEDULER',countryId:s.countryId,turn:t,action:'COUNTRY_TICK_HEARTBEAT',observed:true});return{status:'SKIPPED',countryId:s.countryId,turn:t,mode,heartbeat,last:this.runs.get(s.countryId)||null};}
+    // Runtime resource-flow analysis is the expensive derived pass; skip it when this country is not due.
+    const runtimeAnalysis=this.runtimeFlow.analyze(s.countryId,s);
     this.forecast.observe(s);this.forecast.setProjects(this.projects.list(s.countryId));
     const ctx={countryId:s.countryId,turn:t,mode,signals:s.signals,demand,supply,gapPressure:gap,scenarios,events,
       countryCapabilities:this.cap.forCountry(s.countryId),forecasts:null};
