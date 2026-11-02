@@ -7,7 +7,8 @@
 (function (g) {
   'use strict';
 
-  var VERSION = '1.1.0';
+  var VERSION = '1.2.0';
+  var FACTORY_INPUT_COVERAGE_VERSION = '2.0.0';
   if (g.OmegaResourceStartupBaseline && g.OmegaResourceStartupBaseline.VERSION === VERSION) return;
 
   var PATHS = {
@@ -1182,14 +1183,65 @@
       seeded: seeded, preserved: preserved, unknownResourceIds: unresolved, stateMismatchResourceIds: stateMismatch,
       sourceCounts: sourceCounts, batchIds: batchIds };
   }
+  function getFactoryInputCoverageDays(state, resource, countryId) {
+    state = object(state) || {};
+    resource = object(resource) || {};
+    var simulation = object(state.simulation) || {};
+    var supplyPolicy = object(simulation.resourceSupplyPolicy) || {};
+    var countryPolicy = object(supplyPolicy.countries) && object(supplyPolicy.countries[countryId]) ||
+      object(supplyPolicy[countryId]) || supplyPolicy;
+    var resourcePolicy = object(resource.factoryInputPolicy) || {};
+    var economyPolicy = object(data && data.economyRules && data.economyRules.demand &&
+      data.economyRules.demand.playerSupplyLifeline) || {};
+    var candidates = [
+      resource.factoryInputCoverageDays,
+      resourcePolicy.targetCoverageDays,
+      countryPolicy.factoryInputCoverageDays,
+      countryPolicy.targetCoverageDays,
+      simulation.factoryInputCoverageDays,
+      data && data.policy && data.policy.factoryInputStockBaseline &&
+        data.policy.factoryInputStockBaseline.targetCoverageDays,
+      economyPolicy.targetCoverageDays,
+      100
+    ];
+    var days = null;
+    for (var i = 0; i < candidates.length; i++) {
+      var candidate = finite(candidates[i]);
+      if (candidate !== null && candidate > 0) {
+        days = Math.round(candidate);
+        break;
+      }
+    }
+    return Math.max(1, Math.min(3650, days || 100));
+  }
+
+  function factoryInputDailyDemand(row) {
+    if (!row || !Array.isArray(row.sources) || !row.sources.length) return null;
+    var daily = 0;
+    for (var i = 0; i < row.sources.length; i++) {
+      var source = row.sources[i] || {};
+      var quantity = positive(source.demandQuantity);
+      var cycleDays = positive(source.cycleDays) || 1;
+      if (quantity === null) return null;
+      daily += quantity / cycleDays;
+    }
+    return Number.isFinite(daily) && daily > 0 ? Number(daily.toPrecision(12)) : null;
+  }
+
   function seedCountryFactoryInputStock(resource, profile, turn) {
     var countryId = id(profile && profile.iso3);
     var baseline = data.factoryInputBaseline && data.factoryInputBaseline.countries[countryId] || null;
     if (!baseline) return { status: 'NOT_IN_CORE_FACTORY_ROSTER', countryId: countryId, seeded: 0, openingStockQuantity: 0 };
+    var coverageDays = getFactoryInputCoverageDays(rootState(), resource, countryId);
     var marker = object(resource.factoryInputBaselineV1);
-    if (marker && marker.version === data.factoryInputBaseline.version && marker.openingStockInitialized === true) {
+    if (marker && marker.version === data.factoryInputBaseline.version &&
+        marker.coverageModelVersion === FACTORY_INPUT_COVERAGE_VERSION &&
+        Number(marker.targetCoverageDays) === coverageDays &&
+        marker.openingStockInitialized === true) {
       return { status: 'ALREADY_INITIALIZED', countryId: countryId, seeded: 0,
         openingStockQuantity: finite(marker.openingStockQuantity) || 0,
+        storedOpeningStockQuantity: finite(marker.storedOpeningStockQuantity) || 0,
+        targetCoverageDays: coverageDays,
         unknownProductIds: clone(marker.unknownProductIds || []) };
     }
     var rows = Array.isArray(baseline.factoryInputRows) ? baseline.factoryInputRows : null;
@@ -1275,8 +1327,8 @@
 
     var maxBatches = Math.max(1, Math.floor(finite(data.economyRules.runtime && data.economyRules.runtime.maxBatches) || 8192));
     var maxLedgerEntries = Math.max(1, Math.floor(finite(data.economyRules.runtime && data.economyRules.runtime.maxLedgerEntries) || 2048));
-    var seeded = 0, openingStockQuantity = 0, storedOpeningStockQuantity = 0, unknown = [], stateMismatch = [];
-    var batchIds = [], stockRows = [], inventoryEvents = [];
+    var seeded = 0, preserved = 0, openingStockQuantity = 0, storedOpeningStockQuantity = 0;
+    var unknown = [], stateMismatch = [], batchIds = [], stockRows = [], inventoryEvents = [];
     var unit = String(data.factoryInputBaseline.quantityBasis && data.factoryInputBaseline.quantityBasis.unit || 'SIMULATION_RESOURCE_UNIT');
 
     function matchingKeys(map, wanted) {
@@ -1285,16 +1337,16 @@
     }
     rows.forEach(function (row) {
       var productId = token(row && row.productId);
-      var quantity = positive(row && row.openingStockQuantity);
       var demand = positive(row && row.demandPerFullCycle);
-      var buffer = finite(row && row.bufferQuantity);
+      var dailyDemand = factoryInputDailyDemand(row);
+      var quantity = dailyDemand === null ? null : Number((dailyDemand * coverageDays).toPrecision(12));
       var stage = id(row && row.stage);
-      if (!productId || !quantity || !demand || buffer === null ||
-          Math.abs(buffer - demand * 0.4) > 1e-5 || Math.abs(quantity - demand * 1.4) > 1e-5 ||
+      if (!productId || demand === null || dailyDemand === null || quantity === null || quantity <= 0 ||
           ['RAW', 'INTERMEDIATE'].indexOf(stage) < 0 || !Array.isArray(row.sources) || !row.sources.length) {
         unknown.push(productId || String(row && row.productId || 'UNKNOWN_PRODUCT'));
         return;
       }
+
       var inventoryKeys = matchingKeys(inventory, productId);
       var warehouse = stage === 'RAW' ? rawWarehouse : processedWarehouse;
       var warehouseKeys = matchingKeys(warehouse.availableByResource, productId);
@@ -1306,10 +1358,7 @@
       var currentInventory = inventoryKeys.length ? finite(inventory[inventoryKey]) : 0;
       var warehouseKey = warehouseKeys.length ? warehouseKeys[0] : productId;
       var currentWarehouse = warehouseKeys.length ? finite(warehouse.availableByResource[warehouseKey]) : 0;
-      if (unitKeys.length > 1) {
-        unknown.push(productId); stateMismatch.push(productId); return;
-      }
-      if (currentInventory === null || currentWarehouse === null) {
+      if (unitKeys.length > 1 || currentInventory === null || currentWarehouse === null) {
         unknown.push(productId); stateMismatch.push(productId); return;
       }
       var storedUnit = unitKeys.length ? String(inventoryUnits[unitKeys[0]] || '').trim() : '';
@@ -1325,46 +1374,81 @@
       if (!unitBridge || unitFactor === null || unitFactor <= 0) {
         unknown.push(productId); stateMismatch.push(productId); return;
       }
-      var storedQuantity = Number((quantity / unitFactor).toPrecision(12));
-      if (!(storedQuantity > 0) || !Number.isFinite(storedQuantity)) {
-        unknown.push(productId); stateMismatch.push(productId); return;
+
+      // Aggregate inventory and the matching warehouse are two views of the same stock.
+      // Never guess a missing delta when their ledgers disagree; a reconciliation pass must
+      // resolve the discrepancy before this startup policy can safely add a batch.
+      if (Math.abs(currentInventory - currentWarehouse) > 1e-6) {
+        unknown.push(productId); stateMismatch.push(productId);
+        stockRows.push({
+          productId: productId, stage: stage, dailyDemandQuantity: dailyDemand,
+          targetCoverageDays: coverageDays, targetStockQuantity: quantity,
+          currentStockBefore: null, topUpQuantity: 0, quantity: 0, unit: storedUnit,
+          inputSimulationUnit: unit, unitBridgeFactor: unitFactor, batchId: null,
+          state: 'BLOCKED_INVENTORY_WAREHOUSE_MISMATCH'
+        });
+        return;
       }
-      var batchId = 'STARTUP-FACTORY-INPUT-V1-' + countryId + '-' + productId.toUpperCase();
-      if (batches.some(function (batch) { return batch && String(batch.batchId || '') === batchId; }) ||
-          own(lots, batchId)) {
-        unknown.push(productId); stateMismatch.push(productId); return;
-      }
-      if (batches.length + seeded >= maxBatches) {
-        unknown.push(productId); stateMismatch.push(productId); return;
-      }
+      var currentStock = Number((currentInventory * unitFactor).toPrecision(12));
+      var topUpQuantity = Math.max(0, Number((quantity - currentStock).toPrecision(12)));
+      openingStockQuantity += quantity;
       var sourceTypes = Array.from(new Set(row.sources.map(function (source) {
         return id(source && source.factoryType);
       }).filter(Boolean)));
       var recipeIds = Array.from(new Set(row.sources.map(function (source) {
         return String(source && source.recipeId || '').trim();
       }).filter(Boolean)));
+      if (topUpQuantity <= 1e-9) {
+        preserved++;
+        stockRows.push({
+          productId: productId, stage: stage, dailyDemandQuantity: dailyDemand,
+          targetCoverageDays: coverageDays, targetStockQuantity: quantity,
+          currentStockBefore: currentStock, topUpQuantity: 0, quantity: 0,
+          unit: storedUnit, inputSimulationUnit: unit, unitBridgeFactor: unitFactor,
+          batchId: null, sourceFactoryTypes: sourceTypes, sourceRecipeIds: recipeIds,
+          state: 'TARGET_ALREADY_MET_OR_EXCEEDED'
+        });
+        return;
+      }
+      var storedQuantity = Number((topUpQuantity / unitFactor).toPrecision(12));
+      if (!(storedQuantity > 0) || !Number.isFinite(storedQuantity)) {
+        unknown.push(productId); stateMismatch.push(productId); return;
+      }
+      var batchId = 'STARTUP-FACTORY-INPUT-V2-' + countryId + '-' +
+        productId.toUpperCase() + '-C' + coverageDays;
+      if (batches.some(function (batch) { return batch && String(batch.batchId || '') === batchId; }) ||
+          own(lots, batchId)) {
+        unknown.push(productId); stateMismatch.push(productId); return;
+      }
+      if (batches.length + seeded >= maxBatches ||
+          ledger.length + seeded >= maxLedgerEntries ||
+          warehouse.receipts.length + seeded >= maxLedgerEntries) {
+        unknown.push(productId); stateMismatch.push(productId); return;
+      }
       var provenance = {
-        source: 'SIMULATED_FACTORY_INPUT_STARTUP_BASELINE_V1',
-        authority: 'SIMULATED_FACTORY_INPUT_STARTUP_BASELINE_V1',
+        source: 'SIMULATED_FACTORY_INPUT_STARTUP_BASELINE_V2',
+        authority: 'SIMULATED_FACTORY_INPUT_STARTUP_BASELINE_V2',
         datasetId: data.factoryInputBaseline.datasetId,
         countryId: countryId,
         productId: productId,
         demandPerFullCycle: demand,
-        bufferPercent: 40,
-        bufferQuantity: buffer,
+        dailyDemandQuantity: dailyDemand,
+        targetCoverageDays: coverageDays,
+        targetStockQuantity: quantity,
+        topUpQuantity: topUpQuantity,
         sourceFactoryTypes: sourceTypes,
         sourceRecipeIds: recipeIds,
         productNamespace: row.productNamespace || null,
         supplySource: row.supplySource || null,
         sourceAuthority: row.sourceAuthority || null,
-        supplyMode: row.supplyMode || 'STARTUP_BASELINE_STOCK',
+        supplyMode: row.supplyMode || 'STARTUP_OPENING_STOCK',
         requiresRecordedUpstreamBatch: row.requiresRecordedUpstreamBatch === true,
         storageUnit: storedUnit,
         inputSimulationUnit: unit,
         unitBridgeFactor: unitFactor,
         simulationOnly: true,
         geologicalReserveQuantityUsedAsStock: false,
-        statement: 'One-time gameplay opening stock equal to full-cycle recipe input demand plus a 40 percent buffer; not observed inventory or a recorded shipment.'
+        statement: 'One-time game opening allocation calculated from daily factory input demand and the selected coverage window. Recurring additions must come from the normal turn-based mine, processing, or approved trade pipeline.'
       };
       var warehouseId = warehouse.warehouseId;
       var batch = {
@@ -1413,23 +1497,27 @@
         receiptId: 'WH-REC-' + batchId, warehouseId: warehouseId, countryId: countryId,
         batchId: batchId, resourceId: productId, quantity: storedQuantity, unit: storedUnit,
         simulationTurn: turn, status: 'RECEIVED',
-        source: 'SIMULATED_FACTORY_INPUT_STARTUP_BASELINE_V1',
+        source: 'SIMULATED_FACTORY_INPUT_STARTUP_BASELINE_V2',
         provenance: clone(provenance)
       });
       ledger.push({
         type: 'FACTORY_INPUT_STARTUP_STOCK_CREATED',
         resourceId: productId, quantity: storedQuantity, unit: storedUnit, stage: stage,
-        turn: turn, batchId: batchId, source: 'SIMULATED_FACTORY_INPUT_STARTUP_BASELINE_V1',
-        demandPerFullCycle: demand, bufferPercent: 40, provenance: clone(provenance)
+        turn: turn, batchId: batchId, source: 'SIMULATED_FACTORY_INPUT_STARTUP_BASELINE_V2',
+        dailyDemandQuantity: dailyDemand, targetCoverageDays: coverageDays,
+        targetStockQuantity: quantity, provenance: clone(provenance)
       });
       seeded++;
-      openingStockQuantity += quantity;
       storedOpeningStockQuantity += storedQuantity;
       batchIds.push(batchId);
-      stockRows.push({ productId: productId, stage: stage, demandPerFullCycle: demand,
-        bufferQuantity: buffer, quantity: storedQuantity, targetQuantity: quantity,
-        unit: storedUnit, inputSimulationUnit: unit, unitBridgeFactor: unitFactor, batchId: batchId,
-        sourceFactoryTypes: sourceTypes, sourceRecipeIds: recipeIds });
+      stockRows.push({
+        productId: productId, stage: stage, demandPerFullCycle: demand,
+        dailyDemandQuantity: dailyDemand, targetCoverageDays: coverageDays,
+        targetStockQuantity: quantity, currentStockBefore: currentStock,
+        topUpQuantity: topUpQuantity, quantity: storedQuantity, unit: storedUnit,
+        inputSimulationUnit: unit, unitBridgeFactor: unitFactor, batchId: batchId,
+        sourceFactoryTypes: sourceTypes, sourceRecipeIds: recipeIds, state: 'TOPPED_UP'
+      });
       inventoryEvents.push({
         countryId: countryId, resourceId: productId, delta: storedQuantity,
         newQuantity: nextInventory, warehouseQuantity: nextWarehouse, stage: stage,
@@ -1454,19 +1542,28 @@
     } else {
       if (!inventoryPresent) resource.inventory = inventory;
       if (!unitsPresent) resource.inventoryUnits = inventoryUnits;
+      if (!batchesPresent && batches.length) resource.batches = batches;
+      if (!lotsPresent && Object.keys(lots).length) resource.inventoryLots = lots;
+      if (!ledgerPresent && ledger.length) resource.inventoryLedger = ledger;
+      if (rawWarehouse) resource.warehouse = rawWarehouse;
+      if (processedWarehouse) resource.processedWarehouse = processedWarehouse;
     }
     resource.factoryInputBaselineV1 = {
       version: data.factoryInputBaseline.version,
       datasetId: data.factoryInputBaseline.datasetId,
+      coverageModelVersion: FACTORY_INPUT_COVERAGE_VERSION,
       status: unknown.length ? 'INITIALIZED_WITH_GAPS' : 'INITIALIZED',
       openingStockInitialized: true,
       countryId: countryId,
       initializedTurn: turn,
       factoryUnitCount: baseline.totalStartingFactoryUnits,
       factoryTypeCount: data.factoryInputBaseline.factoryTypeCount,
-      bufferPercent: 40,
+      bufferPercent: 0,
+      legacyCycleBufferPercent: 40,
+      targetCoverageDays: coverageDays,
       inputProductCount: rows.length,
       seededProductCount: seeded,
+      preservedProductCount: preserved,
       openingStockQuantity: Number(openingStockQuantity.toPrecision(12)),
       storedOpeningStockQuantity: Number(storedOpeningStockQuantity.toPrecision(12)),
       unknownProductIds: unknown,
@@ -1474,12 +1571,13 @@
       stockBatchIds: batchIds,
       stockRows: stockRows,
       sourceFile: PATHS.factoryInputBaseline,
-      authority: 'SIMULATED_FACTORY_INPUT_STARTUP_BASELINE_V1',
+      authority: 'SIMULATED_FACTORY_INPUT_STARTUP_BASELINE_V2',
       geologicalReserveQuantityUsedAsStock: false,
       existingSaveDataOverwritten: false
     };
     return { status: unknown.length ? 'INITIALIZED_WITH_GAPS' : 'INITIALIZED',
-      countryId: countryId, seeded: seeded,
+      countryId: countryId, seeded: seeded, preserved: preserved,
+      targetCoverageDays: coverageDays,
       openingStockQuantity: Number(openingStockQuantity.toPrecision(12)),
       storedOpeningStockQuantity: Number(storedOpeningStockQuantity.toPrecision(12)),
       unknownProductIds: unknown, stateMismatchProductIds: stateMismatch, batchIds: batchIds };
