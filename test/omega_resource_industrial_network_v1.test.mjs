@@ -943,21 +943,61 @@ console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');
   assert.equal(context.Game.state.resource[countryId].inventory.iron_ore,20);
   assert.equal(context.Game.state.resource[countryId].warehouse.availableByResource.iron_ore,20);
 
-  // Non-site opening stock continues using the shared sovereign warehouse.
+  // Opening/import batches without mine lineage must still move through a real
+  // warehouse-to-factory shipment, reserve stock, wait for ETA and receipt exactly once.
   const pooledFactory={
     id:'FAC-POOL:'+countryId+':iron_ore',countryId,
     factoryType:'UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT',
     capacityPerDay:5,inputCoefficients:{iron_ore:1},inputInventory:{},inputBatchLots:[],
     status:'OPERATIONAL'
   };
-  const pooledTransfer=N.transferFactoryInputsFromWarehouse(countryId,pooledFactory,recipe);
-  assert.equal(pooledTransfer.transferCount,1,'generic opening stock retains shared warehouse behavior');
-  assert.equal(pooledTransfer.transfers[0].sourceBatchId,genericBatchId);
-  assert.equal(unrelated.remainingQuantity,10,'mine batch from another site remains reserved for logistics');
-  assert.equal(bound.remainingQuantity,5,'source-bound mine batch remains reserved for logistics');
-  assert.equal(generic.remainingQuantity,0,'generic opening stock transfers once');
-  assert.equal(context.Game.state.resource[countryId].inventory.iron_ore,15);
-  assert.equal(context.Game.state.resource[countryId].warehouse.availableByResource.iron_ore,15);
+  const priorSimulation=context.Game.state.simulation;
+  const economyRoot=context.Game.state.economy||(context.Game.state.economy={});
+  const priorEconomy=economyRoot[countryId];
+  try {
+    context.Game.state.simulation={...(priorSimulation||{}),turn:100,startYear:2025,date:'2025-01-01',
+      daysPerTurn:1,playerCountryId:countryId,session:{playerCountryId:countryId}};
+    economyRoot[countryId]={...(priorEconomy||{}),productionAssets:[pooledFactory]};
+    await N.loadCatalog();
+    const warehouseFleet=N.setTransportFleet({countryId,siteId:'WH-'+countryId+'-RAW',transportType:'truck',count:2});
+    assert.equal(warehouseFleet.status,'APPLIED','the country raw warehouse can store its own count-based fleet profile');
+    assert.equal(N.getTransportFleet({countryId,siteId:'WH-'+countryId+'-RAW'}).transportTypes
+      .find(row=>row.transportType==='truck').count,2);
+    const pooledTransfer=N.transferFactoryInputsFromWarehouse(countryId,pooledFactory,recipe);
+    assert.equal(pooledTransfer.transferCount,1,JSON.stringify(pooledTransfer));
+    const shipment=context.Game.state.resource[countryId].industrialNetwork.shipments
+      .find(row=>row.shipmentType==='WAREHOUSE_TO_FACTORY'&&row.batchId===genericBatchId);
+    assert.ok(shipment,'opening stock must create a canonical Industrial Network shipment');
+    assert.equal(shipment.status,'IN_TRANSIT');
+    assert.equal(shipment.factoryId,pooledFactory.id);
+    assert.equal(shipment.sourceWarehouseId,'WH-'+countryId+'-RAW');
+    assert.ok(shipment.route.totalDistanceKm>0,'warehouse freight must have a non-zero route distance estimate');
+    assert.ok(shipment.etaTurn>100,'warehouse freight cannot be delivered in the dispatch turn');
+    assert.equal(generic.remainingQuantity,5,'source batch quantity is unchanged while cargo is in transit');
+    assert.equal(pooledFactory.inputInventory.iron_ore||0,0,'factory input cannot be credited before receipt');
+    assert.equal(context.Game.state.resource[countryId].inventory.iron_ore,20);
+    assert.equal(context.Game.state.resource[countryId].warehouse.availableByResource.iron_ore,20);
+    assert.equal(context.Game.state.resource[countryId].warehouse.reservedByResource.iron_ore,5);
+    assert.equal(unrelated.remainingQuantity,10,'unrelated mine batch remains untouched');
+    assert.equal(bound.remainingQuantity,5,'source-bound mine batch remains reserved for mine logistics');
+
+    context.Game.state.simulation.turn=Number(shipment.etaTurn);
+    const arrival=N.advanceShipments(countryId);
+    assert.equal(shipment.status,'DELIVERED',JSON.stringify(arrival));
+    assert.equal(shipment.destinationStatus,'FACTORY_RECEIVED');
+    assert.equal(generic.remainingQuantity,0,'source batch is debited only at confirmed delivery');
+    assert.equal(context.Game.state.resource[countryId].inventory.iron_ore,15);
+    assert.equal(context.Game.state.resource[countryId].warehouse.availableByResource.iron_ore,15);
+    assert.equal(context.Game.state.resource[countryId].warehouse.reservedByResource.iron_ore,0);
+    assert.equal(pooledFactory.inputInventory.iron_ore,5,'factory input appears only after transport receipt');
+    assert.equal(pooledFactory.inputBatchLots.length,1,'receipt creates one factory input lot with provenance');
+    N.advanceShipments(countryId);
+    assert.equal(pooledFactory.inputInventory.iron_ore,5,'replaying the same turn cannot duplicate warehouse receipt');
+  } finally {
+    context.Game.state.simulation=priorSimulation;
+    if(priorEconomy===undefined)delete economyRoot[countryId];
+    else economyRoot[countryId]=priorEconomy;
+  }
   console.log('OMEGA MINE-BOUND FACTORY INPUT ISOLATION PASSED');
 }
 
@@ -1264,13 +1304,21 @@ console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');
     resourceState.batches=[inputBatch];
     resourceState.inventoryLots={[inputBatchId]:{...inputBatch,status:'AVAILABLE'}};
     const schedulerStart= await N.processPendingFactoryInputs('BGD');
-    const startedCycle=resourceState.industrialNetwork.factoryProductionCycles[universal.id];
-    assert.equal(schedulerStart.started.some(row=>row.factoryId===universal.id),true,
-      'the automatic turn scheduler must select the stocked iron ore rule for a dynamic universal plant');
-    assert.equal(startedCycle.status,'IN_PROGRESS');
+    let startedCycle=resourceState.industrialNetwork.factoryProductionCycles[universal.id];
+    const startupShipment=resourceState.industrialNetwork.shipments.find(row=>
+      row.shipmentType==='WAREHOUSE_TO_FACTORY'&&row.factoryId===universal.id&&row.batchId===inputBatchId);
+    assert.ok(startupShipment,'the turn scheduler dispatches starting allocation through warehouse freight');
+    assert.equal(startupShipment.status,'IN_TRANSIT');
+    assert.equal(startedCycle,undefined,'a factory cycle cannot start before warehouse cargo receipt');
+    assert.equal(universal.inputInventory.iron_ore||0,0);
+    context.Game.state.simulation.turn=Number(startupShipment.etaTurn);
+    await N.advanceShipments('BGD');
+    const schedulerArrival=await N.processPendingFactoryInputs('BGD');
+    startedCycle=resourceState.industrialNetwork.factoryProductionCycles[universal.id];
+    assert.equal(startedCycle.status,'IN_PROGRESS',JSON.stringify({schedulerStart,schedulerArrival,shipment:startupShipment}));
     assert.equal(startedCycle.primaryInputResourceId,'iron_ore');
     assert.equal(universal.inputInventory.iron_ore,100,
-      'tracked raw input must move from the national warehouse into the starting factory');
+      'tracked opening allocation enters factory input only after the physical warehouse shipment is received');
     context.Game.state.simulation.turn=Number(startedCycle.finishTurn);
     context.Game.state.simulation.date=startedCycle.finishDate;
     const schedulerFinish= await N.processPendingFactoryInputs('BGD');
