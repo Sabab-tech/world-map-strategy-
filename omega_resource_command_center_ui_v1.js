@@ -896,7 +896,7 @@
         (!location||location==='WAREHOUSE:'+activeCountry(country)+':RAW'||location==='MIXED:RAW_WAREHOUSE_OR_TRANSIT');
       if(!atRawWarehouse)return 0;
       const reservedInTransit=shipments.filter(row=>String(row?.batchId||'')===batchId&&
-        ['RAW_TO_FACTORY','MINE_TO_WAREHOUSE'].includes(String(row?.shipmentType||''))&&
+        ['RAW_TO_FACTORY','WAREHOUSE_TO_FACTORY','MINE_TO_WAREHOUSE'].includes(String(row?.shipmentType||''))&&
         inFlightStatuses.has(String(row?.status||'')))
         .reduce((sum,row)=>sum+Math.max(0,Number(row?.quantity)||0),0);
       return Math.min(remaining,Math.max(0,remaining-reservedInTransit));
@@ -905,15 +905,21 @@
       rawWarehouseAvailableQuantity:rawWarehouseAvailableForBatch(batch)}))
       .filter(batch=>batch.rawWarehouseAvailableQuantity>1e-9);
     const fleetBySite=network.transportFleetBySiteId&&typeof network.transportFleetBySiteId==='object'?network.transportFleetBySiteId:{};
-    const chosenSite=sites.find(site=>String(site.siteId)===String(selectedFleetSiteId))||sites[0]||null;
+    const warehouseFleetId=rawWarehouseId;
+    const warehouseFleetSelected=String(selectedFleetSiteId||'')===warehouseFleetId;
+    const chosenSite=warehouseFleetSelected
+      ?{siteId:warehouseFleetId,siteName:'Raw resource warehouse',countryId:activeCountry(country),siteType:'RAW_MATERIAL_WAREHOUSE'}
+      :(sites.find(site=>String(site.siteId)===String(selectedFleetSiteId))||sites[0]||
+        {siteId:warehouseFleetId,siteName:'Raw resource warehouse',countryId:activeCountry(country),siteType:'RAW_MATERIAL_WAREHOUSE'});
     if(chosenSite&&String(selectedFleetSiteId)!==String(chosenSite.siteId))selectedFleetSiteId=String(chosenSite.siteId);
+    const isWarehouseFleetEndpoint=String(chosenSite?.siteId||'')===warehouseFleetId;
     const siteId=chosenSite?String(chosenSite.siteId):'';
     const siteFleet=siteId&&fleetBySite[siteId]&&typeof fleetBySite[siteId]==='object'?fleetBySite[siteId]:{};
     const fleetRows=siteFleet.transportTypes&&typeof siteFleet.transportTypes==='object'?siteFleet.transportTypes:{};
     const fleetPreviewKey=activeCountry(country)+'|'+siteId;
     const fleetPreview=fleetPreviewCache[fleetPreviewKey]||null;
     const fleetPreviewRuntime=g.Omega&&g.Omega.ResourceIndustrialNetwork;
-    if(chosenSite&&fleetPreviewRuntime&&typeof fleetPreviewRuntime.previewSiteTransport==='function'&&
+    if(chosenSite&&!isWarehouseFleetEndpoint&&fleetPreviewRuntime&&typeof fleetPreviewRuntime.previewSiteTransport==='function'&&
        !Object.prototype.hasOwnProperty.call(fleetPreviewCache,fleetPreviewKey)&&!fleetPreviewPending[fleetPreviewKey]){
       fleetPreviewPending[fleetPreviewKey]=true;
       Promise.resolve(fleetPreviewRuntime.previewSiteTransport({countryId:activeCountry(country),siteId:siteId,quantity:10000}))
@@ -940,7 +946,8 @@
       {id:'barge',label:'Inland barge',iconMode:'barge'},
       {id:'pipeline',label:'Pipeline flow',iconMode:'pipeline'}
     ];
-    const siteOptions=sites.map(site=>'<option value="'+esc(site.siteId)+'"'+(chosenSite&&String(site.siteId)===String(chosenSite.siteId)?' selected':'')+'>'+esc(site.siteName||site.name||site.depositName||site.siteId)+' · '+esc(site.siteId)+'</option>').join('');
+    const siteOptions='<option value="'+esc(warehouseFleetId)+'"'+(isWarehouseFleetEndpoint?' selected':'')+'>Raw resource warehouse · '+esc(warehouseFleetId)+'</option>'+
+      sites.map(site=>'<option value="'+esc(site.siteId)+'"'+(chosenSite&&!isWarehouseFleetEndpoint&&String(site.siteId)===String(chosenSite.siteId)?' selected':'')+'>'+esc(site.siteName||site.name||site.depositName||site.siteId)+' · '+esc(site.siteId)+'</option>').join('');
     const fleetCards=chosenSite?supportedFleetModes.map(mode=>{
       const stored=fleetRows[mode.id]&&typeof fleetRows[mode.id]==='object'?fleetRows[mode.id]:null;
       const calculated=(fleetPreview&&Array.isArray(fleetPreview.transportTypes)?fleetPreview.transportTypes:[])
@@ -969,13 +976,14 @@
         kv('Trip time',calculated&&calculated.travelDays!=null?calculated.travelDays+' days':'Unavailable')+
         kv('Fleet sufficiency',calculated&&calculated.fleetSufficiency!==null?(calculated.fleetSufficiency?'Sufficient':'Insufficient'):'Unknown')+'</div>');
     }).join(''):empty('No registered mine/site is available for this country.');
-    const fleetSection='<h3 class="omega-rescc-section-title">Country and mine transport fleet</h3>'+
-      '<p class="omega-rescc-note">Set the available count for each transport type at this mine. The game recalculates route capacity, required loads and timing from the saved count and profile. Individual vehicle IDs and registration numbers are not used.</p>'+
+    const fleetSection='<h3 class="omega-rescc-section-title">Country, warehouse and mine transport fleet</h3>'+
+      '<p class="omega-rescc-note">Configure known available counts at the raw warehouse or a mine. Unknown fleet counts stay unknown; warehouse-to-factory movement uses the shared shipment ledger, route capacity and ETA. Individual vehicle registration IDs are not required.</p>'+
       '<form data-form="logistics-fleet-site" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0 14px">'+
-      '<label style="flex:1;min-width:220px"><span style="display:block;margin-bottom:5px">Mine / site</span><select name="siteId" class="omega-rescc-input" required '+(!sites.length?'disabled':'')+'>'+siteOptions+'</select></label>'+
-      '<button type="submit" class="omega-rescc-button" '+(!sites.length?'disabled':'')+'>Open site</button></form>'+
-      (chosenSite?'<div class="omega-rescc-metrics"><div><span>Selected site</span><strong>'+esc(chosenSite.siteName||chosenSite.name||chosenSite.siteId)+'</strong></div><div><span>Transport types</span><strong>5</strong></div><div><span>Configured profiles</span><strong>'+number(Object.values(fleetRows).filter(row=>row&&row.count!==undefined&&row.count!==null).length)+'</strong></div></div>'+
-        '<p class="omega-rescc-note">Route calculation: '+esc(fleetPreview&&fleetPreview.status||'CALCULATING')+(fleetPreview&&fleetPreview.reason?' · '+esc(fleetPreview.reason):'')+' · reference load 10,000 tonnes</p>':'')+
+      '<label style="flex:1;min-width:220px"><span style="display:block;margin-bottom:5px">Raw warehouse / mine / site</span><select name="siteId" class="omega-rescc-input" required>'+siteOptions+'</select></label>'+
+      '<button type="submit" class="omega-rescc-button">Open endpoint</button></form>'+
+      (chosenSite?'<div class="omega-rescc-metrics"><div><span>Selected endpoint</span><strong>'+esc(chosenSite.siteName||chosenSite.name||chosenSite.siteId)+'</strong></div><div><span>Transport types</span><strong>5</strong></div><div><span>Configured profiles</span><strong>'+number(Object.values(fleetRows).filter(row=>row&&row.count!==undefined&&row.count!==null).length)+'</strong></div></div>'+
+        '<p class="omega-rescc-note">'+(isWarehouseFleetEndpoint?'Warehouse corridor and ETA are calculated per dispatched batch; unrecorded coordinates remain scenario estimates.':
+          'Route calculation: '+esc(fleetPreview&&fleetPreview.status||'CALCULATING')+(fleetPreview&&fleetPreview.reason?' · '+esc(fleetPreview.reason):'')+' · reference load 10,000 tonnes')+'</p>':'')+
       (fleetCards||empty('No fleet modes can be configured yet.'));
     const batchCards=batches.map(batch=>{
       const id=batch.batchId,rid=batch.resourceId||batch.materialIdentity||'',qty=batch.rawWarehouseAvailableQuantity,warehouse=rawWarehouseId;
@@ -986,8 +994,22 @@
     const routes=siteRouteRows(country,sites),routeCards=routes.slice(0,200).map(x=>card(x.routeName||x.routeId||'Saved route profile','PROFILE ONLY · NOT DISPATCHED',
       '<div class="omega-rescc-grid2">'+kv('Route ID',x.routeId)+kv('Site',x.siteName)+kv('Site ID',x.siteId)+kv('Transport mode',x.mode)+kv('From',x.from)+kv('To',x.to)+kv('Distance (km)',x.distanceKm)+kv('Route authority',x.authority)+'</div>'+
       '<p class="omega-rescc-note">A saved route definition is not a shipment or proof that material moved.</p>','')).join('');
-    const shipmentCards=shipments.slice(-100).reverse().map(s=>card(s.shipmentId||s.routeId||'Shipment',s.status||s.deliveryStatus||'STATUS NOT RECORDED',
-      '<div class="omega-rescc-grid2">'+kv('Shipment type',s.shipmentType||'NOT_RECORDED')+kv('Resource',s.resourceId)+kv('Quantity',s.quantity)+kv('Factory',s.factoryId)+kv('Transport mode',s.route&&s.route.transportMode||s.transportMode)+kv('ETA turn',s.etaTurn??(s.timing&&s.timing.etaTurn))+kv('Authority',s.sourceAuthority||'OMEGA_RESOURCE_INDUSTRIAL_NETWORK_V1')+'</div>'+(s.blockReason||s.reason?'<div class="omega-rescc-warning">'+esc(s.blockReason||s.reason)+'</div>':''),'')).join('');
+    const shipmentCards=shipments.slice(-100).reverse().map(s=>{
+      const route=s.route&&typeof s.route==='object'?s.route:{};
+      const legs=Array.isArray(route.legs)?route.legs:[];
+      const legSummary=legs.map((leg,index)=>String(index+1)+'. '+String(leg.transportMode||leg.mode||'UNKNOWN')+
+        ' · '+number(leg.distanceKm??leg.estimatedDistanceKm,' km')+
+        (leg.vehicleCount!=null?' · '+number(leg.vehicleCount)+' units':'')).join(' → ');
+      const source=s.sourceWarehouseId||s.warehouseId||s.siteId||'NOT_RECORDED';
+      return card(s.shipmentId||s.routeId||'Shipment',s.status||s.deliveryStatus||'STATUS NOT RECORDED',
+        '<div class="omega-rescc-grid2">'+kv('Shipment type',s.shipmentType||'NOT_RECORDED')+
+        kv('Resource',s.resourceId)+kv('Quantity',s.quantity)+kv('Source warehouse / site',source)+
+        kv('Destination factory',s.factoryId)+kv('Transport mode',route.transportMode||s.transportMode)+
+        kv('Distance (km)',route.totalDistanceKm)+kv('ETA turn',s.etaTurn??(s.timing&&s.timing.etaTurn))+
+        kv('Route authority',route.distanceAuthority||s.provenance?.authority||'NOT_RECORDED')+'</div>'+
+        (legSummary?'<p class="omega-rescc-note">Transport legs: '+esc(legSummary)+'</p>':'')+
+        (s.blockReason||s.reason?'<div class="omega-rescc-warning">'+esc(s.blockReason||s.reason)+'</div>':''),'');
+    }).join('');
     const legacyPlanCards=legacyPlans.slice(-100).reverse().map(s=>card(s.batchId||s.routeId||s.shipmentId||'Legacy route plan','LEGACY PLAN · NOT A SHIPMENT',
       '<div class="omega-rescc-grid2">'+kv('Resource',s.resourceId)+kv('Quantity',s.quantity)+kv('Factory',s.factoryId)+kv('Recorded status',s.status||s.deliveryStatus||'UNKNOWN')+kv('Route ID',s.routeId||'NOT_RECORDED')+'</div><p class="omega-rescc-note">Historical preview record only. It is not delivery proof and is excluded from live shipment state.</p>','')).join('');
     return '<div class="omega-rescc-metrics"><div><span>Available raw batches</span><strong>'+number(batches.length)+'</strong></div><div><span>Factories in state</span><strong>'+number(factories.length)+'</strong></div><div><span>Saved site routes</span><strong>'+number(routes.length)+'</strong></div></div>'+
@@ -1887,8 +1909,9 @@
     try {
       if (kind === 'logistics-fleet-site') {
         const targetSiteId = String(data.get('siteId') || '').trim();
-        if (!siteRows(c).some(site => String(site.siteId) === targetSiteId)) {
-          setOutcome('Transport fleet site selection', { status: 'BLOCKED', reason: 'SITE_NOT_FOUND_IN_SELECTED_COUNTRY' });
+        const warehouseId='WH-'+activeCountry(c)+'-RAW';
+        if (targetSiteId!==warehouseId&&!siteRows(c).some(site => String(site.siteId) === targetSiteId)) {
+          setOutcome('Transport fleet endpoint selection', { status: 'BLOCKED', reason: 'SITE_OR_WAREHOUSE_NOT_FOUND_IN_SELECTED_COUNTRY' });
           return;
         }
         selectedFleetSiteId = targetSiteId;
