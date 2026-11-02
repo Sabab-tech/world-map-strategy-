@@ -2037,11 +2037,13 @@ function buildRoute(site,asset,resourceId,requestedQuantity,input={}){
 function planShipment(input={}){
   const cid=canonicalCountry(input.countryId);
   const sourceKind=String(input.sourceType||input.shipmentType||'').trim().toUpperCase();
-  const warehouseSource=sourceKind==='RAW_WAREHOUSE'||sourceKind==='WAREHOUSE_TO_FACTORY';
+  const warehouseSource=['RAW_WAREHOUSE','PROCESSED_WAREHOUSE','WAREHOUSE_TO_FACTORY'].includes(sourceKind);
   const sourceWarehouseId=String(input.warehouseId||input.siteId||('WH-'+cid+'-RAW')).trim();
   const site=warehouseSource
-    ?{siteId:sourceWarehouseId,countryId:cid,siteName:'Raw resource warehouse · '+cid,
-      siteType:'RAW_MATERIAL_WAREHOUSE',real:{resourceId:input.resourceId},simulation:{transportRoute:[]}}
+    ?{siteId:sourceWarehouseId,countryId:cid,
+      siteName:(sourceKind==='PROCESSED_WAREHOUSE'?'Processed goods warehouse · ':'Raw resource warehouse · ')+cid,
+      siteType:sourceKind==='PROCESSED_WAREHOUSE'?'PROCESSED_GOODS_WAREHOUSE':'RAW_MATERIAL_WAREHOUSE',
+      real:{resourceId:input.resourceId},simulation:{transportRoute:[]}}
     :(siteById(input.siteId)||input.site);
   if(!site?.siteId)return{status:'BLOCKED',reason:'SITE_NOT_FOUND'};
   const rid=tok(input.resourceId||site?.real?.resourceId||site?.sourceSiteRecord?.resourceId);if(!rid)return{status:'BLOCKED',reason:'RESOURCE_ID_MISSING'};
@@ -2114,26 +2116,42 @@ function planShipment(input={}){
     policy:policyBlockedRoute||null,candidates:ordered.length,routeAttempts};
   if(best.route.crossBorderRequired&&!input.tradeContractId)return{status:'BLOCKED',reason:'CROSS_BORDER_CONTRACT_REQUIRED',route:best.route};
   const result={status:'PLANNED',countryId:cid,siteId:warehouseSource?null:site.siteId,
-    sourceType:warehouseSource?'RAW_WAREHOUSE':'MINE_SITE',sourceWarehouseId:warehouseId,
+    sourceType:warehouseSource?sourceKind:'MINE_SITE',sourceWarehouseId:warehouseId,
     resourceId:rid,factoryId:String(best.candidate.asset?.id||best.candidate.asset?.assetId||best.candidate.asset?.projectId),
     recipe:best.candidate.recipe,route:best.route};
   emit('OMEGA_RESOURCE_FACTORY_ROUTE_PLANNED',cid,result);
   return result;
 }
 
-function reserveInventoryForShipment(c,resourceId,quantity,shipmentId){
-  const r=resourceState(c),n=netState(c);r.warehouse=r.warehouse||{availableByResource:{},reservedByResource:{}};const w=r.warehouse;
+function warehouseForShipment(rs,countryId,warehouseId){
+  const cid=canonicalCountry(countryId),id=String(warehouseId||'WH-'+cid+'-RAW').trim().toUpperCase();
+  if(id.includes('PROCESSED')){
+    rs.processedWarehouse=rs.processedWarehouse||{warehouseId:id,countryId:cid,
+      type:'SOVEREIGN_PROCESSED_GOODS_WAREHOUSE',availableByResource:{},reservedByResource:{},storedBatchIds:[],receipts:[]};
+    return{kind:'PROCESSED',warehouse:rs.processedWarehouse,warehouseId:id};
+  }
+  rs.warehouse=rs.warehouse||{warehouseId:id,countryId:cid,
+    type:'SOVEREIGN_RAW_MATERIAL_WAREHOUSE',availableByResource:{},reservedByResource:{},storedBatchIds:[],receipts:[]};
+  return{kind:'RAW',warehouse:rs.warehouse,warehouseId:id};
+}
+function reserveInventoryForShipment(c,resourceId,quantity,shipmentId,warehouseId){
+  const r=resourceState(c),n=netState(c),source=warehouseForShipment(r,c,warehouseId),w=source.warehouse;
   w.availableByResource=w.availableByResource||{};w.reservedByResource=w.reservedByResource||{};
-  const available=Math.max(0,num(w.availableByResource[resourceId])||0);
-  const reserved=Math.max(0,num(w.reservedByResource[resourceId])||0);
-  const free=Math.max(0,available-reserved);
-  const requested=Math.max(0,num(quantity)||0);
+  const availableKey=quantityObjectKey(w.availableByResource,resourceId);
+  if(availableKey===null)return{ok:false,reason:'WAREHOUSE_RESOURCE_BALANCE_NOT_RECORDED',
+    warehouseId:source.warehouseId,requestedQuantity:Math.max(0,num(quantity)||0),dispatchableQuantity:0};
+  const reservedKey=quantityObjectKey(w.reservedByResource,resourceId)||resourceId;
+  const available=Math.max(0,num(w.availableByResource[availableKey])||0);
+  const reserved=Math.max(0,num(w.reservedByResource[reservedKey])||0);
+  const free=Math.max(0,available-reserved),requested=Math.max(0,num(quantity)||0);
   const approved=Math.min(requested,free);
   if(approved<=1e-9)return{ok:false,reason:'WAREHOUSE_AVAILABLE_AFTER_RESERVATIONS_TOO_LOW',
-    available:free,requestedQuantity:requested,dispatchableQuantity:0};
-  w.reservedByResource[resourceId]=reserved+approved;
-  n.reservations[shipmentId]={resourceId,quantity:approved,status:'RESERVED'};
-  return{ok:true,quantity:approved,requestedQuantity:requested,adjusted:approved+1e-6<requested,
+    warehouseId:source.warehouseId,available:free,requestedQuantity:requested,dispatchableQuantity:0};
+  w.reservedByResource[reservedKey]=reserved+approved;
+  n.reservations[shipmentId]={resourceId,quantity:approved,status:'RESERVED',
+    warehouseId:source.warehouseId,warehouseKind:source.kind};
+  return{ok:true,quantity:approved,warehouseId:source.warehouseId,warehouseKind:source.kind,
+    requestedQuantity:requested,adjusted:approved+1e-6<requested,
     reason:approved+1e-6<requested?'WAREHOUSE_AVAILABLE_AFTER_RESERVATIONS':'SOURCE_BATCH_WITHIN_AVAILABLE_WAREHOUSE_BALANCE'};
 }
 function resizeRouteForDispatch(route,actualQuantity,plannedQuantity){
@@ -2164,7 +2182,7 @@ function dispatchShipment(input={}){
   const cid=canonicalCountry(input.countryId);
   const sourceBatchId=String(input.batchId||'').trim();
   const requestedSource=String(input.sourceType||input.shipmentType||'').trim().toUpperCase();
-  const warehouseShipment=requestedSource==='RAW_WAREHOUSE'||requestedSource==='WAREHOUSE_TO_FACTORY';
+  const warehouseShipment=['RAW_WAREHOUSE','PROCESSED_WAREHOUSE','WAREHOUSE_TO_FACTORY'].includes(requestedSource);
   const shipmentType=warehouseShipment?'WAREHOUSE_TO_FACTORY':'RAW_TO_FACTORY';
   const requestedFactoryId=String(input.factoryId||'').trim();
   if(cid&&sourceBatchId){
@@ -2173,8 +2191,10 @@ function dispatchShipment(input={}){
       (!requestedFactoryId||String(x?.factoryId||'')===requestedFactoryId));
     if(inTransit)return{status:'DISPATCHED',shipment:inTransit,idempotent:true};
   }
-  const shipmentInput=warehouseShipment?{...input,sourceType:'RAW_WAREHOUSE'}:input;
+  const shipmentInput=warehouseShipment?{...input,
+    sourceType:requestedSource==='PROCESSED_WAREHOUSE'?'PROCESSED_WAREHOUSE':'RAW_WAREHOUSE'}:input;
   const plan=planShipment(shipmentInput);if(plan.status!=='PLANNED')return plan;
+  const sourceWarehouseId=String(input.warehouseId||plan.sourceWarehouseId||'WH-'+cid+'-RAW');
   const strategicPolicy=g.Omega?.ResourceStrategicPolicyRuntime||g.OmegaResourceStrategicPolicyRuntime;
   const dispatchBlockade=strategicPolicy?.isRouteBlocked?.(cid,{resourceId:plan.resourceId,
     transportMode:plan.route?.transportMode,routeId:plan.route?.routeId,
@@ -2223,7 +2243,8 @@ function dispatchShipment(input={}){
     quantity=capacityPreview.allowedQuantity;
   }
   if(quantity<=0)return{status:'BLOCKED',reason:'SOURCE_BATCH_QUANTITY_ZERO',batchId:sourceBatchId||null,plan,capacity:capacityPreview};
-  const reserved=reserveInventoryForShipment(cid,plan.resourceId,quantity,shipmentId);if(!reserved.ok)return{status:'BLOCKED',reason:reserved.reason,details:reserved,plan};
+  const reserved=reserveInventoryForShipment(cid,plan.resourceId,quantity,shipmentId,sourceWarehouseId);
+  if(!reserved.ok)return{status:'BLOCKED',reason:reserved.reason,details:reserved,plan};
   if(Number.isFinite(Number(reserved.quantity))&&reserved.quantity>0&&reserved.quantity<quantity){
     quantity=reserved.quantity;quantityAdjustmentReason='WAREHOUSE_AVAILABLE_AFTER_RESERVATIONS';
   }
@@ -2234,7 +2255,6 @@ function dispatchShipment(input={}){
   const shipmentTravelDays=Math.max(0,num(route.travelTimeDays)||0);
   const shipmentEtaTurns=Math.max(1,num(route.etaTurn)-turn());
   const shipmentEtaDate=factoryAddGameDays(factoryCurrentGameDate(),shipmentEtaTurns*daysPerTurn());
-  const sourceWarehouseId=String(input.warehouseId||sourceBatch?.warehouseId||plan.sourceWarehouseId||('WH-'+cid+'-RAW'));
   const s={shipmentId,shipmentType,countryId:cid,siteId:warehouseShipment?null:plan.siteId,resourceId:plan.resourceId,
     factoryId:plan.factoryId,quantity,unit:input.unit||sourceBatch?.unit||'TONNES',
     batchId:sourceBatchId||null,occurrenceKey:input.occurrenceKey||sourceBatch?.occurrenceKey||null,
@@ -2789,8 +2809,12 @@ function advanceShipments(c){
       continue;
     }
     const rid=tok(s.resourceId),quantity=Math.max(0,num(s.quantity)||0),r=resourceState(cid);
-    const warehouse=r.warehouse||{},available=Math.max(0,num(warehouse.availableByResource?.[rid])||0);
-    const reserved=Math.max(0,num(warehouse.reservedByResource?.[rid])||0);
+    const warehouseId=String(s.sourceWarehouseId||s.warehouseId||('WH-'+cid+'-RAW'));
+    const sourceWarehouse=warehouseForShipment(r,cid,warehouseId),warehouse=sourceWarehouse.warehouse;
+    const warehouseKey=quantityObjectKey(warehouse.availableByResource||{},rid);
+    const reservedKey=quantityObjectKey(warehouse.reservedByResource||{},rid)||rid;
+    const available=warehouseKey===null?0:Math.max(0,num(warehouse.availableByResource[warehouseKey])||0);
+    const reserved=Math.max(0,num(warehouse.reservedByResource?.[reservedKey])||0);
     if(quantity<=0||available+1e-9<quantity||reserved+1e-9<quantity){
       s.status='BLOCKED_LEDGER_MISMATCH';s.blockReason='WAREHOUSE_AVAILABLE_OR_RESERVATION_MISMATCH';s.blockedTurn=turn();markShipmentDeliveryAttempt(s);
       emit('OMEGA_RESOURCE_DELIVERY_BLOCKED',cid,{shipmentId:s.shipmentId,siteId:s.siteId,resourceId:rid,quantity,available,reserved,reason:s.blockReason});
@@ -2820,7 +2844,11 @@ function advanceShipments(c){
       }
     }
     warehouse.availableByResource=warehouse.availableByResource||{};warehouse.reservedByResource=warehouse.reservedByResource||{};
-    warehouse.availableByResource[rid]=Math.max(0,available-quantity);warehouse.reservedByResource[rid]=Math.max(0,reserved-quantity);
+    const warehouseResourceKey=warehouseKey||rid;
+    warehouse.availableByResource[warehouseResourceKey]=Math.max(0,available-quantity);
+    warehouse.reservedByResource[reservedKey]=Math.max(0,reserved-quantity);
+    if(sourceWarehouse.kind==='PROCESSED')r.processedWarehouse=warehouse;
+    else r.warehouse=warehouse;
     if(sourceBatch){
       const sourceRemaining=Math.max(0,num(sourceBatch.remainingQuantity!=null?sourceBatch.remainingQuantity:sourceBatch.quantity)||0);
       sourceBatch.remainingQuantity=Math.max(0,sourceRemaining-quantity);
@@ -4463,7 +4491,7 @@ function transferFactoryInputsFromWarehouse(countryId,asset,recipe,allocationTar
     const candidates=batches.filter(batch=>tok(batch?.resourceId||batch?.materialIdentity)===rid&&
       !siteFlowBatchIds.has(String(batch?.batchId||''))&&
       !nonTransferable.has(String(batch?.status||'').toUpperCase())&&
-      factorySourceWarehouse(rs,batch).kind==='RAW'&&
+      ['RAW','PROCESSED'].includes(factorySourceWarehouse(rs,batch).kind)&&
       Math.max(0,num(batch?.remainingQuantity!=null?batch.remainingQuantity:batch?.quantity)||0)>1e-9&&
       batchBelongsToBoundFactorySite(rs,batch,boundSourceSiteId,flowSiteByBatchId))
       .sort((a,b)=>(num(a?.createdTurn)||0)-(num(b?.createdTurn)||0));
@@ -4497,10 +4525,13 @@ function transferFactoryInputsFromWarehouse(countryId,asset,recipe,allocationTar
       const amount=Math.min(remaining/bridge.factor,Math.max(0,warehouseAvailable-reserved),sourceRemaining,lotRemaining,countryAvailable);
       if(amount<=1e-9)continue;
       const warehouseId=String(wh.warehouseId||('WH-'+cid+'-RAW'));
-      const warehouseSite={siteId:warehouseId,countryId:cid,siteName:'Raw resource warehouse · '+cid,
-        siteType:'RAW_MATERIAL_WAREHOUSE',real:{resourceId:rid},simulation:{transportRoute:[]}};
+      const warehouseKind=source.kind==='PROCESSED'?'PROCESSED_WAREHOUSE':'RAW_WAREHOUSE';
+      const warehouseSite={siteId:warehouseId,countryId:cid,
+        siteName:(source.kind==='PROCESSED'?'Processed goods warehouse · ':'Raw resource warehouse · ')+cid,
+        siteType:source.kind==='PROCESSED'?'PROCESSED_GOODS_WAREHOUSE':'RAW_MATERIAL_WAREHOUSE',
+        real:{resourceId:rid},simulation:{transportRoute:[]}};
       const dispatched=dispatchShipment({countryId:cid,siteId:warehouseId,site:warehouseSite,
-        sourceType:'RAW_WAREHOUSE',shipmentType:'WAREHOUSE_TO_FACTORY',warehouseId,
+        sourceType:warehouseKind,shipmentType:'WAREHOUSE_TO_FACTORY',warehouseId,
         resourceId:rid,quantity:amount,batchId,factoryId:String(asset.id||asset.assetId||asset.projectId),
         unit:sourceUnit,transportMode:rules()[rid]?.preferredModes?.[0]||undefined});
       if(dispatched?.status!=='DISPATCHED'||!dispatched.shipment){
