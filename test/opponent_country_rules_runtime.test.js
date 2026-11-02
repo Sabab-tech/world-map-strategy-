@@ -17,7 +17,7 @@ let resourceRuntime={
   inventory:{crude_oil:20}
 };
 
-const queued=[],actions=new Map(),handlers=new Map(),listeners=new Map();
+const queued=[],actions=new Map(),handlers=new Map(),listeners=new Map();let fetchCount=0;
 const state={
   simulation:{turn:1,session:{playerCountryId:'AAA'}},
   population:{BD:{labor:{available:100,skilled:50}}},
@@ -42,7 +42,7 @@ const fake={
   console:{log(){},error(){}},Map,Set,WeakMap,Object,Array,Number,String,JSON,Promise,Math,Date,
   CustomEvent:class{constructor(type,init={}){this.type=type;this.detail=init.detail;}},
   addEventListener(type,fn){const a=listeners.get(type)||[];a.push(fn);listeners.set(type,a);},
-  fetch:async()=>({ok:true,json:async()=>countries}),
+  fetch:async()=>{fetchCount++;return{ok:true,json:async()=>countries};},
   Game:{state},
   ResourceMinistryEngine:{getIntegratedResourceState(){return resourceRuntime;}},
   Omega:{
@@ -58,14 +58,42 @@ vm.createContext(fake);
 vm.runInContext(source,fake,{filename:'opponent_country_rules.js'});
 const api=fake.Omega.OpponentCountryRules;
 
-assert.equal(api.VERSION,'4.2.0');
+assert.equal(api.VERSION,'4.4.0');
 await api.initialize({fetchCountries:true});
-
+const fetchesBeforeOptional=fetchCount;
+await Promise.all([api.loadDataset('population'),api.loadDataset('population')]);
+assert.equal(fetchCount-fetchesBeforeOptional,1,'same dataset concurrent load is shared');
+assert.equal(api.releaseDataset('population'),true);
+assert.equal(api.getDataset('population'),undefined);
+const originalFetch=api.instance.gw.fetch;
+let resolveSharedFetch;
+api.instance.gw.fetch=()=>new Promise(resolve=>{resolveSharedFetch=resolve;});
+const internalSharedLoad=api.instance.gw.load('industry',{copy:false});
+const publicSharedLoad=api.instance.gw.load('industry',{copy:true});
+resolveSharedFetch({ok:true,json:async()=>({records:[{id:'SHARED'}]})});
+const [internalSharedValue,publicSharedValue]=await Promise.all([internalSharedLoad,publicSharedLoad]);
+publicSharedValue.records.push({id:'PUBLIC_MUTATION'});
+assert.equal(internalSharedValue.records.length,1,'public callers must receive a defensive copy even when sharing an internal load');
+api.releaseDataset('industry');
+let releaseDelayedFetch;
+api.instance.gw.fetch=()=>new Promise(resolve=>{releaseDelayedFetch=resolve;});
+const releasedInFlight=api.loadDataset('industry');
+assert.equal(api.releaseDataset('industry'),true,'releasing a pending dataset should invalidate its request');
+releaseDelayedFetch({ok:true,json:async()=>({records:[{id:'STALE'}]})});
+assert.equal(await releasedInFlight,undefined,'a released request must not publish its stale result');
+assert.equal(api.getDataset('industry'),undefined,'a released request must not repopulate the cache');
+api.instance.gw.fetch=originalFetch;
 api.setDataset('countries',countries);
 api.setDataset('population',populationData);
 api.setDataset('economy',economyData);
 api.setDataset('cities',citiesData);
 api.setDataset('relations',relationsData);
+assert.ok(api.instance.gw.c.size<=5,'the source gateway must retain only the required roster and four optional working datasets');
+api.setDataset('industry',{rows:[{countryCode:'BD',output:1}]});
+assert.ok(api.instance.gw.c.size<=5,'new datasets must evict the least-recent optional dataset instead of accumulating');
+assert.equal(api.getDataset('population'),undefined,'the oldest optional dataset should be evicted from the bounded working set');
+api.setDataset('population',populationData);
+api.setDataset('economy',economyData);
 
 const bd=await api.evaluateCountry('BD',1);
 assert.equal(bd.status,'COMPLETE');
@@ -149,6 +177,9 @@ const trace=api.getTrace();
 assert.ok(trace.some(x=>x.layer==='L26_EVIDENCE_TRACE'));
 assert.ok(!trace.some(x=>x.type==='RUNTIME_COVERAGE'));
 
+const trimmedSnapshot=api.saveState();
+assert.ok(trimmedSnapshot.datasets.datasets.countries);
+for(const key of ['population','economy','cities','relations'])assert.equal(trimmedSnapshot.datasets.datasets[key],undefined);
 const diagnostics=api.diagnostics();
 assert.equal(diagnostics.layers,28);
 assert.ok(diagnostics.executedLayers>0 && diagnostics.executedLayers<=diagnostics.layers);
@@ -158,9 +189,50 @@ assert.ok(diagnostics.approvedPolicyLayer.scenarioRules>=20);
 assert.equal(diagnostics.approvedPolicyLayer.numericStateTransitions,0);
 assert.equal(diagnostics.dataTruth.syntheticFallbackTraceEntries,0);
 
+const originalRuntimeAnalyze=api.instance.runtimeFlow.analyze.bind(api.instance.runtimeFlow);
+let skippedRuntimeAnalysisCalls=0;
+api.instance.scheduler.dirty.delete('BD');
+api.instance.scheduler.nextDue.set('BD',20);
+const originalSnap=api.instance.kernel.snap.bind(api.instance.kernel);
+const originalGraphBuild=api.instance.graph.build.bind(api.instance.graph);
+let skippedSnapshotCalls=0,skippedGraphBuildCalls=0;
+api.instance.kernel.snap=(...args)=>{skippedSnapshotCalls++;return originalSnap(...args);};
+api.instance.graph.build=(...args)=>{skippedGraphBuildCalls++;return originalGraphBuild(...args);};
+api.instance.runtimeFlow.analyze=(...args)=>{skippedRuntimeAnalysisCalls++;return originalRuntimeAnalyze(...args);};
+const skippedRun=await api.evaluateCountry('BD',19);
+assert.equal(skippedRun.status,'SKIPPED');
+assert.equal(skippedRuntimeAnalysisCalls,0,'unscheduled countries must skip expensive resource-flow analysis');
+assert.equal(skippedSnapshotCalls,0,'unscheduled countries must return before country snapshot hydration');
+assert.equal(skippedGraphBuildCalls,0,'unscheduled countries must not rebuild the dependency graph');
+api.instance.graph.build=originalGraphBuild;
+api.instance.kernel.snap=originalSnap;
+api.instance.runtimeFlow.analyze=originalRuntimeAnalyze;
+assert.equal(api.markDirty('BD',['OUTPUT'],'TEST_SOURCE_UPDATE'),true);
+assert.equal(api.instance.runs.has('BD'),false,'dirty state must evict the stale country analysis');
+api.instance.kernel.hyd.set('BD',{turn:18});
+assert.equal(api.markDirty('BD',['RESOURCE_STOCK'],'TEST_INVENTORY_UPDATE'),true);
+assert.equal(api.instance.kernel.hyd.has('BD'),false,'dirty state must evict stale hydrated state');
+const dirtyRun=await api.evaluateCountry('BD',19);
+assert.equal(dirtyRun.status,'COMPLETE','a dirty country must be evaluated immediately');
+api.instance.scheduler.nextDue.set('BD',99);
+api.invalidateAllDerived();
+assert.equal(api.instance.scheduler.last.size,0,'source invalidation must reset the previous evaluation clock');
+const sourceRefreshRun=await api.evaluateCountry('BD',19);
+assert.equal(sourceRefreshRun.status,'COMPLETE','a source revision must force recalculation even within the same game turn');
+
+const stressCountryIds=[...new Set(countries.slice(0,90).map(row=>row.code).filter(Boolean))];
+let stressTurn=10;
+for(const countryId of stressCountryIds)await api.evaluateCountry(countryId,stressTurn++);
+assert.equal(api.instance.runs.size,64,'derived country analyses must stay within the LRU cache bound');
+assert.equal(api.diagnostics().countryRunCacheLimit,64);
 const saved=api.saveState();
 assert.equal(saved.schemaVersion,6);
+assert.equal(Object.keys(saved.runs||{}).length,0,'derived country analyses must not be written to autosaves');
+assert.equal(Object.keys(saved.hydrated||{}).length,0,'hydrated source snapshots must not be written to autosaves');
 api.loadState(saved);
+assert.equal(api.instance.runs.size,0,'derived country analyses must be rebuilt after loading a save');
+assert.equal(api.instance.kernel.hyd.size,0,'hydrated data must be rebuilt after loading a save');
+assert.ok(saved.trace.length<=128,'only a small diagnostic trace window should be persisted');
 
 console.log('OMEGA AUTONOMOUS WORLD CORE TEST PASSED');
 console.log(JSON.stringify({

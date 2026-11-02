@@ -22,6 +22,67 @@ const OmegaReasoningDispatcher = globalThis.OmegaReasoningDispatcher || null;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const INDEX_PATH = path.join(__dirname, 'index.html');
+const COUNTRY_GENERAL_REGISTRY_PATH = path.join(__dirname, 'country_general_data_registry_v1.json');
+const COUNTRY_SECTOR_PROFILES_PATH = path.join(__dirname, 'country_sector_profiles_v1.json');
+const COUNTRY_DOMAIN_FILES = Object.freeze({
+  cities: path.join(__dirname, 'cities.json'),
+  economy: path.join(__dirname, 'economy.json'),
+  population: path.join(__dirname, 'population.json'),
+  society: path.join(__dirname, 'society.json')
+});
+const normalizeCountryLookup = value => String(value ?? '').normalize('NFKD')
+  .replace(/[\u0300-\u036f]/g, '').trim().toUpperCase().replace(/[^A-Z0-9]+/g, '');
+function countryRowMatches(row, identityFields, lookup) {
+  if (!row || !row.identity) return false;
+  const pairs = Array.isArray(row.identity)
+    ? row.identity.map((value,index)=>({field:identityFields[index],value}))
+    : Object.entries(row.identity).map(([field,value])=>({field,value}));
+  return pairs.some(({field,value}) => value != null && value !== '' &&
+    (!field || ['iso2','iso3','countryCode','numericCode','name','officialName','code','countryName'].includes(field)) &&
+    normalizeCountryLookup(value) === lookup);
+}
+const transientCountryData = new Map();
+const TRANSIENT_COUNTRY_DATA_TTL_MS = 25000;
+async function readTransientCountryDataset(filePath) {
+  const stat=await fs.promises.stat(filePath);
+  const revision=`${stat.size}:${stat.mtimeMs}:${stat.ctimeMs}`;
+  let current=transientCountryData.get(filePath);
+  if(current&&current.revision!==revision){
+    clearTimeout(current.timer);
+    transientCountryData.delete(filePath);
+    current=null;
+  }
+  if(current&&current.data){
+    clearTimeout(current.timer);
+    current.timer=setTimeout(()=>{
+      if(transientCountryData.get(filePath)===current)transientCountryData.delete(filePath);
+    },TRANSIENT_COUNTRY_DATA_TTL_MS);
+    current.timer.unref?.();
+    return current.data;
+  }
+  if(current&&current.promise)return current.promise;
+  const entry={revision,data:null,promise:null,timer:null};
+  entry.promise=fs.promises.readFile(filePath,'utf8').then(raw=>JSON.parse(raw)).then(data=>{
+    if(transientCountryData.get(filePath)!==entry)return data;
+    entry.data=data;entry.promise=null;
+    entry.timer=setTimeout(()=>{
+      if(transientCountryData.get(filePath)===entry)transientCountryData.delete(filePath);
+    },TRANSIENT_COUNTRY_DATA_TTL_MS);
+    entry.timer.unref?.();
+    return data;
+  }).catch(error=>{
+    if(transientCountryData.get(filePath)===entry)transientCountryData.delete(filePath);
+    throw error;
+  });
+  transientCountryData.set(filePath,entry);
+  return entry.promise;
+}
+async function countryScopedDataset(filePath,lookup,identityFieldsFor) {
+  const data=await readTransientCountryDataset(filePath);
+  const rows=Array.isArray(data?.countries)?data.countries:[];
+  const row=rows.find(item=>countryRowMatches(item,identityFieldsFor(data),lookup));
+  return {data,row};
+}
 const CANDIDATE_MODELS = ['gemini-2.5-flash','gemini-2.0-flash'];
 const resourceDecisionAiRateLimits = new Map();
 const ministerConsultRateLimits = new Map();
@@ -200,6 +261,65 @@ function renderIndex(res, next) {
     res.type('html').send(output);
   });
 }
+app.get('/api/omega/country-domain/:domain/:countryKey', async (req,res) => {
+  const domain=String(req.params.domain||'').toLowerCase();
+  const filePath=COUNTRY_DOMAIN_FILES[domain];
+  const lookup=normalizeCountryLookup(req.params.countryKey);
+  if(!filePath||!lookup)return res.status(400).json({ok:false,error:'COUNTRY_DOMAIN_REQUEST_INVALID'});
+  try {
+    const data=await readTransientCountryDataset(filePath);
+    let record=null;
+    if(domain==='cities') {
+      const rows=Array.isArray(data?.countries)?data.countries:(Array.isArray(data)?data:[]);
+      record=rows.find(row=>normalizeCountryLookup(row?.name||row?.countryName||row?.country_name)===lookup)||null;
+    } else if(data&&typeof data==='object'&&!Array.isArray(data)) {
+      const key=Object.keys(data).find(candidate=>normalizeCountryLookup(candidate)===lookup);
+      if(key!==undefined)record=data[key];
+      else if(Array.isArray(data.countries)) {
+        record=data.countries.find(row=>normalizeCountryLookup(row?.name||row?.countryName||row?.country_name)===lookup)||null;
+      }
+    }
+    res.setHeader('Cache-Control','private, no-cache, must-revalidate');
+    return res.json({domain,countryKey:req.params.countryKey,record:record&&typeof record==='object'?record:null});
+  } catch(error) {
+    console.warn('[Country Data API] Domain record unavailable:',domain,error?.message||error);
+    return res.status(503).json({ok:false,error:'COUNTRY_DOMAIN_UNAVAILABLE',domain});
+  }
+});
+app.get('/api/omega/country-general-data/:countryId', async (req,res) => {
+  const lookup=normalizeCountryLookup(req.params.countryId);
+  if(!lookup)return res.status(400).json({ok:false,error:'COUNTRY_ID_REQUIRED'});
+  try {
+    const found=await countryScopedDataset(COUNTRY_GENERAL_REGISTRY_PATH,lookup,
+      data=>data?.metadata?.recordSchema?.identityFields||[]);
+    if(!found.row)return res.status(404).json({ok:false,error:'COUNTRY_PROFILE_NOT_FOUND'});
+    const metadata=found.data.metadata||{};
+    res.setHeader('Cache-Control','private, no-cache, must-revalidate');
+    return res.json({
+      metadata:{datasetId:metadata.datasetId||'OMEGA_COUNTRY_GENERAL_DATA_REGISTRY_V1',
+        schemaVersion:metadata.schemaVersion||null,recordSchema:metadata.recordSchema,
+        provenanceEncoding:metadata.provenanceEncoding||{}},
+      fieldCatalogue:Array.isArray(found.data.fieldCatalogue)?found.data.fieldCatalogue:[],
+      countries:[found.row]
+    });
+  } catch(error) {
+    console.warn('[Country Data API] General profile unavailable:',error?.message||error);
+    return res.status(503).json({ok:false,error:'COUNTRY_PROFILE_UNAVAILABLE'});
+  }
+});
+app.get('/api/omega/country-sector-profile/:countryId', async (req,res) => {
+  const lookup=normalizeCountryLookup(req.params.countryId);
+  if(!lookup)return res.status(400).json({ok:false,error:'COUNTRY_ID_REQUIRED'});
+  try {
+    const found=await countryScopedDataset(COUNTRY_SECTOR_PROFILES_PATH,lookup,()=>[]);
+    if(!found.row)return res.status(404).json({ok:false,error:'COUNTRY_SECTOR_PROFILE_NOT_FOUND'});
+    res.setHeader('Cache-Control','private, no-cache, must-revalidate');
+    return res.json({profile:found.row});
+  } catch(error) {
+    console.warn('[Country Data API] Sector profile unavailable:',error?.message||error);
+    return res.status(503).json({ok:false,error:'COUNTRY_SECTOR_PROFILE_UNAVAILABLE'});
+  }
+});
 app.get('/', (req, res, next) => renderIndex(res, next));
 app.get('/index.html', (req, res, next) => renderIndex(res, next));
 app.use(express.static(__dirname, { index: false }));

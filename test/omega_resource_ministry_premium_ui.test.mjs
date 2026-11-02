@@ -47,14 +47,13 @@ test("resource visual layer is wired into the offline-first app without remote d
   assert.ok(html.includes(stylesheetTag), "premium resource stylesheet must be loaded by the app");
   assert.ok(sw.includes('"' + "./" + cssPath + '"'), "premium resource stylesheet must be precached offline");
   assert.ok(uiManifest.additionalStyles.includes(cssPath), "UI v2 manifest must document the resource style");
-  assert.match(sw, /omega-offline-atlas-shell-v69/, "offline cache must be invalidated for new visual assets");
+  assert.match(sw, /omega-offline-atlas-shell-v75/, "offline cache must be invalidated for new visual assets");
   const coreAssets = sw.slice(sw.indexOf("const CORE_ASSETS"), sw.indexOf("];", sw.indexOf("const CORE_ASSETS")));
   assert.ok(coreAssets.includes('"./assets/omega-industrial-icons-v1/transport/route-mine-origin.svg"'));
   assert.ok(coreAssets.includes('"./assets/omega-industrial-icons-v1/transport/route-warehouse-destination.svg"'));
   assert.ok(coreAssets.includes('"./' + cssPath + '"'), "premium stylesheet belongs in the precache list");
-  assert.ok(sw.includes("factoryIconManifest.transportVariants"), "cargo-specific truck/train/ship/barge icons must be precached offline");
-  assert.ok(sw.includes("const resourceIcons = Array.isArray(factoryIconManifest.resources)"),
-    "offline install must enumerate the canonical resource icon manifest");
+  assert.match(sw,/\[\s*"factories"\s*,\s*"resources"\s*,\s*"transportVariants"\s*\]/,
+    "offline install must enumerate all canonical icon manifest groups, including cargo-specific transport variants");
   assert.ok(sw.includes('new URL("./assets/omega-industrial-icons-v1/" + file, APP_BASE).href'),
     "offline install must resolve icon paths against the local application base");
   assert.equal(json("assets/omega-industrial-icons-v1/manifest.json").resources.length, 42);
@@ -621,7 +620,7 @@ test("all resource SVGs use a light metallic backplate for readable dark mineral
     assert.match(svg, /data-omega-icon-kind="resource"/);
   }
   assert.match(manifest.rendering.background, /light silver-metal.*factory SVGs retain their shared dark-navy/i);
-  assert.match(read("omega-offline-map-sw.js"), /omega-offline-atlas-shell-v69/);
+  assert.match(read("omega-offline-map-sw.js"), /omega-offline-atlas-shell-v75/);
 });
 
 

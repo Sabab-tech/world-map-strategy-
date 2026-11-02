@@ -3,7 +3,7 @@
  */
 (function (root) {
   'use strict';
-  const VERSION = '1.0.0';
+  const VERSION = '1.1.0';
   if (root.OmegaCountryDataGateway?.VERSION === VERSION) return;
   const sources = new Map();
   const str = v => String(v == null ? '' : v).trim();
@@ -327,11 +327,40 @@
   function auditAllCountries(){const profiles=runtime()?.listProfiles?.()||[],reports=profiles.map(p=>({countryCode:p.countryCode,name:p.name,...auditCountry(p.countryCode)})),errors=reports.flatMap(r=>r.errors.map(e=>({countryCode:r.countryCode,name:r.name,...e}))),warnings=reports.flatMap(r=>r.warnings.map(e=>({countryCode:r.countryCode,name:r.name,...e})));return{schemaVersion:VERSION,countryCount:reports.length,ok:errors.length===0,errorCount:errors.length,warningCount:warnings.length,missingFieldCount:reports.reduce((n,r)=>n+r.missingFields.length,0),errors,warnings,reports};}
   function getField(country,key){return getSnapshot(country).fields[key]||missing(key);}
   function diagnostics(){return{version:VERSION,sourceCount:sources.size,sourceIds:[...sources.keys()],runtimeAvailable:!!runtime(),runtimeReady:!!runtime()?.isReady?.(),generalRuntimeAvailable:!!general(),generalRuntimeReady:!!general()?.diagnostics?.().ready,countryCount:runtime()?.diagnostics?.().profileCount||0};}
-  function init(){const tasks=[];if(runtime()?.ready)tasks.push(Promise.resolve(runtime().ready));if(general()?.init)tasks.push(Promise.resolve(general().init()));return Promise.all(tasks).then(()=>{for(const id of ['economy_global_profiles_v1.json','cities.json','economy.json','population.json','society.json','country_general_data_registry_v1.json']){const data=runtime()?.getSourceDataset?.(id);if(data&&!sources.has(id))registerSource(id,data,{authority:'EXISTING_RUNTIME_SOURCE'});}const geo=root.Game?.Map?.countryGeoJSON||root.Game?.Map?.geoData||root.worldGeoJSON||root.worldData;if(geo&&!sources.has('world.json'))registerSource('world.json',geo,{authority:'GEOGRAPHIC_REFERENCE'});const roster=root.OmegaGeographicRegionSystem?.countries||root.countryRoster||root.countriesData;if(roster&&!sources.has('countries.json'))registerSource('countries.json',roster,{authority:'CANONICAL_MAP_ROSTER'});return diagnostics();});}
-  root.OmegaCountryDataGateway=Object.freeze({VERSION,init,resolveCountry,getSnapshot,getField,getValue,getDomainRecord,auditCountry,auditAllCountries,registerSource,diagnostics});
+  let activeCountry=null;
+  function init(countryValue){
+    const tasks=[];if(runtime()?.ready)tasks.push(Promise.resolve(runtime().ready));
+    if(countryValue&&general()?.init)tasks.push(Promise.resolve(general().init(countryValue)));
+    return Promise.all(tasks).then(()=>{
+      const base=runtime()?.getSourceDataset?.('economy_global_profiles_v1.json');
+      if(base&&!sources.has('economy_global_profiles_v1.json'))registerSource('economy_global_profiles_v1.json',base,{authority:'EXISTING_RUNTIME_SOURCE'});
+      const geo=root.Game?.Map?.countryGeoJSON||root.Game?.Map?.geoData||root.worldGeoJSON||root.worldData;
+      if(geo&&!sources.has('world.json'))registerSource('world.json',geo,{authority:'GEOGRAPHIC_REFERENCE'});
+      const roster=root.OmegaGeographicRegionSystem?.countries||root.countryRoster||root.countriesData;
+      if(roster&&!sources.has('countries.json'))registerSource('countries.json',roster,{authority:'CANONICAL_MAP_ROSTER'});
+      return diagnostics();
+    });
+  }
+  async function prepareCountry(countryValue){
+    if(!countryValue)return{status:'COUNTRY_REQUIRED'};
+    await init(countryValue);
+    const identity=resolveCountry(countryValue),next=identity?.countryCode||identity?.iso2||countryValue;
+    if(activeCountry&&String(activeCountry)!==String(next))general()?.releaseCountry?.(activeCountry);
+    activeCountry=next;
+    return{status:'READY',countryCode:next,snapshot:getSnapshot(next)};
+  }
+  function releaseCountry(countryValue){
+    general()?.releaseCountry?.(countryValue);runtime()?.releaseCountryData?.(countryValue);
+    if(String(activeCountry)===String(countryValue))activeCountry=null;return true;
+  }
+  root.OmegaCountryDataGateway=Object.freeze({VERSION,init,prepareCountry,releaseCountry,resolveCountry,getSnapshot,getField,getValue,getDomainRecord,auditCountry,auditAllCountries,registerSource,diagnostics});
   root.Omega=root.Omega||{};root.Omega.CountryDataGateway=root.OmegaCountryDataGateway;
   function emit(type,detail){try{if(typeof root.CustomEvent==='function')root.dispatchEvent?.(new root.CustomEvent(type,{detail}));}catch(_){}}
-  root.addEventListener?.('OMEGA_COUNTRY_CONTEXT_CHANGED',event=>{const country=event?.detail?.countryId||event?.detail?.country;if(country)emit('OMEGA_COUNTRY_DATA_CONTEXT_READY',{countryId:country,snapshot:getSnapshot(country)});});
+  root.addEventListener?.('OMEGA_COUNTRY_CONTEXT_CHANGED',event=>{
+    const country=event?.detail?.countryId||event?.detail?.country;
+    if(country)prepareCountry(country).then(result=>emit('OMEGA_COUNTRY_DATA_CONTEXT_READY',result))
+      .catch(error=>root.console?.warn?.('[Country Data Gateway] Country context deferred:',error?.message||error));
+  });
   root.addEventListener?.('OMEGA_SIMULATION_TURN_COMMITTED',()=>{const country=root.CountryIOS?.activeCountry||root.OmegaMinistryViewCountry||root.Game?.currentActiveCountry;if(country)emit('OMEGA_COUNTRY_DATA_REFRESHED',{countryId:country,snapshot:getSnapshot(country)});});
   init().catch(error=>root.console?.warn?.('[Country Data Gateway] Initialization deferred:',error?.message||error));
 })(typeof window!=='undefined'?window:globalThis);

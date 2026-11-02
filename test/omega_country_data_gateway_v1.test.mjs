@@ -59,6 +59,13 @@ test('live simulation values win and do not overwrite shared baselines',()=>{
   assert.equal(snap.raw.countryGeneralRecord.metrics.gdpCurrentUsd,460000000000);
 });
 
+test('selected-country preparation uses one country profile and not the global registry',async()=>{
+  const api=fixture(),result=await api.prepareCountry('Bangladesh');
+  assert.equal(result.status,'READY');assert.equal(result.countryCode,'BD');
+  assert.equal(result.snapshot.countryCode,'BD');
+  assert.equal(api.diagnostics().sourceIds.includes('country_general_data_registry_v1.json'),false);
+  assert.equal(api.releaseCountry('BD'),true);
+});
 test('unknown country never silently falls back to another country',()=>{
   const snap=fixture().getSnapshot('Country Not In Registry');
   assert.equal(snap.status,'COUNTRY_NOT_RESOLVED');assert.equal(snap.countryCode,null);

@@ -638,7 +638,7 @@ test('every mapped resource site joins the executable runtime and has a one-tap 
   assert.match(endowmentSource, /simulation\.routeAuthority='SIMULATED_TOPOLOGY_FALLBACK'/);
   assert.match(endowmentSource, /distanceKm:null,distanceStatus:'UNOBSERVED'/,
     'a fallback route must not invent an observed transport distance');
-  assert.match(endowmentSource, /async function startCountryProduction\(countryId,siteIds=null\)/);
+  assert.match(endowmentSource, /async function startCountryProduction\(countryId,siteIds=null(?:,options=\{\})?\)/);
   assert.match(endowmentSource, /PRODUCTION_ALREADY_STARTED_THIS_TURN/);
   assert.match(endowmentSource, /NO_UNATTEMPTED_SITE_OCCURRENCES/);
   assert.match(endowmentSource, /registerCanonicalSiteSimulationRecord/);

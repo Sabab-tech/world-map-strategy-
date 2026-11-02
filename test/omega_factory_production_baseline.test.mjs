@@ -413,7 +413,7 @@ test('invalid output recipe is rejected before any input batch is consumed', () 
   assert.equal((context.Game.state.resource.BGD.batches || []).length, 0);
 });
 
-test('processed mine-derived batches route to a downstream factory and reconcile a full multi-input cycle', () => {
+test('processed mine-derived batches route to a downstream factory and reconcile a full multi-input cycle', async () => {
   const { context, api } = makeRuntime();
   const assets = [makeSteelAsset({ inputInventory: {}, inputBatchLots: [] })];
   context.Game.state.economy.BGD = { unemploymentCount: 600000, laborForce: 6000000, unemployment_rate: 10, productionAssets: assets };
@@ -484,7 +484,7 @@ test('processed mine-derived batches route to a downstream factory and reconcile
     .every(row => row.status === 'DELIVERED' && ['AWAITING_INPUTS','IN_PROGRESS'].includes(row.processingStatus)));
   context.Game.state.simulation.turn = cycle.finishTurn;
   context.Game.state.simulation.date = cycle.finishDate;
-  const finished = api.processPendingFactoryInputs('BGD');
+  const finished = await api.processPendingFactoryInputs('BGD');
   assert.equal(finished.completedCount, 1);
   assert.equal(finished.completed[0].status, 'COMPLETED');
   assert.ok(network.shipments.filter(row => row.shipmentType === 'FACTORY_INPUT')
@@ -799,7 +799,7 @@ test('factory construction calendar honours exact game-calendar month dates', ()
     recipeId: 'STEEL_PRIMARY_ROUTE_V1', requestId: 'CALENDAR-6-MONTHS', buildMonths: 6 }).idempotent, true);
 });
 
-test('fifty factories receive proportional input when the country warehouse is short', () => {
+test('fifty factories receive proportional input when the country warehouse is short', async () => {
   const { context, api } = makeRuntime();
   const assets = Array.from({ length: 50 }, (_, index) => ({
     id: 'FAC-PROP-' + String(index + 1).padStart(2, '0'),
@@ -835,7 +835,7 @@ test('fifty factories receive proportional input when the country warehouse is s
       reservedByResource: {}, storedBatchIds: ['BATCH-PROP-IRON-8'], receipts: []
     }
   };
-  const result = api.processPendingFactoryInputs('BGD');
+  const result = await api.processPendingFactoryInputs('BGD');
   assert.equal(result.startedCount, 50, JSON.stringify(result.blocked));
   assert.equal(result.inputRequestCount, 50);
   assert.equal(result.warehouseTransferCount, 50);
@@ -859,7 +859,7 @@ test('fifty factories receive proportional input when the country warehouse is s
     'aggregate transferred stock must reconcile at the resource ledger precision');
   context.Game.state.simulation.turn = 2;
   context.Game.state.simulation.date = '2015-01-02';
-  const completed = api.processPendingFactoryInputs('BGD');
+  const completed = await api.processPendingFactoryInputs('BGD');
   assert.equal(completed.completedCount, 50);
   assert.equal(completed.startedCount, 0);
   assert.equal(Number(resource.processedWarehouse.availableByResource.IRON_CONCENTRATE.toFixed(6)), 32);
@@ -869,7 +869,7 @@ test('fifty factories receive proportional input when the country warehouse is s
   assert.equal(resource.batches.filter(row => row.stage === 'FINISHED' && row.resourceId === 'IRON_CONCENTRATE').length, 50);
 });
 
-test('factory productivity is calculated from live supply ratios and each factory capacity', () => {
+test('factory productivity is calculated from live supply ratios and each factory capacity', async () => {
   const scenarios = [
     { name: '40 percent supply', capacities: [1, 1, 1, 1, 1], supply: 0.4 },
     { name: '65 percent supply', capacities: [1, 1, 1, 1, 1], supply: 0.65 },
@@ -923,7 +923,7 @@ test('factory productivity is calculated from live supply ratios and each factor
       }
     };
 
-    const result = api.processPendingFactoryInputs('BGD');
+    const result = await api.processPendingFactoryInputs('BGD');
     assert.equal(result.startedCount, assets.length, scenario.name + ': every eligible factory should start');
     assert.equal(result.blocked.length, 0, scenario.name + ': no factory should be starved by iteration order');
 
@@ -943,7 +943,7 @@ test('factory productivity is calculated from live supply ratios and each factor
 });
 
 
-test('factory output follows the minimum live bottleneck across materials, workforce, electricity and water', () => {
+test('factory output follows the minimum live bottleneck across materials, workforce, electricity and water', async () => {
   const scenarios = [
     { name: 'workforce-limited', materialRatio: 1, workforceRatio: 0.8, electricityRatio: 1, waterRatio: 1, expectedRatio: 0.8 },
     { name: 'electricity-limited', materialRatio: 1, workforceRatio: 1, electricityRatio: 0.7, waterRatio: 0.9, expectedRatio: 0.7 },
@@ -992,7 +992,7 @@ test('factory output follows the minimum live bottleneck across materials, workf
       authority: 'TEST_FIXTURE', status: 'AVAILABLE', simulationOnly: true, assets: []
     } } };
 
-    const result = api.processPendingFactoryInputs('BGD');
+    const result = await api.processPendingFactoryInputs('BGD');
     assert.equal(result.startedCount, 1, scenario.name + ': a partially supplied factory must still start');
     assert.equal(result.blocked.length, 0, scenario.name + ': partial constraints must reduce output, not block operation');
     const expectedPct = Number((scenario.expectedRatio * 100).toFixed(2));
@@ -1036,7 +1036,7 @@ test('multi-input factory reduces the live production quantity for workforce and
   assert.equal(result.productionConstraints.effectiveRatio, 0.5);
   assert.equal(asset.productionHealth.productivityPct, 50);
 });
-test('future-dated paused factory does not take stock allocation from ready factories', () => {
+test('future-dated paused factory does not take stock allocation from ready factories', async () => {
   const { context, api } = makeRuntime();
   const paused = {
     id: 'FAC-PAUSED-FUTURE', countryId: 'BGD',
@@ -1093,7 +1093,7 @@ test('future-dated paused factory does not take stock allocation from ready fact
     }
   };
 
-  const result = api.processPendingFactoryInputs('BGD');
+  const result = await api.processPendingFactoryInputs('BGD');
   assert.equal(result.startedCount, 1, JSON.stringify(result.blocked));
   assert.equal(result.inputRequestCount, 1,
     'only the factory eligible to start this turn should receive a requisition');
@@ -1107,7 +1107,7 @@ test('future-dated paused factory does not take stock allocation from ready fact
   assert.equal(resource.warehouse.availableByResource.iron_ore, 0);
 });
 
-test('factory production scheduler waits for cycle time and posts output only on the game-calendar finish date', () => {
+test('factory production scheduler waits for cycle time and posts output only on the game-calendar finish date', async () => {
   const { context, api } = makeRuntime();
   const asset = makeSteelAsset();
   context.Game.state.simulation.date = '2015-01-01';
@@ -1139,16 +1139,16 @@ test('factory production scheduler waits for cycle time and posts output only on
     'starting a cycle and rejecting a competing immediate run must not debit input stock');
   assert.deepEqual(Object.fromEntries(asset.inputBatchLots.map(lot => [lot.batchId, Number(lot.remainingQuantity)])), inputLotBalancesBeforeCycle);
   assert.equal((context.Game.state.resource.BGD.batches || []).length, 0, 'no output should exist when the cycle only starts');
-  const sameDay = api.processPendingFactoryInputs('BGD');
+  const sameDay = await api.processPendingFactoryInputs('BGD');
   assert.equal(sameDay.completedCount, 0);
   assert.equal((context.Game.state.resource.BGD.batches || []).length, 0);
   context.Game.state.simulation.turn = 2;
   context.Game.state.simulation.date = '2015-01-02';
-  api.processPendingFactoryInputs('BGD');
+  await api.processPendingFactoryInputs('BGD');
   assert.equal((context.Game.state.resource.BGD.batches || []).length, 0);
   context.Game.state.simulation.turn = 3;
   context.Game.state.simulation.date = '2015-01-03';
-  const done = api.processPendingFactoryInputs('BGD');
+  const done = await api.processPendingFactoryInputs('BGD');
   assert.equal(done.completedCount, 1);
   assert.equal(done.completed[0].status, 'COMPLETED');
   assert.equal(context.Game.state.resource.BGD.processedWarehouse.availableByResource.STEEL, 36);
@@ -1158,7 +1158,7 @@ test('factory production scheduler waits for cycle time and posts output only on
   assert.equal(asset.productionHealth.productivityPct, 50);
 });
 
-test('warehouse feeder transfers real tracked stock and schedules proportional partial factory production', () => {
+test('warehouse feeder transfers real tracked stock and schedules proportional partial factory production', async () => {
   const { context, api } = makeRuntime();
   const asset = makeSteelAsset({ inputInventory: {}, inputBatchLots: [] });
   context.Game.state.simulation.date = '2015-01-01';
@@ -1179,7 +1179,7 @@ test('warehouse feeder transfers real tracked stock and schedules proportional p
       stage: 'RAW', status: 'AVAILABLE', countryId: 'BGD', warehouseId: 'WH-BGD-RAW', createdTurn: 1 });
     r.inventoryLots[batchId] = { batchId, resourceId, quantity, remainingQuantity: quantity, unit: 'SIMULATION_RESOURCE_UNIT', status: 'AVAILABLE' };
   }
-  const result = api.processPendingFactoryInputs('BGD');
+  const result = await api.processPendingFactoryInputs('BGD');
   assert.equal(result.startedCount, 1);
   assert.equal(result.warehouseTransferCount, 4);
   assert.equal(result.started[0].productivityPct, 40);
@@ -1195,13 +1195,13 @@ test('warehouse feeder transfers real tracked stock and schedules proportional p
   assert.equal(r.batches.some(x => Object.keys(x).includes('STEEL')), false);
   context.Game.state.simulation.turn = 3;
   context.Game.state.simulation.date = '2015-01-03';
-  const completed = api.processPendingFactoryInputs('BGD');
+  const completed = await api.processPendingFactoryInputs('BGD');
   assert.equal(completed.completedCount, 1);
   assert.equal(r.processedWarehouse.availableByResource.STEEL, 28.8);
   assert.equal(r.inventory.STEEL, 28.8);
 });
 
-test('factory production health stops at zero required input and retains unconverted factory stock', () => {
+test('factory production health stops at zero required input and retains unconverted factory stock', async () => {
   const { context, api } = makeRuntime();
   const asset = makeSteelAsset({ inputInventory: { iron_concentrate: 60, coal_concentrate: 0, cement_feed: 10, copper_concentrate: 10 } });
   asset.inputBatchLots = asset.inputBatchLots.filter(row => row.resourceId !== 'coal_concentrate');
@@ -1210,7 +1210,7 @@ test('factory production health stops at zero required input and retains unconve
     electricityMWhPerDay: 1000000, waterM3PerDay: 1000000, authority: 'TEST_FIXTURE', status: 'AVAILABLE', simulationOnly: true, assets: []
   } } };
   const before = JSON.stringify(asset.inputInventory);
-  const result = api.processPendingFactoryInputs('BGD');
+  const result = await api.processPendingFactoryInputs('BGD');
   assert.equal(result.startedCount, 0);
   assert.equal(result.blocked.length, 1);
   assert.equal(asset.productionHealth.status, 'STOPPED');
@@ -1230,7 +1230,7 @@ test('factory UI keeps warning lamps compact and exposes month/date and producti
 });
 
 
-test('paused factory cycle resumes from new warehouse batches at the reduced attainable productivity', () => {
+test('paused factory cycle resumes from new warehouse batches at the reduced attainable productivity', async () => {
   const { context, catalog, api } = makeRuntime();
   const asset = makeSteelAsset();
   context.Game.state.simulation.date = '2015-01-01';
@@ -1258,7 +1258,7 @@ test('paused factory cycle resumes from new warehouse batches at the reduced att
 
   context.Game.state.simulation.turn = firstCycle.finishTurn;
   context.Game.state.simulation.date = firstCycle.finishDate;
-  const paused = api.processPendingFactoryInputs('BGD');
+  const paused = await api.processPendingFactoryInputs('BGD');
   assert.equal(paused.completedCount, 0);
   assert.equal(paused.startedCount, 0);
   assert.equal(asset.productionHealth.status, 'STOPPED');
@@ -1279,7 +1279,7 @@ test('paused factory cycle resumes from new warehouse batches at the reduced att
   resource.batches.push(batch);
   resource.inventoryLots[batch.batchId] = { ...batch, status: 'AVAILABLE' };
 
-  const resumed = api.processPendingFactoryInputs('BGD');
+  const resumed = await api.processPendingFactoryInputs('BGD');
   assert.equal(resumed.startedCount, 1, JSON.stringify(resumed));
   assert.equal(resumed.blocked.length, 0, JSON.stringify(resumed.blocked));
   const nextCycle = context.Game.state.resource.BGD.industrialNetwork.factoryProductionCycles[asset.id];
@@ -1438,7 +1438,7 @@ test('legacy and primary factory runtimes reserve shared utilities before anothe
 });
 
 
-test('all canonical factory types have executable catalog recipes and multi-route cycles preserve the selected recipe through warehouse completion', () => {
+test('all canonical factory types have executable catalog recipes and multi-route cycles preserve the selected recipe through warehouse completion', async () => {
   const { context, catalog, api } = makeRuntime();
   const profileTypes = Object.keys(catalog.factoryProfiles || {});
   assert.equal(profileTypes.length, 21, 'the existing canonical factory catalogue must remain at 21 types');
@@ -1496,7 +1496,7 @@ test('all canonical factory types have executable catalog recipes and multi-rout
   } } };
   api.reconcileFactoryEmployment('BGD');
 
-  const started = api.processPendingFactoryInputs('BGD');
+  const started = await api.processPendingFactoryInputs('BGD');
   assert.equal(started.startedCount, 1, JSON.stringify(started));
   const cycle = context.Game.state.resource.BGD.industrialNetwork.factoryProductionCycles[asset.id];
   assert.equal(cycle.recipeId, recipeId,
@@ -1508,7 +1508,7 @@ test('all canonical factory types have executable catalog recipes and multi-rout
 
   context.Game.state.simulation.turn = cycle.finishTurn;
   context.Game.state.simulation.date = cycle.finishDate;
-  const completed = api.processPendingFactoryInputs('BGD');
+  const completed = await api.processPendingFactoryInputs('BGD');
   assert.equal(completed.completedCount, 1, JSON.stringify(completed));
   const warehouse = context.Game.state.resource.BGD.processedWarehouse;
   assert.equal(warehouse.availableByResource.ALUMINUM_INGOT, 50);

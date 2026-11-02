@@ -50,7 +50,9 @@ test('country sector UI is wired into the existing page and offline app shell', 
  assert.doesNotMatch(sw,/"\.\/omega_country_sector_profile_ui_v1\.css"/,'legacy sector CSS is not preloaded');
  assert.match(sw,/"\.\/omega_ui_v2\/omega-ui-v2\.css"/);
  assert.match(sw,/omega_country_sector_profile_ui_v1\.js/);
- assert.match(sw,/country_sector_profiles_v1\.json/);
+ assert.equal(sw.includes('"./country_sector_profiles_v1.json"'),false,'full sector registry is not pre-cached');
+ assert.match(read('omega_country_sector_profile_ui_v1.js'),/api\/omega\/country-sector-profile/);
+ assert.match(read('omega_country_sector_profile_ui_v1.js'),/releaseData/);
  assert.match(sw,/country_sector_profile_schema_v1\.json/);
  assert.match(sw,/omega-offline-atlas-shell-v[0-9]+/);
 });

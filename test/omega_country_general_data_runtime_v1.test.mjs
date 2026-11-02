@@ -37,12 +37,21 @@ function countryRow(iso2,iso3,name,metrics){
 const fixture={metadata:{schemaVersion:'1.0.0',datasetId:'OMEGA_COUNTRY_GENERAL_DATA_REGISTRY_V1',countryAndTerritoryCount:2,recordSchema:schema,
  provenanceEncoding:{statuses:['WORLD_BANK_API_OBSERVATION'],sourceIds:['WORLD_BANK_WDI'],sourceNames:['Fixture source'],methods:['SOURCE_OBSERVATION'],missingCode:-1}},
  fieldCatalogue:metricFields.map(key=>({key,name:key,unit:key.includes('Pct')?'%':'source units'})),countries:[countryRow('AA','AAA','Alpha',alpha),countryRow('BB','BBB','Beta',beta)]};
-globalThis.fetch=async()=>({ok:true,json:async()=>fixture});
+let fetchCount=0;
+globalThis.fetch=async input=>{
+ fetchCount++;
+ const lookup=decodeURIComponent(String(input).split('/').pop()).toUpperCase();
+ const row=fixture.countries.find(item=>[item.identity[0],item.identity[1],item.identity[2]].some(value=>String(value).toUpperCase()===lookup));
+ return {ok:!!row,json:async()=>({...fixture,countries:row?[row]:[]})};
+};
 await import('../omega_country_general_data_runtime_v1.js');
 const runtime=globalThis.OmegaCountryGeneralDataRuntime;
 
 test('shared registry decoding keeps identity, provenance, metrics and geography',async()=>{
- assert.equal(await runtime.init(),true);assert.equal(runtime.diagnostics().recordCount,2);
+ assert.equal(await runtime.init(),true,'runtime initialization is a no-op when no country is selected');
+ assert.equal(fetchCount,0);assert.equal(runtime.diagnostics().recordCount,0);assert.equal(runtime.diagnostics().ready,false);
+ assert.equal(await runtime.init('AAA'),true);assert.equal(runtime.diagnostics().recordCount,1);
+ assert.equal(await runtime.init('BBB'),true);assert.equal(runtime.diagnostics().recordCount,2);
  const a=runtime.getCountryRecord('AAA');assert.equal(a.identity.name,'Alpha');assert.equal(a.generalFacts.capital,'Alpha Capital');
  assert.equal(a.metrics.gdpCurrentUsd,500000000000);assert.equal(a.metricMetadata.gdpCurrentUsd.year,2022);
  const gdpMeta=a.metricMetadata.gdpCurrentUsd;
@@ -68,15 +77,56 @@ test('shared registry decoding keeps identity, provenance, metrics and geography
  assert.deepEqual(a.localGeography.economicCenters,[{name:'Alpha City',description:'fixture city record'}]);
  assert.equal(runtime.getCountryRecord('BBB').metrics.populationTotal,30000000);assert.equal(runtime.getCountryRecord('MISSING'),null);
 });
-test('country traits are derived from data and change opponent action scoring',async()=>{
- globalThis.OmegaCanonicalIdentityRegistry={resolveCountry:v=>({id:String(v||'').toUpperCase(),raw:{}}),list:()=>[{id:'AAA'},{id:'BBB'}]};
+test('same-country requests coalesce and selected records can be released',async()=>{
+ runtime.releaseCountry('AAA');const before=fetchCount;
+ const results=await Promise.all([runtime.init('AAA'),runtime.init('AAA')]);
+ assert.deepEqual(results,[true,true]);assert.equal(fetchCount-before,1);
+ assert.equal(runtime.diagnostics().recordCount,2);
+ assert.equal(runtime.releaseCountry('AAA'),true);
+ assert.equal(runtime.getCountryRecord('AAA'),null);
+ assert.equal(runtime.diagnostics().recordCount,1);
+ assert.equal(runtime.diagnostics().cacheLimit,6);
+});
+test('missing country behaviour evidence stays unobserved instead of fabricating strategic traits',async()=>{
+ globalThis.OmegaCanonicalIdentityRegistry={resolveCountry:v=>({id:String(v||'').toUpperCase(),raw:{}}),list:()=>[{id:'ZZZ'},{id:'ZZY'}]};
  await import('../omega_opponent_adaptive_strategy_system.js');
- const strategy=globalThis.OmegaOpponentAdaptiveStrategy,a=runtime.getBehaviorProfile('AAA'),b=runtime.getBehaviorProfile('BBB');
- assert.equal(a.availability,'DERIVED');assert.equal(b.availability,'DERIVED');
- assert.ok(a.dimensions.innovationPreference.value>b.dimensions.innovationPreference.value);
- assert.ok(a.dimensions.fiscalDiscipline.value>b.dimensions.fiscalDiscipline.value);
- assert.ok(a.dimensions.tradeDependence.value>b.dimensions.tradeDependence.value);
- assert.equal(strategy.profile('AAA').dimensions.innovationPreference.availability,'DERIVED_HEURISTIC');
- const scoreA=strategy.scoreAction('AAA','EFFICIENCY'),scoreB=strategy.scoreAction('BBB','EFFICIENCY');
- assert.equal(scoreA.known,true);assert.equal(scoreB.known,true);assert.ok(scoreA.score>scoreB.score);
+ const strategy=globalThis.OmegaOpponentAdaptiveStrategy,a=runtime.getBehaviorProfile('ZZZ'),b=runtime.getBehaviorProfile('ZZY');
+ assert.equal(a.availability,'UNOBSERVED');assert.equal(b.availability,'UNOBSERVED');
+ assert.equal(a.dimensions.innovationPreference?.value??null,null);
+ assert.equal(b.dimensions.fiscalDiscipline?.value??null,null);
+ const scoreA=strategy.scoreAction('ZZZ','EFFICIENCY'),scoreB=strategy.scoreAction('ZZY','EFFICIENCY');
+ assert.equal(scoreA.known,false,'unknown evidence must not produce a fabricated action score');
+ assert.equal(scoreB.known,false,'unknown evidence must not produce a fabricated action score');
+});
+
+test('releaseAll clears every selected country record and registry schema',async()=>{
+ const released=runtime.releaseAll();
+ assert.ok(released>=1,'full invalidation should report the records and pending requests it cleared');
+ assert.equal(runtime.diagnostics().recordCount,0);
+ assert.equal(runtime.diagnostics().ready,false);
+ assert.equal(runtime.getCountryRecord('AAA'),null);
+ assert.equal(await runtime.init('AAA'),true,'the runtime should be able to rebuild from source after invalidation');
+ assert.equal(runtime.getCountryRecord('AAA').identity.name,'Alpha');
+});
+
+test('a response released in flight cannot restore a cleared country registry',async()=>{
+ runtime.releaseAll();
+ const originalFetch=globalThis.fetch;
+ let resolveFetch,markStarted;
+ const started=new Promise(resolve=>{markStarted=resolve;});
+ globalThis.fetch=()=>new Promise(resolve=>{resolveFetch=resolve;markStarted();});
+ try{
+  const pending=runtime.init('AAA');
+  await started;
+  assert.ok(runtime.releaseAll()>=1,'releaseAll must cancel the pending country request');
+  resolveFetch({ok:true,json:async()=>({...fixture,countries:[fixture.countries[0]]})});
+  assert.equal(await pending,false,'an invalidated request must not publish its returned country');
+  assert.equal(runtime.diagnostics().recordCount,0);
+  assert.equal(runtime.diagnostics().inFlightCount,0);
+  assert.equal(runtime.diagnostics().ready,false);
+ }finally{
+  globalThis.fetch=originalFetch;
+ }
+ assert.equal(await runtime.init('AAA'),true,'a fresh request should rebuild the registry after invalidation');
+ assert.equal(runtime.getCountryRecord('AAA').identity.name,'Alpha');
 });

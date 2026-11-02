@@ -1982,7 +1982,7 @@ function batchFromExtraction(x,record){
     return result;
   }
 
-  async function startCountryProduction(countryId,siteIds=null){
+  async function startCountryProduction(countryId,siteIds=null,options={}){
     const c=canonical(countryId);
     if(!/^[A-Z]{3}$/.test(c))return{status:'BLOCKED',reason:'COUNTRY_ID_INVALID',countryId:c||null};
     const selectedCountryId=playerSimulationCountryId();
@@ -1990,10 +1990,15 @@ function batchFromExtraction(x,record){
     if(c!==selectedCountryId)return{status:'BLOCKED',reason:'PLAYER_COUNTRY_SCOPE_VIOLATION',countryId:c,playerCountryId:selectedCountryId};
     const initialized=await initialize();
     if(initialized?.status!=='READY')return{status:'BLOCKED',reason:'RESOURCE_ENDOWMENT_NOT_READY',detail:initialized,countryId:c};
-    const refreshed=await hydrateCountry(c),hydration=refreshed?.result||refreshed;
-    if(refreshed?.status!=='APPLIED'||hydration?.accepted===false)
-      return{status:'BLOCKED',reason:'COUNTRY_HYDRATION_NOT_COMMITTED',detail:refreshed,countryId:c};
-    const bucket=state()?.resource?.[c]||{},t=turn();
+    let bucket=state()?.resource?.[c]||{};
+    const canReuseHydration=options.skipHydrationIfReady===true&&Array.isArray(bucket.mineSiteReferences)&&!!bucket.mineSiteControllers;
+    if(!canReuseHydration){
+      const refreshed=await hydrateCountry(c),hydration=refreshed?.result||refreshed;
+      if(refreshed?.status!=='APPLIED'||hydration?.accepted===false)
+        return{status:'BLOCKED',reason:'COUNTRY_HYDRATION_NOT_COMMITTED',detail:refreshed,countryId:c};
+      bucket=state()?.resource?.[c]||{};
+    }
+    const t=turn();
     const requestedSites=Array.isArray(siteIds)&&siteIds.length?new Set(siteIds.map(String)):null;
     const outputs=bucket.mineOutputs&&typeof bucket.mineOutputs==='object'?bucket.mineOutputs:{};
     const paths=bucket.minePaths&&typeof bucket.minePaths==='object'?bucket.minePaths:{};
@@ -2058,18 +2063,29 @@ function batchFromExtraction(x,record){
             (String(row?.status||'').toUpperCase().startsWith('BLOCK')||!!row?.blockReason)).length,
         requestedSiteIds:requestedSites?[...requestedSites]:null,records:[]};
     }
-    const dispatchResult=await extractCountry(c,candidates);
-    const payload=dispatchResult?.result||dispatchResult||{};
-    const records=Array.isArray(payload.records)?payload.records:[];
+    const nav=g.navigator||{},ua=String(nav.userAgent||'');
+    const constrained=/Android|Mobile|iPhone|iPad/i.test(ua)||Number(nav.deviceMemory||8)<=4||Number(nav.hardwareConcurrency||8)<=4;
+    const sliceSize=constrained?3:8,sliceResults=[];
+    for(let offset=0;offset<candidates.length;offset+=sliceSize){
+      const slice=candidates.slice(offset,offset+sliceSize);
+      const result=await extractCountry(c,slice);
+      const payload=result?.result||result||{};
+      sliceResults.push({result,payload,records:Array.isArray(payload.records)?payload.records:[],
+        blocked:Array.isArray(payload.blocked)?payload.blocked.length:Math.max(0,n(payload.blocked)||0)});
+      if(offset+sliceSize<candidates.length)await yieldResourceExtractionToUi();
+    }
+    const records=sliceResults.flatMap(row=>row.records);
     const produced=records.filter(row=>(n(row?.approvedQuantity??row?.quantity)||0)>0);
     const producingSites=new Set(produced.map(row=>String(row.siteReferenceKey||row.siteId||row.occurrenceKey||'')).filter(Boolean));
-    const blocked=Array.isArray(payload.blocked)?payload.blocked.length:Math.max(0,n(payload.blocked)||0);
+    const blocked=sliceResults.reduce((sum,row)=>sum+row.blocked,0);
+    const failed=sliceResults.find(row=>row.result?.status!=='APPLIED'||row.payload?.status==='FAILED');
     const status=produced.length?(blocked?'PARTIALLY_STARTED':'STARTED'):'BLOCKED';
     return{status,countryId:c,turn:t,requestedSiteCount:requestedSites?.size||null,
-      attemptedOccurrenceCount:candidates.length,startedSiteCount:producingSites.size,
+      attemptedOccurrenceCount:candidates.length,processedOccurrenceCount:records.length,
+      extractionSliceCount:sliceResults.length,startedSiteCount:producingSites.size,
       extractedRecordCount:produced.length,blockedOccurrenceCount:blocked,
-      reason:produced.length?null:(payload.reason||dispatchResult?.reason||'NO_SITE_PRODUCTION_APPROVED'),
-      records:clone(records),dispatchStatus:dispatchResult?.status||payload.status||null};
+      reason:produced.length?null:(failed?.payload?.reason||failed?.result?.reason||'NO_SITE_PRODUCTION_APPROVED'),
+      records:clone(records),dispatchStatus:failed?'PARTIALLY_APPLIED':'APPLIED'};
   }
   function countryResourceState(c){
     const out=clone(state()?.resource?.[canonical(c)]||null);

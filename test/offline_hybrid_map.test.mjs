@@ -148,9 +148,14 @@ test("canonical country profile pack is bundled for Android and refreshes offlin
   ]) {
     assert.ok(androidOfflineWorkflow.includes('      - "' + asset + '"'),
       "Android offline smoke must rerun when " + asset + " changes.");
-    assert.ok(serviceWorker.includes('"./' + asset + '"'),
-      "Browser offline cache must include " + asset + ".");
+    if (asset === "country_sector_profile_schema_v1.json") {
+      assert.ok(serviceWorker.includes('"./' + asset + '"'), "small sector schema remains available offline");
+    } else {
+      assert.equal(serviceWorker.includes('"./' + asset + '"'), false,
+        "Large country registries must not be part of the initial browser cache: " + asset);
+    }
   }
+  assert.match(serviceWorker, /fetchAndCache/);
 });
 
 test("runtime composition root executes in the ordered deferred script queue", () => {
@@ -219,6 +224,18 @@ test("browser shell resources are cached locally for offline relaunch", () => {
   assert.match(serviceWorker, /financial_transmission_rules_v1[.]json/);
   assert.match(serviceWorker, /self\.addEventListener\("install"/);
   assert.match(serviceWorker, /self\.addEventListener\("fetch"/);
+  assert.match(serviceWorker, /DATA_CACHE_MAX_ENTRIES = 48/);
+  assert.match(serviceWorker, /DATA_CACHE_MAX_BYTES = 48 \* 1024 \* 1024/);
+  assert.match(serviceWorker, /DATA_NETWORK_TIMEOUT_MS = 2200/);
+  assert.match(serviceWorker, /function isDataRequest\(url\)/);
+  assert.match(serviceWorker, /networkFirstData\(request, event\)/,
+    "offline data and media must use the bounded persistent data cache");
+  assert.match(serviceWorker, /OMEGA_CACHE_DATA_UPDATED/);
+  assert.match(serviceWorker, /OMEGA_CACHE_DATA_REMOVED/);
+  assert.match(serviceWorker, /async function refreshCachedData/,
+    "cached responses should be served immediately while replacements download");
+  assert.doesNotMatch(serviceWorker, /ignoreSearch:\s*true/,
+    "query/version keys must not accidentally return a different cached dataset");
   assert.match(serviceWorker, /request\.mode === "navigate"/);
   assert.match(serviceWorker, /url\.origin !== self\.location\.origin/);
   assert.doesNotMatch(serviceWorker, /server\.arcgisonline\.com|assets\.science\.nasa\.gov/);

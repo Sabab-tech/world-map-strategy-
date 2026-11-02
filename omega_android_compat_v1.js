@@ -32,8 +32,26 @@
         });
     }
 
+    if (typeof Promise.allSettled !== 'function') {
+        Object.defineProperty(Promise, 'allSettled', {
+            configurable: true,
+            writable: true,
+            enumerable: false,
+            value: function (iterable) {
+                var items = Array.from(iterable);
+                return Promise.all(items.map(function (item) {
+                    return Promise.resolve(item).then(
+                        function (value) { return { status: 'fulfilled', value: value }; },
+                        function (reason) { return { status: 'rejected', reason: reason }; }
+                    );
+                }));
+            }
+        });
+    }
+
     window.OMEGA_ANDROID_COMPAT_V1 = Object.freeze({
         version: 1,
-        arrayFlatMap: typeof Array.prototype.flatMap === 'function'
+        arrayFlatMap: typeof Array.prototype.flatMap === 'function',
+        promiseAllSettled: typeof Promise.allSettled === 'function'
     });
 })();

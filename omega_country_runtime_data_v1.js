@@ -4,7 +4,7 @@
  */
 (function (root) {
   'use strict';
-  const state = { ready:false, settled:false, error:null, promise:null, profiles:[], extras:new Map(), byCode:new Map(), byIso3:new Map(), byNumeric:new Map(), aliases:new Map(), cities:new Map(), legacyEconomy:{}, legacyPopulation:{}, datasets:new Map(), strategicProfiles:new Map(), strategicProfileDiagnostics:{available:false,profileCount:0,error:null} };
+  const state = { ready:false, settled:false, error:null, promise:null, profiles:[], extras:new Map(), byCode:new Map(), byIso3:new Map(), byNumeric:new Map(), aliases:new Map(), cities:new Map(), legacyEconomy:{}, legacyPopulation:{}, countryRecords:new Map(), countryLoads:new Map(), legacyLoads:new Map(), countryEpochs:new Map(), datasets:new Map(), strategicProfiles:new Map(), strategicProfileDiagnostics:{available:false,profileCount:0,error:'COUNTRY_SCOPED_PROFILE_NOT_REQUESTED'} };
   const s = v => String(v == null ? '' : v).trim();
   const norm = v => s(v).normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/&/g, ' AND ').replace(/[_’'`-]+/g, ' ').replace(/[^A-Z0-9]+/gi, ' ').trim().toUpperCase().replace(/\s+/g, ' ');
   const fixedAliases = {
@@ -97,15 +97,83 @@
     }
     return null;
   }
+  const COUNTRY_DATA_FILES = Object.freeze({cities:'cities.json',economy:'economy.json',population:'population.json',society:'society.json'});
+  const COUNTRY_RECORD_CACHE_LIMIT = 8;
   function legacyRecord(domain,profile,input) {
-    const source=domain==='economy'?state.legacyEconomy:(domain==='population'?state.legacyPopulation:null);
-    if(!source||typeof source!=='object')return null;
-    const keys=candidateKeys(profile,input);
-    for(const key of keys) {
-      const hit=Object.keys(source).find(candidate=>norm(candidate)===key);
-      if(hit!==undefined&&source[hit]&&typeof source[hit]==='object')return source[hit];
+    if(!profile?.countryCode)return null;
+    const key=domain+':'+profile.countryCode,row=state.countryRecords.get(key);
+    if(!row)return null;
+    state.countryRecords.delete(key);state.countryRecords.set(key,row);
+    return row;
+  }
+  async function loadLegacyCountrySource(domain,profile){
+    const file=COUNTRY_DATA_FILES[domain];if(!file)return null;
+    let pending=state.legacyLoads.get(domain);
+    if(!pending){pending=load('./'+file,true);state.legacyLoads.set(domain,pending);}
+    let data;
+    try{data=await pending;}finally{if(state.legacyLoads.get(domain)===pending)state.legacyLoads.delete(domain);}
+    if(!data||typeof data!=='object'||Array.isArray(data))return null;
+    if(domain==='cities'){
+      const rows=Array.isArray(data.countries)?data.countries:[];
+      return rows.find(row=>norm(row?.name)===norm(profile.name)||norm(row?.name)===norm(profile.officialName))||null;
     }
-    return null;
+    const candidates=[profile.name,profile.officialName,profile.economyKey,profile.populationKey,profile.countryCode,profile.iso3].map(norm).filter(Boolean);
+    const hit=Object.entries(data).find(([key])=>candidates.includes(norm(key)));
+    return hit&&hit[1]&&typeof hit[1]==='object'&&!Array.isArray(hit[1])?hit[1]:null;
+  }
+  async function loadCountrySource(domain,profile){
+    const key=domain==='economy'?(profile.economyKey||profile.name):
+      domain==='population'?(profile.populationKey||profile.name):(profile.name||profile.countryCode);
+    if(!key)return null;
+    const url='./api/omega/country-domain/'+encodeURIComponent(domain)+'/'+encodeURIComponent(key);
+    const result=await load(url,true);
+    if(result?.record&&typeof result.record==='object')return result.record;
+    return loadLegacyCountrySource(domain,profile);
+  }
+  async function loadCountryData(value,domains=['cities']){
+    if(state.promise)await state.promise;
+    const profile=resolveCountry(value);
+    if(!profile)return{status:'COUNTRY_NOT_RESOLVED',countryCode:null,records:{}};
+    const requested=(Array.isArray(domains)?domains:[domains]).map(x=>String(x||'').toLowerCase())
+      .filter((x,i,a)=>COUNTRY_DATA_FILES[x]&&a.indexOf(x)===i);
+    const records={};
+    const countryEpoch=state.countryEpochs.get(profile.countryCode)||0;
+    for(const domain of requested){
+      if((state.countryEpochs.get(profile.countryCode)||0)!==countryEpoch)
+        return{status:'RELEASED',countryCode:profile.countryCode,records};
+      const key=domain+':'+profile.countryCode;
+      if(state.countryRecords.has(key)){records[domain]=legacyRecord(domain,profile,value);continue;}
+      if(state.countryLoads.has(key)){records[domain]=await state.countryLoads.get(key);continue;}
+      let task;
+      task=(async()=>{
+        const row=await loadCountrySource(domain,profile);
+        if(state.countryLoads.get(key)!==task)return null;
+        if(!row)return null;
+        state.countryRecords.set(key,row);
+        if(domain==='cities')state.cities.set(profile.countryCode,row);
+        while(state.countryRecords.size>COUNTRY_RECORD_CACHE_LIMIT){
+          const oldest=state.countryRecords.keys().next().value;
+          state.countryRecords.delete(oldest);
+          if(oldest.startsWith('cities:'))state.cities.delete(oldest.slice(7));
+        }
+        return row;
+      })().finally(()=>{if(state.countryLoads.get(key)===task)state.countryLoads.delete(key)});
+      state.countryLoads.set(key,task);records[domain]=await task;
+    }
+    return{status:'READY',countryCode:profile.countryCode,records};
+  }
+  function releaseCountryData(value,domains=Object.keys(COUNTRY_DATA_FILES)){
+    const profile=resolveCountry(value);if(!profile)return false;
+    const selected=(Array.isArray(domains)?domains:[domains]).map(x=>String(x||'').toLowerCase());
+    state.countryEpochs.set(profile.countryCode,(state.countryEpochs.get(profile.countryCode)||0)+1);
+    let released=0;
+    for(const domain of selected){
+      const key=domain+':'+profile.countryCode;
+      if(state.countryLoads.has(key)){state.countryLoads.delete(key);released++;}
+      if(state.countryRecords.delete(key))released++;
+      if(domain==='cities')state.cities.delete(profile.countryCode);
+    }
+    return released>0;
   }
   function getRecord(domain,input) {
     const kind=norm(domain).toLowerCase(), p=resolveCountry(input);
@@ -221,10 +289,11 @@
     };
   }
   function getStrategicProfile(value) {
-    const identity = resolveCountry(value);
-    if (!identity) return null;
-    return state.strategicProfiles.get(String(identity.countryCode || '').toUpperCase()) ||
-      (identity.iso3 ? state.strategicProfiles.get(String(identity.iso3).toUpperCase()) : null) || null;
+    const identity=resolveCountry(value);if(!identity)return null;
+    const scoped=root.OmegaCountryGeneralDataRuntime?.getStrategicProfile?.(identity.countryCode);
+    if(scoped)return scoped;
+    return state.strategicProfiles.get(String(identity.countryCode||'').toUpperCase())||
+      (identity.iso3?state.strategicProfiles.get(String(identity.iso3).toUpperCase()):null)||null;
   }
 
   function getProfile(value) {
@@ -255,45 +324,63 @@
   }
   async function load(path,optional) {
     if (typeof root.fetch!=='function') { if(optional)return null; throw new Error('FETCH_UNAVAILABLE:'+path); }
-    const response=await root.fetch(path,{cache:'default'});
+    const response=await root.fetch(path,{cache:'no-store'});
     if(!response||response.ok===false){if(optional)return null;throw new Error('DATA_FETCH_FAILED:'+path);}
     return response.json();
   }
   function init() {
     if(state.promise)return state.promise;
-    state.promise=Promise.all([
-      load('./economy_global_profiles_v1.json',false),
-      load('./cities.json',true).catch(()=>null),
-      load('./economy.json',true).catch(()=>null),
-      load('./population.json',true).catch(()=>null),
-      load('./society.json',true).catch(()=>null),
-      load('./country_general_data_registry_v1.json',true).catch(()=>null)
-    ])
-      .then(([data,cityData,economyData,populationData,societyData,strategicRegistry])=>{
+    state.promise=load('./economy_global_profiles_v1.json',false)
+      .then(data=>{
         if(!data||!Array.isArray(data.countries))throw new Error('COUNTRY_PROFILE_REGISTRY_INVALID');
-        buildProfiles(data.countries);
-        addSupplementalIdentities();
-        state.legacyEconomy=economyData&&typeof economyData==='object'?economyData:{};
-        state.legacyPopulation=populationData&&typeof populationData==='object'?populationData:{};
-        // Keep references to already-loaded source objects so connected UIs can inspect provenance
-        // without copying these datasets into a second country database.
-        state.datasets.set('economy_global_profiles_v1.json',data);
-        if(cityData)state.datasets.set('cities.json',cityData);
-        if(economyData)state.datasets.set('economy.json',economyData);
-        if(populationData)state.datasets.set('population.json',populationData);
-        if(societyData)state.datasets.set('society.json',societyData);
-        if(strategicRegistry)state.datasets.set('country_general_data_registry_v1.json',strategicRegistry);
-        const strategicIndex=buildStrategicProfiles(strategicRegistry);
-        state.strategicProfiles=strategicIndex.profiles;
-        state.strategicProfileDiagnostics=strategicIndex.diagnostics;
-        state.cities.clear();
-        (Array.isArray(cityData?.countries)?cityData.countries:[]).forEach(row=>{
-          const p=row&&resolveCountry(row.name); if(p)state.cities.set(p.countryCode,row);
-        });
+        buildProfiles(data.countries);addSupplementalIdentities();
+        state.datasets.clear();state.datasets.set('economy_global_profiles_v1.json',data);
+        state.cities.clear();state.countryRecords.clear();state.countryLoads.clear();
+        state.legacyEconomy={};state.legacyPopulation={};state.strategicProfiles.clear();
+        state.strategicProfileDiagnostics={available:false,profileCount:0,error:'COUNTRY_SCOPED_PROFILE_NOT_REQUESTED'};
         state.ready=true;state.settled=true;state.error=null;return true;
       }).catch(error=>{state.ready=false;state.settled=true;state.error=String(error?.message||error);return false;});
     return state.promise;
   }
   function getSourceDataset(id){return state.datasets.get(String(id||'').trim())||null;}
-  root.OmegaCountryRuntimeData=Object.freeze({version:'1.3.0',init,ready:init(),isReady:()=>state.ready,isSettled:()=>state.settled,resolveCountry,flagFor,getProfile,getStrategicProfile,getRecord,getLiveRecord,getSourceDataset,getCapital,getCities,diagnostics,listProfiles});
+  function diagnostics(){
+    return{version:'1.4.0',ready:state.ready,settled:state.settled,error:state.error,profileCount:state.profiles.length,
+      countryIdentityCount:state.byCode.size+state.extras.size,
+      flagCount:state.profiles.concat(Array.from(state.extras.values())).filter(p=>!!flagFor(p)).length,
+      capitalCount:state.cities.size,profilesWithEconomy:state.profiles.filter(p=>p.sourceValues&&typeof p.sourceValues==='object').length,
+      profilesWithPopulation:state.profiles.filter(p=>p.populationValues&&typeof p.populationValues==='object').length,
+      legacyEconomyRecords:0,legacyPopulationRecords:0,retainedCountryRecords:state.countryRecords.size,
+      inFlightCountryLoads:state.countryLoads.size,countryRecordCacheLimit:COUNTRY_RECORD_CACHE_LIMIT,
+      strategicProfiles:state.strategicProfileDiagnostics};
+  }
+  let activeCountryForCities=null;
+  if(typeof root.addEventListener==='function')root.addEventListener('OMEGA_COUNTRY_CONTEXT_CHANGED',event=>{
+    const value=event?.detail?.countryId||event?.detail?.country;if(!value)return;
+    const profile=resolveCountry(value);if(!profile)return;
+    const previous=activeCountryForCities;activeCountryForCities=profile.countryCode;
+    if(previous&&previous!==activeCountryForCities)releaseCountryData(previous);
+    loadCountryData(profile.countryCode,['cities']).then(result=>{
+      if(result.status==='READY'&&activeCountryForCities===profile.countryCode){
+        try{root.dispatchEvent(new CustomEvent('OMEGA_COUNTRY_RUNTIME_COUNTRY_DATA_READY',{detail:{countryId:profile.countryCode,domains:['cities']}}));}catch(_){}
+        try{root.Game?.Map?.renderCountryHubs?.();}catch(_){}
+      }
+    }).catch(error=>{state.error=String(error?.message||error)});
+  });
+  root.OmegaCountryRuntimeData=Object.freeze({version:'1.4.0',init,ready:init(),isReady:()=>state.ready,isSettled:()=>state.settled,
+    resolveCountry,flagFor,getProfile,getStrategicProfile,getRecord,getLiveRecord,getSourceDataset,getCapital,getCities,
+    loadCountryData,releaseCountryData,diagnostics,listProfiles});
+  if(root.navigator?.serviceWorker?.addEventListener){
+    root.navigator.serviceWorker.addEventListener('message',event=>{
+      const message=event?.data;if(!['OMEGA_CACHE_DATA_UPDATED','OMEGA_CACHE_DATA_REMOVED'].includes(message?.type))return;
+      const marker='/api/omega/country-domain/',url=String(message.url||''),at=url.indexOf(marker);
+      if(at<0)return;
+      const parts=url.slice(at+marker.length).split('/');
+      const domain=String(parts[0]||'').toLowerCase();
+      let countryKey='';try{countryKey=decodeURIComponent(parts.slice(1).join('/').split('?')[0]);}catch(_){return;}
+      if(!COUNTRY_DATA_FILES[domain]||!countryKey)return;
+      const identity=resolveCountry(countryKey);if(!identity)return;
+      releaseCountryData(identity.countryCode,[domain]);
+      try{root.dispatchEvent(new CustomEvent('OMEGA_COUNTRY_DATA_INVALIDATED',{detail:{countryId:identity.countryCode,domain,url:message.url}}));}catch(_){}
+    });
+  }
 })(window);

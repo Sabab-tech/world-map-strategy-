@@ -415,6 +415,16 @@ Game.DataLoader = {
     __worldLoadPromise: null,
     __countryConfigPromise: null,
 
+    isConstrainedDevice() {
+        const nav = window.navigator || {};
+        const userAgent = String(nav.userAgent || '');
+        const memory = Number(nav.deviceMemory);
+        const cores = Number(nav.hardwareConcurrency);
+        return /Android|iPhone|iPad|Mobile/i.test(userAgent) ||
+            (Number.isFinite(memory) && memory > 0 && memory <= 4) ||
+            (Number.isFinite(cores) && cores > 0 && cores <= 4);
+    },
+
     getFetcher() {
         return window.fetchResilient || (async function (filename, options) {
             const response = await fetch(filename, options && options.signal ? { signal:options.signal } : undefined);
@@ -645,7 +655,7 @@ Game.DataLoader = {
                 if (Game.Diplomacy && typeof Game.Diplomacy.generateAllBilateralRelations === 'function') {
                     // This is simulation/game-state work, not map presentation. It may continue independently.
                     const relationCountries = Object.keys(Game.state.economy || {});
-                    const RELATION_COUNTRIES_PER_FRAME = 2;
+                    const RELATION_COUNTRIES_PER_FRAME = this.isConstrainedDevice() ? 1 : 2;
                     let relationCursor = 0;
                     const scheduleRelationChunk = typeof window.requestAnimationFrame === 'function'
                         ? callback => window.requestAnimationFrame(callback)
@@ -1509,9 +1519,13 @@ Game.Map.renderGeoJSON = function(geoData) {
         Game.__omegaGeoJSONResumeRender();
         return Game.geojsonLayer;
     }
+    const constrainedMapDevice = Game.DataLoader &&
+        typeof Game.DataLoader.isConstrainedDevice === 'function' &&
+        Game.DataLoader.isConstrainedDevice();
     const renderOptions = {
-        // Simplify country paths slightly to reduce Canvas drawing cost.
-        smoothFactor: 1.2,
+        // Simplify and stream country paths more gently on low-memory/mobile WebViews.
+        smoothFactor: constrainedMapDevice ? 1.5 : 1.2,
+
         filter: function(feature) {
             var props = feature.properties || {};
             var geoName = (props.ADMIN || props.name || props.NAME || "").toLowerCase().trim();
@@ -1671,8 +1685,8 @@ Game.Map.renderGeoJSON = function(geoData) {
     // Large world collections are added in short frame-budgeted slices so map
     // construction cannot monopolize the browser's main thread.
     const CHUNK_THRESHOLD = 24;
-    const MAX_FEATURES_PER_FRAME = 8;
-    const FRAME_BUDGET_MS = 7;
+    const MAX_FEATURES_PER_FRAME = constrainedMapDevice ? 1 : 8;
+    const FRAME_BUDGET_MS = constrainedMapDevice ? 4 : 7;
     if (!featureCollection || featureCollection.length <= CHUNK_THRESHOLD ||
         typeof window.requestAnimationFrame !== "function") {
         if (featureCollection) {
@@ -1690,6 +1704,7 @@ Game.Map.renderGeoJSON = function(geoData) {
     let nextFeature = 0;
     const now = () => window.performance && typeof window.performance.now === "function"
         ? window.performance.now() : Date.now();
+    let lastProgressAt = 0;
     const scheduleFeatureChunk = function() {
         if (renderToken !== Game.__omegaGeoJSONRenderToken || Game.geojsonLayer !== layer ||
             self.__omegaMapUiActive === false || Game.__omegaGeoJSONRenderFrame !== null) return;
@@ -1721,10 +1736,14 @@ Game.Map.renderGeoJSON = function(geoData) {
         const fraction = nextFeature / Math.max(1, featureCollection.length);
         const skippedSoFar = Array.isArray(Game.__omegaGeoJSONRenderErrors)
             ? Game.__omegaGeoJSONRenderErrors.length : 0;
-        self.updateMapLoadingProgress(18 + fraction * 78,
-            'Drawing country borders ' + Math.floor(fraction * 100) + '%' +
-                (skippedSoFar ? ' · skipped ' + skippedSoFar + ' invalid feature(s)' : ''),
-            'loading');
+        const progressTime = now();
+        if (nextFeature >= featureCollection.length || progressTime - lastProgressAt >= 100) {
+            self.updateMapLoadingProgress(18 + fraction * 78,
+                'Drawing country borders ' + Math.floor(fraction * 100) + '%' +
+                    (skippedSoFar ? ' · skipped ' + skippedSoFar + ' invalid feature(s)' : ''),
+                'loading');
+            lastProgressAt = progressTime;
+        }
         if (nextFeature < featureCollection.length) scheduleFeatureChunk();
         else finishRender();
     };

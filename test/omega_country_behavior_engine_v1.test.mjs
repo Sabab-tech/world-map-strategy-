@@ -29,6 +29,18 @@ function makeContext() {
     },
     fetch: async input => {
       const relative = String(input).replace(/^\.?\//, '').split(/[?#]/)[0];
+      const scopedPrefix = 'api/omega/country-general-data/';
+      if (relative.startsWith(scopedPrefix)) {
+        const data = JSON.parse(read('country_general_data_registry_v1.json'));
+        const requested = decodeURIComponent(relative.slice(scopedPrefix.length)).toUpperCase();
+        const fields = data.metadata?.recordSchema?.identityFields || [];
+        const row = data.countries.find(item => {
+          const values = Array.isArray(item.identity) ? item.identity : Object.values(item.identity || {});
+          return values.some(value => String(value || '').toUpperCase() === requested);
+        });
+        const response = row ? { ...data, countries: [row] } : { ...data, countries: [] };
+        return { ok: !!row, status: row ? 200 : 404, json: async () => response };
+      }
       const full = path.join(root, relative);
       if (!fs.existsSync(full)) {
         return { ok: false, status: 404, json: async () => { throw new Error('NOT_FOUND:' + relative); } };
@@ -53,7 +65,9 @@ async function loadCountryEngines() {
   vm.runInContext(read('omega_country_general_data_runtime_v1.js'), context, { filename: 'omega_country_general_data_runtime_v1.js' });
   const generalData = context.OmegaCountryGeneralDataRuntime;
   assert.ok(generalData, 'unified country general data runtime should register');
-  assert.equal(await generalData.init(), true, 'unified source-backed country registry should initialize');
+  assert.equal(await generalData.init(), true, 'module initializes without global registry download');
+  assert.equal(generalData.diagnostics().recordCount, 0, 'boot retains no country profile rows');
+  await Promise.all([generalData.init('BGD'), generalData.init('USA')]);
   vm.runInContext(read('omega_country_behavior_engine_v1.js'), context, { filename: 'omega_country_behavior_engine_v1.js' });
   const behavior = context.OmegaCountryBehaviorEngine;
   assert.ok(behavior, 'country behaviour engine should register');

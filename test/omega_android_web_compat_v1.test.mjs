@@ -10,6 +10,20 @@ const html = read('index.html');
 const iconSource = read('omega_icon_system_v1.js');
 const smokeSource = read('android/app/src/androidTest/java/com/omega/globalsupremecommander/OmegaGameplaySmokeTest.java');
 
+test('Android compatibility shim provides Promise.allSettled semantics on a legacy WebView', async () => {
+  const context = vm.createContext({ window: {} });
+  vm.runInContext('Promise.allSettled = undefined;', context);
+  vm.runInContext(compatibility, context, { filename: 'omega_android_compat_v1.js', timeout: 1000 });
+  const results = await vm.runInContext(
+    'Promise.allSettled([Promise.resolve(7), Promise.reject("offline")])',
+    context
+  );
+  assert.deepEqual(JSON.parse(JSON.stringify(results)), [
+    { status: 'fulfilled', value: 7 },
+    { status: 'rejected', reason: 'offline' }
+  ]);
+});
+
 test('Android compatibility shim provides one-level Array.flatMap semantics on a legacy WebView', () => {
   const context = vm.createContext({ window: {} });
   vm.runInContext('delete Array.prototype.flatMap;', context);
@@ -48,6 +62,7 @@ test('icon system can be parsed by legacy Chromium without Unicode property-esca
 
 test('Android 9 smoke treats legacy runtime compatibility as a boot requirement', () => {
   assert.ok(smokeSource.includes("typeof Array.prototype.flatMap === 'function'"));
+  assert.ok(smokeSource.includes("typeof Promise.allSettled === 'function'"), 'Android 9 smoke must verify Promise.allSettled before app boot');
   assert.ok(smokeSource.includes('window.OMEGA_ICON_SYSTEM_V1'));
 });
 
@@ -55,6 +70,8 @@ test('Android 9 smoke treats legacy runtime compatibility as a boot requirement'
 test('Android asset sync packages every local OMEGA UI v2 module referenced by the app shell', () => {
   const gradle = read('android/app/build.gradle');
   const serviceWorker = read('omega-offline-map-sw.js');
+  assert.ok(serviceWorker.includes('"./omega_android_compat_v1.js"'), 'offline shell must retain the Android compatibility shim');
+  assert.ok(!serviceWorker.includes('Promise.allSettled'), 'service worker install must not rely on Promise.allSettled in legacy WebView engines');
   const requiredAssets = [
     'omega_ui_v2/omega-ui-v2.css',
     'omega_ui_v2/navigation-registry.js',

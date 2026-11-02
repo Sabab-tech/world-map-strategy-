@@ -264,7 +264,7 @@ assert.equal(context.Game.state.resource.BGD.processedWarehouse,undefined,
 
 context.Game.state.simulation.turn=Math.max(Number(context.Game.state.simulation.turn)||0,Number(cycle.finishTurn)||0);
 context.Game.state.simulation.date=cycle.finishDate;
-const completed=N.processPendingFactoryInputs('BGD');
+const completed= await N.processPendingFactoryInputs('BGD');
 assert.equal(completed.completedCount,1,JSON.stringify(completed));
 assert.equal(completed.completed[0].status,'COMPLETED');
 assert.equal(context.Game.state.resource.BGD.inventory.COAL_CONCENTRATE,820,'completed factory output must enter the resource inventory');
@@ -402,7 +402,7 @@ const copperCycle=context.Game.state.resource.BGD.industrialNetwork.factoryProdu
 assert.ok(copperCycle&&copperCycle.finishDate,'auto-commissioned copper processing must have a dated production cycle');
 context.Game.state.simulation.turn=Math.max(Number(context.Game.state.simulation.turn)||0,Number(copperCycle.finishTurn)||0);
 context.Game.state.simulation.date=copperCycle.finishDate;
-const copperCompleted=N.processPendingFactoryInputs('BGD');
+const copperCompleted= await N.processPendingFactoryInputs('BGD');
 assert.equal(copperCompleted.completedCount,1,JSON.stringify(copperCompleted));
 assert.ok(context.Game.state.resource.BGD.inventory.COPPER_CONCENTRATE>0,'completed site output must be persisted in the country inventory');
 assert.ok(context.Game.state.resource.BGD.inventory.TAILINGS>0,'completed processing by-product must be persisted too');
@@ -470,7 +470,7 @@ assert.equal(Number(builtFactory.inputInventory.iron_ore)||0,1200,
 assert.equal(Number(context.Game.state.resource.BGD.inventory.IRON_CONCENTRATE)||0,0,
   'finished iron concentrate must not appear before the processing date');
 advanceToCycleFinish(context.Game.state,ironCycle);
-const builtFactoryCycleResult=N.processPendingFactoryInputs('BGD');
+const builtFactoryCycleResult= await N.processPendingFactoryInputs('BGD');
 assert.equal(builtFactoryCycleResult.completedCount,1,JSON.stringify(builtFactoryCycleResult));
 assert.equal(Number(builtFactory.inputInventory.iron_ore)||0,0,
   'the commissioned factory must consume the complete input batch only on cycle completion');
@@ -1232,7 +1232,7 @@ console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');
     };
     resourceState.batches=[inputBatch];
     resourceState.inventoryLots={[inputBatchId]:{...inputBatch,status:'AVAILABLE'}};
-    const schedulerStart=N.processPendingFactoryInputs('BGD');
+    const schedulerStart= await N.processPendingFactoryInputs('BGD');
     const startedCycle=resourceState.industrialNetwork.factoryProductionCycles[universal.id];
     assert.equal(schedulerStart.started.some(row=>row.factoryId===universal.id),true,
       'the automatic turn scheduler must select the stocked iron ore rule for a dynamic universal plant');
@@ -1242,7 +1242,7 @@ console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');
       'tracked raw input must move from the national warehouse into the starting factory');
     context.Game.state.simulation.turn=Number(startedCycle.finishTurn);
     context.Game.state.simulation.date=startedCycle.finishDate;
-    const schedulerFinish=N.processPendingFactoryInputs('BGD');
+    const schedulerFinish= await N.processPendingFactoryInputs('BGD');
     assert.equal(schedulerFinish.completed.some(row=>row.factoryId===universal.id),true,
       'the starting universal factory must finish its dated production cycle');
     assert.ok(Number(resourceState.inventory.IRON_CONCENTRATE)>0,

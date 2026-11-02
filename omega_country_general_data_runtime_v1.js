@@ -4,8 +4,8 @@
  */
 (function(root){
 'use strict';
-const VERSION='1.0.0',DATA_URL='./country_general_data_registry_v1.json';
-const s={promise:null,ready:false,settled:false,error:null,data:null,schema:null,byAlias:new Map(),fields:new Map()};
+const VERSION='1.1.0',DATA_URL='./api/omega/country-general-data/',CACHE_LIMIT=6;
+const s={ready:false,settled:false,error:null,metadata:null,schema:null,byAlias:new Map(),records:new Map(),inflight:new Map(),fields:new Map()};
 const str=v=>String(v==null?'':v).trim();
 const n=v=>typeof v==='number'&&Number.isFinite(v)?v:(typeof v==='string'&&v.trim()!==''&&Number.isFinite(Number(v))?Number(v):null);
 const clamp=(v,a=0,b=1)=>n(v)===null?null:Math.max(a,Math.min(b,n(v)));
@@ -48,28 +48,84 @@ function inferredDataGap(value,status,sourceId,sourceName,year,persisted){
  if(/MODELED|MODELLED|SIMULATION|GAMEPLAY|LOCAL_/.test(st))return 'UNVERIFIED_OR_MODELLED_SOURCE';
  return null;
 }
-function init(){if(s.promise)return s.promise;s.promise=(async()=>{try{
- if(typeof root.fetch!=='function')throw Error('FETCH_UNAVAILABLE');
- const res=await root.fetch(DATA_URL,{cache:'default'});if(!res||res.ok===false)throw Error('COUNTRY_GENERAL_DATA_FETCH_FAILED');
- const data=await res.json(),schema=data?.metadata?.recordSchema;
- if(!Array.isArray(data?.countries)||!Array.isArray(schema?.identityFields)||!Array.isArray(schema?.generalFactFields)||!Array.isArray(schema?.metricFields))throw Error('COUNTRY_GENERAL_DATA_SCHEMA_INVALID');
- s.data=data;s.schema=schema;s.byAlias.clear();s.fields.clear();
- (data.fieldCatalogue||[]).forEach(f=>{if(f?.key)s.fields.set(f.key,f)});
- data.countries.forEach(row=>(row.identity||[]).forEach((v,i)=>{const k=norm(v);if(k&&!s.byAlias.has(k))s.byAlias.set(k,row);if(['iso2','iso3','countryCode','numericCode'].includes(schema.identityFields[i])&&k)s.byAlias.set(k,row)}));
- if(!s.byAlias.size)throw Error('COUNTRY_GENERAL_DATA_IDENTITY_INDEX_EMPTY');
- s.ready=true;s.settled=true;s.error=null;return true;
-}catch(e){s.ready=false;s.settled=true;s.error=String(e?.message||e);return false}})();return s.promise}
+function canonicalIdentity(value){
+ try{const hit=root.OmegaCountryRuntimeData?.resolveCountry?.(value);if(hit)return hit}catch(_){}
+ const bridge=root.OmegaCanonicalIdentityRegistry||root.OmegaCountrySemanticBridge||root.Omega?.CanonicalIdentity;
+ try{const hit=bridge?.resolveCountry?.(value);if(hit)return hit}catch(_){}
+ return obj(value)?value:null;
+}
+function touchRecord(key){
+ const entry=s.records.get(key);if(!entry)return null;
+ s.records.delete(key);s.records.set(key,entry);return entry.row;
+}
+function evictRecord(key){
+ const entry=s.records.get(key);if(!entry)return false;
+ s.records.delete(key);
+ for(const alias of entry.aliases)if(s.byAlias.get(alias)===key)s.byAlias.delete(alias);
+ return true;
+}
+async function init(countryValue){
+ if(countryValue==null||str(countryValue)===''){s.settled=true;return true}
+ try{const runtime=root.OmegaCountryRuntimeData;if(runtime?.ready)await runtime.ready}catch(_){}
+ const identity=canonicalIdentity(countryValue);
+ const requestKey=identity?.iso2||identity?.countryCode||identity?.iso3||identity?.numericCode||identity?.name||str(countryValue);
+ const cacheKey=norm(identity?.iso2||identity?.countryCode||identity?.iso3||requestKey);
+ const oldKey=s.byAlias.get(norm(requestKey));
+ if(oldKey&&touchRecord(oldKey)){s.ready=true;s.settled=true;return true}
+ if(s.records.has(cacheKey)){touchRecord(cacheKey);s.ready=true;s.settled=true;return true}
+ if(s.inflight.has(cacheKey))return s.inflight.get(cacheKey);
+ let task;
+ task=(async()=>{
+  if(typeof root.fetch!=='function')throw Error('FETCH_UNAVAILABLE');
+  const response=await root.fetch(DATA_URL+encodeURIComponent(requestKey),{cache:'no-store'});
+  if(!response||response.ok===false)throw Error('COUNTRY_GENERAL_DATA_FETCH_FAILED');
+  const data=await response.json(),schema=data?.metadata?.recordSchema;
+  if(!Array.isArray(data?.countries)||!data.countries.length||!Array.isArray(schema?.identityFields)||
+     !Array.isArray(schema?.generalFactFields)||!Array.isArray(schema?.metricFields))throw Error('COUNTRY_GENERAL_DATA_SCHEMA_INVALID');
+  // A country or full-registry invalidation may have happened while the request was in flight.
+  // Reject the stale response before it can republish global schema metadata.
+  if(s.inflight.get(cacheKey)!==task)return false;
+  if(!s.schema){
+   s.metadata=data.metadata;s.schema=schema;
+   (data.fieldCatalogue||[]).forEach(field=>{if(field?.key)s.fields.set(field.key,field)});
+  }
+  const row=data.countries[0],identityMap=map(schema.identityFields,row.identity);
+  const primary=norm(identityMap.iso2||identityMap.countryCode||identityMap.iso3||requestKey);
+  const aliases=new Set([requestKey,...Object.values(identityMap)].map(norm).filter(Boolean));
+  if(!primary)throw Error('COUNTRY_GENERAL_DATA_IDENTITY_INDEX_EMPTY');
+  evictRecord(primary);
+  s.records.set(primary,{row,aliases:[...aliases]});
+  for(const alias of aliases)s.byAlias.set(alias,primary);
+  while(s.records.size>CACHE_LIMIT)evictRecord(s.records.keys().next().value);
+  s.ready=true;s.settled=true;s.error=null;return true;
+ })().catch(error=>{s.settled=true;s.error=String(error?.message||error);return false})
+ .finally(()=>{if(s.inflight.get(cacheKey)===task)s.inflight.delete(cacheKey)});
+ s.inflight.set(cacheKey,task);return task;
+}
 function candidates(v){
  if(obj(v))return [v.countryCode,v.iso2,v.iso3,v.countryId,v.country_id,v.code,v.name].filter(x=>x!=null);
  const out=[v];try{const p=root.OmegaCountryRuntimeData?.resolveCountry?.(v);if(p)out.push(p.countryCode,p.iso2,p.iso3,p.name,p.officialName,p.economyKey)}catch(_){}
  try{const b=root.OmegaCanonicalIdentityRegistry||root.OmegaCountrySemanticBridge||root.Omega?.CanonicalIdentity,p=b?.resolveCountry?.(v);if(p)out.push(p.id,p.iso2,p.iso3,p.name,p.raw?.name)}catch(_){}
  return out.filter(x=>x!=null)
 }
-function find(v){if(!s.ready)return null;for(const x of candidates(v)){const r=s.byAlias.get(norm(x));if(r)return r}return null}
+function find(v){for(const x of candidates(v)){const key=s.byAlias.get(norm(x));if(key){const row=touchRecord(key);if(row)return row}}return null}
+function releaseCountry(v){
+ const row=find(v),identity=row?map(s.schema?.identityFields,row.identity):canonicalIdentity(v)||{};
+ const key=norm(identity.iso2||identity.countryCode||identity.iso3||v);
+ let released=false;if(key&&s.inflight.has(key)){s.inflight.delete(key);released=true}
+ if(row&&key)released=evictRecord(key)||released;return released;
+}
+function releaseAll(){
+ const count=s.records.size+s.inflight.size;
+ s.records.clear();s.byAlias.clear();s.inflight.clear();
+ s.metadata=null;s.schema=null;s.fields.clear();
+ s.ready=false;s.settled=false;s.error=null;
+ return count;
+}
 function map(fields,values){const out={};if(Array.isArray(fields)&&Array.isArray(values))fields.forEach((k,i)=>out[k]=values[i]===undefined?null:values[i]);return out}
 function code(list,v){const i=n(v);return i===null||i<0||!Array.isArray(list)?null:(list[i]===undefined?null:list[i])}
 function decode(row){
- const schema=s.schema,enc=s.data.metadata.provenanceEncoding||{},identity=map(schema.identityFields,row.identity),generalFacts=map(schema.generalFactFields,row.generalFacts),metrics=map(schema.metricFields,row.metrics),a=row.metricMetadata||{},metricMetadata={};
+ const schema=s.schema,enc=s.metadata?.provenanceEncoding||{},identity=map(schema.identityFields,row.identity),generalFacts=map(schema.generalFactFields,row.generalFacts),metrics=map(schema.metricFields,row.metrics),a=row.metricMetadata||{},metricMetadata={};
  schema.metricFields.forEach((k,i)=>{
   const meta={year:a.years?.[i]??null,status:code(enc.statuses,a.statusCodes?.[i]),sourceId:code(enc.sourceIds,a.sourceCodes?.[i]),sourceName:code(enc.sourceNames,a.sourceNameCodes?.[i]),method:code(enc.methods,a.methodCodes?.[i]),sourceUrl:a.sourceUrls?.[i]??null,note:a.notes?.[i]??null};
   const value=metrics[k];
@@ -87,9 +143,10 @@ function decode(row){
  ps.fleetSummary=map(schema.fleetSummaryFields,ps.fleetSummary);ps.countryContext=map(schema.countryContextFields,ps.countryContext);
  if(Array.isArray(ps.countryContext.environmentMixPct))ps.countryContext.environmentMixPct=map(schema.environmentMixFields,ps.countryContext.environmentMixPct);
  const geo=map(schema.localGeographyFields,row.localGeography);if(Array.isArray(geo.economicCenters))geo.economicCenters=geo.economicCenters.map(x=>Array.isArray(x)?{name:x[0]??null,description:x[1]??null}:x);
- return {identity,generalFacts,metrics,metricMetadata,naturalResources:nr,publicSafety:ps,localGeography:geo,dataStatus:map(schema.dataStatusFields,row.dataStatus),datasetId:s.data.metadata.datasetId||'OMEGA_COUNTRY_GENERAL_DATA_REGISTRY_V1',schemaVersion:s.data.metadata.schemaVersion||null}
+ return {identity,generalFacts,metrics,metricMetadata,naturalResources:nr,publicSafety:ps,localGeography:geo,dataStatus:map(schema.dataStatusFields,row.dataStatus),datasetId:s.metadata?.datasetId||'OMEGA_COUNTRY_GENERAL_DATA_REGISTRY_V1',schemaVersion:s.metadata?.schemaVersion||null}
 }
 function getCountryRecord(v){const r=find(v);return r?decode(r):null}
+function getStrategicProfile(v){const row=find(v);if(!row||!s.schema)return null;const fields=s.schema.strategicProfileFields||[],raw=row.strategicProfile;if(Array.isArray(raw))return Object.fromEntries(fields.map((key,index)=>[key,raw[index]===undefined?null:raw[index]]));return obj(raw)?Object.assign({},raw):null}
 function metric(r,k){return r?n(r.metrics?.[k]):null}
 function year(r,k){return r?n(r.metricMetadata?.[k]?.year):null}
 const normWgi=v=>v===null?null:clamp((v+2.5)/5);
@@ -115,9 +172,24 @@ function getBehaviorProfile(v){
  };
  const count=Object.values(dimensions).filter(x=>x.value!==null).length;return{countryId:r.identity.iso3||r.identity.iso2||str(v).toUpperCase(),availability:count?'DERIVED':'UNOBSERVED',source:count?'OMEGA_COUNTRY_GENERAL_DATA_REGISTRY_V1':null,modelVersion:VERSION,dimensions}
 }
-function diagnostics(){return{version:VERSION,ready:s.ready,settled:s.settled,error:s.error,recordCount:s.data?.countries?.length||0,aliasCount:s.byAlias.size,datasetId:s.data?.metadata?.datasetId||null,dataUrl:DATA_URL}}
-const API=Object.freeze({VERSION,DATA_URL,init,diagnostics,resolveCountry:v=>getCountryRecord(v)?.identity||null,getCountryRecord,getBehaviorProfile,getMetricDefinition:key=>s.ready?(s.fields.get(str(key))||null):null});
+function diagnostics(){return{version:VERSION,ready:s.ready,settled:s.settled,error:s.error,recordCount:s.records.size,aliasCount:s.byAlias.size,inFlightCount:s.inflight.size,cacheLimit:CACHE_LIMIT,datasetId:s.metadata?.datasetId||null,dataUrl:DATA_URL}}
+const API=Object.freeze({VERSION,DATA_URL,init,diagnostics,resolveCountry:v=>getCountryRecord(v)?.identity||canonicalIdentity(v)||null,getCountryRecord,getStrategicProfile,getBehaviorProfile,releaseCountry,releaseAll,getMetricDefinition:key=>s.fields.get(str(key))||null});
 root.Omega=root.Omega||{};root.Omega.CountryGeneralData=API;root.OmegaCountryGeneralDataRuntime=API;
+if(root.navigator?.serviceWorker?.addEventListener){
+ root.navigator.serviceWorker.addEventListener('message',event=>{
+  const message=event?.data;if(!['OMEGA_CACHE_DATA_UPDATED','OMEGA_CACHE_DATA_REMOVED'].includes(message?.type))return;
+  const marker='/api/omega/country-general-data/',url=String(message.url||''),at=url.indexOf(marker);
+  if(at<0)return;
+  let country='';try{country=decodeURIComponent(url.slice(at+marker.length).split('?')[0]);}catch(_){return;}
+  if(!country)return;
+  releaseCountry(country);
+  try{root.dispatchEvent(new CustomEvent('OMEGA_COUNTRY_GENERAL_DATA_INVALIDATED',{detail:{country,url:message.url}}));}catch(_){}
+  const active=root.CountryIOS?.activeCountry||root.OmegaMinistryViewCountry;
+  if(active&&norm(active)===norm(country)&&String(root.CountryIOS?.activeChapter)==='1'&&typeof root.CountryIOS?.switchChapter==='function'){
+   const schedule=root.setTimeout||setTimeout;schedule(()=>root.CountryIOS.switchChapter(1),0);
+  }
+ });
+}
 const esc=v=>String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 const show=v=>v==null||v===''?'NOT RECORDED':typeof v==='boolean'?(v?'YES':'NO'):Array.isArray(v)?(v.length?v.map(show).join(', '):'NOT RECORDED'):obj(v)?(Object.values(v).some(x=>x!=null&&x!=='')?Object.values(v).filter(x=>x!=null&&x!=='').map(show).join(', '):'NOT RECORDED'):typeof v==='number'?v.toLocaleString('en-US',{maximumFractionDigits:2}):str(v).replace(/_/g,' ');
 const first=(o,keys)=>{for(const k of keys)if(o&&o[k]!=null&&o[k]!=='')return o[k];return null};
@@ -135,7 +207,7 @@ function render(country){
  const info='<div style="padding:9px;display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:7px">'+general.map(x=>fact(x[0],x[1])).join('')+'</div>';
  return'<section data-omega-country-general-panel data-country-id="'+esc(cid)+'" style="margin-top:13px;padding:11px;border-radius:12px;background:linear-gradient(145deg,#0b1220,#111c30);color:#e2e8f0;border:1px solid rgba(129,140,248,.38)"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><div><div style="font-size:10px;letter-spacing:.12em;color:#a5b4fc;font-weight:700">COUNTRY OVERVIEW · GENERAL DATA</div><h3 style="font-size:17px;margin:5px 0;color:#f8fafc">'+esc(show(name))+'</h3></div><span style="font-size:10px;border:1px solid #475569;border-radius:99px;padding:5px 8px">'+esc(r.datasetId)+'</span></div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:7px;margin-top:8px">'+top.map(k=>card(r,k)).join('')+'</div><details open style="margin-top:9px;border:1px solid rgba(148,163,184,.2);border-radius:10px"><summary style="cursor:pointer;padding:10px 12px;color:#c7d2fe;font-size:12px;font-weight:700">IDENTITY & GENERAL FACTS</summary>'+info+'</details>'+section(r,'ECONOMY & DEMOGRAPHICS',['populationGrowthPct','population2015','gdpPerCapitaUsd','inflationPct','unemploymentRatePct','publicDebtToGdpPct','externalDebtUsd','externalDebtToGniPct','budgetBalancePctGdp','tradeBalanceUsd','tradeBalanceToGdpPct','exportsUsd','importsUsd','fxReservesUsd','fxReservesToGdpPct','governmentRevenuePctGdp','governmentExpenditurePctGdp','taxRevenuePctGdp','agricultureValueAddedPctGdp','industryValueAddedPctGdp','servicesValueAddedPctGdp'])+section(r,'POLITICS & GOVERNANCE',['politicalStabilityWgiEstimate','ruleOfLawWgiEstimate','controlOfCorruptionWgiEstimate','governmentEffectivenessWgiEstimate','regulatoryQualityWgiEstimate','voiceAccountabilityWgiEstimate','democracyIndex','corruptionPerceptionIndex','fragileStatesIndex','pressFreedomIndex','globalPeaceIndexRank','humanDevelopmentIndex','povertyRatePct'])+section(r,'MILITARY & PUBLIC SAFETY',['militaryExpenditurePctGdp','homicideRatePer100k'])+section(r,'TECHNOLOGY, INFRASTRUCTURE & SERVICES',['internetUsersPct','electricityAccessPct','rAndDSpendPctGdp','healthSpendPctGdp','educationSpendPctGdp','lifeExpectancyYears','urbanizationPct','co2TonnesPerCapita'])+'<details style="margin-top:9px;border:1px solid rgba(148,163,184,.2);border-radius:10px"><summary style="cursor:pointer;padding:10px 12px;color:#c7d2fe;font-size:12px;font-weight:700">NATURAL RESOURCES & PUBLIC SAFETY</summary><div style="padding:9px;display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:7px">'+fact('Resource-context status',nr.coverageStatus)+fact('Recorded resource groups',groups.length?groups.join(', '):null)+fact('Police baseline source',ps.baselinePolice?.source)+fact('Staffing baseline per 100k',ps.baselinePolice?.staffingRatePer100k)+'</div></details><div style="font-size:10px;line-height:1.5;color:#94a3b8;margin-top:9px">Data coverage: '+esc(all.length-missing)+'/'+esc(all.length)+' metrics populated. NOT RECORDED means unknown/unavailable, not zero. Sources and observation years are shown per metric; reference values do not overwrite live simulation state.</div></section>'
 }
-function installUI(){const ios=root.CountryIOS;if(!ios||typeof ios.renderChapter1_Overview!=='function'||ios.__omegaGeneralDataWrapped)return false;const original=ios.renderChapter1_Overview;ios.renderChapter1_Overview=function(){const args=Array.from(arguments),country=args[0]||this.activeCountry||root.OmegaMinistryViewCountry||'USA',base=original.apply(this,args),placeholder='<section data-omega-country-general-panel data-country-id="'+esc(country)+'" style="margin-top:12px;padding:12px;border-radius:12px;background:#0f172a;color:#cbd5e1;border:1px solid #334155"><strong>COUNTRY GENERAL DATA</strong><p>Loading shared country profile…</p></section>';init().then(refresh);return base+placeholder};Object.defineProperty(ios,'__omegaGeneralDataWrapped',{value:true});return true}
+function installUI(){const ios=root.CountryIOS;if(!ios||typeof ios.renderChapter1_Overview!=='function'||ios.__omegaGeneralDataWrapped)return false;const original=ios.renderChapter1_Overview;ios.renderChapter1_Overview=function(){const args=Array.from(arguments),country=args[0]||this.activeCountry||root.OmegaMinistryViewCountry||'USA',base=original.apply(this,args),placeholder='<section data-omega-country-general-panel data-country-id="'+esc(country)+'" style="margin-top:12px;padding:12px;border-radius:12px;background:#0f172a;color:#cbd5e1;border:1px solid #334155"><strong>COUNTRY GENERAL DATA</strong><p>Loading shared country profile…</p></section>';init(country).then(refresh);return base+placeholder};Object.defineProperty(ios,'__omegaGeneralDataWrapped',{value:true});return true}
 function refresh(){if(!root.document||!s.ready)return;root.document.querySelectorAll('[data-omega-country-general-panel]').forEach(p=>{const c=p.getAttribute('data-country-id')||root.CountryIOS?.activeCountry||'USA';p.outerHTML=render(c)})}
-if(root.document){installUI();init().then(refresh)}
+if(root.document){installUI()}
 })(typeof window!=='undefined'?window:globalThis);

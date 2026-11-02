@@ -283,7 +283,7 @@ test('every committed deposit event is routed country-by-country through factory
     const cycle=rs.industrialNetwork.factoryProductionCycles[factory.id];
     assert.ok(cycle&&cycle.status==='IN_PROGRESS'&&cycle.finishDate,'delivery must schedule a cycle against the game calendar');
     advanceToCycleFinish(state,cycle);
-    const completion=industry.processPendingFactoryInputs(c);
+    const completion=await industry.processPendingFactoryInputs(c);
     assert.equal(completion.completedCount,1,JSON.stringify(completion));
     const completedDelivery=(rs.industrialNetwork.deliveries||[]).find(x=>String(x.shipmentId)===String(result.shipmentId));
     assert.equal(completedDelivery?.processingStatus,'PROCESSED','shipment status must reconcile after the cycle commits');

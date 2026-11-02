@@ -39,3 +39,12 @@ Participants should be deterministic and idempotent by turn. Persist the turn th
 The lifecycle autosave runs in the dedicated finalizer phase after all sector participants, the publish hook, and the checkpoint phase have finished. It writes the authoritative simulation snapshot synchronously to local storage where available and waits for the IndexedDB transaction if that is the only durable storage available. State-change events outside a turn save synchronously; mutations during a turn are persisted after that turn finishes. `visibilitychange`, page `freeze`, `pagehide`, and `beforeunload` trigger a best-effort snapshot. If exit occurs mid-turn, the runtime preserves the last coherent checkpoint rather than overwrite it with a half-applied day.
 
 No browser application can guarantee a new write after the operating system has killed its process or power has been lost. The mitigation is to save each completed turn and meaningful state mutation before relying on an exit callback, rather than treating the Back button or unload event as the primary save mechanism.
+
+## World simulation scheduler
+
+The tier-aware world scheduler budgets up to four active and eight macro countries per committed game day on standard devices. Constrained mobile uses up to two active and four macro evaluations, yields after each country and uses a smaller turn budget. Pending events and duplicate IDs persist in existing world state, with priority protection for war, conflict and sanctions. The player keeps the existing detailed runtime. See `docs/OMEGA_WORLD_SIMULATION_SCHEDULER_V1.md` for the runtime contract, memory limits and 100-day regression boundaries.
+
+
+## Country data loading and release
+
+The compact country identity/economy baseline remains available. Large supporting records load only for the selected country and requested domain. The country runtime coalesces concurrent source-file requests, retains at most eight country/domain records and exposes explicit release methods. General and sector profile APIs return one country record, not the full global registry. The server shares concurrent source reads and evicts its parsed copy after a short idle interval. Optional datasets are excluded from the offline app-shell precache. The opponent gateway coalesces duplicate in-flight loads and omits optional raw datasets from save snapshots.
