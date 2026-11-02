@@ -308,7 +308,7 @@
   }
   async function load(path,optional) {
     if (typeof root.fetch!=='function') { if(optional)return null; throw new Error('FETCH_UNAVAILABLE:'+path); }
-    const response=await root.fetch(path,{cache:'default'});
+    const response=await root.fetch(path,{cache:'no-store'});
     if(!response||response.ok===false){if(optional)return null;throw new Error('DATA_FETCH_FAILED:'+path);}
     return response.json();
   }
