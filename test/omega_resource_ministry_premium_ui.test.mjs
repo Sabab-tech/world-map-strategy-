@@ -108,7 +108,7 @@ test("inventory displays the canonical 41 resources and aggregate balances when 
       "factory input stock must be visible separately from country warehouse stock");
     assert.match(root.innerHTML, /Bangladesh Textile Factory/,
       "factory-held balances must identify the factory that owns them");
-    assert.match(root.innerHTML, /321(?:\\.00)? TONNES/,
+    assert.match(root.innerHTML, /321(?:\.00)? TONNES/,
       "factory-held input quantity must remain visible after it leaves the country warehouse");
     const dashboardResult = api.render(root, { countryId: "BGD", sites: [], tab: "dashboard" });
     assert.equal(dashboardResult.ok, true);
