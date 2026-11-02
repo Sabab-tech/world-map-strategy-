@@ -47,7 +47,7 @@ test('new catalog and all cargo icons are included in offline cache',()=>{
  assert.match(offline,/assets\/omega-industrial-icons-v1\/logistics\/warehouse-node\.svg/);
  assert.ok(existsSync(new URL('../assets/omega-industrial-icons-v1/logistics/mine-site.svg',import.meta.url)));
  assert.ok(existsSync(new URL('../assets/omega-industrial-icons-v1/logistics/warehouse-node.svg',import.meta.url)));
- assert.match(offline,/omega-offline-atlas-shell-v78/);
+ assert.ok(Number(offline.match(/CACHE_NAME = "omega-offline-atlas-shell-v(\d+)"/)?.[1] || 0) >= 79, "offline shell cache version must be current");
  for(const mode of catalog.transportTypes){
   for(const path of Object.values(mode.cargoIcons)){
    assert.ok(offline.includes('"./'+path+'"'),'offline cache missing '+path);
