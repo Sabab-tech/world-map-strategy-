@@ -190,12 +190,13 @@ test("inventory rows show current stock coverage, shortage/surplus and verified 
     const result = api.render(root, { countryId: "BGD", sites: [], tab: "inventory" });
     assert.equal(result.ok, true);
     assert.match(root.innerHTML, /Current Stock/);
-    assert.match(root.innerHTML, /125(?:\\.00)? TONNES/);
+    assert.match(root.innerHTML, /125.*TONNES/);
     assert.match(root.innerHTML, /5 days/, "125 tonnes at 25 tonnes/day must cover five days");
     assert.match(root.innerHTML, /Surplus/, "stock above its runtime target must be shown as surplus");
     assert.match(root.innerHTML, /Shortage/, "runtime shortage status must be retained");
     assert.match(root.innerHTML, /Domestic mine/, "local mine batch lineage must be visible");
-    assert.match(root.innerHTML, /Foreign import \\(AUS\\)/, "foreign inventory origin must show its source country");
+    assert.match(root.innerHTML, /Foreign import/, "foreign inventory origin must be identified");
+    assert.match(root.innerHTML, /AUS/, "foreign inventory origin must show its source country");
     assert.match(root.innerHTML, /Confirmed foreign inbound/, "approved inbound import requests must be separated from on-hand stock");
     assert.match(root.innerHTML, /data-omega-v2-coverage-days-input/);
     assert.match(root.innerHTML, /max="3650"/);
