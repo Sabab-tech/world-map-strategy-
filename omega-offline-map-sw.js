@@ -2,12 +2,16 @@
  * Same-origin app files are cached for offline relaunch; remote map tiles are never cached here.
  */
 "use strict";
-const CACHE_NAME = "omega-offline-atlas-shell-v78";
+const CACHE_NAME = "omega-offline-atlas-shell-v79";
 const DATA_CACHE_NAME = "omega-country-data-v1";
 const DATA_CACHE_MAX_ENTRIES = 48;
 const DATA_CACHE_MAX_BYTES = 48 * 1024 * 1024;
 const DATA_CACHE_MAX_ENTRY_BYTES = 12 * 1024 * 1024;
 const DATA_NETWORK_TIMEOUT_MS = 2200;
+const DATA_CACHE_REFRESH_INTERVAL_MS = 5 * 60 * 1000;
+const DATA_CACHE_TOUCH_INTERVAL_MS = 60 * 1000;
+const MAX_BACKGROUND_DATA_REFRESHES = 2;
+let activeBackgroundDataRefreshes = 0;
 let dataCacheMutation = Promise.resolve();
 const APP_BASE = new URL("./", self.location.href);
 const INDEX_URL = new URL("index.html", APP_BASE).href;
@@ -191,8 +195,10 @@ async function rememberDataResponse(cache, request, response) {
       return false;
     }
     await cache.put(request, response.clone());
-    const rows = (await readDataCacheIndex(cache)).filter(row => row.url !== request.url);
-    rows.push({ url: request.url, size, usedAt: Date.now() });
+    const existingRows = await readDataCacheIndex(cache);
+    const checkedAt = Date.now();
+    const rows = existingRows.filter(row => row.url !== request.url);
+    rows.push({ url: request.url, size, usedAt: checkedAt, checkedAt });
     rows.sort((left, right) => Number(left.usedAt) - Number(right.usedAt));
     let total = rows.reduce((sum, row) => sum + Math.max(0, Number(row.size) || 0), 0);
     while (rows.length > DATA_CACHE_MAX_ENTRIES || total > DATA_CACHE_MAX_BYTES) {
@@ -219,7 +225,9 @@ async function touchDataResponse(cache, request) {
     const rows = await readDataCacheIndex(cache);
     const row = rows.find(item => item.url === request.url);
     if (!row) return;
-    row.usedAt = Date.now();
+    const now = Date.now();
+    if (now - Number(row.usedAt || 0) < DATA_CACHE_TOUCH_INTERVAL_MS) return;
+    row.usedAt = now;
     rows.sort((left, right) => Number(left.usedAt) - Number(right.usedAt));
     await writeDataCacheIndex(cache, rows);
   });
@@ -282,7 +290,7 @@ async function networkFirstData(request, fetchEvent) {
     // Offline-first: serve a valid local copy immediately and refresh in the
     // background. The page is notified if the source version changes or vanishes.
     if (!(self.navigator && self.navigator.onLine === false)) {
-      const refresh = refreshCachedData(cache, request, cached);
+      const refresh = refreshCachedDataIfDue(cache, request, cached);
       if (fetchEvent && typeof fetchEvent.waitUntil === "function") fetchEvent.waitUntil(refresh);
       else void refresh;
     }
@@ -312,6 +320,33 @@ async function networkFirstData(request, fetchEvent) {
       status: 504, statusText: "Offline data unavailable",
       headers: { "Content-Type": "text/plain; charset=utf-8" }
     });
+}
+
+async function refreshCachedDataIfDue(cache, request, previous) {
+  // Never fan out every cache hit into more network work. Two refreshes maximum
+  // may run at once, and each exact URL is checked at most once per cooldown.
+  if (activeBackgroundDataRefreshes >= MAX_BACKGROUND_DATA_REFRESHES) return false;
+  activeBackgroundDataRefreshes += 1;
+  try {
+    const shouldRefresh = await withDataCacheLock(async () => {
+      const rows = await readDataCacheIndex(cache);
+      const now = Date.now();
+      let row = rows.find(item => item.url === request.url);
+      if (row && now - Number(row.checkedAt || 0) < DATA_CACHE_REFRESH_INTERVAL_MS) return false;
+      if (!row) {
+        row = { url: request.url, size: 0, usedAt: now };
+        rows.push(row);
+      }
+      row.checkedAt = now;
+      await writeDataCacheIndex(cache, rows);
+      return true;
+    });
+    if (!shouldRefresh) return false;
+    await refreshCachedData(cache, request, previous);
+    return true;
+  } finally {
+    activeBackgroundDataRefreshes = Math.max(0, activeBackgroundDataRefreshes - 1);
+  }
 }
 
 async function fetchAndCache(cache, url) {
@@ -364,7 +399,7 @@ self.addEventListener("install", event => {
     }
     const urls = [...assets];
     let cursor = 0;
-    const workers = Array.from({ length: 3 }, async () => {
+    const workers = Array.from({ length: 2 }, async () => {
       while (cursor < urls.length) {
         const url = urls[cursor++];
         await fetchAndCache(cache, url);
@@ -399,7 +434,11 @@ self.addEventListener("fetch", event => {
         ? await cache.match(APP_BASE.href) || await cache.match(INDEX_URL)
         : null);
     if (cached) {
-      event.waitUntil(fetchAndCache(cache, url.href).then(() => undefined));
+      // A shell cache hit must stay local. The versioned install process refreshes
+      // scripts/styles once per release; only a navigation checks the HTML shell.
+      if (request.mode === "navigate") {
+        event.waitUntil(fetchAndCache(cache, url.href).then(() => undefined));
+      }
       return cached;
     }
     const response = await fetchAndCache(cache, url.href);

@@ -8,6 +8,8 @@ const source=readFileSync(new URL('../omega-offline-map-sw.js',import.meta.url),
 function createCacheHarness(){
   const listeners=new Map(),cacheStores=new Map(),networkRequests=[];
   let offline=false,deleted=false,serverError=false,stalled=false,payload={revision:1};
+  let clockNow=Date.now();
+  class TestDate extends Date{static now(){return clockNow;}}
   const appUrl='https://omega.test/game/omega-offline-map-sw.js';
   const origin='https://omega.test';
   class MemoryCache{
@@ -50,7 +52,7 @@ function createCacheHarness(){
     if(url.pathname.endsWith('/manifest.json'))return new Response(JSON.stringify({factories:[],resources:[],transportVariants:[]}),{status:200,headers:{'Content-Type':'application/json'}});
     return new Response('asset',{status:200,headers:{'Content-Type':'application/javascript'}});
   }
-  const sandbox={self,caches,fetch:fetchImpl,URL,Request,Response,Headers,AbortController,setTimeout,clearTimeout,Promise,Map,Set,Array,Object,Number,String,Math,Date,RegExp};
+  const sandbox={self,caches,fetch:fetchImpl,URL,Request,Response,Headers,AbortController,setTimeout,clearTimeout,Promise,Map,Set,Array,Object,Number,String,Math,Date:TestDate,RegExp};
   vm.runInNewContext(source,sandbox,{filename:'omega-offline-map-sw.js'});
   async function install(){
     let pending;
@@ -72,7 +74,8 @@ function createCacheHarness(){
     setDeleted(value){deleted=value;},
     setServerError(value){serverError=value;},
     setStalled(value){stalled=value;},
-    setPayload(value){payload=value;}
+    setPayload(value){payload=value;},
+    advanceTime(ms){clockNow+=ms;}
   };
 }
 
@@ -84,6 +87,17 @@ test('offline install precaches the shell but not the large resource registry sh
   assert.ok(!requested.some(path=>path.endsWith('/resource_site_master_registry_v1.json')));
   assert.ok(!requested.some(path=>/resource_site_logistics_routes_v1_part_\d+\.json$/.test(path)));
   assert.ok(!requested.some(path=>path.endsWith('/resource_site_country_expansion_v1.json')));
+});
+
+test('cached shell scripts do not trigger another background network request on every page load',async()=>{
+  const h=createCacheHarness();await h.install();
+  const url='https://omega.test/game/boot.js';
+  const before=h.networkRequests.filter(row=>row.url===url).length;
+  assert.equal(before,1,'the shell script should have been fetched during installation');
+  const response=await h.request(url);
+  assert.equal(response.status,200);
+  const after=h.networkRequests.filter(row=>row.url===url).length;
+  assert.equal(after,before,'a cache hit for a JS asset must not spawn a second network request');
 });
 
 test('boot-critical world and country economy JSON remain available from the shell cache offline',async()=>{
@@ -101,8 +115,15 @@ test('country data is refreshed online and only uses its last downloaded copy af
   let response=await h.request(url);
   assert.deepEqual(await response.json(),{revision:1});
   h.setPayload({revision:2});
+  const requestsBeforeCooldown=h.networkRequests.filter(row=>row.url===url).length;
   response=await h.request(url);
-  assert.deepEqual(await response.json(),{revision:1},'a cached revision is returned immediately while the new revision is fetched in the background');
+  assert.deepEqual(await response.json(),{revision:1},'fresh cached data remains available during the refresh cooldown');
+  assert.equal(response.headers.get('X-OMEGA-OFFLINE-STALE'),'1');
+  assert.equal(h.networkRequests.filter(row=>row.url===url).length,requestsBeforeCooldown,
+    're-reading a recently checked data URL must not start another network request');
+  h.advanceTime(5*60*1000+1);
+  response=await h.request(url);
+  assert.deepEqual(await response.json(),{revision:1},'the current read still returns the cached copy while its due refresh completes');
   assert.equal(response.headers.get('X-OMEGA-OFFLINE-STALE'),'1');
   response=await h.request(url);
   assert.deepEqual(await response.json(),{revision:2},'the next read must use the refreshed exact-URL cache entry');
@@ -116,6 +137,7 @@ test('server errors may use a marked stale copy while the server is temporarily 
   const h=createCacheHarness();await h.install();
   const url='https://omega.test/game/api/omega/country-general-data/BD';
   await h.request(url);
+  h.advanceTime(5*60*1000+1);
   h.setServerError(true);
   const response=await h.request(url);
   assert.equal(response.status,200,'a transient server error should not prevent offline-capable data from being displayed');
@@ -127,6 +149,7 @@ test('stalled country requests abort at the configured timeout and fall back to 
   const h=createCacheHarness();await h.install();
   const url='https://omega.test/game/api/omega/country-general-data/BD';
   await h.request(url);
+  h.advanceTime(5*60*1000+1);
   h.setStalled(true);
   const started=Date.now();
   const pending=await h.request(url,{waitForBackground:false});
@@ -145,6 +168,7 @@ test('deleted country data is removed rather than resurrected from an old offlin
   const h=createCacheHarness();await h.install();
   const url='https://omega.test/game/api/omega/country-general-data/BD';
   await h.request(url);
+  h.advanceTime(5*60*1000+1);
   h.setDeleted(true);
   let response=await h.request(url);
   assert.equal(response.status,200,'the last downloaded copy can be served while a background deletion check completes');

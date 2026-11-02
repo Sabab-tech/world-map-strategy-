@@ -369,7 +369,7 @@ test("resource visual layer is wired into the offline-first app without remote d
   assert.ok(html.includes(stylesheetTag), "premium resource stylesheet must be loaded by the app");
   assert.ok(sw.includes('"' + "./" + cssPath + '"'), "premium resource stylesheet must be precached offline");
   assert.ok(uiManifest.additionalStyles.includes(cssPath), "UI v2 manifest must document the resource style");
-  assert.match(sw, /omega-offline-atlas-shell-v78/, "offline cache must be invalidated for new visual assets");
+  assert.ok(Number(sw.match(/CACHE_NAME = "omega-offline-atlas-shell-v(\d+)"/)?.[1] || 0) >= 79, "offline cache must be invalidated for new visual assets");
   const coreAssets = sw.slice(sw.indexOf("const CORE_ASSETS"), sw.indexOf("];", sw.indexOf("const CORE_ASSETS")));
   assert.ok(coreAssets.includes('"./resource_economy_rules.json"'), "canonical resource identities remain in the shell precache list");
   const shellAssetPolicy = sw.slice(sw.indexOf("function isShellAsset"), sw.indexOf("function isLocalAppUrl"));
@@ -946,7 +946,7 @@ test("all resource SVGs use a light metallic backplate for readable dark mineral
     assert.match(svg, /data-omega-icon-kind="resource"/);
   }
   assert.match(manifest.rendering.background, /light silver-metal.*factory SVGs retain their shared dark-navy/i);
-  assert.match(read("omega-offline-map-sw.js"), /omega-offline-atlas-shell-v78/);
+  assert.ok(Number(read("omega-offline-map-sw.js").match(/CACHE_NAME = "omega-offline-atlas-shell-v(\d+)"/)?.[1] || 0) >= 79, "offline shell cache version must be current");
 });
 
 
