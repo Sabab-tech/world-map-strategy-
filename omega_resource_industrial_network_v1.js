@@ -5353,9 +5353,16 @@ function registerStartingFactoryAssets(input={}){
     return types.includes(type)&&!['DECOMMISSIONED','DESTROYED','UNDER_CONSTRUCTION'].includes(String(asset?.status||'').toUpperCase());
   });
   if(prior&&prior.status==='COMPLETED'){
-    const live=activeFactoryAssets();
-    return{...clone(prior),status:'ALREADY_REGISTERED',idempotent:true,activeAssetCount:live.length,
-      activeByType:Object.fromEntries(types.map(type=>[type,live.filter(asset=>normalizeFactoryType(asset?.factoryType||asset?.type||asset?.facilityType||'')===type).length]))};
+    // Keep the prior registration marker only while its country factory records
+    // still exist. A saved marker must not hide factories removed from the live list.
+    const recordedByType=Object.fromEntries(types.map(type=>[type,assets.filter(asset=>
+      normalizeFactoryType(asset?.factoryType||asset?.type||asset?.facilityType||'')===type).length]));
+    const recordsComplete=types.every(type=>recordedByType[type]>=Number(counts[type]||0));
+    if(recordsComplete){
+      const live=activeFactoryAssets();
+      return{...clone(prior),status:'ALREADY_REGISTERED',idempotent:true,activeAssetCount:live.length,
+        activeByType:Object.fromEntries(types.map(type=>[type,live.filter(asset=>normalizeFactoryType(asset?.factoryType||asset?.type||asset?.facilityType||'')===type).length]))};
+    }
   }
   const createdAssetIds=[],createdByType={},blockedTypes=[],skippedByType={};
   for(const type of types){
