@@ -302,6 +302,7 @@ test('factory production yields between bounded batches without skipping eligibl
   let yieldCount=0;
   context.navigator={userAgent:'Android',deviceMemory:2,hardwareConcurrency:2};
   context.setTimeout=callback=>{yieldCount++;return setImmediate(callback);};
+  context.requestAnimationFrame=callback=>{yieldCount++;return 1;};
   for(let index=1;index<=8;index++){
     worldState.economy.BGD.productionAssets.push({
       id:'PROC_EXTRA_'+index,stage:'PROCESSING',capacity:1,
@@ -317,7 +318,7 @@ test('factory production yields between bounded batches without skipping eligibl
   assert.equal(runtime.blockedFacilities.length,0,'bounded yielding must not turn eligible facilities into blocked work');
   assert.ok(yieldCount>=5,'mobile production must yield repeatedly during planning and transaction commits');
   assert.equal(worldState.resource.BGD.inventory.iron_ore,42);
-  assert.equal(worldState.resource.BGD.inventory.iron_intermediate,46.4);
+  assert.ok(Math.abs(worldState.resource.BGD.inventory.iron_intermediate-46.4)<1e-9,'floating-point output should remain within numerical tolerance');
   assert.equal(worldState.resource.BGD.warehouse.availableByResource.iron_ore,42);
 });
 
