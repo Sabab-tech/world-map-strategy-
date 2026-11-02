@@ -2,7 +2,7 @@
  * Same-origin app files are cached for offline relaunch; remote map tiles are never cached here.
  */
 "use strict";
-const CACHE_NAME = "omega-offline-atlas-shell-v72";
+const CACHE_NAME = "omega-offline-atlas-shell-v73";
 const DATA_CACHE_NAME = "omega-country-data-v1";
 const DATA_CACHE_MAX_ENTRIES = 48;
 const DATA_CACHE_MAX_BYTES = 48 * 1024 * 1024;
@@ -144,10 +144,11 @@ function isLocalAppUrl(value) {
 }
 
 function isDataRequest(url) {
-  // These two compact boot datasets are already part of the app shell.
+  // The compact bootstrap stays in the shell. All larger mutable records and
+  // media assets use the bounded data cache and are downloaded only when used.
   if (/\/(?:world\.json|economy_global_profiles_v1\.json)$/i.test(url.pathname)) return false;
   return /\/api\/omega\/country-(?:domain|general-data|sector-profile)\//i.test(url.pathname) ||
-    /\.(?:json|geojson)$/i.test(url.pathname);
+    /\.(?:json|geojson|png|jpe?g|webp|avif|svg|woff2?)$/i.test(url.pathname);
 }
 
 function withDataCacheLock(work) {
@@ -253,35 +254,62 @@ async function notifyCachedDataChanged(request, previous, response) {
     });
   } catch (_) {}
 }
-async function networkFirstData(request) {
-  const cache = await caches.open(DATA_CACHE_NAME);
-  const cached = await cache.match(request);
-  if (cached && self.navigator && self.navigator.onLine === false)
-    return serveCachedData(cache, request, cached);
+async function notifyDataRemoved(request) {
+  try {
+    const clients = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+    for (const client of clients) client.postMessage({ type: "OMEGA_CACHE_DATA_REMOVED", url: request.url });
+  } catch (_) {}
+}
+async function refreshCachedData(cache, request, previous) {
   try {
     const response = await fetchDataWithTimeout(request);
-    if (response) {
-      if (response.ok && response.type !== "opaque") {
-        await rememberDataResponse(cache, request, response);
-        await notifyCachedDataChanged(request, cached, response);
-        return response;
-      }
-      if (response.status === 404 || response.status === 410) {
-        await forgetDataResponse(cache, request);
-        return response;
-      }
-      if (response.status >= 500 && cached)
-        return serveCachedData(cache, request, cached);
+    if (!response) return;
+    if (response.ok && response.type !== "opaque") {
+      await rememberDataResponse(cache, request, response);
+      await notifyCachedDataChanged(request, previous, response);
+    } else if (response.status === 404 || response.status === 410) {
+      await forgetDataResponse(cache, request);
+      await notifyDataRemoved(request);
+    }
+  } catch (_) {
+    // Cached data remains intact during an offline or slow-network refresh.
+  }
+}
+async function networkFirstData(request, fetchEvent) {
+  const cache = await caches.open(DATA_CACHE_NAME);
+  const cached = await cache.match(request);
+  if (cached) {
+    // Offline-first: serve a valid local copy immediately and refresh in the
+    // background. The page is notified if the source version changes or vanishes.
+    if (!(self.navigator && self.navigator.onLine === false)) {
+      const refresh = refreshCachedData(cache, request, cached);
+      if (fetchEvent && typeof fetchEvent.waitUntil === "function") fetchEvent.waitUntil(refresh);
+      else void refresh;
+    }
+    return serveCachedData(cache, request, cached);
+  }
+  try {
+    const response = await fetchDataWithTimeout(request);
+    if (response && response.ok && response.type !== "opaque") {
+      await rememberDataResponse(cache, request, response);
+      return response;
+    }
+    if (response && (response.status === 404 || response.status === 410)) {
+      await forgetDataResponse(cache, request);
+      return response;
+    }
+    if (response && response.status >= 500) {
+      const latest = await cache.match(request);
+      if (latest) return serveCachedData(cache, request, latest);
       return response;
     }
   } catch (_) {
-    // Network failures are bounded. The last valid offline response is still usable.
+    // First-time fetches are also bounded; return an explicit offline miss.
   }
-  const refreshed = await cache.match(request);
-  return await serveCachedData(cache, request, refreshed) ||
+  const latest = await cache.match(request);
+  return await serveCachedData(cache, request, latest) ||
     new Response("OMEGA offline data has not been downloaded on this device yet.", {
-      status: 504,
-      statusText: "Offline data unavailable",
+      status: 504, statusText: "Offline data unavailable",
       headers: { "Content-Type": "text/plain; charset=utf-8" }
     });
 }
@@ -363,7 +391,7 @@ self.addEventListener("fetch", event => {
   if (url.origin !== self.location.origin || !url.pathname.startsWith(APP_BASE.pathname)) return;
 
   event.respondWith((async () => {
-    if (isDataRequest(url)) return networkFirstData(request);
+    if (isDataRequest(url)) return networkFirstData(request, event);
 
     const cache = await caches.open(CACHE_NAME);
     const cached = await cache.match(request) ||
