@@ -52,3 +52,17 @@ Every stage must stay owned by the resource/industrial runtimes. A UI tab change
 - Decommission lifecycle: confirmation required, state retained, output stops, history is recorded, repeated request is idempotent and warehouse stock remains unchanged.
 - Offline: update the cache version whenever UI/CSS changes.
 - Exact-head CI must pass before merge. UI and fixture success is not a claim that every saved game already contains commissioned mines or factories.
+
+
+## Current-stock inventory presentation (2026-11-03)
+
+The Inventory / Warehouse route renders the selected player's canonical raw-resource rows in this order:
+
+1. Existing local SVG commodity icon and resource name.
+2. Recorded current stock, with its physical unit; an absent balance remains explicitly unrecorded.
+3. Recorded daily national demand, with a per-day unit.
+4. Runtime supply status: shortage, low stock, adequate, surplus, no recorded demand, or not verified.
+5. Supply origin from on-hand raw batches: domestic mine, foreign import (supplier country name in brackets), opening allocation, or unrecorded lineage. Accepted import requests still in transit are shown separately and are never added to on-hand stock.
+6. Stock-coverage days and any runtime target gap, shown as supplementary detail.
+
+The inventory namespaces remain physically separate in the UI: **Raw Resource Inventory** enumerates the canonical 41 raw identities and reads the raw warehouse; **Processed Goods Warehouse** reads only the processed warehouse; **Factory-held input** reads each factory's own input inventory. No raw/processed/factory-held quantity is added to another location. Unknown source lineage is reported, never guessed. The raw-resource status uses the resource's own demand-runtime coverage target and never borrows the factory-input stock target.
