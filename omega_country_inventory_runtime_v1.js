@@ -997,8 +997,11 @@
   function getCountryRecord(countryId) {
     var cid = canonicalCountry(countryId);
     if (!cid) return null;
-    var row = root().countries[cid] || ensureCountry(cid);
-    return clone(row);
+    // A country record is persisted only after that country becomes the active
+    // player country. Static country names and shared catalog rows are not a
+    // reason to create inactive runtime state in the save.
+    var row = root().countries[cid];
+    return row ? clone(row) : null;
   }
 
   function clone(value, seen) {
@@ -1018,9 +1021,17 @@
     options = object(options) ? options : {};
     var cid = canonicalCountry(countryId || playerCountry());
     if (!cid) return { status: 'BLOCKED', reason: 'COUNTRY_NOT_RESOLVED', countryId: null, items: [], ledger: [] };
-    var row = root().countries[cid] || ensureCountry(cid);
+    var data = root();
+    var savedRow = data.countries[cid] || null;
+    var activeCountryId = playerCountry();
+    // Non-player lookups are read-only catalog projections. They must never
+    // create persistent country shells or poll another country's live balances.
+    var row = savedRow || (cid === activeCountryId ? ensureCountry(cid) : {
+      countryId:cid, countryName:countryNames[cid] || cid,
+      products:{}, observedBalances:{}, ledger:[], updatedTurn:0
+    });
     var current = inventoryValues(cid);
-    var data = root(), ids = Object.create(null);
+    var ids = Object.create(null);
     Object.keys(data.productCatalog).forEach(function (id) { ids[id] = true; });
     Object.keys(row.products || {}).forEach(function (id) { ids[id] = true; });
     Object.keys(current).forEach(function (id) { ids[id] = true; });
@@ -1096,8 +1107,9 @@
       }
       await loadCanonicalResourceProfiles();
       findProductCatalog();
-      var roster = countryRoster();
-      roster.forEach(function (row) { ensureCountry(row.countryId, row.countryName); });
+      // Populate the static identity/name index, but materialize runtime state
+      // for the current player only. Other countries are activated on selection.
+      countryRoster();
       var active = refreshActiveCountry();
       if (active) {
         baselineCountry(active);
