@@ -725,7 +725,7 @@
     const assets=allFactories(country),requests=bucket('economy',country).capacityUpgradeRequests||resourceBucket(country).capacityUpgradeRequests||[];
     const liveCards=assets.map(asset=>{
       const id=asset.id||asset.assetId||asset.factoryId||asset.projectId,inputs=Object.keys(asset.inputCoefficients||{}),outputs=Object.keys(asset.outputProfile||{}),rid=asset.resourceId||asset.inputResourceId||inputs[0]||(resources(country)[0]&&resources(country)[0].id)||'';
-      const body='<div class="omega-rescc-grid2">'+kv('Factory ID',id)+kv('Stage',asset.stage||asset.facilityType||asset.factoryType)+kv('Capacity',asset.capacity)+kv('Input stock',asset.inputInventory&&asset.inputInventory[rid])+kv('Inputs',inputs.join(', ')||'Not recorded')+kv('Outputs',outputs.join(', ')||'Not recorded')+'</div>';
+      const body='<div class="omega-rescc-grid2">'+kv('Factory ID',id)+kv('Stage',asset.stage||asset.facilityType||asset.factoryType)+kv('Capacity',asset.capacity)+kv('Current input stock',asset.inputInventory&&asset.inputInventory[rid])+kv('Inputs',inputs.join(', ')||'Not recorded')+kv('Outputs',outputs.join(', ')||'Not recorded')+'</div>';
       return card(asset.name||asset.factoryName||id,asset.status||asset.stage||'STATUS NOT RECORDED',body,actionButton('process-factory','Run one real factory cycle',{'factory-id':id,'resource-id':rid,quantity:asset.capacity||1},!(g.Omega&&g.Omega.ResourceIndustrialNetwork&&g.Omega.ResourceIndustrialNetwork.executeFactoryCycle&&id&&rid))+(rid?actionButton('expansion','Request capacity expansion',{'resource-id':rid}):''));
     }).join('');
     const profiles=siteRows(country).map(site=>{
