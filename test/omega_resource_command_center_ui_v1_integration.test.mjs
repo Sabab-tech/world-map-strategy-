@@ -172,7 +172,10 @@ test('value, cascade, market and logistics controls use authoritative records wi
   assert.match(market,/referenceAskDepth/);
   assert.match(market,/bestAsk=asks\.find\(x=>x\.referenceOnly!==true\)/);
   assert.match(logistics,/RESOURCE_ROUTE_BLOCKADE_ACTIVE/);
-  assert.match(logistics,/status:x\.status==='BLOCKED'/);
+  assert.match(logistics,/dispatchCommitted:false/);
+  assert.match(logistics,/shipmentAuthority:'OMEGA_RESOURCE_INDUSTRIAL_NETWORK_V1'/);
+  assert.match(logistics,/ROUTE_PREVIEW_ONLY/);
+  assert.doesNotMatch(logistics,/log\.shipments=shipments/);
   assert.match(policyRuntime,/function capitalizeSwfTx/);
   assert.match(policyRuntime,/SWF_TRANSACTION_ID_CONFLICT/);
 });
