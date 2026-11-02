@@ -945,7 +945,9 @@ test("Resource Ministry loads only the selected player's current inventory and u
   globalThis.Omega = { SimulationRuntime:{ world:{ state:{
     simulation:{ turn:7, session:{ sessionId:"RESOURCE-LAZY-1", playerCountryId:"BGD", status:"RUNNING" } },
     resource:{
-      BGD:{ inventory:{ coal:1234 }, inventoryUnits:{ coal:"TONNES" }, warehouse:{ availableByResource:{ coal:1234 } },
+      BGD:{ inventory:{ coal:1234, steel:5678 }, inventoryUnits:{ coal:"TONNES", steel:"TONNES" },
+        warehouse:{ availableByResource:{ coal:1234, steel:5678 } },
+        factoryInputBaselineV1:{ stockRows:[{ productId:"steel", quantity:5678, unit:"TONNES", state:"TOPPED_UP" }] },
         processedWarehouse:{ availableByResource:{} }, batches:[], mineAssets:[], industrialNetwork:{projects:[],shipments:[],siteFlowLedger:[]} }
     }
   } } } };
@@ -967,13 +969,17 @@ test("Resource Ministry loads only the selected player's current inventory and u
     const result = api.render(root,{countryId:"USA",sites:[
       {siteId:"BGD-COAL-LAZY",countryId:"BGD",siteName:"Bangladesh Mine",resourceId:"coal"},
       {siteId:"USA-COAL-LAZY",countryId:"USA",siteName:"United States Mine",resourceId:"coal"}
-    ],tab:"inventory"});
+    ],tab:"dashboard"});
     assert.equal(result.code,"PLAYER_COUNTRY_BASELINE_LOADING");
     assert.match(root.innerHTML,/Loading BGD inventory/);
     await new Promise(resolve => setTimeout(resolve,0));
     assert.deepEqual(calls,["BGD"]);
-    assert.match(root.innerHTML,/Current Stock/);
+    assert.match(root.innerHTML,/Current Stock/,
+      "the default ministry overview must expose current stock without opening another tab");
     assert.match(root.innerHTML,/1,234(?:\.00)? TONNES/);
+    assert.match(root.innerHTML,/steel/);
+    assert.match(root.innerHTML,/5,678(?:\.00)? TONNES/,
+      "factory-specific input product balances must be visible on the overview");
     assert.match(root.innerHTML,/Bangladesh \(BGD\)/);
     assert.doesNotMatch(root.innerHTML,/United States Mine|999,999/);
     const unloaded = api.unload(root);
