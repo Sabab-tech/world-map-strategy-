@@ -1316,7 +1316,7 @@ test('factory command cards use canonical SVGs, daily production state, type cou
     assert.match(root.innerHTML,/data-omega-v2-factory-build="FAC-STEEL"/);
     assert.match(root.innerHTML,/data-omega-v2-factory-destroy="FAC-STEEL"/);
     assert.match(root.innerHTML,/class="fp-summary"/);
-    assert.match(root.innerHTML,/FACTORIES/);
+    assert.match(root.innerHTML,/FACTORY ASSETS/);
     assert.match(root.innerHTML,/PRODUCTION CYCLES/);
 
     // Every industrial tab must remain inside the reference command stage.
