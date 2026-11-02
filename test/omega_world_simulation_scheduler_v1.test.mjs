@@ -34,7 +34,7 @@ test('active countries and event intake are capped and unknown IDs are ignored a
  const h=harness(197);for(let i=1;i<80;i++)h.scheduler.activateCountry(h.ids[i],{turn:1,reason:'WAR',priority:100});assert.ok(h.scheduler.diagnostics().activeCountryCount<=48);
  for(let i=0;i<300;i++)h.scheduler.enqueueEvent({eventId:'EVENT-'+i,eventType:'OMEGA_TRADE_REQUEST_CREATED',simulationTurn:1,payload:{countryId:'BB'}});
  assert.ok(h.scheduler.diagnostics().pendingEvents<=256);assert.ok(h.scheduler.diagnostics().eventOverflowCount>0);
- h.scheduler.activateCountry('ZZ',{turn:1,reason:'TRADE',priority:65});h.state.simulation.turn=1;
+ assert.equal(h.scheduler.activateCountry('ZZ',{turn:1,reason:'TRADE',priority:100}).status,'ACTIVATED');h.state.simulation.turn=1;
  const result=await h.participant.handler({}, {turn:1,countryId:'AA',playerCountryId:'AA',state:h.state,simulation:h.simulation});
  assert.equal(result.active.results.some(row=>row.countryId==='ZZ'),false);
  assert.equal(h.state.simulation.worldSimulationScheduler.activeCountries.ZZ,undefined);
