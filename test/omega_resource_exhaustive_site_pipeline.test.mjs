@@ -658,7 +658,7 @@ for(let pass=0;pass<32;pass++){
   const pendingCountries=new Set(pending.map(item=>item.site.countryId));
   const previousCompleted=pending.filter(item=>flowProcessed(item.site.countryId,item.result.batchId)).length;
   advanceTo(targetTurn,targetDate);
-  for(const countryId of pendingCountries)industry.processPendingFactoryInputs(countryId);
+  for(const countryId of pendingCountries)await industry.processPendingFactoryInputs(countryId);
   const stillPending=targetPipelines.filter(item=>!flowProcessed(item.site.countryId,item.result.batchId));
   const currentTurn=Number(game.state.simulation.turn)||1;
   const canProgress=stillPending.some(item=>{
