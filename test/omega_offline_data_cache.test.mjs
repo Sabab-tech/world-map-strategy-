@@ -7,7 +7,7 @@ const source=readFileSync(new URL('../omega-offline-map-sw.js',import.meta.url),
 
 function createCacheHarness(){
   const listeners=new Map(),cacheStores=new Map(),networkRequests=[];
-  let offline=false,deleted=false,serverError=false,payload={revision:1};
+  let offline=false,deleted=false,serverError=false,stalled=false,payload={revision:1};
   const appUrl='https://omega.test/game/omega-offline-map-sw.js';
   const origin='https://omega.test';
   class MemoryCache{
@@ -33,9 +33,13 @@ function createCacheHarness(){
     const url=new URL(href,appUrl);networkRequests.push({url:url.href,cache:options.cache||null});
     if(url.pathname.endsWith('/resource-large.json')){
       if(offline)throw new Error('NETWORK_OFFLINE');
-      return new Response('asset',{status:200,headers:{'Content-Type':'application/json','Content-Length':String(4*1024*1024+1)}});
+      return new Response('asset',{status:200,headers:{'Content-Type':'application/json','Content-Length':String(12*1024*1024+1)}});
     }
     if(url.pathname.endsWith('/api/omega/country-general-data/BD')){
+      if(stalled)return new Promise((resolve,reject)=>{
+        if(options.signal?.aborted)return reject(new Error('NETWORK_TIMEOUT'));
+        options.signal?.addEventListener('abort',()=>reject(new Error('NETWORK_TIMEOUT')),{once:true});
+      });
       if(offline)throw new Error('NETWORK_OFFLINE');
       if(deleted)return new Response('missing',{status:404});
       if(serverError)return new Response('temporarily unavailable',{status:503});
@@ -46,7 +50,7 @@ function createCacheHarness(){
     if(url.pathname.endsWith('/manifest.json'))return new Response(JSON.stringify({factories:[],resources:[],transportVariants:[]}),{status:200,headers:{'Content-Type':'application/json'}});
     return new Response('asset',{status:200,headers:{'Content-Type':'application/javascript'}});
   }
-  const sandbox={self,caches,fetch:fetchImpl,URL,Request,Response,Headers,Promise,Map,Set,Array,Object,Number,String,Math,Date,RegExp};
+  const sandbox={self,caches,fetch:fetchImpl,URL,Request,Response,Headers,AbortController,setTimeout,clearTimeout,Promise,Map,Set,Array,Object,Number,String,Math,Date,RegExp};
   vm.runInNewContext(source,sandbox,{filename:'omega-offline-map-sw.js'});
   async function install(){
     let pending;
@@ -66,6 +70,7 @@ function createCacheHarness(){
     setOffline(value){offline=value;},
     setDeleted(value){deleted=value;},
     setServerError(value){serverError=value;},
+    setStalled(value){stalled=value;},
     setPayload(value){payload=value;}
   };
 }
@@ -103,18 +108,28 @@ test('country data is refreshed online and only uses its last downloaded copy af
   assert.equal(response.headers.get('X-OMEGA-OFFLINE-STALE'),'1');
 });
 
-test('server errors do not silently serve stale data while the server is reachable',async()=>{
+test('server errors may use a marked stale copy while the server is temporarily unavailable',async()=>{
   const h=createCacheHarness();await h.install();
   const url='https://omega.test/game/api/omega/country-general-data/BD';
   await h.request(url);
   h.setServerError(true);
   const response=await h.request(url);
-  assert.equal(response.status,503,'server errors must be visible instead of being masked by cached JSON');
-  h.setServerError(false);
-  h.setOffline(true);
-  const offlineResponse=await h.request(url);
-  assert.equal(offlineResponse.status,200,'a later genuine network failure may still use the saved offline copy');
-  assert.equal(offlineResponse.headers.get('X-OMEGA-OFFLINE-STALE'),'1');
+  assert.equal(response.status,200,'a transient server error should not prevent offline-capable data from being displayed');
+  assert.equal(response.headers.get('X-OMEGA-OFFLINE-STALE'),'1','fallback data must be visibly marked stale');
+  assert.deepEqual(await response.json(),{revision:1});
+});
+
+test('stalled country requests abort at the configured timeout and fall back to the last downloaded copy',async()=>{
+  const h=createCacheHarness();await h.install();
+  const url='https://omega.test/game/api/omega/country-general-data/BD';
+  await h.request(url);
+  h.setStalled(true);
+  const started=Date.now();
+  const response=await h.request(url);
+  const elapsed=Date.now()-started;
+  assert.equal(response.status,200);
+  assert.equal(response.headers.get('X-OMEGA-OFFLINE-STALE'),'1');
+  assert.ok(elapsed>=1900&&elapsed<5000,'network fallback must be bounded by the 2.2 second request timeout');
 });
 
 test('deleted country data is removed rather than resurrected from an old offline cache',async()=>{
@@ -129,7 +144,7 @@ test('deleted country data is removed rather than resurrected from an old offlin
   assert.equal(response.status,504);
 });
 
-test('oversized dynamic data is not retained in the offline working set',async()=>{
+test('data larger than the configured per-file limit is not retained in the offline working set',async()=>{
   const h=createCacheHarness();await h.install();
   const url='https://omega.test/game/resource-large.json';
   h.setOffline(false);
