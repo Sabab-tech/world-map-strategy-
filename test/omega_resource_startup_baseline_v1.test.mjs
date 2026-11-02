@@ -147,7 +147,11 @@ test('source catalog contract remains exactly 41 resource identities and 21 fact
   assert.equal(policy.startupFactories.maxOneDownstreamAssetPerFactoryTypePerCountry, true);
   assert.equal(policy.bootstrap.neverReplenishAfterInitialization, true);
   assert.equal(policy.factoryInputStockBaseline.enabled, true);
-  assert.equal(policy.factoryInputStockBaseline.bufferPercent, 40);
+  assert.equal(policy.factoryInputStockBaseline.bufferPercent, 0);
+  assert.equal(policy.factoryInputStockBaseline.legacyCycleBufferPercent, 40);
+  assert.equal(policy.factoryInputStockBaseline.targetCoverageDays, 100);
+  assert.equal(policy.factoryInputStockBaseline.recurringDomesticSupply.onlySelectedPlayerCountry, true);
+  assert.equal(policy.factoryInputStockBaseline.recurringDomesticSupply.wallClockTimers, false);
   assert.equal(policy.factoryInputStockBaseline.oneTimeOnly, true);
   assert.equal(policy.factoryInputStockBaseline.neverUseGeologicalReservesAsStock, true);
 });
@@ -169,7 +173,7 @@ test('fresh session seeds bounded opening stock and source-context-driven factor
     const detail = event && event.detail || {};
     const stockSource = detail.provenance && detail.provenance.source;
     const isExistingDemandOpeningStock = stockSource === 'SIMULATED_STARTUP_BASELINE_V1';
-    const isFactoryInputRawStock = stockSource === 'SIMULATED_FACTORY_INPUT_STARTUP_BASELINE_V1' && detail.stage === 'RAW';
+    const isFactoryInputRawStock = stockSource === 'SIMULATED_FACTORY_INPUT_STARTUP_BASELINE_V2' && detail.stage === 'RAW';
     if (!isExistingDemandOpeningStock && !isFactoryInputRawStock) return;
     const bucket = state.resource[detail.countryId];
     const batch = (bucket.batches || []).find(row => row.batchId === detail.transactionId);
@@ -191,22 +195,34 @@ test('fresh session seeds bounded opening stock and source-context-driven factor
   assert.ok(['COMPLETED_WITH_REPORTED_GAPS', 'COMPLETED'].includes(initialized.status));
   const bangladeshFactoryCoal = factoryInputBaseline.countries.BGD.factoryInputRows.find(row => row.productId === 'coal');
   assert.ok(bangladeshFactoryCoal);
-  assert.equal(state.resource.BGD.inventory.coal, bangladeshFactoryCoal.openingStockQuantity,
-    'the existing explicit zero is preserved as the starting balance and the factory-input baseline is added separately');
+  const bangladeshCoalDailyDemand = bangladeshFactoryCoal.sources.reduce((sum, source) =>
+    sum + source.demandQuantity / Math.max(1, source.cycleDays || 1), 0);
+  const bangladeshFactoryStock = state.resource.BGD.factoryInputBaselineV1.stockRows.find(row => row.productId === 'coal');
+  const bangladeshCoalTarget = bangladeshCoalDailyDemand * 100;
+  assert.equal(state.resource.BGD.inventory.coal, bangladeshCoalTarget,
+    'opening current stock is daily recipe demand multiplied by the configured 100-day target, not a 1.4-cycle buffer');
   assert.equal(state.resource.BGD.inventoryUnits.coal, 'TONNES',
     'the factory opening-stock seed must not overwrite an existing product-unit label');
   assert.equal(state.resource.BGD.factoryInputBaselineV1.openingStockInitialized, true);
-  assert.equal(state.resource.BGD.factoryInputBaselineV1.bufferPercent, 40);
-  const bangladeshCoalBatchId = state.resource.BGD.factoryInputBaselineV1.stockRows.find(row => row.productId === 'coal').batchId;
+  assert.equal(state.resource.BGD.factoryInputBaselineV1.coverageModelVersion, '2.0.0');
+  assert.equal(state.resource.BGD.factoryInputBaselineV1.targetCoverageDays, 100);
+  assert.equal(state.resource.BGD.factoryInputBaselineV1.bufferPercent, 0);
+  assert.ok(bangladeshFactoryStock);
+  assert.equal(bangladeshFactoryStock.targetCoverageDays, 100);
+  assert.equal(bangladeshFactoryStock.targetStockQuantity, bangladeshCoalTarget);
+  const bangladeshCoalBatchId = bangladeshFactoryStock.batchId;
+  assert.ok(bangladeshCoalBatchId.startsWith('STARTUP-FACTORY-INPUT-V2-BGD-COAL-C100'));
   assert.ok(state.resource.BGD.batches.some(row => row.batchId === bangladeshCoalBatchId && row.stage === 'RAW'));
   assert.ok(state.resource.BGD.inventoryLots[bangladeshCoalBatchId]);
   assert.ok(state.resource.BGD.warehouse.receipts.some(row => row.batchId === bangladeshCoalBatchId));
   assert.equal(state.resource.BGD.warehouse.availableByResource.coal, state.resource.BGD.inventory.coal);
   const bangladeshIntermediate = factoryInputBaseline.countries.BGD.factoryInputRows.find(row => row.stage === 'INTERMEDIATE');
   assert.ok(bangladeshIntermediate);
+  const intermediateStockRow = state.resource.BGD.factoryInputBaselineV1.stockRows.find(row => row.productId === bangladeshIntermediate.productId);
+  assert.ok(intermediateStockRow);
   assert.equal(state.resource.BGD.processedWarehouse.availableByResource[bangladeshIntermediate.productId],
-    bangladeshIntermediate.openingStockQuantity,
-    'intermediate recipe inputs must be seeded in the processed warehouse, not the raw warehouse');
+    intermediateStockRow.targetStockQuantity / intermediateStockRow.unitBridgeFactor,
+    'intermediate input quantities are seeded into the processed warehouse using the same configured coverage calculation');
   assert.equal(state.resource.BGD.inventoryUnits.natural_gas, 'UNREGISTERED_STOCK_UNIT',
     'unknown pre-existing unit metadata must be preserved without inventing a conversion');
   assert.equal(Object.prototype.hasOwnProperty.call(state.resource.BGD.inventory, 'natural_gas'), false,
@@ -298,8 +314,11 @@ test('fresh session seeds bounded opening stock and source-context-driven factor
     assert.ok(indiaResource.startupBaselineV1.unknownResourceIds.includes('coal'),
       'coal stays unknown when its national demand profile lacks an accepted stock-unit bridge');
   }
-  assert.ok(Math.abs(indiaResource.inventory.coal - expectedIndiaNationalCoal - indiaFactoryCoal.openingStockQuantity) < 1e-6,
-    'national demand stock, when unit-resolved, and the additive 140% factory-input stock are accounted separately');
+  const indiaFactoryStockRow = indiaResource.factoryInputBaselineV1.stockRows.find(item => item.productId === 'coal');
+  assert.ok(indiaFactoryStockRow);
+  const indiaFactoryTargetStored = indiaFactoryStockRow.targetStockQuantity / indiaFactoryStockRow.unitBridgeFactor;
+  assert.ok(Math.abs(indiaResource.inventory.coal - Math.max(expectedIndiaNationalCoal, indiaFactoryTargetStored)) < 1e-6,
+    'national opening stock is preserved and factory input stock tops the same current balance up to its target instead of double-crediting it');
   assert.equal(indiaResource.inventoryUnits.coal, coalStockRow && coalStockRow.unit || 'SIMULATION_RESOURCE_UNIT');
   assert.equal(indiaResource.startupBaselineV1.openingStockCoverageDays, 14,
     'the legacy fallback remains 14 days while priority-specific target days are recorded per stock row');
@@ -307,12 +326,14 @@ test('fresh session seeds bounded opening stock and source-context-driven factor
   assert.equal(indiaResource.startupBaselineV1.geologicalReserveQuantityUsedAsStock, false);
   assert.equal(indiaResource.startupBaselineV1.stockRowsEncoding, 'COMPACT_PER_RESOURCE_PROVENANCE_V1');
   assert.equal(indiaResource.warehouse.availableByResource.coal, indiaResource.inventory.coal);
-  const factoryCoalRow = indiaResource.factoryInputBaselineV1.stockRows.find(item => item.productId === 'coal');
+  const factoryCoalRow = indiaFactoryStockRow;
   assert.ok(factoryCoalRow);
-  assert.ok(indiaResource.batches.some(row => row.batchId === factoryCoalRow.batchId && row.stage === 'RAW'));
-  assert.ok(indiaResource.inventoryLots[factoryCoalRow.batchId]);
-  assert.ok(indiaResource.warehouse.storedBatchIds.includes(factoryCoalRow.batchId));
-  assert.ok(indiaResource.warehouse.receipts.some(row => row.batchId === factoryCoalRow.batchId));
+  if (factoryCoalRow.batchId) {
+    assert.ok(indiaResource.batches.some(row => row.batchId === factoryCoalRow.batchId && row.stage === 'RAW'));
+    assert.ok(indiaResource.inventoryLots[factoryCoalRow.batchId]);
+    assert.ok(indiaResource.warehouse.storedBatchIds.includes(factoryCoalRow.batchId));
+    assert.ok(indiaResource.warehouse.receipts.some(row => row.batchId === factoryCoalRow.batchId));
+  }
 
   for (const code of Object.keys(state.resource)) {
     const bucket = state.resource[code];
@@ -437,4 +458,45 @@ test('mid-game existing save receives one additive player-country inventory reco
     'reopening the same save cannot replenish depleted or initialized opening stock');
   assert.equal(JSON.stringify(state.economy.BGD.productionAssets.map(row => row.id).sort()), factoryIdsAfterRecovery,
     'reopening the same save cannot duplicate factory assets');
+});
+
+
+test('configured factory input coverage changes top up only the shortfall and stay idempotent', async () => {
+  const state = makeState();
+  const { api, emitSimulationEvent } = makeHarness(state);
+  await api.ready;
+  emitSimulationEvent('OMEGA_GAME_SESSION_CREATED', {
+    session: JSON.parse(JSON.stringify(state.simulation.session))
+  });
+  const first = await api.waitForPendingInitialization();
+  assert.ok(['COMPLETED_WITH_REPORTED_GAPS', 'COMPLETED'].includes(first.status));
+  const resource = state.resource.BGD;
+  const firstMarker = resource.factoryInputBaselineV1;
+  const firstRow = firstMarker.stockRows.find(row => row.productId === 'coal');
+  const daily = firstRow.dailyDemandQuantity;
+  const firstStoredTarget = firstRow.targetStockQuantity / firstRow.unitBridgeFactor;
+  assert.equal(firstMarker.targetCoverageDays, 100);
+  assert.ok(Math.abs(resource.inventory.coal - firstStoredTarget) < 1e-6);
+
+  const invalid = await api.setFactoryInputCoverageDays('BGD', 3651);
+  assert.equal(invalid.status, 'BLOCKED');
+  assert.equal(invalid.reason, 'FACTORY_INPUT_COVERAGE_DAYS_OUT_OF_RANGE');
+  const otherCountry = await api.setFactoryInputCoverageDays('IND', 120);
+  assert.equal(otherCountry.status, 'BLOCKED');
+  assert.equal(otherCountry.reason, 'PLAYER_COUNTRY_SCOPE_VIOLATION');
+
+  const upgraded = await api.setFactoryInputCoverageDays('BGD', 120);
+  assert.ok(['APPLIED', 'COMPLETED_WITH_REPORTED_GAPS'].includes(upgraded.status), JSON.stringify(upgraded));
+  const upgradedMarker = resource.factoryInputBaselineV1;
+  const upgradedRow = upgradedMarker.stockRows.find(row => row.productId === 'coal');
+  const expected120DayStock = daily * 120 / upgradedRow.unitBridgeFactor;
+  assert.equal(upgradedMarker.targetCoverageDays, 120);
+  assert.ok(Math.abs(resource.inventory.coal - expected120DayStock) < 1e-6,
+    'the 120-day target adds only the missing 20 days and leaves the already available 100-day stock in place');
+  assert.equal(upgradedRow.batchId, 'STARTUP-FACTORY-INPUT-V2-BGD-COAL-C120');
+  const afterUpgrade = JSON.stringify(resource.inventory);
+  const repeated = await api.setFactoryInputCoverageDays('BGD', 120);
+  assert.equal(repeated.status, 'ALREADY_INITIALIZED');
+  assert.equal(JSON.stringify(resource.inventory), afterUpgrade,
+    're-entering the same configured coverage window cannot credit the top-up twice');
 });

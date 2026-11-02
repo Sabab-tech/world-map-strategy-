@@ -4,7 +4,7 @@
  */
 (function (g) {
   'use strict';
-  const VERSION = '1.1.0';
+  const VERSION = '1.2.0';
   const PANELS = [
     { id: 'matrix', num: '01', title: 'Unit standards & metrology' },
     { id: 'ontology', num: '02', title: 'Commodity ontology' },
@@ -352,14 +352,14 @@
       '<button class="omega-rescc-button" type="submit">Convert quantity</button></form>';
     const top = metrology + '<div class="omega-rescc-metrics">' +
       '<div><span>Autonomy index</span><strong>' + number(metrics.autonomyIndex, '%') + '</strong></div>' +
-      '<div><span>Reserve duration</span><strong>' + number(metrics.strategicReservesTotalDays, ' days') + '</strong></div>' +
+
       '<div><span>Runtime source</span><strong>' + esc(summary.version || 'Unavailable') + '</strong></div></div>' +
       '<p class="omega-rescc-note">' + esc(summary.briefing || 'Missing values remain unavailable; no synthetic values are shown.') + '</p>';
     const content = rows.map(function (r) {
       return card(r.name || r.id, r.id + ' · ' + (r.unit || 'unit not specified'),
         '<div class="omega-rescc-grid2">' + kv('Production/day', r.dailyProduction) +
         kv('Demand/day', r.dailyConsumption) + kv('Net balance', r.netBalance) +
-        kv('Inventory', r.inventory) + kv('Reserve', r.reserve) + kv('Stock days', r.stockDays) + '</div>' +
+        kv('Current Stock', r.inventory) + kv('Reserve', r.reserve) + '</div>' +
         '<div class="omega-rescc-muted">Production authority: ' + esc(r.productionAuthority || 'NOT_RECORDED') +
         ' · Reserve authority: ' + esc(r.reserveAuthority || 'NOT_RECORDED') + '</div>',
         actionButton('survey', 'Request survey', { 'resource-id': r.id }) +
@@ -497,6 +497,7 @@
       endowment: ledgerField(row && row.endowment, runtime.endowment, id),
       reserve: ledgerField(row && row.reserve, runtime.reserves, id),
       inventory: ledgerField(row && row.inventory, runtime.inventory, id),
+      warehouseAvailable: ledgerQuantity(resourceMapValue(runtime.warehouse && runtime.warehouse.availableByResource, id)),
       dailyProduction: ledgerField(row && row.dailyProduction, runtime.production, id),
       dailyConsumption: ledgerField(row && row.dailyConsumption, runtime.consumption, id),
       netBalance: ledgerQuantity(row && row.netBalance),
@@ -558,10 +559,10 @@
       ledgerMetric('⛏️', 'Production / day', data.dailyProduction, unit) +
       ledgerMetric('🏭', 'Consumption / day', data.dailyConsumption, unit) +
       ledgerMetric('⚖️', 'Net balance', data.netBalance, unit) +
-      ledgerMetric('📦', 'Available inventory', data.inventory, unit) +
+      ledgerMetric('📦', 'Current Stock', data.inventory, unit) +
+      ledgerMetric('🏬', 'Raw Warehouse', data.warehouseAvailable, unit) +
       ledgerMetric('💎', 'Proven reserves', data.reserve, unit) +
       ledgerMetric('🌍', 'In-situ endowment', data.endowment, unit) +
-      ledgerMetric('📅', 'Stock duration', data.stockDays, 'days') +
       '</div>';
     const survey = data.present ? '' : '<div class="omega-rescc-actions">' +
       actionButton('survey', 'Survey Resource', { 'resource-id': selected.id }) + '</div>';
@@ -726,7 +727,7 @@
     const assets=allFactories(country),requests=bucket('economy',country).capacityUpgradeRequests||resourceBucket(country).capacityUpgradeRequests||[];
     const liveCards=assets.map(asset=>{
       const id=asset.id||asset.assetId||asset.factoryId||asset.projectId,inputs=Object.keys(asset.inputCoefficients||{}),outputs=Object.keys(asset.outputProfile||{}),rid=asset.resourceId||asset.inputResourceId||inputs[0]||(resources(country)[0]&&resources(country)[0].id)||'';
-      const body='<div class="omega-rescc-grid2">'+kv('Factory ID',id)+kv('Stage',asset.stage||asset.facilityType||asset.factoryType)+kv('Capacity',asset.capacity)+kv('Input stock',asset.inputInventory&&asset.inputInventory[rid])+kv('Inputs',inputs.join(', ')||'Not recorded')+kv('Outputs',outputs.join(', ')||'Not recorded')+'</div>';
+      const body='<div class="omega-rescc-grid2">'+kv('Factory ID',id)+kv('Stage',asset.stage||asset.facilityType||asset.factoryType)+kv('Capacity',asset.capacity)+kv('Current input stock',asset.inputInventory&&asset.inputInventory[rid])+kv('Inputs',inputs.join(', ')||'Not recorded')+kv('Outputs',outputs.join(', ')||'Not recorded')+'</div>';
       return card(asset.name||asset.factoryName||id,asset.status||asset.stage||'STATUS NOT RECORDED',body,actionButton('process-factory','Run one real factory cycle',{'factory-id':id,'resource-id':rid,quantity:asset.capacity||1},!(g.Omega&&g.Omega.ResourceIndustrialNetwork&&g.Omega.ResourceIndustrialNetwork.executeFactoryCycle&&id&&rid))+(rid?actionButton('expansion','Request capacity expansion',{'resource-id':rid}):''));
     }).join('');
     const profiles=siteRows(country).map(site=>{
@@ -780,19 +781,78 @@
   function panelInventory(country) {
     const r = resourceBucket(country);
     const warehouse = r.warehouse || {};
+    const processedWarehouse = r.processedWarehouse || {};
+    const inventory = r.inventory && typeof r.inventory === 'object' ? r.inventory : {};
+    const inventoryUnits = r.inventoryUnits && typeof r.inventoryUnits === 'object' ? r.inventoryUnits : {};
     const spr = r.strategicReserve || {};
     const batches = Array.isArray(r.batches) ? r.batches : [];
     const requests = Array.isArray(r.reserveBufferRequests) ? r.reserveBufferRequests : [];
-    const stock = resources(country).map(function (row) {
-      const id = row.id;
-      const wh = warehouse.availableByResource && warehouse.availableByResource[id];
-      const reserved = spr.availableByResource && spr.availableByResource[id];
-      return card(row.name || id, id,
-        '<div class="omega-rescc-grid2">' + kv('Inventory', row.inventory) +
-        kv('Warehouse available', wh) + kv('SPR protected stock', reserved) +
-        kv('Trade availability', row.tradeAvailability) + kv('Stock days', row.stockDays) +
-        kv('Unit', row.unit) + '</div>',
-        actionButton('reserve', 'Request stock-backed SPR transfer', { 'resource-id': id }));
+    const baselineRuntime = g.OmegaResourceStartupBaseline || g.Omega && g.Omega.ResourceStartupBaseline;
+    const configuredCoverageDays = baselineRuntime && typeof baselineRuntime.getFactoryInputCoverageDays === 'function'
+      ? baselineRuntime.getFactoryInputCoverageDays(country) : 100;
+    const simulationState = state().simulation || {};
+    const playerCountryValue = simulationState.session && simulationState.session.playerCountryId ||
+      simulationState.playerCountryId || state().playerCountryId || '';
+    const canConfigureCoverage = !!(baselineRuntime &&
+      typeof baselineRuntime.setFactoryInputCoverageDays === 'function' &&
+      playerCountryValue && normaliseCountry(playerCountryValue) === activeCountry(country));
+    const coverageTargetForm = '<form class="omega-rescc-form" data-search-item data-form="factory-input-stock-target">' +
+      '<h3>Factory input stock target</h3>' +
+      '<div class="omega-rescc-formgrid"><label>Target coverage days' +
+      '<input name="targetCoverageDays" type="number" min="1" max="3650" step="1" required value="' +
+      esc(configuredCoverageDays) + '"' + (canConfigureCoverage ? '' : ' disabled') + '></label></div>' +
+      '<p class="omega-rescc-muted">Sets the opening stock target from daily factory input demand. Only the missing quantity is added, for the selected player country.</p>' +
+      '<button class="omega-rescc-button" type="submit"' + (canConfigureCoverage ? '' : ' disabled') +
+      '>Apply target and top up stock gap</button></form>';
+    const baselineRows = r.factoryInputBaselineV1 && Array.isArray(r.factoryInputBaselineV1.stockRows)
+      ? r.factoryInputBaselineV1.stockRows : [];
+    const canonicalRows = resources(country);
+    const products = Object.create(null);
+    function addProduct(rawId, metadata) {
+      const id = String(rawId || '').trim();
+      if (!id) return;
+      const key = resourceToken(id);
+      if (!key) return;
+      const row = products[key] || (products[key] = { id: id });
+      if (metadata && typeof metadata === 'object') {
+        if (metadata.name && (!row.name || row.name === row.id)) row.name = metadata.name;
+        if (metadata.stage) row.stage = metadata.stage;
+        if (metadata.productNamespace) row.productNamespace = metadata.productNamespace;
+        if (metadata.unit) row.unit = metadata.unit;
+        if (metadata.tradeAvailability !== undefined) row.tradeAvailability = metadata.tradeAvailability;
+      }
+    }
+    canonicalRows.forEach(function (row) { addProduct(row.id, row); });
+    Object.keys(inventory).forEach(function (id) { addProduct(id); });
+    Object.keys(warehouse.availableByResource || {}).forEach(function (id) { addProduct(id, { stage: 'RAW' }); });
+    Object.keys(processedWarehouse.availableByResource || {}).forEach(function (id) { addProduct(id, { stage: 'INTERMEDIATE' }); });
+    baselineRows.forEach(function (row) { addProduct(row && row.productId, row); });
+    const stock = Object.keys(products).sort().map(function (key) {
+      const row = products[key], id = row.id;
+      const aggregate = resourceMapValue(inventory, id);
+      const rawAvailable = resourceMapValue(warehouse.availableByResource || {}, id);
+      const processedAvailable = resourceMapValue(processedWarehouse.availableByResource || {}, id);
+      const reserved = resourceMapValue(spr.availableByResource || {}, id);
+      const unit = resourceMapValue(inventoryUnits, id) || row.unit || 'Unit not recorded';
+      const currentStock = aggregate !== undefined && aggregate !== null && aggregate !== ''
+        ? aggregate
+        : (rawAvailable !== undefined && rawAvailable !== null && rawAvailable !== ''
+          ? rawAvailable
+          : (processedAvailable !== undefined && processedAvailable !== null && processedAvailable !== ''
+            ? processedAvailable : undefined));
+      const rawResource = canonicalRows.some(function (candidate) {
+        return resourceToken(candidate.id) === key;
+      });
+      const stage = row.stage || (rawResource ? 'RAW' : 'NOT CLASSIFIED');
+      const name = row.name || id.replace(/[_-]+/g, ' ').replace(/\b\w/g, function (ch) { return ch.toUpperCase(); });
+      return card(name, id,
+        '<div class="omega-rescc-grid2">' + kv('Current Stock', currentStock) +
+        kv('Raw warehouse available', rawAvailable) +
+        kv('Processed warehouse available', processedAvailable) +
+        kv('SPR protected stock', reserved) +
+        kv('Trade availability', resourceMapValue(r.tradeAvailability || {}, id) ?? row.tradeAvailability) +
+        kv('Stage', stage) + kv('Unit', unit) + '</div>',
+        rawResource ? actionButton('reserve', 'Request stock-backed SPR transfer', { 'resource-id': id }) : '');
     }).join('');
     const batchCards = batches.map(function (b) {
       return card(b.batchId || 'Resource batch', b.stage || 'STAGE NOT RECORDED',
@@ -801,10 +861,12 @@
         kv('Warehouse', b.warehouseId) + kv('Purity', b.purity) + kv('Grade', b.grade) + '</div>', '');
     }).join('');
     return '<div class="omega-rescc-metrics"><div><span>Raw warehouse</span><strong>' + esc(warehouse.warehouseId || 'Not registered') +
-      '</strong></div><div><span>Strategic reserve</span><strong>' + esc(spr.warehouseId || 'Not registered') +
-      '</strong></div><div><span>Observed batches</span><strong>' + number(batches.length) + '</strong></div></div>' +
-      '<p class="omega-rescc-note">SPR actions create a request. They do not fabricate stock; a later authoritative action tick must transfer observed material.</p>' +
-      stock + '<h3 class="omega-rescc-section-title">Observed batches</h3>' +
+      '</strong></div><div><span>Processed warehouse</span><strong>' + esc(processedWarehouse.warehouseId || 'Not registered') +
+      '</strong></div><div><span>Current batches</span><strong>' + number(batches.length) + '</strong></div></div>' +
+      coverageTargetForm +
+      '<p class="omega-rescc-note">Current stock is shown once from the country inventory ledger. Raw and processed warehouse balances are displayed separately for reconciliation.</p>' +
+      (stock || empty('No inventory products are recorded for this country.')) +
+      '<h3 class="omega-rescc-section-title">Recorded batches</h3>' +
       (batchCards || empty('No resource batches are recorded.')) +
       '<h3 class="omega-rescc-section-title">SPR request history</h3>' + statusRows(requests);
   }
@@ -1873,6 +1935,16 @@
           source: 'OMEGA_RESOURCE_COMMAND_CENTER_UI'
         });
         setOutcome('Bilateral supply request', result);
+        return;
+      }
+      if (kind === 'factory-input-stock-target') {
+        const runtime = g.OmegaResourceStartupBaseline || g.Omega && g.Omega.ResourceStartupBaseline;
+        if (!runtime || typeof runtime.setFactoryInputCoverageDays !== 'function') {
+          result = { status: 'UNAVAILABLE', reason: 'FACTORY_INPUT_STOCK_TARGET_API_UNAVAILABLE' };
+        } else {
+          result = await runtime.setFactoryInputCoverageDays(c, data.get('targetCoverageDays'));
+        }
+        setOutcome('Factory input current-stock target', result);
         return;
       }
       if (kind === 'factory-utility-project') {

@@ -511,6 +511,7 @@
     }
     var canOperate = !!countryKey && countryKey === playerCountryKey();
     var gameResource = countryBucket(stateRoot.resource) || countryBucket(stateRoot.resources) || {};
+    var gameTrade = countryBucket(stateRoot.trade) || {};
     var industrial = gameResource.industrialNetwork && typeof gameResource.industrialNetwork === 'object' ? gameResource.industrialNetwork : {};
     var rawWarehouse = gameResource.warehouse && typeof gameResource.warehouse === 'object' ? gameResource.warehouse : {};
     var processedWarehouse = gameResource.processedWarehouse && typeof gameResource.processedWarehouse === 'object' ? gameResource.processedWarehouse : {};
@@ -549,6 +550,23 @@
           status:row.status || '' };
       });
     }
+    var inventoryLotsForOrigin = gameResource.inventoryLots && typeof gameResource.inventoryLots === 'object' ? gameResource.inventoryLots : {};
+    var sourceBatchRows = [], sourceBatchIds = Object.create(null);
+    safeArray(batchesRaw).concat(Object.keys(inventoryLotsForOrigin).map(function (key) {
+      var row = inventoryLotsForOrigin[key];
+      return row && typeof row === 'object' ? Object.assign({ batchId:key }, row) : null;
+    })).forEach(function (row, index) {
+      if (!row || typeof row !== 'object') return;
+      var batchKey = String(row.batchId || row.id || 'UNKEYED:' + index);
+      if (sourceBatchIds[batchKey] !== undefined) {
+        // inventoryLots is the latest warehouse/remaining-quantity projection;
+        // merge it over the original batch so extraction lineage is retained.
+        sourceBatchRows[sourceBatchIds[batchKey]] = Object.assign({}, sourceBatchRows[sourceBatchIds[batchKey]], row);
+        return;
+      }
+      sourceBatchIds[batchKey] = sourceBatchRows.length;
+      sourceBatchRows.push(row);
+    });
     var shipments = Array.isArray(industrial.shipments) ? industrial.shipments :
       Array.isArray(industrial.transportJobs) ? industrial.transportJobs :
       Array.isArray(gameResource.shipmentLedger) ? gameResource.shipmentLedger :
@@ -643,26 +661,76 @@
       if (String(row.status || row.operation && row.operation.status || '').toUpperCase() === 'NOT_APPLICABLE') return false;
       return true;
     }
+    function resourceEntryFor(map, resourceId) {
+      if (!map || typeof map !== 'object' || Array.isArray(map)) return null;
+      if (Object.prototype.hasOwnProperty.call(map, resourceId)) return map[resourceId];
+      var wanted = String(resourceId || '').trim().toLowerCase();
+      var match = Object.keys(map).find(function (key) { return key.toLowerCase() === wanted; });
+      return match === undefined ? null : map[match];
+    }
+    function demandRuntimeFor(resourceId) {
+      var snapshot = gameResource.demandRuntime && typeof gameResource.demandRuntime === 'object'
+        ? gameResource.demandRuntime : {};
+      var maps = [
+        snapshot.byResource,
+        gameResource.nationalDemand && (gameResource.nationalDemand.byResource || gameResource.nationalDemand),
+        gameResource.resourceDemand,
+        gameResource.demandByResource,
+        gameResource.demand && (gameResource.demand.byResource || gameResource.demand)
+      ];
+      for (var i = 0; i < maps.length; i += 1) {
+        var row = resourceEntryFor(maps[i], resourceId);
+        if (row && typeof row === 'object') return row;
+      }
+      return null;
+    }
+    function factoryInputBaselineRowFor(resourceId) {
+      var marker = gameResource.factoryInputBaselineV1 && typeof gameResource.factoryInputBaselineV1 === 'object'
+        ? gameResource.factoryInputBaselineV1 : {};
+      var rows = safeArray(marker.stockRows);
+      var wanted = String(resourceId || '').trim().toLowerCase();
+      return rows.find(function (row) {
+        return String(row && (row.productId || row.resourceId) || '').trim().toLowerCase() === wanted;
+      }) || null;
+    }
+    function targetCoverageDaysFor(resourceId) {
+      var runtimeRow = demandRuntimeFor(resourceId);
+      var baselineRow = factoryInputBaselineRowFor(resourceId);
+      var marker = gameResource.factoryInputBaselineV1 && typeof gameResource.factoryInputBaselineV1 === 'object'
+        ? gameResource.factoryInputBaselineV1 : {};
+      var candidates = [
+        baselineRow && baselineRow.targetCoverageDays,
+        marker.targetCoverageDays,
+        gameResource.factoryInputCoverageDays,
+        runtimeRow && runtimeRow.stockCoverageTargetDays
+      ];
+      for (var i = 0; i < candidates.length; i += 1) {
+        var days = numberOrNull(candidates[i]);
+        if (days !== null && days > 0) return days;
+      }
+      return null;
+    }
     function dailyDemand(resourceId) {
+      var runtimeRow = demandRuntimeFor(resourceId);
+      var runtimeRate = numberOrNull(runtimeRow && (runtimeRow.demandPerDay !== undefined
+        ? runtimeRow.demandPerDay : runtimeRow.dailyDemandQuantity));
+      if (runtimeRate !== null && runtimeRate >= 0) return runtimeRate;
       var maps = [
         gameResource.demandByResource, gameResource.resourceDemand,
         gameResource.nationalDemand && (gameResource.nationalDemand.byResource || gameResource.nationalDemand),
         gameResource.demand && (gameResource.demand.byResource || gameResource.demand)
       ];
       for (var i = 0; i < maps.length; i += 1) {
-        var map = maps[i];
-        if (!map || typeof map !== 'object') continue;
-        var hit = map[resourceId];
-        if (hit === undefined) {
-          var match = Object.keys(map).find(function (key) { return key.toLowerCase() === String(resourceId).toLowerCase(); });
-          if (match) hit = map[match];
-        }
-        if (hit && typeof hit === 'object') {
-          var value = numberOrNull(hit.dailyDemand !== undefined ? hit.dailyDemand :
-            hit.demandPerDay !== undefined ? hit.demandPerDay : hit.quantityPerDay !== undefined ? hit.quantityPerDay :
-            hit.perDay !== undefined ? hit.perDay : hit.perTurn !== undefined ? hit.perTurn : null);
-          if (value !== null && value >= 0) return value;
-        }
+        var hit = resourceEntryFor(maps[i], resourceId);
+        if (!hit || typeof hit !== 'object') continue;
+        var value = numberOrNull(hit.dailyDemand !== undefined ? hit.dailyDemand :
+          hit.demandPerDay !== undefined ? hit.demandPerDay : hit.quantityPerDay !== undefined ? hit.quantityPerDay :
+          hit.perDay !== undefined ? hit.perDay : null);
+        if (value !== null && value >= 0) return value;
+        var perTurn = numberOrNull(hit.perTurn);
+        var daysPerTurn = numberOrNull(hit.turnDurationDays) ||
+          numberOrNull(stateRoot.simulation && stateRoot.simulation.daysPerTurn);
+        if (perTurn !== null && perTurn >= 0 && daysPerTurn !== null && daysPerTurn > 0) return perTurn / daysPerTurn;
       }
       return null;
     }
@@ -747,10 +815,137 @@
         if (q !== null && q > 0) movementIn[rid] = (movementIn[rid] || 0) + q;
       });
     });
-    function shortageFor(resourceId) {
-      var demand = dailyDemand(resourceId), raw = stockFor(resourceId, rawStock), processed = stockFor(resourceId, finishedStock);
-      if (demand === null || raw === null && processed === null) return null;
-      return Math.max(0, demand - (raw || 0) - (processed || 0));
+    function currentStockFor(resourceId, raw, processed) {
+      var aggregate = stockFor(resourceId, inventory);
+      if (aggregate !== null) return aggregate;
+      // If only one warehouse projection exists, it is a safe fallback. If both
+      // exist without an aggregate balance, do not add them and risk double-counting.
+      if (raw !== null && processed === null) return raw;
+      if (processed !== null && raw === null) return processed;
+      return null;
+    }
+    function coverageDaysFor(resourceId) {
+      var stock = currentStockFor(resourceId, stockFor(resourceId, rawStock), stockFor(resourceId, finishedStock));
+      var demand = dailyDemand(resourceId);
+      return stock !== null && demand !== null && demand > 0 ? stock / demand : null;
+    }
+    function targetGapFor(resourceId) {
+      var stock = currentStockFor(resourceId, stockFor(resourceId, rawStock), stockFor(resourceId, finishedStock));
+      var demand = dailyDemand(resourceId);
+      var targetDays = targetCoverageDaysFor(resourceId);
+      if (stock === null || demand === null || demand <= 0 || targetDays === null) return null;
+      return Math.max(0, demand * targetDays - stock);
+    }
+    function sourceSummaryFor(resourceId, unit, currentStock) {
+      var domesticMine = 0, unknown = 0, foreignByCountry = Object.create(null), tracked = 0;
+      sourceBatchRows.forEach(function (row) {
+        var rid = String(row && (row.resourceId || row.materialId || row.productId || '')).trim().toLowerCase();
+        if (rid !== String(resourceId || '').trim().toLowerCase()) return;
+        var status = String(row.status || row.lifecycleStatus || '').toUpperCase();
+        if (/CONSUMED|DEPLETED|TRANSFERRED_OUT|DISPATCHED|EXPORTED|SOLD|CANCELLED/.test(status)) return;
+        var warehouseId = String(row.warehouseId || '').trim();
+        var locationNodeKey = String(row.locationNodeKey || '').trim().toUpperCase();
+        if (!warehouseId && locationNodeKey.indexOf('WAREHOUSE:') !== 0) return;
+        var quantity = numberOrNull(row.remainingQuantity !== undefined ? row.remainingQuantity :
+          row.availableQuantity !== undefined ? row.availableQuantity :
+          row.quantity !== undefined ? row.quantity : row.amount);
+        if (quantity === null || quantity <= 0) return;
+        tracked += quantity;
+        var provenance = row.provenance && typeof row.provenance === 'object' ? row.provenance : {};
+        var sourceCountry = String(row.sourceCountryId || row.originCountryId ||
+          provenance.sourceCountryId || provenance.originCountryId || '').trim().toUpperCase();
+        var transferType = String(row.transferType || row.sourceType || provenance.transferType || '').toUpperCase();
+        var sourceSystem = String(provenance.sourceSubsystem || provenance.source || '').toUpperCase();
+        var hasMineLineage = !!(row.occurrenceKey || row.siteReferenceKey || row.siteId ||
+          (Array.isArray(row.sourceSiteIds) && row.sourceSiteIds.length) ||
+          /LOCAL_EXTRACTION|MINE/.test(transferType) || /ENDOWMENT/.test(sourceSystem));
+        if (sourceCountry && sourceCountry !== countryKey) {
+          foreignByCountry[sourceCountry] = (foreignByCountry[sourceCountry] || 0) + quantity;
+        } else if (hasMineLineage && (!sourceCountry || sourceCountry === countryKey)) {
+          domesticMine += quantity;
+        } else {
+          unknown += quantity;
+        }
+      });
+      var parts = [];
+      if (domesticMine > 0) parts.push('Domestic mine: ' + amount(domesticMine, unit));
+      Object.keys(foreignByCountry).sort().forEach(function (country) {
+        parts.push('Foreign import (' + esc(country) + '): ' + amount(foreignByCountry[country], unit));
+      });
+      if (unknown > 0) parts.push('Unverified batch source: ' + amount(unknown, unit));
+      if (currentStock !== null && currentStock > tracked + 1e-9) {
+        parts.push('Additional stock source unverified: ' + amount(currentStock - tracked, unit));
+      } else if (currentStock === null && !tracked) {
+        parts.push('Batch origin not recorded');
+      } else if (currentStock !== null && tracked > currentStock + 1e-9) {
+        parts.push('Batch ledger exceeds current stock by: ' + amount(tracked - currentStock, unit));
+      }
+      var requests = safeArray(gameTrade.importRequests), inbound = 0, unknownInbound = 0, suppliers = Object.create(null);
+      requests.forEach(function (request) {
+        if (!request || String(request.resourceId || '').trim().toLowerCase() !== String(resourceId || '').trim().toLowerCase()) return;
+        var status = String(request.status || '').toUpperCase();
+        var stage = String(request.stage || '').toUpperCase();
+        var terminal = ['SETTLED','DELIVERED','COMPLETED','FULFILLED','REJECTED','CANCELLED','CANCELED','FAILED','EXPIRED'];
+        var confirmed = ['ACCEPTED','SETTLEMENT_PREPARING','IN_TRANSIT','SHIPPED','DISPATCHED','AWAITING_DELIVERY','CONFIRMED','CONTRACTED','LOADED'];
+        if (terminal.indexOf(status) >= 0 || terminal.indexOf(stage) >= 0 ||
+            (confirmed.indexOf(status) < 0 && confirmed.indexOf(stage) < 0)) return;
+        var quantity = numberOrNull(request.remainingQuantity !== undefined ? request.remainingQuantity : request.quantity);
+        if (quantity === null || quantity <= 0) return;
+        var supplier = String(request.supplierCountryId || request.sellerCountryId ||
+          request.sourceCountryId || request.counterpartyCountryId || '').trim().toUpperCase();
+        if (supplier && supplier !== countryKey) {
+          suppliers[supplier] = (suppliers[supplier] || 0) + quantity;
+          inbound += quantity;
+        } else if (!supplier) {
+          unknownInbound += quantity;
+        }
+      });
+      if (inbound > 0) {
+        var supplierLabel = Object.keys(suppliers).sort().map(function (country) {
+          return country + ' ' + amount(suppliers[country], unit);
+        }).join(', ');
+        parts.push('Confirmed foreign inbound: ' + amount(inbound, unit) + (supplierLabel ? ' (' + esc(supplierLabel) + ')' : ''));
+      }
+      if (unknownInbound > 0) parts.push('Confirmed inbound, supplier unverified: ' + amount(unknownInbound, unit));
+      return parts.join(' · ');
+    }
+    function stockStatusRow(resourceId, currentStock, demand, unit) {
+      var runtimeRow = demandRuntimeFor(resourceId) || {};
+      var coverage = coverageDaysFor(resourceId);
+      var targetDays = targetCoverageDaysFor(resourceId);
+      var targetStock = demand !== null && demand > 0 && targetDays !== null ? demand * targetDays : null;
+      var targetGap = targetGapFor(resourceId);
+      var runtimeStatus = String(runtimeRow.status || '').toUpperCase();
+      var unmetDemand = numberOrNull(runtimeRow.unmetDemand);
+      var label = 'Not verified', state = 'unknown', targetNote = '';
+      if (runtimeStatus === 'SHORTAGE' || (unmetDemand !== null && unmetDemand > 1e-9)) {
+        label = 'Shortage'; state = 'critical';
+      } else if (runtimeStatus === 'LOW_COVERAGE' || runtimeRow.lowStockCoverage === true ||
+          (targetGap !== null && targetGap > 1e-9)) {
+        label = 'Below target'; state = 'warning';
+      } else if (demand === 0) {
+        label = 'No recorded daily use'; state = 'unknown';
+      } else if (targetStock !== null && currentStock !== null && currentStock > targetStock + 1e-9) {
+        label = 'Surplus'; state = 'surplus';
+      } else if (demand !== null && currentStock !== null) {
+        label = 'Adequate'; state = 'adequate';
+      }
+      if (targetGap !== null && targetGap > 1e-9) {
+        targetNote = 'Target gap: ' + amount(targetGap, unit);
+      } else if (targetStock !== null && currentStock !== null && currentStock > targetStock + 1e-9) {
+        targetNote = 'Above target: ' + amount(currentStock - targetStock, unit);
+      } else if (targetDays !== null) {
+        targetNote = 'Target: ' + fmt(targetDays) + ' days';
+      }
+      var coverageLabel = coverage !== null ? fmt(coverage) + ' days' :
+        (demand === 0 ? 'No daily use recorded' : 'Not available');
+      var origin = sourceSummaryFor(resourceId, unit, currentStock);
+      return '<tr class="omega-v2-inventory-status-row"><td colspan="7"><div class="omega-v2-inventory-status-line">' +
+        '<span><strong>Coverage</strong>' + esc(coverageLabel) + '</span>' +
+        '<span class="omega-v2-stock-status" data-state="' + state + '"><strong>Status</strong>' + esc(label) + '</span>' +
+        (targetNote ? '<span><strong>Stock target</strong>' + esc(targetNote) + '</span>' : '') +
+        '<span class="omega-v2-stock-origin"><strong>Supply source</strong>' + (origin || 'Source not recorded') + '</span>' +
+        '</div></td></tr>';
     }
     function siteCard(site) {
       var asset = assetFor(site.siteId), project = projectFor(site.siteId), output = outputForSite(site.siteId, flows);
@@ -915,23 +1110,51 @@
       }).join('') + '</div></section></div>';
     function stockRow(rid) {
       var raw = stockFor(rid, rawStock), processed = stockFor(rid, finishedStock);
-      var demand = dailyDemand(rid), shortage = shortageFor(rid);
+      var demand = dailyDemand(rid), currentStock = currentStockFor(rid, raw, processed);
+      var targetGap = targetGapFor(rid);
       var unit = resourceUnit(rid);
-      return '<tr><td><span class="omega-v2-resource-table-icon">' + resourceIconMarkup(rid, resourceLabel(rid)) + '</span>' +
-        esc(resourceLabel(rid)) + '</td><td>' + (raw === null ? 'Not recorded' : amount(raw, unit)) + '</td><td>' +
+      var currentLabel = currentStock === null
+        ? (raw !== null && processed !== null ? 'Reconciliation needed' : 'Not recorded')
+        : amount(currentStock, unit);
+      return '<tr data-resource-id="' + esc(rid) + '"><td><span class="omega-v2-resource-table-icon">' + resourceIconMarkup(rid, resourceLabel(rid)) + '</span>' +
+        esc(resourceLabel(rid)) + '</td><td class="omega-v2-current-stock-cell">' + currentLabel + '</td><td>' +
+        (raw === null ? 'Not recorded' : amount(raw, unit)) + '</td><td>' +
         (processed === null ? 'Not recorded' : amount(processed, unit)) + '</td><td>' +
         (movementIn[rid] !== undefined ? amount(movementIn[rid], unit) : '—') + '</td><td>' +
         (movementOut[rid] !== undefined ? amount(movementOut[rid], unit) : '—') + '</td><td>' +
-        (demand !== null ? amount(shortage, unit) : '—') + '</td></tr>';
+        (targetGap !== null ? amount(targetGap, unit) : '—') + '</td></tr>' +
+        stockStatusRow(rid, currentStock, demand, unit);
     }
-    var stockTable = inventoryKeys.length ? '<div class="omega-v2-table-wrap"><table><thead><tr><th>Resource</th><th>Raw stock</th><th>Processed</th><th>In</th><th>Out</th><th>Shortage</th></tr></thead><tbody>' +
+    var stockTable = inventoryKeys.length ? '<div class="omega-v2-table-wrap"><table><thead><tr><th>Resource</th><th>Current Stock</th><th>Raw warehouse</th><th>Processed warehouse</th><th>In</th><th>Out</th><th>Target gap</th></tr></thead><tbody>' +
       inventoryKeys.map(stockRow).join('') + '</tbody></table></div>' : '<div class="omega-v2-empty">No warehouse balances have been recorded.</div>';
-    var inventoryMarkup = '<div class="omega-v2-kpis">' +
+    var startupBaselineRuntime = g.OmegaResourceStartupBaseline || g.Omega && g.Omega.ResourceStartupBaseline || null;
+    var stockTargetDays = null;
+    try {
+      if (startupBaselineRuntime && typeof startupBaselineRuntime.getFactoryInputCoverageDays === 'function') {
+        stockTargetDays = numberOrNull(startupBaselineRuntime.getFactoryInputCoverageDays(countryKey));
+      }
+    } catch (_) {}
+    if (stockTargetDays === null) {
+      stockTargetDays = numberOrNull(gameResource.factoryInputCoverageDays) ||
+        numberOrNull(gameResource.factoryInputBaselineV1 && gameResource.factoryInputBaselineV1.targetCoverageDays);
+    }
+    var canEditStockTarget = canOperate && startupBaselineRuntime &&
+      typeof startupBaselineRuntime.setFactoryInputCoverageDays === 'function';
+    var stockTargetControl = '<section class="omega-v2-stock-target"><div class="omega-v2-stock-target-copy"><strong>Factory input stock target</strong>' +
+      '<small>Daily input demand × target days. Only the missing quantity is added.</small></div>' +
+      (canEditStockTarget ? '<div class="omega-v2-stock-target-control"><label>Coverage days<input type="number" min="1" max="3650" step="1" value="' +
+        esc(stockTargetDays === null ? '' : String(Math.round(stockTargetDays))) + '" data-omega-v2-coverage-days-input></label>' +
+        '<button type="button" class="omega-v2-button omega-v2-button--primary" data-omega-v2-coverage-apply' +
+        (root.__omegaV2CoverageSaving ? ' disabled' : '') + '>Apply</button></div>' :
+        '<span class="omega-v2-stock-target-readonly">Saved target: ' +
+          (stockTargetDays === null ? 'Not recorded' : esc(fmt(stockTargetDays) + ' days')) + '</span>') +
+      '</section>';
+    var inventoryMarkup = stockTargetControl + '<div class="omega-v2-kpis">' +
       renderKpi('Raw resource types', String(distinctResources.length), 'Canonical resources available', 'neutral') +
       renderKpi('Stocked raw types', String(Object.keys(rawStock).filter(function (key) { return val(rawStock[key]) > 0; }).length), 'Positive on-hand balance', 'neutral') +
       renderKpi('Processed types', String(Object.keys(finishedStock).filter(function (key) { return val(finishedStock[key]) > 0; }).length), 'Finished stock', 'neutral') +
       renderKpi('Tracked batches', String(inventoryRows.length), 'Recorded inventory entries', 'neutral') +
-      renderKpi('Stock shortages', String(inventoryKeys.filter(function (rid) { return shortageFor(rid) > 0; }).length), 'Where demand is recorded', inventoryKeys.some(function (rid) { return shortageFor(rid) > 0; }) ? 'shortage' : 'neutral') +
+      renderKpi('Below stock target', String(inventoryKeys.filter(function (rid) { return targetGapFor(rid) !== null && targetGapFor(rid) > 0; }).length), 'Compared with daily demand target', inventoryKeys.some(function (rid) { return targetGapFor(rid) !== null && targetGapFor(rid) > 0; }) ? 'shortage' : 'neutral') +
       '</div><section class="omega-v2-card omega-v2-movement-card"><h2>Inventory movement</h2><p>Stored quantity, confirmed receipts and recorded dispatches for the selected country.</p>' + stockTable + '</section>' +
       (inventoryRows.length ? '<section class="omega-v2-card omega-v2-movement-card"><h2>Recent batches</h2><div class="omega-v2-table-wrap"><table><thead><tr><th>Resource</th><th>Quantity</th><th>Warehouse</th><th>Status</th></tr></thead><tbody>' +
         inventoryRows.slice(-40).reverse().map(function (row) { return '<tr><td>' + esc(resourceLabel(row.resourceId)) + '</td><td>' + amount(row.quantity, resourceUnit(row.resourceId) || (/SIMULATION.*UNIT/i.test(String(row.unit || '')) ? '' : row.unit)) +
@@ -1818,6 +2041,48 @@
       root.addEventListener('click', function (event) {
         var target = event && event.target;
         if (!target || typeof target.closest !== 'function') return;
+        var coverageApply = target.closest('[data-omega-v2-coverage-apply]');
+        if (coverageApply && root.contains(coverageApply) && !coverageApply.disabled) {
+          var coverageOptions = root.__omegaV2ResourceOptions || {};
+          var coverageCountry = selectedCountryKey(coverageOptions.countryId || root.__omegaV2CurrentCountryKey || countryKey);
+          var coverageInput = root.querySelector('[data-omega-v2-coverage-days-input]');
+          var requestedDays = numberOrNull(coverageInput && coverageInput.value);
+          var baselineRuntime = g.OmegaResourceStartupBaseline || g.Omega && g.Omega.ResourceStartupBaseline || null;
+          if (!livePlayerCountryKey() || coverageCountry !== livePlayerCountryKey()) {
+            root.__omegaV2ResourceNotice = 'Stock targets can only be changed for the active player country.';
+          } else if (!Number.isInteger(requestedDays) || requestedDays < 1 || requestedDays > 3650) {
+            root.__omegaV2ResourceNotice = 'Enter a whole number from 1 to 3650 days. No stock was changed.';
+          } else if (!baselineRuntime || typeof baselineRuntime.setFactoryInputCoverageDays !== 'function') {
+            root.__omegaV2ResourceNotice = 'The stock target runtime is unavailable. No stock was changed.';
+          } else if (root.__omegaV2CoverageSaving) {
+            return;
+          } else {
+            root.__omegaV2CoverageSaving = true;
+            coverageApply.disabled = true;
+            Promise.resolve().then(function () {
+              return baselineRuntime.setFactoryInputCoverageDays(coverageCountry, requestedDays);
+            }).then(function (result) {
+              var status = String(result && result.status || '').toUpperCase();
+              if (status === 'APPLIED' || status === 'ALREADY_INITIALIZED') {
+                root.__omegaV2ResourceNotice = 'Stock target updated to ' + requestedDays +
+                  ' days. Existing stock was preserved; only the required difference was added.';
+              } else if (status === 'COMPLETED_WITH_REPORTED_GAPS') {
+                root.__omegaV2ResourceNotice = 'Target set to ' + requestedDays +
+                  ' days. Some source or warehouse records still need reconciliation.';
+              } else {
+                root.__omegaV2ResourceNotice = 'Stock target was not changed: ' +
+                  human(result && (result.reason || result.status) || 'runtime rejected the request') + '.';
+              }
+            }).catch(function () {
+              root.__omegaV2ResourceNotice = 'Stock target could not be saved. No success was recorded.';
+            }).finally(function () {
+              root.__omegaV2CoverageSaving = false;
+              scheduleRender(root, Object.assign({}, coverageOptions, { tab:'inventory' }));
+            });
+          }
+          if (!root.__omegaV2CoverageSaving) scheduleRender(root, Object.assign({}, coverageOptions, { tab:'inventory' }));
+          return;
+        }
         var tab = target.closest('[data-omega-v2-resource-tab]');
         if (tab && root.contains(tab)) {
           root.__omegaV2ResourceTab = tab.getAttribute('data-omega-v2-resource-tab') || 'dashboard';
@@ -1971,7 +2236,11 @@
         scheduleRender(root,Object.assign({},options,{tab:'mines'}));
       });
       if (!root.__omegaV2RuntimeEventsBound && typeof g.addEventListener === 'function') {
-        ['OMEGA_RESOURCE_MINE_PROJECT_STARTED','OMEGA_RESOURCE_MINE_PROJECT_PROGRESS','OMEGA_RESOURCE_MINE_COMMISSIONED','OMEGA_SIMULATION_TURN_COMMITTED'].forEach(function (name) {
+        ['OMEGA_RESOURCE_MINE_PROJECT_STARTED','OMEGA_RESOURCE_MINE_PROJECT_PROGRESS','OMEGA_RESOURCE_MINE_COMMISSIONED',
+          'OMEGA_RESOURCE_FACTORY_INPUT_STOCK_TARGET_UPDATED','OMEGA_RESOURCE_NATIONAL_DEMAND_UPDATED',
+          'OMEGA_RESOURCE_ECONOMY_UPDATED','OMEGA_RESOURCE_MINE_HAUL_DELIVERED',
+          'OMEGA_RESOURCE_MINE_WAREHOUSE_RECEIPT_POSTED','OMEGA_FACTORY_INPUT_SHIPMENT_DELIVERED',
+          'OMEGA_SIMULATION_TURN_COMMITTED'].forEach(function (name) {
           g.addEventListener(name,function(){ if(root.__omegaV2ResourceOptions) scheduleRender(root,Object.assign({},root.__omegaV2ResourceOptions,{tab:root.__omegaV2ResourceTab||'mines'})); });
         });
         root.__omegaV2RuntimeEventsBound = true;

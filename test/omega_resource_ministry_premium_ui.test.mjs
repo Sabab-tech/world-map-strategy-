@@ -103,6 +103,136 @@ test("inventory displays the canonical 41 resources and aggregate balances when 
   }
 });
 
+test("inventory rows show current stock coverage, shortage/surplus and verified supply origin", async () => {
+  const api = globalThis.OmegaUIV2ResourceMinistry;
+  const rules = json("resource_economy_rules.json");
+  const resources = Object.keys(rules.demand.resourceProfiles).map((resourceId) => {
+    const profile = rules.demand.resourceProfiles[resourceId] || {};
+    return {
+      resourceId,
+      name: resourceId.replace(/[_-]+/g, " ").replace(/\\b\\w/g, (ch) => ch.toUpperCase()),
+      unit: String(profile.unit || "").replace(/_PER_DAY$/i, "") || "TONNES",
+      demandUnit: profile.unit || "TONNES_PER_DAY",
+      profileKnown: true
+    };
+  });
+  const priorGame = globalThis.Game;
+  const priorInventoryRuntime = globalThis.OmegaCountryInventoryRuntime;
+  const priorIndustrialCatalog = globalThis.OmegaResourceIndustrialCatalogData;
+  const priorStartupBaseline = globalThis.OmegaResourceStartupBaseline;
+  const calls = [];
+  let savedDays = 100;
+  const listeners = Object.create(null);
+  const coverageInput = { value: "120" };
+  const root = {
+    innerHTML: "",
+    classList: { add() {} },
+    addEventListener(type, fn) { (listeners[type] || (listeners[type] = [])).push(fn); },
+    querySelector(selector) {
+      return selector === "[data-omega-v2-coverage-days-input]" ? coverageInput : null;
+    },
+    querySelectorAll() { return []; },
+    contains() { return true; }
+  };
+  globalThis.Game = {
+    state: {
+      simulation: { turn: 12, session: { playerCountryId: "BGD", status: "RUNNING" } },
+      resource: {
+        BGD: {
+          inventory: { coal: 125, iron_ore: 50 },
+          inventoryUnits: { coal: "TONNES", iron_ore: "TONNES" },
+          batches: [
+            {
+              batchId: "LOCAL-COAL-01", resourceId: "coal", quantity: 125, remainingQuantity: 125,
+              unit: "TONNES", status: "AVAILABLE", warehouseId: "WH-BGD-RAW",
+              sourceCountryId: "BGD", originCountryId: "BGD",
+              transferType: "LOCAL_EXTRACTION", sourceSiteIds: ["SITE_BGD_COAL"]
+            },
+            {
+              batchId: "MINE-SIDE-COAL-02", resourceId: "coal", quantity: 70, remainingQuantity: 70,
+              unit: "TONNES", status: "AVAILABLE", sourceCountryId: "BGD", originCountryId: "BGD",
+              transferType: "LOCAL_EXTRACTION", sourceSiteIds: ["SITE_BGD_COAL"]
+            },
+            {
+              batchId: "IMPORT-ORE-01", resourceId: "iron_ore", quantity: 50, remainingQuantity: 50,
+              unit: "TONNES", status: "AVAILABLE", warehouseId: "WH-BGD-RAW",
+              sourceCountryId: "AUS", originCountryId: "AUS",
+              transferType: "INTERNATIONAL_TRADE_IMPORT"
+            }
+          ],
+          demandRuntime: {
+            byResource: {
+              coal: { demandPerDay: 25, status: "BALANCED", stockCoverageTargetDays: 4 },
+              iron_ore: { demandPerDay: 10, status: "SHORTAGE", unmetDemand: 3, stockCoverageTargetDays: 10 }
+            }
+          },
+          warehouse: { warehouseId: "WH-BGD-RAW", availableByResource: {}, receipts: [], storedBatchIds: [] },
+          processedWarehouse: { warehouseId: "WH-BGD-PROCESSED", availableByResource: {}, receipts: [], storedBatchIds: [] },
+          mineAssets: [],
+          industrialNetwork: { projects: [], shipments: [], siteFlowLedger: [] },
+          inventoryLedger: []
+        }
+      },
+      trade: {
+        BGD: {
+          importRequests: [{
+            requestId: "IMPORT-INBOUND-01", resourceId: "iron_ore", quantity: 20,
+            remainingQuantity: 20, status: "IN_TRANSIT", supplierCountryId: "AUS"
+          }]
+        }
+      }
+    }
+  };
+  globalThis.OmegaCountryInventoryRuntime = { getResourceCatalog() { return resources; } };
+  globalThis.OmegaResourceIndustrialCatalogData = { resourceRules: {} };
+  globalThis.OmegaResourceStartupBaseline = {
+    getFactoryInputCoverageDays() { return savedDays; },
+    async setFactoryInputCoverageDays(countryId, days) {
+      calls.push({ countryId, days });
+      savedDays = days;
+      return { status: "APPLIED", countryId, targetCoverageDays: days };
+    }
+  };
+  try {
+    const result = api.render(root, { countryId: "BGD", sites: [], tab: "inventory" });
+    assert.equal(result.ok, true);
+    assert.match(root.innerHTML, /Current Stock/);
+    assert.match(root.innerHTML, /125.*TONNES/);
+    assert.match(root.innerHTML, /5 days/, "125 tonnes at 25 tonnes/day must cover five days");
+    assert.match(root.innerHTML, /Surplus/, "stock above its runtime target must be shown as surplus");
+    assert.match(root.innerHTML, /Shortage/, "runtime shortage status must be retained");
+    assert.match(root.innerHTML, /Domestic mine/, "local mine batch lineage must be visible");
+    assert.doesNotMatch(root.innerHTML, /Batch ledger exceeds current stock by: 70/,
+      "mine-side extraction must not be counted as current stock before warehouse receipt");
+    assert.match(root.innerHTML, /Foreign import/, "foreign inventory origin must be identified");
+    assert.match(root.innerHTML, /AUS/, "foreign inventory origin must show its source country");
+    assert.match(root.innerHTML, /Confirmed foreign inbound/, "approved inbound import requests must be separated from on-hand stock");
+    assert.match(root.innerHTML, /data-omega-v2-coverage-days-input/);
+    assert.match(root.innerHTML, /max="3650"/);
+    const applyButton = { disabled: false };
+    const clickEvent = {
+      target: {
+        closest(selector) {
+          return selector === "[data-omega-v2-coverage-apply]" ? applyButton : null;
+        }
+      }
+    };
+    for (const handler of listeners.click || []) handler(clickEvent);
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.deepEqual(calls, [{ countryId: "BGD", days: 120 }],
+      "the coverage control must call the authoritative startup-baseline setter");
+    assert.match(root.innerHTML, /value="120"/, "the applied target is read back from runtime state");
+  } finally {
+    if (priorGame === undefined) delete globalThis.Game; else globalThis.Game = priorGame;
+    if (priorInventoryRuntime === undefined) delete globalThis.OmegaCountryInventoryRuntime;
+    else globalThis.OmegaCountryInventoryRuntime = priorInventoryRuntime;
+    if (priorIndustrialCatalog === undefined) delete globalThis.OmegaResourceIndustrialCatalogData;
+    else globalThis.OmegaResourceIndustrialCatalogData = priorIndustrialCatalog;
+    if (priorStartupBaseline === undefined) delete globalThis.OmegaResourceStartupBaseline;
+    else globalThis.OmegaResourceStartupBaseline = priorStartupBaseline;
+  }
+});
+
 test("mine archetype classifier keeps extraction-site silhouettes distinct", () => {
   const api = globalThis.OmegaUIV2ResourceMinistry;
   assert.equal(api.mineArchetype({ siteType: "underground mine" }), "UNDERGROUND_MINE");
@@ -125,7 +255,7 @@ test("resource visual layer is wired into the offline-first app without remote d
   assert.ok(html.includes(stylesheetTag), "premium resource stylesheet must be loaded by the app");
   assert.ok(sw.includes('"' + "./" + cssPath + '"'), "premium resource stylesheet must be precached offline");
   assert.ok(uiManifest.additionalStyles.includes(cssPath), "UI v2 manifest must document the resource style");
-  assert.match(sw, /omega-offline-atlas-shell-v76/, "offline cache must be invalidated for new visual assets");
+  assert.match(sw, /omega-offline-atlas-shell-v77/, "offline cache must be invalidated for new visual assets");
   const coreAssets = sw.slice(sw.indexOf("const CORE_ASSETS"), sw.indexOf("];", sw.indexOf("const CORE_ASSETS")));
   assert.ok(coreAssets.includes('"./resource_economy_rules.json"'), "canonical resource identities remain in the shell precache list");
   const shellAssetPolicy = sw.slice(sw.indexOf("function isShellAsset"), sw.indexOf("function isLocalAppUrl"));
@@ -702,7 +832,7 @@ test("all resource SVGs use a light metallic backplate for readable dark mineral
     assert.match(svg, /data-omega-icon-kind="resource"/);
   }
   assert.match(manifest.rendering.background, /light silver-metal.*factory SVGs retain their shared dark-navy/i);
-  assert.match(read("omega-offline-map-sw.js"), /omega-offline-atlas-shell-v76/);
+  assert.match(read("omega-offline-map-sw.js"), /omega-offline-atlas-shell-v77/);
 });
 
 

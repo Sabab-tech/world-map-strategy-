@@ -40,6 +40,15 @@ class EventTargetMock {
   constructor(){this.listeners=new Map();}
   addEventListener(type,fn){const rows=this.listeners.get(type)||[];rows.push(fn);this.listeners.set(type,rows);}
   dispatchEvent(evt){for(const fn of this.listeners.get(evt.type)||[])fn(evt);return true;}
+  async dispatchAndWait(evt){
+    const pending=[];
+    for(const fn of this.listeners.get(evt.type)||[]){
+      const result=fn(evt);
+      if(result&&typeof result.then==='function')pending.push(result);
+    }
+    await Promise.all(pending);
+    return true;
+  }
 }
 class CustomEventMock {constructor(type,init={}){this.type=type;this.detail=init.detail;}}
 
@@ -455,4 +464,93 @@ test('real site extraction flows through raw warehouse, transport, factory, fini
   assert.ok(Number(state.finance.BGD.available)>treasuryBefore-100000,'fiscal receipts must change treasury cash');
   assert.equal(industry.diagnostics('BGD').targetArchitecture,'SITE -> EXTRACTION -> WAREHOUSE -> ROUTE -> FACTORY -> PROCESS -> OUTPUT');
   console.log('OMEGA TRUE RESOURCE GAMEPLAY PIPELINE PASSED');
+});
+
+test('committed game turns run the selected country mine and industrial pipeline once without wall-clock timers', async () => {
+  const h = buildContext(), g = h.context, state = h.state;
+  const modules = [
+    'omega_resource_part04_identity_runtime.js',
+    'omega_resource_part05_reserve_extraction_runtime.js',
+    'omega_resource_production_model_v2.js',
+    'omega_resource_site_integrity_v1.js',
+    'omega_resource_scenario_engineering_data_v1.js',
+    'omega_resource_realism_runtime_v1.js',
+    'omega_resource_country_boundary_guard.js',
+    'omega_resource_endowment_runtime.js',
+    'omega_resource_industrial_network_v1.js',
+    'omega_resource_economy_runtime_v2.js'
+  ];
+  for (const file of modules) vm.runInContext(readText(file), g, { filename: file });
+  const endowment = g.OmegaResourceEndowmentRuntime || g.Omega?.ResourceEndowmentRuntime;
+  const industry = g.OmegaResourceIndustrialNetwork || g.Omega?.ResourceIndustrialNetwork;
+  const economy = g.OmegaResourceEconomy || g.Omega?.ResourceEconomy;
+  assert.ok(endowment && industry && economy);
+  assert.equal((await endowment.initialize()).status, 'READY');
+  const hydration = await endowment.hydrateCountry('BGD');
+  assert.equal(hydration.status, 'APPLIED', JSON.stringify(hydration));
+  state.economy.BGD = state.economy.BGD || { productionAssets: [] };
+  state.economy.BGD.unemploymentCount = 100000;
+  state.economy.BGD.laborForce = 1000000;
+  state.economy.BGD.unemployment_rate = 10;
+  state.transport.BGD = state.transport.BGD || {};
+  state.transport.BGD.infrastructure = {
+    roads: { capacityPerDay: 40000, quality: .9 },
+    rail: { capacityPerDay: 90000, quality: .9 },
+    ports: { capacityPerDay: 180000, quality: .9 },
+    bridges: { capacityPerDay: 45000, quality: .9 },
+    pipelines: { capacityPerDay: 350000, quality: .9 },
+    utilitySupply: {
+      electricityMWhPerDay: 1000000, waterM3PerDay: 1000000,
+      authority: 'TEST_FIXTURE', status: 'AVAILABLE', simulationOnly: true, assets: []
+    }
+  };
+  state.simulation.playerCountryId = 'BGD';
+  const firstCommittedTurn = Number(state.simulation.turn) || 1;
+  const routeLoad = await industry.loadSiteLogisticsRoutes('BGD');
+  assert.equal(routeLoad.status, 'READY', JSON.stringify(routeLoad));
+  const foreignBefore = JSON.stringify(state.resource.KWT || null);
+  const extractionCalls = [], industrialCalls = [];
+  const startProduction = endowment.startCountryProduction.bind(endowment);
+  const runCountryTurn = industry.runCountryTurn.bind(industry);
+  // Runtime APIs are intentionally frozen. Wrap the references in the test harness
+  // instead of mutating production API objects.
+  const observedEndowment = Object.assign({}, endowment, {
+    startCountryProduction: async function (countryId, ...args) {
+      extractionCalls.push({ countryId, turn: state.simulation.turn });
+      return startProduction(countryId, ...args);
+    }
+  });
+  const observedIndustry = Object.assign({}, industry, {
+    runCountryTurn: async function (countryId, ...args) {
+      industrialCalls.push({ countryId, turn: state.simulation.turn });
+      return runCountryTurn(countryId, ...args);
+    }
+  });
+  g.OmegaResourceEndowmentRuntime = observedEndowment;
+  g.Omega.ResourceEndowmentRuntime = observedEndowment;
+  g.OmegaResourceIndustrialNetwork = observedIndustry;
+  g.Omega.ResourceIndustrialNetwork = observedIndustry;
+
+  const firstCommit = h.events.dispatchAndWait(new CustomEventMock('OMEGA_SIMULATION_TURN_COMMITTED'));
+  const firstTurnPromise = economy.runTurn();
+  await firstCommit;
+  await firstTurnPromise;
+  const repeatedSameTurn = economy.runTurn();
+  assert.strictEqual(repeatedSameTurn, firstTurnPromise,
+    'a second resource run in the same committed turn reuses the same in-flight/completed task');
+  await repeatedSameTurn;
+  assert.deepEqual(extractionCalls, [{ countryId: 'BGD', turn: firstCommittedTurn }]);
+  assert.deepEqual(industrialCalls, [{ countryId: 'BGD', turn: firstCommittedTurn }]);
+
+  advanceOneGameTurn(state);
+  await h.events.dispatchAndWait(new CustomEventMock('OMEGA_SIMULATION_TURN_COMMITTED'));
+  await economy.runTurn();
+  assert.deepEqual(extractionCalls.map(row => row.turn), [firstCommittedTurn, firstCommittedTurn + 1],
+    'mine extraction advances once on each committed game turn, not from a wall-clock timer');
+  assert.deepEqual(industrialCalls.map(row => row.turn), [firstCommittedTurn, firstCommittedTurn + 1],
+    'mine-haul arrivals and factory input transfers advance once on each committed game turn');
+  assert.ok(extractionCalls.every(row => row.countryId === 'BGD'));
+  assert.ok(industrialCalls.every(row => row.countryId === 'BGD'));
+  assert.equal(JSON.stringify(state.resource.KWT || null), foreignBefore,
+    'other countries are not hydrated or mutated by the selected-country turn runner');
 });

@@ -7,7 +7,9 @@
 (function (g) {
   'use strict';
 
-  var VERSION = '1.1.0';
+  var VERSION = '1.2.0';
+  var LEGACY_STARTUP_BASELINE_VERSION = '1.1.0';
+  var FACTORY_INPUT_COVERAGE_VERSION = '2.0.0';
   if (g.OmegaResourceStartupBaseline && g.OmegaResourceStartupBaseline.VERSION === VERSION) return;
 
   var PATHS = {
@@ -448,7 +450,7 @@
     var countryId = id(profile.iso3);
     var policy = data.policy.startupFactories || {};
     var created = [], existingCount = assets.length;
-    if (marker && marker.version === VERSION && marker.factoryAssetsInitialized === true) {
+    if (marker && (marker.version === VERSION || marker.version === LEGACY_STARTUP_BASELINE_VERSION) && marker.factoryAssetsInitialized === true) {
       return { status: 'ALREADY_INITIALIZED', countryId: countryId, created: 0,
         assetCount: assets.length, existingCount: assets.length, siteResourceGroupCount: (groups || []).length };
     }
@@ -808,7 +810,7 @@
   }
   function seedCountryStock(state, profile, economy, resource, assets, turn) {
     var marker = object(resource.startupBaselineV1);
-    if (marker && marker.version === VERSION && marker.openingStockInitialized === true) {
+    if (marker && (marker.version === VERSION || marker.version === LEGACY_STARTUP_BASELINE_VERSION) && marker.openingStockInitialized === true) {
       return {
         status: 'ALREADY_INITIALIZED',
         seeded: 0,
@@ -1182,14 +1184,69 @@
       seeded: seeded, preserved: preserved, unknownResourceIds: unresolved, stateMismatchResourceIds: stateMismatch,
       sourceCounts: sourceCounts, batchIds: batchIds };
   }
+  function getFactoryInputCoverageDays(state, resource, countryId) {
+    state = object(state) || {};
+    resource = object(resource) || {};
+    var simulation = object(state.simulation) || {};
+    var supplyPolicy = object(simulation.resourceSupplyPolicy) || {};
+    var countryPolicy = object(supplyPolicy.countries) && object(supplyPolicy.countries[countryId]) ||
+      object(supplyPolicy[countryId]) || supplyPolicy;
+    var resourcePolicy = object(resource.factoryInputPolicy) || {};
+    var economyPolicy = object(data && data.economyRules && data.economyRules.demand &&
+      data.economyRules.demand.playerSupplyLifeline) || {};
+    var candidates = [
+      resource.factoryInputCoverageDays,
+      resourcePolicy.targetCoverageDays,
+      countryPolicy.factoryInputCoverageDays,
+      countryPolicy.targetCoverageDays,
+      supplyPolicy.factoryInputCoverageDays,
+      supplyPolicy.targetCoverageDays,
+      simulation.factoryInputCoverageDays,
+      economyPolicy.targetCoverageDays,
+      data && data.policy && data.policy.factoryInputStockBaseline &&
+        data.policy.factoryInputStockBaseline.targetCoverageDays,
+      100
+    ];
+    var days = null;
+    for (var i = 0; i < candidates.length; i++) {
+      var candidate = finite(candidates[i]);
+      if (candidate !== null && candidate > 0) {
+        days = Math.round(candidate);
+        break;
+      }
+    }
+    return Math.max(1, Math.min(3650, days || 100));
+  }
+
+  function factoryInputDailyDemand(row) {
+    if (!row || !Array.isArray(row.sources) || !row.sources.length) return null;
+    var daily = 0;
+    for (var i = 0; i < row.sources.length; i++) {
+      var source = row.sources[i] || {};
+      var quantity = positive(source.demandQuantity);
+      var cycleDays = positive(source.cycleDays) || 1;
+      if (quantity === null) return null;
+      daily += quantity / cycleDays;
+    }
+    return Number.isFinite(daily) && daily > 0 ? Number(daily.toPrecision(12)) : null;
+  }
+
   function seedCountryFactoryInputStock(resource, profile, turn) {
     var countryId = id(profile && profile.iso3);
     var baseline = data.factoryInputBaseline && data.factoryInputBaseline.countries[countryId] || null;
     if (!baseline) return { status: 'NOT_IN_CORE_FACTORY_ROSTER', countryId: countryId, seeded: 0, openingStockQuantity: 0 };
+    var coverageDays = getFactoryInputCoverageDays(rootState(), resource, countryId);
     var marker = object(resource.factoryInputBaselineV1);
-    if (marker && marker.version === data.factoryInputBaseline.version && marker.openingStockInitialized === true) {
+    if (marker && marker.version === data.factoryInputBaseline.version &&
+        marker.coverageModelVersion === FACTORY_INPUT_COVERAGE_VERSION &&
+        Number(marker.targetCoverageDays) === coverageDays &&
+        marker.openingStockInitialized === true &&
+        !(Array.isArray(marker.unknownProductIds) && marker.unknownProductIds.length) &&
+        !(Array.isArray(marker.stateMismatchProductIds) && marker.stateMismatchProductIds.length)) {
       return { status: 'ALREADY_INITIALIZED', countryId: countryId, seeded: 0,
         openingStockQuantity: finite(marker.openingStockQuantity) || 0,
+        storedOpeningStockQuantity: finite(marker.storedOpeningStockQuantity) || 0,
+        targetCoverageDays: coverageDays,
         unknownProductIds: clone(marker.unknownProductIds || []) };
     }
     var rows = Array.isArray(baseline.factoryInputRows) ? baseline.factoryInputRows : null;
@@ -1275,8 +1332,8 @@
 
     var maxBatches = Math.max(1, Math.floor(finite(data.economyRules.runtime && data.economyRules.runtime.maxBatches) || 8192));
     var maxLedgerEntries = Math.max(1, Math.floor(finite(data.economyRules.runtime && data.economyRules.runtime.maxLedgerEntries) || 2048));
-    var seeded = 0, openingStockQuantity = 0, storedOpeningStockQuantity = 0, unknown = [], stateMismatch = [];
-    var batchIds = [], stockRows = [], inventoryEvents = [];
+    var seeded = 0, preserved = 0, openingStockQuantity = 0, storedOpeningStockQuantity = 0;
+    var unknown = [], stateMismatch = [], batchIds = [], stockRows = [], inventoryEvents = [];
     var unit = String(data.factoryInputBaseline.quantityBasis && data.factoryInputBaseline.quantityBasis.unit || 'SIMULATION_RESOURCE_UNIT');
 
     function matchingKeys(map, wanted) {
@@ -1285,16 +1342,16 @@
     }
     rows.forEach(function (row) {
       var productId = token(row && row.productId);
-      var quantity = positive(row && row.openingStockQuantity);
       var demand = positive(row && row.demandPerFullCycle);
-      var buffer = finite(row && row.bufferQuantity);
+      var dailyDemand = factoryInputDailyDemand(row);
+      var quantity = dailyDemand === null ? null : Number((dailyDemand * coverageDays).toPrecision(12));
       var stage = id(row && row.stage);
-      if (!productId || !quantity || !demand || buffer === null ||
-          Math.abs(buffer - demand * 0.4) > 1e-5 || Math.abs(quantity - demand * 1.4) > 1e-5 ||
+      if (!productId || demand === null || dailyDemand === null || quantity === null || quantity <= 0 ||
           ['RAW', 'INTERMEDIATE'].indexOf(stage) < 0 || !Array.isArray(row.sources) || !row.sources.length) {
         unknown.push(productId || String(row && row.productId || 'UNKNOWN_PRODUCT'));
         return;
       }
+
       var inventoryKeys = matchingKeys(inventory, productId);
       var warehouse = stage === 'RAW' ? rawWarehouse : processedWarehouse;
       var warehouseKeys = matchingKeys(warehouse.availableByResource, productId);
@@ -1306,10 +1363,7 @@
       var currentInventory = inventoryKeys.length ? finite(inventory[inventoryKey]) : 0;
       var warehouseKey = warehouseKeys.length ? warehouseKeys[0] : productId;
       var currentWarehouse = warehouseKeys.length ? finite(warehouse.availableByResource[warehouseKey]) : 0;
-      if (unitKeys.length > 1) {
-        unknown.push(productId); stateMismatch.push(productId); return;
-      }
-      if (currentInventory === null || currentWarehouse === null) {
+      if (unitKeys.length > 1 || currentInventory === null || currentWarehouse === null) {
         unknown.push(productId); stateMismatch.push(productId); return;
       }
       var storedUnit = unitKeys.length ? String(inventoryUnits[unitKeys[0]] || '').trim() : '';
@@ -1325,46 +1379,81 @@
       if (!unitBridge || unitFactor === null || unitFactor <= 0) {
         unknown.push(productId); stateMismatch.push(productId); return;
       }
-      var storedQuantity = Number((quantity / unitFactor).toPrecision(12));
-      if (!(storedQuantity > 0) || !Number.isFinite(storedQuantity)) {
-        unknown.push(productId); stateMismatch.push(productId); return;
+
+      // Aggregate inventory and the matching warehouse are two views of the same stock.
+      // Never guess a missing delta when their ledgers disagree; a reconciliation pass must
+      // resolve the discrepancy before this startup policy can safely add a batch.
+      if (Math.abs(currentInventory - currentWarehouse) > 1e-6) {
+        unknown.push(productId); stateMismatch.push(productId);
+        stockRows.push({
+          productId: productId, stage: stage, dailyDemandQuantity: dailyDemand,
+          targetCoverageDays: coverageDays, targetStockQuantity: quantity,
+          currentStockBefore: null, topUpQuantity: 0, quantity: 0, unit: storedUnit,
+          inputSimulationUnit: unit, unitBridgeFactor: unitFactor, batchId: null,
+          state: 'BLOCKED_INVENTORY_WAREHOUSE_MISMATCH'
+        });
+        return;
       }
-      var batchId = 'STARTUP-FACTORY-INPUT-V1-' + countryId + '-' + productId.toUpperCase();
-      if (batches.some(function (batch) { return batch && String(batch.batchId || '') === batchId; }) ||
-          own(lots, batchId)) {
-        unknown.push(productId); stateMismatch.push(productId); return;
-      }
-      if (batches.length + seeded >= maxBatches) {
-        unknown.push(productId); stateMismatch.push(productId); return;
-      }
+      var currentStock = Number((currentInventory * unitFactor).toPrecision(12));
+      var topUpQuantity = Math.max(0, Number((quantity - currentStock).toPrecision(12)));
+      openingStockQuantity += quantity;
       var sourceTypes = Array.from(new Set(row.sources.map(function (source) {
         return id(source && source.factoryType);
       }).filter(Boolean)));
       var recipeIds = Array.from(new Set(row.sources.map(function (source) {
         return String(source && source.recipeId || '').trim();
       }).filter(Boolean)));
+      if (topUpQuantity <= 1e-9) {
+        preserved++;
+        stockRows.push({
+          productId: productId, stage: stage, dailyDemandQuantity: dailyDemand,
+          targetCoverageDays: coverageDays, targetStockQuantity: quantity,
+          currentStockBefore: currentStock, topUpQuantity: 0, quantity: 0,
+          unit: storedUnit, inputSimulationUnit: unit, unitBridgeFactor: unitFactor,
+          batchId: null, sourceFactoryTypes: sourceTypes, sourceRecipeIds: recipeIds,
+          state: 'TARGET_ALREADY_MET_OR_EXCEEDED'
+        });
+        return;
+      }
+      var storedQuantity = Number((topUpQuantity / unitFactor).toPrecision(12));
+      if (!(storedQuantity > 0) || !Number.isFinite(storedQuantity)) {
+        unknown.push(productId); stateMismatch.push(productId); return;
+      }
+      var batchId = 'STARTUP-FACTORY-INPUT-V2-' + countryId + '-' +
+        productId.toUpperCase() + '-C' + coverageDays;
+      if (batches.some(function (batch) { return batch && String(batch.batchId || '') === batchId; }) ||
+          own(lots, batchId)) {
+        unknown.push(productId); stateMismatch.push(productId); return;
+      }
+      if (batches.length + seeded >= maxBatches ||
+          ledger.length + seeded >= maxLedgerEntries ||
+          warehouse.receipts.length + seeded >= maxLedgerEntries) {
+        unknown.push(productId); stateMismatch.push(productId); return;
+      }
       var provenance = {
-        source: 'SIMULATED_FACTORY_INPUT_STARTUP_BASELINE_V1',
-        authority: 'SIMULATED_FACTORY_INPUT_STARTUP_BASELINE_V1',
+        source: 'SIMULATED_FACTORY_INPUT_STARTUP_BASELINE_V2',
+        authority: 'SIMULATED_FACTORY_INPUT_STARTUP_BASELINE_V2',
         datasetId: data.factoryInputBaseline.datasetId,
         countryId: countryId,
         productId: productId,
         demandPerFullCycle: demand,
-        bufferPercent: 40,
-        bufferQuantity: buffer,
+        dailyDemandQuantity: dailyDemand,
+        targetCoverageDays: coverageDays,
+        targetStockQuantity: quantity,
+        topUpQuantity: topUpQuantity,
         sourceFactoryTypes: sourceTypes,
         sourceRecipeIds: recipeIds,
         productNamespace: row.productNamespace || null,
         supplySource: row.supplySource || null,
         sourceAuthority: row.sourceAuthority || null,
-        supplyMode: row.supplyMode || 'STARTUP_BASELINE_STOCK',
+        supplyMode: row.supplyMode || 'STARTUP_OPENING_STOCK',
         requiresRecordedUpstreamBatch: row.requiresRecordedUpstreamBatch === true,
         storageUnit: storedUnit,
         inputSimulationUnit: unit,
         unitBridgeFactor: unitFactor,
         simulationOnly: true,
         geologicalReserveQuantityUsedAsStock: false,
-        statement: 'One-time gameplay opening stock equal to full-cycle recipe input demand plus a 40 percent buffer; not observed inventory or a recorded shipment.'
+        statement: 'One-time game opening allocation calculated from daily factory input demand and the selected coverage window. Recurring additions must come from the normal turn-based mine, processing, or approved trade pipeline.'
       };
       var warehouseId = warehouse.warehouseId;
       var batch = {
@@ -1413,23 +1502,27 @@
         receiptId: 'WH-REC-' + batchId, warehouseId: warehouseId, countryId: countryId,
         batchId: batchId, resourceId: productId, quantity: storedQuantity, unit: storedUnit,
         simulationTurn: turn, status: 'RECEIVED',
-        source: 'SIMULATED_FACTORY_INPUT_STARTUP_BASELINE_V1',
+        source: 'SIMULATED_FACTORY_INPUT_STARTUP_BASELINE_V2',
         provenance: clone(provenance)
       });
       ledger.push({
         type: 'FACTORY_INPUT_STARTUP_STOCK_CREATED',
         resourceId: productId, quantity: storedQuantity, unit: storedUnit, stage: stage,
-        turn: turn, batchId: batchId, source: 'SIMULATED_FACTORY_INPUT_STARTUP_BASELINE_V1',
-        demandPerFullCycle: demand, bufferPercent: 40, provenance: clone(provenance)
+        turn: turn, batchId: batchId, source: 'SIMULATED_FACTORY_INPUT_STARTUP_BASELINE_V2',
+        dailyDemandQuantity: dailyDemand, targetCoverageDays: coverageDays,
+        targetStockQuantity: quantity, provenance: clone(provenance)
       });
       seeded++;
-      openingStockQuantity += quantity;
       storedOpeningStockQuantity += storedQuantity;
       batchIds.push(batchId);
-      stockRows.push({ productId: productId, stage: stage, demandPerFullCycle: demand,
-        bufferQuantity: buffer, quantity: storedQuantity, targetQuantity: quantity,
-        unit: storedUnit, inputSimulationUnit: unit, unitBridgeFactor: unitFactor, batchId: batchId,
-        sourceFactoryTypes: sourceTypes, sourceRecipeIds: recipeIds });
+      stockRows.push({
+        productId: productId, stage: stage, demandPerFullCycle: demand,
+        dailyDemandQuantity: dailyDemand, targetCoverageDays: coverageDays,
+        targetStockQuantity: quantity, currentStockBefore: currentStock,
+        topUpQuantity: topUpQuantity, quantity: storedQuantity, unit: storedUnit,
+        inputSimulationUnit: unit, unitBridgeFactor: unitFactor, batchId: batchId,
+        sourceFactoryTypes: sourceTypes, sourceRecipeIds: recipeIds, state: 'TOPPED_UP'
+      });
       inventoryEvents.push({
         countryId: countryId, resourceId: productId, delta: storedQuantity,
         newQuantity: nextInventory, warehouseQuantity: nextWarehouse, stage: stage,
@@ -1454,19 +1547,28 @@
     } else {
       if (!inventoryPresent) resource.inventory = inventory;
       if (!unitsPresent) resource.inventoryUnits = inventoryUnits;
+      if (!batchesPresent && batches.length) resource.batches = batches;
+      if (!lotsPresent && Object.keys(lots).length) resource.inventoryLots = lots;
+      if (!ledgerPresent && ledger.length) resource.inventoryLedger = ledger;
+      if (rawWarehouse) resource.warehouse = rawWarehouse;
+      if (processedWarehouse) resource.processedWarehouse = processedWarehouse;
     }
     resource.factoryInputBaselineV1 = {
       version: data.factoryInputBaseline.version,
       datasetId: data.factoryInputBaseline.datasetId,
+      coverageModelVersion: FACTORY_INPUT_COVERAGE_VERSION,
       status: unknown.length ? 'INITIALIZED_WITH_GAPS' : 'INITIALIZED',
       openingStockInitialized: true,
       countryId: countryId,
       initializedTurn: turn,
       factoryUnitCount: baseline.totalStartingFactoryUnits,
       factoryTypeCount: data.factoryInputBaseline.factoryTypeCount,
-      bufferPercent: 40,
+      bufferPercent: 0,
+      legacyCycleBufferPercent: 40,
+      targetCoverageDays: coverageDays,
       inputProductCount: rows.length,
       seededProductCount: seeded,
+      preservedProductCount: preserved,
       openingStockQuantity: Number(openingStockQuantity.toPrecision(12)),
       storedOpeningStockQuantity: Number(storedOpeningStockQuantity.toPrecision(12)),
       unknownProductIds: unknown,
@@ -1474,16 +1576,71 @@
       stockBatchIds: batchIds,
       stockRows: stockRows,
       sourceFile: PATHS.factoryInputBaseline,
-      authority: 'SIMULATED_FACTORY_INPUT_STARTUP_BASELINE_V1',
+      authority: 'SIMULATED_FACTORY_INPUT_STARTUP_BASELINE_V2',
       geologicalReserveQuantityUsedAsStock: false,
       existingSaveDataOverwritten: false
     };
     return { status: unknown.length ? 'INITIALIZED_WITH_GAPS' : 'INITIALIZED',
-      countryId: countryId, seeded: seeded,
+      countryId: countryId, seeded: seeded, preserved: preserved,
+      targetCoverageDays: coverageDays,
       openingStockQuantity: Number(openingStockQuantity.toPrecision(12)),
       storedOpeningStockQuantity: Number(storedOpeningStockQuantity.toPrecision(12)),
       unknownProductIds: unknown, stateMismatchProductIds: stateMismatch, batchIds: batchIds };
   }
+  async function setFactoryInputCoverageDays(countryId, daysValue) {
+    var loaded = await loadSources();
+    if (!loaded || loaded.status !== 'READY') {
+      return { status: 'BLOCKED', reason: loaded && loaded.reason || 'STARTUP_BASELINE_SOURCES_NOT_READY' };
+    }
+    var state = rootState();
+    if (!state || typeof state !== 'object') return { status: 'BLOCKED', reason: 'AUTHORITATIVE_GAME_STATE_UNAVAILABLE' };
+    var wanted = id(countryId), simulation = object(state.simulation) || {}, session = sessionFromState(state) || {};
+    var playerCountryId = id(session.playerCountryId || simulation.playerCountryId || state.playerCountryId);
+    if (!playerCountryId) return { status: 'BLOCKED', reason: 'PLAYER_COUNTRY_NOT_SELECTED' };
+    if (!wanted || wanted !== playerCountryId) {
+      return { status: 'BLOCKED', reason: 'PLAYER_COUNTRY_SCOPE_VIOLATION',
+        countryId: wanted || null, playerCountryId: playerCountryId };
+    }
+    var days = finite(daysValue);
+    if (days === null || Math.floor(days) !== days || days < 1 || days > 3650) {
+      return { status: 'BLOCKED', reason: 'FACTORY_INPUT_COVERAGE_DAYS_OUT_OF_RANGE',
+        minimum: 1, maximum: 3650, supplied: daysValue };
+    }
+    var profile = data && data.countryProfiles.find(function (item) { return id(item && item.iso3) === wanted; });
+    if (!profile) return { status: 'BLOCKED', reason: 'COUNTRY_FACTORY_INPUT_BASELINE_NOT_FOUND', countryId: wanted };
+    var resourceHit = bucketFor(state, 'resource', profile, true);
+    if (resourceHit.invalid || !resourceHit.value) {
+      return { status: 'BLOCKED', reason: 'PLAYER_RESOURCE_STATE_BUCKET_INVALID', countryId: wanted };
+    }
+    var resource = resourceHit.value;
+    var previousDays = getFactoryInputCoverageDays(state, resource, wanted);
+    var hadOverride = own(resource, 'factoryInputCoverageDays'), previousOverride = resource.factoryInputCoverageDays;
+    resource.factoryInputCoverageDays = days;
+    var stockResult = seedCountryFactoryInputStock(resource, profile, currentTurn(state));
+    if (!stockResult || stockResult.status === 'BLOCKED') {
+      if (hadOverride) resource.factoryInputCoverageDays = previousOverride;
+      else delete resource.factoryInputCoverageDays;
+      return { status: 'BLOCKED', reason: stockResult && stockResult.reason || 'FACTORY_INPUT_STOCK_TOP_UP_FAILED',
+        countryId: wanted, previousTargetCoverageDays: previousDays, targetCoverageDays: days,
+        stock: clone(stockResult || null) };
+    }
+    var hasGaps = stockResult.status === 'INITIALIZED_WITH_GAPS' ||
+      (Array.isArray(stockResult.unknownProductIds) && stockResult.unknownProductIds.length > 0) ||
+      (Array.isArray(stockResult.stateMismatchProductIds) && stockResult.stateMismatchProductIds.length > 0);
+    if (object(simulation.startupBaselineV1) && id(simulation.startupBaselineV1.playerCountryId) === wanted) {
+      simulation.startupBaselineV1.playerCountryFactoryInputCoverageDays = days;
+      simulation.startupBaselineV1.factoryInputTargetCoverageDays = days;
+    }
+    var result = {
+      status: stockResult.status === 'ALREADY_INITIALIZED' ? 'ALREADY_INITIALIZED' :
+        (hasGaps ? 'COMPLETED_WITH_REPORTED_GAPS' : 'APPLIED'),
+      countryId: wanted, previousTargetCoverageDays: previousDays, targetCoverageDays: days,
+      turn: currentTurn(state), stock: clone(stockResult)
+    };
+    dispatchEvent('OMEGA_RESOURCE_FACTORY_INPUT_STOCK_TARGET_UPDATED', result);
+    return result;
+  }
+
   function seedCountryContext(state, profile) {
     var econHit = bucketFor(state, 'economy', profile, true);
     if (econHit.invalid || !econHit.value) return { status: 'BLOCKED', reason: 'ECONOMY_STATE_BUCKET_INVALID' };
@@ -1513,7 +1670,9 @@
       factoryInputOpeningStockQuantity: factoryInputResult && factoryInputResult.openingStockQuantity || 0,
       unknownFactoryInputProductIds: clone(factoryInputResult && factoryInputResult.unknownProductIds || []),
       factoryInputStateMismatchProductIds: clone(factoryInputResult && factoryInputResult.stateMismatchProductIds || []),
-      factoryInputBufferPercent: factoryInputMarker.bufferPercent || null,
+      factoryInputBufferPercent: factoryInputMarker.bufferPercent === undefined ? null : factoryInputMarker.bufferPercent,
+      factoryInputCoverageModelVersion: factoryInputMarker.coverageModelVersion || null,
+      factoryInputTargetCoverageDays: finite(factoryInputMarker.targetCoverageDays),
       factoryStatus: factoryResult && factoryResult.status || 'NOT_RUN',
       factoryAssetsCreated: factoryResult && factoryResult.status === 'ALREADY_INITIALIZED'
         ? (economyMarker.factoryAssetsCreated || 0) : (factoryResult && factoryResult.created || 0),
@@ -1568,9 +1727,17 @@
     var resourceMarker = object(resource.startupBaselineV1);
     var factoryInputMarker = object(resource.factoryInputBaselineV1);
     var economyMarker = object(economy.startupBaselineV1);
-    var stockReady = resourceMarker && resourceMarker.version === VERSION && resourceMarker.openingStockInitialized === true;
-    var factoryInputReady = factoryInputMarker && factoryInputMarker.version === data.factoryInputBaseline.version && factoryInputMarker.openingStockInitialized === true;
-    var factoriesReady = economyMarker && economyMarker.version === VERSION && economyMarker.factoryAssetsInitialized === true;
+    var stockReady = resourceMarker && (resourceMarker.version === VERSION ||
+      resourceMarker.version === LEGACY_STARTUP_BASELINE_VERSION) && resourceMarker.openingStockInitialized === true;
+    var requiredInputCoverageDays = getFactoryInputCoverageDays(state, resource, countryId);
+    var factoryInputReady = factoryInputMarker && factoryInputMarker.version === data.factoryInputBaseline.version &&
+      factoryInputMarker.coverageModelVersion === FACTORY_INPUT_COVERAGE_VERSION &&
+      Number(factoryInputMarker.targetCoverageDays) === requiredInputCoverageDays &&
+      factoryInputMarker.openingStockInitialized === true &&
+      !(Array.isArray(factoryInputMarker.unknownProductIds) && factoryInputMarker.unknownProductIds.length) &&
+      !(Array.isArray(factoryInputMarker.stateMismatchProductIds) && factoryInputMarker.stateMismatchProductIds.length);
+    var factoriesReady = economyMarker && (economyMarker.version === VERSION ||
+      economyMarker.version === LEGACY_STARTUP_BASELINE_VERSION) && economyMarker.factoryAssetsInitialized === true;
     if (stockReady && factoryInputReady && factoriesReady) {
       return { status: 'ALREADY_INITIALIZED', countryId: countryId, sessionId: String(session.sessionId || ''),
         reason: 'PLAYER_COUNTRY_STARTUP_BASELINE_ALREADY_PRESENT' };
@@ -1613,7 +1780,10 @@
           factoryInputOpeningStockQuantity: finite(factoryInputResult.openingStockQuantity) || 0,
           factoryInputUnknownRows: (factoryInputResult.unknownProductIds || []).length
         },
-        factoryInputBufferPercent: 40,
+        factoryInputBufferPercent: 0,
+        factoryInputLegacyCycleBufferPercent: 40,
+        factoryInputCoverageModelVersion: FACTORY_INPUT_COVERAGE_VERSION,
+        factoryInputTargetCoverageDays: getFactoryInputCoverageDays(state, resource, countryId),
         factoryInputStockIsOneTime: true,
         geologicalReserveQuantityUsedAsStock: false,
         existingSaveDataOverwritten: false,
@@ -1672,9 +1842,15 @@
         previousGlobalBaseline.version === VERSION &&
         previousGlobalBaseline.sessionId === String(session.sessionId || '')) {
       var previousCounts = object(previousGlobalBaseline.counts) || {};
+      var playerCountryIdForCoverage = id(session && session.playerCountryId);
+      var playerResourceForCoverage = state.resource && object(state.resource[playerCountryIdForCoverage]);
+      var currentPlayerCoverageDays = getFactoryInputCoverageDays(state, playerResourceForCoverage, playerCountryIdForCoverage);
       // A completed report is idempotent. If earlier country buckets were blocked,
       // retry the country pass; per-country stock/factory markers prevent duplication.
-      if ((finite(previousCounts.countriesBlocked) || 0) === 0) {
+      if ((finite(previousCounts.countriesBlocked) || 0) === 0 &&
+          previousGlobalBaseline.factoryInputCoverageModelVersion === FACTORY_INPUT_COVERAGE_VERSION &&
+          Number(previousGlobalBaseline.playerCountryFactoryInputCoverageDays) === currentPlayerCoverageDays &&
+          Number(previousCounts.factoryInputUnknownRows) === 0) {
         lastReport = clone(previousGlobalBaseline);
         return { status: 'ALREADY_INITIALIZED', report: diagnostics() };
       }
@@ -1794,7 +1970,10 @@
         factoryAssetCountries: totals.factoryAssetCountries,
         factoryInputBaselineCountryCount: Object.keys(data.factoryInputBaseline.countries).length,
         factoryInputProductCount: Object.keys(data.factoryInputBaseline.worldOpeningStockByProduct || {}).length,
-        factoryInputBufferPercent: 40,
+        factoryInputBufferPercent: 0,
+        factoryInputLegacyCycleBufferPercent: 40,
+        factoryInputCoverageModelVersion: FACTORY_INPUT_COVERAGE_VERSION,
+        factoryInputTargetCoverageDays: 100,
         factoryInputStockCountries: totals.factoryInputStockCountries,
         factoryInputProductsSeeded: totals.factoryInputProductsSeeded,
         factoryInputOpeningStockQuantity: Number(totals.factoryInputOpeningStockQuantity.toPrecision(12)),
@@ -1809,7 +1988,15 @@
       automaticSupplyRenewal: false,
       geologicalReserveQuantityUsedAsStock: false,
       factoryInputGeologicalReserveQuantityUsedAsStock: false,
-      factoryInputBufferPercent: 40,
+      factoryInputBufferPercent: 0,
+      factoryInputLegacyCycleBufferPercent: 40,
+      factoryInputCoverageModelVersion: FACTORY_INPUT_COVERAGE_VERSION,
+      factoryInputTargetCoverageDays: getFactoryInputCoverageDays(state,
+        state.resource && object(state.resource[id(session && session.playerCountryId)]),
+        id(session && session.playerCountryId)),
+      playerCountryFactoryInputCoverageDays: getFactoryInputCoverageDays(state,
+        state.resource && object(state.resource[id(session && session.playerCountryId)]),
+        id(session && session.playerCountryId)),
       factoryInputStockIsOneTime: true,
       existingSaveDataOverwritten: false,
       countrySummaries: results
@@ -1836,7 +2023,10 @@
       playerCountryId: report.playerCountryId || null,
       counts: clone(report.counts || {}),
       factoryTypesCreated: clone(report.factoryTypesCreated || {}),
-      factoryInputBufferPercent: report.factoryInputBufferPercent || null,
+      factoryInputBufferPercent: report.factoryInputBufferPercent === undefined ? null : report.factoryInputBufferPercent,
+      factoryInputLegacyCycleBufferPercent: report.factoryInputLegacyCycleBufferPercent || null,
+      factoryInputCoverageModelVersion: report.factoryInputCoverageModelVersion || null,
+      factoryInputTargetCoverageDays: report.factoryInputTargetCoverageDays || null,
       factoryInputStockIsOneTime: report.factoryInputStockIsOneTime === true,
       openingStockCoverageDays: report.openingStockCoverageDays,
       automaticSupplyWindowDays: report.automaticSupplyWindowDays,
@@ -1859,7 +2049,21 @@
   function getCountryFactoryInputBaseline(countryId) {
     var wanted = id(countryId);
     var row = data && data.factoryInputBaseline && data.factoryInputBaseline.countries[wanted];
-    return row ? clone(row) : null;
+    if (!row) return null;
+    var state = rootState(), profile = data.countryProfiles.find(function (item) { return id(item && item.iso3) === wanted; });
+    var hit = profile ? bucketFor(state, 'resource', profile, false) : { value: null };
+    var days = getFactoryInputCoverageDays(state, hit && hit.value, wanted);
+    var result = clone(row);
+    result.factoryInputRows = result.factoryInputRows.map(function (item) {
+      var daily = factoryInputDailyDemand(item);
+      item.dailyDemandQuantity = daily;
+      item.targetCoverageDays = days;
+      item.targetStockQuantity = daily === null ? null : Number((daily * days).toPrecision(12));
+      return item;
+    });
+    result.targetCoverageDays = days;
+    result.coverageModelVersion = FACTORY_INPUT_COVERAGE_VERSION;
+    return result;
   }
   function onSessionCreated(event) {
     var detail = event && event.detail !== undefined ? event.detail
@@ -1939,6 +2143,14 @@
 
   var api = {
     VERSION: VERSION,
+    FACTORY_INPUT_COVERAGE_VERSION: FACTORY_INPUT_COVERAGE_VERSION,
+    setFactoryInputCoverageDays: setFactoryInputCoverageDays,
+    getFactoryInputCoverageDays: function (countryId) {
+      var wanted = id(countryId);
+      var state = rootState(), profile = data && data.countryProfiles.find(function (item) { return id(item && item.iso3) === wanted; });
+      var hit = profile ? bucketFor(state, 'resource', profile, false) : { value: null };
+      return getFactoryInputCoverageDays(state, hit && hit.value, wanted);
+    },
     init: init,
     get ready() { return loadSources(); },
     initializeForSession: initializeForSession,
