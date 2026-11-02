@@ -1377,7 +1377,9 @@ function planExtraction(input={}){
 
 function factoryAssets(c){
   const economy=econState(c);
-  // A factory bootstrap must mutate the persisted country economy, not a detached fallback array.
+  // This is the single country-scoped factory asset registry. Starting-baseline assets
+  // and completed player construction persist in this same array; routing, production,
+  // scheduling and decommissioning must never create a parallel factory collection.
   if(!Array.isArray(economy.productionAssets))economy.productionAssets=[];
   // Migrate saved assets from retired material-processing IDs to the one canonical factory type.
   // Commodity-specific inputs and outputs stay on the asset; only its factory type is canonicalized.
