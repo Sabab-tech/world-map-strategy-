@@ -70,6 +70,7 @@ test('Android 9 smoke treats legacy runtime compatibility as a boot requirement'
 test('Android asset sync packages every local OMEGA UI v2 module referenced by the app shell', () => {
   const gradle = read('android/app/build.gradle');
   const serviceWorker = read('omega-offline-map-sw.js');
+  assert.ok(serviceWorker.includes('"./omega_android_compat_v1.js"'), 'offline shell must retain the Android compatibility shim');
   const requiredAssets = [
     'omega_ui_v2/omega-ui-v2.css',
     'omega_ui_v2/navigation-registry.js',
