@@ -32,7 +32,7 @@ test("Resource Ministry loads the active player's baseline and displays its live
     const profile = rules.demand.resourceProfiles[resourceId] || {};
     return {
       resourceId,
-      name: resourceId.replace(/[_-]+/g, " ").replace(/\\b\\w/g, (ch) => ch.toUpperCase()),
+      name: resourceId.replace(/[_-]+/g, " ").replace(/\b\w/g, (ch) => ch.toUpperCase()),
       unit: String(profile.unit || "").replace(/_PER_DAY$/i, "") || "TONNES",
       demandUnit: profile.unit || "TONNES_PER_DAY",
       profileKnown: true
@@ -97,9 +97,9 @@ test("Resource Ministry loads the active player's baseline and displays its live
     assert.equal(screenRoot.__omegaV2ResourceLoadedCountry, "BGD");
     assert.match(screenRoot.innerHTML, /Current Stock/);
     assert.match(screenRoot.innerHTML, /Coal/);
-    assert.match(screenRoot.innerHTML, /320(?:\\.00)? TONNES/);
+    assert.match(screenRoot.innerHTML, /320(?:\.00)? TONNES/);
     assert.match(screenRoot.innerHTML, /Iron Ore/);
-    assert.match(screenRoot.innerHTML, /82(?:\\.00)? TONNES/);
+    assert.match(screenRoot.innerHTML, /82(?:\.00)? TONNES/);
     assert.doesNotMatch(screenRoot.innerHTML, /USA|Browse resource country/);
     assert.deepEqual(Object.keys(globalThis.Game.state.resource), ["BGD"],
       "rendering the ministry must not create inventory state for another country");
