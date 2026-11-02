@@ -5,6 +5,7 @@ import test from 'node:test';
 
 const runtimeSource = fs.readFileSync(new URL('../omega_country_inventory_runtime_v1.js', import.meta.url), 'utf8');
 const indexHtml = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+const resourceEconomyRules = JSON.parse(fs.readFileSync(new URL('../resource_economy_rules.json', import.meta.url), 'utf8'));
 
 const roster = [
   { code: 'BD', iso2: 'BD', iso3: 'BGD', name: 'Bangladesh' },
@@ -101,6 +102,12 @@ function makeRuntime() {
     OmegaCanonicalIdentityRegistry: registry,
     OmegaCountrySemanticBridge: registry,
     OmegaResourceIndustrialCatalogData: catalog,
+    fetch: async url => {
+      if (String(url).includes('resource_economy_rules.json')) {
+        return { ok: true, json: async () => JSON.parse(JSON.stringify(resourceEconomyRules)) };
+      }
+      return { ok: false, status: 404, json: async () => ({}) };
+    },
     CustomEvent,
     addEventListener(type, callback) {
       const rows = listeners.get(type) || [];
@@ -169,6 +176,25 @@ test('all countries have saved inventory shells and shared product rows, while o
   api.refreshActiveCountry();
   assert.equal(api.getInventory('USA', { includeZero: true }).readOnly, true);
   assert.equal(item(api.getInventory('USA', { includeZero: true }), 'steel').quantity, 999);
+});
+
+test('inventory registers all 41 canonical raw-resource identities and displays explicit unknown rows', async () => {
+  const { api } = makeRuntime();
+  const initialized = await api.init();
+  assert.equal(initialized.status, 'READY');
+  const resources = api.getResourceCatalog();
+  const expectedIds = Object.keys(resourceEconomyRules.demand.resourceProfiles).sort();
+  assert.equal(expectedIds.length, 41);
+  assert.equal(resources.length, 41);
+  assert.deepEqual(resources.map(row => row.resourceId).sort(), expectedIds);
+  const view = api.getInventory('BGD', { includeZero: true, includeLedger: false });
+  for (const resourceId of expectedIds) {
+    assert.ok(item(view, resourceId), 'the inventory catalog must expose ' + resourceId);
+  }
+  assert.equal(item(view, 'coal').unit, 'METRIC_TONS');
+  assert.equal(item(view, 'natural_gas').unit, 'BCM');
+  assert.equal(item(view, 'lithium').quantity, 0,
+    'a catalog identity without an opening-stock record stays visible without inventing a positive balance');
 });
 
 test('import-only mineral source contracts place imported raw material in the raw warehouse', async () => {
