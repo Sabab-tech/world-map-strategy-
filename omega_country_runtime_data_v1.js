@@ -4,7 +4,7 @@
  */
 (function (root) {
   'use strict';
-  const state = { ready:false, settled:false, error:null, promise:null, profiles:[], extras:new Map(), byCode:new Map(), byIso3:new Map(), byNumeric:new Map(), aliases:new Map(), cities:new Map(), legacyEconomy:{}, legacyPopulation:{}, countryRecords:new Map(), countryLoads:new Map(), countryEpochs:new Map(), datasets:new Map(), strategicProfiles:new Map(), strategicProfileDiagnostics:{available:false,profileCount:0,error:'COUNTRY_SCOPED_PROFILE_NOT_REQUESTED'} };
+  const state = { ready:false, settled:false, error:null, promise:null, profiles:[], extras:new Map(), byCode:new Map(), byIso3:new Map(), byNumeric:new Map(), aliases:new Map(), cities:new Map(), legacyEconomy:{}, legacyPopulation:{}, countryRecords:new Map(), countryLoads:new Map(), legacyLoads:new Map(), countryEpochs:new Map(), datasets:new Map(), strategicProfiles:new Map(), strategicProfileDiagnostics:{available:false,profileCount:0,error:'COUNTRY_SCOPED_PROFILE_NOT_REQUESTED'} };
   const s = v => String(v == null ? '' : v).trim();
   const norm = v => s(v).normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/&/g, ' AND ').replace(/[_’'`-]+/g, ' ').replace(/[^A-Z0-9]+/gi, ' ').trim().toUpperCase().replace(/\s+/g, ' ');
   const fixedAliases = {
@@ -106,13 +106,29 @@
     state.countryRecords.delete(key);state.countryRecords.set(key,row);
     return row;
   }
+  async function loadLegacyCountrySource(domain,profile){
+    const file=COUNTRY_DATA_FILES[domain];if(!file)return null;
+    let pending=state.legacyLoads.get(domain);
+    if(!pending){pending=load('./'+file,true);state.legacyLoads.set(domain,pending);}
+    let data;
+    try{data=await pending;}finally{if(state.legacyLoads.get(domain)===pending)state.legacyLoads.delete(domain);}
+    if(!obj(data))return null;
+    if(domain==='cities'){
+      const rows=Array.isArray(data.countries)?data.countries:[];
+      return rows.find(row=>norm(row?.name)===norm(profile.name)||norm(row?.name)===norm(profile.officialName))||null;
+    }
+    const candidates=[profile.name,profile.officialName,profile.economyKey,profile.populationKey,profile.countryCode,profile.iso3].map(norm).filter(Boolean);
+    const hit=Object.entries(data).find(([key])=>candidates.includes(norm(key)));
+    return hit&&obj(hit[1])?hit[1]:null;
+  }
   async function loadCountrySource(domain,profile){
     const key=domain==='economy'?(profile.economyKey||profile.name):
       domain==='population'?(profile.populationKey||profile.name):(profile.name||profile.countryCode);
     if(!key)return null;
     const url='./api/omega/country-domain/'+encodeURIComponent(domain)+'/'+encodeURIComponent(key);
-    const result=await load(url,false);
-    return result?.record&&typeof result.record==='object'?result.record:null;
+    const result=await load(url,true);
+    if(result?.record&&typeof result.record==='object')return result.record;
+    return loadLegacyCountrySource(domain,profile);
   }
   async function loadCountryData(value,domains=['cities']){
     if(state.promise)await state.promise;
