@@ -35,8 +35,8 @@
     getActiveMinister(countryId, ministryId){ const id=this.active.get(this.key(countryId,ministryId)); return id ? this.getEffectiveState(id) : null; }
     getEffectiveState(id){ const p=this.getMinister(id); const r=this.getRuntime(id); const l=this.getLearning(id); if(!p||!r||!l) return null; return {profile:deepClone(p),runtime:deepClone(r),learning:deepClone(l)}; }
     activeIds(){ return [...this.active.values()]; }
-    setRuntime(id, patch){ const old=this.states.get(String(id))||{}; this.states.set(String(id), {...old,...deepClone(patch),ministerId:String(id)}); this.version++; }
-    setLearning(id, patch){ const old=this.learning.get(String(id))||{}; this.learning.set(String(id), {...old,...deepClone(patch),ministerId:String(id)}); this.version++; }
+    setRuntime(id, patch){ const old=this.states.get(String(id))||{}; this.states.set(String(id), Object.assign({}, old, deepClone(patch), {ministerId:String(id)})); this.version++; }
+    setLearning(id, patch){ const old=this.learning.get(String(id))||{}; this.learning.set(String(id), Object.assign({}, old, deepClone(patch), {ministerId:String(id)})); this.version++; }
     assign(id,countryId,ministryId,time){
       const key=this.key(countryId,ministryId), existing=this.active.get(key);
       if(existing && existing !== String(id)) throw new Error('MINISTRY_ALREADY_OCCUPIED');
@@ -59,7 +59,7 @@
   function readConfig(raw){
     if(!raw || typeof raw!=='object') return;
     const src=raw.ministerRuntime || raw.minister_runtime || raw;
-    for(const k of ['workload','stress','learning']) if(src[k] && typeof src[k]==='object') engine.config[k]={...engine.config[k],...src[k]};
+    for(const k of ['workload','stress','learning']) if(src[k] && typeof src[k]==='object') engine.config[k]=Object.assign({},engine.config[k],src[k]);
   }
   function profileName(profile){
     const rn=profile?.regional_names||profile?.regionalNames;
@@ -71,10 +71,10 @@
     if(!db || typeof db!=='object') throw new Error('INVALID_MINISTERS_JSON');
     for(const [ministry,arr] of Object.entries(db)) if(Array.isArray(arr)) for(const p0 of arr){
       if(!p0?.id) continue;
-      const p={...p0, ministryId:p0.ministryId||ministry, baseName:p0.baseName||p0.name||null,
-        baseAge:Number(p0.baseAge ?? p0.age ?? 0), baseStats:{...(p0.baseStats||p0.stats||{})},
-        efficiencyProfile:{...(p0.efficiencyProfile||p0.efficiency||{})}, personalityProfile:{...(p0.personalityProfile||p0.personality||{})},
-        regionalNames:{...(p0.regionalNames||p0.regional_names||{})}};
+      const p=Object.assign({},p0, {ministryId:p0.ministryId||ministry, baseName:p0.baseName||p0.name||null,
+        baseAge:Number(p0.baseAge ?? p0.age ?? 0), baseStats:Object.assign({},p0.baseStats||p0.stats||{}),
+        efficiencyProfile:Object.assign({},p0.efficiencyProfile||p0.efficiency||{}), personalityProfile:Object.assign({},p0.personalityProfile||p0.personality||{}),
+        regionalNames:Object.assign({},p0.regionalNames||p0.regional_names||{})});
       registry.registerProfile(p);
     }
     engine.profilesLoaded=true;
@@ -135,8 +135,8 @@
   function recordOutcome(id,task={},outcome={}){
     const r=registry.getRuntime(id), l=registry.getLearning(id); if(!r||!l||r.status!=='ACTIVE') return;
     const domain=String(task.domain||'general'), gain=engine.config.learning.base*Math.pow(1/(1+Number(l.domainExperience?.[domain]||0)*engine.config.learning.diminishing),.5);
-    const evolution={...(l.skillEvolution||{})}; evolution[domain]=clamp(Number(evolution[domain]||0)+gain*(outcome.success?1:.35),0,engine.config.learning.maxSkillGain);
-    const de={...(l.domainExperience||{})}; de[domain]=clamp(Number(de[domain]||0)+gain,0,100000);
+    const evolution=Object.assign({},l.skillEvolution||{}); evolution[domain]=clamp(Number(evolution[domain]||0)+gain*(outcome.success?1:.35),0,engine.config.learning.maxSkillGain);
+    const de=Object.assign({},l.domainExperience||{}); de[domain]=clamp(Number(de[domain]||0)+gain,0,100000);
     const lessons=[...(l.learnedLessons||[])]; if(outcome.lesson) lessons.push({time:now(),domain,lesson:String(outcome.lesson)}); if(lessons.length>100) lessons.splice(0,lessons.length-100);
     registry.setLearning(id,{totalTaskExposure:Number(l.totalTaskExposure||0)+1,domainExperience:de,skillEvolution:evolution,learnedLessons:lessons,successfulDecisions:Number(l.successfulDecisions||0)+(outcome.success?1:0),failedDecisions:Number(l.failedDecisions||0)+(outcome.success?0:1),decisionExperience:Number(l.decisionExperience||0)+gain});
     persist(); bus.emit(EVENTS.STATE,{ministerId:id,reason:'LEARNING'});
@@ -242,7 +242,7 @@
     try{
       const [ministers,config]=await Promise.all([loadJson('ministers.json'),loadJson('minister_system_config.json').catch(()=>null)]);
       normalizeProfiles(ministers); readConfig(config); restore(); synchronize();
-      window.OmegaMinisterSystem={...engine,recruit,fire,tick,recordOutcome,applyExposure,resolveFactors,getActive:(c,m)=>registry.getActiveMinister(c,m),openRecruitment:openPanel,getCandidates:candidateList,getMinister:id=>registry.getEffectiveState(id),persist,synchronize};
+      window.OmegaMinisterSystem=Object.assign({},engine,{recruit,fire,tick,recordOutcome,applyExposure,resolveFactors,getActive:(c,m)=>registry.getActiveMinister(c,m),openRecruitment:openPanel,getCandidates:candidateList,getMinister:id=>registry.getEffectiveState(id),persist,synchronize});
       window.dispatchEvent(new CustomEvent('OMEGA_MINISTER_RUNTIME_READY',{detail:{version:VERSION,profileCount:registry.profiles.size}}));
       // Public command hook for existing ministry UI. Existing buttons may call this without owning state.
       window.OmegaMinisterSystem.openForMinistry=openPanel;
