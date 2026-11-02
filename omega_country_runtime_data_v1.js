@@ -112,14 +112,14 @@
     if(!pending){pending=load('./'+file,true);state.legacyLoads.set(domain,pending);}
     let data;
     try{data=await pending;}finally{if(state.legacyLoads.get(domain)===pending)state.legacyLoads.delete(domain);}
-    if(!obj(data))return null;
+    if(!data||typeof data!=='object'||Array.isArray(data))return null;
     if(domain==='cities'){
       const rows=Array.isArray(data.countries)?data.countries:[];
       return rows.find(row=>norm(row?.name)===norm(profile.name)||norm(row?.name)===norm(profile.officialName))||null;
     }
     const candidates=[profile.name,profile.officialName,profile.economyKey,profile.populationKey,profile.countryCode,profile.iso3].map(norm).filter(Boolean);
     const hit=Object.entries(data).find(([key])=>candidates.includes(norm(key)));
-    return hit&&obj(hit[1])?hit[1]:null;
+    return hit&&hit[1]&&typeof hit[1]==='object'&&!Array.isArray(hit[1])?hit[1]:null;
   }
   async function loadCountrySource(domain,profile){
     const key=domain==='economy'?(profile.economyKey||profile.name):
