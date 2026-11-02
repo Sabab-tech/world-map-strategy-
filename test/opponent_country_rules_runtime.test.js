@@ -213,6 +213,11 @@ assert.equal(api.markDirty('BD',['RESOURCE_STOCK'],'TEST_INVENTORY_UPDATE'),true
 assert.equal(api.instance.kernel.hyd.has('BD'),false,'dirty state must evict stale hydrated state');
 const dirtyRun=await api.evaluateCountry('BD',19);
 assert.equal(dirtyRun.status,'COMPLETE','a dirty country must be evaluated immediately');
+api.instance.scheduler.nextDue.set('BD',99);
+api.invalidateAllDerived();
+assert.equal(api.instance.scheduler.last.size,0,'source invalidation must reset the previous evaluation clock');
+const sourceRefreshRun=await api.evaluateCountry('BD',19);
+assert.equal(sourceRefreshRun.status,'COMPLETE','a source revision must force recalculation even within the same game turn');
 
 const stressCountryIds=[...new Set(countries.slice(0,90).map(row=>row.code).filter(Boolean))];
 let stressTurn=10;
