@@ -4408,6 +4408,7 @@ function transferFactoryInputsFromWarehouse(countryId,asset,recipe,allocationTar
   // Generic factories without a source-site binding retain normal pooled-warehouse behavior.
   const boundSourceSiteId=String(asset?.sourceSiteId||asset?.siteId||'').trim();
   const siteFlowRows=Array.isArray(rs.industrialNetwork?.siteFlowLedger)?rs.industrialNetwork.siteFlowLedger:[];
+  const siteFlowBatchIds=new Set(siteFlowRows.filter(row=>row?.batchId).map(row=>String(row.batchId)));
   const flowSiteByBatchId=new Map(siteFlowRows.filter(row=>row?.batchId&&row?.siteId)
     .map(row=>[String(row.batchId),String(row.siteId)]));
   for(const [rawId,rawCoefficient] of Object.entries(recipe?.inputs||{})){
@@ -4423,11 +4424,24 @@ function transferFactoryInputsFromWarehouse(countryId,asset,recipe,allocationTar
       Math.max(0,num(allocationTargets[rid])||0)+inTransit:Math.max(0,capacity*coefficient-current);
     let remaining=Math.max(0,target-inTransit);
     if(remaining<=1e-9)continue;
+    // Extraction batches have a physical mine -> raw warehouse -> factory route.
+    // Never let this immediate internal-transfer helper consume their unshipped remainder:
+    // dispatchResidualSiteBatches() owns that movement, including route capacity and ETA.
     const candidates=batches.filter(batch=>tok(batch?.resourceId||batch?.materialIdentity)===rid&&
+      !siteFlowBatchIds.has(String(batch?.batchId||''))&&
       !nonTransferable.has(String(batch?.status||'').toUpperCase())&&
       Math.max(0,num(batch?.remainingQuantity!=null?batch.remainingQuantity:batch?.quantity)||0)>1e-9&&
       batchBelongsToBoundFactorySite(rs,batch,boundSourceSiteId,flowSiteByBatchId))
       .sort((a,b)=>(num(a?.createdTurn)||0)-(num(b?.createdTurn)||0));
+    const routeManagedBatches=batches.filter(batch=>tok(batch?.resourceId||batch?.materialIdentity)===rid&&
+      siteFlowBatchIds.has(String(batch?.batchId||''))&&
+      !nonTransferable.has(String(batch?.status||'').toUpperCase())&&
+      Math.max(0,num(batch?.remainingQuantity!=null?batch.remainingQuantity:batch?.quantity)||0)>1e-9&&
+      batchBelongsToBoundFactorySite(rs,batch,boundSourceSiteId,flowSiteByBatchId));
+    if(routeManagedBatches.length){
+      blocked.push({resourceId:rid,reason:'SITE_BATCH_REQUIRES_RAW_TO_FACTORY_LOGISTICS',
+        batchIds:routeManagedBatches.map(batch=>String(batch.batchId)),authority:'OMEGA_RESOURCE_INDUSTRIAL_NETWORK_V1'});
+    }
     for(const batch of candidates){
       if(remaining<=1e-9)break;
       const batchId=String(batch?.batchId||'').trim();if(!batchId)continue;

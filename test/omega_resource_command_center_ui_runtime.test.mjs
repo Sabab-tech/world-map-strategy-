@@ -37,16 +37,22 @@ globalThis.Game = {
         tradeAvailability: { iron_ore: 90, crude_oil: 40 },
         warehouse: { warehouseId: 'WH-BGD-RAW', availableByResource: { iron_ore: 80 } },
         strategicReserve: { warehouseId: 'SPR-BGD', availableByResource: { iron_ore: 10 } },
-        batches: [{ batchId: 'B1', resourceId: 'iron_ore', remainingQuantity: 80, unit: 'METRIC_TONNE', warehouseId: 'WH-BGD-RAW' }],
+        batches: [
+          { batchId: 'B1', resourceId: 'iron_ore', remainingQuantity: 80, unit: 'METRIC_TONNE', warehouseId: 'WH-BGD-RAW' },
+          { batchId: 'B-PARTIAL', resourceId: 'iron_ore', remainingQuantity: 80, quantity: 100, unit: 'METRIC_TONNE', warehouseId: null, status: 'PARTIAL_STOCK_ACROSS_MINE_WAREHOUSE_OR_TRANSIT', stage: 'PARTIALLY_IN_RAW_INVENTORY', locationNodeKey: 'MIXED:MINE_RAW_WAREHOUSE_OR_TRANSIT' }
+        ],
         industrialNetwork: {
-          siteFlowLedger: [{ siteId: 'SITE-BGD-IRON', status: 'IN_TRANSIT', resourceId: 'iron_ore' }],
+          siteFlowLedger: [
+            { siteId: 'SITE-BGD-IRON', status: 'IN_TRANSIT', resourceId: 'iron_ore' },
+            { siteId: 'SITE-BGD-IRON', batchId: 'B-PARTIAL', resourceId: 'iron_ore', mineLogisticsRouteId: 'ROUTE-BGD-IRON', mineWarehouseReceivedQuantity: 35, factoryDispatchedQuantity: 15, mineHeldQuantity: 30 }
+          ],
           projects: [{ projectId: 'FACTORY-P1', status: 'UNDER_CONSTRUCTION' }],
           technologyContracts: [{ projectId: 'TECH-P1', status: 'IN_PROGRESS' }],
-          shipments: []
+          shipments: [{ shipmentId: 'CORE-SHIPMENT-1', shipmentType: 'RAW_TO_FACTORY', status: 'IN_TRANSIT', resourceId: 'iron_ore', quantity: 80, factoryId: 'FAC-BGD-IRON', etaTurn: 4 }]
         },
         mineSiteReferences: [{ siteId: 'SITE-BGD-IRON', countryId: 'BGD', resourceId: 'iron_ore', name: 'Test Mine' }],
         surveyRequests: [], surveyResults: [], reserveBufferRequests: [],
-        mineProductionLedger: [], logistics: { shipments: [] }, environment: { waterRecycling: { status: 'RESEARCH' } }, byproducts: []
+        mineProductionLedger: [], logistics: { shipments: [{ shipmentId: 'LEGACY-PREVIEW-1', batchId: 'B-OLD', status: 'IN_TRANSIT', resourceId: 'iron_ore', quantity: 80 }] }, environment: { waterRecycling: { status: 'RESEARCH' } }, byproducts: []
       }
     },
     economy: {
@@ -212,6 +218,11 @@ test('canonical site profiles appear in relevant tabs without becoming live prod
   assert.match(modal.innerHTML, /ROUTE-BGD-IRON-1/);
   assert.match(modal.innerHTML, /PROFILE ONLY/);
   assert.match(modal.innerHTML, /Actual shipment state/);
+  assert.match(modal.innerHTML, /CORE-SHIPMENT-1/, 'live shipment cards must read the Industrial Network ledger');
+  assert.match(modal.innerHTML, /LEGACY PLAN · NOT A SHIPMENT/, 'legacy route plans must never be presented as actual deliveries');
+  assert.match(modal.innerHTML, /B-PARTIAL/, 'a partially received mine batch must remain visible in the raw-warehouse panel');
+  assert.ok(modal.innerHTML.includes('<strong>20</strong>'), 'the warehouse card must show received-minus-dispatched quantity, not the whole source batch');
+  assert.match(modal.innerHTML, /B-OLD/, 'old planning history remains visible by its batch ID under the non-authoritative label');
 
   ui.open('BGD', 'processing');
   modal = elements.get('gsrsk-intelligence-modal');
