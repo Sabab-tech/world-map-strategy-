@@ -1982,7 +1982,7 @@ function batchFromExtraction(x,record){
     return result;
   }
 
-  async function startCountryProduction(countryId,siteIds=null){
+  async function startCountryProduction(countryId,siteIds=null,options={}){
     const c=canonical(countryId);
     if(!/^[A-Z]{3}$/.test(c))return{status:'BLOCKED',reason:'COUNTRY_ID_INVALID',countryId:c||null};
     const selectedCountryId=playerSimulationCountryId();
@@ -1991,7 +1991,8 @@ function batchFromExtraction(x,record){
     const initialized=await initialize();
     if(initialized?.status!=='READY')return{status:'BLOCKED',reason:'RESOURCE_ENDOWMENT_NOT_READY',detail:initialized,countryId:c};
     let bucket=state()?.resource?.[c]||{};
-    if(!Array.isArray(bucket.mineSiteReferences)||!bucket.mineSiteControllers){
+    const canReuseHydration=options.skipHydrationIfReady===true&&Array.isArray(bucket.mineSiteReferences)&&!!bucket.mineSiteControllers;
+    if(!canReuseHydration){
       const refreshed=await hydrateCountry(c),hydration=refreshed?.result||refreshed;
       if(refreshed?.status!=='APPLIED'||hydration?.accepted===false)
         return{status:'BLOCKED',reason:'COUNTRY_HYDRATION_NOT_COMMITTED',detail:refreshed,countryId:c};
