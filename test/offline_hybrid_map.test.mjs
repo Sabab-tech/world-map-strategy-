@@ -148,11 +148,14 @@ test("canonical country profile pack is bundled for Android and refreshes offlin
   ]) {
     assert.ok(androidOfflineWorkflow.includes('      - "' + asset + '"'),
       "Android offline smoke must rerun when " + asset + " changes.");
-    assert.equal(serviceWorker.includes('"./' + asset + '"'), false,
-      "Large country registries must not be part of the initial browser cache: " + asset);
+    if (asset === "country_sector_profile_schema_v1.json") {
+      assert.ok(serviceWorker.includes('"./' + asset + '"'), "small sector schema remains available offline");
+    } else {
+      assert.equal(serviceWorker.includes('"./' + asset + '"'), false,
+        "Large country registries must not be part of the initial browser cache: " + asset);
+    }
   }
   assert.match(serviceWorker, /fetchAndCache/);
-  }
 });
 
 test("runtime composition root executes in the ordered deferred script queue", () => {

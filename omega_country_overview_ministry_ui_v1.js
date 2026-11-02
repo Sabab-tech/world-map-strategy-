@@ -413,8 +413,7 @@
             name: countryRow.name || countryRow.officialName || String(code),
             code, metrics: metricKeys.slice(), facts: factKeys.slice(), identity: identityKeys.slice(),
             context: contextKeys.slice()
-            api.releaseCountry?.(code);
-      }
+          });
           api.releaseCountry?.(code);
           continue;
         }
@@ -432,7 +431,8 @@
             code, metrics: missingMetrics, facts: missingFacts, identity: missingIdentity, context: missingContext
           });
         }
-      });
+        api.releaseCountry?.(code);
+      }
       const metricNames = key => {
         const definition = api.getMetricDefinition?.(key) || {};
         return definition.name || definition.title || humanizeCountryDataKey(key);
