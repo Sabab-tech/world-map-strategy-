@@ -27,6 +27,16 @@
   function stateFor(root) { return root && root.__omegaUIV2State; }
   function rotateScreenWork(state) {
     if (!state) return null;
+    var previousRoute = String(state.lastRenderedScreenIdentity || '').split('|')[0];
+    var nextRoute = String(screenIdentity(state) || '').split('|')[0];
+    if (previousRoute === 'resources' && nextRoute !== 'resources') {
+      var appRoot = state.root;
+      var resourceRoot = appRoot && appRoot.querySelector && appRoot.querySelector('[data-omega-v2-main]');
+      var resourceScreen = g.OmegaUIV2ResourceMinistry;
+      if (resourceRoot && resourceScreen && typeof resourceScreen.deactivate === 'function') {
+        try { resourceScreen.deactivate(resourceRoot); } catch (_) {}
+      }
+    }
     var previous = state.screenAbortController;
     if (previous && typeof previous.abort === 'function') {
       try { previous.abort(); } catch (_) {}
@@ -749,6 +759,11 @@
   function unmount(root) {
     if (typeof root === 'string') root = g.document && g.document.querySelector(root);
     if (!root || !root.__omegaUIV2State) return { ok:false, code:'UI_V2_NOT_MOUNTED' };
+    var activeMain = root.querySelector && root.querySelector('[data-omega-v2-main]');
+    var resourceScreen = g.OmegaUIV2ResourceMinistry;
+    if (activeMain && resourceScreen && typeof resourceScreen.deactivate === 'function') {
+      try { resourceScreen.deactivate(activeMain); } catch (_) {}
+    }
     invalidatePendingRender(root.__omegaUIV2State);
     root.innerHTML = '';
     delete root.__omegaUIV2State;
