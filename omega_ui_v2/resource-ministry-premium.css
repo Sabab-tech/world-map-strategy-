@@ -1653,3 +1653,145 @@
   min-height: 34px;
   width: 100%;
 }
+
+
+/* Inventory current stock, runtime coverage and verified supply lineage. */
+.omega-v2-resource-premium .omega-v2-stock-target {
+  align-items: center;
+  background:
+    linear-gradient(110deg, rgba(20,190,235,.11), transparent 56%),
+    linear-gradient(145deg, rgba(17,37,55,.97), rgba(8,22,36,.98));
+  border: 1px solid rgba(53,174,214,.34);
+  border-left: 3px solid rgba(33,199,244,.86);
+  border-radius: 11px;
+  box-shadow: inset 0 1px rgba(255,255,255,.035), 0 6px 16px rgba(0,0,0,.12);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  justify-content: space-between;
+  margin: 0 0 12px;
+  padding: 11px 12px;
+}
+.omega-v2-resource-premium .omega-v2-stock-target-copy {
+  display: flex;
+  flex: 1 1 180px;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.omega-v2-resource-premium .omega-v2-stock-target-copy strong {
+  color: #e7f7ff;
+  font-size: 12px;
+  font-weight: 760;
+}
+.omega-v2-resource-premium .omega-v2-stock-target-copy small,
+.omega-v2-resource-premium .omega-v2-stock-target-readonly {
+  color: #91aabb;
+  font-size: 10px;
+  line-height: 1.45;
+}
+.omega-v2-resource-premium .omega-v2-stock-target-control {
+  align-items: end;
+  display: flex;
+  flex: 0 1 auto;
+  gap: 7px;
+}
+.omega-v2-resource-premium .omega-v2-stock-target-control label {
+  color: #a9c0d0;
+  display: flex;
+  flex-direction: column;
+  font-size: 10px;
+  gap: 4px;
+}
+.omega-v2-resource-premium .omega-v2-stock-target-control input {
+  background: rgba(3,14,25,.78);
+  border: 1px solid rgba(87,174,207,.48);
+  border-radius: 7px;
+  box-sizing: border-box;
+  color: #f0f8fc;
+  font: inherit;
+  font-size: 12px;
+  min-height: 39px;
+  padding: 7px 9px;
+  width: 104px;
+}
+.omega-v2-resource-premium .omega-v2-stock-target-control .omega-v2-button {
+  min-height: 39px;
+  padding: 7px 12px;
+}
+.omega-v2-resource-premium .omega-v2-inventory-status-row td {
+  border-top: 0 !important;
+  padding: 0 8px 9px !important;
+}
+.omega-v2-resource-premium .omega-v2-inventory-status-line {
+  align-items: center;
+  background:
+    linear-gradient(100deg, rgba(17,45,64,.66), rgba(9,24,39,.72));
+  border: 1px solid rgba(93,143,171,.18);
+  border-left: 2px solid rgba(68,174,211,.55);
+  border-radius: 7px;
+  color: #a9bdca;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px 14px;
+  line-height: 1.45;
+  min-width: 0;
+  padding: 7px 9px;
+}
+.omega-v2-resource-premium .omega-v2-inventory-status-line > span {
+  align-items: baseline;
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  font-size: 10px;
+  overflow-wrap: anywhere;
+}
+.omega-v2-resource-premium .omega-v2-inventory-status-line > span strong {
+  color: #7f9aac;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.omega-v2-resource-premium .omega-v2-inventory-status-line .omega-v2-stock-status {
+  border: 1px solid rgba(112,153,177,.28);
+  border-radius: 20px;
+  padding: 2px 7px;
+}
+.omega-v2-resource-premium .omega-v2-stock-status[data-state="critical"] {
+  background: rgba(236,71,84,.12);
+  border-color: rgba(255,105,116,.45);
+  color: #ffb4ba;
+}
+.omega-v2-resource-premium .omega-v2-stock-status[data-state="warning"] {
+  background: rgba(236,170,56,.1);
+  border-color: rgba(236,183,76,.42);
+  color: #f3d18b;
+}
+.omega-v2-resource-premium .omega-v2-stock-status[data-state="surplus"] {
+  background: rgba(40,190,143,.1);
+  border-color: rgba(50,208,159,.4);
+  color: #9cebd0;
+}
+.omega-v2-resource-premium .omega-v2-stock-status[data-state="adequate"] {
+  background: rgba(50,160,207,.1);
+  border-color: rgba(86,174,211,.35);
+  color: #b5e6fa;
+}
+.omega-v2-resource-premium .omega-v2-current-stock-cell {
+  color: #eaf7fd;
+  font-variant-numeric: tabular-nums;
+  font-weight: 780;
+  white-space: nowrap;
+}
+.omega-v2-resource-premium .omega-v2-inventory-status-line .omega-v2-stock-origin {
+  flex: 1 1 260px;
+  min-width: 180px;
+}
+@media (max-width: 480px) {
+  .omega-v2-resource-premium .omega-v2-stock-target { align-items: flex-start; padding: 10px; }
+  .omega-v2-resource-premium .omega-v2-stock-target-control { width: 100%; }
+  .omega-v2-resource-premium .omega-v2-stock-target-control label { flex: 1 1 100px; }
+  .omega-v2-resource-premium .omega-v2-stock-target-control input { width: 100%; }
+  .omega-v2-resource-premium .omega-v2-inventory-status-line { gap: 6px 10px; padding: 7px; }
+  .omega-v2-resource-premium .omega-v2-inventory-status-line .omega-v2-stock-origin { flex-basis: 100%; min-width: 0; }
+}
