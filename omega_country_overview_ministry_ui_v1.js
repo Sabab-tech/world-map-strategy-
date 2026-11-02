@@ -370,14 +370,14 @@
       return;
     }
     output.textContent = 'Reviewing country indicator coverage…';
+    const countries = identities();
+    const firstCountry = countries[0];
+    const firstCode = firstCountry && (firstCountry.iso3 || firstCountry.countryCode || firstCountry.code || firstCountry.name);
     ensureCountryDataReady(firstCode).then(async ready => {
       if (!ready) {
         output.textContent = 'Country indicator records could not be loaded.';
         return;
       }
-      const countries = identities();
-      const firstCountry = countries[0];
-      const firstCode = firstCountry && (firstCountry.iso3 || firstCountry.countryCode || firstCountry.code || firstCountry.name);
       const template = firstCode ? api.getCountryRecord(firstCode) : null;
       if (!countries.length || !template) {
         output.textContent = 'Country records could not be enumerated for this review.';
