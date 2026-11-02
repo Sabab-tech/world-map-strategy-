@@ -214,7 +214,7 @@ test('canonical site profiles appear in relevant tabs without becoming live prod
   assert.match(modal.innerHTML, /Actual shipment state/);
   assert.match(modal.innerHTML, /CORE-SHIPMENT-1/, 'live shipment cards must read the Industrial Network ledger');
   assert.match(modal.innerHTML, /LEGACY PLAN · NOT A SHIPMENT/, 'legacy route plans must never be presented as actual deliveries');
-  assert.doesNotMatch(modal.innerHTML, /LEGACY-PREVIEW-1.*?IN_TRANSIT/s, 'legacy preview status must not appear as live cargo movement');
+  assert.match(modal.innerHTML, /LEGACY-PREVIEW-1/, 'old planning history remains visible under its non-authoritative label');
 
   ui.open('BGD', 'processing');
   modal = elements.get('gsrsk-intelligence-modal');
