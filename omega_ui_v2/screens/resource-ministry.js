@@ -453,6 +453,9 @@
       return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
     }
     function resourceLabel(value) {
+      var key = String(value == null ? '' : value).trim().toLowerCase();
+      var meta = resourceCatalogById[key];
+      if (meta && meta.name) return String(meta.name);
       return String(value == null ? '' : value).trim().replace(/[_-]+/g, ' ')
         .replace(/\b\w/g, function (ch) { return ch.toUpperCase(); }) || 'Resource';
     }
@@ -511,9 +514,29 @@
     var industrial = gameResource.industrialNetwork && typeof gameResource.industrialNetwork === 'object' ? gameResource.industrialNetwork : {};
     var rawWarehouse = gameResource.warehouse && typeof gameResource.warehouse === 'object' ? gameResource.warehouse : {};
     var processedWarehouse = gameResource.processedWarehouse && typeof gameResource.processedWarehouse === 'object' ? gameResource.processedWarehouse : {};
+    var inventoryRuntime = g.OmegaCountryInventoryRuntime || g.Omega && g.Omega.CountryInventoryRuntime || null;
+    var canonicalResourceCatalog = [];
+    try {
+      if (inventoryRuntime && typeof inventoryRuntime.getResourceCatalog === 'function') {
+        canonicalResourceCatalog = safeArray(inventoryRuntime.getResourceCatalog());
+      }
+      if (!canonicalResourceCatalog.length) {
+        var startupBaseline = g.OmegaResourceStartupBaseline || g.Omega && g.Omega.ResourceStartupBaseline || null;
+        if (startupBaseline && typeof startupBaseline.getResourceCatalog === 'function') {
+          canonicalResourceCatalog = safeArray(startupBaseline.getResourceCatalog());
+        }
+      }
+    } catch (_) { canonicalResourceCatalog = []; }
+    var resourceCatalogById = Object.create(null);
+    canonicalResourceCatalog.forEach(function (row) {
+      var rid = String(row && (row.resourceId || row.id) || '').trim().toLowerCase();
+      if (rid) resourceCatalogById[rid] = row;
+    });
+    var inventoryUnits = gameResource.inventoryUnits && typeof gameResource.inventoryUnits === 'object' ? gameResource.inventoryUnits : {};
     var inventory = gameResource.inventory && typeof gameResource.inventory === 'object' ? gameResource.inventory :
       gameResource.warehouseInventory && typeof gameResource.warehouseInventory === 'object' ? gameResource.warehouseInventory : {};
-    var batchesRaw = Array.isArray(inventory.batches) ? inventory.batches :
+    var batchesRaw = Array.isArray(gameResource.batches) ? gameResource.batches :
+      Array.isArray(inventory.batches) ? inventory.batches :
       Array.isArray(inventory.inventoryBatches) ? inventory.inventoryBatches :
       Array.isArray(gameResource.warehouseBatches) ? gameResource.warehouseBatches :
       Array.isArray(gameResource.stockBatches) ? gameResource.stockBatches : null;
@@ -652,8 +675,13 @@
       return val(row);
     }
     function resourceUnit(resourceId) {
+      var wanted = String(resourceId || '').trim().toLowerCase();
+      var unitKey = Object.keys(inventoryUnits).find(function (key) { return key.toLowerCase() === wanted; });
+      if (unitKey && inventoryUnits[unitKey]) return String(inventoryUnits[unitKey]);
+      var meta = resourceCatalogById[wanted];
+      if (meta && meta.unit) return String(meta.unit);
       var rules = g.OmegaResourceIndustrialCatalogData || g.Omega && g.Omega.ResourceIndustrialCatalogData || {};
-      var rule = rules.resourceRules && rules.resourceRules[resourceId];
+      var rule = rules.resourceRules && (rules.resourceRules[resourceId] || rules.resourceRules[wanted]);
       if (!rule) return '';
       return String(rule.unit || rule.baseUnit || rule.outputUnit || '');
     }
@@ -676,9 +704,23 @@
     var portfolioBalanceState = currentOutputGroups.length ? (outputShortageCount ? 'shortage' : outputDemandKnown ? 'adequate' : 'producing') : activeSiteCount ? 'stopped' : 'neutral';
     var producingSites = model.sites.filter(function (site) { return outputForSite(site.siteId, flows) > 0; });
     var blockedFlows = flows.filter(flowIsBlocked);
-    var distinctResources = Array.from(new Set(model.sites.filter(eligible).map(function (site) { return site.resourceId; })));
-    var rawStock = rawWarehouse.availableByResource && typeof rawWarehouse.availableByResource === 'object' ? rawWarehouse.availableByResource : {};
+    var distinctSiteResources = model.sites.filter(eligible).map(function (site) { return site.resourceId; });
+    var distinctResources = Array.from(new Set(distinctSiteResources.concat(canonicalResourceCatalog.map(function (row) {
+      return String(row && (row.resourceId || row.id) || '').trim();
+    }).filter(Boolean))));
+    var rawStock = Object.assign({}, rawWarehouse.availableByResource && typeof rawWarehouse.availableByResource === 'object'
+      ? rawWarehouse.availableByResource : {});
     var finishedStock = processedWarehouse.availableByResource && typeof processedWarehouse.availableByResource === 'object' ? processedWarehouse.availableByResource : {};
+    // Older saves may contain aggregate resource.inventory balances without a warehouse projection.
+    // Use those balances only for the canonical 41 raw identities, and only when the raw warehouse has no row.
+    canonicalResourceCatalog.forEach(function (row) {
+      var rid = String(row && (row.resourceId || row.id) || '').trim();
+      if (!rid) return;
+      var warehouseKey = Object.keys(rawStock).find(function (key) { return key.toLowerCase() === rid.toLowerCase(); });
+      if (warehouseKey) return;
+      var inventoryKey = Object.keys(inventory).find(function (key) { return key.toLowerCase() === rid.toLowerCase(); });
+      if (inventoryKey) rawStock[rid] = inventory[inventoryKey];
+    });
     var inventoryKeys = Array.from(new Set(distinctResources.concat(Object.keys(rawStock), Object.keys(finishedStock)))).sort();
     var movementIn = Object.create(null), movementOut = Object.create(null);
     safeArray(rawWarehouse.receipts).concat(safeArray(processedWarehouse.receipts)).concat(safeArray(gameResource.inventoryLedger))
@@ -875,7 +917,8 @@
       var demand = dailyDemand(rid), shortage = shortageFor(rid);
       var unit = resourceUnit(rid);
       return '<tr><td><span class="omega-v2-resource-table-icon">' + resourceIconMarkup(rid, resourceLabel(rid)) + '</span>' +
-        esc(resourceLabel(rid)) + '</td><td>' + amount(raw, unit) + '</td><td>' + amount(processed, unit) + '</td><td>' +
+        esc(resourceLabel(rid)) + '</td><td>' + (raw === null ? 'Not recorded' : amount(raw, unit)) + '</td><td>' +
+        (processed === null ? 'Not recorded' : amount(processed, unit)) + '</td><td>'
         (movementIn[rid] !== undefined ? amount(movementIn[rid], unit) : '—') + '</td><td>' +
         (movementOut[rid] !== undefined ? amount(movementOut[rid], unit) : '—') + '</td><td>' +
         (demand !== null ? amount(shortage, unit) : '—') + '</td></tr>';
@@ -883,8 +926,9 @@
     var stockTable = inventoryKeys.length ? '<div class="omega-v2-table-wrap"><table><thead><tr><th>Resource</th><th>Raw stock</th><th>Processed</th><th>In</th><th>Out</th><th>Shortage</th></tr></thead><tbody>' +
       inventoryKeys.map(stockRow).join('') + '</tbody></table></div>' : '<div class="omega-v2-empty">No warehouse balances have been recorded.</div>';
     var inventoryMarkup = '<div class="omega-v2-kpis">' +
-      renderKpi('Raw stock types', String(Object.keys(rawStock).length), 'Country warehouse', 'neutral') +
-      renderKpi('Processed types', String(Object.keys(finishedStock).length), 'Finished stock', 'neutral') +
+      renderKpi('Raw resource types', String(distinctResources.length), 'Canonical resources available', 'neutral') +
+      renderKpi('Stocked raw types', String(Object.keys(rawStock).filter(function (key) { return val(rawStock[key]) > 0; }).length), 'Positive on-hand balance', 'neutral') +
+      renderKpi('Processed types', String(Object.keys(finishedStock).filter(function (key) { return val(finishedStock[key]) > 0; }).length), 'Finished stock', 'neutral') +
       renderKpi('Tracked batches', String(inventoryRows.length), 'Recorded inventory entries', 'neutral') +
       renderKpi('Stock shortages', String(inventoryKeys.filter(function (rid) { return shortageFor(rid) > 0; }).length), 'Where demand is recorded', inventoryKeys.some(function (rid) { return shortageFor(rid) > 0; }) ? 'shortage' : 'neutral') +
       '</div><section class="omega-v2-card omega-v2-movement-card"><h2>Inventory movement</h2><p>Stored quantity, confirmed receipts and recorded dispatches for the selected country.</p>' + stockTable + '</section>' +
