@@ -81,38 +81,26 @@
     return canonicalCountry(value);
   }
   function factoryAssetRows(resource, economy) {
-    resource = resource && typeof resource === 'object' ? resource : {};
     economy = economy && typeof economy === 'object' ? economy : {};
-    var industrial = resource.industrialNetwork && typeof resource.industrialNetwork === 'object' ? resource.industrialNetwork : {};
-    var sources = [
-      { rows: economy.productionAssets, force: true },
-      { rows: resource.productionAssets, force: false },
-      { rows: industrial.productionAssets, force: true },
-      { rows: industrial.factoryAssets, force: true }
-    ];
+    // economy[country].productionAssets is the single authoritative factory registry.
+    // Resource/industrial mirrors are not merged into ownership counts.
+    var rows = Array.isArray(economy.productionAssets) ? economy.productionAssets : [];
     var byId = Object.create(null), ordered = [];
-    sources.forEach(function (source) {
-      (Array.isArray(source.rows) ? source.rows : []).forEach(function (asset) {
-        if (!asset || typeof asset !== 'object') return;
-        var id = String(asset.id || asset.assetId || asset.factoryId || asset.projectId || asset.name || '').trim();
-        if (!id) return;
-        var descriptor = [asset.factoryType, asset.facilityType, asset.assetType, asset.type, asset.stage, asset.name].join(' ').toUpperCase();
-        var clearlyMineOnly = /(^|[\s_-])(MINE|MINING|EXTRACTION|EXTRACTOR|QUARRY|DEPOSIT|OIL_FIELD|GAS_FIELD)([\s_-]|$)/.test(descriptor) &&
-          !/(PROCESS|MILL|SMELT|REFIN|FACTORY|PLANT)/.test(descriptor);
-        if (clearlyMineOnly) return;
-        var recipe = asset.recipe && typeof asset.recipe === 'object' ? asset.recipe : {};
-        var hasInputs = !!(asset.inputCoefficients || asset.inputProfile || recipe.inputs || asset.inputInventory);
-        var hasOutputs = !!(asset.outputProfile || asset.outputCoefficients || recipe.outputs);
-        var looksFactory = source.force || /FACTORY|PLANT|MILL|SMELT|REFIN|FURNACE|PROCESS|GENERATOR|POWER_STATION|CEMENT|TEXTILE|ASSEMBLY|MANUFACTUR|PACKAGING|CHEMICAL|CONCENTRATOR/.test(descriptor) || (hasInputs && hasOutputs);
-        if (!looksFactory) return;
-        var key = id.toUpperCase();
-        if (byId[key]) {
-          byId[key] = Object.assign({}, byId[key], asset);
-          return;
-        }
-        byId[key] = Object.assign({}, asset);
-        ordered.push(key);
-      });
+    rows.forEach(function (asset) {
+      if (!asset || typeof asset !== 'object') return;
+      var id = String(asset.id || asset.assetId || asset.factoryId || asset.projectId || '').trim();
+      if (!id) return;
+      var descriptor = [asset.factoryType, asset.facilityType, asset.assetType, asset.type, asset.stage, asset.name].join(' ').toUpperCase();
+      var clearlyMineOnly = /(^|[\s_-])(MINE|MINING|EXTRACTION|EXTRACTOR|QUARRY|DEPOSIT|OIL_FIELD|GAS_FIELD)([\s_-]|$)/.test(descriptor) &&
+        !/(PROCESS|MILL|SMELT|REFIN|FACTORY|PLANT)/.test(descriptor);
+      if (clearlyMineOnly) return;
+      var key = id.toUpperCase();
+      if (byId[key]) {
+        byId[key] = Object.assign({}, byId[key], asset);
+        return;
+      }
+      byId[key] = Object.assign({}, asset);
+      ordered.push(key);
     });
     return ordered.map(function (key) { return byId[key]; });
   }
@@ -255,15 +243,22 @@
     var catalog = safeCatalog() || {};
     var factoryDataRuntime = g.OmegaCountryFactoryStartingBaselineV1 ||
       (g.Omega && g.Omega.CountryFactoryStartingBaselineV1) || null;
-    var countryFactoryEstablishmentData = null;
-    if (context.countryId && factoryDataRuntime && typeof factoryDataRuntime.getCountryRealWorldData === 'function') {
-      try { countryFactoryEstablishmentData = factoryDataRuntime.getCountryRealWorldData(context.countryId); } catch (_) { countryFactoryEstablishmentData = null; }
+    var factoryStartingRegistry = null;
+    if (context.countryId && factoryDataRuntime && typeof factoryDataRuntime.getCountryFactoryRegistry === 'function') {
+      try { factoryStartingRegistry = factoryDataRuntime.getCountryFactoryRegistry(context.countryId); } catch (_) { factoryStartingRegistry = null; }
     }
     var inventoryRuntime = g.OmegaCountryInventoryRuntime || (g.Omega && g.Omega.CountryInventoryRuntime) || null;
-    var nationalInventory = null;
+    var nationalInventory = null, canonicalResourceIds = [];
     if (context.countryId && inventoryRuntime && typeof inventoryRuntime.getInventory === 'function') {
       try { nationalInventory = inventoryRuntime.getInventory(context.countryId, { includeZero: true, includeLedger: false }); } catch (_) { nationalInventory = null; }
     }
+    try {
+      if (inventoryRuntime && typeof inventoryRuntime.getResourceCatalog === 'function') {
+        canonicalResourceIds = inventoryRuntime.getResourceCatalog().map(function (row) {
+          return String(row && (row.resourceId || row.id) || '').trim().toLowerCase();
+        }).filter(Boolean);
+      }
+    } catch (_) { canonicalResourceIds = []; }
     var assets = factoryAssetRows(resource, economy);
     var rawMineSites = countryMineSiteRows(context.countryId, resource);
     var mineAssets = mineAssetRows(resource);
@@ -332,17 +327,55 @@
     var currentExtractionRows = currentExtraction.rows;
     var operatingMineCount = mineAssets.filter(function (asset) { return /^(OPERATIONAL|ACTIVE|RUNNING)$/.test(String(asset.status || '').toUpperCase()); }).length;
     var factoryTypeCountsIndex = Object.create(null);
+    var rawFactoryTypeRecords = Object.create(null);
+    assets.forEach(function (asset) {
+      var typeKey = normalizeFactoryType(asset.factoryType || asset.type || asset.facilityType || '', catalog);
+      if (!typeKey) return;
+      if (!rawFactoryTypeRecords[typeKey]) rawFactoryTypeRecords[typeKey] = { hasStartingRecord: false };
+      if (String(asset.sourceType || '').toUpperCase() === 'COUNTRY_STARTING_FACTORY_BASELINE') rawFactoryTypeRecords[typeKey].hasStartingRecord = true;
+    });
     mappedAssets.forEach(function (factory) {
-      var typeKey = String(factory.type || 'NOT_RECORDED').trim().toUpperCase() || 'NOT_RECORDED';
+      var typeKey = normalizeFactoryType(factory.type || '', catalog) || String(factory.type || 'NOT_RECORDED').trim().toUpperCase() || 'NOT_RECORDED';
       if (!factoryTypeCountsIndex[typeKey]) {
         var profile = profiles[typeKey] || profiles[factory.type] || {};
         factoryTypeCountsIndex[typeKey] = { type: typeKey, name: String(profile.name || factory.type || 'Not recorded'), count: 0 };
       }
       factoryTypeCountsIndex[typeKey].count += 1;
     });
+    // The baseline runtime already owns the country's factory counts. Use it only
+    // to restore card display when starting asset records are absent. Once the
+    // live registry is registered, the live asset count always wins.
+    if (factoryStartingRegistry && factoryStartingRegistry.status === 'READY' && Array.isArray(factoryStartingRegistry.registry)) {
+      var liveFactoryCounts = factoryStartingRegistry.liveFactoryTypeCounts || {};
+      factoryStartingRegistry.registry.forEach(function (row) {
+        var typeKey = normalizeFactoryType(row && row.factoryType || '', catalog);
+        if (!typeKey) return;
+        var recordInfo = rawFactoryTypeRecords[typeKey] || { hasStartingRecord: false };
+        var liveCount = Number(liveFactoryCounts[typeKey]);
+        if (!Number.isFinite(liveCount) || liveCount < 0) liveCount = 0;
+        var activeAssetCount = factoryTypeCountsIndex[typeKey] ? factoryTypeCountsIndex[typeKey].count : 0;
+        var nonBaselineActiveCount = mappedAssets.filter(function (factory) {
+          return normalizeFactoryType(factory.type || '', catalog) === typeKey &&
+            String(factory.raw && factory.raw.sourceType || '').toUpperCase() !== 'COUNTRY_STARTING_FACTORY_BASELINE';
+        }).length;
+        var count = factoryStartingRegistry.runtimeRegistered === true
+          ? liveCount
+          : recordInfo.hasStartingRecord
+            ? activeAssetCount
+            : Math.max(0, Number(row.startingCount) || 0) + nonBaselineActiveCount;
+        var profile = profiles[typeKey] || {};
+        if (!factoryTypeCountsIndex[typeKey]) {
+          factoryTypeCountsIndex[typeKey] = { type: typeKey, name: String(row.name || profile.name || typeKey), count: count };
+        } else {
+          factoryTypeCountsIndex[typeKey].count = count;
+          if (row.name || profile.name) factoryTypeCountsIndex[typeKey].name = String(row.name || profile.name);
+        }
+      });
+    }
     var factoryTypeCounts = Object.keys(factoryTypeCountsIndex).map(function (key) {
       return factoryTypeCountsIndex[key];
     }).sort(function (a, b) { return a.name.localeCompare(b.name); });
+    var factoryCount = factoryTypeCounts.reduce(function (total, row) { return total + (Number(row.count) || 0); }, 0);
     var seenCatalogTypes = Object.create(null);
     var factoryTypeCatalog = Object.keys(profiles).map(function (rawType) {
       var profile = profiles[rawType] || {};
@@ -363,10 +396,10 @@
     return {
       countryId: context.countryId,
       hasCountryState: !!(context.resource || context.economy),
-      factoryCount: mappedAssets.length,
+      factoryCount: factoryCount,
       factoryTypeCounts: factoryTypeCounts,
       factoryTypeCatalog: factoryTypeCatalog,
-      countryFactoryEstablishmentData: countryFactoryEstablishmentData,
+      canonicalResourceIds: canonicalResourceIds,
       factories: mappedAssets,
       factoryNames: mappedAssets.map(function (row) { return row.name; }),
       playerCountryId: playerCountryId() || null,
@@ -391,7 +424,7 @@
       catalogProfiles: profiles,
       inputInventoryCount: mappedAssets.reduce(function (total, row) { return total + row.inputRows.filter(function (input) { return input.quantity !== null && input.quantity > 0; }).length; }, 0),
       nationalInventory: nationalInventory,
-      source: 'Game.state.resource[country].industrialNetwork + Game.state.economy[country].productionAssets + canonical industrial catalogue'
+      source: 'Game.state.economy[country].productionAssets + canonical industrial catalogue'
     };
   }
 
@@ -617,7 +650,7 @@
         '<span class="omega-v2-factory-status-led" aria-hidden="true"></span><strong>' + esc(status.label) + '</strong>' +
         '<span class="omega-v2-factory-output">' + displayOutput + '</span>' + outputProduct + reason +
       '</div>' +
-      '<div class="omega-v2-factory-count"><span>Total:</span><strong>' + fmt(ownedCount) + '</strong></div>' +
+      '<div class="omega-v2-factory-count"><span>Owned:</span><strong>' + fmt(ownedCount) + '</strong></div>' +
       '<div class="omega-v2-factory-actions">' +
         '<button type="button" class="omega-v2-factory-button omega-v2-factory-button--build" data-omega-v2-factory-build="' + esc(id) + '" data-factory-type="' + esc(factory.type) + '"' +
           (canOperate ? '' : ' disabled title="Build actions are available only for the active player country."') + '><span aria-hidden="true" class="omega-v2-action-icon omega-v2-action-icon--build"></span>Build</button>' +
@@ -626,95 +659,6 @@
           '><span aria-hidden="true" class="omega-v2-action-icon omega-v2-action-icon--destroy"></span>Destroy</button>' +
       '</div></article>';
   }
-  function metalCommandCard(model) {
-    var factoryNames = model.factories.length
-      ? model.factories.map(function (factory) {
-        return '<li><strong>' + esc(factory.name) + '</strong><span>' + esc(factory.type) + '</span></li>';
-      }).join('')
-      : '<li class="omega-v2-industry-register-empty">No commissioned factories are recorded. Catalog profiles are not counted as owned assets.</li>';
-    var factoryTypeRows = (model.factoryTypeCounts || []).map(function (row) {
-      return '<tr><td><strong>' + esc(row.name) + '</strong><small>' + esc(row.type) + '</small></td><td class="omega-v2-metal-number">' + fmt(row.count) + '</td></tr>';
-    }).join('');
-    var establishmentData = model.countryFactoryEstablishmentData;
-    var establishmentRecords = establishmentData && establishmentData.factoryEstablishments || {};
-    var establishmentRows = (model.factoryTypeCatalog || []).map(function (row) {
-      var record = establishmentRecords[row.type] || {};
-      var count = Number(record.establishmentCount);
-      var status = String(record.status || 'NOT_QUERIED');
-      var countText = status === 'REPORTED' && Number.isInteger(count) && count >= 0 ? fmt(count)
-        : status === 'PARTIAL' ? 'Partial · not total'
-        : status === 'NOT_COMPARABLE' ? 'Not comparable'
-        : status === 'NOT_REPORTED' ? 'Not reported'
-        : status === 'COUNTRY_NOT_COVERED' ? 'Country not covered'
-        : status === 'MAPPING_UNAVAILABLE' ? 'Mapping unavailable'
-        : status === 'SOURCE_UNAVAILABLE' ? 'Source unavailable' : 'Pending source';
-      var year = record.referenceYear !== null && record.referenceYear !== undefined && Number.isFinite(Number(record.referenceYear))
-        ? fmt(record.referenceYear) : '—';
-      return '<tr><td><strong>' + esc(row.name) + '</strong><small>' + esc(row.type) + '</small></td>' +
-        '<td class="omega-v2-metal-number">' + esc(countText) + '</td><td>' + esc(year) + '</td><td>' +
-        esc(status.replace(/_/g, ' ').toLowerCase()) + '</td></tr>';
-    }).join('');
-    var reportedEstablishmentCount = Object.keys(establishmentRecords).filter(function (type) {
-      return establishmentRecords[type] && establishmentRecords[type].status === 'REPORTED';
-    }).length;
-    var partialEstablishmentCount = Object.keys(establishmentRecords).filter(function (type) {
-      return establishmentRecords[type] && establishmentRecords[type].status === 'PARTIAL';
-    }).length;
-    var establishmentMarkup = establishmentData
-      ? '<section class="omega-v2-metal-plate omega-v2-metal-plate--silver omega-v2-industry-starting-baseline" aria-label="Official industrial establishment records">' +
-          '<div class="omega-v2-metal-label">REAL-WORLD SOURCE DATA · UNIDO INDSTAT</div>' +
-          '<h3>Industrial Establishment Records</h3>' +
-          '<p class="omega-v2-industry-muted"><strong>' + fmt(reportedEstablishmentCount) + '</strong> complete type records · <strong>' + fmt(partialEstablishmentCount) + '</strong> partial records · country ' + esc(establishmentData.countryId || model.countryId || '') + '</p>' +
-          '<div class="omega-v2-industry-table-wrap omega-v2-industry-type-table"><table><thead><tr><th>Factory type / ISIC category</th><th>Establishments</th><th>Year</th><th>Source status</th></tr></thead>' +
-          '<tbody>' + establishmentRows + '</tbody></table></div>' +
-          '<p class="omega-v2-industry-muted">UNIDO establishments are statistical business units, not necessarily individual physical factory sites. Missing values are not zero.</p></section>'
-      : '<section class="omega-v2-metal-plate omega-v2-metal-plate--silver omega-v2-industry-starting-baseline" aria-label="Official industrial establishment records"><div class="omega-v2-metal-label">REAL-WORLD SOURCE DATA · UNIDO INDSTAT</div><h3>Industrial Establishment Records</h3><p class="omega-v2-industry-muted">Official source data is loading or unavailable. Unknown values remain unreported.</p></section>';
-    var rates = model.mineSites.map(function (site) {
-      var daily = site.dailyProduction || {};
-      return '<tr><td><strong>' + esc(site.name) + '</strong><small>' + esc(site.siteId) + '</small></td>' +
-        '<td>' + esc(site.resourceId) + '</td>' +
-        '<td><strong>' + (daily.value === null || daily.value === undefined ? 'Not recorded' : fmt(daily.value, daily.unit)) + '</strong><small>' + esc(daily.basis || 'Not recorded') + '</small></td>' +
-        '<td>' + esc(site.status) + '</td></tr>';
-    }).join('');
-    var additions = model.currentTurnExtraction.length
-      ? model.currentTurnExtraction.map(function (row) {
-        return '<div class="omega-v2-industry-addition"><span><strong>' + esc(row.resourceId) + '</strong><small>' + fmt(row.batchCount) + ' batch(es) · ' + fmt(row.siteCount) + ' site(s)</small><small>Average per simulation day: ' + (row.averagePerDay === null ? 'Not recorded (days per turn unavailable)' : fmt(row.averagePerDay, row.unit + '/game-day')) + '</small></span><b>' + fmt(row.quantity, row.unit) + '</b></div>';
-      }).join('')
-      : '<p class="omega-v2-industry-muted">No new extraction batches are recorded for ' + (model.currentTurnNumber === null ? 'the current turn' : 'turn ' + fmt(model.currentTurnNumber)) + '.</p>';
-    var readOnly = !model.canOperateSelectedCountry;
-    var accessLabel = model.canOperateSelectedCountry ? 'PLAYER COUNTRY · OPERATIONS AVAILABLE' : 'REFERENCE VIEW · OPERATIONS LOCKED';
-    return '<section class="omega-v2-industry-command" aria-label="Country industrial and resource command panel">' +
-      '<header class="omega-v2-industry-command-head"><div><div class="omega-v2-eyebrow">NATIONAL INDUSTRY REGISTER</div><h2>Industrial Command Plate</h2><p>Selected country: <strong>' + esc(model.countryId || 'Not recorded') + '</strong> · factory ownership comes from live game state</p></div>' +
-      '<span class="omega-v2-industry-access" data-mode="' + (readOnly ? 'readonly' : 'player') + '">' + esc(accessLabel) + '</span></header>' +
-      '<div class="omega-v2-industry-command-grid">' +
-        '<div class="omega-v2-metal-plate omega-v2-metal-plate--gold"><span class="omega-v2-metal-label">TOTAL FACTORIES</span><strong class="omega-v2-metal-number">' + fmt(model.factoryCount) + '</strong><small>Registered factory assets</small><span class="omega-v2-metal-stamp">COUNTRY ' + esc(model.countryId || 'N/A') + '</span></div>' +
-        '<div class="omega-v2-industry-svg-slot" data-omega-factory-svg-slot data-country-id="' + esc(model.countryId || '') + '" role="img" aria-label="Empty reserved factory SVG artwork area"><div class="omega-v2-industry-svg-frame"><span>FACTORY SVG SLOT</span><small>Paste the country factory SVG here</small></div></div>' +
-        '<div class="omega-v2-metal-plate omega-v2-metal-plate--silver omega-v2-industry-register"><div class="omega-v2-metal-label">FACTORY TYPE · TOTAL COUNT</div><div class="omega-v2-industry-register-count">' + fmt(model.factoryCount) + ' recorded</div>' +
-          '<div class="omega-v2-industry-table-wrap omega-v2-industry-type-table"><table><thead><tr><th>Factory name / type</th><th>Total</th></tr></thead><tbody>' +
-          (factoryTypeRows || '<tr><td colspan="2">No factory assets</td></tr>') + '</tbody></table></div>' +
-          '<details class="omega-v2-industry-factory-names"><summary>Individual registered factory names (' + fmt(model.factoryNames.length) + ')</summary><ul>' + factoryNames + '</ul></details></div>' +
-      '</div>' +
-      establishmentMarkup +
-      '<div class="omega-v2-industry-resource-stats">' +
-        '<div class="omega-v2-metal-plate omega-v2-metal-plate--blue"><span class="omega-v2-metal-label">REGISTERED RESOURCE SITES</span><strong class="omega-v2-metal-number">' + fmt(model.registeredMineSiteCount) + '</strong><small>Country-specific canonical sites</small></div>' +
-        '<div class="omega-v2-metal-plate omega-v2-metal-plate--copper"><span class="omega-v2-metal-label">OPERATING MINE ASSETS</span><strong class="omega-v2-metal-number">' + fmt(model.operatingMineCount) + '</strong><small>Operational player/game assets</small></div>' +
-        '<div class="omega-v2-metal-plate omega-v2-metal-plate--steel"><span class="omega-v2-metal-label">DAILY OUTPUT DATA</span><strong class="omega-v2-metal-number">' + fmt(model.dailyProductionKnownCount) + ' / ' + fmt(model.registeredMineSiteCount) + '</strong><small>Sites with a usable daily rate or capacity</small></div>' +
-      '</div>' +
-      '<div class="omega-v2-industry-production-row"><section class="omega-v2-industry-panel"><h3>Daily mine production / capacity</h3><p>Values are shown per site and keep their source status. Different resource units are not added into a misleading world-total number.</p>' +
-        (rates ? '<div class="omega-v2-industry-table-wrap"><table><thead><tr><th>Mine / resource site</th><th>Resource</th><th>Daily rate or capacity</th><th>Source status</th></tr></thead><tbody>' + rates + '</tbody></table></div>' : '<div class="omega-v2-empty">No canonical resource sites are recorded for this selected country.</div>') +
-      '</section><section class="omega-v2-industry-panel"><h3>New resources added this turn</h3><p>' + (model.currentTurnNumber === null ? 'Current game turn not recorded.' : 'Authoritative extraction ledger · turn ' + fmt(model.currentTurnNumber)) + '</p><div class="omega-v2-industry-additions">' + additions + '</div><small>Counts only committed extraction-ledger quantities from the selected country and current turn. Old turns, foreign-country rows and catalog estimates are excluded.</small></section></div>' +
-      '<div class="omega-v2-industry-actions">' +
-        '<button type="button" class="omega-v2-button omega-v2-button--primary" data-omega-v2-industry-action="open-mines">Build / view mines</button>' +
-        '<button type="button" class="omega-v2-button" data-omega-v2-industry-action="open-extraction"' + (readOnly ? ' disabled title="Extraction controls are locked outside the active player country."' : '') + '>Open extraction controls</button>' +
-        '<button type="button" class="omega-v2-button" data-omega-v2-industry-action="factory-projects">Factory projects</button>' +
-        '<button type="button" class="omega-v2-button" data-omega-v2-industry-action="research">Research records</button>' +
-        '<button type="button" class="omega-v2-button" data-omega-v2-jump-ministry="science_research">Technology development</button>' +
-        '<button type="button" class="omega-v2-button" data-omega-v2-jump-ministry="infrastructure">Roads &amp; logistics</button>' +
-      '</div>' +
-      '<p class="omega-v2-industry-footnote">Real-world reported quantities and simulated gameplay capacity are kept distinct. Unknown values stay “Not recorded”. Buttons open existing game systems; they do not fabricate a build, extraction, road or technology result.</p>' +
-    '</section>';
-  }
-
   function factoryTypeBuildSupport(type, catalog) {
     catalog = catalog || safeCatalog() || {};
     var wanted = normalizeFactoryType(type, catalog) || String(type || '').toUpperCase();
@@ -747,62 +691,13 @@
     return '<article class="omega-v2-factory-type-card" data-omega-v2-factory-type-card data-factory-type="' + esc(type) + '">' +
       '<header class="fp-type-card-head"><span class="fp-type-card-art">' + factorySvgMarkup({ type:type, name:item.name || type }) + '</span>' +
       '<span class="fp-type-card-name"><strong>' + esc(item.name || type) + '</strong><small>' + esc(item.category || 'Uncategorised') + '</small></span></header>' +
-      '<div class="fp-type-card-count"><span>Factory assets in runtime</span><strong>' + fmt(ownedCount) + '</strong></div>' +
+      '<div class="fp-type-card-count"><span>Owned factories</span><strong>' + fmt(ownedCount) + '</strong></div>' +
       '<dl class="fp-type-card-metrics"><div><dt>Modeled build time</dt><dd>' + esc(duration) + '</dd></div>' +
       '<div><dt>Modeled capacity</dt><dd>' + esc(capacity) + '</dd></div>' +
       '<div><dt>Modeled construction cost</dt><dd>' + esc(cost) + '</dd></div></dl>' +
       '<div class="fp-type-card-actions"><button type="button" class="omega-v2-factory-button omega-v2-factory-button--build" data-omega-v2-factory-build="CATALOG" data-factory-type="' + esc(type) + '"' +
       (canBuild ? '' : ' disabled title="' + esc(disabledReason) + '"') +
       '><span aria-hidden="true" class="omega-v2-action-icon omega-v2-action-icon--build"></span>Build project</button></div></article>';
-  }
-
-  function factoryEstablishmentMarkup(model) {
-    model = model || {};
-    var data = model.countryFactoryEstablishmentData;
-    var records = data && data.factoryEstablishments || {};
-    var rows = Array.isArray(model.factoryTypeCatalog) ? model.factoryTypeCatalog.slice() : [];
-    if (!data || !data.factoryEstablishments) {
-      return '<section class="fp-starting-allocation fp-establishment-data" aria-label="Official factory establishment data">' +
-        '<header class="fp-starting-allocation-heading"><div><span>UNIDO / INDSTAT · ISIC REV.4</span><strong>Official establishment data</strong></div></header>' +
-        '<p class="fp-starting-allocation-foot">Source observations are loading or unavailable. Missing values are not treated as zero.</p></section>';
-    }
-    rows.sort(function (a, b) {
-      return String(a && a.name || a && a.type || '').localeCompare(String(b && b.name || b && b.type || ''));
-    });
-    var reportedCount = 0;
-    var partialCount = 0;
-    var tableRows = rows.map(function (row) {
-      var record = records[row.type] || {};
-      var status = String(record.status || 'NOT_QUERIED');
-      var value = Number(record.establishmentCount);
-      var partial = Number(record.partialEstablishmentCount);
-      var countText = 'Not reported';
-      if (status === 'REPORTED' && Number.isInteger(value) && value >= 0) {
-        reportedCount += 1;
-        countText = fmt(value);
-      } else if (status === 'PARTIAL') {
-        partialCount += 1;
-        countText = Number.isInteger(partial) && partial >= 0
-          ? fmt(partial) + ' · partial, not total'
-          : 'Partial, not total';
-      } else if (status === 'NOT_COMPARABLE') countText = 'Not comparable';
-      else if (status === 'COUNTRY_NOT_COVERED') countText = 'Country not covered';
-      else if (status === 'MAPPING_UNAVAILABLE') countText = 'Mapping unavailable';
-      else if (status === 'SOURCE_UNAVAILABLE') countText = 'Source unavailable';
-      else if (status === 'NOT_QUERIED') countText = 'Pending source';
-      var year = record.referenceYear !== null && record.referenceYear !== undefined &&
-        Number.isInteger(Number(record.referenceYear)) ? String(Number(record.referenceYear)) : '—';
-      return '<tr><td><strong>' + esc(row.name || row.type) + '</strong><small>' + esc(row.type) + '</small></td>' +
-        '<td class="fp-starting-allocation-count">' + esc(countText) + '</td><td>' + esc(year) + '</td>' +
-        '<td>' + esc(status.replace(/_/g, ' ').toLowerCase()) + '</td></tr>';
-    }).join('');
-    return '<section class="fp-starting-allocation fp-establishment-data" aria-label="Official factory establishment data">' +
-      '<header class="fp-starting-allocation-heading"><div><span>UNIDO / INDSTAT · ISIC REV.4</span><strong>Official establishment data</strong></div>' +
-      '<div class="fp-starting-allocation-meta"><span>' + fmt(reportedCount) + ' complete</span><span>' + fmt(partialCount) + ' partial</span></div></header>' +
-      '<div class="fp-starting-allocation-table-wrap"><table><thead><tr><th>Factory type</th><th>Establishments</th><th>Year</th><th>Source status</th></tr></thead>' +
-      '<tbody>' + (tableRows || '<tr><td colspan="4">Factory type catalogue unavailable</td></tr>') + '</tbody></table></div>' +
-      '<p class="fp-starting-allocation-foot">UNIDO counts statistical establishments, not necessarily individual physical factory sites. Partial values are not complete totals; missing values are not zero.</p>' +
-      '</section>';
   }
 
   function factoryTypeCatalogMarkup(model) {
@@ -887,13 +782,13 @@
     if (root.__omegaV2IndustryCountryId !== countryKey) {
       root.__omegaV2IndustryCountryId = countryKey;
       root.__omegaV2IndustryFactoryViewExplicit = false;
-      root.__omegaV2IndustryFactoryView = model.factoryCount > 0 ? 'assets' : 'types';
+      root.__omegaV2IndustryFactoryView = model.factories.length > 0 ? 'assets' : 'types';
     }
     if (options.factoryView === 'assets' || options.factoryView === 'types') {
       root.__omegaV2IndustryFactoryView = options.factoryView;
       root.__omegaV2IndustryFactoryViewExplicit = true;
     }
-    if (!root.__omegaV2IndustryFactoryViewExplicit) root.__omegaV2IndustryFactoryView = model.factoryCount > 0 ? 'assets' : 'types';
+    if (!root.__omegaV2IndustryFactoryViewExplicit) root.__omegaV2IndustryFactoryView = model.factories.length > 0 ? 'assets' : 'types';
     var factoryView = root.__omegaV2IndustryFactoryView === 'types' ? 'types' : 'assets';
     var content = '';
     if (active === 'factories') {
@@ -931,9 +826,13 @@
     } else if (active === 'national-inventory') {
       var snapshot = model.nationalInventory;
       if (snapshot && snapshot.status === 'READY') {
-        var stockRows = Array.isArray(snapshot.items) ? snapshot.items : [];
+        var allowedRawResources = Object.create(null);
+        (model.canonicalResourceIds || []).forEach(function (id) { allowedRawResources[String(id).toLowerCase()] = true; });
+        var stockRows = (Array.isArray(snapshot.items) ? snapshot.items : []).filter(function (row) {
+          return !!allowedRawResources[String(row && row.productId || '').toLowerCase()];
+        });
         var inventoryStatus = snapshot.active ? 'PLAYER INVENTORY · ACTIVE' : 'READ-ONLY SNAPSHOT';
-        content = '<div class="omega-v2-card"><div class="omega-v2-card-header"><div><h3 class="omega-v2-card-title">' + esc(snapshot.countryName || snapshot.countryId || model.countryId) + ' inventory</h3><div class="omega-v2-card-meta">' + esc(inventoryStatus) + ' · ' + fmt(stockRows.length) + ' product records</div></div><span class="omega-v2-status">' + (snapshot.unbounded ? 'UNBOUNDED STOCK LOG' : 'STOCK STATUS') + '</span></div>' +
+        content = '<div class="omega-v2-card"><div class="omega-v2-card-header"><div><h3 class="omega-v2-card-title">' + esc(snapshot.countryName || snapshot.countryId || model.countryId) + ' inventory</h3><div class="omega-v2-card-meta">' + esc(inventoryStatus) + ' · ' + fmt(stockRows.length) + ' resource records</div></div><span class="omega-v2-status">' + (snapshot.unbounded ? 'UNBOUNDED STOCK LOG' : 'STOCK STATUS') + '</span></div>' +
           (stockRows.length ? '<div class="omega-v2-table-wrap"><table><thead><tr><th>Product</th><th>Product ID</th><th>Base</th><th>On hand</th><th>Change</th><th>Unit</th></tr></thead><tbody>' + stockRows.map(function (row) {
             return '<tr><td>' + esc(row.name) + '</td><td>' + esc(row.productId) + '</td><td>' + fmt(row.base) + '</td><td><strong>' + fmt(row.quantity) + '</strong></td><td>' + fmt(row.deltaFromBase) + '</td><td>' + esc(row.unit || 'Not recorded') + '</td></tr>';
           }).join('') + '</tbody></table></div>' : '<p class="omega-v2-empty">No product catalog rows are available for this country yet.</p>') +
@@ -988,7 +887,7 @@
       '<div class="fp-summary-item"><span>PRODUCTION CYCLES</span><strong>' + fmt(model.cycles.length) + '</strong></div>' +
       '</div>';
     var panelBody = active === 'factories'
-      ? factoryEstablishmentMarkup(model) + (factoryView === 'types' ? factoryTypeCatalogMarkup(model) : '<div class="omega-v2-factory-deck">' + factoryCards + '</div>')
+      ? (factoryView === 'types' ? factoryTypeCatalogMarkup(model) : '<div class="omega-v2-factory-deck">' + factoryCards + '</div>')
       : '<div class="fp-content" data-omega-v2-industry-content data-active-tab="' + esc(active) + '">' +
           '<header class="fp-content-heading"><div><span>OMEGA / COUNTRY DATA</span><strong>' + esc(activeLabel) + '</strong></div>' +
           '<span class="fp-content-country">' + esc(model.countryId || 'Country not selected') + '</span></header>' +
