@@ -101,7 +101,7 @@ test("More command cards use the uploaded local imagery and every action has a d
   assert.match(sw, /resource-ministry-premium\.css/);
   assert.ok(html.includes("omega_ui_v2/resource-ministry-legacy-bridge.js"), "Resource Ministry handoff must be loaded by the application shell");
   assert.ok(sw.includes("omega_ui_v2/resource-ministry-legacy-bridge.js"), "Resource Ministry handoff must be cached offline");
-  assert.match(sw, /factoryIconManifest\.resources/);
+  assert.match(sw, /\[\s*\"factories\"\s*,\s*\"resources\"\s*,\s*\"transportVariants\"\s*\]/, "factory, resource and transport icon groups must all be included in offline precaching");
   assert.match(sw, /factory-production-command\.css/);
   assert.doesNotMatch(sw.slice(sw.indexOf("const CORE_ASSETS"), sw.indexOf("];", sw.indexOf("const CORE_ASSETS"))), /industrial-production-line\.webp/);
   assert.match(sw, /factoryIconManifest\.factories/);
