@@ -13,7 +13,7 @@ const APP_BASE = new URL("./", self.location.href);
 const INDEX_URL = new URL("index.html", APP_BASE).href;
 const DATA_CACHE_META_URL = new URL("__omega-data-cache-index__", APP_BASE).href;
 const CORE_ASSETS = [
-  "./", "./index.html", "./world.json", "./leaflet.js", "./leaflet.css",
+  "./", "./index.html", "./omega_android_compat_v1.js", "./world.json", "./leaflet.js", "./leaflet.css",
   "./style.css", "./design-tokens.js", "./omega_action_progress_v1.js", "./map-engine-1.js", "./map-engine-2.js",
   "./omega_game_lifecycle_runtime_v1.js", 
   "./omega_shared_number_format_v1.js",
