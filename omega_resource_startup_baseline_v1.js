@@ -1542,6 +1542,95 @@
     var status = id(session && session.status);
     return ['READY', 'RUNNING', 'PAUSED'].indexOf(status) >= 0;
   }
+  async function ensureCountryFactoryStartingBaseline(session) {
+    var runtime = g.OmegaCountryFactoryStartingBaselineV1 ||
+      (g.Omega && g.Omega.CountryFactoryStartingBaselineV1) || null;
+    if (!runtime || typeof runtime.initializeForSession !== 'function') {
+      return { status: 'NOT_READY', reason: 'COUNTRY_FACTORY_STARTING_BASELINE_UNAVAILABLE' };
+    }
+    try { return await runtime.initializeForSession(session); }
+    catch (error) { return { status: 'BLOCKED', reason: String(error && error.message || error) }; }
+  }
+
+  async function initializeCurrentCountryBaseline(state, session, runKey) {
+    var countryId = id(session && session.playerCountryId);
+    if (!countryId || countryId === 'GLOBAL' || countryId === 'WORLD') {
+      return { status: 'BLOCKED', reason: 'PLAYER_COUNTRY_NOT_SELECTED' };
+    }
+    var profile = data.countryProfiles.find(function (row) { return id(row && row.iso3) === countryId; });
+    if (!profile) return { status: 'BLOCKED', reason: 'PLAYER_COUNTRY_PROFILE_NOT_FOUND', countryId: countryId };
+    var resourceHit = bucketFor(state, 'resource', profile, true);
+    var economyHit = bucketFor(state, 'economy', profile, true);
+    if (resourceHit.invalid || economyHit.invalid || !resourceHit.value || !economyHit.value) {
+      return { status: 'BLOCKED', reason: 'PLAYER_COUNTRY_STATE_BUCKET_INVALID', countryId: countryId };
+    }
+    var resource = resourceHit.value, economy = economyHit.value;
+    var resourceMarker = object(resource.startupBaselineV1);
+    var factoryInputMarker = object(resource.factoryInputBaselineV1);
+    var economyMarker = object(economy.startupBaselineV1);
+    var stockReady = resourceMarker && resourceMarker.version === VERSION && resourceMarker.openingStockInitialized === true;
+    var factoryInputReady = factoryInputMarker && factoryInputMarker.version === data.factoryInputBaseline.version && factoryInputMarker.openingStockInitialized === true;
+    var factoriesReady = economyMarker && economyMarker.version === VERSION && economyMarker.factoryAssetsInitialized === true;
+    if (stockReady && factoryInputReady && factoriesReady) {
+      return { status: 'ALREADY_INITIALIZED', countryId: countryId, sessionId: String(session.sessionId || ''),
+        reason: 'PLAYER_COUNTRY_STARTUP_BASELINE_ALREADY_PRESENT' };
+    }
+    var key = String(session.sessionId || countryId) + ':PLAYER_COUNTRY_RECOVERY';
+    if (running[key]) return running[key];
+    running[key] = Promise.resolve().then(function () {
+      var context = seedCountryContext(state, profile);
+      var groups = siteGroupsByCountry();
+      var groupList = groups[countryId] || [];
+      var existingAssets = Array.isArray(economy.productionAssets) ? economy.productionAssets.slice() : [];
+      var stockResult = seedCountryStock(state, profile, economy, resource, existingAssets, currentTurn(state));
+      var factoryResult = startupFactoryCountry(state, profile, currentTurn(state), groupList);
+      var factoryInputResult = seedCountryFactoryInputStock(resource, profile, currentTurn(state));
+      var countryReport = reportCountry(state, profile, groupList, factoryResult, stockResult, factoryInputResult, context);
+      var blocked = context.status === 'BLOCKED' || factoryResult.status === 'BLOCKED' ||
+        stockResult.status === 'BLOCKED' || factoryInputResult.status === 'BLOCKED';
+      lastReport = {
+        version: VERSION,
+        status: blocked ? 'COMPLETED_WITH_REPORTED_GAPS' : 'COMPLETED',
+        sessionId: String(session.sessionId || runKey),
+        playerCountryId: countryId,
+        initializedTurn: currentTurn(state),
+        authority: 'SIMULATED_STARTUP_BASELINE_V1',
+        scope: 'PLAYER_COUNTRY_EXISTING_SAVE_RECOVERY',
+        counts: {
+          countryCount: 1,
+          resourceProfileCount: Object.keys(data.resourceProfiles).length,
+          factoryProfileCount: Object.keys(data.factoryProfiles).length,
+          siteResourceGroupCount: groupList.length,
+          countriesCompleted: blocked ? 0 : 1,
+          countriesBlocked: blocked ? 1 : 0,
+          openingStocksSeeded: finite(stockResult.seeded) || 0,
+          existingStocksPreserved: finite(stockResult.preserved) || 0,
+          unknownStockRows: (stockResult.unknownResourceIds || []).length,
+          factoryAssetsCreated: finite(factoryResult.created) || 0,
+          factoryInputBaselineCountryCount: Object.keys(data.factoryInputBaseline.countries).length,
+          factoryInputProductCount: Object.keys(data.factoryInputBaseline.worldOpeningStockByProduct || {}).length,
+          factoryInputProductsSeeded: finite(factoryInputResult.seeded) || 0,
+          factoryInputOpeningStockQuantity: finite(factoryInputResult.openingStockQuantity) || 0,
+          factoryInputUnknownRows: (factoryInputResult.unknownProductIds || []).length
+        },
+        factoryInputBufferPercent: 40,
+        factoryInputStockIsOneTime: true,
+        geologicalReserveQuantityUsedAsStock: false,
+        existingSaveDataOverwritten: false,
+        countrySummaries: [countryReport]
+      };
+      dispatchEvent('OMEGA_RESOURCE_STARTUP_BASELINE_COMPLETED', lastReport);
+      return { status: lastReport.status, report: diagnostics(), country: countryReport };
+    }).catch(function (error) {
+      lastReport = { version: VERSION, status: 'BLOCKED', reason: String(error && error.message || error),
+        sessionId: String(session.sessionId || runKey), playerCountryId: countryId,
+        scope: 'PLAYER_COUNTRY_EXISTING_SAVE_RECOVERY' };
+      dispatchEvent('OMEGA_RESOURCE_STARTUP_BASELINE_FAILED', lastReport);
+      return lastReport;
+    }).finally(function () { delete running[key]; });
+    return running[key];
+  }
+
   async function initializeForSession(sessionInput) {
     var loaded = await loadSources();
     if (!loaded || loaded.status !== 'READY') return loaded || { status: 'BLOCKED', reason: 'STARTUP_BASELINE_SOURCES_NOT_READY' };
@@ -1555,12 +1644,14 @@
     if (expectedSessionId && liveSessionId && expectedSessionId !== liveSessionId) {
       return { status: 'STALE_SESSION_IGNORED', expectedSessionId: expectedSessionId, liveSessionId: liveSessionId };
     }
-    if (!isSessionEligible(state, currentSession || session)) {
-      return { status: 'SKIPPED_NOT_NEW_GAME', turn: currentTurn(state), sessionId: expectedSessionId };
-    }
     var playerCountryId = id((currentSession || session).playerCountryId || session.playerCountryId);
     if (!playerCountryId || playerCountryId === 'GLOBAL' || playerCountryId === 'WORLD') {
       return { status: 'BLOCKED', reason: 'PLAYER_COUNTRY_NOT_SELECTED' };
+    }
+    // Starting factories must register first, so the resource pipeline joins the same live asset registry.
+    await ensureCountryFactoryStartingBaseline(currentSession || session);
+    if (!isSessionEligible(state, currentSession || session)) {
+      return initializeCurrentCountryBaseline(state, currentSession || session, expectedSessionId || playerCountryId);
     }
     var key = expectedSessionId || playerCountryId + ':T' + currentTurn(state);
     if (running[key]) return running[key];
@@ -1811,6 +1902,17 @@
       return false;
     }
   }
+  function ensureCurrentSession() {
+    var state = rootState();
+    var session = sessionFromState(state);
+    if (!session || !session.playerCountryId) return Promise.resolve({ status: 'NO_ACTIVE_SESSION' });
+    pendingInitialization = initializeForSession(session);
+    return pendingInitialization;
+  }
+  function onRuntimeReady() {
+    attachSimulationEventBus();
+    ensureCurrentSession().catch(function () {});
+  }
   function install() {
     if (installed) return;
     installed = true;
@@ -1818,12 +1920,13 @@
       // Older builds may dispatch this as a browser CustomEvent. The current
       // SimulationRuntime uses its own EventLedger, so both supported paths are wired.
       g.addEventListener('OMEGA_GAME_SESSION_CREATED', onSessionCreated);
-      g.addEventListener('OMEGA_READY', attachSimulationEventBus);
+      g.addEventListener('OMEGA_READY', onRuntimeReady);
+      g.addEventListener('OMEGA_GAME_SESSION_STARTED', onRuntimeReady);
       if (g.document && typeof g.document.addEventListener === 'function') {
         if (g.document.readyState === 'loading') {
-          g.document.addEventListener('DOMContentLoaded', attachSimulationEventBus, { once: true });
+          g.document.addEventListener('DOMContentLoaded', onRuntimeReady, { once: true });
         } else {
-          attachSimulationEventBus();
+          onRuntimeReady();
         }
       }
     }
@@ -1842,6 +1945,22 @@
     diagnostics: diagnostics,
     getCountryReport: getCountryReport,
     getCountryFactoryInputBaseline: getCountryFactoryInputBaseline,
+    getResourceCatalog: function () {
+      if (!data || !data.resourceProfiles) return [];
+      return Object.keys(data.resourceProfiles).sort().map(function (resourceId) {
+        var profile = data.resourceProfiles[resourceId] || {};
+        var demandUnit = String(profile.unit || '').trim();
+        return {
+          resourceId: resourceId,
+          name: String(profile.name || resourceId.replace(/[_-]+/g, ' ').replace(/\b\w/g, function (ch) { return ch.toUpperCase(); })),
+          unit: demandUnit.replace(/_PER_DAY$/i, '') || null,
+          demandUnit: demandUnit || null,
+          priority: finite(profile.priority),
+          profileKnown: positive(profile.basePerMillionPopulation) !== null
+        };
+      });
+    },
+    ensureCurrentSession: ensureCurrentSession,
     waitForPendingInitialization: function () { return pendingInitialization; },
     getSourceStatus: function () {
       return { status: data ? 'READY' : (loadPromise ? 'LOADING' : 'BLOCKED'), version: VERSION,
