@@ -265,16 +265,26 @@ test('runtime registers the active player country as live factory assets and pre
     'repeated initialization must not duplicate starting production assets');
 });
 
-test('runtime does not initialize a game that has already advanced past the opening turns', async () => {
+test('an existing save missing its starting factory baseline receives one safe additive registration', async () => {
   const state = makeState(5);
   state.simulation.session.createdTurn = 5;
   const { api } = makeHarness(state);
   assert.equal((await api.ready).status, 'READY');
   const result = await api.initializeForSession(state.simulation.session);
-  assert.equal(result.status, 'SKIPPED_NOT_NEW_GAME');
-  assert.equal(Object.keys(state.economy).filter(code => state.economy[code] && code !== 'BGD').length, 0);
-  assert.equal(Object.keys(state.economy).length, 1);
-  assert.equal(Object.prototype.hasOwnProperty.call(state.economy.BGD, 'factoryStartingBaselineV1'), false);
+  assert.equal(result.status, 'COMPLETED');
+  assert.equal(state.simulation.countryFactoryStartingBaselineV1.playerCountryAssetRegistryStatus, 'REGISTERED');
+  assert.equal(state.simulation.countryFactoryStartingBaselineV1.playerCountryLiveAssetCount, 100);
+  assert.equal(state.simulation.countryFactoryStartingBaselineV1.initializedCountryCount, 197);
+  assert.equal(state.economy.BGD.productionAssets.length, 100);
+  assert.ok(state.economy.BGD.productionAssets.some(asset => asset.id === 'EXISTING-FACTORY-BGD-1'),
+    'existing player-built or saved assets must remain in the single live registry');
+  assert.equal(Object.keys(state.economy).length, 1,
+    'recovery must only activate the selected player country, not materialize 197 runtime buckets');
+  const stable = JSON.stringify(state.economy.BGD.productionAssets.map(asset => asset.id).sort());
+  const repeated = await api.initializeForSession(state.simulation.session);
+  assert.equal(repeated.status, 'ALREADY_INITIALIZED');
+  assert.equal(JSON.stringify(state.economy.BGD.productionAssets.map(asset => asset.id).sort()), stable,
+    'reopening the same save must not duplicate the starting allocation');
 });
 
 test('runtime blocks an incomplete or mismatched canonical factory catalog', async () => {
