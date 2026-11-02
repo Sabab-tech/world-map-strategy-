@@ -77,7 +77,7 @@ async function init(countryValue){
  let task;
  task=(async()=>{
   if(typeof root.fetch!=='function')throw Error('FETCH_UNAVAILABLE');
-  const response=await root.fetch(DATA_URL+encodeURIComponent(requestKey),{cache:'default'});
+  const response=await root.fetch(DATA_URL+encodeURIComponent(requestKey),{cache:'no-store'});
   if(!response||response.ok===false)throw Error('COUNTRY_GENERAL_DATA_FETCH_FAILED');
   const data=await response.json(),schema=data?.metadata?.recordSchema;
   if(!Array.isArray(data?.countries)||!data.countries.length||!Array.isArray(schema?.identityFields)||
