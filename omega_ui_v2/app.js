@@ -546,7 +546,7 @@
     state.pendingFrames = [first];
   }
   function resourceRouteActive(state) {
-    return !!state && (state.route === 'resources' || state.route === 'mine-detail' ||
+    return !!state && (state.route === 'resources' ||
       (state.route === 'ministry-detail' && state.ministryId === 'energy_mining'));
   }
   function releaseResourceScopeIfLeaving(root, state) {
