@@ -4,7 +4,7 @@
  */
 (function (root) {
   'use strict';
-  const state = { ready:false, settled:false, error:null, promise:null, profiles:[], extras:new Map(), byCode:new Map(), byIso3:new Map(), byNumeric:new Map(), aliases:new Map(), cities:new Map(), legacyEconomy:{}, legacyPopulation:{}, countryRecords:new Map(), countryLoads:new Map(), fileLoads:new Map(), datasets:new Map(), strategicProfiles:new Map(), strategicProfileDiagnostics:{available:false,profileCount:0,error:'COUNTRY_SCOPED_PROFILE_NOT_REQUESTED'} };
+  const state = { ready:false, settled:false, error:null, promise:null, profiles:[], extras:new Map(), byCode:new Map(), byIso3:new Map(), byNumeric:new Map(), aliases:new Map(), cities:new Map(), legacyEconomy:{}, legacyPopulation:{}, countryRecords:new Map(), countryLoads:new Map(), datasets:new Map(), strategicProfiles:new Map(), strategicProfileDiagnostics:{available:false,profileCount:0,error:'COUNTRY_SCOPED_PROFILE_NOT_REQUESTED'} };
   const s = v => String(v == null ? '' : v).trim();
   const norm = v => s(v).normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/&/g, ' AND ').replace(/[_’'`-]+/g, ' ').replace(/[^A-Z0-9]+/gi, ' ').trim().toUpperCase().replace(/\s+/g, ' ');
   const fixedAliases = {
@@ -106,33 +106,13 @@
     state.countryRecords.delete(key);state.countryRecords.set(key,row);
     return row;
   }
-  async function loadCountrySource(domain){
-    if(state.fileLoads.has(domain))return state.fileLoads.get(domain);
-    let task;
-    task=load('./'+COUNTRY_DATA_FILES[domain],false).finally(()=>{
-      if(state.fileLoads.get(domain)===task)state.fileLoads.delete(domain);
-    });
-    state.fileLoads.set(domain,task);return task;
-  }
-  function countryRow(data,profile,input){
-    const keys=candidateKeys(profile,input),aliases=[...keys];
-    const matches=row=>{
-      if(!row||typeof row!=='object'||Array.isArray(row))return false;
-      const values=[row.countryCode,row.country_code,row.countryId,row.country_id,row.iso2,row.iso3,
-        row.countryName,row.country_name,row.name,row.officialName,row.official_name];
-      return values.some(value=>{
-        const key=norm(value);if(!key)return false;
-        if(keys.has(key))return true;
-        const resolved=resolveCountry(value);
-        return !!resolved&&resolved.countryCode===profile.countryCode;
-      });
-    };
-    if(Array.isArray(data?.countries))return data.countries.find(matches)||null;
-    if(Array.isArray(data))return data.find(matches)||null;
-    if(data&&typeof data==='object'){
-      for(const alias of aliases){const hit=Object.keys(data).find(key=>norm(key)===alias);if(hit&&data[hit]&&typeof data[hit]==='object')return data[hit];}
-    }
-    return null;
+  async function loadCountrySource(domain,profile){
+    const key=domain==='economy'?(profile.economyKey||profile.name):
+      domain==='population'?(profile.populationKey||profile.name):(profile.name||profile.countryCode);
+    if(!key)return null;
+    const url='./api/omega/country-domain/'+encodeURIComponent(domain)+'/'+encodeURIComponent(key);
+    const result=await load(url,false);
+    return result?.record&&typeof result.record==='object'?result.record:null;
   }
   async function loadCountryData(value,domains=['cities']){
     if(state.promise)await state.promise;
@@ -147,9 +127,8 @@
       if(state.countryLoads.has(key)){records[domain]=await state.countryLoads.get(key);continue;}
       let task;
       task=(async()=>{
-        const data=await loadCountrySource(domain);
+        const row=await loadCountrySource(domain,profile);
         if(state.countryLoads.get(key)!==task)return null;
-        const row=countryRow(data,profile,value);
         if(!row)return null;
         state.countryRecords.set(key,row);
         if(domain==='cities')state.cities.set(profile.countryCode,row);
@@ -336,7 +315,7 @@
         if(!data||!Array.isArray(data.countries))throw new Error('COUNTRY_PROFILE_REGISTRY_INVALID');
         buildProfiles(data.countries);addSupplementalIdentities();
         state.datasets.clear();state.datasets.set('economy_global_profiles_v1.json',data);
-        state.cities.clear();state.countryRecords.clear();state.countryLoads.clear();state.fileLoads.clear();
+        state.cities.clear();state.countryRecords.clear();state.countryLoads.clear();
         state.legacyEconomy={};state.legacyPopulation={};state.strategicProfiles.clear();
         state.strategicProfileDiagnostics={available:false,profileCount:0,error:'COUNTRY_SCOPED_PROFILE_NOT_REQUESTED'};
         state.ready=true;state.settled=true;state.error=null;return true;

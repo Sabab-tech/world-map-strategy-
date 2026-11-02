@@ -24,6 +24,12 @@ const __dirname = path.dirname(__filename);
 const INDEX_PATH = path.join(__dirname, 'index.html');
 const COUNTRY_GENERAL_REGISTRY_PATH = path.join(__dirname, 'country_general_data_registry_v1.json');
 const COUNTRY_SECTOR_PROFILES_PATH = path.join(__dirname, 'country_sector_profiles_v1.json');
+const COUNTRY_DOMAIN_FILES = Object.freeze({
+  cities: path.join(__dirname, 'cities.json'),
+  economy: path.join(__dirname, 'economy.json'),
+  population: path.join(__dirname, 'population.json'),
+  society: path.join(__dirname, 'society.json')
+});
 const normalizeCountryLookup = value => String(value ?? '').normalize('NFKD')
   .replace(/[\u0300-\u036f]/g, '').trim().toUpperCase().replace(/[^A-Z0-9]+/g, '');
 function countryRowMatches(row, identityFields, lookup) {
@@ -247,6 +253,31 @@ function renderIndex(res, next) {
     res.type('html').send(output);
   });
 }
+app.get('/api/omega/country-domain/:domain/:countryKey', async (req,res) => {
+  const domain=String(req.params.domain||'').toLowerCase();
+  const filePath=COUNTRY_DOMAIN_FILES[domain];
+  const lookup=normalizeCountryLookup(req.params.countryKey);
+  if(!filePath||!lookup)return res.status(400).json({ok:false,error:'COUNTRY_DOMAIN_REQUEST_INVALID'});
+  try {
+    const data=await readTransientCountryDataset(filePath);
+    let record=null;
+    if(domain==='cities') {
+      const rows=Array.isArray(data?.countries)?data.countries:(Array.isArray(data)?data:[]);
+      record=rows.find(row=>normalizeCountryLookup(row?.name||row?.countryName||row?.country_name)===lookup)||null;
+    } else if(data&&typeof data==='object'&&!Array.isArray(data)) {
+      const key=Object.keys(data).find(candidate=>normalizeCountryLookup(candidate)===lookup);
+      if(key!==undefined)record=data[key];
+      else if(Array.isArray(data.countries)) {
+        record=data.countries.find(row=>normalizeCountryLookup(row?.name||row?.countryName||row?.country_name)===lookup)||null;
+      }
+    }
+    res.setHeader('Cache-Control','public, max-age=3600, stale-while-revalidate=86400');
+    return res.json({domain,countryKey:req.params.countryKey,record:record&&typeof record==='object'?record:null});
+  } catch(error) {
+    console.warn('[Country Data API] Domain record unavailable:',domain,error?.message||error);
+    return res.status(503).json({ok:false,error:'COUNTRY_DOMAIN_UNAVAILABLE',domain});
+  }
+});
 app.get('/api/omega/country-general-data/:countryId', async (req,res) => {
   const lookup=normalizeCountryLookup(req.params.countryId);
   if(!lookup)return res.status(400).json({ok:false,error:'COUNTRY_ID_REQUIRED'});
