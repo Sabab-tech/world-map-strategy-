@@ -85,6 +85,19 @@ test('the 100-day supply policy is visible and preserves stock/shipment semantic
   assert.match(ui, /OMEGA_RESOURCE_SUPPLY_ALERT_CREATED/);
 });
 
+test('inventory UI labels live balances as Current Stock and includes raw plus processed factory inputs', () => {
+  const inventoryPanel = ui.slice(ui.indexOf('function panelInventory'), ui.indexOf('function panelLogistics'));
+  assert.match(inventoryPanel, /Current Stock/);
+  assert.match(inventoryPanel, /processedWarehouse/);
+  assert.match(inventoryPanel, /factoryInputBaselineV1/);
+  assert.match(inventoryPanel, /resourceMapValue\(inventory, id\)/);
+  assert.match(inventoryPanel, /resourceMapValue\(processedWarehouse\.availableByResource/);
+  assert.doesNotMatch(inventoryPanel, /Stock days|Stock duration|targetCoverageDays|100-day/i);
+  assert.match(inventoryPanel, /Current stock is shown once from the country inventory ledger/);
+  assert.match(ui, /kv\('Current Stock', r\.inventory\)/);
+  assert.doesNotMatch(ui, /ledgerMetric\('📅', 'Stock duration'/);
+});
+
 test('resource panels avoid navigation clutter, raw diagnostics, and pinned top content', () => {
   assert.ok(ui.includes('omega-rescc-panel-select'));
   assert.ok(ui.includes('overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain'));
