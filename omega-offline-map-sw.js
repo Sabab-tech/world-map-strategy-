@@ -144,6 +144,8 @@ function isLocalAppUrl(value) {
 }
 
 function isDataRequest(url) {
+  // These two compact boot datasets are already part of the app shell.
+  if (/\/(?:world\.json|economy_global_profiles_v1\.json)$/i.test(url.pathname)) return false;
   return /\/api\/omega\/country-(?:domain|general-data|sector-profile)\//i.test(url.pathname) ||
     /\.(?:json|geojson)$/i.test(url.pathname);
 }
