@@ -121,6 +121,6 @@ test("cargo-specific transport variants cover truck, rail, ship and barge models
  assert.equal(files.size,20);
  assert.deepEqual(modeCounts,{barge:5,ship:5,rail:5,truck:5});
  const offline=fs.readFileSync(path.join(root,"omega-offline-map-sw.js"),"utf8");
- assert.match(offline,/omega-offline-atlas-shell-v78/);
+ assert.ok(Number(offline.match(/CACHE_NAME = "omega-offline-atlas-shell-v(\d+)"/)?.[1] || 0) >= 79, "offline shell cache version must be current");
  assert.match(offline,/\[\s*"factories"\s*,\s*"resources"\s*,\s*"transportVariants"\s*\]/,"all canonical manifest groups, including transport variants, must be precached");
 });
