@@ -1199,10 +1199,12 @@
       resourcePolicy.targetCoverageDays,
       countryPolicy.factoryInputCoverageDays,
       countryPolicy.targetCoverageDays,
+      supplyPolicy.factoryInputCoverageDays,
+      supplyPolicy.targetCoverageDays,
       simulation.factoryInputCoverageDays,
+      economyPolicy.targetCoverageDays,
       data && data.policy && data.policy.factoryInputStockBaseline &&
         data.policy.factoryInputStockBaseline.targetCoverageDays,
-      economyPolicy.targetCoverageDays,
       100
     ];
     var days = null;
@@ -1782,10 +1784,14 @@
         previousGlobalBaseline.version === VERSION &&
         previousGlobalBaseline.sessionId === String(session.sessionId || '')) {
       var previousCounts = object(previousGlobalBaseline.counts) || {};
+      var playerCountryIdForCoverage = id(session && session.playerCountryId);
+      var playerResourceForCoverage = state.resource && object(state.resource[playerCountryIdForCoverage]);
+      var currentPlayerCoverageDays = getFactoryInputCoverageDays(state, playerResourceForCoverage, playerCountryIdForCoverage);
       // A completed report is idempotent. If earlier country buckets were blocked,
       // retry the country pass; per-country stock/factory markers prevent duplication.
       if ((finite(previousCounts.countriesBlocked) || 0) === 0 &&
-          previousGlobalBaseline.factoryInputCoverageModelVersion === FACTORY_INPUT_COVERAGE_VERSION) {
+          previousGlobalBaseline.factoryInputCoverageModelVersion === FACTORY_INPUT_COVERAGE_VERSION &&
+          Number(previousGlobalBaseline.playerCountryFactoryInputCoverageDays) === currentPlayerCoverageDays) {
         lastReport = clone(previousGlobalBaseline);
         return { status: 'ALREADY_INITIALIZED', report: diagnostics() };
       }
@@ -1905,7 +1911,10 @@
         factoryAssetCountries: totals.factoryAssetCountries,
         factoryInputBaselineCountryCount: Object.keys(data.factoryInputBaseline.countries).length,
         factoryInputProductCount: Object.keys(data.factoryInputBaseline.worldOpeningStockByProduct || {}).length,
-        factoryInputBufferPercent: 40,
+        factoryInputBufferPercent: 0,
+        factoryInputLegacyCycleBufferPercent: 40,
+        factoryInputCoverageModelVersion: FACTORY_INPUT_COVERAGE_VERSION,
+        factoryInputTargetCoverageDays: 100,
         factoryInputStockCountries: totals.factoryInputStockCountries,
         factoryInputProductsSeeded: totals.factoryInputProductsSeeded,
         factoryInputOpeningStockQuantity: Number(totals.factoryInputOpeningStockQuantity.toPrecision(12)),
@@ -1923,7 +1932,12 @@
       factoryInputBufferPercent: 0,
       factoryInputLegacyCycleBufferPercent: 40,
       factoryInputCoverageModelVersion: FACTORY_INPUT_COVERAGE_VERSION,
-      factoryInputTargetCoverageDays: 100,
+      factoryInputTargetCoverageDays: getFactoryInputCoverageDays(state,
+        state.resource && object(state.resource[id(session && session.playerCountryId)]),
+        id(session && session.playerCountryId)),
+      playerCountryFactoryInputCoverageDays: getFactoryInputCoverageDays(state,
+        state.resource && object(state.resource[id(session && session.playerCountryId)]),
+        id(session && session.playerCountryId)),
       factoryInputStockIsOneTime: true,
       existingSaveDataOverwritten: false,
       countrySummaries: results
