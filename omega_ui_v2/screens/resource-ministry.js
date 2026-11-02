@@ -63,6 +63,77 @@
     return requested;
   }
 
+
+  var resourceScreenSequence = 0;
+  function activePlayerCountryKey() {
+    var state=g.Game&&g.Game.state||g.gameState||{}, sim=g.Omega&&(g.Omega.SimulationRuntime||g.Omega.Simulation)||null;
+    var values=[state.simulation&&state.simulation.session&&state.simulation.session.playerCountryId,
+      sim&&typeof sim.getPlayerCountryId==='function'?(function(){try{return sim.getPlayerCountryId();}catch(_){return null;}})():null,
+      sim&&sim.playerCountryId,state.simulation&&state.simulation.playerCountryId,state.playerCountryId,g.Game&&g.Game.playerCountryId];
+    for(var i=0;i<values.length;i+=1)if(values[i]!==null&&values[i]!==undefined&&String(values[i]).trim())return selectedCountryKey(values[i]);
+    return '';
+  }
+  function bindResourceEvent(root,target,type,handler){
+    if(!root||!target||typeof target.addEventListener!=='function'||typeof handler!=='function')return false;
+    target.addEventListener(type,handler);
+    if(!Array.isArray(root.__omegaV2ResourceEventBindings))root.__omegaV2ResourceEventBindings=[];
+    root.__omegaV2ResourceEventBindings.push({target:target,type:type,handler:handler});
+    return true;
+  }
+  function resourceScreenSessionIsCurrent(root,session){
+    return !!(root&&session&&session.active===true&&root.__omegaV2ResourceScreenSession===session&&activePlayerCountryKey()===session.countryId);
+  }
+  function beginResourceScreenSession(root,options,countryId){
+    var previous=root.__omegaV2ResourceScreenSession;
+    if(previous&&previous.active===true&&previous.countryId===countryId)return previous;
+    if(previous)deactivateResourceScreen(root);
+    var controller=typeof g.AbortController==='function'?new g.AbortController():null;
+    var session={generation:++resourceScreenSequence,countryId:countryId,active:true,ready:false,error:null,controller:controller,signal:controller?controller.signal:null,promise:null};
+    root.__omegaV2ResourceScreenSession=session;root.__omegaV2ResourceScreenActive=true;
+    root.__omegaV2ResourceOptions=Object.assign({},options,{countryId:countryId});
+    root.__omegaV2CurrentCountryKey=countryId;root.__omegaV2ResourceTab=options.tab||root.__omegaV2ResourceTab||'dashboard';
+    var tasks=[],inventoryRuntime=g.OmegaCountryInventoryRuntime||g.Omega&&(g.Omega.CountryInventoryRuntime)||null;
+    var startup=g.OmegaResourceStartupBaseline||g.Omega&&(g.Omega.ResourceStartupBaseline)||null;
+    if(inventoryRuntime&&typeof inventoryRuntime.init==='function')tasks.push(Promise.resolve().then(function(){return inventoryRuntime.init();}));
+    if(startup&&typeof startup.ensureCurrentSession==='function')tasks.push(Promise.resolve().then(function(){return startup.ensureCurrentSession();}));
+    else if(startup&&typeof startup.waitForPendingInitialization==='function')tasks.push(Promise.resolve().then(function(){return startup.waitForPendingInitialization();}));
+    if(!tasks.length){session.ready=true;return session;}
+    session.promise=Promise.all(tasks).then(function(){
+      if(!resourceScreenSessionIsCurrent(root,session))return null;
+      session.ready=true;
+      scheduleRender(root,Object.assign({},root.__omegaV2ResourceOptions||options,{countryId:countryId,tab:root.__omegaV2ResourceTab||options.tab||'dashboard'}),'Loading player country resources');
+      return true;
+    }).catch(function(error){
+      if(!resourceScreenSessionIsCurrent(root,session))return null;
+      session.ready=true;session.error=String(error&&error.message||error||'RESOURCE_RUNTIME_INITIALIZATION_FAILED');
+      scheduleRender(root,Object.assign({},root.__omegaV2ResourceOptions||options,{countryId:countryId,tab:root.__omegaV2ResourceTab||options.tab||'dashboard'}),'Refreshing player country resources');
+      return false;
+    });
+    return session;
+  }
+  function deactivateResourceScreen(root){
+    if(!root||typeof root!=='object')return false;
+    var session=root.__omegaV2ResourceScreenSession;
+    if(session){session.active=false;if(session.controller&&typeof session.controller.abort==='function'){try{session.controller.abort();}catch(_){}}}
+    (Array.isArray(root.__omegaV2ResourceEventBindings)?root.__omegaV2ResourceEventBindings.slice():[]).forEach(function(binding){
+      if(binding&&binding.target&&typeof binding.target.removeEventListener==='function')try{binding.target.removeEventListener(binding.type,binding.handler);}catch(_){}
+    });
+    root.__omegaV2ResourceEventBindings=[];root.__omegaV2ResourceBound=false;root.__omegaV2RuntimeEventsBound=false;
+    Object.keys(logisticsRoutePlanWaiters).forEach(function(country){
+      logisticsRoutePlanWaiters[country]=(logisticsRoutePlanWaiters[country]||[]).filter(function(waiter){return waiter!==root;});
+      if(!logisticsRoutePlanWaiters[country].length)delete logisticsRoutePlanWaiters[country];
+    });
+    [logisticsRoutePlanCache,logisticsRoutePlanRequests,logisticsRouteShardRequests].forEach(function(cache){
+      Object.keys(cache).forEach(function(cacheKey){delete cache[cacheKey];});
+    });
+    logisticsRouteManifestRequest=null;
+    ['__omegaV2ResourceScreenSession','__omegaV2ResourceScreenActive','__omegaV2ResourceOptions','__omegaV2ResourceModel',
+      '__omegaV2CurrentCountryKey','__omegaV2ResourceTab','__omegaV2ResourceNotice','__omegaV2MineAction',
+      '__omegaV2BuildSiteId','__omegaV2SelectedMineId'].forEach(function(name){delete root[name];});
+    if(typeof root.innerHTML==='string')root.innerHTML='';
+    return !!session;
+  }
+
   function resourceId(row) {
     return String(row && (row.identity && (row.identity.resourceId || row.identity.resourceTypeId || row.identity.resourceName) ||
       row.sourceSiteRecord && (row.sourceSiteRecord.resourceId || row.sourceSiteRecord.resourceTypeId) ||
@@ -99,10 +170,11 @@
   var logisticsRoutePlanWaiters = Object.create(null);
   var logisticsRouteManifestRequest = null;
 
-  function fetchLogisticsJson(path) {
+  function fetchLogisticsJson(path, signal) {
     if (typeof g.fetch !== 'function') return Promise.reject(new Error('FETCH_UNAVAILABLE'));
-    return g.fetch('./' + path, { cache: 'force-cache' }).then(function (response) {
-      if (!response || response.ok === false) throw new Error('LOGISTICS_DATA_REQUEST_FAILED');
+    var requestOptions={cache:'force-cache'};if(signal)requestOptions.signal=signal;
+    return g.fetch('./'+path,requestOptions).then(function(response){
+      if(!response||response.ok===false)throw new Error('LOGISTICS_DATA_REQUEST_FAILED');
       return response.json();
     });
   }
@@ -118,8 +190,9 @@
     var waiters = logisticsRoutePlanWaiters[country] || [];
     delete logisticsRoutePlanWaiters[country];
     waiters.forEach(function (root) {
-      if (!root || root.__omegaV2ResourceTab !== 'logistics' ||
-          key(root.__omegaV2CurrentCountryKey) !== country || !root.__omegaV2ResourceOptions) return;
+      var session=root&&root.__omegaV2ResourceScreenSession;
+      if(!root||!session||session.active!==true||session.countryId!==country||root.__omegaV2ResourceTab!=='logistics'||
+          key(root.__omegaV2CurrentCountryKey)!==country||!root.__omegaV2ResourceOptions)return;
       scheduleRender(root, Object.assign({}, root.__omegaV2ResourceOptions, {
         countryId:country, tab:'logistics'
       }), 'Loading mine site route plans');
@@ -127,8 +200,10 @@
   }
 
   function ensureLogisticsRoutePlans(countryValue, root) {
-    var country = key(countryValue);
-    if (!/^[A-Z]{3}$/.test(country)) return Promise.resolve({ status:'unavailable', routes:[] });
+    var country=key(countryValue),screenSession=root&&root.__omegaV2ResourceScreenSession;
+    if(!/^[A-Z]{3}$/.test(country)||!screenSession||screenSession.active!==true||screenSession.countryId!==country||activePlayerCountryKey()!==country)
+      return Promise.resolve({status:'unavailable',routes:[]});
+    if(!screenSession.ready)return Promise.resolve({status:'loading',routes:[]});
     if (Object.prototype.hasOwnProperty.call(logisticsRoutePlanCache, country)) {
       return Promise.resolve(logisticsRoutePlanCache[country]);
     }
@@ -143,7 +218,7 @@
       return Promise.resolve(logisticsRoutePlanCache[country]);
     }
     if (!logisticsRouteManifestRequest) {
-      logisticsRouteManifestRequest = fetchLogisticsJson('resource_site_logistics_routes_v1.json');
+      logisticsRouteManifestRequest = fetchLogisticsJson('resource_site_logistics_routes_v1.json', screenSession.signal);
     }
     var request = logisticsRouteManifestRequest.then(function (manifest) {
       if (!manifest || manifest.datasetId !== 'OMEGA_RESOURCE_SITE_LOGISTICS_ROUTES_V1' ||
@@ -160,7 +235,7 @@
         throw new Error('LOGISTICS_ROUTE_SHARD_INVALID');
       }
       if (!logisticsRouteShardRequests[file]) {
-        logisticsRouteShardRequests[file] = fetchLogisticsJson(file).then(function (shard) {
+        logisticsRouteShardRequests[file] = fetchLogisticsJson(file, screenSession.signal).then(function (shard) {
           if (!shard || !Array.isArray(shard.routes)) throw new Error('LOGISTICS_ROUTE_SHARD_INVALID');
           return shard.routes;
         });
@@ -177,11 +252,11 @@
       });
     }).catch(function () {
       return { status:'unavailable', routes:[] };
-    }).then(function (result) {
-      logisticsRoutePlanCache[country] = result;
-      delete logisticsRoutePlanRequests[country];
-      notifyLogisticsRoutePlanWaiters(country);
-      return result;
+    }).then(function(result){
+      if(!resourceScreenSessionIsCurrent(root,screenSession))return result;
+      logisticsRoutePlanCache[country]=result;
+      if(logisticsRoutePlanRequests[country]===request)delete logisticsRoutePlanRequests[country];
+      notifyLogisticsRoutePlanWaiters(country);return result;
     });
     logisticsRoutePlanRequests[country] = request;
     return request;
@@ -416,16 +491,33 @@
     return render(root, options);
   }
 
-  function render(root, options) {
-    options = options || {};
-    if (!root || typeof root !== 'object') return { ok:false, code:'RESOURCE_ROOT_REQUIRED' };
-    var model = buildViewModel(options);
+  function render(root,options){
+    options=options||{};
+    if(!root||typeof root!=='object')return {ok:false,code:'RESOURCE_ROOT_REQUIRED'};
+    var playerCountryId=activePlayerCountryKey();
+    if(!playerCountryId){
+      deactivateResourceScreen(root);
+      root.innerHTML='<section class="omega-v2-shell omega-v2-resource" role="status"><div class="omega-v2-empty">Select a player country before opening Resource Ministry.</div></section>';
+      return {ok:false,code:'PLAYER_COUNTRY_NOT_SELECTED'};
+    }
+    options=Object.assign({},options,{countryId:playerCountryId});
+    var screenSession=beginResourceScreenSession(root,options,playerCountryId);
+    if(!screenSession.ready){
+      root.innerHTML='<section class="omega-v2-shell omega-v2-resource omega-v2-resource-loading" role="status" aria-live="polite">'+
+        '<div class="omega-v2-navigation-loading-panel"><span class="omega-v2-navigation-loading-mark" aria-hidden="true"></span>'+
+        '<div class="omega-v2-navigation-loading-copy"><div class="omega-v2-eyebrow">RESOURCE MINISTRY</div>'+
+        '<h1 class="omega-v2-title">Loading player country resources</h1>'+
+        '<p class="omega-v2-subtitle">Preparing current stock, factory inputs and mine records for '+esc(playerCountryId)+'.</p>'+
+        '<div class="omega-v2-navigation-progress" aria-hidden="true"><span></span></div></div></div></section>';
+      return {ok:true,code:'RESOURCE_SCREEN_LOADING',pending:true,countryId:playerCountryId};
+    }
+    var model=buildViewModel(options);
     var active = options.tab || root.__omegaV2ResourceTab || 'dashboard';
     if (active === 'reserves') active = 'mines';
     if (active === 'warehouses') active = 'inventory';
     if (active === 'transport') active = 'logistics';
     var stateRoot = g.Game && g.Game.state || g.gameState || {};
-    var countryKey = String(model.countryId || options.countryId || '').trim().toUpperCase();
+    var countryKey = playerCountryId;
     function countryBucket(map) {
       if (!map || typeof map !== 'object' || !countryKey) return null;
       if (map[countryKey]) return map[countryKey];
@@ -494,21 +586,7 @@
       return numberOrNull(stateRoot.simulation && (stateRoot.simulation.turn || stateRoot.simulation.currentTurn)) ||
         numberOrNull(stateRoot.turn) || 0;
     }
-    function playerCountryKey() {
-      var values = [
-        stateRoot.simulation && stateRoot.simulation.session && stateRoot.simulation.session.playerCountryId,
-        stateRoot.simulation && stateRoot.simulation.playerCountryId,
-        stateRoot.playerCountryId, g.Game && g.Game.playerCountryId
-      ];
-      try {
-        var simulation = g.Omega && g.Omega.Simulation;
-        if (simulation && typeof simulation.getPlayerCountryId === 'function') values.unshift(simulation.getPlayerCountryId());
-      } catch (_) {}
-      for (var i = 0; i < values.length; i += 1) {
-        if (values[i] != null && String(values[i]).trim()) return selectedCountryKey(values[i]);
-      }
-      return '';
-    }
+    function playerCountryKey(){return activePlayerCountryKey();}
     var canOperate = !!countryKey && countryKey === playerCountryKey();
     var gameResource = countryBucket(stateRoot.resource) || countryBucket(stateRoot.resources) || {};
     var gameTrade = countryBucket(stateRoot.trade) || {};
@@ -1960,15 +2038,15 @@
     root.innerHTML = '<section class="omega-v2-shell omega-v2-resource omega-v2-resource-premium" data-resource-ui-version="command-v2">' +
       '<header class="omega-v2-heading omega-v2-resource-heading"><div class="omega-v2-resource-heading-copy"><img class="omega-v2-resource-ministry-mark" src="assets/ministry-logos/energy_mining.svg" alt="" aria-hidden="true" loading="lazy" decoding="async"><div>' +
       '<div class="omega-v2-eyebrow">RESOURCE COMMAND</div><h1 class="omega-v2-title">Mine Production Ministry</h1><p class="omega-v2-subtitle">' + esc(countryLabel) +
-      ' · Resource Extraction · National Wealth</p></div></div><div class="omega-v2-resource-heading-actions">' + countrySelectMarkup(countryKey) +
+      ' · Resource Extraction · National Wealth</p></div></div><div class="omega-v2-resource-heading-actions">' + '<span class="omega-v2-resource-country-select"><span>Player country</span><strong>' + esc(countryLabel) + ' (' + esc(countryKey) + ')</strong>' +
       '<span class="omega-v2-status" data-state="' + (model.ready ? 'operational' : 'attention') + '">' +
       fmt(model.sites.filter(eligible).length) + ' mines</span></div></header>' + notice + tabMarkup + '<div data-omega-v2-resource-content>' + contentMarkup + '</div></section>';
     if (!root.__omegaV2ResourceBound && typeof root.addEventListener === 'function') {
-      root.addEventListener('input', function (event) {
+      bindResourceEvent(root, root, 'input', function (event) {
         if (!event || !event.target) return;
         if (event.target.matches && event.target.matches('[data-omega-v2-site-search]')) applySiteFilter(root);
       });
-      root.addEventListener('change', function (event) {
+      bindResourceEvent(root, root, 'change', function (event) {
         if (!event || !event.target) return;
         if (event.target.matches && event.target.matches('[data-omega-v2-resource-filter]')) {
           applySiteFilter(root);
@@ -1983,7 +2061,7 @@
           scheduleRender(root, Object.assign({}, prior, { countryId:viewedCountry, tab:root.__omegaV2ResourceTab || 'dashboard' }));
         }
       });
-      root.addEventListener('submit', function (event) {
+      bindResourceEvent(root, root, 'submit', function (event) {
         var form = event && event.target;
         if (!form || typeof form.matches !== 'function' ||
             !form.matches('[data-omega-v2-logistics-fleet-form]') || !root.contains(form)) return;
@@ -2038,7 +2116,7 @@
           : 'Saved ' + saved + ' transport count(s). Route estimates now use the saved counts.';
         scheduleRender(root, Object.assign({}, options, { tab:'logistics' }));
       });
-      root.addEventListener('click', function (event) {
+      bindResourceEvent(root, root, 'click', function (event) {
         var target = event && event.target;
         if (!target || typeof target.closest !== 'function') return;
         var coverageApply = target.closest('[data-omega-v2-coverage-apply]');
@@ -2151,7 +2229,7 @@
           root.__omegaV2ResourceOptions.onLocateSite(id);
         }
       });
-      root.addEventListener('input', function (event) {
+      bindResourceEvent(root, root, 'input', function (event) {
         var target = event && event.target;
         if (!target || typeof target.matches !== 'function') return;
         if (!target.matches('[data-omega-v2-build-count]') && !target.matches('[data-omega-v2-build-workers]')) return;
@@ -2168,7 +2246,7 @@
         var preview = root.querySelector('[data-omega-v2-build-preview]');
         if (preview && site) preview.innerHTML = mineBuildQuoteMarkup(site,country,count,workers);
       });
-      root.addEventListener('click', function (event) {
+      bindResourceEvent(root, root, 'click', function (event) {
         var target = event && event.target;
         if (!target || typeof target.closest !== 'function') return;
         var options = root.__omegaV2ResourceOptions || {};
@@ -2235,19 +2313,27 @@
         }
         scheduleRender(root,Object.assign({},options,{tab:'mines'}));
       });
-      if (!root.__omegaV2RuntimeEventsBound && typeof g.addEventListener === 'function') {
+      if(!root.__omegaV2RuntimeEventsBound&&typeof g.addEventListener==='function'){
         ['OMEGA_RESOURCE_MINE_PROJECT_STARTED','OMEGA_RESOURCE_MINE_PROJECT_PROGRESS','OMEGA_RESOURCE_MINE_COMMISSIONED',
           'OMEGA_RESOURCE_FACTORY_INPUT_STOCK_TARGET_UPDATED','OMEGA_RESOURCE_NATIONAL_DEMAND_UPDATED',
           'OMEGA_RESOURCE_ECONOMY_UPDATED','OMEGA_RESOURCE_MINE_HAUL_DELIVERED',
           'OMEGA_RESOURCE_MINE_WAREHOUSE_RECEIPT_POSTED','OMEGA_FACTORY_INPUT_SHIPMENT_DELIVERED',
-          'OMEGA_SIMULATION_TURN_COMMITTED'].forEach(function (name) {
-          g.addEventListener(name,function(){ if(root.__omegaV2ResourceOptions) scheduleRender(root,Object.assign({},root.__omegaV2ResourceOptions,{tab:root.__omegaV2ResourceTab||'mines'})); });
-        });
-        root.__omegaV2RuntimeEventsBound = true;
+          'OMEGA_RESOURCE_STARTUP_BASELINE_COMPLETED','OMEGA_RESOURCE_STARTUP_BASELINE_FAILED','OMEGA_SIMULATION_TURN_COMMITTED']
+          .forEach(function(name){
+            bindResourceEvent(root,g,name,function(event){
+              var session=root.__omegaV2ResourceScreenSession;
+              if(!session||session.active!==true||!root.__omegaV2ResourceOptions)return;
+              var detail=event&&event.detail||{},eventCountry=detail.countryId||detail.playerCountryId||detail.ownerCountryId||'';
+              if(eventCountry&&selectedCountryKey(eventCountry)!==session.countryId)return;
+              scheduleRender(root,Object.assign({},root.__omegaV2ResourceOptions,{tab:root.__omegaV2ResourceTab||'mines'}));
+            });
+          });
+        root.__omegaV2RuntimeEventsBound=true;
       }
       root.__omegaV2ResourceBound = true;
     }
     root.__omegaV2ResourceOptions = Object.assign({}, options, { countryId:countryKey });
+    root.__omegaV2ResourceScreenActive = true;
     root.__omegaV2ResourceModel = model;
     root.__omegaV2CurrentCountryKey = countryKey;
     root.__omegaV2ResourceTab = active;
@@ -2273,11 +2359,7 @@
   }
 
   g.OmegaUIV2ResourceMinistry = Object.freeze({
-    version: '1.1.0',
-    resourceIconIds: RESOURCE_ICON_IDS.slice(),
-    resourceIconPath: resourceIconPath,
-    mineArchetype: mineArchetype,
-    buildViewModel: buildViewModel,
-    render: render
+    version:'1.2.0',resourceIconIds:RESOURCE_ICON_IDS.slice(),resourceIconPath:resourceIconPath,
+    mineArchetype:mineArchetype,buildViewModel:buildViewModel,render:render,deactivate:deactivateResourceScreen
   });
 })(typeof window !== 'undefined' ? window : globalThis);
