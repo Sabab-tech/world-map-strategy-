@@ -87,17 +87,16 @@ test('same-country requests coalesce and selected records can be released',async
  assert.equal(runtime.diagnostics().recordCount,1);
  assert.equal(runtime.diagnostics().cacheLimit,6);
 });
-test('country traits are derived from data and change opponent action scoring',async()=>{
+test('missing country behaviour evidence stays unobserved instead of fabricating strategic traits',async()=>{
  globalThis.OmegaCanonicalIdentityRegistry={resolveCountry:v=>({id:String(v||'').toUpperCase(),raw:{}}),list:()=>[{id:'AAA'},{id:'BBB'}]};
  await import('../omega_opponent_adaptive_strategy_system.js');
  const strategy=globalThis.OmegaOpponentAdaptiveStrategy,a=runtime.getBehaviorProfile('AAA'),b=runtime.getBehaviorProfile('BBB');
- assert.equal(a.availability,'DERIVED');assert.equal(b.availability,'DERIVED');
- assert.ok(a.dimensions.innovationPreference.value>b.dimensions.innovationPreference.value);
- assert.ok(a.dimensions.fiscalDiscipline.value>b.dimensions.fiscalDiscipline.value);
- assert.ok(a.dimensions.tradeDependence.value>b.dimensions.tradeDependence.value);
- assert.equal(strategy.profile('AAA').dimensions.innovationPreference.availability,'DERIVED_HEURISTIC');
+ assert.equal(a.availability,'UNOBSERVED');assert.equal(b.availability,'UNOBSERVED');
+ assert.equal(a.dimensions.innovationPreference.value,null);
+ assert.equal(b.dimensions.fiscalDiscipline.value,null);
  const scoreA=strategy.scoreAction('AAA','EFFICIENCY'),scoreB=strategy.scoreAction('BBB','EFFICIENCY');
- assert.equal(scoreA.known,true);assert.equal(scoreB.known,true);assert.ok(scoreA.score>scoreB.score);
+ assert.equal(scoreA.known,false,'unknown evidence must not produce a fabricated action score');
+ assert.equal(scoreB.known,false,'unknown evidence must not produce a fabricated action score');
 });
 
 test('releaseAll clears every selected country record and registry schema',async()=>{
