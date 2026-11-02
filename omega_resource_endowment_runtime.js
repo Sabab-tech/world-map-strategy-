@@ -94,15 +94,38 @@
   let losslessReferenceMap=null,losslessReferencePromise=null,masterResearchMap=null,masterResearchPromise=null;
   const LEGACY_GAMEPLAY_EXPANSION_FILES=['resource_site_legacy_gameplay_expansion_part_1_v1.json','resource_site_legacy_gameplay_expansion_part_2_v1.json','resource_site_legacy_gameplay_expansion_part_3_v1.json','resource_site_legacy_gameplay_expansion_part_4_v1.json','resource_site_legacy_gameplay_expansion_part_5_v1.json','resource_site_legacy_gameplay_expansion_part_6_v1.json'];
   const LEGACY_CANONICAL_ALIAS_IDS={SITE_AUS_olympic_dam_uranium_copper:'SITE_AUS_olympic_dam_mine',SITE_BRA_carajas_iron_ore_mine_legacy2:'SITE_BRA_carajas_iron_ore_mine',SITE_CHL_escondida_copper_mine_legacy2:'SITE_CHL_escondida_copper_mine',SITE_IDN_grasberg_copper_gold_mine:'SITE_IDN_grasberg_mine',SITE_COD_tenke_fungurume_copper_cobalt_complex:'SITE_COD_tenke_fungurume_mine',SITE_COD_kibali_gold_mine_complex:'SITE_COD_kibali_gold_mine',SITE_CAN_voiseys_bay_nickel_mine:'SITE_CAN_voisey_s_bay_nickel_mine',SITE_GBR_boulby_mine:'SITE_GBR_boulby_potash_mine',SITE_SWE_kiruna_iron_ore_mine:'SITE_SWE_kiruna_iron_mine',SITE_PRK_musan_iron_ore_mine:'SITE_PRK_musan_iron_mine'};
-  let legacyGameplayExpansionRows=null,legacyGameplayExpansionPromise=null;
+  let legacyGameplayExpansionRows=null,legacyGameplayExpansionPromise=null,legacyGameplayExpansionLoadedParts=0;
+  async function mapWithConcurrency(items,limit,worker){
+    const results=new Array(items.length);
+    let cursor=0;
+    const count=Math.max(1,Math.min(items.length,Math.floor(Number(limit)||1)));
+    const runners=Array.from({length:count},async()=>{
+      while(cursor<items.length){
+        const index=cursor++;
+        results[index]=await worker(items[index],index);
+      }
+    });
+    await Promise.all(runners);
+    return results;
+  }
   async function loadLegacyGameplayExpansionRows(){
-    if(Array.isArray(legacyGameplayExpansionRows))return{status:'READY',count:legacyGameplayExpansionRows.length,reused:true,rows:legacyGameplayExpansionRows};
+    if(Array.isArray(legacyGameplayExpansionRows))return{status:legacyGameplayExpansionLoadedParts===6?'READY':'PARTIAL',count:legacyGameplayExpansionRows.length,reused:true,rows:legacyGameplayExpansionRows,loadedParts:legacyGameplayExpansionLoadedParts};
     if(legacyGameplayExpansionPromise)return legacyGameplayExpansionPromise;
     legacyGameplayExpansionPromise=(async()=>{
-      const packs=await Promise.all(LEGACY_GAMEPLAY_EXPANSION_FILES.map(async file=>{try{const response=await fetch(file,{cache:'no-store'});if(!response?.ok)return null;const data=await response.json();return data?.datasetId?.startsWith('OMEGA_RESOURCE_SITE_LEGACY_GAMEPLAY_EXPANSION_PART_')&&Array.isArray(data.records)?data:null;}catch(_){return null;}}));
-      const unique=new Map();for(const pack of packs.filter(Boolean).sort((a,b)=>Number(a.part)-Number(b.part)))for(const row of pack.records)if(row?.siteId&&!unique.has(String(row.siteId)))unique.set(String(row.siteId),row);
+      const packs=await mapWithConcurrency(LEGACY_GAMEPLAY_EXPANSION_FILES,2,async file=>{
+        try{
+          const response=await fetch(file,{cache:'no-store'});
+          if(!response?.ok)return null;
+          const data=await response.json();
+          return data?.datasetId?.startsWith('OMEGA_RESOURCE_SITE_LEGACY_GAMEPLAY_EXPANSION_PART_')&&Array.isArray(data.records)?data:null;
+        }catch(_){return null;}
+      });
+      legacyGameplayExpansionLoadedParts=packs.filter(Boolean).length;
+      const unique=new Map();
+      for(const pack of packs.filter(Boolean).sort((a,b)=>Number(a.part)-Number(b.part)))
+        for(const row of pack.records)if(row?.siteId&&!unique.has(String(row.siteId)))unique.set(String(row.siteId),row);
       legacyGameplayExpansionRows=[...unique.values()];
-      return{status:legacyGameplayExpansionRows.length===115?'READY':'PARTIAL',count:legacyGameplayExpansionRows.length,rows:legacyGameplayExpansionRows,loadedParts:packs.filter(Boolean).length};
+      return{status:legacyGameplayExpansionRows.length===115?'READY':'PARTIAL',count:legacyGameplayExpansionRows.length,rows:legacyGameplayExpansionRows,loadedParts:legacyGameplayExpansionLoadedParts};
     })().finally(()=>{legacyGameplayExpansionPromise=null;});
     return legacyGameplayExpansionPromise;
   }
@@ -527,7 +550,7 @@
         g.Omega=g.Omega||{};
         g.Omega.ResourceLosslessReferenceData=g.OmegaResourceLosslessReferenceData;
         return{status:'READY',count:Object.keys(map).length};
-      }catch(e){losslessReferenceMap={};return{status:'FAILED',count:0,reason:String(e?.message||e)};}
+      }catch(e){losslessReferenceMap=null;return{status:'FAILED',count:0,reason:String(e?.message||e)};}
       finally{losslessReferencePromise=null;}
     })();
     return losslessReferencePromise;
@@ -584,7 +607,7 @@
         g.Omega=g.Omega||{};
         g.Omega.ResourceSiteMasterResearchData=data;
         return{status:'READY',count:rows.length};
-      }catch(e){masterResearchMap={};return{status:'FAILED',count:0,reason:String(e?.message||e)}}
+      }catch(e){masterResearchMap=null;return{status:'FAILED',count:0,reason:String(e?.message||e)}}
       finally{masterResearchPromise=null;}
     })();
     return masterResearchPromise;
@@ -601,7 +624,7 @@
         const rows=Array.isArray(data?.records)?data.records:[],map={};for(const row of rows)if(row?.siteId)map[String(row.siteId)]=clone(row);
         researchEvidenceMap=map;g.OmegaResourceSiteResearchEvidenceData=data;g.Omega=g.Omega||{};g.Omega.ResourceSiteResearchEvidenceData=data;
         return{status:'READY',count:rows.length};
-      }catch(e){researchEvidenceMap={};return{status:'FAILED',count:0,reason:String(e?.message||e)}}
+      }catch(e){researchEvidenceMap=null;return{status:'FAILED',count:0,reason:String(e?.message||e)}}
       finally{researchEvidencePromise=null;}
     })();
     return researchEvidencePromise;
@@ -1988,8 +2011,9 @@ function batchFromExtraction(x,record){
     const selectedCountryId=playerSimulationCountryId();
     if(!selectedCountryId)return{status:'BLOCKED',reason:'PLAYER_COUNTRY_NOT_SELECTED',countryId:c};
     if(c!==selectedCountryId)return{status:'BLOCKED',reason:'PLAYER_COUNTRY_SCOPE_VIOLATION',countryId:c,playerCountryId:selectedCountryId};
-    const initialized=await initialize();
+    const initialized=await initialize({coreOnly:true});
     if(initialized?.status!=='READY')return{status:'BLOCKED',reason:'RESOURCE_ENDOWMENT_NOT_READY',detail:initialized,countryId:c};
+    void scheduleResourceSupplementalData();
     let bucket=state()?.resource?.[c]||{};
     const canReuseHydration=options.skipHydrationIfReady===true&&Array.isArray(bucket.mineSiteReferences)&&!!bucket.mineSiteControllers;
     if(!canReuseHydration){
@@ -2109,17 +2133,110 @@ function batchFromExtraction(x,record){
     try{m.registerAction?.('OMEGA_RESOURCE_EXTRACT_TICK',{actionId:'OMEGA_RESOURCE_EXTRACT_TICK',stateOwnerMinistry:'resource',authority:'OMEGA_RESOURCE_ENDOWMENT_RUNTIME'});}catch(_){}
     return handlersRegistered;
   }
-  async function initialize(){
-    if(g.__omegaResourceEndowmentReady)return{status:'READY',countries:countries().length,reused:true};
+  function scheduleResourceTask(callback,delay=0){
+    if(typeof g.setTimeout==='function')return g.setTimeout(callback,delay);
+    return Promise.resolve().then(callback);
+  }
+  function yieldResourceInitializationToUi(){
+    return new Promise(resolve=>{
+      if(typeof g.requestAnimationFrame==='function'){
+        g.requestAnimationFrame(()=>scheduleResourceTask(resolve,0));
+      }else{
+        scheduleResourceTask(resolve,16);
+      }
+    });
+  }
+  let resourceInitializationSchedulePromise=null;
+  function scheduleResourceInitialization(){
+    if(g.__omegaResourceEndowmentReady)return Promise.resolve({status:'READY',countries:countries().length,reused:true});
     if(g.__omegaResourceEndowmentPromise)return g.__omegaResourceEndowmentPromise;
+    if(resourceInitializationSchedulePromise)return resourceInitializationSchedulePromise;
+    resourceInitializationSchedulePromise=new Promise(resolve=>{
+      const start=()=>scheduleResourceTask(()=>resolve(initialize({coreOnly:true})),0);
+      if(typeof g.requestIdleCallback==='function')g.requestIdleCallback(start,{timeout:1800});
+      else scheduleResourceTask(start,650);
+    }).finally(()=>{resourceInitializationSchedulePromise=null;});
+    return resourceInitializationSchedulePromise;
+  }
+  let supplementalResourceDataPromise=null,supplementalResourceDataReport=null;
+  async function loadSupplementalResourceData(){
+    if(supplementalResourceDataReport)return supplementalResourceDataReport;
+    if(supplementalResourceDataPromise)return supplementalResourceDataPromise;
+    supplementalResourceDataPromise=(async()=>{
+      const losslessReferenceData=await loadLosslessResourceReferenceData();
+      await yieldResourceInitializationToUi();
+      const masterResearchData=await loadMasterResourceResearchData();
+      await yieldResourceInitializationToUi();
+      const researchData=await loadResearchEvidenceData();
+      const dependencyLightContext=typeof g.fetch!=='function'&&typeof g.OmegaResourceSiteReserveSimulationData==='undefined'&&typeof g.Omega?.ResourceSiteReserveSimulationData==='undefined';
+      const failures=[];
+      if((losslessReferenceData.status!=='READY'||losslessReferenceData.count!==199)&&!dependencyLightContext)
+        failures.push({dataset:'LOSSLESS_RESOURCE_REFERENCE',detail:losslessReferenceData});
+      if((masterResearchData.status!=='READY'||masterResearchData.count!==250)&&!dependencyLightContext)
+        failures.push({dataset:'MASTER_RESOURCE_RESEARCH',detail:masterResearchData});
+      const report={
+        status:failures.length?'DEGRADED':'READY',
+        losslessReferenceData,masterResearchData,researchData,
+        failures,loadedAtTurn:turn(),
+        mode:'IDLE_SUPPLEMENTAL_ENRICHMENT'
+      };
+      // A failed optional reference load remains retryable instead of becoming an empty READY cache.
+      supplementalResourceDataReport=report.status==='READY'?report:null;
+      try{profileCache.clear();mineSiteReferenceCache.clear();siteExecutionRowsCache.clear();siteExecutionRowsCacheTurn=-1;}catch(_){}
+      g.OmegaResourceSupplementalDataReport=clone(report);
+      g.Omega=g.Omega||{};
+      g.Omega.ResourceSupplementalDataReport=g.OmegaResourceSupplementalDataReport;
+      try{
+        if(typeof g.dispatchEvent==='function'&&typeof g.CustomEvent==='function')
+          g.dispatchEvent(new g.CustomEvent('OMEGA_RESOURCE_SUPPLEMENTAL_DATA_READY',{detail:clone(report)}));
+      }catch(_){}
+      return report;
+    })().finally(()=>{supplementalResourceDataPromise=null;});
+    return supplementalResourceDataPromise;
+  }
+  let supplementalResourceSchedulePromise=null;
+  function scheduleResourceSupplementalData(){
+    if(supplementalResourceDataReport)return Promise.resolve(supplementalResourceDataReport);
+    if(supplementalResourceDataPromise)return supplementalResourceDataPromise;
+    if(supplementalResourceSchedulePromise)return supplementalResourceSchedulePromise;
+    supplementalResourceSchedulePromise=new Promise(resolve=>{
+      const start=()=>scheduleResourceTask(()=>resolve(loadSupplementalResourceData()),0);
+      if(typeof g.requestIdleCallback==='function')g.requestIdleCallback(start,{timeout:5000});
+      else scheduleResourceTask(start,2500);
+    }).finally(()=>{supplementalResourceSchedulePromise=null;});
+    return supplementalResourceSchedulePromise;
+  }
+  async function initialize(options={}){
+    const coreOnly=options?.coreOnly===true;
+    if(g.__omegaResourceEndowmentReady){
+      if(coreOnly)return{status:'READY',countries:countries().length,reused:true,hydrationMode:'LAZY_ON_EXTRACTION'};
+      const supplemental=await loadSupplementalResourceData();
+      if(supplemental.status==='DEGRADED'&&supplemental.failures.length)
+        return{status:'FAILED',reason:'RESOURCE_SUPPLEMENTAL_DATASETS_INCOMPLETE',detail:supplemental};
+      return{status:'READY',countries:countries().length,reused:true,hydrationMode:'LAZY_ON_EXTRACTION',supplementalData:supplemental};
+    }
+    if(g.__omegaResourceEndowmentPromise){
+      const existing=await g.__omegaResourceEndowmentPromise;
+      if(coreOnly||existing?.status!=='READY')return existing;
+      const supplemental=await loadSupplementalResourceData();
+      if(supplemental.status==='DEGRADED'&&supplemental.failures.length)
+        return{status:'FAILED',reason:'RESOURCE_SUPPLEMENTAL_DATASETS_INCOMPLETE',detail:supplemental};
+      return Object.assign({},existing,{supplementalData:supplemental});
+    }
     g.__omegaResourceEndowmentInitializing=true;
     g.__omegaResourceEndowmentPromise=(async function(){
       try{
         for(let i=0;i<400&&!engine()?.isReady;i++)await new Promise(r=>setTimeout(r,0));
-        const [reserveData,researchData,canonicalCatalogData,losslessReferenceData,masterResearchData]=await Promise.all([loadSimulationReserveData(),loadResearchEvidenceData(),loadCanonicalSiteCatalogData(),loadLosslessResourceReferenceData(),loadMasterResourceResearchData()]);
+        // Reserve quantities and canonical site identity are the only data needed by the playable extraction path.
+        const reserveData=await loadSimulationReserveData();
+        await yieldResourceInitializationToUi();
+        const canonicalCatalogData=await loadCanonicalSiteCatalogData();
+        await yieldResourceInitializationToUi();
         const dependencyLightContext=typeof g.fetch!=='function'&&typeof g.OmegaResourceSiteReserveSimulationData==='undefined'&&typeof g.Omega?.ResourceSiteReserveSimulationData==='undefined';
-        if((reserveData.status!=='READY'||Number(reserveData.baseSiteCount??reserveData.count)!==250)&&!dependencyLightContext)return{status:'FAILED',reason:'PER_SITE_RESERVE_DATASET_INCOMPLETE',detail:reserveData};
-        if(canonicalCatalogData.status!=='READY'&&!dependencyLightContext)return{status:'FAILED',reason:'CANONICAL_SITE_CATALOG_LOAD_FAILED',detail:canonicalCatalogData};
+        if((reserveData.status!=='READY'||Number(reserveData.baseSiteCount??reserveData.count)!==250)&&!dependencyLightContext)
+          return{status:'FAILED',reason:'PER_SITE_RESERVE_DATASET_INCOMPLETE',detail:reserveData};
+        if(canonicalCatalogData.status!=='READY'&&!dependencyLightContext)
+          return{status:'FAILED',reason:'CANONICAL_SITE_CATALOG_LOAD_FAILED',detail:canonicalCatalogData};
         const mineplayCoverage=canonicalCatalogData.mineplayBatchCoverage||{};
         const mineplaySupplementReady=canonicalCatalogData.status==='READY'&&
           mineplayCoverage.base?.status==='READY'&&Number(mineplayCoverage.base?.recordCount)===44&&
@@ -2132,12 +2249,13 @@ function batchFromExtraction(x,record){
           detail:{coverage:mineplayCoverage,sourceRecordCount:canonicalCatalogData.mineplaySourceRecordCount,
             uniqueRecordCount:canonicalCatalogData.mineplayUniqueRecordCount}
         };
-        const canonicalCatalogCountReady=canonicalCatalogData.status==='READY'&&(canonicalCatalogData.count===250||(canonicalCatalogData.count===315&&canonicalCatalogData.legacyCanonicalCandidateCount===65&&canonicalCatalogData.legacyLoadedParts===6&&((canonicalCatalogData.legacyExpansionSiteCount===55&&canonicalCatalogData.legacyCandidateCount===65)||(canonicalCatalogData.legacyCandidateCount===115&&canonicalCatalogData.legacyExpansionSiteCount+(Number(canonicalCatalogData.legacyAliasCount)||0)===115))));
-        if(!canonicalCatalogCountReady&&!dependencyLightContext)return{status:'FAILED',reason:'CANONICAL_SITE_CATALOG_INCOMPLETE',detail:canonicalCatalogData};
-        if((losslessReferenceData.status!=='READY'||losslessReferenceData.count!==199)&&!dependencyLightContext)return{status:'FAILED',reason:'LOSSLESS_RESOURCE_REFERENCE_INCOMPLETE',detail:losslessReferenceData};
-        if((masterResearchData.status!=='READY'||masterResearchData.count!==250)&&!dependencyLightContext)return{status:'FAILED',reason:'RESOURCE_SITE_MASTER_RESEARCH_INCOMPLETE',detail:masterResearchData};
+        const canonicalCatalogCountReady=canonicalCatalogData.status==='READY'&&(canonicalCatalogData.count===250||
+          (canonicalCatalogData.count===315&&canonicalCatalogData.legacyCanonicalCandidateCount===65&&canonicalCatalogData.legacyLoadedParts===6&&
+            ((canonicalCatalogData.legacyExpansionSiteCount===55&&canonicalCatalogData.legacyCandidateCount===65)||
+             (canonicalCatalogData.legacyCandidateCount===115&&canonicalCatalogData.legacyExpansionSiteCount+(Number(canonicalCatalogData.legacyAliasCount)||0)===115))));
+        if(!canonicalCatalogCountReady&&!dependencyLightContext)
+          return{status:'FAILED',reason:'CANONICAL_SITE_CATALOG_INCOMPLETE',detail:canonicalCatalogData};
         if(!engine()?.isReady)return{status:'FAILED',reason:'RESOURCE_MINISTRY_ENGINE_NOT_READY'};
-        // Build the immutable country index once before any per-country extraction work.
         countryListCache=countries();
         const compiled=compile();
         if(compiled.status!=='READY')return compiled;
@@ -2147,7 +2265,14 @@ function batchFromExtraction(x,record){
         if(!stateRoot.resource)stateRoot.resource={};
         for(const countryId of countryList)if(!stateRoot.resource[countryId])stateRoot.resource[countryId]={};
         g.__omegaResourceEndowmentReady=true;
-        return{status:'READY',countries:countryList.length,reused:false,hydrationMode:'LAZY_ON_EXTRACTION'};
+        let supplemental=null;
+        if(!coreOnly){
+          supplemental=await loadSupplementalResourceData();
+          if(supplemental.status==='DEGRADED'&&supplemental.failures.length)
+            return{status:'FAILED',reason:'RESOURCE_SUPPLEMENTAL_DATASETS_INCOMPLETE',detail:supplemental};
+        }
+        return{status:'READY',countries:countryList.length,reused:false,hydrationMode:'LAZY_ON_EXTRACTION',
+          supplementalData:supplemental||supplementalResourceDataReport};
       }catch(e){
         return{status:'FAILED',reason:String(e?.message||e)};
       }finally{
@@ -2224,7 +2349,8 @@ function batchFromExtraction(x,record){
     if(g.__omegaResourceExtractionTurn===t)return Promise.resolve({status:'ALREADY_EXTRACTED',turn:t});
     let shared=null;
     const workPromise=(async()=>{
-      const initialized=await initialize();
+      const initialized=await initialize({coreOnly:true});
+      if(initialized?.status==='READY')void scheduleResourceSupplementalData();
       if(!g.__OmegaResourceReserveRegistry||initialized?.status==='FAILED'||initialized?.status==='WAITING_DEPENDENCIES')
         return initialized||{status:'WAITING_DEPENDENCIES'};
       const strategicPolicy=g.Omega?.ResourceStrategicPolicyRuntime||g.OmegaResourceStrategicPolicyRuntime;
@@ -2291,7 +2417,8 @@ function batchFromExtraction(x,record){
     return shared;
   }
   function onReady(){
-    void initialize().then(function(initialized){
+    void scheduleResourceInitialization().then(function(initialized){
+      if(initialized?.status==='READY')void scheduleResourceSupplementalData();
       const binding=g.Omega?.IndividualResourceSiteBinding||g.OmegaIndividualResourceSiteBinding;
       const last=g.__omegaResourceEndowmentLastBootstrap;
       const waitingCountrySelected=last?.status==='WAITING_FOR_PLAYER_COUNTRY'&&!!playerSimulationCountryId();
@@ -2810,7 +2937,8 @@ function batchFromExtraction(x,record){
       reason:initialized?.reason||'RESOURCE_RUNTIME_NOT_READY',detail:clone(initialized||null)
     });
     const work=(async function(){
-      const initialized=await initialize();
+      const initialized=await initialize({coreOnly:true});
+      if(initialized?.status==='READY')void scheduleResourceSupplementalData();
       if(initialized?.status!=='READY'){
         const snapshot=failureSnapshot(initialized);
         g.__omegaResourceEndowmentLastBootstrap=snapshot;
@@ -2998,7 +3126,7 @@ function batchFromExtraction(x,record){
   }
   function init(){
     install();
-    if(engine()?.isReady)void initialize();
+    if(engine()?.isReady)void scheduleResourceInitialization();
     g.addEventListener?.('OMEGA_READY',onReady);
     g.addEventListener?.('RESOURCE_STATE_UPDATED',onReady);
     g.addEventListener?.('OMEGA_GAME_SESSION_STARTED',onReady);
