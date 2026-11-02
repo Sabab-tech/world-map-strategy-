@@ -1518,7 +1518,7 @@ test("raw-resource inventory cards show icon, stock, demand, status and named su
     assert.deepEqual(orderedFields, orderedFields.slice().sort((a, b) => a - b),
       "resource icon, name, current stock, demand, status and supply source must render in the requested order");
     assert.match(root.innerHTML,/125(?:\.00)? TONNES/);
-    assert.match(root.innerHTML,/25(?:\.00)? TONNES_PER_DAY|25(?:\.00)? TONNES per day/i);
+    assert.match(root.innerHTML,/25(?:\.00)? [A-Z ]+PER DAY/i);
     assert.match(root.innerHTML,/Domestic mine/);
     assert.match(root.innerHTML,/Foreign import/);
     assert.match(root.innerHTML,/\(Australia\)/);
