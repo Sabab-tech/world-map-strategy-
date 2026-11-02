@@ -99,3 +99,13 @@ test('country traits are derived from data and change opponent action scoring',a
  const scoreA=strategy.scoreAction('AAA','EFFICIENCY'),scoreB=strategy.scoreAction('BBB','EFFICIENCY');
  assert.equal(scoreA.known,true);assert.equal(scoreB.known,true);assert.ok(scoreA.score>scoreB.score);
 });
+
+test('releaseAll clears every selected country record and registry schema',async()=>{
+ const released=runtime.releaseAll();
+ assert.ok(released>=1,'full invalidation should report the records and pending requests it cleared');
+ assert.equal(runtime.diagnostics().recordCount,0);
+ assert.equal(runtime.diagnostics().ready,false);
+ assert.equal(runtime.getCountryRecord('AAA'),null);
+ assert.equal(await runtime.init('AAA'),true,'the runtime should be able to rebuild from source after invalidation');
+ assert.equal(runtime.getCountryRecord('AAA').identity.name,'Alpha');
+});
