@@ -1068,7 +1068,8 @@ if(g.navigator?.serviceWorker?.addEventListener){
     let changedUrl;
     try{changedUrl=new URL(String(message.url||''),g.location?.href||'http://omega.invalid/');}catch(_){return;}
     const entry=Object.entries(DATASETS).find(([,dataset])=>{
-      try{return new URL(dataset[0],g.location?.href||'http://omega.invalid/').pathname===changedUrl.pathname;}catch(_){return false;}
+      const filename=String(dataset[0]||'').split('/').pop();
+      return !!filename&&changedUrl.pathname.endsWith('/'+filename);
     });
     if(!entry)return;
     const key=entry[0],released=RT.gw.release(key);
