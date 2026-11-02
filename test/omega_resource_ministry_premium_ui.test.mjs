@@ -202,6 +202,8 @@ test("inventory rows show current stock coverage, shortage/surplus and verified 
     assert.match(root.innerHTML, /Surplus/, "stock above its runtime target must be shown as surplus");
     assert.match(root.innerHTML, /Shortage/, "runtime shortage status must be retained");
     assert.match(root.innerHTML, /Domestic mine/, "local mine batch lineage must be visible");
+    assert.doesNotMatch(root.innerHTML, /Batch ledger exceeds current stock by: 70/,
+      "mine-side extraction must not be counted as current stock before warehouse receipt");
     assert.match(root.innerHTML, /Foreign import/, "foreign inventory origin must be identified");
     assert.match(root.innerHTML, /AUS/, "foreign inventory origin must show its source country");
     assert.match(root.innerHTML, /Confirmed foreign inbound/, "approved inbound import requests must be separated from on-hand stock");
