@@ -37,7 +37,7 @@
     var n = finite(value);
     if (n === null) return value == null || value === '' ? 'Not recorded' : esc(value);
     if (unit === 'USD' || /USD|dollar/i.test(String(unit || ''))) {
-      return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 1, notation: Math.abs(n) >= 1e9 ? 'compact' : 'standard' }).format(n);
+      return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 1, notation: Math.abs(n) >= 1e9 ? 'compact' : 'standard' }).format(n);
     }
     return new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 }).format(n) + (unit ? ' ' + esc(unit) : '');
   }
