@@ -913,6 +913,7 @@ test("Resource Ministry loads only the selected player's current inventory and u
   const api = globalThis.OmegaUIV2ResourceMinistry;
   const prior = {
     Game:globalThis.Game,
+    Omega:globalThis.Omega,
     OmegaCountryInventoryRuntime:globalThis.OmegaCountryInventoryRuntime,
     OmegaResourceStartupBaseline:globalThis.OmegaResourceStartupBaseline,
     OmegaResourceSiteCanonicalCatalogData:globalThis.OmegaResourceSiteCanonicalCatalogData
@@ -931,15 +932,22 @@ test("Resource Ministry loads only the selected player's current inventory and u
     querySelectorAll(){ return []; },
     contains(){ return true; }
   };
+  // A stale compatibility snapshot points to USA; the simulation world is
+  // authoritative and has BGD selected. The ministry must show only BGD.
   globalThis.Game = { state:{
-    simulation:{ turn:7, session:{ sessionId:"RESOURCE-LAZY-1", playerCountryId:"BGD", status:"RUNNING" } },
+    simulation:{ turn:2, session:{ sessionId:"STALE-COMPATIBILITY-SNAPSHOT", playerCountryId:"USA", status:"RUNNING" } },
     resource:{
-      BGD:{ inventory:{ coal:1234 }, inventoryUnits:{ coal:"TONNES" }, warehouse:{ availableByResource:{ coal:1234 } },
-        processedWarehouse:{ availableByResource:{} }, batches:[], mineAssets:[], industrialNetwork:{projects:[],shipments:[],siteFlowLedger:[]} },
-      USA:{ inventory:{ coal:999999 }, inventoryUnits:{ coal:"TONNES" }, warehouse:{ availableByResource:{ coal:999999} },
+      USA:{ inventory:{ coal:999999 }, inventoryUnits:{ coal:"TONNES" }, warehouse:{ availableByResource:{ coal:999999 } },
         processedWarehouse:{ availableByResource:{} }, batches:[], mineAssets:[], industrialNetwork:{projects:[],shipments:[],siteFlowLedger:[]} }
     }
   } };
+  globalThis.Omega = { SimulationRuntime:{ world:{ state:{
+    simulation:{ turn:7, session:{ sessionId:"RESOURCE-LAZY-1", playerCountryId:"BGD", status:"RUNNING" } },
+    resource:{
+      BGD:{ inventory:{ coal:1234 }, inventoryUnits:{ coal:"TONNES" }, warehouse:{ availableByResource:{ coal:1234 } },
+        processedWarehouse:{ availableByResource:{} }, batches:[], mineAssets:[], industrialNetwork:{projects:[],shipments:[],siteFlowLedger:[]} }
+    }
+  } } } };
   globalThis.OmegaCountryInventoryRuntime = { getResourceCatalog(){ return catalog; } };
   globalThis.OmegaResourceSiteCanonicalCatalogData = { sites:[
     {siteId:"BGD-COAL-LAZY",countryId:"BGD",siteName:"Bangladesh Mine",resourceId:"coal"},
