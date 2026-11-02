@@ -6,6 +6,8 @@ on:
     paths:
       - 'index.html'
       - 'omega_ui_v2/**'
+      - 'omega_resource_startup_baseline_v1.js'
+      - 'test/omega_resource_startup_baseline_v1.test.mjs'
       - 'test/omega_ui_v2.test.mjs'
       - 'test/omega_resource_ministry_premium_ui.test.mjs'
       - 'test/omega_ui_photo_assets.test.mjs'
@@ -37,6 +39,8 @@ on:
     paths:
       - 'index.html'
       - 'omega_ui_v2/**'
+      - 'omega_resource_startup_baseline_v1.js'
+      - 'test/omega_resource_startup_baseline_v1.test.mjs'
       - 'test/omega_ui_v2.test.mjs'
       - 'test/omega_resource_ministry_premium_ui.test.mjs'
       - 'test/omega_ui_photo_assets.test.mjs'
@@ -83,6 +87,7 @@ jobs:
       - name: Syntax-check map UI
         run: |
           node --check map-engine-1.js
+          node --check omega_resource_startup_baseline_v1.js
           node --check omega_ui_v2/screens/resource-ministry.js
           node --check omega_ui_v2/app.js
           node --check omega_ui_v2/integration.js
@@ -95,5 +100,7 @@ jobs:
           node --check offline-hybrid-map.js
       - name: Run UI visual and map-layer regression tests
         run: npm run test:ui-visual
+      - name: Run player-country resource baseline regression tests
+        run: node --test test/omega_resource_startup_baseline_v1.test.mjs
       - name: Run Resource Ministry logistics transport UI regression tests
         run: npm run test:resource-ui-premium
