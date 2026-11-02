@@ -799,7 +799,7 @@ test('factory construction calendar honours exact game-calendar month dates', ()
     recipeId: 'STEEL_PRIMARY_ROUTE_V1', requestId: 'CALENDAR-6-MONTHS', buildMonths: 6 }).idempotent, true);
 });
 
-test('fifty factories receive proportional input when the country warehouse is short', () => {
+test('fifty factories receive proportional input when the country warehouse is short', async () => {
   const { context, api } = makeRuntime();
   const assets = Array.from({ length: 50 }, (_, index) => ({
     id: 'FAC-PROP-' + String(index + 1).padStart(2, '0'),
