@@ -110,7 +110,7 @@ test("inventory rows show current stock coverage, shortage/surplus and verified 
     const profile = rules.demand.resourceProfiles[resourceId] || {};
     return {
       resourceId,
-      name: resourceId.replace(/[_-]+/g, " ").replace(/\\b\\w/g, (ch) => ch.toUpperCase()),
+      name: resourceId.replace(/[_-]+/g, " ").replace(/\b\w/g, (ch) => ch.toUpperCase()),
       unit: String(profile.unit || "").replace(/_PER_DAY$/i, "") || "TONNES",
       demandUnit: profile.unit || "TONNES_PER_DAY",
       profileKnown: true
@@ -836,7 +836,7 @@ test("all resource SVGs use a light metallic backplate for readable dark mineral
 });
 
 
-test("country selector browses canonical mine sites without granting foreign-country operation access", () => {
+test("Resource Ministry is locked to the selected player country", () => {
   const api = globalThis.OmegaUIV2ResourceMinistry;
   const priorGame = globalThis.Game;
   const priorResourceEngine = globalThis.ResourceMinistryEngine;
@@ -855,7 +855,6 @@ test("country selector browses canonical mine sites without granting foreign-cou
   const bangladesh = site("BGD", "Bangladesh", "Bangladesh Coal Mine", "SITE_BGD_COUNTRY_SELECTOR");
   const usa = site("USA", "United States", "United States Coal Mine", "SITE_USA_COUNTRY_SELECTOR");
   const listeners = Object.create(null);
-  let foreignStateBefore = null;
   globalThis.Game = { state: {
     simulation: { turn: 4, session: { playerCountryId: "BGD" } },
     resource: {
@@ -863,7 +862,7 @@ test("country selector browses canonical mine sites without granting foreign-cou
       USA: { mineAssets: [], industrialNetwork: { projects: [], shipments: [], siteFlowLedger: [] } }
     }
   } };
-  foreignStateBefore = JSON.stringify(globalThis.Game.state.resource.USA);
+  const foreignStateBefore = JSON.stringify(globalThis.Game.state.resource.USA);
   globalThis.ResourceMinistryEngine = {
     countryProfiles: {
       BGD: { identity: { iso3: "BGD", officialName: "Bangladesh" } },
@@ -882,10 +881,12 @@ test("country selector browses canonical mine sites without granting foreign-cou
   try {
     const first = api.render(root, { countryId: "BGD", sites: [bangladesh, usa], tab: "mines" });
     assert.equal(first.ok, true);
-    assert.match(root.innerHTML, /data-omega-v2-resource-country/);
+    assert.doesNotMatch(root.innerHTML, /data-omega-v2-resource-country/,
+      "resource country is a fixed player-country label, not a browse selector");
     assert.match(root.innerHTML, /Bangladesh \(BGD\)/);
-    assert.match(root.innerHTML, /United States \(USA\)/);
+    assert.doesNotMatch(root.innerHTML, /United States \\(USA\\)/);
     assert.match(root.innerHTML, /Bangladesh Coal Mine/);
+    assert.doesNotMatch(root.innerHTML, /United States Coal Mine/);
 
     listeners.change({
       target: {
@@ -893,11 +894,11 @@ test("country selector browses canonical mine sites without granting foreign-cou
         matches(selector) { return selector === "[data-omega-v2-resource-country]"; }
       }
     });
-    assert.match(root.innerHTML, /United States \(USA\)/);
-    assert.match(root.innerHTML, /United States Coal Mine/);
-    assert.match(root.innerHTML, /data-omega-v2-mine-action="build"[^>]*disabled/);
+    assert.match(root.innerHTML, /Bangladesh \(BGD\)/,
+      "a stale selector event cannot switch the ministry to another country");
+    assert.doesNotMatch(root.innerHTML, /United States Coal Mine/);
     assert.equal(JSON.stringify(globalThis.Game.state.resource.USA), foreignStateBefore,
-      "browsing a foreign country must remain read-only");
+      "foreign-country state remains untouched");
     assert.doesNotMatch(root.innerHTML.replace(/<[^>]*>/g, " "), /\bSIMULATED\b/i);
   } finally {
     if (priorGame === undefined) delete globalThis.Game; else globalThis.Game = priorGame;
@@ -905,6 +906,92 @@ test("country selector browses canonical mine sites without granting foreign-cou
     else globalThis.ResourceMinistryEngine = priorResourceEngine;
     if (priorCatalog === undefined) delete globalThis.OmegaResourceSiteCanonicalCatalogData;
     else globalThis.OmegaResourceSiteCanonicalCatalogData = priorCatalog;
+  }
+});
+
+test("Resource Ministry loads only the selected player's current inventory and unloads it on exit", async () => {
+  const api = globalThis.OmegaUIV2ResourceMinistry;
+  const prior = {
+    Game:globalThis.Game,
+    Omega:globalThis.Omega,
+    ResourceMinistryEngine:globalThis.ResourceMinistryEngine,
+    OmegaCountryInventoryRuntime:globalThis.OmegaCountryInventoryRuntime,
+    OmegaResourceStartupBaseline:globalThis.OmegaResourceStartupBaseline,
+    OmegaResourceSiteCanonicalCatalogData:globalThis.OmegaResourceSiteCanonicalCatalogData
+  };
+  const calls = [];
+  const rules = json("resource_economy_rules.json");
+  const catalog = Object.keys(rules.demand.resourceProfiles).map((resourceId) => ({
+    resourceId, name:resourceId.replace(/[_-]+/g," ").replace(/\b\w/g,ch => ch.toUpperCase()),
+    unit:"TONNES", profileKnown:true
+  }));
+  const root = {
+    innerHTML:"",
+    classList:{ add(){} },
+    addEventListener(){},
+    querySelector(){ return null; },
+    querySelectorAll(){ return []; },
+    contains(){ return true; }
+  };
+  // A stale compatibility snapshot points to USA; the simulation world is
+  // authoritative and has BGD selected. The ministry must show only BGD.
+  globalThis.Game = { state:{
+    simulation:{ turn:2, session:{ sessionId:"STALE-COMPATIBILITY-SNAPSHOT", playerCountryId:"USA", status:"RUNNING" } },
+    resource:{
+      USA:{ inventory:{ coal:999999 }, inventoryUnits:{ coal:"TONNES" }, warehouse:{ availableByResource:{ coal:999999 } },
+        processedWarehouse:{ availableByResource:{} }, batches:[], mineAssets:[], industrialNetwork:{projects:[],shipments:[],siteFlowLedger:[]} }
+    }
+  } };
+  globalThis.Omega = { SimulationRuntime:{ world:{ state:{
+    simulation:{ turn:7, session:{ sessionId:"RESOURCE-LAZY-1", playerCountryId:"BGD", status:"RUNNING" } },
+    resource:{
+      BGD:{ inventory:{ coal:1234, steel:5678 }, inventoryUnits:{ coal:"TONNES", steel:"TONNES" },
+        warehouse:{ availableByResource:{ coal:1234, steel:5678 } },
+        factoryInputBaselineV1:{ stockRows:[{ productId:"steel", quantity:5678, unit:"TONNES", state:"TOPPED_UP" }] },
+        processedWarehouse:{ availableByResource:{} }, batches:[], mineAssets:[], industrialNetwork:{projects:[],shipments:[],siteFlowLedger:[]} }
+    }
+  } } } };
+  globalThis.ResourceMinistryEngine = { countryProfiles:{
+    BGD:{ identity:{ iso3:"BGD", officialName:"Bangladesh" } },
+    USA:{ identity:{ iso3:"USA", officialName:"United States" } }
+  } };
+  globalThis.OmegaCountryInventoryRuntime = { getResourceCatalog(){ return catalog; } };
+  globalThis.OmegaResourceSiteCanonicalCatalogData = { sites:[
+    {siteId:"BGD-COAL-LAZY",countryId:"BGD",siteName:"Bangladesh Mine",resourceId:"coal"},
+    {siteId:"USA-COAL-LAZY",countryId:"USA",siteName:"United States Mine",resourceId:"coal"}
+  ] };
+  globalThis.OmegaResourceStartupBaseline = {
+    getResourceCatalog(){ return catalog; },
+    getFactoryInputCoverageDays(){ return 100; },
+    ensurePlayerCountryBaseline(countryId){ calls.push(countryId); return Promise.resolve({status:"ALREADY_INITIALIZED",countryId}); }
+  };
+  try {
+    const result = api.render(root,{countryId:"USA",sites:[
+      {siteId:"BGD-COAL-LAZY",countryId:"BGD",siteName:"Bangladesh Mine",resourceId:"coal"},
+      {siteId:"USA-COAL-LAZY",countryId:"USA",siteName:"United States Mine",resourceId:"coal"}
+    ],tab:"dashboard"});
+    assert.equal(result.code,"PLAYER_COUNTRY_BASELINE_LOADING");
+    assert.match(root.innerHTML,/Loading BGD inventory/);
+    await new Promise(resolve => setTimeout(resolve,0));
+    assert.deepEqual(calls,["BGD"]);
+    assert.match(root.innerHTML,/Current Stock/,
+      "the default ministry overview must expose current stock without opening another tab");
+    assert.match(root.innerHTML,/1,234(?:\.00)? TONNES/);
+    assert.match(root.innerHTML,/steel/);
+    assert.match(root.innerHTML,/5,678(?:\.00)? TONNES/,
+      "factory-specific input product balances must be visible on the overview");
+    assert.match(root.innerHTML,/Bangladesh \(BGD\)/);
+    assert.doesNotMatch(root.innerHTML,/United States Mine|999,999/);
+    const unloaded = api.unload(root);
+    assert.equal(unloaded.ok,true);
+    assert.equal(root.__omegaV2ResourceActive,false);
+    assert.equal(root.__omegaV2CurrentCountryKey,undefined);
+    assert.equal(root.__omegaV2ResourceOptions,undefined);
+  } finally {
+    for (const key of Object.keys(prior)) {
+      if (prior[key] === undefined) delete globalThis[key];
+      else globalThis[key] = prior[key];
+    }
   }
 });
 

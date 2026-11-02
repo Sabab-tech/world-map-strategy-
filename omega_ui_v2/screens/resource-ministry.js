@@ -63,6 +63,32 @@
     return requested;
   }
 
+  function authoritativeGameState() {
+    var runtime = g.Omega && (g.Omega.SimulationRuntime || g.Omega.Simulation);
+    var simulationState = runtime && runtime.world && runtime.world.state;
+    if (simulationState && typeof simulationState === 'object') return simulationState;
+    if (g.Game && g.Game.state && typeof g.Game.state === 'object') return g.Game.state;
+    return g.gameState && typeof g.gameState === 'object' ? g.gameState : {};
+  }
+
+  function activePlayerCountryKey(state) {
+    state = state && typeof state === 'object' ? state : authoritativeGameState();
+    var runtime = g.Omega && (g.Omega.SimulationRuntime || g.Omega.Simulation);
+    var values = [
+      state.simulation && state.simulation.session && state.simulation.session.playerCountryId,
+      state.simulation && state.simulation.playerCountryId,
+      state.playerCountryId,
+      g.Game && g.Game.playerCountryId
+    ];
+    try {
+      if (runtime && typeof runtime.getPlayerCountryId === 'function') values.unshift(runtime.getPlayerCountryId());
+    } catch (_) {}
+    for (var i = 0; i < values.length; i += 1) {
+      if (values[i] != null && String(values[i]).trim()) return selectedCountryKey(values[i]);
+    }
+    return '';
+  }
+
   function resourceId(row) {
     return String(row && (row.identity && (row.identity.resourceId || row.identity.resourceTypeId || row.identity.resourceName) ||
       row.sourceSiteRecord && (row.sourceSiteRecord.resourceId || row.sourceSiteRecord.resourceTypeId) ||
@@ -97,6 +123,7 @@
   var logisticsRoutePlanRequests = Object.create(null);
   var logisticsRouteShardRequests = Object.create(null);
   var logisticsRoutePlanWaiters = Object.create(null);
+  var logisticsRoutePlanGenerations = Object.create(null);
   var logisticsRouteManifestRequest = null;
 
   function fetchLogisticsJson(path) {
@@ -118,7 +145,7 @@
     var waiters = logisticsRoutePlanWaiters[country] || [];
     delete logisticsRoutePlanWaiters[country];
     waiters.forEach(function (root) {
-      if (!root || root.__omegaV2ResourceTab !== 'logistics' ||
+      if (!root || root.__omegaV2ResourceActive === false || root.__omegaV2ResourceTab !== 'logistics' ||
           key(root.__omegaV2CurrentCountryKey) !== country || !root.__omegaV2ResourceOptions) return;
       scheduleRender(root, Object.assign({}, root.__omegaV2ResourceOptions, {
         countryId:country, tab:'logistics'
@@ -145,6 +172,7 @@
     if (!logisticsRouteManifestRequest) {
       logisticsRouteManifestRequest = fetchLogisticsJson('resource_site_logistics_routes_v1.json');
     }
+    var generation = Number(logisticsRoutePlanGenerations[country]) || 0;
     var request = logisticsRouteManifestRequest.then(function (manifest) {
       if (!manifest || manifest.datasetId !== 'OMEGA_RESOURCE_SITE_LOGISTICS_ROUTES_V1' ||
           manifest.simulationOnly !== true || !manifest.countryToPart || !Array.isArray(manifest.parts)) {
@@ -159,14 +187,11 @@
       if (!/^resource_site_logistics_routes_v1_part_0[1-6]\.json$/.test(file)) {
         throw new Error('LOGISTICS_ROUTE_SHARD_INVALID');
       }
-      if (!logisticsRouteShardRequests[file]) {
-        logisticsRouteShardRequests[file] = fetchLogisticsJson(file).then(function (shard) {
-          if (!shard || !Array.isArray(shard.routes)) throw new Error('LOGISTICS_ROUTE_SHARD_INVALID');
-          return shard.routes;
-        });
-      }
-      return logisticsRouteShardRequests[file].then(function (rows) {
-        var routes = rows.filter(function (route) {
+      // Parse the shared shard temporarily, but retain only the selected country's
+      // routes in memory. This prevents inactive countries' route rows from lingering.
+      return fetchLogisticsJson(file).then(function (shard) {
+        if (!shard || !Array.isArray(shard.routes)) throw new Error('LOGISTICS_ROUTE_SHARD_INVALID');
+        var routes = shard.routes.filter(function (route) {
           return key(route && route.countryId) === country &&
             String(route.siteId || '').trim() && String(route.resourceId || '').trim() &&
             route.routePlan && typeof route.routePlan === 'object';
@@ -178,15 +203,23 @@
     }).catch(function () {
       return { status:'unavailable', routes:[] };
     }).then(function (result) {
+      var waiters = logisticsRoutePlanWaiters[country] || [];
+      var activeWaiter = waiters.some(function (waiter) {
+        return waiter && waiter.__omegaV2ResourceActive !== false &&
+          key(waiter.__omegaV2CurrentCountryKey) === country;
+      });
+      if ((Number(logisticsRoutePlanGenerations[country]) || 0) !== generation || !activeWaiter) {
+        if (logisticsRoutePlanRequests[country] === request) delete logisticsRoutePlanRequests[country];
+        return { status:'unloaded', routes:[] };
+      }
       logisticsRoutePlanCache[country] = result;
-      delete logisticsRoutePlanRequests[country];
+      if (logisticsRoutePlanRequests[country] === request) delete logisticsRoutePlanRequests[country];
       notifyLogisticsRoutePlanWaiters(country);
       return result;
     });
     logisticsRoutePlanRequests[country] = request;
     return request;
   }
-
   function mineArchetype(site) {
     site = site && typeof site === 'object' ? site : {};
     var identity = site.identity && typeof site.identity === 'object' ? site.identity : {};
@@ -398,13 +431,26 @@
     });
   }
 
+  function playerCountryDisplayName(currentCountry) {
+    var profile = null, runtime = g.OmegaCountryRuntimeData || (g.Omega && g.Omega.CountryRuntimeData);
+    try {
+      if (runtime && typeof runtime.resolveCountry === 'function') profile = runtime.resolveCountry(currentCountry);
+    } catch (_) {}
+    if (!profile) {
+      var engine = g.ResourceMinistryEngine;
+      var profiles = engine && engine.countryProfiles;
+      profile = profiles && (profiles[currentCountry] || profiles[String(currentCountry).toLowerCase()]) || null;
+    }
+    var identity = profile && (profile.identity || profile.country || profile) || {};
+    return String(identity.officialName || identity.countryName || identity.name ||
+      profile && (profile.officialName || profile.countryName || profile.name) || currentCountry || 'Not selected');
+  }
+
   function countrySelectMarkup(currentCountry) {
-    var rows = countryRoster(currentCountry);
-    return '<label class="omega-v2-resource-country-select"><span>Selected country</span><select data-omega-v2-resource-country aria-label="Browse resource country">' +
-      rows.map(function (row) {
-        return '<option value="' + esc(row.id) + '"' + (row.id === currentCountry ? ' selected' : '') + '>' +
-          esc(row.name) + ' (' + esc(row.id) + ')</option>';
-      }).join('') + '</select></label>';
+    // Resolve only the selected player's identity; never enumerate the country roster.
+    var name = playerCountryDisplayName(currentCountry);
+    return '<div class="omega-v2-resource-country-select" aria-label="Active player country">' +
+      '<span>Player country</span><strong>' + esc(name + (currentCountry ? ' (' + currentCountry + ')' : '')) + '</strong></div>';
   }
 
   function scheduleRender(root, options, label) {
@@ -419,13 +465,84 @@
   function render(root, options) {
     options = options || {};
     if (!root || typeof root !== 'object') return { ok:false, code:'RESOURCE_ROOT_REQUIRED' };
-    var model = buildViewModel(options);
-    var active = options.tab || root.__omegaV2ResourceTab || 'dashboard';
+    root.__omegaV2ResourceActive = true;
+    var stateRoot = authoritativeGameState();
+    var playerCountry = activePlayerCountryKey(stateRoot);
+    var requestedCountry = selectedCountryKey(options.countryId || playerCountry);
+    // Once a player session exists, this screen is locked to that country.
+    // Passive previews without a session remain available for tests and recovery.
+    var countryKey = playerCountry || requestedCountry;
+    if (playerCountry && requestedCountry && requestedCountry !== playerCountry) {
+      root.__omegaV2ResourceNotice = 'Only the active player country is available in Resource Ministry.';
+    }
+    if (!countryKey) {
+      root.innerHTML = '<section class="omega-v2-shell omega-v2-resource"><div class="omega-v2-empty" role="status">Select a player country before opening the resource inventory.</div></section>';
+      return { ok:false, code:'PLAYER_COUNTRY_NOT_SELECTED' };
+    }
+    var renderOptions = Object.assign({}, options, { countryId:countryKey });
+    var active = renderOptions.tab || root.__omegaV2ResourceTab || 'dashboard';
     if (active === 'reserves') active = 'mines';
     if (active === 'warehouses') active = 'inventory';
     if (active === 'transport') active = 'logistics';
-    var stateRoot = g.Game && g.Game.state || g.gameState || {};
-    var countryKey = String(model.countryId || options.countryId || '').trim().toUpperCase();
+    root.__omegaV2ResourceOptions = renderOptions;
+    root.__omegaV2CurrentCountryKey = countryKey;
+    root.__omegaV2ResourceTab = active;
+    var startupBaselineForLoad = g.OmegaResourceStartupBaseline || g.Omega && g.Omega.ResourceStartupBaseline || null;
+    if (startupBaselineForLoad && typeof startupBaselineForLoad.ensurePlayerCountryBaseline === 'function' &&
+        root.__omegaV2ResourceLoadedCountry !== countryKey) {
+      var sameRequest = root.__omegaV2ResourceLoadingCountry === countryKey && root.__omegaV2ResourceLoadPromise;
+      if (!sameRequest) {
+        root.__omegaV2ResourceLoadGeneration = (Number(root.__omegaV2ResourceLoadGeneration) || 0) + 1;
+        var loadGeneration = root.__omegaV2ResourceLoadGeneration;
+        root.__omegaV2ResourceLoadingCountry = countryKey;
+        root.__omegaV2ResourceLoadError = '';
+        root.__omegaV2ResourceLoadPromise = Promise.resolve().then(function () {
+          return startupBaselineForLoad.ensurePlayerCountryBaseline(countryKey);
+        }).then(function (result) {
+          if (root.__omegaV2ResourceActive === false ||
+              root.__omegaV2ResourceLoadGeneration !== loadGeneration || root.isConnected === false) return result;
+          var status = String(result && result.status || '').toUpperCase();
+          var ready = ['COMPLETED','COMPLETED_WITH_REPORTED_GAPS','ALREADY_INITIALIZED','INITIALIZED','INITIALIZED_WITH_GAPS'].indexOf(status) >= 0;
+          root.__omegaV2ResourceLoadingCountry = '';
+          root.__omegaV2ResourceLoadPromise = null;
+          if (ready) {
+            root.__omegaV2ResourceLoadedCountry = countryKey;
+            root.__omegaV2ResourceLoadStatus = status;
+            root.__omegaV2ResourceLoadError = '';
+          } else {
+            root.__omegaV2ResourceLoadError = String(result && (result.reason || result.message || result.status) || 'PLAYER_COUNTRY_BASELINE_NOT_READY');
+          }
+          var latest = Object.assign({}, root.__omegaV2ResourceOptions || renderOptions, {
+            countryId:countryKey, tab:root.__omegaV2ResourceTab || active
+          });
+          if (typeof latest.onScheduleRender === 'function') scheduleRender(root, latest, 'Showing current player inventory');
+          else render(root, latest);
+          return result;
+        }).catch(function (error) {
+          if (root.__omegaV2ResourceActive === false || root.__omegaV2ResourceLoadGeneration !== loadGeneration) return null;
+          root.__omegaV2ResourceLoadingCountry = '';
+          root.__omegaV2ResourceLoadPromise = null;
+          root.__omegaV2ResourceLoadError = String(error && error.message || error || 'PLAYER_COUNTRY_BASELINE_FAILED');
+          var latest = Object.assign({}, root.__omegaV2ResourceOptions || renderOptions, {
+            countryId:countryKey, tab:root.__omegaV2ResourceTab || active
+          });
+          if (typeof latest.onScheduleRender === 'function') scheduleRender(root, latest, 'Resource inventory could not be loaded');
+          else render(root, latest);
+          return null;
+        });
+      }
+      if (root.__omegaV2ResourceLoadError) {
+        root.innerHTML = '<section class="omega-v2-shell omega-v2-resource"><div class="omega-v2-note" role="alert">Player inventory could not be loaded: ' +
+          esc(root.__omegaV2ResourceLoadError) + '</div></section>';
+        return { ok:false, code:'PLAYER_COUNTRY_BASELINE_FAILED', countryId:countryKey };
+      }
+      root.innerHTML = '<section class="omega-v2-shell omega-v2-resource" role="status" aria-live="polite"><div class="omega-v2-navigation-loading-panel">' +
+        '<div class="omega-v2-eyebrow">RESOURCE COMMAND</div><h1 class="omega-v2-title">Loading ' + esc(countryKey) + ' inventory</h1>' +
+        '<p class="omega-v2-subtitle">Preparing current stock and factory input balances for the active player country.</p>' +
+        '<div class="omega-v2-navigation-progress" aria-hidden="true"><span></span></div></div></section>';
+      return { ok:true, code:'PLAYER_COUNTRY_BASELINE_LOADING', countryId:countryKey };
+    }
+    var model = buildViewModel(renderOptions);
     function countryBucket(map) {
       if (!map || typeof map !== 'object' || !countryKey) return null;
       if (map[countryKey]) return map[countryKey];
@@ -495,19 +612,7 @@
         numberOrNull(stateRoot.turn) || 0;
     }
     function playerCountryKey() {
-      var values = [
-        stateRoot.simulation && stateRoot.simulation.session && stateRoot.simulation.session.playerCountryId,
-        stateRoot.simulation && stateRoot.simulation.playerCountryId,
-        stateRoot.playerCountryId, g.Game && g.Game.playerCountryId
-      ];
-      try {
-        var simulation = g.Omega && g.Omega.Simulation;
-        if (simulation && typeof simulation.getPlayerCountryId === 'function') values.unshift(simulation.getPlayerCountryId());
-      } catch (_) {}
-      for (var i = 0; i < values.length; i += 1) {
-        if (values[i] != null && String(values[i]).trim()) return selectedCountryKey(values[i]);
-      }
-      return '';
+      return activePlayerCountryKey(stateRoot);
     }
     var canOperate = !!countryKey && countryKey === playerCountryKey();
     var gameResource = countryBucket(stateRoot.resource) || countryBucket(stateRoot.resources) || {};
@@ -790,7 +895,13 @@
       var inventoryKey = Object.keys(inventory).find(function (key) { return key.toLowerCase() === rid.toLowerCase(); });
       if (inventoryKey) rawStock[rid] = inventory[inventoryKey];
     });
-    var inventoryKeys = Array.from(new Set(distinctResources.concat(Object.keys(rawStock), Object.keys(finishedStock)))).sort();
+    var factoryInputStockRows = safeArray(gameResource.factoryInputBaselineV1 && gameResource.factoryInputBaselineV1.stockRows);
+    var factoryInputProductIds = factoryInputStockRows.map(function (row) {
+      return String(row && (row.productId || row.resourceId) || '').trim();
+    }).filter(Boolean);
+    var inventoryKeys = Array.from(new Set(distinctResources.concat(
+      Object.keys(rawStock), Object.keys(finishedStock), factoryInputProductIds
+    ))).sort();
     var movementIn = Object.create(null), movementOut = Object.create(null);
     safeArray(rawWarehouse.receipts).concat(safeArray(processedWarehouse.receipts)).concat(safeArray(gameResource.inventoryLedger))
       .forEach(function (row) {
@@ -988,12 +1099,7 @@
     var selectedMine = model.sites.find(function (site) { return site.siteId === selectedId; }) || model.sites[0] || null;
     if (selectedMine) root.__omegaV2SelectedMineId = selectedMine.siteId;
     function livePlayerCountryKey() {
-      var state = g.Game && g.Game.state || g.gameState || {};
-      var values = [state.simulation && state.simulation.session && state.simulation.session.playerCountryId,
-        state.simulation && state.simulation.playerCountryId,state.playerCountryId,g.Game && g.Game.playerCountryId];
-      try { var sim = g.Omega && g.Omega.Simulation; if (sim && typeof sim.getPlayerCountryId === 'function') values.unshift(sim.getPlayerCountryId()); } catch (_) {}
-      for (var i=0;i<values.length;i+=1) if (values[i]!=null && String(values[i]).trim()) return selectedCountryKey(values[i]);
-      return '';
+      return activePlayerCountryKey(authoritativeGameState());
     }
     function mineBuildQuoteMarkup(site,country,count,workers) {
       if (!Number.isInteger(count)||count<1||count>100) return '<div class="omega-v2-build-notice" role="status">Choose a whole-number batch size from 1 to 100.</div>';
@@ -1084,11 +1190,7 @@
         esc(value) + '</strong><small>' + esc(meta || '') + '</small></div>';
     }
     var outputHeadline = sumUnitGroups(currentOutputGroups);
-    var heroCountry = g.OmegaCountryRuntimeData && typeof g.OmegaCountryRuntimeData.resolveCountry === 'function'
-      ? g.OmegaCountryRuntimeData.resolveCountry(countryKey) : null;
-    var rosterCountry = countryRoster(countryKey).find(function (row) { return row.id === countryKey; });
-    var countryLabel = String(heroCountry && (heroCountry.officialName || heroCountry.name || heroCountry.countryName) ||
-      rosterCountry && rosterCountry.name || countryKey || 'Selected country');
+    var countryLabel = playerCountryDisplayName(countryKey);
     var dashMarkup = photoMarkup + '<div class="omega-v2-kpis omega-v2-resource-command-kpis">' +
       renderKpi('Registered mines', String(model.sites.filter(eligible).length), model.sites.length + ' sites', 'neutral') +
       renderKpi('Producing now', String(producingSites.length), 'Recorded this turn', portfolioBalanceState) +
@@ -1127,6 +1229,25 @@
     }
     var stockTable = inventoryKeys.length ? '<div class="omega-v2-table-wrap"><table><thead><tr><th>Resource</th><th>Current Stock</th><th>Raw warehouse</th><th>Processed warehouse</th><th>In</th><th>Out</th><th>Target gap</th></tr></thead><tbody>' +
       inventoryKeys.map(stockRow).join('') + '</tbody></table></div>' : '<div class="omega-v2-empty">No warehouse balances have been recorded.</div>';
+    // Overview must show actual recorded player stock immediately. Do not
+    // substitute planned targets or inferred reserve quantities for balances.
+    var dashboardStockRows = inventoryKeys.map(function (rid) {
+      var currentStock = currentStockFor(rid, stockFor(rid, rawStock), stockFor(rid, finishedStock));
+      if (currentStock === null) return '';
+      return '<tr data-resource-id="' + esc(rid) + '"><td>' +
+        resourceIconMarkup(rid, resourceLabel(rid)) + esc(resourceLabel(rid)) +
+        '</td><td class="omega-v2-current-stock-cell">' + amount(currentStock, resourceUnit(rid)) + '</td></tr>';
+    }).filter(Boolean);
+    var dashboardStockMarkup = '<section class="omega-v2-card omega-v2-movement-card omega-v2-dashboard-stock">' +
+      '<div class="omega-v2-card-header"><div><h2>Current Stock</h2><p>Recorded opening stock and live balances for ' +
+      esc(countryKey) + '</p></div><span class="omega-v2-status" data-state="' +
+      (dashboardStockRows.length ? 'operational' : 'attention') + '">' + fmt(dashboardStockRows.length) + ' stocked products</span></div>' +
+      (dashboardStockRows.length
+        ? '<div class="omega-v2-table-wrap"><table><thead><tr><th>Resource / Product</th><th>Current Stock</th></tr></thead><tbody>' +
+          dashboardStockRows.join('') + '</tbody></table></div>'
+        : '<div class="omega-v2-empty">No recorded current stock is available for this player country.</div>') +
+      '</section>';
+    dashMarkup += dashboardStockMarkup;
     var startupBaselineRuntime = g.OmegaResourceStartupBaseline || g.Omega && g.Omega.ResourceStartupBaseline || null;
     var stockTargetDays = null;
     try {
@@ -1975,12 +2096,13 @@
           return;
         }
         if (event.target.matches && event.target.matches('[data-omega-v2-resource-country]')) {
-          var viewedCountry = selectedCountryKey(event.target.value);
-          var prior = root.__omegaV2ResourceOptions || {};
-          // Country browsing changes only this view. All mutations remain player-country guarded.
-          root.__omegaV2ResourceNotice = '';
-          root.__omegaV2ResourceSelectedCountryId = viewedCountry;
-          scheduleRender(root, Object.assign({}, prior, { countryId:viewedCountry, tab:root.__omegaV2ResourceTab || 'dashboard' }));
+          var activePlayer = livePlayerCountryKey();
+          if (activePlayer) {
+            root.__omegaV2ResourceNotice = 'Only the active player country is available in Resource Ministry.';
+            scheduleRender(root, Object.assign({}, root.__omegaV2ResourceOptions || {}, {
+              countryId:activePlayer, tab:root.__omegaV2ResourceTab || 'dashboard'
+            }));
+          }
         }
       });
       root.addEventListener('submit', function (event) {
@@ -2211,7 +2333,7 @@
             root.__omegaV2BuildWorkers = workers;
             root.__omegaV2ResourceNotice = 'Construction blocked: ' + human(quote && (quote.reason || (!quote.staffingReady ? 'INSUFFICIENT_WORKER_COMMITMENT' : 'CONSTRUCTION_REQUIREMENTS_NOT_MET')) || 'requirements not verified') + '. No resources were committed.';
           } else {
-            var state = g.Game && g.Game.state || g.gameState || {};
+            var state = authoritativeGameState();
             var activeTurn = numberOrNull(state.simulation && (state.simulation.turn || state.simulation.currentTurn)) || numberOrNull(state.turn) || 0;
             root.__omegaV2BuildAttempt = (numberOrNull(root.__omegaV2BuildAttempt) || 0) + 1;
             var result = network.startMineProject({countryId:country,siteId:site.siteId,resourceId:site.resourceId,quantity:count,assignedWorkers:workers,
@@ -2236,18 +2358,26 @@
         scheduleRender(root,Object.assign({},options,{tab:'mines'}));
       });
       if (!root.__omegaV2RuntimeEventsBound && typeof g.addEventListener === 'function') {
+        root.__omegaV2ResourceRuntimeEventHandlers = [];
         ['OMEGA_RESOURCE_MINE_PROJECT_STARTED','OMEGA_RESOURCE_MINE_PROJECT_PROGRESS','OMEGA_RESOURCE_MINE_COMMISSIONED',
           'OMEGA_RESOURCE_FACTORY_INPUT_STOCK_TARGET_UPDATED','OMEGA_RESOURCE_NATIONAL_DEMAND_UPDATED',
           'OMEGA_RESOURCE_ECONOMY_UPDATED','OMEGA_RESOURCE_MINE_HAUL_DELIVERED',
           'OMEGA_RESOURCE_MINE_WAREHOUSE_RECEIPT_POSTED','OMEGA_FACTORY_INPUT_SHIPMENT_DELIVERED',
-          'OMEGA_SIMULATION_TURN_COMMITTED'].forEach(function (name) {
-          g.addEventListener(name,function(){ if(root.__omegaV2ResourceOptions) scheduleRender(root,Object.assign({},root.__omegaV2ResourceOptions,{tab:root.__omegaV2ResourceTab||'mines'})); });
+          'OMEGA_SIMULATION_TURN_COMMITTED','OMEGA_RESOURCE_STARTUP_BASELINE_COMPLETED',
+          'OMEGA_RESOURCE_PLAYER_COUNTRY_READY'].forEach(function (name) {
+          var handler = function () {
+            if (root.__omegaV2ResourceActive && root.__omegaV2ResourceOptions) {
+              scheduleRender(root,Object.assign({},root.__omegaV2ResourceOptions,{tab:root.__omegaV2ResourceTab||'mines'}));
+            }
+          };
+          g.addEventListener(name, handler);
+          root.__omegaV2ResourceRuntimeEventHandlers.push({ type:name, callback:handler });
         });
         root.__omegaV2RuntimeEventsBound = true;
       }
       root.__omegaV2ResourceBound = true;
     }
-    root.__omegaV2ResourceOptions = Object.assign({}, options, { countryId:countryKey });
+    root.__omegaV2ResourceOptions = Object.assign({}, renderOptions, { countryId:countryKey });
     root.__omegaV2ResourceModel = model;
     root.__omegaV2CurrentCountryKey = countryKey;
     root.__omegaV2ResourceTab = active;
@@ -2272,12 +2402,51 @@
     if (counter) counter.textContent = String(count);
   }
 
+  function unload(root) {
+    if (!root || typeof root !== 'object') return { ok:false, code:'RESOURCE_ROOT_REQUIRED' };
+    var country = key(root.__omegaV2CurrentCountryKey || root.__omegaV2ResourceLoadedCountry || '');
+    root.__omegaV2ResourceActive = false;
+    root.__omegaV2ResourceLoadGeneration = (Number(root.__omegaV2ResourceLoadGeneration) || 0) + 1;
+    root.__omegaV2ResourceLoadingCountry = '';
+    root.__omegaV2ResourceLoadPromise = null;
+    root.__omegaV2ResourceLoadedCountry = '';
+    root.__omegaV2ResourceLoadStatus = '';
+    root.__omegaV2ResourceLoadError = '';
+    var handlers = Array.isArray(root.__omegaV2ResourceRuntimeEventHandlers)
+      ? root.__omegaV2ResourceRuntimeEventHandlers : [];
+    handlers.forEach(function (row) {
+      try { if (g.removeEventListener) g.removeEventListener(row.type, row.callback); } catch (_) {}
+    });
+    root.__omegaV2ResourceRuntimeEventHandlers = [];
+    root.__omegaV2RuntimeEventsBound = false;
+    Object.keys(logisticsRoutePlanWaiters).forEach(function (countryId) {
+      logisticsRoutePlanWaiters[countryId] = (logisticsRoutePlanWaiters[countryId] || []).filter(function (waiter) {
+        return waiter !== root;
+      });
+      if (!logisticsRoutePlanWaiters[countryId].length) delete logisticsRoutePlanWaiters[countryId];
+    });
+    if (country) {
+      logisticsRoutePlanGenerations[country] = (Number(logisticsRoutePlanGenerations[country]) || 0) + 1;
+      delete logisticsRoutePlanCache[country];
+      delete logisticsRoutePlanRequests[country];
+    }
+    delete root.__omegaV2ResourceOptions;
+    delete root.__omegaV2ResourceModel;
+    delete root.__omegaV2CurrentCountryKey;
+    delete root.__omegaV2ResourceTab;
+    delete root.__omegaV2SelectedMineId;
+    delete root.__omegaV2BuildSiteId;
+    delete root.__omegaV2MineAction;
+    return { ok:true, countryId:country, unloaded:true };
+  }
+
   g.OmegaUIV2ResourceMinistry = Object.freeze({
-    version: '1.1.0',
+    version: '1.2.0',
     resourceIconIds: RESOURCE_ICON_IDS.slice(),
     resourceIconPath: resourceIconPath,
     mineArchetype: mineArchetype,
     buildViewModel: buildViewModel,
-    render: render
+    render: render,
+    unload: unload
   });
 })(typeof window !== 'undefined' ? window : globalThis);

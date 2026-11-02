@@ -321,6 +321,7 @@
     } else if (state.route === 'home-affairs' || (state.route === 'ministry-detail' && state.ministryId === 'interior_security')) {
       if (g.OmegaUIV2HomeAffairs && typeof g.OmegaUIV2HomeAffairs.render === 'function') return g.OmegaUIV2HomeAffairs.render(content, withScheduledScreenRefresh(root, Object.assign({}, options, { countryId:state.countryId, tab:state.section })));
     } else if (state.route === 'resources' || (state.route === 'ministry-detail' && state.ministryId === 'energy_mining')) {
+      state.resourceScopeActive = true;
       if (g.OmegaUIV2ResourceMinistry && typeof g.OmegaUIV2ResourceMinistry.render === 'function') {
         return g.OmegaUIV2ResourceMinistry.render(content, withScheduledScreenRefresh(root, Object.assign({}, options, { countryId:state.countryId,
           onOpenSite:function (siteId) { state.resourceSiteId = siteId; return navigate(root, 'mine-detail', true); },
@@ -544,9 +545,25 @@
     });
     state.pendingFrames = [first];
   }
+  function resourceRouteActive(state) {
+    return !!state && (state.route === 'resources' ||
+      (state.route === 'ministry-detail' && state.ministryId === 'energy_mining'));
+  }
+  function releaseResourceScopeIfLeaving(root, state) {
+    if (!state || !state.resourceScopeActive || resourceRouteActive(state)) return false;
+    var main = root && root.querySelector && root.querySelector('[data-omega-v2-main]');
+    var resource = g.OmegaUIV2ResourceMinistry;
+    if (resource && typeof resource.unload === 'function' && main) {
+      try { resource.unload(main); } catch (_) {}
+    }
+    state.resourceScopeActive = false;
+    state.resourceScopeReleasedAt = Date.now();
+    return true;
+  }
   function scheduleDeferredTransition(root, label, callback, replaceMain) {
     var state = stateFor(root);
     if (!state) return false;
+    releaseResourceScopeIfLeaving(root, state);
     rotateScreenWork(state);
     state.navigationGeneration = (Number(state.navigationGeneration) || 0) + 1;
     var generation = state.navigationGeneration;
@@ -646,6 +663,7 @@
   function render(root) {
     var state = stateFor(root);
     if (!root || !state) return { ok:false, code:'UI_V2_NOT_MOUNTED' };
+    releaseResourceScopeIfLeaving(root, state);
     invalidatePendingRender(state);
     if (state.shellMounted && state.lastRenderedScreenIdentity !== screenIdentity(state)) replaceMainForNavigation(root);
     ensureShell(root, state);
@@ -749,7 +767,14 @@
   function unmount(root) {
     if (typeof root === 'string') root = g.document && g.document.querySelector(root);
     if (!root || !root.__omegaUIV2State) return { ok:false, code:'UI_V2_NOT_MOUNTED' };
-    invalidatePendingRender(root.__omegaUIV2State);
+    var state = root.__omegaUIV2State;
+    var main = root.querySelector && root.querySelector('[data-omega-v2-main]');
+    var resource = g.OmegaUIV2ResourceMinistry;
+    if (resource && typeof resource.unload === 'function' && main) {
+      try { resource.unload(main); } catch (_) {}
+    }
+    state.resourceScopeActive = false;
+    invalidatePendingRender(state);
     root.innerHTML = '';
     delete root.__omegaUIV2State;
     root.classList.remove('omega-v2-app-root');

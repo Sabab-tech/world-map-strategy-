@@ -156,6 +156,46 @@ test('source catalog contract remains exactly 41 resource identities and 21 fact
   assert.equal(policy.factoryInputStockBaseline.neverUseGeologicalReservesAsStock, true);
 });
 
+test('on-demand Resource Ministry baseline seeds only the selected player country and is idempotent', async () => {
+  const state = makeState();
+  const { api } = makeHarness(state);
+  await api.ready;
+
+  const first = await api.ensurePlayerCountryBaseline('BGD');
+  assert.ok(['COMPLETED','COMPLETED_WITH_REPORTED_GAPS','ALREADY_INITIALIZED'].includes(first.status));
+  assert.equal(first.scope, 'PLAYER_COUNTRY_ONLY');
+  assert.ok(state.resource.BGD.factoryInputBaselineV1,
+    'the selected country must receive its country-specific factory input stock baseline');
+  assert.ok(Object.keys(state.resource.BGD.inventory || {}).length > 0,
+    'the selected country must receive visible current inventory balances');
+  assert.equal(Object.prototype.hasOwnProperty.call(state.resource, 'USA'), false,
+    "opening the player inventory must not create another country's resource bucket");
+  assert.equal(Object.prototype.hasOwnProperty.call(state.economy, 'USA'), false,
+    "opening the player inventory must not initialize another country's factory runtime");
+  assert.equal(Object.prototype.hasOwnProperty.call(state.resource, 'IND'), false);
+  assert.equal(Object.prototype.hasOwnProperty.call(state.economy, 'IND'), false);
+
+  const before = plain({
+    inventory: state.resource.BGD.inventory,
+    warehouse: state.resource.BGD.warehouse,
+    processedWarehouse: state.resource.BGD.processedWarehouse
+  });
+  const second = await api.ensurePlayerCountryBaseline('BGD');
+  assert.equal(second.status, 'ALREADY_INITIALIZED',
+    "re-entering the selected country's ministry must not mint duplicate opening stock");
+  assert.deepEqual(plain({
+    inventory: state.resource.BGD.inventory,
+    warehouse: state.resource.BGD.warehouse,
+    processedWarehouse: state.resource.BGD.processedWarehouse
+  }), before);
+
+  const denied = await api.ensurePlayerCountryBaseline('USA');
+  assert.equal(denied.status, 'BLOCKED');
+  assert.equal(denied.reason, 'PLAYER_COUNTRY_SCOPE_MISMATCH');
+  assert.equal(Object.prototype.hasOwnProperty.call(state.resource, 'USA'), false,
+    "a request to load a non-player country must be rejected before state creation");
+});
+
 test('fresh session seeds bounded opening stock and source-context-driven factories without overwriting saved values', async () => {
   const state = makeState();
   const { context, api, emittedEvents, emitSimulationEvent } = makeHarness(state);
