@@ -23,7 +23,8 @@ test('100-game-day schedule is bounded and all 196 non-player test countries are
  const processed=new Set(h.evaluations.map(x=>x.countryId));
  assert.equal(processed.size,196,'every non-player country, including active-tier countries, should be evaluated');
  assert.equal(processed.has('AA'),false,'player must remain outside opponent AI');
- assert.ok(h.evaluations.length<=1200);assert.ok(h.queued.length<=h.evaluations.length);assert.ok(h.yields()>0,'large turns must yield cooperatively to the browser');assert.equal(h.scheduler.diagnostics().lastTurn,100);
+ assert.ok(h.evaluations.length<=1200);assert.ok(h.queued.length<=h.evaluations.length);assert.ok(h.yields()>0,'large turns must yield cooperatively to the browser');
+ assert.equal(h.scheduler.LIMITS.COUNTRY_BATCH_BUDGET_MS,8,'country execution slices must have a bounded time budget');assert.equal(h.scheduler.diagnostics().lastTurn,100);
 });
 test('trade events promote both counterparties and duplicate event IDs are ignored',async()=>{
  const h=harness(197),event={eventId:'SETTLEMENT-1',eventType:'OMEGA_TRADE_SETTLEMENT_COMPLETED',simulationTurn:1,payload:{sourceCountryId:'BB',destinationCountryId:'CC'}};

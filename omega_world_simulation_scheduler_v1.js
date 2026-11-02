@@ -5,7 +5,7 @@
 (function (g) {
   'use strict';
   const VERSION = '1.0.0';
-  const LIMITS = Object.freeze({ MACRO_COUNTRIES_PER_TURN:8, ACTIVE_COUNTRIES_PER_TURN:4, MAX_ACTIVE_COUNTRIES:48, ACTIVE_TTL_TURNS:30, MAX_EVENTS_PER_TURN:16, MAX_EVENT_QUEUE:256, MAX_SEEN_EVENT_IDS:512, MAX_QUEUED_DECISIONS_PER_COUNTRY:1, ROSTER_REFRESH_TURNS:30, COUNTRY_EVALUATIONS_PER_YIELD:2 });
+  const LIMITS = Object.freeze({ MACRO_COUNTRIES_PER_TURN:8, ACTIVE_COUNTRIES_PER_TURN:4, MAX_ACTIVE_COUNTRIES:48, ACTIVE_TTL_TURNS:30, MAX_EVENTS_PER_TURN:16, MAX_EVENT_QUEUE:256, MAX_SEEN_EVENT_IDS:512, MAX_QUEUED_DECISIONS_PER_COUNTRY:1, ROSTER_REFRESH_TURNS:30, COUNTRY_EVALUATIONS_PER_YIELD:2, COUNTRY_BATCH_BUDGET_MS:8 });
   if (g.Omega?.WorldSimulationScheduler?.VERSION === VERSION) return;
   const EVENT_PATTERN = /TRADE|DIPLOMAC|FOREIGN|TREATY|WAR|SANCTION|CONFLICT|BORDER|PROJECT|MILITARY|IMPORT|EXPORT|SETTLEMENT/i;
   const ACTIVE_PROJECT_STATES = new Set(['UNDER_CONSTRUCTION','COMMISSIONING']);
@@ -19,6 +19,7 @@
   const sim=()=>g.Omega?.Simulation||g.Omega?.SimulationRuntime||null;
   const state=()=>sim()?.world?.state||g.Game?.state||g.gameState||null;
   const turnOf=ctx=>Math.max(0,Math.floor(num(ctx?.turn??ctx?.event?.simulationTurn??state()?.simulation?.turn??sim()?.clock?.turn)));
+  const clockNow=()=>{try{const n=Number(g.performance?.now?.());if(Number.isFinite(n))return n;}catch(_){}return Date.now();};
   function yieldToBrowser(){
     totalYieldCount++;
     return new Promise(resolve=>{
@@ -149,8 +150,8 @@
     bootstrap(root,turn,ids);const base={turn,day:turn+1,playerCountryId:player,simulationDate:ctx.simulationDate||null,stepDurationMs:ctx.stepDurationMs||sim()?.clock?.stepDurationMs||null};
     const events=await processEvents(base,meta),playerHandlers=await runHandlers(player,'PLAYER',base);
     meta.lastProcessedTurn[player]=turn;meta.lastSuccessfulTurn[player]=turn;meta.counters.player=num(meta.counters.player)+1;
-    const active=selectActive(meta,turn,player),activeResults=[];let countryEvaluationsSinceYield=0;
-    const yieldWithinCountryBudget=async()=>{countryEvaluationsSinceYield++;if(countryEvaluationsSinceYield>=LIMITS.COUNTRY_EVALUATIONS_PER_YIELD){countryEvaluationsSinceYield=0;await yieldToBrowser();}};
+    const active=selectActive(meta,turn,player),activeResults=[];let countryEvaluationsSinceYield=0,countrySliceStartedAt=clockNow();
+    const yieldWithinCountryBudget=async()=>{countryEvaluationsSinceYield++;const elapsed=clockNow()-countrySliceStartedAt;if(countryEvaluationsSinceYield>=LIMITS.COUNTRY_EVALUATIONS_PER_YIELD||elapsed>=LIMITS.COUNTRY_BATCH_BUDGET_MS){countryEvaluationsSinceYield=0;await yieldToBrowser();countrySliceStartedAt=clockNow();}};
     for(const item of active){const handlers=await runHandlers(item.id,'ACTIVE',base),result=await evaluateOpponent(item.id,turn,'ACTIVE');activeResults.push({countryId:item.id,handlers,result});item.row.lastProcessedTurn=turn;item.row.lastEvaluationStatus=result.status;meta.lastProcessedTurn[item.id]=turn;if(result.status==='COMPLETE')meta.lastSuccessfulTurn[item.id]=turn;if(busyReason(root,item.id))item.row.expiresAtTurn=Math.max(num(item.row.expiresAtTurn),turn+LIMITS.ACTIVE_TTL_TURNS);await yieldWithinCountryBudget();}
     meta.counters.active=num(meta.counters.active)+activeResults.length;
     const macro=selectMacro(ids,meta,turn,player);meta.macroCursor=macro.nextCursor;const macroResults=[];
