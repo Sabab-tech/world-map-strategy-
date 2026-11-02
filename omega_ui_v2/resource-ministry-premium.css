@@ -1795,3 +1795,227 @@
   .omega-v2-resource-premium .omega-v2-inventory-status-line { gap: 6px 10px; padding: 7px; }
   .omega-v2-resource-premium .omega-v2-inventory-status-line .omega-v2-stock-origin { flex-basis: 100%; min-width: 0; }
 }
+
+
+/* Country resource rows: raw mine stock, processed goods and factory inputs stay visibly distinct. */
+.omega-v2-resource-premium .omega-v2-raw-inventory-section,
+.omega-v2-resource-premium .omega-v2-processed-inventory-section {
+  background: linear-gradient(150deg, rgba(15,34,51,.96), rgba(7,20,33,.98));
+  border: 1px solid rgba(75,165,199,.29);
+  border-radius: 14px;
+  box-shadow: inset 0 1px rgba(255,255,255,.035), 0 8px 22px rgba(0,0,0,.14);
+  margin: 12px 0;
+  padding: 12px;
+}
+.omega-v2-resource-premium .omega-v2-raw-resource-grid,
+.omega-v2-resource-premium .omega-v2-processed-goods-grid {
+  display: grid;
+  gap: 9px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 275px), 1fr));
+}
+.omega-v2-resource-premium .omega-v2-inventory-resource-card {
+  background:
+    radial-gradient(ellipse at 0 0, rgba(29,185,225,.09), transparent 46%),
+    linear-gradient(145deg, rgba(19,43,62,.98), rgba(8,23,37,.99));
+  border: 1px solid rgba(75,169,204,.34);
+  border-left: 3px solid rgba(46,190,226,.72);
+  border-radius: 11px;
+  box-shadow: inset 0 1px rgba(255,255,255,.045), inset 0 0 17px rgba(35,164,207,.035), 0 6px 17px rgba(0,0,0,.16);
+  display: grid;
+  gap: 9px;
+  min-width: 0;
+  padding: 10px;
+}
+.omega-v2-resource-premium .omega-v2-inventory-resource-card[data-stock-state="critical"] {
+  border-left-color: #f07179;
+  border-color: rgba(240,113,121,.38);
+}
+.omega-v2-resource-premium .omega-v2-inventory-resource-card[data-stock-state="warning"] {
+  border-left-color: #e6b95e;
+}
+.omega-v2-resource-premium .omega-v2-inventory-resource-head {
+  align-items: center;
+  display: flex;
+  gap: 9px;
+  min-width: 0;
+}
+.omega-v2-resource-premium .omega-v2-inventory-resource-icon,
+.omega-v2-resource-premium .omega-v2-inventory-product-art {
+  align-items: center;
+  background: linear-gradient(145deg, #eff7fb, #b7cbd6);
+  border: 1px solid rgba(94,204,235,.62);
+  border-radius: 9px;
+  box-shadow: inset 0 1px rgba(255,255,255,.85), 0 0 11px rgba(29,183,226,.15);
+  display: flex;
+  flex: 0 0 43px;
+  height: 43px;
+  justify-content: center;
+  overflow: hidden;
+  padding: 3px;
+  width: 43px;
+}
+.omega-v2-resource-premium .omega-v2-inventory-resource-icon img,
+.omega-v2-resource-premium .omega-v2-inventory-product-art img {
+  height: 100%;
+  object-fit: contain;
+  width: 100%;
+}
+.omega-v2-resource-premium .omega-v2-inventory-resource-name {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.omega-v2-resource-premium .omega-v2-inventory-resource-name h3,
+.omega-v2-resource-premium .omega-v2-inventory-product-copy h3 {
+  color: #f0f8fc;
+  font-size: 12px;
+  font-weight: 820;
+  line-height: 1.3;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.omega-v2-resource-premium .omega-v2-inventory-resource-name small {
+  color: #7fa6bc;
+  display: block;
+  font-size: 8px;
+  line-height: 1.3;
+  margin-top: 3px;
+}
+.omega-v2-resource-premium .omega-v2-inventory-status-badge {
+  flex: 0 0 auto;
+  font-size: 8px;
+  font-weight: 850;
+  max-width: 96px;
+  text-align: center;
+}
+.omega-v2-resource-premium .omega-v2-inventory-resource-metrics {
+  display: grid;
+  gap: 6px;
+  grid-template-columns: 1.15fr 1fr;
+}
+.omega-v2-resource-premium .omega-v2-inventory-coverage {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px 9px;
+}
+.omega-v2-resource-premium .omega-v2-inventory-coverage > span {
+  color: #86a5b8;
+  font-size: 8px;
+  font-weight: 760;
+}
+.omega-v2-resource-premium .omega-v2-inventory-coverage > strong {
+  color: #d9edf6;
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
+}
+.omega-v2-resource-premium .omega-v2-inventory-resource-metrics > div {
+  background: rgba(3,15,26,.44);
+  border: 1px solid rgba(94,144,171,.17);
+  border-radius: 7px;
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 7px;
+}
+.omega-v2-resource-premium .omega-v2-inventory-resource-metrics span {
+  color: #86a5b8;
+  font-size: 8px;
+  font-weight: 760;
+  line-height: 1.25;
+}
+.omega-v2-resource-premium .omega-v2-inventory-resource-metrics strong {
+  color: #eaf7fd;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+.omega-v2-resource-premium .omega-v2-inventory-target-note {
+  color: #c1d5e1;
+  font-size: 9px;
+  line-height: 1.35;
+}
+.omega-v2-resource-premium .omega-v2-inventory-resource-origin {
+  border-top: 1px solid rgba(78,153,184,.19);
+  display: grid;
+  gap: 6px;
+  padding-top: 7px;
+}
+.omega-v2-resource-premium .omega-v2-inventory-origin-heading {
+  color: #83a8bc;
+  font-size: 8px;
+  font-weight: 850;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.omega-v2-resource-premium .omega-v2-inventory-origin-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.omega-v2-resource-premium .omega-v2-origin-pill {
+  background: rgba(3,16,27,.6);
+  border: 1px solid rgba(84,153,181,.24);
+  border-radius: 7px;
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding: 5px 7px;
+}
+.omega-v2-resource-premium .omega-v2-origin-pill[data-origin="mine"] { border-color: rgba(72,186,156,.4); }
+.omega-v2-resource-premium .omega-v2-origin-pill[data-origin="import"],
+.omega-v2-resource-premium .omega-v2-origin-pill[data-origin="in-transit"] { border-color: rgba(82,169,218,.42); }
+.omega-v2-resource-premium .omega-v2-origin-pill[data-origin="opening"] { border-color: rgba(206,174,108,.38); }
+.omega-v2-resource-premium .omega-v2-origin-kind {
+  color: #9eb9c9;
+  font-size: 8px;
+  font-weight: 760;
+}
+.omega-v2-resource-premium .omega-v2-origin-pill strong {
+  color: #edf8fc;
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.25;
+}
+.omega-v2-resource-premium .omega-v2-origin-pill small {
+  color: #9dc1d3;
+  font-size: 8px;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+.omega-v2-resource-premium .omega-v2-origin-empty {
+  color: #8ca6b6;
+  font-size: 9px;
+}
+.omega-v2-resource-premium .omega-v2-inventory-product-card {
+  align-items: center;
+  background: linear-gradient(145deg, rgba(18,42,61,.94), rgba(8,22,36,.98));
+  border: 1px solid rgba(185,158,105,.29);
+  border-left: 3px solid rgba(199,169,112,.65);
+  border-radius: 10px;
+  box-shadow: inset 0 1px rgba(255,255,255,.035), 0 5px 14px rgba(0,0,0,.12);
+  display: flex;
+  gap: 10px;
+  min-width: 0;
+  padding: 10px;
+}
+.omega-v2-resource-premium .omega-v2-inventory-product-copy {
+  display: grid;
+  flex: 1 1 auto;
+  gap: 4px;
+  min-width: 0;
+}
+.omega-v2-resource-premium .omega-v2-inventory-product-copy > span {
+  color: #bda978;
+  font-size: 8px;
+  font-weight: 800;
+}
+.omega-v2-resource-premium .omega-v2-inventory-product-copy > strong {
+  color: #f1e7ce;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 420px) {
+  .omega-v2-resource-premium .omega-v2-inventory-resource-metrics { grid-template-columns: 1fr 1fr; }
+  .omega-v2-resource-premium .omega-v2-inventory-status-badge { max-width: 80px; }
+}
