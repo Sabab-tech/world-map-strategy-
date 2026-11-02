@@ -1,10 +1,10 @@
 /* OMEGA COUNTRY PRODUCT INVENTORY RUNTIME v1.0.0
  * Country-scoped, unbounded game inventory ledger.
- * All country records are persisted in Game.state.countryInventories. Only the
- * player-selected country may be mutated by this runtime; other country records
- * remain available for read-only inspection. Existing ResourceIndustrialNetwork
- * remains the authority for factory stock changes, so factory outputs are logged
- * here but are never credited a second time.
+ * Only the active player's country is materialized as a live runtime record.
+ * Inactive countries remain static catalog identities; already-saved snapshots are
+ * retained read-only, and a never-activated country is not created by inspection.
+ * Existing ResourceIndustrialNetwork remains authoritative for factory stock
+ * changes, so factory outputs are logged here but never credited a second time.
  */
 (function (g) {
   'use strict';
