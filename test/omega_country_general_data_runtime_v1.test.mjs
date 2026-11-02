@@ -88,13 +88,13 @@ test('same-country requests coalesce and selected records can be released',async
  assert.equal(runtime.diagnostics().cacheLimit,6);
 });
 test('missing country behaviour evidence stays unobserved instead of fabricating strategic traits',async()=>{
- globalThis.OmegaCanonicalIdentityRegistry={resolveCountry:v=>({id:String(v||'').toUpperCase(),raw:{}}),list:()=>[{id:'AAA'},{id:'BBB'}]};
+ globalThis.OmegaCanonicalIdentityRegistry={resolveCountry:v=>({id:String(v||'').toUpperCase(),raw:{}}),list:()=>[{id:'ZZZ'},{id:'ZZY'}]};
  await import('../omega_opponent_adaptive_strategy_system.js');
- const strategy=globalThis.OmegaOpponentAdaptiveStrategy,a=runtime.getBehaviorProfile('AAA'),b=runtime.getBehaviorProfile('BBB');
+ const strategy=globalThis.OmegaOpponentAdaptiveStrategy,a=runtime.getBehaviorProfile('ZZZ'),b=runtime.getBehaviorProfile('ZZY');
  assert.equal(a.availability,'UNOBSERVED');assert.equal(b.availability,'UNOBSERVED');
- assert.equal(a.dimensions.innovationPreference.value,null);
- assert.equal(b.dimensions.fiscalDiscipline.value,null);
- const scoreA=strategy.scoreAction('AAA','EFFICIENCY'),scoreB=strategy.scoreAction('BBB','EFFICIENCY');
+ assert.equal(a.dimensions.innovationPreference?.value??null,null);
+ assert.equal(b.dimensions.fiscalDiscipline?.value??null,null);
+ const scoreA=strategy.scoreAction('ZZZ','EFFICIENCY'),scoreB=strategy.scoreAction('ZZY','EFFICIENCY');
  assert.equal(scoreA.known,false,'unknown evidence must not produce a fabricated action score');
  assert.equal(scoreB.known,false,'unknown evidence must not produce a fabricated action score');
 });
