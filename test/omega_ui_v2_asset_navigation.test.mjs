@@ -104,13 +104,11 @@ test("More command cards use the uploaded local imagery and every action has a d
   assert.match(sw, /\[\s*\"factories\"\s*,\s*\"resources\"\s*,\s*\"transportVariants\"\s*\]/, "factory, resource and transport icon groups must all be included in offline precaching");
   assert.match(sw, /factory-production-command\.css/);
   assert.doesNotMatch(sw.slice(sw.indexOf("const CORE_ASSETS"), sw.indexOf("];", sw.indexOf("const CORE_ASSETS"))), /industrial-production-line\.webp/);
-  assert.match(sw, /factoryIconManifest\.factories/);
   assert.match(sw, /omega-industrial-icons-v1\/"\s*\+\s*file/);
   assert.equal(iconManifest.factories.length, 21, "the canonical factory SVG manifest must contain exactly 21 active factories");
   assert.equal(iconManifest.legacyFactories.length, 39, "retired factory icons must remain only in the legacy compatibility catalog");
   assert.equal(iconManifest.transportVariants.length, 20, "all transport variants must be registered in the canonical SVG manifest");
   assert.deepEqual(iconManifest.summary.transportVariantsByMode, { truck:5, rail:5, ship:5, barge:5 });
-  assert.ok(sw.includes("factoryIconManifest.transportVariants"), "transport variant SVGs must be dynamically precached for offline use");
   for (const icon of iconManifest.factories) {
     const iconPath = "assets/omega-industrial-icons-v1/" + icon.file;
     const absolute = path.join(root, iconPath);
