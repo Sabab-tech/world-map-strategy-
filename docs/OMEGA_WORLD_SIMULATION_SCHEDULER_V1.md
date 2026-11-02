@@ -28,6 +28,7 @@ Country identity resolution uses the canonical country runtime/identity bridge. 
 | Active country set | Maximum 48 |
 | Pending event queue | Maximum 256 |
 | Remembered event identifiers | Maximum 512 |
+| Country evaluations between browser yields | 2 |
 
 Active countries expire after 30 game days unless renewed by ongoing work or a new relevant event. The macro cursor, active-country metadata and last-processed turns are stored under the existing simulation state. Country economic, resource, factory and inventory data remain with their current authoritative owners.
 
@@ -41,4 +42,4 @@ Opponent autonomy project and training ticks use player/active country handlers.
 
 The 100-game-day automated test uses 197 canonical test identities and verifies that every non-player test country receives at least one evaluation through either the active or macro tier, the player never enters opponent AI, active/macro budgets stay within limits, counterparties become active, duplicate turns are idempotent, and active/event queues are bounded.
 
-This is a deterministic engine regression test, not evidence that a physical Android 9 device has completed a 100-day gameplay soak. Browser JavaScript remains single-threaded for these evaluations: this change bounds work at turn boundaries rather than claiming that Web Workers are already active. The macro evaluation produces evidence-backed decisions and queues commands; it does not claim that every country changes GDP or inventory every day. Resource and factory production continue through existing domain runtimes and their current player-country scope.
+This is a deterministic engine regression test, not evidence that a physical Android 9 device has completed a 100-day gameplay soak. Browser JavaScript remains single-threaded for these evaluations: this change bounds work at turn boundaries and yields cooperatively to the browser after every two country evaluations, but does not claim that Web Workers are already active. The macro evaluation produces evidence-backed decisions and queues commands; it does not claim that every country changes GDP or inventory every day. Resource and factory production continue through existing domain runtimes and their current player-country scope.

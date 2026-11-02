@@ -6,16 +6,16 @@ const source=readFileSync(new URL('../omega_world_simulation_scheduler_v1.js',im
 function harness(count=197){
  const ids=[],profiles=[],byId=new Map();
  for(let i=0;i<count;i++){const id=String.fromCharCode(65+Math.floor(i/26))+String.fromCharCode(65+i%26),row={countryCode:id,iso3:'X'+String(i).padStart(2,'0')};ids.push(id);profiles.push(row);byId.set(id,row);}
- const participants=new Map(),listeners=new Set(),evaluations=[],queued=[],handled=[];
+ const participants=new Map(),listeners=new Set(),evaluations=[],queued=[],handled=[];let yields=0;
  const state={simulation:{turn:0,session:{playerCountryId:'AA',status:'RUNNING'}},projects:{BB:{registry:[{projectId:'P1',autonomy:true,status:'UNDER_CONSTRUCTION'}]}},military:{CC:{trainingQueue:[{trainingId:'T1',status:'IN_TRAINING'}]}},trade:{}};
  const simulation={world:{state},clock:{turn:0,stepDurationMs:10000},getPlayerCountryId:()=>state.simulation.session?.playerCountryId||null,registerTurnParticipant(id,handler,options){participants.set(id,{handler,options});return()=>participants.delete(id);},events:{subscribe(type,handler){if(type==='*')listeners.add(handler);return()=>listeners.delete(handler);}}};
  const rules={async listCountryIds(){return ids;},async evaluateCountry(countryId,turn){evaluations.push({countryId,turn});return{status:'COMPLETE',decisions:[{decisionId:'D-'+countryId+'-'+turn,scenarioId:'RESOURCE_DEFICIT',priorityScore:1,selected:{action:'IMPORT'}}]};},queueDecision(decision,turn){queued.push({decisionId:decision.decisionId,turn});return{commandId:decision.decisionId};}};
- const sandbox={console,Promise,Map,Set,WeakMap,Object,Array,Number,String,Math,Date,JSON,Omega:{Simulation:simulation,OpponentCountryRules:rules},OmegaCountryRuntimeData:{resolveCountry(v){return byId.get(String(v).toUpperCase())||null;},listProfiles(){return profiles;}},Game:{state},addEventListener(){},removeEventListener(){}};
+ const sandbox={console,Promise,Map,Set,WeakMap,Object,Array,Number,String,Math,Date,JSON,Omega:{Simulation:simulation,OpponentCountryRules:rules},OmegaCountryRuntimeData:{resolveCountry(v){return byId.get(String(v).toUpperCase())||null;},listProfiles(){return profiles;}},Game:{state},addEventListener(){},removeEventListener(){},setTimeout(callback){yields++;queueMicrotask(callback);return 0;}};
  vm.runInNewContext(source,sandbox,{filename:'omega_world_simulation_scheduler_v1.js'});
  const scheduler=sandbox.Omega.WorldSimulationScheduler,participant=participants.get('omega.world-simulation.scheduler.v1');
  assert.ok(participant,'scheduler must register one canonical turn participant');
  scheduler.registerCountryHandler('test.player-active-handler',async(cid,ctx)=>handled.push({countryId:cid,tier:ctx.tier,turn:ctx.turn}),{tiers:['PLAYER','ACTIVE']});
- return{ids,participants,listeners,evaluations,queued,handled,state,simulation,scheduler,participant};
+ return{ids,participants,listeners,evaluations,queued,handled,yields:()=>yields,state,simulation,scheduler,participant};
 }
 test('100-game-day schedule is bounded and all 196 non-player test countries are evaluated',async()=>{
  const h=harness(197);
@@ -23,7 +23,7 @@ test('100-game-day schedule is bounded and all 196 non-player test countries are
  const processed=new Set(h.evaluations.map(x=>x.countryId));
  assert.equal(processed.size,196,'every non-player country, including active-tier countries, should be evaluated');
  assert.equal(processed.has('AA'),false,'player must remain outside opponent AI');
- assert.ok(h.evaluations.length<=1200);assert.ok(h.queued.length<=h.evaluations.length);assert.equal(h.scheduler.diagnostics().lastTurn,100);
+ assert.ok(h.evaluations.length<=1200);assert.ok(h.queued.length<=h.evaluations.length);assert.ok(h.yields()>0,'large turns must yield cooperatively to the browser');assert.equal(h.scheduler.diagnostics().lastTurn,100);
 });
 test('trade events promote both counterparties and duplicate event IDs are ignored',async()=>{
  const h=harness(197),event={eventId:'SETTLEMENT-1',eventType:'OMEGA_TRADE_SETTLEMENT_COMPLETED',simulationTurn:1,payload:{sourceCountryId:'BB',destinationCountryId:'CC'}};
