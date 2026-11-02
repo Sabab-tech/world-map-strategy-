@@ -397,7 +397,7 @@ test('repeated startup calls and depletion after initialization never replenish 
   assert.deepEqual(plain(loadedState.economy.IND.productionAssets.map(asset => asset.id).sort()), plain(beforeAssets));
 });
 
-test('mid-game and late-save sessions are skipped rather than given a fresh startup economy', async () => {
+test('mid-game existing save receives one additive player-country inventory recovery', async () => {
   const state = makeState({
     simulation: {
       turn: 180,
@@ -410,15 +410,31 @@ test('mid-game and late-save sessions are skipped rather than given a fresh star
       }
     }
   });
+  const originalFactoryIds = state.economy.BGD.productionAssets.map(row => row.id);
   const { context, api, emitSimulationEvent } = makeHarness(state);
   await api.ready;
   emitSimulationEvent('OMEGA_GAME_SESSION_CREATED', {
     session: JSON.parse(JSON.stringify(state.simulation.session))
   });
   const result = await api.waitForPendingInitialization();
-  assert.equal(result.status, 'SKIPPED_NOT_NEW_GAME');
-  assert.equal(state.simulation.startupBaselineV1, undefined);
-  assert.equal(state.economy.BGD.startupBaselineV1, undefined);
-  assert.equal(state.resource.BGD.startupBaselineV1, undefined);
-  assert.equal(state.resource.BGD.inventory.coal, 0);
+  assert.ok(['COMPLETED_WITH_REPORTED_GAPS', 'COMPLETED'].includes(result.status));
+  assert.equal(state.simulation.startupBaselineV1, undefined,
+    'existing-save recovery must not overwrite or fabricate a new-game global baseline report');
+  assert.equal(state.resource.BGD.startupBaselineV1.openingStockInitialized, true);
+  assert.equal(state.resource.BGD.factoryInputBaselineV1.openingStockInitialized, true);
+  assert.equal(state.economy.BGD.startupBaselineV1.factoryAssetsInitialized, true);
+  assert.ok(state.resource.BGD.inventory.coal > 0,
+    'the existing save receives the approved one-time factory-input stock without using geological reserve quantities');
+  assert.ok(originalFactoryIds.every(id => state.economy.BGD.productionAssets.some(row => row.id === id)),
+    'all existing factory assets are preserved');
+  assert.equal(Object.keys(state.resource).length, 1,
+    'recovery activates only the selected player country rather than materializing all 249 country buckets');
+  const inventoryAfterRecovery = JSON.stringify(state.resource.BGD.inventory);
+  const factoryIdsAfterRecovery = JSON.stringify(state.economy.BGD.productionAssets.map(row => row.id).sort());
+  const repeated = await api.initializeForSession(state.simulation.session);
+  assert.equal(repeated.status, 'ALREADY_INITIALIZED');
+  assert.equal(JSON.stringify(state.resource.BGD.inventory), inventoryAfterRecovery,
+    'reopening the same save cannot replenish depleted or initialized opening stock');
+  assert.equal(JSON.stringify(state.economy.BGD.productionAssets.map(row => row.id).sort()), factoryIdsAfterRecovery,
+    'reopening the same save cannot duplicate factory assets');
 });

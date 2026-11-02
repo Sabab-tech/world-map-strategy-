@@ -25,6 +25,84 @@ test("resource icon manifest is complete, local, unique and integrated with Reso
   assert.equal(api.resourceIconPath("unregistered_future_type"), "", "unknown types must use the safe text fallback");
 });
 
+test("inventory displays the canonical 41 resources and aggregate balances when warehouse projections are missing", () => {
+  const api = globalThis.OmegaUIV2ResourceMinistry;
+  const rules = json("resource_economy_rules.json");
+  const resources = Object.keys(rules.demand.resourceProfiles).map((resourceId) => {
+    const profile = rules.demand.resourceProfiles[resourceId] || {};
+    const unit = String(profile.unit || "").replace(/_PER_DAY$/i, "");
+    return {
+      resourceId,
+      name: resourceId.replace(/[_-]+/g, " ").replace(/\b\w/g, (ch) => ch.toUpperCase()),
+      unit: unit || null,
+      demandUnit: profile.unit || null,
+      priority: profile.priority ?? null,
+      profileKnown: Number.isFinite(Number(profile.basePerMillionPopulation))
+    };
+  });
+  const priorGame = globalThis.Game;
+  const priorInventoryRuntime = globalThis.OmegaCountryInventoryRuntime;
+  const priorIndustrialCatalog = globalThis.OmegaResourceIndustrialCatalogData;
+  const listeners = Object.create(null);
+  const root = {
+    innerHTML: "",
+    classList: { add() {} },
+    addEventListener(type, fn) { listeners[type] = fn; },
+    querySelector() { return null; },
+    querySelectorAll() { return []; },
+    contains() { return true; }
+  };
+  globalThis.Game = {
+    state: {
+      simulation: { turn: 12, session: { playerCountryId: "BGD", status: "RUNNING" } },
+      resource: {
+        BGD: {
+          inventory: { coal: 125, iron_ore: 0 },
+          inventoryUnits: { coal: "TONNES", iron_ore: "TONNES" },
+          batches: [{
+            batchId: "STARTUP-BATCH-COAL", resourceId: "coal", quantity: 125,
+            remainingQuantity: 125, unit: "TONNES", stage: "RAW",
+            warehouseId: "WH-BGD-RAW", status: "AVAILABLE"
+          }],
+          warehouse: { warehouseId: "WH-BGD-RAW", availableByResource: {}, receipts: [], storedBatchIds: [] },
+          processedWarehouse: { warehouseId: "WH-BGD-PROCESSED", availableByResource: {}, receipts: [], storedBatchIds: [] },
+          mineAssets: [],
+          industrialNetwork: { projects: [], shipments: [], siteFlowLedger: [] },
+          inventoryLedger: []
+        }
+      }
+    }
+  };
+  globalThis.OmegaCountryInventoryRuntime = {
+    getResourceCatalog() { return resources; }
+  };
+  globalThis.OmegaResourceIndustrialCatalogData = { resourceRules: {} };
+  try {
+    const result = api.render(root, { countryId: "BGD", sites: [], tab: "inventory" });
+    assert.equal(result.ok, true);
+    assert.match(root.innerHTML, /Raw resource types/);
+    assert.match(root.innerHTML, /<strong>41<\/strong>/,
+      "inventory must enumerate every canonical raw-resource identity");
+    assert.match(root.innerHTML, /Coal/);
+    assert.match(root.innerHTML, /125(?:\.00)? TONNES/,
+      "aggregate resource.inventory balances must remain visible if warehouse projections are absent");
+    assert.match(root.innerHTML, /Not recorded/,
+      "unknown balances stay explicit instead of being fabricated as zero");
+    assert.match(root.innerHTML, /STARTUP-BATCH-COAL|Recent batches/,
+      "tracked raw batches are included in the inventory view");
+    assert.match(root.innerHTML, /Natural Gas/,
+      "resource labels are resolved from canonical resource profiles");
+    assert.doesNotMatch(root.innerHTML, /SIMULATION(?:_RESOURCE)?_UNIT/i,
+      "internal simulation unit labels are not exposed in the inventory table or batch list");
+  } finally {
+    if (priorGame === undefined) delete globalThis.Game; else globalThis.Game = priorGame;
+    if (priorInventoryRuntime === undefined) delete globalThis.OmegaCountryInventoryRuntime;
+    else globalThis.OmegaCountryInventoryRuntime = priorInventoryRuntime;
+    if (priorIndustrialCatalog === undefined) delete globalThis.OmegaResourceIndustrialCatalogData;
+    else globalThis.OmegaResourceIndustrialCatalogData = priorIndustrialCatalog;
+  }
+});
+
 test("mine archetype classifier keeps extraction-site silhouettes distinct", () => {
   const api = globalThis.OmegaUIV2ResourceMinistry;
   assert.equal(api.mineArchetype({ siteType: "underground mine" }), "UNDERGROUND_MINE");
@@ -47,8 +125,12 @@ test("resource visual layer is wired into the offline-first app without remote d
   assert.ok(html.includes(stylesheetTag), "premium resource stylesheet must be loaded by the app");
   assert.ok(sw.includes('"' + "./" + cssPath + '"'), "premium resource stylesheet must be precached offline");
   assert.ok(uiManifest.additionalStyles.includes(cssPath), "UI v2 manifest must document the resource style");
-  assert.match(sw, /omega-offline-atlas-shell-v75/, "offline cache must be invalidated for new visual assets");
+  assert.match(sw, /omega-offline-atlas-shell-v76/, "offline cache must be invalidated for new visual assets");
   const coreAssets = sw.slice(sw.indexOf("const CORE_ASSETS"), sw.indexOf("];", sw.indexOf("const CORE_ASSETS")));
+  assert.ok(coreAssets.includes('"./resource_economy_rules.json"'), "canonical resource identities remain in the shell precache list");
+  const shellAssetPolicy = sw.slice(sw.indexOf("function isShellAsset"), sw.indexOf("function isLocalAppUrl"));
+  assert.ok(shellAssetPolicy.includes(String.raw`resource_economy_rules\.json`),
+    "the Service Worker must cache the canonical resource rules as an offline shell asset");
   assert.ok(coreAssets.includes('"./assets/omega-industrial-icons-v1/transport/route-mine-origin.svg"'));
   assert.ok(coreAssets.includes('"./assets/omega-industrial-icons-v1/transport/route-warehouse-destination.svg"'));
   assert.ok(coreAssets.includes('"./' + cssPath + '"'), "premium stylesheet belongs in the precache list");
@@ -620,7 +702,7 @@ test("all resource SVGs use a light metallic backplate for readable dark mineral
     assert.match(svg, /data-omega-icon-kind="resource"/);
   }
   assert.match(manifest.rendering.background, /light silver-metal.*factory SVGs retain their shared dark-navy/i);
-  assert.match(read("omega-offline-map-sw.js"), /omega-offline-atlas-shell-v75/);
+  assert.match(read("omega-offline-map-sw.js"), /omega-offline-atlas-shell-v76/);
 });
 
 
