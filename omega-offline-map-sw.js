@@ -370,7 +370,7 @@ self.addEventListener("install", event => {
         await fetchAndCache(cache, url);
       }
     });
-    await Promise.allSettled(workers);
+    await Promise.all(workers.map(worker => worker.catch(() => null)));
     await self.skipWaiting();
   })());
 });
