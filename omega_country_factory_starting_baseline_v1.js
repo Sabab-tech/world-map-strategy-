@@ -278,9 +278,8 @@
   }
   function eligibleSession(state, session) {
     if (!session) return false;
-    var turn = currentTurn(state);
-    var createdTurn = finite(session.createdTurn);
-    if (turn > 1 || (createdTurn !== null && createdTurn > 1)) return false;
+    // A missing starting baseline is also repaired in an already-running saved game.
+    // Existing assets are preserved and the live registry only creates the missing count.
     var status = id(session.status);
     if (['READY', 'RUNNING', 'PAUSED'].indexOf(status) < 0) return false;
     var player = id(session.playerCountryId);
@@ -432,6 +431,17 @@
       return running[runningKey];
     });
   }
+  function ensureCurrentSession() {
+    var state = rootState();
+    var session = sessionFromState(state);
+    if (!session || !session.playerCountryId) return Promise.resolve({ version: VERSION, status: 'NO_ACTIVE_SESSION' });
+    pendingInitialization = initializeForSession(session);
+    return pendingInitialization;
+  }
+  function onRuntimeReady() {
+    attachSimulationEventBus();
+    ensureCurrentSession().catch(function () {});
+  }
   function onSessionCreated(event) {
     var detail = event && event.detail !== undefined ? event.detail
       : (event && event.payload !== undefined ? event.payload : event || {});
@@ -484,12 +494,13 @@
     installed = true;
     if (typeof g.addEventListener === 'function') {
       g.addEventListener('OMEGA_GAME_SESSION_CREATED', onSessionCreated);
-      g.addEventListener('OMEGA_READY', attachSimulationEventBus);
+      g.addEventListener('OMEGA_READY', onRuntimeReady);
+      g.addEventListener('OMEGA_GAME_SESSION_STARTED', onRuntimeReady);
       if (g.document && typeof g.document.addEventListener === 'function') {
         if (g.document.readyState === 'loading') {
-          g.document.addEventListener('DOMContentLoaded', attachSimulationEventBus, { once: true });
+          g.document.addEventListener('DOMContentLoaded', onRuntimeReady, { once: true });
         } else {
-          attachSimulationEventBus();
+          onRuntimeReady();
         }
       }
     }
@@ -534,6 +545,7 @@
   var api = {
     VERSION: VERSION,
     init: function () { install(); return loadSources(); },
+    ensureCurrentSession: ensureCurrentSession,
     get ready() { return loadSources(); },
     getCountryBaseline: function (countryId) {
       if (!loaded) return null;
