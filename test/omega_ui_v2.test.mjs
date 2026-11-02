@@ -155,6 +155,60 @@ test('Government directory includes every canonical cabinet record', () => {
   assert.equal(rows.length, 3);
 });
 
+
+test('executive government overview reuses its ministry rows without loading unused minister state', () => {
+  const keys = ['OmegaCabinetUI','OmegaMinisterRecruitment','OmegaMinisterStateRegistry',
+    'OmegaLiveMinisterSelectorV9','OmegaCountryDataGateway'];
+  const previous = Object.fromEntries(keys.map((key) => [key, globalThis[key]]));
+  let activeMinisterReads = 0;
+  globalThis.OmegaCabinetUI = {
+    ministriesDatabase: {
+      energy_mining: { id:'energy_mining', title:'Energy & Mining', bnTitle:'Energy', category:'agriculture' },
+      interior_security: { id:'interior_security', title:'Interior & Security', bnTitle:'Interior', category:'governance' }
+    }
+  };
+  globalThis.OmegaMinisterRecruitment = {
+    normalizeCountryCode(value) { return String(value || '').toUpperCase() === 'BANGLADESH' ? 'BGD' : String(value || '').toUpperCase(); }
+  };
+  globalThis.OmegaMinisterStateRegistry = {
+    getActiveMinisterSummary() { activeMinisterReads += 1; return null; }
+  };
+  globalThis.OmegaLiveMinisterSelectorV9 = {
+    active() { activeMinisterReads += 1; return null; }
+  };
+  globalThis.OmegaCountryDataGateway = {
+    getSnapshot(countryId) {
+      assert.equal(countryId, 'BGD');
+      return {
+        countryCode:'BGD',
+        status:'OK',
+        identity:{ countryCode:'BGD', name:'Bangladesh', officialName:'People’s Republic of Bangladesh' },
+        fields:{},
+        diagnostics:{ missingFields:[] }
+      };
+    }
+  };
+  const root = {
+    classList:{ add() {} },
+    addEventListener() {},
+    innerHTML:''
+  };
+  try {
+    const result = globalThis.OmegaUIV2Government.render(root, { countryId:'BGD' });
+    assert.equal(result.ok, true);
+    assert.equal(result.view, 'executive-ministry');
+    assert.equal(activeMinisterReads, 0,
+      'the executive overview only uses ministry labels and must not read every minister record');
+    assert.match(root.innerHTML, /Energy &amp; Mining|Energy & Mining/);
+    assert.match(root.innerHTML, /Interior &amp; Security|Interior & Security/);
+  } finally {
+    for (const key of keys) {
+      if (previous[key] === undefined) delete globalThis[key];
+      else globalThis[key] = previous[key];
+    }
+  }
+});
+
 test('Government ministry rows show the canonical active minister for the explicitly selected country', () => {
   const previous = {
     OmegaCabinetUI: globalThis.OmegaCabinetUI,
