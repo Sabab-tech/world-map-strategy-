@@ -673,7 +673,7 @@
         return { batchId:row.batchId || row.id || '', resourceId:row.resourceId || row.materialId || row.commodity || '',
           quantity:val(row.availableQuantity !== undefined ? row.availableQuantity : row.quantity !== undefined ? row.quantity : row.amount),
           unit:row.unit || row.quantityUnit || '', location:row.warehouseId || row.warehouse || row.location || '',
-          status:row.status || '' };
+          status:row.status || '', stage:String(row.stage || row.inventoryStage || row.materialStage || '').toUpperCase(), warehouseId:String(row.warehouseId || row.warehouse || row.location || '') };
       });
     }
     var inventoryLotsForOrigin = gameResource.inventoryLots && typeof gameResource.inventoryLots === 'object' ? gameResource.inventoryLots : {};
@@ -821,14 +821,14 @@
     }
     function targetCoverageDaysFor(resourceId) {
       var runtimeRow = demandRuntimeFor(resourceId);
-      var baselineRow = factoryInputBaselineRowFor(resourceId);
-      var marker = gameResource.factoryInputBaselineV1 && typeof gameResource.factoryInputBaselineV1 === 'object'
-        ? gameResource.factoryInputBaselineV1 : {};
+      var targetMap = gameResource.resourceStockCoverageTargetDays ||
+        gameResource.stockCoverageTargetDaysByResource || {};
+      var targetKey = Object.keys(targetMap).find(function (key) {
+        return key.toLowerCase() === String(resourceId || '').trim().toLowerCase();
+      });
       var candidates = [
-        baselineRow && baselineRow.targetCoverageDays,
-        marker.targetCoverageDays,
-        gameResource.factoryInputCoverageDays,
-        runtimeRow && runtimeRow.stockCoverageTargetDays
+        runtimeRow && runtimeRow.stockCoverageTargetDays,
+        targetKey ? targetMap[targetKey] : null
       ];
       for (var i = 0; i < candidates.length; i += 1) {
         var days = numberOrNull(candidates[i]);
@@ -874,11 +874,18 @@
       var recordedUnit = unitKey && inventoryUnits[unitKey] ? String(inventoryUnits[unitKey]) : '';
       if (recordedUnit && !/SIMULATION.*UNIT/i.test(recordedUnit)) return recordedUnit;
       var meta = resourceCatalogById[wanted];
-      if (meta && meta.unit) return String(meta.unit);
+      if (meta && meta.unit && !/PER[_\s-]*DAY|\/\s*DAY/i.test(String(meta.unit))) return String(meta.unit);
       var rules = g.OmegaResourceIndustrialCatalogData || g.Omega && g.Omega.ResourceIndustrialCatalogData || {};
       var rule = rules.resourceRules && (rules.resourceRules[resourceId] || rules.resourceRules[wanted]);
       if (rule) return String(rule.unit || rule.baseUnit || rule.outputUnit || '');
-      return '';
+      return meta && meta.stockUnit ? String(meta.stockUnit) : '';
+    }
+    function resourceDemandUnit(resourceId, unit) {
+      var meta = resourceCatalogById[String(resourceId || '').trim().toLowerCase()] || {};
+      var runtimeRow = demandRuntimeFor(resourceId) || {};
+      var explicit = String(runtimeRow.demandUnit || runtimeRow.unit || meta.demandUnit || meta.dailyDemandUnit || '').trim();
+      if (explicit) return explicit.replace(/_/g, ' ');
+      return (unit || 'units') + '/day';
     }
     // Factory input is a separate physical stock location. It has already left
     // the country warehouse, but it is not consumed until a production cycle commits.
