@@ -831,7 +831,7 @@
       if (stock === null || demand === null || demand <= 0 || targetDays === null) return null;
       return Math.max(0, demand * targetDays - stock);
     }
-    function sourceSummaryFor(resourceId, unit) {
+    function sourceSummaryFor(resourceId, unit, currentStock) {
       var domesticMine = 0, unknown = 0, foreignByCountry = Object.create(null), tracked = 0;
       sourceBatchRows.forEach(function (row) {
         var rid = String(row && (row.resourceId || row.materialId || row.productId || '')).trim().toLowerCase();
@@ -864,9 +864,15 @@
       Object.keys(foreignByCountry).sort().forEach(function (country) {
         parts.push('Foreign import (' + esc(country) + '): ' + amount(foreignByCountry[country], unit));
       });
-      if (unknown > 0) parts.push('Unverified source: ' + amount(unknown, unit));
-      if (!tracked) parts.push('Batch origin not recorded');
-      var requests = safeArray(gameTrade.importRequests), inbound = 0, suppliers = Object.create(null);
+      if (unknown > 0) parts.push('Unverified batch source: ' + amount(unknown, unit));
+      if (currentStock !== null && currentStock > tracked + 1e-9) {
+        parts.push('Additional stock source unverified: ' + amount(currentStock - tracked, unit));
+      } else if (currentStock === null && !tracked) {
+        parts.push('Batch origin not recorded');
+      } else if (currentStock !== null && tracked > currentStock + 1e-9) {
+        parts.push('Batch ledger exceeds current stock by: ' + amount(tracked - currentStock, unit));
+      }
+      var requests = safeArray(gameTrade.importRequests), inbound = 0, unknownInbound = 0, suppliers = Object.create(null);
       requests.forEach(function (request) {
         if (!request || String(request.resourceId || '').trim().toLowerCase() !== String(resourceId || '').trim().toLowerCase()) return;
         var status = String(request.status || '').toUpperCase();
@@ -879,8 +885,12 @@
         if (quantity === null || quantity <= 0) return;
         var supplier = String(request.supplierCountryId || request.sellerCountryId ||
           request.sourceCountryId || request.counterpartyCountryId || '').trim().toUpperCase();
-        if (supplier && supplier !== countryKey) suppliers[supplier] = (suppliers[supplier] || 0) + quantity;
-        if (!supplier || supplier !== countryKey) inbound += quantity;
+        if (supplier && supplier !== countryKey) {
+          suppliers[supplier] = (suppliers[supplier] || 0) + quantity;
+          inbound += quantity;
+        } else if (!supplier) {
+          unknownInbound += quantity;
+        }
       });
       if (inbound > 0) {
         var supplierLabel = Object.keys(suppliers).sort().map(function (country) {
@@ -888,6 +898,7 @@
         }).join(', ');
         parts.push('Confirmed foreign inbound: ' + amount(inbound, unit) + (supplierLabel ? ' (' + esc(supplierLabel) + ')' : ''));
       }
+      if (unknownInbound > 0) parts.push('Confirmed inbound, supplier unverified: ' + amount(unknownInbound, unit));
       return parts.join(' · ');
     }
     function stockStatusRow(resourceId, currentStock, demand, unit) {
@@ -920,7 +931,7 @@
       }
       var coverageLabel = coverage !== null ? fmt(coverage) + ' days' :
         (demand === 0 ? 'No daily use recorded' : 'Not available');
-      var origin = sourceSummaryFor(resourceId, unit);
+      var origin = sourceSummaryFor(resourceId, unit, currentStock);
       return '<tr class="omega-v2-inventory-status-row"><td colspan="7"><div class="omega-v2-inventory-status-line">' +
         '<span><strong>Coverage</strong>' + esc(coverageLabel) + '</span>' +
         '<span class="omega-v2-stock-status" data-state="' + state + '"><strong>Status</strong>' + esc(label) + '</span>' +
