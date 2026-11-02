@@ -9,9 +9,11 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const read = name => fs.readFileSync(path.join(root, name), 'utf8');
 
 async function createRuntime() {
+  const requests=[];
   const context = {
     console,
     fetch: async input => {
+      requests.push(String(input));
       const relative = String(input).replace(/^\.\//, '');
       const body = read(relative);
       return { ok: true, json: async () => JSON.parse(body) };
@@ -23,7 +25,7 @@ async function createRuntime() {
   const api = context.OmegaCountryRuntimeData;
   assert.ok(api, 'runtime data bridge must register a public API');
   assert.equal(await api.ready, true, 'country profile registry must initialize');
-  return { api, context };
+  return { api, context, requests };
 }
 
 test('all canonical country identities have an ISO-2-derived flag', async () => {
@@ -51,15 +53,20 @@ test('country aliases resolve to the same canonical profile and source records',
   assert.equal(api.resolveCountry('Democratic Republic of the Congo')?.countryCode, 'CD');
   assert.equal(api.resolveCountry('Kosovo')?.countryCode, 'XK');
   assert.equal(api.flagFor('Kosovo'), '🇽🇰');
+  assert.equal(api.getCapital('Kosovo'), null, 'city records are lazy before country selection');
+  await api.loadCountryData('Kosovo', ['cities']);
   assert.equal(api.getCapital('Kosovo'), 'Pristina');
-  assert.ok(api.getRecord('economy', 'Kosovo')?.gdp != null, 'legacy economy record remains accessible');
-  assert.ok(api.getRecord('population', 'Kosovo')?.population_2015 != null, 'legacy population record remains accessible');
-
+  assert.ok(api.getRecord('economy', 'Kosovo')?.gdp != null);
+  assert.ok(api.getRecord('population', 'Kosovo')?.population_2015 != null);
   const bangladesh = api.getProfile('Bangladesh');
   assert.equal(bangladesh?.countryCode, 'BD');
   assert.equal(api.getRecord('economy', 'Bangladesh')?.gdp, bangladesh.sourceValues.gdp);
   assert.equal(api.getRecord('population', 'BGD')?.population_2015, bangladesh.populationValues.population_2015);
+  await api.loadCountryData('Bangladesh', ['cities']);
   assert.equal(api.getCapital('Bangladesh'), 'Dhaka');
+  assert.ok(api.diagnostics().retainedCountryRecords <= api.diagnostics().countryRecordCacheLimit);
+  api.releaseCountryData('Bangladesh');
+  assert.equal(api.getCapital('Bangladesh'), null);
 });
 
 test('live runtime records override baseline values without losing unrelated source fields', async () => {
@@ -105,16 +112,30 @@ test('country selection UI uses the shared bridge and removes hardcoded cross-co
   assert.doesNotMatch(countryIOS, /Western \/ Transatlantic/i);
 });
 
-test('offline app shell caches the country runtime bridge and city records', () => {
+test('offline app shell caches runtime code but defers optional data files', () => {
   const sw = read('omega-offline-map-sw.js');
   assert.match(sw, /\.\/omega_country_runtime_data_v1\.js/);
-  assert.match(sw, /\.\/cities\.json/);
-  assert.match(sw, /\.\/economy\.json/);
-  assert.match(sw, /\.\/population\.json/);
-  assert.match(sw, /\.\/society\.json/);
   assert.match(sw, /\.\/omega_country_data_gateway_v1\.js/);
+  for (const file of ['cities.json','economy.json','population.json','society.json','country_general_data_registry_v1.json','country_sector_profiles_v1.json','country_factory_starting_baseline_v1.json','country_factory_input_inventory_baseline_v1.json']) {
+    assert.equal(sw.includes('./' + file), false, file + ' must be lazy');
+  }
+  assert.match(sw,/omega-offline-atlas-shell-v71/);
+  const bridge=read('omega_country_runtime_data_v1.js');
+  assert.match(bridge,/loadCountryData/);assert.match(bridge,/releaseCountryData/);
 });
 
+test('opponent runtime script is registered once',()=>{
+  const html=read('index.html');
+  assert.equal(html.split('<script src="opponent_country_rules.js" defer></script>').length-1,1);
+});
+test('concurrent country requests share one parsed source file',async()=>{
+  const {api,requests}=await createRuntime();
+  assert.deepEqual(requests,['./economy_global_profiles_v1.json']);
+  const results=await Promise.all([api.loadCountryData('Bangladesh',['cities']),api.loadCountryData('Kosovo',['cities'])]);
+  assert.equal(results[0].status,'READY');assert.equal(results[1].status,'READY');
+  assert.equal(requests.filter(path=>path==='./cities.json').length,1);
+  assert.equal(api.diagnostics().retainedCountryRecords,2);
+});
 test('strategic profile chapter is safely wired into the existing Country IOS', () => {
   const html = read('index.html');
   const countryIOS = read('country-ios.js');

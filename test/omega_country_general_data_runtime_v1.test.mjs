@@ -37,12 +37,21 @@ function countryRow(iso2,iso3,name,metrics){
 const fixture={metadata:{schemaVersion:'1.0.0',datasetId:'OMEGA_COUNTRY_GENERAL_DATA_REGISTRY_V1',countryAndTerritoryCount:2,recordSchema:schema,
  provenanceEncoding:{statuses:['WORLD_BANK_API_OBSERVATION'],sourceIds:['WORLD_BANK_WDI'],sourceNames:['Fixture source'],methods:['SOURCE_OBSERVATION'],missingCode:-1}},
  fieldCatalogue:metricFields.map(key=>({key,name:key,unit:key.includes('Pct')?'%':'source units'})),countries:[countryRow('AA','AAA','Alpha',alpha),countryRow('BB','BBB','Beta',beta)]};
-globalThis.fetch=async()=>({ok:true,json:async()=>fixture});
+let fetchCount=0;
+globalThis.fetch=async input=>{
+ fetchCount++;
+ const lookup=decodeURIComponent(String(input).split('/').pop()).toUpperCase();
+ const row=fixture.countries.find(item=>[item.identity[0],item.identity[1],item.identity[2]].some(value=>String(value).toUpperCase()===lookup));
+ return {ok:!!row,json:async()=>({...fixture,countries:row?[row]:[]})};
+};
 await import('../omega_country_general_data_runtime_v1.js');
 const runtime=globalThis.OmegaCountryGeneralDataRuntime;
 
 test('shared registry decoding keeps identity, provenance, metrics and geography',async()=>{
- assert.equal(await runtime.init(),true);assert.equal(runtime.diagnostics().recordCount,2);
+ assert.equal(await runtime.init(),false,'boot does not fetch the global registry');
+ assert.equal(fetchCount,0);assert.equal(runtime.diagnostics().recordCount,0);
+ assert.equal(await runtime.init('AAA'),true);assert.equal(runtime.diagnostics().recordCount,1);
+ assert.equal(await runtime.init('BBB'),true);assert.equal(runtime.diagnostics().recordCount,2);
  const a=runtime.getCountryRecord('AAA');assert.equal(a.identity.name,'Alpha');assert.equal(a.generalFacts.capital,'Alpha Capital');
  assert.equal(a.metrics.gdpCurrentUsd,500000000000);assert.equal(a.metricMetadata.gdpCurrentUsd.year,2022);
  const gdpMeta=a.metricMetadata.gdpCurrentUsd;
@@ -67,6 +76,16 @@ test('shared registry decoding keeps identity, provenance, metrics and geography
  fixture.countries[0].metricMetadata.years[gdpIndex]=priorYear;
  assert.deepEqual(a.localGeography.economicCenters,[{name:'Alpha City',description:'fixture city record'}]);
  assert.equal(runtime.getCountryRecord('BBB').metrics.populationTotal,30000000);assert.equal(runtime.getCountryRecord('MISSING'),null);
+});
+test('same-country requests coalesce and selected records can be released',async()=>{
+ runtime.releaseCountry('AAA');const before=fetchCount;
+ const results=await Promise.all([runtime.init('AAA'),runtime.init('AAA')]);
+ assert.deepEqual(results,[true,true]);assert.equal(fetchCount-before,1);
+ assert.equal(runtime.diagnostics().recordCount,2);
+ assert.equal(runtime.releaseCountry('AAA'),true);
+ assert.equal(runtime.getCountryRecord('AAA'),null);
+ assert.equal(runtime.diagnostics().recordCount,1);
+ assert.equal(runtime.diagnostics().cacheLimit,6);
 });
 test('country traits are derived from data and change opponent action scoring',async()=>{
  globalThis.OmegaCanonicalIdentityRegistry={resolveCountry:v=>({id:String(v||'').toUpperCase(),raw:{}}),list:()=>[{id:'AAA'},{id:'BBB'}]};
