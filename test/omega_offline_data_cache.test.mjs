@@ -57,13 +57,14 @@ function createCacheHarness(){
     listeners.get('install')({waitUntil(promise){pending=promise;}});
     await pending;
   }
-  async function request(url){
+  async function request(url,options={}){
     let pending;
     const waits=[];
     listeners.get('fetch')({request:new Request(url),respondWith(promise){pending=promise;},waitUntil(promise){waits.push(promise);}});
     const response=await pending;
-    await Promise.all(waits);
-    return response;
+    const background=Promise.all(waits);
+    if(options.waitForBackground!==false)await background;
+    return options.waitForBackground===false?{response,background}:response;
   }
   return{
     install,request,networkRequests,cacheStores,
@@ -101,7 +102,10 @@ test('country data is refreshed online and only uses its last downloaded copy af
   assert.deepEqual(await response.json(),{revision:1});
   h.setPayload({revision:2});
   response=await h.request(url);
-  assert.deepEqual(await response.json(),{revision:2});
+  assert.deepEqual(await response.json(),{revision:1},'a cached revision is returned immediately while the new revision is fetched in the background');
+  assert.equal(response.headers.get('X-OMEGA-OFFLINE-STALE'),'1');
+  response=await h.request(url);
+  assert.deepEqual(await response.json(),{revision:2},'the next read must use the refreshed exact-URL cache entry');
   h.setOffline(true);
   response=await h.request(url);
   assert.deepEqual(await response.json(),{revision:2});
@@ -125,11 +129,16 @@ test('stalled country requests abort at the configured timeout and fall back to 
   await h.request(url);
   h.setStalled(true);
   const started=Date.now();
-  const response=await h.request(url);
-  const elapsed=Date.now()-started;
+  const pending=await h.request(url,{waitForBackground:false});
+  const response=pending.response;
+  const pageElapsed=Date.now()-started;
   assert.equal(response.status,200);
   assert.equal(response.headers.get('X-OMEGA-OFFLINE-STALE'),'1');
-  assert.ok(elapsed>=1900&&elapsed<5000,'network fallback must be bounded by the 2.2 second request timeout');
+  assert.ok(pageElapsed<500,'a cached page response must not wait for the background network timeout');
+  const backgroundStarted=Date.now();
+  await pending.background;
+  const refreshElapsed=Date.now()-backgroundStarted;
+  assert.ok(refreshElapsed<2800,'a stalled background refresh must abort at its 2.2 second timeout');
 });
 
 test('deleted country data is removed rather than resurrected from an old offline cache',async()=>{
@@ -138,10 +147,11 @@ test('deleted country data is removed rather than resurrected from an old offlin
   await h.request(url);
   h.setDeleted(true);
   let response=await h.request(url);
-  assert.equal(response.status,404);
+  assert.equal(response.status,200,'the last downloaded copy can be served while a background deletion check completes');
+  assert.equal(response.headers.get('X-OMEGA-OFFLINE-STALE'),'1');
   h.setOffline(true);
   response=await h.request(url);
-  assert.equal(response.status,504);
+  assert.equal(response.status,504,'a 404/410 refresh must remove the previous offline copy');
 });
 
 test('data larger than the configured per-file limit is not retained in the offline working set',async()=>{
