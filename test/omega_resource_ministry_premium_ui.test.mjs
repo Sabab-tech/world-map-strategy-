@@ -92,6 +92,8 @@ test("inventory displays the canonical 41 resources and aggregate balances when 
       "tracked raw batches are included in the inventory view");
     assert.match(root.innerHTML, /Natural Gas/,
       "resource labels are resolved from canonical resource profiles");
+    assert.doesNotMatch(root.innerHTML, /SIMULATION(?:_RESOURCE)?_UNIT/i,
+      "internal simulation unit labels are not exposed in the inventory table or batch list");
   } finally {
     if (priorGame === undefined) delete globalThis.Game; else globalThis.Game = priorGame;
     if (priorInventoryRuntime === undefined) delete globalThis.OmegaCountryInventoryRuntime;
