@@ -1081,7 +1081,7 @@ test("Resource Ministry shows only canonical raw stock and preserves factory inp
       "the default ministry overview must expose current stock without opening another tab");
     assert.match(root.innerHTML,/1,234(?:\.00)? TONNES/);
     const rawSectionStart = root.innerHTML.indexOf("data-omega-v2-raw-resource-inventory");
-    const processedSectionStart = root.innerHTML.indexOf("data-omega-v2-processed-goods-inventory");
+    const processedSectionStart = root.innerHTML.indexOf("Processed Goods Warehouse");
     assert.ok(rawSectionStart >= 0 && processedSectionStart > rawSectionStart,
       "the overview must render separate raw and processed warehouse sections");
     const rawSection = root.innerHTML.slice(rawSectionStart, processedSectionStart);
