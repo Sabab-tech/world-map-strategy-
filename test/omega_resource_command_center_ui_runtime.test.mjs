@@ -222,7 +222,7 @@ test('canonical site profiles appear in relevant tabs without becoming live prod
   assert.match(modal.innerHTML, /LEGACY PLAN · NOT A SHIPMENT/, 'legacy route plans must never be presented as actual deliveries');
   assert.match(modal.innerHTML, /B-PARTIAL/, 'a partially received mine batch must remain visible in the raw-warehouse panel');
   assert.ok(modal.innerHTML.includes('<strong>20</strong>'), 'the warehouse card must show received-minus-dispatched quantity, not the whole source batch');
-  assert.match(modal.innerHTML, /LEGACY-PREVIEW-1/, 'old planning history remains visible under its non-authoritative label');
+  assert.match(modal.innerHTML, /B-OLD/, 'old planning history remains visible by its batch ID under the non-authoritative label');
 
   ui.open('BGD', 'processing');
   modal = elements.get('gsrsk-intelligence-modal');
