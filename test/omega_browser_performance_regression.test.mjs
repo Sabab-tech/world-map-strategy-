@@ -533,7 +533,7 @@ test('universal action progress covers legacy controls, mining actions and resou
 
   assert.ok(html.includes('<script src="omega_action_progress_v1.js" defer></script>'),
     'the universal action loader must be loaded by the production shell');
-  const shellVersion = Number(worker.match(/CACHE_NAME = "omega-offline-atlas-shell-v(\\d+)"/)?.[1] || 0);
+  const shellVersion = Number(worker.match(/CACHE_NAME = "omega-offline-atlas-shell-v(\d+)"/)?.[1] || 0);
   assert.ok(shellVersion >= 79, 'the offline shell cache must invalidate older assets for the new loader');
   assert.ok(coreAssets.includes('"./omega_action_progress_v1.js"'),
     'the universal action loader must work after offline relaunch');
