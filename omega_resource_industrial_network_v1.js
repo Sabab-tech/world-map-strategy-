@@ -4865,7 +4865,7 @@ function selectFactoryProductionRecipeForTurn(countryId,asset){
 
 async function processPendingFactoryInputs(countryId){
   const cid=canonicalCountry(countryId),n=factoryCycleStore(cid),assets=factoryAssets(cid),
-    completed=[],started=[],blocked=[],transfers=[];
+    completed=[],started=[],awaiting=[],blocked=[],transfers=[];
   const employmentSummary=reconcileFactoryEmployment(cid);
   const nav=g.navigator||{},ua=String(nav.userAgent||'');
   const constrained=/Android|Mobile|iPhone|iPad/i.test(ua)||Number(nav.deviceMemory||8)<=4||Number(nav.hardwareConcurrency||8)<=4;
@@ -4951,6 +4951,12 @@ async function processPendingFactoryInputs(countryId){
           .map(row=>({resourceId:row.resourceId,available:row.available,tracked:row.tracked,
             reason:row.available<=1e-9?'WAREHOUSE_AND_FACTORY_INPUT_STOCK_EMPTY':'FACTORY_INPUT_BATCH_LEDGER_MISMATCH'}));
         if(resumedMetrics.possibleProduction<=1e-9||resumeMissing.length){
+          if(result.status==='IN_TRANSIT'){
+            awaiting.push({factoryId:fid,reason:'WAREHOUSE_SHIPMENT_IN_TRANSIT',
+              shipmentIds:(result.transfers||[]).map(row=>String(row.shipmentId||row.transferId||'')).filter(Boolean),
+              missingInputs:resumeMissing.length?resumeMissing:resumedMetrics.missingInputs});
+            continue;
+          }
           factorySetProductionHealth(asset,'STOPPED',0,resumedMetrics.capacity,{reason:'FACTORY_INPUT_SHORTAGE',
             missingInputs:resumeMissing.length?resumeMissing:resumedMetrics.missingInputs,cycleId:prior.cycleId});
           blocked.push({factoryId:fid,reason:'FACTORY_INPUT_SHORTAGE',
@@ -4986,6 +4992,12 @@ async function processPendingFactoryInputs(countryId){
       .map(row=>({resourceId:row.resourceId,available:row.available,tracked:row.tracked,
         reason:row.available<=1e-9?'WAREHOUSE_AND_FACTORY_INPUT_STOCK_EMPTY':'FACTORY_INPUT_BATCH_LEDGER_MISMATCH'}));
     if(metrics.possibleProduction<=1e-9||missing.length){
+      if(feeder.status==='IN_TRANSIT'){
+        awaiting.push({factoryId:fid,reason:'WAREHOUSE_SHIPMENT_IN_TRANSIT',
+          shipmentIds:(feeder.transfers||[]).map(row=>String(row.shipmentId||row.transferId||'')).filter(Boolean),
+          missingInputs:missing.length?missing:metrics.missingInputs});
+        continue;
+      }
       factorySetProductionHealth(asset,'STOPPED',0,metrics.capacity,{reason:'FACTORY_INPUT_SHORTAGE',
         missingInputs:missing.length?missing:metrics.missingInputs});
       blocked.push({factoryId:fid,reason:'FACTORY_INPUT_SHORTAGE',
@@ -5001,9 +5013,10 @@ async function processPendingFactoryInputs(countryId){
       productionQuantity:result.productionQuantity,productivityPct:result.productivityPct,finishDate:result.finishDate});
     }else blocked.push({factoryId:fid,reason:result.reason||result.status,detail:result});
   }
-  return{status:blocked.length?'DEGRADED':'COMPLETED',countryId:cid,turn:turn(),
+  return{status:blocked.length?'DEGRADED':(awaiting.length?'IN_TRANSIT':'COMPLETED'),countryId:cid,turn:turn(),
     completedCount:completed.length,processedCount:completed.length,completed,processed:completed,
-    startedCount:started.length,started,warehouseTransferCount:transfers.length,transfers,blocked,
+    startedCount:started.length,started,awaitingCount:awaiting.length,awaiting,
+    warehouseTransferCount:transfers.length,transfers,blocked,
     inputRequestCount:requisitions.requestCount,inputRequests:requisitions.requests,employmentSummary};
 }
 
