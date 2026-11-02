@@ -43,7 +43,7 @@ test('resource economy and mine/action pipelines never call world-wide processin
   const economy = read('omega_resource_economy_runtime_v2.js');
   const runTurn = between(economy, 'function runTurn(){', 'var uiOriginal=null;');
   assert.match(runTurn, /playerSimulationCountryId\(\)/);
-  assert.match(runTurn, /endowment\.extractCountry\(cid\)/);
+  assert.match(runTurn, /endowment\.startCountryProduction\(cid,null,\{skipHydrationIfReady:true\}\)/);\n  assert.match(runTurn, /endowment\.extractCountry\(cid\)/, 'legacy endowment fallback remains available');
   assert.doesNotMatch(runTurn, /extractAll\(\)|countries\(\)\.forEach|GlobalTrade\.processAll/);
   const turnListener = between(economy, "g.addEventListener('OMEGA_SIMULATION_TURN_COMMITTED'", "g.addEventListener('OMEGA_READY'");
   assert.match(turnListener, /playerSimulationCountryId\(\)/);
