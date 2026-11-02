@@ -186,7 +186,7 @@ test('inventory registers all 41 canonical raw-resource identities and displays 
   const expectedIds = Object.keys(resourceEconomyRules.demand.resourceProfiles).sort();
   assert.equal(expectedIds.length, 41);
   assert.equal(resources.length, 41);
-  assert.deepEqual(resources.map(row => row.resourceId).sort(), expectedIds);
+  assert.equal(resources.map(row => row.resourceId).sort().join('|'), expectedIds.join('|'));
   const view = api.getInventory('BGD', { includeZero: true, includeLedger: false });
   for (const resourceId of expectedIds) {
     assert.ok(item(view, resourceId), 'the inventory catalog must expose ' + resourceId);
