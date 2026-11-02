@@ -1352,3 +1352,89 @@ test("logistics cards expose an accessible route diagram with existing SVG cargo
     if (priorGame === undefined) delete globalThis.Game; else globalThis.Game = priorGame;
   }
 });
+
+
+test("Resource Ministry cancels a shared country route shard after its last active screen unloads", async () => {
+  const vm = await import("node:vm");
+  const requested = [];
+  const signals = [];
+  const sandbox = {
+    AbortController,
+    OmegaResourceIndustrialCatalogData: json("resource_industrial_catalog_v1.json"),
+    fetch(url, options) {
+      const name = String(url).replace(/^\.\//, "");
+      requested.push(name);
+      if (name === "resource_site_logistics_routes_v1.json") {
+        return Promise.resolve({ ok:true, json:async () => ({
+          datasetId:"OMEGA_RESOURCE_SITE_LOGISTICS_ROUTES_V1",
+          simulationOnly:true,
+          countryToPart:{ TST:1 },
+          parts:[{ part:1, file:"resource_site_logistics_routes_v1_part_01.json" }]
+        }) });
+      }
+      if (name === "resource_site_logistics_routes_v1_part_01.json") {
+        const signal = options && options.signal;
+        signals.push(signal);
+        return new Promise((resolve, reject) => {
+          if (!signal) return;
+          signal.addEventListener("abort", () => {
+            const error = new Error("route shard request aborted");
+            error.name = "AbortError";
+            reject(error);
+          }, { once:true });
+        });
+      }
+      return Promise.reject(new Error("Unexpected route request: " + name));
+    }
+  };
+  sandbox.window = sandbox;
+  vm.default.createContext(sandbox);
+  vm.default.runInContext(read("omega_ui_v2/screens/resource-ministry.js"), sandbox, {
+    filename:"omega_ui_v2/screens/resource-ministry.js"
+  });
+  sandbox.Game = { state:{
+    simulation:{ turn:1, session:{ playerCountryId:"TST" } },
+    resource:{ TST:{
+      mineAssets:[],
+      industrialNetwork:{ projects:[], shipments:[], siteFlowLedger:[] },
+      warehouse:{ availableByResource:{} },
+      processedWarehouse:{ availableByResource:{} },
+      inventory:{},
+      inventoryLedger:[]
+    } }
+  } };
+  const makeRoot = () => ({
+    innerHTML:"",
+    classList:{ add(){} },
+    addEventListener(){},
+    querySelector(){ return null; },
+    querySelectorAll(){ return []; },
+    contains(){ return true; }
+  });
+  const api = sandbox.OmegaUIV2ResourceMinistry;
+  const first = makeRoot();
+  const second = makeRoot();
+  try {
+    api.render(first, { countryId:"TST", sites:[], tab:"logistics" });
+    api.render(second, { countryId:"TST", sites:[], tab:"logistics" });
+    for (let attempt=0; attempt<8 && !signals.length; attempt++) {
+      await new Promise(resolve => setImmediate(resolve));
+    }
+    assert.deepEqual(requested, [
+      "resource_site_logistics_routes_v1.json",
+      "resource_site_logistics_routes_v1_part_01.json"
+    ], "one route manifest and one selected-country shard should be shared");
+    assert.equal(signals.length, 1);
+    assert.ok(signals[0], "the large route shard must receive an abort signal");
+    api.unload(first);
+    assert.equal(signals[0].aborted, false,
+      "a request stays active while another screen still waits for the same country");
+    api.unload(second);
+    assert.equal(signals[0].aborted, true,
+      "the shard request is cancelled as soon as the last requesting screen leaves");
+    await new Promise(resolve => setImmediate(resolve));
+  } finally {
+    api.unload(first);
+    api.unload(second);
+  }
+});
