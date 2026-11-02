@@ -15,8 +15,10 @@ async function createRuntime() {
     fetch: async input => {
       requests.push(String(input));
       const relative = String(input).replace(/^\.\//, '');
+      if(relative.startsWith('api/omega/country-domain/'))
+        return {ok:false,status:404,json:async()=>({})};
       const body = read(relative);
-      return { ok: true, json: async () => JSON.parse(body) };
+      return { ok: true, status:200, json: async () => JSON.parse(body) };
     }
   };
   context.window = context;
