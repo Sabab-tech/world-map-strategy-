@@ -1384,18 +1384,19 @@ test("raw-resource inventory cards show icon, stock, demand, status and named su
   globalThis.Game = { state:{
     simulation:{turn:8,session:{playerCountryId:"BGD",status:"RUNNING"}},
     resource:{BGD:{
-      inventory:{coal:125,iron_ore:50},
-      inventoryUnits:{coal:"TONNES",iron_ore:"TONNES"},
+      inventory:{coal:125,iron_ore:50,copper:60},
+      inventoryUnits:{coal:"TONNES",iron_ore:"TONNES",copper:"TONNES"},
       batches:[
         {batchId:"RAW-MINE-COAL-01",resourceId:"coal",stage:"RAW",quantity:125,remainingQuantity:125,unit:"TONNES",status:"AVAILABLE",warehouseId:"WH-BGD-RAW",sourceCountryId:"BGD",transferType:"LOCAL_EXTRACTION",sourceSiteIds:["SITE-BGD-COAL"]},
         {batchId:"RAW-IMPORT-ORE-01",resourceId:"iron_ore",stage:"RAW",quantity:50,remainingQuantity:50,unit:"TONNES",status:"AVAILABLE",warehouseId:"WH-BGD-RAW",sourceCountryId:"AUS",transferType:"INTERNATIONAL_TRADE_IMPORT"},
+        {batchId:"STARTUP-STOCK-V1-BGD-COPPER",resourceId:"copper",stage:"RAW",quantity:60,remainingQuantity:60,unit:"TONNES",status:"AVAILABLE",warehouseId:"WH-BGD-RAW",sourceCountryId:"BGD",transferType:"LOCAL_RUNTIME",provenance:{source:"SIMULATED_STARTUP_BASELINE_V1",authority:"SIMULATED_STARTUP_BASELINE_V1"}},
         {batchId:"PROCESSED-STEEL-01",resourceId:"steel",stage:"FINISHED",quantity:900,remainingQuantity:900,unit:"TONNES",status:"AVAILABLE",warehouseId:"WH-BGD-PROCESSED"}
       ],
       demandRuntime:{byResource:{
         coal:{demandPerDay:25,status:"BALANCED",stockCoverageDays:5,stockCoverageTargetDays:4},
         iron_ore:{demandPerDay:10,status:"SHORTAGE",unmetDemand:2,stockCoverageDays:5,stockCoverageTargetDays:10}
       }},
-      warehouse:{warehouseId:"WH-BGD-RAW",availableByResource:{coal:125,iron_ore:50},receipts:[]},
+      warehouse:{warehouseId:"WH-BGD-RAW",availableByResource:{coal:125,iron_ore:50,copper:60},receipts:[]},
       processedWarehouse:{warehouseId:"WH-BGD-PROCESSED",availableByResource:{steel:900},unitsByProduct:{steel:"TONNES"},receipts:[]},
       mineAssets:[],industrialNetwork:{projects:[],shipments:[],siteFlowLedger:[]},inventoryLedger:[]
     }},
@@ -1418,11 +1419,25 @@ test("raw-resource inventory cards show icon, stock, demand, status and named su
     assert.match(root.innerHTML,/data-resource-id="coal"/);
     assert.match(root.innerHTML,/Current stock/);
     assert.match(root.innerHTML,/Daily demand/);
+    const coalCard = root.innerHTML.slice(root.innerHTML.indexOf('data-resource-id="coal"'), root.innerHTML.indexOf('data-resource-id="coal"') + 1400);
+    const orderedFields = [
+      coalCard.indexOf('omega-v2-resource-icon-image'),
+      coalCard.indexOf('<h3>Coal</h3>'),
+      coalCard.indexOf('Current stock'),
+      coalCard.indexOf('Daily demand'),
+      coalCard.indexOf('<strong>Status</strong>'),
+      coalCard.indexOf('Supply source')
+    ];
+    assert.ok(orderedFields.every((value) => value >= 0));
+    assert.deepEqual(orderedFields, orderedFields.slice().sort((a, b) => a - b),
+      "resource icon, name, current stock, demand, status and supply source must render in the requested order");
     assert.match(root.innerHTML,/125(?:\.00)? TONNES/);
     assert.match(root.innerHTML,/25(?:\.00)? TONNES_PER_DAY|25(?:\.00)? TONNES per day/i);
     assert.match(root.innerHTML,/Domestic mine/);
     assert.match(root.innerHTML,/Foreign import/);
     assert.match(root.innerHTML,/\(Australia\)/);
+    assert.match(root.innerHTML,/Opening allocation/);
+    assert.match(root.innerHTML,/41 resource identities/);
     assert.match(root.innerHTML,/Shortage/);
     assert.match(root.innerHTML,/data-omega-v2-processed-goods-inventory/);
     assert.match(root.innerHTML,/Processed Goods Warehouse/);
