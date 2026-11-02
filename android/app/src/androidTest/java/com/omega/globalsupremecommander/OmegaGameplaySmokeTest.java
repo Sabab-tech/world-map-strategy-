@@ -179,6 +179,8 @@ public final class OmegaGameplaySmokeTest {
                     " layer: window.OmegaLayerManager ? window.OmegaLayerManager.currentLayer : null," +
                     " activeLayer: document.body.getAttribute('data-active-layer')," +
                     " entryResult: button ? button.getAttribute('data-last-open-result') : null," +
+                    " renderFailure: window.__OMEGA_UI_V2_DIAGNOSTICS && window.__OMEGA_UI_V2_DIAGNOSTICS.lastRenderFailure || null," +
+                    " ministerErrors: window.__OMEGA_DIAG__ && window.__OMEGA_DIAG__.errors || []," +
                     " audit: audit || null" +
                     " });" +
                     "})()";
