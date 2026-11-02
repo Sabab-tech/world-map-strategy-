@@ -4653,7 +4653,15 @@ function completeFactoryProductionCycle(countryId,asset,cycle,result){
   }
   emit('OMEGA_FACTORY_PRODUCTION_CYCLE_COMPLETED',cid,{cycleId:cycle.cycleId,transactionId:result.transactionId,
     factoryId:cycle.factoryId,outputQuantities:cycle.outputQuantities,finishDate:cycle.finishDate,actualCompletionDate:cycle.actualCompletionDate});
-  return{status:'COMPLETED',countryId:cid,factoryId:String(cycle.factoryId||asset?.id||asset?.assetId||asset?.projectId||''),cycleId:cycle.cycleId,transactionId:result.transactionId,outputQuantities:cycle.outputQuantities};
+  return{status:'COMPLETED',countryId:cid,factoryId:String(cycle.factoryId||asset?.id||asset?.assetId||asset?.projectId||''),
+    factoryType:String(asset?.factoryType||asset?.type||'').toUpperCase(),
+    companyId:asset?.companyId||asset?.ownerCompanyId||asset?.operatorCompanyId||null,
+    cycleId:cycle.cycleId,recipeId:cycle.recipeId||null,transactionId:result.transactionId,
+    actualProductionQuantity:cycle.actualProductionQuantity||cycle.productionQuantity||0,
+    productivityPct:cycle.productivityPct||0,inputQuantities:clone(cycle.inputQuantities||{}),
+    outputQuantities:clone(cycle.outputQuantities||{}),sourceBatchIds:clone(result.sourceBatchIds||[]),
+    createdBatchIds:clone(cycle.createdBatchIds||[]),finishDate:cycle.finishDate,
+    authority:'OMEGA_RESOURCE_INDUSTRIAL_NETWORK'};
 }
 function selectFactoryProductionRecipeForTurn(countryId,asset){
   const cid=canonicalCountry(countryId),type=normalizeFactoryType(asset?.factoryType||asset?.type||asset?.facilityType||'');

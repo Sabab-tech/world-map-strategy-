@@ -353,4 +353,18 @@
   root.OmegaCountryRuntimeData=Object.freeze({version:'1.4.0',init,ready:init(),isReady:()=>state.ready,isSettled:()=>state.settled,
     resolveCountry,flagFor,getProfile,getStrategicProfile,getRecord,getLiveRecord,getSourceDataset,getCapital,getCities,
     loadCountryData,releaseCountryData,diagnostics,listProfiles});
+  if(root.navigator?.serviceWorker?.addEventListener){
+    root.navigator.serviceWorker.addEventListener('message',event=>{
+      const message=event?.data;if(message?.type!=='OMEGA_CACHE_DATA_UPDATED')return;
+      const marker='/api/omega/country-domain/',url=String(message.url||''),at=url.indexOf(marker);
+      if(at<0)return;
+      const parts=url.slice(at+marker.length).split('/');
+      const domain=String(parts[0]||'').toLowerCase();
+      let countryKey='';try{countryKey=decodeURIComponent(parts.slice(1).join('/').split('?')[0]);}catch(_){return;}
+      if(!COUNTRY_DATA_FILES[domain]||!countryKey)return;
+      const identity=resolveCountry(countryKey);if(!identity)return;
+      releaseCountryData(identity.countryCode,[domain]);
+      try{root.dispatchEvent(new CustomEvent('OMEGA_COUNTRY_DATA_INVALIDATED',{detail:{countryId:identity.countryCode,domain,url:message.url}}));}catch(_){}
+    });
+  }
 })(window);

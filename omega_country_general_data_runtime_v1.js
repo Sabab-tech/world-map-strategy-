@@ -173,6 +173,21 @@ function getBehaviorProfile(v){
 function diagnostics(){return{version:VERSION,ready:s.ready,settled:s.settled,error:s.error,recordCount:s.records.size,aliasCount:s.byAlias.size,inFlightCount:s.inflight.size,cacheLimit:CACHE_LIMIT,datasetId:s.metadata?.datasetId||null,dataUrl:DATA_URL}}
 const API=Object.freeze({VERSION,DATA_URL,init,diagnostics,resolveCountry:v=>getCountryRecord(v)?.identity||canonicalIdentity(v)||null,getCountryRecord,getStrategicProfile,getBehaviorProfile,releaseCountry,releaseAll,getMetricDefinition:key=>s.fields.get(str(key))||null});
 root.Omega=root.Omega||{};root.Omega.CountryGeneralData=API;root.OmegaCountryGeneralDataRuntime=API;
+if(root.navigator?.serviceWorker?.addEventListener){
+ root.navigator.serviceWorker.addEventListener('message',event=>{
+  const message=event?.data;if(message?.type!=='OMEGA_CACHE_DATA_UPDATED')return;
+  const marker='/api/omega/country-general-data/',url=String(message.url||''),at=url.indexOf(marker);
+  if(at<0)return;
+  let country='';try{country=decodeURIComponent(url.slice(at+marker.length).split('?')[0]);}catch(_){return;}
+  if(!country)return;
+  releaseCountry(country);
+  try{root.dispatchEvent(new CustomEvent('OMEGA_COUNTRY_GENERAL_DATA_INVALIDATED',{detail:{country,url:message.url}}));}catch(_){}
+  const active=root.CountryIOS?.activeCountry||root.OmegaMinistryViewCountry;
+  if(active&&norm(active)===norm(country)&&String(root.CountryIOS?.activeChapter)==='1'&&typeof root.CountryIOS?.switchChapter==='function'){
+   const schedule=root.setTimeout||setTimeout;schedule(()=>root.CountryIOS.switchChapter(1),0);
+  }
+ });
+}
 const esc=v=>String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 const show=v=>v==null||v===''?'NOT RECORDED':typeof v==='boolean'?(v?'YES':'NO'):Array.isArray(v)?(v.length?v.map(show).join(', '):'NOT RECORDED'):obj(v)?(Object.values(v).some(x=>x!=null&&x!=='')?Object.values(v).filter(x=>x!=null&&x!=='').map(show).join(', '):'NOT RECORDED'):typeof v==='number'?v.toLocaleString('en-US',{maximumFractionDigits:2}):str(v).replace(/_/g,' ');
 const first=(o,keys)=>{for(const k of keys)if(o&&o[k]!=null&&o[k]!=='')return o[k];return null};

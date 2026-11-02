@@ -292,6 +292,26 @@ function diagnostics(){return {version:VERSION,initialized:!!state.panelObserver
  sectorCount:state.schema&&Array.isArray(state.schema.sectors)?state.schema.sectors.length:0,lastError:state.lastError,mountCount:state.mountCount,profileUrl:PROFILE_URL,profileCacheLimit:1}}
 const API=Object.freeze({VERSION,init:attach,loadData,releaseData,diagnostics,formatValue});
 root.Omega=root.Omega||{};root.Omega.CountrySectorProfileUI=API;root.OmegaCountrySectorProfileUI=API;
+if(root.navigator?.serviceWorker?.addEventListener){
+ root.navigator.serviceWorker.addEventListener('message',event=>{
+  const message=event?.data;if(message?.type!=='OMEGA_CACHE_DATA_UPDATED')return;
+  const marker='/api/omega/country-sector-profile/',url=String(message.url||''),at=url.indexOf(marker);
+  if(at<0)return;
+  let country='';try{country=decodeURIComponent(url.slice(at+marker.length).split('?')[0]);}catch(_){return;}
+  if(!country)return;
+  releaseData(country);
+  try{root.dispatchEvent(new CustomEvent('OMEGA_COUNTRY_SECTOR_PROFILE_INVALIDATED',{detail:{country,url:message.url}}));}catch(_){}
+  if(root.document){
+   root.document.querySelectorAll('[data-ocsp-root]').forEach(shell=>{
+    const selected=shell.getAttribute('data-country-value')||'';
+    if(norm(selected)!==norm(country))return;
+    shell.dataset.loaded='false';
+    const content=shell.querySelector('[data-ocsp-content]');
+    if(content&&!content.hidden)content.innerHTML='<p class="ocsp-empty">Updated country data is available. Reopen details to load the latest profile.</p>';
+   });
+  }
+ });
+}
 if(root.document&&root.document.readyState==='loading')root.document.addEventListener('DOMContentLoaded',attach,{once:true});else attach();
 if(root.document){root.document.addEventListener('click',onClick);root.document.addEventListener('input',onInput)}
 })(typeof window!=='undefined'?window:globalThis);
