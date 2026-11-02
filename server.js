@@ -44,18 +44,26 @@ function countryRowMatches(row, identityFields, lookup) {
 const transientCountryData = new Map();
 const TRANSIENT_COUNTRY_DATA_TTL_MS = 25000;
 async function readTransientCountryDataset(filePath) {
-  const current = transientCountryData.get(filePath);
-  if (current && current.data) {
+  const stat=await fs.promises.stat(filePath);
+  const revision=`${stat.size}:${stat.mtimeMs}:${stat.ctimeMs}`;
+  let current=transientCountryData.get(filePath);
+  if(current&&current.revision!==revision){
     clearTimeout(current.timer);
-    current.timer = setTimeout(() => {
-      if (transientCountryData.get(filePath) === current) transientCountryData.delete(filePath);
-    }, TRANSIENT_COUNTRY_DATA_TTL_MS);
+    transientCountryData.delete(filePath);
+    current=null;
+  }
+  if(current&&current.data){
+    clearTimeout(current.timer);
+    current.timer=setTimeout(()=>{
+      if(transientCountryData.get(filePath)===current)transientCountryData.delete(filePath);
+    },TRANSIENT_COUNTRY_DATA_TTL_MS);
     current.timer.unref?.();
     return current.data;
   }
-  if (current && current.promise) return current.promise;
-  const entry = { data:null, promise:null, timer:null };
-  entry.promise = fs.promises.readFile(filePath,'utf8').then(raw=>JSON.parse(raw)).then(data=>{
+  if(current&&current.promise)return current.promise;
+  const entry={revision,data:null,promise:null,timer:null};
+  entry.promise=fs.promises.readFile(filePath,'utf8').then(raw=>JSON.parse(raw)).then(data=>{
+    if(transientCountryData.get(filePath)!==entry)return data;
     entry.data=data;entry.promise=null;
     entry.timer=setTimeout(()=>{
       if(transientCountryData.get(filePath)===entry)transientCountryData.delete(filePath);
@@ -271,7 +279,7 @@ app.get('/api/omega/country-domain/:domain/:countryKey', async (req,res) => {
         record=data.countries.find(row=>normalizeCountryLookup(row?.name||row?.countryName||row?.country_name)===lookup)||null;
       }
     }
-    res.setHeader('Cache-Control','public, max-age=3600, stale-while-revalidate=86400');
+    res.setHeader('Cache-Control','private, no-cache, must-revalidate');
     return res.json({domain,countryKey:req.params.countryKey,record:record&&typeof record==='object'?record:null});
   } catch(error) {
     console.warn('[Country Data API] Domain record unavailable:',domain,error?.message||error);
@@ -286,7 +294,7 @@ app.get('/api/omega/country-general-data/:countryId', async (req,res) => {
       data=>data?.metadata?.recordSchema?.identityFields||[]);
     if(!found.row)return res.status(404).json({ok:false,error:'COUNTRY_PROFILE_NOT_FOUND'});
     const metadata=found.data.metadata||{};
-    res.setHeader('Cache-Control','public, max-age=3600, stale-while-revalidate=86400');
+    res.setHeader('Cache-Control','private, no-cache, must-revalidate');
     return res.json({
       metadata:{datasetId:metadata.datasetId||'OMEGA_COUNTRY_GENERAL_DATA_REGISTRY_V1',
         schemaVersion:metadata.schemaVersion||null,recordSchema:metadata.recordSchema,
@@ -305,7 +313,7 @@ app.get('/api/omega/country-sector-profile/:countryId', async (req,res) => {
   try {
     const found=await countryScopedDataset(COUNTRY_SECTOR_PROFILES_PATH,lookup,()=>[]);
     if(!found.row)return res.status(404).json({ok:false,error:'COUNTRY_SECTOR_PROFILE_NOT_FOUND'});
-    res.setHeader('Cache-Control','public, max-age=3600, stale-while-revalidate=86400');
+    res.setHeader('Cache-Control','private, no-cache, must-revalidate');
     return res.json({profile:found.row});
   } catch(error) {
     console.warn('[Country Data API] Sector profile unavailable:',error?.message||error);
