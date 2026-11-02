@@ -876,16 +876,34 @@
     const shipments=Array.isArray(network.shipments)?network.shipments:[];
     const rawWarehouse=r.warehouse&&typeof r.warehouse==='object'?r.warehouse:{};
     const rawWarehouseId=String(rawWarehouse.warehouseId||('WH-'+activeCountry(country)+'-RAW'));
-    // A batch is eligible for this route preview only after the authoritative core
-    // ledger places it in the raw warehouse. A target warehouse ID is not proof of arrival.
-    const batches=allBatches.filter(batch=>{
-      const status=String(batch?.status||'').toUpperCase(),stage=String(batch?.stage||'').toUpperCase();
+    // Compute the physical raw-warehouse portion, not the whole source-batch remainder.
+    // A single mine batch can be split between mine-held stock, raw warehouse and transit.
+    const siteFlows=Array.isArray(network.siteFlowLedger)?network.siteFlowLedger:[];
+    const inFlightStatuses=new Set(['IN_TRANSIT','BLOCKED_ROUTE_BLOCKADE','BLOCKED_LEDGER_MISMATCH',
+      'BLOCKED_BATCH_LEDGER_MISMATCH','BLOCKED_FACTORY_MISSING']);
+    const rawWarehouseAvailableForBatch=batch=>{
+      const batchId=String(batch?.batchId||''),rid=String(batch?.resourceId||batch?.materialIdentity||'');
+      const remaining=Math.max(0,Number(batch?.remainingQuantity??batch?.quantity)||0);
+      if(!batchId||!rid||remaining<=1e-9)return 0;
+      const flow=siteFlows.find(row=>String(row?.batchId||'')===batchId);
+      if(flow&&(flow.mineLogisticsRouteId||flow.mineLogisticsStockDebited===true)){
+        const received=Math.max(0,Number(flow.mineWarehouseReceivedQuantity)||0);
+        const factoryDispatched=Math.max(0,Number(flow.factoryDispatchedQuantity)||0);
+        return Math.min(remaining,Math.max(0,received-factoryDispatched));
+      }
       const location=String(batch?.locationNodeKey||'');
       const atRawWarehouse=String(batch?.warehouseId||'')===rawWarehouseId&&
-        (!location||location==='WAREHOUSE:'+activeCountry(country)+':RAW');
-      const moving=/IN_TRANSIT|MINE_AWAITING_HAUL|AWAITING_HAUL|TRANSFERRED_TO_FACTORY|FACTORY_INPUT/.test(status+' '+stage);
-      return atRawWarehouse&&!moving;
-    });
+        (!location||location==='WAREHOUSE:'+activeCountry(country)+':RAW'||location==='MIXED:RAW_WAREHOUSE_OR_TRANSIT');
+      if(!atRawWarehouse)return 0;
+      const reservedInTransit=shipments.filter(row=>String(row?.batchId||'')===batchId&&
+        ['RAW_TO_FACTORY','MINE_TO_WAREHOUSE'].includes(String(row?.shipmentType||''))&&
+        inFlightStatuses.has(String(row?.status||'')))
+        .reduce((sum,row)=>sum+Math.max(0,Number(row?.quantity)||0),0);
+      return Math.min(remaining,Math.max(0,remaining-reservedInTransit));
+    };
+    const batches=allBatches.map(batch=>({...batch,
+      rawWarehouseAvailableQuantity:rawWarehouseAvailableForBatch(batch)}))
+      .filter(batch=>batch.rawWarehouseAvailableQuantity>1e-9);
     const fleetBySite=network.transportFleetBySiteId&&typeof network.transportFleetBySiteId==='object'?network.transportFleetBySiteId:{};
     const chosenSite=sites.find(site=>String(site.siteId)===String(selectedFleetSiteId))||sites[0]||null;
     if(chosenSite&&String(selectedFleetSiteId)!==String(chosenSite.siteId))selectedFleetSiteId=String(chosenSite.siteId);
@@ -960,7 +978,7 @@
         '<p class="omega-rescc-note">Route calculation: '+esc(fleetPreview&&fleetPreview.status||'CALCULATING')+(fleetPreview&&fleetPreview.reason?' · '+esc(fleetPreview.reason):'')+' · reference load 10,000 tonnes</p>':'')+
       (fleetCards||empty('No fleet modes can be configured yet.'));
     const batchCards=batches.map(batch=>{
-      const id=batch.batchId,rid=batch.resourceId||batch.materialIdentity||'',qty=batch.remainingQuantity??batch.quantity,warehouse=batch.warehouseId||'';
+      const id=batch.batchId,rid=batch.resourceId||batch.materialIdentity||'',qty=batch.rawWarehouseAvailableQuantity,warehouse=rawWarehouseId;
       const compatible=matchingAssets(country,rid).filter(a=>a&&(a.id||a.assetId||a.factoryId||a.projectId)),ids=compatible.map(a=>a.id||a.assetId||a.factoryId||a.projectId);
       return card(id||'Unidentified batch',rid||'Resource not recorded','<div class="omega-rescc-grid2">'+kv('Quantity',qty)+kv('Unit',batch.unit)+kv('Warehouse',warehouse)+kv('Compatible factories',ids.length)+'</div>',
         actionButton('plan-shipment','Preview warehouse-to-factory route',{'batch-id':id,'resource-id':rid,quantity:qty,unit:batch.unit||'','warehouse-id':warehouse,'factory-ids':ids.join(',')},!(id&&rid&&warehouse&&ids.length&&g.Omega&&g.Omega.ResourceLogisticsRuntime&&g.Omega.ResourceLogisticsRuntime.planFromFactoryInput)));
