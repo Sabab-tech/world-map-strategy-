@@ -25,6 +25,82 @@ test("resource icon manifest is complete, local, unique and integrated with Reso
   assert.equal(api.resourceIconPath("unregistered_future_type"), "", "unknown types must use the safe text fallback");
 });
 
+test("inventory displays the canonical 41 resources and aggregate balances when warehouse projections are missing", () => {
+  const api = globalThis.OmegaUIV2ResourceMinistry;
+  const rules = json("resource_economy_rules.json");
+  const resources = Object.keys(rules.demand.resourceProfiles).map((resourceId) => {
+    const profile = rules.demand.resourceProfiles[resourceId] || {};
+    const unit = String(profile.unit || "").replace(/_PER_DAY$/i, "");
+    return {
+      resourceId,
+      name: resourceId.replace(/[_-]+/g, " ").replace(/\\b\\w/g, (ch) => ch.toUpperCase()),
+      unit: unit || null,
+      demandUnit: profile.unit || null,
+      priority: profile.priority ?? null,
+      profileKnown: Number.isFinite(Number(profile.basePerMillionPopulation))
+    };
+  });
+  const priorGame = globalThis.Game;
+  const priorInventoryRuntime = globalThis.OmegaCountryInventoryRuntime;
+  const priorIndustrialCatalog = globalThis.OmegaResourceIndustrialCatalogData;
+  const listeners = Object.create(null);
+  const root = {
+    innerHTML: "",
+    classList: { add() {} },
+    addEventListener(type, fn) { listeners[type] = fn; },
+    querySelector() { return null; },
+    querySelectorAll() { return []; },
+    contains() { return true; }
+  };
+  globalThis.Game = {
+    state: {
+      simulation: { turn: 12, session: { playerCountryId: "BGD", status: "RUNNING" } },
+      resource: {
+        BGD: {
+          inventory: { coal: 125, iron_ore: 0 },
+          inventoryUnits: { coal: "TONNES", iron_ore: "TONNES" },
+          batches: [{
+            batchId: "STARTUP-BATCH-COAL", resourceId: "coal", quantity: 125,
+            remainingQuantity: 125, unit: "TONNES", stage: "RAW",
+            warehouseId: "WH-BGD-RAW", status: "AVAILABLE"
+          }],
+          warehouse: { warehouseId: "WH-BGD-RAW", availableByResource: {}, receipts: [], storedBatchIds: [] },
+          processedWarehouse: { warehouseId: "WH-BGD-PROCESSED", availableByResource: {}, receipts: [], storedBatchIds: [] },
+          mineAssets: [],
+          industrialNetwork: { projects: [], shipments: [], siteFlowLedger: [] },
+          inventoryLedger: []
+        }
+      }
+    }
+  };
+  globalThis.OmegaCountryInventoryRuntime = {
+    getResourceCatalog() { return resources; }
+  };
+  globalThis.OmegaResourceIndustrialCatalogData = { resourceRules: {} };
+  try {
+    const result = api.render(root, { countryId: "BGD", sites: [], tab: "inventory" });
+    assert.equal(result.ok, true);
+    assert.match(root.innerHTML, /Raw resource types/);
+    assert.match(root.innerHTML, /<strong>41<\\/strong>/,
+      "inventory must enumerate every canonical raw-resource identity");
+    assert.match(root.innerHTML, /Coal/);
+    assert.match(root.innerHTML, /125(?:\\.00)? TONNES/,
+      "aggregate resource.inventory balances must remain visible if warehouse projections are absent");
+    assert.match(root.innerHTML, /Not recorded/,
+      "unknown balances stay explicit instead of being fabricated as zero");
+    assert.match(root.innerHTML, /STARTUP-BATCH-COAL|Recent batches/,
+      "tracked raw batches are included in the inventory view");
+    assert.match(root.innerHTML, /Natural Gas/,
+      "resource labels are resolved from canonical resource profiles");
+  } finally {
+    if (priorGame === undefined) delete globalThis.Game; else globalThis.Game = priorGame;
+    if (priorInventoryRuntime === undefined) delete globalThis.OmegaCountryInventoryRuntime;
+    else globalThis.OmegaCountryInventoryRuntime = priorInventoryRuntime;
+    if (priorIndustrialCatalog === undefined) delete globalThis.OmegaResourceIndustrialCatalogData;
+    else globalThis.OmegaResourceIndustrialCatalogData = priorIndustrialCatalog;
+  }
+});
+
 test("mine archetype classifier keeps extraction-site silhouettes distinct", () => {
   const api = globalThis.OmegaUIV2ResourceMinistry;
   assert.equal(api.mineArchetype({ siteType: "underground mine" }), "UNDERGROUND_MINE");
