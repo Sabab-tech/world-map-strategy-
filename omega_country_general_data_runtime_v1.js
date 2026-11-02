@@ -113,6 +113,13 @@ function releaseCountry(v){
  let released=false;if(key&&s.inflight.has(key)){s.inflight.delete(key);released=true}
  if(row&&key)released=evictRecord(key)||released;return released;
 }
+function releaseAll(){
+ const count=s.records.size+s.inflight.size;
+ s.records.clear();s.byAlias.clear();s.inflight.clear();
+ s.metadata=null;s.schema=null;s.fields.clear();
+ s.ready=false;s.settled=false;s.error=null;
+ return count;
+}
 function map(fields,values){const out={};if(Array.isArray(fields)&&Array.isArray(values))fields.forEach((k,i)=>out[k]=values[i]===undefined?null:values[i]);return out}
 function code(list,v){const i=n(v);return i===null||i<0||!Array.isArray(list)?null:(list[i]===undefined?null:list[i])}
 function decode(row){
