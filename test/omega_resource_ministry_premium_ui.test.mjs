@@ -147,12 +147,11 @@ test("inventory rows show current stock coverage, shortage/surplus and verified 
               unit: "TONNES", status: "AVAILABLE", warehouseId: "WH-BGD-RAW",
               sourceCountryId: "BGD", originCountryId: "BGD",
               transferType: "LOCAL_EXTRACTION", sourceSiteIds: ["SITE_BGD_COAL"]
-,
-{
+            },
+            {
               batchId: "MINE-SIDE-COAL-02", resourceId: "coal", quantity: 70, remainingQuantity: 70,
               unit: "TONNES", status: "AVAILABLE", sourceCountryId: "BGD", originCountryId: "BGD",
               transferType: "LOCAL_EXTRACTION", sourceSiteIds: ["SITE_BGD_COAL"]
-            },
             },
             {
               batchId: "IMPORT-ORE-01", resourceId: "iron_ore", quantity: 50, remainingQuantity: 50,
