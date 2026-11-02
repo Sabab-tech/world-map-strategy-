@@ -148,8 +148,10 @@ test("canonical country profile pack is bundled for Android and refreshes offlin
   ]) {
     assert.ok(androidOfflineWorkflow.includes('      - "' + asset + '"'),
       "Android offline smoke must rerun when " + asset + " changes.");
-    assert.ok(serviceWorker.includes('"./' + asset + '"'),
-      "Browser offline cache must include " + asset + ".");
+    assert.equal(serviceWorker.includes('"./' + asset + '"'), false,
+      "Large country registries must not be part of the initial browser cache: " + asset);
+  }
+  assert.match(serviceWorker, /fetchAndCache/);
   }
 });
 

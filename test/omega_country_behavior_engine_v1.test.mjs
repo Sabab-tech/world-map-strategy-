@@ -53,7 +53,9 @@ async function loadCountryEngines() {
   vm.runInContext(read('omega_country_general_data_runtime_v1.js'), context, { filename: 'omega_country_general_data_runtime_v1.js' });
   const generalData = context.OmegaCountryGeneralDataRuntime;
   assert.ok(generalData, 'unified country general data runtime should register');
-  assert.equal(await generalData.init(), true, 'unified source-backed country registry should initialize');
+  assert.equal(await generalData.init(), true, 'module initializes without global registry download');
+  assert.equal(generalData.diagnostics().recordCount, 0, 'boot retains no country profile rows');
+  await Promise.all([generalData.init('BGD'), generalData.init('USA')]);
   vm.runInContext(read('omega_country_behavior_engine_v1.js'), context, { filename: 'omega_country_behavior_engine_v1.js' });
   const behavior = context.OmegaCountryBehaviorEngine;
   assert.ok(behavior, 'country behaviour engine should register');
