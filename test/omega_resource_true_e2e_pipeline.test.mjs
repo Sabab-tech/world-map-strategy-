@@ -40,6 +40,15 @@ class EventTargetMock {
   constructor(){this.listeners=new Map();}
   addEventListener(type,fn){const rows=this.listeners.get(type)||[];rows.push(fn);this.listeners.set(type,rows);}
   dispatchEvent(evt){for(const fn of this.listeners.get(evt.type)||[])fn(evt);return true;}
+  async dispatchAndWait(evt){
+    const pending=[];
+    for(const fn of this.listeners.get(evt.type)||[]){
+      const result=fn(evt);
+      if(result&&typeof result.then==='function')pending.push(result);
+    }
+    await Promise.all(pending);
+    return true;
+  }
 }
 class CustomEventMock {constructor(type,init={}){this.type=type;this.detail=init.detail;}}
 
@@ -503,16 +512,28 @@ test('committed game turns run the selected country mine and industrial pipeline
   const extractionCalls = [], industrialCalls = [];
   const startProduction = endowment.startCountryProduction.bind(endowment);
   const runCountryTurn = industry.runCountryTurn.bind(industry);
-  endowment.startCountryProduction = async function (countryId, ...args) {
-    extractionCalls.push({ countryId, turn: state.simulation.turn });
-    return startProduction(countryId, ...args);
-  };
-  industry.runCountryTurn = async function (countryId, ...args) {
-    industrialCalls.push({ countryId, turn: state.simulation.turn });
-    return runCountryTurn(countryId, ...args);
-  };
+  // Runtime APIs are intentionally frozen. Wrap the references in the test harness
+  // instead of mutating production API objects.
+  const observedEndowment = Object.assign({}, endowment, {
+    startCountryProduction: async function (countryId, ...args) {
+      extractionCalls.push({ countryId, turn: state.simulation.turn });
+      return startProduction(countryId, ...args);
+    }
+  });
+  const observedIndustry = Object.assign({}, industry, {
+    runCountryTurn: async function (countryId, ...args) {
+      industrialCalls.push({ countryId, turn: state.simulation.turn });
+      return runCountryTurn(countryId, ...args);
+    }
+  });
+  g.OmegaResourceEndowmentRuntime = observedEndowment;
+  g.Omega.ResourceEndowmentRuntime = observedEndowment;
+  g.OmegaResourceIndustrialNetwork = observedIndustry;
+  g.Omega.ResourceIndustrialNetwork = observedIndustry;
 
+  const firstCommit = h.events.dispatchAndWait(new CustomEventMock('OMEGA_SIMULATION_TURN_COMMITTED'));
   const firstTurnPromise = economy.runTurn();
+  await firstCommit;
   await firstTurnPromise;
   const repeatedSameTurn = economy.runTurn();
   assert.strictEqual(repeatedSameTurn, firstTurnPromise,
@@ -522,6 +543,7 @@ test('committed game turns run the selected country mine and industrial pipeline
   assert.deepEqual(industrialCalls, [{ countryId: 'BGD', turn: firstCommittedTurn }]);
 
   advanceOneGameTurn(state);
+  await h.events.dispatchAndWait(new CustomEventMock('OMEGA_SIMULATION_TURN_COMMITTED'));
   await economy.runTurn();
   assert.deepEqual(extractionCalls.map(row => row.turn), [firstCommittedTurn, firstCommittedTurn + 1],
     'mine extraction advances once on each committed game turn, not from a wall-clock timer');

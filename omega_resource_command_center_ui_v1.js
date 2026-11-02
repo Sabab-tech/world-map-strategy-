@@ -787,6 +787,23 @@
     const spr = r.strategicReserve || {};
     const batches = Array.isArray(r.batches) ? r.batches : [];
     const requests = Array.isArray(r.reserveBufferRequests) ? r.reserveBufferRequests : [];
+    const baselineRuntime = g.OmegaResourceStartupBaseline || g.Omega && g.Omega.ResourceStartupBaseline;
+    const configuredCoverageDays = baselineRuntime && typeof baselineRuntime.getFactoryInputCoverageDays === 'function'
+      ? baselineRuntime.getFactoryInputCoverageDays(country) : 100;
+    const simulationState = state().simulation || {};
+    const playerCountryValue = simulationState.session && simulationState.session.playerCountryId ||
+      simulationState.playerCountryId || state().playerCountryId || '';
+    const canConfigureCoverage = !!(baselineRuntime &&
+      typeof baselineRuntime.setFactoryInputCoverageDays === 'function' &&
+      playerCountryValue && normaliseCountry(playerCountryValue) === activeCountry(country));
+    const coverageTargetForm = '<form class="omega-rescc-form" data-search-item data-form="factory-input-stock-target">' +
+      '<h3>Factory input stock target</h3>' +
+      '<div class="omega-rescc-formgrid"><label>Target coverage days' +
+      '<input name="targetCoverageDays" type="number" min="1" max="3650" step="1" required value="' +
+      esc(configuredCoverageDays) + '"' + (canConfigureCoverage ? '' : ' disabled') + '></label></div>' +
+      '<p class="omega-rescc-muted">Sets the opening stock target from daily factory input demand. Only the missing quantity is added, for the selected player country.</p>' +
+      '<button class="omega-rescc-button" type="submit"' + (canConfigureCoverage ? '' : ' disabled') +
+      '>Apply target and top up stock gap</button></form>';
     const baselineRows = r.factoryInputBaselineV1 && Array.isArray(r.factoryInputBaselineV1.stockRows)
       ? r.factoryInputBaselineV1.stockRows : [];
     const canonicalRows = resources(country);
@@ -846,6 +863,7 @@
     return '<div class="omega-rescc-metrics"><div><span>Raw warehouse</span><strong>' + esc(warehouse.warehouseId || 'Not registered') +
       '</strong></div><div><span>Processed warehouse</span><strong>' + esc(processedWarehouse.warehouseId || 'Not registered') +
       '</strong></div><div><span>Current batches</span><strong>' + number(batches.length) + '</strong></div></div>' +
+      coverageTargetForm +
       '<p class="omega-rescc-note">Current stock is shown once from the country inventory ledger. Raw and processed warehouse balances are displayed separately for reconciliation.</p>' +
       (stock || empty('No inventory products are recorded for this country.')) +
       '<h3 class="omega-rescc-section-title">Recorded batches</h3>' +
@@ -1917,6 +1935,16 @@
           source: 'OMEGA_RESOURCE_COMMAND_CENTER_UI'
         });
         setOutcome('Bilateral supply request', result);
+        return;
+      }
+      if (kind === 'factory-input-stock-target') {
+        const runtime = g.OmegaResourceStartupBaseline || g.Omega && g.Omega.ResourceStartupBaseline;
+        if (!runtime || typeof runtime.setFactoryInputCoverageDays !== 'function') {
+          result = { status: 'UNAVAILABLE', reason: 'FACTORY_INPUT_STOCK_TARGET_API_UNAVAILABLE' };
+        } else {
+          result = await runtime.setFactoryInputCoverageDays(c, data.get('targetCoverageDays'));
+        }
+        setOutcome('Factory input current-stock target', result);
         return;
       }
       if (kind === 'factory-utility-project') {

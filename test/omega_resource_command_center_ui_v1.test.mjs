@@ -92,7 +92,7 @@ test('inventory UI labels live balances as Current Stock and includes raw plus p
   assert.match(inventoryPanel, /factoryInputBaselineV1/);
   assert.match(inventoryPanel, /resourceMapValue\(inventory, id\)/);
   assert.match(inventoryPanel, /resourceMapValue\(processedWarehouse\.availableByResource/);
-  assert.doesNotMatch(inventoryPanel, /Stock days|Stock duration|targetCoverageDays|100-day/i);
+  assert.doesNotMatch(inventoryPanel, /Stock days|Stock duration|100-day/i);
   assert.match(inventoryPanel, /Current stock is shown once from the country inventory ledger/);
   assert.match(ui, /kv\('Current Stock', r\.inventory\)/);
   assert.doesNotMatch(ui, /ledgerMetric\('📅', 'Stock duration'/);
@@ -116,4 +116,13 @@ test('industrial panel exposes real utility ledgers and a single-country utility
   assert.match(ui, /startInfrastructureProject\(\{/);
   assert.match(ui, /Not recorded/);
   assert.match(ui, /Completed in-game utility projects|completed in-game utility projects/i);
+});
+
+test('inventory panel exposes a bounded editable factory-input stock target for the active player country', () => {
+  const inventoryPanel = ui.slice(ui.indexOf('function panelInventory'), ui.indexOf('function panelLogistics'));
+  assert.match(inventoryPanel, /data-form="factory-input-stock-target"/);
+  assert.match(inventoryPanel, /name="targetCoverageDays"/);
+  assert.match(inventoryPanel, /min="1" max="3650"/);
+  assert.match(ui, /setFactoryInputCoverageDays\(c, data\.get\('targetCoverageDays'\)\)/);
+  assert.match(ui, /canConfigureCoverage/);
 });

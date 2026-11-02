@@ -1587,6 +1587,60 @@
       storedOpeningStockQuantity: Number(storedOpeningStockQuantity.toPrecision(12)),
       unknownProductIds: unknown, stateMismatchProductIds: stateMismatch, batchIds: batchIds };
   }
+  async function setFactoryInputCoverageDays(countryId, daysValue) {
+    var loaded = await loadSources();
+    if (!loaded || loaded.status !== 'READY') {
+      return { status: 'BLOCKED', reason: loaded && loaded.reason || 'STARTUP_BASELINE_SOURCES_NOT_READY' };
+    }
+    var state = rootState();
+    if (!state || typeof state !== 'object') return { status: 'BLOCKED', reason: 'AUTHORITATIVE_GAME_STATE_UNAVAILABLE' };
+    var wanted = id(countryId), simulation = object(state.simulation) || {}, session = sessionFromState(state) || {};
+    var playerCountryId = id(session.playerCountryId || simulation.playerCountryId || state.playerCountryId);
+    if (!playerCountryId) return { status: 'BLOCKED', reason: 'PLAYER_COUNTRY_NOT_SELECTED' };
+    if (!wanted || wanted !== playerCountryId) {
+      return { status: 'BLOCKED', reason: 'PLAYER_COUNTRY_SCOPE_VIOLATION',
+        countryId: wanted || null, playerCountryId: playerCountryId };
+    }
+    var days = finite(daysValue);
+    if (days === null || Math.floor(days) !== days || days < 1 || days > 3650) {
+      return { status: 'BLOCKED', reason: 'FACTORY_INPUT_COVERAGE_DAYS_OUT_OF_RANGE',
+        minimum: 1, maximum: 3650, supplied: daysValue };
+    }
+    var profile = data && data.countryProfiles.find(function (item) { return id(item && item.iso3) === wanted; });
+    if (!profile) return { status: 'BLOCKED', reason: 'COUNTRY_FACTORY_INPUT_BASELINE_NOT_FOUND', countryId: wanted };
+    var resourceHit = bucketFor(state, 'resource', profile, true);
+    if (resourceHit.invalid || !resourceHit.value) {
+      return { status: 'BLOCKED', reason: 'PLAYER_RESOURCE_STATE_BUCKET_INVALID', countryId: wanted };
+    }
+    var resource = resourceHit.value;
+    var previousDays = getFactoryInputCoverageDays(state, resource, wanted);
+    var hadOverride = own(resource, 'factoryInputCoverageDays'), previousOverride = resource.factoryInputCoverageDays;
+    resource.factoryInputCoverageDays = days;
+    var stockResult = seedCountryFactoryInputStock(resource, profile, currentTurn(state));
+    if (!stockResult || stockResult.status === 'BLOCKED') {
+      if (hadOverride) resource.factoryInputCoverageDays = previousOverride;
+      else delete resource.factoryInputCoverageDays;
+      return { status: 'BLOCKED', reason: stockResult && stockResult.reason || 'FACTORY_INPUT_STOCK_TOP_UP_FAILED',
+        countryId: wanted, previousTargetCoverageDays: previousDays, targetCoverageDays: days,
+        stock: clone(stockResult || null) };
+    }
+    var hasGaps = stockResult.status === 'INITIALIZED_WITH_GAPS' ||
+      (Array.isArray(stockResult.unknownProductIds) && stockResult.unknownProductIds.length > 0) ||
+      (Array.isArray(stockResult.stateMismatchProductIds) && stockResult.stateMismatchProductIds.length > 0);
+    if (object(simulation.startupBaselineV1) && id(simulation.startupBaselineV1.playerCountryId) === wanted) {
+      simulation.startupBaselineV1.playerCountryFactoryInputCoverageDays = days;
+      simulation.startupBaselineV1.factoryInputTargetCoverageDays = days;
+    }
+    var result = {
+      status: stockResult.status === 'ALREADY_INITIALIZED' ? 'ALREADY_INITIALIZED' :
+        (hasGaps ? 'COMPLETED_WITH_REPORTED_GAPS' : 'APPLIED'),
+      countryId: wanted, previousTargetCoverageDays: previousDays, targetCoverageDays: days,
+      turn: currentTurn(state), stock: clone(stockResult)
+    };
+    dispatchEvent('OMEGA_RESOURCE_FACTORY_INPUT_STOCK_TARGET_UPDATED', result);
+    return result;
+  }
+
   function seedCountryContext(state, profile) {
     var econHit = bucketFor(state, 'economy', profile, true);
     if (econHit.invalid || !econHit.value) return { status: 'BLOCKED', reason: 'ECONOMY_STATE_BUCKET_INVALID' };
@@ -2090,6 +2144,7 @@
   var api = {
     VERSION: VERSION,
     FACTORY_INPUT_COVERAGE_VERSION: FACTORY_INPUT_COVERAGE_VERSION,
+    setFactoryInputCoverageDays: setFactoryInputCoverageDays,
     getFactoryInputCoverageDays: function (countryId) {
       var wanted = id(countryId);
       var state = rootState(), profile = data && data.countryProfiles.find(function (item) { return id(item && item.iso3) === wanted; });

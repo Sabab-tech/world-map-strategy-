@@ -478,9 +478,15 @@ test('configured factory input coverage changes top up only the shortfall and st
   assert.equal(firstMarker.targetCoverageDays, 100);
   assert.ok(Math.abs(resource.inventory.coal - firstStoredTarget) < 1e-6);
 
-  resource.factoryInputCoverageDays = 120;
-  const upgraded = await api.initializeForSession(state.simulation.session);
-  assert.ok(['COMPLETED', 'COMPLETED_WITH_REPORTED_GAPS'].includes(upgraded.status));
+  const invalid = await api.setFactoryInputCoverageDays('BGD', 3651);
+  assert.equal(invalid.status, 'BLOCKED');
+  assert.equal(invalid.reason, 'FACTORY_INPUT_COVERAGE_DAYS_OUT_OF_RANGE');
+  const otherCountry = await api.setFactoryInputCoverageDays('IND', 120);
+  assert.equal(otherCountry.status, 'BLOCKED');
+  assert.equal(otherCountry.reason, 'PLAYER_COUNTRY_SCOPE_VIOLATION');
+
+  const upgraded = await api.setFactoryInputCoverageDays('BGD', 120);
+  assert.ok(['APPLIED', 'COMPLETED_WITH_REPORTED_GAPS'].includes(upgraded.status), JSON.stringify(upgraded));
   const upgradedMarker = resource.factoryInputBaselineV1;
   const upgradedRow = upgradedMarker.stockRows.find(row => row.productId === 'coal');
   const expected120DayStock = daily * 120 / upgradedRow.unitBridgeFactor;
@@ -489,7 +495,7 @@ test('configured factory input coverage changes top up only the shortfall and st
     'the 120-day target adds only the missing 20 days and leaves the already available 100-day stock in place');
   assert.equal(upgradedRow.batchId, 'STARTUP-FACTORY-INPUT-V2-BGD-COAL-C120');
   const afterUpgrade = JSON.stringify(resource.inventory);
-  const repeated = await api.initializeForSession(state.simulation.session);
+  const repeated = await api.setFactoryInputCoverageDays('BGD', 120);
   assert.equal(repeated.status, 'ALREADY_INITIALIZED');
   assert.equal(JSON.stringify(resource.inventory), afterUpgrade,
     're-entering the same configured coverage window cannot credit the top-up twice');
