@@ -878,7 +878,13 @@
       var rules = g.OmegaResourceIndustrialCatalogData || g.Omega && g.Omega.ResourceIndustrialCatalogData || {};
       var rule = rules.resourceRules && (rules.resourceRules[resourceId] || rules.resourceRules[wanted]);
       if (rule) return String(rule.unit || rule.baseUnit || rule.outputUnit || '');
-      return meta && meta.stockUnit ? String(meta.stockUnit) : '';
+      if (meta && meta.stockUnit) return String(meta.stockUnit);
+      // A configured rate unit such as METRIC_TONS_PER_DAY has the same
+      // numerator unit for a recorded warehouse quantity, without the rate suffix.
+      if (meta && meta.unit && /_PER_DAY$/i.test(String(meta.unit))) {
+        return String(meta.unit).replace(/_PER_DAY$/i, '');
+      }
+      return '';
     }
     function resourceDemandUnit(resourceId, unit) {
       var meta = resourceCatalogById[String(resourceId || '').trim().toLowerCase()] || {};
