@@ -175,7 +175,7 @@ const API=Object.freeze({VERSION,DATA_URL,init,diagnostics,resolveCountry:v=>get
 root.Omega=root.Omega||{};root.Omega.CountryGeneralData=API;root.OmegaCountryGeneralDataRuntime=API;
 if(root.navigator?.serviceWorker?.addEventListener){
  root.navigator.serviceWorker.addEventListener('message',event=>{
-  const message=event?.data;if(message?.type!=='OMEGA_CACHE_DATA_UPDATED')return;
+  const message=event?.data;if(!['OMEGA_CACHE_DATA_UPDATED','OMEGA_CACHE_DATA_REMOVED'].includes(message?.type))return;
   const marker='/api/omega/country-general-data/',url=String(message.url||''),at=url.indexOf(marker);
   if(at<0)return;
   let country='';try{country=decodeURIComponent(url.slice(at+marker.length).split('?')[0]);}catch(_){return;}
