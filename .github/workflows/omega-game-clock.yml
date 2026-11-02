@@ -14,6 +14,7 @@ on:
       - 'opponent_country_rules.js'
       - 'omega_opponent_autonomy_system.js'
       - 'test/omega_world_simulation_scheduler_v1.test.mjs'
+      - 'test/opponent_country_rules_runtime.test.js'
       - 'world_ecosystem_engine.js'
       - 'omega_enterprise_composition_root_v10.js'
       - 'omega_game_lifecycle_runtime_v1.js'
@@ -83,4 +84,4 @@ jobs:
           node --check omega_live_operations_observability_v1.js
           node --check omega-offline-map-sw.js
       - name: Test shared daily clock, saves and lifecycle wiring
-        run: node --test test/omega_simulation_daily_clock.test.mjs test/omega_simulation_runtime.test.js test/omega_resource_industrial_network_v1.test.mjs test/omega_world_simulation_scheduler_v1.test.mjs
+        run: node --test test/omega_simulation_daily_clock.test.mjs test/omega_simulation_runtime.test.js test/omega_resource_industrial_network_v1.test.mjs test/omega_world_simulation_scheduler_v1.test.mjs test/opponent_country_rules_runtime.test.js
