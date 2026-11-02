@@ -1361,7 +1361,7 @@ test("raw-resource inventory cards show icon, stock, demand, status and named su
     const profile = rules.demand.resourceProfiles[resourceId] || {};
     return {
       resourceId,
-      name: resourceId.replace(/[_-]+/g, " ").replace(/\\b\\w/g, (ch) => ch.toUpperCase()),
+      name: resourceId.replace(/[_-]+/g, " ").replace(/\b\w/g, (ch) => ch.toUpperCase()),
       unit: String(profile.unit || "").replace(/_PER_DAY$/i, "") || "TONNES",
       demandUnit: profile.unit || "TONNES_PER_DAY"
     };
@@ -1418,27 +1418,27 @@ test("raw-resource inventory cards show icon, stock, demand, status and named su
     assert.match(root.innerHTML,/data-resource-id="coal"/);
     assert.match(root.innerHTML,/Current stock/);
     assert.match(root.innerHTML,/Daily demand/);
-    assert.match(root.innerHTML,/125(?:\\.00)? TONNES/);
-    assert.match(root.innerHTML,/25(?:\\.00)? TONNES_PER_DAY|25(?:\\.00)? TONNES per day/i);
+    assert.match(root.innerHTML,/125(?:\.00)? TONNES/);
+    assert.match(root.innerHTML,/25(?:\.00)? TONNES_PER_DAY|25(?:\.00)? TONNES per day/i);
     assert.match(root.innerHTML,/Domestic mine/);
     assert.match(root.innerHTML,/Foreign import/);
-    assert.match(root.innerHTML,/Australia \\(AUS\\)/);
+    assert.match(root.innerHTML,/Australia \(AUS\)/);
     assert.match(root.innerHTML,/Shortage/);
     assert.match(root.innerHTML,/data-omega-v2-processed-goods-inventory/);
-    assert.match(root.innerHTML,/Finished Goods Warehouse/);
+    assert.match(root.innerHTML,/Processed Goods Warehouse/);
     assert.match(root.innerHTML,/Steel/);
-    assert.match(root.innerHTML,/900(?:\\.00)? TONNES/);
+    assert.match(root.innerHTML,/900(?:\.00)? TONNES/);
     const rawSection = root.innerHTML.slice(root.innerHTML.indexOf('data-omega-v2-raw-resource-inventory'),root.innerHTML.indexOf('data-omega-v2-processed-goods-inventory'));
-    assert.doesNotMatch(rawSection,/data-product-id="steel"|900(?:\\.00)? TONNES/,
+    assert.doesNotMatch(rawSection,/data-product-id="steel"|900(?:\.00)? TONNES/,
       "finished-goods stock must never appear in the natural-resource inventory");
     assert.match(root.innerHTML,/Factory-held input/);
     assert.match(root.innerHTML,/Bangladesh Steel Works/);
-    assert.match(root.innerHTML,/12(?:\\.00)? TONNES/,
+    assert.match(root.innerHTML,/12(?:\.00)? TONNES/,
       "factory-held raw input must remain in its separate factory-owned section");
     const dashboard = api.render(root,{countryId:"BGD",sites:[],tab:"dashboard"});
     assert.equal(dashboard.ok,true);
     assert.match(root.innerHTML,/Raw Resource Inventory/);
-    assert.match(root.innerHTML,/Finished Goods Warehouse/);
+    assert.match(root.innerHTML,/Processed Goods Warehouse/);
   } finally {
     api.unload(root);
     if(prior.Game===undefined)delete globalThis.Game;else globalThis.Game=prior.Game;
