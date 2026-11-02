@@ -7,7 +7,9 @@ on:
       - 'index.html'
       - 'omega_ui_v2/**'
       - 'omega_resource_startup_baseline_v1.js'
+      - 'omega_country_inventory_runtime_v1.js'
       - 'test/omega_resource_startup_baseline_v1.test.mjs'
+      - 'test/omega_country_inventory_runtime_v1.test.mjs'
       - 'test/omega_ui_v2.test.mjs'
       - 'test/omega_resource_ministry_premium_ui.test.mjs'
       - 'test/omega_ui_photo_assets.test.mjs'
@@ -40,7 +42,9 @@ on:
       - 'index.html'
       - 'omega_ui_v2/**'
       - 'omega_resource_startup_baseline_v1.js'
+      - 'omega_country_inventory_runtime_v1.js'
       - 'test/omega_resource_startup_baseline_v1.test.mjs'
+      - 'test/omega_country_inventory_runtime_v1.test.mjs'
       - 'test/omega_ui_v2.test.mjs'
       - 'test/omega_resource_ministry_premium_ui.test.mjs'
       - 'test/omega_ui_photo_assets.test.mjs'
@@ -102,5 +106,7 @@ jobs:
         run: npm run test:ui-visual
       - name: Run player-country resource baseline regression tests
         run: node --test test/omega_resource_startup_baseline_v1.test.mjs
+      - name: Run player-only country inventory runtime tests
+        run: node --test test/omega_country_inventory_runtime_v1.test.mjs
       - name: Run Resource Ministry logistics transport UI regression tests
         run: npm run test:resource-ui-premium
