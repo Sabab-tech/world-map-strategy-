@@ -666,7 +666,18 @@
     function demandRuntimeFor(resourceId) {
       var snapshot = gameResource.demandRuntime && typeof gameResource.demandRuntime === 'object'
         ? gameResource.demandRuntime : {};
-      return resourceEntryFor(snapshot.byResource || {}, resourceId);
+      var maps = [
+        snapshot.byResource,
+        gameResource.nationalDemand && (gameResource.nationalDemand.byResource || gameResource.nationalDemand),
+        gameResource.resourceDemand,
+        gameResource.demandByResource,
+        gameResource.demand && (gameResource.demand.byResource || gameResource.demand)
+      ];
+      for (var i = 0; i < maps.length; i += 1) {
+        var row = resourceEntryFor(maps[i], resourceId);
+        if (row && typeof row === 'object') return row;
+      }
+      return null;
     }
     function factoryInputBaselineRowFor(resourceId) {
       var marker = gameResource.factoryInputBaselineV1 && typeof gameResource.factoryInputBaselineV1 === 'object'
