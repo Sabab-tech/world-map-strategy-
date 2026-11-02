@@ -14,6 +14,8 @@
   var EPSILON = 1e-9;
   var initPromise = null;
   var countryNames = Object.create(null);
+  var canonicalResourceProfiles = Object.create(null);
+  var canonicalResourceProfilePromise = null;
   var installed = false;
 
   function gameState() {
@@ -197,6 +199,43 @@
     });
   }
 
+  function loadCanonicalResourceProfiles() {
+    if (canonicalResourceProfilePromise) return canonicalResourceProfilePromise;
+    canonicalResourceProfilePromise = (async function () {
+      if (typeof g.fetch !== 'function') return 0;
+      try {
+        var response = await g.fetch('./resource_economy_rules.json', { cache: 'default' });
+        if (!response || !response.ok) return 0;
+        var document = await response.json();
+        var profiles = document && document.demand && document.demand.resourceProfiles;
+        if (!object(profiles)) return 0;
+        canonicalResourceProfiles = Object.create(null);
+        Object.keys(profiles).forEach(function (rawId) {
+          var productId = normalizeProductId(rawId);
+          var profile = profiles[rawId] || {};
+          if (!productId) return;
+          var demandUnit = String(profile.unit || '').trim();
+          var stockUnit = demandUnit.replace(/_PER_DAY$/i, '');
+          canonicalResourceProfiles[productId] = {
+            resourceId: productId,
+            name: displayName(productId),
+            unit: stockUnit || null,
+            demandUnit: demandUnit || null,
+            priority: number(profile.priority),
+            basePerMillionPopulation: number(profile.basePerMillionPopulation),
+            profileKnown: number(profile.basePerMillionPopulation) !== null
+          };
+          productMeta(productId, displayName(productId), stockUnit || null);
+        });
+        return Object.keys(canonicalResourceProfiles).length;
+      } catch (_) {
+        canonicalResourceProfiles = Object.create(null);
+        return 0;
+      }
+    })();
+    return canonicalResourceProfilePromise;
+  }
+
   function findProductCatalog() {
     var data = root();
     var cat = g.OmegaResourceIndustrialCatalogData ||
@@ -215,6 +254,11 @@
         if (!cat && typeof r.getDataset === 'function') cat = r.getDataset('resource_industrial_catalog_v1.json');
       }
     } catch (_) {}
+
+    Object.keys(canonicalResourceProfiles).forEach(function (id) {
+      var profile = canonicalResourceProfiles[id] || {};
+      productMeta(id, profile.name, profile.unit);
+    });
 
     if (object(cat)) {
       registerMapKeys(cat.resourceRules, null);
@@ -1050,6 +1094,7 @@
           }
         } catch (_) {}
       }
+      await loadCanonicalResourceProfiles();
       findProductCatalog();
       var roster = countryRoster();
       roster.forEach(function (row) { ensureCountry(row.countryId, row.countryName); });
@@ -1113,6 +1158,20 @@
     getPlayerCountryId: playerCountry,
     refreshActiveCountry: refreshActiveCountry,
     getInventory: getInventory,
+    getResourceCatalog: function () {
+      return Object.keys(canonicalResourceProfiles).sort().map(function (id) {
+        var profile = canonicalResourceProfiles[id] || {};
+        var meta = root().productCatalog[id] || {};
+        return {
+          resourceId: id,
+          name: meta.name || profile.name || displayName(id),
+          unit: meta.unit || profile.unit || null,
+          demandUnit: profile.demandUnit || null,
+          priority: profile.priority === undefined ? null : profile.priority,
+          profileKnown: profile.profileKnown === true
+        };
+      });
+    },
     getCountryRecord: getCountryRecord,
     registerProduct: function (productId, name, unit) {
       var meta = productMeta(productId, name, unit);
