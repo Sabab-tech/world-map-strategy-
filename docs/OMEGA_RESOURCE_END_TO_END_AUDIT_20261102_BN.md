@@ -49,7 +49,7 @@ Geological reserve, active extraction, raw inventory, factory input এবং fi
 
 2. **Extraction event-এ premature factory route plan বন্ধ।** OMEGA_RESOURCE_FACTORY_INPUT_AVAILABLE আসার সময় batch এখনও mine haul বা warehouse receipt-এর আগে থাকতে পারে। Economy event handler আর দুইবার পুরোনো logistics planner চালায় না। Event এখন PENDING_RAW_WAREHOUSE_RECEIPT এবং AWAITING_CORE_NETWORK_DISPATCH হিসেবে চিহ্নিত হয়।
 
-3. **Mine batch-এর transport bypass বন্ধ।** transferFactoryInputsFromWarehouse()-এর immediate internal-transfer helper এখন siteFlowLedger-এ থাকা mine-backed batch সরাসরি factory input-এ তুলবে না। Site-backed batch-এর factory feed core RAW_TO_FACTORY shipment, capacity reservation ও receipt দিয়েই যেতে হবে। Non-site opening/import batch-এর existing internal warehouse transfer অপরিবর্তিত।
+3. **সব warehouse feed-এর physical shipment authority।** Mine-backed batch-এর factory feed core RAW_TO_FACTORY shipment, capacity reservation ও receipt দিয়েই যায়। Opening/import বা অন্য non-site raw batch-ও এখন WAREHOUSE_TO_FACTORY core shipment, shared transport-capacity reservation, ETA ও confirmed receipt ছাড়া factory input-এ ঢুকতে পারে না.
 
 4. **Actual shipment UI authority ঠিক।** Logistics panel এখন industrialNetwork.shipments দেখায়। resource.logistics.shipments-এর পুরোনো রেকর্ড live shipment হিসেবে দেখানো হয় না; সেগুলো legacy route-plan history।
 
@@ -57,12 +57,19 @@ Geological reserve, active extraction, raw inventory, factory input এবং fi
 
 6. **Test contract শক্ত করা হয়েছে।** Logistics adapter test যাচাই করে route preview source-stock debit, shipment record বা false delivery তৈরি করে না; advance core Industrial Network-এ delegate হয়। Economy test premature dispatch status যাচাই করে। UI test core-vs-legacy shipment ও partial warehouse quantity যাচাই করে। Mine-batch bypass প্রতিরোধের regression guard যোগ হয়েছে।
 
+## ৩ নভেম্বরের warehouse transport completion
+
+- Opening/import raw batches without mine lineage no longer use the instant INTERNAL_WAREHOUSE_TO_FACTORY delivery shortcut. They dispatch as WAREHOUSE_TO_FACTORY through the core Industrial Network shipment ledger.
+- Dispatch reserves the batch, warehouse aggregate balance and shared turn transport capacity. Receipt is the only step that debits the raw warehouse/national stock and credits factory input lots.
+- The logistics panel subtracts these in-transit reservations from available warehouse batch quantities and shows each shipment's source warehouse, destination, transport mode, route distance, leg summary and ETA.
+- Count-based transport profiles can be configured at the raw warehouse endpoint as well as mine sites. Missing configured counts remain unknown and are never filled with invented vehicle counts.
+
 ## এখনো প্রয়োজনীয় যাচাই / সীমাবদ্ধতা
 - **প্রকৃত gameplay/save-load smoke:** browser বা Android runtime-এ একটি নতুন ও একটি পূর্বের save খুলে mine থেকে finished-goods warehouse পর্যন্ত বাস্তব in-game turn চালিয়ে UI, save, reload এবং পুনরায় turn চালিয়ে duplicate shipment/receipt হয় কি না যাচাই করতে হবে। Repository API access দিয়ে নির্দিষ্ট save বা device session চালানো যায়নি।
 - **Normal commissioning path:** বিদ্যমান comprehensive end-to-end test explicit autoCommissionFactory: true fixture ব্যবহার করে। এটি test fixture-এ processing path প্রমাণ করে; নতুন game-এ normal build/commission user action-এর সম্পূর্ণ বাস্তব পথের বিকল্প নয়।
 - **Route data truth:** logistics manifest-এ 561 unique physical site ID route design আছে, 193টি country profile-এ; shared framework 197 country-কে সমর্থন করে, কিন্তু Liechtenstein (LIE), Monaco (MCO), San Marino (SMR) ও Vatican City (VAT)-এর eligible mine/site route নেই। 561টি row হলো canonical/expanded/critical/legacy source union, সব দেশের সব বাস্তব mine-এর census নয়। Dataset-এর authority SCENARIO_LOGISTICS_DESIGN_ONLY এবং simulationOnly=true; routePlan dispatchStatus NOT_DISPATCHABLE_DATA_ONLY_PHASE। তাই route geometry, distance, speed, payload ও capacity simulation design estimate; surveyed corridor নয়।
 - **Transport fleet binding:** route manifest-এ warehouse physical coordinates null, actual bound/working fleet units null এবং actual asset status unknown। Test matrix-এ 519 leg-এর design fleet need হিসাব করা যায়; 841 leg unit incompatibility বা explicit pipeline-line capacity না থাকায় uncalculated থাকে। UNBOUND_SIMULATED_CAPACITY বা simulation authority-র route-কে actual registered vehicle availability বলা যাবে না।
-- **Non-site warehouse feed:** opening/imported stock যার site-flow lineage নেই, সেটি এখনো INTERNAL_WAREHOUSE_TO_FACTORY immediate transfer path ব্যবহার করতে পারে। সব warehouse→factory transfer-এ physical transport চাইলে imported/opening stock-এর জন্যও explicit internal route, fleet/capacity, ETA ও receipt contract নির্ধারণ করে আলাদা implementation ও test প্রয়োজন।
+- **Non-site warehouse feed:** opening/import batches without mine lineage now use WAREHOUSE_TO_FACTORY in the same Industrial Network shipment ledger. Dispatch reserves the raw-warehouse balance and shared per-turn transport capacity; the source batch, national inventory and factory input remain unchanged until ETA and confirmed receipt. The route uses configured warehouse fleet/infrastructure when available and explicitly labelled scenario distance/ETA estimates where measured warehouse coordinates or actual fleet counts are unknown.
 - **Full asset/data coverage:** canonical 41 raw-resource identity, 21 factory types, 197 country baseline এবং 561 site/route references-এর প্রতিটি record এই patch-এর মধ্যে runtime-এ চালিয়ে যাচাই করা হয়নি। Data-completeness test, selected-country live run এবং per-site route audit আলাদা করে করতে হবে।
 - **Device performance:** runtime cooperative yielding ও player-country scope রয়েছে, কিন্তু Android 9 low-memory device-এ বড় mine count এবং simultaneous shipments-সহ soak test ছাড়া Chrome crash বা memory-pressure issue সমাধান হয়েছে বলা যাবে না।
 
@@ -71,6 +78,7 @@ Geological reserve, active extraction, raw inventory, factory input এবং fi
 - [ ] Mine dispatch reserves the complete unshipped source amount once; receipt restores exactly the received amount once.
 - [ ] Raw warehouse available stock equals received minus factory-dispatched/reserved amount.
 - [ ] Site-backed factory feed always has a core RAW_TO_FACTORY shipment and matching receipt.
+- [ ] Opening/import raw stock always has a core WAREHOUSE_TO_FACTORY shipment with route, capacity reservation, ETA and matching receipt.
 - [ ] No route preview, legacy adapter, UI action or event observer can create an independent shipment ledger.
 - [ ] Recipe input units and quantities reconcile with factory input batch lots.
 - [ ] Factory cycle starts only after all recipe inputs and operational gates are ready.

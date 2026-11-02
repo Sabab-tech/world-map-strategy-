@@ -659,6 +659,10 @@ const TRANSPORT_PROFILE_OVERRIDE_RULES=Object.freeze({
   payloadTonnes:{minExclusive:0},speedKmh:{minExclusive:0},loadHours:{min:0},unloadHours:{min:0},
   costPerTonneKm:{min:0},maintenanceMultiplier:{minExclusive:0}
 });
+function isWarehouseTransportEndpoint(countryId,siteId){
+  const cid=canonicalCountry(countryId),sid=String(siteId||'').trim().toUpperCase();
+  return !!cid&&(sid==='WH-'+cid+'-RAW'||sid==='WH-'+cid+'-PROCESSED');
+}
 function storedTransportFleetRecord(countryId,siteId,mode){
   const cid=canonicalCountry(countryId),sid=String(siteId||'').trim(),transportMode=normalizeTransportMode(mode);
   if(!cid||!sid||!transportMode)return null;
@@ -673,8 +677,9 @@ function getTransportFleet(input={},siteIdValue){
   const selected=playerSimulationCountryId();
   if(selected&&selected!==cid)return{status:'BLOCKED',reason:'PLAYER_COUNTRY_SCOPE_VIOLATION',countryId:cid,playerCountryId:selected};
   const site=siteById(sid);
-  if(!site?.siteId)return{status:'BLOCKED',reason:'SITE_NOT_FOUND',siteId:sid,countryId:cid};
-  if(canonicalCountry(site.countryId)!==cid)return{status:'BLOCKED',reason:'SITE_COUNTRY_MISMATCH',siteId:sid,countryId:cid,siteCountryId:canonicalCountry(site.countryId)};
+  const warehouseEndpoint=isWarehouseTransportEndpoint(cid,sid);
+  if(!site?.siteId&&!warehouseEndpoint)return{status:'BLOCKED',reason:'SITE_NOT_FOUND',siteId:sid,countryId:cid};
+  if(site?.siteId&&canonicalCountry(site.countryId)!==cid)return{status:'BLOCKED',reason:'SITE_COUNTRY_MISMATCH',siteId:sid,countryId:cid,siteCountryId:canonicalCountry(site.countryId)};
   const fleet=netState(cid).transportFleetBySiteId[sid]||{},profiles=modeRules();
   const supportedModes=Object.keys(profiles).length?Object.keys(profiles):['truck','rail','barge','ship','pipeline'];
   const transportTypes=supportedModes.map(mode=>{
@@ -687,8 +692,9 @@ function getTransportFleet(input={},siteIdValue){
       unloadHours:num(overrides.unloadHours)??num(profile.unloadHours),
       lastUpdatedTurn:record?.lastUpdatedTurn??null,authority:record?.authority||'NOT_CONFIGURED'};
   });
-  return{status:'READY',countryId:cid,siteId:sid,transportTypes,individualVehicleIdsRequired:false,
-    authority:'OMEGA_PLAYER_CONFIGURED_COUNTRY_SITE_TRANSPORT_COUNT',lastUpdatedTurn:fleet.lastUpdatedTurn??null};
+  return{status:'READY',countryId:cid,siteId:sid,endpointType:warehouseEndpoint?'RAW_WAREHOUSE':'MINE_SITE',
+    transportTypes,individualVehicleIdsRequired:false,
+    authority:'OMEGA_PLAYER_CONFIGURED_COUNTRY_ENDPOINT_TRANSPORT_COUNT',lastUpdatedTurn:fleet.lastUpdatedTurn??null};
 }
 function setTransportFleet(input={}){
   const cid=canonicalCountry(input.countryId),sid=String(input.siteId||'').trim(),mode=normalizeTransportMode(input.transportType||input.mode);
@@ -696,8 +702,9 @@ function setTransportFleet(input={}){
   const selected=playerSimulationCountryId();
   if(selected&&selected!==cid)return{status:'BLOCKED',reason:'PLAYER_COUNTRY_SCOPE_VIOLATION',countryId:cid,playerCountryId:selected};
   const site=siteById(sid);
-  if(!site?.siteId)return{status:'BLOCKED',reason:'SITE_NOT_FOUND',siteId:sid,countryId:cid};
-  if(canonicalCountry(site.countryId)!==cid)return{status:'BLOCKED',reason:'SITE_COUNTRY_MISMATCH',siteId:sid,countryId:cid,siteCountryId:canonicalCountry(site.countryId)};
+  const warehouseEndpoint=isWarehouseTransportEndpoint(cid,sid);
+  if(!site?.siteId&&!warehouseEndpoint)return{status:'BLOCKED',reason:'SITE_NOT_FOUND',siteId:sid,countryId:cid};
+  if(site?.siteId&&canonicalCountry(site.countryId)!==cid)return{status:'BLOCKED',reason:'SITE_COUNTRY_MISMATCH',siteId:sid,countryId:cid,siteCountryId:canonicalCountry(site.countryId)};
   const knownModes=new Set([...Object.keys(modeRules()),'truck','rail','barge','ship','pipeline']);
   if(!knownModes.has(mode))return{status:'BLOCKED',reason:'UNKNOWN_TRANSPORT_TYPE',transportType:mode,allowedTransportTypes:[...knownModes]};
   const count=num(input.count);
@@ -721,7 +728,8 @@ function setTransportFleet(input={}){
   const prior=siteFleet.transportTypes[mode]||{};
   const mergedProfile={...(prior.profileOverrides&&typeof prior.profileOverrides==='object'?prior.profileOverrides:{}),...profileOverrides};
   const record={transportType:mode,count:Math.floor(count),profileOverrides:mergedProfile,individualVehicleIdsRequired:false,
-    authority:'PLAYER_CONFIGURED_COUNTRY_SITE_TRANSPORT_COUNT',lastUpdatedTurn:turn()};
+    authority:warehouseEndpoint?'PLAYER_CONFIGURED_RAW_WAREHOUSE_TRANSPORT_COUNT':'PLAYER_CONFIGURED_COUNTRY_SITE_TRANSPORT_COUNT',
+    lastUpdatedTurn:turn()};
   siteFleet.transportTypes[mode]=record;siteFleet.lastUpdatedTurn=turn();
   emit('OMEGA_RESOURCE_TRANSPORT_FLEET_UPDATED',cid,{siteId:sid,transportType:mode,count:record.count,
     profileOverrides:clone(mergedProfile),individualVehicleIdsRequired:false,lastUpdatedTurn:turn()});
@@ -2027,11 +2035,22 @@ function buildRoute(site,asset,resourceId,requestedQuantity,input={}){
   return route;
 }
 function planShipment(input={}){
-  const cid=canonicalCountry(input.countryId),site=siteById(input.siteId)||input.site;
+  const cid=canonicalCountry(input.countryId);
+  const sourceKind=String(input.sourceType||input.shipmentType||'').trim().toUpperCase();
+  const warehouseSource=['RAW_WAREHOUSE','PROCESSED_WAREHOUSE','WAREHOUSE_TO_FACTORY'].includes(sourceKind);
+  const sourceWarehouseId=warehouseSource
+    ?String(input.warehouseId||input.siteId||('WH-'+cid+'-RAW')).trim()
+    :'WH-'+cid+'-RAW';
+  const site=warehouseSource
+    ?{siteId:sourceWarehouseId,countryId:cid,
+      siteName:(sourceKind==='PROCESSED_WAREHOUSE'?'Processed goods warehouse · ':'Raw resource warehouse · ')+cid,
+      siteType:sourceKind==='PROCESSED_WAREHOUSE'?'PROCESSED_GOODS_WAREHOUSE':'RAW_MATERIAL_WAREHOUSE',
+      real:{resourceId:input.resourceId},simulation:{transportRoute:[]}}
+    :(siteById(input.siteId)||input.site);
   if(!site?.siteId)return{status:'BLOCKED',reason:'SITE_NOT_FOUND'};
   const rid=tok(input.resourceId||site?.real?.resourceId||site?.sourceSiteRecord?.resourceId);if(!rid)return{status:'BLOCKED',reason:'RESOURCE_ID_MISSING'};
   const strategicPolicy=g.Omega?.ResourceStrategicPolicyRuntime||g.OmegaResourceStrategicPolicyRuntime;
-  const siteGate=strategicPolicy?.siteAvailableForExtraction?.(cid,site.siteId,site);
+  const siteGate=warehouseSource?null:strategicPolicy?.siteAvailableForExtraction?.(cid,site.siteId,site);
   if(siteGate&&!siteGate.allowed)return{status:'BLOCKED',reason:siteGate.reason||'SITE_EXPLORATION_GATE_BLOCKED',siteId:site.siteId,countryId:cid,resourceId:rid};
   let candidates=candidateFactories(cid,rid);
   const sourceSiteId=String(site?.siteId||'').trim();
@@ -2060,11 +2079,10 @@ function planShipment(input={}){
   const ordered=candidates.sort((a,b)=>String(a.asset?.priority??999)-String(b.asset?.priority??999));
   let best=null,policyBlockedRoute=null;
   const routeAttempts=[];
-  const warehouseId='WH-'+cid+'-RAW';
-  // Use the extraction flow's immutable site snapshot for the downstream corridor.
-  // The live canonical site row may not carry the route-to-factory fields saved when
-  // the mine batch was created; losing them falls back to a fabricated corridor.
-  const snapshot=input.routeSiteSnapshot;
+  // The source node is always a country-owned warehouse. A missing measured corridor
+  // remains a clearly labelled scenario estimate inside buildRoute(), never a survey fact.
+  const warehouseId=sourceWarehouseId;
+  const snapshot=warehouseSource?null:input.routeSiteSnapshot;
   const routeSite=snapshot&&String(snapshot.siteId||'')===String(site.siteId||'')&&
     canonicalCountry(snapshot.countryId||cid)===cid?snapshot:site;
   const siteRoute=(routeSite.simulation?.transportRoute||[])[0]||{};
@@ -2072,21 +2090,27 @@ function planShipment(input={}){
   const preferredMode=tok(input.transportMode||rules()[rid]?.preferredModes?.[0]||'truck');
   const routeMode=routeType.includes('pipeline')?'pipeline':routeType.includes('sea')?'ship':routeType.includes('rail')?'rail':preferredMode;
   const routeDistance=Math.max(0,num(siteRoute.distanceKm??siteRoute.distance??siteRoute.km)||0);
-  const declaredSiteRoute=siteLogisticsRouteFor(cid,site.siteId);
+  const declaredSiteRoute=warehouseSource?null:siteLogisticsRouteFor(cid,site.siteId);
   const routeDesignCapacityPerDay=num(siteRoute.designCapacityPerDay??siteRoute.routeCapacityPerDay??
     routeSite.logistics?.transport?.routeCapacityPerDay??declaredSiteRoute?.routePlan?.capacityBottleneckPerDay);
   const routeOrigin={siteId:warehouseId,countryId:cid,siteName:cid+' sovereign raw warehouse',siteType:'RAW_MATERIAL_WAREHOUSE',
     simulation:{transportRoute:routeDistance>0?[{...clone(siteRoute),mode:routeMode,transportMode:routeMode,distanceKm:routeDistance,
       ...(routeDesignCapacityPerDay!==null&&routeDesignCapacityPerDay>0?{designCapacityPerDay:routeDesignCapacityPerDay}:{}),
-      authority:'SITE_SIMULATION_ROUTE',countryIsolationKey:cid}]:[]}};
+      authority:warehouseSource?'WAREHOUSE_CORRIDOR_SCENARIO_ESTIMATE':'SITE_SIMULATION_ROUTE',
+      countryIsolationKey:cid}]:[]}};
   for(const c of ordered.slice(0,16)){
-    const route=buildRoute(routeOrigin,c.asset,rid,input.quantity,{countryId:cid,sourceSiteId:site.siteId,sourceWarehouseId:warehouseId,sourceNode:'WAREHOUSE:'+cid+':RAW',sourceNodeType:'WAREHOUSE',transportMode:input.transportMode,unit:input.unit});
+    const route=buildRoute(routeOrigin,c.asset,rid,input.quantity,{countryId:cid,
+      sourceSiteId:warehouseSource?null:site.siteId,sourceWarehouseId:warehouseId,
+      sourceNode:'WAREHOUSE:'+cid+':RAW',sourceNodeType:'WAREHOUSE',
+      transportMode:input.transportMode,unit:input.unit});
     const routeAttempt={factoryId:String(c.asset?.id||c.asset?.assetId||c.asset?.projectId||''),
       status:route.status,reason:route.reason||route.statusReason||null,transportMode:route.transportMode||route.mode||null,
       totalDistanceKm:route.totalDistanceKm??null,dispatchQuantity:route.dispatchQuantity??null,
       routePath:Array.isArray(route.routePath)?route.routePath.slice():[],distanceAuthority:route.distanceAuthority||null,
       capacityAuthority:route.capacityAuthority||null};
-    const blockade=strategicPolicy?.isRouteBlocked?.(cid,{resourceId:rid,transportMode:route.transportMode||route.mode,routeId:route.routeId,siteId:site.siteId,factoryId:String(c.asset?.id||c.asset?.assetId||c.asset?.projectId||'')});
+    const blockade=strategicPolicy?.isRouteBlocked?.(cid,{resourceId:rid,transportMode:route.transportMode||route.mode,
+      routeId:route.routeId,siteId:warehouseSource?null:site.siteId,
+      factoryId:String(c.asset?.id||c.asset?.assetId||c.asset?.projectId||'')});
     if(blockade?.blocked){policyBlockedRoute=blockade;routeAttempts.push({...routeAttempt,policyReason:blockade.reason||'ROUTE_BLOCKED'});continue;}
     routeAttempts.push(routeAttempt);
     if(route.status==='PLANNED' && (!best||route.travelTimeDays<best.route.travelTimeDays))best={candidate:c,route};
@@ -2094,24 +2118,43 @@ function planShipment(input={}){
   if(!best)return{status:'BLOCKED',reason:policyBlockedRoute?.reason||'NO_USABLE_TRANSPORT_ROUTE',
     policy:policyBlockedRoute||null,candidates:ordered.length,routeAttempts};
   if(best.route.crossBorderRequired&&!input.tradeContractId)return{status:'BLOCKED',reason:'CROSS_BORDER_CONTRACT_REQUIRED',route:best.route};
-  const result={status:'PLANNED',countryId:cid,siteId:site.siteId,resourceId:rid,factoryId:String(best.candidate.asset?.id||best.candidate.asset?.assetId||best.candidate.asset?.projectId),recipe:best.candidate.recipe,route:best.route};
+  const result={status:'PLANNED',countryId:cid,siteId:warehouseSource?null:site.siteId,
+    sourceType:warehouseSource?sourceKind:'MINE_SITE',sourceWarehouseId:warehouseId,
+    resourceId:rid,factoryId:String(best.candidate.asset?.id||best.candidate.asset?.assetId||best.candidate.asset?.projectId),
+    recipe:best.candidate.recipe,route:best.route};
   emit('OMEGA_RESOURCE_FACTORY_ROUTE_PLANNED',cid,result);
   return result;
 }
 
-function reserveInventoryForShipment(c,resourceId,quantity,shipmentId){
-  const r=resourceState(c),n=netState(c);r.warehouse=r.warehouse||{availableByResource:{},reservedByResource:{}};const w=r.warehouse;
+function warehouseForShipment(rs,countryId,warehouseId){
+  const cid=canonicalCountry(countryId),id=String(warehouseId||'WH-'+cid+'-RAW').trim().toUpperCase();
+  if(id.includes('PROCESSED')){
+    rs.processedWarehouse=rs.processedWarehouse||{warehouseId:id,countryId:cid,
+      type:'SOVEREIGN_PROCESSED_GOODS_WAREHOUSE',availableByResource:{},reservedByResource:{},storedBatchIds:[],receipts:[]};
+    return{kind:'PROCESSED',warehouse:rs.processedWarehouse,warehouseId:id};
+  }
+  rs.warehouse=rs.warehouse||{warehouseId:id,countryId:cid,
+    type:'SOVEREIGN_RAW_MATERIAL_WAREHOUSE',availableByResource:{},reservedByResource:{},storedBatchIds:[],receipts:[]};
+  return{kind:'RAW',warehouse:rs.warehouse,warehouseId:id};
+}
+function reserveInventoryForShipment(c,resourceId,quantity,shipmentId,warehouseId){
+  const r=resourceState(c),n=netState(c),source=warehouseForShipment(r,c,warehouseId),w=source.warehouse;
   w.availableByResource=w.availableByResource||{};w.reservedByResource=w.reservedByResource||{};
-  const available=Math.max(0,num(w.availableByResource[resourceId])||0);
-  const reserved=Math.max(0,num(w.reservedByResource[resourceId])||0);
-  const free=Math.max(0,available-reserved);
-  const requested=Math.max(0,num(quantity)||0);
+  const availableKey=quantityObjectKey(w.availableByResource,resourceId);
+  if(availableKey===null)return{ok:false,reason:'WAREHOUSE_RESOURCE_BALANCE_NOT_RECORDED',
+    warehouseId:source.warehouseId,requestedQuantity:Math.max(0,num(quantity)||0),dispatchableQuantity:0};
+  const reservedKey=quantityObjectKey(w.reservedByResource,resourceId)||resourceId;
+  const available=Math.max(0,num(w.availableByResource[availableKey])||0);
+  const reserved=Math.max(0,num(w.reservedByResource[reservedKey])||0);
+  const free=Math.max(0,available-reserved),requested=Math.max(0,num(quantity)||0);
   const approved=Math.min(requested,free);
   if(approved<=1e-9)return{ok:false,reason:'WAREHOUSE_AVAILABLE_AFTER_RESERVATIONS_TOO_LOW',
-    available:free,requestedQuantity:requested,dispatchableQuantity:0};
-  w.reservedByResource[resourceId]=reserved+approved;
-  n.reservations[shipmentId]={resourceId,quantity:approved,status:'RESERVED'};
-  return{ok:true,quantity:approved,requestedQuantity:requested,adjusted:approved+1e-6<requested,
+    warehouseId:source.warehouseId,available:free,requestedQuantity:requested,dispatchableQuantity:0};
+  w.reservedByResource[reservedKey]=reserved+approved;
+  n.reservations[shipmentId]={resourceId,quantity:approved,status:'RESERVED',
+    warehouseId:source.warehouseId,warehouseKind:source.kind};
+  return{ok:true,quantity:approved,warehouseId:source.warehouseId,warehouseKind:source.kind,
+    requestedQuantity:requested,adjusted:approved+1e-6<requested,
     reason:approved+1e-6<requested?'WAREHOUSE_AVAILABLE_AFTER_RESERVATIONS':'SOURCE_BATCH_WITHIN_AVAILABLE_WAREHOUSE_BALANCE'};
 }
 function resizeRouteForDispatch(route,actualQuantity,plannedQuantity){
@@ -2141,20 +2184,33 @@ function resizeRouteForDispatch(route,actualQuantity,plannedQuantity){
 function dispatchShipment(input={}){
   const cid=canonicalCountry(input.countryId);
   const sourceBatchId=String(input.batchId||'').trim();
+  const requestedSource=String(input.sourceType||input.shipmentType||'').trim().toUpperCase();
+  const warehouseShipment=['RAW_WAREHOUSE','PROCESSED_WAREHOUSE','WAREHOUSE_TO_FACTORY'].includes(requestedSource);
+  const shipmentType=warehouseShipment?'WAREHOUSE_TO_FACTORY':'RAW_TO_FACTORY';
+  const requestedFactoryId=String(input.factoryId||'').trim();
   if(cid&&sourceBatchId){
-    const inTransit=netState(cid).shipments.find(x=>String(x?.batchId||'')===sourceBatchId&&String(x?.status||'')==='IN_TRANSIT'&&String(x?.shipmentType||'')!=='MINE_TO_WAREHOUSE');
+    const inTransit=netState(cid).shipments.find(x=>String(x?.batchId||'')===sourceBatchId&&
+      String(x?.status||'')==='IN_TRANSIT'&&String(x?.shipmentType||'')===shipmentType&&
+      (!requestedFactoryId||String(x?.factoryId||'')===requestedFactoryId));
     if(inTransit)return{status:'DISPATCHED',shipment:inTransit,idempotent:true};
   }
-  const plan=planShipment(input);if(plan.status!=='PLANNED')return plan;
+  const shipmentInput=warehouseShipment?{...input,
+    sourceType:requestedSource==='PROCESSED_WAREHOUSE'?'PROCESSED_WAREHOUSE':'RAW_WAREHOUSE'}:input;
+  const plan=planShipment(shipmentInput);if(plan.status!=='PLANNED')return plan;
+  const sourceWarehouseId=String(input.warehouseId||plan.sourceWarehouseId||'WH-'+cid+'-RAW');
   const strategicPolicy=g.Omega?.ResourceStrategicPolicyRuntime||g.OmegaResourceStrategicPolicyRuntime;
-  const dispatchBlockade=strategicPolicy?.isRouteBlocked?.(cid,{resourceId:plan.resourceId,transportMode:plan.route?.transportMode,routeId:plan.route?.routeId,siteId:plan.siteId,factoryId:plan.factoryId});
+  const dispatchBlockade=strategicPolicy?.isRouteBlocked?.(cid,{resourceId:plan.resourceId,
+    transportMode:plan.route?.transportMode,routeId:plan.route?.routeId,
+    siteId:warehouseShipment?null:plan.siteId,factoryId:plan.factoryId});
   if(dispatchBlockade?.blocked)return{status:'BLOCKED',reason:dispatchBlockade.reason||'RESOURCE_ROUTE_BLOCKADE_ACTIVE',policy:dispatchBlockade,plan};
   const plannedQuantity=Math.max(0,num(plan.route.dispatchQuantity)||0);
   let quantity=plannedQuantity,quantityAdjustmentReason=null;
   const sourceBatch=sourceBatchId?
     (Array.isArray(resourceState(cid).batches)?resourceState(cid).batches.find(x=>String(x?.batchId||'')===sourceBatchId):null):null;
   if(sourceBatchId){
-    const inTransit=netState(cid).shipments.find(x=>String(x?.batchId||'')===sourceBatchId&&String(x?.status||'')==='IN_TRANSIT'&&String(x?.shipmentType||'')!=='MINE_TO_WAREHOUSE');
+    const inTransit=netState(cid).shipments.find(x=>String(x?.batchId||'')===sourceBatchId&&
+      String(x?.status||'')==='IN_TRANSIT'&&String(x?.shipmentType||'')===shipmentType&&
+      String(x?.factoryId||'')===String(plan.factoryId||''));
     if(inTransit)return{status:'DISPATCHED',shipment:inTransit,idempotent:true};
   }
   if(sourceBatchId&&!sourceBatch)return{status:'BLOCKED',reason:'SOURCE_BATCH_NOT_FOUND',batchId:sourceBatchId,plan};
@@ -2190,7 +2246,8 @@ function dispatchShipment(input={}){
     quantity=capacityPreview.allowedQuantity;
   }
   if(quantity<=0)return{status:'BLOCKED',reason:'SOURCE_BATCH_QUANTITY_ZERO',batchId:sourceBatchId||null,plan,capacity:capacityPreview};
-  const reserved=reserveInventoryForShipment(cid,plan.resourceId,quantity,shipmentId);if(!reserved.ok)return{status:'BLOCKED',reason:reserved.reason,details:reserved,plan};
+  const reserved=reserveInventoryForShipment(cid,plan.resourceId,quantity,shipmentId,sourceWarehouseId);
+  if(!reserved.ok)return{status:'BLOCKED',reason:reserved.reason,details:reserved,plan};
   if(Number.isFinite(Number(reserved.quantity))&&reserved.quantity>0&&reserved.quantity<quantity){
     quantity=reserved.quantity;quantityAdjustmentReason='WAREHOUSE_AVAILABLE_AFTER_RESERVATIONS';
   }
@@ -2201,11 +2258,15 @@ function dispatchShipment(input={}){
   const shipmentTravelDays=Math.max(0,num(route.travelTimeDays)||0);
   const shipmentEtaTurns=Math.max(1,num(route.etaTurn)-turn());
   const shipmentEtaDate=factoryAddGameDays(factoryCurrentGameDate(),shipmentEtaTurns*daysPerTurn());
-  const s={shipmentId,shipmentType:'RAW_TO_FACTORY',countryId:cid,siteId:plan.siteId,resourceId:plan.resourceId,factoryId:plan.factoryId,quantity,unit:input.unit||'TONNES',
+  const s={shipmentId,shipmentType,countryId:cid,siteId:warehouseShipment?null:plan.siteId,resourceId:plan.resourceId,
+    factoryId:plan.factoryId,quantity,unit:input.unit||sourceBatch?.unit||'TONNES',
     batchId:sourceBatchId||null,occurrenceKey:input.occurrenceKey||sourceBatch?.occurrenceKey||null,
-    warehouseId:input.warehouseId||sourceBatch?.warehouseId||('WH-'+cid+'-RAW'),
-    status:'IN_TRANSIT',createdTurn:turn(),createdDate:factoryCurrentGameDate(),etaTurn:route.etaTurn,etaDate:shipmentEtaDate,route,reservationId:shipmentId,transportCapacityReservation:capacityUse,
-    provenance:{source:'OMEGA_RESOURCE_INDUSTRIAL_NETWORK_V1',authority:route.distanceAuthority,sourceBatchId:sourceBatchId||null,
+    sourceWarehouseId,warehouseId:sourceWarehouseId,
+    status:'IN_TRANSIT',createdTurn:turn(),createdDate:factoryCurrentGameDate(),etaTurn:route.etaTurn,etaDate:shipmentEtaDate,
+    route,reservationId:shipmentId,transportCapacityReservation:capacityUse,
+    provenance:{source:'OMEGA_RESOURCE_INDUSTRIAL_NETWORK_V1',authority:route.distanceAuthority,
+      movementAuthority:'CORE_WAREHOUSE_TRANSPORT_SHIPMENT',sourceType:warehouseShipment?'RAW_WAREHOUSE':'MINE_SITE',
+      sourceWarehouseId,sourceBatchId:sourceBatchId||null,
       sourceAuthority:sourceBatch?.provenance?.sourceAuthority||sourceBatch?.provenance?.authority||'UNOBSERVED',
       sourceBatchQuantity:sourceBatch?Math.max(0,num(sourceBatch.remainingQuantity!=null?sourceBatch.remainingQuantity:sourceBatch.quantity)||0):null,
       plannedDispatchQuantity:plannedQuantity,actualDispatchQuantity:quantity}};
@@ -2237,7 +2298,7 @@ function dispatchShipment(input={}){
         dispatchWarehouse.storedBatchIds=dispatchWarehouse.storedBatchIds.filter(value=>String(value)!==sourceBatchId);
     }
   }
-  if(sourceBatchId)updateSiteFlow(cid,sourceBatchId,row=>{
+  if(sourceBatchId&&!warehouseShipment)updateSiteFlow(cid,sourceBatchId,row=>{
     row.shipmentId=s.shipmentId;row.shipmentIds=[...new Set([...(row.shipmentIds||[]),s.shipmentId])];
   });
   emit('OMEGA_RESOURCE_SHIPMENT_CREATED',cid,s);
@@ -2751,8 +2812,12 @@ function advanceShipments(c){
       continue;
     }
     const rid=tok(s.resourceId),quantity=Math.max(0,num(s.quantity)||0),r=resourceState(cid);
-    const warehouse=r.warehouse||{},available=Math.max(0,num(warehouse.availableByResource?.[rid])||0);
-    const reserved=Math.max(0,num(warehouse.reservedByResource?.[rid])||0);
+    const warehouseId=String(s.sourceWarehouseId||s.warehouseId||('WH-'+cid+'-RAW'));
+    const sourceWarehouse=warehouseForShipment(r,cid,warehouseId),warehouse=sourceWarehouse.warehouse;
+    const warehouseKey=quantityObjectKey(warehouse.availableByResource||{},rid);
+    const reservedKey=quantityObjectKey(warehouse.reservedByResource||{},rid)||rid;
+    const available=warehouseKey===null?0:Math.max(0,num(warehouse.availableByResource[warehouseKey])||0);
+    const reserved=Math.max(0,num(warehouse.reservedByResource?.[reservedKey])||0);
     if(quantity<=0||available+1e-9<quantity||reserved+1e-9<quantity){
       s.status='BLOCKED_LEDGER_MISMATCH';s.blockReason='WAREHOUSE_AVAILABLE_OR_RESERVATION_MISMATCH';s.blockedTurn=turn();markShipmentDeliveryAttempt(s);
       emit('OMEGA_RESOURCE_DELIVERY_BLOCKED',cid,{shipmentId:s.shipmentId,siteId:s.siteId,resourceId:rid,quantity,available,reserved,reason:s.blockReason});
@@ -2782,7 +2847,11 @@ function advanceShipments(c){
       }
     }
     warehouse.availableByResource=warehouse.availableByResource||{};warehouse.reservedByResource=warehouse.reservedByResource||{};
-    warehouse.availableByResource[rid]=Math.max(0,available-quantity);warehouse.reservedByResource[rid]=Math.max(0,reserved-quantity);
+    const warehouseResourceKey=warehouseKey||rid;
+    warehouse.availableByResource[warehouseResourceKey]=Math.max(0,available-quantity);
+    warehouse.reservedByResource[reservedKey]=Math.max(0,reserved-quantity);
+    if(sourceWarehouse.kind==='PROCESSED')r.processedWarehouse=warehouse;
+    else r.warehouse=warehouse;
     if(sourceBatch){
       const sourceRemaining=Math.max(0,num(sourceBatch.remainingQuantity!=null?sourceBatch.remainingQuantity:sourceBatch.quantity)||0);
       sourceBatch.remainingQuantity=Math.max(0,sourceRemaining-quantity);
@@ -2818,21 +2887,29 @@ function advanceShipments(c){
         sourceBatch.locationNodeKey=mixedLocation;sourceBatch.currentLocationNodeId=null;
         if(sourceLot){sourceLot.stage='PARTIALLY_IN_RAW_INVENTORY';sourceLot.warehouseId=null;sourceLot.locationNodeKey=mixedLocation;}
       }else{
-        const rawWarehouseId=String(warehouse.warehouseId||('WH-'+cid+'-RAW'));
-        sourceBatch.stage='RAW_INVENTORY';sourceBatch.warehouseId=rawWarehouseId;
-        sourceBatch.locationNodeKey='WAREHOUSE:'+cid+':RAW';sourceBatch.currentLocationNodeId=rawWarehouseId;
-        if(sourceLot){sourceLot.stage='RAW_INVENTORY';sourceLot.warehouseId=rawWarehouseId;sourceLot.locationNodeKey=sourceBatch.locationNodeKey;}
+        const remainingWarehouseId=String(warehouse.warehouseId||warehouseId);
+        const remainingWarehouseStage=sourceWarehouse.kind==='PROCESSED'?'PROCESSED':'RAW_INVENTORY';
+        const remainingWarehouseLabel=sourceWarehouse.kind==='PROCESSED'?'PROCESSED':'RAW';
+        sourceBatch.stage=remainingWarehouseStage;sourceBatch.warehouseId=remainingWarehouseId;
+        sourceBatch.locationNodeKey='WAREHOUSE:'+cid+':'+remainingWarehouseLabel;
+        sourceBatch.currentLocationNodeId=remainingWarehouseId;
+        if(sourceLot){sourceLot.stage=remainingWarehouseStage;sourceLot.warehouseId=remainingWarehouseId;sourceLot.locationNodeKey=sourceBatch.locationNodeKey;}
         warehouse.storedBatchIds=Array.isArray(warehouse.storedBatchIds)?warehouse.storedBatchIds:[];
         if(!warehouse.storedBatchIds.some(value=>String(value)===sourceBatchId))warehouse.storedBatchIds.push(sourceBatchId);
       }
     }
-    r.warehouse=warehouse;r.inventoryLots=lots;r.batches=batches;r.inventory[invKey]=Math.max(0,countryRawStock-quantity);
+    if(sourceWarehouse.kind==='PROCESSED')r.processedWarehouse=warehouse;
+    else r.warehouse=warehouse;
+    r.inventoryLots=lots;r.batches=batches;r.inventory[invKey]=Math.max(0,countryRawStock-quantity);
+    const factoryInputQuantity=Math.max(0,num(s.targetQuantity)??quantity);
+    const factoryInputUnit=s.targetUnit||s.unit||sourceBatch?.unit||factory.inputUnit||'TONNES';
     factory.inputInventory=factory.inputInventory&&typeof factory.inputInventory==='object'?factory.inputInventory:{};
-    factory.inputInventory[rid]=(num(factory.inputInventory[rid])||0)+quantity;
+    factory.inputInventory[rid]=(num(factory.inputInventory[rid])||0)+factoryInputQuantity;
     factory.inputBatchLots=Array.isArray(factory.inputBatchLots)?factory.inputBatchLots:[];
     const inputBatchId='INPUT:'+s.shipmentId;
+    s.factoryInputBatchId=inputBatchId;
     if(!factory.inputBatchLots.some(x=>String(x?.batchId||'')===inputBatchId)){
-      factory.inputBatchLots.push({batchId:inputBatchId,resourceId:rid,materialIdentity:rid,quantity,remainingQuantity:quantity,unit:s.unit||sourceBatch?.unit||'TONNES',
+      factory.inputBatchLots.push({batchId:inputBatchId,resourceId:rid,materialIdentity:rid,quantity:factoryInputQuantity,remainingQuantity:factoryInputQuantity,unit:factoryInputUnit,
         stage:'FACTORY_INPUT',countryId:cid,sourceCountryId:cid,originCountryId:cid,ownerCountryCode:cid,destinationCountryId:cid,
         ownerCompanyId:String(factory.companyId||factory.ownerCompanyId||('SIM-COMPANY:'+cid)),sourceBatchIds:sourceBatch?[sourceBatchId]:[],
         sourceOccurrenceKey:s.occurrenceKey||sourceBatch?.occurrenceKey||null,sourceWarehouseId:s.warehouseId||sourceBatch?.warehouseId||('WH-'+cid+'-RAW'),
@@ -2879,6 +2956,7 @@ function advanceShipments(c){
         authority:'TRACKED_LOTS_PLUS_UNOBSERVED_LEGACY_BALANCE'},'resource-industrial-network');
     }
     s.status='DELIVERED';s.deliveredTurn=turn();s.destinationStatus='FACTORY_RECEIVED';s.factoryInputBatchId=inputBatchId;
+    reconcileWarehouseFactoryInputShipmentReceipt(cid,s);
     // Delivery updates warehouse/factory input ledgers only. Production is scheduled and
     // output cannot be committed until the authoritative in-game calendar reaches finishDate.
     const receivedRecipe=recipeFor(rid,factory),productionMetrics=factoryProductionMetrics(factory,receivedRecipe);
@@ -2896,7 +2974,7 @@ function advanceShipments(c){
         ?{status:'BLOCKED',reason:'FACTORY_INPUT_SHORTAGE',factoryId:String(s.factoryId),
           missingInputs:clone(productionMetrics.missingInputs),capacity:productionMetrics.capacity}
         :startFactoryProductionCycle({countryId:cid,factoryId:s.factoryId,resourceId:rid,
-          quantity:productionMetrics.possibleProduction,unit:s.unit||sourceBatch?.unit||factory.inputUnit||null});
+          quantity:productionMetrics.possibleProduction,unit:s.targetUnit||s.unit||sourceBatch?.unit||factory.inputUnit||null});
     s.processingStatus=processing?.status==='COMPLETED'?'PROCESSED':
       processing?.status==='IN_PROGRESS'?'IN_PROGRESS':
       processing?.status==='PAUSED'?'PAUSED':
@@ -2926,7 +3004,8 @@ function advanceShipments(c){
       }
     }
     n.deliveries.push(clone(s));delivered.push(clone(s));const res=n.reservations?.[s.reservationId];if(res)res.status='DELIVERED';
-    emit('OMEGA_RESOURCE_DELIVERY_COMPLETED',cid,{shipmentId:s.shipmentId,siteId:s.siteId,factoryId:s.factoryId,resourceId:rid,quantity,unit:s.unit,
+    emit('OMEGA_RESOURCE_DELIVERY_COMPLETED',cid,{shipmentId:s.shipmentId,siteId:s.siteId,factoryId:s.factoryId,resourceId:rid,
+      quantity:factoryInputQuantity,unit:factoryInputUnit,sourceQuantity:quantity,sourceUnit:s.unit,
       travelTimeDays:s.route.travelTimeDays,transport:s.route.transportMode,status:'DELIVERED_TO_FACTORY',processingStatus:s.processingStatus,
       processingTransactionId:s.processingTransactionId,batchId:sourceBatchId||null});
     if(sourceBatchId){
@@ -4364,31 +4443,70 @@ function planFactoryInputRequests(countryId,plans){
   return{countryId:cid,turn:turn(),requestCount:created.length,requests:created};
 }
 
+function reconcileWarehouseFactoryInputShipmentReceipt(countryId,shipment){
+  const network=netState(countryId),dispatches=Array.isArray(network.warehouseFactoryDispatches)?network.warehouseFactoryDispatches:[];
+  const dispatch=dispatches.find(row=>String(row.shipmentId||row.dispatchId||'')===String(shipment?.shipmentId||''));
+  if(dispatch){
+    dispatch.status='DELIVERED';dispatch.deliveredTurn=turn();dispatch.inputBatchId=shipment.factoryInputBatchId||('INPUT:'+shipment.shipmentId);
+  }
+  for(const request of (Array.isArray(network.factoryInputRequests)?network.factoryInputRequests:[])){
+    if(String(request.factoryId||'')!==String(shipment.factoryId||'')||
+      tok(request.resourceId)!==tok(shipment.resourceId)||
+      !(Array.isArray(request.transferIds)&&request.transferIds.some(id=>String(id)===String(shipment.shipmentId))))continue;
+    const related=(request.transferIds||[]).map(id=>network.shipments.find(row=>String(row.shipmentId||'')===String(id))).filter(Boolean);
+    const delivered=related.filter(row=>String(row.status||'')==='DELIVERED');
+    const pending=related.filter(row=>['IN_TRANSIT','BLOCKED_ROUTE_BLOCKADE','BLOCKED_LEDGER_MISMATCH','BLOCKED_BATCH_LEDGER_MISMATCH'].includes(String(row.status||'')));
+    const fulfilled=Number(delivered.reduce((sum,row)=>sum+Math.max(0,num(row.targetQuantity??row.quantity)||0),0).toFixed(6));
+    const inTransit=Number(pending.reduce((sum,row)=>sum+Math.max(0,num(row.targetQuantity??row.quantity)||0),0).toFixed(6));
+    request.fulfilledQuantity=fulfilled;request.inTransitQuantity=inTransit;
+    request.unfulfilledQuantity=Number(Math.max(0,num(request.requestedQuantity)-fulfilled-inTransit).toFixed(6));
+    request.inputBatchIds=delivered.map(row=>String(row.factoryInputBatchId||'INPUT:'+row.shipmentId));
+    request.deliveryStatus=fulfilled+1e-6>=num(request.allocatedQuantity)&&num(request.allocatedQuantity)>1e-9
+      ?'DELIVERED':(fulfilled>1e-9?'PARTIALLY_DELIVERED':(inTransit>1e-9?'IN_TRANSIT':'NOT_DELIVERED'));
+    request.status=fulfilled+1e-6>=num(request.requestedQuantity)?'FULFILLED':
+      (fulfilled>1e-9?'PARTIALLY_FULFILLED':(inTransit>1e-9?'IN_TRANSIT':'UNFULFILLED'));
+    if(request.status==='FULFILLED')request.reason=null;
+    else if(inTransit>1e-9)request.reason='WAREHOUSE_SHIPMENT_IN_TRANSIT';
+    request.stages=Array.isArray(request.stages)?request.stages:[];
+    const stageStatus=request.deliveryStatus;
+    if(!request.stages.some(row=>row.status===stageStatus&&row.turn===turn()))
+      request.stages.push({status:stageStatus,turn:turn(),quantity:fulfilled,inTransitQuantity:inTransit,
+        transferIds:(request.transferIds||[]).slice()});
+    request.updatedTurn=turn();
+  }
+  return{updatedRequestCount:dispatch?1:0,shipmentId:shipment?.shipmentId||null};
+}
+
 function reconcileFactoryInputRequestDeliveries(countryId,plan,transferResult){
   const network=netState(countryId),transferRows=Array.isArray(transferResult?.transfers)?transferResult.transfers:[];
   for(const requestId of plan?.requestIds||[]){
     const request=network.factoryInputRequests.find(row=>String(row?.requestId||'')===String(requestId));
     if(!request)continue;
     const matched=transferRows.filter(row=>tok(row?.resourceId)===tok(request.resourceId)&&
-      String(row?.factoryId||'')===String(request.factoryId)&&String(row?.status||'')==='DELIVERED');
-    const fulfilled=Number(matched.reduce((sum,row)=>sum+Math.max(0,num(row?.targetQuantity)||0),0).toFixed(6));
-    request.fulfilledQuantity=fulfilled;
-    request.unfulfilledQuantity=Number(Math.max(0,request.requestedQuantity-fulfilled).toFixed(6));
+      String(row?.factoryId||'')===String(request.factoryId)&&
+      ['DELIVERED','IN_TRANSIT','BLOCKED_ROUTE_BLOCKADE','BLOCKED_LEDGER_MISMATCH'].includes(String(row?.status||'')));
+    const deliveredRows=matched.filter(row=>String(row?.status||'')==='DELIVERED');
+    const pendingRows=matched.filter(row=>String(row?.status||'')!=='DELIVERED');
+    const fulfilled=Number(deliveredRows.reduce((sum,row)=>sum+Math.max(0,num(row?.targetQuantity)||0),0).toFixed(6));
+    const inTransit=Number(pendingRows.reduce((sum,row)=>sum+Math.max(0,num(row?.targetQuantity)||0),0).toFixed(6));
+    request.fulfilledQuantity=fulfilled;request.inTransitQuantity=inTransit;
+    request.unfulfilledQuantity=Number(Math.max(0,request.requestedQuantity-fulfilled-inTransit).toFixed(6));
     request.transferIds=matched.map(row=>String(row.transferId||'')).filter(Boolean);
-    request.inputBatchIds=matched.map(row=>String(row.inputBatchId||'')).filter(Boolean);
+    request.inputBatchIds=deliveredRows.map(row=>String(row.inputBatchId||'')).filter(Boolean);
     request.deliveryStatus=fulfilled+1e-6>=request.allocatedQuantity&&request.allocatedQuantity>1e-9?
-      'DELIVERED':(fulfilled>1e-9?'PARTIALLY_DELIVERED':'NOT_DELIVERED');
+      'DELIVERED':(fulfilled>1e-9?'PARTIALLY_DELIVERED':(inTransit>1e-9?'IN_TRANSIT':'NOT_DELIVERED'));
     request.status=fulfilled+1e-6>=request.requestedQuantity?'FULFILLED':
-      (fulfilled>1e-9?'PARTIALLY_FULFILLED':'UNFULFILLED');
+      (fulfilled>1e-9?'PARTIALLY_FULFILLED':(inTransit>1e-9?'IN_TRANSIT':'UNFULFILLED'));
     if(request.status==='FULFILLED')request.reason=null;
+    else if(inTransit>1e-9)request.reason='WAREHOUSE_SHIPMENT_IN_TRANSIT';
     else if(fulfilled+1e-6<request.allocatedQuantity)
       request.reason=(transferResult?.blocked||[]).find(row=>tok(row?.resourceId)===tok(request.resourceId))?.reason||'WAREHOUSE_FULFILLMENT_SHORTFALL';
     else request.reason=request.reason||'PROPORTIONAL_STOCK_RATIONING';
     request.stages=Array.isArray(request.stages)?request.stages:[];
     const stageStatus=request.deliveryStatus==='DELIVERED'?'DELIVERED':
-      (request.deliveryStatus==='PARTIALLY_DELIVERED'?'PARTIALLY_DELIVERED':'AWAITING_STOCK');
+      (request.deliveryStatus==='PARTIALLY_DELIVERED'?'PARTIALLY_DELIVERED':(inTransit>1e-9?'IN_TRANSIT':'AWAITING_STOCK'));
     if(!request.stages.some(row=>row.status===stageStatus&&row.turn===turn()))
-      request.stages.push({status:stageStatus,turn:turn(),quantity:fulfilled,transferIds:request.transferIds.slice()});
+      request.stages.push({status:stageStatus,turn:turn(),quantity:fulfilled,inTransitQuantity:inTransit,transferIds:request.transferIds.slice()});
     request.updatedTurn=turn();
   }
   return{updatedRequestCount:(plan?.requestIds||[]).length};
@@ -4402,10 +4520,7 @@ function transferFactoryInputsFromWarehouse(countryId,asset,recipe,allocationTar
   const transfers=[],blocked=[];
   if(!(capacity>1e-9))return{status:'BLOCKED',reason:'PRODUCTION_CAPACITY_UNAVAILABLE',transfers,blocked};
   const batches=Array.isArray(rs.batches)?rs.batches:[];
-  const nonTransferable=new Set(['CONSUMED','SOLD','TRANSFERRED_OUT','EXHAUSTED','IN_TRANSIT','RESERVED','DECOMMISSIONED']);
-  // Mine-bound simulation factories must not silently consume a different mine's
-  // same-resource stock just because it is older in the national warehouse FIFO.
-  // Generic factories without a source-site binding retain normal pooled-warehouse behavior.
+  const nonTransferable=new Set(['CONSUMED','SOLD','TRANSFERRED_OUT','EXHAUSTED','IN_TRANSIT','RESERVED','DECOMMISSIONED','TRANSFERRED_TO_FACTORY']);
   const boundSourceSiteId=String(asset?.sourceSiteId||asset?.siteId||'').trim();
   const siteFlowRows=Array.isArray(rs.industrialNetwork?.siteFlowLedger)?rs.industrialNetwork.siteFlowLedger:[];
   const siteFlowBatchIds=new Set(siteFlowRows.filter(row=>row?.batchId).map(row=>String(row.batchId)));
@@ -4415,21 +4530,20 @@ function transferFactoryInputsFromWarehouse(countryId,asset,recipe,allocationTar
     const rid=tok(rawId),coefficient=num(rawCoefficient);
     if(!rid||coefficient===null||coefficient<=0){blocked.push({resourceId:rid||rawId,reason:'FACTORY_RECIPE_COEFFICIENT_INVALID'});continue;}
     const currentKey=quantityObjectKey(stock,rid),current=currentKey===null?0:Math.max(0,num(stock[currentKey])||0);
-    const inTransit=n.shipments.filter(row=>String(row?.shipmentType||'')==='FACTORY_INPUT'&&
+    const inTransit=n.shipments.filter(row=>
+      ['FACTORY_INPUT','WAREHOUSE_TO_FACTORY','RAW_TO_FACTORY'].includes(String(row?.shipmentType||''))&&
       String(row?.factoryId||'')===String(asset.id||asset.assetId||asset.projectId)&&tok(row?.resourceId)===rid&&
-      ['IN_TRANSIT','BLOCKED_ROUTE_BLOCKADE'].includes(String(row?.status||'')))
-      .reduce((sum,row)=>sum+Math.max(0,num(row?.targetQuantity)||0),0);
+      ['IN_TRANSIT','BLOCKED_ROUTE_BLOCKADE','BLOCKED_LEDGER_MISMATCH','BLOCKED_BATCH_LEDGER_MISMATCH'].includes(String(row?.status||'')))
+      .reduce((sum,row)=>sum+Math.max(0,num(row?.targetQuantity??row?.quantity)||0),0);
     const hasAllocation=allocationTargets&&Object.prototype.hasOwnProperty.call(allocationTargets,rid);
     const target=hasAllocation?
       Math.max(0,num(allocationTargets[rid])||0)+inTransit:Math.max(0,capacity*coefficient-current);
     let remaining=Math.max(0,target-inTransit);
     if(remaining<=1e-9)continue;
-    // Extraction batches have a physical mine -> raw warehouse -> factory route.
-    // Never let this immediate internal-transfer helper consume their unshipped remainder:
-    // dispatchResidualSiteBatches() owns that movement, including route capacity and ETA.
     const candidates=batches.filter(batch=>tok(batch?.resourceId||batch?.materialIdentity)===rid&&
       !siteFlowBatchIds.has(String(batch?.batchId||''))&&
       !nonTransferable.has(String(batch?.status||'').toUpperCase())&&
+      ['RAW','PROCESSED'].includes(factorySourceWarehouse(rs,batch).kind)&&
       Math.max(0,num(batch?.remainingQuantity!=null?batch.remainingQuantity:batch?.quantity)||0)>1e-9&&
       batchBelongsToBoundFactorySite(rs,batch,boundSourceSiteId,flowSiteByBatchId))
       .sort((a,b)=>(num(a?.createdTurn)||0)-(num(b?.createdTurn)||0));
@@ -4446,6 +4560,9 @@ function transferFactoryInputsFromWarehouse(countryId,asset,recipe,allocationTar
       if(remaining<=1e-9)break;
       const batchId=String(batch?.batchId||'').trim();if(!batchId)continue;
       const source=factorySourceWarehouse(rs,batch),wh=source.warehouse;
+      if(!['RAW','PROCESSED'].includes(source.kind)){
+        blocked.push({batchId,resourceId:rid,reason:'WAREHOUSE_KIND_NOT_SUPPORTED_FOR_FACTORY_DISPATCH'});continue;
+      }
       wh.availableByResource=wh.availableByResource||{};wh.reservedByResource=wh.reservedByResource||{};
       const availableKey=quantityObjectKey(wh.availableByResource,rid),reservedKey=quantityObjectKey(wh.reservedByResource,rid);
       if(availableKey===null)continue;
@@ -4461,54 +4578,55 @@ function transferFactoryInputsFromWarehouse(countryId,asset,recipe,allocationTar
       if(!bridge){blocked.push({batchId,resourceId:rid,reason:'FACTORY_INPUT_UNIT_BRIDGE_NOT_DECLARED',sourceUnit:sourceUnit||'NOT_RECORDED',targetUnit:targetUnit||'NOT_RECORDED'});continue;}
       const amount=Math.min(remaining/bridge.factor,Math.max(0,warehouseAvailable-reserved),sourceRemaining,lotRemaining,countryAvailable);
       if(amount<=1e-9)continue;
-      const targetAmount=Number((amount*bridge.factor).toFixed(6));
-      if(!(targetAmount>1e-9))continue;
-      const transferSequence=(Number(n.factoryInputTransferSequence)||0)+1;n.factoryInputTransferSequence=transferSequence;
-      const transferId='FACTORY-WH-TRANSFER:'+cid+':'+String(asset.id||asset.assetId||asset.projectId)+':T'+turn()+':'+transferSequence;
-      const rootIds=[batchId,...(Array.isArray(batch.sourceBatchIds)?batch.sourceBatchIds:[])].filter(Boolean).map(String);
-      wh.availableByResource[availableKey]=Number(Math.max(0,warehouseAvailable-amount).toFixed(6));
-      batch.remainingQuantity=Number(Math.max(0,sourceRemaining-amount).toFixed(6));
-      batch.status=batch.remainingQuantity>1e-9?'PARTIALLY_TRANSFERRED_TO_FACTORY':'TRANSFERRED_TO_FACTORY';
-      batch.lastMovementType='WAREHOUSE_TO_FACTORY_INPUT_TRANSFER';batch.lastMovementTurn=turn();
-      if(sourceLot){
-        sourceLot.remainingQuantity=Number(Math.max(0,lotRemaining-amount).toFixed(6));
-        sourceLot.status=sourceLot.remainingQuantity>1e-9?'PARTIALLY_TRANSFERRED_TO_FACTORY':'TRANSFERRED_TO_FACTORY';
-        sourceLot.lastMovementType='WAREHOUSE_TO_FACTORY_INPUT_TRANSFER';sourceLot.lastMovementTurn=turn();
+      const warehouseId=String(wh.warehouseId||('WH-'+cid+'-RAW'));
+      const warehouseKind=source.kind==='PROCESSED'?'PROCESSED_WAREHOUSE':'RAW_WAREHOUSE';
+      const warehouseSite={siteId:warehouseId,countryId:cid,
+        siteName:(source.kind==='PROCESSED'?'Processed goods warehouse · ':'Raw resource warehouse · ')+cid,
+        siteType:source.kind==='PROCESSED'?'PROCESSED_GOODS_WAREHOUSE':'RAW_MATERIAL_WAREHOUSE',
+        real:{resourceId:rid},simulation:{transportRoute:[]}};
+      const dispatched=dispatchShipment({countryId:cid,siteId:warehouseId,site:warehouseSite,
+        sourceType:warehouseKind,shipmentType:'WAREHOUSE_TO_FACTORY',warehouseId,
+        resourceId:rid,quantity:amount,batchId,factoryId:String(asset.id||asset.assetId||asset.projectId),
+        unit:sourceUnit,transportMode:rules()[rid]?.preferredModes?.[0]||undefined});
+      if(dispatched?.status!=='DISPATCHED'||!dispatched.shipment){
+        blocked.push({batchId,resourceId:rid,reason:'WAREHOUSE_TRANSPORT_DISPATCH_BLOCKED',
+          detail:clone(dispatched),authority:'OMEGA_RESOURCE_INDUSTRIAL_NETWORK_V1'});
+        continue;
       }
-      if(batch.remainingQuantity<=1e-9&&Array.isArray(wh.storedBatchIds))wh.storedBatchIds=wh.storedBatchIds.filter(id=>String(id)!==batchId);
-      if(invKey!==null)rs.inventory[invKey]=Number(Math.max(0,countryAvailable-amount).toFixed(6));
-      const destKey=quantityObjectKey(stock,rid)||rid;
-      stock[destKey]=Number(((num(stock[destKey])||0)+targetAmount).toFixed(6));
-      const inputBatchId='INPUT:'+transferId;
-      const inputLot={batchId:inputBatchId,resourceId:rid,materialIdentity:rid,quantity:targetAmount,remainingQuantity:targetAmount,
-        unit:bridge.targetUnit,stage:'FACTORY_INPUT',countryId:cid,sourceCountryId:cid,originCountryId:cid,
-        ownerCountryCode:cid,destinationCountryId:cid,ownerCompanyId:String(asset.companyId||asset.ownerCompanyId||('SIM-COMPANY:'+cid)),
-        sourceBatchIds:rootIds,sourceSiteIds:[...(Array.isArray(batch.sourceSiteIds)?batch.sourceSiteIds:[])],
-        sourceFactoryId:batch.sourceFactoryId||null,sourceWarehouseId:wh.warehouseId||('WH-'+cid+'-'+source.kind),
-        factoryId:String(asset.id||asset.assetId||asset.projectId),locationNodeKey:'FACTORY:'+cid+':'+String(asset.id||asset.assetId||asset.projectId),
-        createdTurn:turn(),status:'AVAILABLE_TO_FACTORY',lastMovementType:'WAREHOUSE_TO_FACTORY_INPUT_TRANSFER',lastMovementTurn:turn(),
-        provenance:{source:'OMEGA_RESOURCE_INDUSTRIAL_NETWORK_V1',authority:bridge.authority,unitBridge:bridge,
-          sourceBatchId:batchId,sourceBatchIds:rootIds,transferId,simulationOnly:true,simulationTurn:turn()}};
-      lots.push(inputLot);
-      if(!rs.inventoryLots||typeof rs.inventoryLots!=='object')rs.inventoryLots={};
-      rs.inventoryLots[inputBatchId]={...clone(inputLot),createdTurn:turn()};
-      const row={transferId,countryId:cid,factoryId:String(asset.id||asset.assetId||asset.projectId),resourceId:rid,
-        quantity:amount,targetQuantity:targetAmount,sourceUnit,targetUnit:bridge.targetUnit,sourceBatchId:batchId,
-        inputBatchId,sourceWarehouseId:wh.warehouseId||('WH-'+cid+'-'+source.kind),destinationNode:'FACTORY:'+cid+':'+String(asset.id||asset.assetId||asset.projectId),
-        routeType:'INTERNAL_WAREHOUSE_TO_FACTORY',status:'DELIVERED',turn:turn(),sourceBatchIds:rootIds,
-        authority:'SIMULATED_WAREHOUSE_TO_FACTORY_TRANSFER',simulationOnly:true};
-      n.factoryInputTransfers=Array.isArray(n.factoryInputTransfers)?n.factoryInputTransfers:[];
-      n.factoryInputTransfers.push(row);n.factoryInputTransfers=n.factoryInputTransfers.slice(-MAX_EVENTS);
-      const inventoryLedger=Array.isArray(rs.inventoryLedger)?rs.inventoryLedger:[];
-      inventoryLedger.push({type:'FACTORY_WAREHOUSE_INPUT_TRANSFER',...clone(row)});
-      rs.inventoryLedger=inventoryLedger.slice(-2048);
-      emit('OMEGA_FACTORY_WAREHOUSE_INPUT_TRANSFERRED',cid,row);
-      transfers.push(row);remaining=Math.max(0,remaining-targetAmount);
+      const shipment=dispatched.shipment;
+      const moved=Math.min(amount,Math.max(0,num(shipment.quantity)||0));
+      const targetAmount=Number((moved*bridge.factor).toFixed(6));
+      shipment.targetQuantity=targetAmount;shipment.targetUnit=bridge.targetUnit;
+      shipment.factoryInputBatchId='INPUT:'+shipment.shipmentId;
+      if(!(moved>1e-9)||!(targetAmount>1e-9)){
+        blocked.push({batchId,resourceId:rid,reason:'WAREHOUSE_TRANSPORT_DISPATCH_QUANTITY_ZERO',
+          shipmentId:shipment.shipmentId});
+        continue;
+      }
+      n.warehouseFactoryDispatches=Array.isArray(n.warehouseFactoryDispatches)?n.warehouseFactoryDispatches:[];
+      n.warehouseFactoryDispatches.push({dispatchId:shipment.shipmentId,shipmentId:shipment.shipmentId,
+        countryId:cid,sourceWarehouseId:warehouseId,destinationFactoryId:String(asset.id||asset.assetId||asset.projectId),
+        resourceId:rid,batchId,quantity:moved,targetQuantity:targetAmount,unit:sourceUnit,targetUnit:bridge.targetUnit,
+        inputBatchId:shipment.factoryInputBatchId,route:clone(shipment.route),
+        etaTurn:shipment.etaTurn,status:'IN_TRANSIT',createdTurn:turn(),
+        authority:'CORE_WAREHOUSE_TRANSPORT_SHIPMENT'});
+      n.warehouseFactoryDispatches=n.warehouseFactoryDispatches.slice(-MAX_EVENTS);
+      transfers.push({transferId:shipment.shipmentId,shipmentId:shipment.shipmentId,countryId:cid,
+        factoryId:String(asset.id||asset.assetId||asset.projectId),resourceId:rid,sourceBatchId:batchId,
+        quantity:moved,targetQuantity:targetAmount,sourceUnit,targetUnit:bridge.targetUnit,
+        sourceWarehouseId:warehouseId,destinationNode:'FACTORY:'+cid+':'+String(asset.id||asset.assetId||asset.projectId),
+        inputBatchId:shipment.factoryInputBatchId,
+        routeType:'WAREHOUSE_TO_FACTORY',status:'IN_TRANSIT',etaTurn:shipment.etaTurn,
+        route:clone(shipment.route),authority:'CORE_WAREHOUSE_TRANSPORT_SHIPMENT',simulationOnly:true});
+      remaining=Math.max(0,remaining-targetAmount);
     }
-    if(remaining>1e-6)blocked.push({resourceId:rid,reason:'INSUFFICIENT_TRACKED_WAREHOUSE_STOCK',required:remaining+Math.max(0,target-remaining),transferred:target-remaining,remaining});
+    if(remaining>1e-6)blocked.push({resourceId:rid,reason:'INSUFFICIENT_TRACKED_WAREHOUSE_STOCK_OR_TRANSPORT_CAPACITY',
+      required:remaining+Math.max(0,target-remaining),transferred:target-remaining,remaining});
   }
   asset.inputInventory=stock;asset.inputBatchLots=lots;
-  return{status:blocked.length?'DEGRADED':'TRANSFERRED',countryId:cid,factoryId:String(asset.id||asset.assetId||asset.projectId),turn:turn(),transferCount:transfers.length,transfers,blocked};
+  return{status:blocked.length?'DEGRADED':(transfers.length?'IN_TRANSIT':'NO_CHANGE'),
+    countryId:cid,factoryId:String(asset.id||asset.assetId||asset.projectId),turn:turn(),
+    transferCount:transfers.length,transfers,blocked};
 }
 function factoryCycleDue(cycle){
   const now=factoryCurrentGameDate();
@@ -4758,7 +4876,7 @@ function selectFactoryProductionRecipeForTurn(countryId,asset){
 
 async function processPendingFactoryInputs(countryId){
   const cid=canonicalCountry(countryId),n=factoryCycleStore(cid),assets=factoryAssets(cid),
-    completed=[],started=[],blocked=[],transfers=[];
+    completed=[],started=[],awaiting=[],blocked=[],transfers=[];
   const employmentSummary=reconcileFactoryEmployment(cid);
   const nav=g.navigator||{},ua=String(nav.userAgent||'');
   const constrained=/Android|Mobile|iPhone|iPad/i.test(ua)||Number(nav.deviceMemory||8)<=4||Number(nav.hardwareConcurrency||8)<=4;
@@ -4844,6 +4962,12 @@ async function processPendingFactoryInputs(countryId){
           .map(row=>({resourceId:row.resourceId,available:row.available,tracked:row.tracked,
             reason:row.available<=1e-9?'WAREHOUSE_AND_FACTORY_INPUT_STOCK_EMPTY':'FACTORY_INPUT_BATCH_LEDGER_MISMATCH'}));
         if(resumedMetrics.possibleProduction<=1e-9||resumeMissing.length){
+          if(result.status==='IN_TRANSIT'){
+            awaiting.push({factoryId:fid,reason:'WAREHOUSE_SHIPMENT_IN_TRANSIT',
+              shipmentIds:(result.transfers||[]).map(row=>String(row.shipmentId||row.transferId||'')).filter(Boolean),
+              missingInputs:resumeMissing.length?resumeMissing:resumedMetrics.missingInputs});
+            continue;
+          }
           factorySetProductionHealth(asset,'STOPPED',0,resumedMetrics.capacity,{reason:'FACTORY_INPUT_SHORTAGE',
             missingInputs:resumeMissing.length?resumeMissing:resumedMetrics.missingInputs,cycleId:prior.cycleId});
           blocked.push({factoryId:fid,reason:'FACTORY_INPUT_SHORTAGE',
@@ -4879,6 +5003,12 @@ async function processPendingFactoryInputs(countryId){
       .map(row=>({resourceId:row.resourceId,available:row.available,tracked:row.tracked,
         reason:row.available<=1e-9?'WAREHOUSE_AND_FACTORY_INPUT_STOCK_EMPTY':'FACTORY_INPUT_BATCH_LEDGER_MISMATCH'}));
     if(metrics.possibleProduction<=1e-9||missing.length){
+      if(feeder.status==='IN_TRANSIT'){
+        awaiting.push({factoryId:fid,reason:'WAREHOUSE_SHIPMENT_IN_TRANSIT',
+          shipmentIds:(feeder.transfers||[]).map(row=>String(row.shipmentId||row.transferId||'')).filter(Boolean),
+          missingInputs:missing.length?missing:metrics.missingInputs});
+        continue;
+      }
       factorySetProductionHealth(asset,'STOPPED',0,metrics.capacity,{reason:'FACTORY_INPUT_SHORTAGE',
         missingInputs:missing.length?missing:metrics.missingInputs});
       blocked.push({factoryId:fid,reason:'FACTORY_INPUT_SHORTAGE',
@@ -4894,9 +5024,10 @@ async function processPendingFactoryInputs(countryId){
       productionQuantity:result.productionQuantity,productivityPct:result.productivityPct,finishDate:result.finishDate});
     }else blocked.push({factoryId:fid,reason:result.reason||result.status,detail:result});
   }
-  return{status:blocked.length?'DEGRADED':'COMPLETED',countryId:cid,turn:turn(),
+  return{status:blocked.length?'DEGRADED':(awaiting.length?'IN_TRANSIT':'COMPLETED'),countryId:cid,turn:turn(),
     completedCount:completed.length,processedCount:completed.length,completed,processed:completed,
-    startedCount:started.length,started,warehouseTransferCount:transfers.length,transfers,blocked,
+    startedCount:started.length,started,awaitingCount:awaiting.length,awaiting,
+    warehouseTransferCount:transfers.length,transfers,blocked,
     inputRequestCount:requisitions.requestCount,inputRequests:requisitions.requests,employmentSummary};
 }
 
