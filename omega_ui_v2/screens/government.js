@@ -124,7 +124,7 @@
     try { var active = selector.active(ministryId, countryKey); return active && (active.profile || active.staticProfile) || null; }
     catch (_) { return null; }
   }
-  function ministryRows(countryId) {
+  function ministryRows(countryId, includeActiveMinisterDetails) {
     var db = ministryDatabase();
     var rows = [];
     var countryKey = normalizeCountryId(countryId || activeCountry());
@@ -136,7 +136,7 @@
         var row = db[id];
         if (!row) return;
         var canonicalId = String(row.id || id);
-        var activeProfile = activeMinisterProfile(canonicalId, countryKey) || {};
+        var activeProfile = includeActiveMinisterDetails === false ? {} : (activeMinisterProfile(canonicalId, countryKey) || {});
         rows.push({
           id: canonicalId,
           title: String(row.title || row.bnTitle || id.replace(/[_-]+/g, ' ')),
@@ -178,7 +178,7 @@
     var detail = source + year + (metric.status && metric.status !== 'AVAILABLE' ? ' · ' + metric.status : '');
     return '<div class="omega-v2-kpi"><span>' + esc(title) + '</span><strong>' + fmt(metric.value, metric.unit) + '</strong><small>' + esc(detail) + '</small></div>';
   }
-  function overviewHtml(countryId, options) {
+  function overviewHtml(countryId, options, ministryRowCache) {
     var data = snapshot(countryId);
     if (!data || !data.identity) {
       return '<section class="omega-v2-overview"><div class="omega-v2-empty">Country overview data is not available for ' + esc(countryId || 'the selected country') + '. The source gateway did not return a resolved identity; no country statistics were invented.</div></section>';
@@ -192,7 +192,7 @@
       ['Public debt / GDP', 'debtToGdpPct'], ['Trade balance', 'tradeBalance'], ['FX reserves', 'reserves']
     ];
     var cards = fields.map(function (entry) { return metricCard(entry[0], field(data, entry[1])); }).join('');
-    var rows = ministryRows();
+    var rows = Array.isArray(ministryRowCache) ? ministryRowCache : ministryRows(countryId, false);
     var shortcutIds = ['treasury_finance', 'energy_mining', 'production', 'interior_security', 'foreign_affairs', 'mega_projects'];
     var shortcuts = rows.filter(function (row) { return shortcutIds.indexOf(row.id) >= 0; }).map(function (row) {
       var photoId = PHOTO_BY_MINISTRY[row.id];
@@ -605,7 +605,7 @@
     }
     root.__omegaV2RecruitingCountry = countryKey;
     var view = options.view === 'all-ministries' ? 'all-ministries' : 'executive-ministry';
-    var rows = ministryRows(countryId);
+    var rows = ministryRows(countryId, view === 'all-ministries');
     var nav = g.OmegaUIV2Navigation;
     root.classList.add('omega-v2-screen');
     root.innerHTML = '<section class="omega-v2-shell omega-v2-government">' +
@@ -614,7 +614,7 @@
       '<button type="button" class="omega-v2-button ' + (view === 'executive-ministry' ? 'omega-v2-button--accent' : 'omega-v2-button--quiet') + '" data-omega-v2-government-view="executive-ministry" aria-pressed="' + (view === 'executive-ministry' ? 'true' : 'false') + '">Executive Ministry</button>' +
       '<button type="button" class="omega-v2-button ' + (view === 'all-ministries' ? 'omega-v2-button--accent' : 'omega-v2-button--quiet') + '" data-omega-v2-government-view="all-ministries" aria-pressed="' + (view === 'all-ministries' ? 'true' : 'false') + '">All Ministries · ' + rows.length + '</button></div>' +
       (view === 'executive-ministry'
-        ? overviewHtml(countryId, options)
+        ? overviewHtml(countryId, options, rows)
         : '<section class="omega-v2-ministry-directory"><header class="omega-v2-heading"><div><h2 class="omega-v2-title">All Ministries</h2><p class="omega-v2-subtitle">Open any ministry directly. The Executive Cabinet card returns to the executive overview; it does not create a duplicate runtime.</p></div><span class="omega-v2-status">' + rows.length + ' / 18 registered</span></header>' +
           '<div class="omega-v2-ministry-rotator-mount">' + ministrySpotlightMarkup(rows) + '</div>' +
           '<div class="omega-v2-filterbar"><input type="search" aria-label="Search ministries" placeholder="Search all 18 ministries" data-omega-v2-ministry-search>' +
