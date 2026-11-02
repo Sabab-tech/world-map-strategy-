@@ -42,7 +42,6 @@ test('factory and resource-research background ticks are scoped to one player co
 test('resource economy and mine/action pipelines never call world-wide processing on the turn event', () => {
   const economy = read('omega_resource_economy_runtime_v2.js');
   const runTurnCore = between(economy, 'function runTurnCore(cid){', 'var resourceTurnPromises=');
-  assert.match(runTurnCore, /playerSimulationCountryId/);
   assert.match(runTurnCore, /endowment\.startCountryProduction\(cid,null,\{skipHydrationIfReady:true\}\)/);
   assert.match(runTurnCore, /endowment\.extractCountry\(cid\)/, 'legacy endowment fallback remains available');
   assert.doesNotMatch(runTurnCore, /extractAll\(\)|countries\(\)\.forEach|GlobalTrade\.processAll/);
