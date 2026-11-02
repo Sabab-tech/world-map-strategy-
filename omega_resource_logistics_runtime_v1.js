@@ -19,18 +19,18 @@ function plan(payload){
  const r=realism();if(!r?.dispatchFromWarehouse)return{status:'UNAVAILABLE',reason:'RESOURCE_REALISM_RUNTIME_UNAVAILABLE'};
  const ids=Array.isArray(payload?.candidateFactoryIds)?payload.candidateFactoryIds.filter(Boolean):[];
  const mode=payload?.transportMode||routeMode(payload?.resourceId);
- const targetIds=ids.length?ids.slice(0,1):[null];
+ const targetIds=ids.length?ids.slice(0,Math.min(25,MAX)):[null];
  return targetIds.slice(0,25).map(factoryId=>{
    const x=r.dispatchFromWarehouse({warehouseId:payload?.warehouseId||null,batchId:payload?.batchId||payload?.batch?.batchId||null,resourceId:payload?.resourceId||payload?.batch?.resourceId||null,
      quantity:Number(payload?.quantity)||0,unit:payload?.unit||payload?.batch?.unit||null,sourceNode:payload?.warehouseId||'WAREHOUSE',destinationNode:factoryId||'FACTORY',mode});
-   return {...x,factoryId:factoryId||null,resourceId:payload?.resourceId||payload?.batch?.resourceId||null,countryId:canonical(payload?.countryId),stage:'WAREHOUSE_TO_INDUSTRY',deliveryStatus:x.delivery?.status||x.deliveryStatus||'READY_FOR_DELIVERY'};
+   return {...x,factoryId:factoryId||null,resourceId:payload?.resourceId||payload?.batch?.resourceId||null,countryId:canonical(payload?.countryId),stage:'ROUTE_PREVIEW_ONLY',deliveryStatus:'NOT_DISPATCHED',dispatchCommitted:false,inventoryReserved:false,shipmentAuthority:'OMEGA_RESOURCE_INDUSTRIAL_NETWORK_V1'};
  });
 }
-function handler(cmd,ctx){
- const p=cmd?.payload||{},c=canonical(ctx.countryId),rs=clone(ctx.stateTransaction.get('resource')||{}),log=clone(rs.logistics||{});
- const shipments=Array.isArray(log.shipments)?log.shipments:[];
+function evaluatePlan(payload,countryId){
+ const p=payload&&typeof payload==='object'?payload:{},c=canonical(countryId||p.countryId);
  const planned=plan(p);
- if(!Array.isArray(planned))return{accepted:false,reason:planned?.reason||'LOGISTICS_PLAN_UNAVAILABLE',status:planned?.status||'UNAVAILABLE'};
+ if(!Array.isArray(planned))return{accepted:false,countryId:c||null,status:planned?.status||'UNAVAILABLE',
+   reason:planned?.reason||'LOGISTICS_PLAN_UNAVAILABLE',dispatchCommitted:false,shipmentAuthority:'OMEGA_RESOURCE_INDUSTRIAL_NETWORK_V1'};
  const policy=g.Omega?.ResourceStrategicPolicyRuntime||g.OmegaResourceStrategicPolicyRuntime;
  const targetCountry=canonical(p.targetCountryId||p.destinationCountryId||p.factoryCountryId||'');
  const plans=planned.map(x=>{
@@ -42,37 +42,27 @@ function handler(cmd,ctx){
    const blockers=checks.flatMap(y=>Array.isArray(y.blockades)?y.blockades:[]);
    if(!blockers.length)return{...x,routePolicy:{status:'ALLOWED',checkedCountries:endpoints,blockades:[]}};
    const reason='RESOURCE_ROUTE_BLOCKADE_ACTIVE';
-   return{...x,status:'BLOCKED',reason,dispatchQuantity:0,deliveryStatus:'BLOCKED',
+   return{...x,status:'BLOCKED',reason,dispatchQuantity:0,deliveryStatus:'NOT_DISPATCHED',
      policyDecision:{status:'BLOCKED',reason,checkedCountries:endpoints,blockades:blockers},
      delivery:{...(x.delivery||{}),status:'BLOCKED',quantity:0}};
  });
- for(const x of plans){
-   const shipmentId=x.delivery?.shipmentId||null;
-   if(shipments.some(s=>String(s?.shipmentId)===String(shipmentId)))continue;
-   shipments.push({shipmentId,routeId:x.routeId,warehouseId:p.warehouseId||x.delivery?.warehouseId||null,batchId:p.batchId||p.batch?.batchId||x.delivery?.batchId||null,
-     factoryId:x.factoryId,resourceId:x.resourceId,quantity:x.dispatchQuantity,unit:p.unit||p.batch?.unit||null,transportMode:x.transportMode,
-     route:{sourceNode:x.sourceNode,destinationNode:x.destinationNode,distanceKm:x.distanceKm,capacity:x.capacity},
-     economics:{costEstimate:x.costEstimate,costUnit:x.costUnit,costAuthority:x.costAuthority},
-     timing:{travelTimeDays:x.travelTimeDays,timeAuthority:x.timeAuthority,plannedTurn:turn(),etaTurn:turn()+Math.max(1,Math.ceil(x.travelTimeDays))},
-     status:x.status==='BLOCKED'||!(x.dispatchQuantity>0)?'BLOCKED':'IN_TRANSIT',deliveryStatus:x.status==='BLOCKED'||!(x.dispatchQuantity>0)?'BLOCKED':'IN_TRANSIT',
-     sourceAuthority:p.sourceAuthority||p.batch?.stateAuthority||'UNOBSERVED',policyDecision:x.policyDecision||x.routePolicy||null,blockedReason:x.reason||null,simulationTurn:turn(),createdTurn:turn()});
- }
- while(shipments.length>MAX)shipments.shift();
- log.shipments=shipments;log.lastPlanTurn=turn();log.status='OPERATIONAL';log.routeCount=shipments.length;
- ctx.stateTransaction.set('resource.logistics',log);
- return{accepted:true,countryId:c,planned:plans.length,shipments:plans.map(x=>x.delivery?.shipmentId||x.routeId),plans};
+ return{accepted:true,countryId:c,planned:plans.length,plans,dispatchCommitted:false,
+   inventoryReserved:false,sourceWarehouseDebited:false,
+   authority:'OMEGA_RESOURCE_LOGISTICS_ROUTE_PREVIEW_V1',
+   shipmentAuthority:'OMEGA_RESOURCE_INDUSTRIAL_NETWORK_V1'};
+}
+function handler(cmd,ctx){
+ const p=cmd?.payload||{},c=canonical(ctx?.countryId||p.countryId);
+ return evaluatePlan(p,c);
 }
 function advanceHandler(cmd,ctx){
- const c=canonical(ctx.countryId),rs=clone(ctx.stateTransaction.get('resource')||{}),log=clone(rs.logistics||{}),shipments=Array.isArray(log.shipments)?log.shipments:[],delivered=[];
- for(const s of shipments){
-   if(String(s?.status||'').toUpperCase()!=='IN_TRANSIT')continue;
-   if((Number(s?.timing?.etaTurn)||0)>turn())continue;
-   s.status='DELIVERED';s.deliveryStatus='DELIVERED_TO_FACTORY';s.deliveredTurn=turn();s.deliveryEventId='DELIVERY:'+s.shipmentId+':T'+turn();delivered.push(clone(s));
- }
- log.shipments=shipments;log.lastAdvanceTurn=turn();log.deliveredCount=delivered.length;
- ctx.stateTransaction.set('resource.logistics',log);
- for(const s of delivered)emitDelivery(c,s);
- return{accepted:true,countryId:c,turn:turn(),delivered:delivered.length,shipments:delivered};
+ const c=canonical(ctx?.countryId||cmd?.payload?.countryId),network=g.Omega?.ResourceIndustrialNetwork||g.OmegaResourceIndustrialNetwork;
+ if(!c)return{accepted:false,status:'BLOCKED',reason:'LOGISTICS_COUNTRY_INVALID'};
+ if(!network||typeof network.advanceShipments!=='function')
+   return{accepted:false,status:'UNAVAILABLE',reason:'CORE_INDUSTRIAL_NETWORK_UNAVAILABLE'};
+ const result=network.advanceShipments(c);
+ return{...(result||{}),accepted:!!result&&!['BLOCKED','SKIPPED','UNAVAILABLE'].includes(String(result.status||'').toUpperCase()),
+   countryId:c,shipmentAuthority:'OMEGA_RESOURCE_INDUSTRIAL_NETWORK_V1'};
 }
 function emitDelivery(c,s){
  const payload={shipmentId:s.shipmentId,routeId:s.routeId,countryId:c,factoryId:s.factoryId,warehouseId:s.warehouseId,batchId:s.batchId,resourceId:s.resourceId,quantity:s.quantity,unit:s.unit,transportMode:s.transportMode,
@@ -83,23 +73,22 @@ function emitDelivery(c,s){
 function install(){
  const m=interop();if(!m?.registerCommandHandler)return false;
  try{
-   m.registerAction?.('OMEGA_RESOURCE_LOGISTICS_PLAN',{actionId:'OMEGA_RESOURCE_LOGISTICS_PLAN',stateOwnerMinistry:'resource',authority:'OMEGA_RESOURCE_LOGISTICS_RUNTIME'});
-   m.registerAction?.('OMEGA_RESOURCE_LOGISTICS_ADVANCE',{actionId:'OMEGA_RESOURCE_LOGISTICS_ADVANCE',stateOwnerMinistry:'resource',authority:'OMEGA_RESOURCE_LOGISTICS_RUNTIME'});
+   m.registerAction?.('OMEGA_RESOURCE_LOGISTICS_PLAN',{actionId:'OMEGA_RESOURCE_LOGISTICS_PLAN',stateOwnerMinistry:'resource',authority:'OMEGA_RESOURCE_LOGISTICS_ROUTE_PREVIEW_V1'});
+   m.registerAction?.('OMEGA_RESOURCE_LOGISTICS_ADVANCE',{actionId:'OMEGA_RESOURCE_LOGISTICS_ADVANCE',stateOwnerMinistry:'resource',authority:'OMEGA_RESOURCE_INDUSTRIAL_NETWORK_V1'});
    m.registerCommandHandler('OMEGA_RESOURCE_LOGISTICS_PLAN','resource',handler);
    m.registerCommandHandler('OMEGA_RESOURCE_LOGISTICS_ADVANCE','resource',advanceHandler);
    return true;
  }catch(_){return false;}
 }
 function planFromFactoryInput(payload={}){
- const c=canonical(payload.countryId);const m=interop();if(!m?.dispatchCommand)return{status:'UNAVAILABLE'};
- try{return m.dispatchCommand('resource','OMEGA_RESOURCE_LOGISTICS_PLAN',c,payload,{turn:turn(),commandType:'LOGISTICS_PLAN',correlationId:payload.extractionId||payload.batchId||null});}
- catch(e){return{status:'FAILED',reason:String(e?.message||e)}}
+ const c=canonical(payload.countryId);
+ if(!c)return{status:'BLOCKED',reason:'COUNTRY_ID_INVALID',dispatchCommitted:false};
+ const result=evaluatePlan(payload,c);
+ return result.accepted?{status:'PLANNED',result}:{status:result.status||'UNAVAILABLE',reason:result.reason,result};
 }
 function installEventListener(){return false;}
 function advanceCountry(countryId){
- const m=interop();if(!m?.dispatchCommand)return{status:'UNAVAILABLE',reason:'MINISTRY_INTEROPERABILITY_UNAVAILABLE'};
- try{return m.dispatchCommand('resource','OMEGA_RESOURCE_LOGISTICS_ADVANCE',canonical(countryId),{correlationId:'LOG-ADV-'+turn()+'-'+canonical(countryId)},{turn:turn(),commandType:'OMEGA_RESOURCE_LOGISTICS_ADVANCE',correlationId:'LOG-ADV-'+turn()+'-'+canonical(countryId)});}
- catch(e){return{status:'FAILED',reason:String(e?.message||e)}}
+ return advanceHandler({payload:{countryId}}, {countryId});
 }
 const API=Object.freeze({VERSION,install,plan,planFromFactoryInput,advanceCountry,routeMode});
 g.Omega=g.Omega||{};g.Omega.ResourceLogisticsRuntime=API;g.OmegaResourceLogisticsRuntime=API;
