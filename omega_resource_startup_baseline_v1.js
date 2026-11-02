@@ -234,9 +234,34 @@
   }
   async function fetchJson(url) {
     if (typeof g.fetch !== 'function') throw new Error('STARTUP_BASELINE_FETCH_UNAVAILABLE:' + url);
-    var response = await g.fetch(url, { cache: 'default' });
-    if (!response || response.ok === false) throw new Error('STARTUP_BASELINE_FETCH_FAILED:' + url);
-    return response.json();
+    var controller = typeof g.AbortController === 'function' ? new g.AbortController() : null;
+    var timer = null;
+    var scheduleTimeout = typeof g.setTimeout === 'function' ? g.setTimeout.bind(g) :
+      (typeof setTimeout === 'function' ? setTimeout : null);
+    var cancelTimeout = typeof g.clearTimeout === 'function' ? g.clearTimeout.bind(g) :
+      (typeof clearTimeout === 'function' ? clearTimeout : null);
+    var request = Promise.resolve().then(function () {
+      var options = { cache: 'default' };
+      if (controller) options.signal = controller.signal;
+      return g.fetch(url, options);
+    }).then(function (response) {
+      if (!response || response.ok === false) throw new Error('STARTUP_BASELINE_FETCH_FAILED:' + url);
+      return response.json();
+    });
+    if (!scheduleTimeout) return request;
+    var timeout = new Promise(function (_, reject) {
+      timer = scheduleTimeout(function () {
+        try { if (controller) controller.abort(); } catch (_) {}
+        reject(new Error('STARTUP_BASELINE_FETCH_TIMEOUT:' + url));
+      }, 15000);
+    });
+    try {
+      return await Promise.race([request, timeout]);
+    } finally {
+      if (timer !== null && cancelTimeout) {
+        try { cancelTimeout(timer); } catch (_) {}
+      }
+    }
   }
   function loadSources() {
     if (loadPromise) return loadPromise;
