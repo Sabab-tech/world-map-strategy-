@@ -329,9 +329,16 @@ test('Production Ministry shows each country factory count on the matching facto
     assert.equal((html.match(/omega-rescc-factory-catalog-row/g) || []).length, 2);
     assert.match(html, /Steel Mill/);
     assert.match(html, /Textile Mill/);
-    assert.match(html, /Factories[\\s\\S]*?<strong>4<\\/strong>/,
+    const cardMarker = '<article class="omega-rescc-factory-catalog-row"';
+    const firstCard = html.indexOf(cardMarker);
+    const secondCard = html.indexOf(cardMarker, firstCard + cardMarker.length);
+    assert.ok(firstCard >= 0 && secondCard > firstCard);
+    const steelCard = html.slice(firstCard, secondCard);
+    const textileCard = html.slice(secondCard, html.indexOf('</section>', secondCard) > 0
+      ? html.indexOf('</section>', secondCard) : html.length);
+    assert.match(steelCard, /<span>Factories<\\/span><strong>4<\\/strong>/,
       'the steel card shows three country factories plus the one completed player build');
-    assert.match(html, /Factories[\\s\\S]*?<strong>2<\\/strong>/,
+    assert.match(textileCard, /<span>Factories<\\/span><strong>2<\\/strong>/,
       'the textile card shows the country factory total');
     assert.match(html, /BGD-STEEL-BUILD-1/,
       'the actual factory record remains inside the matching factory type card');
