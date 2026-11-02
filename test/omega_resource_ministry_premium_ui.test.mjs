@@ -1422,7 +1422,7 @@ test("raw-resource inventory cards show icon, stock, demand, status and named su
     assert.match(root.innerHTML,/25(?:\.00)? TONNES_PER_DAY|25(?:\.00)? TONNES per day/i);
     assert.match(root.innerHTML,/Domestic mine/);
     assert.match(root.innerHTML,/Foreign import/);
-    assert.match(root.innerHTML,/Australia \(AUS\)/);
+    assert.match(root.innerHTML,/\(Australia\)/);
     assert.match(root.innerHTML,/Shortage/);
     assert.match(root.innerHTML,/data-omega-v2-processed-goods-inventory/);
     assert.match(root.innerHTML,/Processed Goods Warehouse/);
