@@ -74,7 +74,7 @@ test('offline install precaches the shell but not the large resource registry sh
   assert.ok(requested.some(path=>path.endsWith('/index.html')));
   assert.ok(requested.some(path=>path.endsWith('/leaflet.js')));
   assert.ok(!requested.some(path=>path.endsWith('/resource_site_master_registry_v1.json')));
-  assert.ok(!requested.some(path=>/resource_site_logistics_routes_v1_part_\\d+\\.json$/.test(path)));
+  assert.ok(!requested.some(path=>/resource_site_logistics_routes_v1_part_\d+\.json$/.test(path)));
   assert.ok(!requested.some(path=>path.endsWith('/resource_site_country_expansion_v1.json')));
 });
 
