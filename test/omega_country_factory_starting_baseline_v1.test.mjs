@@ -9,13 +9,11 @@ const baseline = readJson('country_factory_starting_baseline_v1.json');
 const catalog = readJson('resource_industrial_catalog_v1.json');
 const countryContext = readJson('resource_country_resource_context_index.json');
 const economyProfiles = readJson('economy_global_profiles_v1.json');
-const realWorldEstablishments = readJson('country_factory_establishment_data_v1.json');
 const sourceDocuments = {
   'country_factory_starting_baseline_v1.json': baseline,
   'resource_industrial_catalog_v1.json': catalog,
   'resource_country_resource_context_index.json': countryContext,
-  'economy_global_profiles_v1.json': economyProfiles,
-  'country_factory_establishment_data_v1.json': realWorldEstablishments
+  'economy_global_profiles_v1.json': economyProfiles
 };
 const factoryTypes = Object.keys(catalog.factoryProfiles).sort();
 const coreCountryIds = Object.keys(countryContext.countries).sort();
@@ -189,16 +187,10 @@ test('runtime registers the active player country as live factory assets and pre
   assert.equal(bangladesh.factoryCounts.TEXTILE_GARMENT_MILL, baseline.countries.BGD.factoryCounts.TEXTILE_GARMENT_MILL);
   assert.equal(api.getCountryBaseline('Bangladesh').countryId, 'BGD');
   assert.equal(api.getCountryBaseline('UNKNOWN-COUNTRY'), null);
-  const realWorld = api.getCountryRealWorldData('BGD');
-  assert.equal(realWorld.countryId, 'BGD');
-  assert.equal(Object.keys(realWorld.factoryEstablishments).length, 21);
-  assert.ok(['NOT_QUERIED','REPORTED','PARTIAL','NOT_REPORTED','NOT_COMPARABLE','MAPPING_UNAVAILABLE','COUNTRY_NOT_COVERED','SOURCE_UNAVAILABLE'].includes(realWorld.factoryEstablishments.TEXTILE_GARMENT_MILL.status));
-  if (realWorld.factoryEstablishments.TEXTILE_GARMENT_MILL.status === 'REPORTED') {
-    assert.ok(Number.isInteger(realWorld.factoryEstablishments.TEXTILE_GARMENT_MILL.establishmentCount));
-  } else {
-    assert.equal(realWorld.factoryEstablishments.TEXTILE_GARMENT_MILL.establishmentCount, null);
-  }
-  assert.equal(realWorld.factoryEstablishments.UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT.status, 'NOT_COMPARABLE');
+  assert.equal(api.getCountryRealWorldData, undefined,
+    'the factory runtime no longer loads a separate establishment/source status layer');
+  assert.doesNotMatch(runtimeSource, /country_factory_establishment_data_v1|SOURCE_UNAVAILABLE|OMEGA_COUNTRY_FACTORY_ESTABLISHMENT/,
+    'the common country factory baseline does not depend on an external establishment status');
 
   emitSimulationEvent('OMEGA_GAME_SESSION_CREATED', { session: structuredCloneSafe(state.simulation.session) });
   const result = await api.waitForPendingInitialization();
@@ -285,6 +277,37 @@ test('an existing save missing its starting factory baseline receives one safe a
   assert.equal(repeated.status, 'ALREADY_INITIALIZED');
   assert.equal(JSON.stringify(state.economy.BGD.productionAssets.map(asset => asset.id).sort()), stable,
     'reopening the same save must not duplicate the starting allocation');
+});
+
+test('a stale completed marker restores starting factory records that disappeared from the saved country list', async () => {
+  const state = makeState();
+  const { api } = makeHarness(state);
+  assert.equal((await api.ready).status, 'READY');
+  const first = await api.initializeForSession(state.simulation.session);
+  assert.equal(first.status, 'COMPLETED');
+  const firstCount = state.economy.BGD.productionAssets.filter(asset =>
+    !['DECOMMISSIONED','DESTROYED'].includes(String(asset.status || '').toUpperCase())).length;
+  assert.equal(firstCount, 100);
+
+  // Reproduce the regression: the registration marker survives but the
+  // baseline-created factory records disappear from the country's live list.
+  state.economy.BGD.productionAssets = state.economy.BGD.productionAssets.filter(asset =>
+    String(asset.sourceType || '').toUpperCase() !== 'COUNTRY_STARTING_FACTORY_BASELINE');
+  assert.equal(state.economy.BGD.productionAssets.length, 1);
+
+  const repaired = await api.initializeForSession(state.simulation.session);
+  assert.equal(repaired.status, 'COMPLETED',
+    'a completed marker is not trusted when the country factory records are missing');
+  const restored = state.economy.BGD.productionAssets.filter(asset =>
+    !['DECOMMISSIONED','DESTROYED'].includes(String(asset.status || '').toUpperCase()));
+  assert.equal(restored.length, 100);
+  for (const [type, expected] of Object.entries(baseline.countries.BGD.factoryCounts)) {
+    assert.equal(restored.filter(asset => asset.factoryType === type).length, expected, type);
+  }
+  const repeated = await api.initializeForSession(state.simulation.session);
+  assert.equal(repeated.status, 'ALREADY_INITIALIZED',
+    'recovery is idempotent after every factory type reaches its country count');
+  assert.equal(state.economy.BGD.productionAssets.length, 100);
 });
 
 test('runtime blocks an incomplete or mismatched canonical factory catalog', async () => {
