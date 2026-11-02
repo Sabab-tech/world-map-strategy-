@@ -82,11 +82,13 @@ async function init(countryValue){
   const data=await response.json(),schema=data?.metadata?.recordSchema;
   if(!Array.isArray(data?.countries)||!data.countries.length||!Array.isArray(schema?.identityFields)||
      !Array.isArray(schema?.generalFactFields)||!Array.isArray(schema?.metricFields))throw Error('COUNTRY_GENERAL_DATA_SCHEMA_INVALID');
+  // A country or full-registry invalidation may have happened while the request was in flight.
+  // Reject the stale response before it can republish global schema metadata.
+  if(s.inflight.get(cacheKey)!==task)return false;
   if(!s.schema){
    s.metadata=data.metadata;s.schema=schema;
    (data.fieldCatalogue||[]).forEach(field=>{if(field?.key)s.fields.set(field.key,field)});
   }
-  if(s.inflight.get(cacheKey)!==task)return false;
   const row=data.countries[0],identityMap=map(schema.identityFields,row.identity);
   const primary=norm(identityMap.iso2||identityMap.countryCode||identityMap.iso3||requestKey);
   const aliases=new Set([requestKey,...Object.values(identityMap)].map(norm).filter(Boolean));
