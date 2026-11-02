@@ -8,7 +8,7 @@ function harness(count=197){
  for(let i=0;i<count;i++){const id=String.fromCharCode(65+Math.floor(i/26))+String.fromCharCode(65+i%26),row={countryCode:id,iso3:'X'+String(i).padStart(2,'0')};ids.push(id);profiles.push(row);byId.set(id,row);}
  const participants=new Map(),listeners=new Set(),evaluations=[],queued=[],handled=[];
  const state={simulation:{turn:0,session:{playerCountryId:'AA',status:'RUNNING'}},projects:{BB:{registry:[{projectId:'P1',autonomy:true,status:'UNDER_CONSTRUCTION'}]}},military:{CC:{trainingQueue:[{trainingId:'T1',status:'IN_TRAINING'}]}},trade:{}};
- const simulation={world:{state},clock:{turn:0,stepDurationMs:10000},getPlayerCountryId:()=> 'AA',registerTurnParticipant(id,handler,options){participants.set(id,{handler,options});return()=>participants.delete(id);},events:{subscribe(type,handler){if(type==='*')listeners.add(handler);return()=>listeners.delete(handler);}}};
+ const simulation={world:{state},clock:{turn:0,stepDurationMs:10000},getPlayerCountryId:()=>state.simulation.session?.playerCountryId||null,registerTurnParticipant(id,handler,options){participants.set(id,{handler,options});return()=>participants.delete(id);},events:{subscribe(type,handler){if(type==='*')listeners.add(handler);return()=>listeners.delete(handler);}}};
  const rules={async listCountryIds(){return ids;},async evaluateCountry(countryId,turn){evaluations.push({countryId,turn});return{status:'COMPLETE',decisions:[{decisionId:'D-'+countryId+'-'+turn,scenarioId:'RESOURCE_DEFICIT',priorityScore:1,selected:{action:'IMPORT'}}]};},queueDecision(decision,turn){queued.push({decisionId:decision.decisionId,turn});return{commandId:decision.decisionId};}};
  const sandbox={console,Promise,Map,Set,WeakMap,Object,Array,Number,String,Math,Date,JSON,Omega:{Simulation:simulation,OpponentCountryRules:rules},OmegaCountryRuntimeData:{resolveCountry(v){return byId.get(String(v).toUpperCase())||null;},listProfiles(){return profiles;}},Game:{state},addEventListener(){},removeEventListener(){}};
  vm.runInNewContext(source,sandbox,{filename:'omega_world_simulation_scheduler_v1.js'});
@@ -44,6 +44,6 @@ test('missing player identity does not fabricate a default player country',async
 });
 test('scheduler reuses canonical simulation clock and country roster APIs',()=>{
  const h=harness(3);assert.equal(h.scheduler.engineIntegrated,true);assert.equal(typeof h.scheduler.registerCountryHandler,'function');assert.equal(typeof h.scheduler.getCountryRoster,'function');
- assert.equal(h.state.simulation.worldSimulationScheduler?.schemaVersion,1);
- assert.equal(h.state.clock,undefined,'scheduler must not create a second clock');
+ h.scheduler.diagnostics();assert.equal(h.state.simulation.worldSimulationScheduler?.schemaVersion,1);
+ assert.equal(h.state.worldClock,undefined,'scheduler must not create a second clock');
 });
