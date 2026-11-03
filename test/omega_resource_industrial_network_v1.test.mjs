@@ -1381,3 +1381,58 @@ console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');
     context.Game.state=previousState;
   }
 }
+
+
+// A boot-time catalog request is shared with factory baseline initialization.
+// It must time out, abort the request and release the promise slot for retries.
+{
+  const timers = new Map();
+  const requests = [];
+  let nextTimerId = 1;
+  let shouldHang = true;
+  const timeoutContext = {
+    console, Math, Number, String, Object, Array, Set, Map, WeakMap, JSON, Date, Promise, Intl,
+    AbortController,
+    Game: { state: { simulation: { turn: 1, playerCountryId: 'BGD' } } },
+    setTimeout(callback, delay) {
+      assert.equal(delay, 15000, 'industrial catalog loading must use the bounded startup deadline');
+      const timerId = nextTimerId++;
+      timers.set(timerId, callback);
+      return timerId;
+    },
+    clearTimeout(timerId) {
+      timers.delete(timerId);
+    },
+    fetch(url, options) {
+      requests.push({ url, signal: options && options.signal });
+      if (shouldHang) return new Promise(() => {});
+      return Promise.resolve({ ok: true, json: async () => catalog });
+    },
+    addEventListener() {},
+    dispatchEvent() { return true; }
+  };
+  timeoutContext.globalThis = timeoutContext;
+  vm.runInNewContext(
+    fs.readFileSync('omega_resource_industrial_network_v1.js', 'utf8'),
+    timeoutContext,
+    { filename: 'omega_resource_industrial_network_v1.js' }
+  );
+  const runtime = timeoutContext.Omega.ResourceIndustrialNetwork;
+  const pending = runtime.loadCatalog();
+  await Promise.resolve();
+  assert.equal(requests.length, 1, 'boot and ministry must share one catalog request');
+  assert.equal(timers.size, 1, 'the shared catalog request must have a timeout');
+  timers.values().next().value();
+
+  const failed = await pending;
+  assert.equal(failed.status, 'FAILED');
+  assert.equal(failed.reason, 'INDUSTRIAL_CATALOG_FETCH_TIMEOUT');
+  assert.ok(requests[0].signal && requests[0].signal.aborted,
+    'a timed-out catalog request must be aborted');
+  assert.equal(timers.size, 0, 'the timeout handle must be released');
+  shouldHang = false;
+
+  const retried = await runtime.loadCatalog();
+  assert.equal(retried.status, 'READY', 'a timed-out catalog promise must not block later retries');
+  assert.equal(retried.count, Object.keys(catalog.resourceRules || {}).length);
+}

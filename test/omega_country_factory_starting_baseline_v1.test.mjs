@@ -44,7 +44,7 @@ function makeState(turn = 1) {
   };
 }
 
-function makeHarness(state) {
+function makeHarness(state, runtimeOverrides = {}) {
   const listeners = new Map();
   const simulationListeners = new Map();
   const emitted = [];
@@ -63,6 +63,9 @@ function makeHarness(state) {
   };
   const context = {
     console,
+    AbortController,
+    setTimeout: runtimeOverrides.setTimeout || setTimeout,
+    clearTimeout: runtimeOverrides.clearTimeout || clearTimeout,
     Game: { state },
     gameState: state,
     Omega: {
@@ -99,13 +102,13 @@ function makeHarness(state) {
         }
       }
     },
-    fetch: async url => {
+    fetch: runtimeOverrides.fetch || (async url => {
       const name = String(url).split('/').pop();
       if (!Object.prototype.hasOwnProperty.call(sourceDocuments, name)) {
         return { ok: false, status: 404, json: async () => ({}) };
       }
       return { ok: true, json: async () => structuredCloneSafe(sourceDocuments[name]) };
-    },
+    }),
     addEventListener(type, callback) {
       const rows = listeners.get(type) || [];
       rows.push(callback);
@@ -326,4 +329,55 @@ test('runtime blocks an incomplete or mismatched canonical factory catalog', asy
   const result = await h.context.OmegaCountryFactoryStartingBaselineV1.ready;
   assert.equal(result.status, 'BLOCKED');
   assert.match(result.reason, /FACTORY_CATALOG_MISMATCH/);
+});
+
+
+test('a stalled factory-baseline source is time-bounded and cancels sibling requests', async () => {
+  const state = makeState();
+  const pendingRequests = [];
+  const timers = new Map();
+  let nextTimerId = 1;
+  const h = makeHarness(state, {
+    setTimeout(callback, delay) {
+      assert.equal(delay, 15000, 'factory baseline sources must use the same bounded startup deadline');
+      const timerId = nextTimerId++;
+      timers.set(timerId, callback);
+      return timerId;
+    },
+    clearTimeout(timerId) {
+      timers.delete(timerId);
+    },
+    fetch(url, options) {
+      const name = String(url).split('/').pop();
+      pendingRequests.push({ name, signal: options && options.signal });
+      if (name === 'country_factory_starting_baseline_v1.json') {
+        // Simulate a request that never returns. The UI must not wait forever.
+        return new Promise(() => {});
+      }
+      return Promise.resolve({
+        ok: Object.prototype.hasOwnProperty.call(sourceDocuments, name),
+        json: async () => structuredCloneSafe(sourceDocuments[name] || {})
+      });
+    }
+  });
+
+  const pending = h.api.ready;
+  for (let attempt = 0; attempt < 8 && pendingRequests.length < 4; attempt += 1) {
+    await Promise.resolve();
+  }
+  assert.equal(pendingRequests.length, 4, 'all required source files should be requested concurrently');
+  assert.equal(timers.size, 4, 'each source request must have a deadline');
+
+  const firstTimer = timers.entries().next().value;
+  assert.ok(firstTimer, 'a stalled source must have an active deadline');
+  firstTimer[1]();
+
+  const result = await pending;
+  assert.equal(result.status, 'BLOCKED');
+  assert.match(result.reason, /COUNTRY_FACTORY_STARTING_BASELINE_FETCH_TIMEOUT:/);
+  assert.ok(pendingRequests.every(row => row.signal),
+    'all source requests must share an abortable request lifecycle');
+  assert.ok(pendingRequests.every(row => row.signal.aborted),
+    'one stalled source must cancel every sibling fetch');
+  assert.equal(timers.size, 0, 'successful, failed and aborted source requests must release their timers');
 });
