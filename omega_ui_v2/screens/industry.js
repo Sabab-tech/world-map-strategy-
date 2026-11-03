@@ -1610,7 +1610,7 @@
         : 'Not calculated';
       var breakdown = row.breakdown.map(function (item) {
         return '<span class="fp-factory-source"><strong>' + esc(item.name) + ' · ' +
-          fmt(item.perDay, unit) + '/day</strong><small>' + fmt(item.factoryCount) + ' factory/factories</small></span>';
+          fmt(item.perDay, unit) + '/day</strong><small>' + fmt(item.factoryCount) + (item.factoryCount === 1 ? ' factory' : ' factories') + '</small></span>';
       }).join('');
       var status = coverage ? factoryInputRiskMarkup(coverage.status) : factoryInputRiskMarkup('unknown');
       html += '<tr><td>' + factoryProductIdentityMarkup(row.productId, panelProductLabel(model, row.productId)) + '</td>' +
