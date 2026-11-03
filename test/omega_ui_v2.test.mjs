@@ -817,7 +817,7 @@ test('factory Stock shows committed finished goods and traced use while Input sh
             batchTransfers:[{sourceBatchId:'OUTPUT-STEEL-1',resourceId:'steel',quantity:2,destinationCountryId:'USA'}]}
         ],
         nationalDemandRuntime:{byResource:{
-          steel:{status:'BALANCED',demandThisTurn:4,unmetDemand:0,nationalConsumption:2}
+          steel:{status:'BALANCED',demandThisTurn:4,demandPerDay:4,projectedDemandPerDay:8,demandUnit:'TONNES',unmetDemand:0,nationalConsumption:2}
         }},
         industrialNetwork:{
           projects:[],factoryProductionCycles:{},
@@ -843,6 +843,8 @@ test('factory Stock shows committed finished goods and traced use while Input sh
           }],
           productionHealth:{
             status:'REDUCED',productivityPct:60,reason:'FACTORY_INPUT_SHORTAGE',
+            actualOutputPerDay:5,outputResourceId:'steel',outputUnit:'TONNES',
+            dailyOperatingCostByProduct:{steel:{amountPerDay:250,currency:'USD'}},
             detail:{constraints:{rawMaterialRatio:0.6}},
             missingInputs:[{resourceId:'iron_ore',required:10,available:3}]
           }
@@ -872,21 +874,47 @@ test('factory Stock shows committed finished goods and traced use while Input sh
     const stockResult = globalThis.OmegaUIV2Industry.render(stockRoot,{countryId:'BGD',tab:'national-inventory'});
     assert.equal(stockResult.ok,true);
     assert.match(stockRoot.innerHTML,/Stock/);
-    assert.match(stockRoot.innerHTML,/Chattogram Steel Works/);
-    assert.match(stockRoot.innerHTML,/Steel/);
-    assert.match(stockRoot.innerHTML,/10 TONNES/);
-    assert.match(stockRoot.innerHTML,/2 TONNES/);
-    assert.match(stockRoot.innerHTML,/USA/);
-    assert.match(stockRoot.innerHTML,/6 TONNES/);
-    assert.match(stockRoot.innerHTML,/Surplus/);
     assert.match(stockRoot.innerHTML,/data-factory-stock-input-ui="v2"/,
       'the updated factory screen must expose the current Stock/Input UI build marker');
+    assert.match(stockRoot.innerHTML,/data-factory-output-summary="v1"/);
+    assert.match(stockRoot.innerHTML,/data-factory-output-row="steel"/);
     assert.match(stockRoot.innerHTML,/data-factory-product-identity="steel"/,
       'finished output rows must include the generated Steel identity icon');
-    assert.match(stockRoot.innerHTML,/data-factory-stock-product="steel"/,
-      'the current finished-goods stock balance must repeat the matching product icon');
-    assert.match(stockRoot.innerHTML,/data-icon-source="generated-product"/,
-      'finished industrial products without raw-resource art must receive an SVG icon');
+    assert.match(stockRoot.innerHTML,/5 TONNES/);
+    assert.match(stockRoot.innerHTML,/USD 250/);
+    assert.match(stockRoot.innerHTML,/Domestic use/);
+    assert.match(stockRoot.innerHTML,/USA 2 TONNES/);
+    assert.match(stockRoot.innerHTML,/data-state="future"/,
+      'a documented product-specific future demand uplift must activate the yellow LED');
+    assert.doesNotMatch(stockRoot.innerHTML,/Planned \/ full cycle|Planned \/ day|Planned output|Produced to date|Current stock/,
+      'the Stock panel must not display plan quantities or duplicate historic stock columns');
+    assert.equal((stockRoot.innerHTML.match(/data-factory-output-row="steel"/g)||[]).length,1,
+      'a product must have one row even when multiple trace records are associated with it');
+
+    const steelDemand = globalThis.Game.state.resource.BGD.nationalDemandRuntime.byResource.steel;
+    delete steelDemand.projectedDemandPerDay;
+    steelDemand.status = 'BALANCED';
+    steelDemand.demandPerDay = 4;
+    steelDemand.unmetDemand = 0;
+    globalThis.OmegaUIV2Industry.render(stockRoot,{countryId:'BGD',tab:'national-inventory'});
+    assert.match(stockRoot.innerHTML,/data-state="ok"/,'covered current demand must show green');
+
+    steelDemand.status = 'SHORTAGE';
+    steelDemand.demandPerDay = 8;
+    steelDemand.unmetDemand = 4;
+    globalThis.OmegaUIV2Industry.render(stockRoot,{countryId:'BGD',tab:'national-inventory'});
+    assert.match(stockRoot.innerHTML,/data-state="shortage"/,'current unmet demand must show red');
+
+    steelDemand.status = 'UNAVAILABLE';
+    steelDemand.demandPerDay = null;
+    steelDemand.unmetDemand = 0;
+    globalThis.OmegaUIV2Industry.render(stockRoot,{countryId:'BGD',tab:'national-inventory'});
+    assert.match(stockRoot.innerHTML,/data-state="unknown"/,'missing demand evidence must stay neutral grey');
+
+    delete globalThis.Game.state.economy.BGD.productionAssets[0].productionHealth.dailyOperatingCostByProduct;
+    globalThis.OmegaUIV2Industry.render(stockRoot,{countryId:'BGD',tab:'national-inventory'});
+    assert.match(stockRoot.innerHTML,/fp-output-not-recorded[^<]*Not recorded|fp-output-cost-cell[^]*Not recorded/,
+      'missing cost must be shown as Not recorded rather than a fabricated expense');
 
     assert.doesNotMatch(stockRoot.innerHTML,/UNBOUNDED STOCK LOG/,
       'the factory Stock button must not fall back to a national raw-resource snapshot');
@@ -2590,19 +2618,18 @@ test('Factory Stock and Input calculate all assigned factory-type requirements b
     const stockRoot = {classList:{add(){}},addEventListener(){},contains(){return true},innerHTML:''};
     const stock = globalThis.OmegaUIV2Industry.render(stockRoot,{countryId:'BGD',tab:'national-inventory'});
     assert.equal(stock.ok,true);
-    assert.match(stockRoot.innerHTML,/Factory-type output and stock plan/);
-    assert.match(stockRoot.innerHTML,/Steel Mill/);
-    const outputPlanStart = stockRoot.innerHTML.indexOf('data-factory-output-plan');
-    const outputSteelOrder = stockRoot.innerHTML.indexOf('<strong>Steel Mill</strong>',outputPlanStart);
-    const outputCementOrder = stockRoot.innerHTML.indexOf('<strong>Cement Plant</strong>',outputPlanStart);
-    assert.ok(outputSteelOrder >= 0 && outputCementOrder > outputSteelOrder,
-      'output plans must list higher-owned factory types first');
-    assert.match(stockRoot.innerHTML,/PRESENT · 3 FACTORIES/);
+    assert.match(stockRoot.innerHTML,/data-factory-output-summary="v1"/);
+    assert.match(stockRoot.innerHTML,/Output \/ day/);
+    assert.match(stockRoot.innerHTML,/Cost \/ day/);
+    assert.match(stockRoot.innerHTML,/Used in/);
     assert.match(stockRoot.innerHTML,/Steel/);
-    assert.match(stockRoot.innerHTML,/24 game units/);
-    assert.match(stockRoot.innerHTML,/12 game units/);
-    assert.match(stockRoot.innerHTML,/Not started \/ no committed output/);
-    assert.match(stockRoot.innerHTML,/No committed factory output batches are recorded yet/);
+    assert.match(stockRoot.innerHTML,/Cement/);
+    assert.match(stockRoot.innerHTML,/data-factory-output-row="steel"/);
+    assert.match(stockRoot.innerHTML,/data-factory-output-row="cement"/);
+    assert.match(stockRoot.innerHTML,/Not recorded/);
+    assert.match(stockRoot.innerHTML,/data-state="unknown"/);
+    assert.doesNotMatch(stockRoot.innerHTML,/Factory-type output and stock plan|Planned \/ full cycle|Planned \/ day|Planned output|Produced to date|24 game units|12 game units/,
+      'the summary must not leak modeled recipe output as actual production');
     assert.doesNotMatch(stockRoot.innerHTML,/Iron Ore/);
   } finally {
     if (previous.Game === undefined) delete globalThis.Game; else globalThis.Game = previous.Game;
