@@ -2574,10 +2574,10 @@ test('Factory Stock and Input calculate all assigned factory-type requirements b
     assert.equal(input.model.factoryCount,5);
     assert.match(inputRoot.innerHTML,/All factory input requirements/);
     assert.match(inputRoot.innerHTML,/Steel Mill/);
-    assert.match(inputRoot.innerHTML,/PRESENT · 3 FACTORIES/);
+    assert.match(inputRoot.innerHTML,/3 factories/);
     const inputPlanStart = inputRoot.innerHTML.indexOf('data-factory-input-plan');
-    const inputSteelOrder = inputRoot.innerHTML.indexOf('<strong>Steel Mill</strong>',inputPlanStart);
-    const inputCementOrder = inputRoot.innerHTML.indexOf('<strong>Cement Plant</strong>',inputPlanStart);
+    const inputSteelOrder = inputRoot.innerHTML.indexOf('Steel Mill ·',inputPlanStart);
+    const inputCementOrder = inputRoot.innerHTML.indexOf('Cement Plant ·',inputPlanStart);
     assert.ok(inputSteelOrder >= 0 && inputCementOrder > inputSteelOrder,
       'input plans must list owned factory types before less numerous/absent types');
     assert.match(inputRoot.innerHTML,/Iron Ore/);
