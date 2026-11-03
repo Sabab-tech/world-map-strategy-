@@ -2395,7 +2395,18 @@
       root.__omegaV2IndustryCountryId = countryKey;
       root.__omegaV2IndustryFactoryViewExplicit = false;
       root.__omegaV2IndustryFactoryView = 'types';
+      root.__omegaV2FactoryCardUiState = { expandedKey:'', buildKey:'', sections:Object.create(null), buildMaterialsExpanded:false };
     }
+    if (!root.__omegaV2FactoryCardUiState || typeof root.__omegaV2FactoryCardUiState !== 'object') {
+      root.__omegaV2FactoryCardUiState = { expandedKey:'', buildKey:'', sections:Object.create(null), buildMaterialsExpanded:false };
+    }
+    if (!root.__omegaV2FactoryCardUiState.sections) root.__omegaV2FactoryCardUiState.sections = Object.create(null);
+    if (active !== 'factories') {
+      root.__omegaV2FactoryCardUiState.expandedKey = '';
+      root.__omegaV2FactoryCardUiState.buildKey = '';
+      root.__omegaV2FactoryCardUiState.buildMaterialsExpanded = false;
+    }
+    model.factoryCardUiState = root.__omegaV2FactoryCardUiState;
     if (options.factoryView === 'assets' || options.factoryView === 'types') {
       root.__omegaV2IndustryFactoryView = options.factoryView;
       root.__omegaV2IndustryFactoryViewExplicit = true;
@@ -2512,6 +2523,10 @@
         if (viewToggle && root.contains(viewToggle)) {
           root.__omegaV2IndustryFactoryView = factoryView === 'types' ? 'assets' : 'types';
           root.__omegaV2IndustryFactoryViewExplicit = true;
+          root.__omegaV2FactoryCardUiState.expandedKey = '';
+          root.__omegaV2FactoryCardUiState.buildKey = '';
+          root.__omegaV2FactoryCardUiState.sections = Object.create(null);
+          root.__omegaV2FactoryCardUiState.buildMaterialsExpanded = false;
           root.__omegaV2IndustryNotice = '';
           scheduleRender(root, Object.assign({}, root.__omegaV2IndustryOptions || {}, { tab: 'factories', factoryView: root.__omegaV2IndustryFactoryView }));
           return;
@@ -2521,6 +2536,59 @@
           root.__omegaV2IndustryBuildFactoryType = '';
           root.__omegaV2IndustryNotice = '';
           scheduleRender(root, Object.assign({}, root.__omegaV2IndustryOptions || {}, { tab: root.__omegaV2IndustryTab || 'factories' }));
+          return;
+        }
+
+        var factorySelect = target.closest('[data-omega-v2-factory-select]');        var cardDisclosure = target.closest('[data-omega-v2-factory-card-expand]');
+        if (cardDisclosure && root.contains(cardDisclosure)) {
+          var disclosureKey = cardDisclosure.getAttribute('data-card-key') || '';
+          var cardState = root.__omegaV2FactoryCardUiState || (root.__omegaV2FactoryCardUiState = { expandedKey:'', buildKey:'', sections:Object.create(null), buildMaterialsExpanded:false });
+          cardState.expandedKey = cardState.expandedKey === disclosureKey ? '' : disclosureKey;
+          cardState.buildKey = '';
+          cardState.sections = Object.create(null);
+          cardState.buildMaterialsExpanded = false;
+          scheduleRender(root, Object.assign({}, root.__omegaV2IndustryOptions || {}, { tab:'factories' }));
+          return;
+        }
+
+        var sectionToggle = target.closest('[data-omega-v2-factory-section-toggle]');
+        if (sectionToggle && root.contains(sectionToggle)) {
+          var sectionCardKey = sectionToggle.getAttribute('data-card-key') || '';
+          var sectionName = sectionToggle.getAttribute('data-section') || '';
+          var sectionState = root.__omegaV2FactoryCardUiState || (root.__omegaV2FactoryCardUiState = { expandedKey:'', buildKey:'', sections:Object.create(null), buildMaterialsExpanded:false });
+          var sectionStateKey = sectionCardKey + ':' + sectionName;
+          sectionState.sections[sectionStateKey] = !sectionState.sections[sectionStateKey];
+          scheduleRender(root, Object.assign({}, root.__omegaV2IndustryOptions || {}, { tab:'factories' }));
+          return;
+        }
+
+        var buildDetails = target.closest('[data-omega-v2-factory-build-details]');
+        if (buildDetails && root.contains(buildDetails) && !buildDetails.disabled) {
+          var buildState = root.__omegaV2FactoryCardUiState || (root.__omegaV2FactoryCardUiState = { expandedKey:'', buildKey:'', sections:Object.create(null), buildMaterialsExpanded:false });
+          buildState.buildKey = buildDetails.getAttribute('data-factory-card-key') || '';
+          buildState.expandedKey = '';
+          buildState.sections = Object.create(null);
+          buildState.buildMaterialsExpanded = false;
+          root.__omegaV2IndustryNotice = '';
+          scheduleRender(root, Object.assign({}, root.__omegaV2IndustryOptions || {}, { tab:'factories' }));
+          return;
+        }
+
+        var buildDetailsClose = target.closest('[data-omega-v2-factory-build-details-close]');
+        if (buildDetailsClose && root.contains(buildDetailsClose)) {
+          var closeState = root.__omegaV2FactoryCardUiState || {};
+          closeState.buildKey = '';
+          closeState.buildMaterialsExpanded = false;
+          root.__omegaV2IndustryNotice = '';
+          scheduleRender(root, Object.assign({}, root.__omegaV2IndustryOptions || {}, { tab:'factories' }));
+          return;
+        }
+
+        var buildMaterialsToggle = target.closest('[data-omega-v2-factory-build-materials]');
+        if (buildMaterialsToggle && root.contains(buildMaterialsToggle)) {
+          var materialsState = root.__omegaV2FactoryCardUiState || {};
+          materialsState.buildMaterialsExpanded = !materialsState.buildMaterialsExpanded;
+          scheduleRender(root, Object.assign({}, root.__omegaV2IndustryOptions || {}, { tab:'factories' }));
           return;
         }
 
@@ -2572,6 +2640,10 @@
         var tab = target.closest('[data-omega-v2-industry-tab]');
         if (tab && root.contains(tab)) {
           root.__omegaV2IndustryTab = tab.getAttribute('data-omega-v2-industry-tab');
+          root.__omegaV2FactoryCardUiState.expandedKey = '';
+          root.__omegaV2FactoryCardUiState.buildKey = '';
+          root.__omegaV2FactoryCardUiState.sections = Object.create(null);
+          root.__omegaV2FactoryCardUiState.buildMaterialsExpanded = false;
           scheduleRender(root, Object.assign({}, root.__omegaV2IndustryOptions || {}, { tab: root.__omegaV2IndustryTab }));
           return;
         }
