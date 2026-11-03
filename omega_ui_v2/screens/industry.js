@@ -1582,10 +1582,13 @@
         if (!productId) return;
         var key = productId.toLowerCase();
         if (!byProduct[key]) byProduct[key] = {
-          productId:productId, perDay:0, unit:String(input.unit || ''), breakdown:[], expectedFactoryCount:0
+          productId:productId, perDay:0, perDayComplete:true, hasPerDay:false,
+          unit:String(input.unit || ''), breakdown:[], expectedFactoryCount:0
         };
         var row = byProduct[key];
-        row.perDay += Math.max(0, num(input.perDay) || 0);
+        var dailyValue = num(input.perDay);
+        if (dailyValue === null) row.perDayComplete = false;
+        else { row.perDay += Math.max(0, dailyValue); row.hasPerDay = true; }
         if (!row.unit && input.unit) row.unit = String(input.unit);
         var factoryCount = (Array.isArray(input.sources) ? input.sources : []).reduce(function (sum, source) {
           return sum + Math.max(0, Math.floor(num(source && source.factoryCount) || 0));
@@ -1599,7 +1602,13 @@
         });
       });
     });
-    return Object.keys(byProduct).map(function (key) { return byProduct[key]; }).sort(function (a, b) {
+    return Object.keys(byProduct).map(function (key) {
+      var row = byProduct[key];
+      row.perDay = row.perDayComplete && row.hasPerDay ? row.perDay : null;
+      delete row.perDayComplete;
+      delete row.hasPerDay;
+      return row;
+    }).sort(function (a, b) {
       return a.productId.localeCompare(b.productId);
     });
   }
@@ -1880,6 +1889,43 @@
     return key ? panelInputCoefficient(coefficients[key]) : null;
   }
 
+  function factoryInputDailyRequirement(factory, productId, model) {
+    var coefficient = factoryInputCoefficientFor(factory, productId);
+    var capacity = num(factory && factory.capacityPerDay);
+    var raw = factory && factory.raw || {};
+    var recipes = model && model.catalogRecipes || {};
+    var processingRules = model && model.processingRules || {};
+    var recipe = recipes[String(factory && factory.recipeId || '')] || null;
+    if (!recipe) {
+      var resourceId = String(raw.resourceId || raw.inputResourceId || raw.primaryInputResourceId || '').trim();
+      recipe = resourceId ? processingRules[resourceId] || null : null;
+    }
+    if (!recipe) {
+      var wantedType = normalizeFactoryType(factory && factory.type || '', safeCatalog());
+      var matchKey = Object.keys(processingRules).find(function (key) {
+        var rule = processingRules[key] || {};
+        var inputs = rule.inputs && typeof rule.inputs === 'object' ? rule.inputs : {};
+        var productKey = Object.keys(inputs).find(function (id) {
+          return String(id).toLowerCase() === String(productId || '').toLowerCase();
+        });
+        return productKey && (!rule.factoryType || normalizeFactoryType(rule.factoryType, safeCatalog()) === wantedType);
+      });
+      if (matchKey) recipe = processingRules[matchKey];
+    }
+    var unitMap = factory && factory.inputUnits && typeof factory.inputUnits === 'object' ? factory.inputUnits : {};
+    var unitKey = Object.keys(unitMap).find(function (key) {
+      return String(key).toLowerCase() === String(productId || '').toLowerCase();
+    });
+    var unit = unitKey ? unitMap[unitKey] : factory && factory.inputUnit || recipe && recipe.inputUnit || '';
+    var cycleDays = num(recipe && recipe.cycleDays);
+    if (cycleDays === null) cycleDays = num(raw.cycleDays);
+    var rate = factoryRouteRate(coefficient, {
+      cycleDays:cycleDays,
+      quantityBasis:recipe && recipe.quantityBasis
+    }, capacity, unit);
+    return rate ? rate.perDay : null;
+  }
+
     function factoryInputEfficiency(factory, inputRows) {
     var raw = factory.raw || {}, health = raw.productionHealth && typeof raw.productionHealth === 'object' ? raw.productionHealth : {};
     var reason = String(health.reason || factory.healthReason || '').toUpperCase();
@@ -1921,8 +1967,7 @@
       var capacity = num(factory.capacityPerDay), rows = [];
       ids.forEach(function (productId) {
         var coefficient = factoryInputCoefficientFor(factory, productId);
-        var required = capacity !== null && coefficient !== null
-          ? capacity * coefficient / Math.max(1, num(factory.cycleDays) || 1) : null;
+        var required = factoryInputDailyRequirement(factory, productId, model);
         var current = factory.hasInputInventory ? panelValueByKey(factory.raw.inputInventory, productId) : null;
         var lots = factory.inputLots.filter(function (lot) {
           return String(lot && (lot.resourceId || lot.materialIdentity) || '').toLowerCase() === productId.toLowerCase();
@@ -2025,9 +2070,7 @@
         });
         var recordedStock = 0, stockComplete = expectedComplete, importQuantity = 0, sourceQuantity = 0, activeShortage = false;
         matchingFactories.forEach(function (factory) {
-          var coefficient = factoryInputCoefficientFor(factory, product.productId);
-          var required = num(factory.capacityPerDay) !== null && coefficient !== null
-            ? num(factory.capacityPerDay) * coefficient / Math.max(1, num(factory.cycleDays) || 1) : null;
+          var required = factoryInputDailyRequirement(factory, product.productId, model);
           var stock = factory.hasInputInventory ? panelValueByKey(factory.raw && factory.raw.inputInventory, product.productId) : null;
           if (stock === null) stockComplete = false;
           else recordedStock += Math.max(0, stock);
