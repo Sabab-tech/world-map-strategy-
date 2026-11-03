@@ -141,6 +141,11 @@
         ['#d8e8f2','#7d9eb6','#3c5366'],['#e4dfc9','#9c9470','#5b543d'],['#e5d7ed','#9b7caf','#584267']
       ]
     };
+    if (category === 'metal') {
+      if (/(copper|cu)/.test(id)) return ['#ffd1a4','#c66d3e','#673a23'];
+      if (/(alumin|alumina)/.test(id)) return ['#f7fbff','#b7c4ce','#667582'];
+      if (/(steel|iron|alloy|titanium|nickel|chromium)/.test(id)) return ['#edf4f8','#8f9eaa','#3f4d5a'];
+    }
     var rows = palettes[category] || palettes.equipment;
     var hash = 0;
     for (var i = 0; i < id.length; i += 1) hash = ((hash * 31) + id.charCodeAt(i)) >>> 0;
