@@ -1792,7 +1792,8 @@
     var rows = model && Array.isArray(model.factoryTypeCounts) ? model.factoryTypeCounts : [];
     for (var i = 0; i < rows.length; i += 1) {
       if ((normalizeFactoryType(rows[i].type, catalog) || String(rows[i].type || '').toUpperCase()) === type) {
-        return rows[i].count;
+        var count = num(rows[i].count);
+        return count === null ? null : Math.max(0, Math.floor(count));
       }
     }
     return null;
