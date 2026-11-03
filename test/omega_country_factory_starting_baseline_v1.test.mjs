@@ -44,7 +44,7 @@ function makeState(turn = 1) {
   };
 }
 
-function makeHarness(state) {
+function makeHarness(state, runtimeOverrides = {}) {
   const listeners = new Map();
   const simulationListeners = new Map();
   const emitted = [];
@@ -64,8 +64,8 @@ function makeHarness(state) {
   const context = {
     console,
     AbortController,
-    setTimeout,
-    clearTimeout,
+    setTimeout: runtimeOverrides.setTimeout || setTimeout,
+    clearTimeout: runtimeOverrides.clearTimeout || clearTimeout,
     Game: { state },
     gameState: state,
     Omega: {
@@ -102,13 +102,13 @@ function makeHarness(state) {
         }
       }
     },
-    fetch: async url => {
+    fetch: runtimeOverrides.fetch || (async url => {
       const name = String(url).split('/').pop();
       if (!Object.prototype.hasOwnProperty.call(sourceDocuments, name)) {
         return { ok: false, status: 404, json: async () => ({}) };
       }
       return { ok: true, json: async () => structuredCloneSafe(sourceDocuments[name]) };
-    },
+    }),
     addEventListener(type, callback) {
       const rows = listeners.get(type) || [];
       rows.push(callback);
@@ -334,29 +334,32 @@ test('runtime blocks an incomplete or mismatched canonical factory catalog', asy
 
 test('a stalled factory-baseline source is time-bounded and cancels sibling requests', async () => {
   const state = makeState();
-  const h = makeHarness(state);
   const pendingRequests = [];
   const timers = new Map();
   let nextTimerId = 1;
-  h.context.setTimeout = (callback, delay) => {
-    assert.equal(delay, 15000, 'factory baseline sources must use the same bounded startup deadline');
-    const timerId = nextTimerId++;
-    timers.set(timerId, callback);
-    return timerId;
-  };
-  h.context.clearTimeout = timerId => timers.delete(timerId);
-  h.context.fetch = (url, options) => {
-    const name = String(url).split('/').pop();
-    pendingRequests.push({ name, signal: options && options.signal });
-    if (name === 'country_factory_starting_baseline_v1.json') {
-      // Simulate a request that never returns. The UI must not wait forever.
-      return new Promise(() => {});
+  const h = makeHarness(state, {
+    setTimeout(callback, delay) {
+      assert.equal(delay, 15000, 'factory baseline sources must use the same bounded startup deadline');
+      const timerId = nextTimerId++;
+      timers.set(timerId, callback);
+      return timerId;
+    },
+    clearTimeout(timerId) {
+      timers.delete(timerId);
+    },
+    fetch(url, options) {
+      const name = String(url).split('/').pop();
+      pendingRequests.push({ name, signal: options && options.signal });
+      if (name === 'country_factory_starting_baseline_v1.json') {
+        // Simulate a request that never returns. The UI must not wait forever.
+        return new Promise(() => {});
+      }
+      return Promise.resolve({
+        ok: Object.prototype.hasOwnProperty.call(sourceDocuments, name),
+        json: async () => structuredCloneSafe(sourceDocuments[name] || {})
+      });
     }
-    return Promise.resolve({
-      ok: Object.prototype.hasOwnProperty.call(sourceDocuments, name),
-      json: async () => structuredCloneSafe(sourceDocuments[name] || {})
-    });
-  };
+  });
 
   const pending = h.api.ready;
   for (let attempt = 0; attempt < 8 && pendingRequests.length < 4; attempt += 1) {
