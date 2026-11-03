@@ -2503,10 +2503,91 @@ test('every canonical factory recipe input and output renders a product-specific
     'Steel must use a finished-product SVG rather than pretending to be raw iron ore');
 });
 
+
+test('Factory Stock and Input calculate all assigned factory-type requirements before production starts', () => {
+  const previous = {
+    Game:globalThis.Game,
+    catalog:globalThis.OmegaResourceIndustrialCatalogData,
+    baseline:globalThis.OmegaCountryFactoryStartingBaselineV1,
+    inventory:globalThis.OmegaCountryInventoryRuntime,
+    countryRuntime:globalThis.OmegaCountryRuntimeData,
+    omega:globalThis.Omega
+  };
+  globalThis.Omega = {};
+  globalThis.OmegaCountryRuntimeData = null;
+  globalThis.OmegaResourceIndustrialCatalogData = {
+    factoryProfiles: {
+      STEEL_MILL: { name:'Steel Mill', category:'Metals', defaultCapacityPerDay:10, defaultRecipeId:'STEEL-RECIPE', recipeIds:['STEEL-RECIPE'] },
+      CEMENT_PLANT: { name:'Cement Plant', category:'Construction', defaultCapacityPerDay:20, defaultRecipeId:'CEMENT-RECIPE', recipeIds:['CEMENT-RECIPE'] }
+    },
+    downstreamFactoryRecipes: {
+      'STEEL-RECIPE': { recipeId:'STEEL-RECIPE', factoryType:'STEEL_MILL', cycleDays:2, inputs:{iron_ore:0.5,coal:0.25}, outputs:{steel:0.8}, inputUnit:'SIMULATION_RESOURCE_UNIT', outputUnit:'SIMULATION_RESOURCE_UNIT' },
+      'CEMENT-RECIPE': { recipeId:'CEMENT-RECIPE', factoryType:'CEMENT_PLANT', cycleDays:1, inputs:{limestone:0.4}, outputs:{cement:0.9}, inputUnit:'SIMULATION_RESOURCE_UNIT', outputUnit:'SIMULATION_RESOURCE_UNIT' }
+    },
+    processingRules: {}
+  };
+  globalThis.OmegaCountryFactoryStartingBaselineV1 = {
+    getCountryFactoryRegistry(countryId) {
+      assert.equal(countryId,'BGD');
+      return {
+        status:'READY',
+        runtimeRegistered:false,
+        registry:[
+          {factoryType:'STEEL_MILL',name:'Steel Mill',startingCount:3},
+          {factoryType:'CEMENT_PLANT',name:'Cement Plant',startingCount:2}
+        ],
+        liveFactoryTypeCounts:{STEEL_MILL:0,CEMENT_PLANT:0}
+      };
+    }
+  };
+  globalThis.Game = { state:{
+    simulation:{session:{playerCountryId:'BGD'},turn:1},
+    resource:{BGD:{
+      industrialNetwork:{projects:[],factoryProductionCycles:{},factoryRuntime:{},siteFlowLedger:[]},
+      batches:[],finishedGoodsLedger:[],inventoryLedger:[],processedWarehouse:{availableByResource:{}}
+    }},
+    economy:{BGD:{productionAssets:[]}}
+  }};
+  try {
+    const inputRoot = {classList:{add(){}},addEventListener(){},contains(){return true},innerHTML:''};
+    const input = globalThis.OmegaUIV2Industry.render(inputRoot,{countryId:'BGD',tab:'inventory'});
+    assert.equal(input.ok,true);
+    assert.equal(input.model.factoryCount,5);
+    assert.match(inputRoot.innerHTML,/Factory-type input requirements/);
+    assert.match(inputRoot.innerHTML,/Steel Mill/);
+    assert.match(inputRoot.innerHTML,/3 factories/);
+    assert.match(inputRoot.innerHTML,/Iron Ore/);
+    assert.match(inputRoot.innerHTML,/15 game units/);
+    assert.match(inputRoot.innerHTML,/7\.5 game units/);
+    assert.match(inputRoot.innerHTML,/750 game units/);
+    assert.match(inputRoot.innerHTML,/Limestone/);
+    assert.doesNotMatch(inputRoot.innerHTML,/No active factories are recorded/);
+
+    const stockRoot = {classList:{add(){}},addEventListener(){},contains(){return true},innerHTML:''};
+    const stock = globalThis.OmegaUIV2Industry.render(stockRoot,{countryId:'BGD',tab:'national-inventory'});
+    assert.equal(stock.ok,true);
+    assert.match(stockRoot.innerHTML,/Factory-type output and stock plan/);
+    assert.match(stockRoot.innerHTML,/Steel Mill/);
+    assert.match(stockRoot.innerHTML,/Steel/);
+    assert.match(stockRoot.innerHTML,/24 game units/);
+    assert.match(stockRoot.innerHTML,/12 game units/);
+    assert.match(stockRoot.innerHTML,/Not started \/ no committed output/);
+    assert.match(stockRoot.innerHTML,/No committed factory output batches are recorded yet/);
+    assert.doesNotMatch(stockRoot.innerHTML,/Iron Ore/);
+  } finally {
+    if (previous.Game === undefined) delete globalThis.Game; else globalThis.Game = previous.Game;
+    if (previous.catalog === undefined) delete globalThis.OmegaResourceIndustrialCatalogData; else globalThis.OmegaResourceIndustrialCatalogData = previous.catalog;
+    if (previous.baseline === undefined) delete globalThis.OmegaCountryFactoryStartingBaselineV1; else globalThis.OmegaCountryFactoryStartingBaselineV1 = previous.baseline;
+    if (previous.inventory === undefined) delete globalThis.OmegaCountryInventoryRuntime; else globalThis.OmegaCountryInventoryRuntime = previous.inventory;
+    if (previous.countryRuntime === undefined) delete globalThis.OmegaCountryRuntimeData; else globalThis.OmegaCountryRuntimeData = previous.countryRuntime;
+    if (previous.omega === undefined) delete globalThis.Omega; else globalThis.Omega = previous.omega;
+  }
+});
+
 test('Factory Stock/Input UI assets invalidate the old offline shell cache', () => {
   const sw = readFileSync('omega-offline-map-sw.js','utf8');
   const css = readFileSync('omega_ui_v2/factory-production-command.css','utf8');
-  assert.ok(sw.includes('omega-offline-atlas-shell-v81'),
+  assert.ok(sw.includes('omega-offline-atlas-shell-v82'),
     'the offline shell must activate the new JS/CSS rather than retaining the old Stock/Input renderer');
   for (const selector of ['.fp-product-identity','.fp-product-icon-frame','.fp-product-stock-quantity']) {
     assert.ok(css.includes(selector), selector + ' must be styled in the actual factory command stylesheet');
