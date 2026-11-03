@@ -2754,7 +2754,7 @@ test('factory cards progressively disclose canonical products, quantities and in
     assert.match(live[0],/Steel/);
     assert.match(live[0],/Alloy Steel/);
     assert.match(live[0],/Iron Concentrate/);
-    assert.match(live[0],/Factory stock: 120 simulation units/);
+    assert.match(live[0],/Factory stock: 120 SIMULATION_RESOURCE_UNIT/);
     assert.match(live[0],/data-omega-v2-factory-build-details/);
     assert.match(live[0],/data-omega-v2-factory-destroy/);
 
@@ -2769,7 +2769,7 @@ test('factory cards progressively disclose canonical products, quantities and in
     assert.ok(liveExpanded);
     assert.match(liveExpanded[0],/Complete production formula/);
     assert.match(liveExpanded[0],/Not started \\/ no committed output/);
-    assert.match(liveExpanded[0],/Factory stock: 120 simulation units/);
+    assert.match(liveExpanded[0],/Factory stock: 120 SIMULATION_RESOURCE_UNIT/);
 
     // Exercise the real delegated card disclosure handler and assert it updates root-local UI state.
     root.__omegaV2FactoryCardUiState = {
