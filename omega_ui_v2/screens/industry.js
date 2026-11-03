@@ -904,7 +904,9 @@
           ? fmt(row.domesticConsumption, unit)
           : '<span class="fp-factory-muted">Not recorded</span>';
         if (nationalConsumption !== null && nationalConsumption > 0 && !nationalConsumptionShown[productKey]) {
-          consumptionMarkup += '<small>Country total: ' + fmt(nationalConsumption, unit) + '</small>';
+          if (row.domesticConsumption <= 0 || Math.abs(nationalConsumption - row.domesticConsumption) > 1e-9) {
+            consumptionMarkup += '<small>Country total, including traced batch: ' + fmt(nationalConsumption, unit) + '</small>';
+          }
           nationalConsumptionShown[productKey] = true;
         }
         var status = factoryStockStatus(model, row, productProducerCounts[String(row.productId || '').toLowerCase()] > 1);
