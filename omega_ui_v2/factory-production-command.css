@@ -3216,3 +3216,41 @@
   height:auto !important;
   min-height:0;
 }
+
+/* Product use routing notes: preserve the existing product SVG and add compact
+   recipe-consumer / sector-use text directly below the existing identity. */
+.omega-v2-industry--factory-home .fp-product-use-map {
+  display:grid;
+  gap:3px;
+  min-width:0;
+  margin:4px 0 1px 46px;
+  padding:4px 6px;
+  border-left:2px solid rgba(76,190,244,.48);
+  background:linear-gradient(90deg,rgba(25,78,111,.22),rgba(7,22,36,.08));
+}
+.omega-v2-industry--factory-home .fp-product-use-map > small {
+  display:block;
+  margin:0;
+  color:#93aec2;
+  font-size:7px;
+  font-weight:600;
+  line-height:1.35;
+  white-space:normal;
+  overflow-wrap:anywhere;
+}
+.omega-v2-industry--factory-home .fp-product-use-map > small strong {
+  display:inline;
+  color:#67c7f4;
+  font-size:7px;
+  font-weight:900;
+}
+@media (max-width:680px) and (orientation:portrait) {
+  .omega-v2-industry--factory-home .fp-product-use-map {
+    margin-left:38px;
+    padding:3px 5px;
+  }
+  .omega-v2-industry--factory-home .fp-product-use-map > small,
+  .omega-v2-industry--factory-home .fp-product-use-map > small strong {
+    font-size:7px;
+  }
+}

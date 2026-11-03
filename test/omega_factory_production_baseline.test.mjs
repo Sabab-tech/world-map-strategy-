@@ -300,6 +300,63 @@ test('factory card presentation roles resolve every canonical recipe and process
   }
 });
 
+test('product-use catalog covers every resource, processing and factory recipe identity', () => {
+  const catalog = readJson('resource_industrial_catalog_v1.json');
+  const uses = catalog.productUseCatalog;
+  assert.ok(uses, 'canonical industrial catalog must include product-use metadata');
+  assert.equal(uses.authority, 'SECTOR_USE_REFERENCE_NOT_AUTOMATIC_CONSUMPTION');
+  assert.ok(uses.marketRouteNote.includes('batch allocation') && uses.marketRouteNote.includes('pricing checks'),
+    'market eligibility must remain conditional on real stock and settlement prerequisites');
+  const productKey = value => String(value ?? '').trim().toLowerCase()
+    .replace(/^res[_-]?type[:_\/-]?/, '').replace(/[\s-]+/g, '_');
+  const allProducts = new Set();
+  const outputProducts = new Set();
+  const consumerProducts = new Set();
+  for (const row of Object.values(catalog.processingRules || {})) {
+    for (const key of Object.keys(row.inputs || {})) { allProducts.add(productKey(key)); consumerProducts.add(productKey(key)); }
+    for (const key of Object.keys(row.outputs || {})) { allProducts.add(productKey(key)); outputProducts.add(productKey(key)); }
+  }
+  for (const row of Object.values(catalog.downstreamFactoryRecipes || {})) {
+    for (const key of Object.keys(row.inputs || {})) { allProducts.add(productKey(key)); consumerProducts.add(productKey(key)); }
+    for (const key of Object.keys(row.outputs || {})) { allProducts.add(productKey(key)); outputProducts.add(productKey(key)); }
+  }
+  for (const key of Object.keys(catalog.resourceRules || {})) allProducts.add(productKey(key));
+  for (const key of Object.keys(catalog.externalInputSources || {})) allProducts.add(productKey(key));
+  assert.equal(uses.productCount, allProducts.size);
+  assert.equal(Object.keys(uses.products || {}).length, allProducts.size);
+  for (const key of allProducts) {
+    const use = uses.products[key];
+    assert.ok(use, 'product-use description must exist for ' + key);
+    assert.ok(typeof use.usageClass === 'string' && use.usageClass.length > 0,
+      key + ': usage class must be explicit');
+    assert.ok(Array.isArray(use.endUses) && use.endUses.length > 0 && use.endUses.every(value => typeof value === 'string' && value.trim()),
+      key + ': at least one meaningful use/handling note must be present');
+  }
+  const terminalOutputs = [...outputProducts].filter(key => !consumerProducts.has(key));
+  assert.equal(outputProducts.size, 139, 'output identity count should be recomputed when the canonical catalog changes');
+  assert.equal(terminalOutputs.length, 94, 'terminal outputs without a recipe consumer must remain visible as a reviewed set');
+  for (const key of terminalOutputs) {
+    const use = uses.products[key];
+    assert.ok(use && use.endUses.length,
+      key + ': every output without a downstream recipe consumer needs an explicit end-use or handling note');
+  }
+  assert.match(uses.products.processed_food.endUses.join(' '), /People and households consume processed food/);
+  assert.match(uses.products.processing_dust.endUses.join(' '), /no current factory recipe directly consumes/);
+  assert.match(uses.products.metal_scrap.endUses.join(' '), /Recycling/);
+  for (const key of terminalOutputs) {
+    assert.ok(!uses.products[key].endUses.join(' ').includes('No downstream factory or configured national consumer is registered'),
+      key + ': terminal outputs need a product-specific use/handling note, not only a generic no-consumer fallback');
+  }
+  for (const key of [
+    'nickel_concentrate','cobalt_hydroxide','yellowcake','manganese_concentrate','chromite_concentrate',
+    'zinc_concentrate','tin_concentrate','tungsten_concentrate','rare_earth_concentrate',
+    'upgraded_rutile','niobium_concentrate','diatomite_concentrate','copper_matte'
+  ]) {
+    assert.ok(uses.products[key].endUses.join(' ').length > 100,
+      key + ': specialist concentrate/intermediate needs a specific downstream sector-use explanation');
+  }
+});
+
 test('factory construction reads its selected recipe and defaults from the canonical profile', () => {
   const { context, catalog, api } = makeRuntime();
   const profile = catalog.factoryProfiles.STEEL_AND_ALLOY_WORKS;
