@@ -2572,7 +2572,7 @@ test('Factory Stock and Input calculate all assigned factory-type requirements b
     const input = globalThis.OmegaUIV2Industry.render(inputRoot,{countryId:'BGD',tab:'inventory'});
     assert.equal(input.ok,true);
     assert.equal(input.model.factoryCount,5);
-    assert.match(inputRoot.innerHTML,/Factory-type input requirements/);
+    assert.match(inputRoot.innerHTML,/All factory input requirements/);
     assert.match(inputRoot.innerHTML,/Steel Mill/);
     assert.match(inputRoot.innerHTML,/PRESENT · 3 FACTORIES/);
     const inputPlanStart = inputRoot.innerHTML.indexOf('data-factory-input-plan');
@@ -2581,9 +2581,11 @@ test('Factory Stock and Input calculate all assigned factory-type requirements b
     assert.ok(inputSteelOrder >= 0 && inputCementOrder > inputSteelOrder,
       'input plans must list owned factory types before less numerous/absent types');
     assert.match(inputRoot.innerHTML,/Iron Ore/);
-    assert.match(inputRoot.innerHTML,/15 game units/);
+    assert.match(inputRoot.innerHTML,/Total required \/ day/);
     assert.match(inputRoot.innerHTML,/7\.5 game units/);
-    assert.match(inputRoot.innerHTML,/750 game units/);
+    assert.match(inputRoot.innerHTML,/Every 10 game days/);
+    assert.match(inputRoot.innerHTML,/Awaiting the first Day 10 checkpoint/);
+    assert.doesNotMatch(inputRoot.innerHTML,/Total \/ full cycle|100-day requirement|750 game units|Coverage target/);
     assert.match(inputRoot.innerHTML,/Limestone/);
     assert.doesNotMatch(inputRoot.innerHTML,/No active factories are recorded/);
 
@@ -2609,6 +2611,121 @@ test('Factory Stock and Input calculate all assigned factory-type requirements b
     if (previous.catalog === undefined) delete globalThis.OmegaResourceIndustrialCatalogData; else globalThis.OmegaResourceIndustrialCatalogData = previous.catalog;
     if (previous.baseline === undefined) delete globalThis.OmegaCountryFactoryStartingBaselineV1; else globalThis.OmegaCountryFactoryStartingBaselineV1 = previous.baseline;
     if (previous.inventory === undefined) delete globalThis.OmegaCountryInventoryRuntime; else globalThis.OmegaCountryInventoryRuntime = previous.inventory;
+    if (previous.countryRuntime === undefined) delete globalThis.OmegaCountryRuntimeData; else globalThis.OmegaCountryRuntimeData = previous.countryRuntime;
+    if (previous.omega === undefined) delete globalThis.Omega; else globalThis.Omega = previous.omega;
+  }
+});
+
+test('Factory input stock coverage is captured only at every tenth in-game day', () => {
+  const previous = {
+    Game:globalThis.Game,
+    catalog:globalThis.OmegaResourceIndustrialCatalogData,
+    baseline:globalThis.OmegaCountryFactoryStartingBaselineV1,
+    countryRuntime:globalThis.OmegaCountryRuntimeData,
+    omega:globalThis.Omega
+  };
+  globalThis.Omega = {};
+  globalThis.OmegaCountryRuntimeData = null;
+  globalThis.OmegaResourceIndustrialCatalogData = {
+    factoryProfiles: {
+      STEEL_MILL: { name:'Steel Mill', category:'Metals', defaultCapacityPerDay:10, defaultRecipeId:'STEEL-RECIPE', recipeIds:['STEEL-RECIPE'] },
+      CEMENT_PLANT: { name:'Cement Plant', category:'Construction', defaultCapacityPerDay:20, defaultRecipeId:'CEMENT-RECIPE', recipeIds:['CEMENT-RECIPE'] }
+    },
+    downstreamFactoryRecipes: {
+      'STEEL-RECIPE': { recipeId:'STEEL-RECIPE', factoryType:'STEEL_MILL', cycleDays:2, inputs:{iron_ore:0.5,coal:0.25}, outputs:{steel:0.8}, inputUnit:'SIMULATION_RESOURCE_UNIT', outputUnit:'SIMULATION_RESOURCE_UNIT' },
+      'CEMENT-RECIPE': { recipeId:'CEMENT-RECIPE', factoryType:'CEMENT_PLANT', cycleDays:1, inputs:{limestone:0.4}, outputs:{cement:0.9}, inputUnit:'SIMULATION_RESOURCE_UNIT', outputUnit:'SIMULATION_RESOURCE_UNIT' }
+    },
+    processingRules:{}
+  };
+  globalThis.OmegaCountryFactoryStartingBaselineV1 = {
+    getCountryFactoryRegistry(countryId) {
+      assert.equal(countryId,'BGD');
+      return {
+        status:'READY',
+        runtimeRegistered:true,
+        registry:[
+          {factoryType:'STEEL_MILL',name:'Steel Mill',startingCount:1},
+          {factoryType:'CEMENT_PLANT',name:'Cement Plant',startingCount:1}
+        ],
+        liveFactoryTypeCounts:{STEEL_MILL:1,CEMENT_PLANT:1}
+      };
+    }
+  };
+  globalThis.Game = { state:{
+    simulation:{session:{playerCountryId:'BGD'},turn:9},
+    resource:{BGD:{
+      industrialNetwork:{projects:[],factoryProductionCycles:{},factoryRuntime:{},siteFlowLedger:[]},
+      batches:[],finishedGoodsLedger:[],inventoryLedger:[],processedWarehouse:{availableByResource:{}}
+    }},
+    economy:{BGD:{productionAssets:[
+      {
+        id:'FACTORY-STEEL-COVERAGE-01',name:'Bangladesh Steel Mill',factoryType:'STEEL_MILL',
+        recipeId:'STEEL-RECIPE',status:'OPERATIONAL',capacityPerDay:10,
+        inputInventory:{iron_ore:25,coal:25},
+        inputBatchLots:[
+          {batchId:'IRON-IMPORT-01',resourceId:'iron_ore',quantity:25,remainingQuantity:25,
+            unit:'SIMULATION_RESOURCE_UNIT',sourceCountryId:'IND'}
+        ]
+      },
+      {
+        id:'FACTORY-CEMENT-COVERAGE-01',name:'Bangladesh Cement Plant',factoryType:'CEMENT_PLANT',
+        recipeId:'CEMENT-RECIPE',status:'OPERATIONAL',capacityPerDay:20,
+        inputInventory:{limestone:80},
+        inputBatchLots:[
+          {batchId:'LIME-MINE-01',resourceId:'limestone',quantity:80,remainingQuantity:80,
+            unit:'SIMULATION_RESOURCE_UNIT',sourceCountryId:'BGD',sourceSiteIds:['SITE-BGD-LIMESTONE-01']}
+        ]
+      }
+    ]}}
+  }};
+  try {
+    const bucket = globalThis.Game.state.resource.BGD;
+    const first = globalThis.OmegaUIV2Industry.recordFactoryInputCoverage({detail:{simulationTurn:9}});
+    assert.equal(first.updatedDay,10);
+    const iron = first.products.find(row => row.productId === 'iron_ore');
+    const coal = first.products.find(row => row.productId === 'coal');
+    const limestone = first.products.find(row => row.productId === 'limestone');
+    assert.equal(iron.dailyRequired,2.5);
+    assert.equal(iron.currentStock,25);
+    assert.equal(iron.coverageDays,10);
+    assert.equal(iron.importShare,1);
+    assert.equal(iron.status,'risk');
+    assert.equal(coal.coverageDays,20);
+    assert.equal(coal.status,'stable');
+    assert.equal(limestone.coverageDays,10);
+    assert.equal(limestone.status,'risk');
+
+    globalThis.Game.state.economy.BGD.productionAssets[0].inputInventory.iron_ore = 12.5;
+    const offCheckpoint = globalThis.OmegaUIV2Industry.recordFactoryInputCoverage({detail:{simulationTurn:10}});
+    assert.equal(offCheckpoint.updatedDay,10,'Day 11 must retain the Day 10 coverage snapshot');
+    assert.equal(bucket.factoryInputCoverageSnapshotV1.updatedDay,10);
+
+    const second = globalThis.OmegaUIV2Industry.recordFactoryInputCoverage({detail:{simulationTurn:19}});
+    const secondIron = second.products.find(row => row.productId === 'iron_ore');
+    assert.equal(second.updatedDay,20);
+    assert.equal(secondIron.coverageDays,5);
+    assert.equal(secondIron.status,'risk');
+
+    globalThis.Game.state.economy.BGD.productionAssets[0].inputInventory.iron_ore = 1;
+    const third = globalThis.OmegaUIV2Industry.recordFactoryInputCoverage({detail:{simulationTurn:29}});
+    const thirdIron = third.products.find(row => row.productId === 'iron_ore');
+    assert.equal(third.updatedDay,30);
+    assert.equal(thirdIron.coverageDays,0.4);
+    assert.equal(thirdIron.status,'critical');
+
+    const root = {classList:{add(){}},addEventListener(){},contains(){return true},innerHTML:''};
+    const rendered = globalThis.OmegaUIV2Industry.render(root,{countryId:'BGD',tab:'inventory'});
+    assert.equal(rendered.ok,true);
+    assert.match(root.innerHTML,/Bangladesh Steel Mill/);
+    assert.match(root.innerHTML,/Import/);
+    assert.match(root.innerHTML,/Domestic mine/);
+    assert.match(root.innerHTML,/data-state="critical"/);
+    assert.match(root.innerHTML,/0\\.4 days/);
+    assert.match(root.innerHTML,/Updated on Day 30/);
+  } finally {
+    if (previous.Game === undefined) delete globalThis.Game; else globalThis.Game = previous.Game;
+    if (previous.catalog === undefined) delete globalThis.OmegaResourceIndustrialCatalogData; else globalThis.OmegaResourceIndustrialCatalogData = previous.catalog;
+    if (previous.baseline === undefined) delete globalThis.OmegaCountryFactoryStartingBaselineV1; else globalThis.OmegaCountryFactoryStartingBaselineV1 = previous.baseline;
     if (previous.countryRuntime === undefined) delete globalThis.OmegaCountryRuntimeData; else globalThis.OmegaCountryRuntimeData = previous.countryRuntime;
     if (previous.omega === undefined) delete globalThis.Omega; else globalThis.Omega = previous.omega;
   }
