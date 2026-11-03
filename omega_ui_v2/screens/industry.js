@@ -1860,13 +1860,28 @@
           raw.identity && (raw.identity.resourceTypeId || raw.identity.resourceId) || '').trim().toLowerCase();
         if (!id || raw.commercialExtraction !== true || !processing[id]) return;
         if ((normalizeFactoryType(processing[id].factoryType, catalog) || String(processing[id].factoryType || '').toUpperCase()) !== wanted) return;
-        siteResources[id] = true;
+        if (!siteResources[id]) siteResources[id] = { count:0, knownDaily:0, hasDaily:false };
+        siteResources[id].count += 1;
+        var dailyValue = num(site && site.dailyProduction && site.dailyProduction.value);
+        if (dailyValue !== null && dailyValue >= 0) {
+          siteResources[id].knownDaily += dailyValue;
+          siteResources[id].hasDaily = true;
+        }
       });
-      return Object.keys(siteResources).sort().map(function (resourceId) {
+      return Object.keys(siteResources).sort(function (a, b) {
+        var left = siteResources[a], right = siteResources[b];
+        if (left.hasDaily && right.hasDaily && left.knownDaily !== right.knownDaily) return right.knownDaily - left.knownDaily;
+        if (left.hasDaily !== right.hasDaily) return left.hasDaily ? -1 : 1;
+        if (left.count !== right.count) return right.count - left.count;
+        return a.localeCompare(b);
+      }).map(function (resourceId) {
         return Object.assign({
           recipeId:'PROCESSING:' + resourceId,
           name:resourceId.replace(/_/g, ' ') + ' processing',
           resourceId:resourceId,
+          siteCount:siteResources[resourceId].count,
+          routeDailyProductionKnown:siteResources[resourceId].hasDaily,
+          routeDailyProduction:siteResources[resourceId].hasDaily ? siteResources[resourceId].knownDaily : null,
           routeKind:'RESOURCE_PROCESSING'
         }, processing[resourceId]);
       });
@@ -2007,12 +2022,30 @@
     if (asset && side === 'input') {
       var current = asset.hasInputInventory ? factoryFindValue(asset.raw && asset.raw.inputInventory, productId) : null;
       if (asset.hasInputInventory && current === null) current = 0;
-      actual = '<small class="fp-card-product-actual">Factory stock: ' + (current === null ? 'Not recorded' : fmt(current, 'simulation units')) + '</small>';
+      var matchingLots = (Array.isArray(asset.inputLots) ? asset.inputLots : []).filter(function (lot) {
+        return lot && String(lot.resourceId || lot.materialIdentity || '').toLowerCase() === String(productId).toLowerCase();
+      });
+      var seenBatches = Object.create(null), delivered = 0, deliveredKnown = false, deliveredUnit = '';
+      matchingLots.forEach(function (lot) {
+        var batchId = String(lot.batchId || '');
+        if (batchId && seenBatches[batchId]) return;
+        if (batchId) seenBatches[batchId] = true;
+        var received = num(lot.quantity);
+        if (received !== null) { delivered += received; deliveredKnown = true; }
+        if (!deliveredUnit && lot.unit) deliveredUnit = String(lot.unit);
+      });
+      var unitKey = Object.keys(asset.inputUnits || {}).find(function (key) {
+        return String(key).toLowerCase() === String(productId).toLowerCase();
+      });
+      var stockUnit = (unitKey && asset.inputUnits[unitKey]) || asset.inputUnit || route.inputUnit || '';
+      actual = '<small class="fp-card-product-actual">Delivered: ' + (deliveredKnown ? fmt(delivered, deliveredUnit || stockUnit) : 'Not recorded') +
+        ' · Factory stock: ' + (current === null ? 'Not recorded' : fmt(current, stockUnit)) + '</small>';
     } else if (asset && side === 'output') {
       var committed = factoryFindValue(asset.latestOutputs, productId);
       var stock = factoryFindValue(model && model.processedStock, productId);
-      actual = '<small class="fp-card-product-actual">Committed: ' + (committed === null ? 'Not started / no committed output' : fmt(committed, 'simulation units')) +
-        ' · Warehouse: ' + (stock === null ? 'Not recorded' : fmt(stock, 'simulation units')) + '</small>';
+      var outputUnit = asset.raw && (asset.raw.outputUnit || asset.raw.productionUnit) || route.outputUnit || '';
+      actual = '<small class="fp-card-product-actual">Committed: ' + (committed === null ? 'Not started / no committed output' : fmt(committed, outputUnit)) +
+        ' · Warehouse: ' + (stock === null ? 'Not recorded' : fmt(stock, outputUnit)) + '</small>';
     }
     return '<div class="fp-card-product-row" data-product-role="' + esc(roleLabel || side) + '">' +
       factoryProductIdentityMarkup(productId, panelProductLabel(model, productId)) +
