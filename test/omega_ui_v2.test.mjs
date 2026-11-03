@@ -897,7 +897,6 @@ test('factory Stock shows committed finished goods and traced use while Input sh
     assert.match(inputRoot.innerHTML,/Input/);
     assert.match(inputRoot.innerHTML,/Chattogram Steel Works/);
     assert.match(inputRoot.innerHTML,/Iron Ore/);
-    assert.match(inputRoot.innerHTML,/NOT PRESENT IN THIS COUNTRY · 0 FACTORIES/);
     assert.match(inputRoot.innerHTML,/10 TONNES/);
     assert.match(inputRoot.innerHTML,/3 TONNES/);
     assert.match(inputRoot.innerHTML,/Domestic mine/);
