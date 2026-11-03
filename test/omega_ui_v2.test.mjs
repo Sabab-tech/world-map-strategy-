@@ -693,46 +693,138 @@ test('UI v2 integration normalizes map-selected aliases before mounting country 
   }
 });
 
-test('industry national stock display filters finished products to the canonical raw-resource catalogue', () => {
-  const previous = globalThis.OmegaCountryInventoryRuntime;
-  globalThis.OmegaCountryInventoryRuntime = {
-    getResourceCatalog() {
-      return [{ resourceId:'iron_ore', name:'Iron Ore', unit:'TONNES' }];
+test('factory Stock shows committed finished goods and traced use while Input shows delivery sources and shortage efficiency', () => {
+  const previous = {
+    Game:globalThis.Game,
+    inventory:globalThis.OmegaCountryInventoryRuntime,
+    industrialCatalog:globalThis.OmegaResourceIndustrialCatalogData,
+    countryRuntime:globalThis.OmegaCountryRuntimeData,
+    omega:globalThis.Omega
+  };
+  globalThis.Omega = {};
+  globalThis.OmegaCountryRuntimeData = null;
+  globalThis.OmegaResourceIndustrialCatalogData = {
+    factoryProfiles: {
+      STEEL_AND_ALLOY_WORKS: { name:'Steel and Alloy Works', defaultRecipeId:'STEEL-RECIPE', defaultCapacityPerDay:5 }
     },
-    getInventory(countryId, options) {
-      assert.equal(options.includeZero, true);
-      assert.equal(options.includeLedger, false);
-      return {
-        status: 'READY',
-        countryId: countryId,
-        countryName: 'Bangladesh',
-        active: countryId === 'BGD',
-        readOnly: countryId !== 'BGD',
-        unbounded: true,
-        items: [
-          { productId:'steel', name:'Steel', base:5, quantity:9, deltaFromBase:4, unit:'TONNES' },
-          { productId:'iron_ore', name:'Iron Ore', base:25, quantity:30, deltaFromBase:5, unit:'TONNES' }
-        ]
-      };
+    downstreamFactoryRecipes: {
+      'STEEL-RECIPE': { recipeId:'STEEL-RECIPE', factoryType:'STEEL_AND_ALLOY_WORKS', inputs:{iron_ore:2}, outputs:{steel:1}, inputUnit:'TONNES', outputUnit:'TONNES' }
     }
   };
+  globalThis.Game = { state:{
+    simulation:{ playerCountryId:'BGD' },
+    resource:{
+      BGD:{
+        finishedGoodsLedger:[{
+          transactionId:'RUN-STEEL-1',countryId:'BGD',factoryId:'FACTORY-STEEL-1',
+          outputQuantities:{steel:10},createdBatchIds:['OUTPUT-STEEL-1'],turn:12,status:'AVAILABLE_TO_ECONOMY'
+        }],
+        batches:[{
+          batchId:'OUTPUT-STEEL-1',resourceId:'steel',sourceFactoryId:'FACTORY-STEEL-1',
+          quantity:10,remainingQuantity:6,unit:'TONNES',stage:'FINISHED',status:'AVAILABLE',
+          processId:'RUN-STEEL-1'
+        }],
+        processedWarehouse:{availableByResource:{steel:6}},
+        inventoryLedger:[
+          {type:'INVENTORY_CONSUMED',resourceId:'steel',quantity:2,reason:'NATIONAL_DEMAND',
+            consumed:[{batchId:'OUTPUT-STEEL-1',quantity:2,stage:'FINISHED'}]},
+          {type:'INTERNATIONAL_TRADE_EXPORT',resourceId:'steel',quantity:2,
+            batchTransfers:[{sourceBatchId:'OUTPUT-STEEL-1',resourceId:'steel',quantity:2,destinationCountryId:'USA'}]}
+        ],
+        nationalDemandRuntime:{byResource:{
+          steel:{status:'BALANCED',demandThisTurn:4,unmetDemand:0,nationalConsumption:2}
+        }},
+        industrialNetwork:{
+          projects:[],factoryProductionCycles:{},
+          factoryRuntime:{
+            'FACTORY-STEEL-1':{
+              transactionId:'RUN-STEEL-1',factoryId:'FACTORY-STEEL-1',turn:12,status:'COMPLETED',
+              outputQuantities:{steel:10},inputQuantities:{iron_ore:20}
+            }
+          },
+          siteFlowLedger:[]
+        }
+      }
+    },
+    economy:{
+      BGD:{
+        productionAssets:[{
+          id:'FACTORY-STEEL-1',name:'Chattogram Steel Works',factoryType:'STEEL_AND_ALLOY_WORKS',recipeId:'STEEL-RECIPE',
+          status:'OPERATIONAL',capacityPerDay:5,
+          inputInventory:{iron_ore:3},
+          inputBatchLots:[{
+            batchId:'INPUT-IRON-1',resourceId:'iron_ore',quantity:10,remainingQuantity:3,
+            unit:'TONNES',sourceCountryId:'BGD',sourceSiteIds:['BGD-MINE-01'],status:'AVAILABLE_TO_FACTORY'
+          }],
+          productionHealth:{
+            status:'REDUCED',productivityPct:60,reason:'FACTORY_INPUT_SHORTAGE',
+            detail:{constraints:{rawMaterialRatio:0.6}},
+            missingInputs:[{resourceId:'iron_ore',required:10,available:3}]
+          }
+        }]
+      }
+    },
+    trade:{BGD:{domesticSales:[]}}
+  }};
+  globalThis.OmegaCountryInventoryRuntime = {
+    getInventory(countryId, options) {
+      assert.equal(options.includeZero,true);
+      assert.equal(options.includeLedger,true);
+      return {
+        status:'READY',countryId:countryId,countryName:'Bangladesh',active:true,readOnly:false,
+        unbounded:true,items:[
+          {productId:'steel',name:'Steel',quantity:6,unit:'TONNES'},
+          {productId:'iron_ore',name:'Iron Ore',quantity:3,unit:'TONNES'}
+        ],ledger:[]
+      };
+    },
+    getResourceCatalog() { return []; }
+  };
   try {
-    const model = globalThis.OmegaUIV2Industry.buildViewModel({ countryId:'BGD' });
-    assert.equal(model.nationalInventory.items.length, 2,
-      'the underlying unbounded inventory ledger still retains every product');
-    assert.equal(model.nationalInventory.items[0].quantity, 9);
-    const root = { classList:{ add(){} }, addEventListener(){}, innerHTML:'' };
-    const result = globalThis.OmegaUIV2Industry.render(root, { countryId:'BGD', tab:'national-inventory' });
-    assert.equal(result.ok, true);
-    assert.match(root.innerHTML, /National Inventory/);
-    assert.match(root.innerHTML, /Iron Ore/);
-    assert.doesNotMatch(root.innerHTML, />Steel</,
-      'finished products outside the canonical 41 raw resources are not added to the stock screen');
-    assert.match(root.innerHTML, /UNBOUNDED STOCK LOG/);
-    assert.match(root.innerHTML, /Input Inventory/);
+    const model = globalThis.OmegaUIV2Industry.buildViewModel({countryId:'BGD'});
+    assert.equal(model.factories.length,1);
+    const stockRoot = {classList:{add(){}},addEventListener(){},contains(){return true},innerHTML:''};
+    const stockResult = globalThis.OmegaUIV2Industry.render(stockRoot,{countryId:'BGD',tab:'national-inventory'});
+    assert.equal(stockResult.ok,true);
+    assert.match(stockRoot.innerHTML,/Stock/);
+    assert.match(stockRoot.innerHTML,/Chattogram Steel Works/);
+    assert.match(stockRoot.innerHTML,/Steel/);
+    assert.match(stockRoot.innerHTML,/10 TONNES/);
+    assert.match(stockRoot.innerHTML,/2 TONNES/);
+    assert.match(stockRoot.innerHTML,/USA/);
+    assert.match(stockRoot.innerHTML,/6 TONNES/);
+    assert.match(stockRoot.innerHTML,/Surplus/);
+    assert.doesNotMatch(stockRoot.innerHTML,/UNBOUNDED STOCK LOG/,
+      'the factory Stock button must not fall back to a national raw-resource snapshot');
+
+    const inputRoot = {classList:{add(){}},addEventListener(){},contains(){return true},innerHTML:''};
+    const inputResult = globalThis.OmegaUIV2Industry.render(inputRoot,{countryId:'BGD',tab:'inventory'});
+    assert.equal(inputResult.ok,true);
+    assert.match(inputRoot.innerHTML,/Input/);
+    assert.match(inputRoot.innerHTML,/Chattogram Steel Works/);
+    assert.match(inputRoot.innerHTML,/Iron Ore/);
+    assert.match(inputRoot.innerHTML,/10 TONNES/);
+    assert.match(inputRoot.innerHTML,/3 TONNES/);
+    assert.match(inputRoot.innerHTML,/Domestic mine/);
+    assert.match(inputRoot.innerHTML,/BGD-MINE-01/);
+    assert.match(inputRoot.innerHTML,/Shortage/);
+    assert.match(inputRoot.innerHTML,/40 %/);
+    assert.match(inputRoot.innerHTML,/Efficiency reduction/);
+
+    const factoryRoot = {classList:{add(){}},addEventListener(){},contains(){return true},innerHTML:''};
+    const factoryResult = globalThis.OmegaUIV2Industry.render(factoryRoot,{countryId:'BGD',tab:'factories'});
+    assert.equal(factoryResult.ok,true);
+    assert.match(factoryRoot.innerHTML,/data-omega-v2-factory-type-card/);
+    assert.match(factoryRoot.innerHTML,/Steel and Alloy Works/);
   } finally {
-    if (previous === undefined) delete globalThis.OmegaCountryInventoryRuntime;
-    else globalThis.OmegaCountryInventoryRuntime = previous;
+    if (previous.Game === undefined) delete globalThis.Game; else globalThis.Game = previous.Game;
+    if (previous.inventory === undefined) delete globalThis.OmegaCountryInventoryRuntime;
+    else globalThis.OmegaCountryInventoryRuntime = previous.inventory;
+    if (previous.industrialCatalog === undefined) delete globalThis.OmegaResourceIndustrialCatalogData;
+    else globalThis.OmegaResourceIndustrialCatalogData = previous.industrialCatalog;
+    if (previous.countryRuntime === undefined) delete globalThis.OmegaCountryRuntimeData;
+    else globalThis.OmegaCountryRuntimeData = previous.countryRuntime;
+    if (previous.omega === undefined) delete globalThis.Omega; else globalThis.Omega = previous.omega;
   }
 });
 
