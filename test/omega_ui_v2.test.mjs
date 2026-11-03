@@ -435,6 +435,14 @@ test('industry factory cards show owned factory counts without a separate source
     assert.match(root.innerHTML, /Factory types &amp; country totals/);
     assert.match(root.innerHTML, /Factories/);
     assert.match(root.innerHTML, /<strong>3<\/strong>/);
+    const existingCard = root.innerHTML.indexOf('data-omega-v2-factory-type-card data-factory-type="STEEL_MILL"');
+    const absentCard = root.innerHTML.indexOf('data-omega-v2-factory-type-card data-factory-type="CEMENT_PLANT"');
+    assert.ok(existingCard >= 0 && absentCard > existingCard,
+      'country-owned factory types must appear above types with zero factories');
+    assert.match(root.innerHTML, /EXISTING FACTORIES IN THIS COUNTRY/);
+    assert.match(root.innerHTML, /FACTORY TYPES NOT PRESENT IN THIS COUNTRY/);
+    assert.match(root.innerHTML, /data-factory-presence="present"/);
+    assert.match(root.innerHTML, /data-factory-presence="absent"/);
     assert.doesNotMatch(root.innerHTML, /UNIDO|Official establishment data|Establishments|Source status/);
     const foreign = globalThis.OmegaUIV2Industry.buildViewModel({ countryId:'USA' });
     assert.equal(foreign.factoryCount, 0, 'another country does not inherit Bangladesh factory counts');
@@ -2501,6 +2509,17 @@ test('every canonical factory recipe input and output renders a product-specific
     'Copper must resolve to the copper asset rather than a generic drawing');
   assert.ok(api.productIconVisualMarkup('steel','Steel').includes('data-icon-source="generated-product"'),
     'Steel must use a finished-product SVG rather than pretending to be raw iron ore');
+  const productMotifs = new Set();
+  for (const productId of productIds) {
+    const label = productId.split(/[_-]+/).map(part => part.charAt(0).toUpperCase() + part.slice(1)).join(' ');
+    const markup = api.productIconVisualMarkup(productId,label);
+    if (markup.includes('data-icon-source="canonical-resource"')) continue;
+    const motif = markup.match(/data-icon-motif="([^"]+)"/)?.[1];
+    assert.ok(motif, productId + ' must expose its physical SVG motif');
+    assert.notEqual(motif, 'industrial-crate', productId + ' must not fall back to a generic crate icon');
+    productMotifs.add(motif);
+  }
+  assert.ok(productMotifs.size >= 25, 'canonical industrial products must use a broad set of recognizably different silhouettes');
 });
 
 
@@ -2555,7 +2574,12 @@ test('Factory Stock and Input calculate all assigned factory-type requirements b
     assert.equal(input.model.factoryCount,5);
     assert.match(inputRoot.innerHTML,/Factory-type input requirements/);
     assert.match(inputRoot.innerHTML,/Steel Mill/);
-    assert.match(inputRoot.innerHTML,/3 factories/);
+    assert.match(inputRoot.innerHTML,/PRESENT · 3 FACTORIES/);
+    const inputPlanStart = inputRoot.innerHTML.indexOf('data-factory-input-plan');
+    const inputSteelOrder = inputRoot.innerHTML.indexOf('<strong>Steel Mill</strong>',inputPlanStart);
+    const inputCementOrder = inputRoot.innerHTML.indexOf('<strong>Cement Plant</strong>',inputPlanStart);
+    assert.ok(inputSteelOrder >= 0 && inputCementOrder > inputSteelOrder,
+      'input plans must list owned factory types before less numerous/absent types');
     assert.match(inputRoot.innerHTML,/Iron Ore/);
     assert.match(inputRoot.innerHTML,/15 game units/);
     assert.match(inputRoot.innerHTML,/7\.5 game units/);
@@ -2568,6 +2592,12 @@ test('Factory Stock and Input calculate all assigned factory-type requirements b
     assert.equal(stock.ok,true);
     assert.match(stockRoot.innerHTML,/Factory-type output and stock plan/);
     assert.match(stockRoot.innerHTML,/Steel Mill/);
+    const outputPlanStart = stockRoot.innerHTML.indexOf('data-factory-output-plan');
+    const outputSteelOrder = stockRoot.innerHTML.indexOf('<strong>Steel Mill</strong>',outputPlanStart);
+    const outputCementOrder = stockRoot.innerHTML.indexOf('<strong>Cement Plant</strong>',outputPlanStart);
+    assert.ok(outputSteelOrder >= 0 && outputCementOrder > outputSteelOrder,
+      'output plans must list higher-owned factory types first');
+    assert.match(stockRoot.innerHTML,/PRESENT · 3 FACTORIES/);
     assert.match(stockRoot.innerHTML,/Steel/);
     assert.match(stockRoot.innerHTML,/24 game units/);
     assert.match(stockRoot.innerHTML,/12 game units/);
@@ -2587,7 +2617,7 @@ test('Factory Stock and Input calculate all assigned factory-type requirements b
 test('Factory Stock/Input UI assets invalidate the old offline shell cache', () => {
   const sw = readFileSync('omega-offline-map-sw.js','utf8');
   const css = readFileSync('omega_ui_v2/factory-production-command.css','utf8');
-  assert.ok(sw.includes('omega-offline-atlas-shell-v82'),
+  assert.ok(sw.includes('omega-offline-atlas-shell-v83'),
     'the offline shell must activate the new JS/CSS rather than retaining the old Stock/Input renderer');
   for (const selector of ['.fp-product-identity','.fp-product-icon-frame','.fp-product-stock-quantity']) {
     assert.ok(css.includes(selector), selector + ' must be styled in the actual factory command stylesheet');

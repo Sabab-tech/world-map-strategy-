@@ -93,7 +93,7 @@
 
   function factoryProductIconCategory(id) {
     if (/(scrap|waste|residue|slag|dross|dust|cullet|disposal|loss|recovered|recycled)/.test(id)) return 'scrap';
-    if (/(battery|cell|pack)/.test(id)) return 'battery';
+    if (/(battery|cell|pack|lithium_carbonate_or_hydroxide)/.test(id)) return 'battery';
     if (/(semiconductor|silicon|chip|electronic|control_module|switchgear|transformer|power_cable|grid_equipment)/.test(id)) return 'electronics';
     if (/(chemical|ammonia|caustic|solvent|gas|naphtha|propylene|polymer|resin|refinery|petroleum|pipeline)/.test(id)) return 'chemical';
     if (/(textile|fabric|garment|cotton|wool|fibre|fiber)/.test(id)) return 'textile';
@@ -142,6 +142,8 @@
       ]
     };
     if (category === 'metal') {
+      if (/(dor[eé]|gold)/.test(id)) return ['#fff0a8','#d3a12f','#785317'];
+      if (/(silver|platinum)/.test(id)) return ['#f5f8fb','#b9c4cc','#687986'];
       if (/(copper|cu)/.test(id)) return ['#ffd1a4','#c66d3e','#673a23'];
       if (/(alumin|alumina)/.test(id)) return ['#f7fbff','#b7c4ce','#667582'];
       if (/(steel|iron|alloy|titanium|nickel|chromium)/.test(id)) return ['#edf4f8','#8f9eaa','#3f4d5a'];
@@ -174,76 +176,249 @@
     return stamp.slice(0, 6) || 'ITEM';
   }
 
-  function factoryProductShape(category, mainGradient, topGradient, sideGradient, token, stamp) {
-    if (category === 'electronics') {
-      return '<g stroke-linejoin="round"><path d="M34 42h60v42H34z" fill="' + mainGradient + '" stroke="#283e58" stroke-width="2"/>' +
-        '<path d="M40 36h48v48H40z" fill="' + sideGradient + '" stroke="#172d4b" stroke-width="2"/>' +
-        '<path d="M44 39h40v39H44z" fill="' + mainGradient + '" stroke="#d8efff" stroke-opacity=".7" stroke-width="1.4"/>' +
-        '<rect x="51" y="46" width="26" height="24" rx="3" fill="' + topGradient + '" stroke="#f2fbff" stroke-width="1.2"/>' +
-        '<path d="M57 52h14v12H57z" fill="#19344e" stroke="#e9f8ff" stroke-width="1"/>' +
-        '<path d="M46 31v8m12-8v8m12-8v8m12-8v8M46 79v8m12-8v8m12-8v8m12-8v8M31 47h9m-9 12h9m48-12h9m-9 12h9" stroke="#d7e8f3" stroke-width="3" stroke-linecap="round"/></g>';
+  function factoryProductIconMotif(id) {
+    // Finished goods receive a physical object silhouette, not a category-wide
+    // placeholder. Raw resources continue to resolve to their canonical assets.
+    if (/^(steel|alloy_steel|recovered_steel)$/.test(id)) return 'steel-beam';
+    if (/^doré$/.test(id)) return 'precious-metal-ingot';
+    if (/^(aluminum_ingot|refined_copper|copper_matte|recovered_copper)$/.test(id)) return 'metal-ingot';
+    if (/^(sorted_diamonds|sorted_ruby_rough)$/.test(id)) return 'gemstone';
+    if (/^silicon_wafers$/.test(id)) return 'silicon-wafer';
+    if (/^(semiconductor_chips|electronic_components|control_modules)$/.test(id)) return 'microchip';
+    if (/^battery_cells$/.test(id)) return 'battery-cell';
+    if (/^battery_packs$/.test(id)) return 'battery-pack';
+    if (/^lithium_carbonate_or_hydroxide$/.test(id)) return 'battery-salt';
+    if (/^grid_transformers$/.test(id)) return 'transformer';
+    if (/^(switchgear|grid_equipment)$/.test(id)) return 'switchgear-cabinet';
+    if (/^power_cables$/.test(id)) return 'cable-coil';
+    if (/^(aircraft|aerospace_components)$/.test(id)) return 'aircraft';
+    if (/^(ship_rail_equipment|heavy_transport_spares)$/.test(id)) return 'ship-rail';
+    if (/^(vehicles|vehicle_spare_parts)$/.test(id)) return 'vehicle';
+    if (/^defense_equipment$/.test(id)) return 'armored-vehicle';
+    if (/^defense_spare_parts$/.test(id)) return 'defense-parts';
+    if (/^(pharmaceutical_goods|medical_supplies)$/.test(id)) return 'medical-kit';
+    if (/^pharma_process_waste$/.test(id)) return 'pharma-waste';
+    if (/^readymade_garments$/.test(id)) return 'garment';
+    if (/^(textile_fabric|secondary_textile_fibre|cotton_fibre|wool_fibre)$/.test(id)) return 'textile-roll';
+    if (/^paper$/.test(id)) return 'paper-roll';
+    if (/^packaging_board$/.test(id)) return 'packaging-carton';
+    if (/^(flat_glass|container_glass)$/.test(id)) return 'glass-pane';
+    if (/^(glass_cullet|recovered_glass)$/.test(id)) return 'glass-cullet';
+    if (/^(processed_food|feed_byproduct|grain|sugar|vegetable_oil)$/.test(id)) return 'food-crate';
+    if (/^(npk_fertilizer|mop_potash)$/.test(id)) return 'fertilizer-sack';
+    if (/^ready_mix_concrete$/.test(id)) return 'concrete-mixer';
+    if (/^cement$/.test(id)) return 'cement-bag';
+    if (/^(cement_feed|calcined_gypsum)$/.test(id)) return 'mineral-sack';
+    if (/^(graded_aggregate|granite_block|marble_block|limestone|aragonite_sand|basalt_aggregate|dolomite_product)$/.test(id)) return 'stone-block';
+    if (/^ceramic_components$/.test(id)) return 'ceramic-tile';
+    if (/^(industrial_machinery|machine_tool_parts|composite_materials)$/.test(id)) return 'machine-tool';
+    if (/^(diesel|gasoline|jet_fuel|heavy_fuel_oil|naphtha|ngl|shale_oil|other_refinery_products)$/.test(id)) return 'fuel-drum';
+    if (/^(industrial_gases|pipeline_gas|shale_gas|ammonia)$/.test(id)) return 'gas-cylinder';
+    if (/^(industrial_chemicals|industrial_solvents|caustic_soda|propylene_feedstock|polymer_resin|boric_acid_or_borax)$/.test(id)) return 'chemical-vessel';
+    if (/^recycled_(polymer|feedstock)$/.test(id)) return 'recycled-feedstock';
+    if (/^(assembly_loss|alumina_residue|battery_scrap|blast_furnace_slag|chemical_process_residue|disposal_residue|e_waste|electrical_scrap|kiln_dust|manufacturing_scrap|metal_scrap|organic_processing_waste|packaging_waste|plastic_waste|precision_scrap|processing_dust|processing_loss|smelter_dross|smelter_slag|textile_waste)$/.test(id)) return 'industrial-waste';
+    if (/^(glass_silica_feed|iron_concentrate|coal_concentrate|copper_concentrate|graphite_concentrate|phosphate_concentrate|titanium_feed|yellowcake|magnesia|alumina|refined_salt)$/.test(id)) return 'ore-sack';
+    if (/(concentrate|yellowcake|_feed|tailings|salt|ore)$/.test(id)) {
+      if (/(tailings)$/.test(id)) return 'industrial-waste';
+      return 'ore-sack';
     }
-    if (category === 'battery') {
-      return '<g stroke-linejoin="round"><path d="M35 43h57v43H35z" fill="' + sideGradient + '" stroke="#233d4b" stroke-width="2"/>' +
-        '<path d="M42 35h48v48H42z" fill="' + mainGradient + '" stroke="#f3fff8" stroke-width="1.5"/>' +
-        '<path d="M53 28h10v8H53zm18 0h10v8H71z" fill="' + topGradient + '" stroke="#466b61" stroke-width="1.2"/>' +
-        '<rect x="50" y="47" width="32" height="24" rx="4" fill="#112c31" fill-opacity=".78" stroke="#e6fff2" stroke-width="1.2"/>' +
-        '<path d="M64 51v16m-8-8h16" stroke="' + topGradient + '" stroke-width="4" stroke-linecap="round"/>' +
-        '<path d="M46 39h39" stroke="#fff" stroke-opacity=".55" stroke-width="2"/></g>';
+    if (/^(limestone|granite|marble|aggregate)$/.test(id)) return 'stone-block';
+    return 'industrial-crate';
+  }
+
+  function factoryProductShape(motif, mainGradient, topGradient, sideGradient) {
+    var outline = '#263b4d';
+    var highlight = '#f7fbff';
+    if (motif === 'steel-beam') {
+      return '<g stroke-linejoin="round"><path d="M27 29h74v15H72v40h29v15H27V84h29V44H27Z" fill="' + mainGradient + '" stroke="' + outline + '" stroke-width="2"/>' +
+        '<path d="M27 29h74l-9 7H36Z" fill="' + topGradient + '"/><path d="M72 44v40l-9 7V51Z" fill="' + sideGradient + '"/>' +
+        '<path d="M39 36h49M39 91h49" stroke="' + highlight + '" stroke-opacity=".65" stroke-width="2"/></g>';
     }
-    if (category === 'chemical') {
-      return '<g stroke-linejoin="round"><path d="M53 28h22v12l18 34a8 8 0 0 1-7 12H42a8 8 0 0 1-7-12l18-34Z" fill="' + sideGradient + '" stroke="#31485b" stroke-width="2"/>' +
-        '<path d="M54 43h20l14 29a5 5 0 0 1-5 8H45a5 5 0 0 1-5-8Z" fill="' + mainGradient + '" stroke="#f0fbff" stroke-width="1.5"/>' +
-        '<path d="M47 65h37l6 12a5 5 0 0 1-5 5H45a5 5 0 0 1-5-5Z" fill="' + topGradient + '" fill-opacity=".9"/>' +
-        '<path d="M52 28h24v6H52zM57 20h14v8H57z" fill="' + topGradient + '" stroke="#526b7d" stroke-width="1.2"/>' +
-        '<path d="M49 54c9-5 19 5 28 0" stroke="#fff" stroke-opacity=".65" stroke-width="2" fill="none"/></g>';
+    if (motif === 'metal-ingot' || motif === 'precious-metal-ingot') {
+      return '<g stroke-linejoin="round"><path d="m28 73 13-25h49l13 25-13 12H41Z" fill="' + sideGradient + '" stroke="' + outline + '" stroke-width="2"/>' +
+        '<path d="m28 73 13-25h49l13 25-38 15Z" fill="' + mainGradient + '" stroke="' + highlight + '" stroke-opacity=".65" stroke-width="1.4"/>' +
+        '<path d="m41 48 11-9h49l-11 9Z" fill="' + topGradient + '" stroke="' + outline + '" stroke-width="1.5"/>' +
+        '<path d="m51 62 13-7 13 7-13 7Z" fill="' + topGradient + '" fill-opacity=".8"/></g>';
     }
-    if (category === 'textile') {
-      return '<g stroke-linejoin="round"><path d="M38 37h52v46H38z" fill="' + sideGradient + '" stroke="#4a3e5b" stroke-width="2"/>' +
-        '<path d="M45 34h39v50H45z" fill="' + mainGradient + '" stroke="#fff" stroke-opacity=".75" stroke-width="1.4"/>' +
-        '<ellipse cx="45" cy="59" rx="9" ry="24" fill="' + topGradient + '" stroke="#fff" stroke-opacity=".7" stroke-width="1.2"/>' +
-        '<ellipse cx="84" cy="59" rx="9" ry="24" fill="' + sideGradient + '" stroke="#4b3e5b" stroke-width="1.3"/>' +
-        '<path d="M53 43h27m-27 8h27m-27 8h27m-27 8h27" stroke="#fff" stroke-opacity=".62" stroke-width="2.3"/></g>';
+    if (motif === 'gemstone') {
+      return '<g stroke-linejoin="round"><path d="m30 46 16-18h36l16 18-34 53Z" fill="' + mainGradient + '" stroke="' + outline + '" stroke-width="2"/>' +
+        '<path d="m30 46 24 2 10 51-34-53Zm68 0-24 2-10 51 34-53Z" fill="' + sideGradient + '" stroke="' + highlight + '" stroke-opacity=".7" stroke-width="1.2"/>' +
+        '<path d="m46 28 8 20h20l8-20m-28 20 10 51 10-51" fill="' + topGradient + '" fill-opacity=".72" stroke="' + highlight + '" stroke-width="1.2"/></g>';
     }
-    if (category === 'packaging') {
-      return '<g stroke-linejoin="round"><path d="M30 48 64 30 99 48 64 68Z" fill="' + topGradient + '" stroke="#6c5b43" stroke-width="1.5"/>' +
-        '<path d="M30 48 64 68 64 91 30 71Z" fill="' + mainGradient + '" stroke="#6c5b43" stroke-width="1.5"/>' +
-        '<path d="M64 68 99 48 99 72 64 91Z" fill="' + sideGradient + '" stroke="#564a3b" stroke-width="1.5"/>' +
-        '<path d="M64 30v38m-17-29 34 20m-51-11 18-10m35 50V69" stroke="#fff" stroke-opacity=".55" stroke-width="1.4"/>' +
-        '<path d="M45 57 56 64v17L45 75Z" fill="' + topGradient + '" fill-opacity=".8"/></g>';
+    if (motif === 'ore-sack' || motif === 'mineral-sack' || motif === 'fertilizer-sack' || motif === 'cement-bag') {
+      var sackMark = motif === 'fertilizer-sack'
+        ? '<path d="M64 51c-16-17-26 3-8 11 5-6 8-11 8-11Zm0 0c16-17 26 3 8 11-5-6-8-11-8-11Zm0 7v17" fill="none" stroke="' + sideGradient + '" stroke-width="3"/>'
+        : motif === 'cement-bag' ? '<path d="M46 59h36m-32 8h28" stroke="' + sideGradient + '" stroke-width="3"/><path d="M53 50h22v28H53z" fill="none" stroke="' + highlight + '" stroke-opacity=".75"/>' :
+          '<path d="m44 61 10-13 10 10 8-9 13 13-13 10H54Z" fill="' + sideGradient + '" stroke="' + outline + '" stroke-width="1"/>';
+      return '<g stroke-linejoin="round"><path d="M42 35h44l-5 11 10 39q-27 18-54 0l10-39Z" fill="' + sideGradient + '" stroke="' + outline + '" stroke-width="2"/>' +
+        '<path d="M47 46h34l8 37q-25 14-50 0Z" fill="' + mainGradient + '" stroke="' + highlight + '" stroke-opacity=".72" stroke-width="1.4"/>' +
+        '<path d="M42 35h44l-8 10H50Z" fill="' + topGradient + '" stroke="' + outline + '" stroke-width="1.2"/>' +
+        sackMark + '<path d="M52 88h24" stroke="' + highlight + '" stroke-opacity=".55" stroke-width="2"/></g>';
     }
-    if (category === 'food') {
-      return '<g stroke-linejoin="round"><path d="M41 39h47l-5 12 11 28q-30 19-60 0l11-28Z" fill="' + sideGradient + '" stroke="#5c673a" stroke-width="2"/>' +
-        '<path d="M46 49h37l10 29q-29 15-58 0Z" fill="' + mainGradient + '" stroke="#f8ffe8" stroke-width="1.4"/>' +
-        '<path d="M41 39h47l-6 9H47Z" fill="' + topGradient + '" stroke="#fff" stroke-opacity=".7" stroke-width="1.2"/>' +
-        '<path d="M49 59q15-12 30 0m-30 8q15-12 30 0" stroke="' + topGradient + '" stroke-width="3" fill="none"/>' +
-        '<path d="M57 31q7-9 14 0" fill="none" stroke="#fff" stroke-width="2"/></g>';
+    if (motif === 'battery-salt') {
+      return '<g stroke-linejoin="round"><path d="M32 76 43 45h42l11 31-32 17Z" fill="' + mainGradient + '" stroke="' + outline + '" stroke-width="2"/>' +
+        '<path d="M43 45 54 34h31L85 45Z" fill="' + topGradient + '" stroke="' + outline + '" stroke-width="1.5"/>' +
+        '<path d="M54 59h21m-10-10v21" stroke="' + highlight + '" stroke-width="3" stroke-linecap="round"/><path d="M32 76 64 93l32-17" fill="none" stroke="' + sideGradient + '" stroke-width="2"/></g>';
     }
-    if (category === 'scrap') {
-      return '<g stroke-linejoin="round"><path d="M31 57 43 40l18 8 10-13 24 16 5 28-22 10-18-7-18 8-15-16Z" fill="' + sideGradient + '" stroke="#344452" stroke-width="2"/>' +
-        '<path d="m31 57 22-8 8 17-17 15Z" fill="' + mainGradient + '" stroke="#f4f8fa" stroke-opacity=".7" stroke-width="1.2"/>' +
-        '<path d="m61 48 10-13 15 18-10 15Z" fill="' + topGradient + '" stroke="#fff" stroke-opacity=".7" stroke-width="1.2"/>' +
-        '<path d="m55 68 20-4 13 15-28 8Z" fill="' + mainGradient + '" stroke="#344452" stroke-width="1.2"/>' +
-        '<path d="m39 44 10-10 12 11m14 31 10-13" stroke="#fff" stroke-opacity=".55" stroke-width="2" fill="none"/></g>';
+    if (motif === 'stone-block' || motif === 'ceramic-tile') {
+      return '<g stroke-linejoin="round"><path d="m28 51 35-20 37 19v34L64 103 28 84Z" fill="' + sideGradient + '" stroke="' + outline + '" stroke-width="2"/>' +
+        '<path d="m28 51 36 20 36-21-37-19Z" fill="' + topGradient + '" stroke="' + highlight + '" stroke-opacity=".72" stroke-width="1.4"/>' +
+        '<path d="M64 71v32M28 51l36 20 36-22" fill="none" stroke="' + highlight + '" stroke-opacity=".54" stroke-width="1.5"/>' +
+        (motif === 'ceramic-tile' ? '<path d="m42 48 22 12 23-12M42 56l22 12 23-12" fill="none" stroke="' + mainGradient + '" stroke-width="2"/>' : '') + '</g>';
     }
-    if (category === 'transport' || category === 'equipment') {
-      return '<g stroke-linejoin="round"><path d="M30 67 42 48l17-5 11-12 20 10-4 18 13 12-11 17H42Z" fill="' + sideGradient + '" stroke="#3e4b58" stroke-width="2"/>' +
-        '<path d="m36 64 12-16 18 3 10 18-12 17H43Z" fill="' + mainGradient + '" stroke="#fff" stroke-opacity=".7" stroke-width="1.3"/>' +
-        '<path d="m66 47 15-16 14 10-6 17-14 7Z" fill="' + topGradient + '" stroke="#fff" stroke-opacity=".8" stroke-width="1.2"/>' +
-        '<circle cx="48" cy="77" r="7" fill="#172736" stroke="' + topGradient + '" stroke-width="3"/>' +
-        '<circle cx="83" cy="77" r="7" fill="#172736" stroke="' + topGradient + '" stroke-width="3"/>' +
-        '<path d="M44 56h20m-14 8h22" stroke="#fff" stroke-opacity=".55" stroke-width="2"/></g>';
+    if (motif === 'battery-cell' || motif === 'battery-pack') {
+      if (motif === 'battery-cell') return '<g stroke-linejoin="round"><rect x="36" y="39" width="23" height="54" rx="7" fill="' + sideGradient + '" stroke="' + outline + '" stroke-width="2"/>' +
+        '<rect x="69" y="39" width="23" height="54" rx="7" fill="' + mainGradient + '" stroke="' + outline + '" stroke-width="2"/>' +
+        '<rect x="43" y="32" width="9" height="8" rx="2" fill="' + topGradient + '"/><rect x="76" y="32" width="9" height="8" rx="2" fill="' + topGradient + '"/>' +
+        '<path d="M42 53h11m-5-5v10m28-5h11" stroke="' + highlight + '" stroke-width="2.5" stroke-linecap="round"/></g>';
+      return '<g stroke-linejoin="round"><path d="M32 48h64v43H32z" fill="' + sideGradient + '" stroke="' + outline + '" stroke-width="2"/>' +
+        '<path d="M39 39h49v44H39z" fill="' + mainGradient + '" stroke="' + highlight + '" stroke-opacity=".7" stroke-width="1.5"/>' +
+        '<path d="M49 31h10v9H49zm20 0h10v9H69z" fill="' + topGradient + '" stroke="' + outline + '"/>' +
+        '<path d="M64 49v25m-12-12h24" stroke="' + highlight + '" stroke-width="5" stroke-linecap="round"/></g>';
     }
-    if (category === 'ore') {
-      return '<g stroke-linejoin="round"><path d="M25 82 37 60 50 65 60 41 73 58 85 48 104 82 91 91H36Z" fill="' + sideGradient + '" stroke="#554638" stroke-width="2"/>' +
-        '<path d="m25 82 15-17 13 10 12-26 12 24 12-16 15 25-13 9H37Z" fill="' + mainGradient + '" stroke="#fff" stroke-opacity=".65" stroke-width="1.3"/>' +
-        '<path d="m60 49 5-8 9 16-8 5Z" fill="' + topGradient + '" stroke="#fff" stroke-opacity=".8" stroke-width="1"/>' +
-        '<path d="M34 80 49 70m29 10 13-15" stroke="#fff" stroke-opacity=".38" stroke-width="2"/></g>';
+    if (motif === 'microchip') {
+      return '<g stroke-linejoin="round"><rect x="35" y="34" width="58" height="58" rx="8" fill="' + sideGradient + '" stroke="' + outline + '" stroke-width="3"/>' +
+        '<rect x="44" y="43" width="40" height="40" rx="4" fill="' + mainGradient + '" stroke="' + highlight + '" stroke-width="1.5"/>' +
+        '<rect x="53" y="52" width="22" height="22" rx="2" fill="' + topGradient + '" stroke="' + outline + '" stroke-width="1.5"/>' +
+        '<path d="M43 23v11m14-11v11m14-11v11m14-11v11M43 92v12m14-12v12m14-12v12m14-12v12M24 43h11m-11 14h11m-11 14h11m58-28h12m-12 14h12m-12 14h12" stroke="' + highlight + '" stroke-width="4" stroke-linecap="round"/></g>';
     }
-    return '<g stroke-linejoin="round"><path d="M27 51 43 38h44l15 13-12 34H39Z" fill="' + mainGradient + '" stroke="' + sideGradient + '" stroke-width="2"/>' +
-      '<path d="M27 51 43 38h44l15 13-21 12H44Z" fill="' + topGradient + '" stroke="#fff" stroke-opacity=".7" stroke-width="1.3"/>' +
-      '<path d="M44 63h37l9 22H39Z" fill="' + sideGradient + '" stroke="#344b5f" stroke-width="1.3"/>' +
-      '<path d="M36 53h53m-44-9h35" stroke="#fff" stroke-opacity=".55" stroke-width="1.4"/></g>';
+    if (motif === 'silicon-wafer') {
+      return '<g stroke-linejoin="round"><ellipse cx="64" cy="65" rx="39" ry="31" fill="' + sideGradient + '" stroke="' + outline + '" stroke-width="2"/>' +
+        '<ellipse cx="64" cy="56" rx="39" ry="31" fill="' + mainGradient + '" stroke="' + highlight + '" stroke-width="1.5"/>' +
+        '<ellipse cx="64" cy="56" rx="29" ry="22" fill="none" stroke="' + topGradient + '" stroke-width="2"/>' +
+        '<path d="M43 42h42M38 53h52M41 65h46M53 29v53m12-55v57m12-53v48" stroke="' + highlight + '" stroke-opacity=".55" stroke-width="1.3"/></g>';
+    }
+    if (motif === 'transformer' || motif === 'switchgear-cabinet') {
+      if (motif === 'transformer') return '<g stroke-linejoin="round"><path d="M31 47h66v42H31z" fill="' + sideGradient + '" stroke="' + outline + '" stroke-width="2"/>' +
+        '<path d="M39 38h50v43H39z" fill="' + mainGradient + '" stroke="' + highlight + '" stroke-width="1.5"/>' +
+        '<path d="M48 29v11m12-11v11m12-11v11m12-11v11" stroke="' + topGradient + '" stroke-width="7"/>' +
+        '<path d="M49 50q-8 9 0 18t0 10m14-28q-8 9 0 18t0 10m14-28q-8 9 0 18t0 10" fill="none" stroke="' + topGradient + '" stroke-width="3"/></g>';
+      return '<g stroke-linejoin="round"><path d="M35 27h58v74H35z" fill="' + sideGradient + '" stroke="' + outline + '" stroke-width="2"/>' +
+        '<path d="M42 34h44v60H42z" fill="' + mainGradient + '" stroke="' + highlight + '" stroke-width="1.3"/>' +
+        '<rect x="50" y="43" width="28" height="15" rx="2" fill="' + topGradient + '" stroke="' + outline + '"/>' +
+        '<circle cx="55" cy="70" r="4" fill="' + highlight + '"/><circle cx="70" cy="70" r="4" fill="' + topGradient + '"/>' +
+        '<path d="M50 83h28M64 34v60" stroke="' + highlight + '" stroke-opacity=".7" stroke-width="1.5"/></g>';
+    }
+    if (motif === 'cable-coil') {
+      return '<g stroke-linejoin="round"><ellipse cx="64" cy="72" rx="35" ry="20" fill="' + sideGradient + '" stroke="' + outline + '" stroke-width="2"/>' +
+        '<ellipse cx="64" cy="59" rx="35" ry="20" fill="none" stroke="' + mainGradient + '" stroke-width="9"/>' +
+        '<ellipse cx="64" cy="59" rx="22" ry="12" fill="none" stroke="' + topGradient + '" stroke-width="7"/>' +
+        '<path d="M96 59c13 9 8 22-4 27" fill="none" stroke="' + highlight + '" stroke-width="3" stroke-linecap="round"/></g>';
+    }
+    if (motif === 'aircraft') {
+      return '<g stroke-linejoin="round"><path d="M62 22 72 55 103 75 99 84 70 73 69 94 81 104 80 109 64 101 48 109 47 104 59 94 58 73 29 84 25 75 56 55Z" fill="' + mainGradient + '" stroke="' + outline + '" stroke-width="2"/>' +
+        '<path d="m62 22 10 33-8 7-7-7Z" fill="' + topGradient + '" stroke="' + highlight + '" stroke-opacity=".7"/>' +
+        '<path d="m58 73 6-5 6 5-1 21-5 5-5-5Z" fill="' + sideGradient + '"/></g>';
+    }
+    if (motif === 'ship-rail') {
+      return '<g stroke-linejoin="round"><path d="M23 70h82l-13 24H42Z" fill="' + sideGradient + '" stroke="' + outline + '" stroke-width="2"/>' +
+        '<path d="M36 69V47h42v23M49 47V35h18v12" fill="' + mainGradient + '" stroke="' + outline + '" stroke-width="2"/>' +
+        '<path d="M40 52h33v8H40Z" fill="' + topGradient + '"/><circle cx="43" cy="100" r="7" fill="' + sideGradient + '" stroke="' + highlight + '" stroke-width="2"/>' +
+        '<circle cx="64" cy="100" r="7" fill="' + sideGradient + '" stroke="' + highlight + '" stroke-width="2"/><circle cx="85" cy="100" r="7" fill="' + sideGradient + '" stroke="' + highlight + '" stroke-width="2"/></g>';
+    }
+    if (motif === 'vehicle' || motif === 'armored-vehicle') {
+      if (motif === 'armored-vehicle') return '<g stroke-linejoin="round"><path d="M25 68h78l-8 22H34Z" fill="' + sideGradient + '" stroke="' + outline + '" stroke-width="2"/>' +
+        '<path d="M38 48h50l13 20H27Z" fill="' + mainGradient + '" stroke="' + highlight + '" stroke-width="1.4"/>' +
+        '<path d="M56 48V36h25v12m-13-12h38" stroke="' + topGradient + '" stroke-width="7" stroke-linecap="round"/>' +
+        '<circle cx="42" cy="88" r="8" fill="#172736" stroke="' + topGradient + '" stroke-width="3"/><circle cx="64" cy="88" r="8" fill="#172736" stroke="' + topGradient + '" stroke-width="3"/><circle cx="86" cy="88" r="8" fill="#172736" stroke="' + topGradient + '" stroke-width="3"/></g>';
+      return '<g stroke-linejoin="round"><path d="M24 69 33 48h50l19 20v23H24Z" fill="' + sideGradient + '" stroke="' + outline + '" stroke-width="2"/>' +
+        '<path d="M38 48 46 36h27l12 12Z" fill="' + topGradient + '" stroke="' + outline + '" stroke-width="1.5"/>' +
+        '<path d="M29 68h69v17H29Z" fill="' + mainGradient + '"/><circle cx="43" cy="88" r="9" fill="#172736" stroke="' + topGradient + '" stroke-width="3"/>' +
+        '<circle cx="85" cy="88" r="9" fill="#172736" stroke="' + topGradient + '" stroke-width="3"/></g>';
+    }
+    if (motif === 'defense-parts') {
+      return '<g stroke-linejoin="round"><path d="M64 23 99 36v25q0 29-35 45Q29 90 29 61V36Z" fill="' + sideGradient + '" stroke="' + outline + '" stroke-width="2"/>' +
+        '<path d="M64 32 90 42v19q0 20-26 35Q38 81 38 61V42Z" fill="' + mainGradient + '" stroke="' + highlight + '" stroke-width="1.5"/>' +
+        '<path d="m52 56 12-9 12 9-4 17H56Z" fill="' + topGradient + '" stroke="' + outline + '" stroke-width="1.5"/></g>';
+    }
+    if (motif === 'medical-kit' || motif === 'pharma-waste') {
+      return '<g stroke-linejoin="round"><rect x="30" y="43" width="68" height="49" rx="8" fill="' + sideGradient + '" stroke="' + outline + '" stroke-width="2"/>' +
+        '<path d="M48 43v-9a7 7 0 0 1 7-7h18a7 7 0 0 1 7 7v9" fill="none" stroke="' + topGradient + '" stroke-width="7"/>' +
+        '<rect x="40" y="52" width="48" height="31" rx="4" fill="' + mainGradient + '" stroke="' + highlight + '" stroke-width="1.3"/>' +
+        '<path d="M64 57v21m-10-10h20" stroke="' + highlight + '" stroke-width="5" stroke-linecap="round"/>' +
+        (motif === 'pharma-waste' ? '<path d="M37 98h54m-46 5h38" stroke="' + topGradient + '" stroke-width="3"/>' : '') + '</g>';
+    }
+    if (motif === 'garment') {
+      return '<g stroke-linejoin="round"><path d="m45 35 19-8 19 8 20 17-13 15-10-8v34H48V59l-10 8-13-15Z" fill="' + mainGradient + '" stroke="' + outline + '" stroke-width="2"/>' +
+        '<path d="m45 35 19-8 19 8-10 15H55Z" fill="' + topGradient + '" stroke="' + highlight + '" stroke-width="1.3"/>' +
+        '<path d="M64 49v39M51 64h8m18 0h-8" stroke="' + highlight + '" stroke-opacity=".7" stroke-width="1.7"/></g>';
+    }
+    if (motif === 'textile-roll' || motif === 'paper-roll') {
+      var rollWidth = motif === 'paper-roll' ? 48 : 64;
+      return '<g stroke-linejoin="round"><path d="M28 39h64v48H28Z" fill="' + sideGradient + '" stroke="' + outline + '" stroke-width="2"/>' +
+        '<path d="M36 32h' + rollWidth + 'v55H36Z" fill="' + mainGradient + '" stroke="' + highlight + '" stroke-width="1.4"/>' +
+        '<ellipse cx="36" cy="59" rx="10" ry="27" fill="' + topGradient + '" stroke="' + highlight + '" stroke-width="1.2"/>' +
+        '<ellipse cx="36" cy="59" rx="4" ry="10" fill="' + sideGradient + '"/>' +
+        '<path d="M49 45h27m-27 10h27m-27 10h27m-27 10h27" stroke="' + highlight + '" stroke-opacity=".6" stroke-width="2"/></g>';
+    }
+    if (motif === 'packaging-carton') {
+      return '<g stroke-linejoin="round"><path d="m28 50 36-20 36 20-36 21Z" fill="' + topGradient + '" stroke="' + outline + '" stroke-width="2"/>' +
+        '<path d="m28 50 36 21v35L28 85Z" fill="' + mainGradient + '" stroke="' + outline + '" stroke-width="2"/>' +
+        '<path d="m64 71 36-21v35l-36 21Z" fill="' + sideGradient + '" stroke="' + outline + '" stroke-width="2"/>' +
+        '<path d="M52 37 64 53l12-16m-12 18v17" fill="none" stroke="' + highlight + '" stroke-width="2"/></g>';
+    }
+    if (motif === 'glass-pane' || motif === 'glass-cullet') {
+      if (motif === 'glass-cullet') return '<g stroke-linejoin="round"><path d="m28 83 13-35 16 12 10-30 13 31 19-10 8 36-32 8Z" fill="' + mainGradient + '" fill-opacity=".78" stroke="' + outline + '" stroke-width="2"/>' +
+        '<path d="m41 48 12 12-8 20m22-50 9 31-15 19m38-29-18 29" fill="none" stroke="' + highlight + '" stroke-width="2"/></g>';
+      return '<g stroke-linejoin="round"><path d="m30 40 49-13 16 7-49 14Z" fill="' + topGradient + '" stroke="' + outline + '" stroke-width="1.5"/>' +
+        '<path d="M46 48v49l49-13V35Z" fill="' + mainGradient + '" fill-opacity=".45" stroke="' + highlight + '" stroke-width="2"/>' +
+        '<path d="M30 40v49l16 8V48Z" fill="' + sideGradient + '" fill-opacity=".62" stroke="' + outline + '" stroke-width="1.5"/>' +
+        '<path d="m54 45 31-8m-31 20 31-8m-31 20 31-8" stroke="' + highlight + '" stroke-opacity=".75" stroke-width="1.5"/></g>';
+    }
+    if (motif === 'food-crate') {
+      return '<g stroke-linejoin="round"><path d="M29 49h70v41H29Z" fill="' + sideGradient + '" stroke="' + outline + '" stroke-width="2"/>' +
+        '<path d="M36 55h56v27H36Z" fill="' + mainGradient + '" stroke="' + highlight + '" stroke-width="1.3"/>' +
+        '<path d="M36 64h56M36 73h56M43 55v27m42-27v27" stroke="' + topGradient + '" stroke-width="3"/>' +
+        '<path d="M49 48q-5-18 9-21 3 13-9 21Zm12 0q0-18 16-21 1 14-16 21Z" fill="' + topGradient + '" stroke="' + outline + '"/></g>';
+    }
+    if (motif === 'concrete-mixer') {
+      return '<g stroke-linejoin="round"><path d="M33 39h61l-10 47H43Z" fill="' + sideGradient + '" stroke="' + outline + '" stroke-width="2"/>' +
+        '<path d="M42 43h45l-8 35H49Z" fill="' + mainGradient + '" stroke="' + highlight + '" stroke-width="1.3"/>' +
+        '<path d="m49 43 8-11h26l-8 11Z" fill="' + topGradient + '" stroke="' + outline + '"/>' +
+        '<path d="M41 87h48m-39 0-7 10m39-10 7 10" stroke="' + topGradient + '" stroke-width="4" stroke-linecap="round"/></g>';
+    }
+    if (motif === 'machine-tool') {
+      return '<g stroke-linejoin="round"><circle cx="64" cy="63" r="30" fill="' + sideGradient + '" stroke="' + outline + '" stroke-width="2"/>' +
+        '<circle cx="64" cy="63" r="20" fill="' + mainGradient + '" stroke="' + highlight + '" stroke-width="1.4"/>' +
+        '<circle cx="64" cy="63" r="8" fill="' + topGradient + '" stroke="' + outline + '" stroke-width="2"/>' +
+        '<path d="M64 22v11m0 60v11M23 63h11m60 0h11M35 34l8 8m42 42 8 8M93 34l-8 8M43 84l-8 8" stroke="' + topGradient + '" stroke-width="7" stroke-linecap="round"/>' +
+        '<path d="M86 31 99 19m-9 0h9v9" fill="none" stroke="' + highlight + '" stroke-width="4" stroke-linecap="round"/></g>';
+    }
+    if (motif === 'fuel-drum' || motif === 'gas-cylinder') {
+      if (motif === 'gas-cylinder') return '<g stroke-linejoin="round"><rect x="31" y="36" width="28" height="57" rx="10" fill="' + sideGradient + '" stroke="' + outline + '" stroke-width="2"/>' +
+        '<rect x="69" y="36" width="28" height="57" rx="10" fill="' + mainGradient + '" stroke="' + outline + '" stroke-width="2"/>' +
+        '<path d="M39 36v-8h12v8m26 0v-8h12v8" stroke="' + topGradient + '" stroke-width="5"/>' +
+        '<path d="M40 54h10m27 0h10M45 28v-5m38 5v-5" stroke="' + highlight + '" stroke-width="2"/></g>';
+      return '<g stroke-linejoin="round"><rect x="33" y="33" width="28" height="61" rx="4" fill="' + sideGradient + '" stroke="' + outline + '" stroke-width="2"/>' +
+        '<rect x="67" y="33" width="28" height="61" rx="4" fill="' + mainGradient + '" stroke="' + outline + '" stroke-width="2"/>' +
+        '<path d="M33 47h28m-28 36h28M67 47h28m-28 36h28" stroke="' + topGradient + '" stroke-width="4"/>' +
+        '<path d="M43 57c-8 10-7 17 4 19 11-2 12-9 4-19l-4-7Z" fill="' + highlight + '" fill-opacity=".85"/></g>';
+    }
+    if (motif === 'chemical-vessel') {
+      return '<g stroke-linejoin="round"><path d="M53 25h22v17l22 39a8 8 0 0 1-7 12H38a8 8 0 0 1-7-12l22-39Z" fill="' + sideGradient + '" stroke="' + outline + '" stroke-width="2"/>' +
+        '<path d="M44 69h40l9 14a5 5 0 0 1-5 7H40a5 5 0 0 1-5-7Z" fill="' + mainGradient + '" stroke="' + highlight + '" stroke-width="1.3"/>' +
+        '<path d="M53 25h22v8H53zM57 18h14v8H57z" fill="' + topGradient + '" stroke="' + outline + '"/>' +
+        '<path d="M48 57q16-8 32 0" fill="none" stroke="' + highlight + '" stroke-width="2"/></g>';
+    }
+    if (motif === 'industrial-waste' || motif === 'recycled-feedstock' || motif === 'pharma-waste') {
+      if (motif === 'recycled-feedstock') return '<g stroke-linejoin="round"><path d="m30 61 14-24h40l14 24-14 28H44Z" fill="' + sideGradient + '" stroke="' + outline + '" stroke-width="2"/>' +
+        '<path d="M43 55h42v25H43Z" fill="' + mainGradient + '" stroke="' + highlight + '" stroke-width="1.3"/>' +
+        '<circle cx="53" cy="65" r="5" fill="' + topGradient + '"/><circle cx="68" cy="61" r="5" fill="' + topGradient + '"/><circle cx="76" cy="73" r="5" fill="' + topGradient + '"/>' +
+        '<path d="M42 44h44" stroke="' + highlight + '" stroke-width="2"/></g>';
+      if (motif === 'pharma-waste') return '<g stroke-linejoin="round"><rect x="34" y="37" width="60" height="56" rx="6" fill="' + sideGradient + '" stroke="' + outline + '" stroke-width="2"/>' +
+        '<path d="M44 48h40v34H44Z" fill="' + mainGradient + '" stroke="' + highlight + '" stroke-width="1.2"/>' +
+        '<path d="m64 53 13 24H51Z" fill="' + topGradient + '" stroke="' + outline + '"/><path d="M64 61v8m0 4h.01" stroke="' + outline + '" stroke-width="3"/></g>';
+      return '<g stroke-linejoin="round"><path d="M39 36h50l-4 58H43Z" fill="' + sideGradient + '" stroke="' + outline + '" stroke-width="2"/>' +
+        '<path d="M34 33h60v8H34Z" fill="' + topGradient + '" stroke="' + outline + '" stroke-width="2"/>' +
+        '<path d="m50 58 8-11 8 11m-8-11v25m0 0-8-8m8 8 8-8" fill="none" stroke="' + highlight + '" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>' +
+        '<path d="M50 78h28" stroke="' + highlight + '" stroke-opacity=".65" stroke-width="2"/></g>';
+    }
+    // A labelled industrial crate is reserved for future products not yet
+    // assigned a dedicated canonical motif mapping.
+    return '<g stroke-linejoin="round"><path d="m27 48 37-21 37 21-37 22Z" fill="' + topGradient + '" stroke="' + outline + '" stroke-width="2"/>' +
+      '<path d="m27 48 37 22v34L27 82Z" fill="' + mainGradient + '" stroke="' + outline + '" stroke-width="2"/>' +
+      '<path d="m64 70 37-22v34l-37 22Z" fill="' + sideGradient + '" stroke="' + outline + '" stroke-width="2"/>' +
+      '<path d="M45 52v42m38-42v42M27 65l37 22 37-22" fill="none" stroke="' + highlight + '" stroke-opacity=".65" stroke-width="2"/></g>';
   }
 
   function factoryProductIconVisualMarkup(productId, label) {
@@ -259,9 +434,10 @@
     var colors = factoryProductPalette(category, id);
     var token = 'fp-product-' + (++factoryProductIconInstance);
     var stamp = factoryProductStamp(id);
-    var shape = factoryProductShape(category, 'url(#' + token + '-main)', 'url(#' + token + '-top)', 'url(#' + token + '-side)', token, stamp);
+    var motif = factoryProductIconMotif(id);
+    var shape = factoryProductShape(motif, 'url(#' + token + '-main)', 'url(#' + token + '-top)', 'url(#' + token + '-side)');
     return '<svg class="fp-product-icon-visual fp-product-icon-visual--finished" viewBox="0 0 128 128" width="128" height="128" role="img" ' +
-      'aria-label="' + esc(safeLabel + ' icon') + '" data-factory-product-icon="' + esc(id) + '" data-icon-source="generated-product">' +
+      'aria-label="' + esc(safeLabel + ' icon') + '" data-factory-product-icon="' + esc(id) + '" data-icon-source="generated-product" data-icon-motif="' + esc(motif) + '">' +
       '<title>' + esc(safeLabel) + '</title><defs>' +
       '<linearGradient id="' + token + '-main" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="' + colors[0] + '"/><stop offset=".55" stop-color="' + colors[1] + '"/><stop offset="1" stop-color="' + colors[2] + '"/></linearGradient>' +
       '<linearGradient id="' + token + '-top" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".95"/><stop offset=".4" stop-color="' + colors[0] + '"/><stop offset="1" stop-color="' + colors[1] + '"/></linearGradient>' +
@@ -1145,6 +1321,9 @@
         routes: []
       };
     }).sort(function (a, b) {
+      var presentOrder = (b.count > 0 ? 1 : 0) - (a.count > 0 ? 1 : 0);
+      if (presentOrder) return presentOrder;
+      if (a.count !== b.count) return b.count - a.count;
       return a.category.localeCompare(b.category) || a.name.localeCompare(b.name);
     });
 
@@ -1301,6 +1480,17 @@
     };
   }
 
+  function factoryPlanPresenceMarkup(type, model) {
+    var ownershipCount = model && model.hasCountryState === true ? factoryTypeOwnedCount({ type: type && type.type }, model) : null;
+    var known = ownershipCount !== null;
+    var count = Math.max(0, Math.floor(num(type && type.count) || 0));
+    var state = !known ? 'unknown' : count > 0 ? 'present' : 'absent';
+    var label = state === 'present' ? 'PRESENT · ' + fmt(count) + ' FACTORIES'
+      : state === 'absent' ? 'NOT PRESENT IN THIS COUNTRY · 0 FACTORIES'
+      : 'COUNTRY FACTORY DATA NOT LOADED';
+    return '<span class="fp-factory-data-presence" data-state="' + state + '">' + label + '</span>';
+  }
+
   function factoryPlanUnit(unit) {
     var value = String(unit || '').replace(/_/g, ' ').trim();
     if (!value || /SIMULATION RESOURCE UNIT/i.test(value)) return 'game units';
@@ -1319,7 +1509,7 @@
     plan.types.forEach(function (type) {
       html += '<article class="fp-factory-data-card"><header class="fp-factory-data-heading"><div><span>FACTORY INPUT PLAN</span><strong>' +
         esc(type.name) + '</strong><small>' + esc(type.category) + ' · ' + esc(type.type) + '</small></div>' +
-        '<span class="fp-factory-data-count">' + fmt(type.count) + ' factories</span></header>';
+        factoryPlanPresenceMarkup(type, model) + '</header>';
       if (!type.count) {
         html += '<div class="fp-factory-table-wrap"><p class="fp-factory-muted">No factories of this type are assigned. Current input demand: 0.</p></div></article>';
         return;
@@ -1361,7 +1551,7 @@
     plan.types.forEach(function (type) {
       html += '<article class="fp-factory-data-card"><header class="fp-factory-data-heading"><div><span>FACTORY OUTPUT PLAN</span><strong>' +
         esc(type.name) + '</strong><small>' + esc(type.category) + ' · ' + esc(type.type) + '</small></div>' +
-        '<span class="fp-factory-data-count">' + fmt(type.count) + ' factories</span></header>';
+        factoryPlanPresenceMarkup(type, model) + '</header>';
       if (!type.count) {
         html += '<div class="fp-factory-table-wrap"><p class="fp-factory-muted">No factories of this type are assigned. Planned output: 0.</p></div></article>';
         return;
@@ -1602,10 +1792,11 @@
     var rows = model && Array.isArray(model.factoryTypeCounts) ? model.factoryTypeCounts : [];
     for (var i = 0; i < rows.length; i += 1) {
       if ((normalizeFactoryType(rows[i].type, catalog) || String(rows[i].type || '').toUpperCase()) === type) {
-        return rows[i].count;
+        var count = num(rows[i].count);
+        return count === null ? null : Math.max(0, Math.floor(count));
       }
     }
-    return 0;
+    return null;
   }
 
   function factoryCard(factory, options) {
@@ -1670,6 +1861,9 @@
     var type = normalizeFactoryType(item.type, catalog) || String(item.type || '').toUpperCase();
     var support = factoryTypeBuildSupport(type, catalog);
     var ownedCount = model.hasCountryState ? factoryTypeOwnedCount({ type: type }, model) : null;
+    var presence = ownedCount === null ? 'unknown' : Number(ownedCount) > 0 ? 'present' : 'absent';
+    var presenceLabel = presence === 'present' ? 'EXISTING IN THIS COUNTRY'
+      : presence === 'absent' ? 'NOT PRESENT IN THIS COUNTRY' : 'COUNTRY DATA NOT LOADED';
     var canBuild = model.canOperateSelectedCountry === true && support.canBuild;
     var duration = item.constructionDays == null ? 'Not recorded' : fmt(item.constructionDays) + ' game-days';
     var capacity = item.defaultCapacityPerDay == null ? 'Not recorded' : fmt(item.defaultCapacityPerDay) + ' simulation units/day';
@@ -1677,10 +1871,11 @@
     var disabledReason = !model.canOperateSelectedCountry
       ? 'Building is available only for the active player country.'
       : !support.canBuild ? 'No canonical recipe/input is registered for this type.' : '';
-    return '<article class="omega-v2-factory-type-card" data-omega-v2-factory-type-card data-factory-type="' + esc(type) + '">' +
+    return '<article class="omega-v2-factory-type-card omega-v2-factory-type-card--' + presence + '" data-omega-v2-factory-type-card data-factory-type="' + esc(type) + '" data-factory-presence="' + presence + '">' +
       '<header class="fp-type-card-head"><span class="fp-type-card-art">' + factorySvgMarkup({ type:type, name:item.name || type }) + '</span>' +
       '<span class="fp-type-card-name"><strong>' + esc(item.name || type) + '</strong><small>' + esc(item.category || 'Uncategorised') + '</small></span></header>' +
       '<div class="fp-type-card-count"><span>Factories</span><strong>' + fmt(ownedCount) + '</strong></div>' +
+      '<div class="fp-type-card-presence" data-state="' + presence + '"><span class="fp-type-card-presence-led" aria-hidden="true"></span><strong>' + presenceLabel + '</strong></div>' +
       '<dl class="fp-type-card-metrics"><div><dt>Modeled build time</dt><dd>' + esc(duration) + '</dd></div>' +
       '<div><dt>Modeled capacity</dt><dd>' + esc(capacity) + '</dd></div>' +
       '<div><dt>Modeled construction cost</dt><dd>' + esc(cost) + '</dd></div></dl>' +
@@ -1692,16 +1887,39 @@
   function factoryTypeCatalogMarkup(model) {
     model = model || {};
     var rows = Array.isArray(model.factoryTypeCatalog) ? model.factoryTypeCatalog.slice() : [];
+    function owned(item) {
+      return model.hasCountryState === true
+        ? factoryTypeOwnedCount({ type: item && item.type }, model)
+        : null;
+    }
+    function rank(item) {
+      var count = owned(item);
+      return count === null ? 0 : Number(count) > 0 ? 2 : 1;
+    }
     rows.sort(function (a, b) {
+      var presenceOrder = rank(b) - rank(a);
+      if (presenceOrder) return presenceOrder;
+      var countA = owned(a), countB = owned(b);
+      if (countA !== null && countB !== null && Number(countA) !== Number(countB)) return Number(countB) - Number(countA);
       var categoryA = String(a && a.category || 'Uncategorised');
       var categoryB = String(b && b.category || 'Uncategorised');
       var byCategory = categoryA.localeCompare(categoryB);
       return byCategory || String(a && (a.name || a.type) || '').localeCompare(String(b && (b.name || b.type) || ''));
     });
     var cardRows = rows.map(function (item) { return factoryTypeCard(item, model); });
-    var cards = '', lastCategory = null;
+    var cards = '', lastCategory = null, lastPresence = null;
     rows.forEach(function (item, index) {
       var category = String(item && item.category || 'Uncategorised');
+      var count = owned(item);
+      var presence = count === null ? 'unknown' : Number(count) > 0 ? 'present' : 'absent';
+      if (lastPresence !== presence) {
+        var groupLabel = presence === 'present' ? 'EXISTING FACTORIES IN THIS COUNTRY'
+          : presence === 'absent' ? 'FACTORY TYPES NOT PRESENT IN THIS COUNTRY'
+          : 'FACTORY TYPES · COUNTRY DATA NOT LOADED';
+        cards += '<div class="fp-type-catalog-divider fp-type-catalog-divider--presence" role="separator" data-factory-presence-group="' + presence + '"><span>' + groupLabel + '</span></div>';
+        lastPresence = presence;
+        lastCategory = null;
+      }
       if (lastCategory !== null && category !== lastCategory) cards += '<div class="fp-type-catalog-divider" role="separator" aria-hidden="true"></div>';
       cards += cardRows[index];
       lastCategory = category;
@@ -1710,7 +1928,7 @@
     return '<section class="fp-type-catalog" aria-label="Factory types and selected-country totals">' +
       '<header class="fp-type-catalog-heading"><div><span>OMEGA / COUNTRY INDUSTRY REGISTER</span><strong>Factory types &amp; country totals</strong></div>' +
       '<span class="fp-type-catalog-total">' + fmt(rows.length) + ' types</span></header>' +
-      '<p class="fp-type-catalog-note">Each factory card shows the current total recorded for the selected country.</p>' +
+      '<p class="fp-type-catalog-note">Factory types owned by this country appear first. Types with no recorded factories are grouped at the bottom.</p>' +
       '<div class="fp-type-catalog-grid">' + (cards || empty) + '</div></section>';
   }
 
