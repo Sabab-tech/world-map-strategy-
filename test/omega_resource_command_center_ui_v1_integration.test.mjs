@@ -201,3 +201,80 @@ test('quota enforcement and remediation follow-up are visible to the player and 
   assert.match(ui, /carbonQuotaEnforcementLedger:.*slice\(-12\)/);
   assert.match(fs.readFileSync(new URL('../omega_resource_ai_decision_service.js', import.meta.url), 'utf8'), /recentQuotaEnforcement/);
 });
+
+
+test('industrial panel refreshes its first open when the shared factory catalog finishes loading', async () => {
+  const nodes = new Map();
+  class FakeElement {
+    constructor() { this.id=''; this.style={}; this.dataset={}; this.innerHTML=''; this.listeners={}; this.value=''; }
+    addEventListener(type, fn) { (this.listeners[type] ||= []).push(fn); }
+    appendChild(child) { if (child.id) nodes.set(child.id, child); }
+    querySelectorAll() { return []; }
+    setAttribute() {}
+    getBoundingClientRect() { return { width:900, height:240 }; }
+  }
+  const document = {
+    body:new FakeElement(),
+    createElement() { return new FakeElement(); },
+    getElementById(id) { return nodes.get(id) || null; }
+  };
+  const catalog = {
+    factoryCatalogPolicy:{categoryOrder:['METALS_AND_ALLOYS']},
+    factoryProfiles:{
+      STEEL_AND_ALLOY_WORKS:{
+        name:'Steel and Alloy Works',
+        category:'METALS_AND_ALLOYS',
+        defaultCapacityPerDay:10,
+        employment:{jobsPerFactory:100},
+        recipeIds:[]
+      }
+    },
+    downstreamFactoryRecipes:{},
+    processingRules:{}
+  };
+  const state={
+    simulation:{turn:1},
+    playerCountryId:'USA',
+    resource:{USA:{industrialNetwork:{projects:[],siteFlowLedger:[]}}},
+    economy:{USA:{productionAssets:[]}}
+  };
+  let catalogLoaded=false;
+  const network={
+    diagnostics(){return{};},
+    gameplayPipelineDiagnostics(){return{perCountry:[]};},
+    factoryCatalogDiagnostics(){return{status:catalogLoaded?'READY':'LOADING'};},
+    factoryUtilityDiagnostics(){return{status:'UNKNOWN'};},
+    loadCatalog(){
+      return new Promise(resolve=>setTimeout(()=>{
+        catalogLoaded=true;
+        sandbox.OmegaResourceIndustrialCatalogData=catalog;
+        sandbox.Omega.ResourceIndustrialCatalogData=catalog;
+        resolve({status:'READY'});
+      },40));
+    }
+  };
+  const sandbox={
+    document,
+    Game:{state,countryLookup:{USA:{name:'United States'}}},
+    ResourceMinistryEngine:{isReady:true},
+    Omega:{ResourceIndustrialNetwork:network},
+    OmegaResourceIndustrialNetwork:network,
+    setTimeout,clearTimeout,setInterval,clearInterval,
+    console,Date,Math,JSON,Object,Array,String,Number,RegExp,Map,Set,WeakMap,Promise
+  };
+  sandbox.window=sandbox;
+  sandbox.globalThis=sandbox;
+  vm.runInNewContext(ui,sandbox,{filename:'omega_resource_command_center_ui_v1.js'});
+  const api=sandbox.OmegaResourceCommandCenterUI;
+  assert.ok(api,'the resource command-center UI must install');
+  api.open('USA','industrial');
+  const modal=document.getElementById('gsrsk-intelligence-modal');
+  assert.ok(modal && modal.style.display==='flex');
+  assert.doesNotMatch(modal.innerHTML,/omega-rescc-factory-catalog-row/,
+    'the initial synchronous shell may render while the canonical factory catalog is loading');
+  await new Promise(resolve=>setTimeout(resolve,360));
+  assert.equal(catalogLoaded,true);
+  assert.match(modal.innerHTML,/omega-rescc-factory-catalog-row/,
+    'the same open panel must refresh when the shared factory catalog resolves');
+  assert.match(modal.innerHTML,/Steel and Alloy Works/);
+});

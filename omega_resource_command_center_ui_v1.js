@@ -1733,10 +1733,16 @@
     if (!force && resourceDataWarmupAttempted) return null;
     resourceDataWarmupAttempted = true;
     const e = engine(), endowment = g.Omega && g.Omega.ResourceEndowmentRuntime;
+    const network = g.OmegaResourceIndustrialNetwork || (g.Omega && g.Omega.ResourceIndustrialNetwork);
     const needsEngine = !!(e && !e.isReady && typeof e.init === 'function');
     const needsEndowment = !!(e && e.isReady && endowment && typeof endowment.initialize === 'function' && !g.__omegaResourceEndowmentReady);
-    if (!needsEngine && !needsEndowment) return null;
+    // The industrial panel reads canonical factory profiles synchronously. Make
+    // the shared catalog promise part of first-open readiness so the first render
+    // cannot remain an empty shell while the network finishes its own boot fetch.
+    const needsIndustrialCatalog = !!(network && typeof network.loadCatalog === 'function');
+    if (!needsEngine && !needsEndowment && !needsIndustrialCatalog) return null;
     resourceDataWarmupPromise = (async function () {
+      if (needsIndustrialCatalog) { try { await network.loadCatalog(); } catch (_) {} }
       if (needsEngine) { try { await e.init(); } catch (_) {} }
       if (e && e.isReady && endowment && typeof endowment.initialize === 'function' && !g.__omegaResourceEndowmentReady) {
         try { await endowment.initialize(); } catch (_) {}
@@ -1748,7 +1754,7 @@
     if (resourceDataRefreshBound || typeof g.addEventListener !== 'function') return;
     resourceDataRefreshBound = true;
     [
-      'RESOURCE_STATE_UPDATED','OMEGA_RESOURCE_SITE_BINDING_READY','OMEGA_READY','OMEGA_GAME_SESSION_STARTED',
+      'RESOURCE_STATE_UPDATED','OMEGA_RESOURCE_SITE_BINDING_READY','OMEGA_RESOURCE_INDUSTRIAL_NETWORK_READY','OMEGA_READY','OMEGA_GAME_SESSION_STARTED',
       'OMEGA_SIMULATION_TURN_COMMITTED','OMEGA_RESOURCE_EXTRACTION_COMPLETED','OMEGA_RESOURCE_BATCH_CREATED',
       'OMEGA_RESOURCE_INVENTORY_CHANGED','OMEGA_RESOURCE_PROCESSING_COMPLETED','OMEGA_TRADE_SETTLEMENT_COMPLETED',
       'OMEGA_RESOURCE_SUPPLY_ALERT_CREATED','OMEGA_COUNTRY_FACTORY_STARTING_BASELINE_READY',
