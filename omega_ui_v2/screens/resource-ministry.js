@@ -2130,7 +2130,7 @@
         resourceIconMarkup(resource, resourceLabel(resource)) + '</span><div class="omega-v2-logistics-cargo-copy">' +
         '<span class="omega-v2-eyebrow">SITE ROUTE PLAN</span><h3 class="omega-v2-card-title">' + esc(siteName) +
         '</h3><span class="omega-v2-card-meta">' + esc(resourceLabel(resource)) + '</span></div></div>' +
-        '<span class="omega-v2-status" data-state="attention">Route plan</span></div>' +
+        '</div>' +
         '<div class="omega-v2-logistics-path omega-v2-logistics-route-journey" aria-label="Planned route from ' + esc(from) +
         ' to ' + esc(to) + ' via ' + esc(routeModeLabel) + '">' +
         '<div class="omega-v2-logistics-node omega-v2-logistics-node--origin"><span class="omega-v2-logistics-node-art">' +
