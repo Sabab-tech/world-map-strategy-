@@ -1597,7 +1597,7 @@
         row.breakdown.push({
           type:String(type.type || ''),
           name:String(type.name || type.type || 'Factory'),
-          perDay:Math.max(0, num(input.perDay) || 0),
+          perDay:num(input.perDay),
           factoryCount:factoryCount
         });
       });
@@ -1637,6 +1637,22 @@
       '<i aria-hidden="true"></i><strong>' + esc(text) + '</strong></span>';
   }
 
+  function factoryInputLiveRiskStatus(model, productId) {
+    var factories = Array.isArray(model && model.factories) ? model.factories : [];
+    for (var index = 0; index < factories.length; index += 1) {
+      var factory = factories[index];
+      var coefficient = factoryInputCoefficientFor(factory, productId);
+      if (coefficient === null || coefficient <= 0) continue;
+      var current = factory.hasInputInventory
+        ? panelValueByKey(factory.raw && factory.raw.inputInventory, productId) : null;
+      var required = factoryInputDailyRequirement(factory, productId, model);
+      var efficiency = factoryInputEfficiency(factory, [{ productId:productId, current:current, required:required }]);
+      if (efficiency.value !== null && efficiency.value > 1e-9) return 'critical';
+      if (required !== null && required > 0 && current !== null && current + 1e-9 < required) return 'critical';
+    }
+    return 'unknown';
+  }
+
   function factoryInputIdentityMarkup(model, productId) {
     var label = panelProductLabel(model, productId);
     return factoryProductIdentityMarkup(productId, label) +
@@ -1663,7 +1679,7 @@
     if (!rows.length) return '<span class="fp-factory-muted">Source not recorded</span>';
     return rows.map(function (source) {
       return '<span class="fp-factory-source"><strong>' + esc(source.label) + '</strong><small>' +
-        fmt(source.quantity, source.unit) + '</small></span>';
+        fmt(source.quantity, factoryPlanUnit(source.unit)) + '</small></span>';
     }).join('');
   }
 
@@ -1703,7 +1719,9 @@
           fmt(item.perDay, unit) + '/day</strong><small>' + fmt(item.factoryCount) +
           (item.factoryCount === 1 ? ' factory' : ' factories') + '</small></span>';
       }).join('');
-      var status = coverage ? factoryInputRiskMarkup(coverage.status) : factoryInputRiskMarkup('unknown');
+      var liveStatus = factoryInputLiveRiskStatus(model, row.productId);
+      var statusKey = liveStatus === 'critical' ? 'critical' : coverage ? coverage.status : liveStatus;
+      var status = factoryInputRiskMarkup(statusKey);
       html += '<tr><td>' + factoryInputIdentityMarkup(model, row.productId) + '</td>' +
         '<td><strong>' + fmt(row.perDay, unit) + '/day</strong></td>' +
         '<td>' + (breakdown || '<span class="fp-factory-muted">Factory allocation not recorded</span>') + '</td>' +
@@ -1982,7 +2000,7 @@
           if (!unit && lot.unit) unit = lot.unit;
         });
         var inputUnit = factory.inputUnits && Object.keys(factory.inputUnits).find(function (key) { return key.toLowerCase() === productId.toLowerCase(); });
-        unit = unit || (inputUnit ? factory.inputUnits[inputUnit] : '') || factory.inputUnit || '';
+        unit = factoryPlanUnit(unit || (inputUnit ? factory.inputUnits[inputUnit] : '') || factory.inputUnit || '');
         rows.push({ productId:productId, coefficient:coefficient, required:required, current:current,
           received:hasReceipt ? received : null, unit:unit });
       });
@@ -1998,6 +2016,7 @@
         var coverage = factoryInputCoverageRecord(model, row.productId, factory.id);
         var rowStatus = coverage && coverage.status || 'unknown';
         if (row.required !== null && row.current !== null && row.current + 1e-9 < row.required) rowStatus = 'critical';
+        if (efficiency.value !== null && efficiency.value > 1e-9) rowStatus = 'critical';
         var coverageText = coverage && num(coverage.coverageDays) !== null
           ? fmt(coverage.coverageDays, 'days') : 'Not calculated';
         html += '<tr><td>' + factoryInputIdentityMarkup(model, row.productId) + '</td>' +
