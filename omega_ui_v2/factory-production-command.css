@@ -3190,3 +3190,20 @@
   .omega-v2-industry--factory-home .fp-card-byproduct-row { grid-template-columns:minmax(0,1fr) auto; }
   .omega-v2-industry--factory-home .fp-card-byproduct-row > .fp-card-section-label { grid-column:1 / -1; }
 }
+
+
+/* Compact recipe rows also need intrinsic card height in the collapsed state. */
+.omega-v2-industry--factory-home .fp-card {
+  height:auto !important;
+  min-height:0;
+}
+.omega-v2-industry--factory-home .fp-type-catalog-grid {
+  align-items:start;
+}
+.omega-v2-industry--factory-home .fp-type-card--expanded,
+.omega-v2-industry--factory-home .fp-type-card--build,
+.omega-v2-industry--factory-home .fp-card--expanded,
+.omega-v2-industry--factory-home .fp-card--build {
+  height:auto !important;
+  min-height:0;
+}
