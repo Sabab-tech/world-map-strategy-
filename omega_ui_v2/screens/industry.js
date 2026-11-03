@@ -1954,16 +1954,20 @@
           if (stock === null) stockComplete = false;
           else recordedStock += Math.max(0, stock);
           if (required !== null && required > 0 && stock !== null && stock + 1e-9 < required) activeShortage = true;
-          var sources = factoryInputSourceRows(factory, product.productId, model);
+          var sources = factoryInputSourceRows(factory, product.productId, model), factoryImportQuantity = 0;
           sources.forEach(function (source) {
-            sourceQuantity += Math.max(0, num(source.quantity) || 0);
-            if (source.kind === 'import') importQuantity += Math.max(0, num(source.quantity) || 0);
+            var sourceAmount = Math.max(0, num(source.quantity) || 0);
+            sourceQuantity += sourceAmount;
+            if (source.kind === 'import') {
+              importQuantity += sourceAmount;
+              factoryImportQuantity += sourceAmount;
+            }
           });
           var factoryCoverage = stock !== null && required !== null && required > 0 ? stock / required : null;
           var factoryStatus = stock !== null && required !== null && required > 0
             ? (factoryCoverage < 1 ? 'critical' : factoryCoverage <= 10 ? 'risk' : 'stable')
             : 'unknown';
-          if (importQuantity > 0 && factoryCoverage !== null && factoryCoverage <= 30 && factoryStatus === 'stable') factoryStatus = 'risk';
+          if (factoryImportQuantity > 0 && factoryCoverage !== null && factoryCoverage <= 30 && factoryStatus === 'stable') factoryStatus = 'risk';
           snapshot.factories.push({
             factoryId:String(factory.id || ''),
             factoryName:String(factory.name || factory.id || 'Factory'),
