@@ -93,7 +93,7 @@
 
   function factoryProductIconCategory(id) {
     if (/(scrap|waste|residue|slag|dross|dust|cullet|disposal|loss|recovered|recycled)/.test(id)) return 'scrap';
-    if (/(battery|cell|pack)/.test(id)) return 'battery';
+    if (/(battery|cell|pack|lithium_carbonate_or_hydroxide)/.test(id)) return 'battery';
     if (/(semiconductor|silicon|chip|electronic|control_module|switchgear|transformer|power_cable|grid_equipment)/.test(id)) return 'electronics';
     if (/(chemical|ammonia|caustic|solvent|gas|naphtha|propylene|polymer|resin|refinery|petroleum|pipeline)/.test(id)) return 'chemical';
     if (/(textile|fabric|garment|cotton|wool|fibre|fiber)/.test(id)) return 'textile';
@@ -142,6 +142,8 @@
       ]
     };
     if (category === 'metal') {
+      if (/(dor[eé]|gold)/.test(id)) return ['#fff0a8','#d3a12f','#785317'];
+      if (/(silver|platinum)/.test(id)) return ['#f5f8fb','#b9c4cc','#687986'];
       if (/(copper|cu)/.test(id)) return ['#ffd1a4','#c66d3e','#673a23'];
       if (/(alumin|alumina)/.test(id)) return ['#f7fbff','#b7c4ce','#667582'];
       if (/(steel|iron|alloy|titanium|nickel|chromium)/.test(id)) return ['#edf4f8','#8f9eaa','#3f4d5a'];
@@ -1319,6 +1321,9 @@
         routes: []
       };
     }).sort(function (a, b) {
+      var presentOrder = (b.count > 0 ? 1 : 0) - (a.count > 0 ? 1 : 0);
+      if (presentOrder) return presentOrder;
+      if (a.count !== b.count) return b.count - a.count;
       return a.category.localeCompare(b.category) || a.name.localeCompare(b.name);
     });
 
@@ -1475,6 +1480,16 @@
     };
   }
 
+  function factoryPlanPresenceMarkup(type, model) {
+    var known = model && model.hasCountryState === true;
+    var count = Math.max(0, Math.floor(num(type && type.count) || 0));
+    var state = !known ? 'unknown' : count > 0 ? 'present' : 'absent';
+    var label = state === 'present' ? 'PRESENT · ' + fmt(count) + ' FACTORIES'
+      : state === 'absent' ? 'NOT PRESENT IN THIS COUNTRY · 0 FACTORIES'
+      : 'COUNTRY FACTORY DATA NOT LOADED';
+    return '<span class="fp-factory-data-presence" data-state="' + state + '">' + label + '</span>';
+  }
+
   function factoryPlanUnit(unit) {
     var value = String(unit || '').replace(/_/g, ' ').trim();
     if (!value || /SIMULATION RESOURCE UNIT/i.test(value)) return 'game units';
@@ -1493,7 +1508,7 @@
     plan.types.forEach(function (type) {
       html += '<article class="fp-factory-data-card"><header class="fp-factory-data-heading"><div><span>FACTORY INPUT PLAN</span><strong>' +
         esc(type.name) + '</strong><small>' + esc(type.category) + ' · ' + esc(type.type) + '</small></div>' +
-        '<span class="fp-factory-data-count">' + fmt(type.count) + ' factories</span></header>';
+        factoryPlanPresenceMarkup(type, model) + '</header>';
       if (!type.count) {
         html += '<div class="fp-factory-table-wrap"><p class="fp-factory-muted">No factories of this type are assigned. Current input demand: 0.</p></div></article>';
         return;
@@ -1844,6 +1859,9 @@
     var type = normalizeFactoryType(item.type, catalog) || String(item.type || '').toUpperCase();
     var support = factoryTypeBuildSupport(type, catalog);
     var ownedCount = model.hasCountryState ? factoryTypeOwnedCount({ type: type }, model) : null;
+    var presence = ownedCount === null ? 'unknown' : Number(ownedCount) > 0 ? 'present' : 'absent';
+    var presenceLabel = presence === 'present' ? 'EXISTING IN THIS COUNTRY'
+      : presence === 'absent' ? 'NOT PRESENT IN THIS COUNTRY' : 'COUNTRY DATA NOT LOADED';
     var canBuild = model.canOperateSelectedCountry === true && support.canBuild;
     var duration = item.constructionDays == null ? 'Not recorded' : fmt(item.constructionDays) + ' game-days';
     var capacity = item.defaultCapacityPerDay == null ? 'Not recorded' : fmt(item.defaultCapacityPerDay) + ' simulation units/day';
@@ -1851,10 +1869,11 @@
     var disabledReason = !model.canOperateSelectedCountry
       ? 'Building is available only for the active player country.'
       : !support.canBuild ? 'No canonical recipe/input is registered for this type.' : '';
-    return '<article class="omega-v2-factory-type-card" data-omega-v2-factory-type-card data-factory-type="' + esc(type) + '">' +
+    return '<article class="omega-v2-factory-type-card omega-v2-factory-type-card--' + presence + '" data-omega-v2-factory-type-card data-factory-type="' + esc(type) + '" data-factory-presence="' + presence + '">' +
       '<header class="fp-type-card-head"><span class="fp-type-card-art">' + factorySvgMarkup({ type:type, name:item.name || type }) + '</span>' +
       '<span class="fp-type-card-name"><strong>' + esc(item.name || type) + '</strong><small>' + esc(item.category || 'Uncategorised') + '</small></span></header>' +
       '<div class="fp-type-card-count"><span>Factories</span><strong>' + fmt(ownedCount) + '</strong></div>' +
+      '<div class="fp-type-card-presence" data-state="' + presence + '"><span class="fp-type-card-presence-led" aria-hidden="true"></span><strong>' + presenceLabel + '</strong></div>' +
       '<dl class="fp-type-card-metrics"><div><dt>Modeled build time</dt><dd>' + esc(duration) + '</dd></div>' +
       '<div><dt>Modeled capacity</dt><dd>' + esc(capacity) + '</dd></div>' +
       '<div><dt>Modeled construction cost</dt><dd>' + esc(cost) + '</dd></div></dl>' +
@@ -1866,16 +1885,39 @@
   function factoryTypeCatalogMarkup(model) {
     model = model || {};
     var rows = Array.isArray(model.factoryTypeCatalog) ? model.factoryTypeCatalog.slice() : [];
+    function owned(item) {
+      return model.hasCountryState === true
+        ? factoryTypeOwnedCount({ type: item && item.type }, model)
+        : null;
+    }
+    function rank(item) {
+      var count = owned(item);
+      return count === null ? 0 : Number(count) > 0 ? 2 : 1;
+    }
     rows.sort(function (a, b) {
+      var presenceOrder = rank(b) - rank(a);
+      if (presenceOrder) return presenceOrder;
+      var countA = owned(a), countB = owned(b);
+      if (countA !== null && countB !== null && Number(countA) !== Number(countB)) return Number(countB) - Number(countA);
       var categoryA = String(a && a.category || 'Uncategorised');
       var categoryB = String(b && b.category || 'Uncategorised');
       var byCategory = categoryA.localeCompare(categoryB);
       return byCategory || String(a && (a.name || a.type) || '').localeCompare(String(b && (b.name || b.type) || ''));
     });
     var cardRows = rows.map(function (item) { return factoryTypeCard(item, model); });
-    var cards = '', lastCategory = null;
+    var cards = '', lastCategory = null, lastPresence = null;
     rows.forEach(function (item, index) {
       var category = String(item && item.category || 'Uncategorised');
+      var count = owned(item);
+      var presence = count === null ? 'unknown' : Number(count) > 0 ? 'present' : 'absent';
+      if (lastPresence !== presence) {
+        var groupLabel = presence === 'present' ? 'EXISTING FACTORIES IN THIS COUNTRY'
+          : presence === 'absent' ? 'FACTORY TYPES NOT PRESENT IN THIS COUNTRY'
+          : 'FACTORY TYPES · COUNTRY DATA NOT LOADED';
+        cards += '<div class="fp-type-catalog-divider fp-type-catalog-divider--presence" role="separator" data-factory-presence-group="' + presence + '"><span>' + groupLabel + '</span></div>';
+        lastPresence = presence;
+        lastCategory = null;
+      }
       if (lastCategory !== null && category !== lastCategory) cards += '<div class="fp-type-catalog-divider" role="separator" aria-hidden="true"></div>';
       cards += cardRows[index];
       lastCategory = category;
@@ -1884,7 +1926,7 @@
     return '<section class="fp-type-catalog" aria-label="Factory types and selected-country totals">' +
       '<header class="fp-type-catalog-heading"><div><span>OMEGA / COUNTRY INDUSTRY REGISTER</span><strong>Factory types &amp; country totals</strong></div>' +
       '<span class="fp-type-catalog-total">' + fmt(rows.length) + ' types</span></header>' +
-      '<p class="fp-type-catalog-note">Each factory card shows the current total recorded for the selected country.</p>' +
+      '<p class="fp-type-catalog-note">Factory types owned by this country appear first. Types with no recorded factories are grouped at the bottom.</p>' +
       '<div class="fp-type-catalog-grid">' + (cards || empty) + '</div></section>';
   }
 
