@@ -1910,7 +1910,6 @@
       if (dailyDemand > output.value + 1e-9) return { key:'shortage', label:'Shortage' };
       return { key:'ok', label:output.value > dailyDemand + 1e-9 ? 'Surplus' : 'Balanced' };
     }
-    if (/^(BALANCED|SURPLUS|ADEQUATE|SUFFICIENT)$/.test(status)) return { key:'ok', label:'Balanced' };
     return { key:'unknown', label:'Unknown' };
   }
 
