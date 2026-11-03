@@ -2697,8 +2697,8 @@ test('factory cards progressively disclose canonical products, quantities and in
     assert.match(steel,/Blast Furnace Slag/);
     assert.match(steel,/Input/);
     assert.match(steel,/Iron Concentrate/);
-    assert.match(steel,/0\\.72 \\/ production unit/);
-    assert.match(steel,/0\\.60 \\/ production unit/);
+    assert.match(steel,/0\.72 \/ production unit/);
+    assert.match(steel,/0\.60 \/ production unit/);
     assert.match(steel,/data-omega-v2-factory-card-expand/);
     assert.match(steel,/data-omega-v2-factory-section-toggle/);
     assert.doesNotMatch(steel,/Processing Dust/,'the second by-product must remain hidden in collapsed view');
@@ -2772,6 +2772,13 @@ test('factory cards progressively disclose canonical products, quantities and in
     assert.match(liveExpanded[0],/Factory stock: 120 simulation units/);
 
     // Exercise the real delegated card disclosure handler and assert it updates root-local UI state.
+    root.__omegaV2FactoryCardUiState = {
+      expandedKey:'',
+      buildKey:'',
+      sections:Object.create(null),
+      buildMaterialsExpanded:false
+    };
+    render({factoryView:'types'});
     const clickTarget = {
       closest(selector) {
         if (selector === '[data-omega-v2-factory-card-expand]') {
