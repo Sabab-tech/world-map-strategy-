@@ -1390,7 +1390,7 @@
   }
   function panelCascade(country) {
     const r = resourceBucket(country);
-    const shipments = Array.isArray(r.logistics && r.logistics.shipments) ? r.logistics.shipments : [];
+    const shipments = Array.isArray(r.industrialNetwork && r.industrialNetwork.shipments) ? r.industrialNetwork.shipments : [];
     const hardening = g.OmegaResourceSystemHardening || g.Omega && g.Omega.ResourceSystemHardening;
     const form = '<form class="omega-rescc-form" data-search-item data-form="cascade">' +
       '<h3>Evaluate transport constraint scenario</h3><p class="omega-rescc-note">This is non-mutating. It reports active policy blockades separately from player-entered hypothetical multipliers.</p><div class="omega-rescc-formgrid">' +

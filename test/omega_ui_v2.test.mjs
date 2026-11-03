@@ -846,7 +846,7 @@ test('factory Stock shows committed finished goods and traced use while Input sh
   globalThis.OmegaCountryInventoryRuntime = {
     getInventory(countryId, options) {
       assert.equal(options.includeZero,true);
-      assert.equal(options.includeLedger,true);
+      assert.equal(options.includeLedger,false, 'the industry view needs stock rows, not a full unbounded inventory-history clone');
       return {
         status:'READY',countryId:countryId,countryName:'Bangladesh',active:true,readOnly:false,
         unbounded:true,items:[

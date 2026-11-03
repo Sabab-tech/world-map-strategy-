@@ -228,6 +228,11 @@ test('canonical site profiles appear in relevant tabs without becoming live prod
   modal = elements.get('gsrsk-intelligence-modal');
   assert.match(modal.innerHTML, /Processing capabilities from existing site files/);
   assert.match(modal.innerHTML, /Beneficiation/);
+
+  ui.open('BGD', 'cascade');
+  modal = elements.get('gsrsk-intelligence-modal');
+  assert.match(modal.innerHTML, /CORE-SHIPMENT-1/, 'cascade shipment consequences must use the authoritative Industrial Network ledger');
+  assert.doesNotMatch(modal.innerHTML, /LEGACY-PREVIEW-1/, 'legacy route previews must not appear as live shipment consequences');
 });
 
 test('reserves ledger lists only resources backed by country quantities or local resource records', () => {

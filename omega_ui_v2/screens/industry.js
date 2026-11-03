@@ -480,7 +480,7 @@
     var inventoryRuntime = g.OmegaCountryInventoryRuntime || (g.Omega && g.Omega.CountryInventoryRuntime) || null;
     var nationalInventory = null, canonicalResourceIds = [];
     if (context.countryId && inventoryRuntime && typeof inventoryRuntime.getInventory === 'function') {
-      try { nationalInventory = inventoryRuntime.getInventory(context.countryId, { includeZero: true, includeLedger: true }); } catch (_) { nationalInventory = null; }
+      try { nationalInventory = inventoryRuntime.getInventory(context.countryId, { includeZero: true, includeLedger: false }); } catch (_) { nationalInventory = null; }
     }
     var finishedGoodsLedger = Array.isArray(resource.finishedGoodsLedger) ? resource.finishedGoodsLedger.slice() : [];
     var economyIndustrialRuntime = economy.industrialRuntime && typeof economy.industrialRuntime === 'object' ? economy.industrialRuntime : {};
