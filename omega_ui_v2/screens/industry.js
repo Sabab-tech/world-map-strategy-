@@ -2110,7 +2110,9 @@
     var primaryOutputs = factoryRouteProductIds(route, 'primaryOutputs', route.outputs || {});
     var coProducts = factoryRouteProductIds(route, 'coProducts', route.outputs || {});
     var byProducts = factoryRouteProductIds(route, 'byProducts', route.outputs || {});
-    if (!primaryInputs.length && inputs.length === 1) primaryInputs = inputs.slice();
+    // If role metadata is missing or no longer matches a route key, keep one
+    // deterministic canonical input visible without falsely calling it primary.
+    if (!primaryInputs.length && inputs.length) primaryInputs = [inputs[0]];
     if (!primaryOutputs.length && outputs.length === 1) primaryOutputs = outputs.slice();
     var visibleInputs = primaryInputs.slice(0, 1);
     var visibleOutputs = primaryOutputs.slice(0, 2);
