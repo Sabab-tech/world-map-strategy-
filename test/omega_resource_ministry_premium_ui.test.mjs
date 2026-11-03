@@ -1656,3 +1656,105 @@ test("Resource Ministry logistics manifest and country-shard requests are time-b
   assert.ok(retryRoot.innerHTML.length > 0);
   api.unload(retryRoot);
 });
+
+
+test("Resource Ministry coalesces runtime event bursts into one in-place refresh and cancels it on unload", async () => {
+  const vm = await import("node:vm");
+  const timers = new Map();
+  const globalListeners = Object.create(null);
+  let nextTimer = 1;
+  let writes = 0;
+  let html = "";
+  let deferredNavigationCalls = 0;
+  const sandbox = {
+    AbortController,
+    OmegaResourceIndustrialCatalogData: json("resource_industrial_catalog_v1.json"),
+    setTimeout(callback, delay) {
+      assert.equal(delay, 350, "runtime event bursts must share one bounded refresh window");
+      const id = nextTimer++;
+      timers.set(id, callback);
+      return id;
+    },
+    clearTimeout(id) { timers.delete(id); },
+    addEventListener(type, callback) {
+      (globalListeners[type] || (globalListeners[type] = [])).push(callback);
+    },
+    removeEventListener(type, callback) {
+      globalListeners[type] = (globalListeners[type] || []).filter((fn) => fn !== callback);
+    }
+  };
+  sandbox.window = sandbox;
+  vm.default.createContext(sandbox);
+  vm.default.runInContext(read("omega_ui_v2/screens/resource-ministry.js"), sandbox, {
+    filename:"omega_ui_v2/screens/resource-ministry.js"
+  });
+  sandbox.Game = { state:{
+    simulation:{ turn:1, session:{ playerCountryId:"TST" } },
+    resource:{ TST:{
+      inventory:{ coal:10 }, inventoryUnits:{ coal:"TONNES" },
+      mineAssets:[],
+      industrialNetwork:{ projects:[], shipments:[], siteFlowLedger:[] },
+      warehouse:{ availableByResource:{ coal:10 } },
+      processedWarehouse:{ availableByResource:{} },
+      inventoryLedger:[]
+    } }
+  } };
+  const root = {
+    get innerHTML() { return html; },
+    set innerHTML(value) { html = String(value); writes += 1; },
+    classList:{ add(){} },
+    addEventListener(){},
+    querySelector(){ return null; },
+    querySelectorAll(){ return []; },
+    contains(){ return true; }
+  };
+  const api = sandbox.OmegaUIV2ResourceMinistry;
+  const options = {
+    countryId:"TST", sites:[], tab:"inventory",
+    onScheduleRender() { deferredNavigationCalls += 1; }
+  };
+  try {
+    api.render(root, options);
+    const initialWrites = writes;
+    const emit = (name, detail) => {
+      for (const callback of globalListeners[name] || []) callback({ type:name, detail:detail || {} });
+    };
+
+    emit("OMEGA_RESOURCE_MINE_PROJECT_PROGRESS", { countryId:"TST" });
+    assert.equal(timers.size, 0,
+      "mine-project progress must not rebuild an unrelated Inventory tab");
+
+    emit("OMEGA_RESOURCE_INVENTORY_CHANGED", { countryId:"USA" });
+    assert.equal(timers.size, 0,
+      "updates belonging to a different country must not refresh the player inventory");
+
+    for (let i=0;i<40;i+=1) {
+      emit(i%2 ? "OMEGA_RESOURCE_INVENTORY_CHANGED" : "OMEGA_RESOURCE_CONSUMPTION_COMPLETED",
+        { countryId:"TST" });
+    }
+    assert.equal(timers.size, 1,
+      "a burst of gameplay events must schedule exactly one screen refresh");
+    assert.equal(writes, initialWrites,
+      "runtime events must not synchronously replace the live screen with a loading panel");
+    assert.equal(deferredNavigationCalls, 0,
+      "data refreshes must not enter the navigation progress/cancellation pipeline");
+
+    sandbox.Game.state.resource.TST.inventory.coal = 25;
+    const [timerId, refresh] = timers.entries().next().value;
+    timers.delete(timerId);
+    refresh();
+    assert.equal(writes, initialWrites + 1,
+      "the complete event burst must cause only one in-place DOM render");
+    assert.equal(deferredNavigationCalls, 0);
+    assert.equal(root.__omegaV2ResourceRefreshTimer, null);
+
+    emit("OMEGA_RESOURCE_INVENTORY_CHANGED", { countryId:"TST" });
+    assert.equal(timers.size, 1);
+    api.unload(root);
+    assert.equal(timers.size, 0,
+      "leaving Resource Ministry must cancel a queued refresh instead of leaving background UI work");
+    assert.equal(root.__omegaV2ResourceRefreshTimer, null);
+  } finally {
+    api.unload(root);
+  }
+});

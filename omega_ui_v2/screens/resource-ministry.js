@@ -534,6 +534,73 @@
     return render(root, options);
   }
 
+  // Runtime events can arrive in bursts during one simulation turn. They update the
+  // visible data, but they are not navigation requests: routing them through the
+  // deferred-navigation loader repeatedly cancels the pending screen render.
+  var RESOURCE_RUNTIME_EVENT_TABS = {
+    OMEGA_RESOURCE_MINE_PROJECT_STARTED: ['dashboard','mines','reports'],
+    OMEGA_RESOURCE_MINE_PROJECT_PROGRESS: ['dashboard','mines','reports'],
+    OMEGA_RESOURCE_MINE_COMMISSIONED: ['dashboard','mines','logistics','reports'],
+    OMEGA_RESOURCE_FACTORY_INPUT_STOCK_TARGET_UPDATED: ['dashboard','inventory','reports'],
+    OMEGA_RESOURCE_NATIONAL_DEMAND_UPDATED: ['dashboard','inventory','reports'],
+    OMEGA_RESOURCE_ECONOMY_UPDATED: ['dashboard','inventory','reports'],
+    OMEGA_RESOURCE_MINE_HAUL_DELIVERED: ['dashboard','inventory','logistics','reports'],
+    OMEGA_RESOURCE_MINE_WAREHOUSE_RECEIPT_POSTED: ['dashboard','inventory','logistics','reports'],
+    OMEGA_RESOURCE_INVENTORY_CHANGED: ['dashboard','inventory','reports'],
+    OMEGA_RESOURCE_IMPORT_COMPLETED: ['dashboard','inventory','reports'],
+    OMEGA_RESOURCE_EXPORT_COMPLETED: ['dashboard','inventory','reports'],
+    OMEGA_RESOURCE_CONSUMPTION_COMPLETED: ['dashboard','inventory','reports'],
+    OMEGA_RESOURCE_FACTORY_INPUT_AVAILABLE: ['dashboard','inventory','logistics','reports'],
+    OMEGA_FACTORY_INPUT_SHIPMENT_DELIVERED: ['dashboard','inventory','logistics','reports'],
+    OMEGA_FACTORY_PRODUCTION_CYCLE_STARTED: ['dashboard','inventory','reports'],
+    OMEGA_FACTORY_PRODUCTION_CYCLE_PAUSED: ['dashboard','inventory','reports'],
+    OMEGA_FACTORY_PRODUCTION_CYCLE_COMPLETED: ['dashboard','inventory','reports'],
+    OMEGA_SIMULATION_TURN_COMMITTED: ['dashboard','mines','inventory','logistics','reports'],
+    OMEGA_RESOURCE_STARTUP_BASELINE_COMPLETED: ['dashboard','mines','inventory','logistics','reports'],
+    OMEGA_RESOURCE_PLAYER_COUNTRY_READY: ['dashboard','mines','inventory','logistics','reports']
+  };
+
+  function resourceRuntimeEventAffectsTab(eventName, tab) {
+    var tabs = RESOURCE_RUNTIME_EVENT_TABS[eventName];
+    return !!(tabs && tabs.indexOf(tab) >= 0);
+  }
+
+  function resourceRuntimeEventCountry(event) {
+    var detail = event && event.detail !== undefined ? event.detail
+      : (event && event.payload !== undefined ? event.payload : null);
+    if (detail && detail.payload && typeof detail.payload === 'object' &&
+        !detail.countryId && !detail.playerCountryId && !detail.sourceCountryId) detail = detail.payload;
+    var value = detail && (detail.countryId || detail.playerCountryId || detail.sourceCountryId);
+    var country = selectedCountryKey(value || '');
+    return country === 'GLOBAL' || country === 'WORLD' ? '' : country;
+  }
+
+  function scheduleResourceRuntimeRefresh(root) {
+    if (!root || root.__omegaV2ResourceActive === false || !root.__omegaV2ResourceOptions) return false;
+    var schedule = typeof g.setTimeout === 'function' ? g.setTimeout.bind(g) : null;
+    if (!schedule) return false;
+    var pending = root.__omegaV2ResourceRefreshEvents || (root.__omegaV2ResourceRefreshEvents = Object.create(null));
+    // The set is intentionally tiny: it contains only event names in the current burst.
+    // One timer produces one in-place refresh, without replacing the screen by a loader.
+    if (root.__omegaV2ResourceRefreshTimer !== null &&
+        root.__omegaV2ResourceRefreshTimer !== undefined) return true;
+    root.__omegaV2ResourceRefreshTimer = schedule(function () {
+      root.__omegaV2ResourceRefreshTimer = null;
+      var names = Object.keys(root.__omegaV2ResourceRefreshEvents || {});
+      root.__omegaV2ResourceRefreshEvents = Object.create(null);
+      if (root.__omegaV2ResourceActive === false || !root.__omegaV2ResourceOptions) return;
+      var latest = Object.assign({}, root.__omegaV2ResourceOptions, {
+        countryId: root.__omegaV2CurrentCountryKey || root.__omegaV2ResourceOptions.countryId,
+        tab: root.__omegaV2ResourceTab || root.__omegaV2ResourceOptions.tab || 'dashboard'
+      });
+      if (!names.some(function (name) { return resourceRuntimeEventAffectsTab(name, latest.tab); })) return;
+      // Refresh data in the mounted Resource Ministry. Do not invoke onScheduleRender:
+      // it is reserved for navigation and asynchronous screen transitions.
+      render(root, latest);
+    }, 350);
+    return true;
+  }
+
   function render(root, options) {
     options = options || {};
     if (!root || typeof root !== 'object') return { ok:false, code:'RESOURCE_ROOT_REQUIRED' };
@@ -2593,10 +2660,16 @@
           'OMEGA_FACTORY_PRODUCTION_CYCLE_STARTED','OMEGA_FACTORY_PRODUCTION_CYCLE_PAUSED',
           'OMEGA_FACTORY_PRODUCTION_CYCLE_COMPLETED','OMEGA_SIMULATION_TURN_COMMITTED','OMEGA_RESOURCE_STARTUP_BASELINE_COMPLETED',
           'OMEGA_RESOURCE_PLAYER_COUNTRY_READY'].forEach(function (name) {
-          var handler = function () {
-            if (root.__omegaV2ResourceActive && root.__omegaV2ResourceOptions) {
-              scheduleRender(root,Object.assign({},root.__omegaV2ResourceOptions,{tab:root.__omegaV2ResourceTab||'mines'}));
-            }
+          var handler = function (event) {
+            if (!root.__omegaV2ResourceActive || !root.__omegaV2ResourceOptions) return;
+            var activeTab = root.__omegaV2ResourceTab || 'mines';
+            if (!resourceRuntimeEventAffectsTab(name, activeTab)) return;
+            var eventCountry = resourceRuntimeEventCountry(event);
+            if (eventCountry && eventCountry !== key(root.__omegaV2CurrentCountryKey)) return;
+            var pendingEvents = root.__omegaV2ResourceRefreshEvents ||
+              (root.__omegaV2ResourceRefreshEvents = Object.create(null));
+            pendingEvents[name] = true;
+            scheduleResourceRuntimeRefresh(root);
           };
           g.addEventListener(name, handler);
           root.__omegaV2ResourceRuntimeEventHandlers.push({ type:name, callback:handler });
@@ -2642,6 +2715,12 @@
     root.__omegaV2ResourceLoadStatus = '';
     root.__omegaV2ResourceLoadError = '';
     root.__omegaV2ResourceLoadFailedCountry = '';
+    if (root.__omegaV2ResourceRefreshTimer !== null &&
+        root.__omegaV2ResourceRefreshTimer !== undefined && typeof g.clearTimeout === 'function') {
+      try { g.clearTimeout(root.__omegaV2ResourceRefreshTimer); } catch (_) {}
+    }
+    root.__omegaV2ResourceRefreshTimer = null;
+    root.__omegaV2ResourceRefreshEvents = Object.create(null);
     var handlers = Array.isArray(root.__omegaV2ResourceRuntimeEventHandlers)
       ? root.__omegaV2ResourceRuntimeEventHandlers : [];
     handlers.forEach(function (row) {
