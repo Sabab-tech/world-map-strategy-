@@ -5,7 +5,7 @@
   "rendering": {
     "format": "SVG",
     "viewBox": "0 0 128 128",
-    "artDirection": "Cohesive dimensional object-led industrial vector icons; resource icons use a light metallic contrast field with commodity-specific focal artwork, while factory icons retain the dark-navy category plate.",
+    "artDirection": "Dimensional industrial vector artwork; resource icons use metallic contrast plates, factory icons retain the dark-navy category plate, and logistics transport heroes use transparent three-dimensional vehicle illustrations.",
     "background": "Resource SVGs use a light silver-metal backplate for contrast; canonical factory SVGs retain their shared dark-navy backplate.",
     "dependencies": []
   },
@@ -18,14 +18,15 @@
     "canonicalResourceRuleCount": 42,
     "integratedIntoRuntime": true,
     "legacyFactoryIconCount": 39,
-    "transportVariantIconCount": 20,
+    "transportVariantIconCount": 25,
     "transportVariantsByMode": {
-      "barge": 5,
-      "ship": 5,
-      "rail": 5,
-      "truck": 5
+      "barge": 6,
+      "ship": 6,
+      "rail": 6,
+      "truck": 6,
+      "pipeline": 1
     },
-    "totalTransportVariantIconCount": 20
+    "totalTransportVariantIconCount": 25
   },
   "logisticsNodeAssets": [
     {
@@ -1040,6 +1041,61 @@
       "viewBox": "0 0 128 128",
       "source": "LOCAL_SVG_ASSET",
       "authority": "OMEGA_RESOURCE_TRANSPORT_VARIANT_ICON_V1"
+    },
+    {
+      "id": "mode-hero-road-truck",
+      "label": "Dimensional road freight truck",
+      "assetId": "mode-hero-road-truck",
+      "transportMode": "truck",
+      "cargoClass": "mode_hero",
+      "file": "transport/variants/mode-hero-road-truck.svg",
+      "viewBox": "0 0 128 128",
+      "source": "LOCAL_SVG_ASSET",
+      "authority": "OMEGA_RESOURCE_TRANSPORT_MODE_HERO_ART_V1"
+    },
+    {
+      "id": "mode-hero-freight-train",
+      "label": "Dimensional freight train",
+      "assetId": "mode-hero-freight-train",
+      "transportMode": "rail",
+      "cargoClass": "mode_hero",
+      "file": "transport/variants/mode-hero-freight-train.svg",
+      "viewBox": "0 0 128 128",
+      "source": "LOCAL_SVG_ASSET",
+      "authority": "OMEGA_RESOURCE_TRANSPORT_MODE_HERO_ART_V1"
+    },
+    {
+      "id": "mode-hero-cargo-ship",
+      "label": "Dimensional cargo ship",
+      "assetId": "mode-hero-cargo-ship",
+      "transportMode": "ship",
+      "cargoClass": "mode_hero",
+      "file": "transport/variants/mode-hero-cargo-ship.svg",
+      "viewBox": "0 0 128 128",
+      "source": "LOCAL_SVG_ASSET",
+      "authority": "OMEGA_RESOURCE_TRANSPORT_MODE_HERO_ART_V1"
+    },
+    {
+      "id": "mode-hero-river-barge",
+      "label": "Dimensional river cargo barge",
+      "assetId": "mode-hero-river-barge",
+      "transportMode": "barge",
+      "cargoClass": "mode_hero",
+      "file": "transport/variants/mode-hero-river-barge.svg",
+      "viewBox": "0 0 128 128",
+      "source": "LOCAL_SVG_ASSET",
+      "authority": "OMEGA_RESOURCE_TRANSPORT_MODE_HERO_ART_V1"
+    },
+    {
+      "id": "mode-hero-pipeline",
+      "label": "Dimensional industrial pipeline",
+      "assetId": "mode-hero-pipeline",
+      "transportMode": "pipeline",
+      "cargoClass": "mode_hero",
+      "file": "transport/variants/mode-hero-pipeline.svg",
+      "viewBox": "0 0 128 128",
+      "source": "LOCAL_SVG_ASSET",
+      "authority": "OMEGA_RESOURCE_TRANSPORT_MODE_HERO_ART_V1"
     }
   ]
 }
