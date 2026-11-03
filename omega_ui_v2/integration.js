@@ -320,8 +320,19 @@
     var ministryId=mappings[route]||null,destinations=g.OmegaUIV2App.destinations||[];
     if(destinations.indexOf(route)<0&&!ministryId)return false;
     var root=cabinetRoot();
-    try{if(root&&root.getAttribute&&root.getAttribute(ACTIVE_ATTR)==='true'&&root.__omegaUIV2State){if(ministryId)return !!g.OmegaUIV2App.openMinistry(root,ministryId);g.OmegaUIV2App.navigate(root,route);return true;}
-      var initial=destinations.indexOf(route)>=0?route:'government';return !!(mountIntoCabinet(root,{initialRoute:initial,ministryId:ministryId})||{}).ok;
+    try{
+      if(root&&root.getAttribute&&root.getAttribute(ACTIVE_ATTR)==='true'&&root.__omegaUIV2State){
+        if(ministryId)return !!g.OmegaUIV2App.openMinistry(root,ministryId,route==='resources');
+        g.OmegaUIV2App.navigate(root,route);
+        return true;
+      }
+      // Resource Ministry is its own initial route. Mounting Government first and
+      // immediately navigating away performs two synchronous screen renders.
+      if(ministryId==='energy_mining'){
+        return !!(mountIntoCabinet(root,{initialRoute:'resources',initialMinistryId:ministryId})||{}).ok;
+      }
+      var initial=destinations.indexOf(route)>=0?route:'government';
+      return !!(mountIntoCabinet(root,{initialRoute:initial,ministryId:ministryId})||{}).ok;
     }catch(_){return false;}
   }
   function prepareCloseToWorldMap() {
