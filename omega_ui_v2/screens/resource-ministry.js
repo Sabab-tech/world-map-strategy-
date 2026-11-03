@@ -799,9 +799,17 @@
           numberOrNull(stage.turn) === turn;
       });
     }
+    var outputBySite = Object.create(null);
+    flows.forEach(function (row) {
+      if (!row || !row.siteId || !isCurrentTurnFlow(row)) return;
+      var id = String(row.siteId);
+      outputBySite[id] = (outputBySite[id] || 0) + Math.max(0, numberOrNull(row.quantity) || 0);
+    });
     function outputForSite(id, rows) {
-      return rows.reduce(function (sum, row) {
-        if (String(row.siteId || '') !== String(id || '') || !isCurrentTurnFlow(row)) return sum;
+      var siteKey = String(id || '');
+      if (rows === flows) return outputBySite[siteKey] || 0;
+      return (Array.isArray(rows) ? rows : []).reduce(function (sum, row) {
+        if (String(row.siteId || '') !== siteKey || !isCurrentTurnFlow(row)) return sum;
         return sum + Math.max(0, numberOrNull(row.quantity) || 0);
       }, 0);
     }
@@ -1004,6 +1012,10 @@
     var portfolioBalanceState = currentOutputGroups.length ? (outputShortageCount ? 'shortage' : outputDemandKnown ? 'adequate' : 'producing') : activeSiteCount ? 'stopped' : 'neutral';
     var producingSites = model.sites.filter(function (site) { return outputForSite(site.siteId, flows) > 0; });
     var blockedFlows = flows.filter(flowIsBlocked);
+    var blockedFlowSiteIds = Object.create(null);
+    blockedFlows.forEach(function (row) {
+      if (row && row.siteId) blockedFlowSiteIds[String(row.siteId)] = true;
+    });
     var distinctSiteResources = model.sites.filter(eligible).map(function (site) { return site.resourceId; });
     var distinctResources = Array.from(new Set(distinctSiteResources.concat(canonicalResourceCatalog.map(function (row) {
       return String(row && (row.resourceId || row.id) || '').trim();
@@ -1223,7 +1235,7 @@
     }
     function siteCard(site) {
       var asset = assetFor(site.siteId), project = projectFor(site.siteId), output = outputForSite(site.siteId, flows);
-      var isBuilt = isOperationalAsset(asset), balance = balanceState(site, asset, output, blockedFlows.some(function (row) { return String(row.siteId || '') === site.siteId; }));
+      var isBuilt = isOperationalAsset(asset), balance = balanceState(site, asset, output, !!blockedFlowSiteIds[site.siteId]);
       var reserveValue = site.reserve.value !== null ? site.reserve.value :
         site.modeledReserve && site.modeledReserve.modeledValue !== null ? site.modeledReserve.modeledValue : null;
       var capacity = site.production.value !== null ? site.production.value : site.production.modeledValue;
@@ -1257,9 +1269,13 @@
         '<button type="button" class="omega-v2-button omega-v2-button--extract" data-omega-v2-mine-action="extract" data-site-id="' + esc(site.siteId) + '"' + (extractDisabled ? ' disabled' : '') + '>Extract</button>' +
         '<button type="button" class="omega-v2-button omega-v2-button--demolish" data-omega-v2-mine-action="demolish" data-site-id="' + esc(site.siteId) + '"' + (demolishDisabled ? ' disabled' : '') + '>Demolish</button></div></article>';
     }
-    var cards = model.sites.map(siteCard).join('');
+    // Mine cards are expensive because they include site operations, production and
+    // construction quotes. Build them only when the player opens the Mines tab.
+    var cards = active === 'mines' ? model.sites.map(siteCard).join('') : '';
     var selectedId = String(root.__omegaV2SelectedMineId || '');
-    var selectedMine = model.sites.find(function (site) { return site.siteId === selectedId; }) || model.sites[0] || null;
+    var selectedMine = active === 'mines'
+      ? model.sites.find(function (site) { return site.siteId === selectedId; }) || model.sites[0] || null
+      : null;
     if (selectedMine) root.__omegaV2SelectedMineId = selectedMine.siteId;
     function livePlayerCountryKey() {
       return activePlayerCountryKey(authoritativeGameState());
@@ -1329,7 +1345,7 @@
       var workersRequired = numberOrNull(asset && asset.workersRequired);
       var trucks = numberOrNull(asset && (asset.trucksAssigned !== undefined ? asset.trucksAssigned : asset.vehicleCount));
       var power = numberOrNull(asset && (asset.powerAvailability !== undefined ? asset.powerAvailability : asset.powerPercent));
-      var balance = balanceState(site, asset, output, blockedFlows.some(function (row) { return String(row.siteId || '') === site.siteId; }));
+      var balance = balanceState(site, asset, output, !!blockedFlowSiteIds[site.siteId]);
       return '<section class="omega-v2-card omega-v2-mine-detail" data-omega-v2-mine-detail><div class="omega-v2-mine-detail-head"><span class="omega-v2-resource-icon omega-v2-resource-icon--large">' +
         resourceIconMarkup(site.resourceId, resourceLabel(site.resourceId)) + '</span><div><h2 class="omega-v2-card-title">' + esc(site.name) + '</h2><p class="omega-v2-card-meta">' +
         esc(site.location) + ' · ' + esc(resourceLabel(site.resourceId)) + '</p><span class="omega-v2-status" data-state="' +
@@ -2263,15 +2279,17 @@
       (currentOutputGroups.length ? '' : '<div class="omega-v2-empty">No extraction output has been recorded this turn.</div>') +
       '</div></section>' + (reportCharts ? '<div class="omega-v2-grid omega-v2-report-grid">' + reportCharts + '</div>' :
         '<div class="omega-v2-empty">Charts appear when production records have been created by the game.</div>');
-    var selectedDetail = selectedSiteDetail(selectedMine);
-    var mineMarkup = '<div class="omega-v2-filterbar omega-v2-mine-filterbar"><input type="search" aria-label="Search mine sites" placeholder="Search mines..." data-omega-v2-site-search>' +
-      '<select aria-label="Filter by resource" data-omega-v2-resource-filter>' + '<option value="all">All resources</option>' +
-      Array.from(new Set(model.sites.map(function (item) { return item.resourceId; })).values()).map(function (id) {
-        return '<option value="' + esc(id) + '">' + esc(resourceLabel(id)) + '</option>';
-      }).join('') + '</select></div>' +
-      '<div class="omega-v2-card-meta">Showing <strong data-omega-v2-site-visible-count>' + fmt(model.sites.filter(eligible).length) + '</strong> mines</div>' +
-      (model.siteCount ? '<div class="omega-v2-mine-workspace"><div class="omega-v2-grid" data-omega-v2-site-grid>' + cards + '</div><aside class="omega-v2-mine-side-panel">' + selectedDetail + '</aside></div>' :
-        '<div class="omega-v2-empty">No mine sites are available for this country.</div>');
+    var selectedDetail = active === 'mines' ? selectedSiteDetail(selectedMine) : '';
+    var mineMarkup = active === 'mines'
+      ? '<div class="omega-v2-filterbar omega-v2-mine-filterbar"><input type="search" aria-label="Search mine sites" placeholder="Search mines..." data-omega-v2-site-search>' +
+        '<select aria-label="Filter by resource" data-omega-v2-resource-filter>' + '<option value="all">All resources</option>' +
+        Array.from(new Set(model.sites.map(function (item) { return item.resourceId; })).values()).map(function (id) {
+          return '<option value="' + esc(id) + '">' + esc(resourceLabel(id)) + '</option>';
+        }).join('') + '</select></div>' +
+        '<div class="omega-v2-card-meta">Showing <strong data-omega-v2-site-visible-count>' + fmt(model.sites.filter(eligible).length) + '</strong> mines</div>' +
+        (model.siteCount ? '<div class="omega-v2-mine-workspace"><div class="omega-v2-grid" data-omega-v2-site-grid>' + cards + '</div><aside class="omega-v2-mine-side-panel">' + selectedDetail + '</aside></div>' :
+          '<div class="omega-v2-empty">No mine sites are available for this country.</div>')
+      : '';
     var tabRows = [
       ['dashboard','Overview'],['mines','Mines'],['logistics','Stock & Logistics'],['inventory','Inventory / Warehouse'],['reports','Reports']
     ];
