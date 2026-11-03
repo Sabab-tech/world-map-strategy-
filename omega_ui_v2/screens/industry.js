@@ -8,6 +8,7 @@
   function esc(value) { return String(value == null ? '' : value).replace(/[&<>"']/g, function (ch) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch]; }); }
   function num(value) { if (value === null || value === undefined || value === '') return null; var n = Number(value); return Number.isFinite(n) ? n : null; }
   function fmt(value, unit) { var n = num(value); return n === null ? 'Not recorded' : n.toLocaleString('en-US', { maximumFractionDigits: 2 }) + (unit ? ' ' + esc(unit) : ''); }
+  function readableIdentifier(value) { return String(value == null ? '' : value).replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim(); }
   function stateRoot() { return g.Game && g.Game.state || g.gameState || null; }
   function countryProfile(value) {
     var runtime = g.OmegaCountryRuntimeData || (g.Omega && g.Omega.CountryRuntimeData);
@@ -462,7 +463,7 @@
     var safeLabel = String(label || productId || 'Industrial product');
     return '<span class="fp-product-identity" data-factory-product-identity="' + esc(id) + '">' +
       '<span class="fp-product-icon-frame">' + factoryProductIconVisualMarkup(id, safeLabel) + '</span>' +
-      '<span class="fp-product-identity-copy"><strong>' + esc(safeLabel) + '</strong><small>' + esc(productId || 'Product ID not recorded') + '</small></span></span>';
+      '<span class="fp-product-identity-copy"><strong>' + esc(safeLabel) + '</strong></span></span>';
   }
 
   function factoryProductStockMarkup(productId, label, value) {
@@ -1331,16 +1332,23 @@
       var id = String(productId || '').trim();
       if (!id) return;
       var key = id.toLowerCase();
-      if (!map[key]) map[key] = { productId: id, perCycle: 0, perDay: 0, unit: String(unit || ''), sources: [] };
-      map[key].perCycle += perCycle;
-      map[key].perDay += perDay;
-      if (!map[key].unit && unit) map[key].unit = String(unit);
-      if (source) map[key].sources.push(source);
+      if (!map[key]) map[key] = {
+        productId:id, perCycle:0, perDay:0, unit:String(unit || ''), sources:[],
+        hasPerCycle:false, hasPerDay:false, perCycleComplete:true, perDayComplete:true
+      };
+      var row = map[key];
+      var cycleValue = num(perCycle), dayValue = num(perDay);
+      if (cycleValue === null) row.perCycleComplete = false;
+      else { row.perCycle += cycleValue; row.hasPerCycle = true; }
+      if (dayValue === null) row.perDayComplete = false;
+      else { row.perDay += dayValue; row.hasPerDay = true; }
+      if (!row.unit && unit) row.unit = String(unit);
+      if (source) row.sources.push(source);
     }
     function addRoute(plan, factoryUnits, recipeId, rule, capacity, routeKind) {
       factoryUnits = Math.max(0, Math.floor(Number(factoryUnits) || 0));
       if (!factoryUnits || !rule || !(capacity > 0)) return;
-      var cycleDays = Math.max(1, num(rule.cycleDays) || 1);
+      var cycleDays = num(rule.cycleDays);
       var totalCapacity = factoryUnits * capacity;
       var inputs = rule.inputs && typeof rule.inputs === 'object' ? rule.inputs : {};
       var outputs = rule.outputs && typeof rule.outputs === 'object' ? rule.outputs : {};
@@ -1355,16 +1363,16 @@
       Object.keys(inputs).forEach(function (productId) {
         var coefficient = panelInputCoefficient(inputs[productId]);
         if (coefficient === null || coefficient <= 0) return;
-        var perCycle = totalCapacity * coefficient;
         var productUnit = rule.inputUnit || 'SIMULATION_RESOURCE_UNIT';
-        addProduct(plan.inputs, productId, perCycle, perCycle / cycleDays, productUnit, source);
+        var rate = factoryRouteRate(coefficient, rule, totalCapacity, productUnit);
+        addProduct(plan.inputs, productId, rate ? rate.perCycle : null, rate ? rate.perDay : null, productUnit, source);
       });
       Object.keys(outputs).forEach(function (productId) {
         var coefficient = panelInputCoefficient(outputs[productId]);
         if (coefficient === null || coefficient <= 0) return;
-        var perCycle = totalCapacity * coefficient;
         var productUnit = rule.outputUnit || 'SIMULATION_RESOURCE_UNIT';
-        addProduct(plan.outputs, productId, perCycle, perCycle / cycleDays, productUnit, source);
+        var rate = factoryRouteRate(coefficient, rule, totalCapacity, productUnit);
+        addProduct(plan.outputs, productId, rate ? rate.perCycle : null, rate ? rate.perDay : null, productUnit, source);
       });
       plan.routes.push({
         recipeId: recipeId || ('PROCESSING:' + String(rule.resourceId || 'RESOURCE')),
@@ -1428,18 +1436,12 @@
         var resources = Object.keys(siteMix).sort().map(function (resourceId) {
           return { resourceId: resourceId, siteCount: siteMix[resourceId] };
         });
-        var fallback = false;
-        if (!resources.length) {
-          fallback = true;
-          resources = ['coal', 'iron_ore'].filter(function (resourceId) { return !!processingRules[resourceId]; })
-            .map(function (resourceId) { return { resourceId: resourceId, siteCount: 1 }; });
-        }
         splitBySiteWeight(count, resources).forEach(function (allocation) {
           var rule = processingRules[allocation.resourceId];
           if (!rule) return;
           var processing = Object.assign({}, rule, { resourceId: allocation.resourceId });
           addRoute(plan, allocation.factoryCount, 'PROCESSING:' + allocation.resourceId, processing, capacity,
-            fallback ? 'SIMULATED_IMPORT_BASELINE_NO_DOMESTIC_SITE' : 'DOMESTIC_COMMERCIAL_SITE_MIX');
+            'DOMESTIC_COMMERCIAL_SITE_MIX');
         });
         return;
       }
@@ -1457,13 +1459,23 @@
     });
     var coverageDays = Math.max(1, Math.min(3650, Math.round(num(model.factoryInputCoverageDays) || 100)));
     typeRows.forEach(function (plan) {
-      plan.inputs = Object.keys(plan.inputs).map(function (key) { return plan.inputs[key]; })
-        .sort(function (a, b) { return a.productId.localeCompare(b.productId); });
-      plan.outputs = Object.keys(plan.outputs).map(function (key) { return plan.outputs[key]; })
-        .sort(function (a, b) { return a.productId.localeCompare(b.productId); });
+      plan.inputs = Object.keys(plan.inputs).map(function (key) {
+        var row = plan.inputs[key];
+        row.perCycle = row.hasPerCycle && row.perCycleComplete ? row.perCycle : null;
+        row.perDay = row.hasPerDay && row.perDayComplete ? row.perDay : null;
+        delete row.hasPerCycle; delete row.hasPerDay; delete row.perCycleComplete; delete row.perDayComplete;
+        return row;
+      }).sort(function (a, b) { return a.productId.localeCompare(b.productId); });
+      plan.outputs = Object.keys(plan.outputs).map(function (key) {
+        var row = plan.outputs[key];
+        row.perCycle = row.hasPerCycle && row.perCycleComplete ? row.perCycle : null;
+        row.perDay = row.hasPerDay && row.perDayComplete ? row.perDay : null;
+        delete row.hasPerCycle; delete row.hasPerDay; delete row.perCycleComplete; delete row.perDayComplete;
+        return row;
+      }).sort(function (a, b) { return a.productId.localeCompare(b.productId); });
       plan.inputs.forEach(function (row) {
         row.coverageDays = coverageDays;
-        row.coverageQuantity = row.perDay * coverageDays;
+        row.coverageQuantity = row.perDay === null ? null : row.perDay * coverageDays;
       });
     });
     return {
@@ -1508,7 +1520,7 @@
       '<p class="omega-v2-source">Calculated from the country factory allocation, canonical factory capacity and recipe cycle. Planned demand is not reported consumption.</p>';
     plan.types.forEach(function (type) {
       html += '<article class="fp-factory-data-card"><header class="fp-factory-data-heading"><div><span>FACTORY INPUT PLAN</span><strong>' +
-        esc(type.name) + '</strong><small>' + esc(type.category) + ' · ' + esc(type.type) + '</small></div>' +
+        esc(type.name) + '</strong><small>' + esc(readableIdentifier(type.category)) + ' · ' + esc(readableIdentifier(type.type)) + '</small></div>' +
         factoryPlanPresenceMarkup(type, model) + '</header>';
       if (!type.count) {
         html += '<div class="fp-factory-table-wrap"><p class="fp-factory-muted">No factories of this type are assigned. Current input demand: 0.</p></div></article>';
@@ -1550,7 +1562,7 @@
       '<p class="omega-v2-source">Planned output is calculated from full factory capacity and recipe coefficients. Actual output and stock remain tied to committed production batches.</p>';
     plan.types.forEach(function (type) {
       html += '<article class="fp-factory-data-card"><header class="fp-factory-data-heading"><div><span>FACTORY OUTPUT PLAN</span><strong>' +
-        esc(type.name) + '</strong><small>' + esc(type.category) + ' · ' + esc(type.type) + '</small></div>' +
+        esc(type.name) + '</strong><small>' + esc(readableIdentifier(type.category)) + ' · ' + esc(readableIdentifier(type.type)) + '</small></div>' +
         factoryPlanPresenceMarkup(type, model) + '</header>';
       if (!type.count) {
         html += '<div class="fp-factory-table-wrap"><p class="fp-factory-muted">No factories of this type are assigned. Planned output: 0.</p></div></article>';
@@ -1904,14 +1916,50 @@
   }
 
   function factoryQuantityBasisLabel(value, route, side) {
-    var amount = num(value);
+    var amount = panelInputCoefficient(value);
     if (amount === null) return 'Quantity not recorded';
     var unit = String(side === 'input' ? route && route.inputUnit || '' : route && route.outputUnit || '');
     var basis = String(route && route.quantityBasis || '');
     var amountText = amount.toLocaleString('en-US', { maximumFractionDigits:4 });
     if (basis === 'PER_SIMULATION_PRODUCTION_UNIT') return amountText + (unit ? ' ' + unit.replace(/_/g, ' ').toLowerCase() : '') + ' / production unit';
-    if (basis) return amountText + ' / ' + basis.toLowerCase().replace(/_/g, ' ');
-    return amountText + (unit ? ' ' + unit : '') + ' · basis not recorded';
+    if (basis) return amountText + ' / ' + readableIdentifier(basis).toLowerCase();
+    return amountText + (unit ? ' ' + readableIdentifier(unit).toLowerCase() : '') + ' · basis not recorded';
+  }
+
+  function factoryRouteRate(value, route, capacity, unitOverride) {
+    var coefficient = panelInputCoefficient(value);
+    var capacityValue = num(capacity);
+    var cycleDays = num(route && route.cycleDays);
+    var quantityBasis = String(route && route.quantityBasis || '').toUpperCase();
+    var unit = String(unitOverride || '').trim();
+    // Legacy canonical recipes may omit quantityBasis; keep their basis visibly unrecorded while
+    // still deriving a game-unit rate when capacity, cycle duration and unit are all explicit.
+    if (coefficient === null || coefficient <= 0 || capacityValue === null || capacityValue <= 0 ||
+        cycleDays === null || cycleDays <= 0 ||
+        (quantityBasis && quantityBasis !== 'PER_SIMULATION_PRODUCTION_UNIT') || !unit) return null;
+    var perCycle = capacityValue * coefficient;
+    var perDay = perCycle / cycleDays;
+    if (!Number.isFinite(perCycle) || !Number.isFinite(perDay)) return null;
+    return { perCycle:perCycle, perDay:perDay, unit:unit };
+  }
+
+  function factoryRouteCardCapacity(model, route, asset) {
+    if (asset) {
+      var assetCapacity = num(asset.capacityPerDay);
+      if (assetCapacity !== null) return assetCapacity;
+    }
+    var catalog = safeCatalog() || {};
+    var profiles = model && model.catalogProfiles || catalog.factoryProfiles || {};
+    var wanted = normalizeFactoryType(route && route.factoryType, catalog) ||
+      String(route && route.factoryType || '').toUpperCase();
+    var profile = profiles[wanted] || {};
+    return num(profile.defaultCapacityPerDay);
+  }
+
+  function factoryDisplayUnit(unit) {
+    var value = String(unit || '').replace(/_/g, ' ').trim();
+    if (/^SIMULATION RESOURCE UNIT$/i.test(value)) return 'game units';
+    return value ? value.toLowerCase() : '';
   }
 
   function factoryFindValue(source, productId) {
@@ -2018,10 +2066,13 @@
     var map = side === 'input' ? route.inputs || {} : route.outputs || {};
     var amount = map[productId];
     var quantity = factoryQuantityBasisLabel(amount, route, side);
+    var routeUnit = side === 'input' ? route.inputUnit : route.outputUnit;
+    var routeRate = factoryRouteRate(amount, route, factoryRouteCardCapacity(model, route, asset), routeUnit);
+    var rateMarkup = '<small class="fp-card-product-rate">Modeled per game day per factory: ' +
+      (routeRate ? fmt(routeRate.perDay, factoryDisplayUnit(routeRate.unit)) : 'Not recorded') + '</small>';
     var actual = '';
     if (asset && side === 'input') {
       var current = asset.hasInputInventory ? factoryFindValue(asset.raw && asset.raw.inputInventory, productId) : null;
-      if (asset.hasInputInventory && current === null) current = 0;
       var matchingLots = (Array.isArray(asset.inputLots) ? asset.inputLots : []).filter(function (lot) {
         return lot && String(lot.resourceId || lot.materialIdentity || '').toLowerCase() === String(productId).toLowerCase();
       });
@@ -2038,18 +2089,18 @@
         return String(key).toLowerCase() === String(productId).toLowerCase();
       });
       var stockUnit = (unitKey && asset.inputUnits[unitKey]) || asset.inputUnit || route.inputUnit || '';
-      actual = '<small class="fp-card-product-actual">Delivered: ' + (deliveredKnown ? fmt(delivered, deliveredUnit || stockUnit) : 'Not recorded') +
-        ' · Factory stock: ' + (current === null ? 'Not recorded' : fmt(current, stockUnit)) + '</small>';
+      actual = '<small class="fp-card-product-actual">Delivered: ' + (deliveredKnown ? fmt(delivered, factoryDisplayUnit(deliveredUnit || stockUnit)) : 'Not recorded') +
+        ' · Factory stock: ' + (current === null ? 'Not recorded' : fmt(current, factoryDisplayUnit(stockUnit))) + '</small>';
     } else if (asset && side === 'output') {
       var committed = factoryFindValue(asset.latestOutputs, productId);
       var stock = factoryFindValue(model && model.processedStock, productId);
       var outputUnit = asset.raw && (asset.raw.outputUnit || asset.raw.productionUnit) || route.outputUnit || '';
-      actual = '<small class="fp-card-product-actual">Committed: ' + (committed === null ? 'Not started / no committed output' : fmt(committed, outputUnit)) +
-        ' · Warehouse: ' + (stock === null ? 'Not recorded' : fmt(stock, outputUnit)) + '</small>';
+      actual = '<small class="fp-card-product-actual">Committed: ' + (committed === null ? 'Not started / no committed output' : fmt(committed, factoryDisplayUnit(outputUnit))) +
+        ' · Warehouse: ' + (stock === null ? 'Not recorded' : fmt(stock, factoryDisplayUnit(outputUnit))) + '</small>';
     }
     return '<div class="fp-card-product-row" data-product-role="' + esc(roleLabel || side) + '">' +
       factoryProductIdentityMarkup(productId, panelProductLabel(model, productId)) +
-      '<span class="fp-card-product-quantity">' + esc(quantity) + '</span>' + actual +
+      '<span class="fp-card-product-quantity">' + esc(quantity) + '</span>' + rateMarkup + actual +
     '</div>';
   }
 
@@ -2065,8 +2116,9 @@
     co.forEach(function (id) { roleMap[id] = 'Co-product'; });
     by.forEach(function (id) { roleMap[id] = 'By-product'; });
     var unclassified = outputs.filter(function (id) { return !roleMap[id]; });
-    var html = '<section class="fp-card-route-detail"><header><strong>' + esc(route.name || route.recipeId || 'Production route') + '</strong>' +
-      '<small>' + esc(route.recipeId || 'Recipe ID not recorded') + ' · ' + esc(fmt(route.cycleDays, 'game-days/cycle')) + '</small></header>';
+    var routeLabel = readableIdentifier(route.name || route.recipeId || 'Production route');
+    var html = '<section class="fp-card-route-detail"><header><strong>' + esc(routeLabel) + '</strong>' +
+      '<small>' + esc(fmt(route.cycleDays, 'game-days/cycle')) + '</small></header>';
     html += '<div class="fp-card-detail-columns"><div><h4>Inputs required</h4>' +
       (inputs.length ? inputs.map(function (id) {
         return factoryRecipeProductRow(route, id, 'input', model, asset, 'input');
@@ -2085,7 +2137,7 @@
         return factoryRecipeProductRow(route, id, 'output', model, asset, 'unclassified');
       }).join('') : '') +
       '</div></div>' +
-      '<footer><span>Quantity basis: ' + esc(route.quantityBasis || 'Not recorded') + '</span><span>Cycle: ' + esc(fmt(route.cycleDays, 'game-days')) + '</span>' +
+      '<footer><span>Quantity basis: ' + esc(readableIdentifier(route.quantityBasis || 'Not recorded')) + '</span><span>Cycle: ' + esc(fmt(route.cycleDays, 'game-days')) + '</span>' +
       (route.simulationOnly === true ? '<span>Modeled gameplay recipe</span>' : '') +
       '</footer></section>';
     return html;
@@ -2159,7 +2211,7 @@
       !!(route.recipeId || num(route.cycleDays) !== null || route.quantityBasis);
     if (expanded) {
       html += '<div class="fp-card-expanded-details">' +
-        '<div class="fp-card-expanded-heading"><strong>Complete production formula</strong><span>' + esc(route.recipeId || 'Route not recorded') + '</span></div>' +
+        '<div class="fp-card-expanded-heading"><strong>Complete production formula</strong><span>' + esc(readableIdentifier(route.name || route.recipeId || 'Route not recorded')) + '</span></div>' +
         routes.map(function (item) { return factoryRouteFullDetailsMarkup(item, model, asset); }).join('') +
       '</div>';
     }
@@ -2186,9 +2238,9 @@
     var selected = String(options.selectedFactoryId || '') === id;
     var ownedCount = factoryTypeOwnedCount(factory, model);
     var displayOutput = daily
-      ? (daily.value > 0 ? '+ ' : '') + fmt(daily.value) + (daily.unit ? ' ' + esc(daily.unit) : '') + '/day'
+      ? (daily.value > 0 ? '+ ' : '') + fmt(daily.value, factoryDisplayUnit(daily.unit)) + '/day'
       : 'Not recorded';
-    var outputProduct = daily && daily.product ? '<small class="omega-v2-factory-output-product">' + esc(daily.product) + '</small>' : '';
+    var outputProduct = daily && daily.product ? '<small class="omega-v2-factory-output-product">' + esc(panelProductLabel(model, daily.product)) + '</small>' : '';
     var reasonText = String(status.reason || '').trim();
     var reason = reasonText && !/^(NOT_RECORDED|NOT RECORDED|UNKNOWN)$/.test(reasonText.toUpperCase())
       ? '<small class="omega-v2-factory-reason">' + esc(reasonText.replace(/_/g, ' ').toLowerCase()) + '</small>' : '';
@@ -2260,7 +2312,7 @@
       ? 'Building is available only for the active player country.'
       : !support.canBuild ? 'No canonical recipe/input is registered for this type.' : '';
     var header = '<header class="fp-type-card-head"><span class="fp-type-card-art">' + factorySvgMarkup({ type:type, name:item.name || type }) + '</span>' +
-      '<span class="fp-type-card-name"><strong>' + esc(item.name || type) + '</strong><small>' + esc(item.category || 'Uncategorised') + '</small></span></header>';
+      '<span class="fp-type-card-name"><strong>' + esc(item.name || type) + '</strong><small>' + esc(readableIdentifier(item.category || 'Uncategorised')) + '</small></span></header>';
     if (state.buildKey === cardKey) {
       return '<article class="omega-v2-factory-type-card omega-v2-factory-type-card--' + presence + ' fp-type-card--build" data-omega-v2-factory-type-card data-factory-type="' + esc(type) + '" data-factory-presence="' + presence + '">' +
         header + '<div class="fp-type-card-count"><span>Factories</span><strong>' + fmt(ownedCount) + '</strong></div>' +
@@ -2339,7 +2391,7 @@
       ? '<label>Production recipe<select name="recipeId"><option value="">Use the profile default</option>' + support.recipes.map(function (recipe) {
           var id = String(recipe.recipeId || recipe.id || '');
           var selected = id && id === String(profile.defaultRecipeId || '') ? ' selected' : '';
-          return '<option value="' + esc(id) + '"' + selected + '>' + esc(recipe.name || recipe.title || id) + ' · ' + esc(id) + '</option>';
+          return '<option value="' + esc(id) + '"' + selected + '>' + esc(readableIdentifier(recipe.name || recipe.title || id)) + '</option>';
         }).join('') + '</select></label>'
       : '';
     var resourceControl = !support.recipes.length && support.resources.length
@@ -2357,7 +2409,7 @@
       '<header class="fp-project-heading"><div><span>OMEGA / INDUSTRIAL PROJECTS</span><h2 id="omega-v2-factory-project-title">Start factory construction</h2></div>' +
       '<button type="button" class="fp-project-close" data-omega-v2-factory-project-cancel aria-label="Close construction form">×</button></header>' +
       '<form data-omega-v2-factory-project-form><input type="hidden" name="factoryType" value="' + esc(type) + '">' +
-      '<div class="fp-project-type"><span>Factory type</span><strong>' + esc(profile.name || type) + '</strong><small>' + esc(type) + '</small></div>' +
+      '<div class="fp-project-type"><span>Factory type</span><strong>' + esc(profile.name || readableIdentifier(type)) + '</strong><small>' + esc(readableIdentifier(type)) + '</small></div>' +
       recipeControl + resourceControl +
       '<div class="fp-project-fields"><label>Build duration (modeled game-days)<input type="number" name="buildDays" min="1" step="1" inputmode="numeric" placeholder="' + esc(profile.constructionDays || 'Use profile default') + '"></label>' +
       '<label>Capacity (simulation units/day)<input type="number" name="capacityPerDay" min="1" step="any" inputmode="decimal" placeholder="' + esc(profile.defaultCapacityPerDay || 'Use profile default') + '"></label>' +
@@ -2400,16 +2452,23 @@
     if (!waits.length) return;
     var pending = root.__omegaV2IndustryPlanWarmup;
     if (pending && pending.countryId === countryKey) return;
-    pending = { countryId: countryKey, completed: false };
+    pending = { countryId:countryKey, completed:false, timedOut:false };
     root.__omegaV2IndustryPlanWarmup = pending;
-    pending.promise = Promise.all(waits.map(function (promise) {
+    var timeoutHandle = null;
+    var warmupPromise = Promise.all(waits.map(function (promise) {
       return Promise.resolve(promise).catch(function () { return null; });
-    })).then(function () {
+    })).then(function () { return { timedOut:false }; });
+    var timeoutPromise = new Promise(function (resolve) {
+      timeoutHandle = setTimeout(function () { resolve({ timedOut:true }); }, 4000);
+    });
+    pending.promise = Promise.race([warmupPromise, timeoutPromise]).then(function (result) {
+      if (timeoutHandle !== null) clearTimeout(timeoutHandle);
       pending.completed = true;
+      pending.timedOut = !!(result && result.timedOut);
+      if (pending.timedOut) return;
       if (root.__omegaV2IndustryPlanWarmup !== pending ||
           String(root.__omegaV2IndustryCountryId || '') !== countryKey) return;
-      // Do not revive a hidden Industry screen after the player has navigated
-      // to another ministry while this read-only source request was pending.
+      // Do not revive a hidden Industry screen after this read-only source request settles.
       if (typeof root.querySelector === 'function' &&
           !root.querySelector('[data-omega-v2-industry-tab]')) return;
       var refreshedModel = buildViewModel({ countryId:countryKey });

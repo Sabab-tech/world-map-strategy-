@@ -2718,8 +2718,8 @@ test('factory cards progressively disclose canonical products, quantities and in
     assert.match(steel,/COPPER CONCENTRATE/i);
     assert.match(steel,/CEMENT FEED/i);
     assert.match(steel,/PROCESSING DUST/i);
-    assert.match(steel,/Quantity basis: PER_SIMULATION_PRODUCTION_UNIT/);
-    assert.match(steel,/STEEL_PRIMARY_ROUTE_V1/);
+    assert.match(steel,/Quantity basis: PER SIMULATION PRODUCTION UNIT/);
+    assert.match(steel,/Steel and alloy works/i);
 
     root.__omegaV2FactoryCardUiState = {
       expandedKey:'',
@@ -2754,7 +2754,7 @@ test('factory cards progressively disclose canonical products, quantities and in
     assert.match(live[0],/Steel/);
     assert.match(live[0],/ALLOY STEEL/i);
     assert.match(live[0],/IRON CONCENTRATE/i);
-    assert.match(live[0],/Factory stock: 120 SIMULATION_RESOURCE_UNIT/);
+    assert.match(live[0],/Factory stock: 120 game units/);
     assert.match(live[0],/data-omega-v2-factory-build-details/);
     assert.match(live[0],/data-omega-v2-factory-destroy/);
 
@@ -2769,7 +2769,11 @@ test('factory cards progressively disclose canonical products, quantities and in
     assert.ok(liveExpanded);
     assert.match(liveExpanded[0],/Complete production formula/);
     assert.ok(liveExpanded[0].includes('Not started / no committed output'));
-    assert.match(liveExpanded[0],/Factory stock: 120 SIMULATION_RESOURCE_UNIT/);
+    assert.match(liveExpanded[0],/Factory stock: 120 game units/);
+    assert.match(liveExpanded[0],/Factory stock: Not recorded/,'an absent product key must remain unknown, not be converted to zero');
+    assert.match(liveExpanded[0],/Modeled per game day per factory: 324 game units/,'the card must use capacity × coefficient ÷ cycle days');
+    const visibleCardText = liveExpanded[0].replace(/<[^>]*>/g,' ');
+    assert.doesNotMatch(visibleCardText,/[A-Za-z0-9]_[A-Za-z0-9]/,'visible card text must not expose underscore-based identifiers');
 
     // Exercise the real delegated card disclosure handler and assert it updates root-local UI state.
     root.__omegaV2FactoryCardUiState = {
@@ -2802,11 +2806,111 @@ test('factory cards progressively disclose canonical products, quantities and in
   }
 });
 
+
+test('universal processing plan does not invent coal or iron ore when no eligible commercial sites exist', () => {
+  const previous = {
+    Game:globalThis.Game,
+    inventory:globalThis.OmegaCountryInventoryRuntime,
+    catalog:globalThis.OmegaResourceIndustrialCatalogData,
+    baseline:globalThis.OmegaCountryFactoryStartingBaselineV1,
+    countryRuntime:globalThis.OmegaCountryRuntimeData,
+    omega:globalThis.Omega,
+    network:globalThis.OmegaResourceIndustrialNetwork,
+    siteCatalog:globalThis.OmegaResourceSiteCanonicalCatalogData,
+    siteBinding:globalThis.OmegaIndividualResourceSiteBinding
+  };
+  const catalog = JSON.parse(readFileSync(new URL('../resource_industrial_catalog_v1.json', import.meta.url), 'utf8'));
+  globalThis.Omega = {};
+  globalThis.OmegaCountryRuntimeData = null;
+  globalThis.OmegaCountryFactoryStartingBaselineV1 = null;
+  globalThis.OmegaResourceIndustrialCatalogData = catalog;
+  globalThis.OmegaResourceIndustrialNetwork = null;
+  globalThis.OmegaCountryInventoryRuntime = null;
+  globalThis.OmegaResourceSiteCanonicalCatalogData = null;
+  globalThis.OmegaIndividualResourceSiteBinding = null;
+  globalThis.Game = { state:{
+    simulation:{ playerCountryId:'BGD', turn:1 },
+    resource:{ BGD:{
+      mineSiteReferences:[],
+      industrialNetwork:{ projects:[],factoryProductionCycles:{},factoryRuntime:{},siteFlowLedger:[] },
+      batches:[],finishedGoodsLedger:[],inventoryLedger:[],
+      processedWarehouse:{ availableByResource:{} }
+    }},
+    economy:{ BGD:{ productionAssets:[{
+      id:'UNIVERSAL-PROCESSING-EMPTY-SITE-MIX',
+      name:'Materials Processing Plant',
+      factoryType:'UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT',
+      status:'OPERATIONAL',
+      capacityPerDay:900
+    }] } }
+  }};
+  const root = { classList:{add(){}}, addEventListener(){}, contains(){return true;}, innerHTML:'' };
+  try {
+    const result = globalThis.OmegaUIV2Industry.render(root,{countryId:'BGD',tab:'inventory'});
+    assert.equal(result.ok,true);
+    assert.match(root.innerHTML,/data-factory-input-plan/);
+    assert.doesNotMatch(root.innerHTML,/coal concentrate|iron concentrate|iron ore processing/i,
+      'no eligible domestic site must not create a hard-coded coal/iron processing route');
+  } finally {
+    if (previous.Game === undefined) delete globalThis.Game; else globalThis.Game = previous.Game;
+    if (previous.inventory === undefined) delete globalThis.OmegaCountryInventoryRuntime; else globalThis.OmegaCountryInventoryRuntime = previous.inventory;
+    if (previous.catalog === undefined) delete globalThis.OmegaResourceIndustrialCatalogData; else globalThis.OmegaResourceIndustrialCatalogData = previous.catalog;
+    if (previous.baseline === undefined) delete globalThis.OmegaCountryFactoryStartingBaselineV1; else globalThis.OmegaCountryFactoryStartingBaselineV1 = previous.baseline;
+    if (previous.countryRuntime === undefined) delete globalThis.OmegaCountryRuntimeData; else globalThis.OmegaCountryRuntimeData = previous.countryRuntime;
+    if (previous.omega === undefined) delete globalThis.Omega; else globalThis.Omega = previous.omega;
+    if (previous.network === undefined) delete globalThis.OmegaResourceIndustrialNetwork; else globalThis.OmegaResourceIndustrialNetwork = previous.network;
+    if (previous.siteCatalog === undefined) delete globalThis.OmegaResourceSiteCanonicalCatalogData; else globalThis.OmegaResourceSiteCanonicalCatalogData = previous.siteCatalog;
+    if (previous.siteBinding === undefined) delete globalThis.OmegaIndividualResourceSiteBinding; else globalThis.OmegaIndividualResourceSiteBinding = previous.siteBinding;
+  }
+});
+
+test('factory catalog warm-up timeout releases a never-settling optional load without blocking the initial view', async () => {
+  const previous = {
+    Game:globalThis.Game,
+    catalog:globalThis.OmegaResourceIndustrialCatalogData,
+    baseline:globalThis.OmegaCountryFactoryStartingBaselineV1,
+    network:globalThis.OmegaResourceIndustrialNetwork,
+    omega:globalThis.Omega,
+    setTimeout:globalThis.setTimeout,
+    clearTimeout:globalThis.clearTimeout
+  };
+  globalThis.Omega = {};
+  globalThis.OmegaResourceIndustrialCatalogData = null;
+  globalThis.OmegaCountryFactoryStartingBaselineV1 = null;
+  globalThis.OmegaResourceIndustrialNetwork = { loadCatalog(){ return new Promise(() => {}); } };
+  globalThis.Game = { state:{
+    simulation:{ playerCountryId:'BGD', turn:1 },
+    resource:{ BGD:{ industrialNetwork:{ projects:[],factoryProductionCycles:{},factoryRuntime:{},siteFlowLedger:[] } } },
+    economy:{ BGD:{} }
+  }};
+  globalThis.setTimeout = callback => { Promise.resolve().then(callback); return 1; };
+  globalThis.clearTimeout = () => {};
+  const root = { classList:{add(){}}, addEventListener(){}, contains(){return true;}, querySelector(){return {};}, innerHTML:'' };
+  try {
+    const result = globalThis.OmegaUIV2Industry.render(root,{countryId:'BGD',tab:'factories'});
+    assert.equal(result.ok,true,'initial render must return without awaiting catalog readiness');
+    assert.ok(root.__omegaV2IndustryPlanWarmup);
+    await root.__omegaV2IndustryPlanWarmup.promise;
+    assert.equal(root.__omegaV2IndustryPlanWarmup.completed,true);
+    assert.equal(root.__omegaV2IndustryPlanWarmup.timedOut,true);
+  } finally {
+    if (previous.Game === undefined) delete globalThis.Game; else globalThis.Game = previous.Game;
+    if (previous.catalog === undefined) delete globalThis.OmegaResourceIndustrialCatalogData; else globalThis.OmegaResourceIndustrialCatalogData = previous.catalog;
+    if (previous.baseline === undefined) delete globalThis.OmegaCountryFactoryStartingBaselineV1; else globalThis.OmegaCountryFactoryStartingBaselineV1 = previous.baseline;
+    if (previous.network === undefined) delete globalThis.OmegaResourceIndustrialNetwork; else globalThis.OmegaResourceIndustrialNetwork = previous.network;
+    if (previous.omega === undefined) delete globalThis.Omega; else globalThis.Omega = previous.omega;
+    globalThis.setTimeout = previous.setTimeout;
+    globalThis.clearTimeout = previous.clearTimeout;
+  }
+});
+
 test('Factory Stock/Input UI assets invalidate the old offline shell cache', () => {
   const sw = readFileSync('omega-offline-map-sw.js','utf8');
   const css = readFileSync('omega_ui_v2/factory-production-command.css','utf8');
-  assert.ok(sw.includes('omega-offline-atlas-shell-v84'),
+  assert.ok(sw.includes('omega-offline-atlas-shell-v85'),
     'the offline shell must activate the new JS/CSS rather than retaining the old Stock/Input renderer');
+  assert.ok(css.includes('flex:0 0 20px'),'compact recipe product SVGs must stay small on desktop cards');
+  assert.ok(css.includes('flex-basis:18px'),'compact recipe product SVGs must stay small on mobile cards');
   for (const selector of ['.fp-product-identity','.fp-product-icon-frame','.fp-product-stock-quantity']) {
     assert.ok(css.includes(selector), selector + ' must be styled in the actual factory command stylesheet');
   }
