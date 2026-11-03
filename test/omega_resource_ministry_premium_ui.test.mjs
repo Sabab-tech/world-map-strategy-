@@ -120,6 +120,95 @@ test("Resource Ministry loads the active player's baseline and displays its live
   }
 });
 
+
+test("Resource Ministry dashboard avoids per-mine rendering and scales output ledger work linearly", () => {
+  const api = globalThis.OmegaUIV2ResourceMinistry;
+  const previous = {
+    Game:globalThis.Game,
+    omega:globalThis.Omega,
+    inventory:globalThis.OmegaCountryInventoryRuntime,
+    startup:globalThis.OmegaResourceStartupBaseline,
+    industrial:globalThis.OmegaResourceIndustrialCatalogData
+  };
+  const siteCount = 36;
+  let archetypeReads = 0;
+  let flowSiteIdReads = 0;
+  const sites = Array.from({length:siteCount}, (_, index) => {
+    const row = {
+      siteId:"BGD-LAZY-MINE-" + index,
+      countryId:"BGD",
+      resourceId:"coal",
+      siteName:"Lazy Mine " + index,
+      location:{region:"Sylhet"},
+      operation:{status:"ACTIVE",commercialExtraction:true},
+      quantitative:{
+        reserve:{quantity:100000,unit:"TONNES",status:"SIMULATED"},
+        production:{quantity:12,unit:"TONNES_PER_DAY",status:"SIMULATED"}
+      },
+      simulation:{reserve:{quantity:100000,unit:"TONNES",status:"SIMULATED"}}
+    };
+    Object.defineProperty(row,"siteType",{enumerable:true,get(){archetypeReads+=1;return "OPEN_PIT";}});
+    return row;
+  });
+  const flows = sites.map((site) => {
+    const row = {
+      resourceId:"coal",quantity:5,unit:"TONNES",extractionTurn:1,status:"COMPLETED"
+    };
+    Object.defineProperty(row,"siteId",{enumerable:true,get(){flowSiteIdReads+=1;return site.siteId;}});
+    return row;
+  });
+  const listeners = Object.create(null);
+  const screenRoot = {
+    innerHTML:"",
+    classList:{add(){}},
+    addEventListener(type, handler){(listeners[type]||(listeners[type]=[])).push(handler);},
+    querySelector(){return null;},
+    querySelectorAll(){return[];},
+    contains(){return true;}
+  };
+  globalThis.Game = {state:{
+    simulation:{turn:1,session:{sessionId:"RESOURCE-LAZY-BGD",playerCountryId:"BGD",status:"READY"}},
+    resource:{BGD:{
+      inventory:{},inventoryUnits:{},batches:[],inventoryLots:{},
+      warehouse:{warehouseId:"WH-BGD-RAW",availableByResource:{},receipts:[],storedBatchIds:[]},
+      processedWarehouse:{warehouseId:"WH-BGD-PROCESSED",availableByResource:{},receipts:[],storedBatchIds:[]},
+      mineAssets:[],
+      industrialNetwork:{projects:[],shipments:[],siteFlowLedger:flows},
+      inventoryLedger:[]
+    }},
+    economy:{BGD:{productionAssets:[]}}
+  }};
+  globalThis.Omega = {};
+  globalThis.OmegaCountryInventoryRuntime = {getResourceCatalog(){return[];}};
+  globalThis.OmegaResourceStartupBaseline = undefined;
+  globalThis.OmegaResourceIndustrialCatalogData = {factoryProfiles:{}};
+  try {
+    const dashboard = api.render(screenRoot,{countryId:"BGD",sites,tab:"dashboard"});
+    assert.equal(dashboard.ok,true);
+    assert.equal(archetypeReads,0,
+      "opening Overview must not build Mine cards or read each mine's presentation metadata");
+    assert.ok(flowSiteIdReads <= siteCount * 8,
+      "the dashboard should aggregate the site-flow ledger in a bounded number of linear passes");
+    assert.match(screenRoot.innerHTML,/Raw Resource Inventory/);
+
+    const mines = api.render(screenRoot,{countryId:"BGD",sites,tab:"mines"});
+    assert.equal(mines.ok,true);
+    assert.ok(archetypeReads > 0,
+      "the full mine-card presentation must still be built when the Mines tab is opened");
+    assert.match(screenRoot.innerHTML,/data-omega-v2-site-card/);
+  } finally {
+    api.unload(screenRoot);
+    const restore = {
+      Game:"Game",omega:"Omega",inventory:"OmegaCountryInventoryRuntime",
+      startup:"OmegaResourceStartupBaseline",industrial:"OmegaResourceIndustrialCatalogData"
+    };
+    for (const [key,target] of Object.entries(restore)) {
+      if (previous[key] === undefined) delete globalThis[target];
+      else globalThis[target] = previous[key];
+    }
+  }
+});
+
 test("inventory displays the canonical 41 resources and aggregate balances when warehouse projections are missing", () => {
   const api = globalThis.OmegaUIV2ResourceMinistry;
   const rules = json("resource_economy_rules.json");
@@ -1136,6 +1225,7 @@ test("legacy Resource & Mining renderer entry points hand off to UI v2 without d
   const dashboard = { style: {}, setAttribute() {} };
   const mountCalls = [];
   const openCalls = [];
+  const deferredOpenCalls = [];
   let legacyCalls = 0;
   globalThis.document = {
     getElementById(id) {
@@ -1154,8 +1244,9 @@ test("legacy Resource & Mining renderer entry points hand off to UI v2 without d
     }
   };
   globalThis.OmegaUIV2App = {
-    openMinistry(node, id) {
+    openMinistry(node, id, deferRender) {
       openCalls.push(id);
+      deferredOpenCalls.push(deferRender);
       node.__omegaUIV2State = { route: "resources", ministryId: id, section: "dashboard" };
       return true;
     }
@@ -1172,11 +1263,13 @@ test("legacy Resource & Mining renderer entry points hand off to UI v2 without d
     assert.equal(bridge.install(), true);
     assert.equal(legacy.renderMinistryDashboard("energy_mining"), true);
     assert.equal(mountCalls.length, 1, "direct ministry entry must mount the unified UI once");
-    assert.equal(mountCalls[0].options.initialRoute, "government");
-    assert.equal(mountCalls[0].options.ministryId, "energy_mining");
+    assert.equal(mountCalls[0].options.initialRoute, "resources");
+    assert.equal(mountCalls[0].options.initialMinistryId, "energy_mining");
+    assert.equal(mountCalls[0].options.ministryId, undefined);
     assert.equal(mountCalls[0].options.countryId, "BGD");
     assert.equal(legacy.renderResourceMinistryDashboard({ id: "energy_mining" }, {}), true);
     assert.deepEqual(openCalls, ["energy_mining"], "an active UI v2 screen must be reused rather than re-mounted");
+    assert.deepEqual(deferredOpenCalls, [true], "an active ministry navigation must yield before rendering the destination");
     assert.equal(legacyCalls, 0, "retired resource renderers must never produce legacy markup");
     legacy.renderMinistryDashboard("defense");
     assert.equal(legacyCalls, 1, "unrelated ministry rendering must remain unchanged");
