@@ -852,6 +852,8 @@
     }
     if (demandRow) {
       var unmet = num(demandRow.unmetDemand);
+      demand = num(demandRow.demandThisTurn !== undefined ? demandRow.demandThisTurn :
+        demandRow.demandPerDay !== undefined ? demandRow.demandPerDay : demandRow.demand);
       if (unmet !== null && unmet > 1e-9) return { label: 'Shortage · ' + fmt(unmet, row.unit), key: 'shortage' };
       if (String(demandRow.status || '').toUpperCase() === 'SHORTAGE') return { label: 'Shortage', key: 'shortage' };
       if (String(demandRow.status || '').toUpperCase() === 'LOW_COVERAGE') return { label: 'Low stock', key: 'low' };
@@ -870,7 +872,7 @@
     (model.factories || []).forEach(function (factory) { if (factory && factory.id) factoryMap[String(factory.id)] = factory; });
     if (!rows.length) return '<div class="omega-v2-empty">No committed factory output batches are recorded for this country.</div>';
     var html = '<section class="fp-factory-analytics" aria-label="Factory output stock">';
-    var byFactory = Object.create(null), productProducerCounts = Object.create(null);
+    var byFactory = Object.create(null), productProducerCounts = Object.create(null), nationalConsumptionShown = Object.create(null);
     rows.forEach(function (row) {
       var productKey = String(row.productId || '').toLowerCase();
       productProducerCounts[productKey] = (productProducerCounts[productKey] || 0) + 1;
@@ -892,11 +894,24 @@
         }).join('');
         if (!destinations && row.exported <= 0) destinations = '<span class="fp-factory-muted">No recorded export</span>';
         else if (!destinations) destinations = '<span class="fp-factory-muted">Destination not recorded</span>';
+        var productKey = String(row.productId || '').toLowerCase();
+        var demandRow = null, demandKeys = Object.keys(model.demandByProduct || {});
+        for (var di = 0; di < demandKeys.length; di += 1) {
+          if (demandKeys[di].toLowerCase() === productKey) { demandRow = model.demandByProduct[demandKeys[di]]; break; }
+        }
+        var nationalConsumption = demandRow ? num(demandRow.nationalConsumption) : null;
+        var consumptionMarkup = row.domesticConsumption > 0
+          ? fmt(row.domesticConsumption, unit)
+          : '<span class="fp-factory-muted">Not recorded</span>';
+        if (nationalConsumption !== null && nationalConsumption > 0 && !nationalConsumptionShown[productKey]) {
+          consumptionMarkup += '<small>Country total: ' + fmt(nationalConsumption, unit) + '</small>';
+          nationalConsumptionShown[productKey] = true;
+        }
         var status = factoryStockStatus(model, row, productProducerCounts[String(row.productId || '').toLowerCase()] > 1);
         html += '<tr><td><strong>' + esc(panelProductLabel(model, row.productId)) + '</strong><small>' + esc(row.productId) + '</small></td>' +
           '<td><strong>' + fmt(row.produced, unit) + '</strong></td>' +
           '<td>' + (row.factoryUse > 0 ? fmt(row.factoryUse, unit) : '<span class="fp-factory-muted">Not recorded</span>') + '</td>' +
-          '<td>' + (row.domesticConsumption > 0 ? fmt(row.domesticConsumption, unit) : '<span class="fp-factory-muted">Not recorded</span>') + '</td>' +
+          '<td>' + consumptionMarkup + '</td>' +
           '<td>' + (row.domesticSupply > 0 ? fmt(row.domesticSupply, unit) : '<span class="fp-factory-muted">Not recorded</span>') + '</td>' +
           '<td>' + (row.exported > 0 ? fmt(row.exported, unit) : '<span class="fp-factory-muted">Not recorded</span>') + '</td>' +
           '<td>' + destinations + '</td><td>' + fmt(row.currentStock, unit) + '</td>' +
