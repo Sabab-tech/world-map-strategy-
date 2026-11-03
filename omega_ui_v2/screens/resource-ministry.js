@@ -510,8 +510,10 @@
     if (startupBaselineForLoad && typeof startupBaselineForLoad.ensurePlayerCountryBaseline === 'function' &&
         root.__omegaV2ResourceLoadedCountry !== countryKey) {
       var sameRequest = root.__omegaV2ResourceLoadingCountry === countryKey && root.__omegaV2ResourceLoadPromise;
-      if (!sameRequest) {
+      var failedRequest = root.__omegaV2ResourceLoadFailedCountry === countryKey;
+      if (!sameRequest && !failedRequest) {
         root.__omegaV2ResourceLoadGeneration = (Number(root.__omegaV2ResourceLoadGeneration) || 0) + 1;
+        root.__omegaV2ResourceLoadFailedCountry = '';
         var loadGeneration = root.__omegaV2ResourceLoadGeneration;
         root.__omegaV2ResourceLoadingCountry = countryKey;
         root.__omegaV2ResourceLoadError = '';
@@ -528,8 +530,10 @@
             root.__omegaV2ResourceLoadedCountry = countryKey;
             root.__omegaV2ResourceLoadStatus = status;
             root.__omegaV2ResourceLoadError = '';
+            root.__omegaV2ResourceLoadFailedCountry = '';
           } else {
             root.__omegaV2ResourceLoadError = String(result && (result.reason || result.message || result.status) || 'PLAYER_COUNTRY_BASELINE_NOT_READY');
+            root.__omegaV2ResourceLoadFailedCountry = countryKey;
           }
           var latest = Object.assign({}, root.__omegaV2ResourceOptions || renderOptions, {
             countryId:countryKey, tab:root.__omegaV2ResourceTab || active
@@ -542,6 +546,7 @@
           root.__omegaV2ResourceLoadingCountry = '';
           root.__omegaV2ResourceLoadPromise = null;
           root.__omegaV2ResourceLoadError = String(error && error.message || error || 'PLAYER_COUNTRY_BASELINE_FAILED');
+          root.__omegaV2ResourceLoadFailedCountry = countryKey;
           var latest = Object.assign({}, root.__omegaV2ResourceOptions || renderOptions, {
             countryId:countryKey, tab:root.__omegaV2ResourceTab || active
           });
@@ -550,17 +555,9 @@
           return null;
         });
       }
-      if (root.__omegaV2ResourceLoadError) {
-        root.innerHTML = '<section class="omega-v2-shell omega-v2-resource"><div class="omega-v2-note" role="alert">Player inventory could not be loaded: ' +
-          esc(root.__omegaV2ResourceLoadError) + '</div></section>';
-        return { ok:false, code:'PLAYER_COUNTRY_BASELINE_FAILED', countryId:countryKey };
-      }
-      root.innerHTML = '<section class="omega-v2-shell omega-v2-resource" role="status" aria-live="polite"><div class="omega-v2-navigation-loading-panel">' +
-        '<div class="omega-v2-eyebrow">RESOURCE COMMAND</div><h1 class="omega-v2-title">Loading ' + esc(countryKey) + ' inventory</h1>' +
-        '<p class="omega-v2-subtitle">Preparing current stock and factory input balances for the active player country.</p>' +
-        '<div class="omega-v2-navigation-progress" aria-hidden="true"><span></span></div></div></section>';
-      return { ok:true, code:'PLAYER_COUNTRY_BASELINE_LOADING', countryId:countryKey };
     }
+    var baselineLoading = root.__omegaV2ResourceLoadingCountry === countryKey;
+    var baselineFailed = root.__omegaV2ResourceLoadFailedCountry === countryKey && !!root.__omegaV2ResourceLoadError;
     var model = buildViewModel(renderOptions);
     function countryBucket(map) {
       if (!map || typeof map !== 'object' || !countryKey) return null;
@@ -2234,13 +2231,19 @@
       active === 'inventory' ? inventoryMarkup :
       active === 'reports' ? reportsMarkup : dashMarkup;
     var notice = root.__omegaV2ResourceNotice ? '<div class="omega-v2-note omega-v2-resource-notice" role="status" aria-live="polite">' + esc(root.__omegaV2ResourceNotice) + '</div>' : '';
+    var baselineStatusMarkup = baselineLoading
+      ? '<div class="omega-v2-note omega-v2-resource-notice" role="status" aria-live="polite">Loading ' + esc(countryKey) + ' inventory. Current recorded stock remains visible while opening balances are checked.</div>'
+      : (baselineFailed
+        ? '<div class="omega-v2-note omega-v2-resource-notice" role="alert">Inventory baseline update did not complete: ' + esc(root.__omegaV2ResourceLoadError) +
+          ' <button type="button" class="omega-v2-button omega-v2-button--primary" data-omega-v2-resource-retry>Retry inventory update</button></div>'
+        : '');
     root.classList.add('omega-v2-screen');
     root.innerHTML = '<section class="omega-v2-shell omega-v2-resource omega-v2-resource-premium" data-resource-ui-version="command-v2">' +
       '<header class="omega-v2-heading omega-v2-resource-heading"><div class="omega-v2-resource-heading-copy"><img class="omega-v2-resource-ministry-mark" src="assets/ministry-logos/energy_mining.svg" alt="" aria-hidden="true" loading="lazy" decoding="async"><div>' +
       '<div class="omega-v2-eyebrow">RESOURCE COMMAND</div><h1 class="omega-v2-title">Mine Production Ministry</h1><p class="omega-v2-subtitle">' + esc(countryLabel) +
       ' · Resource Extraction · National Wealth</p></div></div><div class="omega-v2-resource-heading-actions">' + countrySelectMarkup(countryKey) +
       '<span class="omega-v2-status" data-state="' + (model.ready ? 'operational' : 'attention') + '">' +
-      fmt(model.sites.filter(eligible).length) + ' mines</span></div></header>' + notice + tabMarkup + '<div data-omega-v2-resource-content>' + contentMarkup + '</div></section>';
+      fmt(model.sites.filter(eligible).length) + ' mines</span></div></header>' + notice + baselineStatusMarkup + tabMarkup + '<div data-omega-v2-resource-content>' + contentMarkup + '</div></section>';
     if (!root.__omegaV2ResourceBound && typeof root.addEventListener === 'function') {
       root.addEventListener('input', function (event) {
         if (!event || !event.target) return;
@@ -2320,6 +2323,18 @@
       root.addEventListener('click', function (event) {
         var target = event && event.target;
         if (!target || typeof target.closest !== 'function') return;
+        var retryBaseline = target.closest('[data-omega-v2-resource-retry]');
+        if (retryBaseline && root.contains(retryBaseline) && !retryBaseline.disabled) {
+          var retryOptions = Object.assign({}, root.__omegaV2ResourceOptions || {}, {
+            countryId:root.__omegaV2CurrentCountryKey || countryKey,
+            tab:root.__omegaV2ResourceTab || 'dashboard'
+          });
+          root.__omegaV2ResourceLoadFailedCountry = '';
+          root.__omegaV2ResourceLoadError = '';
+          root.__omegaV2ResourceLoadPromise = null;
+          render(root, retryOptions);
+          return;
+        }
         var coverageApply = target.closest('[data-omega-v2-coverage-apply]');
         if (coverageApply && root.contains(coverageApply) && !coverageApply.disabled) {
           var coverageOptions = root.__omegaV2ResourceOptions || {};
@@ -2520,6 +2535,7 @@
           'OMEGA_RESOURCE_FACTORY_INPUT_STOCK_TARGET_UPDATED','OMEGA_RESOURCE_NATIONAL_DEMAND_UPDATED',
           'OMEGA_RESOURCE_ECONOMY_UPDATED','OMEGA_RESOURCE_MINE_HAUL_DELIVERED',
           'OMEGA_RESOURCE_MINE_WAREHOUSE_RECEIPT_POSTED','OMEGA_RESOURCE_INVENTORY_CHANGED',
+          'OMEGA_RESOURCE_IMPORT_COMPLETED','OMEGA_RESOURCE_EXPORT_COMPLETED','OMEGA_RESOURCE_CONSUMPTION_COMPLETED',
           'OMEGA_RESOURCE_FACTORY_INPUT_AVAILABLE','OMEGA_FACTORY_INPUT_SHIPMENT_DELIVERED',
           'OMEGA_FACTORY_PRODUCTION_CYCLE_STARTED','OMEGA_FACTORY_PRODUCTION_CYCLE_PAUSED',
           'OMEGA_FACTORY_PRODUCTION_CYCLE_COMPLETED','OMEGA_SIMULATION_TURN_COMMITTED','OMEGA_RESOURCE_STARTUP_BASELINE_COMPLETED',
@@ -2542,7 +2558,8 @@
     root.__omegaV2ResourceTab = active;
     if (active === 'mines') applySiteFilter(root);
     if (active === 'logistics') ensureLogisticsRoutePlans(countryKey, root);
-    return { ok:true, tab:active, siteCount:model.siteCount, model:model, inventoryRowCount:inventoryRows.length,
+    return { ok:true, code:baselineLoading ? 'PLAYER_COUNTRY_BASELINE_LOADING' : null,
+      tab:active, siteCount:model.siteCount, model:model, inventoryRowCount:inventoryRows.length,
       shipmentRowCount:shipments.length, producingSiteCount:producingSites.length, blockedFlowCount:blockedFlows.length };
   }
   function applySiteFilter(root) {
@@ -2571,6 +2588,7 @@
     root.__omegaV2ResourceLoadedCountry = '';
     root.__omegaV2ResourceLoadStatus = '';
     root.__omegaV2ResourceLoadError = '';
+    root.__omegaV2ResourceLoadFailedCountry = '';
     var handlers = Array.isArray(root.__omegaV2ResourceRuntimeEventHandlers)
       ? root.__omegaV2ResourceRuntimeEventHandlers : [];
     handlers.forEach(function (row) {

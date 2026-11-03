@@ -91,6 +91,10 @@ test("Resource Ministry loads the active player's baseline and displays its live
     const first = api.render(screenRoot, { countryId:"USA", sites:[], tab:"dashboard" });
     assert.equal(first.code, "PLAYER_COUNTRY_BASELINE_LOADING");
     assert.match(screenRoot.innerHTML, /Loading BGD inventory/);
+    assert.match(screenRoot.innerHTML, /Current Stock/,
+      "the Resource Ministry must keep the live inventory view visible during opening-baseline initialization");
+    assert.match(screenRoot.innerHTML, /Raw Resource Inventory/,
+      "baseline loading must not replace the whole ministry with a blocking loading screen");
     await screenRoot.__omegaV2ResourceLoadPromise;
 
     assert.deepEqual(calls, ["BGD"], "the startup baseline must only receive the selected player country");
