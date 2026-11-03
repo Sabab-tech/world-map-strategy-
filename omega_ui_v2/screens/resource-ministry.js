@@ -2164,6 +2164,7 @@
         '<span class="omega-v2-status" data-state="attention">' + fmt(routes.length) + ' route plans</span></div>' +
         '<div class="omega-v2-grid omega-v2-logistics-grid">' + routes.map(logisticsRouteCard).join('') + '</div></section>';
     }
+    var routePlanState = getLogisticsRoutePlanState(countryKey);
     var liveShipmentsMarkup = shipments.length ? '<section class="omega-v2-logistics-live-section">' +
       '<div class="omega-v2-logistics-route-heading"><div><h2>Current Shipments</h2></div><span class="omega-v2-status" data-state="unknown">' +
       fmt(shipments.length) + ' records</span></div>' +
