@@ -1356,7 +1356,7 @@
       '<div class="omega-v2-vehicle-stats"><div><span>Total factories</span><strong>' + fmt(plan.totalFactories) + '</strong></div>' +
       '<div><span>Factory types</span><strong>' + fmt(plan.factoryTypeCount) + '</strong></div>' +
       '<div><span>Types with factories</span><strong>' + fmt(plan.assignedFactoryTypeCount) + '</strong></div>' +
-      '<div><span>Production records</span><strong>' + (plan.productionStarted ? 'Recorded' : 'Not started') + '</strong></div></div>' +
+      '<div><span>Production records</span><strong>' + (actualRows.length ? 'Recorded' : 'Not started') + '</strong></div></div>' +
       '<p class="omega-v2-source">Planned output is calculated from full factory capacity and recipe coefficients. Actual output and stock remain tied to committed production batches.</p>';
     plan.types.forEach(function (type) {
       html += '<article class="fp-factory-data-card"><header class="fp-factory-data-heading"><div><span>FACTORY OUTPUT PLAN</span><strong>' +
