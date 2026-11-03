@@ -1411,6 +1411,16 @@ test("logistics cards expose an accessible route diagram with existing SVG cargo
     transportMode: "ROAD",
     etaTurn: 12
   };
+  const shipmentWithoutTransportMode = {
+    shipmentId: "SHIPMENT_VISUAL_TEST_02",
+    resourceId: "iron_ore",
+    quantity: 1200,
+    unit: "TONNES",
+    status: "IN_TRANSIT",
+    sourceSiteName: "Chittagong Ore Depot",
+    destinationFactoryName: "Dhaka Steel Factory",
+    etaTurn: 14
+  };
   const listeners = Object.create(null);
   const root = {
     innerHTML: "",
@@ -1426,7 +1436,7 @@ test("logistics cards expose an accessible route diagram with existing SVG cargo
       resource: {
         BGD: {
           mineAssets: [],
-          industrialNetwork: { projects: [], shipments: [shipment], siteFlowLedger: [] },
+          industrialNetwork: { projects: [], shipments: [shipment, shipmentWithoutTransportMode], siteFlowLedger: [] },
           warehouse: { availableByResource: { coal: 8200 } }
         }
       }
@@ -1445,6 +1455,10 @@ test("logistics cards expose an accessible route diagram with existing SVG cargo
     assert.match(root.innerHTML, /Road/);
     assert.match(root.innerHTML, /8,200 TONNES/);
     assert.match(root.innerHTML, /Turn 12/);
+    assert.match(root.innerHTML, /Transport mode not recorded/,
+      "a shipment with no recorded mode must not invent a truck, ship or other transport");
+    assert.doesNotMatch(root.innerHTML, /data-omega-v2-transport-mode="unknown"|src=""/,
+      "a missing mode must not render a blank or fabricated transport image");
     const css = cssText();
     assert.match(css, /omega-v2-logistics-card::before/);
     assert.match(css, /omega-v2-logistics-path/);
