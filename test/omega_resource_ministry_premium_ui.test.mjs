@@ -882,7 +882,7 @@ test("Resource Logistics shows configured per-site route cards separately from l
   assert.match(coalRouteCard, /40 km/);
   assert.match(coalRouteCard, /80 km/);
   assert.match(coalRouteCard, /Route capacity 45 tonnes\/day/);
-  assert.match(coalRouteCard, /Route capacity 5000 tonnes\/day/);
+  assert.match(coalRouteCard, /Route capacity 5,000 tonnes\/day/);
   assert.doesNotMatch(coalRouteCard, /Distance by transport type|data-route-mode-distance=/);
   assert.ok(root.innerHTML.includes("assets/omega-industrial-icons-v1/transport/variants/mode-hero-road-truck.svg"));
   assert.ok(root.innerHTML.includes("assets/omega-industrial-icons-v1/transport/variants/mode-hero-freight-train.svg"));
