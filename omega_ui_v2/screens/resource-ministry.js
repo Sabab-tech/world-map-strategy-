@@ -2070,9 +2070,8 @@
         countryKey === livePlayerCountryKey());
       return '<section class="omega-v2-logistics-route-transport" data-omega-v2-logistics-fleet-summary data-site-id="' +
         esc(route && route.siteId || '') + '" data-fleet-ready="' + (ready ? 'true' : 'false') + '">' +
-        '<div class="omega-v2-logistics-transport-heading"><span>TRANSPORT ON THIS ROUTE</span><strong>' +
-        'ROUTE-SPECIFIC MODE DETAILS' +
-        '</strong></div><div class="omega-v2-logistics-transport-grid">' + cards + '</div>' +
+        '<div class="omega-v2-logistics-transport-heading"><span>TRANSPORT MODES</span></div>' +
+        '<div class="omega-v2-logistics-transport-grid">' + cards + '</div>' +
         (canManage
           ? '<details class="omega-v2-logistics-fleet-editor"><summary>Adjust route transport counts</summary>' +
             '<form data-omega-v2-logistics-fleet-form data-site-id="' + esc(route && route.siteId || '') +
