@@ -2786,6 +2786,17 @@ test('Factory input stock coverage is captured only at every tenth in-game day',
     assert.equal(thirdIron.coverageDays,0.4);
     assert.equal(thirdIron.status,'critical');
 
+    const root = {classList:{add(){}},addEventListener(){},contains(){return true},innerHTML:''};
+    const rendered = globalThis.OmegaUIV2Industry.render(root,{countryId:'BGD',tab:'inventory'});
+    assert.equal(rendered.ok,true);
+    assert.match(root.innerHTML,/Bangladesh Steel Mill/);
+    assert.match(root.innerHTML,/Import/);
+    assert.match(root.innerHTML,/Domestic mine/);
+    assert.match(root.innerHTML,/data-state="critical"/);
+    assert.match(root.innerHTML,/0\.4 days/);
+    assert.match(root.innerHTML,/Updated on Day 30/);
+    assert.match(root.innerHTML,/iron_ore/);
+
     delete globalThis.Game.state.economy.BGD.productionAssets[0].inputInventory.coal;
     const fourth = globalThis.OmegaUIV2Industry.recordFactoryInputCoverage({detail:{simulationTurn:39}});
     const fourthCoal = fourth.products.find(row => row.productId === 'coal');
@@ -2802,16 +2813,6 @@ test('Factory input stock coverage is captured only at every tenth in-game day',
     assert.equal(fifthIron.coverageDays,0);
     assert.equal(fifthIron.status,'critical');
 
-    const root = {classList:{add(){}},addEventListener(){},contains(){return true},innerHTML:''};
-    const rendered = globalThis.OmegaUIV2Industry.render(root,{countryId:'BGD',tab:'inventory'});
-    assert.equal(rendered.ok,true);
-    assert.match(root.innerHTML,/Bangladesh Steel Mill/);
-    assert.match(root.innerHTML,/Import/);
-    assert.match(root.innerHTML,/Domestic mine/);
-    assert.match(root.innerHTML,/data-state="critical"/);
-    assert.match(root.innerHTML,/0\.4 days/);
-    assert.match(root.innerHTML,/Updated on Day 30/);
-    assert.match(root.innerHTML,/iron_ore/);
   } finally {
     if (previous.Game === undefined) delete globalThis.Game; else globalThis.Game = previous.Game;
     if (previous.catalog === undefined) delete globalThis.OmegaResourceIndustrialCatalogData; else globalThis.OmegaResourceIndustrialCatalogData = previous.catalog;
