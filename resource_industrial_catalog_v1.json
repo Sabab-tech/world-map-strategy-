@@ -570,7 +570,15 @@
       "cycleTimeUnit": "IN_GAME_DAYS",
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "presentation": {
+        "primaryInputs": ["coal"],
+        "primaryOutputs": ["COAL_CONCENTRATE"],
+        "coProducts": [],
+        "byProducts": ["COAL_REJECT"],
+        "reviewStatus": "REVIEWED_GAMEPLAY_PRESENTATION",
+        "authority": "OMEGA_FACTORY_CARD_PRODUCT_ROLE_REVIEW_20261103"
+      }
     },
     "iron_ore": {
       "factoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
@@ -588,7 +596,15 @@
       "cycleTimeUnit": "IN_GAME_DAYS",
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "presentation": {
+        "primaryInputs": ["iron_ore"],
+        "primaryOutputs": ["IRON_CONCENTRATE"],
+        "coProducts": [],
+        "byProducts": ["ORE_TAILINGS"],
+        "reviewStatus": "REVIEWED_GAMEPLAY_PRESENTATION",
+        "authority": "OMEGA_FACTORY_CARD_PRODUCT_ROLE_REVIEW_20261103"
+      }
     },
     "copper": {
       "factoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
@@ -606,7 +622,15 @@
       "cycleTimeUnit": "IN_GAME_DAYS",
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "presentation": {
+        "primaryInputs": ["copper"],
+        "primaryOutputs": ["COPPER_CONCENTRATE"],
+        "coProducts": [],
+        "byProducts": ["TAILINGS"],
+        "reviewStatus": "REVIEWED_GAMEPLAY_PRESENTATION",
+        "authority": "OMEGA_FACTORY_CARD_PRODUCT_ROLE_REVIEW_20261103"
+      }
     },
     "gold": {
       "factoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
@@ -624,7 +648,15 @@
       "cycleTimeUnit": "IN_GAME_DAYS",
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "presentation": {
+        "primaryInputs": ["gold"],
+        "primaryOutputs": ["DORÉ"],
+        "coProducts": [],
+        "byProducts": ["TAILINGS"],
+        "reviewStatus": "REVIEWED_GAMEPLAY_PRESENTATION",
+        "authority": "OMEGA_FACTORY_CARD_PRODUCT_ROLE_REVIEW_20261103"
+      }
     },
     "silver": {
       "factoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
@@ -642,7 +674,15 @@
       "cycleTimeUnit": "IN_GAME_DAYS",
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "presentation": {
+        "primaryInputs": ["silver"],
+        "primaryOutputs": ["SILVER_CONCENTRATE"],
+        "coProducts": [],
+        "byProducts": ["TAILINGS"],
+        "reviewStatus": "REVIEWED_GAMEPLAY_PRESENTATION",
+        "authority": "OMEGA_FACTORY_CARD_PRODUCT_ROLE_REVIEW_20261103"
+      }
     },
     "bauxite": {
       "factoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
@@ -660,7 +700,15 @@
       "cycleTimeUnit": "IN_GAME_DAYS",
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "presentation": {
+        "primaryInputs": ["bauxite"],
+        "primaryOutputs": ["ALUMINA"],
+        "coProducts": [],
+        "byProducts": ["BAUXITE_RESIDUE"],
+        "reviewStatus": "REVIEWED_GAMEPLAY_PRESENTATION",
+        "authority": "OMEGA_FACTORY_CARD_PRODUCT_ROLE_REVIEW_20261103"
+      }
     },
     "nickel": {
       "factoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
@@ -678,7 +726,15 @@
       "cycleTimeUnit": "IN_GAME_DAYS",
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "presentation": {
+        "primaryInputs": ["nickel"],
+        "primaryOutputs": ["NICKEL_CONCENTRATE"],
+        "coProducts": [],
+        "byProducts": ["TAILINGS"],
+        "reviewStatus": "REVIEWED_GAMEPLAY_PRESENTATION",
+        "authority": "OMEGA_FACTORY_CARD_PRODUCT_ROLE_REVIEW_20261103"
+      }
     },
     "cobalt": {
       "factoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
@@ -696,7 +752,15 @@
       "cycleTimeUnit": "IN_GAME_DAYS",
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "presentation": {
+        "primaryInputs": ["cobalt"],
+        "primaryOutputs": ["COBALT_HYDROXIDE"],
+        "coProducts": [],
+        "byProducts": ["RESIDUE"],
+        "reviewStatus": "REVIEWED_GAMEPLAY_PRESENTATION",
+        "authority": "OMEGA_FACTORY_CARD_PRODUCT_ROLE_REVIEW_20261103"
+      }
     },
     "lithium": {
       "factoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
@@ -714,7 +778,15 @@
       "cycleTimeUnit": "IN_GAME_DAYS",
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "presentation": {
+        "primaryInputs": ["lithium"],
+        "primaryOutputs": ["LITHIUM_CARBONATE_OR_HYDROXIDE"],
+        "coProducts": [],
+        "byProducts": ["RESIDUE"],
+        "reviewStatus": "REVIEWED_GAMEPLAY_PRESENTATION",
+        "authority": "OMEGA_FACTORY_CARD_PRODUCT_ROLE_REVIEW_20261103"
+      }
     },
     "crude_oil": {
       "factoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
@@ -736,7 +808,15 @@
       "cycleTimeUnit": "IN_GAME_DAYS",
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "presentation": {
+        "primaryInputs": ["crude_oil"],
+        "primaryOutputs": ["DIESEL","GASOLINE"],
+        "coProducts": ["JET_FUEL","NAPHTHA","HEAVY_FUEL_OIL","OTHER_REFINERY_PRODUCTS"],
+        "byProducts": [],
+        "reviewStatus": "REVIEWED_GAMEPLAY_PRESENTATION",
+        "authority": "OMEGA_FACTORY_CARD_PRODUCT_ROLE_REVIEW_20261103"
+      }
     },
     "natural_gas": {
       "factoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
@@ -755,7 +835,15 @@
       "cycleTimeUnit": "IN_GAME_DAYS",
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "presentation": {
+        "primaryInputs": ["natural_gas"],
+        "primaryOutputs": ["PIPELINE_GAS","NGL"],
+        "coProducts": [],
+        "byProducts": ["LOSS"],
+        "reviewStatus": "REVIEWED_GAMEPLAY_PRESENTATION",
+        "authority": "OMEGA_FACTORY_CARD_PRODUCT_ROLE_REVIEW_20261103"
+      }
     },
     "uranium": {
       "factoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
@@ -773,7 +861,15 @@
       "cycleTimeUnit": "IN_GAME_DAYS",
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "presentation": {
+        "primaryInputs": ["uranium"],
+        "primaryOutputs": ["YELLOWCAKE"],
+        "coProducts": [],
+        "byProducts": ["MILL_TAILINGS"],
+        "reviewStatus": "REVIEWED_GAMEPLAY_PRESENTATION",
+        "authority": "OMEGA_FACTORY_CARD_PRODUCT_ROLE_REVIEW_20261103"
+      }
     },
     "phosphate": {
       "factoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
@@ -791,7 +887,15 @@
       "cycleTimeUnit": "IN_GAME_DAYS",
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "presentation": {
+        "primaryInputs": ["phosphate"],
+        "primaryOutputs": ["PHOSPHATE_CONCENTRATE"],
+        "coProducts": [],
+        "byProducts": ["TAILINGS"],
+        "reviewStatus": "REVIEWED_GAMEPLAY_PRESENTATION",
+        "authority": "OMEGA_FACTORY_CARD_PRODUCT_ROLE_REVIEW_20261103"
+      }
     },
     "potash": {
       "factoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
@@ -809,7 +913,15 @@
       "cycleTimeUnit": "IN_GAME_DAYS",
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "presentation": {
+        "primaryInputs": ["potash"],
+        "primaryOutputs": ["MOP_POTASH"],
+        "coProducts": [],
+        "byProducts": ["SALT_TAILINGS"],
+        "reviewStatus": "REVIEWED_GAMEPLAY_PRESENTATION",
+        "authority": "OMEGA_FACTORY_CARD_PRODUCT_ROLE_REVIEW_20261103"
+      }
     },
     "graphite": {
       "factoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
@@ -827,7 +939,15 @@
       "cycleTimeUnit": "IN_GAME_DAYS",
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "presentation": {
+        "primaryInputs": ["graphite"],
+        "primaryOutputs": ["GRAPHITE_CONCENTRATE"],
+        "coProducts": [],
+        "byProducts": ["TAILINGS"],
+        "reviewStatus": "REVIEWED_GAMEPLAY_PRESENTATION",
+        "authority": "OMEGA_FACTORY_CARD_PRODUCT_ROLE_REVIEW_20261103"
+      }
     },
     "manganese": {
       "factoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
@@ -845,7 +965,15 @@
       "cycleTimeUnit": "IN_GAME_DAYS",
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "presentation": {
+        "primaryInputs": ["manganese"],
+        "primaryOutputs": ["MANGANESE_CONCENTRATE"],
+        "coProducts": [],
+        "byProducts": ["TAILINGS"],
+        "reviewStatus": "REVIEWED_GAMEPLAY_PRESENTATION",
+        "authority": "OMEGA_FACTORY_CARD_PRODUCT_ROLE_REVIEW_20261103"
+      }
     },
     "chromite": {
       "factoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
@@ -863,7 +991,15 @@
       "cycleTimeUnit": "IN_GAME_DAYS",
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "presentation": {
+        "primaryInputs": ["chromite"],
+        "primaryOutputs": ["CHROMITE_CONCENTRATE"],
+        "coProducts": [],
+        "byProducts": ["TAILINGS"],
+        "reviewStatus": "REVIEWED_GAMEPLAY_PRESENTATION",
+        "authority": "OMEGA_FACTORY_CARD_PRODUCT_ROLE_REVIEW_20261103"
+      }
     },
     "zinc": {
       "factoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
@@ -881,7 +1017,15 @@
       "cycleTimeUnit": "IN_GAME_DAYS",
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "presentation": {
+        "primaryInputs": ["zinc"],
+        "primaryOutputs": ["ZINC_CONCENTRATE"],
+        "coProducts": [],
+        "byProducts": ["TAILINGS"],
+        "reviewStatus": "REVIEWED_GAMEPLAY_PRESENTATION",
+        "authority": "OMEGA_FACTORY_CARD_PRODUCT_ROLE_REVIEW_20261103"
+      }
     },
     "tin": {
       "factoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
@@ -899,7 +1043,15 @@
       "cycleTimeUnit": "IN_GAME_DAYS",
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "presentation": {
+        "primaryInputs": ["tin"],
+        "primaryOutputs": ["TIN_CONCENTRATE"],
+        "coProducts": [],
+        "byProducts": ["TAILINGS"],
+        "reviewStatus": "REVIEWED_GAMEPLAY_PRESENTATION",
+        "authority": "OMEGA_FACTORY_CARD_PRODUCT_ROLE_REVIEW_20261103"
+      }
     },
     "tungsten": {
       "factoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
@@ -917,7 +1069,15 @@
       "cycleTimeUnit": "IN_GAME_DAYS",
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "presentation": {
+        "primaryInputs": ["tungsten"],
+        "primaryOutputs": ["TUNGSTEN_CONCENTRATE"],
+        "coProducts": [],
+        "byProducts": ["TAILINGS"],
+        "reviewStatus": "REVIEWED_GAMEPLAY_PRESENTATION",
+        "authority": "OMEGA_FACTORY_CARD_PRODUCT_ROLE_REVIEW_20261103"
+      }
     },
     "platinum": {
       "factoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
@@ -935,7 +1095,15 @@
       "cycleTimeUnit": "IN_GAME_DAYS",
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "presentation": {
+        "primaryInputs": ["platinum"],
+        "primaryOutputs": ["PGM_CONCENTRATE"],
+        "coProducts": [],
+        "byProducts": ["TAILINGS"],
+        "reviewStatus": "REVIEWED_GAMEPLAY_PRESENTATION",
+        "authority": "OMEGA_FACTORY_CARD_PRODUCT_ROLE_REVIEW_20261103"
+      }
     },
     "diamond": {
       "factoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
@@ -953,7 +1121,15 @@
       "cycleTimeUnit": "IN_GAME_DAYS",
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "presentation": {
+        "primaryInputs": ["diamond"],
+        "primaryOutputs": ["SORTED_DIAMONDS"],
+        "coProducts": [],
+        "byProducts": ["GRAVEL_TAILINGS"],
+        "reviewStatus": "REVIEWED_GAMEPLAY_PRESENTATION",
+        "authority": "OMEGA_FACTORY_CARD_PRODUCT_ROLE_REVIEW_20261103"
+      }
     },
     "rare_earth": {
       "factoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
@@ -971,7 +1147,15 @@
       "cycleTimeUnit": "IN_GAME_DAYS",
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "presentation": {
+        "primaryInputs": ["rare_earth"],
+        "primaryOutputs": ["RARE_EARTH_CONCENTRATE"],
+        "coProducts": [],
+        "byProducts": ["TAILINGS"],
+        "reviewStatus": "REVIEWED_GAMEPLAY_PRESENTATION",
+        "authority": "OMEGA_FACTORY_CARD_PRODUCT_ROLE_REVIEW_20261103"
+      }
     },
     "rutile": {
       "factoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
@@ -989,7 +1173,15 @@
       "cycleTimeUnit": "IN_GAME_DAYS",
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "presentation": {
+        "primaryInputs": ["rutile"],
+        "primaryOutputs": ["UPGRADED_RUTILE"],
+        "coProducts": [],
+        "byProducts": ["Tailings"],
+        "reviewStatus": "REVIEWED_GAMEPLAY_PRESENTATION",
+        "authority": "OMEGA_FACTORY_CARD_PRODUCT_ROLE_REVIEW_20261103"
+      }
     },
     "ilmenite": {
       "factoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
@@ -1007,7 +1199,15 @@
       "cycleTimeUnit": "IN_GAME_DAYS",
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "presentation": {
+        "primaryInputs": ["ilmenite"],
+        "primaryOutputs": ["TITANIUM_FEED"],
+        "coProducts": [],
+        "byProducts": ["Tailings"],
+        "reviewStatus": "REVIEWED_GAMEPLAY_PRESENTATION",
+        "authority": "OMEGA_FACTORY_CARD_PRODUCT_ROLE_REVIEW_20261103"
+      }
     },
     "limestone": {
       "factoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
@@ -1025,7 +1225,15 @@
       "cycleTimeUnit": "IN_GAME_DAYS",
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "presentation": {
+        "primaryInputs": ["limestone"],
+        "primaryOutputs": ["CEMENT_FEED"],
+        "coProducts": [],
+        "byProducts": ["QUARRY_LOSS"],
+        "reviewStatus": "REVIEWED_GAMEPLAY_PRESENTATION",
+        "authority": "OMEGA_FACTORY_CARD_PRODUCT_ROLE_REVIEW_20261103"
+      }
     },
     "gypsum": {
       "factoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
@@ -1043,7 +1251,15 @@
       "cycleTimeUnit": "IN_GAME_DAYS",
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "presentation": {
+        "primaryInputs": ["gypsum"],
+        "primaryOutputs": ["CALCINED_GYPSUM"],
+        "coProducts": [],
+        "byProducts": ["LOSS"],
+        "reviewStatus": "REVIEWED_GAMEPLAY_PRESENTATION",
+        "authority": "OMEGA_FACTORY_CARD_PRODUCT_ROLE_REVIEW_20261103"
+      }
     },
     "marble": {
       "factoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
@@ -1061,7 +1277,15 @@
       "cycleTimeUnit": "IN_GAME_DAYS",
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "presentation": {
+        "primaryInputs": ["marble"],
+        "primaryOutputs": ["MARBLE_BLOCK"],
+        "coProducts": [],
+        "byProducts": ["SAWING_LOSS"],
+        "reviewStatus": "REVIEWED_GAMEPLAY_PRESENTATION",
+        "authority": "OMEGA_FACTORY_CARD_PRODUCT_ROLE_REVIEW_20261103"
+      }
     },
     "granite": {
       "factoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
@@ -1079,7 +1303,15 @@
       "cycleTimeUnit": "IN_GAME_DAYS",
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "presentation": {
+        "primaryInputs": ["granite"],
+        "primaryOutputs": ["GRANITE_BLOCK"],
+        "coProducts": [],
+        "byProducts": ["SAWING_LOSS"],
+        "reviewStatus": "REVIEWED_GAMEPLAY_PRESENTATION",
+        "authority": "OMEGA_FACTORY_CARD_PRODUCT_ROLE_REVIEW_20261103"
+      }
     },
     "silica_sand": {
       "factoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
@@ -1097,7 +1329,15 @@
       "cycleTimeUnit": "IN_GAME_DAYS",
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "presentation": {
+        "primaryInputs": ["silica_sand"],
+        "primaryOutputs": ["GLASS_SILICA_FEED"],
+        "coProducts": [],
+        "byProducts": ["LOSS"],
+        "reviewStatus": "REVIEWED_GAMEPLAY_PRESENTATION",
+        "authority": "OMEGA_FACTORY_CARD_PRODUCT_ROLE_REVIEW_20261103"
+      }
     },
     "construction_aggregate": {
       "factoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
@@ -1115,7 +1355,15 @@
       "cycleTimeUnit": "IN_GAME_DAYS",
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "presentation": {
+        "primaryInputs": ["construction_aggregate"],
+        "primaryOutputs": ["GRADED_AGGREGATE"],
+        "coProducts": [],
+        "byProducts": ["LOSS"],
+        "reviewStatus": "REVIEWED_GAMEPLAY_PRESENTATION",
+        "authority": "OMEGA_FACTORY_CARD_PRODUCT_ROLE_REVIEW_20261103"
+      }
     },
     "basalt": {
       "factoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
@@ -1133,7 +1381,15 @@
       "cycleTimeUnit": "IN_GAME_DAYS",
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "presentation": {
+        "primaryInputs": ["basalt"],
+        "primaryOutputs": ["BASALT_AGGREGATE"],
+        "coProducts": [],
+        "byProducts": ["LOSS"],
+        "reviewStatus": "REVIEWED_GAMEPLAY_PRESENTATION",
+        "authority": "OMEGA_FACTORY_CARD_PRODUCT_ROLE_REVIEW_20261103"
+      }
     },
     "salt": {
       "factoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
@@ -1151,7 +1407,15 @@
       "cycleTimeUnit": "IN_GAME_DAYS",
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "presentation": {
+        "primaryInputs": ["salt"],
+        "primaryOutputs": ["REFINED_SALT"],
+        "coProducts": [],
+        "byProducts": ["BRINE_LOSS"],
+        "reviewStatus": "REVIEWED_GAMEPLAY_PRESENTATION",
+        "authority": "OMEGA_FACTORY_CARD_PRODUCT_ROLE_REVIEW_20261103"
+      }
     },
     "dolomite": {
       "factoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
@@ -1169,7 +1433,15 @@
       "cycleTimeUnit": "IN_GAME_DAYS",
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "presentation": {
+        "primaryInputs": ["dolomite"],
+        "primaryOutputs": ["DOLOMITE_PRODUCT"],
+        "coProducts": [],
+        "byProducts": ["LOSS"],
+        "reviewStatus": "REVIEWED_GAMEPLAY_PRESENTATION",
+        "authority": "OMEGA_FACTORY_CARD_PRODUCT_ROLE_REVIEW_20261103"
+      }
     },
     "magnesite": {
       "factoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
@@ -1187,7 +1459,15 @@
       "cycleTimeUnit": "IN_GAME_DAYS",
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "presentation": {
+        "primaryInputs": ["magnesite"],
+        "primaryOutputs": ["MAGNESIA"],
+        "coProducts": [],
+        "byProducts": ["LOSS"],
+        "reviewStatus": "REVIEWED_GAMEPLAY_PRESENTATION",
+        "authority": "OMEGA_FACTORY_CARD_PRODUCT_ROLE_REVIEW_20261103"
+      }
     },
     "oil_shale": {
       "factoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
@@ -1206,7 +1486,15 @@
       "cycleTimeUnit": "IN_GAME_DAYS",
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "presentation": {
+        "primaryInputs": ["oil_shale"],
+        "primaryOutputs": ["SHALE_OIL","SHALE_GAS"],
+        "coProducts": [],
+        "byProducts": ["SOLID_RESIDUE"],
+        "reviewStatus": "REVIEWED_GAMEPLAY_PRESENTATION",
+        "authority": "OMEGA_FACTORY_CARD_PRODUCT_ROLE_REVIEW_20261103"
+      }
     },
     "boron": {
       "factoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
@@ -1224,7 +1512,15 @@
       "cycleTimeUnit": "IN_GAME_DAYS",
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "presentation": {
+        "primaryInputs": ["boron"],
+        "primaryOutputs": ["BORIC_ACID_OR_BORAX"],
+        "coProducts": [],
+        "byProducts": ["RESIDUE"],
+        "reviewStatus": "REVIEWED_GAMEPLAY_PRESENTATION",
+        "authority": "OMEGA_FACTORY_CARD_PRODUCT_ROLE_REVIEW_20261103"
+      }
     },
     "niobium": {
       "factoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
@@ -1242,7 +1538,15 @@
       "cycleTimeUnit": "IN_GAME_DAYS",
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "presentation": {
+        "primaryInputs": ["niobium"],
+        "primaryOutputs": ["NIOBIUM_CONCENTRATE"],
+        "coProducts": [],
+        "byProducts": ["TAILINGS"],
+        "reviewStatus": "REVIEWED_GAMEPLAY_PRESENTATION",
+        "authority": "OMEGA_FACTORY_CARD_PRODUCT_ROLE_REVIEW_20261103"
+      }
     },
     "ruby": {
       "factoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
@@ -1260,7 +1564,15 @@
       "cycleTimeUnit": "IN_GAME_DAYS",
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "presentation": {
+        "primaryInputs": ["ruby"],
+        "primaryOutputs": ["SORTED_RUBY_ROUGH"],
+        "coProducts": [],
+        "byProducts": ["GEMSTONE_WASTE"],
+        "reviewStatus": "REVIEWED_GAMEPLAY_PRESENTATION",
+        "authority": "OMEGA_FACTORY_CARD_PRODUCT_ROLE_REVIEW_20261103"
+      }
     },
     "diatomite": {
       "factoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
@@ -1279,7 +1591,15 @@
       "cycleTimeUnit": "IN_GAME_DAYS",
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "presentation": {
+        "primaryInputs": ["diatomite"],
+        "primaryOutputs": ["DIATOMITE_CONCENTRATE"],
+        "coProducts": [],
+        "byProducts": ["PROCESSING_RESIDUE"],
+        "reviewStatus": "REVIEWED_GAMEPLAY_PRESENTATION",
+        "authority": "OMEGA_FACTORY_CARD_PRODUCT_ROLE_REVIEW_20261103"
+      }
     },
     "coral_aggregate": {
       "factoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
@@ -1298,7 +1618,15 @@
       "cycleTimeUnit": "IN_GAME_DAYS",
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "presentation": {
+        "primaryInputs": ["coral_aggregate"],
+        "primaryOutputs": ["CONSTRUCTION_AGGREGATE"],
+        "coProducts": [],
+        "byProducts": ["PROCESSING_RESIDUE"],
+        "reviewStatus": "REVIEWED_GAMEPLAY_PRESENTATION",
+        "authority": "OMEGA_FACTORY_CARD_PRODUCT_ROLE_REVIEW_20261103"
+      }
     },
     "aragonite": {
       "factoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
@@ -1317,7 +1645,15 @@
       "cycleTimeUnit": "IN_GAME_DAYS",
       "requiresAllInputs": true,
       "missingInputPolicy": "BLOCK_CYCLE",
-      "simulationOnly": true
+      "simulationOnly": true,
+      "presentation": {
+        "primaryInputs": ["aragonite"],
+        "primaryOutputs": ["ARAGONITE_SAND"],
+        "coProducts": [],
+        "byProducts": ["PROCESSING_RESIDUE"],
+        "reviewStatus": "REVIEWED_GAMEPLAY_PRESENTATION",
+        "authority": "OMEGA_FACTORY_CARD_PRODUCT_ROLE_REVIEW_20261103"
+      }
     }
   },
   "transportModes": {
@@ -3735,7 +4071,15 @@
       "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
       "simulationOnly": true,
       "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
-      "cycleTimeUnit": "IN_GAME_DAYS"
+      "cycleTimeUnit": "IN_GAME_DAYS",
+      "presentation": {
+        "primaryInputs": ["iron_concentrate"],
+        "primaryOutputs": ["STEEL","ALLOY_STEEL"],
+        "coProducts": [],
+        "byProducts": ["BLAST_FURNACE_SLAG","PROCESSING_DUST"],
+        "reviewStatus": "REVIEWED_GAMEPLAY_PRESENTATION",
+        "authority": "OMEGA_FACTORY_CARD_PRODUCT_ROLE_REVIEW_20261103"
+      }
     },
     "NONFERROUS_COPPER_ROUTE_V1": {
       "recipeId": "NONFERROUS_COPPER_ROUTE_V1",
@@ -3761,7 +4105,15 @@
       "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
       "simulationOnly": true,
       "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
-      "cycleTimeUnit": "IN_GAME_DAYS"
+      "cycleTimeUnit": "IN_GAME_DAYS",
+      "presentation": {
+        "primaryInputs": ["copper_concentrate"],
+        "primaryOutputs": ["REFINED_COPPER","COPPER_MATTE"],
+        "coProducts": [],
+        "byProducts": ["SMELTER_SLAG","PROCESSING_DUST"],
+        "reviewStatus": "REVIEWED_GAMEPLAY_PRESENTATION",
+        "authority": "OMEGA_FACTORY_CARD_PRODUCT_ROLE_REVIEW_20261103"
+      }
     },
     "NONFERROUS_ALUMINUM_ROUTE_V1": {
       "recipeId": "NONFERROUS_ALUMINUM_ROUTE_V1",
@@ -3786,7 +4138,15 @@
       "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
       "simulationOnly": true,
       "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
-      "cycleTimeUnit": "IN_GAME_DAYS"
+      "cycleTimeUnit": "IN_GAME_DAYS",
+      "presentation": {
+        "primaryInputs": ["alumina"],
+        "primaryOutputs": ["ALUMINUM_INGOT"],
+        "coProducts": [],
+        "byProducts": ["ALUMINA_RESIDUE","SMELTER_DROSS"],
+        "reviewStatus": "REVIEWED_GAMEPLAY_PRESENTATION",
+        "authority": "OMEGA_FACTORY_CARD_PRODUCT_ROLE_REVIEW_20261103"
+      }
     },
     "PETROCHEMICAL_POLYMER_ROUTE_V1": {
       "recipeId": "PETROCHEMICAL_POLYMER_ROUTE_V1",
@@ -3813,7 +4173,15 @@
       "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
       "simulationOnly": true,
       "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
-      "cycleTimeUnit": "IN_GAME_DAYS"
+      "cycleTimeUnit": "IN_GAME_DAYS",
+      "presentation": {
+        "primaryInputs": ["naphtha"],
+        "primaryOutputs": ["POLYMER_RESIN","PROPYLENE_FEEDSTOCK"],
+        "coProducts": ["INDUSTRIAL_SOLVENTS"],
+        "byProducts": ["CHEMICAL_PROCESS_RESIDUE","PLASTIC_WASTE"],
+        "reviewStatus": "REVIEWED_GAMEPLAY_PRESENTATION",
+        "authority": "OMEGA_FACTORY_CARD_PRODUCT_ROLE_REVIEW_20261103"
+      }
     },
     "FERTILIZER_ROUTE_V1": {
       "recipeId": "FERTILIZER_ROUTE_V1",
@@ -3838,7 +4206,15 @@
       "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
       "simulationOnly": true,
       "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
-      "cycleTimeUnit": "IN_GAME_DAYS"
+      "cycleTimeUnit": "IN_GAME_DAYS",
+      "presentation": {
+        "primaryInputs": ["pipeline_gas"],
+        "primaryOutputs": ["NPK_FERTILIZER","AMMONIA"],
+        "coProducts": [],
+        "byProducts": ["CHEMICAL_PROCESS_RESIDUE"],
+        "reviewStatus": "REVIEWED_GAMEPLAY_PRESENTATION",
+        "authority": "OMEGA_FACTORY_CARD_PRODUCT_ROLE_REVIEW_20261103"
+      }
     },
     "INDUSTRIAL_CHEMICALS_ROUTE_V1": {
       "recipeId": "INDUSTRIAL_CHEMICALS_ROUTE_V1",
@@ -3865,7 +4241,15 @@
       "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
       "simulationOnly": true,
       "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
-      "cycleTimeUnit": "IN_GAME_DAYS"
+      "cycleTimeUnit": "IN_GAME_DAYS",
+      "presentation": {
+        "primaryInputs": ["pipeline_gas"],
+        "primaryOutputs": ["INDUSTRIAL_CHEMICALS","INDUSTRIAL_GASES"],
+        "coProducts": ["CAUSTIC_SODA"],
+        "byProducts": ["CHEMICAL_PROCESS_RESIDUE"],
+        "reviewStatus": "REVIEWED_GAMEPLAY_PRESENTATION",
+        "authority": "OMEGA_FACTORY_CARD_PRODUCT_ROLE_REVIEW_20261103"
+      }
     },
     "CEMENT_CONCRETE_ROUTE_V1": {
       "recipeId": "CEMENT_CONCRETE_ROUTE_V1",
@@ -3890,7 +4274,15 @@
       "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
       "simulationOnly": true,
       "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
-      "cycleTimeUnit": "IN_GAME_DAYS"
+      "cycleTimeUnit": "IN_GAME_DAYS",
+      "presentation": {
+        "primaryInputs": ["cement_feed"],
+        "primaryOutputs": ["CEMENT","READY_MIX_CONCRETE"],
+        "coProducts": [],
+        "byProducts": ["KILN_DUST"],
+        "reviewStatus": "REVIEWED_GAMEPLAY_PRESENTATION",
+        "authority": "OMEGA_FACTORY_CARD_PRODUCT_ROLE_REVIEW_20261103"
+      }
     },
     "GLASS_CERAMICS_ROUTE_V1": {
       "recipeId": "GLASS_CERAMICS_ROUTE_V1",
@@ -3916,7 +4308,15 @@
       "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
       "simulationOnly": true,
       "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
-      "cycleTimeUnit": "IN_GAME_DAYS"
+      "cycleTimeUnit": "IN_GAME_DAYS",
+      "presentation": {
+        "primaryInputs": ["glass_silica_feed"],
+        "primaryOutputs": ["FLAT_GLASS","CONTAINER_GLASS"],
+        "coProducts": ["CERAMIC_COMPONENTS"],
+        "byProducts": ["GLASS_CULLET"],
+        "reviewStatus": "REVIEWED_GAMEPLAY_PRESENTATION",
+        "authority": "OMEGA_FACTORY_CARD_PRODUCT_ROLE_REVIEW_20261103"
+      }
     },
     "PAPER_PACKAGING_ROUTE_V1": {
       "recipeId": "PAPER_PACKAGING_ROUTE_V1",
@@ -3940,7 +4340,15 @@
       "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
       "simulationOnly": true,
       "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
-      "cycleTimeUnit": "IN_GAME_DAYS"
+      "cycleTimeUnit": "IN_GAME_DAYS",
+      "presentation": {
+        "primaryInputs": ["recycled_feedstock"],
+        "primaryOutputs": ["PAPER","PACKAGING_BOARD"],
+        "coProducts": [],
+        "byProducts": ["PACKAGING_WASTE"],
+        "reviewStatus": "REVIEWED_GAMEPLAY_PRESENTATION",
+        "authority": "OMEGA_FACTORY_CARD_PRODUCT_ROLE_REVIEW_20261103"
+      }
     },
     "FOOD_PROCESSING_ROUTE_V1": {
       "recipeId": "FOOD_PROCESSING_ROUTE_V1",
@@ -3966,7 +4374,15 @@
       "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
       "simulationOnly": true,
       "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
-      "cycleTimeUnit": "IN_GAME_DAYS"
+      "cycleTimeUnit": "IN_GAME_DAYS",
+      "presentation": {
+        "primaryInputs": ["grain"],
+        "primaryOutputs": ["PROCESSED_FOOD"],
+        "coProducts": ["FEED_BYPRODUCT"],
+        "byProducts": ["ORGANIC_PROCESSING_WASTE"],
+        "reviewStatus": "REVIEWED_GAMEPLAY_PRESENTATION",
+        "authority": "OMEGA_FACTORY_CARD_PRODUCT_ROLE_REVIEW_20261103"
+      }
     },
     "TEXTILE_GARMENT_ROUTE_V1": {
       "recipeId": "TEXTILE_GARMENT_ROUTE_V1",
@@ -3993,7 +4409,15 @@
       "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
       "simulationOnly": true,
       "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
-      "cycleTimeUnit": "IN_GAME_DAYS"
+      "cycleTimeUnit": "IN_GAME_DAYS",
+      "presentation": {
+        "primaryInputs": ["cotton_fibre"],
+        "primaryOutputs": ["TEXTILE_FABRIC","READYMADE_GARMENTS"],
+        "coProducts": ["SECONDARY_TEXTILE_FIBRE"],
+        "byProducts": ["TEXTILE_WASTE"],
+        "reviewStatus": "REVIEWED_GAMEPLAY_PRESENTATION",
+        "authority": "OMEGA_FACTORY_CARD_PRODUCT_ROLE_REVIEW_20261103"
+      }
     },
     "INDUSTRIAL_MACHINERY_ROUTE_V1": {
       "recipeId": "INDUSTRIAL_MACHINERY_ROUTE_V1",
@@ -4020,7 +4444,15 @@
       "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
       "simulationOnly": true,
       "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
-      "cycleTimeUnit": "IN_GAME_DAYS"
+      "cycleTimeUnit": "IN_GAME_DAYS",
+      "presentation": {
+        "primaryInputs": ["steel"],
+        "primaryOutputs": ["INDUSTRIAL_MACHINERY","MACHINE_TOOL_PARTS"],
+        "coProducts": ["COMPOSITE_MATERIALS"],
+        "byProducts": ["METAL_SCRAP"],
+        "reviewStatus": "REVIEWED_GAMEPLAY_PRESENTATION",
+        "authority": "OMEGA_FACTORY_CARD_PRODUCT_ROLE_REVIEW_20261103"
+      }
     },
     "GRID_EQUIPMENT_ROUTE_V1": {
       "recipeId": "GRID_EQUIPMENT_ROUTE_V1",
@@ -4048,7 +4480,15 @@
       "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
       "simulationOnly": true,
       "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
-      "cycleTimeUnit": "IN_GAME_DAYS"
+      "cycleTimeUnit": "IN_GAME_DAYS",
+      "presentation": {
+        "primaryInputs": ["refined_copper"],
+        "primaryOutputs": ["GRID_TRANSFORMERS","SWITCHGEAR"],
+        "coProducts": ["POWER_CABLES","GRID_EQUIPMENT"],
+        "byProducts": ["ELECTRICAL_SCRAP"],
+        "reviewStatus": "REVIEWED_GAMEPLAY_PRESENTATION",
+        "authority": "OMEGA_FACTORY_CARD_PRODUCT_ROLE_REVIEW_20261103"
+      }
     },
     "SEMICONDUCTOR_ELECTRONICS_ROUTE_V1": {
       "recipeId": "SEMICONDUCTOR_ELECTRONICS_ROUTE_V1",
@@ -4078,7 +4518,15 @@
       "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
       "simulationOnly": true,
       "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
-      "cycleTimeUnit": "IN_GAME_DAYS"
+      "cycleTimeUnit": "IN_GAME_DAYS",
+      "presentation": {
+        "primaryInputs": ["silicon_wafers"],
+        "primaryOutputs": ["SEMICONDUCTOR_CHIPS","ELECTRONIC_COMPONENTS"],
+        "coProducts": ["CONTROL_MODULES"],
+        "byProducts": ["E_WASTE","PROCESSING_LOSS"],
+        "reviewStatus": "REVIEWED_GAMEPLAY_PRESENTATION",
+        "authority": "OMEGA_FACTORY_CARD_PRODUCT_ROLE_REVIEW_20261103"
+      }
     },
     "BATTERY_STORAGE_ROUTE_V1": {
       "recipeId": "BATTERY_STORAGE_ROUTE_V1",
@@ -4106,7 +4554,15 @@
       "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
       "simulationOnly": true,
       "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
-      "cycleTimeUnit": "IN_GAME_DAYS"
+      "cycleTimeUnit": "IN_GAME_DAYS",
+      "presentation": {
+        "primaryInputs": ["lithium_carbonate_or_hydroxide"],
+        "primaryOutputs": ["BATTERY_CELLS","BATTERY_PACKS"],
+        "coProducts": [],
+        "byProducts": ["BATTERY_SCRAP"],
+        "reviewStatus": "REVIEWED_GAMEPLAY_PRESENTATION",
+        "authority": "OMEGA_FACTORY_CARD_PRODUCT_ROLE_REVIEW_20261103"
+      }
     },
     "VEHICLE_ASSEMBLY_ROUTE_V1": {
       "recipeId": "VEHICLE_ASSEMBLY_ROUTE_V1",
@@ -4135,7 +4591,15 @@
       "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
       "simulationOnly": true,
       "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
-      "cycleTimeUnit": "IN_GAME_DAYS"
+      "cycleTimeUnit": "IN_GAME_DAYS",
+      "presentation": {
+        "primaryInputs": ["steel"],
+        "primaryOutputs": ["VEHICLES"],
+        "coProducts": ["VEHICLE_SPARE_PARTS"],
+        "byProducts": ["METAL_SCRAP","ASSEMBLY_LOSS"],
+        "reviewStatus": "REVIEWED_GAMEPLAY_PRESENTATION",
+        "authority": "OMEGA_FACTORY_CARD_PRODUCT_ROLE_REVIEW_20261103"
+      }
     },
     "SHIP_RAIL_EQUIPMENT_ROUTE_V1": {
       "recipeId": "SHIP_RAIL_EQUIPMENT_ROUTE_V1",
@@ -4163,7 +4627,15 @@
       "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
       "simulationOnly": true,
       "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
-      "cycleTimeUnit": "IN_GAME_DAYS"
+      "cycleTimeUnit": "IN_GAME_DAYS",
+      "presentation": {
+        "primaryInputs": ["steel"],
+        "primaryOutputs": ["SHIP_RAIL_EQUIPMENT"],
+        "coProducts": ["HEAVY_TRANSPORT_SPARES"],
+        "byProducts": ["METAL_SCRAP"],
+        "reviewStatus": "REVIEWED_GAMEPLAY_PRESENTATION",
+        "authority": "OMEGA_FACTORY_CARD_PRODUCT_ROLE_REVIEW_20261103"
+      }
     },
     "AEROSPACE_EQUIPMENT_ROUTE_V1": {
       "recipeId": "AEROSPACE_EQUIPMENT_ROUTE_V1",
@@ -4192,7 +4664,15 @@
       "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
       "simulationOnly": true,
       "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
-      "cycleTimeUnit": "IN_GAME_DAYS"
+      "cycleTimeUnit": "IN_GAME_DAYS",
+      "presentation": {
+        "primaryInputs": ["aluminum_ingot"],
+        "primaryOutputs": ["AEROSPACE_COMPONENTS","AIRCRAFT"],
+        "coProducts": [],
+        "byProducts": ["PRECISION_SCRAP","ASSEMBLY_LOSS"],
+        "reviewStatus": "REVIEWED_GAMEPLAY_PRESENTATION",
+        "authority": "OMEGA_FACTORY_CARD_PRODUCT_ROLE_REVIEW_20261103"
+      }
     },
     "PHARMA_MEDICAL_ROUTE_V1": {
       "recipeId": "PHARMA_MEDICAL_ROUTE_V1",
@@ -4219,7 +4699,15 @@
       "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
       "simulationOnly": true,
       "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
-      "cycleTimeUnit": "IN_GAME_DAYS"
+      "cycleTimeUnit": "IN_GAME_DAYS",
+      "presentation": {
+        "primaryInputs": ["industrial_solvents"],
+        "primaryOutputs": ["PHARMACEUTICAL_GOODS","MEDICAL_SUPPLIES"],
+        "coProducts": [],
+        "byProducts": ["PHARMA_PROCESS_WASTE"],
+        "reviewStatus": "REVIEWED_GAMEPLAY_PRESENTATION",
+        "authority": "OMEGA_FACTORY_CARD_PRODUCT_ROLE_REVIEW_20261103"
+      }
     },
     "DEFENSE_EQUIPMENT_ROUTE_V1": {
       "recipeId": "DEFENSE_EQUIPMENT_ROUTE_V1",
@@ -4247,7 +4735,15 @@
       "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
       "simulationOnly": true,
       "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
-      "cycleTimeUnit": "IN_GAME_DAYS"
+      "cycleTimeUnit": "IN_GAME_DAYS",
+      "presentation": {
+        "primaryInputs": ["steel"],
+        "primaryOutputs": ["DEFENSE_EQUIPMENT","DEFENSE_SPARE_PARTS"],
+        "coProducts": [],
+        "byProducts": ["MANUFACTURING_SCRAP"],
+        "reviewStatus": "REVIEWED_GAMEPLAY_PRESENTATION",
+        "authority": "OMEGA_FACTORY_CARD_PRODUCT_ROLE_REVIEW_20261103"
+      }
     },
     "RECYCLING_CIRCULAR_ROUTE_V1": {
       "recipeId": "RECYCLING_CIRCULAR_ROUTE_V1",
@@ -4277,7 +4773,15 @@
       "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
       "simulationOnly": true,
       "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
-      "cycleTimeUnit": "IN_GAME_DAYS"
+      "cycleTimeUnit": "IN_GAME_DAYS",
+      "presentation": {
+        "primaryInputs": ["metal_scrap"],
+        "primaryOutputs": ["RECOVERED_STEEL","RECOVERED_COPPER"],
+        "coProducts": ["RECYCLED_POLYMER","RECOVERED_GLASS","RECYCLED_FEEDSTOCK"],
+        "byProducts": ["DISPOSAL_RESIDUE"],
+        "reviewStatus": "REVIEWED_GAMEPLAY_PRESENTATION",
+        "authority": "OMEGA_FACTORY_CARD_PRODUCT_ROLE_REVIEW_20261103"
+      }
     },
     "SILICON_WAFER_PRODUCTION_ROUTE_V1": {
       "recipeId": "SILICON_WAFER_PRODUCTION_ROUTE_V1",
@@ -4303,7 +4807,15 @@
       "recipeAuthority": "SIMULATED_GAMEPLAY_RULE",
       "simulationOnly": true,
       "quantityBasis": "PER_SIMULATION_PRODUCTION_UNIT",
-      "cycleTimeUnit": "IN_GAME_DAYS"
+      "cycleTimeUnit": "IN_GAME_DAYS",
+      "presentation": {
+        "primaryInputs": ["glass_silica_feed"],
+        "primaryOutputs": ["SILICON_WAFERS"],
+        "coProducts": [],
+        "byProducts": ["PROCESSING_DUST","CHEMICAL_PROCESS_RESIDUE","PROCESSING_LOSS"],
+        "reviewStatus": "REVIEWED_GAMEPLAY_PRESENTATION",
+        "authority": "OMEGA_FACTORY_CARD_PRODUCT_ROLE_REVIEW_20261103"
+      }
     }
   },
   "factoryCatalogSummary": {
@@ -4491,5 +5003,13 @@
     "QUARRY": {"wasteOutputs": {"metal_scrap": 0.018, "glass_cullet": 0.01, "disposal_residue": 0.02}},
     "OIL_GAS_FIELD": {"wasteOutputs": {"metal_scrap": 0.05, "chemical_process_residue": 0.035, "disposal_residue": 0.04}},
     "OFFSHORE_PLATFORM": {"wasteOutputs": {"metal_scrap": 0.08, "glass_cullet": 0.018, "chemical_process_residue": 0.04, "disposal_residue": 0.05}}
+  },
+  "factoryCardPresentationSchemaVersion": "1.0.0",
+  "factoryCardPresentationPolicy": {
+    "purpose": "Progressive disclosure roles for canonical factory-card product previews only.",
+    "allowedRoles": ["primaryInput", "primaryOutput", "coProduct", "byProduct"],
+    "priorityPolicy": "Array order is explicit display priority; do not infer roles from coefficients.",
+    "runtimePolicy": "Presentation metadata must not change recipe coefficients, production scheduling, stock, batches, ledgers or construction.",
+    "missingRolePolicy": "Unclassified outputs remain visible in expanded detail and must not be silently treated as primary or by-product."
   }
 }
