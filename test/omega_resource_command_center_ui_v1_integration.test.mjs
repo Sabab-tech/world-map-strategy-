@@ -270,11 +270,11 @@ test('industrial panel refreshes its first open when the shared factory catalog 
   api.open('USA','industrial');
   const modal=document.getElementById('gsrsk-intelligence-modal');
   assert.ok(modal && modal.style.display==='flex');
-  assert.doesNotMatch(modal.innerHTML,/omega-rescc-factory-catalog-row/,
+  assert.doesNotMatch(modal.innerHTML,/<article class="omega-rescc-factory-catalog-row"/,
     'the initial synchronous shell may render while the canonical factory catalog is loading');
   await new Promise(resolve=>setTimeout(resolve,360));
   assert.equal(catalogLoaded,true);
-  assert.match(modal.innerHTML,/omega-rescc-factory-catalog-row/,
+  assert.match(modal.innerHTML,/<article class="omega-rescc-factory-catalog-row"/,
     'the same open panel must refresh when the shared factory catalog resolves');
   assert.match(modal.innerHTML,/Steel and Alloy Works/);
 });
