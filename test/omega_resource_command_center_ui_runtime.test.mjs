@@ -326,7 +326,8 @@ test('Production Ministry shows each country factory count on the matching facto
   try {
     ui.open('BGD', 'industrial');
     const html = elements.get('gsrsk-intelligence-modal').innerHTML;
-    assert.equal((html.match(/omega-rescc-factory-catalog-row/g) || []).length, 2);
+    assert.equal(html.split('<article class="omega-rescc-factory-catalog-row"').length - 1, 2,
+      'count the rendered factory cards, not their CSS selector');
     assert.match(html, /Steel Mill/);
     assert.match(html, /Textile Mill/);
     const cardMarker = '<article class="omega-rescc-factory-catalog-row"';
