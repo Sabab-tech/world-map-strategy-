@@ -1552,3 +1552,103 @@ test("raw-resource inventory cards show icon, stock, demand, status and named su
     if(prior.startup===undefined)delete globalThis.OmegaResourceStartupBaseline;else globalThis.OmegaResourceStartupBaseline=prior.startup;
   }
 });
+
+
+test("Resource Ministry logistics manifest and country-shard requests are time-bounded and retryable", async () => {
+  const vm = await import("node:vm");
+  const requested = [];
+  const timers = new Map();
+  let nextTimerId = 1;
+  let manifestCalls = 0;
+  let shardCalls = 0;
+  const sandbox = {
+    AbortController,
+    setTimeout(callback) {
+      const id = nextTimerId++;
+      timers.set(id, callback);
+      return id;
+    },
+    clearTimeout(id) { timers.delete(id); },
+    fetch(url, options) {
+      const name = String(url).replace(/^\.\//, "");
+      requested.push(name);
+      if (name === "resource_site_logistics_routes_v1.json") {
+        manifestCalls += 1;
+        if (manifestCalls === 1) return new Promise(() => {});
+        return Promise.resolve({ ok:true, json:async () => ({
+          datasetId:"OMEGA_RESOURCE_SITE_LOGISTICS_ROUTES_V1",
+          simulationOnly:true,
+          countryToPart:{ TST:1 },
+          parts:[{ part:1, file:"resource_site_logistics_routes_v1_part_01.json" }]
+        }) });
+      }
+      if (name === "resource_site_logistics_routes_v1_part_01.json") {
+        shardCalls += 1;
+        if (shardCalls === 1) return new Promise(() => {});
+        return Promise.resolve({ ok:true, json:async () => ({ routes:[] }) });
+      }
+      return Promise.reject(new Error("Unexpected route request: " + name));
+    }
+  };
+  sandbox.window = sandbox;
+  vm.default.createContext(sandbox);
+  vm.default.runInContext(read("omega_ui_v2/screens/resource-ministry.js"), sandbox, {
+    filename:"omega_ui_v2/screens/resource-ministry.js"
+  });
+  sandbox.Game = { state:{ simulation:{ turn:1, session:{ playerCountryId:"TST" } }, resource:{ TST:{
+    mineAssets:[],
+    industrialNetwork:{ projects:[], shipments:[], siteFlowLedger:[] },
+    warehouse:{ availableByResource:{} },
+    processedWarehouse:{ availableByResource:{} },
+    inventory:{},
+    inventoryLedger:[]
+  } } } };
+  const api = sandbox.OmegaUIV2ResourceMinistry;
+  const makeRoot = () => ({
+    innerHTML:"",
+    classList:{ add(){} },
+    addEventListener(){},
+    querySelector(){ return null; },
+    querySelectorAll(){ return []; },
+    contains(){ return true; }
+  });
+  const flush = async () => {
+    for (let attempt=0; attempt<8; attempt++) await new Promise(resolve => setImmediate(resolve));
+  };
+  const expireNextTimer = () => {
+    const entry = timers.entries().next().value;
+    assert.ok(entry, "a pending route request must always have a timeout");
+    timers.delete(entry[0]);
+    entry[1]();
+  };
+
+  const manifestRoot = makeRoot();
+  api.render(manifestRoot, { countryId:"TST", sites:[], tab:"logistics" });
+  await flush();
+  assert.equal(manifestCalls, 1);
+  assert.ok(requested.includes("resource_site_logistics_routes_v1.json"));
+  expireNextTimer();
+  await flush();
+  assert.equal(timers.size, 0, "timed-out manifest requests must release their timer");
+  assert.ok(manifestRoot.innerHTML.length > 0, "the Logistics screen remains rendered after a route manifest timeout");
+  api.unload(manifestRoot);
+
+  const shardRoot = makeRoot();
+  api.render(shardRoot, { countryId:"TST", sites:[], tab:"logistics" });
+  await flush();
+  assert.equal(manifestCalls, 2, "a failed shared manifest request must be cleared so a later visit can retry");
+  assert.equal(shardCalls, 1, "the selected country's route shard should start after the manifest succeeds");
+  expireNextTimer();
+  await flush();
+  assert.equal(timers.size, 0, "timed-out country shards must release their timer");
+  assert.ok(shardRoot.innerHTML.length > 0, "the Logistics screen remains rendered after a shard timeout");
+  api.unload(shardRoot);
+
+  const retryRoot = makeRoot();
+  api.render(retryRoot, { countryId:"TST", sites:[], tab:"logistics" });
+  await flush();
+  assert.equal(shardCalls, 2, "a timed-out country shard must be fetched again on the next Logistics visit");
+  assert.equal(timers.size, 0, "successful route requests must clear their timeout handles");
+  assert.ok(retryRoot.innerHTML.length > 0);
+  api.unload(retryRoot);
+});
