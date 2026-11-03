@@ -2614,10 +2614,191 @@ test('Factory Stock and Input calculate all assigned factory-type requirements b
   }
 });
 
+test('factory cards progressively disclose canonical products, quantities and inline construction requirements', () => {
+  const previous = {
+    Game:globalThis.Game,
+    inventory:globalThis.OmegaCountryInventoryRuntime,
+    catalog:globalThis.OmegaResourceIndustrialCatalogData,
+    baseline:globalThis.OmegaCountryFactoryStartingBaselineV1,
+    countryRuntime:globalThis.OmegaCountryRuntimeData,
+    omega:globalThis.Omega,
+    network:globalThis.OmegaResourceIndustrialNetwork
+  };
+  const catalog = JSON.parse(readFileSync(new URL('../resource_industrial_catalog_v1.json', import.meta.url), 'utf8'));
+  globalThis.Omega = {};
+  globalThis.OmegaCountryRuntimeData = null;
+  globalThis.OmegaCountryFactoryStartingBaselineV1 = null;
+  globalThis.OmegaResourceIndustrialCatalogData = catalog;
+  globalThis.OmegaResourceIndustrialNetwork = null;
+  globalThis.Game = { state:{
+    simulation:{ playerCountryId:'BGD', turn:1 },
+    resource:{ BGD:{
+      industrialNetwork:{ projects:[],factoryProductionCycles:{},factoryRuntime:{},siteFlowLedger:[] },
+      batches:[],finishedGoodsLedger:[],inventoryLedger:[],
+      processedWarehouse:{ availableByResource:{} }
+    }},
+    economy:{ BGD:{ productionAssets:[{
+      id:'FACTORY-STEEL-CARD-01',
+      name:'Chattogram Steel Works',
+      factoryType:'STEEL_AND_ALLOY_WORKS',
+      recipeId:'STEEL_PRIMARY_ROUTE_V1',
+      status:'OPERATIONAL',
+      capacityPerDay:900,
+      inputInventory:{ iron_concentrate:120 },
+      inputBatchLots:[{
+        batchId:'STEEL-IRON-INPUT-01',resourceId:'iron_concentrate',quantity:120,remainingQuantity:120,
+        unit:'SIMULATION_RESOURCE_UNIT',status:'AVAILABLE_TO_FACTORY'
+      }]
+    }] } }
+  }};
+  globalThis.OmegaCountryInventoryRuntime = {
+    getInventory(countryId, options) {
+      assert.equal(countryId,'BGD');
+      assert.equal(options.includeLedger,false);
+      return {
+        status:'READY',countryId:'BGD',countryName:'Bangladesh',active:true,readOnly:false,
+        items:[
+          {productId:'construction_aggregate',name:'Construction Aggregate',quantity:500,unit:'SIMULATION_RESOURCE_UNIT'},
+          {productId:'iron_concentrate',name:'Iron Concentrate',quantity:120,unit:'SIMULATION_RESOURCE_UNIT'}
+        ],
+        ledger:[]
+      };
+    },
+    getResourceCatalog() { return Object.keys(catalog.resourceRules).map(id => ({resourceId:id})); }
+  };
+  const listeners = {};
+  const root = {
+    classList:{add(){}},
+    addEventListener(name, callback) { listeners[name] = callback; },
+    contains() { return true; },
+    innerHTML:''
+  };
+  function render(options) {
+    return globalThis.OmegaUIV2Industry.render(root,Object.assign({countryId:'BGD',tab:'factories'},options||{}));
+  }
+  function cardHtml(type) {
+    const marker = 'data-factory-type="' + type + '"';
+    const position = root.innerHTML.indexOf(marker);
+    assert.ok(position >= 0,type + ' card must be rendered');
+    const start = root.innerHTML.lastIndexOf('<article',position);
+    const end = root.innerHTML.indexOf('</article>',position);
+    assert.ok(start >= 0 && end > start,type + ' card markup must be complete');
+    return root.innerHTML.slice(start,end + '</article>'.length);
+  }
+  try {
+    const initial = render();
+    assert.equal(initial.ok,true);
+    assert.match(root.innerHTML,/data-omega-v2-factory-type-card/);
+    let steel = cardHtml('STEEL_AND_ALLOY_WORKS');
+    assert.match(steel,/Main output/);
+    assert.match(steel,/Steel/);
+    assert.match(steel,/Alloy Steel/);
+    assert.match(steel,/By-product:/);
+    assert.match(steel,/Blast Furnace Slag/);
+    assert.match(steel,/Input/);
+    assert.match(steel,/Iron Concentrate/);
+    assert.match(steel,/0\\.72 \\/ production unit/);
+    assert.match(steel,/0\\.60 \\/ production unit/);
+    assert.match(steel,/data-omega-v2-factory-card-expand/);
+    assert.match(steel,/data-omega-v2-factory-section-toggle/);
+    assert.doesNotMatch(steel,/Processing Dust/,'the second by-product must remain hidden in collapsed view');
+    assert.doesNotMatch(steel,/Copper Concentrate/,'only the primary input is shown in collapsed view');
+    assert.match(steel,/Modeled build time/);
+    assert.match(steel,/Build project/);
+
+    root.__omegaV2FactoryCardUiState = {
+      expandedKey:'type:STEEL_AND_ALLOY_WORKS',
+      buildKey:'',
+      sections:Object.create(null),
+      buildMaterialsExpanded:false
+    };
+    render();
+    steel = cardHtml('STEEL_AND_ALLOY_WORKS');
+    assert.match(steel,/Complete production formula/);
+    assert.match(steel,/Copper Concentrate/);
+    assert.match(steel,/Cement Feed/);
+    assert.match(steel,/Processing Dust/);
+    assert.match(steel,/Quantity basis: PER_SIMULATION_PRODUCTION_UNIT/);
+    assert.match(steel,/STEEL_PRIMARY_ROUTE_V1/);
+
+    root.__omegaV2FactoryCardUiState = {
+      expandedKey:'',
+      buildKey:'type:STEEL_AND_ALLOY_WORKS',
+      sections:Object.create(null),
+      buildMaterialsExpanded:false
+    };
+    render();
+    steel = cardHtml('STEEL_AND_ALLOY_WORKS');
+    assert.match(steel,/Build requirements/);
+    assert.match(steel,/Construction materials/);
+    assert.match(steel,/240 game-days/);
+    assert.match(steel,/18,000/);
+    assert.match(steel,/Construction Aggregate/);
+    assert.match(steel,/500 available/);
+    assert.match(steel,/Required infrastructure/);
+    assert.match(steel,/rail/);
+    assert.match(steel,/Start construction project/);
+    assert.doesNotMatch(steel,/Main output/,'Build mode must replace the production summary');
+    assert.doesNotMatch(steel,/Blast Furnace Slag/,'Build mode must not leak recipe products');
+    assert.match(steel,/data-omega-v2-factory-build-materials/);
+
+    root.__omegaV2FactoryCardUiState = {
+      expandedKey:'',
+      buildKey:'',
+      sections:Object.create(null),
+      buildMaterialsExpanded:false
+    };
+    render({factoryView:'assets'});
+    const live = root.innerHTML.match(/<article class="omega-v2-factory-card fp-card[^>]*data-factory-id="FACTORY-STEEL-CARD-01"[\s\S]*?<\/article>/);
+    assert.ok(live,'the live factory asset card must remain available');
+    assert.match(live[0],/Steel/);
+    assert.match(live[0],/Alloy Steel/);
+    assert.match(live[0],/Iron Concentrate/);
+    assert.match(live[0],/Factory stock: 120 simulation units/);
+    assert.match(live[0],/data-omega-v2-factory-build-details/);
+    assert.match(live[0],/data-omega-v2-factory-destroy/);
+
+    root.__omegaV2FactoryCardUiState = {
+      expandedKey:'asset:FACTORY-STEEL-CARD-01',
+      buildKey:'',
+      sections:Object.create(null),
+      buildMaterialsExpanded:false
+    };
+    render({factoryView:'assets'});
+    const liveExpanded = root.innerHTML.match(/<article class="omega-v2-factory-card fp-card[^>]*data-factory-id="FACTORY-STEEL-CARD-01"[\s\S]*?<\/article>/);
+    assert.ok(liveExpanded);
+    assert.match(liveExpanded[0],/Complete production formula/);
+    assert.match(liveExpanded[0],/Not started \\/ no committed output/);
+    assert.match(liveExpanded[0],/Factory stock: 120 simulation units/);
+
+    // Exercise the real delegated card disclosure handler and assert it updates root-local UI state.
+    const clickTarget = {
+      closest(selector) {
+        if (selector === '[data-omega-v2-factory-card-expand]') {
+          return { getAttribute(name) { return name === 'data-card-key' ? 'type:STEEL_AND_ALLOY_WORKS' : null; } };
+        }
+        return null;
+      }
+    };
+    listeners.click({target:clickTarget});
+    assert.equal(root.__omegaV2FactoryCardUiState.expandedKey,'type:STEEL_AND_ALLOY_WORKS');
+    assert.equal(root.__omegaV2FactoryCardUiState.buildKey,'');
+    assert.match(root.innerHTML,/Complete production formula/);
+  } finally {
+    if (previous.Game === undefined) delete globalThis.Game; else globalThis.Game = previous.Game;
+    if (previous.inventory === undefined) delete globalThis.OmegaCountryInventoryRuntime; else globalThis.OmegaCountryInventoryRuntime = previous.inventory;
+    if (previous.catalog === undefined) delete globalThis.OmegaResourceIndustrialCatalogData; else globalThis.OmegaResourceIndustrialCatalogData = previous.catalog;
+    if (previous.baseline === undefined) delete globalThis.OmegaCountryFactoryStartingBaselineV1; else globalThis.OmegaCountryFactoryStartingBaselineV1 = previous.baseline;
+    if (previous.countryRuntime === undefined) delete globalThis.OmegaCountryRuntimeData; else globalThis.OmegaCountryRuntimeData = previous.countryRuntime;
+    if (previous.omega === undefined) delete globalThis.Omega; else globalThis.Omega = previous.omega;
+    if (previous.network === undefined) delete globalThis.OmegaResourceIndustrialNetwork; else globalThis.OmegaResourceIndustrialNetwork = previous.network;
+  }
+});
+
 test('Factory Stock/Input UI assets invalidate the old offline shell cache', () => {
   const sw = readFileSync('omega-offline-map-sw.js','utf8');
   const css = readFileSync('omega_ui_v2/factory-production-command.css','utf8');
-  assert.ok(sw.includes('omega-offline-atlas-shell-v83'),
+  assert.ok(sw.includes('omega-offline-atlas-shell-v84'),
     'the offline shell must activate the new JS/CSS rather than retaining the old Stock/Input renderer');
   for (const selector of ['.fp-product-identity','.fp-product-icon-frame','.fp-product-stock-quantity']) {
     assert.ok(css.includes(selector), selector + ' must be styled in the actual factory command stylesheet');
