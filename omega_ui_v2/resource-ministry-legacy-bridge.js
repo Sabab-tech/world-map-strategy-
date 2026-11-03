@@ -87,7 +87,7 @@
     if (root.getAttribute && root.getAttribute(ACTIVE_ATTR) === 'true' && root.__omegaUIV2State) {
       if (!app || typeof app.openMinistry !== 'function') return failClosed('UI_V2_MINISTRY_ROUTER_UNAVAILABLE');
       var opened = false;
-      try { opened = app.openMinistry(root, 'energy_mining') === true; } catch (_) {}
+      try { opened = app.openMinistry(root, 'energy_mining', true) === true; } catch (_) {}
       return opened && resourceRouteActive(root) ? true : failClosed('RESOURCE_ROUTE_NOT_ACTIVE');
     }
 
@@ -97,8 +97,8 @@
     var result;
     try {
       result = integration.mountIntoCabinet(root, {
-        initialRoute: 'government',
-        ministryId: 'energy_mining',
+        initialRoute: 'resources',
+        initialMinistryId: 'energy_mining',
         countryId: activeCountry(owner)
       });
     } catch (_) {
