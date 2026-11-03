@@ -1481,7 +1481,8 @@
   }
 
   function factoryPlanPresenceMarkup(type, model) {
-    var known = model && model.hasCountryState === true;
+    var ownershipCount = model && model.hasCountryState === true ? factoryTypeOwnedCount({ type: type && type.type }, model) : null;
+    var known = ownershipCount !== null;
     var count = Math.max(0, Math.floor(num(type && type.count) || 0));
     var state = !known ? 'unknown' : count > 0 ? 'present' : 'absent';
     var label = state === 'present' ? 'PRESENT · ' + fmt(count) + ' FACTORIES'
@@ -1794,7 +1795,7 @@
         return rows[i].count;
       }
     }
-    return 0;
+    return null;
   }
 
   function factoryCard(factory, options) {
