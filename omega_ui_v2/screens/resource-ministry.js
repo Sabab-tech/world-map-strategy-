@@ -129,12 +129,67 @@
 
   function fetchLogisticsJson(path, signal) {
     if (typeof g.fetch !== 'function') return Promise.reject(new Error('FETCH_UNAVAILABLE'));
+    var scheduleTimeout = typeof g.setTimeout === 'function' ? g.setTimeout.bind(g) :
+      (typeof setTimeout === 'function' ? setTimeout : null);
+    var cancelTimeout = typeof g.clearTimeout === 'function' ? g.clearTimeout.bind(g) :
+      (typeof clearTimeout === 'function' ? clearTimeout : null);
+    if (!scheduleTimeout) return Promise.reject(new Error('LOGISTICS_REQUEST_TIMEOUT_UNAVAILABLE:' + path));
+    var controller = typeof g.AbortController === 'function' ? new g.AbortController() : null;
     var requestOptions = { cache: 'force-cache' };
-    if (signal) requestOptions.signal = signal;
-    return g.fetch('./' + path, requestOptions).then(function (response) {
-      if (!response || response.ok === false) throw new Error('LOGISTICS_DATA_REQUEST_FAILED');
+    if (controller) requestOptions.signal = controller.signal;
+    else if (signal) requestOptions.signal = signal;
+    var timeoutHandle = null;
+    var abortListener = null;
+    var request = Promise.resolve().then(function () {
+      if (signal && signal.aborted) {
+        var aborted = new Error('LOGISTICS_DATA_REQUEST_ABORTED:' + path);
+        aborted.name = 'AbortError';
+        throw aborted;
+      }
+      return g.fetch('./' + path, requestOptions);
+    }).then(function (response) {
+      if (!response || response.ok === false) throw new Error('LOGISTICS_DATA_REQUEST_FAILED:' + path);
       return response.json();
     });
+    var timeout = new Promise(function (_, reject) {
+      timeoutHandle = scheduleTimeout(function () {
+        try { if (controller) controller.abort(); } catch (_) {}
+        reject(new Error('LOGISTICS_DATA_REQUEST_TIMEOUT:' + path));
+      }, 15000);
+    });
+    var races = [request, timeout];
+    if (signal) {
+      var abortedRequest = new Promise(function (_, reject) {
+        abortListener = function () {
+          try { if (controller) controller.abort(); } catch (_) {}
+          var error = new Error('LOGISTICS_DATA_REQUEST_ABORTED:' + path);
+          error.name = 'AbortError';
+          reject(error);
+        };
+        if (signal.aborted) abortListener();
+        else if (typeof signal.addEventListener === 'function') signal.addEventListener('abort', abortListener, { once:true });
+      });
+      races.push(abortedRequest);
+    }
+    return Promise.race(races).finally(function () {
+      if (timeoutHandle !== null && cancelTimeout) {
+        try { cancelTimeout(timeoutHandle); } catch (_) {}
+      }
+      if (signal && abortListener && typeof signal.removeEventListener === 'function') {
+        try { signal.removeEventListener('abort', abortListener); } catch (_) {}
+      }
+    });
+  }
+
+  function getLogisticsRouteManifest() {
+    if (!logisticsRouteManifestRequest) {
+      var sharedRequest = fetchLogisticsJson('resource_site_logistics_routes_v1.json').catch(function (error) {
+        if (logisticsRouteManifestRequest === sharedRequest) logisticsRouteManifestRequest = null;
+        throw error;
+      });
+      logisticsRouteManifestRequest = sharedRequest;
+    }
+    return logisticsRouteManifestRequest;
   }
 
   function getLogisticsRoutePlanState(countryValue) {
@@ -172,9 +227,7 @@
       notifyLogisticsRoutePlanWaiters(country);
       return Promise.resolve(logisticsRoutePlanCache[country]);
     }
-    if (!logisticsRouteManifestRequest) {
-      logisticsRouteManifestRequest = fetchLogisticsJson('resource_site_logistics_routes_v1.json');
-    }
+    var manifestRequest = getLogisticsRouteManifest();
     var generation = Number(logisticsRoutePlanGenerations[country]) || 0;
     var controller = typeof g.AbortController === 'function' ? new g.AbortController() : null;
     if (controller) logisticsRoutePlanControllers[country] = controller;
@@ -184,7 +237,7 @@
           key(waiter.__omegaV2CurrentCountryKey) === country;
       });
     }
-    var request = logisticsRouteManifestRequest.then(function (manifest) {
+    var request = manifestRequest.then(function (manifest) {
       // The manifest is shared and cheap. Do not fetch a large country shard
       // after every screen that requested it has already been unloaded.
       if ((Number(logisticsRoutePlanGenerations[country]) || 0) !== generation || !hasActiveWaiter()) {
