@@ -2073,7 +2073,7 @@
         '<div class="omega-v2-logistics-transport-heading"><span>TRANSPORT MODES</span></div>' +
         '<div class="omega-v2-logistics-transport-grid">' + cards + '</div>' +
         (canManage
-          ? '<details class="omega-v2-logistics-fleet-editor"><summary>Adjust route transport counts</summary>' +
+          ? '<details class="omega-v2-logistics-fleet-editor"><summary>Configure transport counts</summary>' +
             '<form data-omega-v2-logistics-fleet-form data-site-id="' + esc(route && route.siteId || '') +
             '" data-country-id="' + esc(route && route.countryId || countryKey || '') + '">' +
             '<div class="omega-v2-logistics-count-grid">' + countFields + '</div>' +
