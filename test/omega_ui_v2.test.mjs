@@ -2768,7 +2768,7 @@ test('factory cards progressively disclose canonical products, quantities and in
     const liveExpanded = root.innerHTML.match(/<article class="omega-v2-factory-card fp-card[^>]*data-factory-id="FACTORY-STEEL-CARD-01"[\s\S]*?<\/article>/);
     assert.ok(liveExpanded);
     assert.match(liveExpanded[0],/Complete production formula/);
-    assert.match(liveExpanded[0],/Not started \\/ no committed output/);
+    assert.ok(liveExpanded[0].includes('Not started / no committed output'));
     assert.match(liveExpanded[0],/Factory stock: 120 SIMULATION_RESOURCE_UNIT/);
 
     // Exercise the real delegated card disclosure handler and assert it updates root-local UI state.
