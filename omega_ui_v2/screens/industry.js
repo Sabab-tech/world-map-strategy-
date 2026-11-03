@@ -869,6 +869,8 @@
       processingRules: processingRules,
       factoryBaselineStatus: factoryStartingRegistry && factoryStartingRegistry.status || 'NOT_READY',
       factoryInputCoverageDays: Math.max(1, Math.min(3650, Math.round(num(resource.factoryInputBaselineV1 && resource.factoryInputBaselineV1.targetCoverageDays) || num(resource.factoryInputPolicy && resource.factoryInputPolicy.targetCoverageDays) || 100))),
+      factoryInputCoverageSnapshot: resource.factoryInputCoverageSnapshotV1 && typeof resource.factoryInputCoverageSnapshotV1 === 'object' ? resource.factoryInputCoverageSnapshotV1 : null,
+      factoryInputCoverageIntervalDays: 10,
       inputInventoryCount: mappedAssets.reduce(function (total, row) { return total + row.inputRows.filter(function (input) { return input.quantity !== null && input.quantity > 0; }).length; }, 0),
       nationalInventory: nationalInventory,
       finishedGoodsLedger: finishedGoodsLedger,
@@ -1509,43 +1511,133 @@
     return value;
   }
 
+  function factoryInputPlanProducts(plan) {
+    var byProduct = Object.create(null);
+    (plan && Array.isArray(plan.types) ? plan.types : []).forEach(function (type) {
+      (Array.isArray(type.inputs) ? type.inputs : []).forEach(function (input) {
+        var productId = String(input && input.productId || '').trim();
+        if (!productId) return;
+        var key = productId.toLowerCase();
+        if (!byProduct[key]) byProduct[key] = {
+          productId:productId, perDay:0, unit:String(input.unit || ''), breakdown:[], expectedFactoryCount:0
+        };
+        var row = byProduct[key];
+        row.perDay += Math.max(0, num(input.perDay) || 0);
+        if (!row.unit && input.unit) row.unit = String(input.unit);
+        var factoryCount = (Array.isArray(input.sources) ? input.sources : []).reduce(function (sum, source) {
+          return sum + Math.max(0, Math.floor(num(source && source.factoryCount) || 0));
+        }, 0);
+        row.expectedFactoryCount += factoryCount;
+        row.breakdown.push({
+          type:String(type.type || ''),
+          name:String(type.name || type.type || 'Factory'),
+          perDay:Math.max(0, num(input.perDay) || 0),
+          factoryCount:factoryCount
+        });
+      });
+    });
+    return Object.keys(byProduct).map(function (key) { return byProduct[key]; }).sort(function (a, b) {
+      return a.productId.localeCompare(b.productId);
+    });
+  }
+
+  function factoryInputCoverageRecord(model, productId, factoryId) {
+    var snapshot = model && model.factoryInputCoverageSnapshot;
+    if (!snapshot || !Array.isArray(snapshot.products)) return null;
+    var wanted = String(productId || '').toLowerCase();
+    if (factoryId && Array.isArray(snapshot.factories)) {
+      return snapshot.factories.find(function (row) {
+        return String(row && row.factoryId || '') === String(factoryId) &&
+          String(row && row.productId || '').toLowerCase() === wanted;
+      }) || null;
+    }
+    return snapshot.products.find(function (row) {
+      return String(row && row.productId || '').toLowerCase() === wanted;
+    }) || null;
+  }
+
+  function factoryInputRiskMarkup(status, label) {
+    var key = /^(stable|risk|critical)$/.test(String(status || '').toLowerCase())
+      ? String(status).toLowerCase() : 'unknown';
+    var text = label || (key === 'stable' ? 'Stable' : key === 'risk' ? 'At risk' :
+      key === 'critical' ? 'Shortage' : 'Not verified');
+    return '<span class="fp-factory-risk" data-state="' + key + '" role="status">' +
+      '<i aria-hidden="true"></i><strong>' + esc(text) + '</strong></span>';
+  }
+
+  function factoryInputAggregateSourceMarkup(model, productId) {
+    var grouped = Object.create(null), factories = Array.isArray(model && model.factories) ? model.factories : [];
+    factories.forEach(function (factory) {
+      var coefficient = factoryInputCoefficientFor(factory, productId);
+      var hasLot = (Array.isArray(factory.inputLots) ? factory.inputLots : []).some(function (lot) {
+        return lot && String(lot.resourceId || lot.materialIdentity || '').toLowerCase() === String(productId).toLowerCase();
+      });
+      if ((coefficient === null || coefficient <= 0) && !hasLot) return;
+      factoryInputSourceRows(factory, productId, model).forEach(function (source) {
+        var key = String(source.label || '').toLowerCase();
+        if (!key) return;
+        if (!grouped[key]) grouped[key] = { label:source.label, quantity:0, unit:source.unit || '' };
+        grouped[key].quantity += Math.max(0, num(source.quantity) || 0);
+        if (!grouped[key].unit && source.unit) grouped[key].unit = source.unit;
+      });
+    });
+    var rows = Object.keys(grouped).map(function (key) { return grouped[key]; });
+    if (!rows.length) return '<span class="fp-factory-muted">Source not recorded</span>';
+    return rows.map(function (source) {
+      return '<span class="fp-factory-source"><strong>' + esc(source.label) + '</strong><small>' +
+        fmt(source.quantity, source.unit) + '</small></span>';
+    }).join('');
+  }
+
   function factoryInputPlanMarkup(model) {
-    var plan = factoryProductionPlan(model);
-    var html = '<section class="fp-factory-analytics fp-factory-plan" data-factory-input-plan="canonical-v1" aria-label="Calculated factory input requirements">' +
-      '<h3 class="omega-v2-section-title">Factory-type input requirements</h3>' +
+    var plan = factoryProductionPlan(model), products = factoryInputPlanProducts(plan);
+    var snapshot = model && model.factoryInputCoverageSnapshot;
+    var updatedDay = snapshot && num(snapshot.updatedDay);
+    var html = '<section class="fp-factory-analytics fp-factory-plan" data-factory-input-plan="daily-v2" aria-label="Daily input requirement and stock coverage">' +
+      '<h3 class="omega-v2-section-title">All factory input requirements</h3>' +
       '<div class="omega-v2-vehicle-stats"><div><span>Total factories</span><strong>' + fmt(plan.totalFactories) + '</strong></div>' +
       '<div><span>Factory types</span><strong>' + fmt(plan.factoryTypeCount) + '</strong></div>' +
       '<div><span>Types with factories</span><strong>' + fmt(plan.assignedFactoryTypeCount) + '</strong></div>' +
-      '<div><span>Coverage target</span><strong>' + fmt(plan.coverageDays, 'days') + '</strong></div></div>' +
-      '<p class="omega-v2-source">Calculated from the country factory allocation, canonical factory capacity and recipe cycle. Planned demand is not reported consumption.</p>';
-    plan.types.forEach(function (type) {
-      html += '<article class="fp-factory-data-card"><header class="fp-factory-data-heading"><div><span>FACTORY INPUT PLAN</span><strong>' +
-        esc(type.name) + '</strong><small>' + esc(readableIdentifier(type.category)) + ' · ' + esc(readableIdentifier(type.type)) + '</small></div>' +
-        factoryPlanPresenceMarkup(type, model) + '</header>';
-      if (!type.count) {
-        html += '<div class="fp-factory-table-wrap"><p class="fp-factory-muted">No factories of this type are assigned. Current input demand: 0.</p></div></article>';
-        return;
-      }
-      if (!type.inputs.length) {
-        html += '<div class="fp-factory-table-wrap"><p class="fp-factory-muted">No input recipe is defined for this factory type.</p></div></article>';
-        return;
-      }
-      html += '<div class="fp-factory-table-wrap"><table class="fp-factory-table"><thead><tr>' +
-        '<th>Required input product</th><th>Total / full cycle</th><th>Total / day</th><th>' + esc(String(plan.coverageDays)) + '-day requirement</th>' +
-        '</tr></thead><tbody>';
-      type.inputs.forEach(function (row) {
-        var unit = factoryPlanUnit(row.unit);
-        html += '<tr><td>' + factoryProductIdentityMarkup(row.productId, panelProductLabel(model, row.productId)) + '</td>' +
-          '<td><strong>' + fmt(row.perCycle, unit) + '</strong></td>' +
-          '<td><strong>' + fmt(row.perDay, unit) + '</strong></td>' +
-          '<td>' + fmt(row.coverageQuantity, unit) + '</td></tr>';
-      });
-      html += '</tbody></table></div></article>';
+      '<div><span>Coverage refresh</span><strong>Every 10 game days</strong></div></div>' +
+      '<p class="fp-factory-coverage-cycle"><strong>STOCK COVERAGE</strong><span>' +
+      (updatedDay !== null ? 'Last calculated: Day ' + fmt(updatedDay) : 'Awaiting the first Day 10 checkpoint') +
+      '</span></p>';
+    if (!products.length) {
+      html += '<div class="fp-factory-table-wrap"><p class="fp-factory-muted">No factory input requirements are recorded for this country.</p></div></section>';
+      return html;
+    }
+    html += '<div class="fp-factory-table-wrap"><table class="fp-factory-table fp-factory-input-table fp-factory-input-total-table"><thead><tr>' +
+      '<th>Input resource</th><th>Total required / day</th><th>Factory-wise daily use</th><th>Current factory stock</th><th>Coverage</th><th>Supply origin</th><th>Current situation</th>' +
+      '</tr></thead><tbody>';
+    products.forEach(function (row) {
+      var unit = factoryPlanUnit(row.unit);
+      var coverage = factoryInputCoverageRecord(model, row.productId, null);
+      var stockText = coverage && coverage.stockComplete === true
+        ? fmt(coverage.currentStock, unit)
+        : coverage && num(coverage.recordedStock) !== null && num(coverage.recordedStock) > 0
+          ? 'Partial · ' + fmt(coverage.recordedStock, unit)
+          : 'Not verified';
+      var coverageText = coverage && num(coverage.coverageDays) !== null
+        ? fmt(coverage.coverageDays, 'days')
+        : 'Not calculated';
+      var breakdown = row.breakdown.map(function (item) {
+        return '<span class="fp-factory-source"><strong>' + esc(item.name) + ' · ' +
+          fmt(item.perDay, unit) + '/day</strong><small>' + fmt(item.factoryCount) +
+          (item.factoryCount === 1 ? ' factory' : ' factories') + '</small></span>';
+      }).join('');
+      var status = coverage ? factoryInputRiskMarkup(coverage.status) : factoryInputRiskMarkup('unknown');
+      html += '<tr><td>' + factoryProductIdentityMarkup(row.productId, panelProductLabel(model, row.productId)) + '</td>' +
+        '<td><strong>' + fmt(row.perDay, unit) + '/day</strong></td>' +
+        '<td>' + (breakdown || '<span class="fp-factory-muted">Factory allocation not recorded</span>') + '</td>' +
+        '<td>' + stockText + '</td><td><strong>' + coverageText + '</strong>' +
+        (coverage && num(coverage.coverageDays) !== null ? '<small>Updated on Day ' + fmt(coverage.updatedDay) + '</small>' : '') + '</td>' +
+        '<td>' + factoryInputAggregateSourceMarkup(model, row.productId) + '</td><td>' + status + '</td></tr>';
     });
-    return html + '</section>';
+    html += '</tbody></table></div></section>';
+    return html;
   }
 
-  function factoryOutputPlanMarkup(model, actualRows) {
+    function factoryOutputPlanMarkup(model, actualRows) {
     var plan = factoryProductionPlan(model);
     actualRows = Array.isArray(actualRows) ? actualRows : factoryOutputRows(model);
     var factoryTypeById = Object.create(null);
@@ -1656,7 +1748,7 @@
     });
     return planMarkup + html + '</section>';
   }
-  function factoryInputSourceMarkup(factory, productId, model) {
+  function factoryInputSourceRows(factory, productId, model) {
     var lots = (factory.inputLots || []).filter(function (lot) {
       return lot && String(lot.resourceId || lot.materialIdentity || '').toLowerCase() === String(productId).toLowerCase();
     });
@@ -1677,28 +1769,49 @@
         if (!sourceFactory && sourceBatch.sourceFactoryId) sourceFactory = String(sourceBatch.sourceFactoryId);
         if (!sourceCountry && (sourceBatch.sourceCountryId || sourceBatch.originCountryId)) sourceCountry = String(sourceBatch.sourceCountryId || sourceBatch.originCountryId).toUpperCase();
       });
-      var label;
-      if (sourceCountry && sourceCountry !== model.countryId) label = 'Import · ' + panelCountryLabel(sourceCountry);
-      else if (sites.length) label = 'Domestic mine · ' + Array.from(new Set(sites)).join(', ');
-      else if (sourceFactory) label = 'Domestic factory · ' + (factoryNames[sourceFactory] || sourceFactory);
-      else if (/OPENING|STARTUP/.test(String(provenance.status || provenance.source || lot.batchId || '').toUpperCase())) label = 'Opening allocation';
-      else if (sourceCountry === model.countryId) label = 'Domestic warehouse · mine lineage not recorded';
-      else label = 'Source not recorded';
+      var label, kind;
+      if (sourceCountry && sourceCountry !== model.countryId) {
+        label = 'Import · ' + panelCountryLabel(sourceCountry); kind = 'import';
+      } else if (sites.length) {
+        label = 'Domestic mine · ' + Array.from(new Set(sites)).join(', '); kind = 'mine';
+      } else if (sourceFactory) {
+        label = 'Domestic factory · ' + (factoryNames[sourceFactory] || sourceFactory); kind = 'factory';
+      } else if (/OPENING|STARTUP/.test(String(provenance.status || provenance.source || lot.batchId || '').toUpperCase())) {
+        label = 'Opening allocation'; kind = 'opening';
+      } else if (sourceCountry === model.countryId) {
+        label = 'Domestic warehouse · mine lineage not recorded'; kind = 'warehouse';
+      } else {
+        label = 'Source not recorded'; kind = 'unknown';
+      }
       var key = label.toLowerCase();
-      sourceGroups[key] = sourceGroups[key] || { label: label, quantity: 0, unit: String(lot.unit || '') };
+      sourceGroups[key] = sourceGroups[key] || { label:label, quantity:0, unit:String(lot.unit || ''), kind:kind };
       sourceGroups[key].quantity += remaining;
     });
-    var lines = Object.keys(sourceGroups).map(function (key) {
-      var source = sourceGroups[key];
-      return '<span class="fp-factory-source"><strong>' + esc(source.label) + '</strong><small>' + fmt(source.quantity, source.unit) + '</small></span>';
-    });
-    if (!lines.length) {
+    return Object.keys(sourceGroups).map(function (key) { return sourceGroups[key]; });
+  }
+
+  function factoryInputSourceMarkup(factory, productId, model) {
+    var rows = factoryInputSourceRows(factory, productId, model);
+    if (!rows.length) {
       var current = panelValueByKey(factory.raw && factory.raw.inputInventory, productId);
       return current > 0 ? '<span class="fp-factory-muted">Source not recorded</span>' : '<span class="fp-factory-muted">No delivered source batch</span>';
     }
-    return lines.join('');
+    return rows.map(function (source) {
+      return '<span class="fp-factory-source"><strong>' + esc(source.label) + '</strong><small>' +
+        fmt(source.quantity, source.unit) + '</small></span>';
+    }).join('');
   }
-  function factoryInputEfficiency(factory, inputRows) {
+
+  function factoryInputCoefficientFor(factory, productId) {
+    var coefficients = factory && factory.inputCoefficients && typeof factory.inputCoefficients === 'object'
+      ? factory.inputCoefficients : {};
+    var key = Object.keys(coefficients).find(function (candidate) {
+      return String(candidate).toLowerCase() === String(productId || '').toLowerCase();
+    });
+    return key ? panelInputCoefficient(coefficients[key]) : null;
+  }
+
+    function factoryInputEfficiency(factory, inputRows) {
     var raw = factory.raw || {}, health = raw.productionHealth && typeof raw.productionHealth === 'object' ? raw.productionHealth : {};
     var reason = String(health.reason || factory.healthReason || '').toUpperCase();
     var detail = health.detail && typeof health.detail === 'object' ? health.detail : {};
@@ -1722,7 +1835,7 @@
     var planMarkup = factoryInputPlanMarkup(model);
     var factories = Array.isArray(model.factories) ? model.factories : [];
     if (!factories.length) return planMarkup;
-    var html = '<section class="fp-factory-analytics" aria-label="Recorded factory input deliveries"><h3 class="omega-v2-section-title">Actual factory input inventory and deliveries</h3>';
+    var html = '<section class="fp-factory-analytics" aria-label="Recorded factory input deliveries"><h3 class="omega-v2-section-title">Factory input inventory and deliveries</h3>';
     var visibleFactories = 0;
     factories.forEach(function (factory) {
       var coefficientMap = factory.inputCoefficients && typeof factory.inputCoefficients === 'object' ? factory.inputCoefficients : {};
@@ -1738,14 +1851,10 @@
       visibleFactories += 1;
       var capacity = num(factory.capacityPerDay), rows = [];
       ids.forEach(function (productId) {
-        var coefficient = panelInputCoefficient(coefficientMap[productId]);
-        if (coefficient === null) {
-          var coefficientKey = Object.keys(coefficientMap).find(function (key) { return key.toLowerCase() === productId.toLowerCase(); });
-          if (coefficientKey) coefficient = panelInputCoefficient(coefficientMap[coefficientKey]);
-        }
-        var required = capacity !== null && coefficient !== null ? capacity * coefficient / Math.max(1, num(factory.cycleDays) || 1) : null;
+        var coefficient = factoryInputCoefficientFor(factory, productId);
+        var required = capacity !== null && coefficient !== null
+          ? capacity * coefficient / Math.max(1, num(factory.cycleDays) || 1) : null;
         var current = factory.hasInputInventory ? panelValueByKey(factory.raw.inputInventory, productId) : null;
-        if (factory.hasInputInventory && current === null) current = 0;
         var lots = factory.inputLots.filter(function (lot) {
           return String(lot && (lot.resourceId || lot.materialIdentity) || '').toLowerCase() === productId.toLowerCase();
         });
@@ -1760,8 +1869,8 @@
         });
         var inputUnit = factory.inputUnits && Object.keys(factory.inputUnits).find(function (key) { return key.toLowerCase() === productId.toLowerCase(); });
         unit = unit || (inputUnit ? factory.inputUnits[inputUnit] : '') || factory.inputUnit || '';
-        rows.push({ productId: productId, coefficient: coefficient, required: required, current: current,
-          received: hasReceipt ? received : null, unit: unit });
+        rows.push({ productId:productId, coefficient:coefficient, required:required, current:current,
+          received:hasReceipt ? received : null, unit:unit });
       });
       var efficiency = factoryInputEfficiency(factory, rows);
       var productionHealth = factory.healthStatus || factory.status || 'Not recorded';
@@ -1769,28 +1878,152 @@
         esc(factory.name) + '</strong><small>' + esc(factory.type) + ' · ' + esc(productionHealth) + '</small></div>' +
         '<span class="fp-factory-data-count">' + fmt(rows.length) + ' input line(s)</span></header>';
       html += '<div class="fp-factory-table-wrap"><table class="fp-factory-table fp-factory-input-table"><thead><tr>' +
-        '<th>Input product</th><th>Required / day</th><th>Total received</th><th>Current factory stock</th><th>Supply source</th><th>Availability</th><th>Efficiency reduction</th>' +
+        '<th>Input product</th><th>Required / day</th><th>Total received</th><th>Current factory stock</th><th>Coverage</th><th>Supply source</th><th>Current situation</th><th>Efficiency reduction</th>' +
         '</tr></thead><tbody>';
       rows.forEach(function (row) {
-        var shortage = row.required !== null && row.current !== null ? Math.max(0, row.required - row.current) : null;
-        var state = shortage !== null ? (shortage > 1e-9 ? 'shortage' : 'sufficient') : 'unknown';
-        var stateLabel = shortage === null ? 'Not recorded' : shortage > 1e-9
-          ? 'Shortage · ' + fmt(shortage, row.unit) : 'Sufficient';
+        var coverage = factoryInputCoverageRecord(model, row.productId, factory.id);
+        var rowStatus = coverage && coverage.status || 'unknown';
+        if (row.required !== null && row.current !== null && row.current + 1e-9 < row.required) rowStatus = 'critical';
+        var coverageText = coverage && num(coverage.coverageDays) !== null
+          ? fmt(coverage.coverageDays, 'days') : 'Not calculated';
         html += '<tr><td>' + factoryProductIdentityMarkup(row.productId, panelProductLabel(model, row.productId)) + '</td>' +
-          '<td>' + fmt(row.required, row.unit) + '</td><td>' + fmt(row.received, row.unit) + '</td>' +
-          '<td>' + factoryProductStockMarkup(row.productId, panelProductLabel(model, row.productId), fmt(row.current, row.unit)) + '</td><td>' + factoryInputSourceMarkup(factory, row.productId, model) + '</td>' +
-          '<td><span class="fp-factory-state" data-state="' + state + '">' + esc(stateLabel) + '</span></td>' +
+          '<td><strong>' + fmt(row.required, row.unit) + '/day</strong></td><td>' + fmt(row.received, row.unit) + '</td>' +
+          '<td>' + factoryProductStockMarkup(row.productId, panelProductLabel(model, row.productId), fmt(row.current, row.unit)) + '</td>' +
+          '<td><strong>' + coverageText + '</strong>' +
+          (coverage && num(coverage.coverageDays) !== null ? '<small>Updated on Day ' + fmt(coverage.updatedDay) + '</small>' : '') + '</td>' +
+          '<td>' + factoryInputSourceMarkup(factory, row.productId, model) + '</td>' +
+          '<td>' + factoryInputRiskMarkup(rowStatus) + '</td>' +
           '<td>' + (efficiency.value === null ? '<span class="fp-factory-muted">Not recorded</span>' :
             '<span class="fp-factory-state" data-state="' + (efficiency.value > 1e-9 ? 'shortage' : 'sufficient') + '">' +
             fmt(efficiency.value, '%') + '</span>') + '</td></tr>';
       });
       html += '</tbody></table></div></article>';
     });
-    if (!visibleFactories) return planMarkup + '<div class="omega-v2-empty">No delivered factory input rows are recorded yet. Planned requirements remain shown above.</div>';
+    if (!visibleFactories) return planMarkup + '<div class="omega-v2-empty">No delivered factory input rows are recorded yet. Planned daily requirements remain shown above.</div>';
     return planMarkup + html + '</section>';
   }
 
-  function factoryTypeLabel(factory) {
+  function updateFactoryInputCoverageSnapshotV1(event) {
+    try {
+      var detail = event && event.detail && typeof event.detail === 'object' ? event.detail : {};
+      var day = num(detail.day);
+      if (day === null && detail.payload && typeof detail.payload === 'object') day = num(detail.payload.day);
+      var turn = num(detail.simulationTurn !== undefined ? detail.simulationTurn : detail.turn);
+      if (turn === null) turn = num(stateRoot() && stateRoot().simulation && stateRoot().simulation.turn);
+      if (day === null && turn !== null) day = turn + 1;
+      if (day === null || day < 1 || Math.floor(day) % 10 !== 0) return null;
+      day = Math.floor(day);
+      var countryId = playerCountryId();
+      if (!countryId) return null;
+      var root = stateRoot() || {};
+      var resourceRoot = root.resource || root.resources || {};
+      var resourceBucket = pickCountryBucket(resourceRoot, countryId);
+      if (!resourceBucket || typeof resourceBucket !== 'object') return null;
+      var previousSnapshot = resourceBucket.factoryInputCoverageSnapshotV1 || null;
+      if (previousSnapshot && num(previousSnapshot.updatedDay) !== null && num(previousSnapshot.updatedDay) >= day) {
+        return previousSnapshot;
+      }
+      var model = buildViewModel({ countryId:countryId });
+      if (!model || !model.catalogProfileCount) return null;
+      var plan = factoryProductionPlan(model), products = factoryInputPlanProducts(plan);
+      var factories = Array.isArray(model.factories) ? model.factories : [];
+      var previousProducts = previousSnapshot && Array.isArray(previousSnapshot.products) ? previousSnapshot.products : [];
+      var snapshot = {
+        schemaVersion:'1.0.0',
+        countryId:countryId,
+        intervalDays:10,
+        updatedDay:day,
+        updatedTurn:turn,
+        products:[],
+        factories:[]
+      };
+      products.forEach(function (product) {
+        var previous = previousProducts.find(function (row) {
+          return String(row && row.productId || '').toLowerCase() === product.productId.toLowerCase();
+        });
+        var matchingFactories = [], expectedComplete = product.expectedFactoryCount > 0;
+        product.breakdown.forEach(function (line) {
+          var typeKey = normalizeFactoryType(line.type, safeCatalog()) || String(line.type || '').toUpperCase();
+          var candidates = factories.filter(function (factory) {
+            return (normalizeFactoryType(factory.type || '', safeCatalog()) || String(factory.type || '').toUpperCase()) === typeKey &&
+              factoryInputCoefficientFor(factory, product.productId) !== null &&
+              factoryInputCoefficientFor(factory, product.productId) > 0;
+          });
+          if (candidates.length < line.factoryCount) expectedComplete = false;
+          candidates.forEach(function (factory) {
+            if (!matchingFactories.some(function (row) { return String(row.id) === String(factory.id); })) matchingFactories.push(factory);
+          });
+        });
+        var recordedStock = 0, stockComplete = expectedComplete, importQuantity = 0, sourceQuantity = 0, activeShortage = false;
+        matchingFactories.forEach(function (factory) {
+          var coefficient = factoryInputCoefficientFor(factory, product.productId);
+          var required = num(factory.capacityPerDay) !== null && coefficient !== null
+            ? num(factory.capacityPerDay) * coefficient / Math.max(1, num(factory.cycleDays) || 1) : null;
+          var stock = factory.hasInputInventory ? panelValueByKey(factory.raw && factory.raw.inputInventory, product.productId) : null;
+          if (stock === null) stockComplete = false;
+          else recordedStock += Math.max(0, stock);
+          if (required !== null && required > 0 && stock !== null && stock + 1e-9 < required) activeShortage = true;
+          var sources = factoryInputSourceRows(factory, product.productId, model), factoryImportQuantity = 0;
+          sources.forEach(function (source) {
+            var sourceAmount = Math.max(0, num(source.quantity) || 0);
+            sourceQuantity += sourceAmount;
+            if (source.kind === 'import') {
+              importQuantity += sourceAmount;
+              factoryImportQuantity += sourceAmount;
+            }
+          });
+          var factoryCoverage = stock !== null && required !== null && required > 0 ? stock / required : null;
+          var factoryStatus = stock !== null && required !== null && required > 0
+            ? (factoryCoverage < 1 ? 'critical' : factoryCoverage <= 10 ? 'risk' : 'stable')
+            : 'unknown';
+          if (factoryImportQuantity > 0 && factoryCoverage !== null && factoryCoverage <= 30 && factoryStatus === 'stable') factoryStatus = 'risk';
+          snapshot.factories.push({
+            factoryId:String(factory.id || ''),
+            factoryName:String(factory.name || factory.id || 'Factory'),
+            productId:product.productId,
+            requiredPerDay:required,
+            currentStock:stock,
+            coverageDays:factoryCoverage,
+            status:factoryStatus,
+            updatedDay:day
+          });
+        });
+        var coverageDays = stockComplete && product.perDay > 0 ? recordedStock / product.perDay : null;
+        var importShare = recordedStock > 0 ? Math.max(0, Math.min(1, importQuantity / recordedStock)) : null;
+        var declining = coverageDays !== null && num(previous && previous.coverageDays) !== null &&
+          coverageDays < num(previous.coverageDays) * 0.8;
+        var riskFromImports = importQuantity > 0 && coverageDays !== null && coverageDays <= 30;
+        var status = activeShortage || coverageDays !== null && coverageDays < 1
+          ? 'critical'
+          : coverageDays === null ? 'unknown'
+          : coverageDays <= 10 || riskFromImports || declining && importQuantity > 0 ? 'risk' : 'stable';
+        snapshot.products.push({
+          productId:product.productId,
+          dailyRequired:product.perDay,
+          unit:product.unit,
+          currentStock:stockComplete ? recordedStock : null,
+          recordedStock:recordedStock,
+          stockComplete:stockComplete,
+          expectedFactoryCount:product.expectedFactoryCount,
+          recordedFactoryCount:matchingFactories.length,
+          coverageDays:coverageDays,
+          importQuantity:importQuantity,
+          sourceQuantity:sourceQuantity,
+          importShare:importShare,
+          previousCoverageDays:num(previous && previous.coverageDays),
+          decliningCoverage:declining,
+          status:status,
+          updatedDay:day
+        });
+      });
+      resourceBucket.factoryInputCoverageSnapshotV1 = snapshot;
+      return snapshot;
+    } catch (error) {
+      return { status:'ERROR', code:'FACTORY_INPUT_COVERAGE_SNAPSHOT_FAILED', message:String(error && error.message || error) };
+    }
+  }
+
+    function factoryTypeLabel(factory) {
     var catalog = safeCatalog() || {};
     var type = normalizeFactoryType(factory && factory.type, catalog) || String(factory && factory.type || '').toUpperCase();
     var profiles = catalog.factoryProfiles && typeof catalog.factoryProfiles === 'object' ? catalog.factoryProfiles : {};
@@ -2884,5 +3117,18 @@
     return { ok: true, model: model };
   }
 
-  g.OmegaUIV2Industry = Object.freeze({ version: '1.1.0', buildViewModel: buildViewModel, render: render, resourceIconPath: factoryResourceIconPath, productIconVisualMarkup: factoryProductIconVisualMarkup, productIdentityMarkup: factoryProductIdentityMarkup });
+  if (!g.__omegaFactoryInputCoverageListenerBound && typeof g.addEventListener === 'function') {
+    g.addEventListener('OMEGA_SIMULATION_TURN_COMMITTED', updateFactoryInputCoverageSnapshotV1);
+    g.__omegaFactoryInputCoverageListenerBound = true;
+  }
+
+  g.OmegaUIV2Industry = Object.freeze({
+    version:'1.2.0',
+    buildViewModel:buildViewModel,
+    render:render,
+    recordFactoryInputCoverage:updateFactoryInputCoverageSnapshotV1,
+    resourceIconPath:factoryResourceIconPath,
+    productIconVisualMarkup:factoryProductIconVisualMarkup,
+    productIdentityMarkup:factoryProductIdentityMarkup
+  });
 })(typeof window !== 'undefined' ? window : globalThis);
