@@ -1550,7 +1550,7 @@
     plan.types.forEach(function (type) {
       html += '<article class="fp-factory-data-card"><header class="fp-factory-data-heading"><div><span>FACTORY OUTPUT PLAN</span><strong>' +
         esc(type.name) + '</strong><small>' + esc(type.category) + ' · ' + esc(type.type) + '</small></div>' +
-        '<span class="fp-factory-data-count">' + fmt(type.count) + ' factories</span></header>';
+        factoryPlanPresenceMarkup(type, model) + '</header>';
       if (!type.count) {
         html += '<div class="fp-factory-table-wrap"><p class="fp-factory-muted">No factories of this type are assigned. Planned output: 0.</p></div></article>';
         return;
