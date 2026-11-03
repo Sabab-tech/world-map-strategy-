@@ -2694,15 +2694,15 @@ test('factory cards progressively disclose canonical products, quantities and in
     assert.match(steel,/Steel/);
     assert.match(steel,/ALLOY STEEL/i);
     assert.match(steel,/By-product:/);
-    assert.match(steel,/Blast Furnace Slag/);
+    assert.match(steel,/BLAST FURNACE SLAG/i);
     assert.match(steel,/Input/);
-    assert.match(steel,/Iron Concentrate/);
+    assert.match(steel,/IRON CONCENTRATE/i);
     assert.match(steel,/0\.72 simulation resource unit \/ production unit/);
     assert.match(steel,/0\.60 simulation resource unit \/ production unit/);
     assert.match(steel,/data-omega-v2-factory-card-expand/);
     assert.match(steel,/data-omega-v2-factory-section-toggle/);
-    assert.doesNotMatch(steel,/Processing Dust/,'the second by-product must remain hidden in collapsed view');
-    assert.doesNotMatch(steel,/Copper Concentrate/,'only the primary input is shown in collapsed view');
+    assert.doesNotMatch(steel,/PROCESSING DUST/i,'the second by-product must remain hidden in collapsed view');
+    assert.doesNotMatch(steel,/COPPER CONCENTRATE/i,'only the primary input is shown in collapsed view');
     assert.match(steel,/Modeled build time/);
     assert.match(steel,/Build project/);
 
@@ -2715,9 +2715,9 @@ test('factory cards progressively disclose canonical products, quantities and in
     render();
     steel = cardHtml('STEEL_AND_ALLOY_WORKS');
     assert.match(steel,/Complete production formula/);
-    assert.match(steel,/Copper Concentrate/);
-    assert.match(steel,/Cement Feed/);
-    assert.match(steel,/Processing Dust/);
+    assert.match(steel,/COPPER CONCENTRATE/i);
+    assert.match(steel,/CEMENT FEED/i);
+    assert.match(steel,/PROCESSING DUST/i);
     assert.match(steel,/Quantity basis: PER_SIMULATION_PRODUCTION_UNIT/);
     assert.match(steel,/STEEL_PRIMARY_ROUTE_V1/);
 
@@ -2733,13 +2733,13 @@ test('factory cards progressively disclose canonical products, quantities and in
     assert.match(steel,/Construction materials/);
     assert.match(steel,/240 game-days/);
     assert.match(steel,/18,000/);
-    assert.match(steel,/Construction Aggregate/);
+    assert.match(steel,/CONSTRUCTION AGGREGATE/i);
     assert.match(steel,/500 available/);
     assert.match(steel,/Required infrastructure/);
     assert.match(steel,/rail/);
     assert.match(steel,/Start construction project/);
     assert.doesNotMatch(steel,/Main output/,'Build mode must replace the production summary');
-    assert.doesNotMatch(steel,/Blast Furnace Slag/,'Build mode must not leak recipe products');
+    assert.doesNotMatch(steel,/BLAST FURNACE SLAG/i,'Build mode must not leak recipe products');
     assert.match(steel,/data-omega-v2-factory-build-materials/);
 
     root.__omegaV2FactoryCardUiState = {
@@ -2753,7 +2753,7 @@ test('factory cards progressively disclose canonical products, quantities and in
     assert.ok(live,'the live factory asset card must remain available');
     assert.match(live[0],/Steel/);
     assert.match(live[0],/ALLOY STEEL/i);
-    assert.match(live[0],/Iron Concentrate/);
+    assert.match(live[0],/IRON CONCENTRATE/i);
     assert.match(live[0],/Factory stock: 120 SIMULATION_RESOURCE_UNIT/);
     assert.match(live[0],/data-omega-v2-factory-build-details/);
     assert.match(live[0],/data-omega-v2-factory-destroy/);
