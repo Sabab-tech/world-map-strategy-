@@ -2788,10 +2788,10 @@
   max-width:100%;
 }
 .omega-v2-industry--factory-home .fp-card-product-row .fp-product-icon-frame {
-  flex:0 0 26px;
-  width:26px;
-  height:26px;
-  min-width:26px;
+  flex:0 0 20px;
+  width:20px;
+  height:20px;
+  min-width:20px;
 }
 .omega-v2-industry--factory-home .fp-card-product-row .fp-product-identity-copy {
   display:flex;
@@ -2821,9 +2821,18 @@
   font-variant-numeric:tabular-nums;
   overflow-wrap:anywhere;
 }
+.omega-v2-industry--factory-home .fp-card-product-rate {
+  grid-column:1 / -1;
+  padding-left:25px;
+  color:#7fa8c3;
+  font-size:7px;
+  line-height:1.2;
+  font-variant-numeric:tabular-nums;
+  overflow-wrap:anywhere;
+}
 .omega-v2-industry--factory-home .fp-card-product-actual {
   grid-column:1 / -1;
-  padding-left:32px;
+  padding-left:25px;
   color:#a6bdcd;
   font-size:7px;
   line-height:1.25;
@@ -3180,7 +3189,7 @@
 }
 @media (max-width:680px) and (orientation:portrait) {
   .omega-v2-industry--factory-home .fp-card-recipe { padding:6px 5px 3px;gap:5px; }
-  .omega-v2-industry--factory-home .fp-card-product-row .fp-product-icon-frame { width:23px;height:23px;min-width:23px;flex-basis:23px; }
+  .omega-v2-industry--factory-home .fp-card-product-row .fp-product-icon-frame { width:18px;height:18px;min-width:18px;flex-basis:18px; }
   .omega-v2-industry--factory-home .fp-card-product-row .fp-product-identity-copy strong { font-size:9px; }
   .omega-v2-industry--factory-home .fp-card-product-quantity { font-size:7px; }
   .omega-v2-industry--factory-home .fp-card-disclosure { min-height:38px; }
