@@ -255,6 +255,51 @@ test('canonical factory catalog, type profiles, offline icons and recipe coeffic
   }
 });
 
+test('factory card presentation roles resolve every canonical recipe and processing product without changing production coefficients', () => {
+  const { catalog } = makeRuntime();
+  assert.equal(catalog.factoryCardPresentationSchemaVersion, '1.0.0');
+  assert.equal(Object.keys(catalog.downstreamFactoryRecipes).length, 22);
+  assert.equal(Object.keys(catalog.processingRules).length, 42);
+  for (const [recipeId, route] of Object.entries(catalog.downstreamFactoryRecipes)) {
+    const presentation = route.presentation;
+    assert.ok(presentation, recipeId + ': presentation roles must exist');
+    assert.equal(presentation.reviewStatus, 'REVIEWED_GAMEPLAY_PRESENTATION');
+    assert.ok(presentation.primaryInputs.length >= 1, recipeId + ': at least one primary input must be identified');
+    for (const id of presentation.primaryInputs) {
+      assert.ok(Object.prototype.hasOwnProperty.call(route.inputs, id), recipeId + ': primary input must exist in the same recipe');
+    }
+    const assigned = [
+      ...presentation.primaryOutputs,
+      ...presentation.coProducts,
+      ...presentation.byProducts
+    ];
+    assert.equal(new Set(assigned).size, assigned.length, recipeId + ': output role assignment must not be duplicated');
+    assert.deepEqual([...assigned].sort(), Object.keys(route.outputs).sort(),
+      recipeId + ': every declared output must be classified exactly once');
+    assert.ok(presentation.primaryOutputs.length <= 2,
+      recipeId + ': collapsed main-output priority should have at most two products');
+    assert.ok(Math.abs(Object.values(route.inputs).reduce((sum, n) => sum + Number(n), 0) - 1) < 1e-9,
+      recipeId + ': presentation metadata must not alter input coefficients');
+    assert.ok(Math.abs(Object.values(route.outputs).reduce((sum, n) => sum + Number(n), 0) - 1) < 1e-9,
+      recipeId + ': presentation metadata must not alter output coefficients');
+  }
+  for (const [resourceId, route] of Object.entries(catalog.processingRules)) {
+    const presentation = route.presentation;
+    assert.ok(presentation, resourceId + ': processing presentation roles must exist');
+    assert.equal(presentation.reviewStatus, 'REVIEWED_GAMEPLAY_PRESENTATION');
+    assert.deepEqual(presentation.primaryInputs, Object.keys(route.inputs),
+      resourceId + ': raw resource input is the primary processing input');
+    const assigned = [
+      ...presentation.primaryOutputs,
+      ...presentation.coProducts,
+      ...presentation.byProducts
+    ];
+    assert.equal(new Set(assigned).size, assigned.length, resourceId + ': processing output roles must not overlap');
+    assert.deepEqual([...assigned].sort(), Object.keys(route.outputs).sort(),
+      resourceId + ': every processing output must be visible in one role');
+  }
+});
+
 test('factory construction reads its selected recipe and defaults from the canonical profile', () => {
   const { context, catalog, api } = makeRuntime();
   const profile = catalog.factoryProfiles.STEEL_AND_ALLOY_WORKS;
