@@ -289,6 +289,8 @@
     var cycles = industrial.factoryProductionCycles && typeof industrial.factoryProductionCycles === 'object' ? industrial.factoryProductionCycles : {};
     var runs = industrial.factoryRuntime && typeof industrial.factoryRuntime === 'object' ? industrial.factoryRuntime : {};
     var profiles = catalog.factoryProfiles && typeof catalog.factoryProfiles === 'object' ? catalog.factoryProfiles : {};
+    var recipeCatalog = catalog.downstreamFactoryRecipes && typeof catalog.downstreamFactoryRecipes === 'object' ? catalog.downstreamFactoryRecipes : {};
+    var processingRules = catalog.processingRules && typeof catalog.processingRules === 'object' ? catalog.processingRules : {};
     var flows = Array.isArray(industrial.siteFlowLedger) ? industrial.siteFlowLedger : (Array.isArray(resource.siteFlowLedger) ? resource.siteFlowLedger : []);
     var mappedAssets = assets.map(function (asset) {
       asset = asset && typeof asset === 'object' ? asset : {};
@@ -296,19 +298,38 @@
       var rawType = String(asset.factoryType || asset.type || asset.facilityType || '');
       var type = normalizeFactoryType(rawType, catalog) || rawType;
       var profile = profiles[type] || profiles[rawType.toUpperCase()] || profiles[rawType] || {};
+      var recipeId = String(asset.recipeId || profile.defaultRecipeId || '');
+      var selectedRecipe = recipeCatalog[recipeId] || null;
+      if (!selectedRecipe && Array.isArray(profile.recipeIds) && profile.recipeIds.length === 1) {
+        selectedRecipe = recipeCatalog[String(profile.recipeIds[0])] || null;
+        if (selectedRecipe) recipeId = String(selectedRecipe.recipeId || profile.recipeIds[0]);
+      }
       var cycle = cycles[id] || null;
       var run = runs[id] || null;
       var health = asset.productionHealth && typeof asset.productionHealth === 'object' ? asset.productionHealth : {};
       var input = asset.inputInventory && typeof asset.inputInventory === 'object' ? asset.inputInventory : {};
       var inputRows = Object.keys(input).map(function (key) { return { resourceId: key, quantity: num(input[key]), rawValue: input[key] }; });
       var employment = asset.employment && typeof asset.employment === 'object' ? asset.employment : {};
+      var inputCoefficients = asset.inputCoefficients || asset.inputs || asset.inputProfile || {};
+      if (!Object.keys(inputCoefficients).length && selectedRecipe && selectedRecipe.inputs) inputCoefficients = selectedRecipe.inputs;
+      if (!Object.keys(inputCoefficients).length) {
+        var inputResource = String(asset.resourceId || asset.inputResourceId || asset.primaryInputResourceId || '').trim();
+        var processingRule = inputResource ? processingRules[inputResource] : null;
+        if (processingRule && (!processingRule.factoryType || normalizeFactoryType(processingRule.factoryType, catalog) === type) && processingRule.inputs) {
+          inputCoefficients = processingRule.inputs;
+        }
+      }
+      var outputProfile = asset.outputProfile || asset.outputs || asset.outputCoefficients || {};
+      if (!Object.keys(outputProfile).length && selectedRecipe && selectedRecipe.outputs) outputProfile = selectedRecipe.outputs;
+      var capacityPerDay = num(asset.capacityPerDay !== undefined ? asset.capacityPerDay : asset.capacity !== undefined ? asset.capacity : asset.productionCapacity);
+      if (capacityPerDay === null) capacityPerDay = num(profile.defaultCapacityPerDay);
       return {
         id: id || null,
         name: String(asset.name || asset.factoryName || profile.name || type || id || 'Unnamed registered factory'),
         type: type || 'Not recorded',
-        recipeId: String(asset.recipeId || profile.defaultRecipeId || 'Not recorded'),
+        recipeId: recipeId || 'Not recorded',
         status: String(asset.status || 'NOT_RECORDED'),
-        capacityPerDay: num(asset.capacityPerDay !== undefined ? asset.capacityPerDay : asset.capacity !== undefined ? asset.capacity : asset.productionCapacity),
+        capacityPerDay: capacityPerDay,
         productivityPct: num(health.productivityPct),
         healthStatus: String(health.status || 'NOT_RECORDED'),
         healthReason: String(health.reason || 'Not recorded'),
@@ -317,11 +338,12 @@
         jobSlots: num(employment.jobsSupported !== undefined ? employment.jobsSupported : profile.employment && profile.employment.jobsPerFactory),
         vacancies: num(employment.vacancies),
         inputRows: inputRows,
-        inputCoefficients: asset.inputCoefficients || asset.inputs || asset.inputProfile || {},
+        inputCoefficients: inputCoefficients,
+        inputUnit: String(asset.inputUnit || selectedRecipe && selectedRecipe.inputUnit || profile.inputUnit || ''),
         inputLots: Array.isArray(asset.inputBatchLots) ? asset.inputBatchLots : [],
         inputUnits: asset.inputUnits && typeof asset.inputUnits === 'object' ? asset.inputUnits : {},
         hasInputInventory: !!(asset.inputInventory && typeof asset.inputInventory === 'object'),
-        outputProfile: asset.outputProfile || asset.outputs || asset.outputCoefficients || {},
+        outputProfile: outputProfile,
         cycle: cycle,
         lastRun: run,
         lastProductionTurn: run && (run.turn !== undefined ? run.turn : run.simulationTurn) !== undefined ? (run.turn !== undefined ? run.turn : run.simulationTurn) : (asset.lastProductionTurn !== undefined ? asset.lastProductionTurn : null),
@@ -976,7 +998,7 @@
           if (!unit && lot.unit) unit = lot.unit;
         });
         var inputUnit = factory.inputUnits && Object.keys(factory.inputUnits).find(function (key) { return key.toLowerCase() === productId.toLowerCase(); });
-        unit = unit || (inputUnit ? factory.inputUnits[inputUnit] : '') || factory.raw.inputUnit || '';
+        unit = unit || (inputUnit ? factory.inputUnits[inputUnit] : '') || factory.inputUnit || '';
         rows.push({ productId: productId, coefficient: coefficient, required: required, current: current,
           received: hasReceipt ? received : null, unit: unit });
       });
