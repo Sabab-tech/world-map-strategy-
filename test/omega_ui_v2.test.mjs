@@ -2809,7 +2809,7 @@ test('Factory input stock coverage is captured only at every tenth in-game day',
     assert.match(root.innerHTML,/Import/);
     assert.match(root.innerHTML,/Domestic mine/);
     assert.match(root.innerHTML,/data-state="critical"/);
-    assert.match(root.innerHTML,/0\\.4 days/);
+    assert.match(root.innerHTML,/0\.4 days/);
     assert.match(root.innerHTML,/Updated on Day 30/);
     assert.match(root.innerHTML,/iron_ore/);
   } finally {
