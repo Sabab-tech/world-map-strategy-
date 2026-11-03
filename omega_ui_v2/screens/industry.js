@@ -327,13 +327,6 @@
     var currentExtractionRows = currentExtraction.rows;
     var operatingMineCount = mineAssets.filter(function (asset) { return /^(OPERATIONAL|ACTIVE|RUNNING)$/.test(String(asset.status || '').toUpperCase()); }).length;
     var factoryTypeCountsIndex = Object.create(null);
-    var rawFactoryTypeRecords = Object.create(null);
-    assets.forEach(function (asset) {
-      var typeKey = normalizeFactoryType(asset.factoryType || asset.type || asset.facilityType || '', catalog);
-      if (!typeKey) return;
-      if (!rawFactoryTypeRecords[typeKey]) rawFactoryTypeRecords[typeKey] = { hasStartingRecord: false };
-      if (String(asset.sourceType || '').toUpperCase() === 'COUNTRY_STARTING_FACTORY_BASELINE') rawFactoryTypeRecords[typeKey].hasStartingRecord = true;
-    });
     mappedAssets.forEach(function (factory) {
       var typeKey = normalizeFactoryType(factory.type || '', catalog) || String(factory.type || 'NOT_RECORDED').trim().toUpperCase() || 'NOT_RECORDED';
       if (!factoryTypeCountsIndex[typeKey]) {
@@ -350,19 +343,17 @@
       factoryStartingRegistry.registry.forEach(function (row) {
         var typeKey = normalizeFactoryType(row && row.factoryType || '', catalog);
         if (!typeKey) return;
-        var recordInfo = rawFactoryTypeRecords[typeKey] || { hasStartingRecord: false };
         var liveCount = Number(liveFactoryCounts[typeKey]);
         if (!Number.isFinite(liveCount) || liveCount < 0) liveCount = 0;
-        var activeAssetCount = factoryTypeCountsIndex[typeKey] ? factoryTypeCountsIndex[typeKey].count : 0;
         var nonBaselineActiveCount = mappedAssets.filter(function (factory) {
           return normalizeFactoryType(factory.type || '', catalog) === typeKey &&
             String(factory.raw && factory.raw.sourceType || '').toUpperCase() !== 'COUNTRY_STARTING_FACTORY_BASELINE';
         }).length;
+        // The country baseline is the common factory count. Add completed
+        // player builds, but never let missing baseline records hide the count.
         var count = factoryStartingRegistry.runtimeRegistered === true
           ? liveCount
-          : recordInfo.hasStartingRecord
-            ? activeAssetCount
-            : Math.max(0, Number(row.startingCount) || 0) + nonBaselineActiveCount;
+          : Math.max(0, Number(row.startingCount) || 0) + nonBaselineActiveCount;
         var profile = profiles[typeKey] || {};
         if (!factoryTypeCountsIndex[typeKey]) {
           factoryTypeCountsIndex[typeKey] = { type: typeKey, name: String(row.name || profile.name || typeKey), count: count };
@@ -691,7 +682,7 @@
     return '<article class="omega-v2-factory-type-card" data-omega-v2-factory-type-card data-factory-type="' + esc(type) + '">' +
       '<header class="fp-type-card-head"><span class="fp-type-card-art">' + factorySvgMarkup({ type:type, name:item.name || type }) + '</span>' +
       '<span class="fp-type-card-name"><strong>' + esc(item.name || type) + '</strong><small>' + esc(item.category || 'Uncategorised') + '</small></span></header>' +
-      '<div class="fp-type-card-count"><span>Owned factories</span><strong>' + fmt(ownedCount) + '</strong></div>' +
+      '<div class="fp-type-card-count"><span>Factories</span><strong>' + fmt(ownedCount) + '</strong></div>' +
       '<dl class="fp-type-card-metrics"><div><dt>Modeled build time</dt><dd>' + esc(duration) + '</dd></div>' +
       '<div><dt>Modeled capacity</dt><dd>' + esc(capacity) + '</dd></div>' +
       '<div><dt>Modeled construction cost</dt><dd>' + esc(cost) + '</dd></div></dl>' +
@@ -721,7 +712,7 @@
     return '<section class="fp-type-catalog" aria-label="Factory types and selected-country totals">' +
       '<header class="fp-type-catalog-heading"><div><span>OMEGA / COUNTRY INDUSTRY REGISTER</span><strong>Factory types &amp; country totals</strong></div>' +
       '<span class="fp-type-catalog-total">' + fmt(rows.length) + ' types</span></header>' +
-      '<p class="fp-type-catalog-note">Every count comes from one live country factory registry. Starting factories and newly completed construction are counted together; catalog profiles alone are not owned assets.</p>' +
+      '<p class="fp-type-catalog-note">Each factory card shows the current total recorded for the selected country.</p>' +
       '<div class="fp-type-catalog-grid">' + (cards || empty) + '</div></section>';
   }
 
@@ -782,17 +773,17 @@
     if (root.__omegaV2IndustryCountryId !== countryKey) {
       root.__omegaV2IndustryCountryId = countryKey;
       root.__omegaV2IndustryFactoryViewExplicit = false;
-      root.__omegaV2IndustryFactoryView = model.factories.length > 0 ? 'assets' : 'types';
+      root.__omegaV2IndustryFactoryView = 'types';
     }
     if (options.factoryView === 'assets' || options.factoryView === 'types') {
       root.__omegaV2IndustryFactoryView = options.factoryView;
       root.__omegaV2IndustryFactoryViewExplicit = true;
     }
-    if (!root.__omegaV2IndustryFactoryViewExplicit) root.__omegaV2IndustryFactoryView = model.factories.length > 0 ? 'assets' : 'types';
+    if (!root.__omegaV2IndustryFactoryViewExplicit) root.__omegaV2IndustryFactoryView = 'types';
     var factoryView = root.__omegaV2IndustryFactoryView === 'types' ? 'types' : 'assets';
     var content = '';
     if (active === 'factories') {
-      content = model.factories.length ? '<div class="omega-v2-grid">' + model.factories.map(function (row) { return factoryCard(row, options); }).join('') + '</div>' : '<div class="omega-v2-empty">No commissioned production assets are recorded for ' + esc(model.countryId || 'the selected country') + '. Catalog profiles are not counted as owned factories.</div>';
+      content = model.factories.length ? '<div class="omega-v2-grid">' + model.factories.map(function (row) { return factoryCard(row, options); }).join('') + '</div>' : '<div class="omega-v2-empty">No factories are recorded for ' + esc(model.countryId || 'the selected country') + '.</div>';
     } else if (active === 'production-lines') {
       content = model.cycles.length ? '<div class="omega-v2-grid">' + model.cycles.map(function (cycle) {
         return '<article class="omega-v2-card"><h3 class="omega-v2-card-title">' + esc(cycle.factoryId) + '</h3><span class="omega-v2-status">' + esc(cycle.status || 'NOT_RECORDED') + '</span><div class="omega-v2-vehicle-stats"><div><span>Output quantity</span><strong>' + fmt(cycle.productionQuantity) + '</strong></div><div><span>Start date</span><strong>' + esc(cycle.startDate || 'Not recorded') + '</strong></div><div><span>Finish date</span><strong>' + esc(cycle.finishDate || 'Not recorded') + '</strong></div><div><span>Source batches</span><strong>' + fmt(Array.isArray(cycle.sourceBatchIds) ? cycle.sourceBatchIds.length : null) + '</strong></div></div></article>';
@@ -848,7 +839,7 @@
 
     root.classList.add('omega-v2-screen');
     var tabLabels = {
-      factories:'Factory assets',
+      factories:'Factories',
       'production-lines':'Production lines',
       inventory:'Factory input records',
       'national-inventory':'National Inventory',
@@ -868,8 +859,8 @@
       tabButton('research', 'R&D', active) +
       tabButton('projects', 'Projects', active) +
       (active === 'factories' ? '<button type="button" class="omega-v2-button fp-view-toggle" data-omega-v2-factory-view-toggle aria-label="' +
-        (factoryView === 'types' ? 'Show owned factory assets' : 'Show canonical factory types and country totals') + '">' +
-        (factoryView === 'types' ? 'Assets' : 'Types &amp; totals') + '</button>' : '') +
+        (factoryView === 'types' ? 'Show factory details' : 'Show factory type totals') + '">' +
+        (factoryView === 'types' ? 'Details' : 'Type totals') + '</button>' : '') +
       '</nav></header>';
     var factoryCards = model.factories.length
       ? model.factories.map(function (row) {
@@ -879,10 +870,10 @@
             onOpenFactory: options.onOpenFactory
           }));
         }).join('')
-      : '<div class="omega-v2-factory-empty">No commissioned factories are recorded for ' + esc(model.countryId || 'the selected country') + '.</div>';
+      : '<div class="omega-v2-factory-empty">No factories are recorded for ' + esc(model.countryId || 'the selected country') + '.</div>';
     var summaryMarkup = '<div class="fp-summary" aria-label="Selected country production summary">' +
       '<div class="fp-summary-item"><span>COUNTRY</span><strong>' + esc(model.countryId || 'Not recorded') + '</strong></div>' +
-      '<div class="fp-summary-item"><span>FACTORY ASSETS</span><strong>' + fmt(model.factoryCount) + '</strong></div>' +
+      '<div class="fp-summary-item"><span>FACTORIES</span><strong>' + fmt(model.factoryCount) + '</strong></div>' +
       '<div class="fp-summary-item"><span>FACTORY TYPES</span><strong>' + fmt(model.factoryTypeCatalog.length) + '</strong></div>' +
       '<div class="fp-summary-item"><span>PRODUCTION CYCLES</span><strong>' + fmt(model.cycles.length) + '</strong></div>' +
       '</div>';
@@ -1103,7 +1094,7 @@
        'OMEGA_RESOURCE_MINE_CAPACITY_CHANGED','OMEGA_SIMULATION_TURN_COMMITTED',
        'OMEGA_FACTORY_CAPACITY_CHANGED','OMEGA_FACTORY_DECOMMISSIONED',
        'OMEGA_COUNTRY_STARTING_FACTORY_ASSETS_REGISTERED','OMEGA_COUNTRY_FACTORY_STARTING_BASELINE_READY','OMEGA_COUNTRY_FACTORY_STARTING_BASELINE_INITIALIZED',
-       'OMEGA_COUNTRY_FACTORY_ESTABLISHMENT_DATA_READY'].forEach(function (eventName) {
+       ].forEach(function (eventName) {
         g.addEventListener(eventName, function () {
           if (!root.querySelector || !root.querySelector('.omega-v2-industry-command, .omega-v2-factory-command')) return;
           scheduleRender(root, Object.assign({}, root.__omegaV2IndustryOptions || {}, { tab: root.__omegaV2IndustryTab || 'factories' }));

@@ -393,7 +393,6 @@ test('industry factory cards show owned factory counts without a separate source
   const previousGame = globalThis.Game;
   const previousCatalog = globalThis.OmegaResourceIndustrialCatalogData;
   const previousFactoryBaseline = globalThis.OmegaCountryFactoryStartingBaselineV1;
-  let realWorldReadCount = 0;
   globalThis.Game = { state: {
     simulation: { session: { playerCountryId: 'BGD' }, turn: 12 },
     resource: {
@@ -420,10 +419,6 @@ test('industry factory cards show owned factory counts without a separate source
         liveFactoryTypeCounts:{STEEL_MILL:0,CEMENT_PLANT:0}
       };
     },
-    getCountryRealWorldData() {
-      realWorldReadCount += 1;
-      return { countryId:'BGD', factoryEstablishments:{ STEEL_MILL:{status:'REPORTED',establishmentCount:12} } };
-    }
   };
   try {
     const model = globalThis.OmegaUIV2Industry.buildViewModel({ countryId:'BGD' });
@@ -432,14 +427,13 @@ test('industry factory cards show owned factory counts without a separate source
     assert.deepEqual(model.factoryTypeCounts.map(row => [row.type,row.count]), [
       ['CEMENT_PLANT',0], ['STEEL_MILL',3]
     ]);
-    assert.equal(realWorldReadCount, 0, 'the factory card must not load a separate establishment/source dataset');
     const root = { classList:{ add(){} }, addEventListener(){}, contains(){ return true; } };
     const result = globalThis.OmegaUIV2Industry.render(root, {
       countryId:'BGD', tab:'factories', factoryView:'types'
     });
     assert.equal(result.ok, true);
     assert.match(root.innerHTML, /Factory types &amp; country totals/);
-    assert.match(root.innerHTML, /Owned factories/);
+    assert.match(root.innerHTML, /Factories/);
     assert.match(root.innerHTML, /<strong>3<\/strong>/);
     assert.doesNotMatch(root.innerHTML, /UNIDO|Official establishment data|Establishments|Source status/);
     const foreign = globalThis.OmegaUIV2Industry.buildViewModel({ countryId:'USA' });
@@ -491,12 +485,12 @@ test('industry treats starting and newly built factories as one live asset regis
     assert.equal(Object.prototype.hasOwnProperty.call(model.factoryTypeCatalog[0], 'startingCount'), false,
       'factory types must not expose a parallel starting allocation count');
     const root = { classList:{ add(){} }, addEventListener(){}, contains(){ return true; } };
-    const result = globalThis.OmegaUIV2Industry.render(root, { countryId:'BGD', tab:'factories' });
+    const result = globalThis.OmegaUIV2Industry.render(root, { countryId:'BGD', tab:'factories', factoryView:'assets' });
     assert.equal(result.ok, true);
     assert.match(root.innerHTML, /omega-v2-factory-command/);
     assert.match(root.innerHTML, /data-omega-v2-factory-card/);
     assert.match(root.innerHTML, /East Steel Works/);
-    assert.match(root.innerHTML, /FACTORY ASSETS/);
+    assert.match(root.innerHTML, /FACTORIES/);
     assert.doesNotMatch(root.innerHTML, /Starting factory allocation|Starting allocation|STARTING UNITS|Starting Factory Allocation/);
     assert.doesNotMatch(root.innerHTML, /Foreign Cement Plant/);
     assert.doesNotMatch(root.innerHTML, /Bangladesh Iron Mine|Daily mine production|FACTORY SVG SLOT/);
@@ -506,7 +500,7 @@ test('industry treats starting and newly built factories as one live asset regis
       countryId:'BGD', tab:'factories', factoryView:'types'
     });
     assert.equal(typeResult.ok, true);
-    assert.match(typeRoot.innerHTML, /Owned factories/);
+    assert.match(typeRoot.innerHTML, /Factories/);
     assert.match(typeRoot.innerHTML, /<strong>3<\/strong>/);
     assert.doesNotMatch(typeRoot.innerHTML, /Starting allocation|fp-type-card-count--starting|Starting units/);
 
@@ -1271,7 +1265,7 @@ test('factory command cards use canonical SVGs, daily production state, type cou
     innerHTML:''
   };
   try {
-    const result = globalThis.OmegaUIV2Industry.render(root,{countryId:'BGD',tab:'factories'});
+    const result = globalThis.OmegaUIV2Industry.render(root,{countryId:'BGD',tab:'factories',factoryView:'assets'});
     assert.equal(result.ok,true);
     assert.equal(result.model.factoryCount,3);
     assert.match(root.innerHTML,/class="omega-v2-factory-command fp-stage"/);
@@ -1292,7 +1286,7 @@ test('factory command cards use canonical SVGs, daily production state, type cou
     assert.match(root.innerHTML,/data-omega-v2-factory-build="FAC-STEEL"/);
     assert.match(root.innerHTML,/data-omega-v2-factory-destroy="FAC-STEEL"/);
     assert.match(root.innerHTML,/class="fp-summary"/);
-    assert.match(root.innerHTML,/FACTORY ASSETS/);
+    assert.match(root.innerHTML,/FACTORIES/);
     assert.match(root.innerHTML,/PRODUCTION CYCLES/);
 
     // Every industrial tab must remain inside the reference command stage.
@@ -1308,7 +1302,7 @@ test('factory command cards use canonical SVGs, daily production state, type cou
       assert.match(root.innerHTML,new RegExp('data-active-tab="' + tab + '"'),tab + ' must mark the active tab');
       assert.doesNotMatch(root.innerHTML,/class="omega-v2-heading"/,tab + ' must not fall back to the legacy screen');
     }
-    const returnToFactories = globalThis.OmegaUIV2Industry.render(root,{countryId:'BGD',tab:'factories'});
+    const returnToFactories = globalThis.OmegaUIV2Industry.render(root,{countryId:'BGD',tab:'factories',factoryView:'assets'});
     assert.equal(returnToFactories.ok,true);
     assert.match(root.innerHTML,/data-omega-v2-factory-card/);
     assert.match(root.innerHTML,/commons\.wikimedia\.org\/wiki\/File:Industrial_production_line_operating_in_a_large_modern_factory\.jpg/);
@@ -1327,7 +1321,7 @@ test('factory command cards use canonical SVGs, daily production state, type cou
     assert.equal(typeView.ok,true);
     assert.match(root.innerHTML,/Factory types &amp; country totals/);
     assert.equal((root.innerHTML.match(/data-omega-v2-factory-type-card/g)||[]).length,3);
-    assert.match(root.innerHTML,/Owned factories/);
+    assert.match(root.innerHTML,/Factories/);
     assert.match(root.innerHTML,/data-factory-view="types"/);
 
     // Build stays within UI v2 rather than opening the retired command centre.
@@ -1782,7 +1776,7 @@ test('industrial command panel scopes factory, mine, daily-rate and current-turn
     assert.equal(unitedStates.canOperateSelectedCountry, false);
 
     const root = { classList:{ add(){} }, addEventListener(){}, contains(){ return true; } };
-    const rendered = globalThis.OmegaUIV2Industry.render(root, { countryId:'BGD' });
+    const rendered = globalThis.OmegaUIV2Industry.render(root, { countryId:'BGD', factoryView:'assets' });
     assert.equal(rendered.ok, true);
     assert.match(root.innerHTML, /omega-v2-industry--factory-home/);
     assert.match(root.innerHTML, /omega-v2-factory-command/);
@@ -2263,7 +2257,7 @@ test('factory type cards restore counts from the existing country registry witho
       countryId:'BGD', tab:'factories', factoryView:'types'
     });
     assert.equal(result.ok, true);
-    assert.match(root.innerHTML, /Owned factories/);
+    assert.match(root.innerHTML, /Factories/);
     assert.match(root.innerHTML, /<strong>3<\/strong>/);
     assert.match(root.innerHTML, /<strong>4<\/strong>/);
     assert.doesNotMatch(root.innerHTML, /UNIDO|Official establishment data|Source status/);
