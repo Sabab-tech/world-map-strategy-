@@ -595,14 +595,40 @@ async function loadCatalog(){
   if(inline){catalog=inline;return{status:'READY',reused:true}};
   if(catalog)return{status:'READY',reused:true};
   if(catalogPromise)return catalogPromise;
+  const scheduleTimeout=typeof g.setTimeout==='function'?g.setTimeout.bind(g):
+    (typeof setTimeout==='function'?setTimeout:null);
+  const cancelTimeout=typeof g.clearTimeout==='function'?g.clearTimeout.bind(g):
+    (typeof clearTimeout==='function'?clearTimeout:null);
+  if(!scheduleTimeout)return{status:'FAILED',reason:'INDUSTRIAL_CATALOG_TIMEOUT_UNAVAILABLE'};
+  const requestController=typeof g.AbortController==='function'?new g.AbortController():null;
   catalogPromise=(async()=>{
+    let timer=null;
     try{
-      if(typeof fetch!=='function')throw new Error('FETCH_UNAVAILABLE');
-      const r=await fetch(CATALOG_URL,{cache:'no-store'});if(!r?.ok)throw new Error('INDUSTRIAL_CATALOG_FETCH_FAILED');
-      catalog=await r.json();g.OmegaResourceIndustrialCatalogData=catalog;g.Omega=g.Omega||{};g.Omega.ResourceIndustrialCatalogData=catalog;
+      if(typeof g.fetch!=='function')throw new Error('FETCH_UNAVAILABLE');
+      // Bound both the network response and JSON decoding. Boot and factory
+      // baseline callers share this promise, so a single stalled catalog fetch
+      // must reject for every caller and release the slot for a later retry.
+      const request=Promise.resolve().then(async()=>{
+        const options={cache:'no-store'};
+        if(requestController)options.signal=requestController.signal;
+        const r=await g.fetch(CATALOG_URL,options);
+        if(!r?.ok)throw new Error('INDUSTRIAL_CATALOG_FETCH_FAILED');
+        return await r.json();
+      });
+      const timeout=new Promise((_,reject)=>{
+        timer=scheduleTimeout(()=>{
+          try{if(requestController)requestController.abort()}catch(_){}
+          reject(new Error('INDUSTRIAL_CATALOG_FETCH_TIMEOUT'));
+        },15000);
+      });
+      catalog=await Promise.race([request,timeout]);
+      g.OmegaResourceIndustrialCatalogData=catalog;g.Omega=g.Omega||{};g.Omega.ResourceIndustrialCatalogData=catalog;
       return{status:'READY',count:Object.keys(catalog.resourceRules||{}).length};
     }catch(e){return{status:'FAILED',reason:String(e?.message||e)}}
-    finally{catalogPromise=null}
+    finally{
+      if(timer!==null&&cancelTimeout){try{cancelTimeout(timer)}catch(_){}}
+      catalogPromise=null;
+    }
   })();
   return catalogPromise;
 }
