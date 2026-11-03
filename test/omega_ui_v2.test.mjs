@@ -2396,6 +2396,13 @@ test('every canonical factory recipe input and output renders a product-specific
   const catalog = JSON.parse(readFileSync('resource_industrial_catalog_v1.json','utf8'));
   const api = globalThis.OmegaUIV2Industry;
   assert.ok(api && typeof api.productIconVisualMarkup === 'function');
+  const iconManifest = JSON.parse(readFileSync('assets/omega-industrial-icons-v1/manifest.json','utf8'));
+  assert.equal(iconManifest.resources.length,42,'all canonical raw resources must retain their SVG identities');
+  for (const resource of iconManifest.resources) {
+    const markup = api.productIconVisualMarkup(resource.id,resource.label);
+    assert.ok(markup.includes('assets/omega-industrial-icons-v1/' + resource.file),
+      resource.id + ' must resolve to its own canonical raw-resource SVG');
+  }
   const productIds = new Set();
   for (const recipe of Object.values(catalog.downstreamFactoryRecipes || {})) {
     for (const productId of [
