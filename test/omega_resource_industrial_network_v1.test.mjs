@@ -1417,6 +1417,7 @@ console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');
   );
   const runtime = timeoutContext.Omega.ResourceIndustrialNetwork;
   const pending = runtime.loadCatalog();
+  await Promise.resolve();
   assert.equal(requests.length, 1, 'boot and ministry must share one catalog request');
   assert.equal(timers.size, 1, 'the shared catalog request must have a timeout');
   timers.values().next().value();
