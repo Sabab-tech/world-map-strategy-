@@ -814,7 +814,7 @@ test('factory Stock shows committed finished goods and traced use while Input sh
     const factoryRoot = {classList:{add(){}},addEventListener(){},contains(){return true},innerHTML:''};
     const factoryResult = globalThis.OmegaUIV2Industry.render(factoryRoot,{countryId:'BGD',tab:'factories'});
     assert.equal(factoryResult.ok,true);
-    assert.match(factoryRoot.innerHTML,/data-omega-v2-factory-card/);
+    assert.match(factoryRoot.innerHTML,/data-omega-v2-factory-type-card/);
     assert.match(factoryRoot.innerHTML,/Chattogram Steel Works/);
   } finally {
     if (previous.Game === undefined) delete globalThis.Game; else globalThis.Game = previous.Game;
