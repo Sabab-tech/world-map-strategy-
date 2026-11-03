@@ -1986,12 +1986,10 @@
         if (mode) byMode[mode] = row;
       });
       var designByMode = logisticsDesignFleetEstimate(route, legs, byMode);
-      var configuredModeCount = 0;
       var cards = routeModes.map(function (mode) {
         var meta = logisticsTransportModeMeta[mode], row = byMode[mode];
         var count = row ? numberOrNull(row.count) : null;
         var configured = !!(ready && row && row.configured === true && count !== null && count >= 0);
-        if (configured) configuredModeCount += 1;
         var modeLegs = safeArray(legs).filter(function (leg) {
           return logisticsTransportModeKey(leg && (leg.transportMode || leg.mode)) === mode;
         });
@@ -2073,7 +2071,7 @@
       return '<section class="omega-v2-logistics-route-transport" data-omega-v2-logistics-fleet-summary data-site-id="' +
         esc(route && route.siteId || '') + '" data-fleet-ready="' + (ready ? 'true' : 'false') + '">' +
         '<div class="omega-v2-logistics-transport-heading"><span>TRANSPORT ON THIS ROUTE</span><strong>' +
-        (ready ? fmt(configuredModeCount) + ' / ' + fmt(routeModes.length) + ' configured' : 'Fleet data unavailable') +
+        'ROUTE-SPECIFIC MODE DETAILS' +
         '</strong></div><div class="omega-v2-logistics-transport-grid">' + cards + '</div>' +
         (canManage
           ? '<details class="omega-v2-logistics-fleet-editor"><summary>Adjust route transport counts</summary>' +
