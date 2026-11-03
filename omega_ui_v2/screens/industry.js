@@ -1909,7 +1909,7 @@
     var unit = String(side === 'input' ? route && route.inputUnit || '' : route && route.outputUnit || '');
     var basis = String(route && route.quantityBasis || '');
     var amountText = amount.toLocaleString('en-US', { maximumFractionDigits:4 });
-    if (basis === 'PER_SIMULATION_PRODUCTION_UNIT') return amountText + ' / production unit';
+    if (basis === 'PER_SIMULATION_PRODUCTION_UNIT') return amountText + (unit ? ' ' + unit.replace(/_/g, ' ').toLowerCase() : '') + ' / production unit';
     if (basis) return amountText + ' / ' + basis.toLowerCase().replace(/_/g, ' ');
     return amountText + (unit ? ' ' + unit : '') + ' · basis not recorded';
   }
@@ -2153,7 +2153,8 @@
         }).join('') : '') +
       '</div>';
     }
-    var canExpand = hasAlternatives || hiddenInputs.length > 0 || hiddenOutputs.length > 0 || hiddenByProducts.length > 0 || coProducts.length > 0;
+    var canExpand = hasAlternatives || hiddenInputs.length > 0 || hiddenOutputs.length > 0 || hiddenByProducts.length > 0 || coProducts.length > 0 ||
+      !!(route.recipeId || num(route.cycleDays) !== null || route.quantityBasis);
     if (expanded) {
       html += '<div class="fp-card-expanded-details">' +
         '<div class="fp-card-expanded-heading"><strong>Complete production formula</strong><span>' + esc(route.recipeId || 'Route not recorded') + '</span></div>' +
