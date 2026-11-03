@@ -87,15 +87,41 @@
       }
     } catch (_) {}
   }
-  function fetchJson(path) {
+  function fetchJson(path, requestController) {
     if (typeof g.fetch !== 'function') {
       return Promise.reject(new Error('COUNTRY_FACTORY_STARTING_BASELINE_FETCH_UNAVAILABLE:' + path));
     }
-    return g.fetch(path, { cache: 'default' }).then(function (response) {
+    var scheduleTimeout = typeof g.setTimeout === 'function' ? g.setTimeout.bind(g) :
+      (typeof setTimeout === 'function' ? setTimeout : null);
+    var cancelTimeout = typeof g.clearTimeout === 'function' ? g.clearTimeout.bind(g) :
+      (typeof clearTimeout === 'function' ? clearTimeout : null);
+    if (!scheduleTimeout) {
+      return Promise.reject(new Error('COUNTRY_FACTORY_STARTING_BASELINE_TIMEOUT_UNAVAILABLE:' + path));
+    }
+    var timer = null;
+    // The timeout covers both the network response and JSON parsing. A single
+    // controller is shared by all four source requests, so one stalled file
+    // cancels its siblings instead of leaving background requests running.
+    var request = Promise.resolve().then(function () {
+      var options = { cache: 'default' };
+      if (requestController) options.signal = requestController.signal;
+      return g.fetch(path, options);
+    }).then(function (response) {
       if (!response || response.ok === false) {
         throw new Error('COUNTRY_FACTORY_STARTING_BASELINE_FETCH_FAILED:' + path);
       }
       return response.json();
+    });
+    var timeout = new Promise(function (_, reject) {
+      timer = scheduleTimeout(function () {
+        try { if (requestController) requestController.abort(); } catch (_) {}
+        reject(new Error('COUNTRY_FACTORY_STARTING_BASELINE_FETCH_TIMEOUT:' + path));
+      }, 15000);
+    });
+    return Promise.race([request, timeout]).finally(function () {
+      if (timer !== null && cancelTimeout) {
+        try { cancelTimeout(timer); } catch (_) {}
+      }
     });
   }
   function validateSources(values) {
@@ -169,9 +195,10 @@
   }
   function loadSources() {
     if (loadPromise) return loadPromise;
+    var requestController = typeof g.AbortController === 'function' ? new g.AbortController() : null;
     loadPromise = Promise.all([
-      fetchJson(DATA_PATH), fetchJson(CATALOG_PATH),
-      fetchJson(COUNTRY_CONTEXT_PATH), fetchJson(ECONOMY_PROFILE_PATH)
+      fetchJson(DATA_PATH, requestController), fetchJson(CATALOG_PATH, requestController),
+      fetchJson(COUNTRY_CONTEXT_PATH, requestController), fetchJson(ECONOMY_PROFILE_PATH, requestController)
     ]).then(function (values) {
       loaded = validateSources(values);
       loadError = null;
@@ -185,6 +212,8 @@
       dispatchEvent('OMEGA_COUNTRY_FACTORY_STARTING_BASELINE_READY', report);
       return report;
     }).catch(function (error) {
+      // Stop every sibling request as soon as one required source fails.
+      try { if (requestController) requestController.abort(); } catch (_) {}
       loaded = null;
       loadError = text(error && error.message) || 'COUNTRY_FACTORY_STARTING_BASELINE_LOAD_FAILED';
       loadPromise = null;
