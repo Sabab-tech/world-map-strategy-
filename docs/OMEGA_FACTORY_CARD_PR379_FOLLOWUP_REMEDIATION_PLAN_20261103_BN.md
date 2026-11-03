@@ -25,7 +25,7 @@ PR #379 is merged, and its original progressive-disclosure implementation is pre
 3. **Use one quantity-rate calculation**
    - Reuse one helper for card preview and country Input/Stock plan rates.
    - Calculate modeled output or input per game-day as capacity × canonical recipe coefficient ÷ cycleDays.
-   - Require a valid positive capacity, valid positive cycle duration, known quantity basis and compatible unit before emitting a rate.
+   - Require a valid positive capacity, valid positive cycle duration, and a known compatible unit. An explicitly incompatible quantity basis suppresses the rate; a legacy recipe that omits its basis may still show a modeled game-unit rate, while its coefficient label remains marked “basis not recorded.”
    - Keep exact per-production-unit coefficients visible; label derived values as modeled per game-day per factory.
    - Do not invent a per-tick rate: the displayed game tick duration must be authoritative before such a conversion is introduced.
 

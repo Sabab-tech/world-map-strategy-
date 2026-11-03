@@ -1932,8 +1932,11 @@
     var cycleDays = num(route && route.cycleDays);
     var quantityBasis = String(route && route.quantityBasis || '').toUpperCase();
     var unit = String(unitOverride || '').trim();
+    // Legacy canonical recipes may omit quantityBasis; keep their basis visibly unrecorded while
+    // still deriving a game-unit rate when capacity, cycle duration and unit are all explicit.
     if (coefficient === null || coefficient <= 0 || capacityValue === null || capacityValue <= 0 ||
-        cycleDays === null || cycleDays <= 0 || quantityBasis !== 'PER_SIMULATION_PRODUCTION_UNIT' || !unit) return null;
+        cycleDays === null || cycleDays <= 0 ||
+        (quantityBasis && quantityBasis !== 'PER_SIMULATION_PRODUCTION_UNIT') || !unit) return null;
     var perCycle = capacityValue * coefficient;
     var perDay = perCycle / cycleDays;
     if (!Number.isFinite(perCycle) || !Number.isFinite(perDay)) return null;
