@@ -2786,6 +2786,22 @@ test('Factory input stock coverage is captured only at every tenth in-game day',
     assert.equal(thirdIron.coverageDays,0.4);
     assert.equal(thirdIron.status,'critical');
 
+    delete globalThis.Game.state.economy.BGD.productionAssets[0].inputInventory.coal;
+    const fourth = globalThis.OmegaUIV2Industry.recordFactoryInputCoverage({detail:{simulationTurn:39}});
+    const fourthCoal = fourth.products.find(row => row.productId === 'coal');
+    assert.equal(fourth.updatedDay,40);
+    assert.equal(fourthCoal.stockComplete,false,'a missing input balance must remain unverified');
+    assert.equal(fourthCoal.currentStock,null);
+    assert.equal(fourthCoal.coverageDays,null);
+
+    globalThis.Game.state.economy.BGD.productionAssets[0].inputInventory.iron_ore = 0;
+    const fifth = globalThis.OmegaUIV2Industry.recordFactoryInputCoverage({detail:{simulationTurn:49}});
+    const fifthIron = fifth.products.find(row => row.productId === 'iron_ore');
+    assert.equal(fifth.updatedDay,50);
+    assert.equal(fifthIron.currentStock,0,'an explicit zero balance remains a recorded zero');
+    assert.equal(fifthIron.coverageDays,0);
+    assert.equal(fifthIron.status,'critical');
+
     const root = {classList:{add(){}},addEventListener(){},contains(){return true},innerHTML:''};
     const rendered = globalThis.OmegaUIV2Industry.render(root,{countryId:'BGD',tab:'inventory'});
     assert.equal(rendered.ok,true);
