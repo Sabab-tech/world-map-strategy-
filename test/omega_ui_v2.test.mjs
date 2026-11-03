@@ -2692,7 +2692,7 @@ test('factory cards progressively disclose canonical products, quantities and in
     let steel = cardHtml('STEEL_AND_ALLOY_WORKS');
     assert.match(steel,/Main output/);
     assert.match(steel,/Steel/);
-    assert.match(steel,/Alloy Steel/);
+    assert.match(steel,/ALLOY STEEL/i);
     assert.match(steel,/By-product:/);
     assert.match(steel,/Blast Furnace Slag/);
     assert.match(steel,/Input/);
@@ -2752,7 +2752,7 @@ test('factory cards progressively disclose canonical products, quantities and in
     const live = root.innerHTML.match(/<article class="omega-v2-factory-card fp-card[^>]*data-factory-id="FACTORY-STEEL-CARD-01"[\s\S]*?<\/article>/);
     assert.ok(live,'the live factory asset card must remain available');
     assert.match(live[0],/Steel/);
-    assert.match(live[0],/Alloy Steel/);
+    assert.match(live[0],/ALLOY STEEL/i);
     assert.match(live[0],/Iron Concentrate/);
     assert.match(live[0],/Factory stock: 120 SIMULATION_RESOURCE_UNIT/);
     assert.match(live[0],/data-omega-v2-factory-build-details/);
