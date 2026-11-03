@@ -2355,3 +2355,37 @@
   justify-content: center;
   width: 34px;
 }
+
+
+/* Live shipments use the same dimensional transport art at readable scale. */
+.omega-v2-resource-premium .omega-v2-logistics-live-section .omega-v2-logistics-path {
+  grid-template-columns: minmax(0, 1fr) minmax(92px, 1.2fr) minmax(0, 1fr);
+  gap: 9px;
+}
+.omega-v2-resource-premium .omega-v2-logistics-live-section .omega-v2-logistics-route-vehicle {
+  align-items: center;
+  height: 70px;
+  width: 100%;
+}
+.omega-v2-resource-premium .omega-v2-logistics-live-section .omega-v2-logistics-route-vehicle .omega-v2-logistics-svg {
+  filter: drop-shadow(0 7px 5px rgba(0,0,0,.38)) drop-shadow(0 0 7px rgba(70,199,235,.12));
+  height: 68px;
+  object-fit: contain;
+  width: 88px;
+}
+.omega-v2-resource-premium .omega-v2-logistics-live-section .omega-v2-logistics-link {
+  align-items: center;
+  flex-direction: column;
+  gap: 3px;
+  justify-content: center;
+  min-width: 0;
+}
+@media (max-width: 420px) {
+  .omega-v2-resource-premium .omega-v2-logistics-live-section .omega-v2-logistics-path {
+    grid-template-columns: minmax(0, 1fr) minmax(70px, .9fr) minmax(0, 1fr);
+  }
+  .omega-v2-resource-premium .omega-v2-logistics-live-section .omega-v2-logistics-route-vehicle .omega-v2-logistics-svg {
+    height: 58px;
+    width: 70px;
+  }
+}
