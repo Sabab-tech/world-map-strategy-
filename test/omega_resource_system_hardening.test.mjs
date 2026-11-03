@@ -132,6 +132,7 @@ assert.equal(constrained.plans[0].dispatchCommitted,false);
 
 const planHandler=logisticsHandlers.get('OMEGA_RESOURCE_LOGISTICS_PLAN');
 assert.equal(typeof planHandler,'function');
+const previewResourceStateBefore=JSON.stringify(context.Game.state.resource);
 let shipmentLedgerWrites=0;
 const previewCommand=planHandler({payload:{countryId:'CHL',quantity:100,resourceId:'iron_ore'}},{
   countryId:'CHL',stateTransaction:{get(){throw new Error('route preview must not read a shipment ledger');},set(){shipmentLedgerWrites++;}}
@@ -142,7 +143,7 @@ assert.equal(previewCommand.inventoryReserved,false);
 assert.equal(previewCommand.sourceWarehouseDebited,false);
 assert.equal(previewCommand.plans[0].deliveryStatus,'NOT_DISPATCHED');
 assert.equal(shipmentLedgerWrites,0,'a route preview must not write pretend in-transit shipments');
-assert.equal(context.Game.state.resource.CHL.logistics.shipments.length,1,'legacy route history must be preserved without new fake shipments');
+assert.equal(JSON.stringify(context.Game.state.resource),previewResourceStateBefore,'the route preview must leave all resource state unchanged');
 
 const copperModel=hard.processModel('copper');
 assert.equal(copperModel.resourceId,'copper');
