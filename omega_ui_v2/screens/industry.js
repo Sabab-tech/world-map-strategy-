@@ -216,7 +216,7 @@
     if (/^(industrial_gases|pipeline_gas|shale_gas|ammonia)$/.test(id)) return 'gas-cylinder';
     if (/^(industrial_chemicals|industrial_solvents|caustic_soda|propylene_feedstock|polymer_resin|boric_acid_or_borax)$/.test(id)) return 'chemical-vessel';
     if (/^recycled_(polymer|feedstock)$/.test(id)) return 'recycled-feedstock';
-    if (/^(assembly_loss|alumina_residue|battery_scrap|blast_furnace_slag|chemical_process_residue|disposal_residue|e_waste|electrical_scrap|manufacturing_scrap|metal_scrap|organic_processing_waste|packaging_waste|plastic_waste|precision_scrap|processing_dust|processing_loss|smelter_dross|smelter_slag|textile_waste)$/.test(id)) return 'industrial-waste';
+    if (/^(assembly_loss|alumina_residue|battery_scrap|blast_furnace_slag|chemical_process_residue|disposal_residue|e_waste|electrical_scrap|kiln_dust|manufacturing_scrap|metal_scrap|organic_processing_waste|packaging_waste|plastic_waste|precision_scrap|processing_dust|processing_loss|smelter_dross|smelter_slag|textile_waste)$/.test(id)) return 'industrial-waste';
     if (/^(glass_silica_feed|iron_concentrate|coal_concentrate|copper_concentrate|graphite_concentrate|phosphate_concentrate|titanium_feed|yellowcake|magnesia|alumina|refined_salt)$/.test(id)) return 'ore-sack';
     if (/(concentrate|yellowcake|_feed|tailings|salt|ore)$/.test(id)) {
       if (/(tailings)$/.test(id)) return 'industrial-waste';
