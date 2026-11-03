@@ -5011,5 +5011,1124 @@
     "priorityPolicy": "Array order is explicit display priority; do not infer roles from coefficients.",
     "runtimePolicy": "Presentation metadata must not change recipe coefficients, production scheduling, stock, batches, ledgers or construction.",
     "missingRolePolicy": "Unclassified outputs remain visible in expanded detail and must not be silently treated as primary or by-product."
+  },
+  "productUseCatalog": {
+    "schemaVersion": "1.0.0",
+    "authority": "SECTOR_USE_REFERENCE_NOT_AUTOMATIC_CONSUMPTION",
+    "productCount": 185,
+    "source": "resourceRules, externalInputSources, processingRules and downstreamFactoryRecipes in this canonical catalog",
+    "marketRouteNote": "Finished goods are registered in the processed warehouse and may be published as market offers only when physical stock, batch allocation and pricing checks pass. A sector-use description does not create demand or debit stock.",
+    "products": {
+      "aerospace_components": {
+        "usageClass": "AVIATION_COMPONENT",
+        "endUses": [
+          "Aircraft assembly, structural systems, aerospace maintenance and precision engineering."
+        ]
+      },
+      "aircraft": {
+        "usageClass": "AVIATION_CAPITAL_GOOD",
+        "endUses": [
+          "Civil aviation and national air-force fleet procurement. This catalog note does not claim an automatic aircraft-inventory transfer."
+        ]
+      },
+      "alloy_steel": {
+        "usageClass": "SPECIALTY_MATERIAL",
+        "endUses": [
+          "High-strength parts, machine tools, vehicles, shipbuilding, aerospace and defence components."
+        ]
+      },
+      "alumina": {
+        "usageClass": "INDUSTRIAL_INPUT",
+        "endUses": [
+          "Industrial feedstock for the factory route(s) listed in the product panel."
+        ]
+      },
+      "alumina_residue": {
+        "usageClass": "INDUSTRIAL_RESIDUE",
+        "endUses": [
+          "Requires controlled residue handling and possible mineral recovery; no current factory recipe directly consumes alumina_residue."
+        ]
+      },
+      "aluminum_ingot": {
+        "usageClass": "INDUSTRIAL_MATERIAL",
+        "endUses": [
+          "Transport structures, packaging, electrical conductors, machinery and lightweight engineering."
+        ]
+      },
+      "ammonia": {
+        "usageClass": "AGRICULTURAL_AND_CHEMICAL_INPUT",
+        "endUses": [
+          "Fertilizer production and agricultural nutrient supply; chemical industry feedstock."
+        ]
+      },
+      "aragonite": {
+        "usageClass": "CONSTRUCTION_AND_BUILDING",
+        "endUses": [
+          "Buildings, housing, roads, bridges and public infrastructure; selected glass and ceramic applications."
+        ]
+      },
+      "aragonite_sand": {
+        "usageClass": "CONSTRUCTION_AND_BUILDING",
+        "endUses": [
+          "Buildings, housing, roads, bridges and public infrastructure; selected glass and ceramic applications."
+        ]
+      },
+      "assembly_loss": {
+        "usageClass": "ASSEMBLY_LOSS",
+        "endUses": [
+          "Manufacturing yield loss; it is not a finished product and has no downstream consumer recipe."
+        ]
+      },
+      "basalt": {
+        "usageClass": "CONSTRUCTION_AND_BUILDING",
+        "endUses": [
+          "Buildings, housing, roads, bridges and public infrastructure; selected glass and ceramic applications."
+        ]
+      },
+      "basalt_aggregate": {
+        "usageClass": "CONSTRUCTION_AND_BUILDING",
+        "endUses": [
+          "Buildings, housing, roads, bridges and public infrastructure; selected glass and ceramic applications."
+        ]
+      },
+      "battery_cells": {
+        "usageClass": "ENERGY_STORAGE_COMPONENT",
+        "endUses": [
+          "Battery packs, stationary storage, backup systems and electric mobility."
+        ]
+      },
+      "battery_packs": {
+        "usageClass": "ENERGY_STORAGE_GOOD",
+        "endUses": [
+          "Grid storage, renewable-energy buffering, industrial backup and electric mobility."
+        ]
+      },
+      "battery_scrap": {
+        "usageClass": "BATTERY_BYPRODUCT",
+        "endUses": [
+          "Potential battery-material recovery under a dedicated recycling route; no current factory recipe directly consumes battery_scrap."
+        ]
+      },
+      "bauxite": {
+        "usageClass": "INDUSTRIAL_INPUT",
+        "endUses": [
+          "Industrial feedstock for the factory route(s) listed in the product panel."
+        ]
+      },
+      "bauxite_residue": {
+        "usageClass": "INDUSTRIAL_RESIDUE",
+        "endUses": [
+          "Requires controlled residue handling and possible mineral recovery; no current factory recipe directly consumes bauxite_residue."
+        ]
+      },
+      "blast_furnace_slag": {
+        "usageClass": "METALLURGICAL_BYPRODUCT",
+        "endUses": [
+          "Potential cement/mineral aggregate or slag-recovery use; no current factory recipe directly consumes blast_furnace_slag."
+        ]
+      },
+      "boric_acid_or_borax": {
+        "usageClass": "CHEMICAL_AND_MATERIAL_INPUT",
+        "endUses": [
+          "Glass and ceramic processing, detergents and selected industrial chemical applications."
+        ]
+      },
+      "boron": {
+        "usageClass": "INDUSTRIAL_INPUT",
+        "endUses": [
+          "Industrial feedstock for the factory route(s) listed in the product panel."
+        ]
+      },
+      "brine_loss": {
+        "usageClass": "PROCESSING_LOSS",
+        "endUses": [
+          "Brine-process loss; no current factory recipe or recovery route consumes it."
+        ]
+      },
+      "calcined_gypsum": {
+        "usageClass": "CONSTRUCTION_AND_BUILDING",
+        "endUses": [
+          "Buildings, housing, roads, bridges and public infrastructure; selected glass and ceramic applications."
+        ]
+      },
+      "caustic_soda": {
+        "usageClass": "CHEMICAL_INTERMEDIATE",
+        "endUses": [
+          "Water treatment, pulp/paper, detergents and chemical manufacturing."
+        ]
+      },
+      "cement": {
+        "usageClass": "CONSTRUCTION_MATERIAL",
+        "endUses": [
+          "Buildings, housing, roads, bridges and public infrastructure."
+        ]
+      },
+      "cement_feed": {
+        "usageClass": "CONSTRUCTION_AND_BUILDING",
+        "endUses": [
+          "Buildings, housing, roads, bridges and public infrastructure; selected glass and ceramic applications."
+        ]
+      },
+      "ceramic_components": {
+        "usageClass": "ENGINEERING_AND_CONSTRUCTION_MATERIAL",
+        "endUses": [
+          "Building finishes, electrical insulation and industrial ceramic components."
+        ]
+      },
+      "chemical_process_residue": {
+        "usageClass": "CHEMICAL_BYPRODUCT",
+        "endUses": [
+          "The recycling factory accepts chemical_process_residue as an input; treatment remains batch- and recipe-dependent."
+        ]
+      },
+      "chromite": {
+        "usageClass": "INDUSTRIAL_INPUT",
+        "endUses": [
+          "Industrial feedstock for the factory route(s) listed in the product panel."
+        ]
+      },
+      "chromite_concentrate": {
+        "usageClass": "MARKET_COMMODITY",
+        "endUses": [
+          "Chromium feedstock for ferrochrome and stainless/specialty-steel supply chains after smelting. The current factory recipes do not directly accept chromite_concentrate."
+        ]
+      },
+      "coal": {
+        "usageClass": "INDUSTRIAL_INPUT",
+        "endUses": [
+          "Industrial feedstock for the factory route(s) listed in the product panel."
+        ]
+      },
+      "coal_concentrate": {
+        "usageClass": "INDUSTRIAL_INPUT",
+        "endUses": [
+          "Industrial feedstock for the factory route(s) listed in the product panel."
+        ]
+      },
+      "coal_reject": {
+        "usageClass": "MINERAL_BYPRODUCT",
+        "endUses": [
+          "Potential reprocessing or controlled disposal; no current factory recipe directly consumes coal_reject."
+        ]
+      },
+      "cobalt": {
+        "usageClass": "INDUSTRIAL_INPUT",
+        "endUses": [
+          "Industrial feedstock for the factory route(s) listed in the product panel."
+        ]
+      },
+      "cobalt_hydroxide": {
+        "usageClass": "MARKET_COMMODITY",
+        "endUses": [
+          "Cobalt refining feedstock for cobalt chemicals and battery cathode materials, plus selected superalloys and high-temperature components. No current recipe consumes cobalt_hydroxide directly."
+        ]
+      },
+      "composite_materials": {
+        "usageClass": "ADVANCED_ENGINEERING_MATERIAL",
+        "endUses": [
+          "Aircraft structures, lightweight transport components and high-strength industrial structures."
+        ]
+      },
+      "construction_aggregate": {
+        "usageClass": "CONSTRUCTION_AND_BUILDING",
+        "endUses": [
+          "Buildings, housing, roads, bridges and public infrastructure; selected glass and ceramic applications."
+        ]
+      },
+      "container_glass": {
+        "usageClass": "PACKAGING_MATERIAL",
+        "endUses": [
+          "Food, beverage and pharmaceutical containers; pharmaceutical production is a registered factory consumer."
+        ]
+      },
+      "control_modules": {
+        "usageClass": "ELECTRONICS_AND_CONTROL",
+        "endUses": [
+          "Electronics manufacturing, automation, communications, vehicle controls and electrical/industrial equipment."
+        ]
+      },
+      "copper": {
+        "usageClass": "INDUSTRIAL_INPUT",
+        "endUses": [
+          "Industrial feedstock for the factory route(s) listed in the product panel."
+        ]
+      },
+      "copper_concentrate": {
+        "usageClass": "INDUSTRIAL_INPUT",
+        "endUses": [
+          "Industrial feedstock for the factory route(s) listed in the product panel."
+        ]
+      },
+      "copper_matte": {
+        "usageClass": "MARKET_COMMODITY",
+        "endUses": [
+          "Intermediate copper-smelting product normally converted and refined into copper metal/anodes for electrical conductors, motors, transformers, cables and electronics. The current recipe graph has no downstream recipe consuming copper_matte directly."
+        ]
+      },
+      "coral_aggregate": {
+        "usageClass": "INDUSTRIAL_INPUT",
+        "endUses": [
+          "Industrial feedstock for the factory route(s) listed in the product panel."
+        ]
+      },
+      "cotton_fibre": {
+        "usageClass": "TEXTILE_AND_APPAREL",
+        "endUses": [
+          "People and households use garments and home textiles; fibres/fabric support apparel, uniforms and textile finishing."
+        ]
+      },
+      "crude_oil": {
+        "usageClass": "ENERGY_AND_FUELS",
+        "endUses": [
+          "Power and heat, transport fuels, industrial energy and petrochemical feedstock, depending on the product grade."
+        ]
+      },
+      "defense_equipment": {
+        "usageClass": "DEFENCE_CAPITAL_GOOD",
+        "endUses": [
+          "Military procurement, defence inventories and equipment modernization."
+        ]
+      },
+      "defense_spare_parts": {
+        "usageClass": "DEFENCE_MAINTENANCE_GOOD",
+        "endUses": [
+          "Military equipment servicing, repair and operational readiness."
+        ]
+      },
+      "diamond": {
+        "usageClass": "PRECIOUS_AND_LUXURY_COMMODITIES",
+        "endUses": [
+          "Jewellery and luxury goods, investment/commodity trade, and selected electronics or catalyst applications depending on grade."
+        ]
+      },
+      "diatomite": {
+        "usageClass": "INDUSTRIAL_INPUT",
+        "endUses": [
+          "Industrial feedstock for the factory route(s) listed in the product panel."
+        ]
+      },
+      "diatomite_concentrate": {
+        "usageClass": "MARKET_COMMODITY",
+        "endUses": [
+          "Diatomite product for industrial filtration media, absorbents, fillers, insulation and selected agricultural applications. No current factory recipe consumes diatomite_concentrate directly."
+        ]
+      },
+      "diesel": {
+        "usageClass": "TRANSPORT_AND_ENERGY_FUEL",
+        "endUses": [
+          "Road freight, buses, generators, construction/mining equipment and industrial backup power."
+        ]
+      },
+      "disposal_residue": {
+        "usageClass": "DISPOSAL_RESIDUE",
+        "endUses": [
+          "Residual from waste processing; requires safe disposal or a future treatment route."
+        ]
+      },
+      "dolomite": {
+        "usageClass": "CONSTRUCTION_AND_BUILDING",
+        "endUses": [
+          "Buildings, housing, roads, bridges and public infrastructure; selected glass and ceramic applications."
+        ]
+      },
+      "dolomite_product": {
+        "usageClass": "CONSTRUCTION_AND_BUILDING",
+        "endUses": [
+          "Buildings, housing, roads, bridges and public infrastructure; selected glass and ceramic applications."
+        ]
+      },
+      "doré": {
+        "usageClass": "PRECIOUS_AND_LUXURY_COMMODITIES",
+        "endUses": [
+          "Jewellery and luxury goods, investment/commodity trade, and selected electronics or catalyst applications depending on grade."
+        ]
+      },
+      "e_waste": {
+        "usageClass": "RECOVERABLE_E_WASTE",
+        "endUses": [
+          "Accepted by the Recycling & Waste Processing recipe for secondary-material recovery."
+        ]
+      },
+      "electrical_scrap": {
+        "usageClass": "ELECTRICAL_BYPRODUCT",
+        "endUses": [
+          "Potential copper/electronics recovery; no current factory recipe directly consumes electrical_scrap."
+        ]
+      },
+      "electronic_components": {
+        "usageClass": "ELECTRONICS_AND_CONTROL",
+        "endUses": [
+          "Electronics manufacturing, automation, communications, vehicle controls and electrical/industrial equipment."
+        ]
+      },
+      "feed_byproduct": {
+        "usageClass": "AGRICULTURAL_BYPRODUCT",
+        "endUses": [
+          "Animal feed and livestock nutrition; no automatic livestock consumption debit is created by this description."
+        ]
+      },
+      "flat_glass": {
+        "usageClass": "CONSTRUCTION_AND_TRANSPORT_MATERIAL",
+        "endUses": [
+          "Building windows/façades and vehicle glazing; vehicle assembly is a registered factory consumer."
+        ]
+      },
+      "gasoline": {
+        "usageClass": "TRANSPORT_FUEL",
+        "endUses": [
+          "Passenger vehicles, light transport and small-engine applications."
+        ]
+      },
+      "gemstone_waste": {
+        "usageClass": "GEMSTONE_BYPRODUCT",
+        "endUses": [
+          "Gemstone sorting residue; possible secondary recovery, but no current factory recipe consumes it."
+        ]
+      },
+      "glass_cullet": {
+        "usageClass": "RECOVERABLE_GLASS_SCRAP",
+        "endUses": [
+          "Accepted by the Recycling & Waste Processing recipe for secondary-material recovery."
+        ]
+      },
+      "glass_silica_feed": {
+        "usageClass": "INDUSTRIAL_INPUT",
+        "endUses": [
+          "Industrial feedstock for the factory route(s) listed in the product panel."
+        ]
+      },
+      "gold": {
+        "usageClass": "PRECIOUS_AND_LUXURY_COMMODITIES",
+        "endUses": [
+          "Jewellery and luxury goods, investment/commodity trade, and selected electronics or catalyst applications depending on grade."
+        ]
+      },
+      "graded_aggregate": {
+        "usageClass": "CONSTRUCTION_AND_BUILDING",
+        "endUses": [
+          "Buildings, housing, roads, bridges and public infrastructure; selected glass and ceramic applications."
+        ]
+      },
+      "grain": {
+        "usageClass": "FOOD_AND_FEED",
+        "endUses": [
+          "People and households consume processed food; food also moves through retail, institutional catering and export markets."
+        ]
+      },
+      "granite": {
+        "usageClass": "CONSTRUCTION_AND_BUILDING",
+        "endUses": [
+          "Buildings, housing, roads, bridges and public infrastructure; selected glass and ceramic applications."
+        ]
+      },
+      "granite_block": {
+        "usageClass": "CONSTRUCTION_AND_BUILDING",
+        "endUses": [
+          "Buildings, housing, roads, bridges and public infrastructure; selected glass and ceramic applications."
+        ]
+      },
+      "graphite": {
+        "usageClass": "INDUSTRIAL_INPUT",
+        "endUses": [
+          "Industrial feedstock for the factory route(s) listed in the product panel."
+        ]
+      },
+      "graphite_concentrate": {
+        "usageClass": "BATTERY_AND_STORAGE",
+        "endUses": [
+          "Stationary energy storage, grid balancing, backup power and electric mobility. Battery scrap needs a dedicated eligible recovery route."
+        ]
+      },
+      "gravel_tailings": {
+        "usageClass": "QUARRY_BYPRODUCT",
+        "endUses": [
+          "Potential aggregate recovery or controlled quarry rehabilitation; no current factory recipe directly consumes gravel_tailings."
+        ]
+      },
+      "grid_equipment": {
+        "usageClass": "GRID_CAPITAL_GOOD",
+        "endUses": [
+          "Electricity network installation, upgrade, protection and maintenance."
+        ]
+      },
+      "grid_transformers": {
+        "usageClass": "GRID_CAPITAL_GOOD",
+        "endUses": [
+          "Substations, distribution networks, industrial power supply and grid expansion."
+        ]
+      },
+      "gypsum": {
+        "usageClass": "CONSTRUCTION_AND_BUILDING",
+        "endUses": [
+          "Buildings, housing, roads, bridges and public infrastructure; selected glass and ceramic applications."
+        ]
+      },
+      "heavy_fuel_oil": {
+        "usageClass": "MARINE_AND_POWER_FUEL",
+        "endUses": [
+          "Marine engines, industrial boilers and compatible power-generation units."
+        ]
+      },
+      "heavy_transport_spares": {
+        "usageClass": "TRANSPORT_MAINTENANCE_GOOD",
+        "endUses": [
+          "Ship, locomotive, rail and heavy-transport maintenance."
+        ]
+      },
+      "ilmenite": {
+        "usageClass": "INDUSTRIAL_INPUT",
+        "endUses": [
+          "Industrial feedstock for the factory route(s) listed in the product panel."
+        ]
+      },
+      "industrial_chemicals": {
+        "usageClass": "INDUSTRIAL_CHEMICALS",
+        "endUses": [
+          "Chemical processing, industrial cleaning/treatment, polymer production and manufacturing feedstock."
+        ]
+      },
+      "industrial_gases": {
+        "usageClass": "INDUSTRIAL_CHEMICALS",
+        "endUses": [
+          "Chemical processing, industrial cleaning/treatment, polymer production and manufacturing feedstock."
+        ]
+      },
+      "industrial_machinery": {
+        "usageClass": "CAPITAL_GOOD",
+        "endUses": [
+          "Factory production lines, mining/logistics equipment, infrastructure maintenance and industrial expansion."
+        ]
+      },
+      "industrial_solvents": {
+        "usageClass": "INDUSTRIAL_CHEMICALS",
+        "endUses": [
+          "Chemical processing, industrial cleaning/treatment, polymer production and manufacturing feedstock."
+        ]
+      },
+      "iron_concentrate": {
+        "usageClass": "INDUSTRIAL_INPUT",
+        "endUses": [
+          "Industrial feedstock for the factory route(s) listed in the product panel."
+        ]
+      },
+      "iron_ore": {
+        "usageClass": "INDUSTRIAL_INPUT",
+        "endUses": [
+          "Industrial feedstock for the factory route(s) listed in the product panel."
+        ]
+      },
+      "jet_fuel": {
+        "usageClass": "AVIATION_FUEL",
+        "endUses": [
+          "Civil aviation and military aircraft operations."
+        ]
+      },
+      "kiln_dust": {
+        "usageClass": "CEMENT_BYPRODUCT",
+        "endUses": [
+          "Potential kiln-feed recovery after quality checks; no current factory recipe directly consumes kiln_dust."
+        ]
+      },
+      "limestone": {
+        "usageClass": "CONSTRUCTION_AND_BUILDING",
+        "endUses": [
+          "Buildings, housing, roads, bridges and public infrastructure; selected glass and ceramic applications."
+        ]
+      },
+      "lithium": {
+        "usageClass": "INDUSTRIAL_INPUT",
+        "endUses": [
+          "Industrial feedstock for the factory route(s) listed in the product panel."
+        ]
+      },
+      "lithium_carbonate_or_hydroxide": {
+        "usageClass": "BATTERY_AND_STORAGE",
+        "endUses": [
+          "Stationary energy storage, grid balancing, backup power and electric mobility. Battery scrap needs a dedicated eligible recovery route."
+        ]
+      },
+      "loss": {
+        "usageClass": "PROCESSING_LOSS",
+        "endUses": [
+          "Accounting/process loss, not a saleable finished good or a resource automatically returned to inventory."
+        ]
+      },
+      "machine_tool_parts": {
+        "usageClass": "CAPITAL_GOOD",
+        "endUses": [
+          "Precision machine-tool assembly, factory maintenance and advanced manufacturing."
+        ]
+      },
+      "magnesia": {
+        "usageClass": "INDUSTRIAL_INPUT",
+        "endUses": [
+          "Industrial feedstock for the factory route(s) listed in the product panel."
+        ]
+      },
+      "magnesite": {
+        "usageClass": "INDUSTRIAL_INPUT",
+        "endUses": [
+          "Industrial feedstock for the factory route(s) listed in the product panel."
+        ]
+      },
+      "manganese": {
+        "usageClass": "INDUSTRIAL_INPUT",
+        "endUses": [
+          "Industrial feedstock for the factory route(s) listed in the product panel."
+        ]
+      },
+      "manganese_concentrate": {
+        "usageClass": "MARKET_COMMODITY",
+        "endUses": [
+          "Feedstock for manganese metal and ferromanganese/silicomanganese production used in steelmaking and selected battery-material chains. No current recipe consumes manganese_concentrate directly."
+        ]
+      },
+      "manufacturing_scrap": {
+        "usageClass": "MANUFACTURING_BYPRODUCT",
+        "endUses": [
+          "Potential metal/material recovery; no current factory recipe directly consumes manufacturing_scrap."
+        ]
+      },
+      "marble": {
+        "usageClass": "CONSTRUCTION_AND_BUILDING",
+        "endUses": [
+          "Buildings, housing, roads, bridges and public infrastructure; selected glass and ceramic applications."
+        ]
+      },
+      "marble_block": {
+        "usageClass": "CONSTRUCTION_AND_BUILDING",
+        "endUses": [
+          "Buildings, housing, roads, bridges and public infrastructure; selected glass and ceramic applications."
+        ]
+      },
+      "medical_supplies": {
+        "usageClass": "HEALTHCARE_GOOD",
+        "endUses": [
+          "Hospitals, clinics, emergency services and public-health operations."
+        ]
+      },
+      "metal_scrap": {
+        "usageClass": "RECOVERABLE_METAL_SCRAP",
+        "endUses": [
+          "Accepted by the Recycling & Waste Processing recipe for secondary-material recovery."
+        ]
+      },
+      "mill_tailings": {
+        "usageClass": "MINE_TAILINGS",
+        "endUses": [
+          "Potential reprocessing/backfill after assays; no current factory recipe directly consumes mill_tailings."
+        ]
+      },
+      "mop_potash": {
+        "usageClass": "AGRICULTURE_AND_FERTILIZER",
+        "endUses": [
+          "Crop nutrients and fertilizer supply; ammonia also serves as an industrial chemical feedstock."
+        ]
+      },
+      "naphtha": {
+        "usageClass": "ENERGY_AND_FUELS",
+        "endUses": [
+          "Power and heat, transport fuels, industrial energy and petrochemical feedstock, depending on the product grade."
+        ]
+      },
+      "natural_gas": {
+        "usageClass": "ENERGY_AND_FUELS",
+        "endUses": [
+          "Power and heat, transport fuels, industrial energy and petrochemical feedstock, depending on the product grade."
+        ]
+      },
+      "ngl": {
+        "usageClass": "ENERGY_AND_FUELS",
+        "endUses": [
+          "Power and heat, transport fuels, industrial energy and petrochemical feedstock, depending on the product grade."
+        ]
+      },
+      "nickel": {
+        "usageClass": "INDUSTRIAL_INPUT",
+        "endUses": [
+          "Industrial feedstock for the factory route(s) listed in the product panel."
+        ]
+      },
+      "nickel_concentrate": {
+        "usageClass": "MARKET_COMMODITY",
+        "endUses": [
+          "Nickel smelting/refining feedstock for stainless steel and nickel alloys, corrosion-resistant plating, and battery-chemical supply chains. No current recipe consumes this concentrate directly; these are potential downstream sector uses."
+        ]
+      },
+      "niobium": {
+        "usageClass": "INDUSTRIAL_INPUT",
+        "endUses": [
+          "Industrial feedstock for the factory route(s) listed in the product panel."
+        ]
+      },
+      "niobium_concentrate": {
+        "usageClass": "MARKET_COMMODITY",
+        "endUses": [
+          "Refining feedstock for ferroniobium and niobium alloys used in high-strength microalloyed steel, pipelines, automotive structures, aerospace superalloys and superconducting equipment. No current recipe consumes niobium_concentrate directly."
+        ]
+      },
+      "npk_fertilizer": {
+        "usageClass": "AGRICULTURAL_INPUT",
+        "endUses": [
+          "Crop nutrition, soil fertility management and agricultural productivity."
+        ]
+      },
+      "oil_shale": {
+        "usageClass": "ENERGY_AND_FUELS",
+        "endUses": [
+          "Power and heat, transport fuels, industrial energy and petrochemical feedstock, depending on the product grade."
+        ]
+      },
+      "ore_tailings": {
+        "usageClass": "MINE_TAILINGS",
+        "endUses": [
+          "Potential reprocessing/backfill after assays; no current factory recipe directly consumes ore_tailings."
+        ]
+      },
+      "organic_processing_waste": {
+        "usageClass": "ORGANIC_BYPRODUCT",
+        "endUses": [
+          "Potential compost, biogas or controlled organic-waste treatment; no dedicated recovery recipe is currently registered."
+        ]
+      },
+      "other_refinery_products": {
+        "usageClass": "INDUSTRIAL_INPUT",
+        "endUses": [
+          "Industrial feedstock for the factory route(s) listed in the product panel."
+        ]
+      },
+      "packaging_board": {
+        "usageClass": "PACKAGING_MATERIAL",
+        "endUses": [
+          "Packaging for food, medicines and manufactured goods; also a registered factory input."
+        ]
+      },
+      "packaging_waste": {
+        "usageClass": "PACKAGING_BYPRODUCT",
+        "endUses": [
+          "Potential packaging recovery/recycling; no current factory recipe directly consumes packaging_waste."
+        ]
+      },
+      "paper": {
+        "usageClass": "CONSUMER_AND_BUSINESS_GOOD",
+        "endUses": [
+          "Printing, publishing, education, offices and household paper products."
+        ]
+      },
+      "pgm_concentrate": {
+        "usageClass": "PRECIOUS_AND_LUXURY_COMMODITIES",
+        "endUses": [
+          "Jewellery and luxury goods, investment/commodity trade, and selected electronics or catalyst applications depending on grade."
+        ]
+      },
+      "pharma_process_waste": {
+        "usageClass": "PHARMA_BYPRODUCT",
+        "endUses": [
+          "Requires regulated pharmaceutical waste handling; no recycling recipe is registered."
+        ]
+      },
+      "pharmaceutical_goods": {
+        "usageClass": "HEALTHCARE_GOOD",
+        "endUses": [
+          "Hospitals, clinics, pharmacies, treatment and household medicine supply."
+        ]
+      },
+      "phosphate": {
+        "usageClass": "AGRICULTURE_AND_FERTILIZER",
+        "endUses": [
+          "Crop nutrients and fertilizer supply; ammonia also serves as an industrial chemical feedstock."
+        ]
+      },
+      "phosphate_concentrate": {
+        "usageClass": "AGRICULTURE_AND_FERTILIZER",
+        "endUses": [
+          "Crop nutrients and fertilizer supply; ammonia also serves as an industrial chemical feedstock."
+        ]
+      },
+      "pipeline_gas": {
+        "usageClass": "ENERGY_AND_FUELS",
+        "endUses": [
+          "Power and heat, transport fuels, industrial energy and petrochemical feedstock, depending on the product grade."
+        ]
+      },
+      "plastic_waste": {
+        "usageClass": "RECOVERABLE_PLASTIC",
+        "endUses": [
+          "Accepted by the Recycling & Waste Processing recipe for secondary-material recovery."
+        ]
+      },
+      "platinum": {
+        "usageClass": "PRECIOUS_AND_LUXURY_COMMODITIES",
+        "endUses": [
+          "Jewellery and luxury goods, investment/commodity trade, and selected electronics or catalyst applications depending on grade."
+        ]
+      },
+      "polymer_resin": {
+        "usageClass": "POLYMER_FEEDSTOCK",
+        "endUses": [
+          "Plastic products, insulation, vehicle parts, packaging and industrial components."
+        ]
+      },
+      "potash": {
+        "usageClass": "AGRICULTURE_AND_FERTILIZER",
+        "endUses": [
+          "Crop nutrients and fertilizer supply; ammonia also serves as an industrial chemical feedstock."
+        ]
+      },
+      "power_cables": {
+        "usageClass": "GRID_EQUIPMENT",
+        "endUses": [
+          "Transmission/distribution lines, substations, buildings and industrial electrical connections."
+        ]
+      },
+      "precision_scrap": {
+        "usageClass": "PRECISION_MANUFACTURING_BYPRODUCT",
+        "endUses": [
+          "Potential high-value metal recovery; no current factory recipe directly consumes precision_scrap."
+        ]
+      },
+      "processed_food": {
+        "usageClass": "CONSUMER_GOOD",
+        "endUses": [
+          "People and households consume processed food through household supply, retail distribution and institutional catering."
+        ]
+      },
+      "processing_dust": {
+        "usageClass": "PROCESSING_RESIDUE",
+        "endUses": [
+          "Requires controlled collection, dust treatment or recovery; no current factory recipe directly consumes processing_dust."
+        ]
+      },
+      "processing_loss": {
+        "usageClass": "PROCESSING_LOSS",
+        "endUses": [
+          "Process loss; the recycling recipe accepts declared processing_loss input, but the loss is not assumed to be fully recoverable."
+        ]
+      },
+      "processing_residue": {
+        "usageClass": "PROCESSING_RESIDUE",
+        "endUses": [
+          "Requires treatment or recovery; no current factory recipe directly consumes processing_residue."
+        ]
+      },
+      "propylene_feedstock": {
+        "usageClass": "PETROCHEMICAL_INTERMEDIATE",
+        "endUses": [
+          "Polymer and chemical feedstock; no downstream recipe in the current 21-factory catalog consumes it yet."
+        ]
+      },
+      "quarry_loss": {
+        "usageClass": "QUARRY_BYPRODUCT",
+        "endUses": [
+          "Quarry yield loss requiring site rehabilitation or aggregate recovery; no current factory recipe consumes it."
+        ]
+      },
+      "rare_earth": {
+        "usageClass": "INDUSTRIAL_INPUT",
+        "endUses": [
+          "Industrial feedstock for the factory route(s) listed in the product panel."
+        ]
+      },
+      "rare_earth_concentrate": {
+        "usageClass": "MARKET_COMMODITY",
+        "endUses": [
+          "Separation/refining feedstock for rare-earth oxides and metals used in permanent magnets, electric motors, wind turbines, electronics and selected industrial catalysts. No current factory recipe consumes this concentrate directly."
+        ]
+      },
+      "ready_mix_concrete": {
+        "usageClass": "CONSTRUCTION_MATERIAL",
+        "endUses": [
+          "Direct concrete placement for buildings, roads, bridges and major infrastructure."
+        ]
+      },
+      "readymade_garments": {
+        "usageClass": "CONSUMER_GOOD",
+        "endUses": [
+          "People and households use ready-made clothing, uniforms, workwear and retail apparel."
+        ]
+      },
+      "recovered_copper": {
+        "usageClass": "SECONDARY_METAL",
+        "endUses": [
+          "Secondary copper feedstock for conductors and electrical manufacturing; no current factory recipe directly consumes recovered_copper."
+        ]
+      },
+      "recovered_glass": {
+        "usageClass": "SECONDARY_GLASS",
+        "endUses": [
+          "Secondary glass feedstock and glass commodity trade; no current factory recipe directly consumes recovered_glass."
+        ]
+      },
+      "recovered_steel": {
+        "usageClass": "SECONDARY_METAL",
+        "endUses": [
+          "Secondary steel feedstock and metal commodity trade; no current factory recipe directly consumes recovered_steel."
+        ]
+      },
+      "recycled_feedstock": {
+        "usageClass": "SECONDARY_RECOVERED_MATERIALS",
+        "endUses": [
+          "Secondary raw-material markets and circular manufacturing. Only products explicitly listed as recipe inputs are currently used by another factory recipe."
+        ]
+      },
+      "recycled_polymer": {
+        "usageClass": "SECONDARY_POLYMER",
+        "endUses": [
+          "Secondary plastics feedstock and polymer commodity trade; no current factory recipe directly consumes recycled_polymer."
+        ]
+      },
+      "refined_copper": {
+        "usageClass": "ELECTRICAL_MATERIAL",
+        "endUses": [
+          "Power cables, transformers, switchgear, motors, electronics and industrial machinery."
+        ]
+      },
+      "refined_salt": {
+        "usageClass": "INDUSTRIAL_INPUT",
+        "endUses": [
+          "Industrial feedstock for the factory route(s) listed in the product panel."
+        ]
+      },
+      "residue": {
+        "usageClass": "PROCESSING_RESIDUE",
+        "endUses": [
+          "Generic process residue; no product-specific downstream treatment recipe is registered."
+        ]
+      },
+      "ruby": {
+        "usageClass": "PRECIOUS_AND_LUXURY_COMMODITIES",
+        "endUses": [
+          "Jewellery and luxury goods, investment/commodity trade, and selected electronics or catalyst applications depending on grade."
+        ]
+      },
+      "rutile": {
+        "usageClass": "INDUSTRIAL_INPUT",
+        "endUses": [
+          "Industrial feedstock for the factory route(s) listed in the product panel."
+        ]
+      },
+      "salt": {
+        "usageClass": "INDUSTRIAL_INPUT",
+        "endUses": [
+          "Industrial feedstock for the factory route(s) listed in the product panel."
+        ]
+      },
+      "salt_tailings": {
+        "usageClass": "MINERAL_BYPRODUCT",
+        "endUses": [
+          "Potential brine/mineral recovery after assay; no current factory recipe directly consumes salt_tailings."
+        ]
+      },
+      "sawing_loss": {
+        "usageClass": "STONE_BYPRODUCT",
+        "endUses": [
+          "Stone-cutting loss; possible aggregate recovery, but no current factory recipe consumes it."
+        ]
+      },
+      "secondary_textile_fibre": {
+        "usageClass": "SECONDARY_TEXTILE",
+        "endUses": [
+          "Re-spinning and recycled textile products; no current factory recipe directly consumes secondary_textile_fibre."
+        ]
+      },
+      "semiconductor_chips": {
+        "usageClass": "ELECTRONICS_AND_CONTROL",
+        "endUses": [
+          "Electronics manufacturing, automation, communications, vehicle controls and electrical/industrial equipment."
+        ]
+      },
+      "shale_gas": {
+        "usageClass": "ENERGY_AND_FUELS",
+        "endUses": [
+          "Power and heat, transport fuels, industrial energy and petrochemical feedstock, depending on the product grade."
+        ]
+      },
+      "shale_oil": {
+        "usageClass": "ENERGY_AND_FUELS",
+        "endUses": [
+          "Power and heat, transport fuels, industrial energy and petrochemical feedstock, depending on the product grade."
+        ]
+      },
+      "ship_rail_equipment": {
+        "usageClass": "TRANSPORT_CAPITAL_GOOD",
+        "endUses": [
+          "Rail rolling stock, locomotives, ships, port and maritime transport equipment."
+        ]
+      },
+      "silica_sand": {
+        "usageClass": "CONSTRUCTION_AND_BUILDING",
+        "endUses": [
+          "Buildings, housing, roads, bridges and public infrastructure; selected glass and ceramic applications."
+        ]
+      },
+      "silicon_wafers": {
+        "usageClass": "ELECTRONICS_AND_CONTROL",
+        "endUses": [
+          "Electronics manufacturing, automation, communications, vehicle controls and electrical/industrial equipment."
+        ]
+      },
+      "silver": {
+        "usageClass": "PRECIOUS_AND_LUXURY_COMMODITIES",
+        "endUses": [
+          "Jewellery and luxury goods, investment/commodity trade, and selected electronics or catalyst applications depending on grade."
+        ]
+      },
+      "silver_concentrate": {
+        "usageClass": "PRECIOUS_AND_LUXURY_COMMODITIES",
+        "endUses": [
+          "Jewellery and luxury goods, investment/commodity trade, and selected electronics or catalyst applications depending on grade."
+        ]
+      },
+      "smelter_dross": {
+        "usageClass": "METALLURGICAL_BYPRODUCT",
+        "endUses": [
+          "Potential secondary-metal recovery; no current factory recipe directly consumes smelter_dross."
+        ]
+      },
+      "smelter_slag": {
+        "usageClass": "METALLURGICAL_BYPRODUCT",
+        "endUses": [
+          "Potential construction aggregate or metal recovery; no current factory recipe directly consumes smelter_slag."
+        ]
+      },
+      "solid_residue": {
+        "usageClass": "SOLID_RESIDUE",
+        "endUses": [
+          "Requires controlled treatment/disposal; no downstream consumer recipe is registered."
+        ]
+      },
+      "sorted_diamonds": {
+        "usageClass": "PRECIOUS_AND_LUXURY_COMMODITIES",
+        "endUses": [
+          "Jewellery and luxury goods, investment/commodity trade, and selected electronics or catalyst applications depending on grade."
+        ]
+      },
+      "sorted_ruby_rough": {
+        "usageClass": "PRECIOUS_AND_LUXURY_COMMODITIES",
+        "endUses": [
+          "Jewellery and luxury goods, investment/commodity trade, and selected electronics or catalyst applications depending on grade."
+        ]
+      },
+      "steel": {
+        "usageClass": "INDUSTRIAL_MATERIAL",
+        "endUses": [
+          "Structural steel for buildings, bridges, machinery, vehicles, rail/ship equipment and industrial construction."
+        ]
+      },
+      "sugar": {
+        "usageClass": "FOOD_AND_FEED",
+        "endUses": [
+          "People and households consume processed food; food also moves through retail, institutional catering and export markets."
+        ]
+      },
+      "switchgear": {
+        "usageClass": "GRID_EQUIPMENT",
+        "endUses": [
+          "Substation protection, switching, circuit isolation and electricity distribution."
+        ]
+      },
+      "tailings": {
+        "usageClass": "MINE_TAILINGS",
+        "endUses": [
+          "Mine-processing tailings; possible reprocessing/backfill after assay, but no generic downstream route is registered."
+        ]
+      },
+      "textile_fabric": {
+        "usageClass": "CONSUMER_AND_INDUSTRIAL_GOOD",
+        "endUses": [
+          "Garments, uniforms, home textiles and apparel finishing."
+        ]
+      },
+      "textile_waste": {
+        "usageClass": "TEXTILE_BYPRODUCT",
+        "endUses": [
+          "Potential fibre recovery and textile recycling; no current factory recipe directly consumes textile_waste."
+        ]
+      },
+      "tin": {
+        "usageClass": "INDUSTRIAL_INPUT",
+        "endUses": [
+          "Industrial feedstock for the factory route(s) listed in the product panel."
+        ]
+      },
+      "tin_concentrate": {
+        "usageClass": "MARKET_COMMODITY",
+        "endUses": [
+          "Smelting feedstock for tin metal used in solder, electronics connections, tinplate packaging and selected chemical products. No current recipe consumes tin_concentrate directly."
+        ]
+      },
+      "titanium_feed": {
+        "usageClass": "INDUSTRIAL_INPUT",
+        "endUses": [
+          "Industrial feedstock for the factory route(s) listed in the product panel."
+        ]
+      },
+      "tungsten": {
+        "usageClass": "INDUSTRIAL_INPUT",
+        "endUses": [
+          "Industrial feedstock for the factory route(s) listed in the product panel."
+        ]
+      },
+      "tungsten_concentrate": {
+        "usageClass": "MARKET_COMMODITY",
+        "endUses": [
+          "Refining feedstock for tungsten metal and tungsten carbide used in cutting tools, drill bits, wear-resistant tooling and high-temperature components. No current recipe consumes tungsten_concentrate directly."
+        ]
+      },
+      "upgraded_rutile": {
+        "usageClass": "MARKET_COMMODITY",
+        "endUses": [
+          "Titanium feedstock for titanium dioxide pigment and titanium-metal production used in paints/coatings, aerospace, chemical equipment and corrosion-resistant parts. No current recipe consumes upgraded_rutile directly."
+        ]
+      },
+      "uranium": {
+        "usageClass": "INDUSTRIAL_INPUT",
+        "endUses": [
+          "Industrial feedstock for the factory route(s) listed in the product panel."
+        ]
+      },
+      "vegetable_oil": {
+        "usageClass": "FOOD_AND_FEED",
+        "endUses": [
+          "People and households consume processed food; food also moves through retail, institutional catering and export markets."
+        ]
+      },
+      "vehicle_spare_parts": {
+        "usageClass": "TRANSPORT_AND_AVIATION",
+        "endUses": [
+          "Civil transport fleets, freight/logistics, aviation, rail and maritime operations; spare parts support maintenance."
+        ]
+      },
+      "vehicles": {
+        "usageClass": "TRANSPORT_CAPITAL_GOOD",
+        "endUses": [
+          "Civilian transport, freight/logistics fleets and government/industrial vehicle fleets."
+        ]
+      },
+      "wool_fibre": {
+        "usageClass": "TEXTILE_AND_APPAREL",
+        "endUses": [
+          "People and households use garments and home textiles; fibres/fabric support apparel, uniforms and textile finishing."
+        ]
+      },
+      "yellowcake": {
+        "usageClass": "MARKET_COMMODITY",
+        "endUses": [
+          "Uranium concentrate normally sent to conversion and nuclear-fuel fabrication for regulated nuclear-energy supply. The current 21-factory catalog has no conversion, fuel-fabrication or nuclear-generation consumer route."
+        ]
+      },
+      "zinc": {
+        "usageClass": "INDUSTRIAL_INPUT",
+        "endUses": [
+          "Industrial feedstock for the factory route(s) listed in the product panel."
+        ]
+      },
+      "zinc_concentrate": {
+        "usageClass": "MARKET_COMMODITY",
+        "endUses": [
+          "Smelting/refining feedstock for zinc metal used in steel galvanizing, brass, die-casting and zinc-based products. No current recipe consumes zinc_concentrate directly."
+        ]
+      }
+    }
   }
 }

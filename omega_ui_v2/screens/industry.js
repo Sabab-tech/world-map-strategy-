@@ -465,6 +465,69 @@
       '<span class="fp-product-identity-copy"><strong>' + esc(safeLabel) + '</strong><small>' + esc(productId || 'Product ID not recorded') + '</small></span></span>';
   }
 
+  function factoryProductUsageMarkup(model, productId) {
+    model = model || {};
+    var catalog = safeCatalog() || {};
+    var productKey = factoryProductKey(productId);
+    var useRoot = catalog.productUseCatalog && catalog.productUseCatalog.products &&
+      typeof catalog.productUseCatalog.products === 'object' ? catalog.productUseCatalog.products : {};
+    var use = useRoot[productKey] || null;
+    if (!use) {
+      return '<div class="fp-product-use-map"><small><strong>Use map:</strong> Product use is not registered in the canonical catalog.</small></div>';
+    }
+    var recipes = model.catalogRecipes && typeof model.catalogRecipes === 'object' ? model.catalogRecipes :
+      catalog.downstreamFactoryRecipes && typeof catalog.downstreamFactoryRecipes === 'object' ? catalog.downstreamFactoryRecipes : {};
+    var processingRules = model.processingRules && typeof model.processingRules === 'object' ? model.processingRules :
+      catalog.processingRules && typeof catalog.processingRules === 'object' ? catalog.processingRules : {};
+    var profiles = model.catalogProfiles && typeof model.catalogProfiles === 'object' ? model.catalogProfiles :
+      catalog.factoryProfiles && typeof catalog.factoryProfiles === 'object' ? catalog.factoryProfiles : {};
+    var consumerTypes = Object.create(null), producerTypes = Object.create(null);
+    function containsProduct(book) {
+      if (!book || typeof book !== 'object' || Array.isArray(book)) return false;
+      return Object.keys(book).some(function (key) { return factoryProductKey(key) === productKey; });
+    }
+    function addType(target, type) {
+      var id = normalizeFactoryType(type, catalog) || String(type || '').trim().toUpperCase();
+      if (id) target[id] = true;
+    }
+    Object.keys(processingRules).forEach(function (resourceId) {
+      var rule = processingRules[resourceId] || {};
+      if (containsProduct(rule.inputs)) addType(consumerTypes, rule.factoryType || 'UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT');
+      if (containsProduct(rule.outputs)) addType(producerTypes, rule.factoryType || 'UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT');
+    });
+    Object.keys(recipes).forEach(function (recipeId) {
+      var recipe = recipes[recipeId] || {};
+      if (containsProduct(recipe.inputs)) addType(consumerTypes, recipe.factoryType);
+      if (containsProduct(recipe.outputs)) addType(producerTypes, recipe.factoryType);
+    });
+    function profileName(type) {
+      var profile = profiles[type] || {};
+      return String(profile.name || type.replace(/_/g, ' ').toLowerCase().replace(/\b[a-z]/g, function (letter) { return letter.toUpperCase(); }));
+    }
+    var consumerNames = Object.keys(consumerTypes).sort().map(profileName);
+    var producerNames = Object.keys(producerTypes).sort().map(profileName);
+    var rawSource = Object.keys(catalog.resourceRules || {}).some(function (key) { return factoryProductKey(key) === productKey; });
+    var externalSource = Object.keys(catalog.externalInputSources || {}).some(function (key) { return factoryProductKey(key) === productKey; });
+    if (rawSource) producerNames.unshift('Mine / raw-resource supply');
+    if (externalSource) {
+      var externalKey = Object.keys(catalog.externalInputSources || {}).find(function (key) { return factoryProductKey(key) === productKey; });
+      var external = externalKey ? catalog.externalInputSources[externalKey] : {};
+      producerNames.unshift(String(external && (external.sector || external.sourceSector || external.sourceType) || 'Recorded external-sector batch'));
+    }
+    producerNames = producerNames.filter(function (name, index, rows) { return rows.indexOf(name) === index; });
+    var routeLabel;
+    if (consumerNames.length) routeLabel = consumerNames.join(', ');
+    else if (/BYPRODUCT|WASTE|RESIDUE|LOSS|TAILINGS|SCRAP|DUST|DROSS|SLAG/.test(String(use.usageClass || '').toUpperCase())) {
+      routeLabel = 'No downstream recycling or treatment factory route is registered';
+    } else routeLabel = 'No downstream factory recipe currently consumes this product';
+    var endUses = Array.isArray(use.endUses) ? use.endUses.filter(Boolean).map(String) : [];
+    return '<div class="fp-product-use-map" data-factory-product-use="' + esc(productKey) + '">' +
+      '<small><strong>Factory route:</strong> ' + esc(routeLabel) + '</small>' +
+      (producerNames.length ? '<small><strong>Produced / supplied by:</strong> ' + esc(producerNames.join(', ')) + '</small>' : '') +
+      (endUses.length ? '<small><strong>Sector uses:</strong> ' + esc(endUses.join(' ')) + '</small>' : '') +
+      '</div>';
+  }
+
   function factoryProductStockMarkup(productId, label, value) {
     var id = factoryProductKey(productId);
     return '<span class="fp-product-stock-quantity" data-factory-stock-product="' + esc(id) + '">' +
@@ -1523,7 +1586,7 @@
         '</tr></thead><tbody>';
       type.inputs.forEach(function (row) {
         var unit = factoryPlanUnit(row.unit);
-        html += '<tr><td>' + factoryProductIdentityMarkup(row.productId, panelProductLabel(model, row.productId)) + '</td>' +
+        html += '<tr><td>' + factoryProductIdentityMarkup(row.productId, panelProductLabel(model, row.productId)) + factoryProductUsageMarkup(model, row.productId) + '</td>' +
           '<td><strong>' + fmt(row.perCycle, unit) + '</strong></td>' +
           '<td><strong>' + fmt(row.perDay, unit) + '</strong></td>' +
           '<td>' + fmt(row.coverageQuantity, unit) + '</td></tr>';
@@ -1576,7 +1639,7 @@
         }, 0);
         var warehouseStock = hasTracedStock ? tracedStock : panelValueByKey(model.processedStock, row.productId);
         var unit = factoryPlanUnit(row.unit);
-        html += '<tr><td>' + factoryProductIdentityMarkup(row.productId, panelProductLabel(model, row.productId)) + '</td>' +
+        html += '<tr><td>' + factoryProductIdentityMarkup(row.productId, panelProductLabel(model, row.productId)) + factoryProductUsageMarkup(model, row.productId) + '</td>' +
           '<td><strong>' + fmt(row.perCycle, unit) + '</strong></td>' +
           '<td><strong>' + fmt(row.perDay, unit) + '</strong></td>' +
           '<td>' + (hasActual ? fmt(produced, unit) : '<span class="fp-factory-muted">Not started / no committed output</span>') + '</td>' +
@@ -1631,7 +1694,7 @@
           nationalConsumptionShown[productKey] = true;
         }
         var status = factoryStockStatus(model, row, productProducerCounts[String(row.productId || '').toLowerCase()] > 1);
-        html += '<tr><td>' + factoryProductIdentityMarkup(row.productId, panelProductLabel(model, row.productId)) + '</td>' +
+        html += '<tr><td>' + factoryProductIdentityMarkup(row.productId, panelProductLabel(model, row.productId)) + factoryProductUsageMarkup(model, row.productId) + '</td>' +
           '<td><strong>' + fmt(row.produced, unit) + '</strong></td>' +
           '<td>' + (row.factoryUse > 0 ? fmt(row.factoryUse, unit) : '<span class="fp-factory-muted">Not recorded</span>') + '</td>' +
           '<td>' + consumptionMarkup + '</td>' +
@@ -1764,7 +1827,7 @@
         var state = shortage !== null ? (shortage > 1e-9 ? 'shortage' : 'sufficient') : 'unknown';
         var stateLabel = shortage === null ? 'Not recorded' : shortage > 1e-9
           ? 'Shortage · ' + fmt(shortage, row.unit) : 'Sufficient';
-        html += '<tr><td>' + factoryProductIdentityMarkup(row.productId, panelProductLabel(model, row.productId)) + '</td>' +
+        html += '<tr><td>' + factoryProductIdentityMarkup(row.productId, panelProductLabel(model, row.productId)) + factoryProductUsageMarkup(model, row.productId) + '</td>' +
           '<td>' + fmt(row.required, row.unit) + '</td><td>' + fmt(row.received, row.unit) + '</td>' +
           '<td>' + factoryProductStockMarkup(row.productId, panelProductLabel(model, row.productId), fmt(row.current, row.unit)) + '</td><td>' + factoryInputSourceMarkup(factory, row.productId, model) + '</td>' +
           '<td><span class="fp-factory-state" data-state="' + state + '">' + esc(stateLabel) + '</span></td>' +
@@ -2825,5 +2888,5 @@
     return { ok: true, model: model };
   }
 
-  g.OmegaUIV2Industry = Object.freeze({ version: '1.1.0', buildViewModel: buildViewModel, render: render, resourceIconPath: factoryResourceIconPath, productIconVisualMarkup: factoryProductIconVisualMarkup, productIdentityMarkup: factoryProductIdentityMarkup });
+  g.OmegaUIV2Industry = Object.freeze({ version: '1.1.0', buildViewModel: buildViewModel, render: render, resourceIconPath: factoryResourceIconPath, productIconVisualMarkup: factoryProductIconVisualMarkup, productIdentityMarkup: factoryProductIdentityMarkup, productUsageMarkup: factoryProductUsageMarkup });
 })(typeof window !== 'undefined' ? window : globalThis);

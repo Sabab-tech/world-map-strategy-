@@ -18,6 +18,78 @@ import '../omega_ui_v2/integration.js';
 import '../omega_ui_v2/world-command-dock.js';
 import { existsSync, readFileSync } from 'node:fs';
 
+test('factory product usage notes resolve recipe consumers and preserve the existing SVG identity', () => {
+  const catalog = JSON.parse(readFileSync(new URL('../resource_industrial_catalog_v1.json', import.meta.url), 'utf8'));
+  const previousGlobalCatalog = globalThis.OmegaResourceIndustrialCatalogData;
+  const previousOmega = globalThis.Omega;
+  globalThis.OmegaResourceIndustrialCatalogData = catalog;
+  globalThis.Omega = Object.assign({}, previousOmega || {}, { ResourceIndustrialCatalogData: catalog });
+  const model = {
+    catalogProfiles: catalog.factoryProfiles,
+    catalogRecipes: catalog.downstreamFactoryRecipes,
+    processingRules: catalog.processingRules
+  };
+  try {
+    const steel = globalThis.OmegaUIV2Industry.productUsageMarkup(model, 'steel');
+    assert.match(steel, /Industrial Machinery and Machine Tools/);
+    assert.match(steel, /Grid and Electrical Equipment/);
+    assert.match(steel, /Vehicle, Truck and Bus Assembly/);
+    assert.match(steel, /Sector uses:/);
+    const scrap = globalThis.OmegaUIV2Industry.productUsageMarkup(model, 'metal_scrap');
+    assert.match(scrap, /Recycling and Waste Processing Plant/);
+    const food = globalThis.OmegaUIV2Industry.productUsageMarkup(model, 'processed_food');
+    assert.match(food, /No downstream factory recipe currently consumes this product/);
+    assert.match(food, /People and households consume processed food/);
+    const dust = globalThis.OmegaUIV2Industry.productUsageMarkup(model, 'processing_dust');
+    assert.match(dust, /No downstream recycling or treatment factory route is registered/);
+
+    const keyOf = value => String(value ?? '').trim().toLowerCase()
+      .replace(/^res[_-]?type[:_\/-]?/, '').replace(/[\s-]+/g, '_');
+    const routeConsumers = new Map();
+    const routeProducers = new Map();
+    const addRoute = (map, product, factoryType) => {
+      const key = keyOf(product);
+      const profile = catalog.factoryProfiles[factoryType] || {};
+      const name = profile.name || factoryType;
+      if (!map.has(key)) map.set(key, new Set());
+      map.get(key).add(name);
+    };
+    const escapeHtml = value => String(value).replace(/[&<>"']/g, char => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    })[char]);
+    for (const rule of Object.values(catalog.processingRules || {})) {
+      const type = rule.factoryType || 'UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT';
+      for (const product of Object.keys(rule.inputs || {})) addRoute(routeConsumers, product, type);
+      for (const product of Object.keys(rule.outputs || {})) addRoute(routeProducers, product, type);
+    }
+    for (const recipe of Object.values(catalog.downstreamFactoryRecipes || {})) {
+      for (const product of Object.keys(recipe.inputs || {})) addRoute(routeConsumers, product, recipe.factoryType);
+      for (const product of Object.keys(recipe.outputs || {})) addRoute(routeProducers, product, recipe.factoryType);
+    }
+    for (const [product, expectedNames] of routeConsumers) {
+      const markup = globalThis.OmegaUIV2Industry.productUsageMarkup(model, product);
+      for (const name of expectedNames) {
+        assert.ok(markup.includes(escapeHtml(name)), product + ': consumer route must include ' + name);
+      }
+    }
+    for (const [product, expectedNames] of routeProducers) {
+      const markup = globalThis.OmegaUIV2Industry.productUsageMarkup(model, product);
+      for (const name of expectedNames) {
+        assert.ok(markup.includes(escapeHtml(name)), product + ': producer route must include ' + name);
+      }
+    }
+
+    const identity = globalThis.OmegaUIV2Industry.productIdentityMarkup('processed_food', 'Processed Food');
+    assert.match(identity, /<svg/);
+    assert.match(identity, /fp-product-icon-frame/);
+  } finally {
+    if (previousGlobalCatalog === undefined) delete globalThis.OmegaResourceIndustrialCatalogData;
+    else globalThis.OmegaResourceIndustrialCatalogData = previousGlobalCatalog;
+    if (previousOmega === undefined) delete globalThis.Omega;
+    else globalThis.Omega = previousOmega;
+  }
+});
+
 test('Government navigation has exactly Executive Ministry and All Ministries', () => {
   const nav = globalThis.OmegaUIV2Navigation;
   assert.ok(nav);
