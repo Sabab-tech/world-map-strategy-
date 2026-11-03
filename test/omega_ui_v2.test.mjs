@@ -693,6 +693,83 @@ test('UI v2 integration normalizes map-selected aliases before mounting country 
   }
 });
 
+
+test('direct Resources route mounts the Resource Ministry without rendering Government first', () => {
+  const bridge = globalThis.OmegaUIV2Integration;
+  const previous = {
+    app:globalThis.OmegaUIV2App,
+    document:globalThis.document,
+    game:globalThis.Game,
+    country:globalThis.OmegaMinistryViewCountry,
+    countryRuntime:globalThis.OmegaCountryRuntimeData,
+    homeEngine:globalThis.OmegaHomeMinistryEngine,
+    gateway:globalThis.OmegaCountryDataGateway,
+    omega:globalThis.Omega,
+    manager:globalThis.OmegaLayerManager
+  };
+  const attrs = Object.create(null);
+  const bodyClasses = new Set();
+  const root = {
+    style:{},
+    setAttribute(key,value){attrs[key]=String(value);},
+    getAttribute(key){return attrs[key] || null;},
+    removeAttribute(key){delete attrs[key];}
+  };
+  const body = {
+    setAttribute(){},
+    classList:{
+      add(key){bodyClasses.add(key);},
+      remove(key){bodyClasses.delete(key);},
+      toggle(key,value){if(value)bodyClasses.add(key);else bodyClasses.delete(key);}
+    }
+  };
+  let mountedOptions = null;
+  let openMinistryCalls = 0;
+  globalThis.document = {
+    body,
+    getElementById(id){return id === 'cabinet-full-window' ? root : null;}
+  };
+  globalThis.Omega = {};
+  globalThis.OmegaCountryRuntimeData = {
+    listProfiles(){return [{countryCode:'BD',iso3:'BGD',name:'Bangladesh'}];},
+    resolveCountry(value){
+      return ['BGD','BD','BANGLADESH'].includes(String(value || '').toUpperCase())
+        ? {countryCode:'BD',iso3:'BGD',name:'Bangladesh'} : null;
+    }
+  };
+  globalThis.OmegaHomeMinistryEngine = null;
+  globalThis.OmegaCountryDataGateway = null;
+  globalThis.OmegaMinistryViewCountry = 'BGD';
+  globalThis.Game = {Map:{setUiActive(){return true;}}};
+  globalThis.OmegaLayerManager = null;
+  globalThis.OmegaUIV2App = {
+    destinations:[],
+    mount(node,options){
+      mountedOptions = options;
+      return {ok:true,mounted:true,route:options.initialRoute};
+    },
+    openMinistry(){openMinistryCalls+=1;return false;}
+  };
+  try {
+    assert.equal(bridge.openRoute('resources'),true);
+    assert.equal(mountedOptions.initialRoute,'resources');
+    assert.equal(mountedOptions.initialMinistryId,'energy_mining');
+    assert.equal(mountedOptions.ministryId,undefined);
+    assert.equal(openMinistryCalls,0,
+      'the direct Resource route must not mount Government and then synchronously render Resources');
+  } finally {
+    if(previous.app===undefined)delete globalThis.OmegaUIV2App;else globalThis.OmegaUIV2App=previous.app;
+    if(previous.document===undefined)delete globalThis.document;else globalThis.document=previous.document;
+    if(previous.game===undefined)delete globalThis.Game;else globalThis.Game=previous.game;
+    if(previous.country===undefined)delete globalThis.OmegaMinistryViewCountry;else globalThis.OmegaMinistryViewCountry=previous.country;
+    if(previous.countryRuntime===undefined)delete globalThis.OmegaCountryRuntimeData;else globalThis.OmegaCountryRuntimeData=previous.countryRuntime;
+    if(previous.homeEngine===undefined)delete globalThis.OmegaHomeMinistryEngine;else globalThis.OmegaHomeMinistryEngine=previous.homeEngine;
+    if(previous.gateway===undefined)delete globalThis.OmegaCountryDataGateway;else globalThis.OmegaCountryDataGateway=previous.gateway;
+    if(previous.omega===undefined)delete globalThis.Omega;else globalThis.Omega=previous.omega;
+    if(previous.manager===undefined)delete globalThis.OmegaLayerManager;else globalThis.OmegaLayerManager=previous.manager;
+  }
+});
+
 test('factory Stock shows committed finished goods and traced use while Input shows delivery sources and shortage efficiency', () => {
   const previous = {
     Game:globalThis.Game,
