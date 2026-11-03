@@ -2403,25 +2403,26 @@ test('every canonical factory recipe input and output renders a product-specific
       ...Object.keys(recipe && recipe.outputs || {})
     ]) productIds.add(String(productId).toLowerCase());
   }
-  assert.ok(productIds.size >= 90, 'canonical recipes should cover the full downstream product namespace');
+  assert.ok(productIds.size >= 90, 'canonical recipes should cover the downstream product namespace');
   for (const productId of productIds) {
-    const label = productId.replace(/[_-]+/g,' ').replace(/\\b[a-z]/g, ch => ch.toUpperCase());
+    const label = productId.split(/[_-]+/).map(part => part.charAt(0).toUpperCase() + part.slice(1)).join(' ');
     const markup = api.productIconVisualMarkup(productId,label);
-    assert.match(markup, /<(?:svg|img)\\b/, productId + ' must render a visual icon');
-    assert.match(markup, new RegExp('data-factory-product-icon="' + productId.replace(/[.*+?^\${}()|[\\]\\\\]/g,'\\\\$&') + '"'),
+    assert.ok(markup.includes('<svg ') || markup.includes('<img '), productId + ' must render a visual icon');
+    assert.ok(markup.includes('data-factory-product-icon="' + productId + '"'),
       productId + ' must keep its exact identity attached to the SVG');
-    assert.match(markup, /aria-label=|alt=/, productId + ' icon must have an accessible label');
+    assert.ok(markup.includes('aria-label=') || markup.includes('alt='),
+      productId + ' icon must have an accessible label');
   }
-  assert.match(api.productIconVisualMarkup('copper','Copper'), /resources\\/copper\\.svg/,
+  assert.ok(api.productIconVisualMarkup('copper','Copper').includes('resources/copper.svg'),
     'Copper must resolve to the copper asset rather than a generic drawing');
-  assert.match(api.productIconVisualMarkup('steel','Steel'), /data-icon-source="generated-product"/,
+  assert.ok(api.productIconVisualMarkup('steel','Steel').includes('data-icon-source="generated-product"'),
     'Steel must use a finished-product SVG rather than pretending to be raw iron ore');
 });
 
 test('Factory Stock/Input UI assets invalidate the old offline shell cache', () => {
   const sw = readFileSync('omega-offline-map-sw.js','utf8');
   const css = readFileSync('omega_ui_v2/factory-production-command.css','utf8');
-  assert.match(sw, /omega-offline-atlas-shell-v81/,
+  assert.ok(sw.includes('omega-offline-atlas-shell-v81'),
     'the offline shell must activate the new JS/CSS rather than retaining the old Stock/Input renderer');
   for (const selector of ['.fp-product-identity','.fp-product-icon-frame','.fp-product-stock-quantity']) {
     assert.ok(css.includes(selector), selector + ' must be styled in the actual factory command stylesheet');

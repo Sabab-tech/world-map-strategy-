@@ -2613,9 +2613,6 @@
   line-height:1.2;
   overflow-wrap:anywhere;
 }
-.omega-v2-industry--factory-home .fp-factory-table td:has(.fp-product-identity) {
-  min-width:150px;
-}
 @media (max-width:680px) and (orientation:portrait) {
   .omega-v2-industry--factory-home .fp-product-identity { gap:6px; }
   .omega-v2-industry--factory-home .fp-product-icon-frame {
