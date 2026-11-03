@@ -705,7 +705,10 @@ test('factory Stock shows committed finished goods and traced use while Input sh
   globalThis.OmegaCountryRuntimeData = null;
   globalThis.OmegaResourceIndustrialCatalogData = {
     factoryProfiles: {
-      STEEL_AND_ALLOY_WORKS: { name:'Steel and Alloy Works', defaultRecipeId:'STEEL-RECIPE' }
+      STEEL_AND_ALLOY_WORKS: { name:'Steel and Alloy Works', defaultRecipeId:'STEEL-RECIPE', defaultCapacityPerDay:5 }
+    },
+    downstreamFactoryRecipes: {
+      'STEEL-RECIPE': { recipeId:'STEEL-RECIPE', factoryType:'STEEL_AND_ALLOY_WORKS', inputs:{iron_ore:2}, outputs:{steel:1}, inputUnit:'TONNES', outputUnit:'TONNES' }
     }
   };
   globalThis.Game = { state:{
@@ -746,15 +749,16 @@ test('factory Stock shows committed finished goods and traced use while Input sh
     economy:{
       BGD:{
         productionAssets:[{
-          id:'FACTORY-STEEL-1',name:'Chattogram Steel Works',factoryType:'STEEL_AND_ALLOY_WORKS',
+          id:'FACTORY-STEEL-1',name:'Chattogram Steel Works',factoryType:'STEEL_AND_ALLOY_WORKS',recipeId:'STEEL-RECIPE',
           status:'OPERATIONAL',capacityPerDay:5,
-          inputInventory:{iron_ore:3},inputCoefficients:{iron_ore:2},inputUnits:{iron_ore:'TONNES'},
+          inputInventory:{iron_ore:3},
           inputBatchLots:[{
             batchId:'INPUT-IRON-1',resourceId:'iron_ore',quantity:10,remainingQuantity:3,
             unit:'TONNES',sourceCountryId:'BGD',sourceSiteIds:['BGD-MINE-01'],status:'AVAILABLE_TO_FACTORY'
           }],
           productionHealth:{
             status:'REDUCED',productivityPct:60,reason:'FACTORY_INPUT_SHORTAGE',
+            detail:{constraints:{rawMaterialRatio:0.6}},
             missingInputs:[{resourceId:'iron_ore',required:10,available:3}]
           }
         }]
