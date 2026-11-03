@@ -1389,6 +1389,7 @@ console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');
   const timers = new Map();
   const requests = [];
   let nextTimerId = 1;
+  let shouldHang = true;
   const timeoutContext = {
     console, Math, Number, String, Object, Array, Set, Map, WeakMap, JSON, Date, Promise, Intl,
     AbortController,
@@ -1404,7 +1405,8 @@ console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');
     },
     fetch(url, options) {
       requests.push({ url, signal: options && options.signal });
-      return new Promise(() => {});
+      if (shouldHang) return new Promise(() => {});
+      return Promise.resolve({ ok: true, json: async () => catalog });
     },
     addEventListener() {},
     dispatchEvent() { return true; }
@@ -1428,7 +1430,7 @@ console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');
   assert.ok(requests[0].signal && requests[0].signal.aborted,
     'a timed-out catalog request must be aborted');
   assert.equal(timers.size, 0, 'the timeout handle must be released');
-  timeoutContext.fetch = async () => ({ ok: true, json: async () => catalog });
+  shouldHang = false;
 
   const retried = await runtime.loadCatalog();
   assert.equal(retried.status, 'READY', 'a timed-out catalog promise must not block later retries');
