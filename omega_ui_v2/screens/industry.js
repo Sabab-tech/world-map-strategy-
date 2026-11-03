@@ -654,7 +654,7 @@
   }
   function factoryOutputRows(model) {
     var groups = Object.create(null), batchById = Object.create(null), batchOwners = Object.create(null);
-    var transactions = Object.create(null), factoriesById = Object.create(null);
+    var transactions = Object.create(null), recordedBatchIds = Object.create(null), factoriesById = Object.create(null);
     var batches = Array.isArray(model.resourceBatches) ? model.resourceBatches : [];
     var ledger = Array.isArray(model.finishedGoodsLedger) ? model.finishedGoodsLedger : [];
     var factories = Array.isArray(model.factories) ? model.factories : [];
@@ -676,7 +676,7 @@
           factoryId: String(factoryId || ''), productId: String(productId || ''),
           produced: 0, factoryUse: 0, domesticConsumption: 0, domesticSupply: 0,
           exported: 0, destinations: Object.create(null), batchIds: Object.create(null),
-          currentStock: null, unit: null, hasProduction: false
+          currentStock: null, unit: null, hasProduction: false, batchProductionIds: Object.create(null)
         };
       }
       return groups[key];
@@ -694,6 +694,7 @@
       if (transactionId && transactions[transactionId]) return;
       if (transactionId) transactions[transactionId] = true;
       var outputs = outputMap(record), ids = Array.isArray(record.createdBatchIds) ? record.createdBatchIds : [];
+      ids.forEach(function (batchId) { recordedBatchIds[String(batchId)] = true; });
       var entries = Object.keys(outputs);
       if (!entries.length && ids.length) {
         entries = [];
@@ -744,14 +745,14 @@
       batchOwners[String(batch.batchId)] = { factoryId: factoryId, productId: productId };
       if (batch.unit && !row.unit) row.unit = batch.unit;
       var processId = String(batch.processId || '');
-      if ((!processId || !transactions[processId]) && !row.batchProductionCounted) {
+      if (!recordedBatchIds[String(batch.batchId)] && (!processId || !transactions[processId]) && !row.batchProductionIds[String(batch.batchId)]) {
         var quantity = num(batch.quantity);
         if (quantity !== null && quantity > 0) {
           row.produced += quantity;
           row.hasProduction = true;
         }
+        row.batchProductionIds[String(batch.batchId)] = true;
       }
-      row.batchProductionCounted = true;
     });
     Object.keys(groups).forEach(function (key) {
       var row = groups[key], hasTrackedBatch = false, current = 0;
@@ -767,7 +768,7 @@
         }
       });
       row.currentStock = hasTrackedBatch ? current : null;
-      delete row.batchProductionCounted;
+      delete row.batchProductionIds;
     });
     function ownerForBatch(batchId) {
       var owner = batchOwners[String(batchId || '')];
@@ -907,12 +908,12 @@
       else if (sourceCountry === model.countryId) label = 'Domestic warehouse · mine lineage not recorded';
       else label = 'Source not recorded';
       var key = label.toLowerCase();
-      sourceGroups[key] = sourceGroups[key] || { label: label, quantity: 0 };
+      sourceGroups[key] = sourceGroups[key] || { label: label, quantity: 0, unit: String(lot.unit || '') };
       sourceGroups[key].quantity += remaining;
     });
     var lines = Object.keys(sourceGroups).map(function (key) {
       var source = sourceGroups[key];
-      return '<span class="fp-factory-source"><strong>' + esc(source.label) + '</strong><small>' + fmt(source.quantity) + '</small></span>';
+      return '<span class="fp-factory-source"><strong>' + esc(source.label) + '</strong><small>' + fmt(source.quantity, source.unit) + '</small></span>';
     });
     if (!lines.length) {
       var current = panelValueByKey(factory.raw && factory.raw.inputInventory, productId);
@@ -921,18 +922,18 @@
     return lines.join('');
   }
   function factoryInputEfficiency(factory, inputRows) {
+    var raw = factory.raw || {}, health = raw.productionHealth && typeof raw.productionHealth === 'object' ? raw.productionHealth : {};
+    var reason = String(health.reason || factory.healthReason || '').toUpperCase();
+    if (/FACTORY_INPUT|INPUT_SHORTAGE|MATERIAL_SHORTAGE/.test(reason) && num(health.productivityPct) !== null) {
+      return { value: Math.max(0, 100 - Number(health.productivityPct)), observed: true };
+    }
     var ratio = 1, observed = false;
     inputRows.forEach(function (row) {
       if (row.required === null || row.required <= 0 || row.current === null) return;
       observed = true;
       ratio = Math.min(ratio, Math.max(0, Math.min(1, row.current / row.required)));
     });
-    var raw = factory.raw || {}, health = raw.productionHealth && typeof raw.productionHealth === 'object' ? raw.productionHealth : {};
-    var reason = String(health.reason || factory.healthReason || '').toUpperCase();
     if (observed) return { value: Math.max(0, (1 - ratio) * 100), observed: true };
-    if (/FACTORY_INPUT|INPUT_SHORTAGE|MATERIAL_SHORTAGE/.test(reason) && num(health.productivityPct) !== null) {
-      return { value: Math.max(0, 100 - Number(health.productivityPct)), observed: true };
-    }
     return { value: null, observed: false };
   }
   function factoryInputPanelMarkup(model) {
