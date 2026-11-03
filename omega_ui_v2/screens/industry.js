@@ -55,7 +55,8 @@
     return {
       countryId: code || null,
       resource: pickCountryBucket(root.resource, code) || pickCountryBucket(root.resources, code) || null,
-      economy: pickCountryBucket(root.economy, code) || null
+      economy: pickCountryBucket(root.economy, code) || null,
+      trade: pickCountryBucket(root.trade, code) || null
     };
   }
   function safeNetwork() { return g.OmegaResourceIndustrialNetwork || (g.Omega && g.Omega.ResourceIndustrialNetwork) || null; }
@@ -250,8 +251,25 @@
     var inventoryRuntime = g.OmegaCountryInventoryRuntime || (g.Omega && g.Omega.CountryInventoryRuntime) || null;
     var nationalInventory = null, canonicalResourceIds = [];
     if (context.countryId && inventoryRuntime && typeof inventoryRuntime.getInventory === 'function') {
-      try { nationalInventory = inventoryRuntime.getInventory(context.countryId, { includeZero: true, includeLedger: false }); } catch (_) { nationalInventory = null; }
+      try { nationalInventory = inventoryRuntime.getInventory(context.countryId, { includeZero: true, includeLedger: true }); } catch (_) { nationalInventory = null; }
     }
+    var finishedGoodsLedger = Array.isArray(resource.finishedGoodsLedger) ? resource.finishedGoodsLedger.slice() : [];
+    var economyIndustrialRuntime = economy.industrialRuntime && typeof economy.industrialRuntime === 'object' ? economy.industrialRuntime : {};
+    var economyFinishedGoods = Array.isArray(economyIndustrialRuntime.finishedGoodsLedger) ? economyIndustrialRuntime.finishedGoodsLedger : [];
+    var finishedEventIds = Object.create(null);
+    finishedGoodsLedger.forEach(function (row) { if (row && row.transactionId) finishedEventIds[String(row.transactionId)] = true; });
+    economyFinishedGoods.forEach(function (row) {
+      var id = String(row && row.transactionId || '');
+      if (row && (!id || !finishedEventIds[id])) { finishedGoodsLedger.push(row); if (id) finishedEventIds[id] = true; }
+    });
+    var resourceBatches = Array.isArray(resource.batches) ? resource.batches : [];
+    var resourceInventoryLedger = Array.isArray(resource.inventoryLedger) ? resource.inventoryLedger : [];
+    var processedWarehouse = resource.processedWarehouse && typeof resource.processedWarehouse === 'object' ? resource.processedWarehouse : {};
+    var nationalDemandRuntime = resource.nationalDemandRuntime && typeof resource.nationalDemandRuntime === 'object'
+      ? resource.nationalDemandRuntime : resource.demandRuntime && typeof resource.demandRuntime === 'object' ? resource.demandRuntime : {};
+    var demandByProduct = nationalDemandRuntime.byResource && typeof nationalDemandRuntime.byResource === 'object'
+      ? nationalDemandRuntime.byResource : {};
+    var domesticSales = Array.isArray(context.trade && context.trade.domesticSales) ? context.trade.domesticSales : [];
     try {
       if (inventoryRuntime && typeof inventoryRuntime.getResourceCatalog === 'function') {
         canonicalResourceIds = inventoryRuntime.getResourceCatalog().map(function (row) {
@@ -299,6 +317,11 @@
         jobSlots: num(employment.jobsSupported !== undefined ? employment.jobsSupported : profile.employment && profile.employment.jobsPerFactory),
         vacancies: num(employment.vacancies),
         inputRows: inputRows,
+        inputCoefficients: asset.inputCoefficients || asset.inputs || asset.inputProfile || {},
+        inputLots: Array.isArray(asset.inputBatchLots) ? asset.inputBatchLots : [],
+        inputUnits: asset.inputUnits && typeof asset.inputUnits === 'object' ? asset.inputUnits : {},
+        hasInputInventory: !!(asset.inputInventory && typeof asset.inputInventory === 'object'),
+        outputProfile: asset.outputProfile || asset.outputs || asset.outputCoefficients || {},
         cycle: cycle,
         lastRun: run,
         lastProductionTurn: run && (run.turn !== undefined ? run.turn : run.simulationTurn) !== undefined ? (run.turn !== undefined ? run.turn : run.simulationTurn) : (asset.lastProductionTurn !== undefined ? asset.lastProductionTurn : null),
@@ -415,6 +438,12 @@
       catalogProfiles: profiles,
       inputInventoryCount: mappedAssets.reduce(function (total, row) { return total + row.inputRows.filter(function (input) { return input.quantity !== null && input.quantity > 0; }).length; }, 0),
       nationalInventory: nationalInventory,
+      finishedGoodsLedger: finishedGoodsLedger,
+      resourceBatches: resourceBatches,
+      resourceInventoryLedger: resourceInventoryLedger,
+      processedStock: processedWarehouse.availableByResource && typeof processedWarehouse.availableByResource === 'object' ? processedWarehouse.availableByResource : {},
+      demandByProduct: demandByProduct,
+      domesticSales: domesticSales,
       source: 'Game.state.economy[country].productionAssets + canonical industrial catalogue'
     };
   }
@@ -588,6 +617,393 @@
     var claimsRunning = /^(RUNNING|PRODUCING)$/.test(healthStatus) || cycleStatus === 'IN_PROGRESS';
     if (claimsRunning && hasPositiveProduction) return { key: 'running', label: 'Producing', reason: reason };
     return { key: 'unknown', label: 'Output not recorded', reason: reason };
+  }
+
+
+  function panelProductLabel(model, productId) {
+    var wanted = String(productId || '').trim().toLowerCase();
+    var items = model && model.nationalInventory && Array.isArray(model.nationalInventory.items) ? model.nationalInventory.items : [];
+    for (var i = 0; i < items.length; i += 1) {
+      if (String(items[i].productId || '').trim().toLowerCase() === wanted && items[i].name) return String(items[i].name);
+    }
+    return String(productId || 'Product').replace(/[_-]+/g, ' ').replace(/\b[a-z]/g, function (letter) { return letter.toUpperCase(); });
+  }
+  function panelCountryLabel(countryId) {
+    var profile = countryProfile(countryId), identity = profile && (profile.identity || profile.country || profile);
+    var name = String(profile && (profile.name || profile.officialName || profile.shortName) ||
+      identity && (identity.name || identity.officialName || identity.countryName) || '').trim();
+    return name || String(countryId || 'Destination not recorded').toUpperCase();
+  }
+  function panelValueByKey(source, wanted) {
+    if (!source || typeof source !== 'object') return null;
+    var key = String(wanted || '').trim().toLowerCase();
+    var keys = Object.keys(source);
+    for (var i = 0; i < keys.length; i += 1) {
+      if (keys[i].trim().toLowerCase() === key) return num(source[keys[i]]);
+    }
+    return null;
+  }
+  function panelInputCoefficient(value) {
+    if (value && typeof value === 'object') {
+      value = value.coefficient !== undefined ? value.coefficient :
+        value.quantity !== undefined ? value.quantity :
+        value.amount !== undefined ? value.amount :
+        value.ratio !== undefined ? value.ratio : null;
+    }
+    return num(value);
+  }
+  function factoryOutputRows(model) {
+    var groups = Object.create(null), batchById = Object.create(null), batchOwners = Object.create(null);
+    var transactions = Object.create(null), factoriesById = Object.create(null);
+    var batches = Array.isArray(model.resourceBatches) ? model.resourceBatches : [];
+    var ledger = Array.isArray(model.finishedGoodsLedger) ? model.finishedGoodsLedger : [];
+    var factories = Array.isArray(model.factories) ? model.factories : [];
+    factories.forEach(function (factory) { if (factory && factory.id) factoriesById[String(factory.id)] = factory; });
+    batches.forEach(function (batch) {
+      if (!batch || !batch.batchId) return;
+      batchById[String(batch.batchId)] = batch;
+      if (batch.sourceFactoryId) batchOwners[String(batch.batchId)] = {
+        factoryId: String(batch.sourceFactoryId), productId: String(batch.resourceId || batch.materialIdentity || '')
+      };
+    });
+    function keyFor(factoryId, productId) {
+      return String(factoryId || '') + '|' + String(productId || '').toLowerCase();
+    }
+    function ensure(factoryId, productId) {
+      var key = keyFor(factoryId, productId);
+      if (!groups[key]) {
+        groups[key] = {
+          factoryId: String(factoryId || ''), productId: String(productId || ''),
+          produced: 0, factoryUse: 0, domesticConsumption: 0, domesticSupply: 0,
+          exported: 0, destinations: Object.create(null), batchIds: Object.create(null),
+          currentStock: null, unit: null, hasProduction: false
+        };
+      }
+      return groups[key];
+    }
+    function outputMap(record) {
+      var map = record && (record.outputQuantities || record.outputs);
+      if (!map || typeof map !== 'object' || Array.isArray(map)) return {};
+      return map;
+    }
+    function addProduction(record, fallbackFactoryId) {
+      if (!record || typeof record !== 'object') return;
+      var factoryId = String(record.factoryId || fallbackFactoryId || '');
+      if (!factoryId || !factoriesById[factoryId]) return;
+      var transactionId = String(record.transactionId || record.processId || record.cycleId || '');
+      if (transactionId && transactions[transactionId]) return;
+      if (transactionId) transactions[transactionId] = true;
+      var outputs = outputMap(record), ids = Array.isArray(record.createdBatchIds) ? record.createdBatchIds : [];
+      var entries = Object.keys(outputs);
+      if (!entries.length && ids.length) {
+        entries = [];
+        ids.forEach(function (batchId) {
+          var batch = batchById[String(batchId)];
+          var productId = batch && (batch.resourceId || batch.materialIdentity);
+          var quantity = batch && num(batch.quantity);
+          if (productId && quantity !== null) outputs[productId] = (num(outputs[productId]) || 0) + quantity;
+        });
+        entries = Object.keys(outputs);
+      }
+      entries.forEach(function (productId) {
+        var value = outputs[productId];
+        if (value && typeof value === 'object') value = value.quantity !== undefined ? value.quantity : value.value !== undefined ? value.value : value.amount;
+        var quantity = num(value);
+        if (quantity === null || quantity <= 0) return;
+        var row = ensure(factoryId, productId);
+        row.produced += quantity;
+        row.hasProduction = true;
+        if (record.unit && !row.unit) row.unit = record.unit;
+        ids.forEach(function (batchId) {
+          var batch = batchById[String(batchId)];
+          if (batch && String(batch.resourceId || batch.materialIdentity || '').toLowerCase() === String(productId).toLowerCase()) {
+            row.batchIds[String(batchId)] = true;
+            batchOwners[String(batchId)] = { factoryId: factoryId, productId: String(productId) };
+            if (batch.unit && !row.unit) row.unit = batch.unit;
+          } else if (batch) {
+            batchOwners[String(batchId)] = batchOwners[String(batchId)] || { factoryId: factoryId, productId: String(productId) };
+          }
+        });
+      });
+    }
+    ledger.forEach(function (record) { addProduction(record, record && record.factoryId); });
+    factories.forEach(function (factory) {
+      var run = factory && factory.lastRun;
+      if (run && (run.outputQuantities || run.outputs) && String(run.status || '').toUpperCase() !== 'BLOCKED') {
+        addProduction(run, factory.id);
+      }
+    });
+    batches.forEach(function (batch) {
+      if (!batch || !batch.sourceFactoryId) return;
+      var stage = String(batch.stage || batch.inventoryStage || '').toUpperCase();
+      if (stage && !/FINISHED|PROCESSED|REFINED|OUTPUT/.test(stage)) return;
+      var factoryId = String(batch.sourceFactoryId), productId = String(batch.resourceId || batch.materialIdentity || '');
+      if (!factoriesById[factoryId] || !productId) return;
+      var row = ensure(factoryId, productId);
+      row.batchIds[String(batch.batchId)] = true;
+      batchOwners[String(batch.batchId)] = { factoryId: factoryId, productId: productId };
+      if (batch.unit && !row.unit) row.unit = batch.unit;
+      var processId = String(batch.processId || '');
+      if ((!processId || !transactions[processId]) && !row.batchProductionCounted) {
+        var quantity = num(batch.quantity);
+        if (quantity !== null && quantity > 0) {
+          row.produced += quantity;
+          row.hasProduction = true;
+        }
+      }
+      row.batchProductionCounted = true;
+    });
+    Object.keys(groups).forEach(function (key) {
+      var row = groups[key], hasTrackedBatch = false, current = 0;
+      Object.keys(row.batchIds).forEach(function (batchId) {
+        var batch = batchById[batchId];
+        if (!batch) return;
+        hasTrackedBatch = true;
+        var remaining = num(batch.remainingQuantity !== undefined ? batch.remainingQuantity : batch.quantity);
+        if (remaining !== null) {
+          var status = String(batch.status || '').toUpperCase();
+          if (/^(CONSUMED|EXPORTED|SOLD|DEPLETED|EXHAUSTED|TRANSFERRED_OUT|CANCELLED)$/.test(status)) remaining = 0;
+          current += Math.max(0, remaining);
+        }
+      });
+      row.currentStock = hasTrackedBatch ? current : null;
+      delete row.batchProductionCounted;
+    });
+    function ownerForBatch(batchId) {
+      var owner = batchOwners[String(batchId || '')];
+      return owner && owner.factoryId && owner.productId ? ensure(owner.factoryId, owner.productId) : null;
+    }
+    function attributeMovement(batchId, quantity, kind, destination) {
+      var row = ownerForBatch(batchId), amount = num(quantity);
+      if (!row || amount === null || amount <= 0) return;
+      if (kind === 'FACTORY') row.factoryUse += amount;
+      else if (kind === 'DOMESTIC') row.domesticConsumption += amount;
+      else if (kind === 'SUPPLY') row.domesticSupply += amount;
+      else if (kind === 'EXPORT') {
+        row.exported += amount;
+        var country = String(destination || '').trim().toUpperCase();
+        var label = country ? panelCountryLabel(country) : 'Destination not recorded';
+        row.destinations[label] = (row.destinations[label] || 0) + amount;
+      }
+    }
+    (Array.isArray(model.resourceInventoryLedger) ? model.resourceInventoryLedger : []).forEach(function (entry) {
+      if (!entry || String(entry.type || '').toUpperCase() !== 'INVENTORY_CONSUMED' || !Array.isArray(entry.consumed)) return;
+      var reason = String(entry.reason || '').toUpperCase();
+      entry.consumed.forEach(function (item) {
+        if (!item) return;
+        var sourceIds = Array.isArray(item.sourceBatchIds) ? item.sourceBatchIds.filter(Boolean) : [];
+        var batchId = item.batchId || (sourceIds.length === 1 ? sourceIds[0] : null);
+        if (!batchId) return;
+        attributeMovement(batchId, item.quantity, /FACTORY|PROCESS|INPUT/.test(reason) ? 'FACTORY' : 'DOMESTIC');
+      });
+    });
+    (Array.isArray(model.resourceInventoryLedger) ? model.resourceInventoryLedger : []).forEach(function (entry) {
+      if (!entry || String(entry.type || '').toUpperCase() !== 'INTERNATIONAL_TRADE_EXPORT') return;
+      (Array.isArray(entry.batchTransfers) ? entry.batchTransfers : []).forEach(function (transfer) {
+        if (transfer) attributeMovement(transfer.sourceBatchId, transfer.quantity, 'EXPORT', transfer.destinationCountryId);
+      });
+    });
+    (Array.isArray(model.domesticSales) ? model.domesticSales : []).forEach(function (entry) {
+      var sale = entry && entry.sale && typeof entry.sale === 'object' ? entry.sale : entry;
+      if (!sale || String(sale.direction || 'DOMESTIC').toUpperCase() !== 'DOMESTIC') return;
+      (Array.isArray(sale.batchTransfers) ? sale.batchTransfers : []).forEach(function (transfer) {
+        if (transfer) attributeMovement(transfer.sourceBatchId, transfer.quantity, 'SUPPLY');
+      });
+    });
+    return Object.keys(groups).map(function (key) { return groups[key]; }).filter(function (row) {
+      return row.hasProduction || row.batchIds && Object.keys(row.batchIds).length;
+    }).sort(function (a, b) {
+      var af = factoriesById[a.factoryId], bf = factoriesById[b.factoryId];
+      return String(af && af.name || a.factoryId).localeCompare(String(bf && bf.name || b.factoryId)) ||
+        String(a.productId).localeCompare(String(b.productId));
+    });
+  }
+  function factoryStockStatus(model, row) {
+    var stock = row.currentStock, demand = panelValueByKey(model.demandByProduct, row.productId);
+    var demandRow = null, keys = Object.keys(model.demandByProduct || {});
+    for (var i = 0; i < keys.length; i += 1) {
+      if (keys[i].toLowerCase() === String(row.productId).toLowerCase()) { demandRow = model.demandByProduct[keys[i]]; break; }
+    }
+    if (demandRow) {
+      var unmet = num(demandRow.unmetDemand);
+      if (unmet !== null && unmet > 1e-9) return { label: 'Shortage · ' + fmt(unmet, row.unit), key: 'shortage' };
+      if (String(demandRow.status || '').toUpperCase() === 'SHORTAGE') return { label: 'Shortage', key: 'shortage' };
+      if (String(demandRow.status || '').toUpperCase() === 'LOW_COVERAGE') return { label: 'Low stock', key: 'low' };
+      if (stock !== null && demand !== null && demand > 0) {
+        var surplus = stock - demand;
+        if (surplus > 1e-9) return { label: 'Surplus · ' + fmt(surplus, row.unit), key: 'surplus' };
+        return { label: 'Sufficient', key: 'sufficient' };
+      }
+      if (String(demandRow.status || '').toUpperCase() === 'BALANCED') return { label: 'Sufficient', key: 'sufficient' };
+    }
+    if (stock === null) return { label: 'Not recorded', key: 'unknown' };
+    return stock > 1e-9 ? { label: 'Stock on hand', key: 'sufficient' } : { label: 'No remaining stock', key: 'empty' };
+  }
+  function factoryStockPanelMarkup(model) {
+    var rows = factoryOutputRows(model), factoryMap = Object.create(null);
+    (model.factories || []).forEach(function (factory) { if (factory && factory.id) factoryMap[String(factory.id)] = factory; });
+    if (!rows.length) return '<div class="omega-v2-empty">No committed factory output batches are recorded for this country.</div>';
+    var html = '<section class="fp-factory-analytics" aria-label="Factory output stock">';
+    var byFactory = Object.create(null);
+    rows.forEach(function (row) {
+      if (!byFactory[row.factoryId]) byFactory[row.factoryId] = [];
+      byFactory[row.factoryId].push(row);
+    });
+    Object.keys(byFactory).forEach(function (factoryId) {
+      var factory = factoryMap[factoryId] || {}, name = factory.name || factoryId;
+      html += '<article class="fp-factory-data-card"><header class="fp-factory-data-heading"><div><span>FACTORY OUTPUT</span><strong>' +
+        esc(name) + '</strong><small>' + esc(factory.type || 'Factory type not recorded') + '</small></div><span class="fp-factory-data-count">' +
+        fmt(byFactory[factoryId].length) + ' product line(s)</span></header>';
+      html += '<div class="fp-factory-table-wrap"><table class="fp-factory-table"><thead><tr>' +
+        '<th>Output product</th><th>Produced</th><th>Factory use</th><th>Domestic consumption</th><th>Domestic supply</th><th>Exported</th><th>Destination country</th><th>Current stock</th><th>Stock condition</th>' +
+        '</tr></thead><tbody>';
+      byFactory[factoryId].forEach(function (row) {
+        var unit = row.unit || '';
+        var destinations = Object.keys(row.destinations).map(function (country) {
+          return '<span class="fp-factory-destination"><strong>' + esc(country) + '</strong><small>' + fmt(row.destinations[country], unit) + '</small></span>';
+        }).join('');
+        if (!destinations && row.exported <= 0) destinations = '<span class="fp-factory-muted">No recorded export</span>';
+        else if (!destinations) destinations = '<span class="fp-factory-muted">Destination not recorded</span>';
+        var status = factoryStockStatus(model, row);
+        html += '<tr><td><strong>' + esc(panelProductLabel(model, row.productId)) + '</strong><small>' + esc(row.productId) + '</small></td>' +
+          '<td><strong>' + fmt(row.produced, unit) + '</strong></td>' +
+          '<td>' + (row.factoryUse > 0 ? fmt(row.factoryUse, unit) : '<span class="fp-factory-muted">Not recorded</span>') + '</td>' +
+          '<td>' + (row.domesticConsumption > 0 ? fmt(row.domesticConsumption, unit) : '<span class="fp-factory-muted">Not recorded</span>') + '</td>' +
+          '<td>' + (row.domesticSupply > 0 ? fmt(row.domesticSupply, unit) : '<span class="fp-factory-muted">Not recorded</span>') + '</td>' +
+          '<td>' + (row.exported > 0 ? fmt(row.exported, unit) : '<span class="fp-factory-muted">Not recorded</span>') + '</td>' +
+          '<td>' + destinations + '</td><td>' + fmt(row.currentStock, unit) + '</td>' +
+          '<td><span class="fp-factory-state" data-state="' + status.key + '">' + esc(status.label) + '</span></td></tr>';
+      });
+      html += '</tbody></table></div></article>';
+    });
+    return html + '</section>';
+  }
+  function factoryInputSourceMarkup(factory, productId, model) {
+    var lots = (factory.inputLots || []).filter(function (lot) {
+      return lot && String(lot.resourceId || lot.materialIdentity || '').toLowerCase() === String(productId).toLowerCase();
+    });
+    var sourceGroups = Object.create(null), batches = model.resourceBatches || [], factoryNames = Object.create(null);
+    (model.factories || []).forEach(function (row) { if (row && row.id) factoryNames[String(row.id)] = row.name; });
+    lots.forEach(function (lot) {
+      var remaining = num(lot.remainingQuantity !== undefined ? lot.remainingQuantity : lot.quantity);
+      if (remaining === null || remaining <= 0) return;
+      var provenance = lot.provenance && typeof lot.provenance === 'object' ? lot.provenance : {};
+      var sourceCountry = String(lot.sourceCountryId || lot.originCountryId || provenance.sourceCountryId || '').toUpperCase();
+      var sourceFactory = String(lot.sourceFactoryId || '').trim();
+      var sites = Array.isArray(lot.sourceSiteIds) ? lot.sourceSiteIds.filter(Boolean).map(String) : [];
+      if (lot.siteId) sites.push(String(lot.siteId));
+      (Array.isArray(lot.sourceBatchIds) ? lot.sourceBatchIds : []).forEach(function (batchId) {
+        var sourceBatch = batches.find(function (batch) { return batch && String(batch.batchId) === String(batchId); });
+        if (!sourceBatch) return;
+        if (sourceBatch.siteId || sourceBatch.sourceSiteId || sourceBatch.siteReferenceKey) sites.push(String(sourceBatch.siteId || sourceBatch.sourceSiteId || sourceBatch.siteReferenceKey));
+        if (!sourceFactory && sourceBatch.sourceFactoryId) sourceFactory = String(sourceBatch.sourceFactoryId);
+        if (!sourceCountry && (sourceBatch.sourceCountryId || sourceBatch.originCountryId)) sourceCountry = String(sourceBatch.sourceCountryId || sourceBatch.originCountryId).toUpperCase();
+      });
+      var label;
+      if (sourceCountry && sourceCountry !== model.countryId) label = 'Import · ' + panelCountryLabel(sourceCountry);
+      else if (sites.length) label = 'Domestic mine · ' + Array.from(new Set(sites)).join(', ');
+      else if (sourceFactory) label = 'Domestic factory · ' + (factoryNames[sourceFactory] || sourceFactory);
+      else if (/OPENING|STARTUP/.test(String(provenance.status || provenance.source || lot.batchId || '').toUpperCase())) label = 'Opening allocation';
+      else if (sourceCountry === model.countryId) label = 'Domestic warehouse · mine lineage not recorded';
+      else label = 'Source not recorded';
+      var key = label.toLowerCase();
+      sourceGroups[key] = sourceGroups[key] || { label: label, quantity: 0 };
+      sourceGroups[key].quantity += remaining;
+    });
+    var lines = Object.keys(sourceGroups).map(function (key) {
+      var source = sourceGroups[key];
+      return '<span class="fp-factory-source"><strong>' + esc(source.label) + '</strong><small>' + fmt(source.quantity) + '</small></span>';
+    });
+    if (!lines.length) {
+      var current = panelValueByKey(factory.raw && factory.raw.inputInventory, productId);
+      return current > 0 ? '<span class="fp-factory-muted">Source not recorded</span>' : '<span class="fp-factory-muted">No delivered source batch</span>';
+    }
+    return lines.join('');
+  }
+  function factoryInputEfficiency(factory, inputRows) {
+    var ratio = 1, observed = false;
+    inputRows.forEach(function (row) {
+      if (row.required === null || row.required <= 0 || row.current === null) return;
+      observed = true;
+      ratio = Math.min(ratio, Math.max(0, Math.min(1, row.current / row.required)));
+    });
+    var raw = factory.raw || {}, health = raw.productionHealth && typeof raw.productionHealth === 'object' ? raw.productionHealth : {};
+    var reason = String(health.reason || factory.healthReason || '').toUpperCase();
+    if (observed) return { value: Math.max(0, (1 - ratio) * 100), observed: true };
+    if (/FACTORY_INPUT|INPUT_SHORTAGE|MATERIAL_SHORTAGE/.test(reason) && num(health.productivityPct) !== null) {
+      return { value: Math.max(0, 100 - Number(health.productivityPct)), observed: true };
+    }
+    return { value: null, observed: false };
+  }
+  function factoryInputPanelMarkup(model) {
+    var factories = Array.isArray(model.factories) ? model.factories : [];
+    if (!factories.length) return '<div class="omega-v2-empty">No active factories are recorded for this country.</div>';
+    var html = '<section class="fp-factory-analytics" aria-label="Factory input supply">';
+    var visibleFactories = 0;
+    factories.forEach(function (factory) {
+      var coefficientMap = factory.inputCoefficients && typeof factory.inputCoefficients === 'object' ? factory.inputCoefficients : {};
+      var ids = Object.keys(coefficientMap);
+      (factory.inputRows || []).forEach(function (row) {
+        if (ids.map(function (id) { return id.toLowerCase(); }).indexOf(String(row.resourceId).toLowerCase()) < 0) ids.push(row.resourceId);
+      });
+      (factory.inputLots || []).forEach(function (lot) {
+        var id = String(lot && (lot.resourceId || lot.materialIdentity) || '');
+        if (id && ids.map(function (value) { return value.toLowerCase(); }).indexOf(id.toLowerCase()) < 0) ids.push(id);
+      });
+      if (!ids.length) return;
+      visibleFactories += 1;
+      var capacity = num(factory.capacityPerDay), rows = [];
+      ids.forEach(function (productId) {
+        var coefficient = panelInputCoefficient(coefficientMap[productId]);
+        if (coefficient === null) {
+          var coefficientKey = Object.keys(coefficientMap).find(function (key) { return key.toLowerCase() === productId.toLowerCase(); });
+          if (coefficientKey) coefficient = panelInputCoefficient(coefficientMap[coefficientKey]);
+        }
+        var required = capacity !== null && coefficient !== null ? capacity * coefficient : null;
+        var current = factory.hasInputInventory ? panelValueByKey(factory.raw.inputInventory, productId) : null;
+        if (factory.hasInputInventory && current === null) current = 0;
+        var lots = factory.inputLots.filter(function (lot) {
+          return String(lot && (lot.resourceId || lot.materialIdentity) || '').toLowerCase() === productId.toLowerCase();
+        });
+        var seen = Object.create(null), received = 0, hasReceipt = false, unit = '';
+        lots.forEach(function (lot) {
+          var batchId = String(lot.batchId || '');
+          if (batchId && seen[batchId]) return;
+          if (batchId) seen[batchId] = true;
+          var quantity = num(lot.quantity);
+          if (quantity !== null) { received += quantity; hasReceipt = true; }
+          if (!unit && lot.unit) unit = lot.unit;
+        });
+        var inputUnit = factory.inputUnits && Object.keys(factory.inputUnits).find(function (key) { return key.toLowerCase() === productId.toLowerCase(); });
+        unit = unit || (inputUnit ? factory.inputUnits[inputUnit] : '') || factory.raw.inputUnit || '';
+        rows.push({ productId: productId, coefficient: coefficient, required: required, current: current,
+          received: hasReceipt ? received : null, unit: unit });
+      });
+      var efficiency = factoryInputEfficiency(factory, rows);
+      var productionHealth = factory.healthStatus || factory.status || 'Not recorded';
+      html += '<article class="fp-factory-data-card"><header class="fp-factory-data-heading"><div><span>FACTORY INPUT</span><strong>' +
+        esc(factory.name) + '</strong><small>' + esc(factory.type) + ' · ' + esc(productionHealth) + '</small></div>' +
+        '<span class="fp-factory-data-count">' + fmt(rows.length) + ' input line(s)</span></header>';
+      html += '<div class="fp-factory-table-wrap"><table class="fp-factory-table fp-factory-input-table"><thead><tr>' +
+        '<th>Input product</th><th>Required / day</th><th>Total received</th><th>Current factory stock</th><th>Supply source</th><th>Availability</th><th>Efficiency reduction</th>' +
+        '</tr></thead><tbody>';
+      rows.forEach(function (row) {
+        var shortage = row.required !== null && row.current !== null ? Math.max(0, row.required - row.current) : null;
+        var state = shortage !== null ? (shortage > 1e-9 ? 'shortage' : 'sufficient') : 'unknown';
+        var stateLabel = shortage === null ? 'Not recorded' : shortage > 1e-9
+          ? 'Shortage · ' + fmt(shortage, row.unit) : 'Sufficient';
+        html += '<tr><td><strong>' + esc(panelProductLabel(model, row.productId)) + '</strong><small>' + esc(row.productId) + '</small></td>' +
+          '<td>' + fmt(row.required, row.unit) + '</td><td>' + fmt(row.received, row.unit) + '</td>' +
+          '<td><strong>' + fmt(row.current, row.unit) + '</strong></td><td>' + factoryInputSourceMarkup(factory, row.productId, model) + '</td>' +
+          '<td><span class="fp-factory-state" data-state="' + state + '">' + esc(stateLabel) + '</span></td>' +
+          '<td>' + (efficiency.value === null ? '<span class="fp-factory-muted">Not recorded</span>' :
+            '<span class="fp-factory-state" data-state="' + (efficiency.value > 1e-9 ? 'shortage' : 'sufficient') + '">' +
+            fmt(efficiency.value, '%') + '</span>') + '</td></tr>';
+      });
+      html += '</tbody></table></div></article>';
+    });
+    if (!visibleFactories) return '<div class="omega-v2-empty">Factory recipe inputs have not been recorded for these factories.</div>';
+    return html + '</section>';
   }
 
   function factoryTypeLabel(factory) {
@@ -789,9 +1205,7 @@
         return '<article class="omega-v2-card"><h3 class="omega-v2-card-title">' + esc(cycle.factoryId) + '</h3><span class="omega-v2-status">' + esc(cycle.status || 'NOT_RECORDED') + '</span><div class="omega-v2-vehicle-stats"><div><span>Output quantity</span><strong>' + fmt(cycle.productionQuantity) + '</strong></div><div><span>Start date</span><strong>' + esc(cycle.startDate || 'Not recorded') + '</strong></div><div><span>Finish date</span><strong>' + esc(cycle.finishDate || 'Not recorded') + '</strong></div><div><span>Source batches</span><strong>' + fmt(Array.isArray(cycle.sourceBatchIds) ? cycle.sourceBatchIds.length : null) + '</strong></div></div></article>';
       }).join('') + '</div>' : '<div class="omega-v2-empty">No tracked production cycles were returned by this country’s industrial state.</div>';
     } else if (active === 'inventory') {
-      var rows = [];
-      model.factories.forEach(function (factory) { factory.inputRows.forEach(function (item) { rows.push({ factory: factory.id || factory.name, resource: item.resourceId, quantity: item.quantity }); }); });
-      content = rows.length ? '<div class="omega-v2-card"><div class="omega-v2-table-wrap"><table><thead><tr><th>Factory</th><th>Input resource</th><th>Recorded quantity</th></tr></thead><tbody>' + rows.map(function (row) { return '<tr><td>' + esc(row.factory) + '</td><td>' + esc(row.resource) + '</td><td>' + fmt(row.quantity) + '</td></tr>'; }).join('') + '</tbody></table></div><p class="omega-v2-source">Rows reflect per-factory input inventory only. They do not assert country-wide warehouse availability or a completed logistics receipt.</p></div>' : '<div class="omega-v2-empty">No per-factory input quantities are recorded. Shared warehouse stock is not inferred.</div>';
+      content = factoryInputPanelMarkup(model);
     } else if (active === 'research') {
       var researchRows = model.researchProjects.map(function (item) { return Object.assign({ recordType:'RESEARCH' }, item || {}); })
         .concat(model.technologyTransfers.map(function (item) { return Object.assign({ recordType:'TECHNOLOGY TRANSFER' }, item || {}); }))
@@ -815,22 +1229,7 @@
         (capabilityCards ? '<div class="omega-v2-grid">' + capabilityCards + '</div>' : '<div class="omega-v2-empty">No technology capabilities are recorded for this country.</div>') +
         '<p class="omega-v2-source">Research, transfer and capability rows are read from this country’s authoritative resource state. Foreign-country project rows are not copied into this view.</p></section>';
     } else if (active === 'national-inventory') {
-      var snapshot = model.nationalInventory;
-      if (snapshot && snapshot.status === 'READY') {
-        var allowedRawResources = Object.create(null);
-        (model.canonicalResourceIds || []).forEach(function (id) { allowedRawResources[String(id).toLowerCase()] = true; });
-        var stockRows = (Array.isArray(snapshot.items) ? snapshot.items : []).filter(function (row) {
-          return !!allowedRawResources[String(row && row.productId || '').toLowerCase()];
-        });
-        var inventoryStatus = snapshot.active ? 'PLAYER INVENTORY · ACTIVE' : 'READ-ONLY SNAPSHOT';
-        content = '<div class="omega-v2-card"><div class="omega-v2-card-header"><div><h3 class="omega-v2-card-title">' + esc(snapshot.countryName || snapshot.countryId || model.countryId) + ' inventory</h3><div class="omega-v2-card-meta">' + esc(inventoryStatus) + ' · ' + fmt(stockRows.length) + ' resource records</div></div><span class="omega-v2-status">' + (snapshot.unbounded ? 'UNBOUNDED STOCK LOG' : 'STOCK STATUS') + '</span></div>' +
-          (stockRows.length ? '<div class="omega-v2-table-wrap"><table><thead><tr><th>Product</th><th>Product ID</th><th>Base</th><th>On hand</th><th>Change</th><th>Unit</th></tr></thead><tbody>' + stockRows.map(function (row) {
-            return '<tr><td>' + esc(row.name) + '</td><td>' + esc(row.productId) + '</td><td>' + fmt(row.base) + '</td><td><strong>' + fmt(row.quantity) + '</strong></td><td>' + fmt(row.deltaFromBase) + '</td><td>' + esc(row.unit || 'Not recorded') + '</td></tr>';
-          }).join('') + '</tbody></table></div>' : '<p class="omega-v2-empty">No product catalog rows are available for this country yet.</p>') +
-          '<p class="omega-v2-source">Factory output, imports, consumption and exports are recorded against the selected country. Other countries are read-only snapshots until selected by the player. Inventory has no fixed capacity or ledger-entry cap.</p></div>';
-      } else {
-        content = '<div class="omega-v2-empty">Country inventory runtime is initializing or no country has been selected.</div>';
-      }
+      content = factoryStockPanelMarkup(model);
     } else {
       content = model.projects.length ? '<div class="omega-v2-grid">' + model.projects.slice().reverse().map(function (project) {
         return '<article class="omega-v2-card"><div class="omega-v2-card-header"><h3 class="omega-v2-card-title">' + esc(project.projectType || 'Industrial project') + '</h3><span class="omega-v2-status">' + esc(project.status || 'NOT_RECORDED') + '</span></div><div class="omega-v2-vehicle-stats"><div><span>Project ID</span><strong>' + esc(project.projectId || 'Not recorded') + '</strong></div><div><span>Site / factory</span><strong>' + esc(project.siteId || project.factoryId || 'Not recorded') + '</strong></div><div><span>Start turn</span><strong>' + fmt(project.createdTurn !== undefined ? project.createdTurn : project.startedTurn) + '</strong></div><div><span>Cost</span><strong>' + (num(project.costUsd) === null ? 'Not recorded' : new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(num(project.costUsd))) + '</strong></div></div></article>';
@@ -841,8 +1240,8 @@
     var tabLabels = {
       factories:'Factories',
       'production-lines':'Production lines',
-      inventory:'Factory input records',
-      'national-inventory':'National Inventory',
+      inventory:'Input',
+      'national-inventory':'Stock',
       research:'Research & technology',
       projects:'Industrial projects'
     };
@@ -854,7 +1253,7 @@
       '<nav class="omega-v2-factory-tabs fp-tabs" aria-label="Industrial panels">' +
       tabButton('factories', 'Factories', active) +
       tabButton('production-lines', 'Lines', active) +
-      tabButton('inventory', 'Inputs', active) +
+      tabButton('inventory', 'Input', active) +
       tabButton('national-inventory', 'Stock', active) +
       tabButton('research', 'R&D', active) +
       tabButton('projects', 'Projects', active) +
