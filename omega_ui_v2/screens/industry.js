@@ -1134,7 +1134,7 @@
           nationalConsumptionShown[productKey] = true;
         }
         var status = factoryStockStatus(model, row, productProducerCounts[String(row.productId || '').toLowerCase()] > 1);
-        html += '<tr><td><strong>' + esc(panelProductLabel(model, row.productId)) + '</strong><small>' + esc(row.productId) + '</small></td>' +
+        html += '<tr><td>' + factoryProductIdentityMarkup(row.productId, panelProductLabel(model, row.productId)) + '</td>' +
           '<td><strong>' + fmt(row.produced, unit) + '</strong></td>' +
           '<td>' + (row.factoryUse > 0 ? fmt(row.factoryUse, unit) : '<span class="fp-factory-muted">Not recorded</span>') + '</td>' +
           '<td>' + consumptionMarkup + '</td>' +
