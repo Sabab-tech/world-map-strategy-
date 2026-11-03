@@ -694,6 +694,8 @@ test("Resource Logistics shows configured per-site route cards separately from l
   };
   const sandbox = {
     OmegaResourceIndustrialCatalogData: json("resource_industrial_catalog_v1.json"),
+    setTimeout,
+    clearTimeout,
     fetch: async (url) => {
       const name = String(url).replace(/^\.\//, "");
       fetched.push(name);
@@ -1363,6 +1365,8 @@ test("Resource Ministry cancels a shared country route shard after its last acti
   const signals = [];
   const sandbox = {
     AbortController,
+    setTimeout,
+    clearTimeout,
     OmegaResourceIndustrialCatalogData: json("resource_industrial_catalog_v1.json"),
     fetch(url, options) {
       const name = String(url).replace(/^\.\//, "");
