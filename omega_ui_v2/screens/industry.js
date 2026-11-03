@@ -1794,6 +1794,12 @@
       pending.completed = true;
       if (root.__omegaV2IndustryPlanWarmup !== pending ||
           String(root.__omegaV2IndustryCountryId || '') !== countryKey) return;
+      // Do not revive a hidden Industry screen after the player has navigated
+      // to another ministry while this read-only source request was pending.
+      if (typeof root.querySelector === 'function' &&
+          !root.querySelector('[data-omega-v2-industry-tab]')) return;
+      var refreshedModel = buildViewModel({ countryId:countryKey });
+      if (!(refreshedModel.catalogProfileCount > 0) && refreshedModel.factoryBaselineStatus !== 'READY') return;
       var active = root.__omegaV2IndustryTab || options.tab || 'factories';
       scheduleRender(root, Object.assign({}, root.__omegaV2IndustryOptions || options || {}, { countryId:countryKey, tab:active }),
         'Factory planning catalog ready');
