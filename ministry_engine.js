@@ -1795,7 +1795,7 @@ window.OmegaCabinetUI = {
                 </header>
                 <div class="omega-industry-factory-grid">
                     <button type="button" class="omega-industry-factory-button" data-omega-industry-panel="industrial" data-country="${escapeAttribute(countryKey)}" onclick="if(window.OmegaResourceCommandCenterUI && typeof window.OmegaResourceCommandCenterUI.open === 'function'){window.OmegaResourceCommandCenterUI.open(this.getAttribute('data-country'),this.getAttribute('data-omega-industry-panel'));}else{this.textContent='Factory UI unavailable';this.disabled=true;}">
-                        <span class="omega-industry-factory-index">01</span><span class="omega-industry-factory-copy"><strong>My Factories</strong><small>Factories, staffing and operating status.</small></span>
+                        <span class="omega-industry-factory-index">01</span><span class="omega-industry-factory-copy"><strong>Factories</strong><small>Factories, staffing and operating status.</small></span>
                     </button>
                     <button type="button" class="omega-industry-factory-button" data-omega-industry-panel="processing" data-country="${escapeAttribute(countryKey)}" onclick="if(window.OmegaResourceCommandCenterUI && typeof window.OmegaResourceCommandCenterUI.open === 'function'){window.OmegaResourceCommandCenterUI.open(this.getAttribute('data-country'),this.getAttribute('data-omega-industry-panel'));}else{this.textContent='Factory UI unavailable';this.disabled=true;}">
                         <span class="omega-industry-factory-index">02</span><span class="omega-industry-factory-copy"><strong>Production Lines</strong><small>Recipes, input requirements and processing cycles.</small></span>
