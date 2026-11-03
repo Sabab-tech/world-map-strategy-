@@ -97,19 +97,19 @@ test("mine and warehouse logistics nodes are registered as separate offline SVG 
 });
 
 
-test("cargo-specific transport variants cover truck, rail, ship and barge models offline",()=>{
+test("cargo-specific transport variants and dimensional mode heroes are registered offline",()=>{
  const variants=manifest.transportVariants;
  assert.ok(Array.isArray(variants),"the canonical icon manifest must register transport variants");
- assert.equal(variants.length,20);
- assert.equal(manifest.summary.transportVariantIconCount,20);
- assert.equal(manifest.summary.totalTransportVariantIconCount,20);
- assert.deepEqual(manifest.summary.transportVariantsByMode,{truck:5,rail:5,ship:5,barge:5});
+ assert.equal(variants.length,25);
+ assert.equal(manifest.summary.transportVariantIconCount,25);
+ assert.equal(manifest.summary.totalTransportVariantIconCount,25);
+ assert.deepEqual(manifest.summary.transportVariantsByMode,{truck:6,rail:6,ship:6,barge:6,pipeline:1});
  const ids=new Set(),files=new Set(),modeCounts={};
  for(const row of variants){
   assert.ok(row.id&&row.label&&row.assetId&&row.transportMode&&row.cargoClass&&row.file);
   assert.match(row.file,/^transport\/variants\/[a-z0-9-]+\.svg$/);
-  assert.ok(["truck","rail","ship","barge"].includes(row.transportMode));
-  assert.ok(["dry_bulk","liquid","gas","ore","general_cargo"].includes(row.cargoClass));
+  assert.ok(["truck","rail","ship","barge","pipeline"].includes(row.transportMode));
+  assert.ok(["dry_bulk","liquid","gas","ore","general_cargo","mode_hero"].includes(row.cargoClass));
   assert.equal(ids.has(row.id),false,"transport variant IDs must be unique");
   assert.equal(files.has(row.file),false,"transport variant paths must be unique");
   ids.add(row.id);files.add(row.file);
@@ -117,9 +117,16 @@ test("cargo-specific transport variants cover truck, rail, ship and barge models
   const src=readSvg(row.file,row.id,row.label);
   assert.match(src,/data-omega-icon-kind="transport"/,row.id+" must identify itself as a transport asset");
  }
- assert.equal(ids.size,20);
- assert.equal(files.size,20);
- assert.deepEqual(modeCounts,{barge:5,ship:5,rail:5,truck:5});
+ assert.equal(ids.size,25);
+ assert.equal(files.size,25);
+ assert.deepEqual(modeCounts,{barge:6,ship:6,rail:6,truck:6,pipeline:1});
+ const heroes=variants.filter(row=>row.cargoClass==="mode_hero");
+ assert.equal(heroes.length,5,"one transparent 3D hero illustration is registered for every transport type");
+ for(const row of heroes){
+  const src=fs.readFileSync(path.join(assetRoot,row.file),"utf8");
+  assert.match(src,/aria-labelledby=/,row.id+" needs accessible metadata");
+  assert.match(src,/filter id=/,row.id+" needs dimensional shading");
+ }
  const offline=fs.readFileSync(path.join(root,"omega-offline-map-sw.js"),"utf8");
  assert.ok(Number(offline.match(/CACHE_NAME = "omega-offline-atlas-shell-v(\d+)"/)?.[1] || 0) >= 79, "offline shell cache version must be current");
  assert.match(offline,/\[\s*"factories"\s*,\s*"resources"\s*,\s*"transportVariants"\s*\]/,"all canonical manifest groups, including transport variants, must be precached");
