@@ -863,17 +863,31 @@ test("Resource Logistics shows configured per-site route cards separately from l
   assert.match(root.innerHTML, /120 km/);
   assert.match(root.innerHTML, /3 days/);
   assert.match(root.innerHTML, /45 tonnes\/day/);
-  assert.match(root.innerHTML, /Transport Fleet Summary/);
+  assert.doesNotMatch(root.innerHTML, /Transport Fleet Summary|data-omega-v2-logistics-fleet-overview/,
+    "the redundant global fleet deck must not sit above the mine routes");
   assert.ok(root.innerHTML.includes("assets/omega-industrial-icons-v1/logistics/mine-site.svg"));
   assert.ok(root.innerHTML.includes("assets/omega-industrial-icons-v1/logistics/warehouse-node.svg"));
-  assert.match(root.innerHTML, /data-route-leg="1"/);
-  assert.match(root.innerHTML, /40 km/);
-  assert.match(root.innerHTML, /Cap 45 tonnes\/day/);
-  assert.match(root.innerHTML, /Distance by transport type/);
-  assert.match(root.innerHTML, /data-route-mode-distance="truck"/);
-  assert.match(root.innerHTML, /data-route-mode-distance="rail"/);
-  assert.match(root.innerHTML, /40 km/);
-  assert.match(root.innerHTML, /80 km/);
+  const coalRouteStart = root.innerHTML.indexOf('data-logistics-plan-site-id="TST-MINE-ROUTE-01"');
+  const coalRouteEnd = root.innerHTML.indexOf('</article>', coalRouteStart);
+  assert.ok(coalRouteStart >= 0 && coalRouteEnd > coalRouteStart, "coal route card must render as one mine card");
+  const coalRouteCard = root.innerHTML.slice(coalRouteStart, coalRouteEnd);
+  assert.equal((coalRouteCard.match(/data-route-transport-mode=/g) || []).length, 2,
+    "the coal route must display only its two actual modes once each");
+  assert.match(coalRouteCard, /data-transport-mode="truck"[^>]*data-fleet-configured=/);
+  assert.match(coalRouteCard, /data-transport-mode="rail"[^>]*data-fleet-configured=/);
+  assert.doesNotMatch(coalRouteCard, /data-transport-mode="(?:ship|barge|pipeline)"|Cargo ships|River barges|Pipeline lines/,
+    "a coal route must not display ship, barge or pipeline controls");
+  assert.equal((coalRouteCard.match(/data-omega-v2-fleet-count-input/g) || []).length, 2,
+    "the fleet editor must only expose controls for route modes");
+  assert.match(coalRouteCard, /40 km/);
+  assert.match(coalRouteCard, /80 km/);
+  assert.match(coalRouteCard, /Route capacity 45 tonnes\/day/);
+  assert.match(coalRouteCard, /Route capacity 5,000 tonnes\/day/);
+  assert.doesNotMatch(coalRouteCard, /Distance by transport type|data-route-mode-distance=/);
+  assert.ok(root.innerHTML.includes("assets/omega-industrial-icons-v1/transport/variants/mode-hero-road-truck.svg"));
+  assert.ok(root.innerHTML.includes("assets/omega-industrial-icons-v1/transport/variants/mode-hero-freight-train.svg"));
+  assert.ok(root.innerHTML.includes("assets/omega-industrial-icons-v1/transport/variants/mode-hero-cargo-ship.svg"));
+  assert.ok(root.innerHTML.includes("assets/omega-industrial-icons-v1/transport/variants/mode-hero-pipeline.svg"));
   assert.match(root.innerHTML, /data-design-estimate-available="true"/);
   assert.match(root.innerHTML, /data-design-estimated-units="1"/);
   assert.match(root.innerHTML, /data-design-formula="ceil\(production per day/);
@@ -926,9 +940,8 @@ test("Resource Logistics shows configured per-site route cards separately from l
   assert.ok(liveCardStart >= 0 && liveCardEnd > liveCardStart, "live-production mine route card must render");
   assert.match(root.innerHTML.slice(liveCardStart, liveCardEnd), /data-design-estimated-units="2"/,
     "when route planningProduction is absent, use the selected mine's declared simulated daily production");
-  assert.match(root.innerHTML, /Known configured vehicle subtotal/);
-  assert.match(root.innerHTML, /(?:Pipeline lines recorded|Known pipeline-line subtotal|Configured pipeline-line total)/);
-  assert.match(root.innerHTML, /(?:Known combined transport units subtotal|Known combined transport-unit subtotal) \(vehicles \+ lines\)/);
+  assert.doesNotMatch(root.innerHTML, /Known configured vehicle subtotal|Known combined transport-unit subtotal|Pipeline lines recorded/,
+    "duplicate national fleet rollups must not be repeated inside the mine route cards");
   assert.match(root.innerHTML, /Configure transport counts/);
   assert.match(root.innerHTML, /data-omega-v2-logistics-fleet-form/);
   assert.match(root.innerHTML, /data-omega-v2-fleet-count-input/);
@@ -961,23 +974,14 @@ test("Resource Logistics shows configured per-site route cards separately from l
   assert.match(root.innerHTML, /2 train sets/);
   assert.match(root.innerHTML, /Cargo ships/);
   assert.match(root.innerHTML, /0 ships/);
-  assert.match(root.innerHTML, /River barges/);
-  assert.match(root.innerHTML, /Not configured/);
   assert.match(root.innerHTML, /Pipeline lines/);
   assert.match(root.innerHTML, /4 lines/);
-  assert.ok(root.innerHTML.includes("assets/omega-industrial-icons-v1/transport/variants/truck-dry-bulk-tipper.svg"), "coal routes should use the dry-bulk truck SVG");
-  assert.ok(root.innerHTML.includes("assets/omega-industrial-icons-v1/transport/variants/train-bulk-hopper.svg"), "coal routes should use the bulk-hopper train SVG");
-  assert.ok(root.innerHTML.includes("assets/omega-industrial-icons-v1/transport/variants/ship-bulk-carrier.svg"), "coal routes should use the bulk-carrier ship SVG");
-  assert.ok(root.innerHTML.includes("assets/omega-industrial-icons-v1/transport/variants/barge-inland-bulk.svg"), "coal routes should use the inland bulk-barge SVG");
-  assert.ok(root.innerHTML.includes("assets/omega-industrial-icons-v1/transport/variants/truck-liquid-tanker.svg"), "oil routes should use the liquid-tanker truck SVG");
-  assert.ok(root.innerHTML.includes("assets/omega-industrial-icons-v1/transport/variants/train-liquid-tank-cars.svg"), "oil routes should use liquid-tanker railcars");
-  assert.ok(root.innerHTML.includes("assets/omega-industrial-icons-v1/transport/variants/ship-oil-tanker.svg"), "oil routes should use the tanker ship SVG");
-  assert.ok(root.innerHTML.includes("assets/omega-industrial-icons-v1/transport/variants/barge-liquid-tanker.svg"), "oil routes should use the liquid-tanker barge SVG");
+  assert.doesNotMatch(root.innerHTML, /River barges/,
+    "no barge card should appear when the selected country's route plans contain no barge leg");
   assert.match(root.innerHTML, /Design need: 1 truck/);
   assert.match(root.innerHTML, /Design need: 1 train set/);
   assert.match(root.innerHTML, /trips\/day/);
-  assert.match(root.innerHTML, /Calculated design units/);
-  assert.match(root.innerHTML, /data-omega-v2-logistics-fleet-overview/);
+  assert.doesNotMatch(root.innerHTML, /Calculated design units|data-omega-v2-logistics-fleet-overview/);
   assert.match(root.innerHTML, /logistics\/mine-site\.svg/);
   assert.match(root.innerHTML, /logistics\/warehouse-node\.svg/);
   assert.match(read("assets/omega-industrial-icons-v1/logistics/mine-site.svg"), /<title id="mine-title">Resource mine site<\/title>/);
@@ -1407,6 +1411,16 @@ test("logistics cards expose an accessible route diagram with existing SVG cargo
     transportMode: "ROAD",
     etaTurn: 12
   };
+  const shipmentWithoutTransportMode = {
+    shipmentId: "SHIPMENT_VISUAL_TEST_02",
+    resourceId: "iron_ore",
+    quantity: 1200,
+    unit: "TONNES",
+    status: "IN_TRANSIT",
+    sourceSiteName: "Chittagong Ore Depot",
+    destinationFactoryName: "Dhaka Steel Factory",
+    etaTurn: 14
+  };
   const listeners = Object.create(null);
   const root = {
     innerHTML: "",
@@ -1422,7 +1436,7 @@ test("logistics cards expose an accessible route diagram with existing SVG cargo
       resource: {
         BGD: {
           mineAssets: [],
-          industrialNetwork: { projects: [], shipments: [shipment], siteFlowLedger: [] },
+          industrialNetwork: { projects: [], shipments: [shipment, shipmentWithoutTransportMode], siteFlowLedger: [] },
           warehouse: { availableByResource: { coal: 8200 } }
         }
       }
@@ -1441,6 +1455,10 @@ test("logistics cards expose an accessible route diagram with existing SVG cargo
     assert.match(root.innerHTML, /Road/);
     assert.match(root.innerHTML, /8,200 TONNES/);
     assert.match(root.innerHTML, /Turn 12/);
+    assert.match(root.innerHTML, /Transport mode not recorded/,
+      "a shipment with no recorded mode must not invent a truck, ship or other transport");
+    assert.doesNotMatch(root.innerHTML, /data-omega-v2-transport-mode="unknown"|src=""/,
+      "a missing mode must not render a blank or fabricated transport image");
     const css = cssText();
     assert.match(css, /omega-v2-logistics-card::before/);
     assert.match(css, /omega-v2-logistics-path/);
