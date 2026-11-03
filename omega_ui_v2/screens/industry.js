@@ -569,6 +569,7 @@
         inputRows: inputRows,
         inputCoefficients: inputCoefficients,
         inputUnit: String(asset.inputUnit || selectedRecipe && selectedRecipe.inputUnit || profile.inputUnit || ''),
+        cycleDays: num(selectedRecipe && selectedRecipe.cycleDays) || num(profile.cycleDays) || 1,
         inputLots: Array.isArray(asset.inputBatchLots) ? asset.inputBatchLots : [],
         inputUnits: asset.inputUnits && typeof asset.inputUnits === 'object' ? asset.inputUnits : {},
         hasInputInventory: !!(asset.inputInventory && typeof asset.inputInventory === 'object'),
@@ -687,6 +688,10 @@
       recentFlows: flows.slice(-20).reverse(),
       catalogProfileCount: Object.keys(profiles).length,
       catalogProfiles: profiles,
+      catalogRecipes: recipeCatalog,
+      processingRules: processingRules,
+      factoryBaselineStatus: factoryStartingRegistry && factoryStartingRegistry.status || 'NOT_READY',
+      factoryInputCoverageDays: Math.max(1, Math.min(3650, Math.round(num(resource.factoryInputBaselineV1 && resource.factoryInputBaselineV1.targetCoverageDays) || num(resource.factoryInputPolicy && resource.factoryInputPolicy.targetCoverageDays) || 100))),
       inputInventoryCount: mappedAssets.reduce(function (total, row) { return total + row.inputRows.filter(function (input) { return input.quantity !== null && input.quantity > 0; }).length; }, 0),
       nationalInventory: nationalInventory,
       finishedGoodsLedger: finishedGoodsLedger,
@@ -1096,11 +1101,308 @@
     if (stock === null) return { label: 'Not recorded', key: 'unknown' };
     return stock > 1e-9 ? { label: 'Stock on hand', key: 'sufficient' } : { label: 'No remaining stock', key: 'empty' };
   }
+
+  function factoryProductionPlan(model) {
+    model = model || {};
+    var catalog = safeCatalog() || {};
+    var profiles = model.catalogProfiles && typeof model.catalogProfiles === 'object' ? model.catalogProfiles :
+      catalog.factoryProfiles && typeof catalog.factoryProfiles === 'object' ? catalog.factoryProfiles : {};
+    var recipes = model.catalogRecipes && typeof model.catalogRecipes === 'object' ? model.catalogRecipes :
+      catalog.downstreamFactoryRecipes && typeof catalog.downstreamFactoryRecipes === 'object' ? catalog.downstreamFactoryRecipes : {};
+    var processingRules = model.processingRules && typeof model.processingRules === 'object' ? model.processingRules :
+      catalog.processingRules && typeof catalog.processingRules === 'object' ? catalog.processingRules : {};
+    var counts = Object.create(null);
+    (Array.isArray(model.factoryTypeCounts) ? model.factoryTypeCounts : []).forEach(function (row) {
+      var type = normalizeFactoryType(row && row.type, catalog) || String(row && row.type || '').toUpperCase();
+      if (type) counts[type] = Math.max(0, Math.floor(num(row && row.count) || 0));
+    });
+    var assetsByType = Object.create(null);
+    (Array.isArray(model.factories) ? model.factories : []).forEach(function (factory) {
+      var type = normalizeFactoryType(factory && factory.type, catalog) || String(factory && factory.type || '').toUpperCase();
+      if (!type) return;
+      if (!assetsByType[type]) assetsByType[type] = [];
+      assetsByType[type].push(factory);
+    });
+    var profileTypes = Object.keys(profiles);
+    var typeRows = profileTypes.map(function (rawType) {
+      var type = normalizeFactoryType(rawType, catalog) || rawType;
+      var profile = profiles[rawType] || profiles[type] || {};
+      var liveCapacities = (assetsByType[type] || []).map(function (factory) {
+        return num(factory && factory.capacityPerDay);
+      }).filter(function (value) { return value !== null && value > 0; });
+      var capacity = num(profile.defaultCapacityPerDay);
+      if (capacity === null && liveCapacities.length) {
+        capacity = liveCapacities.reduce(function (sum, value) { return sum + value; }, 0) / liveCapacities.length;
+      }
+      return {
+        type: type,
+        name: String(profile.name || type),
+        category: String(profile.category || profile.subCategory || 'Industry'),
+        count: Object.prototype.hasOwnProperty.call(counts, type) ? counts[type] : (assetsByType[type] || []).length,
+        capacityPerFactory: capacity,
+        inputs: Object.create(null),
+        outputs: Object.create(null),
+        routes: []
+      };
+    }).sort(function (a, b) {
+      return a.category.localeCompare(b.category) || a.name.localeCompare(b.name);
+    });
+
+    function addProduct(map, productId, perCycle, perDay, unit, source) {
+      var id = String(productId || '').trim();
+      if (!id) return;
+      var key = id.toLowerCase();
+      if (!map[key]) map[key] = { productId: id, perCycle: 0, perDay: 0, unit: String(unit || ''), sources: [] };
+      map[key].perCycle += perCycle;
+      map[key].perDay += perDay;
+      if (!map[key].unit && unit) map[key].unit = String(unit);
+      if (source) map[key].sources.push(source);
+    }
+    function addRoute(plan, factoryUnits, recipeId, rule, capacity, routeKind) {
+      factoryUnits = Math.max(0, Math.floor(Number(factoryUnits) || 0));
+      if (!factoryUnits || !rule || !(capacity > 0)) return;
+      var cycleDays = Math.max(1, num(rule.cycleDays) || 1);
+      var totalCapacity = factoryUnits * capacity;
+      var inputs = rule.inputs && typeof rule.inputs === 'object' ? rule.inputs : {};
+      var outputs = rule.outputs && typeof rule.outputs === 'object' ? rule.outputs : {};
+      var source = {
+        factoryType: plan.type,
+        factoryCount: factoryUnits,
+        recipeId: recipeId || ('PROCESSING:' + String(rule.resourceId || 'RESOURCE')),
+        cycleDays: cycleDays,
+        capacityPerCycle: capacity,
+        allocationKind: routeKind || 'CATALOG_RECIPE'
+      };
+      Object.keys(inputs).forEach(function (productId) {
+        var coefficient = panelInputCoefficient(inputs[productId]);
+        if (coefficient === null || coefficient <= 0) return;
+        var perCycle = totalCapacity * coefficient;
+        var productUnit = rule.inputUnit || 'SIMULATION_RESOURCE_UNIT';
+        addProduct(plan.inputs, productId, perCycle, perCycle / cycleDays, productUnit, source);
+      });
+      Object.keys(outputs).forEach(function (productId) {
+        var coefficient = panelInputCoefficient(outputs[productId]);
+        if (coefficient === null || coefficient <= 0) return;
+        var perCycle = totalCapacity * coefficient;
+        var productUnit = rule.outputUnit || 'SIMULATION_RESOURCE_UNIT';
+        addProduct(plan.outputs, productId, perCycle, perCycle / cycleDays, productUnit, source);
+      });
+      plan.routes.push({
+        recipeId: recipeId || ('PROCESSING:' + String(rule.resourceId || 'RESOURCE')),
+        factoryCount: factoryUnits,
+        cycleDays: cycleDays,
+        capacityPerFactory: capacity,
+        allocationKind: routeKind || 'CATALOG_RECIPE'
+      });
+    }
+    function splitFactoryUnits(factoryCount, routes, defaultRecipeId) {
+      var ordered = routes.slice().sort(function (left, right) {
+        if (left === defaultRecipeId) return -1;
+        if (right === defaultRecipeId) return 1;
+        return routes.indexOf(left) - routes.indexOf(right);
+      });
+      if (!ordered.length || !factoryCount) return [];
+      if (ordered.length === 1) return [{ recipeId: ordered[0], factoryCount: factoryCount }];
+      var each = Math.floor(factoryCount / ordered.length);
+      var remaining = factoryCount - each * ordered.length;
+      return ordered.map(function (recipeId, index) {
+        return { recipeId: recipeId, factoryCount: each + (index < remaining ? 1 : 0) };
+      }).filter(function (row) { return row.factoryCount > 0; });
+    }
+    function splitBySiteWeight(factoryCount, resources) {
+      if (!resources.length || !factoryCount) return [];
+      var totalWeight = resources.reduce(function (sum, row) { return sum + row.siteCount; }, 0);
+      if (!(totalWeight > 0)) return [];
+      var allocations = resources.map(function (row) {
+        var exact = factoryCount * row.siteCount / totalWeight;
+        var base = Math.floor(exact);
+        return { resourceId: row.resourceId, factoryCount: base, remainder: exact - base };
+      });
+      var remaining = factoryCount - allocations.reduce(function (sum, row) { return sum + row.factoryCount; }, 0);
+      var priority = allocations.slice().sort(function (a, b) {
+        return b.remainder - a.remainder || (a.resourceId < b.resourceId ? -1 : a.resourceId > b.resourceId ? 1 : 0);
+      });
+      for (var index = 0; index < remaining; index += 1) {
+        var target = allocations.find(function (row) { return row.resourceId === priority[index].resourceId; });
+        if (target) target.factoryCount += 1;
+      }
+      return allocations.filter(function (row) { return row.factoryCount > 0; });
+    }
+
+    var typeById = Object.create(null);
+    typeRows.forEach(function (plan) { typeById[plan.type] = plan; });
+    typeRows.forEach(function (plan) {
+      var count = plan.count, capacity = plan.capacityPerFactory;
+      if (!count || !(capacity > 0)) return;
+      var profile = profiles[plan.type] || {};
+      if (plan.type === 'UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT') {
+        var siteMix = Object.create(null);
+        (Array.isArray(model.mineSites) ? model.mineSites : []).forEach(function (site) {
+          var raw = site && site.raw || {};
+          if (raw.commercialExtraction !== true) return;
+          var resourceId = String(site.resourceId || raw.resourceId || raw.resourceTypeId ||
+            raw.identity && (raw.identity.resourceTypeId || raw.identity.resourceId) || '')
+            .trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+          if (!resourceId || !processingRules[resourceId]) return;
+          siteMix[resourceId] = (siteMix[resourceId] || 0) + 1;
+        });
+        var resources = Object.keys(siteMix).sort().map(function (resourceId) {
+          return { resourceId: resourceId, siteCount: siteMix[resourceId] };
+        });
+        var fallback = false;
+        if (!resources.length) {
+          fallback = true;
+          resources = ['coal', 'iron_ore'].filter(function (resourceId) { return !!processingRules[resourceId]; })
+            .map(function (resourceId) { return { resourceId: resourceId, siteCount: 1 }; });
+        }
+        splitBySiteWeight(count, resources).forEach(function (allocation) {
+          var rule = processingRules[allocation.resourceId];
+          if (!rule) return;
+          var processing = Object.assign({}, rule, { resourceId: allocation.resourceId });
+          addRoute(plan, allocation.factoryCount, 'PROCESSING:' + allocation.resourceId, processing, capacity,
+            fallback ? 'SIMULATED_IMPORT_BASELINE_NO_DOMESTIC_SITE' : 'DOMESTIC_COMMERCIAL_SITE_MIX');
+        });
+        return;
+      }
+      var recipeIds = (Array.isArray(profile.recipeIds) ? profile.recipeIds : []).filter(function (recipeId) {
+        return !!(recipes[recipeId] && normalizeFactoryType(recipes[recipeId].factoryType, catalog) === plan.type);
+      });
+      if (!recipeIds.length && profile.defaultRecipeId && recipes[profile.defaultRecipeId] &&
+          normalizeFactoryType(recipes[profile.defaultRecipeId].factoryType, catalog) === plan.type) {
+        recipeIds = [profile.defaultRecipeId];
+      }
+      splitFactoryUnits(count, recipeIds, profile.defaultRecipeId).forEach(function (allocation) {
+        var recipe = recipes[allocation.recipeId];
+        if (recipe) addRoute(plan, allocation.factoryCount, allocation.recipeId, recipe, capacity, 'CATALOG_RECIPE');
+      });
+    });
+    var coverageDays = Math.max(1, Math.min(3650, Math.round(num(model.factoryInputCoverageDays) || 100)));
+    typeRows.forEach(function (plan) {
+      plan.inputs = Object.keys(plan.inputs).map(function (key) { return plan.inputs[key]; })
+        .sort(function (a, b) { return a.productId.localeCompare(b.productId); });
+      plan.outputs = Object.keys(plan.outputs).map(function (key) { return plan.outputs[key]; })
+        .sort(function (a, b) { return a.productId.localeCompare(b.productId); });
+      plan.inputs.forEach(function (row) {
+        row.coverageDays = coverageDays;
+        row.coverageQuantity = row.perDay * coverageDays;
+      });
+    });
+    return {
+      countryId: model.countryId || null,
+      totalFactories: Math.max(0, num(model.factoryCount) || typeRows.reduce(function (sum, row) { return sum + row.count; }, 0)),
+      factoryTypeCount: typeRows.length,
+      assignedFactoryTypeCount: typeRows.filter(function (row) { return row.count > 0; }).length,
+      coverageDays: coverageDays,
+      types: typeRows,
+      authority: 'CANONICAL_FACTORY_PROFILES_AND_RECIPES',
+      productionStarted: (Array.isArray(model.factories) ? model.factories : []).some(function (factory) {
+        return !!(factory && factory.lastRun && (factory.lastRun.outputQuantities || factory.lastRun.outputs));
+      }) || (Array.isArray(model.finishedGoodsLedger) && model.finishedGoodsLedger.length > 0)
+    };
+  }
+
+  function factoryPlanUnit(unit) {
+    var value = String(unit || '').replace(/_/g, ' ').trim();
+    if (!value || /SIMULATION RESOURCE UNIT/i.test(value)) return 'game units';
+    return value;
+  }
+
+  function factoryInputPlanMarkup(model) {
+    var plan = factoryProductionPlan(model);
+    var html = '<section class="fp-factory-analytics fp-factory-plan" data-factory-input-plan="canonical-v1" aria-label="Calculated factory input requirements">' +
+      '<h3 class="omega-v2-section-title">Factory-type input requirements</h3>' +
+      '<div class="omega-v2-vehicle-stats"><div><span>Total factories</span><strong>' + fmt(plan.totalFactories) + '</strong></div>' +
+      '<div><span>Factory types</span><strong>' + fmt(plan.factoryTypeCount) + '</strong></div>' +
+      '<div><span>Types with factories</span><strong>' + fmt(plan.assignedFactoryTypeCount) + '</strong></div>' +
+      '<div><span>Coverage target</span><strong>' + fmt(plan.coverageDays, 'days') + '</strong></div></div>' +
+      '<p class="omega-v2-source">Calculated from the country factory allocation, canonical factory capacity and recipe cycle. Planned demand is not reported consumption.</p>';
+    plan.types.forEach(function (type) {
+      html += '<article class="fp-factory-data-card"><header class="fp-factory-data-heading"><div><span>FACTORY INPUT PLAN</span><strong>' +
+        esc(type.name) + '</strong><small>' + esc(type.category) + ' · ' + esc(type.type) + '</small></div>' +
+        '<span class="fp-factory-data-count">' + fmt(type.count) + ' factories</span></header>';
+      if (!type.count) {
+        html += '<div class="fp-factory-table-wrap"><p class="fp-factory-muted">No factories of this type are assigned. Current input demand: 0.</p></div></article>';
+        return;
+      }
+      if (!type.inputs.length) {
+        html += '<div class="fp-factory-table-wrap"><p class="fp-factory-muted">No input recipe is defined for this factory type.</p></div></article>';
+        return;
+      }
+      html += '<div class="fp-factory-table-wrap"><table class="fp-factory-table"><thead><tr>' +
+        '<th>Required input product</th><th>Total / full cycle</th><th>Total / day</th><th>' + esc(String(plan.coverageDays)) + '-day requirement</th>' +
+        '</tr></thead><tbody>';
+      type.inputs.forEach(function (row) {
+        var unit = factoryPlanUnit(row.unit);
+        html += '<tr><td>' + factoryProductIdentityMarkup(row.productId, panelProductLabel(model, row.productId)) + '</td>' +
+          '<td><strong>' + fmt(row.perCycle, unit) + '</strong></td>' +
+          '<td><strong>' + fmt(row.perDay, unit) + '</strong></td>' +
+          '<td>' + fmt(row.coverageQuantity, unit) + '</td></tr>';
+      });
+      html += '</tbody></table></div></article>';
+    });
+    return html + '</section>';
+  }
+
+  function factoryOutputPlanMarkup(model, actualRows) {
+    var plan = factoryProductionPlan(model);
+    actualRows = Array.isArray(actualRows) ? actualRows : factoryOutputRows(model);
+    var factoryTypeById = Object.create(null);
+    (Array.isArray(model.factories) ? model.factories : []).forEach(function (factory) {
+      if (!factory || !factory.id) return;
+      factoryTypeById[String(factory.id)] = normalizeFactoryType(factory.type, safeCatalog()) || String(factory.type || '').toUpperCase();
+    });
+    var html = '<section class="fp-factory-analytics fp-factory-plan" data-factory-output-plan="canonical-v1" aria-label="Planned factory outputs and actual finished stock">' +
+      '<h3 class="omega-v2-section-title">Factory-type output and stock plan</h3>' +
+      '<div class="omega-v2-vehicle-stats"><div><span>Total factories</span><strong>' + fmt(plan.totalFactories) + '</strong></div>' +
+      '<div><span>Factory types</span><strong>' + fmt(plan.factoryTypeCount) + '</strong></div>' +
+      '<div><span>Types with factories</span><strong>' + fmt(plan.assignedFactoryTypeCount) + '</strong></div>' +
+      '<div><span>Production records</span><strong>' + (actualRows.length ? 'Recorded' : 'Not started') + '</strong></div></div>' +
+      '<p class="omega-v2-source">Planned output is calculated from full factory capacity and recipe coefficients. Actual output and stock remain tied to committed production batches.</p>';
+    plan.types.forEach(function (type) {
+      html += '<article class="fp-factory-data-card"><header class="fp-factory-data-heading"><div><span>FACTORY OUTPUT PLAN</span><strong>' +
+        esc(type.name) + '</strong><small>' + esc(type.category) + ' · ' + esc(type.type) + '</small></div>' +
+        '<span class="fp-factory-data-count">' + fmt(type.count) + ' factories</span></header>';
+      if (!type.count) {
+        html += '<div class="fp-factory-table-wrap"><p class="fp-factory-muted">No factories of this type are assigned. Planned output: 0.</p></div></article>';
+        return;
+      }
+      if (!type.outputs.length) {
+        html += '<div class="fp-factory-table-wrap"><p class="fp-factory-muted">No output recipe is defined for this factory type.</p></div></article>';
+        return;
+      }
+      html += '<div class="fp-factory-table-wrap"><table class="fp-factory-table"><thead><tr>' +
+        '<th>Output product</th><th>Planned / full cycle</th><th>Planned / day</th><th>Produced to date</th><th>Country warehouse stock</th>' +
+        '</tr></thead><tbody>';
+      type.outputs.forEach(function (row) {
+        var matching = actualRows.filter(function (actual) {
+          return factoryTypeById[String(actual.factoryId)] === type.type &&
+            String(actual.productId || '').toLowerCase() === String(row.productId || '').toLowerCase();
+        });
+        var hasActual = matching.some(function (actual) { return actual.hasProduction === true; });
+        var produced = matching.reduce(function (sum, actual) { return sum + (num(actual.produced) || 0); }, 0);
+        var hasTracedStock = matching.some(function (actual) { return actual.currentStock !== null; });
+        var tracedStock = matching.reduce(function (sum, actual) {
+          return sum + (actual.currentStock === null ? 0 : num(actual.currentStock) || 0);
+        }, 0);
+        var warehouseStock = hasTracedStock ? tracedStock : panelValueByKey(model.processedStock, row.productId);
+        var unit = factoryPlanUnit(row.unit);
+        html += '<tr><td>' + factoryProductIdentityMarkup(row.productId, panelProductLabel(model, row.productId)) + '</td>' +
+          '<td><strong>' + fmt(row.perCycle, unit) + '</strong></td>' +
+          '<td><strong>' + fmt(row.perDay, unit) + '</strong></td>' +
+          '<td>' + (hasActual ? fmt(produced, unit) : '<span class="fp-factory-muted">Not started / no committed output</span>') + '</td>' +
+          '<td>' + (warehouseStock === null ? '<span class="fp-factory-muted">Not recorded</span>' : factoryProductStockMarkup(row.productId, panelProductLabel(model, row.productId), fmt(warehouseStock, unit))) + '</td></tr>';
+      });
+      html += '</tbody></table></div></article>';
+    });
+    return html + '</section>';
+  }
+
   function factoryStockPanelMarkup(model) {
     var rows = factoryOutputRows(model), factoryMap = Object.create(null);
     (model.factories || []).forEach(function (factory) { if (factory && factory.id) factoryMap[String(factory.id)] = factory; });
-    if (!rows.length) return '<div class="omega-v2-empty">No committed factory output batches are recorded for this country.</div>';
-    var html = '<section class="fp-factory-analytics" aria-label="Factory output stock">';
+    var planMarkup = factoryOutputPlanMarkup(model, rows);
+    if (!rows.length) return planMarkup + '<div class="omega-v2-empty">No committed factory output batches are recorded yet. Planned outputs remain shown above.</div>';
+    var html = '<section class="fp-factory-analytics" aria-label="Recorded factory output stock"><h3 class="omega-v2-section-title">Recorded factory output batches</h3>';
     var byFactory = Object.create(null), productProducerCounts = Object.create(null), nationalConsumptionShown = Object.create(null);
     rows.forEach(function (row) {
       var productKey = String(row.productId || '').toLowerCase();
@@ -1150,7 +1452,7 @@
       });
       html += '</tbody></table></div></article>';
     });
-    return html + '</section>';
+    return planMarkup + html + '</section>';
   }
   function factoryInputSourceMarkup(factory, productId, model) {
     var lots = (factory.inputLots || []).filter(function (lot) {
@@ -1215,9 +1517,10 @@
     return { value: null, observed: false };
   }
   function factoryInputPanelMarkup(model) {
+    var planMarkup = factoryInputPlanMarkup(model);
     var factories = Array.isArray(model.factories) ? model.factories : [];
-    if (!factories.length) return '<div class="omega-v2-empty">No active factories are recorded for this country.</div>';
-    var html = '<section class="fp-factory-analytics" aria-label="Factory input supply">';
+    if (!factories.length) return planMarkup;
+    var html = '<section class="fp-factory-analytics" aria-label="Recorded factory input deliveries"><h3 class="omega-v2-section-title">Actual factory input inventory and deliveries</h3>';
     var visibleFactories = 0;
     factories.forEach(function (factory) {
       var coefficientMap = factory.inputCoefficients && typeof factory.inputCoefficients === 'object' ? factory.inputCoefficients : {};
@@ -1238,7 +1541,7 @@
           var coefficientKey = Object.keys(coefficientMap).find(function (key) { return key.toLowerCase() === productId.toLowerCase(); });
           if (coefficientKey) coefficient = panelInputCoefficient(coefficientMap[coefficientKey]);
         }
-        var required = capacity !== null && coefficient !== null ? capacity * coefficient : null;
+        var required = capacity !== null && coefficient !== null ? capacity * coefficient / Math.max(1, num(factory.cycleDays) || 1) : null;
         var current = factory.hasInputInventory ? panelValueByKey(factory.raw.inputInventory, productId) : null;
         if (factory.hasInputInventory && current === null) current = 0;
         var lots = factory.inputLots.filter(function (lot) {
@@ -1281,8 +1584,8 @@
       });
       html += '</tbody></table></div></article>';
     });
-    if (!visibleFactories) return '<div class="omega-v2-empty">Factory recipe inputs have not been recorded for these factories.</div>';
-    return html + '</section>';
+    if (!visibleFactories) return planMarkup + '<div class="omega-v2-empty">No delivered factory input rows are recorded yet. Planned requirements remain shown above.</div>';
+    return planMarkup + html + '</section>';
   }
 
   function factoryTypeLabel(factory) {
@@ -1459,12 +1762,57 @@
     return render(root, options);
   }
 
+
+  function warmFactoryPlanningData(root, options, model) {
+    if (!root || !model) return;
+    var countryKey = String(model.countryId || '');
+    if (!countryKey) return;
+    var runtime = g.OmegaCountryFactoryStartingBaselineV1 ||
+      (g.Omega && g.Omega.CountryFactoryStartingBaselineV1) || null;
+    var network = safeNetwork();
+    var waits = [];
+    if (model.factoryBaselineStatus === 'LOADING' && runtime) {
+      try {
+        var ready = runtime.ready;
+        if (ready && typeof ready.then === 'function') waits.push(ready);
+      } catch (_) {}
+    }
+    if (!(model.catalogProfileCount > 0) && network && typeof network.loadCatalog === 'function') {
+      try {
+        var catalogReady = network.loadCatalog();
+        if (catalogReady && typeof catalogReady.then === 'function') waits.push(catalogReady);
+      } catch (_) {}
+    }
+    if (!waits.length) return;
+    var pending = root.__omegaV2IndustryPlanWarmup;
+    if (pending && pending.countryId === countryKey) return;
+    pending = { countryId: countryKey, completed: false };
+    root.__omegaV2IndustryPlanWarmup = pending;
+    pending.promise = Promise.all(waits.map(function (promise) {
+      return Promise.resolve(promise).catch(function () { return null; });
+    })).then(function () {
+      pending.completed = true;
+      if (root.__omegaV2IndustryPlanWarmup !== pending ||
+          String(root.__omegaV2IndustryCountryId || '') !== countryKey) return;
+      // Do not revive a hidden Industry screen after the player has navigated
+      // to another ministry while this read-only source request was pending.
+      if (typeof root.querySelector === 'function' &&
+          !root.querySelector('[data-omega-v2-industry-tab]')) return;
+      var refreshedModel = buildViewModel({ countryId:countryKey });
+      if (!(refreshedModel.catalogProfileCount > 0) && refreshedModel.factoryBaselineStatus !== 'READY') return;
+      var active = root.__omegaV2IndustryTab || options.tab || 'factories';
+      scheduleRender(root, Object.assign({}, root.__omegaV2IndustryOptions || options || {}, { countryId:countryKey, tab:active }),
+        'Factory planning catalog ready');
+    });
+  }
+
   function render(root, options) {
     options = options || {};
     if (!root) return { ok: false, code: 'INDUSTRY_ROOT_REQUIRED' };
     var model = buildViewModel(options);
     var active = options.tab || root.__omegaV2IndustryTab || 'factories';
     var countryKey = String(model.countryId || '');
+    warmFactoryPlanningData(root, options, model);
     if (root.__omegaV2IndustryCountryId !== countryKey) {
       root.__omegaV2IndustryCountryId = countryKey;
       root.__omegaV2IndustryFactoryViewExplicit = false;
