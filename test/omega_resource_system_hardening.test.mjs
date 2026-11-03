@@ -36,7 +36,13 @@ context.globalThis=context;
 vm.createContext(context);
 vm.runInContext(read('omega_resource_production_capacity_contract_v1.js'),context,{filename:'omega_resource_production_capacity_contract_v1.js'});
 vm.runInContext(read('omega_resource_realism_runtime_v1.js'),context,{filename:'omega_resource_realism_runtime_v1.js'});
-context.Omega.ResourceLogisticsRuntime={plan:()=>({status:'PLANNED',requestedQuantity:100,dispatchQuantity:100,capacity:100,transportMode:'truck',travelTimeDays:1})};
+context.Omega.ResourceLogisticsRuntime={
+  plan:()=>[{status:'PLANNED',requestedQuantity:100,dispatchQuantity:100,capacity:100,transportMode:'truck',travelTimeDays:1,factoryId:'FAC-1'}],
+  planFromFactoryInput(payload){const plans=this.plan(payload);return{status:'PLANNED',result:{accepted:true,plans,dispatchCommitted:false}};}
+};
+const logisticsHandlers=new Map();
+context.OmegaMinistryInteroperability={registerAction(){},registerCommandHandler(id,_owner,handler){logisticsHandlers.set(id,handler);}};
+context.Game.state.resource.CHL={logistics:{shipments:[{shipmentId:'LEGACY-PLAN',status:'IN_TRANSIT'}]}};
 vm.runInContext(read('omega_resource_system_hardening_v1.js'),context,{filename:'omega_resource_system_hardening_v1.js'});
 
 const realism=context.Omega.ResourceRealism;
@@ -119,7 +125,25 @@ const constrained=hard.constrainedLogisticsPlan({
   quantity:100,terrainMultiplier:0.5,infrastructureMultiplier:0.5,atWar:true,sanctioned:true
 });
 assert.ok(Math.abs(constrained.logisticsConstraints.totalMultiplier-0.089375)<1e-12);
-assert(constrained.dispatchQuantity<=18);
+assert.ok(Math.abs(constrained.capacity-8.9375)<1e-9, 'array route capacity must be constrained per route instead of collapsing to zero');
+assert.ok(Math.abs(constrained.dispatchQuantity-8.9375)<1e-9, 'route preview dispatch quantity must reflect actual route capacity');
+assert.equal(constrained.plans[0].deliveryStatus,'NOT_DISPATCHED');
+assert.equal(constrained.plans[0].dispatchCommitted,false);
+
+const planHandler=logisticsHandlers.get('OMEGA_RESOURCE_LOGISTICS_PLAN');
+assert.equal(typeof planHandler,'function');
+const previewResourceStateBefore=JSON.stringify(context.Game.state.resource);
+let shipmentLedgerWrites=0;
+const previewCommand=planHandler({payload:{countryId:'CHL',quantity:100,resourceId:'iron_ore'}},{
+  countryId:'CHL',stateTransaction:{get(){throw new Error('route preview must not read a shipment ledger');},set(){shipmentLedgerWrites++;}}
+});
+assert.equal(previewCommand.accepted,true);
+assert.equal(previewCommand.dispatchCommitted,false);
+assert.equal(previewCommand.inventoryReserved,false);
+assert.equal(previewCommand.sourceWarehouseDebited,false);
+assert.equal(previewCommand.plans[0].deliveryStatus,'NOT_DISPATCHED');
+assert.equal(shipmentLedgerWrites,0,'a route preview must not write pretend in-transit shipments');
+assert.equal(JSON.stringify(context.Game.state.resource),previewResourceStateBefore,'the route preview must leave all resource state unchanged');
 
 const copperModel=hard.processModel('copper');
 assert.equal(copperModel.resourceId,'copper');

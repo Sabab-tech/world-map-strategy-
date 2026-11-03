@@ -184,14 +184,54 @@ function logisticsConstraints(p={}){
  return{terrain:t,infrastructure:i,border,war,sanctions:sanc,blockade:block,damage,maintenance:maint,totalMultiplier:t*i*border*war*sanc*block*damage*maint};
 }
 function constrainedLogisticsPlan(payload={}){
- const rt=g.Omega?.ResourceLogisticsRuntime||g.OmegaResourceLogisticsRuntime,base=rt?.plan?rt.plan(payload):null;
- const route=base||{status:'UNAVAILABLE',requestedQuantity:num(payload.quantity)||0,dispatchQuantity:0,capacity:0},lc=logisticsConstraints(payload),baseCap=num(route.capacity)||0,req=Math.max(0,num(route.requestedQuantity??payload.quantity)||0),cap=Math.max(0,baseCap*lc.totalMultiplier);
- return{...clone(route),requestedQuantity:req,capacity:cap,dispatchQuantity:Math.min(req,cap),deliveryStatus:Math.min(req,cap)<=0&&req>0?'BLOCKED_BY_ROUTE':(Math.min(req,cap)<req?'PARTIAL_ROUTE_CAPACITY':'READY'),logisticsConstraints:lc};
+ const rt=g.Omega?.ResourceLogisticsRuntime||g.OmegaResourceLogisticsRuntime;
+ let preview=null,rawPlans=[];
+ if(typeof rt?.planFromFactoryInput==='function'){
+   try{preview=rt.planFromFactoryInput(payload)||null;}catch(error){preview={status:'UNAVAILABLE',reason:String(error?.message||error)};}
+   const result=preview?.result;
+   if(Array.isArray(result?.plans))rawPlans=result.plans;
+   else if(Array.isArray(preview?.plans))rawPlans=preview.plans;
+ }
+ if(!rawPlans.length&&typeof rt?.plan==='function'){
+   try{
+     const direct=rt.plan(payload);
+     rawPlans=Array.isArray(direct)?direct:(direct&&typeof direct==='object'?[direct]:[]);
+   }catch(error){if(!preview)preview={status:'UNAVAILABLE',reason:String(error?.message||error)};}
+ }
+ const lc=logisticsConstraints(payload),requested=Math.max(0,num(payload.quantity)??0);
+ const plans=rawPlans.map(route=>{
+   const row=route&&typeof route==='object'?route:{};
+   const req=Math.max(0,num(row.requestedQuantity??row.quantity??requested)??0);
+   const observedCapacity=num(row.capacity);
+   const fallbackCapacity=num(row.dispatchQuantity);
+   const baseCapacity=Math.max(0,observedCapacity??fallbackCapacity??req);
+   const capacity=Math.max(0,baseCapacity*lc.totalMultiplier);
+   const policyBlocked=String(row.status||'').toUpperCase()==='BLOCKED'||
+     String(row.policyDecision?.status||'').toUpperCase()==='BLOCKED';
+   const dispatchQuantity=policyBlocked?0:Math.min(req,capacity);
+   const capacityStatus=policyBlocked?'BLOCKED_BY_ROUTE':
+     dispatchQuantity<=0&&req>0?'NO_CAPACITY':
+     dispatchQuantity+1e-9<req?'PARTIAL_CAPACITY':'CAPACITY_SUFFICIENT';
+   return{...clone(row),requestedQuantity:req,capacity,dispatchQuantity,capacityStatus,
+     deliveryStatus:'NOT_DISPATCHED',dispatchCommitted:false,inventoryReserved:false,
+     sourceWarehouseDebited:false,stage:'ROUTE_PREVIEW_ONLY',logisticsConstraints:lc};
+ });
+ const accepted=preview?.result?.accepted===true||preview?.accepted===true||
+   (plans.length>0&&String(preview?.status||'PLANNED').toUpperCase()==='PLANNED');
+ const maxCapacity=plans.reduce((v,x)=>Math.max(v,num(x.capacity)||0),0);
+ const maxDispatch=plans.reduce((v,x)=>Math.max(v,num(x.dispatchQuantity)||0),0);
+ return{...(preview?.result&&typeof preview.result==='object'?clone(preview.result):{}),
+   accepted:!!accepted,status:plans.length?'PLANNED':(preview?.status||'UNAVAILABLE'),
+   reason:plans.length?null:(preview?.reason||'LOGISTICS_PLAN_UNAVAILABLE'),
+   planned:plans.length,requestedQuantity:requested,capacity:maxCapacity,dispatchQuantity:maxDispatch,
+   plans,deliveryStatus:'NOT_DISPATCHED',dispatchCommitted:false,inventoryReserved:false,
+   sourceWarehouseDebited:false,authority:'OMEGA_RESOURCE_LOGISTICS_ROUTE_PREVIEW_V1',
+   shipmentAuthority:'OMEGA_RESOURCE_INDUSTRIAL_NETWORK_V1',logisticsConstraints:lc};
 }
 
 function patchLogistics(){
  const m=g.Omega?.MinistryInteroperability||g.OmegaMinistryInteroperability;if(!m?.registerCommandHandler)return false;
- try{m.registerCommandHandler('OMEGA_RESOURCE_LOGISTICS_PLAN','resource',(cmd,ctx)=>{const p=cmd?.payload||{},plan=constrainedLogisticsPlan(p),c=country(ctx.countryId),rs=clone(ctx.stateTransaction.get('resource')||{}),log=clone(rs.logistics||{}),shipments=Array.isArray(log.shipments)?log.shipments:[];if(plan.dispatchQuantity>0){const sid=plan.delivery?.shipmentId||('SHIP:'+turn()+':'+c+':'+tok(p.batchId||p.resourceId||'RESOURCE'));if(!shipments.some(s=>String(s?.shipmentId)===String(sid)))shipments.push({shipmentId:sid,countryId:c,batchId:p.batchId||null,resourceId:p.resourceId||null,warehouseId:p.warehouseId||null,factoryId:p.factoryId||null,quantity:plan.dispatchQuantity,unit:p.unit||null,transportMode:plan.transportMode,route:{sourceNode:plan.sourceNode,destinationNode:plan.destinationNode,distanceKm:plan.distanceKm,capacity:plan.capacity},constraints:plan.logisticsConstraints,status:'IN_TRANSIT',createdTurn:turn()});}log.shipments=shipments.slice(-2048);log.lastPlanTurn=turn();log.status='OPERATIONAL';ctx.stateTransaction.set('resource.logistics',log);return{accepted:true,countryId:c,plan};});return true;}catch(_){return false;}
+ try{m.registerCommandHandler('OMEGA_RESOURCE_LOGISTICS_PLAN','resource',(cmd,ctx)=>{const p=cmd?.payload||{},c=country(ctx?.countryId||p.countryId),plan=constrainedLogisticsPlan(p);return{...plan,accepted:!!c&&plan.accepted===true,countryId:c,dispatchCommitted:false,inventoryReserved:false,sourceWarehouseDebited:false,authority:'OMEGA_RESOURCE_LOGISTICS_ROUTE_PREVIEW_V1',shipmentAuthority:'OMEGA_RESOURCE_INDUSTRIAL_NETWORK_V1'};});return true;}catch(_){return false;}
 }
 
 function diagnostics(){
