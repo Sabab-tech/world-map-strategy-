@@ -841,8 +841,11 @@
         String(a.productId).localeCompare(String(b.productId));
     });
   }
-  function factoryStockStatus(model, row) {
+  function factoryStockStatus(model, row, sharedProduct) {
     var stock = row.currentStock, demand = panelValueByKey(model.demandByProduct, row.productId);
+    if (sharedProduct) return stock === null
+      ? { label:'Not recorded', key:'unknown' }
+      : { label:'Factory stock · demand unallocated', key:'unknown' };
     var demandRow = null, keys = Object.keys(model.demandByProduct || {});
     for (var i = 0; i < keys.length; i += 1) {
       if (keys[i].toLowerCase() === String(row.productId).toLowerCase()) { demandRow = model.demandByProduct[keys[i]]; break; }
@@ -867,8 +870,10 @@
     (model.factories || []).forEach(function (factory) { if (factory && factory.id) factoryMap[String(factory.id)] = factory; });
     if (!rows.length) return '<div class="omega-v2-empty">No committed factory output batches are recorded for this country.</div>';
     var html = '<section class="fp-factory-analytics" aria-label="Factory output stock">';
-    var byFactory = Object.create(null);
+    var byFactory = Object.create(null), productProducerCounts = Object.create(null);
     rows.forEach(function (row) {
+      var productKey = String(row.productId || '').toLowerCase();
+      productProducerCounts[productKey] = (productProducerCounts[productKey] || 0) + 1;
       if (!byFactory[row.factoryId]) byFactory[row.factoryId] = [];
       byFactory[row.factoryId].push(row);
     });
@@ -887,7 +892,7 @@
         }).join('');
         if (!destinations && row.exported <= 0) destinations = '<span class="fp-factory-muted">No recorded export</span>';
         else if (!destinations) destinations = '<span class="fp-factory-muted">Destination not recorded</span>';
-        var status = factoryStockStatus(model, row);
+        var status = factoryStockStatus(model, row, productProducerCounts[String(row.productId || '').toLowerCase()] > 1);
         html += '<tr><td><strong>' + esc(panelProductLabel(model, row.productId)) + '</strong><small>' + esc(row.productId) + '</small></td>' +
           '<td><strong>' + fmt(row.produced, unit) + '</strong></td>' +
           '<td>' + (row.factoryUse > 0 ? fmt(row.factoryUse, unit) : '<span class="fp-factory-muted">Not recorded</span>') + '</td>' +
@@ -946,6 +951,11 @@
   function factoryInputEfficiency(factory, inputRows) {
     var raw = factory.raw || {}, health = raw.productionHealth && typeof raw.productionHealth === 'object' ? raw.productionHealth : {};
     var reason = String(health.reason || factory.healthReason || '').toUpperCase();
+    var detail = health.detail && typeof health.detail === 'object' ? health.detail : {};
+    var constraints = detail.constraints && typeof detail.constraints === 'object' ? detail.constraints :
+      health.productionConstraints && typeof health.productionConstraints === 'object' ? health.productionConstraints : {};
+    var rawMaterialRatio = num(constraints.rawMaterialRatio);
+    if (rawMaterialRatio !== null) return { value: Math.max(0, Math.min(100, (1 - rawMaterialRatio) * 100)), observed: true };
     if (/FACTORY_INPUT|INPUT_SHORTAGE|MATERIAL_SHORTAGE/.test(reason) && num(health.productivityPct) !== null) {
       return { value: Math.max(0, 100 - Number(health.productivityPct)), observed: true };
     }
