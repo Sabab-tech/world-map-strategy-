@@ -342,7 +342,7 @@ test('Production Ministry shows each country factory count on the matching facto
       'the textile card shows the country factory total');
     assert.match(html, /BGD-STEEL-BUILD-1/,
       'the actual factory record remains inside the matching factory type card');
-    assert.match(html, /<span>Factories<\\/span>/);
+    assert.ok(html.includes('<span>Factories</span>'));
     assert.doesNotMatch(html, /Factory catalog|My factories|commissioned factory|SOURCE_UNAVAILABLE|Source status/i);
   } finally {
     if (previousCatalog === undefined) delete globalThis.OmegaResourceIndustrialCatalogData;
