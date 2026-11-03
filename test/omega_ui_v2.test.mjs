@@ -2697,8 +2697,8 @@ test('factory cards progressively disclose canonical products, quantities and in
     assert.match(steel,/Blast Furnace Slag/);
     assert.match(steel,/Input/);
     assert.match(steel,/Iron Concentrate/);
-    assert.match(steel,/0\.72 \/ production unit/);
-    assert.match(steel,/0\.60 \/ production unit/);
+    assert.match(steel,/0\.72 simulation resource unit \/ production unit/);
+    assert.match(steel,/0\.60 simulation resource unit \/ production unit/);
     assert.match(steel,/data-omega-v2-factory-card-expand/);
     assert.match(steel,/data-omega-v2-factory-section-toggle/);
     assert.doesNotMatch(steel,/Processing Dust/,'the second by-product must remain hidden in collapsed view');
