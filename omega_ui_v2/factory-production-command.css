@@ -3216,3 +3216,111 @@
   height:auto !important;
   min-height:0;
 }
+
+
+/* Factory Input: daily demand, ten-day stock coverage and neon risk signals. */
+.omega-v2-industry--factory-home .fp-factory-coverage-cycle {
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  justify-content:space-between;
+  gap:6px 12px;
+  margin:0;
+  padding:7px 9px;
+  border:1px solid rgba(85,171,220,.35);
+  border-left:3px solid #4fc8ff;
+  background:linear-gradient(100deg,rgba(13,53,80,.78),rgba(5,20,34,.72));
+  color:#a9c7dc;
+  font-size:8px;
+  letter-spacing:.035em;
+}
+.omega-v2-industry--factory-home .fp-factory-coverage-cycle strong {
+  color:#70d4ff;
+  font-size:8px;
+  font-weight:900;
+  letter-spacing:.1em;
+}
+.omega-v2-industry--factory-home .fp-factory-coverage-cycle span {
+  color:#e2f4ff;
+  font-size:9px;
+  font-weight:750;
+}
+.omega-v2-industry--factory-home .fp-factory-input-total-table {
+  min-width:1120px;
+}
+.omega-v2-industry--factory-home .fp-factory-input-total-table td {
+  vertical-align:middle;
+}
+.omega-v2-industry--factory-home .fp-factory-input-total-table td:nth-child(2) strong,
+.omega-v2-industry--factory-home .fp-factory-input-total-table td:nth-child(5) strong {
+  color:#effaff;
+  font-size:11px;
+  font-weight:900;
+  white-space:nowrap;
+}
+.omega-v2-industry--factory-home .fp-factory-risk {
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  min-height:23px;
+  max-width:100%;
+  padding:4px 7px;
+  border:1px solid rgba(132,160,179,.3);
+  border-radius:4px;
+  color:#b4c5d1;
+  background:rgba(22,39,52,.62);
+  font-size:8px;
+  font-weight:900;
+  line-height:1.2;
+  white-space:nowrap;
+}
+.omega-v2-industry--factory-home .fp-factory-risk > i {
+  display:inline-block;
+  flex:0 0 8px;
+  width:8px;
+  height:8px;
+  border:1px solid currentColor;
+  border-radius:50%;
+  background:currentColor;
+  box-shadow:0 0 5px currentColor;
+}
+.omega-v2-industry--factory-home .fp-factory-risk[data-state="stable"] {
+  color:#69ffac;
+  border-color:rgba(71,255,157,.62);
+  background:linear-gradient(100deg,rgba(5,71,42,.82),rgba(4,29,27,.84));
+  box-shadow:0 0 7px rgba(45,255,146,.15),inset 0 1px 0 rgba(255,255,255,.08);
+}
+.omega-v2-industry--factory-home .fp-factory-risk[data-state="risk"] {
+  color:#ffdc55;
+  border-color:rgba(255,211,65,.68);
+  background:linear-gradient(100deg,rgba(78,59,5,.84),rgba(36,28,8,.86));
+  box-shadow:0 0 8px rgba(255,211,65,.18),inset 0 1px 0 rgba(255,255,255,.08);
+}
+.omega-v2-industry--factory-home .fp-factory-risk[data-state="critical"] {
+  color:#ff6678;
+  border-color:rgba(255,73,100,.76);
+  background:linear-gradient(100deg,rgba(84,8,25,.88),rgba(40,7,20,.9));
+  box-shadow:0 0 9px rgba(255,52,82,.24),inset 0 1px 0 rgba(255,255,255,.08);
+}
+.omega-v2-industry--factory-home .fp-factory-risk[data-state="unknown"] {
+  color:#9eb1c0;
+  border-color:rgba(142,165,182,.34);
+  background:rgba(28,45,59,.55);
+  box-shadow:none;
+}
+.omega-v2-industry--factory-home .fp-factory-risk[data-state="unknown"] > i {
+  box-shadow:none;
+}
+.omega-v2-industry--factory-home .fp-factory-input-table:not(.fp-factory-input-total-table) {
+  min-width:1040px;
+}
+@media (max-height:500px) and (orientation:landscape) {
+  .omega-v2-industry--factory-home .fp-factory-coverage-cycle {
+    min-height:26px;
+    padding:4px 7px;
+  }
+  .omega-v2-industry--factory-home .fp-factory-risk {
+    min-height:20px;
+    padding:3px 6px;
+  }
+}
