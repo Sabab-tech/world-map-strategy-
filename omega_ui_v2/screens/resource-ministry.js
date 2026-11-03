@@ -2175,8 +2175,13 @@
         var mode = shipment.route && (shipment.route.transportMode || shipment.route.mode) || shipment.transportMode || shipment.mode || '';
         var destinationKind = shipment.destinationFactoryId || shipment.destinationFactoryName ? 'factory' :
           shipment.destinationWarehouseId ? 'warehouse' : 'destination';
-        var modeLabel = mode ? human(mode) : 'Route not recorded';
-        var modeIcon = logisticsTransportIconPath(mode || 'truck', shipment.resourceId || '');
+        var modeKey = logisticsTransportModeKey(mode);
+        var modeLabel = modeKey ? human(mode) : 'Transport mode not recorded';
+        var modeIcon = logisticsTransportIconPath(modeKey);
+        var modeVisualMarkup = modeIcon
+          ? '<img class="omega-v2-logistics-svg omega-v2-logistics-svg--mode" data-omega-v2-logistics-icon="transport" data-omega-v2-transport-mode="' +
+            esc(modeKey) + '" src="' + esc(modeIcon) + '" alt="' + esc(modeLabel) + '" loading="lazy" decoding="async">'
+          : '<span class="omega-v2-logistics-mode-unrecorded" role="img" aria-label="Transport mode not recorded">?</span>';
         var etaLabel = numberOrNull(shipment.etaTurn) !== null ? 'Turn ' + fmt(shipment.etaTurn) : 'Not recorded';
         return '<article class="omega-v2-card omega-v2-logistics-card" data-logistics-state="' + status.state + '">' +
           '<div class="omega-v2-logistics-header"><div class="omega-v2-logistics-cargo">' +
@@ -2187,8 +2192,8 @@
           '<div class="omega-v2-logistics-path" aria-label="Shipment route from ' + esc(from) + ' to ' + esc(to) + '">' +
           '<div class="omega-v2-logistics-node omega-v2-logistics-node--origin"><span class="omega-v2-logistics-node-art">' + logisticsIconMarkup('origin') +
           '</span><span class="omega-v2-logistics-node-copy"><small>ORIGIN</small><strong>' + esc(from) + '</strong></span></div>' +
-          '<div class="omega-v2-logistics-link"><span class="omega-v2-logistics-route-vehicle"><img class="omega-v2-logistics-svg omega-v2-logistics-svg--mode" data-omega-v2-logistics-icon="transport" data-omega-v2-transport-mode="' + esc(mode || 'unknown') + '" src="' + esc(modeIcon) +
-          '" alt="' + esc(modeLabel) + '" loading="lazy" decoding="async"></span><span class="omega-v2-logistics-link-line"></span><span class="omega-v2-logistics-mode">' +
+          '<div class="omega-v2-logistics-link"><span class="omega-v2-logistics-route-vehicle">' + modeVisualMarkup +
+          '</span><span class="omega-v2-logistics-link-line"></span><span class="omega-v2-logistics-mode">' +
           esc(modeLabel) + '</span></div>' +
           '<div class="omega-v2-logistics-node omega-v2-logistics-node--destination"><span class="omega-v2-logistics-node-art">' + logisticsIconMarkup(destinationKind) +
           '</span><span class="omega-v2-logistics-node-copy"><small>DESTINATION</small><strong>' + esc(to) + '</strong></span></div></div>' +
