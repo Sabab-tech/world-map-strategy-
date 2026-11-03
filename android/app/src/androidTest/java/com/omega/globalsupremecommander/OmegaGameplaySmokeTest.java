@@ -275,9 +275,16 @@ public final class OmegaGameplaySmokeTest {
                     " return body.indexOf('Factories') >= 0 &&" +
                     "        content.querySelectorAll('.omega-rescc-factory-catalog-row').length > 0;" +
                     "})()";
+            String factoryPanelReady = "false";
+            final long factoryPanelDeadline = SystemClock.elapsedRealtime() + 30000L;
+            while (!"true".equals(factoryPanelReady) &&
+                    SystemClock.elapsedRealtime() < factoryPanelDeadline) {
+                factoryPanelReady = evaluate(instrumentation, webViewRef.get(), factoryPanelScript);
+                if (!"true".equals(factoryPanelReady)) SystemClock.sleep(300L);
+            }
             assertEquals(
-                    "Selecting a country and opening Industry/Factories must show the country factory cards and current factory records",
-                    "true", evaluate(instrumentation, webViewRef.get(), factoryPanelScript)
+                    "Selecting a country and opening Industry/Factories must show the country factory cards after the bounded catalog-ready refresh",
+                    "true", factoryPanelReady
             );
             android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=FACTORY_PANEL_READY");
         } finally {
