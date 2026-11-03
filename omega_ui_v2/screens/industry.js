@@ -452,8 +452,8 @@
     var fullLabels = {
       factories:'Factories',
       'production-lines':'Production Lines',
-      inventory:'Input Inventory',
-      'national-inventory':'National Inventory',
+      inventory:'Input',
+      'national-inventory':'Stock',
       research:'Research & Technology',
       projects:'Build Projects'
     };
