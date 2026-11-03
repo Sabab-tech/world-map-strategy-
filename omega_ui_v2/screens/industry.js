@@ -68,6 +68,230 @@
     return key;
   }
 
+  // Resource identities use their canonical dimensional SVGs. Factory-only
+  // intermediates and finished goods receive an inline, product-labelled 3D SVG.
+  var FACTORY_RAW_RESOURCE_ICON_IDS = [
+    'aragonite','basalt','bauxite','boron','chromite','coal','cobalt','construction_aggregate',
+    'copper','coral_aggregate','crude_oil','diamond','diatomite','dolomite','gold','granite',
+    'graphite','gypsum','ilmenite','iron_ore','limestone','lithium','magnesite','manganese',
+    'marble','natural_gas','nickel','niobium','oil_shale','phosphate','platinum','potash',
+    'rare_earth','ruby','rutile','salt','silica_sand','silver','tin','tungsten','uranium','zinc'
+  ];
+  var factoryProductIconInstance = 0;
+
+  function factoryProductKey(value) {
+    return String(value == null ? '' : value).trim().toLowerCase()
+      .replace(/^res[_-]?type[:_\/-]?/, '')
+      .replace(/[\s-]+/g, '_');
+  }
+
+  function factoryResourceIconPath(value) {
+    var id = factoryProductKey(value);
+    if (FACTORY_RAW_RESOURCE_ICON_IDS.indexOf(id) < 0) return '';
+    return 'assets/omega-industrial-icons-v1/resources/' + id.replace(/_/g, '-') + '.svg';
+  }
+
+  function factoryProductIconCategory(id) {
+    if (/(scrap|waste|residue|slag|dross|dust|cullet|disposal|loss|recovered|recycled)/.test(id)) return 'scrap';
+    if (/(battery|cell|pack)/.test(id)) return 'battery';
+    if (/(semiconductor|silicon|chip|electronic|control_module|switchgear|transformer|power_cable|grid_equipment)/.test(id)) return 'electronics';
+    if (/(chemical|ammonia|caustic|solvent|gas|naphtha|propylene|polymer|resin|refinery|petroleum|pipeline)/.test(id)) return 'chemical';
+    if (/(textile|fabric|garment|cotton|wool|fibre|fiber)/.test(id)) return 'textile';
+    if (/(paper|packaging|board|glass|ceramic|container)/.test(id)) return 'packaging';
+    if (/(food|grain|sugar|vegetable_oil|feed_byproduct)/.test(id)) return 'food';
+    if (/(aircraft|aerospace|vehicle|ship|rail|transport|spare_parts)/.test(id)) return 'transport';
+    if (/(concentrate|aggregate|feed|ore|phosphate|potash|gypsum|magnesia|silica|limestone|salt|bauxite|alumina)/.test(id)) return 'ore';
+    if (/(steel|iron|copper|aluminum|alloy|metal|titanium|ingot|dor[eé])/.test(id)) return 'metal';
+    return 'equipment';
+  }
+
+  function factoryProductPalette(category, id) {
+    var palettes = {
+      metal: [
+        ['#f0f5f8','#b7c7d3','#526474'],['#ffd7a4','#c77a46','#63351f'],['#dce7ef','#8498aa','#3f5061']
+      ],
+      ore: [
+        ['#f0d7b0','#be8854','#70472c'],['#e0c6a0','#a77b4b','#58422e'],['#e8c6b5','#b36b55','#65392c']
+      ],
+      chemical: [
+        ['#b9e9f6','#4d9fbe','#17485e'],['#c5e6e1','#4c9e90','#1e514d'],['#d5d0f5','#8276bd','#40365f']
+      ],
+      electronics: [
+        ['#b8dcff','#528dc9','#183d67'],['#c4e7ef','#4b9da9','#1c5360'],['#d5cdf7','#8273bf','#443a72']
+      ],
+      battery: [
+        ['#b9eed8','#4aab86','#1c5b45'],['#d5edb1','#85ad4e','#425b2b'],['#c5e9eb','#4c9da3','#1c5358']
+      ],
+      textile: [
+        ['#ead0f0','#a47ab9','#5a426d'],['#d7d0f3','#8078bf','#46416e'],['#f1cbd9','#bf718c','#6b3e50']
+      ],
+      packaging: [
+        ['#f0dfbb','#b9955e','#67502e'],['#e0e9f1','#879cad','#465767'],['#f3d7c9','#bd8b70','#684636']
+      ],
+      food: [
+        ['#e2edbc','#8daa5a','#4c6333'],['#f4dfaa','#c49b50','#74552b'],['#d8e7c9','#8cae80','#49664a']
+      ],
+      scrap: [
+        ['#d3dce3','#8997a4','#46515c'],['#d8c9bd','#9a7964','#554236'],['#c9d8d2','#718f85','#3d574f']
+      ],
+      transport: [
+        ['#ffe0b3','#c17b43','#663b1d'],['#d8e7f2','#718ea8','#344a5f'],['#f0d0c5','#b8755e','#674237']
+      ],
+      equipment: [
+        ['#d8e8f2','#7d9eb6','#3c5366'],['#e4dfc9','#9c9470','#5b543d'],['#e5d7ed','#9b7caf','#584267']
+      ]
+    };
+    var rows = palettes[category] || palettes.equipment;
+    var hash = 0;
+    for (var i = 0; i < id.length; i += 1) hash = ((hash * 31) + id.charCodeAt(i)) >>> 0;
+    return rows[hash % rows.length];
+  }
+
+  function factoryProductStamp(id) {
+    var special = {
+      steel:'STL', alloy_steel:'ALLOY', aluminum_ingot:'Al', alumina:'Al₂O₃',
+      refined_copper:'Cu', copper_concentrate:'Cu', copper_matte:'Cu MATTE',
+      iron_concentrate:'Fe', coal_concentrate:'COAL', semiconductor_chips:'Si',
+      silicon_wafers:'Si', battery_cells:'CELL', battery_packs:'PACK',
+      npk_fertilizer:'NPK', pharmaceutical_goods:'PHARMA', doré:'DORÉ',
+      pipeline_gas:'GAS', polymer_resin:'POLY', industrial_gases:'GAS',
+      industrial_chemicals:'CHEM', industrial_machinery:'MACH', vehicles:'VEH',
+      aircraft:'AIR', defense_equipment:'DEF', grid_equipment:'GRID',
+      power_cables:'CABLE', textile_fabric:'FABRIC', readymade_garments:'RMG',
+      processed_food:'FOOD', ready_mix_concrete:'RMC', flat_glass:'GLASS',
+      container_glass:'GLASS', packaging_board:'BOARD', paper:'PAPER',
+      metal_scrap:'SCRAP', processing_loss:'LOSS'
+    };
+    if (special[id]) return special[id];
+    var words = id.replace(/[^a-z0-9]+/gi, ' ').trim().split(/\s+/).filter(Boolean);
+    var stamp = words.map(function (word) { return word.charAt(0); }).join('').toUpperCase();
+    if (stamp.length < 2 && words.length) stamp = words[0].slice(0, 3).toUpperCase();
+    return stamp.slice(0, 6) || 'ITEM';
+  }
+
+  function factoryProductShape(category, mainGradient, topGradient, sideGradient, token, stamp) {
+    if (category === 'electronics') {
+      return '<g stroke-linejoin="round"><path d="M34 42h60v42H34z" fill="' + mainGradient + '" stroke="#283e58" stroke-width="2"/>' +
+        '<path d="M40 36h48v48H40z" fill="' + sideGradient + '" stroke="#172d4b" stroke-width="2"/>' +
+        '<path d="M44 39h40v39H44z" fill="' + mainGradient + '" stroke="#d8efff" stroke-opacity=".7" stroke-width="1.4"/>' +
+        '<rect x="51" y="46" width="26" height="24" rx="3" fill="' + topGradient + '" stroke="#f2fbff" stroke-width="1.2"/>' +
+        '<path d="M57 52h14v12H57z" fill="#19344e" stroke="#e9f8ff" stroke-width="1"/>' +
+        '<path d="M46 31v8m12-8v8m12-8v8m12-8v8M46 79v8m12-8v8m12-8v8m12-8v8M31 47h9m-9 12h9m48-12h9m-9 12h9" stroke="#d7e8f3" stroke-width="3" stroke-linecap="round"/></g>';
+    }
+    if (category === 'battery') {
+      return '<g stroke-linejoin="round"><path d="M35 43h57v43H35z" fill="' + sideGradient + '" stroke="#233d4b" stroke-width="2"/>' +
+        '<path d="M42 35h48v48H42z" fill="' + mainGradient + '" stroke="#f3fff8" stroke-width="1.5"/>' +
+        '<path d="M53 28h10v8H53zm18 0h10v8H71z" fill="' + topGradient + '" stroke="#466b61" stroke-width="1.2"/>' +
+        '<rect x="50" y="47" width="32" height="24" rx="4" fill="#112c31" fill-opacity=".78" stroke="#e6fff2" stroke-width="1.2"/>' +
+        '<path d="M64 51v16m-8-8h16" stroke="' + topGradient + '" stroke-width="4" stroke-linecap="round"/>' +
+        '<path d="M46 39h39" stroke="#fff" stroke-opacity=".55" stroke-width="2"/></g>';
+    }
+    if (category === 'chemical') {
+      return '<g stroke-linejoin="round"><path d="M53 28h22v12l18 34a8 8 0 0 1-7 12H42a8 8 0 0 1-7-12l18-34Z" fill="' + sideGradient + '" stroke="#31485b" stroke-width="2"/>' +
+        '<path d="M54 43h20l14 29a5 5 0 0 1-5 8H45a5 5 0 0 1-5-8Z" fill="' + mainGradient + '" stroke="#f0fbff" stroke-width="1.5"/>' +
+        '<path d="M47 65h37l6 12a5 5 0 0 1-5 5H45a5 5 0 0 1-5-5Z" fill="' + topGradient + '" fill-opacity=".9"/>' +
+        '<path d="M52 28h24v6H52zM57 20h14v8H57z" fill="' + topGradient + '" stroke="#526b7d" stroke-width="1.2"/>' +
+        '<path d="M49 54c9-5 19 5 28 0" stroke="#fff" stroke-opacity=".65" stroke-width="2" fill="none"/></g>';
+    }
+    if (category === 'textile') {
+      return '<g stroke-linejoin="round"><path d="M38 37h52v46H38z" fill="' + sideGradient + '" stroke="#4a3e5b" stroke-width="2"/>' +
+        '<path d="M45 34h39v50H45z" fill="' + mainGradient + '" stroke="#fff" stroke-opacity=".75" stroke-width="1.4"/>' +
+        '<ellipse cx="45" cy="59" rx="9" ry="24" fill="' + topGradient + '" stroke="#fff" stroke-opacity=".7" stroke-width="1.2"/>' +
+        '<ellipse cx="84" cy="59" rx="9" ry="24" fill="' + sideGradient + '" stroke="#4b3e5b" stroke-width="1.3"/>' +
+        '<path d="M53 43h27m-27 8h27m-27 8h27m-27 8h27" stroke="#fff" stroke-opacity=".62" stroke-width="2.3"/></g>';
+    }
+    if (category === 'packaging') {
+      return '<g stroke-linejoin="round"><path d="M30 48 64 30 99 48 64 68Z" fill="' + topGradient + '" stroke="#6c5b43" stroke-width="1.5"/>' +
+        '<path d="M30 48 64 68 64 91 30 71Z" fill="' + mainGradient + '" stroke="#6c5b43" stroke-width="1.5"/>' +
+        '<path d="M64 68 99 48 99 72 64 91Z" fill="' + sideGradient + '" stroke="#564a3b" stroke-width="1.5"/>' +
+        '<path d="M64 30v38m-17-29 34 20m-51-11 18-10m35 50V69" stroke="#fff" stroke-opacity=".55" stroke-width="1.4"/>' +
+        '<path d="M45 57 56 64v17L45 75Z" fill="' + topGradient + '" fill-opacity=".8"/></g>';
+    }
+    if (category === 'food') {
+      return '<g stroke-linejoin="round"><path d="M41 39h47l-5 12 11 28q-30 19-60 0l11-28Z" fill="' + sideGradient + '" stroke="#5c673a" stroke-width="2"/>' +
+        '<path d="M46 49h37l10 29q-29 15-58 0Z" fill="' + mainGradient + '" stroke="#f8ffe8" stroke-width="1.4"/>' +
+        '<path d="M41 39h47l-6 9H47Z" fill="' + topGradient + '" stroke="#fff" stroke-opacity=".7" stroke-width="1.2"/>' +
+        '<path d="M49 59q15-12 30 0m-30 8q15-12 30 0" stroke="' + topGradient + '" stroke-width="3" fill="none"/>' +
+        '<path d="M57 31q7-9 14 0" fill="none" stroke="#fff" stroke-width="2"/></g>';
+    }
+    if (category === 'scrap') {
+      return '<g stroke-linejoin="round"><path d="M31 57 43 40l18 8 10-13 24 16 5 28-22 10-18-7-18 8-15-16Z" fill="' + sideGradient + '" stroke="#344452" stroke-width="2"/>' +
+        '<path d="m31 57 22-8 8 17-17 15Z" fill="' + mainGradient + '" stroke="#f4f8fa" stroke-opacity=".7" stroke-width="1.2"/>' +
+        '<path d="m61 48 10-13 15 18-10 15Z" fill="' + topGradient + '" stroke="#fff" stroke-opacity=".7" stroke-width="1.2"/>' +
+        '<path d="m55 68 20-4 13 15-28 8Z" fill="' + mainGradient + '" stroke="#344452" stroke-width="1.2"/>' +
+        '<path d="m39 44 10-10 12 11m14 31 10-13" stroke="#fff" stroke-opacity=".55" stroke-width="2" fill="none"/></g>';
+    }
+    if (category === 'transport' || category === 'equipment') {
+      return '<g stroke-linejoin="round"><path d="M30 67 42 48l17-5 11-12 20 10-4 18 13 12-11 17H42Z" fill="' + sideGradient + '" stroke="#3e4b58" stroke-width="2"/>' +
+        '<path d="m36 64 12-16 18 3 10 18-12 17H43Z" fill="' + mainGradient + '" stroke="#fff" stroke-opacity=".7" stroke-width="1.3"/>' +
+        '<path d="m66 47 15-16 14 10-6 17-14 7Z" fill="' + topGradient + '" stroke="#fff" stroke-opacity=".8" stroke-width="1.2"/>' +
+        '<circle cx="48" cy="77" r="7" fill="#172736" stroke="' + topGradient + '" stroke-width="3"/>' +
+        '<circle cx="83" cy="77" r="7" fill="#172736" stroke="' + topGradient + '" stroke-width="3"/>' +
+        '<path d="M44 56h20m-14 8h22" stroke="#fff" stroke-opacity=".55" stroke-width="2"/></g>';
+    }
+    if (category === 'ore') {
+      return '<g stroke-linejoin="round"><path d="M25 82 37 60 50 65 60 41 73 58 85 48 104 82 91 91H36Z" fill="' + sideGradient + '" stroke="#554638" stroke-width="2"/>' +
+        '<path d="m25 82 15-17 13 10 12-26 12 24 12-16 15 25-13 9H37Z" fill="' + mainGradient + '" stroke="#fff" stroke-opacity=".65" stroke-width="1.3"/>' +
+        '<path d="m60 49 5-8 9 16-8 5Z" fill="' + topGradient + '" stroke="#fff" stroke-opacity=".8" stroke-width="1"/>' +
+        '<path d="M34 80 49 70m29 10 13-15" stroke="#fff" stroke-opacity=".38" stroke-width="2"/></g>';
+    }
+    return '<g stroke-linejoin="round"><path d="M27 51 43 38h44l15 13-12 34H39Z" fill="' + mainGradient + '" stroke="' + sideGradient + '" stroke-width="2"/>' +
+      '<path d="M27 51 43 38h44l15 13-21 12H44Z" fill="' + topGradient + '" stroke="#fff" stroke-opacity=".7" stroke-width="1.3"/>' +
+      '<path d="M44 63h37l9 22H39Z" fill="' + sideGradient + '" stroke="#344b5f" stroke-width="1.3"/>' +
+      '<path d="M36 53h53m-44-9h35" stroke="#fff" stroke-opacity=".55" stroke-width="1.4"/></g>';
+  }
+
+  function factoryProductIconVisualMarkup(productId, label) {
+    var id = factoryProductKey(productId);
+    var safeLabel = String(label || productId || 'Industrial product');
+    var resourcePath = factoryResourceIconPath(id);
+    if (resourcePath) {
+      return '<img class="fp-product-icon-visual fp-product-icon-visual--resource" src="' + esc(resourcePath) +
+        '" alt="' + esc(safeLabel + ' icon') + '" width="128" height="128" loading="eager" decoding="async" ' +
+        'data-factory-product-icon="' + esc(id) + '" data-icon-source="canonical-resource">';
+    }
+    var category = factoryProductIconCategory(id);
+    var colors = factoryProductPalette(category, id);
+    var token = 'fp-product-' + (++factoryProductIconInstance);
+    var stamp = factoryProductStamp(id);
+    var shape = factoryProductShape(category, 'url(#' + token + '-main)', 'url(#' + token + '-top)', 'url(#' + token + '-side)', token, stamp);
+    return '<svg class="fp-product-icon-visual fp-product-icon-visual--finished" viewBox="0 0 128 128" width="128" height="128" role="img" ' +
+      'aria-label="' + esc(safeLabel + ' icon') + '" data-factory-product-icon="' + esc(id) + '" data-icon-source="generated-product">' +
+      '<title>' + esc(safeLabel) + '</title><defs>' +
+      '<linearGradient id="' + token + '-main" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="' + colors[0] + '"/><stop offset=".55" stop-color="' + colors[1] + '"/><stop offset="1" stop-color="' + colors[2] + '"/></linearGradient>' +
+      '<linearGradient id="' + token + '-top" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".95"/><stop offset=".4" stop-color="' + colors[0] + '"/><stop offset="1" stop-color="' + colors[1] + '"/></linearGradient>' +
+      '<linearGradient id="' + token + '-side" x1="0" y1="0" x2="1" y2=".8"><stop offset="0" stop-color="' + colors[1] + '"/><stop offset="1" stop-color="' + colors[2] + '"/></linearGradient>' +
+      '<linearGradient id="' + token + '-plate" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f5f8fb"/><stop offset=".55" stop-color="#d7e2e9"/><stop offset="1" stop-color="#a9bbc7"/></linearGradient>' +
+      '<filter id="' + token + '-shadow" x="-40%" y="-40%" width="180%" height="190%"><feGaussianBlur stdDeviation="3"/></filter></defs>' +
+      '<rect x="4.5" y="4.5" width="119" height="119" rx="21" fill="url(#' + token + '-plate)" stroke="#708697" stroke-opacity=".62"/>' +
+      '<path d="M15 29V19a4 4 0 0 1 4-4h13m66 0h10a5 5 0 0 1 5 5v10M15 94v11a6 6 0 0 0 6 6h11m65 0h10a6 6 0 0 0 6-6V94" fill="none" stroke="' + colors[1] + '" stroke-opacity=".7" stroke-width="1.5"/>' +
+      '<ellipse cx="64" cy="96" rx="43" ry="8" fill="#07111a" opacity=".58" filter="url(#' + token + '-shadow)"/>' +
+      '<ellipse cx="64" cy="95" rx="42" ry="7" fill="#243849" fill-opacity=".28" stroke="#657b8b" stroke-opacity=".55"/>' +
+      shape +
+      '<path d="M27 99h74" stroke="' + colors[2] + '" stroke-opacity=".42" stroke-width="1.2"/>' +
+      '<rect x="37" y="100" width="54" height="15" rx="4" fill="#183044" stroke="#f6fbff" stroke-opacity=".76" stroke-width="1"/>' +
+      '<text x="64" y="110.5" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="' + (stamp.length > 5 ? '7' : stamp.length > 3 ? '8' : '10') + '" font-weight="900" letter-spacing=".3" fill="#f5fbff">' + esc(stamp) + '</text>' +
+      '<path d="M25 39l.7 2.1 2.1.7-2.1.7L25 45.6l-.7-2.1-2.1-.7 2.1-.7Z" fill="#fff" opacity=".8"/>' +
+      '<path d="M101 36l.6 1.8 1.8.6-1.8.6-.6 1.8-.6-1.8-1.8-.6 1.8-.6Z" fill="#fff" opacity=".8"/>' +
+      '</svg>';
+  }
+
+  function factoryProductIdentityMarkup(productId, label) {
+    var id = factoryProductKey(productId);
+    var safeLabel = String(label || productId || 'Industrial product');
+    return '<span class="fp-product-identity" data-factory-product-identity="' + esc(id) + '">' +
+      '<span class="fp-product-icon-frame">' + factoryProductIconVisualMarkup(id, safeLabel) + '</span>' +
+      '<span class="fp-product-identity-copy"><strong>' + esc(safeLabel) + '</strong><small>' + esc(productId || 'Product ID not recorded') + '</small></span></span>';
+  }
+
+  function factoryProductStockMarkup(productId, label, value) {
+    var id = factoryProductKey(productId);
+    return '<span class="fp-product-stock-quantity" data-factory-stock-product="' + esc(id) + '">' +
+      '<span class="fp-product-icon-frame fp-product-icon-frame--stock">' + factoryProductIconVisualMarkup(id, label) + '</span>' +
+      '<strong>' + value + '</strong></span>';
+  }
+
+
 
   function playerCountryId() {
     var state = stateRoot() || {};
@@ -916,7 +1140,7 @@
           '<td>' + consumptionMarkup + '</td>' +
           '<td>' + (row.domesticSupply > 0 ? fmt(row.domesticSupply, unit) : '<span class="fp-factory-muted">Not recorded</span>') + '</td>' +
           '<td>' + (row.exported > 0 ? fmt(row.exported, unit) : '<span class="fp-factory-muted">Not recorded</span>') + '</td>' +
-          '<td>' + destinations + '</td><td>' + fmt(row.currentStock, unit) + '</td>' +
+          '<td>' + destinations + '</td><td>' + factoryProductStockMarkup(row.productId, panelProductLabel(model, row.productId), fmt(row.currentStock, unit)) + '</td>' +
           '<td><span class="fp-factory-state" data-state="' + status.key + '">' + esc(status.label) + '</span></td></tr>';
       });
       html += '</tbody></table></div></article>';
@@ -1042,9 +1266,9 @@
         var state = shortage !== null ? (shortage > 1e-9 ? 'shortage' : 'sufficient') : 'unknown';
         var stateLabel = shortage === null ? 'Not recorded' : shortage > 1e-9
           ? 'Shortage · ' + fmt(shortage, row.unit) : 'Sufficient';
-        html += '<tr><td><strong>' + esc(panelProductLabel(model, row.productId)) + '</strong><small>' + esc(row.productId) + '</small></td>' +
+        html += '<tr><td>' + factoryProductIdentityMarkup(row.productId, panelProductLabel(model, row.productId)) + '</td>' +
           '<td>' + fmt(row.required, row.unit) + '</td><td>' + fmt(row.received, row.unit) + '</td>' +
-          '<td><strong>' + fmt(row.current, row.unit) + '</strong></td><td>' + factoryInputSourceMarkup(factory, row.productId, model) + '</td>' +
+          '<td>' + factoryProductStockMarkup(row.productId, panelProductLabel(model, row.productId), fmt(row.current, row.unit)) + '</td><td>' + factoryInputSourceMarkup(factory, row.productId, model) + '</td>' +
           '<td><span class="fp-factory-state" data-state="' + state + '">' + esc(stateLabel) + '</span></td>' +
           '<td>' + (efficiency.value === null ? '<span class="fp-factory-muted">Not recorded</span>' :
             '<span class="fp-factory-state" data-state="' + (efficiency.value > 1e-9 ? 'shortage' : 'sufficient') + '">' +
@@ -1333,7 +1557,7 @@
           '<span class="fp-content-country">' + esc(model.countryId || 'Country not selected') + '</span></header>' +
           '<div class="fp-content-body">' + content + '</div>' +
         '</div>';
-    root.innerHTML = '<section class="omega-v2-shell omega-v2-industry omega-v2-industry--factory-home">' +
+    root.innerHTML = '<section class="omega-v2-shell omega-v2-industry omega-v2-industry--factory-home" data-factory-stock-input-ui="v2">' +
       '<div class="omega-v2-factory-command fp-stage" data-glow="hover" data-active-tab="' + esc(active) + '" data-factory-view="' + esc(active === 'factories' ? factoryView : 'assets') + '" aria-label="Factory production control">' +
       '<img class="omega-v2-factory-backdrop" src="assets/ui-photos/industrial-production-line.webp" alt="" aria-hidden="true" loading="lazy" decoding="async" width="1280" height="720">' +
       '<a class="omega-v2-factory-photo-credit" href="https://commons.wikimedia.org/wiki/File:Industrial_production_line_operating_in_a_large_modern_factory.jpg" target="_blank" rel="noopener noreferrer" aria-label="Photo credit: Shixart1985. CC BY 2.0 license. Image resized and converted to WebP.">Photo: <span class="omega-v2-factory-photo-author">Shixart1985</span></a><a class="omega-v2-factory-photo-license" href="https://creativecommons.org/licenses/by/2.0/" target="_blank" rel="license noopener noreferrer" aria-label="Creative Commons Attribution 2.0 license">CC BY 2.0</a><span class="omega-v2-factory-photo-credit__changes">Image resized and converted to WebP.</span>' +
@@ -1562,5 +1786,5 @@
     return { ok: true, model: model };
   }
 
-  g.OmegaUIV2Industry = Object.freeze({ version: '1.0.0', buildViewModel: buildViewModel, render: render });
+  g.OmegaUIV2Industry = Object.freeze({ version: '1.1.0', buildViewModel: buildViewModel, render: render, resourceIconPath: factoryResourceIconPath, productIconVisualMarkup: factoryProductIconVisualMarkup, productIdentityMarkup: factoryProductIdentityMarkup });
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -794,6 +794,15 @@ test('factory Stock shows committed finished goods and traced use while Input sh
     assert.match(stockRoot.innerHTML,/USA/);
     assert.match(stockRoot.innerHTML,/6 TONNES/);
     assert.match(stockRoot.innerHTML,/Surplus/);
+    assert.match(stockRoot.innerHTML,/data-factory-stock-input-ui="v2"/,
+      'the updated factory screen must expose the current Stock/Input UI build marker');
+    assert.match(stockRoot.innerHTML,/data-factory-product-identity="steel"/,
+      'finished output rows must include the generated Steel identity icon');
+    assert.match(stockRoot.innerHTML,/data-factory-stock-product="steel"/,
+      'the current finished-goods stock balance must repeat the matching product icon');
+    assert.match(stockRoot.innerHTML,/data-icon-source="generated-product"/,
+      'finished industrial products without raw-resource art must receive an SVG icon');
+
     assert.doesNotMatch(stockRoot.innerHTML,/UNBOUNDED STOCK LOG/,
       'the factory Stock button must not fall back to a national raw-resource snapshot');
 
@@ -810,6 +819,13 @@ test('factory Stock shows committed finished goods and traced use while Input sh
     assert.match(inputRoot.innerHTML,/Shortage/);
     assert.match(inputRoot.innerHTML,/40 %/);
     assert.match(inputRoot.innerHTML,/Efficiency reduction/);
+    assert.match(inputRoot.innerHTML,/data-factory-product-identity="iron_ore"/,
+      'factory input rows must carry the correct resource identity');
+    assert.match(inputRoot.innerHTML,/resources\/iron-ore\.svg/,
+      'raw input resources must use their own canonical dimensional SVG asset');
+    assert.match(inputRoot.innerHTML,/data-factory-stock-product="iron_ore"/,
+      'the current factory input balance must carry the same resource icon');
+
 
     const factoryRoot = {classList:{add(){}},addEventListener(){},contains(){return true},innerHTML:''};
     const factoryResult = globalThis.OmegaUIV2Industry.render(factoryRoot,{countryId:'BGD',tab:'factories'});
@@ -2372,5 +2388,42 @@ test('factory type cards restore counts from the existing country registry witho
     else globalThis.OmegaResourceIndustrialCatalogData = previousCatalog;
     if (previousBaseline === undefined) delete globalThis.OmegaCountryFactoryStartingBaselineV1;
     else globalThis.OmegaCountryFactoryStartingBaselineV1 = previousBaseline;
+  }
+});
+
+
+test('every canonical factory recipe input and output renders a product-specific SVG identity', () => {
+  const catalog = JSON.parse(readFileSync('resource_industrial_catalog_v1.json','utf8'));
+  const api = globalThis.OmegaUIV2Industry;
+  assert.ok(api && typeof api.productIconVisualMarkup === 'function');
+  const productIds = new Set();
+  for (const recipe of Object.values(catalog.downstreamFactoryRecipes || {})) {
+    for (const productId of [
+      ...Object.keys(recipe && recipe.inputs || {}),
+      ...Object.keys(recipe && recipe.outputs || {})
+    ]) productIds.add(String(productId).toLowerCase());
+  }
+  assert.ok(productIds.size >= 90, 'canonical recipes should cover the full downstream product namespace');
+  for (const productId of productIds) {
+    const label = productId.replace(/[_-]+/g,' ').replace(/\\b[a-z]/g, ch => ch.toUpperCase());
+    const markup = api.productIconVisualMarkup(productId,label);
+    assert.match(markup, /<(?:svg|img)\\b/, productId + ' must render a visual icon');
+    assert.match(markup, new RegExp('data-factory-product-icon="' + productId.replace(/[.*+?^\${}()|[\\]\\\\]/g,'\\\\$&') + '"'),
+      productId + ' must keep its exact identity attached to the SVG');
+    assert.match(markup, /aria-label=|alt=/, productId + ' icon must have an accessible label');
+  }
+  assert.match(api.productIconVisualMarkup('copper','Copper'), /resources\\/copper\\.svg/,
+    'Copper must resolve to the copper asset rather than a generic drawing');
+  assert.match(api.productIconVisualMarkup('steel','Steel'), /data-icon-source="generated-product"/,
+    'Steel must use a finished-product SVG rather than pretending to be raw iron ore');
+});
+
+test('Factory Stock/Input UI assets invalidate the old offline shell cache', () => {
+  const sw = readFileSync('omega-offline-map-sw.js','utf8');
+  const css = readFileSync('omega_ui_v2/factory-production-command.css','utf8');
+  assert.match(sw, /omega-offline-atlas-shell-v81/,
+    'the offline shell must activate the new JS/CSS rather than retaining the old Stock/Input renderer');
+  for (const selector of ['.fp-product-identity','.fp-product-icon-frame','.fp-product-stock-quantity']) {
+    assert.ok(css.includes(selector), selector + ' must be styled in the actual factory command stylesheet');
   }
 });
