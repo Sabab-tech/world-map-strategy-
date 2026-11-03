@@ -1964,6 +1964,10 @@
       };
       return icons[mode] || '';
     }
+    function logisticsCapacityUnitLabel(unitValue) {
+      return String(buildDisplayUnit(unitValue) || '').replace(/\\s+per\\s+/gi, '/').replace(/\\s+/g, ' ').toLowerCase();
+    }
+
     function logisticsSiteFleetMarkup(route, legs) {
       var routeModes = [];
       safeArray(legs).forEach(function (leg) {
@@ -2012,7 +2016,7 @@
           return Math.min(min,item.value);
         },Infinity) : null;
         var capacityLabel = modeCapacity !== null
-          ? 'Route capacity ' + fmt(modeCapacity) + ' ' + buildDisplayUnit(capacityUnit)
+          ? 'Route capacity ' + fmt(modeCapacity) + ' ' + logisticsCapacityUnitLabel(capacityUnit)
           : 'Capacity not recorded';
         var estimate = designByMode[mode] || null;
         var estimateLeg = estimate && estimate.legs && estimate.legs.length === 1 ? estimate.legs[0] : null;
@@ -2022,8 +2026,8 @@
           estimateLeg.perVehicleCapacityUnit);
         var capacityDetail = perUnitCapacity !== null && perUnitCapacity !== undefined &&
           Number.isFinite(Number(perUnitCapacity)) && perUnitCapacityUnit
-          ? ' · ' + fmt(Number(Number(perUnitCapacity).toFixed(4))) + ' ' + buildDisplayUnit(perUnitCapacityUnit) +
-            (mode === 'pipeline' ? ' per line/day' : ' per vehicle/day') : '';
+          ? ' · ' + fmt(Number(Number(perUnitCapacity).toFixed(4))) + ' ' + logisticsCapacityUnitLabel(perUnitCapacityUnit) +
+            (mode === 'pipeline' ? ' per line' : ' per vehicle') : '';
         var capacityBasedEstimate = !!(estimate && estimate.basis &&
           estimate.basis.indexOf('route-capacity-envelope-divided-by-distance-aware-per-vehicle-daily-capacity') >= 0);
         var estimateLabel = estimate && estimate.available
