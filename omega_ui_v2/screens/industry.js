@@ -1332,11 +1332,18 @@
       var id = String(productId || '').trim();
       if (!id) return;
       var key = id.toLowerCase();
-      if (!map[key]) map[key] = { productId: id, perCycle: 0, perDay: 0, unit: String(unit || ''), sources: [] };
-      map[key].perCycle += perCycle;
-      map[key].perDay += perDay;
-      if (!map[key].unit && unit) map[key].unit = String(unit);
-      if (source) map[key].sources.push(source);
+      if (!map[key]) map[key] = {
+        productId:id, perCycle:0, perDay:0, unit:String(unit || ''), sources:[],
+        hasPerCycle:false, hasPerDay:false, perCycleComplete:true, perDayComplete:true
+      };
+      var row = map[key];
+      var cycleValue = num(perCycle), dayValue = num(perDay);
+      if (cycleValue === null) row.perCycleComplete = false;
+      else { row.perCycle += cycleValue; row.hasPerCycle = true; }
+      if (dayValue === null) row.perDayComplete = false;
+      else { row.perDay += dayValue; row.hasPerDay = true; }
+      if (!row.unit && unit) row.unit = String(unit);
+      if (source) row.sources.push(source);
     }
     function addRoute(plan, factoryUnits, recipeId, rule, capacity, routeKind) {
       factoryUnits = Math.max(0, Math.floor(Number(factoryUnits) || 0));
@@ -1358,16 +1365,14 @@
         if (coefficient === null || coefficient <= 0) return;
         var productUnit = rule.inputUnit || 'SIMULATION_RESOURCE_UNIT';
         var rate = factoryRouteRate(coefficient, rule, totalCapacity, productUnit);
-        if (!rate) return;
-        addProduct(plan.inputs, productId, rate.perCycle, rate.perDay, productUnit, source);
+        addProduct(plan.inputs, productId, rate ? rate.perCycle : null, rate ? rate.perDay : null, productUnit, source);
       });
       Object.keys(outputs).forEach(function (productId) {
         var coefficient = panelInputCoefficient(outputs[productId]);
         if (coefficient === null || coefficient <= 0) return;
         var productUnit = rule.outputUnit || 'SIMULATION_RESOURCE_UNIT';
         var rate = factoryRouteRate(coefficient, rule, totalCapacity, productUnit);
-        if (!rate) return;
-        addProduct(plan.outputs, productId, rate.perCycle, rate.perDay, productUnit, source);
+        addProduct(plan.outputs, productId, rate ? rate.perCycle : null, rate ? rate.perDay : null, productUnit, source);
       });
       plan.routes.push({
         recipeId: recipeId || ('PROCESSING:' + String(rule.resourceId || 'RESOURCE')),
@@ -1454,13 +1459,23 @@
     });
     var coverageDays = Math.max(1, Math.min(3650, Math.round(num(model.factoryInputCoverageDays) || 100)));
     typeRows.forEach(function (plan) {
-      plan.inputs = Object.keys(plan.inputs).map(function (key) { return plan.inputs[key]; })
-        .sort(function (a, b) { return a.productId.localeCompare(b.productId); });
-      plan.outputs = Object.keys(plan.outputs).map(function (key) { return plan.outputs[key]; })
-        .sort(function (a, b) { return a.productId.localeCompare(b.productId); });
+      plan.inputs = Object.keys(plan.inputs).map(function (key) {
+        var row = plan.inputs[key];
+        row.perCycle = row.hasPerCycle && row.perCycleComplete ? row.perCycle : null;
+        row.perDay = row.hasPerDay && row.perDayComplete ? row.perDay : null;
+        delete row.hasPerCycle; delete row.hasPerDay; delete row.perCycleComplete; delete row.perDayComplete;
+        return row;
+      }).sort(function (a, b) { return a.productId.localeCompare(b.productId); });
+      plan.outputs = Object.keys(plan.outputs).map(function (key) {
+        var row = plan.outputs[key];
+        row.perCycle = row.hasPerCycle && row.perCycleComplete ? row.perCycle : null;
+        row.perDay = row.hasPerDay && row.perDayComplete ? row.perDay : null;
+        delete row.hasPerCycle; delete row.hasPerDay; delete row.perCycleComplete; delete row.perDayComplete;
+        return row;
+      }).sort(function (a, b) { return a.productId.localeCompare(b.productId); });
       plan.inputs.forEach(function (row) {
         row.coverageDays = coverageDays;
-        row.coverageQuantity = row.perDay * coverageDays;
+        row.coverageQuantity = row.perDay === null ? null : row.perDay * coverageDays;
       });
     });
     return {
