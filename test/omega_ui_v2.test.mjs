@@ -2617,7 +2617,7 @@ test('Factory Stock and Input calculate all assigned factory-type requirements b
 test('Factory Stock/Input UI assets invalidate the old offline shell cache', () => {
   const sw = readFileSync('omega-offline-map-sw.js','utf8');
   const css = readFileSync('omega_ui_v2/factory-production-command.css','utf8');
-  assert.ok(sw.includes('omega-offline-atlas-shell-v82'),
+  assert.ok(sw.includes('omega-offline-atlas-shell-v83'),
     'the offline shell must activate the new JS/CSS rather than retaining the old Stock/Input renderer');
   for (const selector of ['.fp-product-identity','.fp-product-icon-frame','.fp-product-stock-quantity']) {
     assert.ok(css.includes(selector), selector + ' must be styled in the actual factory command stylesheet');
