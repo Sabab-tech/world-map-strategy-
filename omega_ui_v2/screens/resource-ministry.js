@@ -1965,7 +1965,7 @@
       return icons[mode] || '';
     }
     function logisticsCapacityUnitLabel(unitValue) {
-      return String(buildDisplayUnit(unitValue) || '').replace(/\\s+per\\s+/gi, '/').replace(/\\s+/g, ' ').toLowerCase();
+      return String(buildDisplayUnit(unitValue) || '').replace(/\s+per\s+/gi, '/').replace(/\s+/g, ' ').toLowerCase();
     }
 
     function logisticsSiteFleetMarkup(route, legs) {
