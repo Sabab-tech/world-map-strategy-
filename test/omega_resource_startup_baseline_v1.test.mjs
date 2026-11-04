@@ -11,6 +11,7 @@ const industrialCatalog = readJson('resource_industrial_catalog_v1.json');
 const siteDocument = readJson('resource_site_reserve_simulation_v1.json');
 const countryDocument = readJson('economy_global_profiles_v1.json');
 const factoryInputBaseline = readJson('country_factory_input_inventory_baseline_v1.json');
+const primaryResourceBaseline = readJson('country_primary_resource_opening_baseline_v1.json');
 const resourceIds = Object.keys(economyRules.demand.resourceProfiles);
 const factoryTypes = Object.keys(industrialCatalog.factoryProfiles);
 const sourceDocuments = {
@@ -19,7 +20,8 @@ const sourceDocuments = {
   'resource_industrial_catalog_v1.json': industrialCatalog,
   'resource_site_reserve_simulation_v1.json': siteDocument,
   'economy_global_profiles_v1.json': countryDocument,
-  'country_factory_input_inventory_baseline_v1.json': factoryInputBaseline
+  'country_factory_input_inventory_baseline_v1.json': factoryInputBaseline,
+  'country_primary_resource_opening_baseline_v1.json': primaryResourceBaseline
 };
 
 function makeState(overrides = {}) {
@@ -138,10 +140,22 @@ test('source catalog contract remains exactly 41 resource identities and 21 fact
   assert.equal(factoryInputBaseline.summary.countriesUsingMultipleFactoryRoutes, 63);
   assert.equal(factoryInputBaseline.summary.startingFactoryUnitsAcrossMultiRouteTypes, 970);
   assert.equal(factoryInputBaseline.summary.totalOpeningStockSimulationUnits, 16405900);
+  assert.equal(primaryResourceBaseline.countryCount, 197);
+  assert.equal(primaryResourceBaseline.resourceCount, 41);
+  assert.equal(primaryResourceBaseline.rowCount, 8077);
+  assert.equal(primaryResourceBaseline.coverageDays, 100);
+  assert.equal(primaryResourceBaseline.readyRows + primaryResourceBaseline.unknownRows, 8077);
+  assert.equal(primaryResourceBaseline.resourceIds.length, 41);
+  assert.equal(Object.keys(primaryResourceBaseline.countries).length, 197);
   for (const country of Object.values(factoryInputBaseline.countries)) {
     assert.equal(country.factoryInputRows.every(row =>
       Math.abs(row.openingStockQuantity - row.demandPerFullCycle * 1.4) < 1e-5), true);
   }
+  assert.equal(policy.openingStock.coverageDays, 100);
+  assert.equal(policy.openingStock.coverageDaysByPriority.critical, 100);
+  assert.equal(policy.openingStock.coverageDaysByPriority.standard, 100);
+  assert.equal(policy.openingStock.coverageDaysByPriority.nonCritical, 100);
+  assert.equal(policy.openingStock.coverageDaysByPriority.fallback, 100);
   assert.equal(policy.openingStock.neverUseGeologicalReservesAsStock, true);
   assert.equal(policy.startupFactories.reserveQuantityUsedAsWarehouseStock, false);
   assert.equal(policy.startupFactories.maxOneDownstreamAssetPerFactoryTypePerCountry, true);
@@ -206,6 +220,20 @@ test('fresh session seeds opening stock and starting factories for the player co
   assert.equal(ready.factoryProfileCount, 21);
   assert.equal(ready.factoryInputCountryCount, 197);
   assert.equal(ready.factoryInputProductCount, 69);
+  assert.equal(ready.primaryResourceCountryCount, 197);
+  assert.equal(ready.primaryResourceCount, 41);
+  assert.equal(ready.primaryResourceOpeningCoverageDays, 100);
+  const primaryBaseline = api.getCountryPrimaryResourceBaseline('BGD');
+  assert.equal(primaryBaseline.resources.length, 41);
+  assert.equal(primaryBaseline.targetCoverageDays, 100);
+  const copperIndex = primaryResourceBaseline.resourceIds.indexOf('copper');
+  const expectedCopperDaily = economyRules.demand.resourceProfiles.copper.basePerMillionPopulation *
+    primaryResourceBaseline.countries.BGD[1] / 1000000;
+  assert.ok(Math.abs(primaryBaseline.resources[copperIndex].dailyDemandQuantity - expectedCopperDaily) < 1e-7);
+  assert.ok(Math.abs(primaryBaseline.resources[copperIndex].openingStockQuantity - expectedCopperDaily * 100) < 1e-5);
+  const unknownIndex = primaryResourceBaseline.resourceIds.indexOf('gypsum');
+  assert.equal(primaryBaseline.resources[unknownIndex].openingStockQuantity, null,
+    'a resource with no rate profile remains unknown rather than becoming zero stock');
 
   state.resource.BGD.inventoryUnits.natural_gas = 'UNREGISTERED_STOCK_UNIT';
   const committedStockEvents = [];
@@ -230,7 +258,7 @@ test('fresh session seeds opening stock and starting factories for the player co
     });
   });
   emitSimulationEvent('OMEGA_GAME_SESSION_CREATED', {
-    session: JSON.parse(JSON.stringify(state.simulation.session))
+    session: { status:'READY', createdTurn:1 }
   });
   const initialized = await api.waitForPendingInitialization();
   assert.ok(['COMPLETED_WITH_REPORTED_GAPS', 'COMPLETED'].includes(initialized.status));
@@ -367,7 +395,8 @@ test('metadata-only resources stay unknown and unmaterialized for inactive count
     'a country with no population, eligible mine site or factory input receives no fabricated stock');
   assert.deepEqual(Object.keys(state.resource), ['ATA']);
   assert.deepEqual(Object.keys(state.economy), ['ATA']);
-  assert.equal(state.resource.BGD, undefined);
+  assert.equal(state.resource.BGD, undefined,
+    'inactive countries must not be materialized by the player-country startup pass');
   assert.equal(state.resource.USA, undefined);
   const countryReport = api.getCountryReport('ATA');
   assert.ok(countryReport);
@@ -525,4 +554,45 @@ test('startup baseline data requests fail with a bounded timeout instead of leav
   assert.equal(result.status, 'BLOCKED');
   assert.match(result.reason, /STARTUP_BASELINE_FETCH_TIMEOUT:/,
     'a stalled source request must return a concrete timeout reason');
+});
+
+test('a selected player country exposed outside session.playerCountryId still resolves for baseline initialization', async () => {
+  const state = makeState();
+  state.simulation.playerCountryId = 'USA';
+  state.simulation.session = { sessionId:'OMEGA-STARTUP-USA-LEGACY', status:'READY', createdTurn:1 };
+  const bangladeshBefore = plain(state.resource.BGD.inventory);
+  const { api } = makeHarness(state);
+  await api.ready;
+
+  const result = await api.ensurePlayerCountryBaseline('USA');
+  assert.ok(['COMPLETED','COMPLETED_WITH_REPORTED_GAPS','ALREADY_INITIALIZED'].includes(result.status));
+  assert.equal(result.scope, 'PLAYER_COUNTRY_ONLY');
+  assert.equal(result.report.playerCountryId, 'USA');
+  assert.ok(state.resource.USA, 'USA player resource state must be created for the selected player, even if the session copy omits playerCountryId');
+  assert.ok(Object.keys(state.resource.USA.inventory || {}).length > 0,
+    'the selected player country must receive its opening inventory');
+  assert.deepEqual(plain(state.resource.BGD.inventory), bangladeshBefore,
+    'the pre-existing non-player country inventory must not be mutated');
+  const summary = api.getCountryPrimaryResourceBaseline('USA');
+  assert.equal(summary.targetCoverageDays, 100);
+  assert.equal(summary.resources.length, 41);
+});
+
+test('session-created event resolves the live player country when its session snapshot omits the country field', async () => {
+  const state = makeState();
+  const bangladeshBefore = plain(state.resource.BGD);
+  state.simulation.playerCountryId = 'USA';
+  state.simulation.session = { sessionId:'OMEGA-STARTUP-USA-EVENT', status:'READY', createdTurn:1 };
+  const { api, emitSimulationEvent } = makeHarness(state);
+  await api.ready;
+
+  emitSimulationEvent('OMEGA_GAME_SESSION_CREATED', {
+    session: JSON.parse(JSON.stringify(state.simulation.session))
+  });
+  const result = await api.waitForPendingInitialization();
+  assert.ok(['COMPLETED','COMPLETED_WITH_REPORTED_GAPS','ALREADY_INITIALIZED'].includes(result.status));
+  assert.equal(result.report.playerCountryId, 'USA');
+  assert.ok(state.resource.USA && Object.keys(state.resource.USA.inventory || {}).length > 0);
+  assert.deepEqual(plain(state.resource.BGD), bangladeshBefore,
+    'pre-existing non-player country resource state remains unchanged');
 });

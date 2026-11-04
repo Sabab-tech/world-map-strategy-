@@ -24,8 +24,8 @@
   },
   "openingStock": {
     "enabled": true,
-    "coverageDays": 14,
-    "quantityBasis": "SIMULATED_RESOURCE_NATIVE_OPENING_STOCK",
+    "coverageDays": 100,
+    "quantityBasis": "SIMULATED_RESOURCE_NATIVE_OPENING_STOCK_FOR_100_GAME_DAYS",
     "stockAuthority": "SIMULATED_STARTUP_STOCK",
     "dailyRatePriority": [
       "OBSERVED_RESOURCE_CONSUMPTION",
@@ -46,11 +46,11 @@
     "neverDeleteStockAtExpiry": true,
     "coverageDaysByPriority": {
       "criticalPriorityMin": 8.5,
-      "critical": 40,
+      "critical": 100,
       "standardPriorityMin": 6,
-      "standard": 24,
-      "nonCritical": 10,
-      "fallback": 14,
+      "standard": 100,
+      "nonCritical": 100,
+      "fallback": 100,
       "authority": "SIMULATED_STARTUP_BASELINE_V1"
     },
     "inventoryMaterialization": {
@@ -62,7 +62,8 @@
       "preserveExplicitZeroInventory": true,
       "blockOnInconsistentExistingStockLayers": true,
       "quantityAuthority": "SIMULATED"
-    }
+    },
+    "policyVersion": "100_DAY_PRIMARY_RESOURCE_OPENING_BASELINE_V1"
   },
   "factoryInputStockBaseline": {
     "enabled": true,

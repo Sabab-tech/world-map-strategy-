@@ -279,6 +279,8 @@ test("inventory displays the canonical 41 resources and aggregate balances when 
     assert.equal(result.ok, true);
     assert.match(root.innerHTML, /Raw resource types/);
     assert.match(root.innerHTML, /Current Stock/);
+    assert.match(root.innerHTML, /Opening target · 100 days/);
+    assert.match(root.innerHTML, /Opening target · 100 days/);
 
     assert.doesNotMatch(root.innerHTML, /SIMULATION(?:_RESOURCE)?_UNIT/i,
       "internal simulation unit labels are not exposed in the inventory table or batch list");
@@ -291,7 +293,7 @@ test("inventory displays the canonical 41 resources and aggregate balances when 
   }
 });
 
-test("inventory cards show current stock coverage, provenance and shortage/surplus without counting mine-side stock", async () => {
+test("inventory table shows current stock coverage, provenance and shortage/surplus without counting mine-side stock", async () => {
   const api = globalThis.OmegaUIV2ResourceMinistry;
   const rules = json("resource_economy_rules.json");
   const resources = Object.keys(rules.demand.resourceProfiles).map((resourceId) => {
@@ -393,8 +395,11 @@ test("inventory cards show current stock coverage, provenance and shortage/surpl
       "on-hand raw inventory shows domestic mine provenance");
     assert.match(root.innerHTML, /Foreign import/,
       "on-hand imported raw inventory is identified by source type");
-    assert.match(root.innerHTML, /Supply source/,
-      "raw-resource cards expose their supply-source section");
+    assert.match(root.innerHTML, /Supply origin/,
+      "raw-resource table shows its supply-origin column");
+    assert.match(root.innerHTML, /omega-v2-inventory-table/,
+      "raw and processed stock must be presented as a table, not resource cards");
+    assert.match(root.innerHTML, /Opening target · 100 days/);
     assert.match(root.innerHTML, /AUS/,
       "import supplier identity is retained in the supply-source details");
     assert.doesNotMatch(root.innerHTML, /Batch ledger exceeds current stock by: 70/,
@@ -454,9 +459,13 @@ test("resource visual layer is wired into the offline-first app without remote d
   assert.ok(Number(sw.match(/CACHE_NAME = "omega-offline-atlas-shell-v(\d+)"/)?.[1] || 0) >= 79, "offline cache must be invalidated for new visual assets");
   const coreAssets = sw.slice(sw.indexOf("const CORE_ASSETS"), sw.indexOf("];", sw.indexOf("const CORE_ASSETS")));
   assert.ok(coreAssets.includes('"./resource_economy_rules.json"'), "canonical resource identities remain in the shell precache list");
+  assert.ok(coreAssets.includes('"./country_primary_resource_opening_baseline_v1.json"'),
+    "the country-wide primary resource opening baseline must be precached");
   const shellAssetPolicy = sw.slice(sw.indexOf("function isShellAsset"), sw.indexOf("function isLocalAppUrl"));
   assert.ok(shellAssetPolicy.includes(String.raw`resource_economy_rules\.json`),
     "the Service Worker must cache the canonical resource rules as an offline shell asset");
+  assert.ok(shellAssetPolicy.includes("country_primary_resource_opening_baseline_v1"),
+    "the Service Worker must classify the new baseline as an offline shell asset");
   assert.ok(coreAssets.includes('"./assets/omega-industrial-icons-v1/transport/route-mine-origin.svg"'));
   assert.ok(coreAssets.includes('"./assets/omega-industrial-icons-v1/transport/route-warehouse-destination.svg"'));
   assert.ok(coreAssets.includes('"./' + cssPath + '"'), "premium stylesheet belongs in the precache list");
@@ -1558,7 +1567,7 @@ test("Resource Ministry cancels a shared country route shard after its last acti
 });
 
 
-test("raw-resource inventory cards show icon, stock, demand, status and named supplier without mixing product warehouse balances", () => {
+test("raw-resource inventory table shows icon, stock, demand, status and named supplier without mixing product warehouse balances", () => {
   const api = globalThis.OmegaUIV2ResourceMinistry;
   const rules = json("resource_economy_rules.json");
   const resources = Object.keys(rules.demand.resourceProfiles).map((resourceId) => {
@@ -1621,20 +1630,25 @@ test("raw-resource inventory cards show icon, stock, demand, status and named su
     assert.equal(result.ok,true);
     assert.match(root.innerHTML,/data-omega-v2-raw-resource-inventory/);
     assert.match(root.innerHTML,/data-resource-id="coal"/);
-    assert.match(root.innerHTML,/Current stock/);
-    assert.match(root.innerHTML,/Daily demand/);
-    const coalCard = root.innerHTML.slice(root.innerHTML.indexOf('data-resource-id="coal"'), root.innerHTML.indexOf('data-resource-id="coal"') + 1400);
+    assert.match(root.innerHTML,/Current Stock/);
+    assert.match(root.innerHTML,/Daily Demand/);
+    const rawSection = root.innerHTML.slice(root.innerHTML.indexOf('data-omega-v2-raw-resource-inventory'),root.innerHTML.indexOf('data-omega-v2-processed-goods-inventory'));
+    const coalRowStart = rawSection.indexOf('data-resource-id="coal"');
+    const coalRow = rawSection.slice(coalRowStart, rawSection.indexOf('</tr>', coalRowStart) + 5);
     const orderedFields = [
-      coalCard.indexOf('omega-v2-resource-icon-image'),
-      coalCard.indexOf('<h3>Coal</h3>'),
-      coalCard.indexOf('Current stock'),
-      coalCard.indexOf('Daily demand'),
-      coalCard.indexOf('<strong>Status</strong>'),
-      coalCard.indexOf('Supply source')
+      coalRow.indexOf('omega-v2-resource-icon-image'),
+      coalRow.indexOf('<strong>Coal</strong>'),
+      coalRow.indexOf('125'),
+      coalRow.indexOf('Surplus')
     ];
     assert.ok(orderedFields.every((value) => value >= 0));
     assert.deepEqual(orderedFields, orderedFields.slice().sort((a, b) => a - b),
-      "resource icon, name, current stock, demand, status and supply source must render in the requested order");
+      "the icon, resource label, current balance and stock state must align in the same table row");
+    assert.match(rawSection, /Current Stock/);
+    assert.match(rawSection, /Daily Demand/);
+    assert.match(rawSection, /Opening target · 100 days/);
+    assert.match(rawSection, /Supply origin/);
+    assert.doesNotMatch(rawSection, /omega-v2-inventory-resource-card|<article/);
     assert.match(root.innerHTML,/125(?:\.00)? TONNES/);
     assert.match(root.innerHTML,/25(?:\.00)? [A-Z ]+PER DAY/i);
     assert.match(root.innerHTML,/Domestic mine/);
@@ -1647,8 +1661,8 @@ test("raw-resource inventory cards show icon, stock, demand, status and named su
     assert.match(root.innerHTML,/Processed Goods Warehouse/);
     assert.match(root.innerHTML,/Steel/);
     assert.match(root.innerHTML,/900(?:\.00)? TONNES/);
-    const rawSection = root.innerHTML.slice(root.innerHTML.indexOf('data-omega-v2-raw-resource-inventory'),root.innerHTML.indexOf('data-omega-v2-processed-goods-inventory'));
-    assert.doesNotMatch(rawSection,/data-product-id="steel"|900(?:\.00)? TONNES/,
+    const rawResourceNamespaceSection = root.innerHTML.slice(root.innerHTML.indexOf('data-omega-v2-raw-resource-inventory'),root.innerHTML.indexOf('data-omega-v2-processed-goods-inventory'));
+    assert.doesNotMatch(rawResourceNamespaceSection,/data-product-id="steel"|900(?:\.00)? TONNES/,
       "finished-goods stock must never appear in the natural-resource inventory");
     assert.match(root.innerHTML,/Factory-held input/);
     assert.match(root.innerHTML,/Bangladesh Steel Works/);
