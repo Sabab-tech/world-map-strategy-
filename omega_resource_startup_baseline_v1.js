@@ -18,7 +18,8 @@
     industrialCatalog: './resource_industrial_catalog_v1.json',
     sites: './resource_site_reserve_simulation_v1.json',
     countryProfiles: './economy_global_profiles_v1.json',
-    factoryInputBaseline: './country_factory_input_inventory_baseline_v1.json'
+    factoryInputBaseline: './country_factory_input_inventory_baseline_v1.json',
+    primaryResourceBaseline: './country_primary_resource_opening_baseline_v1.json'
   };
   var data = null;
   var loadPromise = null;
@@ -95,6 +96,54 @@
   }
   function sessionFromState(state) {
     return state && state.simulation && object(state.simulation.session) || null;
+  }
+  // Keep the baseline runtime's player identity resolver aligned with the
+  // Resource Ministry screen. A player country may be exposed by the live
+  // SimulationRuntime/Game state even when session.playerCountryId is absent.
+  // Never fall back to a country being merely viewed in a ministry/map panel.
+  function playerCountryIdFromState(state) {
+    state = object(state) || rootState() || {};
+    var simulation = object(state.simulation) || {};
+    var session = sessionFromState(state) || {};
+    var runtime = g.Omega && (g.Omega.SimulationRuntime || g.Omega.Simulation);
+    var candidates = [];
+    try {
+      if (runtime && typeof runtime.getPlayerCountryId === 'function') {
+        candidates.push(runtime.getPlayerCountryId());
+      }
+    } catch (_) {}
+    candidates.push(
+      session.playerCountryId,
+      simulation.playerCountryId,
+      state.playerCountryId,
+      state.playerCountryCode,
+      g.Game && g.Game.playerCountryId,
+      g.Game && g.Game.playerCountryCode,
+      g.CountryIOS && g.CountryIOS.playerCountryId,
+      g.currentPlayerCountry
+    );
+    for (var i = 0; i < candidates.length; i += 1) {
+      var candidate = id(candidates[i]);
+      if (candidate && candidate !== 'GLOBAL' && candidate !== 'WORLD') return candidate;
+    }
+    return null;
+  }
+  function sessionForPlayerCountry(state, countryId) {
+    var player = id(countryId);
+    var current = sessionFromState(state);
+    var session = current ? clone(current) : {};
+    var simulation = object(state && state.simulation) || {};
+    var runtime = g.Omega && (g.Omega.SimulationRuntime || g.Omega.Simulation);
+    if (!player || player === 'GLOBAL' || player === 'WORLD') return null;
+    // The selected-player resolver is authoritative when a legacy save omitted
+    // the duplicated session field. Copying here avoids mutating a live session.
+    session.playerCountryId = player;
+    if (!session.sessionId) {
+      session.sessionId = String(simulation.sessionId ||
+        runtime && (runtime.sessionId || runtime.currentSessionId) || ('PLAYER-COUNTRY-' + player));
+    }
+    if (!session.status) session.status = 'RUNNING';
+    return session;
   }
   function profileAliases(profile) {
     return [profile && profile.iso3, profile && profile.countryCode, profile && profile.iso2,
@@ -185,7 +234,8 @@
         !object(catalog.factoryProfiles) || !object(catalog.processingRules) ||
         !object(catalog.downstreamFactoryRecipes) || !object(catalog.technologyProjects) ||
         !Array.isArray(loaded.siteDocument.records) || !Array.isArray(loaded.countryDocument.countries) ||
-        !object(loaded.factoryInputBaseline) || !object(loaded.factoryInputBaseline.countries)) {
+        !object(loaded.factoryInputBaseline) || !object(loaded.factoryInputBaseline.countries) ||
+        !object(loaded.primaryResourceBaseline) || !object(loaded.primaryResourceBaseline.countries)) {
       throw new Error('STARTUP_BASELINE_SOURCE_SCHEMA_INVALID');
     }
     var expectedResources = finite(policy.canonicalIdentityPolicy && policy.canonicalIdentityPolicy.resourceProfileCount);
@@ -223,6 +273,48 @@
         }
       });
     });
+    var primaryBaseline = loaded.primaryResourceBaseline;
+    var primaryResourceIds = Array.isArray(primaryBaseline.resourceIds) ? primaryBaseline.resourceIds : [];
+    var primaryCountries = object(primaryBaseline.countries) || {};
+    if (Number(primaryBaseline.countryCount) !== 197 ||
+        Number(primaryBaseline.resourceCount) !== expectedResources ||
+        Number(primaryBaseline.coverageDays) !== 100 ||
+        Number(primaryBaseline.rowCount) !== 197 * expectedResources ||
+        Object.keys(primaryCountries).length !== 197 ||
+        primaryResourceIds.length !== expectedResources ||
+        primaryResourceIds.some(function (resourceId) { return !own(rules.demand.resourceProfiles, resourceId); }) ||
+        !Array.isArray(primaryBaseline.resourceUnits) ||
+        primaryBaseline.resourceUnits.length !== expectedResources) {
+      throw new Error('PRIMARY_RESOURCE_OPENING_BASELINE_COUNTRY_RESOURCE_OR_COVERAGE_CONTRACT_INVALID');
+    }
+    Object.keys(primaryCountries).forEach(function (countryId) {
+      var countryRow = primaryCountries[countryId];
+      if (!Array.isArray(countryRow) || countryRow.length !== 3 ||
+          !Array.isArray(countryRow[2]) || countryRow[2].length !== expectedResources) {
+        throw new Error('PRIMARY_RESOURCE_OPENING_BASELINE_COUNTRY_ROW_INVALID:' + countryId);
+      }
+      countryRow[2].forEach(function (dailyRate, index) {
+        if (dailyRate === null || dailyRate === undefined) return;
+        var rate = finite(dailyRate);
+        if (rate === null || rate <= 0 ||
+            !primaryBaseline.resourceUnits[index] ||
+            !own(rules.demand.resourceProfiles, primaryResourceIds[index])) {
+          throw new Error('PRIMARY_RESOURCE_OPENING_BASELINE_RATE_INVALID:' + countryId + ':' + primaryResourceIds[index]);
+        }
+      });
+    });
+    if (Number(policy.openingStock && policy.openingStock.coverageDays) !== 100 ||
+        Number(policy.openingStock && policy.openingStock.coverageDaysByPriority &&
+          policy.openingStock.coverageDaysByPriority.critical) !== 100 ||
+        Number(policy.openingStock && policy.openingStock.coverageDaysByPriority &&
+          policy.openingStock.coverageDaysByPriority.standard) !== 100 ||
+        Number(policy.openingStock && policy.openingStock.coverageDaysByPriority &&
+          policy.openingStock.coverageDaysByPriority.nonCritical) !== 100 ||
+        Number(policy.openingStock && policy.openingStock.coverageDaysByPriority &&
+          policy.openingStock.coverageDaysByPriority.fallback) !== 100) {
+      throw new Error('PRIMARY_RESOURCE_OPENING_STOCK_MUST_USE_100_DAYS');
+    }
+    loaded.primaryResourceBaseline = primaryBaseline;
     loaded.countryProfiles = loaded.countryDocument.countries;
     loaded.siteRows = loaded.siteDocument.records;
     loaded.resourceProfiles = rules.demand.resourceProfiles;
@@ -271,17 +363,22 @@
       fetchJson(PATHS.industrialCatalog),
       fetchJson(PATHS.sites),
       fetchJson(PATHS.countryProfiles),
-      fetchJson(PATHS.factoryInputBaseline)
+      fetchJson(PATHS.factoryInputBaseline),
+      fetchJson(PATHS.primaryResourceBaseline)
     ]).then(function (values) {
       data = checkData({
         policy: values[0], economyRules: values[1], industrialCatalog: values[2],
-        siteDocument: values[3], countryDocument: values[4], factoryInputBaseline: values[5]
+        siteDocument: values[3], countryDocument: values[4], factoryInputBaseline: values[5],
+        primaryResourceBaseline: values[6]
       });
       return { status: 'READY', version: VERSION, countryCount: data.countryProfiles.length,
         resourceProfileCount: Object.keys(data.resourceProfiles).length,
         factoryProfileCount: Object.keys(data.factoryProfiles).length,
         factoryInputCountryCount: Object.keys(data.factoryInputBaseline.countries).length,
-        factoryInputProductCount: Object.keys(data.factoryInputBaseline.worldOpeningStockByProduct || {}).length };
+        factoryInputProductCount: Object.keys(data.factoryInputBaseline.worldOpeningStockByProduct || {}).length,
+        primaryResourceCountryCount: Object.keys(data.primaryResourceBaseline.countries).length,
+        primaryResourceCount: data.primaryResourceBaseline.resourceIds.length,
+        primaryResourceOpeningCoverageDays: data.primaryResourceBaseline.coverageDays };
     }).catch(function (error) {
       data = null;
       loadPromise = null;
@@ -827,7 +924,7 @@
   function coverageDaysForProfile(profileRow, policies) {
     var tiers = object(policies && policies.coverageDaysByPriority) || {};
     var priority = finite(profileRow && profileRow.priority);
-    var fallback = positive(tiers.fallback) || positive(policies && policies.coverageDays) || 14;
+    var fallback = positive(tiers.fallback) || positive(policies && policies.coverageDays) || 100;
     if (priority === null) return fallback;
     if (priority >= (finite(tiers.criticalPriorityMin) === null ? 8.5 : finite(tiers.criticalPriorityMin))) {
       return positive(tiers.critical) || fallback;
@@ -1191,7 +1288,7 @@
       openingStockInitialized: true,
       countryId: countryId,
       initializedTurn: turn,
-      openingStockCoverageDays: positive(policies.coverageDays) || 14,
+      openingStockCoverageDays: positive(policies.coverageDays) || 100,
       openingStockCoverageDaysByPriority: clone(policies.coverageDaysByPriority || null),
       openingStockSeededCount: seeded,
       existingStockPreservedCount: preserved,
@@ -1623,8 +1720,9 @@
     }
     var state = rootState();
     if (!state || typeof state !== 'object') return { status: 'BLOCKED', reason: 'AUTHORITATIVE_GAME_STATE_UNAVAILABLE' };
-    var wanted = id(countryId), simulation = object(state.simulation) || {}, session = sessionFromState(state) || {};
-    var playerCountryId = id(session.playerCountryId || simulation.playerCountryId || state.playerCountryId);
+    var wanted = id(countryId);
+    var simulation = object(state.simulation) || {};
+    var playerCountryId = playerCountryIdFromState(state) || '';
     if (!playerCountryId) return { status: 'BLOCKED', reason: 'PLAYER_COUNTRY_NOT_SELECTED' };
     if (!wanted || wanted !== playerCountryId) {
       return { status: 'BLOCKED', reason: 'PLAYER_COUNTRY_SCOPE_VIOLATION',
@@ -1840,11 +1938,10 @@
       }
       var state = rootState();
       if (!state || typeof state !== 'object') return { status:'BLOCKED', reason:'AUTHORITATIVE_GAME_STATE_UNAVAILABLE' };
-      var session = sessionFromState(state);
-      if (!session || !session.playerCountryId) return { status:'BLOCKED', reason:'PLAYER_COUNTRY_NOT_SELECTED' };
-      var playerCountryId = id(session.playerCountryId);
+      var playerCountryId = playerCountryIdFromState(state);
+      var session = playerCountryId ? sessionForPlayerCountry(state, playerCountryId) : null;
       var requestedCountryId = id(countryInput || playerCountryId);
-      if (!playerCountryId || playerCountryId === 'GLOBAL' || playerCountryId === 'WORLD') {
+      if (!playerCountryId || playerCountryId === 'GLOBAL' || playerCountryId === 'WORLD' || !session) {
         return { status:'BLOCKED', reason:'PLAYER_COUNTRY_NOT_SELECTED' };
       }
       if (requestedCountryId !== playerCountryId) {
@@ -1859,15 +1956,17 @@
       var inFlightWorldBaseline = running[sessionId];
       var promise = Promise.resolve(inFlightWorldBaseline || null).then(function () {
         var liveState = rootState();
-        var liveSession = sessionFromState(liveState);
-        if (!liveState || !liveSession || id(liveSession.playerCountryId) !== playerCountryId ||
+        var livePlayerCountryId = playerCountryIdFromState(liveState);
+        var liveSession = livePlayerCountryId ? sessionForPlayerCountry(liveState, livePlayerCountryId) : null;
+        if (!liveState || !liveSession || livePlayerCountryId !== playerCountryId ||
             (session.sessionId && liveSession.sessionId && String(session.sessionId) !== String(liveSession.sessionId))) {
           return { status:'STALE_SESSION_IGNORED', countryId:playerCountryId };
         }
         return ensureCountryFactoryStartingBaseline(liveSession).then(function (factoryResult) {
           var currentState = rootState();
-          var currentSession = sessionFromState(currentState);
-          if (!currentState || !currentSession || id(currentSession.playerCountryId) !== playerCountryId ||
+          var currentPlayerCountryId = playerCountryIdFromState(currentState);
+          var currentSession = currentPlayerCountryId ? sessionForPlayerCountry(currentState, currentPlayerCountryId) : null;
+          if (!currentState || !currentSession || currentPlayerCountryId !== playerCountryId ||
               (session.sessionId && currentSession.sessionId && String(session.sessionId) !== String(currentSession.sessionId))) {
             return { status:'STALE_SESSION_IGNORED', countryId:playerCountryId };
           }
@@ -1899,20 +1998,19 @@
     var state = rootState();
     if (!state || typeof state !== 'object') return { status: 'BLOCKED', reason: 'AUTHORITATIVE_GAME_STATE_UNAVAILABLE' };
     var currentSession = sessionFromState(state);
-    var session = object(sessionInput) || currentSession;
-    if (!session) return { status: 'BLOCKED', reason: 'GAME_SESSION_NOT_AVAILABLE' };
-    var expectedSessionId = String(session.sessionId || '');
+    var requestedSession = object(sessionInput) || currentSession || {};
+    var expectedSessionId = String(requestedSession.sessionId || '');
     var liveSessionId = String(currentSession && currentSession.sessionId || '');
     if (expectedSessionId && liveSessionId && expectedSessionId !== liveSessionId) {
       return { status: 'STALE_SESSION_IGNORED', expectedSessionId: expectedSessionId, liveSessionId: liveSessionId };
     }
-    var playerCountryId = id((currentSession || session).playerCountryId || session.playerCountryId);
+    var playerCountryId = playerCountryIdFromState(state) ||
+      id((currentSession || requestedSession).playerCountryId);
     if (!playerCountryId || playerCountryId === 'GLOBAL' || playerCountryId === 'WORLD') {
       return { status: 'BLOCKED', reason: 'PLAYER_COUNTRY_NOT_SELECTED' };
     }
-    // The game session owns one live country runtime. The 197-country factory
-    // and resource baselines remain static source data and are materialized only
-    // for this player's country, never by a world-wide startup loop.
+    // Static opening targets cover the 197-country roster. Live inventory is
+    // still written only to the selected player country.
     return ensurePlayerCountryBaseline(playerCountryId);
   }
   async function runNewGameBaseline(state, session, runKey) {
@@ -2032,6 +2130,7 @@
       sources: {
         openingStockRules: PATHS.policy,
         demandProfiles: PATHS.economyRules,
+        primaryResourceOpeningBaseline: PATHS.primaryResourceBaseline,
         factoryProfilesAndRecipes: PATHS.industrialCatalog,
         mineSiteIdentityGroups: PATHS.sites,
         countryPopulationAndEconomicContext: PATHS.countryProfiles,
@@ -2067,7 +2166,7 @@
       factoryTypeCountCreated: Object.keys(totals.factoryTypesCreated).length,
       factoryTypesCreated: totals.factoryTypesCreated,
       notRealWorldFacilityCount: totals.factoryAssetsCreated,
-      openingStockCoverageDays: positive(policy.openingStock && policy.openingStock.coverageDays) || 14,
+      openingStockCoverageDays: positive(policy.openingStock && policy.openingStock.coverageDays) || 100,
       automaticSupplyWindowDays: positive(data.economyRules.demand.playerSupplyLifeline &&
         data.economyRules.demand.playerSupplyLifeline.termDays) || 100,
       automaticSupplyRenewal: false,
@@ -2155,7 +2254,19 @@
       : (event && event.payload !== undefined ? event.payload : event || {});
     if (detail && detail.payload && !detail.session && detail.payload.session) detail = detail.payload;
     var session = object(detail.session) || object(detail);
-    if (!session || !session.playerCountryId) return;
+    if (!session) return;
+    var selectedPlayerCountryId = id(session.playerCountryId) || playerCountryIdFromState(rootState());
+    if (!selectedPlayerCountryId || selectedPlayerCountryId === 'GLOBAL' || selectedPlayerCountryId === 'WORLD') return;
+    session = clone(session);
+    session.playerCountryId = selectedPlayerCountryId;
+    if (!session.sessionId) {
+      var state = rootState(), simulation = object(state && state.simulation) || {};
+      var currentSession = sessionFromState(state);
+      var runtime = g.Omega && (g.Omega.SimulationRuntime || g.Omega.Simulation);
+      session.sessionId = String(currentSession && currentSession.sessionId ||
+        simulation.sessionId || runtime && (runtime.sessionId || runtime.currentSessionId) ||
+        ('PLAYER-COUNTRY-' + selectedPlayerCountryId));
+    }
     pendingSession = clone(session);
     pendingInitialization = loadSources().then(function (result) {
       if (!pendingSession) return result;
@@ -2193,9 +2304,9 @@
   }
   function ensureCurrentSession() {
     var state = rootState();
-    var session = sessionFromState(state);
-    if (!session || !session.playerCountryId) return Promise.resolve({ status: 'NO_ACTIVE_SESSION' });
-    pendingInitialization = initializeForSession(session);
+    var playerCountryId = playerCountryIdFromState(state);
+    if (!state || !playerCountryId) return Promise.resolve({ status: 'NO_ACTIVE_SESSION' });
+    pendingInitialization = initializeForSession(sessionForPlayerCountry(state, playerCountryId));
     return pendingInitialization;
   }
   function onRuntimeReady() {
@@ -2242,6 +2353,41 @@
     diagnostics: diagnostics,
     getCountryReport: getCountryReport,
     getCountryFactoryInputBaseline: getCountryFactoryInputBaseline,
+    getPlayerCountryId: function () { return playerCountryIdFromState(rootState()); },
+    getCountryPrimaryResourceBaseline: function (countryId) {
+      var wanted = id(countryId);
+      var source = data && data.primaryResourceBaseline;
+      var row = source && source.countries && source.countries[wanted];
+      if (!row || !Array.isArray(row[2])) return null;
+      return {
+        countryId: wanted,
+        name: row[0] || wanted,
+        population2015: finite(row[1]),
+        targetCoverageDays: source.coverageDays,
+        authority: 'SIMULATED_STARTUP_BASELINE_V1',
+        resources: source.resourceIds.map(function (resourceId, index) {
+          var daily = finite(row[2][index]);
+          var profile = data.resourceProfiles[resourceId] || {};
+          var unit = source.resourceUnits[index] || null;
+          return {
+            resourceId: resourceId,
+            name: String(profile.name || resourceId.replace(/[_-]+/g, ' ').replace(/\b\w/g, function (ch) { return ch.toUpperCase(); })),
+            dailyDemandQuantity: daily,
+            openingStockQuantity: daily === null ? null : Number((daily * source.coverageDays).toPrecision(12)),
+            targetCoverageDays: source.coverageDays,
+            unit: unit,
+            status: daily === null ? (positive(profile.basePerMillionPopulation) === null ? 'UNKNOWN_RATE_PROFILE' : 'UNKNOWN_POPULATION') : 'MODELED_OPENING_ALLOCATION',
+            authority: 'SIMULATED_STARTUP_BASELINE_V1'
+          };
+        })
+      };
+    },
+    getPrimaryResourceBaselineSummary: function () {
+      var source = data && data.primaryResourceBaseline;
+      return source ? { countryCount:source.countryCount, resourceCount:source.resourceCount,
+        rowCount:source.rowCount, readyRows:source.readyRows, unknownRows:source.unknownRows,
+        targetCoverageDays:source.coverageDays } : null;
+    },
     getResourceCatalog: function () {
       if (!data || !data.resourceProfiles) return [];
       return Object.keys(data.resourceProfiles).sort().map(function (resourceId) {

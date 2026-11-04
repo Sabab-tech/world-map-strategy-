@@ -525,6 +525,28 @@
       '<span>Player country</span><strong>' + esc(name + (currentCountry ? ' (' + currentCountry + ')' : '')) + '</strong></div>';
   }
 
+  function ensureResourceMinuteRefresh(root) {
+    if (!root || !root.ownerDocument || root.__omegaV2MinuteRefreshTimer != null ||
+        typeof g.setInterval !== 'function' || !g.document ||
+        typeof g.document.addEventListener !== 'function' ||
+        typeof g.document.visibilityState !== 'string') return false;
+    root.__omegaV2MinuteRefreshTimer = g.setInterval(function () {
+      if (root.__omegaV2ResourceActive === false || !root.__omegaV2ResourceOptions) return;
+      if (g.document && g.document.visibilityState === 'hidden') return;
+      var active = g.document && g.document.activeElement;
+      if (active && root.contains && root.contains(active) &&
+          /^(INPUT|SELECT|TEXTAREA)$/.test(String(active.tagName || '').toUpperCase())) return;
+      var latest = Object.assign({}, root.__omegaV2ResourceOptions, {
+        countryId: root.__omegaV2CurrentCountryKey || root.__omegaV2ResourceOptions.countryId,
+        tab: root.__omegaV2ResourceTab || root.__omegaV2ResourceOptions.tab || 'dashboard'
+      });
+      var scrollTop = Number(root.scrollTop) || 0;
+      render(root, latest);
+      if (typeof root.scrollTop === 'number') root.scrollTop = scrollTop;
+    }, 60000);
+    return true;
+  }
+
   function scheduleRender(root, options, label) {
     options = options || {};
     var scheduler = options.onScheduleRender;
@@ -625,6 +647,7 @@
     if (active === 'transport') active = 'logistics';
     root.__omegaV2ResourceOptions = renderOptions;
     root.__omegaV2CurrentCountryKey = countryKey;
+    ensureResourceMinuteRefresh(root);
     root.__omegaV2ResourceTab = active;
     var startupBaselineForLoad = g.OmegaResourceStartupBaseline || g.Omega && g.Omega.ResourceStartupBaseline || null;
     if (startupBaselineForLoad && typeof startupBaselineForLoad.ensurePlayerCountryBaseline === 'function' &&
@@ -1456,29 +1479,35 @@
           ({mine:'⛏',warehouse:'▤',truck:'⇢',factory:'▥',chart:'↗'}[step[1]]) + '</span><span>' + step[0] + '</span>' +
           (i < 4 ? '<span class="omega-v2-flow-arrow">›</span>' : '') + '</span>';
       }).join('') + '</div></section></div>';
-    function rawResourceCard(rid) {
+    var primaryOpeningRuntime = g.OmegaResourceStartupBaseline || g.Omega && g.Omega.ResourceStartupBaseline || null;
+    var primaryOpeningBaseline = null;
+    try {
+      if (primaryOpeningRuntime && typeof primaryOpeningRuntime.getCountryPrimaryResourceBaseline === 'function') {
+        primaryOpeningBaseline = primaryOpeningRuntime.getCountryPrimaryResourceBaseline(countryKey);
+      }
+    } catch (_) {}
+    var primaryOpeningById = Object.create(null);
+    safeArray(primaryOpeningBaseline && primaryOpeningBaseline.resources).forEach(function (row) {
+      if (row && row.resourceId) primaryOpeningById[String(row.resourceId).toLowerCase()] = row;
+    });
+    function rawResourceTableRow(rid) {
       var rawWarehouseStock = stockFor(rid, rawStock);
       var currentStock = currentStockFor(rid, rawWarehouseStock, null);
+      var baselineRow = primaryOpeningById[String(rid || '').toLowerCase()] || null;
       var demand = dailyDemand(rid);
+      if (demand === null && baselineRow) demand = numberOrNull(baselineRow.dailyDemandQuantity);
       var unit = resourceUnit(rid);
       var state = stockStatusInfo(rid, currentStock, demand, unit);
-      return '<article class="omega-v2-inventory-resource-card" data-resource-id="' + esc(rid) +
-        '" data-stock-state="' + esc(state.state) + '">' +
-        '<div class="omega-v2-inventory-resource-head"><span class="omega-v2-inventory-resource-icon">' +
-        resourceIconMarkup(rid, resourceLabel(rid)) + '</span><div class="omega-v2-inventory-resource-name"><h3>' +
-        esc(resourceLabel(rid)) + '</h3></div></div>' +
-        '<div class="omega-v2-inventory-resource-metrics">' +
-        '<div><span>Current stock</span><strong class="omega-v2-current-stock-cell">' +
-        (currentStock === null ? 'Not recorded' : amount(currentStock, unit)) + '</strong></div>' +
-        '<div><span>Daily demand</span><strong>' +
-        (demand === null ? 'Not recorded' : amount(demand, resourceDemandUnit(rid, unit))) + '</strong></div>' +
-        '</div><div class="omega-v2-inventory-status-line">' +
-        '<span class="omega-v2-inventory-status-badge omega-v2-stock-status" data-state="' + esc(state.state) + '">' +
-        '<strong>Status</strong>' + esc(state.label) + '</span></div>' +
-        '<div class="omega-v2-inventory-coverage"><span>Stock coverage</span><strong>' + esc(state.coverageLabel) + '</strong></div>' +
-        (state.targetNote ? '<div class="omega-v2-inventory-target-note">' + esc(state.targetNote) + '</div>' : '') +
-        '<div class="omega-v2-inventory-resource-origin"><span class="omega-v2-inventory-origin-heading">Supply source</span>' +
-        '<div class="omega-v2-inventory-origin-list">' + state.origin + '</div></div></article>';
+      var openingTarget = baselineRow && numberOrNull(baselineRow.openingStockQuantity);
+      return '<tr data-resource-id="' + esc(rid) + '" data-stock-state="' + esc(state.state) + '">' +
+        '<td><span class="omega-v2-table-resource">' + resourceIconMarkup(rid, resourceLabel(rid)) +
+          '<strong>' + esc(resourceLabel(rid)) + '</strong></span></td>' +
+        '<td class="omega-v2-current-stock-cell">' + (currentStock === null ? 'Not recorded' : amount(currentStock, unit)) + '</td>' +
+        '<td>' + (demand === null ? 'Not recorded' : amount(demand, resourceDemandUnit(rid, unit))) + '</td>' +
+        '<td>' + (openingTarget === null ? 'Unknown' : amount(openingTarget, baselineRow.unit || unit)) + '</td>' +
+        '<td>' + esc(state.coverageLabel) + '</td>' +
+        '<td><span class="omega-v2-stock-status" data-state="' + esc(state.state) + '">' + esc(state.label) + '</span></td>' +
+        '<td>' + state.origin + '</td></tr>';
     }
     function processedProductLabel(productId) {
       var catalog = g.OmegaResourceIndustrialCatalogData || g.Omega && g.Omega.ResourceIndustrialCatalogData || {};
@@ -1488,34 +1517,37 @@
         String(productId || '').trim().replace(/[_-]+/g, ' ').replace(/\b\w/g, function (ch) { return ch.toUpperCase(); }) ||
         'Industrial product');
     }
-    function processedProductCard(productId) {
+    function processedProductTableRow(productId) {
       var quantity = stockFor(productId, processedStockDisplay);
       var productUnit = '';
       var unitMap = processedWarehouse.unitsByProduct || processedWarehouse.inventoryUnits || inventoryUnits;
       var unitKey = Object.keys(unitMap).find(function (key) { return key.toLowerCase() === String(productId).toLowerCase(); });
       if (unitKey) productUnit = String(unitMap[unitKey] || '');
-      return '<article class="omega-v2-inventory-product-card" data-product-id="' + esc(productId) + '">' +
-        '<div class="omega-v2-inventory-product-art">' + resourceIconMarkup(productId, processedProductLabel(productId)) + '</div>' +
-        '<div class="omega-v2-inventory-product-copy"><span>Finished goods · Processed warehouse</span><h3>' +
-        esc(processedProductLabel(productId)) + '</h3><strong>' +
-        (quantity === null ? 'Not recorded' : amount(quantity, productUnit)) + '</strong></div></article>';
+      return '<tr data-product-id="' + esc(productId) + '">' +
+        '<td><span class="omega-v2-table-resource">' + resourceIconMarkup(productId, processedProductLabel(productId)) +
+          '<strong>' + esc(processedProductLabel(productId)) + '</strong></span></td>' +
+        '<td>' + (quantity === null ? 'Not recorded' : amount(quantity, productUnit)) + '</td>' +
+        '<td>' + esc(productUnit || 'Unit not recorded') + '</td>' +
+        '<td>' + esc(processedWarehouse.warehouseId || 'Processed warehouse') + '</td></tr>';
     }
-    var rawInventoryCardsMarkup = rawInventoryKeys.length
-      ? '<div class="omega-v2-grid omega-v2-raw-resource-grid" data-omega-v2-raw-resource-inventory>' +
-        rawInventoryKeys.map(rawResourceCard).join('') + '</div>'
+    var rawInventoryTableMarkup = rawInventoryKeys.length
+      ? '<div class="omega-v2-table-wrap" data-omega-v2-raw-resource-inventory><table class="omega-v2-inventory-table"><thead><tr>' +
+        '<th>Resource</th><th>Current Stock</th><th>Daily Demand</th><th>Opening target · 100 days</th><th>Stock coverage</th><th>Status</th><th>Supply origin</th>' +
+        '</tr></thead><tbody>' + rawInventoryKeys.map(rawResourceTableRow).join('') + '</tbody></table></div>'
       : '<div class="omega-v2-empty">No canonical raw-resource identities are available.</div>';
-    var processedGoodsCardsMarkup = processedInventoryKeys.length
-      ? '<div class="omega-v2-grid omega-v2-processed-goods-grid" data-omega-v2-processed-goods-inventory>' +
-        processedInventoryKeys.map(processedProductCard).join('') + '</div>'
+    var processedGoodsTableMarkup = processedInventoryKeys.length
+      ? '<div class="omega-v2-table-wrap" data-omega-v2-processed-goods-inventory><table class="omega-v2-inventory-table"><thead><tr>' +
+        '<th>Processed product</th><th>Current stock</th><th>Unit</th><th>Warehouse</th>' +
+        '</tr></thead><tbody>' + processedInventoryKeys.map(processedProductTableRow).join('') + '</tbody></table></div>'
       : '<div class="omega-v2-empty">No finished-goods stock is currently recorded in the processed warehouse.</div>';
     var rawInventorySectionMarkup = '<section class="omega-v2-card omega-v2-raw-inventory-section">' +
       '<div class="omega-v2-card-header"><div><h2>Current Stock · Raw Resource Inventory</h2><p>Mine output and raw-resource receipts held by the national warehouse.</p></div>' +
       '<span class="omega-v2-status" data-state="operational">' + fmt(rawInventoryKeys.length) + ' resource identities</span></div>' +
-      rawInventoryCardsMarkup + '</section>';
+      rawInventoryTableMarkup + '</section>';
     var processedInventorySectionMarkup = '<section class="omega-v2-card omega-v2-processed-inventory-section">' +
       '<div class="omega-v2-card-header"><div><h2>Processed Goods Warehouse</h2><p>Processed goods held by the processed-goods warehouse. Kept separate from raw resources and factory-held inputs.</p></div>' +
       '<span class="omega-v2-status" data-state="neutral">' + fmt(processedInventoryKeys.length) + ' product balances</span></div>' +
-      processedGoodsCardsMarkup + '</section>';
+      processedGoodsTableMarkup + '</section>';
     var rawInventoryRows = inventoryRows.filter(function (row) {
       var stage = String(row.stage || '').toUpperCase();
       var isRawResource = canonicalRawResourceIds.indexOf(String(row.resourceId || '').toLowerCase()) >= 0;
@@ -2629,6 +2661,10 @@
       try { g.clearTimeout(root.__omegaV2ResourceRefreshTimer); } catch (_) {}
     }
     root.__omegaV2ResourceRefreshTimer = null;
+    if (root.__omegaV2MinuteRefreshTimer != null && typeof g.clearInterval === 'function') {
+      try { g.clearInterval(root.__omegaV2MinuteRefreshTimer); } catch (_) {}
+    }
+    root.__omegaV2MinuteRefreshTimer = null;
     root.__omegaV2ResourceRefreshEvents = Object.create(null);
     var handlers = Array.isArray(root.__omegaV2ResourceRuntimeEventHandlers)
       ? root.__omegaV2ResourceRuntimeEventHandlers : [];

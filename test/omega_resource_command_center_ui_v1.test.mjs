@@ -92,9 +92,18 @@ test('inventory UI labels live balances as Current Stock and includes raw plus p
   assert.match(inventoryPanel, /factoryInputBaselineV1/);
   assert.match(inventoryPanel, /resourceMapValue\(inventory, id\)/);
   assert.match(inventoryPanel, /resourceMapValue\(processedWarehouse\.availableByResource/);
-  assert.doesNotMatch(inventoryPanel, /Stock days|Stock duration|100-day/i);
+  assert.match(inventoryPanel, /omega-rescc-inventory-table/);
+  assert.match(inventoryPanel, /Opening target · 100 days/);
+  assert.match(inventoryPanel, /getCountryPrimaryResourceBaseline/);
+  assert.match(inventoryPanel, /inventoryIcon/);
+  assert.match(inventoryPanel, /assets\/omega-industrial-icons-v1\/resources/);
+  assert.match(ui, /ensureVisiblePanelMinuteRefresh/);
+  assert.match(ui, /60000/);
+  assert.doesNotMatch(inventoryPanel, /Stock days|Stock duration/i);
   assert.match(inventoryPanel, /Current stock is shown once from the country inventory ledger/);
-  assert.match(ui, /kv\('Current Stock', r\.inventory\)/);
+  assert.match(ui, /Current stock is shown once from the country inventory ledger/);
+  assert.doesNotMatch(inventoryPanel, /return card\(name, id/);
+  assert.doesNotMatch(inventoryPanel, /const batchCards = batches\.map/);
   assert.doesNotMatch(ui, /ledgerMetric\('📅', 'Stock duration'/);
 });
 

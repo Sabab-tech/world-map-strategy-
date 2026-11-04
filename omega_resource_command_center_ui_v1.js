@@ -791,8 +791,10 @@
     const configuredCoverageDays = baselineRuntime && typeof baselineRuntime.getFactoryInputCoverageDays === 'function'
       ? baselineRuntime.getFactoryInputCoverageDays(country) : 100;
     const simulationState = state().simulation || {};
-    const playerCountryValue = simulationState.session && simulationState.session.playerCountryId ||
-      simulationState.playerCountryId || state().playerCountryId || '';
+    const playerCountryValue = baselineRuntime && typeof baselineRuntime.getPlayerCountryId === 'function'
+      ? baselineRuntime.getPlayerCountryId()
+      : (simulationState.session && simulationState.session.playerCountryId ||
+        simulationState.playerCountryId || state().playerCountryId || '');
     const canConfigureCoverage = !!(baselineRuntime &&
       typeof baselineRuntime.setFactoryInputCoverageDays === 'function' &&
       playerCountryValue && normaliseCountry(playerCountryValue) === activeCountry(country));
@@ -804,11 +806,21 @@
       '<p class="omega-rescc-muted">Sets the opening stock target from daily factory input demand. Only the missing quantity is added, for the selected player country.</p>' +
       '<button class="omega-rescc-button" type="submit"' + (canConfigureCoverage ? '' : ' disabled') +
       '>Apply target and top up stock gap</button></form>';
-    const baselineRows = r.factoryInputBaselineV1 && Array.isArray(r.factoryInputBaselineV1.stockRows)
+    const factoryInputRows = r.factoryInputBaselineV1 && Array.isArray(r.factoryInputBaselineV1.stockRows)
       ? r.factoryInputBaselineV1.stockRows : [];
     const canonicalRows = resources(country);
+    const baselineCatalogRows = baselineRuntime && typeof baselineRuntime.getResourceCatalog === 'function'
+      ? baselineRuntime.getResourceCatalog() : [];
+    const primaryBaseline = baselineRuntime && typeof baselineRuntime.getCountryPrimaryResourceBaseline === 'function'
+      ? baselineRuntime.getCountryPrimaryResourceBaseline(country) : null;
+    const primaryRows = Array.isArray(primaryBaseline && primaryBaseline.resources) ? primaryBaseline.resources : [];
+    const primaryByResource = Object.create(null);
+    primaryRows.forEach(function (row) {
+      if (row && row.resourceId) primaryByResource[resourceToken(row.resourceId)] = row;
+    });
+    const canonicalIds = Object.create(null);
     const products = Object.create(null);
-    function addProduct(rawId, metadata) {
+    function addProduct(rawId, metadata, isCanonical) {
       const id = String(rawId || '').trim();
       if (!id) return;
       const key = resourceToken(id);
@@ -821,13 +833,31 @@
         if (metadata.unit) row.unit = metadata.unit;
         if (metadata.tradeAvailability !== undefined) row.tradeAvailability = metadata.tradeAvailability;
       }
+      if (isCanonical) canonicalIds[key] = true;
     }
-    canonicalRows.forEach(function (row) { addProduct(row.id, row); });
+    canonicalRows.forEach(function (row) { addProduct(row.resourceId || row.id, row, true); });
+    baselineCatalogRows.forEach(function (row) { addProduct(row.resourceId || row.id, row, true); });
     Object.keys(inventory).forEach(function (id) { addProduct(id); });
     Object.keys(warehouse.availableByResource || {}).forEach(function (id) { addProduct(id, { stage: 'RAW' }); });
     Object.keys(processedWarehouse.availableByResource || {}).forEach(function (id) { addProduct(id, { stage: 'INTERMEDIATE' }); });
-    baselineRows.forEach(function (row) { addProduct(row && row.productId, row); });
-    const stock = Object.keys(products).sort().map(function (key) {
+    factoryInputRows.forEach(function (row) { addProduct(row && row.productId, row); });
+    function inventoryIcon(id, name, rawResource) {
+      const iconApi = g.OmegaUIV2ResourceMinistry;
+      const iconPath = rawResource
+        ? (iconApi && typeof iconApi.resourceIconPath === 'function'
+          ? iconApi.resourceIconPath(id)
+          : 'assets/omega-industrial-icons-v1/resources/' + String(id).toLowerCase().replace(/_/g, '-') + '.svg')
+        : '';
+      return iconPath
+        ? '<img class="omega-rescc-inventory-icon" src="' + esc(iconPath) + '" loading="lazy" decoding="async" alt="">'
+        : '<span class="omega-rescc-inventory-icon omega-rescc-inventory-icon--fallback" aria-hidden="true">' +
+          esc(String(name || id || '?').trim().slice(0, 1).toUpperCase()) + '</span>';
+    }
+    function stockCell(value, unit) {
+      return value === undefined || value === null || value === '' ? 'Not recorded' :
+        number(value, unit ? ' ' + unit : '');
+    }
+    const stockRows = Object.keys(products).sort().map(function (key) {
       const row = products[key], id = row.id;
       const aggregate = resourceMapValue(inventory, id);
       const rawAvailable = resourceMapValue(warehouse.availableByResource || {}, id);
@@ -840,34 +870,61 @@
           ? rawAvailable
           : (processedAvailable !== undefined && processedAvailable !== null && processedAvailable !== ''
             ? processedAvailable : undefined));
-      const rawResource = canonicalRows.some(function (candidate) {
-        return resourceToken(candidate.id) === key;
-      });
+      const rawResource = canonicalIds[key] === true;
       const stage = row.stage || (rawResource ? 'RAW' : 'NOT CLASSIFIED');
       const name = row.name || id.replace(/[_-]+/g, ' ').replace(/\b\w/g, function (ch) { return ch.toUpperCase(); });
-      return card(name, id,
-        '<div class="omega-rescc-grid2">' + kv('Current Stock', currentStock) +
-        kv('Raw warehouse available', rawAvailable) +
-        kv('Processed warehouse available', processedAvailable) +
-        kv('SPR protected stock', reserved) +
-        kv('Trade availability', resourceMapValue(r.tradeAvailability || {}, id) ?? row.tradeAvailability) +
-        kv('Stage', stage) + kv('Unit', unit) + '</div>',
-        rawResource ? actionButton('reserve', 'Request stock-backed SPR transfer', { 'resource-id': id }) : '');
+      const target = primaryByResource[key];
+      const targetQuantity = target && target.openingStockQuantity;
+      const tradeAvailability = resourceMapValue(r.tradeAvailability || {}, id) ?? row.tradeAvailability;
+      const targetCell = rawResource
+        ? (targetQuantity === null || targetQuantity === undefined ? 'Unknown' : stockCell(targetQuantity, target.unit || unit))
+        : '—';
+      return '<tr data-search-item data-search="' + esc((name + ' ' + id).toLowerCase()) + '">' +
+        '<td><span class="omega-rescc-inventory-resource">' + inventoryIcon(id, name, rawResource) +
+          '<span><strong>' + esc(name) + '</strong><small>' + esc(id) + '</small></span></span></td>' +
+        '<td>' + stockCell(currentStock, unit) + '</td>' +
+        '<td>' + stockCell(rawAvailable, unit) + '</td>' +
+        '<td>' + stockCell(processedAvailable, unit) + '</td>' +
+        '<td>' + stockCell(reserved, unit) + '</td>' +
+        '<td>' + targetCell + '</td>' +
+        '<td>' + stockCell(tradeAvailability, '') + '</td>' +
+        '<td>' + esc(stage) + '</td><td>' + esc(unit) + '</td>' +
+        '<td>' + (rawResource ? actionButton('reserve', 'Request stock-backed SPR transfer', { 'resource-id': id }) : '—') + '</td></tr>';
     }).join('');
-    const batchCards = batches.map(function (b) {
-      return card(b.batchId || 'Resource batch', b.stage || 'STAGE NOT RECORDED',
-        '<div class="omega-rescc-grid2">' + kv('Resource', b.resourceId) +
-        kv('Remaining', b.remainingQuantity ?? b.quantity) + kv('Unit', b.unit) +
-        kv('Warehouse', b.warehouseId) + kv('Purity', b.purity) + kv('Grade', b.grade) + '</div>', '');
+    const batchRows = batches.map(function (batch) {
+      const resourceId = String(batch && batch.resourceId || '').trim();
+      const key = resourceToken(resourceId);
+      const product = products[key] || { id: resourceId };
+      const name = product.name || resourceId.replace(/[_-]+/g, ' ').replace(/\b\w/g, function (ch) { return ch.toUpperCase(); });
+      const rawResource = canonicalIds[key] === true;
+      return '<tr data-search-item data-search="' + esc(String(batch.batchId || '') + ' ' + name + ' ' + resourceId) + '">' +
+        '<td>' + esc(batch.batchId || 'Resource batch') + '</td>' +
+        '<td><span class="omega-rescc-inventory-resource">' + inventoryIcon(resourceId, name, rawResource) +
+          '<span><strong>' + esc(name || 'Unknown resource') + '</strong><small>' + esc(resourceId || 'Not recorded') + '</small></span></span></td>' +
+        '<td>' + stockCell(batch.remainingQuantity !== undefined ? batch.remainingQuantity : batch.quantity, batch.unit) + '</td>' +
+        '<td>' + esc(batch.unit || 'Unit not recorded') + '</td>' +
+        '<td>' + esc(batch.warehouseId || 'Not recorded') + '</td>' +
+        '<td>' + esc(batch.purity === undefined ? '—' : batch.purity) + '</td>' +
+        '<td>' + esc(batch.grade || '—') + '</td><td>' + esc(batch.stage || 'Not recorded') + '</td></tr>';
     }).join('');
+    const stockTable = stockRows
+      ? '<div class="omega-rescc-inventory-table-wrap"><table class="omega-rescc-inventory-table"><thead><tr>' +
+        '<th>Resource</th><th>Current Stock</th><th>Raw warehouse</th><th>Processed warehouse</th>' +
+        '<th>SPR protected</th><th>Opening target · 100 days</th><th>Trade availability</th><th>Stage</th><th>Unit</th><th>Action</th>' +
+        '</tr></thead><tbody>' + stockRows + '</tbody></table></div>'
+      : empty('No inventory products are recorded for this country.');
+    const batchTable = batchRows
+      ? '<div class="omega-rescc-inventory-table-wrap"><table class="omega-rescc-inventory-table"><thead><tr>' +
+        '<th>Batch</th><th>Resource</th><th>Remaining quantity</th><th>Unit</th><th>Warehouse</th><th>Purity</th><th>Grade</th><th>Stage</th>' +
+        '</tr></thead><tbody>' + batchRows + '</tbody></table></div>'
+      : empty('No resource batches are recorded.');
     return '<div class="omega-rescc-metrics"><div><span>Raw warehouse</span><strong>' + esc(warehouse.warehouseId || 'Not registered') +
       '</strong></div><div><span>Processed warehouse</span><strong>' + esc(processedWarehouse.warehouseId || 'Not registered') +
       '</strong></div><div><span>Current batches</span><strong>' + number(batches.length) + '</strong></div></div>' +
       coverageTargetForm +
-      '<p class="omega-rescc-note">Current stock is shown once from the country inventory ledger. Raw and processed warehouse balances are displayed separately for reconciliation.</p>' +
-      (stock || empty('No inventory products are recorded for this country.')) +
-      '<h3 class="omega-rescc-section-title">Recorded batches</h3>' +
-      (batchCards || empty('No resource batches are recorded.')) +
+      '<p class="omega-rescc-note">Current stock is shown once from the country inventory ledger. Warehouse balances remain separate and are not added twice. The 100-day column is a simulated opening-stock target, not a geological reserve or delivery record.</p>' +
+      stockTable +
+      '<h3 class="omega-rescc-section-title">Recorded batches</h3>' + batchTable +
       '<h3 class="omega-rescc-section-title">SPR request history</h3>' + statusRows(requests);
   }
   function panelLogistics(country){
@@ -1624,6 +1681,17 @@
       '.omega-rescc-form h3{font-size:13px;margin:0;color:#a5f3fc}.omega-rescc-formgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:9px}' +
       '.omega-rescc-form label,.omega-rescc-question{display:flex;flex-direction:column;gap:5px;color:#cbd5e1;font-size:11px;min-width:0}' +
       '.omega-rescc-question{border:1px solid #1b3245;border-radius:7px;padding:8px}.omega-rescc-question span{line-height:1.4}' +
+      '.omega-rescc-inventory-table-wrap{width:100%;max-width:100%;overflow-x:auto;border:1px solid #20394f;border-radius:8px;background:#071421;-webkit-overflow-scrolling:touch}' +
+      '.omega-rescc-inventory-table{width:100%;min-width:1120px;border-collapse:collapse;font-size:11px}' +
+      '.omega-rescc-inventory-table th,.omega-rescc-inventory-table td{padding:8px 9px;border-bottom:1px solid #1d3549;text-align:left;vertical-align:middle;white-space:nowrap}' +
+      '.omega-rescc-inventory-table th{position:sticky;top:0;background:#0c2032;color:#9ec7d9;font-size:10px;font-weight:750;z-index:1}' +
+      '.omega-rescc-inventory-table tbody tr:nth-child(even){background:#091a29}' +
+      '.omega-rescc-inventory-table tbody tr:hover{background:#0c2639}' +
+      '.omega-rescc-inventory-resource{display:inline-flex;align-items:center;gap:8px;min-width:145px;white-space:normal}' +
+      '.omega-rescc-inventory-resource>span{display:flex;flex-direction:column;gap:2px;min-width:0}' +
+      '.omega-rescc-inventory-resource small{color:#819aaf;font-size:9px}' +
+      '.omega-rescc-inventory-icon{display:inline-flex;width:25px;height:25px;flex:0 0 25px;object-fit:contain;align-items:center;justify-content:center}' +
+      '.omega-rescc-inventory-icon--fallback{border:1px solid #28516d;border-radius:6px;background:#0a273d;color:#67e8f9;font-weight:800}' +
       '@media(max-width:600px){.omega-rescc-shell{width:100vw;height:100dvh;max-height:none;border-radius:0}.omega-rescc-heading h2{font-size:13px}.omega-rescc-top{padding:9px}.omega-rescc-content{padding:9px}.omega-rescc-headtools{width:100%}.omega-rescc-search{width:100%;flex-basis:100%}}';
   }
   function ensureModal() {
@@ -1710,16 +1778,34 @@
     return PANELS.some(function (p) { return p.id === id; }) ? id : 'matrix';
   }
   let resourceDataWarmupAttempted = false, resourceDataWarmupPromise = null, resourceDataRefreshBound = false;
-  let visibleRefreshTimer = null;
+  let visibleRefreshTimer = null, visibleMinuteRefreshTimer = null;
   function visibleModal() { return g.document && g.document.getElementById('gsrsk-intelligence-modal'); }
+  function ensureVisiblePanelMinuteRefresh() {
+    // Run the browser refresh loop only with a real document. Node test harnesses
+    // and server-side mocks should not keep their event loop alive with intervals.
+    if (visibleMinuteRefreshTimer !== null || typeof g.setInterval !== 'function' ||
+        !g.document || typeof g.document.addEventListener !== 'function' ||
+        typeof g.document.visibilityState !== 'string') return;
+    visibleMinuteRefreshTimer = g.setInterval(function () {
+      const modal = visibleModal();
+      if (!modal || !modal.style || modal.style.display === 'none') {
+        if (visibleMinuteRefreshTimer !== null && typeof g.clearInterval === 'function') g.clearInterval(visibleMinuteRefreshTimer);
+        visibleMinuteRefreshTimer = null;
+        return;
+      }
+      const active = g.document && g.document.activeElement;
+      if (active && modal.contains && modal.contains(active) && /^(INPUT|SELECT|TEXTAREA)$/.test(String(active.tagName || '').toUpperCase())) return;
+      refreshVisiblePanel();
+    }, 60000);
+  }
   function refreshVisiblePanel() {
     const modal = visibleModal();
     if (!modal || !modal.style || modal.style.display === 'none') return;
-    const old = modal.querySelector ? modal.querySelector('#omega-rescc-content') : null;
-    const scrollTop = old ? old.scrollTop : 0, scrollLeft = old ? old.scrollLeft : 0;
+    const shell = modal.querySelector ? modal.querySelector('.omega-rescc-shell') : null;
+    const scrollTop = shell ? shell.scrollTop : 0, scrollLeft = shell ? shell.scrollLeft : 0;
     render(countryId, activePanel, modal);
-    const current = modal.querySelector ? modal.querySelector('#omega-rescc-content') : null;
-    if (current) { current.scrollTop = scrollTop; current.scrollLeft = scrollLeft; }
+    const currentShell = modal.querySelector ? modal.querySelector('.omega-rescc-shell') : null;
+    if (currentShell) { currentShell.scrollTop = scrollTop; currentShell.scrollLeft = scrollLeft; }
   }
   function scheduleVisiblePanelRefresh() {
     if (visibleRefreshTimer !== null) return;
@@ -1786,6 +1872,7 @@
       '<main id="omega-rescc-content" class="omega-rescc-content"><h3 class="omega-rescc-section-title">' + esc(viewTitle(activePanel)) + '</h3>' +
       panelContent(activePanel, countryId) + '</main></div>';
     modal.style.display = 'flex';
+    ensureVisiblePanelMinuteRefresh();
     bindResourceDataRefreshEvents();
     ensureResourceDataReady(false);
   }
@@ -1793,6 +1880,10 @@
   function close() {
     const modal = g.document && g.document.getElementById('gsrsk-intelligence-modal');
     if (modal) modal.style.display = 'none';
+    if (visibleMinuteRefreshTimer !== null && typeof g.clearInterval === 'function') g.clearInterval(visibleMinuteRefreshTimer);
+    visibleMinuteRefreshTimer = null;
+    if (visibleRefreshTimer !== null && typeof g.clearTimeout === 'function') g.clearTimeout(visibleRefreshTimer);
+    visibleRefreshTimer = null;
   }
   function resultMessage(label, result) {
     const outer = result || {};

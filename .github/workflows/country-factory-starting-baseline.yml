@@ -7,6 +7,11 @@ on:
       - 'country_factory_starting_baseline_v1.json'
       - 'country_factory_input_inventory_baseline_v1.json'
       - 'resource_startup_baseline_rules_v1.json'
+      - 'country_primary_resource_opening_baseline_v1.json'
+      - 'omega_ui_v2/screens/resource-ministry.js'
+      - 'omega_resource_command_center_ui_v1.js'
+      - 'test/omega_resource_ministry_premium_ui.test.mjs'
+      - 'test/omega_resource_command_center_ui_v1.test.mjs'
       - 'scripts/build_country_factory_input_inventory_baseline_v1.mjs'
       - 'omega_resource_startup_baseline_v1.js'
       - 'test/omega_resource_startup_baseline_v1.test.mjs'
@@ -42,6 +47,11 @@ on:
       - 'country_factory_starting_baseline_v1.json'
       - 'country_factory_input_inventory_baseline_v1.json'
       - 'resource_startup_baseline_rules_v1.json'
+      - 'country_primary_resource_opening_baseline_v1.json'
+      - 'omega_ui_v2/screens/resource-ministry.js'
+      - 'omega_resource_command_center_ui_v1.js'
+      - 'test/omega_resource_ministry_premium_ui.test.mjs'
+      - 'test/omega_resource_command_center_ui_v1.test.mjs'
       - 'scripts/build_country_factory_input_inventory_baseline_v1.mjs'
       - 'omega_resource_startup_baseline_v1.js'
       - 'test/omega_resource_startup_baseline_v1.test.mjs'
@@ -79,12 +89,14 @@ jobs:
           node-version: 24
       - name: Validate 197-country, 21-factory starting matrix and sector alignment
         run: |
-          node --test test/omega_resource_startup_baseline_v1.test.mjs test/omega_country_factory_starting_baseline_v1.test.mjs test/omega_resource_industrial_network_v1.test.mjs test/omega_factory_production_baseline.test.mjs test/omega_country_factory_establishment_data_v1.test.mjs test/country_factory_starting_baseline_alignment_v1.test.mjs test/omega_factory_country_simulation_integrity_v1.test.mjs test/omega_country_factory_allocation_v2.test.mjs test/omega_country_factory_count_scaling_v1.test.mjs
+          node --test test/omega_resource_startup_baseline_v1.test.mjs test/omega_resource_ministry_premium_ui.test.mjs test/omega_resource_command_center_ui_v1.test.mjs test/omega_country_factory_starting_baseline_v1.test.mjs test/omega_resource_industrial_network_v1.test.mjs test/omega_factory_production_baseline.test.mjs test/omega_country_factory_establishment_data_v1.test.mjs test/country_factory_starting_baseline_alignment_v1.test.mjs test/omega_factory_country_simulation_integrity_v1.test.mjs test/omega_country_factory_allocation_v2.test.mjs test/omega_country_factory_count_scaling_v1.test.mjs
           node scripts/enrich_country_factory_starting_baseline_v1.mjs --check
           node scripts/rebalance_country_factory_starting_baseline_v1.mjs --check
           node scripts/scale_country_factory_counts_v1.mjs --check
           node scripts/build_country_factory_input_inventory_baseline_v1.mjs --check
           node --check omega_resource_startup_baseline_v1.js
+          node --check omega_resource_command_center_ui_v1.js
+          node --check omega_ui_v2/screens/resource-ministry.js
           node --check scripts/build_country_factory_input_inventory_baseline_v1.mjs
       - name: Check establishment data importer and industry runtime
         run: |

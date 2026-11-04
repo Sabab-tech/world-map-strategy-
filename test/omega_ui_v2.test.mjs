@@ -3229,7 +3229,7 @@ test('factory catalog warm-up timeout releases a never-settling optional load wi
 test('Factory Stock/Input UI assets invalidate the old offline shell cache', () => {
   const sw = readFileSync('omega-offline-map-sw.js','utf8');
   const css = readFileSync('omega_ui_v2/factory-production-command.css','utf8');
-  assert.ok(sw.includes('omega-offline-atlas-shell-v88'),
+  assert.ok(sw.includes('omega-offline-atlas-shell-v89'),
     'the offline shell must activate the new JS/CSS rather than retaining the old Stock/Input renderer');
   assert.ok(css.includes('flex:0 0 20px'),'compact recipe product SVGs must stay small on desktop cards');
   assert.ok(css.includes('flex-basis:18px'),'compact recipe product SVGs must stay small on mobile cards');
@@ -3269,7 +3269,7 @@ test('Factory cards use horizontal internal layouts and only reserve the landsca
   assert.match(css,/fp-workspace--detail-open/);
   assert.match(css,/@media \(orientation:landscape\) and \(max-width:680px\)/);
   assert.match(css,/grid-template-columns:repeat\(auto-fit,minmax\(245px,1fr\)\)/);
-  assert.match(sw,/omega-offline-atlas-shell-v88/);
+  assert.match(sw,/omega-offline-atlas-shell-v89/);
 });
 
 
