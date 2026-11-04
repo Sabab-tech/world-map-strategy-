@@ -1106,7 +1106,34 @@ test('factory Stock shows committed finished goods and traced use while Input sh
       'the initial Input render must mount four factory detail cards');
     assert.match(pagedInputRoot.innerHTML,/data-factory-input-show-more/,
       'remaining factory input details must remain accessible');
-    const showMoreInputButton = {};
+    let inputMoreRemoved = false;
+    const inputPageStatus = { textContent:'' };
+    const showMoreInputButton = {
+      attributes:{'data-next-index':'4'},
+      disabled:false,
+      textContent:'Show more factories',
+      getAttribute(name) {
+        return this.attributes[name] === undefined ? null : this.attributes[name];
+      },
+      setAttribute(name,value) {
+        this.attributes[name] = String(value);
+      },
+      parentNode:{
+        removeChild() {
+          inputMoreRemoved = true;
+          pagedInputRoot.innerHTML = pagedInputRoot.innerHTML.replace(
+            /<button[^>]*data-factory-input-show-more[^>]*>[\\s\\S]*?<\\/button>/,''
+          );
+        }
+      }
+    };
+    pagedInputRoot.querySelector = (selector) => {
+      if (selector === '[data-factory-input-cards]') {
+        return { insertAdjacentHTML(_position,markup) { pagedInputRoot.innerHTML += markup; } };
+      }
+      if (selector === '[data-factory-input-page-status]') return inputPageStatus;
+      return null;
+    };
     const clickShowMoreInput = () => {
       pagedInputRoot.listeners.click({target:{closest(selector){
         return selector === '[data-factory-input-show-more]' ? showMoreInputButton : null;
@@ -1118,8 +1145,9 @@ test('factory Stock shows committed finished goods and traced use while Input sh
     clickShowMoreInput();
     assert.equal(renderedInputCardCount(),9,
       'the final partial batch must preserve the ninth factory record');
-    assert.doesNotMatch(pagedInputRoot.innerHTML,/data-factory-input-show-more/,
-      'the continuation control must disappear after every factory input record is shown');
+    assert.equal(inputMoreRemoved,true,
+      'the continuation control must be removed after every factory input record is shown');
+    assert.match(inputPageStatus.textContent,/9 of 9/);
 
     const factoryRoot = {classList:{add(){}},addEventListener(){},contains(){return true},innerHTML:''};
     const factoryResult = globalThis.OmegaUIV2Industry.render(factoryRoot,{countryId:'BGD',tab:'factories'});
