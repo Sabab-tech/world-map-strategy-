@@ -1794,7 +1794,7 @@
       const turn=Number.isFinite(Number(options.turn))?Number(options.turn):this.lastTurn;
       this._eventSequence+=1;
       const eventId=String(options.eventId||('OMEGA-EVT-'+String(turn)+'-'+String(this._eventSequence)));
-      if(this.events.has(eventId))return clone(this.events.get(eventId));
+      // Compare the existing event fingerprint before treating a reused ID as a retry.
       const event={
         schemaVersion:1,eventId,eventType:type,countryId:country,
         sourceMinistryId:source,simulationTurn:turn,
