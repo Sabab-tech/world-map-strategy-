@@ -3829,6 +3829,59 @@ function factoryOperationGate(countryId,asset,employmentSnapshot){
     coreOperatingCrew:requiredCrew,
     workforceAuthority:employment.authority||employmentModel.authority||'SIMULATED_FACTORY_EMPLOYMENT_RECONCILIATION'};
 }
+function normalizedUnitMapEntry(map,productId){
+  if(!map||typeof map!=='object'||Array.isArray(map))return{unit:'',ambiguous:false,key:null};
+  const wanted=tok(productId),keys=Object.keys(map).filter(key=>tok(key)===wanted);
+  if(keys.length>1)return{unit:'',ambiguous:true,key:null};
+  if(!keys.length)return{unit:'',ambiguous:false,key:null};
+  const value=map[keys[0]],unit=value&&typeof value==='object'
+    ?(value.unit||value.outputUnit||value.quantityUnit||value.inventoryUnit||''):value;
+  return{unit:String(unit||'').trim(),ambiguous:false,key:keys[0]};
+}
+function factoryOutputUnit(recipe,asset,productId){
+  const maps=[recipe?.outputUnits,recipe?.outputUnitsByProduct,recipe?.unitsByProduct,
+    asset?.outputUnits,asset?.outputUnitsByProduct];
+  for(const map of maps){
+    const entry=normalizedUnitMapEntry(map,productId);
+    if(entry.ambiguous)continue;
+    if(entry.unit)return entry.unit;
+  }
+  return String(recipe?.outputUnit||asset?.outputUnit||'SIMULATION_RESOURCE_UNIT').trim();
+}
+function factoryOutputUnitPlan(resource,recipe,asset,productIds){
+  const state=resource&&typeof resource==='object'?resource:{};
+  const warehouse=state.processedWarehouse&&typeof state.processedWarehouse==='object'?state.processedWarehouse:{};
+  const inventoryUnits=state.inventoryUnits&&typeof state.inventoryUnits==='object'?state.inventoryUnits:{};
+  const unitMaps=[inventoryUnits,warehouse.unitsByProduct,warehouse.inventoryUnits];
+  const units={};
+  for(const productId of productIds||[]){
+    const expected=factoryOutputUnit(recipe,asset,productId);
+    if(!expected)return{status:'BLOCKED',reason:'FACTORY_OUTPUT_UNIT_NOT_DECLARED',resourceId:productId};
+    for(const map of unitMaps){
+      const entry=normalizedUnitMapEntry(map,productId);
+      if(entry.ambiguous)return{status:'BLOCKED',reason:'DUPLICATE_FACTORY_OUTPUT_UNIT_KEYS',resourceId:productId};
+      if(entry.unit&&entry.unit.toUpperCase()!==expected.toUpperCase())
+        return{status:'BLOCKED',reason:'FACTORY_OUTPUT_UNIT_CONFLICT',resourceId:productId,
+          expectedUnit:expected,recordedUnit:entry.unit};
+    }
+    units[productId]=expected;
+  }
+  return{status:'READY',units};
+}
+function writeFactoryOutputUnit(resource,warehouse,productId,unit){
+  resource.inventoryUnits=resource.inventoryUnits&&typeof resource.inventoryUnits==='object'&&!Array.isArray(resource.inventoryUnits)
+    ?resource.inventoryUnits:{};
+  warehouse.unitsByProduct=warehouse.unitsByProduct&&typeof warehouse.unitsByProduct==='object'&&!Array.isArray(warehouse.unitsByProduct)
+    ?warehouse.unitsByProduct:{};
+  const inventoryEntry=normalizedUnitMapEntry(resource.inventoryUnits,productId);
+  const inventoryKey=inventoryEntry.key||
+    Object.keys(resource.inventory||{}).find(key=>tok(key)===tok(productId))||productId;
+  if(!inventoryEntry.unit)resource.inventoryUnits[inventoryKey]=unit;
+  const warehouseEntry=normalizedUnitMapEntry(warehouse.unitsByProduct,productId);
+  const warehouseKey=warehouseEntry.key||
+    Object.keys(warehouse.availableByResource||{}).find(key=>tok(key)===tok(productId))||productId;
+  if(!warehouseEntry.unit)warehouse.unitsByProduct[warehouseKey]=unit;
+}
 function commitFactoryCycleImmediately(input={}){
   const cid=canonicalCountry(input.countryId),fid=String(input.factoryId||''),asset=(input._asset&&String(input._asset?.id||input._asset?.assetId||input._asset?.projectId)===fid)?input._asset:factoryAssets(cid).find(a=>String(a?.id||a?.assetId||a?.projectId)===fid);
   if(!asset)return{status:'BLOCKED',reason:'FACTORY_NOT_FOUND'};
@@ -3883,6 +3936,8 @@ function commitFactoryCycleImmediately(input={}){
   });
   if(carbonGate&&carbonGate.allowed===false)return{status:'BLOCKED',reason:carbonGate.reason||'CARBON_QUOTA_POLICY_BLOCKED_PROCESSING',carbonGate};
   const output={};for(const k of Object.keys(recipe.outputs))output[k]=requested*(num(recipe.outputs[k])||0);
+  const outputUnitPlan=factoryOutputUnitPlan(r,recipe,asset,Object.keys(output));
+  if(outputUnitPlan.status!=='READY')return outputUnitPlan;
   const sourceBatchIds=[],consumedInputs=[];let inputTrackingStatus='UNTRACKED_LEGACY_INPUT';
   if(fromFactoryInput){
     factoryStock[rid]=Math.max(0,factoryAvailable-need);
@@ -3934,7 +3989,7 @@ function commitFactoryCycleImmediately(input={}){
   for(const outputId of Object.keys(output)){
     const outQty=output[outputId];if(!(outQty>0))continue;
     r.inventory[outputId]=(num(r.inventory[outputId])||0)+outQty;
-    const batchId='OUTPUT:'+transactionId+':'+outputId,roots=[...new Set(sourceBatchIds.filter(Boolean))],unit=input.unit||inputLots.find(x=>tok(x.resourceId)===rid)?.unit||'TONNES';
+    const batchId='OUTPUT:'+transactionId+':'+outputId,roots=[...new Set(sourceBatchIds.filter(Boolean))],unit=outputUnitPlan.units[outputId];
     const row={batchId,resourceId:outputId,materialIdentity:outputId,quantity:outQty,remainingQuantity:outQty,unit,stage:'FINISHED',countryId:cid,
       sourceCountryId:cid,originCountryId:cid,ownerCountryCode:cid,destinationCountryId:cid,ownerCompanyId:String(asset.companyId||asset.ownerCompanyId||('SIM-COMPANY:'+cid)),
       sourceBatchIds:roots,sourceFactoryId:fid,warehouseId:'WH-'+cid+'-PROCESSED',locationNodeKey:'WAREHOUSE:'+cid+':PROCESSED',processId:transactionId,
@@ -3943,6 +3998,7 @@ function commitFactoryCycleImmediately(input={}){
     inventoryLots[batchId]={batchId,resourceId:outputId,quantity:outQty,remainingQuantity:outQty,unit,stage:'FINISHED',countryId:cid,warehouseId:row.warehouseId,
       locationNodeKey:row.locationNodeKey,ownerCompanyId:row.ownerCompanyId,sourceBatchIds:roots,status:'AVAILABLE',provenance:clone(row.provenance),createdTurn:turn()};
     finishedWarehouse.availableByResource[outputId]=(num(finishedWarehouse.availableByResource[outputId])||0)+outQty;
+    writeFactoryOutputUnit(r,finishedWarehouse,outputId,unit);
     if(!finishedWarehouse.storedBatchIds.includes(batchId))finishedWarehouse.storedBatchIds.push(batchId);
     finishedWarehouse.receipts.push({receiptId:'WH-REC-'+batchId,warehouseId:row.warehouseId,countryId:cid,batchId,resourceId:outputId,quantity:outQty,unit,simulationTurn:turn(),status:'RECEIVED'});
   }
@@ -4079,6 +4135,8 @@ function commitMultiInputFactoryCycleImmediately(input={}){
   const utilityPreview=utilityLimit.preview;
   const r=resourceState(cid);
   r.inventory=r.inventory&&typeof r.inventory==='object'?r.inventory:{};
+  const outputUnitPlan=factoryOutputUnitPlan(r,recipe,asset,outputEntries.map(row=>row.outputId));
+  if(outputUnitPlan.status!=='READY')return outputUnitPlan;
   const finishedMap=r.processedWarehouse?.availableByResource||{};
   const outputInventoryKeys={},outputWarehouseKeys={};
   for(const row of outputEntries){
@@ -4128,13 +4186,12 @@ function commitMultiInputFactoryCycleImmediately(input={}){
   const inventoryLots=r.inventoryLots&&typeof r.inventoryLots==='object'?r.inventoryLots:(r.inventoryLots={});
   const roots=[...new Set(sourceBatchIds.filter(Boolean))],sites=[...new Set(sourceSiteIds.filter(Boolean))],created=[];
   const companyId=String(asset.companyId||asset.ownerCompanyId||('SIM-COMPANY:'+cid));
-  const outputUnit=recipe.outputUnit||asset.outputUnit||'SIMULATION_TONNE_EQUIVALENT';
   for(const [outputId,outQty] of Object.entries(output)){
     if(!(outQty>1e-9))continue;
     const inventoryKey=outputInventoryKeys[outputId]||outputId;
     r.inventory[inventoryKey]=(num(r.inventory[inventoryKey])||0)+outQty;
     const batchId='OUTPUT:'+transactionId+':'+outputId;
-    const row={batchId,resourceId:outputId,materialIdentity:outputId,quantity:outQty,remainingQuantity:outQty,unit:outputUnit,
+    const row={batchId,resourceId:outputId,materialIdentity:outputId,quantity:outQty,remainingQuantity:outQty,unit:outputUnitPlan.units[outputId],
       stage:'FINISHED',countryId:cid,sourceCountryId:cid,originCountryId:cid,ownerCountryCode:cid,destinationCountryId:cid,
       ownerCompanyId:companyId,sourceBatchIds:roots,sourceSiteIds:sites,sourceFactoryId:fid,warehouseId:'WH-'+cid+'-PROCESSED',
       locationNodeKey:'WAREHOUSE:'+cid+':PROCESSED',processId:transactionId,
@@ -4146,6 +4203,7 @@ function commitMultiInputFactoryCycleImmediately(input={}){
       sourceBatchIds:roots,sourceSiteIds:sites,status:'AVAILABLE',provenance:clone(row.provenance),createdTurn:turn()};
     const warehouseKey=outputWarehouseKeys[outputId]||outputId;
     finished.availableByResource[warehouseKey]=(num(finished.availableByResource[warehouseKey])||0)+outQty;
+    writeFactoryOutputUnit(r,finished,outputId,outputUnitPlan.units[outputId]);
     if(!finished.storedBatchIds.includes(batchId))finished.storedBatchIds.push(batchId);
     finished.receipts.push({receiptId:'WH-REC-'+batchId,warehouseId:row.warehouseId,countryId:cid,batchId,resourceId:outputId,
       quantity:outQty,unit:outputUnit,simulationTurn:turn(),status:'RECEIVED'});
@@ -4309,13 +4367,27 @@ function factorySourceWarehouse(rs,batch){
     return{kind:'PROCESSED',warehouse:rs.processedWarehouse||(rs.processedWarehouse={warehouseId:'WH-'+canonicalCountry(batch?.countryId||'' )+'-PROCESSED',availableByResource:{},reservedByResource:{}})};
   return{kind:'RAW',warehouse:rs.warehouse||(rs.warehouse={warehouseId:'WH-'+canonicalCountry(batch?.countryId||'')+'-RAW',availableByResource:{},reservedByResource:{}})};
 }
-function batchBelongsToBoundFactorySite(rs,batch,sourceSiteId,flowSiteByBatchId){
+function batchBelongsToBoundFactorySite(rs,batch,sourceSiteId,flowSiteByBatchId,countryId){
   const wanted=String(sourceSiteId||'').trim();
   if(!wanted)return true;
   const batchId=String(batch?.batchId||'').trim();
   const flowSite=flowSiteByBatchId.get(batchId);
   // A recorded site-flow entry is the strongest source identity for extracted batches.
   if(flowSite)return flowSite===wanted;
+  // National opening allocations are country-owned stock, not mine output.
+  // Permit only exact startup authorities with matching batch and provenance countries.
+  // Site-derived and foreign batches retain strict source-site restrictions.
+  const provenance=batch?.provenance&&typeof batch.provenance==='object'?batch.provenance:{};
+  const startupAuthority=String(provenance.authority||provenance.source||'').trim().toUpperCase();
+  const trustedStartupAuthorities=new Set([
+    'SIMULATED_STARTUP_BASELINE_V1',
+    'SIMULATED_FACTORY_INPUT_STARTUP_BASELINE_V2'
+  ]);
+  const expectedCountry=canonicalCountry(countryId||'');
+  const batchCountry=canonicalCountry(batch?.countryId||batch?.ownerCountryCode||batch?.destinationCountryId||'');
+  const provenanceCountry=canonicalCountry(provenance.countryId||'');
+  if(trustedStartupAuthorities.has(startupAuthority)&&expectedCountry&&
+     batchCountry===expectedCountry&&provenanceCountry===expectedCountry)return true;
   const directIds=[batch?.siteReferenceKey,batch?.siteId,batch?.sourceSiteId,batch?.originSiteId,
     batch?.provenance?.siteId,batch?.provenance?.sourceSiteId]
     .map(value=>String(value||'').trim()).filter(Boolean);
@@ -4378,7 +4450,7 @@ function factoryInputWarehouseAvailability(countryId,resourceId,recipe,asset=nul
   for(const batch of batches){
     if(countryRemaining<=1e-9)break;
     if(!String(batch?.batchId||'').trim()||nonTransferable.has(String(batch?.status||'').toUpperCase()))continue;
-    if(boundSiteId&&!batchBelongsToBoundFactorySite(rs,batch,boundSiteId,flowSiteByBatchId))continue;
+    if(boundSiteId&&!batchBelongsToBoundFactorySite(rs,batch,boundSiteId,flowSiteByBatchId,cid))continue;
     const source=factorySourceWarehouse(rs,batch),warehouse=source.warehouse;
     warehouse.availableByResource=warehouse.availableByResource||{};
     warehouse.reservedByResource=warehouse.reservedByResource||{};
@@ -4571,7 +4643,7 @@ function transferFactoryInputsFromWarehouse(countryId,asset,recipe,allocationTar
       !nonTransferable.has(String(batch?.status||'').toUpperCase())&&
       ['RAW','PROCESSED'].includes(factorySourceWarehouse(rs,batch).kind)&&
       Math.max(0,num(batch?.remainingQuantity!=null?batch.remainingQuantity:batch?.quantity)||0)>1e-9&&
-      batchBelongsToBoundFactorySite(rs,batch,boundSourceSiteId,flowSiteByBatchId))
+      batchBelongsToBoundFactorySite(rs,batch,boundSourceSiteId,flowSiteByBatchId,cid))
       .sort((a,b)=>(num(a?.createdTurn)||0)-(num(b?.createdTurn)||0));
     const routeManagedBatches=batches.filter(batch=>tok(batch?.resourceId||batch?.materialIdentity)===rid&&
       siteFlowBatchIds.has(String(batch?.batchId||''))&&
@@ -4879,7 +4951,7 @@ function selectFactoryProductionRecipeForTurn(countryId,asset){
       const batchQuantity=countryBatches.filter(batch=>tok(batch?.resourceId||batch?.materialIdentity)===inputId&&
         !inactive.has(String(batch?.status||'').toUpperCase())&&
         Math.max(0,num(batch?.remainingQuantity!=null?batch.remainingQuantity:batch?.quantity)||0)>1e-9&&
-        batchBelongsToBoundFactorySite(rs,batch,boundSite,flowSiteByBatchId))
+        batchBelongsToBoundFactorySite(rs,batch,boundSite,flowSiteByBatchId,cid))
         .reduce((sum,batch)=>sum+Math.max(0,num(batch?.remainingQuantity!=null?batch.remainingQuantity:batch?.quantity)||0),0);
       const warehouseTracked=Math.min(Math.max(0,num(nationalStock)||0),batchQuantity);
       const available=factoryAvailable+warehouseTracked;

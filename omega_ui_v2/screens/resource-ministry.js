@@ -738,7 +738,8 @@
     function amount(value, unit) {
       var n = numberOrNull(value);
       if (n === null) return '—';
-      return fmt(n, 2) + (unit ? ' ' + String(unit) : '');
+      var displayUnit = buildDisplayUnit(unit);
+      return fmt(n, 2) + (displayUnit ? ' ' + displayUnit : '');
     }
     function compactBuildNumber(value) {
       var n = numberOrNull(value);
@@ -754,8 +755,13 @@
       return scaled.toLocaleString('en-US', { maximumFractionDigits: digits }) + suffix;
     }
     function buildDisplayUnit(unit) {
-      var normalized = String(unit == null ? '' : unit).trim().replace(/[_-]+/g, ' ');
-      if (!normalized || /SIMULATION.*UNIT/i.test(normalized)) return '';
+      var raw = String(unit == null ? '' : unit).trim();
+      if (!raw) return '';
+      var token = raw.toUpperCase().replace(/[ -]+/g, '_');
+      if (token === 'SIMULATION_RESOURCE_UNIT') return 'Game units';
+      if (token === 'SIMULATION_TONNE_EQUIVALENT' || token === 'SIMULATION_TONNE') return 'Game tonnes';
+      var normalized = raw.replace(/[_-]+/g, ' ');
+      if (/^SIMULATION_/i.test(normalized)) normalized = 'Game ' + normalized.replace(/^SIMULATION_/i, '');
       return normalized.toLowerCase().replace(/\b[a-z]/g, function (ch) { return ch.toUpperCase(); });
     }
     function buildResourceAmount(value, unit) {
@@ -1517,18 +1523,40 @@
         String(productId || '').trim().replace(/[_-]+/g, ' ').replace(/\b\w/g, function (ch) { return ch.toUpperCase(); }) ||
         'Industrial product');
     }
+    function warehouseDisplayLabel(location, stage) {
+      var value = String(location || '').trim();
+      var token = value.toUpperCase();
+      if (token.indexOf('PROCESSED') >= 0 || /^(INTERMEDIATE|FINISHED|PROCESSED)$/.test(String(stage || '').toUpperCase()))
+        return 'Processed goods warehouse';
+      if (token.indexOf('RAW') >= 0 || String(stage || '').toUpperCase() === 'RAW')
+        return 'Raw materials warehouse';
+      return value || 'Location not recorded';
+    }
     function processedProductTableRow(productId) {
       var quantity = stockFor(productId, processedStockDisplay);
       var productUnit = '';
-      var unitMap = processedWarehouse.unitsByProduct || processedWarehouse.inventoryUnits || inventoryUnits;
-      var unitKey = Object.keys(unitMap).find(function (key) { return key.toLowerCase() === String(productId).toLowerCase(); });
-      if (unitKey) productUnit = String(unitMap[unitKey] || '');
+      var unitMaps = [processedWarehouse.unitsByProduct, processedWarehouse.inventoryUnits, inventoryUnits];
+      for (var i = 0; i < unitMaps.length && !productUnit; i += 1) {
+        var unitMap = unitMaps[i] && typeof unitMaps[i] === 'object' ? unitMaps[i] : {};
+        var unitKey = Object.keys(unitMap).find(function (key) {
+          return key.toLowerCase() === String(productId).toLowerCase();
+        });
+        if (unitKey) productUnit = String(unitMap[unitKey] || '');
+      }
+      if (!productUnit) {
+        var recentBatch = safeArray(gameResource.batches).slice().reverse().find(function (row) {
+          return String(row && (row.resourceId || row.materialIdentity) || '').toLowerCase() === String(productId).toLowerCase() &&
+            row.unit;
+        });
+        if (recentBatch) productUnit = String(recentBatch.unit);
+      }
+      var warehouseLabel = processedWarehouse.displayName || processedWarehouse.name || 'Processed goods warehouse';
       return '<tr data-product-id="' + esc(productId) + '">' +
         '<td><span class="omega-v2-table-resource">' + resourceIconMarkup(productId, processedProductLabel(productId)) +
           '<strong>' + esc(processedProductLabel(productId)) + '</strong></span></td>' +
         '<td>' + (quantity === null ? 'Not recorded' : amount(quantity, productUnit)) + '</td>' +
-        '<td>' + esc(productUnit || 'Unit not recorded') + '</td>' +
-        '<td>' + esc(processedWarehouse.warehouseId || 'Processed warehouse') + '</td></tr>';
+        '<td>' + esc(buildDisplayUnit(productUnit) || 'Unit not recorded') + '</td>' +
+        '<td>' + esc(warehouseLabel) + '</td></tr>';
     }
     var rawInventoryTableMarkup = rawInventoryKeys.length
       ? '<div class="omega-v2-table-wrap" data-omega-v2-raw-resource-inventory><table class="omega-v2-inventory-table"><thead><tr>' +
@@ -1562,7 +1590,7 @@
         rawInventoryRows.slice(-40).reverse().map(function (row) {
           return '<tr><td>' + resourceIconMarkup(row.resourceId, resourceLabel(row.resourceId)) + esc(resourceLabel(row.resourceId)) +
             '</td><td>' + amount(row.quantity, resourceUnit(row.resourceId) || (/SIMULATION.*UNIT/i.test(String(row.unit || '')) ? '' : row.unit)) +
-            '</td><td>' + esc(row.location || '—') + '</td><td>' + esc(human(row.status)) + '</td></tr>';
+            '</td><td>' + esc(warehouseDisplayLabel(row.location, row.stage)) + '</td><td>' + esc(human(row.status)) + '</td></tr>';
         }).join('') + '</tbody></table></div></section>' : '';
     var processedBatchHistoryMarkup = processedInventoryRows.length
       ? '<section class="omega-v2-card omega-v2-movement-card"><h2>Recent processed-product batches</h2><div class="omega-v2-table-wrap"><table><thead><tr><th>Product</th><th>Quantity</th><th>Processed warehouse</th><th>Status</th></tr></thead><tbody>' +

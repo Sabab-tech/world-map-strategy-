@@ -937,6 +937,7 @@ test('fifty factories receive proportional input when the country warehouse is s
     countryId: 'BGD', factoryType: 'UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT',
     capacityPerDay: 1, capacity: 1, status: 'OPERATIONAL', recipeMode: 'SINGLE_INPUT',
     inputCoefficients: { iron_ore: 0.2 },
+    sourceSiteId: 'SITE-BOUND-FACTORY-' + String(index + 1).padStart(2, '0'),
     outputProfile: { IRON_CONCENTRATE: 0.8, ORE_TAILINGS: 0.2 },
     inputUnit: 'SIMULATION_RESOURCE_UNIT', outputUnit: 'SIMULATION_RESOURCE_UNIT'
   }));
@@ -953,12 +954,18 @@ test('fifty factories receive proportional input when the country warehouse is s
     batches: [{
       batchId: 'BATCH-PROP-IRON-8', resourceId: 'iron_ore', materialIdentity: 'iron_ore',
       quantity: 8, remainingQuantity: 8, unit: 'SIMULATION_RESOURCE_UNIT', stage: 'RAW',
-      status: 'AVAILABLE', countryId: 'BGD', warehouseId: 'WH-BGD-RAW', createdTurn: 1
+      status: 'AVAILABLE', countryId: 'BGD', ownerCountryCode: 'BGD', sourceCountryId: 'BGD',
+      destinationCountryId: 'BGD', warehouseId: 'WH-BGD-RAW', createdTurn: 1,
+      provenance: { source: 'SIMULATED_FACTORY_INPUT_STARTUP_BASELINE_V2',
+        authority: 'SIMULATED_FACTORY_INPUT_STARTUP_BASELINE_V2', countryId: 'BGD', simulationOnly: true }
     }],
     inventoryLots: {
       'BATCH-PROP-IRON-8': {
         batchId: 'BATCH-PROP-IRON-8', resourceId: 'iron_ore', quantity: 8,
-        remainingQuantity: 8, unit: 'SIMULATION_RESOURCE_UNIT', status: 'AVAILABLE'
+        remainingQuantity: 8, unit: 'SIMULATION_RESOURCE_UNIT', status: 'AVAILABLE',
+        countryId: 'BGD', ownerCountryCode: 'BGD',
+        provenance: { source: 'SIMULATED_FACTORY_INPUT_STARTUP_BASELINE_V2',
+          authority: 'SIMULATED_FACTORY_INPUT_STARTUP_BASELINE_V2', countryId: 'BGD', simulationOnly: true }
       }
     },
     warehouse: {
@@ -1010,6 +1017,47 @@ test('fifty factories receive proportional input when the country warehouse is s
   assert.equal(Number(resource.inventory.IRON_CONCENTRATE.toFixed(6)), 32);
   assert.equal(Number(resource.inventory.ORE_TAILINGS.toFixed(6)), 8);
   assert.equal(resource.batches.filter(row => row.stage === 'FINISHED' && row.resourceId === 'IRON_CONCENTRATE').length, 50);
+  assert.equal(resource.inventoryUnits.IRON_CONCENTRATE, 'SIMULATION_RESOURCE_UNIT');
+  assert.equal(resource.inventoryUnits.ORE_TAILINGS, 'SIMULATION_RESOURCE_UNIT');
+  assert.equal(resource.processedWarehouse.unitsByProduct.IRON_CONCENTRATE, 'SIMULATION_RESOURCE_UNIT');
+  assert.equal(resource.processedWarehouse.unitsByProduct.ORE_TAILINGS, 'SIMULATION_RESOURCE_UNIT');
+});
+
+test('foreign startup opening batches cannot satisfy a site-bound factory in the player country', async () => {
+  const { context, api } = makeRuntime();
+  const asset = {
+    id: 'FAC-FOREIGN-STARTUP-STOCK', countryId: 'BGD',
+    factoryType: 'UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT',
+    sourceSiteId: 'SITE-LOCAL-MINE', capacityPerDay: 1, capacity: 1,
+    status: 'OPERATIONAL', recipeMode: 'SINGLE_INPUT',
+    inputCoefficients: { iron_ore: 1 },
+    outputProfile: { IRON_CONCENTRATE: 0.8, ORE_TAILINGS: 0.2 },
+    inputUnit: 'SIMULATION_RESOURCE_UNIT', outputUnit: 'SIMULATION_RESOURCE_UNIT'
+  };
+  context.Game.state.economy.BGD = {
+    unemploymentCount: 600000, laborForce: 6000000, unemployment_rate: 10, productionAssets: [asset]
+  };
+  context.Game.state.transport.BGD = { infrastructure: { utilitySupply: {
+    electricityMWhPerDay: 1000000, waterM3PerDay: 1000000,
+    authority: 'TEST_FIXTURE', status: 'AVAILABLE', simulationOnly: true, assets: []
+  } } };
+  const resource = context.Game.state.resource.BGD = {
+    inventory: { iron_ore: 1 }, batches: [{
+      batchId: 'FOREIGN-STARTUP-IRON', resourceId: 'iron_ore', materialIdentity: 'iron_ore',
+      quantity: 1, remainingQuantity: 1, unit: 'SIMULATION_RESOURCE_UNIT', stage: 'RAW',
+      status: 'AVAILABLE', countryId: 'KWT', ownerCountryCode: 'KWT', warehouseId: 'WH-BGD-RAW',
+      provenance: { source: 'SIMULATED_FACTORY_INPUT_STARTUP_BASELINE_V2',
+        authority: 'SIMULATED_FACTORY_INPUT_STARTUP_BASELINE_V2', countryId: 'KWT', simulationOnly: true }
+    }],
+    inventoryLots: {},
+    warehouse: { warehouseId: 'WH-BGD-RAW', countryId: 'BGD', availableByResource: { iron_ore: 1 },
+      reservedByResource: {}, storedBatchIds: ['FOREIGN-STARTUP-IRON'], receipts: [] }
+  };
+  const result = await api.processPendingFactoryInputs('BGD');
+  assert.equal(result.startedCount, 0);
+  assert.equal(result.warehouseTransferCount, 0);
+  assert.equal(resource.batches[0].remainingQuantity, 1);
+  assert.equal(asset.inputInventory && asset.inputInventory.iron_ore || 0, 0);
 });
 
 test('factory productivity is calculated from live supply ratios and each factory capacity', async () => {
