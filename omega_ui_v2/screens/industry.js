@@ -3426,7 +3426,7 @@
       root.__omegaV2FactoryCardUiState.buildMaterialsExpanded = false;
     }
     model.factoryCardUiState = root.__omegaV2FactoryCardUiState;
-    if (!Number.isFinite(Number(root.__omegaV2FactoryTypeVisibleCount)) || Number(root.__omegaV2FactoryTypeVisibleCount) < 4) {
+    if (!Number.isFinite(Number(root.__omegaV2FactoryTypeVisibleCount)) || Number(root.__omegaV2FactoryTypeVisibleCount) < 1) {
       root.__omegaV2FactoryTypeVisibleCount = 1;
     }
     model.factoryTypeVisibleCount = root.__omegaV2FactoryTypeVisibleCount;
