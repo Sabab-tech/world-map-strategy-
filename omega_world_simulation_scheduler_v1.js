@@ -13,7 +13,7 @@
   const PRIORITY = Object.freeze({WAR:100,CONFLICT:95,SANCTION:90,TREATY:75,SETTLEMENT:75,DIPLOMAC:70,TRADE:65,IMPORT:65,EXPORT:60,MILITARY:55,PROJECT:45,FOREIGN:40});
   const eventQueue=[],seenEventIds=new Set(),seenOrder=[],eventHandlers=new Map(),countryHandlers=new Map();
   let eventStateOwner=null;
-  let eventSequence=0,countryHandlerSequence=0,eventHandlerSequence=0,turnUnregister=null,ledgerUnsubscribe=null,installed=false,lastBatch=null,totalEvaluated=0,totalQueued=0,totalEvaluationErrors=0,totalYieldCount=0,eventOverflowCount=0,lastPlayerCountryId=null,cachedRoster=null,cachedRosterTurn=-1,rosterTask=null;
+  let eventSequence=0,countryHandlerSequence=0,eventHandlerSequence=0,turnUnregister=null,ledgerUnsubscribe=null,installed=false,lastBatch=null,totalEvaluated=0,totalQueued=0,totalEvaluationErrors=0,totalYieldCount=0,eventOverflowCount=0,lastPlayerCountryId=null,cachedRoster=null,cachedRosterTurn=-1,rosterTask=null,inFlightTurn=null,inFlightTurnPromise=null;
   const isObject=v=>!!v&&typeof v==='object'&&!Array.isArray(v);
   const num=(v,fallback=0)=>{const n=Number(v);return Number.isFinite(n)?n:fallback;};
   const clone=(v,seen=new WeakMap())=>{if(v===null||typeof v!=='object')return v;if(seen.has(v))return seen.get(v);if(Array.isArray(v)){const a=[];seen.set(v,a);for(const x of v)a.push(clone(x,seen));return a;}const o={};seen.set(v,o);for(const k of Object.keys(v))if(k!=='__proto__'&&k!=='constructor'&&typeof v[k]!=='function')o[k]=clone(v[k],seen);return o;};
@@ -232,7 +232,7 @@
     }
     return{selected,nextCursor:cursor,cursorAfterSelected};
   }
-  async function processTurn(ctx={}){
+  async function processTurnInternal(ctx={}){
     const root=state();if(!isObject(root))return{status:'SKIPPED',reason:'WORLD_STATE_UNAVAILABLE'};
     const turn=turnOf(ctx),meta=ensureMeta(root),turnStartedAt=clockNow(),constrained=constrainedDevice();
     const turnBudgetMs=constrained?LIMITS.MOBILE_TURN_BUDGET_MS:LIMITS.DESKTOP_TURN_BUDGET_MS;
@@ -305,6 +305,28 @@
       budget:{profile:constrained?'CONSTRAINED':'STANDARD',budgetMs:turnBudgetMs,elapsedMs:lastBatch.elapsedMs,exhausted:budgetExhausted},
       limits:clone(LIMITS)};
   }
+  // Serialize the authoritative turn pipeline. Repeated calls for the same
+  // turn share one promise; a later turn waits until the current turn commits.
+  // This prevents concurrent clock/event callbacks from running economy and
+  // ministry handlers twice before lastProcessedTurn is persisted.
+  function processTurn(ctx={}){
+    const requestedTurn=turnOf(ctx);
+    if(inFlightTurnPromise){
+      if(inFlightTurn===requestedTurn)return inFlightTurnPromise;
+      const previous=inFlightTurnPromise;
+      return previous.then(()=>processTurn(ctx),()=>processTurn(ctx));
+    }
+    const task=processTurnInternal(ctx);
+    const tracked=task.finally(()=>{
+      if(inFlightTurnPromise===tracked){
+        inFlightTurnPromise=null;
+        inFlightTurn=null;
+      }
+    });
+    inFlightTurn=requestedTurn;
+    inFlightTurnPromise=tracked;
+    return tracked;
+  }
   async function install(){
     if(installed)return true;const runtime=sim();if(!runtime||typeof runtime.registerTurnParticipant!=='function')return false;
     turnUnregister=runtime.registerTurnParticipant('omega.world-simulation.scheduler.v1',(_event,context)=>processTurn(context||{}),{priority:9000});
@@ -318,7 +340,8 @@
       limits:clone(LIMITS),lastPlayerCountryId,lastTurn:lastBatch?.turn??null,lastBatch:clone(lastBatch),
       totalEvaluated,totalQueued,totalEvaluationErrors,totalYieldCount,pendingEvents:eventQueue.length,eventOverflowCount,
       persistedEventCount:Array.isArray(m.pendingEvents)?m.pendingEvents.length:0,
-      seenEventIdCount:seenEventIds.size,deviceProfile:constrainedDevice()?'CONSTRAINED':'STANDARD',
+      seenEventIdCount:seenEventIds.size,processing:!!inFlightTurnPromise,inFlightTurn,
+      deviceProfile:constrainedDevice()?'CONSTRAINED':'STANDARD',
       registeredCountryHandlers:countryHandlers.size,registeredEventHandlers:eventHandlers.size};
   }
   const API=Object.freeze({VERSION,LIMITS,engineIntegrated:true,install,processTurn,activateCountry,deactivateCountry,enqueueEvent,queueEvent:enqueueEvent,registerCountryHandler,registerEventHandler,diagnostics,getCountryRoster:roster,dispose(){try{turnUnregister?.();}catch(_){}try{ledgerUnsubscribe?.();}catch(_){}turnUnregister=null;ledgerUnsubscribe=null;installed=false;return true;}});

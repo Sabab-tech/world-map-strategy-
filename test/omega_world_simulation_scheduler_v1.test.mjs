@@ -84,3 +84,32 @@ test('canonical roster is reused between refresh boundaries',async()=>{
  await h.participant.handler({}, {turn:31,countryId:'AA',playerCountryId:'AA',state:h.state,simulation:h.simulation,stepDurationMs:10000});
  assert.equal(h.rosterCalls(),2,'roster should be refreshed at its 30-turn boundary');
 });
+
+
+test('concurrent callbacks for one turn share one execution and do not duplicate handlers',async()=>{
+ const h=harness(24);h.state.simulation.turn=1;h.simulation.clock.turn=1;
+ let releaseSlow,slowCalls=0,signalStarted;
+ const started=new Promise(resolve=>{signalStarted=resolve;});
+ const gate=new Promise(resolve=>{releaseSlow=resolve;});
+ h.scheduler.registerCountryHandler('test.concurrent-turn-gate',async()=>{
+   slowCalls++;signalStarted();await gate;return'RELEASED';
+ },{tiers:['PLAYER'],priority:10});
+ const ctx={turn:1,countryId:'AA',playerCountryId:'AA',state:h.state,simulation:h.simulation,stepDurationMs:10000};
+ const first=h.participant.handler({},ctx);
+ await started;
+ const second=h.participant.handler({},ctx);
+ assert.strictEqual(first,second,'overlapping requests for the same turn must share the in-flight promise');
+ assert.equal(h.scheduler.diagnostics().processing,true);
+ assert.equal(h.scheduler.diagnostics().inFlightTurn,1);
+ releaseSlow();
+ const [a,b]=await Promise.all([first,second]);
+ assert.strictEqual(a,b,'both callers receive the same committed turn result');
+ assert.equal(a.status,'COMPLETED');
+ assert.equal(slowCalls,1,'player handler must execute once for the turn');
+ assert.equal(h.handled.filter(x=>x.countryId==='AA'&&x.tier==='PLAYER').length,1,
+   'normal player handlers must not be repeated by concurrent clock callbacks');
+ assert.equal(h.evaluations.length,a.active.selected+a.macro.selected,
+   'opponent evaluations must not be doubled');
+ assert.equal(h.scheduler.diagnostics().processing,false);
+ assert.equal(h.scheduler.diagnostics().inFlightTurn,null);
+});
