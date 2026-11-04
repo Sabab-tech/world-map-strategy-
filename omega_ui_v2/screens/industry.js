@@ -466,15 +466,40 @@
       '<span class="fp-product-identity-copy"><strong>' + esc(safeLabel) + '</strong></span></span>';
   }
 
+  // Input renders revisit the same product, factory and batch lineage across
+  // aggregate and per-factory tables. Keep those derived lookups scoped to the
+  // current view model so a later render always sees fresh authoritative state.
+  function factoryInputMarkupCache(model) {
+    if (!model || typeof model !== 'object') return {
+      usage:Object.create(null), sourceRows:Object.create(null),
+      aggregateSources:Object.create(null), factoryNames:null, batchesById:null
+    };
+    var cache = model.__omegaV2FactoryInputMarkupCache;
+    if (!cache || typeof cache !== 'object') {
+      cache = {
+        usage:Object.create(null),
+        sourceRows:Object.create(null),
+        aggregateSources:Object.create(null),
+        factoryNames:null,
+        batchesById:null
+      };
+      try { model.__omegaV2FactoryInputMarkupCache = cache; } catch (_) {}
+    }
+    return cache;
+  }
+
   function factoryProductUsageMarkup(model, productId) {
     model = model || {};
+    var cache = factoryInputMarkupCache(model);
     var catalog = safeCatalog() || {};
     var productKey = factoryProductKey(productId);
+    if (Object.prototype.hasOwnProperty.call(cache.usage, productKey)) return cache.usage[productKey];
     var useRoot = catalog.productUseCatalog && catalog.productUseCatalog.products &&
       typeof catalog.productUseCatalog.products === 'object' ? catalog.productUseCatalog.products : {};
     var use = useRoot[productKey] || null;
     if (!use) {
-      return '<div class="fp-product-use-map"><small><strong>Use map:</strong> Product use is not registered in the canonical catalog.</small></div>';
+      return (cache.usage[productKey] =
+        '<div class="fp-product-use-map"><small><strong>Use map:</strong> Product use is not registered in the canonical catalog.</small></div>');
     }
     var recipes = model.catalogRecipes && typeof model.catalogRecipes === 'object' ? model.catalogRecipes :
       catalog.downstreamFactoryRecipes && typeof catalog.downstreamFactoryRecipes === 'object' ? catalog.downstreamFactoryRecipes : {};
@@ -522,11 +547,11 @@
       routeLabel = 'No downstream recycling or treatment factory route is registered';
     } else routeLabel = 'No downstream factory recipe currently consumes this product';
     var endUses = Array.isArray(use.endUses) ? use.endUses.filter(Boolean).map(String) : [];
-    return '<div class="fp-product-use-map" data-factory-product-use="' + esc(productKey) + '">' +
+    return (cache.usage[productKey] = '<div class="fp-product-use-map" data-factory-product-use="' + esc(productKey) + '">' +
       '<small><strong>Factory route:</strong> ' + esc(routeLabel) + '</small>' +
       (producerNames.length ? '<small><strong>Produced / supplied by:</strong> ' + esc(producerNames.join(', ')) + '</small>' : '') +
       (endUses.length ? '<small><strong>Sector uses:</strong> ' + esc(endUses.join(' ')) + '</small>' : '') +
-      '</div>';
+      '</div>');
   }
 
   function factoryProductStockMarkup(productId, label, value) {
@@ -1661,6 +1686,9 @@
   }
 
   function factoryInputAggregateSourceMarkup(model, productId) {
+    var cache = factoryInputMarkupCache(model);
+    var productKey = factoryProductKey(productId);
+    if (Object.prototype.hasOwnProperty.call(cache.aggregateSources, productKey)) return cache.aggregateSources[productKey];
     var grouped = Object.create(null), factories = Array.isArray(model && model.factories) ? model.factories : [];
     factories.forEach(function (factory) {
       var coefficient = factoryInputCoefficientFor(factory, productId);
@@ -1677,11 +1705,11 @@
       });
     });
     var rows = Object.keys(grouped).map(function (key) { return grouped[key]; });
-    if (!rows.length) return '<span class="fp-factory-muted">Source not recorded</span>';
-    return rows.map(function (source) {
+    if (!rows.length) return (cache.aggregateSources[productKey] = '<span class="fp-factory-muted">Source not recorded</span>');
+    return (cache.aggregateSources[productKey] = rows.map(function (source) {
       return '<span class="fp-factory-source"><strong>' + esc(source.label) + '</strong><small>' +
         fmt(source.quantity, factoryPlanUnit(source.unit)) + '</small></span>';
-    }).join('');
+    }).join(''));
   }
 
   function factoryInputPlanMarkup(model) {
@@ -2189,11 +2217,31 @@
     return html;
   }
   function factoryInputSourceRows(factory, productId, model) {
+    var cache = factoryInputMarkupCache(model);
+    var factoryId = String(factory && (factory.id || factory.raw && (factory.raw.id || factory.raw.assetId)) || '');
+    var productKey = factoryProductKey(productId);
+    var cacheKey = factoryId + '|' + productKey;
+    if (Object.prototype.hasOwnProperty.call(cache.sourceRows, cacheKey)) return cache.sourceRows[cacheKey];
     var lots = (factory.inputLots || []).filter(function (lot) {
-      return lot && String(lot.resourceId || lot.materialIdentity || '').toLowerCase() === String(productId).toLowerCase();
+      return lot && factoryProductKey(lot.resourceId || lot.materialIdentity) === productKey;
     });
-    var sourceGroups = Object.create(null), batches = model.resourceBatches || [], factoryNames = Object.create(null);
-    (model.factories || []).forEach(function (row) { if (row && row.id) factoryNames[String(row.id)] = row.name; });
+    var sourceGroups = Object.create(null);
+    if (!cache.factoryNames) {
+      cache.factoryNames = Object.create(null);
+      (model.factories || []).forEach(function (row) {
+        if (row && row.id) cache.factoryNames[String(row.id)] = row.name;
+      });
+    }
+    if (!cache.batchesById) {
+      cache.batchesById = Object.create(null);
+      (model.resourceBatches || []).forEach(function (batch) {
+        var batchId = String(batch && batch.batchId || '');
+        if (batchId && !Object.prototype.hasOwnProperty.call(cache.batchesById, batchId)) {
+          cache.batchesById[batchId] = batch;
+        }
+      });
+    }
+    var factoryNames = cache.factoryNames;
     lots.forEach(function (lot) {
       var remaining = num(lot.remainingQuantity !== undefined ? lot.remainingQuantity : lot.quantity);
       if (remaining === null || remaining <= 0) return;
@@ -2203,7 +2251,7 @@
       var sites = Array.isArray(lot.sourceSiteIds) ? lot.sourceSiteIds.filter(Boolean).map(String) : [];
       if (lot.siteId) sites.push(String(lot.siteId));
       (Array.isArray(lot.sourceBatchIds) ? lot.sourceBatchIds : []).forEach(function (batchId) {
-        var sourceBatch = batches.find(function (batch) { return batch && String(batch.batchId) === String(batchId); });
+        var sourceBatch = cache.batchesById[String(batchId)] || null;
         if (!sourceBatch) return;
         if (sourceBatch.siteId || sourceBatch.sourceSiteId || sourceBatch.siteReferenceKey) sites.push(String(sourceBatch.siteId || sourceBatch.sourceSiteId || sourceBatch.siteReferenceKey));
         if (!sourceFactory && sourceBatch.sourceFactoryId) sourceFactory = String(sourceBatch.sourceFactoryId);
@@ -2227,7 +2275,7 @@
       sourceGroups[key] = sourceGroups[key] || { label:label, quantity:0, unit:String(lot.unit || ''), kind:kind };
       sourceGroups[key].quantity += remaining;
     });
-    return Object.keys(sourceGroups).map(function (key) { return sourceGroups[key]; });
+    return (cache.sourceRows[cacheKey] = Object.keys(sourceGroups).map(function (key) { return sourceGroups[key]; }));
   }
 
   function factoryInputSourceMarkup(factory, productId, model) {
@@ -2316,13 +2364,18 @@
     var visibleFactories = 0;
     factories.forEach(function (factory) {
       var coefficientMap = factory.inputCoefficients && typeof factory.inputCoefficients === 'object' ? factory.inputCoefficients : {};
-      var ids = Object.keys(coefficientMap);
+      var ids = Object.keys(coefficientMap), seenInputIds = Object.create(null), lotsByProduct = Object.create(null);
+      ids.forEach(function (id) { seenInputIds[factoryProductKey(id)] = true; });
       (factory.inputRows || []).forEach(function (row) {
-        if (ids.map(function (id) { return id.toLowerCase(); }).indexOf(String(row.resourceId).toLowerCase()) < 0) ids.push(row.resourceId);
+        var id = factoryProductKey(row && row.resourceId);
+        if (id && !seenInputIds[id]) { seenInputIds[id] = true; ids.push(row.resourceId); }
       });
       (factory.inputLots || []).forEach(function (lot) {
-        var id = String(lot && (lot.resourceId || lot.materialIdentity) || '');
-        if (id && ids.map(function (value) { return value.toLowerCase(); }).indexOf(id.toLowerCase()) < 0) ids.push(id);
+        var id = factoryProductKey(lot && (lot.resourceId || lot.materialIdentity));
+        if (!id) return;
+        if (!seenInputIds[id]) { seenInputIds[id] = true; ids.push(lot.resourceId || lot.materialIdentity); }
+        if (!lotsByProduct[id]) lotsByProduct[id] = [];
+        lotsByProduct[id].push(lot);
       });
       if (!ids.length) return;
       visibleFactories += 1;
@@ -2331,9 +2384,7 @@
         var coefficient = factoryInputCoefficientFor(factory, productId);
         var required = factoryInputDailyRequirement(factory, productId, model);
         var current = factory.hasInputInventory ? panelValueByKey(factory.raw.inputInventory, productId) : null;
-        var lots = factory.inputLots.filter(function (lot) {
-          return String(lot && (lot.resourceId || lot.materialIdentity) || '').toLowerCase() === productId.toLowerCase();
-        });
+        var lots = lotsByProduct[factoryProductKey(productId)] || [];
         var seen = Object.create(null), received = 0, hasReceipt = false, unit = '';
         lots.forEach(function (lot) {
           var batchId = String(lot.batchId || '');
