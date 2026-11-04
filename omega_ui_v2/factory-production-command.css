@@ -4036,6 +4036,13 @@
    deducted. Keep the details below the cards there; do not squeeze both
    workspaces into two narrow columns simply because the viewport is 681px. */
 @media (orientation:landscape) and (min-width:681px) and (max-width:899px) {
+  .omega-v2-industry--factory-home .fp-stage {
+    width:100%;
+    height:auto;
+    min-height:0;
+    aspect-ratio:auto;
+    overflow:visible;
+  }
   .omega-v2-industry--factory-home .fp-factory-catalog-workspace,
   .omega-v2-industry--factory-home .fp-assets-workspace,
   .omega-v2-industry--factory-home .fp-factory-catalog-workspace.fp-workspace--detail-open,
