@@ -3655,3 +3655,23 @@
     max-width:100% !important;
   }
 }
+
+
+/* Older Android WebViews without container query units use viewport-relative panel geometry. */
+@supports not (width: 1cqw) {
+  .omega-v2-industry--factory-home .fp-factory-details-panel {
+    top:82px;
+    right:9px;
+    bottom:10px;
+    width:38%;
+  }
+  .omega-v2-industry--factory-home .fp-stage.fp-has-side-details .fp-type-catalog,
+  .omega-v2-industry--factory-home .fp-stage.fp-has-side-details .omega-v2-factory-deck {
+    width:60% !important;
+    max-width:60% !important;
+  }
+  .omega-v2-industry--factory-home .fp-stage.fp-has-side-details .fp-type-catalog-grid,
+  .omega-v2-industry--factory-home .fp-stage.fp-has-side-details .omega-v2-factory-deck {
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+}
