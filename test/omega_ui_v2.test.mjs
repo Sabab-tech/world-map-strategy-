@@ -3126,8 +3126,12 @@ test('factory catalog warm-up timeout releases a never-settling optional load wi
 test('Factory Stock/Input UI assets invalidate the old offline shell cache', () => {
   const sw = readFileSync('omega-offline-map-sw.js','utf8');
   const css = readFileSync('omega_ui_v2/factory-production-command.css','utf8');
-  assert.ok(sw.includes('omega-offline-atlas-shell-v85'),
-    'the offline shell must activate the new JS/CSS rather than retaining the old Stock/Input renderer');
+  assert.ok(sw.includes('omega-offline-atlas-shell-v86'),
+    'the offline shell must activate the current Factory Input and Stock/Input renderer');
+  assert.ok(sw.includes('"./omega_ui_v2/screens/industry.js"'),
+    'the offline shell must precache the current Industry screen');
+  assert.ok(sw.includes('"./omega_ui_v2/factory-production-command.css"'),
+    'the offline shell must precache the current Factory stylesheet');
   assert.ok(css.includes('flex:0 0 20px'),'compact recipe product SVGs must stay small on desktop cards');
   assert.ok(css.includes('flex-basis:18px'),'compact recipe product SVGs must stay small on mobile cards');
   for (const selector of ['.fp-product-identity','.fp-product-icon-frame','.fp-product-stock-quantity']) {
