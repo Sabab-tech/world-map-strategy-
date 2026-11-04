@@ -687,8 +687,30 @@ test('event IDs reject conflicting payloads while identical retries remain stabl
   assert.ok(s.mesh.getIntegrityConflicts(s.countryA).some(row=>row.kind==='EVENT_ID_COLLISION'));
 });
 
+test('conflicting event IDs staged by one command are rejected before state commit or partial publication', () => {
+  const s=createSandbox();
+  const before=Number(s.state.economy[s.countryA].gdp||0);
+  s.mesh.registerCommandHandler('PIPELINE_STAGED_EVENT_COLLISION','economy',(command,{stateTransaction,emitEvent})=>{
+    stateTransaction.set('economy.gdp',before+50);
+    emitEvent('TREATY_SIGNED',{agreementId:'STAGED-AGREEMENT-A'},{eventId:'PIPE-EVT-STAGED-COLLISION'});
+    emitEvent('TREATY_SIGNED',{agreementId:'STAGED-AGREEMENT-B'},{eventId:'PIPE-EVT-STAGED-COLLISION'});
+    return{accepted:true};
+  });
+  const result=s.mesh.dispatchCommand('finance','PIPELINE_STAGED_EVENT_COLLISION',s.countryA,{},{
+    turn:9,commandId:'PIPE-CMD-STAGED-EVENT-COLLISION'
+  });
+  assert.equal(result.status,'FAILED');
+  assert.equal(result.reason,'EVENT_ID_COLLISION');
+  assert.equal(s.state.economy[s.countryA].gdp,before,
+    'the command state transaction must not commit when staged event IDs conflict');
+  assert.equal(s.mesh.getEvent('PIPE-EVT-STAGED-COLLISION'),null,
+    'neither conflicting event may be published');
+  assert.ok(s.mesh.getIntegrityConflicts(s.countryA).some(row =>
+    row.kind==='EVENT_ID_COLLISION' && row.id==='PIPE-EVT-STAGED-COLLISION'));
+});
+
 console.log('OMEGA GOVERNMENT INTEROPERABILITY TEST MATRIX READY');
-console.log('Tests:',26);
+console.log('Tests:',27);
 console.log('Canonical ministry count:',MINISTRY_COUNT);
 
 
