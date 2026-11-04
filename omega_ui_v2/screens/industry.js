@@ -3775,27 +3775,47 @@
         if (showMoreFactoryInputs && root.contains(showMoreFactoryInputs)) {
           var inputPagingModel = root.__omegaV2IndustryModel || model;
           var inputCandidates = factoryInputEligibleFactories(inputPagingModel);
-          var inputStart = Math.max(0, Math.floor(num(showMoreFactoryInputs.getAttribute('data-next-index')) || 0));
+          var inputStartAttribute = typeof showMoreFactoryInputs.getAttribute === 'function'
+            ? showMoreFactoryInputs.getAttribute('data-next-index') : null;
+          var inputStart = inputStartAttribute === null || inputStartAttribute === undefined
+            ? Math.max(4, Math.floor(num(root.__omegaV2FactoryInputVisibleCount) || 4))
+            : Math.max(0, Math.floor(num(inputStartAttribute) || 0));
           var inputBatch = factoryInputFactoryCardsMarkup(inputPagingModel, inputCandidates, inputStart, 4);
-          var inputCards = root.querySelector('[data-factory-input-cards]');
-          if (!inputCards || !inputBatch.html) return;
-          showMoreFactoryInputs.disabled = true;
-          inputCards.insertAdjacentHTML('beforeend', inputBatch.html);
-          var pageStatus = root.querySelector('[data-factory-input-page-status]');
-          if (pageStatus) pageStatus.textContent = 'Showing ' + inputBatch.nextIndex.toLocaleString('en-US') +
-            ' of ' + inputBatch.total.toLocaleString('en-US') + ' factories with input records.';
+          if (!inputBatch.html) return;
+          var inputCards = typeof root.querySelector === 'function'
+            ? root.querySelector('[data-factory-input-cards]') : null;
+          if (inputCards && typeof inputCards.insertAdjacentHTML === 'function') {
+            inputCards.insertAdjacentHTML('beforeend', inputBatch.html);
+          } else if (typeof root.innerHTML === 'string') {
+            var inputCardsMarker = root.innerHTML.indexOf('data-factory-input-cards');
+            var inputCardsOpen = inputCardsMarker >= 0 ? root.innerHTML.indexOf('>', inputCardsMarker) : -1;
+            if (inputCardsOpen < inputCardsMarker) return;
+            root.innerHTML = root.innerHTML.slice(0, inputCardsOpen + 1) + inputBatch.html + root.innerHTML.slice(inputCardsOpen + 1);
+          } else {
+            return;
+          }
+          if (typeof root.querySelector === 'function') {
+            var pageStatus = root.querySelector('[data-factory-input-page-status]');
+            if (pageStatus) pageStatus.textContent = 'Showing ' + inputBatch.nextIndex.toLocaleString('en-US') +
+              ' of ' + inputBatch.total.toLocaleString('en-US') + ' factories with input records.';
+          }
           root.__omegaV2FactoryInputVisibleCount = inputBatch.nextIndex;
           if (inputBatch.nextIndex >= inputBatch.total) {
-            if (showMoreFactoryInputs.parentNode) showMoreFactoryInputs.parentNode.removeChild(showMoreFactoryInputs);
+            if (showMoreFactoryInputs.parentNode && typeof showMoreFactoryInputs.parentNode.removeChild === 'function') {
+              showMoreFactoryInputs.parentNode.removeChild(showMoreFactoryInputs);
+            } else if (typeof root.innerHTML === 'string') {
+              root.innerHTML = root.innerHTML.replace(/<button[^>]*data-factory-input-show-more[^>]*>[\s\S]*?<\/button>/, '');
+            }
           } else {
-            showMoreFactoryInputs.setAttribute('data-next-index', String(inputBatch.nextIndex));
+            if (typeof showMoreFactoryInputs.setAttribute === 'function') {
+              showMoreFactoryInputs.setAttribute('data-next-index', String(inputBatch.nextIndex));
+            }
             showMoreFactoryInputs.textContent = 'Show more factories · ' +
               Math.max(0, inputBatch.total - inputBatch.nextIndex).toLocaleString('en-US') + ' remaining';
             showMoreFactoryInputs.disabled = false;
           }
           return;
         }
-
         var tab = target.closest('[data-omega-v2-industry-tab]');
         if (tab && root.contains(tab)) {
           var nextTab = tab.getAttribute('data-omega-v2-industry-tab');
