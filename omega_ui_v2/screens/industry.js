@@ -2563,6 +2563,11 @@
     if (!root) return false;
     model = model || root.__omegaV2IndustryModel || {};
     var key = String(factoryCardUiState(model).expandedKey || '');
+    var workspace = typeof root.querySelector === 'function'
+      ? root.querySelector('.fp-factory-catalog-workspace, .fp-assets-workspace') : null;
+    if (workspace && workspace.classList && typeof workspace.classList.toggle === 'function') {
+      workspace.classList.toggle('fp-workspace--detail-open', !!key);
+    }
     var buttons = typeof root.querySelectorAll === 'function'
       ? root.querySelectorAll('[data-omega-v2-factory-card-expand]') : [];
     for (var i = 0; i < buttons.length; i += 1) {
@@ -2797,7 +2802,7 @@
       '<header class="fp-type-catalog-heading"><div><span>OMEGA / COUNTRY INDUSTRY REGISTER</span><strong>Factory types &amp; country totals</strong></div>' +
       '<span class="fp-type-catalog-total">' + fmt(rows.length) + ' types</span></header>' +
       '<p class="fp-type-catalog-note">Factory types owned by this country appear first. Types with no recorded factories are grouped at the bottom.</p>' +
-      '<div class="fp-factory-catalog-workspace"><div class="fp-type-catalog-grid">' + (cards || empty) + '</div>' +
+      '<div class="fp-factory-catalog-workspace' + (factoryCardUiState(model).expandedKey ? ' fp-workspace--detail-open' : '') + '"><div class="fp-type-catalog-grid">' + (cards || empty) + '</div>' +
       factoryDetailPanelMarkup(model) + '</div></section>';
   }
 
@@ -3010,7 +3015,7 @@
       '</div>';
     var panelBody = active === 'factories'
       ? (factoryView === 'types' ? factoryTypeCatalogMarkup(model) :
-        '<div class="fp-assets-workspace"><div class="omega-v2-factory-deck">' + factoryCards + '</div>' +
+        '<div class="fp-assets-workspace' + (factoryCardUiState(model).expandedKey ? ' fp-workspace--detail-open' : '') + '"><div class="omega-v2-factory-deck">' + factoryCards + '</div>' +
         factoryDetailPanelMarkup(model) + '</div>')
       : '<div class="fp-content" data-omega-v2-industry-content data-active-tab="' + esc(active) + '">' +
           '<header class="fp-content-heading"><div><span>OMEGA / COUNTRY DATA</span><strong>' + esc(activeLabel) + '</strong></div>' +
