@@ -481,7 +481,9 @@
         sourceRows:Object.create(null),
         aggregateSources:Object.create(null),
         factoryNames:null,
-        batchesById:null
+        batchesById:null,
+        factoriesByInputProduct:null,
+        eligibleInputFactories:null
       };
       try { model.__omegaV2FactoryInputMarkupCache = cache; } catch (_) {}
     }
@@ -1663,7 +1665,7 @@
   }
 
   function factoryInputLiveRiskStatus(model, productId) {
-    var factories = Array.isArray(model && model.factories) ? model.factories : [];
+    var factories = factoryInputFactoriesForProduct(model, productId);
     for (var index = 0; index < factories.length; index += 1) {
       var factory = factories[index];
       var coefficient = factoryInputCoefficientFor(factory, productId);
@@ -1685,11 +1687,50 @@
       factoryProductUsageMarkup(model, productId);
   }
 
+  // Index live factory inputs once per model so aggregate rows do not rescan every
+  // factory and every input lot for every resource product.
+  function factoryInputFactoriesForProduct(model, productId) {
+    var cache = factoryInputMarkupCache(model);
+    if (!cache.factoriesByInputProduct) {
+      var byProduct = Object.create(null), eligible = [];
+      (Array.isArray(model && model.factories) ? model.factories : []).forEach(function (factory) {
+        if (!factory || typeof factory !== 'object') return;
+        var ids = [], seen = Object.create(null);
+        function addId(value) {
+          var key = factoryProductKey(value);
+          if (!key || seen[key]) return;
+          seen[key] = true;
+          ids.push(key);
+        }
+        Object.keys(factory.inputCoefficients || {}).forEach(addId);
+        (Array.isArray(factory.inputRows) ? factory.inputRows : []).forEach(function (row) {
+          addId(row && row.resourceId);
+        });
+        (Array.isArray(factory.inputLots) ? factory.inputLots : []).forEach(function (lot) {
+          addId(lot && (lot.resourceId || lot.materialIdentity));
+        });
+        if (ids.length) eligible.push(factory);
+        ids.forEach(function (key) {
+          if (!byProduct[key]) byProduct[key] = [];
+          byProduct[key].push(factory);
+        });
+      });
+      cache.factoriesByInputProduct = byProduct;
+      cache.eligibleInputFactories = eligible;
+    }
+    return cache.factoriesByInputProduct[factoryProductKey(productId)] || [];
+  }
+
+  function factoryInputEligibleFactories(model) {
+    factoryInputFactoriesForProduct(model, '');
+    return factoryInputMarkupCache(model).eligibleInputFactories || [];
+  }
+
   function factoryInputAggregateSourceMarkup(model, productId) {
     var cache = factoryInputMarkupCache(model);
     var productKey = factoryProductKey(productId);
     if (Object.prototype.hasOwnProperty.call(cache.aggregateSources, productKey)) return cache.aggregateSources[productKey];
-    var grouped = Object.create(null), factories = Array.isArray(model && model.factories) ? model.factories : [];
+    var grouped = Object.create(null), factories = factoryInputFactoriesForProduct(model, productId);
     factories.forEach(function (factory) {
       var coefficient = factoryInputCoefficientFor(factory, productId);
       var hasLot = (Array.isArray(factory.inputLots) ? factory.inputLots : []).some(function (lot) {
@@ -2356,13 +2397,17 @@
     if (observed) return { value: Math.max(0, (1 - ratio) * 100), observed: true };
     return { value: null, observed: false };
   }
-  function factoryInputPanelMarkup(model) {
+  function factoryInputPanelMarkup(model, root) {
     var planMarkup = factoryInputPlanMarkup(model);
-    var factories = Array.isArray(model.factories) ? model.factories : [];
+    var factories = factoryInputEligibleFactories(model);
     if (!factories.length) return planMarkup;
+    var pageSize = 4;
+    var requestedCount = root ? Math.floor(num(root.__omegaV2FactoryInputVisibleCount) || pageSize) : pageSize;
+    var visibleLimit = Math.min(factories.length, Math.max(pageSize, requestedCount));
     var html = '<section class="fp-factory-analytics" aria-label="Recorded factory input deliveries"><h3 class="omega-v2-section-title">Factory input inventory and deliveries</h3>';
     var visibleFactories = 0;
-    factories.forEach(function (factory) {
+    factories.forEach(function (factory, factoryIndex) {
+      if (factoryIndex >= visibleLimit) return;
       var coefficientMap = factory.inputCoefficients && typeof factory.inputCoefficients === 'object' ? factory.inputCoefficients : {};
       var ids = Object.keys(coefficientMap), seenInputIds = Object.create(null), lotsByProduct = Object.create(null);
       ids.forEach(function (id) { seenInputIds[factoryProductKey(id)] = true; });
@@ -2428,7 +2473,13 @@
       html += '</tbody></table></div></article>';
     });
     if (!visibleFactories) return planMarkup + '<div class="omega-v2-empty">No delivered factory input rows are recorded yet. Planned daily requirements remain shown above.</div>';
-    return planMarkup + html + '</section>';
+    html += '</section>';
+    if (visibleFactories < factories.length) {
+      var remaining = factories.length - visibleFactories;
+      html += '<div class="fp-factory-input-more-wrap"><button type="button" class="omega-v2-button fp-factory-input-more" data-factory-input-show-more>' +
+        'Show next factory inputs · ' + fmt(Math.min(pageSize, remaining)) + ' of ' + fmt(remaining) + ' remaining</button></div>';
+    }
+    return planMarkup + html;
   }
 
   function updateFactoryInputCoverageSnapshotV1(event) {
@@ -3352,6 +3403,7 @@
       root.__omegaV2IndustryCountryId = countryKey;
       root.__omegaV2IndustryFactoryViewExplicit = false;
       root.__omegaV2IndustryFactoryView = 'types';
+      root.__omegaV2FactoryInputVisibleCount = 4;
       root.__omegaV2FactoryCardUiState = { expandedKey:'', buildKey:'', sections:Object.create(null), buildMaterialsExpanded:false };
     }
     if (!root.__omegaV2FactoryCardUiState || typeof root.__omegaV2FactoryCardUiState !== 'object') {
@@ -3380,7 +3432,7 @@
         return '<article class="omega-v2-card"><h3 class="omega-v2-card-title">' + esc(cycle.factoryId) + '</h3><span class="omega-v2-status">' + esc(cycle.status || 'NOT_RECORDED') + '</span><div class="omega-v2-vehicle-stats"><div><span>Output quantity</span><strong>' + fmt(cycle.productionQuantity) + '</strong></div><div><span>Start date</span><strong>' + esc(cycle.startDate || 'Not recorded') + '</strong></div><div><span>Finish date</span><strong>' + esc(cycle.finishDate || 'Not recorded') + '</strong></div><div><span>Source batches</span><strong>' + fmt(Array.isArray(cycle.sourceBatchIds) ? cycle.sourceBatchIds.length : null) + '</strong></div></div></article>';
       }).join('') + '</div>' : '<div class="omega-v2-empty">No tracked production cycles were returned by this country’s industrial state.</div>';
     } else if (active === 'inventory') {
-      content = factoryInputPanelMarkup(model);
+      content = factoryInputPanelMarkup(model, root);
     } else if (active === 'research') {
       var researchRows = model.researchProjects.map(function (item) { return Object.assign({ recordType:'RESEARCH' }, item || {}); })
         .concat(model.technologyTransfers.map(function (item) { return Object.assign({ recordType:'TECHNOLOGY TRANSFER' }, item || {}); }))
@@ -3470,6 +3522,20 @@
       root.addEventListener('click', function (event) {
         var target = event && event.target;
         if (!target || typeof target.closest !== 'function') return;
+
+        var showMoreFactoryInputs = target.closest('[data-factory-input-show-more]');
+        if (showMoreFactoryInputs && root.contains(showMoreFactoryInputs)) {
+          var inputPagingModel = root.__omegaV2IndustryModel || model;
+          var totalInputFactories = factoryInputEligibleFactories(inputPagingModel).length;
+          var currentVisibleInputs = Math.max(4, Math.floor(num(root.__omegaV2FactoryInputVisibleCount) || 4));
+          var nextVisibleInputs = Math.min(totalInputFactories, currentVisibleInputs + 4);
+          if (nextVisibleInputs > currentVisibleInputs) {
+            root.__omegaV2FactoryInputVisibleCount = nextVisibleInputs;
+            scheduleRender(root, Object.assign({}, root.__omegaV2IndustryOptions || options || {}, { tab:'inventory' }),
+              'Loading more factory input details');
+          }
+          return;
+        }
 
         var viewToggle = target.closest('[data-omega-v2-factory-view-toggle]');
         if (viewToggle && root.contains(viewToggle)) {
