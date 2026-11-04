@@ -763,13 +763,19 @@
       if (/^SIMULATION_/i.test(raw)) {
         return 'Game ' + raw.replace(/^SIMULATION_/i, '').replace(/[_-]+/g, ' ').toLowerCase();
       }
-      // Keep declared physical-unit symbols (for example TONNES) unchanged.
-      return raw;
+      // Preserve simple canonical unit symbols; expand compound rates such as
+      // TONNES_PER_DAY so the logistics display can safely render them as tonnes/day.
+      if (!/[_-]/.test(raw)) return raw;
+      return raw.replace(/[_-]+/g, ' ').toLowerCase().replace(/\b[a-z]/g, function (ch) {
+        return ch.toUpperCase();
+      });
     }
     function buildResourceAmount(value, unit) {
       var n = numberOrNull(value);
       if (n === null) return '—';
-      var displayUnit = buildDisplayUnit(unit);
+      // Build materials use a simulation quantity basis, not a real-world unit.
+      // Keep compact amounts clean and do not expose runtime enum labels here.
+      var displayUnit = /^SIMULATION_/i.test(String(unit || '').trim()) ? '' : buildDisplayUnit(unit);
       var precise = fmt(n, 2) + (displayUnit ? ' ' + displayUnit : '');
       return '<span class="omega-v2-build-amount" title="' + esc(precise) + '">' +
         esc(compactBuildNumber(n)) + (displayUnit ? ' ' + esc(displayUnit) : '') + '</span>';
