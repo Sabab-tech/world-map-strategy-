@@ -76,6 +76,9 @@ test('icon runtime observes new UI nodes and excludes editable/script content', 
 test('icon CSS uses mobile-safe geometry, semantic color palettes and honors reduced motion', () => {
   const css = read('omega_icon_system_v1.css');
   assert.match(css, /stroke: currentColor/);
+  assert.ok(css.includes('.omega-icon-sprite'), 'the hidden SVG symbol sheet must have an active zero-size style');
+  assert.ok(iconSource.includes("svg.setAttribute('width', '1em')"), 'generated icons must have safe intrinsic dimensions without CSS');
+  assert.ok(iconSource.includes("sprite.setAttribute('width', '0')"), 'the SVG symbol sheet must remain invisible without CSS');
   assert.match(css, /--omega-icon-color/);
   assert.match(css, /\.omega-ui-icon--industrial-production/);
   assert.match(css, /\.omega-ui-icon--mine-extraction/);
