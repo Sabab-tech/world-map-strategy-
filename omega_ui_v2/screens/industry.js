@@ -2678,9 +2678,14 @@
   }
 
   function factoryDisplayUnit(unit) {
-    var value = String(unit || '').replace(/_/g, ' ').trim();
-    if (/^SIMULATION RESOURCE UNIT$/i.test(value)) return 'game units';
-    return value ? value.toLowerCase() : '';
+    var raw = String(unit || '').trim();
+    if (!raw) return '';
+    var token = raw.toUpperCase().replace(/[ -]+/g, '_');
+    if (token === 'SIMULATION_RESOURCE_UNIT') return 'game units';
+    if (token === 'SIMULATION_TONNE_EQUIVALENT' || token === 'SIMULATION_TONNE') return 'game tonnes';
+    var value = raw.replace(/[_-]+/g, ' ');
+    if (/^SIMULATION_/i.test(raw)) value = 'game ' + raw.replace(/^SIMULATION_/i, '').replace(/[_-]+/g, ' ');
+    return value.toLowerCase();
   }
 
   function factoryFindValue(source, productId) {
