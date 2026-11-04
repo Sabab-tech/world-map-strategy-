@@ -322,7 +322,6 @@
         var assetUnitKey = resourceKey(assetUnitMap, resourceId);
         var targetUnit = (assetUnitKey === null ? null : String(assetUnitMap[assetUnitKey] || '').trim()) ||
           String(asset.inputUnit || asset.recipeInputUnit || '').trim() || null;
-        if (!sourceUnit) sourceUnit = targetUnit;
         if (!sourceUnit || !targetUnit) return;
         var bridge = factoryInputUnitBridge(sourceUnit, targetUnit);
         if (!bridge) return;
