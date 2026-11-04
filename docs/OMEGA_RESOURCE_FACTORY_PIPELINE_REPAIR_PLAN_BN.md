@@ -199,3 +199,12 @@ Simulation-only fixture data must be labelled; the fixture does not imply those 
 - Do not call a delivered input a completed production cycle.
 - Do not call a passing test fixture proof that the user's existing save has the same commissioned factories, inventory and transport assets.
 - Do not claim a PR is merged until GitHub confirms merged=true and main points at the resulting commit.
+
+## 6. National opening-stock consumption by site-bound factories
+
+- The 100-day primary-resource and factory-input startup baselines already seed the selected country's authoritative `resource.inventory`, matching batch/lot records, and the corresponding raw or processed warehouse. They must not be copied into a second inventory or minted again.
+- Opening allocations are country-owned rather than mine-site output. A factory bound to a specific mine may therefore consume an opening allocation only when the batch and its provenance both identify the active country and carry one of the two exact authorities: `SIMULATED_STARTUP_BASELINE_V1` or `SIMULATED_FACTORY_INPUT_STARTUP_BASELINE_V2`.
+- Site-flow batches remain restricted to their recorded site. Unknown, malformed, or foreign-country batches do not inherit the startup exception.
+- Factory output commits persist one declared product unit to both `resource.inventoryUnits` and the processed warehouse's `unitsByProduct`. A conflicting pre-existing unit blocks the output before input debit, instead of publishing mixed-unit stock.
+- UI projections resolve product units from the first matching available unit map, display simulation-only quantities as game units/game tonnes, and use readable warehouse names instead of exposing internal warehouse IDs.
+- Regression coverage includes 50 site-bound factories supplied from one country-wide opening batch, one-time inventory seeding, output-unit reconciliation, and rejection of a foreign startup batch.

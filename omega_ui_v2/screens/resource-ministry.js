@@ -738,7 +738,8 @@
     function amount(value, unit) {
       var n = numberOrNull(value);
       if (n === null) return '—';
-      return fmt(n, 2) + (unit ? ' ' + String(unit) : '');
+      var displayUnit = buildDisplayUnit(unit);
+      return fmt(n, 2) + (displayUnit ? ' ' + displayUnit : '');
     }
     function compactBuildNumber(value) {
       var n = numberOrNull(value);
@@ -754,14 +755,27 @@
       return scaled.toLocaleString('en-US', { maximumFractionDigits: digits }) + suffix;
     }
     function buildDisplayUnit(unit) {
-      var normalized = String(unit == null ? '' : unit).trim().replace(/[_-]+/g, ' ');
-      if (!normalized || /SIMULATION.*UNIT/i.test(normalized)) return '';
-      return normalized.toLowerCase().replace(/\b[a-z]/g, function (ch) { return ch.toUpperCase(); });
+      var raw = String(unit == null ? '' : unit).trim();
+      if (!raw) return '';
+      var token = raw.toUpperCase().replace(/[ -]+/g, '_');
+      if (token === 'SIMULATION_RESOURCE_UNIT') return 'Game units';
+      if (token === 'SIMULATION_TONNE_EQUIVALENT' || token === 'SIMULATION_TONNE') return 'Game tonnes';
+      if (/^SIMULATION_/i.test(raw)) {
+        return 'Game ' + raw.replace(/^SIMULATION_/i, '').replace(/[_-]+/g, ' ').toLowerCase();
+      }
+      // Preserve simple canonical unit symbols; expand compound rates such as
+      // TONNES_PER_DAY so the logistics display can safely render them as tonnes/day.
+      if (!/[_-]/.test(raw)) return raw;
+      return raw.replace(/[_-]+/g, ' ').toLowerCase().replace(/\b[a-z]/g, function (ch) {
+        return ch.toUpperCase();
+      });
     }
     function buildResourceAmount(value, unit) {
       var n = numberOrNull(value);
       if (n === null) return '—';
-      var displayUnit = buildDisplayUnit(unit);
+      // Build materials use a simulation quantity basis, not a real-world unit.
+      // Keep compact amounts clean and do not expose runtime enum labels here.
+      var displayUnit = /^SIMULATION_/i.test(String(unit || '').trim()) ? '' : buildDisplayUnit(unit);
       var precise = fmt(n, 2) + (displayUnit ? ' ' + displayUnit : '');
       return '<span class="omega-v2-build-amount" title="' + esc(precise) + '">' +
         esc(compactBuildNumber(n)) + (displayUnit ? ' ' + esc(displayUnit) : '') + '</span>';
@@ -871,6 +885,19 @@
       return !!asset && !/DECOMMISSIONED|DESTROYED|STOPPED|CLOSED|INACTIVE/.test(status) &&
         /OPERATIONAL|ACTIVE|COMMISSIONED|PRODUCING/.test(status);
     }
+    // Keep sites, constructed assets, operating assets and construction work separate.
+    var builtMineCount = assets.filter(function (asset) {
+      var status = String(asset && asset.status || '').toUpperCase();
+      return !!asset && !/DECOMMISSIONED|DESTROYED|DEMOLISHED|REMOVED/.test(status);
+    }).length;
+    var operatingMineCount = assets.filter(isOperationalAsset).length;
+    var mineUnitsBuilding = mineProjects.reduce(function (total, project) {
+      if (String(project && project.status || '').toUpperCase() !== 'UNDER_CONSTRUCTION') return total;
+      var quantity = numberOrNull(project && project.assetCount);
+      return total + (quantity !== null && quantity > 0 ? Math.floor(quantity) : 1);
+    }, 0);
+    var pendingMineProjectCount = mineProjects.length;
+    var eligibleMineSiteCount = model.sites.filter(eligible).length;
     function projectFor(id) {
       for (var i = mineProjects.length - 1; i >= 0; i -= 1) if (String(mineProjects[i].siteId || '') === String(id || '')) return mineProjects[i];
       return null;
@@ -1461,9 +1488,12 @@
     var outputHeadline = sumUnitGroups(currentOutputGroups);
     var countryLabel = playerCountryDisplayName(countryKey);
     var dashMarkup = photoMarkup + '<div class="omega-v2-kpis omega-v2-resource-command-kpis">' +
-      renderKpi('Registered mines', String(model.sites.filter(eligible).length), model.sites.length + ' sites', 'neutral') +
-      renderKpi('Producing now', String(producingSites.length), 'Recorded this turn', portfolioBalanceState) +
-      renderKpi('Pending projects', String(mineProjects.length), 'Mine construction', mineProjects.length ? 'shortage' : 'neutral') +
+      renderKpi('Eligible mine sites', String(eligibleMineSiteCount), model.sites.length + ' registered sites', 'neutral') +
+      renderKpi('Built mine units', String(builtMineCount), 'Existing assets, including stopped units', builtMineCount ? 'operational' : 'neutral') +
+      renderKpi('Operating mines', String(operatingMineCount), 'Built units currently operating', operatingMineCount ? 'operational' : 'neutral') +
+      renderKpi('Producing this turn', String(producingSites.length), 'Recorded extraction output', portfolioBalanceState) +
+      renderKpi('Mine units building', String(mineUnitsBuilding), 'Units in active construction projects', mineUnitsBuilding ? 'shortage' : 'neutral') +
+      renderKpi('Projects pending', String(pendingMineProjectCount), 'Mine construction projects', pendingMineProjectCount ? 'shortage' : 'neutral') +
       renderKpi('Blocked supply', String(blockedFlows.length), 'Recorded unresolved flows', blockedFlows.length ? 'shortage' : 'adequate') +
       renderKpi('Resource types', String(distinctResources.length), 'Available in country', 'neutral') +
       renderKpi('Today output', outputHeadline, 'Kept separate by unit', portfolioBalanceState) +
@@ -1517,18 +1547,40 @@
         String(productId || '').trim().replace(/[_-]+/g, ' ').replace(/\b\w/g, function (ch) { return ch.toUpperCase(); }) ||
         'Industrial product');
     }
+    function warehouseDisplayLabel(location, stage) {
+      var value = String(location || '').trim();
+      var token = value.toUpperCase();
+      if (token.indexOf('PROCESSED') >= 0 || /^(INTERMEDIATE|FINISHED|PROCESSED)$/.test(String(stage || '').toUpperCase()))
+        return 'Processed goods warehouse';
+      if (token.indexOf('RAW') >= 0 || String(stage || '').toUpperCase() === 'RAW')
+        return 'Raw materials warehouse';
+      return value || 'Location not recorded';
+    }
     function processedProductTableRow(productId) {
       var quantity = stockFor(productId, processedStockDisplay);
       var productUnit = '';
-      var unitMap = processedWarehouse.unitsByProduct || processedWarehouse.inventoryUnits || inventoryUnits;
-      var unitKey = Object.keys(unitMap).find(function (key) { return key.toLowerCase() === String(productId).toLowerCase(); });
-      if (unitKey) productUnit = String(unitMap[unitKey] || '');
+      var unitMaps = [processedWarehouse.unitsByProduct, processedWarehouse.inventoryUnits, inventoryUnits];
+      for (var i = 0; i < unitMaps.length && !productUnit; i += 1) {
+        var unitMap = unitMaps[i] && typeof unitMaps[i] === 'object' ? unitMaps[i] : {};
+        var unitKey = Object.keys(unitMap).find(function (key) {
+          return key.toLowerCase() === String(productId).toLowerCase();
+        });
+        if (unitKey) productUnit = String(unitMap[unitKey] || '');
+      }
+      if (!productUnit) {
+        var recentBatch = safeArray(gameResource.batches).slice().reverse().find(function (row) {
+          return String(row && (row.resourceId || row.materialIdentity) || '').toLowerCase() === String(productId).toLowerCase() &&
+            row.unit;
+        });
+        if (recentBatch) productUnit = String(recentBatch.unit);
+      }
+      var warehouseLabel = processedWarehouse.displayName || processedWarehouse.name || 'Processed goods warehouse';
       return '<tr data-product-id="' + esc(productId) + '">' +
         '<td><span class="omega-v2-table-resource">' + resourceIconMarkup(productId, processedProductLabel(productId)) +
           '<strong>' + esc(processedProductLabel(productId)) + '</strong></span></td>' +
         '<td>' + (quantity === null ? 'Not recorded' : amount(quantity, productUnit)) + '</td>' +
-        '<td>' + esc(productUnit || 'Unit not recorded') + '</td>' +
-        '<td>' + esc(processedWarehouse.warehouseId || 'Processed warehouse') + '</td></tr>';
+        '<td>' + esc(buildDisplayUnit(productUnit) || 'Unit not recorded') + '</td>' +
+        '<td>' + esc(warehouseLabel) + '</td></tr>';
     }
     var rawInventoryTableMarkup = rawInventoryKeys.length
       ? '<div class="omega-v2-table-wrap" data-omega-v2-raw-resource-inventory><table class="omega-v2-inventory-table"><thead><tr>' +
@@ -1562,7 +1614,7 @@
         rawInventoryRows.slice(-40).reverse().map(function (row) {
           return '<tr><td>' + resourceIconMarkup(row.resourceId, resourceLabel(row.resourceId)) + esc(resourceLabel(row.resourceId)) +
             '</td><td>' + amount(row.quantity, resourceUnit(row.resourceId) || (/SIMULATION.*UNIT/i.test(String(row.unit || '')) ? '' : row.unit)) +
-            '</td><td>' + esc(row.location || '—') + '</td><td>' + esc(human(row.status)) + '</td></tr>';
+            '</td><td>' + esc(warehouseDisplayLabel(row.location, row.stage)) + '</td><td>' + esc(human(row.status)) + '</td></tr>';
         }).join('') + '</tbody></table></div></section>' : '';
     var processedBatchHistoryMarkup = processedInventoryRows.length
       ? '<section class="omega-v2-card omega-v2-movement-card"><h2>Recent processed-product batches</h2><div class="omega-v2-table-wrap"><table><thead><tr><th>Product</th><th>Quantity</th><th>Processed warehouse</th><th>Status</th></tr></thead><tbody>' +
@@ -2259,9 +2311,12 @@
           }).join('') + '</div></section>';
       }).join('');
     var reportsMarkup = '<div class="omega-v2-kpis">' +
-      renderKpi('Mine sites', String(model.sites.filter(eligible).length), 'Mine sites available to manage', 'neutral') +
-      renderKpi('Producing this turn', String(producingSites.length), 'Mine sites with output', portfolioBalanceState) +
-      renderKpi('Projects pending', String(mineProjects.length), 'Under construction', mineProjects.length ? 'shortage' : 'neutral') +
+      renderKpi('Mine sites', String(eligibleMineSiteCount), 'Registered sites available to manage', 'neutral') +
+      renderKpi('Built mine units', String(builtMineCount), 'Commissioned or retained assets', builtMineCount ? 'operational' : 'neutral') +
+      renderKpi('Operating mines', String(operatingMineCount), 'Built units not paused or closed', operatingMineCount ? 'operational' : 'neutral') +
+      renderKpi('Mine units building', String(mineUnitsBuilding), 'Units in active construction projects', mineUnitsBuilding ? 'shortage' : 'neutral') +
+      renderKpi('Producing this turn', String(producingSites.length), 'Mine sites with recorded output', portfolioBalanceState) +
+      renderKpi('Projects pending', String(pendingMineProjectCount), 'Mine construction projects', pendingMineProjectCount ? 'shortage' : 'neutral') +
       renderKpi('Blocked supply flows', String(blockedFlows.length), 'Current flow ledger', blockedFlows.length ? 'shortage' : 'adequate') + '</div>' +
       '<section class="omega-v2-card omega-v2-report-overview"><h2>National resource economy</h2><p>Production and stock remain grouped by their own units.</p><div class="omega-v2-report-unit-totals">' +
       currentOutputGroups.map(function (row) { return '<div><span>' + esc(resourceLabel(row.resourceId)) + '</span><strong>' + amount(row.quantity,row.unit) +
