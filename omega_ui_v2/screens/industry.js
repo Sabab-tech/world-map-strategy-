@@ -468,13 +468,15 @@
 
   function factoryProductUsageMarkup(model, productId) {
     model = model || {};
-    var catalog = safeCatalog() || {};
+    var cache = factoryInputMarkupCache(model);
     var productKey = factoryProductKey(productId);
+    if (Object.prototype.hasOwnProperty.call(cache.usage, productKey)) return cache.usage[productKey];
+    var catalog = safeCatalog() || {};
     var useRoot = catalog.productUseCatalog && catalog.productUseCatalog.products &&
       typeof catalog.productUseCatalog.products === 'object' ? catalog.productUseCatalog.products : {};
     var use = useRoot[productKey] || null;
     if (!use) {
-      return '<div class="fp-product-use-map"><small><strong>Use map:</strong> Product use is not registered in the canonical catalog.</small></div>';
+      return (cache.usage[productKey] = '<div class="fp-product-use-map"><small><strong>Use map:</strong> Product use is not registered in the canonical catalog.</small></div>');
     }
     var recipes = model.catalogRecipes && typeof model.catalogRecipes === 'object' ? model.catalogRecipes :
       catalog.downstreamFactoryRecipes && typeof catalog.downstreamFactoryRecipes === 'object' ? catalog.downstreamFactoryRecipes : {};
@@ -522,11 +524,11 @@
       routeLabel = 'No downstream recycling or treatment factory route is registered';
     } else routeLabel = 'No downstream factory recipe currently consumes this product';
     var endUses = Array.isArray(use.endUses) ? use.endUses.filter(Boolean).map(String) : [];
-    return '<div class="fp-product-use-map" data-factory-product-use="' + esc(productKey) + '">' +
+    return (cache.usage[productKey] = '<div class="fp-product-use-map" data-factory-product-use="' + esc(productKey) + '">' +
       '<small><strong>Factory route:</strong> ' + esc(routeLabel) + '</small>' +
       (producerNames.length ? '<small><strong>Produced / supplied by:</strong> ' + esc(producerNames.join(', ')) + '</small>' : '') +
       (endUses.length ? '<small><strong>Sector uses:</strong> ' + esc(endUses.join(' ')) + '</small>' : '') +
-      '</div>';
+      '</div>');
   }
 
   function factoryProductStockMarkup(productId, label, value) {
@@ -1638,7 +1640,7 @@
   }
 
   function factoryInputLiveRiskStatus(model, productId) {
-    var factories = Array.isArray(model && model.factories) ? model.factories : [];
+    var factories = factoryInputFactoriesForProduct(model, productId);
     for (var index = 0; index < factories.length; index += 1) {
       var factory = factories[index];
       var coefficient = factoryInputCoefficientFor(factory, productId);
@@ -1661,12 +1663,14 @@
   }
 
   function factoryInputAggregateSourceMarkup(model, productId) {
-    var grouped = Object.create(null), factories = Array.isArray(model && model.factories) ? model.factories : [];
+    var cache = factoryInputMarkupCache(model);
+    var productKey = factoryProductKey(productId);
+    if (Object.prototype.hasOwnProperty.call(cache.aggregateSources, productKey)) return cache.aggregateSources[productKey];
+    var grouped = Object.create(null), factories = factoryInputFactoriesForProduct(model, productId);
     factories.forEach(function (factory) {
       var coefficient = factoryInputCoefficientFor(factory, productId);
-      var hasLot = (Array.isArray(factory.inputLots) ? factory.inputLots : []).some(function (lot) {
-        return lot && String(lot.resourceId || lot.materialIdentity || '').toLowerCase() === String(productId).toLowerCase();
-      });
+      var card = cache.cardsByFactory && cache.cardsByFactory.get(factory);
+      var hasLot = !!(card && card.lotsByProduct[productKey] && card.lotsByProduct[productKey].length);
       if ((coefficient === null || coefficient <= 0) && !hasLot) return;
       factoryInputSourceRows(factory, productId, model).forEach(function (source) {
         var key = String(source.label || '').toLowerCase();
@@ -1677,11 +1681,11 @@
       });
     });
     var rows = Object.keys(grouped).map(function (key) { return grouped[key]; });
-    if (!rows.length) return '<span class="fp-factory-muted">Source not recorded</span>';
-    return rows.map(function (source) {
+    if (!rows.length) return (cache.aggregateSources[productKey] = '<span class="fp-factory-muted">Source not recorded</span>');
+    return (cache.aggregateSources[productKey] = rows.map(function (source) {
       return '<span class="fp-factory-source"><strong>' + esc(source.label) + '</strong><small>' +
         fmt(source.quantity, factoryPlanUnit(source.unit)) + '</small></span>';
-    }).join('');
+    }).join(''));
   }
 
   function factoryInputPlanMarkup(model) {
@@ -2188,12 +2192,122 @@
     html += '</tbody></table></div></section>';
     return html;
   }
-  function factoryInputSourceRows(factory, productId, model) {
-    var lots = (factory.inputLots || []).filter(function (lot) {
-      return lot && String(lot.resourceId || lot.materialIdentity || '').toLowerCase() === String(productId).toLowerCase();
+  function factoryInputMarkupCache(model) {
+    if (!model || typeof model !== 'object') return {};
+    var cache = model.__omegaV2FactoryInputMarkupCache;
+    if (!cache || typeof cache !== 'object') {
+      cache = {
+        usage:Object.create(null), sourceRows:new WeakMap(),
+        aggregateSources:Object.create(null), factoryNames:null, batchesById:null,
+        factoriesByInputProduct:null, eligibleInputFactories:null,
+        cardsByFactory:new WeakMap(), dailyRequirements:new WeakMap(),
+        processingRulesByProduct:null
+      };
+      try { model.__omegaV2FactoryInputMarkupCache = cache; } catch (_) {}
+    }
+    return cache;
+  }
+
+  function factoryInputFactoriesForProduct(model, productId) {
+    var cache = factoryInputMarkupCache(model);
+    if (!cache.factoriesByInputProduct) {
+      var byProduct = Object.create(null), eligible = [];
+      (Array.isArray(model && model.factories) ? model.factories : []).forEach(function (factory) {
+        if (!factory || typeof factory !== 'object') return;
+        var ids = [], seen = Object.create(null), lotsByProduct = Object.create(null);
+        function addId(value) {
+          var key = factoryProductKey(value);
+          if (!key || seen[key]) return;
+          seen[key] = true;
+          ids.push(String(value));
+        }
+        Object.keys(factory.inputCoefficients || {}).forEach(addId);
+        (Array.isArray(factory.inputRows) ? factory.inputRows : []).forEach(function (row) {
+          addId(row && row.resourceId);
+        });
+        (Array.isArray(factory.inputLots) ? factory.inputLots : []).forEach(function (lot) {
+          var key = factoryProductKey(lot && (lot.resourceId || lot.materialIdentity));
+          if (!key) return;
+          addId(lot.resourceId || lot.materialIdentity);
+          if (!lotsByProduct[key]) lotsByProduct[key] = [];
+          lotsByProduct[key].push(lot);
+        });
+        if (!ids.length) return;
+        var card = { factory:factory, ids:ids, lotsByProduct:lotsByProduct };
+        eligible.push(card);
+        cache.cardsByFactory.set(factory, card);
+        ids.forEach(function (id) {
+          var key = factoryProductKey(id);
+          if (!byProduct[key]) byProduct[key] = [];
+          byProduct[key].push(factory);
+        });
+      });
+      cache.factoriesByInputProduct = byProduct;
+      cache.eligibleInputFactories = eligible;
+    }
+    return cache.factoriesByInputProduct[factoryProductKey(productId)] || [];
+  }
+
+  function factoryInputEligibleFactories(model) {
+    factoryInputFactoriesForProduct(model, '');
+    return factoryInputMarkupCache(model).eligibleInputFactories || [];
+  }
+
+  function factoryInputProcessingRulesByProduct(model) {
+    var cache = factoryInputMarkupCache(model);
+    if (cache.processingRulesByProduct) return cache.processingRulesByProduct;
+    var indexed = Object.create(null);
+    var catalog = safeCatalog() || {};
+    var rules = model && model.processingRules && typeof model.processingRules === 'object'
+      ? model.processingRules : catalog.processingRules || {};
+    Object.keys(rules).forEach(function (ruleKey) {
+      var rule = rules[ruleKey] || {};
+      var type = rule.factoryType ? normalizeFactoryType(rule.factoryType, catalog) : '';
+      Object.keys(rule.inputs && typeof rule.inputs === 'object' ? rule.inputs : {}).forEach(function (productId) {
+        var key = factoryProductKey(productId);
+        if (!key) return;
+        if (!indexed[key]) indexed[key] = [];
+        indexed[key].push({ rule:rule, type:type });
+      });
     });
-    var sourceGroups = Object.create(null), batches = model.resourceBatches || [], factoryNames = Object.create(null);
-    (model.factories || []).forEach(function (row) { if (row && row.id) factoryNames[String(row.id)] = row.name; });
+    cache.processingRulesByProduct = indexed;
+    return indexed;
+  }
+
+  function factoryInputSourceRows(factory, productId, model) {
+    var cache = factoryInputMarkupCache(model);
+    var key = factoryProductKey(productId);
+    var cacheByFactory = cache.sourceRows.get(factory);
+    if (cacheByFactory && Object.prototype.hasOwnProperty.call(cacheByFactory, key)) return cacheByFactory[key];
+    var rows = factoryInputSourceRowsUncached(factory, productId, model, cache);
+    cacheByFactory = cacheByFactory || Object.create(null);
+    cacheByFactory[key] = rows;
+    cache.sourceRows.set(factory, cacheByFactory);
+    return rows;
+  }
+
+  function factoryInputSourceRowsUncached(factory, productId, model, cache) {
+    var card = cache.cardsByFactory && cache.cardsByFactory.get(factory);
+    var productKey = factoryProductKey(productId);
+    var lots = card ? (card.lotsByProduct[productKey] || []) : (factory.inputLots || []).filter(function (lot) {
+      return lot && factoryProductKey(lot.resourceId || lot.materialIdentity) === productKey;
+    });
+    var sourceGroups = Object.create(null);
+    if (!cache.factoryNames) {
+      cache.factoryNames = Object.create(null);
+      (Array.isArray(model.factories) ? model.factories : []).forEach(function (row) {
+        if (row && row.id) cache.factoryNames[String(row.id)] = row.name;
+      });
+    }
+    if (!cache.batchesById) {
+      cache.batchesById = Object.create(null);
+      (Array.isArray(model.resourceBatches) ? model.resourceBatches : []).forEach(function (batch) {
+        var batchId = String(batch && batch.batchId || '');
+        if (batchId && !Object.prototype.hasOwnProperty.call(cache.batchesById, batchId)) {
+          cache.batchesById[batchId] = batch;
+        }
+      });
+    }
     lots.forEach(function (lot) {
       var remaining = num(lot.remainingQuantity !== undefined ? lot.remainingQuantity : lot.quantity);
       if (remaining === null || remaining <= 0) return;
@@ -2203,7 +2317,7 @@
       var sites = Array.isArray(lot.sourceSiteIds) ? lot.sourceSiteIds.filter(Boolean).map(String) : [];
       if (lot.siteId) sites.push(String(lot.siteId));
       (Array.isArray(lot.sourceBatchIds) ? lot.sourceBatchIds : []).forEach(function (batchId) {
-        var sourceBatch = batches.find(function (batch) { return batch && String(batch.batchId) === String(batchId); });
+        var sourceBatch = cache.batchesById[String(batchId)] || null;
         if (!sourceBatch) return;
         if (sourceBatch.siteId || sourceBatch.sourceSiteId || sourceBatch.siteReferenceKey) sites.push(String(sourceBatch.siteId || sourceBatch.sourceSiteId || sourceBatch.siteReferenceKey));
         if (!sourceFactory && sourceBatch.sourceFactoryId) sourceFactory = String(sourceBatch.sourceFactoryId);
@@ -2215,7 +2329,7 @@
       } else if (sites.length) {
         label = 'Domestic mine · ' + Array.from(new Set(sites)).join(', '); kind = 'mine';
       } else if (sourceFactory) {
-        label = 'Domestic factory · ' + (factoryNames[sourceFactory] || sourceFactory); kind = 'factory';
+        label = 'Domestic factory · ' + (cache.factoryNames[sourceFactory] || sourceFactory); kind = 'factory';
       } else if (/OPENING|STARTUP/.test(String(provenance.status || provenance.source || lot.batchId || '').toUpperCase())) {
         label = 'Opening allocation'; kind = 'opening';
       } else if (sourceCountry === model.countryId) {
@@ -2223,11 +2337,11 @@
       } else {
         label = 'Source not recorded'; kind = 'unknown';
       }
-      var key = label.toLowerCase();
-      sourceGroups[key] = sourceGroups[key] || { label:label, quantity:0, unit:String(lot.unit || ''), kind:kind };
-      sourceGroups[key].quantity += remaining;
+      var groupKey = label.toLowerCase();
+      sourceGroups[groupKey] = sourceGroups[groupKey] || { label:label, quantity:0, unit:String(lot.unit || ''), kind:kind };
+      sourceGroups[groupKey].quantity += remaining;
     });
-    return Object.keys(sourceGroups).map(function (key) { return sourceGroups[key]; });
+    return Object.keys(sourceGroups).map(function (groupKey) { return sourceGroups[groupKey]; });
   }
 
   function factoryInputSourceMarkup(factory, productId, model) {
@@ -2252,32 +2366,29 @@
   }
 
   function factoryInputDailyRequirement(factory, productId, model) {
+    var cache = factoryInputMarkupCache(model);
+    var productKey = factoryProductKey(productId);
+    var cached = cache.dailyRequirements.get(factory);
+    if (cached && Object.prototype.hasOwnProperty.call(cached, productKey)) return cached[productKey];
     var coefficient = factoryInputCoefficientFor(factory, productId);
     var capacity = num(factory && factory.capacityPerDay);
     var raw = factory && factory.raw || {};
-    var recipes = model && model.catalogRecipes || {};
-    var processingRules = model && model.processingRules || {};
+    var catalog = safeCatalog() || {};
+    var recipes = model && model.catalogRecipes || catalog.downstreamFactoryRecipes || {};
+    var processingRules = model && model.processingRules || catalog.processingRules || {};
     var recipe = recipes[String(factory && factory.recipeId || '')] || null;
     if (!recipe) {
       var resourceId = String(raw.resourceId || raw.inputResourceId || raw.primaryInputResourceId || '').trim();
       recipe = resourceId ? processingRules[resourceId] || null : null;
     }
     if (!recipe) {
-      var wantedType = normalizeFactoryType(factory && factory.type || '', safeCatalog());
-      var matchKey = Object.keys(processingRules).find(function (key) {
-        var rule = processingRules[key] || {};
-        var inputs = rule.inputs && typeof rule.inputs === 'object' ? rule.inputs : {};
-        var productKey = Object.keys(inputs).find(function (id) {
-          return String(id).toLowerCase() === String(productId || '').toLowerCase();
-        });
-        return productKey && (!rule.factoryType || normalizeFactoryType(rule.factoryType, safeCatalog()) === wantedType);
-      });
-      if (matchKey) recipe = processingRules[matchKey];
+      var wantedType = normalizeFactoryType(factory && factory.type || '', catalog);
+      var candidates = factoryInputProcessingRulesByProduct(model)[productKey] || [];
+      var match = candidates.find(function (entry) { return !entry.type || entry.type === wantedType; });
+      if (match) recipe = match.rule;
     }
     var unitMap = factory && factory.inputUnits && typeof factory.inputUnits === 'object' ? factory.inputUnits : {};
-    var unitKey = Object.keys(unitMap).find(function (key) {
-      return String(key).toLowerCase() === String(productId || '').toLowerCase();
-    });
+    var unitKey = Object.keys(unitMap).find(function (key) { return factoryProductKey(key) === productKey; });
     var unit = unitKey ? unitMap[unitKey] : factory && factory.inputUnit || recipe && recipe.inputUnit || '';
     var cycleDays = num(recipe && recipe.cycleDays);
     if (cycleDays === null) cycleDays = num(raw.cycleDays);
@@ -2285,55 +2396,24 @@
       cycleDays:cycleDays,
       quantityBasis:recipe && recipe.quantityBasis
     }, capacity, unit);
-    return rate ? rate.perDay : null;
+    var result = rate ? rate.perDay : null;
+    cached = cached || Object.create(null);
+    cached[productKey] = result;
+    cache.dailyRequirements.set(factory, cached);
+    return result;
   }
 
-    function factoryInputEfficiency(factory, inputRows) {
-    var raw = factory.raw || {}, health = raw.productionHealth && typeof raw.productionHealth === 'object' ? raw.productionHealth : {};
-    var reason = String(health.reason || factory.healthReason || '').toUpperCase();
-    var detail = health.detail && typeof health.detail === 'object' ? health.detail : {};
-    var constraints = detail.constraints && typeof detail.constraints === 'object' ? detail.constraints :
-      health.productionConstraints && typeof health.productionConstraints === 'object' ? health.productionConstraints : {};
-    var rawMaterialRatio = num(constraints.rawMaterialRatio);
-    if (rawMaterialRatio !== null) return { value: Math.max(0, Math.min(100, (1 - rawMaterialRatio) * 100)), observed: true };
-    if (/FACTORY_INPUT|INPUT_SHORTAGE|MATERIAL_SHORTAGE/.test(reason) && num(health.productivityPct) !== null) {
-      return { value: Math.max(0, 100 - Number(health.productivityPct)), observed: true };
-    }
-    var ratio = 1, observed = false;
-    inputRows.forEach(function (row) {
-      if (row.required === null || row.required <= 0 || row.current === null) return;
-      observed = true;
-      ratio = Math.min(ratio, Math.max(0, Math.min(1, row.current / row.required)));
-    });
-    if (observed) return { value: Math.max(0, (1 - ratio) * 100), observed: true };
-    return { value: null, observed: false };
-  }
-  function factoryInputPanelMarkup(model) {
-    var planMarkup = factoryInputPlanMarkup(model);
-    var factories = Array.isArray(model.factories) ? model.factories : [];
-    if (!factories.length) return planMarkup;
-    var html = '<section class="fp-factory-analytics" aria-label="Recorded factory input deliveries"><h3 class="omega-v2-section-title">Factory input inventory and deliveries</h3>';
-    var visibleFactories = 0;
-    factories.forEach(function (factory) {
-      var coefficientMap = factory.inputCoefficients && typeof factory.inputCoefficients === 'object' ? factory.inputCoefficients : {};
-      var ids = Object.keys(coefficientMap);
-      (factory.inputRows || []).forEach(function (row) {
-        if (ids.map(function (id) { return id.toLowerCase(); }).indexOf(String(row.resourceId).toLowerCase()) < 0) ids.push(row.resourceId);
-      });
-      (factory.inputLots || []).forEach(function (lot) {
-        var id = String(lot && (lot.resourceId || lot.materialIdentity) || '');
-        if (id && ids.map(function (value) { return value.toLowerCase(); }).indexOf(id.toLowerCase()) < 0) ids.push(id);
-      });
-      if (!ids.length) return;
-      visibleFactories += 1;
-      var capacity = num(factory.capacityPerDay), rows = [];
+  function factoryInputFactoryCardsMarkup(model, candidates, start, limit) {
+    var html = '';
+    var end = Math.min(candidates.length, Math.max(0, start) + Math.max(1, limit));
+    for (var index = Math.max(0, start); index < end; index += 1) {
+      var entry = candidates[index], factory = entry.factory, ids = entry.ids, rows = [];
       ids.forEach(function (productId) {
+        var key = factoryProductKey(productId);
         var coefficient = factoryInputCoefficientFor(factory, productId);
         var required = factoryInputDailyRequirement(factory, productId, model);
-        var current = factory.hasInputInventory ? panelValueByKey(factory.raw.inputInventory, productId) : null;
-        var lots = factory.inputLots.filter(function (lot) {
-          return String(lot && (lot.resourceId || lot.materialIdentity) || '').toLowerCase() === productId.toLowerCase();
-        });
+        var current = factory.hasInputInventory ? panelValueByKey(factory.raw && factory.raw.inputInventory, productId) : null;
+        var lots = entry.lotsByProduct[key] || [];
         var seen = Object.create(null), received = 0, hasReceipt = false, unit = '';
         lots.forEach(function (lot) {
           var batchId = String(lot.batchId || '');
@@ -2343,7 +2423,9 @@
           if (quantity !== null) { received += quantity; hasReceipt = true; }
           if (!unit && lot.unit) unit = lot.unit;
         });
-        var inputUnit = factory.inputUnits && Object.keys(factory.inputUnits).find(function (key) { return key.toLowerCase() === productId.toLowerCase(); });
+        var inputUnit = factory.inputUnits && Object.keys(factory.inputUnits).find(function (unitKey) {
+          return factoryProductKey(unitKey) === key;
+        });
         unit = factoryPlanUnit(unit || (inputUnit ? factory.inputUnits[inputUnit] : '') || factory.inputUnit || '');
         rows.push({ productId:productId, coefficient:coefficient, required:required, current:current,
           received:hasReceipt ? received : null, unit:unit });
@@ -2375,9 +2457,36 @@
             fmt(efficiency.value, '%') + '</span>') + '</td></tr>';
       });
       html += '</tbody></table></div></article>';
-    });
-    if (!visibleFactories) return planMarkup + '<div class="omega-v2-empty">No delivered factory input rows are recorded yet. Planned daily requirements remain shown above.</div>';
-    return planMarkup + html + '</section>';
+    }
+    return { html:html, nextIndex:end, total:candidates.length };
+  }
+
+  function factoryInputPanelMarkup(model, root) {
+    var planMarkup = factoryInputPlanMarkup(model);
+    var candidates = factoryInputEligibleFactories(model);
+    if (!candidates.length) {
+      var hasFactories = Array.isArray(model && model.factories) && model.factories.length > 0;
+      return planMarkup + (hasFactories
+        ? '<div class="omega-v2-empty">No delivered factory input rows are recorded yet. Planned daily requirements remain shown above.</div>'
+        : '');
+    }
+    var visibleCount = root && root.__omegaV2FactoryInputModel === model
+      ? Math.max(4, Math.floor(num(root.__omegaV2FactoryInputVisibleCount) || 4)) : 4;
+    if (root) {
+      root.__omegaV2FactoryInputModel = model;
+      root.__omegaV2FactoryInputVisibleCount = visibleCount;
+    }
+    var firstPage = factoryInputFactoryCardsMarkup(model, candidates, 0, visibleCount);
+    var remaining = Math.max(0, candidates.length - firstPage.nextIndex);
+    var status = '<p class="fp-factory-muted fp-factory-input-page-status" data-factory-input-page-status>Showing ' +
+      fmt(firstPage.nextIndex) + ' of ' + fmt(candidates.length) + ' factories with input records.</p>';
+    var moreButton = remaining
+      ? '<button type="button" class="omega-v2-button fp-factory-input-more" data-factory-input-show-more data-next-index="' +
+        firstPage.nextIndex + '">Show more factories · ' + fmt(remaining) + ' remaining</button>'
+      : '';
+    return planMarkup + '<section class="fp-factory-analytics" data-factory-input-panel aria-label="Recorded factory input deliveries">' +
+      '<h3 class="omega-v2-section-title">Factory input inventory and deliveries</h3>' +
+      status + '<div data-factory-input-cards>' + firstPage.html + '</div>' + moreButton + '</section>';
   }
 
   function updateFactoryInputCoverageSnapshotV1(event) {
@@ -3334,7 +3443,7 @@
         return '<article class="omega-v2-card"><h3 class="omega-v2-card-title">' + esc(cycle.factoryId) + '</h3><span class="omega-v2-status">' + esc(cycle.status || 'NOT_RECORDED') + '</span><div class="omega-v2-vehicle-stats"><div><span>Output quantity</span><strong>' + fmt(cycle.productionQuantity) + '</strong></div><div><span>Start date</span><strong>' + esc(cycle.startDate || 'Not recorded') + '</strong></div><div><span>Finish date</span><strong>' + esc(cycle.finishDate || 'Not recorded') + '</strong></div><div><span>Source batches</span><strong>' + fmt(Array.isArray(cycle.sourceBatchIds) ? cycle.sourceBatchIds.length : null) + '</strong></div></div></article>';
       }).join('') + '</div>' : '<div class="omega-v2-empty">No tracked production cycles were returned by this country’s industrial state.</div>';
     } else if (active === 'inventory') {
-      content = factoryInputPanelMarkup(model);
+      content = factoryInputPanelMarkup(model, root);
     } else if (active === 'research') {
       var researchRows = model.researchProjects.map(function (item) { return Object.assign({ recordType:'RESEARCH' }, item || {}); })
         .concat(model.technologyTransfers.map(function (item) { return Object.assign({ recordType:'TECHNOLOGY TRANSFER' }, item || {}); }))
@@ -3613,9 +3722,67 @@
           scheduleRender(root, Object.assign({}, root.__omegaV2IndustryOptions || {}, { tab: 'factories' }));
           return;
         }
+        var showMoreFactoryInputs = target.closest('[data-factory-input-show-more]');
+        if (showMoreFactoryInputs && root.contains(showMoreFactoryInputs)) {
+          var inputPagingModel = root.__omegaV2IndustryModel || model;
+          var inputCandidates = factoryInputEligibleFactories(inputPagingModel);
+          var inputStart = Math.max(0, Math.floor(num(showMoreFactoryInputs.getAttribute('data-next-index')) || 0));
+          var inputBatch = factoryInputFactoryCardsMarkup(inputPagingModel, inputCandidates, inputStart, 4);
+          var inputCards = root.querySelector('[data-factory-input-cards]');
+          if (!inputCards || !inputBatch.html) return;
+          showMoreFactoryInputs.disabled = true;
+          inputCards.insertAdjacentHTML('beforeend', inputBatch.html);
+          var pageStatus = root.querySelector('[data-factory-input-page-status]');
+          if (pageStatus) pageStatus.textContent = 'Showing ' + inputBatch.nextIndex.toLocaleString('en-US') +
+            ' of ' + inputBatch.total.toLocaleString('en-US') + ' factories with input records.';
+          root.__omegaV2FactoryInputVisibleCount = inputBatch.nextIndex;
+          if (inputBatch.nextIndex >= inputBatch.total) {
+            if (showMoreFactoryInputs.parentNode) showMoreFactoryInputs.parentNode.removeChild(showMoreFactoryInputs);
+          } else {
+            showMoreFactoryInputs.setAttribute('data-next-index', String(inputBatch.nextIndex));
+            showMoreFactoryInputs.textContent = 'Show more factories · ' +
+              Math.max(0, inputBatch.total - inputBatch.nextIndex).toLocaleString('en-US') + ' remaining';
+            showMoreFactoryInputs.disabled = false;
+          }
+          return;
+        }
+
         var tab = target.closest('[data-omega-v2-industry-tab]');
         if (tab && root.contains(tab)) {
-          root.__omegaV2IndustryTab = tab.getAttribute('data-omega-v2-industry-tab');
+          var nextTab = tab.getAttribute('data-omega-v2-industry-tab');
+          var activeInputModel = root.__omegaV2IndustryModel || model;
+          var existingFactoryView = typeof root.querySelector === 'function'
+            ? root.querySelector('[data-omega-v2-factory-view-content]') : null;
+          if (nextTab === 'inventory' && existingFactoryView && activeInputModel &&
+              String(root.__omegaV2IndustryCountryId || '') === String(activeInputModel.countryId || '')) {
+            root.__omegaV2IndustryTab = nextTab;
+            root.__omegaV2IndustryNotice = '';
+            root.__omegaV2FactoryInputVisibleCount = 4;
+            root.__omegaV2FactoryInputModel = activeInputModel;
+            root.__omegaV2FactoryCardUiState.expandedKey = '';
+            root.__omegaV2FactoryCardUiState.buildKey = '';
+            root.__omegaV2FactoryCardUiState.sections = Object.create(null);
+            root.__omegaV2FactoryCardUiState.buildMaterialsExpanded = false;
+            var stage = root.querySelector('.fp-stage');
+            if (stage) stage.setAttribute('data-active-tab', nextTab);
+            var tabButtons = root.querySelectorAll('.fp-tabs [data-omega-v2-industry-tab]');
+            Array.prototype.forEach.call(tabButtons, function (button) {
+              var selected = button === tab;
+              button.setAttribute('aria-pressed', selected ? 'true' : 'false');
+              if (button.classList) {
+                button.classList.toggle('omega-v2-button--accent', selected);
+                button.classList.toggle('omega-v2-button--quiet', !selected);
+              }
+            });
+            var inputMarkup = factoryInputPanelMarkup(activeInputModel, root);
+            var inputBody = '<div class="fp-content" data-omega-v2-industry-content data-active-tab="inventory">' +
+              '<header class="fp-content-heading"><div><span>OMEGA / COUNTRY DATA</span><strong>Input</strong></div>' +
+              '<span class="fp-content-country">' + esc(activeInputModel.countryId || 'Country not selected') + '</span></header>' +
+              '<div class="fp-content-body">' + inputMarkup + '</div></div>';
+            existingFactoryView.outerHTML = inputBody;
+            return;
+          }
+          root.__omegaV2IndustryTab = nextTab;
           root.__omegaV2FactoryCardUiState.expandedKey = '';
           root.__omegaV2FactoryCardUiState.buildKey = '';
           root.__omegaV2FactoryCardUiState.sections = Object.create(null);
