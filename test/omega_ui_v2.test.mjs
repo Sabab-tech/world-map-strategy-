@@ -511,11 +511,15 @@ test('industry factory cards show owned factory counts without a separate source
     assert.deepEqual(model.factoryTypeCounts.map(row => [row.type,row.count]), [
       ['CEMENT_PLANT',0], ['STEEL_MILL',3]
     ]);
-    const root = { classList:{ add(){} }, addEventListener(){}, contains(){ return true; } };
+    const root = { classList:{ add(){} }, listeners:Object.create(null), addEventListener(name, handler){ this.listeners[name]=handler; }, contains(){ return true; } };
     const result = globalThis.OmegaUIV2Industry.render(root, {
       countryId:'BGD', tab:'factories', factoryView:'types'
     });
     assert.equal(result.ok, true);
+    const showMoreButton = {};
+    root.listeners.click({target:{closest(selector){
+      return selector === '[data-factory-type-show-more]' ? showMoreButton : null;
+    }}});
     assert.match(root.innerHTML, /Factory types &amp; country totals/);
     assert.match(root.innerHTML, /Factories/);
     assert.match(root.innerHTML, /<strong>3<\/strong>/);
@@ -596,8 +600,8 @@ test('industry treats starting and newly built factories as one live asset regis
     assert.match(typeRoot.innerHTML, /<strong>3<\/strong>/);
     assert.doesNotMatch(typeRoot.innerHTML, /Starting allocation|fp-type-card-count--starting|Starting units/);
 
-    // The complete canonical catalog remains available, while the first
-    // landscape render mounts only four rich cards to avoid Android WebView stalls.
+    // A country with a full factory catalog must not mount all rich type cards
+    // in its first WebView frame. Every canonical profile remains reachable.
     const profiles = globalThis.OmegaResourceIndustrialCatalogData.factoryProfiles;
     for (let index = 1; index <= 7; index += 1) {
       profiles['TEST_FACTORY_TYPE_' + index] = {
@@ -616,8 +620,8 @@ test('industry treats starting and newly built factories as one live asset regis
     });
     assert.equal(pagedTypeResult.ok,true);
     const renderedTypeCardCount = () => (pagedTypeRoot.innerHTML.match(/data-omega-v2-factory-type-card/g)||[]).length;
-    assert.equal(renderedTypeCardCount(),4,
-      'the initial Android-friendly Industry route must mount four rich factory-type cards');
+    assert.equal(renderedTypeCardCount(),1,
+      'the initial Android-friendly Industry route must mount one rich factory-type card');
     assert.match(pagedTypeRoot.innerHTML,/9 types/);
     assert.match(pagedTypeRoot.innerHTML,/data-factory-type-show-more/,
       'the remaining canonical factory types must remain accessible');
@@ -627,12 +631,11 @@ test('industry treats starting and newly built factories as one live asset regis
         return selector === '[data-factory-type-show-more]' ? showMoreTypesButton : null;
       }}});
     };
-    clickShowMoreTypes();
-    assert.equal(renderedTypeCardCount(),8,
-      'the first continuation action must expose four more canonical factory types');
-    clickShowMoreTypes();
-    assert.equal(renderedTypeCardCount(),9,
-      'the final continuation action must expose the complete catalog');
+    for (let expectedCount = 2; expectedCount <= 9; expectedCount += 1) {
+      clickShowMoreTypes();
+      assert.equal(renderedTypeCardCount(),expectedCount,
+        'each continuation action must expose exactly the next canonical factory type');
+    }
     assert.doesNotMatch(pagedTypeRoot.innerHTML,/data-factory-type-show-more/,
       'the continuation control must disappear when the entire catalog is visible');
 
@@ -1699,6 +1702,12 @@ test('factory command cards use canonical SVGs, daily production state, type cou
 
     const typeView = globalThis.OmegaUIV2Industry.render(root,{countryId:'BGD',tab:'factories',factoryView:'types'});
     assert.equal(typeView.ok,true);
+    const showMoreTypeButton = {};
+    for (let visible = 2; visible <= 3; visible += 1) {
+      handlers.click({target:{closest(selector){
+        return selector === '[data-factory-type-show-more]' ? showMoreTypeButton : null;
+      }}});
+    }
     assert.match(root.innerHTML,/Factory types &amp; country totals/);
     assert.equal((root.innerHTML.match(/data-omega-v2-factory-type-card/g)||[]).length,3);
     assert.match(root.innerHTML,/Factories/);
@@ -2632,11 +2641,15 @@ test('factory type cards restore counts from the existing country registry witho
     assert.deepEqual(model.factoryTypeCounts.map(row => [row.type,row.count]).sort(), [
       ['CEMENT_PLANT',4], ['STEEL_MILL',3]
     ]);
-    const root = { classList:{ add(){} }, addEventListener(){}, contains(){ return true; } };
+    const root = { classList:{ add(){} }, listeners:Object.create(null), addEventListener(name, handler){ this.listeners[name]=handler; }, contains(){ return true; } };
     const result = globalThis.OmegaUIV2Industry.render(root, {
       countryId:'BGD', tab:'factories', factoryView:'types'
     });
     assert.equal(result.ok, true);
+    const showMoreButton = {};
+    root.listeners.click({target:{closest(selector){
+      return selector === '[data-factory-type-show-more]' ? showMoreButton : null;
+    }}});
     assert.match(root.innerHTML, /Factories/);
     assert.match(root.innerHTML, /<strong>3<\/strong>/);
     assert.match(root.innerHTML, /<strong>4<\/strong>/);
@@ -2755,7 +2768,11 @@ test('Factory Stock and Input calculate all assigned factory-type requirements b
     economy:{BGD:{productionAssets:[]}}
   }};
   try {
-    const inputRoot = {classList:{add(){}},addEventListener(){},contains(){return true},innerHTML:''};
+    const inputRoot = {
+      classList:{add(){}},listeners:Object.create(null),
+      addEventListener(type,listener){this.listeners[type]=listener;},
+      contains(){return true},innerHTML:''
+    };
     const input = globalThis.OmegaUIV2Industry.render(inputRoot,{countryId:'BGD',tab:'inventory'});
     assert.equal(input.ok,true);
     assert.equal(input.model.factoryCount,5);
@@ -2776,6 +2793,50 @@ test('Factory Stock and Input calculate all assigned factory-type requirements b
     assert.doesNotMatch(inputRoot.innerHTML,/Total \/ full cycle|100-day requirement|750 game units|Coverage target/);
     assert.match(inputRoot.innerHTML,/Limestone/);
     assert.doesNotMatch(inputRoot.innerHTML,/No active factories are recorded/);
+ 
+    // Large countries must not mount every per-factory table in one WebView frame.
+    // All factory records remain accessible in deterministic four-card batches.
+    globalThis.Game.state.economy.BGD.productionAssets = Array.from({length:9},(_,index)=>({
+      id:'FACTORY-INPUT-PAGING-'+String(index+1).padStart(2,'0'),
+      name:'Steel Mill '+(index+1),
+      factoryType:'STEEL_MILL',
+      recipeId:'STEEL-RECIPE',
+      status:'OPERATIONAL',
+      capacityPerDay:10,
+      inputInventory:{iron_ore:20,coal:10}
+    }));
+    globalThis.OmegaUIV2Industry.render(inputRoot,{countryId:'BGD',tab:'inventory'});
+    const renderedFactoryCardCount=()=> (inputRoot.innerHTML.match(/class="fp-factory-data-card"/g)||[]).length;
+    assert.equal(renderedFactoryCardCount(),4,'the initial Input render must mount only one four-factory detail batch');
+    assert.match(inputRoot.innerHTML,/data-factory-input-show-more/,
+      'remaining factory input details must be accessible through the continuation control');
+    let inputMoreRemoved=false;
+    const inputPageStatus={textContent:''};
+    const showMoreButton={
+      attributes:{'data-next-index':'4'},disabled:false,textContent:'',
+      getAttribute(name){return this.attributes[name]===undefined?null:this.attributes[name];},
+      setAttribute(name,value){this.attributes[name]=String(value);},
+      parentNode:{removeChild(){
+        inputMoreRemoved=true;
+        inputRoot.innerHTML=inputRoot.innerHTML.replace(/<button[^>]*data-factory-input-show-more[^>]*>[\s\S]*?<\/button>/,'');
+      }}
+    };
+    inputRoot.querySelector=(selector)=>{
+      if(selector==='[data-factory-input-cards]') return {insertAdjacentHTML(_position,markup){inputRoot.innerHTML+=markup;}};
+      if(selector==='[data-factory-input-page-status]') return inputPageStatus;
+      return null;
+    };
+    const clickShowMore=()=>{
+      inputRoot.listeners.click({target:{closest(selector){
+        return selector==='[data-factory-input-show-more]'?showMoreButton:null;
+      }}});
+    };
+    clickShowMore();
+    assert.equal(renderedFactoryCardCount(),8,'the next action must render the next four factory records');
+    clickShowMore();
+    assert.equal(renderedFactoryCardCount(),9,'the final partial batch must preserve the last factory record');
+    assert.equal(inputMoreRemoved,true,'the continuation control must disappear when all factory input records are rendered');
+    assert.match(inputPageStatus.textContent,/9 of 9/);
 
     const stockRoot = {classList:{add(){}},addEventListener(){},contains(){return true},innerHTML:''};
     const stock = globalThis.OmegaUIV2Industry.render(stockRoot,{countryId:'BGD',tab:'national-inventory'});

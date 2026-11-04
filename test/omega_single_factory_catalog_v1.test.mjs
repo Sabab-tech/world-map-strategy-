@@ -26,7 +26,7 @@ test('one canonical 21-type factory catalog supplies cards for every selected co
     'the canonical catalog must remain complete while rich cards are paged');
   assert.match(source, /visibleRows\.map\(function \(item\) \{ return factoryTypeCard\(item, model\); \}\)/);
   assert.match(source, /data-factory-type-show-more/,
-    'every canonical factory type must remain reachable through the continuation control');
+    'every canonical factory type must remain reachable through progressive disclosure');
   for (const country of ['BGD', 'USA', 'CHN', 'BRA', 'ZAF']) {
     const api = makeScreen('BGD');
     const model = api.buildViewModel({ countryId: country });
