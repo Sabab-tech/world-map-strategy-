@@ -1074,6 +1074,52 @@ test('factory Stock shows committed finished goods and traced use while Input sh
     assert.match(inputRoot.innerHTML,/data-factory-stock-product="iron_ore"/,
       'the current factory input balance must carry the same resource icon');
 
+    // A country with many live factories must not mount every per-factory
+    // table in a single Android WebView frame. All records remain reachable.
+    globalThis.Game.state.economy.BGD.productionAssets = Array.from({length:9},(_,index)=>({
+      id:'FACTORY-INPUT-PAGING-'+String(index+1).padStart(2,'0'),
+      name:'Steel Mill '+(index+1),
+      factoryType:'STEEL_MILL',
+      recipeId:'STEEL-RECIPE',
+      status:'OPERATIONAL',
+      capacityPerDay:10,
+      inputInventory:{iron_ore:20,coal:10},
+      inputCoefficients:{iron_ore:0.5,coal:0.25},
+      inputBatchLots:[
+        {batchId:'INPUT-PAGING-IRON-'+index,resourceId:'iron_ore',quantity:20,remainingQuantity:20,unit:'TONNES'},
+        {batchId:'INPUT-PAGING-COAL-'+index,resourceId:'coal',quantity:10,remainingQuantity:10,unit:'TONNES'}
+      ],
+      inputUnits:{iron_ore:'TONNES',coal:'TONNES'}
+    }));
+    const pagedInputRoot = {
+      classList:{add(){}},listeners:Object.create(null),
+      addEventListener(type,listener){this.listeners[type]=listener;},
+      contains(){return true},innerHTML:''
+    };
+    const pagedInput = globalThis.OmegaUIV2Industry.render(
+      pagedInputRoot,{countryId:'BGD',tab:'inventory'}
+    );
+    assert.equal(pagedInput.ok,true);
+    const renderedInputCardCount = () =>
+      (pagedInputRoot.innerHTML.match(/class="fp-factory-data-card"/g)||[]).length;
+    assert.equal(renderedInputCardCount(),4,
+      'the initial Input render must mount four factory detail cards');
+    assert.match(pagedInputRoot.innerHTML,/data-factory-input-show-more/,
+      'remaining factory input details must remain accessible');
+    const showMoreInputButton = {};
+    const clickShowMoreInput = () => {
+      pagedInputRoot.listeners.click({target:{closest(selector){
+        return selector === '[data-factory-input-show-more]' ? showMoreInputButton : null;
+      }}});
+    };
+    clickShowMoreInput();
+    assert.equal(renderedInputCardCount(),8,
+      'the next action must append the next four factory input records');
+    clickShowMoreInput();
+    assert.equal(renderedInputCardCount(),9,
+      'the final partial batch must preserve the ninth factory record');
+    assert.doesNotMatch(pagedInputRoot.innerHTML,/data-factory-input-show-more/,
+      'the continuation control must disappear after every factory input record is shown');
 
     const factoryRoot = {classList:{add(){}},addEventListener(){},contains(){return true},innerHTML:''};
     const factoryResult = globalThis.OmegaUIV2Industry.render(factoryRoot,{countryId:'BGD',tab:'factories'});
