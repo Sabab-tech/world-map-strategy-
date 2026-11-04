@@ -511,8 +511,12 @@ test("mine command screen has the requested tabs, per-site actions and clean pla
   globalThis.Game = { state: {
     simulation: { turn: 7, session: { playerCountryId: "BGD" } },
     resource: { BGD: {
-      mineAssets: [{ siteId: row.siteId, resourceId: "coal", status: "OPERATIONAL", workersCommitted: 250, workersRequired: 300 }],
-      industrialNetwork: { projects: [], shipments: [], siteFlowLedger: [{
+      mineAssets: [
+       { siteId: row.siteId, resourceId: "coal", status: "OPERATIONAL", workersCommitted: 250, workersRequired: 300 },
+       { siteId: "SITE_BGD_STOPPED_MINE", resourceId: "iron_ore", status: "STOPPED" },
+       { siteId: "SITE_BGD_DESTROYED_MINE", resourceId: "copper", status: "DESTROYED" }
+     ],
+      industrialNetwork: { projects: [{projectId:"MINE-KPI-BUILD-TEST",projectType:"MINE_CONSTRUCTION",status:"UNDER_CONSTRUCTION",assetCount:3}], shipments: [], siteFlowLedger: [{
         flowId: "FLOW-TEST-1", siteId: row.siteId, countryId: "BGD", resourceId: "coal",
         batchId: "BATCH-TEST-1", quantity: 100, unit: "TONNES", status: "DELIVERED",
         extractionTurn: 7, stages: [{ stage: "EXTRACTION", status: "COMPLETED", turn: 7 }]
@@ -545,7 +549,18 @@ test("mine command screen has the requested tabs, per-site actions and clean pla
     assert.match(root.innerHTML, /data-balance-state="shortage"/);
     const visibleText = root.innerHTML.replace(/<[^>]*>/g, " ").replace(/&amp;/g, "&");
     assert.doesNotMatch(visibleText, /\b(simulated|modelled|modeled|catalog reference|source:|site id)\b/i);
+    api.render(root, { countryId: "BGD", sites: [row], tab: "dashboard" });
+    assert.match(root.innerHTML, /<span>Eligible mine sites<\/span><strong>1<\/strong>/);
+    assert.match(root.innerHTML, /<span>Built mine units<\/span><strong>2<\/strong>/,
+      "stopped assets remain built while destroyed assets are excluded");
+    assert.match(root.innerHTML, /<span>Operating mines<\/span><strong>1<\/strong>/);
+    assert.match(root.innerHTML, /<span>Mine units building<\/span><strong>3<\/strong>/,
+      "construction KPI counts asset units rather than project records");
+    assert.match(root.innerHTML, /<span>Projects pending<\/span><strong>1<\/strong>/);
     api.render(root, { countryId: "BGD", sites: [row], tab: "reports" });
+    assert.match(root.innerHTML, /<span>Built mine units<\/span><strong>2<\/strong>/);
+    assert.match(root.innerHTML, /<span>Operating mines<\/span><strong>1<\/strong>/);
+    assert.match(root.innerHTML, /<span>Mine units building<\/span><strong>3<\/strong>/);
     assert.match(root.innerHTML, /omega-v2-report-chart/);
     assert.match(root.innerHTML, /omega-v2-chart-bar/);
   } finally {
