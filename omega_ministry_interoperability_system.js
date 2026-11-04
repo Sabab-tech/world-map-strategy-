@@ -2234,6 +2234,7 @@
     getRequest:(...args)=>apiInstance.getRequest(...args),
     getCommand:(...args)=>apiInstance.getCommand(...args),
     getEvent:(...args)=>apiInstance.getEvent(...args),
+    getIntegrityConflicts:(...args)=>apiInstance.getIntegrityConflicts(...args),
     getPendingRequests:(...args)=>apiInstance.getPendingRequests(...args),
     saveState:()=>apiInstance.saveState(),
     loadState:state=>apiInstance.loadState(state),
