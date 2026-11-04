@@ -1522,11 +1522,32 @@ test('factory command cards use canonical SVGs, daily production state, type cou
     ] } }
   } };
   const handlers = {};
+  const selectionAttrs = {};
+  const assetCardAttrs = {};
+  const selectionButton = {
+    getAttribute(name) { return name === 'data-omega-v2-factory-select' ? 'FAC-STEEL' : selectionAttrs[name]; },
+    setAttribute(name, value) { selectionAttrs[name] = value; }
+  };
+  const selectedAssetCard = {
+    getAttribute(name) { return name === 'data-factory-id' ? 'FAC-STEEL' : assetCardAttrs[name]; },
+    setAttribute(name, value) { assetCardAttrs[name] = value; }
+  };
+  const sidePanel = {
+    innerHTML:'',
+    hidden:true,
+    setAttribute(name, value) { this[name] = value; }
+  };
   const root = {
     classList:{add(){}},
     addEventListener(name,handler){handlers[name]=handler;},
     contains(){return true;},
-    querySelector(){return null;},
+    querySelector(selector) { return selector === '[data-factory-detail-panel]' ? sidePanel : null; },
+    querySelectorAll(selector) {
+      if (selector === '[data-omega-v2-factory-card-expand]') return [];
+      if (selector === '[data-omega-v2-factory-select]') return [selectionButton];
+      if (selector === '[data-omega-v2-factory-card]') return [selectedAssetCard];
+      return [];
+    },
     innerHTML:''
   };
   try {
@@ -1576,11 +1597,17 @@ test('factory command cards use canonical SVGs, daily production state, type cou
     assert.doesNotMatch(root.innerHTML,/<small class="omega-v2-factory-reason">not recorded<\/small>/);
     const click = handlers.click;
     assert.equal(typeof click,'function');
+    const htmlBeforeLocalSelection = root.innerHTML;
     click({target:{closest(selector){
-      if(selector==='[data-omega-v2-factory-select]')return{getAttribute(){return 'FAC-STEEL';}};
+      if(selector==='[data-omega-v2-factory-select]') return selectionButton;
       return null;
     }}});
-    assert.match(root.innerHTML,/data-factory-id="FAC-STEEL" data-state="running" data-selected="true"/);
+    assert.equal(root.innerHTML,htmlBeforeLocalSelection,
+      'selecting a live factory must update the selected card and side panel without rerendering the Industry root');
+    assert.equal(selectionAttrs['aria-pressed'],'true');
+    assert.equal(assetCardAttrs['data-selected'],'true');
+    assert.equal(root.__omegaV2FactoryCardUiState.expandedKey,'asset:FAC-STEEL');
+    assert.equal(sidePanel.hidden,false);
 
     const typeView = globalThis.OmegaUIV2Industry.render(root,{countryId:'BGD',tab:'factories',factoryView:'types'});
     assert.equal(typeView.ok,true);
