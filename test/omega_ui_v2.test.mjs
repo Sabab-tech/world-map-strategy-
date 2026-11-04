@@ -82,6 +82,18 @@ test('factory product usage notes resolve recipe consumers and preserve the exis
     const identity = globalThis.OmegaUIV2Industry.productIdentityMarkup('processed_food', 'Processed Food');
     assert.match(identity, /<svg/);
     assert.match(identity, /fp-product-icon-frame/);
+
+    // Both aggregate daily requirements and per-factory input inventory use this
+    // shared renderer, so recipe/sector-use details must remain visible in both.
+    const industrySource = readFileSync(new URL('../omega_ui_v2/screens/industry.js', import.meta.url), 'utf8');
+    const helperStart = industrySource.indexOf('function factoryInputIdentityMarkup(model, productId)');
+    const helperEnd = industrySource.indexOf('  function factoryInputAggregateSourceMarkup', helperStart);
+    assert.ok(helperStart >= 0 && helperEnd > helperStart, 'factory input identity renderer must exist');
+    const inputIdentityHelper = industrySource.slice(helperStart, helperEnd);
+    assert.ok(inputIdentityHelper.includes('factoryProductUsageMarkup(model, productId)'));
+    const inputTableCall = 'factoryInputIdentityMarkup(model, row.productId)';
+    assert.equal(industrySource.split(inputTableCall).length - 1, 2,
+      'both input views must render product-use routes');
   } finally {
     if (previousGlobalCatalog === undefined) delete globalThis.OmegaResourceIndustrialCatalogData;
     else globalThis.OmegaResourceIndustrialCatalogData = previousGlobalCatalog;
