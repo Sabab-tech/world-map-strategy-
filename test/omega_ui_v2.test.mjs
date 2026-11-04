@@ -616,8 +616,8 @@ test('industry treats starting and newly built factories as one live asset regis
     });
     assert.equal(pagedTypeResult.ok,true);
     const renderedTypeCardCount = () => (pagedTypeRoot.innerHTML.match(/data-omega-v2-factory-type-card/g)||[]).length;
-    assert.equal(renderedTypeCardCount(),4,
-      'the initial Industry route must mount only four rich factory-type cards');
+    assert.equal(renderedTypeCardCount(),1,
+      'the initial Android-friendly Industry route must mount one rich factory-type card');
     assert.match(pagedTypeRoot.innerHTML,/9 types/);
     assert.match(pagedTypeRoot.innerHTML,/data-factory-type-show-more/,
       'the remaining canonical factory types must remain accessible');
@@ -627,12 +627,11 @@ test('industry treats starting and newly built factories as one live asset regis
         return selector === '[data-factory-type-show-more]' ? showMoreTypesButton : null;
       }}});
     };
-    clickShowMoreTypes();
-    assert.equal(renderedTypeCardCount(),8,
-      'the next action must render the next four canonical factory types');
-    clickShowMoreTypes();
-    assert.equal(renderedTypeCardCount(),9,
-      'the final partial batch must preserve the last canonical factory type');
+    for (let expectedCount = 2; expectedCount <= 9; expectedCount += 1) {
+      clickShowMoreTypes();
+      assert.equal(renderedTypeCardCount(),expectedCount,
+        'each continuation action must expose exactly the next canonical factory type');
+    }
     assert.doesNotMatch(pagedTypeRoot.innerHTML,/data-factory-type-show-more/,
       'the continuation control must disappear when the entire catalog is visible');
 
