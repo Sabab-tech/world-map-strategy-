@@ -367,6 +367,39 @@ test('active factory input demand is ignored when no declared unit bridge exists
   assert.equal(worldState.resource.BGD.inventory.gypsum, 100);
 });
 
+test('active factory demand remains unknown when national stock unit is not recorded', async () => {
+  const { context, worldState } = createRuntimeContext({
+    inventory: { gypsum: 100 },
+    consumption: {},
+    production: {}
+  });
+  context.__OmegaResourceEconomyRules.demand.resourceProfiles = {
+    gypsum: structuredClone(demandRules.resourceProfiles.gypsum)
+  };
+  context.__OmegaResourceEconomyRules.demand.stockUnitByRateUnit = {};
+  context.OmegaResourceIndustrialCatalogData = JSON.parse(readFileSync('resource_industrial_catalog_v1.json', 'utf8'));
+  worldState.resource.BGD.inventoryUnits = {};
+  worldState.economy.BGD.productionAssets = [{
+    id: 'FAC-GYPSUM-MISSING-STOCK-UNIT',
+    factoryType: 'UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT',
+    status: 'OPERATIONAL',
+    capacityPerDay: 40,
+    cycleDays: 1,
+    inputCoefficients: { gypsum: 0.25 },
+    inputUnit: 'SIMULATION_RESOURCE_UNIT'
+  }];
+
+  const runtime = context.OmegaResourceNationalDemandRuntime;
+  await runtime.prepare();
+  runtime.processCountry('BGD', []);
+  const row = worldState.resource.BGD.demandRuntime.byResource.gypsum;
+  assert.equal(row.status, 'UNKNOWN',
+    'factory input unit cannot substitute for an unrecorded national stock unit');
+  assert.equal(row.demandPerDay, undefined);
+  assert.equal(worldState.resource.BGD.inventory.gypsum, 100,
+    'missing unit evidence must not create demand or debit stock');
+});
+
 test('the canonical demand catalog covers exactly the existing 41 resource identities without inventing demand for four metadata-only resources', () => {
   const ids = Object.keys(demandRules.resourceProfiles).sort();
   assert.equal(ids.length, 41);
