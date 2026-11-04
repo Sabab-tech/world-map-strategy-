@@ -2715,7 +2715,11 @@ test('Factory Stock and Input calculate all assigned factory-type requirements b
     economy:{BGD:{productionAssets:[]}}
   }};
   try {
-    const inputRoot = {classList:{add(){}},addEventListener(){},contains(){return true},innerHTML:''};
+    const inputRoot = {
+      classList:{add(){}},listeners:Object.create(null),
+      addEventListener(type,listener){this.listeners[type]=listener;},
+      contains(){return true},innerHTML:''
+    };
     const input = globalThis.OmegaUIV2Industry.render(inputRoot,{countryId:'BGD',tab:'inventory'});
     assert.equal(input.ok,true);
     assert.equal(input.model.factoryCount,5);
@@ -2736,6 +2740,35 @@ test('Factory Stock and Input calculate all assigned factory-type requirements b
     assert.doesNotMatch(inputRoot.innerHTML,/Total \/ full cycle|100-day requirement|750 game units|Coverage target/);
     assert.match(inputRoot.innerHTML,/Limestone/);
     assert.doesNotMatch(inputRoot.innerHTML,/No active factories are recorded/);
+ 
+    // Large countries must not mount every per-factory table in one WebView frame.
+    // All factory records remain accessible in deterministic four-card batches.
+    globalThis.Game.state.economy.BGD.productionAssets = Array.from({length:9},(_,index)=>({
+      id:'FACTORY-INPUT-PAGING-'+String(index+1).padStart(2,'0'),
+      name:'Steel Mill '+(index+1),
+      factoryType:'STEEL_MILL',
+      recipeId:'STEEL-RECIPE',
+      status:'OPERATIONAL',
+      capacityPerDay:10,
+      inputInventory:{iron_ore:20,coal:10}
+    }));
+    api.render(inputRoot,{countryId:'BGD',tab:'inventory'});
+    const renderedFactoryCardCount=()=> (inputRoot.innerHTML.match(/class="fp-factory-data-card"/g)||[]).length;
+    assert.equal(renderedFactoryCardCount(),4,'the initial Input render must mount only one four-factory detail batch');
+    assert.match(inputRoot.innerHTML,/data-factory-input-show-more/,
+      'remaining factory input details must be accessible through the continuation control');
+    const showMoreButton={};
+    const clickShowMore=()=>{
+      inputRoot.listeners.click({target:{closest(selector){
+        return selector==='[data-factory-input-show-more]'?showMoreButton:null;
+      }}});
+    };
+    clickShowMore();
+    assert.equal(renderedFactoryCardCount(),8,'the next action must render the next four factory records');
+    clickShowMore();
+    assert.equal(renderedFactoryCardCount(),9,'the final partial batch must preserve the last factory record');
+    assert.doesNotMatch(inputRoot.innerHTML,/data-factory-input-show-more/,
+      'the continuation control must disappear when all factory input records are rendered');
 
     const stockRoot = {classList:{add(){}},addEventListener(){},contains(){return true},innerHTML:''};
     const stock = globalThis.OmegaUIV2Industry.render(stockRoot,{countryId:'BGD',tab:'national-inventory'});
