@@ -511,11 +511,15 @@ test('industry factory cards show owned factory counts without a separate source
     assert.deepEqual(model.factoryTypeCounts.map(row => [row.type,row.count]), [
       ['CEMENT_PLANT',0], ['STEEL_MILL',3]
     ]);
-    const root = { classList:{ add(){} }, addEventListener(){}, contains(){ return true; } };
+    const root = { classList:{ add(){} }, listeners:Object.create(null), addEventListener(name, handler){ this.listeners[name]=handler; }, contains(){ return true; } };
     const result = globalThis.OmegaUIV2Industry.render(root, {
       countryId:'BGD', tab:'factories', factoryView:'types'
     });
     assert.equal(result.ok, true);
+    const showMoreButton = {};
+    root.listeners.click({target:{closest(selector){
+      return selector === '[data-factory-type-show-more]' ? showMoreButton : null;
+    }}});
     assert.match(root.innerHTML, /Factory types &amp; country totals/);
     assert.match(root.innerHTML, /Factories/);
     assert.match(root.innerHTML, /<strong>3<\/strong>/);
@@ -1698,6 +1702,12 @@ test('factory command cards use canonical SVGs, daily production state, type cou
 
     const typeView = globalThis.OmegaUIV2Industry.render(root,{countryId:'BGD',tab:'factories',factoryView:'types'});
     assert.equal(typeView.ok,true);
+    const showMoreTypeButton = {};
+    for (let visible = 2; visible <= 3; visible += 1) {
+      handlers.click({target:{closest(selector){
+        return selector === '[data-factory-type-show-more]' ? showMoreTypeButton : null;
+      }}});
+    }
     assert.match(root.innerHTML,/Factory types &amp; country totals/);
     assert.equal((root.innerHTML.match(/data-omega-v2-factory-type-card/g)||[]).length,3);
     assert.match(root.innerHTML,/Factories/);
@@ -2631,11 +2641,15 @@ test('factory type cards restore counts from the existing country registry witho
     assert.deepEqual(model.factoryTypeCounts.map(row => [row.type,row.count]).sort(), [
       ['CEMENT_PLANT',4], ['STEEL_MILL',3]
     ]);
-    const root = { classList:{ add(){} }, addEventListener(){}, contains(){ return true; } };
+    const root = { classList:{ add(){} }, listeners:Object.create(null), addEventListener(name, handler){ this.listeners[name]=handler; }, contains(){ return true; } };
     const result = globalThis.OmegaUIV2Industry.render(root, {
       countryId:'BGD', tab:'factories', factoryView:'types'
     });
     assert.equal(result.ok, true);
+    const showMoreButton = {};
+    root.listeners.click({target:{closest(selector){
+      return selector === '[data-factory-type-show-more]' ? showMoreButton : null;
+    }}});
     assert.match(root.innerHTML, /Factories/);
     assert.match(root.innerHTML, /<strong>3<\/strong>/);
     assert.match(root.innerHTML, /<strong>4<\/strong>/);
