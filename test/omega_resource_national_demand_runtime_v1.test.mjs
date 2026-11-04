@@ -296,7 +296,7 @@ test('active recipe inputs create forecast demand before the first factory cycle
   context.__OmegaResourceEconomyRules.demand.stockUnitByRateUnit = {
     METRIC_TONS_PER_DAY: 'TONNES'
   };
-  context.OmegaResourceIndustrialCatalogData = readJson('resource_industrial_catalog_v1.json');
+  context.OmegaResourceIndustrialCatalogData = JSON.parse(readFileSync('resource_industrial_catalog_v1.json', 'utf8'));
   worldState.resource.BGD.inventoryUnits = { gypsum: 'TONNES' };
   worldState.economy.BGD.productionAssets = [{
     id: 'FAC-GYPSUM-ACTIVE-01',
@@ -345,7 +345,7 @@ test('active factory input demand is ignored when no declared unit bridge exists
   context.__OmegaResourceEconomyRules.demand.stockUnitByRateUnit = {
     METRIC_TONS_PER_DAY: 'TONNES'
   };
-  context.OmegaResourceIndustrialCatalogData = readJson('resource_industrial_catalog_v1.json');
+  context.OmegaResourceIndustrialCatalogData = JSON.parse(readFileSync('resource_industrial_catalog_v1.json', 'utf8'));
   worldState.resource.BGD.inventoryUnits = { gypsum: 'TONNES' };
   worldState.economy.BGD.productionAssets = [{
     id: 'FAC-GYPSUM-UNKNOWN-UNIT',
