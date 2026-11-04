@@ -4198,7 +4198,7 @@ function commitMultiInputFactoryCycleImmediately(input={}){
       provenance:{source:'OMEGA_RESOURCE_INDUSTRIAL_NETWORK_V1',authority:'SIMULATED_DOWNSTREAM_RECIPE',status:'FINISHED_GOODS_CREATED',
         transactionId,recipeId:recipe.recipeId||null,factoryType:asset.factoryType,sourceBatchIds:roots,sourceSiteIds:sites,simulationTurn:turn()}};
     batches.push(row);created.push(row);
-    inventoryLots[batchId]={batchId,resourceId:outputId,quantity:outQty,remainingQuantity:outQty,unit:outputUnit,stage:'FINISHED',
+    inventoryLots[batchId]={batchId,resourceId:outputId,quantity:outQty,remainingQuantity:outQty,unit:outputUnitPlan.units[outputId],stage:'FINISHED',
       countryId:cid,warehouseId:row.warehouseId,locationNodeKey:row.locationNodeKey,ownerCompanyId:companyId,
       sourceBatchIds:roots,sourceSiteIds:sites,status:'AVAILABLE',provenance:clone(row.provenance),createdTurn:turn()};
     const warehouseKey=outputWarehouseKeys[outputId]||outputId;
@@ -4206,7 +4206,7 @@ function commitMultiInputFactoryCycleImmediately(input={}){
     writeFactoryOutputUnit(r,finished,outputId,outputUnitPlan.units[outputId]);
     if(!finished.storedBatchIds.includes(batchId))finished.storedBatchIds.push(batchId);
     finished.receipts.push({receiptId:'WH-REC-'+batchId,warehouseId:row.warehouseId,countryId:cid,batchId,resourceId:outputId,
-      quantity:outQty,unit:outputUnit,simulationTurn:turn(),status:'RECEIVED'});
+      quantity:outQty,unit:outputUnitPlan.units[outputId],simulationTurn:turn(),status:'RECEIVED'});
   }
   while(finished.receipts.length>2048)finished.receipts.shift();
   while(batches.length>8192)batches.shift();
