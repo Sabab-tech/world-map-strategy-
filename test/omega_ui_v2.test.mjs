@@ -2907,10 +2907,12 @@ test('factory cards progressively disclose canonical products, quantities and in
     assert.match(steel,/IRON CONCENTRATE/i);
     assert.match(steel,/0\.72 simulation resource unit \/ production unit/);
     assert.match(steel,/0\.6 simulation resource unit \/ production unit/);
-    assert.match(steel,/data-omega-v2-factory-card-expand/);
-    assert.match(steel,/data-omega-v2-factory-section-toggle/);
-    assert.doesNotMatch(steel,/PROCESSING DUST/i,'the second by-product must remain hidden in collapsed view');
-    assert.doesNotMatch(steel,/COPPER CONCENTRATE/i,'only the primary input is shown in collapsed view');
+    assert.match(steel,/data-omega-v2-factory-card-details/);
+    assert.match(steel,/data-omega-v2-factory-details-template/);
+    assert.doesNotMatch(steel,/data-omega-v2-factory-section-toggle/,'the card uses one details action instead of multiple independent drop-downs');
+    const compactSteel = steel.slice(0,steel.indexOf('<template'));
+    assert.doesNotMatch(compactSteel,/PROCESSING DUST/i,'the compact card must not render the full product list inline');
+    assert.doesNotMatch(compactSteel,/COPPER CONCENTRATE/i,'secondary inputs belong in the side details panel');
     assert.match(steel,/Modeled build time/);
     assert.match(steel,/Build project/);
 
@@ -2979,30 +2981,79 @@ test('factory cards progressively disclose canonical products, quantities and in
     assert.ok(liveExpanded[0].includes('Not started / no committed output'));
     assert.match(liveExpanded[0],/Factory stock: 120 game units/);
     assert.match(liveExpanded[0],/Factory stock: Not recorded/,'an absent product key must remain unknown, not be converted to zero');
-    assert.match(liveExpanded[0],/Modeled per game day per factory: 324 game units/,'the card must use capacity × coefficient ÷ cycle days');
+    assert.match(liveExpanded[0],/Required per factory per day: 324 game units/,'the per-factory daily input must use capacity × coefficient ÷ cycle days');
     const visibleCardText = liveExpanded[0].replace(/<[^>]*>/g,' ');
     assert.doesNotMatch(visibleCardText,/[A-Za-z0-9]_[A-Za-z0-9]/,'visible card text must not expose underscore-based identifiers');
 
-    // Exercise the real delegated card disclosure handler and assert it updates root-local UI state.
-    root.__omegaV2FactoryCardUiState = {
-      expandedKey:'',
-      buildKey:'',
-      sections:Object.create(null),
-      buildMaterialsExpanded:false
-    };
+    // Opening/switching/closing details updates only the side panel; the parent screen is not rendered again.
     render({factoryView:'types'});
-    const clickTarget = {
-      closest(selector) {
-        if (selector === '[data-omega-v2-factory-card-expand]') {
-          return { getAttribute(name) { return name === 'data-card-key' ? 'type:STEEL_AND_ALLOY_WORKS' : null; } };
-        }
-        return null;
-      }
+    const screenMarkupBeforeDetails = root.innerHTML;
+    const panelContent = { innerHTML:'', scrollTop:0 };
+    const panelTitle = { textContent:'' };
+    const panelState = { hidden:true, attributes:{}, classList:{ values:new Set(), add(v){this.values.add(v);}, remove(v){this.values.delete(v);} },
+      setAttribute(name,value){this.attributes[name]=value;},
+      querySelector(selector){ return selector === '[data-omega-v2-factory-details-content]' ? panelContent :
+        selector === '[data-factory-details-title]' ? panelTitle : null; },
+      closest(selector){ return selector === '.fp-stage' ? sideStage : null; }
     };
-    listeners.click({target:clickTarget});
-    assert.equal(root.__omegaV2FactoryCardUiState.expandedKey,'type:STEEL_AND_ALLOY_WORKS');
-    assert.equal(root.__omegaV2FactoryCardUiState.buildKey,'');
-    assert.match(root.innerHTML,/Complete production formula/);
+    const sideStage = { classList:{ values:new Set(), add(v){this.values.add(v);}, remove(v){this.values.delete(v);} } };
+    const sideTemplateA = { innerHTML:'<section>Steel recipe · COPPER CONCENTRATE · Required per factory per day: 45 game units</section>' };
+    const sideTemplateB = { innerHTML:'<section>Cement recipe · LIMESTONE · Required per factory per day: 8 game units</section>' };
+    const cardTitleA = { textContent:'Steel &amp; Alloy Works' };
+    const cardTitleB = { textContent:'Cement Works' };
+    const ownerCardA = { querySelector(selector){ return selector.indexOf('template[') === 0 ? sideTemplateA :
+      selector.indexOf('.fp-type-card-name') === 0 ? cardTitleA : null; } };
+    const ownerCardB = { querySelector(selector){ return selector.indexOf('template[') === 0 ? sideTemplateB :
+      selector.indexOf('.fp-type-card-name') === 0 ? cardTitleB : null; } };
+    function makeDetailsTrigger(key, ownerCard) {
+      const attrs = {};
+      return {
+        attrs,
+        setAttribute(name,value){ attrs[name]=value; },
+        getAttribute(name){ return name === 'data-card-key' ? key : attrs[name]; },
+        closest(selector){ return selector.indexOf('data-omega-v2-factory-type-card') >= 0 ? ownerCard : null; }
+      };
+    }
+    const triggerA = makeDetailsTrigger('type:STEEL_AND_ALLOY_WORKS',ownerCardA);
+    const triggerB = makeDetailsTrigger('type:CEMENT_AND_CONCRETE_PLANT',ownerCardB);
+    root.querySelector = selector => selector === '[data-omega-v2-factory-details-panel]' ? panelState : null;
+    root.querySelectorAll = selector => selector === '[data-omega-v2-factory-card-details]' ? [triggerA,triggerB] : [];
+    function clickDetails(trigger) {
+      listeners.click({target:{closest(selector) {
+        if (selector === '[data-omega-v2-factory-details-close]') return null;
+        if (selector === '[data-omega-v2-factory-card-details]') return trigger;
+        return null;
+      }}});
+    }
+    clickDetails(triggerA);
+    assert.equal(root.__omegaV2FactoryDetailsActiveKey,'type:STEEL_AND_ALLOY_WORKS');
+    assert.equal(panelState.hidden,false);
+    assert.equal(panelState.attributes['aria-hidden'],'false');
+    assert.match(panelContent.innerHTML,/COPPER CONCENTRATE/);
+    assert.match(panelContent.innerHTML,/Required per factory per day: 45 game units/);
+    assert.equal(panelTitle.textContent,'Steel &amp; Alloy Works');
+    assert.equal(triggerA.attrs['aria-expanded'],'true');
+    assert.equal(triggerB.attrs['aria-expanded'],'false');
+    assert.ok(sideStage.classList.values.has('fp-has-side-details'));
+    assert.equal(root.innerHTML,screenMarkupBeforeDetails,'opening details must not rebuild or replace the Factory screen');
+
+    clickDetails(triggerB);
+    assert.equal(root.__omegaV2FactoryDetailsActiveKey,'type:CEMENT_AND_CONCRETE_PLANT');
+    assert.match(panelContent.innerHTML,/LIMESTONE/,'selecting another card replaces the same side panel content');
+    assert.equal(triggerA.attrs['aria-expanded'],'false');
+    assert.equal(triggerB.attrs['aria-expanded'],'true');
+    assert.equal(root.innerHTML,screenMarkupBeforeDetails,'switching details must not rerender the Factory screen');
+
+    listeners.click({target:{closest(selector) {
+      return selector === '[data-omega-v2-factory-details-close]' ? { } : null;
+    }}});
+    assert.equal(root.__omegaV2FactoryDetailsActiveKey,'');
+    assert.equal(panelState.hidden,true);
+    assert.equal(panelState.attributes['aria-hidden'],'true');
+    assert.ok(!sideStage.classList.values.has('fp-has-side-details'));
+    assert.equal(triggerA.attrs['aria-expanded'],'false');
+    assert.equal(triggerB.attrs['aria-expanded'],'false');
+    assert.equal(root.innerHTML,screenMarkupBeforeDetails,'closing details must not rerender the Factory screen');
   } finally {
     if (previous.Game === undefined) delete globalThis.Game; else globalThis.Game = previous.Game;
     if (previous.inventory === undefined) delete globalThis.OmegaCountryInventoryRuntime; else globalThis.OmegaCountryInventoryRuntime = previous.inventory;
