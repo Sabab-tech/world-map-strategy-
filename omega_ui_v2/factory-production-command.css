@@ -3804,6 +3804,7 @@
 @media (orientation:landscape) and (max-width:680px) {
   .omega-v2-industry--factory-home .fp-factory-catalog-workspace,
   .omega-v2-industry--factory-home .fp-assets-workspace { grid-template-columns:minmax(0,1fr); }
-  .omega-v2-industry--factory-home .fp-type-catalog-grid { grid-template-columns:minmax(0,1fr); }
+  .omega-v2-industry--factory-home .fp-type-catalog-grid { grid-template-columns:repeat(auto-fit,minmax(245px,1fr)); }
+  .omega-v2-industry--factory-home .fp-assets-workspace .omega-v2-factory-deck { grid-template-columns:minmax(0,1fr); }
   .omega-v2-industry--factory-home .fp-factory-detail-panel { order:2; }
 }
