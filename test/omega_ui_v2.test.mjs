@@ -87,7 +87,7 @@ test('factory product usage notes resolve recipe consumers and preserve the exis
     // shared identity helper, so product-use routes remain visible in both views.
     const industrySource = readFileSync(new URL('../omega_ui_v2/screens/industry.js', import.meta.url), 'utf8');
     const helperStart = industrySource.indexOf('function factoryInputIdentityMarkup(model, productId)');
-    const helperEnd = industrySource.indexOf('\\n  }', helperStart);
+    const helperEnd = industrySource.indexOf('  function factoryInputAggregateSourceMarkup', helperStart);
     assert.ok(helperStart >= 0 && helperEnd > helperStart, 'factory input identity renderer must exist');
     const inputIdentityHelper = industrySource.slice(helperStart, helperEnd);
     assert.ok(inputIdentityHelper.includes('factoryProductUsageMarkup(model, productId)'));
