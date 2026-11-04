@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-labelledby="hero-truck-title hero-truck-desc" data-omega-icon-kind="transport" data-omega-icon-id="mode-hero-road-truck">
+<title id="hero-truck-title">Dimensional road freight truck</title>
+<desc id="hero-truck-desc">Three-quarter view of a heavy industrial road freight truck with a closed metallic cargo body, glass cab, detailed chassis and deep tyres.</desc>
+<defs>
+ <linearGradient id="truck-shell" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#c5d7df"/><stop offset=".34" stop-color="#6d8da2"/><stop offset=".72" stop-color="#31536c"/><stop offset="1" stop-color="#172e43"/></linearGradient>
+ <linearGradient id="truck-top" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#f0f8fb"/><stop offset=".45" stop-color="#9bb7c5"/><stop offset="1" stop-color="#54758b"/></linearGradient>
+ <linearGradient id="truck-blue" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#7de4f7"/><stop offset=".42" stop-color="#147ca9"/><stop offset="1" stop-color="#07364f"/></linearGradient>
+ <linearGradient id="truck-glass" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#d8fbff"/><stop offset=".42" stop-color="#4c9eb7"/><stop offset="1" stop-color="#15364d"/></linearGradient>
+ <linearGradient id="truck-rubber" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#34485a"/><stop offset=".5" stop-color="#101b27"/><stop offset="1" stop-color="#030911"/></linearGradient>
+ <filter id="truck-shadow" x="-30%" y="-30%" width="170%" height="180%"><feGaussianBlur stdDeviation="3"/></filter>
+ <filter id="truck-depth" x="-25%" y="-25%" width="160%" height="170%"><feDropShadow dx="0" dy="4" stdDeviation="2.2" flood-color="#020b14" flood-opacity=".64"/></filter>
+</defs>
+<ellipse cx="68" cy="111" rx="52" ry="8" fill="#020a12" opacity=".55" filter="url(#truck-shadow)"/>
+<g filter="url(#truck-depth)">
+ <path d="M14 49 74 30 101 44 42 65Z" fill="url(#truck-top)" stroke="#526d81" stroke-width="1.2"/>
+ <path d="M42 65 101 44 101 84 42 105Z" fill="url(#truck-shell)" stroke="#203d53" stroke-width="1.5"/>
+ <path d="M14 49 42 65 42 105 14 87Z" fill="#29485f" stroke="#152e42" stroke-width="1.5"/>
+ <path d="M20 54 36 63M20 64 36 73M20 75 36 84" stroke="#8caebd" stroke-width="1.2" opacity=".65"/>
+ <path d="M49 67 49 97M59 63 59 93M70 59 70 89M81 55 81 85M92 51 92 81" stroke="#b9d2dd" stroke-width="1.1" opacity=".64"/>
+ <path d="M45 68 97 49" stroke="#e4f6fb" stroke-width="1.2" opacity=".68"/>
+ <path d="M81 54 103 46 116 59 116 91 99 98 84 88Z" fill="url(#truck-blue)" stroke="#183a51" stroke-width="1.6"/>
+ <path d="M88 54 103 49 111 58 97 64Z" fill="url(#truck-glass)" stroke="#c4f4ff" stroke-width="1"/>
+ <path d="M100 66 113 61 113 82 100 87Z" fill="url(#truck-glass)" stroke="#b5e7f4" stroke-width=".8"/>
+ <path d="M84 86 99 93 99 100 83 93Z" fill="#18394f"/>
+ <path d="M107 89 116 85 116 91 107 96Z" fill="#122d43"/>
+ <path d="M111 68 116 65 119 72 114 75Z" fill="#d8f9ff"/>
+ <path d="M110 83 118 79 118 84 110 88Z" fill="#ffcf79"/>
+ <path d="M96 97 113 90 117 94 100 102Z" fill="#172d40"/>
+ <path d="M37 103 47 106 47 110 37 107ZM87 91 97 94 97 99 87 96Z" fill="#9ab0bb"/>
+ <path d="M41 93 99 73" stroke="#d4e8ef" stroke-width="1" opacity=".4"/>
+ <g fill="url(#truck-rubber)" stroke="#060e17" stroke-width="1.4">
+  <ellipse cx="34" cy="99" rx="10" ry="14" transform="rotate(-12 34 99)"/>
+  <ellipse cx="78" cy="91" rx="9" ry="13" transform="rotate(-12 78 91)"/>
+  <ellipse cx="105" cy="96" rx="9" ry="12" transform="rotate(-12 105 96)"/>
+ </g>
+ <g fill="#7893a4" stroke="#182c3d" stroke-width="1.3">
+  <ellipse cx="34" cy="99" rx="4.7" ry="7" transform="rotate(-12 34 99)"/>
+  <ellipse cx="78" cy="91" rx="4.2" ry="6.4" transform="rotate(-12 78 91)"/>
+  <ellipse cx="105" cy="96" rx="4.2" ry="6" transform="rotate(-12 105 96)"/>
+ </g>
+ <g fill="#d9e9ef"><circle cx="34" cy="99" r="1.6"/><circle cx="78" cy="91" r="1.5"/><circle cx="105" cy="96" r="1.5"/></g>
+ <path d="M15 87 24 91 24 98 15 94Z" fill="#d8eff6"/>
+ <path d="M15 49 74 30" stroke="#fff" stroke-width="1.4" opacity=".72"/>
+</g></svg>

@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-labelledby="hero-ship-title hero-ship-desc" data-omega-icon-kind="transport" data-omega-icon-id="mode-hero-cargo-ship">
+<title id="hero-ship-title">Dimensional cargo ship</title>
+<desc id="hero-ship-desc">Three-quarter view of a commercial cargo vessel with a deep steel hull, stacked sealed freight containers, bridge and wake.</desc>
+<defs>
+ <linearGradient id="ship-hull" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#9ab2c0"/><stop offset=".24" stop-color="#41647c"/><stop offset=".72" stop-color="#15364f"/><stop offset="1" stop-color="#071c30"/></linearGradient>
+ <linearGradient id="ship-deck" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#eaf3f5"/><stop offset=".4" stop-color="#93aebc"/><stop offset="1" stop-color="#3c5d72"/></linearGradient>
+ <linearGradient id="ship-blue" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#77e1f3"/><stop offset=".42" stop-color="#147ba8"/><stop offset="1" stop-color="#06344d"/></linearGradient>
+ <linearGradient id="ship-red" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#ffc0a0"/><stop offset=".4" stop-color="#c65b49"/><stop offset="1" stop-color="#672d34"/></linearGradient>
+ <linearGradient id="ship-gold" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#ffe9a2"/><stop offset=".45" stop-color="#cb9b42"/><stop offset="1" stop-color="#714a24"/></linearGradient>
+ <filter id="ship-depth" x="-25%" y="-25%" width="160%" height="180%"><feDropShadow dx="0" dy="4" stdDeviation="2.4" flood-color="#020b14" flood-opacity=".62"/></filter>
+</defs>
+<path d="M8 109Q29 100 48 109T88 109T122 106" fill="none" stroke="#269bc5" stroke-width="3" opacity=".6"/>
+<path d="M23 116Q42 108 59 116T96 116" fill="none" stroke="#91e2f1" stroke-width="1.6" opacity=".58"/>
+<g filter="url(#ship-depth)">
+ <path d="M11 76 93 48 119 63 39 95Z" fill="url(#ship-deck)" stroke="#263f54" stroke-width="1.5"/>
+ <path d="M39 95 119 63 113 91 56 115 28 104Z" fill="url(#ship-hull)" stroke="#112c43" stroke-width="1.6"/>
+ <path d="M17 80 39 95 28 104 10 87Z" fill="#8fa7b5" stroke="#35566c" stroke-width="1.2"/>
+ <path d="M31 76 58 66 75 76 48 87Z" fill="url(#ship-blue)" stroke="#16445e" stroke-width="1"/>
+ <path d="M48 87 75 76 75 91 48 102Z" fill="#0d5477" stroke="#143c54" stroke-width="1"/>
+ <path d="M58 65 82 56 98 65 74 75Z" fill="url(#ship-red)" stroke="#6c3d43" stroke-width="1"/>
+ <path d="M74 75 98 65 98 80 74 90Z" fill="#8e4044" stroke="#4e3038" stroke-width="1"/>
+ <path d="M83 55 101 49 113 56 95 63Z" fill="url(#ship-gold)" stroke="#765728" stroke-width="1"/>
+ <path d="M95 63 113 56 113 70 95 78Z" fill="#976e31" stroke="#5d492b" stroke-width="1"/>
+ <path d="M29 59 45 54 55 60 39 66Z" fill="url(#ship-gold)" stroke="#765728" stroke-width="1"/>
+ <path d="M39 66 55 60 55 73 39 79Z" fill="#8b682f" stroke="#5d492b" stroke-width="1"/>
+ <path d="M18 73 29 69 39 75 28 80Z" fill="#dce8ec" stroke="#617f90" stroke-width="1"/>
+ <path d="M28 80 39 75 39 88 28 93Z" fill="#7897a8"/>
+ <path d="M104 43 112 40 119 44 111 48Z" fill="#e4edf0"/>
+ <path d="M111 48 119 44 119 64 111 68Z" fill="url(#ship-blue)" stroke="#23465d" stroke-width="1"/>
+ <path d="M104 43 104 59 111 63 111 48Z" fill="url(#ship-deck)" stroke="#466174" stroke-width="1"/>
+ <path d="M108 51 115 48" stroke="#f7fcff" stroke-width="1"/>
+ <path d="M20 86 38 97 112 68" stroke="#d9edf2" stroke-width="1.1" opacity=".65" fill="none"/>
+ <path d="M49 103 111 81" stroke="#a1bac7" stroke-width="1" opacity=".4"/>
+ <path d="M56 115 113 91 108 101 69 119Z" fill="#08243a"/>
+</g></svg>
