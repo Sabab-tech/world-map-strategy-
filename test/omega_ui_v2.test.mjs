@@ -3184,7 +3184,7 @@ test('factory catalog warm-up timeout releases a never-settling optional load wi
 test('Factory Stock/Input UI assets invalidate the old offline shell cache', () => {
   const sw = readFileSync('omega-offline-map-sw.js','utf8');
   const css = readFileSync('omega_ui_v2/factory-production-command.css','utf8');
-  assert.ok(sw.includes('omega-offline-atlas-shell-v86'),
+  assert.ok(sw.includes('omega-offline-atlas-shell-v87'),
     'the offline shell must activate the new JS/CSS rather than retaining the old Stock/Input renderer');
   assert.ok(css.includes('flex:0 0 20px'),'compact recipe product SVGs must stay small on desktop cards');
   assert.ok(css.includes('flex-basis:18px'),'compact recipe product SVGs must stay small on mobile cards');
@@ -3207,4 +3207,20 @@ test('factory production details use a landscape side panel and local delegated 
   assert.match(css,/fp-factory-detail-panel/);
   assert.match(source,/Modeled per game day per factory:/,
     'the side panel must reuse the existing canonical per-factory daily input calculation');
+});
+
+
+test('Factory cards use horizontal internal layouts and only reserve the landscape detail panel when opened', () => {
+  const source = readFileSync(new URL('../omega_ui_v2/screens/industry.js', import.meta.url), 'utf8');
+  const css = readFileSync(new URL('../omega_ui_v2/factory-production-command.css', import.meta.url), 'utf8');
+  const sw = readFileSync(new URL('../omega-offline-map-sw.js', import.meta.url), 'utf8');
+  assert.match(source,/fp-workspace--detail-open/);
+  assert.match(source,/workspace\.classList\.toggle\('fp-workspace--detail-open', !!key\)/);
+  assert.match(css,/@media \(orientation:landscape\)/);
+  assert.match(css,/grid-template-areas:\s*"head head"\s*"count presence"/);
+  assert.match(css,/grid-template-areas:\s*"badge title"\s*"art status"\s*"art count"/);
+  assert.match(css,/fp-card-product-section--output/);
+  assert.match(css,/fp-card-input-section/);
+  assert.match(css,/fp-workspace--detail-open/);
+  assert.match(sw,/omega-offline-atlas-shell-v87/);
 });
