@@ -2568,7 +2568,7 @@
       '<span>' + fmt(context.routes.length) + ' route(s)</span></div>' +
       context.routes.map(function (route) {
         return factoryRouteFullDetailsMarkup(route, model, context.asset);
-      }).join('') + '</div>';
+      }).join('') + '</div>');
   }
 
   function factoryDetailPanelMarkup(model) {
