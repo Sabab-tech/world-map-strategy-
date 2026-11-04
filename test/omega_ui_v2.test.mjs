@@ -82,6 +82,18 @@ test('factory product usage notes resolve recipe consumers and preserve the exis
     const identity = globalThis.OmegaUIV2Industry.productIdentityMarkup('processed_food', 'Processed Food');
     assert.match(identity, /<svg/);
     assert.match(identity, /fp-product-icon-frame/);
+
+    // Daily requirements and actual input inventory share this renderer.
+    // Keep downstream route and sector-use details visible in both views.
+    const industrySource = readFileSync(new URL('../omega_ui_v2/screens/industry.js', import.meta.url), 'utf8');
+    const helperStart = industrySource.indexOf('function factoryInputIdentityMarkup(model, productId)');
+    const helperEnd = industrySource.indexOf('  function factoryInputAggregateSourceMarkup', helperStart);
+    assert.ok(helperStart >= 0 && helperEnd > helperStart, 'factory input identity renderer must exist');
+    const inputIdentityHelper = industrySource.slice(helperStart, helperEnd);
+    assert.ok(inputIdentityHelper.includes('factoryProductUsageMarkup(model, productId)'));
+    const inputTableCall = 'factoryInputIdentityMarkup(model, row.productId)';
+    assert.equal(industrySource.split(inputTableCall).length - 1, 2,
+      'daily requirements and actual input inventory must both render product-use routes');
   } finally {
     if (previousGlobalCatalog === undefined) delete globalThis.OmegaResourceIndustrialCatalogData;
     else globalThis.OmegaResourceIndustrialCatalogData = previousGlobalCatalog;
@@ -3174,6 +3186,10 @@ test('Factory Stock/Input UI assets invalidate the old offline shell cache', () 
   const css = readFileSync('omega_ui_v2/factory-production-command.css','utf8');
   assert.ok(sw.includes('omega-offline-atlas-shell-v86'),
     'the offline shell must activate the new JS/CSS rather than retaining the old Stock/Input renderer');
+  assert.ok(sw.includes('"./omega_ui_v2/screens/industry.js"'),
+    'the offline shell must precache the current Industry screen');
+  assert.ok(sw.includes('"./omega_ui_v2/factory-production-command.css"'),
+    'the offline shell must precache the current Factory stylesheet');
   assert.ok(css.includes('flex:0 0 20px'),'compact recipe product SVGs must stay small on desktop cards');
   assert.ok(css.includes('flex-basis:18px'),'compact recipe product SVGs must stay small on mobile cards');
   for (const selector of ['.fp-product-identity','.fp-product-icon-frame','.fp-product-stock-quantity']) {
