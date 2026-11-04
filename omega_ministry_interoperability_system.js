@@ -1683,8 +1683,7 @@
             if(!Object.prototype.hasOwnProperty.call(EVENT_TYPES,type))throw new Error('NON_CANONICAL_EVENT:'+type);
             const normalizedOptions={...clone(eventOptions||{}),turn,causationId:commandId};
             const eventId=normalizedOptions.eventId?String(normalizedOptions.eventId):null;
-            if(eventId&&this.events.has(eventId)){
-              const existingEvent=this.events.get(eventId);
+            if(eventId){
               const candidate={
                 schemaVersion:1,eventId,eventType:type,countryId:country,
                 sourceMinistryId:handler.ownerMinistry,simulationTurn:turn,
@@ -1693,15 +1692,30 @@
                 stateRevision:normalizedOptions.stateRevision??this.snapshots.get(snapshotKey(country,handler.ownerMinistry))?.stateRevision??null,
                 payload:clone(eventPayload),provenance:clone(normalizedOptions.provenance||null)
               };
-              const existingFingerprint=eventFingerprint(existingEvent);
-              const incomingFingerprint=eventFingerprint(candidate);
-              if(existingFingerprint!==incomingFingerprint){
-                this.metrics.eventIdCollisions+=1;
-                this._recordIntegrityConflict('EVENT_ID_COLLISION',eventId,{
-                  countryId,sourceMinistryId:handler.ownerMinistry,targetMinistryId:null,
-                  simulationTurn:turn,existingFingerprint,incomingFingerprint
-                });
-                throw new Error('EVENT_ID_COLLISION');
+              const existingEvent=this.events.get(eventId);
+              const stagedExisting=stagedEvents.find(function (pending) {
+                return String(pending.options?.eventId||'')===eventId;
+              });
+              const previousEvent=existingEvent || (stagedExisting ? {
+                schemaVersion:1,eventId,eventType:stagedExisting.eventType,countryId:country,
+                sourceMinistryId:handler.ownerMinistry,simulationTurn:turn,
+                causationId:stagedExisting.options?.causationId??null,
+                correlationId:stagedExisting.options?.correlationId??null,
+                stateRevision:stagedExisting.options?.stateRevision??this.snapshots.get(snapshotKey(country,handler.ownerMinistry))?.stateRevision??null,
+                payload:clone(stagedExisting.payload),provenance:clone(stagedExisting.options?.provenance||null)
+              } : null);
+              if(previousEvent){
+                const existingFingerprint=eventFingerprint(previousEvent);
+                const incomingFingerprint=eventFingerprint(candidate);
+                if(existingFingerprint!==incomingFingerprint){
+                  this.metrics.eventIdCollisions+=1;
+                  this._recordIntegrityConflict('EVENT_ID_COLLISION',eventId,{
+                    countryId,sourceMinistryId:handler.ownerMinistry,targetMinistryId:null,
+                    simulationTurn:turn,existingFingerprint,incomingFingerprint
+                  });
+                  throw new Error('EVENT_ID_COLLISION');
+                }
+                return{queued:true,duplicate:true,eventType:type,causationId:commandId};
               }
             }
             stagedEvents.push({eventType:type,payload:clone(eventPayload),options:normalizedOptions});
