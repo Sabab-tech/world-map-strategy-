@@ -319,6 +319,62 @@
     return root;
   }
 
+  function stableValue(value,seen=new WeakSet()){
+    if(value===undefined)return 'undefined';
+    if(value===null)return 'null';
+    const type=typeof value;
+    if(type==='string'||type==='boolean')return JSON.stringify(value);
+    if(type==='number')return Number.isFinite(value)?String(value):'number:'+String(value);
+    if(type!=='object')return JSON.stringify(String(value));
+    if(seen.has(value))return '"[Circular]"';
+    seen.add(value);
+    let result;
+    if(Array.isArray(value))result='['+value.map(item=>stableValue(item,seen)).join(',')+']';
+    else if(value instanceof Map)result='{'+[...value.entries()].map(([key,item])=>[String(key),item]).sort((a,b)=>a[0].localeCompare(b[0])).map(([key,item])=>JSON.stringify(key)+':'+stableValue(item,seen)).join(',')+'}';
+    else if(value instanceof Set)result='['+[...value].map(item=>stableValue(item,seen)).sort().join(',')+']';
+    else result='{'+Object.keys(value).filter(key=>key!=='__proto__'&&key!=='constructor').sort().map(key=>JSON.stringify(key)+':'+stableValue(value[key],seen)).join(',')+'}';
+    seen.delete(value);
+    return result;
+  }
+  function stableFingerprint(value){
+    const input=stableValue(value);let a=2166136261>>>0,b=2246822519>>>0;
+    for(let i=0;i<input.length;i++){const code=input.charCodeAt(i);a=Math.imul(a^code,16777619)>>>0;b=Math.imul(b^code,3266489917)>>>0;b=(b^(b>>>13))>>>0;}
+    return String(input.length)+':'+('00000000'+a.toString(16)).slice(-8)+('00000000'+b.toString(16)).slice(-8);
+  }
+  function messageFingerprint(message={}){
+    return stableFingerprint({
+      protocolVersion:message.protocolVersion??2,messageId:String(message.messageId??''),
+      sourceMinistryId:String(message.sourceMinistryId||message.source||''),
+      targetMinistryId:String(message.targetMinistryId||message.target||''),
+      countryId:canonicalCountryId(message.countryId),
+      messageType:String(message.messageType||MESSAGE_TYPES.STATE_UPDATE),
+      topic:String(message.topic||'MINISTRY_INFORMATION'),priority:String(message.priority||'NORMAL'),
+      simulationTurn:Number(message.simulationTurn??message.turn??0),
+      sourceStateRevision:message.sourceStateRevision??null,payload:message.payload,
+      correlationId:message.correlationId??null,causationId:message.causationId??null,
+      expiryTurn:message.expiryTurn??null,provenance:message.provenance??null
+    });
+  }
+  function commandFingerprint(command={}){
+    return stableFingerprint({
+      schemaVersion:command.schemaVersion??1,commandId:String(command.commandId??''),
+      commandType:String(command.commandType??''),actionId:String(command.actionId??''),
+      sourceMinistryId:String(command.sourceMinistryId??''),countryId:canonicalCountryId(command.countryId),
+      simulationTurn:Number(command.simulationTurn??0),stateOwnerMinistryId:command.stateOwnerMinistryId??null,
+      payload:command.payload,correlationId:command.correlationId??null,
+      causationId:command.causationId??null,provenance:command.provenance??null
+    });
+  }
+  function eventFingerprint(event={}){
+    return stableFingerprint({
+      schemaVersion:event.schemaVersion??1,eventId:String(event.eventId??''),
+      eventType:String(event.eventType??''),countryId:canonicalCountryId(event.countryId),
+      sourceMinistryId:String(event.sourceMinistryId??''),simulationTurn:Number(event.simulationTurn??0),
+      causationId:event.causationId??null,correlationId:event.correlationId??null,
+      stateRevision:event.stateRevision??null,payload:event.payload,provenance:event.provenance??null
+    });
+  }
+
   function normalizeIds(registry){
     const ids=Array.isArray(registry?.ids)?registry.ids.map(String).filter(Boolean):
       Array.isArray(registry?.list?.())?registry.list().map(String).filter(Boolean):[];
@@ -396,7 +452,8 @@
         dropped:0,expired:0,failed:0,processed:0,
         requests:0,responses:0,acks:0,alerts:0,
         statePublications:0,decisionEvaluations:0,commands:0,events:0,
-        noStateWrites:0,providerReads:0,providerMisses:0,stateWriteConflicts:0
+        noStateWrites:0,providerReads:0,providerMisses:0,stateWriteConflicts:0,
+        messageIdCollisions:0,commandIdCollisions:0,eventIdCollisions:0
       };
       this._rebuildTopology();
     }
@@ -595,10 +652,6 @@
       }
 
       const messageId=String(options.messageId||this._deterministicMessageId(countryId,turn,src,dst));
-      if(this.deliveryLedger.has(messageId)){
-        this.metrics.duplicate+=1;
-        return clone(this.deliveryLedger.get(messageId).message);
-      }
 
       const sourceSnapshot=this.snapshots.get(snapshotKey(countryId,src));
       const sourceStateRevision=options.sourceStateRevision!==undefined
@@ -628,6 +681,28 @@
         provenance:this._messageProvenance(options)
       });
 
+      const contentFingerprint=messageFingerprint(message);
+      const existingDelivery=this.deliveryLedger.get(messageId);
+      if(existingDelivery){
+        const existingFingerprint=existingDelivery.contentFingerprint||messageFingerprint(existingDelivery.message||{});
+        if(existingFingerprint!==contentFingerprint){
+          this.metrics.messageIdCollisions+=1;
+          this.metrics.rejected+=1;
+          route.messagesRejected+=1;
+          this._recordIntegrityConflict('MESSAGE_ID_COLLISION',messageId,{
+            countryId,sourceMinistryId:src,targetMinistryId:dst,simulationTurn:turn,
+            existingFingerprint,incomingFingerprint:contentFingerprint
+          });
+          throw new Error('MESSAGE_ID_COLLISION');
+        }
+        if([DELIVERY_STATUS.FAILED,DELIVERY_STATUS.REJECTED,DELIVERY_STATUS.EXPIRED].includes(existingDelivery.status)){
+          throw new Error('MESSAGE_ID_TERMINAL:'+String(existingDelivery.status));
+        }
+        route.messagesDuplicated+=1;
+        this.metrics.duplicate+=1;
+        return clone(existingDelivery.message);
+      }
+
       const inbox=this.inboxes.get(dst);
       if(!inbox){
         route.messagesDropped+=1;route.state='DEGRADED';
@@ -638,7 +713,7 @@
         route.messagesDropped+=1;route.state='DEGRADED';
         this.metrics.dropped+=1;this.metrics.failed+=1;
         this.deliveryLedger.set(messageId,{
-          message:clone(message),messageId,countryId,source:src,target:dst,
+          message:clone(message),messageId,countryId,source:src,target:dst,contentFingerprint,
           status:DELIVERY_STATUS.FAILED,statusHistory:[
             {status:DELIVERY_STATUS.CREATED,simulationTurn:turn,reason:null},
             {status:DELIVERY_STATUS.FAILED,simulationTurn:turn,reason:'INBOX_FULL'}
@@ -649,7 +724,7 @@
 
       this.deliveryLedger.set(messageId,{
         message:clone(message),
-        messageId,countryId,source:src,target:dst,
+        messageId,countryId,source:src,target:dst,contentFingerprint,
         status:DELIVERY_STATUS.CREATED,
         statusHistory:[{status:DELIVERY_STATUS.CREATED,simulationTurn:turn,reason:null}],
         createdTurn:turn,
@@ -782,10 +857,24 @@
         return {ok:false,status:DELIVERY_STATUS.REJECTED,reason:'ROUTE_NOT_FOUND'};
       }
       const existing=this.deliveryLedger.get(String(unwrapped.messageId||''));
-      if(existing&&[DELIVERY_STATUS.ACCEPTED,DELIVERY_STATUS.PROCESSING,DELIVERY_STATUS.PROCESSED,DELIVERY_STATUS.RESPONDED].includes(existing.status)){
-        route.messagesDuplicated+=1;
-        this.metrics.duplicate+=1;
-        return {ok:true,duplicate:true,status:DELIVERY_STATUS.DUPLICATE,message:clone(unwrapped)};
+      if(existing){
+        const existingFingerprint=existing.contentFingerprint||messageFingerprint(existing.message||{});
+        const incomingFingerprint=messageFingerprint(unwrapped);
+        if(existingFingerprint!==incomingFingerprint){
+          this.metrics.messageIdCollisions+=1;
+          this.metrics.rejected+=1;
+          route.messagesRejected+=1;
+          this._recordIntegrityConflict('MESSAGE_ID_COLLISION',String(unwrapped.messageId||''),{
+            countryId,sourceMinistryId:String(unwrapped.sourceMinistryId||unwrapped.source),
+            targetMinistryId:targetId,simulationTurn:currentTurn,existingFingerprint,incomingFingerprint
+          });
+          return {ok:false,status:DELIVERY_STATUS.REJECTED,reason:'MESSAGE_ID_COLLISION'};
+        }
+        if([DELIVERY_STATUS.ACCEPTED,DELIVERY_STATUS.PROCESSING,DELIVERY_STATUS.PROCESSED,DELIVERY_STATUS.RESPONDED].includes(existing.status)){
+          route.messagesDuplicated+=1;
+          this.metrics.duplicate+=1;
+          return {ok:true,duplicate:true,status:DELIVERY_STATUS.DUPLICATE,message:clone(existing.message||unwrapped)};
+        }
       }
 
       if(unwrapped.expiryTurn!==null&&unwrapped.expiryTurn!==undefined&&Number.isFinite(Number(unwrapped.expiryTurn))&&currentTurn>Number(unwrapped.expiryTurn)){
@@ -1509,8 +1598,25 @@
         provenance:clone(options.provenance||null)
       });
 
+      const commandContentFingerprint=commandFingerprint(command);
+      const previousCommand=this.commands.get(commandId);
+      if(previousCommand){
+        const previousFingerprint=previousCommand.contentFingerprint||commandFingerprint(previousCommand);
+        if(previousFingerprint!==commandContentFingerprint){
+          this.metrics.commandIdCollisions+=1;
+          this._recordIntegrityConflict('COMMAND_ID_COLLISION',commandId,{
+            countryId:country,sourceMinistryId:source,targetMinistryId:command.stateOwnerMinistryId,
+            simulationTurn:turn,existingFingerprint:previousFingerprint,incomingFingerprint:commandContentFingerprint
+          });
+          throw new Error('COMMAND_ID_COLLISION');
+        }
+        this.metrics.duplicate+=1;
+        return {...clone(previousCommand),duplicate:true,idempotentReplay:true};
+      }
+
       const row={
         ...clone(command),
+        contentFingerprint:commandContentFingerprint,
         status:'CREATED',
         statusHistory:[{status:'CREATED',simulationTurn:turn}],
         result:null,
@@ -1549,11 +1655,30 @@
           emitEvent:(eventType,eventPayload={},eventOptions={})=>{
             const type=String(eventType||'');
             if(!Object.prototype.hasOwnProperty.call(EVENT_TYPES,type))throw new Error('NON_CANONICAL_EVENT:'+type);
-            stagedEvents.push({
-              eventType:type,
-              payload:clone(eventPayload),
-              options:{...clone(eventOptions||{}),turn,causationId:commandId}
-            });
+            const normalizedOptions={...clone(eventOptions||{}),turn,causationId:commandId};
+            const eventId=normalizedOptions.eventId?String(normalizedOptions.eventId):null;
+            if(eventId&&this.events.has(eventId)){
+              const existingEvent=this.events.get(eventId);
+              const candidate={
+                schemaVersion:1,eventId,eventType:type,countryId:country,
+                sourceMinistryId:handler.ownerMinistry,simulationTurn:turn,
+                causationId:normalizedOptions.causationId??null,
+                correlationId:normalizedOptions.correlationId??null,
+                stateRevision:normalizedOptions.stateRevision??this.snapshots.get(snapshotKey(country,handler.ownerMinistry))?.stateRevision??null,
+                payload:clone(eventPayload),provenance:clone(normalizedOptions.provenance||null)
+              };
+              const existingFingerprint=eventFingerprint(existingEvent);
+              const incomingFingerprint=eventFingerprint(candidate);
+              if(existingFingerprint!==incomingFingerprint){
+                this.metrics.eventIdCollisions+=1;
+                this._recordIntegrityConflict('EVENT_ID_COLLISION',eventId,{
+                  countryId,sourceMinistryId:handler.ownerMinistry,targetMinistryId:null,
+                  simulationTurn:turn,existingFingerprint,incomingFingerprint
+                });
+                throw new Error('EVENT_ID_COLLISION');
+              }
+            }
+            stagedEvents.push({eventType:type,payload:clone(eventPayload),options:normalizedOptions});
             return{queued:true,eventType:type,causationId:commandId};
           }
         });
@@ -1654,6 +1779,21 @@
         provenance:clone(options.provenance||null),
         timestamp:Date.now(),timestampIsTelemetry:true
       };
+      const contentFingerprint=eventFingerprint(event);
+      const existingEvent=this.events.get(eventId);
+      if(existingEvent){
+        const existingFingerprint=existingEvent.contentFingerprint||eventFingerprint(existingEvent);
+        if(existingFingerprint!==contentFingerprint){
+          this.metrics.eventIdCollisions+=1;
+          this._recordIntegrityConflict('EVENT_ID_COLLISION',eventId,{
+            countryId,sourceMinistryId:source,targetMinistryId:null,
+            simulationTurn:turn,existingFingerprint,incomingFingerprint:contentFingerprint
+          });
+          throw new Error('EVENT_ID_COLLISION');
+        }
+        return clone(existingEvent);
+      }
+      event.contentFingerprint=contentFingerprint;
       this.events.set(eventId,event);
       while(this.events.size>this.maxHistory){
         const firstKey=this.events.keys().next().value;
