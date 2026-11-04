@@ -951,6 +951,7 @@ test('fifty factories receive proportional input when the country warehouse is s
   } } };
   const resource = context.Game.state.resource.BGD = {
     inventory: { iron_ore: 8 },
+    inventoryUnits: { IRON_CONCENTRATE: 'TONNES' },
     batches: [{
       batchId: 'BATCH-PROP-IRON-8', resourceId: 'iron_ore', materialIdentity: 'iron_ore',
       quantity: 8, remainingQuantity: 8, unit: 'SIMULATION_RESOURCE_UNIT', stage: 'RAW',
@@ -1017,9 +1018,10 @@ test('fifty factories receive proportional input when the country warehouse is s
   assert.equal(Number(resource.inventory.IRON_CONCENTRATE.toFixed(6)), 32);
   assert.equal(Number(resource.inventory.ORE_TAILINGS.toFixed(6)), 8);
   assert.equal(resource.batches.filter(row => row.stage === 'FINISHED' && row.resourceId === 'IRON_CONCENTRATE').length, 50);
-  assert.equal(resource.inventoryUnits.IRON_CONCENTRATE, 'SIMULATION_RESOURCE_UNIT');
+  assert.equal(resource.inventoryUnits.IRON_CONCENTRATE, 'TONNES',
+    'an existing product-specific country inventory unit must outrank the generic recipe unit');
   assert.equal(resource.inventoryUnits.ORE_TAILINGS, 'SIMULATION_RESOURCE_UNIT');
-  assert.equal(resource.processedWarehouse.unitsByProduct.IRON_CONCENTRATE, 'SIMULATION_RESOURCE_UNIT');
+  assert.equal(resource.processedWarehouse.unitsByProduct.IRON_CONCENTRATE, 'TONNES');
   assert.equal(resource.processedWarehouse.unitsByProduct.ORE_TAILINGS, 'SIMULATION_RESOURCE_UNIT');
 });
 

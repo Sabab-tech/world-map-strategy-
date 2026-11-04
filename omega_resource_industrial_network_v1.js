@@ -3838,10 +3838,20 @@ function normalizedUnitMapEntry(map,productId){
     ?(value.unit||value.outputUnit||value.quantityUnit||value.inventoryUnit||''):value;
   return{unit:String(unit||'').trim(),ambiguous:false,key:keys[0]};
 }
-function factoryOutputUnit(recipe,asset,productId){
-  const maps=[recipe?.outputUnits,recipe?.outputUnitsByProduct,recipe?.unitsByProduct,
+function factoryOutputUnit(recipe,asset,productId,resource){
+  const declaredMaps=[recipe?.outputUnits,recipe?.outputUnitsByProduct,recipe?.unitsByProduct,
     asset?.outputUnits,asset?.outputUnitsByProduct];
-  for(const map of maps){
+  for(const map of declaredMaps){
+    const entry=normalizedUnitMapEntry(map,productId);
+    if(entry.ambiguous)continue;
+    if(entry.unit)return entry.unit;
+  }
+  // Existing product stock is the authoritative unit for that product. Generic
+  // recipe/asset outputUnit values are only a fallback for products with no ledger yet.
+  const warehouse=resource?.processedWarehouse&&typeof resource.processedWarehouse==='object'
+    ?resource.processedWarehouse:{};
+  const existingMaps=[resource?.inventoryUnits,warehouse.unitsByProduct,warehouse.inventoryUnits];
+  for(const map of existingMaps){
     const entry=normalizedUnitMapEntry(map,productId);
     if(entry.ambiguous)continue;
     if(entry.unit)return entry.unit;
@@ -3855,7 +3865,7 @@ function factoryOutputUnitPlan(resource,recipe,asset,productIds){
   const unitMaps=[inventoryUnits,warehouse.unitsByProduct,warehouse.inventoryUnits];
   const units={};
   for(const productId of productIds||[]){
-    const expected=factoryOutputUnit(recipe,asset,productId);
+    const expected=factoryOutputUnit(recipe,asset,productId,state);
     if(!expected)return{status:'BLOCKED',reason:'FACTORY_OUTPUT_UNIT_NOT_DECLARED',resourceId:productId};
     for(const map of unitMaps){
       const entry=normalizedUnitMapEntry(map,productId);
