@@ -623,8 +623,72 @@ function stripTelemetry(value){
   return out;
 }
 
+test('a reused message ID is idempotent only when its content is identical',()=>{
+  const s=createSandbox();
+  const options={countryId:s.countryA,turn:1,messageId:'PIPE-MSG-COLLISION-1'};
+  const first=s.mesh.send('finance','trade','pipeline.collision',{value:1},options);
+  const duplicate=s.mesh.send('finance','trade','pipeline.collision',{value:1},options);
+  assert.equal(duplicate.messageId,first.messageId);
+  assert.equal(s.mesh.getMinistryInbox(s.countryA,'trade').length,1,
+    'an identical retry must not enqueue twice');
+  assert.throws(
+    ()=>s.mesh.send('finance','trade','pipeline.collision',{value:2},options),
+    /MESSAGE_ID_COLLISION/
+  );
+
+  const accepted=s.mesh.acceptMessage(s.countryA,'trade',first,1);
+  assert.equal(accepted.ok,true);
+  const duplicateDelivery=s.mesh.acceptMessage(s.countryA,'trade',first,1);
+  assert.equal(duplicateDelivery.duplicate,true);
+  const altered={...first,payload:{value:999}};
+  const collision=s.mesh.acceptMessage(s.countryA,'trade',altered,1);
+  assert.equal(collision.ok,false);
+  assert.equal(collision.reason,'MESSAGE_ID_COLLISION');
+  assert.ok(s.mesh.instance.metrics.messageIdCollisions>=2);
+  assert.ok(s.mesh.getIntegrityConflicts(s.countryA).some(row=>row.kind==='MESSAGE_ID_COLLISION'));
+});
+
+test('command IDs are idempotent and cannot overwrite a different command',()=>{
+  const s=createSandbox();
+  let invocations=0;
+  s.mesh.registerCommandHandler('PIPELINE_IDEMPOTENCY_TEST','economy',(command,{stateTransaction})=>{
+    invocations+=1;
+    const before=Number(stateTransaction.get('economy.gdp')||0);
+    stateTransaction.set('economy.gdp',before+Number(command.payload.delta||1));
+    return{accepted:true,before};
+  });
+  const options={turn:5,commandType:'PIPELINE_IDEMPOTENCY_TEST',commandId:'PIPE-CMD-COLLISION-1'};
+  const first=s.mesh.dispatchCommand('finance','PIPELINE_IDEMPOTENCY_TEST',s.countryA,{delta:1},options);
+  const replay=s.mesh.dispatchCommand('finance','PIPELINE_IDEMPOTENCY_TEST',s.countryA,{delta:1},options);
+  assert.equal(first.status,'APPLIED');
+  assert.equal(replay.idempotentReplay,true);
+  assert.equal(invocations,1,'the same command must never run twice');
+  assert.equal(s.state.economy[s.countryA].gdp,101);
+  assert.throws(
+    ()=>s.mesh.dispatchCommand('finance','PIPELINE_IDEMPOTENCY_TEST',s.countryA,{delta:2},options),
+    /COMMAND_ID_COLLISION/
+  );
+  assert.equal(invocations,1);
+  assert.ok(s.mesh.getIntegrityConflicts(s.countryA).some(row=>row.kind==='COMMAND_ID_COLLISION'));
+});
+
+test('event IDs reject conflicting payloads while identical retries remain stable',()=>{
+  const s=createSandbox();
+  const options={turn:3,eventId:'PIPE-EVT-COLLISION-1'};
+  const first=s.mesh.emitEvent('TREATY_SIGNED',s.countryA,'foreign',{agreementId:'AGREEMENT-A'},options);
+  const replay=s.mesh.emitEvent('TREATY_SIGNED',s.countryA,'foreign',{agreementId:'AGREEMENT-A'},options);
+  assert.equal(replay.eventId,first.eventId);
+  assert.deepEqual(replay.payload,first.payload);
+  assert.throws(
+    ()=>s.mesh.emitEvent('TREATY_SIGNED',s.countryA,'foreign',{agreementId:'AGREEMENT-B'},options),
+    /EVENT_ID_COLLISION/
+  );
+  assert.equal(s.mesh.instance.metrics.eventIdCollisions,1);
+  assert.ok(s.mesh.getIntegrityConflicts(s.countryA).some(row=>row.kind==='EVENT_ID_COLLISION'));
+});
+
 console.log('OMEGA GOVERNMENT INTEROPERABILITY TEST MATRIX READY');
-console.log('Tests:',23);
+console.log('Tests:',26);
 console.log('Canonical ministry count:',MINISTRY_COUNT);
 
 
