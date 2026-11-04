@@ -1734,116 +1734,459 @@
     return html;
   }
 
-    function factoryOutputPlanMarkup(model, actualRows) {
-    var plan = factoryProductionPlan(model);
-    actualRows = Array.isArray(actualRows) ? actualRows : factoryOutputRows(model);
-    var factoryTypeById = Object.create(null);
-    (Array.isArray(model.factories) ? model.factories : []).forEach(function (factory) {
-      if (!factory || !factory.id) return;
-      factoryTypeById[String(factory.id)] = normalizeFactoryType(factory.type, safeCatalog()) || String(factory.type || '').toUpperCase();
-    });
-    var html = '<section class="fp-factory-analytics fp-factory-plan" data-factory-output-plan="canonical-v1" aria-label="Planned factory outputs and actual finished stock">' +
-      '<h3 class="omega-v2-section-title">Factory-type output and stock plan</h3>' +
-      '<div class="omega-v2-vehicle-stats"><div><span>Total factories</span><strong>' + fmt(plan.totalFactories) + '</strong></div>' +
-      '<div><span>Factory types</span><strong>' + fmt(plan.factoryTypeCount) + '</strong></div>' +
-      '<div><span>Types with factories</span><strong>' + fmt(plan.assignedFactoryTypeCount) + '</strong></div>' +
-      '<div><span>Production records</span><strong>' + (actualRows.length ? 'Recorded' : 'Not started') + '</strong></div></div>' +
-      '<p class="omega-v2-source">Planned output is calculated from full factory capacity and recipe coefficients. Actual output and stock remain tied to committed production batches.</p>';
-    plan.types.forEach(function (type) {
-      html += '<article class="fp-factory-data-card"><header class="fp-factory-data-heading"><div><span>FACTORY OUTPUT PLAN</span><strong>' +
-        esc(type.name) + '</strong><small>' + esc(readableIdentifier(type.category)) + ' · ' + esc(readableIdentifier(type.type)) + '</small></div>' +
-        factoryPlanPresenceMarkup(type, model) + '</header>';
-      if (!type.count) {
-        html += '<div class="fp-factory-table-wrap"><p class="fp-factory-muted">No factories of this type are assigned. Planned output: 0.</p></div></article>';
-        return;
+    function factoryProductMapEntry(source, productId) {
+    if (!source || typeof source !== 'object' || Array.isArray(source)) return null;
+    var wanted = String(productId || '').trim().toLowerCase();
+    var keys = Object.keys(source);
+    for (var i = 0; i < keys.length; i += 1) {
+      if (keys[i].trim().toLowerCase() === wanted) return source[keys[i]];
+    }
+    return null;
+  }
+
+  function factoryOutputMapKeys(source) {
+    return source && typeof source === 'object' && !Array.isArray(source) ? Object.keys(source) : [];
+  }
+
+  function factoryProductRateValue(value, fallbackUnit) {
+    var unit = String(fallbackUnit || '');
+    if (value && typeof value === 'object') {
+      unit = String(value.unit || value.outputUnit || value.quantityUnit || unit);
+      value = value.actualOutputPerDay !== undefined ? value.actualOutputPerDay :
+        value.outputPerDay !== undefined ? value.outputPerDay :
+        value.quantityPerDay !== undefined ? value.quantityPerDay :
+        value.valuePerDay !== undefined ? value.valuePerDay :
+        value.ratePerDay !== undefined ? value.ratePerDay :
+        value.dailyOutput !== undefined ? value.dailyOutput :
+        value.rate !== undefined ? value.rate :
+        value.quantity !== undefined ? value.quantity :
+        value.value !== undefined ? value.value : value.amount;
+    }
+    var number = num(value);
+    return number === null || number < 0 ? null : { value:number, unit:unit };
+  }
+
+  function factoryAssetDeclaresProduct(factory, productId) {
+    factory = factory && typeof factory === 'object' ? factory : {};
+    var raw = factory.raw && typeof factory.raw === 'object' ? factory.raw : {};
+    var health = raw.productionHealth && typeof raw.productionHealth === 'object' ? raw.productionHealth : {};
+    var run = factory.lastRun && typeof factory.lastRun === 'object' ? factory.lastRun : {};
+    var outputMaps = [
+      factory.outputProfile, raw.outputProfile, raw.outputs, raw.outputCoefficients,
+      factory.latestOutputs, run.outputQuantities, run.outputs,
+      health.actualOutputPerDayByProduct, health.outputPerDayByProduct, health.dailyOutputByProduct,
+      raw.actualOutputPerDayByProduct, raw.outputPerDayByProduct, raw.dailyOutputByProduct
+    ];
+    for (var i = 0; i < outputMaps.length; i += 1) {
+      if (factoryProductMapEntry(outputMaps[i], productId) !== null) return true;
+    }
+    var wanted = String(productId || '').trim().toLowerCase();
+    var identities = [
+      health.outputResourceId, health.outputProductId, health.primaryOutputResourceId,
+      raw.outputResourceId, raw.outputProductId, raw.primaryOutputResourceId,
+      run.outputResourceId, run.outputProductId, run.resourceId,
+      factory.outputResourceId, factory.primaryOutputResourceId
+    ];
+    if (identities.some(function (value) { return String(value || '').trim().toLowerCase() === wanted; })) return true;
+    return false;
+  }
+
+  function factoryProductDailyOutput(factory, productId) {
+    factory = factory && typeof factory === 'object' ? factory : {};
+    var raw = factory.raw && typeof factory.raw === 'object' ? factory.raw : {};
+    var health = raw.productionHealth && typeof raw.productionHealth === 'object' ? raw.productionHealth : {};
+    var run = factory.lastRun && typeof factory.lastRun === 'object' ? factory.lastRun : {};
+    var cycle = factory.cycle && typeof factory.cycle === 'object' ? factory.cycle : {};
+    var outputUnit = String(health.outputUnit || raw.outputUnit || raw.productionUnit || run.outputUnit || '');
+    var dailyMaps = [
+      health.actualOutputPerDayByProduct, health.outputPerDayByProduct, health.dailyOutputByProduct,
+      health.outputRatesPerDay, health.outputQuantitiesPerDay,
+      raw.actualOutputPerDayByProduct, raw.outputPerDayByProduct, raw.dailyOutputByProduct,
+      raw.outputRatesPerDay, raw.outputQuantitiesPerDay,
+      run.actualOutputPerDayByProduct, run.outputPerDayByProduct, run.dailyOutputByProduct
+    ];
+    for (var i = 0; i < dailyMaps.length; i += 1) {
+      var mapped = factoryProductMapEntry(dailyMaps[i], productId);
+      if (mapped !== null) {
+        var mappedRate = factoryProductRateValue(mapped, outputUnit);
+        if (mappedRate) return mappedRate;
       }
-      if (!type.outputs.length) {
-        html += '<div class="fp-factory-table-wrap"><p class="fp-factory-muted">No output recipe is defined for this factory type.</p></div></article>';
-        return;
+    }
+
+    var wanted = String(productId || '').trim().toLowerCase();
+    var identityMatches = [
+      health.outputResourceId, health.outputProductId, health.primaryOutputResourceId,
+      raw.outputResourceId, raw.outputProductId, raw.primaryOutputResourceId,
+      run.outputResourceId, run.outputProductId, run.resourceId,
+      factory.outputResourceId, factory.primaryOutputResourceId
+    ].some(function (value) { return String(value || '').trim().toLowerCase() === wanted; });
+    var profileKeys = factoryOutputMapKeys(factory.outputProfile);
+    if (!identityMatches && profileKeys.length === 1) identityMatches = String(profileKeys[0]).toLowerCase() === wanted;
+    if (identityMatches) {
+      var scalarCandidates = [
+        health.actualOutputPerDay, health.outputPerDay, health.dailyOutput,
+        raw.actualOutputPerDay, raw.outputPerDay, raw.dailyOutput,
+        run.actualOutputPerDay, run.outputPerDay
+      ];
+      for (var si = 0; si < scalarCandidates.length; si += 1) {
+        var scalarRate = factoryProductRateValue(scalarCandidates[si], outputUnit);
+        if (scalarRate) return scalarRate;
       }
-      html += '<div class="fp-factory-table-wrap"><table class="fp-factory-table"><thead><tr>' +
-        '<th>Output product</th><th>Planned / full cycle</th><th>Planned / day</th><th>Produced to date</th><th>Country warehouse stock</th>' +
-        '</tr></thead><tbody>';
-      type.outputs.forEach(function (row) {
-        var matching = actualRows.filter(function (actual) {
-          return factoryTypeById[String(actual.factoryId)] === type.type &&
-            String(actual.productId || '').toLowerCase() === String(row.productId || '').toLowerCase();
-        });
-        var hasActual = matching.some(function (actual) { return actual.hasProduction === true; });
-        var produced = matching.reduce(function (sum, actual) { return sum + (num(actual.produced) || 0); }, 0);
-        var hasTracedStock = matching.some(function (actual) { return actual.currentStock !== null; });
-        var tracedStock = matching.reduce(function (sum, actual) {
-          return sum + (actual.currentStock === null ? 0 : num(actual.currentStock) || 0);
-        }, 0);
-        var warehouseStock = hasTracedStock ? tracedStock : panelValueByKey(model.processedStock, row.productId);
-        var unit = factoryPlanUnit(row.unit);
-        html += '<tr><td>' + factoryProductIdentityMarkup(row.productId, panelProductLabel(model, row.productId)) + factoryProductUsageMarkup(model, row.productId) + '</td>' +
-          '<td><strong>' + fmt(row.perCycle, unit) + '</strong></td>' +
-          '<td><strong>' + fmt(row.perDay, unit) + '</strong></td>' +
-          '<td>' + (hasActual ? fmt(produced, unit) : '<span class="fp-factory-muted">Not started / no committed output</span>') + '</td>' +
-          '<td>' + (warehouseStock === null ? '<span class="fp-factory-muted">Not recorded</span>' : factoryProductStockMarkup(row.productId, panelProductLabel(model, row.productId), fmt(warehouseStock, unit))) + '</td></tr>';
+    }
+
+    var cycleStatus = String(cycle.status || '').trim().toUpperCase();
+    var activeDays = num(cycle.cycleDays !== undefined ? cycle.cycleDays : cycle.durationDays);
+    var cycleOutputMap = cycle.outputQuantities || cycle.outputs;
+    var activeOutput = factoryProductMapEntry(cycleOutputMap, productId);
+    if (activeOutput !== null && activeDays !== null && activeDays > 0) {
+      var activeQuantity = factoryProductRateValue(activeOutput, outputUnit);
+      if (activeQuantity) return { value:activeQuantity.value / activeDays, unit:activeQuantity.unit, basis:'Committed active-cycle output' };
+    }
+    var cycleProductId = String(cycle.outputResourceId || cycle.outputProductId || cycle.productId || '').trim().toLowerCase();
+    var activeQuantityTotal = num(cycle.productionQuantity);
+    if (cycleStatus === 'IN_PROGRESS' && cycleProductId === wanted && activeQuantityTotal !== null &&
+        activeQuantityTotal >= 0 && activeDays !== null && activeDays > 0) {
+      return { value:activeQuantityTotal / activeDays, unit:outputUnit, basis:'Committed active-cycle output' };
+    }
+
+    var outputMaps = [run.outputQuantities, run.outputs, factory.latestOutputs];
+    var cycleDays = num(run.cycleDays !== undefined ? run.cycleDays : run.durationDays);
+    if (cycleDays === null || cycleDays <= 0) cycleDays = num(cycle.cycleDays !== undefined ? cycle.cycleDays : cycle.durationDays);
+    if (cycleDays === null || cycleDays <= 0) {
+      var canonical = safeCatalog() || {};
+      var canonicalRecipes = canonical.downstreamFactoryRecipes && typeof canonical.downstreamFactoryRecipes === 'object' ? canonical.downstreamFactoryRecipes : {};
+      var selectedRecipe = canonicalRecipes[String(factory.recipeId || '')] || null;
+      cycleDays = num(selectedRecipe && selectedRecipe.cycleDays);
+      if (cycleDays === null || cycleDays <= 0) {
+        var canonicalProfiles = canonical.factoryProfiles && typeof canonical.factoryProfiles === 'object' ? canonical.factoryProfiles : {};
+        var selectedProfile = canonicalProfiles[String(factory.type || '')] || {};
+        cycleDays = num(selectedProfile.cycleDays);
+      }
+    }
+    for (var oi = 0; oi < outputMaps.length; oi += 1) {
+      var committed = factoryProductMapEntry(outputMaps[oi], productId);
+      if (committed === null || cycleDays === null || cycleDays <= 0) continue;
+      var committedQuantity = factoryProductRateValue(committed, outputUnit);
+      if (committedQuantity) {
+        return { value:committedQuantity.value / cycleDays, unit:committedQuantity.unit, basis:'Committed output averaged over recorded cycle' };
+      }
+    }
+
+    var stoppedHealth = String(health.status || factory.healthStatus || '').trim().toUpperCase();
+    var stoppedAsset = String(raw.status || factory.status || '').trim().toUpperCase();
+    var stoppedCycle = String(cycle.status || '').trim().toUpperCase();
+    var stopped = /^(STOPPED|BLOCKED|FAILED|CLOSED|DECOMMISSIONED|DESTROYED|OFFLINE|DISABLED|UNDER_CONSTRUCTION|MAINTENANCE|TECHNOLOGY_LOCKED|READY)$/.test(stoppedHealth) ||
+      /^(STOPPED|BLOCKED|FAILED|CLOSED|DECOMMISSIONED|DESTROYED|OFFLINE|DISABLED|UNDER_CONSTRUCTION|MAINTENANCE|TECHNOLOGY_LOCKED|READY)$/.test(stoppedAsset) ||
+      /^(PAUSED|CANCELLED|BLOCKED|FAILED|STOPPED)$/.test(stoppedCycle);
+    if (stopped && factoryAssetDeclaresProduct(factory, productId)) return { value:0, unit:outputUnit, basis:'Confirmed stopped' };
+    return null;
+  }
+
+  function factoryOutputPlanSources(plan, productId) {
+    var expected = Object.create(null);
+    (plan && Array.isArray(plan.types) ? plan.types : []).forEach(function (type) {
+      var output = (type.outputs || []).find(function (row) {
+        return String(row.productId || '').toLowerCase() === String(productId || '').toLowerCase();
       });
-      html += '</tbody></table></div></article>';
+      if (!output) return;
+      var sources = Array.isArray(output.sources) ? output.sources : [];
+      if (sources.length) {
+        sources.forEach(function (source) {
+          var typeId = normalizeFactoryType(source.factoryType, safeCatalog()) || String(source.factoryType || type.type || '').toUpperCase();
+          var count = Math.max(0, Math.floor(num(source.factoryCount) || 0));
+          if (typeId && count) expected[typeId] = (expected[typeId] || 0) + count;
+        });
+      } else if (type.count > 0 && type.outputs.length === 1) {
+        expected[type.type] = (expected[type.type] || 0) + type.count;
+      }
     });
-    return html + '</section>';
+    return expected;
+  }
+
+  function factoryOutputProductAssets(model, productId, plan, actualRows) {
+    var factories = Array.isArray(model.factories) ? model.factories : [];
+    var expected = factoryOutputPlanSources(plan, productId);
+    var selected = [], seen = Object.create(null), complete = true;
+    Object.keys(expected).forEach(function (typeId) {
+      var typeAssets = factories.filter(function (factory) {
+        return (normalizeFactoryType(factory.type, safeCatalog()) || String(factory.type || '').toUpperCase()) === typeId;
+      });
+      var matching = typeAssets.filter(function (factory) { return factoryAssetDeclaresProduct(factory, productId); });
+      var typePlan = (plan.types || []).find(function (type) { return type.type === typeId; });
+      if (!matching.length && typePlan && typePlan.outputs.length === 1 && typeAssets.length === expected[typeId]) matching = typeAssets;
+      if (matching.length < expected[typeId]) complete = false;
+      matching.forEach(function (factory) {
+        var id = String(factory.id || '');
+        if (id && !seen[id]) { seen[id] = true; selected.push(factory); }
+      });
+    });
+
+    (Array.isArray(actualRows) ? actualRows : []).forEach(function (row) {
+      if (String(row.productId || '').toLowerCase() !== String(productId || '').toLowerCase()) return;
+      var id = String(row.factoryId || '');
+      if (!id || seen[id]) return;
+      var factory = factories.find(function (candidate) { return String(candidate.id || '') === id; });
+      if (factory && factoryAssetDeclaresProduct(factory, productId)) {
+        seen[id] = true;
+        selected.push(factory);
+      }
+    });
+    factories.forEach(function (factory) {
+      var typeId = normalizeFactoryType(factory.type, safeCatalog()) || String(factory.type || '').toUpperCase();
+      if (expected[typeId] || seen[String(factory.id || '')]) return;
+      if (factoryAssetDeclaresProduct(factory, productId)) {
+        seen[String(factory.id || '')] = true;
+        selected.push(factory);
+      }
+    });
+    return { factories:selected, complete:complete && selected.length > 0 };
+  }
+
+  function factoryProductOutputDailySummary(model, productId, plan, actualRows) {
+    var producers = factoryOutputProductAssets(model, productId, plan, actualRows);
+    if (!producers.complete) return { value:null, unit:'', factories:producers.factories };
+    var total = 0, unit = '', seenUnit = false;
+    for (var i = 0; i < producers.factories.length; i += 1) {
+      var rate = factoryProductDailyOutput(producers.factories[i], productId);
+      if (!rate) return { value:null, unit:'', factories:producers.factories };
+      if (seenUnit && unit && rate.unit && unit.toLowerCase() !== rate.unit.toLowerCase()) {
+        return { value:null, unit:'', factories:producers.factories };
+      }
+      if (!unit && rate.unit) unit = rate.unit;
+      seenUnit = true;
+      total += rate.value;
+    }
+    return { value:total, unit:unit, factories:producers.factories };
+  }
+
+  function factoryProductDailyCost(factory, productId, outputRate) {
+    if (!factory || !outputRate || outputRate.value === null) return null;
+    var raw = factory.raw && typeof factory.raw === 'object' ? factory.raw : {};
+    var health = raw.productionHealth && typeof raw.productionHealth === 'object' ? raw.productionHealth : {};
+    var run = factory.lastRun && typeof factory.lastRun === 'object' ? factory.lastRun : {};
+    var dailyCostMaps = [
+      health.operatingCostPerDayByProduct, health.dailyOperatingCostByProduct,
+      health.productionCostPerDayByProduct, health.dailyProductionCostByProduct,
+      health.dailyCostByProduct, health.outputCostPerDayByProduct,
+      raw.operatingCostPerDayByProduct, raw.dailyOperatingCostByProduct,
+      raw.productionCostPerDayByProduct, raw.dailyProductionCostByProduct,
+      raw.dailyCostByProduct, raw.outputCostPerDayByProduct,
+      run.operatingCostPerDayByProduct, run.productionCostPerDayByProduct
+    ];
+    function costParts(value, source, perUnit) {
+      if (value === null || value === undefined) return null;
+      var amount = value, currency = '', basisUnit = '';
+      if (value && typeof value === 'object') {
+        amount = perUnit
+          ? (value.costPerUnit !== undefined ? value.costPerUnit : value.unitCost !== undefined ? value.unitCost : value.amount !== undefined ? value.amount : value.value !== undefined ? value.value : value.cost)
+          : (value.costPerDay !== undefined ? value.costPerDay : value.amountPerDay !== undefined ? value.amountPerDay : value.dailyCost !== undefined ? value.dailyCost : value.amount !== undefined ? value.amount : value.value !== undefined ? value.value : value.cost);
+        currency = String(value.currency || value.currencyCode || value.costCurrency || '');
+        basisUnit = String(value.quantityUnit || value.unitBasis || value.outputUnit || value.denominatorUnit || '');
+      }
+      var number = num(amount);
+      if (number === null || number < 0) return null;
+      if (!currency) currency = String(source.costCurrency || source.operatingCostCurrency || source.productionCostCurrency || '');
+      if (!currency) return null;
+      if (basisUnit && outputRate.unit && basisUnit.toLowerCase() !== outputRate.unit.toLowerCase()) return null;
+      if (perUnit) {
+        if (!basisUnit || !outputRate.unit || basisUnit.toLowerCase() !== outputRate.unit.toLowerCase()) return null;
+        number *= outputRate.value;
+      }
+      return { amount:number, currency:currency };
+    }
+    for (var i = 0; i < dailyCostMaps.length; i += 1) {
+      var entry = factoryProductMapEntry(dailyCostMaps[i], productId);
+      if (entry !== null) {
+        var parsed = costParts(entry, i < 6 ? health : i < 12 ? raw : run, false);
+        if (parsed) return parsed;
+        return null;
+      }
+    }
+    var unitCostMaps = [
+      health.operatingCostPerUnitByProduct, health.productionCostPerUnitByProduct, health.unitCostByProduct,
+      raw.operatingCostPerUnitByProduct, raw.productionCostPerUnitByProduct, raw.unitCostByProduct,
+      run.operatingCostPerUnitByProduct, run.productionCostPerUnitByProduct
+    ];
+    for (var ui = 0; ui < unitCostMaps.length; ui += 1) {
+      var unitEntry = factoryProductMapEntry(unitCostMaps[ui], productId);
+      if (unitEntry !== null) {
+        var unitParsed = costParts(unitEntry, ui < 3 ? health : ui < 6 ? raw : run, true);
+        if (unitParsed) return unitParsed;
+        return null;
+      }
+    }
+    return null;
+  }
+
+  function factoryProductCostDailySummary(producers, outputSummary, productId) {
+    if (!outputSummary || outputSummary.value === null || !outputSummary.factories.length) return null;
+    var amount = 0, currency = '';
+    for (var i = 0; i < outputSummary.factories.length; i += 1) {
+      var factory = outputSummary.factories[i];
+      var rate = factoryProductDailyOutput(factory, productId);
+      var cost = factoryProductDailyCost(factory, productId, rate);
+      if (!cost) return null;
+      if (currency && currency.toUpperCase() !== cost.currency.toUpperCase()) return null;
+      currency = cost.currency;
+      amount += cost.amount;
+    }
+    return currency ? { amount:amount, currency:currency } : null;
+  }
+
+  function factoryDemandRowForProduct(model, productId) {
+    var rows = model && model.demandByProduct && typeof model.demandByProduct === 'object' ? model.demandByProduct : {};
+    var keys = Object.keys(rows), wanted = String(productId || '').toLowerCase();
+    for (var i = 0; i < keys.length; i += 1) {
+      if (keys[i].toLowerCase() === wanted) return rows[keys[i]];
+    }
+    return null;
+  }
+
+  function factoryDemandNumber(value) {
+    if (value && typeof value === 'object') {
+      return {
+        value:num(value.demandPerDay !== undefined ? value.demandPerDay :
+          value.quantityPerDay !== undefined ? value.quantityPerDay :
+          value.valuePerDay !== undefined ? value.valuePerDay :
+          value.quantity !== undefined ? value.quantity : value.value !== undefined ? value.value : value.amount),
+        unit:String(value.unit || value.demandUnit || value.quantityUnit || '')
+      };
+    }
+    return { value:num(value), unit:'' };
+  }
+
+  function factoryOutputStatus(model, productId, output) {
+    var demandRow = factoryDemandRowForProduct(model, productId);
+    if (!demandRow) return { key:'unknown', label:'Unknown' };
+    var status = String(demandRow.status || '').trim().toUpperCase();
+    var unmet = num(demandRow.unmetDemand);
+    if (unmet !== null && unmet > 1e-9 || status === 'SHORTAGE') return { key:'shortage', label:'Shortage' };
+    if (!output || output.value === null) return { key:'unknown', label:'Unknown' };
+    var dailyDemand = null, demandUnit = '';
+    var currentKeys = ['demandPerDay','currentDemandPerDay','dailyDemand','requiredPerDay'];
+    for (var i = 0; i < currentKeys.length; i += 1) {
+      var current = factoryDemandNumber(demandRow[currentKeys[i]]);
+      if (current.value !== null && current.value >= 0) { dailyDemand = current.value; demandUnit = current.unit || String(demandRow.demandUnit || demandRow.unit || ''); break; }
+    }
+    if (dailyDemand === null) {
+      var turnDemand = factoryDemandNumber(demandRow.demandThisTurn);
+      var daysPerTurn = num(model && model.currentTurnDaysPerTurn);
+      if (turnDemand.value !== null && turnDemand.value >= 0 && daysPerTurn !== null && daysPerTurn > 0) {
+        dailyDemand = turnDemand.value / daysPerTurn;
+        demandUnit = turnDemand.unit || String(demandRow.demandUnit || demandRow.unit || '');
+      }
+    }
+    if (dailyDemand === null) {
+      var legacyDemand = factoryDemandNumber(demandRow.demand);
+      if (legacyDemand.value !== null && legacyDemand.value >= 0 && /(?:\/\s*day|per[_\s-]*day|daily)/i.test(String(legacyDemand.unit || demandRow.demandUnit || demandRow.unit || ''))) {
+        dailyDemand = legacyDemand.value;
+        demandUnit = legacyDemand.unit || String(demandRow.demandUnit || demandRow.unit || '');
+      }
+    }
+    var futureDemand = null, futureUnit = '';
+    var futureKeys = ['projectedDemandPerDay','futureDemandPerDay','forecastDemandPerDay','contractedDemandPerDay',
+      'expectedDemandPerDay','demandProjectionPerDay','populationAdjustedDemandPerDay','upcomingDemandPerDay'];
+    var futureSources = [demandRow, demandRow.forecast, demandRow.projection, demandRow.future, demandRow.contract];
+    for (var fi = 0; fi < futureSources.length && futureDemand === null; fi += 1) {
+      var futureSource = futureSources[fi];
+      if (!futureSource || typeof futureSource !== 'object') continue;
+      for (var fk = 0; fk < futureKeys.length; fk += 1) {
+        if (futureSource[futureKeys[fk]] === undefined) continue;
+        var projected = factoryDemandNumber(futureSource[futureKeys[fk]]);
+        if (projected.value !== null && projected.value >= 0) {
+          futureDemand = projected.value;
+          futureUnit = projected.unit || String(futureSource.demandUnit || futureSource.unit || demandRow.demandUnit || demandRow.unit || '');
+          break;
+        }
+      }
+    }
+    function unitsMatch(left, right) {
+      return !left || !right || String(left).replace(/\s+/g, '').toLowerCase() === String(right).replace(/\s+/g, '').toLowerCase();
+    }
+    if (futureDemand !== null && futureDemand > output.value + 1e-9 && unitsMatch(futureUnit, output.unit)) {
+      return { key:'future', label:'Demand rising' };
+    }
+    if (dailyDemand !== null && unitsMatch(demandUnit, output.unit)) {
+      if (dailyDemand > output.value + 1e-9) return { key:'shortage', label:'Shortage' };
+      return { key:'ok', label:output.value > dailyDemand + 1e-9 ? 'Surplus' : 'Balanced' };
+    }
+    return { key:'unknown', label:'Unknown' };
   }
 
   function factoryStockPanelMarkup(model) {
-    var rows = factoryOutputRows(model), factoryMap = Object.create(null);
-    (model.factories || []).forEach(function (factory) { if (factory && factory.id) factoryMap[String(factory.id)] = factory; });
-    var planMarkup = factoryOutputPlanMarkup(model, rows);
-    if (!rows.length) return planMarkup + '<div class="omega-v2-empty">No committed factory output batches are recorded yet. Planned outputs remain shown above.</div>';
-    var html = '<section class="fp-factory-analytics" aria-label="Recorded factory output stock"><h3 class="omega-v2-section-title">Recorded factory output batches</h3>';
-    var byFactory = Object.create(null), productProducerCounts = Object.create(null), nationalConsumptionShown = Object.create(null);
-    rows.forEach(function (row) {
-      var productKey = String(row.productId || '').toLowerCase();
-      productProducerCounts[productKey] = (productProducerCounts[productKey] || 0) + 1;
-      if (!byFactory[row.factoryId]) byFactory[row.factoryId] = [];
-      byFactory[row.factoryId].push(row);
+    var actualRows = factoryOutputRows(model);
+    var plan = factoryProductionPlan(model);
+    var productRows = Object.create(null), factoryMap = Object.create(null);
+    (model.factories || []).forEach(function (factory) {
+      if (factory && factory.id) factoryMap[String(factory.id)] = factory;
     });
-    Object.keys(byFactory).forEach(function (factoryId) {
-      var factory = factoryMap[factoryId] || {}, name = factory.name || factoryId;
-      html += '<article class="fp-factory-data-card"><header class="fp-factory-data-heading"><div><span>FACTORY OUTPUT</span><strong>' +
-        esc(name) + '</strong><small>' + esc(factory.type || 'Factory type not recorded') + '</small></div><span class="fp-factory-data-count">' +
-        fmt(byFactory[factoryId].length) + ' product line(s)</span></header>';
-      html += '<div class="fp-factory-table-wrap"><table class="fp-factory-table"><thead><tr>' +
-        '<th>Output product</th><th>Produced</th><th>Factory use</th><th>Domestic consumption</th><th>Domestic supply</th><th>Exported</th><th>Destination country</th><th>Current stock</th><th>Stock condition</th>' +
-        '</tr></thead><tbody>';
-      byFactory[factoryId].forEach(function (row) {
-        var unit = row.unit || '';
-        var destinations = Object.keys(row.destinations).map(function (country) {
-          return '<span class="fp-factory-destination"><strong>' + esc(country) + '</strong><small>' + fmt(row.destinations[country], unit) + '</small></span>';
-        }).join('');
-        if (!destinations && row.exported <= 0) destinations = '<span class="fp-factory-muted">No recorded export</span>';
-        else if (!destinations) destinations = '<span class="fp-factory-muted">Destination not recorded</span>';
-        var productKey = String(row.productId || '').toLowerCase();
-        var demandRow = null, demandKeys = Object.keys(model.demandByProduct || {});
-        for (var di = 0; di < demandKeys.length; di += 1) {
-          if (demandKeys[di].toLowerCase() === productKey) { demandRow = model.demandByProduct[demandKeys[di]]; break; }
-        }
-        var nationalConsumption = demandRow ? num(demandRow.nationalConsumption) : null;
-        var consumptionMarkup = row.domesticConsumption > 0
-          ? fmt(row.domesticConsumption, unit)
-          : '<span class="fp-factory-muted">Not recorded</span>';
-        if (nationalConsumption !== null && nationalConsumption > 0 && !nationalConsumptionShown[productKey]) {
-          if (row.domesticConsumption <= 0 || Math.abs(nationalConsumption - row.domesticConsumption) > 1e-9) {
-            consumptionMarkup += '<small>Country total, including traced batch: ' + fmt(nationalConsumption, unit) + '</small>';
-          }
-          nationalConsumptionShown[productKey] = true;
-        }
-        var status = factoryStockStatus(model, row, productProducerCounts[String(row.productId || '').toLowerCase()] > 1);
-        html += '<tr><td>' + factoryProductIdentityMarkup(row.productId, panelProductLabel(model, row.productId)) + factoryProductUsageMarkup(model, row.productId) + '</td>' +
-          '<td><strong>' + fmt(row.produced, unit) + '</strong></td>' +
-          '<td>' + (row.factoryUse > 0 ? fmt(row.factoryUse, unit) : '<span class="fp-factory-muted">Not recorded</span>') + '</td>' +
-          '<td>' + consumptionMarkup + '</td>' +
-          '<td>' + (row.domesticSupply > 0 ? fmt(row.domesticSupply, unit) : '<span class="fp-factory-muted">Not recorded</span>') + '</td>' +
-          '<td>' + (row.exported > 0 ? fmt(row.exported, unit) : '<span class="fp-factory-muted">Not recorded</span>') + '</td>' +
-          '<td>' + destinations + '</td><td>' + factoryProductStockMarkup(row.productId, panelProductLabel(model, row.productId), fmt(row.currentStock, unit)) + '</td>' +
-          '<td><span class="fp-factory-state" data-state="' + status.key + '">' + esc(status.label) + '</span></td></tr>';
+    function ensureProduct(productId) {
+      var key = String(productId || '').trim().toLowerCase();
+      if (!key) return null;
+      if (!productRows[key]) productRows[key] = { productId:String(productId), actual:[] };
+      return productRows[key];
+    }
+    plan.types.forEach(function (type) {
+      if (!(type.count > 0)) return;
+      (type.outputs || []).forEach(function (output) { ensureProduct(output.productId); });
+    });
+    actualRows.forEach(function (row) {
+      var product = ensureProduct(row.productId);
+      if (product) product.actual.push(row);
+    });
+    var products = Object.keys(productRows).map(function (key) { return productRows[key]; })
+      .sort(function (a, b) { return panelProductLabel(model, a.productId).localeCompare(panelProductLabel(model, b.productId)); });
+    if (!products.length) {
+      return '<section class="fp-factory-analytics fp-output-summary" data-factory-output-summary="v1" aria-label="Factory product output">' +
+        '<div class="omega-v2-empty">No finished products are recorded for this country.</div></section>';
+    }
+    var html = '<section class="fp-factory-analytics fp-output-summary" data-factory-output-summary="v1" aria-label="Factory product output">' +
+      '<div class="fp-factory-table-wrap fp-output-summary-wrap"><table class="fp-factory-table fp-output-summary-table">' +
+      '<thead><tr><th>Product</th><th>Output / day</th><th>Cost / day</th><th>Used in</th><th>Status</th></tr></thead><tbody>';
+    products.forEach(function (product) {
+      var id = product.productId, key = String(id).toLowerCase();
+      var output = factoryProductOutputDailySummary(model, id, plan, actualRows);
+      var cost = factoryProductCostDailySummary(null, output, id);
+      var factoryUse = 0, domesticUse = 0, domesticSupply = 0, exported = 0;
+      var destinations = Object.create(null);
+      product.actual.forEach(function (row) {
+        factoryUse += num(row.factoryUse) || 0;
+        domesticUse += num(row.domesticConsumption) || 0;
+        domesticSupply += num(row.domesticSupply) || 0;
+        exported += num(row.exported) || 0;
+        Object.keys(row.destinations || {}).forEach(function (destination) {
+          destinations[destination] = (destinations[destination] || 0) + (num(row.destinations[destination]) || 0);
+        });
       });
-      html += '</tbody></table></div></article>';
+      var unit = output.unit || (product.actual.find(function (row) { return !!row.unit; }) || {}).unit || '';
+      var usage = [];
+      if (factoryUse > 0) usage.push('<span><small>Factory use</small><strong>' + fmt(factoryUse, unit) + '</strong></span>');
+      if (domesticUse > 0) usage.push('<span><small>Domestic use</small><strong>' + fmt(domesticUse, unit) + '</strong></span>');
+      if (domesticSupply > 0) usage.push('<span><small>Domestic supply</small><strong>' + fmt(domesticSupply, unit) + '</strong></span>');
+      if (exported > 0) {
+        var destinationLabels = Object.keys(destinations).map(function (destination) {
+          return esc(destination) + ' ' + fmt(destinations[destination], unit);
+        });
+        usage.push('<span><small>Export</small><strong>' + (destinationLabels.length ? destinationLabels.join(' · ') : fmt(exported, unit)) + '</strong></span>');
+      }
+      if (!usage.length) usage.push('<span class="fp-output-not-recorded">Not recorded</span>');
+      var status = factoryOutputStatus(model, id, output);
+      var outputMarkup = output.value === null
+        ? '<span class="fp-output-not-recorded">Not recorded</span>'
+        : '<strong>' + fmt(output.value, unit) + '</strong><small class="fp-output-rate-basis">/ game-day</small>';
+      var costMarkup = cost
+        ? '<strong>' + esc(cost.currency) + ' ' + fmt(cost.amount) + '</strong><small>/ game-day</small>'
+        : '<span class="fp-output-not-recorded">Not recorded</span>';
+      html += '<tr data-factory-output-row="' + esc(factoryProductKey(id)) + '">' +
+        '<td class="fp-output-product-cell">' + factoryProductIdentityMarkup(id, panelProductLabel(model, id)) + '</td>' +
+        '<td class="fp-output-number-cell">' + outputMarkup + '</td>' +
+        '<td class="fp-output-cost-cell">' + costMarkup + '</td>' +
+        '<td class="fp-output-usage-cell"><div class="fp-output-usage">' + usage.join('') + '</div></td>' +
+        '<td class="fp-output-status-cell"><span class="fp-output-led" data-state="' + status.key + '" role="status" aria-label="' + esc(status.label) + '">' +
+        '<i aria-hidden="true"></i><span>' + esc(status.label) + '</span></span></td></tr>';
     });
-    return planMarkup + html + '</section>';
+    html += '</tbody></table></div></section>';
+    return html;
   }
   function factoryInputSourceRows(factory, productId, model) {
     var lots = (factory.inputLots || []).filter(function (lot) {
