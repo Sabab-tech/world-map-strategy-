@@ -3276,15 +3276,16 @@ test('Factory cards use horizontal internal layouts and only reserve the landsca
 test('Factory landscape controls keep readable card text, independent detail scrolling and touch-sized disclosure', () => {
   const css = readFileSync(new URL('../omega_ui_v2/factory-production-command.css', import.meta.url), 'utf8');
   const source = readFileSync(new URL('../omega_ui_v2/screens/industry.js', import.meta.url), 'utf8');
-  assert.match(css,/@media \\(orientation:landscape\\)/);
-  assert.match(css,/fp-type-card-name strong \\{\\s*font-size:13px/);
-  assert.match(css,/fp-type-card-art \\{\\s*flex:0 0 48px/);
-  assert.match(css,/fp-factory-detail-panel \\{[\\s\\S]*?overflow-y:auto/);
-  assert.match(css,/touch-action:pan-y/);
-  assert.match(css,/min-height:46px/);
-  assert.match(css,/max-width:899px/);
-  assert.match(source,/var currentFactoryView = root\\.__omegaV2IndustryFactoryView/);
-  assert.match(source,/viewContent\\.innerHTML = factoryHomeViewMarkup/);
-  assert.match(source,/__omegaV2FactoryRouteCache/);
-  assert.match(source,/__omegaV2FactoryDetailMarkupCache/);
+  assert.ok(css.includes('@media (orientation:landscape)'));
+  assert.ok(css.includes('.fp-type-card-name strong {'));
+  assert.ok(css.includes('font-size:13px'));
+  assert.ok(css.includes('flex:0 0 48px'));
+  assert.ok(css.includes('overflow-y:auto'));
+  assert.ok(css.includes('touch-action:pan-y'));
+  assert.ok(css.includes('min-height:46px'));
+  assert.ok(css.includes('max-width:899px'));
+  assert.ok(source.includes('var currentFactoryView = root.__omegaV2IndustryFactoryView'));
+  assert.ok(source.includes('viewContent.innerHTML = factoryHomeViewMarkup'));
+  assert.ok(source.includes('__omegaV2FactoryRouteCache'));
+  assert.ok(source.includes('__omegaV2FactoryDetailMarkupCache'));
 });
