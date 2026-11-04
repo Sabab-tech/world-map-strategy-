@@ -166,6 +166,7 @@ test('only the selected player country receives a saved inventory runtime; inact
   assert.equal(item(api.getInventory('USA', { includeZero: true }), 'steel').quantity, 0);
   assert.equal(api.getCountryRecord('USA'), null);
 
+  state.simulation.session.playerCountryId = 'USA';
   api.refreshActiveCountry();
   const usaActive = api.getInventory('USA', { includeZero: true });
   assert.equal(usaActive.active, true);
@@ -510,7 +511,6 @@ test('legacy negative balances are normalized and never exposed as spendable sto
   assert.equal(item(view, 'steel').quantity, 4,
     'unrelated valid inventory must be preserved');
 
-  state.simulation.session.playerCountryId = 'USA';
   state.countryInventories.countries.USA = {
     schemaVersion:'1.0.0', countryId:'USA', countryName:'United States',
     active:false, products:{}, observedBalances:{ STEEL:-12 }, ledger:[], eventIds:{}
