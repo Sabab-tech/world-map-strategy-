@@ -3808,3 +3808,348 @@
   .omega-v2-industry--factory-home .fp-assets-workspace .omega-v2-factory-deck { grid-template-columns:minmax(0,1fr); }
   .omega-v2-industry--factory-home .fp-factory-detail-panel { order:2; }
 }
+
+
+/* Landscape readability and touch targets for the actual factory-type register.
+   The previous short-height rules were shrinking the card artwork and labels
+   below comfortable phone readability. These final, scoped rules supersede them. */
+@media (orientation:landscape) {
+  .omega-v2-industry--factory-home .fp-type-catalog {
+    padding:10px;
+  }
+  .omega-v2-industry--factory-home .fp-type-catalog-heading > div > span {
+    font-size:10px;
+  }
+  .omega-v2-industry--factory-home .fp-type-catalog-heading strong {
+    font-size:16px;
+    line-height:1.2;
+  }
+  .omega-v2-industry--factory-home .fp-type-catalog-total {
+    padding:5px 9px;
+    font-size:11px;
+  }
+  .omega-v2-industry--factory-home .fp-type-catalog-note {
+    margin-bottom:8px;
+    font-size:10px;
+    line-height:1.4;
+  }
+  .omega-v2-industry--factory-home .fp-type-catalog-grid {
+    grid-template-columns:repeat(auto-fit,minmax(285px,1fr));
+    align-items:stretch;
+    gap:8px;
+  }
+  .omega-v2-industry--factory-home .omega-v2-factory-type-card:not(.fp-type-card--build) {
+    gap:6px 8px;
+    padding:9px;
+    border-radius:9px;
+    min-width:0;
+  }
+  .omega-v2-industry--factory-home .fp-type-card-art {
+    flex:0 0 48px;
+    width:48px;
+    height:48px;
+    border-radius:8px;
+  }
+  .omega-v2-industry--factory-home .fp-type-card-art .omega-v2-factory-svg {
+    width:39px;
+    height:39px;
+  }
+  .omega-v2-industry--factory-home .fp-type-card-name {
+    gap:4px;
+  }
+  .omega-v2-industry--factory-home .fp-type-card-name strong {
+    font-size:13px;
+    line-height:1.22;
+  }
+  .omega-v2-industry--factory-home .fp-type-card-name small {
+    font-size:9px;
+    line-height:1.25;
+  }
+  .omega-v2-industry--factory-home .fp-type-card-count {
+    min-height:32px;
+    padding:5px 8px;
+  }
+  .omega-v2-industry--factory-home .fp-type-card-count span {
+    font-size:10px;
+  }
+  .omega-v2-industry--factory-home .fp-type-card-count strong {
+    font-size:16px;
+  }
+  .omega-v2-industry--factory-home .fp-type-card-presence {
+    min-height:32px;
+    padding:5px 7px;
+    gap:7px;
+  }
+  .omega-v2-industry--factory-home .fp-type-card-presence strong {
+    font-size:9px;
+    line-height:1.25;
+  }
+  .omega-v2-industry--factory-home .fp-type-card-metrics {
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:5px 9px;
+  }
+  .omega-v2-industry--factory-home .fp-type-card-metrics > div {
+    gap:3px;
+  }
+  .omega-v2-industry--factory-home .fp-type-card-metrics dt {
+    font-size:9px;
+    line-height:1.25;
+  }
+  .omega-v2-industry--factory-home .fp-type-card-metrics dd {
+    font-size:10px;
+    line-height:1.25;
+  }
+  .omega-v2-industry--factory-home .omega-v2-factory-type-card:not(.fp-type-card--build) .fp-card-recipe {
+    gap:5px 8px;
+    padding:7px 6px 4px;
+    margin-top:3px;
+  }
+  .omega-v2-industry--factory-home .fp-type-card-actions .omega-v2-factory-button {
+    min-height:40px;
+    padding:7px 9px;
+    font-size:12px;
+  }
+
+  .omega-v2-industry--factory-home .fp-card-product-row {
+    column-gap:8px;
+    row-gap:3px;
+    padding:4px 3px;
+  }
+  .omega-v2-industry--factory-home .fp-card-product-row .fp-product-icon-frame {
+    flex:0 0 25px;
+    width:25px;
+    height:25px;
+    min-width:25px;
+  }
+  .omega-v2-industry--factory-home .fp-card-product-row .fp-product-identity {
+    gap:7px;
+  }
+  .omega-v2-industry--factory-home .fp-card-product-row .fp-product-identity-copy strong {
+    font-size:10px;
+    line-height:1.24;
+  }
+  .omega-v2-industry--factory-home .fp-card-product-quantity {
+    max-width:46%;
+    font-size:9px;
+    line-height:1.25;
+  }
+  .omega-v2-industry--factory-home .fp-card-section-label {
+    font-size:9px;
+    letter-spacing:.1em;
+  }
+  .omega-v2-industry--factory-home .fp-card-recipe {
+    gap:5px;
+    padding:7px 6px 4px;
+  }
+  .omega-v2-industry--factory-home .fp-card-disclosure {
+    position:relative;
+    z-index:5;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    min-width:44px;
+    min-height:46px;
+    margin:3px auto 0;
+    padding:5px 8px;
+    border-radius:6px;
+    cursor:pointer;
+    pointer-events:auto;
+    touch-action:manipulation;
+  }
+  .omega-v2-industry--factory-home .fp-card-disclosure-plate {
+    width:40px;
+    height:34px;
+  }
+  .omega-v2-industry--factory-home .fp-card-disclosure svg {
+    width:22px;
+    height:22px;
+  }
+
+  .omega-v2-industry--factory-home .fp-factory-detail-panel {
+    align-self:start;
+    min-width:0;
+    max-height:calc(100vh - 156px);
+    max-height:calc(100dvh - 156px);
+    overflow-x:hidden;
+    overflow-y:auto;
+    overscroll-behavior:contain;
+    -webkit-overflow-scrolling:touch;
+    touch-action:pan-y;
+    scrollbar-width:thin;
+    scrollbar-color:#3a789d #071522;
+    padding:10px;
+  }
+  .omega-v2-industry--factory-home .fp-factory-detail-heading {
+    position:sticky;
+    top:-10px;
+    z-index:4;
+    padding:7px 3px 9px;
+    background:linear-gradient(180deg,#102b40 82%,rgba(16,43,64,.94));
+  }
+  .omega-v2-industry--factory-home .fp-factory-detail-heading span {
+    font-size:9px;
+  }
+  .omega-v2-industry--factory-home .fp-factory-detail-heading strong {
+    font-size:14px;
+    line-height:1.25;
+  }
+  .omega-v2-industry--factory-home .fp-factory-detail-heading small {
+    font-size:9px;
+  }
+  .omega-v2-industry--factory-home .fp-factory-detail-close {
+    flex:0 0 44px;
+    width:44px;
+    height:44px;
+    min-width:44px;
+    min-height:44px;
+    font-size:25px;
+    touch-action:manipulation;
+  }
+  .omega-v2-industry--factory-home .fp-card-expanded-heading strong {
+    font-size:11px;
+  }
+  .omega-v2-industry--factory-home .fp-card-route-detail {
+    gap:7px;
+    padding:8px;
+  }
+  .omega-v2-industry--factory-home .fp-card-route-detail > header strong {
+    font-size:10px;
+  }
+  .omega-v2-industry--factory-home .fp-card-detail-columns {
+    grid-template-columns:minmax(0,1fr);
+    gap:9px;
+  }
+  .omega-v2-industry--factory-home .fp-card-detail-columns h4 {
+    font-size:9px;
+  }
+  .omega-v2-industry--factory-home .fp-card-role-heading {
+    font-size:8px;
+  }
+  .omega-v2-industry--factory-home .fp-factory-detail-panel .fp-card-product-rate,
+  .omega-v2-industry--factory-home .fp-factory-detail-panel .fp-card-product-actual {
+    font-size:8px;
+    line-height:1.3;
+  }
+}
+
+/* A phone in landscape has far less usable width once the game's dock is
+   deducted. Keep the details below the cards there; do not squeeze both
+   workspaces into two narrow columns simply because the viewport is 681px. */
+@media (orientation:landscape) and (min-width:681px) and (max-width:899px) {
+  .omega-v2-industry--factory-home .fp-factory-catalog-workspace,
+  .omega-v2-industry--factory-home .fp-assets-workspace,
+  .omega-v2-industry--factory-home .fp-factory-catalog-workspace.fp-workspace--detail-open,
+  .omega-v2-industry--factory-home .fp-assets-workspace.fp-workspace--detail-open {
+    grid-template-columns:minmax(0,1fr);
+  }
+  .omega-v2-industry--factory-home .fp-factory-catalog-workspace.fp-workspace--detail-open .fp-type-catalog-grid {
+    grid-template-columns:repeat(auto-fit,minmax(285px,1fr));
+  }
+  .omega-v2-industry--factory-home .fp-assets-workspace.fp-workspace--detail-open .omega-v2-factory-deck {
+    grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
+  }
+  .omega-v2-industry--factory-home .fp-factory-detail-panel {
+    order:2;
+    width:100%;
+    max-height:42dvh;
+    margin-top:4px;
+  }
+}
+
+/* Only a genuinely wide landscape workspace uses the adjacent side column. */
+@media (orientation:landscape) and (min-width:900px) {
+  .omega-v2-industry--factory-home .fp-factory-catalog-workspace,
+  .omega-v2-industry--factory-home .fp-assets-workspace {
+    grid-template-columns:minmax(0,1.12fr) minmax(300px,.88fr);
+    align-items:start;
+    gap:10px;
+  }
+  .omega-v2-industry--factory-home .fp-factory-catalog-workspace:not(.fp-workspace--detail-open),
+  .omega-v2-industry--factory-home .fp-assets-workspace:not(.fp-workspace--detail-open) {
+    grid-template-columns:minmax(0,1fr);
+  }
+  .omega-v2-industry--factory-home .fp-factory-catalog-workspace.fp-workspace--detail-open .fp-type-catalog-grid {
+    grid-template-columns:repeat(auto-fit,minmax(270px,1fr));
+  }
+  .omega-v2-industry--factory-home .fp-assets-workspace.fp-workspace--detail-open .omega-v2-factory-deck {
+    grid-template-columns:minmax(0,1fr);
+  }
+}
+
+/* Compact device height: preserve text and touchability rather than shrinking
+   the whole card back into the old portrait artwork proportions. */
+@media (orientation:landscape) and (max-height:560px) {
+  .omega-v2-industry--factory-home .fp-type-card-art {
+    flex-basis:44px;
+    width:44px;
+    height:44px;
+  }
+  .omega-v2-industry--factory-home .fp-type-card-art .omega-v2-factory-svg {
+    width:36px;
+    height:36px;
+  }
+  .omega-v2-industry--factory-home .fp-type-card-name strong {
+    font-size:12px;
+  }
+  .omega-v2-industry--factory-home .fp-type-card-name small {
+    font-size:9px;
+  }
+  .omega-v2-industry--factory-home .fp-type-card-count {
+    min-height:29px;
+    padding:4px 7px;
+  }
+  .omega-v2-industry--factory-home .fp-type-card-count span,
+  .omega-v2-industry--factory-home .fp-type-card-metrics dt {
+    font-size:9px;
+  }
+  .omega-v2-industry--factory-home .fp-type-card-count strong {
+    font-size:15px;
+  }
+  .omega-v2-industry--factory-home .fp-type-card-metrics dd {
+    font-size:9px;
+  }
+  .omega-v2-industry--factory-home .fp-type-card-actions .omega-v2-factory-button {
+    min-height:38px;
+    font-size:11px;
+  }
+  .omega-v2-industry--factory-home .fp-assets-workspace .fp-badge {
+    width:38px;
+    height:38px;
+  }
+  .omega-v2-industry--factory-home .fp-assets-workspace .fp-badge .omega-v2-factory-svg {
+    width:27px;
+    height:27px;
+  }
+  .omega-v2-industry--factory-home .fp-assets-workspace .fp-card:not(.fp-card--build) .omega-v2-factory-title strong {
+    font-size:11px;
+  }
+  .omega-v2-industry--factory-home .fp-assets-workspace .fp-card:not(.fp-card--build) .omega-v2-factory-title small {
+    font-size:8px;
+  }
+  .omega-v2-industry--factory-home .fp-assets-workspace .fp-card:not(.fp-card--build) .omega-v2-factory-art {
+    min-height:78px;
+    max-height:94px;
+  }
+  .omega-v2-industry--factory-home .fp-assets-workspace .fp-card .omega-v2-factory-status-plate strong {
+    font-size:9px;
+  }
+  .omega-v2-industry--factory-home .fp-assets-workspace .fp-card .omega-v2-factory-output {
+    font-size:12px;
+  }
+  .omega-v2-industry--factory-home .fp-assets-workspace .fp-card .omega-v2-factory-button {
+    min-height:36px;
+    font-size:11px;
+  }
+  .omega-v2-industry--factory-home .fp-card-disclosure {
+    min-height:46px;
+  }
+}
+
+/* Native touch devices must be able to scroll the side panel independently
+   without the stage or card hit areas swallowing the gesture. */
+.omega-v2-industry--factory-home .fp-factory-detail-panel {
+  overscroll-behavior-y:contain;
+}
+.omega-v2-industry--factory-home .fp-factory-detail-panel[hidden] {
+  display:none !important;
+}
