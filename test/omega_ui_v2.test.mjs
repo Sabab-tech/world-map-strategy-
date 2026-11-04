@@ -1122,7 +1122,7 @@ test('factory Stock shows committed finished goods and traced use while Input sh
         removeChild() {
           inputMoreRemoved = true;
           pagedInputRoot.innerHTML = pagedInputRoot.innerHTML.replace(
-            /<button[^>]*data-factory-input-show-more[^>]*>[\\s\\S]*?<\\/button>/,''
+            /<button[^>]*data-factory-input-show-more[^>]*>[\s\S]*?<\/button>/,''
           );
         }
       }
@@ -1147,6 +1147,7 @@ test('factory Stock shows committed finished goods and traced use while Input sh
       'the final partial batch must preserve the ninth factory record');
     assert.equal(inputMoreRemoved,true,
       'the continuation control must be removed after every factory input record is shown');
+    assert.doesNotMatch(pagedInputRoot.innerHTML,/data-factory-input-show-more/);
     assert.match(inputPageStatus.textContent,/9 of 9/);
 
     const factoryRoot = {classList:{add(){}},addEventListener(){},contains(){return true},innerHTML:''};
