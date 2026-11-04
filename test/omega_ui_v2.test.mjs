@@ -2752,7 +2752,7 @@ test('Factory Stock and Input calculate all assigned factory-type requirements b
       capacityPerDay:10,
       inputInventory:{iron_ore:20,coal:10}
     }));
-    api.render(inputRoot,{countryId:'BGD',tab:'inventory'});
+    globalThis.OmegaUIV2Industry.render(inputRoot,{countryId:'BGD',tab:'inventory'});
     const renderedFactoryCardCount=()=> (inputRoot.innerHTML.match(/class="fp-factory-data-card"/g)||[]).length;
     assert.equal(renderedFactoryCardCount(),4,'the initial Input render must mount only one four-factory detail batch');
     assert.match(inputRoot.innerHTML,/data-factory-input-show-more/,
