@@ -2925,11 +2925,28 @@ test('factory cards progressively disclose canonical products, quantities and in
     innerHTML:'', hidden:true,
     setAttribute(name, value) { this[name] = value; }
   };
+  const viewContent = { innerHTML:'' };
+  const workspaceState = {};
+  const workspace = { classList:{ toggle(name, active) { workspaceState[name] = !!active; } } };
+  const stageAttrs = {};
+  const stage = { setAttribute(name, value) { stageAttrs[name] = value; } };
+  const viewToggleAttrs = {};
+  const viewToggle = {
+    textContent:'Details',
+    getAttribute(name) { return viewToggleAttrs[name] || null; },
+    setAttribute(name, value) { viewToggleAttrs[name] = value; }
+  };
   const root = {
     classList:{add(){}},
     addEventListener(name, callback) { listeners[name] = callback; },
     contains() { return true; },
-    querySelector(selector) { return selector === '[data-factory-detail-panel]' ? sidePanel : null; },
+    querySelector(selector) {
+      if (selector === '[data-factory-detail-panel]') return sidePanel;
+      if (selector === '[data-omega-v2-factory-view-content]') return viewContent;
+      if (selector === '.fp-stage') return stage;
+      if (selector === '.fp-factory-catalog-workspace, .fp-assets-workspace') return workspace;
+      return null;
+    },
     querySelectorAll(selector) { return selector === '[data-omega-v2-factory-card-expand]' ? [disclosureButton] : []; },
     innerHTML:''
   };
@@ -2967,6 +2984,34 @@ test('factory cards progressively disclose canonical products, quantities and in
     assert.doesNotMatch(steel,/COPPER CONCENTRATE/i,'only the primary input is shown in collapsed view');
     assert.match(steel,/Modeled build time/);
     assert.match(steel,/Build project/);
+
+    // The view control must work repeatedly without rebuilding the navigation shell.
+    const beforeViewToggleRoot = root.innerHTML;
+    viewContent.innerHTML = 'Factory view mount';
+    const viewClickTarget = {
+      closest(selector) {
+        if (selector === '[data-omega-v2-factory-view-toggle]') return viewToggle;
+        return null;
+      }
+    };
+    listeners.click({target:viewClickTarget});
+    assert.equal(root.__omegaV2IndustryFactoryView,'assets');
+    assert.match(viewContent.innerHTML,/fp-assets-workspace/);
+    assert.match(viewContent.innerHTML,/FACTORY-STEEL-CARD-01/);
+    assert.equal(stageAttrs['data-factory-view'],'assets');
+    assert.equal(viewToggle.textContent,'Type totals');
+    assert.equal(viewToggleAttrs['aria-pressed'],'true');
+    assert.equal(root.innerHTML,beforeViewToggleRoot,
+      'view switching must update its content subtree without rebuilding navigation and summary');
+
+    listeners.click({target:viewClickTarget});
+    assert.equal(root.__omegaV2IndustryFactoryView,'types',
+      'the second view toggle must use current state, not a first-render closure value');
+    assert.match(viewContent.innerHTML,/fp-type-catalog/);
+    assert.equal(stageAttrs['data-factory-view'],'types');
+    assert.equal(viewToggle.textContent,'Details');
+    assert.equal(viewToggleAttrs['aria-pressed'],'false');
+    assert.equal(root.innerHTML,beforeViewToggleRoot);
 
     root.__omegaV2FactoryCardUiState = {
       expandedKey:'type:STEEL_AND_ALLOY_WORKS',
@@ -3184,7 +3229,7 @@ test('factory catalog warm-up timeout releases a never-settling optional load wi
 test('Factory Stock/Input UI assets invalidate the old offline shell cache', () => {
   const sw = readFileSync('omega-offline-map-sw.js','utf8');
   const css = readFileSync('omega_ui_v2/factory-production-command.css','utf8');
-  assert.ok(sw.includes('omega-offline-atlas-shell-v87'),
+  assert.ok(sw.includes('omega-offline-atlas-shell-v88'),
     'the offline shell must activate the new JS/CSS rather than retaining the old Stock/Input renderer');
   assert.ok(css.includes('flex:0 0 20px'),'compact recipe product SVGs must stay small on desktop cards');
   assert.ok(css.includes('flex-basis:18px'),'compact recipe product SVGs must stay small on mobile cards');
@@ -3224,5 +3269,22 @@ test('Factory cards use horizontal internal layouts and only reserve the landsca
   assert.match(css,/fp-workspace--detail-open/);
   assert.match(css,/@media \(orientation:landscape\) and \(max-width:680px\)/);
   assert.match(css,/grid-template-columns:repeat\(auto-fit,minmax\(245px,1fr\)\)/);
-  assert.match(sw,/omega-offline-atlas-shell-v87/);
+  assert.match(sw,/omega-offline-atlas-shell-v88/);
+});
+
+
+test('Factory landscape controls keep readable card text, independent detail scrolling and touch-sized disclosure', () => {
+  const css = readFileSync(new URL('../omega_ui_v2/factory-production-command.css', import.meta.url), 'utf8');
+  const source = readFileSync(new URL('../omega_ui_v2/screens/industry.js', import.meta.url), 'utf8');
+  assert.match(css,/@media \\(orientation:landscape\\)/);
+  assert.match(css,/fp-type-card-name strong \\{\\s*font-size:13px/);
+  assert.match(css,/fp-type-card-art \\{\\s*flex:0 0 48px/);
+  assert.match(css,/fp-factory-detail-panel \\{[\\s\\S]*?overflow-y:auto/);
+  assert.match(css,/touch-action:pan-y/);
+  assert.match(css,/min-height:46px/);
+  assert.match(css,/max-width:899px/);
+  assert.match(source,/var currentFactoryView = root\\.__omegaV2IndustryFactoryView/);
+  assert.match(source,/viewContent\\.innerHTML = factoryHomeViewMarkup/);
+  assert.match(source,/__omegaV2FactoryRouteCache/);
+  assert.match(source,/__omegaV2FactoryDetailMarkupCache/);
 });
