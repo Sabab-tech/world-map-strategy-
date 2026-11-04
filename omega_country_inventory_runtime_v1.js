@@ -359,7 +359,8 @@
       Object.keys(balances).forEach(function (key) {
         var pid = normalizeProductId(key), value = number(balances[key]);
         if (!pid || value === null) return;
-        map[pid] = value;
+        // Legacy snapshots must never expose a negative quantity as spendable stock.
+        map[pid] = Math.max(0, value);
       });
       return map;
     }
@@ -368,7 +369,12 @@
     Object.keys(inventory).forEach(function (key) {
       var pid = normalizeProductId(key), value = number(inventory[key]);
       if (!pid || value === null) return;
-      map[pid] = (number(map[pid]) || 0) + value;
+      // Repair legacy direct writes at the authoritative inventory boundary.
+      if (value < 0) {
+        inventory[key] = 0;
+        value = 0;
+      }
+      map[pid] = Math.max(0, (number(map[pid]) || 0) + value);
     });
     return map;
   }

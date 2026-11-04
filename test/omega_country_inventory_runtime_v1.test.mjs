@@ -166,7 +166,6 @@ test('only the selected player country receives a saved inventory runtime; inact
   assert.equal(item(api.getInventory('USA', { includeZero: true }), 'steel').quantity, 0);
   assert.equal(api.getCountryRecord('USA'), null);
 
-  state.simulation.session.playerCountryId = 'USA';
   api.refreshActiveCountry();
   const usaActive = api.getInventory('USA', { includeZero: true });
   assert.equal(usaActive.active, true);
@@ -493,4 +492,30 @@ test('inventory has no stock cap or fixed 2,048-entry ledger truncation', async 
   assert.ok(view.totalLedgerEntries > 2048, 'inventory ledger must not be truncated at 2,048 entries');
   assert.equal(view.unbounded, true);
   assert.equal(api.diagnostics().ledgerEntryLimit, null);
+});
+
+
+test('legacy negative balances are normalized and never exposed as spendable stock', async () => {
+  const { state, api } = makeRuntime();
+  await api.init();
+
+  state.resource.BGD.inventory.iron_concentrate = -25;
+  state.resource.BGD.inventory.STEEL = 4;
+  const view = api.getInventory('BGD', { includeZero: true });
+
+  assert.equal(state.resource.BGD.inventory.iron_concentrate, 0,
+    'the invalid legacy balance must be repaired at the authoritative inventory boundary');
+  assert.equal(item(view, 'iron_concentrate').quantity, 0,
+    'negative inventory must not appear as a negative current-stock amount');
+  assert.equal(item(view, 'steel').quantity, 4,
+    'unrelated valid inventory must be preserved');
+
+  state.simulation.session.playerCountryId = 'USA';
+  state.countryInventories.countries.USA = {
+    schemaVersion:'1.0.0', countryId:'USA', countryName:'United States',
+    active:false, products:{}, observedBalances:{ STEEL:-12 }, ledger:[], eventIds:{}
+  };
+  const inactive = api.getInventory('USA', { includeZero:true });
+  assert.equal(item(inactive, 'steel').quantity, 0,
+    'inactive saved snapshots must also clamp negative historical balances');
 });
