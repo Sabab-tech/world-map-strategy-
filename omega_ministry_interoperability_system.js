@@ -396,7 +396,7 @@
         dropped:0,expired:0,failed:0,processed:0,
         requests:0,responses:0,acks:0,alerts:0,
         statePublications:0,decisionEvaluations:0,commands:0,events:0,
-        noStateWrites:0,providerReads:0,providerMisses:0
+        noStateWrites:0,providerReads:0,providerMisses:0,stateWriteConflicts:0
       };
       this._rebuildTopology();
     }
@@ -1526,6 +1526,8 @@
         return clone(row);
       }
 
+      let stagedEvents=[];
+      let result=null;
       try{
         row.status='PROCESSING';
         row.statusHistory.push({status:'PROCESSING',simulationTurn:turn});
@@ -1539,17 +1541,25 @@
         if(!stateTransaction){
           throw new Error('AUTHORITATIVE_STATE_TRANSACTION_UNAVAILABLE');
         }
-        let emittedEventCount=0;
-        const result=handler.handler(deepFreeze(clone(command)),{
+        result=handler.handler(deepFreeze(clone(command)),{
           countryId:country,
           simulationTurn:turn,
           stateProvider:this.provider,
           stateTransaction,
           emitEvent:(eventType,eventPayload={},eventOptions={})=>{
-            emittedEventCount+=1;
-            return this.emitEvent(eventType,country,handler.ownerMinistry,eventPayload,{...eventOptions,turn,causationId:commandId});
+            const type=String(eventType||'');
+            if(!Object.prototype.hasOwnProperty.call(EVENT_TYPES,type))throw new Error('NON_CANONICAL_EVENT:'+type);
+            stagedEvents.push({
+              eventType:type,
+              payload:clone(eventPayload),
+              options:{...clone(eventOptions||{}),turn,causationId:commandId}
+            });
+            return{queued:true,eventType:type,causationId:commandId};
           }
         });
+        if(result?.eventType&&!Object.prototype.hasOwnProperty.call(EVENT_TYPES,String(result.eventType))){
+          throw new Error('NON_CANONICAL_EVENT:'+String(result.eventType));
+        }
         if(result?.accepted!==false && stateTransaction){
           row.transaction=stateTransaction.commit();
         }else if(stateTransaction){
@@ -1560,7 +1570,8 @@
         row.result=clone(result);
         row.stateChanged=Boolean(row.transaction?.changed);
         row.stateWriteCount=stagedWrites;
-        row.eventsEmitted=emittedEventCount;
+        row.eventsStaged=stagedEvents.length+(result?.eventType?1:0);
+        row.eventsEmitted=0;
         row.status=result?.accepted===false?'FAILED':
           (stagedWrites===0&&!intentionalNoWrite?'ACCEPTED_NO_STATE_WRITE':'APPLIED');
         if(row.status==='ACCEPTED_NO_STATE_WRITE'){
@@ -1573,17 +1584,38 @@
         row.statusHistory.push({status:row.status,simulationTurn:turn,reason:row.reason||null});
         if(row.status==='ACCEPTED_NO_STATE_WRITE')this._emit('OMEGA_COMMAND_ACCEPTED_NO_STATE_WRITE',{
           commandId,commandType,countryId:country,sourceMinistryId:source,targetMinistryId:handler.ownerMinistry,
-          eventsEmitted:emittedEventCount
+          eventsStaged:row.eventsStaged
         },turn);
-        if(result?.eventType)this.emitEvent(result.eventType,country,handler.ownerMinistry,result.eventPayload||{},{
-          turn,causationId:commandId,provenance:result.provenance||null
+        const eventsToPublish=stagedEvents.slice();
+        if(result?.eventType)eventsToPublish.push({
+          eventType:String(result.eventType),
+          payload:clone(result.eventPayload||{}),
+          options:{turn,causationId:commandId,provenance:clone(result.provenance||null)}
         });
+        if(row.status==='APPLIED'){
+          for(const pending of eventsToPublish){
+            try{
+              this.emitEvent(pending.eventType,country,handler.ownerMinistry,pending.payload,pending.options);
+              row.eventsEmitted+=1;
+            }catch(eventError){
+              row.eventFailures=(row.eventFailures||0)+1;
+              this.metrics.failed+=1;
+            }
+          }
+        }else{
+          row.eventsDiscarded=eventsToPublish.length;
+        }
         return clone(row);
       }catch(error){
+        const code=String(error?.code||error?.message||error);
         row.status='FAILED';
-        row.result={error:String(error?.message||error)};
-        row.statusHistory.push({status:'FAILED',simulationTurn:turn});
+        row.reason=code;
+        row.result={error:code,code};
+        row.eventsEmitted=0;
+        row.eventsDiscarded=Array.isArray(stagedEvents)?stagedEvents.length+(result?.eventType?1:0):0;
+        row.statusHistory.push({status:'FAILED',simulationTurn:turn,reason:code});
         this.metrics.failed+=1;
+        if(code==='STATE_TRANSACTION_CONFLICT')this.metrics.stateWriteConflicts+=1;
         return clone(row);
       }
     }

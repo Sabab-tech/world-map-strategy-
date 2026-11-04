@@ -626,3 +626,35 @@ function stripTelemetry(value){
 console.log('OMEGA GOVERNMENT INTEROPERABILITY TEST MATRIX READY');
 console.log('Tests:',23);
 console.log('Canonical ministry count:',MINISTRY_COUNT);
+
+
+test('stale ministry writes are rejected and events publish only after a successful commit',()=>{
+  const s=createSandbox();
+  const tx=s.sandbox.OmegaMinistryStateTransaction.create(
+    'finance',s.countryA,4,'PIPE-TX-STALE',s.state
+  );
+  tx.set('finance.reserves',1234);
+  s.state.finance[s.countryA].reserves=777;
+  assert.throws(()=>tx.commit(),/STATE_TRANSACTION_CONFLICT/);
+  assert.equal(s.state.finance[s.countryA].reserves,777,
+    'a stale transaction must preserve the latest authoritative value');
+
+  s.mesh.registerCommandHandler('PIPELINE_STALE_WRITE_TEST','economy',(command,{stateTransaction,emitEvent})=>{
+    stateTransaction.set('economy.gdp',500);
+    s.state.economy[s.countryA].gdp=888;
+    emitEvent('FISCAL_CONDITION_CHANGED',{reason:'must-not-publish-before-commit'});
+    return{accepted:true};
+  });
+  const result=s.mesh.dispatchCommand('finance','PIPELINE_STALE_WRITE_TEST',s.countryA,{},{
+    turn:5,commandType:'PIPELINE_STALE_WRITE_TEST',commandId:'PIPE-CMD-STALE'
+  });
+  assert.equal(result.status,'FAILED');
+  assert.equal(result.result.code,'STATE_TRANSACTION_CONFLICT');
+  assert.equal(s.state.economy[s.countryA].gdp,888);
+  assert.equal(
+    [...s.mesh.instance.events.values()].filter(event=>event.causationId==='PIPE-CMD-STALE').length,
+    0,'events from a failed transaction must be discarded'
+  );
+  assert.equal(result.eventsEmitted,0);
+  assert.equal(result.eventsDiscarded,1);
+});
