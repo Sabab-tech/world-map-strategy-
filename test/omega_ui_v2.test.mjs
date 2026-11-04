@@ -2875,10 +2875,23 @@ test('factory cards progressively disclose canonical products, quantities and in
     getResourceCatalog() { return Object.keys(catalog.resourceRules).map(id => ({resourceId:id})); }
   };
   const listeners = {};
+  const disclosureAttrs = { 'data-card-key':'type:STEEL_AND_ALLOY_WORKS', 'aria-expanded':'false' };
+  const disclosureCard = { setAttribute(name, value) { this[name] = value; }, classList:{toggle(){}} };
+  const disclosureButton = {
+    getAttribute(name) { return disclosureAttrs[name] || (name === 'data-card-key' ? 'type:STEEL_AND_ALLOY_WORKS' : null); },
+    setAttribute(name, value) { disclosureAttrs[name] = value; },
+    closest() { return disclosureCard; }
+  };
+  const sidePanel = {
+    innerHTML:'', hidden:true,
+    setAttribute(name, value) { this[name] = value; }
+  };
   const root = {
     classList:{add(){}},
     addEventListener(name, callback) { listeners[name] = callback; },
     contains() { return true; },
+    querySelector(selector) { return selector === '[data-factory-detail-panel]' ? sidePanel : null; },
+    querySelectorAll(selector) { return selector === '[data-omega-v2-factory-card-expand]' ? [disclosureButton] : []; },
     innerHTML:''
   };
   function render(options) {
@@ -2922,12 +2935,15 @@ test('factory cards progressively disclose canonical products, quantities and in
     };
     render();
     steel = cardHtml('STEEL_AND_ALLOY_WORKS');
-    assert.match(steel,/Complete production formula/);
-    assert.match(steel,/COPPER CONCENTRATE/i);
-    assert.match(steel,/CEMENT FEED/i);
-    assert.match(steel,/PROCESSING DUST/i);
-    assert.match(steel,/Quantity basis: PER SIMULATION PRODUCTION UNIT/);
-    assert.match(steel,/Steel and alloy works/i);
+    assert.doesNotMatch(steel,/Complete production formula/,
+      'expanded recipe details must not increase card height or create a vertical list');
+    assert.match(root.innerHTML,/data-factory-detail-panel/);
+    assert.match(root.innerHTML,/Complete production formula/);
+    assert.match(root.innerHTML,/COPPER CONCENTRATE/i);
+    assert.match(root.innerHTML,/CEMENT FEED/i);
+    assert.match(root.innerHTML,/PROCESSING DUST/i);
+    assert.match(root.innerHTML,/Quantity basis: PER SIMULATION PRODUCTION UNIT/);
+    assert.match(root.innerHTML,/Steel and alloy works/i);
 
     root.__omegaV2FactoryCardUiState = {
       expandedKey:'',
@@ -2975,11 +2991,13 @@ test('factory cards progressively disclose canonical products, quantities and in
     render({factoryView:'assets'});
     const liveExpanded = root.innerHTML.match(/<article class="omega-v2-factory-card fp-card[^>]*data-factory-id="FACTORY-STEEL-CARD-01"[\s\S]*?<\/article>/);
     assert.ok(liveExpanded);
-    assert.match(liveExpanded[0],/Complete production formula/);
-    assert.ok(liveExpanded[0].includes('Not started / no committed output'));
-    assert.match(liveExpanded[0],/Factory stock: 120 game units/);
-    assert.match(liveExpanded[0],/Factory stock: Not recorded/,'an absent product key must remain unknown, not be converted to zero');
-    assert.match(liveExpanded[0],/Modeled per game day per factory: 324 game units/,'the card must use capacity × coefficient ÷ cycle days');
+    assert.doesNotMatch(liveExpanded[0],/Complete production formula/,
+      'full recipe details must stay outside the card in the adjacent panel');
+    assert.match(root.innerHTML,/Complete production formula/);
+    assert.ok(root.innerHTML.includes('Not started / no committed output'));
+    assert.match(root.innerHTML,/Factory stock: 120 game units/);
+    assert.match(root.innerHTML,/Factory stock: Not recorded/,'an absent product key must remain unknown, not be converted to zero');
+    assert.match(root.innerHTML,/Modeled per game day per factory: 324 game units/,'the panel must reuse capacity × coefficient ÷ cycle days per factory');
     const visibleCardText = liveExpanded[0].replace(/<[^>]*>/g,' ');
     assert.doesNotMatch(visibleCardText,/[A-Za-z0-9]_[A-Za-z0-9]/,'visible card text must not expose underscore-based identifiers');
 
@@ -2991,18 +3009,28 @@ test('factory cards progressively disclose canonical products, quantities and in
       buildMaterialsExpanded:false
     };
     render({factoryView:'types'});
+    const renderedBeforeDisclosure = root.innerHTML;
     const clickTarget = {
       closest(selector) {
-        if (selector === '[data-omega-v2-factory-card-expand]') {
-          return { getAttribute(name) { return name === 'data-card-key' ? 'type:STEEL_AND_ALLOY_WORKS' : null; } };
-        }
+        if (selector === '[data-omega-v2-factory-card-expand]') return disclosureButton;
         return null;
       }
     };
     listeners.click({target:clickTarget});
     assert.equal(root.__omegaV2FactoryCardUiState.expandedKey,'type:STEEL_AND_ALLOY_WORKS');
     assert.equal(root.__omegaV2FactoryCardUiState.buildKey,'');
-    assert.match(root.innerHTML,/Complete production formula/);
+    assert.equal(root.innerHTML,renderedBeforeDisclosure,
+      'opening a recipe must not reassign or rebuild the full Industry root');
+    assert.equal(disclosureAttrs['aria-expanded'],'true');
+    assert.equal(sidePanel.hidden,false);
+    assert.match(sidePanel.innerHTML,/Complete production formula/);
+    assert.match(sidePanel.innerHTML,/COPPER CONCENTRATE/i);
+    listeners.click({target:clickTarget});
+    assert.equal(root.__omegaV2FactoryCardUiState.expandedKey,'');
+    assert.equal(root.innerHTML,renderedBeforeDisclosure,
+      'closing a recipe must remain a local DOM update');
+    assert.equal(sidePanel.hidden,true);
+    assert.equal(sidePanel.innerHTML,'');
   } finally {
     if (previous.Game === undefined) delete globalThis.Game; else globalThis.Game = previous.Game;
     if (previous.inventory === undefined) delete globalThis.OmegaCountryInventoryRuntime; else globalThis.OmegaCountryInventoryRuntime = previous.inventory;
@@ -3115,11 +3143,27 @@ test('factory catalog warm-up timeout releases a never-settling optional load wi
 test('Factory Stock/Input UI assets invalidate the old offline shell cache', () => {
   const sw = readFileSync('omega-offline-map-sw.js','utf8');
   const css = readFileSync('omega_ui_v2/factory-production-command.css','utf8');
-  assert.ok(sw.includes('omega-offline-atlas-shell-v85'),
+  assert.ok(sw.includes('omega-offline-atlas-shell-v86'),
     'the offline shell must activate the new JS/CSS rather than retaining the old Stock/Input renderer');
   assert.ok(css.includes('flex:0 0 20px'),'compact recipe product SVGs must stay small on desktop cards');
   assert.ok(css.includes('flex-basis:18px'),'compact recipe product SVGs must stay small on mobile cards');
   for (const selector of ['.fp-product-identity','.fp-product-icon-frame','.fp-product-stock-quantity']) {
     assert.ok(css.includes(selector), selector + ' must be styled in the actual factory command stylesheet');
   }
+});
+
+
+test('factory production details use a landscape side panel and local delegated disclosure updates', () => {
+  const source = readFileSync(new URL('../omega_ui_v2/screens/industry.js', import.meta.url), 'utf8');
+  const css = readFileSync(new URL('../omega_ui_v2/factory-production-command.css', import.meta.url), 'utf8');
+  assert.match(source,/function factoryDetailPanelContentsMarkup/);
+  assert.match(source,/function syncFactoryDetailPanel/);
+  assert.match(source,/factoryDetailPanelMarkup\(model\)/);
+  assert.match(source,/syncFactoryDetailPanel\(root, root\.__omegaV2IndustryModel \|\| model\)/);
+  assert.match(css,/fp-factory-catalog-workspace/);
+  assert.match(css,/fp-assets-workspace/);
+  assert.match(css,/@media \(orientation:landscape\) and \(min-width:681px\)/);
+  assert.match(css,/fp-factory-detail-panel/);
+  assert.match(source,/Modeled per game day per factory:/,
+    'the side panel must reuse the existing canonical per-factory daily input calculation');
 });
