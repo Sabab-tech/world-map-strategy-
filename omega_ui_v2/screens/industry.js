@@ -3244,7 +3244,7 @@
       return byCategory || String(a && (a.name || a.type) || '').localeCompare(String(b && (b.name || b.type) || ''));
     });
     var totalTypes = rows.length;
-    var visibleLimit = Math.min(totalTypes, Math.max(4, Math.floor(num(model.factoryTypeVisibleCount) || 4)));
+    var visibleLimit = Math.min(totalTypes, Math.max(1, Math.floor(num(model.factoryTypeVisibleCount) || 1)));
     var visibleRows = rows.slice(0, visibleLimit);
     // Keep the first Industry route light on Android WebView: build rich recipe
     // markup only for the visible type cards. Every remaining canonical type
@@ -3275,7 +3275,7 @@
       '<div class="fp-factory-catalog-workspace' + (factoryCardUiState(model).expandedKey ? ' fp-workspace--detail-open' : '') + '"><div class="fp-type-catalog-grid">' + (cards || empty) + '</div>' +
       factoryDetailPanelMarkup(model) + '</div>' +
       (visibleRows.length < totalTypes ? '<div class="fp-factory-input-more-wrap"><button type="button" class="omega-v2-button fp-factory-input-more" data-factory-type-show-more>' +
-        'Show next factory types · ' + fmt(Math.min(4, totalTypes - visibleRows.length)) + ' of ' + fmt(totalTypes - visibleRows.length) + ' remaining</button></div>' : '') +
+        'Show next factory types · ' + fmt(Math.min(1, totalTypes - visibleRows.length)) + ' of ' + fmt(totalTypes - visibleRows.length) + ' remaining</button></div>' : '') +
       '</section>';
   }
 
@@ -3413,7 +3413,7 @@
       root.__omegaV2IndustryFactoryViewExplicit = false;
       root.__omegaV2IndustryFactoryView = 'types';
       root.__omegaV2FactoryInputVisibleCount = 4;
-      root.__omegaV2FactoryTypeVisibleCount = 4;
+      root.__omegaV2FactoryTypeVisibleCount = 1;
       root.__omegaV2FactoryCardUiState = { expandedKey:'', buildKey:'', sections:Object.create(null), buildMaterialsExpanded:false };
     }
     if (!root.__omegaV2FactoryCardUiState || typeof root.__omegaV2FactoryCardUiState !== 'object') {
@@ -3427,7 +3427,7 @@
     }
     model.factoryCardUiState = root.__omegaV2FactoryCardUiState;
     if (!Number.isFinite(Number(root.__omegaV2FactoryTypeVisibleCount)) || Number(root.__omegaV2FactoryTypeVisibleCount) < 4) {
-      root.__omegaV2FactoryTypeVisibleCount = 4;
+      root.__omegaV2FactoryTypeVisibleCount = 1;
     }
     model.factoryTypeVisibleCount = root.__omegaV2FactoryTypeVisibleCount;
     if (options.factoryView === 'assets' || options.factoryView === 'types') {
@@ -3541,8 +3541,8 @@
         if (showMoreFactoryTypes && root.contains(showMoreFactoryTypes)) {
           var typePagingModel = root.__omegaV2IndustryModel || model;
           var totalFactoryTypes = Array.isArray(typePagingModel.factoryTypeCatalog) ? typePagingModel.factoryTypeCatalog.length : 0;
-          var currentVisibleTypes = Math.max(4, Math.floor(num(root.__omegaV2FactoryTypeVisibleCount) || 4));
-          var nextVisibleTypes = Math.min(totalFactoryTypes, currentVisibleTypes + 4);
+          var currentVisibleTypes = Math.max(1, Math.floor(num(root.__omegaV2FactoryTypeVisibleCount) || 1));
+          var nextVisibleTypes = Math.min(totalFactoryTypes, currentVisibleTypes + 1);
           if (nextVisibleTypes > currentVisibleTypes) {
             root.__omegaV2FactoryTypeVisibleCount = nextVisibleTypes;
             scheduleRender(root, Object.assign({}, root.__omegaV2IndustryOptions || options || {}, { tab:'factories', factoryView:'types' }),
