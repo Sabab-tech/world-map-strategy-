@@ -435,6 +435,7 @@
       this.requestLedger=new Map();
       this.events=new Map();
       this.commands=new Map();
+      this.integrityConflicts=[];
       this.commandHandlers=new Map();
       this._receivedMessageIds=new Set();
       this._requestSequence=0;
@@ -453,7 +454,7 @@
         requests:0,responses:0,acks:0,alerts:0,
         statePublications:0,decisionEvaluations:0,commands:0,events:0,
         noStateWrites:0,providerReads:0,providerMisses:0,stateWriteConflicts:0,
-        messageIdCollisions:0,commandIdCollisions:0,eventIdCollisions:0
+        conflicts:0,messageIdCollisions:0,commandIdCollisions:0,eventIdCollisions:0
       };
       this._rebuildTopology();
     }
@@ -538,6 +539,30 @@
     _invalidateKnowledgeCache(){
       this._knowledgeRevision+=1;
       this._knowledgeCache=null;
+    }
+
+    _recordIntegrityConflict(kind,id,details={}){
+      const turn=Number.isFinite(Number(details.simulationTurn))?Number(details.simulationTurn):this.lastTurn;
+      const row={
+        kind:String(kind||'UNKNOWN_CONFLICT'),id:String(id??''),
+        countryId:details.countryId?canonicalCountryId(details.countryId):null,
+        simulationTurn:turn,
+        sourceMinistryId:details.sourceMinistryId?String(details.sourceMinistryId):null,
+        targetMinistryId:details.targetMinistryId?String(details.targetMinistryId):null,
+        reason:details.reason?String(details.reason):String(kind||'UNKNOWN_CONFLICT'),
+        existingFingerprint:details.existingFingerprint?String(details.existingFingerprint):null,
+        incomingFingerprint:details.incomingFingerprint?String(details.incomingFingerprint):null
+      };
+      this.integrityConflicts.push(row);
+      while(this.integrityConflicts.length>this.maxHistory)this.integrityConflicts.shift();
+      this.metrics.conflicts+=1;
+      this._emit('OMEGA_DATA_PIPELINE_CONFLICT_DETECTED',row,turn);
+      return clone(row);
+    }
+
+    getIntegrityConflicts(countryId=null){
+      const country=countryId?canonicalCountryId(countryId):null;
+      return clone(this.integrityConflicts.filter(row=>!country||row.countryId===country));
     }
 
     _providerValue(countryId,path,context,observed){
@@ -2108,6 +2133,7 @@
           event:this._eventSequence,command:this._commandSequence
         },
         metrics:clone(this.metrics),
+        integrityConflicts:clone(this.integrityConflicts),
         inboxes,snapshots,deliveryLedger:delivery,requestLedger:requests,
         events,commands
       };
@@ -2123,6 +2149,7 @@
       this._eventSequence=number(state.sequences?.event)||0;
       this._commandSequence=number(state.sequences?.command)||0;
       this.metrics={...this.metrics,...clone(state.metrics||{})};
+      this.integrityConflicts=clone(state.integrityConflicts||[]).slice(-this.maxHistory);
       for(const id of this.ids)this.inboxes.set(id,clone(state.inboxes?.[id]||[]).slice(0,this.maxInbox));
       this.snapshots=new Map(Object.entries(state.snapshots||{}).map(([k,v])=>[k,clone(v)]));
       this.deliveryLedger=new Map(Object.entries(state.deliveryLedger||{}).map(([k,v])=>[k,clone(v)]));
