@@ -760,9 +760,11 @@
       var token = raw.toUpperCase().replace(/[ -]+/g, '_');
       if (token === 'SIMULATION_RESOURCE_UNIT') return 'Game units';
       if (token === 'SIMULATION_TONNE_EQUIVALENT' || token === 'SIMULATION_TONNE') return 'Game tonnes';
-      var normalized = raw.replace(/[_-]+/g, ' ');
-      if (/^SIMULATION_/i.test(normalized)) normalized = 'Game ' + normalized.replace(/^SIMULATION_/i, '');
-      return normalized.toLowerCase().replace(/\b[a-z]/g, function (ch) { return ch.toUpperCase(); });
+      if (/^SIMULATION_/i.test(raw)) {
+        return 'Game ' + raw.replace(/^SIMULATION_/i, '').replace(/[_-]+/g, ' ').toLowerCase();
+      }
+      // Keep declared physical-unit symbols (for example TONNES) unchanged.
+      return raw;
     }
     function buildResourceAmount(value, unit) {
       var n = numberOrNull(value);
