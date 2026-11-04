@@ -596,6 +596,46 @@ test('industry treats starting and newly built factories as one live asset regis
     assert.match(typeRoot.innerHTML, /<strong>3<\/strong>/);
     assert.doesNotMatch(typeRoot.innerHTML, /Starting allocation|fp-type-card-count--starting|Starting units/);
 
+    // The complete canonical catalog remains available, while the first
+    // landscape render mounts only four rich cards to avoid Android WebView stalls.
+    const profiles = globalThis.OmegaResourceIndustrialCatalogData.factoryProfiles;
+    for (let index = 1; index <= 7; index += 1) {
+      profiles['TEST_FACTORY_TYPE_' + index] = {
+        name:'Test Factory Type ' + index,
+        category:'Test catalog',
+        defaultCapacityPerDay:10
+      };
+    }
+    const pagedTypeRoot = {
+      classList:{add(){}},listeners:Object.create(null),
+      addEventListener(type,listener){this.listeners[type]=listener;},
+      contains(){return true},innerHTML:''
+    };
+    const pagedTypeResult = globalThis.OmegaUIV2Industry.render(pagedTypeRoot, {
+      countryId:'BGD',tab:'factories',factoryView:'types'
+    });
+    assert.equal(pagedTypeResult.ok,true);
+    const renderedTypeCardCount = () => (pagedTypeRoot.innerHTML.match(/data-omega-v2-factory-type-card/g)||[]).length;
+    assert.equal(renderedTypeCardCount(),4,
+      'the initial Android-friendly Industry route must mount four rich factory-type cards');
+    assert.match(pagedTypeRoot.innerHTML,/9 types/);
+    assert.match(pagedTypeRoot.innerHTML,/data-factory-type-show-more/,
+      'the remaining canonical factory types must remain accessible');
+    const showMoreTypesButton = {};
+    const clickShowMoreTypes = () => {
+      pagedTypeRoot.listeners.click({target:{closest(selector){
+        return selector === '[data-factory-type-show-more]' ? showMoreTypesButton : null;
+      }}});
+    };
+    clickShowMoreTypes();
+    assert.equal(renderedTypeCardCount(),8,
+      'the first continuation action must expose four more canonical factory types');
+    clickShowMoreTypes();
+    assert.equal(renderedTypeCardCount(),9,
+      'the final continuation action must expose the complete catalog');
+    assert.doesNotMatch(pagedTypeRoot.innerHTML,/data-factory-type-show-more/,
+      'the continuation control must disappear when the entire catalog is visible');
+
     const economyAssets = globalThis.Game.state.economy.BGD.productionAssets;
     const newlyBuiltFactory = {
       id:'BGD-STEEL-4', factoryType:'STEEL_MILL', name:'Newly Built Steel Works',
