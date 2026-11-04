@@ -2921,7 +2921,9 @@ test('factory cards progressively disclose canonical products, quantities and in
     assert.match(steel,/0\.72 simulation resource unit \/ production unit/);
     assert.match(steel,/0\.6 simulation resource unit \/ production unit/);
     assert.match(steel,/data-omega-v2-factory-card-expand/);
-    assert.match(steel,/data-omega-v2-factory-section-toggle/);
+    assert.doesNotMatch(steel,/data-omega-v2-factory-section-toggle/,
+      'expanded input/output rows are now shown in the adjacent side panel, not stacked inside the card');
+    assert.match(root.innerHTML,/data-factory-detail-panel/);
     assert.doesNotMatch(steel,/PROCESSING DUST/i,'the second by-product must remain hidden in collapsed view');
     assert.doesNotMatch(steel,/COPPER CONCENTRATE/i,'only the primary input is shown in collapsed view');
     assert.match(steel,/Modeled build time/);
