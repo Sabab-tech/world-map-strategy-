@@ -871,6 +871,19 @@
       return !!asset && !/DECOMMISSIONED|DESTROYED|STOPPED|CLOSED|INACTIVE/.test(status) &&
         /OPERATIONAL|ACTIVE|COMMISSIONED|PRODUCING/.test(status);
     }
+    // Keep sites, constructed assets, operating assets and construction work separate.
+    var builtMineCount = assets.filter(function (asset) {
+      var status = String(asset && asset.status || '').toUpperCase();
+      return !!asset && !/DECOMMISSIONED|DESTROYED|DEMOLISHED|REMOVED/.test(status);
+    }).length;
+    var operatingMineCount = assets.filter(isOperationalAsset).length;
+    var mineUnitsBuilding = mineProjects.reduce(function (total, project) {
+      if (String(project && project.status || '').toUpperCase() !== 'UNDER_CONSTRUCTION') return total;
+      var quantity = numberOrNull(project && project.assetCount);
+      return total + (quantity !== null && quantity > 0 ? Math.floor(quantity) : 1);
+    }, 0);
+    var pendingMineProjectCount = mineProjects.length;
+    var eligibleMineSiteCount = model.sites.filter(eligible).length;
     function projectFor(id) {
       for (var i = mineProjects.length - 1; i >= 0; i -= 1) if (String(mineProjects[i].siteId || '') === String(id || '')) return mineProjects[i];
       return null;
@@ -1461,9 +1474,12 @@
     var outputHeadline = sumUnitGroups(currentOutputGroups);
     var countryLabel = playerCountryDisplayName(countryKey);
     var dashMarkup = photoMarkup + '<div class="omega-v2-kpis omega-v2-resource-command-kpis">' +
-      renderKpi('Registered mines', String(model.sites.filter(eligible).length), model.sites.length + ' sites', 'neutral') +
-      renderKpi('Producing now', String(producingSites.length), 'Recorded this turn', portfolioBalanceState) +
-      renderKpi('Pending projects', String(mineProjects.length), 'Mine construction', mineProjects.length ? 'shortage' : 'neutral') +
+      renderKpi('Eligible mine sites', String(eligibleMineSiteCount), model.sites.length + ' registered sites', 'neutral') +
+      renderKpi('Built mine units', String(builtMineCount), 'Existing assets, including stopped units', builtMineCount ? 'operational' : 'neutral') +
+      renderKpi('Operating mines', String(operatingMineCount), 'Built units currently operating', operatingMineCount ? 'operational' : 'neutral') +
+      renderKpi('Producing this turn', String(producingSites.length), 'Recorded extraction output', portfolioBalanceState) +
+      renderKpi('Mine units building', String(mineUnitsBuilding), 'Units in active construction projects', mineUnitsBuilding ? 'shortage' : 'neutral') +
+      renderKpi('Projects pending', String(pendingMineProjectCount), 'Mine construction projects', pendingMineProjectCount ? 'shortage' : 'neutral') +
       renderKpi('Blocked supply', String(blockedFlows.length), 'Recorded unresolved flows', blockedFlows.length ? 'shortage' : 'adequate') +
       renderKpi('Resource types', String(distinctResources.length), 'Available in country', 'neutral') +
       renderKpi('Today output', outputHeadline, 'Kept separate by unit', portfolioBalanceState) +
@@ -2259,9 +2275,12 @@
           }).join('') + '</div></section>';
       }).join('');
     var reportsMarkup = '<div class="omega-v2-kpis">' +
-      renderKpi('Mine sites', String(model.sites.filter(eligible).length), 'Mine sites available to manage', 'neutral') +
-      renderKpi('Producing this turn', String(producingSites.length), 'Mine sites with output', portfolioBalanceState) +
-      renderKpi('Projects pending', String(mineProjects.length), 'Under construction', mineProjects.length ? 'shortage' : 'neutral') +
+      renderKpi('Mine sites', String(eligibleMineSiteCount), 'Registered sites available to manage', 'neutral') +
+      renderKpi('Built mine units', String(builtMineCount), 'Commissioned or retained assets', builtMineCount ? 'operational' : 'neutral') +
+      renderKpi('Operating mines', String(operatingMineCount), 'Built units not paused or closed', operatingMineCount ? 'operational' : 'neutral') +
+      renderKpi('Mine units building', String(mineUnitsBuilding), 'Units in active construction projects', mineUnitsBuilding ? 'shortage' : 'neutral') +
+      renderKpi('Producing this turn', String(producingSites.length), 'Mine sites with recorded output', portfolioBalanceState) +
+      renderKpi('Projects pending', String(pendingMineProjectCount), 'Mine construction projects', pendingMineProjectCount ? 'shortage' : 'neutral') +
       renderKpi('Blocked supply flows', String(blockedFlows.length), 'Current flow ledger', blockedFlows.length ? 'shortage' : 'adequate') + '</div>' +
       '<section class="omega-v2-card omega-v2-report-overview"><h2>National resource economy</h2><p>Production and stock remain grouped by their own units.</p><div class="omega-v2-report-unit-totals">' +
       currentOutputGroups.map(function (row) { return '<div><span>' + esc(resourceLabel(row.resourceId)) + '</span><strong>' + amount(row.quantity,row.unit) +
