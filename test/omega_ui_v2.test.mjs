@@ -3222,5 +3222,7 @@ test('Factory cards use horizontal internal layouts and only reserve the landsca
   assert.match(css,/fp-card-product-section--output/);
   assert.match(css,/fp-card-input-section/);
   assert.match(css,/fp-workspace--detail-open/);
+  assert.match(css,/@media \(orientation:landscape\) and \(max-width:680px\)/);
+  assert.match(css,/grid-template-columns:repeat\(auto-fit,minmax\(245px,1fr\)\)/);
   assert.match(sw,/omega-offline-atlas-shell-v87/);
 });
