@@ -1656,7 +1656,8 @@
   function factoryInputIdentityMarkup(model, productId) {
     var label = panelProductLabel(model, productId);
     return factoryProductIdentityMarkup(productId, label) +
-      '<small class="fp-factory-input-id">' + esc(productId) + '</small>';
+      '<small class="fp-factory-input-id">' + esc(productId) + '</small>' +
+      factoryProductUsageMarkup(model, productId);
   }
 
   function factoryInputAggregateSourceMarkup(model, productId) {
