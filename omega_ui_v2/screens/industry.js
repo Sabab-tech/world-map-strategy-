@@ -1639,6 +1639,27 @@
       '<i aria-hidden="true"></i><strong>' + esc(text) + '</strong></span>';
   }
 
+  function factoryInputEfficiency(factory, inputRows) {
+    var raw = factory.raw || {}, health = raw.productionHealth && typeof raw.productionHealth === 'object' ? raw.productionHealth : {};
+    var reason = String(health.reason || factory.healthReason || '').toUpperCase();
+    var detail = health.detail && typeof health.detail === 'object' ? health.detail : {};
+    var constraints = detail.constraints && typeof detail.constraints === 'object' ? detail.constraints :
+      health.productionConstraints && typeof health.productionConstraints === 'object' ? health.productionConstraints : {};
+    var rawMaterialRatio = num(constraints.rawMaterialRatio);
+    if (rawMaterialRatio !== null) return { value: Math.max(0, Math.min(100, (1 - rawMaterialRatio) * 100)), observed: true };
+    if (/FACTORY_INPUT|INPUT_SHORTAGE|MATERIAL_SHORTAGE/.test(reason) && num(health.productivityPct) !== null) {
+      return { value: Math.max(0, 100 - Number(health.productivityPct)), observed: true };
+    }
+    var ratio = 1, observed = false;
+    inputRows.forEach(function (row) {
+      if (row.required === null || row.required <= 0 || row.current === null) return;
+      observed = true;
+      ratio = Math.min(ratio, Math.max(0, Math.min(1, row.current / row.required)));
+    });
+    if (observed) return { value: Math.max(0, (1 - ratio) * 100), observed: true };
+    return { value: null, observed: false };
+  }
+
   function factoryInputLiveRiskStatus(model, productId) {
     var factories = factoryInputFactoriesForProduct(model, productId);
     for (var index = 0; index < factories.length; index += 1) {
