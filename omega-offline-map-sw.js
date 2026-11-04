@@ -29,7 +29,7 @@ const CORE_ASSETS = [
   "./omega_government_banking_runtime_v1.js", "./omega_world_bank_lending_runtime_v1.js", "./omega_economic_transmission_runtime_v1.js",
   "./government_banking_rules_v1.json", "./financial_transmission_rules_v1.json",
   "./omega_finance_ministry_runtime_v1.js", 
-  "./economy_global_profiles_v1.json", "./resource_country_resource_context_index.json", "./resource_economy_rules.json",       "./finance_runtime_rules_v1.json",
+  "./economy_global_profiles_v1.json", "./resource_country_resource_context_index.json", "./resource_economy_rules.json", "./country_primary_resource_opening_baseline_v1.json",       "./finance_runtime_rules_v1.json",
   "./finance_sector_registry_v1.json",
   "./omega_macro_stability_runtime_v1.js", 
   "./economy_raw_financial_data_v2.json", "./finance_macro_stability_rules_v1.json",
@@ -137,7 +137,7 @@ function isShellAsset(value) {
     const url = new URL(value, INDEX_URL);
     if (url.origin !== self.location.origin || !url.pathname.startsWith(APP_BASE.pathname)) return false;
     if (/\.(?:m?js|css|woff2?)$/i.test(url.pathname)) return true;
-    return /\/(?:index\.html?|world\.json|economy_global_profiles_v1\.json|resource_economy_rules\.json)$/i.test(url.pathname);
+    return /\/(?:index\.html?|world\.json|economy_global_profiles_v1\.json|resource_economy_rules\.json|country_primary_resource_opening_baseline_v1\.json)$/i.test(url.pathname);
   } catch (_) {
     return false;
   }
