@@ -276,9 +276,10 @@ public final class OmegaGameplaySmokeTest {
                     "     !modal || modal.style.display !== 'flex' || !content || !title ||" +
                     "     title.textContent.trim() !== 'Industrial value chain') return false;" +
                     " if (content.querySelectorAll('.omega-rescc-factory-catalog-row').length === 0) return false;" +
-                    " var body = content.textContent || '';" +
-                    " return body.indexOf('Factories') >= 0 &&" +
-                    "        content.querySelectorAll('.omega-rescc-factory-catalog-row').length > 0;" +
+                    " var factoryRows = content.querySelectorAll('.omega-rescc-factory-catalog-row');" +
+                    " return factoryRows.length > 0 && Array.prototype.some.call(factoryRows, function(row) {" +
+                    "   return !!String(row.textContent || '').trim();" +
+                    " });" +
                     "})()";
             String factoryPanelReady = "false";
             final long factoryPanelDeadline = SystemClock.elapsedRealtime() + 60000L;
