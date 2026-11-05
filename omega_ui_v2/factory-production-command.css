@@ -4461,7 +4461,7 @@
   touch-action:manipulation;
   -webkit-tap-highlight-color:transparent;
 }
-@media (max-width:520px) {
+@media (max-width:520px) and (orientation:landscape) {
   .omega-v2-industry--factory-home .fp-type-catalog-grid,
   .omega-v2-industry--factory-home .fp-factory-catalog-workspace .fp-type-catalog-grid,
   .omega-v2-industry--factory-home .fp-factory-catalog-workspace.fp-workspace--detail-open .fp-type-catalog-grid {
@@ -4509,5 +4509,55 @@
     min-height:25px;
     padding:3px 2px;
     font-size:8px;
+  }
+}
+
+/* Portrait phones need a full-width factory card. The three-card register is
+   reserved for landscape; nesting three recipe columns inside three narrow
+   cards made product names collapse one character per line. */
+@media (max-width:680px) and (orientation:portrait) {
+  .omega-v2-industry--factory-home .fp-type-catalog-grid,
+  .omega-v2-industry--factory-home .fp-factory-catalog-workspace .fp-type-catalog-grid,
+  .omega-v2-industry--factory-home .fp-factory-catalog-workspace.fp-workspace--detail-open .fp-type-catalog-grid {
+    grid-template-columns:minmax(0,1fr) !important;
+    gap:8px;
+  }
+  .omega-v2-industry--factory-home .omega-v2-factory-type-card {
+    padding:7px;
+    gap:6px;
+    border-radius:8px;
+    overflow:visible;
+  }
+  .omega-v2-industry--factory-home .fp-type-card-art {
+    flex:0 0 38px;
+    width:38px;
+    height:38px;
+  }
+  .omega-v2-industry--factory-home .fp-type-card-art .omega-v2-factory-svg {
+    width:30px;
+    height:30px;
+  }
+  .omega-v2-industry--factory-home .fp-type-card-name strong {
+    font-size:11px;
+    line-height:1.22;
+    overflow-wrap:break-word;
+    word-break:normal;
+  }
+  .omega-v2-industry--factory-home .fp-card-recipe {
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:6px;
+    padding:7px 6px 4px;
+  }
+  .omega-v2-industry--factory-home .fp-card-section-label {
+    font-size:8px;
+  }
+  .omega-v2-industry--factory-home .fp-card-product-row .fp-product-identity-copy strong {
+    font-size:9px;
+    overflow-wrap:break-word;
+    word-break:normal;
+  }
+  .omega-v2-industry--factory-home .fp-type-card-actions .omega-v2-factory-button {
+    min-height:33px;
+    font-size:10px;
   }
 }
