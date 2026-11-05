@@ -277,13 +277,17 @@ public final class OmegaGameplaySmokeTest {
                     " return !!(cabinet && main && cabinet.getAttribute('data-omega-v2-route') === 'industry' &&" +
                     " companiesTab && factoriesTab && factoryView);" +
                     "})()";
-            String privateCompaniesReady = "false";
-            final long privateCompaniesDeadline = SystemClock.elapsedRealtime() + 60000L;
-            while (!"true".equals(privateCompaniesReady) &&
-                    SystemClock.elapsedRealtime() < privateCompaniesDeadline) {
-                privateCompaniesReady = evaluate(instrumentation, webViewRef.get(), privateCompaniesTabReadyScript);
-                if (!"true".equals(privateCompaniesReady)) SystemClock.sleep(350L);
+            String industryRouteReady = "false";
+            final long industryRouteDeadline = SystemClock.elapsedRealtime() + 60000L;
+            while (!"true".equals(industryRouteReady) &&
+                    SystemClock.elapsedRealtime() < industryRouteDeadline) {
+                industryRouteReady = evaluate(instrumentation, webViewRef.get(), privateCompaniesTabReadyScript);
+                if (!"true".equals(industryRouteReady)) SystemClock.sleep(350L);
             }
+            assertEquals(
+                    "The Industry screen must expose the Factory and Companies tabs before loading private data",
+                    "true", industryRouteReady
+            );
             final String openPrivateCompaniesTab =
                     "(function() {" +
                     " var cabinet = document.getElementById('cabinet-full-window');" +
