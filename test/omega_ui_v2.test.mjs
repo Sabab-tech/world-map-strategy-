@@ -3691,3 +3691,77 @@ test('phone landscape factory cards keep compact aligned columns without stage c
   assert.ok(sw.includes('omega-offline-atlas-shell-v93'),
     'Android offline shell must reload the landscape layout stylesheet');
 });
+
+
+test('live factory assets remain counted when the registered baseline snapshot is stale', () => {
+  const previous = {
+    Game:globalThis.Game,
+    catalog:globalThis.OmegaResourceIndustrialCatalogData,
+    Omega:globalThis.Omega,
+    factoryBaseline:globalThis.OmegaCountryFactoryStartingBaselineV1
+  };
+  const catalog = JSON.parse(readFileSync(new URL('../resource_industrial_catalog_v1.json', import.meta.url), 'utf8'));
+  const factory = {
+    id:'LIVE-STEEL-FACTORY-01',
+    name:'Live Steel Works',
+    factoryType:'STEEL_AND_ALLOY_WORKS',
+    recipeId:'STEEL_PRIMARY_ROUTE_V1',
+    status:'OPERATIONAL',
+    capacityPerDay:900,
+    inputInventory:{iron_concentrate:120},
+    inputBatchLots:[{
+      batchId:'LIVE-STEEL-IRON-LOT-01',
+      resourceId:'iron_concentrate',
+      quantity:120,
+      remainingQuantity:120,
+      unit:'SIMULATION_RESOURCE_UNIT',
+      status:'AVAILABLE_TO_FACTORY'
+    }]
+  };
+  globalThis.Game = {
+    currentActiveCountry:'USA',
+    playerCountry:'USA',
+    state:{
+      simulation:{session:{playerCountryId:'USA'},turn:12,daysPerTurn:1},
+      economy:{USA:{productionAssets:[factory]}},
+      resource:{USA:{industrialNetwork:{
+        projects:[],factoryProductionCycles:{},factoryRuntime:{},siteFlowLedger:[]
+      }}}
+    }
+  };
+  globalThis.OmegaResourceIndustrialCatalogData = catalog;
+  globalThis.Omega = Object.assign({}, previous.Omega || {}, {
+    ResourceIndustrialCatalogData:catalog
+  });
+  globalThis.OmegaCountryFactoryStartingBaselineV1 = {
+    getCountryFactoryRegistry(countryId) {
+      if (countryId !== 'USA') return null;
+      return {
+        status:'READY',
+        runtimeRegistered:true,
+        registry:[{
+          factoryType:'STEEL_AND_ALLOY_WORKS',
+          name:'Steel and Alloy Works',
+          startingCount:0
+        }],
+        liveFactoryTypeCounts:{STEEL_AND_ALLOY_WORKS:0}
+      };
+    }
+  };
+  try {
+    const model = globalThis.OmegaUIV2Industry.buildViewModel({countryId:'USA'});
+    const steel = model.factoryTypeCounts.find(row => row.type === 'STEEL_AND_ALLOY_WORKS');
+    assert.ok(steel, 'the canonical steel factory type must remain in the country model');
+    assert.equal(steel.count,1,
+      'a stale registered zero must not hide the active factory already present in productionAssets');
+    assert.equal(model.factoryCount,1,
+      'the national factory total must include the live factory asset');
+  } finally {
+    if (previous.Game === undefined) delete globalThis.Game; else globalThis.Game = previous.Game;
+    if (previous.catalog === undefined) delete globalThis.OmegaResourceIndustrialCatalogData;
+    else globalThis.OmegaResourceIndustrialCatalogData = previous.catalog;
+    if (previous.Omega === undefined) delete globalThis.Omega; else globalThis.Omega = previous.Omega;
+    if (previous.factoryBaseline === undefined) delete globalThis.OmegaCountryFactoryStartingBaselineV1;
+    else globalThis.OmegaCountryFactoryStartingBaselineV1 = previous.factoryBaseline;
+  }
+});
